@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
 using System.IO.Compression;
@@ -147,7 +148,7 @@ internal static class SweepRecordingCases
     // Inputs
     //==================================================================================================
 
-    private static Geom_BSplineCurve MakePath(Rng r, bool theRational, double theWiggle)
+    private static BSplineCurve3D MakePath(Rng r, bool theRational, double theWiggle)
     {
         int aDeg = r.I(2, 4);
         int aNb = r.I(aDeg + 1, aDeg + 4);
@@ -173,29 +174,29 @@ internal static class SweepRecordingCases
         aM[aNbK] = aDeg + 1;
         if (theRational)
         {
-            return new Geom_BSplineCurve(aPoles, aW, aK, aM, aDeg);
+            return new BSplineCurve3D(aPoles, aW, aK, aM, aDeg);
         }
-        return new Geom_BSplineCurve(aPoles, aK, aM, aDeg);
+        return new BSplineCurve3D(aPoles, aK, aM, aDeg);
     }
 
-    private static Geom_Curve MakeSection(Rng r, int theKind, Point3D P, Vector3D T, double theScale)
+    private static Curve3D MakeSection(Rng r, int theKind, Point3D P, Vector3D T, double theScale)
     {
         Frame3D anAx = new(P, new Direction3D(T));
         switch (theKind)
         {
             case 0:
-                return new Geom_Circle(anAx, theScale * r.R(0.5, 1.5));
+                return new CircleCurve3D(anAx, theScale * r.R(0.5, 1.5));
             case 1:
                 {
                     double aMaj = theScale * r.R(1.0, 2.0);
-                    return new Geom_Ellipse(anAx, aMaj, aMaj * r.R(0.3, 0.9));
+                    return new EllipseCurve3D(anAx, aMaj, aMaj * r.R(0.3, 0.9));
                 }
             case 2:
                 {
                     Vector3D aX = new(anAx.XDirection());
                     Point3D aP1 = P.Translated(aX * (-theScale * r.R(0.5, 1.5)));
                     Vector3D aD = aX * theScale * r.R(1.0, 2.5);
-                    return new Geom_TrimmedCurve(new Geom_Line(aP1, new Direction3D(aD)), 0.0, aD.Magnitude());
+                    return new TrimmedCurve3D(new LineCurve3D(aP1, new Direction3D(aD)), 0.0, aD.Magnitude());
                 }
             default:
                 {
@@ -219,7 +220,7 @@ internal static class SweepRecordingCases
                             aKp[i] = (double)(i - 1);
                             aMp[i] = 1;
                         }
-                        return new Geom_BSplineCurve(aPoles, aKp, aMp, aDeg, true);
+                        return new BSplineCurve3D(aPoles, aKp, aMp, aDeg, true);
                     }
                     int aNbK = aNb - aDeg + 1;
                     NCollection_Array1<double> aK = new(1, aNbK);
@@ -231,7 +232,7 @@ internal static class SweepRecordingCases
                     }
                     aM[1] = aDeg + 1;
                     aM[aNbK] = aDeg + 1;
-                    return new Geom_BSplineCurve(aPoles, aK, aM, aDeg);
+                    return new BSplineCurve3D(aPoles, aK, aM, aDeg);
                 }
         }
     }
@@ -242,7 +243,7 @@ internal static class SweepRecordingCases
 
     private static double Clamp(double theV) => theV < -10.0 ? -10.0 : (theV > 10.0 ? 10.0 : theV);
 
-    private static void DumpSurface(Geom_Surface? theS)
+    private static void DumpSurface(Surface? theS)
     {
         if (theS is null)
         {
@@ -251,40 +252,40 @@ internal static class SweepRecordingCases
         }
         theS.Bounds(out double u1, out double u2, out double v1, out double v2);
         Line("SURF " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theS.GetType()) + " " + Hex(u1) + " " + Hex(u2) + " " + Hex(v1) + " " + Hex(v2));
-        Geom_Surface aBasis = theS;
-        if (theS is Geom_RectangularTrimmedSurface aTrim)
+        Surface aBasis = theS;
+        if (theS is TrimmedSurface aTrim)
         {
             aBasis = aTrim.BasisSurface();
             Line("BASIS " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aBasis.GetType()));
         }
-        if (aBasis is Geom_BSplineSurface aBS)
+        if (aBasis is BSplineSurface aBS)
         {
-            Line("BS " + Int(aBS.UDegree()) + " " + Int(aBS.VDegree()) + " " + Int(aBS.NbUPoles()) + " "
-                 + Int(aBS.NbVPoles()) + " " + Int(aBS.NbUKnots()) + " " + Int(aBS.NbVKnots()) + " "
-                 + Int(aBS.IsUPeriodic()) + " " + Int(aBS.IsVPeriodic()) + " " + Int(aBS.IsURational()) + " "
-                 + Int(aBS.IsVRational()));
+            Line("BS " + Int(aBS.UDegree()) + " " + Int(aBS.VDegree()) + " " + Int(aBS.UPoleCount) + " "
+                 + Int(aBS.VPoleCount) + " " + Int(aBS.UKnotCount) + " " + Int(aBS.VKnotCount) + " "
+                 + Int(aBS.IsUPeriodic) + " " + Int(aBS.IsVPeriodic) + " " + Int(aBS.IsURational) + " "
+                 + Int(aBS.IsVRational));
             string aK = "UK";
-            for (int i = 1; i <= aBS.NbUKnots(); i++)
+            for (int i = 1; i <= aBS.UKnotCount; i++)
             {
                 aK += " " + Hex(aBS.UKnot(i)) + "x" + Int(aBS.UMultiplicity(i));
             }
             Line(aK);
             aK = "VK";
-            for (int i = 1; i <= aBS.NbVKnots(); i++)
+            for (int i = 1; i <= aBS.VKnotCount; i++)
             {
                 aK += " " + Hex(aBS.VKnot(i)) + "x" + Int(aBS.VMultiplicity(i));
             }
             Line(aK);
             StringBuilder aPoles = new();
-            for (int i = 1; i <= aBS.NbUPoles(); i++)
+            for (int i = 1; i <= aBS.UPoleCount; i++)
             {
-                for (int j = 1; j <= aBS.NbVPoles(); j++)
+                for (int j = 1; j <= aBS.VPoleCount; j++)
                 {
                     aPoles.Append(Hex(aBS.Pole(i, j))).Append(',').Append(Hex(aBS.Weight(i, j))).Append(';');
                 }
             }
             Line("PR " + Fnv(aPoles.ToString()) + " " + Hex(aBS.Pole(1, 1)) + " "
-                 + Hex(aBS.Pole(aBS.NbUPoles(), aBS.NbVPoles())));
+                 + Hex(aBS.Pole(aBS.UPoleCount, aBS.VPoleCount)));
         }
         StringBuilder aGrid = new("GRID");
         double a1 = Clamp(u1), a2 = Clamp(u2), b1 = Clamp(v1), b2 = Clamp(v2);
@@ -299,7 +300,7 @@ internal static class SweepRecordingCases
         Line(aGrid.ToString());
     }
 
-    private static void DumpCurve2d(string theTag, Geom2d_Curve? theC)
+    private static void DumpCurve2d(string theTag, Curve2D? theC)
     {
         if (theC is null)
         {
@@ -363,7 +364,7 @@ internal static class SweepRecordingCases
     {
         bool aRat = r.I(0, 3) == 0;
         double aWig = r.R(0.5, 5.0);
-        Geom_BSplineCurve aPath = MakePath(r, aRat, aWig);
+        BSplineCurve3D aPath = MakePath(r, aRat, aWig);
         double aR = r.R(0.3, 2.0);
         Line("IN " + Hex(aPath.Pole(1)) + " " + Hex(aR));
         Guard(() =>
@@ -379,14 +380,14 @@ internal static class SweepRecordingCases
     {
         bool aRat = r.I(0, 3) == 0;
         double aWig = r.R(0.5, 5.0);
-        Geom_BSplineCurve aPath = MakePath(r, aRat, aWig);
+        BSplineCurve3D aPath = MakePath(r, aRat, aWig);
         int aKind = r.I(0, 4);
         aPath.D1(aPath.FirstParameter(), out Point3D aP, out Vector3D aT);
         double sx = r.R(-0.5, 0.5);
         double sy = r.R(-0.5, 0.5);
         double sz = r.R(-0.5, 0.5);
         Vector3D aShift = new(sx, sy, sz);
-        Geom_Curve aSect = MakeSection(r, aKind, aP.Translated(aShift), aT, 1.0);
+        Curve3D aSect = MakeSection(r, aKind, aP.Translated(aShift), aT, 1.0);
         int aDeg = r.I(0, 2) == 0 ? 8 : 11;
         Line("IN " + Hex(aPath.Pole(1)) + " " + Int(aKind) + " " + Hex(aSect.Value(aSect.FirstParameter())));
         Guard(() =>
@@ -401,10 +402,10 @@ internal static class SweepRecordingCases
 
     private static void PipeDir(Rng r)
     {
-        Geom_BSplineCurve aPath = MakePath(r, false, r.R(0.5, 3.0));
+        BSplineCurve3D aPath = MakePath(r, false, r.R(0.5, 3.0));
         int aKind = r.I(0, 4);
         aPath.D1(aPath.FirstParameter(), out Point3D aP, out Vector3D aT);
-        Geom_Curve aSect = MakeSection(r, aKind, aP, aT, 1.0);
+        Curve3D aSect = MakeSection(r, aKind, aP, aT, 1.0);
         double dx = r.R(-0.3, 0.3);
         double dy = r.R(0.5, 1.0);
         double dz = r.R(-0.3, 0.3);
@@ -424,16 +425,16 @@ internal static class SweepRecordingCases
     {
         // a 2d path on a plane, a cylinder or a B-spline surface
         int aSupKind = r.I(0, 2);
-        Geom_Surface aSup;
+        Surface aSup;
         if (aSupKind == 0)
         {
             double dx = r.R(-0.2, 0.2);
             double dy = r.R(-0.2, 0.2);
-            aSup = new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(dx, dy, 1.0)));
+            aSup = new PlaneSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(dx, dy, 1.0)));
         }
         else if (aSupKind == 1)
         {
-            aSup = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), r.R(5.0, 10.0));
+            aSup = new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), r.R(5.0, 10.0));
         }
         else
         {
@@ -450,7 +451,7 @@ internal static class SweepRecordingCases
             aKs[1] = 0.0;
             aKs[2] = 1.0;
             aMs[1] = aMs[2] = 4;
-            aSup = new Geom_BSplineSurface(aPoles, aKs, aKs, aMs, aMs, 3, 3);
+            aSup = new BSplineSurface(aPoles, aKs, aKs, aMs, aMs, 3, 3);
         }
         double aScaleU = aSupKind == 1 ? 1.0 : (aSupKind == 2 ? 0.1 : 10.0);
         NCollection_Array1<Point2D> aP2 = new(1, 4);
@@ -464,14 +465,14 @@ internal static class SweepRecordingCases
         aK[1] = 0.0;
         aK[2] = 1.0;
         aM[1] = aM[2] = 4;
-        Geom2d_BSplineCurve aPath = new(aP2, aK, aM, 3);
-        Geom2dAdaptor_Curve aC2 = new(aPath);
+        BSplineCurve2D aPath = new(aP2, aK, aM, 3);
+        CurveAdaptor2D aC2 = new(aPath);
         Point2D aQ = aC2.Value(0.0);
         aSup.D1(aQ.X(), aQ.Y(), out Point3D aP, out Vector3D aDU, out Vector3D aDV);
         Vector2D aT2 = aC2.DN(0.0, 1);
         Vector3D aT = aDU * aT2.X() + aDV * aT2.Y();
         int aKind = r.I(0, 3);
-        Geom_Curve aSect = MakeSection(r, aKind, aP, aT, 0.5);
+        Curve3D aSect = MakeSection(r, aKind, aP, aT, 0.5);
         Line("IN " + Int(aSupKind) + " " + Hex(aP) + " " + Int(aKind));
         Guard(() =>
         {
@@ -485,20 +486,20 @@ internal static class SweepRecordingCases
 
     // The path's poles moved onto a convex planar arc: GeomFill_Pipe's evolving sections fail where the corrected
     // Frenet trihedron needs correcting (occt-issues.md).
-    private static Geom_BSplineCurve Flatten(Geom_BSplineCurve thePath)
+    private static BSplineCurve3D Flatten(BSplineCurve3D thePath)
     {
-        NCollection_Array1<Point3D> aPoles = new(1, thePath.NbPoles());
-        for (int i = 1; i <= thePath.NbPoles(); i++)
+        NCollection_Array1<Point3D> aPoles = new(1, thePath.PoleCount);
+        for (int i = 1; i <= thePath.PoleCount; i++)
         {
             double anA = 0.3 * (i - 1);
             aPoles[i] = new Point3D(20.0 * Math.Sin(anA), 20.0 - 20.0 * Math.Cos(anA), 0.0);
         }
-        return new Geom_BSplineCurve(aPoles, thePath.InternalKnots(), thePath.InternalMultiplicities(), thePath.Degree());
+        return new BSplineCurve3D(aPoles, thePath.InternalKnots(), thePath.InternalMultiplicities(), thePath.Degree());
     }
 
     private static void PipeTwoSections(Rng r, bool thePlanar)
     {
-        Geom_BSplineCurve aPath = MakePath(r, false, r.R(0.5, 4.0));
+        BSplineCurve3D aPath = MakePath(r, false, r.R(0.5, 4.0));
         if (thePlanar)
         {
             aPath = Flatten(aPath);
@@ -506,8 +507,8 @@ internal static class SweepRecordingCases
         int aKind = r.I(0, 1) == 0 ? 0 : 3;
         aPath.D1(aPath.FirstParameter(), out Point3D aP, out Vector3D aT);
         Rng aR2 = new(r.Next());
-        Geom_Curve aS1 = MakeSection(r, aKind, aP, aT, 1.0);
-        Geom_Curve aS2 = MakeSection(aR2, aKind, aP, aT, r.R(0.5, 2.0));
+        Curve3D aS1 = MakeSection(r, aKind, aP, aT, 1.0);
+        Curve3D aS2 = MakeSection(aR2, aKind, aP, aT, r.R(0.5, 2.0));
         Line("IN " + Hex(aPath.Pole(1)) + " " + Int(aKind));
         Guard(() =>
         {
@@ -521,10 +522,10 @@ internal static class SweepRecordingCases
 
     private static void PipeNSections(Rng r)
     {
-        Geom_BSplineCurve aPath = MakePath(r, false, r.R(0.5, 3.0));
+        BSplineCurve3D aPath = MakePath(r, false, r.R(0.5, 3.0));
         int aNb = r.I(2, 4);
         int aKind = r.I(0, 1) == 0 ? 0 : 3;
-        NCollection_Sequence<Geom_Curve> aSeq = new();
+        NCollection_Sequence<Curve3D> aSeq = new();
         double f = aPath.FirstParameter(), l = aPath.LastParameter();
         for (int i = 0; i < aNb; i++)
         {
@@ -546,25 +547,25 @@ internal static class SweepRecordingCases
 
     private static void PipeGuide(Rng r)
     {
-        Geom_BSplineCurve aPath = MakePath(r, false, r.R(0.2, 1.5));
+        BSplineCurve3D aPath = MakePath(r, false, r.R(0.2, 1.5));
         // the guide: the path's poles shifted sideways and wiggled
-        NCollection_Array1<Point3D> aPoles = new(1, aPath.NbPoles());
-        for (int i = 1; i <= aPath.NbPoles(); i++)
+        NCollection_Array1<Point3D> aPoles = new(1, aPath.PoleCount);
+        for (int i = 1; i <= aPath.PoleCount; i++)
         {
             double x = r.R(-0.5, 0.5);
             double y = 3.0 + r.R(-0.5, 0.5);
             double z = r.R(-0.5, 0.5);
             aPoles[i] = aPath.Pole(i).Translated(new Vector3D(x, y, z));
         }
-        Geom_BSplineCurve aGuide = new(aPoles, aPath.InternalKnots(), aPath.InternalMultiplicities(), aPath.Degree());
+        BSplineCurve3D aGuide = new(aPoles, aPath.InternalKnots(), aPath.InternalMultiplicities(), aPath.Degree());
         aPath.D1(aPath.FirstParameter(), out Point3D aP, out Vector3D aT);
         int aKind = r.I(0, 3);
-        Geom_Curve aSect = MakeSection(r, aKind, aP, aT, 1.0);
+        Curve3D aSect = MakeSection(r, aKind, aP, aT, 1.0);
         bool byACR = r.I(0, 1) == 1, rotat = r.I(0, 1) == 1;
         Line("IN " + Hex(aPath.Pole(1)) + " " + Int(aKind) + " " + Int(byACR) + " " + Int(rotat));
         Guard(() =>
         {
-            GeomAdaptor_Curve aG = new(aGuide);
+            CurveAdaptor aG = new(aGuide);
             GeomFill_Pipe aPipe = new(aPath, aG, aSect, byACR, rotat);
             aPipe.GenerateParticularCase(true);
             aPipe.Perform(1.0e-4, false, C2, 11, 30);
@@ -572,14 +573,14 @@ internal static class SweepRecordingCases
         });
     }
 
-    private static void EdgeCurves(Rng r, out Geom_BSplineCurve thePath, out Geom_BSplineCurve theC1,
-                                   out Geom_BSplineCurve theC2, out double theR)
+    private static void EdgeCurves(Rng r, out BSplineCurve3D thePath, out BSplineCurve3D theC1,
+                                   out BSplineCurve3D theC2, out double theR)
     {
         thePath = MakePath(r, false, r.R(0.2, 2.0));
         theR = r.R(1.0, 3.0);
         double anAng = r.R(0.6, 2.6);
-        NCollection_Array1<Point3D> aP1 = new(1, thePath.NbPoles()), aP2 = new(1, thePath.NbPoles());
-        for (int i = 1; i <= thePath.NbPoles(); i++)
+        NCollection_Array1<Point3D> aP1 = new(1, thePath.PoleCount), aP2 = new(1, thePath.PoleCount);
+        for (int i = 1; i <= thePath.PoleCount; i++)
         {
             Point3D aP = thePath.Pole(i);
             double x1 = r.R(-0.1, 0.1);
@@ -588,13 +589,13 @@ internal static class SweepRecordingCases
             double x2 = r.R(-0.1, 0.1);
             aP2[i] = aP.Translated(new Vector3D(x2, theR * Math.Cos(anAng), theR * Math.Sin(anAng)));
         }
-        theC1 = new Geom_BSplineCurve(aP1, thePath.InternalKnots(), thePath.InternalMultiplicities(), thePath.Degree());
-        theC2 = new Geom_BSplineCurve(aP2, thePath.InternalKnots(), thePath.InternalMultiplicities(), thePath.Degree());
+        theC1 = new BSplineCurve3D(aP1, thePath.InternalKnots(), thePath.InternalMultiplicities(), thePath.Degree());
+        theC2 = new BSplineCurve3D(aP2, thePath.InternalKnots(), thePath.InternalMultiplicities(), thePath.Degree());
     }
 
     private static void PipeEdge(Rng r, bool theOld)
     {
-        EdgeCurves(r, out Geom_BSplineCurve aPath, out Geom_BSplineCurve aC1, out Geom_BSplineCurve aC2, out double aR);
+        EdgeCurves(r, out BSplineCurve3D aPath, out BSplineCurve3D aC1, out BSplineCurve3D aC2, out double aR);
         bool aPoly = r.I(0, 2) == 0;
         Line("IN " + Hex(aPath.Pole(1)) + " " + Hex(aR) + " " + Int(aPoly));
         Guard(() =>
@@ -616,7 +617,7 @@ internal static class SweepRecordingCases
     private static void KPart(Rng r)
     {
         int aCase = r.I(0, 7);
-        Geom_Curve aPath;
+        Curve3D aPath;
         if (aCase < 4)
         {
             double dx = r.R(-0.2, 0.2);
@@ -625,7 +626,7 @@ internal static class SweepRecordingCases
             double px = r.R(-1, 1);
             double py = r.R(-1, 1);
             double aL = r.R(5.0, 20.0);
-            aPath = new Geom_TrimmedCurve(new Geom_Line(new Point3D(px, py, 0), aD), 0.0, aL);
+            aPath = new TrimmedCurve3D(new LineCurve3D(new Point3D(px, py, 0), aD), 0.0, aL);
         }
         else
         {
@@ -634,10 +635,10 @@ internal static class SweepRecordingCases
             Frame3D anAx = new(new Point3D(0, 0, 0), new Direction3D(dx, dy, 1.0));
             double anEnd = aCase == 7 ? 2 * M_PI : r.R(1.0, 5.0);
             double aRad = r.R(5.0, 10.0);
-            aPath = new Geom_TrimmedCurve(new Geom_Circle(anAx, aRad), 0.0, anEnd);
+            aPath = new TrimmedCurve3D(new CircleCurve3D(anAx, aRad), 0.0, anEnd);
         }
         aPath.D1(aPath.FirstParameter(), out Point3D aP, out Vector3D aT);
-        Geom_Curve? aSect = null;
+        Curve3D? aSect = null;
         int aSectKind = 0;
         switch (aCase)
         {
@@ -649,7 +650,7 @@ internal static class SweepRecordingCases
                 {
                     // a half circle in the plane of the axis: a sphere
                     Frame3D anAx = new(new Point3D(0, 0, 0), new Direction3D(aT));
-                    aSect = new Geom_TrimmedCurve(new Geom_Circle(anAx, r.R(1.0, 3.0)), -M_PI / 2, M_PI / 2);
+                    aSect = new TrimmedCurve3D(new CircleCurve3D(anAx, r.R(1.0, 3.0)), -M_PI / 2, M_PI / 2);
                 }
                 break;
             case 1:
@@ -675,7 +676,7 @@ internal static class SweepRecordingCases
             aPipe.GenerateParticularCase(true);
             if (aTwo)
             {
-                Geom_Circle aC2 = (Geom_Circle)aSect.Copy();
+                CircleCurve3D aC2 = (CircleCurve3D)aSect.Copy();
                 aC2.SetRadius(aC2.Radius() * r.R(0.5, 2.0));
                 aPipe.Init(aPath, aSect, aC2);
             }
@@ -690,10 +691,10 @@ internal static class SweepRecordingCases
 
     private static void SweepEvolved(Rng r)
     {
-        Geom_BSplineCurve aPath = MakePath(r, false, r.R(0.5, 4.0));
+        BSplineCurve3D aPath = MakePath(r, false, r.R(0.5, 4.0));
         aPath.D1(aPath.FirstParameter(), out Point3D _, out Vector3D _);
         int aKind = r.I(0, 4);
-        Geom_Curve aSect = MakeSection(r, aKind, new Point3D(0, 0, 0), new Vector3D(0, 0, 1), 1.0);
+        Curve3D aSect = MakeSection(r, aKind, new Point3D(0, 0, 0), new Vector3D(0, 0, 1), 1.0);
         Law_Function aLaw;
         double f = aPath.FirstParameter(), l = aPath.LastParameter();
         if (r.I(0, 1) == 0)
@@ -719,7 +720,7 @@ internal static class SweepRecordingCases
         Guard(() =>
         {
             GeomFill_CurveAndTrihedron aLoc = new(new GeomFill_CorrectedFrenet());
-            aLoc.SetCurve(new GeomAdaptor_Curve(aPath));
+            aLoc.SetCurve(new CurveAdaptor(aPath));
             GeomFill_EvolvedSection aSec = new(aSect, aLaw);
             GeomFill_Sweep aSweep = new(aLoc, aKPart);
             aSweep.SetTolerance(1.0e-4, 1.0e-4, 1.0e-5, 0.01);
@@ -742,7 +743,7 @@ internal static class SweepRecordingCases
     {
         int aNb = r.I(2, 4);
         int aKind = r.I(0, 4);
-        NCollection_Sequence<Geom_Curve> aSeq = new();
+        NCollection_Sequence<Curve3D> aSeq = new();
         NCollection_Sequence<double> aPar = new();
         for (int i = 0; i < aNb; i++)
         {
@@ -759,7 +760,7 @@ internal static class SweepRecordingCases
         {
             GeomFill_NSections aLaw = aWithPar ? new GeomFill_NSections(aSeq, aPar, 0.0, 1.0, aPar.First(), aPar.Last())
                                                : new GeomFill_NSections(aSeq);
-            Geom_BSplineSurface? aS = aLaw.BSplineSurface();
+            BSplineSurface? aS = aLaw.BSplineSurface();
             DumpSurface(aS);
             if (aS is null)
             {
@@ -805,15 +806,15 @@ internal static class SweepRecordingCases
 
     private static void BlendFunc(Rng r)
     {
-        EdgeCurves(r, out Geom_BSplineCurve aPath, out Geom_BSplineCurve aC1, out Geom_BSplineCurve aC2, out double aR);
+        EdgeCurves(r, out BSplineCurve3D aPath, out BSplineCurve3D aC1, out BSplineCurve3D aC2, out double aR);
         bool aPoly = r.I(0, 2) == 0;
         Line("IN " + Hex(aPath.Pole(1)) + " " + Hex(aR) + " " + Int(aPoly));
         Guard(() =>
         {
-            GeomFill_CircularBlendFunc aF = new(new GeomAdaptor_Curve(aPath), new GeomAdaptor_Curve(aC1),
-                                                new GeomAdaptor_Curve(aC2), aR, aPoly);
+            GeomFill_CircularBlendFunc aF = new(new CurveAdaptor(aPath), new CurveAdaptor(aC1),
+                                                new CurveAdaptor(aC2), aR, aPoly);
             aF.SectionShape(out int aNbP, out int aNbK, out int aDeg);
-            Line("SHAPE " + Int(aNbP) + " " + Int(aNbK) + " " + Int(aDeg) + " " + Int(aF.IsRational()) + " "
+            Line("SHAPE " + Int(aNbP) + " " + Int(aNbK) + " " + Int(aDeg) + " " + Int(aF.IsRational) + " "
                  + Hex(aF.MaximalSection()) + " " + Hex(aF.BarycentreOfSurf()));
             NCollection_Array1<double> aK = new(1, aNbK);
             NCollection_Array1<int> aM = new(1, aNbK);
@@ -861,13 +862,13 @@ internal static class SweepRecordingCases
     private static void SectionGenerator(Rng r)
     {
         int aType = r.I(1, 6);
-        Geom_Curve aPath;
-        Geom_BSplineCurve aBPath = MakePath(r, false, r.R(0.5, 3.0));
+        Curve3D aPath;
+        BSplineCurve3D aBPath = MakePath(r, false, r.R(0.5, 3.0));
         if (aType >= 4)
         {
             double aRad = r.R(5, 10);
             double anEnd = r.R(1.0, 4.0);
-            aPath = new Geom_TrimmedCurve(new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aRad),
+            aPath = new TrimmedCurve3D(new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aRad),
                                           0.0, anEnd);
         }
         else
@@ -877,8 +878,8 @@ internal static class SweepRecordingCases
         aPath.D1(aPath.FirstParameter(), out Point3D aP, out Vector3D aT);
         int aKind = r.I(0, 1) == 0 ? 0 : 3;
         Rng aR2 = new(r.Next());
-        Geom_Curve aS1 = MakeSection(r, aKind, aP, aT, 1.0);
-        Geom_Curve aS2 = MakeSection(aR2, aKind, aP, aT, 1.5);
+        Curve3D aS1 = MakeSection(r, aKind, aP, aT, 1.0);
+        Curve3D aS2 = MakeSection(aR2, aKind, aP, aT, 1.5);
         Line("IN " + Int(aType) + " " + Int(aKind));
         Guard(() =>
         {
@@ -1002,7 +1003,7 @@ internal static class SweepRecordingCases
     private static void Ruled(Rng r)
     {
         int aCase = r.I(0, 4);
-        Geom_Curve aC1, aC2;
+        Curve3D aC1, aC2;
         switch (aCase)
         {
             case 0:
@@ -1017,16 +1018,16 @@ internal static class SweepRecordingCases
                     double oy = r.R(1, 3);
                     Vector3D aOff = new(ox, oy, 0);
                     double a = r.R(-2, 0), b = r.R(1, 3);
-                    aC1 = new Geom_TrimmedCurve(new Geom_Line(aP, aD), a, b);
+                    aC1 = new TrimmedCurve3D(new LineCurve3D(aP, aD), a, b);
                     Vector3D aDV = new(aD);
                     double proj = aOff.Dot(aDV);
                     if (r.I(0, 1) == 0)
                     {
-                        aC2 = new Geom_TrimmedCurve(new Geom_Line(aP.Translated(aOff), aD), a - proj, b - proj);
+                        aC2 = new TrimmedCurve3D(new LineCurve3D(aP.Translated(aOff), aD), a - proj, b - proj);
                     }
                     else
                     {
-                        aC2 = new Geom_TrimmedCurve(new Geom_Line(aP.Translated(aOff), aD.Reversed()), proj - b, proj - a);
+                        aC2 = new TrimmedCurve3D(new LineCurve3D(aP.Translated(aOff), aD.Reversed()), proj - b, proj - a);
                     }
                     break;
                 }
@@ -1037,15 +1038,15 @@ internal static class SweepRecordingCases
                     double dx = r.R(-0.2, 0.2);
                     Frame3D anAx = new(new Point3D(px, 0, 0), new Direction3D(dx, 0, 1));
                     double aR = r.R(1, 3);
-                    aC1 = new Geom_Circle(anAx, aR);
+                    aC1 = new CircleCurve3D(anAx, aR);
                     Frame3D anAx2 = anAx.Translated(new Vector3D(anAx.Direction()) * r.R(-5, 5));
-                    aC2 = new Geom_Circle(anAx2, aCase == 1 ? aR : aR * r.R(0.3, 2.0));
+                    aC2 = new CircleCurve3D(anAx2, aCase == 1 ? aR : aR * r.R(0.3, 2.0));
                     break;
                 }
             default:
                 { // B-splines and others: GeomFill_Generator
                     aC1 = MakePath(r, false, 2.0);
-                    Geom_BSplineCurve aB = MakePath(r, false, 2.0);
+                    BSplineCurve3D aB = MakePath(r, false, 2.0);
                     aC2 = aCase == 3 ? aB : MakeSection(r, 1, new Point3D(0, 5, 0), new Vector3D(0, 1, 0), 2.0);
                     break;
                 }

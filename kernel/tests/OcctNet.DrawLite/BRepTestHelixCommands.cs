@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
 
@@ -44,7 +45,7 @@ internal static class BRepTestHelixCommands
             double aMaxError = theBuilder.ToleranceReached();
             di.Append("WarningStatus = ").Append(theBuilder.WarningStatus()).Append("\n");
             di.Append("ToleranceReached = ").Append(aMaxError).Append("\n");
-            TopoDS_Shape aW = theBuilder.Shape();
+            Shape aW = theBuilder.Shape();
             theDI.SetShape(theName, aW);
         }
         else

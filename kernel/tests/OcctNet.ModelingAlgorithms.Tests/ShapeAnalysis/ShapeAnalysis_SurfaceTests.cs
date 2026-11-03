@@ -35,7 +35,7 @@ public class ShapeAnalysis_SurfaceTests
     }
 
     /// <summary>The saddle z = x·y on [0, 1]², as a Bezier surface of degree 2 x 2 scaled by <paramref name="theL"/>.</summary>
-    private static Geom_BezierSurface Saddle(double theL)
+    private static BezierSurface Saddle(double theL)
     {
         var aPoles = new NCollection_Array2<Point3D>(1, 3, 1, 3);
         for (int i = 1; i <= 3; i++)
@@ -48,14 +48,14 @@ public class ShapeAnalysis_SurfaceTests
             }
         }
 
-        return new Geom_BezierSurface(aPoles);
+        return new BezierSurface(aPoles);
     }
 
     /// <summary>
     /// A quadratic x linear B-spline patch whose U-first row collapses to the point (0, 0, 1): a cone-like sheet with a
     /// degenerated edge.
     /// </summary>
-    private static Geom_BSplineSurface Degenerated()
+    private static BSplineSurface Degenerated()
     {
         var aPoles = new NCollection_Array2<Point3D>(1, 3, 1, 2);
         aPoles[1, 1] = new Point3D(0, 0, 1);
@@ -64,13 +64,13 @@ public class ShapeAnalysis_SurfaceTests
         aPoles[2, 2] = new Point3D(1, 1, 0.5);
         aPoles[3, 1] = new Point3D(2, 0, 0);
         aPoles[3, 2] = new Point3D(2, 2, 0);
-        return new Geom_BSplineSurface(aPoles, Array(0.0, 1.0), Array(0.0, 1.0), Array(3, 3), Array(2, 2), 2, 1);
+        return new BSplineSurface(aPoles, Array(0.0, 1.0), Array(0.0, 1.0), Array(3, 3), Array(2, 2), 2, 1);
     }
 
     [Fact]
     public void Plane()
     {
-        var aSAS = new ShapeAnalysis_Surface(new Geom_Plane(XOY));
+        var aSAS = new ShapeAnalysis_Surface(new PlaneSurface(XOY));
         AssertUV(3, 4, aSAS.ValueOfUV(new Point3D(3, 4, 5), Preci));
         Assert.Equal(5.0, aSAS.Gap(), 1e-12);
         Assert.Equal(0, aSAS.NbSingularities(1e10));
@@ -92,7 +92,7 @@ public class ShapeAnalysis_SurfaceTests
     [Fact]
     public void Cylinder()
     {
-        var aSAS = new ShapeAnalysis_Surface(new Geom_CylindricalSurface(XOY, 2));
+        var aSAS = new ShapeAnalysis_Surface(new CylindricalSurface(XOY, 2));
         AssertUV(0, 3, aSAS.ValueOfUV(new Point3D(2, 0, 3), Preci));
         AssertUV(1.5 * M_PI, 1, aSAS.ValueOfUV(new Point3D(0, -2, 1), Preci));
         Assert.Equal(0.0, aSAS.Gap(), 1e-15);
@@ -104,18 +104,18 @@ public class ShapeAnalysis_SurfaceTests
         Assert.Equal(0, aSAS.NbSingularities(1e10));
 
         // iso-curves: a line along V and a circle; bound isos are cached, all are frozen
-        Geom_Curve? anIso = aSAS.UIso(0);
-        Assert.IsType<Geom_Line>(anIso);
+        Curve3D? anIso = aSAS.UIso(0);
+        Assert.IsType<LineCurve3D>(anIso);
         Assert.True(anIso!.IsFrozen);
         Assert.Same(anIso, aSAS.UIso(0));
-        Assert.IsType<Geom_Circle>(aSAS.VIso(1));
+        Assert.IsType<CircleCurve3D>(aSAS.VIso(1));
         Assert.NotSame(aSAS.VIso(1), aSAS.VIso(1));
     }
 
     [Fact]
     public void Cone_apex_is_a_singularity()
     {
-        var aCone = new Geom_ConicalSurface(XOY, M_PI / 6, 1);
+        var aCone = new ConicalSurface(XOY, M_PI / 6, 1);
         var aSAS = new ShapeAnalysis_Surface(aCone);
         Assert.Equal(1, aSAS.NbSingularities(0));
         double aPreci = -1, aFirstPar = 0, aLastPar = 0;
@@ -151,7 +151,7 @@ public class ShapeAnalysis_SurfaceTests
     [Fact]
     public void Sphere_poles_are_singularities()
     {
-        var aSphere = new Geom_SphericalSurface(XOY, 1);
+        var aSphere = new SphericalSurface(XOY, 1);
         var aSAS = new ShapeAnalysis_Surface(aSphere);
         Assert.Equal(2, aSAS.NbSingularities(0));
         Assert.True(aSAS.HasSingularities(0));
@@ -205,7 +205,7 @@ public class ShapeAnalysis_SurfaceTests
     [Fact]
     public void Torus_singularities_depend_on_the_radii()
     {
-        var aTorus = new Geom_ToroidalSurface(XOY, 3, 1);
+        var aTorus = new ToroidalSurface(XOY, 3, 1);
         var aSAS = new ShapeAnalysis_Surface(aTorus);
         Assert.Equal(0, aSAS.NbSingularities(Preci));
         Assert.Equal(1, aSAS.NbSingularities(2));
@@ -215,15 +215,15 @@ public class ShapeAnalysis_SurfaceTests
         Assert.True(aSAS.IsVClosed());
 
         // a spindle torus (minor radius larger): two singular points
-        var aSpindle = new ShapeAnalysis_Surface(new Geom_ToroidalSurface(XOY, 1, 2));
+        var aSpindle = new ShapeAnalysis_Surface(new ToroidalSurface(XOY, 1, 2));
         Assert.Equal(2, aSpindle.NbSingularities(0));
     }
 
     [Fact]
     public void Surface_of_revolution()
     {
-        var aProfile = new Geom_TrimmedCurve(new Geom_Line(new Point3D(1, 0, 0), new Direction3D(0, 0, 1)), 0, 2);
-        var aRev = new Geom_SurfaceOfRevolution(aProfile, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
+        var aProfile = new TrimmedCurve3D(new LineCurve3D(new Point3D(1, 0, 0), new Direction3D(0, 0, 1)), 0, 2);
+        var aRev = new RevolutionSurface(aProfile, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
         var aSAS = new ShapeAnalysis_Surface(aRev);
         AssertUV(M_PI / 2, 1, aSAS.ValueOfUV(new Point3D(0, 1, 1), Preci), 1e-7);
         Assert.Equal(0.0, aSAS.Gap(), 1e-7);
@@ -239,8 +239,8 @@ public class ShapeAnalysis_SurfaceTests
         AssertUV(1.6, 1.1, aNext, 1e-9);
 
         // a revolved line through the axis: a cone with its apex as a degenerated boundary
-        var aSlant = new Geom_TrimmedCurve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 1)), 0, 2);
-        var aConeRev = new ShapeAnalysis_Surface(new Geom_SurfaceOfRevolution(aSlant, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))));
+        var aSlant = new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 1)), 0, 2);
+        var aConeRev = new ShapeAnalysis_Surface(new RevolutionSurface(aSlant, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))));
         Assert.Equal(1, aConeRev.NbSingularities(Preci));
         Assert.True(aConeRev.IsDegenerated(new Point3D(0, 0, 0), Preci));
     }
@@ -248,22 +248,22 @@ public class ShapeAnalysis_SurfaceTests
     [Fact]
     public void Surface_of_linear_extrusion()
     {
-        var aCircle = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
-        var anExtr = new Geom_SurfaceOfLinearExtrusion(aCircle, new Direction3D(0, 0, 1));
+        var aCircle = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
+        var anExtr = new ExtrusionSurface(aCircle, new Direction3D(0, 0, 1));
         var aSAS = new ShapeAnalysis_Surface(anExtr);
         Assert.True(aSAS.IsUClosed());
         Assert.False(aSAS.IsVClosed());
         AssertUV(1.0, 3.0, aSAS.ValueOfUV(anExtr.Value(1.0, 3.0), Preci), 1e-7);
 
         // an open profile (an arc of half a circle): U isn't closed
-        var anArc = new Geom_TrimmedCurve(aCircle, 0, M_PI);
-        var aSAS2 = new ShapeAnalysis_Surface(new Geom_SurfaceOfLinearExtrusion(anArc, new Direction3D(0, 0, 1)));
+        var anArc = new TrimmedCurve3D(aCircle, 0, M_PI);
+        var aSAS2 = new ShapeAnalysis_Surface(new ExtrusionSurface(anArc, new Direction3D(0, 0, 1)));
         Assert.False(aSAS2.IsUClosed());
         Assert.Equal(4.0, aSAS2.Gap(), 1e-12);
         Assert.Equal(RealLast(), aSAS2.UCloseVal()); // the ends are farther apart than the start and the middle
         // an almost closed profile is closed with a large enough precision
-        var anAlmost = new Geom_TrimmedCurve(aCircle, 0, 2 * M_PI - 1e-4);
-        var aSAS3 = new ShapeAnalysis_Surface(new Geom_SurfaceOfLinearExtrusion(anAlmost, new Direction3D(0, 0, 1)));
+        var anAlmost = new TrimmedCurve3D(aCircle, 0, 2 * M_PI - 1e-4);
+        var aSAS3 = new ShapeAnalysis_Surface(new ExtrusionSurface(anAlmost, new Direction3D(0, 0, 1)));
         Assert.False(aSAS3.IsUClosed());
         Assert.True(aSAS3.IsUClosed(1e-3));
     }
@@ -271,7 +271,7 @@ public class ShapeAnalysis_SurfaceTests
     [Fact]
     public void Bezier_surface()
     {
-        Geom_BezierSurface aSaddle = Saddle(2);
+        BezierSurface aSaddle = Saddle(2);
         var aSAS = new ShapeAnalysis_Surface(aSaddle);
         AssertUV(0.3, 0.6, aSAS.ValueOfUV(aSaddle.Value(0.3, 0.6), Preci), 1e-8);
         Assert.True(aSAS.Gap() < 1e-8);
@@ -296,7 +296,7 @@ public class ShapeAnalysis_SurfaceTests
     [Fact]
     public void BSpline_with_a_degenerated_edge()
     {
-        Geom_BSplineSurface aBS = Degenerated();
+        BSplineSurface aBS = Degenerated();
         var aSAS = new ShapeAnalysis_Surface(aBS);
         Assert.Equal(1, aSAS.NbSingularities(Preci));
         Assert.True(aSAS.IsDegenerated(new Point3D(0, 0, 1), Preci));
@@ -340,7 +340,7 @@ public class ShapeAnalysis_SurfaceTests
             aPoles[i, 2] = new Point3D(aXs[i - 1], aYs[i - 1], 1);
         }
 
-        var aBS = new Geom_BSplineSurface(aPoles, Array(0.0, 1.0, 2.0, 3.0, 4.0), Array(0.0, 1.0), Array(2, 1, 1, 1, 2), Array(2, 2), 1, 1);
+        var aBS = new BSplineSurface(aPoles, Array(0.0, 1.0, 2.0, 3.0, 4.0), Array(0.0, 1.0), Array(2, 1, 1, 1, 2), Array(2, 2), 1, 1);
         var aSAS = new ShapeAnalysis_Surface(aBS);
         Assert.True(aSAS.IsUClosed());
         Assert.False(aSAS.IsVClosed());
@@ -352,7 +352,7 @@ public class ShapeAnalysis_SurfaceTests
     [Fact]
     public void Offset_surface()
     {
-        var anOffset = new Geom_OffsetSurface(Saddle(2), 0.5);
+        var anOffset = new OffsetSurface(Saddle(2), 0.5);
         var aSAS = new ShapeAnalysis_Surface(anOffset);
         AssertUV(0.4, 0.7, aSAS.ValueOfUV(anOffset.Value(0.4, 0.7), Preci), 1e-7);
         Assert.Equal(4, aSAS.NbSingularities(1e10));
@@ -364,14 +364,14 @@ public class ShapeAnalysis_SurfaceTests
         Assert.Equal(0.25, aV, 1e-6);
 
         // an offset of a cylinder is (for GeomAdaptor) a cylinder
-        var aCylOffset = new ShapeAnalysis_Surface(new Geom_OffsetSurface(new Geom_CylindricalSurface(XOY, 2), 1));
+        var aCylOffset = new ShapeAnalysis_Surface(new OffsetSurface(new CylindricalSurface(XOY, 2), 1));
         AssertUV(M_PI / 2, 4, aCylOffset.ValueOfUV(new Point3D(0, 3, 4), Preci));
     }
 
     [Fact]
     public void Rectangular_trimmed_surface()
     {
-        var aTrimmed = new Geom_RectangularTrimmedSurface(new Geom_CylindricalSurface(XOY, 1), 0, M_PI, 0, 2);
+        var aTrimmed = new TrimmedSurface(new CylindricalSurface(XOY, 1), 0, M_PI, 0, 2);
         var aSAS = new ShapeAnalysis_Surface(aTrimmed);
         Assert.False(aSAS.IsUClosed());
         Assert.Equal(RealLast(), aSAS.UCloseVal()); // the ends are farther apart than the start and the middle
@@ -398,14 +398,14 @@ public class ShapeAnalysis_SurfaceTests
         Assert.Equal(0.0, aZmax, 1e-6);
 
         // a full trimmed cylinder is U-closed by the 101-point check
-        var aFull = new ShapeAnalysis_Surface(new Geom_RectangularTrimmedSurface(new Geom_CylindricalSurface(XOY, 1), 0, 2 * M_PI, 0, 2));
+        var aFull = new ShapeAnalysis_Surface(new TrimmedSurface(new CylindricalSurface(XOY, 1), 0, 2 * M_PI, 0, 2));
         Assert.True(aFull.IsUClosed());
     }
 
     [Fact]
     public void UVFromIso_refines_a_rough_solution()
     {
-        var aTrimmed = new Geom_RectangularTrimmedSurface(Saddle(2), 0, 1, 0, 1);
+        var aTrimmed = new TrimmedSurface(Saddle(2), 0, 1, 0, 1);
         var aSAS = new ShapeAnalysis_Surface(aTrimmed);
         double aU = 0.1, aV = 0.9;
         double aDist = aSAS.UVFromIso(aTrimmed.Value(1.0, 0.3), Preci, ref aU, ref aV);
@@ -424,17 +424,17 @@ public class ShapeAnalysis_SurfaceTests
     [Fact]
     public void Init_and_SetDomain()
     {
-        var aSAS = new ShapeAnalysis_Surface(new Geom_SphericalSurface(XOY, 1));
+        var aSAS = new ShapeAnalysis_Surface(new SphericalSurface(XOY, 1));
         Assert.Equal(2, aSAS.NbSingularities(0));
-        var aCyl = new Geom_CylindricalSurface(XOY, 1);
+        var aCyl = new CylindricalSurface(XOY, 1);
         aSAS.Init(aCyl);
         Assert.Same(aCyl, aSAS.Surface());
         Assert.Equal(0, aSAS.NbSingularities(0));
 
         // a copy of another analyzer takes its singularities and adaptor
-        var aSphere = new ShapeAnalysis_Surface(new Geom_SphericalSurface(XOY, 1));
+        var aSphere = new ShapeAnalysis_Surface(new SphericalSurface(XOY, 1));
         aSphere.NbSingularities(0);
-        var aCopy = new ShapeAnalysis_Surface(new Geom_Plane(XOY));
+        var aCopy = new ShapeAnalysis_Surface(new PlaneSurface(XOY));
         aCopy.Init(aSphere);
         Assert.Equal(2, aCopy.NbSingularities(0));
         Assert.Same(aSphere.TrueAdaptor3d(), aCopy.Adaptor3d());
@@ -453,7 +453,7 @@ public class ShapeAnalysis_SurfaceTests
     [Fact]
     public void Value_evaluates_the_adaptor()
     {
-        var aSAS = new ShapeAnalysis_Surface(new Geom_CylindricalSurface(XOY, 2));
+        var aSAS = new ShapeAnalysis_Surface(new CylindricalSurface(XOY, 2));
         Assert.True(aSAS.Value(M_PI / 2, 3).IsEqual(new Point3D(0, 2, 3), 1e-15));
         Assert.True(aSAS.Value(new Point2D(0, 1)).IsEqual(new Point3D(2, 0, 1), 1e-15));
     }

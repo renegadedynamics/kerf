@@ -2,9 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -35,9 +40,9 @@ public sealed class BRepMesh_EdgeParameterProvider<ParametersCollection> : Trans
     private double myCurParam;
     private double myFoundParam;
 
-    private readonly BRepAdaptor_Curve myCurveAdaptor = new();
+    private readonly EdgeCurveAdaptor myCurveAdaptor = new();
 
-    private readonly Extrema_LocateExtPC myProjector = new();
+    private readonly LocateExtPC myProjector = new();
 
     /// <summary>An empty provider.</summary>
     public BRepMesh_EdgeParameterProvider()
@@ -52,7 +57,7 @@ public sealed class BRepMesh_EdgeParameterProvider<ParametersCollection> : Trans
 
     /// <summary>A provider for the edge with the orientation on the face, and the stored parameters.</summary>
     public BRepMesh_EdgeParameterProvider(IMeshData_Edge theEdge,
-                                          TopAbs_Orientation theOrientation,
+                                          Orientation theOrientation,
                                           IMeshData_Face theFace,
                                           ParametersCollection theParameters)
     {
@@ -61,7 +66,7 @@ public sealed class BRepMesh_EdgeParameterProvider<ParametersCollection> : Trans
 
     /// <summary>Initializes the provider with the given data.</summary>
     public void Init(IMeshData_Edge theEdge,
-                     TopAbs_Orientation theOrientation,
+                     Orientation theOrientation,
                      IMeshData_Face theFace,
                      ParametersCollection theParameters)
     {
@@ -70,7 +75,7 @@ public sealed class BRepMesh_EdgeParameterProvider<ParametersCollection> : Trans
         myScale = 1.0;
 
         // Extract actual parametric values
-        TopoDS_Edge aEdge = TopoDS.Edge(theEdge.GetEdge().Oriented(theOrientation));
+        Edge aEdge = ShapeCasts.Edge(theEdge.GetEdge().Oriented(theOrientation));
 
         myCurveAdaptor.Initialize(aEdge, theFace.GetFace());
         if (myIsSameParam)
@@ -121,7 +126,7 @@ public sealed class BRepMesh_EdgeParameterProvider<ParametersCollection> : Trans
         myFoundParam += (myCurParam - aPrevParam);
 
         myProjector.Perform(thePoint3d, myFoundParam);
-        if (myProjector.IsDone())
+        if (myProjector.IsDone)
         {
             double aFoundParam = myProjector.Point().Parameter();
             if ((aPrevFoundParam < myFoundParam && aPrevFoundParam < aFoundParam)
@@ -138,5 +143,5 @@ public sealed class BRepMesh_EdgeParameterProvider<ParametersCollection> : Trans
     }
 
     /// <summary>The pcurve used to compute the parameters.</summary>
-    public Adaptor2d_Curve2d? GetPCurve() => myCurveAdaptor.CurveOnSurface().GetCurve();
+    public Curve2DAdaptorBase? GetPCurve() => myCurveAdaptor.CurveOnSurface().GetCurve();
 }

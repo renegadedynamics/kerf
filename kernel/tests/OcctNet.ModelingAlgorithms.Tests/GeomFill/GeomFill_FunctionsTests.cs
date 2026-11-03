@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static OcctNet.ModelingAlgorithms.Tests.LocationLawTestSupport;
@@ -15,7 +16,7 @@ public class GeomFill_FunctionsTests
     public void LocFunction_DN_IsTheVectorThenTheColumns()
     {
         var aLaw = new GeomFill_CurveAndTrihedron(new GeomFill_DraftTrihedron(new Vector3D(0, 0, 1), 0.2));
-        aLaw.SetCurve(new GeomAdaptor_Curve(WavyCurve()));
+        aLaw.SetCurve(new CurveAdaptor(WavyCurve()));
         var aFunc = new GeomFill_LocFunction(aLaw);
 
         var P = new NCollection_Array1<Point2D>(1, 1);
@@ -52,7 +53,7 @@ public class GeomFill_FunctionsTests
     public void LocFunction_DN_ReportsAFailedLaw()
     {
         var aLaw = new GeomFill_CurveAndTrihedron(new GeomFill_DraftTrihedron(new Vector3D(0, 0, 1), 0.2));
-        aLaw.SetCurve(new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 1));
+        aLaw.SetCurve(new CurveAdaptor(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 1));
         var aFunc = new GeomFill_LocFunction(aLaw);
         var aRes = new double[12];
         int anIer = 0;
@@ -96,8 +97,8 @@ public class GeomFill_FunctionsTests
     [Fact]
     public void FunctionDraft_DerivativesMatchFiniteDifferences()
     {
-        var aSurf = new GeomAdaptor_Surface(new Geom_SphericalSurface(new CoordinateSystem(Constants.XOY()), 5));
-        var aGen = new GeomAdaptor_Curve(new Geom_Line(new Point3D(1, 2, 0), new Direction3D(1, 1, -1)));
+        var aSurf = new SurfaceAdaptor(new SphericalSurface(new CoordinateSystem(Constants.XOY()), 5));
+        var aGen = new CurveAdaptor(new LineCurve3D(new Point3D(1, 2, 0), new Direction3D(1, 1, -1)));
         var E = new GeomFill_FunctionDraft(aSurf, aGen);
         Assert.Equal(3, E.NbVariables());
         Assert.Equal(3, E.NbEquations());
@@ -151,8 +152,8 @@ public class GeomFill_FunctionsTests
     public void FunctionGuide_DerivativesMatchFiniteDifferences()
     {
         // a constant section: the radial segment [0, 3] along X, revolved about the path's tangent
-        var aSection = new GeomFill_UniformSection(new Geom_TrimmedCurve(new Geom_Line(Constants.OX()), 0, 3));
-        var aGuide = new GeomAdaptor_Curve(new Geom_Line(new Point3D(1, 1, 0), new Direction3D(0, 0.3, 1)));
+        var aSection = new GeomFill_UniformSection(new TrimmedCurve3D(new LineCurve3D(Constants.OX()), 0, 3));
+        var aGuide = new CurveAdaptor(new LineCurve3D(new Point3D(1, 1, 0), new Direction3D(0, 0.3, 1)));
         var E = new GeomFill_FunctionGuide(aSection, aGuide);
         E.SetParam(0.0, new Point3D(0, 0, 1), new Xyz(0, 0, 1), new Xyz(1, 0, 0));
         var X = new math_Vector(1, 3);

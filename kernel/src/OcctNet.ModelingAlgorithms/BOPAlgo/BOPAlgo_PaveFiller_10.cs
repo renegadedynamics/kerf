@@ -3,8 +3,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -23,17 +27,17 @@ public partial class BOPAlgo_PaveFiller
         }
         //
         bool bFlag;
-        NCollection_List<TopoDS_Shape>.Iterator aItLS = new();
+        NCollection_List<Shape>.Iterator aItLS = new();
         //
         bFlag = false;
         aItLS.Initialize(myArguments);
         for (; aItLS.More() && (!bFlag); aItLS.Next())
         {
-            TopoDS_Shape aS = aItLS.Value();
+            Shape aS = aItLS.Value();
             // OCCT.NET: an unfrozen argument may hold frozen sub-shapes (ported code's intermediate shapes sharing a
             // caller's unchanged ones, decision 1013); a destructive operation would throw writing into them, so they
             // count as locked too (decision 1056)
-            bFlag = aS.Locked() || BRepTools.HoldsFrozen(aS);
+            bFlag = aS.Locked() || BrepTools.HoldsFrozen(aS);
         }
         myNonDestructive = bFlag;
     }
@@ -64,8 +68,8 @@ public partial class BOPAlgo_PaveFiller
         }
 
         // Update edge
-        TopoDS_Edge aE = TopoDS.Edge(myDS.Shape(nE));
-        new BRep_Builder().UpdateEdge(aE, theTol);
+        Edge aE = ShapeCasts.Edge(myDS.Shape(nE));
+        new BrepBuilder().UpdateEdge(aE, theTol);
         ref Box aBoxE = ref aSIE.ChangeBox();
         BRepBndLib.Add(aE, ref aBoxE);
         aBoxE.SetGap(aBoxE.GetGap() + global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -87,14 +91,14 @@ public partial class BOPAlgo_PaveFiller
     {
         int nVNew;
         double aTolV;
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
 
         nVNew = nV;
         if (myDS!.IsNewShape(nVNew) || myDS.HasShapeSD(nV, ref nVNew) || !myNonDestructive)
         {
             // nV is a new vertex, it has SD or non-destructive mode is not in force
-            TopoDS_Vertex aVSD = TopoDS.Vertex(myDS.Shape(nVNew));
-            aTolV = BRep_Tool.Tolerance(aVSD);
+            Vertex aVSD = ShapeCasts.Vertex(myDS.Shape(nVNew));
+            aTolV = Tool.Tolerance(aVSD);
             if (aTolV < aTolNew)
             {
                 aBB.UpdateVertex(aVSD, aTolNew);
@@ -108,17 +112,17 @@ public partial class BOPAlgo_PaveFiller
         }
         //
         // nV is old vertex
-        TopoDS_Vertex aV = TopoDS.Vertex(myDS.Shape(nV));
-        aTolV = BRep_Tool.Tolerance(aV);
+        Vertex aV = ShapeCasts.Vertex(myDS.Shape(nV));
+        aTolV = Tool.Tolerance(aV);
         //
         // create new vertex
-        TopoDS_Vertex aVNew = new();
-        Point3D aPV = BRep_Tool.Pnt(aV);
+        Vertex aVNew = new();
+        Point3D aPV = Tool.Pnt(aV);
         aBB.MakeVertex(ref aVNew, aPV, Max(aTolV, aTolNew));
         //
         // append new vertex to DS
         BOPDS_ShapeInfo aSIV0 = new();
-        aSIV0.SetShapeType(TopAbs_VERTEX);
+        aSIV0.SetShapeType(ShapeType.Vertex);
         aSIV0.SetShape(aVNew);
         nVNew = myDS.Append(aSIV0);
         //

@@ -2,6 +2,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
 using System.Collections.Immutable;
 
@@ -20,11 +21,11 @@ namespace Occt;
 /// </remarks>
 public sealed class XdeDoc_Product
 {
-    private readonly TopoDS_Shape myShape;
-    private TopoDS_Shape? myAssemblyShape;
+    private readonly Shape myShape;
+    private Shape? myAssemblyShape;
     private readonly Lock myLock = new();
 
-    private XdeDoc_Product(TopoDS_Shape theShape,
+    private XdeDoc_Product(Shape theShape,
                            bool isAssembly,
                            ImmutableArray<XdeDoc_Instance> theComponents,
                            ImmutableArray<XdeDoc_SubShape> theSubShapes,
@@ -39,11 +40,11 @@ public sealed class XdeDoc_Product
 
     /// <summary>A part: the shape (frozen here, if it isn't yet), its attributes and its sub-shapes' attributes.</summary>
     /// <exception cref="ArgumentException">The shape is null.</exception>
-    public static XdeDoc_Product Part(in TopoDS_Shape theShape,
+    public static XdeDoc_Product Part(in Shape theShape,
                                       XdeDoc_Attributes? theAttributes = null,
                                       IEnumerable<XdeDoc_SubShape>? theSubShapes = null)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             throw new ArgumentException("A part needs a shape", nameof(theShape));
         }
@@ -53,13 +54,13 @@ public sealed class XdeDoc_Product
     }
 
     /// <summary>A part with a name.</summary>
-    public static XdeDoc_Product Part(in TopoDS_Shape theShape, string? theName)
+    public static XdeDoc_Product Part(in Shape theShape, string? theName)
         => Part(theShape, XdeDoc_Attributes.Empty.WithName(theName));
 
     /// <summary>An assembly of the components (possibly none), with its attributes.</summary>
     public static XdeDoc_Product Assembly(IEnumerable<XdeDoc_Instance> theComponents,
                                           XdeDoc_Attributes? theAttributes = null)
-        => new(new TopoDS_Shape(), true, theComponents.ToImmutableArray(), [],
+        => new(new Shape(), true, theComponents.ToImmutableArray(), [],
                theAttributes ?? XdeDoc_Attributes.Empty);
 
     /// <summary>An assembly with a name.</summary>
@@ -85,7 +86,7 @@ public sealed class XdeDoc_Product
     /// The shape: a part's own, or for an assembly the compound of its components placed (as XCAF's
     /// <c>UpdateAssemblies</c> makes it), frozen. An empty assembly gives an empty compound.
     /// </summary>
-    public TopoDS_Shape Shape
+    public Shape Shape
     {
         get
         {
@@ -95,18 +96,18 @@ public sealed class XdeDoc_Product
             }
             lock (myLock)
             {
-                if (myAssemblyShape is TopoDS_Shape aShape)
+                if (myAssemblyShape is Shape aShape)
                 {
                     return aShape;
                 }
             }
-            var aBuilder = new BRep_Builder();
-            TopoDS_Compound aCompound = new();
+            var aBuilder = new BrepBuilder();
+            Compound aCompound = new();
             aBuilder.MakeCompound(ref aCompound);
             foreach (XdeDoc_Instance aComponent in Components)
             {
-                TopoDS_Shape aSub = aComponent.Shape;
-                if (!aSub.IsNull())
+                Shape aSub = aComponent.Shape;
+                if (!aSub.IsNull)
                 {
                     aBuilder.Add(aCompound, aSub);
                 }
@@ -122,7 +123,7 @@ public sealed class XdeDoc_Product
     }
 
     /// <summary>The attributes of a sub-shape (compared with IsSame), or null.</summary>
-    public XdeDoc_SubShape? FindSubShape(in TopoDS_Shape theSubShape)
+    public XdeDoc_SubShape? FindSubShape(in Shape theSubShape)
     {
         foreach (XdeDoc_SubShape aSub in SubShapes)
         {
@@ -163,7 +164,7 @@ public sealed class XdeDoc_Product
     /// The part with the attributes of a sub-shape set (replacing the sub-shape's entry if it has one, compared with
     /// IsSame). The sub-shape is frozen.
     /// </summary>
-    public XdeDoc_Product WithSubShape(in TopoDS_Shape theSubShape, XdeDoc_Attributes theAttributes)
+    public XdeDoc_Product WithSubShape(in Shape theSubShape, XdeDoc_Attributes theAttributes)
     {
         var aSub = new XdeDoc_SubShape(theSubShape, theAttributes);
         var aList = SubShapes.ToBuilder();

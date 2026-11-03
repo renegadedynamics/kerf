@@ -9,6 +9,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
@@ -36,10 +37,10 @@ public class BlendFunc_ConstRad : Blend_Function
     [ThreadStatic] private static Point3D ptgui;
     [ThreadStatic] private static double invnormtg, dinvnormtg;
 
-    private readonly Adaptor3d_Surface surf1;
-    private readonly Adaptor3d_Surface surf2;
-    private readonly Adaptor3d_Curve curv;
-    private Adaptor3d_Curve tcurv;
+    private readonly SurfaceAdaptorBase surf1;
+    private readonly SurfaceAdaptorBase surf2;
+    private readonly CurveAdaptorBase curv;
+    private CurveAdaptorBase tcurv;
     private Point3D pts1;
     private Point3D pts2;
     private bool istangent;
@@ -105,7 +106,7 @@ public class BlendFunc_ConstRad : Blend_Function
     private BlendFunc_SectionShape mySShape;
     private ParameterisationType myTConv;
 
-    public BlendFunc_ConstRad(Adaptor3d_Surface S1, Adaptor3d_Surface S2, Adaptor3d_Curve C)
+    public BlendFunc_ConstRad(SurfaceAdaptorBase S1, SurfaceAdaptorBase S2, CurveAdaptorBase C)
     {
         surf1 = S1;
         surf2 = S2;

@@ -4,11 +4,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Schematiq.Collections;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -20,23 +24,23 @@ namespace Occt;
 /// <para>
 /// Give the shape, <see cref="Add"/> each face with its direction, angle and neutral plane (check
 /// <see cref="AddDone"/>; on a failure <see cref="ProblematicShape"/> is the face and <see cref="Remove"/> takes it
-/// back), then <see cref="Build"/>. The result is a <see cref="BRepTools_Modifier"/>'s, corrected around seams
+/// back), then <see cref="Build"/>. The result is a <see cref="Modifier"/>'s, corrected around seams
 /// (<see cref="CorrectWires"/>) and for the vertex tolerances.
 /// </para>
 /// <para>
 /// A maker (decision 414). The caller's shape is never written: the modifier rebuilds what changes and shares the rest
 /// (decision 973); OCCT's <c>CorrectWires</c> then edits the modifier's result in place, freeing and changing wires,
 /// faces, vertices and pcurves that may be the caller's, so when it has something to change it works on a copy of the
-/// result (<see cref="BRepTools_CopyAtEntry"/>) and gives back the caller's sub-shapes it left alone (decision 1044).
+/// result (<see cref="CopyAtEntry"/>) and gives back the caller's sub-shapes it left alone (decision 1044).
 /// </para>
 /// </remarks>
 public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
 {
-    private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myVtxToReplace = new(TopTools_ShapeMapHasher.Instance);
-    private readonly BRepTools_ReShape mySubs = new();
+    private readonly NCollection_DataMap<Shape, Shape> myVtxToReplace = new(ShapeHasher.Instance);
+    private readonly ReShape mySubs = new();
 
     // OCCT.NET: the copy of the modifier's result that CorrectWires works on (null when it had nothing to change).
-    private BRepTools_CopyAtEntry? myResultCopy;
+    private CopyAtEntry? myResultCopy;
 
     //=================================================================================================
 
@@ -48,7 +52,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     //=================================================================================================
 
     /// <summary>The algorithm on the shape <paramref name="S"/>.</summary>
-    public BRepOffsetAPI_DraftAngle(in TopoDS_Shape S)
+    public BRepOffsetAPI_DraftAngle(in Shape S)
     {
         myInitialShape = S;
         myModification = new Draft_Modification(S);
@@ -70,7 +74,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     //=================================================================================================
 
     /// <summary>Changes the shape and cancels the faces added.</summary>
-    public void Init(in TopoDS_Shape S)
+    public void Init(in Shape S)
     {
         myInitialShape = S;
         NotDone();
@@ -94,14 +98,14 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     /// </summary>
     /// <exception cref="NullObjectException">No shape was given.</exception>
     /// <exception cref="ConstructionErrorException">An earlier Add failed and its face wasn't removed.</exception>
-    public void Add(in TopoDS_Face F, in Direction3D D, double Angle, in Plane3D Plane, bool Flag = true)
+    public void Add(in Face F, in Direction3D D, double Angle, in Plane3D Plane, bool Flag = true)
     {
         // POP-DPF : protection
         if (Math.Abs(Angle) <= 1.0e-04)
         {
             return;
         }
-        Standard_NullObject_Raise_if(myInitialShape.IsNull(), "BRepOffsetAPI_DraftAngle::Add() - initial shape is not set");
+        Standard_NullObject_Raise_if(myInitialShape.IsNull, "BRepOffsetAPI_DraftAngle::Add() - initial shape is not set");
         draft().Add(F, D, Angle, Plane, Flag);
     }
 
@@ -111,8 +115,8 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     /// <exception cref="NullObjectException">No shape was given.</exception>
     public bool AddDone()
     {
-        Standard_NullObject_Raise_if(myInitialShape.IsNull(), "BRepOffsetAPI_DraftAngle::AddDone() - initial shape is not set");
-        return draft().ProblematicShape().IsNull();
+        Standard_NullObject_Raise_if(myInitialShape.IsNull, "BRepOffsetAPI_DraftAngle::AddDone() - initial shape is not set");
+        return draft().ProblematicShape().IsNull;
     }
 
     //=================================================================================================
@@ -120,9 +124,9 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     /// <summary>Cancels the face <paramref name="F"/> and the faces added with it (after a failed Add).</summary>
     /// <exception cref="NullObjectException">No shape was given.</exception>
     /// <exception cref="NoSuchObjectException">The face wasn't added, or the draft was built.</exception>
-    public void Remove(in TopoDS_Face F)
+    public void Remove(in Face F)
     {
-        Standard_NullObject_Raise_if(myInitialShape.IsNull(), "BRepOffsetAPI_DraftAngle::Remove() - initial shape is not set");
+        Standard_NullObject_Raise_if(myInitialShape.IsNull, "BRepOffsetAPI_DraftAngle::Remove() - initial shape is not set");
         draft().Remove(F);
     }
 
@@ -130,9 +134,9 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
 
     /// <summary>The face, edge or vertex on which the draft failed (null if none).</summary>
     /// <exception cref="NullObjectException">No shape was given.</exception>
-    public TopoDS_Shape ProblematicShape()
+    public Shape ProblematicShape()
     {
-        Standard_NullObject_Raise_if(myInitialShape.IsNull(),
+        Standard_NullObject_Raise_if(myInitialShape.IsNull,
                                      "BRepOffsetAPI_DraftAngle::ProblematicShape() - initial shape is not set");
         return draft().ProblematicShape();
     }
@@ -143,7 +147,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     /// <exception cref="NullObjectException">No shape was given.</exception>
     public Draft_ErrorStatus Status()
     {
-        Standard_NullObject_Raise_if(myInitialShape.IsNull(), "BRepOffsetAPI_DraftAngle::Status() - initial shape is not set");
+        Standard_NullObject_Raise_if(myInitialShape.IsNull, "BRepOffsetAPI_DraftAngle::Status() - initial shape is not set");
         return draft().Error();
     }
 
@@ -153,9 +157,9 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     /// <exception cref="NullObjectException">No shape was given.</exception>
     /// <exception cref="NoSuchObjectException">The face wasn't added.</exception>
     /// <exception cref="NotDoneException">The draft isn't built.</exception>
-    public ISchematiqList<TopoDS_Shape> ConnectedFaces(in TopoDS_Face F)
+    public ISchematiqList<Shape> ConnectedFaces(in Face F)
     {
-        Standard_NullObject_Raise_if(myInitialShape.IsNull(),
+        Standard_NullObject_Raise_if(myInitialShape.IsNull,
                                      "BRepOffsetAPI_DraftAngle::ConnectedFaces() - initial shape is not set");
         return PublishedList(draft().ConnectedFaces(F));
     }
@@ -165,24 +169,24 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     /// <summary>The faces of the shape on which a draft was given.</summary>
     /// <exception cref="NullObjectException">No shape was given.</exception>
     /// <exception cref="NotDoneException">An Add failed.</exception>
-    public ISchematiqList<TopoDS_Shape> ModifiedFaces()
+    public ISchematiqList<Shape> ModifiedFaces()
     {
-        Standard_NullObject_Raise_if(myInitialShape.IsNull(),
+        Standard_NullObject_Raise_if(myInitialShape.IsNull,
                                      "BRepOffsetAPI_DraftAngle::ModifiedFaces() - initial shape is not set");
         return PublishedList(draft().ModifiedFaces());
     }
 
     //=================================================================================================
 
-    internal override NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape S)
+    internal override NCollection_List<Shape> InternalGenerated(in Shape S)
     {
         myGenerated.Clear();
-        Standard_NullObject_Raise_if(myInitialShape.IsNull(), "BRepOffsetAPI_DraftAngle::Generated() - initial shape is not set");
+        Standard_NullObject_Raise_if(myInitialShape.IsNull, "BRepOffsetAPI_DraftAngle::Generated() - initial shape is not set");
         Draft_Modification DMod = draft();
 
-        if (S.ShapeType() == TopAbs_FACE)
+        if (S.ShapeType() == ShapeType.Face)
         {
-            if (DMod.NewSurface(TopoDS.Face(S), out _, out _, out _, out _, out _))
+            if (DMod.NewSurface(ShapeCasts.Face(S), out _, out _, out _, out _, out _))
             {
                 if (myVtxToReplace.IsEmpty())
                 {
@@ -199,15 +203,15 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
 
     //=================================================================================================
 
-    internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape S)
+    internal override NCollection_List<Shape> InternalModified(in Shape S)
     {
         myGenerated.Clear();
-        Standard_NullObject_Raise_if(myInitialShape.IsNull(), "BRepOffsetAPI_DraftAngle::Modified() - initial shape is not set");
+        Standard_NullObject_Raise_if(myInitialShape.IsNull, "BRepOffsetAPI_DraftAngle::Modified() - initial shape is not set");
         Draft_Modification DMod = draft();
 
-        if (S.ShapeType() == TopAbs_FACE)
+        if (S.ShapeType() == ShapeType.Face)
         {
-            if (!DMod.NewSurface(TopoDS.Face(S), out _, out _, out _, out _, out _))
+            if (!DMod.NewSurface(ShapeCasts.Face(S), out _, out _, out _, out _, out _))
             {
                 // Ce n est pas une generation => peut etre une  modif
                 if (myVtxToReplace.IsEmpty())
@@ -229,9 +233,9 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
 
     //=================================================================================================
 
-    internal override TopoDS_Shape InternalModifiedShape(in TopoDS_Shape S)
+    internal override Shape InternalModifiedShape(in Shape S)
     {
-        if (S.ShapeType() == TopAbs_VERTEX)
+        if (S.ShapeType() == ShapeType.Vertex)
         {
             if (myVtxToReplace.IsBound(S))
             {
@@ -239,7 +243,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
             }
         }
         // OCCT.NET: through the copy CorrectWires worked on, if it made one.
-        TopoDS_Shape aNS = myModifier.InternalModifiedShape(S);
+        Shape aNS = myModifier.InternalModifiedShape(S);
         if (myResultCopy is not null)
         {
             aNS = myResultCopy.Final(myResultCopy.Copied(aNS));
@@ -285,13 +289,13 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
         double TolInter = 1.0e-7;
         int i, j, k;
 
-        NCollection_Sequence<TopoDS_Shape> Eseq = new();
-        NCollection_Sequence<TopoDS_Shape> Wseq = new();
-        NCollection_Sequence<TopoDS_Shape> Fseq = new();
-        TopoDS_Shape CurEdge, CurWire, CurFace;
-        TopoDS_Iterator wit = new(), eit = new();
+        NCollection_Sequence<Shape> Eseq = new();
+        NCollection_Sequence<Shape> Wseq = new();
+        NCollection_Sequence<Shape> Fseq = new();
+        Shape CurEdge, CurWire, CurFace;
+        Iterator wit = new(), eit = new();
 
-        TopExp_Explorer fexp = new(myShape, TopAbs_FACE);
+        Explorer fexp = new(myShape, ShapeType.Face);
         for (; fexp.More(); fexp.Next())
         {
             CurFace = fexp.Current();
@@ -300,7 +304,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
             {
                 CurWire = wit.Value();
                 // OCCT iterates a map of the wire's edges (by address); the port in the wire's order.
-                NCollection_IndexedMap<TopoDS_Shape> emap = new(TopTools_ShapeMapHasher.Instance);
+                NCollection_IndexedMap<Shape> emap = new(ShapeHasher.Instance);
                 eit.Initialize(CurWire);
                 for (; eit.More(); eit.Next())
                 {
@@ -309,7 +313,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                 for (int m = 1; m <= emap.Extent(); m++)
                 {
                     CurEdge = emap[m];
-                    if (BRepTools.IsReallyClosed(TopoDS.Edge(CurEdge), TopoDS.Face(CurFace)))
+                    if (BrepTools.IsReallyClosed(ShapeCasts.Edge(CurEdge), ShapeCasts.Face(CurFace)))
                     {
                         Eseq.Append(CurEdge);
                         Wseq.Append(CurWire);
@@ -319,37 +323,37 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
             }
         }
 
-        NCollection_DataMap<TopoDS_Shape, NCollection_Sequence<double>> Emap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_Sequence<double>> Emap = new(ShapeHasher.Instance);
 
-        NCollection_Sequence<TopoDS_Shape> NonSeam = new();
-        NCollection_Sequence<TopoDS_Shape> NonSeamWires = new();
+        NCollection_Sequence<Shape> NonSeam = new();
+        NCollection_Sequence<Shape> NonSeamWires = new();
         NCollection_Sequence<NCollection_Sequence<double>> ParsNonSeam = new();
-        NCollection_Sequence<NCollection_Sequence<TopoDS_Shape>> Seam = new();
+        NCollection_Sequence<NCollection_Sequence<Shape>> Seam = new();
         NCollection_Sequence<NCollection_Sequence<double>> ParsSeam = new();
 
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> WFmap = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> WWmap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, Shape> WFmap = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> WWmap = new(ShapeHasher.Instance);
         for (i = 1; i <= Eseq.Length(); i++)
         {
             CurEdge = Eseq[i];
             CurWire = Wseq[i];
             CurFace = Fseq[i];
             //
-            TopoDS_Face aFace = TopoDS.Face(CurFace);
+            Face aFace = ShapeCasts.Face(CurFace);
             //
             // Prepare 2D adaptors for intersection.
             // The seam edge has two 2D curve, thus we have to create 2 adaptors
-            BRepAdaptor_Curve2d aBAC2D1 = new(TopoDS.Edge(CurEdge), aFace);
-            BRepAdaptor_Curve2d aBAC2D1R = new(TopoDS.Edge(CurEdge.Reversed()), aFace);
+            EdgeCurve2DAdaptor aBAC2D1 = new(ShapeCasts.Edge(CurEdge), aFace);
+            EdgeCurve2DAdaptor aBAC2D1R = new(ShapeCasts.Edge(CurEdge.Reversed()), aFace);
             // Get surface of the face to get 3D intersection point
-            Geom_Surface aSurf = BRep_Tool.Surface(aFace, out Placement aLoc)!;
+            Surface aSurf = Tool.Surface(aFace, out Placement aLoc)!;
             // Get the tolerance of the current edge to compare intersection points
-            double aTolCurE = BRep_Tool.Tolerance(TopoDS.Edge(CurEdge));
+            double aTolCurE = Tool.Tolerance(ShapeCasts.Edge(CurEdge));
             //
             wit.Initialize(CurFace);
             for (; wit.More(); wit.Next())
             {
-                TopoDS_Shape aWire = wit.Value();
+                Shape aWire = wit.Value();
                 if (!aWire.IsSame(CurWire))
                 {
                     NCollection_Sequence<Point3D> pts = new();
@@ -357,10 +361,10 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                     eit.Initialize(aWire);
                     for (; eit.More(); eit.Next())
                     {
-                        TopoDS_Edge anEdge = TopoDS.Edge(eit.Value());
+                        Edge anEdge = ShapeCasts.Edge(eit.Value());
                         //
                         // Prepare 2D adaptor for intersection
-                        BRepAdaptor_Curve2d aBAC2D2 = new(anEdge, aFace);
+                        EdgeCurve2DAdaptor aBAC2D2 = new(anEdge, aFace);
                         // Perform intersection
                         Geom2dInt_GInter aGInter = new();
                         aGInter.Perform(aBAC2D1, aBAC2D2, TolInter, TolInter);
@@ -394,7 +398,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                             NonSeamWires.Append(aWire);
                             ind = NonSeam.Length();
                             ParsNonSeam.Append(new NCollection_Sequence<double>());
-                            Seam.Append(new NCollection_Sequence<TopoDS_Shape>());
+                            Seam.Append(new NCollection_Sequence<Shape>());
                             ParsSeam.Append(new NCollection_Sequence<double>());
                         }
                         if (!Emap.IsBound(CurEdge))
@@ -403,7 +407,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                         }
                         //
                         // Get the tolerance of edge to compare intersection points
-                        double aTolE = BRep_Tool.Tolerance(anEdge);
+                        double aTolE = Tool.Tolerance(anEdge);
                         // Tolerance to compare the intersection points is the maximal
                         // tolerance of intersecting edges
                         double aTolCmp = Max(aTolCurE, aTolE);
@@ -439,7 +443,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                     {
                         if (!WWmap.IsBound(CurWire))
                         {
-                            WWmap.Bind(CurWire, new NCollection_List<TopoDS_Shape>());
+                            WWmap.Bind(CurWire, new NCollection_List<Shape>());
                         }
                         WWmap.ChangeFind(CurWire).Append(aWire);
                     }
@@ -450,9 +454,9 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
         // OCCT.NET: the rest writes into the result: vertices, wires and faces it frees and edits, pcurves it moves. Where
         // the result holds the caller's sub-shapes (frozen), the result is copied first and the analysis made again on
         // the copy (decision 1044).
-        if (!Emap.IsEmpty() && myResultCopy is null && BRepTools.HoldsFrozen(myShape))
+        if (!Emap.IsEmpty() && myResultCopy is null && BrepTools.HoldsFrozen(myShape))
         {
-            myResultCopy = new BRepTools_CopyAtEntry(myShape);
+            myResultCopy = new CopyAtEntry(myShape);
             myShape = myResultCopy.Shape();
             CorrectWires();
             myShape = myResultCopy.Finish(myShape);
@@ -471,7 +475,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                         double temp = ParsNonSeam[i][j];
                         ParsNonSeam[i][j] = ParsNonSeam[i][k];
                         ParsNonSeam[i][k] = temp;
-                        TopoDS_Shape tmp = Seam[i][j];
+                        Shape tmp = Seam[i][j];
                         Seam[i][j] = Seam[i][k];
                         Seam[i][k] = tmp;
                         temp = ParsSeam[i][j];
@@ -482,7 +486,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
             }
         }
         // OCCT iterates Emap (and EPmap below) by the edges' addresses; the port in insertion order.
-        foreach (TopoDS_Shape aKey in Emap.Keys.ToList())
+        foreach (Shape aKey in Emap.Keys.ToList())
         {
             NCollection_Sequence<double> Seq = new(Emap.Find(aKey));
             for (i = 1; i < Seq.Length(); i++)
@@ -499,32 +503,32 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
             }
             Emap.ChangeFind(aKey) = Seq;
         }
-        NCollection_DataMap<TopoDS_Shape, NCollection_Sequence<double>> EPmap = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_DataMap<TopoDS_Shape, NCollection_Sequence<TopoDS_Shape>> EVmap =
-            new(TopTools_ShapeMapHasher.Instance); // Seam
-        NCollection_DataMap<TopoDS_Shape, NCollection_Sequence<TopoDS_Shape>> EWmap =
-            new(TopTools_ShapeMapHasher.Instance); // Seam and wires intersecting it
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_Sequence<double>> anEntry in Emap)
+        NCollection_DataMap<Shape, NCollection_Sequence<double>> EPmap = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_Sequence<Shape>> EVmap =
+            new(ShapeHasher.Instance); // Seam
+        NCollection_DataMap<Shape, NCollection_Sequence<Shape>> EWmap =
+            new(ShapeHasher.Instance); // Seam and wires intersecting it
+        foreach (KeyValuePair<Shape, NCollection_Sequence<double>> anEntry in Emap)
         {
             EPmap.Bind(anEntry.Key, new NCollection_Sequence<double>());
-            EVmap.Bind(anEntry.Key, new NCollection_Sequence<TopoDS_Shape>());
-            EWmap.Bind(anEntry.Key, new NCollection_Sequence<TopoDS_Shape>());
+            EVmap.Bind(anEntry.Key, new NCollection_Sequence<Shape>());
+            EWmap.Bind(anEntry.Key, new NCollection_Sequence<Shape>());
         }
 
         // Reconstruction of non-seam edges
-        BRepTools_Substitution aSub = new();
-        BRep_Builder BB = new();
+        Substitution aSub = new();
+        BrepBuilder BB = new();
         for (i = 1; i <= NonSeam.Length(); i++)
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(NonSeam[i]);
-            NCollection_List<TopoDS_Shape> NewEdges = new();
-            TopoDS_Edge NewE;
-            TopExp.Vertices(anEdge, out TopoDS_Vertex Vfirst, out TopoDS_Vertex Vlast);
+            Edge anEdge = ShapeCasts.Edge(NonSeam[i]);
+            NCollection_List<Shape> NewEdges = new();
+            Edge NewE;
+            Exploration.Vertices(anEdge, out Vertex Vfirst, out Vertex Vlast);
             double par;
-            BRep_Tool.Range(anEdge, out double FirstPar, out double LastPar);
+            Tool.Range(anEdge, out double FirstPar, out double LastPar);
             int firstind = 1;
             par = ParsNonSeam[i][1];
-            TopoDS_Edge SeamEdge = TopoDS.Edge(Seam[i][1]);
+            Edge SeamEdge = ShapeCasts.Edge(Seam[i][1]);
             // Find the face
             for (j = 1; j <= Eseq.Length(); j++)
             {
@@ -533,33 +537,33 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                     break;
                 }
             }
-            TopoDS_Face theFace = TopoDS.Face(Fseq[j]);
-            Geom_Surface? theSurf = BRep_Tool.Surface(theFace, out Placement L);
+            Face theFace = ShapeCasts.Face(Fseq[j]);
+            Surface? theSurf = Tool.Surface(theFace, out Placement L);
             if (Math.Abs(par - FirstPar) <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
-                BB.UpdateVertex(Vfirst, ParsSeam[i][1], SeamEdge, BRep_Tool.Tolerance(Vfirst));
+                BB.UpdateVertex(Vfirst, ParsSeam[i][1], SeamEdge, Tool.Tolerance(Vfirst));
                 EPmap.ChangeFind(SeamEdge).Append(ParsSeam[i][1]);
                 EVmap.ChangeFind(SeamEdge).Append(Vfirst);
                 EWmap.ChangeFind(SeamEdge).Append(NonSeamWires[i]);
                 firstind = 2;
             }
             double prevpar = FirstPar;
-            TopoDS_Vertex PrevV = Vfirst;
+            Vertex PrevV = Vfirst;
             for (j = firstind; j <= ParsNonSeam[i].Length(); j++)
             {
-                TopoDS_Shape aLocalShape = anEdge.EmptyCopied();
-                NewE = TopoDS.Edge(aLocalShape);
+                Shape aLocalShape = anEdge.EmptyCopied();
+                NewE = ShapeCasts.Edge(aLocalShape);
                 // NewE = TopoDS::Edge( anEdge.EmptyCopied() );
-                TopoDS_Vertex NewV;
+                Vertex NewV;
                 par = ParsNonSeam[i][j];
                 BB.Range(NewE, prevpar, par);
-                SeamEdge = TopoDS.Edge(Seam[i][j]);
+                SeamEdge = ShapeCasts.Edge(Seam[i][j]);
                 if (j == ParsNonSeam[i].Length() && Math.Abs(par - LastPar) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     NewV = Vlast;
                     if (firstind == 2 && j == 2)
                     {
-                        BB.UpdateVertex(Vlast, ParsSeam[i][j], SeamEdge, BRep_Tool.Tolerance(Vlast));
+                        BB.UpdateVertex(Vlast, ParsSeam[i][j], SeamEdge, Tool.Tolerance(Vlast));
                         EPmap.ChangeFind(SeamEdge).Append(ParsSeam[i][j]);
                         EVmap.ChangeFind(SeamEdge).Append(Vlast);
                         EWmap.ChangeFind(SeamEdge).Append(NonSeamWires[i]);
@@ -568,15 +572,15 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                 }
                 else
                 {
-                    BRepAdaptor_Curve bcur = new(NewE);
+                    EdgeCurveAdaptor bcur = new(NewE);
                     Point3D Point = bcur.Value(par);
                     NewV = new BRepLib_MakeVertex(Point).InternalVertex();
                     BB.UpdateVertex(NewV, par, NewE, 10.0 * global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
                 BB.UpdateVertex(NewV, ParsSeam[i][j], SeamEdge, 10.0 * global::Kerf.Engine.Foundation.Precision.Confusion());
-                NewE.Orientation(TopAbs_FORWARD);
-                BB.Add(NewE, PrevV.Oriented(TopAbs_FORWARD));
-                BB.Add(NewE, NewV.Oriented(TopAbs_REVERSED));
+                NewE.Orientation(Forward);
+                BB.Add(NewE, PrevV.Oriented(Forward));
+                BB.Add(NewE, NewV.Oriented(Reversed));
 
                 NewEdges.Append(NewE);
                 EPmap.ChangeFind(SeamEdge).Append(ParsSeam[i][j]);
@@ -588,16 +592,16 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
             }
             {
                 // The last edge
-                TopoDS_Shape aLocalShape = anEdge.EmptyCopied();
-                NewE = TopoDS.Edge(aLocalShape);
+                Shape aLocalShape = anEdge.EmptyCopied();
+                NewE = ShapeCasts.Edge(aLocalShape);
                 // NewE = TopoDS::Edge( anEdge.EmptyCopied() );
                 par = LastPar;
                 if (Math.Abs(prevpar - par) > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     BB.Range(NewE, prevpar, par);
-                    NewE.Orientation(TopAbs_FORWARD);
-                    BB.Add(NewE, PrevV.Oriented(TopAbs_FORWARD));
-                    BB.Add(NewE, Vlast.Oriented(TopAbs_REVERSED));
+                    NewE.Orientation(Forward);
+                    BB.Add(NewE, PrevV.Oriented(Forward));
+                    BB.Add(NewE, Vlast.Oriented(Reversed));
                     NewEdges.Append(NewE);
                 }
             }
@@ -607,11 +611,11 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
         }
 
         // Sorting of EPmap and EVmap and removing repeating points from them
-        foreach (TopoDS_Shape aKey in EPmap.Keys.ToList())
+        foreach (Shape aKey in EPmap.Keys.ToList())
         {
             NCollection_Sequence<double> Seq = new(EPmap.Find(aKey));
-            NCollection_Sequence<TopoDS_Shape> SeqShape = new(EVmap.Find(aKey));
-            NCollection_Sequence<TopoDS_Shape> SeqShape2 = new(EWmap.Find(aKey));
+            NCollection_Sequence<Shape> SeqShape = new(EVmap.Find(aKey));
+            NCollection_Sequence<Shape> SeqShape2 = new(EWmap.Find(aKey));
             for (i = 1; i < Seq.Length(); i++)
             {
                 for (j = i + 1; j <= Seq.Length(); j++)
@@ -621,7 +625,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                         double temp = Seq[i];
                         Seq[i] = Seq[j];
                         Seq[j] = temp;
-                        TopoDS_Shape tmp = SeqShape[i];
+                        Shape tmp = SeqShape[i];
                         SeqShape[i] = SeqShape[j];
                         SeqShape[j] = tmp;
                         tmp = SeqShape2[i];
@@ -635,11 +639,11 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
             EVmap.ChangeFind(aKey) = SeqShape;
             EWmap.ChangeFind(aKey) = SeqShape2;
         }
-        foreach (TopoDS_Shape aKey in EPmap.Keys.ToList())
+        foreach (Shape aKey in EPmap.Keys.ToList())
         {
             NCollection_Sequence<double> Seq = new(EPmap.Find(aKey));
-            NCollection_Sequence<TopoDS_Shape> SeqShape = new(EVmap.Find(aKey));
-            NCollection_Sequence<TopoDS_Shape> SeqShape2 = new(EWmap.Find(aKey));
+            NCollection_Sequence<Shape> SeqShape = new(EVmap.Find(aKey));
+            NCollection_Sequence<Shape> SeqShape2 = new(EWmap.Find(aKey));
             bool remove = true;
             while (remove)
             {
@@ -661,22 +665,22 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
         }
 
         // Reconstruction of seam edges
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> VEmap = new(TopTools_ShapeMapHasher.Instance);
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_Sequence<double>> anEntry in Emap)
+        NCollection_DataMap<Shape, Shape> VEmap = new(ShapeHasher.Instance);
+        foreach (KeyValuePair<Shape, NCollection_Sequence<double>> anEntry in Emap)
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(anEntry.Key);
+            Edge anEdge = ShapeCasts.Edge(anEntry.Key);
             bool onepoint = false;
-            NCollection_List<TopoDS_Shape> NewEdges = new();
+            NCollection_List<Shape> NewEdges = new();
             NCollection_Sequence<double> Seq = new(anEntry.Value);
             NCollection_Sequence<double> Seq2 = new(EPmap.Find(anEdge));
-            NCollection_Sequence<TopoDS_Shape> SeqVer = new(EVmap.Find(anEdge));
-            NCollection_Sequence<TopoDS_Shape> SeqWire = new(EWmap.Find(anEdge));
-            TopExp.Vertices(anEdge, out TopoDS_Vertex Vfirst, out TopoDS_Vertex Vlast);
+            NCollection_Sequence<Shape> SeqVer = new(EVmap.Find(anEdge));
+            NCollection_Sequence<Shape> SeqWire = new(EWmap.Find(anEdge));
+            Exploration.Vertices(anEdge, out Vertex Vfirst, out Vertex Vlast);
             double fpar, lpar;
-            BRep_Tool.Range(anEdge, out double FirstPar, out double LastPar);
+            Tool.Range(anEdge, out double FirstPar, out double LastPar);
             fpar = FirstPar;
             lpar = Seq[1];
-            TopoDS_Edge NewE;
+            Edge NewE;
             int firstind = 1;
             if (Math.Abs(fpar - lpar) <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
@@ -703,24 +707,24 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
             }
             if (!onepoint)
             {
-                TopoDS_Shape aLocalShape = anEdge.EmptyCopied();
-                NewE = TopoDS.Edge(aLocalShape);
+                Shape aLocalShape = anEdge.EmptyCopied();
+                NewE = ShapeCasts.Edge(aLocalShape);
                 // NewE = TopoDS::Edge( anEdge.EmptyCopied() );
                 BB.Range(NewE, fpar, lpar);
-                NewE.Orientation(TopAbs_FORWARD);
+                NewE.Orientation(Forward);
                 if (firstind == 1)
                 {
-                    BB.Add(NewE, Vfirst.Oriented(TopAbs_FORWARD));
-                    aLocalShape = SeqVer[1].Oriented(TopAbs_REVERSED);
-                    BB.Add(NewE, TopoDS.Vertex(aLocalShape));
+                    BB.Add(NewE, Vfirst.Oriented(Forward));
+                    aLocalShape = SeqVer[1].Oriented(Reversed);
+                    BB.Add(NewE, ShapeCasts.Vertex(aLocalShape));
                     // BB.Add( NewE, TopoDS::Vertex( SeqVer(1).Oriented(TopAbs_REVERSED) ) );
                 }
                 else
                 {
-                    aLocalShape = SeqVer[1].Oriented(TopAbs_FORWARD);
-                    BB.Add(NewE, TopoDS.Vertex(aLocalShape));
-                    aLocalShape = SeqVer[2].Oriented(TopAbs_REVERSED);
-                    BB.Add(NewE, TopoDS.Vertex(aLocalShape));
+                    aLocalShape = SeqVer[1].Oriented(Forward);
+                    BB.Add(NewE, ShapeCasts.Vertex(aLocalShape));
+                    aLocalShape = SeqVer[2].Oriented(Reversed);
+                    BB.Add(NewE, ShapeCasts.Vertex(aLocalShape));
                     // BB.Add( NewE, TopoDS::Vertex( SeqVer(1).Oriented(TopAbs_FORWARD) ) );
                     // BB.Add( NewE, TopoDS::Vertex( SeqVer(2).Oriented(TopAbs_REVERSED) ) );
                 }
@@ -730,7 +734,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                 for (i = firstind; i < Seq.Length(); i += 2)
                 {
                     aLocalShape = anEdge.EmptyCopied();
-                    NewE = TopoDS.Edge(aLocalShape);
+                    NewE = ShapeCasts.Edge(aLocalShape);
                     // NewE = TopoDS::Edge( anEdge.EmptyCopied() );
                     fpar = Seq[i];
                     lpar = Seq[i + 1];
@@ -743,11 +747,11 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                             break;
                         }
                     }
-                    NewE.Orientation(TopAbs_FORWARD);
-                    TopoDS_Shape aLocalShapeCur = SeqVer[j].Oriented(TopAbs_FORWARD);
-                    BB.Add(NewE, TopoDS.Vertex(aLocalShapeCur));
-                    aLocalShapeCur = SeqVer[j + 1].Oriented(TopAbs_REVERSED);
-                    BB.Add(NewE, TopoDS.Vertex(aLocalShapeCur));
+                    NewE.Orientation(Forward);
+                    Shape aLocalShapeCur = SeqVer[j].Oriented(Forward);
+                    BB.Add(NewE, ShapeCasts.Vertex(aLocalShapeCur));
+                    aLocalShapeCur = SeqVer[j + 1].Oriented(Reversed);
+                    BB.Add(NewE, ShapeCasts.Vertex(aLocalShapeCur));
                     // BB.Add( NewE, TopoDS::Vertex( SeqVer(j).Oriented(TopAbs_FORWARD) ) );
                     // BB.Add( NewE, TopoDS::Vertex( SeqVer(j+1).Oriented(TopAbs_REVERSED) ) );
                     NewEdges.Append(NewE);
@@ -762,15 +766,15 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                 continue;
             }
             {
-                TopoDS_Shape aLocalShape = anEdge.EmptyCopied();
-                NewE = TopoDS.Edge(aLocalShape);
+                Shape aLocalShape = anEdge.EmptyCopied();
+                NewE = ShapeCasts.Edge(aLocalShape);
                 // NewE = TopoDS::Edge( anEdge.EmptyCopied() );
                 BB.Range(NewE, fpar, lpar);
-                NewE.Orientation(TopAbs_FORWARD);
-                aLocalShape = SeqVer[SeqVer.Length()].Oriented(TopAbs_FORWARD);
-                BB.Add(NewE, TopoDS.Vertex(aLocalShape));
+                NewE.Orientation(Forward);
+                aLocalShape = SeqVer[SeqVer.Length()].Oriented(Forward);
+                BB.Add(NewE, ShapeCasts.Vertex(aLocalShape));
                 // BB.Add( NewE, TopoDS::Vertex( SeqVer(SeqVer.Length()).Oriented(TopAbs_FORWARD) ) );
-                BB.Add(NewE, Vlast.Oriented(TopAbs_REVERSED));
+                BB.Add(NewE, Vlast.Oriented(Reversed));
                 NewEdges.Append(NewE);
             }
 
@@ -779,11 +783,11 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
         }
 
         // Removing edges connected with missing extremities of seam edges
-        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> anEntry in VEmap)
+        foreach (KeyValuePair<Shape, Shape> anEntry in VEmap)
         {
-            TopoDS_Shape V = anEntry.Key;
-            TopoDS_Shape E = anEntry.Value;
-            TopoDS_Shape W = new();
+            Shape V = anEntry.Key;
+            Shape E = anEntry.Value;
+            Shape W = new();
             for (i = 1; i <= Eseq.Length(); i++)
             {
                 if (E.IsSame(Eseq[i]))
@@ -792,23 +796,23 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                     break;
                 }
             }
-            TopoDS_Shape Etoremove = new();
+            Shape Etoremove = new();
             eit.Initialize(W);
             for (; eit.More(); eit.Next())
             {
-                TopoDS_Edge CurE = TopoDS.Edge(eit.Value());
+                Edge CurE = ShapeCasts.Edge(eit.Value());
                 if (CurE.IsSame(E))
                 {
                     continue;
                 }
-                TopExp.Vertices(CurE, out TopoDS_Vertex Vfirst, out TopoDS_Vertex Vlast);
+                Exploration.Vertices(CurE, out Vertex Vfirst, out Vertex Vlast);
                 if (Vfirst.IsSame(V) || Vlast.IsSame(V))
                 {
                     Etoremove = CurE;
                     break;
                 }
             }
-            if (!Etoremove.IsNull())
+            if (!Etoremove.IsNull)
             {
                 W.Free(true);
                 BB.Remove(W, Etoremove);
@@ -818,7 +822,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
         aSub.Build(myShape);
         if (aSub.IsCopied(myShape))
         {
-            NCollection_List<TopoDS_Shape> listSh = aSub.InternalCopy(myShape);
+            NCollection_List<Shape> listSh = aSub.InternalCopy(myShape);
             if (!listSh.IsEmpty())
             {
                 myShape = listSh.First();
@@ -826,29 +830,29 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
         }
 
         // Reconstruction of wires
-        NCollection_List<TopoDS_Shape> theCopy;
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anEntry in WWmap)
+        NCollection_List<Shape> theCopy;
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> anEntry in WWmap)
         {
             CurWire = anEntry.Key;
             theCopy = aSub.InternalCopy(CurWire);
             CurWire = theCopy.First();
             CurWire.Free(true);
-            NCollection_List<TopoDS_Shape>.Iterator itl = new(anEntry.Value);
+            NCollection_List<Shape>.Iterator itl = new(anEntry.Value);
             for (; itl.More(); itl.Next())
             {
-                TopoDS_Shape aWire = itl.Value();
+                Shape aWire = itl.Value();
                 CurFace = WFmap.Find(aWire);
                 theCopy = aSub.InternalCopy(aWire);
                 aWire = theCopy.First();
                 // Adjusting period
-                Geom_Surface? theSurf = BRep_Tool.Surface(TopoDS.Face(CurFace), out Placement L);
+                Surface? theSurf = Tool.Surface(ShapeCasts.Face(CurFace), out Placement L);
                 eit.Initialize(aWire);
                 for (; eit.More(); eit.Next())
                 {
-                    TopoDS_Edge anEdge = TopoDS.Edge(eit.Value());
+                    Edge anEdge = ShapeCasts.Edge(eit.Value());
                     Point2D Pmid;
-                    BRep_Tool.UVPoints(anEdge, TopoDS.Face(CurFace), out Point2D Pfirst, out Point2D Plast);
-                    BRepAdaptor_Curve2d bc2d = new(anEdge, TopoDS.Face(CurFace));
+                    Tool.UVPoints(anEdge, ShapeCasts.Face(CurFace), out Point2D Pfirst, out Point2D Plast);
+                    EdgeCurve2DAdaptor bc2d = new(anEdge, ShapeCasts.Face(CurFace));
                     Pmid = bc2d.Value((bc2d.FirstParameter() + bc2d.LastParameter()) / 2.0);
                     Vector2D offset = new();
                     bool translate = false;
@@ -866,14 +870,14 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                     }
                     if (translate)
                     {
-                        BRep_TEdge TE = (BRep_TEdge)anEdge.TShape()!;
-                        NCollection_List<BRep_CurveRepresentation> aCurves = TE.ChangeCurves();
-                        for (NCollection_List<BRep_CurveRepresentation>.Iterator itcr = new(aCurves); itcr.More(); itcr.Next())
+                        BrepTEdge TE = (BrepTEdge)anEdge.TShape()!;
+                        NCollection_List<CurveRepresentation> aCurves = TE.ChangeCurves();
+                        for (NCollection_List<CurveRepresentation>.Iterator itcr = new(aCurves); itcr.More(); itcr.Next())
                         {
-                            if (itcr.Value() is BRep_GCurve GC && GC.IsCurveOnSurface(theSurf, L))
+                            if (itcr.Value() is GCurve GC && GC.IsCurveOnSurface(theSurf, L))
                             {
-                                Geom2d_Curve PC = GC.PCurve()!;
-                                PC = (Geom2d_Curve)PC.Translated(offset);
+                                Curve2D PC = GC.PCurve()!;
+                                PC = (Curve2D)PC.Translated(offset);
                                 GC.PCurve(PC);
                                 aCurves.Remove(itcr);
                                 aCurves.Append(GC);
@@ -886,7 +890,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                 eit.Initialize(aWire, false);
                 for (; eit.More(); eit.Next())
                 {
-                    TopoDS_Shape anEdge = eit.Value();
+                    Shape anEdge = eit.Value();
                     BB.Add(CurWire, anEdge);
                 }
                 if (aSub.IsCopied(CurFace))
@@ -904,26 +908,26 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
 
     private void CorrectVertexTol()
     {
-        NCollection_Map<TopoDS_Shape> anInitVertices = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_Map<TopoDS_Shape> anInitEdges = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_Map<TopoDS_Shape> aNewEdges = new(TopTools_ShapeMapHasher.Instance);
-        TopExp_Explorer anExp = new(myInitialShape, TopAbs_EDGE);
+        NCollection_Map<Shape> anInitVertices = new(ShapeHasher.Instance);
+        NCollection_Map<Shape> anInitEdges = new(ShapeHasher.Instance);
+        NCollection_Map<Shape> aNewEdges = new(ShapeHasher.Instance);
+        Explorer anExp = new(myInitialShape, ShapeType.Edge);
         for (; anExp.More(); anExp.Next())
         {
             anInitEdges.Add(anExp.Current());
-            for (TopoDS_Iterator anIter = new(anExp.Current()); anIter.More(); anIter.Next())
+            for (Iterator anIter = new(anExp.Current()); anIter.More(); anIter.Next())
             {
                 anInitVertices.Add(anIter.Value());
             }
         }
         //
 
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
         myVtxToReplace.Clear();
-        anExp.Init(myShape, TopAbs_EDGE);
+        anExp.Init(myShape, ShapeType.Edge);
         for (; anExp.More(); anExp.Next())
         {
-            TopoDS_Shape anE = anExp.Current();
+            Shape anE = anExp.Current();
             // Skip old (not modified) edges
             if (anInitEdges.Contains(anE))
             {
@@ -938,23 +942,23 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
             //
             aNewEdges.Add(anE);
             //
-            double anETol = BRep_Tool.Tolerance(TopoDS.Edge(anE));
-            for (TopoDS_Iterator anIter = new(anE); anIter.More(); anIter.Next())
+            double anETol = Tool.Tolerance(ShapeCasts.Edge(anE));
+            for (Iterator anIter = new(anE); anIter.More(); anIter.Next())
             {
-                TopoDS_Vertex aVtx = TopoDS.Vertex(anIter.Value());
+                Vertex aVtx = ShapeCasts.Vertex(anIter.Value());
                 if (anInitVertices.Contains(aVtx))
                 {
                     if (myVtxToReplace.IsBound(aVtx))
                     {
-                        aBB.UpdateVertex(TopoDS.Vertex(myVtxToReplace.Find(aVtx)), anETol + Epsilon(anETol));
+                        aBB.UpdateVertex(ShapeCasts.Vertex(myVtxToReplace.Find(aVtx)), anETol + Epsilon(anETol));
                     }
                     else
                     {
-                        double aVTol = BRep_Tool.Tolerance(aVtx);
+                        double aVTol = Tool.Tolerance(aVtx);
                         if (aVTol < anETol)
                         {
-                            TopoDS_Vertex aNewVtx = new();
-                            Point3D aVPnt = BRep_Tool.Pnt(aVtx);
+                            Vertex aNewVtx = new();
+                            Point3D aVPnt = Tool.Pnt(aVtx);
                             aBB.MakeVertex(ref aNewVtx, aVPnt, anETol + Epsilon(anETol));
                             aNewVtx.Orientation(aVtx.Orientation());
                             myVtxToReplace.Bind(aVtx, aNewVtx);
@@ -975,7 +979,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
         //
         mySubs.Clear();
         // OCCT iterates the map by the vertices' addresses; the port in insertion order (the requests are independent).
-        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> anEntry in myVtxToReplace)
+        foreach (KeyValuePair<Shape, Shape> anEntry in myVtxToReplace)
         {
             mySubs.Replace(anEntry.Key, anEntry.Value);
         }

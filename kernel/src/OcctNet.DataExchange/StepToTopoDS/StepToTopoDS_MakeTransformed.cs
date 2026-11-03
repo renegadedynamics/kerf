@@ -6,6 +6,7 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.TransformForm;
@@ -34,13 +35,13 @@ public sealed class StepToTopoDS_MakeTransformed : StepToTopoDS_Root
         }
 
         // sln 23.10.2001 : If the directions have not been created do nothing.
-        Geom_Axis2Placement theOrig = StepToGeom.MakeAxis2Placement(Origin, theLocalFactors);
+        Axis2Placement theOrig = StepToGeom.MakeAxis2Placement(Origin, theLocalFactors);
         if (theOrig is null)
         {
             return false;
         }
 
-        Geom_Axis2Placement theTarg = StepToGeom.MakeAxis2Placement(Target, theLocalFactors);
+        Axis2Placement theTarg = StepToGeom.MakeAxis2Placement(Target, theLocalFactors);
         if (theTarg is null)
         {
             return false;
@@ -67,7 +68,7 @@ public sealed class StepToTopoDS_MakeTransformed : StepToTopoDS_Root
     public Transform3D Transformation() => theTrsf;
 
     /// <summary>Applies the computed transformation to a shape; false if the transformation is the identity.</summary>
-    public bool Transform(ref TopoDS_Shape shape)
+    public bool Transform(ref Shape shape)
     {
         if (theTrsf.Form() == Identity)
         {
@@ -83,10 +84,10 @@ public sealed class StepToTopoDS_MakeTransformed : StepToTopoDS_Root
     /// Translates a mapped item: the transformation from its mapping origin to its mapping target is computed, the
     /// mapped representation converted to a shape (through the transient process), then moved as an instance of it.
     /// </summary>
-    public TopoDS_Shape TranslateMappedItem(StepRepr_MappedItem mapit, Transfer_TransientProcess TP, in StepData_Factors theLocalFactors,
+    public Shape TranslateMappedItem(StepRepr_MappedItem mapit, Transfer_TransientProcess TP, in StepData_Factors theLocalFactors,
                                             ProgressRange theProgress = default)
     {
-        TopoDS_Shape theResult = new TopoDS_Shape();
+        Shape theResult = new Shape();
 
         //  Positionnement : 2 formules
         //  1/ Ax2 dans Source et comme Target  : passage de Source a Target
@@ -134,6 +135,6 @@ public sealed class StepToTopoDS_MakeTransformed : StepToTopoDS_Root
         return theResult;
     }
 
-    public TopoDS_Shape TranslateMappedItem(StepRepr_MappedItem mapit, Transfer_TransientProcess TP)
+    public Shape TranslateMappedItem(StepRepr_MappedItem mapit, Transfer_TransientProcess TP)
         => TranslateMappedItem(mapit, TP, new StepData_Factors());
 }

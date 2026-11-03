@@ -7,6 +7,7 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -28,19 +29,19 @@ public static class ShapeUpgrade
     /// OCCT makes the curve non-periodic in place before splitting it. The port does so only for a curve ported code
     /// owns; a frozen curve (any a caller holds) is left as it is and a non-periodic copy is split (decision 998).
     /// </remarks>
-    public static bool C0BSplineToSequenceOfC1BSplineCurve(Geom_BSplineCurve? BS,
-                                                           ref NCollection_HSequence<Geom_BoundedCurve>? seqBS)
+    public static bool C0BSplineToSequenceOfC1BSplineCurve(BSplineCurve3D? BS,
+                                                           ref NCollection_HSequence<BoundedCurve3D>? seqBS)
     {
         if (BS is null || (BS.IsCN(1)))
         {
             return false;
         }
 
-        seqBS = new NCollection_HSequence<Geom_BoundedCurve>();
+        seqBS = new NCollection_HSequence<BoundedCurve3D>();
         // OCCT.NET: copy on write of a frozen curve (decision 998)
         if (BS.IsFrozen)
         {
-            BS = (Geom_BSplineCurve)BS.Copy();
+            BS = (BSplineCurve3D)BS.Copy();
         }
         BS.SetNotPeriodic(); // to have equation NbPoles = NbKnots with Multiplicities - degree - 1
 
@@ -113,7 +114,7 @@ public static class ShapeUpgrade
                 newPoles[j] = Poles[j + PoleIndex - 1];
             }
 
-            var newC = new Geom_BSplineCurve(newPoles, newWeights, newKnots, newMults, deg);
+            var newC = new BSplineCurve3D(newPoles, newWeights, newKnots, newMults, deg);
             seqBS.Append(newC);
 
             StartKnotIndex = EndKnotIndex;
@@ -121,10 +122,10 @@ public static class ShapeUpgrade
         return true;
     }
 
-    private static Geom_BSplineCurve BSplineCurve2dTo3d(Geom2d_BSplineCurve BS)
+    private static BSplineCurve3D BSplineCurve2dTo3d(BSplineCurve2D BS)
     {
         int deg = BS.Degree();
-        int NbPoles = BS.NbPoles();
+        int NbPoles = BS.PoleCount;
         NCollection_Array1<Point2D> Poles2d = BS.InternalPoles();
         NCollection_Array1<double> Weights = BS.InternalWeightsArray();
         NCollection_Array1<double> Knots = BS.InternalKnots();
@@ -136,14 +137,14 @@ public static class ShapeUpgrade
             Poles3d[i] = new Point3D(Poles2d[i].X(), Poles2d[i].Y(), 0);
         }
 
-        var BS3d = new Geom_BSplineCurve(Poles3d, Weights, Knots, Mults, deg, BS.IsPeriodic());
+        var BS3d = new BSplineCurve3D(Poles3d, Weights, Knots, Mults, deg, BS.IsPeriodic);
         return BS3d;
     }
 
-    private static Geom2d_BSplineCurve BSplineCurve3dTo2d(Geom_BSplineCurve BS)
+    private static BSplineCurve2D BSplineCurve3dTo2d(BSplineCurve3D BS)
     {
         int deg = BS.Degree();
-        int NbPoles = BS.NbPoles();
+        int NbPoles = BS.PoleCount;
         NCollection_Array1<Point3D> Poles3d = BS.InternalPoles();
         NCollection_Array1<double> Weights = BS.InternalWeightsArray();
         NCollection_Array1<double> Knots = BS.InternalKnots();
@@ -155,31 +156,31 @@ public static class ShapeUpgrade
             Poles2d[i] = new Point2D(Poles3d[i].X(), Poles3d[i].Y());
         }
 
-        var BS2d = new Geom2d_BSplineCurve(Poles2d, Weights, Knots, Mults, deg, BS.IsPeriodic());
+        var BS2d = new BSplineCurve2D(Poles2d, Weights, Knots, Mults, deg, BS.IsPeriodic);
         return BS2d;
     }
 
     /// <summary>
-    /// The 2D form of <see cref="C0BSplineToSequenceOfC1BSplineCurve(Geom_BSplineCurve?, ref NCollection_HSequence{Geom_BoundedCurve}?)"/>,
+    /// The 2D form of <see cref="C0BSplineToSequenceOfC1BSplineCurve(BSplineCurve3D?, ref NCollection_HSequence{BoundedCurve3D}?)"/>,
     /// through a 3D copy of the curve (so the curve given is never changed).
     /// </summary>
-    public static bool C0BSplineToSequenceOfC1BSplineCurve(Geom2d_BSplineCurve? BS,
-                                                           ref NCollection_HSequence<Geom2d_BoundedCurve>? seqBS)
+    public static bool C0BSplineToSequenceOfC1BSplineCurve(BSplineCurve2D? BS,
+                                                           ref NCollection_HSequence<BoundedCurve2D>? seqBS)
     {
         if (BS is null || (BS.IsCN(1)))
         {
             return false;
         }
 
-        Geom_BSplineCurve BS3d = BSplineCurve2dTo3d(BS);
-        NCollection_HSequence<Geom_BoundedCurve>? seqBS3d = null;
+        BSplineCurve3D BS3d = BSplineCurve2dTo3d(BS);
+        NCollection_HSequence<BoundedCurve3D>? seqBS3d = null;
         bool result = C0BSplineToSequenceOfC1BSplineCurve(BS3d, ref seqBS3d);
         if (result)
         {
-            seqBS = new NCollection_HSequence<Geom2d_BoundedCurve>();
+            seqBS = new NCollection_HSequence<BoundedCurve2D>();
             for (int i = 1; i <= seqBS3d!.Length(); i++)
             {
-                seqBS.Append(BSplineCurve3dTo2d((Geom_BSplineCurve)seqBS3d.Value(i)));
+                seqBS.Append(BSplineCurve3dTo2d((BSplineCurve3D)seqBS3d.Value(i)));
             }
         }
         return result;
@@ -191,6 +192,6 @@ public static class ShapeUpgrade
     /// never a write into a frozen object (Standard_ImmutableObject, TopoDS_LockedShape: decision 423).
     /// </summary>
     internal static bool IsCaughtFailure(Exception theException)
-        => theException is not (ImmutableObjectException or TopoDS_LockedShape)
+        => theException is not (ImmutableObjectException or LockedShapeException)
            && theException is FailureException or NullReferenceException;
 }

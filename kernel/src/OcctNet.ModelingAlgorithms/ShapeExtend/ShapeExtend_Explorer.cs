@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -25,14 +28,14 @@ public sealed class ShapeExtend_Explorer
     }
 
     /// <summary>A compound of the shapes of the sequence. Frozen.</summary>
-    public TopoDS_Shape CompoundFromSeq(NCollection_HSequence<TopoDS_Shape> seqval) =>
+    public Shape CompoundFromSeq(NCollection_HSequence<Shape> seqval) =>
         Published(InternalCompoundFromSeq(seqval));
 
     /// <summary>A compound of the shapes of the sequence, as <see cref="CompoundFromSeq"/>, unfrozen (ported code).</summary>
-    internal TopoDS_Shape InternalCompoundFromSeq(NCollection_HSequence<TopoDS_Shape> seqval)
+    internal Shape InternalCompoundFromSeq(NCollection_HSequence<Shape> seqval)
     {
-        BRep_Builder B = new();
-        TopoDS_Compound C = new();
+        BrepBuilder B = new();
+        Compound C = new();
         B.MakeCompound(ref C);
         int i, n = seqval.Length();
         for (i = 1; i <= n; i++)
@@ -42,12 +45,12 @@ public sealed class ShapeExtend_Explorer
         return C;
     }
 
-    private static void FillList(NCollection_HSequence<TopoDS_Shape> list, in TopoDS_Shape comp, bool expcomp)
+    private static void FillList(NCollection_HSequence<Shape> list, in Shape comp, bool expcomp)
     {
-        for (var it = new TopoDS_Iterator(comp); it.More(); it.Next())
+        for (var it = new Iterator(comp); it.More(); it.Next())
         {
-            TopoDS_Shape sub = it.Value();
-            if (sub.ShapeType() != TopAbs_COMPOUND)
+            Shape sub = it.Value();
+            if (sub.ShapeType() != global::Kerf.Topology.ShapeType.Compound)
             {
                 list.Append(sub);
             }
@@ -66,14 +69,14 @@ public sealed class ShapeExtend_Explorer
     /// The sub-shapes of a compound as a new sequence: <paramref name="comp"/> alone if it isn't a compound, nothing
     /// if it is null; with <paramref name="expcomp"/>, sub-compounds are replaced by their sub-shapes, recursively.
     /// </summary>
-    public NCollection_HSequence<TopoDS_Shape> SeqFromCompound(in TopoDS_Shape comp, bool expcomp)
+    public NCollection_HSequence<Shape> SeqFromCompound(in Shape comp, bool expcomp)
     {
-        var list = new NCollection_HSequence<TopoDS_Shape>();
-        if (comp.IsNull())
+        var list = new NCollection_HSequence<Shape>();
+        if (comp.IsNull)
         {
             return list;
         }
-        if (comp.ShapeType() != TopAbs_COMPOUND)
+        if (comp.ShapeType() != global::Kerf.Topology.ShapeType.Compound)
         {
             list.Append(comp);
             return list;
@@ -85,7 +88,7 @@ public sealed class ShapeExtend_Explorer
     /// <summary>
     /// Appends the shapes of the sequence to the list, after clearing it if <paramref name="clear"/>.
     /// </summary>
-    public void ListFromSeq(NCollection_HSequence<TopoDS_Shape>? seqval, NCollection_List<TopoDS_Shape> lisval, bool clear = true)
+    public void ListFromSeq(NCollection_HSequence<Shape>? seqval, NCollection_List<Shape> lisval, bool clear = true)
     {
         if (clear)
         {
@@ -103,10 +106,10 @@ public sealed class ShapeExtend_Explorer
     }
 
     /// <summary>The shapes of the list as a new sequence.</summary>
-    public NCollection_HSequence<TopoDS_Shape> SeqFromList(NCollection_List<TopoDS_Shape> lisval)
+    public NCollection_HSequence<Shape> SeqFromList(NCollection_List<Shape> lisval)
     {
-        var seqval = new NCollection_HSequence<TopoDS_Shape>();
-        for (var it = new NCollection_List<TopoDS_Shape>.Iterator(lisval); it.More(); it.Next())
+        var seqval = new NCollection_HSequence<Shape>();
+        for (var it = new NCollection_List<Shape>.Iterator(lisval); it.More(); it.Next())
         {
             seqval.Append(it.Value());
         }
@@ -118,54 +121,54 @@ public sealed class ShapeExtend_Explorer
     /// type of its items if they all have the same (an edge and a wire count as wires, a face and a shell as
     /// shells), COMPOUND if they differ, SHAPE if it is empty. SHAPE for a null shape.
     /// </summary>
-    public TopAbs_ShapeEnum ShapeType(in TopoDS_Shape shape, bool compound)
+    public ShapeType ShapeType(in Shape shape, bool compound)
     {
-        if (shape.IsNull())
+        if (shape.IsNull)
         {
-            return TopAbs_SHAPE;
+            return global::Kerf.Topology.ShapeType.Shape;
         }
-        TopAbs_ShapeEnum res = shape.ShapeType();
-        if (!compound || res != TopAbs_COMPOUND)
+        ShapeType res = shape.ShapeType();
+        if (!compound || res != global::Kerf.Topology.ShapeType.Compound)
         {
             return res;
         }
-        res = TopAbs_SHAPE;
-        for (var iter = new TopoDS_Iterator(shape); iter.More(); iter.Next())
+        res = global::Kerf.Topology.ShapeType.Shape;
+        for (var iter = new Iterator(shape); iter.More(); iter.Next())
         {
-            TopoDS_Shape sh = iter.Value();
-            if (sh.IsNull())
+            Shape sh = iter.Value();
+            if (sh.IsNull)
             {
                 continue;
             }
-            TopAbs_ShapeEnum typ = sh.ShapeType();
-            if (typ == TopAbs_COMPOUND)
+            ShapeType typ = sh.ShapeType();
+            if (typ == global::Kerf.Topology.ShapeType.Compound)
             {
                 typ = ShapeType(sh, compound);
             }
-            if (res == TopAbs_SHAPE)
+            if (res == global::Kerf.Topology.ShapeType.Shape)
             {
                 res = typ;
                 //   Egalite : OK;  Pseudo-Egalite : EDGE/WIRE ou FACE/SHELL
             }
-            else if (res == TopAbs_EDGE && typ == TopAbs_WIRE)
+            else if (res == global::Kerf.Topology.ShapeType.Edge && typ == global::Kerf.Topology.ShapeType.Wire)
             {
                 res = typ;
             }
-            else if (res == TopAbs_WIRE && typ == TopAbs_EDGE)
+            else if (res == global::Kerf.Topology.ShapeType.Wire && typ == global::Kerf.Topology.ShapeType.Edge)
             {
                 continue;
             }
-            else if (res == TopAbs_FACE && typ == TopAbs_SHELL)
+            else if (res == global::Kerf.Topology.ShapeType.Face && typ == global::Kerf.Topology.ShapeType.Shell)
             {
                 res = typ;
             }
-            else if (res == TopAbs_SHELL && typ == TopAbs_FACE)
+            else if (res == global::Kerf.Topology.ShapeType.Shell && typ == global::Kerf.Topology.ShapeType.Face)
             {
                 continue;
             }
             else if (res != typ)
             {
-                return TopAbs_COMPOUND;
+                return global::Kerf.Topology.ShapeType.Compound;
             }
         }
         return res;
@@ -177,38 +180,38 @@ public sealed class ShapeExtend_Explorer
     /// shells when it is SHELL. With <paramref name="compound"/>, the items are gathered in compounds following the
     /// starting compounds, solids and shells. A single item is returned itself, nothing as a null shape. Frozen.
     /// </summary>
-    public TopoDS_Shape SortedCompound(in TopoDS_Shape shape, TopAbs_ShapeEnum type, bool explore, bool compound) =>
+    public Shape SortedCompound(in Shape shape, ShapeType type, bool explore, bool compound) =>
         Published(InternalSortedCompound(shape, type, explore, compound));
 
     /// <summary>The sorted compound, as <see cref="SortedCompound"/>, unfrozen (ported code).</summary>
-    internal TopoDS_Shape InternalSortedCompound(in TopoDS_Shape shape, TopAbs_ShapeEnum type, bool explore, bool compound)
+    internal Shape InternalSortedCompound(in Shape shape, ShapeType type, bool explore, bool compound)
     {
-        if (shape.IsNull())
+        if (shape.IsNull)
         {
             return shape;
         }
-        TopAbs_ShapeEnum typ = shape.ShapeType();
-        TopoDS_Shape sh = new(), sh0;
+        ShapeType typ = shape.ShapeType();
+        Shape sh = new(), sh0;
         int nb = 0;
 
         //  Compound : on le prend, soit tel quel, soit son contenu
-        if (typ == TopAbs_COMPOUND || typ == TopAbs_COMPSOLID)
+        if (typ == global::Kerf.Topology.ShapeType.Compound || typ == global::Kerf.Topology.ShapeType.CompSolid)
         {
-            TopoDS_Compound C = new();
-            BRep_Builder B = new();
+            Compound C = new();
+            BrepBuilder B = new();
             B.MakeCompound(ref C);
-            for (var it = new TopoDS_Iterator(shape); it.More(); it.Next())
+            for (var it = new Iterator(shape); it.More(); it.Next())
             {
                 sh0 = InternalSortedCompound(it.Value(), type, explore, compound);
-                if (sh0.IsNull())
+                if (sh0.IsNull)
                 {
                     continue;
                 }
                 sh = sh0;
                 typ = sh.ShapeType();
-                if (typ == TopAbs_COMPOUND && !compound)
+                if (typ == global::Kerf.Topology.ShapeType.Compound && !compound)
                 {
-                    for (var it2 = new TopoDS_Iterator(sh); it2.More(); it2.Next())
+                    for (var it2 = new Iterator(sh); it2.More(); it2.Next())
                     {
                         nb++;
                         sh = it2.Value();
@@ -237,18 +240,18 @@ public sealed class ShapeExtend_Explorer
         {
             return shape;
         }
-        if (typ == TopAbs_EDGE && type == TopAbs_WIRE)
+        if (typ == global::Kerf.Topology.ShapeType.Edge && type == global::Kerf.Topology.ShapeType.Wire)
         {
-            BRep_Builder B = new();
-            TopoDS_Wire W = new();
+            BrepBuilder B = new();
+            Wire W = new();
             B.MakeWire(ref W);
             B.Add(W, shape);
             return W;
         }
-        if (typ == TopAbs_FACE && type == TopAbs_SHELL)
+        if (typ == global::Kerf.Topology.ShapeType.Face && type == global::Kerf.Topology.ShapeType.Shell)
         {
-            BRep_Builder B = new();
-            TopoDS_Shell S = new();
+            BrepBuilder B = new();
+            Shell S = new();
             B.MakeShell(ref S);
             B.Add(S, shape);
             return S;
@@ -257,21 +260,21 @@ public sealed class ShapeExtend_Explorer
         //   Le reste : selon exploration
         if (!explore)
         {
-            TopoDS_Shape nulsh = new();
+            Shape nulsh = new();
             return nulsh;
         }
 
         //  Ici, on doit explorer
         //  SOLID + mode COMPOUND : reconduire les SHELLs
-        if (typ == TopAbs_SOLID && compound)
+        if (typ == global::Kerf.Topology.ShapeType.Solid && compound)
         {
-            TopoDS_Compound C = new();
-            BRep_Builder B = new();
+            Compound C = new();
+            BrepBuilder B = new();
             B.MakeCompound(ref C);
-            for (var it = new TopoDS_Iterator(shape); it.More(); it.Next())
+            for (var it = new Iterator(shape); it.More(); it.Next())
             {
                 sh0 = InternalSortedCompound(it.Value(), type, explore, compound);
-                if (sh0.IsNull())
+                if (sh0.IsNull)
                 {
                     continue;
                 }
@@ -291,10 +294,10 @@ public sealed class ShapeExtend_Explorer
         }
 
         //  Exploration classique
-        TopoDS_Compound CC = new();
-        BRep_Builder BB = new();
+        Compound CC = new();
+        BrepBuilder BB = new();
         BB.MakeCompound(ref CC);
-        for (var aExp = new TopExp_Explorer(shape, type); aExp.More(); aExp.Next())
+        for (var aExp = new Explorer(shape, type); aExp.More(); aExp.Next())
         {
             nb++;
             sh = aExp.Current();
@@ -315,61 +318,61 @@ public sealed class ShapeExtend_Explorer
     /// Appends the shapes of <paramref name="list"/> to the sequence of their type, creating each sequence that is
     /// null.
     /// </summary>
-    public void DispatchList(NCollection_HSequence<TopoDS_Shape>? list,
-                             ref NCollection_HSequence<TopoDS_Shape>? vertices,
-                             ref NCollection_HSequence<TopoDS_Shape>? edges,
-                             ref NCollection_HSequence<TopoDS_Shape>? wires,
-                             ref NCollection_HSequence<TopoDS_Shape>? faces,
-                             ref NCollection_HSequence<TopoDS_Shape>? shells,
-                             ref NCollection_HSequence<TopoDS_Shape>? solids,
-                             ref NCollection_HSequence<TopoDS_Shape>? compsols,
-                             ref NCollection_HSequence<TopoDS_Shape>? compounds)
+    public void DispatchList(NCollection_HSequence<Shape>? list,
+                             ref NCollection_HSequence<Shape>? vertices,
+                             ref NCollection_HSequence<Shape>? edges,
+                             ref NCollection_HSequence<Shape>? wires,
+                             ref NCollection_HSequence<Shape>? faces,
+                             ref NCollection_HSequence<Shape>? shells,
+                             ref NCollection_HSequence<Shape>? solids,
+                             ref NCollection_HSequence<Shape>? compsols,
+                             ref NCollection_HSequence<Shape>? compounds)
     {
         if (list is null)
         {
             return;
         }
-        vertices ??= new NCollection_HSequence<TopoDS_Shape>();
-        edges ??= new NCollection_HSequence<TopoDS_Shape>();
-        wires ??= new NCollection_HSequence<TopoDS_Shape>();
-        faces ??= new NCollection_HSequence<TopoDS_Shape>();
-        shells ??= new NCollection_HSequence<TopoDS_Shape>();
-        solids ??= new NCollection_HSequence<TopoDS_Shape>();
-        compsols ??= new NCollection_HSequence<TopoDS_Shape>();
-        compounds ??= new NCollection_HSequence<TopoDS_Shape>();
+        vertices ??= new NCollection_HSequence<Shape>();
+        edges ??= new NCollection_HSequence<Shape>();
+        wires ??= new NCollection_HSequence<Shape>();
+        faces ??= new NCollection_HSequence<Shape>();
+        shells ??= new NCollection_HSequence<Shape>();
+        solids ??= new NCollection_HSequence<Shape>();
+        compsols ??= new NCollection_HSequence<Shape>();
+        compounds ??= new NCollection_HSequence<Shape>();
 
         int i, nb = list.Length();
         for (i = 1; i <= nb; i++)
         {
-            TopoDS_Shape sh = list.Value(i);
-            if (sh.IsNull())
+            Shape sh = list.Value(i);
+            if (sh.IsNull)
             {
                 continue;
             }
             switch (sh.ShapeType())
             {
-                case TopAbs_VERTEX:
+                case global::Kerf.Topology.ShapeType.Vertex:
                     vertices.Append(sh);
                     break;
-                case TopAbs_EDGE:
+                case global::Kerf.Topology.ShapeType.Edge:
                     edges.Append(sh);
                     break;
-                case TopAbs_WIRE:
+                case global::Kerf.Topology.ShapeType.Wire:
                     wires.Append(sh);
                     break;
-                case TopAbs_FACE:
+                case global::Kerf.Topology.ShapeType.Face:
                     faces.Append(sh);
                     break;
-                case TopAbs_SHELL:
+                case global::Kerf.Topology.ShapeType.Shell:
                     shells.Append(sh);
                     break;
-                case TopAbs_SOLID:
+                case global::Kerf.Topology.ShapeType.Solid:
                     solids.Append(sh);
                     break;
-                case TopAbs_COMPSOLID:
+                case global::Kerf.Topology.ShapeType.CompSolid:
                     compsols.Append(sh);
                     break;
-                case TopAbs_COMPOUND:
+                case global::Kerf.Topology.ShapeType.Compound:
                     compounds.Append(sh);
                     break;
                 default:
@@ -379,7 +382,7 @@ public sealed class ShapeExtend_Explorer
     }
 
     // Freezes the graph of a shape handed to a caller (docs/phase3-design.md, section 4.2).
-    private static TopoDS_Shape Published(in TopoDS_Shape theShape)
+    private static Shape Published(in Shape theShape)
     {
         theShape.TShape()?.FreezeGraph();
         return theShape;

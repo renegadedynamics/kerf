@@ -1,9 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -43,28 +45,28 @@ public class GeomPlate_BuildPlateSurfaceTests
 
     // ---- unit tests ----
 
-    private static Adaptor3d_Curve Segment(in Point3D P1, in Point3D P2)
+    private static CurveAdaptorBase Segment(in Point3D P1, in Point3D P2)
     {
-        var aLine = new GC_MakeSegment(P1, P2).Value()!;
-        return new GeomAdaptor_Curve(aLine);
+        var aLine = new MakeSegment(P1, P2).Value()!;
+        return new CurveAdaptor(aLine);
     }
 
     // A closed contour of four curves: three segments and an arc bulging up, around the unit square.
-    private static Adaptor3d_Curve[] Contour()
+    private static CurveAdaptorBase[] Contour()
     {
         var p1 = new Point3D(0, 0, 0);
         var p2 = new Point3D(10, 0, 0);
         var p3 = new Point3D(10, 10, 0);
         var p4 = new Point3D(0, 10, 0);
-        var anArc = new GC_MakeArcOfCircle(p3, new Point3D(5, 10, 3), p4).Value()!;
-        return [Segment(p1, p2), Segment(p2, p3), new GeomAdaptor_Curve(anArc), Segment(p4, p1)];
+        var anArc = new MakeArcOfCircle(p3, new Point3D(5, 10, 3), p4).Value()!;
+        return [Segment(p1, p2), Segment(p2, p3), new CurveAdaptor(anArc), Segment(p4, p1)];
     }
 
     [Fact]
     public void Perform_on_a_contour_passes_through_its_curves()
     {
         var aBuilder = new GeomPlate_BuildPlateSurface(3, 15, 2);
-        foreach (Adaptor3d_Curve aCurve in Contour())
+        foreach (CurveAdaptorBase aCurve in Contour())
         {
             aBuilder.Add(new GeomPlate_CurveConstraint(aCurve, 0));
         }
@@ -76,15 +78,15 @@ public class GeomPlate_BuildPlateSurfaceTests
         Assert.Equal(0.0, aBuilder.G1Error());
 
         // the 2d curves map onto the 3d curves through the plate surface
-        NCollection_HArray1<Geom2d_Curve?> aCurves2d = aBuilder.Curves2d();
-        Adaptor3d_Curve[] aContour = Contour();
+        NCollection_HArray1<Curve2D?> aCurves2d = aBuilder.Curves2d();
+        CurveAdaptorBase[] aContour = Contour();
         NCollection_HArray1<int> anOrder = aBuilder.Order();
         Assert.Equal(4, aCurves2d.Length());
         for (int i = 1; i <= 4; i++)
         {
-            Geom2d_Curve aC2d = aCurves2d.Value(i)!;
+            Curve2D aC2d = aCurves2d.Value(i)!;
             Assert.True(aC2d.IsFrozen);
-            Adaptor3d_Curve aC3d = aContour[i - 1];
+            CurveAdaptorBase aC3d = aContour[i - 1];
             for (int k = 0; k <= 10; k++)
             {
                 double u = aC3d.FirstParameter() + (aC3d.LastParameter() - aC3d.FirstParameter()) * k / 10;
@@ -105,7 +107,7 @@ public class GeomPlate_BuildPlateSurfaceTests
         Assert.Equal(aSeq2d.Length(), aSeq3d.Length());
         var aCrit = new GeomPlate_PlateG0Criterion(aSeq2d, aSeq3d, 1.0e-3);
         var anApprox = new GeomPlate_MakeApprox(aSurf, aCrit, 1.0e-4, 9, 8);
-        Geom_BSplineSurface aBSpl = anApprox.Surface()!;
+        BSplineSurface aBSpl = anApprox.Surface()!;
         Assert.True(aBSpl.IsFrozen);
         Assert.True(anApprox.ApproxError() < 5.0e-2, $"{anApprox.ApproxError()}");
         Assert.True(anApprox.CriterionError() < 1.0e-2, $"{anApprox.CriterionError()}");
@@ -134,15 +136,15 @@ public class GeomPlate_BuildPlateSurfaceTests
             Assert.True(aSurf.Value(aUV.X(), aUV.Y()).Distance(aPoints[i - 1]) < 1.0e-6);
         }
         // the initial surface is the average plane, trimmed
-        Assert.IsType<Geom_RectangularTrimmedSurface>(aBuilder.SurfInit());
+        Assert.IsType<TrimmedSurface>(aBuilder.SurfInit());
     }
 
     [Fact]
     public void Perform_with_a_given_initial_surface_keeps_it()
     {
-        var aPlane = new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
+        var aPlane = new PlaneSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
         var aBuilder = new GeomPlate_BuildPlateSurface(aPlane, 3, 10, 3);
-        foreach (Adaptor3d_Curve aCurve in Contour())
+        foreach (CurveAdaptorBase aCurve in Contour())
         {
             aBuilder.Add(new GeomPlate_CurveConstraint(aCurve, 0));
         }
@@ -158,7 +160,7 @@ public class GeomPlate_BuildPlateSurfaceTests
     [Fact]
     public void The_old_constructor_checks_its_arguments()
     {
-        var aCurves = new NCollection_HArray1<Adaptor3d_Curve>(1, 1);
+        var aCurves = new NCollection_HArray1<CurveAdaptorBase>(1, 1);
         aCurves.SetValue(1, Contour()[0]);
         var aTang = new NCollection_HArray1<int>(1, 1, 0);
         var aNoPoints = new NCollection_HArray1<int>(1, 1, 0);
@@ -176,14 +178,14 @@ public class GeomPlate_BuildPlateSurfaceTests
     public void Perform_with_tangency_to_a_cylinder_meets_it_G1()
     {
         // a cylinder's half seen from above; the filling closes the strip between its two straight edges with G1
-        var aCyl = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 5.0);
-        var aSurf = new GeomAdaptor_Surface(aCyl);
+        var aCyl = new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 5.0);
+        var aSurf = new SurfaceAdaptor(aCyl);
         // the iso v = 0 on u in [0, pi] of the cylinder z = 5 cos, y = 5 sin: the edge at x = 0 and x = 10
         var aBuilder = new GeomPlate_BuildPlateSurface(3, 15, 3);
-        var aL1 = new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(1, 0));
-        var aC1 = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aL1, 0.0, M_PI), aSurf);
-        var aL2 = new Geom2d_Line(new Point2D(M_PI, 10.0), new Direction2D(-1, 0));
-        var aC2 = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aL2, 0.0, M_PI), aSurf);
+        var aL1 = new LineCurve2D(new Point2D(0.0, 0.0), new Direction2D(1, 0));
+        var aC1 = new CurveOnSurface(new CurveAdaptor2D(aL1, 0.0, M_PI), aSurf);
+        var aL2 = new LineCurve2D(new Point2D(M_PI, 10.0), new Direction2D(-1, 0));
+        var aC2 = new CurveOnSurface(new CurveAdaptor2D(aL2, 0.0, M_PI), aSurf);
         aBuilder.Add(new GeomPlate_CurveConstraint(aC1, 1));
         aBuilder.Add(new GeomPlate_CurveConstraint(Segment(aC1.Value(M_PI), aC2.Value(0.0)), 0));
         aBuilder.Add(new GeomPlate_CurveConstraint(aC2, 1));

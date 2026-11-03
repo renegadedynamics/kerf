@@ -5,10 +5,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepFeat_PerfSelection;
 using static Occt.BRepFeat_StatusError;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -24,11 +27,11 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepFeat_MakeRevol : BRepFeat_Form
 {
-    private TopoDS_Shape myPbase = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> mySlface = new(TopTools_ShapeMapHasher.Instance);
+    private Shape myPbase = new();
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> mySlface = new(ShapeHasher.Instance);
     private Axis3D myAxis = new();
-    private readonly NCollection_Sequence<Geom_Curve> myCurves = new();
-    private Geom_Curve? myBCurve;
+    private readonly NCollection_Sequence<Curve3D> myCurves = new();
+    private Curve3D? myBCurve;
     // OCCT: the class declares its own myStatusError, hiding BRepFeat_Form's; CurrentStatusError reads the form's
 #pragma warning disable CS0414 // written, never read: as in OCCT
     private BRepFeat_StatusError myStatusError;
@@ -45,14 +48,14 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
     /// <paramref name="Axis"/>, from the sketch face <paramref name="Skface"/>; <paramref name="Fuse"/> is the mode
     /// (0 cut, 1 fuse, 2 the feature alone).
     /// </summary>
-    public BRepFeat_MakeRevol(in TopoDS_Shape Sbase, in TopoDS_Shape Pbase, in TopoDS_Face Skface, in Axis3D Axis,
+    public BRepFeat_MakeRevol(in Shape Sbase, in Shape Pbase, in Face Skface, in Axis3D Axis,
                               int Fuse, bool Modify)
     {
         Init(Sbase, Pbase, Skface, Axis, Fuse, Modify);
     }
 
     /// <summary>Initializes the revolved feature (see the constructor).</summary>
-    public void Init(in TopoDS_Shape Sbase, in TopoDS_Shape Pbase, in TopoDS_Face Skface, in Axis3D Axis, int Mode,
+    public void Init(in Shape Sbase, in Shape Pbase, in Face Skface, in Axis3D Axis, int Mode,
                      bool Modify)
     {
         // OCCT.NET: the working copies of frozen inputs (decision 1052)
@@ -87,10 +90,10 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         myMap.Clear();
         myFShape.Nullify();
         myLShape.Nullify();
-        TopExp_Explorer exp = new();
-        for (exp.Init(mySbase, TopAbs_FACE); exp.More(); exp.Next())
+        Explorer exp = new();
+        for (exp.Init(mySbase, ShapeType.Face); exp.More(); exp.Next())
         {
-            NCollection_List<TopoDS_Shape> thelist = new();
+            NCollection_List<Shape> thelist = new();
             myMap.Bind(exp.Current(), thelist);
             myMap[exp.Current()].Append(exp.Current());
         }
@@ -99,10 +102,10 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
 
     /// <summary>Adds an element of sliding: the edge <paramref name="E"/> of the profile slides on the face <paramref name="F"/>.</summary>
     /// <exception cref="ConstructionErrorException">F isn't a face of the basis shape, or E an edge of the profile.</exception>
-    public void Add(in TopoDS_Edge E, in TopoDS_Face F)
+    public void Add(in Edge E, in Face F)
     {
-        TopExp_Explorer exp = new();
-        for (exp.Init(mySbase, TopAbs_FACE); exp.More(); exp.Next())
+        Explorer exp = new();
+        for (exp.Init(mySbase, ShapeType.Face); exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(Working(F)))
             {
@@ -114,7 +117,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
             throw new ConstructionErrorException();
         }
 
-        for (exp.Init(myPbase, TopAbs_EDGE); exp.More(); exp.Next())
+        for (exp.Init(myPbase, ShapeType.Edge); exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(Working(E)))
             {
@@ -128,10 +131,10 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
 
         if (!mySlface.IsBound(F))
         {
-            NCollection_List<TopoDS_Shape> thelist = new();
+            NCollection_List<Shape> thelist = new();
             mySlface.Bind(F, thelist);
         }
-        NCollection_List<TopoDS_Shape>.Iterator itl = new(mySlface[F]);
+        NCollection_List<Shape>.Iterator itl = new(mySlface[F]);
         for (; itl.More(); itl.Next())
         {
             if (itl.Value().IsSame(E))
@@ -158,7 +161,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         bool RevolComp = 2 * M_PI - Math.Abs(Angle) <= global::Kerf.Engine.Foundation.Precision.Angular();
         LocOpe_Revol theRevol = new();
         double angledec = 0.0;
-        TopExp_Explorer exp = new();
+        Explorer exp = new();
         if (RevolComp)
         {
             mySkface.Nullify();
@@ -171,15 +174,15 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         {
             theRevol.Perform(myPbase, myAxis, Angle, angledec);
         }
-        TopoDS_Shape VraiRevol = theRevol.InternalShape();
+        Shape VraiRevol = theRevol.InternalShape();
 
         MajMap(myPbase, theRevol, myMap, ref myFShape, ref myLShape);
 
         myGShape = VraiRevol;
         GeneratedShapeValid();
-        TopoDS_Shape Base = theRevol.InternalFirstShape();
-        exp.Init(Base, TopAbs_FACE);
-        TopoDS_Face theBase = TopoDS.Face(exp.Current());
+        Shape Base = theRevol.InternalFirstShape();
+        exp.Init(Base, ShapeType.Face);
+        Face theBase = ShapeCasts.Face(exp.Current());
         exp.Next();
         if (exp.More())
         {
@@ -188,23 +191,23 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
             return;
         }
 
-        TopoDS_Face FFace = new();
+        Face FFace = new();
 
         bool found = false;
 
-        if (!mySkface.IsNull() || !mySlface.IsEmpty())
+        if (!mySkface.IsNull || !mySlface.IsEmpty())
         {
-            if (myLShape.ShapeType() == TopAbs_WIRE)
+            if (myLShape.ShapeType() == ShapeType.Wire)
             {
-                TopExp_Explorer ex1 = new(VraiRevol, TopAbs_FACE);
+                Explorer ex1 = new(VraiRevol, ShapeType.Face);
                 for (; ex1.More(); ex1.Next())
                 {
-                    TopExp_Explorer ex2 = new(ex1.Current(), TopAbs_WIRE);
+                    Explorer ex2 = new(ex1.Current(), ShapeType.Wire);
                     for (; ex2.More(); ex2.Next())
                     {
                         if (ex2.Current().IsSame(myLShape))
                         {
-                            FFace = TopoDS.Face(ex1.Current());
+                            FFace = ShapeCasts.Face(ex1.Current());
                             found = true;
                             break;
                         }
@@ -216,10 +219,10 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
                 }
             }
 
-            TopExp_Explorer anExp = new(mySbase, TopAbs_FACE);
+            Explorer anExp = new(mySbase, ShapeType.Face);
             for (; anExp.More(); anExp.Next())
             {
-                TopoDS_Face ff = TopoDS.Face(anExp.Current());
+                Face ff = ShapeCasts.Face(anExp.Current());
                 if (ToFuse(ff, FFace))
                 {
                     if (!FFace.IsSame(myPbase) && BRepFeat.IsInside(ff, FFace))
@@ -231,7 +234,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         }
 
         GluedFacesValid();
-        if (!mySkface.IsNull())
+        if (!mySkface.IsNull)
         {
             VerifGluedFaces(mySkface, theBase, ref myBCurve, myCurves, theRevol, myGluedF);
         }
@@ -263,21 +266,21 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
 
     /// <summary>Builds a revolved feature up to the shape <paramref name="Until"/>.</summary>
     /// <exception cref="ConstructionErrorException">Until is null or has no face.</exception>
-    public void Perform(in TopoDS_Shape Until)
+    public void Perform(in Shape Until)
     {
         double Angle = 0.0;
         bool TourComplet = false;
 
-        if (Until.IsNull())
+        if (Until.IsNull)
         {
             throw new ConstructionErrorException();
         }
-        TopExp_Explorer exp = new(Until, TopAbs_FACE);
+        Explorer exp = new(Until, ShapeType.Face);
         if (!exp.More())
         {
             throw new ConstructionErrorException();
         }
-        if (!mySkface.IsNull() && Working(Until).IsSame(mySkface))
+        if (!mySkface.IsNull && Working(Until).IsSame(mySkface))
         {
             Angle = 2 * M_PI;
             TourComplet = true;
@@ -298,7 +301,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
             Angle = 2.0 * M_PI - 3 * M_PI / 180.0;
         }
         theRevol.Perform(myPbase, myAxis, Angle);
-        TopoDS_Shape VraiRevol = theRevol.InternalShape();
+        Shape VraiRevol = theRevol.InternalShape();
         MajMap(myPbase, theRevol, myMap, ref myFShape, ref myLShape);
 
         if (!Trf)
@@ -306,8 +309,8 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
             myGShape = VraiRevol;
             GeneratedShapeValid();
 
-            TopoDS_Shape Base = theRevol.InternalFirstShape();
-            exp.Init(Base, TopAbs_FACE);
+            Shape Base = theRevol.InternalFirstShape();
+            exp.Init(Base, ShapeType.Face);
             exp.Next();
             if (exp.More())
             {
@@ -323,7 +326,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         }
         else
         {
-            NCollection_Sequence<Geom_Curve?> scur = new();
+            NCollection_Sequence<Curve3D?> scur = new();
             theRevol.Curves(myCurves);
             myBCurve = theRevol.BarycCurve();
             scur.Clear();
@@ -332,25 +335,25 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
             ASI.Perform(scur);
             if (ASI.IsDone() && ASI.NbPoints(1) >= 1)
             {
-                TopAbs_Orientation Or = ASI.Point(1, 1).Orientation();
-                TopoDS_Face FUntil = ASI.Point(1, 1).Face();
-                TopoDS_Compound Comp = new();
-                BRep_Builder B = new();
+                Orientation Or = ASI.Point(1, 1).Orientation();
+                Face FUntil = ASI.Point(1, 1).Face();
+                Compound Comp = new();
+                BrepBuilder B = new();
                 B.MakeCompound(ref Comp);
-                TopoDS_Solid S = BRepFeat.Tool(mySUntil, FUntil, Or);
-                if (!S.IsNull())
+                Solid S = BRepFeat.Tool(mySUntil, FUntil, Or);
+                if (!S.IsNull)
                 {
                     B.Add(Comp, S);
                 }
                 BRepAlgoAPI_Cut trP = new(VraiRevol, Comp);
-                TopoDS_Shape Cutsh = trP.InternalShape();
-                TopExp_Explorer ex = new(Cutsh, TopAbs_SOLID);
+                Shape Cutsh = trP.InternalShape();
+                Explorer ex = new(Cutsh, ShapeType.Solid);
                 for (; ex.More(); ex.Next())
                 {
-                    TopExp_Explorer ex1 = new(ex.Current(), TopAbs_FACE);
+                    Explorer ex1 = new(ex.Current(), ShapeType.Face);
                     for (; ex1.More(); ex1.Next())
                     {
-                        TopoDS_Face fac = TopoDS.Face(ex1.Current());
+                        Face fac = ShapeCasts.Face(ex1.Current());
                         if (fac.IsSame(myPbase))
                         {
                             VraiRevol = ex.Current();
@@ -378,13 +381,13 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
 
     /// <summary>Builds a revolved feature from the shape <paramref name="From"/> up to the shape <paramref name="Until"/>.</summary>
     /// <exception cref="ConstructionErrorException">From or Until is null or has no face.</exception>
-    public void Perform(in TopoDS_Shape From, in TopoDS_Shape Until)
+    public void Perform(in Shape From, in Shape Until)
     {
-        if (From.IsNull() || Until.IsNull())
+        if (From.IsNull || Until.IsNull)
         {
             throw new ConstructionErrorException();
         }
-        if (!mySkface.IsNull())
+        if (!mySkface.IsNull)
         {
             if (Working(From).IsSame(mySkface))
             {
@@ -411,12 +414,12 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         myPerfSelection = BRepFeat_SelectionFU;
         PerfSelectionValid();
 
-        TopExp_Explorer exp = new(From, TopAbs_FACE);
+        Explorer exp = new(From, ShapeType.Face);
         if (!exp.More())
         {
             throw new ConstructionErrorException();
         }
-        exp.Init(Until, TopAbs_FACE);
+        exp.Init(Until, ShapeType.Face);
         if (!exp.More())
         {
             throw new ConstructionErrorException();
@@ -436,7 +439,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
 
         LocOpe_Revol theRevol = new();
         theRevol.Perform(myPbase, myAxis, 2 * M_PI);
-        TopoDS_Shape VraiRevol = theRevol.InternalShape();
+        Shape VraiRevol = theRevol.InternalShape();
 
         MajMap(myPbase, theRevol, myMap, ref myFShape, ref myLShape);
 
@@ -453,15 +456,15 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         {
             theRevol.Curves(myCurves);
             myBCurve = theRevol.BarycCurve();
-            NCollection_Sequence<Geom_Curve?> scur = new();
+            NCollection_Sequence<Curve3D?> scur = new();
             scur.Clear();
             scur.Append(myBCurve);
             LocOpe_CSIntersector ASI1 = new(mySUntil);
             LocOpe_CSIntersector ASI2 = new(mySFrom);
             ASI1.Perform(scur);
             ASI2.Perform(scur);
-            TopAbs_Orientation OrU, OrF;
-            TopoDS_Face FFrom, FUntil;
+            Orientation OrU, OrF;
+            Face FFrom, FUntil;
             double PrF, PrU;
             if (ASI1.IsDone() && ASI1.NbPoints(1) >= 1)
             {
@@ -481,7 +484,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
                 pr1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(pr1, PrU - 2 * M_PI, PrU);
                 double pr2 = ASI2.Point(1, ASI2.NbPoints(1)).Parameter();
                 pr2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(pr2, PrU - 2 * M_PI, PrU);
-                OrF = TopAbs.Reverse(OrU);
+                OrF = global::Kerf.Engine.Topology.TopAbs.Reverse(OrU);
                 FFrom = ASI2.Point(1, 1).Face();
                 PrF = Max(pr1, pr2);
             }
@@ -498,22 +501,22 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
                 return;
             }
 
-            TopoDS_Compound Comp = new();
-            BRep_Builder B = new();
+            Compound Comp = new();
+            BrepBuilder B = new();
             B.MakeCompound(ref Comp);
-            TopoDS_Solid SF = BRepFeat.Tool(mySFrom, FFrom, OrF);
-            if (!SF.IsNull())
+            Solid SF = BRepFeat.Tool(mySFrom, FFrom, OrF);
+            if (!SF.IsNull)
             {
                 B.Add(Comp, SF);
             }
-            TopoDS_Solid SU = BRepFeat.Tool(mySUntil, FUntil, OrU);
-            if (!SU.IsNull())
+            Solid SU = BRepFeat.Tool(mySUntil, FUntil, OrU);
+            if (!SU.IsNull)
             {
                 B.Add(Comp, SU);
             }
             BRepAlgoAPI_Cut trP = new(VraiRevol, Comp);
-            TopoDS_Shape Cutsh = trP.InternalShape();
-            TopExp_Explorer ex = new(Cutsh, TopAbs_SOLID);
+            Shape Cutsh = trP.InternalShape();
+            Explorer ex = new(Cutsh, ShapeType.Solid);
             VraiRevol = ex.Current();
             for (; ex.More(); ex.Next())
             {
@@ -554,11 +557,11 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
 
     /// <summary>Builds a revolved feature up to the shape <paramref name="Until"/>, at the angle <paramref name="Angle"/>.</summary>
     /// <exception cref="ConstructionErrorException">Until has no face (a null Until included, see below).</exception>
-    public void PerformUntilAngle(in TopoDS_Shape Until, double Angle)
+    public void PerformUntilAngle(in Shape Until, double Angle)
     {
         // OCCT: neither of the two first calls returns: a null Until goes on and throws below, a zero angle goes on and
         // builds the revolution again with the angle 0
-        if (Until.IsNull())
+        if (Until.IsNull)
         {
             Perform(Angle);
         }
@@ -566,13 +569,13 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         {
             Perform(Until);
         }
-        TopExp_Explorer exp = new(Until, TopAbs_FACE);
+        Explorer exp = new(Until, ShapeType.Face);
         if (!exp.More())
         {
             throw new ConstructionErrorException();
         }
 
-        if (!mySkface.IsNull() && Working(Until).IsSame(mySkface))
+        if (!mySkface.IsNull && Working(Until).IsSame(mySkface))
         {
             Perform(Angle);
             return;
@@ -590,7 +593,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         // Produce systematicallt an almost complete revolution
         LocOpe_Revol theRevol = new();
         theRevol.Perform(myPbase, myAxis, Angle);
-        TopoDS_Shape VraiRevol = theRevol.InternalShape();
+        Shape VraiRevol = theRevol.InternalShape();
 
         MajMap(myPbase, theRevol, myMap, ref myFShape, ref myLShape);
 
@@ -600,8 +603,8 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
             myGShape = VraiRevol;
             GeneratedShapeValid();
 
-            TopoDS_Shape Base = theRevol.InternalFirstShape();
-            exp.Init(Base, TopAbs_FACE);
+            Shape Base = theRevol.InternalFirstShape();
+            exp.Init(Base, ShapeType.Face);
             exp.Next();
             if (exp.More())
             {
@@ -617,7 +620,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         }
         else
         {
-            NCollection_Sequence<Geom_Curve?> scur = new();
+            NCollection_Sequence<Curve3D?> scur = new();
             theRevol.Curves(myCurves);
             myBCurve = theRevol.BarycCurve();
             scur.Clear();
@@ -626,25 +629,25 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
             ASI.Perform(scur);
             if (ASI.IsDone() && ASI.NbPoints(1) >= 1)
             {
-                TopAbs_Orientation Or = ASI.Point(1, 1).Orientation();
-                TopoDS_Face FUntil = ASI.Point(1, 1).Face();
-                TopoDS_Compound Comp = new();
-                BRep_Builder B = new();
+                Orientation Or = ASI.Point(1, 1).Orientation();
+                Face FUntil = ASI.Point(1, 1).Face();
+                Compound Comp = new();
+                BrepBuilder B = new();
                 B.MakeCompound(ref Comp);
-                TopoDS_Solid S = BRepFeat.Tool(mySUntil, FUntil, Or);
-                if (!S.IsNull())
+                Solid S = BRepFeat.Tool(mySUntil, FUntil, Or);
+                if (!S.IsNull)
                 {
                     B.Add(Comp, S);
                 }
                 BRepAlgoAPI_Cut trP = new(VraiRevol, Comp);
-                TopoDS_Shape Cutsh = trP.InternalShape();
-                TopExp_Explorer ex = new(Cutsh, TopAbs_SOLID);
+                Shape Cutsh = trP.InternalShape();
+                Explorer ex = new(Cutsh, ShapeType.Solid);
                 for (; ex.More(); ex.Next())
                 {
-                    TopExp_Explorer ex1 = new(ex.Current(), TopAbs_FACE);
+                    Explorer ex1 = new(ex.Current(), ShapeType.Face);
                     for (; ex1.More(); ex1.Next())
                     {
-                        TopoDS_Face fac = TopoDS.Face(ex1.Current());
+                        Face fac = ShapeCasts.Face(ex1.Current());
                         if (fac.IsSame(myPbase))
                         {
                             VraiRevol = ex.Current();
@@ -671,26 +674,26 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
     }
 
     /// <summary>The curves of the revolution.</summary>
-    public override void Curves(NCollection_Sequence<Geom_Curve> scur)
+    public override void Curves(NCollection_Sequence<Curve3D> scur)
     {
         scur.Assign(myCurves);
     }
 
     /// <summary>The circle of the revolution through the barycentre of the profile.</summary>
-    public override Geom_Curve? BarycCurve()
+    public override Curve3D? BarycCurve()
     {
         return myBCurve;
     }
 
     // Checks whether the gluing faces are valid: if not, the case without gluing
-    private static void VerifGluedFaces(in TopoDS_Face theSkface, in TopoDS_Shape thePbase, ref Geom_Curve? theBCurve,
-                                        NCollection_Sequence<Geom_Curve> theCurves, LocOpe_Revol theRevol,
-                                        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theMap)
+    private static void VerifGluedFaces(in Face theSkface, in Shape thePbase, ref Curve3D? theBCurve,
+                                        NCollection_Sequence<Curve3D> theCurves, LocOpe_Revol theRevol,
+                                        NCollection_DataMap<Shape, Shape> theMap)
     {
         bool GluedFaces = true;
-        TopoDS_Shape VraiRevol = theRevol.InternalShape();
+        Shape VraiRevol = theRevol.InternalShape();
 
-        NCollection_Sequence<Geom_Curve?> scur = new();
+        NCollection_Sequence<Curve3D?> scur = new();
         theRevol.Curves(theCurves);
         theBCurve = theRevol.BarycCurve();
         scur.Clear();
@@ -699,29 +702,29 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         ASI.Perform(scur);
         if (ASI.IsDone() && ASI.NbPoints(1) >= 1)
         {
-            TopAbs_Orientation Or = ASI.Point(1, 1).Orientation();
-            TopoDS_Face FSk = ASI.Point(1, 1).Face();
-            TopoDS_Compound Comp = new();
-            BRep_Builder B = new();
+            Orientation Or = ASI.Point(1, 1).Orientation();
+            Face FSk = ASI.Point(1, 1).Face();
+            Compound Comp = new();
+            BrepBuilder B = new();
             B.MakeCompound(ref Comp);
-            TopoDS_Solid S = BRepFeat.Tool(theSkface, FSk, Or);
-            if (!S.IsNull())
+            Solid S = BRepFeat.Tool(theSkface, FSk, Or);
+            if (!S.IsNull)
             {
                 B.Add(Comp, S);
             }
             BRepAlgoAPI_Cut trP = new(VraiRevol, Comp);
-            TopoDS_Shape Cutsh = trP.InternalShape();
-            TopExp_Explorer ex = new(Cutsh, TopAbs_SOLID);
+            Shape Cutsh = trP.InternalShape();
+            Explorer ex = new(Cutsh, ShapeType.Solid);
             for (; ex.More(); ex.Next())
             {
-                TopExp_Explorer ex1 = new(ex.Current(), TopAbs_FACE);
+                Explorer ex1 = new(ex.Current(), ShapeType.Face);
                 for (; ex1.More(); ex1.Next())
                 {
-                    TopoDS_Face fac1 = TopoDS.Face(ex1.Current());
-                    TopExp_Explorer ex2 = new(thePbase, TopAbs_FACE);
+                    Face fac1 = ShapeCasts.Face(ex1.Current());
+                    Explorer ex2 = new(thePbase, ShapeType.Face);
                     for (; ex2.More(); ex2.Next())
                     {
-                        TopoDS_Face fac2 = TopoDS.Face(ex2.Current());
+                        Face fac2 = ShapeCasts.Face(ex2.Current());
                         if (fac1.IsSame(fac2))
                         {
                             break;
@@ -746,65 +749,65 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         }
     }
 
-    private static void MajMap(in TopoDS_Shape theB, LocOpe_Revol theP,
-                               NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMap,
-                               ref TopoDS_Shape theFShape, ref TopoDS_Shape theLShape)
+    private static void MajMap(in Shape theB, LocOpe_Revol theP,
+                               NCollection_DataMap<Shape, NCollection_List<Shape>> theMap,
+                               ref Shape theFShape, ref Shape theLShape)
     {
-        TopExp_Explorer exp = new(theP.InternalFirstShape(), TopAbs_WIRE);
+        Explorer exp = new(theP.InternalFirstShape(), ShapeType.Wire);
         if (exp.More())
         {
             theFShape = exp.Current();
-            NCollection_List<TopoDS_Shape> thelist = new();
+            NCollection_List<Shape> thelist = new();
             theMap.Bind(theFShape, thelist);
-            for (exp.Init(theP.InternalFirstShape(), TopAbs_FACE); exp.More(); exp.Next())
+            for (exp.Init(theP.InternalFirstShape(), ShapeType.Face); exp.More(); exp.Next())
             {
                 theMap[theFShape].Append(exp.Current());
             }
         }
 
-        exp.Init(theP.InternalLastShape(), TopAbs_WIRE);
+        exp.Init(theP.InternalLastShape(), ShapeType.Wire);
         if (exp.More())
         {
             theLShape = exp.Current();
-            NCollection_List<TopoDS_Shape> thelist1 = new();
+            NCollection_List<Shape> thelist1 = new();
             theMap.Bind(theLShape, thelist1);
-            for (exp.Init(theP.InternalLastShape(), TopAbs_FACE); exp.More(); exp.Next())
+            for (exp.Init(theP.InternalLastShape(), ShapeType.Face); exp.More(); exp.Next())
             {
                 theMap[theLShape].Append(exp.Current());
             }
         }
 
-        for (exp.Init(theB, TopAbs_EDGE); exp.More(); exp.Next())
+        for (exp.Init(theB, ShapeType.Edge); exp.More(); exp.Next())
         {
             if (!theMap.IsBound(exp.Current()))
             {
-                theMap.Bind(exp.Current(), new NCollection_List<TopoDS_Shape>(theP.InternalShapes(exp.Current())));
+                theMap.Bind(exp.Current(), new NCollection_List<Shape>(theP.InternalShapes(exp.Current())));
             }
         }
     }
 
-    private static bool ToFuse(in TopoDS_Face F1, in TopoDS_Face F2)
+    private static bool ToFuse(in Face F1, in Face F2)
     {
-        if (F1.IsNull() || F2.IsNull())
+        if (F1.IsNull || F2.IsNull)
         {
             return false;
         }
 
-        Geom_Surface S1, S2;
+        Surface S1, S2;
         double tollin = global::Kerf.Engine.Foundation.Precision.Confusion();
         double tolang = global::Kerf.Engine.Foundation.Precision.Angular();
 
-        S1 = BRep_Tool.Surface(F1, out _)!;
-        S2 = BRep_Tool.Surface(F2, out _)!;
+        S1 = Tool.Surface(F1, out _)!;
+        S2 = Tool.Surface(F2, out _)!;
 
-        if (S1.GetType() == typeof(Geom_RectangularTrimmedSurface))
+        if (S1.GetType() == typeof(TrimmedSurface))
         {
-            S1 = ((Geom_RectangularTrimmedSurface)S1).BasisSurface();
+            S1 = ((TrimmedSurface)S1).BasisSurface();
         }
 
-        if (S2.GetType() == typeof(Geom_RectangularTrimmedSurface))
+        if (S2.GetType() == typeof(TrimmedSurface))
         {
-            S2 = ((Geom_RectangularTrimmedSurface)S2).BasisSurface();
+            S2 = ((TrimmedSurface)S2).BasisSurface();
         }
 
         if (S1.GetType() != S2.GetType())
@@ -813,13 +816,13 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         }
 
         bool ValRet = false;
-        if (S1.GetType() == typeof(Geom_Plane))
+        if (S1.GetType() == typeof(PlaneSurface))
         {
-            S1 = BRep_Tool.Surface(F1)!; // to apply the location.
-            S2 = BRep_Tool.Surface(F2)!;
+            S1 = Tool.Surface(F1)!; // to apply the location.
+            S2 = Tool.Surface(F2)!;
             // OCCT: a trimmed plane gives a null plane here (an access violation natively)
-            Plane3D pl1 = (S1 as Geom_Plane)!.Pln();
-            Plane3D pl2 = (S2 as Geom_Plane)!.Pln();
+            Plane3D pl1 = (S1 as PlaneSurface)!.Pln();
+            Plane3D pl2 = (S2 as PlaneSurface)!.Pln();
 
             if (pl1.Position().IsCoplanar(pl2.Position(), tollin, tolang))
             {

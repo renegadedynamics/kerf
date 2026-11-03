@@ -143,7 +143,7 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             return this;
-        TopoDS_Shape result;
+        global::Kerf.Topology.Shape result;
         if (matrix.GTrsf.Form() == TransformForm.Other)
         {
             // A general affine transform (stretch, shear): only GTransform can apply it, converting geometry to splines

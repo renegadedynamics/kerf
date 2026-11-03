@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Curves;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 
@@ -14,7 +15,7 @@ public class GCOracleTests(ITestOutputHelper output)
 {
     private const int Cases = 500;
 
-    private static void SameArc(Oracle theOracle, N.Geom_TrimmedCurve theNative, Geom_TrimmedCurve thePort,
+    private static void SameArc(Oracle theOracle, N.Geom_TrimmedCurve theNative, TrimmedCurve3D thePort,
                                 string theWhat, double theTolerance = Oracle.Tolerance)
     {
         double aNF = theNative.FirstParameter(), aNL = theNative.LastParameter();
@@ -29,16 +30,16 @@ public class GCOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void SameStatus(Oracle theOracle, N.GC_Root theNative, GC_Root thePort, string theWhat) =>
+    private static void SameStatus(Oracle theOracle, N.GC_Root theNative, Root thePort, string theWhat) =>
         theOracle.Same((int)theNative.Status(), (int)thePort.Status(), theWhat + " status");
 
-    private static void SameCirc(Oracle theOracle, N.Geom_TrimmedCurve theNative, Geom_TrimmedCurve thePort,
+    private static void SameCirc(Oracle theOracle, N.Geom_TrimmedCurve theNative, TrimmedCurve3D thePort,
                                  string theWhat, double theTolerance = Oracle.Tolerance)
     {
         using var aNBasis = theNative.BasisCurve();
         using var aNCircle = N.Geom_Circle.DownCast(aNBasis);
         using var aNCirc = aNCircle!.Circ();
-        Circle3D aCirc = ((Geom_Circle)thePort.BasisCurve()).Circ();
+        Circle3D aCirc = ((CircleCurve3D)thePort.BasisCurve()).Circ();
         theOracle.Same(aNCirc.Radius(), aCirc.Radius(), theWhat + " radius", theTolerance);
         using var aNPos = aNCirc.Position();
         using var aNLoc = aNPos.Location();
@@ -64,9 +65,9 @@ public class GCOracleTests(ITestOutputHelper output)
             using var aNP3 = Oracle.ToNative(aP3);
 
             using var aNative = new N.GC_MakeArcOfCircle(aNP1, aNP2, aNP3);
-            var aPort = new GC_MakeArcOfCircle(aP1, aP2, aP3);
+            var aPort = new MakeArcOfCircle(aP1, aP2, aP3);
             SameStatus(anOracle, aNative, aPort, "three points");
-            if (!aNative.IsDone() || !aPort.IsDone())
+            if (!aNative.IsDone() || !aPort.IsDone)
             {
                 continue;
             }
@@ -90,9 +91,9 @@ public class GCOracleTests(ITestOutputHelper output)
             using var aNV = Oracle.ToNative(aV);
 
             using var aNative = new N.GC_MakeArcOfCircle(aNP1, aNV, aNP2);
-            var aPort = new GC_MakeArcOfCircle(aP1, aV, aP2);
+            var aPort = new MakeArcOfCircle(aP1, aV, aP2);
             SameStatus(anOracle, aNative, aPort, "tangent");
-            if (!aNative.IsDone() || !aPort.IsDone())
+            if (!aNative.IsDone() || !aPort.IsDone)
             {
                 continue;
             }
@@ -123,17 +124,17 @@ public class GCOracleTests(ITestOutputHelper output)
             using (var aN = new N.GC_MakeArcOfCircle(aNC, aNP1, aNP2, aSense))
             using (var aNArc = aN.Value())
             {
-                SameArc(anOracle, aNArc!, new GC_MakeArcOfCircle(aC, aP1, aP2, aSense).Value(), "two points");
+                SameArc(anOracle, aNArc!, new MakeArcOfCircle(aC, aP1, aP2, aSense).Value(), "two points");
             }
             using (var aN = new N.GC_MakeArcOfCircle(aNC, aNP1, aAlpha2, aSense))
             using (var aNArc = aN.Value())
             {
-                SameArc(anOracle, aNArc!, new GC_MakeArcOfCircle(aC, aP1, aAlpha2, aSense).Value(), "point, angle");
+                SameArc(anOracle, aNArc!, new MakeArcOfCircle(aC, aP1, aAlpha2, aSense).Value(), "point, angle");
             }
             using (var aN = new N.GC_MakeArcOfCircle(aNC, aAlpha1, aAlpha2, aSense))
             using (var aNArc = aN.Value())
             {
-                SameArc(anOracle, aNArc!, new GC_MakeArcOfCircle(aC, aAlpha1, aAlpha2, aSense).Value(), "angles");
+                SameArc(anOracle, aNArc!, new MakeArcOfCircle(aC, aAlpha1, aAlpha2, aSense).Value(), "angles");
             }
         }
         anOracle.Report("GC_MakeArcOfCircle on a circle");
@@ -160,17 +161,17 @@ public class GCOracleTests(ITestOutputHelper output)
             using (var aN = new N.GC_MakeArcOfEllipse(aNE, aNP1, aNP2, aSense))
             using (var aNArc = aN.Value())
             {
-                SameArc(anOracle, aNArc!, new GC_MakeArcOfEllipse(aE, aP1, aP2, aSense).Value(), "two points");
+                SameArc(anOracle, aNArc!, new MakeArcOfEllipse(aE, aP1, aP2, aSense).Value(), "two points");
             }
             using (var aN = new N.GC_MakeArcOfEllipse(aNE, aNP1, aAlpha2, aSense))
             using (var aNArc = aN.Value())
             {
-                SameArc(anOracle, aNArc!, new GC_MakeArcOfEllipse(aE, aP1, aAlpha2, aSense).Value(), "point, angle");
+                SameArc(anOracle, aNArc!, new MakeArcOfEllipse(aE, aP1, aAlpha2, aSense).Value(), "point, angle");
             }
             using (var aN = new N.GC_MakeArcOfEllipse(aNE, aAlpha1, aAlpha2, aSense))
             using (var aNArc = aN.Value())
             {
-                SameArc(anOracle, aNArc!, new GC_MakeArcOfEllipse(aE, aAlpha1, aAlpha2, aSense).Value(), "angles");
+                SameArc(anOracle, aNArc!, new MakeArcOfEllipse(aE, aAlpha1, aAlpha2, aSense).Value(), "angles");
             }
         }
         anOracle.Report("GC_MakeArcOfEllipse");
@@ -196,17 +197,17 @@ public class GCOracleTests(ITestOutputHelper output)
             using (var aN = new N.GC_MakeArcOfHyperbola(aNH, aNP1, aNP2, aSense))
             using (var aNArc = aN.Value())
             {
-                SameArc(anOracle, aNArc!, new GC_MakeArcOfHyperbola(aH, aP1, aP2, aSense).Value(), "two points");
+                SameArc(anOracle, aNArc!, new MakeArcOfHyperbola(aH, aP1, aP2, aSense).Value(), "two points");
             }
             using (var aN = new N.GC_MakeArcOfHyperbola(aNH, aNP1, aAlpha2, aSense))
             using (var aNArc = aN.Value())
             {
-                SameArc(anOracle, aNArc!, new GC_MakeArcOfHyperbola(aH, aP1, aAlpha2, aSense).Value(), "point, angle");
+                SameArc(anOracle, aNArc!, new MakeArcOfHyperbola(aH, aP1, aAlpha2, aSense).Value(), "point, angle");
             }
             using (var aN = new N.GC_MakeArcOfHyperbola(aNH, aAlpha1, aAlpha2, aSense))
             using (var aNArc = aN.Value())
             {
-                SameArc(anOracle, aNArc!, new GC_MakeArcOfHyperbola(aH, aAlpha1, aAlpha2, aSense).Value(), "angles");
+                SameArc(anOracle, aNArc!, new MakeArcOfHyperbola(aH, aAlpha1, aAlpha2, aSense).Value(), "angles");
             }
         }
         anOracle.Report("GC_MakeArcOfHyperbola");
@@ -232,17 +233,17 @@ public class GCOracleTests(ITestOutputHelper output)
             using (var aN = new N.GC_MakeArcOfParabola(aNP, aNP1, aNP2, aSense))
             using (var aNArc = aN.Value())
             {
-                SameArc(anOracle, aNArc!, new GC_MakeArcOfParabola(aPb, aP1, aP2, aSense).Value(), "two points");
+                SameArc(anOracle, aNArc!, new MakeArcOfParabola(aPb, aP1, aP2, aSense).Value(), "two points");
             }
             using (var aN = new N.GC_MakeArcOfParabola(aNP, aNP1, aAlpha2, aSense))
             using (var aNArc = aN.Value())
             {
-                SameArc(anOracle, aNArc!, new GC_MakeArcOfParabola(aPb, aP1, aAlpha2, aSense).Value(), "point, angle");
+                SameArc(anOracle, aNArc!, new MakeArcOfParabola(aPb, aP1, aAlpha2, aSense).Value(), "point, angle");
             }
             using (var aN = new N.GC_MakeArcOfParabola(aNP, aAlpha1, aAlpha2, aSense))
             using (var aNArc = aN.Value())
             {
-                SameArc(anOracle, aNArc!, new GC_MakeArcOfParabola(aPb, aAlpha1, aAlpha2, aSense).Value(), "angles");
+                SameArc(anOracle, aNArc!, new MakeArcOfParabola(aPb, aAlpha1, aAlpha2, aSense).Value(), "angles");
             }
         }
         anOracle.Report("GC_MakeArcOfParabola");

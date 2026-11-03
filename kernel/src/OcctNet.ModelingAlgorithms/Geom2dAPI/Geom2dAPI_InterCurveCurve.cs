@@ -6,6 +6,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -20,18 +21,18 @@ namespace Occt;
 public class Geom2dAPI_InterCurveCurve
 {
     private bool myIsDone;
-    private Geom2d_Curve? myCurve1;
-    private Geom2d_Curve? myCurve2;
+    private Curve2D? myCurve1;
+    private Curve2D? myCurve2;
     private Geom2dInt_GInter myIntersector = new();
 
-    /// <summary>An empty intersector; use <see cref="Init(Geom2d_Curve, Geom2d_Curve, double)"/>.</summary>
+    /// <summary>An empty intersector; use <see cref="Init(Curve2D, Curve2D, double)"/>.</summary>
     public Geom2dAPI_InterCurveCurve()
     {
         myIsDone = false;
     }
 
     /// <summary>The intersections between <paramref name="C1"/> and <paramref name="C2"/>.</summary>
-    public Geom2dAPI_InterCurveCurve(Geom2d_Curve C1, Geom2d_Curve C2, double Tol = 1.0e-6)
+    public Geom2dAPI_InterCurveCurve(Curve2D C1, Curve2D C2, double Tol = 1.0e-6)
     {
         Init(C1, C2, Tol);
     }
@@ -40,35 +41,35 @@ public class Geom2dAPI_InterCurveCurve
     /// The self-intersections of <paramref name="C1"/>. <paramref name="Tol"/> is the precision of the points and,
     /// for tangential intersections, the size of the segments.
     /// </summary>
-    public Geom2dAPI_InterCurveCurve(Geom2d_Curve C1, double Tol = 1.0e-6)
+    public Geom2dAPI_InterCurveCurve(Curve2D C1, double Tol = 1.0e-6)
     {
         Init(C1, Tol);
     }
 
     /// <summary>Computes the intersections between <paramref name="C1"/> and <paramref name="C2"/>.</summary>
     /// <exception cref="NullObjectException">A curve is null.</exception>
-    public void Init(Geom2d_Curve C1, Geom2d_Curve C2, double Tol = 1.0e-6)
+    public void Init(Curve2D C1, Curve2D C2, double Tol = 1.0e-6)
     {
         Standard_NullObject_Raise_if(C1 is null, "Geom2dAPI_InterCurveCurve::Init - C1 is null");
         Standard_NullObject_Raise_if(C2 is null, "Geom2dAPI_InterCurveCurve::Init - C2 is null");
-        myCurve1 = C1!.Copy() as Geom2d_Curve;
-        myCurve2 = C2!.Copy() as Geom2d_Curve;
+        myCurve1 = C1!.Copy() as Curve2D;
+        myCurve2 = C2!.Copy() as Curve2D;
 
-        Geom2dAdaptor_Curve AC1 = new(C1);
-        Geom2dAdaptor_Curve AC2 = new(C2);
+        CurveAdaptor2D AC1 = new(C1);
+        CurveAdaptor2D AC2 = new(C2);
         myIntersector = new Geom2dInt_GInter(AC1, AC2, Tol, Tol);
         myIsDone = myIntersector.IsDone();
     }
 
     /// <summary>Computes the self-intersections of <paramref name="C1"/>.</summary>
     /// <exception cref="NullObjectException">The curve is null.</exception>
-    public void Init(Geom2d_Curve C1, double Tol = 1.0e-6)
+    public void Init(Curve2D C1, double Tol = 1.0e-6)
     {
         Standard_NullObject_Raise_if(C1 is null, "Geom2dAPI_InterCurveCurve::Init - C1 is null");
-        myCurve1 = C1!.Copy() as Geom2d_Curve;
+        myCurve1 = C1!.Copy() as Curve2D;
         myCurve2 = null;
 
-        Geom2dAdaptor_Curve AC1 = new(C1);
+        CurveAdaptor2D AC1 = new(C1);
         myIntersector = new Geom2dInt_GInter(AC1, Tol, Tol);
         myIsDone = myIntersector.IsDone();
     }
@@ -118,7 +119,7 @@ public class Geom2dAPI_InterCurveCurve
     /// </remarks>
     /// <exception cref="OutOfRangeException"><paramref name="theIndex"/> is not in [1, NbSegments].</exception>
     /// <exception cref="NullObjectException">The algorithm was not initialised.</exception>
-    public void Segment(int theIndex, out Geom2d_Curve theCurve1, out Geom2d_Curve theCurve2)
+    public void Segment(int theIndex, out Curve2D theCurve1, out Curve2D theCurve2)
     {
         Standard_OutOfRange_Raise_if(theIndex < 1 || theIndex > NbSegments(), "Geom2dAPI_InterCurveCurve::Segment");
 
@@ -171,14 +172,14 @@ public class Geom2dAPI_InterCurveCurve
             }
         }
 
-        theCurve1 = new Geom2d_TrimmedCurve(myCurve1, aU1, aU2);
+        theCurve1 = new TrimmedCurve2D(myCurve1, aU1, aU2);
         if (myCurve2 is null)
         {
-            theCurve2 = new Geom2d_TrimmedCurve(myCurve1, aV1, aV2);
+            theCurve2 = new TrimmedCurve2D(myCurve1, aV1, aV2);
         }
         else
         {
-            theCurve2 = new Geom2d_TrimmedCurve(myCurve2, aV1, aV2);
+            theCurve2 = new TrimmedCurve2D(myCurve2, aV1, aV2);
         }
     }
 

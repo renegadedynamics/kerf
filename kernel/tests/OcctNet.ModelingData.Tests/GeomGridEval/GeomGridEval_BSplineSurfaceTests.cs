@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomGridEval_BSplineSurface_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -24,17 +26,17 @@ public class GeomGridEval_BSplineSurfaceTest
 
     private static NCollection_Array1<int> Mults2(int theMult) => NCollection_Array1<int>.From([theMult, theMult]);
 
-    private static Geom_BSplineSurface CreateSimpleBSplineSurface()
+    private static BSplineSurface CreateSimpleBSplineSurface()
     {
         NCollection_Array2<Point3D> aPoles = new(1, 2, 1, 2);
         aPoles.SetValue(1, 1, new Point3D(0, 0, 0));
         aPoles.SetValue(2, 1, new Point3D(1, 0, 0));
         aPoles.SetValue(1, 2, new Point3D(0, 1, 0));
         aPoles.SetValue(2, 2, new Point3D(1, 1, 1)); // Non-planar corner
-        return new Geom_BSplineSurface(aPoles, Knots2(), Knots2(), Mults2(2), Mults2(2), 1, 1);
+        return new BSplineSurface(aPoles, Knots2(), Knots2(), Mults2(2), Mults2(2), 1, 1);
     }
 
-    private static Geom_BSplineSurface CreateRationalBSplineSurface()
+    private static BSplineSurface CreateRationalBSplineSurface()
     {
         NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
         NCollection_Array2<double> aWeights = new(1, 3, 1, 3);
@@ -49,10 +51,10 @@ public class GeomGridEval_BSplineSurfaceTest
                 aWeights.SetValue(i, j, (i == 2 && j == 2) ? 2.0 : 1.0);
             }
         }
-        return new Geom_BSplineSurface(aPoles, aWeights, Knots2(), Knots2(), Mults2(3), Mults2(3), 2, 2);
+        return new BSplineSurface(aPoles, aWeights, Knots2(), Knots2(), Mults2(3), Mults2(3), 2, 2);
     }
 
-    private static Geom_BSplineSurface CreateMultiSpanBSplineSurface()
+    private static BSplineSurface CreateMultiSpanBSplineSurface()
     {
         NCollection_Array2<Point3D> aPoles = new(1, 5, 1, 5);
         for (int i = 1; i <= 5; ++i)
@@ -67,11 +69,11 @@ public class GeomGridEval_BSplineSurfaceTest
         }
         NCollection_Array1<double> aKnots = NCollection_Array1<double>.From([0.0, 0.5, 1.0]);
         NCollection_Array1<int> aMults = NCollection_Array1<int>.From([3, 2, 3]);
-        return new Geom_BSplineSurface(aPoles, aKnots, new NCollection_Array1<double>(aKnots), aMults,
+        return new BSplineSurface(aPoles, aKnots, new NCollection_Array1<double>(aKnots), aMults,
                                        new NCollection_Array1<int>(aMults), 2, 2);
     }
 
-    private static void CheckPointsAgainstValue(Geom_BSplineSurface theSurf,
+    private static void CheckPointsAgainstValue(BSplineSurface theSurf,
                                                 NCollection_Array1<double> theUParams,
                                                 NCollection_Array1<double> theVParams,
                                                 NCollection_Array2<Point3D> theGrid)
@@ -88,7 +90,7 @@ public class GeomGridEval_BSplineSurfaceTest
 
     // Isoline tests: compare against Geom_BSplineSurface::D0.
     // Note: ColLength() = number of U params (rows), RowLength() = number of V params (columns)
-    private static void CheckPointsAgainstD0(Geom_BSplineSurface theSurf,
+    private static void CheckPointsAgainstD0(BSplineSurface theSurf,
                                              NCollection_Array1<double> theUParams,
                                              NCollection_Array1<double> theVParams,
                                              NCollection_Array2<Point3D> theGrid)
@@ -112,8 +114,8 @@ public class GeomGridEval_BSplineSurfaceTest
     [Fact]
     public void BasicEvaluation()
     {
-        Geom_BSplineSurface aSurf = CreateSimpleBSplineSurface();
-        GeomGridEval_BSplineSurface anEval = new(aSurf);
+        BSplineSurface aSurf = CreateSimpleBSplineSurface();
+        BSplineSurfaceGrid anEval = new(aSurf);
         Assert.NotNull(anEval.Geometry());
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 5);
@@ -126,8 +128,8 @@ public class GeomGridEval_BSplineSurfaceTest
     [Fact]
     public void CornerPoints()
     {
-        Geom_BSplineSurface aSurf = CreateSimpleBSplineSurface();
-        GeomGridEval_BSplineSurface anEval = new(aSurf);
+        BSplineSurface aSurf = CreateSimpleBSplineSurface();
+        BSplineSurfaceGrid anEval = new(aSurf);
 
         NCollection_Array1<double> aUParams = NCollection_Array1<double>.From([0.0, 1.0]);
         NCollection_Array1<double> aVParams = NCollection_Array1<double>.From([0.0, 1.0]);
@@ -143,8 +145,8 @@ public class GeomGridEval_BSplineSurfaceTest
     [Fact]
     public void RationalSurface()
     {
-        Geom_BSplineSurface aSurf = CreateRationalBSplineSurface();
-        GeomGridEval_BSplineSurface anEval = new(aSurf);
+        BSplineSurface aSurf = CreateRationalBSplineSurface();
+        BSplineSurfaceGrid anEval = new(aSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 11);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 11);
@@ -156,8 +158,8 @@ public class GeomGridEval_BSplineSurfaceTest
     [Fact]
     public void MultiSpanSurface()
     {
-        Geom_BSplineSurface aSurf = CreateMultiSpanBSplineSurface();
-        GeomGridEval_BSplineSurface anEval = new(aSurf);
+        BSplineSurface aSurf = CreateMultiSpanBSplineSurface();
+        BSplineSurfaceGrid anEval = new(aSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 21);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 21);
@@ -181,8 +183,8 @@ public class GeomGridEval_BSplineSurfaceTest
             }
         }
 
-        Geom_BSplineSurface aSurf = new(aPoles, Knots2(), Knots2(), Mults2(4), Mults2(4), 3, 3);
-        GeomGridEval_BSplineSurface anEval = new(aSurf);
+        BSplineSurface aSurf = new(aPoles, Knots2(), Knots2(), Mults2(4), Mults2(4), 3, 3);
+        BSplineSurfaceGrid anEval = new(aSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 17);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 17);
@@ -198,8 +200,8 @@ public class GeomGridEval_BSplineSurfaceTest
     [Fact]
     public void IsolineU_CompareToGeomD0()
     {
-        Geom_BSplineSurface aBSpline = CreateMultiSpanBSplineSurface();
-        GeomGridEval_BSplineSurface anEval = new(aBSpline);
+        BSplineSurface aBSpline = CreateMultiSpanBSplineSurface();
+        BSplineSurfaceGrid anEval = new(aBSpline);
 
         // U-isoline: 1 U param, multiple V params (triggers isoline path)
         NCollection_Array1<double> aUParams = NCollection_Array1<double>.From([0.5]);
@@ -212,8 +214,8 @@ public class GeomGridEval_BSplineSurfaceTest
     [Fact]
     public void IsolineV_CompareToGeomD0()
     {
-        Geom_BSplineSurface aBSpline = CreateMultiSpanBSplineSurface();
-        GeomGridEval_BSplineSurface anEval = new(aBSpline);
+        BSplineSurface aBSpline = CreateMultiSpanBSplineSurface();
+        BSplineSurfaceGrid anEval = new(aBSpline);
 
         // V-isoline: multiple U params, 1 V param (triggers isoline path)
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 15);
@@ -226,8 +228,8 @@ public class GeomGridEval_BSplineSurfaceTest
     [Fact]
     public void IsolineMultiSpan_CompareToGeomD0()
     {
-        Geom_BSplineSurface aBSpline = CreateMultiSpanBSplineSurface();
-        GeomGridEval_BSplineSurface anEval = new(aBSpline);
+        BSplineSurface aBSpline = CreateMultiSpanBSplineSurface();
+        BSplineSurfaceGrid anEval = new(aBSpline);
 
         // U-isoline on multi-span surface
         NCollection_Array1<double> aUParams = NCollection_Array1<double>.From([0.35]);
@@ -240,8 +242,8 @@ public class GeomGridEval_BSplineSurfaceTest
     [Fact]
     public void IsolineRational_CompareToGeomD0()
     {
-        Geom_BSplineSurface aBSpline = CreateRationalBSplineSurface();
-        GeomGridEval_BSplineSurface anEval = new(aBSpline);
+        BSplineSurface aBSpline = CreateRationalBSplineSurface();
+        BSplineSurfaceGrid anEval = new(aBSpline);
 
         // V-isoline on rational surface
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 15);
@@ -258,13 +260,13 @@ public class GeomGridEval_BSplineSurfaceTest
     [Fact]
     public void DerivativeD1()
     {
-        Geom_BSplineSurface aSurf = CreateSimpleBSplineSurface();
-        GeomGridEval_BSplineSurface anEval = new(aSurf);
+        BSplineSurface aSurf = CreateSimpleBSplineSurface();
+        BSplineSurfaceGrid anEval = new(aSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 5);
 
-        NCollection_Array2<Geom_Surface.ResD1> aGrid = anEval.EvaluateGridD1(aUParams, aVParams);
+        NCollection_Array2<Surface.ResD1> aGrid = anEval.EvaluateGridD1(aUParams, aVParams);
 
         for (int iU = 1; iU <= 5; ++iU)
         {
@@ -281,13 +283,13 @@ public class GeomGridEval_BSplineSurfaceTest
     [Fact]
     public void DerivativeD2()
     {
-        Geom_BSplineSurface aSurf = CreateSimpleBSplineSurface();
-        GeomGridEval_BSplineSurface anEval = new(aSurf);
+        BSplineSurface aSurf = CreateSimpleBSplineSurface();
+        BSplineSurfaceGrid anEval = new(aSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 5);
 
-        NCollection_Array2<Geom_Surface.ResD2> aGrid = anEval.EvaluateGridD2(aUParams, aVParams);
+        NCollection_Array2<Surface.ResD2> aGrid = anEval.EvaluateGridD2(aUParams, aVParams);
 
         for (int iU = 1; iU <= 5; ++iU)
         {
@@ -308,15 +310,15 @@ public class GeomGridEval_BSplineSurfaceTest
     [Fact]
     public void DerivativeD3()
     {
-        Geom_BSplineSurface aSurf = CreateMultiSpanBSplineSurface();
-        GeomGridEval_BSplineSurface anEval = new(aSurf);
+        BSplineSurface aSurf = CreateMultiSpanBSplineSurface();
+        BSplineSurfaceGrid anEval = new(aSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 11);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 11);
 
-        NCollection_Array2<Geom_Surface.ResD3> aGrid = anEval.EvaluateGridD3(aUParams, aVParams);
+        NCollection_Array2<Surface.ResD3> aGrid = anEval.EvaluateGridD3(aUParams, aVParams);
 
-        GeomAdaptor_Surface anAdaptor = new(aSurf);
+        SurfaceAdaptor anAdaptor = new(aSurf);
         for (int iU = 1; iU <= 11; ++iU)
         {
             for (int iV = 1; iV <= 11; ++iV)
@@ -342,9 +344,9 @@ public class GeomGridEval_BSplineSurfaceTest
     // DN (Arbitrary Order Derivative) Tests
     //=================================================================================================
 
-    private static void CheckDN(Geom_BSplineSurface theSurf, int theNbPoints, int theNU, int theNV)
+    private static void CheckDN(BSplineSurface theSurf, int theNbPoints, int theNU, int theNV)
     {
-        GeomGridEval_BSplineSurface anEval = new(theSurf);
+        BSplineSurfaceGrid anEval = new(theSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, theNbPoints);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, theNbPoints);
@@ -382,8 +384,8 @@ public class GeomGridEval_BSplineSurfaceTest
     [Fact]
     public void DerivativeDN_BeyondDegree()
     {
-        Geom_BSplineSurface aSurf = CreateSimpleBSplineSurface();
-        GeomGridEval_BSplineSurface anEval = new(aSurf);
+        BSplineSurface aSurf = CreateSimpleBSplineSurface();
+        BSplineSurfaceGrid anEval = new(aSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 5);
@@ -402,7 +404,7 @@ public class GeomGridEval_BSplineSurfaceTest
     [Fact]
     public void DerivativeDN_MultiSpan()
     {
-        Geom_BSplineSurface aSurf = CreateMultiSpanBSplineSurface();
+        BSplineSurface aSurf = CreateMultiSpanBSplineSurface();
         int[][] aTestCases = [[1, 0], [0, 1], [1, 1], [2, 0], [0, 2], [2, 1], [1, 2]];
         foreach (int[] aCase in aTestCases)
         {
@@ -413,7 +415,7 @@ public class GeomGridEval_BSplineSurfaceTest
     [Fact]
     public void DerivativeDN_RationalSurface()
     {
-        Geom_BSplineSurface aSurf = CreateRationalBSplineSurface();
+        BSplineSurface aSurf = CreateRationalBSplineSurface();
         for (int aNU = 0; aNU <= 2; ++aNU)
         {
             for (int aNV = 0; aNV <= 2; ++aNV)

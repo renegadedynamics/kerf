@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
@@ -34,7 +35,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
     private NCollection_HArray1<Vector3D>? HArrTangent;
     private NCollection_HArray1<Vector3D>? HArrNormal;
 
-    private static double ComputeTorsion(double Param, Adaptor3d_Curve aCurve)
+    private static double ComputeTorsion(double Param, CurveAdaptorBase aCurve)
     {
         double Torsion;
 
@@ -143,7 +144,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         }
     }
 
-    private static bool FindPlane(Adaptor3d_Curve theC, ref Geom_Plane? theP)
+    private static bool FindPlane(CurveAdaptorBase theC, ref PlaneSurface? theP)
     {
         bool found = true;
         NCollection_HArray1<Point3D>? TabP = null;
@@ -157,25 +158,25 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
             break;
 
             case Circle:
-                theP = new Geom_Plane(new CoordinateSystem(theC.Circle().Position()));
+                theP = new PlaneSurface(new CoordinateSystem(theC.Circle().Position()));
                 break;
 
             case Ellipse:
-                theP = new Geom_Plane(new CoordinateSystem(theC.Ellipse().Position()));
+                theP = new PlaneSurface(new CoordinateSystem(theC.Ellipse().Position()));
                 break;
 
             case Hyperbola:
-                theP = new Geom_Plane(new CoordinateSystem(theC.Hyperbola().Position()));
+                theP = new PlaneSurface(new CoordinateSystem(theC.Hyperbola().Position()));
                 break;
 
             case Parabola:
-                theP = new Geom_Plane(new CoordinateSystem(theC.Parabola().Position()));
+                theP = new PlaneSurface(new CoordinateSystem(theC.Parabola().Position()));
                 break;
 
             case BezierCurve:
             {
-                Geom_BezierCurve GC = theC.Bezier();
-                int nbp = GC.NbPoles();
+                BezierCurve3D GC = theC.Bezier();
+                int nbp = GC.PoleCount;
                 if (nbp < 2)
                 {
                     found = false;
@@ -193,8 +194,8 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
 
             case BSplineCurve:
             {
-                Geom_BSplineCurve GC = theC.BSpline();
-                int nbp = GC.NbPoles();
+                BSplineCurve3D GC = theC.BSpline();
+                int nbp = GC.PoleCount;
                 if (nbp < 2)
                 {
                     found = false;
@@ -231,14 +232,14 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
 
         if (TabP is not null)
         { // Recherche d'un plan moyen et controle
-            GeomLib.AxeOfInertia(TabP, out Frame3D inertia, out bool issingular);
+            global::Kerf.Engine.Geometry.Library.GeomLib.AxeOfInertia(TabP, out Frame3D inertia, out bool issingular);
             if (issingular)
             {
                 found = false;
             }
             else
             {
-                theP = new Geom_Plane(new CoordinateSystem(inertia));
+                theP = new PlaneSurface(new CoordinateSystem(inertia));
             }
             if (found)
             {
@@ -287,7 +288,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         return copy;
     }
 
-    public override bool SetCurve(Adaptor3d_Curve C)
+    public override bool SetCurve(CurveAdaptorBase C)
     {
         base.SetCurve(C);
         if (C is not null)
@@ -352,7 +353,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
             }
             ((Law_Composite)EvolAroundT).ChangeLaws().Append(Func!);
         }
-        if (myTrimmed.IsPeriodic())
+        if (myTrimmed.IsPeriodic)
         {
             ((Law_Composite)EvolAroundT).SetPeriodic();
         }
@@ -392,7 +393,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         frenet.SetInterval(First, Last); // To have right evaluation at bounds
         GeomFill_SnglrFunc CS = new(myCurve!);
         Box aCurveBoundBox = new();
-        BndLib_Add3dCurve.Add(CS, First, Last, 1.0e-2, ref aCurveBoundBox);
+        Add3dCurve.Add(CS, First, Last, 1.0e-2, ref aCurveBoundBox);
         double LengthMin = aCurveBoundBox.GetGap() * 1.0e-4;
 
         aT = new Vector3D(0, 0, 0);
@@ -401,7 +402,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         double angleAT = 0.0;
         double currStep = Step;
 
-        Geom_Plane? aPlane = null;
+        PlaneSurface? aPlane = null;
         bool isPlanar = false;
         if (!myForEvaluation)
         {
@@ -739,7 +740,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
 
         frenet.Intervals(FrenetInt, S);
         EvolAroundT.Intervals(LawInt, S);
-        GeomLib.FuseIntervals(FrenetInt, LawInt, Fusion, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
+        global::Kerf.Engine.Geometry.Library.GeomLib.FuseIntervals(FrenetInt, LawInt, Fusion, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
 
         return Fusion.Length() - 1;
     }
@@ -768,7 +769,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
 
         frenet.Intervals(FrenetInt, S);
         EvolAroundT.Intervals(LawInt, S);
-        GeomLib.FuseIntervals(FrenetInt, LawInt, Fusion, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
+        global::Kerf.Engine.Geometry.Library.GeomLib.FuseIntervals(FrenetInt, LawInt, Fusion, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
 
         for (int i = 1; i <= Fusion.Length(); i++)
         {

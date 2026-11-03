@@ -2,6 +2,8 @@
 // Omitted:
 // - TestGeomEqualTypeMismatch.test_edge_vs_non_edge, test_wire_vs_non_wire: GeomEqual is typed (Edge with Edge, Wire
 //   with Wire), so comparing an edge with a wire doesn't compile.
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Occt;
 using Ops = Build123d.Operations;
@@ -36,15 +38,15 @@ internal static class GeomEqualObjects
         var multArray = new NCollection_Array1<int>(1, mults.Length);
         for (int i = 0; i < mults.Length; i++)
             multArray.SetValue(i + 1, mults[i]);
-        Geom_BSplineCurve curve;
+        BSplineCurve3D curve;
         if (weights is null)
-            curve = new Geom_BSplineCurve(poleArray, knotArray, multArray, degree, false);
+            curve = new BSplineCurve3D(poleArray, knotArray, multArray, degree, false);
         else
         {
             var weightArray = new NCollection_Array1<double>(1, weights.Length);
             for (int i = 0; i < weights.Length; i++)
                 weightArray.SetValue(i + 1, weights[i]);
-            curve = new Geom_BSplineCurve(poleArray, weightArray, knotArray, multArray, degree, false);
+            curve = new BSplineCurve3D(poleArray, weightArray, knotArray, multArray, degree, false);
         }
         var maker = new BRepBuilderAPI_MakeEdge(curve);
         return new Edge(maker.Edge());
@@ -415,11 +417,11 @@ public class EdgeGeomEqualOffsetTests
         double first, last;
         var adaptor = spline.GeomAdaptor();
         (first, last) = (adaptor.FirstParameter(), adaptor.LastParameter());
-        var topoEdge = TopoDS.Edge(spline.Wrapped);
+        var topoEdge = ShapeCasts.Edge(spline.Wrapped);
         double f = 0, l = 0;
-        var basis = BRep_Tool.Curve(topoEdge, out f, out l);
+        var basis = Tool.Curve(topoEdge, out f, out l);
         var dir = (direction ?? new Vector(0, 0, 1)).ToGpDir();
-        var curve = new Geom_OffsetCurve(basis!, distance, dir);
+        var curve = new OffsetCurve3D(basis!, distance, dir);
         var maker = new BRepBuilderAPI_MakeEdge(curve, first, last);
         var edge = new Edge(maker.Edge());
         Assert.Equal(GeomType.Offset, edge.GeomType);

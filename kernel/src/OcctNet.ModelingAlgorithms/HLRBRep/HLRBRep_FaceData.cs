@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Brep;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -61,11 +65,11 @@ public sealed class HLRBRep_FaceData
     }
 
     /// <summary>Sets the face, its orientation, whether it is closed and its number of wires.</summary>
-    public void Set(in TopoDS_Face FG, TopAbs_Orientation Or, bool Cl, int NW)
+    public void Set(in Face FG, Orientation Or, bool Cl, int NW)
     {
         Closed(Cl);
         Geometry().Surface(FG);
-        myTolerance = (float)(BRep_Tool.Tolerance(FG));
+        myTolerance = (float)(Tool.Tolerance(FG));
         Orientation(Or);
         Wires() = new HLRAlgo_WiresBlock(NW);
     }
@@ -77,7 +81,7 @@ public sealed class HLRBRep_FaceData
     }
 
     /// <summary>Sets the edge EWI of the wire WI: its index, orientation and flags.</summary>
-    public void SetWEdge(int WI, int EWI, int EI, TopAbs_Orientation Or, bool OutL, bool Inte, bool Dble, bool IsoL)
+    public void SetWEdge(int WI, int EWI, int EI, Orientation Or, bool OutL, bool Inte, bool Dble, bool IsoL)
     {
         Wires()!.Wire(WI)!.Edge(EWI, EI);
         Wires()!.Wire(WI)!.Orientation(EWI, Or);
@@ -157,9 +161,9 @@ public sealed class HLRBRep_FaceData
 
     public void Size(double S) => mySize = S;
 
-    public TopAbs_Orientation Orientation() => ((TopAbs_Orientation)(myFlags & EMaskOrient));
+    public Orientation Orientation() => ((Orientation)(myFlags & EMaskOrient));
 
-    public void Orientation(TopAbs_Orientation O)
+    public void Orientation(Orientation O)
     {
         myFlags &= ~EMaskOrient;
         myFlags |= ((int)O & EMaskOrient);

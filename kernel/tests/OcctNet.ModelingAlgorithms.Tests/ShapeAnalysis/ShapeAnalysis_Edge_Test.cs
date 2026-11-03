@@ -3,8 +3,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -16,7 +18,7 @@ public class ShapeAnalysis_EdgeTest
     {
         var aMakeEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0.0, 0.0, 0.0), new Point3D(10.0, 0.0, 0.0));
         Assert.True(aMakeEdge.IsDone());
-        TopoDS_Edge anEdge = aMakeEdge.Edge();
+        Edge anEdge = aMakeEdge.Edge();
 
         var anAnalyzer = new ShapeAnalysis_Edge();
         Assert.True(anAnalyzer.HasCurve3d(anEdge));
@@ -27,14 +29,14 @@ public class ShapeAnalysis_EdgeTest
     {
         var aMakeEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0.0, 0.0, 0.0), new Point3D(10.0, 0.0, 0.0));
         Assert.True(aMakeEdge.IsDone());
-        TopoDS_Edge anEdge = aMakeEdge.Edge();
+        Edge anEdge = aMakeEdge.Edge();
 
         var anAnalyzer = new ShapeAnalysis_Edge();
-        TopoDS_Vertex aFirstVertex = anAnalyzer.FirstVertex(anEdge);
-        TopoDS_Vertex aLastVertex = anAnalyzer.LastVertex(anEdge);
+        Vertex aFirstVertex = anAnalyzer.FirstVertex(anEdge);
+        Vertex aLastVertex = anAnalyzer.LastVertex(anEdge);
 
-        Assert.False(aFirstVertex.IsNull());
-        Assert.False(aLastVertex.IsNull());
+        Assert.False(aFirstVertex.IsNull);
+        Assert.False(aLastVertex.IsNull);
     }
 
     [Fact]
@@ -42,7 +44,7 @@ public class ShapeAnalysis_EdgeTest
     {
         var aMakeEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0.0, 0.0, 0.0), new Point3D(10.0, 0.0, 0.0));
         Assert.True(aMakeEdge.IsDone());
-        TopoDS_Edge anEdge = aMakeEdge.Edge();
+        Edge anEdge = aMakeEdge.Edge();
 
         var anAnalyzer = new ShapeAnalysis_Edge();
         Assert.False(anAnalyzer.IsClosed3d(anEdge));
@@ -51,10 +53,10 @@ public class ShapeAnalysis_EdgeTest
     [Fact]
     public void IsClosed_ClosedEdge()
     {
-        var aCircle = new Geom_Circle(new Frame3D(new Point3D(0.0, 0.0, 0.0), Constants.DZ()), 5.0);
+        var aCircle = new CircleCurve3D(new Frame3D(new Point3D(0.0, 0.0, 0.0), Constants.DZ()), 5.0);
         var aMakeEdge = new BRepBuilderAPI_MakeEdge(aCircle);
         Assert.True(aMakeEdge.IsDone());
-        TopoDS_Edge anEdge = aMakeEdge.Edge();
+        Edge anEdge = aMakeEdge.Edge();
 
         var anAnalyzer = new ShapeAnalysis_Edge();
         Assert.True(anAnalyzer.IsClosed3d(anEdge));
@@ -64,16 +66,16 @@ public class ShapeAnalysis_EdgeTest
     public void IsSeam_NonSeam()
     {
         var aMakeBox = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0);
-        TopoDS_Shape aBox = aMakeBox.Shape();
+        Shape aBox = aMakeBox.Shape();
         Assert.True(aMakeBox.IsDone());
 
-        var aFaceExp = new TopExp_Explorer(aBox, TopAbs_FACE);
+        var aFaceExp = new Explorer(aBox, ShapeType.Face);
         Assert.True(aFaceExp.More());
-        TopoDS_Face aFace = TopoDS.Face(aFaceExp.Current());
+        Face aFace = ShapeCasts.Face(aFaceExp.Current());
 
-        var anEdgeExp = new TopExp_Explorer(aFace, TopAbs_EDGE);
+        var anEdgeExp = new Explorer(aFace, ShapeType.Edge);
         Assert.True(anEdgeExp.More());
-        TopoDS_Edge anEdge = TopoDS.Edge(anEdgeExp.Current());
+        Edge anEdge = ShapeCasts.Edge(anEdgeExp.Current());
 
         var anAnalyzer = new ShapeAnalysis_Edge();
         Assert.False(anAnalyzer.IsSeam(anEdge, aFace));

@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
@@ -69,31 +71,31 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
 
     // ---- the port's side: helixrec's records ----
 
-    private static string CurveText(Geom_Curve theC)
+    private static string CurveText(Curve3D theC)
     {
-        if (theC is not Geom_BSplineCurve aB)
+        if (theC is not BSplineCurve3D aB)
         {
             return "none";
         }
         var aS = new StringBuilder();
-        aS.Append(CultureInfo.InvariantCulture, $"{aB.Degree()} {aB.NbPoles()} {aB.NbKnots()}");
-        for (int i = 1; i <= aB.NbPoles(); ++i)
+        aS.Append(CultureInfo.InvariantCulture, $"{aB.Degree()} {aB.PoleCount} {aB.KnotCount}");
+        for (int i = 1; i <= aB.PoleCount; ++i)
         {
             Point3D aP = aB.Pole(i);
             aS.Append(' ').Append(Hex(aP.X())).Append(' ').Append(Hex(aP.Y())).Append(' ').Append(Hex(aP.Z()));
         }
-        for (int i = 1; i <= aB.NbKnots(); ++i)
+        for (int i = 1; i <= aB.KnotCount; ++i)
         {
             aS.Append(' ').Append(Hex(aB.Knot(i)));
         }
-        for (int i = 1; i <= aB.NbKnots(); ++i)
+        for (int i = 1; i <= aB.KnotCount; ++i)
         {
             aS.Append(' ').Append(aB.Multiplicity(i).ToString(CultureInfo.InvariantCulture));
         }
         return aS.ToString();
     }
 
-    private static void Curve(List<string> theOut, Geom_Curve theC, int theK, int theN)
+    private static void Curve(List<string> theOut, Curve3D theC, int theK, int theN)
     {
         string aText = CurveText(theC);
         theOut.Add(theK <= 2 || theK == theN ? "CURVE " + aText : "CURVEH " + Fnv(aText));
@@ -203,7 +205,7 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
             if (aB.ErrorStatus() == 0)
             {
                 var aS = new StringWriter(CultureInfo.InvariantCulture) { NewLine = "\n" };
-                BRepTools.Write(aB.Shape(), aS, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3);
+                BrepTools.Write(aB.Shape(), aS, true, false, FormatVersion.FormatVersion_VERSION_3);
                 aText = aS.ToString();
             }
             int aNb = aText.Count(c => c == '\n') + (aText.Length > 0 && aText[^1] != '\n' ? 1 : 0);
@@ -268,7 +270,7 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
             }
             try
             {
-                Geom_BSplineCurve? aBS = null;
+                BSplineCurve3D? aBS = null;
                 double aMaxErr = -1.0;
                 int iErr = HelixGeom_Tools.ApprHelix(0.0, aT2c, theParts.P[i], aR, aTaper, aCW, 1.0e-4, ref aBS, ref aMaxErr);
                 theOut.Add($"APPR {iErr} {Hex(aMaxErr)} {(aBS is null ? 0 : 1)}");

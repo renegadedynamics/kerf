@@ -1,4 +1,7 @@
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Occt;
 
@@ -156,7 +159,7 @@ public abstract partial class Shape
         var tool = toolList.Where(o => !o.IsEmpty).Select(o => o._wrapped).ToList();
 
         // Operations with zero shapes
-        TopoDS_Shape? topoResult = null;
+        global::Kerf.Topology.Shape? topoResult = null;
         switch (operation)
         {
             case BRepAlgoAPI_Cut:
@@ -213,7 +216,7 @@ public abstract partial class Shape
 
         // Remove an unnecessary compound around a single shape
         if (result.IsCompound())
-            result = TopoUtil.UnwrapCompound(TopoDS.Compound(result));
+            result = TopoUtil.UnwrapCompound(ShapeCasts.Compound(result));
 
         if (result.IsCompound() && highest.Order != 4)
         {
@@ -300,11 +303,11 @@ public abstract partial class Shape
         var result = section.Shape();
 
         var vertices = new List<Vertex>();
-        var explorer = new TopExp_Explorer(result, TopAbs_ShapeEnum.TopAbs_VERTEX);
+        var explorer = new Explorer(result, global::Kerf.Topology.ShapeType.Vertex);
         for (; explorer.More(); explorer.Next())
             vertices.Add((Vertex)CastLike(TopoUtil.Downcast(explorer.Current())));
         var edges = new List<Edge>();
-        explorer = new TopExp_Explorer(result, TopAbs_ShapeEnum.TopAbs_EDGE);
+        explorer = new Explorer(result, global::Kerf.Topology.ShapeType.Edge);
         for (; explorer.More(); explorer.Next())
             edges.Add((Edge)CastLike(TopoUtil.Downcast(explorer.Current())));
         return (new ShapeList<Vertex>(vertices.Distinct()), new ShapeList<Edge>(edges));
@@ -356,20 +359,20 @@ public abstract partial class Shape
         if (keep == Keep.All)
             return (new ShapeList<Shape>(pieces.Select(CastLike)), [], []);
 
-        TopoDS_Shape? toolSolid = null;
+        global::Kerf.Topology.Shape? toolSolid = null;
         if (tool is not Plane)
         {
             // A reference point off the +ve side of the tool decides which side is up
-            TopoDS_Face toolFace;
+            global::Kerf.Topology.Face toolFace;
             if (trimTool.IsShell())
             {
-                var faces = new TopExp_Explorer(trimTool, TopAbs_ShapeEnum.TopAbs_FACE);
-                toolFace = TopoDS.Face(faces.Current());
+                var faces = new Explorer(trimTool, global::Kerf.Topology.ShapeType.Face);
+                toolFace = ShapeCasts.Face(faces.Current());
             }
             else
-                toolFace = TopoDS.Face(trimTool);
+                toolFace = ShapeCasts.Face(trimTool);
             double uMin = 0, uMax = 0, vMin = 0, vMax = 0;
-            BRepTools.UVBounds(toolFace, out uMin, out uMax, out vMin, out vMax);
+            BrepTools.UVBounds(toolFace, out uMin, out uMax, out vMin, out vMax);
             var surfacePnt = new Point3D();
             var surfaceNormal = new Vector3D();
             var props = new BRepGProp_Face(toolFace);
@@ -377,8 +380,8 @@ public abstract partial class Shape
             var refPoint = new Vector(surfacePnt) + new Vector(surfaceNormal).Normalized();
             var refPnt = refPoint.ToGpPnt();
             var halfSpace = trimTool.IsShell()
-                ? new BRepPrimAPI_MakeHalfSpace(TopoDS.Shell(trimTool), refPnt)
-                : new BRepPrimAPI_MakeHalfSpace(TopoDS.Face(trimTool), refPnt);
+                ? new BRepPrimAPI_MakeHalfSpace(ShapeCasts.Shell(trimTool), refPnt)
+                : new BRepPrimAPI_MakeHalfSpace(ShapeCasts.Face(trimTool), refPnt);
             toolSolid = halfSpace.Solid();
         }
 
@@ -392,7 +395,7 @@ public abstract partial class Shape
             {
                 // A piece lies wholly on one side of the plane and so does its centre of mass. Its geometric centre
                 // need not: that of a curved face is the middle of its surface, trimmed away or not.
-                var props = new GProp_GProps();
+                var props = new Properties();
                 MassProperties(part, props);
                 isUp = plane.ToLocalCoords(new Vector(props.CentreOfMass())).Z >= 0;
             }
@@ -401,7 +404,7 @@ public abstract partial class Shape
                 // Intersect the piece and the thickened tool
                 var common = new BRepAlgoAPI_Common();
                 var isUpObj = TopoUtil.BoolOp([part], [toolSolid!.Value], common);
-                var props = new GProp_GProps();
+                var props = new Properties();
                 BRepGProp.LinearProperties(isUpObj, props);
                 // Mass is the total length for linear properties
                 isUp = props.Mass() >= Constants.Tolerance;
@@ -419,7 +422,7 @@ public abstract partial class Shape
     }
 
     /// <summary>A face on the plane, unbounded as far as OCCT's defaults go.</summary>
-    internal static TopoDS_Face MakePlaneFace(Plane plane)
+    internal static global::Kerf.Topology.Face MakePlaneFace(Plane plane)
     {
         var pln = plane.ToGpPln();
         var maker = new BRepBuilderAPI_MakeFace(pln);

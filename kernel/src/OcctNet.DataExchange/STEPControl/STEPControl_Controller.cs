@@ -6,8 +6,10 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using static Occt.IFSelect_ReturnStatus;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -421,7 +423,7 @@ public class STEPControl_Controller : XSControl_Controller
     /// Fail -1 bad modeshape -2 bad model (requires a StepModel) modeshape : 1 Facetted BRep, 2 Shell, 3 Manifold
     /// Solid
     /// </summary>
-    public override IFSelect_ReturnStatus TransferWriteShape(TopoDS_Shape shape, Transfer_FinderProcess FP, Interface_InterfaceModel model,
+    public override IFSelect_ReturnStatus TransferWriteShape(Shape shape, Transfer_FinderProcess FP, Interface_InterfaceModel model,
                                                              int modeshape = 0, ProgressRange theProgress = default)
     {
         if (modeshape < 0 || modeshape > 4)
@@ -435,12 +437,12 @@ public class STEPControl_Controller : XSControl_Controller
         {
             ActWrite.SetGroupMode((int)aModel.InternalParameters.WriteAssembly);
         }
-        TopoDS_Shape aShape = shape;
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aModifedMap = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        Shape aShape = shape;
+        NCollection_DataMap<Shape, Shape> aModifedMap = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
         if (aModel.InternalParameters.WriteNonmanifold)
         {
             ShapeUpgrade_RemoveLocations aRemLoc = new ShapeUpgrade_RemoveLocations();
-            aRemLoc.SetRemoveLevel(TopAbs_COMPOUND);
+            aRemLoc.SetRemoveLevel(ShapeType.Compound);
             aRemLoc.Remove(aShape);
             aShape = aRemLoc.GetResult();
             aModifedMap = aRemLoc.GetModifiedShapesMap();

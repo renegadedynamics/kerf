@@ -43,7 +43,7 @@ public sealed class GeomToStep_MakePlane : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A plane, its location divided by the length factor.</summary>
-    public GeomToStep_MakePlane(Geom_Plane Gpln, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakePlane(PlaneSurface Gpln, in StepData_Factors theLocalFactors)
     {
         Plane3D P;
         StepGeom_Plane Plan = new StepGeom_Plane();
@@ -61,7 +61,7 @@ public sealed class GeomToStep_MakePlane : GeomToStep_Root
     }
 
     /// <summary>A plane (default factors).</summary>
-    public GeomToStep_MakePlane(Geom_Plane Gpln) : this(Gpln, new StepData_Factors())
+    public GeomToStep_MakePlane(PlaneSurface Gpln) : this(Gpln, new StepData_Factors())
     {
     }
 

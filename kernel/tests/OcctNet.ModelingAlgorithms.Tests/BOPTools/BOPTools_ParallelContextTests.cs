@@ -2,8 +2,10 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests.BOPTools;
 
@@ -15,13 +17,13 @@ namespace OcctNet.ModelingAlgorithms.Tests.BOPTools;
 public class BOPTools_ParallelContextTests
 {
     /// <summary>One face's queries, as a BOPAlgo solver would make them through its context.</summary>
-    private sealed class FaceSolver(TopoDS_Face theFace, TopoDS_Solid theSolid, Point3D[] thePoints)
+    private sealed class FaceSolver(Face theFace, Solid theSolid, Point3D[] thePoints)
         : BOPTools_Parallel.IContextSolver<IntTools_Context>
     {
         private IntTools_Context? myContext;
 
-        public TopoDS_Face Face => theFace;
-        public TopoDS_Solid Solid => theSolid;
+        public Face Face => theFace;
+        public Solid Solid => theSolid;
         public Point3D[] Points => thePoints;
 
         public FaceSolver Fresh() => new(theFace, theSolid, thePoints);
@@ -51,15 +53,15 @@ public class BOPTools_ParallelContextTests
         }
     }
 
-    private static List<FaceSolver> MakeSolvers(TopoDS_Shape theShape, int theSeed)
+    private static List<FaceSolver> MakeSolvers(Shape theShape, int theSeed)
     {
-        TopoDS_Solid aSolid = TopoDS.Solid(new TopExp_Explorer(theShape, TopAbs_SOLID).Current());
+        Solid aSolid = ShapeCasts.Solid(new Explorer(theShape, ShapeType.Solid).Current());
         Box aBox = new();
         BRepBndLib.Add(theShape, ref aBox);
         aBox.Get(out double x0, out double y0, out double z0, out double x1, out double y1, out double z1);
         Random aRnd = new(theSeed);
         List<FaceSolver> aSolvers = [];
-        foreach (TopoDS_Face aF in BOPToolsTestShapes.Faces(theShape))
+        foreach (Face aF in BOPToolsTestShapes.Faces(theShape))
         {
             Point3D[] aPnts = new Point3D[3];
             for (int i = 0; i < aPnts.Length; i++)
@@ -86,7 +88,7 @@ public class BOPTools_ParallelContextTests
     [InlineData("bottle.brep")]
     public void ContextSolvers_ParallelGivesTheSerialResult(string theName)
     {
-        TopoDS_Shape aShape = BOPToolsTestShapes.Primitives().Concat(theName.EndsWith(".brep", StringComparison.Ordinal)
+        Shape aShape = BOPToolsTestShapes.Primitives().Concat(theName.EndsWith(".brep", StringComparison.Ordinal)
                                                                          ? [(theName, BRepMeshModelKit.ReadDataOcc(theName))]
                                                                          : [])
                                                 .First(p => p.Name == theName).Shape;

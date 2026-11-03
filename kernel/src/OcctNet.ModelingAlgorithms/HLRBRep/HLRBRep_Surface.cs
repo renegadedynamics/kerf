@@ -4,7 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
@@ -23,21 +26,21 @@ namespace Occt;
 /// </remarks>
 public sealed class HLRBRep_Surface
 {
-    private readonly BRepAdaptor_Surface mySurf;
+    private readonly FaceSurfaceAdaptor mySurf;
     private SurfaceKind myType;
     private StrongBox<HLRAlgo_Projector>? myProj;
 
     /// <summary>Creates an undefined surface.</summary>
     public HLRBRep_Surface()
     {
-        mySurf = new BRepAdaptor_Surface();
+        mySurf = new FaceSurfaceAdaptor();
         myType = OtherSurface;
         myProj = null;
     }
 
     private HLRBRep_Surface(HLRBRep_Surface theOther)
     {
-        mySurf = (BRepAdaptor_Surface)theOther.mySurf.ShallowCopy();
+        mySurf = (FaceSurfaceAdaptor)theOther.mySurf.ShallowCopy();
         myType = theOther.myType;
         myProj = theOther.myProj;
     }
@@ -51,10 +54,10 @@ public sealed class HLRBRep_Surface
     private ref readonly HLRAlgo_Projector Proj() => ref myProj!.Value;
 
     /// <summary>Returns the 3D surface.</summary>
-    public BRepAdaptor_Surface Surface() => mySurf;
+    public FaceSurfaceAdaptor Surface() => mySurf;
 
     /// <summary>Sets the 3D surface to be projected.</summary>
-    public void Surface(in TopoDS_Face F)
+    public void Surface(in Face F)
     {
         mySurf.Initialize(F, true);
         SurfaceKind typ = HLRBRep_BSurfaceTool.GetType(mySurf);
@@ -70,7 +73,7 @@ public sealed class HLRBRep_Surface
                 myType = typ;
                 break;
 
-            case BezierSurface:
+            case SurfaceKind.BezierSurface:
                 if (HLRBRep_BSurfaceTool.UDegree(mySurf) == 1 && HLRBRep_BSurfaceTool.VDegree(mySurf) == 1)
                 {
                     myType = global::Kerf.Geometry.SurfaceKind.Plane;
@@ -150,8 +153,8 @@ public sealed class HLRBRep_Surface
             }
         }
 
-        GProp_PEquation Pl = new(p, tol);
-        if (Pl.IsPlanar())
+        PEquation Pl = new(p, tol);
+        if (Pl.IsPlanar)
         {
             result = Abs(Pl.Plane().Axis().Direction().Z()) < 0.0001;
         }
@@ -209,7 +212,7 @@ public sealed class HLRBRep_Surface
             double tol = 0.001;
             return Pt.IsEqual(new Point3D(0, 0, Proj().Focus()), tol);
         }
-        else if (myType == BezierSurface)
+        else if (myType == SurfaceKind.BezierSurface)
         {
             if (Proj().Perspective())
             {
@@ -228,7 +231,7 @@ public sealed class HLRBRep_Surface
             }
             return SideRowsOfPoles(tolF, nu, nv, Pnt);
         }
-        else if (myType == BSplineSurface)
+        else if (myType == SurfaceKind.BSplineSurface)
         {
             if (Proj().Perspective())
             {
@@ -390,7 +393,7 @@ public sealed class HLRBRep_Surface
         SurfaceKind typ = HLRBRep_BSurfaceTool.GetType(mySurf);
         switch (typ)
         {
-            case BezierSurface:
+            case SurfaceKind.BezierSurface:
             {
                 D1(0.5, 0.5, out Point3D P, out Vector3D D1U, out Vector3D D1V);
                 return new Plane3D(P, new Direction3D(D1U.Crossed(D1V)));

@@ -3,11 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_TypeTrans;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -38,8 +40,8 @@ public partial class IntPatch_LineConstructor
     /// <paramref name="myDom2"/>; <paramref name="slinref"/> holds the lines of the intersection, whose restriction lines
     /// tell walking parts that are restrictions.
     /// </summary>
-    public void Perform(NCollection_Sequence<IntPatch_Line> slinref, IntPatch_Line L, Adaptor3d_Surface mySurf1,
-                        Adaptor3d_TopolTool myDom1, Adaptor3d_Surface mySurf2, Adaptor3d_TopolTool myDom2,
+    public void Perform(NCollection_Sequence<IntPatch_Line> slinref, IntPatch_Line L, SurfaceAdaptorBase mySurf1,
+                        TopolTool myDom1, SurfaceAdaptorBase mySurf2, TopolTool myDom2,
                         double TolArc)
     {
         int i = 1, nbvtx;
@@ -75,10 +77,10 @@ public partial class IntPatch_LineConstructor
                     Point3D Pmid = ALine.Value(pmid);
                     Parameters(mySurf1, mySurf2, Pmid, ref u1, ref v1, ref u2, ref v2);
                     Recadre(mySurf1, mySurf2, ref u1, ref v1, ref u2, ref v2);
-                    TopAbs_State in1, in2;
+                    Containment in1, in2;
                     in1 = myDom1.Classify(new Point2D(u1, v1), Tol, false);
-                    in2 = (in1 != TopAbs_OUT) ? myDom2.Classify(new Point2D(u2, v2), Tol, false) : TopAbs_OUT;
-                    if (in1 == TopAbs_OUT || in2 == TopAbs_OUT)
+                    in2 = (in1 != Out) ? myDom2.Classify(new Point2D(u2, v2), Tol, false) : Out;
+                    if (in1 == Out || in2 == Out)
                     {
                     }
                     else
@@ -149,9 +151,9 @@ public partial class IntPatch_LineConstructor
                     double aTolerance = ComputeParametricTolerance(TolArc, ad1u, ad1v);
                     //------------------------------------------
 
-                    TopAbs_State in1 = myDom1.Classify(new Point2D(u1, v1), aTolerance, false);
-                    TopAbs_State in2 = TopAbs_OUT;
-                    if (in1 != TopAbs_OUT)
+                    Containment in1 = myDom1.Classify(new Point2D(u1, v1), aTolerance, false);
+                    Containment in2 = Out;
+                    if (in1 != Out)
                     {
                         //------------------------------------------
                         mySurf2.D1(u2, v2, out ap, out ad1u, out ad1v);
@@ -176,7 +178,7 @@ public partial class IntPatch_LineConstructor
                         Recadre(mySurf1, mySurf2, ref vFu1, ref vFv1, ref vFu2, ref vFv2);
                         vL.Parameters(out vLu1, out vLv1, out vLu2, out vLv2);
                         Recadre(mySurf1, mySurf2, ref vLu1, ref vLv1, ref vLu2, ref vLv2);
-                        if (in1 != TopAbs_IN)
+                        if (in1 != In)
                         {
                             double du, dv;
                             Point2D pvF = new Point2D(vFu1, vFv1);
@@ -198,7 +200,7 @@ public partial class IntPatch_LineConstructor
                             aTolerance = ComputeParametricTolerance(TolArc, ad1u, ad1v);
                             in1 = myDom1.Classify(new Point2D(du, dv), aTolerance, false);
                         }
-                        if (in2 != TopAbs_IN)
+                        if (in2 != In)
                         {
                             double du, dv;
                             Point2D pvF = new Point2D(vFu2, vFv2);
@@ -222,7 +224,7 @@ public partial class IntPatch_LineConstructor
                         }
                     } // end of if(std::abs(int_lastp-int_firstp) == 1)
 
-                    if (in1 != TopAbs_OUT && in2 != TopAbs_OUT)
+                    if (in1 != Out && in2 != Out)
                     {
                         bool LignetropPetite = false;
                         IntSurf_PntOn2S Pmid1 = WLine.Point((int)firstp);
@@ -329,28 +331,28 @@ public partial class IntPatch_LineConstructor
                         mySurf1.D1(u1, v1, out P, out Du, out Dv);
                         Tol = ComputeParametricTolerance(myDom1.Tol3d(myDom1.Value()), Du, Dv);
                     }
-                    TopAbs_State in1 = myDom1.Classify(new Point2D(u1, v1), Tol, false);
+                    Containment in1 = myDom1.Classify(new Point2D(u1, v1), Tol, false);
 
                     myDom2.Init();
-                    if (in1 != TopAbs_OUT && myDom2.More())
+                    if (in1 != Out && myDom2.More())
                     {
                         mySurf2.D1(u2, v2, out P, out Du, out Dv);
                         Tol = ComputeParametricTolerance(myDom2.Tol3d(myDom2.Value()), Du, Dv);
                     }
-                    TopAbs_State in2 = (in1 != TopAbs_OUT) ? myDom2.Classify(new Point2D(u2, v2), Tol, false)
-                                                           : TopAbs_OUT;
+                    Containment in2 = (in1 != Out) ? myDom2.Classify(new Point2D(u2, v2), Tol, false)
+                                                           : Out;
                     // modified by NIZHNY-OFV  Wed May 30 17:04:08 2001.BEGIN
                     // --purpose: section algo with infinite prism works now!!!
-                    if (in1 == TopAbs_UNKNOWN)
+                    if (in1 == Unknown)
                     {
-                        in1 = TopAbs_OUT;
+                        in1 = Out;
                     }
-                    if (in2 == TopAbs_UNKNOWN)
+                    if (in2 == Unknown)
                     {
-                        in2 = TopAbs_OUT;
+                        in2 = Out;
                     }
                     // modified by NIZHNY-OFV  Wed May 30 17:05:47 2001.END
-                    if (in1 == TopAbs_OUT || in2 == TopAbs_OUT)
+                    if (in1 == Out || in2 == Out)
                     {
                     }
                     else
@@ -393,21 +395,21 @@ public partial class IntPatch_LineConstructor
                         Parameters(mySurf1, mySurf2, Pmid, ref u1, ref v1, ref u2, ref v2);
                         Recadre(mySurf1, mySurf2, ref u1, ref v1, ref u2, ref v2);
                         // Tol is the last one the loop above computed, as in OCCT.
-                        TopAbs_State in1 = myDom1.Classify(new Point2D(u1, v1), Tol, false);
-                        TopAbs_State in2 = (in1 != TopAbs_OUT) ? myDom2.Classify(new Point2D(u2, v2), Tol, false)
-                                                               : TopAbs_OUT;
+                        Containment in1 = myDom1.Classify(new Point2D(u1, v1), Tol, false);
+                        Containment in2 = (in1 != Out) ? myDom2.Classify(new Point2D(u2, v2), Tol, false)
+                                                               : Out;
                         // modified by NIZHNY-OFV  Wed May 30 17:04:08 2001.BEGIN
                         // --purpose: section algo with infinite prism works now!!!
-                        if (in1 == TopAbs_UNKNOWN)
+                        if (in1 == Unknown)
                         {
-                            in1 = TopAbs_OUT;
+                            in1 = Out;
                         }
-                        if (in2 == TopAbs_UNKNOWN)
+                        if (in2 == Unknown)
                         {
-                            in2 = TopAbs_OUT;
+                            in2 = Out;
                         }
                         // modified by NIZHNY-OFV  Wed May 30 17:05:47 2001.END
-                        if (in1 == TopAbs_OUT || in2 == TopAbs_OUT)
+                        if (in1 == Out || in2 == Out)
                         {
                         }
                         else
@@ -490,13 +492,13 @@ public partial class IntPatch_LineConstructor
                         }
 
                         //-- le 23 mars 1999
-                        TopAbs_State bornin = myDom2.Classify(new Point2D(U2, V2), Tol, false);
-                        if (bornin != TopAbs_OUT)
+                        Containment bornin = myDom2.Classify(new Point2D(U2, V2), Tol, false);
+                        if (bornin != Out)
                         {
                             Vtx2.PntOn2S().Parameters(out _, out _, out double U2t, out double V2t);
                             bornin = myDom2.Classify(new Point2D(U2t, V2t), Tol, false);
                         }
-                        if (bornin == TopAbs_OUT)
+                        if (bornin == Out)
                         {
                             continue;
                         }
@@ -525,29 +527,29 @@ public partial class IntPatch_LineConstructor
 
                         U2 += deltau;
                         V2 += deltav;
-                        if (bornin != TopAbs_OUT)
+                        if (bornin != Out)
                         {
-                            TopAbs_State in2 = myDom2.Classify(new Point2D(U2, V2), Tol, false);
+                            Containment in2 = myDom2.Classify(new Point2D(U2, V2), Tol, false);
                             deltau *= 0.05;
                             deltav *= 0.05;
-                            if (in2 == TopAbs_OUT)
+                            if (in2 == Out)
                             {
                                 in2 = myDom2.Classify(new Point2D(U2 + deltau, V2), Tol, false);
                             }
-                            if (in2 == TopAbs_OUT)
+                            if (in2 == Out)
                             {
                                 in2 = myDom2.Classify(new Point2D(U2 - deltau, V2), Tol, false);
                             }
-                            if (in2 == TopAbs_OUT)
+                            if (in2 == Out)
                             {
                                 in2 = myDom2.Classify(new Point2D(U2, V2 + deltav), Tol, false);
                             }
-                            if (in2 == TopAbs_OUT)
+                            if (in2 == Out)
                             {
                                 in2 = myDom2.Classify(new Point2D(U2, V2 - deltav), Tol, false);
                             }
 
-                            if (in2 != TopAbs_OUT)
+                            if (in2 != Out)
                             {
                                 AddLine(L, i, i + 1, typs1, typs2, TabIndex, slin);
                             }
@@ -579,13 +581,13 @@ public partial class IntPatch_LineConstructor
                         }
 
                         //-- le 23 mars 1999
-                        TopAbs_State bornin = myDom1.Classify(new Point2D(U1, V1), Tol, false);
-                        if (bornin != TopAbs_OUT)
+                        Containment bornin = myDom1.Classify(new Point2D(U1, V1), Tol, false);
+                        if (bornin != Out)
                         {
                             Vtx2.PntOn2S().Parameters(out double U1t, out double V1t, out _, out _);
                             bornin = myDom1.Classify(new Point2D(U1t, V1t), Tol, false);
                         }
-                        if (bornin == TopAbs_OUT)
+                        if (bornin == Out)
                         {
                             continue;
                         }
@@ -615,29 +617,29 @@ public partial class IntPatch_LineConstructor
                         U1 += deltau;
                         V1 += deltav;
 
-                        if (bornin != TopAbs_OUT)
+                        if (bornin != Out)
                         {
-                            TopAbs_State in2 = myDom1.Classify(new Point2D(U1, V1), Tol, false);
+                            Containment in2 = myDom1.Classify(new Point2D(U1, V1), Tol, false);
                             deltau *= 0.05;
                             deltav *= 0.05;
-                            if (in2 == TopAbs_OUT)
+                            if (in2 == Out)
                             {
                                 in2 = myDom1.Classify(new Point2D(U1 + deltau, V1), Tol, false);
                             }
-                            if (in2 == TopAbs_OUT)
+                            if (in2 == Out)
                             {
                                 in2 = myDom1.Classify(new Point2D(U1 - deltau, V1), Tol, false);
                             }
-                            if (in2 == TopAbs_OUT)
+                            if (in2 == Out)
                             {
                                 in2 = myDom1.Classify(new Point2D(U1, V1 + deltav), Tol, false);
                             }
-                            if (in2 == TopAbs_OUT)
+                            if (in2 == Out)
                             {
                                 in2 = myDom1.Classify(new Point2D(U1, V1 - deltav), Tol, false);
                             }
 
-                            if (in2 != TopAbs_OUT)
+                            if (in2 != Out)
                             {
                                 AddLine(L, i, i + 1, typs1, typs2, TabIndex, slin);
                             }

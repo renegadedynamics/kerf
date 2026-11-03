@@ -6,22 +6,28 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Numerics;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFiKPart_ComputeData_Fcts;
-using static Occt.Extrema_ExtFlag;
+using static Kerf.Engine.Extrema.ExtFlag;
 using static Occt.ChFi3d_Builder_C1;
 using static Occt.ChFiDS_ErrorStatus;
 using static Occt.ChFiDS_State;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 using static Occt.TopOpeBRepDS_Kind;
 
 namespace Occt;
@@ -106,7 +112,7 @@ public partial class ChFi3d_Builder
         TopOpeBRepDS_DataStructure DStr = myDS.ChangeDS();
 
         // the top,
-        TopoDS_Vertex Vtx = myVDataMap.FindKey(Index);
+        Vertex Vtx = myVDataMap.FindKey(Index);
         // The fillet is returned,
         NCollection_List<ChFiDS_Stripe>.Iterator StrIt = new();
         StrIt.Initialize(myVDataMap[Index]);
@@ -160,8 +166,8 @@ public partial class ChFi3d_Builder
             stat = spine.LastStatus();
         }
         bool onsame = (stat == ChFiDS_OnSame);
-        TopoDS_Face Fv = new(), Fad = new(), Fop = new();
-        TopoDS_Edge Arcpiv = new(), Arcprol = new(), Arcspine = new();
+        Face Fv = new(), Fad = new(), Fop = new();
+        Edge Arcpiv = new(), Arcprol = new(), Arcspine = new();
         if (isfirst)
         {
             Arcspine = spine.Edges(1);
@@ -170,24 +176,24 @@ public partial class ChFi3d_Builder
         {
             Arcspine = spine.Edges(spine.NbEdges());
         }
-        TopAbs_Orientation OArcprolv = TopAbs_FORWARD, OArcprolop = TopAbs_FORWARD;
+        Orientation OArcprolv = Forward, OArcprolop = Forward;
         int ICurve = 0;
-        BRepAdaptor_Surface? HBs = new BRepAdaptor_Surface();
-        BRepAdaptor_Surface? HBad = new BRepAdaptor_Surface();
-        BRepAdaptor_Surface? HBop = new BRepAdaptor_Surface();
-        BRepAdaptor_Surface Bs = HBs;
-        BRepAdaptor_Surface Bad = HBad;
-        BRepAdaptor_Surface Bop = HBop;
-        Geom_Curve? Cc = null;
-        Geom2d_Curve? Pc = null, Ps = null;
+        FaceSurfaceAdaptor? HBs = new FaceSurfaceAdaptor();
+        FaceSurfaceAdaptor? HBad = new FaceSurfaceAdaptor();
+        FaceSurfaceAdaptor? HBop = new FaceSurfaceAdaptor();
+        FaceSurfaceAdaptor Bs = HBs;
+        FaceSurfaceAdaptor Bad = HBad;
+        FaceSurfaceAdaptor Bop = HBop;
+        Curve3D? Cc = null;
+        Curve2D? Pc = null, Ps = null;
         double Ubid = 0.0, Vbid = 0.0;//,mu,Mu,mv,Mv;
         double Udeb = 0.0, Ufin = 0.0;
         //  gp_Pnt2d UVf1,UVl1,UVf2,UVl2;
         //  double Du,Dv,Step;
         bool inters = true;
         int IFadArc = 1, IFopArc = 2;
-        Fop = TopoDS.Face(DStr.Shape(Fd.Index(IFopArc)));
-        TopExp_Explorer ex = new();
+        Fop = ShapeCasts.Face(DStr.Shape(Fd.Index(IFopArc)));
+        Explorer ex = new();
 
 
         if (onsame)
@@ -199,7 +205,7 @@ public partial class ChFi3d_Builder
             else if (CV1.IsOnArc() && CV2.IsOnArc())
             {
                 bool sur1 = false, sur2 = false;
-                for (ex.Init(CV1.Arc(), TopAbs_VERTEX); ex.More(); ex.Next())
+                for (ex.Init(CV1.Arc(), ShapeType.Vertex); ex.More(); ex.Next())
                 {
                     if (Vtx.IsSame(ex.Current()))
                     {
@@ -207,7 +213,7 @@ public partial class ChFi3d_Builder
                         break;
                     }
                 }
-                for (ex.Init(CV2.Arc(), TopAbs_VERTEX); ex.More(); ex.Next())
+                for (ex.Init(CV2.Arc(), ShapeType.Vertex); ex.More(); ex.Next())
                 {
                     if (Vtx.IsSame(ex.Current()))
                     {
@@ -217,7 +223,7 @@ public partial class ChFi3d_Builder
                 }
                 if (sur1 && sur2)
                 {
-                    TopoDS_Edge[] E = [new(), new(), new()];
+                    Edge[] E = [new(), new(), new()];
                     E[0] = CV1.Arc();
                     E[1] = CV2.Arc();
                     E[2] = Arcspine;
@@ -238,22 +244,22 @@ public partial class ChFi3d_Builder
             IFopArc = 3 - IFadArc;
 
             Arcpiv = Fd.Vertex(isfirst, IFadArc).Arc();
-            Fad = TopoDS.Face(DStr.Shape(Fd.Index(IFadArc)));
-            Fop = TopoDS.Face(DStr.Shape(Fd.Index(IFopArc)));
-            NCollection_List<TopoDS_Shape>.Iterator It = new();
+            Fad = ShapeCasts.Face(DStr.Shape(Fd.Index(IFadArc)));
+            Fop = ShapeCasts.Face(DStr.Shape(Fd.Index(IFopArc)));
+            NCollection_List<Shape>.Iterator It = new();
             // The face at end is returned without check of its unicity.
             for (It.Initialize(myEFMap[Arcpiv]); It.More(); It.Next())
             {
                 if (!Fad.IsSame(It.Value()))
                 {
-                    Fv = TopoDS.Face(It.Value());
+                    Fv = ShapeCasts.Face(It.Value());
                     break;
                 }
             }
 
             // Does the face at bout contain the Vertex ?
             bool isinface = false;
-            for (ex.Init(Fv, TopAbs_VERTEX); ex.More(); ex.Next())
+            for (ex.Init(Fv, ShapeType.Vertex); ex.More(); ex.Next())
             {
                 if (ex.Current().IsSame(Vtx))
                 {
@@ -266,51 +272,51 @@ public partial class ChFi3d_Builder
                 IFadArc = 3 - IFadArc;
                 IFopArc = 3 - IFopArc;
                 Arcpiv = Fd.Vertex(isfirst, IFadArc).Arc();
-                Fad = TopoDS.Face(DStr.Shape(Fd.Index(IFadArc)));
-                Fop = TopoDS.Face(DStr.Shape(Fd.Index(IFopArc)));
+                Fad = ShapeCasts.Face(DStr.Shape(Fd.Index(IFadArc)));
+                Fop = ShapeCasts.Face(DStr.Shape(Fd.Index(IFopArc)));
                 // NCollection_List<TopoDS_Shape>::Iterator It;
                 // The face at end is returned without check of its unicity.
                 for (It.Initialize(myEFMap[Arcpiv]); It.More(); It.Next())
                 {
                     if (!Fad.IsSame(It.Value()))
                     {
-                        Fv = TopoDS.Face(It.Value());
+                        Fv = ShapeCasts.Face(It.Value());
                         break;
                     }
                 }
             }
 
-            if (Fv.IsNull())
+            if (Fv.IsNull)
             {
                 throw new NotDoneException("OneCorner : face at end not found");
             }
 
-            Fv.Orientation(TopAbs_FORWARD);
-            Fad.Orientation(TopAbs_FORWARD);
-            Fop.Orientation(TopAbs_FORWARD);
+            Fv.Orientation(Forward);
+            Fad.Orientation(Forward);
+            Fop.Orientation(Forward);
 
             // The edge that will be extended is returned.
-            for (It.Initialize(myVEMap[Vtx]); It.More() && Arcprol.IsNull(); It.Next())
+            for (It.Initialize(myVEMap[Vtx]); It.More() && Arcprol.IsNull; It.Next())
             {
                 if (!Arcpiv.IsSame(It.Value()))
                 {
-                    for (ex.Init(Fv, TopAbs_EDGE); ex.More(); ex.Next())
+                    for (ex.Init(Fv, ShapeType.Edge); ex.More(); ex.Next())
                     {
                         if (It.Value().IsSame(ex.Current()))
                         {
-                            Arcprol = TopoDS.Edge(It.Value());
+                            Arcprol = ShapeCasts.Edge(It.Value());
                             OArcprolv = ex.Current().Orientation();
                             break;
                         }
                     }
                 }
             }
-            if (Arcprol.IsNull()) /*throw new StdFail_NotDone("OneCorner : edge a prolonger non trouve");*/
+            if (Arcprol.IsNull) /*throw new StdFail_NotDone("OneCorner : edge a prolonger non trouve");*/
             {
                 PerformIntersectionAtEnd(Index);
                 return;
             }
-            for (ex.Init(Fop, TopAbs_EDGE); ex.More(); ex.Next())
+            for (ex.Init(Fop, ShapeType.Edge); ex.More(); ex.Next())
             {
                 if (Arcprol.IsSame(ex.Current()))
                 {
@@ -318,14 +324,14 @@ public partial class ChFi3d_Builder
                     break;
                 }
             }
-            TopoDS_Face FFv = new();
+            Face FFv = new();
             double tol = 0.0;
             int prol = 0;
-            BRep_Builder BRE = new();
-            Geom_Surface? Sface = null;
-            Sface = BRep_Tool.Surface(Fv);
+            BrepBuilder BRE = new();
+            Surface? Sface = null;
+            Sface = Tool.Surface(Fv);
             ChFi3d_ExtendSurface(ref Sface, ref prol);
-            tol = BRep_Tool.Tolerance(Fv);
+            tol = Tool.Tolerance(Fv);
             BRE.MakeFace(ref FFv, Sface, tol);
             if (prol != 0)
 
@@ -351,9 +357,9 @@ public partial class ChFi3d_Builder
         // the parameter of the vertex in the air is initialiced with the value of
         // its opposite (point on arc).
         double wop = Fd.ChangeInterference(IFadArc).Parameter(isfirst);
-        Geom_Curve? c3df = null;
-        GeomAdaptor_Surface? HGs = 
-            new GeomAdaptor_Surface(DStr.Surface(Fd.Surf()).Surface());
+        Curve3D? c3df = null;
+        SurfaceAdaptor? HGs = 
+            new SurfaceAdaptor(DStr.Surface(Fd.Surf()).Surface());
         Point2D p2dbout = new();
 
         if (onsame)
@@ -367,7 +373,7 @@ public partial class ChFi3d_Builder
                                                                     ref FiopArc, ref CPopArc, ref p2dbout,
                                                                     ref wop); // out
 
-            BRepAdaptor_Curve2d? pced = new BRepAdaptor_Curve2d();
+            EdgeCurve2DAdaptor? pced = new EdgeCurve2DAdaptor();
             pced.Initialize(CPadArc.Arc(), Fv);
             // in the case of degenerated Fi, parameter difference can be even negative (eap, occ293)
             if ((FiadArc.LastParameter() - FiadArc.FirstParameter()) > 10 * tolesp)
@@ -392,7 +398,7 @@ public partial class ChFi3d_Builder
                 return;
             }
             Bs.Initialize(Fv);
-            BRepAdaptor_Curve2d? pced = new BRepAdaptor_Curve2d();
+            EdgeCurve2DAdaptor? pced = new EdgeCurve2DAdaptor();
             pced.Initialize(CV1.Arc(), Fv);
             Update(HBs, pced, HGs, ref Fd.ChangeInterferenceOnS1(), ref CV1, isfirst);
             pced.Initialize(CV2.Arc(), Fv);
@@ -400,13 +406,13 @@ public partial class ChFi3d_Builder
         }
 
 
-        TopoDS_Edge edgecouture = new();
+        Edge edgecouture = new();
         bool couture = false, intcouture = false;
         double tolreached = tolapp3d;
         double par1 = 0.0, par2 = 0.0;
         int indpt = 0, Icurv1 = 0, Icurv2 = 0;
-        Geom_TrimmedCurve? curv1 = null, curv2 = null;
-        Geom2d_Curve? c2d1 = null, c2d2 = null;
+        TrimmedCurve3D? curv1 = null, curv2 = null;
+        Curve2D? c2d1 = null, c2d2 = null;
 
         int Isurf = Fd.Surf();
 
@@ -417,14 +423,14 @@ public partial class ChFi3d_Builder
             ChFiDS_FaceInterference Fi2 = Fd.InterferenceOnS2();
             NCollection_Array1<double> Pardeb = new(1, 4), Parfin = new(1, 4);
             Point2D pfil1 = new(), pfac1 = new(), pfil2 = new(), pfac2 = new();
-            Geom2d_Curve? Hc1 = null, Hc2 = null;
+            Curve2D? Hc1 = null, Hc2 = null;
             if (onsame && IFopArc == 1)
             {
                 pfac1 = p2dbout;
             }
             else
             {
-                Hc1 = BRep_Tool.CurveOnSurface(CV1.Arc(), Fv, out Ubid, out Ubid);
+                Hc1 = Tool.CurveOnSurface(CV1.Arc(), Fv, out Ubid, out Ubid);
                 if (Hc1 is null)
                 {
                     throw new ConstructionErrorException("Failed to get p-curve of edge");
@@ -437,7 +443,7 @@ public partial class ChFi3d_Builder
             }
             else
             {
-                Hc2 = BRep_Tool.CurveOnSurface(CV2.Arc(), Fv, out Ubid, out Ubid);
+                Hc2 = Tool.CurveOnSurface(CV2.Arc(), Fv, out Ubid, out Ubid);
                 if (Hc2 is null)
                 {
                     throw new ConstructionErrorException("Failed to get p-curve of edge");
@@ -490,20 +496,20 @@ public partial class ChFi3d_Builder
 
             ChFi3d_Couture(Fv, out couture, ref edgecouture);
 
-            if (couture && !BRep_Tool.Degenerated(edgecouture))
+            if (couture && !Tool.Degenerated(edgecouture))
             {
 
                 // double Ubid,Vbid;
-                Geom_Curve? C = BRep_Tool.Curve(edgecouture, out Ubid, out Vbid);
-                Geom_TrimmedCurve? Ctrim = new Geom_TrimmedCurve(C, Ubid, Vbid);
-                GeomAdaptor_Curve cur1 = new(Ctrim.BasisCurve());
-                GeomAdaptor_Curve cur2 = new(Cc);
-                Extrema_ExtCC extCC = new(cur1, cur2);
-                if (extCC.IsDone() && extCC.NbExt() != 0)
+                Curve3D? C = Tool.Curve(edgecouture, out Ubid, out Vbid);
+                TrimmedCurve3D? Ctrim = new TrimmedCurve3D(C, Ubid, Vbid);
+                CurveAdaptor cur1 = new(Ctrim.BasisCurve());
+                CurveAdaptor cur2 = new(Cc);
+                ExtCC extCC = new(cur1, cur2);
+                if (extCC.IsDone && extCC.ExtCount != 0)
                 {
                     int imin = 0;
                     double distmin2 = RealLast();
-                    for (int i = 1; i <= extCC.NbExt(); i++)
+                    for (int i = 1; i <= extCC.ExtCount; i++)
                     {
                         if (extCC.SquareDistance(i) < distmin2)
                         {
@@ -513,7 +519,7 @@ public partial class ChFi3d_Builder
                     }
                     if (distmin2 <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
-                        Extrema_POnCurv ponc1 = new(), ponc2 = new();
+                        POnCurv ponc1 = new(), ponc2 = new();
                         extCC.Points(imin, out ponc1, out ponc2);
                         par1 = ponc1.Parameter();
                         par2 = ponc2.Parameter();
@@ -524,8 +530,8 @@ public partial class ChFi3d_Builder
                             TopOpeBRepDS_Point tpoint = new(P1, Tol);
                             indpt = DStr.AddPoint(tpoint);
                             intcouture = true;
-                            curv1 = new Geom_TrimmedCurve(Cc, Udeb, par2);
-                            curv2 = new Geom_TrimmedCurve(Cc, par2, Ufin);
+                            curv1 = new TrimmedCurve3D(Cc, Udeb, par2);
+                            curv2 = new TrimmedCurve3D(Cc, par2, Ufin);
                             TopOpeBRepDS_Curve tcurv1 = new(curv1, tolreached);
                             TopOpeBRepDS_Curve tcurv2 = new(curv2, tolreached);
                             Icurv1 = DStr.AddCurve(tcurv1);
@@ -540,27 +546,27 @@ public partial class ChFi3d_Builder
             throw new MethodNotImplementedException("OneCorner : bouchon non ecrit");
         }
         int IShape = DStr.AddShape(Fv);
-        TopAbs_Orientation Et = TopAbs_FORWARD;
+        Orientation Et = Forward;
         if (IFadArc == 1)
         {
-            TopExp_Explorer Exp = new();
-            for (Exp.Init(Fv.Oriented(TopAbs_FORWARD), TopAbs_EDGE); Exp.More(); Exp.Next())
+            Explorer Exp = new();
+            for (Exp.Init(Fv.Oriented(Forward), ShapeType.Edge); Exp.More(); Exp.Next())
             {
                 if (Exp.Current().IsSame(CV1.Arc()))
                 {
-                    Et = TopAbs.Reverse(TopAbs.Compose(Exp.Current().Orientation(), CV1.TransitionOnArc()));
+                    Et = global::Kerf.Engine.Topology.TopAbs.Reverse(global::Kerf.Engine.Topology.TopAbs.Compose(Exp.Current().Orientation(), CV1.TransitionOnArc()));
                     break;
                 }
             }
         }
         else
         {
-            TopExp_Explorer Exp = new();
-            for (Exp.Init(Fv.Oriented(TopAbs_FORWARD), TopAbs_EDGE); Exp.More(); Exp.Next())
+            Explorer Exp = new();
+            for (Exp.Init(Fv.Oriented(Forward), ShapeType.Edge); Exp.More(); Exp.Next())
             {
                 if (Exp.Current().IsSame(CV2.Arc()))
                 {
-                    Et = TopAbs.Compose(Exp.Current().Orientation(), CV2.TransitionOnArc());
+                    Et = global::Kerf.Engine.Topology.TopAbs.Compose(Exp.Current().Orientation(), CV2.TransitionOnArc());
                     break;
                 }
             }
@@ -586,7 +592,7 @@ public partial class ChFi3d_Builder
             // 31/01/02 akm vvv : (OCC119) Prevent the builder from creating
             //                    intersecting fillets - they are bad.
             Geom2dInt_GInter anIntersector = new();
-            Geom2dAdaptor_Curve aCorkPCurve = new(Pc, Udeb, Ufin);
+            CurveAdaptor2D aCorkPCurve = new(Pc, Udeb, Ufin);
 
             // Take all the interferences with faces from all the stripes
             // and look if their pcurves intersect our cork pcurve.
@@ -602,10 +608,10 @@ public partial class ChFi3d_Builder
                 for (iPart = 1; iPart <= aSeqData.Length(); iPart++)
                 {
                     ChFiDS_SurfData? aData = aSeqData.Value(iPart);
-                    Geom2dAdaptor_Curve anOtherPCurve = new();
+                    CurveAdaptor2D anOtherPCurve = new();
                     if (IShape == aData.IndexOfS1())
                     {
-                        Geom2d_Curve? aPCurve = aData.InterferenceOnS1().PCurveOnFace();
+                        Curve2D? aPCurve = aData.InterferenceOnS1().PCurveOnFace();
                         if (aPCurve is null)
                         {
                             continue;
@@ -616,7 +622,7 @@ public partial class ChFi3d_Builder
                     }
                     else if (IShape == aData.IndexOfS2())
                     {
-                        Geom2d_Curve? aPCurve = aData.InterferenceOnS2().PCurveOnFace();
+                        Curve2D? aPCurve = aData.InterferenceOnS2().PCurveOnFace();
                         if (aPCurve is null)
                         {
                             continue;
@@ -654,14 +660,14 @@ public partial class ChFi3d_Builder
                     continue;
                 }
                 // Look if there is an intersection between pcurves
-                Geom_TrimmedCurve? anOtherCur = 
-                    (DStr.Curve(anOtherIntrf.Geometry()).Curve() as Geom_TrimmedCurve);
+                TrimmedCurve3D? anOtherCur = 
+                    (DStr.Curve(anOtherIntrf.Geometry()).Curve() as TrimmedCurve3D);
                 if (anOtherCur is null)
                 {
                     continue;
                 }
                 // OCCT's anOtherPCurve, renamed: C# cannot redeclare it in this scope
-                Geom2dAdaptor_Curve anOtherPCurve2 = new(anOtherIntrf.PCurve(), anOtherCur.FirstParameter(),
+                CurveAdaptor2D anOtherPCurve2 = new(anOtherIntrf.PCurve(), anOtherCur.FirstParameter(),
                                                         anOtherCur.LastParameter());
                 anIntersector.Perform(aCorkPCurve, anOtherPCurve2, tol2d, global::Kerf.Engine.Foundation.Precision.PConfusion());
                 if (anIntersector.NbSegments() > 0 || anIntersector.NbPoints() > 0)
@@ -683,7 +689,7 @@ public partial class ChFi3d_Builder
                     Vector2D DerPc = new(), DerHc = new();
                     double first = 0.0, last = 0.0, prm1 = 0.0, prm2 = 0.0;
                     bool onfirst = false, FirstToPar = false;
-                    Geom2d_Curve? Hc = BRep_Tool.CurveOnSurface(CV[i].Arc(), Fv, out first, out last);
+                    Curve2D? Hc = Tool.CurveOnSurface(CV[i].Arc(), Fv, out first, out last);
                     if (Hc is null)
                     {
                         throw new ConstructionErrorException("Failed to get p-curve of edge");
@@ -715,9 +721,9 @@ public partial class ChFi3d_Builder
                         prm2 = CV[i].ParameterOnArc();
                         FirstToPar = true;
                     }
-                    Geom_Curve? Ct = BRep_Tool.Curve(CV[i].Arc(), out first, out last);
-                    Ct = new Geom_TrimmedCurve(Ct, prm1, prm2);
-                    double toled = BRep_Tool.Tolerance(CV[i].Arc());
+                    Curve3D? Ct = Tool.Curve(CV[i].Arc(), out first, out last);
+                    Ct = new TrimmedCurve3D(Ct, prm1, prm2);
+                    double toled = Tool.Tolerance(CV[i].Arc());
                     TopOpeBRepDS_Curve tcurv = new(Ct, toled);
                     TopOpeBRepDS_CurvePointInterference? Interfp1 = null, Interfp2 = null;
                     int indcurv = 0;
@@ -726,22 +732,22 @@ public partial class ChFi3d_Builder
                     int indvertex = DStr.AddShape(Vtx);
                     if (FirstToPar)
                     {
-                        Interfp1 = ChFi3d_FilPointInDS(TopAbs_FORWARD, indcurv, indvertex, prm1, true);
-                        Interfp2 = ChFi3d_FilPointInDS(TopAbs_REVERSED, indcurv, indpoint, prm2, false);
+                        Interfp1 = ChFi3d_FilPointInDS(Forward, indcurv, indvertex, prm1, true);
+                        Interfp2 = ChFi3d_FilPointInDS(Reversed, indcurv, indpoint, prm2, false);
                     }
                     else
                     {
-                        Interfp1 = ChFi3d_FilPointInDS(TopAbs_FORWARD, indcurv, indpoint, prm1, false);
-                        Interfp2 = ChFi3d_FilPointInDS(TopAbs_REVERSED, indcurv, indvertex, prm2, true);
+                        Interfp1 = ChFi3d_FilPointInDS(Forward, indcurv, indpoint, prm1, false);
+                        Interfp2 = ChFi3d_FilPointInDS(Reversed, indcurv, indvertex, prm2, true);
                     }
                     DStr.ChangeCurveInterferences(indcurv).Append(Interfp1);
                     DStr.ChangeCurveInterferences(indcurv).Append(Interfp2);
                     int indface = DStr.AddShape(Fv);
                     Interfc = ChFi3d_FilCurveInDS(indcurv, indface, Hc, CV[i].Arc().Orientation());
                     DStr.ChangeShapeInterferences(indface).Append(Interfc);
-                    TopoDS_Edge aLocalEdge = CV[i].Arc();
+                    Edge aLocalEdge = CV[i].Arc();
                     aLocalEdge.Reverse();
-                    Geom2d_Curve? HcR = BRep_Tool.CurveOnSurface(aLocalEdge, Fv, out first, out last);
+                    Curve2D? HcR = Tool.CurveOnSurface(aLocalEdge, Fv, out first, out last);
                     if (HcR is null)
                     {
                         throw new ConstructionErrorException("Failed to get p-curve of edge");
@@ -750,15 +756,15 @@ public partial class ChFi3d_Builder
                     DStr.ChangeShapeInterferences(indface).Append(Interfc);
                     // modify degenerated edge
                     bool DegenExist = false;
-                    TopoDS_Edge Edeg = new();
-                    TopExp_Explorer Explo = new(Fv, TopAbs_EDGE);
+                    Edge Edeg = new();
+                    Explorer Explo = new(Fv, ShapeType.Edge);
                     for (; Explo.More(); Explo.Next())
                     {
-                        TopoDS_Edge Ecur = TopoDS.Edge(Explo.Current());
-                        if (BRep_Tool.Degenerated(Ecur))
+                        Edge Ecur = ShapeCasts.Edge(Explo.Current());
+                        if (Tool.Degenerated(Ecur))
                         {
-                            TopoDS_Vertex Vf = new(), Vl = new();
-                            TopExp.Vertices(Ecur, out Vf, out Vl);
+                            Vertex Vf = new(), Vl = new();
+                            Exploration.Vertices(Ecur, out Vf, out Vl);
                             if (Vf.IsSame(Vtx) || Vl.IsSame(Vtx))
                             {
                                 DegenExist = true;
@@ -770,12 +776,12 @@ public partial class ChFi3d_Builder
                     if (DegenExist)
                     {
                         double fd = 0.0, ld = 0.0;
-                        Geom2d_Curve? Cd = BRep_Tool.CurveOnSurface(Edeg, Fv, out fd, out ld);
+                        Curve2D? Cd = Tool.CurveOnSurface(Edeg, Fv, out fd, out ld);
                         if (Cd is null)
                         {
                             throw new ConstructionErrorException("Failed to get p-curve of edge");
                         }
-                        Geom2d_TrimmedCurve? tCd = (Cd as Geom2d_TrimmedCurve);
+                        TrimmedCurve2D? tCd = (Cd as TrimmedCurve2D);
                         if (tCd is not null)
                         {
                             Cd = tCd.BasisCurve();
@@ -785,7 +791,7 @@ public partial class ChFi3d_Builder
                         double par = Projector.LowerDistanceParameter();
                         int Ideg = DStr.AddShape(Edeg);
                         // clang-format off
-                        TopAbs_Orientation ori = (par < fd)? TopAbs_FORWARD : TopAbs_REVERSED;//if par<fd => par>ld
+                        Orientation ori = (par < fd)? Forward : Reversed;//if par<fd => par>ld
                         // clang-format on
                         Interfp1 = ChFi3d_FilPointInDS(ori, Ideg, indvertex, par, true);
                         DStr.ChangeShapeInterferences(Ideg).Append(Interfp1);
@@ -814,32 +820,32 @@ public partial class ChFi3d_Builder
             // interferences of curv1 and curv2 on Isurf
             if (Fd.Orientation() == Fv.Orientation())
             {
-                Et = TopAbs.Reverse(Et);
+                Et = global::Kerf.Engine.Topology.TopAbs.Reverse(Et);
             }
-            c2d1 = new Geom2d_TrimmedCurve(Ps, Udeb, par2);
+            c2d1 = new TrimmedCurve2D(Ps, Udeb, par2);
             InterFv = ChFi3d_FilCurveInDS(Icurv1, Isurf, c2d1, Et);
             DStr.ChangeSurfaceInterferences(Isurf).Append(InterFv);
-            c2d2 = new Geom2d_TrimmedCurve(Ps, par2, Ufin);
+            c2d2 = new TrimmedCurve2D(Ps, par2, Ufin);
             InterFv = ChFi3d_FilCurveInDS(Icurv2, Isurf, c2d2, Et);
             DStr.ChangeSurfaceInterferences(Isurf).Append(InterFv);
 
             // limitation of the sewing edge
             int Iarc = DStr.AddShape(edgecouture);
             TopOpeBRepDS_CurvePointInterference? Interfedge = null;
-            TopAbs_Orientation ori = default;
-            TopoDS_Vertex Vdeb = new(), Vfin = new();
-            Vdeb = TopExp.FirstVertex(edgecouture);
-            Vfin = TopExp.LastVertex(edgecouture);
+            Orientation ori = default;
+            Vertex Vdeb = new(), Vfin = new();
+            Vdeb = Exploration.FirstVertex(edgecouture);
+            Vfin = Exploration.LastVertex(edgecouture);
             double pard = 0.0, parf = 0.0;
-            pard = BRep_Tool.Parameter(Vdeb, edgecouture);
-            parf = BRep_Tool.Parameter(Vfin, edgecouture);
+            pard = Tool.Parameter(Vdeb, edgecouture);
+            parf = Tool.Parameter(Vfin, edgecouture);
             if (Math.Abs(par1 - pard) < Math.Abs(parf - par1))
             {
-                ori = TopAbs_FORWARD;
+                ori = Forward;
             }
             else
             {
-                ori = TopAbs_REVERSED;
+                ori = Reversed;
             }
             Interfedge = ChFi3d_FilPointInDS(ori, Iarc, indpt, par1);
             DStr.ChangeShapeInterferences(Iarc).Append(Interfedge);
@@ -849,13 +855,13 @@ public partial class ChFi3d_Builder
             int ind1 = stripe.IndexPoint(isfirst, 1);
             int ind2 = stripe.IndexPoint(isfirst, 2);
             TopOpeBRepDS_CurvePointInterference? interfprol = 
-                ChFi3d_FilPointInDS(TopAbs_FORWARD, Icurv1, ind1, Udeb);
+                ChFi3d_FilPointInDS(Forward, Icurv1, ind1, Udeb);
             DStr.ChangeCurveInterferences(Icurv1).Append(interfprol);
-            interfprol = ChFi3d_FilPointInDS(TopAbs_REVERSED, Icurv1, indpt, par2);
+            interfprol = ChFi3d_FilPointInDS(Reversed, Icurv1, indpt, par2);
             DStr.ChangeCurveInterferences(Icurv1).Append(interfprol);
-            interfprol = ChFi3d_FilPointInDS(TopAbs_FORWARD, Icurv2, indpt, par2);
+            interfprol = ChFi3d_FilPointInDS(Forward, Icurv2, indpt, par2);
             DStr.ChangeCurveInterferences(Icurv2).Append(interfprol);
-            interfprol = ChFi3d_FilPointInDS(TopAbs_REVERSED, Icurv2, ind2, Ufin);
+            interfprol = ChFi3d_FilPointInDS(Reversed, Icurv2, ind2, Ufin);
             DStr.ChangeCurveInterferences(Icurv2).Append(interfprol);
         }
 
@@ -874,8 +880,8 @@ public partial class ChFi3d_Builder
             // First of all the points are cut with the edge of the spine.
             int IArcspine = DStr.AddShape(Arcspine);
             int IVtx = DStr.AddShape(Vtx);
-            TopAbs_Orientation OVtx = TopAbs_FORWARD;
-            for (ex.Init(Arcspine.Oriented(TopAbs_FORWARD), TopAbs_VERTEX); ex.More(); ex.Next())
+            Orientation OVtx = Forward;
+            for (ex.Init(Arcspine.Oriented(Forward), ShapeType.Vertex); ex.More(); ex.Next())
             {
                 if (Vtx.IsSame(ex.Current()))
                 {
@@ -883,15 +889,15 @@ public partial class ChFi3d_Builder
                     break;
                 }
             }
-            OVtx = TopAbs.Reverse(OVtx);
-            double parVtx = BRep_Tool.Parameter(Vtx, Arcspine);
+            OVtx = global::Kerf.Engine.Topology.TopAbs.Reverse(OVtx);
+            double parVtx = Tool.Parameter(Vtx, Arcspine);
             TopOpeBRepDS_CurvePointInterference? interfv = 
                 ChFi3d_FilVertexInDS(OVtx, IArcspine, IVtx, parVtx);
             DStr.ChangeShapeInterferences(IArcspine).Append(interfv);
 
             // Now the missing curves are constructed.
-            TopoDS_Vertex V2 = new();
-            for (ex.Init(Arcprol.Oriented(TopAbs_FORWARD), TopAbs_VERTEX); ex.More(); ex.Next())
+            Vertex V2 = new();
+            for (ex.Init(Arcprol.Oriented(Forward), ShapeType.Vertex); ex.More(); ex.Next())
             {
                 if (Vtx.IsSame(ex.Current()))
                 {
@@ -899,22 +905,22 @@ public partial class ChFi3d_Builder
                 }
                 else
                 {
-                    V2 = TopoDS.Vertex(ex.Current());
+                    V2 = ShapeCasts.Vertex(ex.Current());
                 }
             }
 
-            Geom2d_Curve? Hc = null;
-            parVtx = BRep_Tool.Parameter(Vtx, Arcprol); // VARIANT1
+            Curve2D? Hc = null;
+            parVtx = Tool.Parameter(Vtx, Arcprol); // VARIANT1
             ChFiDS_FaceInterference Fiop = Fd.Interference(IFopArc);
             Point2D pop1 = new(), pop2 = new(), pv1 = new(), pv2 = new();
-            Hc = BRep_Tool.CurveOnSurface(Arcprol, Fop, out Ubid, out Ubid);
+            Hc = Tool.CurveOnSurface(Arcprol, Fop, out Ubid, out Ubid);
             if (Hc is null)
             {
                 throw new ConstructionErrorException("Failed to get p-curve of edge");
             }
             pop1 = Hc.Value(parVtx);
             pop2 = Fiop.PCurveOnFace().Value(Fiop.Parameter(isfirst));
-            Hc = BRep_Tool.CurveOnSurface(Arcprol, Fv, out Ubid, out Ubid);
+            Hc = Tool.CurveOnSurface(Arcprol, Fv, out Ubid, out Ubid);
             if (Hc is null)
             {
                 throw new ConstructionErrorException("Failed to get p-curve of edge");
@@ -937,8 +943,8 @@ public partial class ChFi3d_Builder
             ChFi3d_Boite(pop1, pop2, out uu1, out uu2, out vv1, out vv2);
             ChFi3d_BoundFac(Bop, uu1, uu2, vv1, vv2);
 
-            Geom_Curve? zob3d = null;
-            Geom2d_Curve? zob2dop = null, zob2dv = null;
+            Curve3D? zob3d = null;
+            Curve2D? zob2dop = null, zob2dv = null;
             // double tolreached;
             if (!ChFi3d_ComputeCurves(HBop, HBs, Pardeb, Parfin, ref zob3d, ref zob2dop, ref zob2dv, tolapp3d, tol2d,
                                                                 out tolreached))
@@ -958,10 +964,10 @@ public partial class ChFi3d_Builder
             // bool couture;
             ChFi3d_Couture(Fop, out couture, ref edgecouture);
 
-            if (couture && !BRep_Tool.Degenerated(edgecouture))
+            if (couture && !Tool.Degenerated(edgecouture))
             {
                 BRepLib_MakeEdge Bedge = new(zob3d);
-                TopoDS_Edge edg = Bedge.Edge();
+                Edge edg = Bedge.Edge();
                 BRepExtrema_ExtCC extCC = new(edgecouture, edg);
                 if (extCC.IsDone() && extCC.NbExt() != 0)
                 {
@@ -975,8 +981,8 @@ public partial class ChFi3d_Builder
                             TopOpeBRepDS_Point tpoint = new(P1, 1.0e-4);
                             indpt = DStr.AddPoint(tpoint);
                             intcouture = true;
-                            curv1 = new Geom_TrimmedCurve(zob3d, Udeb, par2);
-                            curv2 = new Geom_TrimmedCurve(zob3d, par2, Ufin);
+                            curv1 = new TrimmedCurve3D(zob3d, Udeb, par2);
+                            curv2 = new TrimmedCurve3D(zob3d, par2, Ufin);
                             TopOpeBRepDS_Curve tcurv1 = new(curv1, tolreached);
                             TopOpeBRepDS_Curve tcurv2 = new(curv2, tolreached);
                             Icurv1 = DStr.AddCurve(tcurv1);
@@ -989,7 +995,7 @@ public partial class ChFi3d_Builder
             {
 
                 // interference of curv1 and curv2 on Ishape
-                Et = TopAbs.Reverse(TopAbs.Compose(OVtx, OArcprolv));
+                Et = global::Kerf.Engine.Topology.TopAbs.Reverse(global::Kerf.Engine.Topology.TopAbs.Compose(OVtx, OArcprolv));
                 ComputeCurve2d(curv1, ref Fop, ref c2d1);
                 TopOpeBRepDS_SurfaceCurveInterference? InterFv = 
                     ChFi3d_FilCurveInDS(Icurv1, IShape, /*zob2dv*/ c2d1, Et);
@@ -1001,27 +1007,27 @@ public partial class ChFi3d_Builder
                 // limitation of the sewing edge
                 int Iarc = DStr.AddShape(edgecouture);
                 TopOpeBRepDS_CurvePointInterference? Interfedge = null;
-                TopAbs_Orientation ori = default;
-                TopoDS_Vertex Vdeb = new(), Vfin = new();
-                Vdeb = TopExp.FirstVertex(edgecouture);
-                Vfin = TopExp.LastVertex(edgecouture);
+                Orientation ori = default;
+                Vertex Vdeb = new(), Vfin = new();
+                Vdeb = Exploration.FirstVertex(edgecouture);
+                Vfin = Exploration.LastVertex(edgecouture);
                 double pard = 0.0, parf = 0.0;
-                pard = BRep_Tool.Parameter(Vdeb, edgecouture);
-                parf = BRep_Tool.Parameter(Vfin, edgecouture);
+                pard = Tool.Parameter(Vdeb, edgecouture);
+                parf = Tool.Parameter(Vfin, edgecouture);
                 if (Math.Abs(par1 - pard) < Math.Abs(parf - par1))
                 {
-                    ori = TopAbs_REVERSED;
+                    ori = Reversed;
                 }
                 else
                 {
-                    ori = TopAbs_FORWARD;
+                    ori = Forward;
                 }
                 Interfedge = ChFi3d_FilPointInDS(ori, Iarc, indpt, par1);
                 DStr.ChangeShapeInterferences(Iarc).Append(Interfedge);
 
                 //  interference of curv1 and curv2 on Iop
                 int Iop = DStr.AddShape(Fop);
-                Et = TopAbs.Reverse(TopAbs.Compose(OVtx, OArcprolop));
+                Et = global::Kerf.Engine.Topology.TopAbs.Reverse(global::Kerf.Engine.Topology.TopAbs.Compose(OVtx, OArcprolop));
                 TopOpeBRepDS_SurfaceCurveInterference? Interfop = null;
                 ComputeCurve2d(curv1, ref Fop, ref c2d1);
                 Interfop = ChFi3d_FilCurveInDS(Icurv1, Iop, c2d1, Et);
@@ -1030,32 +1036,32 @@ public partial class ChFi3d_Builder
                 Interfop = ChFi3d_FilCurveInDS(Icurv2, Iop, c2d2, Et);
                 DStr.ChangeShapeInterferences(Iop).Append(Interfop);
                 TopOpeBRepDS_CurvePointInterference? interfprol = 
-                    ChFi3d_FilVertexInDS(TopAbs_FORWARD, Icurv1, IVtx, Udeb);
+                    ChFi3d_FilVertexInDS(Forward, Icurv1, IVtx, Udeb);
                 DStr.ChangeCurveInterferences(Icurv1).Append(interfprol);
-                interfprol = ChFi3d_FilPointInDS(TopAbs_REVERSED, Icurv1, indpt, par2);
+                interfprol = ChFi3d_FilPointInDS(Reversed, Icurv1, indpt, par2);
                 DStr.ChangeCurveInterferences(Icurv1).Append(interfprol);
                 int icc = stripe.IndexPoint(isfirst, IFopArc);
-                interfprol = ChFi3d_FilPointInDS(TopAbs_FORWARD, Icurv2, indpt, par2);
+                interfprol = ChFi3d_FilPointInDS(Forward, Icurv2, indpt, par2);
                 DStr.ChangeCurveInterferences(Icurv2).Append(interfprol);
-                interfprol = ChFi3d_FilPointInDS(TopAbs_REVERSED, Icurv2, icc, Ufin);
+                interfprol = ChFi3d_FilPointInDS(Reversed, Icurv2, icc, Ufin);
                 DStr.ChangeCurveInterferences(Icurv2).Append(interfprol);
             }
             else
             {
-                Et = TopAbs.Reverse(TopAbs.Compose(OVtx, OArcprolv));
+                Et = global::Kerf.Engine.Topology.TopAbs.Reverse(global::Kerf.Engine.Topology.TopAbs.Compose(OVtx, OArcprolv));
                 TopOpeBRepDS_SurfaceCurveInterference? InterFv = 
                     ChFi3d_FilCurveInDS(IZob, IShape, zob2dv, Et);
                 DStr.ChangeShapeInterferences(IShape).Append(InterFv);
-                Et = TopAbs.Reverse(TopAbs.Compose(OVtx, OArcprolop));
+                Et = global::Kerf.Engine.Topology.TopAbs.Reverse(global::Kerf.Engine.Topology.TopAbs.Compose(OVtx, OArcprolop));
                 int Iop = DStr.AddShape(Fop);
                 TopOpeBRepDS_SurfaceCurveInterference? Interfop = 
                     ChFi3d_FilCurveInDS(IZob, Iop, zob2dop, Et);
                 DStr.ChangeShapeInterferences(Iop).Append(Interfop);
                 TopOpeBRepDS_CurvePointInterference? interfprol = null;
-                interfprol = ChFi3d_FilVertexInDS(TopAbs_FORWARD, IZob, IVtx, Udeb); // VARIANT1
+                interfprol = ChFi3d_FilVertexInDS(Forward, IZob, IVtx, Udeb); // VARIANT1
                 DStr.ChangeCurveInterferences(IZob).Append(interfprol);
                 int icc = stripe.IndexPoint(isfirst, IFopArc);
-                interfprol = ChFi3d_FilPointInDS(TopAbs_REVERSED, IZob, icc, Ufin);
+                interfprol = ChFi3d_FilPointInDS(Reversed, IZob, icc, Ufin);
                 DStr.ChangeCurveInterferences(IZob).Append(interfprol);
                 { // VARIANT1
                     if (IFopArc == 1)
@@ -1136,17 +1142,17 @@ public partial class ChFi3d_Builder
         ChFiDS_Spine? spine = stripe.Spine();
         NCollection_Sequence<ChFiDS_SurfData> SeqFil = 
             stripe.ChangeSetOfSurfData();
-        TopoDS_Vertex Vtx = myVDataMap.FindKey(Index);
+        Vertex Vtx = myVDataMap.FindKey(Index);
         int sens = 0, num, num1;
         bool couture = false, isfirst;
         // int sense;
-        TopoDS_Edge edgelibre1 = new(), edgelibre2 = new(), EdgeSpine = new();
+        Edge edgelibre1 = new(), edgelibre2 = new(), EdgeSpine = new();
         bool bordlibre = false;
         // determine the number of faces and edges
-        NCollection_Array1<TopoDS_Shape> tabedg = new(0, nn);
-        TopoDS_Face F1 = new(), F2 = new();
+        NCollection_Array1<Shape> tabedg = new(0, nn);
+        Face F1 = new(), F2 = new();
         int nface = ChFi3d_nbface(myVFMap[Vtx]);
-        NCollection_List<TopoDS_Shape>.Iterator ItF = new();
+        NCollection_List<Shape>.Iterator ItF = new();
         int nbarete = 0;
         nbarete = ChFi3d_NbNotDegeneratedEdges(Vtx, myVEMap);
         ChFi3d_ChercheBordsLibres(myVEMap, Vtx, out bordlibre, ref edgelibre1, ref edgelibre2);
@@ -1160,13 +1166,13 @@ public partial class ChFi3d_Builder
         }
         // it is determined if there is an edge of sewing and it face
 
-        TopoDS_Face facecouture = new();
-        TopoDS_Edge edgecouture = new();
+        Face facecouture = new();
+        Edge edgecouture = new();
 
         bool trouve = false;
         for (ItF.Initialize(myVFMap[Vtx]); ItF.More() && !couture; ItF.Next())
         {
-            TopoDS_Face fcur = TopoDS.Face(ItF.Value());
+            Face fcur = ShapeCasts.Face(ItF.Value());
             ChFi3d_CoutureOnVertex(fcur, Vtx, out couture, ref edgecouture);
             if (couture)
             {
@@ -1175,9 +1181,9 @@ public partial class ChFi3d_Builder
         }
         // it is determined if one of edges adjacent to the fillet is regular
         bool reg1 = false, reg2 = false;
-        TopoDS_Edge Ecur = new(), Eadj1 = new(), Eadj2 = new();
-        TopoDS_Face Fga = new(), Fdr = new();
-        TopoDS_Vertex Vbid1 = new();
+        Edge Ecur = new(), Eadj1 = new(), Eadj2 = new();
+        Face Fga = new(), Fdr = new();
+        Vertex Vbid1 = new();
         int nbsurf = 0, nbedge = 0;
         reg1 = false;
         reg2 = false;
@@ -1269,7 +1275,7 @@ public partial class ChFi3d_Builder
         }
         // there is only one face at end if FindFace is true and if the face
         // is not the face with sewing edge
-        TopoDS_Face face = new();
+        Face face = new();
         ChFiDS_SurfData? Fd = SeqFil.ChangeValue(num);
         ref ChFiDS_CommonPoint CV1 = ref Fd.ChangeVertex(isfirst, 1);
         ref ChFiDS_CommonPoint CV2 = ref Fd.ChangeVertex(isfirst, 2);
@@ -1298,16 +1304,16 @@ public partial class ChFi3d_Builder
             PerformMoreThreeCorner(Index, 1);
             return;
         }
-        GeomAdaptor_Surface? HGs = ChFi3d_BoundSurf(DStr, Fd, 1, 2);
+        SurfaceAdaptor? HGs = ChFi3d_BoundSurf(DStr, Fd, 1, 2);
         ChFiDS_FaceInterference Fi1 = Fd.InterferenceOnS1();
         ChFiDS_FaceInterference Fi2 = Fd.InterferenceOnS2();
-        GeomAdaptor_Surface Gs = HGs;
-        BRepAdaptor_Surface? HBs = new BRepAdaptor_Surface();
-        BRepAdaptor_Surface Bs = HBs;
-        Geom_Curve? Cc = null;
-        Geom2d_Curve? Pc = null, Ps = null;
+        SurfaceAdaptor Gs = HGs;
+        FaceSurfaceAdaptor? HBs = new FaceSurfaceAdaptor();
+        FaceSurfaceAdaptor Bs = HBs;
+        Curve3D? Cc = null;
+        Curve2D? Pc = null, Ps = null;
         double Ubid = 0.0, Vbid = 0.0;
-        TopAbs_Orientation orsurfdata = default;
+        Orientation orsurfdata = default;
         orsurfdata = Fd.Orientation();
         int IsurfPrev = 0, Isurf = Fd.Surf();
         ChFiDS_SurfData? SDprev = null;
@@ -1320,7 +1326,7 @@ public partial class ChFi3d_Builder
 
         double tolpt = 1.0e-4;
         double tolreached = 0.0;
-        TopAbs_Orientation orcourbe = default, orface = default, orien = default;
+        Orientation orcourbe = default, orface = default, orien = default;
 
         stripe.SetIndexPoint(ChFi3d_IndexPointInDS(CV1, DStr), isfirst, 1);
         stripe.SetIndexPoint(ChFi3d_IndexPointInDS(CV2, DStr), isfirst, 2);
@@ -1329,16 +1335,16 @@ public partial class ChFi3d_Builder
         //  gp_Pnt2d p2d;
         double dist = 0.0;
         int Ishape1 = Fd.IndexOfS1();
-        TopAbs_Orientation trafil1 = TopAbs_FORWARD;
+        Orientation trafil1 = Forward;
         if (Ishape1 != 0)
         {
             if (Ishape1 > 0)
             {
                 trafil1 = DStr.Shape(Ishape1).Orientation();
             }
-            trafil1 = TopAbs.Compose(trafil1, Fd.Orientation());
+            trafil1 = global::Kerf.Engine.Topology.TopAbs.Compose(trafil1, Fd.Orientation());
 
-            trafil1 = TopAbs.Compose(TopAbs.Reverse(Fi1.Transition()), trafil1);
+            trafil1 = global::Kerf.Engine.Topology.TopAbs.Compose(global::Kerf.Engine.Topology.TopAbs.Reverse(Fi1.Transition()), trafil1);
         }
         // eap, Apr 22 2002, occ 293
         //   Fi1.PCurveOnFace()->D0(Fi1.LastParameter(),p2d);
@@ -1354,7 +1360,7 @@ public partial class ChFi3d_Builder
         }
         else
         {
-            orcourbe = TopAbs.Reverse(trafil1);
+            orcourbe = global::Kerf.Engine.Topology.TopAbs.Reverse(trafil1);
         }
 
         // eap, Apr 22 2002, occ 293
@@ -1415,23 +1421,23 @@ public partial class ChFi3d_Builder
         /**********************************************************************/
 
         int nb = 1, nbface;
-        TopoDS_Edge E1 = new(), E2 = new(), E = new(), Ei = new(), edgesau = new();
-        TopoDS_Edge[] Edge = new TopoDS_Edge[nn];
-        TopoDS_Face[] Face = new TopoDS_Face[nn];
+        Edge E1 = new(), E2 = new(), E = new(), Ei = new(), edgesau = new();
+        Edge[] Edge = new Edge[nn];
+        Face[] Face = new Face[nn];
         for (int k = 0; k < nn; k++)
         {
             Edge[k] = new();
             Face[k] = new();
         }
-        TopoDS_Face facesau = new();
+        Face facesau = new();
         bool oneintersection1 = false;
         bool oneintersection2 = false;
-        TopoDS_Face F = new(), F3 = new();
-        TopoDS_Vertex V1 = new(), V2 = new(), V = new(), Vfin = new();
+        Face F = new(), F3 = new();
+        Vertex V1 = new(), V2 = new(), V = new(), Vfin = new();
         bool findonf1 = false, findonf2 = false;
-        NCollection_List<TopoDS_Shape>.Iterator It3 = new();
-        F1 = TopoDS.Face(DStr.Shape(Fd.IndexOfS1()));
-        F2 = TopoDS.Face(DStr.Shape(Fd.IndexOfS2()));
+        NCollection_List<Shape>.Iterator It3 = new();
+        F1 = ShapeCasts.Face(DStr.Shape(Fd.IndexOfS1()));
+        F2 = ShapeCasts.Face(DStr.Shape(Fd.IndexOfS2()));
         F3 = F1;
         if (couture || bordlibre)
         {
@@ -1466,15 +1472,15 @@ public partial class ChFi3d_Builder
             /*TopoDS_Vertex */ V = CV1.Vertex();
             for (It3.Initialize(myVEMap[V]); It3.More() && !trouve; It3.Next())
             {
-                E = TopoDS.Edge(It3.Value());
+                E = ShapeCasts.Edge(It3.Value());
                 if (!E.IsSame(Edge[0]) && (containE(F1, E)))
                 {
                     trouve = true;
                 }
             }
-            TopoDS_Vertex Vt = new(), V3 = new(), V4 = new();
-            V1 = TopExp.FirstVertex(Edge[0]);
-            V2 = TopExp.LastVertex(Edge[0]);
+            Vertex Vt = new(), V3 = new(), V4 = new();
+            V1 = Exploration.FirstVertex(Edge[0]);
+            V2 = Exploration.LastVertex(Edge[0]);
             if (V.IsSame(V1))
             {
                 Vt = V2;
@@ -1483,9 +1489,9 @@ public partial class ChFi3d_Builder
             {
                 Vt = V1;
             }
-            dist1 = (BRep_Tool.Pnt(Vt)).Distance(BRep_Tool.Pnt(Vtx));
-            V3 = TopExp.FirstVertex(E);
-            V4 = TopExp.LastVertex(E);
+            dist1 = (Tool.Pnt(Vt)).Distance(Tool.Pnt(Vtx));
+            V3 = Exploration.FirstVertex(E);
+            V4 = Exploration.LastVertex(E);
             if (V.IsSame(V3))
             {
                 Vt = V4;
@@ -1494,20 +1500,20 @@ public partial class ChFi3d_Builder
             {
                 Vt = V3;
             }
-            dist2 = (BRep_Tool.Pnt(Vt)).Distance(BRep_Tool.Pnt(Vtx));
+            dist2 = (Tool.Pnt(Vt)).Distance(Tool.Pnt(Vtx));
             if (dist2 < dist1)
             {
                 Edge[0] = E;
-                TopAbs_Orientation ori = default;
+                Orientation ori = default;
                 if (V2.IsSame(V3) || V1.IsSame(V4))
                 {
                     ori = CV1.TransitionOnArc();
                 }
                 else
                 {
-                    ori = TopAbs.Reverse(CV1.TransitionOnArc());
+                    ori = global::Kerf.Engine.Topology.TopAbs.Reverse(CV1.TransitionOnArc());
                 }
-                double par = BRep_Tool.Parameter(V, Edge[0]);
+                double par = Tool.Parameter(V, Edge[0]);
                 double tol = CV1.Tolerance();
                 CV1.SetArc(tol, Edge[0], par, ori);
             }
@@ -1519,15 +1525,15 @@ public partial class ChFi3d_Builder
             /*TopoDS_Vertex*/ V = CV2.Vertex();
             for (It3.Initialize(myVEMap[V]); It3.More() && !trouve; It3.Next())
             {
-                E = TopoDS.Edge(It3.Value());
+                E = ShapeCasts.Edge(It3.Value());
                 if (!E.IsSame(Edge[2]) && (containE(F2, E)))
                 {
                     trouve = true;
                 }
             }
-            TopoDS_Vertex Vt = new(), V3 = new(), V4 = new();
-            V1 = TopExp.FirstVertex(Edge[2]);
-            V2 = TopExp.LastVertex(Edge[2]);
+            Vertex Vt = new(), V3 = new(), V4 = new();
+            V1 = Exploration.FirstVertex(Edge[2]);
+            V2 = Exploration.LastVertex(Edge[2]);
             if (V.IsSame(V1))
             {
                 Vt = V2;
@@ -1536,9 +1542,9 @@ public partial class ChFi3d_Builder
             {
                 Vt = V1;
             }
-            dist1 = (BRep_Tool.Pnt(Vt)).Distance(BRep_Tool.Pnt(Vtx));
-            V3 = TopExp.FirstVertex(E);
-            V4 = TopExp.LastVertex(E);
+            dist1 = (Tool.Pnt(Vt)).Distance(Tool.Pnt(Vtx));
+            V3 = Exploration.FirstVertex(E);
+            V4 = Exploration.LastVertex(E);
             if (V.IsSame(V3))
             {
                 Vt = V4;
@@ -1547,20 +1553,20 @@ public partial class ChFi3d_Builder
             {
                 Vt = V3;
             }
-            dist2 = (BRep_Tool.Pnt(Vt)).Distance(BRep_Tool.Pnt(Vtx));
+            dist2 = (Tool.Pnt(Vt)).Distance(Tool.Pnt(Vtx));
             if (dist2 < dist1)
             {
                 Edge[2] = E;
-                TopAbs_Orientation ori = default;
+                Orientation ori = default;
                 if (V2.IsSame(V3) || V1.IsSame(V4))
                 {
                     ori = CV2.TransitionOnArc();
                 }
                 else
                 {
-                    ori = TopAbs.Reverse(CV2.TransitionOnArc());
+                    ori = global::Kerf.Engine.Topology.TopAbs.Reverse(CV2.TransitionOnArc());
                 }
-                double par = BRep_Tool.Parameter(V, Edge[2]);
+                double par = Tool.Parameter(V, Edge[2]);
                 double tol = CV2.Tolerance();
                 CV2.SetArc(tol, Edge[2], par, ori);
             }
@@ -1600,8 +1606,8 @@ public partial class ChFi3d_Builder
                 }
                 if (!findonf1)
                 {
-                    NCollection_IndexedMap<TopoDS_Shape> MapV = new(TopTools_ShapeMapHasher.Instance);
-                    TopExp.MapShapes(Edge[0], TopAbs_VERTEX, MapV);
+                    NCollection_IndexedMap<Shape> MapV = new(ShapeHasher.Instance);
+                    Exploration.MapShapes(Edge[0], ShapeType.Vertex, MapV);
                     if (MapV.Extent() == 2)
                     {
                         if (!MapV[1].IsSame(Vtx) && !MapV[2].IsSame(Vtx))
@@ -1612,8 +1618,8 @@ public partial class ChFi3d_Builder
                 }
                 if (!findonf2)
                 {
-                    NCollection_IndexedMap<TopoDS_Shape> MapV = new(TopTools_ShapeMapHasher.Instance);
-                    TopExp.MapShapes(Edge[2], TopAbs_VERTEX, MapV);
+                    NCollection_IndexedMap<Shape> MapV = new(ShapeHasher.Instance);
+                    Exploration.MapShapes(Edge[2], ShapeType.Vertex, MapV);
                     if (MapV.Extent() == 2)
                     {
                         if (!MapV[1].IsSame(Vtx) && !MapV[2].IsSame(Vtx))
@@ -1626,7 +1632,7 @@ public partial class ChFi3d_Builder
                 // detect and process OnSame situatuation
                 if (state == ChFiDS_OnSame)
                 {
-                    TopoDS_Edge[] threeE = [new(), new(), new()];
+                    Edge[] threeE = [new(), new(), new()];
 
                     ChFi3d_cherche_element(Vtx, EdgeSpine, F1, ref threeE[0], ref V2);
                     ChFi3d_cherche_element(Vtx, EdgeSpine, F2, ref threeE[1], ref V2);
@@ -1658,13 +1664,13 @@ public partial class ChFi3d_Builder
 
                 if (findonf1 && !isOnSame1)
                 {
-                    if (CV1.TransitionOnArc() == TopAbs_FORWARD)
+                    if (CV1.TransitionOnArc() == Forward)
                     {
-                        V1 = TopExp.FirstVertex(CV1.Arc());
+                        V1 = Exploration.FirstVertex(CV1.Arc());
                     }
                     else
                     {
-                        V1 = TopExp.LastVertex(CV1.Arc());
+                        V1 = Exploration.LastVertex(CV1.Arc());
                     }
                     ChFi3d_cherche_face1(myEFMap[CV1.Arc()], F1, ref Face[0]);
                     nb = 1;
@@ -1694,13 +1700,13 @@ public partial class ChFi3d_Builder
                         nb = 1;
                     }
                     V1 = Vtx;
-                    if (CV2.TransitionOnArc() == TopAbs_FORWARD)
+                    if (CV2.TransitionOnArc() == Forward)
                     {
-                        Vfin = TopExp.LastVertex(CV2.Arc());
+                        Vfin = Exploration.LastVertex(CV2.Arc());
                     }
                     else
                     {
-                        Vfin = TopExp.FirstVertex(CV2.Arc());
+                        Vfin = Exploration.FirstVertex(CV2.Arc());
                     }
                     if (!findonf1)
                     {
@@ -1740,16 +1746,16 @@ public partial class ChFi3d_Builder
                 //  the faces and edges concerned are found
                 bool /*trouve,*/ possible1, possible2;
                 trouve = possible1 = possible2 = false;
-                TopExp_Explorer ex = new();
+                Explorer ex = new();
                 nb = 0;
-                for (ex.Init(CV1.Arc(), TopAbs_VERTEX); ex.More(); ex.Next())
+                for (ex.Init(CV1.Arc(), ShapeType.Vertex); ex.More(); ex.Next())
                 {
                     if (Vtx.IsSame(ex.Current()))
                     {
                         possible1 = true;
                     }
                 }
-                for (ex.Init(CV2.Arc(), TopAbs_VERTEX); ex.More(); ex.Next())
+                for (ex.Init(CV2.Arc(), ShapeType.Vertex); ex.More(); ex.Next())
                 {
                     if (Vtx.IsSame(ex.Current()))
                     {
@@ -1800,7 +1806,7 @@ public partial class ChFi3d_Builder
                 {
                     // if two consecutive edges are G1 there is only one face of intersection
                     double ang1 = 0.0;
-                    TopoDS_Vertex Vcom = new();
+                    Vertex Vcom = new();
                     trouve = false;
                     ChFi3d_cherche_vertex(Edge[0], Edge[1], ref Vcom, out trouve);
                     if (Vcom.IsSame(Vtx))
@@ -1869,11 +1875,11 @@ public partial class ChFi3d_Builder
 
         NCollection_Array1<double> Pardeb = new(1, 4), Parfin = new(1, 4);
         Point2D pfil1 = new(), pfac1 = new(), pfil2 = new(), pfac2 = new(), pint = new(), pfildeb = new();
-        Geom2d_Curve? Hc1 = null, Hc2 = null;
+        Curve2D? Hc1 = null, Hc2 = null;
         IntCurveSurface_HInter inters = new();
         int[] proledge = new int[nn], prolface = new int[nn + 1]; // last prolface[nn] is for Fd
         int[] shrink = new int[nn];
-        TopoDS_Face[] faceprol = new TopoDS_Face[nn];
+        Face[] faceprol = new Face[nn];
         for (int k = 0; k < nn; k++)
         {
             faceprol[k] = new();
@@ -1888,7 +1894,7 @@ public partial class ChFi3d_Builder
         double u2 = 0.0, v2 = 0.0, p1 = 0.0, p2 = 0.0, paredge1 = 0.0;
         double paredge2 = 0.0, tolex = 1.0e-4;
         bool extend = false;
-        Geom_Surface? Sfacemoins1 = null, Sface = null;
+        Surface? Sfacemoins1 = null, Sface = null;
         /***************************************************************************/
         // calculate intersection of the fillet and each face
         // and storage in the DS
@@ -1937,14 +1943,14 @@ public partial class ChFi3d_Builder
                 }
             }
 
-            if (F.IsNull())
+            if (F.IsNull)
             {
                 throw new NullObjectException("IntersectionAtEnd : Trying to intersect with null face");
             }
 
-            Sfacemoins1 = BRep_Tool.Surface(F);
-            Geom_Curve? cint = null;
-            Geom2d_Curve? C2dint1 = null, C2dint2 = null, cface = null, cfacemoins1 = null;
+            Sfacemoins1 = Tool.Surface(F);
+            Curve3D? cint = null;
+            Curve2D? C2dint1 = null, C2dint2 = null, cface = null, cfacemoins1 = null;
 
             ///////////////////////////////////////////////////////
             // determine intersections of edges and the fillet
@@ -1953,7 +1959,7 @@ public partial class ChFi3d_Builder
 
             if (nb == 1)
             {
-                Hc1 = BRep_Tool.CurveOnSurface(Edge[0], Face[0], out Ubid, out Ubid);
+                Hc1 = Tool.CurveOnSurface(Edge[0], Face[0], out Ubid, out Ubid);
                 if (isOnSame1)
                 {
                     // update interference param on Fi1 and point of CV1
@@ -1965,7 +1971,7 @@ public partial class ChFi3d_Builder
                     {
                         Bs.Initialize(Face[0], false);
                     }
-                    Geom_Curve? c3df = DStr.Curve(Fi1.LineIndex()).Curve();
+                    Curve3D? c3df = DStr.Curve(Fi1.LineIndex()).Curve();
                     double Ufi = Fi2.Parameter(isfirst);
                     ref ChFiDS_FaceInterference Fi = ref Fd.ChangeInterferenceOnS1();
                     if (!IntersUpdateOnSame(HGs, HBs, c3df, F1, Face[0], Edge[0], Vtx, isfirst,
@@ -1994,9 +2000,9 @@ public partial class ChFi3d_Builder
                     indpoint1 = DStr.AddPoint(tpoint);
                     stripe.SetIndexPoint(indpoint1, isfirst, 1);
                     // reset arc of CV1
-                    TopoDS_Vertex vert1 = new(), vert2 = new();
-                    TopExp.Vertices(Edge[0], out vert1, out vert2);
-                    TopAbs_Orientation arcOri = Vtx.IsSame(vert1) ? TopAbs_FORWARD : TopAbs_REVERSED;
+                    Vertex vert1 = new(), vert2 = new();
+                    Exploration.Vertices(Edge[0], out vert1, out vert2);
+                    Orientation arcOri = Vtx.IsSame(vert1) ? Forward : Reversed;
                     CV1.SetArc(tolapp3d, Edge[0], paredge2, arcOri);
                 }
                 else
@@ -2009,16 +2015,16 @@ public partial class ChFi3d_Builder
                         if (prolface[0] != 0)
                         {
                             extend = true;
-                            BRep_Builder BRE = new();
-                            double tol = BRep_Tool.Tolerance(F);
+                            BrepBuilder BRE = new();
+                            double tol = Tool.Tolerance(F);
                             BRE.MakeFace(ref faceprol[0], Sfacemoins1, F.Location(), tol);
                             if (!isOnSame1)
                             {
-                                GeomAdaptor_Surface Asurf = new();
+                                SurfaceAdaptor Asurf = new();
                                 Asurf.Load(Sfacemoins1);
-                                Extrema_ExtPS ext = new(CV1.Point(), Asurf, tol, tol, Extrema_ExtFlag_MIN);
+                                ExtPS ext = new(CV1.Point(), Asurf, tol, tol, ExtFlag_MIN);
                                 double uc1 = 0.0, vc1 = 0.0;
-                                if (ext.IsDone())
+                                if (ext.IsDone)
                                 {
                                     ext.Point(1).Parameter(out uc1, out vc1);
                                     pfac1.SetX(uc1);
@@ -2054,13 +2060,13 @@ public partial class ChFi3d_Builder
             {
                 int nbp = 0;
 
-                Geom_Curve? C = null;
-                C = BRep_Tool.Curve(E2, out Ubid, out Vbid);
-                Geom_TrimmedCurve? Ctrim = new Geom_TrimmedCurve(C, Ubid, Vbid);
+                Curve3D? C = null;
+                C = Tool.Curve(E2, out Ubid, out Vbid);
+                TrimmedCurve3D? Ctrim = new TrimmedCurve3D(C, Ubid, Vbid);
                 double Utrim = 0.0, Vtrim = 0.0;
                 Utrim = Ctrim.BasisCurve().FirstParameter();
                 Vtrim = Ctrim.BasisCurve().LastParameter();
-                if (Ctrim.IsPeriodic())
+                if (Ctrim.IsPeriodic)
                 {
                     if (Ubid > Ctrim.Period())
                     {
@@ -2078,18 +2084,18 @@ public partial class ChFi3d_Builder
                     Ubid = Utrim;
                     Vbid = Vtrim;
                 }
-                GeomAdaptor_Curve? HC = new GeomAdaptor_Curve(C, Ubid, Vbid);
-                GeomAdaptor_Curve Cad = HC;
+                CurveAdaptor? HC = new CurveAdaptor(C, Ubid, Vbid);
+                CurveAdaptor Cad = HC;
                 inters.Perform(HC, HGs);
                 if (prolface[nn] == 0 && (!inters.IsDone() || (inters.NbPoints() == 0)))
                 {
                     // extend surface of conge
-                    Geom_BoundedSurface? S1 = 
-                        (DStr.Surface(Fd.Surf()).Surface() as Geom_BoundedSurface);
+                    BoundedSurface? S1 = 
+                        (DStr.Surface(Fd.Surf()).Surface() as BoundedSurface);
                     if (S1 is not null)
                     {
                         double length = 0.5 * Max(Fi1Length, Fi2Length);
-                        GeomLib.ExtendSurfByLength(ref S1, length, 1, false, !isfirst);
+                        global::Kerf.Engine.Geometry.Library.GeomLib.ExtendSurfByLength(ref S1, length, 1, false, !isfirst);
                         prolface[nn] = 1;
                         if (stripe.IsInDS(!isfirst) == 0)
                         {
@@ -2126,21 +2132,21 @@ public partial class ChFi3d_Builder
                 }
                 if (!inters.IsDone() || (inters.NbPoints() == 0))
                 {
-                    Geom_BSplineCurve? cd = (C as Geom_BSplineCurve);
-                    Geom_BezierCurve? cd1 = (C as Geom_BezierCurve);
+                    BSplineCurve3D? cd = (C as BSplineCurve3D);
+                    BezierCurve3D? cd1 = (C as BezierCurve3D);
                     if (cd is not null || cd1 is not null)
                     {
-                        BRep_Builder BRE = new();
-                        Sface = BRep_Tool.Surface(Face[nb]);
+                        BrepBuilder BRE = new();
+                        Sface = Tool.Surface(Face[nb]);
                         ChFi3d_ExtendSurface(ref Sface, ref prolface[nb]);
-                        double tol = BRep_Tool.Tolerance(F);
+                        double tol = Tool.Tolerance(F);
                         BRE.MakeFace(ref faceprol[nb], Sface, Face[nb].Location(), tol);
                         if (nb != 0 && prolface[nb - 1] == 0)
                         {
                             ChFi3d_ExtendSurface(ref Sfacemoins1, ref prolface[nb - 1]);
                             if (prolface[nb - 1] != 0)
                             {
-                                tol = BRep_Tool.Tolerance(F);
+                                tol = Tool.Tolerance(F);
                                 BRE.MakeFace(ref faceprol[nb - 1], Sfacemoins1, F.Location(), tol);
                             }
                         }
@@ -2189,7 +2195,7 @@ public partial class ChFi3d_Builder
                     }
                     else
                     {
-                        Point3D P = BRep_Tool.Pnt(Vtx);
+                        Point3D P = Tool.Pnt(Vtx);
                         double distmin = P.Distance(inters.Point(1).Pnt());
                         nbp = 1;
                         for (int i = 2; i <= inters.NbPoints(); i++)
@@ -2206,12 +2212,12 @@ public partial class ChFi3d_Builder
                         paredge2 = inters.Point(nbp).W();
                         if (!extend)
                         {
-                            cfacemoins1 = BRep_Tool.CurveOnSurface(E2, F, out u2, out v2);
+                            cfacemoins1 = Tool.CurveOnSurface(E2, F, out u2, out v2);
                             if (cfacemoins1 is null)
                             {
                                 throw new ConstructionErrorException("Failed to get p-curve of edge");
                             }
-                            cface = BRep_Tool.CurveOnSurface(E2, Face[nb], out u2, out v2);
+                            cface = Tool.CurveOnSurface(E2, Face[nb], out u2, out v2);
                             if (cface is null)
                             {
                                 throw new ConstructionErrorException("Failed to get p-curve of edge");
@@ -2238,7 +2244,7 @@ public partial class ChFi3d_Builder
             }
             else
             {
-                Hc2 = BRep_Tool.CurveOnSurface(E2, Face[nbface - 1], out Ubid, out Ubid);
+                Hc2 = Tool.CurveOnSurface(E2, Face[nbface - 1], out Ubid, out Ubid);
                 if (Hc2 is null)
                 {
                     // curve 2d is not found,  Sfacemoins1 is extended CV2.Point() is projected there
@@ -2246,15 +2252,15 @@ public partial class ChFi3d_Builder
                     ChFi3d_ExtendSurface(ref Sfacemoins1, ref prolface[0]);
                     if (prolface[0] != 0)
                     {
-                        BRep_Builder BRE = new();
+                        BrepBuilder BRE = new();
                         extend = true;
-                        double tol = BRep_Tool.Tolerance(F);
+                        double tol = Tool.Tolerance(F);
                         BRE.MakeFace(ref faceprol[nb - 1], Sfacemoins1, F.Location(), tol);
-                        GeomAdaptor_Surface Asurf = new();
+                        SurfaceAdaptor Asurf = new();
                         Asurf.Load(Sfacemoins1);
-                        Extrema_ExtPS ext = new(CV2.Point(), Asurf, tol, tol, Extrema_ExtFlag_MIN);
+                        ExtPS ext = new(CV2.Point(), Asurf, tol, tol, ExtFlag_MIN);
                         double uc2 = 0.0, vc2 = 0.0;
-                        if (ext.IsDone())
+                        if (ext.IsDone)
                         {
                             ext.Point(1).Parameter(out uc2, out vc2);
                             pfac2.SetX(uc2);
@@ -2292,7 +2298,7 @@ public partial class ChFi3d_Builder
                 {
                     Bs.Initialize(Face[nb - 1]);
                 }
-                Geom_Curve? c3df = DStr.Curve(Fi2.LineIndex()).Curve();
+                Curve3D? c3df = DStr.Curve(Fi2.LineIndex()).Curve();
                 double Ufi = Fi1.Parameter(isfirst);
                 ref ChFiDS_FaceInterference Fi = ref Fd.ChangeInterferenceOnS2();
                 if (!IntersUpdateOnSame(HGs, HBs, c3df, F2, F, Edge[nb], Vtx, isfirst,
@@ -2312,7 +2318,7 @@ public partial class ChFi3d_Builder
                     }
                     else
                     {
-                        proj.Init(pfac2, BRep_Tool.CurveOnSurface(E2, Face[nbface - 1], out Ubid, out Ubid));
+                        proj.Init(pfac2, Tool.CurveOnSurface(E2, Face[nbface - 1], out Ubid, out Ubid));
                     }
                     paredge2 = proj.LowerDistanceParameter();
                 }
@@ -2321,9 +2327,9 @@ public partial class ChFi3d_Builder
                 indpoint2 = DStr.AddPoint(tpoint);
                 stripe.SetIndexPoint(indpoint2, isfirst, 2);
                 // reset arc of CV2
-                TopoDS_Vertex vert1 = new(), vert2 = new();
-                TopExp.Vertices(Edge[nbface], out vert1, out vert2);
-                TopAbs_Orientation arcOri = Vtx.IsSame(vert1) ? TopAbs_FORWARD : TopAbs_REVERSED;
+                Vertex vert1 = new(), vert2 = new();
+                Exploration.Vertices(Edge[nbface], out vert1, out vert2);
+                Orientation arcOri = Vtx.IsSame(vert1) ? Forward : Reversed;
                 CV2.SetArc(tolapp3d, Edge[nbface], paredge2, arcOri);
             }
 
@@ -2482,9 +2488,9 @@ public partial class ChFi3d_Builder
             TopOpeBRepDS_Curve tcurv3d = new(Cc, tolreached);
             indcurve[nb - 1] = DStr.AddCurve(tcurv3d);
 
-            Interfp1 = ChFi3d_FilPointInDS(TopAbs_FORWARD, indcurve[nb - 1], indpoint1, Cc.FirstParameter(), Isvtx1);
+            Interfp1 = ChFi3d_FilPointInDS(Forward, indcurve[nb - 1], indpoint1, Cc.FirstParameter(), Isvtx1);
 
-            Interfp2 = ChFi3d_FilPointInDS(TopAbs_REVERSED, indcurve[nb - 1], indpoint2, Cc.LastParameter(), Isvtx2);
+            Interfp2 = ChFi3d_FilPointInDS(Reversed, indcurve[nb - 1], indpoint2, Cc.LastParameter(), Isvtx2);
 
             DStr.ChangeCurveInterferences(indcurve[nb - 1]).Append(Interfp1);
             DStr.ChangeCurveInterferences(indcurve[nb - 1]).Append(Interfp2);
@@ -2493,11 +2499,11 @@ public partial class ChFi3d_Builder
             // storage for the face
             //////////////////////////////////////////////////////////////////////
 
-            TopAbs_Orientation ori = TopAbs_FORWARD;
+            Orientation ori = Forward;
             orface = Face[nb - 1].Orientation();
             if (orface == orsurfdata)
             {
-                orien = TopAbs.Reverse(orcourbe);
+                orien = global::Kerf.Engine.Topology.TopAbs.Reverse(orcourbe);
             }
             else
             {
@@ -2523,15 +2529,15 @@ public partial class ChFi3d_Builder
             {
                 if (nface == 3)
                 {
-                    V1 = TopExp.FirstVertex(Edge[nb]);
-                    V2 = TopExp.LastVertex(Edge[nb]);
+                    V1 = Exploration.FirstVertex(Edge[nb]);
+                    V2 = Exploration.LastVertex(Edge[nb]);
                     if (containV(F1, V1) || containV(F2, V1))
                     {
-                        ori = TopAbs_FORWARD;
+                        ori = Forward;
                     }
                     else if (containV(F1, V2) || containV(F2, V2))
                     {
-                        ori = TopAbs_REVERSED;
+                        ori = Reversed;
                     }
                     else
                     {
@@ -2540,40 +2546,40 @@ public partial class ChFi3d_Builder
 
                     if (containV(F1, V1) && containV(F1, V2))
                     {
-                        dist1 = (BRep_Tool.Pnt(V1)).Distance(BRep_Tool.Pnt(Vtx));
-                        dist2 = (BRep_Tool.Pnt(V2)).Distance(BRep_Tool.Pnt(Vtx));
+                        dist1 = (Tool.Pnt(V1)).Distance(Tool.Pnt(Vtx));
+                        dist2 = (Tool.Pnt(V2)).Distance(Tool.Pnt(Vtx));
                         if (dist1 < dist2)
                         {
-                            ori = TopAbs_FORWARD;
+                            ori = Forward;
                         }
                         else
                         {
-                            ori = TopAbs_REVERSED;
+                            ori = Reversed;
                         }
                     }
                     if (containV(F2, V1) && containV(F2, V2))
                     {
-                        dist1 = (BRep_Tool.Pnt(V1)).Distance(BRep_Tool.Pnt(Vtx));
-                        dist2 = (BRep_Tool.Pnt(V2)).Distance(BRep_Tool.Pnt(Vtx));
+                        dist1 = (Tool.Pnt(V1)).Distance(Tool.Pnt(Vtx));
+                        dist2 = (Tool.Pnt(V2)).Distance(Tool.Pnt(Vtx));
                         if (dist1 < dist2)
                         {
-                            ori = TopAbs_FORWARD;
+                            ori = Forward;
                         }
                         else
                         {
-                            ori = TopAbs_REVERSED;
+                            ori = Reversed;
                         }
                     }
                 }
                 else
                 {
-                    if (TopExp.FirstVertex(Edge[nb]).IsSame(Vtx))
+                    if (Exploration.FirstVertex(Edge[nb]).IsSame(Vtx))
                     {
-                        ori = TopAbs_FORWARD;
+                        ori = Forward;
                     }
                     else
                     {
-                        ori = TopAbs_REVERSED;
+                        ori = Reversed;
                     }
                 }
                 if (!extend && !(oneintersection1 || oneintersection2))
@@ -2591,9 +2597,9 @@ public partial class ChFi3d_Builder
                     int indp1 = 0, indp2 = 0, ind = 0;
                     Point3D pext = new();
                     double ubid = 0.0, vbid = 0.0;
-                    pext = BRep_Tool.Pnt(Vtx);
-                    GeomAdaptor_Curve cad = new();
-                    Geom_Curve? csau = null;
+                    pext = Tool.Pnt(Vtx);
+                    CurveAdaptor cad = new();
+                    Curve3D? csau = null;
                     if (!(oneintersection1 || oneintersection2))
                     {
                         cad.Load(cint);
@@ -2601,8 +2607,8 @@ public partial class ChFi3d_Builder
                     }
                     else
                     {
-                        csau = BRep_Tool.Curve(edgesau, out ubid, out vbid);
-                        Geom_BoundedCurve? C1 = (csau as Geom_BoundedCurve);
+                        csau = Tool.Curve(edgesau, out ubid, out vbid);
+                        BoundedCurve3D? C1 = (csau as BoundedCurve3D);
                         if (oneintersection1 && extend)
                         {
                             if (C1 is not null)
@@ -2611,7 +2617,7 @@ public partial class ChFi3d_Builder
                                 Pl = C1.Value(C1.LastParameter());
                                 // bool sens;
                                 sens = Pl.Distance(pext) < tolpt ? 1 : 0; // OCCT: a bool in the int sens
-                                GeomLib.ExtendCurveToPoint(ref C1, CV1.Point(), 1, sens != 0);
+                                global::Kerf.Engine.Geometry.Library.GeomLib.ExtendCurveToPoint(ref C1, CV1.Point(), 1, sens != 0);
                                 csau = C1;
                             }
                         }
@@ -2623,13 +2629,13 @@ public partial class ChFi3d_Builder
                                 Pl = C1.Value(C1.LastParameter());
                                 // bool sens;
                                 sens = Pl.Distance(pext) < tolpt ? 1 : 0; // OCCT: a bool in the int sens
-                                GeomLib.ExtendCurveToPoint(ref C1, CV2.Point(), 1, sens != 0);
+                                global::Kerf.Engine.Geometry.Library.GeomLib.ExtendCurveToPoint(ref C1, CV2.Point(), 1, sens != 0);
                                 csau = C1;
                             }
                         }
                         cad.Load(csau);
                     }
-                    Extrema_ExtPC ext = new(pext, cad, tolpt);
+                    CurvePointExtrema ext = new(pext, cad, tolpt);
                     double par1 = 0.0, par2 = 0.0, par = 0.0, ParVtx = 0.0;
                     bool vtx1 = false;
                     bool vtx2 = false;
@@ -2647,7 +2653,7 @@ public partial class ChFi3d_Builder
                             pext = CV1.Point();
                             ind = indpoint1;
                         }
-                        Extrema_ExtPC ext2 = new(pext, cad, tolpt);
+                        CurvePointExtrema ext2 = new(pext, cad, tolpt);
                         par2 = ext2.Point(1).Parameter();
                     }
                     else
@@ -2670,8 +2676,8 @@ public partial class ChFi3d_Builder
                         indp2 = ind;
                         vtx1 = true;
                     }
-                    Geom_Curve? Ct = new Geom_TrimmedCurve(csau, par1, par2);
-                    TopAbs_Orientation orient = default;
+                    Curve3D? Ct = new TrimmedCurve3D(csau, par1, par2);
+                    Orientation orient = default;
                     Cc.D0(Cc.FirstParameter(), out P1);
                     Cc.D0(Cc.LastParameter(), out P2);
                     Ct.D0(Ct.FirstParameter(), out P3);
@@ -2682,7 +2688,7 @@ public partial class ChFi3d_Builder
                     }
                     else
                     {
-                        orient = TopAbs.Reverse(orien);
+                        orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orien);
                     }
                     if (oneintersection1 || oneintersection2)
                     {
@@ -2694,12 +2700,12 @@ public partial class ChFi3d_Builder
                         }
                         else
                         {
-                            TopoDS_Edge aLocalEdge = edgesau;
+                            Edge aLocalEdge = edgesau;
                             if (edgesau.Orientation() != orient)
                             {
                                 aLocalEdge.Reverse();
                             }
-                            C2dint1 = BRep_Tool.CurveOnSurface(aLocalEdge, Face[0], out ubid, out vbid);
+                            C2dint1 = Tool.CurveOnSurface(aLocalEdge, Face[0], out ubid, out vbid);
                         }
                     }
                     else
@@ -2708,9 +2714,9 @@ public partial class ChFi3d_Builder
                         DStr.SetNewSurface(Face[nb - 1], Sfacemoins1);
                     }
                     //// for periodic 3d curves ////
-                    if (cad.IsPeriodic() && C2dint1 is not null)
+                    if (cad.IsPeriodic && C2dint1 is not null)
                     {
-                        Point2D P2d = BRep_Tool.Parameters(Vtx, Face[0]);
+                        Point2D P2d = Tool.Parameters(Vtx, Face[0]);
                         Geom2dAPI_ProjectPointOnCurve Projector = new(P2d, C2dint1);
                         par = Projector.LowerDistanceParameter();
                         double shift = par - ParVtx;
@@ -2722,30 +2728,30 @@ public partial class ChFi3d_Builder
                     }
                     ////////////////////////////////
 
-                    Ct = new Geom_TrimmedCurve(csau, par1, par2);
+                    Ct = new TrimmedCurve3D(csau, par1, par2);
                     if (oneintersection1 || oneintersection2)
                     {
-                        tolex = 10 * BRep_Tool.Tolerance(edgesau);
+                        tolex = 10 * Tool.Tolerance(edgesau);
                     }
                     if (extend)
                     {
-                        GeomAdaptor_Surface? H1 = null, H2 = null;
-                        H1 = new GeomAdaptor_Surface(Sfacemoins1);
+                        SurfaceAdaptor? H1 = null, H2 = null;
+                        H1 = new SurfaceAdaptor(Sfacemoins1);
                         if (Sface is null)
                         {
                             tolex = Max(tolex, ChFi3d_EvalTolReached(H1, C2dint1, H1, C2dint1, Ct));
                         }
                         else
                         {
-                            H2 = new GeomAdaptor_Surface(Sface);
+                            H2 = new SurfaceAdaptor(Sface);
                             tolex = Max(tolex, ChFi3d_EvalTolReached(H1, C2dint1, H2, C2dint2, Ct));
                         }
                     }
                     TopOpeBRepDS_Curve tcurv = new(Ct, tolex);
                     int indcurv = 0;
                     indcurv = DStr.AddCurve(tcurv);
-                    Interfp1 = ChFi3d_FilPointInDS(TopAbs_FORWARD, indcurv, indp1, par1, vtx1);
-                    Interfp2 = ChFi3d_FilPointInDS(TopAbs_REVERSED, indcurv, indp2, par2, vtx2);
+                    Interfp1 = ChFi3d_FilPointInDS(Forward, indcurv, indp1, par1, vtx1);
+                    Interfp2 = ChFi3d_FilPointInDS(Reversed, indcurv, indp2, par2, vtx2);
                     DStr.ChangeCurveInterferences(indcurv).Append(Interfp1);
                     DStr.ChangeCurveInterferences(indcurv).Append(Interfp2);
 
@@ -2756,7 +2762,7 @@ public partial class ChFi3d_Builder
                         indice = DStr.AddShape(facesau);
                         if (facesau.Orientation() == Face[0].Orientation())
                         {
-                            orient = TopAbs.Reverse(orient);
+                            orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orient);
                         }
                         if (extend)
                         {
@@ -2764,12 +2770,12 @@ public partial class ChFi3d_Builder
                         }
                         else
                         {
-                            TopoDS_Edge aLocalEdge = edgesau;
+                            Edge aLocalEdge = edgesau;
                             if (edgesau.Orientation() != orient)
                             {
                                 aLocalEdge.Reverse();
                             }
-                            C2dint2 = BRep_Tool.CurveOnSurface(aLocalEdge, facesau, out ubid, out vbid);
+                            C2dint2 = Tool.CurveOnSurface(aLocalEdge, facesau, out ubid, out vbid);
                             // Reverse for case of edgesau on closed surface (Face[0] is equal to facesau)
                         }
                     }
@@ -2779,7 +2785,7 @@ public partial class ChFi3d_Builder
                         DStr.SetNewSurface(Face[nb], Sface);
                         if (Face[nb].Orientation() == Face[nb - 1].Orientation())
                         {
-                            orient = TopAbs.Reverse(orient);
+                            orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orient);
                         }
                     }
                     if (!bordlibre)
@@ -2791,7 +2797,7 @@ public partial class ChFi3d_Builder
             }
 
             if (checkShrink
-                    && IsShrink(new Geom2dAdaptor_Curve(Ps), p1, p2, checkShrParam, isUShrink, global::Kerf.Engine.Foundation.Precision.Parametric(tolreached)))
+                    && IsShrink(new CurveAdaptor2D(Ps), p1, p2, checkShrParam, isUShrink, global::Kerf.Engine.Foundation.Precision.Parametric(tolreached)))
             {
                 shrink[nb - 1] = 1;
                 // store section face-chamf curve for previous SurfData
@@ -2881,8 +2887,8 @@ public partial class ChFi3d_Builder
                 UV = UV1 = Fi2.PCurveOnSurf().Value(Fi2.Parameter(!isfirst));
             }
             double aTolreached = 0.0;
-            Geom_Curve? C3d = null;
-            Geom_Surface? aSurf = DStr.Surface(Fd.Surf()).Surface();
+            Curve3D? C3d = null;
+            Surface? aSurf = DStr.Surface(Fd.Surf()).Surface();
             // box.Add(aSurf->Value(UV.X(), UV.Y()));
 
             ChFi3d_ComputeArete(CV1, UV1, CV2, UV2,
@@ -2911,8 +2917,8 @@ public partial class ChFi3d_Builder
 
             TopOpeBRepDS_Curve Crv = new TopOpeBRepDS_Curve(C3d, aTolreached);
             int Icurv = DStr.AddCurve(Crv);
-            Interfp1 = ChFi3d_FilPointInDS(TopAbs_FORWARD, Icurv, indpoint1, p1, false);
-            Interfp2 = ChFi3d_FilPointInDS(TopAbs_REVERSED, Icurv, indpoint2, p2, false);
+            Interfp1 = ChFi3d_FilPointInDS(Forward, Icurv, indpoint1, p1, false);
+            Interfp2 = ChFi3d_FilPointInDS(Reversed, Icurv, indpoint2, p2, false);
             Interfc = ChFi3d_FilCurveInDS(Icurv, Isurf, Ps, orcourbe);
             DStr.ChangeCurveInterferences(Icurv).Append(Interfp1);
             DStr.ChangeCurveInterferences(Icurv).Append(Interfp2);
@@ -2927,7 +2933,7 @@ public partial class ChFi3d_Builder
 
             Crv.Tolerance(Max(Crv.Tolerance(), aTolreached)); // OCCT: changes the local copy, not the curve in the DS
 
-            Interfc = ChFi3d_FilCurveInDS(Icurv, IsurfPrev, Pc, TopAbs.Reverse(orcourbe));
+            Interfc = ChFi3d_FilCurveInDS(Icurv, IsurfPrev, Pc, global::Kerf.Engine.Topology.TopAbs.Reverse(orcourbe));
             DStr.ChangeSurfaceInterferences(IsurfPrev).Append(Interfc);
 
             // UV = isOnSame1 ? UV2 : UV1;
@@ -2961,14 +2967,14 @@ public partial class ChFi3d_Builder
                     break;
                 }
             }
-            Geom_Curve? Cend = DStr.Curve(indcurve[nb]).Curve();
-            Geom2d_Curve? PCend = InterfPS[nb].PCurve();
+            Curve3D? Cend = DStr.Curve(indcurve[nb]).Curve();
+            Curve2D? PCend = InterfPS[nb].PCurve();
             // point near which self intersection may occur
             ref TopOpeBRepDS_Point Pds = ref DStr.ChangePoint(midIpoint);
             Point3D Pvert = Pds.Point();
             double tol = Pds.Tolerance();
 
-            Geom2dAdaptor_Curve PC1 = new(Ps), PC2 = new(PCend);
+            CurveAdaptor2D PC1 = new(Ps), PC2 = new(PCend);
             Geom2dInt_GInter Intersector = new(PC1, PC2, global::Kerf.Engine.Foundation.Precision.PConfusion(), global::Kerf.Engine.Foundation.Precision.PConfusion());
             if (!Intersector.IsDone())
             {
@@ -3030,7 +3036,7 @@ public partial class ChFi3d_Builder
 
         NCollection_Sequence<ChFiDS_SurfData> aSeqSurfData = 
             aStripe.ChangeSetOfSurfData();
-        TopoDS_Vertex aVtx = myVDataMap.FindKey(Index);
+        Vertex aVtx = myVDataMap.FindKey(Index);
         int aSens = 0;
         int anInd = ChFi3d_IndexOfSurfData(aVtx, aStripe, out aSens);
         bool isFirst = (aSens == 1);
@@ -3044,13 +3050,13 @@ public partial class ChFi3d_Builder
         aCP1 = aSurfData.Vertex(isFirst, 1);
         aCP2 = aSurfData.Vertex(isFirst, 2);
 
-        Geom_Surface? aSurfPrev = null;
-        Geom_Surface? aSurf = null;
-        TopoDS_Face aFace = new();
-        TopoDS_Face aNeighborFace = new();
+        Surface? aSurfPrev = null;
+        Surface? aSurf = null;
+        Face aFace = new();
+        Face aNeighborFace = new();
 
         FindFace(aVtx, aCP1, aCP2, ref aFace);
-        aSurfPrev = BRep_Tool.Surface(aFace);
+        aSurfPrev = Tool.Surface(aFace);
 
         if (aSens == 1)
         {
@@ -3061,14 +3067,14 @@ public partial class ChFi3d_Builder
             anIndPrev = anInd - 1;
         }
 
-        TopoDS_Edge anArc1 = new();
-        TopoDS_Edge anArc2 = new();
-        NCollection_List<TopoDS_Shape>.Iterator anIter = new(myVEMap[aVtx]);
+        Edge anArc1 = new();
+        Edge anArc2 = new();
+        NCollection_List<Shape>.Iterator anIter = new(myVEMap[aVtx]);
         bool isFound = false;
 
         for (; anIter.More() && !isFound; anIter.Next())
         {
-            anArc1 = TopoDS.Edge(anIter.Value());
+            anArc1 = ShapeCasts.Edge(anIter.Value());
 
             if (containE(aFace, anArc1))
             {
@@ -3081,7 +3087,7 @@ public partial class ChFi3d_Builder
 
         for (; anIter.More() && !isFound; anIter.Next())
         {
-            anArc2 = TopoDS.Edge(anIter.Value());
+            anArc2 = ShapeCasts.Edge(anIter.Value());
 
             if (containE(aFace, anArc2) && !anArc2.IsSame(anArc1))
             {
@@ -3152,11 +3158,11 @@ public partial class ChFi3d_Builder
             indSurface = myListStripe.First().SetOfSurfData().Value(anInd).IndexOfS2();
         }
 
-        aNeighborFace = TopoDS.Face(myDS.Shape(indSurface));
+        aNeighborFace = ShapeCasts.Face(myDS.Shape(indSurface));
 
         // calculation of intersections
-        Geom_Curve? aCracc = null;
-        Geom2d_Curve? aPCurv1 = null;
+        Curve3D? aCracc = null;
+        Curve2D? aPCurv1 = null;
         double aParf = 0.0;
         double aParl = 0.0;
         double aTolReached = 0.0;
@@ -3194,9 +3200,9 @@ public partial class ChFi3d_Builder
             aFI = aSurfData.InterferenceOnS2();
         }
 
-        Geom_Curve? aCline = null;
-        Geom2d_Curve? aPClineOnSurf = null;
-        Geom2d_Curve? aPClineOnFace = null;
+        Curve3D? aCline = null;
+        Curve2D? aPClineOnSurf = null;
+        Curve2D? aPClineOnFace = null;
         int indLine = 0;
 
         indLine = aFI.LineIndex();
@@ -3209,11 +3215,11 @@ public partial class ChFi3d_Builder
         aSurf = DStr.Surface(aSurfData.Surf()).Surface();
 
         GeomInt_IntSS anInterSS = new(aSurfPrev, aSurf, 1.0e-7, true, true, true);
-        Geom_Curve? aCint1 = null;
-        Geom2d_Curve? aPCint11 = null;
-        Geom2d_Curve? aPCint12 = null;
-        GeomAdaptor_Surface? H1 = new GeomAdaptor_Surface(aSurfPrev);
-        GeomAdaptor_Surface? H2 = new GeomAdaptor_Surface(aSurf);
+        Curve3D? aCint1 = null;
+        Curve2D? aPCint11 = null;
+        Curve2D? aPCint12 = null;
+        SurfaceAdaptor? H1 = new SurfaceAdaptor(aSurfPrev);
+        SurfaceAdaptor? H2 = new SurfaceAdaptor(aSurf);
         double aTolex1 = 0.0;
         int i = 0;
         Point3D aPext1 = new();
@@ -3275,16 +3281,16 @@ public partial class ChFi3d_Builder
 
         if (isPextFound)
         {
-            GeomAdaptor_Curve aCad = new(aCracc);
-            Extrema_ExtPC anExt = new(aPext, aCad, aTol3d);
+            CurveAdaptor aCad = new(aCracc);
+            CurvePointExtrema anExt = new(aPext, aCad, aTol3d);
 
-            if (!anExt.IsDone())
+            if (!anExt.IsDone)
             {
                 return;
             }
 
             isFound = false;
-            for (i = 1; i <= anExt.NbExt() && !isFound; i++)
+            for (i = 1; i <= anExt.ExtCount && !isFound; i++)
             {
                 if (anExt.IsMin(i))
                 {
@@ -3299,9 +3305,9 @@ public partial class ChFi3d_Builder
             }
         }
 
-        Geom_Curve? aTrCracc = null;
-        TopAbs_Orientation anOrSD1 = default;
-        TopAbs_Orientation anOrSD2 = default;
+        Curve3D? aTrCracc = null;
+        Orientation anOrSD1 = default;
+        Orientation anOrSD2 = default;
         int indShape = 0;
 
         anOrSD1 = aSurfData.Orientation();
@@ -3310,9 +3316,9 @@ public partial class ChFi3d_Builder
         aSurf = DStr.Surface(aSurfData.Surf()).Surface();
 
         // The following variables will be used if isDoSecondSection is true
-        Geom_Curve? aCint2 = null;
-        Geom2d_Curve? aPCint21 = null;
-        Geom2d_Curve? aPCint22 = null;
+        Curve3D? aCint2 = null;
+        Curve2D? aPCint21 = null;
+        Curve2D? aPCint22 = null;
         double aTolex2 = 0.0;
 
         if (isDoSecondSection)
@@ -3332,11 +3338,11 @@ public partial class ChFi3d_Builder
 
             if (aPar1 < aPar)
             {
-                aTrCracc = new Geom_TrimmedCurve(aCracc, aPar1, aPar);
+                aTrCracc = new TrimmedCurve3D(aCracc, aPar1, aPar);
             }
             else
             {
-                aTrCracc = new Geom_TrimmedCurve(aCracc, aPar, aPar1);
+                aTrCracc = new TrimmedCurve3D(aCracc, aPar, aPar1);
             }
 
             // Second section
@@ -3347,8 +3353,8 @@ public partial class ChFi3d_Builder
                 return;
             }
 
-            H1 = new GeomAdaptor_Surface(aSurfPrev);
-            H2 = new GeomAdaptor_Surface(aSurf);
+            H1 = new SurfaceAdaptor(aSurfPrev);
+            H2 = new SurfaceAdaptor(aSurf);
 
             isFound = false;
 
@@ -3376,7 +3382,7 @@ public partial class ChFi3d_Builder
         }
         else
         {
-            aTrCracc = new Geom_TrimmedCurve(aCracc, aCracc.FirstParameter(), aCracc.LastParameter());
+            aTrCracc = new TrimmedCurve3D(aCracc, aCracc.FirstParameter(), aCracc.LastParameter());
         }
 
         // Storage of the data structure
@@ -3384,7 +3390,7 @@ public partial class ChFi3d_Builder
         // calculation of the orientation of line of surfdata number
         // anIndPrev which contains aCP2onArc
 
-        Geom2d_Curve? aPCraccS = GeomProjLib.Curve2d(aTrCracc, aSurf);
+        Curve2D? aPCraccS = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(aTrCracc, aSurf);
 
         if (is2ndCP1OnArc)
         {
@@ -3402,11 +3408,11 @@ public partial class ChFi3d_Builder
             return;
         }
 
-        TopAbs_Orientation aCurOrient = default;
+        Orientation aCurOrient = default;
 
         aCurOrient = DStr.Shape(indShape).Orientation();
-        aCurOrient = TopAbs.Compose(aCurOrient, aSurfData.Orientation());
-        aCurOrient = TopAbs.Compose(TopAbs.Reverse(aFI.Transition()), aCurOrient);
+        aCurOrient = global::Kerf.Engine.Topology.TopAbs.Compose(aCurOrient, aSurfData.Orientation());
+        aCurOrient = global::Kerf.Engine.Topology.TopAbs.Compose(global::Kerf.Engine.Topology.TopAbs.Reverse(aFI.Transition()), aCurOrient);
 
         // Filling the data structure
         aSurfData = aSeqSurfData.Value(anInd);
@@ -3496,14 +3502,14 @@ public partial class ChFi3d_Builder
 
         Point2D aP2d = new();
         TopOpeBRepDS_SurfaceCurveInterference? anInterfc = null;
-        TopAbs_Orientation anOrSurf = aCurOrient;
-        TopAbs_Orientation anOrFace = aFace.Orientation();
+        Orientation anOrSurf = aCurOrient;
+        Orientation anOrFace = aFace.Orientation();
         int indaFace = DStr.AddShape(aFace);
         int indPoint = indCP2onArc;
         int indCurve = 0;
 
         aFI.PCurveOnFace().D0(aFI.LastParameter(), out aP2d);
-        Geom_Surface? Stemp2 = BRep_Tool.Surface(TopoDS.Face(DStr.Shape(indShape)));
+        Surface? Stemp2 = Tool.Surface(ShapeCasts.Face(DStr.Shape(indShape)));
         Stemp2.D0(aP2d.X(), aP2d.Y(), out aPoint2);
         aFI.PCurveOnFace().D0(aFI.FirstParameter(), out aP2d);
         Stemp2.D0(aP2d.X(), aP2d.Y(), out aPoint1);
@@ -3533,13 +3539,13 @@ public partial class ChFi3d_Builder
             // define the orientation of aCint2
             if (aPext1.Distance(aPoint2) > aTol3d && aPext2.Distance(aPoint1) > aTol3d)
             {
-                anOrSurf = TopAbs.Reverse(anOrSurf);
+                anOrSurf = global::Kerf.Engine.Topology.TopAbs.Reverse(anOrSurf);
             }
 
             // ---------------------------------------------------------------
             // storage of aCint2
-            anInterfp1 = ChFi3d_FilPointInDS(TopAbs_FORWARD, indCurve, indPoint1, aCint2.FirstParameter());
-            anInterfp2 = ChFi3d_FilPointInDS(TopAbs_REVERSED, indCurve, indPoint2, aCint2.LastParameter());
+            anInterfp1 = ChFi3d_FilPointInDS(Forward, indCurve, indPoint1, aCint2.FirstParameter());
+            anInterfp2 = ChFi3d_FilPointInDS(Reversed, indCurve, indPoint2, aCint2.LastParameter());
             DStr.ChangeCurveInterferences(indCurve).Append(anInterfp1);
             DStr.ChangeCurveInterferences(indCurve).Append(anInterfp2);
 
@@ -3551,7 +3557,7 @@ public partial class ChFi3d_Builder
 
             if (anOrFace == anOrSD2)
             {
-                anOrFace = TopAbs.Reverse(anOrSurf);
+                anOrFace = global::Kerf.Engine.Topology.TopAbs.Reverse(anOrSurf);
             }
             else
             {
@@ -3597,7 +3603,7 @@ public partial class ChFi3d_Builder
 
         if (isToReverse)
         {
-            anOrSurf = TopAbs.Reverse(anOrSurf);
+            anOrSurf = global::Kerf.Engine.Topology.TopAbs.Reverse(anOrSurf);
         }
 
         // ---------------------------------------------------------------
@@ -3605,8 +3611,8 @@ public partial class ChFi3d_Builder
         TopOpeBRepDS_Curve tct2 = new(aTrCracc, aTolReached);
 
         indCurve = DStr.AddCurve(tct2);
-        anInterfp1 = ChFi3d_FilPointInDS(TopAbs_FORWARD, indCurve, indPoint1, aTrCracc.FirstParameter());
-        anInterfp2 = ChFi3d_FilPointInDS(TopAbs_REVERSED, indCurve, indPoint2, aTrCracc.LastParameter());
+        anInterfp1 = ChFi3d_FilPointInDS(Forward, indCurve, indPoint1, aTrCracc.FirstParameter());
+        anInterfp2 = ChFi3d_FilPointInDS(Reversed, indCurve, indPoint2, aTrCracc.LastParameter());
         DStr.ChangeCurveInterferences(indCurve).Append(anInterfp1);
         DStr.ChangeCurveInterferences(indCurve).Append(anInterfp2);
 
@@ -3619,7 +3625,7 @@ public partial class ChFi3d_Builder
         // interference of aTrCracc on the SurfData number anInd
         if (anOrSD1 == anOrSD2)
         {
-            anOrSurf = TopAbs.Reverse(anOrSurf);
+            anOrSurf = global::Kerf.Engine.Topology.TopAbs.Reverse(anOrSurf);
         }
 
         anInterfc = ChFi3d_FilCurveInDS(indCurve, indSurf1, aPCurv1, anOrSurf);
@@ -3649,13 +3655,13 @@ public partial class ChFi3d_Builder
 
         if (aP1.Distance(aP4) > aTol3d && aP2.Distance(aP3) > aTol3d)
         {
-            anOrSurf = TopAbs.Reverse(anOrSurf);
+            anOrSurf = global::Kerf.Engine.Topology.TopAbs.Reverse(anOrSurf);
         }
 
         TopOpeBRepDS_Curve aTCint1 = new(aCint1, aTolex1);
         indCurve = DStr.AddCurve(aTCint1);
-        anInterfp1 = ChFi3d_FilPointInDS(TopAbs_FORWARD, indCurve, indPoint1, aCint1.FirstParameter());
-        anInterfp2 = ChFi3d_FilPointInDS(TopAbs_REVERSED, indCurve, indPoint2, aCint1.LastParameter());
+        anInterfp1 = ChFi3d_FilPointInDS(Forward, indCurve, indPoint1, aCint1.FirstParameter());
+        anInterfp2 = ChFi3d_FilPointInDS(Reversed, indCurve, indPoint2, aCint1.LastParameter());
         DStr.ChangeCurveInterferences(indCurve).Append(anInterfp1);
         DStr.ChangeCurveInterferences(indCurve).Append(anInterfp2);
 
@@ -3670,7 +3676,7 @@ public partial class ChFi3d_Builder
 
         if (anOrFace == anOrSD1)
         {
-            anOrFace = TopAbs.Reverse(anOrSurf);
+            anOrFace = global::Kerf.Engine.Topology.TopAbs.Reverse(anOrSurf);
         }
         else
         {
@@ -3682,8 +3688,8 @@ public partial class ChFi3d_Builder
         // ---------------------------------------------------------------
         // storage of aCline passing through aCP1onArc and aCP2NotonArc
 
-        Geom_Curve? aTrCline = 
-            new Geom_TrimmedCurve(aCline, aCline.FirstParameter(), aCline.LastParameter());
+        Curve3D? aTrCline = 
+            new TrimmedCurve3D(aCline, aCline.FirstParameter(), aCline.LastParameter());
         double aTolerance = DStr.Curve(indLine).Tolerance();
         TopOpeBRepDS_Curve aTct3 = new(aTrCline, aTolerance);
 
@@ -3710,11 +3716,11 @@ public partial class ChFi3d_Builder
 
         if (aP1.Distance(aP4) > aTol3d && aP2.Distance(aP3) > aTol3d)
         {
-            anOrSurf = TopAbs.Reverse(anOrSurf);
+            anOrSurf = global::Kerf.Engine.Topology.TopAbs.Reverse(anOrSurf);
         }
 
-        anInterfp1 = ChFi3d_FilPointInDS(TopAbs_FORWARD, indCurve, indPoint1, aTrCline.FirstParameter());
-        anInterfp2 = ChFi3d_FilPointInDS(TopAbs_REVERSED, indCurve, indPoint2, aTrCline.LastParameter());
+        anInterfp1 = ChFi3d_FilPointInDS(Forward, indCurve, indPoint1, aTrCline.FirstParameter());
+        anInterfp2 = ChFi3d_FilPointInDS(Reversed, indCurve, indPoint2, aTrCline.LastParameter());
         DStr.ChangeCurveInterferences(indCurve).Append(anInterfp1);
         DStr.ChangeCurveInterferences(indCurve).Append(anInterfp2);
 
@@ -3729,7 +3735,7 @@ public partial class ChFi3d_Builder
 
         if (anOrFace == anOrSD1)
         {
-            anOrFace = TopAbs.Reverse(anOrSurf);
+            anOrFace = global::Kerf.Engine.Topology.TopAbs.Reverse(anOrSurf);
         }
         else
         {
@@ -3748,13 +3754,13 @@ public partial class ChFi3d_Builder
     //           between P1,P2,V
     //===========================================================
 
-    private bool FindFace(in TopoDS_Vertex V, in ChFiDS_CommonPoint P1, in ChFiDS_CommonPoint P2, ref TopoDS_Face Fv)
+    private bool FindFace(in Vertex V, in ChFiDS_CommonPoint P1, in ChFiDS_CommonPoint P2, ref Face Fv)
     {
-        TopoDS_Face Favoid = new();
+        Face Favoid = new();
         return FindFace(V, P1, P2, ref Fv, Favoid);
     }
 
-    private bool FindFace(in TopoDS_Vertex V, in ChFiDS_CommonPoint P1, in ChFiDS_CommonPoint P2, ref TopoDS_Face Fv, in TopoDS_Face Favoid)
+    private bool FindFace(in Vertex V, in ChFiDS_CommonPoint P1, in ChFiDS_CommonPoint P2, ref Face Fv, in Face Favoid)
     {
         if (P1.IsVertex() || P2.IsVertex())
         {
@@ -3763,16 +3769,16 @@ public partial class ChFi3d_Builder
         {
             return false;
         }
-        NCollection_List<TopoDS_Shape>.Iterator It = new(), Jt = new();
+        NCollection_List<Shape>.Iterator It = new(), Jt = new();
         bool Found = false;
         for (It.Initialize(myEFMap[P1.Arc()]); It.More() && !Found; It.Next())
         {
-            Fv = TopoDS.Face(It.Value());
+            Fv = ShapeCasts.Face(It.Value());
             if (!Fv.IsSame(Favoid))
             {
                 for (Jt.Initialize(myEFMap[P2.Arc()]); Jt.More() && !Found; Jt.Next())
                 {
-                    if (TopoDS.Face(Jt.Value()).IsSame(Fv))
+                    if (ShapeCasts.Face(Jt.Value()).IsSame(Fv))
                     {
                         Found = true;
                     }
@@ -3798,7 +3804,7 @@ public partial class ChFi3d_Builder
         ChFiDS_Stripe? stripe = It.ChangeValue();
         NCollection_Sequence<ChFiDS_SurfData> SeqFil = 
             stripe.ChangeSetOfSurfData();
-        TopoDS_Vertex Vtx = myVDataMap.FindKey(Index);
+        Vertex Vtx = myVDataMap.FindKey(Index);
         int sens = 0;
         int num = ChFi3d_IndexOfSurfData(Vtx, stripe, out sens);
         bool isfirst = (sens == 1);
@@ -3807,7 +3813,7 @@ public partial class ChFi3d_Builder
         ref ChFiDS_CommonPoint CV2 = ref Fd.ChangeVertex(isfirst, 2);
 
         int num1 = 0, num2 = 0, nbsurf = 0;
-        TopoDS_Face Fv = new();
+        Face Fv = new();
         bool inters = false, oksurf = false;
         nbsurf = stripe.SetOfSurfData().Length();
         // Fv is the face at end
@@ -3830,12 +3836,12 @@ public partial class ChFi3d_Builder
 
             // determination of arc1 and arc2 intersection of the fillet and the face at end
 
-            TopoDS_Edge arc1 = new(), arc2 = new();
-            NCollection_List<TopoDS_Shape>.Iterator ItE = new();
+            Edge arc1 = new(), arc2 = new();
+            NCollection_List<Shape>.Iterator ItE = new();
             bool trouve = false;
             for (ItE.Initialize(myVEMap[Vtx]); ItE.More() && !trouve; ItE.Next())
             {
-                arc1 = TopoDS.Edge(ItE.Value());
+                arc1 = ShapeCasts.Edge(ItE.Value());
                 if (containE(Fv, arc1))
                 {
                     trouve = true;
@@ -3844,7 +3850,7 @@ public partial class ChFi3d_Builder
             trouve = false;
             for (ItE.Initialize(myVEMap[Vtx]); ItE.More() && !trouve; ItE.Next())
             {
-                arc2 = TopoDS.Edge(ItE.Value());
+                arc2 = ShapeCasts.Edge(ItE.Value());
                 if (containE(Fv, arc2) && !arc2.IsSame(arc1))
                 {
                     trouve = true;
@@ -3905,7 +3911,7 @@ public partial class ChFi3d_Builder
         NCollection_Sequence<ChFiDS_SurfData> SeqFil = 
             stripe.ChangeSetOfSurfData();
         // the top,
-        TopoDS_Vertex Vtx = myVDataMap.FindKey(Index);
+        Vertex Vtx = myVDataMap.FindKey(Index);
         // the SurfData concerned and its CommonPoints,
         int sens = 0;
 
@@ -3939,8 +3945,8 @@ public partial class ChFi3d_Builder
         // The cases of cap are processed separately from intersection.
         // ----------------------------------------------------------
 
-        TopoDS_Face Fv = new(), Fad = new(), Fop = new(), Fopbis = new();
-        TopoDS_Edge Arcpiv = new(), Arcprol = new(), Arcspine = new(), Arcprolbis = new();
+        Face Fv = new(), Fad = new(), Fop = new(), Fopbis = new();
+        Edge Arcpiv = new(), Arcprol = new(), Arcspine = new(), Arcprolbis = new();
         if (isfirst)
         {
             Arcspine = spine.Edges(1);
@@ -3949,25 +3955,25 @@ public partial class ChFi3d_Builder
         {
             Arcspine = spine.Edges(spine.NbEdges());
         }
-        TopAbs_Orientation OArcprolbis = TopAbs_FORWARD;
-        TopAbs_Orientation OArcprolv = TopAbs_FORWARD, OArcprolop = TopAbs_FORWARD;
+        Orientation OArcprolbis = Forward;
+        Orientation OArcprolv = Forward, OArcprolop = Forward;
         int ICurve = 0;
-        BRepAdaptor_Surface? HBs = new BRepAdaptor_Surface();
-        BRepAdaptor_Surface? HBad = new BRepAdaptor_Surface();
-        BRepAdaptor_Surface? HBop = new BRepAdaptor_Surface();
-        BRepAdaptor_Surface Bs = HBs;
-        BRepAdaptor_Surface Bad = HBad;
-        BRepAdaptor_Surface Bop = HBop;
-        Geom_Curve? Cc = null;
-        Geom2d_Curve? Pc = null, Ps = null;
+        FaceSurfaceAdaptor? HBs = new FaceSurfaceAdaptor();
+        FaceSurfaceAdaptor? HBad = new FaceSurfaceAdaptor();
+        FaceSurfaceAdaptor? HBop = new FaceSurfaceAdaptor();
+        FaceSurfaceAdaptor Bs = HBs;
+        FaceSurfaceAdaptor Bad = HBad;
+        FaceSurfaceAdaptor Bop = HBop;
+        Curve3D? Cc = null;
+        Curve2D? Pc = null, Ps = null;
         double Ubid = 0.0, Vbid = 0.0;//,mu,Mu,mv,Mv;
         double Udeb = 0.0, Ufin = 0.0;
         // gp_Pnt2d UVf1,UVl1,UVf2,UVl2;
         // double Du,Dv,Step;
         bool inters = true;
         int IFadArc = 1, IFopArc = 2;
-        Fop = TopoDS.Face(DStr.Shape(Fd.Index(IFopArc)));
-        TopExp_Explorer ex = new();
+        Fop = ShapeCasts.Face(DStr.Shape(Fd.Index(IFopArc)));
+        Explorer ex = new();
 
         {
             if (!CV1.IsOnArc() && !CV2.IsOnArc())
@@ -3977,14 +3983,14 @@ public partial class ChFi3d_Builder
             else if (CV1.IsOnArc() && CV2.IsOnArc())
             {
                 bool sur2 = false;
-                for (ex.Init(CV1.Arc(), TopAbs_VERTEX); ex.More(); ex.Next())
+                for (ex.Init(CV1.Arc(), ShapeType.Vertex); ex.More(); ex.Next())
                 {
                     if (Vtx.IsSame(ex.Current()))
                     {
                         break;
                     }
                 }
-                for (ex.Init(CV2.Arc(), TopAbs_VERTEX); ex.More(); ex.Next())
+                for (ex.Init(CV2.Arc(), ShapeType.Vertex); ex.More(); ex.Next())
                 {
                     if (Vtx.IsSame(ex.Current()))
                     {
@@ -4004,22 +4010,22 @@ public partial class ChFi3d_Builder
             IFopArc = 3 - IFadArc;
 
             Arcpiv = Fd.Vertex(isfirst, IFadArc).Arc();
-            Fad = TopoDS.Face(DStr.Shape(Fd.Index(IFadArc)));
-            Fop = TopoDS.Face(DStr.Shape(Fd.Index(IFopArc)));
-            NCollection_List<TopoDS_Shape>.Iterator It = new();
+            Fad = ShapeCasts.Face(DStr.Shape(Fd.Index(IFadArc)));
+            Fop = ShapeCasts.Face(DStr.Shape(Fd.Index(IFopArc)));
+            NCollection_List<Shape>.Iterator It = new();
             // The face at end is returned without control of its unicity.
             for (It.Initialize(myEFMap[Arcpiv]); It.More(); It.Next())
             {
                 if (!Fad.IsSame(It.Value()))
                 {
-                    Fv = TopoDS.Face(It.Value());
+                    Fv = ShapeCasts.Face(It.Value());
                     break;
                 }
             }
 
             // does the face at end contain the Vertex ?
             bool isinface = false;
-            for (ex.Init(Fv, TopAbs_VERTEX); ex.More(); ex.Next())
+            for (ex.Init(Fv, ShapeType.Vertex); ex.More(); ex.Next())
             {
                 if (ex.Current().IsSame(Vtx))
                 {
@@ -4032,38 +4038,38 @@ public partial class ChFi3d_Builder
                 IFadArc = 3 - IFadArc;
                 IFopArc = 3 - IFopArc;
                 Arcpiv = Fd.Vertex(isfirst, IFadArc).Arc();
-                Fad = TopoDS.Face(DStr.Shape(Fd.Index(IFadArc)));
-                Fop = TopoDS.Face(DStr.Shape(Fd.Index(IFopArc)));
+                Fad = ShapeCasts.Face(DStr.Shape(Fd.Index(IFadArc)));
+                Fop = ShapeCasts.Face(DStr.Shape(Fd.Index(IFopArc)));
                 // NCollection_List<TopoDS_Shape>::Iterator It;
                 // The face at end is returned without control of its unicity.
                 for (It.Initialize(myEFMap[Arcpiv]); It.More(); It.Next())
                 {
                     if (!Fad.IsSame(It.Value()))
                     {
-                        Fv = TopoDS.Face(It.Value());
+                        Fv = ShapeCasts.Face(It.Value());
                         break;
                     }
                 }
             }
 
-            if (Fv.IsNull())
+            if (Fv.IsNull)
             {
                 throw new NotDoneException("OneCorner : face at end is not found");
             }
 
-            Fv.Orientation(TopAbs_FORWARD);
-            Fad.Orientation(TopAbs_FORWARD);
+            Fv.Orientation(Forward);
+            Fad.Orientation(Forward);
 
             // In the same way the edge to be extended is returned.
-            for (It.Initialize(myVEMap[Vtx]); It.More() && Arcprol.IsNull(); It.Next())
+            for (It.Initialize(myVEMap[Vtx]); It.More() && Arcprol.IsNull; It.Next())
             {
                 if (!Arcpiv.IsSame(It.Value()))
                 {
-                    for (ex.Init(Fv, TopAbs_EDGE); ex.More(); ex.Next())
+                    for (ex.Init(Fv, ShapeType.Edge); ex.More(); ex.Next())
                     {
                         if (It.Value().IsSame(ex.Current()))
                         {
-                            Arcprol = TopoDS.Edge(It.Value());
+                            Arcprol = ShapeCasts.Edge(It.Value());
                             OArcprolv = ex.Current().Orientation();
                             break;
                         }
@@ -4072,19 +4078,19 @@ public partial class ChFi3d_Builder
             }
 
             // Guard: Arcprol may be null if the loop above found no matching edge.
-            if (Arcprol.IsNull())
+            if (Arcprol.IsNull)
             {
                 throw new NotDoneException("IntersectMoreCorner: edge to be extended is not found");
             }
 
             // Fopbis is the face containing the trace of fillet CP.Arc() which of does not contain Vtx.
             // Normally Fobis is either the same as Fop (cylinder), or Fobis is G1 with Fop.
-            Fopbis.Orientation(TopAbs_FORWARD);
+            Fopbis.Orientation(Forward);
 
             // Fop calls the 4th face non-used for the vertex
             cherche_face(myVFMap[Vtx], Arcprol, Fad, Fv, Fv, ref Fopbis);
-            Fop.Orientation(TopAbs_FORWARD);
-            for (ex.Init(Fopbis, TopAbs_EDGE); ex.More(); ex.Next())
+            Fop.Orientation(Forward);
+            for (ex.Init(Fopbis, ShapeType.Edge); ex.More(); ex.Next())
             {
                 if (Arcprol.IsSame(ex.Current()))
                 {
@@ -4092,14 +4098,14 @@ public partial class ChFi3d_Builder
                     break;
                 }
             }
-            TopoDS_Face FFv = new();
+            Face FFv = new();
             double tol = 0.0;
             int prol = 0;
-            BRep_Builder BRE = new();
-            Geom_Surface? Sface = null;
-            Sface = BRep_Tool.Surface(Fv);
+            BrepBuilder BRE = new();
+            Surface? Sface = null;
+            Sface = Tool.Surface(Fv);
             ChFi3d_ExtendSurface(ref Sface, ref prol);
-            tol = BRep_Tool.Tolerance(Fv);
+            tol = Tool.Tolerance(Fv);
             BRE.MakeFace(ref FFv, Sface, tol);
             if (prol != 0)
 
@@ -4126,9 +4132,9 @@ public partial class ChFi3d_Builder
         // the parameter of the vertex is initialized with the value
         // of its opposing vertex (point on arc).
         double wop = Fd.ChangeInterference(IFadArc).Parameter(isfirst);
-        Geom_Curve? c3df = null;
-        GeomAdaptor_Surface? HGs = 
-            new GeomAdaptor_Surface(DStr.Surface(Fd.Surf()).Surface());
+        Curve3D? c3df = null;
+        SurfaceAdaptor? HGs = 
+            new SurfaceAdaptor(DStr.Surface(Fd.Surf()).Surface());
         Point2D p2dbout = new();
         {
 
@@ -4138,14 +4144,14 @@ public partial class ChFi3d_Builder
             c3df = DStr.Curve(FiopArc.LineIndex()).Curve();
             double uf = FiopArc.FirstParameter();
             double ul = FiopArc.LastParameter();
-            GeomAdaptor_Curve? Hc3df = null;
-            if (c3df.IsPeriodic())
+            CurveAdaptor? Hc3df = null;
+            if (c3df.IsPeriodic)
             {
-                Hc3df = new GeomAdaptor_Curve(c3df);
+                Hc3df = new CurveAdaptor(c3df);
             }
             else
             {
-                Hc3df = new GeomAdaptor_Curve(c3df, uf, ul);
+                Hc3df = new CurveAdaptor(c3df, uf, ul);
             }
             inters = Update(HBs, Hc3df, ref FiopArc, ref CPopArc, ref p2dbout, isfirst, ref wop);
             //  Modified by Sergey KHROMOV - Fri Dec 21 18:08:27 2001 Begin
@@ -4155,28 +4161,28 @@ public partial class ChFi3d_Builder
                 //  Modified by Sergey KHROMOV - Fri Dec 21 18:08:29 2001 End
                 // Arcprol is an edge of tangency, ultimate adjustment by an extrema curve/curve is attempted.
                 double ff = 0.0, ll = 0.0;
-                Geom2d_Curve? gpcprol = BRep_Tool.CurveOnSurface(Arcprol, Fv, out ff, out ll);
+                Curve2D? gpcprol = Tool.CurveOnSurface(Arcprol, Fv, out ff, out ll);
                 if (gpcprol is null)
                 {
                     throw new ConstructionErrorException("Failed to get p-curve of edge");
                 }
-                Geom2dAdaptor_Curve? pcprol = new Geom2dAdaptor_Curve(gpcprol);
-                double partemp = BRep_Tool.Parameter(Vtx, Arcprol);
+                CurveAdaptor2D? pcprol = new CurveAdaptor2D(gpcprol);
+                double partemp = Tool.Parameter(Vtx, Arcprol);
                 inters =
                     Update(HBs, pcprol, HGs, ref FiopArc, ref CPopArc, ref p2dbout, isfirst, ref partemp, ref wop, 10 * tolapp3d);
             }
-            BRepAdaptor_Curve2d? pced = new BRepAdaptor_Curve2d();
+            EdgeCurve2DAdaptor? pced = new EdgeCurve2DAdaptor();
             pced.Initialize(CPadArc.Arc(), Fv);
             Update(HBs, pced, HGs, ref FiadArc, ref CPadArc, isfirst);
         }
 
-        TopoDS_Edge edgecouture = new();
+        Edge edgecouture = new();
         bool couture = false, intcouture = false;
         double tolreached = tolapp3d;
         double par1 = 0.0, par2 = 0.0;
         int indpt = 0, Icurv1 = 0, Icurv2 = 0;
-        Geom_TrimmedCurve? curv1 = null, curv2 = null;
-        Geom2d_Curve? c2d1 = null, c2d2 = null;
+        TrimmedCurve3D? curv1 = null, curv2 = null;
+        Curve2D? c2d1 = null, c2d2 = null;
 
         int Isurf = Fd.Surf();
 
@@ -4187,14 +4193,14 @@ public partial class ChFi3d_Builder
             ChFiDS_FaceInterference Fi2 = Fd.InterferenceOnS2();
             NCollection_Array1<double> Pardeb = new(1, 4), Parfin = new(1, 4);
             Point2D pfil1 = new(), pfac1 = new(), pfil2 = new(), pfac2 = new();
-            Geom2d_Curve? Hc1 = null, Hc2 = null;
+            Curve2D? Hc1 = null, Hc2 = null;
             if (IFopArc == 1)
             {
                 pfac1 = p2dbout;
             }
             else
             {
-                Hc1 = BRep_Tool.CurveOnSurface(CV1.Arc(), Fv, out Ubid, out Ubid);
+                Hc1 = Tool.CurveOnSurface(CV1.Arc(), Fv, out Ubid, out Ubid);
                 if (Hc1 is null)
                 {
                     throw new ConstructionErrorException("Failed to get p-curve of edge");
@@ -4207,7 +4213,7 @@ public partial class ChFi3d_Builder
             }
             else
             {
-                Hc2 = BRep_Tool.CurveOnSurface(CV2.Arc(), Fv, out Ubid, out Ubid);
+                Hc2 = Tool.CurveOnSurface(CV2.Arc(), Fv, out Ubid, out Ubid);
                 if (Hc2 is null)
                 {
                     throw new ConstructionErrorException("Failed to get p-curve of edge");
@@ -4255,20 +4261,20 @@ public partial class ChFi3d_Builder
 
             ChFi3d_Couture(Fv, out couture, ref edgecouture);
 
-            if (couture && !BRep_Tool.Degenerated(edgecouture))
+            if (couture && !Tool.Degenerated(edgecouture))
             {
 
                 // double Ubid,Vbid;
-                Geom_Curve? C = BRep_Tool.Curve(edgecouture, out Ubid, out Vbid);
-                Geom_TrimmedCurve? Ctrim = new Geom_TrimmedCurve(C, Ubid, Vbid);
-                GeomAdaptor_Curve cur1 = new(Ctrim.BasisCurve());
-                GeomAdaptor_Curve cur2 = new(Cc);
-                Extrema_ExtCC extCC = new(cur1, cur2);
-                if (extCC.IsDone() && extCC.NbExt() != 0)
+                Curve3D? C = Tool.Curve(edgecouture, out Ubid, out Vbid);
+                TrimmedCurve3D? Ctrim = new TrimmedCurve3D(C, Ubid, Vbid);
+                CurveAdaptor cur1 = new(Ctrim.BasisCurve());
+                CurveAdaptor cur2 = new(Cc);
+                ExtCC extCC = new(cur1, cur2);
+                if (extCC.IsDone && extCC.ExtCount != 0)
                 {
                     int imin = 0;
                     double dist2min = RealLast();
-                    for (int i = 1; i <= extCC.NbExt(); i++)
+                    for (int i = 1; i <= extCC.ExtCount; i++)
                     {
                         if (extCC.SquareDistance(i) < dist2min)
                         {
@@ -4278,7 +4284,7 @@ public partial class ChFi3d_Builder
                     }
                     if (dist2min <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
-                        Extrema_POnCurv ponc1 = new(), ponc2 = new();
+                        POnCurv ponc1 = new(), ponc2 = new();
                         extCC.Points(imin, out ponc1, out ponc2);
                         par1 = ponc1.Parameter();
                         par2 = ponc2.Parameter();
@@ -4289,8 +4295,8 @@ public partial class ChFi3d_Builder
                             TopOpeBRepDS_Point tpoint = new(P1, Tol);
                             indpt = DStr.AddPoint(tpoint);
                             intcouture = true;
-                            curv1 = new Geom_TrimmedCurve(Cc, Udeb, par2);
-                            curv2 = new Geom_TrimmedCurve(Cc, par2, Ufin);
+                            curv1 = new TrimmedCurve3D(Cc, Udeb, par2);
+                            curv2 = new TrimmedCurve3D(Cc, par2, Ufin);
                             TopOpeBRepDS_Curve tcurv1 = new(curv1, tolreached);
                             TopOpeBRepDS_Curve tcurv2 = new(curv2, tolreached);
                             Icurv1 = DStr.AddCurve(tcurv1);
@@ -4306,27 +4312,27 @@ public partial class ChFi3d_Builder
             throw new MethodNotImplementedException("OneCorner : cap not written");
         }
         int IShape = DStr.AddShape(Fv);
-        TopAbs_Orientation Et = TopAbs_FORWARD;
+        Orientation Et = Forward;
         if (IFadArc == 1)
         {
-            TopExp_Explorer Exp = new();
-            for (Exp.Init(Fv.Oriented(TopAbs_FORWARD), TopAbs_EDGE); Exp.More(); Exp.Next())
+            Explorer Exp = new();
+            for (Exp.Init(Fv.Oriented(Forward), ShapeType.Edge); Exp.More(); Exp.Next())
             {
                 if (Exp.Current().IsSame(CV1.Arc()))
                 {
-                    Et = TopAbs.Reverse(TopAbs.Compose(Exp.Current().Orientation(), CV1.TransitionOnArc()));
+                    Et = global::Kerf.Engine.Topology.TopAbs.Reverse(global::Kerf.Engine.Topology.TopAbs.Compose(Exp.Current().Orientation(), CV1.TransitionOnArc()));
                     break;
                 }
             }
         }
         else
         {
-            TopExp_Explorer Exp = new();
-            for (Exp.Init(Fv.Oriented(TopAbs_FORWARD), TopAbs_EDGE); Exp.More(); Exp.Next())
+            Explorer Exp = new();
+            for (Exp.Init(Fv.Oriented(Forward), ShapeType.Edge); Exp.More(); Exp.Next())
             {
                 if (Exp.Current().IsSame(CV2.Arc()))
                 {
-                    Et = TopAbs.Compose(Exp.Current().Orientation(), CV2.TransitionOnArc());
+                    Et = global::Kerf.Engine.Topology.TopAbs.Compose(Exp.Current().Orientation(), CV2.TransitionOnArc());
                     break;
                 }
             }
@@ -4370,32 +4376,32 @@ public partial class ChFi3d_Builder
             // interferences of curv1 and curv2 on Isurf
             if (Fd.Orientation() == Fv.Orientation())
             {
-                Et = TopAbs.Reverse(Et);
+                Et = global::Kerf.Engine.Topology.TopAbs.Reverse(Et);
             }
-            c2d1 = new Geom2d_TrimmedCurve(Ps, Udeb, par2);
+            c2d1 = new TrimmedCurve2D(Ps, Udeb, par2);
             InterFv = ChFi3d_FilCurveInDS(Icurv1, Isurf, c2d1, Et);
             DStr.ChangeSurfaceInterferences(Isurf).Append(InterFv);
-            c2d2 = new Geom2d_TrimmedCurve(Ps, par2, Ufin);
+            c2d2 = new TrimmedCurve2D(Ps, par2, Ufin);
             InterFv = ChFi3d_FilCurveInDS(Icurv2, Isurf, c2d2, Et);
             DStr.ChangeSurfaceInterferences(Isurf).Append(InterFv);
 
             // limitation of the sewing edge
             int Iarc = DStr.AddShape(edgecouture);
             TopOpeBRepDS_CurvePointInterference? Interfedge = null;
-            TopAbs_Orientation ori = default;
-            TopoDS_Vertex Vdeb = new(), Vfin = new();
-            Vdeb = TopExp.FirstVertex(edgecouture);
-            Vfin = TopExp.LastVertex(edgecouture);
+            Orientation ori = default;
+            Vertex Vdeb = new(), Vfin = new();
+            Vdeb = Exploration.FirstVertex(edgecouture);
+            Vfin = Exploration.LastVertex(edgecouture);
             double pard = 0.0, parf = 0.0;
-            pard = BRep_Tool.Parameter(Vdeb, edgecouture);
-            parf = BRep_Tool.Parameter(Vfin, edgecouture);
+            pard = Tool.Parameter(Vdeb, edgecouture);
+            parf = Tool.Parameter(Vfin, edgecouture);
             if (Math.Abs(par1 - pard) < Math.Abs(parf - par1))
             {
-                ori = TopAbs_FORWARD;
+                ori = Forward;
             }
             else
             {
-                ori = TopAbs_REVERSED;
+                ori = Reversed;
             }
             Interfedge = ChFi3d_FilPointInDS(ori, Iarc, indpt, par1);
             DStr.ChangeShapeInterferences(Iarc).Append(Interfedge);
@@ -4405,13 +4411,13 @@ public partial class ChFi3d_Builder
             int ind1 = stripe.IndexPoint(isfirst, 1);
             int ind2 = stripe.IndexPoint(isfirst, 2);
             TopOpeBRepDS_CurvePointInterference? interfprol = 
-                ChFi3d_FilPointInDS(TopAbs_FORWARD, Icurv1, ind1, Udeb);
+                ChFi3d_FilPointInDS(Forward, Icurv1, ind1, Udeb);
             DStr.ChangeCurveInterferences(Icurv1).Append(interfprol);
-            interfprol = ChFi3d_FilPointInDS(TopAbs_REVERSED, Icurv1, indpt, par2);
+            interfprol = ChFi3d_FilPointInDS(Reversed, Icurv1, indpt, par2);
             DStr.ChangeCurveInterferences(Icurv1).Append(interfprol);
-            interfprol = ChFi3d_FilPointInDS(TopAbs_FORWARD, Icurv2, indpt, par2);
+            interfprol = ChFi3d_FilPointInDS(Forward, Icurv2, indpt, par2);
             DStr.ChangeCurveInterferences(Icurv2).Append(interfprol);
-            interfprol = ChFi3d_FilPointInDS(TopAbs_REVERSED, Icurv2, ind2, Ufin);
+            interfprol = ChFi3d_FilPointInDS(Reversed, Icurv2, ind2, Ufin);
             DStr.ChangeCurveInterferences(Icurv2).Append(interfprol);
         }
 
@@ -4427,9 +4433,9 @@ public partial class ChFi3d_Builder
             // Above all the points cut the points with the edge of the spine.
             int IArcspine = DStr.AddShape(Arcspine);
             int IVtx = DStr.AddShape(Vtx);
-            TopAbs_Orientation OVtx2 = TopAbs_FORWARD;
-            TopAbs_Orientation OVtx = TopAbs_FORWARD;
-            for (ex.Init(Arcspine.Oriented(TopAbs_FORWARD), TopAbs_VERTEX); ex.More(); ex.Next())
+            Orientation OVtx2 = Forward;
+            Orientation OVtx = Forward;
+            for (ex.Init(Arcspine.Oriented(Forward), ShapeType.Vertex); ex.More(); ex.Next())
             {
                 if (Vtx.IsSame(ex.Current()))
                 {
@@ -4437,21 +4443,21 @@ public partial class ChFi3d_Builder
                     break;
                 }
             }
-            OVtx = TopAbs.Reverse(OVtx);
-            double parVtx = BRep_Tool.Parameter(Vtx, Arcspine);
+            OVtx = global::Kerf.Engine.Topology.TopAbs.Reverse(OVtx);
+            double parVtx = Tool.Parameter(Vtx, Arcspine);
             TopOpeBRepDS_CurvePointInterference? interfv = 
                 ChFi3d_FilVertexInDS(OVtx, IArcspine, IVtx, parVtx);
             DStr.ChangeShapeInterferences(IArcspine).Append(interfv);
 
             // Modif of lvt to find the suite of Arcprol in the other face
             {
-                NCollection_List<TopoDS_Shape>.Iterator It = new();
+                NCollection_List<Shape>.Iterator It = new();
                 for (It.Initialize(myVEMap[Vtx]); It.More(); It.Next())
                 {
                     if (!(Arcprol.IsSame(It.Value()) || Arcspine.IsSame(It.Value())
                                 || Arcpiv.IsSame(It.Value())))
                     {
-                        Arcprolbis = TopoDS.Edge(It.Value());
+                        Arcprolbis = ShapeCasts.Edge(It.Value());
                         break;
                     }
                 }
@@ -4461,13 +4467,13 @@ public partial class ChFi3d_Builder
             // Guard: Arcprolbis may be null if myVEMap[Vtx] contained only
             // Arcprol, Arcspine, and Arcpiv (e.g. when topology maps carry stale
             // data from shared TShape pointers after prior operations).
-            if (Arcprolbis.IsNull())
+            if (Arcprolbis.IsNull)
             {
                 throw new ConstructionErrorException("IntersectMoreCorner: continuation edge (Arcprolbis) is not found");
             }
 
             // Now the missing curves are constructed.
-            for (ex.Init(Arcprolbis.Oriented(TopAbs_FORWARD), TopAbs_VERTEX); ex.More(); ex.Next())
+            for (ex.Init(Arcprolbis.Oriented(Forward), ShapeType.Vertex); ex.More(); ex.Next())
             {
                 if (Vtx.IsSame(ex.Current()))
                 {
@@ -4475,7 +4481,7 @@ public partial class ChFi3d_Builder
                     break;
                 }
             }
-            for (ex.Init(Arcprol.Oriented(TopAbs_FORWARD), TopAbs_VERTEX); ex.More(); ex.Next())
+            for (ex.Init(Arcprol.Oriented(Forward), ShapeType.Vertex); ex.More(); ex.Next())
             {
                 if (Vtx.IsSame(ex.Current()))
                 {
@@ -4488,12 +4494,12 @@ public partial class ChFi3d_Builder
             //     TopoDS_Edge edgecouture;
             //     bool couture;
             ChFi3d_Couture(Fop, out couture, ref edgecouture);
-            Geom2d_Curve? Hc = null;
+            Curve2D? Hc = null;
             //    parVtx = BRep_Tool::Parameter(Vtx,Arcprol);
             ChFiDS_FaceInterference Fiop = Fd.Interference(IFopArc);
             Point2D pop1 = new(), pop2 = new(), pv1 = new(), pv2 = new();
             // deb modif
-            parVtx = BRep_Tool.Parameter(Vtx, Arcprolbis);
+            parVtx = Tool.Parameter(Vtx, Arcprolbis);
             //  Modified by skv - Thu Aug 21 11:55:58 2008 OCC20222 Begin
             //    if(Fop.IsSame(Fopbis)) OArcprolbis = OArcprolop;
             //    else OArcprolbis = Arcprolbis.Orientation();
@@ -4503,7 +4509,7 @@ public partial class ChFi3d_Builder
             }
             else
             {
-                for (ex.Init(Fop, TopAbs_EDGE); ex.More(); ex.Next())
+                for (ex.Init(Fop, ShapeType.Edge); ex.More(); ex.Next())
                 {
                     if (Arcprolbis.IsSame(ex.Current()))
                     {
@@ -4514,20 +4520,20 @@ public partial class ChFi3d_Builder
             }
             //  Modified by skv - Thu Aug 21 11:55:58 2008 OCC20222 End
             // fin modif
-            Hc = BRep_Tool.CurveOnSurface(Arcprolbis, Fop, out Ubid, out Ubid);
+            Hc = Tool.CurveOnSurface(Arcprolbis, Fop, out Ubid, out Ubid);
             if (Hc is null)
             {
                 throw new ConstructionErrorException("Failed to get p-curve of edge");
             }
             pop1 = Hc.Value(parVtx);
             pop2 = Fiop.PCurveOnFace().Value(Fiop.Parameter(isfirst));
-            Hc = BRep_Tool.CurveOnSurface(Arcprol, Fv, out Ubid, out Ubid);
+            Hc = Tool.CurveOnSurface(Arcprol, Fv, out Ubid, out Ubid);
             if (Hc is null)
             {
                 throw new ConstructionErrorException("Failed to get p-curve of edge");
             }
             // modif
-            parVtx = BRep_Tool.Parameter(Vtx, Arcprol);
+            parVtx = Tool.Parameter(Vtx, Arcprol);
             // fin modif
             pv1 = Hc.Value(parVtx);
             pv2 = p2dbout;
@@ -4547,8 +4553,8 @@ public partial class ChFi3d_Builder
             ChFi3d_Boite(pop1, pop2, out uu1, out uu2, out vv1, out vv2);
             ChFi3d_BoundFac(Bop, uu1, uu2, vv1, vv2);
 
-            Geom_Curve? zob3d = null;
-            Geom2d_Curve? zob2dop = null, zob2dv = null;
+            Curve3D? zob3d = null;
+            Curve2D? zob2dop = null, zob2dv = null;
             //    double tolreached;
             if (!ChFi3d_ComputeCurves(HBop, HBs, Pardeb, Parfin, ref zob3d, ref zob2dop, ref zob2dv, tolapp3d, tol2d,
                                                                 out tolreached))
@@ -4564,7 +4570,7 @@ public partial class ChFi3d_Builder
             // it is not determined if the curve has an intersection with the sewing edge
 
             {
-                Et = TopAbs.Reverse(TopAbs.Compose(OVtx, OArcprolv));
+                Et = global::Kerf.Engine.Topology.TopAbs.Reverse(global::Kerf.Engine.Topology.TopAbs.Compose(OVtx, OArcprolv));
                 int Iop = DStr.AddShape(Fop);
                 TopOpeBRepDS_SurfaceCurveInterference? InterFv = 
                     ChFi3d_FilCurveInDS(IZob, IShape, zob2dv, Et);
@@ -4572,7 +4578,7 @@ public partial class ChFi3d_Builder
                 // OVtx = TopAbs::Reverse(OVtx);
                 //  Modified by skv - Thu Aug 21 11:55:58 2008 OCC20222 Begin
                 //      Et = TopAbs::Reverse(TopAbs::Compose(OVtx,OArcprolbis));
-                Et = TopAbs.Reverse(TopAbs.Compose(OVtx2, OArcprolbis));
+                Et = global::Kerf.Engine.Topology.TopAbs.Reverse(global::Kerf.Engine.Topology.TopAbs.Compose(OVtx2, OArcprolbis));
                 //  Modified by skv - Thu Aug 21 11:55:58 2008 OCC20222 End
                 // OVtx = TopAbs::Reverse(OVtx);
                 //      Et = TopAbs::Reverse(Et);
@@ -4580,10 +4586,10 @@ public partial class ChFi3d_Builder
                     ChFi3d_FilCurveInDS(IZob, Iop, zob2dop, Et);
                 DStr.ChangeShapeInterferences(Iop).Append(Interfop);
                 TopOpeBRepDS_CurvePointInterference? interfprol = 
-                    ChFi3d_FilVertexInDS(TopAbs_FORWARD, IZob, IVtx, Udeb);
+                    ChFi3d_FilVertexInDS(Forward, IZob, IVtx, Udeb);
                 DStr.ChangeCurveInterferences(IZob).Append(interfprol);
                 int icc = stripe.IndexPoint(isfirst, IFopArc);
-                interfprol = ChFi3d_FilPointInDS(TopAbs_REVERSED, IZob, icc, Ufin);
+                interfprol = ChFi3d_FilPointInDS(Reversed, IZob, icc, Ufin);
                 DStr.ChangeCurveInterferences(IZob).Append(interfprol);
             }
         }
@@ -4629,19 +4635,19 @@ internal static class ChFi3d_Builder_C1
         return p;
     }
 
-    internal static bool Update(Adaptor3d_Surface? fb, Adaptor2d_Curve2d? pcfb, Adaptor3d_Surface? surf, ref ChFiDS_FaceInterference fi, ref ChFiDS_CommonPoint cp, ref Point2D p2dbout, bool isfirst, ref double pared, ref double wop, double tol)
+    internal static bool Update(SurfaceAdaptorBase? fb, Curve2DAdaptorBase? pcfb, SurfaceAdaptorBase? surf, ref ChFiDS_FaceInterference fi, ref ChFiDS_CommonPoint cp, ref Point2D p2dbout, bool isfirst, ref double pared, ref double wop, double tol)
     {
-        Adaptor3d_CurveOnSurface c1 = new(pcfb, fb);
-        Geom2d_Curve? pc = fi.PCurveOnSurf();
-        Geom2dAdaptor_Curve? hpc = new Geom2dAdaptor_Curve(pc);
-        Adaptor3d_CurveOnSurface c2 = new(hpc, surf);
-        Extrema_LocateExtCC ext = new(c1, c2, pared, wop);
-        if (ext.IsDone())
+        CurveOnSurface c1 = new(pcfb, fb);
+        Curve2D? pc = fi.PCurveOnSurf();
+        CurveAdaptor2D? hpc = new CurveAdaptor2D(pc);
+        CurveOnSurface c2 = new(hpc, surf);
+        LocateExtCC ext = new(c1, c2, pared, wop);
+        if (ext.IsDone)
         {
             double dist2 = ext.SquareDistance();
             if (dist2 < tol * tol)
             {
-                Extrema_POnCurv ponc1 = new(), ponc2 = new();
+                POnCurv ponc1 = new(), ponc2 = new();
                 ext.Point(out ponc1, out ponc2);
                 double parfb = ponc1.Parameter();
                 p2dbout = pcfb.Value(parfb);
@@ -4656,7 +4662,7 @@ internal static class ChFi3d_Builder_C1
         return false;
     }
 
-    internal static bool Update(Adaptor3d_Surface? fb, Adaptor3d_Curve? ct, ref ChFiDS_FaceInterference fi, ref ChFiDS_CommonPoint cp, ref Point2D p2dbout, bool isfirst, ref double wop)
+    internal static bool Update(SurfaceAdaptorBase? fb, CurveAdaptorBase? ct, ref ChFiDS_FaceInterference fi, ref ChFiDS_CommonPoint cp, ref Point2D p2dbout, bool isfirst, ref double wop)
     {
         IntCurveSurface_HInter Intersection = new();
         // check if in KPart the limits of the tangency line
@@ -4666,7 +4672,7 @@ internal static class ChFi3d_Builder_C1
 
         double wbis = 0.0;
 
-        bool isperiodic = ct.IsPeriodic(), recadrebis = false;
+        bool isperiodic = ct.IsPeriodic, recadrebis = false;
         Intersection.Perform(ct, fb);
         if (Intersection.IsDone())
         {
@@ -4740,21 +4746,21 @@ internal static class ChFi3d_Builder_C1
         return false;
     }
 
-    internal static bool IntersUpdateOnSame(GeomAdaptor_Surface? HGs, BRepAdaptor_Surface? HBs, Geom_Curve? c3dFI, in TopoDS_Face Fop, in TopoDS_Face Fprol, in TopoDS_Edge Eprol, in TopoDS_Vertex Vtx, bool isFirst, double Tol, ref ChFiDS_FaceInterference FIop, ref ChFiDS_CommonPoint CPop, ref Point2D FprolUV, ref double c3dU)
+    internal static bool IntersUpdateOnSame(SurfaceAdaptor? HGs, FaceSurfaceAdaptor? HBs, Curve3D? c3dFI, in Face Fop, in Face Fprol, in Edge Eprol, in Vertex Vtx, bool isFirst, double Tol, ref ChFiDS_FaceInterference FIop, ref ChFiDS_CommonPoint CPop, ref Point2D FprolUV, ref double c3dU)
     {
         // add more or less restrictive criterions to
         // decide if the intersection is done with the face at
         // extended end or if the end is sharp.
         double uf = FIop.FirstParameter();
         double ul = FIop.LastParameter();
-        GeomAdaptor_Curve? Hc3df = null;
-        if (c3dFI.IsPeriodic())
+        CurveAdaptor? Hc3df = null;
+        if (c3dFI.IsPeriodic)
         {
-            Hc3df = new GeomAdaptor_Curve(c3dFI);
+            Hc3df = new CurveAdaptor(c3dFI);
         }
         else
         {
-            Hc3df = new GeomAdaptor_Curve(c3dFI, uf, ul);
+            Hc3df = new CurveAdaptor(c3dFI, uf, ul);
         }
 
         if (Update(HBs, Hc3df, ref FIop, ref CPop, ref FprolUV, isFirst, ref c3dU))
@@ -4767,54 +4773,54 @@ internal static class ChFi3d_Builder_C1
             return false;
         }
 
-        Geom2d_Curve? gpcprol = BRep_Tool.CurveOnSurface(Eprol, Fprol, out uf, out ul);
+        Curve2D? gpcprol = Tool.CurveOnSurface(Eprol, Fprol, out uf, out ul);
         if (gpcprol is null)
         {
             throw new ConstructionErrorException("Failed to get p-curve of edge");
         }
-        Geom2dAdaptor_Curve? pcprol = new Geom2dAdaptor_Curve(gpcprol);
-        double partemp = BRep_Tool.Parameter(Vtx, Eprol);
+        CurveAdaptor2D? pcprol = new CurveAdaptor2D(gpcprol);
+        double partemp = Tool.Parameter(Vtx, Eprol);
 
         return Update(HBs, pcprol, HGs, ref FIop, ref CPop, ref FprolUV, isFirst, ref partemp, ref c3dU, Tol);
     }
 
-    internal static bool Update(Adaptor3d_Surface? face, Adaptor2d_Curve2d? edonface, Adaptor3d_Surface? surf, ref ChFiDS_FaceInterference fi, ref ChFiDS_CommonPoint cp, bool isfirst)
+    internal static bool Update(SurfaceAdaptorBase? face, Curve2DAdaptorBase? edonface, SurfaceAdaptorBase? surf, ref ChFiDS_FaceInterference fi, ref ChFiDS_CommonPoint cp, bool isfirst)
     {
         if (!cp.IsOnArc())
         {
             return false;
         }
-        Adaptor3d_CurveOnSurface c1 = new(edonface, face);
+        CurveOnSurface c1 = new(edonface, face);
         double pared = cp.ParameterOnArc();
         double parltg = fi.Parameter(isfirst);
-        Geom2d_Curve? pc = fi.PCurveOnSurf();
+        Curve2D? pc = fi.PCurveOnSurf();
         double f = fi.FirstParameter();
         double l = fi.LastParameter();
         double delta = 0.1 * (l - f);
         f = Max(f - delta, pc.FirstParameter());
         l = Min(l + delta, pc.LastParameter());
-        Geom2dAdaptor_Curve? hpc = new Geom2dAdaptor_Curve(pc, f, l);
-        Adaptor3d_CurveOnSurface c2 = new(hpc, surf);
+        CurveAdaptor2D? hpc = new CurveAdaptor2D(pc, f, l);
+        CurveOnSurface c2 = new(hpc, surf);
 
-        Extrema_LocateExtCC ext = new(c1, c2, pared, parltg);
-        if (ext.IsDone())
+        LocateExtCC ext = new(c1, c2, pared, parltg);
+        if (ext.IsDone)
         {
-            Extrema_POnCurv ponc1 = new(), ponc2 = new();
+            POnCurv ponc1 = new(), ponc2 = new();
             ext.Point(out ponc1, out ponc2);
             pared = ponc1.Parameter();
             parltg = ponc2.Parameter();
             if ((parltg > f) && (parltg < l))
             {
                 ////modified by jgv, 10.05.2012 for the bug 23139, 25657////
-                Geom2d_Curve? PConF = fi.PCurveOnFace();
+                Curve2D? PConF = fi.PCurveOnFace();
                 if (PConF is not null)
                 {
-                    Geom2d_TrimmedCurve? aTrCurve = (PConF as Geom2d_TrimmedCurve);
+                    TrimmedCurve2D? aTrCurve = (PConF as TrimmedCurve2D);
                     if (aTrCurve is not null)
                     {
                         PConF = aTrCurve.BasisCurve();
                     }
-                    if (!PConF.IsPeriodic())
+                    if (!PConF.IsPeriodic)
                     {
                         if (isfirst)
                         {
@@ -4843,14 +4849,14 @@ internal static class ChFi3d_Builder_C1
         return false;
     }
 
-    internal static void ChFi3d_ExtendSurface(ref Geom_Surface? S, ref int prol)
+    internal static void ChFi3d_ExtendSurface(ref Surface? S, ref int prol)
     {
         if (prol != 0)
         {
             return;
         }
 
-        prol = ((S is Geom_BSplineSurface) ? 1 : (S is Geom_BezierSurface) ? 2 : 0);
+        prol = ((S is global::Kerf.Geometry.BSplineSurface) ? 1 : (S is global::Kerf.Geometry.BezierSurface) ? 2 : 0);
         if (prol == 0)
         {
             return;
@@ -4863,20 +4869,20 @@ internal static class ChFi3d_Builder_C1
         S.D0(umax, vmax, out P2);
         length = P1.Distance(P2);
 
-        Geom_BoundedSurface? aBS = (S as Geom_BoundedSurface);
-        GeomLib.ExtendSurfByLength(ref aBS, length, 1, false, true);
-        GeomLib.ExtendSurfByLength(ref aBS, length, 1, true, true);
-        GeomLib.ExtendSurfByLength(ref aBS, length, 1, false, false);
-        GeomLib.ExtendSurfByLength(ref aBS, length, 1, true, false);
+        BoundedSurface? aBS = (S as BoundedSurface);
+        global::Kerf.Engine.Geometry.Library.GeomLib.ExtendSurfByLength(ref aBS, length, 1, false, true);
+        global::Kerf.Engine.Geometry.Library.GeomLib.ExtendSurfByLength(ref aBS, length, 1, true, true);
+        global::Kerf.Engine.Geometry.Library.GeomLib.ExtendSurfByLength(ref aBS, length, 1, false, false);
+        global::Kerf.Engine.Geometry.Library.GeomLib.ExtendSurfByLength(ref aBS, length, 1, true, false);
         S = aBS;
     }
 
-    internal static void ComputeCurve2d(Geom_Curve? Ct, ref TopoDS_Face Face, ref Geom2d_Curve? C2d)
+    internal static void ComputeCurve2d(Curve3D? Ct, ref Face Face, ref Curve2D? C2d)
     {
-        TopoDS_Edge E1 = new();
-        NCollection_IndexedMap<TopoDS_Shape> MapE1 = new(TopTools_ShapeMapHasher.Instance);
+        Edge E1 = new();
+        NCollection_IndexedMap<Shape> MapE1 = new(ShapeHasher.Instance);
         BRepLib_MakeEdge Bedge = new(Ct);
-        TopoDS_Edge edg = Bedge.Edge();
+        Edge edg = Bedge.Edge();
         BRepAlgo_NormalProjection OrtProj = new();
         OrtProj.Init(Face);
         OrtProj.Add(edg);
@@ -4887,27 +4893,27 @@ internal static class ChFi3d_Builder_C1
         double up1 = 0.0, up2 = 0.0;
         if (OrtProj.IsDone())
         {
-            TopExp.MapShapes(OrtProj.Projection(), TopAbs_EDGE, MapE1);
+            Exploration.MapShapes(OrtProj.Projection(), ShapeType.Edge, MapE1);
             if (MapE1.Extent() != 0)
             {
-                TopoDS_Shape aLocalShape = MapE1[1];
-                E1 = TopoDS.Edge(aLocalShape);
+                Shape aLocalShape = MapE1[1];
+                E1 = ShapeCasts.Edge(aLocalShape);
                 //      E1=TopoDS::Edge( TopoDS_Shape (MapE1[1]));
-                C2d = BRep_Tool.CurveOnSurface(E1, Face, out up1, out up2);
+                C2d = Tool.CurveOnSurface(E1, Face, out up1, out up2);
             }
         }
     }
 
-    internal static void ChFi3d_Recale(BRepAdaptor_Surface Bs, ref Point2D p1, ref Point2D p2, bool refon1)
+    internal static void ChFi3d_Recale(FaceSurfaceAdaptor Bs, ref Point2D p1, ref Point2D p2, bool refon1)
     {
-        Geom_Surface? surf = Bs.GeomSurfaceOriginal();
-        Geom_RectangularTrimmedSurface? ts = 
-            (surf as Geom_RectangularTrimmedSurface);
+        Surface? surf = Bs.GeomSurfaceOriginal();
+        TrimmedSurface? ts = 
+            (surf as TrimmedSurface);
         if (ts is not null)
         {
             surf = ts.BasisSurface();
         }
-        if (surf.IsUPeriodic())
+        if (surf.IsUPeriodic)
         {
             double u1 = p1.X(), u2 = p2.X();
             double uper = surf.UPeriod();
@@ -4933,7 +4939,7 @@ internal static class ChFi3d_Builder_C1
             p1.SetX(u1);
             p2.SetX(u2);
         }
-        if (surf.IsVPeriodic())
+        if (surf.IsVPeriodic)
         {
             double v1 = p1.Y(), v2 = p2.Y();
             double vper = surf.VPeriod();
@@ -4961,7 +4967,7 @@ internal static class ChFi3d_Builder_C1
         }
     }
 
-    internal static bool ChFi3d_SelectStripe(NCollection_List<ChFiDS_Stripe>.Iterator It, in TopoDS_Vertex Vtx, bool thePrepareOnSame)
+    internal static bool ChFi3d_SelectStripe(NCollection_List<ChFiDS_Stripe>.Iterator It, in Vertex Vtx, bool thePrepareOnSame)
     {
         if (!thePrepareOnSame)
         {
@@ -4991,23 +4997,23 @@ internal static class ChFi3d_Builder_C1
         return false;
     }
 
-    internal static void cherche_face(NCollection_List<TopoDS_Shape> map, in TopoDS_Edge E, in TopoDS_Face F1, in TopoDS_Face F2, in TopoDS_Face F3, ref TopoDS_Face F)
+    internal static void cherche_face(NCollection_List<Shape> map, in Edge E, in Face F1, in Face F2, in Face F3, ref Face F)
     {
-        TopoDS_Face Fcur = new();
+        Face Fcur = new();
         bool trouve = false;
-        NCollection_List<TopoDS_Shape>.Iterator It = new();
+        NCollection_List<Shape>.Iterator It = new();
         int ie = 0;
         for (It.Initialize(map); It.More() && !trouve; It.Next())
         {
-            Fcur = TopoDS.Face(It.Value());
+            Fcur = ShapeCasts.Face(It.Value());
             if (!Fcur.IsSame(F1) && !Fcur.IsSame(F2) && !Fcur.IsSame(F3))
             {
-                NCollection_IndexedMap<TopoDS_Shape> MapE = new(TopTools_ShapeMapHasher.Instance);
-                TopExp.MapShapes(Fcur, TopAbs_EDGE, MapE);
+                NCollection_IndexedMap<Shape> MapE = new(ShapeHasher.Instance);
+                Exploration.MapShapes(Fcur, ShapeType.Edge, MapE);
                 for (ie = 1; ie <= MapE.Extent() && !trouve; ie++)
                 {
-                    TopoDS_Shape aLocalShape = MapE[ie];
-                    if (E.IsSame(TopoDS.Edge(aLocalShape)))
+                    Shape aLocalShape = MapE[ie];
+                    if (E.IsSame(ShapeCasts.Edge(aLocalShape)))
                     //            if (E.IsSame(TopoDS::Edge(TopoDS_Shape (MapE[ie]))))
                     {
                         F = Fcur;
@@ -5016,29 +5022,29 @@ internal static class ChFi3d_Builder_C1
                 }
             }
         }
-        if (F.IsNull())
+        if (F.IsNull)
         {
             throw new ConstructionErrorException("Failed to find face.");
         }
     }
 
-    internal static void cherche_edge1(in TopoDS_Face F1, in TopoDS_Face F2, ref TopoDS_Edge Edge)
+    internal static void cherche_edge1(in Face F1, in Face F2, ref Edge Edge)
     {
         int i = 0, j = 0;
-        TopoDS_Edge Ecur1 = new(), Ecur2 = new();
+        Edge Ecur1 = new(), Ecur2 = new();
         bool trouve = false;
-        NCollection_IndexedMap<TopoDS_Shape> MapE1 = new(TopTools_ShapeMapHasher.Instance), MapE2 = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(F1, TopAbs_EDGE, MapE1);
-        TopExp.MapShapes(F2, TopAbs_EDGE, MapE2);
+        NCollection_IndexedMap<Shape> MapE1 = new(ShapeHasher.Instance), MapE2 = new(ShapeHasher.Instance);
+        Exploration.MapShapes(F1, global::Kerf.Topology.ShapeType.Edge, MapE1);
+        Exploration.MapShapes(F2, global::Kerf.Topology.ShapeType.Edge, MapE2);
         for (i = 1; i <= MapE1.Extent() && !trouve; i++)
         {
-            TopoDS_Shape aLocalShape = MapE1[i];
-            Ecur1 = TopoDS.Edge(aLocalShape);
+            Shape aLocalShape = MapE1[i];
+            Ecur1 = ShapeCasts.Edge(aLocalShape);
             //	Ecur1=TopoDS::Edge(TopoDS_Shape (MapE1[i]));
             for (j = 1; j <= MapE2.Extent() && !trouve; j++)
             {
                 aLocalShape = MapE2[j];
-                Ecur2 = TopoDS.Edge(aLocalShape);
+                Ecur2 = ShapeCasts.Edge(aLocalShape);
                 //	      Ecur2=TopoDS::Edge(TopoDS_Shape (MapE2[j]));
                 if (Ecur2.IsSame(Ecur1))
                 {
@@ -5047,24 +5053,24 @@ internal static class ChFi3d_Builder_C1
                 }
             }
         }
-        if (Edge.IsNull())
+        if (Edge.IsNull)
         {
             throw new ConstructionErrorException("Failed to find edge.");
         }
     }
 
-    internal static bool containV(in TopoDS_Face F1, in TopoDS_Vertex V)
+    internal static bool containV(in Face F1, in Vertex V)
     {
         int i = 0;
-        TopoDS_Vertex Vcur = new();
+        Vertex Vcur = new();
         bool trouve = false;
         bool contain = false;
-        NCollection_IndexedMap<TopoDS_Shape> MapV = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(F1, TopAbs_VERTEX, MapV);
+        NCollection_IndexedMap<Shape> MapV = new(ShapeHasher.Instance);
+        Exploration.MapShapes(F1, ShapeType.Vertex, MapV);
         for (i = 1; i <= MapV.Extent() && !trouve; i++)
         {
-            TopoDS_Shape aLocalShape = MapV[i];
-            Vcur = TopoDS.Vertex(aLocalShape);
+            Shape aLocalShape = MapV[i];
+            Vcur = ShapeCasts.Vertex(aLocalShape);
             //	Vcur=TopoDS::Vertex(TopoDS_Shape (MapV[i]));
             if (Vcur.IsSame(V))
             {
@@ -5075,18 +5081,18 @@ internal static class ChFi3d_Builder_C1
         return contain;
     }
 
-    internal static bool containE(in TopoDS_Face F1, in TopoDS_Edge E)
+    internal static bool containE(in Face F1, in Edge E)
     {
         int i = 0;
-        TopoDS_Edge Ecur = new();
+        Edge Ecur = new();
         bool trouve = false;
         bool contain = false;
-        NCollection_IndexedMap<TopoDS_Shape> MapE = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(F1, TopAbs_EDGE, MapE);
+        NCollection_IndexedMap<Shape> MapE = new(ShapeHasher.Instance);
+        Exploration.MapShapes(F1, ShapeType.Edge, MapE);
         for (i = 1; i <= MapE.Extent() && !trouve; i++)
         {
-            TopoDS_Shape aLocalShape = MapE[i];
-            Ecur = TopoDS.Edge(aLocalShape);
+            Shape aLocalShape = MapE[i];
+            Ecur = ShapeCasts.Edge(aLocalShape);
             //	Ecur=TopoDS::Edge(TopoDS_Shape (MapE[i]));
             if (Ecur.IsSame(E))
             {
@@ -5097,7 +5103,7 @@ internal static class ChFi3d_Builder_C1
         return contain;
     }
 
-    internal static bool IsShrink(Geom2dAdaptor_Curve PC, double Pf, double Pl, double Param, bool isU, double tol)
+    internal static bool IsShrink(CurveAdaptor2D PC, double Pf, double Pl, double Param, bool isU, double tol)
     {
         switch (PC.GetType())
         {

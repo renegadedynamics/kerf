@@ -5,8 +5,8 @@
 
 using Kerf.Engine.Foundation;
 using static Occt.IntRes2d_Position;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -42,17 +42,17 @@ public sealed class HatchGen_PointOnHatching : HatchGen_IntersectionPoint
         switch (Point.TransitionOfFirst().PositionOnCurve())
         {
             case IntRes2d_Head:
-                myPosit = TopAbs_FORWARD;
+                myPosit = Forward;
                 break;
             case IntRes2d_Middle:
-                myPosit = TopAbs_INTERNAL;
+                myPosit = Internal;
                 break;
             case IntRes2d_End:
-                myPosit = TopAbs_REVERSED;
+                myPosit = Reversed;
                 break;
         }
-        myBefore = TopAbs_UNKNOWN;
-        myAfter = TopAbs_UNKNOWN;
+        myBefore = Unknown;
+        myAfter = Unknown;
         mySegBeg = false;
         mySegEnd = false;
         myPoints.Clear();

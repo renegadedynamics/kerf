@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -20,23 +22,23 @@ public class ShapeUpgrade_ClosedEdgeDivide : ShapeUpgrade_EdgeDivide
     }
 
     /// <summary>Computes the splitting value of the edge; true if it is closed and has to be split.</summary>
-    public override bool Compute(in TopoDS_Edge anEdge)
+    public override bool Compute(in Edge anEdge)
     {
         Clear();
         var sae = new ShapeAnalysis_Edge();
-        TopoDS_Vertex V1 = sae.FirstVertex(anEdge);
-        TopoDS_Vertex V2 = sae.LastVertex(anEdge);
-        if (V1.IsSame(V2) && !BRep_Tool.Degenerated(anEdge))
+        Vertex V1 = sae.FirstVertex(anEdge);
+        Vertex V2 = sae.LastVertex(anEdge);
+        if (V1.IsSame(V2) && !Tool.Degenerated(anEdge))
         {
             const int nbPoints = 23;
-            Point3D pntV = BRep_Tool.Pnt(V1);
-            double TolV1 = LimitTolerance(BRep_Tool.Tolerance(V1));
+            Point3D pntV = Tool.Pnt(V1);
+            double TolV1 = LimitTolerance(Tool.Tolerance(V1));
             TolV1 = TolV1 * TolV1;
-            Geom_Curve? curve3d = BRep_Tool.Curve(anEdge, out double f, out double l);
+            Curve3D? curve3d = Tool.Curve(anEdge, out double f, out double l);
             myHasCurve3d = curve3d is not null;
             double f2d = 0.0, l2d = 0.0;
-            Geom2d_Curve? pcurve1 = null;
-            if (!myFace.IsNull())
+            Curve2D? pcurve1 = null;
+            if (!myFace.IsNull)
             { // process free edges
                 sae.PCurve(anEdge, myFace, out pcurve1, out f2d, out l2d, false);
             }
@@ -83,7 +85,7 @@ public class ShapeUpgrade_ClosedEdgeDivide : ShapeUpgrade_EdgeDivide
 
             if (myHasCurve2d)
             {
-                Geom_Surface surf = BRep_Tool.Surface(myFace)!;
+                Surface surf = Tool.Surface(myFace)!;
 
                 double maxPar = f2d, dMax = 0;
                 double step = (l2d - f2d) / (nbPoints - 1);

@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -13,14 +14,14 @@ public class GProp_PGPropsTest
     [Fact]
     public void EmptySet()
     {
-        var aProps = new GProp_PGProps();
+        var aProps = new PGProps();
         Assert.Equal(0.0, aProps.Mass(), Conf);
     }
 
     [Fact]
     public void SinglePoint()
     {
-        var aProps = new GProp_PGProps();
+        var aProps = new PGProps();
         aProps.AddPoint(new Point3D(1.0, 2.0, 3.0));
 
         Assert.Equal(1.0, aProps.Mass(), Conf);
@@ -32,7 +33,7 @@ public class GProp_PGPropsTest
     [Fact]
     public void TwoPoints_Barycentre()
     {
-        var aProps = new GProp_PGProps();
+        var aProps = new PGProps();
         aProps.AddPoint(new Point3D(0.0, 0.0, 0.0));
         aProps.AddPoint(new Point3D(2.0, 4.0, 6.0));
 
@@ -45,7 +46,7 @@ public class GProp_PGPropsTest
     [Fact]
     public void WeightedPoints()
     {
-        var aProps = new GProp_PGProps();
+        var aProps = new PGProps();
         aProps.AddPoint(new Point3D(0.0, 0.0, 0.0), 1.0);
         aProps.AddPoint(new Point3D(4.0, 0.0, 0.0), 3.0);
 
@@ -65,7 +66,7 @@ public class GProp_PGPropsTest
         aPnts[3] = new Point3D(0.0, 1.0, 0.0);
         aPnts[4] = new Point3D(0.0, -1.0, 0.0);
 
-        var aProps = new GProp_PGProps(aPnts);
+        var aProps = new PGProps(aPnts);
         Assert.Equal(4.0, aProps.Mass(), Conf);
         Assert.Equal(0.0, aProps.CentreOfMass().X(), Conf);
         Assert.Equal(0.0, aProps.CentreOfMass().Y(), Conf);
@@ -80,7 +81,7 @@ public class GProp_PGPropsTest
         aPnts[2] = new Point3D(3.0, 0.0, 0.0);
         aPnts[3] = new Point3D(0.0, 6.0, 0.0);
 
-        Point3D aG = GProp_PGProps.Barycentre(aPnts);
+        Point3D aG = PGProps.Barycentre(aPnts);
         Assert.Equal(1.0, aG.X(), Conf);
         Assert.Equal(2.0, aG.Y(), Conf);
         Assert.Equal(0.0, aG.Z(), Conf);
@@ -97,7 +98,7 @@ public class GProp_PGPropsTest
         aPnts[3] = new Point3D(0.0, 1.0, 0.0);
         aPnts[4] = new Point3D(0.0, -1.0, 0.0);
 
-        var aProps = new GProp_PGProps(aPnts);
+        var aProps = new PGProps(aPnts);
         Matrix3x3 anInertia = aProps.MatrixOfInertia();
 
         Assert.Equal(2.0, anInertia.Value(1, 1), Conf); // Ixx

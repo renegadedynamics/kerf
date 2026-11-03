@@ -3,8 +3,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Numerics;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 using math_Vector = Kerf.Engine.Numerics.VectorBase<double>;
 
@@ -47,13 +52,13 @@ internal static class GeometryTestCurveCommands
         }
 
         // get the curve
-        Geom_Curve? C = DrawTrSurf.GetCurve(theDI, a[2]);
+        Curve3D? C = DrawTrSurf.GetCurve(theDI, a[2]);
         if (C is null)
         {
             return 1;
         }
 
-        Geom_Surface? S;
+        Surface? S;
         if (n >= 4)
         {
             S = DrawTrSurf.GetSurface(theDI, a[3]);
@@ -64,14 +69,14 @@ internal static class GeometryTestCurveCommands
         }
         else
         {
-            S = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
+            S = new PlaneSurface(new CoordinateSystem(Constants.XOY()));
         }
 
-        if (S is not Geom_Plane P)
+        if (S is not PlaneSurface P)
         {
             return 1;
         }
-        Geom2d_Curve? r = GeomAPI.To2d(C, P.Pln());
+        Curve2D? r = GeomAPI.To2d(C, P.Pln());
         DrawTrSurf.Set(theDI, a[1], r);
         return 0;
     }
@@ -85,13 +90,13 @@ internal static class GeometryTestCurveCommands
             return 1;
         }
 
-        Geom2d_Curve? C = DrawTrSurf.GetCurve2d(theDI, a[2]);
+        Curve2D? C = DrawTrSurf.GetCurve2d(theDI, a[2]);
         if (C is null)
         {
             return 1;
         }
 
-        Geom_Surface? S;
+        Surface? S;
         if (n >= 4)
         {
             S = DrawTrSurf.GetSurface(theDI, a[3]);
@@ -102,14 +107,14 @@ internal static class GeometryTestCurveCommands
         }
         else
         {
-            S = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
+            S = new PlaneSurface(new CoordinateSystem(Constants.XOY()));
         }
 
-        if (S is not Geom_Plane P)
+        if (S is not PlaneSurface P)
         {
             return 1;
         }
-        Geom_Curve r = GeomAPI.To3d(C, P.Pln());
+        Curve3D r = GeomAPI.To3d(C, P.Pln());
 
         DrawTrSurf.Set(theDI, a[1], r);
         return 0;
@@ -132,13 +137,13 @@ internal static class GeometryTestCurveCommands
         {
             return 1;
         }
-        Geom_Surface? GS = DrawTrSurf.GetSurface(theDI, a[3]);
+        Surface? GS = DrawTrSurf.GetSurface(theDI, a[3]);
         if (GS is null)
         {
             return 1;
         }
 
-        Geom_Curve? GC = DrawTrSurf.GetCurve(theDI, a[2]);
+        Curve3D? GC = DrawTrSurf.GetCurve(theDI, a[2]);
         if (GC is null)
         {
             return 1;
@@ -182,7 +187,7 @@ internal static class GeometryTestCurveCommands
             index += 2;
         }
 
-        Geom2d_Curve? G2d = GeomProjLib.Curve2d(GC, GS, U1, U2, V1, V2, ref tolerance);
+        Curve2D? G2d = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(GC, GS, U1, U2, V1, V2, ref tolerance);
 
         if (G2d is null)
         {
@@ -233,19 +238,19 @@ internal static class GeometryTestCurveCommands
             return 1;
         }
 
-        Geom_Surface? S = DrawTrSurf.GetSurface(theDI, a[3]);
+        Surface? S = DrawTrSurf.GetSurface(theDI, a[3]);
         if (S is null)
         {
             return 1;
         }
 
-        if (S is not Geom_Plane Pl)
+        if (S is not PlaneSurface Pl)
         {
             di.Append(" The surface must be a plane\n");
             return 1;
         }
 
-        Geom_Curve? C = DrawTrSurf.GetCurve(theDI, a[2]);
+        Curve3D? C = DrawTrSurf.GetCurve(theDI, a[2]);
         if (C is null)
         {
             return 1;
@@ -268,35 +273,35 @@ internal static class GeometryTestCurveCommands
             D = Pl.Pln().Position().Direction();
         }
 
-        Geom_Curve? Res = GeomProjLib.ProjectOnPlane(C, Pl, D, Param);
+        Curve3D? Res = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(C, Pl, D, Param);
 
         DrawTrSurf.Set(theDI, a[1], Res);
         return 0;
     }
 
     // the curve, or the wire as a composite curve; null after the failure message
-    private static Adaptor3d_Curve? CurveOrWire(DrawInterpreter theDI, string theName)
+    private static CurveAdaptorBase? CurveOrWire(DrawInterpreter theDI, string theName)
     {
-        Geom_Curve? C = DrawTrSurf.GetCurve(theDI, theName);
+        Curve3D? C = DrawTrSurf.GetCurve(theDI, theName);
         if (C is not null)
         {
-            return new GeomAdaptor_Curve(C);
+            return new CurveAdaptor(C);
         }
 
         // try getting a wire
-        TopoDS_Wire aWire = TopoDS.Wire(theDI.GetShape(theName, TopAbs_ShapeEnum.TopAbs_WIRE));
-        if (aWire.IsNull())
+        Wire aWire = ShapeCasts.Wire(theDI.GetShape(theName, ShapeType.Wire));
+        if (aWire.IsNull)
         {
             // Message::SendFail (decision 405)
             theDI.Output.WriteLine($"cannot evaluate the argument {theName} as a curve");
             return null;
         }
-        var aCompCurve = new BRepAdaptor_CompCurve(aWire);
+        var aCompCurve = new WireCurveAdaptor(aWire);
         return aCompCurve;
     }
 
     // the polyline through the points as a degree 1 B-spline curve, bound, and its deviation from the curve
-    private static void BindPolyline(DrawInterpreter theDI, DrawResult di, string theName, Adaptor3d_Curve theCurve, int nbp,
+    private static void BindPolyline(DrawInterpreter theDI, DrawResult di, string theName, CurveAdaptorBase theCurve, int nbp,
                                      Func<int, Point3D> theValue, Func<int, double> theParameter)
     {
         var aPoles = new NCollection_Array1<Point3D>(1, nbp);
@@ -313,7 +318,7 @@ internal static class GeometryTestCurveCommands
         aMults[1] = 2;
         aMults[nbp] = 2;
 
-        var aPnts = new Geom_BSplineCurve(aPoles, aKnots, aMults, 1);
+        var aPnts = new BSplineCurve3D(aPoles, aKnots, aMults, 1);
         DrawTrSurf.Set(theDI, theName, aPnts);
 
         // check deviation
@@ -324,7 +329,7 @@ internal static class GeometryTestCurveCommands
     // crvpoints result <curve or wire> deflection // OCCT: the word count isn't checked
     private static int CrvPoints(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
-        Adaptor3d_Curve? aHCurve = CurveOrWire(theDI, Arg(a, 2));
+        CurveAdaptorBase? aHCurve = CurveOrWire(theDI, Arg(a, 2));
         if (aHCurve is null)
         {
             return 1;
@@ -332,15 +337,15 @@ internal static class GeometryTestCurveCommands
 
         double defl = theDI.Atof(Arg(a, 3));
 
-        var PntGen = new GCPnts_QuasiUniformDeflection(aHCurve, defl);
+        var PntGen = new QuasiUniformDeflection(aHCurve, defl);
 
-        if (!PntGen.IsDone())
+        if (!PntGen.IsDone)
         {
             di.Append("Points generation failed\n");
             return 1;
         }
 
-        int nbp = PntGen.NbPoints();
+        int nbp = PntGen.PointCount;
         di.Append("Nb points : ").Append(nbp).Append("\n");
 
         BindPolyline(theDI, di, a[1], aHCurve, nbp, PntGen.Value, PntGen.Parameter);
@@ -354,7 +359,7 @@ internal static class GeometryTestCurveCommands
         int aMinPntsNb = 2;
         double angle = global::Kerf.Engine.Foundation.Precision.Angular();
 
-        Adaptor3d_Curve? aHCurve = CurveOrWire(theDI, Arg(a, 2));
+        CurveAdaptorBase? aHCurve = CurveOrWire(theDI, Arg(a, 2));
         if (aHCurve is null)
         {
             return 1;
@@ -371,9 +376,9 @@ internal static class GeometryTestCurveCommands
             aMinPntsNb = theDI.Atoi(a[5]);
         }
 
-        var PntGen = new GCPnts_TangentialDeflection(aHCurve, angle, defl, aMinPntsNb);
+        var PntGen = new TangentialDeflection(aHCurve, angle, defl, aMinPntsNb);
 
-        int nbp = PntGen.NbPoints();
+        int nbp = PntGen.PointCount;
         di.Append("Nb points : ").Append(nbp).Append("\n");
 
         BindPolyline(theDI, di, a[1], aHCurve, nbp, PntGen.Value, PntGen.Parameter);
@@ -381,7 +386,7 @@ internal static class GeometryTestCurveCommands
     }
 
     // Static method computing deviation of curve and polyline
-    private static void ComputeDeviation(Adaptor3d_Curve theCurve, Geom_BSplineCurve thePnts, out double theDmax, out double theUfMax,
+    private static void ComputeDeviation(CurveAdaptorBase theCurve, BSplineCurve3D thePnts, out double theDmax, out double theUfMax,
                                          out double theUlMax, out int theImax)
     {
         theDmax = 0.0;
@@ -407,7 +412,7 @@ internal static class GeometryTestCurveCommands
         }
     }
 
-    private static double CompLocalDev(Adaptor3d_Curve theCurve, double u1, double u2)
+    private static double CompLocalDev(CurveAdaptorBase theCurve, double u1, double u2)
     {
         var aLowBorder = new math_Vector(1, 1);
         var aUppBorder = new math_Vector(1, 1);
@@ -417,10 +422,10 @@ internal static class GeometryTestCurveCommands
         aUppBorder[1] = u2;
         aSteps[1] = (aUppBorder[1] - aLowBorder[1]) * 0.01; // Run PSO on even distribution with 100 points.
         //
-        var aFunc1 = new GCPnts_DistFunction(theCurve, u1, u2);
+        var aFunc1 = new DistFunction(theCurve, u1, u2);
         //
         var aT = new math_Vector(1, 1);
-        var aFunc = new GCPnts_DistFunctionMV(aFunc1);
+        var aFunc = new DistFunctionMV(aFunc1);
 
         var aFinder = new Pso(aFunc, aLowBorder, aUppBorder, aSteps); // Choose 32 best points from 100 above.
         aFinder.Perform(aSteps, out double aValue, aT);

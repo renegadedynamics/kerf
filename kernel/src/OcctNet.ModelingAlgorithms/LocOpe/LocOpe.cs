@@ -3,10 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -16,9 +19,9 @@ public static class LocOpe
     private const int NECHANT = 10;
 
     /// <summary>Returns true when the wire <paramref name="W"/> is closed on the face <paramref name="F"/>.</summary>
-    public static bool Closed(in TopoDS_Wire W, in TopoDS_Face F)
+    public static bool Closed(in Wire W, in Face F)
     {
-        TopExp.Vertices(W, out TopoDS_Vertex Vf, out TopoDS_Vertex Vl);
+        Exploration.Vertices(W, out Vertex Vf, out Vertex Vl);
         if (!Vf.IsSame(Vl))
         {
             return false;
@@ -26,12 +29,12 @@ public static class LocOpe
 
         // On recherche l`edge contenant Vf FORWARD
 
-        TopExp_Explorer exp = new(), exp2 = new();
-        for (exp.Init(W.Oriented(TopAbs_FORWARD), TopAbs_EDGE); exp.More(); exp.Next())
+        Explorer exp = new(), exp2 = new();
+        for (exp.Init(W.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
         {
-            for (exp2.Init(exp.Current(), TopAbs_VERTEX); exp2.More(); exp2.Next())
+            for (exp2.Init(exp.Current(), ShapeType.Vertex); exp2.More(); exp2.Next())
             {
-                if (exp2.Current().IsSame(Vf) && exp2.Current().Orientation() == TopAbs_FORWARD)
+                if (exp2.Current().IsSame(Vf) && exp2.Current().Orientation() == Forward)
                 {
                     break;
                 }
@@ -41,15 +44,15 @@ public static class LocOpe
                 break;
             }
         }
-        TopoDS_Edge Ef = TopoDS.Edge(exp.Current());
+        Edge Ef = ShapeCasts.Edge(exp.Current());
 
         // On recherche l`edge contenant Vl REVERSED
 
-        for (exp.Init(W.Oriented(TopAbs_FORWARD), TopAbs_EDGE); exp.More(); exp.Next())
+        for (exp.Init(W.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
         {
-            for (exp2.Init(exp.Current(), TopAbs_VERTEX); exp2.More(); exp2.Next())
+            for (exp2.Init(exp.Current(), ShapeType.Vertex); exp2.More(); exp2.Next())
             {
-                if (exp2.Current().IsSame(Vl) && exp2.Current().Orientation() == TopAbs_REVERSED)
+                if (exp2.Current().IsSame(Vl) && exp2.Current().Orientation() == Reversed)
                 {
                     break;
                 }
@@ -59,11 +62,11 @@ public static class LocOpe
                 break;
             }
         }
-        TopoDS_Edge El = TopoDS.Edge(exp.Current());
+        Edge El = ShapeCasts.Edge(exp.Current());
 
         Point2D pf, pl;
-        Geom2d_Curve C2d = BRep_Tool.CurveOnSurface(Ef, F, out double f, out double l)!;
-        if (Ef.Orientation() == TopAbs_FORWARD)
+        Curve2D C2d = Tool.CurveOnSurface(Ef, F, out double f, out double l)!;
+        if (Ef.Orientation() == Forward)
         {
             pf = C2d.Value(f);
         }
@@ -71,8 +74,8 @@ public static class LocOpe
         {
             pf = C2d.Value(l);
         }
-        C2d = BRep_Tool.CurveOnSurface(El, F, out f, out l)!;
-        if (El.Orientation() == TopAbs_FORWARD)
+        C2d = Tool.CurveOnSurface(El, F, out f, out l)!;
+        if (El.Orientation() == Forward)
         {
             pl = C2d.Value(l);
         }
@@ -89,36 +92,36 @@ public static class LocOpe
     }
 
     /// <summary>Returns true when the edge <paramref name="E"/> is closed on the face <paramref name="F"/>.</summary>
-    public static bool Closed(in TopoDS_Edge E, in TopoDS_Face F)
+    public static bool Closed(in Edge E, in Face F)
     {
-        BRep_Builder B = new();
-        TopoDS_Wire W = new();
+        BrepBuilder B = new();
+        Wire W = new();
         B.MakeWire(ref W);
-        B.Add(W, E.Oriented(TopAbs_FORWARD));
+        B.Add(W, E.Oriented(Forward));
         return Closed(W, F);
     }
 
     /// <summary>Returns true when the faces are tangent along <paramref name="E"/>.</summary>
-    public static bool TgtFaces(in TopoDS_Edge E, in TopoDS_Face F1, in TopoDS_Face F2)
+    public static bool TgtFaces(in Edge E, in Face F1, in Face F2)
     {
-        BRepAdaptor_Surface bs = new(F1, false);
+        FaceSurfaceAdaptor bs = new(F1, false);
         double u;
         double ta = 0.0001;
 
-        TopoDS_Edge e = E;
+        Edge e = E;
 
-        BRepAdaptor_Surface HS1 = new(F1);
-        BRepAdaptor_Surface HS2 = new(F2);
-        e.Orientation(TopAbs_FORWARD);
-        BRepAdaptor_Curve2d HC2d = new();
-        BRepAdaptor_Curve2d HC2d2 = new();
+        FaceSurfaceAdaptor HS1 = new(F1);
+        FaceSurfaceAdaptor HS2 = new(F2);
+        e.Orientation(Forward);
+        EdgeCurve2DAdaptor HC2d = new();
+        EdgeCurve2DAdaptor HC2d2 = new();
         HC2d.Initialize(e, F1);
         HC2d2.Initialize(e, F2);
 
-        bool rev1 = (F1.Orientation() == TopAbs_REVERSED);
-        bool rev2 = (F2.Orientation() == TopAbs_REVERSED);
+        bool rev1 = (F1.Orientation() == Reversed);
+        bool rev2 = (F2.Orientation() == Reversed);
         double eps, angmin = Math.PI, angmax = -Math.PI, ang;
-        BRep_Tool.Range(e, out double f, out double l);
+        Tool.Range(e, out double f, out double l);
 
         eps = (l - f) / 100.0;
         f += eps; // pour eviter de faire des calculs sur les
@@ -164,27 +167,27 @@ public static class LocOpe
     /// Fills <paramref name="theSeq"/> with points sampled on the edges of <paramref name="theShape"/> (not at their
     /// ends), then with every vertex.
     /// </summary>
-    public static void SampleEdges(in TopoDS_Shape theShape, NCollection_Sequence<Point3D> theSeq)
+    public static void SampleEdges(in Shape theShape, NCollection_Sequence<Point3D> theSeq)
     {
         theSeq.Clear();
-        NCollection_Map<TopoDS_Shape> theMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> theMap = new(ShapeHasher.Instance);
 
-        TopExp_Explorer exp = new(theShape, TopAbs_EDGE);
+        Explorer exp = new(theShape, ShapeType.Edge);
         double prm;
         int i;
 
         // Computes points on edge, but does not take the extremities into account
         for (; exp.More(); exp.Next())
         {
-            TopoDS_Edge edg = TopoDS.Edge(exp.Current());
+            Edge edg = ShapeCasts.Edge(exp.Current());
             if (!theMap.Add(edg))
             {
                 continue;
             }
-            if (!BRep_Tool.Degenerated(edg))
+            if (!Tool.Degenerated(edg))
             {
-                Geom_Curve C = BRep_Tool.Curve(edg, out Placement Loc, out double f, out double l)!;
-                C = (Geom_Curve)C.Transformed(Loc.Transformation());
+                Curve3D C = Tool.Curve(edg, out Placement Loc, out double f, out double l)!;
+                C = (Curve3D)C.Transformed(Loc.Transformation());
                 double delta = (l - f) / NECHANT * 0.123456;
                 for (i = 1; i < NECHANT; i++)
                 {
@@ -195,11 +198,11 @@ public static class LocOpe
         }
 
         // Adds every vertex
-        for (exp.Init(theShape, TopAbs_VERTEX); exp.More(); exp.Next())
+        for (exp.Init(theShape, ShapeType.Vertex); exp.More(); exp.Next())
         {
             if (theMap.Add(exp.Current()))
             {
-                theSeq.Append(BRep_Tool.Pnt(TopoDS.Vertex(exp.Current())));
+                theSeq.Append(Tool.Pnt(ShapeCasts.Vertex(exp.Current())));
             }
         }
     }

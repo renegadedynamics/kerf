@@ -6,8 +6,11 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -74,7 +77,7 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
         using var aPS = new ProgressScope(theRange, "Per-facet shape construction", (double)aNbNodes + 2.0 * aNbTriangles);
 
         // Build shared vertices.
-        var aPnt2VertexMap = new NCollection_IndexedDataMap<int, TopoDS_Vertex>();
+        var aPnt2VertexMap = new NCollection_IndexedDataMap<int, Vertex>();
 
         for (int i = 1; i <= aNbNodes; ++i)
         {
@@ -85,12 +88,12 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
             }
 
             Point3D aP = myMesh.Node(i);
-            TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(aP).InternalVertex();
+            Vertex aV = new BRepBuilderAPI_MakeVertex(aP).InternalVertex();
             aPnt2VertexMap.Add(i, aV);
         }
 
         // Build shared edges.
-        var anEdgeToTEgeMap = new NCollection_IndexedDataMap<Edge, TopoDS_Edge>();
+        var anEdgeToTEgeMap = new NCollection_IndexedDataMap<Edge, global::Kerf.Topology.Edge>();
         for (int i = 1; i <= aNbTriangles; ++i)
         {
             aPS.Next();
@@ -122,9 +125,9 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
             // Edges are constructed in forward order for the existing normals orientation.
             // In Poly_Triangulation, positive direction is defined as cross product:
             // (aV1, aV2) x (aV1, aV3).
-            TopoDS_Vertex aV1 = aPnt2VertexMap.FindFromKey(anIdx0);
-            TopoDS_Vertex aV2 = aPnt2VertexMap.FindFromKey(anIdx1);
-            TopoDS_Vertex aV3 = aPnt2VertexMap.FindFromKey(anIdx2);
+            Vertex aV1 = aPnt2VertexMap.FindFromKey(anIdx0);
+            Vertex aV2 = aPnt2VertexMap.FindFromKey(anIdx1);
+            Vertex aV3 = aPnt2VertexMap.FindFromKey(anIdx2);
 
             var aMeshEdge1 = new Edge(anIdx0, anIdx1);
             var aMeshEdge2 = new Edge(anIdx1, anIdx2);
@@ -134,19 +137,19 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
             var aMaker2 = new BRepBuilderAPI_MakeEdge(aV2, aV3);
             var aMaker3 = new BRepBuilderAPI_MakeEdge(aV3, aV1);
 
-            TopoDS_Edge aTE1 = aMaker1.InternalEdge();
+            global::Kerf.Topology.Edge aTE1 = aMaker1.InternalEdge();
             if (anIdx1 < anIdx0)
             {
                 aTE1.Reverse();
             }
 
-            TopoDS_Edge aTE2 = aMaker2.InternalEdge();
+            global::Kerf.Topology.Edge aTE2 = aMaker2.InternalEdge();
             if (anIdx2 < anIdx1)
             {
                 aTE2.Reverse();
             }
 
-            TopoDS_Edge aTE3 = aMaker3.InternalEdge();
+            global::Kerf.Topology.Edge aTE3 = aMaker3.InternalEdge();
             if (anIdx0 < anIdx2)
             {
                 aTE3.Reverse();
@@ -158,8 +161,8 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
         }
 
         // Construct planar faces using shared topology.
-        TopoDS_Compound aResult = new();
-        BRep_Builder aBB = new();
+        Compound aResult = new();
+        BrepBuilder aBB = new();
         aBB.MakeCompound(ref aResult);
         for (int i = 1; i <= aNbTriangles; ++i)
         {
@@ -189,17 +192,17 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
                 continue;
             }
 
-            TopoDS_Edge aTEdge1 = anEdgeToTEgeMap.FindFromKey(aMeshEdge1);
+            global::Kerf.Topology.Edge aTEdge1 = anEdgeToTEgeMap.FindFromKey(aMeshEdge1);
             if (isReversed1)
             {
                 aTEdge1.Reverse();
             }
-            TopoDS_Edge aTEdge2 = anEdgeToTEgeMap.FindFromKey(aMeshEdge2);
+            global::Kerf.Topology.Edge aTEdge2 = anEdgeToTEgeMap.FindFromKey(aMeshEdge2);
             if (isReversed2)
             {
                 aTEdge2.Reverse();
             }
-            TopoDS_Edge aTEdge3 = anEdgeToTEgeMap.FindFromKey(aMeshEdge3);
+            global::Kerf.Topology.Edge aTEdge3 = anEdgeToTEgeMap.FindFromKey(aMeshEdge3);
             if (isReversed3)
             {
                 aTEdge3.Reverse();
@@ -209,12 +212,12 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
             aWireMaker.Add(aTEdge1);
             aWireMaker.Add(aTEdge2);
             aWireMaker.Add(aTEdge3);
-            TopoDS_Wire aWire = aWireMaker.InternalWire();
+            Wire aWire = aWireMaker.InternalWire();
 
             // Construct plane explicitly since it is faster than automatic construction
             // within BRepBuilderAPI_MakeFace.
-            var aC1 = new BRepAdaptor_Curve(aTEdge1);
-            var aC2 = new BRepAdaptor_Curve(aTEdge2);
+            var aC1 = new EdgeCurveAdaptor(aTEdge1);
+            var aC2 = new EdgeCurveAdaptor(aTEdge2);
             Direction3D aD1 = aC1.Line().Direction();
             Direction3D aD2 = aC2.Line().Direction();
             Xyz aN = aD1.XYZ().Crossed(aD2.XYZ());
@@ -222,11 +225,11 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
             {
                 continue;
             }
-            if (aTEdge1.Orientation() == TopAbs_REVERSED)
+            if (aTEdge1.Orientation() == Reversed)
             {
                 aN.Reverse();
             }
-            if (aTEdge2.Orientation() == TopAbs_REVERSED)
+            if (aTEdge2.Orientation() == Reversed)
             {
                 aN.Reverse();
             }
@@ -234,7 +237,7 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
             var aPln = new Plane3D(myMesh.Node(anIdx0), aNorm);
 
             var aFaceMaker = new BRepBuilderAPI_MakeFace(aPln, aWire);
-            TopoDS_Face aFace = aFaceMaker.InternalFace();
+            Face aFace = aFaceMaker.InternalFace();
 
             aBB.Add(aResult, aFace);
         }

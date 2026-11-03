@@ -6,7 +6,8 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -24,7 +25,7 @@ public sealed class BRepMesh_Classifier : Transient
     public BRepMesh_Classifier() { }
 
     /// <summary>Whether the point is inside the face (on a wire counts as outside).</summary>
-    public TopAbs_State Perform(in Point2D thePoint)
+    public Containment Perform(in Point2D thePoint)
     {
         bool isOut = false;
         int aNb = myTabClass.Length();
@@ -44,11 +45,11 @@ public sealed class BRepMesh_Classifier : Transient
 
             if (isOut)
             {
-                return TopAbs_OUT;
+                return Out;
             }
         }
 
-        return TopAbs_IN;
+        return In;
     }
 
     /// <summary>

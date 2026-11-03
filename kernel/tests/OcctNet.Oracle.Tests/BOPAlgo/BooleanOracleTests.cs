@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -190,7 +193,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
                        + $"{(theCase.Glue != BOPAlgo_GlueEnum.BOPAlgo_GlueOff ? $" {theCase.Glue}" : "")}{(theCase.UseOBB ? " OBB" : "")}"
                        + $"{(theCase.Simplify ? " simplify" : "")}{(theCase.NonDestructive ? "" : " destructive")}"
                        + $"{(theCase.CheckInverted ? "" : " no-inverted-check")}]";
-        if (ReadArgs(theRun, theCase.ArgsText) is not (List<N.TopoDS_Shape> aNArgs, List<TopoDS_Shape> aPArgs))
+        if (ReadArgs(theRun, theCase.ArgsText) is not (List<N.TopoDS_Shape> aNArgs, List<Shape> aPArgs))
         {
             theTally.Skipped++;
             return;
@@ -207,16 +210,16 @@ public class BooleanOracleTests(ITestOutputHelper output)
         bool isNativeRepeatable = aNErr == aNErrPar && (aNText is null || aNText == theRun.NativeText(aNResPar!));
 
         // the port, serially then in parallel
-        (TopoDS_Shape? aPRes, BRepTools_History? aPHist, string? aPErr) = RunPort(theCase, aPArgs, false);
+        (Shape? aPRes, History? aPHist, string? aPErr) = RunPort(theCase, aPArgs, false);
         string? aPText = aPRes is null ? null : theRun.PortText(aPRes.Value);
-        string aPRecord = (aPText ?? aPErr ?? "") + DeterminismHarness.HistoryText(aPArgs, aPRes ?? new TopoDS_Shape(), aPHist);
+        string aPRecord = (aPText ?? aPErr ?? "") + DeterminismHarness.HistoryText(aPArgs, aPRes ?? new Shape(), aPHist);
         foreach (int aDegree in new[] { 2, 3, Environment.ProcessorCount }.Distinct())
         {
             using (OsdParallel.MaxDegreeOfParallelismScope(aDegree))
             {
-                (TopoDS_Shape? aPResPar, BRepTools_History? aPHistPar, string? aPErrPar) = RunPort(theCase, aPArgs, true);
+                (Shape? aPResPar, History? aPHistPar, string? aPErrPar) = RunPort(theCase, aPArgs, true);
                 string aRecordPar = (aPResPar is null ? aPErrPar ?? "" : theRun.PortText(aPResPar.Value))
-                                    + DeterminismHarness.HistoryText(aPArgs, aPResPar ?? new TopoDS_Shape(), aPHistPar);
+                                    + DeterminismHarness.HistoryText(aPArgs, aPResPar ?? new Shape(), aPHistPar);
                 if (aRecordPar != aPRecord)
                 {
                     theTally.NotDeterministic++;
@@ -243,8 +246,8 @@ public class BooleanOracleTests(ITestOutputHelper output)
             }
             return;
         }
-        TopoDS_Shape aPR = aPRes!.Value;
-        if (!aPR.IsNull() && !aPR.TShape()!.IsFrozen)
+        Shape aPR = aPRes!.Value;
+        if (!aPR.IsNull && !aPR.TShape()!.IsFrozen)
         {
             theTally.NotFrozen++;
             theTally.Differences.Add($"{aWhat}: the port's result isn't frozen");
@@ -252,17 +255,17 @@ public class BooleanOracleTests(ITestOutputHelper output)
 
         (int Runs, int Identical, int FreeMasked, int Canonical) aByOp = theTally.ByOp.GetValueOrDefault(theCase.Op);
         aByOp.Runs++;
-        if (!aPR.IsNull() && new TopExp_Explorer(aPR, TopAbs_ShapeEnum.TopAbs_EDGE).More())
+        if (!aPR.IsNull && new Explorer(aPR, ShapeType.Edge).More())
         {
             theTally.NonEmpty++;
         }
-        if (aPHist is not null && aPArgs.Any(a => CanonicalShapeComparer.SubShapes(a, TopAbs_ShapeEnum.TopAbs_FACE).Any(f => aPHist.Modified(f).Count > 0)))
+        if (aPHist is not null && aPArgs.Any(a => CanonicalShapeComparer.SubShapes(a, ShapeType.Face).Any(f => aPHist.Modified(f).Count > 0)))
         {
             theTally.SplitFaces++;
         }
         BRepTextDiff aDiff = BRepTextComparison.Compare(aNText!, aPText!);
-        TopoDS_Shape aNResP = ReadPort(aNText!);
-        TopoDS_Shape aPResP = ReadPort(aPText!);
+        Shape aNResP = ReadPort(aNText!);
+        Shape aPResP = ReadPort(aPText!);
         bool isSameMap = false;
         if (aDiff.IsIdentical)
         {
@@ -320,8 +323,8 @@ public class BooleanOracleTests(ITestOutputHelper output)
             return;
         }
         theTally.Histories++;
-        BRepTools_History aNH = NativeHistory(aNHist, aNArgs, aNRes!, aPArgs, aNResP, out Dictionary<(int, int), TopoDS_Shape> aKeptByNative);
-        BRepTools_History aPH = PortHistory(aPHist, aPArgs, aPR, aPResP);
+        History aNH = NativeHistory(aNHist, aNArgs, aNRes!, aPArgs, aNResP, out Dictionary<(int, int), Shape> aKeptByNative);
+        History aPH = PortHistory(aPHist, aPArgs, aPR, aPResP);
         List<string> aHDiff = isSameMap ? IndexedHistoryDiff(aNH, aPH, aPArgs, aNResP, aPResP)
                                         : HistoryComparison.Compare(aPArgs, aNResP, aNH, aPArgs, aPResP, aPH);
         if (aHDiff.Count == 0)
@@ -339,7 +342,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
         // result (UnifySameDomain adding a pcurve, the destructive filler growing a tolerance) is modified into its
         // changed copy in the port, where native's history has no entry; drop those entries and compare again
         CanonicalKeys aNKeys = CanonicalKeys.Build(aNResP), aPKeys = CanonicalKeys.Build(aPResP);
-        BRepTools_History aPH2 = WithoutInPlace(aPH, aPArgs, aKeptByNative, (p, n) => aPKeys.Key(p) == aNKeys.Key(n));
+        History aPH2 = WithoutInPlace(aPH, aPArgs, aKeptByNative, (p, n) => aPKeys.Key(p) == aNKeys.Key(n));
         List<string> aHDiff2 = isSameMap ? IndexedHistoryDiff(aNH, aPH2, aPArgs, aNResP, aPResP, true)
                                          : HistoryComparison.Compare(aPArgs, aNResP, aNH, aPArgs, aPResP, aPH2);
         if (aHDiff2.Count == 0)
@@ -368,8 +371,8 @@ public class BooleanOracleTests(ITestOutputHelper output)
 
     // Where the results' texts agree (Free masked), the histories are compared exactly, through the indices of the
     // results' sub-shapes in TopExp::MapShapes (which the text keeps): a stronger check than the canonical keys.
-    private static List<string> IndexedHistoryDiff(BRepTools_History theN, BRepTools_History theP, List<TopoDS_Shape> theArgs,
-                                                   in TopoDS_Shape theNRes, in TopoDS_Shape thePRes, bool theUnordered = false)
+    private static List<string> IndexedHistoryDiff(History theN, History theP, List<Shape> theArgs,
+                                                   in Shape theNRes, in Shape thePRes, bool theUnordered = false)
     {
         string aN = DeterminismHarness.HistoryText(theArgs, theNRes, theN);
         string aP = DeterminismHarness.HistoryText(theArgs, thePRes, theP);
@@ -430,7 +433,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
     // ---------------------------------------------------------------------------------------------------------------
     // The two sides
 
-    internal static (List<N.TopoDS_Shape>, List<TopoDS_Shape>)? ReadArgs(ShapeFixOracleRun theRun, string theText)
+    internal static (List<N.TopoDS_Shape>, List<Shape>)? ReadArgs(ShapeFixOracleRun theRun, string theText)
     {
         string aFile = Path.Combine(Path.GetTempPath(), $"bop-{Guid.NewGuid():N}.brep");
         File.WriteAllText(aFile, theText);
@@ -441,7 +444,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
             {
                 return null;
             }
-            Assert.True(BRepTools.Read(out TopoDS_Shape aP, aFile));
+            Assert.True(BrepTools.Read(out Shape aP, aFile));
             aP.TShape()!.FreezeGraph(); // a caller's shapes
             var aNArgs = new List<N.TopoDS_Shape>();
             for (var anIt = new N.TopoDS_Iterator(aN); anIt.More(); anIt.Next())
@@ -449,8 +452,8 @@ public class BooleanOracleTests(ITestOutputHelper output)
                 aNArgs.Add(anIt.Value());
             }
             GC.KeepAlive(aN); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
-            var aPArgs = new List<TopoDS_Shape>();
-            for (var anIt = new TopoDS_Iterator(aP); anIt.More(); anIt.Next())
+            var aPArgs = new List<Shape>();
+            for (var anIt = new Iterator(aP); anIt.More(); anIt.Next())
             {
                 aPArgs.Add(anIt.Value());
             }
@@ -567,11 +570,11 @@ public class BooleanOracleTests(ITestOutputHelper output)
         }
     }
 
-    internal static (TopoDS_Shape?, BRepTools_History?, string?) RunPort(Run theCase, List<TopoDS_Shape> theArgs, bool theParallel)
+    internal static (Shape?, History?, string?) RunPort(Run theCase, List<Shape> theArgs, bool theParallel)
     {
-        var anObjects = new NCollection_List<TopoDS_Shape>();
-        var aTools = new NCollection_List<TopoDS_Shape>();
-        var anAll = new NCollection_List<TopoDS_Shape>();
+        var anObjects = new NCollection_List<Shape>();
+        var aTools = new NCollection_List<Shape>();
+        var anAll = new NCollection_List<Shape>();
         for (int i = 0; i < theArgs.Count; i++)
         {
             (i < theCase.NbObjects ? anObjects : aTools).Append(theArgs[i]);
@@ -661,42 +664,42 @@ public class BooleanOracleTests(ITestOutputHelper output)
         }
     }
 
-    internal static TopoDS_Shape ReadPort(string theText)
+    internal static Shape ReadPort(string theText)
     {
-        BRepTools.Read(out TopoDS_Shape aShape, new StringReader(theText));
+        BrepTools.Read(out Shape aShape, new StringReader(theText));
         return aShape;
     }
 
     // Native's history over the port's readings of the arguments and of native's result (sub-shapes matched by their
     // indices in TopExp::MapShapes, which the BRep text keeps).
-    private static BRepTools_History NativeHistory(N.BRepTools_History theHistory, List<N.TopoDS_Shape> theNArgs, N.TopoDS_Shape theNRes,
-                                                   List<TopoDS_Shape> thePArgs, in TopoDS_Shape thePRes,
-                                                   out Dictionary<(int, int), TopoDS_Shape> theKeptByNative)
+    private static History NativeHistory(N.BRepTools_History theHistory, List<N.TopoDS_Shape> theNArgs, N.TopoDS_Shape theNRes,
+                                                   List<Shape> thePArgs, in Shape thePRes,
+                                                   out Dictionary<(int, int), Shape> theKeptByNative)
     {
         theKeptByNative = [];
         using var aNResMap = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(theNRes, aNResMap);
-        var aPResMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(thePRes, aPResMap);
+        var aPResMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(thePRes, aPResMap);
         Assert.Equal(aNResMap.Extent(), aPResMap.Extent());
-        var aHistory = new BRepTools_History();
+        var aHistory = new History();
         for (int a = 0; a < theNArgs.Count; a++)
         {
             using var aNInMap = new N.TopTools_IndexedMapOfShape();
             N.TopExp.MapShapes(theNArgs[a], aNInMap);
-            var aPInMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(thePArgs[a], aPInMap);
+            var aPInMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            Exploration.MapShapes(thePArgs[a], aPInMap);
             Assert.Equal(aNInMap.Extent(), aPInMap.Extent());
             for (int i = 1; i <= aNInMap.Extent(); i++)
             {
                 using N.TopoDS_Shape aNS = aNInMap.FindKey(i);
-                TopoDS_Shape aPS = aPInMap[i];
+                Shape aPS = aPInMap[i];
                 int aKeptIndex = aNResMap.FindIndex(aNS);
                 if (aKeptIndex > 0)
                 {
                     theKeptByNative[(a, i)] = aPResMap[aKeptIndex];
                 }
-                if (!BRepTools_History.IsSupportedType(aPS))
+                if (!History.IsSupportedType(aPS))
                 {
                     continue;
                 }
@@ -728,23 +731,23 @@ public class BooleanOracleTests(ITestOutputHelper output)
     }
 
     // The port's history with its result's sub-shapes replaced by those of the result read back (by their indices).
-    private static BRepTools_History PortHistory(BRepTools_History theHistory, List<TopoDS_Shape> theArgs, in TopoDS_Shape theRes,
-                                                 in TopoDS_Shape theResRead)
+    private static History PortHistory(History theHistory, List<Shape> theArgs, in Shape theRes,
+                                                 in Shape theResRead)
     {
-        var aResMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var aReadMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theRes, aResMap);
-        TopExp.MapShapes(theResRead, aReadMap);
+        var aResMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aReadMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theRes, aResMap);
+        Exploration.MapShapes(theResRead, aReadMap);
         Assert.Equal(aResMap.Extent(), aReadMap.Extent());
-        var aHistory = new BRepTools_History();
-        foreach (TopoDS_Shape anArg in theArgs)
+        var aHistory = new History();
+        foreach (Shape anArg in theArgs)
         {
-            var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(anArg, aMap);
+            var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            Exploration.MapShapes(anArg, aMap);
             for (int i = 1; i <= aMap.Extent(); i++)
             {
-                TopoDS_Shape aS = aMap[i];
-                if (!BRepTools_History.IsSupportedType(aS))
+                Shape aS = aMap[i];
+                if (!History.IsSupportedType(aS))
                 {
                     continue;
                 }
@@ -752,13 +755,13 @@ public class BooleanOracleTests(ITestOutputHelper output)
                 {
                     aHistory.Remove(aS);
                 }
-                foreach (TopoDS_Shape aM in theHistory.Modified(aS))
+                foreach (Shape aM in theHistory.Modified(aS))
                 {
                     int anIndex = aResMap.FindIndex(aM);
                     Assert.True(anIndex > 0, "a modified shape outside the port's result");
                     aHistory.AddModified(aS, aReadMap[anIndex]);
                 }
-                foreach (TopoDS_Shape aG in theHistory.Generated(aS))
+                foreach (Shape aG in theHistory.Generated(aS))
                 {
                     int anIndex = aResMap.FindIndex(aG);
                     Assert.True(anIndex > 0, "a generated shape outside the port's result");
@@ -772,19 +775,19 @@ public class BooleanOracleTests(ITestOutputHelper output)
     // The port's history without the entries "modified into its changed copy": an argument sub-shape native's result
     // holds by TShape (changed in place or not), modified in the port into exactly the sub-shape of its result that
     // stands at that place (the same canonical key: the same geometry, vertices and range).
-    private static BRepTools_History WithoutInPlace(BRepTools_History theHistory, List<TopoDS_Shape> theArgs,
-                                                    Dictionary<(int, int), TopoDS_Shape> theKeptByNative,
-                                                    Func<TopoDS_Shape, TopoDS_Shape, bool> theSame)
+    private static History WithoutInPlace(History theHistory, List<Shape> theArgs,
+                                                    Dictionary<(int, int), Shape> theKeptByNative,
+                                                    Func<Shape, Shape, bool> theSame)
     {
-        var aHistory = new BRepTools_History();
+        var aHistory = new History();
         for (int a = 0; a < theArgs.Count; a++)
         {
-            var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(theArgs[a], aMap);
+            var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            Exploration.MapShapes(theArgs[a], aMap);
             for (int i = 1; i <= aMap.Extent(); i++)
             {
-                TopoDS_Shape aS = aMap[i];
-                if (!BRepTools_History.IsSupportedType(aS))
+                Shape aS = aMap[i];
+                if (!History.IsSupportedType(aS))
                 {
                     continue;
                 }
@@ -793,14 +796,14 @@ public class BooleanOracleTests(ITestOutputHelper output)
                     aHistory.Remove(aS);
                 }
                 var aModified = theHistory.Modified(aS);
-                if (!(aModified.Count == 1 && theKeptByNative.TryGetValue((a, i), out TopoDS_Shape aKept) && theSame(aModified[0], aKept)))
+                if (!(aModified.Count == 1 && theKeptByNative.TryGetValue((a, i), out Shape aKept) && theSame(aModified[0], aKept)))
                 {
-                    foreach (TopoDS_Shape aM in aModified)
+                    foreach (Shape aM in aModified)
                     {
                         aHistory.AddModified(aS, aM);
                     }
                 }
-                foreach (TopoDS_Shape aG in theHistory.Generated(aS))
+                foreach (Shape aG in theHistory.Generated(aS))
                 {
                     aHistory.AddGenerated(aS, aG);
                 }

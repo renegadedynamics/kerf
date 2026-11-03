@@ -5,8 +5,12 @@
 
 // szv#4 S4163
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -18,7 +22,7 @@ namespace Occt;
 /// <para>
 /// A working object (decision 21). <see cref="Fix"/> and <see cref="FixSame"/> write into the edges of the wire data
 /// in place (vertices removed and added, tolerances and parameters raised), as OCCT's. When the loaded edges hold
-/// frozen shapes (any wire a caller holds), the first fix copies them (<see cref="BRepTools_CopyAtEntry"/>, decision
+/// frozen shapes (any wire a caller holds), the first fix copies them (<see cref="CopyAtEntry"/>, decision
 /// 583) and works on the copies, so the caller's wire never changes; <see cref="Wire"/> gives back the caller's own
 /// edges and vertices wherever the fixes left them unchanged, and freezes. A fix after <see cref="Wire"/> copies
 /// again.
@@ -34,7 +38,7 @@ public sealed class ShapeFix_WireVertex
 
     // OCCT.NET: the copy of the loaded edges, from the first fix to the public result (null when they hold no frozen
     // shape), and whether the loaded edges must be checked before the next fix.
-    private BRepTools_CopyAtEntry? myEntry;
+    private CopyAtEntry? myEntry;
     private bool                   myToEnter;
 
     // ied_modif_for_compil_Nov-19-1998
@@ -49,7 +53,7 @@ public sealed class ShapeFix_WireVertex
     /// Loads the wire, initializes the internal analyzer (ShapeAnalysis_WireVertex) with the given precision and
     /// performs the analysis.
     /// </summary>
-    public void Init(in TopoDS_Wire wire, double preci)
+    public void Init(in Wire wire, double preci)
     {
         var sbwd = new ShapeExtend_WireData(wire);
         Init(sbwd, preci);
@@ -89,14 +93,14 @@ public sealed class ShapeFix_WireVertex
     /// Returns the resulting wire (fixed), frozen: where the loaded edges were frozen, those the fixes left unchanged
     /// are the caller's own.
     /// </summary>
-    public TopoDS_Wire Wire()
+    public Wire Wire()
     {
         endWork();
         return myAnalyzer.WireData()!.Wire();
     }
 
     /// <summary>The resulting wire, unfrozen, for ported code fixing a wire it owns: its edges are the working ones.</summary>
-    internal TopoDS_Wire InternalWire() => myAnalyzer.WireData()!.InternalWire();
+    internal Wire InternalWire() => myAnalyzer.WireData()!.InternalWire();
 
     /// <summary>
     /// Fixes the "Same" or "Close" statuses (the same vertex may be set, without changing parameters). Returns the
@@ -113,7 +117,7 @@ public sealed class ShapeFix_WireVertex
         enterWork(); // OCCT.NET: frozen
 
         int nbfix = 0;
-        var B     = new BRep_Builder();
+        var B     = new BrepBuilder();
 
         ShapeExtend_WireData sbwd = myAnalyzer.WireData()!;
         int                  i, nb = sbwd.NbEdges();
@@ -127,12 +131,12 @@ public sealed class ShapeFix_WireVertex
                 continue;
             }
             // Ici on prend un vertex et on le generalise aux deux edges
-            TopoDS_Edge E1 = sbwd.Edge(i);
-            TopoDS_Edge E2 = sbwd.Edge(j);
+            Edge E1 = sbwd.Edge(i);
+            Edge E2 = sbwd.Edge(j);
 
             var           sae = new ShapeAnalysis_Edge();
-            TopoDS_Vertex V1  = sae.LastVertex(E1);
-            TopoDS_Vertex V2  = sae.FirstVertex(E2);
+            Vertex V1  = sae.LastVertex(E1);
+            Vertex V2  = sae.FirstVertex(E2);
             if (V1 == V2) // OCCT: == compares orientations; a shared vertex is REVERSED in E1, FORWARD in E2
             {
                 myAnalyzer.SetSameVertex(i);
@@ -198,11 +202,11 @@ public sealed class ShapeFix_WireVertex
         }
         enterWork(); // OCCT.NET: frozen
 
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
 
-        var VI = new NCollection_HArray1<TopoDS_Shape>(1, nb);
-        var VJ = new NCollection_HArray1<TopoDS_Shape>(1, nb);
-        var EF = new NCollection_HArray1<TopoDS_Shape>(1, nb);
+        var VI = new NCollection_HArray1<Shape>(1, nb);
+        var VJ = new NCollection_HArray1<Shape>(1, nb);
+        var EF = new NCollection_HArray1<Shape>(1, nb);
         var UI = new NCollection_HArray1<double>(1, nb);
         var UJ = new NCollection_HArray1<double>(1, nb);
 
@@ -213,12 +217,12 @@ public sealed class ShapeFix_WireVertex
             int stat = myAnalyzer.Status(i);
 
             var           sae = new ShapeAnalysis_Edge();
-            TopoDS_Vertex V1  = sae.LastVertex(sbwd.Edge(i));
-            TopoDS_Vertex V2  = sae.FirstVertex(sbwd.Edge(j));
+            Vertex V1  = sae.LastVertex(sbwd.Edge(i));
+            Vertex V2  = sae.FirstVertex(sbwd.Edge(j));
             VI.SetValue(i, V1);
             VJ.SetValue(j, V2);
 
-            TopoDS_Edge E = sbwd.Edge(i);
+            Edge E = sbwd.Edge(i);
             //    E.EmptyCopy();   trop d ennuis
             EF.SetValue(i, E);
 
@@ -253,9 +257,9 @@ public sealed class ShapeFix_WireVertex
 
         for (i = 1; i <= nb; i++)
         {
-            TopoDS_Edge E1 = TopoDS.Edge(EF.Value(i));
-            E1.Orientation(TopAbs_FORWARD);
-            TopExp.Vertices(E1, out TopoDS_Vertex VA, out TopoDS_Vertex VB);
+            Edge E1 = ShapeCasts.Edge(EF.Value(i));
+            E1.Orientation(Forward);
+            Exploration.Vertices(E1, out Vertex VA, out Vertex VB);
             E1.Free(true);
             B.Remove(E1, VA);
             B.Remove(E1, VB);
@@ -270,9 +274,9 @@ public sealed class ShapeFix_WireVertex
             int stat = myAnalyzer.Status(i);
             //    if (stat <= 0) continue;
 
-            TopoDS_Vertex V1   = TopoDS.Vertex(VI.Value(i));
-            TopoDS_Edge   E1   = TopoDS.Edge(EF.Value(i));
-            TopoDS_Edge   E2   = TopoDS.Edge(EF.Value(j));
+            Vertex V1   = ShapeCasts.Vertex(VI.Value(i));
+            Edge   E1   = ShapeCasts.Edge(EF.Value(i));
+            Edge   E2   = ShapeCasts.Edge(EF.Value(j));
             double        upre = UI.Value(i);
             double        ufol = UJ.Value(j);
 
@@ -286,14 +290,14 @@ public sealed class ShapeFix_WireVertex
             {
                 B.UpdateVertex(V1, upre, E1, Prec);
                 B.UpdateVertex(V1, ufol, E2, Prec);
-                V1.Orientation(TopAbs_FORWARD);
+                V1.Orientation(Forward);
                 //    V1.Orientation (E2.Orientation());
             }
 
             //    Comme on a deshabille les edges, il faut tout remettre
             E2.Free(true); // sur place
             B.Add(E2, V1);
-            V1.Orientation(TopAbs_REVERSED);
+            V1.Orientation(Reversed);
             //    V1.Orientation (E1.Orientation());    V1.Reverse();
             E1.Free(true); // sur place
             B.Add(E1, V1);
@@ -304,7 +308,7 @@ public sealed class ShapeFix_WireVertex
         //  pour finir, MAJ du STW
         for (i = 1; i <= nb; i++)
         {
-            sbwd.Set(TopoDS.Edge(EF.Value(i)), i);
+            sbwd.Set(ShapeCasts.Edge(EF.Value(i)), i);
         }
 
         return nbfix;
@@ -324,18 +328,18 @@ public sealed class ShapeFix_WireVertex
         {
             return;
         }
-        TopoDS_Compound anEdges = edgesCompound(sbwd);
-        if (!BRepTools.HoldsFrozen(anEdges))
+        Compound anEdges = edgesCompound(sbwd);
+        if (!BrepTools.HoldsFrozen(anEdges))
         {
             return;
         }
-        myEntry = new BRepTools_CopyAtEntry(anEdges);
+        myEntry = new CopyAtEntry(anEdges);
         setEdges(sbwd, myEntry.Shape());
 
         // The copy clears the Free flag of the edges it puts in the compound; give each copy its original's (a cache
         // bit, which KeepUnchanged ignores), so FixSame's B.Add accepts or refuses an edge as OCCT does on the original.
-        var anOriginal = new TopoDS_Iterator(anEdges, false, false);
-        for (var aCopy = new TopoDS_Iterator(myEntry.Shape(), false, false); aCopy.More(); aCopy.Next(), anOriginal.Next())
+        var anOriginal = new Iterator(anEdges, false, false);
+        for (var aCopy = new Iterator(myEntry.Shape(), false, false); aCopy.More(); aCopy.Next(), anOriginal.Next())
         {
             aCopy.Value().TShape()!.Free(anOriginal.Value().TShape()!.Free());
         }
@@ -345,47 +349,47 @@ public sealed class ShapeFix_WireVertex
     private void endWork()
     {
         myToEnter = true;
-        BRepTools_CopyAtEntry? anEntry = myEntry;
+        CopyAtEntry? anEntry = myEntry;
         myEntry = null;
         ShapeExtend_WireData? sbwd = myAnalyzer.WireData();
         if (anEntry is null || sbwd is null)
         {
             return;
         }
-        TopoDS_Shape aFinal = anEntry.Finish(edgesCompound(sbwd));
+        Shape aFinal = anEntry.Finish(edgesCompound(sbwd));
         setEdges(sbwd, aFinal);
     }
 
     // The edges, then the non-manifold edges, of the wire data, appended to a new compound as they are.
-    private static TopoDS_Compound edgesCompound(ShapeExtend_WireData sbwd)
+    private static Compound edgesCompound(ShapeExtend_WireData sbwd)
     {
-        var aCompound = new TopoDS_Compound();
-        new BRep_Builder().MakeCompound(ref aCompound);
-        TopoDS_TShape aTShape = aCompound.TShape()!;
+        var aCompound = new Compound();
+        new BrepBuilder().MakeCompound(ref aCompound);
+        TShape aTShape = aCompound.TShape()!;
         for (int i = 1; i <= sbwd.NbEdges(); i++)
         {
-            aTShape.myShapes.Append(sbwd.Edge(i));
+            aTShape._shapes.Append(sbwd.Edge(i));
         }
-        NCollection_HSequence<TopoDS_Shape> aNM = sbwd.InternalNonmanifoldEdges();
+        NCollection_HSequence<Shape> aNM = sbwd.InternalNonmanifoldEdges();
         for (int i = 1; i <= aNM.Length(); i++)
         {
-            aTShape.myShapes.Append(aNM[i]);
+            aTShape._shapes.Append(aNM[i]);
         }
         return aCompound;
     }
 
     // Puts back into the wire data, in order, the children of a compound made by edgesCompound.
-    private static void setEdges(ShapeExtend_WireData sbwd, in TopoDS_Shape theCompound)
+    private static void setEdges(ShapeExtend_WireData sbwd, in Shape theCompound)
     {
         int aNbEdges = sbwd.NbEdges();
-        NCollection_HSequence<TopoDS_Shape> aNM = sbwd.InternalNonmanifoldEdges();
+        NCollection_HSequence<Shape> aNM = sbwd.InternalNonmanifoldEdges();
         int i = 1;
-        for (var anIt = new TopoDS_Iterator(theCompound, false, false); anIt.More(); anIt.Next(), i++)
+        for (var anIt = new Iterator(theCompound, false, false); anIt.More(); anIt.Next(), i++)
         {
-            TopoDS_Shape anEdge = anIt.Value();
+            Shape anEdge = anIt.Value();
             if (i <= aNbEdges)
             {
-                sbwd.InternalSetEdge(TopoDS.Edge(anEdge), i);
+                sbwd.InternalSetEdge(ShapeCasts.Edge(anEdge), i);
             }
             else
             {

@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
@@ -31,14 +33,14 @@ public static class DemoCore
     {
         var aResult = new DemoResult();
         long t0 = Stopwatch.GetTimestamp();
-        TopoDS_Shape aShape;
+        Shape aShape;
         using (var aReader = new StreamReader(new MemoryStream(theBrep), Encoding.Latin1, false))
         {
-            BRepTools.Read(out aShape, aReader);
+            BrepTools.Read(out aShape, aReader);
         }
         long t1 = Stopwatch.GetTimestamp();
         // Some data/occ files carry meshes: meshed afresh, as a shape built in Bento would be
-        aShape = BRepTools.Cleaned(aShape);
+        aShape = BrepTools.Cleaned(aShape);
 
         var aBox = new Box();
         BRepBndLib.Add(aShape, ref aBox, true);
@@ -46,7 +48,7 @@ public static class DemoCore
         aResult.Deflection = aDiagonal > 1e-6 ? aDiagonal * thePercent / 100 : 1e-3;
 
         long t2 = Stopwatch.GetTimestamp();
-        TopoDS_Shape aMeshed = new BRepMesh_IncrementalMesh(aShape, aResult.Deflection, false, Angle, true).Shape();
+        Shape aMeshed = new BRepMesh_IncrementalMesh(aShape, aResult.Deflection, false, Angle, true).Shape();
         long t3 = Stopwatch.GetTimestamp();
         MeshBuffers aBuffers = MeshExtraction.Extract(aMeshed, aResult.Deflection, Angle);
         long t4 = Stopwatch.GetTimestamp();

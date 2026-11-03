@@ -2,13 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Hashing;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
 
 public class GeomHash_SurfaceHasherTest
 {
-    private readonly GeomHash_SurfaceHasher myHasher = new();
+    private readonly SurfaceHasher myHasher = new();
 
     // ============================================================================
     // Plane Tests
@@ -18,8 +19,8 @@ public class GeomHash_SurfaceHasherTest
     public void Plane_CopiedPlanes_SameHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Plane aPlane1 = new Geom_Plane(anAxis);
-        Geom_Plane aPlane2 = (Geom_Plane)aPlane1.Copy();
+        PlaneSurface aPlane1 = new PlaneSurface(anAxis);
+        PlaneSurface aPlane2 = (PlaneSurface)aPlane1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aPlane1), myHasher.GetHashCode(aPlane2));
         Assert.True(myHasher.Equals(aPlane1, aPlane2));
@@ -28,10 +29,10 @@ public class GeomHash_SurfaceHasherTest
     [Fact]
     public void Plane_DifferentPlanes_DifferentHash()
     {
-        Geom_Plane aPlane1 =
-            new Geom_Plane(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)));
-        Geom_Plane aPlane2 =
-            new Geom_Plane(new CoordinateSystem(new Point3D(0.0, 0.0, 1.0), new Direction3D(0.0, 0.0, 1.0)));
+        PlaneSurface aPlane1 =
+            new PlaneSurface(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)));
+        PlaneSurface aPlane2 =
+            new PlaneSurface(new CoordinateSystem(new Point3D(0.0, 0.0, 1.0), new Direction3D(0.0, 0.0, 1.0)));
 
         Assert.NotEqual(myHasher.GetHashCode(aPlane1), myHasher.GetHashCode(aPlane2));
         Assert.False(myHasher.Equals(aPlane1, aPlane2));
@@ -45,9 +46,9 @@ public class GeomHash_SurfaceHasherTest
     public void CylindricalSurface_CopiedSurfaces_SameHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_CylindricalSurface aCyl1 = new Geom_CylindricalSurface(anAxis, 5.0);
-        Geom_CylindricalSurface aCyl2 =
-            (Geom_CylindricalSurface)aCyl1.Copy();
+        CylindricalSurface aCyl1 = new CylindricalSurface(anAxis, 5.0);
+        CylindricalSurface aCyl2 =
+            (CylindricalSurface)aCyl1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aCyl1), myHasher.GetHashCode(aCyl2));
         Assert.True(myHasher.Equals(aCyl1, aCyl2));
@@ -57,8 +58,8 @@ public class GeomHash_SurfaceHasherTest
     public void CylindricalSurface_DifferentRadius_DifferentHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_CylindricalSurface aCyl1 = new Geom_CylindricalSurface(anAxis, 5.0);
-        Geom_CylindricalSurface aCyl2 = new Geom_CylindricalSurface(anAxis, 10.0);
+        CylindricalSurface aCyl1 = new CylindricalSurface(anAxis, 5.0);
+        CylindricalSurface aCyl2 = new CylindricalSurface(anAxis, 10.0);
 
         Assert.NotEqual(myHasher.GetHashCode(aCyl1), myHasher.GetHashCode(aCyl2));
         Assert.False(myHasher.Equals(aCyl1, aCyl2));
@@ -72,8 +73,8 @@ public class GeomHash_SurfaceHasherTest
     public void ConicalSurface_CopiedSurfaces_SameHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_ConicalSurface aCone1 = new Geom_ConicalSurface(anAxis, M_PI / 6.0, 5.0);
-        Geom_ConicalSurface aCone2 = (Geom_ConicalSurface)aCone1.Copy();
+        ConicalSurface aCone1 = new ConicalSurface(anAxis, M_PI / 6.0, 5.0);
+        ConicalSurface aCone2 = (ConicalSurface)aCone1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aCone1), myHasher.GetHashCode(aCone2));
         Assert.True(myHasher.Equals(aCone1, aCone2));
@@ -83,8 +84,8 @@ public class GeomHash_SurfaceHasherTest
     public void ConicalSurface_DifferentAngle_DifferentHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_ConicalSurface aCone1 = new Geom_ConicalSurface(anAxis, M_PI / 6.0, 5.0);
-        Geom_ConicalSurface aCone2 = new Geom_ConicalSurface(anAxis, M_PI / 4.0, 5.0);
+        ConicalSurface aCone1 = new ConicalSurface(anAxis, M_PI / 6.0, 5.0);
+        ConicalSurface aCone2 = new ConicalSurface(anAxis, M_PI / 4.0, 5.0);
 
         Assert.NotEqual(myHasher.GetHashCode(aCone1), myHasher.GetHashCode(aCone2));
         Assert.False(myHasher.Equals(aCone1, aCone2));
@@ -98,9 +99,9 @@ public class GeomHash_SurfaceHasherTest
     public void SphericalSurface_CopiedSurfaces_SameHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_SphericalSurface aSphere1 = new Geom_SphericalSurface(anAxis, 5.0);
-        Geom_SphericalSurface aSphere2 =
-            (Geom_SphericalSurface)aSphere1.Copy();
+        SphericalSurface aSphere1 = new SphericalSurface(anAxis, 5.0);
+        SphericalSurface aSphere2 =
+            (SphericalSurface)aSphere1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aSphere1), myHasher.GetHashCode(aSphere2));
         Assert.True(myHasher.Equals(aSphere1, aSphere2));
@@ -110,8 +111,8 @@ public class GeomHash_SurfaceHasherTest
     public void SphericalSurface_DifferentRadius_DifferentHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_SphericalSurface aSphere1 = new Geom_SphericalSurface(anAxis, 5.0);
-        Geom_SphericalSurface aSphere2 = new Geom_SphericalSurface(anAxis, 10.0);
+        SphericalSurface aSphere1 = new SphericalSurface(anAxis, 5.0);
+        SphericalSurface aSphere2 = new SphericalSurface(anAxis, 10.0);
 
         Assert.NotEqual(myHasher.GetHashCode(aSphere1), myHasher.GetHashCode(aSphere2));
         Assert.False(myHasher.Equals(aSphere1, aSphere2));
@@ -125,8 +126,8 @@ public class GeomHash_SurfaceHasherTest
     public void ToroidalSurface_CopiedSurfaces_SameHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_ToroidalSurface aTorus1 = new Geom_ToroidalSurface(anAxis, 10.0, 3.0);
-        Geom_ToroidalSurface aTorus2 = (Geom_ToroidalSurface)aTorus1.Copy();
+        ToroidalSurface aTorus1 = new ToroidalSurface(anAxis, 10.0, 3.0);
+        ToroidalSurface aTorus2 = (ToroidalSurface)aTorus1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aTorus1), myHasher.GetHashCode(aTorus2));
         Assert.True(myHasher.Equals(aTorus1, aTorus2));
@@ -136,8 +137,8 @@ public class GeomHash_SurfaceHasherTest
     public void ToroidalSurface_DifferentRadii_DifferentHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_ToroidalSurface aTorus1 = new Geom_ToroidalSurface(anAxis, 10.0, 3.0);
-        Geom_ToroidalSurface aTorus2 = new Geom_ToroidalSurface(anAxis, 10.0, 5.0);
+        ToroidalSurface aTorus1 = new ToroidalSurface(anAxis, 10.0, 3.0);
+        ToroidalSurface aTorus2 = new ToroidalSurface(anAxis, 10.0, 5.0);
 
         Assert.NotEqual(myHasher.GetHashCode(aTorus1), myHasher.GetHashCode(aTorus2));
         Assert.False(myHasher.Equals(aTorus1, aTorus2));
@@ -156,8 +157,8 @@ public class GeomHash_SurfaceHasherTest
         aPoles[2, 1] = new Point3D(0.0, 1.0, 0.0);
         aPoles[2, 2] = new Point3D(1.0, 1.0, 1.0);
 
-        Geom_BezierSurface aSurf1 = new Geom_BezierSurface(aPoles);
-        Geom_BezierSurface aSurf2 = (Geom_BezierSurface)aSurf1.Copy();
+        BezierSurface aSurf1 = new BezierSurface(aPoles);
+        BezierSurface aSurf2 = (BezierSurface)aSurf1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aSurf1), myHasher.GetHashCode(aSurf2));
         Assert.True(myHasher.Equals(aSurf1, aSurf2));
@@ -178,8 +179,8 @@ public class GeomHash_SurfaceHasherTest
         aPoles2[2, 1] = new Point3D(0.0, 1.0, 0.0);
         aPoles2[2, 2] = new Point3D(1.0, 1.0, 2.0); // Different
 
-        Geom_BezierSurface aSurf1 = new Geom_BezierSurface(aPoles1);
-        Geom_BezierSurface aSurf2 = new Geom_BezierSurface(aPoles2);
+        BezierSurface aSurf1 = new BezierSurface(aPoles1);
+        BezierSurface aSurf2 = new BezierSurface(aPoles2);
 
         // Hash may be same (metadata only), but comparison should differ
         Assert.False(myHasher.Equals(aSurf1, aSurf2));
@@ -212,9 +213,9 @@ public class GeomHash_SurfaceHasherTest
         aVMults[1] = 2;
         aVMults[2] = 2;
 
-        Geom_BSplineSurface aSurf1 =
-            new Geom_BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, 1, 1);
-        Geom_BSplineSurface aSurf2 = (Geom_BSplineSurface)aSurf1.Copy();
+        BSplineSurface aSurf1 =
+            new BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, 1, 1);
+        BSplineSurface aSurf2 = (BSplineSurface)aSurf1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aSurf1), myHasher.GetHashCode(aSurf2));
         Assert.True(myHasher.Equals(aSurf1, aSurf2));
@@ -227,11 +228,11 @@ public class GeomHash_SurfaceHasherTest
     [Fact]
     public void SurfaceOfRevolution_CopiedSurfaces_SameHash()
     {
-        Geom_Line aLine = new Geom_Line(new Point3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        LineCurve3D aLine = new LineCurve3D(new Point3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Axis3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_SurfaceOfRevolution aRev1 = new Geom_SurfaceOfRevolution(aLine, anAxis);
-        Geom_SurfaceOfRevolution aRev2 =
-            (Geom_SurfaceOfRevolution)aRev1.Copy();
+        RevolutionSurface aRev1 = new RevolutionSurface(aLine, anAxis);
+        RevolutionSurface aRev2 =
+            (RevolutionSurface)aRev1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aRev1), myHasher.GetHashCode(aRev2));
         Assert.True(myHasher.Equals(aRev1, aRev2));
@@ -244,12 +245,12 @@ public class GeomHash_SurfaceHasherTest
     [Fact]
     public void SurfaceOfLinearExtrusion_CopiedSurfaces_SameHash()
     {
-        Geom_Line aLine = new Geom_Line(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        LineCurve3D aLine = new LineCurve3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         Direction3D aDir = new(0.0, 0.0, 1.0);
-        Geom_SurfaceOfLinearExtrusion anExt1 =
-            new Geom_SurfaceOfLinearExtrusion(aLine, aDir);
-        Geom_SurfaceOfLinearExtrusion anExt2 =
-            (Geom_SurfaceOfLinearExtrusion)anExt1.Copy();
+        ExtrusionSurface anExt1 =
+            new ExtrusionSurface(aLine, aDir);
+        ExtrusionSurface anExt2 =
+            (ExtrusionSurface)anExt1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(anExt1), myHasher.GetHashCode(anExt2));
         Assert.True(myHasher.Equals(anExt1, anExt2));
@@ -263,11 +264,11 @@ public class GeomHash_SurfaceHasherTest
     public void RectangularTrimmedSurface_CopiedSurfaces_SameHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Plane                     aPlane = new Geom_Plane(anAxis);
-        Geom_RectangularTrimmedSurface aTrimmed1 =
-            new Geom_RectangularTrimmedSurface(aPlane, 0.0, 10.0, 0.0, 10.0);
-        Geom_RectangularTrimmedSurface aTrimmed2 =
-            (Geom_RectangularTrimmedSurface)aTrimmed1.Copy();
+        PlaneSurface                     aPlane = new PlaneSurface(anAxis);
+        TrimmedSurface aTrimmed1 =
+            new TrimmedSurface(aPlane, 0.0, 10.0, 0.0, 10.0);
+        TrimmedSurface aTrimmed2 =
+            (TrimmedSurface)aTrimmed1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aTrimmed1), myHasher.GetHashCode(aTrimmed2));
         Assert.True(myHasher.Equals(aTrimmed1, aTrimmed2));
@@ -277,11 +278,11 @@ public class GeomHash_SurfaceHasherTest
     public void RectangularTrimmedSurface_DifferentBounds_DifferentHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Plane                     aPlane = new Geom_Plane(anAxis);
-        Geom_RectangularTrimmedSurface aTrimmed1 =
-            new Geom_RectangularTrimmedSurface(aPlane, 0.0, 10.0, 0.0, 10.0);
-        Geom_RectangularTrimmedSurface aTrimmed2 =
-            new Geom_RectangularTrimmedSurface(aPlane, 0.0, 20.0, 0.0, 10.0);
+        PlaneSurface                     aPlane = new PlaneSurface(anAxis);
+        TrimmedSurface aTrimmed1 =
+            new TrimmedSurface(aPlane, 0.0, 10.0, 0.0, 10.0);
+        TrimmedSurface aTrimmed2 =
+            new TrimmedSurface(aPlane, 0.0, 20.0, 0.0, 10.0);
 
         Assert.NotEqual(myHasher.GetHashCode(aTrimmed1), myHasher.GetHashCode(aTrimmed2));
         Assert.False(myHasher.Equals(aTrimmed1, aTrimmed2));
@@ -295,9 +296,9 @@ public class GeomHash_SurfaceHasherTest
     public void OffsetSurface_CopiedSurfaces_SameHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Plane         aPlane    = new Geom_Plane(anAxis);
-        Geom_OffsetSurface anOffset1 = new Geom_OffsetSurface(aPlane, 5.0);
-        Geom_OffsetSurface anOffset2 = (Geom_OffsetSurface)anOffset1.Copy();
+        PlaneSurface         aPlane    = new PlaneSurface(anAxis);
+        OffsetSurface anOffset1 = new OffsetSurface(aPlane, 5.0);
+        OffsetSurface anOffset2 = (OffsetSurface)anOffset1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(anOffset1), myHasher.GetHashCode(anOffset2));
         Assert.True(myHasher.Equals(anOffset1, anOffset2));
@@ -307,9 +308,9 @@ public class GeomHash_SurfaceHasherTest
     public void OffsetSurface_DifferentOffset_DifferentHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Plane         aPlane    = new Geom_Plane(anAxis);
-        Geom_OffsetSurface anOffset1 = new Geom_OffsetSurface(aPlane, 5.0);
-        Geom_OffsetSurface anOffset2 = new Geom_OffsetSurface(aPlane, 10.0);
+        PlaneSurface         aPlane    = new PlaneSurface(anAxis);
+        OffsetSurface anOffset1 = new OffsetSurface(aPlane, 5.0);
+        OffsetSurface anOffset2 = new OffsetSurface(aPlane, 10.0);
 
         Assert.NotEqual(myHasher.GetHashCode(anOffset1), myHasher.GetHashCode(anOffset2));
         Assert.False(myHasher.Equals(anOffset1, anOffset2));
@@ -323,8 +324,8 @@ public class GeomHash_SurfaceHasherTest
     public void DifferentTypes_DifferentComparison()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Plane            aPlane  = new Geom_Plane(anAxis);
-        Geom_SphericalSurface aSphere = new Geom_SphericalSurface(anAxis, 5.0);
+        PlaneSurface            aPlane  = new PlaneSurface(anAxis);
+        SphericalSurface aSphere = new SphericalSurface(anAxis, 5.0);
 
         Assert.False(myHasher.Equals(aPlane, aSphere));
     }
@@ -332,9 +333,9 @@ public class GeomHash_SurfaceHasherTest
     [Fact]
     public void NullSurfaces_HandledCorrectly()
     {
-        Geom_Surface? aNullSurface = null;
+        Surface? aNullSurface = null;
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Plane   aPlane = new Geom_Plane(anAxis);
+        PlaneSurface   aPlane = new PlaneSurface(anAxis);
 
         Assert.Equal(0, myHasher.GetHashCode(aNullSurface));
         Assert.True(myHasher.Equals(aNullSurface, aNullSurface));
@@ -345,7 +346,7 @@ public class GeomHash_SurfaceHasherTest
     public void SameObject_Equal()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Plane aPlane = new Geom_Plane(anAxis);
+        PlaneSurface aPlane = new PlaneSurface(anAxis);
         Assert.True(myHasher.Equals(aPlane, aPlane));
     }
 
@@ -382,9 +383,9 @@ public class GeomHash_SurfaceHasherTest
         aVMults[1] = 2;
         aVMults[2] = 2;
 
-        Geom_BSplineSurface aSurf1 =
-            new Geom_BSplineSurface(aPoles, aWeights, aUKnots, aVKnots, aUMults, aVMults, 1, 1);
-        Geom_BSplineSurface aSurf2 = (Geom_BSplineSurface)aSurf1.Copy();
+        BSplineSurface aSurf1 =
+            new BSplineSurface(aPoles, aWeights, aUKnots, aVKnots, aUMults, aVMults, 1, 1);
+        BSplineSurface aSurf2 = (BSplineSurface)aSurf1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aSurf1), myHasher.GetHashCode(aSurf2));
         Assert.True(myHasher.Equals(aSurf1, aSurf2));
@@ -425,10 +426,10 @@ public class GeomHash_SurfaceHasherTest
         aVMults[1] = 2;
         aVMults[2] = 2;
 
-        Geom_BSplineSurface aSurf1 =
-            new Geom_BSplineSurface(aPoles, aWeights1, aUKnots, aVKnots, aUMults, aVMults, 1, 1);
-        Geom_BSplineSurface aSurf2 =
-            new Geom_BSplineSurface(aPoles, aWeights2, aUKnots, aVKnots, aUMults, aVMults, 1, 1);
+        BSplineSurface aSurf1 =
+            new BSplineSurface(aPoles, aWeights1, aUKnots, aVKnots, aUMults, aVMults, 1, 1);
+        BSplineSurface aSurf2 =
+            new BSplineSurface(aPoles, aWeights2, aUKnots, aVKnots, aUMults, aVMults, 1, 1);
 
         Assert.False(myHasher.Equals(aSurf1, aSurf2));
     }
@@ -452,8 +453,8 @@ public class GeomHash_SurfaceHasherTest
         aWeights[2, 1] = 1.0;
         aWeights[2, 2] = 2.0;
 
-        Geom_BezierSurface aSurf1 = new Geom_BezierSurface(aPoles, aWeights);
-        Geom_BezierSurface aSurf2 = (Geom_BezierSurface)aSurf1.Copy();
+        BezierSurface aSurf1 = new BezierSurface(aPoles, aWeights);
+        BezierSurface aSurf2 = (BezierSurface)aSurf1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aSurf1), myHasher.GetHashCode(aSurf2));
         Assert.True(myHasher.Equals(aSurf1, aSurf2));
@@ -468,8 +469,8 @@ public class GeomHash_SurfaceHasherTest
     {
         CoordinateSystem anAxis1 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         CoordinateSystem anAxis2 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 1.0, 0.0));
-        Geom_Plane aPlane1 = new Geom_Plane(anAxis1);
-        Geom_Plane aPlane2 = new Geom_Plane(anAxis2);
+        PlaneSurface aPlane1 = new PlaneSurface(anAxis1);
+        PlaneSurface aPlane2 = new PlaneSurface(anAxis2);
 
         Assert.NotEqual(myHasher.GetHashCode(aPlane1), myHasher.GetHashCode(aPlane2));
         Assert.False(myHasher.Equals(aPlane1, aPlane2));
@@ -480,8 +481,8 @@ public class GeomHash_SurfaceHasherTest
     {
         CoordinateSystem anAxis1 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         CoordinateSystem anAxis2 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
-        Geom_CylindricalSurface aCyl1 = new Geom_CylindricalSurface(anAxis1, 5.0);
-        Geom_CylindricalSurface aCyl2 = new Geom_CylindricalSurface(anAxis2, 5.0);
+        CylindricalSurface aCyl1 = new CylindricalSurface(anAxis1, 5.0);
+        CylindricalSurface aCyl2 = new CylindricalSurface(anAxis2, 5.0);
 
         Assert.NotEqual(myHasher.GetHashCode(aCyl1), myHasher.GetHashCode(aCyl2));
         Assert.False(myHasher.Equals(aCyl1, aCyl2));
@@ -494,11 +495,11 @@ public class GeomHash_SurfaceHasherTest
     [Fact]
     public void SurfaceOfRevolution_DifferentBasisCurve_DifferentComparison()
     {
-        Geom_Line aLine1 = new Geom_Line(new Point3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Line aLine2 = new Geom_Line(new Point3D(2.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        LineCurve3D aLine1 = new LineCurve3D(new Point3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        LineCurve3D aLine2 = new LineCurve3D(new Point3D(2.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Axis3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_SurfaceOfRevolution aRev1 = new Geom_SurfaceOfRevolution(aLine1, anAxis);
-        Geom_SurfaceOfRevolution aRev2 = new Geom_SurfaceOfRevolution(aLine2, anAxis);
+        RevolutionSurface aRev1 = new RevolutionSurface(aLine1, anAxis);
+        RevolutionSurface aRev2 = new RevolutionSurface(aLine2, anAxis);
 
         Assert.False(myHasher.Equals(aRev1, aRev2));
     }
@@ -510,13 +511,13 @@ public class GeomHash_SurfaceHasherTest
     [Fact]
     public void SurfaceOfLinearExtrusion_DifferentDirection_DifferentHash()
     {
-        Geom_Line aLine = new Geom_Line(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        LineCurve3D aLine = new LineCurve3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         Direction3D aDir1 = new(0.0, 0.0, 1.0);
         Direction3D aDir2 = new(0.0, 1.0, 0.0);
-        Geom_SurfaceOfLinearExtrusion anExt1 =
-            new Geom_SurfaceOfLinearExtrusion(aLine, aDir1);
-        Geom_SurfaceOfLinearExtrusion anExt2 =
-            new Geom_SurfaceOfLinearExtrusion(aLine, aDir2);
+        ExtrusionSurface anExt1 =
+            new ExtrusionSurface(aLine, aDir1);
+        ExtrusionSurface anExt2 =
+            new ExtrusionSurface(aLine, aDir2);
 
         Assert.NotEqual(myHasher.GetHashCode(anExt1), myHasher.GetHashCode(anExt2));
         Assert.False(myHasher.Equals(anExt1, anExt2));
@@ -552,10 +553,10 @@ public class GeomHash_SurfaceHasherTest
         aVMults[1] = 2;
         aVMults[2] = 2;
 
-        Geom_BSplineSurface aSurf1 =
-            new Geom_BSplineSurface(aPoles, aUKnots1, aVKnots, aUMults, aVMults, 1, 1);
-        Geom_BSplineSurface aSurf2 =
-            new Geom_BSplineSurface(aPoles, aUKnots2, aVKnots, aUMults, aVMults, 1, 1);
+        BSplineSurface aSurf1 =
+            new BSplineSurface(aPoles, aUKnots1, aVKnots, aUMults, aVMults, 1, 1);
+        BSplineSurface aSurf2 =
+            new BSplineSurface(aPoles, aUKnots2, aVKnots, aUMults, aVMults, 1, 1);
 
         Assert.False(myHasher.Equals(aSurf1, aSurf2));
     }
@@ -568,8 +569,8 @@ public class GeomHash_SurfaceHasherTest
     public void Plane_Translated_DifferentHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Plane aPlane1 = new Geom_Plane(anAxis);
-        Geom_Plane aPlane2 = (Geom_Plane)aPlane1.Copy();
+        PlaneSurface aPlane1 = new PlaneSurface(anAxis);
+        PlaneSurface aPlane2 = (PlaneSurface)aPlane1.Copy();
         aPlane2.Translate(new Vector3D(0.0, 0.0, 1.0));
 
         Assert.NotEqual(myHasher.GetHashCode(aPlane1), myHasher.GetHashCode(aPlane2));
@@ -580,9 +581,9 @@ public class GeomHash_SurfaceHasherTest
     public void Sphere_Scaled_DifferentHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_SphericalSurface aSphere1 = new Geom_SphericalSurface(anAxis, 5.0);
-        Geom_SphericalSurface aSphere2 =
-            (Geom_SphericalSurface)aSphere1.Copy();
+        SphericalSurface aSphere1 = new SphericalSurface(anAxis, 5.0);
+        SphericalSurface aSphere2 =
+            (SphericalSurface)aSphere1.Copy();
         aSphere2.Scale(new Point3D(0.0, 0.0, 0.0), 2.0);
 
         Assert.NotEqual(myHasher.GetHashCode(aSphere1), myHasher.GetHashCode(aSphere2));
@@ -602,8 +603,8 @@ public class GeomHash_SurfaceHasherTest
         aPoles[2, 1] = new Point3D(0.0, 1.0, 0.0);
         aPoles[2, 2] = new Point3D(1.0, 1.0, 1.0);
 
-        Geom_BezierSurface aSurf1 = new Geom_BezierSurface(aPoles);
-        Geom_BezierSurface aSurf2 = (Geom_BezierSurface)aSurf1.UReversed();
+        BezierSurface aSurf1 = new BezierSurface(aPoles);
+        BezierSurface aSurf2 = (BezierSurface)aSurf1.UReversed();
 
         Assert.False(myHasher.Equals(aSurf1, aSurf2));
     }
@@ -617,8 +618,8 @@ public class GeomHash_SurfaceHasherTest
         aPoles[2, 1] = new Point3D(0.0, 1.0, 0.0);
         aPoles[2, 2] = new Point3D(1.0, 1.0, 1.0);
 
-        Geom_BezierSurface aSurf1 = new Geom_BezierSurface(aPoles);
-        Geom_BezierSurface aSurf2 = (Geom_BezierSurface)aSurf1.VReversed();
+        BezierSurface aSurf1 = new BezierSurface(aPoles);
+        BezierSurface aSurf2 = (BezierSurface)aSurf1.VReversed();
 
         Assert.False(myHasher.Equals(aSurf1, aSurf2));
     }
@@ -653,9 +654,9 @@ public class GeomHash_SurfaceHasherTest
         aVMults[1] = 4;
         aVMults[2] = 4;
 
-        Geom_BSplineSurface aSurf1 =
-            new Geom_BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, 3, 3);
-        Geom_BSplineSurface aSurf2 = (Geom_BSplineSurface)aSurf1.Copy();
+        BSplineSurface aSurf1 =
+            new BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, 3, 3);
+        BSplineSurface aSurf2 = (BSplineSurface)aSurf1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aSurf1), myHasher.GetHashCode(aSurf2));
         Assert.True(myHasher.Equals(aSurf1, aSurf2));
@@ -669,8 +670,8 @@ public class GeomHash_SurfaceHasherTest
     public void Cylinder_vs_Cone_DifferentComparison()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_CylindricalSurface aCylinder = new Geom_CylindricalSurface(anAxis, 5.0);
-        Geom_ConicalSurface     aCone     = new Geom_ConicalSurface(anAxis, M_PI / 6.0, 5.0);
+        CylindricalSurface aCylinder = new CylindricalSurface(anAxis, 5.0);
+        ConicalSurface     aCone     = new ConicalSurface(anAxis, M_PI / 6.0, 5.0);
 
         Assert.False(myHasher.Equals(aCylinder, aCone));
     }
@@ -679,8 +680,8 @@ public class GeomHash_SurfaceHasherTest
     public void Sphere_vs_Torus_DifferentComparison()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_SphericalSurface aSphere = new Geom_SphericalSurface(anAxis, 5.0);
-        Geom_ToroidalSurface  aTorus  = new Geom_ToroidalSurface(anAxis, 5.0, 1.0);
+        SphericalSurface aSphere = new SphericalSurface(anAxis, 5.0);
+        ToroidalSurface  aTorus  = new ToroidalSurface(anAxis, 5.0, 1.0);
 
         Assert.False(myHasher.Equals(aSphere, aTorus));
     }
@@ -693,9 +694,9 @@ public class GeomHash_SurfaceHasherTest
     public void RectangularTrimmedSurface_vs_BaseSurface_DifferentComparison()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Plane                     aPlane = new Geom_Plane(anAxis);
-        Geom_RectangularTrimmedSurface aTrimmed =
-            new Geom_RectangularTrimmedSurface(aPlane, 0.0, 10.0, 0.0, 10.0);
+        PlaneSurface                     aPlane = new PlaneSurface(anAxis);
+        TrimmedSurface aTrimmed =
+            new TrimmedSurface(aPlane, 0.0, 10.0, 0.0, 10.0);
 
         Assert.False(myHasher.Equals(aPlane, aTrimmed));
     }
@@ -708,9 +709,9 @@ public class GeomHash_SurfaceHasherTest
     public void Sphere_VerySmallRadius_CopiedSpheres_SameHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_SphericalSurface aSphere1 = new Geom_SphericalSurface(anAxis, 1e-10);
-        Geom_SphericalSurface aSphere2 =
-            (Geom_SphericalSurface)aSphere1.Copy();
+        SphericalSurface aSphere1 = new SphericalSurface(anAxis, 1e-10);
+        SphericalSurface aSphere2 =
+            (SphericalSurface)aSphere1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aSphere1), myHasher.GetHashCode(aSphere2));
         Assert.True(myHasher.Equals(aSphere1, aSphere2));
@@ -720,9 +721,9 @@ public class GeomHash_SurfaceHasherTest
     public void Sphere_VeryLargeRadius_CopiedSpheres_SameHash()
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_SphericalSurface aSphere1 = new Geom_SphericalSurface(anAxis, 1e10);
-        Geom_SphericalSurface aSphere2 =
-            (Geom_SphericalSurface)aSphere1.Copy();
+        SphericalSurface aSphere1 = new SphericalSurface(anAxis, 1e10);
+        SphericalSurface aSphere2 =
+            (SphericalSurface)aSphere1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aSphere1), myHasher.GetHashCode(aSphere2));
         Assert.True(myHasher.Equals(aSphere1, aSphere2));
@@ -733,8 +734,8 @@ public class GeomHash_SurfaceHasherTest
     {
         CoordinateSystem anAxis1 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         CoordinateSystem anAxis2 = new(new Point3D(1e10, 1e10, 1e10), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Plane aPlane1 = new Geom_Plane(anAxis1);
-        Geom_Plane aPlane2 = new Geom_Plane(anAxis2);
+        PlaneSurface aPlane1 = new PlaneSurface(anAxis1);
+        PlaneSurface aPlane2 = new PlaneSurface(anAxis2);
 
         Assert.NotEqual(myHasher.GetHashCode(aPlane1), myHasher.GetHashCode(aPlane2));
         Assert.False(myHasher.Equals(aPlane1, aPlane2));
@@ -748,11 +749,11 @@ public class GeomHash_SurfaceHasherTest
     public void SurfaceOfRevolution_CircleBasis_CopiedSurfaces_SameHash()
     {
         Frame3D aCircleAxis = new(new Point3D(5.0, 0.0, 0.0), new Direction3D(0.0, 1.0, 0.0));
-        Geom_Circle              aCircle = new Geom_Circle(aCircleAxis, 1.0);
+        CircleCurve3D              aCircle = new CircleCurve3D(aCircleAxis, 1.0);
         Axis3D aRevAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_SurfaceOfRevolution aRev1 = new Geom_SurfaceOfRevolution(aCircle, aRevAxis);
-        Geom_SurfaceOfRevolution aRev2 =
-            (Geom_SurfaceOfRevolution)aRev1.Copy();
+        RevolutionSurface aRev1 = new RevolutionSurface(aCircle, aRevAxis);
+        RevolutionSurface aRev2 =
+            (RevolutionSurface)aRev1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aRev1), myHasher.GetHashCode(aRev2));
         Assert.True(myHasher.Equals(aRev1, aRev2));
@@ -767,10 +768,10 @@ public class GeomHash_SurfaceHasherTest
     {
         CoordinateSystem anAxis1 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         CoordinateSystem anAxis2 = new(new Point3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Plane         aPlane1   = new Geom_Plane(anAxis1);
-        Geom_Plane         aPlane2   = new Geom_Plane(anAxis2);
-        Geom_OffsetSurface anOffset1 = new Geom_OffsetSurface(aPlane1, 5.0);
-        Geom_OffsetSurface anOffset2 = new Geom_OffsetSurface(aPlane2, 5.0);
+        PlaneSurface         aPlane1   = new PlaneSurface(anAxis1);
+        PlaneSurface         aPlane2   = new PlaneSurface(anAxis2);
+        OffsetSurface anOffset1 = new OffsetSurface(aPlane1, 5.0);
+        OffsetSurface anOffset2 = new OffsetSurface(aPlane2, 5.0);
 
         Assert.False(myHasher.Equals(anOffset1, anOffset2));
     }

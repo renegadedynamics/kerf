@@ -5,10 +5,11 @@
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
+using Occt;
 using static Kerf.Engine.Geometry.DerivativeStatus;
-using static Occt.LProp_Status;
+using static Kerf.Engine.Geometry.Properties.Status;
 
-namespace Occt;
+namespace Kerf.Engine.Geometry.Properties;
 
 /// <summary>
 /// The computations shared by the surface local-property classes (OCCT's namespace <c>LProp_SurfaceUtils</c>, in
@@ -18,193 +19,193 @@ namespace Occt;
 /// <remarks>
 /// OCCT's templates over the surface type are ported per instantiation (rules, section 9): the helpers that don't
 /// depend on the surface are here; the access policies, derivative evaluation, bounds and the wrappers that take
-/// the properties object are written out in <see cref="GeomLProp_SLProps"/> and <see cref="LProp_SLProps3d"/>.
+/// the properties object are written out in <see cref="SLProps"/> and <see cref="SLProps3d"/>.
 /// </remarks>
-internal static class LProp_SurfaceUtils
+internal static class SurfaceUtils
 {
     /// <summary>
     /// The order (1 or 2) of the first derivative in one direction longer than the tolerance; the status is
     /// LProp_Defined if there is one, LProp_Undefined otherwise.
     /// </summary>
-    internal static bool FindSurfTangentOrder(in Vector3D theD1,
-                                              in Vector3D theD2,
-                                              int theCN,
-                                              double theTolSq,
-                                              out int theOrder,
-                                              out LProp_Status theStatus)
+    internal static bool FindSurfTangentOrder(in Vector3D d1,
+                                              in Vector3D d2,
+                                              int cn,
+                                              double tolSq,
+                                              out int order,
+                                              out Status status)
     {
-        theOrder = 0;
+        order = 0;
 
-        while (theOrder < 3)
+        while (order < 3)
         {
-            theOrder++;
-            if (theCN >= theOrder)
+            order++;
+            if (cn >= order)
             {
                 // OCCT's array of pointers {&theD1, &theD2}
-                if (theOrder <= 2 && (theOrder == 1 ? theD1 : theD2).SquareMagnitude() > theTolSq)
+                if (order <= 2 && (order == 1 ? d1 : d2).SquareMagnitude() > tolSq)
                 {
-                    theStatus = LProp_Defined;
+                    status = Defined;
                     return true;
                 }
             }
             else
             {
-                theStatus = LProp_Undefined;
+                status = Undefined;
                 return false;
             }
         }
 
-        theStatus = LProp_Undefined;
+        status = Undefined;
         return false;
     }
 
     /// <summary>The normal by CSLib::Normal; true if it is defined.</summary>
-    internal static bool ComputeSurfNormal(in Vector3D theD1u, in Vector3D theD1v, double theLinTol, ref Direction3D theNormal)
+    internal static bool ComputeSurfNormal(in Vector3D d1u, in Vector3D d1v, double linTol, ref Direction3D normal)
     {
-        DerivativeStatus aStatus;
-        global::Kerf.Engine.Geometry.CSLib.Normal(theD1u, theD1v, theLinTol, out aStatus, ref theNormal);
-        return aStatus == Done;
+        DerivativeStatus status;
+        global::Kerf.Engine.Geometry.CSLib.Normal(d1u, d1v, linTol, out status, ref normal);
+        return status == Done;
     }
 
     /// <summary>
     /// The principal curvatures and directions, the mean and the Gaussian curvatures, from the first and second
     /// fundamental forms; false if they can't be computed (the outputs may then be partly written, as in OCCT).
     /// </summary>
-    internal static bool ComputeSurfCurvatures(in Vector3D theD1u,
-                                               in Vector3D theD1v,
-                                               in Vector3D theD2u,
-                                               in Vector3D theD2v,
-                                               in Vector3D theDuv,
-                                               in Direction3D theNormal,
-                                               ref double theMinCurv,
-                                               ref double theMaxCurv,
-                                               ref Direction3D theDirMin,
-                                               ref Direction3D theDirMax,
-                                               ref double theMeanCurv,
-                                               ref double theGausCurv)
+    internal static bool ComputeSurfCurvatures(in Vector3D d1u,
+                                               in Vector3D d1v,
+                                               in Vector3D d2u,
+                                               in Vector3D d2v,
+                                               in Vector3D duv,
+                                               in Direction3D normal,
+                                               ref double minCurv,
+                                               ref double maxCurv,
+                                               ref Direction3D dirMin,
+                                               ref Direction3D dirMax,
+                                               ref double meanCurv,
+                                               ref double gausCurv)
     {
-        Vector3D aNorm = new(theNormal);
+        Vector3D norm = new(normal);
 
-        double anE = theD1u.SquareMagnitude();
-        double anF = theD1u.Dot(theD1v);
-        double aG = theD1v.SquareMagnitude();
+        double e = d1u.SquareMagnitude();
+        double f = d1u.Dot(d1v);
+        double g = d1v.SquareMagnitude();
 
-        double aL = aNorm.Dot(theD2u);
-        double aM = aNorm.Dot(theDuv);
-        double aN = aNorm.Dot(theD2v);
+        double l = norm.Dot(d2u);
+        double m = norm.Dot(duv);
+        double n = norm.Dot(d2v);
 
-        double anA0 = anE * aM - anF * aL;
-        double aB0 = anE * aN - aG * aL;
-        double aC0 = anF * aN - aG * aM;
+        double a0 = e * m - f * l;
+        double b0 = e * n - g * l;
+        double c0 = f * n - g * m;
 
-        double aMaxABC = Max(Max(Math.Abs(anA0), Math.Abs(aB0)), Math.Abs(aC0));
-        if (aMaxABC < RealEpsilon())
+        double maxABC = Max(Max(Math.Abs(a0), Math.Abs(b0)), Math.Abs(c0));
+        if (maxABC < RealEpsilon())
         {
             // Umbilic point
-            if (aG < RealEpsilon())
+            if (g < RealEpsilon())
             {
                 return false;
             }
 
-            theMinCurv = aN / aG;
-            theMaxCurv = theMinCurv;
-            theDirMin = new Direction3D(theD1u);
-            theDirMax = new Direction3D(theD1u.Crossed(aNorm));
-            theMeanCurv = theMinCurv;
-            theGausCurv = theMinCurv * theMinCurv;
+            minCurv = n / g;
+            maxCurv = minCurv;
+            dirMin = new Direction3D(d1u);
+            dirMax = new Direction3D(d1u.Crossed(norm));
+            meanCurv = minCurv;
+            gausCurv = minCurv * minCurv;
             return true;
         }
 
-        double anA = anA0 / aMaxABC;
-        double aB = aB0 / aMaxABC;
-        double aC = aC0 / aMaxABC;
+        double a = a0 / maxABC;
+        double b = b0 / maxABC;
+        double c = c0 / maxABC;
 
-        double aCurv1, aCurv2;
-        Vector3D aVectCurv1, aVectCurv2;
+        double curv1, curv2;
+        Vector3D vectCurv1, vectCurv2;
 
-        if (Math.Abs(anA) > RealEpsilon())
+        if (Math.Abs(a) > RealEpsilon())
         {
-            var aRoot = new DirectPolynomialRoots(anA, aB, aC);
-            if (aRoot.SolutionCount != 2)
+            var root = new DirectPolynomialRoots(a, b, c);
+            if (root.SolutionCount != 2)
             {
                 return false;
             }
 
-            double aRoot1 = aRoot.Value(1);
-            double aRoot2 = aRoot.Value(2);
-            aCurv1 = ((aL * aRoot1 + 2.0 * aM) * aRoot1 + aN) / ((anE * aRoot1 + 2.0 * anF) * aRoot1 + aG);
-            aCurv2 = ((aL * aRoot2 + 2.0 * aM) * aRoot2 + aN) / ((anE * aRoot2 + 2.0 * anF) * aRoot2 + aG);
-            aVectCurv1 = aRoot1 * theD1u + theD1v;
-            aVectCurv2 = aRoot2 * theD1u + theD1v;
+            double root1 = root.Value(1);
+            double root2 = root.Value(2);
+            curv1 = ((l * root1 + 2.0 * m) * root1 + n) / ((e * root1 + 2.0 * f) * root1 + g);
+            curv2 = ((l * root2 + 2.0 * m) * root2 + n) / ((e * root2 + 2.0 * f) * root2 + g);
+            vectCurv1 = root1 * d1u + d1v;
+            vectCurv2 = root2 * d1u + d1v;
         }
-        else if (Math.Abs(aC) > RealEpsilon())
+        else if (Math.Abs(c) > RealEpsilon())
         {
-            var aRoot = new DirectPolynomialRoots(aC, aB, anA);
-            if (aRoot.SolutionCount != 2)
+            var root = new DirectPolynomialRoots(c, b, a);
+            if (root.SolutionCount != 2)
             {
                 return false;
             }
 
-            double aRoot1 = aRoot.Value(1);
-            double aRoot2 = aRoot.Value(2);
-            aCurv1 = ((aN * aRoot1 + 2.0 * aM) * aRoot1 + aL) / ((aG * aRoot1 + 2.0 * anF) * aRoot1 + anE);
-            aCurv2 = ((aN * aRoot2 + 2.0 * aM) * aRoot2 + aL) / ((aG * aRoot2 + 2.0 * anF) * aRoot2 + anE);
-            aVectCurv1 = theD1u + aRoot1 * theD1v;
-            aVectCurv2 = theD1u + aRoot2 * theD1v;
+            double root1 = root.Value(1);
+            double root2 = root.Value(2);
+            curv1 = ((n * root1 + 2.0 * m) * root1 + l) / ((g * root1 + 2.0 * f) * root1 + e);
+            curv2 = ((n * root2 + 2.0 * m) * root2 + l) / ((g * root2 + 2.0 * f) * root2 + e);
+            vectCurv1 = d1u + root1 * d1v;
+            vectCurv2 = d1u + root2 * d1v;
         }
         else
         {
-            aCurv1 = aL / anE;
-            aCurv2 = aN / aG;
-            aVectCurv1 = theD1u;
-            aVectCurv2 = theD1v;
+            curv1 = l / e;
+            curv2 = n / g;
+            vectCurv1 = d1u;
+            vectCurv2 = d1v;
         }
 
-        if (aCurv1 < aCurv2)
+        if (curv1 < curv2)
         {
-            theMinCurv = aCurv1;
-            theMaxCurv = aCurv2;
-            theDirMin = new Direction3D(aVectCurv1);
-            theDirMax = new Direction3D(aVectCurv2);
+            minCurv = curv1;
+            maxCurv = curv2;
+            dirMin = new Direction3D(vectCurv1);
+            dirMax = new Direction3D(vectCurv2);
         }
         else
         {
-            theMinCurv = aCurv2;
-            theMaxCurv = aCurv1;
-            theDirMin = new Direction3D(aVectCurv2);
-            theDirMax = new Direction3D(aVectCurv1);
+            minCurv = curv2;
+            maxCurv = curv1;
+            dirMin = new Direction3D(vectCurv2);
+            dirMax = new Direction3D(vectCurv1);
         }
 
-        double anEG_FF = (anE * aG) - (anF * anF);
-        theMeanCurv = ((aN * anE) - (2.0 * aM * anF) + (aL * aG)) / (2.0 * anEG_FF);
-        theGausCurv = ((aL * aN) - (aM * aM)) / anEG_FF;
+        double eg_FF = (e * g) - (f * f);
+        meanCurv = ((n * e) - (2.0 * m * f) + (l * g)) / (2.0 * eg_FF);
+        gausCurv = ((l * n) - (m * m)) / eg_FF;
         return true;
     }
 
     /// <summary>The normal status, computing the normal if it is undecided.</summary>
-    internal static bool IsNormalDefined(in Vector3D theD1u,
-                                         in Vector3D theD1v,
-                                         double theLinTol,
-                                         ref Direction3D theNormal,
-                                         ref LProp_Status theNormStatus)
+    internal static bool IsNormalDefined(in Vector3D d1u,
+                                         in Vector3D d1v,
+                                         double linTol,
+                                         ref Direction3D normal,
+                                         ref Status normStatus)
     {
-        if (theNormStatus == LProp_Undefined)
+        if (normStatus == Undefined)
         {
             return false;
         }
 
-        if (theNormStatus >= LProp_Defined)
+        if (normStatus >= Defined)
         {
             return true;
         }
 
-        if (ComputeSurfNormal(theD1u, theD1v, theLinTol, ref theNormal))
+        if (ComputeSurfNormal(d1u, d1v, linTol, ref normal))
         {
-            theNormStatus = LProp_Computed;
+            normStatus = Computed;
             return true;
         }
 
-        theNormStatus = LProp_Undefined;
+        normStatus = Undefined;
         return false;
     }
 }

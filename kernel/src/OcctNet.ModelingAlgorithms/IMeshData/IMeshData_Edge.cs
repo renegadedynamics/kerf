@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using static Occt.IMeshData_Status;
 
 namespace Occt;
@@ -21,26 +24,26 @@ public abstract class IMeshData_Edge : IMeshData_TessellatedShape, IMeshData_Sta
     private int myStatus; // IMeshData_StatusOwner
 
     /// <summary>An empty model of the edge, with the edge's SameParameter, SameRange and Degenerated flags.</summary>
-    protected IMeshData_Edge(in TopoDS_Edge theEdge) : base(theEdge)
+    protected IMeshData_Edge(in Edge theEdge) : base(theEdge)
     {
-        mySameParam = BRep_Tool.SameParameter(theEdge);
-        mySameRange = BRep_Tool.SameRange(theEdge);
-        myDegenerated = BRep_Tool.Degenerated(theEdge);
+        mySameParam = Tool.SameParameter(theEdge);
+        mySameRange = Tool.SameRange(theEdge);
+        myDegenerated = Tool.Degenerated(theEdge);
         myAngDeflection = RealLast();
         myStatus = (int)IMeshData_NoError;
     }
 
     /// <summary>The edge of the model.</summary>
-    public TopoDS_Edge GetEdge() => TopoDS.Edge(GetShape());
+    public Edge GetEdge() => ShapeCasts.Edge(GetShape());
 
     /// <summary>The number of pcurves of the edge.</summary>
     public abstract int PCurvesNb();
 
     /// <summary>Adds a discrete pcurve for the given discrete face.</summary>
-    public abstract IMeshData_PCurve AddPCurve(IMeshData_Face theDFace, TopAbs_Orientation theOrientation);
+    public abstract IMeshData_PCurve AddPCurve(IMeshData_Face theDFace, Orientation theOrientation);
 
     /// <summary>The pcurve for the given discrete face and orientation.</summary>
-    public abstract IMeshData_PCurve GetPCurve(IMeshData_Face theDFace, TopAbs_Orientation theOrientation);
+    public abstract IMeshData_PCurve GetPCurve(IMeshData_Face theDFace, Orientation theOrientation);
 
     /// <summary>The pcurve with the given index.</summary>
     public abstract IMeshData_PCurve GetPCurve(int theIndex);

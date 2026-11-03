@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -14,13 +16,13 @@ public class ShapeFix_ShapeTest
     public void FixValidBox()
     {
         var aMakeBox = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0);
-        TopoDS_Shape aBox = aMakeBox.Shape();
+        Shape aBox = aMakeBox.Shape();
         Assert.True(aMakeBox.IsDone());
 
         var aFixer = new ShapeFix_Shape(aBox);
         aFixer.Perform();
-        TopoDS_Shape aResult = aFixer.Shape();
-        Assert.False(aResult.IsNull());
+        Shape aResult = aFixer.Shape();
+        Assert.False(aResult.IsNull);
 
         var anAnalyzer = new BRepCheck_Analyzer(aResult);
         Assert.True(anAnalyzer.IsValid());
@@ -30,7 +32,7 @@ public class ShapeFix_ShapeTest
     public void StatusAfterFix()
     {
         var aMakeBox = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0);
-        TopoDS_Shape aBox = aMakeBox.Shape();
+        Shape aBox = aMakeBox.Shape();
         Assert.True(aMakeBox.IsDone());
 
         var aFixer = new ShapeFix_Shape(aBox);
@@ -62,23 +64,23 @@ public class ShapeFix_ShapeTest
     public void FixCompound()
     {
         var aMakeBox1 = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0);
-        TopoDS_Shape aBox1 = aMakeBox1.Shape();
+        Shape aBox1 = aMakeBox1.Shape();
         Assert.True(aMakeBox1.IsDone());
 
         var aMakeBox2 = new BRepPrimAPI_MakeBox(new Point3D(20.0, 0.0, 0.0), 5.0, 5.0, 5.0);
-        TopoDS_Shape aBox2 = aMakeBox2.Shape();
+        Shape aBox2 = aMakeBox2.Shape();
         Assert.True(aMakeBox2.IsDone());
 
-        var aBuilder = new BRep_Builder();
-        var aCompound = new TopoDS_Compound();
+        var aBuilder = new BrepBuilder();
+        var aCompound = new Compound();
         aBuilder.MakeCompound(ref aCompound);
         aBuilder.Add(aCompound, aBox1);
         aBuilder.Add(aCompound, aBox2);
 
         var aFixer = new ShapeFix_Shape(aCompound);
         aFixer.Perform();
-        TopoDS_Shape aResult = aFixer.Shape();
-        Assert.False(aResult.IsNull());
+        Shape aResult = aFixer.Shape();
+        Assert.False(aResult.IsNull);
 
         var anAnalyzer = new BRepCheck_Analyzer(aResult);
         Assert.True(anAnalyzer.IsValid());
@@ -106,7 +108,7 @@ public class ShapeFix_ShapeTest
 
         var aFixer = new ShapeFix_Shape(aMakePrism.Shape());
         aFixer.Perform();
-        Assert.False(aFixer.Shape().IsNull());
+        Assert.False(aFixer.Shape().IsNull);
 
         var anAnalyzer = new BRepCheck_Analyzer(aFixer.Shape());
         Assert.True(anAnalyzer.IsValid());

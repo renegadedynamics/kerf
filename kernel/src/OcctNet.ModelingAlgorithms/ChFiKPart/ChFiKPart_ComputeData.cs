@@ -5,7 +5,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ChFiDS_ChamfMethod;
 using static Occt.ChFiKPart_ComputeData_ChAsymPlnCon;
 using static Occt.ChFiKPart_ComputeData_ChAsymPlnCyl;
@@ -22,7 +25,7 @@ using static Occt.ChFiKPart_ComputeData_Rotule;
 using static Occt.ChFiKPart_ComputeData_Sphere;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -45,8 +48,8 @@ internal static class ChFiKPart_ComputeData
 
     /// <summary>Computes a simple fillet in several particular cases.</summary>
     /// <exception cref="MethodNotImplementedException">The pair of surfaces is not one of the particular cases.</exception>
-    internal static bool Compute(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Data, Adaptor3d_Surface S1,
-                                 Adaptor3d_Surface S2, TopAbs_Orientation Or1, TopAbs_Orientation Or2,
+    internal static bool Compute(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Data, SurfaceAdaptorBase S1,
+                                 SurfaceAdaptorBase S2, Orientation Or1, Orientation Or2,
                                  ChFiDS_Spine Sp, int Iedge)
     {
         double Wref = 0.0;
@@ -68,13 +71,13 @@ internal static class ChFiKPart_ComputeData
         }
 
         // Return orientations.
-        TopAbs_Orientation OrFace1 = TopAbs_FORWARD, OrFace2 = TopAbs_FORWARD;
-        BRepAdaptor_Surface? HS = S1 as BRepAdaptor_Surface;
+        Orientation OrFace1 = Forward, OrFace2 = Forward;
+        FaceSurfaceAdaptor? HS = S1 as FaceSurfaceAdaptor;
         if (HS is not null)
         {
             OrFace1 = HS.Face().Orientation();
         }
-        HS = S2 as BRepAdaptor_Surface;
+        HS = S2 as FaceSurfaceAdaptor;
         if (HS is not null)
         {
             OrFace2 = HS.Face().Orientation();
@@ -315,9 +318,9 @@ internal static class ChFiKPart_ComputeData
 
     /// <summary>Computes a toric or spheric corner fillet.</summary>
     /// <exception cref="ConstructionErrorException"><paramref name="S1"/> is not a plane.</exception>
-    internal static bool ComputeCorner(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Data, Adaptor3d_Surface S1,
-                                       Adaptor3d_Surface S2, TopAbs_Orientation OrFace1, TopAbs_Orientation OrFace2,
-                                       TopAbs_Orientation Or1, TopAbs_Orientation Or2, double minRad, double majRad,
+    internal static bool ComputeCorner(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Data, SurfaceAdaptorBase S1,
+                                       SurfaceAdaptorBase S2, Orientation OrFace1, Orientation OrFace2,
+                                       Orientation Or1, Orientation Or2, double minRad, double majRad,
                                        in Point2D P1S1, in Point2D P2S1, in Point2D P1S2, in Point2D P2S2)
     {
         bool surfok;
@@ -369,9 +372,9 @@ internal static class ChFiKPart_ComputeData
     //=================================================================================================
 
     /// <summary>Computes spheric corner fillet with non iso pcurve on S2.</summary>
-    internal static bool ComputeCorner(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Data, Adaptor3d_Surface S1,
-                                       Adaptor3d_Surface S2, TopAbs_Orientation OrFace1, TopAbs_Orientation OrFace2,
-                                       TopAbs_Orientation Or1, TopAbs_Orientation Or2, double Rad, in Point2D PS1,
+    internal static bool ComputeCorner(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Data, SurfaceAdaptorBase S1,
+                                       SurfaceAdaptorBase S2, Orientation OrFace1, Orientation OrFace2,
+                                       Orientation Or1, Orientation Or2, double Rad, in Point2D PS1,
                                        in Point2D P1S2, in Point2D P2S2)
     {
         return ChFiKPart_Sphere(DStr, Data, S1, S2, OrFace1, OrFace2, Or1, Or2, Rad, PS1, P1S2, P2S2);
@@ -381,9 +384,9 @@ internal static class ChFiKPart_ComputeData
 
     /// <summary>Computes a toric corner rotule.</summary>
     /// <exception cref="ConstructionErrorException">One of the surfaces is not a plane.</exception>
-    internal static bool ComputeCorner(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Data, Adaptor3d_Surface S,
-                                       Adaptor3d_Surface S1, Adaptor3d_Surface S2, TopAbs_Orientation OfS,
-                                       TopAbs_Orientation OS, TopAbs_Orientation OS1, TopAbs_Orientation OS2,
+    internal static bool ComputeCorner(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Data, SurfaceAdaptorBase S,
+                                       SurfaceAdaptorBase S1, SurfaceAdaptorBase S2, Orientation OfS,
+                                       Orientation OS, Orientation OS1, Orientation OS2,
                                        double Radius)
     {
         SurfaceKind typ = S.GetType();

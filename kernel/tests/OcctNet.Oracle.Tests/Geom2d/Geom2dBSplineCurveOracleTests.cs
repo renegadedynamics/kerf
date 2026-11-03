@@ -14,7 +14,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
     private static readonly int Cases = Tape.Cases(300, 70);
 
     /// <summary>Structure, then evaluation at a few parameters (and slightly outside the range).</summary>
-    private static void CheckAll(Oracle theOracle, N.Geom2d_BSplineCurve theNative, Geom2d_BSplineCurve thePort, string theWhat)
+    private static void CheckAll(Oracle theOracle, N.Geom2d_BSplineCurve theNative, BSplineCurve2D thePort, string theWhat)
     {
         Geom2dOracle.SameStructure(theOracle, theNative, thePort, theWhat);
         for (int k = 0; k < 3; k++)
@@ -32,7 +32,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
         {
             BSplineSpec aSpec = Geom2dOracle.RandomBSpline(anOracle);
             using var aNative = Geom2dOracle.ToNative(aSpec);
-            Geom2d_BSplineCurve aPort = Geom2dOracle.ToPort(aSpec);
+            BSplineCurve2D aPort = Geom2dOracle.ToPort(aSpec);
             CheckAll(anOracle, aNative, aPort, "BSpline");
 
             for (int n = 0; n <= 6; n++)
@@ -59,7 +59,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
             // LocateU, on and off knots, with and without knot repetition
             for (int k = 0; k < 4; k++)
             {
-                double aU = k == 0 ? aPort.Knot(anOracle.Int(1, aPort.NbKnots())) : Geom2dOracle.Param(anOracle, aPort, 0.3);
+                double aU = k == 0 ? aPort.Knot(anOracle.Int(1, aPort.KnotCount)) : Geom2dOracle.Param(anOracle, aPort, 0.3);
                 bool aRep = anOracle.Bool();
                 double aPTol = anOracle.Bool() ? 0.0 : 1e-9;
                 int aNI1 = 0, aNI2 = 0;
@@ -97,14 +97,14 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
             using (var aNRev = aNative.Reversed())
             using (var aNRevB = N.Geom2d_BSplineCurve.DownCast(aNRev))
             {
-                CheckAll(anOracle, aNRevB!, (Geom2d_BSplineCurve)aPort.Reversed(), "Reversed");
+                CheckAll(anOracle, aNRevB!, (BSplineCurve2D)aPort.Reversed(), "Reversed");
             }
             var (aT, aNT) = Geom2dOracle.Trsf(anOracle);
             using (aNT)
             using (var aNTr = aNative.Transformed(aNT))
             using (var aNTrB = N.Geom2d_BSplineCurve.DownCast(aNTr))
             {
-                CheckAll(anOracle, aNTrB!, (Geom2d_BSplineCurve)aPort.Transformed(aT), "Transformed");
+                CheckAll(anOracle, aNTrB!, (BSplineCurve2D)aPort.Transformed(aT), "Transformed");
             }
         }
 
@@ -116,12 +116,12 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
     /// returning its extra results (RemoveKnot's flag, MovePoint's indexes, ...). False if no valid edit of that
     /// kind exists for the curve.
     /// </summary>
-    private static bool Edit(Oracle theOracle, int theKind, Geom2d_BSplineCurve thePort, out string theWhat,
+    private static bool Edit(Oracle theOracle, int theKind, BSplineCurve2D thePort, out string theWhat,
                              out Func<N.Geom2d_BSplineCurve, double[]> theNativeEdit,
-                             out Func<Geom2d_BSplineCurve, double[]> thePortEdit)
+                             out Func<BSplineCurve2D, double[]> thePortEdit)
     {
         int aDeg = thePort.Degree();
-        int aNbKnots = thePort.NbKnots();
+        int aNbKnots = thePort.KnotCount;
         double aF = thePort.FirstParameter(), aL = thePort.LastParameter();
         theNativeEdit = _ => [];
         thePortEdit = _ => [];
@@ -252,7 +252,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
             }
             case 7:
             {
-                if (thePort.IsPeriodic())
+                if (thePort.IsPeriodic)
                 {
                     if (theOracle.Bool())
                     {
@@ -278,7 +278,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
                         return false;
                     }
                     theWhat = "SetPeriodic";
-                    int aLastPole = thePort.NbPoles();
+                    int aLastPole = thePort.PoleCount;
                     Point2D aFirstPole = thePort.Pole(1);
                     double aFirstWeight = thePort.Weight(1);
                     theNativeEdit = c =>
@@ -306,7 +306,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
             }
             case 9:
             {
-                int anIndex = theOracle.Int(1, thePort.NbPoles());
+                int anIndex = theOracle.Int(1, thePort.PoleCount);
                 Point2D aP = new Point2D(theOracle.Real(-10, 10), theOracle.Real(-10, 10));
                 double aW = theOracle.Real(0.5, 2.0);
                 switch (theOracle.Int(0, 3))
@@ -343,10 +343,10 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
                     theWhat = "";
                     return false;
                 }
-                if (theOracle.Bool() || thePort.NbPoles() <= 2 || aNbKnots <= 2)
+                if (theOracle.Bool() || thePort.PoleCount <= 2 || aNbKnots <= 2)
                 {
                     theWhat = "InsertPoleAfter";
-                    int anIndex = theOracle.Int(0, thePort.NbPoles());
+                    int anIndex = theOracle.Int(0, thePort.PoleCount);
                     Point2D aP = new Point2D(theOracle.Real(-10, 10), theOracle.Real(-10, 10));
                     double aW = theOracle.Bool() ? 1.0 : theOracle.Real(0.5, 2.0);
                     theNativeEdit = c => { using var aNP = Oracle.ToNative(aP); c.InsertPoleAfter(anIndex, aNP, aW); return []; };
@@ -355,7 +355,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
                 else
                 {
                     theWhat = "RemovePole";
-                    int anIndex = theOracle.Int(1, thePort.NbPoles());
+                    int anIndex = theOracle.Int(1, thePort.PoleCount);
                     theNativeEdit = c => { c.RemovePole(anIndex); return []; };
                     thePortEdit = c => { c.RemovePole(anIndex); return []; };
                 }
@@ -365,7 +365,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
             {
                 theWhat = "MovePoint";
                 double U = theOracle.Real(aF, aL);
-                int I1 = theOracle.Int(1, thePort.NbPoles()), I2 = theOracle.Int(1, thePort.NbPoles());
+                int I1 = theOracle.Int(1, thePort.PoleCount), I2 = theOracle.Int(1, thePort.PoleCount);
                 int aLo = Math.Min(I1, I2), aHi = Math.Max(I1, I2);
                 Point2D aP = new Point2D(theOracle.Real(-10, 10), theOracle.Real(-10, 10));
                 theNativeEdit = c =>
@@ -431,7 +431,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
             // Uniform knots for the pole insertion and removal, which need them
             BSplineSpec aSpec = Geom2dOracle.RandomBSpline(anOracle, null, aKind == 10);
             using var aNative = Geom2dOracle.ToNative(aSpec);
-            Geom2d_BSplineCurve aPort = Geom2dOracle.ToPort(aSpec);
+            BSplineCurve2D aPort = Geom2dOracle.ToPort(aSpec);
 
             // Up to three successive edits, each compared. Some random edits are invalid for some curves (raising
             // the degree of an unclamped curve, for instance): then both sides must throw, and the curve is dropped.
@@ -443,7 +443,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
                     break;
                 }
 
-                Geom2d_BSplineCurve aEdited = new Geom2d_BSplineCurve(aPort);
+                BSplineCurve2D aEdited = new BSplineCurve2D(aPort);
                 double[]? aPortRes = null, aNativeRes = null;
                 Exception? aPortExc = null, aNativeExc = null;
                 try
@@ -488,7 +488,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
 
                 // Some edits of unclamped curves leave a pole count that doesn't match the multiplicities, natively
                 // as in the port (compared just above); later edits would then read past the arrays. Stop there.
-                if (aPort.NbPoles() != global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aPort.Degree(), aPort.IsPeriodic(), aPort.InternalMultiplicities()))
+                if (aPort.PoleCount != global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aPort.Degree(), aPort.IsPeriodic, aPort.InternalMultiplicities()))
                 {
                     anInconsistent[aWhat] = anInconsistent.GetValueOrDefault(aWhat) + 1;
                     break;

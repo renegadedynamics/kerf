@@ -1,8 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Port of: src/ModelingAlgorithms/TKOffset/GTests/BRepOffsetAPI_MakePipeShell_Test.cxx (OCCT V8_0_1)
 
+using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -10,9 +15,9 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class BRepOffsetAPI_MakePipeShellTests
 {
     // Computes the total linear length of a wire.
-    private static double wireLength(in TopoDS_Wire theWire)
+    private static double wireLength(in Wire theWire)
     {
-        GProp_GProps aProps = new();
+        Properties aProps = new();
         BRepGProp.LinearProperties(theWire, aProps);
         return aProps.Mass();
     }
@@ -25,11 +30,11 @@ public class BRepOffsetAPI_MakePipeShellTests
                                       double theDia2,
                                       double theMajorRadius,
                                       double theLength,
-                                      out TopoDS_Solid theWallSolid,
-                                      out TopoDS_Shape theGasSolid)
+                                      out Solid theWallSolid,
+                                      out Shape theGasSolid)
     {
-        theWallSolid = new TopoDS_Solid();
-        theGasSolid = new TopoDS_Shape();
+        theWallSolid = new Solid();
+        theGasSolid = new Shape();
         double aBendAngle = theLength / theMajorRadius;
         if (aBendAngle >= Math.PI)
         {
@@ -52,10 +57,10 @@ public class BRepOffsetAPI_MakePipeShellTests
         Frame3D aSpineAxis = new(aCircCenter, anOrigin.YDirection(), anOrigin.XDirection().Reversed());
         Circle3D aSpineCircle = new(aSpineAxis, theMajorRadius);
 
-        TopoDS_Wire aWire1 = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aFaceCircle).Edge()).Wire();
-        TopoDS_Wire anOutWire = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(anOutFaceCircle).Edge()).Wire();
+        Wire aWire1 = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aFaceCircle).Edge()).Wire();
+        Wire anOutWire = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(anOutFaceCircle).Edge()).Wire();
 
-        Geom_Curve aSpineCurve = new GC_MakeArcOfCircle(aSpineCircle, 0.0, aBendAngle, true).Value();
+        Curve3D aSpineCurve = new MakeArcOfCircle(aSpineCircle, 0.0, aBendAngle, true).Value();
 
         Law_Linear aLaw1 = new();
         Law_Linear aLaw2 = new();
@@ -70,7 +75,7 @@ public class BRepOffsetAPI_MakePipeShellTests
         {
             return false;
         }
-        TopoDS_Wire aSpineWire = new BRepBuilderAPI_MakeWire(aMkEdge.Edge()).Wire();
+        Wire aSpineWire = new BRepBuilderAPI_MakeWire(aMkEdge.Edge()).Wire();
 
         BRepOffsetAPI_MakePipeShell aMkPipe1 = new(aSpineWire);
         aMkPipe1.SetTolerance(1.0e-8, 1.0e-8, 1.0e-6);
@@ -92,33 +97,33 @@ public class BRepOffsetAPI_MakePipeShellTests
 
         // Build opening face at start of bend (annular ring)
         BRepBuilderAPI_MakeFace aMkFace = new();
-        Geom_Plane aPlane1 = new(aCirc1Plane);
+        PlaneSurface aPlane1 = new(aCirc1Plane);
         aMkFace.Init(aPlane1, false, global::Kerf.Engine.Foundation.Precision.Confusion());
-        aMkFace.Add(TopoDS.Wire(aMkPipe2.FirstShape()));
-        aMkFace.Add(TopoDS.Wire(aMkPipe1.FirstShape().Reversed()));
+        aMkFace.Add(ShapeCasts.Wire(aMkPipe2.FirstShape()));
+        aMkFace.Add(ShapeCasts.Wire(aMkPipe1.FirstShape().Reversed()));
         if (!aMkFace.IsDone())
         {
             return false;
         }
-        TopoDS_Face aFace1 = aMkFace.Face();
+        Face aFace1 = aMkFace.Face();
 
         // Build opening face at end of bend (annular ring)
-        Geom_Plane aPlane2 = new(aCirc2Plane);
+        PlaneSurface aPlane2 = new(aCirc2Plane);
         aMkFace.Init(aPlane2, false, global::Kerf.Engine.Foundation.Precision.Confusion());
-        aMkFace.Add(TopoDS.Wire(aMkPipe2.LastShape()));
-        aMkFace.Add(TopoDS.Wire(aMkPipe1.LastShape().Reversed()));
+        aMkFace.Add(ShapeCasts.Wire(aMkPipe2.LastShape()));
+        aMkFace.Add(ShapeCasts.Wire(aMkPipe1.LastShape().Reversed()));
         if (!aMkFace.IsDone())
         {
             return false;
         }
-        TopoDS_Face aFace2 = aMkFace.Face();
+        Face aFace2 = aMkFace.Face();
 
         // Assemble tube shell from inner pipe face, outer pipe face, and two annular ring faces
-        TopoDS_Shell aTubeShell = new();
-        BRep_Builder aBuilder = new();
+        Shell aTubeShell = new();
+        BrepBuilder aBuilder = new();
         aBuilder.MakeShell(ref aTubeShell);
 
-        TopExp_Explorer aFaceExp = new(aMkPipe1.Shape(), TopAbs_FACE);
+        Explorer aFaceExp = new(aMkPipe1.Shape(), ShapeType.Face);
         if (aFaceExp.More())
         {
             aBuilder.Add(aTubeShell, aFaceExp.Current().Reversed());
@@ -128,7 +133,7 @@ public class BRepOffsetAPI_MakePipeShellTests
         aMkPipe1.MakeSolid();
         theGasSolid = aMkPipe1.Shape();
 
-        aFaceExp.Init(aMkPipe2.Shape(), TopAbs_FACE);
+        aFaceExp.Init(aMkPipe2.Shape(), ShapeType.Face);
         if (aFaceExp.More())
         {
             aBuilder.Add(aTubeShell, aFaceExp.Current());
@@ -136,7 +141,7 @@ public class BRepOffsetAPI_MakePipeShellTests
 
         aBuilder.Add(aTubeShell, aFace1.Reversed());
         aBuilder.Add(aTubeShell, aFace2);
-        aTubeShell.Closed(BRep_Tool.IsClosed(aTubeShell));
+        aTubeShell.Closed(Tool.IsClosed(aTubeShell));
 
         aBuilder.MakeSolid(ref theWallSolid);
         aBuilder.Add(theWallSolid, aTubeShell);
@@ -155,8 +160,8 @@ public class BRepOffsetAPI_MakePipeShellTests
         const double aMajorRadius = 100.0;
         const double aLength = 200.0;
 
-        bool aBuilt = buildBentTube(aWallThickness, aDia1, aDia2, aMajorRadius, aLength, out TopoDS_Solid aWallSolid,
-                                    out TopoDS_Shape aGasSolid);
+        bool aBuilt = buildBentTube(aWallThickness, aDia1, aDia2, aMajorRadius, aLength, out Solid aWallSolid,
+                                    out Shape aGasSolid);
         Assert.True(aBuilt, "buildBentTube construction failed");
 
         // Validate both solids
@@ -165,9 +170,9 @@ public class BRepOffsetAPI_MakePipeShellTests
 
         // Collect all wire lengths in wallSolid
         List<double> aWireLengths = [];
-        for (TopExp_Explorer anExp = new(aWallSolid, TopAbs_WIRE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(aWallSolid, ShapeType.Wire); anExp.More(); anExp.Next())
         {
-            double aLen = wireLength(TopoDS.Wire(anExp.Current()));
+            double aLen = wireLength(ShapeCasts.Wire(anExp.Current()));
             if (aLen > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 aWireLengths.Add(aLen);

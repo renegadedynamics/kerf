@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -35,15 +36,15 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     private bool mult;
     private bool onS1;
     private bool vtxonS1;
-    private Adaptor3d_HVertex? vS1;
-    private Adaptor2d_Curve2d? arcS1;
+    private HVertex? vS1;
+    private Curve2DAdaptorBase? arcS1;
     private IntSurf_Transition traline1;
     private IntSurf_Transition tra1;
     private double prm1;
     private bool onS2;
     private bool vtxonS2;
-    private Adaptor3d_HVertex? vS2;
-    private Adaptor2d_Curve2d? arcS2;
+    private HVertex? vS2;
+    private Curve2DAdaptorBase? arcS2;
     private IntSurf_Transition traline2;
     private IntSurf_Transition tra2;
     private double prm2;
@@ -106,7 +107,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     /// <summary>
     /// Makes the point a vertex of the restrictions of the first surface (<paramref name="OnFirst"/>) or of the second.
     /// </summary>
-    internal void SetVertex(bool OnFirst, Adaptor3d_HVertex V)
+    internal void SetVertex(bool OnFirst, HVertex V)
     {
         if (OnFirst)
         {
@@ -127,7 +128,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     /// at <paramref name="Param"/>, with the transitions of the line (<paramref name="TLine"/>) and of the arc
     /// (<paramref name="TArc"/>).
     /// </summary>
-    internal void SetArc(bool OnFirst, Adaptor2d_Curve2d A, double Param, in IntSurf_Transition TLine,
+    internal void SetArc(bool OnFirst, Curve2DAdaptorBase A, double Param, in IntSurf_Transition TLine,
                          in IntSurf_Transition TArc)
     {
         if (OnFirst)
@@ -244,7 +245,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     public readonly bool IsVertexOnS1() => vtxonS1;
 
     /// <summary>The vertex on the first surface; throws Standard_DomainError unless <see cref="IsVertexOnS1"/>.</summary>
-    public readonly Adaptor3d_HVertex VertexOnS1()
+    public readonly HVertex VertexOnS1()
     {
         if (!vtxonS1)
         {
@@ -254,7 +255,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     }
 
     /// <summary>The arc of restriction of the first surface; throws Standard_DomainError unless <see cref="IsOnDomS1"/>.</summary>
-    public readonly Adaptor2d_Curve2d ArcOnS1()
+    public readonly Curve2DAdaptorBase ArcOnS1()
     {
         if (!onS1)
         {
@@ -300,7 +301,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     public readonly bool IsVertexOnS2() => vtxonS2;
 
     /// <summary>The vertex on the second surface; throws Standard_DomainError unless <see cref="IsVertexOnS2"/>.</summary>
-    public readonly Adaptor3d_HVertex VertexOnS2()
+    public readonly HVertex VertexOnS2()
     {
         if (!vtxonS2)
         {
@@ -310,7 +311,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     }
 
     /// <summary>The arc of restriction of the second surface; throws Standard_DomainError unless <see cref="IsOnDomS2"/>.</summary>
-    public readonly Adaptor2d_Curve2d ArcOnS2()
+    public readonly Curve2DAdaptorBase ArcOnS2()
     {
         if (!onS2)
         {

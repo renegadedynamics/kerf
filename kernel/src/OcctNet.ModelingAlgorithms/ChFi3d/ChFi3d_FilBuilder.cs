@@ -7,8 +7,13 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BlendFunc_SectionShape;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFi3d_FilletShape;
@@ -17,9 +22,9 @@ using static Occt.ChFiDS_State;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 using static Occt.TopOpeBRepDS_Kind;
 
 namespace Occt;
@@ -37,13 +42,13 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
     private BlendFunc_SectionShape myShape;
 
     /// <summary>Initializes the builder on <paramref name="S"/>.</summary>
-    public ChFi3d_FilBuilder(in TopoDS_Shape S, ChFi3d_FilletShape FShape = ChFi3d_Rational, double Ta = 1.0e-2)
+    public ChFi3d_FilBuilder(in Shape S, ChFi3d_FilletShape FShape = ChFi3d_Rational, double Ta = 1.0e-2)
         : base(S, Ta)
     {
         SetFilletShape(FShape);
     }
 
-    private static double MaxRad(ChFiDS_FilSpine? fsp, in TopoDS_Edge E)
+    private static double MaxRad(ChFiDS_FilSpine? fsp, in Edge E)
     {
         int IE = fsp.Index(E);
 
@@ -156,10 +161,10 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    public void Add(in TopoDS_Edge theE)
+    public void Add(in Edge theE)
     {
-        TopoDS_Edge E = TopoDS.Edge(ToWork(theE)); // the working copy's (OCCT.NET)
-        TopoDS_Face dummy = new();
+        Edge E = ShapeCasts.Edge(ToWork(theE)); // the working copy's (OCCT.NET)
+        Face dummy = new();
 
         if (Contains(E) == 0 && myEFMap.Contains(E))
         {
@@ -168,8 +173,8 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             Sp = new ChFiDS_FilSpine(tolesp);
             ChFiDS_FilSpine? Spine = (Sp as ChFiDS_FilSpine);
 
-            TopoDS_Edge E_wnt = E;
-            E_wnt.Orientation(TopAbs_FORWARD);
+            Edge E_wnt = E;
+            E_wnt.Orientation(Forward);
             Spine.SetEdges(E_wnt);
             if (PerformElement(Spine, -1, dummy))
             {
@@ -182,7 +187,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    public void Add(double Radius, in TopoDS_Edge E)
+    public void Add(double Radius, in Edge E)
     {
         Add(E);
         int IC = Contains(E);
@@ -240,9 +245,9 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    public void SetRadius(double Radius, int IC, in TopoDS_Edge theE)
+    public void SetRadius(double Radius, int IC, in Edge theE)
     {
-        TopoDS_Edge E = TopoDS.Edge(ToWork(theE)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(ToWork(theE)); // the working copy's (OCCT.NET)
         if (IC <= NbElements())
         {
             ChFiDS_FilSpine? fsp = (Value(IC) as ChFiDS_FilSpine);
@@ -252,9 +257,9 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    public void UnSet(int IC, in TopoDS_Edge theE)
+    public void UnSet(int IC, in Edge theE)
     {
-        TopoDS_Edge E = TopoDS.Edge(ToWork(theE)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(ToWork(theE)); // the working copy's (OCCT.NET)
         if (IC <= NbElements())
         {
             ChFiDS_FilSpine? fsp = (Value(IC) as ChFiDS_FilSpine);
@@ -264,9 +269,9 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    public void SetRadius(double Radius, int IC, in TopoDS_Vertex theV)
+    public void SetRadius(double Radius, int IC, in Vertex theV)
     {
-        TopoDS_Vertex V = TopoDS.Vertex(ToWork(theV)); // the working copy's (OCCT.NET)
+        Vertex V = ShapeCasts.Vertex(ToWork(theV)); // the working copy's (OCCT.NET)
         if (IC <= NbElements())
         {
             ChFiDS_FilSpine? fsp = (Value(IC) as ChFiDS_FilSpine);
@@ -276,9 +281,9 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    public void UnSet(int IC, in TopoDS_Vertex theV)
+    public void UnSet(int IC, in Vertex theV)
     {
-        TopoDS_Vertex V = TopoDS.Vertex(ToWork(theV)); // the working copy's (OCCT.NET)
+        Vertex V = ShapeCasts.Vertex(ToWork(theV)); // the working copy's (OCCT.NET)
         if (IC <= NbElements())
         {
             ChFiDS_FilSpine? fsp = (Value(IC) as ChFiDS_FilSpine);
@@ -299,9 +304,9 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    public bool IsConstant(int IC, in TopoDS_Edge theE)
+    public bool IsConstant(int IC, in Edge theE)
     {
-        TopoDS_Edge E = TopoDS.Edge(ToWork(theE)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(ToWork(theE)); // the working copy's (OCCT.NET)
         if (IC <= NbElements())
         {
             ChFiDS_FilSpine? fsp = (Value(IC) as ChFiDS_FilSpine);
@@ -312,9 +317,9 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    public double Radius(int IC, in TopoDS_Edge theE)
+    public double Radius(int IC, in Edge theE)
     {
-        TopoDS_Edge E = TopoDS.Edge(ToWork(theE)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(ToWork(theE)); // the working copy's (OCCT.NET)
         if (IC <= NbElements())
         {
             ChFiDS_FilSpine? fsp = (Value(IC) as ChFiDS_FilSpine);
@@ -325,9 +330,9 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    public bool GetBounds(int IC, in TopoDS_Edge theE, ref double F, ref double L)
+    public bool GetBounds(int IC, in Edge theE, ref double F, ref double L)
     {
-        TopoDS_Edge E = TopoDS.Edge(ToWork(theE)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(ToWork(theE)); // the working copy's (OCCT.NET)
         if (IC <= NbElements())
         {
             ChFiDS_FilSpine? fsp = (Value(IC) as ChFiDS_FilSpine);
@@ -343,9 +348,9 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    public Law_Function? GetLaw(int IC, in TopoDS_Edge theE)
+    public Law_Function? GetLaw(int IC, in Edge theE)
     {
-        TopoDS_Edge E = TopoDS.Edge(ToWork(theE)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(ToWork(theE)); // the working copy's (OCCT.NET)
         if (IC <= NbElements())
         {
             ChFiDS_FilSpine? fsp = (Value(IC) as ChFiDS_FilSpine);
@@ -356,9 +361,9 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    public void SetLaw(int IC, in TopoDS_Edge theE, Law_Function? L)
+    public void SetLaw(int IC, in Edge theE, Law_Function? L)
     {
-        TopoDS_Edge E = TopoDS.Edge(ToWork(theE)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(ToWork(theE)); // the working copy's (OCCT.NET)
         // Check if it is necessary to check borders!
         if (IC <= NbElements())
         {
@@ -423,7 +428,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
     internal override void SimulKPart(ChFiDS_SurfData? SD)
     {
         TopOpeBRepDS_DataStructure DStr = myDS.ChangeDS();
-        Geom_Surface? S = DStr.Surface(SD.Surf()).Surface();
+        Surface? S = DStr.Surface(SD.Surf()).Surface();
         Point2D p1f = 
             SD.InterferenceOnS1().PCurveOnSurf().Value(SD.InterferenceOnS1().FirstParameter());
         Point2D p1l = 
@@ -432,7 +437,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             SD.InterferenceOnS2().PCurveOnSurf().Value(SD.InterferenceOnS2().FirstParameter());
         Point2D p2l = 
             SD.InterferenceOnS2().PCurveOnSurf().Value(SD.InterferenceOnS2().LastParameter());
-        GeomAdaptor_Surface AS = new(S);
+        SurfaceAdaptor AS = new(S);
         NCollection_HArray1<ChFiDS_CircSection>? sec = null;
         double u1 = 0.0, v1 = 0.0, u2 = 0.0, v2 = 0.0;
         SurfaceKind typ = AS.GetType();
@@ -503,7 +508,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    internal override bool SimulSurf(ChFiDS_SurfData? Data, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, int Choix, BRepAdaptor_Surface? S1, Adaptor3d_TopolTool? I1, BRepAdaptor_Surface? S2, Adaptor3d_TopolTool? I2, double TolGuide, ref double First, ref double Last, bool Inside, bool Appro, bool Forward, bool RecOnS1, bool RecOnS2, math_Vector Soldep, ref int intf, ref int intl)
+    internal override bool SimulSurf(ChFiDS_SurfData? Data, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, int Choix, FaceSurfaceAdaptor? S1, TopolTool? I1, FaceSurfaceAdaptor? S2, TopolTool? I2, double TolGuide, ref double First, ref double Last, bool Inside, bool Appro, bool Forward, bool RecOnS1, bool RecOnS2, math_Vector Soldep, ref int intf, ref int intl)
     {
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
         if (fsp is null)
@@ -621,16 +626,16 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             ChFiDS_CommonPoint cp1 = Data.VertexFirstOnS1();
             if (cp1.IsOnArc())
             {
-                TopoDS_Face F1 = S1.Face();
-                TopoDS_Face bid = new();
+                Face F1 = S1.Face();
+                Face bid = new();
                 intf = !SearchFace(Spine, cp1, F1, ref bid) ? 1 : 0;
                 ok = intf != 0;
             }
             ChFiDS_CommonPoint cp2 = Data.VertexFirstOnS2();
             if (cp2.IsOnArc() && !ok)
             {
-                TopoDS_Face F2 = S2.Face();
-                TopoDS_Face bid = new();
+                Face F2 = S2.Face();
+                Face bid = new();
                 intf = !SearchFace(Spine, cp2, F2, ref bid) ? 1 : 0;
             }
         }
@@ -640,16 +645,16 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             ChFiDS_CommonPoint cp1 = Data.VertexLastOnS1();
             if (cp1.IsOnArc())
             {
-                TopoDS_Face F1 = S1.Face();
-                TopoDS_Face bid = new();
+                Face F1 = S1.Face();
+                Face bid = new();
                 intl = !SearchFace(Spine, cp1, F1, ref bid) ? 1 : 0;
                 ok = intl != 0;
             }
             ChFiDS_CommonPoint cp2 = Data.VertexLastOnS2();
             if (cp2.IsOnArc() && !ok)
             {
-                TopoDS_Face F2 = S2.Face();
-                TopoDS_Face bid = new();
+                Face F2 = S2.Face();
+                Face bid = new();
                 intl = !SearchFace(Spine, cp2, F2, ref bid) ? 1 : 0;
             }
         }
@@ -658,7 +663,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    internal override void SimulSurf(ChFiDS_SurfData? Data, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, int Choix, BRepAdaptor_Surface? HS1, Adaptor3d_TopolTool? I1, BRepAdaptor_Curve2d? PC1, BRepAdaptor_Surface? HSref1, BRepAdaptor_Curve2d? PCref1, ref bool Decroch1, BRepAdaptor_Surface? HS2, Adaptor3d_TopolTool? I2, TopAbs_Orientation Or2, double _unused1, double TolGuide, ref double First, ref double Last, bool Inside, bool Appro, bool Forward, bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
+    internal override void SimulSurf(ChFiDS_SurfData? Data, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, int Choix, FaceSurfaceAdaptor? HS1, TopolTool? I1, EdgeCurve2DAdaptor? PC1, FaceSurfaceAdaptor? HSref1, EdgeCurve2DAdaptor? PCref1, ref bool Decroch1, FaceSurfaceAdaptor? HS2, TopolTool? I2, Orientation Or2, double _unused1, double TolGuide, ref double First, ref double Last, bool Inside, bool Appro, bool Forward, bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
     {
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
         if (fsp is null)
@@ -678,7 +683,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         {
             BRepBlend_SurfRstConstRad func = new(HS2, HS1, PC1, HGuide);
             func.Set(HSref1, PCref1);
-            Adaptor3d_CurveOnSurface? HC = new Adaptor3d_CurveOnSurface();
+            CurveOnSurface? HC = new CurveOnSurface();
             HC.Load(PC1, HS1);
             BRepBlend_SurfCurvConstRadInv finvc = new(HS2, HC, HGuide);
             BRepBlend_SurfPointConstRadInv finvp = new(HS2, HGuide);
@@ -687,7 +692,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
             double rad = fsp.Radius();
             int petitchoix = 1;
-            if (Or2 == TopAbs_REVERSED)
+            if (Or2 == Reversed)
             {
                 petitchoix = 3;
             }
@@ -738,14 +743,14 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         else
         {
             BRepBlend_SurfRstEvolRad func = new(HS2, HS1, PC1, HGuide, fsp.Law(HGuide));
-            Adaptor3d_CurveOnSurface? HC = new Adaptor3d_CurveOnSurface();
+            CurveOnSurface? HC = new CurveOnSurface();
             HC.Load(PC1, HS1);
             BRepBlend_SurfCurvEvolRadInv finvc = new(HS2, HC, HGuide, fsp.Law(HGuide));
             BRepBlend_SurfPointEvolRadInv finvp = new(HS2, HGuide, fsp.Law(HGuide));
             BlendFunc_EvolRadInv finv = new(HS2, HSref1, HGuide, fsp.Law(HGuide));
             finv.Set(false, PCref1);
             int petitchoix = 1;
-            if (Or2 == TopAbs_REVERSED)
+            if (Or2 == Reversed)
             {
                 petitchoix = 3;
             }
@@ -807,7 +812,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    internal override void SimulSurf(ChFiDS_SurfData? Data, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, int Choix, BRepAdaptor_Surface? HS1, Adaptor3d_TopolTool? I1, TopAbs_Orientation Or1, BRepAdaptor_Surface? HS2, Adaptor3d_TopolTool? I2, BRepAdaptor_Curve2d? PC2, BRepAdaptor_Surface? HSref2, BRepAdaptor_Curve2d? PCref2, ref bool Decroch2, double _unused2, double TolGuide, ref double First, ref double Last, bool Inside, bool Appro, bool Forward, bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
+    internal override void SimulSurf(ChFiDS_SurfData? Data, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, int Choix, FaceSurfaceAdaptor? HS1, TopolTool? I1, Orientation Or1, FaceSurfaceAdaptor? HS2, TopolTool? I2, EdgeCurve2DAdaptor? PC2, FaceSurfaceAdaptor? HSref2, EdgeCurve2DAdaptor? PCref2, ref bool Decroch2, double _unused2, double TolGuide, ref double First, ref double Last, bool Inside, bool Appro, bool Forward, bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
     {
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
         if (fsp is null)
@@ -827,7 +832,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         {
             BRepBlend_SurfRstConstRad func = new(HS1, HS2, PC2, HGuide);
             func.Set(HSref2, PCref2);
-            Adaptor3d_CurveOnSurface? HC = new Adaptor3d_CurveOnSurface();
+            CurveOnSurface? HC = new CurveOnSurface();
             HC.Load(PC2, HS2);
             BRepBlend_SurfCurvConstRadInv finvc = new(HS1, HC, HGuide);
             BRepBlend_SurfPointConstRadInv finvp = new(HS1, HGuide);
@@ -836,7 +841,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
             double rad = fsp.Radius();
             int petitchoix = 1;
-            if (Or1 == TopAbs_REVERSED)
+            if (Or1 == Reversed)
             {
                 petitchoix = 3;
             }
@@ -887,14 +892,14 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         else
         {
             BRepBlend_SurfRstEvolRad func = new(HS1, HS2, PC2, HGuide, fsp.Law(HGuide));
-            Adaptor3d_CurveOnSurface? HC = new Adaptor3d_CurveOnSurface();
+            CurveOnSurface? HC = new CurveOnSurface();
             HC.Load(PC2, HS2);
             BRepBlend_SurfCurvEvolRadInv finvc = new(HS1, HC, HGuide, fsp.Law(HGuide));
             BRepBlend_SurfPointEvolRadInv finvp = new(HS1, HGuide, fsp.Law(HGuide));
             BlendFunc_EvolRadInv finv = new(HS1, HSref2, HGuide, fsp.Law(HGuide));
             finv.Set(false, PCref2);
             int petitchoix = 1;
-            if (Or1 == TopAbs_REVERSED)
+            if (Or1 == Reversed)
             {
                 petitchoix = 3;
             }
@@ -956,7 +961,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    internal override void SimulSurf(ChFiDS_SurfData? Data, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, int Choix, BRepAdaptor_Surface? HS1, Adaptor3d_TopolTool? I1, BRepAdaptor_Curve2d? PC1, BRepAdaptor_Surface? HSref1, BRepAdaptor_Curve2d? PCref1, ref bool Decroch1, TopAbs_Orientation Or1, BRepAdaptor_Surface? HS2, Adaptor3d_TopolTool? I2, BRepAdaptor_Curve2d? PC2, BRepAdaptor_Surface? HSref2, BRepAdaptor_Curve2d? PCref2, ref bool Decroch2, TopAbs_Orientation Or2, double _unused3, double TolGuide, ref double First, ref double Last, bool Inside, bool Appro, bool Forward, bool RecP1, bool RecRst1, bool RecP2, bool RecRst2, math_Vector Soldep)
+    internal override void SimulSurf(ChFiDS_SurfData? Data, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, int Choix, FaceSurfaceAdaptor? HS1, TopolTool? I1, EdgeCurve2DAdaptor? PC1, FaceSurfaceAdaptor? HSref1, EdgeCurve2DAdaptor? PCref1, ref bool Decroch1, Orientation Or1, FaceSurfaceAdaptor? HS2, TopolTool? I2, EdgeCurve2DAdaptor? PC2, FaceSurfaceAdaptor? HSref2, EdgeCurve2DAdaptor? PCref2, ref bool Decroch2, Orientation Or2, double _unused3, double TolGuide, ref double First, ref double Last, bool Inside, bool Appro, bool Forward, bool RecP1, bool RecRst1, bool RecP2, bool RecRst2, math_Vector Soldep)
     {
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
         if (fsp is null)
@@ -978,9 +983,9 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         {
             BRepBlend_RstRstConstRad func = new(HS1, PC1, HS2, PC2, HGuide);
             func.Set(HSref1, PCref1, HSref2, PCref2);
-            Adaptor3d_CurveOnSurface? HC1 = new Adaptor3d_CurveOnSurface();
+            CurveOnSurface? HC1 = new CurveOnSurface();
             HC1.Load(PC1, HS1);
-            Adaptor3d_CurveOnSurface? HC2 = new Adaptor3d_CurveOnSurface();
+            CurveOnSurface? HC2 = new CurveOnSurface();
             HC2.Load(PC2, HS2);
             BRepBlend_SurfCurvConstRadInv finv1 = new(HSref1, HC2, HGuide);
             BRepBlend_CurvPointRadInv finvp1 = new(HGuide, HC2);
@@ -991,11 +996,11 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             finv2.Set(PCref2);
 
             double rad = fsp.Radius();
-            if (Or1 == TopAbs_REVERSED)
+            if (Or1 == Reversed)
             {
                 ch1 = 3;
             }
-            if (Or2 == TopAbs_REVERSED)
+            if (Or2 == Reversed)
             {
                 ch2 = 3;
             }
@@ -1035,9 +1040,9 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         {
             BRepBlend_RstRstEvolRad func = new(HS1, PC1, HS2, PC2, HGuide, fsp.Law(HGuide));
             func.Set(HSref1, PCref1, HSref2, PCref2);
-            Adaptor3d_CurveOnSurface? HC1 = new Adaptor3d_CurveOnSurface();
+            CurveOnSurface? HC1 = new CurveOnSurface();
             HC1.Load(PC1, HS1);
-            Adaptor3d_CurveOnSurface? HC2 = new Adaptor3d_CurveOnSurface();
+            CurveOnSurface? HC2 = new CurveOnSurface();
             HC2.Load(PC2, HS2);
 
             BRepBlend_SurfCurvEvolRadInv finv1 = new(HSref1, HC2, HGuide, fsp.Law(HGuide));
@@ -1050,11 +1055,11 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
             int ch11 = 1, ch22 = 2;
 
-            if (Or1 == TopAbs_REVERSED)
+            if (Or1 == Reversed)
             {
                 ch11 = 3;
             }
-            if (Or2 == TopAbs_REVERSED)
+            if (Or2 == Reversed)
             {
                 ch22 = 3;
             }
@@ -1107,7 +1112,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    internal override bool PerformFirstSection(ChFiDS_Spine? Spine, ChFiDS_ElSpine? HGuide, int Choix, BRepAdaptor_Surface? S1, BRepAdaptor_Surface? S2, Adaptor3d_TopolTool? I1, Adaptor3d_TopolTool? I2, double Par, math_Vector SolDep, ref TopAbs_State Pos1, ref TopAbs_State Pos2)
+    internal override bool PerformFirstSection(ChFiDS_Spine? Spine, ChFiDS_ElSpine? HGuide, int Choix, FaceSurfaceAdaptor? S1, FaceSurfaceAdaptor? S2, TopolTool? I1, TopolTool? I2, double Par, math_Vector SolDep, ref Containment Pos1, ref Containment Pos2)
     {
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
         if (fsp is null)
@@ -1135,7 +1140,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    internal override bool PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, int Choix, BRepAdaptor_Surface? S1, Adaptor3d_TopolTool? I1, BRepAdaptor_Surface? S2, Adaptor3d_TopolTool? I2, double MaxStep, double Fleche, double TolGuide, ref double First, ref double Last, bool Inside, bool Appro, bool Forward, bool RecOnS1, bool RecOnS2, math_Vector Soldep, ref int intf, ref int intl)
+    internal override bool PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, int Choix, FaceSurfaceAdaptor? S1, TopolTool? I1, FaceSurfaceAdaptor? S2, TopolTool? I2, double MaxStep, double Fleche, double TolGuide, ref double First, ref double Last, bool Inside, bool Appro, bool Forward, bool RecOnS1, bool RecOnS2, math_Vector Soldep, ref int intf, ref int intl)
     {
         ChFiDS_SurfData? Data = SeqData[1];
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
@@ -1145,7 +1150,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         }
         bool gd1 = false, gd2 = false, gf1 = false, gf2 = false, maybesingular = false;
         BRepBlend_Line? lin = null;
-        TopAbs_Orientation Or = S1.Face().Orientation();
+        Orientation Or = S1.Face().Orientation();
         double PFirst = First;
         if (intf != 0)
         {
@@ -1221,7 +1226,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    internal override void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, int Choix, BRepAdaptor_Surface? HS1, Adaptor3d_TopolTool? I1, BRepAdaptor_Curve2d? PC1, BRepAdaptor_Surface? HSref1, BRepAdaptor_Curve2d? PCref1, ref bool Decroch1, BRepAdaptor_Surface? HS2, Adaptor3d_TopolTool? I2, TopAbs_Orientation Or2, double MaxStep, double Fleche, double TolGuide, ref double First, ref double Last, bool Inside, bool Appro, bool Forward, bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
+    internal override void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, int Choix, FaceSurfaceAdaptor? HS1, TopolTool? I1, EdgeCurve2DAdaptor? PC1, FaceSurfaceAdaptor? HSref1, EdgeCurve2DAdaptor? PCref1, ref bool Decroch1, FaceSurfaceAdaptor? HS2, TopolTool? I2, Orientation Or2, double MaxStep, double Fleche, double TolGuide, ref double First, ref double Last, bool Inside, bool Appro, bool Forward, bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
     {
         ChFiDS_SurfData? Data = SeqData[1];
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
@@ -1237,7 +1242,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         {
             BRepBlend_SurfRstConstRad func = new(HS2, HS1, PC1, HGuide);
             func.Set(HSref1, PCref1);
-            Adaptor3d_CurveOnSurface? HC = new Adaptor3d_CurveOnSurface();
+            CurveOnSurface? HC = new CurveOnSurface();
             HC.Load(PC1, HS1);
             BRepBlend_SurfCurvConstRadInv finvc = new(HS2, HC, HGuide);
             BRepBlend_SurfPointConstRadInv finvp = new(HS2, HGuide);
@@ -1246,7 +1251,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
             double rad = fsp.Radius();
             int petitchoix = 1;
-            if (Or2 == TopAbs_REVERSED)
+            if (Or2 == Reversed)
             {
                 petitchoix = 3;
             }
@@ -1267,7 +1272,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
                 Spine.SetErrorStatus(ChFiDS_WalkingFailure);
                 throw new FailureException("PerformSurf : Failed processing!");
             }
-            TopAbs_Orientation Or = HS2.Face().Orientation();
+            Orientation Or = HS2.Face().Orientation();
             done = CompleteData(Data, func, lin, HS1, HS2, Or, true);
             if (!done)
             {
@@ -1279,14 +1284,14 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         {
             BRepBlend_SurfRstEvolRad func = new(HS2, HS1, PC1, HGuide, fsp.Law(HGuide));
             func.Set(HSref1, PCref1);
-            Adaptor3d_CurveOnSurface? HC = new Adaptor3d_CurveOnSurface();
+            CurveOnSurface? HC = new CurveOnSurface();
             HC.Load(PC1, HS1);
             BRepBlend_SurfCurvEvolRadInv finvc = new(HS2, HC, HGuide, fsp.Law(HGuide));
             BRepBlend_SurfPointEvolRadInv finvp = new(HS2, HGuide, fsp.Law(HGuide));
             BlendFunc_EvolRadInv finv = new(HS2, HSref1, HGuide, fsp.Law(HGuide));
             finv.Set(false, PCref1);
             int petitchoix = 1;
-            if (Or2 == TopAbs_REVERSED)
+            if (Or2 == Reversed)
             {
                 petitchoix = 3;
             }
@@ -1306,7 +1311,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
                 Spine.SetErrorStatus(ChFiDS_WalkingFailure);
                 throw new FailureException("PerformSurf : Failed processing!");
             }
-            TopAbs_Orientation Or = HS2.Face().Orientation();
+            Orientation Or = HS2.Face().Orientation();
             done = CompleteData(Data, func, lin, HS1, HS2, Or, true);
             if (!done)
             {
@@ -1322,7 +1327,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    internal override void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, int Choix, BRepAdaptor_Surface? HS1, Adaptor3d_TopolTool? I1, TopAbs_Orientation Or1, BRepAdaptor_Surface? HS2, Adaptor3d_TopolTool? I2, BRepAdaptor_Curve2d? PC2, BRepAdaptor_Surface? HSref2, BRepAdaptor_Curve2d? PCref2, ref bool Decroch2, double MaxStep, double Fleche, double TolGuide, ref double First, ref double Last, bool Inside, bool Appro, bool Forward, bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
+    internal override void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, int Choix, FaceSurfaceAdaptor? HS1, TopolTool? I1, Orientation Or1, FaceSurfaceAdaptor? HS2, TopolTool? I2, EdgeCurve2DAdaptor? PC2, FaceSurfaceAdaptor? HSref2, EdgeCurve2DAdaptor? PCref2, ref bool Decroch2, double MaxStep, double Fleche, double TolGuide, ref double First, ref double Last, bool Inside, bool Appro, bool Forward, bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
     {
         ChFiDS_SurfData? Data = SeqData[1];
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
@@ -1338,7 +1343,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         {
             BRepBlend_SurfRstConstRad func = new(HS1, HS2, PC2, HGuide);
             func.Set(HSref2, PCref2);
-            Adaptor3d_CurveOnSurface? HC = new Adaptor3d_CurveOnSurface();
+            CurveOnSurface? HC = new CurveOnSurface();
             HC.Load(PC2, HS2);
             BRepBlend_SurfCurvConstRadInv finvc = new(HS1, HC, HGuide);
             BRepBlend_SurfPointConstRadInv finvp = new(HS1, HGuide);
@@ -1347,7 +1352,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
             double rad = fsp.Radius();
             int petitchoix = 1;
-            if (Or1 == TopAbs_REVERSED)
+            if (Or1 == Reversed)
             {
                 petitchoix = 3;
             }
@@ -1368,7 +1373,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
                 Spine.SetErrorStatus(ChFiDS_WalkingFailure);
                 throw new FailureException("PerformSurf : Failed processing!");
             }
-            TopAbs_Orientation Or = HS1.Face().Orientation();
+            Orientation Or = HS1.Face().Orientation();
             done = CompleteData(Data, func, lin, HS1, HS2, Or, false);
             if (!done)
             {
@@ -1380,14 +1385,14 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         {
             BRepBlend_SurfRstEvolRad func = new(HS1, HS2, PC2, HGuide, fsp.Law(HGuide));
             func.Set(HSref2, PCref2);
-            Adaptor3d_CurveOnSurface? HC = new Adaptor3d_CurveOnSurface();
+            CurveOnSurface? HC = new CurveOnSurface();
             HC.Load(PC2, HS2);
             BRepBlend_SurfCurvEvolRadInv finvc = new(HS1, HC, HGuide, fsp.Law(HGuide));
             BRepBlend_SurfPointEvolRadInv finvp = new(HS1, HGuide, fsp.Law(HGuide));
             BlendFunc_EvolRadInv finv = new(HS1, HSref2, HGuide, fsp.Law(HGuide));
             finv.Set(false, PCref2);
             int petitchoix = 1;
-            if (Or1 == TopAbs_REVERSED)
+            if (Or1 == Reversed)
             {
                 petitchoix = 3;
             }
@@ -1408,7 +1413,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
                 Spine.SetErrorStatus(ChFiDS_WalkingFailure);
                 throw new FailureException("PerformSurf : Failed processing!");
             }
-            TopAbs_Orientation Or = HS1.Face().Orientation();
+            Orientation Or = HS1.Face().Orientation();
             done = CompleteData(Data, func, lin, HS1, HS2, Or, false);
             if (!done)
             {
@@ -1424,7 +1429,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    internal override void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, int Choix, BRepAdaptor_Surface? HS1, Adaptor3d_TopolTool? I1, BRepAdaptor_Curve2d? PC1, BRepAdaptor_Surface? HSref1, BRepAdaptor_Curve2d? PCref1, ref bool Decroch1, TopAbs_Orientation Or1, BRepAdaptor_Surface? HS2, Adaptor3d_TopolTool? I2, BRepAdaptor_Curve2d? PC2, BRepAdaptor_Surface? HSref2, BRepAdaptor_Curve2d? PCref2, ref bool Decroch2, TopAbs_Orientation Or2, double MaxStep, double Fleche, double TolGuide, ref double First, ref double Last, bool Inside, bool Appro, bool Forward, bool RecP1, bool RecRst1, bool RecP2, bool RecRst2, math_Vector Soldep)
+    internal override void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, int Choix, FaceSurfaceAdaptor? HS1, TopolTool? I1, EdgeCurve2DAdaptor? PC1, FaceSurfaceAdaptor? HSref1, EdgeCurve2DAdaptor? PCref1, ref bool Decroch1, Orientation Or1, FaceSurfaceAdaptor? HS2, TopolTool? I2, EdgeCurve2DAdaptor? PC2, FaceSurfaceAdaptor? HSref2, EdgeCurve2DAdaptor? PCref2, ref bool Decroch2, Orientation Or2, double MaxStep, double Fleche, double TolGuide, ref double First, ref double Last, bool Inside, bool Appro, bool Forward, bool RecP1, bool RecRst1, bool RecP2, bool RecRst2, math_Vector Soldep)
     {
         ChFiDS_SurfData? Data = SeqData[1];
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
@@ -1440,9 +1445,9 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         {
             BRepBlend_RstRstConstRad func = new(HS1, PC1, HS2, PC2, HGuide);
             func.Set(HSref1, PCref1, HSref2, PCref2);
-            Adaptor3d_CurveOnSurface? HC1 = new Adaptor3d_CurveOnSurface();
+            CurveOnSurface? HC1 = new CurveOnSurface();
             HC1.Load(PC1, HS1);
-            Adaptor3d_CurveOnSurface? HC2 = new Adaptor3d_CurveOnSurface();
+            CurveOnSurface? HC2 = new CurveOnSurface();
             HC2.Load(PC2, HS2);
             BRepBlend_SurfCurvConstRadInv finv1 = new(HSref1, HC2, HGuide);
             BRepBlend_CurvPointRadInv finvp1 = new(HGuide, HC2);
@@ -1454,11 +1459,11 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
             int ch1 = 1, ch2 = 2;
             double rad = fsp.Radius();
-            if (Or1 == TopAbs_REVERSED)
+            if (Or1 == Reversed)
             {
                 ch1 = 3;
             }
-            if (Or2 == TopAbs_REVERSED)
+            if (Or2 == Reversed)
             {
                 ch2 = 3;
             }
@@ -1478,7 +1483,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
                 Spine.SetErrorStatus(ChFiDS_WalkingFailure);
                 throw new FailureException("PerformSurf : Failed processing!");
             }
-            TopAbs_Orientation Or = HS1.Face().Orientation();
+            Orientation Or = HS1.Face().Orientation();
             done = CompleteData(Data, func, lin, HS1, HS2, Or);
             if (!done)
             {
@@ -1490,9 +1495,9 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         {
             BRepBlend_RstRstEvolRad func = new(HS1, PC1, HS2, PC2, HGuide, fsp.Law(HGuide));
             func.Set(HSref1, PCref1, HSref2, PCref2);
-            Adaptor3d_CurveOnSurface? HC1 = new Adaptor3d_CurveOnSurface();
+            CurveOnSurface? HC1 = new CurveOnSurface();
             HC1.Load(PC1, HS1);
-            Adaptor3d_CurveOnSurface? HC2 = new Adaptor3d_CurveOnSurface();
+            CurveOnSurface? HC2 = new CurveOnSurface();
             HC2.Load(PC2, HS2);
 
             BRepBlend_SurfCurvEvolRadInv finv1 = new(HSref1, HC2, HGuide, fsp.Law(HGuide));
@@ -1505,11 +1510,11 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
             int ch1 = 1, ch2 = 2;
 
-            if (Or1 == TopAbs_REVERSED)
+            if (Or1 == Reversed)
             {
                 ch1 = 3;
             }
-            if (Or2 == TopAbs_REVERSED)
+            if (Or2 == Reversed)
             {
                 ch2 = 3;
             }
@@ -1530,7 +1535,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
                 Spine.SetErrorStatus(ChFiDS_WalkingFailure);
                 throw new FailureException("PerformSurf : Failed processing!");
             }
-            TopAbs_Orientation Or = HS1.Face().Orientation();
+            Orientation Or = HS1.Face().Orientation();
             done = CompleteData(Data, func, lin, HS1, HS2, Or);
             if (!done)
             {
@@ -1560,10 +1565,10 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         Blend_Point P = new();
 
         ISurf = @ref.Surf();
-        Geom_Surface? Surf = DStr.Surface(ISurf).Surface();
+        Surface? Surf = DStr.Surface(ISurf).Surface();
         Surf.Bounds(out UFirst, out ULast, out VFirst, out VLast);
-        Geom_Curve? Courbe1 = Surf.UIso(UFirst);
-        Geom_Curve? Courbe2 = Surf.UIso(ULast);
+        Curve3D? Courbe1 = Surf.UIso(UFirst);
+        Curve3D? Courbe2 = Surf.UIso(ULast);
         ChFi3d_SearchSing Fonc = new(Courbe1, Courbe2);
 
         NCollection_Sequence<double> LesVi = new();
@@ -1703,7 +1708,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    internal override void ExtentOneCorner(in TopoDS_Vertex V, ChFiDS_Stripe? S)
+    internal override void ExtentOneCorner(in Vertex V, ChFiDS_Stripe? S)
     {
         // review by using the data at end of fillets (point, radius, normal
         // to the faces and tangents of the guideline).
@@ -1736,7 +1741,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    internal override void ExtentTwoCorner(in TopoDS_Vertex V, NCollection_List<ChFiDS_Stripe> LS)
+    internal override void ExtentTwoCorner(in Vertex V, NCollection_List<ChFiDS_Stripe> LS)
     {
         // Review by using the data at end of fillets (point, radius, normal
         // to faces and tangents to the guideline.
@@ -1760,7 +1765,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             }
             else
             {
-                TopoDS_Edge E = ChFi3d_EdgeFromV1(V, itel.Value(), out Sens);
+                Edge E = ChFi3d_EdgeFromV1(V, itel.Value(), out Sens);
                 rad = MaxRad(fsp, E);
                 /*
                 IE = ChFi3d_IndexOfSurfData(V,itel.Value(),out Sens);
@@ -1808,7 +1813,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    internal override void ExtentThreeCorner(in TopoDS_Vertex V, NCollection_List<ChFiDS_Stripe> LS)
+    internal override void ExtentThreeCorner(in Vertex V, NCollection_List<ChFiDS_Stripe> LS)
     {
         // Review by using the data at end of fillets (point, radius, normal
         // to faces and tangents to the guideline.
@@ -1859,24 +1864,24 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
     internal override void SetRegul()
     {
         NCollection_List<ChFiDS_Regul>.Iterator it = new();
-        NCollection_List<TopoDS_Shape>.Iterator itc = new();
-        NCollection_List<TopoDS_Shape>.Iterator its1 = new();
-        NCollection_List<TopoDS_Shape>.Iterator its2 = new();
-        BRep_Builder B = new();
+        NCollection_List<Shape>.Iterator itc = new();
+        NCollection_List<Shape>.Iterator its1 = new();
+        NCollection_List<Shape>.Iterator its2 = new();
+        BrepBuilder B = new();
         for (it.Initialize(myRegul); it.More(); it.Next())
         {
             ChFiDS_Regul reg = it.Value();
             itc.Initialize(myCoup.NewEdges(reg.Curve()));
             if (itc.More())
             {
-                TopoDS_Edge E = TopoDS.Edge(itc.Value());
+                Edge E = ShapeCasts.Edge(itc.Value());
                 if (reg.IsSurface1())
                 {
                     its1.Initialize(myCoup.NewFaces(reg.S1()));
                 }
                 else
                 {
-                    its1.Initialize(myCoup.Merged(myDS.Shape(reg.S1()), TopAbs_IN));
+                    its1.Initialize(myCoup.Merged(myDS.Shape(reg.S1()), In));
                 }
                 if (reg.IsSurface2())
                 {
@@ -1884,12 +1889,12 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
                 }
                 else
                 {
-                    its2.Initialize(myCoup.Merged(myDS.Shape(reg.S2()), TopAbs_IN));
+                    its2.Initialize(myCoup.Merged(myDS.Shape(reg.S2()), In));
                 }
                 if (its1.More() && its2.More())
                 {
-                    TopoDS_Face F1 = TopoDS.Face(its1.Value());
-                    TopoDS_Face F2 = TopoDS.Face(its2.Value());
+                    Face F1 = ShapeCasts.Face(its1.Value());
+                    Face F2 = ShapeCasts.Face(its2.Value());
                     Continuity cont = ChFi3d_evalconti(E, F1, F2);
                     B.Continuity(E, F1, F2, cont);
                 }

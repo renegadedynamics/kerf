@@ -1,8 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -45,22 +46,22 @@ public class GeomIntTests
     {
         GeomInt_ParameterAndOrientation aDef = new();
         Assert.Equal(0.0, aDef.Parameter());
-        Assert.Equal(TopAbs_FORWARD, aDef.Orientation1());
-        Assert.Equal(TopAbs_FORWARD, aDef.Orientation2());
+        Assert.Equal(Forward, aDef.Orientation1());
+        Assert.Equal(Forward, aDef.Orientation2());
         Assert.Equal(default(GeomInt_ParameterAndOrientation), aDef);
 
-        GeomInt_ParameterAndOrientation aP = new(2.5, TopAbs_REVERSED, TopAbs_INTERNAL);
+        GeomInt_ParameterAndOrientation aP = new(2.5, Reversed, Internal);
         Assert.Equal(2.5, aP.Parameter());
-        Assert.Equal(TopAbs_REVERSED, aP.Orientation1());
-        Assert.Equal(TopAbs_INTERNAL, aP.Orientation2());
+        Assert.Equal(Reversed, aP.Orientation1());
+        Assert.Equal(Internal, aP.Orientation2());
 
-        GeomInt_ParameterAndOrientation aQ = aP.WithOrientation1(TopAbs_FORWARD).WithOrientation2(TopAbs_EXTERNAL);
-        Assert.Equal(TopAbs_REVERSED, aP.Orientation1()); // the original is unchanged
-        Assert.Equal(new GeomInt_ParameterAndOrientation(2.5, TopAbs_FORWARD, TopAbs_EXTERNAL), aQ);
+        GeomInt_ParameterAndOrientation aQ = aP.WithOrientation1(Forward).WithOrientation2(External);
+        Assert.Equal(Reversed, aP.Orientation1()); // the original is unchanged
+        Assert.Equal(new GeomInt_ParameterAndOrientation(2.5, Forward, External), aQ);
         Assert.True(aQ != aP);
 
-        aP.SetOrientation2(TopAbs_FORWARD);
-        Assert.Equal(TopAbs_FORWARD, aP.Orientation2());
+        aP.SetOrientation2(Forward);
+        Assert.Equal(Forward, aP.Orientation2());
         Assert.Contains("2.5", aP.ToString());
     }
 
@@ -69,17 +70,17 @@ public class GeomIntTests
     {
         IntPatch_WLine aW = new(IntPatch_WLineTests.StraightLine(5), false);
 
-        Geom_BSplineCurve aC = Assert.IsType<Geom_BSplineCurve>(GeomInt_IntSS.MakeBSpline(aW, 2, 4));
+        BSplineCurve3D aC = Assert.IsType<BSplineCurve3D>(GeomInt_IntSS.MakeBSpline(aW, 2, 4));
         Assert.Equal(1, aC.Degree());
-        Assert.Equal(3, aC.NbPoles());
+        Assert.Equal(3, aC.PoleCount);
         Assert.Equal(new Point3D(1, 0, 0), aC.Pole(1));
         Assert.Equal(new Point3D(3, 0, 0), aC.Pole(3));
         Assert.Equal([0.0, 1.0, 2.0], aC.Knots().AsSpan().ToArray());
         Assert.Equal([2, 1, 2], aC.Multiplicities().AsSpan().ToArray());
         Assert.False(aC.IsFrozen);
 
-        Geom2d_BSplineCurve aC1 = GeomInt_IntSS.MakeBSpline2d(aW, 2, 4, true);
-        Geom2d_BSplineCurve aC2 = GeomInt_IntSS.MakeBSpline2d(aW, 2, 4, false);
+        BSplineCurve2D aC1 = GeomInt_IntSS.MakeBSpline2d(aW, 2, 4, true);
+        BSplineCurve2D aC2 = GeomInt_IntSS.MakeBSpline2d(aW, 2, 4, false);
         Assert.Equal(new Point2D(1, 0), aC1.Pole(1));
         Assert.Equal(new Point2D(3, 0), aC1.Pole(3));
         Assert.Equal(new Point2D(1, 1), aC2.Pole(1));
@@ -90,20 +91,20 @@ public class GeomIntTests
     [Fact]
     public void BuildPCurves_ProjectsALineOnAPlane()
     {
-        Geom_Plane aPlane = new(new Plane3D());
-        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 1, 0));
+        PlaneSurface aPlane = new(new Plane3D());
+        LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 1, 0));
         double aTol = 1.0e-7;
-        Geom2d_Curve? aC2d = null;
+        Curve2D? aC2d = null;
         GeomInt_IntSS.BuildPCurves(0.0, 1.0, ref aTol, aPlane, aLine, ref aC2d);
         Assert.NotNull(aC2d);
         double s = 0.5 / Math.Sqrt(2.0);
         Assert.True(aC2d.Value(0.5).IsEqual(new Point2D(s, s), Tol));
 
         // A 2D curve already given, or no surface: nothing changes.
-        Geom2d_Curve? aSame = aC2d;
+        Curve2D? aSame = aC2d;
         GeomInt_IntSS.BuildPCurves(0.0, 1.0, ref aTol, aPlane, aLine, ref aSame);
         Assert.Same(aC2d, aSame);
-        Geom2d_Curve? aNone = null;
+        Curve2D? aNone = null;
         GeomInt_IntSS.BuildPCurves(0.0, 1.0, ref aTol, null, aLine, ref aNone);
         Assert.Null(aNone);
     }
@@ -112,13 +113,13 @@ public class GeomIntTests
     public void BuildPCurves_TinyRangeIsASegment()
     {
         // A range shorter than 2e-9: the ends projected by Extrema_ExtPS make a 2-pole B-spline on [f, l].
-        Geom_Plane aPlane = new(new Plane3D());
-        Geom_Line aLine = new(new Point3D(1, 2, 0), new Direction3D(1, 0, 0));
+        PlaneSurface aPlane = new(new Plane3D());
+        LineCurve3D aLine = new(new Point3D(1, 2, 0), new Direction3D(1, 0, 0));
         double aTol = 1.0e-7;
-        Geom2d_Curve? aC2d = null;
+        Curve2D? aC2d = null;
         GeomInt_IntSS.BuildPCurves(0.0, 1.0e-9, -10, 10, -10, 10, ref aTol, aPlane, aLine, ref aC2d);
-        Geom2d_BSplineCurve aBS = Assert.IsType<Geom2d_BSplineCurve>(aC2d);
-        Assert.Equal(2, aBS.NbPoles());
+        BSplineCurve2D aBS = Assert.IsType<BSplineCurve2D>(aC2d);
+        Assert.Equal(2, aBS.PoleCount);
         Assert.Equal([0.0, 1.0e-9], aBS.Knots().AsSpan().ToArray());
         Assert.True(aBS.Pole(1).IsEqual(new Point2D(1, 2), 1.0e-9));
         Assert.Equal(1.0e-7, aTol, 1.0e-12);
@@ -128,10 +129,10 @@ public class GeomIntTests
     public void BuildPCurves_MovesIntoThePeriodicRange()
     {
         // A circle on a cylinder, projected on [0, π], then moved by a period into u in [2π, 4π].
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(), 1.0);
-        Geom_Circle aCirc = new(new Frame3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), 1.0);
+        CylindricalSurface aCyl = new(new CoordinateSystem(), 1.0);
+        CircleCurve3D aCirc = new(new Frame3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), 1.0);
         double aTol = 1.0e-7;
-        Geom2d_Curve? aC2d = null;
+        Curve2D? aC2d = null;
         GeomInt_IntSS.BuildPCurves(0.0, Math.PI, 2.0 * Math.PI, 4.0 * Math.PI, -10, 10, ref aTol, aCyl, aCirc,
                                    ref aC2d);
         Assert.NotNull(aC2d);
@@ -144,7 +145,7 @@ public class GeomIntTests
     public void TrimILineOnSurfBoundaries_SortsTheCrossings()
     {
         // A horizontal 2D line through the box [0, 1] x [0, 1]: it crosses u = 0 at 1 and u = 1 at 2.
-        Geom2d_Line aL = new(new Point2D(-1, 0.5), new Direction2D(1, 0));
+        LineCurve2D aL = new(new Point2D(-1, 0.5), new Direction2D(1, 0));
         Box2d aBox1 = new(), aBox2 = new();
         aBox1.Add(new Point2D(0, 0));
         aBox1.Add(new Point2D(1, 1));
@@ -187,21 +188,21 @@ public class GeomIntTests
         Assert.Equal(2.0 * Math.PI, GeomInt_LineTool.LastParameter(aCirc));
     }
 
-    private static (GeomInt_LineConstructor, GeomAdaptor_Surface, GeomAdaptor_Surface) PlanePlane()
+    private static (GeomInt_LineConstructor, SurfaceAdaptor, SurfaceAdaptor) PlanePlane()
     {
         // The same plane twice: the first bounded by [0, 10] x [-1, 1], the second by [0, 4] x [0, 2].
-        Geom_Plane aPlane = new(new Plane3D());
-        GeomAdaptor_Surface aHS1 = new(aPlane, 0, 10, -1, 1);
-        GeomAdaptor_Surface aHS2 = new(aPlane, 0, 4, 0, 2);
+        PlaneSurface aPlane = new(new Plane3D());
+        SurfaceAdaptor aHS1 = new(aPlane, 0, 10, -1, 1);
+        SurfaceAdaptor aHS2 = new(aPlane, 0, 4, 0, 2);
         GeomInt_LineConstructor aLC = new();
-        aLC.Load(new Adaptor3d_TopolTool(aHS1), new Adaptor3d_TopolTool(aHS2), aHS1, aHS2);
+        aLC.Load(new TopolTool(aHS1), new TopolTool(aHS2), aHS1, aHS2);
         return (aLC, aHS1, aHS2);
     }
 
     [Fact]
     public void LineConstructor_KeepsTheWalkingPartsInsideBothDomains()
     {
-        (GeomInt_LineConstructor aLC, GeomAdaptor_Surface aHS1, GeomAdaptor_Surface aHS2) = PlanePlane();
+        (GeomInt_LineConstructor aLC, SurfaceAdaptor aHS1, SurfaceAdaptor aHS2) = PlanePlane();
         Assert.False(aLC.IsDone());
         Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aLC.NbParts());
 
@@ -248,12 +249,12 @@ public class GeomIntTests
     {
         // The unit circle in z = 0 on a cylinder of radius 1 (v in [-1, 1]) and on the plane z = 0 bounded by
         // x in [0, 2]: vertices at π/2 and 3π/2 (given in that order), the arc [3π/2, 5π/2] is kept.
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(), 1.0);
-        Geom_Plane aPlane = new(new Plane3D());
-        GeomAdaptor_Surface aHS1 = new(aCyl, 0, 2.0 * Math.PI, -1, 1);
-        GeomAdaptor_Surface aHS2 = new(aPlane, 0, 2, -2, 2);
+        CylindricalSurface aCyl = new(new CoordinateSystem(), 1.0);
+        PlaneSurface aPlane = new(new Plane3D());
+        SurfaceAdaptor aHS1 = new(aCyl, 0, 2.0 * Math.PI, -1, 1);
+        SurfaceAdaptor aHS2 = new(aPlane, 0, 2, -2, 2);
         GeomInt_LineConstructor aLC = new();
-        aLC.Load(new Adaptor3d_TopolTool(aHS1), new Adaptor3d_TopolTool(aHS2), aHS1, aHS2);
+        aLC.Load(new TopolTool(aHS1), new TopolTool(aHS2), aHS1, aHS2);
 
         IntPatch_GLine aG = new(new Circle3D(new Frame3D(), 1.0), false);
         IntPatch_Point aV1 = new();

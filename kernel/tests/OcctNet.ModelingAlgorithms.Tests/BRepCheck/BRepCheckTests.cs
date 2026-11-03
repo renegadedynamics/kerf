@@ -1,9 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.BRepCheck_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -12,12 +16,12 @@ public class BRepCheckTests
 {
     private static List<BRepCheck_Status> ToList(NCollection_List<BRepCheck_Status> theList) => [.. theList];
 
-    private static TopoDS_Shell ShellOf(params TopoDS_Shape[] theFaces)
+    private static Shell ShellOf(params Shape[] theFaces)
     {
-        var aB = new BRep_Builder();
-        TopoDS_Shell aShell = new();
+        var aB = new BrepBuilder();
+        Shell aShell = new();
         aB.MakeShell(ref aShell);
-        foreach (TopoDS_Shape aF in theFaces)
+        foreach (Shape aF in theFaces)
         {
             aB.Add(aShell, aF);
         }
@@ -25,19 +29,19 @@ public class BRepCheckTests
         return aShell;
     }
 
-    private static TopoDS_Solid SolidOf(in TopoDS_Shell theShell)
+    private static Solid SolidOf(in Shell theShell)
     {
-        var aB = new BRep_Builder();
-        TopoDS_Solid aSolid = new();
+        var aB = new BrepBuilder();
+        Solid aSolid = new();
         aB.MakeSolid(ref aSolid);
         aB.Add(aSolid, theShell);
         return aSolid;
     }
 
-    private static List<TopoDS_Shape> Faces(in TopoDS_Shape theShape)
+    private static List<Shape> Faces(in Shape theShape)
     {
-        var aFaces = new List<TopoDS_Shape>();
-        for (var anExp = new TopExp_Explorer(theShape, TopAbs_FACE); anExp.More(); anExp.Next())
+        var aFaces = new List<Shape>();
+        for (var anExp = new Explorer(theShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
             aFaces.Add(anExp.Current());
         }
@@ -45,24 +49,24 @@ public class BRepCheckTests
         return aFaces;
     }
 
-    private static TopoDS_Shell BoxShell(double dx = 1, double dy = 1, double dz = 1)
-        => TopoDS.Shell(new TopoDS_Iterator(TestShapes.Box(dx, dy, dz)).Value());
+    private static Shell BoxShell(double dx = 1, double dy = 1, double dz = 1)
+        => ShapeCasts.Shell(new Iterator(TestShapes.Box(dx, dy, dz)).Value());
 
     /// <summary>
     /// Two unit boxes, [0, 1]^3 and [1, 2] x [1, 2] x [0, 1], sharing the vertical edge x = y = 1: twelve faces in
     /// one shell, four of them on the shared edge.
     /// </summary>
-    private static TopoDS_Shell TwoBoxesSharingAnEdge()
+    private static Shell TwoBoxesSharingAnEdge()
     {
         Point3D[] aPoints =
         [
             new(0, 0, 0), new(1, 0, 0), new(0, 1, 0), new(1, 1, 0), new(0, 0, 1), new(1, 0, 1), new(0, 1, 1), new(1, 1, 1),
             new(2, 1, 0), new(1, 2, 0), new(2, 2, 0), new(2, 1, 1), new(1, 2, 1), new(2, 2, 1),
         ];
-        TopoDS_Vertex[] aV = [.. aPoints.Select(p => TestShapes.Vertex(p))];
+        Vertex[] aV = [.. aPoints.Select(p => TestShapes.Vertex(p))];
         // box B's corners in TestShapes.Box's numbering (bit 0: x, bit 1: y, bit 2: z)
         int[] aB = [3, 8, 9, 10, 7, 11, 12, 13];
-        var anEdges = new Dictionary<(int, int), TopoDS_Edge>();
+        var anEdges = new Dictionary<(int, int), Edge>();
         (int[] Indices, Direction3D Normal)[] aFaces =
         [
             ([0, 2, 3, 1], new Direction3D(0, 0, -1)),
@@ -72,7 +76,7 @@ public class BRepCheckTests
             ([0, 4, 6, 2], new Direction3D(-1, 0, 0)),
             ([1, 3, 7, 5], new Direction3D(1, 0, 0)),
         ];
-        var aShellFaces = new List<TopoDS_Shape>();
+        var aShellFaces = new List<Shape>();
         foreach ((int[] anIndices, Direction3D aNormal) in aFaces)
         {
             aShellFaces.Add(TestShapes.PolygonFace(aV, aNormal, anEdges, anIndices));
@@ -120,26 +124,26 @@ public class BRepCheckTests
     [Fact]
     public void PrecCurve_EllipseUsesItsLargestNumber()
     {
-        Assert.Equal(RealEpsilon(), BRepCheck.PrecCurve(new GeomAdaptor_Curve(new Geom_Line(new Point3D(500, 0, 0), new Direction3D(1, 0, 0)))));
-        var anEllipse = new Geom_Ellipse(new Frame3D(new Point3D(-300, 20, 1), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 10, 5);
-        Assert.Equal(Epsilon(300.0), BRepCheck.PrecCurve(new GeomAdaptor_Curve(anEllipse)));
-        var aBig = new Geom_Ellipse(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 4000, 5);
-        Assert.Equal(Epsilon(4000.0), BRepCheck.PrecCurve(new GeomAdaptor_Curve(aBig)));
+        Assert.Equal(RealEpsilon(), BRepCheck.PrecCurve(new CurveAdaptor(new LineCurve3D(new Point3D(500, 0, 0), new Direction3D(1, 0, 0)))));
+        var anEllipse = new EllipseCurve3D(new Frame3D(new Point3D(-300, 20, 1), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 10, 5);
+        Assert.Equal(Epsilon(300.0), BRepCheck.PrecCurve(new CurveAdaptor(anEllipse)));
+        var aBig = new EllipseCurve3D(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 4000, 5);
+        Assert.Equal(Epsilon(4000.0), BRepCheck.PrecCurve(new CurveAdaptor(aBig)));
     }
 
     [Fact]
     public void PrecSurface_ConeUsesItsLargestNumber()
     {
-        Assert.Equal(RealEpsilon(), BRepCheck.PrecSurface(new GeomAdaptor_Surface(new Geom_Plane(new Point3D(900, 0, 0), new Direction3D(0, 0, 1)))));
-        var aCone = new Geom_ConicalSurface(new CoordinateSystem(new Point3D(0, 0, -200), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 0.3, 3);
-        Assert.Equal(Epsilon(200.0), BRepCheck.PrecSurface(new GeomAdaptor_Surface(aCone)));
+        Assert.Equal(RealEpsilon(), BRepCheck.PrecSurface(new SurfaceAdaptor(new PlaneSurface(new Point3D(900, 0, 0), new Direction3D(0, 0, 1)))));
+        var aCone = new ConicalSurface(new CoordinateSystem(new Point3D(0, 0, -200), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 0.3, 3);
+        Assert.Equal(Epsilon(200.0), BRepCheck.PrecSurface(new SurfaceAdaptor(aCone)));
     }
 
     [Fact]
     public void Shell_ClosedBox()
     {
-        TopoDS_Solid aBox = TestShapes.Box(1, 2, 3);
-        TopoDS_Shell aShell = TopoDS.Shell(new TopoDS_Iterator(aBox).Value());
+        Solid aBox = TestShapes.Box(1, 2, 3);
+        Shell aShell = ShapeCasts.Shell(new Iterator(aBox).Value());
         var aCheck = new BRepCheck_Shell(aShell);
         Assert.True(aCheck.IsMinimum());
         Assert.Equal([BRepCheck_NoError], ToList(aCheck.Status()));
@@ -157,15 +161,15 @@ public class BRepCheckTests
         aCheck.NextShapeInContext();
         Assert.False(aCheck.MoreShapeInContext());
 
-        var aSets = new NCollection_List<TopoDS_Shape>();
+        var aSets = new NCollection_List<Shape>();
         Assert.Equal(0, aCheck.NbConnectedSet(aSets));
     }
 
     [Fact]
     public void Shell_FrozenInputIsReadOnly()
     {
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        TopoDS_Shell aShell = TopoDS.Shell(new TopoDS_Iterator(aBox).Value());
+        Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        Shell aShell = ShapeCasts.Shell(new Iterator(aBox).Value());
         var aCheck = new BRepCheck_Shell(aShell);
         Assert.Equal(BRepCheck_NoError, aCheck.Closed(true));
         Assert.Equal(BRepCheck_NoError, aCheck.Orientation(true));
@@ -176,8 +180,8 @@ public class BRepCheckTests
     [Fact]
     public void Shell_OpenBoxIsNotClosed()
     {
-        List<TopoDS_Shape> aFaces = Faces(BoxShell());
-        TopoDS_Shell anOpen = ShellOf([.. aFaces.Take(5)]);
+        List<Shape> aFaces = Faces(BoxShell());
+        Shell anOpen = ShellOf([.. aFaces.Take(5)]);
         var aCheck = new BRepCheck_Shell(anOpen);
         Assert.Equal([BRepCheck_NoError], ToList(aCheck.Status()));
         Assert.Equal(BRepCheck_NotClosed, aCheck.Closed());
@@ -190,7 +194,7 @@ public class BRepCheckTests
 
         // in a solid, the shell must be closed
         var aCheck2 = new BRepCheck_Shell(anOpen);
-        TopoDS_Solid aSolid = SolidOf(anOpen);
+        Solid aSolid = SolidOf(anOpen);
         aCheck2.InContext(aSolid);
         Assert.Equal([BRepCheck_NotClosed], ToList(aCheck2.StatusOnShape(aSolid)));
     }
@@ -198,16 +202,16 @@ public class BRepCheckTests
     [Fact]
     public void Shell_ReversedFaceIsBadlyOriented()
     {
-        List<TopoDS_Shape> aFaces = Faces(BoxShell());
+        List<Shape> aFaces = Faces(BoxShell());
         aFaces[2] = aFaces[2].Reversed();
-        TopoDS_Shell aShell = ShellOf([.. aFaces]);
+        Shell aShell = ShellOf([.. aFaces]);
         var aCheck = new BRepCheck_Shell(aShell);
         Assert.Equal(BRepCheck_NoError, aCheck.Closed());
         Assert.Equal(BRepCheck_BadOrientationOfSubshape, aCheck.Orientation());
         Assert.True(aCheck.IsUnorientable());
 
         var aCheck2 = new BRepCheck_Shell(aShell);
-        TopoDS_Solid aSolid = SolidOf(aShell);
+        Solid aSolid = SolidOf(aShell);
         aCheck2.InContext(aSolid);
         Assert.Equal([BRepCheck_BadOrientationOfSubshape], ToList(aCheck2.StatusOnShape(aSolid)));
 
@@ -226,7 +230,7 @@ public class BRepCheckTests
         Assert.Equal(BRepCheck_EmptyShell, anEmpty.Closed());
         Assert.Equal(BRepCheck_EmptyShell, anEmpty.Orientation());
 
-        var aFaces = new List<TopoDS_Shape>(Faces(BoxShell()));
+        var aFaces = new List<Shape>(Faces(BoxShell()));
         aFaces.AddRange(Faces(BoxShell(2, 2, 2)));
         var aTwo = new BRepCheck_Shell(ShellOf([.. aFaces]));
         Assert.Equal([BRepCheck_NotConnected], ToList(aTwo.Status()));
@@ -236,9 +240,9 @@ public class BRepCheckTests
     [Fact]
     public void Shell_RedundantFace()
     {
-        List<TopoDS_Shape> aFaces = Faces(BoxShell());
+        List<Shape> aFaces = Faces(BoxShell());
         aFaces.Add(aFaces[0]);
-        TopoDS_Shell aShell = ShellOf([.. aFaces]);
+        Shell aShell = ShellOf([.. aFaces]);
         var aCheck = new BRepCheck_Shell(aShell);
         // Minimum counts 7 faces but reaches 6 distinct ones, so the shell is "not connected", and Closed and
         // Orientation report that first status (Closed's own RedundantFace check can't fire anyway, occt-issues.md)
@@ -259,20 +263,20 @@ public class BRepCheckTests
     [Fact]
     public void Shell_TwoBoxesSharingAnEdge()
     {
-        TopoDS_Shell aShell = TwoBoxesSharingAnEdge();
+        Shell aShell = TwoBoxesSharingAnEdge();
         var aCheck = new BRepCheck_Shell(aShell);
         Assert.Equal([BRepCheck_NoError], ToList(aCheck.Status()));
         Assert.Equal(BRepCheck_InvalidMultiConnexity, aCheck.Closed());
 
-        var aSets = new NCollection_List<TopoDS_Shape>();
+        var aSets = new NCollection_List<Shape>();
         Assert.Equal(2, aCheck.NbConnectedSet(aSets));
-        foreach (TopoDS_Shape aSet in aSets)
+        foreach (Shape aSet in aSets)
         {
-            Assert.Equal(TopAbs_SHELL, aSet.ShapeType());
+            Assert.Equal(ShapeType.Shell, aSet.ShapeType());
             Assert.Equal(6, Faces(aSet).Count);
             Assert.True(aSet.TShape()!.IsFrozen);
             Assert.True(aSet.Closed());
-            Assert.Equal(BRepCheck_NoError, new BRepCheck_Shell(TopoDS.Shell(aSet)).Closed());
+            Assert.Equal(BRepCheck_NoError, new BRepCheck_Shell(ShapeCasts.Shell(aSet)).Closed());
         }
     }
 
@@ -280,7 +284,7 @@ public class BRepCheckTests
     public void Shell_NotInContext()
     {
         var aCheck = new BRepCheck_Shell(BoxShell());
-        TopoDS_Solid anOther = TestShapes.Box(1, 1, 1);
+        Solid anOther = TestShapes.Box(1, 1, 1);
         aCheck.InContext(anOther);
         Assert.Equal([BRepCheck_SubshapeNotInShape], ToList(aCheck.StatusOnShape(anOther)));
         // a second call does nothing
@@ -291,13 +295,13 @@ public class BRepCheckTests
     [Fact]
     public void Result_SetFailStatusAndContexts()
     {
-        TopoDS_Shell aShell = BoxShell();
+        Shell aShell = BoxShell();
         var aCheck = new BRepCheck_Shell(aShell);
         aCheck.SetParallel(true);
         Assert.True(aCheck.IsParallel());
         aCheck.SetFailStatus(aShell);
         Assert.Equal([BRepCheck_CheckFail], ToList(aCheck.Status()));
-        TopoDS_Face aFace = TopoDS.Face(Faces(aShell)[0]);
+        Face aFace = ShapeCasts.Face(Faces(aShell)[0]);
         Assert.False(aCheck.IsStatusOnShape(aFace));
         aCheck.SetFailStatus(aFace);
         Assert.Equal([BRepCheck_CheckFail], ToList(aCheck.StatusOnShape(aFace)));

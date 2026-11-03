@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -20,12 +22,12 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepAlgo_Image
 {
-    private readonly NCollection_List<TopoDS_Shape> roots = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> up = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> down = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_List<Shape> roots = new();
+    private readonly NCollection_DataMap<Shape, Shape> up = new(ShapeHasher.Instance);
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> down = new(ShapeHasher.Instance);
 
     [ThreadStatic]
-    private static NCollection_List<TopoDS_Shape>? theNoImage;
+    private static NCollection_List<Shape>? theNoImage;
 
     /// <summary>An empty image.</summary>
     public BRepAlgo_Image()
@@ -41,32 +43,32 @@ public sealed class BRepAlgo_Image
         }
         roots.Assign(theOther.roots);
         up.Clear();
-        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> anItem in theOther.up)
+        foreach (KeyValuePair<Shape, Shape> anItem in theOther.up)
         {
             up.Bind(anItem.Key, anItem.Value);
         }
         down.Clear();
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anItem in theOther.down)
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> anItem in theOther.down)
         {
-            down.Bind(anItem.Key, new NCollection_List<TopoDS_Shape>(anItem.Value));
+            down.Bind(anItem.Key, new NCollection_List<Shape>(anItem.Value));
         }
     }
 
     /// <summary>Adds <paramref name="S"/> to the roots.</summary>
-    public void SetRoot(in TopoDS_Shape S)
+    public void SetRoot(in Shape S)
     {
         roots.Append(S);
     }
 
     /// <summary>Links <paramref name="NewS"/> as the image of <paramref name="OldS"/>.</summary>
     /// <exception cref="ConstructionErrorException">OldS already has images.</exception>
-    public void Bind(in TopoDS_Shape OldS, in TopoDS_Shape NewS)
+    public void Bind(in Shape OldS, in Shape NewS)
     {
         if (down.IsBound(OldS))
         {
             throw new ConstructionErrorException(" BRepAlgo_Image::Bind");
         }
-        NCollection_List<TopoDS_Shape> L = new();
+        NCollection_List<Shape> L = new();
         down.Bind(OldS, L);
         down[OldS].Append(NewS);
         up.Bind(NewS, OldS);
@@ -74,13 +76,13 @@ public sealed class BRepAlgo_Image
 
     /// <summary>Links the shapes of <paramref name="L"/> as the images of <paramref name="OldS"/>.</summary>
     /// <exception cref="ConstructionErrorException">OldS already has images.</exception>
-    public void Bind(in TopoDS_Shape OldS, NCollection_List<TopoDS_Shape> L)
+    public void Bind(in Shape OldS, NCollection_List<Shape> L)
     {
         if (HasImage(OldS))
         {
             throw new ConstructionErrorException(" BRepAlgo_Image::Bind");
         }
-        NCollection_List<TopoDS_Shape>.Iterator it = new(L);
+        NCollection_List<Shape>.Iterator it = new(L);
         for (; it.More(); it.Next())
         {
             if (!HasImage(OldS))
@@ -104,7 +106,7 @@ public sealed class BRepAlgo_Image
 
     /// <summary>Adds <paramref name="NewS"/> to the images of <paramref name="OldS"/>.</summary>
     /// <exception cref="ConstructionErrorException">OldS has no images.</exception>
-    public void Add(in TopoDS_Shape OldS, in TopoDS_Shape NewS)
+    public void Add(in Shape OldS, in Shape NewS)
     {
         if (!HasImage(OldS))
         {
@@ -115,9 +117,9 @@ public sealed class BRepAlgo_Image
     }
 
     /// <summary>Adds the shapes of <paramref name="L"/> to the images of <paramref name="OldS"/>.</summary>
-    public void Add(in TopoDS_Shape OldS, NCollection_List<TopoDS_Shape> L)
+    public void Add(in Shape OldS, NCollection_List<Shape> L)
     {
-        NCollection_List<TopoDS_Shape>.Iterator it = new(L);
+        NCollection_List<Shape>.Iterator it = new(L);
         for (; it.More(); it.Next())
         {
             Add(OldS, it.Value());
@@ -126,15 +128,15 @@ public sealed class BRepAlgo_Image
 
     /// <summary>Removes the image <paramref name="S"/>.</summary>
     /// <exception cref="ConstructionErrorException">S isn't an image.</exception>
-    public void Remove(in TopoDS_Shape S)
+    public void Remove(in Shape S)
     {
         if (!up.IsBound(S))
         {
             throw new ConstructionErrorException(" BRepAlgo_Image::Remove");
         }
-        TopoDS_Shape OldS = up[S];
-        NCollection_List<TopoDS_Shape> L = down[OldS];
-        NCollection_List<TopoDS_Shape>.Iterator it = new(L);
+        Shape OldS = up[S];
+        NCollection_List<Shape> L = down[OldS];
+        NCollection_List<Shape>.Iterator it = new(L);
         while (it.More())
         {
             if (it.Value().IsSame(S))
@@ -152,14 +154,14 @@ public sealed class BRepAlgo_Image
     }
 
     /// <summary>The roots.</summary>
-    public NCollection_List<TopoDS_Shape> Roots() => roots;
+    public NCollection_List<Shape> Roots() => roots;
 
     /// <summary>Whether <paramref name="S"/> is an image.</summary>
-    public bool IsImage(in TopoDS_Shape S) => up.IsBound(S);
+    public bool IsImage(in Shape S) => up.IsBound(S);
 
     /// <summary>The shape <paramref name="S"/> is an image of.</summary>
     /// <exception cref="ConstructionErrorException">S isn't an image.</exception>
-    public TopoDS_Shape ImageFrom(in TopoDS_Shape S)
+    public Shape ImageFrom(in Shape S)
     {
         if (!up.IsBound(S))
         {
@@ -170,15 +172,15 @@ public sealed class BRepAlgo_Image
 
     /// <summary>The first generator of <paramref name="S"/>.</summary>
     /// <exception cref="ConstructionErrorException">S isn't an image.</exception>
-    public TopoDS_Shape Root(in TopoDS_Shape S)
+    public Shape Root(in Shape S)
     {
         if (!up.IsBound(S))
         {
             throw new ConstructionErrorException(" BRepAlgo_Image::FirstImageFrom");
         }
 
-        TopoDS_Shape S1 = up[S];
-        TopoDS_Shape S2 = S;
+        Shape S1 = up[S];
+        Shape S2 = S;
 
         if (S1.IsSame(S2))
         {
@@ -198,15 +200,15 @@ public sealed class BRepAlgo_Image
     }
 
     /// <summary>Whether <paramref name="S"/> has images.</summary>
-    public bool HasImage(in TopoDS_Shape S) => down.IsBound(S);
+    public bool HasImage(in Shape S) => down.IsBound(S);
 
     /// <summary>The images of <paramref name="S"/>; for a shape without images, a list holding it (see the remarks).</summary>
-    public NCollection_List<TopoDS_Shape> Image(in TopoDS_Shape S)
+    public NCollection_List<Shape> Image(in Shape S)
     {
         if (!HasImage(S))
         {
             // OCCT: the static list keeps every shape appended by earlier calls
-            theNoImage ??= new NCollection_List<TopoDS_Shape>();
+            theNoImage ??= new NCollection_List<Shape>();
             theNoImage.Append(S);
             return theNoImage;
         }
@@ -216,7 +218,7 @@ public sealed class BRepAlgo_Image
     /// <summary>
     /// Appends to <paramref name="L"/> the images of the images ... of <paramref name="S"/> (S itself if it has none).
     /// </summary>
-    public void LastImage(in TopoDS_Shape S, NCollection_List<TopoDS_Shape> L)
+    public void LastImage(in Shape S, NCollection_List<Shape> L)
     {
         if (!down.IsBound(S))
         {
@@ -224,7 +226,7 @@ public sealed class BRepAlgo_Image
         }
         else
         {
-            NCollection_List<TopoDS_Shape>.Iterator it = new(down[S]);
+            NCollection_List<Shape>.Iterator it = new(down[S]);
             for (; it.More(); it.Next())
             {
                 if (it.Value().IsSame(S))
@@ -242,12 +244,12 @@ public sealed class BRepAlgo_Image
     /// <summary>Keeps only the links between the roots and their last images.</summary>
     public void Compact()
     {
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> M = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape>.Iterator it = new(roots);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> M = new(ShapeHasher.Instance);
+        NCollection_List<Shape>.Iterator it = new(roots);
         for (; it.More(); it.Next())
         {
-            TopoDS_Shape S = it.Value();
-            NCollection_List<TopoDS_Shape> LI = new();
+            Shape S = it.Value();
+            NCollection_List<Shape> LI = new();
             if (HasImage(S))
             {
                 LastImage(S, LI);
@@ -269,10 +271,10 @@ public sealed class BRepAlgo_Image
     /// Removes the images of type <paramref name="T"/> that aren't sub-shapes of <paramref name="S"/>; call
     /// <see cref="Compact"/> first.
     /// </summary>
-    public void Filter(in TopoDS_Shape S, TopAbs_ShapeEnum T)
+    public void Filter(in Shape S, ShapeType T)
     {
-        TopExp_Explorer exp = new(S, T);
-        NCollection_Map<TopoDS_Shape> M = new(TopTools_ShapeMapHasher.Instance);
+        Explorer exp = new(S, T);
+        NCollection_Map<Shape> M = new(ShapeHasher.Instance);
         for (; exp.More(); exp.Next())
         {
             M.Add(exp.Current());
@@ -281,9 +283,9 @@ public sealed class BRepAlgo_Image
         while (Change)
         {
             Change = false;
-            foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> mit in up)
+            foreach (KeyValuePair<Shape, Shape> mit in up)
             {
-                TopoDS_Shape aS = mit.Key;
+                Shape aS = mit.Key;
                 if (aS.ShapeType() == T && !M.Contains(aS))
                 {
                     Remove(aS);
@@ -295,10 +297,10 @@ public sealed class BRepAlgo_Image
     }
 
     /// <summary>Removes the root <paramref name="Root"/> from the roots, and its images.</summary>
-    public void RemoveRoot(in TopoDS_Shape Root)
+    public void RemoveRoot(in Shape Root)
     {
         bool isRemoved = false;
-        for (NCollection_List<TopoDS_Shape>.Iterator it = new(roots); it.More(); it.Next())
+        for (NCollection_List<Shape>.Iterator it = new(roots); it.More(); it.Next())
         {
             if (Root.IsSame(it.Value()))
             {
@@ -313,11 +315,11 @@ public sealed class BRepAlgo_Image
             return;
         }
 
-        if (down.Find(Root, out NCollection_List<TopoDS_Shape> pNewS))
+        if (down.Find(Root, out NCollection_List<Shape> pNewS))
         {
-            for (NCollection_List<TopoDS_Shape>.Iterator it = new(pNewS); it.More(); it.Next())
+            for (NCollection_List<Shape>.Iterator it = new(pNewS); it.More(); it.Next())
             {
-                if (up.Find(it.Value(), out TopoDS_Shape pOldS) && pOldS.IsSame(Root))
+                if (up.Find(it.Value(), out Shape pOldS) && pOldS.IsSame(Root))
                 {
                     up.UnBind(it.Value());
                 }
@@ -330,14 +332,14 @@ public sealed class BRepAlgo_Image
     /// Replaces the root <paramref name="OldRoot"/> by <paramref name="NewRoot"/>: the images of the old one become
     /// images of the new one, and the old one is removed.
     /// </summary>
-    public void ReplaceRoot(in TopoDS_Shape OldRoot, in TopoDS_Shape NewRoot)
+    public void ReplaceRoot(in Shape OldRoot, in Shape NewRoot)
     {
         if (!HasImage(OldRoot))
         {
             return;
         }
 
-        NCollection_List<TopoDS_Shape> aLImage = Image(OldRoot);
+        NCollection_List<Shape> aLImage = Image(OldRoot);
         if (HasImage(NewRoot))
         {
             Add(NewRoot, aLImage);

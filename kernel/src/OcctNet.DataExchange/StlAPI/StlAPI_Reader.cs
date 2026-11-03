@@ -6,6 +6,7 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Meshing;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -18,7 +19,7 @@ namespace Occt;
 public class StlAPI_Reader
 {
     /// <summary>Reads an STL file into the shape (left unchanged on failure). True on success.</summary>
-    public bool Read(ref TopoDS_Shape theShape, string theFileName, ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public bool Read(ref Shape theShape, string theFileName, ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
     {
         Triangulation? aMesh = RWStl.ReadFile(theFileName, theProgress, theLimits);
         return MakeShape(ref theShape, aMesh);
@@ -28,13 +29,13 @@ public class StlAPI_Reader
     /// Reads STL from a stream into the shape (left unchanged on failure): ASCII if the data start with "solid",
     /// binary otherwise, as OCCT's <see cref="RWStl.ReadStream"/>. True on success.
     /// </summary>
-    public bool Read(ref TopoDS_Shape theShape, Stream theStream, ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public bool Read(ref Shape theShape, Stream theStream, ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
     {
         Triangulation? aMesh = RWStl.ReadStream(theStream, Math.PI / 2.0, theProgress, theLimits);
         return MakeShape(ref theShape, aMesh);
     }
 
-    private static bool MakeShape(ref TopoDS_Shape theShape, Triangulation? aMesh)
+    private static bool MakeShape(ref Shape theShape, Triangulation? aMesh)
     {
         if (aMesh is null)
         {
@@ -48,8 +49,8 @@ public class StlAPI_Reader
             return false;
         }
 
-        TopoDS_Shape aResult = aConverter.Shape();
-        if (aResult.IsNull())
+        Shape aResult = aConverter.Shape();
+        if (aResult.IsNull)
         {
             return false;
         }

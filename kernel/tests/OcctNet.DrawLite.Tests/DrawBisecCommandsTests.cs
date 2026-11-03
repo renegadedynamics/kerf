@@ -29,31 +29,31 @@ public class DrawBisecCommandsTests(ITestOutputHelper output)
 
         // two lines: two bisecting lines, always named r_1, r_2
         Assert.Equal("There are 2 Solutions.\n", i.Eval("bisec r l1 l2"));
-        Line2D aL = Geometry<Geom2d_Line>(i, "r_1").Lin2d();
+        Line2D aL = Geometry<LineCurve2D>(i, "r_1").Lin2d();
         Assert.Equal(Math.Abs(aL.Direction().X()), Math.Abs(aL.Direction().Y()), 1e-15);
-        Geometry<Geom2d_Line>(i, "r_2");
+        Geometry<LineCurve2D>(i, "r_2");
 
         // a line and a circle: parabolas
         string aRes = i.Eval("bisec s l1 c2");
         Assert.StartsWith("There are ", aRes, StringComparison.Ordinal);
-        Geometry<Geom2d_Parabola>(i, "s_1");
+        Geometry<ParabolaCurve2D>(i, "s_1");
 
         // two circles apart: hyperbolas (several solutions)
         Assert.StartsWith("There are ", i.Eval("bisec h c1 c2"), StringComparison.Ordinal);
-        Geometry<Geom2d_Curve>(i, "h_1");
+        Geometry<Curve2D>(i, "h_1");
 
         // a line and a point: one parabola, named as the result
         Assert.Equal("There is 1 Solution.\n", i.Eval("bisec q l1 p1"));
-        Geometry<Geom2d_Parabola>(i, "q");
+        Geometry<ParabolaCurve2D>(i, "q");
         Assert.Equal("There is 1 Solution.\n", i.Eval("bisec q2 p1 l1"));
-        Geometry<Geom2d_Parabola>(i, "q2");
+        Geometry<ParabolaCurve2D>(i, "q2");
 
         // a circle and a point outside it
         Assert.StartsWith("There ", i.Eval("bisec e c1 p2"), StringComparison.Ordinal);
 
         // two points: their perpendicular bisector
         Assert.Equal("There is 1 Solution.\n", i.Eval("bisec m p1 p2"));
-        Line2D aM = Geometry<Geom2d_Line>(i, "m").Lin2d();
+        Line2D aM = Geometry<LineCurve2D>(i, "m").Lin2d();
         Assert.Equal(1.0, aM.Location().X(), 1e-15);
     }
 

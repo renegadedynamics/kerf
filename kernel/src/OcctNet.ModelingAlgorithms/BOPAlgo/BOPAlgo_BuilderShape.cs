@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using Schematiq.Collections;
 
 namespace Occt;
@@ -14,11 +16,11 @@ namespace Occt;
 /// </remarks>
 public abstract class BOPAlgo_BuilderShape : BOPAlgo_Algo
 {
-    protected TopoDS_Shape myShape = new();                                                //!< Result of the operation
-    protected NCollection_List<TopoDS_Shape> myHistShapes = new();                         //!< Storer for the history shapes
-    protected NCollection_Map<TopoDS_Shape> myMapShape = new(TopTools_ShapeMapHasher.Instance); //!< cached map of all arguments shapes
+    protected Shape myShape = new();                                                //!< Result of the operation
+    protected NCollection_List<Shape> myHistShapes = new();                         //!< Storer for the history shapes
+    protected NCollection_Map<Shape> myMapShape = new(ShapeHasher.Instance); //!< cached map of all arguments shapes
     protected bool myFillHistory;                                                          //!< Controls the history filling
-    protected BRepTools_History? myHistory;                                                //!< History tool
+    protected History? myHistory;                                                //!< History tool
 
     protected BOPAlgo_BuilderShape()
     {
@@ -26,57 +28,57 @@ public abstract class BOPAlgo_BuilderShape : BOPAlgo_Algo
     }
 
     /// <summary>The result of the operation (frozen).</summary>
-    public TopoDS_Shape Shape()
+    public Shape Shape()
     {
         myShape.TShape()?.FreezeGraph();
         return myShape;
     }
 
     /// <summary>The result, unfrozen, for ported code.</summary>
-    internal TopoDS_Shape InternalShape() => myShape;
+    internal Shape InternalShape() => myShape;
 
     /// <summary>The shapes modified from <paramref name="theS"/>.</summary>
-    public ISchematiqList<TopoDS_Shape> Modified(in TopoDS_Shape theS)
+    public ISchematiqList<Shape> Modified(in Shape theS)
     {
         if (myFillHistory && myHistory is not null)
         {
             return myHistory.Modified(theS);
         }
-        return PackedList<TopoDS_Shape>.Empty;
+        return PackedList<Shape>.Empty;
     }
 
     /// <summary>The shapes generated from <paramref name="theS"/>.</summary>
-    public ISchematiqList<TopoDS_Shape> Generated(in TopoDS_Shape theS)
+    public ISchematiqList<Shape> Generated(in Shape theS)
     {
         if (myFillHistory && myHistory is not null)
         {
             return myHistory.Generated(theS);
         }
-        return PackedList<TopoDS_Shape>.Empty;
+        return PackedList<Shape>.Empty;
     }
 
     /// <summary>True if <paramref name="theS"/> has been deleted: neither it nor a split of it is in the result.</summary>
-    public bool IsDeleted(in TopoDS_Shape theS) => myFillHistory && myHistory is not null && myHistory.IsRemoved(theS);
+    public bool IsDeleted(in Shape theS) => myFillHistory && myHistory is not null && myHistory.IsRemoved(theS);
 
-    public bool HasModified() => myFillHistory && myHistory is not null && myHistory.HasModified();
+    public bool HasModified() => myFillHistory && myHistory is not null && myHistory.HasModified;
 
-    public bool HasGenerated() => myFillHistory && myHistory is not null && myHistory.HasGenerated();
+    public bool HasGenerated() => myFillHistory && myHistory is not null && myHistory.HasGenerated;
 
-    public bool HasDeleted() => myFillHistory && myHistory is not null && myHistory.HasRemoved();
+    public bool HasDeleted() => myFillHistory && myHistory is not null && myHistory.HasRemoved;
 
     /// <summary>The history of the operation (null when not collected); the result graph is frozen first.</summary>
-    public BRepTools_History? History()
+    public History? History()
     {
         myShape.TShape()?.FreezeGraph();
         return InternalHistory();
     }
 
     /// <summary>OCCT's <c>History()</c>, without freezing: makes an empty history if there is none.</summary>
-    internal BRepTools_History? InternalHistory()
+    internal History? InternalHistory()
     {
         if (myFillHistory)
         {
-            myHistory ??= new BRepTools_History();
+            myHistory ??= new History();
             return myHistory;
         }
         return null;

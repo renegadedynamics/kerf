@@ -5,40 +5,41 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.Topology;
 
 /// <summary>An attempt was made to modify a shape already shared or protected (OCCT's Free flag is off).</summary>
-public class TopoDS_FrozenShape : DomainErrorException
+public class FrozenShapeException : DomainErrorException
 {
-    public TopoDS_FrozenShape() { }
-    public TopoDS_FrozenShape(string? message) : base(message) { }
+    public FrozenShapeException() { }
+    public FrozenShapeException(string? message) : base(message) { }
 }
 
 /// <summary>
 /// An attempt was made to modify a geometry of a shape already shared or protected: the shape is Locked, which in
 /// the port includes every frozen shape (docs/phase3-design.md, section 4.3).
 /// </summary>
-public class TopoDS_LockedShape : DomainErrorException
+public class LockedShapeException : DomainErrorException
 {
-    public TopoDS_LockedShape() { }
-    public TopoDS_LockedShape(string? message) : base(message) { }
+    public LockedShapeException() { }
+    public LockedShapeException(string? message) : base(message) { }
 }
 
 /// <summary>An attempt was made to add a shape to a shape of a type that can't contain it.</summary>
-public class TopoDS_UnCompatibleShapes : DomainErrorException
+public class IncompatibleShapesException : DomainErrorException
 {
-    public TopoDS_UnCompatibleShapes() { }
-    public TopoDS_UnCompatibleShapes(string? message) : base(message) { }
+    public IncompatibleShapesException() { }
+    public IncompatibleShapesException(string? message) : base(message) { }
 }
 
-internal static class TopoDS_Raise
+internal static class Raise
 {
     internal static void TopoDS_FrozenShape_Raise_if(bool condition, string? message = null)
     {
         if (condition)
         {
-            throw new TopoDS_FrozenShape(message);
+            throw new FrozenShapeException(message);
         }
     }
 }

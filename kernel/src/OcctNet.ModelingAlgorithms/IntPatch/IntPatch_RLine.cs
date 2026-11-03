@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 
@@ -20,8 +21,8 @@ namespace Occt;
 /// </remarks>
 public class IntPatch_RLine : IntPatch_PointLine
 {
-    private Adaptor2d_Curve2d? theArcOnS1;
-    private Adaptor2d_Curve2d? theArcOnS2;
+    private Curve2DAdaptorBase? theArcOnS1;
+    private Curve2DAdaptorBase? theArcOnS2;
     private bool onS1;
     private bool onS2;
     // ParamInf1, ParamSup1, ParamInf2, ParamSup2: initialised to 0 by OCCT and never read: left out (decision 143).
@@ -129,21 +130,21 @@ public class IntPatch_RLine : IntPatch_PointLine
     /// <summary>True if the line is an arc of restriction of the second surface.</summary>
     public bool IsArcOnS2() => onS2;
 
-    public void SetArcOnS1(Adaptor2d_Curve2d A)
+    public void SetArcOnS1(Curve2DAdaptorBase A)
     {
         theArcOnS1 = A;
         onS1 = true;
     }
 
-    public void SetArcOnS2(Adaptor2d_Curve2d A)
+    public void SetArcOnS2(Curve2DAdaptorBase A)
     {
         theArcOnS2 = A;
         onS2 = true;
     }
 
-    public Adaptor2d_Curve2d? ArcOnS1() => theArcOnS1;
+    public Curve2DAdaptorBase? ArcOnS1() => theArcOnS1;
 
-    public Adaptor2d_Curve2d? ArcOnS2() => theArcOnS2;
+    public Curve2DAdaptorBase? ArcOnS2() => theArcOnS2;
 
     /// <summary>
     /// The smallest and largest parameters on the line of the vertices if the line is on the first surface's arc;

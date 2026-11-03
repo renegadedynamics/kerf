@@ -2,7 +2,12 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
@@ -10,7 +15,7 @@ using OcctNet.TestHarness;
 using Xunit.Abstractions;
 using static Occt.BRepOffset_Mode;
 using static Kerf.Geometry.JoinKind;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -48,20 +53,20 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
     // ---------------------------------------------------------------------------------------------------------------
     // Inputs
 
-    private static TopoDS_Shape Box(double x, double y, double z) => new BRepPrimAPI_MakeBox(x, y, z).Shape();
+    private static Shape Box(double x, double y, double z) => new BRepPrimAPI_MakeBox(x, y, z).Shape();
 
-    private static TopoDS_Shape Fuse(in TopoDS_Shape a, in TopoDS_Shape b) => new BRepAlgoAPI_Fuse(a, b).Shape();
+    private static Shape Fuse(in Shape a, in Shape b) => new BRepAlgoAPI_Fuse(a, b).Shape();
 
-    private static TopoDS_Shape Cut(in TopoDS_Shape a, in TopoDS_Shape b) => new BRepAlgoAPI_Cut(a, b).Shape();
+    private static Shape Cut(in Shape a, in Shape b) => new BRepAlgoAPI_Cut(a, b).Shape();
 
-    private static TopoDS_Shape Unified(in TopoDS_Shape a)
+    private static Shape Unified(in Shape a)
     {
         var aU = new ShapeUpgrade_UnifySameDomain(a);
         aU.Build();
         return aU.Shape();
     }
 
-    private static TopoDS_Shape Moved(in TopoDS_Shape theS, double x, double y, double z)
+    private static Shape Moved(in Shape theS, double x, double y, double z)
     {
         Transform3D aT = new();
         aT.SetTranslation(new Vector3D(x, y, z));
@@ -70,7 +75,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
 
     private static Frame3D Ax(double x, double y, double z) => new(new Point3D(x, y, z), new Direction3D(0, 0, 1));
 
-    private static TopoDS_Shape Prism(double h, params (double X, double Y)[] thePoints)
+    private static Shape Prism(double h, params (double X, double Y)[] thePoints)
     {
         var aP = new BRepBuilderAPI_MakePolygon();
         foreach ((double x, double y) in thePoints)
@@ -78,12 +83,12 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
             aP.Add(new Point3D(x, y, 0));
         }
         aP.Close();
-        TopoDS_Face aF = new BRepBuilderAPI_MakeFace(aP.Wire()).Face();
+        Face aF = new BRepBuilderAPI_MakeFace(aP.Wire()).Face();
         return new BRepPrimAPI_MakePrism(aF, new Vector3D(0, 0, h)).Shape();
     }
 
     /// <summary>Solids: primitives and Boolean results.</summary>
-    internal static List<(string Name, TopoDS_Shape Shape)> Solids() =>
+    internal static List<(string Name, Shape Shape)> Solids() =>
     [
         ("box 10x20x30", Box(10, 20, 30)),
         ("cube 10", Box(10, 10, 10)),
@@ -108,24 +113,24 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
     ];
 
     /// <summary>Faces and shells to offset and thicken.</summary>
-    internal static List<(string Name, TopoDS_Shape Shape)> Sheets()
+    internal static List<(string Name, Shape Shape)> Sheets()
     {
-        TopoDS_Shape aBox = Box(10, 20, 30);
-        var aFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aBox, TopAbs_FACE, aFaces);
-        TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 12).Shape();
-        var aCylFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aCyl, TopAbs_FACE, aCylFaces);
-        TopoDS_Shape aSph = new BRepPrimAPI_MakeSphere(new Point3D(0, 0, 0), 6, 0.3, 1.2, 2.0).Shape();
-        var aSphFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aSph, TopAbs_FACE, aSphFaces);
-        BRep_Builder aB = new();
-        TopoDS_Shell aShell = new();
+        Shape aBox = Box(10, 20, 30);
+        var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(aBox, ShapeType.Face, aFaces);
+        Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 12).Shape();
+        var aCylFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(aCyl, ShapeType.Face, aCylFaces);
+        Shape aSph = new BRepPrimAPI_MakeSphere(new Point3D(0, 0, 0), 6, 0.3, 1.2, 2.0).Shape();
+        var aSphFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(aSph, ShapeType.Face, aSphFaces);
+        BrepBuilder aB = new();
+        Shell aShell = new();
         aB.MakeShell(ref aShell);
         aB.Add(aShell, aFaces[1]);
         aB.Add(aShell, aFaces[3]);
         aB.Add(aShell, aFaces[5]);
-        TopoDS_Shell aShell2 = new();
+        Shell aShell2 = new();
         aB.MakeShell(ref aShell2);
         for (int i = 1; i <= 5; i++)
         {
@@ -141,7 +146,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
             }
         }
         var aSurf = new GeomAPI_PointsToBSplineSurface(aPoles).Surface();
-        TopoDS_Face aBsp = new BRepBuilderAPI_MakeFace(aSurf, 1.0e-7).Face();
+        Face aBsp = new BRepBuilderAPI_MakeFace(aSurf, 1.0e-7).Face();
         return
         [
             ("planar face", aFaces[1]),
@@ -162,7 +167,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
     {
         var aTally = new Tally();
         using var aRun = new ShapeFixOracleRun(output, "offset");
-        foreach ((string aName, TopoDS_Shape aShape) in Tape.Budget(Solids()))
+        foreach ((string aName, Shape aShape) in Tape.Budget(Solids()))
         {
             double aD = Diagonal(aShape) * 0.04;
             foreach (Run aCase in SolidRuns(aName, aD))
@@ -178,7 +183,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
     {
         var aTally = new Tally();
         using var aRun = new ShapeFixOracleRun(output, "offset");
-        foreach ((string aName, TopoDS_Shape aShape) in Sheets())
+        foreach ((string aName, Shape aShape) in Sheets())
         {
             double aD = Diagonal(aShape) * 0.04;
             foreach (double aSign in new[] { 1.0, -1.0 })
@@ -210,14 +215,14 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
             {
                 continue;
             }
-            Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aFile));
-            if (aShape.IsNull() || !new TopExp_Explorer(aShape, TopAbs_FACE).More())
+            Assert.True(BrepTools.Read(out Shape aShape, aFile));
+            if (aShape.IsNull || !new Explorer(aShape, ShapeType.Face).More())
             {
                 continue;
             }
             string aName = Path.GetFileNameWithoutExtension(aFile);
             double aD = Diagonal(aShape) * 0.02;
-            bool isSolid = new TopExp_Explorer(aShape, TopAbs_SOLID).More();
+            bool isSolid = new Explorer(aShape, ShapeType.Solid).More();
             foreach (double aSign in new[] { 1.0, -1.0 })
             {
                 double d = aSign * aD;
@@ -260,7 +265,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
         }
     }
 
-    private static double Diagonal(in TopoDS_Shape theShape)
+    private static double Diagonal(in Shape theShape)
     {
         Box aBox = new();
         BRepBndLib.Add(theShape, ref aBox);
@@ -270,12 +275,12 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
     // ---------------------------------------------------------------------------------------------------------------
     // One comparison
 
-    internal sealed record Outcome(string? Error, string Status, string? Text, string History, TopoDS_Shape? PortResult);
+    internal sealed record Outcome(string? Error, string Status, string? Text, string History, Shape? PortResult);
 
-    internal void Compare(ShapeFixOracleRun theRun, Tally theTally, Run theCase, TopoDS_Shape theInput)
+    internal void Compare(ShapeFixOracleRun theRun, Tally theTally, Run theCase, Shape theInput)
     {
         string aWhat = $"{theCase.Name} [{theCase.Kind} {theCase.Join} inter={theCase.Inter} thick={theCase.Thickening}]";
-        if (theRun.Read(Native(theRun, theInput)) is not (N.TopoDS_Shape aNIn, TopoDS_Shape aPIn))
+        if (theRun.Read(Native(theRun, theInput)) is not (N.TopoDS_Shape aNIn, Shape aPIn))
         {
             return;
         }
@@ -295,7 +300,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
             theTally.InputsChanged++;
             theTally.Differences.Add($"{aWhat}: the port's input changed");
         }
-        if (aP.PortResult is TopoDS_Shape aPR && !aPR.IsNull() && !aPR.TShape()!.IsFrozen)
+        if (aP.PortResult is Shape aPR && !aPR.IsNull && !aPR.TShape()!.IsFrozen)
         {
             theTally.NotFrozen++;
             theTally.Differences.Add($"{aWhat}: the port's result isn't frozen");
@@ -345,7 +350,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
         else
         {
             isSameMap = false;
-            TopoDS_Shape aNResP = BooleanOracleTests.ReadPort(aN.Text), aPResP = BooleanOracleTests.ReadPort(aP.Text);
+            Shape aNResP = BooleanOracleTests.ReadPort(aN.Text), aPResP = BooleanOracleTests.ReadPort(aP.Text);
             CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aNResP, aPResP, new CanonicalOptions { CheckValidity = false });
             if (aCanon.IsIdentical)
             {
@@ -368,7 +373,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                     if (aN2.Text is not null && aN2.Status == aP.Status)
                     {
                         BRepTextDiff aDiff2 = BRepTextComparison.Compare(aN2.Text, aP.Text);
-                        TopoDS_Shape aN2ResP = BooleanOracleTests.ReadPort(aN2.Text);
+                        Shape aN2ResP = BooleanOracleTests.ReadPort(aN2.Text);
                         CanonicalComparison aCanon2 = CanonicalShapeComparer.Compare(aN2ResP, aPResP, new CanonicalOptions { CheckValidity = false });
                         isVariant = aDiff2.IsIdenticalMaskingFree || aCanon2.IsIdentical;
                         isGeometricVariant |= Geometric(aN2ResP, aPResP, aCanon2) is null;
@@ -422,13 +427,13 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
 
     // Null if the two results agree geometrically: the same number of each type of sub-shape, the same volume, area and
     // centroid (relative 1e-7), the same validity; else what differs.
-    internal static string? Geometric(in TopoDS_Shape theN, in TopoDS_Shape theP, CanonicalComparison theCanon)
+    internal static string? Geometric(in Shape theN, in Shape theP, CanonicalComparison theCanon)
     {
         if (!theCanon.CountsEqual)
         {
             return "counts " + string.Join(' ', theCanon.Counts.Select(c => $"{c.Key}:{c.Value.Native}/{c.Value.Port}"));
         }
-        GProp_GProps aNV = new(), aPV = new(), aNS = new(), aPS = new();
+        Properties aNV = new(), aPV = new(), aNS = new(), aPS = new();
         BRepGProp.VolumeProperties(theN, aNV);
         BRepGProp.VolumeProperties(theP, aPV);
         BRepGProp.SurfaceProperties(theN, aNS);
@@ -453,10 +458,10 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
 
     // The history with each result index replaced by the canonical key of that sub-shape of the result read back,
     // each list sorted.
-    private static string Keyed(string theHistory, in TopoDS_Shape theResult)
+    private static string Keyed(string theHistory, in Shape theResult)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theResult, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theResult, aMap);
         CanonicalKeys aKeys = CanonicalKeys.Build(theResult);
         return System.Text.RegularExpressions.Regex.Replace(theHistory, @"([GM])\[([^\]]*)\]", m =>
             m.Groups[1].Value + "[" + string.Join(' ', m.Groups[2].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries)
@@ -465,7 +470,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                                                          .Order(StringComparer.Ordinal)) + "]");
     }
 
-    internal static N.TopoDS_Shape Native(ShapeFixOracleRun theRun, in TopoDS_Shape theShape)
+    internal static N.TopoDS_Shape Native(ShapeFixOracleRun theRun, in Shape theShape)
     {
         string aText = theRun.PortText(theShape);
         string aFile = Path.Combine(Path.GetTempPath(), $"offset-{Guid.NewGuid():N}.brep");
@@ -596,22 +601,22 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
         return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation() == N.TopAbs_Orientation.TopAbs_REVERSED ? "r" : "");
     }
 
-    private static string IndexOf(NCollection_IndexedMap<TopoDS_Shape> theMap, in TopoDS_Shape theS)
+    private static string IndexOf(NCollection_IndexedMap<Shape> theMap, in Shape theS)
     {
         int anI = theMap.FindIndex(theS);
-        return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation() == TopAbs_Orientation.TopAbs_REVERSED ? "r" : "");
+        return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation() == Orientation.Reversed ? "r" : "");
     }
 
-    internal static Outcome RunPort(ShapeFixOracleRun theRun, Run theCase, TopoDS_Shape theInput)
+    internal static Outcome RunPort(ShapeFixOracleRun theRun, Run theCase, Shape theInput)
     {
-        var aFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theInput, TopAbs_FACE, aFaces);
+        var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theInput, ShapeType.Face, aFaces);
         try
         {
-            TopoDS_Shape aRes;
+            Shape aRes;
             string aStatus;
-            Func<TopoDS_Shape, IReadOnlyList<TopoDS_Shape>> aGen, aMod;
-            Func<TopoDS_Shape, bool> aDel;
+            Func<Shape, IReadOnlyList<Shape>> aGen, aMod;
+            Func<Shape, bool> aDel;
             switch (theCase.Kind)
             {
                 case Kind.MakeOffset:
@@ -640,7 +645,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                     aMO.PerformByJoin(theInput, theCase.Offset, theCase.Tol, BRepOffset_Skin, theCase.Inter, false, theCase.Join,
                                       theCase.RemoveIntEdges);
                     aStatus = $"done={aMO.IsDone()} error={(int)aMO.MakeOffset().Error()}";
-                    aRes = aMO.IsDone() ? aMO.Shape() : new TopoDS_Shape();
+                    aRes = aMO.IsDone() ? aMO.Shape() : new Shape();
                     aGen = s => aMO.Generated(s);
                     aMod = s => aMO.Modified(s);
                     aDel = s => aMO.IsDeleted(s);
@@ -649,7 +654,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                 default:
                 {
                     var aMT = new BRepOffsetAPI_MakeThickSolid();
-                    var aClosing = new NCollection_List<TopoDS_Shape>();
+                    var aClosing = new NCollection_List<Shape>();
                     foreach (int i in theCase.Closing ?? [])
                     {
                         if (i <= aFaces.Extent())
@@ -661,27 +666,27 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                                              theCase.Join, theCase.RemoveIntEdges);
                     aMT.Build();
                     aStatus = $"done={aMT.IsDone()} error={(int)aMT.MakeOffset().Error()}";
-                    aRes = aMT.IsDone() ? aMT.Shape() : new TopoDS_Shape();
+                    aRes = aMT.IsDone() ? aMT.Shape() : new Shape();
                     aGen = s => aMT.Generated(s);
                     aMod = s => aMT.Modified(s);
                     aDel = s => aMT.IsDeleted(s);
                     break;
                 }
             }
-            if (aRes.IsNull())
+            if (aRes.IsNull)
             {
                 return new Outcome(null, aStatus, aStatus.StartsWith("done=True", StringComparison.Ordinal) ? "" : null, "", aRes);
             }
             string aText = theRun.PortText(aRes);
-            var aResMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(aRes, aResMap);
-            var anInMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(theInput, anInMap);
+            var aResMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            Exploration.MapShapes(aRes, aResMap);
+            var anInMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            Exploration.MapShapes(theInput, anInMap);
             var aSb = new StringBuilder();
             for (int i = 1; i <= anInMap.Extent(); i++)
             {
-                TopoDS_Shape aS = anInMap[i];
-                if (aS.ShapeType() is not (TopAbs_VERTEX or TopAbs_EDGE or TopAbs_FACE))
+                Shape aS = anInMap[i];
+                if (aS.ShapeType() is not (ShapeType.Vertex or ShapeType.Edge or ShapeType.Face))
                 {
                     continue;
                 }

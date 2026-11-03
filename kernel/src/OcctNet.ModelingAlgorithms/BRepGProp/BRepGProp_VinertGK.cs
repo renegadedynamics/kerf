@@ -4,10 +4,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Kerf.Engine.Geometry.IsoType;
-using static Occt.GProp_ValueType;
+using static Kerf.Engine.Measurement.PropertyValueType;
 
 namespace Occt;
 
@@ -20,7 +21,7 @@ namespace Occt;
 /// The volume is always computed; the centre of mass if <c>theCGFlag</c> or <c>theIFlag</c>, the inertia if
 /// <c>theIFlag</c>. Each Perform returns the absolute error reached, or -1 on failure.
 /// </remarks>
-public class BRepGProp_VinertGK : GProp_GProps
+public class BRepGProp_VinertGK : Properties
 {
     private double myErrorReached;
     private double myAbsolutError;
@@ -106,7 +107,7 @@ public class BRepGProp_VinertGK : GProp_GProps
     }
 
     /// <summary>Sets the reference point.</summary>
-    public void SetLocation(in Point3D theLocation) => loc = theLocation;
+    public void SetLocation(in Point3D theLocation) => _loc = theLocation;
 
     /// <summary>The region between the face, over its natural bounds, and the location.</summary>
     public double Perform(BRepGProp_Face theSurface, double theTolerance = 0.001, bool theCGFlag = false, bool theIFlag = false)
@@ -123,7 +124,7 @@ public class BRepGProp_VinertGK : GProp_GProps
                           bool theCGFlag = false,
                           bool theIFlag = false)
     {
-        Xyz aXYZ = thePoint.XYZ().Subtracted(loc.XYZ());
+        Xyz aXYZ = thePoint.XYZ().Subtracted(_loc.XYZ());
         Span<double> aShift = stackalloc double[3];
 
         aXYZ.Coord(out aShift[0], out aShift[1], out aShift[2]);
@@ -151,7 +152,7 @@ public class BRepGProp_VinertGK : GProp_GProps
                           bool theCGFlag = false,
                           bool theIFlag = false)
     {
-        Xyz aXYZ = thePoint.XYZ().Subtracted(loc.XYZ());
+        Xyz aXYZ = thePoint.XYZ().Subtracted(_loc.XYZ());
         Span<double> aShift = stackalloc double[3];
 
         aXYZ.Coord(out aShift[0], out aShift[1], out aShift[2]);
@@ -171,7 +172,7 @@ public class BRepGProp_VinertGK : GProp_GProps
         double aYLoc;
         double aZLoc;
 
-        loc.Coord(out aXLoc, out aYLoc, out aZLoc);
+        _loc.Coord(out aXLoc, out aYLoc, out aZLoc);
         thePlane.Coefficients(out aCoeff[0], out aCoeff[1], out aCoeff[2], out aCoeff[3]);
         aCoeff[3] = aCoeff[3] - aCoeff[0] * aXLoc - aCoeff[1] * aYLoc - aCoeff[2] * aZLoc;
 
@@ -191,7 +192,7 @@ public class BRepGProp_VinertGK : GProp_GProps
         double aYLoc;
         double aZLoc;
 
-        loc.Coord(out aXLoc, out aYLoc, out aZLoc);
+        _loc.Coord(out aXLoc, out aYLoc, out aZLoc);
         thePlane.Coefficients(out aCoeff[0], out aCoeff[1], out aCoeff[2], out aCoeff[3]);
         aCoeff[3] = aCoeff[3] - aCoeff[0] * aXLoc - aCoeff[1] * aYLoc - aCoeff[2] * aZLoc;
 
@@ -319,7 +320,7 @@ public class BRepGProp_VinertGK : GProp_GProps
             aTMax = theSurface.LastParameter();
 
             // Get the spans on the curve.
-            var aTFunc = new BRepGProp_TFunction(theSurface, loc, IsByPoint, theCoeffs, aUMin, aCrvTol);
+            var aTFunc = new BRepGProp_TFunction(theSurface, _loc, IsByPoint, theCoeffs, aUMin, aCrvTol);
 
             NCollection_HArray1<double> aTKnots = theSurface.GetTKnots(aTMin, aTMax);
 
@@ -328,7 +329,7 @@ public class BRepGProp_VinertGK : GProp_GProps
             // double                 aTolSpan       = aCrvTol/aNbTIntervals;
             double aTolSpan = 0.9 * theTolerance; // Relative error
             var anIntegral = new KronrodSingleIntegration();
-            GProp_ValueType aValueType;
+            PropertyValueType aValueType;
 
             // Empirical criterion.
             aNbPnts = Min(15, theSurface.IntegrationOrder() / aNbTIntervals + 1);
@@ -350,34 +351,34 @@ public class BRepGProp_VinertGK : GProp_GProps
                 switch (k)
                 {
                     case 1:
-                        aValueType = GProp_Mass;
+                        aValueType = global::Kerf.Engine.Measurement.PropertyValueType.Mass;
                         break;
                     case 2:
-                        aValueType = GProp_CenterMassX;
+                        aValueType = CenterMassX;
                         break;
                     case 3:
-                        aValueType = GProp_CenterMassY;
+                        aValueType = CenterMassY;
                         break;
                     case 4:
-                        aValueType = GProp_CenterMassZ;
+                        aValueType = CenterMassZ;
                         break;
                     case 5:
-                        aValueType = GProp_InertiaXX;
+                        aValueType = InertiaXX;
                         break;
                     case 6:
-                        aValueType = GProp_InertiaYY;
+                        aValueType = InertiaYY;
                         break;
                     case 7:
-                        aValueType = GProp_InertiaZZ;
+                        aValueType = InertiaZZ;
                         break;
                     case 8:
-                        aValueType = GProp_InertiaXY;
+                        aValueType = InertiaXY;
                         break;
                     case 9:
-                        aValueType = GProp_InertiaXZ;
+                        aValueType = InertiaXZ;
                         break;
                     case 10:
-                        aValueType = GProp_InertiaYZ;
+                        aValueType = InertiaYZ;
                         break;
 
                     default:
@@ -438,10 +439,10 @@ public class BRepGProp_VinertGK : GProp_GProps
         }
 
         // Get volume value.
-        dim = aValue[1];
+        _dim = aValue[1];
         myErrorReached = aTolReached[1];
         myAbsolutError = myErrorReached;
-        double anAbsDim = Math.Abs(dim);
+        double anAbsDim = Math.Abs(_dim);
         double aVolTol = Epsilon(myAbsolutError);
         if (anAbsDim >= aVolTol)
         {
@@ -455,15 +456,15 @@ public class BRepGProp_VinertGK : GProp_GProps
             {
                 if (IsByPoint)
                 {
-                    aValue[2] = aCoeffs[0] + aValue[2] / dim;
-                    aValue[3] = aCoeffs[1] + aValue[3] / dim;
-                    aValue[4] = aCoeffs[2] + aValue[4] / dim;
+                    aValue[2] = aCoeffs[0] + aValue[2] / _dim;
+                    aValue[3] = aCoeffs[1] + aValue[3] / _dim;
+                    aValue[4] = aCoeffs[2] + aValue[4] / _dim;
                 }
                 else
                 {
-                    aValue[2] /= dim;
-                    aValue[3] /= dim;
-                    aValue[4] /= dim;
+                    aValue[2] /= _dim;
+                    aValue[3] /= _dim;
+                    aValue[4] /= _dim;
                 }
             }
             else
@@ -471,16 +472,16 @@ public class BRepGProp_VinertGK : GProp_GProps
                 aValue[2] = 0.0;
                 aValue[3] = 0.0;
                 aValue[4] = 0.0;
-                dim = 0.0;
+                _dim = 0.0;
             }
 
-            g.SetCoord(aValue[2], aValue[3], aValue[4]);
+            _g.SetCoord(aValue[2], aValue[3], aValue[4]);
         }
 
         if (theIFlag)
         {
             // Fill the matrix of inertia.
-            inertia.SetCols(new Xyz(aValue[5], aValue[8], aValue[9]),
+            _inertia.SetCols(new Xyz(aValue[5], aValue[8], aValue[9]),
                             new Xyz(aValue[8], aValue[6], aValue[10]),
                             new Xyz(aValue[9], aValue[10], aValue[7]));
         }

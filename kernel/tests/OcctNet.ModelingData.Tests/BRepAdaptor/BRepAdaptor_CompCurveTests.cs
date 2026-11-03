@@ -1,12 +1,18 @@
 // Port of: src/ModelingData/TKBRep/GTests/BRepAdaptor_CompCurve_Test.cxx
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -17,12 +23,12 @@ namespace OcctNet.ModelingData.Tests;
 public class BRepAdaptor_CompCurveTests
 {
     /// <summary>A frozen wire of the edges, in this order (as BRepBuilderAPI_MakeWire of one edge gives).</summary>
-    internal static TopoDS_Wire MakeWire(params TopoDS_Edge[] theEdges)
+    internal static Wire MakeWire(params Edge[] theEdges)
     {
-        var aB = new BRep_Builder();
-        TopoDS_Wire aW = new TopoDS_Wire();
+        var aB = new BrepBuilder();
+        Wire aW = new Wire();
         aB.MakeWire(ref aW);
-        foreach (TopoDS_Edge anE in theEdges)
+        foreach (Edge anE in theEdges)
         {
             aB.Add(aW, anE);
         }
@@ -31,11 +37,11 @@ public class BRepAdaptor_CompCurveTests
     }
 
     /// <summary>The outer wire of the box's first face (a closed wire of 4 segments, from a frozen box).</summary>
-    internal static TopoDS_Wire BoxFaceWire(out TopoDS_Face theFace)
+    internal static Wire BoxFaceWire(out Face theFace)
     {
-        TopoDS_Shape aBox = TestShapes.Frozen(TestShapes.Box(1.0, 2.0, 3.0));
-        theFace = TopoDS.Face(new TopExp_Explorer(aBox, TopAbs_FACE).Current());
-        return TopoDS.Wire(new TopExp_Explorer(theFace, TopAbs_WIRE).Current());
+        Shape aBox = TestShapes.Frozen(TestShapes.Box(1.0, 2.0, 3.0));
+        theFace = ShapeCasts.Face(new Explorer(aBox, ShapeType.Face).Current());
+        return ShapeCasts.Wire(new Explorer(theFace, ShapeType.Wire).Current());
     }
 
     // Test OCC5696: BRepAdaptor_CompCurve::Edge() method
@@ -43,13 +49,13 @@ public class BRepAdaptor_CompCurveTests
     public void OCC5696_EdgeMethod()
     {
         // Create a simple edge from two points
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(2, 0, 0)).Edge();
+        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(2, 0, 0)).Edge();
 
         // Create a wire from the edge
-        TopoDS_Wire aWire = new BRepBuilderAPI_MakeWire(anEdge).Wire();
+        Wire aWire = new BRepBuilderAPI_MakeWire(anEdge).Wire();
 
         // Create a composite curve adaptor
-        var aCurve = new BRepAdaptor_CompCurve(aWire);
+        var aCurve = new WireCurveAdaptor(aWire);
 
         // Get curve parameters
         double aFirst = aCurve.FirstParameter();
@@ -58,14 +64,14 @@ public class BRepAdaptor_CompCurveTests
 
         // Test the Edge() method
         double aParEdge = 0.0;
-        TopoDS_Edge anEdgeFound = new TopoDS_Edge();
+        Edge anEdgeFound = new Edge();
 
         // The original test was checking that this method doesn't throw an exception and returns valid parameter
         Exception? anException = Record.Exception(() => aCurve.Edge(aPar, out anEdgeFound, out aParEdge));
         Assert.Null(anException);
 
         // Verify that the returned edge is valid
-        Assert.False(anEdgeFound.IsNull());
+        Assert.False(anEdgeFound.IsNull);
 
         // Verify that the parameter is within valid range [0, edge length]
         Assert.True(aParEdge >= 0.0);
@@ -81,24 +87,24 @@ public class BRepAdaptor_CompCurveTests
     {
         double r45 = Math.PI / 4.0, r225 = 3.0 * Math.PI / 4.0;
 
-        var arcMaker = new GC_MakeArcOfCircle(
+        var arcMaker = new MakeArcOfCircle(
             new Circle3D(new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1.0),
             r45,
             r225,
             true);
         var edgeMaker = new BRepBuilderAPI_MakeEdge(arcMaker.Value());
         var wireMaker = new BRepBuilderAPI_MakeWire(edgeMaker.Edge());
-        TopoDS_Wire aWire = wireMaker.Wire();
+        Wire aWire = wireMaker.Wire();
 
-        var aCurve = new BRepAdaptor_CompCurve(aWire);
+        var aCurve = new WireCurveAdaptor(aWire);
         Point3D aStartPt = aCurve.Value(aCurve.FirstParameter());
         Point3D anEndPt = aCurve.Value(aCurve.LastParameter());
 
         // Collect wire vertices
         var aVertices = new List<Point3D>();
-        for (var anExp = new TopExp_Explorer(aWire, TopAbs_VERTEX); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aWire, ShapeType.Vertex); anExp.More(); anExp.Next())
         {
-            aVertices.Add(BRep_Tool.Pnt(TopoDS.Vertex(anExp.Current())));
+            aVertices.Add(Tool.Pnt(ShapeCasts.Vertex(anExp.Current())));
         }
         Assert.True(aVertices.Count >= 1);
 
@@ -126,19 +132,19 @@ public class BRepAdaptor_CompCurveTests
     {
         // Build a circle: center(1,0,0), Z-axis(0,-1,0), X-axis(0,0,-1), radius=1
         var anAx2 = new Frame3D(new Point3D(1.0, 0.0, 0.0), new Direction3D(0.0, -1.0, 0.0), new Direction3D(0.0, 0.0, -1.0));
-        var aCircle = new Geom_Circle(anAx2, 1.0);
+        var aCircle = new CircleCurve3D(anAx2, 1.0);
 
         double t1 = Math.PI / 2.0;
         double t2 = 3.0 * Math.PI / 2.0;
 
-        var aTrimmed = new Geom_TrimmedCurve(aCircle, t1, t2);
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(aTrimmed).Edge();
+        var aTrimmed = new TrimmedCurve3D(aCircle, t1, t2);
+        Edge anEdge = new BRepBuilderAPI_MakeEdge(aTrimmed).Edge();
 
         // Reverse the edge, then wrap it in a wire
-        anEdge = TopoDS.Edge(anEdge.Oriented(TopAbs_REVERSED));
-        TopoDS_Wire aWire = new BRepBuilderAPI_MakeWire(anEdge).Wire();
+        anEdge = ShapeCasts.Edge(anEdge.Oriented(Reversed));
+        Wire aWire = new BRepBuilderAPI_MakeWire(anEdge).Wire();
 
-        var aBACC = new BRepAdaptor_CompCurve(aWire);
+        var aBACC = new WireCurveAdaptor(aWire);
         double aFirst = aBACC.FirstParameter();
         double aLast = aBACC.LastParameter();
 
@@ -156,7 +162,7 @@ public class BRepAdaptor_CompCurveTests
 
         // Reference: inverse circle (normal = (0,1,0)), evaluated at the same parameters
         var anAx2Ref = new Frame3D(new Point3D(1.0, 0.0, 0.0), new Direction3D(0.0, 1.0, 0.0), new Direction3D(0.0, 0.0, -1.0));
-        var aCircleRef = new Geom_Circle(anAx2Ref, 1.0);
+        var aCircleRef = new CircleCurve3D(anAx2Ref, 1.0);
 
         aCircleRef.D1(t1, out Point3D aRefP1, out Vector3D aRefV1);
         aCircleRef.D1(t2, out Point3D aRefP2, out Vector3D aRefV2);
@@ -192,22 +198,22 @@ public class BRepAdaptor_CompCurveTests
     [Fact]
     public void ClosedWire_UnitParametrisation()
     {
-        TopoDS_Wire aWire = BoxFaceWire(out _);
-        var aC = new BRepAdaptor_CompCurve(aWire);
+        Wire aWire = BoxFaceWire(out _);
+        var aC = new WireCurveAdaptor(aWire);
         Assert.Equal(0.0, aC.FirstParameter());
         Assert.Equal(4.0, aC.LastParameter());
-        Assert.True(aC.IsClosed());
-        Assert.False(aC.IsPeriodic());
+        Assert.True(aC.IsClosed);
+        Assert.False(aC.IsPeriodic);
         Assert.Equal(4.0, aC.Period());
         Assert.Equal(C0, aC.Continuity());
         Assert.Equal(OtherCurve, aC.GetType());
         Assert.True(aC.Wire().IsSame(aWire));
 
         // the knots are the vertices, met in the explorer's order; the curve closes on itself
-        var anExp = new BRepTools_WireExplorer(aWire);
+        var anExp = new WireExplorer(aWire);
         for (int i = 0; i < 4; i++, anExp.Next())
         {
-            Point3D aV = BRep_Tool.Pnt(anExp.CurrentVertex());
+            Point3D aV = Tool.Pnt(anExp.CurrentVertex());
             Assert.True(aC.Value(i).Distance(aV) < 1e-12, $"knot {i}");
         }
         Assert.True(aC.Value(0.0).Distance(aC.Value(4.0)) < 1e-12);
@@ -225,8 +231,8 @@ public class BRepAdaptor_CompCurveTests
     [Fact]
     public void ClosedWire_CurvilinearAbscissa()
     {
-        TopoDS_Wire aWire = BoxFaceWire(out _);
-        var aC = new BRepAdaptor_CompCurve(aWire, true);
+        Wire aWire = BoxFaceWire(out _);
+        var aC = new WireCurveAdaptor(aWire, true);
         // the first face of the box 1 x 2 x 3 is the bottom: a 1 x 2 rectangle
         Assert.Equal(6.0, aC.LastParameter(), 1e-12);
 
@@ -237,18 +243,18 @@ public class BRepAdaptor_CompCurveTests
             Assert.Equal(1.0, aD1.Magnitude(), 1e-12);
         }
 
-        aC.Edge(2.5, out TopoDS_Edge anE, out double aUonE);
-        Assert.False(anE.IsNull());
-        BRep_Tool.Range(anE, out double f, out double l);
+        aC.Edge(2.5, out Edge anE, out double aUonE);
+        Assert.False(anE.IsNull);
+        Tool.Range(anE, out double f, out double l);
         Assert.InRange(aUonE, Math.Min(f, l), Math.Max(f, l));
     }
 
     [Fact]
     public void Trim_And_ShallowCopy()
     {
-        TopoDS_Wire aWire = BoxFaceWire(out _);
-        var aC = new BRepAdaptor_CompCurve(aWire);
-        var aT = (BRepAdaptor_CompCurve)aC.Trim(0.5, 2.5, 1e-9);
+        Wire aWire = BoxFaceWire(out _);
+        var aC = new WireCurveAdaptor(aWire);
+        var aT = (WireCurveAdaptor)aC.Trim(0.5, 2.5, 1e-9);
         Assert.Equal(0.5, aT.FirstParameter());
         Assert.Equal(2.5, aT.LastParameter());
         foreach (double u in new[] { 0.5, 1.0, 1.7, 2.5 })
@@ -256,7 +262,7 @@ public class BRepAdaptor_CompCurveTests
             Assert.True(aT.Value(u).Distance(aC.Value(u)) < 1e-12, $"u = {u}");
         }
 
-        var aCopy = (BRepAdaptor_CompCurve)aC.ShallowCopy();
+        var aCopy = (WireCurveAdaptor)aC.ShallowCopy();
         foreach (double u in new[] { 0.0, 0.3, 1.5, 3.9, 4.0 })
         {
             Assert.Equal(aC.Value(u), aCopy.Value(u));
@@ -271,13 +277,13 @@ public class BRepAdaptor_CompCurveTests
     [Fact]
     public void SinglePeriodicEdge_IsNotPeriodic()
     {
-        TopoDS_Face aFace = TestShapes.Frozen(TestShapes.CylinderFace(2.0, 1.0));
-        TopoDS_Edge aBottom = TopoDS.Edge(new TopExp_Explorer(aFace, TopAbs_EDGE).Current());
-        var aC = new BRepAdaptor_CompCurve(MakeWire(aBottom));
-        Assert.False(aC.IsPeriodic());
+        Face aFace = TestShapes.Frozen(TestShapes.CylinderFace(2.0, 1.0));
+        Edge aBottom = ShapeCasts.Edge(new Explorer(aFace, ShapeType.Edge).Current());
+        var aC = new WireCurveAdaptor(MakeWire(aBottom));
+        Assert.False(aC.IsPeriodic);
         Assert.Equal(1.0, aC.LastParameter());
         Assert.Equal(CN, aC.Continuity());
-        Assert.Equal(Circle, new BRepAdaptor_Curve(aBottom).GetType());
+        Assert.Equal(Circle, new EdgeCurveAdaptor(aBottom).GetType());
         Assert.Equal(2.0, aC.Circle().Radius());
         Assert.True(aC.Value(0.25).Distance(new Point3D(0, 2, 0)) < 1e-12);
     }
@@ -285,16 +291,16 @@ public class BRepAdaptor_CompCurveTests
     [Fact]
     public void DegeneratedEdgesAreSkipped()
     {
-        var aB = new BRep_Builder();
-        TopoDS_Vertex aV0 = TestShapes.Vertex(new Point3D(0, 0, 0));
-        TopoDS_Vertex aV1 = TestShapes.Vertex(new Point3D(1, 0, 0));
-        TopoDS_Edge anE = TestShapes.Edge(aV0, aV1);
-        TopoDS_Edge aDeg = new TopoDS_Edge();
+        var aB = new BrepBuilder();
+        Vertex aV0 = TestShapes.Vertex(new Point3D(0, 0, 0));
+        Vertex aV1 = TestShapes.Vertex(new Point3D(1, 0, 0));
+        Edge anE = TestShapes.Edge(aV0, aV1);
+        Edge aDeg = new Edge();
         aB.MakeEdge(ref aDeg);
-        aB.Add(aDeg, aV1.Oriented(TopAbs_FORWARD));
-        aB.Add(aDeg, aV1.Oriented(TopAbs_REVERSED));
+        aB.Add(aDeg, aV1.Oriented(Forward));
+        aB.Add(aDeg, aV1.Oriented(Reversed));
         aB.Degenerated(aDeg, true);
-        var aC = new BRepAdaptor_CompCurve(MakeWire(anE, aDeg));
+        var aC = new WireCurveAdaptor(MakeWire(anE, aDeg));
         Assert.Equal(1.0, aC.LastParameter());
         Assert.Equal(1, aC.NbIntervals(C0));
     }

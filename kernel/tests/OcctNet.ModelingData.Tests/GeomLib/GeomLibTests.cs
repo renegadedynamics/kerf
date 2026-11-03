@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
 
@@ -25,7 +26,7 @@ public class GeomLibTests
         return anArray;
     }
 
-    private static Geom_BSplineCurve Wavy3d()
+    private static BSplineCurve3D Wavy3d()
     {
         NCollection_Array1<Point3D> aPoles = new(1, 6);
         for (int i = 1; i <= 6; i++)
@@ -36,10 +37,10 @@ public class GeomLibTests
         aMults.Init(1);
         aMults[1] = 4;
         aMults[4] = 4;
-        return new Geom_BSplineCurve(aPoles, Reals(0, 1, 2, 3), aMults, 3);
+        return new BSplineCurve3D(aPoles, Reals(0, 1, 2, 3), aMults, 3);
     }
 
-    private static Geom_BSplineSurface Sheet(bool theRational)
+    private static BSplineSurface Sheet(bool theRational)
     {
         NCollection_Array2<Point3D> aPoles = new(1, 4, 1, 4);
         NCollection_Array2<double> aWeights = new(1, 4, 1, 4);
@@ -54,8 +55,8 @@ public class GeomLibTests
         NCollection_Array1<int> aMults = new(1, 2);
         aMults.Init(4);
         return theRational
-            ? new Geom_BSplineSurface(aPoles, aWeights, Reals(0, 1), Reals(0, 1), aMults, aMults, 3, 3)
-            : new Geom_BSplineSurface(aPoles, Reals(0, 1), Reals(0, 1), aMults, aMults, 3, 3);
+            ? new BSplineSurface(aPoles, aWeights, Reals(0, 1), Reals(0, 1), aMults, aMults, 3, 3)
+            : new BSplineSurface(aPoles, Reals(0, 1), Reals(0, 1), aMults, aMults, 3, 3);
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -65,12 +66,12 @@ public class GeomLibTests
     public void FuseIntervals_MergesCloseValues()
     {
         NCollection_Sequence<double> aSeq = new();
-        GeomLib.FuseIntervals(Reals(0, 1, 2, 3), Reals(0, 1.5, 2 + 1e-10, 4), aSeq);
+        global::Kerf.Engine.Geometry.Library.GeomLib.FuseIntervals(Reals(0, 1, 2, 3), Reals(0, 1.5, 2 + 1e-10, 4), aSeq);
         Assert.Equal(6, aSeq.Length());
         Assert.Equal([0.0, 1.0, 1.5, 2 + 0.5e-10, 3.0, 4.0], Enumerable.Range(1, 6).Select(i => aSeq.Value(i)));
 
         NCollection_Sequence<double> aFirst = new();
-        GeomLib.FuseIntervals(Reals(0, 2), Reals(1e-4, 2), aFirst, 1e-3, true);
+        global::Kerf.Engine.Geometry.Library.GeomLib.FuseIntervals(Reals(0, 2), Reals(1e-4, 2), aFirst, 1e-3, true);
         Assert.Equal(2, aFirst.Length());
         Assert.Equal(0.0, aFirst.Value(1));
     }
@@ -83,7 +84,7 @@ public class GeomLibTests
         {
             anIn[i] = (i - 1) * 0.01;
         }
-        GeomLib.RemovePointsFromArray(10, anIn, out NCollection_HArray1<double> anOut);
+        global::Kerf.Engine.Geometry.Library.GeomLib.RemovePointsFromArray(10, anIn, out NCollection_HArray1<double> anOut);
         Assert.Equal(0.0, anOut[1]);
         Assert.Equal(1.0, anOut[anOut.Upper()]);
         Assert.True(anOut.Length() <= 11);
@@ -96,15 +97,15 @@ public class GeomLibTests
     [Fact]
     public void DensifyArray1OfReal_AddsUniformPoints()
     {
-        GeomLib.DensifyArray1OfReal(5, Reals(0, 4), out NCollection_HArray1<double> anOut);
+        global::Kerf.Engine.Geometry.Library.GeomLib.DensifyArray1OfReal(5, Reals(0, 4), out NCollection_HArray1<double> anOut);
         Assert.Equal([0.0, 4.0 / 4, 2.0, 3.0, 4.0], anOut.AsSpan().ToArray().Select(x => Math.Round(x, 12)));
 
         // Not in order: copied
-        GeomLib.DensifyArray1OfReal(5, Reals(3, 1), out NCollection_HArray1<double> aCopy);
+        global::Kerf.Engine.Geometry.Library.GeomLib.DensifyArray1OfReal(5, Reals(3, 1), out NCollection_HArray1<double> aCopy);
         Assert.Equal([3.0, 1.0], aCopy.AsSpan().ToArray());
 
         // Enough points: copied
-        GeomLib.DensifyArray1OfReal(2, Reals(0, 1, 2), out NCollection_HArray1<double> aSame);
+        global::Kerf.Engine.Geometry.Library.GeomLib.DensifyArray1OfReal(2, Reals(0, 1, 2), out NCollection_HArray1<double> aSame);
         Assert.Equal([0.0, 1.0, 2.0], aSame.AsSpan().ToArray());
     }
 
@@ -125,7 +126,7 @@ public class GeomLibTests
                 aPoints[k++] = new Point3D(x / Math.Sqrt(2.0), j / 4.0, x / Math.Sqrt(2.0));
             }
         }
-        GeomLib.Inertia(aPoints, out Point3D aBary, out Direction3D aX, out Direction3D aY, out double aXGap, out double aYGap,
+        global::Kerf.Engine.Geometry.Library.GeomLib.Inertia(aPoints, out Point3D aBary, out Direction3D aX, out Direction3D aY, out double aXGap, out double aYGap,
                         out double aZGap);
         Assert.Equal(2.0 / Math.Sqrt(2.0), aBary.X(), 1e-12);
         Assert.Equal(0.5, aBary.Y(), 1e-12);
@@ -134,7 +135,7 @@ public class GeomLibTests
         Assert.True(aXGap > aYGap);
         Assert.Equal(0.0, aZGap, 1e-7);
 
-        GeomLib.AxeOfInertia(aPoints, out Frame3D anAxe, out bool anIsSingular);
+        global::Kerf.Engine.Geometry.Library.GeomLib.AxeOfInertia(aPoints, out Frame3D anAxe, out bool anIsSingular);
         Assert.False(anIsSingular);
         Assert.True(anAxe.Direction().IsParallel(new Direction3D(-1, 0, 1), 1e-9));
 
@@ -144,7 +145,7 @@ public class GeomLibTests
         {
             aLine[i] = new Point3D(i, 2.0 * i, 0.0);
         }
-        GeomLib.AxeOfInertia(aLine, out Frame3D aLineAxe, out bool aLineSingular);
+        global::Kerf.Engine.Geometry.Library.GeomLib.AxeOfInertia(aLine, out Frame3D aLineAxe, out bool aLineSingular);
         Assert.True(aLineSingular);
         Assert.True(aLineAxe.XDirection().IsParallel(new Direction3D(1, 2, 0), 1e-9));
     }
@@ -155,15 +156,15 @@ public class GeomLibTests
     [Fact]
     public void EvalMaxDistances_BetweenAShiftedCurve()
     {
-        Geom_BSplineCurve aCurve = Wavy3d();
-        Geom_BSplineCurve aShifted = (Geom_BSplineCurve)aCurve.Translated(new Vector3D(0, 0, 0.01));
-        GeomAdaptor_Curve aC1 = new(aCurve), aC2 = new(aShifted);
+        BSplineCurve3D aCurve = Wavy3d();
+        BSplineCurve3D aShifted = (BSplineCurve3D)aCurve.Translated(new Vector3D(0, 0, 0.01));
+        CurveAdaptor aC1 = new(aCurve), aC2 = new(aShifted);
         NCollection_Array1<double> aParams = Reals(0, 0.5, 1, 1.5, 2, 2.5, 3);
-        GeomLib.EvalMaxParametricDistance(aC1, aC2, 1e-7, aParams, out double aMax);
+        global::Kerf.Engine.Geometry.Library.GeomLib.EvalMaxParametricDistance(aC1, aC2, 1e-7, aParams, out double aMax);
         Assert.Equal(0.01, aMax, 1e-12);
-        GeomLib.EvalMaxDistanceAlongParameter(aC1, aC2, 1e-7, aParams, out double aMaxAlong);
+        global::Kerf.Engine.Geometry.Library.GeomLib.EvalMaxDistanceAlongParameter(aC1, aC2, 1e-7, aParams, out double aMaxAlong);
         Assert.InRange(aMaxAlong, 0.005, 0.01 + 1e-12); // projected: at most the shift
-        GeomLib.EvalMaxDistanceAlongParameter(aC1, aC1, 1e-7, aParams, out double aZero);
+        global::Kerf.Engine.Geometry.Library.GeomLib.EvalMaxDistanceAlongParameter(aC1, aC1, 1e-7, aParams, out double aZero);
         Assert.Equal(1e-7, aZero);
     }
 
@@ -174,28 +175,28 @@ public class GeomLibTests
     public void To3d_EveryCurveKind()
     {
         Frame3D aPos = new(new Point3D(1, 2, 3), new Direction3D(0, 1, 1), new Direction3D(1, 0, 0));
-        Geom_Plane aPlane = new(new CoordinateSystem(aPos));
-        Geom2d_Curve[] aCurves =
+        PlaneSurface aPlane = new(new CoordinateSystem(aPos));
+        Curve2D[] aCurves =
         [
-            new Geom2d_Line(new Point2D(1, 1), new Direction2D(1, 2)),
-            new Geom2d_Circle(new Axis2D(new Point2D(0.5, -1), new Direction2D(1, 1)), 2.0),
-            new Geom2d_Ellipse(new Axis2D(new Point2D(0, 0), new Direction2D(0, 1)), 3.0, 1.0),
-            new Geom2d_Parabola(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 0.5),
-            new Geom2d_Hyperbola(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0, 1.0),
-            new Geom2d_TrimmedCurve(new Geom2d_Circle(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0), 0.5, 2.0),
-            new Geom2d_OffsetCurve(new Geom2d_Circle(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0), 0.25),
-            new Geom2d_BezierCurve(NCollection_Array1<Point2D>.From([new(0, 0), new(1, 2), new(3, 1)])),
-            Geom2dConvert.CurveToBSplineCurve(new Geom2d_TrimmedCurve(
-                new Geom2d_Circle(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0), 0.0, 2.0)),
+            new LineCurve2D(new Point2D(1, 1), new Direction2D(1, 2)),
+            new CircleCurve2D(new Axis2D(new Point2D(0.5, -1), new Direction2D(1, 1)), 2.0),
+            new EllipseCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(0, 1)), 3.0, 1.0),
+            new ParabolaCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 0.5),
+            new HyperbolaCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0, 1.0),
+            new TrimmedCurve2D(new CircleCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0), 0.5, 2.0),
+            new OffsetCurve2D(new CircleCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0), 0.25),
+            new BezierCurve2D(NCollection_Array1<Point2D>.From([new(0, 0), new(1, 2), new(3, 1)])),
+            global::Kerf.Engine.Geometry.Conversion.Geom2dConvert2D.CurveToBSplineCurve(new TrimmedCurve2D(
+                new CircleCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0), 0.0, 2.0)),
         ];
         Type[] aTypes =
         [
-            typeof(Geom_Line), typeof(Geom_Circle), typeof(Geom_Ellipse), typeof(Geom_Parabola), typeof(Geom_Hyperbola),
-            typeof(Geom_TrimmedCurve), typeof(Geom_OffsetCurve), typeof(Geom_BezierCurve), typeof(Geom_BSplineCurve),
+            typeof(LineCurve3D), typeof(CircleCurve3D), typeof(EllipseCurve3D), typeof(ParabolaCurve3D), typeof(HyperbolaCurve3D),
+            typeof(TrimmedCurve3D), typeof(OffsetCurve3D), typeof(BezierCurve3D), typeof(BSplineCurve3D),
         ];
         for (int k = 0; k < aCurves.Length; k++)
         {
-            Geom_Curve a3d = GeomLib.To3d(aPos, aCurves[k]);
+            Curve3D a3d = global::Kerf.Engine.Geometry.Library.GeomLib.To3d(aPos, aCurves[k]);
             Assert.IsType(aTypes[k], a3d);
             double f = Math.Max(aCurves[k].FirstParameter(), -2.0), l = Math.Min(aCurves[k].LastParameter(), 2.0);
             for (int i = 0; i <= 8; i++)
@@ -211,13 +212,13 @@ public class GeomLibTests
     [Fact]
     public void GTransform_TrsfAndAffinity()
     {
-        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(1, 0), new Direction2D(1, 0)), 2.0);
+        CircleCurve2D aCircle = new(new Axis2D(new Point2D(1, 0), new Direction2D(1, 0)), 2.0);
         GeneralTransform2D aRotation = new(new Transform2D().WithRotation(new Point2D(0, 0), 0.3));
-        Assert.IsType<Geom2d_Circle>(GeomLib.GTransform(aCircle, aRotation));
+        Assert.IsType<CircleCurve2D>(global::Kerf.Engine.Geometry.Library.GeomLib.GTransform(aCircle, aRotation));
 
         GeneralTransform2D anAffinity = GeneralTransform2D.Affinity(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 0.5);
-        Geom2d_Curve? anEllipse = GeomLib.GTransform(aCircle, anAffinity);
-        Assert.IsType<Geom2d_BSplineCurve>(anEllipse);
+        Curve2D? anEllipse = global::Kerf.Engine.Geometry.Library.GeomLib.GTransform(aCircle, anAffinity);
+        Assert.IsType<BSplineCurve2D>(anEllipse);
         for (double t = 0; t < 6; t += 0.5)
         {
             // the transformed curve passes through the transformed points of the circle (not at the same parameter)
@@ -226,19 +227,19 @@ public class GeomLibTests
             Geom2dAPI_Distance(anEllipse!, new Point2D(anImage), 1e-9);
         }
 
-        Geom2d_Line aLine = new(new Point2D(0, 1), new Direction2D(1, 1));
-        Geom2d_Curve? aLineImage = GeomLib.GTransform(aLine, anAffinity);
-        Assert.IsType<Geom2d_Line>(aLineImage);
+        LineCurve2D aLine = new(new Point2D(0, 1), new Direction2D(1, 1));
+        Curve2D? aLineImage = global::Kerf.Engine.Geometry.Library.GeomLib.GTransform(aLine, anAffinity);
+        Assert.IsType<LineCurve2D>(aLineImage);
         Assert.Equal(1.0, aLine.Location().Y());
-        Assert.Equal(0.5, ((Geom2d_Line)aLineImage!).Location().Y(), 1e-15);
+        Assert.Equal(0.5, ((LineCurve2D)aLineImage!).Location().Y(), 1e-15);
 
-        Assert.Null(GeomLib.GTransform(new Geom2d_OffsetCurve(aCircle, 0.1), anAffinity));
-        Assert.Null(GeomLib.GTransform(new Geom2d_Parabola(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0),
+        Assert.Null(global::Kerf.Engine.Geometry.Library.GeomLib.GTransform(new OffsetCurve2D(aCircle, 0.1), anAffinity));
+        Assert.Null(global::Kerf.Engine.Geometry.Library.GeomLib.GTransform(new ParabolaCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0),
                                        anAffinity));
     }
 
     // The distance from the point to the curve is within the tolerance (dense sampling, then Newton-free bisection).
-    private static void Geom2dAPI_Distance(Geom2d_Curve theC, Point2D theP, double theTol)
+    private static void Geom2dAPI_Distance(Curve2D theC, Point2D theP, double theTol)
     {
         double f = theC.FirstParameter(), l = theC.LastParameter();
         double aBest = double.MaxValue, aBestT = f;
@@ -279,14 +280,14 @@ public class GeomLibTests
     public void SameRange_EveryCase_LeavesTheCallersCurve()
     {
         // Within the tolerance: the curve itself
-        Geom2d_Line aLine = new(new Point2D(0, 0), new Direction2D(1, 0));
-        Geom2d_Curve? aRes = null;
-        GeomLib.SameRange(1e-7, aLine, 0, 1, 0, 1 + 1e-9, ref aRes);
+        LineCurve2D aLine = new(new Point2D(0, 0), new Direction2D(1, 0));
+        Curve2D? aRes = null;
+        global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(1e-7, aLine, 0, 1, 0, 1 + 1e-9, ref aRes);
         Assert.Same(aLine, aRes);
 
         // A line moved along itself
-        GeomLib.SameRange(1e-7, aLine, 2, 5, 0, 3, ref aRes);
-        Assert.IsType<Geom2d_Line>(aRes);
+        global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(1e-7, aLine, 2, 5, 0, 3, ref aRes);
+        Assert.IsType<LineCurve2D>(aRes);
         Assert.NotSame(aLine, aRes);
         Assert.True(aRes!.Value(0).IsEqual(aLine.Value(2), 1e-15));
         Assert.Equal(0.0, aLine.Location().X());
@@ -294,41 +295,41 @@ public class GeomLibTests
         // A circle turned (direct and indirect)
         foreach (bool aSense in new[] { true, false })
         {
-            Geom2d_Circle aCircle = new(new Axis2D(new Point2D(1, 1), new Direction2D(1, 0)), 2.0, aSense);
+            CircleCurve2D aCircle = new(new Axis2D(new Point2D(1, 1), new Direction2D(1, 0)), 2.0, aSense);
             aCircle.Freeze();
-            GeomLib.SameRange(1e-7, aCircle, 1, 2, 3, 4, ref aRes);
-            Assert.IsType<Geom2d_Circle>(aRes);
+            global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(1e-7, aCircle, 1, 2, 3, 4, ref aRes);
+            Assert.IsType<CircleCurve2D>(aRes);
             Assert.True(aRes!.Value(3.5).IsEqual(aCircle.Value(1.5), 1e-12));
         }
 
         // A trimmed curve: its basis moved, trimmed again
-        Geom2d_TrimmedCurve aTrimmed = new(new Geom2d_Line(new Point2D(0, 0), new Direction2D(0, 1)), 1, 3);
-        GeomLib.SameRange(1e-7, aTrimmed, 1, 3, 10, 12, ref aRes);
-        Assert.IsType<Geom2d_TrimmedCurve>(aRes);
+        TrimmedCurve2D aTrimmed = new(new LineCurve2D(new Point2D(0, 0), new Direction2D(0, 1)), 1, 3);
+        global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(1e-7, aTrimmed, 1, 3, 10, 12, ref aRes);
+        Assert.IsType<TrimmedCurve2D>(aRes);
         Assert.Equal(10.0, aRes!.FirstParameter());
         Assert.True(aRes.Value(11).IsEqual(aTrimmed.Value(2), 1e-15));
 
         // Another curve with the same length: a reparametrised B-spline
-        Geom2d_Ellipse anEllipse = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 3, 1);
-        GeomLib.SameRange(1e-7, anEllipse, 0.5, 1.5, 7, 8, ref aRes);
-        Geom2d_BSplineCurve aBS = Assert.IsType<Geom2d_BSplineCurve>(aRes);
+        EllipseCurve2D anEllipse = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 3, 1);
+        global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(1e-7, anEllipse, 0.5, 1.5, 7, 8, ref aRes);
+        BSplineCurve2D aBS = Assert.IsType<BSplineCurve2D>(aRes);
         Assert.Equal(7.0, aBS.FirstParameter());
         Assert.Equal(8.0, aBS.LastParameter());
         Assert.True(aBS.Value(7).IsEqual(anEllipse.Value(0.5), 1e-12));
         Assert.True(aBS.Value(8).IsEqual(anEllipse.Value(1.5), 1e-12));
 
         // Another length: a segment of the curve, reparametrised
-        Geom2d_BSplineCurve aCurve = Geom2dConvert.CurveToBSplineCurve(new Geom2d_TrimmedCurve(anEllipse, 0, 3));
+        BSplineCurve2D aCurve = global::Kerf.Engine.Geometry.Conversion.Geom2dConvert2D.CurveToBSplineCurve(new TrimmedCurve2D(anEllipse, 0, 3));
         aCurve.Freeze();
-        GeomLib.SameRange(1e-7, aCurve, 1, 2, 0, 10, ref aRes);
-        aBS = Assert.IsType<Geom2d_BSplineCurve>(aRes);
+        global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(1e-7, aCurve, 1, 2, 0, 10, ref aRes);
+        aBS = Assert.IsType<BSplineCurve2D>(aRes);
         Assert.Equal(0.0, aBS.FirstParameter());
         Assert.Equal(10.0, aBS.LastParameter());
         Assert.True(aBS.Value(0).IsEqual(aCurve.Value(1), 1e-12));
         Assert.True(aBS.Value(10).IsEqual(aCurve.Value(2), 1e-12));
         Assert.Equal(0.0, aCurve.FirstParameter());
 
-        Assert.ThrowsAny<FailureException>(() => GeomLib.SameRange(1e-7, null, 0, 1, 0, 2, ref aRes));
+        Assert.ThrowsAny<FailureException>(() => global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(1e-7, null, 0, 1, 0, 2, ref aRes));
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -338,30 +339,30 @@ public class GeomLibTests
     public void BuildCurve3d_OnPlane_Iso_AndApproximated()
     {
         // On a plane: To3d of the 2D curve
-        Geom_Plane aPlane = new(new CoordinateSystem(new Point3D(0, 0, 1), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
-        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0);
-        Adaptor3d_CurveOnSurface aCOS = new(new Geom2dAdaptor_Curve(aCircle, 0, 1), new GeomAdaptor_Surface(aPlane));
-        Geom_Curve? aRes = null;
-        GeomLib.BuildCurve3d(1e-7, aCOS, 0, 1, ref aRes, out double aMax, out double anAvg);
-        Geom_Circle aC3d = Assert.IsType<Geom_Circle>(aRes);
+        PlaneSurface aPlane = new(new CoordinateSystem(new Point3D(0, 0, 1), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
+        CircleCurve2D aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0);
+        CurveOnSurface aCOS = new(new CurveAdaptor2D(aCircle, 0, 1), new SurfaceAdaptor(aPlane));
+        Curve3D? aRes = null;
+        global::Kerf.Engine.Geometry.Library.GeomLib.BuildCurve3d(1e-7, aCOS, 0, 1, ref aRes, out double aMax, out double anAvg);
+        CircleCurve3D aC3d = Assert.IsType<CircleCurve3D>(aRes);
         Assert.Equal(2.0, aC3d.Radius());
         Assert.Equal(0.0, aMax);
 
         // An isoline of a cylinder: its own isoline
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(), 3.0);
-        Geom2d_Line anIso = new(new Point2D(0.7, -1), new Direction2D(0, 1));
-        aCOS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(anIso, 0, 2), new GeomAdaptor_Surface(aCyl));
+        CylindricalSurface aCyl = new(new CoordinateSystem(), 3.0);
+        LineCurve2D anIso = new(new Point2D(0.7, -1), new Direction2D(0, 1));
+        aCOS = new CurveOnSurface(new CurveAdaptor2D(anIso, 0, 2), new SurfaceAdaptor(aCyl));
         aRes = null;
-        GeomLib.BuildCurve3d(1e-7, aCOS, 0, 2, ref aRes, out aMax, out anAvg);
-        Assert.IsType<Geom_BSplineCurve>(aRes);
+        global::Kerf.Engine.Geometry.Library.GeomLib.BuildCurve3d(1e-7, aCOS, 0, 2, ref aRes, out aMax, out anAvg);
+        Assert.IsType<BSplineCurve3D>(aRes);
         Assert.True(aRes!.Value(1.5).IsEqual(aCyl.Value(0.7, 0.5), 1e-12));
 
         // A helix: approximated
-        Geom2d_Line aHelix = new(new Point2D(0, 0), new Direction2D(1, 0.2));
-        aCOS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aHelix, 0, 8), new GeomAdaptor_Surface(aCyl));
+        LineCurve2D aHelix = new(new Point2D(0, 0), new Direction2D(1, 0.2));
+        aCOS = new CurveOnSurface(new CurveAdaptor2D(aHelix, 0, 8), new SurfaceAdaptor(aCyl));
         aRes = null;
-        GeomLib.BuildCurve3d(1e-6, aCOS, 0, 8, ref aRes, out aMax, out anAvg, C2, 10, 20);
-        Geom_BSplineCurve anApprox = Assert.IsType<Geom_BSplineCurve>(aRes);
+        global::Kerf.Engine.Geometry.Library.GeomLib.BuildCurve3d(1e-6, aCOS, 0, 8, ref aRes, out aMax, out anAvg, C2, 10, 20);
+        BSplineCurve3D anApprox = Assert.IsType<BSplineCurve3D>(aRes);
         Assert.True(aMax < 1e-6 && aMax > 0.0 && anAvg <= aMax);
         Assert.False(anApprox.IsFrozen);
         for (double t = 0; t <= 8; t += 0.25)
@@ -374,24 +375,24 @@ public class GeomLibTests
     [Fact]
     public void isIsoLine_And_buildC3dOnIsoLine()
     {
-        Geom2dAdaptor_Curve aV = new(new Geom2d_Line(new Point2D(2, 0), new Direction2D(0, -1)), 0, 1);
-        Assert.True(GeomLib.isIsoLine(aV, out bool anIsU, out double aParam, out bool aForward));
+        CurveAdaptor2D aV = new(new LineCurve2D(new Point2D(2, 0), new Direction2D(0, -1)), 0, 1);
+        Assert.True(global::Kerf.Engine.Geometry.Library.GeomLib.IsIsoLine(aV, out bool anIsU, out double aParam, out bool aForward));
         Assert.True(anIsU);
         Assert.Equal(2.0, aParam);
         Assert.False(aForward);
 
-        Geom2dAdaptor_Curve aDiagonal = new(new Geom2d_Line(new Point2D(2, 0), new Direction2D(1, 1)), 0, 1);
-        Assert.False(GeomLib.isIsoLine(aDiagonal, out _, out _, out _));
+        CurveAdaptor2D aDiagonal = new(new LineCurve2D(new Point2D(2, 0), new Direction2D(1, 1)), 0, 1);
+        Assert.False(global::Kerf.Engine.Geometry.Library.GeomLib.IsIsoLine(aDiagonal, out _, out _, out _));
 
         // On a sphere the isoline is refused
-        GeomAdaptor_Surface aSphere = new(new Geom_SphericalSurface(new CoordinateSystem(), 1.0));
-        Assert.Null(GeomLib.buildC3dOnIsoLine(aV, aSphere, 0, 1, 1e-7, true, 2.0, false));
+        SurfaceAdaptor aSphere = new(new SphericalSurface(new CoordinateSystem(), 1.0));
+        Assert.Null(global::Kerf.Engine.Geometry.Library.GeomLib.BuildC3dOnIsoLine(aV, aSphere, 0, 1, 1e-7, true, 2.0, false));
 
         // On a plane B-spline surface, the isoline reversed and reparametrised
-        Geom_BSplineSurface aSheet = Sheet(false);
+        BSplineSurface aSheet = Sheet(false);
         aSheet.Freeze();
-        Geom2dAdaptor_Curve anIso = new(new Geom2d_Line(new Point2D(0.25, 1), new Direction2D(0, -1)), 0, 1);
-        Geom_Curve? aC3d = GeomLib.buildC3dOnIsoLine(anIso, new GeomAdaptor_Surface(aSheet), 0, 1, 1e-7, true, 0.25, false);
+        CurveAdaptor2D anIso = new(new LineCurve2D(new Point2D(0.25, 1), new Direction2D(0, -1)), 0, 1);
+        Curve3D? aC3d = global::Kerf.Engine.Geometry.Library.GeomLib.BuildC3dOnIsoLine(anIso, new SurfaceAdaptor(aSheet), 0, 1, 1e-7, true, 0.25, false);
         Assert.NotNull(aC3d);
         Assert.True(aC3d!.Value(0.2).IsEqual(aSheet.Value(0.25, 0.8), 1e-12));
     }
@@ -402,12 +403,12 @@ public class GeomLibTests
     [Fact]
     public void AdjustExtremity_MovesEndsAndTangents_FrozenInput()
     {
-        Geom_BSplineCurve aCurve = Wavy3d();
+        BSplineCurve3D aCurve = Wavy3d();
         aCurve.Freeze();
-        Geom_BoundedCurve aRes = aCurve;
+        BoundedCurve3D aRes = aCurve;
         Point3D P1 = new(1, 0.5, 0.2), P2 = new(6.2, -0.1, 0.0);
         Vector3D T1 = new(1, 0, 0), T2 = new(1, 1, 0);
-        GeomLib.AdjustExtremity(ref aRes, P1, P2, T1, T2);
+        global::Kerf.Engine.Geometry.Library.GeomLib.AdjustExtremity(ref aRes, P1, P2, T1, T2);
         Assert.NotSame(aCurve, aRes);
         Assert.True(aRes.Value(aRes.FirstParameter()).IsEqual(P1, 1e-12));
         Assert.True(aRes.Value(aRes.LastParameter()).IsEqual(P2, 1e-12));
@@ -425,12 +426,12 @@ public class GeomLibTests
         {
             foreach (bool anAfter in new[] { true, false })
             {
-                Geom_BSplineCurve aCurve = Wavy3d();
+                BSplineCurve3D aCurve = Wavy3d();
                 aCurve.Freeze();
-                Geom_BoundedCurve aRes = aCurve;
+                BoundedCurve3D aRes = aCurve;
                 Point3D aTarget = anAfter ? new Point3D(7.5, -0.5, 0.5) : new Point3D(-0.2, 0.5, 0.0);
-                GeomLib.ExtendCurveToPoint(ref aRes, aTarget, aCont, anAfter);
-                Geom_BSplineCurve aBS = Assert.IsType<Geom_BSplineCurve>(aRes);
+                global::Kerf.Engine.Geometry.Library.GeomLib.ExtendCurveToPoint(ref aRes, aTarget, aCont, anAfter);
+                BSplineCurve3D aBS = Assert.IsType<BSplineCurve3D>(aRes);
                 Assert.False(aBS.IsFrozen);
                 Point3D anEnd = anAfter ? aBS.EndPoint() : aBS.StartPoint();
                 Assert.True(anEnd.IsEqual(aTarget, 1e-9), $"cont {aCont} after {anAfter}");
@@ -439,11 +440,11 @@ public class GeomLibTests
         }
 
         // Nothing for a continuity out of 1..3, or a point on the end
-        Geom_BoundedCurve aSame = Wavy3d();
-        Geom_BoundedCurve aKept = aSame;
-        GeomLib.ExtendCurveToPoint(ref aKept, new Point3D(10, 0, 0), 0, true);
+        BoundedCurve3D aSame = Wavy3d();
+        BoundedCurve3D aKept = aSame;
+        global::Kerf.Engine.Geometry.Library.GeomLib.ExtendCurveToPoint(ref aKept, new Point3D(10, 0, 0), 0, true);
         Assert.Same(aSame, aKept);
-        GeomLib.ExtendCurveToPoint(ref aKept, aSame.EndPoint(), 1, true);
+        global::Kerf.Engine.Geometry.Library.GeomLib.ExtendCurveToPoint(ref aKept, aSame.EndPoint(), 1, true);
         Assert.Same(aSame, aKept);
     }
 
@@ -451,21 +452,21 @@ public class GeomLibTests
     public void ExtendSurfByLength_TrimmedPlaneAndBSpline_FrozenInput()
     {
         // A trimmed plane is re-trimmed
-        Geom_RectangularTrimmedSurface aTrimmed = new(new Geom_Plane(new CoordinateSystem()), 0, 1, 0, 2);
-        Geom_BoundedSurface aRes = aTrimmed;
-        GeomLib.ExtendSurfByLength(ref aRes, 0.5, 1, true, true);
+        TrimmedSurface aTrimmed = new(new PlaneSurface(new CoordinateSystem()), 0, 1, 0, 2);
+        BoundedSurface aRes = aTrimmed;
+        global::Kerf.Engine.Geometry.Library.GeomLib.ExtendSurfByLength(ref aRes, 0.5, 1, true, true);
         aRes.Bounds(out double u1, out double u2, out double v1, out double v2);
         Assert.Equal((0.0, 1.5, 0.0, 2.0), (u1, u2, v1, v2));
 
         // A B-spline surface becomes a larger B-spline; the caller's is unchanged
         foreach (bool aRational in new[] { false, true })
         {
-            Geom_BSplineSurface aSheet = Sheet(aRational);
+            BSplineSurface aSheet = Sheet(aRational);
             aSheet.Freeze();
             Point3D aCorner = aSheet.Value(1, 0.5);
-            Geom_BoundedSurface aBS = aSheet;
-            GeomLib.ExtendSurfByLength(ref aBS, 1.0, 1, true, true);
-            Geom_BSplineSurface anExt = Assert.IsType<Geom_BSplineSurface>(aBS);
+            BoundedSurface aBS = aSheet;
+            global::Kerf.Engine.Geometry.Library.GeomLib.ExtendSurfByLength(ref aBS, 1.0, 1, true, true);
+            BSplineSurface anExt = Assert.IsType<BSplineSurface>(aBS);
             Assert.NotSame(aSheet, anExt);
             aSheet.Bounds(out _, out double aSheetU2, out _, out _);
             Assert.Equal(1.0, aSheetU2);
@@ -493,13 +494,13 @@ public class GeomLibTests
         }
         NCollection_Array1<int> aUMults = NCollection_Array1<int>.From([4, 4]);
         NCollection_Array1<int> aVMults = NCollection_Array1<int>.From([3, 3]);
-        Geom_BSplineSurface aSurf = new(aPoles, aWeights, Reals(2, 5), Reals(0, 1), aUMults, aVMults, 3, 2);
+        BSplineSurface aSurf = new(aPoles, aWeights, Reals(2, 5), Reals(0, 1), aUMults, aVMults, 3, 2);
         aSurf.Freeze();
-        Geom_BSplineSurface aRes = aSurf;
-        GeomLib.CancelDenominatorDerivative(ref aRes, true, false);
+        BSplineSurface aRes = aSurf;
+        global::Kerf.Engine.Geometry.Library.GeomLib.CancelDenominatorDerivative(ref aRes, true, false);
         Assert.NotSame(aSurf, aRes);
         Assert.Equal(2.0, aRes.UKnot(1));
-        Assert.Equal(5.0, aRes.UKnot(aRes.NbUKnots()));
+        Assert.Equal(5.0, aRes.UKnot(aRes.UKnotCount));
         for (double u = 2; u <= 5; u += 0.5)
         {
             for (double v = 0; v <= 1; v += 0.25)
@@ -518,8 +519,8 @@ public class GeomLibTests
         }
 
         // Nothing requested: the same surface
-        Geom_BSplineSurface aKept = aSurf;
-        GeomLib.CancelDenominatorDerivative(ref aKept, false, false);
+        BSplineSurface aKept = aSurf;
+        global::Kerf.Engine.Geometry.Library.GeomLib.CancelDenominatorDerivative(ref aKept, false, false);
         Assert.Same(aSurf, aKept);
     }
 
@@ -536,33 +537,33 @@ public class GeomLibTests
         }
         NCollection_Array1<int> aUMults = NCollection_Array1<int>.From([4, 4]);
         NCollection_Array1<int> aVMults = NCollection_Array1<int>.From([2, 2]);
-        Geom_BSplineSurface aSurf = new(aPoles, Reals(2, 5), Reals(0, 1), aUMults, aVMults, 3, 1);
-        Geom_BSplineSurface aRes = aSurf;
-        GeomLib.CancelDenominatorDerivative(ref aRes, true, false);
+        BSplineSurface aSurf = new(aPoles, Reals(2, 5), Reals(0, 1), aUMults, aVMults, 3, 1);
+        BSplineSurface aRes = aSurf;
+        global::Kerf.Engine.Geometry.Library.GeomLib.CancelDenominatorDerivative(ref aRes, true, false);
         Assert.Equal(0.0, aRes.UKnot(1));
         Assert.Equal(1.0, aRes.UKnot(2));
         Assert.True(aRes.Value(1.0, 0.5).IsEqual(aSurf.Value(5.0, 0.5), 1e-12));
         Assert.Equal(2.0, aSurf.UKnot(1));
     }
 
-    private static double Denominator(Geom_BSplineSurface theS, double theU, double theV)
+    private static double Denominator(BSplineSurface theS, double theU, double theV)
     {
         NCollection_Array2<double> aW = theS.WeightsArray();
-        NCollection_Array2<Point3D> aP = new(1, theS.NbUPoles(), 1, theS.NbVPoles());
-        for (int i = 1; i <= theS.NbUPoles(); i++)
+        NCollection_Array2<Point3D> aP = new(1, theS.UPoleCount, 1, theS.VPoleCount);
+        for (int i = 1; i <= theS.UPoleCount; i++)
         {
-            for (int j = 1; j <= theS.NbVPoles(); j++)
+            for (int j = 1; j <= theS.VPoleCount; j++)
             {
                 aP[i, j] = new Point3D(aW[i, j], 0, 0);
             }
         }
-        NCollection_Array1<double> aUK = new(1, theS.NbUKnots()), aVK = new(1, theS.NbVKnots());
-        NCollection_Array1<int> aUM = new(1, theS.NbUKnots()), aVM = new(1, theS.NbVKnots());
+        NCollection_Array1<double> aUK = new(1, theS.UKnotCount), aVK = new(1, theS.VKnotCount);
+        NCollection_Array1<int> aUM = new(1, theS.UKnotCount), aVM = new(1, theS.VKnotCount);
         theS.UKnots(aUK);
         theS.VKnots(aVK);
         theS.UMultiplicities(aUM);
         theS.VMultiplicities(aVM);
-        return new Geom_BSplineSurface(aP, aUK, aVK, aUM, aVM, theS.UDegree(), theS.VDegree()).Value(theU, theV).X();
+        return new BSplineSurface(aP, aUK, aVK, aUM, aVM, theS.UDegree(), theS.VDegree()).Value(theU, theV).X();
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -572,51 +573,51 @@ public class GeomLibTests
     public void NormEstim_RegularSingularAndFailing()
     {
         Direction3D aNorm = new();
-        Assert.Equal(0, GeomLib.NormEstim(new Geom_Plane(new CoordinateSystem()), new Point2D(1, 2), 1e-7, ref aNorm));
+        Assert.Equal(0, global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(new PlaneSurface(new CoordinateSystem()), new Point2D(1, 2), 1e-7, ref aNorm));
         Assert.True(aNorm.IsEqual(new Direction3D(0, 0, 1), 1e-15));
 
         // The pole of a sphere: from D2
-        Geom_SphericalSurface aSphere = new(new CoordinateSystem(), 2.0);
+        SphericalSurface aSphere = new(new CoordinateSystem(), 2.0);
         aNorm = new Direction3D(1, 0, 0);
-        Assert.Equal(1, GeomLib.NormEstim(aSphere, new Point2D(0.3, Math.PI / 2), 1e-7, ref aNorm));
+        Assert.Equal(1, global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(aSphere, new Point2D(0.3, Math.PI / 2), 1e-7, ref aNorm));
         Assert.True(aNorm.IsParallel(new Direction3D(0, 0, 1), 1e-6));
 
         // The apex of a cone: no normal; the result is left unchanged
-        Geom_ConicalSurface aCone = new(new CoordinateSystem(), 0.5, 1.0);
+        ConicalSurface aCone = new(new CoordinateSystem(), 0.5, 1.0);
         double anApexV = -1.0 / Math.Sin(0.5);
         aNorm = new Direction3D(1, 0, 0);
-        Assert.True(GeomLib.NormEstim(aCone, new Point2D(0.3, anApexV), 1e-7, ref aNorm) >= 2);
+        Assert.True(global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(aCone, new Point2D(0.3, anApexV), 1e-7, ref aNorm) >= 2);
         Assert.Equal(new Direction3D(1, 0, 0), aNorm);
     }
 
     [Fact]
     public void IsClosed_EverySurfaceKind()
     {
-        GeomLib.IsClosed(new Geom_Plane(new CoordinateSystem()), 1e-7, out bool aU, out bool aV);
+        global::Kerf.Engine.Geometry.Library.GeomLib.IsClosed(new PlaneSurface(new CoordinateSystem()), 1e-7, out bool aU, out bool aV);
         Assert.False(aU || aV);
-        GeomLib.IsClosed(new Geom_CylindricalSurface(new CoordinateSystem(), 1), 1e-7, out aU, out aV);
+        global::Kerf.Engine.Geometry.Library.GeomLib.IsClosed(new CylindricalSurface(new CoordinateSystem(), 1), 1e-7, out aU, out aV);
         Assert.True(aU && !aV);
-        GeomLib.IsClosed(new Geom_RectangularTrimmedSurface(new Geom_CylindricalSurface(new CoordinateSystem(), 1), 0, 3, 0, 1),
+        global::Kerf.Engine.Geometry.Library.GeomLib.IsClosed(new TrimmedSurface(new CylindricalSurface(new CoordinateSystem(), 1), 0, 3, 0, 1),
                          1e-7, out aU, out aV);
         Assert.False(aU || aV);
-        GeomLib.IsClosed(new Geom_ConicalSurface(new CoordinateSystem(), 0.3, 1), 1e-7, out aU, out aV);
+        global::Kerf.Engine.Geometry.Library.GeomLib.IsClosed(new ConicalSurface(new CoordinateSystem(), 0.3, 1), 1e-7, out aU, out aV);
         Assert.True(aU && !aV);
-        GeomLib.IsClosed(new Geom_SphericalSurface(new CoordinateSystem(), 1), 1e-7, out aU, out aV);
+        global::Kerf.Engine.Geometry.Library.GeomLib.IsClosed(new SphericalSurface(new CoordinateSystem(), 1), 1e-7, out aU, out aV);
         Assert.True(aU && !aV);
-        GeomLib.IsClosed(new Geom_ToroidalSurface(new CoordinateSystem(), 3, 1), 1e-7, out aU, out aV);
+        global::Kerf.Engine.Geometry.Library.GeomLib.IsClosed(new ToroidalSurface(new CoordinateSystem(), 3, 1), 1e-7, out aU, out aV);
         Assert.True(aU && aV);
-        GeomLib.IsClosed(new Geom_SurfaceOfRevolution(new Geom_Line(new Point3D(1, 0, 0), new Direction3D(0.2, 0, 1)),
+        global::Kerf.Engine.Geometry.Library.GeomLib.IsClosed(new RevolutionSurface(new LineCurve3D(new Point3D(1, 0, 0), new Direction3D(0.2, 0, 1)),
                                                       new Axis3D(new Point3D(), new Direction3D(0, 0, 1))),
                          1e-7, out aU, out aV);
         Assert.True(aU && !aV);
 
         // A B-spline converted from a whole cylinder is closed in U, its poles weighted
-        Geom_BSplineSurface aBS = GeomConvert.SurfaceToBSplineSurface(
-            new Geom_RectangularTrimmedSurface(new Geom_CylindricalSurface(new CoordinateSystem(), 1), 0, 2 * Math.PI, 0, 1));
-        GeomLib.IsClosed(aBS, 1e-7, out aU, out aV);
+        BSplineSurface aBS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(
+            new TrimmedSurface(new CylindricalSurface(new CoordinateSystem(), 1), 0, 2 * Math.PI, 0, 1));
+        global::Kerf.Engine.Geometry.Library.GeomLib.IsClosed(aBS, 1e-7, out aU, out aV);
         Assert.True(aU && !aV);
-        Assert.True(GeomLib.IsBSplUClosed(aBS, 0, 2 * Math.PI, 1e-7));
-        Assert.False(GeomLib.IsBSplVClosed(aBS, 0, 1, 1e-7));
+        Assert.True(global::Kerf.Engine.Geometry.Library.GeomLib.IsBSplUClosed(aBS, 0, 2 * Math.PI, 1e-7));
+        Assert.False(global::Kerf.Engine.Geometry.Library.GeomLib.IsBSplVClosed(aBS, 0, 1, 1e-7));
 
         NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 2);
         for (int j = 1; j <= 2; j++)
@@ -625,10 +626,10 @@ public class GeomLibTests
             aPoles[2, j] = new Point3D(1, j, 1);
             aPoles[3, j] = new Point3D(0, j, 0);
         }
-        Geom_BezierSurface aBz = new(aPoles);
-        Assert.True(GeomLib.IsBzUClosed(aBz, 0, 1, 1e-7));
-        Assert.False(GeomLib.IsBzVClosed(aBz, 0, 1, 1e-7));
-        GeomLib.IsClosed(aBz, 1e-7, out aU, out aV);
+        BezierSurface aBz = new(aPoles);
+        Assert.True(global::Kerf.Engine.Geometry.Library.GeomLib.IsBzUClosed(aBz, 0, 1, 1e-7));
+        Assert.False(global::Kerf.Engine.Geometry.Library.GeomLib.IsBzVClosed(aBz, 0, 1, 1e-7));
+        global::Kerf.Engine.Geometry.Library.GeomLib.IsClosed(aBz, 1e-7, out aU, out aV);
         Assert.True(aU && !aV);
     }
 
@@ -638,7 +639,7 @@ public class GeomLibTests
     [Fact]
     public void LogSample_PolyFunc_DenominatorMultiplier()
     {
-        GeomLib_LogSample aSample = new(1.0, 11.0, 10);
+        global::Kerf.Engine.Geometry.Library.LogSample aSample = new(1.0, 11.0, 10);
         Assert.Equal(1.0, aSample.GetParameter(1));
         Assert.Equal(11.0, aSample.GetParameter(10));
         Assert.Equal(0.0 + Math.Exp(Math.Log(10.0) / 10 * 5), aSample.GetParameter(5), 1e-15);
@@ -650,7 +651,7 @@ public class GeomLibTests
         aCoeffs[2] = 2;
         aCoeffs[3] = 3;
         aCoeffs[4] = 4;
-        GeomLib_PolyFunc aF = new(aCoeffs);
+        global::Kerf.Engine.Geometry.Library.PolyFunc aF = new(aCoeffs);
         Assert.True(aF.Value(2.0, out double aV));
         Assert.Equal(2 + 12 + 48, aV, 1e-12);
         Assert.True(aF.Derivative(2.0, out double aD));
@@ -660,9 +661,9 @@ public class GeomLibTests
         Assert.Equal(6 - 24, aD, 1e-12);
 
         // A non-rational surface: the multiplier is the cubic joining 1 and 1 with zero end slopes, i.e. 1
-        Geom_BSplineSurface aSheet = Sheet(false);
+        BSplineSurface aSheet = Sheet(false);
         NCollection_Array1<double> aFlat = Reals(0, 0, 0, 0, 1, 1, 1, 1);
-        GeomLib_DenominatorMultiplier aMult = new(aSheet, aFlat);
+        global::Kerf.Engine.Geometry.Library.DenominatorMultiplier aMult = new(aSheet, aFlat);
         Assert.Equal(1.0, aMult.Value(0.3, 0.6), 1e-14);
     }
 
@@ -670,12 +671,12 @@ public class GeomLibTests
     public void MakeCurvefromApprox_BuildsTheCurves()
     {
         // BuildCurve3d's approximation of a helix, through MakeCurvefromApprox
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(), 3.0);
-        Adaptor3d_CurveOnSurface aCOS = new(new Geom2dAdaptor_Curve(new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0.3)), 0, 3),
-                                            new GeomAdaptor_Surface(aCyl));
-        Geom_Curve? aRes = null;
-        GeomLib.BuildCurve3d(1e-5, aCOS, 0, 3, ref aRes, out double aMax, out _);
-        Geom_BSplineCurve aBS = Assert.IsType<Geom_BSplineCurve>(aRes);
+        CylindricalSurface aCyl = new(new CoordinateSystem(), 3.0);
+        CurveOnSurface aCOS = new(new CurveAdaptor2D(new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0.3)), 0, 3),
+                                            new SurfaceAdaptor(aCyl));
+        Curve3D? aRes = null;
+        global::Kerf.Engine.Geometry.Library.GeomLib.BuildCurve3d(1e-5, aCOS, 0, 3, ref aRes, out double aMax, out _);
+        BSplineCurve3D aBS = Assert.IsType<BSplineCurve3D>(aRes);
         Assert.True(aMax < 1e-5);
         Assert.Equal(0.0, aBS.FirstParameter());
         Assert.Equal(3.0, aBS.LastParameter());

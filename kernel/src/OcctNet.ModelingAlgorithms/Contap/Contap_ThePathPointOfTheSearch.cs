@@ -7,6 +7,7 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -27,8 +28,8 @@ public partial struct Contap_ThePathPointOfTheSearch
     private Point3D point;
     private double tol;
     private bool isnew;
-    private Adaptor3d_HVertex? vtx;
-    private Adaptor2d_Curve2d? arc;
+    private HVertex? vtx;
+    private Curve2DAdaptorBase? arc;
     private double param;
 
     public Contap_ThePathPointOfTheSearch()
@@ -42,7 +43,7 @@ public partial struct Contap_ThePathPointOfTheSearch
     }
 
     /// <summary>A point on the vertex <paramref name="V"/> of the arc <paramref name="A"/>.</summary>
-    public Contap_ThePathPointOfTheSearch(in Point3D P, double Tol, Adaptor3d_HVertex V, Adaptor2d_Curve2d A,
+    public Contap_ThePathPointOfTheSearch(in Point3D P, double Tol, HVertex V, Curve2DAdaptorBase A,
                                                double Parameter)
     {
         point = P;
@@ -54,7 +55,7 @@ public partial struct Contap_ThePathPointOfTheSearch
     }
 
     /// <summary>A new point on the arc <paramref name="A"/>.</summary>
-    public Contap_ThePathPointOfTheSearch(in Point3D P, double Tol, Adaptor2d_Curve2d A, double Parameter)
+    public Contap_ThePathPointOfTheSearch(in Point3D P, double Tol, Curve2DAdaptorBase A, double Parameter)
     {
         point = P;
         tol = Tol;
@@ -66,7 +67,7 @@ public partial struct Contap_ThePathPointOfTheSearch
 
     // Mutators (internal: see docs/translation-rules.md)
 
-    internal void SetValue(in Point3D P, double Tol, Adaptor3d_HVertex V, Adaptor2d_Curve2d A, double Parameter)
+    internal void SetValue(in Point3D P, double Tol, HVertex V, Curve2DAdaptorBase A, double Parameter)
     {
         isnew = false;
         point = P;
@@ -77,7 +78,7 @@ public partial struct Contap_ThePathPointOfTheSearch
     }
 
     /// <summary>Sets a new point (the vertex field is kept, as in OCCT; it is not readable on a new point).</summary>
-    internal void SetValue(in Point3D P, double Tol, Adaptor2d_Curve2d A, double Parameter)
+    internal void SetValue(in Point3D P, double Tol, Curve2DAdaptorBase A, double Parameter)
     {
         isnew = true;
         point = P;
@@ -96,7 +97,7 @@ public partial struct Contap_ThePathPointOfTheSearch
     public readonly bool IsNew() => isnew;
 
     /// <summary>The vertex; throws Standard_DomainError on a new point.</summary>
-    public readonly Adaptor3d_HVertex Vertex()
+    public readonly HVertex Vertex()
     {
         if (isnew)
         {
@@ -105,21 +106,21 @@ public partial struct Contap_ThePathPointOfTheSearch
         return vtx!;
     }
 
-    public readonly Adaptor2d_Curve2d Arc() => arc!;
+    public readonly Curve2DAdaptorBase Arc() => arc!;
 
     public readonly double Parameter() => param;
 
     static Contap_ThePathPointOfTheSearch IIntStart_PathPoint<Contap_ThePathPointOfTheSearch>.Create(
-        in Point3D P, double Tol, Adaptor3d_HVertex V, Adaptor2d_Curve2d A, double Parameter) => new(P, Tol, V, A, Parameter);
+        in Point3D P, double Tol, HVertex V, Curve2DAdaptorBase A, double Parameter) => new(P, Tol, V, A, Parameter);
 
     static Contap_ThePathPointOfTheSearch IIntStart_PathPoint<Contap_ThePathPointOfTheSearch>.Create(
-        in Point3D P, double Tol, Adaptor2d_Curve2d A, double Parameter) => new(P, Tol, A, Parameter);
+        in Point3D P, double Tol, Curve2DAdaptorBase A, double Parameter) => new(P, Tol, A, Parameter);
 
-    void IIntStart_PathPoint<Contap_ThePathPointOfTheSearch>.SetValue(in Point3D P, double Tol, Adaptor3d_HVertex V,
-                                                                             Adaptor2d_Curve2d A, double Parameter) =>
+    void IIntStart_PathPoint<Contap_ThePathPointOfTheSearch>.SetValue(in Point3D P, double Tol, HVertex V,
+                                                                             Curve2DAdaptorBase A, double Parameter) =>
         SetValue(P, Tol, V, A, Parameter);
 
-    void IIntStart_PathPoint<Contap_ThePathPointOfTheSearch>.SetValue(in Point3D P, double Tol, Adaptor2d_Curve2d A,
+    void IIntStart_PathPoint<Contap_ThePathPointOfTheSearch>.SetValue(in Point3D P, double Tol, Curve2DAdaptorBase A,
                                                                              double Parameter) =>
         SetValue(P, Tol, A, Parameter);
 

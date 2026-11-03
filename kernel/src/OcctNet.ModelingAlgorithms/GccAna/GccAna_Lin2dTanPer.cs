@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
@@ -60,12 +61,12 @@ public sealed class GccAna_Lin2dTanPer
                                               TheLin.Direction().X()));
         //                                      ========================
         pnttg1sol[1] = ThePnt;
-        IntAna2d_AnaIntersection Intp = new(linsol[1], TheLin);
-        if (Intp.IsDone())
+        AnalyticIntersection Intp = new(linsol[1], TheLin);
+        if (Intp.IsDone)
         {
-            if (!Intp.IsEmpty())
+            if (!Intp.IsEmpty)
             {
-                for (int i = 1; i <= Intp.NbPoints(); i++)
+                for (int i = 1; i <= Intp.PointCount; i++)
                 {
                     pntint2sol[1] = Intp.Point(i).Value();
                 }
@@ -94,13 +95,13 @@ public sealed class GccAna_Lin2dTanPer
                                  new Direction2D(TheCircle.Location().XY() - ThePnt.XY()));
         //                      ================================================
         pnttg1sol[1] = ThePnt;
-        IntAna2d_AnaIntersection Intp = new(linsol[1], TheCircle);
-        if (Intp.IsDone())
+        AnalyticIntersection Intp = new(linsol[1], TheCircle);
+        if (Intp.IsDone)
         {
-            if (!Intp.IsEmpty())
+            if (!Intp.IsEmpty)
             {
                 double maxdist = RealLast();
-                for (int i = 1; i <= Intp.NbPoints(); i++)
+                for (int i = 1; i <= Intp.PointCount; i++)
                 {
                     // OCCT: maxdist is never lowered, so this keeps the last intersection point, not the nearest
                     if (Intp.Point(i).Value().Distance(ThePnt) < maxdist)
@@ -171,12 +172,12 @@ public sealed class GccAna_Lin2dTanPer
                                                        TheLin.Direction().X()));
             //                                    ========================
             pnttg1sol[NbrSol] = new Point2D((C1.Location().XY()).Added(signe * xy));
-            IntAna2d_AnaIntersection Intp = new(linsol[NbrSol], TheLin);
-            if (Intp.IsDone())
+            AnalyticIntersection Intp = new(linsol[NbrSol], TheLin);
+            if (Intp.IsDone)
             {
-                if (!Intp.IsEmpty())
+                if (!Intp.IsEmpty)
                 {
-                    for (int i = 1; i <= Intp.NbPoints(); i++)
+                    for (int i = 1; i <= Intp.PointCount; i++)
                     {
                         pntint2sol[NbrSol] = Intp.Point(i).Value();
                     }
@@ -247,13 +248,13 @@ public sealed class GccAna_Lin2dTanPer
                                           new Direction2D(-D1.Y(), D1.X()));
             //                     ======================================================
             pnttg1sol[NbrSol] = new Point2D((C1.Location().XY()) + signe * (D1.XY() * C1.Radius()));
-            IntAna2d_AnaIntersection Intp = new(linsol[NbrSol], TheCircle);
-            if (Intp.IsDone())
+            AnalyticIntersection Intp = new(linsol[NbrSol], TheCircle);
+            if (Intp.IsDone)
             {
-                if (!Intp.IsEmpty())
+                if (!Intp.IsEmpty)
                 {
                     double maxdist = RealLast();
-                    for (int i = 1; i <= Intp.NbPoints(); i++)
+                    for (int i = 1; i <= Intp.PointCount; i++)
                     {
                         // OCCT: maxdist is never lowered, so this keeps the last intersection point
                         if (Intp.Point(i).Value().Distance(pnttg1sol[NbrSol]) < maxdist)

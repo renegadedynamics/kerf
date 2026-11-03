@@ -12,25 +12,25 @@ public class Geom2dTrimmedCurveOracleTests(ITestOutputHelper output)
     private const int Cases = 400;
 
     /// <summary>A random basis curve on both sides.</summary>
-    private static (Geom2d_Curve Port, N.Geom2d_Curve Native) Basis(Oracle theOracle, int theKind)
+    private static (Curve2D Port, N.Geom2d_Curve Native) Basis(Oracle theOracle, int theKind)
     {
         (N.gp_Ax2d aNAx, Axis2D anAx) = Ax2ds(theOracle);
         using var aNAxOwner = aNAx;
         switch (theKind)
         {
             case 0:
-                return (new Geom2d_Line(anAx), new N.Geom2d_Line(aNAx));
+                return (new LineCurve2D(anAx), new N.Geom2d_Line(aNAx));
             case 1:
             {
                 double aR = theOracle.Real(0.1, 50);
                 bool aSense = theOracle.Bool();
-                return (new Geom2d_Circle(anAx, aR, aSense), new N.Geom2d_Circle(aNAx, aR, aSense));
+                return (new CircleCurve2D(anAx, aR, aSense), new N.Geom2d_Circle(aNAx, aR, aSense));
             }
             case 2:
             {
                 double aMaj = theOracle.Real(1, 50), aMin = theOracle.Real(0.05, 1.0) * aMaj;
                 bool aSense = theOracle.Bool();
-                return (new Geom2d_Ellipse(anAx, aMaj, aMin, aSense), new N.Geom2d_Ellipse(aNAx, aMaj, aMin, aSense));
+                return (new EllipseCurve2D(anAx, aMaj, aMin, aSense), new N.Geom2d_Ellipse(aNAx, aMaj, aMin, aSense));
             }
             default:
             {
@@ -40,7 +40,7 @@ public class Geom2dTrimmedCurveOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void Check(Oracle theOracle, N.Geom2d_TrimmedCurve theNative, Geom2d_TrimmedCurve thePort, string theWhat)
+    private static void Check(Oracle theOracle, N.Geom2d_TrimmedCurve theNative, TrimmedCurve2D thePort, string theWhat)
     {
         Geom2dOracle.SameBounds(theOracle, theNative, thePort, theWhat);
         using (var aNS = theNative.StartPoint())
@@ -59,7 +59,7 @@ public class Geom2dTrimmedCurveOracleTests(ITestOutputHelper output)
         {
             theOracle.Same(theNative.IsCN(n), thePort.IsCN(n), $"{theWhat} IsCN({n})");
         }
-        if (thePort.IsPeriodic())
+        if (thePort.IsPeriodic)
         {
             theOracle.Same(theNative.Period(), thePort.Period(), $"{theWhat} Period");
         }
@@ -76,7 +76,7 @@ public class Geom2dTrimmedCurveOracleTests(ITestOutputHelper output)
             using var aNBasis = aNBasisRaw;
 
             double U1, U2;
-            if (aBasis.IsPeriodic())
+            if (aBasis.IsPeriodic)
             {
                 // Anywhere, also outside one period: the constructor adjusts them
                 double aPer = aBasis.Period();
@@ -98,7 +98,7 @@ public class Geom2dTrimmedCurveOracleTests(ITestOutputHelper output)
                 continue;
             }
             bool aSense = anOracle.Bool();
-            bool anAdjust = !aBasis.IsPeriodic() || anOracle.Int(0, 3) != 0;
+            bool anAdjust = !aBasis.IsPeriodic || anOracle.Int(0, 3) != 0;
             if (!anAdjust && Math.Abs(U2 - U1) > aBasis.Period())
             {
                 // Without the adjustment the trimmed range must stay within one period
@@ -107,14 +107,14 @@ public class Geom2dTrimmedCurveOracleTests(ITestOutputHelper output)
             string aWhat = $"Trimmed[{aKind}]";
 
             using var aNative = new N.Geom2d_TrimmedCurve(aNBasis, U1, U2, aSense, anAdjust);
-            var aPort = new Geom2d_TrimmedCurve(aBasis, U1, U2, aSense, anAdjust);
+            var aPort = new TrimmedCurve2D(aBasis, U1, U2, aSense, anAdjust);
             Check(anOracle, aNative, aPort, aWhat);
 
             // Reversed
             using (var aNRevC = aNative.Reversed())
             using (var aNRev = N.Geom2d_TrimmedCurve.DownCast(aNRevC))
             {
-                Check(anOracle, aNRev!, (Geom2d_TrimmedCurve)aPort.Reversed(), aWhat + " reversed");
+                Check(anOracle, aNRev!, (TrimmedCurve2D)aPort.Reversed(), aWhat + " reversed");
             }
 
             // Transformed
@@ -123,7 +123,7 @@ public class Geom2dTrimmedCurveOracleTests(ITestOutputHelper output)
             using (var aNTrG = aNative.Transformed(aNT))
             using (var aNTr = N.Geom2d_TrimmedCurve.DownCast(aNTrG))
             {
-                Check(anOracle, aNTr!, (Geom2d_TrimmedCurve)aPort.Transformed(aT), aWhat + " transformed");
+                Check(anOracle, aNTr!, (TrimmedCurve2D)aPort.Transformed(aT), aWhat + " transformed");
             }
 
             // SetTrim with new parameters inside the trimmed range

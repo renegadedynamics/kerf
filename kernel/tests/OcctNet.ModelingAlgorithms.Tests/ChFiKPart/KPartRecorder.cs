@@ -1,7 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -10,8 +15,8 @@ using static Occt.ChFi3d_Builder_0;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -76,7 +81,7 @@ internal static class KPartRecorder
 
         internal void Real(string theTag, double v) => L(theTag + " " + R(v));
 
-        internal void C2(string theTag, Geom2d_Curve? C)
+        internal void C2(string theTag, Curve2D? C)
         {
             if (C is null)
             {
@@ -84,10 +89,10 @@ internal static class KPartRecorder
                 return;
             }
             L(theTag);
-            GeomTools.Write(C, OS);
+            global::Kerf.Engine.Exchange.Brep.GeomTools.Write(C, OS);
         }
 
-        internal void C3(string theTag, Geom_Curve? C)
+        internal void C3(string theTag, Curve3D? C)
         {
             if (C is null)
             {
@@ -95,7 +100,7 @@ internal static class KPartRecorder
                 return;
             }
             L(theTag);
-            GeomTools.Write(C, OS);
+            global::Kerf.Engine.Exchange.Brep.GeomTools.Write(C, OS);
         }
 
         internal void Cp(string theTag, in ChFiDS_CommonPoint P)
@@ -137,7 +142,7 @@ internal static class KPartRecorder
 
         internal void DS(TopOpeBRepDS_DataStructure DStr)
         {
-            string s = TopOpeBRepDS_TextDump.Write(DStr, new TopoDS_Shape());
+            string s = TopOpeBRepDS_TextDump.Write(DStr, new Shape());
             L("ds " + s.Count(c => c == '\n'));
             OS.Write(s);
         }
@@ -145,24 +150,24 @@ internal static class KPartRecorder
         internal void Exception(Exception e) => L("exception class " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
     }
 
-    private static TopoDS_Edge EdgeOf(in TopoDS_Shape S, int k)
+    private static Edge EdgeOf(in Shape S, int k)
     {
-        NCollection_IndexedMap<TopoDS_Shape> M = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(S, TopAbs_EDGE, M);
-        return TopoDS.Edge(M.FindKey(k));
+        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        Exploration.MapShapes(S, ShapeType.Edge, M);
+        return ShapeCasts.Edge(M.FindKey(k));
     }
 
-    private static TopoDS_Face FaceOf(in TopoDS_Shape S, int k)
+    private static Face FaceOf(in Shape S, int k)
     {
-        NCollection_IndexedMap<TopoDS_Shape> M = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(S, TopAbs_FACE, M);
-        return TopoDS.Face(M.FindKey(k));
+        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        Exploration.MapShapes(S, ShapeType.Face, M);
+        return ShapeCasts.Face(M.FindKey(k));
     }
 
-    private static void FacesOf(in TopoDS_Shape S, in TopoDS_Edge E, out TopoDS_Face F1, out TopoDS_Face F2)
+    private static void FacesOf(in Shape S, in Edge E, out Face F1, out Face F2)
     {
         ChFiDS_Map M = new();
-        M.Fill(S, TopAbs_EDGE, TopAbs_FACE);
+        M.Fill(S, ShapeType.Edge, ShapeType.Face);
         ChFi3d_conexfaces(E, out F1, out F2, M);
     }
 
@@ -173,7 +178,7 @@ internal static class KPartRecorder
     /// <summary>The port's text for the case, its input read from the recording.</summary>
     internal static string Run(string theName, string theBRep)
     {
-        BRepTools.Read(out TopoDS_Shape S, new StringReader(theBRep));
+        BrepTools.Read(out Shape S, new StringReader(theBRep));
         Out o = new();
         string aBase = theName.EndsWith("_swapped", StringComparison.Ordinal) ? theName[..^8] : theName;
         bool aSwap = aBase != theName;
@@ -216,15 +221,15 @@ internal static class KPartRecorder
             case "ch_pln_con_throat": KPart(o, S, Circles(S)[0], 1, 10, 0, ChFiDS_ConstThroatChamfer, aSwap); break;
             case "fil_cyl_cyl_not_implemented": KPart(o, S, Lines(S)[0], 0, 10, 0, ChFiDS_ClassicChamfer, false); break;
             case "corner_torus_cylinder":
-                CornerTorus(o, new Geom_CylindricalSurface(new CoordinateSystem(), 20.0));
+                CornerTorus(o, new CylindricalSurface(new CoordinateSystem(), 20.0));
                 break;
             case "corner_torus_sphere":
-                CornerTorus(o, new Geom_SphericalSurface(new CoordinateSystem(), 20.0));
+                CornerTorus(o, new SphericalSurface(new CoordinateSystem(), 20.0));
                 break;
-            case "corner_sphere": CornerSphere(o, 10.0, TopAbs_FORWARD); break;
-            case "corner_sphere_reversed": CornerSphere(o, 10.0, TopAbs_REVERSED); break;
-            case "rotule": Rotule(o, S, 1, 3, 5, TopAbs_FORWARD, TopAbs_REVERSED, TopAbs_REVERSED); break;
-            case "rotule_reversed": Rotule(o, S, 1, 3, 5, TopAbs_REVERSED, TopAbs_FORWARD, TopAbs_REVERSED); break;
+            case "corner_sphere": CornerSphere(o, 10.0, Forward); break;
+            case "corner_sphere_reversed": CornerSphere(o, 10.0, Reversed); break;
+            case "rotule": Rotule(o, S, 1, 3, 5, Forward, Reversed, Reversed); break;
+            case "rotule_reversed": Rotule(o, S, 1, 3, 5, Reversed, Forward, Reversed); break;
             case "ComputePCurv": ComputePCurv(o); break;
             case "BuildPCurve": BuildPCurve(o); break;
             case "ComputeArete": ComputeArete(o); break;
@@ -240,23 +245,23 @@ internal static class KPartRecorder
     }
 
     // the edges of the quarter cylinder between its lateral face and a plane: lines and circles
-    private static List<int> CylQLines(in TopoDS_Shape S) => CylQEdges(S, Line);
+    private static List<int> CylQLines(in Shape S) => CylQEdges(S, Line);
 
-    private static List<int> CylQCircles(in TopoDS_Shape S) => CylQEdges(S, Circle);
+    private static List<int> CylQCircles(in Shape S) => CylQEdges(S, Circle);
 
-    private static List<int> CylQEdges(in TopoDS_Shape S, CurveKind theType)
+    private static List<int> CylQEdges(in Shape S, CurveKind theType)
     {
         List<int> aRes = [];
-        NCollection_IndexedMap<TopoDS_Shape> M = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(S, TopAbs_EDGE, M);
+        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        Exploration.MapShapes(S, ShapeType.Edge, M);
         for (int k = 1; k <= M.Extent(); k++)
         {
-            TopoDS_Edge E = TopoDS.Edge(M.FindKey(k));
-            BRepAdaptor_Curve C = new(E);
-            FacesOf(S, E, out TopoDS_Face F1, out TopoDS_Face F2);
-            bool aCylFace = new BRepAdaptor_Surface(F1).GetType() == SurfaceKind.Cylinder
-                            || (!F2.IsNull() && new BRepAdaptor_Surface(F2).GetType() == SurfaceKind.Cylinder);
-            if (!aCylFace || F2.IsNull())
+            Edge E = ShapeCasts.Edge(M.FindKey(k));
+            EdgeCurveAdaptor C = new(E);
+            FacesOf(S, E, out Face F1, out Face F2);
+            bool aCylFace = new FaceSurfaceAdaptor(F1).GetType() == SurfaceKind.Cylinder
+                            || (!F2.IsNull && new FaceSurfaceAdaptor(F2).GetType() == SurfaceKind.Cylinder);
+            if (!aCylFace || F2.IsNull)
             {
                 continue;
             }
@@ -268,18 +273,18 @@ internal static class KPartRecorder
         return aRes;
     }
 
-    private static List<int> Circles(in TopoDS_Shape S) => EdgesOfType(S, Circle);
+    private static List<int> Circles(in Shape S) => EdgesOfType(S, Circle);
 
-    private static List<int> Lines(in TopoDS_Shape S) => EdgesOfType(S, Line);
+    private static List<int> Lines(in Shape S) => EdgesOfType(S, Line);
 
-    private static List<int> EdgesOfType(in TopoDS_Shape S, CurveKind theType)
+    private static List<int> EdgesOfType(in Shape S, CurveKind theType)
     {
         List<int> aRes = [];
-        NCollection_IndexedMap<TopoDS_Shape> M = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(S, TopAbs_EDGE, M);
+        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        Exploration.MapShapes(S, ShapeType.Edge, M);
         for (int k = 1; k <= M.Extent(); k++)
         {
-            if (new BRepAdaptor_Curve(TopoDS.Edge(M.FindKey(k))).GetType() == theType)
+            if (new EdgeCurveAdaptor(ShapeCasts.Edge(M.FindKey(k))).GetType() == theType)
             {
                 aRes.Add(k);
             }
@@ -287,20 +292,20 @@ internal static class KPartRecorder
         return aRes;
     }
 
-    private static void KPart(Out o, in TopoDS_Shape S, int k, int theKind, double a, double b,
+    private static void KPart(Out o, in Shape S, int k, int theKind, double a, double b,
                               ChFiDS_ChamfMode theMode, bool theSwap)
     {
         try
         {
-            TopoDS_Edge E = EdgeOf(S, k);
-            FacesOf(S, E, out TopoDS_Face F1, out TopoDS_Face F2);
+            Edge E = EdgeOf(S, k);
+            FacesOf(S, E, out Face F1, out Face F2);
             if (theSwap)
             {
                 (F1, F2) = (F2, F1);
             }
-            BRepAdaptor_Surface HS1 = new(F1);
-            BRepAdaptor_Surface HS2 = new(F2);
-            int aChoix = ChFi3d.ConcaveSide(HS1, HS2, E, out TopAbs_Orientation Or1, out TopAbs_Orientation Or2);
+            FaceSurfaceAdaptor HS1 = new(F1);
+            FaceSurfaceAdaptor HS2 = new(F2);
+            int aChoix = ChFi3d.ConcaveSide(HS1, HS2, E, out Orientation Or1, out Orientation Or2);
             o.L("concave " + aChoix + " " + theOri[(int)Or1] + " " + theOri[(int)Or2]);
             ChFiDS_Spine Sp;
             if (theKind == 0)
@@ -344,16 +349,16 @@ internal static class KPartRecorder
         }
     }
 
-    private static void CornerTorus(Out o, Geom_Surface S2)
+    private static void CornerTorus(Out o, Surface S2)
     {
         try
         {
-            GeomAdaptor_Surface HS1 = new(new Geom_Plane(new Plane3D()));
-            GeomAdaptor_Surface HS2 = new(S2);
+            SurfaceAdaptor HS1 = new(new PlaneSurface(new Plane3D()));
+            SurfaceAdaptor HS2 = new(S2);
             TopOpeBRepDS_DataStructure DStr = new();
             ChFiDS_SurfData Data = new();
-            bool ok = ChFiKPart_ComputeData.ComputeCorner(DStr, Data, HS1, HS2, TopAbs_FORWARD, TopAbs_FORWARD,
-                                                          TopAbs_FORWARD, TopAbs_REVERSED, 5.0, 20.0,
+            bool ok = ChFiKPart_ComputeData.ComputeCorner(DStr, Data, HS1, HS2, Forward, Forward,
+                                                          Forward, Reversed, 5.0, 20.0,
                                                           new Point2D(15, 0), new Point2D(0, 15), new Point2D(0, 0),
                                                           new Point2D(Math.PI / 2, 0));
             o.L("ok " + (ok ? 1 : 0));
@@ -366,16 +371,16 @@ internal static class KPartRecorder
         }
     }
 
-    private static void CornerSphere(Out o, double theRad, TopAbs_Orientation Or1)
+    private static void CornerSphere(Out o, double theRad, Orientation Or1)
     {
         try
         {
-            GeomAdaptor_Surface HS1 = new(new Geom_Plane(new Plane3D()));
-            GeomAdaptor_Surface HS2 = new(new Geom_CylindricalSurface(new CoordinateSystem(), 10.0));
+            SurfaceAdaptor HS1 = new(new PlaneSurface(new Plane3D()));
+            SurfaceAdaptor HS2 = new(new CylindricalSurface(new CoordinateSystem(), 10.0));
             TopOpeBRepDS_DataStructure DStr = new();
             ChFiDS_SurfData Data = new();
-            bool ok = ChFiKPart_ComputeData.ComputeCorner(DStr, Data, HS1, HS2, TopAbs_FORWARD, TopAbs_FORWARD, Or1,
-                                                          TopAbs_FORWARD, theRad, new Point2D(0.0, 0.0),
+            bool ok = ChFiKPart_ComputeData.ComputeCorner(DStr, Data, HS1, HS2, Forward, Forward, Or1,
+                                                          Forward, theRad, new Point2D(0.0, 0.0),
                                                           new Point2D(0.0, 10.0), new Point2D(Math.PI / 2, 10.0));
             o.L("ok " + (ok ? 1 : 0));
             o.SurfData(Data);
@@ -387,15 +392,15 @@ internal static class KPartRecorder
         }
     }
 
-    private static void Rotule(Out o, in TopoDS_Shape S, int fs, int f1, int f2, TopAbs_Orientation OS,
-                               TopAbs_Orientation OS1, TopAbs_Orientation OS2)
+    private static void Rotule(Out o, in Shape S, int fs, int f1, int f2, Orientation OS,
+                               Orientation OS1, Orientation OS2)
     {
         try
         {
-            TopoDS_Face F = FaceOf(S, fs);
-            BRepAdaptor_Surface HS = new(F);
-            BRepAdaptor_Surface H1 = new(FaceOf(S, f1));
-            BRepAdaptor_Surface H2 = new(FaceOf(S, f2));
+            Face F = FaceOf(S, fs);
+            FaceSurfaceAdaptor HS = new(F);
+            FaceSurfaceAdaptor H1 = new(FaceOf(S, f1));
+            FaceSurfaceAdaptor H2 = new(FaceOf(S, f2));
             TopOpeBRepDS_DataStructure DStr = new();
             ChFiDS_SurfData Data = new();
             bool ok = ChFiKPart_ComputeData.ComputeCorner(DStr, Data, HS, H1, H2, F.Orientation(), OS, OS1, OS2, 10.0);
@@ -420,13 +425,13 @@ internal static class KPartRecorder
         {
             for (int r = 0; r < 2; r++)
             {
-                ChFi3d_ComputePCurv(aUV[i, 0], aUV[i, 1], out Geom2d_Curve C, 2.0, 5.0, r == 1);
+                ChFi3d_ComputePCurv(aUV[i, 0], aUV[i, 1], out Curve2D C, 2.0, 5.0, r == 1);
                 o.C2("pcurv", C);
             }
         }
-        Geom_Surface aCyl = new Geom_CylindricalSurface(new CoordinateSystem(), 3.0);
-        Geom_Curve aC3d = aCyl.VIso(1.0);
-        ChFi3d_ComputePCurv(aC3d, new Point2D(0.5, 1.0), new Point2D(2.0, 1.0), out Geom2d_Curve C2, aCyl, 0.5, 2.0,
+        Surface aCyl = new CylindricalSurface(new CoordinateSystem(), 3.0);
+        Curve3D aC3d = aCyl.VIso(1.0);
+        ChFi3d_ComputePCurv(aC3d, new Point2D(0.5, 1.0), new Point2D(2.0, 1.0), out Curve2D C2, aCyl, 0.5, 2.0,
                             1.0e-6, out double tolr, false);
         o.C2("pcurv", C2);
         o.Real("tolreached", tolr);
@@ -438,12 +443,12 @@ internal static class KPartRecorder
         o.C2("bezier", ChFi3d_BuildPCurve(new Point2D(0, 0), ref d1, new Point2D(3, 1), ref d2, true));
         Direction2D e1 = new(1, 1), e2 = new(1, -1);
         o.C2("bezier", ChFi3d_BuildPCurve(new Point2D(0, 0), ref e1, new Point2D(3, 1), ref e2, false));
-        GeomAdaptor_Surface aCyl = new(new Geom_CylindricalSurface(new CoordinateSystem(), 3.0));
+        SurfaceAdaptor aCyl = new(new CylindricalSurface(new CoordinateSystem(), 3.0));
         o.C2("bezier", ChFi3d_BuildPCurve(aCyl, new Point2D(0.2, 0), new Vector2D(1, 0.5), new Point2D(1.5, 2),
                                           new Vector2D(0.2, 1), true));
         o.C2("bezier", ChFi3d_BuildPCurve(aCyl, new Point2D(0.2, 0), new Vector3D(0, 1, 0.5), new Point2D(1.5, 2),
                                           new Vector3D(-1, 0, 1), true));
-        GeomFill_Boundary aB = ChFi3d_mkbound(aCyl, out Geom2d_Curve aCurv, new Point2D(0.2, 0), new Point2D(1.5, 2),
+        GeomFill_Boundary aB = ChFi3d_mkbound(aCyl, out Curve2D aCurv, new Point2D(0.2, 0), new Point2D(1.5, 2),
                                               1.0e-4, 1.0e-2);
         o.C2("mkbound", aCurv);
         for (int i = 0; i <= 4; i++)
@@ -454,13 +459,13 @@ internal static class KPartRecorder
 
     private static void ComputeArete(Out o)
     {
-        Geom_Surface aCyl = new Geom_CylindricalSurface(new CoordinateSystem(), 3.0);
+        Surface aCyl = new CylindricalSurface(new CoordinateSystem(), 3.0);
         ChFiDS_CommonPoint P1 = new(), P2 = new();
         Point2D[,] aUV = { { new(1, 0.5), new(1, 4) }, { new(2, 1), new(0.5, 1) }, { new(0.5, 0.5), new(2, 3) } };
         for (int i = 0; i < 3; i++)
         {
-            Geom_Curve? C3d = null;
-            Geom2d_Curve? Pc = null;
+            Curve3D? C3d = null;
+            Curve2D? Pc = null;
             double Pardeb = 0.0, Parfin = 0.0;
             ChFi3d_ComputeArete(P1, aUV[i, 0], P2, aUV[i, 1], aCyl, ref C3d, ref Pc, ref Pardeb, ref Parfin, 1.0e-6,
                                 1.0e-7, out double tolr, 0);
@@ -473,14 +478,14 @@ internal static class KPartRecorder
     private static void ComputeCurves(Out o)
     {
         double aPi = Math.PI;
-        GeomAdaptor_Surface aPlnZ = new(new Geom_Plane(new Plane3D()));
-        GeomAdaptor_Surface aPlnX = new(new Geom_Plane(new Plane3D(new Point3D(1, 0, 0), new Direction3D(1, 0, 0))));
-        GeomAdaptor_Surface aCylZ = new(new Geom_CylindricalSurface(new CoordinateSystem(), 3.0), 0.0, 2 * aPi, -10.0, 10.0);
-        GeomAdaptor_Surface aPlnZ2 = new(new Geom_Plane(new Plane3D(new Point3D(0, 0, 2), new Direction3D(0, 0, 1))));
-        GeomAdaptor_Surface aPlnY3 = new(new Geom_Plane(new Plane3D(new Point3D(0, 3, 0), new Direction3D(0, 1, 0))));
-        GeomAdaptor_Surface aSph =
-            new(new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), 4.0));
-        List<(Adaptor3d_Surface S1, Adaptor3d_Surface S2, double[] d, double[] f)> aPairs = [];
+        SurfaceAdaptor aPlnZ = new(new PlaneSurface(new Plane3D()));
+        SurfaceAdaptor aPlnX = new(new PlaneSurface(new Plane3D(new Point3D(1, 0, 0), new Direction3D(1, 0, 0))));
+        SurfaceAdaptor aCylZ = new(new CylindricalSurface(new CoordinateSystem(), 3.0), 0.0, 2 * aPi, -10.0, 10.0);
+        SurfaceAdaptor aPlnZ2 = new(new PlaneSurface(new Plane3D(new Point3D(0, 0, 2), new Direction3D(0, 0, 1))));
+        SurfaceAdaptor aPlnY3 = new(new PlaneSurface(new Plane3D(new Point3D(0, 3, 0), new Direction3D(0, 1, 0))));
+        SurfaceAdaptor aSph =
+            new(new SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), 4.0));
+        List<(SurfaceAdaptorBase S1, SurfaceAdaptorBase S2, double[] d, double[] f)> aPairs = [];
         double u, v;
         {
             double[] d = new double[4], f = new double[4];
@@ -550,8 +555,8 @@ internal static class KPartRecorder
                     d[j + 1] = p.d[j];
                     f[j + 1] = p.f[j];
                 }
-                Geom_Curve? C3d = null;
-                Geom2d_Curve? Pc1 = null, Pc2 = null;
+                Curve3D? C3d = null;
+                Curve2D? Pc1 = null, Pc2 = null;
                 try
                 {
                     bool ok = ChFi3d_ComputeCurves(p.S1, p.S2, d, f, ref C3d, ref Pc1, ref Pc2, 1.0e-6, 1.0e-7,
@@ -575,8 +580,8 @@ internal static class KPartRecorder
     private static void Misc(Out o)
     {
         double aPi = Math.PI;
-        GeomAdaptor_Surface aCyl = new(new Geom_CylindricalSurface(new CoordinateSystem(), 3.0), 0.0, 2 * aPi, -10.0, 10.0);
-        GeomAdaptor_Curve aLin = new(new Geom_Line(new Point3D(-10, 1, 2), new Direction3D(1, 0, 0.1)), 0.0, 30.0);
+        SurfaceAdaptor aCyl = new(new CylindricalSurface(new CoordinateSystem(), 3.0), 0.0, 2 * aPi, -10.0, 10.0);
+        CurveAdaptor aLin = new(new LineCurve3D(new Point3D(-10, 1, 2), new Direction3D(1, 0, 0.1)), 0.0, 30.0);
         foreach (double wc in new[] { -2.0e100, 2.0e100, 15.0 })
         {
             Point2D p2d = new();
@@ -584,8 +589,8 @@ internal static class KPartRecorder
             bool ok = ChFi3d_IntCS(aCyl, aLin, ref p2d, ref w);
             o.L("intcs " + (ok ? 1 : 0) + " " + Out.R(p2d.X()) + " " + Out.R(p2d.Y()) + " " + Out.R(w));
         }
-        GeomAdaptor_Surface aPln = new(new Geom_Plane(new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0.2))));
-        GeomAdaptor_Curve aCir = new(new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0), 0.0,
+        SurfaceAdaptor aPln = new(new PlaneSurface(new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0.2))));
+        CurveAdaptor aCir = new(new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0), 0.0,
                                      2 * aPi);
         for (int s = 0; s < 2; s++)
         {
@@ -593,16 +598,16 @@ internal static class KPartRecorder
             bool ok = ChFi3d_InterPlaneEdge(aPln, aCir, ref W, s == 1, 1.0e-7);
             o.L("interplane " + (ok ? 1 : 0) + " " + Out.R(W));
         }
-        ChFi3d_Parameters(new Geom_CylindricalSurface(new CoordinateSystem(), 3.0), new Point3D(0, 3, 7), out double u,
+        ChFi3d_Parameters(new CylindricalSurface(new CoordinateSystem(), 3.0), new Point3D(0, 3, 7), out double u,
                           out double v);
         o.L("parameters " + Out.R(u) + " " + Out.R(v));
-        ChFi3d_Parameters(new Geom_SphericalSurface(new CoordinateSystem(), 3.0), new Point3D(0, 0, 3), out u, out v);
+        ChFi3d_Parameters(new SphericalSurface(new CoordinateSystem(), 3.0), new Point3D(0, 0, 3), out u, out v);
         o.L("parameters " + Out.R(u) + " " + Out.R(v));
-        ChFi3d_TrimCurve(new Geom_Circle(new Frame3D(), 5.0), new Point3D(0, 5, 0), new Point3D(-5, 0, 0),
-                         out Geom_TrimmedCurve aTr);
+        ChFi3d_TrimCurve(new CircleCurve3D(new Frame3D(), 5.0), new Point3D(0, 5, 0), new Point3D(-5, 0, 0),
+                         out TrimmedCurve3D aTr);
         o.C3("trimmed", aTr);
         double wf = -1.0, wl = -1.0;
-        Geom_Circle? aCs = ChFi3d_CircularSpine(ref wf, ref wl, new Point3D(5, 0, 0), new Vector3D(0, 1, 0),
+        CircleCurve3D? aCs = ChFi3d_CircularSpine(ref wf, ref wl, new Point3D(5, 0, 0), new Vector3D(0, 1, 0),
                                                 new Point3D(0, 5, 0), new Vector3D(-1, 0, 0), 2.0);
         o.C3("circularspine", aCs);
         o.L("w " + Out.R(wf) + " " + Out.R(wl));
@@ -611,41 +616,41 @@ internal static class KPartRecorder
         o.V3("vd", vd);
         o.V3("vf", vf);
         o.Real("convtol", ChFi3d_ConvTol2dToTol3d(aCyl, 1.0e-5));
-        Geom_Curve aC3 = new Geom_TrimmedCurve(new Geom_Circle(new Frame3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)),
+        Curve3D aC3 = new TrimmedCurve3D(new CircleCurve3D(new Frame3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)),
                                                                3.0), 0.0, 2.0);
-        Geom2d_Curve aPc1 = new Geom2d_Line(new Point2D(0.0, 1.0), new Direction2D(1.0, 0.0));
-        GeomAdaptor_Surface aSph = new(new Geom_SphericalSurface(new CoordinateSystem(), 3.2));
-        Geom2d_Curve aPc2 = new Geom2d_Line(new Point2D(0.0, 0.3), new Direction2D(1.0, 0.0));
+        Curve2D aPc1 = new LineCurve2D(new Point2D(0.0, 1.0), new Direction2D(1.0, 0.0));
+        SurfaceAdaptor aSph = new(new SphericalSurface(new CoordinateSystem(), 3.2));
+        Curve2D aPc2 = new LineCurve2D(new Point2D(0.0, 0.3), new Direction2D(1.0, 0.0));
         o.Real("evaltol", ChFi3d_EvalTolReached(aCyl, aPc1, aSph, aPc2, aC3));
-        GeomAdaptor_Surface aB = new(new Geom_CylindricalSurface(new CoordinateSystem(), 3.0));
+        SurfaceAdaptor aB = new(new CylindricalSurface(new CoordinateSystem(), 3.0));
         ChFi3d_BoundSrf(aB, 0.5, 1.0, 0.0, 2.0, true);
         o.L("boundsrf " + Out.R(aB.FirstUParameter()) + " " + Out.R(aB.LastUParameter()) + " "
             + Out.R(aB.FirstVParameter()) + " " + Out.R(aB.LastVParameter()));
-        GeomAdaptor_Surface aP = new(new Geom_Plane(new Plane3D()));
+        SurfaceAdaptor aP = new(new PlaneSurface(new Plane3D()));
         ChFi3d_BoundSrf(aP, 0.0, 1.0, 0.0, 4.0, true);
         o.L("boundsrf " + Out.R(aP.FirstUParameter()) + " " + Out.R(aP.LastUParameter()) + " "
             + Out.R(aP.FirstVParameter()) + " " + Out.R(aP.LastVParameter()));
-        Geom_Curve aArc = new Geom_TrimmedCurve(new Geom_Circle(new Frame3D(), 5.0), 0.0, 2.0);
+        Curve3D aArc = new TrimmedCurve3D(new CircleCurve3D(new Frame3D(), 5.0), 0.0, 2.0);
         o.C3("approxbyc2", ChFi3d_ApproxByC2(aArc));
         o.L("issmooth " + (ChFi3d_IsSmooth(aArc) ? 1 : 0) + " " + (ChFi3d_IsSmooth(ChFi3d_ApproxByC2(aArc)) ? 1 : 0));
     }
 
-    private static void Topology(Out o, in TopoDS_Shape S)
+    private static void Topology(Out o, in Shape S)
     {
         ChFiDS_Map EF = new(), VE = new(), VF = new();
-        EF.Fill(S, TopAbs_EDGE, TopAbs_FACE);
-        VE.Fill(S, TopAbs_VERTEX, TopAbs_EDGE);
-        VF.Fill(S, TopAbs_VERTEX, TopAbs_FACE);
-        NCollection_IndexedMap<TopoDS_Shape> MV = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(S, TopAbs_VERTEX, MV);
+        EF.Fill(S, ShapeType.Edge, ShapeType.Face);
+        VE.Fill(S, ShapeType.Vertex, ShapeType.Edge);
+        VF.Fill(S, ShapeType.Vertex, ShapeType.Face);
+        NCollection_IndexedMap<Shape> MV = new(ShapeHasher.Instance);
+        Exploration.MapShapes(S, ShapeType.Vertex, MV);
         for (int i = 1; i <= MV.Extent(); i++)
         {
-            TopoDS_Vertex V = TopoDS.Vertex(MV.FindKey(i));
+            Vertex V = ShapeCasts.Vertex(MV.FindKey(i));
             o.L("vertex " + i + " nbface " + ChFi3d_nbface(VF[V]) + " nbedges " + ChFi3d_NumberOfEdges(V, VE)
                 + " nbsharp " + ChFi3d_NumberOfSharpEdges(V, VE, EF));
-            TopoDS_Edge[] E = new TopoDS_Edge[3];
+            Edge[] E = new Edge[3];
             int n = 0;
-            foreach (TopoDS_Shape it in VE[V])
+            foreach (Shape it in VE[V])
             {
                 if (n >= 3)
                 {
@@ -658,7 +663,7 @@ internal static class KPartRecorder
                 }
                 if (!seen)
                 {
-                    E[n++] = TopoDS.Edge(it);
+                    E[n++] = ShapeCasts.Edge(it);
                 }
             }
             if (n == 3)
@@ -666,18 +671,18 @@ internal static class KPartRecorder
                 o.L("edgestate " + (int)ChFi3d_EdgeState(E, EF) + " angle " + Out.R(ChFi3d_AngleEdge(V, E[0], E[1])));
             }
         }
-        NCollection_IndexedMap<TopoDS_Shape> ME = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(S, TopAbs_EDGE, ME);
+        NCollection_IndexedMap<Shape> ME = new(ShapeHasher.Instance);
+        Exploration.MapShapes(S, ShapeType.Edge, ME);
         for (int i = 1; i <= ME.Extent(); i++)
         {
-            TopoDS_Edge E = TopoDS.Edge(ME.FindKey(i));
-            ChFi3d_conexfaces(E, out TopoDS_Face F1, out TopoDS_Face F2, EF);
+            Edge E = ShapeCasts.Edge(ME.FindKey(i));
+            ChFi3d_conexfaces(E, out Face F1, out Face F2, EF);
             o.L("edge " + i + " conti " + (int)ChFi3d_evalconti(E, F1, F2) + " pseudoseam "
                 + (ChFi3d_IsPseudoSeam(E, F1) ? 1 : 0));
         }
     }
 
-    private static void ElSpine(Out o, in TopoDS_Shape S, int k, double WF, double WL)
+    private static void ElSpine(Out o, in Shape S, int k, double WF, double WL)
     {
         try
         {

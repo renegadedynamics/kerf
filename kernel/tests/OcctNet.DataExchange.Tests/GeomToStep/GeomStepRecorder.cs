@@ -1,11 +1,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Text;
 using OcctNet.DataExchange.Tests.StepGen;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DataExchange.Tests.GeomToStep;
 
@@ -41,24 +46,24 @@ internal static class GeomStepRecorder
         return aWriter;
     }
 
-    public static string Curve(Geom_Curve C)
+    public static string Curve(Curve3D C)
     {
         var aS = Writer();
-        GeomTools_CurveSet.PrintCurve(C, aS, true);
+        CurveSet.PrintCurve(C, aS, true);
         return OneLine(aS.ToString());
     }
 
-    public static string Curve2d(Geom2d_Curve C)
+    public static string Curve2d(Curve2D C)
     {
         var aS = Writer();
-        GeomTools_Curve2dSet.PrintCurve2d(C, aS, true);
+        Curve2dSet.PrintCurve2d(C, aS, true);
         return OneLine(aS.ToString());
     }
 
-    public static string Surface(Geom_Surface S)
+    public static string Surface(Surface S)
     {
         var aS = Writer();
-        GeomTools_SurfaceSet.PrintSurface(S, aS, true);
+        SurfaceSet.PrintSurface(S, aS, true);
         return OneLine(aS.ToString());
     }
 
@@ -250,166 +255,166 @@ internal static class GeomStepRecorder
 
     private static (bool, Func<Transient?>) M(GeomToStep_Root theMaker, Func<Transient?> theValue) => (theMaker.IsDone(), theValue);
 
-    private static void CurveMakers(string theId, Geom_Curve C, Context X)
+    private static void CurveMakers(string theId, Curve3D C, Context X)
     {
         X.Lines.Add(theId + " " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(C.GetType()));
         var F = X.F;
         X.Make(theId, "curve", () => { var m = new GeomToStep_MakeCurve(C, F); return M(m, m.Value); });
-        if (C is Geom_Line L)
+        if (C is LineCurve3D L)
         {
             X.Make(theId, "line", () => { var m = new GeomToStep_MakeLine(L, F); return M(m, m.Value); });
             X.Make(theId, "lin", () => { var m = new GeomToStep_MakeLine(L.Lin(), F); return M(m, m.Value); });
         }
 
-        if (C is Geom_Conic Co)
+        if (C is ConicCurve3D Co)
         {
             X.Make(theId, "conic", () => { var m = new GeomToStep_MakeConic(Co, F); return M(m, m.Value); });
         }
 
-        if (C is Geom_Circle Ci)
+        if (C is CircleCurve3D Ci)
         {
             X.Make(theId, "circle", () => { var m = new GeomToStep_MakeCircle(Ci, F); return M(m, m.Value); });
             X.Make(theId, "circ", () => { var m = new GeomToStep_MakeCircle(Ci.Circ(), F); return M(m, m.Value); });
         }
 
-        if (C is Geom_Ellipse E)
+        if (C is EllipseCurve3D E)
         {
             X.Make(theId, "ellipse", () => { var m = new GeomToStep_MakeEllipse(E, F); return M(m, m.Value); });
             X.Make(theId, "elips", () => { var m = new GeomToStep_MakeEllipse(E.Elips(), F); return M(m, m.Value); });
         }
 
-        if (C is Geom_Hyperbola H)
+        if (C is HyperbolaCurve3D H)
         {
             X.Make(theId, "hyperbola", () => { var m = new GeomToStep_MakeHyperbola(H, F); return M(m, m.Value); });
         }
 
-        if (C is Geom_Parabola P)
+        if (C is ParabolaCurve3D P)
         {
             X.Make(theId, "parabola", () => { var m = new GeomToStep_MakeParabola(P, F); return M(m, m.Value); });
         }
 
-        if (C is Geom_BoundedCurve B)
+        if (C is BoundedCurve3D B)
         {
             X.Make(theId, "bounded", () => { var m = new GeomToStep_MakeBoundedCurve(B, F); return M(m, m.Value); });
         }
 
-        if (C is Geom_BSplineCurve BS)
+        if (C is BSplineCurve3D BS)
         {
             X.Make(theId, "bspline", () => { var m = new GeomToStep_MakeBSplineCurveWithKnots(BS, F); return M(m, m.Value); });
             X.Make(theId, "rbspline", () => { var m = new GeomToStep_MakeBSplineCurveWithKnotsAndRationalBSplineCurve(BS, F); return M(m, m.Value); });
         }
     }
 
-    private static void Curve2dMakers(string theId, Geom2d_Curve C, Context X)
+    private static void Curve2dMakers(string theId, Curve2D C, Context X)
     {
         X.Lines.Add(theId + " " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(C.GetType()));
         var F = X.F;
         X.Make(theId, "curve", () => { var m = new GeomToStep_MakeCurve(C, F); return M(m, m.Value); });
-        if (C is Geom2d_Line L)
+        if (C is LineCurve2D L)
         {
             X.Make(theId, "line", () => { var m = new GeomToStep_MakeLine(L, F); return M(m, m.Value); });
             X.Make(theId, "lin", () => { var m = new GeomToStep_MakeLine(L.Lin2d(), F); return M(m, m.Value); });
         }
 
-        if (C is Geom2d_Conic Co)
+        if (C is ConicCurve2D Co)
         {
             X.Make(theId, "conic", () => { var m = new GeomToStep_MakeConic(Co, F); return M(m, m.Value); });
         }
 
-        if (C is Geom2d_Circle Ci)
+        if (C is CircleCurve2D Ci)
         {
             X.Make(theId, "circle", () => { var m = new GeomToStep_MakeCircle(Ci, F); return M(m, m.Value); });
         }
 
-        if (C is Geom2d_Ellipse E)
+        if (C is EllipseCurve2D E)
         {
             X.Make(theId, "ellipse", () => { var m = new GeomToStep_MakeEllipse(E, F); return M(m, m.Value); });
         }
 
-        if (C is Geom2d_Hyperbola H)
+        if (C is HyperbolaCurve2D H)
         {
             X.Make(theId, "hyperbola", () => { var m = new GeomToStep_MakeHyperbola(H, F); return M(m, m.Value); });
         }
 
-        if (C is Geom2d_Parabola P)
+        if (C is ParabolaCurve2D P)
         {
             X.Make(theId, "parabola", () => { var m = new GeomToStep_MakeParabola(P, F); return M(m, m.Value); });
         }
 
-        if (C is Geom2d_BoundedCurve B)
+        if (C is BoundedCurve2D B)
         {
             X.Make(theId, "bounded", () => { var m = new GeomToStep_MakeBoundedCurve(B, F); return M(m, m.Value); });
         }
 
-        if (C is Geom2d_BSplineCurve BS)
+        if (C is BSplineCurve2D BS)
         {
             X.Make(theId, "bspline", () => { var m = new GeomToStep_MakeBSplineCurveWithKnots(BS, F); return M(m, m.Value); });
             X.Make(theId, "rbspline", () => { var m = new GeomToStep_MakeBSplineCurveWithKnotsAndRationalBSplineCurve(BS, F); return M(m, m.Value); });
         }
     }
 
-    private static void SurfaceMakers(string theId, Geom_Surface S, Context X)
+    private static void SurfaceMakers(string theId, Surface S, Context X)
     {
         X.Lines.Add(theId + " " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(S.GetType()));
         var F = X.F;
         X.Make(theId, "surface", () => { var m = new GeomToStep_MakeSurface(S, F); return M(m, m.Value); });
-        if (S is Geom_BoundedSurface B)
+        if (S is BoundedSurface B)
         {
             X.Make(theId, "bounded", () => { var m = new GeomToStep_MakeBoundedSurface(B, F); return M(m, m.Value); });
         }
 
-        if (S is Geom_ElementarySurface E)
+        if (S is ElementarySurface E)
         {
             X.Make(theId, "elementary", () => { var m = new GeomToStep_MakeElementarySurface(E, F); return M(m, m.Value); });
         }
 
-        if (S is Geom_SweptSurface W)
+        if (S is SweptSurface W)
         {
             X.Make(theId, "swept", () => { var m = new GeomToStep_MakeSweptSurface(W, F); return M(m, m.Value); });
         }
 
-        if (S is Geom_Plane P)
+        if (S is PlaneSurface P)
         {
             X.Make(theId, "plane", () => { var m = new GeomToStep_MakePlane(P, F); return M(m, m.Value); });
             X.Make(theId, "pln", () => { var m = new GeomToStep_MakePlane(P.Pln(), F); return M(m, m.Value); });
         }
 
-        if (S is Geom_CylindricalSurface Cy)
+        if (S is CylindricalSurface Cy)
         {
             X.Make(theId, "cylinder", () => { var m = new GeomToStep_MakeCylindricalSurface(Cy, F); return M(m, m.Value); });
         }
 
-        if (S is Geom_ConicalSurface Co)
+        if (S is ConicalSurface Co)
         {
             X.Make(theId, "cone", () => { var m = new GeomToStep_MakeConicalSurface(Co, F); return M(m, m.Value); });
         }
 
-        if (S is Geom_SphericalSurface Sp)
+        if (S is SphericalSurface Sp)
         {
             X.Make(theId, "sphere", () => { var m = new GeomToStep_MakeSphericalSurface(Sp, F); return M(m, m.Value); });
         }
 
-        if (S is Geom_ToroidalSurface To)
+        if (S is ToroidalSurface To)
         {
             X.Make(theId, "torus", () => { var m = new GeomToStep_MakeToroidalSurface(To, F); return M(m, m.Value); });
         }
 
-        if (S is Geom_SurfaceOfLinearExtrusion Ex)
+        if (S is ExtrusionSurface Ex)
         {
             X.Make(theId, "extrusion", () => { var m = new GeomToStep_MakeSurfaceOfLinearExtrusion(Ex, F); return M(m, m.Value); });
         }
 
-        if (S is Geom_SurfaceOfRevolution Rv)
+        if (S is RevolutionSurface Rv)
         {
             X.Make(theId, "revolution", () => { var m = new GeomToStep_MakeSurfaceOfRevolution(Rv, F); return M(m, m.Value); });
         }
 
-        if (S is Geom_RectangularTrimmedSurface RT)
+        if (S is TrimmedSurface RT)
         {
             X.Make(theId, "rtrimmed", () => { var m = new GeomToStep_MakeRectangularTrimmedSurface(RT, F); return M(m, m.Value); });
         }
 
-        if (S is Geom_BSplineSurface BS)
+        if (S is BSplineSurface BS)
         {
             X.Make(theId, "bspline", () => { var m = new GeomToStep_MakeBSplineSurfaceWithKnots(BS, F); return M(m, m.Value); });
             X.Make(theId, "rbspline", () => { var m = new GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface(BS, F); return M(m, m.Value); });
@@ -461,13 +466,13 @@ internal static class GeomStepRecorder
         switch (aKind)
         {
             case "C3":
-                CurveMakers(theId, GeomTools_CurveSet.ReadCurve(new StringReader(aRest))!, X);
+                CurveMakers(theId, CurveSet.ReadCurve(new StringReader(aRest))!, X);
                 return;
             case "C2":
-                Curve2dMakers(theId, GeomTools_Curve2dSet.ReadCurve2d(new StringReader(aRest))!, X);
+                Curve2dMakers(theId, Curve2dSet.ReadCurve2d(new StringReader(aRest))!, X);
                 return;
             case "S":
-                SurfaceMakers(theId, GeomTools_SurfaceSet.ReadSurface(new StringReader(aRest))!, X);
+                SurfaceMakers(theId, SurfaceSet.ReadSurface(new StringReader(aRest))!, X);
                 return;
         }
 
@@ -479,63 +484,63 @@ internal static class GeomStepRecorder
             {
                 Point3D P = new Point3D(v[0], v[1], v[2]);
                 Add(X, theId, "pnt", () => new GeomToStep_MakeCartesianPoint(P, F.LengthFactor()).Value());
-                Add(X, theId, "gpnt", () => new GeomToStep_MakeCartesianPoint(new Geom_CartesianPoint(P), F.LengthFactor()).Value());
+                Add(X, theId, "gpnt", () => new GeomToStep_MakeCartesianPoint(new CartesianPoint(P), F.LengthFactor()).Value());
                 break;
             }
             case "PNT2":
             {
                 Point2D P = new Point2D(v[0], v[1]);
                 Add(X, theId, "pnt", () => new GeomToStep_MakeCartesianPoint(P, F.LengthFactor()).Value());
-                Add(X, theId, "gpnt", () => new GeomToStep_MakeCartesianPoint(new Geom2d_CartesianPoint(P)).Value());
+                Add(X, theId, "gpnt", () => new GeomToStep_MakeCartesianPoint(new CartesianPoint2(P)).Value());
                 break;
             }
             case "DIR":
             {
                 Direction3D D = new Direction3D(v[0], v[1], v[2]);
                 X.Make(theId, "dir", () => { var m = new GeomToStep_MakeDirection(D); return M(m, m.Value); });
-                X.Make(theId, "gdir", () => { var m = new GeomToStep_MakeDirection(new Geom_Direction(D)); return M(m, m.Value); });
+                X.Make(theId, "gdir", () => { var m = new GeomToStep_MakeDirection(new Direction(D)); return M(m, m.Value); });
                 break;
             }
             case "DIR2":
             {
                 Direction2D D = new Direction2D(v[0], v[1]);
                 X.Make(theId, "dir", () => { var m = new GeomToStep_MakeDirection(D); return M(m, m.Value); });
-                X.Make(theId, "gdir", () => { var m = new GeomToStep_MakeDirection(new Geom2d_Direction(D)); return M(m, m.Value); });
+                X.Make(theId, "gdir", () => { var m = new GeomToStep_MakeDirection(new Direction2(D)); return M(m, m.Value); });
                 break;
             }
             case "VEC":
             {
                 Vector3D V = new Vector3D(v[0], v[1], v[2]);
                 X.Make(theId, "vec", () => { var m = new GeomToStep_MakeVector(V, F); return M(m, m.Value); });
-                X.Make(theId, "gvec", () => { var m = new GeomToStep_MakeVector(new Geom_VectorWithMagnitude(V), F); return M(m, m.Value); });
+                X.Make(theId, "gvec", () => { var m = new GeomToStep_MakeVector(new VectorWithMagnitude(V), F); return M(m, m.Value); });
                 break;
             }
             case "VEC2":
             {
                 Vector2D V = new Vector2D(v[0], v[1]);
                 X.Make(theId, "vec", () => { var m = new GeomToStep_MakeVector(V, F); return M(m, m.Value); });
-                X.Make(theId, "gvec", () => { var m = new GeomToStep_MakeVector(new Geom2d_VectorWithMagnitude(V), F); return M(m, m.Value); });
+                X.Make(theId, "gvec", () => { var m = new GeomToStep_MakeVector(new VectorWithMagnitude2(V), F); return M(m, m.Value); });
                 break;
             }
             case "AX1":
             {
                 Axis3D A = new Axis3D(new Point3D(v[0], v[1], v[2]), new Direction3D(v[3], v[4], v[5]));
                 X.Make(theId, "ax1", () => { var m = new GeomToStep_MakeAxis1Placement(A, F); return M(m, m.Value); });
-                X.Make(theId, "gax1", () => { var m = new GeomToStep_MakeAxis1Placement(new Geom_Axis1Placement(A), F); return M(m, m.Value); });
+                X.Make(theId, "gax1", () => { var m = new GeomToStep_MakeAxis1Placement(new Axis1Placement(A), F); return M(m, m.Value); });
                 break;
             }
             case "AX2D":
             {
                 Axis2D A = new Axis2D(new Point2D(v[0], v[1]), new Direction2D(v[2], v[3]));
                 X.Make(theId, "ax2d", () => { var m = new GeomToStep_MakeAxis1Placement(A, F); return M(m, m.Value); });
-                X.Make(theId, "gax2d", () => { var m = new GeomToStep_MakeAxis1Placement(new Geom2d_AxisPlacement(A), F); return M(m, m.Value); });
+                X.Make(theId, "gax2d", () => { var m = new GeomToStep_MakeAxis1Placement(new AxisPlacement2(A), F); return M(m, m.Value); });
                 break;
             }
             case "AX2":
             {
                 Frame3D A = new Frame3D(new Point3D(v[0], v[1], v[2]), new Direction3D(v[3], v[4], v[5]), new Direction3D(v[6], v[7], v[8]));
                 X.Make(theId, "ax2", () => { var m = new GeomToStep_MakeAxis2Placement3d(A, F); return M(m, m.Value); });
-                X.Make(theId, "gax2", () => { var m = new GeomToStep_MakeAxis2Placement3d(new Geom_Axis2Placement(A), F); return M(m, m.Value); });
+                X.Make(theId, "gax2", () => { var m = new GeomToStep_MakeAxis2Placement3d(new Axis2Placement(A), F); return M(m, m.Value); });
                 X.Make(theId, "ax2to2d", () => { var m = new GeomToStep_MakeAxis2Placement2d(A, F); return M(m, m.Value); });
                 CoordinateSystem A3 = new CoordinateSystem(A);
                 if (v.Count > 9 && v[9] == 0.0)
@@ -612,15 +617,15 @@ internal static class GeomStepRecorder
     }
 
     /// <summary>The g2s lines of a shape's geometry, with the given factors.</summary>
-    public static List<string> ShapeLines(in TopoDS_Shape theShape, StepData_Protocol theProtocol, StepData_Factors F)
+    public static List<string> ShapeLines(in Shape theShape, StepData_Protocol theProtocol, StepData_Factors F)
     {
         var aLines = new List<string>();
         var X = new Context(theProtocol, F, aLines);
         var aSeen = new HashSet<object>(ReferenceEqualityComparer.Instance);
         int aNb = 0;
-        for (var anExp = new TopExp_Explorer(theShape, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(theShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            Geom_Surface? S = BRep_Tool.Surface(TopoDS.Face(anExp.Current()), out _);
+            Surface? S = Tool.Surface(ShapeCasts.Face(anExp.Current()), out _);
             if (S is null || !aSeen.Add(S))
             {
                 continue;
@@ -629,14 +634,14 @@ internal static class GeomStepRecorder
             SurfaceMakers("s" + (++aNb).ToString(CultureInfo.InvariantCulture), S, X);
         }
 
-        for (var anExp = new TopExp_Explorer(theShape, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(theShape, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            var TE = (BRep_TEdge)anExp.Current().TShape()!;
-            foreach (BRep_CurveRepresentation aRep in TE.Curves())
+            var TE = (BrepTEdge)anExp.Current().TShape()!;
+            foreach (CurveRepresentation aRep in TE.Curves())
             {
-                if (aRep.IsCurve3D())
+                if (aRep.IsCurve3D)
                 {
-                    Geom_Curve? C = aRep.Curve3D();
+                    Curve3D? C = aRep.Curve3D();
                     if (C is null || !aSeen.Add(C))
                     {
                         continue;
@@ -644,11 +649,11 @@ internal static class GeomStepRecorder
 
                     string anId = "c" + (++aNb).ToString(CultureInfo.InvariantCulture);
                     CurveMakers(anId, C, X);
-                    var GC = (BRep_GCurve)aRep;
-                    Geom_Curve? T = null;
+                    var GC = (GCurve)aRep;
+                    Curve3D? T = null;
                     try
                     {
-                        T = new Geom_TrimmedCurve(C, GC.First(), GC.Last());
+                        T = new TrimmedCurve3D(C, GC.First(), GC.Last());
                     }
                     catch (Exception e) when (e is not OutOfMemoryException)
                     {
@@ -662,8 +667,8 @@ internal static class GeomStepRecorder
                 }
                 else if (aRep.IsCurveOnSurface())
                 {
-                    Geom2d_Curve?[] P = [aRep.PCurve(), aRep.IsCurveOnClosedSurface() ? aRep.PCurve2() : null];
-                    foreach (Geom2d_Curve? C in P)
+                    Curve2D?[] P = [aRep.PCurve(), aRep.IsCurveOnClosedSurface ? aRep.PCurve2() : null];
+                    foreach (Curve2D? C in P)
                     {
                         if (C is null || !aSeen.Add(C))
                         {

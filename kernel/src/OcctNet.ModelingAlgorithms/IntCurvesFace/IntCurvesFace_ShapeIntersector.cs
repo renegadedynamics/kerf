@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -36,16 +39,16 @@ public class IntCurvesFace_ShapeIntersector
     }
 
     /// <summary>Loads the faces of <paramref name="theShape"/>, with the tolerance <paramref name="theTol"/> (see <see cref="IntCurvesFace_Intersector"/>).</summary>
-    public void Load(in TopoDS_Shape theShape, double theTol)
+    public void Load(in Shape theShape, double theTol)
     {
         // OCCT doesn't clear the intersectors of a shape loaded before: they stay first in the sequence, and myNbFaces
         // counts only the new faces, so a second Load intersects the old shape's faces (occt-issues.md)
-        var Ex = new TopExp_Explorer();
+        var Ex = new Explorer();
         int i;
-        for (myNbFaces = 0, i = 0, Ex.Init(theShape, TopAbs_FACE); Ex.More(); ++i, Ex.Next())
+        for (myNbFaces = 0, i = 0, Ex.Init(theShape, global::Kerf.Topology.ShapeType.Face); Ex.More(); ++i, Ex.Next())
         {
             ++myNbFaces;
-            TopoDS_Face aCurrentFace = TopoDS.Face(Ex.Current());
+            Face aCurrentFace = ShapeCasts.Face(Ex.Current());
             myIntersector.Append(new IntCurvesFace_Intersector(aCurrentFace, theTol));
         }
     }
@@ -147,7 +150,7 @@ public class IntCurvesFace_ShapeIntersector
     /// Intersects the part [<paramref name="theParMin"/>, <paramref name="theParMax"/>] of the curve
     /// <paramref name="theHCurve"/> with the loaded faces.
     /// </summary>
-    public void Perform(Adaptor3d_Curve theHCurve, double theParMin, double theParMax)
+    public void Perform(CurveAdaptorBase theHCurve, double theParMin, double theParMax)
     {
         myIsDone = false;
         for (int i = 1; i <= myNbFaces; ++i)
@@ -201,14 +204,14 @@ public class IntCurvesFace_ShapeIntersector
     }
 
     /// <summary>The state of the <paramref name="I"/>-th point in its face: IN, or ON its boundary.</summary>
-    public TopAbs_State State(int I)
+    public Containment State(int I)
     {
         IntCurvesFace_Intersector anIntAdaptor = myIntersector[myIndexFace[myIndexPt[I]]];
         return anIntAdaptor.State(myIndexIntPnt[myIndexPt[I]]);
     }
 
     /// <summary>The face of the <paramref name="I"/>-th point.</summary>
-    public TopoDS_Face Face(int I)
+    public Face Face(int I)
     {
         IntCurvesFace_Intersector anIntAdaptor = myIntersector[myIndexFace[myIndexPt[I]]];
         return anIntAdaptor.Face();

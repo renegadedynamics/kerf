@@ -42,7 +42,7 @@ public class GProp_ElementaryTests
     [Fact]
     public void HOperator_PointMass()
     {
-        GProp.HOperator(new Point3D(1.0, 2.0, 3.0), Constants.Origin(), 2.0, out Matrix3x3 aH);
+        global::Kerf.Engine.Measurement.GProp.HOperator(new Point3D(1.0, 2.0, 3.0), Constants.Origin(), 2.0, out Matrix3x3 aH);
         AssertMat(aH, 2.0 * 13.0, 2.0 * 10.0, 2.0 * 5.0, -4.0, -6.0, -12.0);
     }
 
@@ -50,12 +50,12 @@ public class GProp_ElementaryTests
     public void Add_TranslatesInertia()
     {
         // Two unit points composed through systems with different reference points.
-        var aP1 = new GProp_PGProps();
+        var aP1 = new global::Kerf.Engine.Measurement.PGProps();
         aP1.AddPoint(new Point3D(1.0, 0.0, 0.0));
-        var aP2 = new GProp_PGProps();
+        var aP2 = new global::Kerf.Engine.Measurement.PGProps();
         aP2.AddPoint(new Point3D(-1.0, 0.0, 0.0));
 
-        var aSystem = new GProp_GProps(new Point3D(5.0, 5.0, 5.0));
+        var aSystem = new global::Kerf.Engine.Measurement.Properties(new Point3D(5.0, 5.0, 5.0));
         aSystem.Add(aP1, 2.0);
         aSystem.Add(aP2, 2.0);
 
@@ -77,9 +77,9 @@ public class GProp_ElementaryTests
     [Fact]
     public void Copy_IsIndependent()
     {
-        var aP = new GProp_PGProps();
+        var aP = new global::Kerf.Engine.Measurement.PGProps();
         aP.AddPoint(new Point3D(1.0, 2.0, 3.0));
-        var aCopy = new GProp_GProps(aP);
+        var aCopy = new global::Kerf.Engine.Measurement.Properties(aP);
         aP.AddPoint(new Point3D(3.0, 2.0, 1.0));
         Assert.Equal(1.0, aCopy.Mass());
         AssertPnt(aCopy.CentreOfMass(), 1.0, 2.0, 3.0);
@@ -96,7 +96,7 @@ public class GProp_ElementaryTests
         aPnts[4] = new Point3D(0.0, -1.0, 0.0);
         aPnts[5] = new Point3D(0.0, 0.0, 1.0);
         aPnts[6] = new Point3D(0.0, 0.0, -1.0);
-        GProp_PrincipalProps aPP = new GProp_PGProps(aPnts).PrincipalProperties();
+        global::Kerf.Engine.Measurement.PrincipalProperties aPP = new global::Kerf.Engine.Measurement.PGProps(aPnts).PrincipalProperties();
         Assert.True(aPP.HasSymmetryPoint());
         Assert.True(aPP.HasSymmetryAxis());
         aPP.Moments(out double aI1, out double aI2, out double aI3);
@@ -114,7 +114,7 @@ public class GProp_ElementaryTests
         aRect[2] = new Point3D(-2.0, 1.0, 0.0).Transformed(aRot);
         aRect[3] = new Point3D(2.0, -1.0, 0.0).Transformed(aRot);
         aRect[4] = new Point3D(-2.0, -1.0, 0.0).Transformed(aRot);
-        aPP = new GProp_PGProps(aRect).PrincipalProperties();
+        aPP = new global::Kerf.Engine.Measurement.PGProps(aRect).PrincipalProperties();
         Assert.False(aPP.HasSymmetryAxis());
         Assert.False(aPP.HasSymmetryPoint());
         aPP.Moments(out aI1, out aI2, out aI3);
@@ -138,11 +138,11 @@ public class GProp_ElementaryTests
     [Fact]
     public void PrincipalProps_Default()
     {
-        var aPP = new GProp_PrincipalProps();
+        var aPP = new global::Kerf.Engine.Measurement.PrincipalProperties();
         aPP.Moments(out double aI1, out _, out _);
         Assert.Equal(RealLast(), aI1);
         Assert.Equal(new Vector3D(0.0, 1.0, 0.0), aPP.SecondAxisOfInertia());
-        Assert.Equal(aPP, new GProp_PrincipalProps());
+        Assert.Equal(aPP, new global::Kerf.Engine.Measurement.PrincipalProperties());
     }
 
     // ---- Curves, surfaces and solids ---------------------------------------------------------------------------
@@ -156,7 +156,7 @@ public class GProp_ElementaryTests
     {
         const double R = 2.0;
         var aCirc = new Circle3D(Constants.XOY(), R);
-        var aProps = new GProp_CelGProps(aCirc, Constants.Origin());
+        var aProps = new global::Kerf.Engine.Measurement.CelGProps(aCirc, Constants.Origin());
         Assert.Equal(2.0 * Math.PI * R, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, 0.0);
         // The right matrix is diag(pi R^3, pi R^3, 2 pi R^3). OCCT builds P V L (eigenvectors scaled by their
@@ -174,7 +174,7 @@ public class GProp_ElementaryTests
     {
         const double R = 3.0;
         var aCirc = new Circle3D(Constants.XOY(), R);
-        var aProps = new GProp_CelGProps(aCirc, 0.0, Math.PI / 2.0, Constants.Origin());
+        var aProps = new global::Kerf.Engine.Measurement.CelGProps(aCirc, 0.0, Math.PI / 2.0, Constants.Origin());
         Assert.Equal(Math.PI * R / 2.0, aProps.Mass(), Tol);
         // Centroid of a quarter arc: 2R/pi on each axis.
         AssertPnt(aProps.CentreOfMass(), 2.0 * R / Math.PI, 2.0 * R / Math.PI, 0.0);
@@ -186,7 +186,7 @@ public class GProp_ElementaryTests
         // OCCT stores the absolute centre in g, which GProp_GProps reads as relative to the location point, so the
         // centre of mass comes out shifted by the location.
         var aCirc = new Circle3D(Constants.XOY(), 1.0);
-        var aProps = new GProp_CelGProps(aCirc, new Point3D(1.0, 2.0, 3.0));
+        var aProps = new global::Kerf.Engine.Measurement.CelGProps(aCirc, new Point3D(1.0, 2.0, 3.0));
         AssertPnt(aProps.CentreOfMass(), 1.0, 2.0, 3.0);
     }
 
@@ -194,7 +194,7 @@ public class GProp_ElementaryTests
     public void Line_Segment()
     {
         var aLin = new Line3D(new Point3D(1.0, 2.0, 3.0), new Direction3D(1.0, 0.0, 0.0));
-        var aProps = new GProp_CelGProps(aLin, 0.0, 6.0, Constants.Origin());
+        var aProps = new global::Kerf.Engine.Measurement.CelGProps(aLin, 0.0, 6.0, Constants.Origin());
         Assert.Equal(6.0, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 4.0, 2.0, 3.0);
         // Thin rod of length L = 6 along x through (., 2, 3): central moments 0, L^3/12 + ..., about the centre.
@@ -213,7 +213,7 @@ public class GProp_ElementaryTests
         const double R = 2.0;
         const double H = 5.0;
         var aCyl = new Cylinder(new CoordinateSystem(Constants.XOY()), R);
-        var aProps = new GProp_SelGProps(aCyl, 0.0, 2.0 * Math.PI, 0.0, H, Constants.Origin());
+        var aProps = new global::Kerf.Engine.Measurement.SelGProps(aCyl, 0.0, 2.0 * Math.PI, 0.0, H, Constants.Origin());
         Assert.Equal(2.0 * Math.PI * R * H, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, H / 2.0);
     }
@@ -223,7 +223,7 @@ public class GProp_ElementaryTests
     {
         const double R = 1.5;
         var aSph = new Sphere(new CoordinateSystem(Constants.XOY()), R);
-        var aProps = new GProp_SelGProps(aSph, 0.0, 2.0 * Math.PI, -Math.PI / 2.0, Math.PI / 2.0, Constants.Origin());
+        var aProps = new global::Kerf.Engine.Measurement.SelGProps(aSph, 0.0, 2.0 * Math.PI, -Math.PI / 2.0, Math.PI / 2.0, Constants.Origin());
         Assert.Equal(4.0 * Math.PI * R * R, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, 0.0);
 
@@ -239,7 +239,7 @@ public class GProp_ElementaryTests
         const double RMaj = 4.0;
         const double RMin = 1.0;
         var aTor = new Torus(new CoordinateSystem(Constants.XOY()), RMaj, RMin);
-        var aProps = new GProp_SelGProps(aTor, 0.0, 2.0 * Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
+        var aProps = new global::Kerf.Engine.Measurement.SelGProps(aTor, 0.0, 2.0 * Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
         Assert.Equal(4.0 * Math.PI * Math.PI * RMaj * RMin, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, 0.0);
     }
@@ -252,7 +252,7 @@ public class GProp_ElementaryTests
         const double L = 2.0;
         double t = Math.PI / 6.0;
         var aCone = new Cone(new CoordinateSystem(Constants.XOY()), t, R);
-        var aProps = new GProp_SelGProps(aCone, 0.0, 2.0 * Math.PI, 0.0, L, Constants.Origin());
+        var aProps = new global::Kerf.Engine.Measurement.SelGProps(aCone, 0.0, 2.0 * Math.PI, 0.0, L, Constants.Origin());
         // The area is pi (R + R2) L; OCCT multiplies it by cos(t).
         double aR2 = R + L * Math.Sin(t);
         Assert.Equal(Math.PI * (R + aR2) * L * Math.Cos(t), aProps.Mass(), Tol);
@@ -264,7 +264,7 @@ public class GProp_ElementaryTests
         const double R = 2.0;
         const double H = 3.0;
         var aCyl = new Cylinder(new CoordinateSystem(Constants.XOY()), R);
-        var aProps = new GProp_VelGProps(aCyl, 0.0, 2.0 * Math.PI, 0.0, H, Constants.Origin());
+        var aProps = new global::Kerf.Engine.Measurement.VelGProps(aCyl, 0.0, 2.0 * Math.PI, 0.0, H, Constants.Origin());
         double aM = Math.PI * R * R * H;
         Assert.Equal(aM, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, H / 2.0);
@@ -277,7 +277,7 @@ public class GProp_ElementaryTests
     {
         const double R = 2.0;
         var aSph = new Sphere(new CoordinateSystem(Constants.XOY()), R);
-        var aProps = new GProp_VelGProps(aSph, 0.0, 2.0 * Math.PI, -Math.PI / 2.0, Math.PI / 2.0, Constants.Origin());
+        var aProps = new global::Kerf.Engine.Measurement.VelGProps(aSph, 0.0, 2.0 * Math.PI, -Math.PI / 2.0, Math.PI / 2.0, Constants.Origin());
         Assert.Equal(4.0 / 3.0 * Math.PI * R * R * R, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, 0.0);
     }
@@ -288,15 +288,15 @@ public class GProp_ElementaryTests
         const double RMaj = 3.0;
         const double RMin = 1.0;
         var aTor = new Torus(new CoordinateSystem(Constants.XOY()), RMaj, RMin);
-        var aProps = new GProp_VelGProps(aTor, 0.0, 2.0 * Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
+        var aProps = new global::Kerf.Engine.Measurement.VelGProps(aTor, 0.0, 2.0 * Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
         Assert.Equal(2.0 * Math.PI * Math.PI * RMaj * RMin * RMin, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, 0.0);
 
         // Half a torus (Teta in [0, pi]): the surface class puts the centre at y = 2 RMaj / pi; the volume class
         // reads cos(Alpha2) and sin(Alpha2) for Teta2, so with Alpha2 = 2 pi its centre stays at y = 0.
-        var aHalfS = new GProp_SelGProps(aTor, 0.0, Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
+        var aHalfS = new global::Kerf.Engine.Measurement.SelGProps(aTor, 0.0, Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
         Assert.Equal(2.0 * RMaj / Math.PI, aHalfS.CentreOfMass().Y(), Tol);
-        var aHalfV = new GProp_VelGProps(aTor, 0.0, Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
+        var aHalfV = new global::Kerf.Engine.Measurement.VelGProps(aTor, 0.0, Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
         Assert.Equal(0.0, aHalfV.CentreOfMass().Y(), Tol);
     }
 
@@ -307,7 +307,7 @@ public class GProp_ElementaryTests
         const double L = 2.0;
         double t = Math.PI / 6.0;
         var aCone = new Cone(new CoordinateSystem(Constants.XOY()), t, R);
-        var aProps = new GProp_VelGProps(aCone, 0.0, 2.0 * Math.PI, 0.0, L, Constants.Origin());
+        var aProps = new global::Kerf.Engine.Measurement.VelGProps(aCone, 0.0, 2.0 * Math.PI, 0.0, L, Constants.Origin());
         // The frustum's volume is pi h (R^2 + R R2 + R2^2) / 3 with h = L cos(t); OCCT computes
         // pi L^2 cos(t) sin(t) (2R + L sin(t)), the lateral area's formula times L sin(t).
         double aExpected = Math.PI * L * L * Math.Cos(t) * Math.Sin(t) * (2.0 * R + L * Math.Sin(t));

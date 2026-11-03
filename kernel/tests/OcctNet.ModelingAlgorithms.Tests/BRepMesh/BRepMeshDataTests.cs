@@ -1,12 +1,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.IMeshData_Status;
 using static Occt.IMeshTools_MeshAlgoType;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -113,7 +117,7 @@ public class BRepMeshDataTests
         Assert.Equal(0, aCurve.ParametersNb());
 
         BRepMeshData_Face aDFace = new(new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).Face());
-        var aPCurve = new BRepMeshData_PCurve(aDFace, TopAbs_REVERSED);
+        var aPCurve = new BRepMeshData_PCurve(aDFace, Reversed);
         Assert.False(aPCurve.IsForward());
         Assert.False(aPCurve.IsInternal());
         Assert.Same(aDFace, aPCurve.GetFace());
@@ -132,49 +136,49 @@ public class BRepMeshDataTests
         Assert.Equal(42, aPCurve.GetIndex(0));
         aPCurve.Clear(true);
         Assert.Equal(2, aPCurve.ParametersNb());
-        Assert.True(new BRepMeshData_PCurve(aDFace, TopAbs_INTERNAL).IsInternal());
+        Assert.True(new BRepMeshData_PCurve(aDFace, Internal).IsInternal());
     }
 
     [Fact]
     public void Model_of_a_box_built_by_hand()
     {
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(2, 3, 4));
+        Solid aBox = TestShapes.Frozen(TestShapes.Box(2, 3, 4));
         var aModel = new BRepMeshData_Model(aBox);
         Assert.True(aModel.GetShape().IsSame(aBox));
         aModel.SetMaxSize(4.0);
         Assert.Equal(4.0, aModel.GetMaxSize());
 
         // Edges first, mapped by shape, then faces with their wires and pcurves (as BRepMesh_ShapeVisitor does).
-        var anEdgeMap = new NCollection_DataMap<TopoDS_Shape, int>(TopTools_ShapeMapHasher.Instance);
-        for (var anExp = new TopExp_Explorer(aBox, TopAbs_EDGE); anExp.More(); anExp.Next())
+        var anEdgeMap = new NCollection_DataMap<Shape, int>(ShapeHasher.Instance);
+        for (var anExp = new Explorer(aBox, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             if (!anEdgeMap.IsBound(anExp.Current()))
             {
                 anEdgeMap.Bind(anExp.Current(), aModel.EdgesNb());
-                IMeshData_Edge aDEdge = aModel.AddEdge(TopoDS.Edge(anExp.Current()));
+                IMeshData_Edge aDEdge = aModel.AddEdge(ShapeCasts.Edge(anExp.Current()));
                 Assert.Same(aDEdge, aModel.GetEdge(aModel.EdgesNb() - 1));
                 Assert.True(aDEdge.IsFree());
                 Assert.Equal(RealLast(), aDEdge.GetDeflection());
                 Assert.Equal(RealLast(), aDEdge.GetAngularDeflection());
-                Assert.Equal(BRep_Tool.SameParameter(aDEdge.GetEdge()), aDEdge.GetSameParam());
-                Assert.Equal(BRep_Tool.SameRange(aDEdge.GetEdge()), aDEdge.GetSameRange());
+                Assert.Equal(Tool.SameParameter(aDEdge.GetEdge()), aDEdge.GetSameParam());
+                Assert.Equal(Tool.SameRange(aDEdge.GetEdge()), aDEdge.GetSameRange());
                 Assert.False(aDEdge.GetDegenerated());
                 Assert.NotNull(aDEdge.GetCurve());
             }
         }
         Assert.Equal(12, aModel.EdgesNb());
 
-        for (var aFaceExp = new TopExp_Explorer(aBox, TopAbs_FACE); aFaceExp.More(); aFaceExp.Next())
+        for (var aFaceExp = new Explorer(aBox, ShapeType.Face); aFaceExp.More(); aFaceExp.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(aFaceExp.Current().Oriented(TopAbs_FORWARD));
+            Face aFace = ShapeCasts.Face(aFaceExp.Current().Oriented(Forward));
             IMeshData_Face aDFace = aModel.AddFace(aFace);
             Assert.True(aDFace.IsValid());
             Assert.True(aDFace.GetSurface().Face().IsEqual(aFace));
-            TopoDS_Wire aWire = BRepTools.OuterWire(aFace);
+            Wire aWire = BrepTools.OuterWire(aFace);
             IMeshData_Wire aDWire = aDFace.AddWire(aWire, 4);
             Assert.Same(aDWire, aDFace.GetWire(0));
             Assert.True(aDWire.GetWire().IsSame(aWire));
-            for (var anIt = new TopoDS_Iterator(aWire); anIt.More(); anIt.Next())
+            for (var anIt = new Iterator(aWire); anIt.More(); anIt.Next())
             {
                 IMeshData_Edge aDEdge = aModel.GetEdge(anEdgeMap.Find(anIt.Value()));
                 int anIndex = aDWire.AddEdge(aDEdge, anIt.Value().Orientation());
@@ -216,23 +220,23 @@ public class BRepMeshDataTests
     [Fact]
     public void Seam_edge_has_two_pcurves_on_one_face()
     {
-        TopoDS_Face aCyl = TestShapes.CylinderFace(2, 3);
+        Face aCyl = TestShapes.CylinderFace(2, 3);
         BRepMeshData_Face aDFace = new(aCyl);
-        TopoDS_Edge aSeam = new();
-        for (var anExp = new TopExp_Explorer(aCyl, TopAbs_EDGE); anExp.More(); anExp.Next())
+        Edge aSeam = new();
+        for (var anExp = new Explorer(aCyl, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            if (BRep_Tool.IsClosed(TopoDS.Edge(anExp.Current()), aCyl))
+            if (Tool.IsClosed(ShapeCasts.Edge(anExp.Current()), aCyl))
             {
-                aSeam = TopoDS.Edge(anExp.Current());
+                aSeam = ShapeCasts.Edge(anExp.Current());
             }
         }
-        Assert.False(aSeam.IsNull());
+        Assert.False(aSeam.IsNull);
 
         BRepMeshData_Edge aDEdge = new(aSeam);
-        IMeshData_PCurve aFwd = aDEdge.AddPCurve(aDFace, TopAbs_FORWARD);
-        IMeshData_PCurve aRev = aDEdge.AddPCurve(aDFace, TopAbs_REVERSED);
-        Assert.Same(aFwd, aDEdge.GetPCurve(aDFace, TopAbs_FORWARD));
-        Assert.Same(aRev, aDEdge.GetPCurve(aDFace, TopAbs_REVERSED));
+        IMeshData_PCurve aFwd = aDEdge.AddPCurve(aDFace, Forward);
+        IMeshData_PCurve aRev = aDEdge.AddPCurve(aDFace, Reversed);
+        Assert.Same(aFwd, aDEdge.GetPCurve(aDFace, Forward));
+        Assert.Same(aRev, aDEdge.GetPCurve(aDFace, Reversed));
         Assert.Equal([0, 1], aDEdge.GetPCurves(aDFace));
 
         // The pcurves of another face aren't found by this one.
@@ -257,7 +261,7 @@ public class BRepMeshDataTests
         aDFace.SetStatus(IMeshData_Failure);
         Assert.False(aDFace.IsValid());
 
-        IMeshData_StatusOwner aWire = new BRepMeshData_Wire(new TopoDS_Wire(), 0);
+        IMeshData_StatusOwner aWire = new BRepMeshData_Wire(new Wire(), 0);
         aWire.SetStatus(IMeshData_OpenWire);
         Assert.Equal((int)IMeshData_OpenWire, aWire.GetStatusMask());
 
@@ -272,7 +276,7 @@ public class BRepMeshDataTests
     {
         // Decision 490: IMeshData's maps keyed by IFacePtr/IEdgePtr compare by reference and iterate in insertion
         // order, whatever the objects' hash codes.
-        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+        Edge anEdge = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         var anEdges = Enumerable.Range(0, 200).Select(_ => (IMeshData_Edge)new BRepMeshData_Edge(anEdge)).ToList();
         var aMap = new NCollection_Map<IMeshData_Edge>(ReferenceEqualityComparer.Instance);
         foreach (IMeshData_Edge aE in anEdges)
@@ -292,8 +296,8 @@ public class BRepMeshDataTests
     public void EdgeParameterProvider_scales_parameters_of_an_edge_not_SameParameter()
     {
         // A straight edge on a plane: 3D range [0, 10], pcurve range [0, 10]; stored parameters on [0, 1].
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(), -1, 11, -1, 1).Face();
-        TopoDS_Edge anEdge = TopoDS.Edge(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)));
+        Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(), -1, 11, -1, 1).Face();
+        Edge anEdge = ShapeCasts.Edge(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)));
         BRepMeshData_Face aDFace = new(aFace);
         BRepMeshData_Edge aDEdge = new(anEdge);
         var aStored = new NCollection_HArray1<double>(1, 3);
@@ -303,13 +307,13 @@ public class BRepMeshDataTests
 
         // SameParameter: the stored values as they are.
         Assert.True(aDEdge.GetSameParam());
-        var aSame = new BRepMesh_EdgeParameterProvider<NCollection_HArray1<double>>(aDEdge, TopAbs_FORWARD, aDFace, aStored);
+        var aSame = new BRepMesh_EdgeParameterProvider<NCollection_HArray1<double>>(aDEdge, Forward, aDFace, aStored);
         Assert.Equal(0.5, aSame.Parameter(2, new Point3D(5, 0, 0)));
         Assert.NotNull(aSame.GetPCurve());
 
         // Not SameParameter: scaled to the pcurve's range and refined by projection.
         aDEdge.SetSameParam(false);
-        var aScaled = new BRepMesh_EdgeParameterProvider<NCollection_HArray1<double>>(aDEdge, TopAbs_FORWARD, aDFace, aStored);
+        var aScaled = new BRepMesh_EdgeParameterProvider<NCollection_HArray1<double>>(aDEdge, Forward, aDFace, aStored);
         Assert.Equal(0.0, aScaled.Parameter(1, new Point3D(0, 0, 0)), 1e-12);
         Assert.Equal(5.0, aScaled.Parameter(2, new Point3D(5, 0, 0)), 1e-9);
         Assert.Equal(10.0, aScaled.Parameter(3, new Point3D(10, 0, 0)), 1e-9);
@@ -319,7 +323,7 @@ public class BRepMeshDataTests
         aCurve.AddPoint(new Point3D(0, 0, 0), 0.0);
         aCurve.AddPoint(new Point3D(10, 0, 0), 10.0);
         var aProvider = new BRepMesh_EdgeParameterProvider<IMeshData_ParametersListArrayAdaptor<IMeshData_Curve>>();
-        aProvider.Init(aDEdge, TopAbs_FORWARD, aDFace, new IMeshData_ParametersListArrayAdaptor<IMeshData_Curve>(aCurve));
+        aProvider.Init(aDEdge, Forward, aDFace, new IMeshData_ParametersListArrayAdaptor<IMeshData_Curve>(aCurve));
         Assert.Equal(10.0, aProvider.Parameter(1, new Point3D(10, 0, 0)), 1e-9);
     }
 }

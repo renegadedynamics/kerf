@@ -5,6 +5,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -15,15 +17,15 @@ namespace Occt;
 /// <remarks>
 /// A working object (decision 21). The maps are its own: <see cref="MapTransient"/> and <see cref="MapShape"/> return
 /// them as OCCT's const references do, for reading. Transients are keys by reference (OCCT's handle maps); shapes by
-/// <see cref="TopTools_ShapeMapHasher"/>, as OCCT's.
+/// <see cref="ShapeHasher"/>, as OCCT's.
 /// </remarks>
 public class ShapeExtend_MsgRegistrator : ShapeExtend_BasicMsgRegistrator
 {
     private readonly NCollection_DataMap<Transient, NCollection_List<Msg>> myMapTransient =
         new(ReferenceEqualityComparer.Instance);
 
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<Msg>> myMapShape =
-        new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, NCollection_List<Msg>> myMapShape =
+        new(ShapeHasher.Instance);
 
     /// <summary>An empty registrator.</summary>
     public ShapeExtend_MsgRegistrator()
@@ -57,9 +59,9 @@ public class ShapeExtend_MsgRegistrator : ShapeExtend_BasicMsgRegistrator
     /// Attaches the message to the shape: appended to its list if it is in the map, else the shape is added with it.
     /// A null shape is ignored.
     /// </summary>
-    public override void Send(in TopoDS_Shape shape, Msg message, Gravity gravity)
+    public override void Send(in Shape shape, Msg message, Gravity gravity)
     {
-        if (shape.IsNull())
+        if (shape.IsNull)
         {
             return;
         }
@@ -80,5 +82,5 @@ public class ShapeExtend_MsgRegistrator : ShapeExtend_BasicMsgRegistrator
     public NCollection_DataMap<Transient, NCollection_List<Msg>> MapTransient() => myMapTransient;
 
     /// <summary>The map of shapes to their messages.</summary>
-    public NCollection_DataMap<TopoDS_Shape, NCollection_List<Msg>> MapShape() => myMapShape;
+    public NCollection_DataMap<Shape, NCollection_List<Msg>> MapShape() => myMapShape;
 }

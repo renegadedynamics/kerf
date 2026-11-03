@@ -4,11 +4,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using static Occt.BOPAlgo_Operation;
 using static Kerf.Engine.Foundation.Gravity;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -31,16 +34,16 @@ namespace Occt;
 /// </remarks>
 public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
 {
-    protected NCollection_List<TopoDS_Shape> myArguments = new();                                                     //!< Arguments of the operation
-    protected NCollection_Map<TopoDS_Shape> myMapFence = new(TopTools_ShapeMapHasher.Instance);                         //!< Fence map providing the uniqueness of the shapes in the list of arguments
+    protected NCollection_List<Shape> myArguments = new();                                                     //!< Arguments of the operation
+    protected NCollection_Map<Shape> myMapFence = new(ShapeHasher.Instance);                         //!< Fence map providing the uniqueness of the shapes in the list of arguments
     protected BOPAlgo_PaveFiller? myPaveFiller;                                                                         //!< Pave Filler - algorithm for sub-shapes intersection
     protected BOPDS_DS? myDS;                                                                                           //!< Data Structure - holder of intersection information
     protected IntTools_Context? myContext;                                                                              //!< Context - tool for cashing heavy algorithms such as Projectors and Classifiers
     protected int myEntryPoint;                                                                                         //!< EntryPoint - controls the deletion of the PaveFiller, which could live longer than the Builder
-    protected NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myImages = new(TopTools_ShapeMapHasher.Instance);  //!< Images - map of Images of the sub-shapes of arguments
-    protected NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myShapesSD = new(TopTools_ShapeMapHasher.Instance);                  //!< ShapesSD - map of SD Shapes
-    protected NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myOrigins = new(TopTools_ShapeMapHasher.Instance); //!< Origins - map of Origins, back map of Images
-    protected NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myInParts = new(TopTools_ShapeMapHasher.Instance); //!< InParts - map of own and acquired IN faces of the arguments solids
+    protected NCollection_DataMap<Shape, NCollection_List<Shape>> myImages = new(ShapeHasher.Instance);  //!< Images - map of Images of the sub-shapes of arguments
+    protected NCollection_DataMap<Shape, Shape> myShapesSD = new(ShapeHasher.Instance);                  //!< ShapesSD - map of SD Shapes
+    protected NCollection_DataMap<Shape, NCollection_List<Shape>> myOrigins = new(ShapeHasher.Instance); //!< Origins - map of Origins, back map of Images
+    protected NCollection_DataMap<Shape, NCollection_List<Shape>> myInParts = new(ShapeHasher.Instance); //!< InParts - map of own and acquired IN faces of the arguments solids
     protected bool myNonDestructive;                                                                                    //!< Safe processing option allows avoiding modification of the input shapes
     protected BOPAlgo_GlueEnum myGlue;                                                                                  //!< Gluing option allows speeding up the intersection of the input shapes
     protected bool myCheckInverted;                                                                                     //!< Check inverted option allows disabling the check of input solids on inverted status
@@ -83,7 +86,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
     /// As in OCCT, the fence of added arguments is cleared only by <see cref="Clear"/>, not by
     /// <see cref="SetArguments"/>: setting again arguments added before leaves them out (occt-issues.md, unit 6A).
     /// </remarks>
-    public virtual void AddArgument(in TopoDS_Shape theShape)
+    public virtual void AddArgument(in Shape theShape)
     {
         if (myMapFence.Add(theShape))
         {
@@ -92,9 +95,9 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
     }
 
     /// <summary>Sets the arguments.</summary>
-    public virtual void SetArguments(NCollection_List<TopoDS_Shape> theShapes)
+    public virtual void SetArguments(NCollection_List<Shape> theShapes)
     {
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new();
+        NCollection_List<Shape>.Iterator aIt = new();
         //
         myArguments.Clear();
         // OCCT: myMapFence isn't cleared (occt-issues.md, unit 6A)
@@ -102,13 +105,13 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
         aIt.Initialize(theShapes);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aS = aIt.Value();
+            Shape aS = aIt.Value();
             AddArgument(aS);
         }
     }
 
     /// <summary>The arguments.</summary>
-    public NCollection_List<TopoDS_Shape> Arguments() => myArguments;
+    public NCollection_List<Shape> Arguments() => myArguments;
 
     //! @name Options
 
@@ -180,8 +183,8 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
     /// Works for open solids too, and keeps the internal parts of the solids where the operation keeps IN faces.
     /// Errors go to <paramref name="theReport"/> (the algorithm's own report when null).
     /// </remarks>
-    public virtual void BuildBOP(NCollection_List<TopoDS_Shape> theObjects, TopAbs_State theObjState,
-                                 NCollection_List<TopoDS_Shape> theTools, TopAbs_State theToolsState,
+    public virtual void BuildBOP(NCollection_List<Shape> theObjects, Containment theObjState,
+                                 NCollection_List<Shape> theTools, Containment theToolsState,
                                  ProgressRange theRange, Report? theReport = null)
     {
         if (HasErrors())
@@ -192,14 +195,14 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
         // Report for the method
         Report aReport = theReport is null ? myReport : theReport;
 
-        if (myArguments.IsEmpty() || myShape.IsNull())
+        if (myArguments.IsEmpty() || myShape.IsNull)
         {
             aReport.AddAlert(Fail, new BOPAlgo_AlertBuilderFailed());
             return;
         }
         // Check the input data
-        if ((theObjState != TopAbs_IN && theObjState != TopAbs_OUT)
-            || (theToolsState != TopAbs_IN && theToolsState != TopAbs_OUT))
+        if ((theObjState != In && theObjState != Out)
+            || (theToolsState != In && theToolsState != Out))
         {
             aReport.AddAlert(Fail, new BOPAlgo_AlertBOPNotSet());
             return;
@@ -217,11 +220,11 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
         // Check that all input solids are from the arguments
         for (int i = 0; i < 2; ++i)
         {
-            NCollection_List<TopoDS_Shape> aList = i == 0 ? theObjects : theTools;
-            NCollection_List<TopoDS_Shape>.Iterator itLS = new(aList);
+            NCollection_List<Shape> aList = i == 0 ? theObjects : theTools;
+            NCollection_List<Shape>.Iterator itLS = new(aList);
             for (; itLS.More(); itLS.Next())
             {
-                TopoDS_Shape aS = itLS.Value();
+                Shape aS = itLS.Value();
                 // Check if the shape belongs to the arguments of operation
                 if (myDS!.Index(aS) < 0)
                 {
@@ -230,17 +233,17 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
                 }
 
                 // Check if the shape is a solid or collection of them
-                if (aS.ShapeType() != TopAbs_SOLID)
+                if (aS.ShapeType() != ShapeType.Solid)
                 {
-                    NCollection_List<TopoDS_Shape> aLS = new();
-                    NCollection_Map<TopoDS_Shape> aMFence0 = new(TopTools_ShapeMapHasher.Instance);
+                    NCollection_List<Shape> aLS = new();
+                    NCollection_Map<Shape> aMFence0 = new(ShapeHasher.Instance);
                     BOPTools_AlgoTools.TreatCompound(aS, aLS, aMFence0);
 
-                    NCollection_List<TopoDS_Shape>.Iterator it = new(aLS);
+                    NCollection_List<Shape>.Iterator it = new(aLS);
                     for (; it.More(); it.Next())
                     {
-                        TopoDS_Shape aSx = it.Value();
-                        if (aSx.ShapeType() != TopAbs_SOLID && aSx.ShapeType() != TopAbs_COMPSOLID)
+                        Shape aSx = it.Value();
+                        if (aSx.ShapeType() != ShapeType.Solid && aSx.ShapeType() != ShapeType.CompSolid)
                         {
                             aReport.AddAlert(Fail, new BOPAlgo_AlertUnsupportedType(aS));
                             return;
@@ -257,45 +260,45 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
         // will be considered as OUT.
 
         // Prepare the maps of splits of solids faces with orientations (OCCT's default hasher: orientation counts)
-        NCollection_IndexedMap<TopoDS_Shape> aMObjFacesOri = new(EqualityComparer<TopoDS_Shape>.Default),
-                                             aMToolFacesOri = new(EqualityComparer<TopoDS_Shape>.Default);
+        NCollection_IndexedMap<Shape> aMObjFacesOri = new(EqualityComparer<Shape>.Default),
+                                             aMToolFacesOri = new(EqualityComparer<Shape>.Default);
         // Prepare the maps of splits of solids faces
-        NCollection_IndexedMap<TopoDS_Shape> aMObjFaces = new(TopTools_ShapeMapHasher.Instance),
-                                             aMToolFaces = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> aMObjFaces = new(ShapeHasher.Instance),
+                                             aMToolFaces = new(ShapeHasher.Instance);
         // Copy the list of IN faces of the solids into map
-        NCollection_Map<TopoDS_Shape> anINObjects = new(TopTools_ShapeMapHasher.Instance),
-                                      anINTools = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> anINObjects = new(ShapeHasher.Instance),
+                                      anINTools = new(ShapeHasher.Instance);
 
         for (int i = 0; i < 2; ++i)
         {
-            NCollection_List<TopoDS_Shape> aList = i == 0 ? theObjects : theTools;
-            NCollection_IndexedMap<TopoDS_Shape> aMapOri = i == 0 ? aMObjFacesOri : aMToolFacesOri;
-            NCollection_IndexedMap<TopoDS_Shape> aMap = i == 0 ? aMObjFaces : aMToolFaces;
-            NCollection_List<TopoDS_Shape>.Iterator itLS = new(aList);
+            NCollection_List<Shape> aList = i == 0 ? theObjects : theTools;
+            NCollection_IndexedMap<Shape> aMapOri = i == 0 ? aMObjFacesOri : aMToolFacesOri;
+            NCollection_IndexedMap<Shape> aMap = i == 0 ? aMObjFaces : aMToolFaces;
+            NCollection_List<Shape>.Iterator itLS = new(aList);
             for (; itLS.More(); itLS.Next())
             {
-                TopoDS_Shape aShape = itLS.Value();
-                TopExp_Explorer expS = new(aShape, TopAbs_SOLID);
+                Shape aShape = itLS.Value();
+                Explorer expS = new(aShape, ShapeType.Solid);
                 for (; expS.More(); expS.Next())
                 {
-                    TopoDS_Shape aS = expS.Current();
-                    TopExp_Explorer expF = new(aS, TopAbs_FACE);
+                    Shape aS = expS.Current();
+                    Explorer expF = new(aS, ShapeType.Face);
                     for (; expF.More(); expF.Next())
                     {
-                        TopoDS_Shape aF = expF.Current();
-                        if (aF.Orientation() != TopAbs_FORWARD && aF.Orientation() != TopAbs_REVERSED)
+                        Shape aF = expF.Current();
+                        if (aF.Orientation() != Forward && aF.Orientation() != Reversed)
                         {
                             continue;
                         }
-                        if (myImages.Find(aF, out NCollection_List<TopoDS_Shape> pLFIm))
+                        if (myImages.Find(aF, out NCollection_List<Shape> pLFIm))
                         {
-                            NCollection_List<TopoDS_Shape>.Iterator itLFIm = new(pLFIm);
+                            NCollection_List<Shape>.Iterator itLFIm = new(pLFIm);
                             for (; itLFIm.More(); itLFIm.Next())
                             {
-                                TopoDS_Face aFImRef = TopoDS.Face(itLFIm.Value());
+                                Face aFImRef = ShapeCasts.Face(itLFIm.Value());
                                 if (BOPTools_AlgoTools.IsSplitToReverse(aFImRef, aF, myContext))
                                 {
-                                    TopoDS_Face aFIm = aFImRef;
+                                    Face aFIm = aFImRef;
                                     aFIm.Reverse();
                                     aMapOri.Add(aFIm);
                                     aMap.Add(aFIm);
@@ -315,10 +318,10 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
                     }
 
                     // Copy the list of IN faces into a map
-                    if (myInParts.Find(aS, out NCollection_List<TopoDS_Shape> pLFIN))
+                    if (myInParts.Find(aS, out NCollection_List<Shape> pLFIN))
                     {
-                        NCollection_Map<TopoDS_Shape> anINMap = i == 0 ? anINObjects : anINTools;
-                        NCollection_List<TopoDS_Shape>.Iterator itLFIn = new(pLFIN);
+                        NCollection_Map<Shape> anINMap = i == 0 ? anINObjects : anINTools;
+                        NCollection_List<Shape>.Iterator itLFIn = new(pLFIN);
                         for (; itLFIn.More(); itLFIn.Next())
                         {
                             anINMap.Add(itLFIn.Value());
@@ -331,7 +334,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
         // Now we need to select all faces which will participate in
         // building of the resulting solids. The final set of faces
         // depends on the given states for the groups.
-        bool isObjectsIN = theObjState == TopAbs_IN, isToolsIN = theToolsState == TopAbs_IN;
+        bool isObjectsIN = theObjState == In, isToolsIN = theToolsState == In;
 
         // Shortcuts
         bool bAvoidIN = !isObjectsIN && !isToolsIN,  // avoid all in faces
@@ -340,26 +343,26 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
         // Choose which SD faces are needed to be taken - equally or differently oriented faces
         bool isSameOriNeeded = theObjState == theToolsState;
         // Resulting faces
-        NCollection_IndexedMap<TopoDS_Shape> aMResFacesOri = new(EqualityComparer<TopoDS_Shape>.Default);
-        NCollection_Map<TopoDS_Shape> aMResFacesFence = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> aMResFacesOri = new(EqualityComparer<Shape>.Default);
+        NCollection_Map<Shape> aMResFacesFence = new(ShapeHasher.Instance);
         // Fence map
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance),
-                                      aMFToAvoid = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance),
+                                      aMFToAvoid = new(ShapeHasher.Instance);
         // Oriented fence map
-        NCollection_Map<TopoDS_Shape> aMFenceOri = new(EqualityComparer<TopoDS_Shape>.Default);
+        NCollection_Map<Shape> aMFenceOri = new(EqualityComparer<Shape>.Default);
 
         for (int i = 0; i < 2; ++i)
         {
-            NCollection_IndexedMap<TopoDS_Shape> aMap = i == 0 ? aMObjFacesOri : aMToolFacesOri;
-            NCollection_IndexedMap<TopoDS_Shape> anOppositeMap = i == 0 ? aMToolFaces : aMObjFaces;
-            NCollection_Map<TopoDS_Shape> anINMap = i == 0 ? anINObjects : anINTools;
-            NCollection_Map<TopoDS_Shape> anOppositeINMap = i == 0 ? anINTools : anINObjects;
+            NCollection_IndexedMap<Shape> aMap = i == 0 ? aMObjFacesOri : aMToolFacesOri;
+            NCollection_IndexedMap<Shape> anOppositeMap = i == 0 ? aMToolFaces : aMObjFaces;
+            NCollection_Map<Shape> anINMap = i == 0 ? anINObjects : anINTools;
+            NCollection_Map<Shape> anOppositeINMap = i == 0 ? anINTools : anINObjects;
             bool bTakeIN = i == 0 ? isObjectsIN : isToolsIN;
 
             int aNbF = aMap.Extent();
             for (int j = 1; j <= aNbF; ++j)
             {
-                TopoDS_Shape aFIm = aMap[j];
+                Shape aFIm = aMap[j];
 
                 bool isIN = anINMap.Contains(aFIm);
                 bool isINOpposite = anOppositeINMap.Contains(aFIm);
@@ -435,18 +438,18 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
         }
 
         // Remove the faces which has to be avoided
-        NCollection_List<TopoDS_Shape> aResFaces = new();
+        NCollection_List<Shape> aResFaces = new();
         int aNbRF = aMResFacesOri.Extent();
         for (int i = 1; i <= aNbRF; ++i)
         {
-            TopoDS_Shape aRF = aMResFacesOri[i];
+            Shape aRF = aMResFacesOri[i];
             if (!aMFToAvoid.Contains(aRF))
             {
                 aResFaces.Append(aRF);
             }
         }
         using var aPS = new ProgressScope(theRange, null, 2);
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
 
         // Try to build closed solids from the faces
         BOPAlgo_BuilderSolid aBS = new();
@@ -457,22 +460,22 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
         aBS.Perform(aPS.Next());
 
         // Resulting solids
-        NCollection_List<TopoDS_Shape> aResSolids = new();
+        NCollection_List<Shape> aResSolids = new();
 
         aMFence.Clear();
         if (!aBS.HasErrors())
         {
             // If any, add solids into resulting compound
-            NCollection_List<TopoDS_Shape>.Iterator itA = new(aBS.Areas());
+            NCollection_List<Shape>.Iterator itA = new(aBS.Areas());
             for (; itA.More(); itA.Next())
             {
-                TopoDS_Shape aSolid = itA.Value();
+                Shape aSolid = itA.Value();
                 // The solid must contain at least one face
                 // from either of objects or tools
-                TopExp_Explorer expF = new(aSolid, TopAbs_FACE);
+                Explorer expF = new(aSolid, ShapeType.Face);
                 for (; expF.More(); expF.Next())
                 {
-                    TopoDS_Shape aF = expF.Current();
+                    Shape aF = expF.Current();
                     if (aMObjFacesOri.Contains(aF) || aMToolFacesOri.Contains(aF))
                     {
                         break;
@@ -481,7 +484,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
                 if (expF.More())
                 {
                     aResSolids.Append(aSolid);
-                    TopExp.MapShapes(aSolid, aMFence);
+                    Exploration.MapShapes(aSolid, aMFence);
                 }
             }
         }
@@ -491,10 +494,10 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
         }
 
         // Collect unused faces
-        TopoDS_Compound anUnUsedFaces = new();
+        Compound anUnUsedFaces = new();
         aBB.MakeCompound(ref anUnUsedFaces);
 
-        NCollection_List<TopoDS_Shape>.Iterator itLF = new(aResFaces);
+        NCollection_List<Shape>.Iterator itLF = new(aResFaces);
         for (; itLF.More(); itLF.Next())
         {
             if (aMFence.Add(itLF.Value()))
@@ -504,19 +507,19 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
         }
 
         // Build blocks from the unused faces
-        NCollection_List<TopoDS_Shape> aLCB = new();
-        BOPTools_AlgoTools.MakeConnexityBlocks(anUnUsedFaces, TopAbs_EDGE, TopAbs_FACE, aLCB);
+        NCollection_List<Shape> aLCB = new();
+        BOPTools_AlgoTools.MakeConnexityBlocks(anUnUsedFaces, ShapeType.Edge, ShapeType.Face, aLCB);
 
         // Build solid from each block
-        NCollection_List<TopoDS_Shape>.Iterator itCB = new(aLCB);
+        NCollection_List<Shape>.Iterator itCB = new(aLCB);
         for (; itCB.More(); itCB.Next())
         {
-            TopoDS_Shape aCB = itCB.Value();
-            TopoDS_Shell aShell0 = new();
+            Shape aCB = itCB.Value();
+            Shell aShell0 = new();
             aBB.MakeShell(ref aShell0);
-            TopoDS_Shape aShell = aShell0;
+            Shape aShell = aShell0;
             // Add faces of the block to the shell
-            TopExp_Explorer anExpF = new(aCB, TopAbs_FACE);
+            Explorer anExpF = new(aCB, ShapeType.Face);
             for (; anExpF.More(); anExpF.Next())
             {
                 aBB.Add(aShell, anExpF.Current());
@@ -524,7 +527,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
 
             BOPTools_AlgoTools.OrientFacesOnShell(ref aShell);
             // Make solid out of the shell
-            TopoDS_Solid aSolid = new();
+            Solid aSolid = new();
             aBB.MakeSolid(ref aSolid);
             aBB.Add(aSolid, aShell);
             // Add new solid to result
@@ -534,29 +537,29 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
         if (!bAvoidIN)
         {
             // Fill solids with internal parts coming with the solids
-            NCollection_List<TopoDS_Shape> anInParts = new();
+            NCollection_List<Shape> anInParts = new();
             for (int i = 0; i < 2; ++i)
             {
-                NCollection_List<TopoDS_Shape> aList = i == 0 ? theObjects : theTools;
-                NCollection_List<TopoDS_Shape>.Iterator itLS = new(aList);
+                NCollection_List<Shape> aList = i == 0 ? theObjects : theTools;
+                NCollection_List<Shape>.Iterator itLS = new(aList);
                 for (; itLS.More(); itLS.Next())
                 {
-                    TopExp_Explorer expS = new(itLS.Value(), TopAbs_SOLID);
+                    Explorer expS = new(itLS.Value(), ShapeType.Solid);
                     for (; expS.More(); expS.Next())
                     {
-                        TopoDS_Shape aS = expS.Current(); // Solid
-                        for (TopoDS_Iterator it = new(aS); it.More(); it.Next())
+                        Shape aS = expS.Current(); // Solid
+                        for (Iterator it = new(aS); it.More(); it.Next())
                         {
-                            TopoDS_Shape aSInt = it.Value();
-                            if (aSInt.Orientation() == TopAbs_INTERNAL)
+                            Shape aSInt = it.Value();
+                            if (aSInt.Orientation() == Internal)
                             {
                                 anInParts.Append(aSInt); // vertex or edge
                             }
                             else
                             {
                                 // shell treatment
-                                TopoDS_Iterator itInt = new(aSInt);
-                                if (itInt.More() && itInt.Value().Orientation() == TopAbs_INTERNAL)
+                                Iterator itInt = new(aSInt);
+                                if (itInt.More() && itInt.Value().Orientation() == Internal)
                                 {
                                     anInParts.Append(aSInt);
                                 }
@@ -570,11 +573,11 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
         }
 
         // Combine solids into compound
-        TopoDS_Compound aResult0 = new();
+        Compound aResult0 = new();
         aBB.MakeCompound(ref aResult0);
-        TopoDS_Shape aResult = aResult0;
+        Shape aResult = aResult0;
 
-        NCollection_List<TopoDS_Shape>.Iterator itLS2 = new(aResSolids);
+        NCollection_List<Shape>.Iterator itLS2 = new(aResSolids);
         for (; itLS2.More(); itLS2.Next())
         {
             aBB.Add(aResult, itLS2.Value());
@@ -588,40 +591,40 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
     /// Builds the result of a Boolean operation of the given type from the splits of the given solids (see the
     /// overload with states).
     /// </summary>
-    public void BuildBOP(NCollection_List<TopoDS_Shape> theObjects, NCollection_List<TopoDS_Shape> theTools,
+    public void BuildBOP(NCollection_List<Shape> theObjects, NCollection_List<Shape> theTools,
                          BOPAlgo_Operation theOperation, ProgressRange theRange, Report? theReport = null)
     {
-        TopAbs_State anObjState, aToolsState;
+        Containment anObjState, aToolsState;
         switch (theOperation)
         {
             case BOPAlgo_COMMON:
             {
-                anObjState = TopAbs_IN;
-                aToolsState = TopAbs_IN;
+                anObjState = In;
+                aToolsState = In;
                 break;
             }
             case BOPAlgo_FUSE:
             {
-                anObjState = TopAbs_OUT;
-                aToolsState = TopAbs_OUT;
+                anObjState = Out;
+                aToolsState = Out;
                 break;
             }
             case BOPAlgo_CUT:
             {
-                anObjState = TopAbs_OUT;
-                aToolsState = TopAbs_IN;
+                anObjState = Out;
+                aToolsState = In;
                 break;
             }
             case BOPAlgo_CUT21:
             {
-                anObjState = TopAbs_IN;
-                aToolsState = TopAbs_OUT;
+                anObjState = In;
+                aToolsState = Out;
                 break;
             }
             default:
             {
-                anObjState = TopAbs_UNKNOWN;
-                aToolsState = TopAbs_UNKNOWN;
+                anObjState = Unknown;
+                aToolsState = Unknown;
                 break;
             }
         }
@@ -631,13 +634,13 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
     //! @name Images/Origins
 
     /// <summary>The map of images: the splits of the argument sub-shapes.</summary>
-    public NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> Images() => myImages;
+    public NCollection_DataMap<Shape, NCollection_List<Shape>> Images() => myImages;
 
     /// <summary>The map of origins: the argument sub-shapes each split comes from.</summary>
-    public NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> Origins() => myOrigins;
+    public NCollection_DataMap<Shape, NCollection_List<Shape>> Origins() => myOrigins;
 
     /// <summary>The map of same-domain shapes: each shape to its representative.</summary>
-    public NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> ShapesSD() => myShapesSD;
+    public NCollection_DataMap<Shape, Shape> ShapesSD() => myShapesSD;
 
     //! @name Analyze progress of the operation
 
@@ -688,7 +691,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
             switch (aSI.ShapeType())
             {
-                case TopAbs_EDGE:
+                case ShapeType.Edge:
                 {
                     if (myDS.HasPaveBlocks(i))
                     {
@@ -696,10 +699,10 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
                     }
                     break;
                 }
-                case TopAbs_WIRE:
+                case ShapeType.Wire:
                     aCounter.NbWires()++;
                     break;
-                case TopAbs_FACE:
+                case ShapeType.Face:
                 {
                     if (myDS.HasFaceInfo(i))
                     {
@@ -707,16 +710,16 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
                     }
                     break;
                 }
-                case TopAbs_SHELL:
+                case ShapeType.Shell:
                     aCounter.NbShells()++;
                     break;
-                case TopAbs_SOLID:
+                case ShapeType.Solid:
                     aCounter.NbSolids()++;
                     break;
-                case TopAbs_COMPSOLID:
+                case ShapeType.CompSolid:
                     aCounter.NbCompsolids()++;
                     break;
-                case TopAbs_COMPOUND:
+                case ShapeType.Compound:
                     aCounter.NbCompounds()++;
                     break;
                 default:
@@ -808,7 +811,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
             return;
         }
         //
-        BuildResult(TopAbs_VERTEX);
+        BuildResult(ShapeType.Vertex);
         if (HasErrors())
         {
             return;
@@ -820,20 +823,20 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
             return;
         }
         //
-        BuildResult(TopAbs_EDGE);
+        BuildResult(ShapeType.Edge);
         if (HasErrors())
         {
             return;
         }
         //
         // 3.3 Wires
-        FillImagesContainers(TopAbs_WIRE, aPS.Next(aSteps.GetStep((int)BOPAlgo_PIOperation.PIOperation_TreatWires)));
+        FillImagesContainers(ShapeType.Wire, aPS.Next(aSteps.GetStep((int)BOPAlgo_PIOperation.PIOperation_TreatWires)));
         if (HasErrors())
         {
             return;
         }
         //
-        BuildResult(TopAbs_WIRE);
+        BuildResult(ShapeType.Wire);
         if (HasErrors())
         {
             return;
@@ -846,19 +849,19 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
             return;
         }
         //
-        BuildResult(TopAbs_FACE);
+        BuildResult(ShapeType.Face);
         if (HasErrors())
         {
             return;
         }
         // 3.5 Shells
-        FillImagesContainers(TopAbs_SHELL, aPS.Next(aSteps.GetStep((int)BOPAlgo_PIOperation.PIOperation_TreatShells)));
+        FillImagesContainers(ShapeType.Shell, aPS.Next(aSteps.GetStep((int)BOPAlgo_PIOperation.PIOperation_TreatShells)));
         if (HasErrors())
         {
             return;
         }
 
-        BuildResult(TopAbs_SHELL);
+        BuildResult(ShapeType.Shell);
         if (HasErrors())
         {
             return;
@@ -870,19 +873,19 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
             return;
         }
 
-        BuildResult(TopAbs_SOLID);
+        BuildResult(ShapeType.Solid);
         if (HasErrors())
         {
             return;
         }
         // 3.7 CompSolids
-        FillImagesContainers(TopAbs_COMPSOLID, aPS.Next(aSteps.GetStep((int)BOPAlgo_PIOperation.PIOperation_TreatCompsolids)));
+        FillImagesContainers(ShapeType.CompSolid, aPS.Next(aSteps.GetStep((int)BOPAlgo_PIOperation.PIOperation_TreatCompsolids)));
         if (HasErrors())
         {
             return;
         }
 
-        BuildResult(TopAbs_COMPSOLID);
+        BuildResult(ShapeType.CompSolid);
         if (HasErrors())
         {
             return;
@@ -895,7 +898,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
             return;
         }
 
-        BuildResult(TopAbs_COMPOUND);
+        BuildResult(ShapeType.Compound);
         if (HasErrors())
         {
             return;
@@ -941,8 +944,8 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
     /// <summary>Makes the result an empty compound.</summary>
     protected virtual void Prepare()
     {
-        BRep_Builder aBB = new();
-        TopoDS_Compound aC = new();
+        BrepBuilder aBB = new();
+        Compound aC = new();
         //
         // 1. myShape is empty compound
         aBB.MakeCompound(ref aC);
@@ -955,8 +958,8 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
     protected virtual void PostTreat(ProgressRange theRange)
     {
         int i, aNbS;
-        TopAbs_ShapeEnum aType;
-        NCollection_IndexedMap<TopoDS_Shape> aMA = new(TopTools_ShapeMapHasher.Instance);
+        ShapeType aType;
+        NCollection_IndexedMap<Shape> aMA = new(ShapeHasher.Instance);
         if (myPaveFiller!.NonDestructive())
         {
             // MapToAvoid
@@ -965,9 +968,9 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
             {
                 BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
                 aType = aSI.ShapeType();
-                if (aType == TopAbs_VERTEX || aType == TopAbs_EDGE || aType == TopAbs_FACE)
+                if (aType == ShapeType.Vertex || aType == ShapeType.Edge || aType == ShapeType.Face)
                 {
-                    TopoDS_Shape aS = aSI.Shape();
+                    Shape aS = aSI.Shape();
                     aMA.Add(aS);
                 }
             }

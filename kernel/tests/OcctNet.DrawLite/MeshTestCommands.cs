@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -69,7 +73,7 @@ internal static class MeshTestCommands
             return 1;
         }
 
-        var aShapes = new List<TopoDS_Shape>();
+        var aShapes = new List<Shape>();
         for (int anArgIter = 1; anArgIter < n; ++anArgIter)
         {
             if (a[anArgIter] == "-geom")
@@ -82,8 +86,8 @@ internal static class MeshTestCommands
             }
             else
             {
-                TopoDS_Shape aShape = theDI.GetShape(a[anArgIter]);
-                if (aShape.IsNull())
+                Shape aShape = theDI.GetShape(a[anArgIter]);
+                if (aShape.IsNull)
                 {
                     di.Append("Syntax error : NULL shape '").Append(a[anArgIter]).Append("'");
                     return 1;
@@ -106,15 +110,15 @@ internal static class MeshTestCommands
         }
 
         // in place in OCCT: on a copy of the graph here, one copy for all the shapes, so shared sub-shapes stay shared
-        TopoDS_Shape anOriginal = TopoDS_Builder.MakeCompound(aShapes);
-        TopoDS_Shape aCompound = DrawShapeCopy.Copy(anOriginal);
+        Shape anOriginal = global::Kerf.Engine.Topology.Builder.MakeCompound(aShapes);
+        Shape aCompound = DrawShapeCopy.Copy(anOriginal);
         if (toRemoveGeometry)
         {
-            BRepTools.CleanGeometry(aCompound);
+            BrepTools.CleanGeometry(aCompound);
         }
         else
         {
-            BRepTools.Clean(aCompound, isForceClean);
+            BrepTools.Clean(aCompound, isForceClean);
         }
 
         DrawShapeRebind.Rebind(theDI, anOriginal, aCompound);
@@ -140,7 +144,7 @@ internal static class MeshTestCommands
             return 1;
         }
 
-        var aListOfShapes = new List<TopoDS_Shape>();
+        var aListOfShapes = new List<Shape>();
         var aMeshParams = new IMeshTools_Parameters();
         bool hasDefl = false, hasAngDefl = false, isPrsDefl = false;
 
@@ -264,8 +268,8 @@ internal static class MeshTestCommands
             }
             else
             {
-                TopoDS_Shape anArgShape = theDI.GetShape(theArgVec[anArgIter]);
-                if (anArgShape.IsNull())
+                Shape anArgShape = theDI.GetShape(theArgVec[anArgIter]);
+                if (anArgShape.IsNull)
                 {
                     di.Append("Syntax error: null shapes are not allowed here '").Append(theArgVec[anArgIter]).Append("'\n");
                     return 1;
@@ -283,7 +287,7 @@ internal static class MeshTestCommands
 
         di.Append("Incremental Mesh, multi-threading ").Append(aMeshParams.InParallel ? "ON" : "OFF").Append("\n");
 
-        TopoDS_Shape aShape = aListOfShapes.Count == 1 ? aListOfShapes[0] : TopoDS_Builder.MakeCompound(aListOfShapes);
+        Shape aShape = aListOfShapes.Count == 1 ? aListOfShapes[0] : global::Kerf.Engine.Topology.Builder.MakeCompound(aListOfShapes);
         if (isPrsDefl)
         {
             var aDrawer = new Prs3d_Drawer();
@@ -372,7 +376,7 @@ internal static class MeshTestCommands
             return 1;
         }
 
-        Geom_Surface? aSurf = DrawTrSurf.GetSurface(theDI, aSrcName);
+        Surface? aSurf = DrawTrSurf.GetSurface(theDI, aSrcName);
         double aUMin, aUMax, aVMin, aVMax;
         if (aSurf is not null)
         {
@@ -380,22 +384,22 @@ internal static class MeshTestCommands
         }
         else
         {
-            TopoDS_Shape aShape = theDI.GetShape(aSrcName);
-            if (aShape.IsNull() || aShape.ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE)
+            Shape aShape = theDI.GetShape(aSrcName);
+            if (aShape.IsNull || aShape.ShapeType() != ShapeType.Face)
             {
                 theDI.Output.WriteLine("Error: " + aSrcName + " is not a face");
                 return 1;
             }
 
-            TopoDS_Face aSrcFace = TopoDS.Face(aShape);
-            aSurf = BRep_Tool.Surface(aSrcFace);
+            Face aSrcFace = global::Kerf.Engine.Topology.ShapeCasts.Face(aShape);
+            aSurf = Tool.Surface(aSrcFace);
             if (aSurf is null)
             {
                 theDI.Output.WriteLine("Error: Face " + aSrcName + " has no surface");
                 return 1;
             }
 
-            BRepTools.UVBounds(aSrcFace, out aUMin, out aUMax, out aVMin, out aVMax);
+            BrepTools.UVBounds(aSrcFace, out aUMin, out aUMax, out aVMin, out aVMax);
         }
 
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aUMin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aUMax) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aVMin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aVMax))
@@ -412,7 +416,7 @@ internal static class MeshTestCommands
         }
 
         // OCCT writes into the new face: here into a copy of its graph, as the maker's face is frozen (decision 480)
-        TopoDS_Face aFace = TopoDS.Face(DrawShapeCopy.Copy(aFaceMaker.Face()));
+        Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(DrawShapeCopy.Copy(aFaceMaker.Face()));
 
         // create triangulation
         int aNbNodes = (aNbU + 1) * (aNbV + 1);
@@ -420,7 +424,7 @@ internal static class MeshTestCommands
         var aTriangulation = new Triangulation(aNbNodes, aNbTriangles, false);
 
         // fill nodes
-        var anAdSurf = new GeomAdaptor_Surface(aSurf);
+        var anAdSurf = new SurfaceAdaptor(aSurf);
         double aDU = (aUMax - aUMin) / aNbU;
         double aDV = (aVMax - aVMin) / aNbV;
         for (int iU = 0, iShift = 1; iU <= aNbU; iU++, iShift += aNbV + 1)
@@ -448,7 +452,7 @@ internal static class MeshTestCommands
         }
 
         // put triangulation to face
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         B.UpdateFace(aFace, aTriangulation);
 
         // fill edge polygons
@@ -472,15 +476,15 @@ internal static class MeshTestCommands
         var aUMaxPoly = new PolygonOnTriangulation(aUMaxIso);
         var aVMinPoly = new PolygonOnTriangulation(aVMinIso);
         var aVMaxPoly = new PolygonOnTriangulation(aVMaxIso);
-        for (var exp = new TopExp_Explorer(aFace, TopAbs_ShapeEnum.TopAbs_EDGE); exp.More(); exp.Next())
+        for (var exp = new global::Kerf.Engine.Topology.Explorer(aFace, ShapeType.Edge); exp.More(); exp.Next())
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(exp.Current());
-            Geom2d_Curve aC = BRep_Tool.CurveOnSurface(anEdge, aFace, out double aFirst, out double aLast)!;
+            Edge anEdge = global::Kerf.Engine.Topology.ShapeCasts.Edge(exp.Current());
+            Curve2D aC = Tool.CurveOnSurface(anEdge, aFace, out double aFirst, out double aLast)!;
             Point2D aPFirst = aC.Value(aFirst);
             Point2D aPLast = aC.Value(aLast);
             if (Math.Abs(aPFirst.X() - aPLast.X()) < 0.1 * (aUMax - aUMin)) // U=const
             {
-                if (BRep_Tool.IsClosed(anEdge, aFace))
+                if (Tool.IsClosed(anEdge, aFace))
                 {
                     B.UpdateEdge(anEdge, aUMinPoly, aUMaxPoly, aTriangulation);
                 }
@@ -491,7 +495,7 @@ internal static class MeshTestCommands
             }
             else // V=const
             {
-                if (BRep_Tool.IsClosed(anEdge, aFace))
+                if (Tool.IsClosed(anEdge, aFace))
                 {
                     B.UpdateEdge(anEdge, aVMinPoly, aVMaxPoly, aTriangulation);
                 }
@@ -526,8 +530,8 @@ internal static class MeshTestCommands
             return 1;
         }
 
-        TopoDS_Shape aShape = theDI.GetShape(theArgVec[1]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(theArgVec[1]);
+        if (aShape.IsNull)
         {
             theResult.Append(theArgVec[1]).Append(" is not a shape\n");
             return 1;
@@ -539,11 +543,11 @@ internal static class MeshTestCommands
         int aNbFaces = 0, aNbEmptyFaces = 0, aNbTriangles = 0, aNbNodes = 0, aNbRepresentations = 0;
         var aLODsStat = new List<TriangulationStat>(); // NCollection_IndexedDataMap<int, ...> keyed 0, 1, 2 ...
         var aNbLODs = new List<int>();
-        for (var anExp = new TopExp_Explorer(aShape, TopAbs_ShapeEnum.TopAbs_FACE); anExp.More(); anExp.Next())
+        for (var anExp = new global::Kerf.Engine.Topology.Explorer(aShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(anExp.Current());
+            Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(anExp.Current());
             aNbFaces++;
-            Triangulation? aTriangulation = BRep_Tool.Triangulation(aFace, out _);
+            Triangulation? aTriangulation = Tool.Triangulation(aFace, out _);
             if (aTriangulation is not null)
             {
                 aNbTriangles += aTriangulation.TriangleCount;
@@ -564,7 +568,7 @@ internal static class MeshTestCommands
             if (toPrintLODs)
             {
                 // Collect LODs information
-                NCollection_List<Triangulation> aLODs = BRep_Tool.Triangulations(aFace, out _);
+                NCollection_List<Triangulation> aLODs = Tool.Triangulations(aFace, out _);
                 if (aLODs.Extent() != 0)
                 {
                     aNbLODs.Add(aLODs.Extent());
@@ -624,12 +628,12 @@ internal static class MeshTestCommands
             }
         }
 
-        var anEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aShape, TopAbs_ShapeEnum.TopAbs_EDGE, anEdges);
+        var anEdges = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        global::Kerf.Engine.Topology.Exploration.MapShapes(aShape, ShapeType.Edge, anEdges);
         for (int i = 1; i <= anEdges.Extent(); ++i)
         {
-            var aTE = (BRep_TEdge)anEdges.FindKey(i).TShape()!;
-            for (var anIterCR = new NCollection_List<BRep_CurveRepresentation>.Iterator(aTE.Curves()); anIterCR.More(); anIterCR.Next())
+            var aTE = (BrepTEdge)anEdges.FindKey(i).TShape()!;
+            for (var anIterCR = new NCollection_List<CurveRepresentation>.Iterator(aTE.Curves()); anIterCR.More(); anIterCR.Next())
             {
                 if (anIterCR.Value().IsPolygonOnTriangulation())
                 {
@@ -741,22 +745,22 @@ internal static class MeshTestCommands
 
         for (int i = 1; i < nbarg; i++)
         {
-            TopoDS_Shape aShape = theDI.GetShape(argv[i]);
-            if (aShape.IsNull())
+            Shape aShape = theDI.GetShape(argv[i]);
+            if (aShape.IsNull)
             {
                 continue;
             }
 
-            var anEdgeSet = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            var anEdgeMap = new List<TopoDS_Shape>();
-            if (aShape.ShapeType() == TopAbs_ShapeEnum.TopAbs_EDGE)
+            var anEdgeSet = new NCollection_Map<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            var anEdgeMap = new List<Shape>();
+            if (aShape.ShapeType() == ShapeType.Edge)
             {
                 anEdgeSet.Add(aShape);
                 anEdgeMap.Add(aShape);
             }
             else
             {
-                for (var ex = new TopExp_Explorer(aShape, TopAbs_ShapeEnum.TopAbs_EDGE); ex.More(); ex.Next())
+                for (var ex = new global::Kerf.Engine.Topology.Explorer(aShape, ShapeType.Edge); ex.More(); ex.Next())
                 {
                     if (anEdgeSet.Add(ex.Current()))
                     {
@@ -772,9 +776,9 @@ internal static class MeshTestCommands
 
             string aPrefix = argv[i] + "_";
             int nbEdge = 1;
-            foreach (TopoDS_Shape anEdge in anEdgeMap)
+            foreach (Shape anEdge in anEdgeMap)
             {
-                BRep_Tool.PolygonOnTriangulation(TopoDS.Edge(anEdge), out PolygonOnTriangulation? aPoly, out Triangulation? aT, out Placement aLoc);
+                Tool.PolygonOnTriangulation(global::Kerf.Engine.Topology.ShapeCasts.Edge(anEdge), out PolygonOnTriangulation? aPoly, out Triangulation? aT, out Placement aLoc);
                 if (aT is null || aPoly is null)
                 {
                     continue;
@@ -815,8 +819,8 @@ internal static class MeshTestCommands
             return 1;
         }
 
-        TopoDS_Shape aShape = theDI.GetShape(theArgVec[1]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(theArgVec[1]);
+        if (aShape.IsNull)
         {
             theResult.Append("Syntax error: '").Append(theArgVec[1]).Append("' is not a shape");
             return 1;
@@ -874,10 +878,10 @@ internal static class MeshTestCommands
         if (aResFace.Length > 0)
         {
             var aMergeTool = new MergeNodesTool(aMergeAngle, aMergeToler);
-            for (var aFaceIter = new TopExp_Explorer(aShape, TopAbs_ShapeEnum.TopAbs_FACE); aFaceIter.More(); aFaceIter.Next())
+            for (var aFaceIter = new global::Kerf.Engine.Topology.Explorer(aShape, ShapeType.Face); aFaceIter.More(); aFaceIter.Next())
             {
-                TopoDS_Face aFace = TopoDS.Face(aFaceIter.Value());
-                Triangulation? aTris = BRep_Tool.Triangulation(aFace, out Placement aFaceLoc);
+                Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(aFaceIter.Value());
+                Triangulation? aTris = Tool.Triangulation(aFace, out Placement aFaceLoc);
                 if (aTris is null || aTris.NodeCount < 3 || aTris.TriangleCount < 1)
                 {
                     continue;
@@ -885,7 +889,7 @@ internal static class MeshTestCommands
 
                 aNbNodesOld += aTris.NodeCount;
                 aNbTrisOld += aTris.TriangleCount;
-                aMergeTool.AddTriangulation(aTris, aFaceLoc.Transformation(), aFace.Orientation() == TopAbs_Orientation.TopAbs_REVERSED);
+                aMergeTool.AddTriangulation(aTris, aFaceLoc.Transformation(), aFace.Orientation() == Orientation.Reversed);
             }
 
             Triangulation? aNewTris = aMergeTool.Result();
@@ -897,25 +901,25 @@ internal static class MeshTestCommands
 
             aNbNodesNew += aNewTris.NodeCount;
             aNbTrisNew += aNewTris.TriangleCount;
-            var aFace1 = new TopoDS_Face();
-            new BRep_Builder().MakeFace(ref aFace1, aNewTris);
+            var aFace1 = new Face();
+            new BrepBuilder().MakeFace(ref aFace1, aNewTris);
             theDI.SetShape(aResFace, aFace1);
         }
         else
         {
             // in place in OCCT: on a copy of the graph here, bound when a face changed
-            TopoDS_Shape aCopy = DrawShapeCopy.Copy(aShape);
+            Shape aCopy = DrawShapeCopy.Copy(aShape);
             bool isChanged = false;
-            var aProcessedFaces = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            for (var aFaceIter = new TopExp_Explorer(aCopy, TopAbs_ShapeEnum.TopAbs_FACE); aFaceIter.More(); aFaceIter.Next())
+            var aProcessedFaces = new NCollection_Map<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            for (var aFaceIter = new global::Kerf.Engine.Topology.Explorer(aCopy, ShapeType.Face); aFaceIter.More(); aFaceIter.Next())
             {
-                TopoDS_Face aFace = TopoDS.Face(aFaceIter.Value());
+                Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(aFaceIter.Value());
                 if (!aProcessedFaces.Add(aFace.Located(new Placement())))
                 {
                     continue;
                 }
 
-                Triangulation? aTris = BRep_Tool.Triangulation(aFace, out _);
+                Triangulation? aTris = Tool.Triangulation(aFace, out _);
                 if (aTris is null || aTris.NodeCount < 3 || aTris.TriangleCount < 1)
                 {
                     continue;
@@ -927,11 +931,11 @@ internal static class MeshTestCommands
                 aMergeTool.AddTriangulation(aTris);
                 if (toForce || aMergeTool.NodeCount != aTris.NodeCount || aMergeTool.ElementCount != aTris.TriangleCount)
                 {
-                    new BRep_Builder().UpdateFace(aFace, aMergeTool.Result(), false);
+                    new BrepBuilder().UpdateFace(aFace, aMergeTool.Result(), false);
                     isChanged = true;
                 }
 
-                aTris = BRep_Tool.Triangulation(aFace, out _)!;
+                aTris = Tool.Triangulation(aFace, out _)!;
                 aNbNodesNew += aTris.NodeCount;
                 aNbTrisNew += aTris.TriangleCount;
             }
@@ -955,23 +959,23 @@ internal static class MeshTestCommands
     {
         // OCCT reads argv[1] without checking the count (Tcl's null argv[argc]); an empty word here
         string aName = theArgVal.Count > 1 ? theArgVal[1] : "";
-        TopoDS_Shape S = theDI.GetShape(aName);
-        TopoDS_Shape aCopy = DrawShapeCopy.Copy(S);
+        Shape S = theDI.GetShape(aName);
+        Shape aCopy = DrawShapeCopy.Copy(S);
 
         // OCCT writes the normals into the attached triangulations, which leaves the faces' flags as they are; the
         // port attaches corrected copies with BRep_Builder::UpdateFace, which marks the faces modified and unchecked.
         // The faces get their flags back, so the shape writes OCCT's text.
-        var aFlags = new List<(TopoDS_TShape Face, bool Modified, bool Checked)>();
-        for (var anExp = new TopExp_Explorer(aCopy, TopAbs_ShapeEnum.TopAbs_FACE); anExp.More(); anExp.Next())
+        var aFlags = new List<(global::Kerf.Engine.Topology.TShape Face, bool Modified, bool Checked)>();
+        for (var anExp = new global::Kerf.Engine.Topology.Explorer(aCopy, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            TopoDS_TShape aTFace = anExp.Current().TShape()!;
+            global::Kerf.Engine.Topology.TShape aTFace = anExp.Current().TShape()!;
             aFlags.Add((aTFace, aTFace.Modified(), aTFace.Checked()));
         }
 
         // OCCT bug: EnsureNormalConsistency reads UV nodes a triangulation may not have (after trmergenodes); the port
         // throws Standard_OutOfRange there (occt-issues.md)
         bool isCorrected = BRepLib.EnsureNormalConsistency(aCopy);
-        foreach ((TopoDS_TShape aTFace, bool aModified, bool aChecked) in aFlags)
+        foreach ((global::Kerf.Engine.Topology.TShape aTFace, bool aModified, bool aChecked) in aFlags)
         {
             aTFace.Modified(aModified);
             aTFace.Checked(aChecked);
@@ -1077,8 +1081,8 @@ internal static class MeshTestCommands
             return 0;
         }
 
-        TopoDS_Shape aS = theDI.GetShape(a[1]);
-        if (aS.IsNull())
+        Shape aS = theDI.GetShape(a[1]);
+        if (aS.IsNull)
         {
             theDI.Output.Write(" null shape is not allowed here\n");
             return 0;
@@ -1118,8 +1122,8 @@ internal static class MeshTestCommands
             return 1;
         }
 
-        TopoDS_Shape shape = theDI.GetShape(a[1]);
-        if (shape.IsNull())
+        Shape shape = theDI.GetShape(a[1]);
+        if (shape.IsNull)
         {
             return 1;
         }
@@ -1130,14 +1134,14 @@ internal static class MeshTestCommands
             anEps = theDI.Atof(a[2]);
         }
 
-        var aMapF = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(shape, TopAbs_ShapeEnum.TopAbs_FACE, aMapF);
+        var aMapF = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        global::Kerf.Engine.Topology.Exploration.MapShapes(shape, ShapeType.Face, aMapF);
 
         // detect if a shape has triangulation
         bool hasPoly = false;
         for (int i = 1; i <= aMapF.Extent(); i++)
         {
-            if (BRep_Tool.Triangulation(TopoDS.Face(aMapF.FindKey(i)), out _) is not null)
+            if (Tool.Triangulation(global::Kerf.Engine.Topology.ShapeCasts.Face(aMapF.FindKey(i)), out _) is not null)
             {
                 hasPoly = true;
                 break;
@@ -1150,7 +1154,7 @@ internal static class MeshTestCommands
         {
             for (int i = 1; i <= aMapF.Extent(); i++)
             {
-                Triangulation? aPoly = BRep_Tool.Triangulation(TopoDS.Face(aMapF.FindKey(i)), out _);
+                Triangulation? aPoly = Tool.Triangulation(global::Kerf.Engine.Topology.ShapeCasts.Face(aMapF.FindKey(i)), out _);
                 if (aPoly is null)
                 {
                     theDI.Output.Write("face " + i + " has no triangulation\n");
@@ -1173,7 +1177,7 @@ internal static class MeshTestCommands
         }
 
         // compute area by geometry
-        var props = new GProp_GProps();
+        var props = new Properties();
         if (anEps <= 0.0)
         {
             BRepGProp.SurfaceProperties(shape, props);
@@ -1205,8 +1209,8 @@ internal static class MeshTestCommands
             return 1;
         }
 
-        TopoDS_Shape shape = theDI.GetShape(a[1]);
-        if (shape.IsNull())
+        Shape shape = theDI.GetShape(a[1]);
+        if (shape.IsNull)
         {
             return 1;
         }
@@ -1298,17 +1302,17 @@ internal static class MeshTestCommands
         }
 
         int aFaceIndex = 1;
-        for (var aFaceExp = new TopExp_Explorer(shape, TopAbs_ShapeEnum.TopAbs_FACE); aFaceExp.More(); aFaceExp.Next(), ++aFaceIndex)
+        for (var aFaceExp = new global::Kerf.Engine.Topology.Explorer(shape, ShapeType.Face); aFaceExp.More(); aFaceExp.Next(), ++aFaceIndex)
         {
-            TopoDS_Shape aShape = aFaceExp.Current();
-            TopoDS_Face aFace = TopoDS.Face(aShape);
-            Triangulation? aT = BRep_Tool.Triangulation(aFace, out Placement aLoc);
+            Shape aShape = aFaceExp.Current();
+            Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(aShape);
+            Triangulation? aT = Tool.Triangulation(aFace, out Placement aLoc);
 
             // Iterate boundary edges (BRepMesh_Edge: equal in either direction)
             var aBoundaryEdgeMap = new HashSet<(int, int)>();
-            for (var anExp = new TopExp_Explorer(aShape, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+            for (var anExp = new global::Kerf.Engine.Topology.Explorer(aShape, ShapeType.Edge); anExp.More(); anExp.Next())
             {
-                PolygonOnTriangulation? aPoly = BRep_Tool.PolygonOnTriangulation(TopoDS.Edge(anExp.Current()), aT, aLoc);
+                PolygonOnTriangulation? aPoly = Tool.PolygonOnTriangulation(global::Kerf.Engine.Topology.ShapeCasts.Edge(anExp.Current()), aT, aLoc);
                 if (aPoly is null)
                 {
                     continue;

@@ -10,7 +10,7 @@ namespace OcctNet.ModelingData.Tests;
 
 public class Geom_BezierCurve_Test
 {
-    private readonly Geom_BezierCurve myOriginalCurve;
+    private readonly BezierCurve3D myOriginalCurve;
 
     public Geom_BezierCurve_Test()
     {
@@ -21,7 +21,7 @@ public class Geom_BezierCurve_Test
         aPoles[3] = new Point3D(2, 1, 0);
         aPoles[4] = new Point3D(3, 0, 0);
 
-        myOriginalCurve = new Geom_BezierCurve(aPoles);
+        myOriginalCurve = new BezierCurve3D(aPoles);
     }
 
     private static NCollection_Array1<Point3D> Poles3(Point3D p1, Point3D p2, Point3D p3)
@@ -46,22 +46,22 @@ public class Geom_BezierCurve_Test
     public void CopyConstructorBasicProperties()
     {
         // Test copy constructor
-        Geom_BezierCurve aCopiedCurve = new(myOriginalCurve);
+        BezierCurve3D aCopiedCurve = new(myOriginalCurve);
 
         // Verify basic properties are identical
         Assert.Equal(myOriginalCurve.Degree(), aCopiedCurve.Degree());
-        Assert.Equal(myOriginalCurve.NbPoles(), aCopiedCurve.NbPoles());
-        Assert.Equal(myOriginalCurve.IsRational(), aCopiedCurve.IsRational());
-        Assert.Equal(myOriginalCurve.IsClosed(), aCopiedCurve.IsClosed());
+        Assert.Equal(myOriginalCurve.PoleCount, aCopiedCurve.PoleCount);
+        Assert.Equal(myOriginalCurve.IsRational, aCopiedCurve.IsRational);
+        Assert.Equal(myOriginalCurve.IsClosed, aCopiedCurve.IsClosed);
     }
 
     [Fact]
     public void CopyConstructorPoles()
     {
-        Geom_BezierCurve aCopiedCurve = new(myOriginalCurve);
+        BezierCurve3D aCopiedCurve = new(myOriginalCurve);
 
         // Verify all poles are identical
-        for (int i = 1; i <= myOriginalCurve.NbPoles(); ++i)
+        for (int i = 1; i <= myOriginalCurve.PoleCount; ++i)
         {
             Point3D anOrigPole = myOriginalCurve.Pole(i);
             Point3D aCopyPole = aCopiedCurve.Pole(i);
@@ -73,12 +73,12 @@ public class Geom_BezierCurve_Test
     public void CopyMethodUsesOptimizedConstructor()
     {
         // Test that Copy() method uses the optimized copy constructor
-        Geom_BezierCurve? aCopiedCurve = myOriginalCurve.Copy() as Geom_BezierCurve;
+        BezierCurve3D? aCopiedCurve = myOriginalCurve.Copy() as BezierCurve3D;
         Assert.NotNull(aCopiedCurve);
 
         // Verify the copy is functionally identical
         Assert.Equal(myOriginalCurve.Degree(), aCopiedCurve.Degree());
-        Assert.Equal(myOriginalCurve.NbPoles(), aCopiedCurve.NbPoles());
+        Assert.Equal(myOriginalCurve.PoleCount, aCopiedCurve.PoleCount);
 
         // Test evaluation at several points
         for (double u = 0.0; u <= 1.0; u += 0.25)
@@ -93,14 +93,14 @@ public class Geom_BezierCurve_Test
     public void RationalCurveCopyConstructor()
     {
         // Create a rational Bezier curve
-        Geom_BezierCurve aRationalCurve = new(Poles3(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
+        BezierCurve3D aRationalCurve = new(Poles3(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
                                               Weights3(1.0, 2.0, 1.0));
-        Geom_BezierCurve aCopiedRational = new(aRationalCurve);
+        BezierCurve3D aCopiedRational = new(aRationalCurve);
 
-        Assert.True(aCopiedRational.IsRational());
+        Assert.True(aCopiedRational.IsRational);
 
         // Verify weights are copied correctly
-        for (int i = 1; i <= aRationalCurve.NbPoles(); ++i)
+        for (int i = 1; i <= aRationalCurve.PoleCount; ++i)
         {
             Assert.Equal(aRationalCurve.Weight(i), aCopiedRational.Weight(i));
         }
@@ -109,7 +109,7 @@ public class Geom_BezierCurve_Test
     [Fact]
     public void CopyIndependence()
     {
-        Geom_BezierCurve aCopiedCurve = new(myOriginalCurve);
+        BezierCurve3D aCopiedCurve = new(myOriginalCurve);
 
         // Modify the original curve
         Point3D aNewPole = new(10, 10, 10);
@@ -178,9 +178,9 @@ public class Geom_BezierCurve_Test
     public void Properties()
     {
         Assert.Equal(3, myOriginalCurve.Degree());
-        Assert.False(myOriginalCurve.IsPeriodic());
-        Assert.False(myOriginalCurve.IsRational());
-        Assert.False(myOriginalCurve.IsClosed());
+        Assert.False(myOriginalCurve.IsPeriodic);
+        Assert.False(myOriginalCurve.IsRational);
+        Assert.False(myOriginalCurve.IsClosed);
         Assert.True(myOriginalCurve.IsCN(100));
         Assert.Equal(Continuity.CN, myOriginalCurve.Continuity());
         Assert.Equal(0.0, myOriginalCurve.FirstParameter());
@@ -201,13 +201,13 @@ public class Geom_BezierCurve_Test
     [Fact]
     public void SetWeight()
     {
-        Geom_BezierCurve aCurve = new(Poles3(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
+        BezierCurve3D aCurve = new(Poles3(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
                                       Weights3(1.0, 1.0, 1.0));
         Point3D aMidBefore = aCurve.Value(0.5);
 
         aCurve.SetWeight(2, 10.0);
         Assert.Equal(10.0, aCurve.Weight(2));
-        Assert.True(aCurve.IsRational());
+        Assert.True(aCurve.IsRational);
 
         Point3D aMidAfter = aCurve.Value(0.5);
         // High weight pulls curve toward the control point
@@ -217,10 +217,10 @@ public class Geom_BezierCurve_Test
     [Fact]
     public void InsertPoleAfter()
     {
-        int aNbBefore = myOriginalCurve.NbPoles();
+        int aNbBefore = myOriginalCurve.PoleCount;
         Point3D aNewPole = new(1.5, 2.0, 0);
         myOriginalCurve.InsertPoleAfter(2, aNewPole);
-        Assert.Equal(aNbBefore + 1, myOriginalCurve.NbPoles());
+        Assert.Equal(aNbBefore + 1, myOriginalCurve.PoleCount);
         Assert.Equal(4, myOriginalCurve.Degree());
         Assert.True(myOriginalCurve.Pole(3).IsEqual(aNewPole, 1e-10));
     }
@@ -228,10 +228,10 @@ public class Geom_BezierCurve_Test
     [Fact]
     public void InsertPoleBefore()
     {
-        int aNbBefore = myOriginalCurve.NbPoles();
+        int aNbBefore = myOriginalCurve.PoleCount;
         Point3D aNewPole = new(0.5, 2.0, 0);
         myOriginalCurve.InsertPoleBefore(2, aNewPole);
-        Assert.Equal(aNbBefore + 1, myOriginalCurve.NbPoles());
+        Assert.Equal(aNbBefore + 1, myOriginalCurve.PoleCount);
         Assert.True(myOriginalCurve.Pole(2).IsEqual(aNewPole, 1e-10));
     }
 
@@ -240,9 +240,9 @@ public class Geom_BezierCurve_Test
     {
         // Add a pole first so we have 5, then remove one
         myOriginalCurve.InsertPoleAfter(2, new Point3D(1.5, 2, 0));
-        Assert.Equal(5, myOriginalCurve.NbPoles());
+        Assert.Equal(5, myOriginalCurve.PoleCount);
         myOriginalCurve.RemovePole(3);
-        Assert.Equal(4, myOriginalCurve.NbPoles());
+        Assert.Equal(4, myOriginalCurve.PoleCount);
         Assert.Equal(3, myOriginalCurve.Degree());
     }
 
@@ -252,7 +252,7 @@ public class Geom_BezierCurve_Test
         Point3D aValBefore = myOriginalCurve.Value(0.5);
         myOriginalCurve.Increase(5);
         Assert.Equal(5, myOriginalCurve.Degree());
-        Assert.Equal(6, myOriginalCurve.NbPoles());
+        Assert.Equal(6, myOriginalCurve.PoleCount);
         Point3D aValAfter = myOriginalCurve.Value(0.5);
         Assert.True(aValBefore.IsEqual(aValAfter, 1e-10));
     }
@@ -318,9 +318,9 @@ public class Geom_BezierCurve_Test
     public void RationalCurveEvaluation()
     {
         // Create a rational quadratic Bezier (approximation of circular arc)
-        Geom_BezierCurve aCurve = new(Poles3(new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0)),
+        BezierCurve3D aCurve = new(Poles3(new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0)),
                                       Weights3(1.0, 1.0 / Math.Sqrt(2.0), 1.0));
-        Assert.True(aCurve.IsRational());
+        Assert.True(aCurve.IsRational);
 
         // At u=0.5, the rational curve should be close to the unit circle
         Point3D aMid = aCurve.Value(0.5);
@@ -331,30 +331,30 @@ public class Geom_BezierCurve_Test
     [Fact]
     public void MaxDegree()
     {
-        Assert.True(Geom_BezierCurve.MaxDegree() >= 25);
+        Assert.True(BezierCurve3D.MaxDegree() >= 25);
     }
 
     [Fact]
     public void SetPoleWithWeight()
     {
-        Geom_BezierCurve aCurve = new(Poles3(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
+        BezierCurve3D aCurve = new(Poles3(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
                                       Weights3(1.0, 1.0, 1.0));
         Point3D aNewPole = new(1, 2, 0);
         aCurve.SetPole(2, aNewPole, 5.0);
         Assert.True(aCurve.Pole(2).IsEqual(aNewPole, 1e-10));
         Assert.Equal(5.0, aCurve.Weight(2));
-        Assert.True(aCurve.IsRational());
+        Assert.True(aCurve.IsRational);
     }
 
     [Fact]
     public void InsertPoleAfterWithWeight()
     {
-        Geom_BezierCurve aCurve = new(Poles3(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
+        BezierCurve3D aCurve = new(Poles3(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
                                       Weights3(1.0, 2.0, 1.0));
         aCurve.InsertPoleAfter(2, new Point3D(1.5, 0.5, 0), 3.0);
-        Assert.Equal(4, aCurve.NbPoles());
+        Assert.Equal(4, aCurve.PoleCount);
         Assert.Equal(3.0, aCurve.Weight(3));
-        Assert.True(aCurve.IsRational());
+        Assert.True(aCurve.IsRational);
     }
 
     [Fact]
@@ -365,31 +365,31 @@ public class Geom_BezierCurve_Test
         aPoles[2] = new Point3D(1, 1, 0);
         aPoles[3] = new Point3D(2, 0, 0);
         aPoles[4] = new Point3D(0, 0, 0);
-        Geom_BezierCurve aCurve = new(aPoles);
-        Assert.True(aCurve.IsClosed());
+        BezierCurve3D aCurve = new(aPoles);
+        Assert.True(aCurve.IsClosed);
     }
 
     [Fact]
     public void RationalSegment()
     {
-        Geom_BezierCurve aCurve = new(Poles3(new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0)),
+        BezierCurve3D aCurve = new(Poles3(new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0)),
                                       Weights3(1.0, 1.0 / Math.Sqrt(2.0), 1.0));
         Point3D aMid = aCurve.Value(0.5);
         aCurve.Segment(0.25, 0.75);
         Point3D aMidAfter = aCurve.Value(0.5);
         Assert.True(aMid.IsEqual(aMidAfter, 1e-6));
-        Assert.True(aCurve.IsRational());
+        Assert.True(aCurve.IsRational);
     }
 
     [Fact]
     public void RationalIncrease()
     {
-        Geom_BezierCurve aCurve = new(Poles3(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
+        BezierCurve3D aCurve = new(Poles3(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
                                       Weights3(1.0, 2.0, 1.0));
         Point3D aValBefore = aCurve.Value(0.5);
         aCurve.Increase(5);
         Assert.Equal(5, aCurve.Degree());
-        Assert.True(aCurve.IsRational());
+        Assert.True(aCurve.IsRational);
         Point3D aValAfter = aCurve.Value(0.5);
         Assert.True(aValBefore.IsEqual(aValAfter, 1e-10));
     }
@@ -397,7 +397,7 @@ public class Geom_BezierCurve_Test
     [Fact]
     public void RationalReverse()
     {
-        Geom_BezierCurve aCurve = new(Poles3(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
+        BezierCurve3D aCurve = new(Poles3(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
                                       Weights3(1.0, 3.0, 2.0));
         Point3D aStart = aCurve.StartPoint();
         Point3D anEnd = aCurve.EndPoint();
@@ -423,7 +423,7 @@ public class Geom_BezierCurve_Test
         NCollection_Array1<Point3D> aPoles = new(1, 2);
         aPoles[1] = new Point3D(0, 0, 0);
         aPoles[2] = new Point3D(3, 4, 0);
-        Geom_BezierCurve aCurve = new(aPoles);
+        BezierCurve3D aCurve = new(aPoles);
         Assert.Equal(1, aCurve.Degree());
 
         Point3D aMid = aCurve.Value(0.5);
@@ -440,9 +440,9 @@ public class Geom_BezierCurve_Test
     [Fact]
     public void WeightsArray_NonRational_ReturnsUnitWeights()
     {
-        Assert.False(myOriginalCurve.IsRational());
+        Assert.False(myOriginalCurve.IsRational);
         NCollection_Array1<double> aWeights = myOriginalCurve.InternalWeightsArray();
-        Assert.Equal(myOriginalCurve.NbPoles(), aWeights.Length());
+        Assert.Equal(myOriginalCurve.PoleCount, aWeights.Length());
         Assert.False(aWeights.IsDeletable());
         for (int i = 1; i <= aWeights.Length(); ++i)
         {
@@ -455,9 +455,9 @@ public class Geom_BezierCurve_Test
     [Fact]
     public void WeightsArray_Rational_ReturnsOwning()
     {
-        Geom_BezierCurve aRational = new(Poles3(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
+        BezierCurve3D aRational = new(Poles3(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
                                          Weights3(1.0, 2.0, 1.0));
-        Assert.True(aRational.IsRational());
+        Assert.True(aRational.IsRational);
 
         NCollection_Array1<double> aWeights = aRational.InternalWeightsArray();
         Assert.Equal(3, aWeights.Length());
@@ -482,7 +482,7 @@ public class Geom_BezierCurveTest
             aPoles.SetValue(i, new Point3D(i + 10, i * 2 + 20, i * 3 + 45));
         }
 
-        Geom_BezierCurve aCurve = new(aPoles);
+        BezierCurve3D aCurve = new(aPoles);
         Assert.Equal(aNbPoles - 1, aCurve.Degree());
     }
 
@@ -496,6 +496,6 @@ public class Geom_BezierCurveTest
             aPoles.SetValue(i, new Point3D(i + 10, i * 2 + 20, i * 3 + 45));
         }
 
-        Assert.ThrowsAny<FailureException>(() => new Geom_BezierCurve(aPoles));
+        Assert.ThrowsAny<FailureException>(() => new BezierCurve3D(aPoles));
     }
 }

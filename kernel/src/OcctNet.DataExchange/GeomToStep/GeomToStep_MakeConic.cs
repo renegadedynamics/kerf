@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of Conic from Geom and Geom2d to a STEP conic (circle, ellipse, hyperbola, parabola).</summary>
@@ -17,30 +19,30 @@ public sealed class GeomToStep_MakeConic : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D conic.</summary>
-    public GeomToStep_MakeConic(Geom_Conic C, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeConic(ConicCurve3D C, in StepData_Factors theLocalFactors)
     {
         done = true;
-        if (C is Geom_Circle)
+        if (C is CircleCurve3D)
         {
-            Geom_Circle Cer = C as Geom_Circle;
+            CircleCurve3D Cer = C as CircleCurve3D;
             GeomToStep_MakeCircle MkCircle = new GeomToStep_MakeCircle(Cer, theLocalFactors);
             theConic = MkCircle.Value();
         }
-        else if (C is Geom_Ellipse)
+        else if (C is EllipseCurve3D)
         {
-            Geom_Ellipse Ell = C as Geom_Ellipse;
+            EllipseCurve3D Ell = C as EllipseCurve3D;
             GeomToStep_MakeEllipse MkEllipse = new GeomToStep_MakeEllipse(Ell, theLocalFactors);
             theConic = MkEllipse.Value();
         }
-        else if (C is Geom_Hyperbola)
+        else if (C is HyperbolaCurve3D)
         {
-            Geom_Hyperbola Hyp = C as Geom_Hyperbola;
+            HyperbolaCurve3D Hyp = C as HyperbolaCurve3D;
             GeomToStep_MakeHyperbola MkHyperbola = new GeomToStep_MakeHyperbola(Hyp, theLocalFactors);
             theConic = MkHyperbola.Value();
         }
-        else if (C is Geom_Parabola)
+        else if (C is ParabolaCurve3D)
         {
-            Geom_Parabola Par = C as Geom_Parabola;
+            ParabolaCurve3D Par = C as ParabolaCurve3D;
             GeomToStep_MakeParabola MkParabola = new GeomToStep_MakeParabola(Par, theLocalFactors);
             theConic = MkParabola.Value();
         }
@@ -52,7 +54,7 @@ public sealed class GeomToStep_MakeConic : GeomToStep_Root
     }
 
     /// <summary>A 3D conic (default factors).</summary>
-    public GeomToStep_MakeConic(Geom_Conic C) : this(C, new StepData_Factors())
+    public GeomToStep_MakeConic(ConicCurve3D C) : this(C, new StepData_Factors())
     {
     }
 
@@ -61,30 +63,30 @@ public sealed class GeomToStep_MakeConic : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D conic.</summary>
-    public GeomToStep_MakeConic(Geom2d_Conic C, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeConic(ConicCurve2D C, in StepData_Factors theLocalFactors)
     {
         done = true;
-        if (C is Geom2d_Circle)
+        if (C is CircleCurve2D)
         {
-            Geom2d_Circle Cer = C as Geom2d_Circle;
+            CircleCurve2D Cer = C as CircleCurve2D;
             GeomToStep_MakeCircle MkCircle = new GeomToStep_MakeCircle(Cer, theLocalFactors);
             theConic = MkCircle.Value();
         }
-        else if (C is Geom2d_Ellipse)
+        else if (C is EllipseCurve2D)
         {
-            Geom2d_Ellipse Ell = C as Geom2d_Ellipse;
+            EllipseCurve2D Ell = C as EllipseCurve2D;
             GeomToStep_MakeEllipse MkEllipse = new GeomToStep_MakeEllipse(Ell, theLocalFactors);
             theConic = MkEllipse.Value();
         }
-        else if (C is Geom2d_Hyperbola)
+        else if (C is HyperbolaCurve2D)
         {
-            Geom2d_Hyperbola Hyp = C as Geom2d_Hyperbola;
+            HyperbolaCurve2D Hyp = C as HyperbolaCurve2D;
             GeomToStep_MakeHyperbola MkHyperbola = new GeomToStep_MakeHyperbola(Hyp, theLocalFactors);
             theConic = MkHyperbola.Value();
         }
-        else if (C is Geom2d_Parabola)
+        else if (C is ParabolaCurve2D)
         {
-            Geom2d_Parabola Par = C as Geom2d_Parabola;
+            ParabolaCurve2D Par = C as ParabolaCurve2D;
             GeomToStep_MakeParabola MkParabola = new GeomToStep_MakeParabola(Par, theLocalFactors);
             theConic = MkParabola.Value();
         }
@@ -98,7 +100,7 @@ public sealed class GeomToStep_MakeConic : GeomToStep_Root
     }
 
     /// <summary>A 2D conic.</summary>
-    public GeomToStep_MakeConic(Geom2d_Conic C) : this(C, new StepData_Factors())
+    public GeomToStep_MakeConic(ConicCurve2D C) : this(C, new StepData_Factors())
     {
     }
 

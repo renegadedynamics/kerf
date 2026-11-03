@@ -5,13 +5,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Intersection;
 using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 
 namespace Occt;
 
 /// <summary>
-/// An intersection line described by a parametrised curve (<see cref="IntAna_Curve"/>, the intersection of a
+/// An intersection line described by a parametrised curve (<see cref="Curve"/>, the intersection of a
 /// cylinder or a cone with a quadric), with its vertices.
 /// </summary>
 /// <remarks>
@@ -23,7 +24,7 @@ public class IntPatch_ALine : IntPatch_Line
 {
     private const double PCONFUSION = 0.00001;
 
-    private readonly IntAna_Curve curv;
+    private readonly Curve curv;
     private bool fipt;
     private bool lapt;
     private int indf;
@@ -31,7 +32,7 @@ public class IntPatch_ALine : IntPatch_Line
     private readonly NCollection_Sequence<IntPatch_Point> svtx = new();
 
     /// <summary>Creates an analytic intersection line when the transitions are in or out.</summary>
-    public IntPatch_ALine(in IntAna_Curve C, bool Tang, IntSurf_TypeTrans Trans1, IntSurf_TypeTrans Trans2)
+    public IntPatch_ALine(in Curve C, bool Tang, IntSurf_TypeTrans Trans1, IntSurf_TypeTrans Trans2)
         : base(Tang, Trans1, Trans2)
     {
         typ = IntPatch_Analytic;
@@ -39,7 +40,7 @@ public class IntPatch_ALine : IntPatch_Line
     }
 
     /// <summary>Creates an analytic intersection line when the transitions are touch.</summary>
-    public IntPatch_ALine(in IntAna_Curve C, bool Tang, IntSurf_Situation Situ1, IntSurf_Situation Situ2)
+    public IntPatch_ALine(in Curve C, bool Tang, IntSurf_Situation Situ1, IntSurf_Situation Situ2)
         : base(Tang, Situ1, Situ2)
     {
         typ = IntPatch_Analytic;
@@ -47,7 +48,7 @@ public class IntPatch_ALine : IntPatch_Line
     }
 
     /// <summary>Creates an analytic intersection line when the transitions are undecided.</summary>
-    public IntPatch_ALine(in IntAna_Curve C, bool Tang)
+    public IntPatch_ALine(in Curve C, bool Tang)
         : base(Tang)
     {
         typ = IntPatch_Analytic;
@@ -79,7 +80,7 @@ public class IntPatch_ALine : IntPatch_Line
     public double FirstParameter(out bool IsIncluded)
     {
         curv.Domain(out double first, out _);
-        IsIncluded = !curv.IsFirstOpen();
+        IsIncluded = !curv.IsFirstOpen;
         return first;
     }
 
@@ -90,7 +91,7 @@ public class IntPatch_ALine : IntPatch_Line
     public double LastParameter(out bool IsIncluded)
     {
         curv.Domain(out _, out double last);
-        IsIncluded = !curv.IsLastOpen();
+        IsIncluded = !curv.IsLastOpen;
         return last;
     }
 
@@ -140,7 +141,7 @@ public class IntPatch_ALine : IntPatch_Line
     public ref IntPatch_Point ChangeVertex(int theIndex) => ref svtx.ChangeValue(theIndex);
 
     /// <summary>The curve (a copy).</summary>
-    public IntAna_Curve Curve() => (curv);
+    public Curve Curve() => (curv);
 
     /// <summary>
     /// Sets the parameters of all the vertices on the line: adds the other representations of a vertex on a line

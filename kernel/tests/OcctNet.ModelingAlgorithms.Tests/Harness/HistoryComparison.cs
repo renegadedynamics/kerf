@@ -8,6 +8,10 @@
 // differences is empty (or call AssertSame). The arguments of the two sides may be different objects (read twice):
 // they are matched by their canonical keys too.
 
+using Kerf.Engine.Topology;
+
+using Kerf.Topology;
+
 namespace OcctNet.TestHarness;
 
 /// <summary>Compares two histories through the canonical keys of the arguments and the results.</summary>
@@ -18,10 +22,10 @@ internal static class HistoryComparison
     /// solids, the multisets of keys of the shapes modified and generated from the sub-shapes with that key, and
     /// their removed flags. Empty if the histories agree.
     /// </summary>
-    public static List<string> Compare(IReadOnlyList<TopoDS_Shape> theNativeArguments, TopoDS_Shape theNativeResult,
-                                       BRepTools_History? theNativeHistory,
-                                       IReadOnlyList<TopoDS_Shape> thePortArguments, TopoDS_Shape thePortResult,
-                                       BRepTools_History? thePortHistory)
+    public static List<string> Compare(IReadOnlyList<Shape> theNativeArguments, Shape theNativeResult,
+                                       History? theNativeHistory,
+                                       IReadOnlyList<Shape> thePortArguments, Shape thePortResult,
+                                       History? thePortHistory)
     {
         var aDifferences = new List<string>();
         if (theNativeHistory is null || thePortHistory is null)
@@ -59,10 +63,10 @@ internal static class HistoryComparison
     }
 
     /// <summary>Asserts that the histories agree (<see cref="Compare"/>), listing the differences otherwise.</summary>
-    public static void AssertSame(IReadOnlyList<TopoDS_Shape> theNativeArguments, TopoDS_Shape theNativeResult,
-                                  BRepTools_History? theNativeHistory,
-                                  IReadOnlyList<TopoDS_Shape> thePortArguments, TopoDS_Shape thePortResult,
-                                  BRepTools_History? thePortHistory)
+    public static void AssertSame(IReadOnlyList<Shape> theNativeArguments, Shape theNativeResult,
+                                  History? theNativeHistory,
+                                  IReadOnlyList<Shape> thePortArguments, Shape thePortResult,
+                                  History? thePortHistory)
     {
         List<string> aDifferences = Compare(theNativeArguments, theNativeResult, theNativeHistory,
                                             thePortArguments, thePortResult, thePortHistory);
@@ -78,17 +82,17 @@ internal static class HistoryComparison
     }
 
     // Argument key -> the history of all argument sub-shapes with that key, as sorted result keys.
-    private static Dictionary<string, Entry> Entries(IReadOnlyList<TopoDS_Shape> theArguments, TopoDS_Shape theResult,
-                                                     BRepTools_History theHistory)
+    private static Dictionary<string, Entry> Entries(IReadOnlyList<Shape> theArguments, Shape theResult,
+                                                     History theHistory)
     {
         CanonicalKeys aResultKeys = CanonicalKeys.Build(theResult);
-        var anArgumentMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var anArgumentMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         var aKeysOf = new List<CanonicalKeys>();
-        foreach (TopoDS_Shape anArgument in theArguments)
+        foreach (Shape anArgument in theArguments)
         {
             CanonicalKeys aKeys = CanonicalKeys.Build(anArgument);
             int aBefore = anArgumentMap.Extent();
-            TopExp.MapShapes(anArgument, anArgumentMap);
+            Exploration.MapShapes(anArgument, anArgumentMap);
             for (int i = aBefore + 1; i <= anArgumentMap.Extent(); ++i)
             {
                 aKeysOf.Add(aKeys);
@@ -98,8 +102,8 @@ internal static class HistoryComparison
         var anEntries = new Dictionary<string, Entry>(StringComparer.Ordinal);
         for (int i = 1; i <= anArgumentMap.Extent(); ++i)
         {
-            TopoDS_Shape aShape = anArgumentMap.FindKey(i);
-            if (!BRepTools_History.IsSupportedType(aShape))
+            Shape aShape = anArgumentMap.FindKey(i);
+            if (!History.IsSupportedType(aShape))
             {
                 continue;
             }

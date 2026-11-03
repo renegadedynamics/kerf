@@ -1,4 +1,5 @@
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using System.Collections;
 using System.Runtime.CompilerServices;
@@ -167,13 +168,13 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
         {
             switch (shape.TopoShape.ShapeType())
             {
-                case TopAbs_ShapeEnum.TopAbs_COMPOUND:
+                case global::Kerf.Topology.ShapeType.Compound:
                     expanded.AddRange(new ShapeList<Shape>(shape is Compound c ? c.Children() : []).Expand());
                     break;
-                case TopAbs_ShapeEnum.TopAbs_SHELL:
+                case global::Kerf.Topology.ShapeType.Shell:
                     expanded.AddRange(shape.Faces());
                     break;
-                case TopAbs_ShapeEnum.TopAbs_WIRE:
+                case global::Kerf.Topology.ShapeType.Wire:
                     expanded.AddRange(shape.Edges());
                     break;
                 default:
@@ -278,7 +279,7 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
         if (shape is Face face && face.IsPlanarSurface())
         {
             double u0 = 0, u1 = 0, v0 = 0, v1 = 0;
-            BRepTools.UVBounds(face.TopoFace, out u0, out u1, out v0, out v1);
+            BrepTools.UVBounds(face.TopoFace, out u0, out u1, out v0, out v1);
             shapeAxis = new Axis(shape.Center(), face.NormalAtParameters(u0, v0));
         }
         else if (shape is Edge edge && shape.GeomType == GeomType.Line)
@@ -302,7 +303,7 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
             case Face face when face.IsPlanarSurface():
             {
                 double u0 = 0, u1 = 0, v0 = 0, v1 = 0;
-                BRepTools.UVBounds(face.TopoFace, out u0, out u1, out v0, out v1);
+                BrepTools.UVBounds(face.TopoFace, out u0, out u1, out v0, out v1);
                 return planeAxis.IsParallel(new Axis(shape.Center(), face.NormalAtParameters(u0, v0)), tolerance);
             }
             case Wire wire:

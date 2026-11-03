@@ -6,6 +6,9 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using static Occt.IFSelect_PrintCount;
 
 using static Occt.Interface_CheckStatus;
@@ -593,9 +596,9 @@ public class XSControl_TransferReader : Transient
     /// <summary>
     /// Returns the resulting object as a Shape Null Shape if no result or result not a shape
     /// </summary>
-    public TopoDS_Shape ShapeResult(Transient? ent)
+    public Shape ShapeResult(Transient? ent)
     {
-        TopoDS_Shape tres = default; // DOIT RESTER null
+        Shape tres = default; // DOIT RESTER null
         Transfer_ResultFromModel res = FinalResult(ent);
         if (res is null)
         {
@@ -607,7 +610,7 @@ public class XSControl_TransferReader : Transient
             return tres;
         }
         XSControl_Utils xu = new XSControl_Utils();
-        TopoDS_Shape sh = xu.BinderShape(mres.Binder());
+        Shape sh = xu.BinderShape(mres.Binder());
 
         //   Ooh the ugly wart
         // OCCT.NET: the static is the reader's parameter set's (OCCT: the process-wide one; without a set, its
@@ -616,11 +619,11 @@ public class XSControl_TransferReader : Transient
         // results sharing it keep sharing it; a shape holding frozen shapes is encoded into a copy (BRepLib's
         // functional twin, decision 1224)
         double tolang = (myStatics is null ? 0.01 : myStatics.RVal("read.encoderegularity.angle"));
-        if (tolang <= 0 || sh.IsNull())
+        if (tolang <= 0 || sh.IsNull)
         {
             return sh;
         }
-        if (!BRepTools.HoldsFrozen(sh))
+        if (!BrepTools.HoldsFrozen(sh))
         {
             ShapeFix.EncodeRegularity(sh, tolang);
             return sh;
@@ -638,18 +641,18 @@ public class XSControl_TransferReader : Transient
         return sh;
     }
 
-    private static void encodeRegularityAround(in TopoDS_Shape theShape, double theTolAng)
+    private static void encodeRegularityAround(in Shape theShape, double theTolAng)
     {
         if (theShape.TShape()!.IsFrozen)
         {
             return;
         }
-        if (!BRepTools.HoldsFrozen(theShape))
+        if (!BrepTools.HoldsFrozen(theShape))
         {
             ShapeFix.EncodeRegularity(theShape, theTolAng);
             return;
         }
-        for (var anIt = new TopoDS_Iterator(theShape); anIt.More(); anIt.Next())
+        for (var anIt = new Iterator(theShape); anIt.More(); anIt.Next())
         {
             encodeRegularityAround(anIt.Value(), theTolAng);
         }
@@ -704,8 +707,8 @@ public class XSControl_TransferReader : Transient
         Transient nulh = null;
         //  case of the shape
         XSControl_Utils xu = new XSControl_Utils();
-        TopoDS_Shape sh = xu.BinderShape(res);
-        if (!sh.IsNull())
+        Shape sh = xu.BinderShape(res);
+        if (!sh.IsNull)
         {
             return EntityFromShapeResult(sh, mode);
         }
@@ -792,10 +795,10 @@ public class XSControl_TransferReader : Transient
     /// Returns an entity from which a given shape result was produced Returns a Null Handle if &lt;res&gt; not
     /// recorded or not a Shape
     /// </summary>
-    public Transient? EntityFromShapeResult(TopoDS_Shape res, int mode = 0)
+    public Transient? EntityFromShapeResult(Shape res, int mode = 0)
     {
         Transient nulh = null, samesh = null, partner = null;
-        if (res.IsNull())
+        if (res.IsNull)
         {
             return nulh;
         }
@@ -816,8 +819,8 @@ public class XSControl_TransferReader : Transient
                         continue;
                     }
                     Transient ent = myTP.Mapped(i);
-                    TopoDS_Shape sh = TransferBRep.ShapeResult(myTP, ent);
-                    if (!sh.IsNull())
+                    Shape sh = TransferBRep.ShapeResult(myTP, ent);
+                    if (!sh.IsNull)
                     {
                         if (sh == res)
                         {
@@ -870,8 +873,8 @@ public class XSControl_TransferReader : Transient
                     {
                         continue;
                     }
-                    TopoDS_Shape sh = xu.BinderShape(rft.Binder());
-                    if (!sh.IsNull() && sh == res)
+                    Shape sh = xu.BinderShape(rft.Binder());
+                    if (!sh.IsNull && sh == res)
                     {
                         return rft.Start();
                     }
@@ -886,7 +889,7 @@ public class XSControl_TransferReader : Transient
     /// Returns the list of entities from which some shapes were produced : it corresponds to a loop on
     /// EntityFromShapeResult, but is optimised
     /// </summary>
-    public NCollection_HSequence<Transient>? EntitiesFromShapeList(NCollection_HSequence<TopoDS_Shape>? res, int mode = 0)
+    public NCollection_HSequence<Transient>? EntitiesFromShapeList(NCollection_HSequence<Shape>? res, int mode = 0)
     {
         NCollection_HSequence<Transient> lt =
             new NCollection_HSequence<Transient>();
@@ -894,7 +897,7 @@ public class XSControl_TransferReader : Transient
         {
             return lt;
         }
-        NCollection_Map<TopoDS_Shape> shapes = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> shapes = new NCollection_Map<Shape>(ShapeHasher.Instance);
 
         //  We convert res to a map, for rapid presence test
         int i, j, nb = res.Length();
@@ -923,8 +926,8 @@ public class XSControl_TransferReader : Transient
                     {
                         continue;
                     }
-                    TopoDS_Shape sh = xu.BinderShape(myTP.MapItem(i));
-                    if (!sh.IsNull() && shapes.Contains(sh))
+                    Shape sh = xu.BinderShape(myTP.MapItem(i));
+                    if (!sh.IsNull && shapes.Contains(sh))
                     {
                         lt.Append(myTP.Mapped(i));
                         j = nb; // skl (for looking for entities in checkbrep)
@@ -956,8 +959,8 @@ public class XSControl_TransferReader : Transient
                     {
                         continue;
                     }
-                    TopoDS_Shape sh = xu.BinderShape(rft.Binder());
-                    if (!sh.IsNull() && shapes.Contains(sh))
+                    Shape sh = xu.BinderShape(rft.Binder());
+                    if (!sh.IsNull && shapes.Contains(sh))
                     {
                         lt.Append(rft.Start());
                     }
@@ -1575,7 +1578,7 @@ public class XSControl_TransferReader : Transient
     /// LastTransferList (last ROOT transfers) For each one, if it is a Shape, it is cumulated to the list If no
     /// Shape is found, returns an empty Sequence
     /// </summary>
-    public NCollection_HSequence<TopoDS_Shape>? ShapeResultList(bool rec)
+    public NCollection_HSequence<Shape>? ShapeResultList(bool rec)
     {
         if (!rec)
         {
@@ -1585,27 +1588,27 @@ public class XSControl_TransferReader : Transient
             }
             if (myShapeResult is null)
             {
-                myShapeResult = new NCollection_HSequence<TopoDS_Shape>();
+                myShapeResult = new NCollection_HSequence<Shape>();
             }
         }
         else
         {
             if (myShapeResult is null)
             {
-                myShapeResult = new NCollection_HSequence<TopoDS_Shape>();
+                myShapeResult = new NCollection_HSequence<Shape>();
             }
             if (myModel is null)
             {
                 return myShapeResult;
             }
             NCollection_HSequence<Transient> li = RecordedList();
-            myShapeResult = new NCollection_HSequence<TopoDS_Shape>();
+            myShapeResult = new NCollection_HSequence<Shape>();
             int i, nb = myModel.NbEntities();
-            TopoDS_Shape sh;
+            Shape sh;
             for (i = 1; i <= nb; i++)
             {
                 sh = ShapeResult(myModel.Value(i));
-                if (!sh.IsNull())
+                if (!sh.IsNull)
                 {
                     myShapeResult.Append(sh);
                 }
@@ -1969,5 +1972,5 @@ public class XSControl_TransferReader : Transient
     private Transfer_TransientProcess? myTP;
     private NCollection_DataMap<int, Transient> myResults = new NCollection_DataMap<int, Transient>();
     private Interface_StaticSet? myStatics;
-    private NCollection_HSequence<TopoDS_Shape>? myShapeResult;
+    private NCollection_HSequence<Shape>? myShapeResult;
 }

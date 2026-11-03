@@ -51,7 +51,7 @@ public class GeomHash_MeshHasherTest
     [Fact]
     public void Polygon2D_CloseDeflectionKeepsEqualHash()
     {
-        var aHasher = new GeomHash_Polygon2DHasher(0.1, 0.01);
+        var aHasher = new global::Kerf.Engine.Geometry.Hashing.Polygon2DHasher(0.1, 0.01);
         Polygon2D aPoly1 = makePolygon2D(0.004);
         Polygon2D aPoly2 = makePolygon2D(0.0044);
 
@@ -62,7 +62,7 @@ public class GeomHash_MeshHasherTest
     [Fact]
     public void Polygon3D_CloseDeflectionKeepsEqualHash()
     {
-        var aHasher = new GeomHash_Polygon3DHasher(0.1, 0.01);
+        var aHasher = new global::Kerf.Engine.Geometry.Hashing.Polygon3DHasher(0.1, 0.01);
         Polygon3D aPoly1 = makePolygon3D(0.004);
         Polygon3D aPoly2 = makePolygon3D(0.0044);
 
@@ -73,9 +73,9 @@ public class GeomHash_MeshHasherTest
     [Fact]
     public void PolygonOnTriangulation_CloseDeflectionKeepsEqualHash()
     {
-        var aHasher = new GeomHash_PolygonOnTriHasher(0.1, 0.01);
-        var aKey1 = new PolygonOnTriHashKey(makePolygonOnTriangulation(0.004), 7);
-        var aKey2 = new PolygonOnTriHashKey(makePolygonOnTriangulation(0.0044), 7);
+        var aHasher = new global::Kerf.Engine.Geometry.Hashing.PolygonOnTriHasher(0.1, 0.01);
+        var aKey1 = new global::Kerf.Engine.Geometry.Hashing.PolygonOnTriHashKey(makePolygonOnTriangulation(0.004), 7);
+        var aKey2 = new global::Kerf.Engine.Geometry.Hashing.PolygonOnTriHashKey(makePolygonOnTriangulation(0.0044), 7);
 
         Assert.True(aHasher.Equals(aKey1, aKey2));
         Assert.Equal(aHasher.GetHashCode(aKey1), aHasher.GetHashCode(aKey2));
@@ -84,7 +84,7 @@ public class GeomHash_MeshHasherTest
     [Fact]
     public void Triangulation_CloseDeflectionKeepsEqualHash()
     {
-        var aHasher = new GeomHash_TriangulationHasher(0.1, 0.01);
+        var aHasher = new global::Kerf.Engine.Geometry.Hashing.TriangulationHasher(0.1, 0.01);
         Triangulation aTri1 = makeTriangulation(0.004);
         Triangulation aTri2 = makeTriangulation(0.0044);
 
@@ -95,7 +95,7 @@ public class GeomHash_MeshHasherTest
     [Fact]
     public void Polygon2D_DifferentSameCountGeometryChangesHash()
     {
-        var aHasher = new GeomHash_Polygon2DHasher(0.1, 0.01);
+        var aHasher = new global::Kerf.Engine.Geometry.Hashing.Polygon2DHasher(0.1, 0.01);
         Polygon2D aPoly1 = makePolygon2D(0.004);
         Polygon2D aPoly2 = makePolygon2D(0.004);
         aPoly2.ChangeNodes().SetValue(2, new Point2D(2.0, 0.0));
@@ -107,7 +107,7 @@ public class GeomHash_MeshHasherTest
     [Fact]
     public void Polygon3D_DifferentSameCountGeometryChangesHash()
     {
-        var aHasher = new GeomHash_Polygon3DHasher(0.1, 0.01);
+        var aHasher = new global::Kerf.Engine.Geometry.Hashing.Polygon3DHasher(0.1, 0.01);
         Polygon3D aPoly1 = makePolygon3D(0.004);
         Polygon3D aPoly2 = makePolygon3D(0.004);
         aPoly2.ChangeNodes().SetValue(2, new Point3D(2.0, 0.0, 0.0));
@@ -119,9 +119,9 @@ public class GeomHash_MeshHasherTest
     [Fact]
     public void PolygonOnTriangulation_DifferentSameCountIndicesChangesHash()
     {
-        var aHasher = new GeomHash_PolygonOnTriHasher(0.1, 0.01);
-        var aKey1 = new PolygonOnTriHashKey(makePolygonOnTriangulation(0.004), 7);
-        var aKey2 = new PolygonOnTriHashKey(makePolygonOnTriangulation(0.004), 7);
+        var aHasher = new global::Kerf.Engine.Geometry.Hashing.PolygonOnTriHasher(0.1, 0.01);
+        var aKey1 = new global::Kerf.Engine.Geometry.Hashing.PolygonOnTriHashKey(makePolygonOnTriangulation(0.004), 7);
+        var aKey2 = new global::Kerf.Engine.Geometry.Hashing.PolygonOnTriHashKey(makePolygonOnTriangulation(0.004), 7);
         aKey2.Poly!.SetNode(2, 3);
 
         Assert.False(aHasher.Equals(aKey1, aKey2));
@@ -131,7 +131,7 @@ public class GeomHash_MeshHasherTest
     [Fact]
     public void Triangulation_DifferentSameCountGeometryChangesHash()
     {
-        var aHasher = new GeomHash_TriangulationHasher(0.1, 0.01);
+        var aHasher = new global::Kerf.Engine.Geometry.Hashing.TriangulationHasher(0.1, 0.01);
         Triangulation aTri1 = makeTriangulation(0.004);
         Triangulation aTri2 = makeTriangulation(0.004);
         aTri2.SetNode(3, new Point3D(0.0, 2.0, 0.0));
@@ -143,10 +143,10 @@ public class GeomHash_MeshHasherTest
     [Fact]
     public void NullHandlesDoNotCrash()
     {
-        var aPoly2dHasher = new GeomHash_Polygon2DHasher();
-        var aPoly3dHasher = new GeomHash_Polygon3DHasher();
-        var aPolyOnTriHasher = new GeomHash_PolygonOnTriHasher();
-        var aTriHasher = new GeomHash_TriangulationHasher();
+        var aPoly2dHasher = new global::Kerf.Engine.Geometry.Hashing.Polygon2DHasher();
+        var aPoly3dHasher = new global::Kerf.Engine.Geometry.Hashing.Polygon3DHasher();
+        var aPolyOnTriHasher = new global::Kerf.Engine.Geometry.Hashing.PolygonOnTriHasher();
+        var aTriHasher = new global::Kerf.Engine.Geometry.Hashing.TriangulationHasher();
         Polygon2D?              aNullPoly2d = null;
         Polygon3D?              aNullPoly3d = null;
         PolygonOnTriangulation? aNullPolyOnTri = null;
@@ -164,12 +164,12 @@ public class GeomHash_MeshHasherTest
         Assert.True(aTriHasher.Equals(aNullTri, aNullTri));
         Assert.False(aTriHasher.Equals(aNullTri, makeTriangulation(0.004)));
 
-        var aNullKey1 = new PolygonOnTriHashKey(aNullPolyOnTri, 7);
-        var aNullKey2 = new PolygonOnTriHashKey(aNullPolyOnTri, 7);
-        var aNullKey3 = new PolygonOnTriHashKey(aNullPolyOnTri, 8);
+        var aNullKey1 = new global::Kerf.Engine.Geometry.Hashing.PolygonOnTriHashKey(aNullPolyOnTri, 7);
+        var aNullKey2 = new global::Kerf.Engine.Geometry.Hashing.PolygonOnTriHashKey(aNullPolyOnTri, 7);
+        var aNullKey3 = new global::Kerf.Engine.Geometry.Hashing.PolygonOnTriHashKey(aNullPolyOnTri, 8);
         Assert.True(aPolyOnTriHasher.Equals(aNullKey1, aNullKey2));
         Assert.False(aPolyOnTriHasher.Equals(aNullKey1, aNullKey3));
-        Assert.False(aPolyOnTriHasher.Equals(aNullKey1, new PolygonOnTriHashKey(makePolygonOnTriangulation(0.004), 7)));
+        Assert.False(aPolyOnTriHasher.Equals(aNullKey1, new global::Kerf.Engine.Geometry.Hashing.PolygonOnTriHashKey(makePolygonOnTriangulation(0.004), 7)));
     }
 
     [Fact]
@@ -177,8 +177,8 @@ public class GeomHash_MeshHasherTest
     {
         Polygon2D aPoly = makePolygon2D(0.06);
 
-        var aFineHasher = new GeomHash_Polygon2DHasher(0.1, 0.01);
-        var aCoarseHasher = new GeomHash_Polygon2DHasher(0.1, 0.1);
+        var aFineHasher = new global::Kerf.Engine.Geometry.Hashing.Polygon2DHasher(0.1, 0.01);
+        var aCoarseHasher = new global::Kerf.Engine.Geometry.Hashing.Polygon2DHasher(0.1, 0.1);
 
         Assert.NotEqual(aFineHasher.GetHashCode(aPoly), aCoarseHasher.GetHashCode(aPoly));
     }

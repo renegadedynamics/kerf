@@ -27,7 +27,7 @@ public abstract class BasePartObject : Part, IBuilderObject
         Mode = mode;
     }
 
-    private static TopoDS_Shape Prepare(Shape part, Rotation? rotation, Alignment? align)
+    private static global::Kerf.Topology.Shape Prepare(Shape part, Rotation? rotation, Alignment? align)
     {
         if (align is { } a)
             part = part.Moved(new Location(part.BoundingBox().ToAlignOffset(a)));

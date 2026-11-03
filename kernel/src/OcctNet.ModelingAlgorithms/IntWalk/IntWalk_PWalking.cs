@@ -4,7 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Occt.IntImp_ConstIsoparametric;
@@ -91,7 +93,7 @@ public partial class IntWalk_PWalking
     /// the tangency test, Epsilon the 3D tolerance of the deflection test, Deflection the largest deflection between
     /// consecutive points, Increment the largest step, relative to the parametric ranges.
     /// </summary>
-    public IntWalk_PWalking(Adaptor3d_Surface Caro1, Adaptor3d_Surface Caro2, double TolTangency, double Epsilon,
+    public IntWalk_PWalking(SurfaceAdaptorBase Caro1, SurfaceAdaptorBase Caro2, double TolTangency, double Epsilon,
                             double Deflection, double Increment)
     {
         done = true;
@@ -112,21 +114,21 @@ public partial class IntWalk_PWalking
         double KELARG = 20.0;
         //
         pasMax = Increment * 0.2; //-- June 25 99 after problems with precision
-        Um1 = Adaptor3d_HSurfaceTool.FirstUParameter(Caro1);
-        Vm1 = Adaptor3d_HSurfaceTool.FirstVParameter(Caro1);
-        UM1 = Adaptor3d_HSurfaceTool.LastUParameter(Caro1);
-        VM1 = Adaptor3d_HSurfaceTool.LastVParameter(Caro1);
+        Um1 = HSurfaceTool.FirstUParameter(Caro1);
+        Vm1 = HSurfaceTool.FirstVParameter(Caro1);
+        UM1 = HSurfaceTool.LastUParameter(Caro1);
+        VM1 = HSurfaceTool.LastVParameter(Caro1);
 
-        Um2 = Adaptor3d_HSurfaceTool.FirstUParameter(Caro2);
-        Vm2 = Adaptor3d_HSurfaceTool.FirstVParameter(Caro2);
-        UM2 = Adaptor3d_HSurfaceTool.LastUParameter(Caro2);
-        VM2 = Adaptor3d_HSurfaceTool.LastVParameter(Caro2);
+        Um2 = HSurfaceTool.FirstUParameter(Caro2);
+        Vm2 = HSurfaceTool.FirstVParameter(Caro2);
+        UM2 = HSurfaceTool.LastUParameter(Caro2);
+        VM2 = HSurfaceTool.LastVParameter(Caro2);
 
-        ResoU1 = Adaptor3d_HSurfaceTool.UResolution(Caro1, global::Kerf.Engine.Foundation.Precision.Confusion());
-        ResoV1 = Adaptor3d_HSurfaceTool.VResolution(Caro1, global::Kerf.Engine.Foundation.Precision.Confusion());
+        ResoU1 = HSurfaceTool.UResolution(Caro1, global::Kerf.Engine.Foundation.Precision.Confusion());
+        ResoV1 = HSurfaceTool.VResolution(Caro1, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        ResoU2 = Adaptor3d_HSurfaceTool.UResolution(Caro2, global::Kerf.Engine.Foundation.Precision.Confusion());
-        ResoV2 = Adaptor3d_HSurfaceTool.VResolution(Caro2, global::Kerf.Engine.Foundation.Precision.Confusion());
+        ResoU2 = HSurfaceTool.UResolution(Caro2, global::Kerf.Engine.Foundation.Precision.Confusion());
+        ResoV2 = HSurfaceTool.VResolution(Caro2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         double NEWRESO;
         double MAXVAL;
@@ -202,64 +204,64 @@ public partial class IntWalk_PWalking
             ResoV2 = 0.00001 * pasuv[3];
         }
 
-        if (!Adaptor3d_HSurfaceTool.IsUPeriodic(Caro1))
+        if (!HSurfaceTool.IsUPeriodic(Caro1))
         {
             // UM1+=KELARG*pasuv[0];  Um1-=KELARG*pasuv[0];
         }
         else
         {
             double t = UM1 - Um1;
-            if (t < Adaptor3d_HSurfaceTool.UPeriod(Caro1))
+            if (t < HSurfaceTool.UPeriod(Caro1))
             {
-                t = 0.5 * (Adaptor3d_HSurfaceTool.UPeriod(Caro1) - t);
+                t = 0.5 * (HSurfaceTool.UPeriod(Caro1) - t);
                 t = (t > KELARG * pasuv[0]) ? KELARG * pasuv[0] : t;
                 UM1 += t;
                 Um1 -= t;
             }
         }
 
-        if (!Adaptor3d_HSurfaceTool.IsVPeriodic(Caro1))
+        if (!HSurfaceTool.IsVPeriodic(Caro1))
         {
             // VM1+=KELARG*pasuv[1];  Vm1-=KELARG*pasuv[1];
         }
         else
         {
             double t = VM1 - Vm1;
-            if (t < Adaptor3d_HSurfaceTool.VPeriod(Caro1))
+            if (t < HSurfaceTool.VPeriod(Caro1))
             {
-                t = 0.5 * (Adaptor3d_HSurfaceTool.VPeriod(Caro1) - t);
+                t = 0.5 * (HSurfaceTool.VPeriod(Caro1) - t);
                 t = (t > KELARG * pasuv[1]) ? KELARG * pasuv[1] : t;
                 VM1 += t;
                 Vm1 -= t;
             }
         }
 
-        if (!Adaptor3d_HSurfaceTool.IsUPeriodic(Caro2))
+        if (!HSurfaceTool.IsUPeriodic(Caro2))
         {
             // UM2+=KELARG*pasuv[2];  Um2-=KELARG*pasuv[2];
         }
         else
         {
             double t = UM2 - Um2;
-            if (t < Adaptor3d_HSurfaceTool.UPeriod(Caro2))
+            if (t < HSurfaceTool.UPeriod(Caro2))
             {
-                t = 0.5 * (Adaptor3d_HSurfaceTool.UPeriod(Caro2) - t);
+                t = 0.5 * (HSurfaceTool.UPeriod(Caro2) - t);
                 t = (t > KELARG * pasuv[2]) ? KELARG * pasuv[2] : t;
                 UM2 += t;
                 Um2 -= t;
             }
         }
 
-        if (!Adaptor3d_HSurfaceTool.IsVPeriodic(Caro2))
+        if (!HSurfaceTool.IsVPeriodic(Caro2))
         {
             // VM2+=KELARG*pasuv[3];  Vm2-=KELARG*pasuv[3];
         }
         else
         {
             double t = VM2 - Vm2;
-            if (t < Adaptor3d_HSurfaceTool.VPeriod(Caro2))
+            if (t < HSurfaceTool.VPeriod(Caro2))
             {
-                t = 0.5 * (Adaptor3d_HSurfaceTool.VPeriod(Caro2) - t);
+                t = 0.5 * (HSurfaceTool.VPeriod(Caro2) - t);
                 t = (t > KELARG * pasuv[3]) ? KELARG * pasuv[3] : t;
                 VM2 += t;
                 Vm2 -= t;
@@ -290,7 +292,7 @@ public partial class IntWalk_PWalking
     /// OCCT leaves <c>tgfirst</c>, <c>tglast</c>, <c>myTangentIdx</c> and <c>previoustg</c> uninitialised here; Perform
     /// sets them before reading them, and the port's fields start false and 0.
     /// </remarks>
-    public IntWalk_PWalking(Adaptor3d_Surface Caro1, Adaptor3d_Surface Caro2, double TolTangency, double Epsilon,
+    public IntWalk_PWalking(SurfaceAdaptorBase Caro1, SurfaceAdaptorBase Caro2, double TolTangency, double Epsilon,
                             double Deflection, double Increment, double U1, double V1, double U2, double V2)
     {
         done = true;
@@ -307,21 +309,21 @@ public partial class IntWalk_PWalking
         //
         pasMax = Increment * 0.2; //-- June 25 99 after problems with precision
         //
-        Um1 = Adaptor3d_HSurfaceTool.FirstUParameter(Caro1);
-        Vm1 = Adaptor3d_HSurfaceTool.FirstVParameter(Caro1);
-        UM1 = Adaptor3d_HSurfaceTool.LastUParameter(Caro1);
-        VM1 = Adaptor3d_HSurfaceTool.LastVParameter(Caro1);
+        Um1 = HSurfaceTool.FirstUParameter(Caro1);
+        Vm1 = HSurfaceTool.FirstVParameter(Caro1);
+        UM1 = HSurfaceTool.LastUParameter(Caro1);
+        VM1 = HSurfaceTool.LastVParameter(Caro1);
 
-        Um2 = Adaptor3d_HSurfaceTool.FirstUParameter(Caro2);
-        Vm2 = Adaptor3d_HSurfaceTool.FirstVParameter(Caro2);
-        UM2 = Adaptor3d_HSurfaceTool.LastUParameter(Caro2);
-        VM2 = Adaptor3d_HSurfaceTool.LastVParameter(Caro2);
+        Um2 = HSurfaceTool.FirstUParameter(Caro2);
+        Vm2 = HSurfaceTool.FirstVParameter(Caro2);
+        UM2 = HSurfaceTool.LastUParameter(Caro2);
+        VM2 = HSurfaceTool.LastVParameter(Caro2);
 
-        ResoU1 = Adaptor3d_HSurfaceTool.UResolution(Caro1, global::Kerf.Engine.Foundation.Precision.Confusion());
-        ResoV1 = Adaptor3d_HSurfaceTool.VResolution(Caro1, global::Kerf.Engine.Foundation.Precision.Confusion());
+        ResoU1 = HSurfaceTool.UResolution(Caro1, global::Kerf.Engine.Foundation.Precision.Confusion());
+        ResoV1 = HSurfaceTool.VResolution(Caro1, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        ResoU2 = Adaptor3d_HSurfaceTool.UResolution(Caro2, global::Kerf.Engine.Foundation.Precision.Confusion());
-        ResoV2 = Adaptor3d_HSurfaceTool.VResolution(Caro2, global::Kerf.Engine.Foundation.Precision.Confusion());
+        ResoU2 = HSurfaceTool.UResolution(Caro2, global::Kerf.Engine.Foundation.Precision.Confusion());
+        ResoV2 = HSurfaceTool.VResolution(Caro2, global::Kerf.Engine.Foundation.Precision.Confusion());
         //
         double NEWRESO, MAXVAL, MAXVAL2;
         //
@@ -378,7 +380,7 @@ public partial class IntWalk_PWalking
         pasuv[2] = pasMax * Math.Abs(UM2 - Um2);
         pasuv[3] = pasMax * Math.Abs(VM2 - Vm2);
         //
-        if (!Adaptor3d_HSurfaceTool.IsUPeriodic(Caro1))
+        if (!HSurfaceTool.IsUPeriodic(Caro1))
         {
             UM1 += KELARG * pasuv[0];
             Um1 -= KELARG * pasuv[0];
@@ -386,16 +388,16 @@ public partial class IntWalk_PWalking
         else
         {
             double t = UM1 - Um1;
-            if (t < Adaptor3d_HSurfaceTool.UPeriod(Caro1))
+            if (t < HSurfaceTool.UPeriod(Caro1))
             {
-                t = 0.5 * (Adaptor3d_HSurfaceTool.UPeriod(Caro1) - t);
+                t = 0.5 * (HSurfaceTool.UPeriod(Caro1) - t);
                 t = (t > KELARG * pasuv[0]) ? KELARG * pasuv[0] : t;
                 UM1 += t;
                 Um1 -= t;
             }
         }
         //
-        if (!Adaptor3d_HSurfaceTool.IsVPeriodic(Caro1))
+        if (!HSurfaceTool.IsVPeriodic(Caro1))
         {
             VM1 += KELARG * pasuv[1];
             Vm1 -= KELARG * pasuv[1];
@@ -403,16 +405,16 @@ public partial class IntWalk_PWalking
         else
         {
             double t = VM1 - Vm1;
-            if (t < Adaptor3d_HSurfaceTool.VPeriod(Caro1))
+            if (t < HSurfaceTool.VPeriod(Caro1))
             {
-                t = 0.5 * (Adaptor3d_HSurfaceTool.VPeriod(Caro1) - t);
+                t = 0.5 * (HSurfaceTool.VPeriod(Caro1) - t);
                 t = (t > KELARG * pasuv[1]) ? KELARG * pasuv[1] : t;
                 VM1 += t;
                 Vm1 -= t;
             }
         }
         //
-        if (!Adaptor3d_HSurfaceTool.IsUPeriodic(Caro2))
+        if (!HSurfaceTool.IsUPeriodic(Caro2))
         {
             UM2 += KELARG * pasuv[2];
             Um2 -= KELARG * pasuv[2];
@@ -420,16 +422,16 @@ public partial class IntWalk_PWalking
         else
         {
             double t = UM2 - Um2;
-            if (t < Adaptor3d_HSurfaceTool.UPeriod(Caro2))
+            if (t < HSurfaceTool.UPeriod(Caro2))
             {
-                t = 0.5 * (Adaptor3d_HSurfaceTool.UPeriod(Caro2) - t);
+                t = 0.5 * (HSurfaceTool.UPeriod(Caro2) - t);
                 t = (t > KELARG * pasuv[2]) ? KELARG * pasuv[2] : t;
                 UM2 += t;
                 Um2 -= t;
             }
         }
 
-        if (!Adaptor3d_HSurfaceTool.IsVPeriodic(Caro2))
+        if (!HSurfaceTool.IsVPeriodic(Caro2))
         {
             VM2 += KELARG * pasuv[3];
             Vm2 -= KELARG * pasuv[3];
@@ -437,9 +439,9 @@ public partial class IntWalk_PWalking
         else
         {
             double t = VM2 - Vm2;
-            if (t < Adaptor3d_HSurfaceTool.VPeriod(Caro2))
+            if (t < HSurfaceTool.VPeriod(Caro2))
             {
-                t = 0.5 * (Adaptor3d_HSurfaceTool.VPeriod(Caro2) - t);
+                t = 0.5 * (HSurfaceTool.VPeriod(Caro2) - t);
                 t = (t > KELARG * pasuv[3]) ? KELARG * pasuv[3] : t;
                 VM2 += t;
                 Vm2 -= t;
@@ -601,8 +603,8 @@ public partial class IntWalk_PWalking
     {
         const double aRangePart = 0.01;
         double Increment = 2.0 * pasMax;
-        Adaptor3d_Surface Caro1 = myIntersectionOn2S.Function().AuxillarSurface1();
-        Adaptor3d_Surface Caro2 = myIntersectionOn2S.Function().AuxillarSurface2();
+        SurfaceAdaptorBase Caro1 = myIntersectionOn2S.Function().AuxillarSurface1();
+        SurfaceAdaptorBase Caro2 = myIntersectionOn2S.Function().AuxillarSurface2();
 
         double aDeltaU1 = Math.Abs(UM1 - Um1);
         double aDeltaV1 = Math.Abs(VM1 - Vm1);
@@ -648,10 +650,10 @@ public partial class IntWalk_PWalking
             pasuv[3] = Math.Max(Increment * theDeltaV2, pasuv[3]);
         }
 
-        double ResoU1tol = Adaptor3d_HSurfaceTool.UResolution(Caro1, tolconf);
-        double ResoV1tol = Adaptor3d_HSurfaceTool.VResolution(Caro1, tolconf);
-        double ResoU2tol = Adaptor3d_HSurfaceTool.UResolution(Caro2, tolconf);
-        double ResoV2tol = Adaptor3d_HSurfaceTool.VResolution(Caro2, tolconf);
+        double ResoU1tol = HSurfaceTool.UResolution(Caro1, tolconf);
+        double ResoV1tol = HSurfaceTool.VResolution(Caro1, tolconf);
+        double ResoU2tol = HSurfaceTool.UResolution(Caro2, tolconf);
+        double ResoV2tol = HSurfaceTool.VResolution(Caro2, tolconf);
 
         myStepMin[0] = Math.Max(myStepMin[0], 2.0 * ResoU1tol);
         myStepMin[1] = Math.Max(myStepMin[1], 2.0 * ResoV1tol);
@@ -800,12 +802,12 @@ public partial class IntWalk_PWalking
     }
 
     /// <summary>The square distance between thePnt and theSurf, from (theU0, theV0).</summary>
-    private static double SQDistPointSurface(in Point3D thePnt, Adaptor3d_Surface theSurf, double theU0, double theV0)
+    private static double SQDistPointSurface(in Point3D thePnt, SurfaceAdaptorBase theSurf, double theU0, double theV0)
     {
-        Extrema_GenLocateExtPS aExtPS = new(theSurf);
+        GenLocateExtPS aExtPS = new(theSurf);
         aExtPS.Perform(thePnt, theU0, theV0);
 
-        if (!aExtPS.IsDone())
+        if (!aExtPS.IsDone)
         {
             return RealLast();
         }
@@ -817,7 +819,7 @@ public partial class IntWalk_PWalking
     /// Additional check that the surfaces are tangent: whether points of each, around the start point, lie on the
     /// other (with the tolerance given).
     /// </summary>
-    private static bool IsTangentExtCheck(Adaptor3d_Surface theSurf1, Adaptor3d_Surface theSurf2, double theU10,
+    private static bool IsTangentExtCheck(SurfaceAdaptorBase theSurf1, SurfaceAdaptorBase theSurf2, double theU10,
                                           double theV10, double theU20, double theV20, double theToler,
                                           double[] theArrStep)
     {

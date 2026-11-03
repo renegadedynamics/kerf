@@ -5,9 +5,14 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.GeomFill_PipeError;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -22,11 +27,11 @@ namespace Occt;
 /// </remarks>
 public abstract class BRepFill_LocationLaw : Transient
 {
-    protected TopoDS_Wire myPath = new();
+    protected Wire myPath = new();
     protected double myTol;
     protected NCollection_HArray1<GeomFill_LocationLaw>? myLaws;
     protected NCollection_HArray1<double>? myLength;
-    protected NCollection_HArray1<TopoDS_Shape>? myEdges;
+    protected NCollection_HArray1<Shape>? myEdges;
     protected NCollection_HArray1<int>? myDisc;
     // Set by TangentIsMain, NormalIsMain and BiNormalIsMain and never read, as in OCCT.
 #pragma warning disable CS0414
@@ -71,11 +76,11 @@ public abstract class BRepFill_LocationLaw : Transient
     //=================================================================================================
 
     /// <summary>Initialises all the fields; called by the constructors of the derived classes.</summary>
-    protected void Init(in TopoDS_Wire Path)
+    protected void Init(in Wire Path)
 
     {
         int NbEdge;
-        BRepTools_WireExplorer wexp = new();
+        WireExplorer wexp = new();
         // Class BRep_Tool without fields and without Constructor :
         //  BRep_Tool B;
 
@@ -85,7 +90,7 @@ public abstract class BRepFill_LocationLaw : Transient
         for (NbEdge = 0, wexp.Init(myPath); wexp.More(); wexp.Next())
         {
             //    if (! B.Degenerated(wexp.Current())) NbEdge++;
-            if (!BRep_Tool.Degenerated(wexp.Current()))
+            if (!Tool.Degenerated(wexp.Current()))
             {
                 NbEdge++;
             }
@@ -95,7 +100,7 @@ public abstract class BRepFill_LocationLaw : Transient
         myLength = new NCollection_HArray1<double>(1, NbEdge + 1);
         myLength.Init(-1.0);
         myLength.SetValue(1, 0.0);
-        myEdges = new NCollection_HArray1<TopoDS_Shape>(1, NbEdge);
+        myEdges = new NCollection_HArray1<Shape>(1, NbEdge);
         myDisc = null;
         TangentIsMain();
     }
@@ -292,42 +297,42 @@ public abstract class BRepFill_LocationLaw : Transient
     //=================================================================================================
 
     /// <summary>The path.</summary>
-    public TopoDS_Wire Wire() => myPath;
+    public Wire Wire() => myPath;
 
     //=================================================================================================
 
     /// <summary>The edge of rank <paramref name="Index"/> (in [1, NbLaw()]) of the path.</summary>
-    public TopoDS_Edge Edge(int Index) => TopoDS.Edge(myEdges!.Value(Index));
+    public Edge Edge(int Index) => ShapeCasts.Edge(myEdges!.Value(Index));
 
     //=================================================================================================
 
     /// <summary>The vertex of rank <paramref name="Index"/> (in [1, NbLaw() + 1]) of the path.</summary>
-    public TopoDS_Vertex Vertex(int Index)
+    public Vertex Vertex(int Index)
     {
-        TopoDS_Edge E;
-        TopoDS_Vertex V = new();
+        Edge E;
+        Vertex V = new();
         if (Index <= myEdges!.Length())
         {
-            E = TopoDS.Edge(myEdges.Value(Index));
-            if (E.Orientation() == TopAbs_REVERSED)
+            E = ShapeCasts.Edge(myEdges.Value(Index));
+            if (E.Orientation() == Reversed)
             {
-                V = TopExp.LastVertex(E);
+                V = Exploration.LastVertex(E);
             }
             else
             {
-                V = TopExp.FirstVertex(E);
+                V = Exploration.FirstVertex(E);
             }
         }
         else if (Index == myEdges.Length() + 1)
         {
-            E = TopoDS.Edge(myEdges.Value(Index - 1));
-            if (E.Orientation() == TopAbs_REVERSED)
+            E = ShapeCasts.Edge(myEdges.Value(Index - 1));
+            if (E.Orientation() == Reversed)
             {
-                V = TopExp.FirstVertex(E);
+                V = Exploration.FirstVertex(E);
             }
             else
             {
-                V = TopExp.LastVertex(E);
+                V = Exploration.LastVertex(E);
             }
         }
         return V;
@@ -344,18 +349,18 @@ public abstract class BRepFill_LocationLaw : Transient
     /// frozen vertex. <paramref name="ILoc"/> chooses the law at a discontinuity: -1 the law before the vertex, 1 the
     /// law after it, 0 the average of both (the tolerance then covers half their gap).
     /// </summary>
-    public void PerformVertex(int Index, in TopoDS_Vertex Input, double TolMin, out TopoDS_Vertex Output, int ILoc = 0)
+    public void PerformVertex(int Index, in Vertex Input, double TolMin, out Vertex Output, int ILoc = 0)
     {
         InternalPerformVertex(Index, Input, TolMin, out Output, ILoc);
         Output.TShape()?.FreezeGraph();
     }
 
     /// <summary><see cref="PerformVertex"/> without freezing the vertex, for the sweeps that build on it.</summary>
-    internal void InternalPerformVertex(int Index, in TopoDS_Vertex Input, double TolMin, out TopoDS_Vertex Output,
+    internal void InternalPerformVertex(int Index, in Vertex Input, double TolMin, out Vertex Output,
                                         int ILoc = 0)
     {
-        Output = new TopoDS_Vertex();
-        BRep_Builder B = new();
+        Output = new Vertex();
+        BrepBuilder B = new();
         bool IsBary = (ILoc == 0);
         double First, Last;
         Point3D P;
@@ -423,7 +428,7 @@ public abstract class BRepFill_LocationLaw : Transient
             }
         }
 
-        P = BRep_Tool.Pnt(Input);
+        P = Tool.Pnt(Input);
 
         if (IsBary)
         {
@@ -462,7 +467,7 @@ public abstract class BRepFill_LocationLaw : Transient
             for (ii = 1, Length = 0.0; ii <= NbE; ii++)
             {
                 myLaws!.Value(ii).GetDomain(out _, out _);
-                Length += GCPnts_AbscissaPoint.Length(myLaws.Value(ii).GetCurve()!, myTol);
+                Length += AbscissaPoint.Length(myLaws.Value(ii).GetCurve()!, myTol);
                 myLength.SetValue(ii + 1, Length);
             }
 
@@ -479,7 +484,7 @@ public abstract class BRepFill_LocationLaw : Transient
             return true;
         }
 
-        TopExp.Vertices(myPath, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+        Exploration.Vertices(myPath, out Vertex V1, out Vertex V2);
         return (V1.IsSame(V2));
     }
 
@@ -499,8 +504,8 @@ public abstract class BRepFill_LocationLaw : Transient
         double First, Last, EpsNul = 1.0e-12;
         double TolEps = SpatialTolerance;
         bool Ok_D1 = false;
-        TopoDS_Vertex V;
-        TopoDS_Edge E = new();
+        Vertex V;
+        Edge E = new();
         NCollection_Array1<Point2D> Bid1 = new(1, 1);
         NCollection_Array1<Vector2D> Bid2 = new(1, 1);
 
@@ -523,7 +528,7 @@ public abstract class BRepFill_LocationLaw : Transient
                 myLaws.Value(Index + 1).D0(First, ref M2, ref V2);
             }
 
-            E = TopoDS.Edge(myEdges!.Value(Index + 1));
+            E = ShapeCasts.Edge(myEdges!.Value(Index + 1));
         }
         if (Index == 0 || Index == myLaws!.Length())
         {
@@ -549,19 +554,19 @@ public abstract class BRepFill_LocationLaw : Transient
                 myLaws.Value(1).D0(First, ref M2, ref V2);
             }
 
-            E = TopoDS.Edge(myEdges!.Value(1));
+            E = ShapeCasts.Edge(myEdges!.Value(1));
         }
 
-        if (E.Orientation() == TopAbs_REVERSED)
+        if (E.Orientation() == Reversed)
         {
-            V = TopExp.LastVertex(E);
+            V = Exploration.LastVertex(E);
         }
         else
         {
-            V = TopExp.FirstVertex(E);
+            V = Exploration.FirstVertex(E);
         }
 
-        TolEps += 2 * BRep_Tool.Tolerance(V);
+        TolEps += 2 * Tool.Tolerance(V);
 
         bool isG0 = true;
         bool isG1 = true;
@@ -667,7 +672,7 @@ public abstract class BRepFill_LocationLaw : Transient
             }
             else
             {
-                GCPnts_AbscissaPoint AbsC = new(myTol,
+                AbscissaPoint AbsC = new(myTol,
                                                 myLaws.Value(iedge).GetCurve()!,
                                                 Abcissa - myLength.Value(iedge),
                                                 f);
@@ -690,14 +695,14 @@ public abstract class BRepFill_LocationLaw : Transient
     /// <paramref name="W"/> placed by the law at the curvilinear abscissa <paramref name="Abcissa"/>: a frozen
     /// transformed copy (null past the path's end).
     /// </summary>
-    public void D0(double Abcissa, ref TopoDS_Shape W)
+    public void D0(double Abcissa, ref Shape W)
     {
         InternalD0(Abcissa, ref W);
         W.TShape()?.FreezeGraph();
     }
 
     /// <summary><see cref="D0"/> without freezing the copy, for the pipe shell that sweeps it (BRepFill_PipeShell).</summary>
-    internal void InternalD0(double Abcissa, ref TopoDS_Shape W)
+    internal void InternalD0(double Abcissa, ref Shape W)
     {
         double u = 0;
         Matrix3x3 M = new();
@@ -747,7 +752,7 @@ public abstract class BRepFill_LocationLaw : Transient
             CurvilinearBounds(Index, out _, out Length);
         }
 
-        Length += GCPnts_AbscissaPoint.Length(myLaws!.Value(Index).GetCurve()!,
+        Length += AbscissaPoint.Length(myLaws!.Value(Index).GetCurve()!,
                                               myLaws.Value(Index).GetCurve()!.FirstParameter(),
                                               Param,
                                               myTol);

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
@@ -32,12 +33,12 @@ public class Adaptor3d_CurveOnSurfaceTests
     /// S(C(t)) and its derivatives by the chain rule; D3Occt is what OCCT's formula computes (occt-issues.md:
     /// Su is weighted by u' instead of u''', Suvv by 5u'v'^2 instead of 3u'v'^2).
     /// </summary>
-    private static Ref Reference(Geom_Surface theS, Geom2d_Curve theC, double t)
+    private static Ref Reference(Surface theS, Curve2D theC, double t)
     {
         theC.D3(t, out Point2D uv, out Vector2D d1, out Vector2D d2, out Vector2D d3);
         double u = uv.X(), v = uv.Y();
         double u1 = d1.X(), v1 = d1.Y(), u2 = d2.X(), v2 = d2.Y(), u3 = d3.X(), v3 = d3.Y();
-        Geom_Surface.ResD3 r = theS.EvalD3(u, v);
+        Surface.ResD3 r = theS.EvalD3(u, v);
         Vector3D P = new Vector3D(r.Point.XYZ());
         Vector3D D1 = r.D1U * u1 + r.D1V * v1;
         Vector3D D2 = r.D2U * (u1 * u1) + r.D2UV * (2 * u1 * v1) + r.D2V * (v1 * v1) + r.D1U * u2 + r.D1V * v2;
@@ -56,7 +57,7 @@ public class Adaptor3d_CurveOnSurfaceTests
     }
 
     /// <summary>Compares D0 to D2 (and D3, unless theSkipD3) with the reference at the ends, the knots and inside.</summary>
-    private static void CheckEval(Adaptor3d_CurveOnSurface theCOS, Geom_Surface theS, Geom2d_Curve theC,
+    private static void CheckEval(CurveOnSurface theCOS, Surface theS, Curve2D theC,
                                   IEnumerable<double> theParams, bool theOcctD3 = false, double theTol = Tol)
     {
         foreach (double t in theParams)
@@ -96,7 +97,7 @@ public class Adaptor3d_CurveOnSurfaceTests
         new CoordinateSystem(new Point3D(1, -2, 0.5), new Direction3D(0.3, 0.4, 1.0), new Direction3D(1.0, -0.3, 0.0));
 
     // A bicubic B-spline surface on [0, 3] x [0, 2], simple interior knots (C2).
-    private static Geom_BSplineSurface MakeBSplineSurface()
+    private static BSplineSurface MakeBSplineSurface()
     {
         NCollection_Array2<Point3D> aPoles = new(1, 6, 1, 5);
         for (int i = 1; i <= 6; i++)
@@ -110,10 +111,10 @@ public class Adaptor3d_CurveOnSurfaceTests
         NCollection_Array1<int> aUMults = NCollection_Array1<int>.From(new[] { 4, 1, 1, 4 });
         NCollection_Array1<double> aVKnots = NCollection_Array1<double>.From(new[] { 0.0, 1.0, 2.0 });
         NCollection_Array1<int> aVMults = NCollection_Array1<int>.From(new[] { 4, 1, 4 });
-        return new Geom_BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, 3, 3);
+        return new BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, 3, 3);
     }
 
-    private static Geom2d_BSplineCurve Make2dBSpline(double theScaleU, double theScaleV)
+    private static BSplineCurve2D Make2dBSpline(double theScaleU, double theScaleV)
     {
         NCollection_Array1<Point2D> aPoles = new(1, 5);
         aPoles[1] = new Point2D(0.0 * theScaleU, 0.1 * theScaleV);
@@ -123,25 +124,25 @@ public class Adaptor3d_CurveOnSurfaceTests
         aPoles[5] = new Point2D(3.0 * theScaleU, 1.0 * theScaleV);
         NCollection_Array1<double> aKnots = NCollection_Array1<double>.From(new[] { 0.0, 0.5, 1.0 });
         NCollection_Array1<int> aMults = NCollection_Array1<int>.From(new[] { 4, 1, 4 });
-        return new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 3);
+        return new BSplineCurve2D(aPoles, aKnots, aMults, 3);
     }
 
-    private static Geom2d_Line Line2d(double theX, double theY, double theDX, double theDY) =>
-        new Geom2d_Line(new Point2D(theX, theY), new Direction2D(theDX, theDY));
+    private static LineCurve2D Line2d(double theX, double theY, double theDX, double theDY) =>
+        new LineCurve2D(new Point2D(theX, theY), new Direction2D(theDX, theDY));
 
     [Fact]
     public void Plane_Line_IsLine()
     {
-        Geom_Plane aPlane = new Geom_Plane(SomeAxes());
-        Geom2d_Line aLine = Line2d(1.0, 2.0, 0.6, -0.8);
-        var aCOS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aLine, -3.0, 4.0), new TestSurfaceAdaptor(aPlane));
+        PlaneSurface aPlane = new PlaneSurface(SomeAxes());
+        LineCurve2D aLine = Line2d(1.0, 2.0, 0.6, -0.8);
+        var aCOS = new CurveOnSurface(new CurveAdaptor2D(aLine, -3.0, 4.0), new TestSurfaceAdaptor(aPlane));
 
         Assert.Equal(Line, aCOS.GetType());
         Line3D aLin = aCOS.Line();
         Assert.True(aLin.Location().IsEqual(aPlane.Value(1.0, 2.0), Tol));
         Assert.Equal(-3.0, aCOS.FirstParameter());
         Assert.Equal(4.0, aCOS.LastParameter());
-        Assert.False(aCOS.IsPeriodic());
+        Assert.False(aCOS.IsPeriodic);
         CheckEval(aCOS, aPlane, aLine, Params(-3.0, 4.0));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCOS.Circle());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCOS.DN(0.5, 4));
@@ -150,23 +151,23 @@ public class Adaptor3d_CurveOnSurfaceTests
     [Fact]
     public void Plane_CircleAndEllipse()
     {
-        Geom_Plane aPlane = new Geom_Plane(SomeAxes());
-        Geom2d_Circle aCircle = new Geom2d_Circle(new Axis2D(new Point2D(1, 2), new Direction2D(1, 1)), 2.5);
-        var aCOS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aCircle), new TestSurfaceAdaptor(aPlane));
+        PlaneSurface aPlane = new PlaneSurface(SomeAxes());
+        CircleCurve2D aCircle = new CircleCurve2D(new Axis2D(new Point2D(1, 2), new Direction2D(1, 1)), 2.5);
+        var aCOS = new CurveOnSurface(new CurveAdaptor2D(aCircle), new TestSurfaceAdaptor(aPlane));
         Assert.Equal(Circle, aCOS.GetType());
         Assert.Equal(2.5, aCOS.Circle().Radius(), 1e-12);
-        Assert.True(aCOS.IsPeriodic());
+        Assert.True(aCOS.IsPeriodic);
         Assert.Equal(2 * Math.PI, aCOS.Period());
         Assert.True(aCOS.Circle().Location().IsEqual(aPlane.Value(1, 2), Tol));
         CheckEval(aCOS, aPlane, aCircle, Params(0.0, 2 * Math.PI));
 
-        Geom2d_Ellipse anEllipse = new Geom2d_Ellipse(new Axis2D(new Point2D(-1, 0.5), new Direction2D(1, -2)), 3.0, 1.0);
-        var aCOSE = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(anEllipse), new TestSurfaceAdaptor(aPlane));
+        EllipseCurve2D anEllipse = new EllipseCurve2D(new Axis2D(new Point2D(-1, 0.5), new Direction2D(1, -2)), 3.0, 1.0);
+        var aCOSE = new CurveOnSurface(new CurveAdaptor2D(anEllipse), new TestSurfaceAdaptor(aPlane));
         Assert.Equal(Ellipse, aCOSE.GetType());
         Ellipse3D anE = aCOSE.Ellipse();
         Assert.Equal(3.0, anE.MajorRadius(), 1e-12);
         Assert.Equal(1.0, anE.MinorRadius(), 1e-12);
-        Assert.True(aCOSE.IsPeriodic());
+        Assert.True(aCOSE.IsPeriodic);
         // An ellipse goes through the general path; on a plane the second derivatives vanish, so D3 is exact
         // except for OCCT's u' in place of u''' (see Reference).
         CheckEval(aCOSE, aPlane, anEllipse, Params(0.0, 2 * Math.PI), theOcctD3: true);
@@ -176,11 +177,11 @@ public class Adaptor3d_CurveOnSurfaceTests
             Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(t, anE).IsEqual(aCOSE.Value(t), Tol));
         }
 
-        Geom2d_Hyperbola aHyp = new Geom2d_Hyperbola(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0, 1.0);
-        var aCOSH = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aHyp, -1, 1), new TestSurfaceAdaptor(aPlane));
+        HyperbolaCurve2D aHyp = new HyperbolaCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0, 1.0);
+        var aCOSH = new CurveOnSurface(new CurveAdaptor2D(aHyp, -1, 1), new TestSurfaceAdaptor(aPlane));
         Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(0.3, aCOSH.Hyperbola()).IsEqual(aCOSH.Value(0.3), Tol));
-        Geom2d_Parabola aPar = new Geom2d_Parabola(new Axis2D(new Point2D(0, 1), new Direction2D(0, 1)), 0.5);
-        var aCOSP = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aPar, -1, 1), new TestSurfaceAdaptor(aPlane));
+        ParabolaCurve2D aPar = new ParabolaCurve2D(new Axis2D(new Point2D(0, 1), new Direction2D(0, 1)), 0.5);
+        var aCOSP = new CurveOnSurface(new CurveAdaptor2D(aPar, -1, 1), new TestSurfaceAdaptor(aPlane));
         Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(0.3, aCOSP.Parabola()).IsEqual(aCOSP.Value(0.3), Tol));
     }
 
@@ -193,22 +194,22 @@ public class Adaptor3d_CurveOnSurfaceTests
         { "torus", 0.7, 0.4, 1, 0 }, { "torus", 0.7, 0.4, -1, 0 }, { "torus", 0.7, 0.4, 0, 1 }, { "torus", 0.7, 0.4, 0, -1 },
     };
 
-    private static Geom_Surface Elementary(string theName) => theName switch
+    private static Surface Elementary(string theName) => theName switch
     {
-        "cylinder" => new Geom_CylindricalSurface(SomeAxes(), 2.0),
-        "cone" => new Geom_ConicalSurface(SomeAxes(), 0.4, 1.5),
-        "sphere" => new Geom_SphericalSurface(SomeAxes(), 2.0),
-        _ => new Geom_ToroidalSurface(SomeAxes(), 3.0, 1.0),
+        "cylinder" => new CylindricalSurface(SomeAxes(), 2.0),
+        "cone" => new ConicalSurface(SomeAxes(), 0.4, 1.5),
+        "sphere" => new SphericalSurface(SomeAxes(), 2.0),
+        _ => new ToroidalSurface(SomeAxes(), 3.0, 1.0),
     };
 
     [Theory]
     [MemberData(nameof(IsoLines))]
     public void ElementarySurfaces_IsoLines_AreLinesAndCircles(string theSurface, double X, double Y, double DX, double DY)
     {
-        Geom_Surface aSurf = Elementary(theSurface);
-        Geom2d_Line aLine = Line2d(X, Y, DX, DY);
+        Surface aSurf = Elementary(theSurface);
+        LineCurve2D aLine = Line2d(X, Y, DX, DY);
         double aFirst = -0.5, aLast = 0.5;
-        var aCOS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aLine, aFirst, aLast), new TestSurfaceAdaptor(aSurf));
+        var aCOS = new CurveOnSurface(new CurveAdaptor2D(aLine, aFirst, aLast), new TestSurfaceAdaptor(aSurf));
 
         CurveKind anExpected = (DX == 0 && (theSurface == "cylinder" || theSurface == "cone")) ? Line : Circle;
         Assert.Equal(anExpected, aCOS.GetType());
@@ -216,7 +217,7 @@ public class Adaptor3d_CurveOnSurfaceTests
         CheckEval(aCOS, aSurf, aLine, Params(aFirst, aLast));
         if (anExpected == Circle)
         {
-            Assert.True(aCOS.IsPeriodic());
+            Assert.True(aCOS.IsPeriodic);
             Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(0.3, aCOS.Circle()).IsEqual(aSurf.Value(X + 0.3 * DX, Y + 0.3 * DY), Tol));
         }
         else
@@ -229,8 +230,8 @@ public class Adaptor3d_CurveOnSurfaceTests
     public void Sphere_IsoVAtPole_StaysGeneral()
     {
         // A V iso through the pole of a sphere is a point: not turned into a circle
-        Geom_SphericalSurface aSph = new Geom_SphericalSurface(SomeAxes(), 2.0);
-        var aCOS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(Line2d(0, Math.PI / 2, 1, 0), 0, 1),
+        SphericalSurface aSph = new SphericalSurface(SomeAxes(), 2.0);
+        var aCOS = new CurveOnSurface(new CurveAdaptor2D(Line2d(0, Math.PI / 2, 1, 0), 0, 1),
                                                 new TestSurfaceAdaptor(aSph));
         Assert.Equal(OtherCurve, aCOS.GetType());
         Assert.True(aCOS.Value(0.5).IsEqual(aSph.Value(0.5, Math.PI / 2), Tol));
@@ -239,9 +240,9 @@ public class Adaptor3d_CurveOnSurfaceTests
     [Fact]
     public void ObliqueLine_OnCylinder_GeneralPath()
     {
-        Geom_CylindricalSurface aCyl = new Geom_CylindricalSurface(SomeAxes(), 2.0);
-        Geom2d_Line aLine = Line2d(0.3, -1.0, 1, 2);
-        var aCOS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aLine, -1, 2), new TestSurfaceAdaptor(aCyl));
+        CylindricalSurface aCyl = new CylindricalSurface(SomeAxes(), 2.0);
+        LineCurve2D aLine = Line2d(0.3, -1.0, 1, 2);
+        var aCOS = new CurveOnSurface(new CurveAdaptor2D(aLine, -1, 2), new TestSurfaceAdaptor(aCyl));
         Assert.Equal(OtherCurve, aCOS.GetType());
         // A 2D line has u''' = 0 but u' != 0, and Suvv = 0 on a cylinder: OCCT's D3 adds Su * u'.
         CheckEval(aCOS, aCyl, aLine, Params(-1, 2), theOcctD3: true);
@@ -250,16 +251,16 @@ public class Adaptor3d_CurveOnSurfaceTests
     [Fact]
     public void BSplineSurface_BSplineCurve_EndsAndKnots()
     {
-        Geom_BSplineSurface aSurf = MakeBSplineSurface();
-        Geom2d_BSplineCurve aC = Make2dBSpline(1.0, 2.0);
-        var aCOS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aC), new TestSurfaceAdaptor(aSurf));
+        BSplineSurface aSurf = MakeBSplineSurface();
+        BSplineCurve2D aC = Make2dBSpline(1.0, 2.0);
+        var aCOS = new CurveOnSurface(new CurveAdaptor2D(aC), new TestSurfaceAdaptor(aSurf));
         Assert.Equal(OtherCurve, aCOS.GetType());
         // The ends go through myFirstSurf / myLastSurf (patches located by LocatePart)
         CheckEval(aCOS, aSurf, aC, Params(0.0, 1.0, 0.5, 1e-11, 1.0 - 1e-11), theOcctD3: true, theTol: 1e-8);
-        Assert.True(aCOS.IsRational() == false);
+        Assert.True(aCOS.IsRational == false);
         Assert.Equal(3, aCOS.Degree());
-        Assert.Equal(5, aCOS.NbPoles());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCOS.NbKnots());
+        Assert.Equal(5, aCOS.PoleCount);
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCOS.KnotCount);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCOS.BSpline());
     }
 
@@ -280,10 +281,10 @@ public class Adaptor3d_CurveOnSurfaceTests
     [MemberData(nameof(BSplineIsoLines))]
     public void BSplineSurface_Lines_LocatePart(double U, double V, double DU, double DV)
     {
-        Geom_BSplineSurface aSurf = MakeBSplineSurface();
-        Geom2d_Line aLine = Line2d(U, V, DU, DV);
+        BSplineSurface aSurf = MakeBSplineSurface();
+        LineCurve2D aLine = Line2d(U, V, DU, DV);
         double aLen = 0.4;
-        var aCOS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aLine, 0.0, aLen), new TestSurfaceAdaptor(aSurf));
+        var aCOS = new CurveOnSurface(new CurveAdaptor2D(aLine, 0.0, aLen), new TestSurfaceAdaptor(aSurf));
         // A 2D line on a non-planar surface: OCCT's D3 formula (see Reference)
         CheckEval(aCOS, aSurf, aLine, Params(0.0, aLen), theOcctD3: true, theTol: 1e-8);
     }
@@ -300,13 +301,13 @@ public class Adaptor3d_CurveOnSurfaceTests
         aPoles[5] = new Point3D(1.0, 0, 4);
         NCollection_Array1<double> aKnots = NCollection_Array1<double>.From(new[] { 0.0, 1.0, 2.0 });
         NCollection_Array1<int> aMults = NCollection_Array1<int>.From(new[] { 4, 1, 4 });
-        Geom_BSplineCurve aBasis = new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
+        BSplineCurve3D aBasis = new BSplineCurve3D(aPoles, aKnots, aMults, 3);
 
-        Geom_SurfaceOfRevolution aRev = new Geom_SurfaceOfRevolution(aBasis, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
-        Geom_SurfaceOfLinearExtrusion anExt = new Geom_SurfaceOfLinearExtrusion(aBasis, new Direction3D(0.2, 1, 0.3));
+        RevolutionSurface aRev = new RevolutionSurface(aBasis, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
+        ExtrusionSurface anExt = new ExtrusionSurface(aBasis, new Direction3D(0.2, 1, 0.3));
 
         // Revolution: U is the angle, V the basis parameter; extrusion: U the basis parameter, V the length
-        foreach (var (aSurf, aSA, aLine, aRange) in new (Geom_Surface, TestSurfaceAdaptor, Geom2d_Line, double)[]
+        foreach (var (aSurf, aSA, aLine, aRange) in new (Surface, TestSurfaceAdaptor, LineCurve2D, double)[]
                  {
                      (aRev, new TestSurfaceAdaptor(aRev, 0, 2 * Math.PI, 0, 2), Line2d(0.5, 1.0, 0.3, 1), 0.9),
                      (aRev, new TestSurfaceAdaptor(aRev, 0, 2 * Math.PI, 0, 2), Line2d(0.5, 0.3, 1, 0), 1.0),
@@ -316,16 +317,16 @@ public class Adaptor3d_CurveOnSurfaceTests
                      (anExt, new TestSurfaceAdaptor(anExt, 0, 2, -5, 5), Line2d(2.0, 1.0, -1, 0.2), 1.5),
                  })
         {
-            var aCOS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aLine, 0, aRange), aSA);
+            var aCOS = new CurveOnSurface(new CurveAdaptor2D(aLine, 0, aRange), aSA);
             Assert.Equal(OtherCurve, aCOS.GetType());
             CheckEval(aCOS, aSurf, aLine, Params(0, aRange), theOcctD3: true, theTol: 1e-8);
         }
     }
 
     // A surface adaptor whose U range is split at its middle (C1 there), to check the curve's intervals
-    private sealed class SplitSurface(Adaptor3d_Surface theBase, double theUSplit) : Adaptor3d_Surface
+    private sealed class SplitSurface(SurfaceAdaptorBase theBase, double theUSplit) : SurfaceAdaptorBase
     {
-        public override Adaptor3d_Surface ShallowCopy() => new SplitSurface(theBase.ShallowCopy(), theUSplit);
+        public override SurfaceAdaptorBase ShallowCopy() => new SplitSurface(theBase.ShallowCopy(), theUSplit);
         public override double FirstUParameter() => theBase.FirstUParameter();
         public override double LastUParameter() => theBase.LastUParameter();
         public override double FirstVParameter() => theBase.FirstVParameter();
@@ -353,19 +354,19 @@ public class Adaptor3d_CurveOnSurfaceTests
         public override SurfaceKind GetType() => SurfaceKind.OtherSurface;
         public override double UResolution(double R3d) => theBase.UResolution(R3d);
         public override double VResolution(double R3d) => theBase.VResolution(R3d);
-        public override bool IsURational() => false;
-        public override bool IsVRational() => false;
+        public override bool IsURational => false;
+        public override bool IsVRational => false;
         public override Point3D EvalD0(double theU, double theV) => theBase.EvalD0(theU, theV);
-        public override Geom_Surface.ResD1 EvalD1(double theU, double theV) => theBase.EvalD1(theU, theV);
-        public override Geom_Surface.ResD2 EvalD2(double theU, double theV) => theBase.EvalD2(theU, theV);
-        public override Geom_Surface.ResD3 EvalD3(double theU, double theV) => theBase.EvalD3(theU, theV);
+        public override Surface.ResD1 EvalD1(double theU, double theV) => theBase.EvalD1(theU, theV);
+        public override Surface.ResD2 EvalD2(double theU, double theV) => theBase.EvalD2(theU, theV);
+        public override Surface.ResD3 EvalD3(double theU, double theV) => theBase.EvalD3(theU, theV);
         public override Vector3D EvalDN(double theU, double theV, int theNu, int theNv) => theBase.EvalDN(theU, theV, theNu, theNv);
     }
 
     [Fact]
     public void Intervals_SplitWhereTheCurveCrossesSurfaceBounds()
     {
-        Geom_Plane aPlane = new Geom_Plane(SomeAxes());
+        PlaneSurface aPlane = new PlaneSurface(SomeAxes());
         // A curve C1 at its knot 0.5, crossing u = 1.2 twice
         NCollection_Array1<Point2D> aPoles = new(1, 6);
         aPoles[1] = new Point2D(0, 0);
@@ -376,10 +377,10 @@ public class Adaptor3d_CurveOnSurfaceTests
         aPoles[6] = new Point2D(0, 3);
         NCollection_Array1<double> aKnots = NCollection_Array1<double>.From(new[] { 0.0, 0.5, 1.0 });
         NCollection_Array1<int> aMults = NCollection_Array1<int>.From(new[] { 4, 2, 4 });
-        Geom2d_BSplineCurve aC = new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 3);
-        var aCurve = new Geom2dAdaptor_Curve(aC);
+        BSplineCurve2D aC = new BSplineCurve2D(aPoles, aKnots, aMults, 3);
+        var aCurve = new CurveAdaptor2D(aC);
         var aSurf = new SplitSurface(new TestSurfaceAdaptor(aPlane, -10, 10, -10, 10), 1.2);
-        var aCOS = new Adaptor3d_CurveOnSurface(aCurve, aSurf);
+        var aCOS = new CurveOnSurface(aCurve, aSurf);
 
         Assert.Equal(C1, aCOS.Continuity());
         Assert.Equal(1, aCOS.NbIntervals(C1));
@@ -416,18 +417,18 @@ public class Adaptor3d_CurveOnSurfaceTests
     [Fact]
     public void Trim_ShallowCopy_Load()
     {
-        Geom_BSplineSurface aSurf = MakeBSplineSurface();
-        Geom2d_BSplineCurve aC = Make2dBSpline(1.0, 2.0);
-        var aCOS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aC), new TestSurfaceAdaptor(aSurf));
+        BSplineSurface aSurf = MakeBSplineSurface();
+        BSplineCurve2D aC = Make2dBSpline(1.0, 2.0);
+        var aCOS = new CurveOnSurface(new CurveAdaptor2D(aC), new TestSurfaceAdaptor(aSurf));
 
-        Adaptor3d_Curve aTrim = aCOS.Trim(0.2, 0.7, 1e-7);
-        Assert.IsType<Adaptor3d_CurveOnSurface>(aTrim);
+        CurveAdaptorBase aTrim = aCOS.Trim(0.2, 0.7, 1e-7);
+        Assert.IsType<CurveOnSurface>(aTrim);
         Assert.Equal(0.2, aTrim.FirstParameter());
         Assert.Equal(0.7, aTrim.LastParameter());
         Assert.True(aTrim.Value(0.2).IsEqual(aCOS.Value(0.2), Tol));
         Assert.True(aTrim.Value(0.45).IsEqual(aCOS.Value(0.45), Tol));
 
-        Adaptor3d_Curve aCopy = aCOS.ShallowCopy();
+        CurveAdaptorBase aCopy = aCOS.ShallowCopy();
         Assert.Equal(aCOS.GetType(), aCopy.GetType());
         foreach (double t in Params(0, 1))
         {
@@ -435,17 +436,17 @@ public class Adaptor3d_CurveOnSurfaceTests
         }
 
         // Load in two steps, in either order
-        var aCOS2 = new Adaptor3d_CurveOnSurface(new TestSurfaceAdaptor(aSurf));
+        var aCOS2 = new CurveOnSurface(new TestSurfaceAdaptor(aSurf));
         Assert.Null(aCOS2.GetCurve());
-        aCOS2.Load(new Geom2dAdaptor_Curve(aC));
+        aCOS2.Load(new CurveAdaptor2D(aC));
         Assert.True(aCOS2.Value(0.3).IsEqual(aCOS.Value(0.3), 0.0));
-        var aCOS3 = new Adaptor3d_CurveOnSurface();
-        aCOS3.Load(new Geom2dAdaptor_Curve(aC), new TestSurfaceAdaptor(aSurf));
+        var aCOS3 = new CurveOnSurface();
+        aCOS3.Load(new CurveAdaptor2D(aC), new TestSurfaceAdaptor(aSurf));
         Assert.True(aCOS3.Value(0.3).IsEqual(aCOS.Value(0.3), 0.0));
         Assert.NotNull(aCOS3.GetSurface());
 
         // ChangeCurve gives the stored reference
-        ref Adaptor2d_Curve2d? aRef = ref aCOS3.ChangeCurve();
+        ref Curve2DAdaptorBase? aRef = ref aCOS3.ChangeCurve();
         Assert.Same(aCOS3.GetCurve(), aRef);
         Assert.Same(aCOS3.GetSurface(), aCOS3.ChangeSurface());
     }
@@ -453,12 +454,12 @@ public class Adaptor3d_CurveOnSurfaceTests
     [Fact]
     public void Plane_BezierAndBSpline_To3d()
     {
-        Geom_Plane aPlane = new Geom_Plane(SomeAxes());
-        Geom2d_BSplineCurve aBS = Make2dBSpline(1.0, 1.0);
-        var aCOS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aBS), new TestSurfaceAdaptor(aPlane));
+        PlaneSurface aPlane = new PlaneSurface(SomeAxes());
+        BSplineCurve2D aBS = Make2dBSpline(1.0, 1.0);
+        var aCOS = new CurveOnSurface(new CurveAdaptor2D(aBS), new TestSurfaceAdaptor(aPlane));
         Assert.Equal(BSplineCurve, aCOS.GetType());
-        Assert.Equal(3, aCOS.NbKnots());
-        Geom_BSplineCurve a3d = aCOS.BSpline();
+        Assert.Equal(3, aCOS.KnotCount);
+        BSplineCurve3D a3d = aCOS.BSpline();
         Assert.Equal(3, a3d.Degree());
         foreach (double t in Params(0, 1))
         {
@@ -472,27 +473,27 @@ public class Adaptor3d_CurveOnSurfaceTests
         aPoles[3] = new Point2D(2, -1);
         aPoles[4] = new Point2D(3, 1);
         NCollection_Array1<double> aWeights = NCollection_Array1<double>.From(new[] { 1.0, 2.0, 0.5, 1.0 });
-        Geom2d_BezierCurve aBz = new Geom2d_BezierCurve(aPoles, aWeights);
-        var aCOSB = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aBz), new TestSurfaceAdaptor(aPlane));
+        BezierCurve2D aBz = new BezierCurve2D(aPoles, aWeights);
+        var aCOSB = new CurveOnSurface(new CurveAdaptor2D(aBz), new TestSurfaceAdaptor(aPlane));
         Assert.Equal(BezierCurve, aCOSB.GetType());
-        Assert.True(aCOSB.IsRational());
-        Geom_BezierCurve aBz3 = aCOSB.Bezier();
-        Assert.True(aBz3.IsRational());
+        Assert.True(aCOSB.IsRational);
+        BezierCurve3D aBz3 = aCOSB.Bezier();
+        Assert.True(aBz3.IsRational);
         foreach (double t in Params(0, 1))
         {
             Assert.True(aBz3.Value(t).IsEqual(aCOSB.Value(t), Tol));
         }
 
-        var aCOSCyl = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aBz),
-                                                   new TestSurfaceAdaptor(new Geom_CylindricalSurface(SomeAxes(), 1.0)));
+        var aCOSCyl = new CurveOnSurface(new CurveAdaptor2D(aBz),
+                                                   new TestSurfaceAdaptor(new CylindricalSurface(SomeAxes(), 1.0)));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCOSCyl.Bezier());
     }
 
     [Fact]
     public void Resolution_UsesSurfaceThenCurve()
     {
-        Geom_Plane aPlane = new Geom_Plane(SomeAxes());
-        var aCOS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(Line2d(0, 0, 1, 0), 0, 1), new TestSurfaceAdaptor(aPlane));
+        PlaneSurface aPlane = new PlaneSurface(SomeAxes());
+        var aCOS = new CurveOnSurface(new CurveAdaptor2D(Line2d(0, 0, 1, 0), 0, 1), new TestSurfaceAdaptor(aPlane));
         // TestSurfaceAdaptor's resolutions are Precision::Parametric (R * 0.01); a 2D line's is the identity
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Parametric(0.5), aCOS.Resolution(0.5));
     }
@@ -502,9 +503,9 @@ public class Adaptor3d_CurveOnSurfaceTests
     {
         // OCCT bug (occt-issues.md): the general D3 weights Su by u' instead of u''' and Suvv by 5u'v'^2 instead of
         // 3u'v'^2. A finite difference of D2 agrees with the chain rule, not with OCCT's D3.
-        Geom_CylindricalSurface aCyl = new Geom_CylindricalSurface(SomeAxes(), 2.0);
-        Geom2d_Line aLine = Line2d(0.3, -1.0, 1, 2);
-        var aCOS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aLine, -1, 2), new TestSurfaceAdaptor(aCyl));
+        CylindricalSurface aCyl = new CylindricalSurface(SomeAxes(), 2.0);
+        LineCurve2D aLine = Line2d(0.3, -1.0, 1, 2);
+        var aCOS = new CurveOnSurface(new CurveAdaptor2D(aLine, -1, 2), new TestSurfaceAdaptor(aCyl));
         double t = 0.4, h = 1e-4;
         Vector3D aFD = (aCOS.DN(t + h, 2) - aCOS.DN(t - h, 2)) / (2 * h);
         Ref r = Reference(aCyl, aLine, t);

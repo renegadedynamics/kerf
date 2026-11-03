@@ -1,28 +1,32 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests.BOPTools;
 
 /// <summary>BOPTools_AlgoTools (BOPTools_AlgoTools.cxx and _2.cxx): known answers and context reuse.</summary>
 public class BOPTools_AlgoToolsTests
 {
-    private static TopoDS_Solid BoxSolid(double x, double y, double z, double dx, double dy, double dz) =>
-        TopoDS.Solid(TopExp_ExplorerFirst(new BRepPrimAPI_MakeBox(new Point3D(x, y, z), dx, dy, dz).InternalShape(), TopAbs_SOLID));
+    private static Solid BoxSolid(double x, double y, double z, double dx, double dy, double dz) =>
+        ShapeCasts.Solid(TopExp_ExplorerFirst(new BRepPrimAPI_MakeBox(new Point3D(x, y, z), dx, dy, dz).InternalShape(), ShapeType.Solid));
 
-    private static TopoDS_Shape TopExp_ExplorerFirst(in TopoDS_Shape theS, TopAbs_ShapeEnum theType)
+    private static Shape TopExp_ExplorerFirst(in Shape theS, ShapeType theType)
     {
-        TopExp_Explorer anExp = new(theS, theType);
+        Explorer anExp = new(theS, theType);
         Assert.True(anExp.More());
         return anExp.Current();
     }
 
-    private static IEnumerable<(string Name, TopoDS_Shape Shape)> Shapes()
+    private static IEnumerable<(string Name, Shape Shape)> Shapes()
     {
         foreach (var aS in BOPToolsTestShapes.Primitives())
         {
@@ -35,34 +39,34 @@ public class BOPTools_AlgoToolsTests
     }
 
     // A face on a copy of the face's surface over the middle half of its UV bounds (FORWARD).
-    private static TopoDS_Face SplitOf(in TopoDS_Face theF)
+    private static Face SplitOf(in Face theF)
     {
-        BRepTools.UVBounds(theF, out double u1, out double u2, out double v1, out double v2);
+        BrepTools.UVBounds(theF, out double u1, out double u2, out double v1, out double v2);
         double du = 0.25 * (u2 - u1), dv = 0.25 * (v2 - v1);
-        Geom_Surface aS = (Geom_Surface)BRep_Tool.Surface(theF)!.Copy();
+        Surface aS = (Surface)Tool.Surface(theF)!.Copy();
         Placement aLoc = theF.Location();
-        TopoDS_Face aSplit = TopoDS.Face(new BRepBuilderAPI_MakeFace(aS, u1 + du, u2 - du, v1 + dv, v2 - dv, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalShape());
-        return TopoDS.Face(aSplit.Located(aLoc));
+        Face aSplit = ShapeCasts.Face(new BRepBuilderAPI_MakeFace(aS, u1 + du, u2 - du, v1 + dv, v2 - dv, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalShape());
+        return ShapeCasts.Face(aSplit.Located(aLoc));
     }
 
     [Fact]
     public void IsSplitToReverse_faces_on_copied_surfaces_follow_the_original_orientation()
     {
         int aNb = 0;
-        foreach ((string aName, TopoDS_Shape aShape) in BOPToolsTestShapes.Primitives())
+        foreach ((string aName, Shape aShape) in BOPToolsTestShapes.Primitives())
         {
             IntTools_Context aCtx = new();
-            foreach (TopoDS_Face aF in BOPToolsTestShapes.Faces(aShape))
+            foreach (Face aF in BOPToolsTestShapes.Faces(aShape))
             {
-                TopoDS_Face aSp = SplitOf(aF);
-                bool bExpected = aF.Orientation() == TopAbs_REVERSED;
+                Face aSp = SplitOf(aF);
+                bool bExpected = aF.Orientation() == Reversed;
                 Assert.Equal(bExpected, BOPTools_AlgoTools.IsSplitToReverse(aSp, aF, aCtx, out int anErr));
                 Assert.Equal(0, anErr);
-                TopoDS_Face aSpR = TopoDS.Face(aSp.Reversed());
+                Face aSpR = ShapeCasts.Face(aSp.Reversed());
                 Assert.Equal(!bExpected, BOPTools_AlgoTools.IsSplitToReverse(aSpR, aF, aCtx, out anErr));
                 Assert.Equal(0, anErr);
                 // the shape form dispatches
-                Assert.Equal(bExpected, BOPTools_AlgoTools.IsSplitToReverse((TopoDS_Shape)aSp, (TopoDS_Shape)aF, aCtx));
+                Assert.Equal(bExpected, BOPTools_AlgoTools.IsSplitToReverse((Shape)aSp, (Shape)aF, aCtx));
                 ++aNb;
             }
             _ = aName;
@@ -73,39 +77,39 @@ public class BOPTools_AlgoToolsTests
     [Fact]
     public void IsSplitToReverse_same_surface_compares_orientations()
     {
-        TopoDS_Face aF = BOPToolsTestShapes.Faces(BOPToolsTestShapes.Box())[0];
+        Face aF = BOPToolsTestShapes.Faces(BOPToolsTestShapes.Box())[0];
         IntTools_Context aCtx = new();
         Assert.False(BOPTools_AlgoTools.IsSplitToReverse(aF, aF, aCtx));
-        Assert.True(BOPTools_AlgoTools.IsSplitToReverse(TopoDS.Face(aF.Reversed()), aF, aCtx));
+        Assert.True(BOPTools_AlgoTools.IsSplitToReverse(ShapeCasts.Face(aF.Reversed()), aF, aCtx));
     }
 
     [Fact]
     public void IsSplitToReverse_edges_on_copied_curves_follow_the_original_orientation()
     {
         int aNb = 0;
-        foreach ((string _, TopoDS_Shape aShape) in Shapes())
+        foreach ((string _, Shape aShape) in Shapes())
         {
             IntTools_Context aCtx = new();
-            foreach (TopoDS_Edge aE in BOPToolsTestShapes.Edges(aShape))
+            foreach (Edge aE in BOPToolsTestShapes.Edges(aShape))
             {
-                if (BRep_Tool.Degenerated(aE))
+                if (Tool.Degenerated(aE))
                 {
                     Assert.False(BOPTools_AlgoTools.IsSplitToReverse(aE, aE, aCtx, out int anErrD));
                     Assert.Equal(1, anErrD);
                     continue;
                 }
-                Geom_Curve? aC = BRep_Tool.Curve(aE, out Placement aLoc, out double f, out double l);
+                Curve3D? aC = Tool.Curve(aE, out Placement aLoc, out double f, out double l);
                 if (aC is null)
                 {
                     continue;
                 }
                 double d = 0.25 * (l - f);
-                TopoDS_Edge aSp = TopoDS.Edge(new BRepBuilderAPI_MakeEdge((Geom_Curve)aC.Copy(), f + d, l - d).InternalShape());
-                aSp = TopoDS.Edge(aSp.Located(aLoc));
-                bool bExpected = aE.Orientation() == TopAbs_REVERSED;
+                Edge aSp = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge((Curve3D)aC.Copy(), f + d, l - d).InternalShape());
+                aSp = ShapeCasts.Edge(aSp.Located(aLoc));
+                bool bExpected = aE.Orientation() == Reversed;
                 Assert.Equal(bExpected, BOPTools_AlgoTools.IsSplitToReverse(aSp, aE, aCtx, out int anErr));
                 Assert.Equal(0, anErr);
-                Assert.Equal(!bExpected, BOPTools_AlgoTools.IsSplitToReverse(TopoDS.Edge(aSp.Reversed()), aE, aCtx));
+                Assert.Equal(!bExpected, BOPTools_AlgoTools.IsSplitToReverse(ShapeCasts.Edge(aSp.Reversed()), aE, aCtx));
                 ++aNb;
             }
         }
@@ -115,9 +119,9 @@ public class BOPTools_AlgoToolsTests
     [Fact]
     public void IsSplitToReverse_of_other_types_reports_100_and_WithWarn_adds_an_alert()
     {
-        TopoDS_Shape aBox = BOPToolsTestShapes.Box();
-        TopoDS_Vertex aV = TopoDS.Vertex(TopExp_ExplorerFirst(aBox, TopAbs_VERTEX));
-        Assert.False(BOPTools_AlgoTools.IsSplitToReverse((TopoDS_Shape)aV, (TopoDS_Shape)aV, new IntTools_Context(), out int anErr));
+        Shape aBox = BOPToolsTestShapes.Box();
+        Vertex aV = ShapeCasts.Vertex(TopExp_ExplorerFirst(aBox, ShapeType.Vertex));
+        Assert.False(BOPTools_AlgoTools.IsSplitToReverse((Shape)aV, (Shape)aV, new IntTools_Context(), out int anErr));
         Assert.Equal(100, anErr);
         global::Kerf.Engine.Foundation.Report aReport = new();
         Assert.False(BOPTools_AlgoTools.IsSplitToReverseWithWarn(aV, aV, new IntTools_Context(), aReport));
@@ -129,14 +133,14 @@ public class BOPTools_AlgoToolsTests
     public void ComputeState_agrees_with_the_solid_classifier()
     {
         Random aRnd = new(6440);
-        foreach ((string aName, TopoDS_Shape aShape) in Shapes())
+        foreach ((string aName, Shape aShape) in Shapes())
         {
-            TopExp_Explorer aSolids = new(aShape, TopAbs_SOLID);
+            Explorer aSolids = new(aShape, ShapeType.Solid);
             if (!aSolids.More())
             {
                 continue;
             }
-            TopoDS_Solid aSolid = TopoDS.Solid(aSolids.Current());
+            Solid aSolid = ShapeCasts.Solid(aSolids.Current());
             Box aBox = new();
             BRepBndLib.Add(aSolid, ref aBox);
             aBox.Get(out double x0, out double y0, out double z0, out double x1, out double y1, out double z1);
@@ -150,10 +154,10 @@ public class BOPTools_AlgoToolsTests
                 Assert.True(aSC.State() == BOPTools_AlgoTools.ComputeState(aP, aSolid, 1.0e-7, aCtx), $"{aName} point {i}");
             }
             // vertices, edges and faces of the solid itself are ON
-            foreach (TopoDS_Edge aE in BOPToolsTestShapes.Edges(aSolid).Take(10))
+            foreach (Edge aE in BOPToolsTestShapes.Edges(aSolid).Take(10))
             {
-                Assert.Equal(TopAbs_ON, BOPTools_AlgoTools.ComputeState(aE, aSolid, 1.0e-7, aCtx));
-                Assert.Equal(TopAbs_ON, BOPTools_AlgoTools.ComputeStateByOnePoint(TopExp.FirstVertex(aE), aSolid, 1.0e-7, aCtx));
+                Assert.Equal(On, BOPTools_AlgoTools.ComputeState(aE, aSolid, 1.0e-7, aCtx));
+                Assert.Equal(On, BOPTools_AlgoTools.ComputeStateByOnePoint(Exploration.FirstVertex(aE), aSolid, 1.0e-7, aCtx));
             }
         }
     }
@@ -161,88 +165,88 @@ public class BOPTools_AlgoToolsTests
     [Fact]
     public void ComputeState_of_faces_and_containers()
     {
-        TopoDS_Solid anOuter = BoxSolid(0, 0, 0, 10, 10, 10);
-        TopoDS_Solid anInner = BoxSolid(2, 2, 2, 3, 3, 3);
-        TopoDS_Solid aFar = BoxSolid(20, 0, 0, 3, 3, 3);
+        Solid anOuter = BoxSolid(0, 0, 0, 10, 10, 10);
+        Solid anInner = BoxSolid(2, 2, 2, 3, 3, 3);
+        Solid aFar = BoxSolid(20, 0, 0, 3, 3, 3);
         IntTools_Context aCtx = new();
-        NCollection_IndexedMap<TopoDS_Shape> aBounds = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(anOuter, TopAbs_EDGE, aBounds);
-        foreach (TopoDS_Face aF in BOPToolsTestShapes.Faces(anInner))
+        NCollection_IndexedMap<Shape> aBounds = new(ShapeHasher.Instance);
+        Exploration.MapShapes(anOuter, ShapeType.Edge, aBounds);
+        foreach (Face aF in BOPToolsTestShapes.Faces(anInner))
         {
-            Assert.Equal(TopAbs_IN, BOPTools_AlgoTools.ComputeState(aF, anOuter, 1.0e-7, aBounds, aCtx));
-            Assert.Equal(TopAbs_IN, BOPTools_AlgoTools.ComputeStateByOnePoint(aF, anOuter, 1.0e-7, aCtx));
+            Assert.Equal(In, BOPTools_AlgoTools.ComputeState(aF, anOuter, 1.0e-7, aBounds, aCtx));
+            Assert.Equal(In, BOPTools_AlgoTools.ComputeStateByOnePoint(aF, anOuter, 1.0e-7, aCtx));
         }
-        foreach (TopoDS_Face aF in BOPToolsTestShapes.Faces(aFar))
+        foreach (Face aF in BOPToolsTestShapes.Faces(aFar))
         {
-            Assert.Equal(TopAbs_OUT, BOPTools_AlgoTools.ComputeStateByOnePoint(aF, anOuter, 1.0e-7, aCtx));
+            Assert.Equal(Out, BOPTools_AlgoTools.ComputeStateByOnePoint(aF, anOuter, 1.0e-7, aCtx));
         }
         // the solid's own faces: all edges are bounds, so a point inside the face is classified
-        NCollection_IndexedMap<TopoDS_Shape> aOwn = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(anOuter, TopAbs_EDGE, aOwn);
-        foreach (TopoDS_Face aF in BOPToolsTestShapes.Faces(anOuter))
+        NCollection_IndexedMap<Shape> aOwn = new(ShapeHasher.Instance);
+        Exploration.MapShapes(anOuter, ShapeType.Edge, aOwn);
+        foreach (Face aF in BOPToolsTestShapes.Faces(anOuter))
         {
-            Assert.Equal(TopAbs_ON, BOPTools_AlgoTools.ComputeState(aF, anOuter, 1.0e-7, aOwn, aCtx));
+            Assert.Equal(On, BOPTools_AlgoTools.ComputeState(aF, anOuter, 1.0e-7, aOwn, aCtx));
         }
         // OCCT: a container's state is UNKNOWN (the sub-shape's state is discarded)
-        Assert.Equal(TopAbs_UNKNOWN, BOPTools_AlgoTools.ComputeStateByOnePoint(anInner, anOuter, 1.0e-7, aCtx));
+        Assert.Equal(Unknown, BOPTools_AlgoTools.ComputeStateByOnePoint(anInner, anOuter, 1.0e-7, aCtx));
     }
 
     // The unit box, its edge on the z axis, the two box faces on it, and a planar face through that edge going
     // along (dx, dy, 0), sharing the edge and its vertices.
-    private static (TopoDS_Solid Box, TopoDS_Edge E, TopoDS_Face F1, TopoDS_Face F2, TopoDS_Face Fin) FanAtZAxis(double dx, double dy)
+    private static (Solid Box, Edge E, Face F1, Face F2, Face Fin) FanAtZAxis(double dx, double dy)
     {
-        TopoDS_Solid aBox = BoxSolid(0, 0, 0, 1, 1, 1);
-        TopoDS_Edge aZ = new();
-        foreach (TopoDS_Edge aE in BOPToolsTestShapes.Edges(aBox))
+        Solid aBox = BoxSolid(0, 0, 0, 1, 1, 1);
+        Edge aZ = new();
+        foreach (Edge aE in BOPToolsTestShapes.Edges(aBox))
         {
-            TopExp.Vertices(aE, out TopoDS_Vertex a, out TopoDS_Vertex b);
-            Point3D pa = BRep_Tool.Pnt(a), pb = BRep_Tool.Pnt(b);
+            Exploration.Vertices(aE, out Vertex a, out Vertex b);
+            Point3D pa = Tool.Pnt(a), pb = Tool.Pnt(b);
             if (pa.X() == 0 && pa.Y() == 0 && pb.X() == 0 && pb.Y() == 0)
             {
                 aZ = aE;
                 break;
             }
         }
-        Assert.False(aZ.IsNull());
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMEF = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(aBox, TopAbs_EDGE, TopAbs_FACE, aMEF);
-        NCollection_List<TopoDS_Shape> aLF = aMEF.FindFromKey(aZ);
+        Assert.False(aZ.IsNull);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, aMEF);
+        NCollection_List<Shape> aLF = aMEF.FindFromKey(aZ);
         Assert.Equal(2, aLF.Extent());
-        TopExp.Vertices(aZ, out TopoDS_Vertex aV0, out TopoDS_Vertex aV1);
-        Point3D p0 = BRep_Tool.Pnt(aV0), p1 = BRep_Tool.Pnt(aV1);
-        TopoDS_Vertex aW0 = TopoDS.Vertex(new BRepBuilderAPI_MakeVertex(new Point3D(p0.X() + dx, p0.Y() + dy, p0.Z())).InternalShape());
-        TopoDS_Vertex aW1 = TopoDS.Vertex(new BRepBuilderAPI_MakeVertex(new Point3D(p1.X() + dx, p1.Y() + dy, p1.Z())).InternalShape());
-        TopoDS_Edge e1 = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(aV1, aW1).InternalShape());
-        TopoDS_Edge e2 = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(aW1, aW0).InternalShape());
-        TopoDS_Edge e3 = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(aW0, aV0).InternalShape());
-        TopoDS_Edge aZf = TopoDS.Edge(aZ.Oriented(TopAbs_FORWARD));
-        TopoDS_Wire aW = TopoDS.Wire(new BRepBuilderAPI_MakeWire(aZf, e1, e2, e3).InternalShape());
-        TopoDS_Face aFin = TopoDS.Face(new BRepBuilderAPI_MakeFace(aW, true).InternalShape());
-        return (aBox, aZ, TopoDS.Face(aLF.First()), TopoDS.Face(aLF.Last()), aFin);
+        Exploration.Vertices(aZ, out Vertex aV0, out Vertex aV1);
+        Point3D p0 = Tool.Pnt(aV0), p1 = Tool.Pnt(aV1);
+        Vertex aW0 = ShapeCasts.Vertex(new BRepBuilderAPI_MakeVertex(new Point3D(p0.X() + dx, p0.Y() + dy, p0.Z())).InternalShape());
+        Vertex aW1 = ShapeCasts.Vertex(new BRepBuilderAPI_MakeVertex(new Point3D(p1.X() + dx, p1.Y() + dy, p1.Z())).InternalShape());
+        Edge e1 = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge(aV1, aW1).InternalShape());
+        Edge e2 = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge(aW1, aW0).InternalShape());
+        Edge e3 = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge(aW0, aV0).InternalShape());
+        Edge aZf = ShapeCasts.Edge(aZ.Oriented(Forward));
+        Wire aW = ShapeCasts.Wire(new BRepBuilderAPI_MakeWire(aZf, e1, e2, e3).InternalShape());
+        Face aFin = ShapeCasts.Face(new BRepBuilderAPI_MakeFace(aW, true).InternalShape());
+        return (aBox, aZ, ShapeCasts.Face(aLF.First()), ShapeCasts.Face(aLF.Last()), aFin);
     }
 
     [Fact]
     public void IsInternalFace_by_angles_and_by_classification()
     {
         IntTools_Context aCtx = new();
-        (TopoDS_Solid aBox, TopoDS_Edge aE, TopoDS_Face aF1, TopoDS_Face aF2, TopoDS_Face aIn) = FanAtZAxis(0.5, 0.5);
+        (Solid aBox, Edge aE, Face aF1, Face aF2, Face aIn) = FanAtZAxis(0.5, 0.5);
         Assert.Equal(1, BOPTools_AlgoTools.IsInternalFace(aIn, aE, aF1, aF2, aCtx));
-        NCollection_List<TopoDS_Shape> aLF = new();
+        NCollection_List<Shape> aLF = new();
         aLF.Append(aF1);
         aLF.Append(aF2);
         Assert.Equal(1, BOPTools_AlgoTools.IsInternalFace(aIn, aE, aLF, aCtx));
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMEF = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(aBox, TopAbs_EDGE, TopAbs_FACE, aMEF);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, aMEF);
         Assert.True(BOPTools_AlgoTools.IsInternalFace(aIn, aBox, aMEF, 1.0e-7, aCtx));
 
-        (_, TopoDS_Edge aE2, TopoDS_Face aG1, TopoDS_Face aG2, TopoDS_Face aOut) = FanAtZAxis(-0.5, -0.5);
+        (_, Edge aE2, Face aG1, Face aG2, Face aOut) = FanAtZAxis(-0.5, -0.5);
         Assert.Equal(0, BOPTools_AlgoTools.IsInternalFace(aOut, aE2, aG1, aG2, aCtx));
 
         // a face sharing no edge with the solid: classified by a point
-        TopoDS_Solid anInner = BoxSolid(0.25, 0.25, 0.25, 0.5, 0.5, 0.5);
-        TopoDS_Face anInnerFace = BOPToolsTestShapes.Faces(anInner)[0];
+        Solid anInner = BoxSolid(0.25, 0.25, 0.25, 0.5, 0.5, 0.5);
+        Face anInnerFace = BOPToolsTestShapes.Faces(anInner)[0];
         Assert.True(BOPTools_AlgoTools.IsInternalFace(anInnerFace, aBox, aMEF, 1.0e-7, aCtx));
-        TopoDS_Face aFarFace = BOPToolsTestShapes.Faces(BoxSolid(5, 5, 5, 1, 1, 1))[0];
+        Face aFarFace = BOPToolsTestShapes.Faces(BoxSolid(5, 5, 5, 1, 1, 1))[0];
         Assert.False(BOPTools_AlgoTools.IsInternalFace(aFarFace, aBox, aMEF, 1.0e-7, aCtx));
     }
 
@@ -250,14 +254,14 @@ public class BOPTools_AlgoToolsTests
     public void GetFaceOff_finds_the_face_making_the_smallest_angle()
     {
         IntTools_Context aCtx = new();
-        (_, TopoDS_Edge aE, TopoDS_Face aF1, TopoDS_Face aF2, TopoDS_Face aIn) = FanAtZAxis(0.5, 0.5);
-        TopoDS_Edge aE1 = new(), aE2 = new(), aEIn = new();
+        (_, Edge aE, Face aF1, Face aF2, Face aIn) = FanAtZAxis(0.5, 0.5);
+        Edge aE1 = new(), aE2 = new(), aEIn = new();
         Assert.True(BOPTools_AlgoTools.GetEdgeOnFace(aE, aF1, ref aE1));
         Assert.True(BOPTools_AlgoTools.GetEdgeOnFace(aE, aF2, ref aE2));
         Assert.True(BOPTools_AlgoTools.GetEdgeOnFace(aE, aIn, ref aEIn));
         Assert.True(aE1.IsSame(aE) && aE2.IsSame(aE));
         Assert.NotEqual(aE1.Orientation(), aE2.Orientation());
-        TopoDS_Edge aOff = new();
+        Edge aOff = new();
         Assert.True(BOPTools_AlgoTools.GetEdgeOff(aE1, aF2, ref aOff));
         Assert.Equal(aE2, aOff);
         Assert.False(BOPTools_AlgoTools.GetEdgeOff(aE1, aF1, ref aOff));
@@ -265,7 +269,7 @@ public class BOPTools_AlgoToolsTests
         NCollection_List<BOPTools_CoupleOfShape> aLCS = new();
         aLCS.Append(new BOPTools_CoupleOfShape().WithShape1(aEIn).WithShape2(aIn));
         aLCS.Append(new BOPTools_CoupleOfShape().WithShape1(aE2).WithShape2(aF2));
-        TopoDS_Face aFOff = new();
+        Face aFOff = new();
         Assert.True(BOPTools_AlgoTools.GetFaceOff(aE1, aF1, aLCS, ref aFOff, aCtx));
         Assert.True(aFOff.IsSame(aIn) || aFOff.IsSame(aF2));
     }
@@ -274,13 +278,13 @@ public class BOPTools_AlgoToolsTests
     public void AreFacesSameDomain_and_Sense()
     {
         IntTools_Context aCtx = new();
-        List<TopoDS_Face> aFaces = BOPToolsTestShapes.Faces(BOPToolsTestShapes.Box());
-        TopoDS_Face aF = aFaces[0];
-        TopoDS_Face aSp = SplitOf(aF);
+        List<Face> aFaces = BOPToolsTestShapes.Faces(BOPToolsTestShapes.Box());
+        Face aF = aFaces[0];
+        Face aSp = SplitOf(aF);
         Assert.True(BOPTools_AlgoTools.AreFacesSameDomain(aSp, aF, aCtx));
         Assert.False(BOPTools_AlgoTools.AreFacesSameDomain(aF, aFaces[1], aCtx));
         Assert.Equal(1, BOPTools_AlgoTools.Sense(aF, aF, aCtx));
-        Assert.Equal(-1, BOPTools_AlgoTools.Sense(aF, TopoDS.Face(aF.Reversed()), aCtx));
+        Assert.Equal(-1, BOPTools_AlgoTools.Sense(aF, ShapeCasts.Face(aF.Reversed()), aCtx));
         // no common edge
         Assert.Equal(0, BOPTools_AlgoTools.Sense(aF, aSp, aCtx));
     }
@@ -288,8 +292,8 @@ public class BOPTools_AlgoToolsTests
     [Fact]
     public void IsHole_by_the_wire_orientation()
     {
-        TopoDS_Face aF = TopoDS.Face(new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 2, 0, 1).InternalShape());
-        TopoDS_Wire aW = TopoDS.Wire(TopExp_ExplorerFirst(aF, TopAbs_WIRE));
+        Face aF = ShapeCasts.Face(new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 2, 0, 1).InternalShape());
+        Wire aW = ShapeCasts.Wire(TopExp_ExplorerFirst(aF, ShapeType.Wire));
         Assert.False(BOPTools_AlgoTools.IsHole(aW, aF));
         Assert.True(BOPTools_AlgoTools.IsHole(aW.Reversed(), aF));
     }
@@ -297,28 +301,28 @@ public class BOPTools_AlgoToolsTests
     [Fact]
     public void MakeContainer_makes_each_type()
     {
-        foreach (TopAbs_ShapeEnum aType in new[] { TopAbs_COMPOUND, TopAbs_COMPSOLID, TopAbs_SOLID, TopAbs_SHELL, TopAbs_WIRE })
+        foreach (ShapeType aType in new[] { ShapeType.Compound, ShapeType.CompSolid, ShapeType.Solid, ShapeType.Shell, ShapeType.Wire })
         {
-            TopoDS_Shape aC = new();
+            Shape aC = new();
             BOPTools_AlgoTools.MakeContainer(aType, ref aC);
             Assert.Equal(aType, aC.ShapeType());
-            Assert.False(new TopoDS_Iterator(aC).More());
+            Assert.False(new Iterator(aC).More());
         }
-        TopoDS_Shape aKeep = BOPToolsTestShapes.Box();
-        BOPTools_AlgoTools.MakeContainer(TopAbs_FACE, ref aKeep);
-        Assert.Equal(TopAbs_SOLID, aKeep.ShapeType());
+        Shape aKeep = BOPToolsTestShapes.Box();
+        BOPTools_AlgoTools.MakeContainer(ShapeType.Face, ref aKeep);
+        Assert.Equal(ShapeType.Solid, aKeep.ShapeType());
     }
 
     [Fact]
     public void MakePCurve_adds_pcurves_on_both_faces()
     {
-        TopoDS_Solid aBox = BoxSolid(0, 0, 0, 2, 2, 2);
+        Solid aBox = BoxSolid(0, 0, 0, 2, 2, 2);
         // the two faces at the edge x = 2, z = 2: the line from (2, 0.5, 2) to (2, 1.5, 2) lies on both
-        TopoDS_Face aFx = new(), aFz = new();
-        foreach (TopoDS_Face aF in BOPToolsTestShapes.Faces(aBox))
+        Face aFx = new(), aFz = new();
+        foreach (Face aF in BOPToolsTestShapes.Faces(aBox))
         {
             BRepGProp_Face aProps = new(aF);
-            BRepAdaptor_Surface aBAS = new(aF);
+            FaceSurfaceAdaptor aBAS = new(aF);
             Plane3D aPln = aBAS.Plane();
             Point3D aLoc = aPln.Location();
             Direction3D aN = aPln.Axis().Direction();
@@ -332,16 +336,16 @@ public class BOPTools_AlgoToolsTests
             }
             _ = aProps;
         }
-        Assert.False(aFx.IsNull() || aFz.IsNull());
-        Geom_Line aLine = new(new Point3D(2, 0.5, 2), new Direction3D(0, 1, 0));
-        TopoDS_Edge aE = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(aLine, 0, 1).InternalShape());
+        Assert.False(aFx.IsNull || aFz.IsNull);
+        LineCurve3D aLine = new(new Point3D(2, 0.5, 2), new Direction3D(0, 1, 0));
+        Edge aE = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge(aLine, 0, 1).InternalShape());
         IntTools_Curve aIC = new(aLine, null, null);
         BOPTools_AlgoTools.MakePCurve(aE, aFx, aFz, aIC, true, true, new IntTools_Context());
-        foreach (TopoDS_Face aF in new[] { aFx, aFz })
+        foreach (Face aF in new[] { aFx, aFz })
         {
-            Geom2d_Curve? aC2 = BRep_Tool.CurveOnSurface(aE, aF, out double f, out double l);
+            Curve2D? aC2 = Tool.CurveOnSurface(aE, aF, out double f, out double l);
             Assert.NotNull(aC2);
-            Geom_Surface aS = BRep_Tool.Surface(aF, out Placement aL)!;
+            Surface aS = Tool.Surface(aF, out Placement aL)!;
             for (int i = 0; i <= 10; ++i)
             {
                 double t = f + (l - f) * i / 10.0;
@@ -350,122 +354,122 @@ public class BOPTools_AlgoToolsTests
                 Assert.True(p.Distance(aLine.Value(t)) < 1.0e-9);
             }
         }
-        Assert.True(BRep_Tool.SameParameter(aE));
+        Assert.True(Tool.SameParameter(aE));
     }
 
     [Fact]
     public void MakeEdge_MakeSectEdge_MakeVertex_and_ComputeVV()
     {
-        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         IntTools_Curve aIC = new(aLine, null, null);
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(0, 0, 0), 1.0e-7, out TopoDS_Vertex aV1);
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(3, 0, 0), 1.0e-7, out TopoDS_Vertex aV2);
-        BOPTools_AlgoTools.MakeEdge(aIC, aV1, 0, aV2, 3, 1.0e-4, out TopoDS_Edge aE);
-        BRep_Tool.Range(aE, out double f, out double l);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(0, 0, 0), 1.0e-7, out Vertex aV1);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(3, 0, 0), 1.0e-7, out Vertex aV2);
+        BOPTools_AlgoTools.MakeEdge(aIC, aV1, 0, aV2, 3, 1.0e-4, out Edge aE);
+        Tool.Range(aE, out double f, out double l);
         Assert.Equal(0.0, f);
         Assert.Equal(3.0, l);
-        Assert.Equal(1.0e-4, BRep_Tool.Tolerance(aE));
-        Assert.Equal(1.0e-4 + 1.0e-12, BRep_Tool.Tolerance(aV1));
+        Assert.Equal(1.0e-4, Tool.Tolerance(aE));
+        Assert.Equal(1.0e-4 + 1.0e-12, Tool.Tolerance(aV1));
 
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(0.5, 0, 0), 1.0e-7, out TopoDS_Vertex aVh);
-        BOPTools_AlgoTools.MakeSectEdge(aIC, aVh, 0.5, aV2, 3, out TopoDS_Edge aE2);
-        BRep_Tool.Range(aE2, out f, out l);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(0.5, 0, 0), 1.0e-7, out Vertex aVh);
+        BOPTools_AlgoTools.MakeSectEdge(aIC, aVh, 0.5, aV2, 3, out Edge aE2);
+        Tool.Range(aE2, out f, out l);
         Assert.Equal(0.5, f);
 
         Assert.Equal(0, BOPTools_AlgoTools.ComputeVV(aV1, new Point3D(1.0e-4, 0, 0), 0.0));
         Assert.Equal(1, BOPTools_AlgoTools.ComputeVV(aV1, new Point3D(1.0e-3, 0, 0), 0.0));
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(1.0e-4, 0, 0), 1.0e-7, out TopoDS_Vertex aV3);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(1.0e-4, 0, 0), 1.0e-7, out Vertex aV3);
         Assert.Equal(0, BOPTools_AlgoTools.ComputeVV(aV1, aV3));
         Assert.Equal(1, BOPTools_AlgoTools.ComputeVV(aV1, aV2));
         Assert.Equal(0, BOPTools_AlgoTools.ComputeVV(aV1, aV2, 3.0));
 
-        NCollection_List<TopoDS_Shape> aLV = new();
-        TopoDS_Vertex aVnew = new();
+        NCollection_List<Shape> aLV = new();
+        Vertex aVnew = new();
         BOPTools_AlgoTools.MakeVertex(aLV, ref aVnew);
-        Assert.True(aVnew.IsNull());
+        Assert.True(aVnew.IsNull);
         aLV.Append(aV1);
         BOPTools_AlgoTools.MakeVertex(aLV, ref aVnew);
         Assert.Equal(aV1, aVnew);
         aLV.Append(aV3);
         BOPTools_AlgoTools.MakeVertex(aLV, ref aVnew);
         Assert.False(aVnew.IsSame(aV1) || aVnew.IsSame(aV3));
-        Assert.True(BRep_Tool.Pnt(aVnew).Distance(BRep_Tool.Pnt(aV1)) <= BRep_Tool.Tolerance(aVnew));
-        Assert.True(BRep_Tool.Pnt(aVnew).Distance(BRep_Tool.Pnt(aV3)) <= BRep_Tool.Tolerance(aVnew));
+        Assert.True(Tool.Pnt(aVnew).Distance(Tool.Pnt(aV1)) <= Tool.Tolerance(aVnew));
+        Assert.True(Tool.Pnt(aVnew).Distance(Tool.Pnt(aV3)) <= Tool.Tolerance(aVnew));
     }
 
     [Fact]
     public void MakeConnexityBlocks_three_forms()
     {
-        TopoDS_Solid aB1 = BoxSolid(0, 0, 0, 1, 1, 1), aB2 = BoxSolid(5, 0, 0, 1, 1, 1);
-        TopoDS_Compound aC = new();
-        BRep_Builder aBB = new();
+        Solid aB1 = BoxSolid(0, 0, 0, 1, 1, 1), aB2 = BoxSolid(5, 0, 0, 1, 1, 1);
+        Compound aC = new();
+        BrepBuilder aBB = new();
         aBB.MakeCompound(ref aC);
         aBB.Add(aC, aB1);
         aBB.Add(aC, aB2);
-        NCollection_List<TopoDS_Shape> aLCB = new();
-        BOPTools_AlgoTools.MakeConnexityBlocks(aC, TopAbs_EDGE, TopAbs_FACE, aLCB);
+        NCollection_List<Shape> aLCB = new();
+        BOPTools_AlgoTools.MakeConnexityBlocks(aC, ShapeType.Edge, ShapeType.Face, aLCB);
         Assert.Equal(2, aLCB.Extent());
-        foreach (TopoDS_Shape aBlock in aLCB)
+        foreach (Shape aBlock in aLCB)
         {
             Assert.Equal(6, BOPToolsTestShapes.Faces(aBlock).Count);
         }
 
         // list form: regular for a box's faces, irregular when a face is given twice
-        NCollection_List<TopoDS_Shape> aLS = new(BOPToolsTestShapes.Faces(aB1).Select(f => (TopoDS_Shape)f));
+        NCollection_List<Shape> aLS = new(BOPToolsTestShapes.Faces(aB1).Select(f => (Shape)f));
         NCollection_List<BOPTools_ConnexityBlock> aLCB2 = new();
-        BOPTools_AlgoTools.MakeConnexityBlocks(aLS, TopAbs_EDGE, TopAbs_FACE, aLCB2);
+        BOPTools_AlgoTools.MakeConnexityBlocks(aLS, ShapeType.Edge, ShapeType.Face, aLCB2);
         Assert.Equal(1, aLCB2.Extent());
         Assert.True(aLCB2.First().IsRegular());
         Assert.Equal(6, aLCB2.First().Shapes().Extent());
         aLS.Append(aLS.First());
         NCollection_List<BOPTools_ConnexityBlock> aLCB3 = new();
-        BOPTools_AlgoTools.MakeConnexityBlocks(aLS, TopAbs_EDGE, TopAbs_FACE, aLCB3);
+        BOPTools_AlgoTools.MakeConnexityBlocks(aLS, ShapeType.Edge, ShapeType.Face, aLCB3);
         Assert.False(aLCB3.First().IsRegular());
         Assert.Equal(7, aLCB3.First().Shapes().Extent());
 
         // MakeConnexityBlock: avoiding the four vertical edges of the box splits off nothing (top and bottom still
         // connect through the side faces), avoiding every edge leaves the first face alone
-        NCollection_IndexedMap<TopoDS_Shape> aAvoid = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape> aOne = new();
-        BOPTools_AlgoTools.MakeConnexityBlock(new NCollection_List<TopoDS_Shape>(BOPToolsTestShapes.Faces(aB1).Select(f => (TopoDS_Shape)f)), aAvoid, aOne);
+        NCollection_IndexedMap<Shape> aAvoid = new(ShapeHasher.Instance);
+        NCollection_List<Shape> aOne = new();
+        BOPTools_AlgoTools.MakeConnexityBlock(new NCollection_List<Shape>(BOPToolsTestShapes.Faces(aB1).Select(f => (Shape)f)), aAvoid, aOne);
         Assert.Equal(6, aOne.Extent());
-        TopExp.MapShapes(aB1, TopAbs_EDGE, aAvoid);
+        Exploration.MapShapes(aB1, ShapeType.Edge, aAvoid);
         aOne.Clear();
-        BOPTools_AlgoTools.MakeConnexityBlock(new NCollection_List<TopoDS_Shape>(BOPToolsTestShapes.Faces(aB1).Select(f => (TopoDS_Shape)f)), aAvoid, aOne);
+        BOPTools_AlgoTools.MakeConnexityBlock(new NCollection_List<Shape>(BOPToolsTestShapes.Faces(aB1).Select(f => (Shape)f)), aAvoid, aOne);
         Assert.Equal(1, aOne.Extent());
     }
 
     [Fact]
     public void OrientEdgesOnWire_chains_reversed_edges()
     {
-        TopoDS_Face aF = BOPToolsTestShapes.Faces(BoxSolid(0, 0, 0, 1, 2, 3))[0];
-        List<TopoDS_Edge> aEdges = BOPToolsTestShapes.Edges(aF);
-        TopoDS_Wire aW = new();
-        BRep_Builder aBB = new();
+        Face aF = BOPToolsTestShapes.Faces(BoxSolid(0, 0, 0, 1, 2, 3))[0];
+        List<Edge> aEdges = BOPToolsTestShapes.Edges(aF);
+        Wire aW = new();
+        BrepBuilder aBB = new();
         aBB.MakeWire(ref aW);
         for (int i = 0; i < aEdges.Count; ++i)
         {
             aBB.Add(aW, i % 2 == 0 ? aEdges[i] : aEdges[i].Reversed());
         }
-        TopoDS_Shape aWS = aW;
+        Shape aWS = aW;
         BOPTools_AlgoTools.OrientEdgesOnWire(ref aWS);
-        List<TopoDS_Edge> aOut = [];
-        for (TopoDS_Iterator it = new(aWS); it.More(); it.Next())
+        List<Edge> aOut = [];
+        for (Iterator it = new(aWS); it.More(); it.Next())
         {
-            aOut.Add(TopoDS.Edge(it.Value()));
+            aOut.Add(ShapeCasts.Edge(it.Value()));
         }
         Assert.Equal(aEdges.Count, aOut.Count);
         // every vertex ends one edge and starts the other (the edges are oriented head to tail; OCCT adds them in
         // traversal order, not in chain order)
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aVE = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(aWS, TopAbs_VERTEX, TopAbs_EDGE, aVE);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aVE = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aWS, ShapeType.Vertex, ShapeType.Edge, aVE);
         for (int i = 1; i <= aVE.Extent(); ++i)
         {
-            TopoDS_Shape aV = aVE.FindKey(i);
+            Shape aV = aVE.FindKey(i);
             int aNbFirst = 0, aNbLast = 0;
-            foreach (TopoDS_Edge e in aOut)
+            foreach (Edge e in aOut)
             {
-                TopExp.Vertices(e, out TopoDS_Vertex a, out TopoDS_Vertex b, true);
+                Exploration.Vertices(e, out Vertex a, out Vertex b, true);
                 aNbFirst += a.IsSame(aV) ? 1 : 0;
                 aNbLast += b.IsSame(aV) ? 1 : 0;
             }
@@ -476,31 +480,31 @@ public class BOPTools_AlgoToolsTests
     [Fact]
     public void OrientFacesOnShell_makes_shared_edges_opposite()
     {
-        TopoDS_Shell aShell = TopoDS.Shell(TopExp_ExplorerFirst(BoxSolid(0, 0, 0, 1, 2, 3), TopAbs_SHELL));
-        List<TopoDS_Face> aFaces = BOPToolsTestShapes.Faces(aShell);
-        TopoDS_Shell aMixed = new();
-        BRep_Builder aBB = new();
+        Shell aShell = ShapeCasts.Shell(TopExp_ExplorerFirst(BoxSolid(0, 0, 0, 1, 2, 3), ShapeType.Shell));
+        List<Face> aFaces = BOPToolsTestShapes.Faces(aShell);
+        Shell aMixed = new();
+        BrepBuilder aBB = new();
         aBB.MakeShell(ref aMixed);
         for (int i = 0; i < aFaces.Count; ++i)
         {
             aBB.Add(aMixed, i is 1 or 4 ? aFaces[i].Reversed() : aFaces[i]);
         }
-        TopoDS_Shape aS = aMixed;
+        Shape aS = aMixed;
         BOPTools_AlgoTools.OrientFacesOnShell(ref aS);
         Assert.Equal(6, BOPToolsTestShapes.Faces(aS).Count);
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMEF = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(aS, TopAbs_EDGE, TopAbs_FACE, aMEF);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aS, ShapeType.Edge, ShapeType.Face, aMEF);
         for (int i = 1; i <= aMEF.Extent(); ++i)
         {
-            TopoDS_Edge aE = TopoDS.Edge(aMEF.FindKey(i));
-            NCollection_List<TopoDS_Shape> aLF = aMEF.FindFromIndex(i);
+            Edge aE = ShapeCasts.Edge(aMEF.FindKey(i));
+            NCollection_List<Shape> aLF = aMEF.FindFromIndex(i);
             Assert.Equal(2, aLF.Extent());
-            TopAbs_Orientation o1 = TopAbs_INTERNAL, o2 = TopAbs_INTERNAL;
-            for (TopExp_Explorer x = new(aLF.First(), TopAbs_EDGE); x.More(); x.Next())
+            Orientation o1 = Internal, o2 = Internal;
+            for (Explorer x = new(aLF.First(), ShapeType.Edge); x.More(); x.Next())
             {
                 if (x.Current().IsSame(aE)) { o1 = x.Current().Orientation(); }
             }
-            for (TopExp_Explorer x = new(aLF.Last(), TopAbs_EDGE); x.More(); x.Next())
+            for (Explorer x = new(aLF.Last(), ShapeType.Edge); x.More(); x.Next())
             {
                 if (x.Current().IsSame(aE)) { o2 = x.Current().Orientation(); }
             }
@@ -512,28 +516,28 @@ public class BOPTools_AlgoToolsTests
     public void IsMicroEdge_and_IsBlockInOnFace()
     {
         IntTools_Context aCtx = new();
-        TopoDS_Solid aBox = BoxSolid(0, 0, 0, 1, 2, 3);
-        TopoDS_Edge aE = BOPToolsTestShapes.Edges(aBox)[0];
+        Solid aBox = BoxSolid(0, 0, 0, 1, 2, 3);
+        Edge aE = BOPToolsTestShapes.Edges(aBox)[0];
         Assert.False(BOPTools_AlgoTools.IsMicroEdge(aE, aCtx));
-        TopoDS_Edge aTiny = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1.0e-8, 0, 0)).InternalShape());
+        Edge aTiny = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1.0e-8, 0, 0)).InternalShape());
         Assert.True(BOPTools_AlgoTools.IsMicroEdge(aTiny, aCtx));
-        TopoDS_Edge aDegen = new();
-        foreach (TopoDS_Edge x in BOPToolsTestShapes.Edges(BOPToolsTestShapes.Sphere()))
+        Edge aDegen = new();
+        foreach (Edge x in BOPToolsTestShapes.Edges(BOPToolsTestShapes.Sphere()))
         {
-            if (BRep_Tool.Degenerated(x)) { aDegen = x; break; }
+            if (Tool.Degenerated(x)) { aDegen = x; break; }
         }
         Assert.True(BOPTools_AlgoTools.IsMicroEdge(aDegen, aCtx));
 
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMEF = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(aBox, TopAbs_EDGE, TopAbs_FACE, aMEF);
-        BRep_Tool.Range(aE, out double f, out double l);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, aMEF);
+        Tool.Range(aE, out double f, out double l);
         IntTools_Range aR = new(f, l);
-        foreach (TopoDS_Shape aF in aMEF.FindFromKey(aE))
+        foreach (Shape aF in aMEF.FindFromKey(aE))
         {
-            Assert.True(BOPTools_AlgoTools.IsBlockInOnFace(aR, TopoDS.Face(aF), aE, aCtx));
+            Assert.True(BOPTools_AlgoTools.IsBlockInOnFace(aR, ShapeCasts.Face(aF), aE, aCtx));
         }
         int aNbOff = 0;
-        foreach (TopoDS_Face aF in BOPToolsTestShapes.Faces(aBox))
+        foreach (Face aF in BOPToolsTestShapes.Faces(aBox))
         {
             if (!aMEF.FindFromKey(aE).Any(x => x.IsSame(aF)))
             {
@@ -546,58 +550,58 @@ public class BOPTools_AlgoToolsTests
     [Fact]
     public void AlgoTools_2_vertices_edges_and_ranges()
     {
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(0, 0, 0), 1.0e-3, out TopoDS_Vertex aV1);
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(0.01, 0, 0), 1.0e-4, out TopoDS_Vertex aV2);
-        BOPTools_AlgoTools.MakeNewVertex(aV1, aV2, out TopoDS_Vertex aVm);
-        Assert.Equal(0.005, BRep_Tool.Pnt(aVm).X(), 15);
-        Assert.Equal(1.0e-3 + 0.005, BRep_Tool.Tolerance(aVm), 15);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(0, 0, 0), 1.0e-3, out Vertex aV1);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(0.01, 0, 0), 1.0e-4, out Vertex aV2);
+        BOPTools_AlgoTools.MakeNewVertex(aV1, aV2, out Vertex aVm);
+        Assert.Equal(0.005, Tool.Pnt(aVm).X(), 15);
+        Assert.Equal(1.0e-3 + 0.005, Tool.Tolerance(aVm), 15);
 
-        TopoDS_Edge aE = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(4, 0, 0)).InternalShape());
-        TopoDS_Edge aE2 = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(new Point3D(1, 1.0e-3, 0), new Point3D(1, 5, 0)).InternalShape());
-        BOPTools_AlgoTools.MakeNewVertex(aE, 1.0, aE2, 0.0, out TopoDS_Vertex aVee);
-        Assert.Equal(1.0, BRep_Tool.Pnt(aVee).X(), 15);
-        TopoDS_Face aF = TopoDS.Face(new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).InternalShape());
-        BOPTools_AlgoTools.MakeNewVertex(aE, 2.0, aF, out TopoDS_Vertex aVef);
-        Assert.Equal(BRep_Tool.Tolerance(aE) + BRep_Tool.Tolerance(aF) + 1.0e-12, BRep_Tool.Tolerance(aVef));
+        Edge aE = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(4, 0, 0)).InternalShape());
+        Edge aE2 = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge(new Point3D(1, 1.0e-3, 0), new Point3D(1, 5, 0)).InternalShape());
+        BOPTools_AlgoTools.MakeNewVertex(aE, 1.0, aE2, 0.0, out Vertex aVee);
+        Assert.Equal(1.0, Tool.Pnt(aVee).X(), 15);
+        Face aF = ShapeCasts.Face(new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).InternalShape());
+        BOPTools_AlgoTools.MakeNewVertex(aE, 2.0, aF, out Vertex aVef);
+        Assert.Equal(Tool.Tolerance(aE) + Tool.Tolerance(aF) + 1.0e-12, Tool.Tolerance(aVef));
 
         // UpdateVertex forms
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(2, 0.01, 0), 1.0e-7, out TopoDS_Vertex aVu);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(2, 0.01, 0), 1.0e-7, out Vertex aVu);
         BOPTools_AlgoTools.UpdateVertex(aE, 2.0, aVu);
-        Assert.Equal(0.01 + 1.0e-12, BRep_Tool.Tolerance(aVu), 15);
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(2, 0.02, 0), 1.0e-7, out TopoDS_Vertex aVc);
-        BOPTools_AlgoTools.UpdateVertex(new IntTools_Curve(BRep_Tool.Curve(aE, out _, out _), null, null), 2.0, aVc);
-        Assert.Equal(0.02 + 1.0e-12, BRep_Tool.Tolerance(aVc), 15);
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(2, 0.05, 0), 1.0e-3, out TopoDS_Vertex aVn);
+        Assert.Equal(0.01 + 1.0e-12, Tool.Tolerance(aVu), 15);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(2, 0.02, 0), 1.0e-7, out Vertex aVc);
+        BOPTools_AlgoTools.UpdateVertex(new IntTools_Curve(Tool.Curve(aE, out _, out _), null, null), 2.0, aVc);
+        Assert.Equal(0.02 + 1.0e-12, Tool.Tolerance(aVc), 15);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(2, 0.05, 0), 1.0e-3, out Vertex aVn);
         BOPTools_AlgoTools.UpdateVertex(aVu, aVn);
-        Assert.True(BRep_Tool.Tolerance(aVu) > 0.04);
+        Assert.True(Tool.Tolerance(aVu) > 0.04);
 
         // split and copy
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(1, 0, 0), 1.0e-7, out TopoDS_Vertex aS1);
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(3, 0, 0), 1.0e-7, out TopoDS_Vertex aS2);
-        BOPTools_AlgoTools.MakeSplitEdge(aE, aS2, 3.0, aS1, 1.0, out TopoDS_Edge aSp);
-        BRep_Tool.Range(aSp, out double f, out double l);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(1, 0, 0), 1.0e-7, out Vertex aS1);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(3, 0, 0), 1.0e-7, out Vertex aS2);
+        BOPTools_AlgoTools.MakeSplitEdge(aE, aS2, 3.0, aS1, 1.0, out Edge aSp);
+        Tool.Range(aSp, out double f, out double l);
         Assert.Equal((1.0, 3.0), (f, l));
-        Assert.Same(BRep_Tool.Curve(aE, out _, out _), BRep_Tool.Curve(aSp, out _, out _));
-        TopExp.Vertices(aSp, out TopoDS_Vertex aVF, out TopoDS_Vertex aVL);
+        Assert.Same(Tool.Curve(aE, out _, out _), Tool.Curve(aSp, out _, out _));
+        Exploration.Vertices(aSp, out Vertex aVF, out Vertex aVL);
         Assert.True(aVF.IsSame(aS1) && aVL.IsSame(aS2));
-        TopoDS_Edge aCopy = BOPTools_AlgoTools.CopyEdge(TopoDS.Edge(aE.Reversed()));
+        Edge aCopy = BOPTools_AlgoTools.CopyEdge(ShapeCasts.Edge(aE.Reversed()));
         Assert.False(aCopy.IsSame(aE));
-        Assert.Equal(TopAbs_REVERSED, aCopy.Orientation());
-        TopExp.Vertices(aCopy, out TopoDS_Vertex aCF, out TopoDS_Vertex aCL);
-        TopExp.Vertices(aE, out TopoDS_Vertex aEF, out TopoDS_Vertex aEL);
+        Assert.Equal(Reversed, aCopy.Orientation());
+        Exploration.Vertices(aCopy, out Vertex aCF, out Vertex aCL);
+        Exploration.Vertices(aE, out Vertex aEF, out Vertex aEL);
         Assert.True(aCF.IsSame(aEF) && aCL.IsSame(aEL));
 
         // CorrectRange: lines unchanged, circles shrunk by the tolerances' resolution
         IntTools_Range aR = new(0.5, 3.5);
         BOPTools_AlgoTools.CorrectRange(aE, aE2, aR, out IntTools_Range aNR);
         Assert.Equal(aR, aNR);
-        TopoDS_Edge aCircle = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(), 10)).InternalShape());
+        Edge aCircle = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(), 10)).InternalShape());
         BOPTools_AlgoTools.CorrectRange(aCircle, aE, new IntTools_Range(1, 2), out aNR);
-        double aRes = 2.0 * (BRep_Tool.Tolerance(aCircle) + BRep_Tool.Tolerance(aE)) / 10.0;
+        double aRes = 2.0 * (Tool.Tolerance(aCircle) + Tool.Tolerance(aE)) / 10.0;
         Assert.Equal(1 + aRes, aNR.First(), 14);
         Assert.Equal(2 - aRes, aNR.Last(), 14);
         BOPTools_AlgoTools.CorrectRange(aCircle, aF, new IntTools_Range(1, 2), out aNR);
-        Assert.Equal(1 + BRep_Tool.Tolerance(aF) / 10.0, aNR.First(), 14);
+        Assert.Equal(1 + Tool.Tolerance(aF) / 10.0, aNR.First(), 14);
         BOPTools_AlgoTools.CorrectRange(aCircle, aF, new IntTools_Range(1, 1 + 1.0e-10), out aNR);
         Assert.Equal(new IntTools_Range(1, 1 + 1.0e-10), aNR);
     }
@@ -605,15 +609,15 @@ public class BOPTools_AlgoToolsTests
     [Fact]
     public void Dimensions_and_TreatCompound()
     {
-        TopoDS_Solid aB = BoxSolid(0, 0, 0, 1, 1, 1);
-        TopoDS_Face aF = BOPToolsTestShapes.Faces(aB)[0];
-        TopoDS_Edge aE = BOPToolsTestShapes.Edges(aB)[0];
+        Solid aB = BoxSolid(0, 0, 0, 1, 1, 1);
+        Face aF = BOPToolsTestShapes.Faces(aB)[0];
+        Edge aE = BOPToolsTestShapes.Edges(aB)[0];
         Assert.Equal(3, BOPTools_AlgoTools.Dimension(aB));
         Assert.Equal(2, BOPTools_AlgoTools.Dimension(aF));
         Assert.Equal(1, BOPTools_AlgoTools.Dimension(aE));
-        Assert.Equal(0, BOPTools_AlgoTools.Dimension(TopExp.FirstVertex(aE)));
-        TopoDS_Compound aC = new(), aInner = new(), aEmpty = new();
-        BRep_Builder aBB = new();
+        Assert.Equal(0, BOPTools_AlgoTools.Dimension(Exploration.FirstVertex(aE)));
+        Compound aC = new(), aInner = new(), aEmpty = new();
+        BrepBuilder aBB = new();
         aBB.MakeCompound(ref aC);
         aBB.MakeCompound(ref aInner);
         aBB.MakeCompound(ref aEmpty);
@@ -627,21 +631,21 @@ public class BOPTools_AlgoToolsTests
         BOPTools_AlgoTools.Dimensions(aC, out aMin, out aMax);
         Assert.Equal((1, 2), (aMin, aMax));
         Assert.Equal(-1, BOPTools_AlgoTools.Dimension(aC));
-        NCollection_List<TopoDS_Shape> aL = new();
+        NCollection_List<Shape> aL = new();
         BOPTools_AlgoTools.TreatCompound(aC, aL);
         Assert.Equal(3, aL.Extent());
         aL.Clear();
-        BOPTools_AlgoTools.TreatCompound(aC, aL, new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance));
+        BOPTools_AlgoTools.TreatCompound(aC, aL, new NCollection_Map<Shape>(ShapeHasher.Instance));
         Assert.Equal(2, aL.Extent());
     }
 
     [Fact]
     public void MakePCurve_and_MakeEdge_throw_on_frozen_input()
     {
-        TopoDS_Shape aBox = BOPToolsTestShapes.Box(); // published: frozen
-        TopoDS_Vertex aV = TopoDS.Vertex(TopExp_ExplorerFirst(aBox, TopAbs_VERTEX));
-        Geom_Line aLine = new(BRep_Tool.Pnt(aV), new Direction3D(1, 0, 0));
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(100, 0, 0), 1.0e-7, out TopoDS_Vertex aV2);
+        Shape aBox = BOPToolsTestShapes.Box(); // published: frozen
+        Vertex aV = ShapeCasts.Vertex(TopExp_ExplorerFirst(aBox, ShapeType.Vertex));
+        LineCurve3D aLine = new(Tool.Pnt(aV), new Direction3D(1, 0, 0));
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(100, 0, 0), 1.0e-7, out Vertex aV2);
         Assert.ThrowsAny<Exception>(() =>
         {
             BOPTools_AlgoTools.MakeEdge(new IntTools_Curve(aLine, null, null), aV, 0, aV2, 1, 1.0e-3, out _);
@@ -653,38 +657,38 @@ public class BOPTools_AlgoToolsTests
     public void Reused_context_answers_as_fresh_ones()
     {
         Random aRnd = new(6441);
-        foreach ((string aName, TopoDS_Shape aShape) in Shapes())
+        foreach ((string aName, Shape aShape) in Shapes())
         {
-            List<TopoDS_Face> aFaces = BOPToolsTestShapes.Faces(aShape);
-            List<TopoDS_Edge> aEdges = BOPToolsTestShapes.Edges(aShape).Where(e => !BRep_Tool.Degenerated(e) && BRep_Tool.Curve(e, out _, out _) is not null).ToList();
-            TopExp_Explorer aSolids = new(aShape, TopAbs_SOLID);
-            TopoDS_Solid? aSolid = aSolids.More() ? TopoDS.Solid(aSolids.Current()) : null;
-            NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMEF = new(TopTools_ShapeMapHasher.Instance);
+            List<Face> aFaces = BOPToolsTestShapes.Faces(aShape);
+            List<Edge> aEdges = BOPToolsTestShapes.Edges(aShape).Where(e => !Tool.Degenerated(e) && Tool.Curve(e, out _, out _) is not null).ToList();
+            Explorer aSolids = new(aShape, ShapeType.Solid);
+            Solid? aSolid = aSolids.More() ? ShapeCasts.Solid(aSolids.Current()) : null;
+            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
             if (aSolid is not null)
             {
-                TopExp.MapShapesAndAncestors(aSolid.Value, TopAbs_EDGE, TopAbs_FACE, aMEF);
+                Exploration.MapShapesAndAncestors(aSolid.Value, ShapeType.Edge, ShapeType.Face, aMEF);
             }
             List<Func<IntTools_Context, string>> aQueries = [];
-            foreach (TopoDS_Face aF in aFaces.Take(40))
+            foreach (Face aF in aFaces.Take(40))
             {
-                TopoDS_Face aSp = SplitOf(aF);
+                Face aSp = SplitOf(aF);
                 aQueries.Add(c => $"{BOPTools_AlgoTools.IsSplitToReverse(aSp, aF, c, out int e)} {e}");
                 if (aSolid is not null)
                 {
-                    TopoDS_Solid s = aSolid.Value;
+                    Solid s = aSolid.Value;
                     aQueries.Add(c => BOPTools_AlgoTools.IsInternalFace(aSp, s, aMEF, 1.0e-7, c).ToString());
                     aQueries.Add(c => BOPTools_AlgoTools.ComputeStateByOnePoint(aSp, s, 1.0e-7, c).ToString());
                 }
             }
-            foreach (TopoDS_Edge aE in aEdges.Take(40))
+            foreach (Edge aE in aEdges.Take(40))
             {
-                Geom_Curve aC = BRep_Tool.Curve(aE, out Placement aLoc, out double f, out double l)!;
+                Curve3D aC = Tool.Curve(aE, out Placement aLoc, out double f, out double l)!;
                 double d = 0.3 * (l - f);
-                TopoDS_Edge aSp = TopoDS.Edge(new BRepBuilderAPI_MakeEdge((Geom_Curve)aC.Copy(), f + d, l - d).InternalShape().Located(aLoc));
+                Edge aSp = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge((Curve3D)aC.Copy(), f + d, l - d).InternalShape().Located(aLoc));
                 aQueries.Add(c => $"{BOPTools_AlgoTools.IsSplitToReverse(aSp, aE, c, out int e)} {e}");
                 if (aSolid is not null)
                 {
-                    TopoDS_Solid s = aSolid.Value;
+                    Solid s = aSolid.Value;
                     aQueries.Add(c => BOPTools_AlgoTools.ComputeState(aSp, s, 1.0e-7, c).ToString());
                 }
             }

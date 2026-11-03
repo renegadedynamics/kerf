@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -26,10 +27,10 @@ public class IntAna2d_AnaIntersectionTest
     [Fact]
     public void Empty_constructor_is_not_done()
     {
-        var anInter = new IntAna2d_AnaIntersection();
-        Assert.False(anInter.IsDone());
-        Assert.Throws<NotDoneException>(() => anInter.NbPoints());
-        Assert.Throws<NotDoneException>(() => anInter.IsEmpty());
+        var anInter = new AnalyticIntersection();
+        Assert.False(anInter.IsDone);
+        Assert.Throws<NotDoneException>(() => anInter.PointCount);
+        Assert.Throws<NotDoneException>(() => anInter.IsEmpty);
     }
 
     [Fact]
@@ -40,10 +41,10 @@ public class IntAna2d_AnaIntersectionTest
         {
             Line2D aL1 = new(RandomPnt(aRandom), RandomDir(aRandom));
             Line2D aL2 = new(RandomPnt(aRandom), RandomDir(aRandom));
-            var anInter = new IntAna2d_AnaIntersection(aL1, aL2);
-            Assert.True(anInter.IsDone());
-            Assert.Equal(1, anInter.NbPoints());
-            IntAna2d_IntPoint aP = anInter.Point(1);
+            var anInter = new AnalyticIntersection(aL1, aL2);
+            Assert.True(anInter.IsDone);
+            Assert.Equal(1, anInter.PointCount);
+            IntPoint aP = anInter.Point(1);
             Assert.Equal(0.0, aL1.Distance(aP.Value()), Tol);
             Assert.Equal(0.0, aL2.Distance(aP.Value()), Tol);
             Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnFirst(), aL1).Distance(aP.Value()), Tol);
@@ -52,15 +53,15 @@ public class IntAna2d_AnaIntersectionTest
         }
 
         Line2D aL = new(new Point2D(1, 2), new Direction2D(1, 1));
-        var aParallel = new IntAna2d_AnaIntersection(aL, new Line2D(new Point2D(1, 3), new Direction2D(1, 1)));
+        var aParallel = new AnalyticIntersection(aL, new Line2D(new Point2D(1, 3), new Direction2D(1, 1)));
         Assert.True(aParallel.ParallelElements());
-        Assert.True(aParallel.IsEmpty());
+        Assert.True(aParallel.IsEmpty);
         Assert.False(aParallel.IdenticalElements());
 
-        var anIdentical = new IntAna2d_AnaIntersection(aL, new Line2D(new Point2D(3, 4), new Direction2D(-1, -1)));
+        var anIdentical = new AnalyticIntersection(aL, new Line2D(new Point2D(3, 4), new Direction2D(-1, -1)));
         Assert.True(anIdentical.ParallelElements());
         Assert.True(anIdentical.IdenticalElements());
-        Assert.False(anIdentical.IsEmpty());
+        Assert.False(anIdentical.IsEmpty);
     }
 
     [Fact]
@@ -72,12 +73,12 @@ public class IntAna2d_AnaIntersectionTest
         {
             Circle2D aC1 = new(new Frame2D(RandomPnt(aRandom, 10), RandomDir(aRandom), aRandom.Next(2) == 0), 1 + 20 * aRandom.NextDouble());
             Circle2D aC2 = new(new Frame2D(RandomPnt(aRandom, 10), RandomDir(aRandom), aRandom.Next(2) == 0), 1 + 20 * aRandom.NextDouble());
-            var anInter = new IntAna2d_AnaIntersection(aC1, aC2);
-            Assert.True(anInter.IsDone());
-            for (int j = 1; j <= anInter.NbPoints(); j++)
+            var anInter = new AnalyticIntersection(aC1, aC2);
+            Assert.True(anInter.IsDone);
+            for (int j = 1; j <= anInter.PointCount; j++)
             {
                 aCrossings++;
-                IntAna2d_IntPoint aP = anInter.Point(j);
+                IntPoint aP = anInter.Point(j);
                 Assert.Equal(0.0, aC1.Distance(aP.Value()), Tol);
                 Assert.Equal(0.0, aC2.Distance(aP.Value()), Tol);
                 // OCCT measures the parameters from the X axes counterclockwise, whatever the sense of the circles
@@ -96,11 +97,11 @@ public class IntAna2d_AnaIntersectionTest
         Assert.True(aCrossings > 100);
 
         Circle2D aC = new(new Axis2D(new Point2D(1, 1), new Direction2D(1, 0)), 5);
-        var aSame = new IntAna2d_AnaIntersection(aC, aC);
+        var aSame = new AnalyticIntersection(aC, aC);
         Assert.True(aSame.IdenticalElements());
-        var aConcentric = new IntAna2d_AnaIntersection(aC, new Circle2D(new Axis2D(new Point2D(1, 1), new Direction2D(0, 1)), 3));
+        var aConcentric = new AnalyticIntersection(aC, new Circle2D(new Axis2D(new Point2D(1, 1), new Direction2D(0, 1)), 3));
         Assert.True(aConcentric.ParallelElements());
-        Assert.True(aConcentric.IsEmpty());
+        Assert.True(aConcentric.IsEmpty);
     }
 
     [Fact]
@@ -111,14 +112,14 @@ public class IntAna2d_AnaIntersectionTest
         {
             Circle2D aC = new(new Frame2D(RandomPnt(aRandom, 10), RandomDir(aRandom), aRandom.Next(2) == 0), 1 + 20 * aRandom.NextDouble());
             Line2D aL = new(RandomPnt(aRandom, 15), RandomDir(aRandom));
-            var anInter = new IntAna2d_AnaIntersection(aL, aC);
-            var aConic = new IntAna2d_AnaIntersection(aL, new IntAna2d_Conic(aC));
-            Assert.True(anInter.IsDone());
-            Assert.True(aConic.IsDone());
-            Assert.Equal(anInter.NbPoints(), aConic.NbPoints());
-            for (int j = 1; j <= anInter.NbPoints(); j++)
+            var anInter = new AnalyticIntersection(aL, aC);
+            var aConic = new AnalyticIntersection(aL, new Conic(aC));
+            Assert.True(anInter.IsDone);
+            Assert.True(aConic.IsDone);
+            Assert.Equal(anInter.PointCount, aConic.PointCount);
+            for (int j = 1; j <= anInter.PointCount; j++)
             {
-                IntAna2d_IntPoint aP = anInter.Point(j);
+                IntPoint aP = anInter.Point(j);
                 Assert.Equal(0.0, aC.Distance(aP.Value()), Tol);
                 Assert.Equal(0.0, aL.Distance(aP.Value()), Tol);
                 Assert.True(aConic.Point(j).SecondIsImplicit());
@@ -136,29 +137,29 @@ public class IntAna2d_AnaIntersectionTest
             Frame2D anAx = new(RandomPnt(aRandom, 5), RandomDir(aRandom), aRandom.Next(2) == 0);
             Line2D aL = new(RandomPnt(aRandom, 5), RandomDir(aRandom));
             Circle2D aC = new(new Frame2D(RandomPnt(aRandom, 5), RandomDir(aRandom)), 2 + 10 * aRandom.NextDouble());
-            IntAna2d_Conic anImplicit = i % 2 == 0 ? new IntAna2d_Conic(aL) : new IntAna2d_Conic(aC);
+            Conic anImplicit = i % 2 == 0 ? new Conic(aL) : new Conic(aC);
             double aMinor = 1 + 5 * aRandom.NextDouble();
 
             var aCirc = new Circle2D(anAx, aMinor);
-            Check(new IntAna2d_AnaIntersection(aCirc, anImplicit), anImplicit, theU => global::Kerf.Engine.Geometry.ElCLib.Value(theU, aCirc));
+            Check(new AnalyticIntersection(aCirc, anImplicit), anImplicit, theU => global::Kerf.Engine.Geometry.ElCLib.Value(theU, aCirc));
             var anElips = new Ellipse2D(anAx, aMinor + 3, aMinor);
-            Check(new IntAna2d_AnaIntersection(anElips, anImplicit), anImplicit, theU => global::Kerf.Engine.Geometry.ElCLib.Value(theU, anElips));
+            Check(new AnalyticIntersection(anElips, anImplicit), anImplicit, theU => global::Kerf.Engine.Geometry.ElCLib.Value(theU, anElips));
             var aParab = new Parabola2D(anAx, aMinor);
-            Check(new IntAna2d_AnaIntersection(aParab, anImplicit), anImplicit, theU => global::Kerf.Engine.Geometry.ElCLib.Value(theU, aParab));
+            Check(new AnalyticIntersection(aParab, anImplicit), anImplicit, theU => global::Kerf.Engine.Geometry.ElCLib.Value(theU, aParab));
             var aHypr = new Hyperbola2D(anAx, aMinor + 1, aMinor);
-            Check(new IntAna2d_AnaIntersection(aHypr, anImplicit), anImplicit, theU => global::Kerf.Engine.Geometry.ElCLib.Value(theU, aHypr));
+            Check(new AnalyticIntersection(aHypr, anImplicit), anImplicit, theU => global::Kerf.Engine.Geometry.ElCLib.Value(theU, aHypr));
         }
 
-        static void Check(IntAna2d_AnaIntersection theInter, IntAna2d_Conic theConic, Func<double, Point2D> theCurve)
+        static void Check(AnalyticIntersection theInter, Conic theConic, Func<double, Point2D> theCurve)
         {
-            if (!theInter.IsDone())
+            if (!theInter.IsDone)
             {
                 // A hyperbola that doesn't meet the conic (occt-issues.md)
                 return;
             }
-            for (int j = 1; j <= theInter.NbPoints(); j++)
+            for (int j = 1; j <= theInter.PointCount; j++)
             {
-                IntAna2d_IntPoint aP = theInter.Point(j);
+                IntPoint aP = theInter.Point(j);
                 global::Kerf.Engine.Geometry.Xy aGrad = theConic.Grad(aP.Value().X(), aP.Value().Y());
                 // Distance to the implicit curve, to first order
                 Assert.Equal(0.0, theConic.Value(aP.Value().X(), aP.Value().Y()) / Math.Max(1.0, aGrad.Modulus()), 1e-6);
@@ -173,9 +174,9 @@ public class IntAna2d_AnaIntersectionTest
         // Reproduces OCCT (occt-issues.md): the parameter on an indirect circle is measured counterclockwise
         var aC1 = new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 5, false);
         var aC2 = new Circle2D(new Axis2D(new Point2D(6, 0), new Direction2D(1, 0)), 5);
-        var anInter = new IntAna2d_AnaIntersection(aC1, aC2);
-        Assert.Equal(2, anInter.NbPoints());
-        IntAna2d_IntPoint aP = anInter.Point(1);
+        var anInter = new AnalyticIntersection(aC1, aC2);
+        Assert.Equal(2, anInter.PointCount);
+        IntPoint aP = anInter.Point(1);
         Assert.Equal(0.0, aP.Value().Distance(new Point2D(3, 4)), 1e-12);
         Assert.Equal(Math.Atan2(4, 3), aP.ParamOnFirst(), 1e-12);
         Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnFirst(), aC1).Distance(new Point2D(3, -4)), 1e-12);
@@ -186,13 +187,13 @@ public class IntAna2d_AnaIntersectionTest
     {
         // Reproduces OCCT (occt-issues.md): with no root, the hyperbola case reports IsDone false, not an empty result
         var aHypr = new Hyperbola2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2, 1);
-        var anInter = new IntAna2d_AnaIntersection(aHypr, new IntAna2d_Conic(new Circle2D(new Axis2D(new Point2D(0, 50), new Direction2D(1, 0)), 1)));
-        Assert.False(anInter.IsDone());
+        var anInter = new AnalyticIntersection(aHypr, new Conic(new Circle2D(new Axis2D(new Point2D(0, 50), new Direction2D(1, 0)), 1)));
+        Assert.False(anInter.IsDone);
 
         // while a parabola that misses it is done and empty
         var aParab = new Parabola2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1);
-        var anInterP = new IntAna2d_AnaIntersection(aParab, new IntAna2d_Conic(new Line2D(new Point2D(-1, 0), new Direction2D(0, 1))));
-        Assert.True(anInterP.IsDone());
-        Assert.True(anInterP.IsEmpty());
+        var anInterP = new AnalyticIntersection(aParab, new Conic(new Line2D(new Point2D(-1, 0), new Direction2D(0, 1))));
+        Assert.True(anInterP.IsDone);
+        Assert.True(anInterP.IsEmpty);
     }
 }

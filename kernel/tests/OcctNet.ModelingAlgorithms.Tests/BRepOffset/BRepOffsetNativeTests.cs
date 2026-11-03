@@ -1,13 +1,17 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -61,10 +65,10 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
         return aRecords;
     }
 
-    private static string Text(in TopoDS_Shape theS)
+    private static string Text(in Shape theS)
     {
         var aS = new StringWriter(CultureInfo.InvariantCulture) { NewLine = "\n" };
-        BRepTools.Write(theS, aS, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3);
+        BrepTools.Write(theS, aS, true, false, FormatVersion.FormatVersion_VERSION_3);
         return aS.ToString();
     }
 
@@ -77,7 +81,7 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
     private static (string, string) Throw(Exception theE) => ("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theE.GetType()), "");
 
     // The port's records for the native header theHead on theShape (one, or two for ANA: the types and EXPLODE)
-    private static List<(string Head, string Body)> Port(string theHead, in TopoDS_Shape theShape)
+    private static List<(string Head, string Body)> Port(string theHead, in Shape theShape)
     {
         string[] aWords = theHead.Split(' ');
         var aRes = new List<(string, string)>();
@@ -89,12 +93,12 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                 try
                 {
                     var anA = new BRepOffset_Analyse(theShape, anAngle);
-                    var anEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                    TopExp.MapShapes(theShape, TopAbs_EDGE, anEdges);
+                    var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                    Exploration.MapShapes(theShape, ShapeType.Edge, anEdges);
                     var aS = new StringBuilder();
                     for (int i = 1; i <= anEdges.Extent(); i++)
                     {
-                        NCollection_List<BRepOffset_Interval> aL = anA.Type(TopoDS.Edge(anEdges[i]));
+                        NCollection_List<BRepOffset_Interval> aL = anA.Type(ShapeCasts.Edge(anEdges[i]));
                         aS.Append(i.ToString(CultureInfo.InvariantCulture)).Append(' ').Append(aL.Extent().ToString(CultureInfo.InvariantCulture));
                         foreach (BRepOffset_Interval anI in aL)
                         {
@@ -104,13 +108,13 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                         aS.Append('\n');
                     }
                     aRes.Add(Block("ANA " + aWords[1], aS.ToString()));
-                    var aCompounds = new NCollection_List<TopoDS_Shape>();
+                    var aCompounds = new NCollection_List<Shape>();
                     anA.Explode(aCompounds, ChFiDS_TypeOfConcavity.ChFiDS_Tangential);
                     var anExplode = new StringBuilder("EXPLODE ").Append(aCompounds.Extent().ToString(CultureInfo.InvariantCulture));
-                    foreach (TopoDS_Shape aC in aCompounds)
+                    foreach (Shape aC in aCompounds)
                     {
                         int aNb = 0;
-                        for (var anExp = new TopExp_Explorer(aC, TopAbs_FACE); anExp.More(); anExp.Next())
+                        for (var anExp = new Explorer(aC, ShapeType.Face); anExp.More(); anExp.Next())
                         {
                             ++aNb;
                         }
@@ -118,7 +122,7 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                     }
                     aRes.Add((anExplode.ToString(), ""));
                 }
-                catch (FailureException e) when (e is not (ImmutableObjectException or TopoDS_LockedShape))
+                catch (FailureException e) when (e is not (ImmutableObjectException or LockedShapeException))
                 {
                     aRes.Add(Throw(e));
                 }
@@ -126,17 +130,17 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
             }
             case "OFF":
             {
-                var aFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                TopExp.MapShapes(theShape, TopAbs_FACE, aFaces);
+                var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                Exploration.MapShapes(theShape, ShapeType.Face, aFaces);
                 aRes.Add((theHead, ""));
                 try
                 {
-                    var anOff = new BRepOffset_Offset(TopoDS.Face(aFaces[int.Parse(aWords[1], CultureInfo.InvariantCulture)]), FromHex(aWords[2]));
-                    TopoDS_Face aF = anOff.Face();
+                    var anOff = new BRepOffset_Offset(ShapeCasts.Face(aFaces[int.Parse(aWords[1], CultureInfo.InvariantCulture)]), FromHex(aWords[2]));
+                    Face aF = anOff.Face();
                     Assert.True(aF.TShape()!.IsFrozen);
                     aRes.Add(Block("STATUS " + ((int)anOff.Status()).ToString(CultureInfo.InvariantCulture), Text(aF)));
                 }
-                catch (FailureException e) when (e is not (ImmutableObjectException or TopoDS_LockedShape))
+                catch (FailureException e) when (e is not (ImmutableObjectException or LockedShapeException))
                 {
                     aRes.Add(Throw(e));
                 }
@@ -153,13 +157,13 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                     string aText = "";
                     if (aMaker.IsDone())
                     {
-                        TopoDS_Shape aR = aMaker.GetResultShape();
+                        Shape aR = aMaker.GetResultShape();
                         Assert.True(aR.TShape()!.IsFrozen);
                         aText = Text(aR);
                     }
                     aRes.Add(Block($"DONE {(aMaker.IsDone() ? "1" : "0")} {((int)aMaker.GetError()).ToString(CultureInfo.InvariantCulture)}", aText));
                 }
-                catch (FailureException e) when (e is not (ImmutableObjectException or TopoDS_LockedShape))
+                catch (FailureException e) when (e is not (ImmutableObjectException or LockedShapeException))
                 {
                     aRes.Add(Throw(e));
                 }
@@ -183,18 +187,18 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
         while (i < aNative.Count)
         {
             (string aHead, string aBody) = aNative[i++];
-            TopoDS_Shape aShape;
+            Shape aShape;
             string aName;
             if (aHead.StartsWith("INPUT ", StringComparison.Ordinal))
             {
                 aName = aHead.Split(' ')[1];
-                BRepTools.Read(out aShape, new StringReader(aBody));
+                BrepTools.Read(out aShape, new StringReader(aBody));
             }
             else
             {
                 Assert.StartsWith("FILE ", aHead);
                 aName = aHead[5..];
-                Assert.True(BRepTools.Read(out aShape, Path.Combine(anOcc, aName)), aName);
+                Assert.True(BrepTools.Read(out aShape, Path.Combine(anOcc, aName)), aName);
             }
             anInputs++;
             aShape.TShape()!.FreezeGraph(); // a caller's shape

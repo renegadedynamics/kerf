@@ -1,9 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Globalization;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -16,8 +22,8 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 internal static class ReconComparison
 {
     /// <summary>What the reconstruction gave for a case.</summary>
-    internal sealed record Run(TopoDS_Shape Input, TopOpeBRepDS_HDataStructure HDS, ChFi3d_BOPReconstruction Builder,
-                               TopoDS_Shape Result);
+    internal sealed record Run(Shape Input, TopOpeBRepDS_HDataStructure HDS, ChFi3d_BOPReconstruction Builder,
+                               Shape Result);
 
     /// <summary>Compute from <c>myCoup->Perform</c> to the result and the same-parameter (not SetRegul).</summary>
     /// <remarks>
@@ -27,7 +33,7 @@ internal static class ReconComparison
     /// </remarks>
     internal static Run Reconstruct(ReconCase theCase, bool theFreezeInput = false)
     {
-        TopoDS_Shape anInput = theCase.Input;
+        Shape anInput = theCase.Input;
         if (theFreezeInput)
         {
             anInput.TShape()?.FreezeGraph(); // the reconstruction writes only into its own shapes
@@ -35,7 +41,7 @@ internal static class ReconComparison
         else
         {
             // the fillet builder's working copy (decision 1087): Compute's steps after MergeSolid write into it
-            anInput = BRepTools.ExactCopyForWrite(anInput, out BRepTools_History _);
+            anInput = BrepTools.ExactCopyForWrite(anInput, out History _);
         }
         TopOpeBRepDS_HDataStructure aHDS = TopOpeBRepDS_TextDump.Read(theCase.DsText, anInput);
         TopOpeBRepDS_DataStructure aDS = aHDS.DS();
@@ -46,26 +52,26 @@ internal static class ReconComparison
         List<int> aSolids = [];
         for (int i = 1; i <= aDS.NbShapes(); i++)
         {
-            TopoDS_Shape S = aDS.Shape(i);
-            if (S.ShapeType() == TopAbs_SOLID
-                || (S.ShapeType() == TopAbs_SHELL && aDS.ShapeInterferences(i).Extent() > 0))
+            Shape S = aDS.Shape(i);
+            if (S.ShapeType() == ShapeType.Solid
+                || (S.ShapeType() == ShapeType.Shell && aDS.ShapeInterferences(i).Extent() > 0))
             {
                 aSolids.Add(i);
             }
         }
         foreach (int i in aSolids)
         {
-            aCoup.MergeSolid(aDS.Shape(i), TopAbs_IN);
+            aCoup.MergeSolid(aDS.Shape(i), In);
         }
 
-        BRep_Builder B1 = new();
+        BrepBuilder B1 = new();
         if (theFreezeInput)
         {
-            TopoDS_Compound aMergedOnly = new();
+            Compound aMergedOnly = new();
             B1.MakeCompound(ref aMergedOnly);
             foreach (int i in aSolids)
             {
-                foreach (TopoDS_Shape M in aCoup.Merged(aDS.Shape(i), TopAbs_IN))
+                foreach (Shape M in aCoup.Merged(aDS.Shape(i), In))
                 {
                     B1.Add(aMergedOnly, M);
                 }
@@ -74,35 +80,35 @@ internal static class ReconComparison
         }
         for (int i = 1; i <= aDS.NbShapes(); i++)
         {
-            TopoDS_Shape S = aDS.Shape(i);
-            if (S.ShapeType() != TopAbs_EDGE || !aCoup.IsSplit(S, TopAbs_IN))
+            Shape S = aDS.Shape(i);
+            if (S.ShapeType() != ShapeType.Edge || !aCoup.IsSplit(S, In))
             {
                 continue;
             }
-            foreach (TopoDS_Shape aNewE in aCoup.Splits(S, TopAbs_IN))
+            foreach (Shape aNewE in aCoup.Splits(S, In))
             {
-                double aTolE = BRep_Tool.Tolerance(TopoDS.Edge(aNewE));
-                for (TopExp_Explorer exv = new(aNewE, TopAbs_VERTEX); exv.More(); exv.Next())
+                double aTolE = Tool.Tolerance(ShapeCasts.Edge(aNewE));
+                for (Explorer exv = new(aNewE, ShapeType.Vertex); exv.More(); exv.Next())
                 {
-                    TopoDS_Vertex v = TopoDS.Vertex(exv.Current());
-                    if (aTolE > BRep_Tool.Tolerance(v) && !v.Locked())
+                    Vertex v = ShapeCasts.Vertex(exv.Current());
+                    if (aTolE > Tool.Tolerance(v) && !v.Locked())
                     {
                         B1.UpdateVertex(v, aTolE);
                     }
                 }
             }
         }
-        TopoDS_Compound aResult = new();
+        Compound aResult = new();
         B1.MakeCompound(ref aResult);
         foreach (int i in aSolids)
         {
-            TopoDS_Shape S = aDS.Shape(i);
-            NCollection_List<TopoDS_Shape> aMerged = aCoup.Merged(S, TopAbs_IN);
+            Shape S = aDS.Shape(i);
+            NCollection_List<Shape> aMerged = aCoup.Merged(S, In);
             if (aMerged.IsEmpty())
             {
                 B1.Add(aResult, S);
             }
-            foreach (TopoDS_Shape M in aMerged)
+            foreach (Shape M in aMerged)
             {
                 B1.Add(aResult, M);
             }
@@ -110,7 +116,7 @@ internal static class ReconComparison
         // Compute's last step: the new faces made same-parameter (ChFi3d_Builder.cxx:654-676)
         for (int iF = 1; iF <= aDS.NbSurfaces(); iF++)
         {
-            foreach (TopoDS_Shape aF in aCoup.NewFaces(iF))
+            foreach (Shape aF in aCoup.NewFaces(iF))
             {
                 BRepLib.SameParameter(aF, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
                 ShapeFix.SameParameter(aF, false, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -119,40 +125,40 @@ internal static class ReconComparison
         return new Run(anInput, aHDS, aCoup, aResult);
     }
 
-    internal static double Volume(in TopoDS_Shape S)
+    internal static double Volume(in Shape S)
     {
-        GProp_GProps p = new();
+        Properties p = new();
         BRepGProp.VolumeProperties(S, p);
         return p.Mass();
     }
 
-    internal static double Area(in TopoDS_Shape S)
+    internal static double Area(in Shape S)
     {
-        GProp_GProps p = new();
+        Properties p = new();
         BRepGProp.SurfaceProperties(S, p);
         return p.Mass();
     }
 
-    internal static int Count(in TopoDS_Shape S, TopAbs_ShapeEnum T)
+    internal static int Count(in Shape S, ShapeType T)
     {
-        NCollection_IndexedMap<TopoDS_Shape> M = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(S, T, M);
+        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        Exploration.MapShapes(S, T, M);
         return M.Extent();
     }
 
-    private static string FaceKey(in TopoDS_Shape F) =>
-        new BRepAdaptor_Surface(TopoDS.Face(F)).GetType().ToString().Replace("GeomAbs_", "") + " "
+    private static string FaceKey(in Shape F) =>
+        Kerf.Engine.Foundation.OcctTypeNames.Of(new FaceSurfaceAdaptor(ShapeCasts.Face(F)).GetType()).Replace("GeomAbs_", "") + " "
         + Area(F).ToString("G6", CultureInfo.InvariantCulture);
 
-    private static string FaceSet(IEnumerable<TopoDS_Shape> theFaces)
+    private static string FaceSet(IEnumerable<Shape> theFaces)
     {
         List<string> aKeys = theFaces.Select(f => FaceKey(f)).ToList();
         aKeys.Sort(StringComparer.Ordinal);
         return "[" + string.Join(", ", aKeys) + "]";
     }
 
-    internal static double EdgeLength(in TopoDS_Shape E) =>
-        GCPnts_AbscissaPoint.Length(new BRepAdaptor_Curve(TopoDS.Edge(E)));
+    internal static double EdgeLength(in Shape E) =>
+        AbscissaPoint.Length(new EdgeCurveAdaptor(ShapeCasts.Edge(E)));
 
     private static string Lengths(IEnumerable<double> theLengths) =>
         "[" + string.Join(", ", theLengths.Select(x => x.ToString("G6", CultureInfo.InvariantCulture))
@@ -162,14 +168,14 @@ internal static class ReconComparison
         Math.Abs(a - b) <= theRel * Math.Max(1.0, Math.Max(Math.Abs(a), Math.Abs(b)));
 
     /// <summary>The faults BRepCheck finds, by sub-shape type.</summary>
-    internal static string Faults(in TopoDS_Shape S)
+    internal static string Faults(in Shape S)
     {
         BRepCheck_Analyzer an = new(S);
         SortedSet<string> aFaults = [];
-        TopAbs_ShapeEnum[] aTypes = [TopAbs_SOLID, TopAbs_SHELL, TopAbs_FACE, TopAbs_WIRE, TopAbs_EDGE, TopAbs_VERTEX];
-        foreach (TopAbs_ShapeEnum T in aTypes)
+        ShapeType[] aTypes = [ShapeType.Solid, ShapeType.Shell, ShapeType.Face, ShapeType.Wire, ShapeType.Edge, ShapeType.Vertex];
+        foreach (ShapeType T in aTypes)
         {
-            for (TopExp_Explorer exp = new(S, T); exp.More(); exp.Next())
+            for (Explorer exp = new(S, T); exp.More(); exp.Next())
             {
                 if (an.Result(exp.Current()) is BRepCheck_Result r)
                 {
@@ -177,8 +183,8 @@ internal static class ReconComparison
                     {
                         if (st != BRepCheck_Status.BRepCheck_NoError)
                         {
-                            aFaults.Add(T.ToString().Replace("TopAbs_", "") + ":"
-                                        + st.ToString().Replace("BRepCheck_", ""));
+                            aFaults.Add(Kerf.Engine.Foundation.OcctTypeNames.Of(T).Replace("TopAbs_", "") + ":"
+                                        + Kerf.Engine.Foundation.OcctTypeNames.Of(st).Replace("BRepCheck_", ""));
                         }
                     }
                 }
@@ -193,8 +199,8 @@ internal static class ReconComparison
     internal static List<string> Differences(ReconCase theCase, Run theRun, double theRelTol = 1.0e-6)
     {
         List<string> d = [];
-        TopoDS_Shape aNative = theCase.Result ?? throw new InvalidOperationException("native was not done");
-        TopoDS_Shape aMine = theRun.Result;
+        Shape aNative = theCase.Result ?? throw new InvalidOperationException("native was not done");
+        Shape aMine = theRun.Result;
 
         double v1 = Volume(aNative), v2 = Volume(aMine), a1 = Area(aNative), a2 = Area(aMine);
         if (!Close(v1, v2, theRelTol))
@@ -205,12 +211,12 @@ internal static class ReconComparison
         {
             d.Add($"area {a1:G9} | {a2:G9}");
         }
-        foreach (TopAbs_ShapeEnum T in new[] { TopAbs_SOLID, TopAbs_SHELL, TopAbs_FACE, TopAbs_EDGE, TopAbs_VERTEX })
+        foreach (ShapeType T in new[] { ShapeType.Solid, ShapeType.Shell, ShapeType.Face, ShapeType.Edge, ShapeType.Vertex })
         {
             int n1 = Count(aNative, T), n2 = Count(aMine, T);
             if (n1 != n2)
             {
-                d.Add($"{T} {n1} | {n2}");
+                d.Add($"{Kerf.Engine.Foundation.OcctTypeNames.Of(T)} {n1} | {n2}");
             }
         }
         bool ok1 = new BRepCheck_Analyzer(aNative).IsValid(), ok2 = new BRepCheck_Analyzer(aMine).IsValid();
@@ -236,11 +242,11 @@ internal static class ReconComparison
         }
 
         // the history, as sets of (surface type, area): the faces of each surface and the images of each input face
-        NCollection_IndexedMap<TopoDS_Shape> aNF = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aNative, TopAbs_FACE, aNF);
-        NCollection_IndexedMap<TopoDS_Shape> aMF = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aMine, TopAbs_FACE, aMF);
-        IEnumerable<TopoDS_Shape> NativeFaces(int[] theIdx) => theIdx.Where(i => i > 0).Select(i => aNF[i]);
+        NCollection_IndexedMap<Shape> aNF = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aNative, ShapeType.Face, aNF);
+        NCollection_IndexedMap<Shape> aMF = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aMine, ShapeType.Face, aMF);
+        IEnumerable<Shape> NativeFaces(int[] theIdx) => theIdx.Where(i => i > 0).Select(i => aNF[i]);
         for (int i = 1; i <= theCase.NewFaces.Count; i++)
         {
             string s1 = FaceSet(NativeFaces(theCase.NewFaces[i - 1]));
@@ -259,13 +265,13 @@ internal static class ReconComparison
                 d.Add($"NewEdges({i}) {Lengths(l1)} | {Lengths(l2)}");
             }
         }
-        NCollection_IndexedMap<TopoDS_Shape> aIF = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theRun.Input, TopAbs_FACE, aIF);
+        NCollection_IndexedMap<Shape> aIF = new(ShapeHasher.Instance);
+        Exploration.MapShapes(theRun.Input, ShapeType.Face, aIF);
         for (int i = 1; i <= theCase.Modified.Count; i++)
         {
-            TopoDS_Shape F = aIF[i];
-            List<TopoDS_Shape> aMod = [];
-            foreach (TopAbs_State st in new[] { TopAbs_OUT, TopAbs_IN, TopAbs_ON })
+            Shape F = aIF[i];
+            List<Shape> aMod = [];
+            foreach (Containment st in new[] { Out, In, On })
             {
                 if (theRun.Builder.IsSplit(F, st))
                 {
@@ -281,17 +287,17 @@ internal static class ReconComparison
             }
         }
         // the input's solids: BRepFilletAPI's IsDeleted and Modified read the reconstruction's splits (unit 7R3)
-        NCollection_IndexedMap<TopoDS_Shape> aIS = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theRun.Input, TopAbs_SOLID, aIS);
-        NCollection_IndexedMap<TopoDS_Shape> aNS = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aNative, TopAbs_SOLID, aNS);
-        NCollection_IndexedMap<TopoDS_Shape> aMS = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aMine, TopAbs_SOLID, aMS);
+        NCollection_IndexedMap<Shape> aIS = new(ShapeHasher.Instance);
+        Exploration.MapShapes(theRun.Input, ShapeType.Solid, aIS);
+        NCollection_IndexedMap<Shape> aNS = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aNative, ShapeType.Solid, aNS);
+        NCollection_IndexedMap<Shape> aMS = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aMine, ShapeType.Solid, aMS);
         for (int i = 1; i <= Math.Min(theCase.Solids.Count, aIS.Extent()); i++)
         {
-            TopoDS_Shape S = aIS[i];
-            List<TopoDS_Shape> aMod = [];
-            foreach (TopAbs_State st in new[] { TopAbs_OUT, TopAbs_IN, TopAbs_ON })
+            Shape S = aIS[i];
+            List<Shape> aMod = [];
+            foreach (Containment st in new[] { Out, In, On })
             {
                 if (theRun.Builder.IsSplit(S, st))
                 {
@@ -299,7 +305,7 @@ internal static class ReconComparison
                 }
             }
             bool aDeleted = !(aMS.Contains(S) || aMod.Count > 0);
-            static string Volumes(IEnumerable<TopoDS_Shape> L) =>
+            static string Volumes(IEnumerable<Shape> L) =>
                 "[" + string.Join(", ", L.Select(x => Volume(x).ToString("G6", CultureInfo.InvariantCulture))) + "]";
             (bool nDel, int[] nMod) = theCase.Solids[i - 1];
             string s1 = (nDel ? "deleted " : "") + Volumes(nMod.Where(j => j > 0).Select(j => aNS[j]));

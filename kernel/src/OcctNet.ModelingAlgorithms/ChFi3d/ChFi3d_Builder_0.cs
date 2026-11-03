@@ -5,13 +5,19 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ChFiDS_State;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -52,28 +58,28 @@ internal static partial class ChFi3d_Builder_0
     // namespace { ChFi3d_BaseSurface, ChFi3d_ApplyBounds, ChFi3d_BoundSrfImpl }: the template's two instances are
     // written out through the adaptor's own surface and loading.
 
-    private static Geom_Surface? ChFi3d_BaseSurface(GeomAdaptor_Surface theSurface) => theSurface.Surface();
+    private static Surface? ChFi3d_BaseSurface(SurfaceAdaptor theSurface) => theSurface.Surface();
 
-    private static Geom_Surface? ChFi3d_BaseSurface(BRepAdaptor_Surface theSurface) =>
+    private static Surface? ChFi3d_BaseSurface(FaceSurfaceAdaptor theSurface) =>
         theSurface.GeomSurfaceOriginal();
 
-    private static void ChFi3d_ApplyBounds(GeomAdaptor_Surface theSurface, Geom_Surface theGeomSurface,
+    private static void ChFi3d_ApplyBounds(SurfaceAdaptor theSurface, Surface theGeomSurface,
                                            double theUFirst, double theULast, double theVFirst, double theVLast)
     {
         theSurface.Load(theGeomSurface, theUFirst, theULast, theVFirst, theVLast, theSurface.ToleranceU(),
                         theSurface.ToleranceV());
     }
 
-    private static void ChFi3d_ApplyBounds(BRepAdaptor_Surface theSurface, Geom_Surface theGeomSurface,
+    private static void ChFi3d_ApplyBounds(FaceSurfaceAdaptor theSurface, Surface theGeomSurface,
                                            double theUFirst, double theULast, double theVFirst, double theVLast)
     {
         theSurface.Load(theGeomSurface, theUFirst, theULast, theVFirst, theVLast, theSurface.Trsf(),
                         theSurface.ToleranceU(), theSurface.ToleranceV());
     }
 
-    private static void ChFi3d_BoundSrfImpl(Adaptor3d_Surface theSurface, Geom_Surface? theBase, double theUmin,
+    private static void ChFi3d_BoundSrfImpl(SurfaceAdaptorBase theSurface, Surface? theBase, double theUmin,
                                             double theUmax, double theVmin, double theVmax,
-                                            bool theCheckNaturalBounds, out Geom_Surface aSurface,
+                                            bool theCheckNaturalBounds, out Surface aSurface,
                                             out double aUU1, out double aUU2, out double aVV1, out double aVV2)
     {
         double aUmin = theUmin;
@@ -81,7 +87,7 @@ internal static partial class ChFi3d_Builder_0
         double aVmin = theVmin;
         double aVmax = theVmax;
         aSurface = theBase!;
-        if (aSurface is Geom_RectangularTrimmedSurface aTrimmedSurface)
+        if (aSurface is TrimmedSurface aTrimmedSurface)
         {
             aSurface = aTrimmedSurface.BasisSurface();
         }
@@ -89,11 +95,11 @@ internal static partial class ChFi3d_Builder_0
         aSurface.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         double aPeriodU = 0.0;
         double aPeriodV = 0.0;
-        if (aSurface.IsUPeriodic())
+        if (aSurface.IsUPeriodic)
         {
             aPeriodU = aSurface.UPeriod();
         }
-        if (aSurface.IsVPeriodic())
+        if (aSurface.IsVPeriodic)
         {
             aPeriodV = aSurface.VPeriod();
         }
@@ -128,12 +134,12 @@ internal static partial class ChFi3d_Builder_0
         aVV2 = aVmax + aStepV;
         if (theCheckNaturalBounds)
         {
-            if (!theSurface.IsUPeriodic())
+            if (!theSurface.IsUPeriodic)
             {
                 aUU1 = Math.Max(aUU1, aU1);
                 aUU2 = Math.Min(aUU2, aU2);
             }
-            if (!theSurface.IsVPeriodic())
+            if (!theSurface.IsVPeriodic)
             {
                 aVV1 = Math.Max(aVV1, aV1);
                 aVV2 = Math.Min(aVV2, aV2);
@@ -184,7 +190,7 @@ internal static partial class ChFi3d_Builder_0
 
     //=================================================================================================
 
-    private static Adaptor3d_Surface? Geometry(TopOpeBRepDS_DataStructure DStr, int ind)
+    private static SurfaceAdaptorBase? Geometry(TopOpeBRepDS_DataStructure DStr, int ind)
     {
         if (ind == 0)
         {
@@ -192,23 +198,23 @@ internal static partial class ChFi3d_Builder_0
         }
         if (ind > 0)
         {
-            TopoDS_Face F = TopoDS.Face(DStr.Shape(ind));
-            if (F.IsNull())
+            Face F = ShapeCasts.Face(DStr.Shape(ind));
+            if (F.IsNull)
             {
                 return null;
             }
-            BRepAdaptor_Surface HS = new();
+            FaceSurfaceAdaptor HS = new();
             HS.Initialize(F, false);
             return HS;
         }
         else
         {
-            Geom_Surface? S = DStr.Surface(-ind).Surface();
+            Surface? S = DStr.Surface(-ind).Surface();
             if (S is null)
             {
                 return null;
             }
-            return new GeomAdaptor_Surface(S);
+            return new SurfaceAdaptor(S);
         }
     }
 
@@ -234,7 +240,7 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>Adds the points of <paramref name="C"/> at <paramref name="wd"/> and <paramref name="wf"/> to the
     /// boxes.</summary>
-    internal static void ChFi3d_EnlargeBox(Geom_Curve C, double wd, double wf, ref Box box1, ref Box box2)
+    internal static void ChFi3d_EnlargeBox(Curve3D C, double wd, double wf, ref Box box1, ref Box box2)
     {
         box1.Add(C.Value(wd));
         box2.Add(C.Value(wf));
@@ -244,7 +250,7 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>Adds the points of <paramref name="PC"/> on <paramref name="S"/> at <paramref name="wd"/> and
     /// <paramref name="wf"/> to the boxes.</summary>
-    internal static void ChFi3d_EnlargeBox(Adaptor3d_Surface S, Geom2d_Curve PC, double wd, double wf,
+    internal static void ChFi3d_EnlargeBox(SurfaceAdaptorBase S, Curve2D PC, double wd, double wf,
                                            ref Box box1, ref Box box2)
     {
         double u, v;
@@ -258,15 +264,15 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>Adds the point of <paramref name="E"/> at <paramref name="w"/>, by its 3D curve and its pcurves on
     /// the faces <paramref name="LF"/>, to the box.</summary>
-    internal static void ChFi3d_EnlargeBox(in TopoDS_Edge E, NCollection_List<TopoDS_Shape> LF, double w,
+    internal static void ChFi3d_EnlargeBox(in Edge E, NCollection_List<Shape> LF, double w,
                                            ref Box box)
     {
-        BRepAdaptor_Curve BC = new(E);
+        EdgeCurveAdaptor BC = new(E);
         box.Add(BC.Value(w));
-        foreach (TopoDS_Shape It in LF)
+        foreach (Shape It in LF)
         {
-            TopoDS_Face F = TopoDS.Face(It);
-            if (!F.IsNull())
+            Face F = ShapeCasts.Face(It);
+            if (!F.IsNull)
             {
                 BC.Initialize(E, F);
                 box.Add(BC.Value(w));
@@ -288,13 +294,13 @@ internal static partial class ChFi3d_Builder_0
         b2.Add(cp2.Point());
         ChFiDS_FaceInterference fi1 = sd.InterferenceOnS1();
         ChFiDS_FaceInterference fi2 = sd.InterferenceOnS2();
-        Geom_Surface S = DStr.Surface(sd.Surf()).Surface()!;
-        Geom2d_Curve? pcs1 = fi1.PCurveOnSurf();
-        Geom2d_Curve? pcs2 = fi2.PCurveOnSurf();
-        Geom_Curve? c3d1 = DStr.Curve(fi1.LineIndex()).Curve();
-        Geom_Curve? c3d2 = DStr.Curve(fi2.LineIndex()).Curve();
-        Adaptor3d_Surface? F1 = Geometry(DStr, sd.IndexOfS1());
-        Adaptor3d_Surface? F2 = Geometry(DStr, sd.IndexOfS2());
+        Surface S = DStr.Surface(sd.Surf()).Surface()!;
+        Curve2D? pcs1 = fi1.PCurveOnSurf();
+        Curve2D? pcs2 = fi2.PCurveOnSurf();
+        Curve3D? c3d1 = DStr.Curve(fi1.LineIndex()).Curve();
+        Curve3D? c3d2 = DStr.Curve(fi2.LineIndex()).Curve();
+        SurfaceAdaptorBase? F1 = Geometry(DStr, sd.IndexOfS1());
+        SurfaceAdaptorBase? F2 = Geometry(DStr, sd.IndexOfS2());
         double p1 = fi1.Parameter(isfirst);
         if (c3d1 is not null)
         {
@@ -307,7 +313,7 @@ internal static partial class ChFi3d_Builder_0
         }
         if (F1 is not null)
         {
-            Geom2d_Curve? pcf1 = fi1.PCurveOnFace();
+            Curve2D? pcf1 = fi1.PCurveOnFace();
             if (pcf1 is not null)
             {
                 pcf1.Value(p1).Coord(out u, out v);
@@ -326,7 +332,7 @@ internal static partial class ChFi3d_Builder_0
         }
         if (F2 is not null)
         {
-            Geom2d_Curve? pcf2 = fi2.PCurveOnFace();
+            Curve2D? pcf2 = fi2.PCurveOnFace();
             if (pcf2 is not null)
             {
                 pcf2.Value(p2).Coord(out u, out v);
@@ -335,9 +341,9 @@ internal static partial class ChFi3d_Builder_0
         }
         if (st is not null)
         {
-            Geom_Curve? c3d = DStr.Curve(st.Curve(isfirst)).Curve();
-            Geom2d_Curve? c2d = st.PCurve(isfirst);
-            if (st.Orientation(isfirst) == TopAbs_FORWARD)
+            Curve3D? c3d = DStr.Curve(st.Curve(isfirst)).Curve();
+            Curve2D? c2d = st.PCurve(isfirst);
+            if (st.Orientation(isfirst) == Forward)
             {
                 st.Parameters(isfirst, out p1, out p2);
             }
@@ -364,20 +370,20 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The faces of <paramref name="EFMap"/> on either side of <paramref name="E"/> (the second one null
     /// for a free boundary).</summary>
-    internal static void ChFi3d_conexfaces(in TopoDS_Edge E, out TopoDS_Face F1, out TopoDS_Face F2, ChFiDS_Map EFMap)
+    internal static void ChFi3d_conexfaces(in Edge E, out Face F1, out Face F2, ChFiDS_Map EFMap)
     {
-        F1 = new TopoDS_Face();
-        F2 = new TopoDS_Face();
-        foreach (TopoDS_Shape It in EFMap[E])
+        F1 = new Face();
+        F2 = new Face();
+        foreach (Shape It in EFMap[E])
         {
-            if (F1.IsNull())
+            if (F1.IsNull)
             {
-                F1 = TopoDS.Face(It);
+                F1 = ShapeCasts.Face(It);
             }
             else
             {
-                F2 = TopoDS.Face(It);
-                if (!F2.IsSame(F1) || BRep_Tool.IsClosed(E, F1))
+                F2 = ShapeCasts.Face(It);
+                if (!F2.IsSame(F1) || Tool.IsClosed(E, F1))
                 {
                     break;
                 }
@@ -395,26 +401,26 @@ internal static partial class ChFi3d_Builder_0
     //=======================================================================
 
     /// <summary>The state of a vertex where the three edges <paramref name="E"/> meet.</summary>
-    internal static ChFiDS_State ChFi3d_EdgeState(TopoDS_Edge[] E, ChFiDS_Map EFMap)
+    internal static ChFiDS_State ChFi3d_EdgeState(Edge[] E, ChFiDS_Map EFMap)
     {
         ChFiDS_State sst;
         int i, j;
         // TopoDS_Face F[3]; (and the commented-out choice of the three faces)
-        ChFi3d_conexfaces(E[0], out TopoDS_Face F1, out TopoDS_Face F2, EFMap);
-        ChFi3d_conexfaces(E[1], out TopoDS_Face F3, out TopoDS_Face F4, EFMap);
-        ChFi3d_conexfaces(E[2], out TopoDS_Face F5, out TopoDS_Face F6, EFMap);
+        ChFi3d_conexfaces(E[0], out Face F1, out Face F2, EFMap);
+        ChFi3d_conexfaces(E[1], out Face F3, out Face F4, EFMap);
+        ChFi3d_conexfaces(E[2], out Face F5, out Face F6, EFMap);
 
         // if(F[0].IsNull() || F[1].IsNull() || F[2].IsNull()) sst = ChFiDS_FreeBoundary;
-        if (F2.IsNull() || F4.IsNull() || F6.IsNull())
+        if (F2.IsNull || F4.IsNull || F6.IsNull)
         {
             sst = ChFiDS_FreeBoundary;
         }
         else
         {
-            TopAbs_Orientation o01, o02, o11, o12, o21, o22;
-            i = ChFi3d.ConcaveSide(new BRepAdaptor_Surface(F1), new BRepAdaptor_Surface(F2), E[0], out o01, out o02);
-            i = ChFi3d.ConcaveSide(new BRepAdaptor_Surface(F3), new BRepAdaptor_Surface(F4), E[1], out o11, out o12);
-            j = ChFi3d.ConcaveSide(new BRepAdaptor_Surface(F5), new BRepAdaptor_Surface(F6), E[2], out o21, out o22);
+            Orientation o01, o02, o11, o12, o21, o22;
+            i = ChFi3d.ConcaveSide(new FaceSurfaceAdaptor(F1), new FaceSurfaceAdaptor(F2), E[0], out o01, out o02);
+            i = ChFi3d.ConcaveSide(new FaceSurfaceAdaptor(F3), new FaceSurfaceAdaptor(F4), E[1], out o11, out o12);
+            j = ChFi3d.ConcaveSide(new FaceSurfaceAdaptor(F5), new FaceSurfaceAdaptor(F6), E[2], out o21, out o22);
 
             if (o01 == o11 && o02 == o21 && o12 == o22)
             {
@@ -439,16 +445,16 @@ internal static partial class ChFi3d_Builder_0
     //=======================================================================
 
     /// <summary>The continuity across an edge: CN on a seam of a cone, a sphere or a torus, else G1.</summary>
-    internal static Continuity ChFi3d_evalconti(in TopoDS_Edge E, in TopoDS_Face F1, in TopoDS_Face F2)
+    internal static Continuity ChFi3d_evalconti(in Edge E, in Face F1, in Face F2)
     {
         Continuity cont = G1;
         if (!F1.IsSame(F2))
         {
             return cont;
         }
-        TopoDS_Face F = F1;
-        F.Orientation(TopAbs_FORWARD);
-        BRepAdaptor_Surface S = new(F, false);
+        Face F = F1;
+        F.Orientation(Forward);
+        FaceSurfaceAdaptor S = new(F, false);
         SurfaceKind typ = S.GetType();
         if (typ != SurfaceKind.Cone && typ != SurfaceKind.Sphere && typ != SurfaceKind.Torus)
         {
@@ -462,8 +468,8 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>Whether the edge <paramref name="IE"/> of the spine is one of ChFiKPart's particular cases between
     /// <paramref name="S1"/> and <paramref name="S2"/>.</summary>
-    internal static bool ChFi3d_KParticular(ChFiDS_Spine Spine, int IE, BRepAdaptor_Surface S1,
-                                            BRepAdaptor_Surface S2)
+    internal static bool ChFi3d_KParticular(ChFiDS_Spine Spine, int IE, FaceSurfaceAdaptor S1,
+                                            FaceSurfaceAdaptor S2)
     {
         bool bRet;
         //
@@ -488,8 +494,8 @@ internal static partial class ChFi3d_Builder_0
             return !bRet;
         }
         //
-        BRepAdaptor_Surface aS1 = (bIsPlane1) ? S1 : S2;
-        BRepAdaptor_Surface aS2 = (bIsPlane1) ? S2 : S1;
+        FaceSurfaceAdaptor aS1 = (bIsPlane1) ? S1 : S2;
+        FaceSurfaceAdaptor aS2 = (bIsPlane1) ? S2 : S1;
         aST1 = aS1.GetType();
         aST2 = aS2.GetType();
         //
@@ -498,7 +504,7 @@ internal static partial class ChFi3d_Builder_0
             return !bRet;
         }
         //
-        BRepAdaptor_Curve bc = Spine.CurrentElementarySpine(IE);
+        EdgeCurveAdaptor bc = Spine.CurrentElementarySpine(IE);
         aCT = bc.GetType();
         if (aCT != Line && aCT != Circle)
         {
@@ -549,11 +555,11 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>Reloads the face adaptor <paramref name="S"/> on the box widened in proportion to its size (or a
     /// tenth of the rest of the period).</summary>
-    internal static void ChFi3d_BoundFac(BRepAdaptor_Surface S, double uumin, double uumax, double vvmin,
+    internal static void ChFi3d_BoundFac(FaceSurfaceAdaptor S, double uumin, double uumax, double vvmin,
                                          double vvmax, bool checknaturalbounds = true)
     {
         ChFi3d_BoundSrfImpl(S, ChFi3d_BaseSurface(S), uumin, uumax, vvmin, vvmax, checknaturalbounds,
-                            out Geom_Surface aSurface, out double aUU1, out double aUU2, out double aVV1,
+                            out Surface aSurface, out double aUU1, out double aUU2, out double aVV1,
                             out double aVV2);
         ChFi3d_ApplyBounds(S, aSurface, aUU1, aUU2, aVV1, aVV2);
     }
@@ -566,11 +572,11 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>Reloads the surface adaptor <paramref name="S"/> on the box widened in proportion to its size (or a
     /// tenth of the rest of the period).</summary>
-    internal static void ChFi3d_BoundSrf(GeomAdaptor_Surface S, double uumin, double uumax, double vvmin,
+    internal static void ChFi3d_BoundSrf(SurfaceAdaptor S, double uumin, double uumax, double vvmin,
                                          double vvmax, bool checknaturalbounds = true)
     {
         ChFi3d_BoundSrfImpl(S, ChFi3d_BaseSurface(S), uumin, uumax, vvmin, vvmax, checknaturalbounds,
-                            out Geom_Surface aSurface, out double aUU1, out double aUU2, out double aVV1,
+                            out Surface aSurface, out double aUU1, out double aUU2, out double aVV1,
                             out double aVV2);
         ChFi3d_ApplyBounds(S, aSurface, aUU1, aUU2, aVV1, aVV2);
     }
@@ -579,7 +585,7 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The parameter on <paramref name="C"/> of its first (<paramref name="Sens"/>) or last intersection
     /// with the plane.</summary>
-    internal static bool ChFi3d_InterPlaneEdge(Adaptor3d_Surface Plan, Adaptor3d_Curve C, ref double W, bool Sens,
+    internal static bool ChFi3d_InterPlaneEdge(SurfaceAdaptorBase Plan, CurveAdaptorBase C, ref double W, bool Sens,
                                                double tolc)
     {
         IntCurveSurface_HInter Intersection = new();
@@ -595,7 +601,7 @@ internal static partial class ChFi3d_Builder_0
             for (iip = 1; iip <= nbp; iip++)
             {
                 CW = Intersection.Point(iip).W();
-                if (C.IsPeriodic())
+                if (C.IsPeriodic)
                 {
                     CW = global::Kerf.Engine.Geometry.ElCLib.InPeriod(CW, uf - tolc, uf - tolc + C.Period());
                 }
@@ -640,9 +646,9 @@ internal static partial class ChFi3d_Builder_0
         // Attention for approximated surfaces it is assumed that e
         // the parameters of the pcurve are the same as of
         // elspine used for its construction.
-        Geom_Surface fffil = DStr.Surface(cd.SetOfSurfData()!.Value(i).Surf()).Surface()!;
+        Surface fffil = DStr.Surface(cd.SetOfSurfData()!.Value(i).Surf()).Surface()!;
         Point2D pp = cd.SetOfSurfData()!.Value(i).Interference(jf).PCurveOnSurf()!.Value(p);
-        GeomAdaptor_Surface gs = new(fffil);
+        SurfaceAdaptor gs = new(fffil);
         P = fffil.Value(pp.X(), pp.Y());
         Point3D Pbid;
         Vector3D Vbid;
@@ -705,14 +711,14 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The circular guide of a corner from the points and tangents at the ends of the two fillets' guides,
     /// or null when they turn the same way.</summary>
-    internal static Geom_Circle? ChFi3d_CircularSpine(ref double WFirst, ref double WLast, in Point3D Pdeb,
+    internal static CircleCurve3D? ChFi3d_CircularSpine(ref double WFirst, ref double WLast, in Point3D Pdeb,
                                                       in Vector3D Vdeb, in Point3D Pfin, in Vector3D Vfin, double rad)
     {
         Circle3D ccc = new();
         Plane3D Pl1 = new(Pdeb, new Direction3D(Vdeb)), Pl2 = new(Pfin, new Direction3D(Vfin));
-        IntAna_QuadQuadGeo LInt = new(Pl1, Pl2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        QuadQuadGeo LInt = new(Pl1, Pl2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Line3D li;
-        if (LInt.IsDone())
+        if (LInt.IsDone)
         {
             li = LInt.Line(1);
             Point3D cendeb = global::Kerf.Engine.Geometry.ElCLib.Value(global::Kerf.Engine.Geometry.ElCLib.Parameter(li, Pdeb), li);
@@ -730,7 +736,7 @@ internal static partial class ChFi3d_Builder_0
             ccc.SetRadius(rad);
             WFirst = 0.0;
             WLast = dddeb.Angle(ddfin);
-            return new Geom_Circle(ccc);
+            return new CircleCurve3D(ccc);
         }
 
         return null;
@@ -745,7 +751,7 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The cubic Bézier guide of a corner from the points and tangents at the ends of the two fillets'
     /// guides; scales <paramref name="vd"/> and <paramref name="vf"/>.</summary>
-    internal static Geom_BezierCurve ChFi3d_Spine(in Point3D pd, ref Vector3D vd, in Point3D pf, ref Vector3D vf, double R)
+    internal static BezierCurve3D ChFi3d_Spine(in Point3D pd, ref Vector3D vd, in Point3D pf, ref Vector3D vf, double R)
     {
         NCollection_Array1<Point3D> pol = new(1, 4);
         double fac = 0.5 * Math.Tan((Math.PI - vd.Angle(vf)) * 0.5);
@@ -755,7 +761,7 @@ internal static partial class ChFi3d_Builder_0
         pol[4] = pf;
         vf.Multiply(fac * R);
         pol[3].SetCoord(pf.X() + vf.X(), pf.Y() + vf.Y(), pf.Z() + vf.Z());
-        return new Geom_BezierCurve(pol);
+        return new BezierCurve3D(pol);
     }
 
     //=======================================================================
@@ -772,35 +778,35 @@ internal static partial class ChFi3d_Builder_0
     /// a later pair of sides does not cross.</remarks>
     internal static bool ChFi3d_IsInFront(TopOpeBRepDS_DataStructure DStr, ChFiDS_Stripe cd1, ChFiDS_Stripe cd2,
                                           int i1, int i2, int sens1, int sens2, ref double p1, ref double p2,
-                                          ref TopoDS_Face face, ref bool sameside, ref int jf1, ref int jf2,
-                                          ref bool visavis, in TopoDS_Vertex Vtx, bool Check2dDistance = false,
+                                          ref Face face, ref bool sameside, ref int jf1, ref int jf2,
+                                          ref bool visavis, in Vertex Vtx, bool Check2dDistance = false,
                                           bool enlarge = false)
     {
         bool isf1 = (sens1 == 1), isf2 = (sens2 == 1);
         ChFiDS_SurfData fd1 = cd1.SetOfSurfData()!.Value(i1);
         ChFiDS_SurfData fd2 = cd2.SetOfSurfData()!.Value(i2);
 
-        TopAbs_Orientation Or, OrSave1, OrSave2, OrFace1, OrFace2;
+        Orientation Or, OrSave1, OrSave2, OrFace1, OrFace2;
         visavis = false;
         double u1 = 0.0, u2 = 0.0;
         bool ss = false, ok = false;
         int j1 = 0, j2 = 0;
-        TopoDS_Face ff = new();
-        TopoDS_Vertex vtx = Vtx; // a local function cannot capture an in parameter
+        Face ff = new();
+        Vertex vtx = Vtx; // a local function cannot capture an in parameter
         if (fd1.IndexOfS1() == fd2.IndexOfS1())
         {
             jf1 = 1;
             jf2 = 1;
-            face = TopoDS.Face(DStr.Shape(fd1.Index(jf1)));
-            if (face.IsNull())
+            face = ShapeCasts.Face(DStr.Shape(fd1.Index(jf1)));
+            if (face.IsNull)
             {
                 throw new NullObjectException("ChFi3d_IsInFront : Trying to check orientation of NULL face");
             }
             OrSave1 = cd1.Orientation(jf1);
             Or = OrFace1 = face.Orientation();
             OrSave2 = cd2.Orientation(jf2);
-            TopoDS_Shape shape2 = DStr.Shape(fd2.Index(jf2));
-            if (shape2.IsNull())
+            Shape shape2 = DStr.Shape(fd2.Index(jf2));
+            if (shape2.IsNull)
             {
                 throw new NullObjectException("ChFi3d_IsInFront : Trying to check orientation of NULL shape");
             }
@@ -814,7 +820,7 @@ internal static partial class ChFi3d_Builder_0
             Point2D P2d = new();
             if (Check2dDistance)
             {
-                P2d = BRep_Tool.Parameters(Vtx, face);
+                P2d = Tool.Parameters(Vtx, face);
             }
             if (ChFi3d_IntTraces(fd1, pref1, ref p1, jf1, sens1, fd2, pref2, ref p2, jf2, sens2, P2d,
                                  Check2dDistance, enlarge))
@@ -843,21 +849,21 @@ internal static partial class ChFi3d_Builder_0
         return ok;
 
         // OCCT writes the next three cases out in full; they differ only by the sides compared.
-        void OtherSides(int s1, int s2, ref double p1, ref double p2, ref TopoDS_Face face, ref bool sameside,
+        void OtherSides(int s1, int s2, ref double p1, ref double p2, ref Face face, ref bool sameside,
                         ref int jf1, ref int jf2, ref bool visavis)
         {
             jf1 = s1;
             jf2 = s2;
-            face = TopoDS.Face(DStr.Shape(fd1.Index(jf1)));
-            if (face.IsNull())
+            face = ShapeCasts.Face(DStr.Shape(fd1.Index(jf1)));
+            if (face.IsNull)
             {
                 throw new NullObjectException("ChFi3d_IsInFront : Trying to check orientation of NULL face");
             }
             OrSave1 = cd1.Orientation(jf1);
             Or = OrFace1 = face.Orientation();
             OrSave2 = cd2.Orientation(jf2);
-            TopoDS_Shape shape2 = DStr.Shape(fd2.Index(jf2));
-            if (shape2.IsNull())
+            Shape shape2 = DStr.Shape(fd2.Index(jf2));
+            if (shape2.IsNull)
             {
                 throw new NullObjectException("ChFi3d_IsInFront : Trying to check orientation of NULL shape");
             }
@@ -871,7 +877,7 @@ internal static partial class ChFi3d_Builder_0
             Point2D P2d = new();
             if (Check2dDistance)
             {
-                P2d = BRep_Tool.Parameters(vtx, face);
+                P2d = Tool.Parameters(vtx, face);
             }
             if (ChFi3d_IntTraces(fd1, pref1, ref p1, jf1, sens1, fd2, pref2, ref p2, jf2, sens2, P2d,
                                  Check2dDistance, enlarge))

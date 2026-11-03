@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomGridEval_SurfaceOfExtrusion_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 using static Kerf.Geometry.SurfaceKind;
 
@@ -22,20 +24,20 @@ public class GeomGridEval_SurfaceOfExtrusionTest
     }
 
     // A line along the X axis extruded along the Z axis: a plane.
-    private static Geom_SurfaceOfLinearExtrusion LineExtrusion()
+    private static ExtrusionSurface LineExtrusion()
     {
-        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        LineCurve3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         Direction3D aDirection = new(0, 0, 1);
-        return new Geom_SurfaceOfLinearExtrusion(aLine, aDirection);
+        return new ExtrusionSurface(aLine, aDirection);
     }
 
     // A circle of radius 5 in the XY plane extruded along the Z axis: a cylinder.
-    private static Geom_SurfaceOfLinearExtrusion CircleExtrusion()
+    private static ExtrusionSurface CircleExtrusion()
     {
         Frame3D aCircleAx = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
-        Geom_Circle aCircle = new(aCircleAx, 5.0);
+        CircleCurve3D aCircle = new(aCircleAx, 5.0);
         Direction3D aDirection = new(0, 0, 1);
-        return new Geom_SurfaceOfLinearExtrusion(aCircle, aDirection);
+        return new ExtrusionSurface(aCircle, aDirection);
     }
 
     [Fact]
@@ -43,9 +45,9 @@ public class GeomGridEval_SurfaceOfExtrusionTest
     {
         // Create a line along X axis
         // Extrude along Z axis -> Creates a plane
-        Geom_SurfaceOfLinearExtrusion anExtSurf = LineExtrusion();
+        ExtrusionSurface anExtSurf = LineExtrusion();
 
-        GeomGridEval_SurfaceOfExtrusion anEval = new(anExtSurf);
+        SurfaceOfExtrusionGrid anEval = new(anExtSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 10.0, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 5);
@@ -72,9 +74,9 @@ public class GeomGridEval_SurfaceOfExtrusionTest
     {
         // Create a circle in XY plane with center at origin and radius 5
         // Extrude along Z axis -> Creates a cylinder
-        Geom_SurfaceOfLinearExtrusion anExtSurf = CircleExtrusion();
+        ExtrusionSurface anExtSurf = CircleExtrusion();
 
-        GeomGridEval_SurfaceOfExtrusion anEval = new(anExtSurf);
+        SurfaceOfExtrusionGrid anEval = new(anExtSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 9);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 10.0, 5);
@@ -102,14 +104,14 @@ public class GeomGridEval_SurfaceOfExtrusionTest
     [Fact]
     public void DerivativeD1()
     {
-        Geom_SurfaceOfLinearExtrusion anExtSurf = LineExtrusion();
+        ExtrusionSurface anExtSurf = LineExtrusion();
 
-        GeomGridEval_SurfaceOfExtrusion anEval = new(anExtSurf);
+        SurfaceOfExtrusionGrid anEval = new(anExtSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 10.0, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 5);
 
-        NCollection_Array2<Geom_Surface.ResD1> aGridD1 = anEval.EvaluateGridD1(aUParams, aVParams);
+        NCollection_Array2<Surface.ResD1> aGridD1 = anEval.EvaluateGridD1(aUParams, aVParams);
 
         for (int i = 1; i <= 5; ++i)
         {
@@ -117,7 +119,7 @@ public class GeomGridEval_SurfaceOfExtrusionTest
             {
                 anExtSurf.D1(aUParams.Value(i), aVParams.Value(j), out Point3D aP, out Vector3D aD1U, out Vector3D aD1V);
 
-                Geom_Surface.ResD1 aData = aGridD1.Value(i, j);
+                Surface.ResD1 aData = aGridD1.Value(i, j);
                 Assert.Equal(0.0, aData.Point.Distance(aP), THE_TOLERANCE);
                 Assert.Equal(0.0, (aData.D1U - aD1U).Magnitude(), THE_TOLERANCE);
                 Assert.Equal(0.0, (aData.D1V - aD1V).Magnitude(), THE_TOLERANCE);
@@ -134,14 +136,14 @@ public class GeomGridEval_SurfaceOfExtrusionTest
     public void DerivativeD2()
     {
         // Use circle for non-trivial D2U
-        Geom_SurfaceOfLinearExtrusion anExtSurf = CircleExtrusion();
+        ExtrusionSurface anExtSurf = CircleExtrusion();
 
-        GeomGridEval_SurfaceOfExtrusion anEval = new(anExtSurf);
+        SurfaceOfExtrusionGrid anEval = new(anExtSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, M_PI, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 5);
 
-        NCollection_Array2<Geom_Surface.ResD2> aGridD2 = anEval.EvaluateGridD2(aUParams, aVParams);
+        NCollection_Array2<Surface.ResD2> aGridD2 = anEval.EvaluateGridD2(aUParams, aVParams);
 
         for (int i = 1; i <= 5; ++i)
         {
@@ -150,7 +152,7 @@ public class GeomGridEval_SurfaceOfExtrusionTest
                 anExtSurf.D2(aUParams.Value(i), aVParams.Value(j), out Point3D aP, out Vector3D aD1U, out Vector3D aD1V,
                              out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV);
 
-                Geom_Surface.ResD2 aData = aGridD2.Value(i, j);
+                Surface.ResD2 aData = aGridD2.Value(i, j);
                 Assert.Equal(0.0, aData.Point.Distance(aP), THE_TOLERANCE);
                 Assert.Equal(0.0, (aData.D1U - aD1U).Magnitude(), THE_TOLERANCE);
                 Assert.Equal(0.0, (aData.D1V - aD1V).Magnitude(), THE_TOLERANCE);
@@ -169,14 +171,14 @@ public class GeomGridEval_SurfaceOfExtrusionTest
     public void DerivativeD3()
     {
         // Use circle for non-trivial D3U
-        Geom_SurfaceOfLinearExtrusion anExtSurf = CircleExtrusion();
+        ExtrusionSurface anExtSurf = CircleExtrusion();
 
-        GeomGridEval_SurfaceOfExtrusion anEval = new(anExtSurf);
+        SurfaceOfExtrusionGrid anEval = new(anExtSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, M_PI, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 5);
 
-        NCollection_Array2<Geom_Surface.ResD3> aGridD3 = anEval.EvaluateGridD3(aUParams, aVParams);
+        NCollection_Array2<Surface.ResD3> aGridD3 = anEval.EvaluateGridD3(aUParams, aVParams);
 
         for (int i = 1; i <= 5; ++i)
         {
@@ -195,7 +197,7 @@ public class GeomGridEval_SurfaceOfExtrusionTest
                              out Vector3D aD3UUV,
                              out Vector3D aD3UVV);
 
-                Geom_Surface.ResD3 aData = aGridD3.Value(i, j);
+                Surface.ResD3 aData = aGridD3.Value(i, j);
                 Assert.Equal(0.0, aData.Point.Distance(aP), THE_TOLERANCE);
                 Assert.Equal(0.0, (aData.D3U - aD3U).Magnitude(), THE_TOLERANCE);
                 Assert.Equal(0.0, (aData.D3V - aD3V).Magnitude(), THE_TOLERANCE);
@@ -213,10 +215,10 @@ public class GeomGridEval_SurfaceOfExtrusionTest
     [Fact]
     public void UnifiedDispatch()
     {
-        Geom_SurfaceOfLinearExtrusion anExtSurf = LineExtrusion();
+        ExtrusionSurface anExtSurf = LineExtrusion();
 
         // Test dispatch via unified evaluator
-        GeomGridEval_Surface anEval = new(anExtSurf);
+        SurfaceGrid anEval = new(anExtSurf);
         Assert.Equal(SurfaceOfExtrusion, anEval.GetType());
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 10.0, 5);
@@ -237,11 +239,11 @@ public class GeomGridEval_SurfaceOfExtrusionTest
     [Fact]
     public void AdaptorDispatch()
     {
-        Geom_SurfaceOfLinearExtrusion anExtSurf = LineExtrusion();
+        ExtrusionSurface anExtSurf = LineExtrusion();
 
         // Test dispatch via adaptor
-        GeomAdaptor_Surface anAdaptor = new(anExtSurf);
-        GeomGridEval_Surface anEval = new(anAdaptor);
+        SurfaceAdaptor anAdaptor = new(anExtSurf);
+        SurfaceGrid anEval = new(anAdaptor);
         Assert.Equal(SurfaceOfExtrusion, anEval.GetType());
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 10.0, 5);
@@ -264,13 +266,13 @@ public class GeomGridEval_SurfaceOfExtrusionTest
     {
         // Create a circle and extrude along a diagonal direction
         Frame3D aCircleAx = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
-        Geom_Circle aCircle = new(aCircleAx, 3.0);
+        CircleCurve3D aCircle = new(aCircleAx, 3.0);
 
         // Extrude along (1, 1, 1) direction
         Direction3D aDirection = new(1, 1, 1);
-        Geom_SurfaceOfLinearExtrusion anExtSurf = new(aCircle, aDirection);
+        ExtrusionSurface anExtSurf = new(aCircle, aDirection);
 
-        GeomGridEval_SurfaceOfExtrusion anEval = new(anExtSurf);
+        SurfaceOfExtrusionGrid anEval = new(anExtSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 9);
         NCollection_Array1<double> aVParams = CreateUniformParams(-5.0, 5.0, 5);

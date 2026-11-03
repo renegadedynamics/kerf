@@ -3,11 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepCheck_Status;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -31,7 +34,7 @@ public class BRepCheck_Solid : BRepCheck_Result
         private bool myIsHole;
         private Point3D myPnt;
         private double myPntTol;
-        private TopoDS_Solid mySolid;
+        private Solid mySolid;
         private BRepClass3d_SolidClassifier? myHSC;
 
         public BRepCheck_ToolSolid()
@@ -39,12 +42,12 @@ public class BRepCheck_Solid : BRepCheck_Result
             myIsHole = false;
             myPntTol = global::Kerf.Engine.Foundation.Precision.Confusion();
             myPnt = new Point3D(-1.0, -1.0, -1.0);
-            mySolid = new TopoDS_Solid();
+            mySolid = new Solid();
         }
 
-        public void SetSolid(in TopoDS_Solid aZ) => mySolid = aZ;
+        public void SetSolid(in Solid aZ) => mySolid = aZ;
 
-        public TopoDS_Solid Solid() => mySolid;
+        public Solid Solid() => mySolid;
 
         public bool IsHole() => myIsHole;
 
@@ -55,13 +58,13 @@ public class BRepCheck_Solid : BRepCheck_Result
         public bool IsOut(BRepCheck_ToolSolid aOther)
         {
             bool bFlag;
-            TopAbs_State aState;
+            Containment aState;
             //
             BRepClass3d_SolidClassifier aSC = myHSC!;
             //
             aSC.Perform(aOther.InnerPoint(), aOther.CheckTol());
             aState = aSC.State();
-            bFlag = (aState == TopAbs_OUT);
+            bFlag = (aState == Out);
             //
             return bFlag;
         }
@@ -69,7 +72,7 @@ public class BRepCheck_Solid : BRepCheck_Result
         public void Init()
         {
             double aT, aPAR_T;
-            var aExp = new TopExp_Explorer();
+            var aExp = new Explorer();
             //
             // 0.myHSC
             myHSC = new BRepClass3d_SolidClassifier();
@@ -80,20 +83,20 @@ public class BRepCheck_Solid : BRepCheck_Result
             //
             // 2. myIsHole
             aSC.PerformInfinitePoint(RealSmall());
-            myIsHole = (aSC.State() == TopAbs_IN);
+            myIsHole = (aSC.State() == In);
             //
             // 3. myPnt
             aPAR_T = 0.43213918; // 10*e^(-PI)
-            aExp.Init(mySolid, TopAbs_EDGE);
+            aExp.Init(mySolid, ShapeType.Edge);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Edge aE = TopoDS.Edge(aExp.Current());
-                if (!BRep_Tool.Degenerated(aE))
+                Edge aE = ShapeCasts.Edge(aExp.Current());
+                if (!Tool.Degenerated(aE))
                 {
-                    Geom_Curve aC3D = BRep_Tool.Curve(aE, out double aT1, out double aT2)!;
+                    Curve3D aC3D = Tool.Curve(aE, out double aT1, out double aT2)!;
                     aT = (1.0 - aPAR_T) * aT1 + aPAR_T * aT2;
                     myPnt = aC3D.Value(aT);
-                    myPntTol = BRep_Tool.Tolerance(aE);
+                    myPntTol = Tool.Tolerance(aE);
                     break;
                 }
             }
@@ -101,7 +104,7 @@ public class BRepCheck_Solid : BRepCheck_Result
     }
 
     /// <summary>Checks the solid on its own (<see cref="Minimum"/>).</summary>
-    public BRepCheck_Solid(in TopoDS_Solid S)
+    public BRepCheck_Solid(in Solid S)
     {
         Init(S);
     }
@@ -117,7 +120,7 @@ public class BRepCheck_Solid : BRepCheck_Result
     }
 
     /// <summary>Nothing: a solid has no checks in a context.</summary>
-    public override void InContext(in TopoDS_Shape S)
+    public override void InContext(in Shape S)
     {
     }
 
@@ -136,13 +139,13 @@ public class BRepCheck_Solid : BRepCheck_Result
         //
         bool bFound, bIsHole, bFlag;
         int i, j, aNbVTS, aNbVTS1, iCntSh, iCntShInt;
-        TopoDS_Solid aZ = new();
-        var aIt = new TopoDS_Iterator();
-        var aItF = new TopoDS_Iterator();
-        var aBB = new TopoDS_Builder();
-        var aExp = new TopExp_Explorer();
-        var aMSS = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopAbs_Orientation aOr;
+        Solid aZ = new();
+        var aIt = new Iterator();
+        var aItF = new Iterator();
+        var aBB = new Builder();
+        var aExp = new Explorer();
+        var aMSS = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        Orientation aOr;
         var aVTS = new List<BRepCheck_ToolSolid>();
 
         var aNewList = new NCollection_List<BRepCheck_Status>();
@@ -152,10 +155,10 @@ public class BRepCheck_Solid : BRepCheck_Result
         //-------------------------------------------------
         // 1. InvalidImbricationOfShells
         bFound = false;
-        aExp.Init(myShape, TopAbs_FACE);
+        aExp.Init(myShape, ShapeType.Face);
         for (; !bFound && aExp.More(); aExp.Next())
         {
-            TopoDS_Shape aF = aExp.Current();
+            Shape aF = aExp.Current();
             if (!aMSS.Add(aF))
             {
                 BRepCheck.Add(aLST, BRepCheck_InvalidImbricationOfShells);
@@ -173,12 +176,12 @@ public class BRepCheck_Solid : BRepCheck_Result
         aIt.Initialize(myShape);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aSx = aIt.Value();
+            Shape aSx = aIt.Value();
             //
-            if (aSx.ShapeType() != TopAbs_SHELL)
+            if (aSx.ShapeType() != ShapeType.Shell)
             {
                 aOr = aSx.Orientation();
-                if (aOr != TopAbs_INTERNAL)
+                if (aOr != Internal)
                 {
                     BRepCheck.Add(aLST, BRepCheck_BadOrientationOfSubshape);
                 }
@@ -187,16 +190,16 @@ public class BRepCheck_Solid : BRepCheck_Result
             }
 
             //
-            TopoDS_Shell aSh = TopoDS.Shell(aSx);
+            Shell aSh = ShapeCasts.Shell(aSx);
             //
             // Skip internal shells
             bFound = false;
             aItF.Initialize(aSh);
             for (; !bFound && aItF.More(); aItF.Next())
             {
-                TopoDS_Shape aF = aItF.Value();
+                Shape aF = aItF.Value();
                 aOr = aF.Orientation();
-                if (aOr == TopAbs_INTERNAL)
+                if (aOr == Internal)
                 {
                     bFound = !bFound;
                 }
@@ -212,7 +215,7 @@ public class BRepCheck_Solid : BRepCheck_Result
             ++iCntSh;
             //
             // Skip not closed shells
-            if (!BRep_Tool.IsClosed(aSh))
+            if (!Tool.IsClosed(aSh))
             {
                 continue;
             }

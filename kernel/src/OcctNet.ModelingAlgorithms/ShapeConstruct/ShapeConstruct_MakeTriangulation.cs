@@ -5,9 +5,12 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -24,7 +27,7 @@ namespace Occt;
 public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
 {
     private readonly double myPrecision;
-    private readonly TopoDS_Wire myWire = new();
+    private readonly Wire myWire = new();
 
     /// <summary>Triangulates the closed polygon through <paramref name="pnts"/>.</summary>
     public ShapeConstruct_MakeTriangulation(NCollection_Array1<Point3D> pnts, double prec = 0.0)
@@ -46,7 +49,7 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Triangulates the closed polygonal wire.</summary>
-    public ShapeConstruct_MakeTriangulation(in TopoDS_Wire wire, double prec = 0.0)
+    public ShapeConstruct_MakeTriangulation(in Wire wire, double prec = 0.0)
     {
         myPrecision = (prec > 0.0) ? prec : global::Kerf.Engine.Foundation.Precision.Confusion();
         myWire = wire;
@@ -56,10 +59,10 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
     /// <summary>Triangulates the wire (once).</summary>
     public override void Build(ProgressRange theRange = default)
     {
-        if (myShape.IsNull())
+        if (myShape.IsNull)
         {
             // Triangulate polygonal wire
-            if (!myWire.IsNull())
+            if (!myWire.IsNull)
             {
                 Triangulate(myWire);
             }
@@ -67,13 +70,13 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>True if a face or shell was built.</summary>
-    public override bool IsDone() => !myShape.IsNull();
+    public override bool IsDone() => !myShape.IsNull;
 
-    private void Triangulate(in TopoDS_Wire wire)
+    private void Triangulate(in Wire wire)
     {
         // Fill sequence of edges
-        NCollection_HSequence<TopoDS_Shape>? theEdges = new();
-        for (TopoDS_Iterator ite = new(wire); ite.More(); ite.Next())
+        NCollection_HSequence<Shape>? theEdges = new();
+        for (Iterator ite = new(wire); ite.More(); ite.Next())
         {
             theEdges.Append(ite.Value());
         }
@@ -90,10 +93,10 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
             NCollection_HArray1<Point3D>? theAPnt = new(1, NbEdges);
             for (int i = 1; i <= NbEdges; i++)
             {
-                theAPnt.SetValue(i, BRep_Tool.Pnt(sae.FirstVertex(TopoDS.Edge(theEdges.Value(i)))));
+                theAPnt.SetValue(i, Tool.Pnt(sae.FirstVertex(ShapeCasts.Edge(theEdges.Value(i)))));
             }
 
-            TopoDS_Wire theNewWire = new();
+            Wire theNewWire = new();
 
             // Check planarity on array of points
             Xyz Norm = new(0, 0, 0);
@@ -257,9 +260,9 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
                     int best1 = ((theC1 > theC2) ? 0 : 2);
 
                     // Add "best" planar facets
-                    BRep_Builder B = new();
-                    TopoDS_Wire theFacetWire = new();
-                    TopoDS_Edge theLEdge = new(), theSLEdge = new();
+                    BrepBuilder B = new();
+                    Wire theFacetWire = new();
+                    Edge theLEdge = new(), theSLEdge = new();
                     len = cindex / 4;
                     // Check for special case - 1 shared line
                     bool special = (len == 2 && theSegments[best1 + 1] == theSegments[4 + best1 + 2]
@@ -269,17 +272,17 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
                     {
                         lindex = theSegments[ii * 4 + best1 + 1];
                         rindex = theSegments[ii * 4 + best1 + 2];
-                        if (special && !theSLEdge.IsNull())
+                        if (special && !theSLEdge.IsNull)
                         {
-                            TopoDS_Shape aLocalShape = theSLEdge.Reversed();
-                            theLEdge = TopoDS.Edge(aLocalShape);
+                            Shape aLocalShape = theSLEdge.Reversed();
+                            theLEdge = ShapeCasts.Edge(aLocalShape);
                         }
                         else
                         {
-                            TopoDS_Vertex v1 = sae.FirstVertex(TopoDS.Edge(theEdges.Value(lindex)));
-                            TopoDS_Vertex v2 = sae.FirstVertex(TopoDS.Edge(theEdges.Value(rindex)));
-                            v1.Orientation(TopAbs_FORWARD);
-                            v2.Orientation(TopAbs_REVERSED);
+                            Vertex v1 = sae.FirstVertex(ShapeCasts.Edge(theEdges.Value(lindex)));
+                            Vertex v2 = sae.FirstVertex(ShapeCasts.Edge(theEdges.Value(rindex)));
+                            v1.Orientation(Forward);
+                            v2.Orientation(Reversed);
                             theLEdge = new BRepBuilderAPI_MakeEdge(v1, v2).InternalEdge();
                             theSLEdge = theLEdge;
                         }
@@ -289,7 +292,7 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
                         int cur_edge = lindex;
                         while (cur_edge != rindex)
                         {
-                            TopoDS_Edge theNEdge = TopoDS.Edge(theEdges.Value(cur_edge));
+                            Edge theNEdge = ShapeCasts.Edge(theEdges.Value(cur_edge));
                             B.Add(theFacetWire, theNEdge);
                             if (cur_edge == NbEdges)
                             {
@@ -304,14 +307,14 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
                         if (!special)
                         {
                             // Add edges to the new wire
-                            if (theNewWire.IsNull())
+                            if (theNewWire.IsNull)
                             {
                                 B.MakeWire(ref theNewWire);
                             }
                             cur_edge = pindex;
                             while (cur_edge != lindex)
                             {
-                                TopoDS_Edge theNEdge = TopoDS.Edge(theEdges.Value(cur_edge));
+                                Edge theNEdge = ShapeCasts.Edge(theEdges.Value(cur_edge));
                                 B.Add(theNewWire, theNEdge);
                                 if (cur_edge == NbEdges)
                                 {
@@ -333,7 +336,7 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
                 theAPnt = null;
 
                 // Triangulate the rest of edges
-                if (!theNewWire.IsNull())
+                if (!theNewWire.IsNull)
                 {
                     Triangulate(theNewWire);
                 }
@@ -341,9 +344,9 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
         }
     }
 
-    private void AddFacet(in TopoDS_Wire wire)
+    private void AddFacet(in Wire wire)
     {
-        if (wire.IsNull())
+        if (wire.IsNull)
         {
             return;
         }
@@ -351,9 +354,9 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
         // Fill sequence of points
         ShapeAnalysis_Edge sae = new();
         NCollection_Sequence<Point3D> pts = new();
-        for (TopoDS_Iterator ite = new(wire); ite.More(); ite.Next())
+        for (Iterator ite = new(wire); ite.More(); ite.Next())
         {
-            pts.Append(BRep_Tool.Pnt(sae.FirstVertex(TopoDS.Edge(ite.Value()))));
+            pts.Append(Tool.Pnt(sae.FirstVertex(ShapeCasts.Edge(ite.Value()))));
         }
         int i, nbp = pts.Length();
         if (nbp < 3)
@@ -412,25 +415,25 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
         }
 
         Plane3D Pln = new(pts[1], new Direction3D(Normal));
-        Geom_Plane thePlane = new(Pln);
+        PlaneSurface thePlane = new(Pln);
 
         // Mean plane created - build face
-        BRep_Builder B = new();
-        TopoDS_Face theFace = new();
+        BrepBuilder B = new();
+        Face theFace = new();
         B.MakeFace(ref theFace, thePlane, global::Kerf.Engine.Foundation.Precision.Confusion());
         B.Add(theFace, wire);
 
         // Add new face to the shell
-        if (myShape.IsNull())
+        if (myShape.IsNull)
         {
             myShape = theFace;
         }
         else
         {
-            if (myShape.ShapeType() == TopAbs_FACE)
+            if (myShape.ShapeType() == ShapeType.Face)
             {
-                TopoDS_Face firstFace = TopoDS.Face(myShape);
-                TopoDS_Shell theShell = new();
+                Face firstFace = ShapeCasts.Face(myShape);
+                Shell theShell = new();
                 B.MakeShell(ref theShell);
                 myShape = theShell;
                 B.Add(myShape, firstFace);
@@ -478,12 +481,12 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
                 Point3D pc = new(center);
                 Direction3D pd = new(Norm);
                 Plane3D pl = new(pc, pd);
-                Geom_Plane thePlane = new(pl);
+                PlaneSurface thePlane = new(pl);
 
-                BRep_Builder B = new();
-                TopoDS_Face theFace = new();
+                BrepBuilder B = new();
+                Face theFace = new();
                 B.MakeFace(ref theFace, thePlane, global::Kerf.Engine.Foundation.Precision.Confusion());
-                TopoDS_Wire theWire = mkPoly.InternalWire();
+                Wire theWire = mkPoly.InternalWire();
                 B.Add(theFace, theWire);
                 ShapeAnalysis_Wire saw = new(theWire, theFace, prec);
                 return !saw.CheckSelfIntersection();

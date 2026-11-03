@@ -6,12 +6,16 @@
 using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using BVH_Vec3d = Occt.NCollection_Vec3<double>;
 using ProxPnt_Status = Occt.BRepExtrema_ProximityDistTool.ProxPnt_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -89,10 +93,10 @@ public sealed class BRepExtrema_ProximityValueTool
 {
     private BRepExtrema_TriangleSet? mySet1;
     private BRepExtrema_TriangleSet? mySet2;
-    private NCollection_DynamicArray<TopoDS_Shape> myShapeList1 = new();
-    private NCollection_DynamicArray<TopoDS_Shape> myShapeList2 = new();
-    private TopoDS_Shape myShape1;
-    private TopoDS_Shape myShape2;
+    private NCollection_DynamicArray<Shape> myShapeList1 = new();
+    private NCollection_DynamicArray<Shape> myShapeList2 = new();
+    private Shape myShape1;
+    private Shape myShape2;
     private readonly NCollection_LinearVector<BVH_Vec3d> myAddVertices1 = new(); //!< Additional vertices on the 1st shape if its mesh is coarser.
     private readonly NCollection_LinearVector<BVH_Vec3d> myAddVertices2 = new(); //!< Additional vertices on the 2nd shape if its mesh is coarser.
     private readonly NCollection_DynamicArray<ProxPnt_Status> myAddStatus1 = new(); //!< Status of additional vertices on the 1st shape.
@@ -107,8 +111,8 @@ public sealed class BRepExtrema_ProximityValueTool
     private double myStep2; //!< Step for getting vertices on the 2nd shape.
     private readonly CellFilter<BRepExtrema_VertexInspector, int, Xyz> myCells = new();
     private BRepExtrema_VertexInspector myInspector = new();
-    private TopAbs_ShapeEnum myShapeType1; //!< 1st shape type.
-    private TopAbs_ShapeEnum myShapeType2; //!< 2nd shape type.
+    private ShapeType myShapeType1; //!< 1st shape type.
+    private ShapeType myShapeType2; //!< 2nd shape type.
     private double myDistance; //!< Distance
     private bool myIsDone; //!< State of the algorithm
     private int myNbSamples1; //!< Number of samples points on the first shape
@@ -132,8 +136,8 @@ public sealed class BRepExtrema_ProximityValueTool
     /// <summary>A proximity tool for the given element sets and lists of sub-shapes.</summary>
     public BRepExtrema_ProximityValueTool(BRepExtrema_TriangleSet theSet1,
                                           BRepExtrema_TriangleSet theSet2,
-                                          NCollection_DynamicArray<TopoDS_Shape> theShapeList1,
-                                          NCollection_DynamicArray<TopoDS_Shape> theShapeList2)
+                                          NCollection_DynamicArray<Shape> theShapeList1,
+                                          NCollection_DynamicArray<Shape> theShapeList2)
     {
         myIsRefinementRequired1 = false;
         myIsRefinementRequired2 = false;
@@ -181,15 +185,15 @@ public sealed class BRepExtrema_ProximityValueTool
     // function : calcEdgeRefinementStep
     // purpose  : Calculates the edge refinement step
     //=======================================================================
-    private static double calcEdgeRefinementStep(in TopoDS_Edge theEdge, int theNbNodes)
+    private static double calcEdgeRefinementStep(in Edge theEdge, int theNbNodes)
     {
         if (theNbNodes < 2)
         {
             return 0;
         }
 
-        var aBAC = new BRepAdaptor_Curve(theEdge);
-        double aLen = GCPnts_AbscissaPoint.Length(aBAC);
+        var aBAC = new EdgeCurveAdaptor(theEdge);
+        double aLen = AbscissaPoint.Length(aBAC);
         return aLen / (double)(theNbNodes - 1);
     }
 
@@ -198,14 +202,14 @@ public sealed class BRepExtrema_ProximityValueTool
     // purpose  : Calculates the face refinement step as an approximate square
     // (Shape area / number triangles) * 2
     //=======================================================================
-    private static double calcFaceRefinementStep(in TopoDS_Face theFace, int theNbTrg)
+    private static double calcFaceRefinementStep(in Face theFace, int theNbTrg)
     {
         if (theNbTrg < 1)
         {
             return 0;
         }
 
-        var props = new GProp_GProps();
+        var props = new Properties();
         BRepGProp.SurfaceProperties(theFace, props);
         double aArea = props.Mass();
         return 2 * (aArea / (double)theNbTrg);
@@ -215,17 +219,17 @@ public sealed class BRepExtrema_ProximityValueTool
     // function : getInfoForRefinement
     // purpose  : Gets shape data for further refinement
     //=======================================================================
-    private static bool getInfoForRefinement(in TopoDS_Shape theShape,
-                                             ref TopAbs_ShapeEnum theShapeType,
+    private static bool getInfoForRefinement(in Shape theShape,
+                                             ref ShapeType theShapeType,
                                              ref int theNbNodes,
                                              ref double theStep)
     {
-        if (theShape.ShapeType() == TopAbs_FACE)
+        if (theShape.ShapeType() == ShapeType.Face)
         {
-            theShapeType = TopAbs_FACE;
-            TopoDS_Face aF = TopoDS.Face(theShape);
+            theShapeType = ShapeType.Face;
+            Face aF = ShapeCasts.Face(theShape);
 
-            Triangulation? aTriangulation = BRep_Tool.Triangulation(aF, out _);
+            Triangulation? aTriangulation = Tool.Triangulation(aF, out _);
 
             if (aTriangulation is null)
             {
@@ -236,12 +240,12 @@ public sealed class BRepExtrema_ProximityValueTool
             int aNbTrg = aTriangulation.TriangleCount;
             theStep = calcFaceRefinementStep(aF, aNbTrg);
         }
-        else if (theShape.ShapeType() == TopAbs_EDGE)
+        else if (theShape.ShapeType() == ShapeType.Edge)
         {
-            theShapeType = TopAbs_EDGE;
-            TopoDS_Edge aE = TopoDS.Edge(theShape);
+            theShapeType = ShapeType.Edge;
+            Edge aE = ShapeCasts.Edge(theShape);
 
-            Polygon3D? aPolygon = BRep_Tool.Polygon3D(aE, out _);
+            Polygon3D? aPolygon = Tool.Polygon3D(aE, out _);
 
             if (aPolygon is null)
             {
@@ -265,10 +269,10 @@ public sealed class BRepExtrema_ProximityValueTool
     }
 
     /// <summary>Loads the lists of sub-shapes (copies, as OCCT assigns by value); the first of each is measured.</summary>
-    public void LoadShapeLists(NCollection_DynamicArray<TopoDS_Shape> theShapeList1, NCollection_DynamicArray<TopoDS_Shape> theShapeList2)
+    public void LoadShapeLists(NCollection_DynamicArray<Shape> theShapeList1, NCollection_DynamicArray<Shape> theShapeList2)
     {
-        myShapeList1 = new NCollection_DynamicArray<TopoDS_Shape>(theShapeList1);
-        myShapeList2 = new NCollection_DynamicArray<TopoDS_Shape>(theShapeList2);
+        myShapeList1 = new NCollection_DynamicArray<Shape>(theShapeList1);
+        myShapeList2 = new NCollection_DynamicArray<Shape>(theShapeList2);
 
         myShape1 = theShapeList1[0];
         myIsInitS1 = getInfoForRefinement(myShape1, ref myShapeType1, ref myNbNodes1, ref myStep1);
@@ -297,8 +301,8 @@ public sealed class BRepExtrema_ProximityValueTool
                                                NCollection_LinearVector<BVH_Vec3d> theAddVertices1,
                                                NCollection_DynamicArray<ProxPnt_Status> theAddStatus1,
                                                BRepExtrema_TriangleSet theSet2,
-                                               NCollection_DynamicArray<TopoDS_Shape> theShapeList1,
-                                               NCollection_DynamicArray<TopoDS_Shape> theShapeList2,
+                                               NCollection_DynamicArray<Shape> theShapeList1,
+                                               NCollection_DynamicArray<Shape> theShapeList2,
                                                ref BVH_Vec3d thePoint1,
                                                ref BVH_Vec3d thePoint2,
                                                ref ProxPnt_Status thePointStatus1,
@@ -328,29 +332,29 @@ public sealed class BRepExtrema_ProximityValueTool
     // function : getEdgeAdditionalVertices
     // purpose  : Gets additional vertices and their statuses on the edge with the input step
     //=======================================================================
-    private static bool getEdgeAdditionalVertices(in TopoDS_Edge theEdge,
+    private static bool getEdgeAdditionalVertices(in Edge theEdge,
                                                   double theStep,
                                                   NCollection_LinearVector<BVH_Vec3d> theAddVertices,
                                                   NCollection_DynamicArray<ProxPnt_Status> theAddStatuses)
     {
-        var aBAC = new BRepAdaptor_Curve(theEdge);
+        var aBAC = new EdgeCurveAdaptor(theEdge);
 
         if (!aBAC.Is3DCurve() || theStep < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return false;
         }
 
-        double aLen = GCPnts_AbscissaPoint.Length(aBAC);
+        double aLen = AbscissaPoint.Length(aBAC);
         int aNbSamplePoints = (int)(aLen / theStep) + 1;
 
-        var aGCPnts = new GCPnts_QuasiUniformAbscissa(aBAC, Max(3, aNbSamplePoints));
+        var aGCPnts = new QuasiUniformAbscissa(aBAC, Max(3, aNbSamplePoints));
 
-        if (!aGCPnts.IsDone())
+        if (!aGCPnts.IsDone)
         {
             return false;
         }
 
-        int aNbNodes = aGCPnts.NbPoints();
+        int aNbNodes = aGCPnts.PointCount;
         for (int aVertIdx = 2; aVertIdx < aNbNodes; ++aVertIdx) // don't add extreme points
         {
             double aPar = aGCPnts.Parameter(aVertIdx);
@@ -484,14 +488,14 @@ public sealed class BRepExtrema_ProximityValueTool
     // purpose  : Gets additional vertices and their statuses on the face with the input step (triangle
     // square)
     //=======================================================================
-    private bool getFaceAdditionalVertices(in TopoDS_Face theFace,
+    private bool getFaceAdditionalVertices(in Face theFace,
                                            double theStep,
                                            NCollection_LinearVector<BVH_Vec3d> theAddVertices,
                                            NCollection_DynamicArray<ProxPnt_Status> theAddStatuses)
     {
         double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-        Triangulation? aTr = BRep_Tool.Triangulation(theFace, out Placement aLocation);
+        Triangulation? aTr = Tool.Triangulation(theFace, out Placement aLocation);
 
         if (aTr is null)
         {
@@ -523,17 +527,17 @@ public sealed class BRepExtrema_ProximityValueTool
         double aStep1 = myStep1;
         double aStep2 = myStep2;
 
-        if ((myShapeType1 == TopAbs_EDGE) && (myShapeType2 == TopAbs_EDGE))
+        if ((myShapeType1 == ShapeType.Edge) && (myShapeType2 == ShapeType.Edge))
         {
             if (myNbSamples1 > myNbNodes1) // 1st edge needs refinement
             {
-                aStep1 = calcEdgeRefinementStep(TopoDS.Edge(myShape1), myNbSamples1);
+                aStep1 = calcEdgeRefinementStep(ShapeCasts.Edge(myShape1), myNbSamples1);
                 myIsRefinementRequired1 = true;
             }
 
             if (myNbSamples2 > myNbNodes2) // 2nd edge needs refinement
             {
-                aStep2 = calcEdgeRefinementStep(TopoDS.Edge(myShape2), myNbSamples2);
+                aStep2 = calcEdgeRefinementStep(ShapeCasts.Edge(myShape2), myNbSamples2);
                 myIsRefinementRequired2 = true;
             }
 
@@ -550,7 +554,7 @@ public sealed class BRepExtrema_ProximityValueTool
 
             if (myIsRefinementRequired1)
             {
-                if (!getEdgeAdditionalVertices(TopoDS.Edge(myShape1), aStep1, myAddVertices1, myAddStatus1))
+                if (!getEdgeAdditionalVertices(ShapeCasts.Edge(myShape1), aStep1, myAddVertices1, myAddStatus1))
                 {
                     return false;
                 }
@@ -558,13 +562,13 @@ public sealed class BRepExtrema_ProximityValueTool
 
             if (myIsRefinementRequired2)
             {
-                if (!getEdgeAdditionalVertices(TopoDS.Edge(myShape2), aStep2, myAddVertices2, myAddStatus2))
+                if (!getEdgeAdditionalVertices(ShapeCasts.Edge(myShape2), aStep2, myAddVertices2, myAddStatus2))
                 {
                     return false;
                 }
             }
         }
-        else if ((myShapeType1 == TopAbs_FACE) && (myShapeType2 == TopAbs_FACE))
+        else if ((myShapeType1 == ShapeType.Face) && (myShapeType2 == ShapeType.Face))
         {
             if (aStep1 / aStep2 > 2) // 1st face needs refinement
             {
@@ -579,12 +583,12 @@ public sealed class BRepExtrema_ProximityValueTool
 
             if (myIsRefinementRequired1)
             {
-                return getFaceAdditionalVertices(TopoDS.Face(myShape1), aStep1, myAddVertices1, myAddStatus1);
+                return getFaceAdditionalVertices(ShapeCasts.Face(myShape1), aStep1, myAddVertices1, myAddStatus1);
             }
 
             if (myIsRefinementRequired2)
             {
-                return getFaceAdditionalVertices(TopoDS.Face(myShape2), aStep2, myAddVertices2, myAddStatus2);
+                return getFaceAdditionalVertices(ShapeCasts.Face(myShape2), aStep2, myAddVertices2, myAddStatus2);
             }
         }
 

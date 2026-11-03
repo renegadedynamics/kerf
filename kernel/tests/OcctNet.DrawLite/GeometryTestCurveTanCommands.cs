@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Occt;
 using static Occt.GccEnt_Position;
@@ -16,10 +18,10 @@ namespace OcctNet.DrawLite;
 /// made by <c>qcircle</c> and <c>qline</c>. <see cref="DrawTrSurf.GetCurve2d"/> reads its curve, as OCCT's does through
 /// the base class.
 /// </summary>
-public sealed class DrawQualifiedCurve2d(Geom2d_Curve theCurve, GccEnt_Position thePosition) : DrawDrawable
+public sealed class DrawQualifiedCurve2d(Curve2D theCurve, GccEnt_Position thePosition) : DrawDrawable
 {
     /// <summary>The curve (frozen).</summary>
-    public Geom2d_Curve Curve { get; } = theCurve;
+    public Curve2D Curve { get; } = theCurve;
 
     /// <summary>The qualifier.</summary>
     public GccEnt_Position Position { get; } = thePosition;
@@ -29,11 +31,11 @@ public sealed class DrawQualifiedCurve2d(Geom2d_Curve theCurve, GccEnt_Position 
     /// <summary>GeometryTest_DrawableQualifiedCurve2d::Whatis: nothing for curves other than circles and lines.</summary>
     public override void Whatis(DrawResult theResult)
     {
-        if (Curve is Geom2d_Circle)
+        if (Curve is CircleCurve2D)
         {
             theResult.Append("qualified 2d Circle");
         }
-        else if (Curve is Geom2d_Line)
+        else if (Curve is LineCurve2D)
         {
             theResult.Append("qualified 2d Line");
         }
@@ -44,11 +46,11 @@ public sealed class DrawQualifiedCurve2d(Geom2d_Curve theCurve, GccEnt_Position 
     {
         theStream.Write("Qualified curve 2D: \n");
         theStream.Write("Position :" + GccEnt.PositionToString(Position) + "\n");
-        GeomTools_Curve2dSet.PrintCurve2d(Curve, theStream);
+        Curve2dSet.PrintCurve2d(Curve, theStream);
     }
 
     /// <summary>DrawTrSurf_Curve2d::Save: the curve.</summary>
-    public override void Save(TextWriter theStream) => GeomTools_Curve2dSet.PrintCurve2d(Curve, theStream, true);
+    public override void Save(TextWriter theStream) => Curve2dSet.PrintCurve2d(Curve, theStream, true);
 
     /// <summary>DrawTrSurf_Curve2d::Copy: a plain curve drawable (the qualifier is not copied).</summary>
     public override DrawDrawable Copy() => DrawGeometry.Of(Curve);
@@ -83,19 +85,19 @@ internal static class GeometryTestCurveTanCommands
             return Fail(theDI, "Error: wrong number of argument");
         }
 
-        Geom2d_Curve? aResult2d = null;
+        Curve2D? aResult2d = null;
         string aPositionType = "";
         if (theArgVec[0] == "qcircle")
         {
             if (theArgsNb == 5 || theArgsNb == 6)
             {
-                aResult2d = new Geom2d_Circle(new Frame2D(new Point2D(theDI.Atof(theArgVec[2]), theDI.Atof(theArgVec[3])),
+                aResult2d = new CircleCurve2D(new Frame2D(new Point2D(theDI.Atof(theArgVec[2]), theDI.Atof(theArgVec[3])),
                                                            new Direction2D(Direction2D.D.X)),
                                               theDI.Atof(theArgVec[4]));
             }
             else if (theArgsNb == 7 || theArgsNb == 8)
             {
-                aResult2d = new Geom2d_Circle(new Frame2D(new Point2D(theDI.Atof(theArgVec[2]), theDI.Atof(theArgVec[3])),
+                aResult2d = new CircleCurve2D(new Frame2D(new Point2D(theDI.Atof(theArgVec[2]), theDI.Atof(theArgVec[3])),
                                                            new Direction2D(theDI.Atof(theArgVec[4]), theDI.Atof(theArgVec[5]))),
                                               theDI.Atof(theArgVec[6]));
             }
@@ -115,7 +117,7 @@ internal static class GeometryTestCurveTanCommands
             {
                 return Fail(theDI, "Error: wrong number of arguments");
             }
-            aResult2d = new Geom2d_Line(new Point2D(theDI.Atof(theArgVec[2]), theDI.Atof(theArgVec[3])),
+            aResult2d = new LineCurve2D(new Point2D(theDI.Atof(theArgVec[2]), theDI.Atof(theArgVec[3])),
                                         new Direction2D(theDI.Atof(theArgVec[4]), theDI.Atof(theArgVec[5])));
             if (theArgsNb == 7)
             {
@@ -158,7 +160,7 @@ internal static class GeometryTestCurveTanCommands
         string aName = theName + "_";
         for (int aSolId = 1; aSolId <= theCirTan3.NbSolutions(); aSolId++)
         {
-            var aCircle = new Geom2d_Circle(theCirTan3.ThisSolution(aSolId));
+            var aCircle = new CircleCurve2D(theCirTan3.ThisSolution(aSolId));
             string aSolIdName = aName + aSolId;
             DrawTrSurf.Set(theDI, aSolIdName, aCircle);
             theCirTan3.WhichQualifier(aSolId, out GccEnt_Position aQualifier1, out GccEnt_Position aQualifier2,
@@ -256,7 +258,7 @@ internal static class GeometryTestCurveTanCommands
             {
                 return Fail(theDI, "Error: wrong points definition");
             }
-            var anAdaptorCurve1 = new Geom2dAdaptor_Curve(aQCurve1.Curve);
+            var anAdaptorCurve1 = new CurveAdaptor2D(aQCurve1.Curve);
             if (anAdaptorCurve1.GetType() == Circle)
             {
                 var aQualifiedCircle1 = new GccEnt_QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
@@ -277,8 +279,8 @@ internal static class GeometryTestCurveTanCommands
             {
                 return Fail(theDI, "Error: wrong point definition");
             }
-            var anAdaptorCurve1 = new Geom2dAdaptor_Curve(aQCurve1.Curve);
-            var anAdaptorCurve2 = new Geom2dAdaptor_Curve(aQCurve2.Curve);
+            var anAdaptorCurve1 = new CurveAdaptor2D(aQCurve1.Curve);
+            var anAdaptorCurve2 = new CurveAdaptor2D(aQCurve2.Curve);
             if (anAdaptorCurve1.GetType() == Circle && anAdaptorCurve2.GetType() == Circle)
             {
                 var aQualifiedCircle1 = new GccEnt_QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
@@ -303,9 +305,9 @@ internal static class GeometryTestCurveTanCommands
         // the first, the second and the third curves are not NULL
         // <qcircle, qcircle, qcircle> or <qcircle, qcircle, qlin>, <qcircle, qlin, qlin>, <qlin, qlin, qlin>
         {
-            var anAdaptorCurve1 = new Geom2dAdaptor_Curve(aQCurve1.Curve);
-            var anAdaptorCurve2 = new Geom2dAdaptor_Curve(aQCurve2.Curve);
-            var anAdaptorCurve3 = new Geom2dAdaptor_Curve(aQCurve3.Curve);
+            var anAdaptorCurve1 = new CurveAdaptor2D(aQCurve1.Curve);
+            var anAdaptorCurve2 = new CurveAdaptor2D(aQCurve2.Curve);
+            var anAdaptorCurve3 = new CurveAdaptor2D(aQCurve3.Curve);
             if (anAdaptorCurve1.GetType() == Circle && anAdaptorCurve2.GetType() == Circle
                 && anAdaptorCurve3.GetType() == Circle)
             {

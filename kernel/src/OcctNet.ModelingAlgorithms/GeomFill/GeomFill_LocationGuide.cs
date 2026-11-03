@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Occt.GeomFill_PipeError;
@@ -28,9 +30,9 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
 
     private readonly GeomFill_TrihedronWithGuide myLaw;
     private GeomFill_SectionLaw? mySec;
-    private Adaptor3d_Curve? myCurve;
-    private readonly Adaptor3d_Curve myGuide;
-    private Adaptor3d_Curve? myTrimmed;
+    private CurveAdaptorBase? myCurve;
+    private readonly CurveAdaptorBase myGuide;
+    private CurveAdaptorBase? myTrimmed;
     private readonly int myNbPts;
     private bool rotation;
     private double OrigParam1;
@@ -81,8 +83,8 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
         myFirstS = myLastS = -505e77;
 
         myNbPts = 21;              // nb points pour les calculs
-        Adaptor3d_Curve aGuide = myLaw.Guide(); // courbe guide
-        if (!aGuide.IsPeriodic())
+        CurveAdaptorBase aGuide = myLaw.Guide(); // courbe guide
+        if (!aGuide.IsPeriodic)
         {
             double f, l, delta;
             f = aGuide.FirstParameter();
@@ -118,8 +120,8 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
         double t, v, w, OldAngle = 0, Angle, DeltaG, Diff;
         double CurAngle = PrecAngle, a1;
         Point2D p1 = new Point2D(), p2 = new Point2D();
-        Geom_SurfaceOfRevolution Revol; // surface de revolution
-        Geom_TrimmedCurve S;
+        RevolutionSurface Revol; // surface de revolution
+        TrimmedCurve3D S;
         IntCurveSurface_IntersectionPoint PInt = new IntCurveSurface_IntersectionPoint(); // intersection guide/Revol
         NCollection_HArray1<int>? Mult = null;
         NCollection_HArray1<double>? Knots = null, Weights = null;
@@ -131,7 +133,7 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
         bool Ok, uperiodic = mySec!.IsUPeriodic();
 
         DeltaG = (myGuide.LastParameter() - myGuide.FirstParameter()) / 5;
-        Geom_Curve? mySection = null;
+        Curve3D? mySection = null;
         double Tol = 1.0e-9;
 
         mySec.SectionShape(out int NbPoles, out int NbKnots, out Deg);
@@ -211,30 +213,30 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
 
                 if (israt)
                 {
-                    mySection = new Geom_BSplineCurve(Poles!, Weights!, Knots!, Mult!, Deg, mySec.IsUPeriodic());
+                    mySection = new BSplineCurve3D(Poles!, Weights!, Knots!, Mult!, Deg, mySec.IsUPeriodic());
                 }
                 else
                 {
-                    mySection = new Geom_BSplineCurve(Poles!, Knots!, Mult!, Deg, mySec.IsUPeriodic());
+                    mySection = new BSplineCurve3D(Poles!, Knots!, Mult!, Deg, mySec.IsUPeriodic());
                 }
-                S = new Geom_TrimmedCurve(mySection, Uf, Ul);
+                S = new TrimmedCurve3D(mySection, Uf, Ul);
             }
             else
             {
-                S = new Geom_TrimmedCurve((Geom_Curve)mySection!.Copy(), Uf, Ul);
+                S = new TrimmedCurve3D((Curve3D)mySection!.Copy(), Uf, Ul);
             }
             S.Transform(Transfo);
 
             // Surface de revolution
-            Revol = new Geom_SurfaceOfRevolution(S, Ax);
+            Revol = new RevolutionSurface(S, Ax);
 
-            GeomAdaptor_Surface GArevol = new GeomAdaptor_Surface(Revol);
-            Extrema_ExtCS DistMini = new Extrema_ExtCS(myGuide, GArevol, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion());
-            Extrema_POnCurv Pc = new Extrema_POnCurv();
-            Extrema_POnSurf Ps;
+            SurfaceAdaptor GArevol = new SurfaceAdaptor(Revol);
+            ExtCS DistMini = new ExtCS(myGuide, GArevol, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion());
+            POnCurv Pc = new POnCurv();
+            POnSurf Ps;
             double theU = 0.0, theV = 0.0;
 
-            if (!DistMini.IsDone() || DistMini.NbExt() == 0)
+            if (!DistMini.IsDone || DistMini.ExtCount == 0)
             {
                 bool SOS = false;
                 if (ii > 1)
@@ -272,7 +274,7 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
                 // d'angle le plus proche de P
                 double MinDist = RealLast();
                 int jref = 0;
-                for (int j = 1; j <= DistMini.NbExt(); j++)
+                for (int j = 1; j <= DistMini.ExtCount; j++)
                 {
                     double aDist = DistMini.SquareDistance(j);
                     if (aDist < MinDist)
@@ -298,7 +300,7 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
                 Diff = w - myPoles2d.Value(1, ii - 1).Y();
                 if (Math.Abs(Diff) > DeltaG)
                 {
-                    if (myGuide.IsPeriodic())
+                    if (myGuide.IsPeriodic)
                     {
                         InGoodPeriod(myPoles2d.Value(1, ii - 1).Y(), myGuide.Period(), ref w);
                         Diff = w - myPoles2d.Value(1, ii - 1).Y();
@@ -405,7 +407,7 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
     /// Sets the path and, with a rotation, computes the poles on the guide (the intersections of the guide with
     /// the surface of revolution of the section at myNbPts points).
     /// </summary>
-    public override bool SetCurve(Adaptor3d_Curve C)
+    public override bool SetCurve(CurveAdaptorBase C)
     {
         double LastAngle = 0;
         myCurve = C;
@@ -426,7 +428,7 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
         return myStatus == GeomFill_PipeOk;
     }
 
-    public override Adaptor3d_Curve? GetCurve() => myCurve;
+    public override CurveAdaptorBase? GetCurve() => myCurve;
 
     public override void SetTrsf(in Matrix3x3 Transfo)
     {
@@ -652,7 +654,7 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
         myTrimmed.Intervals(IntC, S);
         myLaw.Intervals(IntL, S);
 
-        GeomLib.FuseIntervals(IntC, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
+        global::Kerf.Engine.Geometry.Library.GeomLib.FuseIntervals(IntC, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
         return Inter.Length() - 1;
     }
 
@@ -679,7 +681,7 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
         myTrimmed.Intervals(IntC, S);
         myLaw.Intervals(IntL, S);
 
-        GeomLib.FuseIntervals(IntC, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
+        global::Kerf.Engine.Geometry.Library.GeomLib.FuseIntervals(IntC, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
         for (int ii = 1; ii <= Inter.Length(); ii++)
         {
             T[ii] = Inter[ii];
@@ -742,10 +744,10 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
     }
 
     /// <summary>A new copy of the constant section of the section law.</summary>
-    public Geom_Curve Section() => mySec!.ConstantSection();
+    public Curve3D Section() => mySec!.ConstantSection();
 
     /// <summary>The guide (trimmed a little beyond the trihedron's guide when that is not periodic).</summary>
-    public Adaptor3d_Curve Guide() => myGuide;
+    public CurveAdaptorBase Guide() => myGuide;
 
     public override bool IsRotation(ref double Error) => false;
 
@@ -820,7 +822,7 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
             X[3] = (P1.Coord(2) + P2.Coord(2)) / 2;
         }
 
-        if (myGuide.IsPeriodic())
+        if (myGuide.IsPeriodic)
         {
             X[1] = global::Kerf.Engine.Geometry.ElCLib.InPeriod(X[1], myGuide.FirstParameter(), myGuide.LastParameter());
         }

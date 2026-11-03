@@ -3,6 +3,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -15,11 +17,11 @@ public static partial class ShapeFix
     /// <paramref name="theIsDone"/> is OCCT's result (false if an edge couldn't be made SameParameter, or on a user
     /// break).
     /// </summary>
-    public static TopoDS_Shape SameParametered(in TopoDS_Shape shape, bool enforce, out bool theIsDone, double preci = 0.0,
+    public static Shape SameParametered(in Shape shape, bool enforce, out bool theIsDone, double preci = 0.0,
                                                ProgressRange theProgress = default,
                                                ShapeExtend_BasicMsgRegistrator? theMsgReg = null)
     {
-        var anEntry = new BRepTools_CopyAtEntry(shape);
+        var anEntry = new CopyAtEntry(shape);
         theIsDone = SameParameter(anEntry.Shape(), enforce, preci, theProgress, theMsgReg);
         return frozen(anEntry.Finish(anEntry.Shape()));
     }
@@ -28,9 +30,9 @@ public static partial class ShapeFix
     /// The functional twin of <see cref="EncodeRegularity"/>: the shape with the continuity of its edges between
     /// their faces encoded, frozen; see <see cref="SameParametered"/>.
     /// </summary>
-    public static TopoDS_Shape RegularityEncoded(in TopoDS_Shape shape, double tolang = 1.0e-10)
+    public static Shape RegularityEncoded(in Shape shape, double tolang = 1.0e-10)
     {
-        var anEntry = new BRepTools_CopyAtEntry(shape);
+        var anEntry = new CopyAtEntry(shape);
         EncodeRegularity(anEntry.Shape(), tolang);
         return frozen(anEntry.Finish(anEntry.Shape()));
     }
@@ -41,16 +43,16 @@ public static partial class ShapeFix
     /// <paramref name="thecontext"/>, which answers for the caller's sub-shapes), frozen; the shape itself when
     /// nothing was done (<paramref name="theIsDone"/> false).
     /// </summary>
-    public static TopoDS_Shape VertexPositionFixed(in TopoDS_Shape theshape, double theTolerance, ShapeBuild_ReShape thecontext,
+    public static Shape VertexPositionFixed(in Shape theshape, double theTolerance, ShapeBuild_ReShape thecontext,
                                                    out bool theIsDone)
     {
-        var          anEntry = new BRepTools_CopyAtEntry(theshape, thecontext);
-        TopoDS_Shape aWork   = anEntry.Shape();
+        var          anEntry = new CopyAtEntry(theshape, thecontext);
+        Shape aWork   = anEntry.Shape();
         theIsDone = FixVertexPosition(ref aWork, theTolerance, thecontext);
         return frozen(anEntry.Finish(aWork));
     }
 
-    private static TopoDS_Shape frozen(in TopoDS_Shape theShape)
+    private static Shape frozen(in Shape theShape)
     {
         theShape.TShape()?.FreezeGraph();
         return theShape;

@@ -5,10 +5,14 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -23,7 +27,7 @@ namespace Occt;
 /// <see cref="FixSpotFace"/>, <see cref="FixStripFace"/>, <see cref="FixSplitFace"/> and <see cref="FixShape"/> fix it,
 /// recording the changes in the context. They also write into the shape in place (a merged strip's vertex tolerances,
 /// the faces' fixes), so a shape holding frozen shapes (any shape a caller holds) is copied at the first fix
-/// (<see cref="BRepTools_CopyAtEntry"/>, decision 583): set the context before it. <see cref="Shape"/> gives back the
+/// (<see cref="CopyAtEntry"/>, decision 583): set the context before it. <see cref="Shape"/> gives back the
 /// caller's own sub-shapes wherever they are unchanged (the shape itself when nothing changed), re-keys the context to
 /// the caller's shapes and freezes the result; a fix after it copies again.
 /// </para>
@@ -36,28 +40,28 @@ namespace Occt;
 public class ShapeFix_FixSmallFace : ShapeFix_Root
 {
     // OCCT declares its own private myShape, hiding ShapeFix_Root's (which the messages are attached to).
-    private new TopoDS_Shape myShape;
-    private TopoDS_Shape myResult;
+    private new Shape myShape;
+    private Shape myResult;
     private int myStatus;
     private readonly ShapeAnalysis_CheckSmallFace myAnalyzer;
 
     // The copy at the entry, from the first fix to the public result (null when the shape holds no frozen shape).
-    private BRepTools_CopyAtEntry? myEntry;
+    private CopyAtEntry? myEntry;
     // True when the loaded shape must be checked (and copied if frozen) at the next fix.
     private bool myToEnter;
 
     /// <summary>Constructor (precision Confusion).</summary>
     public ShapeFix_FixSmallFace()
     {
-        myShape    = new TopoDS_Shape();
-        myResult   = new TopoDS_Shape();
+        myShape    = new Shape();
+        myResult   = new Shape();
         myAnalyzer = new ShapeAnalysis_CheckSmallFace();
         myStatus   = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         SetPrecision(Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>Loads the shape (creates a context if none is set).</summary>
-    public void Init(in TopoDS_Shape S)
+    public void Init(in Shape S)
     {
         myShape = S;
         if (Context() is null)
@@ -81,22 +85,22 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
     /// Fixes the spot faces (removed, their vertices merged into one) and returns the shape, unfrozen until
     /// <see cref="Shape"/> publishes it.
     /// </summary>
-    public TopoDS_Shape FixSpotFace()
+    public Shape FixSpotFace()
     {
         enterWork();
         // gp_Pnt spot;
         // double spotol;
         bool done = false;
-        TopAbs_ShapeEnum st = myShape.ShapeType();
-        if (st == TopAbs_COMPOUND || st == TopAbs_COMPSOLID || st == TopAbs_SOLID || st == TopAbs_SHELL
-            || st == TopAbs_FACE)
+        ShapeType st = myShape.ShapeType();
+        if (st == ShapeType.Compound || st == ShapeType.CompSolid || st == ShapeType.Solid || st == ShapeType.Shell
+            || st == ShapeType.Face)
         {
-            for (var itf = new TopExp_Explorer(myShape, TopAbs_FACE); itf.More(); itf.Next())
+            for (var itf = new Explorer(myShape, ShapeType.Face); itf.More(); itf.Next())
             {
                 // smh#8
-                TopoDS_Shape tmpFace = Context()!.InternalApply(itf.Current());
-                TopoDS_Face F = TopoDS.Face(tmpFace);
-                if (F.IsNull())
+                Shape tmpFace = Context()!.InternalApply(itf.Current());
+                Face F = ShapeCasts.Face(tmpFace);
+                if (F.IsNull)
                 {
                     continue;
                 }
@@ -111,7 +115,7 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
             myShape = Context()!.InternalApply(myShape);
             if (done)
             {
-                if (myShape.IsNull())
+                if (myShape.IsNull)
                 {
                     return myShape;
                 }
@@ -124,29 +128,29 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
     }
 
     /// <summary>Computes the mean vertex of the face and records the replacement of its vertices by it.</summary>
-    internal bool ReplaceVerticesInCaseOfSpot(ref TopoDS_Face F, double tol)
+    internal bool ReplaceVerticesInCaseOfSpot(ref Face F, double tol)
     {
         var thePositions = new NCollection_Sequence<Xyz>();
         Xyz thePosition;
-        var theBuilder = new BRep_Builder();
+        var theBuilder = new BrepBuilder();
         double theMaxDev;
         double theMaxTol = 0.0;
         thePositions.Clear();
         Point3D thePoint;
         // smh#8
-        TopoDS_Shape tmpFace = Context()!.InternalApply(F);
-        F = TopoDS.Face(tmpFace);
+        Shape tmpFace = Context()!.InternalApply(F);
+        F = ShapeCasts.Face(tmpFace);
         // gka Mar2000 Protection against faces without wires
         // but they occur due to bugs in the algorithm itself, it needs to be fixed
         bool isWir = false;
-        for (var itw = new TopoDS_Iterator(F, false); itw.More(); itw.Next())
+        for (var itw = new Iterator(F, false); itw.More(); itw.Next())
         {
-            if (itw.Value().ShapeType() != TopAbs_WIRE)
+            if (itw.Value().ShapeType() != ShapeType.Wire)
             {
                 continue;
             }
-            TopoDS_Wire w1 = TopoDS.Wire(itw.Value());
-            if (!w1.IsNull())
+            Wire w1 = ShapeCasts.Wire(itw.Value());
+            if (!w1.IsNull)
             {
                 isWir = true;
                 break;
@@ -158,13 +162,13 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
         }
 
         // Accumulating positions and maximal vertex tolerance
-        for (var iter_vertex = new TopExp_Explorer(F, TopAbs_VERTEX); iter_vertex.More(); iter_vertex.Next())
+        for (var iter_vertex = new Explorer(F, ShapeType.Vertex); iter_vertex.More(); iter_vertex.Next())
         {
-            TopoDS_Vertex V = TopoDS.Vertex(iter_vertex.Current());
-            thePoint = BRep_Tool.Pnt(V);
-            if (theMaxTol <= (BRep_Tool.Tolerance(V)))
+            Vertex V = ShapeCasts.Vertex(iter_vertex.Current());
+            thePoint = Tool.Pnt(V);
+            if (theMaxTol <= (Tool.Tolerance(V)))
             {
-                theMaxTol = BRep_Tool.Tolerance(V);
+                theMaxTol = Tool.Tolerance(V);
             }
             thePositions.Append(thePoint.XYZ());
         }
@@ -195,28 +199,28 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
         theMaxDev *= 1.00001;
 
         // Create new vertex with mean point
-        var theSharedVertex = new TopoDS_Vertex();
+        var theSharedVertex = new Vertex();
         theBuilder.MakeVertex(ref theSharedVertex);
         theBuilder.UpdateVertex(theSharedVertex, new Point3D(thePosition), theMaxDev + theMaxTol / 2);
         // Use external tolerance
         //   if (tol!=-1.0) theBuilder.UpdateVertex( theSharedVertex, tol);
 
         // Replacing all vertices in the face by new one
-        TopoDS_Vertex theNewVertex;
-        for (var iter_vert = new TopExp_Explorer(F, TopAbs_VERTEX); iter_vert.More(); iter_vert.Next())
+        Vertex theNewVertex;
+        for (var iter_vert = new Explorer(F, ShapeType.Vertex); iter_vert.More(); iter_vert.Next())
         {
-            TopoDS_Vertex V = TopoDS.Vertex(iter_vert.Current());
-            if (V.Orientation() == TopAbs_FORWARD)
+            Vertex V = ShapeCasts.Vertex(iter_vert.Current());
+            if (V.Orientation() == Forward)
             // smh#8
             {
-                TopoDS_Shape tmpVertexFwd = theSharedVertex.Oriented(TopAbs_FORWARD);
-                theNewVertex = TopoDS.Vertex(tmpVertexFwd);
+                Shape tmpVertexFwd = theSharedVertex.Oriented(Forward);
+                theNewVertex = ShapeCasts.Vertex(tmpVertexFwd);
             }
             else
             // smh#8
             {
-                TopoDS_Shape tmpVertexRev = theSharedVertex.Oriented(TopAbs_REVERSED);
-                theNewVertex = TopoDS.Vertex(tmpVertexRev);
+                Shape tmpVertexRev = theSharedVertex.Oriented(Reversed);
+                theNewVertex = ShapeCasts.Vertex(tmpVertexRev);
             }
             Context()!.Replace(V, theNewVertex);
         }
@@ -224,11 +228,11 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
     }
 
     /// <summary>Records the removal of the spot face and its edges.</summary>
-    internal bool RemoveFacesInCaseOfSpot(in TopoDS_Face F)
+    internal bool RemoveFacesInCaseOfSpot(in Face F)
     {
-        for (var iter_vert = new TopExp_Explorer(F, TopAbs_EDGE); iter_vert.More(); iter_vert.Next())
+        for (var iter_vert = new Explorer(F, ShapeType.Edge); iter_vert.More(); iter_vert.Next())
         {
-            TopoDS_Edge Ed = TopoDS.Edge(iter_vert.Current());
+            Edge Ed = ShapeCasts.Edge(iter_vert.Current());
             Context()!.Remove(Ed);
         }
         Context()!.Remove(F);
@@ -240,31 +244,31 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
     /// Fixes the strip faces (removed, their two long edges merged into one) and returns the shape, unfrozen until
     /// <see cref="Shape"/> publishes it.
     /// </summary>
-    public TopoDS_Shape FixStripFace(bool wasdone = false)
+    public Shape FixStripFace(bool wasdone = false)
     {
         enterWork();
-        if (myShape.IsNull())
+        if (myShape.IsNull)
         {
             return myShape;
         }
-        TopAbs_ShapeEnum st = myShape.ShapeType();
+        ShapeType st = myShape.ShapeType();
         // BRep_Builder theBuilder;
         bool done = wasdone;
-        if (st == TopAbs_COMPOUND || st == TopAbs_COMPSOLID || st == TopAbs_SOLID || st == TopAbs_SHELL
-            || st == TopAbs_FACE)
+        if (st == ShapeType.Compound || st == ShapeType.CompSolid || st == ShapeType.Solid || st == ShapeType.Shell
+            || st == ShapeType.Face)
         {
-            for (var itf = new TopExp_Explorer(myShape, TopAbs_FACE); itf.More(); itf.Next())
+            for (var itf = new Explorer(myShape, ShapeType.Face); itf.More(); itf.Next())
             {
-                TopoDS_Face F = TopoDS.Face(itf.Current());
+                Face F = ShapeCasts.Face(itf.Current());
                 // smh#8
-                TopoDS_Shape tmpFace = Context()!.InternalApply(F);
-                F = TopoDS.Face(tmpFace);
-                if (F.IsNull())
+                Shape tmpFace = Context()!.InternalApply(F);
+                F = ShapeCasts.Face(tmpFace);
+                if (F.IsNull)
                 {
                     continue;
                 }
                 // double dmax = 1;
-                TopoDS_Edge E1 = new(), E2 = new();
+                Edge E1 = new(), E2 = new();
                 if (myAnalyzer.CheckStripFace(F, ref E1, ref E2, Precision()))
                 {
                     if (ReplaceInCaseOfStrip(ref F, ref E1, ref E2, Precision()))
@@ -277,12 +281,12 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
             }
             myShape = Context()!.InternalApply(myShape);
             // Particular case of empty shell
-            if (!myShape.IsNull())
+            if (!myShape.IsNull)
             {
-                for (var exp_s = new TopExp_Explorer(myShape, TopAbs_SHELL); exp_s.More(); exp_s.Next())
+                for (var exp_s = new Explorer(myShape, ShapeType.Shell); exp_s.More(); exp_s.Next())
                 {
-                    TopoDS_Shell Sh = TopoDS.Shell(exp_s.Current());
-                    var ex_sh = new TopExp_Explorer(Sh, TopAbs_FACE);
+                    Shell Sh = ShapeCasts.Shell(exp_s.Current());
+                    var ex_sh = new Explorer(Sh, ShapeType.Face);
                     if (!ex_sh.More())
                     {
                         Context()!.Remove(Sh);
@@ -293,7 +297,7 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
                 // Fixing of missing pcurves on new edges, if they were inserted
                 if (done)
                 {
-                    if (myShape.IsNull())
+                    if (myShape.IsNull)
                     {
                         return myShape;
                     }
@@ -307,29 +311,29 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
     }
 
     /// <summary>Records the replacement of the strip face's two long edges by one and the removal of its short ones.</summary>
-    internal bool ReplaceInCaseOfStrip(ref TopoDS_Face F, ref TopoDS_Edge E1, ref TopoDS_Edge E2, double tol)
+    internal bool ReplaceInCaseOfStrip(ref Face F, ref Edge E1, ref Edge E2, double tol)
     {
-        if (E1.IsNull() || E2.IsNull())
+        if (E1.IsNull || E2.IsNull)
         {
             return false;
         }
-        TopoDS_Edge theSharedEdge;
-        TopoDS_Face F1 = new(), F2 = new();
+        Edge theSharedEdge;
+        Face F1 = new(), F2 = new();
         // smh#8
-        TopoDS_Shape tmpFace = Context()!.InternalApply(F);
-        F = TopoDS.Face(tmpFace);
-        for (var expf = new TopExp_Explorer(myShape, TopAbs_FACE); expf.More(); expf.Next())
+        Shape tmpFace = Context()!.InternalApply(F);
+        F = ShapeCasts.Face(tmpFace);
+        for (var expf = new Explorer(myShape, ShapeType.Face); expf.More(); expf.Next())
         {
             // smh#8
-            TopoDS_Shape tmpShape = Context()!.InternalApply(expf.Current());
-            TopoDS_Face tempF = TopoDS.Face(tmpShape);
-            if (tempF.IsNull() || tempF.IsSame(F))
+            Shape tmpShape = Context()!.InternalApply(expf.Current());
+            Face tempF = ShapeCasts.Face(tmpShape);
+            if (tempF.IsNull || tempF.IsSame(F))
             {
                 continue;
             }
-            for (var expe = new TopExp_Explorer(tempF, TopAbs_EDGE); expe.More(); expe.Next())
+            for (var expe = new Explorer(tempF, ShapeType.Edge); expe.More(); expe.Next())
             {
-                TopoDS_Edge tempE = TopoDS.Edge(expe.Current());
+                Edge tempE = ShapeCasts.Edge(expe.Current());
                 if (tempE.IsSame(E1))
                 {
                     F1 = tempF;
@@ -338,7 +342,7 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
                 {
                     F2 = tempF;
                 }
-                if (!F1.IsNull())
+                if (!F1.IsNull)
                 {
                     break; // && !F2.IsNull()) break;
                 }
@@ -346,13 +350,13 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
         }
 
         // Compute shared edge for this face
-        if (F1.IsNull() && F2.IsNull())
+        if (F1.IsNull && F2.IsNull)
         {
             return true;
         }
-        TopoDS_Edge E1tmp = E1;
-        TopoDS_Edge E2tmp = E2;
-        if (F1.IsNull())
+        Edge E1tmp = E1;
+        Edge E2tmp = E2;
+        if (F1.IsNull)
         {
             E1tmp = E2;
             E2tmp = E1;
@@ -361,20 +365,20 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
         theSharedEdge = ComputeSharedEdgeForStripFace(F, E1tmp, E2tmp, F1, tol);
 
         // Replace two long edges by new one
-        if (theSharedEdge.IsNull())
+        if (theSharedEdge.IsNull)
         {
             return false;
         }
-        if (E1.Orientation() == TopAbs_REVERSED)
+        if (E1.Orientation() == Reversed)
         {
-            Context()!.Replace(E1tmp, theSharedEdge.Oriented(TopAbs_REVERSED));
+            Context()!.Replace(E1tmp, theSharedEdge.Oriented(Reversed));
             if (F.Orientation() == F1.Orientation())
             {
                 Context()!.Replace(E2tmp, theSharedEdge);
             }
             else
             {
-                Context()!.Replace(E2tmp, theSharedEdge.Oriented(TopAbs_REVERSED));
+                Context()!.Replace(E2tmp, theSharedEdge.Oriented(Reversed));
             }
         }
         else
@@ -382,7 +386,7 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
             Context()!.Replace(E1tmp, theSharedEdge);
             if (F.Orientation() == F1.Orientation())
             {
-                Context()!.Replace(E2tmp, theSharedEdge.Oriented(TopAbs_REVERSED));
+                Context()!.Replace(E2tmp, theSharedEdge.Oriented(Reversed));
             }
             else
             {
@@ -391,9 +395,9 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
         }
 
         // Remove short edges
-        for (var exp_e = new TopExp_Explorer(F, TopAbs_EDGE); exp_e.More(); exp_e.Next())
+        for (var exp_e = new Explorer(F, ShapeType.Edge); exp_e.More(); exp_e.Next())
         {
-            TopoDS_Edge shortedge = TopoDS.Edge(exp_e.Current());
+            Edge shortedge = ShapeCasts.Edge(exp_e.Current());
             if (!shortedge.IsSame(E1tmp) && !shortedge.IsSame(E2tmp))
             {
                 Context()!.Remove(shortedge);
@@ -404,7 +408,7 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
     }
 
     /// <summary>Records the removal of the strip face.</summary>
-    internal bool RemoveFacesInCaseOfStrip(in TopoDS_Face F)
+    internal bool RemoveFacesInCaseOfStrip(in Face F)
     {
         Context()!.Remove(F);
         SendWarning(F, new Msg("FixAdvFace.FixStripFace.MSG0"));
@@ -415,29 +419,29 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
     /// Computes the edge replacing the two long edges of a strip face, recording the replacement of their vertices;
     /// a kept vertex's tolerance is raised in place.
     /// </summary>
-    internal TopoDS_Edge ComputeSharedEdgeForStripFace(in TopoDS_Face F,
-                                                       in TopoDS_Edge E1,
-                                                       in TopoDS_Edge E2,
-                                                       in TopoDS_Face F1,
+    internal Edge ComputeSharedEdgeForStripFace(in Face F,
+                                                       in Edge E1,
+                                                       in Edge E2,
+                                                       in Face F1,
                                                        double tol)
     {
-        var theBuilder = new BRep_Builder();
+        var theBuilder = new BrepBuilder();
         // Compute deviation between two vertices and create new vertices
-        var theNewEdge = new TopoDS_Edge();
-        TopExp.Vertices(E1, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-        TopExp.Vertices(E2, out TopoDS_Vertex V3, out TopoDS_Vertex V4);
+        var theNewEdge = new Edge();
+        Exploration.Vertices(E1, out Vertex V1, out Vertex V2);
+        Exploration.Vertices(E2, out Vertex V3, out Vertex V4);
         Point3D p1, p2;
         double dev;
-        p1 = BRep_Tool.Pnt(V1);
-        p2 = BRep_Tool.Pnt(V3);
+        p1 = Tool.Pnt(V1);
+        p2 = Tool.Pnt(V3);
         dev = p1.Distance(p2);
-        var theFirstVer = new TopoDS_Vertex();
-        var theSecondVer = new TopoDS_Vertex();
+        var theFirstVer = new Vertex();
+        var theSecondVer = new Vertex();
         theBuilder.MakeVertex(ref theFirstVer);
         theBuilder.MakeVertex(ref theSecondVer);
         Xyz thePosition;
 
-        if ((dev <= BRep_Tool.Tolerance(V1)) || (dev <= BRep_Tool.Tolerance(V3)) || (dev <= tol))
+        if ((dev <= Tool.Tolerance(V1)) || (dev <= Tool.Tolerance(V3)) || (dev <= tol))
         {
             if (V1.IsSame(V3))
             {
@@ -451,21 +455,21 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
                 thePosition = (p1.XYZ() + p2.XYZ()) / 2;
                 theBuilder.UpdateVertex(theFirstVer, new Point3D(thePosition), dev);
 
-                if (V1.Orientation() == TopAbs_FORWARD)
+                if (V1.Orientation() == Forward)
                 {
-                    Context()!.Replace(V1, theFirstVer.Oriented(TopAbs_FORWARD));
+                    Context()!.Replace(V1, theFirstVer.Oriented(Forward));
                 }
                 else
                 {
-                    Context()!.Replace(V1, theFirstVer.Oriented(TopAbs_REVERSED));
+                    Context()!.Replace(V1, theFirstVer.Oriented(Reversed));
                 }
-                if (V3.Orientation() == TopAbs_FORWARD)
+                if (V3.Orientation() == Forward)
                 {
-                    Context()!.Replace(V3, theFirstVer.Oriented(TopAbs_FORWARD));
+                    Context()!.Replace(V3, theFirstVer.Oriented(Forward));
                 }
                 else
                 {
-                    Context()!.Replace(V3, theFirstVer.Oriented(TopAbs_REVERSED));
+                    Context()!.Replace(V3, theFirstVer.Oriented(Reversed));
                 }
             }
             if (V1.IsSame(V2) || V3.IsSame(V4))
@@ -477,8 +481,8 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
                 if (!V2.IsSame(V4))
                 {
                     // #ifdef AIX  CKY : applies to all platforms
-                    p1 = BRep_Tool.Pnt(V2);
-                    p2 = BRep_Tool.Pnt(V4);
+                    p1 = Tool.Pnt(V2);
+                    p2 = Tool.Pnt(V4);
                     dev = p1.Distance(p2);
                     thePosition = (p1.XYZ() + p2.XYZ()) / 2;
                     theBuilder.UpdateVertex(theSecondVer, new Point3D(thePosition), dev);
@@ -490,29 +494,29 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
             }
             if (!V2.IsSame(theSecondVer))
             {
-                if (V2.Orientation() == TopAbs_FORWARD)
+                if (V2.Orientation() == Forward)
                 {
-                    Context()!.Replace(V2, theSecondVer.Oriented(TopAbs_FORWARD));
+                    Context()!.Replace(V2, theSecondVer.Oriented(Forward));
                 }
                 else
                 {
-                    Context()!.Replace(V2, theSecondVer.Oriented(TopAbs_REVERSED));
+                    Context()!.Replace(V2, theSecondVer.Oriented(Reversed));
                 }
-                if (V4.Orientation() == TopAbs_FORWARD)
+                if (V4.Orientation() == Forward)
                 {
-                    Context()!.Replace(V4, theSecondVer.Oriented(TopAbs_FORWARD));
+                    Context()!.Replace(V4, theSecondVer.Oriented(Forward));
                 }
                 else
                 {
-                    Context()!.Replace(V4, theSecondVer.Oriented(TopAbs_REVERSED));
+                    Context()!.Replace(V4, theSecondVer.Oriented(Reversed));
                 }
             }
         }
         else
         {
-            p2 = BRep_Tool.Pnt(V4);
+            p2 = Tool.Pnt(V4);
             dev = p1.Distance(p2);
-            if ((dev <= BRep_Tool.Tolerance(V1)) || (dev <= BRep_Tool.Tolerance(V4)) || (dev <= tol))
+            if ((dev <= Tool.Tolerance(V1)) || (dev <= Tool.Tolerance(V4)) || (dev <= tol))
             {
                 if (V1.IsSame(V4))
                 {
@@ -525,21 +529,21 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
                     dev = (dev / 2) * 1.0001;
                     thePosition = (p1.XYZ() + p2.XYZ()) / 2;
                     theBuilder.UpdateVertex(theFirstVer, new Point3D(thePosition), dev);
-                    if (V1.Orientation() == TopAbs_FORWARD)
+                    if (V1.Orientation() == Forward)
                     {
-                        Context()!.Replace(V1, theFirstVer.Oriented(TopAbs_FORWARD));
+                        Context()!.Replace(V1, theFirstVer.Oriented(Forward));
                     }
                     else
                     {
-                        Context()!.Replace(V1, theFirstVer.Oriented(TopAbs_REVERSED));
+                        Context()!.Replace(V1, theFirstVer.Oriented(Reversed));
                     }
-                    if (V4.Orientation() == TopAbs_FORWARD)
+                    if (V4.Orientation() == Forward)
                     {
-                        Context()!.Replace(V4, theFirstVer.Oriented(TopAbs_FORWARD));
+                        Context()!.Replace(V4, theFirstVer.Oriented(Forward));
                     }
                     else
                     {
-                        Context()!.Replace(V4, theFirstVer.Oriented(TopAbs_REVERSED));
+                        Context()!.Replace(V4, theFirstVer.Oriented(Reversed));
                     }
                 }
                 if (V1.IsSame(V2) || V3.IsSame(V4))
@@ -550,8 +554,8 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
                 {
                     if (!V2.IsSame(V3))
                     {
-                        p1 = BRep_Tool.Pnt(V2);
-                        p2 = BRep_Tool.Pnt(V3);
+                        p1 = Tool.Pnt(V2);
+                        p2 = Tool.Pnt(V3);
                         dev = p1.Distance(p2);
                         thePosition = (p1.XYZ() + p2.XYZ()) / 2;
                         theBuilder.UpdateVertex(theSecondVer, new Point3D(thePosition), dev);
@@ -563,21 +567,21 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
                 }
                 if (!V2.IsSame(theSecondVer))
                 {
-                    if (V2.Orientation() == TopAbs_FORWARD)
+                    if (V2.Orientation() == Forward)
                     {
-                        Context()!.Replace(V2, theSecondVer.Oriented(TopAbs_FORWARD));
+                        Context()!.Replace(V2, theSecondVer.Oriented(Forward));
                     }
                     else
                     {
-                        Context()!.Replace(V2, theSecondVer.Oriented(TopAbs_REVERSED));
+                        Context()!.Replace(V2, theSecondVer.Oriented(Reversed));
                     }
-                    if (V3.Orientation() == TopAbs_FORWARD)
+                    if (V3.Orientation() == Forward)
                     {
-                        Context()!.Replace(V3, theSecondVer.Oriented(TopAbs_FORWARD));
+                        Context()!.Replace(V3, theSecondVer.Oriented(Forward));
                     }
                     else
                     {
-                        Context()!.Replace(V3, theSecondVer.Oriented(TopAbs_REVERSED));
+                        Context()!.Replace(V3, theSecondVer.Oriented(Reversed));
                     }
                 }
             }
@@ -587,7 +591,7 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
                 return theNewEdge;
             }
         }
-        if (theFirstVer.IsNull() || theSecondVer.IsNull())
+        if (theFirstVer.IsNull || theSecondVer.IsNull)
         {
             return theNewEdge;
         }
@@ -595,42 +599,42 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
         // Create new edge
         theBuilder.MakeEdge(ref theNewEdge);
         double f, l, fp1 = 0.0, lp1 = 0.0 /*, fp2, lp2*/;
-        Geom_Curve? the3dcurve;
-        the3dcurve = BRep_Tool.Curve(E1, out f, out l);
-        Geom2d_Curve? the2dcurve1, thenew1 = null;
-        if (!F1.IsNull())
+        Curve3D? the3dcurve;
+        the3dcurve = Tool.Curve(E1, out f, out l);
+        Curve2D? the2dcurve1, thenew1 = null;
+        if (!F1.IsNull)
         {
-            the2dcurve1 = BRep_Tool.CurveOnSurface(E1, F1, out fp1, out lp1);
+            the2dcurve1 = Tool.CurveOnSurface(E1, F1, out fp1, out lp1);
             if (the2dcurve1 is not null && fp1 != f && lp1 != l)
             {
-                GeomLib.SameRange(Kerf.Engine.Foundation.Precision.Confusion(), the2dcurve1, fp1, lp1, f, l, ref thenew1);
+                global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(Kerf.Engine.Foundation.Precision.Confusion(), the2dcurve1, fp1, lp1, f, l, ref thenew1);
             }
         }
 
         double maxdev;
-        if ((BRep_Tool.Tolerance(theFirstVer)) <= (BRep_Tool.Tolerance(theSecondVer)))
+        if ((Tool.Tolerance(theFirstVer)) <= (Tool.Tolerance(theSecondVer)))
         {
-            maxdev = (BRep_Tool.Tolerance(theSecondVer));
+            maxdev = (Tool.Tolerance(theSecondVer));
         }
         else
         {
-            maxdev = (BRep_Tool.Tolerance(theFirstVer));
+            maxdev = (Tool.Tolerance(theFirstVer));
         }
         // In place: when theFirstVer (theSecondVer) is V1 (V2), the strip's own vertex.
         theBuilder.UpdateVertex(theFirstVer, maxdev);
         theBuilder.UpdateVertex(theSecondVer, maxdev);
         // bool IsFree = true;
         theBuilder.SameParameter(theNewEdge, false);
-        the3dcurve = BRep_Tool.Curve(E1, out f, out l);
+        the3dcurve = Tool.Curve(E1, out f, out l);
         theBuilder.UpdateEdge(theNewEdge, the3dcurve, maxdev);
         theBuilder.Range(theNewEdge, f, l);
-        if (!F1.IsNull() && thenew1 is not null)
+        if (!F1.IsNull && thenew1 is not null)
         {
             theBuilder.UpdateEdge(theNewEdge, thenew1, F1, maxdev);
             // IsFree = false;
         }
-        theBuilder.Add(theNewEdge, theFirstVer.Oriented(TopAbs_FORWARD));
-        theBuilder.Add(theNewEdge, theSecondVer.Oriented(TopAbs_REVERSED));
+        theBuilder.Add(theNewEdge, theFirstVer.Oriented(Forward));
+        theBuilder.Add(theNewEdge, theSecondVer.Oriented(Reversed));
         return theNewEdge;
     }
 
@@ -638,23 +642,23 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
     /// Splits the faces of the shape at their splitting vertices (<paramref name="S"/> is ignored, as in OCCT) and
     /// returns the shape, unfrozen until <see cref="Shape"/> publishes it.
     /// </summary>
-    public TopoDS_Shape FixSplitFace(in TopoDS_Shape S)
+    public Shape FixSplitFace(in Shape S)
     {
         enterWork();
-        if (myShape.IsNull())
+        if (myShape.IsNull)
         {
             return myShape;
         }
-        TopAbs_ShapeEnum st = myShape.ShapeType();
+        ShapeType st = myShape.ShapeType();
         bool done = false;
-        var theBuilder = new BRep_Builder();
-        if (st == TopAbs_COMPOUND || st == TopAbs_COMPSOLID || st == TopAbs_SOLID || st == TopAbs_SHELL
-            || st == TopAbs_FACE)
+        var theBuilder = new BrepBuilder();
+        if (st == ShapeType.Compound || st == ShapeType.CompSolid || st == ShapeType.Solid || st == ShapeType.Shell
+            || st == ShapeType.Face)
         {
-            for (var itf = new TopExp_Explorer(myShape, TopAbs_FACE); itf.More(); itf.Next())
+            for (var itf = new Explorer(myShape, ShapeType.Face); itf.More(); itf.Next())
             {
-                TopoDS_Face F = TopoDS.Face(itf.Current());
-                var CompSplittedFaces = new TopoDS_Compound();
+                Face F = ShapeCasts.Face(itf.Current());
+                var CompSplittedFaces = new Compound();
                 theBuilder.MakeCompound(ref CompSplittedFaces);
                 if (SplitOneFace(ref F, CompSplittedFaces))
                 {
@@ -676,47 +680,47 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
     /// Splits the face at its first splitting vertex, recursively, adding the faces to
     /// <paramref name="theSplittedFaces"/> (an unfrozen compound the caller owns); false if it isn't split.
     /// </summary>
-    internal bool SplitOneFace(ref TopoDS_Face F, in TopoDS_Compound theSplittedFaces)
+    internal bool SplitOneFace(ref Face F, in Compound theSplittedFaces)
     {
-        var MapEdges = new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        var MapParam = new NCollection_DataMap<TopoDS_Shape, NCollection_List<double>>(TopTools_ShapeMapHasher.Instance);
-        var theAllVert = new TopoDS_Compound();
-        var theBuilder = new BRep_Builder();
+        var MapEdges = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var MapParam = new NCollection_DataMap<Shape, NCollection_List<double>>(ShapeHasher.Instance);
+        var theAllVert = new Compound();
+        var theBuilder = new BrepBuilder();
         theBuilder.MakeCompound(ref theAllVert);
         // smh#8
-        TopoDS_Shape tmpShape = Context()!.InternalApply(F);
-        F = TopoDS.Face(tmpShape);
+        Shape tmpShape = Context()!.InternalApply(F);
+        F = ShapeCasts.Face(tmpShape);
         // OCCT.NET: the in-place form, into the compound this method owns (each splitting vertex comes twice, as in OCCT)
         if (myAnalyzer.InternalCheckSplittingVertices(F, MapEdges, MapParam, theAllVert) != 0)
         {
-            TopoDS_Wire tempwire = new();
+            Wire tempwire = new();
             // Take information about splitting vertices
-            if (theAllVert.IsNull())
+            if (theAllVert.IsNull)
             {
                 return false;
             }
             // int i;
-            TopoDS_Vertex V;
-            var itc = new TopExp_Explorer(theAllVert, TopAbs_VERTEX);
-            V = TopoDS.Vertex(itc.Current());
-            if (V.IsNull())
+            Vertex V;
+            var itc = new Explorer(theAllVert, ShapeType.Vertex);
+            V = ShapeCasts.Vertex(itc.Current());
+            if (V.IsNull)
             {
                 return false;
             }
             Point3D proj = new();
-            Point3D vp = BRep_Tool.Pnt(V);
-            var theNewVertex = new TopoDS_Vertex();
-            var E = new TopoDS_Edge();
-            var theFirstEdge = new TopoDS_Edge();
-            var theSecondEdge = new TopoDS_Edge();
+            Point3D vp = Tool.Pnt(V);
+            var theNewVertex = new Vertex();
+            var E = new Edge();
+            var theFirstEdge = new Edge();
+            var theSecondEdge = new Edge();
             {
                 // If one vertex presents do splitting by two faces
                 var SAC = new ShapeAnalysis_Curve();
-                for (var ite = new TopExp_Explorer(F, TopAbs_EDGE); ite.More(); ite.Next())
+                for (var ite = new Explorer(F, ShapeType.Edge); ite.More(); ite.Next())
                 {
-                    E = TopoDS.Edge(ite.Current());
-                    TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-                    Geom_Curve? C3D = BRep_Tool.Curve(E, out double cf, out double cl);
+                    E = ShapeCasts.Edge(ite.Current());
+                    Exploration.Vertices(E, out Vertex V1, out Vertex V2);
+                    Curve3D? C3D = Tool.Curve(E, out double cf, out double cl);
                     if (C3D is null)
                     {
                         continue;
@@ -725,7 +729,7 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
                     {
                         continue;
                     }
-                    double vt = BRep_Tool.Tolerance(V);
+                    double vt = Tool.Tolerance(V);
                     double dist = SAC.Project(C3D, vp, vt * 10.0, out proj, out double param, cf, cl);
                     if (dist == 0)
                     {
@@ -737,58 +741,58 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
                         theBuilder.UpdateVertex(theNewVertex, proj, Kerf.Engine.Foundation.Precision.Confusion());
                         theBuilder.MakeEdge(ref theFirstEdge);
                         theBuilder.MakeEdge(ref theSecondEdge);
-                        Geom_Curve? the3dcurve = BRep_Tool.Curve(E, out double f, out double l);
+                        Curve3D? the3dcurve = Tool.Curve(E, out double f, out double l);
                         theBuilder.UpdateEdge(theFirstEdge, the3dcurve, Kerf.Engine.Foundation.Precision.Confusion());
                         theBuilder.UpdateEdge(theSecondEdge, the3dcurve, Kerf.Engine.Foundation.Precision.Confusion());
-                        if (V1.Orientation() == TopAbs_FORWARD)
+                        if (V1.Orientation() == Forward)
                         {
                             theBuilder.Add(theFirstEdge, V1);
-                            theBuilder.Add(theFirstEdge, theNewVertex.Oriented(TopAbs_REVERSED));
-                            theBuilder.Add(theSecondEdge, theNewVertex.Oriented(TopAbs_FORWARD));
+                            theBuilder.Add(theFirstEdge, theNewVertex.Oriented(Reversed));
+                            theBuilder.Add(theSecondEdge, theNewVertex.Oriented(Forward));
                             theBuilder.Add(theSecondEdge, V2);
                         }
                         else
                         {
                             theBuilder.Add(theFirstEdge, V2);
-                            theBuilder.Add(theFirstEdge, theNewVertex.Oriented(TopAbs_REVERSED));
-                            theBuilder.Add(theSecondEdge, theNewVertex.Oriented(TopAbs_FORWARD));
+                            theBuilder.Add(theFirstEdge, theNewVertex.Oriented(Reversed));
+                            theBuilder.Add(theSecondEdge, theNewVertex.Oriented(Forward));
                             theBuilder.Add(theSecondEdge, V1);
                         }
                         theBuilder.Range(theFirstEdge, cf, param);
                         theBuilder.Range(theSecondEdge, param, cl);
 
                         // Replace old edge by two new edges
-                        var twoedges = new TopoDS_Wire();
+                        var twoedges = new Wire();
                         theBuilder.MakeWire(ref twoedges);
-                        if (E.Orientation() == TopAbs_FORWARD)
+                        if (E.Orientation() == Forward)
                         {
-                            theBuilder.Add(twoedges, theFirstEdge.Oriented(TopAbs_FORWARD));
-                            theBuilder.Add(twoedges, theSecondEdge.Oriented(TopAbs_FORWARD));
+                            theBuilder.Add(twoedges, theFirstEdge.Oriented(Forward));
+                            theBuilder.Add(twoedges, theSecondEdge.Oriented(Forward));
                         }
                         else
                         {
-                            theBuilder.Add(twoedges, theFirstEdge.Oriented(TopAbs_REVERSED));
-                            theBuilder.Add(twoedges, theSecondEdge.Oriented(TopAbs_REVERSED));
+                            theBuilder.Add(twoedges, theFirstEdge.Oriented(Reversed));
+                            theBuilder.Add(twoedges, theSecondEdge.Oriented(Reversed));
                         }
                         Context()!.Replace(E, twoedges);
                         break;
                     }
                 }
-                if (theNewVertex.IsNull())
+                if (theNewVertex.IsNull)
                 {
                     return false;
                 }
 
                 // Create split edge
-                var theSplitEdge = new TopoDS_Edge();
+                var theSplitEdge = new Edge();
                 var lin = new Line3D(vp, new Direction3D(new Vector3D(vp, proj)));
                 double firstparam = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin, vp);
                 double lastparam = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin, proj);
-                var L = new Geom_Line(vp, new Direction3D(new Vector3D(vp, proj))); // C++ converts the gp_Vec implicitly
-                Geom_Curve the3dc = L;
+                var L = new LineCurve3D(vp, new Direction3D(new Vector3D(vp, proj))); // C++ converts the gp_Vec implicitly
+                Curve3D the3dc = L;
                 theBuilder.MakeEdge(ref theSplitEdge, the3dc, Kerf.Engine.Foundation.Precision.Confusion());
-                theBuilder.Add(theSplitEdge, V.Oriented(TopAbs_FORWARD));
-                theBuilder.Add(theSplitEdge, theNewVertex.Oriented(TopAbs_REVERSED));
+                theBuilder.Add(theSplitEdge, V.Oriented(Forward));
+                theBuilder.Add(theSplitEdge, theNewVertex.Oriented(Reversed));
                 theBuilder.Range(theSplitEdge, firstparam, lastparam);
 
                 // Add pcurve in new edge
@@ -796,10 +800,10 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
                 sfe.FixAddPCurve(theSplitEdge, F, false);
 
                 // Reorder the wire
-                TopoDS_Wire wireonface;
+                Wire wireonface;
                 // Inher loop is not support yet !!!
-                var itw = new TopExp_Explorer(F, TopAbs_WIRE);
-                wireonface = TopoDS.Wire(itw.Current());
+                var itw = new Explorer(F, ShapeType.Wire);
+                wireonface = ShapeCasts.Wire(itw.Current());
                 itw.Next();
                 if (itw.More())
                 {
@@ -811,71 +815,71 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
                 wireonface = sfw.InternalWire(); // OCCT.NET: written below
 
                 // Create two new wires
-                TopoDS_Wire w1 = new(), w2 = new();
+                Wire w1 = new(), w2 = new();
                 theBuilder.MakeWire(ref w1);
                 theBuilder.MakeWire(ref w2);
                 theBuilder.MakeWire(ref tempwire);
                 // OCCT removes and adds edges of the wire while exploring it (its list iterator then reads the removed,
                 // freed node to go on); the port explores the edges the wire had first, then the two it appends, which
                 // OCCT visits too (occt-issues.md).
-                var anEdges = new List<TopoDS_Edge>();
-                for (var itnew = new TopExp_Explorer(wireonface, TopAbs_EDGE); itnew.More(); itnew.Next())
+                var anEdges = new List<Edge>();
+                for (var itnew = new Explorer(wireonface, ShapeType.Edge); itnew.More(); itnew.Next())
                 {
-                    anEdges.Add(TopoDS.Edge(itnew.Current()));
+                    anEdges.Add(ShapeCasts.Edge(itnew.Current()));
                 }
-                foreach (TopoDS_Edge ce in anEdges)
+                foreach (Edge ce in anEdges)
                 {
                     if (ce.IsSame(E))
                     {
                         theBuilder.Remove(wireonface, ce);
-                        theBuilder.Add(wireonface, theFirstEdge.Oriented(TopAbs_FORWARD));
-                        theBuilder.Add(wireonface, theSecondEdge.Oriented(TopAbs_FORWARD));
+                        theBuilder.Add(wireonface, theFirstEdge.Oriented(Forward));
+                        theBuilder.Add(wireonface, theSecondEdge.Oriented(Forward));
                     }
                 }
                 sfw.Init(wireonface, F, Kerf.Engine.Foundation.Precision.Confusion());
                 sfw.FixReorder();
                 wireonface = sfw.InternalWire();
-                for (var itere = new TopExp_Explorer(wireonface, TopAbs_EDGE); itere.More(); itere.Next())
+                for (var itere = new Explorer(wireonface, ShapeType.Edge); itere.More(); itere.Next())
                 {
-                    TopoDS_Edge ce = TopoDS.Edge(itere.Current());
-                    TopoDS_Vertex thecontrol;
-                    if (ce.Orientation() == TopAbs_FORWARD)
+                    Edge ce = ShapeCasts.Edge(itere.Current());
+                    Vertex thecontrol;
+                    if (ce.Orientation() == Forward)
                     {
-                        thecontrol = TopExp.LastVertex(ce);
+                        thecontrol = Exploration.LastVertex(ce);
                     }
                     else
                     {
-                        thecontrol = TopExp.FirstVertex(ce);
+                        thecontrol = Exploration.FirstVertex(ce);
                     }
                     theBuilder.Add(w1, ce);
                     if (thecontrol.IsSame(V))
                     {
-                        theBuilder.Add(w1, theSplitEdge.Oriented(TopAbs_FORWARD));
-                        TopoDS_Wire wtemp = w1;
+                        theBuilder.Add(w1, theSplitEdge.Oriented(Forward));
+                        Wire wtemp = w1;
                         w1 = w2;
                         w2 = wtemp;
                     }
                     if (thecontrol.IsSame(theNewVertex))
                     {
-                        theBuilder.Add(w1, theSplitEdge.Oriented(TopAbs_REVERSED));
-                        TopoDS_Wire wtemp = w1;
+                        theBuilder.Add(w1, theSplitEdge.Oriented(Reversed));
+                        Wire wtemp = w1;
                         w1 = w2;
                         w2 = wtemp;
                     }
                 }
-                if (w1.IsNull() || w2.IsNull())
+                if (w1.IsNull || w2.IsNull)
                 {
                     return false;
                 }
 
                 // Create two new faces and replace old one
-                var F1 = new TopoDS_Face();
-                var F2 = new TopoDS_Face();
-                theBuilder.MakeFace(ref F1, BRep_Tool.Surface(F), Kerf.Engine.Foundation.Precision.Confusion());
-                theBuilder.MakeFace(ref F2, BRep_Tool.Surface(F), Kerf.Engine.Foundation.Precision.Confusion());
+                var F1 = new Face();
+                var F2 = new Face();
+                theBuilder.MakeFace(ref F1, Tool.Surface(F), Kerf.Engine.Foundation.Precision.Confusion());
+                theBuilder.MakeFace(ref F2, Tool.Surface(F), Kerf.Engine.Foundation.Precision.Confusion());
                 theBuilder.Add(F1, w1);
                 theBuilder.Add(F2, w2);
-                var tf = new TopoDS_Compound();
+                var tf = new Compound();
                 theBuilder.MakeCompound(ref tf);
                 theBuilder.Add(tf, F1);
                 theBuilder.Add(tf, F2);
@@ -896,11 +900,11 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
     }
 
     /// <summary>Fixes a face with ShapeFix_Face (sharing the context); returns the fixed face, unfrozen.</summary>
-    internal TopoDS_Face FixFace(in TopoDS_Face F)
+    internal Face FixFace(in Face F)
     {
         // smh#8
-        TopoDS_Shape emptyCopied = F.EmptyCopied();
-        TopoDS_Face theFixedFace = TopoDS.Face(emptyCopied);
+        Shape emptyCopied = F.EmptyCopied();
+        Face theFixedFace = ShapeCasts.Face(emptyCopied);
         var sff = new ShapeFix_Face();
         sff.SetContext(Context());
         sff.Init(F);
@@ -915,21 +919,21 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
     /// Fixes every face of the shape with ShapeFix_Face and returns the shape with the context applied, unfrozen
     /// until <see cref="Shape"/> publishes it.
     /// </summary>
-    public TopoDS_Shape FixShape()
+    public Shape FixShape()
     {
         enterWork();
-        TopoDS_Shape FixSh = new();
-        if (myShape.IsNull())
+        Shape FixSh = new();
+        if (myShape.IsNull)
         {
             return FixSh;
         }
-        for (var expf = new TopExp_Explorer(myShape, TopAbs_FACE); expf.More(); expf.Next())
+        for (var expf = new Explorer(myShape, ShapeType.Face); expf.More(); expf.Next())
         {
-            TopoDS_Face F = TopoDS.Face(expf.Current());
+            Face F = ShapeCasts.Face(expf.Current());
             // smh#8
-            TopoDS_Shape tmpFace = Context()!.InternalApply(F);
-            F = TopoDS.Face(tmpFace);
-            TopoDS_Face newF = FixFace(F);
+            Shape tmpFace = Context()!.InternalApply(F);
+            F = ShapeCasts.Face(tmpFace);
+            Face newF = FixFace(F);
             Context()!.Replace(F, newF);
         }
         FixSh = Context()!.InternalApply(myShape);
@@ -940,7 +944,7 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
     /// The resulting shape, frozen: the caller's own sub-shapes wherever the fixes left them unchanged (the loaded
     /// shape itself when nothing changed). The context then answers for the caller's shapes.
     /// </summary>
-    public TopoDS_Shape Shape()
+    public Shape Shape()
     {
         endWork();
         myShape.TShape()?.FreezeGraph();
@@ -948,10 +952,10 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
     }
 
     /// <summary>The resulting shape, unfrozen (ported code fixing a shape it owns).</summary>
-    internal TopoDS_Shape InternalShape() => myShape;
+    internal Shape InternalShape() => myShape;
 
     /// <summary>Fixes a pin face: does nothing (OCCT's stub).</summary>
-    public bool FixPinFace(ref TopoDS_Face F) => true;
+    public bool FixPinFace(ref Face F) => true;
 
     // At the first fix after Init or a public result: copies the loaded shape when it holds a frozen shape.
     private void enterWork()
@@ -961,8 +965,8 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
             return;
         }
         myToEnter = false;
-        myEntry = new BRepTools_CopyAtEntry(myShape, Context());
-        if (!myEntry.IsCopied())
+        myEntry = new CopyAtEntry(myShape, Context());
+        if (!myEntry.IsCopied)
         {
             myEntry = null;
             return;
@@ -975,7 +979,7 @@ public class ShapeFix_FixSmallFace : ShapeFix_Root
     private void endWork()
     {
         myToEnter = true;
-        BRepTools_CopyAtEntry? anEntry = myEntry;
+        CopyAtEntry? anEntry = myEntry;
         myEntry = null;
         if (anEntry is null)
         {

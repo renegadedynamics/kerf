@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Text;
 using Xunit.Abstractions;
@@ -83,15 +86,15 @@ public class IntTools_FaceFaceOracleTests(ITestOutputHelper output) : IDisposabl
         return N.BRep_Tool.Surface(N.TopoDS.Face(aShape))!;
     }
 
-    private TopoDS_Face PortFace(string theText)
+    private Face PortFace(string theText)
     {
         string aFile = NewFile();
         File.WriteAllText(aFile, theText, Encoding.Latin1);
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aFile));
-        return TopoDS.Face(aShape);
+        Assert.True(BrepTools.Read(out Shape aShape, aFile));
+        return ShapeCasts.Face(aShape);
     }
 
-    private static Geom_Curve PortBasis(Geom_Curve theC) => theC is Geom_TrimmedCurve aT ? aT.BasisCurve() : theC;
+    private static Curve3D PortBasis(Curve3D theC) => theC is TrimmedCurve3D aT ? aT.BasisCurve() : theC;
 
     private static N.Geom_Curve NativeBasis(N.Geom_Curve theC)
         => N.Geom_TrimmedCurve.DownCast(theC) is N.Geom_TrimmedCurve aT ? aT.BasisCurve()! : theC;
@@ -128,12 +131,12 @@ public class IntTools_FaceFaceOracleTests(ITestOutputHelper output) : IDisposabl
             {
                 continue;
             }
-            List<Geom_Curve> aPort = [];
+            List<Curve3D> aPort = [];
             NCollection_Sequence<IntTools_Curve> aLines = aFF.Lines();
             for (int i = 1; i <= aLines.Length(); i++)
             {
-                if (aLines.Value(i).Curve() is Geom_Curve aC
-                    && PortBasis(aC) is Geom_Line or Geom_Conic)
+                if (aLines.Value(i).Curve() is Curve3D aC
+                    && PortBasis(aC) is LineCurve3D or ConicCurve3D)
                 {
                     aPort.Add(PortBasis(aC));
                 }
@@ -162,7 +165,7 @@ public class IntTools_FaceFaceOracleTests(ITestOutputHelper output) : IDisposabl
             {
             }
             aNativeLines += aNative.Count;
-            foreach (Geom_Curve aC in aPort)
+            foreach (Curve3D aC in aPort)
             {
                 aCompared++;
                 if (aNative.Any(n => aCmp.SameRecord(n, aC)))

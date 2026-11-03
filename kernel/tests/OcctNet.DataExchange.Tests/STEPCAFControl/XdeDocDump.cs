@@ -42,10 +42,10 @@ internal static class XdeDocDump
         return aBuilder.ToString();
     }
 
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        global::Kerf.Engine.Topology.Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
@@ -57,11 +57,11 @@ internal static class XdeDocDump
                        : theDoc.IsSimpleShape(theLabel) ? "S"
                        : "E";
         theOut.Add($"L {theLabel.Entry()} {aKind}");
-        if (theDoc.GetShape(theLabel, out TopoDS_Shape aShape))
+        if (theDoc.GetShape(theLabel, out Shape aShape))
         {
-            theOut.Add($"T {TopAbs.ShapeTypeToString(aShape.ShapeType())} {Count(aShape, TopAbs_ShapeEnum.TopAbs_SOLID)} "
-                       + $"{Count(aShape, TopAbs_ShapeEnum.TopAbs_SHELL)} {Count(aShape, TopAbs_ShapeEnum.TopAbs_FACE)} "
-                       + $"{Count(aShape, TopAbs_ShapeEnum.TopAbs_EDGE)} {Count(aShape, TopAbs_ShapeEnum.TopAbs_VERTEX)}");
+            theOut.Add($"T {Kerf.Engine.Topology.TopAbs.ShapeTypeToString(aShape.ShapeType())} {Count(aShape, ShapeType.Solid)} "
+                       + $"{Count(aShape, ShapeType.Shell)} {Count(aShape, ShapeType.Face)} "
+                       + $"{Count(aShape, ShapeType.Edge)} {Count(aShape, ShapeType.Vertex)}");
         }
         if (theDoc.GetReferredShape(theLabel, out XdeDoc_Label aReferred))
         {
@@ -159,13 +159,13 @@ internal static class XdeDocDump
     };
 
     /// <summary>stepcafrec's MakePartDoc, with XCAF's auto-naming.</summary>
-    public static XdeDoc_Document MakePartDoc(in TopoDS_Shape theShape, string theName, int theIndex)
+    public static XdeDoc_Document MakePartDoc(in Shape theShape, string theName, int theIndex)
     {
         var aDoc = new XdeDoc_Document { AutoNaming = true };
         XdeDoc_Label aLabel = aDoc.AddShape(theShape, false);
         aDoc.SetName(aLabel, theName);
         aDoc.SetColor(aLabel, PaletteColor(theIndex), theIndex % 3 == 1 ? XdeDoc_ColorType.XdeDoc_ColorGen : XdeDoc_ColorType.XdeDoc_ColorSurf);
-        var anExp = new TopExp_Explorer(theShape, TopAbs_ShapeEnum.TopAbs_FACE);
+        var anExp = new global::Kerf.Engine.Topology.Explorer(theShape, ShapeType.Face);
         if (anExp.More())
         {
             XdeDoc_Label aSub = aDoc.AddSubShape(aLabel, anExp.Current());
@@ -192,7 +192,7 @@ internal static class XdeDocDump
     }
 
     /// <summary>stepcafrec's MakeAssemblyDoc, with XCAF's auto-naming.</summary>
-    public static XdeDoc_Document MakeAssemblyDoc(in TopoDS_Shape theShape)
+    public static XdeDoc_Document MakeAssemblyDoc(in Shape theShape)
     {
         var aDoc = new XdeDoc_Document { AutoNaming = true };
         XdeDoc_Label aPart = aDoc.AddShape(theShape, false);

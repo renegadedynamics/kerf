@@ -4,10 +4,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -27,27 +31,27 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
     private Point2D myPoint2d = new();
     private BRepClass_Edge myBCEdge = new();
     private readonly BRepClass_FacePassiveClassifier myFPC = new();
-    private TopoDS_Shape myShape = new();
+    private Shape myShape = new();
 
     /// <summary>A classifier of the wires and edges of the face <paramref name="F"/>, the blocks being in <paramref name="BB"/>.</summary>
-    public TopOpeBRepBuild_WireEdgeClassifier(in TopoDS_Shape F, TopOpeBRepBuild_BlockBuilder BB)
+    public TopOpeBRepBuild_WireEdgeClassifier(in Shape F, TopOpeBRepBuild_BlockBuilder BB)
         : base(BB)
     {
-        myBCEdge.ChangeFace() = TopoDS.Face(F);
+        myBCEdge.ChangeFace() = ShapeCasts.Face(F);
     }
 
     /// <inheritdoc/>
-    public override TopAbs_State Compare(TopOpeBRepBuild_Loop L1, TopOpeBRepBuild_Loop L2)
+    public override Containment Compare(TopOpeBRepBuild_Loop L1, TopOpeBRepBuild_Loop L2)
     {
-        TopAbs_State state = TopAbs_UNKNOWN;
+        Containment state = Unknown;
 
         bool isshape1 = L1.IsShape();
         bool isshape2 = L2.IsShape();
 
         if (isshape2 && isshape1)
         { // L1 is Shape , L2 is Shape
-            TopoDS_Shape s1 = L1.Shape();
-            TopoDS_Shape s2 = L2.Shape();
+            Shape s1 = L1.Shape();
+            Shape s2 = L2.Shape();
             state = CompareShapes(s1, s2);
         }
         else if (isshape2 && !isshape1)
@@ -57,11 +61,11 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
             bool yena1 = Bit1.More();
             while (yena1)
             {
-                TopoDS_Shape s1 = myBlockBuilder.Element(Bit1);
-                TopoDS_Shape s2 = L2.Shape();
+                Shape s1 = myBlockBuilder.Element(Bit1);
+                Shape s2 = L2.Shape();
                 state = CompareElementToShape(s1, s2);
                 yena1 = false;
-                if (state == TopAbs_UNKNOWN)
+                if (state == Unknown)
                 {
                     if (Bit1.More())
                     {
@@ -73,36 +77,36 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
         }
         else if (!isshape2 && isshape1)
         { // L1 is Shape , L2 is Block
-            TopoDS_Shape s1 = L1.Shape();
+            Shape s1 = L1.Shape();
             ResetShape(s1);
             TopOpeBRepBuild_BlockIterator Bit2 = L2.BlockIterator();
             for (Bit2.Initialize(); Bit2.More(); Bit2.Next())
             {
-                TopoDS_Shape s2 = myBlockBuilder.Element(Bit2);
+                Shape s2 = myBlockBuilder.Element(Bit2);
                 CompareElement(s2);
             }
             state = State();
         }
         else if (!isshape2 && !isshape1)
         { // L1 is Block , L2 is Block
-            if (state == TopAbs_UNKNOWN)
+            if (state == Unknown)
             {
                 TopOpeBRepBuild_BlockIterator Bit1 = L1.BlockIterator();
                 Bit1.Initialize();
                 bool yena1 = Bit1.More();
                 while (yena1)
                 {
-                    TopoDS_Shape s1 = myBlockBuilder.Element(Bit1);
+                    Shape s1 = myBlockBuilder.Element(Bit1);
                     ResetElement(s1);
                     TopOpeBRepBuild_BlockIterator Bit2 = L2.BlockIterator();
                     for (Bit2.Initialize(); Bit2.More(); Bit2.Next())
                     {
-                        TopoDS_Shape s2 = myBlockBuilder.Element(Bit2);
+                        Shape s2 = myBlockBuilder.Element(Bit2);
                         CompareElement(s2);
                     }
                     state = State();
                     yena1 = false;
-                    if (state == TopAbs_UNKNOWN)
+                    if (state == Unknown)
                     {
                         if (Bit1.More())
                         {
@@ -113,15 +117,15 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
                 }
             } // UNKNOWN
 
-            if (state == TopAbs_UNKNOWN)
+            if (state == Unknown)
             {
-                TopoDS_Shape s1 = LoopToShape(L1);
-                if (s1.IsNull())
+                Shape s1 = LoopToShape(L1);
+                if (s1.IsNull)
                 {
                     return state;
                 }
-                TopoDS_Shape s2 = LoopToShape(L2);
-                if (s2.IsNull())
+                Shape s2 = LoopToShape(L2);
+                if (s2.IsNull)
                 {
                     return state;
                 }
@@ -129,7 +133,7 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
                 int samedomain = SC.SameDomain();
                 SC.SameDomain(1);
                 SC.SetReference(s2);
-                TopoDS_Shape AvS = s2;
+                Shape AvS = s2;
                 state = SC.StateShapeReference(s1, AvS);
                 SC.SameDomain(samedomain);
             } // UNKNOWN
@@ -142,7 +146,7 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
     /// A face on the classifier's surface bounded by a wire of the block's edges (null for an empty block). Edges
     /// without a pcurve on the face get one.
     /// </summary>
-    public TopoDS_Shape LoopToShape(TopOpeBRepBuild_Loop L)
+    public Shape LoopToShape(TopOpeBRepBuild_Loop L)
     {
         myShape.Nullify();
         TopOpeBRepBuild_BlockIterator Bit = L.BlockIterator();
@@ -152,22 +156,22 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
             return myShape;
         }
 
-        TopoDS_Shape aLocalShape = myBCEdge.Face();
-        TopoDS_Face F1 = TopoDS.Face(aLocalShape);
+        Shape aLocalShape = myBCEdge.Face();
+        Face F1 = ShapeCasts.Face(aLocalShape);
         aLocalShape = F1.EmptyCopied();
-        TopoDS_Face F = TopoDS.Face(aLocalShape);
-        BRep_Builder BB = new();
-        TopoDS_Wire W = new();
+        Face F = ShapeCasts.Face(aLocalShape);
+        BrepBuilder BB = new();
+        Wire W = new();
         BB.MakeWire(ref W);
         for (; Bit.More(); Bit.Next())
         {
-            TopoDS_Edge E = TopoDS.Edge(myBlockBuilder.Element(Bit));
+            Edge E = ShapeCasts.Edge(myBlockBuilder.Element(Bit));
             double tolE;
-            tolE = BRep_Tool.Tolerance(E);
+            tolE = Tool.Tolerance(E);
             bool haspc = TopOpeBRepTool_2d.FC2D_HasCurveOnSurface(E, F);
             if (!haspc)
             {
-                Geom2d_Curve? C2D;
+                Curve2D? C2D;
                 C2D = TopOpeBRepTool_2d.FC2D_CurveOnSurface(E, F, out _, out _, out double tolpc);
                 if (C2D is not null)
                 {
@@ -183,11 +187,11 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
     }
 
     // The unit tangent at v of e, pointing into the edge
-    private static Vector3D FUN_tgINE(in TopoDS_Vertex v, in TopoDS_Vertex vl, in TopoDS_Edge e)
+    private static Vector3D FUN_tgINE(in Vertex v, in Vertex vl, in Edge e)
     {
         // tg oriented INSIDE 1d(e)
         // vl : last vertex of e
-        double par = BRep_Tool.Parameter(v, e);
+        double par = Tool.Parameter(v, e);
         bool ok = TopOpeBRepTool_TOOL.TggeomE(par, e, out Vector3D tg);
         if (!ok)
         {
@@ -204,43 +208,43 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
     /// Classifies the wire <paramref name="B1"/> with the wire <paramref name="B2"/>: an edge of B1 against B2's edges;
     /// if undecided, a point of an edge of B2 that isn't in B1, in the face bounded by B1.
     /// </summary>
-    public override TopAbs_State CompareShapes(in TopoDS_Shape B1, in TopoDS_Shape B2)
+    public override Containment CompareShapes(in Shape B1, in Shape B2)
     {
-        TopAbs_State state = TopAbs_UNKNOWN;
+        Containment state = Unknown;
 
-        TopExp_Explorer ex1 = new(B1, TopAbs_EDGE);
+        Explorer ex1 = new(B1, ShapeType.Edge);
         if (!ex1.More())
         {
             return state; // NYIRAISE
         }
         for (; ex1.More(); ex1.Next())
         {
-            TopoDS_Edge e1 = TopoDS.Edge(ex1.Current());
-            TopExp.Vertices(e1, out TopoDS_Vertex vf1, out TopoDS_Vertex vl1); // xpu101198
+            Edge e1 = ShapeCasts.Edge(ex1.Current());
+            Exploration.Vertices(e1, out Vertex vf1, out Vertex vl1); // xpu101198
             bool e1clo = vf1.IsSame(vl1);
-            NCollection_IndexedMap<TopoDS_Shape> mapv1 = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_IndexedMap<Shape> mapv1 = new(ShapeHasher.Instance);
             mapv1.Add(vf1);
             mapv1.Add(vl1);
 
             ResetShape(e1);
             bool indy = false;
-            TopExp_Explorer Ex = new();
-            for (Ex.Init(B2, TopAbs_EDGE); Ex.More(); Ex.Next())
+            Explorer Ex = new();
+            for (Ex.Init(B2, ShapeType.Edge); Ex.More(); Ex.Next())
             {
-                TopoDS_Edge E = TopoDS.Edge(Ex.Current());
+                Edge E = ShapeCasts.Edge(Ex.Current());
                 if (E.IsSame(e1))
                 {
-                    state = TopAbs_UNKNOWN;
+                    state = Unknown;
                     break;
                 } // eap occ416
-                TopExp.Vertices(E, out TopoDS_Vertex vf, out TopoDS_Vertex vl); // xpu101198
+                Exploration.Vertices(E, out Vertex vf, out Vertex vl); // xpu101198
                 bool Eclo = vf.IsSame(vl);                                        // xpu101198
                 bool hasf = mapv1.Contains(vf);                                   // xpu101198
                 bool hasl = mapv1.Contains(vl);                                   // xpu101198
                 bool filter = (hasf || hasl) && (!e1clo) && (!Eclo);              // nyi : Eclo || e1clo
                 if (filter)
                 { // xpu101198
-                    TopoDS_Vertex vshared = new();
+                    Vertex vshared = new();
                     if (hasf)
                     {
                         vshared = vf;
@@ -261,51 +265,51 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
                 } // xpu101198
                 if (indy)
                 {
-                    state = TopAbs_UNKNOWN;
+                    state = Unknown;
                     break;
                 }
                 CompareElement(E);
                 state = State();
             } // ex(B2,EDGE)
-            if (state != TopAbs_UNKNOWN)
+            if (state != Unknown)
             {
                 break;
             }
         } // ex1
 
-        bool resta = state == TopAbs_UNKNOWN;
-        resta = resta && (B2.ShapeType() == TopAbs_WIRE) && (B1.ShapeType() == TopAbs_WIRE);
+        bool resta = state == Unknown;
+        resta = resta && (B2.ShapeType() == ShapeType.Wire) && (B1.ShapeType() == ShapeType.Wire);
         if (resta)
         {
             // classifying first point of B2's first edge not in B1's edges, in face bounded by B1
-            NCollection_IndexedMap<TopoDS_Shape> mape1 = new(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(B1, TopAbs_EDGE, mape1);
-            TopExp_Explorer ex2 = new(B2, TopAbs_EDGE);
+            NCollection_IndexedMap<Shape> mape1 = new(ShapeHasher.Instance);
+            Exploration.MapShapes(B1, ShapeType.Edge, mape1);
+            Explorer ex2 = new(B2, ShapeType.Edge);
             for (; ex2.More(); ex2.Next())
             {
-                TopoDS_Edge E2 = TopoDS.Edge(ex2.Current());
+                Edge E2 = ShapeCasts.Edge(ex2.Current());
                 if (mape1.Contains(E2))
                 {
                     continue;
                 }
 
-                TopoDS_Face theFace = myBCEdge.Face();
-                BRep_Builder BB = new();
-                TopoDS_Shape aLocalShape = theFace.Oriented(TopAbs_FORWARD);
-                TopoDS_Face ftmp = TopoDS.Face(aLocalShape);
+                Face theFace = myBCEdge.Face();
+                BrepBuilder BB = new();
+                Shape aLocalShape = theFace.Oriented(Forward);
+                Face ftmp = ShapeCasts.Face(aLocalShape);
                 aLocalShape = ftmp.EmptyCopied();
-                TopoDS_Face F2 = TopoDS.Face(aLocalShape);
-                BB.Add(F2, TopoDS.Wire(B2));
-                BRepAdaptor_Curve2d BC2d = new(E2, F2);
+                Face F2 = ShapeCasts.Face(aLocalShape);
+                BB.Add(F2, ShapeCasts.Wire(B2));
+                EdgeCurve2DAdaptor BC2d = new(E2, F2);
                 TopOpeBRepTool_PROJECT.FUN_tool_bounds(E2, out double f, out double l);
                 double x = 0.45678;
                 double p2 = (1 - x) * l + x * f;
                 Point2D p2d = BC2d.Value(p2);
 
                 aLocalShape = ftmp.EmptyCopied();
-                TopoDS_Face F1 = TopoDS.Face(aLocalShape);
-                BB.Add(F1, TopoDS.Wire(B1));
-                double tolF1 = BRep_Tool.Tolerance(F1);
+                Face F1 = ShapeCasts.Face(aLocalShape);
+                BB.Add(F1, ShapeCasts.Wire(B1));
+                double tolF1 = Tool.Tolerance(F1);
                 BRepClass_FaceClassifier Fclass = new(F1, p2d, tolF1);
                 state = Fclass.State();
                 return state;
@@ -316,33 +320,33 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
     }
 
     /// <summary>Classifies the edge <paramref name="EE"/> with the wire <paramref name="B"/>.</summary>
-    public override TopAbs_State CompareElementToShape(in TopoDS_Shape EE, in TopoDS_Shape B)
+    public override Containment CompareElementToShape(in Shape EE, in Shape B)
     {
         // isvalid edges : ~ (closed edge && ~reachable B)
         ResetElement(EE);
-        TopExp_Explorer Ex = new();
-        for (Ex.Init(B, TopAbs_EDGE); Ex.More(); Ex.Next())
+        Explorer Ex = new();
+        for (Ex.Init(B, ShapeType.Edge); Ex.More(); Ex.Next())
         {
-            TopoDS_Shape E = Ex.Current();
+            Shape E = Ex.Current();
             CompareElement(E);
         }
-        TopAbs_State state = State();
+        Containment state = State();
         return state;
     }
 
     /// <summary>Prepares a classification involving the wire (or edge) <paramref name="B"/>: ResetElement on its first edge.</summary>
-    public override void ResetShape(in TopoDS_Shape B)
+    public override void ResetShape(in Shape B)
     {
-        if (B.ShapeType() == TopAbs_EDGE)
+        if (B.ShapeType() == ShapeType.Edge)
         {
             ResetElement(B);
         }
         else
         {
-            TopExp_Explorer ex = new(B, TopAbs_EDGE);
+            Explorer ex = new(B, ShapeType.Edge);
             if (ex.More())
             {
-                TopoDS_Shape E = ex.Current();
+                Shape E = ex.Current();
                 ResetElement(E);
             }
         }
@@ -353,21 +357,21 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
     /// (computed and stored on the edge if it has none).
     /// </summary>
     /// <exception cref="ProgramErrorException">No pcurve could be found.</exception>
-    public override void ResetElement(in TopoDS_Shape EE)
+    public override void ResetElement(in Shape EE)
     {
-        TopoDS_Edge E = TopoDS.Edge(EE);
-        TopoDS_Face F = myBCEdge.Face();
+        Edge E = ShapeCasts.Edge(EE);
+        Face F = myBCEdge.Face();
 
         // initialize myPoint2d with first point of edge E
-        Geom2d_Curve? C2D;                                                // jyl980406+
+        Curve2D? C2D;                                                // jyl980406+
         bool haspc = TopOpeBRepTool_2d.FC2D_HasCurveOnSurface(E, F); // jyl980406+
         if (!haspc)
         { // jyl980406+
             bool trim3d = true;
             C2D = TopOpeBRepTool_2d.FC2D_CurveOnSurface(E, F, out _, out _, out double tolpc0, trim3d); // jyl980406+
-            double tolE = BRep_Tool.Tolerance(E);                                                       // jyl980406+
+            double tolE = Tool.Tolerance(E);                                                       // jyl980406+
             double tol = Max(tolE, tolpc0);                                                             // jyl980406+
-            BRep_Builder BB = new();
+            BrepBuilder BB = new();
             BB.UpdateEdge(E, C2D, F, tol); // jyl980406+
         } // jyl980406+
 
@@ -388,21 +392,21 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
     /// Adds the edge <paramref name="EE"/> to the edges the 2D point is classified against (its pcurve computed and
     /// stored on the edge if it has none). Always true.
     /// </summary>
-    public override bool CompareElement(in TopoDS_Shape EE)
+    public override bool CompareElement(in Shape EE)
     {
         bool bRet = true;
-        TopoDS_Edge E = TopoDS.Edge(EE);
-        TopoDS_Face F = myBCEdge.Face();
+        Edge E = ShapeCasts.Edge(EE);
+        Face F = myBCEdge.Face();
 
-        Geom2d_Curve? C2D;                                                // jyl980402+
+        Curve2D? C2D;                                                // jyl980402+
         bool haspc = TopOpeBRepTool_2d.FC2D_HasCurveOnSurface(E, F); // jyl980402+
         if (!haspc)
         { // jyl980402+
             bool trim3d = true;
             C2D = TopOpeBRepTool_2d.FC2D_CurveOnSurface(E, F, out _, out _, out double tolpc0, trim3d); // jyl980406+
-            double tolE = BRep_Tool.Tolerance(E);                                                       // jyl980402+
+            double tolE = Tool.Tolerance(E);                                                       // jyl980402+
             double tol = Max(tolE, tolpc0);                                                             // jyl980402+
-            BRep_Builder BB = new();
+            BrepBuilder BB = new();
             BB.UpdateEdge(E, C2D, F, tol); // jyl980402+
         } // jyl980402+
 
@@ -422,15 +426,15 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
         }
 
         myBCEdge.ChangeEdge() = E;
-        TopAbs_Orientation Eori = E.Orientation();
+        Orientation Eori = E.Orientation();
         myFPC.Compare(myBCEdge, Eori);
         return bRet;
     }
 
     /// <summary>The state of the 2D point against the edges added.</summary>
-    public override TopAbs_State State()
+    public override Containment State()
     {
-        TopAbs_State state = myFPC.State();
+        Containment state = myFPC.State();
         return state;
     }
 }

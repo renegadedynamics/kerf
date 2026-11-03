@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Text;
 using OcctNet.DrawLite;
 
@@ -40,7 +42,7 @@ internal static class DrawCapture
                     Dictionary<string, string> aShapes = new(StringComparer.Ordinal);
                     foreach (string aWord in a.Skip(1))
                     {
-                        if (!aShapes.ContainsKey(aWord) && theDI.GetDrawable(aWord) is DrawShape { Shape: var aShape } && !aShape.IsNull())
+                        if (!aShapes.ContainsKey(aWord) && theDI.GetDrawable(aWord) is DrawShape { Shape: var aShape } && !aShape.IsNull)
                         {
                             aShapes[aWord] = Write(aShape);
                         }
@@ -53,10 +55,10 @@ internal static class DrawCapture
         return aCalls;
     }
 
-    private static string Write(TopoDS_Shape theShape)
+    private static string Write(Shape theShape)
     {
         using var aWriter = new StringWriter(System.Globalization.CultureInfo.InvariantCulture) { NewLine = "\n" };
-        BRepTools.Write(theShape, aWriter);
+        BrepTools.Write(theShape, aWriter);
         return aWriter.ToString();
     }
 

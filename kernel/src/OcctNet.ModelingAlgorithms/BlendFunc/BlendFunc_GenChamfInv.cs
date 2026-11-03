@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2015-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 namespace Occt;
@@ -10,14 +11,14 @@ namespace Occt;
 /// <summary>The function of a general chamfer with one end on a surface's boundary.</summary>
 public abstract class BlendFunc_GenChamfInv : Blend_FuncInv
 {
-    protected readonly Adaptor3d_Surface surf1;
-    protected readonly Adaptor3d_Surface surf2;
-    protected readonly Adaptor3d_Curve curv;
-    protected Adaptor2d_Curve2d? csurf;
+    protected readonly SurfaceAdaptorBase surf1;
+    protected readonly SurfaceAdaptorBase surf2;
+    protected readonly CurveAdaptorBase curv;
+    protected Curve2DAdaptorBase? csurf;
     protected int choix;
     protected bool first;
 
-    protected BlendFunc_GenChamfInv(Adaptor3d_Surface S1, Adaptor3d_Surface S2, Adaptor3d_Curve C)
+    protected BlendFunc_GenChamfInv(SurfaceAdaptorBase S1, SurfaceAdaptorBase S2, CurveAdaptorBase C)
     {
         surf1 = S1;
         surf2 = S2;
@@ -32,7 +33,7 @@ public abstract class BlendFunc_GenChamfInv : Blend_FuncInv
         return 4;
     }
 
-    public override void Set(bool OnFirst, Adaptor2d_Curve2d C)
+    public override void Set(bool OnFirst, Curve2DAdaptorBase C)
     {
         first = OnFirst;
         csurf = C;

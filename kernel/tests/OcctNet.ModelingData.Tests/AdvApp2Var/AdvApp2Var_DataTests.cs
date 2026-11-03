@@ -8,7 +8,7 @@ public class AdvApp2Var_DataTests
     [Fact]
     public void Mlgdrtl_FieldsAndValues()
     {
-        mlgdrtl_1_ aTab = AdvApp2Var_Data.Getmlgdrtl();
+        global::Kerf.Engine.Approximation.Advanced.MlgdrtlCommon aTab = global::Kerf.Engine.Approximation.Advanced.Data.Getmlgdrtl();
         Assert.Equal(1891, aTab.rootab.AsSpan().Length);
         Assert.Equal(.577350269189625764509148780501958, aTab.rootab[0]);
         Assert.Equal(.999235597631363693039497410657766, aTab.rootab[929]);
@@ -26,7 +26,7 @@ public class AdvApp2Var_DataTests
     [Fact]
     public void Mmjcobi_FieldsAndValues()
     {
-        mmjcobi_1_ aTab = AdvApp2Var_Data.Getmmjcobi();
+        global::Kerf.Engine.Approximation.Advanced.MmjcobiCommon aTab = global::Kerf.Engine.Approximation.Advanced.Data.Getmmjcobi();
         Assert.Equal(7936, aTab.plgcan.AsSpan().Length);
         Assert.Equal(3968, aTab.canjac.AsSpan().Length);
         Assert.Equal(.70710678118654752440084436210485, aTab.plgcan[0]);
@@ -38,7 +38,7 @@ public class AdvApp2Var_DataTests
     [Fact]
     public void Mmcmcnp_IsTheSymmetricBinomialTable()
     {
-        mmcmcnp_1_ aTab = AdvApp2Var_Data.Getmmcmcnp();
+        global::Kerf.Engine.Approximation.Advanced.MmcmcnpCommon aTab = global::Kerf.Engine.Approximation.Advanced.Data.Getmmcmcnp();
         Assert.Equal(3721, aTab.cnp.AsSpan().Length);
         // CNP(N, P) = N! / (P! (N - P)!), stored for N and P from 0 to 60, with CNP(I, J) = CNP(J, I)
         Assert.Equal(1.0, aTab.cnp[0]);
@@ -74,28 +74,28 @@ public class AdvApp2Var_DataTests
     private static void GetGaussTable(int theTable, out double theFirstX, out double theLastX, out double theFirst0,
                                       out double theLast0, out int theTotal, out int theLength0)
     {
-        F2cConstPtr<double> aX, a0;
+        global::Kerf.Engine.Approximation.Advanced.F2cConstPtr<double> aX, a0;
         int aNbX;
         switch (theTable)
         {
             case 0:
-                aX = AdvApp2Var_Data.Getmmapgss().gslxjs;
-                a0 = AdvApp2Var_Data.Getmmapgss().gsl0js;
+                aX = global::Kerf.Engine.Approximation.Advanced.Data.Getmmapgss().gslxjs;
+                a0 = global::Kerf.Engine.Approximation.Advanced.Data.Getmmapgss().gsl0js;
                 aNbX = 5017;
                 break;
             case 1:
-                aX = AdvApp2Var_Data.Getmmapgs0().gslxj0;
-                a0 = AdvApp2Var_Data.Getmmapgs0().gsl0j0;
+                aX = global::Kerf.Engine.Approximation.Advanced.Data.Getmmapgs0().gslxj0;
+                a0 = global::Kerf.Engine.Approximation.Advanced.Data.Getmmapgs0().gsl0j0;
                 aNbX = 4761;
                 break;
             case 2:
-                aX = AdvApp2Var_Data.Getmmapgs1().gslxj1;
-                a0 = AdvApp2Var_Data.Getmmapgs1().gsl0j1;
+                aX = global::Kerf.Engine.Approximation.Advanced.Data.Getmmapgs1().gslxj1;
+                a0 = global::Kerf.Engine.Approximation.Advanced.Data.Getmmapgs1().gsl0j1;
                 aNbX = 4505;
                 break;
             default:
-                aX = AdvApp2Var_Data.Getmmapgs2().gslxj2;
-                a0 = AdvApp2Var_Data.Getmmapgs2().gsl0j2;
+                aX = global::Kerf.Engine.Approximation.Advanced.Data.Getmmapgs2().gslxj2;
+                a0 = global::Kerf.Engine.Approximation.Advanced.Data.Getmmapgs2().gsl0j2;
                 aNbX = 4249;
                 break;
         }
@@ -110,20 +110,20 @@ public class AdvApp2Var_DataTests
     [Fact]
     public void Main_Commons()
     {
-        Assert.Equal(3.141592653589793, AdvApp2Var_Data.Getmdnombr().pi);
-        Assert.Equal(90.0, AdvApp2Var_Data.Getmdnombr().a90);
-        minombr_1_ aNbr = AdvApp2Var_Data.Getminombr();
+        Assert.Equal(3.141592653589793, global::Kerf.Engine.Approximation.Advanced.Data.Getmdnombr().pi);
+        Assert.Equal(90.0, global::Kerf.Engine.Approximation.Advanced.Data.Getmdnombr().a90);
+        global::Kerf.Engine.Approximation.Advanced.MinombrCommon aNbr = global::Kerf.Engine.Approximation.Advanced.Data.Getminombr();
         Assert.Equal(1001, aNbr.nbr.AsSpan().Length);
         for (int i = 0; i <= 1000; i++)
         {
             Assert.Equal(i, aNbr.nbr[i]);
         }
-        ref readonly maovpar_1_ aPar = ref AdvApp2Var_Data.Getmaovpar();
+        ref readonly global::Kerf.Engine.Approximation.Advanced.MaovparCommon aPar = ref global::Kerf.Engine.Approximation.Advanced.Data.Getmaovpar();
         Assert.Equal(1.797693134862315e307, aPar.r8ovr);
         Assert.Equal((float)3.40282347e38, aPar.r4ovr);
         Assert.Equal(17, aPar.r8ncs);
         Assert.Equal((short)-32768, aPar.i2ovn);
-        Assert.Equal("SGI_IRIS        ", AdvApp2Var_Data.Getmaovpch().cnmmac);
-        Assert.Equal("D_FLOAT ", AdvApp2Var_Data.Getmaovpch().cdcode);
+        Assert.Equal("SGI_IRIS        ", global::Kerf.Engine.Approximation.Advanced.Data.Getmaovpch().cnmmac);
+        Assert.Equal("D_FLOAT ", global::Kerf.Engine.Approximation.Advanced.Data.Getmaovpch().cdcode);
     }
 }

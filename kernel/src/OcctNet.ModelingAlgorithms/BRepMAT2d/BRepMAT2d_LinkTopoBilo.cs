@@ -4,8 +4,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -18,10 +23,10 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepMAT2d_LinkTopoBilo
 {
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_Sequence<MAT_BasicElt>> myMap =
-        new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_DataMap<MAT_BasicElt, TopoDS_Shape> myBEShape = new(ReferenceEqualityComparer.Instance);
-    private TopoDS_Shape myKey;
+    private readonly NCollection_DataMap<Shape, NCollection_Sequence<MAT_BasicElt>> myMap =
+        new(ShapeHasher.Instance);
+    private readonly NCollection_DataMap<MAT_BasicElt, Shape> myBEShape = new(ReferenceEqualityComparer.Instance);
+    private Shape myKey;
     private int current;
     private bool isEmpty;
 
@@ -45,16 +50,16 @@ public sealed class BRepMAT2d_LinkTopoBilo
         myMap.Clear();
         myBEShape.Clear();
 
-        TopoDS_Shape S = Explo.Shape();
+        Shape S = Explo.Shape();
         int IndContour = 1;
 
-        if (S.ShapeType() == TopAbs_FACE)
+        if (S.ShapeType() == ShapeType.Face)
         {
-            TopExp_Explorer Exp = new(S, TopAbs_WIRE);
+            Explorer Exp = new(S, ShapeType.Wire);
 
             while (Exp.More())
             {
-                LinkToWire(TopoDS.Wire(Exp.Current()), Explo, IndContour, BiLo);
+                LinkToWire(ShapeCasts.Wire(Exp.Current()), Explo, IndContour, BiLo);
                 Exp.Next();
                 IndContour++;
             }
@@ -67,7 +72,7 @@ public sealed class BRepMAT2d_LinkTopoBilo
 
     /// <summary>Starts an iteration over the basic elements linked to S, an edge or a vertex of the initial face.
     /// </summary>
-    public void Init(in TopoDS_Shape S)
+    public void Init(in Shape S)
     {
         isEmpty = false;
         current = 1;
@@ -98,17 +103,17 @@ public sealed class BRepMAT2d_LinkTopoBilo
     public MAT_BasicElt Value() => myMap.Find(myKey).Value(current);
 
     /// <summary>The shape linked to BE.</summary>
-    public TopoDS_Shape GeneratingShape(MAT_BasicElt BE) => myBEShape.Find(BE);
+    public Shape GeneratingShape(MAT_BasicElt BE) => myBEShape.Find(BE);
 
-    private void LinkToWire(in TopoDS_Wire W, BRepMAT2d_Explorer Explo, int IndC, BRepMAT2d_BisectingLocus BiLo)
+    private void LinkToWire(in Wire W, BRepMAT2d_Explorer Explo, int IndC, BRepMAT2d_BisectingLocus BiLo)
     {
-        BRepTools_WireExplorer TheExp = new(W);
+        WireExplorer TheExp = new(W);
         int KC;
-        TopoDS_Vertex VF, VL;
-        TopoDS_Shape S;
+        Vertex VF, VL;
+        Shape S;
         MAT_BasicElt BE;
         Type Type;
-        NCollection_Sequence<TopoDS_Shape> TopoSeq = new();
+        NCollection_Sequence<Shape> TopoSeq = new();
         NCollection_IntDataMap<int> LinkBECont = new();
 
         for (; TheExp.More(); TheExp.Next())
@@ -128,15 +133,15 @@ public sealed class BRepMAT2d_LinkTopoBilo
             KC = Ite.Value();
             S = TopoSeq.Value(Math.Abs(KC));
 
-            if (Type == typeof(Geom2d_CartesianPoint))
+            if (Type == typeof(CartesianPoint2))
             {
-                if (S.Orientation() == TopAbs_REVERSED)
+                if (S.Orientation() == Reversed)
                 {
-                    TopExp.Vertices(TopoDS.Edge(S), out VL, out VF);
+                    Exploration.Vertices(ShapeCasts.Edge(S), out VL, out VF);
                 }
                 else
                 {
-                    TopExp.Vertices(TopoDS.Edge(S), out VF, out VL);
+                    Exploration.Vertices(ShapeCasts.Edge(S), out VF, out VL);
                 }
                 if (KC > 0)
                 {
@@ -155,7 +160,7 @@ public sealed class BRepMAT2d_LinkTopoBilo
 
             if (KC < 0)
             {
-                myBEShape.Bind(BE, S.Oriented(TopAbs.Reverse(S.Orientation())));
+                myBEShape.Bind(BE, S.Oriented(global::Kerf.Engine.Topology.TopAbs.Reverse(S.Orientation())));
             }
             else
             {
@@ -170,14 +175,14 @@ public sealed class BRepMAT2d_LinkTopoBilo
         NCollection_IntDataMap<int> Link)
     {
         MAT_BasicElt BE;
-        Geom2d_Geometry GeomBE;
+        Geometry2D GeomBE;
         Type Type;
         bool DirectSense = true;
         bool LastPoint = false;
         int NbSect, ISect;
 
         // NbSect: the number of sections of the current curve; ISect: the counter of sections.
-        NCollection_Sequence<Geom2d_Curve> Cont = Explo.Contour(IndC);
+        NCollection_Sequence<Curve2D> Cont = Explo.Contour(IndC);
 
         // On the first curve of the contour.
         int IndOnCont = 1;
@@ -192,7 +197,7 @@ public sealed class BRepMAT2d_LinkTopoBilo
             GeomBE = BiLo.GeomElt(BE);
             Type = GeomBE.GetType();
 
-            if (Type != typeof(Geom2d_CartesianPoint))
+            if (Type != typeof(CartesianPoint2))
             {
                 ISect++;
                 // A curve: associated with the current curve.
@@ -221,7 +226,7 @@ public sealed class BRepMAT2d_LinkTopoBilo
             PrecIndOnCont = IndOnCont;
 
             // To the next curve of Explo, once all the parts of the initial curve are seen.
-            if (Type != typeof(Geom2d_CartesianPoint) && ISect == NbSect)
+            if (Type != typeof(CartesianPoint2) && ISect == NbSect)
             {
                 if (IndOnCont < Cont.Length() && DirectSense)
                 {

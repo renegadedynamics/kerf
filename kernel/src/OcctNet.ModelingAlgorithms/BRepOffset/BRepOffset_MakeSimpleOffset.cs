@@ -4,12 +4,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.BRepOffsetSimple_Status;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -33,7 +37,7 @@ public enum BRepOffsetSimple_Status
 /// <list type="number">
 /// <item><description>Build source-image maps for vertices, edges and faces (<see cref="BRepOffset_SimpleOffset"/>).
 /// The image of a shared edge is built from the corresponding edge of the first face met.</description></item>
-/// <item><description>Run <see cref="BRepTools_Modifier"/> to obtain the offset shape.</description></item>
+/// <item><description>Run <see cref="Modifier"/> to obtain the offset shape.</description></item>
 /// <item><description>Ensure the topological integrity of the output shape.</description></item>
 /// </list>
 /// <para>
@@ -45,7 +49,7 @@ public enum BRepOffsetSimple_Status
 /// The modifier, in its immutable-input mode, is the copy of the input (decision 973): the offset shell never writes
 /// into the caller's shape. Building the solid does: the walls give the input's free edges pcurves (in place, as
 /// OCCT), and <c>ShapeFix_Edge</c> makes them same-parameter. So, with the solid flag, a frozen input is copied at
-/// the entry (<see cref="BRepTools_CopyAtEntry"/>, with the healing context); the algorithm runs on the copy, and the
+/// the entry (<see cref="CopyAtEntry"/>, with the healing context); the algorithm runs on the copy, and the
 /// copied sub-shapes it left unchanged are the caller's own again in the result. <see cref="Generated"/> and
 /// <see cref="Modified"/> answer for the caller's sub-shapes; <see cref="Modified"/> of a sub-shape changed on its copy
 /// is that changed copy.
@@ -59,7 +63,7 @@ public sealed class BRepOffset_MakeSimpleOffset
 {
     // Input data.
     // Input shape.
-    private TopoDS_Shape myInputShape = new();
+    private Shape myInputShape = new();
     // Offset value.
     private double myOffsetValue;
     // Tolerance (for singularities)
@@ -76,20 +80,20 @@ public sealed class BRepOffset_MakeSimpleOffset
     private bool myIsDone;
     // Map of vertex - wall edge.
     // Used to build shared edge between adjacent wall faces.
-    private readonly NCollection_DataMap<TopoDS_Vertex, TopoDS_Edge> myMapVE =
-        new(EqualityComparer<TopoDS_Vertex>.Default); // the default hasher of OCCT (IsEqual)
+    private readonly NCollection_DataMap<Vertex, Edge> myMapVE =
+        new(EqualityComparer<Vertex>.Default); // the default hasher of OCCT (IsEqual)
     // Used for histrory support.
-    private readonly BRepTools_Modifier myBuilder = new();
+    private readonly Modifier myBuilder = new();
     // Used for history support.
     private readonly ShapeBuild_ReShape myReShape;
 
     // Output data.
     // Result shape.
-    private TopoDS_Shape myResShape = new();
+    private Shape myResShape = new();
 
     // OCCT.NET: the shape the algorithm works on (the input, or its copy at the entry), and the copy at the entry.
-    private TopoDS_Shape myShape = new();
-    private BRepTools_CopyAtEntry? myEntry;
+    private Shape myShape = new();
+    private CopyAtEntry? myEntry;
 
     //=================================================================================================
 
@@ -108,7 +112,7 @@ public sealed class BRepOffset_MakeSimpleOffset
     //=================================================================================================
 
     /// <summary>Prepares the offset of <paramref name="theInputShape"/> by <paramref name="theOffsetValue"/>.</summary>
-    public BRepOffset_MakeSimpleOffset(in TopoDS_Shape theInputShape, double theOffsetValue)
+    public BRepOffset_MakeSimpleOffset(in Shape theInputShape, double theOffsetValue)
     {
         myInputShape = theInputShape;
         myOffsetValue = theOffsetValue;
@@ -123,7 +127,7 @@ public sealed class BRepOffset_MakeSimpleOffset
     //=================================================================================================
 
     /// <summary>Initialises the shape to offset and the offset value.</summary>
-    public void Initialize(in TopoDS_Shape theInputShape, double theOffsetValue)
+    public void Initialize(in Shape theInputShape, double theOffsetValue)
     {
         myInputShape = theInputShape;
         myOffsetValue = theOffsetValue;
@@ -192,14 +196,14 @@ public sealed class BRepOffset_MakeSimpleOffset
     public bool IsDone() => myIsDone;
 
     /// <summary>The result shape (frozen).</summary>
-    public TopoDS_Shape GetResultShape()
+    public Shape GetResultShape()
     {
         myResShape.TShape()?.FreezeGraph();
         return myResShape;
     }
 
     /// <summary><see cref="GetResultShape"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shape InternalGetResultShape() => myResShape;
+    internal Shape InternalGetResultShape() => myResShape;
 
     //=================================================================================================
 
@@ -221,7 +225,7 @@ public sealed class BRepOffset_MakeSimpleOffset
     /// <summary>The maximal offset value that keeps the result's tolerance below <paramref name="theExpectedToler"/>.</summary>
     public double GetSafeOffset(double theExpectedToler)
     {
-        if (myInputShape.IsNull())
+        if (myInputShape.IsNull)
         {
             return 0.0; // Input shape is null.
         }
@@ -233,7 +237,7 @@ public sealed class BRepOffset_MakeSimpleOffset
         }
 
         double aMaxTol = 0.0;
-        aMaxTol = BRep_Tool.MaxTolerance(myInputShape, TopAbs_VERTEX);
+        aMaxTol = Tool.MaxTolerance(myInputShape, ShapeType.Vertex);
 
         // OCCT: a shape without sharp junctions has myMaxAngle 0 (recomputed on every call): the division gives an
         // infinite (or NaN) offset
@@ -251,7 +255,7 @@ public sealed class BRepOffset_MakeSimpleOffset
         Clear();
 
         // Check shape existence.
-        if (myInputShape.IsNull())
+        if (myInputShape.IsNull)
         {
             myError = BRepOffsetSimple_NullInputShape;
             return;
@@ -265,7 +269,7 @@ public sealed class BRepOffset_MakeSimpleOffset
         // OCCT.NET: copy at entry (plan 2.2): the walls of the solid write into the input's free edges
         if (myIsBuildSolid)
         {
-            myEntry = new BRepTools_CopyAtEntry(myInputShape, myReShape);
+            myEntry = new CopyAtEntry(myInputShape, myReShape);
             myShape = myEntry.Shape();
         }
 
@@ -273,7 +277,7 @@ public sealed class BRepOffset_MakeSimpleOffset
         var aMapper = new BRepOffset_SimpleOffset(myShape, myOffsetValue, myTolerance);
         myBuilder.Perform(aMapper);
 
-        if (!myBuilder.IsDone())
+        if (!myBuilder.IsDone)
         {
             myError = BRepOffsetSimple_ErrorOffsetComputation;
             finishEntry();
@@ -283,18 +287,18 @@ public sealed class BRepOffset_MakeSimpleOffset
         myResShape = myBuilder.InternalModifiedShape(myShape);
 
         // Fix degeneracy. Degenerated edge should be mapped to the degenerated.
-        var aBB = new BRep_Builder();
-        var anExpSE = new TopExp_Explorer(myShape, TopAbs_EDGE);
+        var aBB = new BrepBuilder();
+        var anExpSE = new Explorer(myShape, ShapeType.Edge);
         for (; anExpSE.More(); anExpSE.Next())
         {
-            TopoDS_Edge aCurrEdge = TopoDS.Edge(anExpSE.Current());
+            Edge aCurrEdge = ShapeCasts.Edge(anExpSE.Current());
 
-            if (!BRep_Tool.Degenerated(aCurrEdge))
+            if (!Tool.Degenerated(aCurrEdge))
             {
                 continue;
             }
 
-            TopoDS_Edge anEdge = TopoDS.Edge(myBuilder.InternalModifiedShape(aCurrEdge));
+            Edge anEdge = ShapeCasts.Edge(myBuilder.InternalModifiedShape(aCurrEdge));
             aBB.Degenerated(anEdge, true);
         }
 
@@ -324,50 +328,50 @@ public sealed class BRepOffset_MakeSimpleOffset
     // purpose  : check the angle at the border between two squares.
     //           Two shares should have a shared front edge.
     //=============================================================================
-    private static void tgtfaces(in TopoDS_Edge Ed, in TopoDS_Face F1, in TopoDS_Face F2, bool couture,
+    private static void tgtfaces(in Edge Ed, in Face F1, in Face F2, bool couture,
                                  ref double theResAngle)
     {
         // Check that pcurves exist on both faces of edge.
         double aFirst, aLast;
-        Geom2d_Curve? aCurve;
-        aCurve = BRep_Tool.CurveOnSurface(Ed, F1, out aFirst, out aLast);
+        Curve2D? aCurve;
+        aCurve = Tool.CurveOnSurface(Ed, F1, out aFirst, out aLast);
         if (aCurve is null)
         {
             return;
         }
-        aCurve = BRep_Tool.CurveOnSurface(Ed, F2, out aFirst, out aLast);
+        aCurve = Tool.CurveOnSurface(Ed, F2, out aFirst, out aLast);
         if (aCurve is null)
         {
             return;
         }
 
         double u;
-        TopoDS_Edge E = Ed;
+        Edge E = Ed;
         // OCCT.NET: OCCT makes aBAS1 and aBAS2, then copies them into HS1 and HS2; the copies are made directly
-        var HS1 = new BRepAdaptor_Surface(F1, false);
-        BRepAdaptor_Surface HS2;
+        var HS1 = new FaceSurfaceAdaptor(F1, false);
+        FaceSurfaceAdaptor HS2;
         if (couture)
         {
             HS2 = HS1;
         }
         else
         {
-            HS2 = new BRepAdaptor_Surface(F2, false);
+            HS2 = new FaceSurfaceAdaptor(F2, false);
         }
         // case when edge lies on the one face
 
-        E.Orientation(TopAbs_FORWARD);
-        var C2d1 = new BRepAdaptor_Curve2d(E, F1);
+        E.Orientation(Forward);
+        var C2d1 = new EdgeCurve2DAdaptor(E, F1);
         if (couture)
         {
-            E.Orientation(TopAbs_REVERSED);
+            E.Orientation(Reversed);
         }
-        var C2d2 = new BRepAdaptor_Curve2d(E, F2);
+        var C2d2 = new EdgeCurve2DAdaptor(E, F2);
 
-        bool rev1 = (F1.Orientation() == TopAbs_REVERSED);
-        bool rev2 = (F2.Orientation() == TopAbs_REVERSED);
+        bool rev1 = (F1.Orientation() == Reversed);
+        bool rev2 = (F2.Orientation() == Reversed);
         double f, l, eps;
-        BRep_Tool.Range(E, out f, out l);
+        Tool.Range(E, out f, out l);
         // OCCT.NET: OCCT's unused local Extrema_LocateExtPC ext is left out
 
         eps = (l - f) / 100.0;
@@ -433,42 +437,42 @@ public sealed class BRepOffset_MakeSimpleOffset
     // purpose  : Code the regularities on all edges of the shape, boundary of
     //            two faces that do not have it.
     //=============================================================================
-    private static void ComputeMaxAngleOnShape(in TopoDS_Shape S, ref double theResAngle)
+    private static void ComputeMaxAngleOnShape(in Shape S, ref double theResAngle)
     {
-        var M = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(S, TopAbs_EDGE, TopAbs_FACE, M);
-        var It = new NCollection_List<TopoDS_Shape>.Iterator();
-        var Ex = new TopExp_Explorer();
-        TopoDS_Face F1 = new(), F2 = new();
+        var M = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(S, ShapeType.Edge, ShapeType.Face, M);
+        var It = new NCollection_List<Shape>.Iterator();
+        var Ex = new Explorer();
+        Face F1 = new(), F2 = new();
         bool found, couture;
         for (int i = 1; i <= M.Extent(); i++)
         {
-            TopoDS_Edge E = TopoDS.Edge(M.FindKey(i));
+            Edge E = ShapeCasts.Edge(M.FindKey(i));
             found = false;
             couture = false;
             F1.Nullify();
             for (It.Initialize(M.FindFromIndex(i)); It.More() && !found; It.Next())
             {
-                if (F1.IsNull())
+                if (F1.IsNull)
                 {
-                    F1 = TopoDS.Face(It.Value());
+                    F1 = ShapeCasts.Face(It.Value());
                 }
                 else
                 {
-                    if (!F1.IsSame(TopoDS.Face(It.Value())))
+                    if (!F1.IsSame(ShapeCasts.Face(It.Value())))
                     {
                         found = true;
-                        F2 = TopoDS.Face(It.Value());
+                        F2 = ShapeCasts.Face(It.Value());
                     }
                 }
             }
-            if (!found && !F1.IsNull())
+            if (!found && !F1.IsNull)
             { // is it a sewing edge?
-                TopAbs_Orientation orE = E.Orientation();
-                TopoDS_Edge curE;
-                for (Ex.Init(F1, TopAbs_EDGE); Ex.More() && !found; Ex.Next())
+                Orientation orE = E.Orientation();
+                Edge curE;
+                for (Ex.Init(F1, ShapeType.Edge); Ex.More() && !found; Ex.Next())
                 {
-                    curE = TopoDS.Edge(Ex.Current());
+                    curE = ShapeCasts.Edge(Ex.Current());
                     if (E.IsSame(curE) && orE != curE.Orientation())
                     {
                         found = true;
@@ -479,7 +483,7 @@ public sealed class BRepOffset_MakeSimpleOffset
             }
             if (found)
             {
-                if (BRep_Tool.Continuity(E, F1, F2) <= C0)
+                if (Tool.Continuity(E, F1, F2) <= C0)
                 {
                     try
                     {
@@ -509,29 +513,29 @@ public sealed class BRepOffset_MakeSimpleOffset
     private bool BuildMissingWalls()
     {
         // Internal list of new faces.
-        TopoDS_Compound aNewFaces = new();
-        var aBB = new BRep_Builder();
+        Compound aNewFaces = new();
+        var aBB = new BrepBuilder();
         aBB.MakeCompound(ref aNewFaces);
 
         // Compute outer bounds of original shape.
         var aFB = new ShapeAnalysis_FreeBounds(myShape);
-        TopoDS_Compound aFreeWires = aFB.InternalGetClosedWires();
+        Compound aFreeWires = aFB.InternalGetClosedWires();
 
         // Build linear faces on each edge and its image.
-        var anExpCW = new TopExp_Explorer(aFreeWires, TopAbs_WIRE);
+        var anExpCW = new Explorer(aFreeWires, ShapeType.Wire);
         for (; anExpCW.More(); anExpCW.Next())
         {
-            TopoDS_Wire aCurWire = TopoDS.Wire(anExpCW.Current());
+            Wire aCurWire = ShapeCasts.Wire(anExpCW.Current());
 
             // Iterate over outer edges in outer wires.
-            var anExpWE = new TopExp_Explorer(aCurWire, TopAbs_EDGE);
+            var anExpWE = new Explorer(aCurWire, ShapeType.Edge);
             for (; anExpWE.More(); anExpWE.Next())
             {
-                TopoDS_Edge aCurEdge = TopoDS.Edge(anExpWE.Current());
+                Edge aCurEdge = ShapeCasts.Edge(anExpWE.Current());
 
-                TopoDS_Face aNewFace = BuildWallFace(aCurEdge);
+                Face aNewFace = BuildWallFace(aCurEdge);
 
-                if (aNewFace.IsNull())
+                if (aNewFace.IsNull)
                 {
                     myError = BRepOffsetSimple_ErrorWallFaceComputation;
                     return false;
@@ -544,70 +548,70 @@ public sealed class BRepOffset_MakeSimpleOffset
         // Update edges from wall faces.
         var aSFE = new ShapeFix_Edge();
         aSFE.SetContext(myReShape);
-        var anExpCE = new TopExp_Explorer(aNewFaces, TopAbs_EDGE);
+        var anExpCE = new Explorer(aNewFaces, ShapeType.Edge);
         for (; anExpCE.More(); anExpCE.Next())
         {
             // Fix same parameter and same range flags.
-            TopoDS_Edge aCurrEdge = TopoDS.Edge(anExpCE.Current());
+            Edge aCurrEdge = ShapeCasts.Edge(anExpCE.Current());
             aSFE.FixSameParameter(aCurrEdge);
         }
 
         // Update result to be compound.
-        TopoDS_Compound aResCompound = new();
+        Compound aResCompound = new();
         aBB.MakeCompound(ref aResCompound);
 
         // Add old faces the result.
-        var anExpSF = new TopExp_Explorer(myShape, TopAbs_FACE);
+        var anExpSF = new Explorer(myShape, ShapeType.Face);
         for (; anExpSF.More(); anExpSF.Next())
         {
             aBB.Add(aResCompound, anExpSF.Current());
         }
 
         // Add new faces the result.
-        anExpSF.Init(myResShape, TopAbs_FACE);
+        anExpSF.Init(myResShape, ShapeType.Face);
         for (; anExpSF.More(); anExpSF.Next())
         {
             aBB.Add(aResCompound, anExpSF.Current());
         }
 
         // Add wall faces to the result.
-        var anExpCF = new TopExp_Explorer(aNewFaces, TopAbs_FACE);
+        var anExpCF = new Explorer(aNewFaces, ShapeType.Face);
         for (; anExpCF.More(); anExpCF.Next())
         {
-            TopoDS_Face aF = TopoDS.Face(anExpCF.Current());
+            Face aF = ShapeCasts.Face(anExpCF.Current());
             aBB.Add(aResCompound, aF);
         }
 
         // Apply stored modifications.
-        aResCompound = TopoDS.Compound(myReShape.InternalApply(aResCompound));
+        aResCompound = ShapeCasts.Compound(myReShape.InternalApply(aResCompound));
 
         // Create result shell.
-        var aQuilt = new BRepTools_Quilt();
+        var aQuilt = new Quilt();
         aQuilt.Add(aResCompound);
-        TopoDS_Shape aShells = aQuilt.InternalShells();
+        Shape aShells = aQuilt.InternalShells();
 
-        var anExpSSh = new TopExp_Explorer(aShells, TopAbs_SHELL);
-        TopoDS_Shell aResShell = new();
+        var anExpSSh = new Explorer(aShells, ShapeType.Shell);
+        Shell aResShell = new();
         for (; anExpSSh.More(); anExpSSh.Next())
         {
-            if (!aResShell.IsNull())
+            if (!aResShell.IsNull)
             {
                 // Shell is not null -> explorer contains two or more shells.
                 myError = BRepOffsetSimple_ErrorInvalidNbShells;
                 return false;
             }
-            aResShell = TopoDS.Shell(anExpSSh.Current());
+            aResShell = ShapeCasts.Shell(anExpSSh.Current());
         }
 
         // OCCT: with no shell at all (Quilt made none), aResShell is null and IsClosed dereferences it
-        if (!BRep_Tool.IsClosed(aResShell))
+        if (!Tool.IsClosed(aResShell))
         {
             myError = BRepOffsetSimple_ErrorNonClosedShell;
             return false;
         }
 
         // Create result solid.
-        TopoDS_Solid aResSolid = new();
+        Solid aResSolid = new();
         aBB.MakeSolid(ref aResSolid);
         aBB.Add(aResSolid, aResShell);
         myResShape = aResSolid;
@@ -618,30 +622,30 @@ public sealed class BRepOffset_MakeSimpleOffset
     //=================================================================================================
 
     // Builds face on specified wall.
-    private TopoDS_Face BuildWallFace(in TopoDS_Edge theOrigEdge)
+    private Face BuildWallFace(in Edge theOrigEdge)
     {
-        TopoDS_Face aResFace = new();
+        Face aResFace = new();
 
         // Get offset edge. offset edge is reversed to create correct wire.
-        TopoDS_Edge aNewEdge = TopoDS.Edge(myBuilder.InternalModifiedShape(theOrigEdge));
-        aNewEdge.Orientation(TopAbs_REVERSED);
+        Edge aNewEdge = ShapeCasts.Edge(myBuilder.InternalModifiedShape(theOrigEdge));
+        aNewEdge.Orientation(Reversed);
 
-        TopExp.Vertices(aNewEdge, out TopoDS_Vertex aNewV1, out TopoDS_Vertex aNewV2);
+        Exploration.Vertices(aNewEdge, out Vertex aNewV1, out Vertex aNewV2);
 
         // Wire contour is:
         // theOrigEdge (forcible forward) -> wall1 -> aNewEdge (forcible reversed) -> wall2
         // Firstly it is necessary to create copy of original shape with forward direction.
         // This simplifies walls creation.
-        TopoDS_Edge anOrigCopy = theOrigEdge;
-        anOrigCopy.Orientation(TopAbs_FORWARD);
-        TopExp.Vertices(anOrigCopy, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
+        Edge anOrigCopy = theOrigEdge;
+        anOrigCopy.Orientation(Forward);
+        Exploration.Vertices(anOrigCopy, out Vertex aV1, out Vertex aV2);
 
         // To simplify work with map.
-        TopoDS_Vertex aForwardV1 = TopoDS.Vertex(aV1.Oriented(TopAbs_FORWARD));
-        TopoDS_Vertex aForwardV2 = TopoDS.Vertex(aV2.Oriented(TopAbs_FORWARD));
+        Vertex aForwardV1 = ShapeCasts.Vertex(aV1.Oriented(Forward));
+        Vertex aForwardV2 = ShapeCasts.Vertex(aV2.Oriented(Forward));
 
         // Check existence of edges in stored map: Edge1
-        TopoDS_Edge aWall1;
+        Edge aWall1;
         if (myMapVE.IsBound(aForwardV2))
         {
             // Edge exists - get it from map.
@@ -650,8 +654,8 @@ public sealed class BRepOffset_MakeSimpleOffset
         else
         {
             // Edge does not exist - create it and add to the map.
-            var aME1 = new BRepLib_MakeEdge(TopoDS.Vertex(aV2.Oriented(TopAbs_FORWARD)),
-                                            TopoDS.Vertex(aNewV2.Oriented(TopAbs_REVERSED)));
+            var aME1 = new BRepLib_MakeEdge(ShapeCasts.Vertex(aV2.Oriented(Forward)),
+                                            ShapeCasts.Vertex(aNewV2.Oriented(Reversed)));
             if (!aME1.IsDone())
             {
                 return aResFace;
@@ -662,17 +666,17 @@ public sealed class BRepOffset_MakeSimpleOffset
         }
 
         // Check existence of edges in stored map: Edge2
-        TopoDS_Edge aWall2;
+        Edge aWall2;
         if (myMapVE.IsBound(aForwardV1))
         {
             // Edge exists - get it from map.
-            aWall2 = TopoDS.Edge(myMapVE[aForwardV1].Oriented(TopAbs_REVERSED));
+            aWall2 = ShapeCasts.Edge(myMapVE[aForwardV1].Oriented(Reversed));
         }
         else
         {
             // Edge does not exist - create it and add to the map.
-            var aME2 = new BRepLib_MakeEdge(TopoDS.Vertex(aV1.Oriented(TopAbs_FORWARD)),
-                                            TopoDS.Vertex(aNewV1.Oriented(TopAbs_REVERSED)));
+            var aME2 = new BRepLib_MakeEdge(ShapeCasts.Vertex(aV1.Oriented(Forward)),
+                                            ShapeCasts.Vertex(aNewV1.Oriented(Reversed)));
             if (!aME2.IsDone())
             {
                 return aResFace;
@@ -682,12 +686,12 @@ public sealed class BRepOffset_MakeSimpleOffset
             myMapVE.Bind(aForwardV1, aWall2);
 
             // Orient it in reversed direction.
-            aWall2.Orientation(TopAbs_REVERSED);
+            aWall2.Orientation(Reversed);
         }
 
-        var aBB = new BRep_Builder();
+        var aBB = new BrepBuilder();
 
-        TopoDS_Wire aWire = new();
+        Wire aWire = new();
         aBB.MakeWire(ref aWire);
         aBB.Add(aWire, anOrigCopy);
         aBB.Add(aWire, aWall1);
@@ -698,7 +702,7 @@ public sealed class BRepOffset_MakeSimpleOffset
         BRepLib.BuildCurves3d(aWire);
 
         // Try to build using simple planar approach.
-        TopoDS_Face aF = new();
+        Face aF = new();
         try
         {
             // Call of face maker is wrapped by try/catch since it generates exceptions sometimes.
@@ -712,37 +716,37 @@ public sealed class BRepOffset_MakeSimpleOffset
         {
         }
 
-        if (aF.IsNull()) // Exception in face maker or result is not computed.
+        if (aF.IsNull) // Exception in face maker or result is not computed.
         {
             // Build using thrusections.
             bool ToReverse = false;
             double fpar, lpar, fparOE, lparOE;
-            Geom_Curve EdgeCurve = BRep_Tool.Curve(theOrigEdge, out fpar, out lpar)!;
-            var TrEdgeCurve = new Geom_TrimmedCurve(EdgeCurve, fpar, lpar);
-            Geom_Curve OffsetCurve = BRep_Tool.Curve(aNewEdge, out fparOE, out lparOE)!;
-            var TrOffsetCurve = new Geom_TrimmedCurve(OffsetCurve, fparOE, lparOE);
+            Curve3D EdgeCurve = Tool.Curve(theOrigEdge, out fpar, out lpar)!;
+            var TrEdgeCurve = new TrimmedCurve3D(EdgeCurve, fpar, lpar);
+            Curve3D OffsetCurve = Tool.Curve(aNewEdge, out fparOE, out lparOE)!;
+            var TrOffsetCurve = new TrimmedCurve3D(OffsetCurve, fparOE, lparOE);
 
             var ThrusecGenerator = new GeomFill_Generator();
             ThrusecGenerator.AddCurve(TrEdgeCurve);
             ThrusecGenerator.AddCurve(TrOffsetCurve);
             ThrusecGenerator.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
-            Geom_Surface theSurf = ThrusecGenerator.Surface()!;
+            Surface theSurf = ThrusecGenerator.Surface()!;
             // theSurf = new Geom_SurfaceOfLinearExtrusion( TrOffsetCurve, OffsetDir );
             theSurf.Bounds(out double Uf, out double Ul, out double Vf, out double Vl);
             Placement Loc = new();
-            Geom2d_Line EdgeLine2d, OELine2d, aLine2d, aLine2d2;
-            EdgeLine2d = new Geom2d_Line(new Point2D(0.0, Vf), new Direction2D(Direction2D.D.X));
+            LineCurve2D EdgeLine2d, OELine2d, aLine2d, aLine2d2;
+            EdgeLine2d = new LineCurve2D(new Point2D(0.0, Vf), new Direction2D(Direction2D.D.X));
             aBB.UpdateEdge(theOrigEdge, EdgeLine2d, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
-            OELine2d = new Geom2d_Line(new Point2D(0.0, Vl), new Direction2D(Direction2D.D.X));
+            OELine2d = new LineCurve2D(new Point2D(0.0, Vl), new Direction2D(Direction2D.D.X));
             aBB.UpdateEdge(aNewEdge, OELine2d, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
             double UonV1 = (ToReverse) ? Ul : Uf;
             double UonV2 = (ToReverse) ? Uf : Ul;
-            aLine2d = new Geom2d_Line(new Point2D(UonV2, 0.0), new Direction2D(Direction2D.D.Y));
-            aLine2d2 = new Geom2d_Line(new Point2D(UonV1, 0.0), new Direction2D(Direction2D.D.Y));
+            aLine2d = new LineCurve2D(new Point2D(UonV2, 0.0), new Direction2D(Direction2D.D.Y));
+            aLine2d2 = new LineCurve2D(new Point2D(UonV1, 0.0), new Direction2D(Direction2D.D.Y));
             if (aWall1.IsSame(aWall2))
             {
                 aBB.UpdateEdge(aWall1, aLine2d, aLine2d2, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
-                Geom_Curve BSplC34 = theSurf.UIso(Uf);
+                Curve3D BSplC34 = theSurf.UIso(Uf);
                 aBB.UpdateEdge(aWall1, BSplC34, global::Kerf.Engine.Foundation.Precision.Confusion());
                 aBB.Range(aWall1, Vf, Vl);
             }
@@ -756,10 +760,10 @@ public sealed class BRepOffset_MakeSimpleOffset
                 aBB.Range(aWall1, theSurf, Loc, Vf, Vl);
                 aBB.UpdateEdge(aWall2, aLine2d2, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
                 aBB.Range(aWall2, theSurf, Loc, Vf, Vl);
-                Geom_Curve BSplC3 = theSurf.UIso(UonV2);
+                Curve3D BSplC3 = theSurf.UIso(UonV2);
                 aBB.UpdateEdge(aWall1, BSplC3, global::Kerf.Engine.Foundation.Precision.Confusion());
                 aBB.Range(aWall1, Vf, Vl, true); // only for 3d curve
-                Geom_Curve BSplC4 = theSurf.UIso(UonV1);
+                Curve3D BSplC4 = theSurf.UIso(UonV1);
                 aBB.UpdateEdge(aWall2, BSplC4, global::Kerf.Engine.Foundation.Precision.Confusion());
                 aBB.Range(aWall2, Vf, Vl, true); // only for 3d curve
             }
@@ -774,18 +778,18 @@ public sealed class BRepOffset_MakeSimpleOffset
 
     /// <summary>The shape generated from a sub-shape of the input (frozen); null if none.</summary>
     /// <exception cref="NoSuchObjectException">The shape isn't a sub-shape of the input.</exception>
-    public TopoDS_Shape Generated(in TopoDS_Shape theShape)
+    public Shape Generated(in Shape theShape)
     {
-        TopoDS_Shape aRes = InternalGenerated(theShape);
+        Shape aRes = InternalGenerated(theShape);
         aRes.TShape()?.FreezeGraph();
         return aRes;
     }
 
     /// <summary><see cref="Generated"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shape InternalGenerated(in TopoDS_Shape theShape)
+    internal Shape InternalGenerated(in Shape theShape)
     {
         // Shape generated by modification.
-        TopoDS_Shape aRes;
+        Shape aRes;
         // OCCT.NET: the modifier ran on the copy at the entry, if any; what stands for its result after the entry's end
         aRes = myBuilder.InternalModifiedShape(myEntry is null ? theShape : myEntry.Copied(theShape));
         if (myEntry is not null)
@@ -793,7 +797,7 @@ public sealed class BRepOffset_MakeSimpleOffset
             aRes = myEntry.Final(aRes);
         }
 
-        if (aRes.IsNull())
+        if (aRes.IsNull)
         {
             return aRes;
         }
@@ -808,20 +812,20 @@ public sealed class BRepOffset_MakeSimpleOffset
 
     /// <summary>The shape a sub-shape of the input was modified into by the healing of the walls (frozen); null if
     /// none.</summary>
-    public TopoDS_Shape Modified(in TopoDS_Shape theShape)
+    public Shape Modified(in Shape theShape)
     {
-        TopoDS_Shape aRes = InternalModified(theShape);
+        Shape aRes = InternalModified(theShape);
         aRes.TShape()?.FreezeGraph();
         return aRes;
     }
 
     /// <summary><see cref="Modified"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shape InternalModified(in TopoDS_Shape theShape)
+    internal Shape InternalModified(in Shape theShape)
     {
-        TopoDS_Shape anEmptyShape = new();
+        Shape anEmptyShape = new();
 
         // Get modification status and new shape.
-        int aModStatus = myReShape.InternalStatus(theShape, out TopoDS_Shape aRes);
+        int aModStatus = myReShape.InternalStatus(theShape, out Shape aRes);
 
         if (aModStatus == 0)
         {

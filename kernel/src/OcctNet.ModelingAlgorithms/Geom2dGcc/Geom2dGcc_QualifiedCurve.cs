@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -15,7 +16,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// A value, as OCCT uses it (no setters). OCCT stores a copy of the adaptor and returns copies: the port keeps a
-/// shallow copy (<see cref="Adaptor2d_Curve2d.ShallowCopy"/>: the curve is shared, the evaluation caches are not)
+/// shallow copy (<see cref="Curve2DAdaptorBase.ShallowCopy"/>: the curve is shared, the evaluation caches are not)
 /// and <see cref="Qualified"/> returns a new one each time, so no caller or solver shares the evaluation caches of
 /// another (decision 797). Two qualified curves are equal when they have the same qualifier, the same Geom2d curve
 /// object and the same parameter range. <c>default</c> has no curve.
@@ -23,19 +24,19 @@ namespace Occt;
 public readonly struct Geom2dGcc_QualifiedCurve : IEquatable<Geom2dGcc_QualifiedCurve>
 {
     private readonly GccEnt_Position TheQualifier;
-    private readonly Geom2dAdaptor_Curve TheQualified;
+    private readonly CurveAdaptor2D TheQualified;
 
     /// <summary>Assigns the qualifier to the curve (copied).</summary>
-    public Geom2dGcc_QualifiedCurve(Geom2dAdaptor_Curve Curve, GccEnt_Position Qualifier)
+    public Geom2dGcc_QualifiedCurve(CurveAdaptor2D Curve, GccEnt_Position Qualifier)
     {
-        TheQualified = (Geom2dAdaptor_Curve)Curve.ShallowCopy();
+        TheQualified = (CurveAdaptor2D)Curve.ShallowCopy();
         TheQualifier = Qualifier;
     }
 
     /// <summary>The curve to which the qualifier is assigned: a new adaptor on the same curve and range.</summary>
-    public Geom2dAdaptor_Curve Qualified()
+    public CurveAdaptor2D Qualified()
     {
-        return (Geom2dAdaptor_Curve)TheQualified.ShallowCopy();
+        return (CurveAdaptor2D)TheQualified.ShallowCopy();
     }
 
     /// <summary>The qualifier.</summary>

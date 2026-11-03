@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 
@@ -43,7 +45,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
     /// solutions) or Geom2dGcc_Circ2d2TanOnGeo (a free-form OnCurve); other curves to Geom2dGcc_Circ2d2TanOnIter (one
     /// solution, from the parameters Param1, Param2 and ParamOn on the arguments and OnCurve).
     /// </summary>
-    public Geom2dGcc_Circ2d2TanOn(in Geom2dGcc_QualifiedCurve Qualified1, in Geom2dGcc_QualifiedCurve Qualified2, Geom2dAdaptor_Curve OnCurve, double Tolerance, double Param1, double Param2, double ParamOn)
+    public Geom2dGcc_Circ2d2TanOn(in Geom2dGcc_QualifiedCurve Qualified1, in Geom2dGcc_QualifiedCurve Qualified2, CurveAdaptor2D OnCurve, double Tolerance, double Param1, double Param2, double ParamOn)
     {
         cirsol     = new(1, 8);
         qualifier1 = new(1, 8);
@@ -59,14 +61,14 @@ public sealed class Geom2dGcc_Circ2d2TanOn
         pararg2    = new(1, 8);
         parcen3    = new(1, 8);
         WellDone   = false;
-        Geom2dAdaptor_Curve              C1    = Qualified1.Qualified();
-        Geom2dAdaptor_Curve              C2    = Qualified2.Qualified();
+        CurveAdaptor2D              C1    = Qualified1.Qualified();
+        CurveAdaptor2D              C2    = Qualified2.Qualified();
         CurveKind                Type1 = C1.GetType();
         CurveKind                Type2 = C2.GetType();
         CurveKind                Type3 = OnCurve.GetType();
-        Geom2d_Curve?  CC1   = C1.Curve();
-        Geom2d_Curve?  CC2   = C2.Curve();
-        Geom2d_Curve?  Con   = OnCurve.Curve();
+        Curve2D?  CC1   = C1.Curve();
+        Curve2D?  CC2   = C2.Curve();
+        Curve2D?  Con   = OnCurve.Curve();
 
         //=============================================================================
         //                            Appel a GccAna.                                 +
@@ -81,16 +83,16 @@ public sealed class Geom2dGcc_Circ2d2TanOn
             {
                 if (Type1 == Circle)
                 {
-                    Geom2d_Circle CCC1 = (CC1 as Geom2d_Circle)!;
+                    CircleCurve2D CCC1 = (CC1 as CircleCurve2D)!;
                     Circle2D                  c1 = CCC1.Circ2d();
                     GccEnt_QualifiedCirc       Qc1 = new GccEnt_QualifiedCirc(c1, Qualified1.Qualifier());
                     if (Type2 == Circle)
                     {
-                        Geom2d_Circle CCC2 = (CC2 as Geom2d_Circle)!;
+                        CircleCurve2D CCC2 = (CC2 as CircleCurve2D)!;
                         Circle2D                  c2 = CCC2.Circ2d();
                         if (Type3 == Circle)
                         {
-                            Geom2d_Circle CCon = (Con as Geom2d_Circle)!;
+                            CircleCurve2D CCon = (Con as CircleCurve2D)!;
                             GccAna_Circ2d2TanOn        CircAna = new(Qc1,
                                                                                     new GccEnt_QualifiedCirc(c2, Qualified2.Qualifier()),
                                                                                     CCon.Circ2d(),
@@ -108,7 +110,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                         }
                         else
                         {
-                            Geom2d_Line LLon = (Con as Geom2d_Line)!;
+                            LineCurve2D LLon = (Con as LineCurve2D)!;
                             GccAna_Circ2d2TanOn      CircAna = new(Qc1,
                                                                                     new GccEnt_QualifiedCirc(c2, Qualified2.Qualifier()),
                                                                                     LLon.Lin2d(),
@@ -127,11 +129,11 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                     }
                     else
                     {
-                        Geom2d_Line LL2 = (CC2 as Geom2d_Line)!;
+                        LineCurve2D LL2 = (CC2 as LineCurve2D)!;
                         Line2D                 l2 = LL2.Lin2d();
                         if (Type3 == Circle)
                         {
-                            Geom2d_Circle CCon = (Con as Geom2d_Circle)!;
+                            CircleCurve2D CCon = (Con as CircleCurve2D)!;
                             GccAna_Circ2d2TanOn        CircAna = new(Qc1,
                                                                                     new GccEnt_QualifiedLin(l2, Qualified2.Qualifier()),
                                                                                     CCon.Circ2d(),
@@ -149,7 +151,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                         }
                         else
                         {
-                            Geom2d_Line LLon = (Con as Geom2d_Line)!;
+                            LineCurve2D LLon = (Con as LineCurve2D)!;
                             GccAna_Circ2d2TanOn      CircAna = new(Qc1,
                                                                                     new GccEnt_QualifiedLin(l2, Qualified2.Qualifier()),
                                                                                     LLon.Lin2d(),
@@ -169,16 +171,16 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                 }
                 else
                 {
-                    Geom2d_Line LL1 = (CC1 as Geom2d_Line)!;
+                    LineCurve2D LL1 = (CC1 as LineCurve2D)!;
                     Line2D                 l1 = LL1.Lin2d();
                     GccEnt_QualifiedLin      Ql1 = new GccEnt_QualifiedLin(l1, Qualified1.Qualifier());
                     if (Type2 == Circle)
                     {
-                        Geom2d_Circle CCC2 = (CC2 as Geom2d_Circle)!;
+                        CircleCurve2D CCC2 = (CC2 as CircleCurve2D)!;
                         Circle2D                  c2 = CCC2.Circ2d();
                         if (Type3 == Circle)
                         {
-                            Geom2d_Circle CCon = (Con as Geom2d_Circle)!;
+                            CircleCurve2D CCon = (Con as CircleCurve2D)!;
                             GccAna_Circ2d2TanOn        CircAna = new(new GccEnt_QualifiedCirc(c2, Qualified2.Qualifier()),
                                                                                     Ql1,
                                                                                     CCon.Circ2d(),
@@ -197,7 +199,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                         }
                         else
                         {
-                            Geom2d_Line LLon = (Con as Geom2d_Line)!;
+                            LineCurve2D LLon = (Con as LineCurve2D)!;
                             GccAna_Circ2d2TanOn      CircAna = new(new GccEnt_QualifiedCirc(c2, Qualified2.Qualifier()),
                                                                                     Ql1,
                                                                                     LLon.Lin2d(),
@@ -217,11 +219,11 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                     }
                     else
                     {
-                        Geom2d_Line LL2 = (CC2 as Geom2d_Line)!;
+                        LineCurve2D LL2 = (CC2 as LineCurve2D)!;
                         Line2D                 l2 = LL2.Lin2d();
                         if (Type3 == Circle)
                         {
-                            Geom2d_Circle CCon = (Con as Geom2d_Circle)!;
+                            CircleCurve2D CCon = (Con as CircleCurve2D)!;
                             GccAna_Circ2d2TanOn        CircAna = new(Ql1,
                                                                                     new GccEnt_QualifiedLin(l2, Qualified2.Qualifier()),
                                                                                     CCon.Circ2d(),
@@ -239,7 +241,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                         }
                         else
                         {
-                            Geom2d_Line LLon = (Con as Geom2d_Line)!;
+                            LineCurve2D LLon = (Con as LineCurve2D)!;
                             GccAna_Circ2d2TanOn      CircAna = new(Ql1,
                                                                                     new GccEnt_QualifiedLin(l2, Qualified2.Qualifier()),
                                                                                     LLon.Lin2d(),
@@ -267,12 +269,12 @@ public sealed class Geom2dGcc_Circ2d2TanOn
             {
                 if (Type1 == Circle)
                 {
-                    Geom2d_Circle CCC1 = (CC1 as Geom2d_Circle)!;
+                    CircleCurve2D CCC1 = (CC1 as CircleCurve2D)!;
                     Circle2D                  c1 = CCC1.Circ2d();
                     GccEnt_QualifiedCirc       Qc1 = new GccEnt_QualifiedCirc(c1, Qualified1.Qualifier());
                     if (Type2 == Circle)
                     {
-                        Geom2d_Circle CCC2 = (CC2 as Geom2d_Circle)!;
+                        CircleCurve2D CCC2 = (CC2 as CircleCurve2D)!;
                         Circle2D                  c2 = CCC2.Circ2d();
                         GccEnt_QualifiedCirc       Qc2 = new GccEnt_QualifiedCirc(c2, Qualified2.Qualifier());
                         Geom2dGcc_Circ2d2TanOnGeo  CircGeo = new(Qc1, Qc2, OnCurve, Tolerance);
@@ -289,7 +291,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                     }
                     else
                     {
-                        Geom2d_Line  LL2 = (CC2 as Geom2d_Line)!;
+                        LineCurve2D  LL2 = (CC2 as LineCurve2D)!;
                         Line2D                  l2 = LL2.Lin2d();
                         GccEnt_QualifiedLin       Ql2 = new GccEnt_QualifiedLin(l2, Qualified2.Qualifier());
                         Geom2dGcc_Circ2d2TanOnGeo CircGeo = new(Qc1, Ql2, OnCurve, Tolerance);
@@ -307,12 +309,12 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                 }
                 else
                 {
-                    Geom2d_Line LL1 = (CC1 as Geom2d_Line)!;
+                    LineCurve2D LL1 = (CC1 as LineCurve2D)!;
                     Line2D                 l1 = LL1.Lin2d();
                     GccEnt_QualifiedLin      Ql1 = new GccEnt_QualifiedLin(l1, Qualified1.Qualifier());
                     if (Type2 == Circle)
                     {
-                        Geom2d_Circle CCC2 = (CC2 as Geom2d_Circle)!;
+                        CircleCurve2D CCC2 = (CC2 as CircleCurve2D)!;
                         Circle2D                  c2 = CCC2.Circ2d();
                         GccEnt_QualifiedCirc       Qc2 = new GccEnt_QualifiedCirc(c2, Qualified2.Qualifier());
                         Geom2dGcc_Circ2d2TanOnGeo  CircGeo = new(Qc2, Ql1, OnCurve, Tolerance);
@@ -330,7 +332,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                     }
                     else
                     {
-                        Geom2d_Line  LL2 = (CC2 as Geom2d_Line)!;
+                        LineCurve2D  LL2 = (CC2 as LineCurve2D)!;
                         Line2D                  l2 = LL2.Lin2d();
                         GccEnt_QualifiedLin       Ql2 = new GccEnt_QualifiedLin(l2, Qualified2.Qualifier());
                         Geom2dGcc_Circ2d2TanOnGeo CircGeo = new(Ql1, Ql2, OnCurve, Tolerance);
@@ -356,7 +358,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
             {
                 if (Type3 == Circle)
                 {
-                    Geom2d_Circle CCon = (Con as Geom2d_Circle)!;
+                    CircleCurve2D CCon = (Con as CircleCurve2D)!;
                     Geom2dGcc_Circ2d2TanOnIter
                         Circ = new(Qc1, Qc2, CCon.Circ2d(), Param1, Param2, ParamOn, Tolerance);
                     WellDone = Circ.IsDone();
@@ -388,7 +390,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                 }
                 else
                 {
-                    Geom2d_Line LLon = (Con as Geom2d_Line)!;
+                    LineCurve2D LLon = (Con as LineCurve2D)!;
                     Geom2dGcc_Circ2d2TanOnIter
                         Circ = new(Qc1, Qc2, LLon.Lin2d(), Param1, Param2, ParamOn, Tolerance);
                     WellDone = Circ.IsDone();
@@ -455,7 +457,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
     /// Circles tangent to a qualified curve, through a point, whose centres lie on OnCurve (GccAna, Geo or Iter as
     /// for two curves; Param1 and ParamOn start the iteration).
     /// </summary>
-    public Geom2dGcc_Circ2d2TanOn(in Geom2dGcc_QualifiedCurve Qualified1, Geom2d_Point Point, Geom2dAdaptor_Curve OnCurve, double Tolerance, double Param1, double ParamOn)
+    public Geom2dGcc_Circ2d2TanOn(in Geom2dGcc_QualifiedCurve Qualified1, Point2 Point, CurveAdaptor2D OnCurve, double Tolerance, double Param1, double ParamOn)
     {
         cirsol     = new(1, 8);
         qualifier1 = new(1, 8);
@@ -471,11 +473,11 @@ public sealed class Geom2dGcc_Circ2d2TanOn
         pararg2    = new(1, 8);
         parcen3    = new(1, 8);
         WellDone   = false;
-        Geom2dAdaptor_Curve              C1    = Qualified1.Qualified();
+        CurveAdaptor2D              C1    = Qualified1.Qualified();
         CurveKind                Type1 = C1.GetType();
         CurveKind                Type3 = OnCurve.GetType();
-        Geom2d_Curve?  CC1   = C1.Curve();
-        Geom2d_Curve?  Con   = OnCurve.Curve();
+        Curve2D?  CC1   = C1.Curve();
+        Curve2D?  Con   = OnCurve.Curve();
 
         //=============================================================================
         //                            Appel a GccAna.                                 +
@@ -490,12 +492,12 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                 Point2D pnt = Point.Pnt2d();
                 if (Type1 == Circle)
                 {
-                    Geom2d_Circle CCC1 = (CC1 as Geom2d_Circle)!;
+                    CircleCurve2D CCC1 = (CC1 as CircleCurve2D)!;
                     Circle2D                  c1 = CCC1.Circ2d();
                     GccEnt_QualifiedCirc       Qc1 = new(c1, Qualified1.Qualifier());
                     if (Type3 == Circle)
                     {
-                        Geom2d_Circle CCon = (Con as Geom2d_Circle)!;
+                        CircleCurve2D CCon = (Con as CircleCurve2D)!;
                         GccAna_Circ2d2TanOn        CircAna = new(Qc1, pnt, CCon.Circ2d(), Tolerance);
                         WellDone = CircAna.IsDone();
                         if (WellDone)
@@ -510,7 +512,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                     }
                     else if (Type3 == Line)
                     {
-                        Geom2d_Line CCon = (Con as Geom2d_Line)!;
+                        LineCurve2D CCon = (Con as LineCurve2D)!;
                         GccAna_Circ2d2TanOn      CircAna = new(Qc1, pnt, CCon.Lin2d(), Tolerance);
                         WellDone = CircAna.IsDone();
                         if (WellDone)
@@ -526,12 +528,12 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                 }
                 else
                 {
-                    Geom2d_Line LLL1 = (CC1 as Geom2d_Line)!;
+                    LineCurve2D LLL1 = (CC1 as LineCurve2D)!;
                     Line2D                 l1 = LLL1.Lin2d();
                     GccEnt_QualifiedLin      Ql1 = new(l1, Qualified1.Qualifier());
                     if (Type3 == Circle)
                     {
-                        Geom2d_Circle CCon = (Con as Geom2d_Circle)!;
+                        CircleCurve2D CCon = (Con as CircleCurve2D)!;
                         GccAna_Circ2d2TanOn        CircAna = new(Ql1, pnt, CCon.Circ2d(), Tolerance);
                         WellDone = CircAna.IsDone();
                         if (WellDone)
@@ -546,7 +548,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                     }
                     else if (Type3 == Line)
                     {
-                        Geom2d_Line LLon = (Con as Geom2d_Line)!;
+                        LineCurve2D LLon = (Con as LineCurve2D)!;
                         GccAna_Circ2d2TanOn      CircAna = new(Ql1, pnt, LLon.Lin2d(), Tolerance);
                         WellDone = CircAna.IsDone();
                         if (WellDone)
@@ -569,7 +571,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
             {
                 if (Type1 == Circle)
                 {
-                    Geom2d_Circle CCC1 = (CC1 as Geom2d_Circle)!;
+                    CircleCurve2D CCC1 = (CC1 as CircleCurve2D)!;
                     Circle2D                  c1 = CCC1.Circ2d();
                     GccEnt_QualifiedCirc       Qc1 = new(c1, Qualified1.Qualifier());
                     Geom2dGcc_Circ2d2TanOnGeo  CircGeo = new(Qc1, Point.Pnt2d(), OnCurve, Tolerance);
@@ -586,7 +588,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                 }
                 else
                 {
-                    Geom2d_Line  LLL1 = (CC1 as Geom2d_Line)!;
+                    LineCurve2D  LLL1 = (CC1 as LineCurve2D)!;
                     Line2D                  l1 = LLL1.Lin2d();
                     GccEnt_QualifiedLin       Ql1 = new(l1, Qualified1.Qualifier());
                     Geom2dGcc_Circ2d2TanOnGeo CircGeo = new(Ql1, Point.Pnt2d(), OnCurve, Tolerance);
@@ -610,7 +612,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
             {
                 if (Type3 == Circle)
                 {
-                    Geom2d_Circle CCon = (Con as Geom2d_Circle)!;
+                    CircleCurve2D CCon = (Con as CircleCurve2D)!;
                     Geom2dGcc_Circ2d2TanOnIter Circ = new(Qc1,
                                                                                     Point.Pnt2d(),
                                                                                     CCon.Circ2d(),
@@ -639,7 +641,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
                 }
                 else
                 {
-                    Geom2d_Line   LLon = (Con as Geom2d_Line)!;
+                    LineCurve2D   LLon = (Con as LineCurve2D)!;
                     Geom2dGcc_Circ2d2TanOnIter Circ = new(Qc1,
                                                                                     Point.Pnt2d(),
                                                                                     LLon.Lin2d(),
@@ -701,7 +703,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
     }
 
     /// <summary>Circles through two points whose centres lie on OnCurve (GccAna, or Geo for a free-form OnCurve).</summary>
-    public Geom2dGcc_Circ2d2TanOn(Geom2d_Point Point1, Geom2d_Point Point2, Geom2dAdaptor_Curve OnCurve, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOn(Point2 Point1, Point2 Point2, CurveAdaptor2D OnCurve, double Tolerance)
     {
         cirsol     = new(1, 8);
         qualifier1 = new(1, 8);
@@ -718,7 +720,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
         parcen3    = new(1, 8);
         WellDone   = false;
         CurveKind                Type3 = OnCurve.GetType();
-        Geom2d_Curve?  Con   = OnCurve.Curve();
+        Curve2D?  Con   = OnCurve.Curve();
 
         //=============================================================================
         //                            Appel a GccAna.                                 +
@@ -732,7 +734,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
             Point2D pnt2 = Point2.Pnt2d();
             if (Type3 == Circle)
             {
-                Geom2d_Circle CCon = (Con as Geom2d_Circle)!;
+                CircleCurve2D CCon = (Con as CircleCurve2D)!;
                 GccAna_Circ2d2TanOn        CircAna = new(pnt1, pnt2, CCon.Circ2d(), Tolerance);
                 WellDone = CircAna.IsDone();
                 if (WellDone)
@@ -747,7 +749,7 @@ public sealed class Geom2dGcc_Circ2d2TanOn
             }
             else
             {
-                Geom2d_Line LLon = (Con as Geom2d_Line)!;
+                LineCurve2D LLon = (Con as LineCurve2D)!;
                 GccAna_Circ2d2TanOn      CircAna = new(pnt1, pnt2, LLon.Lin2d(), Tolerance);
                 WellDone = CircAna.IsDone();
                 if (WellDone)

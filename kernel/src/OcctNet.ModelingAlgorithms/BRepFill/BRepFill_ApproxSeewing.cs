@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
@@ -21,9 +22,9 @@ public sealed class BRepFill_ApproxSeewing
 {
     private BRepFill_MultiLine myML = new();
     private bool myIsDone;
-    private Geom_Curve? myCurve;
-    private Geom2d_Curve? myPCurve1;
-    private Geom2d_Curve? myPCurve2;
+    private Curve3D? myCurve;
+    private Curve2D? myPCurve1;
+    private Curve2D? myPCurve2;
 
     /// <summary>An empty approximation.</summary>
     public BRepFill_ApproxSeewing()
@@ -67,8 +68,8 @@ public sealed class BRepFill_ApproxSeewing
         // On cherche a mettre NbPoints dans la curve.
         // on met les points environ a Length/NbPoints.
 
-        AppDef_MultiLine MLS = new(NbPoints);
-        AppDef_MultiPointConstraint MP = new(1, 2);
+        MultiLine MLS = new(NbPoints);
+        MultiPointConstraint MP = new(1, 2);
         Point3D P3d;
         Point2D PF1, PF2;
 
@@ -90,7 +91,7 @@ public sealed class BRepFill_ApproxSeewing
             }
             Alpha = (Corde - LP[Index - 1].X()) / (LP[Index].X() - LP[Index - 1].X());
             U = LP[Index - 1].Y() + Alpha * (LP[Index].Y() - LP[Index - 1].Y());
-            AppDef_MultiPointConstraint MPC = new(1, 2);
+            MultiPointConstraint MPC = new(1, 2);
             ML.Value3dOnF1OnF2(U, out P3d, out PF1, out PF2);
             MPC.SetPoint(1, P3d);
             MPC.SetPoint2d(2, PF1);
@@ -98,16 +99,16 @@ public sealed class BRepFill_ApproxSeewing
             MLS.SetValue(i, MPC);
             Corde = i * DCorde;
         }
-        AppDef_MultiPointConstraint MPE = new(1, 2);
+        MultiPointConstraint MPE = new(1, 2);
         ML.Value3dOnF1OnF2(U2, out P3d, out PF1, out PF2);
         MPE.SetPoint(1, P3d);
         MPE.SetPoint2d(2, PF1);
         MPE.SetPoint2d(3, PF2);
         MLS.SetValue(NbPoints, MPE);
 
-        AppDef_Compute Fit = new(MLS);
+        Compute Fit = new(MLS);
 
-        int NbCurves = Fit.NbMultiCurves();
+        int NbCurves = Fit.MultiCurveCount;
 
         if (NbCurves == 0)
         {
@@ -122,7 +123,7 @@ public sealed class BRepFill_ApproxSeewing
             double Uf = ML.FirstParameter();
             double Ul = ML.LastParameter();
             double dUlf = (Ul - Uf) / (NbPoints - 1);
-            AppDef_MultiPointConstraint MPC;
+            MultiPointConstraint MPC;
             for (i = 1; i <= NbPoints - 1; i++)
             {
                 MPC = MLS.Value(i);
@@ -139,9 +140,9 @@ public sealed class BRepFill_ApproxSeewing
             P2[NbPoints] = MPC.Point2d(3);
             Knots[NbPoints] = Ul;
 
-            myCurve = new Geom_BSplineCurve(P, Knots, Mults, 1);
-            myPCurve1 = new Geom2d_BSplineCurve(P1, Knots, Mults, 1);
-            myPCurve2 = new Geom2d_BSplineCurve(P2, Knots, Mults, 1);
+            myCurve = new BSplineCurve3D(P, Knots, Mults, 1);
+            myPCurve1 = new BSplineCurve2D(P1, Knots, Mults, 1);
+            myPCurve2 = new BSplineCurve2D(P2, Knots, Mults, 1);
 
             myIsDone = true;
 
@@ -150,7 +151,7 @@ public sealed class BRepFill_ApproxSeewing
 
         // Les approx sont a priori OK.
 
-        AppParCurves_MultiBSpCurve MBSp = Fit.SplineValue();
+        MultiBSpCurve MBSp = Fit.SplineValue();
         int NbPoles = MBSp.NbPoles();
         NCollection_Array1<Point3D> Poles = new(1, NbPoles);
         NCollection_Array1<Point2D> Poles2d1 = new(1, NbPoles);
@@ -164,9 +165,9 @@ public sealed class BRepFill_ApproxSeewing
         NCollection_Array1<int> aMults = MBSp.Multiplicities();
         int Degree = MBSp.Degree();
 
-        myCurve = new Geom_BSplineCurve(Poles, aKnots, aMults, Degree);
-        myPCurve1 = new Geom2d_BSplineCurve(Poles2d1, aKnots, aMults, Degree);
-        myPCurve2 = new Geom2d_BSplineCurve(Poles2d2, aKnots, aMults, Degree);
+        myCurve = new BSplineCurve3D(Poles, aKnots, aMults, Degree);
+        myPCurve1 = new BSplineCurve2D(Poles2d1, aKnots, aMults, Degree);
+        myPCurve2 = new BSplineCurve2D(Poles2d2, aKnots, aMults, Degree);
 
         myIsDone = true;
     }
@@ -176,7 +177,7 @@ public sealed class BRepFill_ApproxSeewing
 
     /// <summary>The 3D curve.</summary>
     /// <exception cref="NotDoneException">Not done.</exception>
-    public Geom_Curve Curve()
+    public Curve3D Curve()
     {
         StdFail_NotDone_Raise_if(!myIsDone, "BRepFill_ApproxSeewing::Curve");
         return myCurve!;
@@ -184,7 +185,7 @@ public sealed class BRepFill_ApproxSeewing
 
     /// <summary>The pcurve on the first face.</summary>
     /// <exception cref="NotDoneException">Not done.</exception>
-    public Geom2d_Curve CurveOnF1()
+    public Curve2D CurveOnF1()
     {
         StdFail_NotDone_Raise_if(!myIsDone, "BRepFill_ApproxSeewing::CurveOnF1");
         return myPCurve1!;
@@ -192,7 +193,7 @@ public sealed class BRepFill_ApproxSeewing
 
     /// <summary>The pcurve on the second face.</summary>
     /// <exception cref="NotDoneException">Not done.</exception>
-    public Geom2d_Curve CurveOnF2()
+    public Curve2D CurveOnF2()
     {
         StdFail_NotDone_Raise_if(!myIsDone, "BRepFill_ApproxSeewing::CurveOnF2");
         return myPCurve2!;

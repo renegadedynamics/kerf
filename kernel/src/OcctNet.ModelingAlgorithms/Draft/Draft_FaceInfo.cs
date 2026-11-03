@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>What the draft modification knows of a face: its new surface and the face it was added with.</summary>
@@ -10,21 +14,21 @@ namespace Occt;
 public sealed class Draft_FaceInfo
 {
     private bool myNewGeom;
-    private Geom_Surface? myGeom;
-    private TopoDS_Face myRootFace = new();
-    private TopoDS_Face myF1 = new();
-    private TopoDS_Face myF2 = new();
-    private Geom_Curve? myCurv;
+    private Surface? myGeom;
+    private Face myRootFace = new();
+    private Face myF1 = new();
+    private Face myF2 = new();
+    private Curve3D? myCurv;
 
     // OCCT leaves myNewGeom uninitialised in the default constructor; false here.
     public Draft_FaceInfo()
     {
     }
 
-    public Draft_FaceInfo(Geom_Surface? S, bool HasNewGeometry)
+    public Draft_FaceInfo(Surface? S, bool HasNewGeometry)
     {
         myNewGeom = HasNewGeometry;
-        if (S is Geom_RectangularTrimmedSurface T)
+        if (S is TrimmedSurface T)
         {
             myGeom = T.BasisSurface();
         }
@@ -34,33 +38,33 @@ public sealed class Draft_FaceInfo
         }
     }
 
-    public void RootFace(in TopoDS_Face F) => myRootFace = F;
+    public void RootFace(in Face F) => myRootFace = F;
 
-    public void Add(in TopoDS_Face F)
+    public void Add(in Face F)
     {
-        if (myF1.IsNull())
+        if (myF1.IsNull)
         {
             myF1 = F;
         }
-        else if (myF2.IsNull())
+        else if (myF2.IsNull)
         {
             myF2 = F;
         }
     }
 
-    public TopoDS_Face FirstFace() => myF1;
+    public Face FirstFace() => myF1;
 
-    public TopoDS_Face SecondFace() => myF2;
+    public Face SecondFace() => myF2;
 
     public bool NewGeometry() => myNewGeom;
 
-    public Geom_Surface? Geometry() => myGeom;
+    public Surface? Geometry() => myGeom;
 
-    public ref Geom_Surface? ChangeGeometry() => ref myGeom;
+    public ref Surface? ChangeGeometry() => ref myGeom;
 
-    public Geom_Curve? Curve() => myCurv;
+    public Curve3D? Curve() => myCurv;
 
-    public ref Geom_Curve? ChangeCurve() => ref myCurv;
+    public ref Curve3D? ChangeCurve() => ref myCurv;
 
-    public TopoDS_Face RootFace() => myRootFace;
+    public Face RootFace() => myRootFace;
 }

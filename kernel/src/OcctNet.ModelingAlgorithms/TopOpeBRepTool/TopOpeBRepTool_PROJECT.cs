@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -16,9 +19,9 @@ namespace Occt;
 public static class TopOpeBRepTool_PROJECT
 {
     /// <summary>The parameter range of the edge's curve.</summary>
-    public static void FUN_tool_bounds(in TopoDS_Edge E, out double f, out double l)
+    public static void FUN_tool_bounds(in Edge E, out double f, out double l)
     {
-        BRepAdaptor_Curve BAC = new(E);
+        EdgeCurveAdaptor BAC = new(E);
         f = BAC.FirstParameter();
         l = BAC.LastParameter();
     }
@@ -29,22 +32,22 @@ public static class TopOpeBRepTool_PROJECT
     /// there is none.
     /// </summary>
     public static bool FUN_tool_projPonS(in Point3D P,
-                                         Geom_Surface S,
+                                         Surface S,
                                          ref Point2D UV,
                                          ref double dist,
-                                         Extrema_ExtFlag anExtFlag = Extrema_ExtFlag.Extrema_ExtFlag_MINMAX,
-                                         Extrema_ExtAlgo anExtAlgo = Extrema_ExtAlgo.Extrema_ExtAlgo_Grad)
+                                         ExtFlag anExtFlag = ExtFlag.ExtFlag_MINMAX,
+                                         ExtAlgo anExtAlgo = ExtAlgo.ExtAlgo_Grad)
     {
         GeomAPI_ProjectPointOnSurf PonS = new();
         //
         S.Bounds(out double UMin, out double UMax, out double VMin, out double VMax);
         PonS.Init(S, UMin, UMax, VMin, VMax, anExtAlgo);
-        Extrema_ExtPS anExtPS = PonS.Extrema();
+        ExtPS anExtPS = PonS.Extrema();
         anExtPS.SetFlag(anExtFlag);
         //
         PonS.Perform(P);
         //
-        if (!PonS.Extrema().IsDone())
+        if (!PonS.Extrema().IsDone)
         {
             return false;
         }

@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -38,7 +41,7 @@ internal static class BRepTestSurfaceCommands
             return 1;
         }
 
-        Geom_Surface? S = DrawTrSurf.GetSurface(theDI, a[2]);
+        Surface? S = DrawTrSurf.GetSurface(theDI, a[2]);
         if (S is null)
         {
             theDI.Output.WriteLine($"{a[2]} is not a surface");
@@ -46,7 +49,7 @@ internal static class BRepTestSurfaceCommands
         }
 
         bool mkface = a[0][2] == 'f';
-        TopoDS_Shape res;
+        Shape res;
         bool Segment = false;
         if (!mkface && (n == 4 || n == 8))
         {
@@ -67,13 +70,13 @@ internal static class BRepTestSurfaceCommands
             }
 
             bool orient = n == 4;
-            TopoDS_Shape W = theDI.GetShape(a[3], TopAbs_ShapeEnum.TopAbs_WIRE);
-            if (W.IsNull())
+            Shape W = theDI.GetShape(a[3], ShapeType.Wire);
+            if (W.IsNull)
             {
                 return 1;
             }
 
-            res = new BRepBuilderAPI_MakeFace(S, TopoDS.Wire(W), orient).Shape();
+            res = new BRepBuilderAPI_MakeFace(S, ShapeCasts.Wire(W), orient).Shape();
         }
         else
         {
@@ -93,14 +96,14 @@ internal static class BRepTestSurfaceCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_FACE);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[2], ShapeType.Face);
+        if (S.IsNull)
         {
             return 1;
         }
 
         // OCCT dereferences the surface without a test
-        Geom_Surface C = BRep_Tool.Surface(TopoDS.Face(S), out Placement L) ?? throw new global::Kerf.Engine.Foundation.NullObjectException();
+        Surface C = Tool.Surface(ShapeCasts.Face(S), out Placement L) ?? throw new global::Kerf.Engine.Foundation.NullObjectException();
         DrawTrSurf.Set(theDI, a[1], C.Transformed(L.Transformation()));
         return 0;
     }
@@ -113,14 +116,14 @@ internal static class BRepTestSurfaceCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_WIRE);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[2], ShapeType.Wire);
+        if (S.IsNull)
         {
             return 1;
         }
 
         bool OnlyPlane = n == 4 && a[3] == "1";
-        var aMF = new BRepBuilderAPI_MakeFace(TopoDS.Wire(S), OnlyPlane);
+        var aMF = new BRepBuilderAPI_MakeFace(ShapeCasts.Wire(S), OnlyPlane);
         switch (aMF.Error())
         {
             case BRepBuilderAPI_FaceError.BRepBuilderAPI_FaceDone:
@@ -147,21 +150,21 @@ internal static class BRepTestSurfaceCommands
     }
 
     // the pcurve itself when it is a trimmed part of a non-periodic curve, else the curve trimmed to the edge's range
-    private static Geom2d_Curve Trimmed(Geom2d_Curve c, double f, double l)
+    private static Curve2D Trimmed(Curve2D c, double f, double l)
     {
         double fr = c.FirstParameter(), lr = c.LastParameter();
-        bool IsPeriodic = c.IsPeriodic();
-        if (c.GetType() == typeof(Geom2d_TrimmedCurve))
+        bool IsPeriodic = c.IsPeriodic;
+        if (c.GetType() == typeof(TrimmedCurve2D))
         {
-            Geom2d_Curve aC = ((Geom2d_TrimmedCurve)c).BasisCurve();
-            IsPeriodic = aC.IsPeriodic();
+            Curve2D aC = ((TrimmedCurve2D)c).BasisCurve();
+            IsPeriodic = aC.IsPeriodic;
             fr = aC.FirstParameter();
             lr = aC.LastParameter();
         }
 
         return !IsPeriodic && (fr - f > global::Kerf.Engine.Foundation.Precision.PConfusion() || l - lr > global::Kerf.Engine.Foundation.Precision.PConfusion())
              ? c
-             : new Geom2d_TrimmedCurve(c, f, l);
+             : new TrimmedCurve2D(c, f, l);
     }
 
     private static int PCurve(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> theArgs)
@@ -172,17 +175,17 @@ internal static class BRepTestSurfaceCommands
         if (n == 2)
         {
             // pcurves of a face
-            TopoDS_Shape S = theDI.GetShape(a[1], TopAbs_ShapeEnum.TopAbs_FACE);
-            if (S.IsNull())
+            Shape S = theDI.GetShape(a[1], ShapeType.Face);
+            if (S.IsNull)
             {
                 return 1;
             }
 
-            S = S.Oriented(TopAbs_Orientation.TopAbs_FORWARD);
-            var ex = new TopExp_Explorer(S, TopAbs_ShapeEnum.TopAbs_EDGE);
+            S = S.Oriented(Orientation.Forward);
+            var ex = new Explorer(S, ShapeType.Edge);
             for (int i = 1; ex.More(); ex.Next(), i++)
             {
-                Geom2d_Curve? c = BRep_Tool.CurveOnSurface(TopoDS.Edge(ex.Current()), TopoDS.Face(S), out double f, out double l);
+                Curve2D? c = Tool.CurveOnSurface(ShapeCasts.Edge(ex.Current()), ShapeCasts.Face(S), out double f, out double l);
                 if (c is null)
                 {
                     theDI.Output.Write($"Error: Edge {i} does not have pcurve\n");
@@ -194,20 +197,20 @@ internal static class BRepTestSurfaceCommands
         }
         else if (n >= 4)
         {
-            TopoDS_Shape SE = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_EDGE);
-            if (SE.IsNull())
+            Shape SE = theDI.GetShape(a[2], ShapeType.Edge);
+            if (SE.IsNull)
             {
                 return 1;
             }
 
-            TopoDS_Shape SF = theDI.GetShape(a[3], TopAbs_ShapeEnum.TopAbs_FACE);
-            if (SF.IsNull())
+            Shape SF = theDI.GetShape(a[3], ShapeType.Face);
+            if (SF.IsNull)
             {
                 return 1;
             }
 
             // OCCT dereferences the pcurve without a test
-            Geom2d_Curve c = BRep_Tool.CurveOnSurface(TopoDS.Edge(SE), TopoDS.Face(SF), out double f, out double l)
+            Curve2D c = Tool.CurveOnSurface(ShapeCasts.Edge(SE), ShapeCasts.Face(SF), out double f, out double l)
                           ?? throw new global::Kerf.Engine.Foundation.NullObjectException();
             DrawTrSurf.Set(theDI, a[1], Trimmed(c, f, l));
         }
@@ -228,13 +231,13 @@ internal static class BRepTestSurfaceCommands
             return 1;
         }
 
-        TopoDS_Shape sh = theDI.GetShape(a[1]);
-        if (sh.IsNull())
+        Shape sh = theDI.GetShape(a[1]);
+        if (sh.IsNull)
         {
             return 1;
         }
 
-        TopoDS_Shape aCopy = DrawShapeCopy.Copy(sh);
+        Shape aCopy = DrawShapeCopy.Copy(sh);
         if (n == 2)
         {
             BRepLib.EncodeRegularity(aCopy);
@@ -260,16 +263,16 @@ internal static class BRepTestSurfaceCommands
             return 1;
         }
 
-        TopoDS_Shape anEdge = theDI.GetShape(argv[1], TopAbs_ShapeEnum.TopAbs_EDGE);
-        TopoDS_Shape aFace1 = theDI.GetShape(argv[2], TopAbs_ShapeEnum.TopAbs_FACE);
-        TopoDS_Shape aFace2 = argc > 3 ? theDI.GetShape(argv[3], TopAbs_ShapeEnum.TopAbs_FACE) : aFace1;
-        if (anEdge.IsNull() || aFace1.IsNull() || aFace2.IsNull())
+        Shape anEdge = theDI.GetShape(argv[1], ShapeType.Edge);
+        Shape aFace1 = theDI.GetShape(argv[2], ShapeType.Face);
+        Shape aFace2 = argc > 3 ? theDI.GetShape(argv[3], ShapeType.Face) : aFace1;
+        if (anEdge.IsNull || aFace1.IsNull || aFace2.IsNull)
         {
             theDI.Output.WriteLine("Invalid number of arguments. Should be: getedgeregularity edge face1 [face2]");
             return 1;
         }
 
-        Continuity aRegularity = BRep_Tool.Continuity(TopoDS.Edge(anEdge), TopoDS.Face(aFace1), TopoDS.Face(aFace2));
+        Continuity aRegularity = Tool.Continuity(ShapeCasts.Edge(anEdge), ShapeCasts.Face(aFace1), ShapeCasts.Face(aFace2));
         string aStrReg = "Regularity of edge : " + aRegularity switch
         {
             Continuity.G1 => "G1",
@@ -294,48 +297,48 @@ internal static class BRepTestSurfaceCommands
             return 1;
         }
 
-        TopoDS_Shape aS = theDI.GetShape(a[1]);
-        if (aS.IsNull())
+        Shape aS = theDI.GetShape(a[1]);
+        if (aS.IsNull)
         {
             di.Append("the face is a null shape\n");
             return 0;
         }
 
-        if (aS.ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE)
+        if (aS.ShapeType() != ShapeType.Face)
         {
             di.Append("not a face\n");
             return 0;
         }
 
-        TopoDS_Face aFace = TopoDS.Face(aS);
+        Face aFace = ShapeCasts.Face(aS);
         var aP = new Point3D();
         DrawTrSurf.GetPoint(theDI, a[2], ref aP);
 
-        Extrema_ExtAlgo anExtAlgo = Extrema_ExtAlgo.Extrema_ExtAlgo_Grad;
-        Extrema_ExtFlag anExtFlag = Extrema_ExtFlag.Extrema_ExtFlag_MINMAX;
+        ExtAlgo anExtAlgo = ExtAlgo.ExtAlgo_Grad;
+        ExtFlag anExtFlag = ExtFlag.ExtFlag_MINMAX;
         for (int i = 3; i < n; ++i)
         {
             switch (a[i].ToLowerInvariant())
             {
                 case "-min":
-                    anExtFlag = Extrema_ExtFlag.Extrema_ExtFlag_MIN;
+                    anExtFlag = ExtFlag.ExtFlag_MIN;
                     break;
                 case "-max":
-                    anExtFlag = Extrema_ExtFlag.Extrema_ExtFlag_MAX;
+                    anExtFlag = ExtFlag.ExtFlag_MAX;
                     break;
                 case "-minmax":
-                    anExtFlag = Extrema_ExtFlag.Extrema_ExtFlag_MINMAX;
+                    anExtFlag = ExtFlag.ExtFlag_MINMAX;
                     break;
                 case "-t":
-                    anExtAlgo = Extrema_ExtAlgo.Extrema_ExtAlgo_Tree;
+                    anExtAlgo = ExtAlgo.ExtAlgo_Tree;
                     break;
                 case "-g":
-                    anExtAlgo = Extrema_ExtAlgo.Extrema_ExtAlgo_Grad;
+                    anExtAlgo = ExtAlgo.ExtAlgo_Grad;
                     break;
             }
         }
 
-        Geom_Surface aSurf = BRep_Tool.Surface(aFace, out Placement aLoc)!;
+        Surface aSurf = Tool.Surface(aFace, out Placement aLoc)!;
         aP = aP.Transformed(aLoc.Transformation().Inverted());
         aSurf.Bounds(out double aUMin, out double aUMax, out double aVMin, out double aVMax);
 

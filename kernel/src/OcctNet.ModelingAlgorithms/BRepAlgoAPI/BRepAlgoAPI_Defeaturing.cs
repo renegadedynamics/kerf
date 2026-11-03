@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -19,8 +21,8 @@ namespace Occt;
 /// </remarks>
 public class BRepAlgoAPI_Defeaturing : BRepAlgoAPI_Algo
 {
-    protected TopoDS_Shape myInputShape = new();                     //!< Input shape to remove the features from
-    protected NCollection_List<TopoDS_Shape> myFacesToRemove = new(); //!< Features to remove from the shape
+    protected Shape myInputShape = new();                     //!< Input shape to remove the features from
+    protected NCollection_List<Shape> myFacesToRemove = new(); //!< Features to remove from the shape
     protected bool myFillHistory;                                     //!< Defines whether to track the history of shapes modifications or not (true by default)
     protected BOPAlgo_RemoveFeatures myFeatureRemovalTool = new();    //!< Tool for the features removal
 
@@ -31,18 +33,18 @@ public class BRepAlgoAPI_Defeaturing : BRepAlgoAPI_Algo
     }
 
     /// <summary>Sets the shape for processing: a SOLID, COMPSOLID or COMPOUND of solids.</summary>
-    public void SetShape(in TopoDS_Shape theShape) => myInputShape = theShape;
+    public void SetShape(in Shape theShape) => myInputShape = theShape;
 
     /// <summary>The input shape.</summary>
-    public TopoDS_Shape InputShape() => myInputShape;
+    public Shape InputShape() => myInputShape;
 
     /// <summary>Adds the faces of <paramref name="theFace"/> to the features to remove.</summary>
-    public void AddFaceToRemove(in TopoDS_Shape theFace) => myFacesToRemove.Append(theFace);
+    public void AddFaceToRemove(in Shape theFace) => myFacesToRemove.Append(theFace);
 
     /// <summary>Adds the faces of the shapes of <paramref name="theFaces"/> to the features to remove.</summary>
-    public void AddFacesToRemove(NCollection_List<TopoDS_Shape> theFaces)
+    public void AddFacesToRemove(NCollection_List<Shape> theFaces)
     {
-        NCollection_List<TopoDS_Shape>.Iterator it = new(theFaces);
+        NCollection_List<Shape>.Iterator it = new(theFaces);
         for (; it.More(); it.Next())
         {
             myFacesToRemove.Append(it.Value());
@@ -50,7 +52,7 @@ public class BRepAlgoAPI_Defeaturing : BRepAlgoAPI_Algo
     }
 
     /// <summary>The shapes requested for removal.</summary>
-    public NCollection_List<TopoDS_Shape> FacesToRemove() => myFacesToRemove;
+    public NCollection_List<Shape> FacesToRemove() => myFacesToRemove;
 
     /// <summary>Performs the operation.</summary>
     public override void Build(ProgressRange theRange = default)
@@ -92,10 +94,10 @@ public class BRepAlgoAPI_Defeaturing : BRepAlgoAPI_Algo
     public bool HasHistory() => myFillHistory;
 
     /// <summary>The algorithm's own list behind <c>Modified</c>: the shapes modified from <paramref name="theS"/>.</summary>
-    internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape theS)
+    internal override NCollection_List<Shape> InternalModified(in Shape theS)
     {
         myGenerated.Clear();
-        foreach (TopoDS_Shape aS in myFeatureRemovalTool.Modified(theS))
+        foreach (Shape aS in myFeatureRemovalTool.Modified(theS))
         {
             myGenerated.Append(aS);
         }
@@ -103,10 +105,10 @@ public class BRepAlgoAPI_Defeaturing : BRepAlgoAPI_Algo
     }
 
     /// <summary>The algorithm's own list behind <c>Generated</c>: the shapes generated from <paramref name="theS"/>.</summary>
-    internal override NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape theS)
+    internal override NCollection_List<Shape> InternalGenerated(in Shape theS)
     {
         myGenerated.Clear();
-        foreach (TopoDS_Shape aS in myFeatureRemovalTool.Generated(theS))
+        foreach (Shape aS in myFeatureRemovalTool.Generated(theS))
         {
             myGenerated.Append(aS);
         }
@@ -114,7 +116,7 @@ public class BRepAlgoAPI_Defeaturing : BRepAlgoAPI_Algo
     }
 
     /// <summary>True if <paramref name="theS"/> has no trace in the result.</summary>
-    public override bool IsDeleted(in TopoDS_Shape theS) => myFeatureRemovalTool.IsDeleted(theS);
+    public override bool IsDeleted(in Shape theS) => myFeatureRemovalTool.IsDeleted(theS);
 
     /// <summary>True if any of the input shapes has been modified.</summary>
     public virtual bool HasModified() => myFeatureRemovalTool.HasModified();
@@ -126,14 +128,14 @@ public class BRepAlgoAPI_Defeaturing : BRepAlgoAPI_Algo
     public virtual bool HasDeleted() => myFeatureRemovalTool.HasDeleted();
 
     /// <summary>The history of the shapes' modifications (the result is frozen first; null without history).</summary>
-    public BRepTools_History? History()
+    public History? History()
     {
         BeforePublishingLists();
         return myFeatureRemovalTool.History();
     }
 
     /// <summary>The history without freezing the result (OCCT's <c>History()</c>), for ported code.</summary>
-    internal BRepTools_History? InternalHistory() => myFeatureRemovalTool.InternalHistory();
+    internal History? InternalHistory() => myFeatureRemovalTool.InternalHistory();
 
     // The lists hold sub-shapes of the result: the whole result is frozen with them (decision 414).
     private protected override void BeforePublishingLists() => myShape.TShape()?.FreezeGraph();

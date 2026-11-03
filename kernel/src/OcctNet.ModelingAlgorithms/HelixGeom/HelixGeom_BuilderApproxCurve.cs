@@ -25,7 +25,7 @@ public abstract class HelixGeom_BuilderApproxCurve
     protected int myMaxDegree;
     protected int myMaxSeg;
     protected double myTolReached;
-    protected NCollection_Sequence<Geom_Curve> myCurves = new();
+    protected NCollection_Sequence<Curve3D> myCurves = new();
 
     /// <summary>Sets the default approximation parameters: tolerance 1e-4, C2, degree 8, 150 segments.</summary>
     protected HelixGeom_BuilderApproxCurve()
@@ -68,12 +68,12 @@ public abstract class HelixGeom_BuilderApproxCurve
     public double ToleranceReached() => myTolReached;
 
     /// <summary>The B-spline curves representing the helix's coils, in order: a new list each call, of the same curves, frozen.</summary>
-    public ISchematiqList<Geom_Curve> Curves()
+    public ISchematiqList<Curve3D> Curves()
     {
-        var aCurves = new Geom_Curve[myCurves.Length()];
+        var aCurves = new Curve3D[myCurves.Length()];
         for (int i = 1; i <= myCurves.Length(); i++)
         {
-            Geom_Curve aCurve = myCurves.Value(i);
+            Curve3D aCurve = myCurves.Value(i);
             aCurve.Freeze();
             aCurves[i - 1] = aCurve;
         }
@@ -82,7 +82,7 @@ public abstract class HelixGeom_BuilderApproxCurve
     }
 
     /// <summary>OCCT's <c>Curves()</c>: the stored sequence, unfrozen, for ported code.</summary>
-    internal NCollection_Sequence<Geom_Curve> InternalCurves() => myCurves;
+    internal NCollection_Sequence<Curve3D> InternalCurves() => myCurves;
 
     /// <summary>The error status: 0 on success, 2 if the approximation failed.</summary>
     public int ErrorStatus() => myErrorStatus;

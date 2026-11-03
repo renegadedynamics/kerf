@@ -2,11 +2,17 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Globalization;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -48,35 +54,35 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
     // ---------------------------------------------------------------------------------------------------------------
     // Cases
 
-    private static double Diagonal(in TopoDS_Shape theShape)
+    private static double Diagonal(in Shape theShape)
     {
         Box aBox = new();
         BRepBndLib.Add(theShape, ref aBox);
         return Math.Sqrt(aBox.SquareExtent());
     }
 
-    private static NCollection_IndexedMap<TopoDS_Shape> Map(in TopoDS_Shape S, TopAbs_ShapeEnum T)
+    private static NCollection_IndexedMap<Shape> Map(in Shape S, ShapeType T)
     {
-        NCollection_IndexedMap<TopoDS_Shape> M = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(S, T, M);
+        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        Exploration.MapShapes(S, T, M);
         return M;
     }
 
     /// <summary>The edges that are not degenerated and lie between two different faces (filletable).</summary>
-    private static List<int> SharpEdges(in TopoDS_Shape S)
+    private static List<int> SharpEdges(in Shape S)
     {
-        NCollection_IndexedMap<TopoDS_Shape> anEdges = Map(S, TopAbs_EDGE);
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> EF = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(S, TopAbs_EDGE, TopAbs_FACE, EF);
+        NCollection_IndexedMap<Shape> anEdges = Map(S, ShapeType.Edge);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> EF = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(S, ShapeType.Edge, ShapeType.Face, EF);
         List<int> r = [];
         for (int k = 1; k <= anEdges.Extent(); k++)
         {
-            TopoDS_Edge E = TopoDS.Edge(anEdges[k]);
-            if (BRep_Tool.Degenerated(E) || !EF.Contains(E))
+            Edge E = ShapeCasts.Edge(anEdges[k]);
+            if (Tool.Degenerated(E) || !EF.Contains(E))
             {
                 continue;
             }
-            NCollection_List<TopoDS_Shape> L = EF.FindFromKey(E);
+            NCollection_List<Shape> L = EF.FindFromKey(E);
             if (L.Extent() == 2 && !L.First().IsSame(L.Last()))
             {
                 r.Add(k);
@@ -86,7 +92,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>The cases on a solid: each edge singly, evolving, chamfered; all the edges; each face's edges; too large.</summary>
-    internal static IEnumerable<Case> SolidCases(string theName, TopoDS_Shape theShape, bool theFull = true, int theMaxEdges = 1000)
+    internal static IEnumerable<Case> SolidCases(string theName, Shape theShape, bool theFull = true, int theMaxEdges = 1000)
     {
         double d = Diagonal(theShape);
         double r = Math.Round(d * 0.03, 3);
@@ -116,12 +122,12 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         if (theFull)
         {
             // the edges of each of the first faces (a chain round the face)
-            NCollection_IndexedMap<TopoDS_Shape> aFaces = Map(theShape, TopAbs_FACE);
-            NCollection_IndexedMap<TopoDS_Shape> anEdges = Map(theShape, TopAbs_EDGE);
+            NCollection_IndexedMap<Shape> aFaces = Map(theShape, ShapeType.Face);
+            NCollection_IndexedMap<Shape> anEdges = Map(theShape, ShapeType.Edge);
             for (int f = 1; f <= Math.Min(3, aFaces.Extent()); f++)
             {
                 List<int> aChain = [];
-                for (TopExp_Explorer ex = new(aFaces[f], TopAbs_EDGE); ex.More(); ex.Next())
+                for (Explorer ex = new(aFaces[f], ShapeType.Edge); ex.More(); ex.Next())
                 {
                     int k = anEdges.FindIndex(ex.Current());
                     if (aSharp.Contains(k) && !aChain.Contains(k))
@@ -150,7 +156,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         var aTally = new Tally();
         using var aRun = new ShapeFixOracleRun(output, "fillet");
         var aWatch = Stopwatch.StartNew();
-        foreach ((string aName, TopoDS_Shape aShape) in Tape.Budget(BRepOffsetAPIMakeThickSolidOracleTests.Solids()))
+        foreach ((string aName, Shape aShape) in Tape.Budget(BRepOffsetAPIMakeThickSolidOracleTests.Solids()))
         {
             foreach (Case aCase in SolidCases(aName, aShape))
             {
@@ -174,8 +180,8 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
             {
                 continue;
             }
-            Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aFile));
-            if (aShape.IsNull() || !new TopExp_Explorer(aShape, TopAbs_SOLID).More())
+            Assert.True(BrepTools.Read(out Shape aShape, aFile));
+            if (aShape.IsNull || !new Explorer(aShape, ShapeType.Solid).More())
             {
                 continue;
             }
@@ -195,12 +201,12 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         // OCC1077: box common sphere, cut by a cylinder, the section edges filleted (BRepFilletAPI_MakeFillet_Test)
         var aTally = new Tally();
         using var aRun = new ShapeFixOracleRun(output, "fillet");
-        TopoDS_Shape aCommon = new BRepAlgoAPI_Common(new BRepPrimAPI_MakeBox(new Point3D(-5, -5, -5), 10, 10, 10).Shape(),
+        Shape aCommon = new BRepAlgoAPI_Common(new BRepPrimAPI_MakeBox(new Point3D(-5, -5, -5), 10, 10, 10).Shape(),
                                                       new BRepPrimAPI_MakeSphere(7).Shape()).Shape();
-        TopoDS_Shape aCyl1 = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, 0, -10), new Direction3D(0, 0, 1)), 3, 20).Shape();
+        Shape aCyl1 = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, 0, -10), new Direction3D(0, 0, 1)), 3, 20).Shape();
         BRepAlgoAPI_Cut aCut = new(aCommon, aCyl1);
-        TopoDS_Shape aCutShape = aCut.Shape();
-        NCollection_IndexedMap<TopoDS_Shape> anEdges = Map(aCutShape, TopAbs_EDGE);
+        Shape aCutShape = aCut.Shape();
+        NCollection_IndexedMap<Shape> anEdges = Map(aCutShape, ShapeType.Edge);
         CaseEdge[] aSection = [.. aCut.SectionEdges().Select(e => new CaseEdge(anEdges.FindIndex(e), 0.7))];
         Compare(aRun, aTally, new Case("OCC1077 first cut, section edges r0.7", false, aSection), aCutShape);
         foreach (CaseEdge e in aSection)
@@ -208,18 +214,18 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
             Compare(aRun, aTally, new Case($"OCC1077 first cut, e{e.K} r0.7", false, [e]), aCutShape);
         }
         // the next cuts, on the port's filleted and fixed result (as the GTest builds it)
-        TopoDS_Shape aStage = aCutShape;
+        Shape aStage = aCutShape;
         {
             BRepFilletAPI_MakeFillet aF = new(aCutShape);
             foreach (CaseEdge e in aSection)
             {
-                aF.Add(0.7, TopoDS.Edge(anEdges[e.K]));
+                aF.Add(0.7, ShapeCasts.Edge(anEdges[e.K]));
             }
             ShapeFix_Shape aFix = new(aF.Shape());
             aFix.Perform();
             aStage = aFix.Shape();
         }
-        TopoDS_Shape[] aCyls =
+        Shape[] aCyls =
         [
             new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(-10, 0, 0), new Direction3D(1, 0, 0)), 3, 20).Shape(),
             new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, -10, 0), new Direction3D(0, 1, 0)), 3, 20).Shape(),
@@ -227,14 +233,14 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         for (int c = 0; c < aCyls.Length; c++)
         {
             BRepAlgoAPI_Cut aCutC = new(aStage, aCyls[c]);
-            TopoDS_Shape aCutCShape = aCutC.Shape();
-            NCollection_IndexedMap<TopoDS_Shape> anEdgesC = Map(aCutCShape, TopAbs_EDGE);
+            Shape aCutCShape = aCutC.Shape();
+            NCollection_IndexedMap<Shape> anEdgesC = Map(aCutCShape, ShapeType.Edge);
             CaseEdge[] aSectionC = [.. aCutC.SectionEdges().Select(e => new CaseEdge(anEdgesC.FindIndex(e), 0.7))];
             Compare(aRun, aTally, new Case($"OCC1077 cut {c + 2}, section edges r0.7", false, aSectionC), aCutCShape);
             BRepFilletAPI_MakeFillet aF = new(aCutCShape);
             foreach (CaseEdge e in aSectionC)
             {
-                aF.Add(0.7, TopoDS.Edge(anEdgesC[e.K]));
+                aF.Add(0.7, ShapeCasts.Edge(anEdgesC[e.K]));
             }
             aF.Build();
             if (!aF.IsDone())
@@ -249,10 +255,10 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         Compare(aRun, aTally, new Case("OCC426 all edges r1", false, [.. SharpEdges(OCC426Input()).Select(k => new CaseEdge(k, 1.0))]),
                 OCC426Input());
         // OCC570: a box's first wire, variable and constant radii
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(100, 100, 100).Shape();
-        NCollection_IndexedMap<TopoDS_Shape> aBoxEdges = Map(aBox, TopAbs_EDGE);
+        Shape aBox = new BRepPrimAPI_MakeBox(100, 100, 100).Shape();
+        NCollection_IndexedMap<Shape> aBoxEdges = Map(aBox, ShapeType.Edge);
         List<int> aWire = [];
-        for (TopExp_Explorer ex = new(new TopExp_Explorer(aBox, TopAbs_WIRE).Current(), TopAbs_EDGE); ex.More(); ex.Next())
+        for (Explorer ex = new(new Explorer(aBox, ShapeType.Wire).Current(), ShapeType.Edge); ex.More(); ex.Next())
         {
             aWire.Add(aBoxEdges.FindIndex(ex.Current()));
         }
@@ -262,9 +268,9 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         Report(aTally, "OCCT's GTests' inputs", KnownGTestDifferences);
     }
 
-    private static TopoDS_Shape OCC426Input()
+    private static Shape OCC426Input()
     {
-        TopoDS_Shape Ring(double r1, double r2, double z1, double z2, double a, double angle)
+        Shape Ring(double r1, double r2, double z1, double z2, double a, double angle)
         {
             BRepBuilderAPI_MakePolygon aW = new();
             double c = Math.Cos(a), s = Math.Sin(a);
@@ -273,13 +279,13 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
             aW.Add(new Point3D(r2 * c, r2 * s, z2));
             aW.Add(new Point3D(r1 * c, r1 * s, z2));
             aW.Add(new Point3D(r1 * c, r1 * s, z1));
-            TopoDS_Face aF = new BRepBuilderAPI_MakeFace(aW.Wire(), false).Face();
+            Face aF = new BRepBuilderAPI_MakeFace(aW.Wire(), false).Face();
             return new BRepPrimAPI_MakeRevol(aF, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), angle).Shape();
         }
-        TopoDS_Shape aRs1 = Ring(10, 20, 0, 10, 0, 2 * Math.PI);
-        TopoDS_Shape aRs2 = Ring(10, 20, 10, 20, Math.PI / 4, 270.0 * Math.PI / 180.0);
-        TopoDS_Shape aRs3 = Ring(10, 20, 20, 30, 0, 2 * Math.PI);
-        TopoDS_Shape aFuse = new BRepAlgoAPI_Fuse(new BRepAlgoAPI_Fuse(aRs3, aRs2).Shape(), aRs1).Shape();
+        Shape aRs1 = Ring(10, 20, 0, 10, 0, 2 * Math.PI);
+        Shape aRs2 = Ring(10, 20, 10, 20, Math.PI / 4, 270.0 * Math.PI / 180.0);
+        Shape aRs3 = Ring(10, 20, 20, 30, 0, 2 * Math.PI);
+        Shape aFuse = new BRepAlgoAPI_Fuse(new BRepAlgoAPI_Fuse(aRs3, aRs2).Shape(), aRs1).Shape();
         ShapeUpgrade_UnifySameDomain aU = new(aFuse, true, true, true);
         aU.Build();
         return aU.Shape();
@@ -295,22 +301,22 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         using var aRun = new ShapeFixOracleRun(output, "fillet");
         List<string> aDifferences = [];
         int aProbes = 0, aSearches = 0;
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
-        TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 12).Shape();
-        List<(string, TopoDS_Shape, int[])> aSearchCases =
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+        Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 12).Shape();
+        List<(string, Shape, int[])> aSearchCases =
         [
             ("box all edges", aBox, [.. SharpEdges(aBox)]),
             ("box edge 1", aBox, [1]),
             ("box edges 1 2", aBox, [1, 2]),
             ("cylinder circles", aCyl, [.. SharpEdges(aCyl)]),
         ];
-        foreach ((string Name, TopoDS_Shape Shape) s in BRepOffsetAPIMakeThickSolidOracleTests.Solids().Where(s => s.Name is "L prism" or "box with hole" or "wedge"))
+        foreach ((string Name, Shape Shape) s in BRepOffsetAPIMakeThickSolidOracleTests.Solids().Where(s => s.Name is "L prism" or "box with hole" or "wedge"))
         {
             aSearchCases.Add((s.Name + " all edges", s.Shape, [.. SharpEdges(s.Shape)]));
         }
-        foreach ((string aName, TopoDS_Shape aShape, int[] anEdges) in aSearchCases)
+        foreach ((string aName, Shape aShape, int[] anEdges) in aSearchCases)
         {
-            if (aRun.Read(BRepOffsetAPIMakeThickSolidOracleTests.Native(aRun, aShape)) is not (N.TopoDS_Shape aNIn, TopoDS_Shape aPIn))
+            if (aRun.Read(BRepOffsetAPIMakeThickSolidOracleTests.Native(aRun, aShape)) is not (N.TopoDS_Shape aNIn, Shape aPIn))
             {
                 continue;
             }
@@ -375,15 +381,15 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static bool ProbePort(in TopoDS_Shape theInput, int[] theEdges, double theR)
+    private static bool ProbePort(in Shape theInput, int[] theEdges, double theR)
     {
         try
         {
-            NCollection_IndexedMap<TopoDS_Shape> anEdges = Map(theInput, TopAbs_EDGE);
+            NCollection_IndexedMap<Shape> anEdges = Map(theInput, ShapeType.Edge);
             BRepFilletAPI_MakeFillet aB = new(theInput);
             foreach (int k in theEdges)
             {
-                aB.Add(theR, TopoDS.Edge(anEdges[k]));
+                aB.Add(theR, ShapeCasts.Edge(anEdges[k]));
             }
             return new BRepCheck_Analyzer(aB.Shape()).IsValid();
         }
@@ -397,7 +403,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
     // One comparison
 
     /// <summary>A side's run: the exception, the status and diagnostics, the result, the history over the result's faces.</summary>
-    internal sealed record Outcome(string? Error, string Status, TopoDS_Shape? Result, Dictionary<string, (bool Deleted, int[] Faces)> History);
+    internal sealed record Outcome(string? Error, string Status, Shape? Result, Dictionary<string, (bool Deleted, int[] Faces)> History);
 
     private static string Status(bool theDone, int theContours, IEnumerable<string> theDiagnostics) =>
         $"done={theDone} contours={theContours} " + string.Join(' ', theDiagnostics);
@@ -537,12 +543,12 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         }
     }
 
-    internal static Outcome RunPort(Case theCase, TopoDS_Shape theInput)
+    internal static Outcome RunPort(Case theCase, Shape theInput)
     {
-        NCollection_IndexedMap<TopoDS_Shape> anEdges = Map(theInput, TopAbs_EDGE);
-        NCollection_IndexedMap<TopoDS_Shape> aFaces = Map(theInput, TopAbs_FACE);
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> EF = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(theInput, TopAbs_EDGE, TopAbs_FACE, EF);
+        NCollection_IndexedMap<Shape> anEdges = Map(theInput, ShapeType.Edge);
+        NCollection_IndexedMap<Shape> aFaces = Map(theInput, ShapeType.Face);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> EF = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(theInput, ShapeType.Edge, ShapeType.Face, EF);
         try
         {
             BRepFilletAPI_LocalOperation aMaker;
@@ -553,8 +559,8 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
                 aMaker = aC;
                 foreach (CaseEdge e in theCase.Edges)
                 {
-                    TopoDS_Edge E = TopoDS.Edge(anEdges[e.K]);
-                    TopoDS_Face F = TopoDS.Face(EF.FindFromKey(E).First());
+                    Edge E = ShapeCasts.Edge(anEdges[e.K]);
+                    Face F = ShapeCasts.Face(EF.FindFromKey(E).First());
                     if (e.Mode == 1)
                     {
                         aC.AddDA(e.R1, e.R2 * Math.PI / 180.0, E, F);
@@ -577,7 +583,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
                 aMaker = aF;
                 foreach (CaseEdge e in theCase.Edges)
                 {
-                    TopoDS_Edge E = TopoDS.Edge(anEdges[e.K]);
+                    Edge E = ShapeCasts.Edge(anEdges[e.K]);
                     if (e.Pairs is double[] p)
                     {
                         NCollection_Array1<Point2D> anArray = new(1, p.Length / 2);
@@ -607,8 +613,8 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
             {
                 return new Outcome(null, aStatus, null, []);
             }
-            TopoDS_Shape aRes = aMaker.Shape();
-            NCollection_IndexedMap<TopoDS_Shape> aResFaces = Map(aRes, TopAbs_FACE);
+            Shape aRes = aMaker.Shape();
+            NCollection_IndexedMap<Shape> aResFaces = Map(aRes, ShapeType.Face);
             Dictionary<string, (bool, int[])> aHistory = [];
             for (int i = 1; i <= aFaces.Extent(); i++)
             {
@@ -616,17 +622,17 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
             }
             for (int k = 1; k <= anEdges.Extent(); k++)
             {
-                IReadOnlyList<TopoDS_Shape> aL = aMaker.Generated(anEdges[k]);
+                IReadOnlyList<Shape> aL = aMaker.Generated(anEdges[k]);
                 if (aL.Count > 0)
                 {
                     aHistory["E" + k] = (false, [.. aL.Select(x => aResFaces.FindIndex(x))]);
                 }
             }
-            NCollection_IndexedMap<TopoDS_Shape> aSolids = Map(theInput, TopAbs_SOLID);
+            NCollection_IndexedMap<Shape> aSolids = Map(theInput, ShapeType.Solid);
             for (int i = 1; i <= aSolids.Extent(); i++)
             {
                 aHistory["So" + i] = (aMaker.IsDeleted(aSolids[i]),
-                                      [.. aMaker.Modified(aSolids[i]).SelectMany(x => Map(x, TopAbs_FACE)).Select(x => aResFaces.FindIndex(x))]);
+                                      [.. aMaker.Modified(aSolids[i]).SelectMany(x => Map(x, ShapeType.Face)).Select(x => aResFaces.FindIndex(x))]);
             }
             return new Outcome(null, aStatus, aRes, aHistory);
         }
@@ -636,9 +642,9 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         }
     }
 
-    internal void Compare(ShapeFixOracleRun theRun, Tally theTally, Case theCase, TopoDS_Shape theInput)
+    internal void Compare(ShapeFixOracleRun theRun, Tally theTally, Case theCase, Shape theInput)
     {
-        if (theRun.Read(BRepOffsetAPIMakeThickSolidOracleTests.Native(theRun, theInput)) is not (N.TopoDS_Shape aNIn, TopoDS_Shape aPIn))
+        if (theRun.Read(BRepOffsetAPIMakeThickSolidOracleTests.Native(theRun, theInput)) is not (N.TopoDS_Shape aNIn, Shape aPIn))
         {
             return;
         }
@@ -651,7 +657,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         {
             theTally.Differences.Add($"{aWhat}: the port's input changed");
         }
-        if (aP.Result is TopoDS_Shape aPR && !aPR.IsNull() && !aPR.TShape()!.IsFrozen)
+        if (aP.Result is Shape aPR && !aPR.IsNull && !aPR.TShape()!.IsFrozen)
         {
             theTally.Differences.Add($"{aWhat}: the port's result isn't frozen");
         }
@@ -701,16 +707,16 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static double Volume(in TopoDS_Shape S)
+    private static double Volume(in Shape S)
     {
-        GProp_GProps p = new();
+        Properties p = new();
         BRepGProp.VolumeProperties(S, p);
         return p.Mass();
     }
 
-    private static double Area(in TopoDS_Shape S)
+    private static double Area(in Shape S)
     {
-        GProp_GProps p = new();
+        Properties p = new();
         BRepGProp.SurfaceProperties(S, p);
         return p.Mass();
     }
@@ -719,13 +725,13 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         Math.Abs(a - b) <= theRel * Math.Max(1.0, Math.Max(Math.Abs(a), Math.Abs(b)));
 
     // The faults BRepCheck finds, by sub-shape type.
-    internal static string ReconFaults(in TopoDS_Shape S)
+    internal static string ReconFaults(in Shape S)
     {
         BRepCheck_Analyzer an = new(S);
         SortedSet<string> aFaults = [];
-        foreach (TopAbs_ShapeEnum T in new[] { TopAbs_SOLID, TopAbs_SHELL, TopAbs_FACE, TopAbs_WIRE, TopAbs_EDGE, TopAbs_VERTEX })
+        foreach (ShapeType T in new[] { ShapeType.Solid, ShapeType.Shell, ShapeType.Face, ShapeType.Wire, ShapeType.Edge, ShapeType.Vertex })
         {
-            for (TopExp_Explorer exp = new(S, T); exp.More(); exp.Next())
+            for (Explorer exp = new(S, T); exp.More(); exp.Next())
             {
                 if (an.Result(exp.Current()) is BRepCheck_Result r)
                 {
@@ -733,7 +739,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
                     {
                         if (st != BRepCheck_Status.BRepCheck_NoError)
                         {
-                            aFaults.Add(T.ToString().Replace("TopAbs_", "") + ":" + st.ToString().Replace("BRepCheck_", ""));
+                            aFaults.Add(Kerf.Engine.Foundation.OcctTypeNames.Of(T).Replace("TopAbs_", "") + ":" + Kerf.Engine.Foundation.OcctTypeNames.Of(st).Replace("BRepCheck_", ""));
                         }
                     }
                 }
@@ -743,11 +749,11 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
     }
 
     // (surface type, area) of each face of a list, sorted
-    private static List<(string Type, double Area)> Keys(in TopoDS_Shape theResult, int[] theFaces)
+    private static List<(string Type, double Area)> Keys(in Shape theResult, int[] theFaces)
     {
-        NCollection_IndexedMap<TopoDS_Shape> M = Map(theResult, TopAbs_FACE);
+        NCollection_IndexedMap<Shape> M = Map(theResult, ShapeType.Face);
         return [.. theFaces.Select(i => i > 0
-                                       ? (new BRepAdaptor_Surface(TopoDS.Face(M[i])).GetType().ToString().Replace("GeomAbs_", ""), Area(M[i]))
+                                       ? (Kerf.Engine.Foundation.OcctTypeNames.Of(new FaceSurfaceAdaptor(ShapeCasts.Face(M[i])).GetType()).Replace("GeomAbs_", ""), Area(M[i]))
                                        : ("out", 0.0))
                            .OrderBy(k => k.Item1, StringComparer.Ordinal).ThenBy(k => k.Item2)];
     }
@@ -762,7 +768,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
     internal static List<string> Geometric(Outcome theN, Outcome theP)
     {
         List<string> d = [];
-        TopoDS_Shape aN = theN.Result!.Value, aP = theP.Result!.Value;
+        Shape aN = theN.Result!.Value, aP = theP.Result!.Value;
         double v1 = Volume(aN), v2 = Volume(aP), a1 = Area(aN), a2 = Area(aP);
         if (!Close(v1, v2, 1.0e-6))
         {
@@ -772,12 +778,12 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         {
             d.Add($"area {a1:G9} | {a2:G9}");
         }
-        foreach (TopAbs_ShapeEnum T in new[] { TopAbs_SOLID, TopAbs_SHELL, TopAbs_FACE, TopAbs_EDGE, TopAbs_VERTEX })
+        foreach (ShapeType T in new[] { ShapeType.Solid, ShapeType.Shell, ShapeType.Face, ShapeType.Edge, ShapeType.Vertex })
         {
             int n1 = Map(aN, T).Extent(), n2 = Map(aP, T).Extent();
             if (n1 != n2)
             {
-                d.Add($"{T.ToString().Replace("TopAbs_", "")} {n1} | {n2}");
+                d.Add($"{Kerf.Engine.Foundation.OcctTypeNames.Of(T).Replace("TopAbs_", "")} {n1} | {n2}");
             }
         }
         bool ok1 = new BRepCheck_Analyzer(aN).IsValid(), ok2 = new BRepCheck_Analyzer(aP).IsValid();

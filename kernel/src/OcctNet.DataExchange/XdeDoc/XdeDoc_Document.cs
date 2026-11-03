@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Collections.Immutable;
@@ -23,8 +25,8 @@ namespace Occt;
 /// part's sub-shapes as their children), the layers under 0:1:3. Each method has the name and the behaviour of the
 /// XCAF tool method it replaces (<c>XCAFDoc_ShapeTool</c>: <see cref="AddShape"/>, <see cref="NewShape"/>,
 /// <see cref="AddComponent(in XdeDoc_Label, in XdeDoc_Label, in Placement)"/>, <see cref="Search"/>,
-/// <see cref="SearchUsingMap"/>, <see cref="FindShape(in TopoDS_Shape, out XdeDoc_Label, bool)"/>,
-/// <see cref="AddSubShape(in XdeDoc_Label, in TopoDS_Shape)"/>, <see cref="GetFreeShapes"/>, <see cref="GetComponents"/>,
+/// <see cref="SearchUsingMap"/>, <see cref="FindShape(in Shape, out XdeDoc_Label, bool)"/>,
+/// <see cref="AddSubShape(in XdeDoc_Label, in Shape)"/>, <see cref="GetFreeShapes"/>, <see cref="GetComponents"/>,
 /// <see cref="GetReferredShape"/>, <see cref="GetLocation"/>, the <c>Is...</c> tests...; <c>XCAFDoc_ColorTool</c>:
 /// <see cref="SetColor(in XdeDoc_Label, in ColorWithAlpha, XdeDoc_ColorType)"/>, <see cref="GetColor(in XdeDoc_Label, XdeDoc_ColorType, out ColorWithAlpha)"/>,
 /// <see cref="SetVisibility"/>, <see cref="IsVisible"/>; <c>XCAFDoc_LayerTool</c>: <see cref="AddLayer(string)"/>,
@@ -53,7 +55,7 @@ public sealed class XdeDoc_Document
         public readonly List<int> Children = [];
         public int NextTag = 1;
 
-        public TopoDS_Shape Shape;           // the shape set on the label (none for a reference)
+        public Shape Shape;           // the shape set on the label (none for a reference)
         public bool IsAssembly;
         public bool IsDirty;                 // an assembly whose compound must be remade from its components
         public int Referred = -1;            // a reference's referred label
@@ -65,17 +67,17 @@ public sealed class XdeDoc_Document
         public List<int>? Layers;            // layer labels (a shape's), in order
         public List<int>? LayerShapes;       // shape labels (a layer's), in order
 
-        public NCollection_IndexedMap<TopoDS_Shape>? SubShapeMap; // XCAFDoc_ShapeMapTool's map
-        public Dictionary<TopoDS_Shape, int>? SubShapeLabels;      // sub-shape children by shape
+        public NCollection_IndexedMap<Shape>? SubShapeMap; // XCAFDoc_ShapeMapTool's map
+        public Dictionary<Shape, int>? SubShapeLabels;      // sub-shape children by shape
 
         public ColorWithAlpha? Color;    // a colour label's colour (XCAFDoc_Color)
         public int[]? ColorRefs;             // a shape label's colour labels, by XdeDoc_ColorType (-1: none)
     }
 
     private readonly List<Node> myNodes = [];
-    private readonly Dictionary<TopoDS_Shape, int> myTopLevelShapes = new(TopTools_ShapeMapHasher.Instance);
-    private readonly Dictionary<TopoDS_Shape, int> myShapeLabels = new(TopTools_ShapeMapHasher.Instance);
-    private readonly Dictionary<TopoDS_Shape, int> mySubShapes = new(TopTools_ShapeMapHasher.Instance);
+    private readonly Dictionary<Shape, int> myTopLevelShapes = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, int> myShapeLabels = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, int> mySubShapes = new(ShapeHasher.Instance);
 
     /// <summary>An empty document.</summary>
     public XdeDoc_Document()
@@ -226,7 +228,7 @@ public sealed class XdeDoc_Document
             return false;
         }
         Node aNode = node(theLabel);
-        return !aNode.Shape.IsNull() && !aNode.IsAssembly && aNode.Referred < 0;
+        return !aNode.Shape.IsNull && !aNode.IsAssembly && aNode.Referred < 0;
     }
 
     /// <summary>True for a reference (a component, or a located top-level shape).</summary>
@@ -248,28 +250,28 @@ public sealed class XdeDoc_Document
     /// True if the shape is a sub-shape of the label's shape, with its location there (XCAF's map of sub-shapes, which
     /// leaves the shape itself out).
     /// </summary>
-    public bool IsSubShape(in XdeDoc_Label theShapeLabel, in TopoDS_Shape theSub)
+    public bool IsSubShape(in XdeDoc_Label theShapeLabel, in Shape theSub)
     {
-        NCollection_IndexedMap<TopoDS_Shape>? aMap = subShapeMap(index(theShapeLabel));
+        NCollection_IndexedMap<Shape>? aMap = subShapeMap(index(theShapeLabel));
         return aMap is not null && aMap.Contains(theSub);
     }
 
     /// <summary>True if the label refers to external files (<c>XCAFDoc_ShapeTool::IsExternRef</c>).</summary>
     public bool IsExternRef(in XdeDoc_Label theLabel) => isMine(theLabel) && node(theLabel).Attributes.ExternRefs.Length > 0;
 
-    private NCollection_IndexedMap<TopoDS_Shape>? subShapeMap(int theIndex)
+    private NCollection_IndexedMap<Shape>? subShapeMap(int theIndex)
     {
         Node aNode = myNodes[theIndex];
         if (aNode.SubShapeMap is null)
         {
-            TopoDS_Shape aShape = getShape(theIndex);
-            if (aShape.IsNull())
+            Shape aShape = getShape(theIndex);
+            if (aShape.IsNull)
             {
                 return null;
             }
-            aNode.SubShapeMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            aNode.SubShapeMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
             // XCAFDoc_ShapeMapTool::SetShape: the shape's sub-shapes, not the shape (unit 8G2's fix)
-            for (var anIt = new TopoDS_Iterator(aShape); anIt.More(); anIt.Next())
+            for (var anIt = new Iterator(aShape); anIt.More(); anIt.Next())
             {
                 addSubShapes(anIt.Value(), aNode.SubShapeMap);
             }
@@ -278,16 +280,16 @@ public sealed class XdeDoc_Document
     }
 
     // XCAFDoc_ShapeMapTool's AddSubShape: the shape and its sub-shapes, with their locations in it
-    private static void addSubShapes(in TopoDS_Shape theShape, NCollection_IndexedMap<TopoDS_Shape> theMap)
+    private static void addSubShapes(in Shape theShape, NCollection_IndexedMap<Shape> theMap)
     {
-        var aStack = new Stack<TopoDS_Shape>();
+        var aStack = new Stack<Shape>();
         aStack.Push(theShape);
         while (aStack.Count > 0)
         {
-            TopoDS_Shape aShape = aStack.Pop();
+            Shape aShape = aStack.Pop();
             theMap.Add(aShape);
-            var aChildren = new List<TopoDS_Shape>();
-            for (var anIt = new TopoDS_Iterator(aShape); anIt.More(); anIt.Next())
+            var aChildren = new List<Shape>();
+            for (var anIt = new Iterator(aShape); anIt.More(); anIt.Next())
             {
                 aChildren.Add(anIt.Value());
             }
@@ -304,22 +306,22 @@ public sealed class XdeDoc_Document
     /// The label's shape: its own, or for a reference the referred shape moved to the reference's location, or for an
     /// assembly the compound of its components (remade when components were added). False if it has none.
     /// </summary>
-    public bool GetShape(in XdeDoc_Label theLabel, out TopoDS_Shape theShape)
+    public bool GetShape(in XdeDoc_Label theLabel, out Shape theShape)
     {
-        theShape = isMine(theLabel) ? getShape(theLabel.Index) : new TopoDS_Shape();
-        return !theShape.IsNull();
+        theShape = isMine(theLabel) ? getShape(theLabel.Index) : new Shape();
+        return !theShape.IsNull;
     }
 
     /// <summary>The label's shape, or a null shape.</summary>
-    public TopoDS_Shape GetShape(in XdeDoc_Label theLabel)
+    public Shape GetShape(in XdeDoc_Label theLabel)
     {
-        GetShape(theLabel, out TopoDS_Shape aShape);
+        GetShape(theLabel, out Shape aShape);
         return aShape;
     }
 
-    private TopoDS_Shape getShape(int theIndex) => getShape(theIndex, 0);
+    private Shape getShape(int theIndex) => getShape(theIndex, 0);
 
-    private TopoDS_Shape getShape(int theIndex, int theDepth)
+    private Shape getShape(int theIndex, int theDepth)
     {
         if (theDepth > myNodes.Count)
         {
@@ -328,20 +330,20 @@ public sealed class XdeDoc_Document
         Node aNode = myNodes[theIndex];
         if (aNode.Referred >= 0)
         {
-            TopoDS_Shape aReferred = getShape(aNode.Referred, theDepth + 1);
-            return aReferred.IsNull() || aNode.RefLocation.IsIdentity ? aReferred : aReferred.Moved(aNode.RefLocation);
+            Shape aReferred = getShape(aNode.Referred, theDepth + 1);
+            return aReferred.IsNull || aNode.RefLocation.IsIdentity ? aReferred : aReferred.Moved(aNode.RefLocation);
         }
         if (aNode.IsAssembly && aNode.IsDirty)
         {
-            var aBuilder = new BRep_Builder();
-            TopoDS_Compound aCompound = new();
+            var aBuilder = new BrepBuilder();
+            Compound aCompound = new();
             aBuilder.MakeCompound(ref aCompound);
             foreach (int aChild in aNode.Children)
             {
                 if (myNodes[aChild].Referred >= 0 && aNode.IsAssembly)
                 {
-                    TopoDS_Shape aSub = getShape(aChild, theDepth + 1);
-                    if (!aSub.IsNull())
+                    Shape aSub = getShape(aChild, theDepth + 1);
+                    if (!aSub.IsNull)
                     {
                         aBuilder.Add(aCompound, aSub);
                     }
@@ -355,12 +357,12 @@ public sealed class XdeDoc_Document
     }
 
     // Sets a label's own shape, indexing it; assemblies using the label must remake their compounds
-    private void setOwnShape(int theIndex, in TopoDS_Shape theShape)
+    private void setOwnShape(int theIndex, in Shape theShape)
     {
         Node aNode = myNodes[theIndex];
         aNode.Shape = theShape;
         aNode.SubShapeMap = null;
-        if (aNode.Father == ShapesIndex && !theShape.IsNull())
+        if (aNode.Father == ShapesIndex && !theShape.IsNull)
         {
             myTopLevelShapes.TryAdd(theShape, theIndex);
         }
@@ -395,14 +397,14 @@ public sealed class XdeDoc_Document
     /// The top-level label of the shape (with its location if <paramref name="findInstance"/>, else without), false if
     /// there is none (<c>XCAFDoc_ShapeTool::FindShape</c>).
     /// </summary>
-    public bool FindShape(in TopoDS_Shape theShape, out XdeDoc_Label theLabel, bool findInstance = false)
+    public bool FindShape(in Shape theShape, out XdeDoc_Label theLabel, bool findInstance = false)
     {
         theLabel = default;
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return false;
         }
-        TopoDS_Shape aS0 = findInstance ? theShape : theShape.Located(new Placement());
+        Shape aS0 = findInstance ? theShape : theShape.Located(new Placement());
         if (myTopLevelShapes.TryGetValue(aS0, out int anIndex) && getShape(anIndex).IsSame(aS0))
         {
             theLabel = label(anIndex);
@@ -421,7 +423,7 @@ public sealed class XdeDoc_Document
     }
 
     /// <summary>The top-level label of the shape, or the null label.</summary>
-    public XdeDoc_Label FindShape(in TopoDS_Shape theShape, bool findInstance = false)
+    public XdeDoc_Label FindShape(in Shape theShape, bool findInstance = false)
         => FindShape(theShape, out XdeDoc_Label aLabel, findInstance) ? aLabel : default;
 
     /// <summary>
@@ -429,14 +431,14 @@ public sealed class XdeDoc_Document
     /// assemblies' components; then among the top-level shapes; then as a sub-shape of a top-level simple shape, adding
     /// a sub-shape label for it.
     /// </summary>
-    public bool Search(in TopoDS_Shape theShape,
+    public bool Search(in Shape theShape,
                        out XdeDoc_Label theLabel,
                        bool findInstance = true,
                        bool findComponent = true,
                        bool findSubShape = true)
     {
         theLabel = default;
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return false;
         }
@@ -487,10 +489,10 @@ public sealed class XdeDoc_Document
     /// label, or a user of its unlocated shape's label holding it, or (if <paramref name="findWithoutLoc"/>) the
     /// unlocated shape's label; then as a sub-shape, through the map of sub-shapes, adding a sub-shape label.
     /// </summary>
-    public bool SearchUsingMap(in TopoDS_Shape theShape, out XdeDoc_Label theLabel, bool findWithoutLoc, bool findSubShape)
+    public bool SearchUsingMap(in Shape theShape, out XdeDoc_Label theLabel, bool findWithoutLoc, bool findSubShape)
     {
         theLabel = default;
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return false;
         }
@@ -499,7 +501,7 @@ public sealed class XdeDoc_Document
             theLabel = label(anIndex);
             return true;
         }
-        TopoDS_Shape aS0 = theShape.Located(new Placement());
+        Shape aS0 = theShape.Located(new Placement());
         if (myShapeLabels.TryGetValue(aS0, out int anIndex1))
         {
             var aUsers = new NCollection_Sequence<XdeDoc_Label>();
@@ -534,11 +536,11 @@ public sealed class XdeDoc_Document
     }
 
     /// <summary>The top-level simple shape having the shape as a sub-shape, through the map of sub-shapes added.</summary>
-    public XdeDoc_Label FindMainShapeUsingMap(in TopoDS_Shape theSub)
+    public XdeDoc_Label FindMainShapeUsingMap(in Shape theSub)
         => mySubShapes.TryGetValue(theSub, out int anIndex) ? label(anIndex) : default;
 
     /// <summary>The first top-level simple shape having the shape as a sub-shape, or the null label.</summary>
-    public XdeDoc_Label FindMainShape(in TopoDS_Shape theSub)
+    public XdeDoc_Label FindMainShape(in Shape theSub)
     {
         foreach (int aTop in myNodes[ShapesIndex].Children)
         {
@@ -554,8 +556,8 @@ public sealed class XdeDoc_Document
     public XdeDoc_Label NewShape()
     {
         int anIndex = newChild(ShapesIndex);
-        var aBuilder = new BRep_Builder();
-        TopoDS_Compound aCompound = new();
+        var aBuilder = new BrepBuilder();
+        Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
         aCompound.TShape()!.FreezeGraph();
         setOwnShape(anIndex, aCompound);
@@ -563,7 +565,7 @@ public sealed class XdeDoc_Document
     }
 
     /// <summary>Sets the label's shape (frozen here, if it isn't yet), as <c>XCAFDoc_ShapeTool::SetShape</c>.</summary>
-    public void SetShape(in XdeDoc_Label theLabel, in TopoDS_Shape theShape)
+    public void SetShape(in XdeDoc_Label theLabel, in Shape theShape)
     {
         int anIndex = index(theLabel);
         theShape.TShape()?.FreezeGraph();
@@ -577,10 +579,10 @@ public sealed class XdeDoc_Document
     /// a located shape becomes a reference to its unlocated shape's label; a compound becomes an assembly of its
     /// sub-shapes if <paramref name="makeAssembly"/>.
     /// </summary>
-    public XdeDoc_Label AddShape(in TopoDS_Shape theShape, bool makeAssembly = true, bool makePrepare = true)
+    public XdeDoc_Label AddShape(in Shape theShape, bool makeAssembly = true, bool makePrepare = true)
     {
         _ = makePrepare; // decision 1231: the compound isn't modified
-        if (!theShape.IsNull())
+        if (!theShape.IsNull)
         {
             theShape.TShape()?.FreezeGraph();
         }
@@ -592,9 +594,9 @@ public sealed class XdeDoc_Document
         return label(anIndex);
     }
 
-    private int addShape(in TopoDS_Shape theShape, bool makeAssembly)
+    private int addShape(in Shape theShape, bool makeAssembly)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return -1;
         }
@@ -614,18 +616,18 @@ public sealed class XdeDoc_Document
         if (AutoNaming)
         {
             // SetLabelNameByShape: the shape type, as TopAbs::Print writes it
-            setAutoName(aShapeIndex, TopAbs.ShapeTypeToString(theShape.ShapeType()));
+            setAutoName(aShapeIndex, global::Kerf.Engine.Topology.TopAbs.ShapeTypeToString(theShape.ShapeType()));
         }
-        if (makeAssembly && theShape.ShapeType() == TopAbs_ShapeEnum.TopAbs_COMPOUND)
+        if (makeAssembly && theShape.ShapeType() == ShapeType.Compound)
         {
             myNodes[aShapeIndex].IsAssembly = true;
             if (AutoNaming)
             {
                 setName(aShapeIndex, "ASSEMBLY");
             }
-            for (var anIt = new TopoDS_Iterator(theShape); anIt.More(); anIt.Next())
+            for (var anIt = new Iterator(theShape); anIt.More(); anIt.Next())
             {
-                TopoDS_Shape aComp = anIt.Value();
+                Shape aComp = anIt.Value();
                 int aCompIndex = addShape(aComp.Located(new Placement()), makeAssembly);
                 int aRef = newChild(aShapeIndex);
                 makeReference(aRef, aCompIndex, aComp.Location());
@@ -640,10 +642,10 @@ public sealed class XdeDoc_Document
         }
         if (!myNodes[aShapeIndex].IsAssembly)
         {
-            NCollection_IndexedMap<TopoDS_Shape> aMap = subShapeMap(aShapeIndex)!;
+            NCollection_IndexedMap<Shape> aMap = subShapeMap(aShapeIndex)!;
             for (int i = 1; i <= aMap.Extent(); i++)
             {
-                TopoDS_Shape aSub = aMap.FindKey(i);
+                Shape aSub = aMap.FindKey(i);
                 mySubShapes[aSub] = aShapeIndex;
                 if (!aSub.Location().IsIdentity)
                 {
@@ -667,8 +669,8 @@ public sealed class XdeDoc_Document
         }
         if (aNode.Father == ShapesIndex)
         {
-            TopoDS_Shape aShape = getShape(theIndex);
-            if (!aShape.IsNull())
+            Shape aShape = getShape(theIndex);
+            if (!aShape.IsNull)
             {
                 myTopLevelShapes.TryAdd(aShape, theIndex);
             }
@@ -704,8 +706,8 @@ public sealed class XdeDoc_Document
         }
         int aRef = newChild(anAssembly);
         makeReference(aRef, aComponent, theLocation);
-        TopoDS_Shape aShape = getShape(aRef);
-        if (!aShape.IsNull())
+        Shape aShape = getShape(aRef);
+        if (!aShape.IsNull)
         {
             myShapeLabels.TryAdd(aShape, aRef);
         }
@@ -749,7 +751,7 @@ public sealed class XdeDoc_Document
     }
 
     /// <summary>Adds the shape at the top level (an assembly if <paramref name="expand"/>) and as a component.</summary>
-    public XdeDoc_Label AddComponent(in XdeDoc_Label theAssembly, in TopoDS_Shape theComponent, bool expand = false)
+    public XdeDoc_Label AddComponent(in XdeDoc_Label theAssembly, in Shape theComponent, bool expand = false)
     {
         XdeDoc_Label aCompLabel = AddShape(theComponent.Located(new Placement()), expand);
         return AddComponent(theAssembly, aCompLabel, theComponent.Location());
@@ -770,7 +772,7 @@ public sealed class XdeDoc_Document
         theLabels.Clear();
         foreach (int aTop in myNodes[ShapesIndex].Children)
         {
-            if (!getShape(aTop).IsNull())
+            if (!getShape(aTop).IsNull)
             {
                 theLabels.Append(label(aTop));
             }
@@ -783,7 +785,7 @@ public sealed class XdeDoc_Document
         theLabels.Clear();
         foreach (int aTop in myNodes[ShapesIndex].Children)
         {
-            if (myNodes[aTop].Users.Count == 0 && !getShape(aTop).IsNull())
+            if (myNodes[aTop].Users.Count == 0 && !getShape(aTop).IsNull)
             {
                 theLabels.Append(label(aTop));
             }
@@ -791,7 +793,7 @@ public sealed class XdeDoc_Document
     }
 
     /// <summary>The free shapes: the only one, or a compound of them (<c>XCAFDoc_ShapeTool::GetOneShape</c>).</summary>
-    public TopoDS_Shape GetOneShape()
+    public Shape GetOneShape()
     {
         var aFree = new NCollection_Sequence<XdeDoc_Label>();
         GetFreeShapes(aFree);
@@ -799,13 +801,13 @@ public sealed class XdeDoc_Document
         {
             return GetShape(aFree.Value(1));
         }
-        var aBuilder = new BRep_Builder();
-        TopoDS_Compound aCompound = new();
+        var aBuilder = new BrepBuilder();
+        Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
         foreach (XdeDoc_Label aLabel in aFree)
         {
-            TopoDS_Shape aShape = GetShape(aLabel);
-            if (!aShape.IsNull())
+            Shape aShape = GetShape(aLabel);
+            if (!aShape.IsNull)
             {
                 aBuilder.Add(aCompound, aShape);
             }
@@ -841,7 +843,7 @@ public sealed class XdeDoc_Document
     public Placement GetLocation(in XdeDoc_Label theLabel)
     {
         Node aNode = node(theLabel);
-        return aNode.Referred >= 0 ? aNode.RefLocation : aNode.Shape.IsNull() ? new Placement() : aNode.Shape.Location();
+        return aNode.Referred >= 0 ? aNode.RefLocation : aNode.Shape.IsNull ? new Placement() : aNode.Shape.Location();
     }
 
     /// <summary>The label a reference refers to; false if the label isn't a reference.</summary>
@@ -892,13 +894,13 @@ public sealed class XdeDoc_Document
     // ---------------------------------------------------------------------------------------------- shape tool: components
 
     // XCAFDoc_ShapeTool.cxx's IsSame: the same TShape, orientation and location
-    private static bool isSameInstance(in TopoDS_Shape theShape1, in TopoDS_Shape theShape2)
+    private static bool isSameInstance(in Shape theShape1, in Shape theShape2)
         => ReferenceEquals(theShape1.TShape(), theShape2.TShape()) && theShape1.Orientation() == theShape2.Orientation()
            && theShape1.Location().IsEqual(theShape2.Location());
 
     // XCAFDoc_ShapeTool.cxx's checkForShape: the component, or a chain of components up the assemblies, placing the
     // shape where the given shape is
-    private bool checkForShape(in TopoDS_Shape theShape, in TopoDS_Shape theCurSh, int theUserL,
+    private bool checkForShape(in Shape theShape, in Shape theCurSh, int theUserL,
                                NCollection_Sequence<XdeDoc_Label> theLabels, int theDepth)
     {
         if (theDepth > myNodes.Count)
@@ -915,7 +917,7 @@ public sealed class XdeDoc_Document
         Placement aCompLoc = GetLocation(label(theUserL));
         aCompLoc = aCompLoc.Multiplied(theCurSh.Location());
         aSupLoc = aSupLoc.Multiplied(aCompLoc);
-        TopoDS_Shape aCopySh = theCurSh.Located(aSupLoc);
+        Shape aCopySh = theCurSh.Located(aSupLoc);
         if (isSameInstance(theShape, aCopySh))
         {
             theLabels.Prepend(label(theUserL));
@@ -951,11 +953,11 @@ public sealed class XdeDoc_Document
     /// top-level assembly's component down to the one referring to the shape's own label; false if there is none
     /// (unit 8G2).
     /// </summary>
-    public bool FindComponent(in TopoDS_Shape theShape, NCollection_Sequence<XdeDoc_Label> theLabels)
+    public bool FindComponent(in Shape theShape, NCollection_Sequence<XdeDoc_Label> theLabels)
     {
         theLabels.Clear();
         // search for a top-level shape that corresponds to this component
-        TopoDS_Shape S0 = theShape.Located(new Placement());
+        Shape S0 = theShape.Located(new Placement());
         XdeDoc_Label aRefL = FindShape(S0);
         if (aRefL.IsNull())
         {
@@ -980,7 +982,7 @@ public sealed class XdeDoc_Document
     /// component found by <see cref="FindComponent"/>. False if there is none, or if the instance is a component of a
     /// sub-assembly placed in an assembly (XCAF's SHUO, which the document hasn't: decision 1278).
     /// </summary>
-    public bool SetInstanceColor(in TopoDS_Shape theShape, XdeDoc_ColorType theType, in ColorWithAlpha theColor)
+    public bool SetInstanceColor(in Shape theShape, XdeDoc_ColorType theType, in ColorWithAlpha theColor)
     {
         // find shuo label structure
         var aLabels = new NCollection_Sequence<XdeDoc_Label>();
@@ -998,8 +1000,8 @@ public sealed class XdeDoc_Document
         return false;
     }
 
-    /// <summary>As <see cref="SetInstanceColor(in TopoDS_Shape, XdeDoc_ColorType, in ColorWithAlpha)"/>, opaque.</summary>
-    public bool SetInstanceColor(in TopoDS_Shape theShape, XdeDoc_ColorType theType, in Color theColor)
+    /// <summary>As <see cref="SetInstanceColor(in Shape, XdeDoc_ColorType, in ColorWithAlpha)"/>, opaque.</summary>
+    public bool SetInstanceColor(in Shape theShape, XdeDoc_ColorType theType, in Color theColor)
         => SetInstanceColor(theShape, theType, new ColorWithAlpha(theColor));
 
     // ---------------------------------------------------------------------------------------------- labels: OCAF's tree
@@ -1066,10 +1068,10 @@ public sealed class XdeDoc_Document
     // ---------------------------------------------------------------------------------------------- shape tool: sub-shapes
 
     /// <summary>The sub-shape label of the shape under the shape label; false if there is none.</summary>
-    public bool FindSubShape(in XdeDoc_Label theShapeLabel, in TopoDS_Shape theSub, out XdeDoc_Label theLabel)
+    public bool FindSubShape(in XdeDoc_Label theShapeLabel, in Shape theSub, out XdeDoc_Label theLabel)
     {
         theLabel = default;
-        if (theSub.IsNull())
+        if (theSub.IsNull)
         {
             return false;
         }
@@ -1086,33 +1088,33 @@ public sealed class XdeDoc_Document
     /// Adds a sub-shape label for the shape under a top-level simple shape (<c>XCAFDoc_ShapeTool::AddSubShape</c>);
     /// the existing label if there is one; the null label if the shape isn't a sub-shape.
     /// </summary>
-    public XdeDoc_Label AddSubShape(in XdeDoc_Label theShapeLabel, in TopoDS_Shape theSub)
+    public XdeDoc_Label AddSubShape(in XdeDoc_Label theShapeLabel, in Shape theSub)
     {
         AddSubShape(theShapeLabel, theSub, out XdeDoc_Label aLabel);
         return aLabel;
     }
 
     /// <summary>
-    /// As <see cref="AddSubShape(in XdeDoc_Label, in TopoDS_Shape)"/>, true only if a label was added (false if it
+    /// As <see cref="AddSubShape(in XdeDoc_Label, in Shape)"/>, true only if a label was added (false if it
     /// existed, with the label set, or if none can be).
     /// </summary>
-    public bool AddSubShape(in XdeDoc_Label theShapeLabel, in TopoDS_Shape theSub, out XdeDoc_Label theAdded)
+    public bool AddSubShape(in XdeDoc_Label theShapeLabel, in Shape theSub, out XdeDoc_Label theAdded)
     {
         theAdded = default;
         if (!IsSimpleShape(theShapeLabel) || !IsTopLevel(theShapeLabel))
         {
             return false;
         }
-        TopoDS_Shape aSubShape = theSub;
+        Shape aSubShape = theSub;
         if (!IsSubShape(theShapeLabel, theSub))
         {
             bool isDefined = false;
             // the sub-shape without its location: take it with its location in the main shape
             if (theSub.Location().IsIdentity)
             {
-                for (var anIt = new TopoDS_Iterator(GetShape(theShapeLabel)); anIt.More() && !isDefined; anIt.Next())
+                for (var anIt = new Iterator(GetShape(theShapeLabel)); anIt.More() && !isDefined; anIt.Next())
                 {
-                    TopoDS_Shape aShape = anIt.Value();
+                    Shape aShape = anIt.Value();
                     if (theSub.IsSame(aShape.Located(new Placement())))
                     {
                         isDefined = true;
@@ -1133,7 +1135,7 @@ public sealed class XdeDoc_Document
         int anIndex = newChild(aFather);
         aSubShape.TShape()?.FreezeGraph();
         myNodes[anIndex].Shape = aSubShape;
-        (myNodes[aFather].SubShapeLabels ??= new(TopTools_ShapeMapHasher.Instance)).TryAdd(aSubShape, anIndex);
+        (myNodes[aFather].SubShapeLabels ??= new(ShapeHasher.Instance)).TryAdd(aSubShape, anIndex);
         theAdded = label(anIndex);
         return true;
     }
@@ -1260,11 +1262,11 @@ public sealed class XdeDoc_Document
             }
             aNode.LayerShapes = null;
         }
-        if (!aNode.Shape.IsNull())
+        if (!aNode.Shape.IsNull)
         {
             removeFromMaps(theIndex);
         }
-        aNode.Shape = new TopoDS_Shape();
+        aNode.Shape = new Shape();
         aNode.IsAssembly = false;
         aNode.IsDirty = false;
         aNode.Attributes = XdeDoc_Attributes.Empty;
@@ -1274,7 +1276,7 @@ public sealed class XdeDoc_Document
         aNode.SubShapeLabels = null;
         if (aNode.Father >= 0 && myNodes[aNode.Father].SubShapeLabels is { } aSubLabels)
         {
-            foreach (KeyValuePair<TopoDS_Shape, int> anEntry in aSubLabels.Where(e => e.Value == theIndex).ToList())
+            foreach (KeyValuePair<Shape, int> anEntry in aSubLabels.Where(e => e.Value == theIndex).ToList())
             {
                 aSubLabels.Remove(anEntry.Key);
             }
@@ -1284,9 +1286,9 @@ public sealed class XdeDoc_Document
     // The maps of shapes added no longer give the label (XCAF's keep stale entries; nothing here relies on them)
     private void removeFromMaps(int theIndex)
     {
-        foreach (Dictionary<TopoDS_Shape, int> aMap in new[] { myTopLevelShapes, myShapeLabels, mySubShapes })
+        foreach (Dictionary<Shape, int> aMap in new[] { myTopLevelShapes, myShapeLabels, mySubShapes })
         {
-            foreach (KeyValuePair<TopoDS_Shape, int> anEntry in aMap.Where(e => e.Value == theIndex).ToList())
+            foreach (KeyValuePair<Shape, int> anEntry in aMap.Where(e => e.Value == theIndex).ToList())
             {
                 aMap.Remove(anEntry.Key);
             }
@@ -1449,7 +1451,7 @@ public sealed class XdeDoc_Document
         => SetColor(theLabel, new ColorWithAlpha(theColor), theType);
 
     /// <summary>Sets the colour of the shape's label, found by <see cref="Search"/>; false if not found.</summary>
-    public bool SetColor(in TopoDS_Shape theShape, in ColorWithAlpha theColor, XdeDoc_ColorType theType)
+    public bool SetColor(in Shape theShape, in ColorWithAlpha theColor, XdeDoc_ColorType theType)
     {
         if (!Search(theShape, out XdeDoc_Label aLabel))
         {
@@ -1480,7 +1482,7 @@ public sealed class XdeDoc_Document
     }
 
     /// <summary>The colour of the shape's label (found by <see cref="Search"/>); false if not found or not set.</summary>
-    public bool GetColor(in TopoDS_Shape theShape, XdeDoc_ColorType theType, out ColorWithAlpha theColor)
+    public bool GetColor(in Shape theShape, XdeDoc_ColorType theType, out ColorWithAlpha theColor)
     {
         theColor = default;
         return Search(theShape, out XdeDoc_Label aLabel) && GetColor(aLabel, theType, out theColor);
@@ -1803,13 +1805,13 @@ public sealed class XdeDoc_Document
                 foreach (int aChild in aNode.Children)
                 {
                     Node aSub = myNodes[aChild];
-                    if (aSub.Referred < 0 && !aSub.Shape.IsNull())
+                    if (aSub.Referred < 0 && !aSub.Shape.IsNull)
                     {
                         aSubs.Add(new XdeDoc_SubShape(aSub.Shape, GetAttributes(label(aChild))));
                     }
                 }
-                TopoDS_Shape aShape = getShape(theIndex);
-                aProduct = aShape.IsNull()
+                Shape aShape = getShape(theIndex);
+                aProduct = aShape.IsNull
                              ? XdeDoc_Product.Assembly([], anAttributes)
                              : XdeDoc_Product.Part(aShape, anAttributes, aSubs);
             }
@@ -1900,8 +1902,8 @@ public sealed class XdeDoc_Document
                     int aRef = aDoc.newChild(anIndex);
                     aDoc.makeReference(aRef, aReferred, aComponent.Location, false);
                     aDoc.SetAttributes(aDoc.label(aRef), aComponent.Attributes);
-                    TopoDS_Shape aCompShape = aDoc.getShape(aRef);
-                    if (!aCompShape.IsNull())
+                    Shape aCompShape = aDoc.getShape(aRef);
+                    if (!aCompShape.IsNull)
                     {
                         aDoc.myShapeLabels.TryAdd(aCompShape, aRef);
                     }
@@ -1916,10 +1918,10 @@ public sealed class XdeDoc_Document
                 {
                     int aSubIndex = aDoc.newChild(anIndex);
                     aDoc.myNodes[aSubIndex].Shape = aSub.Shape;
-                    (aNode.SubShapeLabels ??= new(TopTools_ShapeMapHasher.Instance)).TryAdd(aSub.Shape, aSubIndex);
+                    (aNode.SubShapeLabels ??= new(ShapeHasher.Instance)).TryAdd(aSub.Shape, aSubIndex);
                     aDoc.SetAttributes(aDoc.label(aSubIndex), aSub.Attributes);
                 }
-                NCollection_IndexedMap<TopoDS_Shape> aMap = aDoc.subShapeMap(anIndex)!;
+                NCollection_IndexedMap<Shape> aMap = aDoc.subShapeMap(anIndex)!;
                 for (int i = 1; i <= aMap.Extent(); i++)
                 {
                     aDoc.mySubShapes.TryAdd(aMap.FindKey(i), anIndex);

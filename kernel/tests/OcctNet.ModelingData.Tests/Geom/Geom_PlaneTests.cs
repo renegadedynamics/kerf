@@ -3,6 +3,7 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -16,7 +17,7 @@ public class Geom_PlaneTests
     public void ConstructFromAx3()
     {
         CoordinateSystem anAx3 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Plane aPlane = new(anAx3);
+        PlaneSurface aPlane = new(anAx3);
         Assert.NotNull(aPlane);
         Assert.True(aPlane.Location().IsEqual(new Point3D(0.0, 0.0, 0.0), global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
@@ -24,14 +25,14 @@ public class Geom_PlaneTests
     [Fact]
     public void ConstructFromPointAndDir()
     {
-        Geom_Plane aPlane = new(new Point3D(1.0, 2.0, 3.0), new Direction3D(0.0, 0.0, 1.0));
+        PlaneSurface aPlane = new(new Point3D(1.0, 2.0, 3.0), new Direction3D(0.0, 0.0, 1.0));
         Assert.True(aPlane.Location().IsEqual(new Point3D(1.0, 2.0, 3.0), global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
 
     [Fact]
     public void D0Evaluation()
     {
-        Geom_Plane aPlane = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        PlaneSurface aPlane = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
 
         // XY plane at origin: D0(U,V) = (U,V,0) for default axis
         aPlane.D0(3.0, 4.0, out Point3D aPnt);
@@ -43,7 +44,7 @@ public class Geom_PlaneTests
     [Fact]
     public void Coefficients()
     {
-        Geom_Plane aPlane = new(new Point3D(0.0, 0.0, 5.0), new Direction3D(0.0, 0.0, 1.0));
+        PlaneSurface aPlane = new(new Point3D(0.0, 0.0, 5.0), new Direction3D(0.0, 0.0, 1.0));
         aPlane.Coefficients(out double anA, out double aB, out double aC, out double aD);
         Assert.Equal(0.0, anA, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aB, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -54,12 +55,12 @@ public class Geom_PlaneTests
     [Fact]
     public void UIso()
     {
-        Geom_Plane aPlane = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Curve aUIso = aPlane.UIso(2.0);
+        PlaneSurface aPlane = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        Curve3D aUIso = aPlane.UIso(2.0);
         Assert.NotNull(aUIso);
 
         // UIso at U=2 on XY plane should be a line at x=2, varying in Y
-        Geom_Line? aLine = aUIso as Geom_Line;
+        LineCurve3D? aLine = aUIso as LineCurve3D;
         Assert.NotNull(aLine);
 
         aLine.D0(0.0, out Point3D aPnt);
@@ -69,12 +70,12 @@ public class Geom_PlaneTests
     [Fact]
     public void VIso()
     {
-        Geom_Plane aPlane = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Curve aVIso = aPlane.VIso(3.0);
+        PlaneSurface aPlane = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        Curve3D aVIso = aPlane.VIso(3.0);
         Assert.NotNull(aVIso);
 
         // VIso at V=3 on XY plane should be a line at y=3, varying in X
-        Geom_Line? aLine = aVIso as Geom_Line;
+        LineCurve3D? aLine = aVIso as LineCurve3D;
         Assert.NotNull(aLine);
 
         aLine.D0(0.0, out Point3D aPnt);
@@ -84,10 +85,10 @@ public class Geom_PlaneTests
     [Fact]
     public void Transform()
     {
-        Geom_Plane aPlane = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        PlaneSurface aPlane = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Transform3D aTrsf = new();
         aTrsf.SetTranslation(new Vector3D(0.0, 0.0, 10.0));
-        Geom_Plane aMoved = (Geom_Plane)aPlane.Transformed(aTrsf);
+        PlaneSurface aMoved = (PlaneSurface)aPlane.Transformed(aTrsf);
         Assert.Equal(10.0, aMoved.Location().Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aPlane.Location().Z());
     }
@@ -95,9 +96,9 @@ public class Geom_PlaneTests
     [Fact]
     public void Copy()
     {
-        Geom_Plane aPlane = new(new Point3D(1.0, 2.0, 3.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Geometry aCopy = aPlane.Copy();
-        Geom_Plane? aCopyPlane = aCopy as Geom_Plane;
+        PlaneSurface aPlane = new(new Point3D(1.0, 2.0, 3.0), new Direction3D(0.0, 0.0, 1.0));
+        Geometry3D aCopy = aPlane.Copy();
+        PlaneSurface? aCopyPlane = aCopy as PlaneSurface;
         Assert.NotNull(aCopyPlane);
         Assert.True(aCopyPlane.Location().IsEqual(new Point3D(1.0, 2.0, 3.0), global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
@@ -107,10 +108,10 @@ public class Geom_PlaneTests
     [Fact]
     public void Reversal_And_Parameters()
     {
-        Geom_Plane aPlane = new(new CoordinateSystem(Constants.XOY()));
-        Geom_Plane aU = (Geom_Plane)aPlane.UReversed();
+        PlaneSurface aPlane = new(new CoordinateSystem(Constants.XOY()));
+        PlaneSurface aU = (PlaneSurface)aPlane.UReversed();
         Assert.Equal(aPlane.Value(2, 3), aU.Value(aPlane.UReversedParameter(2), 3));
-        Geom_Plane aV = (Geom_Plane)aPlane.VReversed();
+        PlaneSurface aV = (PlaneSurface)aPlane.VReversed();
         Assert.Equal(aPlane.Value(2, 3), aV.Value(2, aPlane.VReversedParameter(3)));
         // The parametric normal D1U ^ D1V flips with either reversal; the main direction doesn't (left-handed axes)
         Vector3D aN = aPlane.DN(0, 0, 1, 0).Crossed(aPlane.DN(0, 0, 0, 1));
@@ -122,10 +123,10 @@ public class Geom_PlaneTests
     [Fact]
     public void TransformParameters_Matches_Transformed_Surface()
     {
-        Geom_Plane aPlane = new(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(1, 1, 1)));
+        PlaneSurface aPlane = new(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(1, 1, 1)));
         Transform3D T = Transform3D.Scale(new Point3D(4, 5, 6), -2.5);
         T = T.Multiplied(Transform3D.Rotation(new Axis3D(new Point3D(), new Direction3D(0, 1, 1)), 0.7));
-        Geom_Plane aMoved = (Geom_Plane)aPlane.Transformed(T);
+        PlaneSurface aMoved = (PlaneSurface)aPlane.Transformed(T);
         double U = 1.5, V = -0.25;
         double U2 = U, V2 = V;
         aPlane.TransformParameters(ref U2, ref V2, T);
@@ -145,12 +146,12 @@ public class Geom_PlaneTests
     [Fact]
     public void Derivatives()
     {
-        Geom_Plane aPlane = new(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1), new Direction3D(0, 1, 0)));
+        PlaneSurface aPlane = new(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1), new Direction3D(0, 1, 0)));
         Assert.Equal(new Vector3D(0, 1, 0), aPlane.DN(1, 1, 1, 0));
         Assert.Equal(new Vector3D(aPlane.Position().YDirection()), aPlane.DN(1, 1, 0, 1));
         Assert.Equal(new Vector3D(0, 0, 0), aPlane.DN(1, 1, 1, 1));
-        Assert.Throws<Geom_UndefinedDerivative>(() => aPlane.DN(1, 1, 0, 0));
-        Assert.Throws<Geom_UndefinedDerivative>(() => aPlane.DN(1, 1, -1, 2));
+        Assert.Throws<UndefinedDerivative3DException>(() => aPlane.DN(1, 1, 0, 0));
+        Assert.Throws<UndefinedDerivative3DException>(() => aPlane.DN(1, 1, -1, 2));
         aPlane.D3(1, 1, out _, out _, out _, out Vector3D D2U, out _, out _, out Vector3D D3U, out _, out _, out Vector3D D3UVV);
         Assert.Equal(new Vector3D(0, 0, 0), D2U);
         Assert.Equal(new Vector3D(0, 0, 0), D3U);
@@ -160,30 +161,30 @@ public class Geom_PlaneTests
     [Fact]
     public void Bounds_And_Flags()
     {
-        Geom_Plane aPlane = new(1, 2, 3, 4);
+        PlaneSurface aPlane = new(1, 2, 3, 4);
         aPlane.Bounds(out double U1, out double U2, out double V1, out double V2);
         Assert.Equal(-global::Kerf.Engine.Foundation.Precision.Infinite(), U1);
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), U2);
         Assert.Equal(-global::Kerf.Engine.Foundation.Precision.Infinite(), V1);
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), V2);
-        Assert.False(aPlane.IsUClosed() || aPlane.IsVClosed() || aPlane.IsUPeriodic() || aPlane.IsVPeriodic());
+        Assert.False(aPlane.IsUClosed || aPlane.IsVClosed || aPlane.IsUPeriodic || aPlane.IsVPeriodic);
         Assert.Equal(Continuity.CN, aPlane.Continuity());
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Geom_Plane(0, 0, 0, 1));
+        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new PlaneSurface(0, 0, 0, 1));
     }
 
     [Fact]
     public void Frozen_Plane_Refuses_Mutation_But_Twins_Work()
     {
-        Geom_Plane aPlane = new(new CoordinateSystem(Constants.XOY()));
+        PlaneSurface aPlane = new(new CoordinateSystem(Constants.XOY()));
         aPlane.Freeze();
         Assert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aPlane.SetPln(new Plane3D(new CoordinateSystem(Constants.YOZ()))));
         Assert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aPlane.Translate(new Vector3D(1, 0, 0)));
         Assert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aPlane.UReverse());
-        Geom_Plane aOther = aPlane.WithPln(new Plane3D(new CoordinateSystem(Constants.YOZ())));
+        PlaneSurface aOther = aPlane.WithPln(new Plane3D(new CoordinateSystem(Constants.YOZ())));
         Assert.False(aOther.IsFrozen);
         Assert.Equal(Constants.YOZ().Direction(), aOther.Axis().Direction());
         Assert.Equal(Constants.XOY().Direction(), aPlane.Axis().Direction());
-        Geom_ElementarySurface aLocated = aPlane.WithLocation(new Point3D(0, 0, 7));
+        ElementarySurface aLocated = aPlane.WithLocation(new Point3D(0, 0, 7));
         Assert.Equal(7.0, aLocated.Location().Z());
     }
 }

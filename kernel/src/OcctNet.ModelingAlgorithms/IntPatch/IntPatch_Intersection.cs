@@ -4,13 +4,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Geometry.Projection;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -63,8 +67,8 @@ public partial class IntPatch_Intersection
         myV2Start = 0.0;
     }
 
-    public IntPatch_Intersection(Adaptor3d_Surface S1, Adaptor3d_TopolTool D1, Adaptor3d_Surface S2,
-                                 Adaptor3d_TopolTool D2, double TolArc, double TolTang)
+    public IntPatch_Intersection(SurfaceAdaptorBase S1, TopolTool D1, SurfaceAdaptorBase S2,
+                                 TopolTool D2, double TolArc, double TolTang)
         : this()
     {
         myTolArc = TolArc;
@@ -88,7 +92,7 @@ public partial class IntPatch_Intersection
         Perform(S1, D1, S2, D2, TolArc, TolTang);
     }
 
-    public IntPatch_Intersection(Adaptor3d_Surface S1, Adaptor3d_TopolTool D1, double TolArc, double TolTang)
+    public IntPatch_Intersection(SurfaceAdaptorBase S1, TopolTool D1, double TolArc, double TolTang)
         : this()
     {
         myTolArc = TolArc;
@@ -139,7 +143,7 @@ public partial class IntPatch_Intersection
 
     /// <summary>The self-intersection of S1 (parametric surfaces only; quadrics and extrusions of curves without
     /// self-intersection give an empty result).</summary>
-    public void Perform(Adaptor3d_Surface S1, Adaptor3d_TopolTool D1, double TolArc, double TolTang)
+    public void Perform(SurfaceAdaptorBase S1, TopolTool D1, double TolArc, double TolTang)
     {
         myTolArc = TolArc;
         myTolTang = TolTang;
@@ -172,18 +176,18 @@ public partial class IntPatch_Intersection
             {
                 Direction3D aDirection = S1.Direction();
                 CoordinateSystem anAxis = new(Constants.Origin(), aDirection);
-                Adaptor3d_Curve aBasisCurve = S1.BasisCurve();
-                ProjLib_ProjectOnPlane Projector = new(anAxis);
+                CurveAdaptorBase aBasisCurve = S1.BasisCurve();
+                ProjectOnPlane Projector = new(anAxis);
                 Projector.Load(aBasisCurve, global::Kerf.Engine.Foundation.Precision.Confusion());
-                GeomAdaptor_Curve aProjCurve = Projector.GetResult()!;
-                Geom_Plane aPlane = new(anAxis);
-                GeomAdaptor_Surface aGAHsurf = new(aPlane);
-                ProjLib_ProjectedCurve aProjectedCurve = new(aGAHsurf, aProjCurve);
-                ProjLib.MakePCurveOfType(aProjectedCurve, out Geom2d_Curve aPCurve);
-                Geom2dAdaptor_Curve AC = new(aPCurve, aProjectedCurve.FirstParameter(),
+                CurveAdaptor aProjCurve = Projector.GetResult()!;
+                PlaneSurface aPlane = new(anAxis);
+                SurfaceAdaptor aGAHsurf = new(aPlane);
+                ProjectedCurve aProjectedCurve = new(aGAHsurf, aProjCurve);
+                global::Kerf.Engine.Geometry.Projection.ProjLib.MakePCurveOfType(aProjectedCurve, out Curve2D aPCurve);
+                CurveAdaptor2D AC = new(aPCurve, aProjectedCurve.FirstParameter(),
                                              aProjectedCurve.LastParameter());
                 Geom2dInt_GInter Intersector = new(AC, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion());
-                if (Intersector.IsDone() && (Intersector.IsEmpty() || (AC.IsClosed() && Intersector.NbPoints() == 1)))
+                if (Intersector.IsDone() && (Intersector.IsEmpty() || (AC.IsClosed && Intersector.NbPoints() == 1)))
                 {
                     break;
                 }
@@ -216,8 +220,8 @@ public partial class IntPatch_Intersection
     /// intersector; theIsReqToKeepRLine keeps the restriction lines of analytic pairs; theIsReqToPostWLProc false
     /// skips the purging of the walking lines.
     /// </summary>
-    public void Perform(Adaptor3d_Surface theS1, Adaptor3d_TopolTool theD1, Adaptor3d_Surface theS2,
-                        Adaptor3d_TopolTool theD2, double TolArc, double TolTang, bool isGeomInt = true,
+    public void Perform(SurfaceAdaptorBase theS1, TopolTool theD1, SurfaceAdaptorBase theS2,
+                        TopolTool theD2, double TolArc, double TolTang, bool isGeomInt = true,
                         bool theIsReqToKeepRLine = false, bool theIsReqToPostWLProc = true)
     {
         myTolArc = TolArc;
@@ -251,8 +255,8 @@ public partial class IntPatch_Intersection
             SurfaceKind aCTType;
             bool bToCheck;
             //
-            Adaptor3d_Surface aCTSurf = (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs1 == global::Kerf.Geometry.SurfaceKind.Torus) ? theS1 : theS2;
-            Adaptor3d_Surface aGeomSurf = (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs1 == global::Kerf.Geometry.SurfaceKind.Torus) ? theS2 : theS1;
+            SurfaceAdaptorBase aCTSurf = (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs1 == global::Kerf.Geometry.SurfaceKind.Torus) ? theS1 : theS2;
+            SurfaceAdaptorBase aGeomSurf = (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs1 == global::Kerf.Geometry.SurfaceKind.Torus) ? theS2 : theS1;
             //
             aCTType = aCTSurf.GetType();
             bToCheck = false;
@@ -325,17 +329,17 @@ public partial class IntPatch_Intersection
         {
             if (typs1 == global::Kerf.Geometry.SurfaceKind.Cone && typs2 == Plane)
             {
-                typs1 = BezierSurface; // Using Imp-Prm Intersector
+                typs1 = global::Kerf.Geometry.SurfaceKind.BezierSurface; // Using Imp-Prm Intersector
             }
             else if (typs1 == Plane && typs2 == global::Kerf.Geometry.SurfaceKind.Cone)
             {
-                typs2 = BezierSurface; // Using Imp-Prm Intersector
+                typs2 = global::Kerf.Geometry.SurfaceKind.BezierSurface; // Using Imp-Prm Intersector
             }
             else
             {
                 // Using Prm-Prm Intersector
-                typs1 = BezierSurface;
-                typs2 = BezierSurface;
+                typs1 = global::Kerf.Geometry.SurfaceKind.BezierSurface;
+                typs2 = global::Kerf.Geometry.SurfaceKind.BezierSurface;
             }
         }
         //  Modified by skv - Mon Sep 26 14:58:30 2005 End
@@ -395,8 +399,8 @@ public partial class IntPatch_Intersection
     /// As the Perform above, starting from the given points too (ListOfPnts, for the parametric intersector).
     /// The list may gain the points' images across the seams of closed surfaces (decision 706).
     /// </summary>
-    public void Perform(Adaptor3d_Surface theS1, Adaptor3d_TopolTool theD1, Adaptor3d_Surface theS2,
-                        Adaptor3d_TopolTool theD2, double TolArc, double TolTang,
+    public void Perform(SurfaceAdaptorBase theS1, TopolTool theD1, SurfaceAdaptorBase theS2,
+                        TopolTool theD2, double TolArc, double TolTang,
                         NCollection_List<IntSurf_PntOn2S> ListOfPnts, bool isGeomInt = true,
                         bool theIsReqToKeepRLine = false, bool theIsReqToPostWLProc = true)
     {
@@ -430,8 +434,8 @@ public partial class IntPatch_Intersection
             SurfaceKind aCTType;
             bool bToCheck;
             //
-            Adaptor3d_Surface aCTSurf = (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs1 == global::Kerf.Geometry.SurfaceKind.Torus) ? theS1 : theS2;
-            Adaptor3d_Surface aGeomSurf = (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs1 == global::Kerf.Geometry.SurfaceKind.Torus) ? theS2 : theS1;
+            SurfaceAdaptorBase aCTSurf = (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs1 == global::Kerf.Geometry.SurfaceKind.Torus) ? theS1 : theS2;
+            SurfaceAdaptorBase aGeomSurf = (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs1 == global::Kerf.Geometry.SurfaceKind.Torus) ? theS2 : theS1;
             //
             aCTType = aCTSurf.GetType();
             bToCheck = false;
@@ -501,8 +505,8 @@ public partial class IntPatch_Intersection
         if (TreatAsBiParametric)
         {
             // Using Prm-Prm Intersector
-            typs1 = BezierSurface;
-            typs2 = BezierSurface;
+            typs1 = global::Kerf.Geometry.SurfaceKind.BezierSurface;
+            typs2 = global::Kerf.Geometry.SurfaceKind.BezierSurface;
         }
 
         // Surface type definition
@@ -543,7 +547,7 @@ public partial class IntPatch_Intersection
     // that isn't the cone or the torus, then the coaxial test (decision 671's pattern for verbatim repeats).
     private static void CheckGeomGeom(ref bool bToCheck, ref int bGeomGeom, ref bool TreatAsBiParametric,
                                       in Axis3D aCTAx, ref Axis3D aGeomAx, SurfaceKind aCTType,
-                                      Adaptor3d_Surface aCTSurf, Adaptor3d_Surface aGeomSurf)
+                                      SurfaceAdaptorBase aCTSurf, SurfaceAdaptorBase aGeomSurf)
     {
         if (bToCheck)
         {
@@ -639,8 +643,8 @@ public partial class IntPatch_Intersection
     }
 
     // The purging loop at the end of OCCT's three two-surface Performs (repeated verbatim).
-    private void PurgeWLines(Adaptor3d_Surface theS1, Adaptor3d_TopolTool theD1, Adaptor3d_Surface theS2,
-                             Adaptor3d_TopolTool theD2)
+    private void PurgeWLines(SurfaceAdaptorBase theS1, TopolTool theD1, SurfaceAdaptorBase theS2,
+                             TopolTool theD2)
     {
         for (int i = NCollection_Sequence<IntPatch_Line>.Lower(); i <= slin.Upper(); i++)
         {
@@ -670,8 +674,8 @@ public partial class IntPatch_Intersection
 
     //=================================================================================================
 
-    private void ParamParamPerfom(Adaptor3d_Surface theS1, Adaptor3d_TopolTool theD1, Adaptor3d_Surface theS2,
-                                  Adaptor3d_TopolTool theD2, double TolArc, double TolTang,
+    private void ParamParamPerfom(SurfaceAdaptorBase theS1, TopolTool theD1, SurfaceAdaptorBase theS2,
+                                  TopolTool theD2, double TolArc, double TolTang,
                                   NCollection_List<IntSurf_PntOn2S> ListOfPnts, SurfaceKind typs1,
                                   SurfaceKind typs2)
     {
@@ -695,7 +699,7 @@ public partial class IntPatch_Intersection
                 double MU = Max(Math.Abs(theS2.FirstUParameter()), Math.Abs(theS2.LastUParameter()));
                 double MV = Max(Math.Abs(theS2.FirstVParameter()), Math.Abs(theS2.LastVParameter()));
                 double AP = Max(MU, MV);
-                FUN_TrimInfSurf(pMinXYZ, pMaxXYZ, theS1, AP, out Adaptor3d_Surface? SS);
+                FUN_TrimInfSurf(pMinXYZ, pMaxXYZ, theS1, AP, out SurfaceAdaptorBase? SS);
                 interpp.Perform(SS!, theD1, theS2, theD2, TolTang, TolArc, myFleche, myUVMaxStep);
             }
             else
@@ -704,7 +708,7 @@ public partial class IntPatch_Intersection
                 double MU = Max(Math.Abs(theS1.FirstUParameter()), Math.Abs(theS1.LastUParameter()));
                 double MV = Max(Math.Abs(theS1.FirstVParameter()), Math.Abs(theS1.LastVParameter()));
                 double AP = Max(MU, MV);
-                FUN_TrimInfSurf(pMinXYZ, pMaxXYZ, theS2, AP, out Adaptor3d_Surface? SS);
+                FUN_TrimInfSurf(pMinXYZ, pMaxXYZ, theS2, AP, out SurfaceAdaptorBase? SS);
                 interpp.Perform(theS1, theD1, SS!, theD2, TolTang, TolArc, myFleche, myUVMaxStep);
             }
         } //(theD1->DomainIsInfinite()) ^ (theD2->DomainIsInfinite())
@@ -741,8 +745,8 @@ public partial class IntPatch_Intersection
             } // 'COLLINEAR LINES'
             else
             {
-                Adaptor3d_Surface nS1 = theS1;
-                Adaptor3d_Surface nS2 = theS2;
+                SurfaceAdaptorBase nS1 = theS1;
+                SurfaceAdaptorBase nS2 = theS2;
                 FUN_TrimBothSurf(theS1, typs1, theS2, typs2, 1.0e+8, ref nS1, ref nS2);
                 interpp.Perform(nS1, theD1, nS2, theD2, TolTang, TolArc, myFleche, myUVMaxStep);
             } // 'NON - COLLINEAR LINES'
@@ -774,8 +778,8 @@ public partial class IntPatch_Intersection
 
     //=================================================================================================
 
-    private void GeomGeomPerfom(Adaptor3d_Surface theS1, Adaptor3d_TopolTool theD1, Adaptor3d_Surface theS2,
-                                Adaptor3d_TopolTool theD2, double TolArc, double TolTang,
+    private void GeomGeomPerfom(SurfaceAdaptorBase theS1, TopolTool theD1, SurfaceAdaptorBase theS2,
+                                TopolTool theD2, double TolArc, double TolTang,
                                 NCollection_List<IntSurf_PntOn2S> ListOfPnts, SurfaceKind theTyps1,
                                 SurfaceKind theTyps2, bool theIsReqToKeepRLine)
     {
@@ -859,10 +863,10 @@ public partial class IntPatch_Intersection
             aBx1.Enlarge(global::Kerf.Engine.Foundation.Precision.PConfusion());
             aBx2.Enlarge(global::Kerf.Engine.Foundation.Precision.PConfusion());
 
-            ReadOnlySpan<double> anArrOfPeriod = [theS1.IsUPeriodic() ? theS1.UPeriod() : 0.0,
-                                                  theS1.IsVPeriodic() ? theS1.VPeriod() : 0.0,
-                                                  theS2.IsUPeriodic() ? theS2.UPeriod() : 0.0,
-                                                  theS2.IsVPeriodic() ? theS2.VPeriod() : 0.0];
+            ReadOnlySpan<double> anArrOfPeriod = [theS1.IsUPeriodic ? theS1.UPeriod() : 0.0,
+                                                  theS1.IsVPeriodic ? theS1.VPeriod() : 0.0,
+                                                  theS2.IsUPeriodic ? theS2.UPeriod() : 0.0,
+                                                  theS2.IsVPeriodic ? theS2.VPeriod() : 0.0];
 
             NCollection_List<Point3D> aListOfCriticalPoints = new();
 
@@ -893,8 +897,8 @@ public partial class IntPatch_Intersection
 
     //=================================================================================================
 
-    private void GeomParamPerfom(Adaptor3d_Surface theS1, Adaptor3d_TopolTool theD1, Adaptor3d_Surface theS2,
-                                 Adaptor3d_TopolTool theD2, bool isNotAnalitical, SurfaceKind typs1,
+    private void GeomParamPerfom(SurfaceAdaptorBase theS1, TopolTool theD1, SurfaceAdaptorBase theS2,
+                                 TopolTool theD2, bool isNotAnalitical, SurfaceKind typs1,
                                  SurfaceKind typs2)
     {
         IntPatch_ImpPrmIntersection interip = new();
@@ -937,8 +941,8 @@ public partial class IntPatch_Intersection
             }
             else
             {
-                Adaptor3d_Surface nS1 = theS1;
-                Adaptor3d_Surface nS2 = theS2;
+                SurfaceAdaptorBase nS1 = theS1;
+                SurfaceAdaptorBase nS2 = theS2;
                 FUN_TrimBothSurf(theS1, typs1, theS2, typs2, 1.0e+5, ref nS1, ref nS2);
                 interip.Perform(nS1, theD1, nS2, theD2, myTolArc, myTolTang, myFleche, myUVMaxStep);
             }
@@ -985,7 +989,7 @@ public partial class IntPatch_Intersection
     /// <summary>Intersects S1 and S2 from a start point (U1, V1) on S1 and (U2, V2) on S2: through the analytic
     /// dispatch (the point given to IntPatch_ImpPrmIntersection) when one surface is a plane, cylinder, sphere or
     /// cone, by marching from the point (IntPatch_PrmPrmIntersection) otherwise.</summary>
-    public void Perform(Adaptor3d_Surface S1, Adaptor3d_TopolTool D1, Adaptor3d_Surface S2, Adaptor3d_TopolTool D2,
+    public void Perform(SurfaceAdaptorBase S1, TopolTool D1, SurfaceAdaptorBase S2, TopolTool D2,
                         double U1, double V1, double U2, double V2, double TolArc, double TolTang)
     {
         myTolArc = TolArc;
@@ -1047,8 +1051,8 @@ public partial class IntPatch_Intersection
     /// Writes the dump of the intersection. OCCT's body is compiled only with DUMPOFIntPatch_Intersection (a debug
     /// define), so a release build, which the port follows, writes nothing.
     /// </summary>
-    public void Dump(int Mode, Adaptor3d_Surface S1, Adaptor3d_TopolTool D1, Adaptor3d_Surface S2,
-                     Adaptor3d_TopolTool D2, TextWriter theOut)
+    public void Dump(int Mode, SurfaceAdaptorBase S1, TopolTool D1, SurfaceAdaptorBase S2,
+                     TopolTool D2, TextWriter theOut)
     {
         _ = Mode;
         _ = S1;
@@ -1145,8 +1149,8 @@ public partial class IntPatch_Intersection
     /// True if a boundary of theS1 is degenerate (a pole or an apex); theDist is then the smallest distance from
     /// such a point to theS2, Precision.Infinite() otherwise.
     /// </summary>
-    public static bool CheckSingularPoints(Adaptor3d_Surface theS1, Adaptor3d_TopolTool theD1,
-                                           Adaptor3d_Surface theS2, out double theDist)
+    public static bool CheckSingularPoints(SurfaceAdaptorBase theS1, TopolTool theD1,
+                                           SurfaceAdaptorBase theS2, out double theDist)
     {
         theDist = global::Kerf.Engine.Foundation.Precision.Infinite();
         bool isSingular = false;
@@ -1162,7 +1166,7 @@ public partial class IntPatch_Intersection
         bool isU = true;
         for (; theD1.More(); theD1.Next())
         {
-            Adaptor2d_Curve2d aBnd = theD1.Value();
+            Curve2DAdaptorBase aBnd = theD1.Value();
             double pinf = aBnd.FirstParameter(), psup = aBnd.LastParameter();
             if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(pinf) || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(psup))
             {
@@ -1203,11 +1207,11 @@ public partial class IntPatch_Intersection
                 aPmid /= aNb;
                 aPP1.SetXYZ(aPmid);
                 double aTolU = global::Kerf.Engine.Foundation.Precision.PConfusion(), aTolV = global::Kerf.Engine.Foundation.Precision.PConfusion();
-                Extrema_ExtPS aProj = new(aPP1, theS2, aTolU, aTolV, Extrema_ExtFlag.Extrema_ExtFlag_MIN);
+                ExtPS aProj = new(aPP1, theS2, aTolU, aTolV, ExtFlag.ExtFlag_MIN);
 
-                if (aProj.IsDone())
+                if (aProj.IsDone)
                 {
-                    int aNbExt = aProj.NbExt();
+                    int aNbExt = aProj.ExtCount;
                     for (i = 1; i <= aNbExt; ++i)
                     {
                         theDist = Min(theDist, aProj.SquareDistance(i));
@@ -1228,8 +1232,8 @@ public partial class IntPatch_Intersection
 
     /// <summary>The largest step in parameters for the walking: 1e-4 when a singular point of one surface is
     /// within 1e-5 (but farther than Confusion) of the other, 1e-3 otherwise.</summary>
-    public static double DefineUVMaxStep(Adaptor3d_Surface theS1, Adaptor3d_TopolTool theD1, Adaptor3d_Surface theS2,
-                                         Adaptor3d_TopolTool theD2)
+    public static double DefineUVMaxStep(SurfaceAdaptorBase theS1, TopolTool theD1, SurfaceAdaptorBase theS2,
+                                         TopolTool theD2)
     {
         double anUVMaxStep = 0.001;
         double aTolMin = global::Kerf.Engine.Foundation.Precision.Confusion(), aTolMax = 1.0e-5;
@@ -1264,8 +1268,8 @@ public partial class IntPatch_Intersection
 
     //=================================================================================================
 
-    private static void splitCone(Adaptor3d_Surface theS, Adaptor3d_TopolTool theD, double theTol,
-                                  NCollection_DynamicArray<Adaptor3d_Surface> theVecHS)
+    private static void splitCone(SurfaceAdaptorBase theS, TopolTool theD, double theTol,
+                                  NCollection_DynamicArray<SurfaceAdaptorBase> theVecHS)
     {
         if (theS.GetType() != global::Kerf.Geometry.SurfaceKind.Cone)
         {
@@ -1274,14 +1278,14 @@ public partial class IntPatch_Intersection
 
         Cone aCone = theS.Cone();
 
-        Adaptor3d_TopolTool.GetConeApexParam(aCone, out double aU0, out double aV0);
+        TopolTool.GetConeApexParam(aCone, out double aU0, out double aV0);
 
-        TopAbs_State aState = theD.Classify(new Point2D(aU0, aV0), theTol);
+        Containment aState = theD.Classify(new Point2D(aU0, aV0), theTol);
 
-        if (aState == TopAbs_IN || aState == TopAbs_ON)
+        if (aState == In || aState == On)
         {
-            Adaptor3d_Surface aHSDn = theS.VTrim(theS.FirstVParameter(), aV0, global::Kerf.Engine.Foundation.Precision.PConfusion());
-            Adaptor3d_Surface aHSUp = theS.VTrim(aV0, theS.LastVParameter(), global::Kerf.Engine.Foundation.Precision.PConfusion());
+            SurfaceAdaptorBase aHSDn = theS.VTrim(theS.FirstVParameter(), aV0, global::Kerf.Engine.Foundation.Precision.PConfusion());
+            SurfaceAdaptorBase aHSUp = theS.VTrim(aV0, theS.LastVParameter(), global::Kerf.Engine.Foundation.Precision.PConfusion());
 
             theVecHS.Append(aHSDn);
             theVecHS.Append(aHSUp);
@@ -1300,10 +1304,10 @@ public partial class IntPatch_Intersection
     /// Prepares the surfaces for the intersection: a cone whose semi-angle is within theTol of π/2 is split at its
     /// apex when the apex is in its domain; every other surface is appended as is.
     /// </summary>
-    public static void PrepareSurfaces(Adaptor3d_Surface theS1, Adaptor3d_TopolTool theD1, Adaptor3d_Surface theS2,
-                                       Adaptor3d_TopolTool theD2, double theTol,
-                                       NCollection_DynamicArray<Adaptor3d_Surface> theVecHS1,
-                                       NCollection_DynamicArray<Adaptor3d_Surface> theVecHS2)
+    public static void PrepareSurfaces(SurfaceAdaptorBase theS1, TopolTool theD1, SurfaceAdaptorBase theS2,
+                                       TopolTool theD2, double theTol,
+                                       NCollection_DynamicArray<SurfaceAdaptorBase> theVecHS1,
+                                       NCollection_DynamicArray<SurfaceAdaptorBase> theVecHS2)
     {
         if ((theS1.GetType() == global::Kerf.Geometry.SurfaceKind.Cone) && (Math.Abs(M_PI / 2.0 - Math.Abs(theS1.Cone().SemiAngle())) < theTol))
         {

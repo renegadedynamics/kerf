@@ -1,11 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -21,7 +25,7 @@ public class BRepToolsUntrustedTests
 
     private const string NoGeometry = "Curve2ds 0\nCurves 0\nPolygon3D 0\nPolygonOnTriangulations 0\nSurfaces 0\nTriangulations 0\n";
 
-    private static TopoDS_Shape Read(string theText) => BRepToolsIOTests.Read(theText);
+    private static Shape Read(string theText) => BRepToolsIOTests.Read(theText);
 
     private static void Rejects(string theText)
     {
@@ -67,12 +71,12 @@ public class BRepToolsUntrustedTests
         // the curve can't be read: the stream ends)
         var aReader = new StringReader(aText);
         Assert.Equal(StreamUtilities.UnknownInputLength, StreamUtilities.InputLength(aReader));
-        BRepTools.Read(out TopoDS_Shape aShape, aReader);
-        Assert.True(aShape.IsNull());
+        BrepTools.Read(out Shape aShape, aReader);
+        Assert.True(aShape.IsNull);
         // a stream reader over a seekable stream knows its length
         var aStreamReader = new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes(aText)));
         Assert.Equal(aText.Length, StreamUtilities.InputLength(aStreamReader));
-        Assert.Throws<StreamFormatErrorException>(() => BRepTools.Read(out _, aStreamReader));
+        Assert.Throws<StreamFormatErrorException>(() => BrepTools.Read(out _, aStreamReader));
         Assert.Throws<ArgumentOutOfRangeException>(() => StreamUtilities.SetInputLength(new StringReader(""), -1));
     }
 
@@ -104,8 +108,8 @@ public class BRepToolsUntrustedTests
         string Curves(int theDepth) => V3 + "Locations 0\nCurve2ds 0\nCurves 1\n" + Trimmed(theDepth)
                                        + "Polygon3D 0\nPolygonOnTriangulations 0\nSurfaces 0\nTriangulations 0\n\nTShapes 0\n";
 
-        Assert.True(Read(Curves(GeomTools.MaxGeometryNesting)).IsNull());
-        Rejects(Curves(GeomTools.MaxGeometryNesting + 1));
+        Assert.True(Read(Curves(global::Kerf.Engine.Exchange.Brep.GeomTools.MaxGeometryNesting)).IsNull);
+        Rejects(Curves(global::Kerf.Engine.Exchange.Brep.GeomTools.MaxGeometryNesting + 1));
         Rejects(Curves(100000));
 
         // offset surfaces of offset surfaces
@@ -119,8 +123,8 @@ public class BRepToolsUntrustedTests
                 + "1 0 0 0 0 0 1 1 0 0 0 1 0\nTriangulations 0\n\nTShapes 0\n");
 
         // the static readers too
-        Assert.Throws<StreamFormatErrorException>(() => GeomTools_CurveSet.ReadCurve(new StringReader(Trimmed(65))));
-        Assert.NotNull(GeomTools_CurveSet.ReadCurve(new StringReader(Trimmed(64))));
+        Assert.Throws<StreamFormatErrorException>(() => global::Kerf.Engine.Exchange.Brep.CurveSet.ReadCurve(new StringReader(Trimmed(65))));
+        Assert.NotNull(global::Kerf.Engine.Exchange.Brep.CurveSet.ReadCurve(new StringReader(Trimmed(64))));
     }
 
     // a vertex, then compounds each holding the one before
@@ -139,23 +143,23 @@ public class BRepToolsUntrustedTests
     [Fact]
     public void Nested_shapes_are_capped()
     {
-        TopoDS_Shape aDeep = new();
-        RunWithStack(() => aDeep = Read(NestedCompounds(TopTools_ShapeSet.MaxShapeNesting - 1)), theStackSize: 4 << 20);
-        Assert.Equal(TopAbs_COMPOUND, aDeep.ShapeType());
+        Shape aDeep = new();
+        RunWithStack(() => aDeep = Read(NestedCompounds(global::Kerf.Engine.Exchange.Brep.ShapeSet.MaxShapeNesting - 1)), theStackSize: 4 << 20);
+        Assert.Equal(ShapeType.Compound, aDeep.ShapeType());
         // and can be written back: on 4 MB always; on 1 MB it depends on the JIT's frame sizes (tier-0 frames are
         // larger), so there the writer may stop with its clean InsufficientExecutionStackException, never a crash
-        RunWithStack(() => BRepTools.Write(aDeep, new StringWriter()), theStackSize: 4 << 20);
+        RunWithStack(() => BrepTools.Write(aDeep, new StringWriter()), theStackSize: 4 << 20);
         RunWithStack(() =>
         {
             try
             {
-                BRepTools.Write(aDeep, new StringWriter());
+                BrepTools.Write(aDeep, new StringWriter());
             }
             catch (InsufficientExecutionStackException)
             {
             }
         });
-        Rejects(NestedCompounds(TopTools_ShapeSet.MaxShapeNesting));
+        Rejects(NestedCompounds(global::Kerf.Engine.Exchange.Brep.ShapeSet.MaxShapeNesting));
         Rejects(NestedCompounds(20000));
     }
 
@@ -164,17 +168,17 @@ public class BRepToolsUntrustedTests
     {
         // 100,000 nested compounds, built in code: the writer recurses once per level, and stops before the stack
         // overflows
-        TopoDS_Shape aShape = TestShapes.Vertex(new Point3D());
-        var aB = new BRep_Builder();
+        Shape aShape = TestShapes.Vertex(new Point3D());
+        var aB = new BrepBuilder();
         for (int i = 0; i < 100000; i++)
         {
-            TopoDS_Compound aC = new();
+            Compound aC = new();
             aB.MakeCompound(ref aC);
             aB.Add(aC, aShape);
             aShape = aC;
         }
 
-        RunWithStack(() => Assert.Throws<InsufficientExecutionStackException>(() => BRepTools.Write(aShape, new StringWriter())));
+        RunWithStack(() => Assert.Throws<InsufficientExecutionStackException>(() => BrepTools.Write(aShape, new StringWriter())));
     }
 
     [Fact]
@@ -195,7 +199,7 @@ public class BRepToolsUntrustedTests
         Rejects(V3 + aTwo.Replace("Locations 2", "Locations 3", StringComparison.Ordinal) + aChain + " 0\n");
         // an elementary location to any power is one item
         Assert.True(Read(V3 + aTwo.Replace("Locations 2", "Locations 3", StringComparison.Ordinal) + "2 1 1000000 0\n" + NoGeometry
-                         + "\nTShapes 0\n").IsNull());
+                         + "\nTShapes 0\n").IsNull);
         // a reference to a location not read yet, and a chain that ends with the input (OCCT loops for ever)
         Rejects(V3 + aTwo.Replace("Locations 2", "Locations 3", StringComparison.Ordinal) + "2 7 1 0\n");
         Rejects(V3 + aTwo.Replace("Locations 2", "Locations 3", StringComparison.Ordinal) + "2 1 1 2");
@@ -225,7 +229,7 @@ public class BRepToolsUntrustedTests
         // a face made of a triangulation that isn't there
         Rejects(V3 + "Locations 0\n" + NoGeometry + "\nTShapes 1\nFa\n2  5\n\n1100000\n*\n\n+1 0 ");
         // a sub-shape of the wrong type is OCCT's TopoDS_UnCompatibleShapes
-        Assert.Throws<TopoDS_UnCompatibleShapes>(
+        Assert.Throws<IncompatibleShapesException>(
             () => Read(V3 + "Locations 0\n" + NoGeometry + "\nTShapes 2\nCo\n\n1100000\n*\nVe\n1e-07\n0 0 0\n0 0\n\n1101101\n+2 0 *\n\n+1 0 "));
     }
 
@@ -260,8 +264,8 @@ public class BRepToolsUntrustedTests
     {
         try
         {
-            TopoDS_Shape aShape = Read(theText);
-            if (!aShape.IsNull())
+            Shape aShape = Read(theText);
+            if (!aShape.IsNull)
             {
                 if (!aShape.TShape()!.IsFrozen)
                 {
@@ -270,7 +274,7 @@ public class BRepToolsUntrustedTests
 
                 try
                 {
-                    BRepTools.Write(aShape, new StringWriter());
+                    BrepTools.Write(aShape, new StringWriter());
                 }
                 catch (FailureException)
                 {
@@ -292,15 +296,15 @@ public class BRepToolsUntrustedTests
 
     private static IEnumerable<(string Name, string Text)> Samples()
     {
-        foreach ((string aName, TopoDS_Shape aShape) in BinTestShapes.All())
+        foreach ((string aName, Shape aShape) in BinTestShapes.All())
         {
-            yield return (aName, BRepToolsIOTests.Write(aShape, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3, true, true));
+            yield return (aName, BRepToolsIOTests.Write(aShape, global::Kerf.Engine.Exchange.Brep.FormatVersion.FormatVersion_VERSION_3, true, true));
         }
 
         yield return ("box, version 1", BRepToolsIOTests.Write(BinTestShapes.BoxWithRegularityAndPolygon(),
-                                                                TopTools_FormatVersion.TopTools_FormatVersion_VERSION_1));
+                                                                global::Kerf.Engine.Exchange.Brep.FormatVersion.FormatVersion_VERSION_1));
         yield return ("vertices, version 2", BRepToolsIOTests.Write(BinTestShapes.VertexRepresentations(true),
-                                                                     TopTools_FormatVersion.TopTools_FormatVersion_VERSION_2));
+                                                                     global::Kerf.Engine.Exchange.Brep.FormatVersion.FormatVersion_VERSION_2));
     }
 
     private static IEnumerable<(string Name, string Text)> CorpusSamples()

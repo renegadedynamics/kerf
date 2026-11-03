@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -33,7 +34,7 @@ public class BRepMesh_TorusRangeSplitter : BRepMesh_UVParamRangeSplitter
         double r = aTorus.MinorRadius();
         double R = aTorus.MajorRadius();
 
-        double oldDv = GCPnts_TangentialDeflection.ArcAngularStep(r,
+        double oldDv = TangentialDeflection.ArcAngularStep(r,
                                                                   GetDFace().GetDeflection(),
                                                                   theParameters.Angle,
                                                                   theParameters.MinSize);
@@ -48,7 +49,7 @@ public class BRepMesh_TorusRangeSplitter : BRepMesh_UVParamRangeSplitter
         double ru = R + r;
         if (ru > 1.0e-16)
         {
-            Du = GCPnts_TangentialDeflection.ArcAngularStep(ru,
+            Du = TangentialDeflection.ArcAngularStep(ru,
                                                             GetDFace().GetDeflection(),
                                                             theParameters.Angle,
                                                             theParameters.MinSize);

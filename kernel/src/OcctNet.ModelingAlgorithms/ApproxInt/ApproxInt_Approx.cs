@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Geometry;
-using static Occt.AppParCurves_Constraint;
-using static Occt.Approx_ParametrizationType;
+using static Kerf.Engine.Approximation.Constraint;
+using static Kerf.Engine.Approximation.ParametrizationType;
 using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
@@ -89,21 +90,21 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
             indicemin = 0;
             indicemax = 0;
             myNbPntMax = 30;
-            parametrization = Approx_ChordLength;
+            parametrization = ChordLength;
         }
 
         public bool myBezierApprox;
         public double Xo, Yo, Zo, U1o, V1o, U2o, V2o;
         public bool ApproxXYZ, ApproxU1V1, ApproxU2V2;
         public int indicemin, indicemax, myNbPntMax;
-        public Approx_ParametrizationType parametrization;
+        public ParametrizationType parametrization;
     }
 
-    private readonly Approx_BSplComputeLine<ApproxInt_MultiLine<TheWLine>, ApproxInt_MultiLineTool<TheWLine>>
+    private readonly BSplComputeLine<ApproxInt_MultiLine<TheWLine>, ApproxInt_MultiLineTool<TheWLine>>
         myComputeLine;
-    private readonly Approx_ComputeLine<ApproxInt_MultiLine<TheWLine>, ApproxInt_MultiLineTool<TheWLine>>
+    private readonly ComputeLine<ApproxInt_MultiLine<TheWLine>, ApproxInt_MultiLineTool<TheWLine>>
         myComputeLineBezier;
-    private readonly Approx_MCurvesToBSpCurve myBezToBSpl;
+    private readonly MCurvesToBSpCurve myBezToBSpl;
     private bool myWithTangency;
     private double myTol3d;
     private double myTol2d;
@@ -166,12 +167,12 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
     /// for the parametrisation <paramref name="Par"/>, from 0 to 1, in <paramref name="TheParameters"/>.
     /// </summary>
     public static void Parameters(ApproxInt_MultiLine<TheWLine> Line, int firstP, int lastP,
-                                  Approx_ParametrizationType Par, math_Vector TheParameters)
+                                  ParametrizationType Par, math_Vector TheParameters)
     {
         int i, j, nbP2d, nbP3d;
         double dist;
 
-        if (Par == Approx_ChordLength || Par == Approx_Centripetal)
+        if (Par == ChordLength || Par == Centripetal)
         {
             nbP3d = ApproxInt_MultiLineTool<TheWLine>.NbP3d(Line);
             nbP2d = ApproxInt_MultiLineTool<TheWLine>.NbP2d(Line);
@@ -233,7 +234,7 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
                 }
 
                 dist = Math.Sqrt(dist);
-                if (Par == Approx_ChordLength)
+                if (Par == ChordLength)
                 {
                     TheParameters[i] = TheParameters[i - 1] + dist;
                 }
@@ -479,7 +480,7 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
     /// </summary>
     public void SetParameters(double Tol3d, double Tol2d, int DegMin, int DegMax, int NbIterMax, int NbPntMax = 30,
                               bool ApproxWithTangency = true,
-                              Approx_ParametrizationType Parametrization = Approx_ChordLength)
+                              ParametrizationType Parametrization = ChordLength)
     {
         myData.myNbPntMax = NbPntMax;
         myWithTangency = ApproxWithTangency;
@@ -494,8 +495,8 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
 
         if (!ApproxWithTangency)
         {
-            myComputeLine.SetConstraints(AppParCurves_PassPoint, AppParCurves_PassPoint);
-            myComputeLineBezier.SetConstraints(AppParCurves_PassPoint, AppParCurves_PassPoint);
+            myComputeLine.SetConstraints(PassPoint, PassPoint);
+            myComputeLineBezier.SetConstraints(PassPoint, PassPoint);
         }
 
         myData.myBezierApprox = true;
@@ -510,7 +511,7 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
     {
         if (myData.myBezierApprox)
         {
-            int NbCurves = myComputeLineBezier.NbMultiCurves();
+            int NbCurves = myComputeLineBezier.MultiCurveCount;
             for (int ICur = 1; ICur <= NbCurves; ICur++)
             {
                 myComputeLineBezier.Error(ICur, out double Tol3D, out double Tol2D);
@@ -534,16 +535,16 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
     {
         if (myData.myBezierApprox)
         {
-            return (myComputeLineBezier.NbMultiCurves() > 0);
+            return (myComputeLineBezier.MultiCurveCount > 0);
         }
         else
         {
-            return (myComputeLine.IsToleranceReached());
+            return (myComputeLine.IsToleranceReached);
         }
     }
 
     /// <summary>The approximation (whatever the index): the 3D curve first, then the 2D curves.</summary>
-    public AppParCurves_MultiBSpCurve Value(int Index)
+    public MultiBSpCurve Value(int Index)
     {
         if (myData.myBezierApprox)
         {
@@ -700,7 +701,7 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
             if (myData.myBezierApprox)
             {
                 myComputeLineBezier.Perform(myMultiLine);
-                if (myComputeLineBezier.NbMultiCurves() == 0)
+                if (myComputeLineBezier.MultiCurveCount == 0)
                 {
                     return;
                 }
@@ -726,7 +727,7 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
             {
                 if (myData.myBezierApprox)
                 {
-                    for (int nbmc = myComputeLineBezier.NbMultiCurves(); nbmc >= 1; nbmc--)
+                    for (int nbmc = myComputeLineBezier.MultiCurveCount; nbmc >= 1; nbmc--)
                     {
                         myComputeLineBezier.ChangeValue(nbmc)
                             .Transform(indice3d, -myData.Xo, 1.0, -myData.Yo, 1.0, -myData.Zo, 1.0);
@@ -741,7 +742,7 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
             {
                 if (myData.myBezierApprox)
                 {
-                    for (int nbmc = myComputeLineBezier.NbMultiCurves(); nbmc >= 1; nbmc--)
+                    for (int nbmc = myComputeLineBezier.MultiCurveCount; nbmc >= 1; nbmc--)
                     {
                         myComputeLineBezier.ChangeValue(nbmc).Transform2d(indice2d1, -myData.U1o, 1.0, -myData.V1o,
                                                                           1.0);
@@ -756,7 +757,7 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
             {
                 if (myData.myBezierApprox)
                 {
-                    for (int nbmc = myComputeLineBezier.NbMultiCurves(); nbmc >= 1; nbmc--)
+                    for (int nbmc = myComputeLineBezier.MultiCurveCount; nbmc >= 1; nbmc--)
                     {
                         myComputeLineBezier.ChangeValue(nbmc).Transform2d(indice2d2, -myData.U2o, 1.0, -myData.V2o,
                                                                           1.0);
@@ -771,7 +772,7 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
             OtherInter = false;
             if (myData.myBezierApprox)
             {
-                for (int nbmc = 1; nbmc <= myComputeLineBezier.NbMultiCurves(); nbmc++)
+                for (int nbmc = 1; nbmc <= myComputeLineBezier.MultiCurveCount; nbmc++)
                 {
                     myBezToBSpl.Append(myComputeLineBezier.Value(nbmc));
                 }

@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation.Advanced;
 using static Kerf.Engine.Geometry.IsoType;
 
 namespace OcctNet.ModelingData.Tests;
@@ -11,7 +12,7 @@ public class AdvApp2Var_IsoTest
     [Fact]
     public void ConstructorWithOrders_AssignsOrdersByIsoType()
     {
-        AdvApp2Var_Iso anIsoU = new(IsoU, 3, 1);
+        Iso anIsoU = new(IsoU, 3, 1);
         Assert.Equal(IsoU, anIsoU.Type());
         Assert.Equal(3, anIsoU.UOrder());
         Assert.Equal(1, anIsoU.VOrder());
@@ -24,7 +25,7 @@ public class AdvApp2Var_IsoTest
         Assert.Equal(1.0, anIsoU.T1());
         Assert.Equal(0, anIsoU.Position());
 
-        AdvApp2Var_Iso anIsoV = new(IsoV, 3, 1);
+        Iso anIsoV = new(IsoV, 3, 1);
         Assert.Equal(IsoV, anIsoV.Type());
         Assert.Equal(3, anIsoV.UOrder());
         Assert.Equal(1, anIsoV.VOrder());

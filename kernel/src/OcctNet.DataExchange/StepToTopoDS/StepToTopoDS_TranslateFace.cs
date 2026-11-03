@@ -8,9 +8,12 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.StepToTopoDS_TranslateFaceError;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -22,7 +25,7 @@ namespace Occt;
 public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
 {
     private StepToTopoDS_TranslateFaceError myError;
-    private TopoDS_Shape myResult = new TopoDS_Shape();
+    private Shape myResult = new Shape();
 
     // Set nodes to the triangulation from an array
     private static void SetNodes(Triangulation theMesh, NCollection_HArray1<Xyz> theNodes, NCollection_HArray1<int> thePnindices,
@@ -385,7 +388,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         done = true;
         if (theTopoDSTool.IsBound(theFaceSurface))
         {
-            myResult = TopoDS.Face(theTopoDSTool.Find(theFaceSurface));
+            myResult = ShapeCasts.Face(theTopoDSTool.Find(theFaceSurface));
             myError = StepToTopoDS_TranslateFaceDone;
             done = true;
             return;
@@ -411,7 +414,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         // [BEGIN] Added to process non-manifold topology (ssv; 14.11.2010)
         if (theTopoDSToolNM.IsActive() && theTopoDSToolNM.IsBound(aStepGeomSurface))
         {
-            TopoDS_Shape anExistingShape = theTopoDSToolNM.Find(aStepGeomSurface);
+            Shape anExistingShape = theTopoDSToolNM.Find(aStepGeomSurface);
             // Reverse shape's orientation for the next shell
             anExistingShape.Reverse();
             myResult = anExistingShape;
@@ -426,7 +429,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
             aMessageHandler.AddWarning(aStepGeomSurface, " Type OffsetSurface is out of scope of AP 214");
         }
 
-        Geom_Surface aGeomSurface = StepToGeom.MakeSurface(aStepGeomSurface, theLocalFactors);
+        Surface aGeomSurface = StepToGeom.MakeSurface(aStepGeomSurface, theLocalFactors);
         if (aGeomSurface is null)
         {
             aMessageHandler.AddFail(aStepGeomSurface, " Surface has not been created");
@@ -438,7 +441,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         // pdn to force bsplsurf to be periodic
         if (aStepGeomSurface is StepGeom_BSplineSurface)
         {
-            Geom_Surface periodicSurf = ShapeAlgo.AlgoContainer().ConvertToPeriodic(aGeomSurface);
+            Surface periodicSurf = ShapeAlgo.AlgoContainer().ConvertToPeriodic(aGeomSurface);
             if (periodicSurf is not null)
             {
                 aMessageHandler.AddWarning(aStepGeomSurface, "Surface forced to be periodic");
@@ -454,8 +457,8 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         // -- Statistics --
         theTopoDSTool.AddContinuity(aGeomSurface);
 
-        TopoDS_Face aResultFace = new TopoDS_Face();
-        var aFaceBuilder = new BRep_Builder();
+        Face aResultFace = new Face();
+        var aFaceBuilder = new BrepBuilder();
         aFaceBuilder.MakeFace(ref aResultFace, aGeomSurface, Kerf.Engine.Foundation.Precision.Confusion());
 
         // ----------------------------------
@@ -493,7 +496,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
                 // In the meantime, we do nothing
 
                 // abv 10.07.00 pr1sy.stp: vertex_loop can be wrong; so just make natural bounds
-                if ((aGeomSurface is Geom_SphericalSurface || aGeomSurface is Geom_BSplineSurface || aGeomSurface is Geom_SurfaceOfRevolution)
+                if ((aGeomSurface is SphericalSurface || aGeomSurface is BSplineSurface || aGeomSurface is RevolutionSurface)
                     && (theFaceSurface.NbBounds() == 1))
                 {
                     // Modification to create natural bounds for face based on the spherical and Bspline
@@ -505,7 +508,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
                     // - natural bounds are applied only in case if VertexLoop is only the one defined face
                     // bound.
                     var anAuxiliaryFaceBuilder = new BRepBuilderAPI_MakeFace(aGeomSurface, Precision());
-                    for (var aFaceIt = new TopoDS_Iterator(anAuxiliaryFaceBuilder.InternalShape()); aFaceIt.More(); aFaceIt.Next())
+                    for (var aFaceIt = new Iterator(anAuxiliaryFaceBuilder.InternalShape()); aFaceIt.More(); aFaceIt.Next())
                     {
                         aFaceBuilder.Add(aResultFace, aFaceIt.Value());
                     }
@@ -513,13 +516,13 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
                     continue;
                 }
 
-                if (aGeomSurface is Geom_ToroidalSurface)
+                if (aGeomSurface is ToroidalSurface)
                 {
                     continue;
                 }
 
                 StepShape_VertexLoop aVertexLoop = aFaceLoop as StepShape_VertexLoop;
-                if (aGeomSurface is Geom_Plane)
+                if (aGeomSurface is PlaneSurface)
                 {
                     aMessageHandler.AddWarning(aVertexLoop, "VertexLoop on plane is ignored");
                     continue; // smh : BUC60809
@@ -545,15 +548,15 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
             else if (aFaceLoop is StepShape_PolyLoop)
             {
                 StepShape_PolyLoop aPolyLoop = aFaceLoop as StepShape_PolyLoop;
-                aResultFace.Orientation(theFaceSurface.SameSense() ? TopAbs_FORWARD : TopAbs_REVERSED);
+                aResultFace.Orientation(theFaceSurface.SameSense() ? Forward : Reversed);
                 var aPolyLoopTranslator = new StepToTopoDS_TranslatePolyLoop();
                 aPolyLoopTranslator.SetPrecision(Precision()); // gka
                 aPolyLoopTranslator.SetMaxTol(MaxTol());
                 aPolyLoopTranslator.Init(aPolyLoop, theTopoDSTool, aGeomSurface, aResultFace, theLocalFactors);
                 if (aPolyLoopTranslator.IsDone())
                 {
-                    TopoDS_Wire aPolyLoopWire = TopoDS.Wire(aPolyLoopTranslator.InternalValue());
-                    aPolyLoopWire.Orientation(aFaceBound.Orientation() ? TopAbs_FORWARD : TopAbs_REVERSED);
+                    Wire aPolyLoopWire = ShapeCasts.Wire(aPolyLoopTranslator.InternalValue());
+                    aPolyLoopWire.Orientation(aFaceBound.Orientation() ? Forward : Reversed);
                     aFaceBuilder.Add(aResultFace, aPolyLoopWire);
                 }
                 else
@@ -575,7 +578,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
 
                 if (anEdgeLoopTranslator.IsDone())
                 {
-                    TopoDS_Wire anEdgeLoopWire = TopoDS.Wire(anEdgeLoopTranslator.InternalValue());
+                    Wire anEdgeLoopWire = ShapeCasts.Wire(anEdgeLoopTranslator.InternalValue());
 
                     // STEP Face_Surface orientation :
                     // if the topological orientation is opposite to the geometric
@@ -585,11 +588,11 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
                     // the wire orientation has to be explicitly reversed
                     if (aFaceBound.Orientation())
                     {
-                        anEdgeLoopWire.Orientation(aSameSense ? TopAbs_FORWARD : TopAbs_REVERSED);
+                        anEdgeLoopWire.Orientation(aSameSense ? Forward : Reversed);
                     }
                     else
                     {
-                        anEdgeLoopWire.Orientation(aSameSense ? TopAbs_REVERSED : TopAbs_FORWARD);
+                        anEdgeLoopWire.Orientation(aSameSense ? Reversed : Forward);
                     }
 
                     // -----------------------------
@@ -621,7 +624,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
             }
         }
 
-        aResultFace.Orientation(theFaceSurface.SameSense() ? TopAbs_FORWARD : TopAbs_REVERSED);
+        aResultFace.Orientation(theFaceSurface.SameSense() ? Forward : Reversed);
         theTopoDSTool.Bind(theFaceSurface, aResultFace);
 
         // Register face in NM tool (ssv; 14.11.2010)
@@ -652,8 +655,8 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         }
 
         Transfer_TransientProcess aTP = theTool.TransientProcess();
-        var aB = new BRep_Builder();
-        TopoDS_Face aF = new TopoDS_Face();
+        var aB = new BrepBuilder();
+        Face aF = new Face();
 
         if (theTF.HasGeometricLink())
         {
@@ -664,14 +667,14 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
                 theHasGeom = true;
             }
 
-            if (!aF.IsNull() && BRep_Tool.Surface(aF) is not null && theReadTessellatedWhenNoBRepOnly)
+            if (!aF.IsNull && Tool.Surface(aF) is not null && theReadTessellatedWhenNoBRepOnly)
             {
                 // Face has BRep but OnNoBRep param is specified
                 return;
             }
         }
 
-        if (aF.IsNull())
+        if (aF.IsNull)
         {
             aB.MakeFace(ref aF);
             theHasGeom = false;
@@ -726,8 +729,8 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         }
 
         Transfer_TransientProcess aTP = theTool.TransientProcess();
-        var aB = new BRep_Builder();
-        TopoDS_Face aF = new TopoDS_Face();
+        var aB = new BrepBuilder();
+        Face aF = new Face();
         aB.MakeFace(ref aF);
 
         Triangulation aMesh;
@@ -772,15 +775,15 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
 
     /// <summary>The face, frozen.</summary>
     /// <exception cref="NotDoneException">The translation wasn't done.</exception>
-    public TopoDS_Shape Value()
+    public Shape Value()
     {
-        TopoDS_Shape aShape = InternalValue();
+        Shape aShape = InternalValue();
         aShape.TShape()?.FreezeGraph();
         return aShape;
     }
 
     /// <summary>As <see cref="Value"/>, without freezing: the reader's working shape.</summary>
-    internal TopoDS_Shape InternalValue()
+    internal Shape InternalValue()
     {
         StdFail_NotDone_Raise_if(!done, "StepToTopoDS_TranslateFace::Value() - no result");
         return myResult;

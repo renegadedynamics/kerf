@@ -1,6 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -44,19 +49,19 @@ internal static class SWDRAWShapeAnalysisCommands
             return 1;
         }
         string arg1 = argv[1];
-        TopoDS_Shape Shape = theDI.GetShape(arg1);
-        if (Shape.IsNull())
+        Shape Shape = theDI.GetShape(arg1);
+        if (Shape.IsNull)
         {
             di.Append("Shape unknown : ").Append(arg1).Append("\n");
             return 1 /* Error */;
         }
-        if (Shape.ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE)
+        if (Shape.ShapeType() != ShapeType.Face)
         {
             di.Append("Not a face\n");
             return 1 /* Error */;
         }
-        TopoDS_Face F = TopoDS.Face(Shape);
-        Geom_Surface thesurf = BRep_Tool.Surface(F)!; // pas locface
+        Face F = ShapeCasts.Face(Shape);
+        Surface thesurf = Tool.Surface(F)!; // pas locface
         var aClassifier = new BRepTopAdaptor_FClass2d(F, global::Kerf.Engine.Foundation.Precision.Confusion());
         //  On y va
         double X, Y, Z, U, V;
@@ -95,8 +100,8 @@ internal static class SWDRAWShapeAnalysisCommands
             for (sol = 1; sol <= nPSurf; sol++)
             {
                 proj.Parameters(sol, out U, out V);
-                TopAbs_State aStatus = aClassifier.Perform(new Point2D(U, V));
-                if (aStatus == TopAbs_State.TopAbs_OUT)
+                Containment aStatus = aClassifier.Perform(new Point2D(U, V));
+                if (aStatus == Containment.Out)
                 {
                     continue;
                 }
@@ -130,8 +135,8 @@ internal static class SWDRAWShapeAnalysisCommands
         else // Check 2D point
         {
             di.Append(" Point UV  U = ").Append(U).Append("  V = ").Append(V).Append("\n");
-            TopAbs_State aStatus = aClassifier.Perform(new Point2D(U, V));
-            if (aStatus == TopAbs_State.TopAbs_OUT)
+            Containment aStatus = aClassifier.Perform(new Point2D(U, V));
+            if (aStatus == Containment.Out)
             {
                 di.Append("does not belong to the face").Append("\n");
             }
@@ -155,16 +160,16 @@ internal static class SWDRAWShapeAnalysisCommands
         }
         string arg1 = argv[1];
         int i0 = 0;
-        TopoDS_Shape Shape = theDI.GetShape(arg1);
+        Shape Shape = theDI.GetShape(arg1);
 
-        Geom_Curve? C;
+        Curve3D? C;
         double cf, cl;
-        if (!Shape.IsNull())
+        if (!Shape.IsNull)
         {
-            if (Shape.ShapeType() == TopAbs_ShapeEnum.TopAbs_EDGE)
+            if (Shape.ShapeType() == ShapeType.Edge)
             {
-                TopoDS_Edge E = TopoDS.Edge(Shape);
-                C = BRep_Tool.Curve(E, out cf, out cl);
+                Edge E = ShapeCasts.Edge(Shape);
+                C = Tool.Curve(E, out cf, out cl);
                 di.Append("Edge ").Append(arg1).Append(" Params from ").Append(cf).Append(" to ").Append(cl).Append("\n");
             }
             else
@@ -217,14 +222,14 @@ internal static class SWDRAWShapeAnalysisCommands
             return 1;
         }
 
-        TopoDS_Edge aEdge = TopoDS.Edge(theDI.GetShape(argv[1]));
-        if (aEdge.IsNull())
+        Edge aEdge = ShapeCasts.Edge(theDI.GetShape(argv[1]));
+        if (aEdge.IsNull)
         {
             di.Append("SHAPE ").Append(argv[1]).Append(" is not an EDGE\n");
             return 1 /* Error */;
         }
-        TopoDS_Face aFace = TopoDS.Face(theDI.GetShape(argv[2]));
-        if (aFace.IsNull())
+        Face aFace = ShapeCasts.Face(theDI.GetShape(argv[2]));
+        if (aFace.IsNull)
         {
             di.Append("SHAPE ").Append(argv[2]).Append(" is not a FACE\n");
             return 1 /* Error */;
@@ -246,7 +251,7 @@ internal static class SWDRAWShapeAnalysisCommands
             IsStartPoint = true;
         }
 
-        var aCOnS = new Adaptor3d_CurveOnSurface(new BRepAdaptor_Curve2d(aEdge, aFace), new BRepAdaptor_Surface(aFace, false));
+        var aCOnS = new CurveOnSurface(new EdgeCurve2DAdaptor(aEdge, aFace), new FaceSurfaceAdaptor(aFace, false));
 
         Point3D aPnt;
         double aParam;
@@ -286,8 +291,8 @@ internal static class SWDRAWShapeAnalysisCommands
         {
             arg3 = argv[3];
         }
-        TopoDS_Shape Shape = theDI.GetShape(arg1);
-        if (Shape.IsNull())
+        Shape Shape = theDI.GetShape(arg1);
+        if (Shape.IsNull)
         {
             di.Append("Shape unknown : ").Append(arg1).Append("\n");
             return 1 /* Error */;
@@ -348,7 +353,7 @@ internal static class SWDRAWShapeAnalysisCommands
             return 0;
         }
 
-        void Save(bool theMode, NCollection_HSequence<TopoDS_Shape> theSec, string theKey)
+        void Save(bool theMode, NCollection_HSequence<Shape> theSec, string theKey)
         {
             if (!theMode)
             {
@@ -385,8 +390,8 @@ internal static class SWDRAWShapeAnalysisCommands
             return 0;
         }
 
-        TopoDS_Shape shape = theDI.GetShape(argv[1]);
-        if (shape.IsNull())
+        Shape shape = theDI.GetShape(argv[1]);
+        if (shape.IsNull)
         {
             di.Append("Shape name \"").Append(argv[1]).Append("\" is invalid\n");
             return 1;
@@ -417,13 +422,13 @@ internal static class SWDRAWShapeAnalysisCommands
         double max = 0, min = 0, ave = 0.0;
         double relmax = 0, relmin = 0, relave = 0.0;
         var sae = new ShapeAnalysis_Edge();
-        TopoDS_Edge edmax = new(), edmaxrel = new();
-        for (var exp = new TopExp_Explorer(shape, TopAbs_ShapeEnum.TopAbs_EDGE); exp.More(); exp.Next())
+        Edge edmax = new(), edmaxrel = new();
+        for (var exp = new Explorer(shape, ShapeType.Edge); exp.More(); exp.Next())
         {
             double tol = 0;
-            TopoDS_Edge edge = TopoDS.Edge(exp.Current());
+            Edge edge = ShapeCasts.Edge(exp.Current());
             sae.CheckSameParameter(edge, ref tol, nbpnts);
-            double t = BRep_Tool.Tolerance(edge);
+            double t = Tool.Tolerance(edge);
             double rel = tol / (t > global::Kerf.Engine.Foundation.Precision.Confusion() ? t : global::Kerf.Engine.Foundation.Precision.Confusion());
             ave += tol;
             relave += rel;
@@ -484,12 +489,12 @@ internal static class SWDRAWShapeAnalysisCommands
                 di.Append("; edge with max relation saved to ").Append(name).Append("\n");
             }
             int num1 = 0;
-            for (var fac = new TopExp_Explorer(shape, TopAbs_ShapeEnum.TopAbs_FACE); fac.More(); fac.Next())
+            for (var fac = new Explorer(shape, ShapeType.Face); fac.More(); fac.Next())
             {
-                TopoDS_Face face = TopoDS.Face(fac.Current());
-                for (var ed = new TopExp_Explorer(face, TopAbs_ShapeEnum.TopAbs_EDGE); ed.More(); ed.Next())
+                Face face = ShapeCasts.Face(fac.Current());
+                for (var ed = new Explorer(face, ShapeType.Edge); ed.More(); ed.Next())
                 {
-                    TopoDS_Edge edge = TopoDS.Edge(ed.Current());
+                    Edge edge = ShapeCasts.Edge(ed.Current());
                     if (edge.IsSame(edmax) || edge.IsSame(edmaxrel))
                     {
                         if (num1 == 0)
@@ -526,8 +531,8 @@ internal static class SWDRAWShapeAnalysisCommands
         {
             return 1;
         }
-        TopoDS_Shape shape = theDI.GetShape(a[1]);
-        if (shape.IsNull())
+        Shape shape = theDI.GetShape(a[1]);
+        if (shape.IsNull)
         {
             return 1;
         }
@@ -552,7 +557,7 @@ internal static class SWDRAWShapeAnalysisCommands
             F = new ShapeAnalysis_FreeBounds(shape, toler, splitclosed, splitopen);
         }
 
-        TopoDS_Shape wires = F.GetClosedWires();
+        Shape wires = F.GetClosedWires();
         string name = a[1] + "_c";
         theDI.SetShape(name, wires);
         di.Append(name).Append(" - closed wires\n");
@@ -588,8 +593,8 @@ internal static class SWDRAWShapeAnalysisCommands
             return 1;
         }
 
-        TopoDS_Shape source = theDI.GetShape(a[1]);
-        if (source.IsNull())
+        Shape source = theDI.GetShape(a[1]);
+        if (source.IsNull)
         {
             di.Append("Error : unknown shape ").Append(a[1]).Append("\n");
             return 1;
@@ -619,12 +624,12 @@ internal static class SWDRAWShapeAnalysisCommands
             analyzer.Init(source, splitclosed, splitopen);
         }
         analyzer.Perform();
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
 
         int nb = analyzer.NbClosedFreeBounds();
         di.Append("\n");
         di.Append(" \tArea mm2\tLength mm\tRatio L/W\tWidth mm\tNb notch\n");
-        var closed = new TopoDS_Compound();
+        var closed = new Compound();
         B.MakeCompound(ref closed);
         if (nb != 0)
         {
@@ -638,7 +643,7 @@ internal static class SWDRAWShapeAnalysisCommands
         }
 
         nb = analyzer.NbOpenFreeBounds();
-        var open = new TopoDS_Compound();
+        var open = new Compound();
         B.MakeCompound(ref open);
         if (nb != 0)
         {
@@ -667,8 +672,8 @@ internal static class SWDRAWShapeAnalysisCommands
         {
             return 1;
         }
-        TopoDS_Shape shape = theDI.GetShape(a[1]);
-        if (shape.IsNull())
+        Shape shape = theDI.GetShape(a[1]);
+        if (shape.IsNull)
         {
             return 1;
         }
@@ -693,7 +698,7 @@ internal static class SWDRAWShapeAnalysisCommands
             F = new ShapeFix_FreeBounds(shape, sewtoler, closetoler, splitclosed, splitopen);
         }
 
-        TopoDS_Shape wires = F.GetClosedWires();
+        Shape wires = F.GetClosedWires();
         string name = a[1] + "_c";
         theDI.SetShape(name, wires);
         di.Append(name).Append(" - closed wires\n");
@@ -711,18 +716,18 @@ internal static class SWDRAWShapeAnalysisCommands
         {
             return 1;
         }
-        TopoDS_Shape shape = theDI.GetShape(a[1]);
-        if (shape.IsNull())
+        Shape shape = theDI.GetShape(a[1]);
+        if (shape.IsNull)
         {
             di.Append("Shape is not defined\n");
             return 1;
         }
-        if (shape.ShapeType() != TopAbs_ShapeEnum.TopAbs_WIRE)
+        if (shape.ShapeType() != ShapeType.Wire)
         {
             di.Append("invalid type of argument\n");
             return 1;
         }
-        double anArea = ShapeAnalysis.ContourArea(TopoDS.Wire(shape));
+        double anArea = ShapeAnalysis.ContourArea(ShapeCasts.Wire(shape));
         di.Append("Area = ").Append(anArea).Append("\n");
         return 0;
     }
@@ -737,19 +742,19 @@ internal static class SWDRAWShapeAnalysisCommands
         }
 
         // Get wire.
-        TopoDS_Shape wire = theDI.GetShape(argv[1]);
-        if (wire.IsNull() || wire.ShapeType() != TopAbs_ShapeEnum.TopAbs_WIRE)
+        Shape wire = theDI.GetShape(argv[1]);
+        if (wire.IsNull || wire.ShapeType() != ShapeType.Wire)
         {
             di.Append("A null shape or not a wire is used.\n");
             return 2;
         }
 
         // Get face if the user provided us with a face.
-        TopoDS_Shape face = new();
+        Shape face = new();
         if (argc > 2)
         {
             face = theDI.GetShape(argv[2]);
-            if (face.IsNull() || face.ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE)
+            if (face.IsNull || face.ShapeType() != ShapeType.Face)
             {
                 di.Append("A null shape or not a face is used.\n");
                 return 3;
@@ -757,9 +762,9 @@ internal static class SWDRAWShapeAnalysisCommands
         }
 
         // If the face is null, make a plane inside the wire.
-        if (face.IsNull())
+        if (face.IsNull)
         {
-            var mkFace = new BRepBuilderAPI_MakeFace(TopoDS.Wire(wire), true);
+            var mkFace = new BRepBuilderAPI_MakeFace(ShapeCasts.Wire(wire), true);
             if (mkFace.IsDone())
             {
                 face = mkFace.Face();
@@ -771,7 +776,7 @@ internal static class SWDRAWShapeAnalysisCommands
             }
         }
 
-        var analyser = new ShapeAnalysis_Wire(TopoDS.Wire(wire), TopoDS.Face(face), global::Kerf.Engine.Foundation.Precision.Confusion());
+        var analyser = new ShapeAnalysis_Wire(ShapeCasts.Wire(wire), ShapeCasts.Face(face), global::Kerf.Engine.Foundation.Precision.Confusion());
         bool result = analyser.CheckSelfIntersection();
 
         if (result)
@@ -795,19 +800,19 @@ internal static class SWDRAWShapeAnalysisCommands
         }
 
         // Get edge.
-        TopoDS_Shape edge = theDI.GetShape(argv[1]);
-        if (edge.IsNull() || edge.ShapeType() != TopAbs_ShapeEnum.TopAbs_EDGE)
+        Shape edge = theDI.GetShape(argv[1]);
+        if (edge.IsNull || edge.ShapeType() != ShapeType.Edge)
         {
             di.Append("A null shape or not an edge is used.\n");
             return 2;
         }
 
         // Get face.
-        TopoDS_Shape face = new();
+        Shape face = new();
         if (argc == 3)
         {
             face = theDI.GetShape(argv[2]);
-            if (face.IsNull() || face.ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE)
+            if (face.IsNull || face.ShapeType() != ShapeType.Face)
             {
                 di.Append("A null shape or not a face is used.\n");
                 return 3;
@@ -819,10 +824,10 @@ internal static class SWDRAWShapeAnalysisCommands
         bool isOk = true;
 
         // Curve 3D.
-        if (analyser.HasCurve3d(TopoDS.Edge(edge)))
+        if (analyser.HasCurve3d(ShapeCasts.Edge(edge)))
         {
             // Check vertices.
-            if (analyser.CheckVerticesWithCurve3d(TopoDS.Edge(edge)))
+            if (analyser.CheckVerticesWithCurve3d(ShapeCasts.Edge(edge)))
             {
                 isOk = false;
                 di.Append("Vertices of the edge don't coincide with start/end points of 3d-curve (using tolerance of the vertices).\n");
@@ -834,13 +839,13 @@ internal static class SWDRAWShapeAnalysisCommands
             di.Append("Edge doesn't have a 3d-curve\n");
         }
 
-        if (!face.IsNull())
+        if (!face.IsNull)
         {
             // Curve 2D.
-            if (analyser.HasPCurve(TopoDS.Edge(edge), TopoDS.Face(face)))
+            if (analyser.HasPCurve(ShapeCasts.Edge(edge), ShapeCasts.Face(face)))
             {
                 // Check vertices.
-                if (analyser.CheckVerticesWithPCurve(TopoDS.Edge(edge), TopoDS.Face(face)))
+                if (analyser.CheckVerticesWithPCurve(ShapeCasts.Edge(edge), ShapeCasts.Face(face)))
                 {
                     isOk = false;
                     di.Append("Vertices of the edge don't coincide with start/end points of 2d-curve (using tolerance of the vertices).\n");
@@ -874,14 +879,14 @@ internal static class SWDRAWShapeAnalysisCommands
             di.Append("is edge or wire \n");
             return 1;
         }
-        TopoDS_Shape sh = theDI.GetShape(a[2]);
-        if (sh.IsNull())
+        Shape sh = theDI.GetShape(a[2]);
+        if (sh.IsNull)
         {
             return 1;
         }
-        TopAbs_ShapeEnum aShType = sh.ShapeType();
-        if (aShType != TopAbs_ShapeEnum.TopAbs_SHELL && aShType != TopAbs_ShapeEnum.TopAbs_FACE
-            && aShType != TopAbs_ShapeEnum.TopAbs_EDGE && aShType != TopAbs_ShapeEnum.TopAbs_WIRE)
+        ShapeType aShType = sh.ShapeType();
+        if (aShType != ShapeType.Shell && aShType != ShapeType.Face
+            && aShType != ShapeType.Edge && aShType != ShapeType.Wire)
         {
             di.Append("Wrong shape type, shape can be shell or face or edge or wire\n");
             return 1;
@@ -917,10 +922,10 @@ internal static class SWDRAWShapeAnalysisCommands
         }
 
         // get sample target for edge and wire
-        var aSampleSurf = new GeomAdaptor_Surface();
-        if (n > 5 && (sh.ShapeType() == TopAbs_ShapeEnum.TopAbs_EDGE || sh.ShapeType() == TopAbs_ShapeEnum.TopAbs_WIRE))
+        var aSampleSurf = new SurfaceAdaptor();
+        if (n > 5 && (sh.ShapeType() == ShapeType.Edge || sh.ShapeType() == ShapeType.Wire))
         {
-            Geom_Surface? aGSurf = DrawTrSurf.GetSurface(theDI, a[5]);
+            Surface? aGSurf = DrawTrSurf.GetSurface(theDI, a[5]);
             if (aGSurf is null)
             {
                 di.Append("Sample surface is null").Append("\n");
@@ -936,7 +941,7 @@ internal static class SWDRAWShapeAnalysisCommands
         }
 
         var aCanonRec = new ShapeAnalysis_CanonicalRecognition(sh);
-        Geom_Surface? aRes = null;
+        Surface? aRes = null;
         switch (aTargets[isurf])
         {
             case SurfaceKind.Plane:
@@ -948,7 +953,7 @@ internal static class SWDRAWShapeAnalysisCommands
                 }
                 if (aCanonRec.IsPlane(tol, ref aPln))
                 {
-                    aRes = new Geom_Plane(aPln);
+                    aRes = new PlaneSurface(aPln);
                 }
                 break;
             }
@@ -961,7 +966,7 @@ internal static class SWDRAWShapeAnalysisCommands
                 }
                 if (aCanonRec.IsCylinder(tol, ref aCyl))
                 {
-                    aRes = new Geom_CylindricalSurface(aCyl);
+                    aRes = new CylindricalSurface(aCyl);
                 }
                 break;
             }
@@ -974,7 +979,7 @@ internal static class SWDRAWShapeAnalysisCommands
                 }
                 if (aCanonRec.IsCone(tol, ref aCon))
                 {
-                    aRes = new Geom_ConicalSurface(aCon);
+                    aRes = new ConicalSurface(aCon);
                 }
                 break;
             }
@@ -987,7 +992,7 @@ internal static class SWDRAWShapeAnalysisCommands
                 }
                 if (aCanonRec.IsSphere(tol, ref aSph))
                 {
-                    aRes = new Geom_SphericalSurface(aSph);
+                    aRes = new SphericalSurface(aSph);
                 }
                 break;
             }
@@ -1015,13 +1020,13 @@ internal static class SWDRAWShapeAnalysisCommands
             di.Append("target is required type of curve and can be: lin, cir, ell  \n");
             return 1;
         }
-        TopoDS_Shape sh = theDI.GetShape(a[2]);
-        if (sh.IsNull())
+        Shape sh = theDI.GetShape(a[2]);
+        if (sh.IsNull)
         {
             return 1;
         }
-        TopAbs_ShapeEnum aShType = sh.ShapeType();
-        if (aShType != TopAbs_ShapeEnum.TopAbs_WIRE && aShType != TopAbs_ShapeEnum.TopAbs_EDGE)
+        ShapeType aShType = sh.ShapeType();
+        if (aShType != ShapeType.Wire && aShType != ShapeType.Edge)
         {
             di.Append("Wrong shape type, shape can be wire or an edge \n");
             return 1;
@@ -1052,7 +1057,7 @@ internal static class SWDRAWShapeAnalysisCommands
         }
 
         var aCanonRec = new ShapeAnalysis_CanonicalRecognition(sh);
-        Geom_Curve? aRes = null;
+        Curve3D? aRes = null;
         switch (aTargets[icurv])
         {
             case CurveKind.Line:
@@ -1060,7 +1065,7 @@ internal static class SWDRAWShapeAnalysisCommands
                 var aLin = new Line3D();
                 if (aCanonRec.IsLine(tol, ref aLin))
                 {
-                    aRes = new Geom_Line(aLin);
+                    aRes = new LineCurve3D(aLin);
                 }
                 break;
             }
@@ -1069,7 +1074,7 @@ internal static class SWDRAWShapeAnalysisCommands
                 var aCirc = new Circle3D();
                 if (aCanonRec.IsCircle(tol, ref aCirc))
                 {
-                    aRes = new Geom_Circle(aCirc);
+                    aRes = new CircleCurve3D(aCirc);
                 }
                 break;
             }
@@ -1078,7 +1083,7 @@ internal static class SWDRAWShapeAnalysisCommands
                 var anElips = new Ellipse3D();
                 if (aCanonRec.IsEllipse(tol, ref anElips))
                 {
-                    aRes = new Geom_Ellipse(anElips);
+                    aRes = new EllipseCurve3D(anElips);
                 }
                 break;
             }

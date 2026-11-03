@@ -1,13 +1,17 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using OcctNet.ModelingData.Tests;
 using Xunit.Abstractions;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -71,7 +75,7 @@ public class ShapeFix_WireHealGroupTests(ITestOutputHelper output)
         var aFailures = new List<string>();
         foreach (string aFile in aFiles)
         {
-            if (!BRepTools.Read(out TopoDS_Shape aShape, aFile) || aShape.IsNull())
+            if (!BrepTools.Read(out Shape aShape, aFile) || aShape.IsNull)
             {
                 continue;
             }
@@ -79,15 +83,15 @@ public class ShapeFix_WireHealGroupTests(ITestOutputHelper output)
             var aSnap = ShapeSnapshot.Of(aShape);
             aShapes++;
 
-            var aFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(aShape, TopAbs_FACE, aFaces);
+            var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            Exploration.MapShapes(aShape, ShapeType.Face, aFaces);
             int aStep = Math.Max(1, aFaces.Extent() / 40);
             for (int f = 1; f <= aFaces.Extent(); f += aStep)
             {
-                TopoDS_Face aFace = TopoDS.Face(aFaces[f]);
-                for (var anIt = new TopoDS_Iterator(aFace); anIt.More(); anIt.Next())
+                Face aFace = ShapeCasts.Face(aFaces[f]);
+                for (var anIt = new Iterator(aFace); anIt.More(); anIt.Next())
                 {
-                    if (anIt.Value().ShapeType() != TopAbs_WIRE)
+                    if (anIt.Value().ShapeType() != ShapeType.Wire)
                     {
                         continue;
                     }
@@ -98,14 +102,14 @@ public class ShapeFix_WireHealGroupTests(ITestOutputHelper output)
                         try
                         {
                             sfw.SetContext(new ShapeBuild_ReShape());
-                            sfw.Init(TopoDS.Wire(anIt.Value()), aFace, isTopo ? 1e-3 : BRep_Tool.Tolerance(aFace));
+                            sfw.Init(ShapeCasts.Wire(anIt.Value()), aFace, isTopo ? 1e-3 : Tool.Tolerance(aFace));
                             sfw.ModifyTopologyMode() = isTopo;
                             if (sfw.Perform())
                             {
                                 aFixed++;
                             }
-                            TopoDS_Wire aRes = sfw.Wire();
-                            Assert.True(aRes.IsNull() || aRes.TShape()!.IsFrozen);
+                            Wire aRes = sfw.Wire();
+                            Assert.True(aRes.IsNull || aRes.TShape()!.IsFrozen);
                         }
                         catch (FailureException)
                         {

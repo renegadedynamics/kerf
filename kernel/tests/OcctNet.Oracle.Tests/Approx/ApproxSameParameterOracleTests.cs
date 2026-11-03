@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 using static Kerf.Engine.Foundation.Standard;
@@ -21,18 +24,18 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
 {
     private sealed class EdgeCase
     {
-        public required Geom_Surface PortS;
+        public required Surface PortS;
         public required N.Geom_Surface NativeS;
-        public required Geom_Curve PortC3d;
+        public required Curve3D PortC3d;
         public required N.Geom_Curve NativeC3d;
-        public required Geom2d_Curve PortPC;
+        public required Curve2D PortPC;
         public required N.Geom2d_Curve NativePC;
         public double First, Last;
         public required string Kind;
     }
 
     // BRepLib.cxx's ComputeTol, as OCCT writes it.
-    private static double ComputeTol(Adaptor3d_Curve c3d, Adaptor2d_Curve2d c2d, Adaptor3d_Surface surf, int nbp)
+    private static double ComputeTol(CurveAdaptorBase c3d, Curve2DAdaptorBase c2d, SurfaceAdaptorBase surf, int nbp)
     {
         NCollection_Array1<double> dist = new(1, nbp + 10);
         dist.Init(-1.0);
@@ -40,7 +43,7 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
         double uf = surf.FirstUParameter(), ul = surf.LastUParameter(), vf = surf.FirstVParameter(),
                vl = surf.LastVParameter();
         double du = 0.01 * (ul - uf), dv = 0.01 * (vl - vf);
-        bool isUPeriodic = surf.IsUPeriodic(), isVPeriodic = surf.IsVPeriodic();
+        bool isUPeriodic = surf.IsUPeriodic, isVPeriodic = surf.IsVPeriodic;
         double DSdu = 1.0 / surf.UResolution(1.0), DSdv = 1.0 / surf.VResolution(1.0);
         double d2 = 0.0;
         double first = c3d.FirstParameter();
@@ -142,7 +145,7 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
     // A 2D B-spline (degree 2 or 3, one span) from theP1 to theP2 on [theT1, theT2] whose speed varies: the inner
     // poles are on the segment at uneven fractions (all at the regular ones when theWarp is false), then moved by
     // theNoise across it.
-    private static (Geom2d_BSplineCurve, N.Geom2d_BSplineCurve) WarpedSegment(Oracle theO, Point2D theP1, Point2D theP2,
+    private static (BSplineCurve2D, N.Geom2d_BSplineCurve) WarpedSegment(Oracle theO, Point2D theP1, Point2D theP2,
         double theT1, double theT2, bool theWarp, double theNoise)
     {
         int aDeg = theO.Int(2, 3);
@@ -173,43 +176,43 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
         }
         NCollection_Array1<double> aKnots = NCollection_Array1<double>.From([theT1, theT2]);
         NCollection_Array1<int> aMults = NCollection_Array1<int>.From([aDeg + 1, aDeg + 1]);
-        return (new Geom2d_BSplineCurve(aPoles, aKnots, aMults, aDeg),
+        return (new BSplineCurve2D(aPoles, aKnots, aMults, aDeg),
                 Oracle.ToNativeCurve(aPoles, null, aKnots, aMults, aDeg, false));
     }
 
     // The native copy of a port B-spline (its own arrays).
-    private static N.Geom2d_BSplineCurve ToNative(Geom2d_BSplineCurve theC)
+    private static N.Geom2d_BSplineCurve ToNative(BSplineCurve2D theC)
     {
-        NCollection_Array1<Point2D> aPoles = new(1, theC.NbPoles());
+        NCollection_Array1<Point2D> aPoles = new(1, theC.PoleCount);
         theC.Poles(aPoles);
-        NCollection_Array1<double> aKnots = new(1, theC.NbKnots());
+        NCollection_Array1<double> aKnots = new(1, theC.KnotCount);
         theC.Knots(aKnots);
-        NCollection_Array1<int> aMults = new(1, theC.NbKnots());
+        NCollection_Array1<int> aMults = new(1, theC.KnotCount);
         theC.Multiplicities(aMults);
         NCollection_Array1<double>? aWeights = null;
-        if (theC.IsRational())
+        if (theC.IsRational)
         {
-            aWeights = new NCollection_Array1<double>(1, theC.NbPoles());
+            aWeights = new NCollection_Array1<double>(1, theC.PoleCount);
             theC.Weights(aWeights);
         }
-        return Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, theC.Degree(), theC.IsPeriodic());
+        return Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, theC.Degree(), theC.IsPeriodic);
     }
 
-    private static N.Geom_BSplineCurve ToNative(Geom_BSplineCurve theC)
+    private static N.Geom_BSplineCurve ToNative(BSplineCurve3D theC)
     {
-        NCollection_Array1<Point3D> aPoles = new(1, theC.NbPoles());
+        NCollection_Array1<Point3D> aPoles = new(1, theC.PoleCount);
         theC.Poles(aPoles);
-        NCollection_Array1<double> aKnots = new(1, theC.NbKnots());
+        NCollection_Array1<double> aKnots = new(1, theC.KnotCount);
         theC.Knots(aKnots);
-        NCollection_Array1<int> aMults = new(1, theC.NbKnots());
+        NCollection_Array1<int> aMults = new(1, theC.KnotCount);
         theC.Multiplicities(aMults);
         NCollection_Array1<double>? aWeights = null;
-        if (theC.IsRational())
+        if (theC.IsRational)
         {
-            aWeights = new NCollection_Array1<double>(1, theC.NbPoles());
+            aWeights = new NCollection_Array1<double>(1, theC.PoleCount);
             theC.Weights(aWeights);
         }
-        return Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, theC.Degree(), theC.IsPeriodic());
+        return Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, theC.Degree(), theC.IsPeriodic);
     }
 
     private static double Noise(Oracle theO, bool theSame) =>
@@ -218,7 +221,7 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
     private static EdgeCase PlaneCase(Oracle theO, bool theSame)
     {
         double ox = theO.Real(-5, 5), oy = theO.Real(-5, 5), oz = theO.Real(-5, 5);
-        Geom_Plane aPS = new(new CoordinateSystem(new Point3D(ox, oy, oz), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
+        PlaneSurface aPS = new(new CoordinateSystem(new Point3D(ox, oy, oz), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
         using var aNO = new N.gp_Pnt(ox, oy, oz);
         using var aNZ = new N.gp_Dir(0, 0, 1);
         using var aNX = new N.gp_Dir(1, 0, 0);
@@ -232,12 +235,12 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
                 // A circle by angle; the pcurve is the rational B-spline of the same circle (another speed)
                 double cu = theO.Real(-3, 3), cv = theO.Real(-3, 3), r = theO.Real(0.5, 4);
                 double a = theO.Real(0, 3), b = a + theO.Real(0.3, 3);
-                Geom_Circle aPC3 = new(new Frame3D(new Point3D(cu + ox, cv + oy, oz), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
+                CircleCurve3D aPC3 = new(new Frame3D(new Point3D(cu + ox, cv + oy, oz), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
                 using var aNC = new N.gp_Pnt(cu + ox, cv + oy, oz);
                 using var aNAx2 = new N.gp_Ax2(aNC, aNZ, aNX);
                 N.Geom_Circle aNC3 = new(aNAx2, r);
-                Geom2d_Circle aCircle2d = new(new Axis2D(new Point2D(cu, cv), new Direction2D(1, 0)), r);
-                Geom2d_BSplineCurve aPC = Geom2dConvert.CurveToBSplineCurve(new Geom2d_TrimmedCurve(aCircle2d, a, b),
+                CircleCurve2D aCircle2d = new(new Axis2D(new Point2D(cu, cv), new Direction2D(1, 0)), r);
+                BSplineCurve2D aPC = Geom2dConvert2D.CurveToBSplineCurve(new TrimmedCurve2D(aCircle2d, a, b),
                                                                             theO.Bool() ? RationalC1 : QuasiAngular);
                 if (!theSame)
                 {
@@ -261,7 +264,7 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
                 Point2D aP1 = new(theO.Real(-5, 5), theO.Real(-5, 5));
                 double ang = theO.Angle(), len = theO.Real(1, 8);
                 double dx = Math.Cos(ang), dy = Math.Sin(ang);
-                Geom_Line aPC3 = new(new Point3D(aP1.X() + ox, aP1.Y() + oy, oz), new Direction3D(dx, dy, 0));
+                LineCurve3D aPC3 = new(new Point3D(aP1.X() + ox, aP1.Y() + oy, oz), new Direction3D(dx, dy, 0));
                 using var aNP = new N.gp_Pnt(aP1.X() + ox, aP1.Y() + oy, oz);
                 using var aND = new N.gp_Dir(dx, dy, 0);
                 N.Geom_Line aNC3 = new(aNP, aND);
@@ -269,7 +272,7 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
                 Direction2D aD2 = new(dx, dy);
                 Point2D aS = new(aP1.X() + a * aD2.X(), aP1.Y() + a * aD2.Y());
                 Point2D aE = new(aP1.X() + b * aD2.X(), aP1.Y() + b * aD2.Y());
-                (Geom2d_BSplineCurve aPC, N.Geom2d_BSplineCurve aNPC) =
+                (BSplineCurve2D aPC, N.Geom2d_BSplineCurve aNPC) =
                     WarpedSegment(theO, aS, aE, a, b, !theSame, Noise(theO, theSame));
                 return new EdgeCase { PortS = aPS, NativeS = aNS, PortC3d = aPC3, NativeC3d = aNC3, PortPC = aPC,
                     NativePC = aNPC, First = a, Last = b, Kind = "plane line" };
@@ -302,8 +305,8 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
                     a3dPoles[i] = new Point3D(x + ox, y + oy, oz);
                     aPCPoles[i] = new Point2D(x + aNoise * theO.Real(-1, 1), y + aNoise * theO.Real(-1, 1));
                 }
-                Geom_BSplineCurve aPC3 = new(a3dPoles, aKnots, aMults, aDeg);
-                Geom2d_BSplineCurve aPC = new(aPCPoles, aKnots, aMults, aDeg);
+                BSplineCurve3D aPC3 = new(a3dPoles, aKnots, aMults, aDeg);
+                BSplineCurve2D aPC = new(aPCPoles, aKnots, aMults, aDeg);
                 return new EdgeCase { PortS = aPS, NativeS = aNS, PortC3d = aPC3, NativeC3d = ToNative(aPC3), PortPC = aPC,
                     NativePC = ToNative(aPC), First = aKnots[1], Last = aKnots[aNbKnots], Kind = "plane bspline" };
             }
@@ -313,7 +316,7 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
     private static EdgeCase CylinderCase(Oracle theO, bool theSame)
     {
         double r = theO.Real(0.5, 5);
-        Geom_CylindricalSurface aPS = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
+        CylindricalSurface aPS = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
         using var aNO = new N.gp_Pnt(0, 0, 0);
         using var aNZ = new N.gp_Dir(0, 0, 1);
         using var aNX = new N.gp_Dir(1, 0, 0);
@@ -325,11 +328,11 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
             // A horizontal circle by angle; the pcurve is V = h with U running at a varying speed
             double h = theO.Real(-5, 5);
             double a = theO.Real(0, 3), b = a + theO.Real(0.3, 3);
-            Geom_Circle aPC3 = new(new Frame3D(new Point3D(0, 0, h), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
+            CircleCurve3D aPC3 = new(new Frame3D(new Point3D(0, 0, h), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
             using var aNC = new N.gp_Pnt(0, 0, h);
             using var aNAx2 = new N.gp_Ax2(aNC, aNZ, aNX);
             N.Geom_Circle aNC3 = new(aNAx2, r);
-            (Geom2d_BSplineCurve aPC, N.Geom2d_BSplineCurve aNPC) =
+            (BSplineCurve2D aPC, N.Geom2d_BSplineCurve aNPC) =
                 WarpedSegment(theO, new Point2D(a, h), new Point2D(b, h), a, b, !theSame, Noise(theO, theSame));
             return new EdgeCase { PortS = aPS, NativeS = aNS, PortC3d = aPC3, NativeC3d = aNC3, PortPC = aPC,
                 NativePC = aNPC, First = a, Last = b, Kind = "cylinder circle" };
@@ -339,11 +342,11 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
             // A generator by height; the pcurve is U = u0 with V running at a varying speed
             double u0 = theO.Real(0, 6);
             double cx = r * Math.Cos(u0), cy = r * Math.Sin(u0);
-            Geom_Line aPC3 = new(new Point3D(cx, cy, 0), new Direction3D(0, 0, 1));
+            LineCurve3D aPC3 = new(new Point3D(cx, cy, 0), new Direction3D(0, 0, 1));
             using var aNP = new N.gp_Pnt(cx, cy, 0);
             N.Geom_Line aNC3 = new(aNP, aNZ);
             double a = theO.Real(-5, 5), b = a + theO.Real(0.5, 6);
-            (Geom2d_BSplineCurve aPC, N.Geom2d_BSplineCurve aNPC) =
+            (BSplineCurve2D aPC, N.Geom2d_BSplineCurve aNPC) =
                 WarpedSegment(theO, new Point2D(u0, a), new Point2D(u0, b), a, b, !theSame, Noise(theO, theSame));
             return new EdgeCase { PortS = aPS, NativeS = aNS, PortC3d = aPC3, NativeC3d = aNC3, PortPC = aPC,
                 NativePC = aNPC, First = a, Last = b, Kind = "cylinder line" };
@@ -352,26 +355,26 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
 
     private static EdgeCase BSplineSurfaceCase(Oracle theO, bool theSame)
     {
-        (N.Geom_BSplineSurface aNS, Geom_BSplineSurface aPS) =
+        (N.Geom_BSplineSurface aNS, BSplineSurface aPS) =
             AdaptorOracleInputs.RandomBSplineSurface(theO, 1, false, 2);
         aPS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         bool anIsU = theO.Bool();
         double aFix = anIsU ? theO.Real(aU1, aU2) : theO.Real(aV1, aV2);
         double aLo = anIsU ? aV1 : aU1, aHi = anIsU ? aV2 : aU2;
         double a = theO.Real(aLo, aLo + 0.3 * (aHi - aLo)), b = theO.Real(aLo + 0.7 * (aHi - aLo), aHi);
-        Geom_BSplineCurve anIso = (Geom_BSplineCurve)(anIsU ? aPS.UIso(aFix) : aPS.VIso(aFix));
+        BSplineCurve3D anIso = (BSplineCurve3D)(anIsU ? aPS.UIso(aFix) : aPS.VIso(aFix));
         Point2D aS = anIsU ? new Point2D(aFix, a) : new Point2D(a, aFix);
         Point2D aE = anIsU ? new Point2D(aFix, b) : new Point2D(b, aFix);
-        (Geom2d_BSplineCurve aPC, N.Geom2d_BSplineCurve aNPC) =
+        (BSplineCurve2D aPC, N.Geom2d_BSplineCurve aNPC) =
             WarpedSegment(theO, aS, aE, a, b, !theSame, Noise(theO, theSame) * 0.1);
         return new EdgeCase { PortS = aPS, NativeS = aNS, PortC3d = anIso, NativeC3d = ToNative(anIso), PortPC = aPC,
             NativePC = aNPC, First = a, Last = b, Kind = anIsU ? "bspline UIso" : "bspline VIso" };
     }
 
-    private static void SameCurve2d(Oracle theO, N.Geom2d_Curve theN, Geom2d_Curve theP, double theF, double theL,
+    private static void SameCurve2d(Oracle theO, N.Geom2d_Curve theN, Curve2D theP, double theF, double theL,
                                     string theWhat)
     {
-        if (theP is Geom2d_BSplineCurve aPB)
+        if (theP is BSplineCurve2D aPB)
         {
             using N.Geom2d_BSplineCurve? aNB = N.Geom2d_BSplineCurve.DownCast(theN);
             Assert.True(aNB is not null, $"{theWhat}: native pcurve is not a B-spline");
@@ -421,21 +424,21 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
             using N.Geom2d_Curve aNResPC = N.BRep_Tool.CurveOnSurface(aNRes, aNS, aLoc, ref aNF, ref aNL)!;
 
             // Port: BRepLib's path for this edge
-            GeomAdaptor_Curve HC = new(aCase.PortC3d, aCase.First, aCase.Last);
-            Geom2dAdaptor_Curve HC2d = new(aCase.PortPC, aCase.First, aCase.Last);
-            GeomAdaptor_Surface HS = new(aCase.PortS);
+            CurveAdaptor HC = new(aCase.PortC3d, aCase.First, aCase.Last);
+            CurveAdaptor2D HC2d = new(aCase.PortPC, aCase.First, aCase.Last);
+            SurfaceAdaptor HS = new(aCase.PortS);
             double error = ComputeTol(HC, HC2d, HS, 22);
             Assert.True(error <= 1.0e10, $"{aWhat}: BigError");
-            Approx_SameParameter SameP = new(HC, HC2d, HS, aTol);
-            Geom2d_Curve aPortPC = aCase.PortPC;
+            SameParameter SameP = new(HC, HC2d, HS, aTol);
+            Curve2D aPortPC = aCase.PortPC;
             double maxdist = 0.0;
             bool aTolKnown = true;
-            if (SameP.IsSameParameter())
+            if (SameP.IsSameParameter)
             {
                 maxdist = Max(maxdist, SameP.TolReached());
                 aAlready++;
             }
-            else if (SameP.IsDone())
+            else if (SameP.IsDone)
             {
                 double tolreached = SameP.TolReached();
                 if (tolreached <= error)

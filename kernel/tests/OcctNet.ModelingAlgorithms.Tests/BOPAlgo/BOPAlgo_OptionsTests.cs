@@ -2,7 +2,9 @@
 
 // Tests of BOPAlgo_Options, BOPAlgo_Algo and the alerts (no GTests in OCCT).
 
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.BOPAlgo_GlueEnum;
 using static Occt.BOPAlgo_Operation;
@@ -74,7 +76,7 @@ public class BOPAlgo_OptionsTests
     [Fact]
     public void ErrorsAndWarnings()
     {
-        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+        Edge anEdge = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         BOPAlgo_Options anOptions = new();
         anOptions.AddWarning(new BOPAlgo_AlertTooSmallEdge(anEdge));
         Assert.True(anOptions.HasWarnings());
@@ -86,7 +88,7 @@ public class BOPAlgo_OptionsTests
         anOptions.AddError(new BOPAlgo_AlertSelfInterferingShape(anEdge)); // shape alerts don't merge
         Assert.True(anOptions.HasErrors());
         Assert.True(anOptions.HasError(typeof(BOPAlgo_AlertSelfInterferingShape)));
-        Assert.False(anOptions.HasError(typeof(TopoDS_AlertWithShape)));
+        Assert.False(anOptions.HasError(typeof(AlertWithShape)));
         Assert.Equal(2, anOptions.GetReport().GetAlerts(Fail).Extent());
         var anAlert = Assert.IsType<BOPAlgo_AlertSelfInterferingShape>(anOptions.GetReport().GetAlerts(Fail).First());
         Assert.True(anAlert.GetShape().IsSame(anEdge));
@@ -161,7 +163,7 @@ public class BOPAlgo_OptionsTests
         _ = new BOPAlgo_Options();
         Assert.True(global::Kerf.Engine.Foundation.MsgFile.HasMsg("BOPAlgo_LOAD_CHECKER"));
         Assert.Equal("Some of the arguments are self-interfering shapes",
-                     global::Kerf.Engine.Foundation.MsgFile.Msg(new BOPAlgo_AlertSelfInterferingShape(new TopoDS_Shape()).GetMessageKey()));
+                     global::Kerf.Engine.Foundation.MsgFile.Msg(new BOPAlgo_AlertSelfInterferingShape(new Shape()).GetMessageKey()));
         Assert.Equal("Unable to make closed edge on face.", global::Kerf.Engine.Foundation.MsgFile.Msg("BOPAlgo_AlertUnableToMakeClosedEdgeOnFace"));
     }
 

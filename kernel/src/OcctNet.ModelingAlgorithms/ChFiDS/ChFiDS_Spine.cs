@@ -7,12 +7,16 @@
 // Modified by isg, Thu Mar 17 09:21:31 1994
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ChFiDS_ChamfMode;
 using static Occt.ChFiDS_ErrorStatus;
 using static Occt.ChFiDS_State;
 using static Occt.ChFiDS_TypeOfConcavity;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -39,14 +43,14 @@ public class ChFiDS_Spine : Transient
     protected readonly NCollection_List<ChFiDS_ElSpine> offset_elspines = new();
     protected ChFiDS_ChamfMode myMode;
 
-    private readonly BRepAdaptor_Curve myCurve = new();
+    private readonly EdgeCurveAdaptor myCurve = new();
     // OCCT's myOffsetCurve is never used: left out.
     private int indexofcurve;
     private ChFiDS_TypeOfConcavity myTypeOfConcavity;
     private ChFiDS_State firstState;
     private ChFiDS_State lastState;
-    private readonly NCollection_Sequence<TopoDS_Shape> spine = new();
-    private readonly NCollection_Sequence<TopoDS_Shape> offsetspine = new();
+    private readonly NCollection_Sequence<Shape> spine = new();
+    private readonly NCollection_Sequence<Shape> offsetspine = new();
     private NCollection_HArray1<double>? abscissa;
     // OCCT's offset_abscissa is never used: left out.
     private double tolesp;
@@ -98,25 +102,25 @@ public class ChFiDS_Spine : Transient
     }
 
     /// <summary>Appends an edge to the guideline.</summary>
-    internal void SetEdges(in TopoDS_Edge E)
+    internal void SetEdges(in Edge E)
     {
         spine.Append(E);
     }
 
     /// <summary>Appends an edge to the offset guideline.</summary>
-    internal void SetOffsetEdges(in TopoDS_Edge E)
+    internal void SetOffsetEdges(in Edge E)
     {
         offsetspine.Append(E);
     }
 
     /// <summary>Puts the edge first, before all the others.</summary>
-    internal void PutInFirst(in TopoDS_Edge E)
+    internal void PutInFirst(in Edge E)
     {
         spine.InsertBefore(1, E);
     }
 
     /// <summary>Puts the offset edge first, before all the others.</summary>
-    internal void PutInFirstOffset(in TopoDS_Edge E)
+    internal void PutInFirstOffset(in Edge E)
     {
         offsetspine.InsertBefore(1, E);
     }
@@ -126,14 +130,14 @@ public class ChFiDS_Spine : Transient
         return spine.Length();
     }
 
-    public TopoDS_Edge Edges(int I)
+    public Edge Edges(int I)
     {
-        return TopoDS.Edge(spine.Value(I));
+        return ShapeCasts.Edge(spine.Value(I));
     }
 
-    public TopoDS_Edge OffsetEdges(int I)
+    public Edge OffsetEdges(int I)
     {
-        return TopoDS.Edge(offsetspine.Value(I));
+        return ShapeCasts.Edge(offsetspine.Value(I));
     }
 
     /// <summary>Stores whether the chain starts on a section, a free boundary or is closed.</summary>
@@ -159,7 +163,7 @@ public class ChFiDS_Spine : Transient
     }
 
     /// <summary>The elementary spine of the edge <paramref name="E"/>.</summary>
-    public ChFiDS_ElSpine? ElSpine(in TopoDS_Edge E)
+    public ChFiDS_ElSpine? ElSpine(in Edge E)
     {
         return ElSpine(Index(E));
     }
@@ -251,13 +255,13 @@ public class ChFiDS_Spine : Transient
         double a1 = 0.0;
         for (int i = 1; i <= len; i++)
         {
-            myCurve.Initialize(TopoDS.Edge(spine.Value(i)));
-            a1 += GCPnts_AbscissaPoint.Length(myCurve);
+            myCurve.Initialize(ShapeCasts.Edge(spine.Value(i)));
+            a1 += AbscissaPoint.Length(myCurve);
             abscissa.SetValue(i, a1);
         }
 
         indexofcurve = 1;
-        myCurve.Initialize(TopoDS.Edge(spine.Value(1)));
+        myCurve.Initialize(ShapeCasts.Edge(spine.Value(1)));
 
         // Here, we should update tolesp according to curve parameter range
         // if tolesp candidate less than default initial value.
@@ -376,17 +380,17 @@ public class ChFiDS_Spine : Transient
         if (indexofcurve != I)
         {
             indexofcurve = I;
-            myCurve.Initialize(TopoDS.Edge(spine.Value(I)));
+            myCurve.Initialize(ShapeCasts.Edge(spine.Value(I)));
         }
 
         double L = FirstParameter(I);
-        if (spine.Value(I).Orientation() == TopAbs_REVERSED)
+        if (spine.Value(I).Orientation() == Reversed)
         {
-            L += GCPnts_AbscissaPoint.Length(myCurve, U, myCurve.LastParameter());
+            L += AbscissaPoint.Length(myCurve, U, myCurve.LastParameter());
         }
         else
         {
-            L += GCPnts_AbscissaPoint.Length(myCurve, myCurve.FirstParameter(), U);
+            L += AbscissaPoint.Length(myCurve, myCurve.FirstParameter(), U);
         }
 
         return L;
@@ -414,12 +418,12 @@ public class ChFiDS_Spine : Transient
         if (Index != indexofcurve)
         {
             indexofcurve = Index;
-            myCurve.Initialize(TopoDS.Edge(spine.Value(Index)));
+            myCurve.Initialize(ShapeCasts.Edge(spine.Value(Index)));
         }
 
         double L;
-        TopAbs_Orientation Or = spine.Value(Index).Orientation();
-        if (Or == TopAbs_REVERSED)
+        Orientation Or = spine.Value(Index).Orientation();
+        if (Or == Reversed)
         {
             L = abscissa!.Value(indexofcurve) - AbsC;
         }
@@ -434,9 +438,9 @@ public class ChFiDS_Spine : Transient
 
         double t = L / Length(Index);
         double uapp = (1.0 - t) * myCurve.FirstParameter() + t * myCurve.LastParameter();
-        GCPnts_AbscissaPoint GCP = new(myCurve, L, myCurve.FirstParameter(), uapp);
+        AbscissaPoint GCP = new(myCurve, L, myCurve.FirstParameter(), uapp);
         U = GCP.Parameter();
-        if (Or == TopAbs_REVERSED && Oriented)
+        if (Or == Reversed && Oriented)
         {
             U = (myCurve.LastParameter() + myCurve.FirstParameter()) - U;
         }
@@ -469,12 +473,12 @@ public class ChFiDS_Spine : Transient
         if (Index != indexofcurve)
         {
             indexofcurve = Index;
-            myCurve.Initialize(TopoDS.Edge(spine.Value(Index)));
+            myCurve.Initialize(ShapeCasts.Edge(spine.Value(Index)));
         }
 
         double t = L / Length(Index);
         double uapp = (1.0 - t) * myCurve.FirstParameter() + t * myCurve.LastParameter();
-        GCPnts_AbscissaPoint GCP = new(myCurve, L, myCurve.FirstParameter(), uapp);
+        AbscissaPoint GCP = new(myCurve, L, myCurve.FirstParameter(), uapp);
         return myCurve.Value(GCP.Parameter());
     }
 
@@ -512,15 +516,15 @@ public class ChFiDS_Spine : Transient
             if (Index != indexofcurve)
             {
                 indexofcurve = Index;
-                myCurve.Initialize(TopoDS.Edge(spine.Value(Index)));
+                myCurve.Initialize(ShapeCasts.Edge(spine.Value(Index)));
             }
 
             double t = L / Length(Index);
             double uapp = (1.0 - t) * myCurve.FirstParameter() + t * myCurve.LastParameter();
-            GCPnts_AbscissaPoint GCP = new(myCurve, L, myCurve.FirstParameter(), uapp);
+            AbscissaPoint GCP = new(myCurve, L, myCurve.FirstParameter(), uapp);
             myCurve.D1(GCP.Parameter(), out P, out V1);
             double D1 = 1.0 / V1.Magnitude();
-            if (spine.Value(Index).Orientation() == TopAbs_REVERSED)
+            if (spine.Value(Index).Orientation() == Reversed)
             {
                 D1 = -D1;
             }
@@ -561,12 +565,12 @@ public class ChFiDS_Spine : Transient
             if (Index != indexofcurve)
             {
                 indexofcurve = Index;
-                myCurve.Initialize(TopoDS.Edge(spine.Value(Index)));
+                myCurve.Initialize(ShapeCasts.Edge(spine.Value(Index)));
             }
 
             double t = L / Length(Index);
             double uapp = (1.0 - t) * myCurve.FirstParameter() + t * myCurve.LastParameter();
-            GCPnts_AbscissaPoint GCP = new(myCurve, L, myCurve.FirstParameter(), uapp);
+            AbscissaPoint GCP = new(myCurve, L, myCurve.FirstParameter(), uapp);
             myCurve.D2(GCP.Parameter(), out P, out V1, out V2);
             double N1 = V1.SquareMagnitude();
             double D2 = -(V1.Dot(V2)) * (1.0 / N1) * (1.0 / N1);
@@ -575,7 +579,7 @@ public class ChFiDS_Spine : Transient
             Vector3D Va = V1.Multiplied(D2);
             V2.Add(Va);
             double D1 = 1.0 / N1;
-            if (spine.Value(Index).Orientation() == TopAbs_REVERSED)
+            if (spine.Value(Index).Orientation() == Reversed)
             {
                 D1 = -D1;
             }
@@ -589,17 +593,17 @@ public class ChFiDS_Spine : Transient
         if (Index != indexofcurve)
         {
             indexofcurve = Index;
-            myCurve.Initialize(TopoDS.Edge(spine.Value(indexofcurve)));
+            myCurve.Initialize(ShapeCasts.Edge(spine.Value(indexofcurve)));
         }
     }
 
     /// <summary>Sets the current curve to the edge <paramref name="Index"/> and returns it.</summary>
-    internal BRepAdaptor_Curve CurrentElementarySpine(int Index)
+    internal EdgeCurveAdaptor CurrentElementarySpine(int Index)
     {
         if (Index != indexofcurve)
         {
             indexofcurve = Index;
-            myCurve.Initialize(TopoDS.Edge(spine.Value(indexofcurve)));
+            myCurve.Initialize(ShapeCasts.Edge(spine.Value(indexofcurve)));
         }
 
         return myCurve;
@@ -620,7 +624,7 @@ public class ChFiDS_Spine : Transient
     public Line3D Line()
     {
         Line3D LL = myCurve.Line();
-        if (spine.Value(indexofcurve).Orientation() == TopAbs_REVERSED)
+        if (spine.Value(indexofcurve).Orientation() == Reversed)
         {
             LL.Reverse();
             LL.SetLocation(myCurve.Value(myCurve.LastParameter()));
@@ -640,7 +644,7 @@ public class ChFiDS_Spine : Transient
         Direction3D Dc = new Direction3D(new Vector3D(Ac.Location(), myCurve.Value(myCurve.FirstParameter())));
         Direction3D ZZ = Ac.Direction();
 
-        if (spine.Value(indexofcurve).Orientation() == TopAbs_REVERSED)
+        if (spine.Value(indexofcurve).Orientation() == Reversed)
         {
             Dc = new Direction3D(new Vector3D(Ac.Location(), myCurve.Value(myCurve.LastParameter())));
             ZZ.Reverse();
@@ -723,30 +727,30 @@ public class ChFiDS_Spine : Transient
     }
 
     /// <summary>The abscissa of the vertex <paramref name="V"/>, or -1 if it is not on the chain.</summary>
-    public double Absc(in TopoDS_Vertex V)
+    public double Absc(in Vertex V)
     {
-        TopoDS_Vertex d, f;
-        TopoDS_Edge E;
+        Vertex d, f;
+        Edge E;
         for (int i = 1; i <= spine.Length(); i++)
         {
-            E = TopoDS.Edge(spine.Value(i));
-            TopExp.Vertices(E, out d, out f);
-            if (d.IsSame(V) && E.Orientation() == TopAbs_FORWARD)
+            E = ShapeCasts.Edge(spine.Value(i));
+            Exploration.Vertices(E, out d, out f);
+            if (d.IsSame(V) && E.Orientation() == Forward)
             {
                 return FirstParameter(i);
             }
 
-            if (d.IsSame(V) && E.Orientation() == TopAbs_REVERSED)
+            if (d.IsSame(V) && E.Orientation() == Reversed)
             {
                 return LastParameter(i);
             }
 
-            if (f.IsSame(V) && E.Orientation() == TopAbs_FORWARD)
+            if (f.IsSame(V) && E.Orientation() == Forward)
             {
                 return LastParameter(i);
             }
 
-            if (f.IsSame(V) && E.Orientation() == TopAbs_REVERSED)
+            if (f.IsSame(V) && E.Orientation() == Reversed)
             {
                 return FirstParameter(i);
             }
@@ -755,26 +759,26 @@ public class ChFiDS_Spine : Transient
         return -1.0;
     }
 
-    public TopoDS_Vertex FirstVertex()
+    public Vertex FirstVertex()
     {
-        TopoDS_Edge E = TopoDS.Edge(spine.First());
-        if (E.Orientation() == TopAbs_FORWARD)
+        Edge E = ShapeCasts.Edge(spine.First());
+        if (E.Orientation() == Forward)
         {
-            return TopExp.FirstVertex(E);
+            return Exploration.FirstVertex(E);
         }
 
-        return TopExp.LastVertex(E);
+        return Exploration.LastVertex(E);
     }
 
-    public TopoDS_Vertex LastVertex()
+    public Vertex LastVertex()
     {
-        TopoDS_Edge E = TopoDS.Edge(spine.Last());
-        if (E.Orientation() == TopAbs_FORWARD)
+        Edge E = ShapeCasts.Edge(spine.Last());
+        if (E.Orientation() == Forward)
         {
-            return TopExp.LastVertex(E);
+            return Exploration.LastVertex(E);
         }
 
-        return TopExp.FirstVertex(E);
+        return Exploration.FirstVertex(E);
     }
 
     /// <summary>Extends the guideline at its start by its tangent at <paramref name="W"/>.</summary>
@@ -898,7 +902,7 @@ public class ChFiDS_Spine : Transient
     }
 
     /// <summary>The index of the edge <paramref name="E"/>, or 0.</summary>
-    public int Index(in TopoDS_Edge E)
+    public int Index(in Edge E)
     {
         for (int IE = 1; IE <= spine.Length(); IE++)
         {
@@ -1013,7 +1017,7 @@ public class ChFiDS_Spine : Transient
 
         if (Ind >= 1 && Ind <= len)
         {
-            if (spine.Value(Ind).Orientation() == TopAbs_REVERSED)
+            if (spine.Value(Ind).Orientation() == Reversed)
             {
                 L = abscissa.Value(Ind) - L;
             }

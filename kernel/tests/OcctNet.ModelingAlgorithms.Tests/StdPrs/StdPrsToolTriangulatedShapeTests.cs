@@ -5,6 +5,9 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
 
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -14,7 +17,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class StdPrsToolTriangulatedShapeTests
 {
-    private static TopoDS_Shape Box() => new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
+    private static Shape Box() => new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
 
     [Fact]
     public void A_drawer_takes_its_links_settings_where_it_has_none_of_its_own()
@@ -73,7 +76,7 @@ public class StdPrsToolTriangulatedShapeTests
     [Fact]
     public void The_deflection_is_relative_to_the_bounding_box_and_stored_in_the_drawer()
     {
-        TopoDS_Shape aShape = Box();
+        Shape aShape = Box();
         var aBndBox = new Box();
         BRepBndLib.Add(aShape, ref aBndBox, false);
         aBndBox.Get(out _, out _, out double aZMin, out _, out _, out double aZMax);
@@ -88,39 +91,39 @@ public class StdPrsToolTriangulatedShapeTests
         aDrawer.SetTypeOfDeflection(Aspect_TypeOfDeflection.Aspect_TOD_ABSOLUTE);
         aDrawer.SetMaximalChordialDeviation(0.3);
         Assert.Equal(0.3, StdPrs_ToolTriangulatedShape.GetDeflection(aShape, aDrawer));
-        Assert.Equal(0.0001, StdPrs_ToolTriangulatedShape.GetDeflection(TopoDS_Builder.MakeCompound(), new Prs3d_Drawer()));
+        Assert.Equal(0.0001, StdPrs_ToolTriangulatedShape.GetDeflection(Builder.MakeCompound(), new Prs3d_Drawer()));
     }
 
     [Fact]
     public void Tessellate_meshes_a_frozen_shape_on_a_copy_once()
     {
-        TopoDS_Shape aShape = new BRepPrimAPI_MakeCylinder(5.0, 10.0).Shape();
+        Shape aShape = new BRepPrimAPI_MakeCylinder(5.0, 10.0).Shape();
         var aDrawer = new Prs3d_Drawer();
         Assert.False(StdPrs_ToolTriangulatedShape.IsTriangulated(aShape));
         Assert.False(StdPrs_ToolTriangulatedShape.IsTessellated(aShape, aDrawer));
 
-        Assert.True(StdPrs_ToolTriangulatedShape.Tessellate(aShape, aDrawer, out TopoDS_Shape aMeshed, out BRepTools_History aHistory));
+        Assert.True(StdPrs_ToolTriangulatedShape.Tessellate(aShape, aDrawer, out Shape aMeshed, out History aHistory));
         Assert.False(aMeshed.IsSame(aShape));
         Assert.False(StdPrs_ToolTriangulatedShape.IsTriangulated(aShape)); // the input is never written
         Assert.True(StdPrs_ToolTriangulatedShape.IsTriangulated(aMeshed));
         Assert.True(StdPrs_ToolTriangulatedShape.IsTessellated(aMeshed, aDrawer));
-        Assert.True(aHistory.HasModified());
+        Assert.True(aHistory.HasModified);
 
         // the same mesh as the factory's algorithm with the drawer's deflection and angle
         double aDeflection = StdPrs_ToolTriangulatedShape.GetDeflection(aShape, new Prs3d_Drawer());
-        TopoDS_Shape anExpected = new BRepMesh_IncrementalMesh(aShape, aDeflection, false, 20.0 * Math.PI / 180.0).Shape();
-        var aFaces = new TopExp_Explorer(aMeshed, TopAbs_ShapeEnum.TopAbs_FACE);
-        var anExpectedFaces = new TopExp_Explorer(anExpected, TopAbs_ShapeEnum.TopAbs_FACE);
+        Shape anExpected = new BRepMesh_IncrementalMesh(aShape, aDeflection, false, 20.0 * Math.PI / 180.0).Shape();
+        var aFaces = new Explorer(aMeshed, ShapeType.Face);
+        var anExpectedFaces = new Explorer(anExpected, ShapeType.Face);
         for (; aFaces.More(); aFaces.Next(), anExpectedFaces.Next())
         {
-            Triangulation aTriangulation = BRep_Tool.Triangulation(TopoDS.Face(aFaces.Current()), out _)!;
-            Triangulation anExpectedTriangulation = BRep_Tool.Triangulation(TopoDS.Face(anExpectedFaces.Current()), out _)!;
+            Triangulation aTriangulation = Tool.Triangulation(ShapeCasts.Face(aFaces.Current()), out _)!;
+            Triangulation anExpectedTriangulation = Tool.Triangulation(ShapeCasts.Face(anExpectedFaces.Current()), out _)!;
             Assert.Equal(anExpectedTriangulation.TriangleCount, aTriangulation.TriangleCount);
             Assert.Equal(anExpectedTriangulation.Deflection(), aTriangulation.Deflection());
         }
 
         // meshed finely enough already: nothing is done; a finer deflection meshes again
-        Assert.False(StdPrs_ToolTriangulatedShape.Tessellate(aMeshed, aDrawer, out TopoDS_Shape aSame, out _));
+        Assert.False(StdPrs_ToolTriangulatedShape.Tessellate(aMeshed, aDrawer, out Shape aSame, out _));
         Assert.True(aSame.IsSame(aMeshed));
         var aFiner = new Prs3d_Drawer();
         aFiner.SetDeviationCoefficient(1e-6);

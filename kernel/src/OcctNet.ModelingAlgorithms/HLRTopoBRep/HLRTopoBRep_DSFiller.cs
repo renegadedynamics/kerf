@@ -3,12 +3,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.Contap_IType;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -25,11 +30,11 @@ namespace Occt;
 public static class HLRTopoBRep_DSFiller
 {
     /// <summary>Outlines each face of S with FO into DS (nbIso isolines per direction), then splits the edges.</summary>
-    public static void Insert(in TopoDS_Shape S, Contap_Contour FO, HLRTopoBRep_Data DS,
-                              NCollection_DataMap<TopoDS_Shape, BRepTopAdaptor_Tool> MST, int nbIso)
+    public static void Insert(in Shape S, Contap_Contour FO, HLRTopoBRep_Data DS,
+                              NCollection_DataMap<Shape, BRepTopAdaptor_Tool> MST, int nbIso)
     {
-        NCollection_Map<TopoDS_Shape> ShapeMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp_Explorer ex = new(S, TopAbs_FACE);
+        NCollection_Map<Shape> ShapeMap = new(ShapeHasher.Instance);
+        Explorer ex = new(S, ShapeType.Face);
         DS.Clear();
         bool withPCurve = true; // instead of nbIso != 0;
         int f = 0;
@@ -39,10 +44,10 @@ public static class HLRTopoBRep_DSFiller
             if (ShapeMap.Add(ex.Current()))
             {
                 f++;
-                TopoDS_Face S1 = TopoDS.Face(ex.Current());
-                S1.Orientation(TopAbs_FORWARD);
+                Face S1 = ShapeCasts.Face(ex.Current());
+                S1.Orientation(Forward);
                 BRepTopAdaptor_TopolTool Domain;
-                Adaptor3d_Surface? Surface;
+                SurfaceAdaptorBase? Surface;
                 if (MST.IsBound(S1))
                 {
                     BRepTopAdaptor_Tool BRT = MST.ChangeFind(S1);
@@ -76,13 +81,13 @@ public static class HLRTopoBRep_DSFiller
     }
 
     /// <summary>Builds the edges of the contours of F and records them as F's outlines and internal outlines.</summary>
-    private static void InsertFace(int FI, in TopoDS_Face F, Contap_Contour FO, HLRTopoBRep_Data DS, bool withPCurve)
+    private static void InsertFace(int FI, in Face F, Contap_Contour FO, HLRTopoBRep_Data DS, bool withPCurve)
     {
-        double tol = BRep_Tool.Tolerance(F);
-        NCollection_List<TopoDS_Shape> IntL = DS.AddIntL(F);
-        NCollection_List<TopoDS_Shape> OutL = DS.AddOutL(F);
+        double tol = Tool.Tolerance(F);
+        NCollection_List<Shape> IntL = DS.AddIntL(F);
+        NCollection_List<Shape> OutL = DS.AddOutL(F);
 
-        TopoDS_Vertex VF = new(), VL = new();
+        Vertex VF = new(), VL = new();
         // OCCT's commented-out map of the vertices of the closed edges is left out.
 
         int NbLines = FO.NbLines();
@@ -95,9 +100,9 @@ public static class HLRTopoBRep_DSFiller
             if (Line.TypeContour() == Contap_Restriction)
             {
                 // OutLine on restriction
-                TopoDS_Edge E = ((BRepAdaptor_Curve2d)Line.Arc()).Edge();
+                Edge E = ((EdgeCurve2DAdaptor)Line.Arc()).Edge();
                 OutL.Append(E);
-                TopExp.Vertices(E, out VF, out VL);
+                Exploration.Vertices(E, out VF, out VL);
                 // insert the Internal points.
 
                 for (CurPoint = 1; CurPoint <= NbPoints; CurPoint++)
@@ -105,9 +110,9 @@ public static class HLRTopoBRep_DSFiller
                     Contap_Point P = Line.Vertex(CurPoint);
                     if (P.IsInternal())
                     {
-                        if (P.Value().IsEqual(BRep_Tool.Pnt(VF), BRep_Tool.Tolerance(VF)))
+                        if (P.Value().IsEqual(Tool.Pnt(VF), Tool.Tolerance(VF)))
                         {
-                            if (P.Value().IsEqual(BRep_Tool.Pnt(VL), BRep_Tool.Tolerance(VL)))
+                            if (P.Value().IsEqual(Tool.Pnt(VL), Tool.Tolerance(VL)))
                             {
                                 InsertVertex(P, tol, E, DS);
                             }
@@ -139,8 +144,8 @@ public static class HLRTopoBRep_DSFiller
                         if ((parL - parF) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
 
-                            Geom_Curve? C = null;
-                            Geom2d_Curve? C2d = null;
+                            Curve3D? C = null;
+                            Curve2D? C2d = null;
                             double first = parF;
                             double last = parL;
                             bool InsuffisantNumberOfPoints = false;
@@ -150,28 +155,28 @@ public static class HLRTopoBRep_DSFiller
 
                                 case Contap_Lin:
                                 {
-                                    C = new Geom_Line(Line.Line());
+                                    C = new LineCurve3D(Line.Line());
                                     if (withPCurve)
                                     {
-                                        Geom_Surface S = BRep_Tool.Surface(F)!;
+                                        Surface S = Tool.Surface(F)!;
                                         double Tol = 1e-7;
-                                        C2d = GeomProjLib.Curve2d(C, first, last, S, ref Tol);
+                                        C2d = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(C, first, last, S, ref Tol);
                                     }
                                 }
                                 break;
 
                                 case Contap_Circle:
                                 {
-                                    C = new Geom_Circle(Line.Circle());
+                                    C = new CircleCurve3D(Line.Circle());
                                     if (withPCurve)
                                     {
-                                        Geom_Surface S = BRep_Tool.Surface(F, out Placement Loc)!;
+                                        Surface S = Tool.Surface(F, out Placement Loc)!;
                                         if (!Loc.IsIdentity)
                                         {
-                                            S = (Geom_Surface)S.Transformed(Loc.Transformation());
+                                            S = (Surface)S.Transformed(Loc.Transformation());
                                         }
                                         double Tol = 1e-7;
-                                        C2d = GeomProjLib.Curve2d(C, first, last, S, ref Tol);
+                                        C2d = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(C, first, last, S, ref Tol);
                                     }
                                 }
                                 break;
@@ -204,7 +209,7 @@ public static class HLRTopoBRep_DSFiller
                                             Points.SetValue(i, Line.Point(i + ipF - 1).Value());
                                         }
                                         mults[1] = mults[nbp] = 2;
-                                        C = new Geom_BSplineCurve(Points, knots, mults, 1);
+                                        C = new BSplineCurve3D(Points, knots, mults, 1);
 
                                         if (withPCurve)
                                         {
@@ -215,7 +220,7 @@ public static class HLRTopoBRep_DSFiller
                                                 Line.Point(i + ipF - 1).ParametersOnS2(out u, out v);
                                                 Points2d.SetValue(i, new Point2D(u, v));
                                             }
-                                            C2d = new Geom2d_BSplineCurve(Points2d, knots, mults, 1);
+                                            C2d = new BSplineCurve2D(Points2d, knots, mults, 1);
                                         }
                                         first = 1;
                                         last = nbp;
@@ -264,9 +269,9 @@ public static class HLRTopoBRep_DSFiller
                                             Points.SetValue(i, P);
                                         }
                                         mults[1] = mults[nbp] = 2;
-                                        Geom_BSplineCurve AppC;
-                                        Geom2d_BSplineCurve? AppC2d = null;
-                                        AppC = new Geom_BSplineCurve(Points, knots, mults, 1);
+                                        BSplineCurve3D AppC;
+                                        BSplineCurve2D? AppC2d = null;
+                                        AppC = new BSplineCurve3D(Points, knots, mults, 1);
 
                                         if (withPCurve)
                                         {
@@ -293,13 +298,13 @@ public static class HLRTopoBRep_DSFiller
                                                 }
                                                 Points2d.SetValue(i, new Point2D(u, v));
                                             }
-                                            AppC2d = new Geom2d_BSplineCurve(Points2d, knots, mults, 1);
+                                            AppC2d = new BSplineCurve2D(Points2d, knots, mults, 1);
                                         }
                                         first = 1;
                                         last = nbp;
 
                                         BRepApprox_ApproxLine AppLine;
-                                        Geom2d_BSplineCurve? CNull = null;
+                                        BSplineCurve2D? CNull = null;
                                         AppLine = new BRepApprox_ApproxLine(AppC, AppC2d, CNull);
 
                                         int dmin = 4, dmax = 8, niter = 0;
@@ -358,16 +363,16 @@ public static class HLRTopoBRep_DSFiller
                                         }
                                         else
                                         {
-                                            AppParCurves_MultiBSpCurve AppVal = Approx.Value(1);
+                                            MultiBSpCurve AppVal = Approx.Value(1);
                                             NCollection_Array1<Point3D> poles3d = new(1, AppVal.NbPoles());
                                             AppVal.Curve(1, poles3d);
-                                            C = new Geom_BSplineCurve(poles3d, AppVal.Knots(), AppVal.Multiplicities(),
+                                            C = new BSplineCurve3D(poles3d, AppVal.Knots(), AppVal.Multiplicities(),
                                                                       AppVal.Degree());
 
-                                            AppParCurves_MultiBSpCurve AppVal2 = Approx.Value(2);
+                                            MultiBSpCurve AppVal2 = Approx.Value(2);
                                             NCollection_Array1<Point2D> poles2d = new(1, AppVal2.NbPoles());
                                             AppVal2.Curve(2, poles2d);
-                                            C2d = new Geom2d_BSplineCurve(poles2d, AppVal2.Knots(),
+                                            C2d = new BSplineCurve2D(poles2d, AppVal2.Knots(),
                                                                           AppVal2.Multiplicities(), AppVal2.Degree());
                                             first = C2d.FirstParameter();
                                             last = C2d.LastParameter();
@@ -386,22 +391,22 @@ public static class HLRTopoBRep_DSFiller
                             // make the edge
                             if (!InsuffisantNumberOfPoints)
                             {
-                                TopoDS_Edge E = new();
-                                BRep_Builder B = new();
+                                Edge E = new();
+                                BrepBuilder B = new();
                                 B.MakeEdge(ref E, C, tol);
-                                VF.Orientation(TopAbs_FORWARD);
-                                VL.Orientation(TopAbs_REVERSED);
+                                VF.Orientation(Forward);
+                                VL.Orientation(Reversed);
                                 B.Add(E, VF);
                                 B.Add(E, VL);
                                 B.Range(E, first, last);
 
                                 if (C2d is not null)
                                 {
-                                    B.UpdateEdge(E, C2d, F, BRep_Tool.Tolerance(F));
+                                    B.UpdateEdge(E, C2d, F, Tool.Tolerance(F));
                                 }
 
                                 // add the edge in the DS
-                                if (!E.IsNull())
+                                if (!E.IsNull)
                                 {
                                     IntL.Append(E);
                                 }
@@ -415,43 +420,43 @@ public static class HLRTopoBRep_DSFiller
         // Correction of internal outlines: unite coinciding vertices
         double SqTol = tol * tol;
 
-        NCollection_List<TopoDS_Shape>.Iterator itl1 = new(IntL);
+        NCollection_List<Shape>.Iterator itl1 = new(IntL);
         for (; itl1.More(); itl1.Next())
         {
-            TopoDS_Edge anIntLine = TopoDS.Edge(itl1.Value());
-            anIntLine.Orientation(TopAbs_FORWARD);
-            TopoDS_Vertex[] aVer = new TopoDS_Vertex[2];
-            TopExp.Vertices(anIntLine, out aVer[0], out aVer[1]);
-            NCollection_List<TopoDS_Shape>.Iterator itl2 = new(itl1);
+            Edge anIntLine = ShapeCasts.Edge(itl1.Value());
+            anIntLine.Orientation(Forward);
+            Vertex[] aVer = new Vertex[2];
+            Exploration.Vertices(anIntLine, out aVer[0], out aVer[1]);
+            NCollection_List<Shape>.Iterator itl2 = new(itl1);
             for (; itl2.More(); itl2.Next())
             {
-                TopoDS_Edge anIntLine2 = TopoDS.Edge(itl2.Value());
-                anIntLine2.Orientation(TopAbs_FORWARD);
+                Edge anIntLine2 = ShapeCasts.Edge(itl2.Value());
+                anIntLine2.Orientation(Forward);
                 if (anIntLine2.IsSame(anIntLine))
                 {
                     continue;
                 }
-                TopoDS_Vertex[] aVer2 = new TopoDS_Vertex[2];
-                TopExp.Vertices(anIntLine2, out aVer2[0], out aVer2[1]);
+                Vertex[] aVer2 = new Vertex[2];
+                Exploration.Vertices(anIntLine2, out aVer2[0], out aVer2[1]);
                 for (int i = 0; i < 2; i++)
                 {
                     if (i == 1 && aVer[0].IsSame(aVer[1]))
                     {
                         continue;
                     }
-                    Point3D Pnt1 = BRep_Tool.Pnt(aVer[i]);
+                    Point3D Pnt1 = Tool.Pnt(aVer[i]);
                     for (int j = 0; j < 2; j++)
                     {
                         if (aVer[i].IsSame(aVer2[j]))
                         {
                             continue;
                         }
-                        Point3D Pnt2 = BRep_Tool.Pnt(aVer2[j]);
+                        Point3D Pnt2 = Tool.Pnt(aVer2[j]);
                         if (Pnt1.SquareDistance(Pnt2) <= SqTol)
                         {
-                            BRep_Builder aBB = new();
+                            BrepBuilder aBB = new();
                             aBB.Remove(anIntLine2, aVer2[j]);
-                            aVer[i].Orientation((j == 0) ? TopAbs_FORWARD : TopAbs_REVERSED);
+                            aVer[i].Orientation((j == 0) ? Forward : Reversed);
                             aBB.Add(anIntLine2, aVer[i]);
                         }
                     }
@@ -461,10 +466,10 @@ public static class HLRTopoBRep_DSFiller
     }
 
     /// <summary>The vertex of a contour point: the face's vertex, a vertex inserted on the arc it lies on, or a new vertex.</summary>
-    private static TopoDS_Vertex MakeVertex(in Contap_Point P, double tol, HLRTopoBRep_Data DS)
+    private static Vertex MakeVertex(in Contap_Point P, double tol, HLRTopoBRep_Data DS)
     {
-        BRep_Builder B = new();
-        TopoDS_Vertex V = new();
+        BrepBuilder B = new();
+        Vertex V = new();
         if (P.IsVertex())
         {
             V = ((BRepTopAdaptor_HVertex)P.Vertex()).Vertex();
@@ -475,16 +480,16 @@ public static class HLRTopoBRep_DSFiller
             // if on arc, insert in the DS
             if (P.IsOnArc())
             {
-                TopoDS_Edge E = ((BRepAdaptor_Curve2d)P.Arc()).Edge();
+                Edge E = ((EdgeCurve2DAdaptor)P.Arc()).Edge();
                 double Par = P.ParameterOnArc();
                 Point3D P3d = P.Value();
 
                 for (DS.InitVertex(E); DS.MoreVertex(); DS.NextVertex())
                 {
-                    TopoDS_Vertex curV = DS.Vertex();
+                    Vertex curV = DS.Vertex();
                     double curP = DS.Parameter();
-                    Point3D PPP = BRep_Tool.Pnt(curV);
-                    double TTT = BRep_Tool.Tolerance(curV);
+                    Point3D PPP = Tool.Pnt(curV);
+                    double TTT = Tool.Tolerance(curV);
                     if (P3d.IsEqual(PPP, TTT))
                     {
                         V = curV;
@@ -522,10 +527,10 @@ public static class HLRTopoBRep_DSFiller
     }
 
     /// <summary>Inserts the vertex of a contour point on the edge E.</summary>
-    private static void InsertVertex(in Contap_Point P, double tol, in TopoDS_Edge E, HLRTopoBRep_Data DS)
+    private static void InsertVertex(in Contap_Point P, double tol, in Edge E, HLRTopoBRep_Data DS)
     {
-        BRep_Builder B = new();
-        TopoDS_Vertex V = new();
+        BrepBuilder B = new();
+        Vertex V = new();
 
         if (P.IsVertex())
         {
@@ -537,9 +542,9 @@ public static class HLRTopoBRep_DSFiller
 
             for (DS.InitVertex(E); DS.MoreVertex(); DS.NextVertex())
             {
-                TopoDS_Vertex curV = DS.Vertex();
+                Vertex curV = DS.Vertex();
                 double curP = DS.Parameter();
-                if (P.Value().IsEqual(BRep_Tool.Pnt(curV), BRep_Tool.Tolerance(curV)))
+                if (P.Value().IsEqual(Tool.Pnt(curV), Tool.Tolerance(curV)))
                 {
                     V = curV;
                     break;
@@ -563,47 +568,47 @@ public static class HLRTopoBRep_DSFiller
     /// <summary>Splits each edge with inserted vertices into new edges, recorded as its splits.</summary>
     private static void ProcessEdges(HLRTopoBRep_Data DS)
     {
-        BRep_Builder B = new();
-        TopoDS_Edge newE;
-        TopoDS_Vertex VF, VL, VI;
+        BrepBuilder B = new();
+        Edge newE;
+        Vertex VF, VL, VI;
         double PF, PL, PI;
 
         for (DS.InitEdge(); DS.MoreEdge(); DS.NextEdge())
         {
-            TopoDS_Edge E = DS.Edge();
-            NCollection_List<TopoDS_Shape> SplE = DS.AddSplE(E);
-            VF = TopExp.FirstVertex(E);
-            VL = TopExp.LastVertex(E);
-            BRep_Tool.Range(E, out PF, out PL);
-            VF.Orientation(TopAbs_FORWARD);
-            VL.Orientation(TopAbs_REVERSED);
+            Edge E = DS.Edge();
+            NCollection_List<Shape> SplE = DS.AddSplE(E);
+            VF = Exploration.FirstVertex(E);
+            VL = Exploration.LastVertex(E);
+            Tool.Range(E, out PF, out PL);
+            VF.Orientation(Forward);
+            VL.Orientation(Reversed);
 
             for (DS.InitVertex(E); DS.MoreVertex(); DS.NextVertex())
             {
                 VI = DS.Vertex();
                 PI = DS.Parameter();
-                VI.Orientation(TopAbs_REVERSED);
+                VI.Orientation(Reversed);
                 newE = E;
                 newE.EmptyCopy();
-                newE.Orientation(TopAbs_FORWARD);
+                newE.Orientation(Forward);
                 B.Add(newE, VF);
-                B.UpdateVertex(VF, PF, newE, BRep_Tool.Tolerance(VF));
+                B.UpdateVertex(VF, PF, newE, Tool.Tolerance(VF));
                 B.Add(newE, VI);
-                B.UpdateVertex(VI, PI, newE, BRep_Tool.Tolerance(VI));
+                B.UpdateVertex(VI, PI, newE, Tool.Tolerance(VI));
                 newE.Orientation(E.Orientation());
                 SplE.Append(newE);
                 // prepare next edge
                 VF = VI;
                 PF = PI;
-                VF.Orientation(TopAbs_FORWARD);
+                VF.Orientation(Forward);
             }
             newE = E;
             newE.EmptyCopy();
-            newE.Orientation(TopAbs_FORWARD);
+            newE.Orientation(Forward);
             B.Add(newE, VF);
-            B.UpdateVertex(VF, PF, newE, BRep_Tool.Tolerance(VF));
+            B.UpdateVertex(VF, PF, newE, Tool.Tolerance(VF));
             B.Add(newE, VL);
-            B.UpdateVertex(VL, PL, newE, BRep_Tool.Tolerance(VL));
+            B.UpdateVertex(VL, PL, newE, Tool.Tolerance(VL));
             newE.Orientation(E.Orientation());
             SplE.Append(newE);
         }

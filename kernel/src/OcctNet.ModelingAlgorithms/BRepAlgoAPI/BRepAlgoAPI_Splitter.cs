@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -13,7 +14,7 @@ namespace Occt;
 /// </summary>
 public class BRepAlgoAPI_Splitter : BRepAlgoAPI_BuilderAlgo
 {
-    protected NCollection_List<TopoDS_Shape> myTools = new(); //!< Tool arguments of the operation
+    protected NCollection_List<Shape> myTools = new(); //!< Tool arguments of the operation
 
     /// <summary>An empty splitter.</summary>
     public BRepAlgoAPI_Splitter()
@@ -27,10 +28,10 @@ public class BRepAlgoAPI_Splitter : BRepAlgoAPI_BuilderAlgo
     }
 
     /// <summary>Sets the tools (copies the list).</summary>
-    public void SetTools(NCollection_List<TopoDS_Shape> theLS) => myTools = new NCollection_List<TopoDS_Shape>(theLS);
+    public void SetTools(NCollection_List<Shape> theLS) => myTools = new NCollection_List<Shape>(theLS);
 
     /// <summary>The tools.</summary>
-    public NCollection_List<TopoDS_Shape> Tools() => myTools;
+    public NCollection_List<Shape> Tools() => myTools;
 
     /// <summary>Performs the split.</summary>
     public override void Build(ProgressRange theRange = default)
@@ -51,8 +52,8 @@ public class BRepAlgoAPI_Splitter : BRepAlgoAPI_BuilderAlgo
         if (myIsIntersectionNeeded)
         {
             // Combine Objects and Tools into a single list for intersection
-            NCollection_List<TopoDS_Shape> aLArgs = new(myArguments);
-            for (NCollection_List<TopoDS_Shape>.Iterator it = new(myTools); it.More(); it.Next())
+            NCollection_List<Shape> aLArgs = new(myArguments);
+            for (NCollection_List<Shape>.Iterator it = new(myTools); it.More(); it.Next())
             {
                 aLArgs.Append(it.Value());
             }

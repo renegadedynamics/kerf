@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 
@@ -15,15 +16,15 @@ namespace Occt;
 public static class BRepGProp_EdgeTool
 {
     /// <summary>The parameter of the start point of the curve.</summary>
-    public static double FirstParameter(BRepAdaptor_Curve C) => C.FirstParameter();
+    public static double FirstParameter(EdgeCurveAdaptor C) => C.FirstParameter();
 
     /// <summary>The parameter of the end point of the curve.</summary>
-    public static double LastParameter(BRepAdaptor_Curve C) => C.LastParameter();
+    public static double LastParameter(EdgeCurveAdaptor C) => C.LastParameter();
 
     /// <summary>
     /// The number of Gauss points for an accurate integration: for a polynomial curve of degree n, 2n - 1.
     /// </summary>
-    public static int IntegrationOrder(BRepAdaptor_Curve BAC)
+    public static int IntegrationOrder(EdgeCurveAdaptor BAC)
     {
         switch (BAC.GetType())
         {
@@ -38,7 +39,7 @@ public static class BRepGProp_EdgeTool
             {
                 // Use the adaptor's own NbPoles(), which handles the curve-on-surface case;
                 // Curve() is null there and down-casting it segfaults.
-                int n = 2 * BAC.NbPoles() - 1;
+                int n = 2 * BAC.PoleCount - 1;
                 return n;
             }
 
@@ -48,14 +49,14 @@ public static class BRepGProp_EdgeTool
     }
 
     /// <summary>The point of parameter U.</summary>
-    public static Point3D Value(BRepAdaptor_Curve C, double U) => C.Value(U);
+    public static Point3D Value(EdgeCurveAdaptor C, double U) => C.Value(U);
 
     /// <summary>The point of parameter U and the first derivative there.</summary>
-    public static void D1(BRepAdaptor_Curve C, double U, out Point3D P, out Vector3D V1) => C.D1(U, out P, out V1);
+    public static void D1(EdgeCurveAdaptor C, double U, out Point3D P, out Vector3D V1) => C.D1(U, out P, out V1);
 
     /// <summary>The number of intervals of continuity <paramref name="S"/>.</summary>
-    public static int NbIntervals(BRepAdaptor_Curve C, Continuity S) => C.NbIntervals(S);
+    public static int NbIntervals(EdgeCurveAdaptor C, Continuity S) => C.NbIntervals(S);
 
     /// <summary>The parameters bounding the intervals of continuity <paramref name="S"/> (T.Length() > NbIntervals).</summary>
-    public static void Intervals(BRepAdaptor_Curve C, NCollection_Array1<double> T, Continuity S) => C.Intervals(T, S);
+    public static void Intervals(EdgeCurveAdaptor C, NCollection_Array1<double> T, Continuity S) => C.Intervals(T, S);
 }

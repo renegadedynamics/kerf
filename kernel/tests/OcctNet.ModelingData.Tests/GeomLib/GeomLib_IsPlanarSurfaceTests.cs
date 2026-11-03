@@ -4,6 +4,7 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Library;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -12,7 +13,7 @@ public class GeomLib_IsPlanarSurfaceTests
 {
     private static readonly CoordinateSystem TheAx3 = new(new Point3D(1, 2, 3), new Direction3D(1, 1, 1), new Direction3D(1, -1, 0));
 
-    private static Geom_BezierSurface PlanarBezier(double theNoise)
+    private static BezierSurface PlanarBezier(double theNoise)
     {
         var aPoles = new NCollection_Array2<Point3D>(1, 4, 1, 3);
         for (int i = 1; i <= 4; i++)
@@ -25,7 +26,7 @@ public class GeomLib_IsPlanarSurfaceTests
                 aPoles[i, j] = new Point3D(aP);
             }
         }
-        return new Geom_BezierSurface(aPoles);
+        return new BezierSurface(aPoles);
     }
 
     private static void AssertNormal(Plane3D thePln, in Direction3D theExpected)
@@ -36,24 +37,24 @@ public class GeomLib_IsPlanarSurfaceTests
     [Fact]
     public void Plane_IsPlanar()
     {
-        var aPlane = new Geom_Plane(TheAx3);
-        var anIs = new GeomLib_IsPlanarSurface(aPlane);
-        Assert.True(anIs.IsPlanar());
+        var aPlane = new PlaneSurface(TheAx3);
+        var anIs = new IsPlanarSurface(aPlane);
+        Assert.True(anIs.IsPlanar);
         Assert.Equal(aPlane.Pln(), anIs.Plan());
     }
 
     [Fact]
     public void Quadrics_AreNotPlanar()
     {
-        Geom_Surface[] aSurfaces =
+        Surface[] aSurfaces =
         [
-            new Geom_CylindricalSurface(TheAx3, 2), new Geom_ConicalSurface(TheAx3, 0.3, 2),
-            new Geom_SphericalSurface(TheAx3, 2), new Geom_ToroidalSurface(TheAx3, 5, 1),
+            new CylindricalSurface(TheAx3, 2), new ConicalSurface(TheAx3, 0.3, 2),
+            new SphericalSurface(TheAx3, 2), new ToroidalSurface(TheAx3, 5, 1),
         ];
-        foreach (Geom_Surface aS in aSurfaces)
+        foreach (Surface aS in aSurfaces)
         {
-            var anIs = new GeomLib_IsPlanarSurface(aS, 1.0);
-            Assert.False(anIs.IsPlanar());
+            var anIs = new IsPlanarSurface(aS, 1.0);
+            Assert.False(anIs.IsPlanar);
             Assert.ThrowsAny<NotDoneException>(() => anIs.Plan());
         }
     }
@@ -61,10 +62,10 @@ public class GeomLib_IsPlanarSurfaceTests
     [Fact]
     public void PlanarBSpline_IsPlanar_WithItsNormal()
     {
-        var aTrimmed = new Geom_RectangularTrimmedSurface(new Geom_Plane(TheAx3), -3, 4, -1, 2);
-        Geom_BSplineSurface aBS = GeomConvert.SurfaceToBSplineSurface(aTrimmed);
-        var anIs = new GeomLib_IsPlanarSurface(aBS);
-        Assert.True(anIs.IsPlanar());
+        var aTrimmed = new TrimmedSurface(new PlaneSurface(TheAx3), -3, 4, -1, 2);
+        BSplineSurface aBS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(aTrimmed);
+        var anIs = new IsPlanarSurface(aBS);
+        Assert.True(anIs.IsPlanar);
         AssertNormal(anIs.Plan(), TheAx3.Direction());
         Assert.True(anIs.Plan().Distance(TheAx3.Location()) < 1e-12);
     }
@@ -72,20 +73,20 @@ public class GeomLib_IsPlanarSurfaceTests
     [Fact]
     public void NearlyPlanarBezier_DependsOnTolerance()
     {
-        Geom_BezierSurface aBz = PlanarBezier(1e-3);
-        Assert.False(new GeomLib_IsPlanarSurface(aBz).IsPlanar());
-        var anIs = new GeomLib_IsPlanarSurface(aBz, 1e-2);
-        Assert.True(anIs.IsPlanar());
+        BezierSurface aBz = PlanarBezier(1e-3);
+        Assert.False(new IsPlanarSurface(aBz).IsPlanar);
+        var anIs = new IsPlanarSurface(aBz, 1e-2);
+        Assert.True(anIs.IsPlanar);
         Assert.True(anIs.Plan().Axis().Direction().Angle(TheAx3.Direction()) < 1e-3
                     || anIs.Plan().Axis().Direction().Angle(TheAx3.Direction()) > M_PI - 1e-3);
-        Assert.True(new GeomLib_IsPlanarSurface(PlanarBezier(0.0)).IsPlanar());
+        Assert.True(new IsPlanarSurface(PlanarBezier(0.0)).IsPlanar);
     }
 
     [Fact]
     public void PlanarBezier_XDirectionFollowsDU()
     {
-        var anIs = new GeomLib_IsPlanarSurface(PlanarBezier(0.0));
-        Assert.True(anIs.IsPlanar());
+        var anIs = new IsPlanarSurface(PlanarBezier(0.0));
+        Assert.True(anIs.IsPlanar);
         PlanarBezier(0.0).D1(0.5, 0.5, out Point3D _, out Vector3D DU, out Vector3D DV);
         CoordinateSystem aPos = anIs.Plan().Position();
         Assert.True(aPos.XDirection().Angle(new Direction3D(DU)) <= M_PI / 2);
@@ -96,25 +97,25 @@ public class GeomLib_IsPlanarSurfaceTests
     public void RevolutionOfPerpendicularSegment_IsPlanar()
     {
         var anAxis = new Axis3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1));
-        var aSeg = new Geom_TrimmedCurve(new Geom_Line(new Point3D(0, 0, 1), new Direction3D(1, 0, 0)), 1, 3);
-        var anIs = new GeomLib_IsPlanarSurface(new Geom_SurfaceOfRevolution(aSeg, anAxis));
-        Assert.True(anIs.IsPlanar());
+        var aSeg = new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 0)), 1, 3);
+        var anIs = new IsPlanarSurface(new RevolutionSurface(aSeg, anAxis));
+        Assert.True(anIs.IsPlanar);
         AssertNormal(anIs.Plan(), new Direction3D(0, 0, 1));
         Assert.Equal(0.0, anIs.Plan().Distance(new Point3D(5, 7, 1)), 1e-12);
 
         // A slightly tilted segment sweeps a flat cone: planar within a loose tolerance only
-        var aTilted = new Geom_TrimmedCurve(new Geom_Line(new Point3D(0, 0, 1), new Direction3D(1, 0, 1e-4)), 1, 3);
-        var aCone = new Geom_SurfaceOfRevolution(aTilted, anAxis);
-        Assert.False(new GeomLib_IsPlanarSurface(aCone).IsPlanar());
-        Assert.True(new GeomLib_IsPlanarSurface(aCone, 1e-2).IsPlanar());
+        var aTilted = new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 1e-4)), 1, 3);
+        var aCone = new RevolutionSurface(aTilted, anAxis);
+        Assert.False(new IsPlanarSurface(aCone).IsPlanar);
+        Assert.True(new IsPlanarSurface(aCone, 1e-2).IsPlanar);
     }
 
     [Fact]
     public void RevolutionOfCircle_IsNotPlanar()
     {
-        var aCircle = new Geom_Circle(new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 1, 0)), 1);
-        var aTorus = new Geom_SurfaceOfRevolution(aCircle, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
-        Assert.False(new GeomLib_IsPlanarSurface(aTorus).IsPlanar());
+        var aCircle = new CircleCurve3D(new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 1, 0)), 1);
+        var aTorus = new RevolutionSurface(aCircle, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
+        Assert.False(new IsPlanarSurface(aTorus).IsPlanar);
     }
 
     [Fact]
@@ -125,41 +126,41 @@ public class GeomLib_IsPlanarSurfaceTests
         aPoles[2] = new Point3D(1, 3, 2);
         aPoles[3] = new Point3D(3, -1, 2);
         aPoles[4] = new Point3D(4, 2, 2);
-        var aCurve = new Geom_BezierCurve(aPoles);
-        var anExt = new Geom_SurfaceOfLinearExtrusion(aCurve, new Direction3D(1, 1, 0));
-        var aBounded = new Geom_RectangularTrimmedSurface(anExt, -1, 1, false);
-        var anIs = new GeomLib_IsPlanarSurface(aBounded);
+        var aCurve = new BezierCurve3D(aPoles);
+        var anExt = new ExtrusionSurface(aCurve, new Direction3D(1, 1, 0));
+        var aBounded = new TrimmedSurface(anExt, -1, 1, false);
+        var anIs = new IsPlanarSurface(aBounded);
         // A trimmed extrusion is not GeomAbs_SurfaceOfExtrusion for the adaptor: the default (sampling) branch
-        Assert.True(anIs.IsPlanar());
+        Assert.True(anIs.IsPlanar);
         AssertNormal(anIs.Plan(), new Direction3D(0, 0, 1));
-        var anIs2 = new GeomLib_IsPlanarSurface(anExt);
-        Assert.True(anIs2.IsPlanar());
+        var anIs2 = new IsPlanarSurface(anExt);
+        Assert.True(anIs2.IsPlanar);
         AssertNormal(anIs2.Plan(), new Direction3D(0, 0, 1));
 
         // Out of the plane: a cylinder-like surface
-        var anUp = new Geom_RectangularTrimmedSurface(new Geom_SurfaceOfLinearExtrusion(aCurve, new Direction3D(0, 0, 1)),
+        var anUp = new TrimmedSurface(new ExtrusionSurface(aCurve, new Direction3D(0, 0, 1)),
                                                       -1, 1, false);
-        Assert.False(new GeomLib_IsPlanarSurface(anUp).IsPlanar());
+        Assert.False(new IsPlanarSurface(anUp).IsPlanar);
     }
 
     [Fact]
     public void ExtrusionOfLine_IsPlanar()
     {
-        var aLine = new Geom_TrimmedCurve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 5);
-        var anExt = new Geom_RectangularTrimmedSurface(
-            new Geom_SurfaceOfLinearExtrusion(aLine, new Direction3D(0, 1, 1)), -2, 2, false);
-        var anIs = new GeomLib_IsPlanarSurface(anExt);
-        Assert.True(anIs.IsPlanar());
+        var aLine = new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 5);
+        var anExt = new TrimmedSurface(
+            new ExtrusionSurface(aLine, new Direction3D(0, 1, 1)), -2, 2, false);
+        var anIs = new IsPlanarSurface(anExt);
+        Assert.True(anIs.IsPlanar);
         AssertNormal(anIs.Plan(), new Direction3D(0, -1, 1));
     }
 
     [Fact]
     public void OffsetOfPlanarBSpline_IsPlanar()
     {
-        var aTrimmed = new Geom_RectangularTrimmedSurface(new Geom_Plane(TheAx3), -3, 4, -1, 2);
-        Geom_BSplineSurface aBS = GeomConvert.SurfaceToBSplineSurface(aTrimmed);
-        var anIs = new GeomLib_IsPlanarSurface(new Geom_OffsetSurface(aBS, 2.5));
-        Assert.True(anIs.IsPlanar());
+        var aTrimmed = new TrimmedSurface(new PlaneSurface(TheAx3), -3, 4, -1, 2);
+        BSplineSurface aBS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(aTrimmed);
+        var anIs = new IsPlanarSurface(new OffsetSurface(aBS, 2.5));
+        Assert.True(anIs.IsPlanar);
         AssertNormal(anIs.Plan(), TheAx3.Direction());
         Assert.Equal(2.5, anIs.Plan().Distance(TheAx3.Location()), 1e-9);
     }
@@ -173,6 +174,6 @@ public class GeomLib_IsPlanarSurfaceTests
         aPoles[1, 2] = new Point3D(1, 0, 0);
         aPoles[2, 1] = new Point3D(2, 0, 0);
         aPoles[2, 2] = new Point3D(3, 0, 0);
-        Assert.False(new GeomLib_IsPlanarSurface(new Geom_BezierSurface(aPoles)).IsPlanar());
+        Assert.False(new IsPlanarSurface(new BezierSurface(aPoles)).IsPlanar);
     }
 }

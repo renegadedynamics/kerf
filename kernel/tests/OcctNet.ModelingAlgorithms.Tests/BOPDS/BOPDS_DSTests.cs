@@ -1,8 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests.BOPDS;
 
@@ -12,13 +16,13 @@ namespace OcctNet.ModelingAlgorithms.Tests.BOPDS;
 /// </summary>
 public class BOPDS_DSTests
 {
-    internal static TopoDS_Shape Box(double theX, double theY, double theZ, double theSize = 10.0) =>
+    internal static Shape Box(double theX, double theY, double theZ, double theSize = 10.0) =>
         new BRepPrimAPI_MakeBox(new Point3D(theX, theY, theZ), theSize, theSize, theSize).Shape();
 
-    internal static BOPDS_DS MakeDS(params TopoDS_Shape[] theShapes)
+    internal static BOPDS_DS MakeDS(params Shape[] theShapes)
     {
-        NCollection_List<TopoDS_Shape> anArgs = new();
-        foreach (TopoDS_Shape aShape in theShapes)
+        NCollection_List<Shape> anArgs = new();
+        foreach (Shape aShape in theShapes)
         {
             anArgs.Append(aShape);
         }
@@ -28,7 +32,7 @@ public class BOPDS_DSTests
         return aDS;
     }
 
-    private static List<int> IndicesOfType(BOPDS_DS theDS, TopAbs_ShapeEnum theType, int theRank = -1)
+    private static List<int> IndicesOfType(BOPDS_DS theDS, ShapeType theType, int theRank = -1)
     {
         List<int> anIndices = [];
         for (int i = 0; i < theDS.NbSourceShapes(); ++i)
@@ -44,7 +48,7 @@ public class BOPDS_DSTests
     [Fact]
     public void Init_TwoBoxes_ShapeInfosAndRanges()
     {
-        TopoDS_Shape aBox1 = Box(0, 0, 0), aBox2 = Box(20, 0, 0);
+        Shape aBox1 = Box(0, 0, 0), aBox2 = Box(20, 0, 0);
         BOPDS_DS aDS = MakeDS(aBox1, aBox2);
 
         // A box has 1 solid, 1 shell, 6 faces, 6 wires, 12 edges and 8 vertices
@@ -68,31 +72,31 @@ public class BOPDS_DSTests
             Assert.Equal(i, aDS.Index(aDS.Shape(i)));
         }
 
-        Assert.Equal(TopAbs_SOLID, aDS.ShapeInfo(0).ShapeType());
-        Assert.Equal(6, IndicesOfType(aDS, TopAbs_FACE, 0).Count);
-        Assert.Equal(12, IndicesOfType(aDS, TopAbs_EDGE, 1).Count);
-        Assert.Equal(8, IndicesOfType(aDS, TopAbs_VERTEX, 1).Count);
+        Assert.Equal(ShapeType.Solid, aDS.ShapeInfo(0).ShapeType());
+        Assert.Equal(6, IndicesOfType(aDS, ShapeType.Face, 0).Count);
+        Assert.Equal(12, IndicesOfType(aDS, ShapeType.Edge, 1).Count);
+        Assert.Equal(8, IndicesOfType(aDS, ShapeType.Vertex, 1).Count);
 
         // With two arguments the solids keep their shells as sub-shapes, and no box
         BOPDS_ShapeInfo aSolid = aDS.ShapeInfo(0);
         Assert.Equal(1, aSolid.SubShapes().Extent());
-        Assert.Equal(TopAbs_SHELL, aDS.ShapeInfo(aSolid.SubShapes().First()).ShapeType());
+        Assert.Equal(ShapeType.Shell, aDS.ShapeInfo(aSolid.SubShapes().First()).ShapeType());
         Assert.True(aSolid.Box().IsVoid);
 
         // A face's sub-shapes become its edges and vertices
-        foreach (int nF in IndicesOfType(aDS, TopAbs_FACE))
+        foreach (int nF in IndicesOfType(aDS, ShapeType.Face))
         {
             BOPDS_ShapeInfo aFace = aDS.ShapeInfo(nF);
             Assert.Equal(8, aFace.SubShapes().Extent());
-            Assert.Equal(4, aFace.SubShapes().Count(i => aDS.ShapeInfo(i).ShapeType() == TopAbs_EDGE));
-            Assert.Equal(4, aFace.SubShapes().Count(i => aDS.ShapeInfo(i).ShapeType() == TopAbs_VERTEX));
+            Assert.Equal(4, aFace.SubShapes().Count(i => aDS.ShapeInfo(i).ShapeType() == ShapeType.Edge));
+            Assert.Equal(4, aFace.SubShapes().Count(i => aDS.ShapeInfo(i).ShapeType() == ShapeType.Vertex));
             Assert.False(aFace.Box().IsVoid);
             Assert.True(aFace.HasBRep());
             Assert.True(aFace.IsInterfering());
         }
 
         // An edge's box holds its vertices' boxes, with the half fuzzy gap added
-        foreach (int nE in IndicesOfType(aDS, TopAbs_EDGE))
+        foreach (int nE in IndicesOfType(aDS, ShapeType.Edge))
         {
             BOPDS_ShapeInfo anEdge = aDS.ShapeInfo(nE);
             Assert.Equal(2, anEdge.SubShapes().Extent());
@@ -102,10 +106,10 @@ public class BOPDS_DSTests
                 Assert.False(anEdge.Box().IsOut(aDS.ShapeInfo(nV).Box()));
             }
         }
-        foreach (int nV in IndicesOfType(aDS, TopAbs_VERTEX))
+        foreach (int nV in IndicesOfType(aDS, ShapeType.Vertex))
         {
             Box aBox = aDS.ShapeInfo(nV).Box();
-            Assert.Equal(BRep_Tool.Tolerance(TopoDS.Vertex(aDS.Shape(nV))) + global::Kerf.Engine.Foundation.Precision.Confusion() * 0.5, aBox.GetGap());
+            Assert.Equal(Tool.Tolerance(ShapeCasts.Vertex(aDS.Shape(nV))) + global::Kerf.Engine.Foundation.Precision.Confusion() * 0.5, aBox.GetGap());
         }
 
         Assert.True(aDS.IsSubShape(aSolid.SubShapes().First(), 0));
@@ -119,7 +123,7 @@ public class BOPDS_DSTests
         BOPDS_ShapeInfo aSolid = aDS.ShapeInfo(0);
         // the faces, and the faces' sub-shapes: edges and vertices
         Assert.Equal(26, aSolid.SubShapes().Extent());
-        Assert.Equal(6, aSolid.SubShapes().Count(i => aDS.ShapeInfo(i).ShapeType() == TopAbs_FACE));
+        Assert.Equal(6, aSolid.SubShapes().Count(i => aDS.ShapeInfo(i).ShapeType() == ShapeType.Face));
         Assert.False(aSolid.Box().IsVoid);
         Assert.False(aSolid.Box().IsOpen);
 
@@ -147,7 +151,7 @@ public class BOPDS_DSTests
     [Fact]
     public void Init_SameArgumentTwice_IsOneRange()
     {
-        TopoDS_Shape aBox = Box(0, 0, 0);
+        Shape aBox = Box(0, 0, 0);
         BOPDS_DS aDS = MakeDS(aBox, aBox);
         Assert.Equal(1, aDS.NbRanges());
         Assert.Equal(34, aDS.NbSourceShapes());
@@ -165,7 +169,7 @@ public class BOPDS_DSTests
     public void PaveBlocks_OfAnEdge()
     {
         BOPDS_DS aDS = MakeDS(Box(0, 0, 0));
-        int nE = IndicesOfType(aDS, TopAbs_EDGE)[0];
+        int nE = IndicesOfType(aDS, ShapeType.Edge)[0];
         Assert.False(aDS.HasPaveBlocks(nE));
         Assert.True(aDS.PaveBlocks(nE).IsEmpty());
 
@@ -184,7 +188,7 @@ public class BOPDS_DSTests
         Assert.False(aPB.HasShrunkData());
         aPB.Range(out double aT1, out double aT2);
         Assert.True(aT1 < aT2);
-        BRep_Tool.Range(TopoDS.Edge(aDS.Shape(nE)), out double aF, out double aL);
+        Tool.Range(ShapeCasts.Edge(aDS.Shape(nE)), out double aF, out double aL);
         Assert.Equal((aF, aL), (aT1, aT2));
         aPB.Indices(out int nV1, out int nV2);
         Assert.Contains(nV1, aDS.ShapeInfo(nE).SubShapes());
@@ -197,7 +201,7 @@ public class BOPDS_DSTests
 
         // The vertex/edge map makes the pave blocks of every edge of a vertex
         aDS.InitPaveBlocksForVertex(nV1);
-        int aNbEdgesOfV1 = IndicesOfType(aDS, TopAbs_EDGE).Count(e => aDS.ShapeInfo(e).HasSubShape(nV1));
+        int aNbEdgesOfV1 = IndicesOfType(aDS, ShapeType.Edge).Count(e => aDS.ShapeInfo(e).HasSubShape(nV1));
         Assert.Equal(3, aNbEdgesOfV1);
         Assert.Equal(3, aDS.PaveBlocksPool().Length());
     }
@@ -270,10 +274,10 @@ public class BOPDS_DSTests
     public void UpdatePaveBlocks_SplitsTheEdgesWithExtraPaves()
     {
         BOPDS_DS aDS = MakeDS(Box(0, 0, 0));
-        int nE = IndicesOfType(aDS, TopAbs_EDGE)[0];
+        int nE = IndicesOfType(aDS, ShapeType.Edge)[0];
         BOPDS_PaveBlock aPB = aDS.ChangePaveBlocks(nE).First();
         aPB.Range(out double aT1, out double aT2);
-        int nV = IndicesOfType(aDS, TopAbs_VERTEX).First(v => !aDS.ShapeInfo(nE).HasSubShape(v));
+        int nV = IndicesOfType(aDS, ShapeType.Vertex).First(v => !aDS.ShapeInfo(nE).HasSubShape(v));
         aPB.AppendExtPave(new BOPDS_Pave(nV, 0.5 * (aT1 + aT2)));
 
         aDS.UpdatePaveBlocks();
@@ -291,7 +295,7 @@ public class BOPDS_DSTests
         // UpdatePaveBlock splits one pave block in its edge's list
         BOPDS_PaveBlock aPBFirst = aLPB.First();
         aPBFirst.Range(out double aF, out double aL);
-        aPBFirst.AppendExtPave(new BOPDS_Pave(IndicesOfType(aDS, TopAbs_VERTEX).Last(), 0.5 * (aF + aL)));
+        aPBFirst.AppendExtPave(new BOPDS_Pave(IndicesOfType(aDS, ShapeType.Vertex).Last(), 0.5 * (aF + aL)));
         aDS.UpdatePaveBlock(aPBFirst);
         Assert.Equal(3, aDS.PaveBlocks(nE).Extent());
         Assert.DoesNotContain(aPBFirst, aDS.PaveBlocks(nE));
@@ -301,7 +305,7 @@ public class BOPDS_DSTests
     public void ReleasePaveBlocks_ForgetsUntouchedEdges()
     {
         BOPDS_DS aDS = MakeDS(Box(0, 0, 0));
-        List<int> anEdges = IndicesOfType(aDS, TopAbs_EDGE);
+        List<int> anEdges = IndicesOfType(aDS, ShapeType.Edge);
         aDS.ChangePaveBlocks(anEdges[0]);
         aDS.ChangePaveBlocks(anEdges[1]);
         aDS.ReleasePaveBlocks();
@@ -314,8 +318,8 @@ public class BOPDS_DSTests
     public void CommonBlocks()
     {
         BOPDS_DS aDS = MakeDS(Box(0, 0, 0), Box(20, 0, 0));
-        int nE1 = IndicesOfType(aDS, TopAbs_EDGE, 0)[0];
-        int nE2 = IndicesOfType(aDS, TopAbs_EDGE, 1)[0];
+        int nE1 = IndicesOfType(aDS, ShapeType.Edge, 0)[0];
+        int nE2 = IndicesOfType(aDS, ShapeType.Edge, 1)[0];
         BOPDS_PaveBlock aPB1 = aDS.ChangePaveBlocks(nE1).First();
         BOPDS_PaveBlock aPB2 = aDS.ChangePaveBlocks(nE2).First();
 
@@ -376,12 +380,12 @@ public class BOPDS_DSTests
         // Two boxes sharing a face: the edges of the shared square coincide pairwise
         BOPDS_DS aDS = MakeDS(Box(0, 0, 0), Box(10, 0, 0));
         int nE1 = -1, nE2 = -1;
-        foreach (int e1 in IndicesOfType(aDS, TopAbs_EDGE, 0))
+        foreach (int e1 in IndicesOfType(aDS, ShapeType.Edge, 0))
         {
-            foreach (int e2 in IndicesOfType(aDS, TopAbs_EDGE, 1))
+            foreach (int e2 in IndicesOfType(aDS, ShapeType.Edge, 1))
             {
-                BRepAdaptor_Curve aC1 = new(TopoDS.Edge(aDS.Shape(e1)));
-                BRepAdaptor_Curve aC2 = new(TopoDS.Edge(aDS.Shape(e2)));
+                EdgeCurveAdaptor aC1 = new(ShapeCasts.Edge(aDS.Shape(e1)));
+                EdgeCurveAdaptor aC2 = new(ShapeCasts.Edge(aDS.Shape(e2)));
                 Point3D a1F = aC1.Value(aC1.FirstParameter()), a1L = aC1.Value(aC1.LastParameter());
                 Point3D a2F = aC2.Value(aC2.FirstParameter()), a2L = aC2.Value(aC2.LastParameter());
                 if (a1F.Distance(a2F) < 1e-9 && a1L.Distance(a2L) < 1e-9)
@@ -413,7 +417,7 @@ public class BOPDS_DSTests
         // A new vertex in the middle of both
         aPB1.Range(out double aT1, out double aT2);
         int nVNew = aDS.Append(new BRepBuilderAPI_MakeVertex(new Point3D(50, 50, 50)).Vertex());
-        aDS.ChangeShapeInfo(nVNew).SetShapeType(TopAbs_VERTEX);
+        aDS.ChangeShapeInfo(nVNew).SetShapeType(ShapeType.Vertex);
         Assert.True(aDS.IsNewShape(nVNew));
         aPB1.AppendExtPave(new BOPDS_Pave(nVNew, 0.5 * (aT1 + aT2)));
         aPB2.Range(out aT1, out aT2);
@@ -517,7 +521,7 @@ public class BOPDS_DSTests
         Assert.Equal(1, aDS.InterfZZ().Length());
 
         // HasInterfShapeSubShapes / HasInterfSubShapes on a face of the first box
-        int nF = IndicesOfType(aDS, TopAbs_FACE, 0)[0];
+        int nF = IndicesOfType(aDS, ShapeType.Face, 0)[0];
         List<int> aFaceSubs = [.. aDS.ShapeInfo(nF).SubShapes()];
         Assert.False(aDS.HasInterfShapeSubShapes(50, nF));
         aDS.AddInterf(50, aFaceSubs[0]);
@@ -541,22 +545,22 @@ public class BOPDS_DSTests
         // OCCT: SetCommonPart is IntTools_CommonPrt's assignment, which appends the second edge's ranges to the
         // ones already there (occt-issues.md, unit 6A)
         IntTools_CommonPrt aCP = new();
-        aCP.SetType(TopAbs_EDGE);
+        aCP.SetType(ShapeType.Edge);
         aCP.AppendRange2(0.0, 1.0);
         BOPDS_InterfEE anEE = new();
         anEE.SetCommonPart(aCP);
         Assert.Equal(1, anEE.CommonPart().Ranges2().Length());
         anEE.SetCommonPart(aCP);
         Assert.Equal(2, anEE.CommonPart().Ranges2().Length());
-        Assert.Equal(TopAbs_EDGE, anEE.CommonPart().Type());
+        Assert.Equal(ShapeType.Edge, anEE.CommonPart().Type());
     }
 
     [Fact]
     public void FaceInfo_OnInAndAloneVertices()
     {
         BOPDS_DS aDS = MakeDS(Box(0, 0, 0), Box(20, 0, 0));
-        int nF = IndicesOfType(aDS, TopAbs_FACE, 0)[0];
-        foreach (int nE in aDS.ShapeInfo(nF).SubShapes().Where(i => aDS.ShapeInfo(i).ShapeType() == TopAbs_EDGE))
+        int nF = IndicesOfType(aDS, ShapeType.Face, 0)[0];
+        foreach (int nE in aDS.ShapeInfo(nF).SubShapes().Where(i => aDS.ShapeInfo(i).ShapeType() == ShapeType.Edge))
         {
             aDS.ChangePaveBlocks(nE);
         }
@@ -573,7 +577,7 @@ public class BOPDS_DSTests
         Assert.True(aFI.VerticesIn().IsEmpty());
 
         // A vertex/face interference puts the vertex In the face
-        int nV = IndicesOfType(aDS, TopAbs_VERTEX, 1)[0];
+        int nV = IndicesOfType(aDS, ShapeType.Vertex, 1)[0];
         BOPDS_InterfVF aVF = aDS.InterfVF().Append(new BOPDS_InterfVF());
         aVF.SetIndices(nV, nF);
         aDS.UpdateFaceInfoIn(nF);
@@ -616,15 +620,15 @@ public class BOPDS_DSTests
     public void SubShapesOnIn_AndSharedEdges()
     {
         BOPDS_DS aDS = MakeDS(Box(0, 0, 0));
-        List<int> aFaces = IndicesOfType(aDS, TopAbs_FACE);
-        foreach (int nE in IndicesOfType(aDS, TopAbs_EDGE))
+        List<int> aFaces = IndicesOfType(aDS, ShapeType.Face);
+        foreach (int nE in IndicesOfType(aDS, ShapeType.Edge))
         {
             aDS.ChangePaveBlocks(nE).First().SetEdge(nE);
         }
         // Two adjacent faces share one edge
         int nF1 = aFaces[0];
         int nF2 = aFaces.First(f => f != nF1 && aDS.ShapeInfo(f).SubShapes().Any(s =>
-            aDS.ShapeInfo(s).ShapeType() == TopAbs_EDGE && aDS.ShapeInfo(nF1).HasSubShape(s)));
+            aDS.ShapeInfo(s).ShapeType() == ShapeType.Edge && aDS.ShapeInfo(nF1).HasSubShape(s)));
         foreach (int nF in aFaces)
         {
             aDS.ChangeFaceInfo(nF);
@@ -649,7 +653,7 @@ public class BOPDS_DSTests
     public void IsValidShrunkData()
     {
         BOPDS_DS aDS = MakeDS(Box(0, 0, 0));
-        int nE = IndicesOfType(aDS, TopAbs_EDGE)[0];
+        int nE = IndicesOfType(aDS, ShapeType.Edge)[0];
         BOPDS_PaveBlock aPB = aDS.ChangePaveBlocks(nE).First();
         Assert.False(aDS.IsValidShrunkData(aPB));
         aPB.Range(out double aT1, out double aT2);
@@ -675,7 +679,7 @@ public class BOPDS_DSTests
         Assert.EndsWith(" ******\n", aText);
 
         using StringWriter aShapeWriter = new();
-        int nV = Enumerable.Range(0, aDS.NbShapes()).First(i => aDS.ShapeInfo(i).ShapeType() == TopAbs_VERTEX);
+        int nV = Enumerable.Range(0, aDS.NbShapes()).First(i => aDS.ShapeInfo(i).ShapeType() == ShapeType.Vertex);
         aDS.ShapeInfo(nV).Dump(aShapeWriter);
         Assert.Equal(" VERTEX { }", aShapeWriter.ToString());
     }

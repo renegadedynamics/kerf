@@ -1,8 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Geometry;
-using static Occt.AppParCurves_Constraint;
-using static Occt.Approx_ParametrizationType;
+using static Kerf.Engine.Approximation.Constraint;
+using static Kerf.Engine.Approximation.ParametrizationType;
 using static OcctNet.ModelingData.Tests.AppDef_BSplineComputeTests;
 
 namespace OcctNet.ModelingData.Tests;
@@ -11,12 +12,12 @@ namespace OcctNet.ModelingData.Tests;
 public class AppDef_ComputeTests
 {
     // The largest distance between the points and the Bezier curves at their parameters.
-    private static double MaxDistance(AppDef_Compute theComputer, NCollection_Array1<Point3D> thePoints)
+    private static double MaxDistance(Compute theComputer, NCollection_Array1<Point3D> thePoints)
     {
         double aMax = 0.0;
-        for (int c = 1; c <= theComputer.NbMultiCurves(); c++)
+        for (int c = 1; c <= theComputer.MultiCurveCount; c++)
         {
-            AppParCurves_MultiCurve aC = theComputer.Value(c);
+            MultiCurve aC = theComputer.Value(c);
             NCollection_Array1<double> aPar = theComputer.Parameters(c);
             for (int i = aPar.Lower(); i <= aPar.Upper(); i++)
             {
@@ -27,13 +28,13 @@ public class AppDef_ComputeTests
         return aMax;
     }
 
-    public static TheoryData<Approx_ParametrizationType, bool> ParTypesAndSquares() => AppDef_BSplineComputeTests.ParTypesAndSquares();
+    public static TheoryData<ParametrizationType, bool> ParTypesAndSquares() => AppDef_BSplineComputeTests.ParTypesAndSquares();
 
     // The largest distance between the points of the MultiCurve theIndex and the curve, at their parameters.
-    private static double MaxDistance(AppDef_Compute theComputer, int theIndex, NCollection_Array1<Point3D> thePoints)
+    private static double MaxDistance(Compute theComputer, int theIndex, NCollection_Array1<Point3D> thePoints)
     {
         double aMax = 0.0;
-        AppParCurves_MultiCurve aC = theComputer.Value(theIndex);
+        MultiCurve aC = theComputer.Value(theIndex);
         NCollection_Array1<double> aPar = theComputer.Parameters(theIndex);
         for (int i = aPar.Lower(); i <= aPar.Upper(); i++)
         {
@@ -44,16 +45,16 @@ public class AppDef_ComputeTests
     }
 
     [Theory]
-    [InlineData(Approx_ChordLength)]
-    [InlineData(Approx_Centripetal)]
-    [InlineData(Approx_IsoParametric)]
-    public void Cubic_IsOneBezier(Approx_ParametrizationType thePar)
+    [InlineData(ChordLength)]
+    [InlineData(Centripetal)]
+    [InlineData(IsoParametric)]
+    public void Cubic_IsOneBezier(ParametrizationType thePar)
     {
         NCollection_Array1<Point3D> aPnts = Sample3d(25, Cubic);
-        AppDef_Compute aComputer = new(new AppDef_MultiLine(aPnts), 3, 8, 1.0e-6, 1.0e-6, 5, true, thePar, false);
-        Assert.True(aComputer.IsAllApproximated());
-        Assert.True(aComputer.IsToleranceReached());
-        Assert.Equal(1, aComputer.NbMultiCurves());
+        Compute aComputer = new(new MultiLine(aPnts), 3, 8, 1.0e-6, 1.0e-6, 5, true, thePar, false);
+        Assert.True(aComputer.IsAllApproximated);
+        Assert.True(aComputer.IsToleranceReached);
+        Assert.Equal(1, aComputer.MultiCurveCount);
         aComputer.Error(1, out double aTol3d, out double aTol2d);
         Assert.True(aTol3d <= 1.0e-6);
         Assert.Equal(0.0, aTol2d);
@@ -66,9 +67,9 @@ public class AppDef_ComputeTests
     {
         // The cubic is sampled uniformly in t: with iso-parametric parameters, a cubic Bezier reproduces it.
         NCollection_Array1<Point3D> aPnts = Sample3d(25, Cubic);
-        AppDef_Compute aComputer = new(new AppDef_MultiLine(aPnts), 3, 8, 1.0e-9, 1.0e-9, 5, true, Approx_IsoParametric, true);
-        Assert.True(aComputer.IsToleranceReached());
-        Assert.Equal(1, aComputer.NbMultiCurves());
+        Compute aComputer = new(new MultiLine(aPnts), 3, 8, 1.0e-9, 1.0e-9, 5, true, IsoParametric, true);
+        Assert.True(aComputer.IsToleranceReached);
+        Assert.Equal(1, aComputer.MultiCurveCount);
         Assert.Equal(3, aComputer.Value().Degree());
         aComputer.Value().Value(1, 0.3, out Point3D aP);
         Assert.True(aP.Distance(Cubic(0.3)) < 1e-12);
@@ -76,19 +77,19 @@ public class AppDef_ComputeTests
 
     [Theory]
     [MemberData(nameof(ParTypesAndSquares))]
-    public void Sine_IsCutIntoBeziers(Approx_ParametrizationType thePar, bool theSquares)
+    public void Sine_IsCutIntoBeziers(ParametrizationType thePar, bool theSquares)
     {
         NCollection_Array1<Point3D> aPnts = Sample3d(80, t => new Point3D(10.0 * t, Math.Sin(12.0 * t), 0.5 * Math.Cos(9.0 * t)));
-        AppDef_Compute aComputer = new(new AppDef_MultiLine(aPnts), 3, 8, 1.0e-3, 1.0e-6, 5, true, thePar, theSquares);
-        Assert.True(aComputer.IsAllApproximated());
-        Assert.True(aComputer.NbMultiCurves() > 1);
+        Compute aComputer = new(new MultiLine(aPnts), 3, 8, 1.0e-3, 1.0e-6, 5, true, thePar, theSquares);
+        Assert.True(aComputer.IsAllApproximated);
+        Assert.True(aComputer.MultiCurveCount > 1);
         // AppDef_MyLineTool adds no points, so the algorithm stops halving a part at degreemax + 5 points and keeps
         // its best curve: with chord-length parameters and no parameter optimisation, 1e-3 isn't reached here.
-        Assert.Equal(!(theSquares && thePar == Approx_ChordLength), aComputer.IsToleranceReached());
-        for (int c = 1; c <= aComputer.NbMultiCurves(); c++)
+        Assert.Equal(!(theSquares && thePar == ChordLength), aComputer.IsToleranceReached);
+        for (int c = 1; c <= aComputer.MultiCurveCount; c++)
         {
             aComputer.Error(c, out double aTol3d, out _);
-            if (aComputer.IsToleranceReached())
+            if (aComputer.IsToleranceReached)
             {
                 Assert.True(aTol3d <= 1.0e-3, $"curve {c}: {aTol3d}");
             }
@@ -97,7 +98,7 @@ public class AppDef_ComputeTests
         }
 
         // The pieces join: each starts where the previous one ends, at the shared point.
-        for (int c = 2; c <= aComputer.NbMultiCurves(); c++)
+        for (int c = 2; c <= aComputer.MultiCurveCount; c++)
         {
             aComputer.Value(c - 1).Value(1, 1.0, out Point3D aEnd);
             aComputer.Value(c).Value(1, 0.0, out Point3D aStart);
@@ -106,8 +107,8 @@ public class AppDef_ComputeTests
         }
 
         // SplineValue joins the pieces into one B-spline, with a knot per junction.
-        AppParCurves_MultiBSpCurve aSpline = aComputer.SplineValue();
-        Assert.Equal(aComputer.NbMultiCurves() + 1, aSpline.Knots().Length());
+        MultiBSpCurve aSpline = aComputer.SplineValue();
+        Assert.Equal(aComputer.MultiCurveCount + 1, aSpline.Knots().Length());
         aSpline.Value(1, aSpline.Knots()[aSpline.Knots().Upper()], out Point3D aLast);
         Assert.True(aLast.Distance(aPnts[aPnts.Upper()]) < 1e-9);
     }
@@ -116,8 +117,8 @@ public class AppDef_ComputeTests
     public void Circle_IsFittedWithinTolerance()
     {
         NCollection_Array1<Point3D> aPnts = Sample3d(30, Circle);
-        AppDef_Compute aComputer = new(new AppDef_MultiLine(aPnts), 4, 8, 1.0e-6, 1.0e-6, 5, true, Approx_ChordLength, false);
-        Assert.True(aComputer.IsAllApproximated());
+        Compute aComputer = new(new MultiLine(aPnts), 4, 8, 1.0e-6, 1.0e-6, 5, true, ChordLength, false);
+        Assert.True(aComputer.IsAllApproximated);
         Assert.True(MaxDistance(aComputer, aPnts) <= 1.0e-6);
     }
 
@@ -125,9 +126,9 @@ public class AppDef_ComputeTests
     public void Line2d_IsFitted()
     {
         NCollection_Array1<Point2D> aPnts = Sample2d(20, t => new Point2D(t, t * t * t));
-        AppDef_Compute aComputer = new(new AppDef_MultiLine(aPnts), 3, 6, 1.0e-6, 1.0e-6, 5, true, Approx_IsoParametric, true);
-        Assert.Equal(1, aComputer.NbMultiCurves());
-        AppParCurves_MultiCurve aC = aComputer.Value();
+        Compute aComputer = new(new MultiLine(aPnts), 3, 6, 1.0e-6, 1.0e-6, 5, true, IsoParametric, true);
+        Assert.Equal(1, aComputer.MultiCurveCount);
+        MultiCurve aC = aComputer.Value();
         Assert.Equal(2, aC.Dimension(1));
         aC.Value(1, 0.5, out Point2D aP);
         Assert.Equal(0.5, aP.X(), 1e-9);
@@ -138,9 +139,9 @@ public class AppDef_ComputeTests
     public void NoCutting_KeepsTheBestBezier()
     {
         NCollection_Array1<Point3D> aPnts = Sample3d(60, Sine);
-        AppDef_Compute aComputer = new(new AppDef_MultiLine(aPnts), 3, 5, 1.0e-8, 1.0e-8, 5, false, Approx_ChordLength, true);
-        Assert.False(aComputer.IsAllApproximated());
-        Assert.Equal(1, aComputer.NbMultiCurves());
+        Compute aComputer = new(new MultiLine(aPnts), 3, 5, 1.0e-8, 1.0e-8, 5, false, ChordLength, true);
+        Assert.False(aComputer.IsAllApproximated);
+        Assert.Equal(1, aComputer.MultiCurveCount);
         aComputer.Error(1, out double aTol3d, out _);
         Assert.True(aTol3d > 1.0e-8);
         Assert.Equal(60, aComputer.Parameters().Length());
@@ -150,11 +151,11 @@ public class AppDef_ComputeTests
     public void Constraints_HoldAtTheEnds()
     {
         NCollection_Array1<Point3D> aPnts = Sample3d(20, Circle);
-        AppDef_Compute aComputer = new(4, 8, 1.0e-4, 1.0e-6, 5, true, Approx_ChordLength, false);
-        aComputer.SetConstraints(AppParCurves_PassPoint, AppParCurves_PassPoint);
-        aComputer.Perform(new AppDef_MultiLine(aPnts));
-        AppParCurves_MultiCurve aFirst = aComputer.Value(1);
-        AppParCurves_MultiCurve aLastCurve = aComputer.Value(aComputer.NbMultiCurves());
+        Compute aComputer = new(4, 8, 1.0e-4, 1.0e-6, 5, true, ChordLength, false);
+        aComputer.SetConstraints(PassPoint, PassPoint);
+        aComputer.Perform(new MultiLine(aPnts));
+        MultiCurve aFirst = aComputer.Value(1);
+        MultiCurve aLastCurve = aComputer.Value(aComputer.MultiCurveCount);
         aFirst.Value(1, 0.0, out Point3D aP0);
         aLastCurve.Value(1, 1.0, out Point3D aP1);
         Assert.True(aP0.Distance(aPnts[1]) < 1e-9);
@@ -170,8 +171,8 @@ public class AppDef_ComputeTests
         {
             aPar[i] = (i - 1) / 11.0;
         }
-        AppDef_Compute aComputer = new(new AppDef_MultiLine(aPnts), aPar, 3, 3, 1.0e-9, 1.0e-9, 0, false, true);
-        Assert.Equal(1, aComputer.NbMultiCurves());
+        Compute aComputer = new(new MultiLine(aPnts), aPar, 3, 3, 1.0e-9, 1.0e-9, 0, false, true);
+        Assert.Equal(1, aComputer.MultiCurveCount);
         Assert.Equal(3, aComputer.Value().Degree());
         aComputer.Value().Value(1, 0.7, out Point3D aP);
         Assert.True(aP.Distance(Cubic(0.7)) < 1e-12);
@@ -186,11 +187,11 @@ public class AppDef_ComputeTests
             [new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 1, 0), new Point3D(3, 0, 0)]);
         NCollection_Array1<Point3D> aPoles2 = NCollection_Array1<Point3D>.From(
             [new Point3D(3, 0, 0), new Point3D(4, -1, 0), new Point3D(5, 0, 1), new Point3D(6, 2, 2)]);
-        Approx_MCurvesToBSpCurve aTrans = new();
+        MCurvesToBSpCurve aTrans = new();
         aTrans.Append(MultiCurve(aPoles1));
         aTrans.Append(MultiCurve(aPoles2));
         aTrans.Perform();
-        AppParCurves_MultiBSpCurve aSpline = aTrans.Value();
+        MultiBSpCurve aSpline = aTrans.Value();
         Assert.Equal(3, aSpline.Degree());
         Assert.Equal(3, aSpline.Knots().Length());
         Assert.Equal(new[] { 4, 2, 4 }, aSpline.Multiplicities().ToArray()); // the tangents line up: C1
@@ -208,12 +209,12 @@ public class AppDef_ComputeTests
         Assert.Equal(new[] { 4, 4 }, aTrans.Value().Multiplicities().ToArray());
     }
 
-    private static AppParCurves_MultiCurve MultiCurve(NCollection_Array1<Point3D> thePoles)
+    private static MultiCurve MultiCurve(NCollection_Array1<Point3D> thePoles)
     {
-        AppParCurves_MultiCurve aC = new(thePoles.Length());
+        MultiCurve aC = new(thePoles.Length());
         for (int i = 1; i <= thePoles.Length(); i++)
         {
-            aC.SetValue(i, new AppParCurves_MultiPoint(NCollection_Array1<Point3D>.From([thePoles[i]])));
+            aC.SetValue(i, new MultiPoint(NCollection_Array1<Point3D>.From([thePoles[i]])));
         }
         return aC;
     }

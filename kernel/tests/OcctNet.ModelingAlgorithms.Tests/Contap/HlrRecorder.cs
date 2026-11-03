@@ -1,13 +1,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Text;
 using static Occt.Contap_IType;
 using static Kerf.Geometry.CurveKind;
 using static Occt.IntSurf_TypeTrans;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -614,17 +617,17 @@ internal sealed class HlrRecorder
         }
     }
 
-    internal static TopoDS_Face FirstFace(TopoDS_Shape S, int theRank)
+    internal static Face FirstFace(Shape S, int theRank)
     {
-        TopExp_Explorer anExp = new(S, TopAbs_FACE);
+        Explorer anExp = new(S, ShapeType.Face);
         for (int i = 1; i < theRank; i++)
         {
             anExp.Next();
         }
-        return TopoDS.Face(anExp.Current());
+        return ShapeCasts.Face(anExp.Current());
     }
 
-    internal static Geom_BSplineSurface Bump()
+    internal static BSplineSurface Bump()
     {
         NCollection_Array2<Point3D> aPoles = new(1, 5, 1, 4);
         for (int i = 1; i <= 5; i++)
@@ -648,15 +651,15 @@ internal sealed class HlrRecorder
         aVKnots[2] = 1.0;
         aVMults[1] = 4;
         aVMults[2] = 4;
-        return new Geom_BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, 3, 3);
+        return new BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, 3, 3);
     }
 
-    private void RecFace(string theName, TopoDS_Face theFace)
+    private void RecFace(string theName, Face theFace)
     {
-        TopoDS_Face aF = TopoDS.Face(theFace.Oriented(TopAbs_FORWARD));
+        Face aF = ShapeCasts.Face(theFace.Oriented(Forward));
         BRepTopAdaptor_Tool aTool = new(aF, global::Kerf.Engine.Foundation.Precision.PConfusion());
         BRepTopAdaptor_TopolTool aDomain = aTool.GetTopolTool();
-        Adaptor3d_Surface aSurface = aTool.GetSurface()!;
+        SurfaceAdaptorBase aSurface = aTool.GetSurface()!;
 
         Vector3D[] aDirs = [new Vector3D(0.3, -0.4, 0.8), new Vector3D(1, 0, 0), new Vector3D(0.6, 0.7, -0.2)];
         Point3D[] aEyes = [new Point3D(40, -25, 30), new Point3D(-3, 50, 12)];
@@ -701,7 +704,7 @@ internal sealed class HlrRecorder
     }
 
     /// <summary>The faces of the contour cases, by name (in the recorder's order).</summary>
-    internal static IEnumerable<(string Name, TopoDS_Face Face)> Faces()
+    internal static IEnumerable<(string Name, Face Face)> Faces()
     {
         yield return ("sphere", FirstFace(new BRepPrimAPI_MakeSphere(new Point3D(1, 2, 3), 10.0).Shape(), 1));
         yield return ("halfsphere", FirstFace(new BRepPrimAPI_MakeSphere(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
@@ -724,7 +727,7 @@ internal sealed class HlrRecorder
 
     public void RecContours()
     {
-        foreach ((string aName, TopoDS_Face aFace) in Faces())
+        foreach ((string aName, Face aFace) in Faces())
         {
             RecFace(aName, aFace);
         }
@@ -733,7 +736,7 @@ internal sealed class HlrRecorder
     /// <summary>The contours of one face only (the tests run the faces as separate cases).</summary>
     public void RecContours(string theName)
     {
-        foreach ((string aName, TopoDS_Face aFace) in Faces())
+        foreach ((string aName, Face aFace) in Faces())
         {
             if (aName == theName)
             {

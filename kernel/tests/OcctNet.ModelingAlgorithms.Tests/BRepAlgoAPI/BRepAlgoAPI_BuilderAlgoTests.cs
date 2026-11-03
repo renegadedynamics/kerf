@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Reflection;
 
 namespace OcctNet.ModelingAlgorithms.Tests.BRepAlgoAPI;
@@ -83,10 +84,10 @@ public static class BRepAlgoAPI_BuilderAlgoTests
         [Fact]
         public void IdenticalBoxes_A1()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
+            Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
+            Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
 
-            TopoDS_Shape aResult = PerformCommon(aBox1, aBox2);
+            Shape aResult = PerformCommon(aBox1, aBox2);
             ValidateResult(aResult, 6.0);
         }
     }

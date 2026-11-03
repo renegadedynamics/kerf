@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -11,15 +12,15 @@ namespace Occt;
 public static class BOPDS_Tools
 {
     /// <summary>True if the type is that of a shape with a boundary representation: vertex, edge or face.</summary>
-    public static bool HasBRep(TopAbs_ShapeEnum aTi) => aTi == TopAbs_VERTEX || aTi == TopAbs_EDGE || aTi == TopAbs_FACE;
+    public static bool HasBRep(ShapeType aTi) => aTi == ShapeType.Vertex || aTi == ShapeType.Edge || aTi == ShapeType.Face;
 
     /// <summary>True if a shape of the type can take part in an interference: one with BRep, or a solid.</summary>
-    public static bool IsInterfering(TopAbs_ShapeEnum aTi) => HasBRep(aTi) || aTi == TopAbs_SOLID;
+    public static bool IsInterfering(ShapeType aTi) => HasBRep(aTi) || aTi == ShapeType.Solid;
 
     /// <summary>
     /// The interference type of two shape types: 0 VV, 1 VE, 2 EE, 3 VF, 4 EF, 5 FF, 6 VZ, 7 EZ, 8 FZ, 9 ZZ, or -1.
     /// </summary>
-    public static int TypeToInteger(TopAbs_ShapeEnum aType1, TopAbs_ShapeEnum aType2)
+    public static int TypeToInteger(ShapeType aType1, ShapeType aType2)
     {
         int iRet, iT1, iT2, iX;
         //
@@ -73,37 +74,37 @@ public static class BOPDS_Tools
     }
 
     /// <summary>The shape type as an integer: compound 0, compsolid 1, solid 2, ..., vertex 7, shape 8.</summary>
-    public static int TypeToInteger(TopAbs_ShapeEnum aType1)
+    public static int TypeToInteger(ShapeType aType1)
     {
         int iRet = 9;
         //
         switch (aType1)
         {
-            case TopAbs_COMPOUND:
+            case ShapeType.Compound:
                 iRet = 0;
                 break;
-            case TopAbs_COMPSOLID:
+            case ShapeType.CompSolid:
                 iRet = 1;
                 break;
-            case TopAbs_SOLID:
+            case ShapeType.Solid:
                 iRet = 2;
                 break;
-            case TopAbs_SHELL:
+            case ShapeType.Shell:
                 iRet = 3;
                 break;
-            case TopAbs_FACE:
+            case ShapeType.Face:
                 iRet = 4;
                 break;
-            case TopAbs_WIRE:
+            case ShapeType.Wire:
                 iRet = 5;
                 break;
-            case TopAbs_EDGE:
+            case ShapeType.Edge:
                 iRet = 6;
                 break;
-            case TopAbs_VERTEX:
+            case ShapeType.Vertex:
                 iRet = 7;
                 break;
-            case TopAbs_SHAPE:
+            case ShapeType.Shape:
                 iRet = 8;
                 break;
             default:

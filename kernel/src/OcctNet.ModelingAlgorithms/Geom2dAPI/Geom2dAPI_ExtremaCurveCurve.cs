@@ -4,8 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -24,23 +26,23 @@ public class Geom2dAPI_ExtremaCurveCurve
 {
     private readonly bool myIsDone;
     private readonly int myIndex;
-    private readonly Extrema_ExtCC2d myExtCC;
-    private readonly Geom2dAdaptor_Curve myC1 = new();
-    private readonly Geom2dAdaptor_Curve myC2 = new();
+    private readonly ExtCC2d myExtCC;
+    private readonly CurveAdaptor2D myC1 = new();
+    private readonly CurveAdaptor2D myC2 = new();
 
     /// <summary>
     /// The extrema between the part of <paramref name="C1"/> between <paramref name="U1min"/> and
     /// <paramref name="U1max"/> and the part of <paramref name="C2"/> between <paramref name="U2min"/> and
     /// <paramref name="U2max"/>.
     /// </summary>
-    public Geom2dAPI_ExtremaCurveCurve(Geom2d_Curve C1, Geom2d_Curve C2, double U1min, double U1max, double U2min,
+    public Geom2dAPI_ExtremaCurveCurve(Curve2D C1, Curve2D C2, double U1min, double U1max, double U2min,
                                        double U2max)
     {
         myC1.Load(C1, U1min, U1max);
         myC2.Load(C2, U2min, U2max);
-        Extrema_ExtCC2d theExtCC = new(myC1, myC2);
+        ExtCC2d theExtCC = new(myC1, myC2);
         myExtCC = theExtCC;
-        myIsDone = myExtCC.IsDone() && (myExtCC.NbExt() > 0);
+        myIsDone = myExtCC.IsDone && (myExtCC.ExtCount > 0);
 
         if (myIsDone)
         {
@@ -48,7 +50,7 @@ public class Geom2dAPI_ExtremaCurveCurve
             double Dist2, Dist2Min = myExtCC.SquareDistance(1);
             myIndex = 1;
 
-            for (int i = 2; i <= myExtCC.NbExt(); i++)
+            for (int i = 2; i <= myExtCC.ExtCount; i++)
             {
                 Dist2 = myExtCC.SquareDistance(i);
                 if (Dist2 < Dist2Min)
@@ -65,7 +67,7 @@ public class Geom2dAPI_ExtremaCurveCurve
     {
         if (myIsDone)
         {
-            return myExtCC.NbExt();
+            return myExtCC.ExtCount;
         }
         else
         {
@@ -78,7 +80,7 @@ public class Geom2dAPI_ExtremaCurveCurve
     public void Points(int Index, out Point2D P1, out Point2D P2)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > NbExtrema(), "Geom2dAPI_ExtremaCurveCurve::Points");
-        myExtCC.Points(Index, out Extrema_POnCurv2d PC1, out Extrema_POnCurv2d PC2);
+        myExtCC.Points(Index, out POnCurv2d PC1, out POnCurv2d PC2);
 
         P1 = PC1.Value();
         P2 = PC2.Value();
@@ -89,7 +91,7 @@ public class Geom2dAPI_ExtremaCurveCurve
     public void Parameters(int Index, out double U1, out double U2)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > NbExtrema(), "Geom2dAPI_ExtremaCurveCurve::Parameters");
-        myExtCC.Points(Index, out Extrema_POnCurv2d PC1, out Extrema_POnCurv2d PC2);
+        myExtCC.Points(Index, out POnCurv2d PC1, out POnCurv2d PC2);
 
         U1 = PC1.Parameter();
         U2 = PC2.Parameter();
@@ -128,12 +130,12 @@ public class Geom2dAPI_ExtremaCurveCurve
     }
 
     /// <summary>The Extrema algorithm used.</summary>
-    public Extrema_ExtCC2d Extrema() => myExtCC;
+    public ExtCC2d Extrema() => myExtCC;
 
     /// <summary>OCCT's <c>operator double()</c>: <see cref="LowerDistance"/>.</summary>
     public static explicit operator double(Geom2dAPI_ExtremaCurveCurve theExtrema) => theExtrema.LowerDistance();
 
     /// <summary>OCCT's <c>operator int()</c>: the number of extrema of the Extrema algorithm.</summary>
     /// <exception cref="NotDoneException">The Extrema algorithm failed.</exception>
-    public static explicit operator int(Geom2dAPI_ExtremaCurveCurve theExtrema) => theExtrema.myExtCC.NbExt();
+    public static explicit operator int(Geom2dAPI_ExtremaCurveCurve theExtrema) => theExtrema.myExtCC.ExtCount;
 }

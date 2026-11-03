@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 
 namespace Occt;
 
@@ -15,7 +16,7 @@ namespace Occt;
 /// <remarks>A C++ value class, so a struct. <c>SetArc</c> is an internal mutator with a public <c>WithArc</c> twin.</remarks>
 public partial struct BRepBlend_PointOnRst : IEquatable<BRepBlend_PointOnRst>
 {
-    private Adaptor2d_Curve2d? arc;
+    private Curve2DAdaptorBase? arc;
     private IntSurf_Transition traline;
     private IntSurf_Transition traarc;
     private double prm;
@@ -28,7 +29,7 @@ public partial struct BRepBlend_PointOnRst : IEquatable<BRepBlend_PointOnRst>
     }
 
     /// <summary>A point at parameter <paramref name="Param"/> on the arc <paramref name="A"/>.</summary>
-    public BRepBlend_PointOnRst(Adaptor2d_Curve2d A, double Param, in IntSurf_Transition TLine,
+    public BRepBlend_PointOnRst(Curve2DAdaptorBase A, double Param, in IntSurf_Transition TLine,
                                 in IntSurf_Transition TArc)
     {
         arc = A;
@@ -37,7 +38,7 @@ public partial struct BRepBlend_PointOnRst : IEquatable<BRepBlend_PointOnRst>
         prm = Param;
     }
 
-    internal void SetArc(Adaptor2d_Curve2d A, double Param, in IntSurf_Transition TLine, in IntSurf_Transition TArc)
+    internal void SetArc(Curve2DAdaptorBase A, double Param, in IntSurf_Transition TLine, in IntSurf_Transition TArc)
     {
         arc = A;
         prm = Param;
@@ -45,7 +46,7 @@ public partial struct BRepBlend_PointOnRst : IEquatable<BRepBlend_PointOnRst>
         traarc = TArc;
     }
 
-    public readonly BRepBlend_PointOnRst WithArc(Adaptor2d_Curve2d A, double Param, in IntSurf_Transition TLine,
+    public readonly BRepBlend_PointOnRst WithArc(Curve2DAdaptorBase A, double Param, in IntSurf_Transition TLine,
                                                  in IntSurf_Transition TArc)
     {
         BRepBlend_PointOnRst aCopy = this;
@@ -53,7 +54,7 @@ public partial struct BRepBlend_PointOnRst : IEquatable<BRepBlend_PointOnRst>
         return aCopy;
     }
 
-    public readonly Adaptor2d_Curve2d Arc() => arc!;
+    public readonly Curve2DAdaptorBase Arc() => arc!;
 
     public readonly IntSurf_Transition TransitionOnLine() => traline;
 

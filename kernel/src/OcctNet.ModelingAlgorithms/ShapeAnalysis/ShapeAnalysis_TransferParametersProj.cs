@@ -3,9 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -16,15 +19,15 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// A working object. <see cref="TransferRange"/> writes into the edge it is given and is internal (ported code calls
-/// it on edges it builds; it throws on a frozen edge). The public <see cref="CopyNMVertex(in TopoDS_Vertex, in
-/// TopoDS_Edge, in TopoDS_Edge)"/> and its face form return new frozen vertices; ported code that goes on building
+/// it on edges it builds; it throws on a frozen edge). The public <see cref="CopyNMVertex(in Vertex, in
+/// Edge, in Edge)"/> and its face form return new frozen vertices; ported code that goes on building
 /// calls the internal non-freezing forms.
 /// </remarks>
 public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParameters
 {
-    private Geom_Curve?              myCurve;
-    private Geom2d_Curve?            myCurve2d;
-    private Adaptor3d_CurveOnSurface myAC3d = new Adaptor3d_CurveOnSurface();
+    private Curve3D?              myCurve;
+    private Curve2D?            myCurve2d;
+    private CurveOnSurface myAC3d = new CurveOnSurface();
     private double                   myPrecision;
     private Placement          myLocation = new Placement();
     private bool                     myForceProj;
@@ -40,7 +43,7 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
     }
 
     /// <summary>Creates the tool for an edge and a face (the face may be null: 3d curve only).</summary>
-    public ShapeAnalysis_TransferParametersProj(in TopoDS_Edge E, in TopoDS_Face F)
+    public ShapeAnalysis_TransferParametersProj(in Edge E, in Face F)
     {
         myMaxTolerance = 1; // Precision::Infinite(); ?? pdn
         myForceProj    = false;
@@ -48,15 +51,15 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
     }
 
     /// <summary>Initializes the tool with an edge and a face.</summary>
-    public override void Init(in TopoDS_Edge E, in TopoDS_Face F)
+    public override void Init(in Edge E, in Face F)
     {
         myInitOK = false;
         base.Init(E, F);
         myEdge      = E;
-        myPrecision = BRep_Tool.Tolerance(E); // it is better - skl OCC2851
+        myPrecision = Tool.Tolerance(E); // it is better - skl OCC2851
         // myPrecision = Precision::Confusion();
 
-        myCurve = BRep_Tool.Curve(E, out myFirst, out myLast);
+        myCurve = Tool.Curve(E, out myFirst, out myLast);
         if (myCurve is null)
         {
             myFirst = 0.0;
@@ -64,7 +67,7 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
             return;
         }
 
-        if (F.IsNull())
+        if (F.IsNull)
         {
             return;
         }
@@ -72,11 +75,11 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
         ShapeAnalysis_Edge sae = new ShapeAnalysis_Edge();
         if (sae.PCurve(E, F, out myCurve2d, out double f2d, out double l2d, false))
         {
-            Geom2dAdaptor_Curve AC2d     = new Geom2dAdaptor_Curve(myCurve2d!, f2d, l2d);
-            Geom_Surface        aSurface = BRep_Tool.Surface(F, out myLocation)!;
-            GeomAdaptor_Surface AdS      = new GeomAdaptor_Surface(aSurface);
+            CurveAdaptor2D AC2d     = new CurveAdaptor2D(myCurve2d!, f2d, l2d);
+            Surface        aSurface = Tool.Surface(F, out myLocation)!;
+            SurfaceAdaptor AdS      = new SurfaceAdaptor(aSurface);
 
-            Adaptor3d_CurveOnSurface Ad1 = new Adaptor3d_CurveOnSurface(AC2d, AdS);
+            CurveOnSurface Ad1 = new CurveOnSurface(AC2d, AdS);
             myAC3d   = Ad1; // new Adaptor3d_CurveOnSurface(AC2d,AdS);
             myInitOK = true;
         }
@@ -86,7 +89,7 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
     public override NCollection_HSequence<double> Perform(NCollection_HSequence<double> Knots, bool To2d)
     {
         // pdn
-        if (!myInitOK || (!myForceProj && myPrecision < myMaxTolerance && BRep_Tool.SameParameter(myEdge)))
+        if (!myInitOK || (!myForceProj && myPrecision < myMaxTolerance && Tool.SameParameter(myEdge)))
         {
             return base.Perform(Knots, To2d);
         }
@@ -120,7 +123,7 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
         }
 
         // pdn correcting on periodic
-        if (myCurve!.IsClosed())
+        if (myCurve!.IsClosed)
         {
             for (j = len; j >= 1; j--)
             {
@@ -155,7 +158,7 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
     private double PreformSegment(double Param, bool To2d, double First, double Last)
     {
         double linPar = base.Perform(Param, To2d);
-        if (!myInitOK || (!myForceProj && myPrecision < myMaxTolerance && BRep_Tool.SameParameter(myEdge)))
+        if (!myInitOK || (!myForceProj && myPrecision < myMaxTolerance && Tool.SameParameter(myEdge)))
         {
             return linPar;
         }
@@ -166,9 +169,9 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
         if (To2d)
         {
             Point3D                   p1   = myCurve!.Value(Param).Transformed(myLocation.Inverted().Transformation());
-            Adaptor3d_Surface        AdS  = myAC3d.GetSurface()!;
-            Geom2dAdaptor_Curve      AC2d = new Geom2dAdaptor_Curve(myCurve2d!, First, Last);
-            Adaptor3d_CurveOnSurface Ad1  = new Adaptor3d_CurveOnSurface(AC2d, AdS);
+            SurfaceAdaptorBase        AdS  = myAC3d.GetSurface()!;
+            CurveAdaptor2D      AC2d = new CurveAdaptor2D(myCurve2d!, First, Last);
+            CurveOnSurface Ad1  = new CurveOnSurface(AC2d, AdS);
             projDev = sac.Project(Ad1, p1, myPrecision, out _, out ppar); // pdn
             linDev  = p1.Distance(Ad1.Value(linPar));
         }
@@ -190,7 +193,7 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
     /// <summary>Transfers one parameter from 3d to 2d or back, by projection.</summary>
     public override double Perform(double Knot, bool To2d)
     {
-        if (!myInitOK || (!myForceProj && myPrecision < myMaxTolerance && BRep_Tool.SameParameter(myEdge)))
+        if (!myInitOK || (!myForceProj && myPrecision < myMaxTolerance && Tool.SameParameter(myEdge)))
         {
             return base.Perform(Knot, To2d);
         }
@@ -221,17 +224,17 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
         return res;
     }
 
-    private static double CorrectParameter(Geom2d_Curve crv, double param)
+    private static double CorrectParameter(Curve2D crv, double param)
     {
-        if (crv is Geom2d_TrimmedCurve tmpT)
+        if (crv is TrimmedCurve2D tmpT)
         {
             return CorrectParameter(tmpT.BasisCurve(), param);
         }
-        else if (crv is Geom2d_OffsetCurve tmpO)
+        else if (crv is OffsetCurve2D tmpO)
         {
             return CorrectParameter(tmpO.BasisCurve(), param);
         }
-        else if (crv is Geom2d_BSplineCurve bspline)
+        else if (crv is BSplineCurve2D bspline)
         {
             for (int j = bspline.FirstUKnotIndex(); j <= bspline.LastUKnotIndex(); j++)
             {
@@ -251,15 +254,15 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
     /// <paramref name="prevPar"/> and <paramref name="currPar"/>, on the 3d curve or the pcurve) by projection, and its
     /// SameRange flag. Writes into <paramref name="newEdge"/>: it throws on a frozen edge.
     /// </summary>
-    internal override void TransferRange(in TopoDS_Edge newEdge, double prevPar, double currPar, bool Is2d)
+    internal override void TransferRange(in Edge newEdge, double prevPar, double currPar, bool Is2d)
     {
-        if (!myInitOK || (!myForceProj && myPrecision < myMaxTolerance && BRep_Tool.SameParameter(myEdge)))
+        if (!myInitOK || (!myForceProj && myPrecision < myMaxTolerance && Tool.SameParameter(myEdge)))
         {
             base.TransferRange(newEdge, prevPar, currPar, Is2d);
             return;
         }
 
-        BRep_Builder    B         = new BRep_Builder();
+        BrepBuilder    B         = new BrepBuilder();
         bool            samerange = true;
         ShapeBuild_Edge sbe       = new ShapeBuild_Edge();
         sbe.CopyRanges(newEdge, myEdge);
@@ -332,20 +335,20 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
         ShapeAnalysis_Curve sac            = new ShapeAnalysis_Curve();
         double              ppar1, ppar2;
         // OCCT.NET: frozen: ChangeCurves() throws on a frozen edge, as BRep_Builder does
-        NCollection_List<BRep_CurveRepresentation> tolist = ((BRep_TEdge)newEdge.TShape()!).ChangeCurves();
-        BRep_GCurve? toGC;
-        for (NCollection_List<BRep_CurveRepresentation>.Iterator toitcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(tolist);
+        NCollection_List<CurveRepresentation> tolist = ((BrepTEdge)newEdge.TShape()!).ChangeCurves();
+        GCurve? toGC;
+        for (NCollection_List<CurveRepresentation>.Iterator toitcr = new NCollection_List<CurveRepresentation>.Iterator(tolist);
              toitcr.More();
              toitcr.Next())
         {
-            toGC = toitcr.Value() as BRep_GCurve;
+            toGC = toitcr.Value() as GCurve;
             if (toGC is null)
             {
                 continue;
             }
 
             Placement loc = (EdgeLoc * toGC.Location()).Inverted();
-            if (toGC.IsCurve3D())
+            if (toGC.IsCurve3D)
             {
                 if (!Is2d)
                 {
@@ -354,7 +357,7 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
                 }
                 else
                 {
-                    Geom_Curve? C3d = toGC.Curve3D();
+                    Curve3D? C3d = toGC.Curve3D();
                     if (C3d is null)
                     {
                         continue;
@@ -365,7 +368,7 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
                     double            len   = last - first;
                     Point3D            ploc1 = p1.Transformed(loc.Transformation());
                     Point3D            ploc2 = p2.Transformed(loc.Transformation());
-                    GeomAdaptor_Curve GAC   = new GeomAdaptor_Curve(C3d, first, last);
+                    CurveAdaptor GAC   = new CurveAdaptor(C3d, first, last);
                     // CATIA bplseitli.model FAC1155 - Copy: protection for degenerated edges(3d case for
                     // symmetry)
                     double linFirst  = first + alpha * len;
@@ -426,13 +429,13 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
 
                 bool          localLinearFirst = useLinearFirst;
                 bool          localLinearLast  = useLinearLast;
-                Geom2d_Curve  C2d              = toGC.PCurve()!;
+                Curve2D  C2d              = toGC.PCurve()!;
                 double        first            = toGC.First();
                 double        last             = toGC.Last();
                 double        len              = last - first;
-                Geom2dAdaptor_Curve      AC2d  = new Geom2dAdaptor_Curve(toGC.PCurve()!, first, last);
-                GeomAdaptor_Surface      AdS   = new GeomAdaptor_Surface(toGC.Surface()!);
-                Adaptor3d_CurveOnSurface Ad1   = new Adaptor3d_CurveOnSurface(AC2d, AdS);
+                CurveAdaptor2D      AC2d  = new CurveAdaptor2D(toGC.PCurve()!, first, last);
+                SurfaceAdaptor      AdS   = new SurfaceAdaptor(toGC.Surface()!);
+                CurveOnSurface Ad1   = new CurveOnSurface(AC2d, AdS);
                 ShapeAnalysis_Curve      sac1  = new ShapeAnalysis_Curve();
 
                 // gp_Pnt p1 = Ad1.Value(prevPar);
@@ -514,7 +517,7 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
     /// <summary>Returns false when the transfer is a projection, else ShapeAnalysis_TransferParameters' answer.</summary>
     public override bool IsSameRange()
     {
-        if (!myInitOK || (!myForceProj && myPrecision < myMaxTolerance && BRep_Tool.SameParameter(myEdge)))
+        if (!myInitOK || (!myForceProj && myPrecision < myMaxTolerance && Tool.SameParameter(myEdge)))
         {
             return base.IsSameRange();
         }
@@ -535,10 +538,10 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
     /// its parameter on <paramref name="toedge"/>'s curve (projected when the ranges differ); a null vertex for any other
     /// orientation. The new vertex is frozen.
     /// </summary>
-    public static TopoDS_Vertex CopyNMVertex(in TopoDS_Vertex theV, in TopoDS_Edge toedge, in TopoDS_Edge fromedge)
+    public static Vertex CopyNMVertex(in Vertex theV, in Edge toedge, in Edge fromedge)
     {
-        TopoDS_Vertex anewV = InternalCopyNMVertex(theV, toedge, fromedge);
-        if (!anewV.IsNull())
+        Vertex anewV = InternalCopyNMVertex(theV, toedge, fromedge);
+        if (!anewV.IsNull)
         {
             anewV.TShape()!.FreezeGraph();
         }
@@ -551,10 +554,10 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
     /// its parameters on <paramref name="toFace"/>'s surface; a null vertex for any other orientation. The new vertex is
     /// frozen.
     /// </summary>
-    public static TopoDS_Vertex CopyNMVertex(in TopoDS_Vertex theV, in TopoDS_Face toFace, in TopoDS_Face fromFace)
+    public static Vertex CopyNMVertex(in Vertex theV, in Face toFace, in Face fromFace)
     {
-        TopoDS_Vertex anewV = InternalCopyNMVertex(theV, toFace, fromFace);
-        if (!anewV.IsNull())
+        Vertex anewV = InternalCopyNMVertex(theV, toFace, fromFace);
+        if (!anewV.IsNull)
         {
             anewV.TShape()!.FreezeGraph();
         }
@@ -563,31 +566,31 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
     }
 
     /// <summary>OCCT's CopyNMVertex for edges: the new vertex isn't frozen, for ported code that goes on building.</summary>
-    internal static TopoDS_Vertex InternalCopyNMVertex(in TopoDS_Vertex theV, in TopoDS_Edge toedge, in TopoDS_Edge fromedge)
+    internal static Vertex InternalCopyNMVertex(in Vertex theV, in Edge toedge, in Edge fromedge)
     {
-        TopoDS_Vertex anewV = new TopoDS_Vertex();
-        if (theV.Orientation() != TopAbs_INTERNAL && theV.Orientation() != TopAbs_EXTERNAL)
+        Vertex anewV = new Vertex();
+        if (theV.Orientation() != Internal && theV.Orientation() != External)
         {
             return anewV;
         }
 
-        Geom_Curve? C1 = BRep_Tool.Curve(fromedge, out Placement fromLoc, out double f1, out double l1);
+        Curve3D? C1 = Tool.Curve(fromedge, out Placement fromLoc, out double f1, out double l1);
         fromLoc        = fromLoc.Predivided(theV.Location());
 
-        Geom_Curve? C2 = BRep_Tool.Curve(toedge, out double f2, out double l2);
+        Curve3D? C2 = Tool.Curve(toedge, out double f2, out double l2);
 
-        anewV      = TopoDS.Vertex(theV.EmptyCopied());
-        Point3D apv = BRep_Tool.Pnt(anewV);
+        anewV      = ShapeCasts.Vertex(theV.EmptyCopied());
+        Point3D apv = Tool.Pnt(anewV);
 
-        NCollection_List<BRep_PointRepresentation> alistrep = ((BRep_TVertex)anewV.TShape()!).ChangePoints();
+        NCollection_List<PointRepresentation> alistrep = ((BrepTVertex)anewV.TShape()!).ChangePoints();
 
-        NCollection_List<BRep_PointRepresentation>.Iterator itpr =
-            new NCollection_List<BRep_PointRepresentation>.Iterator(((BRep_TVertex)theV.TShape()!).Points());
+        NCollection_List<PointRepresentation>.Iterator itpr =
+            new NCollection_List<PointRepresentation>.Iterator(((BrepTVertex)theV.TShape()!).Points());
         double aOldPar = RealLast();
         bool   hasRepr = false;
         for (; itpr.More(); itpr.Next())
         {
-            BRep_PointRepresentation? pr = itpr.Value();
+            PointRepresentation? pr = itpr.Value();
             if (pr is null)
             {
                 continue;
@@ -601,8 +604,8 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
             }
             else if (pr.IsPointOnSurface())
             {
-                BRep_PointOnSurface aOld = (BRep_PointOnSurface)pr;
-                BRep_PointOnSurface aPS  = new BRep_PointOnSurface(aOld.Parameter(), aOld.Parameter2(), aOld.Surface(), aOld.Location());
+                PointOnSurface aOld = (PointOnSurface)pr;
+                PointOnSurface aPS  = new PointOnSurface(aOld.Parameter(), aOld.Parameter2(), aOld.Surface(), aOld.Location());
                 alistrep.Append(aPS);
                 continue;
             }
@@ -610,19 +613,19 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
             {
                 bool found = false;
                 // OCCT.NET: frozen: OCCT iterates fromedge's ChangeCurves(); it only reads them
-                NCollection_List<BRep_CurveRepresentation>.Iterator fromitcr =
-                    new NCollection_List<BRep_CurveRepresentation>.Iterator(((BRep_TEdge)fromedge.TShape()!).Curves());
+                NCollection_List<CurveRepresentation>.Iterator fromitcr =
+                    new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)fromedge.TShape()!).Curves());
                 for (; fromitcr.More() && !found; fromitcr.Next())
                 {
-                    BRep_GCurve? fromGC = fromitcr.Value() as BRep_GCurve;
+                    GCurve? fromGC = fromitcr.Value() as GCurve;
                     if (fromGC is null || !fromGC.IsCurveOnSurface())
                     {
                         continue;
                     }
 
                     Placement aL       = fromGC.Location().Predivided(theV.Location());
-                    Geom_Surface?   surface1 = fromGC.Surface();
-                    Geom2d_Curve?   ac2d1    = fromGC.PCurve();
+                    Surface?   surface1 = fromGC.Surface();
+                    Curve2D?   ac2d1    = fromGC.PCurve();
                     if (pr.IsPointOnCurveOnSurface(ac2d1, surface1, aL))
                     {
                         found = true;
@@ -641,19 +644,19 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
 
             if (pr.IsPointOnCurve())
             {
-                BRep_PointOnCurve aPRep = new BRep_PointOnCurve(pr.Parameter(), pr.Curve(), pr.Location());
+                PointOnCurve aPRep = new PointOnCurve(pr.Parameter(), pr.Curve(), pr.Location());
                 alistrep.Append(aPRep);
             }
             else if (pr.IsPointOnCurveOnSurface())
             {
-                BRep_PointOnCurveOnSurface aPonCS =
-                    new BRep_PointOnCurveOnSurface(pr.Parameter(), pr.PCurve(), pr.Surface(), pr.Location());
+                PointOnCurveOnSurface aPonCS =
+                    new PointOnCurveOnSurface(pr.Parameter(), pr.PCurve(), pr.Surface(), pr.Location());
                 alistrep.Append(aPonCS);
             }
         }
 
         double apar = aOldPar;
-        double aTol = BRep_Tool.Tolerance(theV);
+        double aTol = Tool.Tolerance(theV);
         if (!hasRepr || (Math.Abs(f1 - f2) > Kerf.Engine.Foundation.Precision.PConfusion() || Math.Abs(l1 - l2) > Kerf.Engine.Foundation.Precision.PConfusion()))
         {
             ShapeAnalysis_Curve sae   = new ShapeAnalysis_Curve();
@@ -664,19 +667,19 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
             }
         }
 
-        BRep_Builder aB = new BRep_Builder();
+        BrepBuilder aB = new BrepBuilder();
         aB.UpdateVertex(anewV, apar, toedge, aTol);
 
         // update tolerance
         bool            needUpdate = false;
-        Point3D          aPV        = ((BRep_TVertex)anewV.TShape()!).Pnt();
+        Point3D          aPV        = ((BrepTVertex)anewV.TShape()!).Pnt();
         Placement toLoc      = toedge.Location();
         // OCCT.NET: frozen: OCCT iterates toedge's ChangeCurves(); it only reads them
-        NCollection_List<BRep_CurveRepresentation>.Iterator toitcr =
-            new NCollection_List<BRep_CurveRepresentation>.Iterator(((BRep_TEdge)toedge.TShape()!).Curves());
+        NCollection_List<CurveRepresentation>.Iterator toitcr =
+            new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)toedge.TShape()!).Curves());
         for (; toitcr.More(); toitcr.Next())
         {
-            BRep_GCurve? toGC = toitcr.Value() as BRep_GCurve;
+            GCurve? toGC = toitcr.Value() as GCurve;
             if (toGC is null || !toGC.IsCurveOnSurface())
             {
                 continue;
@@ -684,8 +687,8 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
 
             Placement aL = (toLoc * toGC.Location()).Predivided(theV.Location());
             // aL.Predivided(theV.Location());
-            Geom_Surface surface1 = toGC.Surface()!;
-            Geom2d_Curve ac2d1    = toGC.PCurve()!;
+            Surface surface1 = toGC.Surface()!;
+            Curve2D ac2d1    = toGC.PCurve()!;
             Point2D     aP2d     = ac2d1.Value(apar);
             Point3D       aP3d     = surface1.Value(aP2d.X(), aP2d.Y());
             aP3d.Transform(aL.Transformation());
@@ -706,30 +709,30 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
     }
 
     /// <summary>OCCT's CopyNMVertex for faces: the new vertex isn't frozen, for ported code that goes on building.</summary>
-    internal static TopoDS_Vertex InternalCopyNMVertex(in TopoDS_Vertex theV, in TopoDS_Face toFace, in TopoDS_Face fromFace)
+    internal static Vertex InternalCopyNMVertex(in Vertex theV, in Face toFace, in Face fromFace)
     {
-        TopoDS_Vertex anewV = new TopoDS_Vertex();
-        if (theV.Orientation() != TopAbs_INTERNAL && theV.Orientation() != TopAbs_EXTERNAL)
+        Vertex anewV = new Vertex();
+        if (theV.Orientation() != Internal && theV.Orientation() != External)
         {
             return anewV;
         }
 
-        Geom_Surface? fromSurf = BRep_Tool.Surface(fromFace, out Placement fromLoc);
-        Geom_Surface? toSurf   = BRep_Tool.Surface(toFace, out Placement toLoc);
+        Surface? fromSurf = Tool.Surface(fromFace, out Placement fromLoc);
+        Surface? toSurf   = Tool.Surface(toFace, out Placement toLoc);
         fromLoc                = fromLoc.Predivided(theV.Location());
 
-        anewV      = TopoDS.Vertex(theV.EmptyCopied());
-        Point3D apv = BRep_Tool.Pnt(anewV);
+        anewV      = ShapeCasts.Vertex(theV.EmptyCopied());
+        Point3D apv = Tool.Pnt(anewV);
 
-        NCollection_List<BRep_PointRepresentation> alistrep = ((BRep_TVertex)anewV.TShape()!).ChangePoints();
+        NCollection_List<PointRepresentation> alistrep = ((BrepTVertex)anewV.TShape()!).ChangePoints();
 
-        NCollection_List<BRep_PointRepresentation>.Iterator itpr =
-            new NCollection_List<BRep_PointRepresentation>.Iterator(((BRep_TVertex)theV.TShape()!).Points());
+        NCollection_List<PointRepresentation>.Iterator itpr =
+            new NCollection_List<PointRepresentation>.Iterator(((BrepTVertex)theV.TShape()!).Points());
         bool   hasRepr = false;
         double apar1 = 0.0, apar2 = 0.0;
         for (; itpr.More(); itpr.Next())
         {
-            BRep_PointRepresentation? pr = itpr.Value();
+            PointRepresentation? pr = itpr.Value();
             if (pr is null)
             {
                 continue;
@@ -738,17 +741,17 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
             Placement aLoc = pr.Location();
             if (pr.IsPointOnCurveOnSurface())
             {
-                BRep_PointOnCurveOnSurface aPonCS = new BRep_PointOnCurveOnSurface(pr.Parameter(), pr.PCurve(), pr.Surface(), aLoc);
+                PointOnCurveOnSurface aPonCS = new PointOnCurveOnSurface(pr.Parameter(), pr.PCurve(), pr.Surface(), aLoc);
                 alistrep.Append(aPonCS);
             }
             else if (pr.IsPointOnCurve())
             {
-                BRep_PointOnCurve aPRep = new BRep_PointOnCurve(pr.Parameter(), pr.Curve(), aLoc);
+                PointOnCurve aPRep = new PointOnCurve(pr.Parameter(), pr.Curve(), aLoc);
                 alistrep.Append(aPRep);
             }
             else if (pr.IsPointOnSurface())
             {
-                BRep_PointOnSurface aOld = (BRep_PointOnSurface)pr;
+                PointOnSurface aOld = (PointOnSurface)pr;
 
                 if (pr.IsPointOnSurface(fromSurf, fromLoc))
                 {
@@ -758,16 +761,16 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
                 }
                 else
                 {
-                    BRep_PointOnSurface aPS = new BRep_PointOnSurface(aOld.Parameter(), aOld.Parameter2(), aOld.Surface(), aOld.Location());
+                    PointOnSurface aPS = new PointOnSurface(aOld.Parameter(), aOld.Parameter2(), aOld.Surface(), aOld.Location());
                     alistrep.Append(aPS);
                 }
             }
         }
 
-        double aTol = BRep_Tool.Tolerance(anewV);
+        double aTol = Tool.Tolerance(anewV);
         if (!hasRepr || (fromSurf != toSurf || fromLoc != toLoc))
         {
-            Geom_Surface?         aS        = BRep_Tool.Surface(toFace);
+            Surface?         aS        = Tool.Surface(toFace);
             ShapeAnalysis_Surface aSurfTool = new ShapeAnalysis_Surface(aS);
             Point2D              aP2d      = aSurfTool.ValueOfUV(apv, Kerf.Engine.Foundation.Precision.Confusion());
             apar1                           = aP2d.X();
@@ -781,7 +784,7 @@ public class ShapeAnalysis_TransferParametersProj : ShapeAnalysis_TransferParame
             // BRep_PointOnSurface(aP2d.X(),aP2d.Y(),toSurf,toLoc); alistrep.Append(aPS);
         }
 
-        BRep_Builder aB = new BRep_Builder();
+        BrepBuilder aB = new BrepBuilder();
         aB.UpdateVertex(anewV, apar1, apar2, toFace, aTol);
         return anewV;
     }

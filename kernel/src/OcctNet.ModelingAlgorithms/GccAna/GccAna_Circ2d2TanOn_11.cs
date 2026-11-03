@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
@@ -61,12 +62,12 @@ public sealed partial class GccAna_Circ2d2TanOn
                                    OnCirc.Radius() + Math.Abs(dp2cen - dp1cen - 2.0 * R));
             }
         }
-        IntAna2d_AnaIntersection Intp = new(L1, C1);
-        if (Intp.IsDone())
+        AnalyticIntersection Intp = new(L1, C1);
+        if (Intp.IsDone)
         {
-            if (!Intp.IsEmpty())
+            if (!Intp.IsEmpty)
             {
-                for (int i = 1; i <= Intp.NbPoints(); i++)
+                for (int i = 1; i <= Intp.PointCount; i++)
                 {
                     NbrSol++;
                     Axis2D axe = new(Intp.Point(i).Value(), dirx);

@@ -4,6 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -15,11 +19,11 @@ public static class BRepMesh_Deflection
     /// The absolute deflection of the shape for the relative deflection, from its bounding box and
     /// <paramref name="theMaxShapeSize"/> (the size of the whole shape; the shape's own if not positive).
     /// </summary>
-    public static double ComputeAbsoluteDeflection(in TopoDS_Shape theShape,
+    public static double ComputeAbsoluteDeflection(in Shape theShape,
                                                    double theRelativeDeflection,
                                                    double theMaxShapeSize)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return theRelativeDeflection;
         }
@@ -63,17 +67,17 @@ public static class BRepMesh_Deflection
                 ? theParameters.Deflection
                 : ComputeAbsoluteDeflection(theDEdge.GetEdge(), theParameters.Deflection, theMaxShapeSize);
 
-        TopoDS_Edge anEdge = theDEdge.GetEdge();
+        Edge anEdge = theDEdge.GetEdge();
 
-        TopExp.Vertices(anEdge, out TopoDS_Vertex aFirstVertex, out TopoDS_Vertex aLastVertex);
+        Exploration.Vertices(anEdge, out Vertex aFirstVertex, out Vertex aLastVertex);
 
-        if (BRepMesh_ShapeTool.Range(anEdge, out Geom_Curve? aCurve, out double aFirstParam, out double aLastParam))
+        if (BRepMesh_ShapeTool.Range(anEdge, out Curve3D? aCurve, out double aFirstParam, out double aLastParam))
         {
-            double aDistF = aFirstVertex.IsNull()
+            double aDistF = aFirstVertex.IsNull
                                 ? -1.0
-                                : BRep_Tool.Pnt(aFirstVertex).Distance(aCurve!.Value(aFirstParam));
+                                : Tool.Pnt(aFirstVertex).Distance(aCurve!.Value(aFirstParam));
             double aDistL =
-                aLastVertex.IsNull() ? -1.0 : BRep_Tool.Pnt(aLastVertex).Distance(aCurve!.Value(aLastParam));
+                aLastVertex.IsNull ? -1.0 : Tool.Pnt(aLastVertex).Distance(aCurve!.Value(aLastParam));
 
             double aVertexAdjustDistance = Max(aDistF, aDistL);
 

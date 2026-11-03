@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using Occt;
 using OcctNet.DrawLite;
 
@@ -32,14 +35,14 @@ public class DrawMeshingCommandsTests
 
     private static string Error(DrawInterpreter theDI, string theScript) => Assert.ThrowsAny<DrawException>(() => theDI.Eval(theScript)).Reason;
 
-    private static string Text(in TopoDS_Shape theShape)
+    private static string Text(in Shape theShape)
     {
         var aWriter = new StringWriter { NewLine = "\n" };
-        BRepTools.Write(theShape, aWriter);
+        BrepTools.Write(theShape, aWriter);
         return aWriter.ToString();
     }
 
-    private static TopoDS_Shape Meshed(in TopoDS_Shape theShape, IMeshTools_Parameters theParameters, IMeshTools_Context? theContext = null)
+    private static Shape Meshed(in Shape theShape, IMeshTools_Parameters theParameters, IMeshTools_Context? theContext = null)
     {
         var aMesher = new BRepMesh_IncrementalMesh();
         aMesher.SetShape(theShape);
@@ -55,7 +58,7 @@ public class DrawMeshingCommandsTests
     public void Incmesh_meshes_the_shape_and_reports_the_statuses()
     {
         (DrawInterpreter i, _) = Load("solid.brep");
-        TopoDS_Shape anInput = i.GetShape("s");
+        Shape anInput = i.GetShape("s");
         Assert.Equal("Incremental Mesh, multi-threading OFF\nMeshing statuses: NoError", i.Eval("incmesh s 0.1"));
         Assert.Equal("\nThis shape contains 8 faces.\n"
                      + "                    492 triangles.\n"
@@ -72,7 +75,7 @@ public class DrawMeshingCommandsTests
         Assert.Equal(Text(Meshed(anInput, Parameters(0.1))), Text(i.GetShape("s")));
 
         // meshing it again finely enough changes nothing (the meshes are reused); -decrease is needed for a coarser mesh
-        TopoDS_Shape aMeshed = i.GetShape("s");
+        Shape aMeshed = i.GetShape("s");
         Assert.EndsWith("Meshing statuses: Reused ",i.Eval("incmesh s 0.5"), StringComparison.Ordinal);
         Assert.True(i.GetShape("s").IsSame(aMeshed));
         i.Eval("incmesh s 0.5 -decrease");
@@ -90,7 +93,7 @@ public class DrawMeshingCommandsTests
     public void Each_option_sets_its_parameter()
     {
         (DrawInterpreter i, _) = Load("CrankArm.brep");
-        TopoDS_Shape anInput = i.GetShape("s");
+        Shape anInput = i.GetShape("s");
         var aCases = new (string Options, IMeshTools_Parameters Parameters, IMeshTools_Context? Context)[]
         {
             ("0.5", Parameters(0.5), null),
@@ -159,9 +162,9 @@ public class DrawMeshingCommandsTests
         Assert.DoesNotContain("empty", aFace3, StringComparison.Ordinal);
 
         // the exploded faces are the meshed shape's own, the compound holds them, the copy is untouched
-        TopoDS_Shape aMeshed = i.GetShape("s");
-        var aFaces = new List<TopoDS_Shape>();
-        for (var anExp = new TopExp_Explorer(aMeshed, TopAbs_ShapeEnum.TopAbs_FACE); anExp.More(); anExp.Next())
+        Shape aMeshed = i.GetShape("s");
+        var aFaces = new List<Shape>();
+        for (var anExp = new Explorer(aMeshed, ShapeType.Face); anExp.More(); anExp.Next())
         {
             aFaces.Add(anExp.Current());
         }
@@ -217,7 +220,7 @@ public class DrawMeshingCommandsTests
                      + " null shape is not allowed here\n", o.ToString());
 
         // mpincmesh: the factory's algorithm (BRepMesh_IncrementalMesh), the name rebound to the meshed copy
-        TopoDS_Shape anInput = i.GetShape("s");
+        Shape anInput = i.GetShape("s");
         i.Eval("explode s f; mpincmesh s 0.1 0.3");
         Assert.Equal(Text(Meshed(anInput, Parameters(0.1) with { Angle = 0.3 })), Text(i.GetShape("s")));
         Assert.DoesNotContain("empty", i.Eval("trinfo s_1"), StringComparison.Ordinal);
@@ -241,7 +244,7 @@ public class DrawMeshingCommandsTests
     public void Vdisplay_meshes_as_AIS_does()
     {
         (DrawInterpreter i, StringWriter o) = Load("CrankArm.brep");
-        TopoDS_Shape anInput = i.GetShape("s");
+        Shape anInput = i.GetShape("s");
         double aDeflection = StdPrs_ToolTriangulatedShape.GetDeflection(anInput, new Prs3d_Drawer());
         string anExpected = Text(new BRepMesh_IncrementalMesh(anInput, aDeflection, false, 20 * Math.PI / 180).Shape());
 

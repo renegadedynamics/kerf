@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
 using static Occt.IntSurf_TypeTrans;
 
@@ -18,10 +20,10 @@ public class BRepBlendTests
     private static Blend_Point Pt(double theParam) =>
         new(new Point3D(theParam, 1, 0), new Point3D(theParam, 0, 1), theParam, theParam, 1, theParam, -1);
 
-    private static Adaptor2d_Curve2d Segment(double x0, double y0, double x1, double y1)
+    private static Curve2DAdaptorBase Segment(double x0, double y0, double x1, double y1)
     {
         Vector2D V = new(new Point2D(x0, y0), new Point2D(x1, y1));
-        return new Geom2dAdaptor_Curve(new Geom2d_Line(new Point2D(x0, y0), new Direction2D(V)), 0.0, V.Magnitude());
+        return new CurveAdaptor2D(new LineCurve2D(new Point2D(x0, y0), new Direction2D(V)), 0.0, V.Magnitude());
     }
 
     [Fact]
@@ -88,12 +90,12 @@ public class BRepBlendTests
         Assert.True(E.HasTangent());
         Assert.Equal(new Vector3D(0, 0, 1), E.Tangent());
 
-        Adaptor3d_HVertex V = new(new Point2D(0, 0), TopAbs_Orientation.TopAbs_FORWARD, 1.0e-7);
+        HVertex V = new(new Point2D(0, 0), Orientation.Forward, 1.0e-7);
         E.SetVertex(V);
         Assert.True(E.IsVertex());
         Assert.Same(V, E.Vertex());
 
-        Adaptor2d_Curve2d A = Segment(0, 0, 1, 0);
+        Curve2DAdaptorBase A = Segment(0, 0, 1, 0);
         IntSurf_Transition TIn = new(false, IntSurf_In), TOut = new(false, IntSurf_Out);
         E.AddArc(A, 0.5, TIn, TOut);
         Assert.Equal(1, E.NbPointOnRst());
@@ -114,7 +116,7 @@ public class BRepBlendTests
     public void Extremity_CopiesAreIndependent()
     {
         // OCCT copies extremities by value (with their sequence of arcs); so does the port (decision 1059).
-        Adaptor2d_Curve2d A = Segment(0, 0, 1, 0);
+        Curve2DAdaptorBase A = Segment(0, 0, 1, 0);
         IntSurf_Transition T = new(false, IntSurf_In);
         BRepBlend_Extremity E1 = new(new Point3D(1, 0, 0), 0.0, 0.0, 1.0, 1.0e-4);
         E1.AddArc(A, 0.25, T, T);
@@ -144,7 +146,7 @@ public class BRepBlendTests
         BRepBlend_PointOnRst P = new();
         Assert.Equal(0.0, P.ParameterOnArc());
         Assert.Equal(IntSurf_Undecided, P.TransitionOnLine().TransitionType());
-        Adaptor2d_Curve2d A = Segment(0, 0, 2, 0);
+        Curve2DAdaptorBase A = Segment(0, 0, 2, 0);
         P.SetArc(A, 1.5, new IntSurf_Transition(true, IntSurf_Out), new IntSurf_Transition(false, IntSurf_In));
         Assert.Same(A, P.Arc());
         Assert.Equal(1.5, P.ParameterOnArc());
@@ -171,18 +173,18 @@ public class BRepBlendTests
         NCollection_Array1<int> M = new(1, 2);
         M[1] = 4;
         M[2] = 4;
-        Geom2dAdaptor_Curve B = new(new Geom2d_BSplineCurve(P2, K, M, 3));
+        CurveAdaptor2D B = new(new BSplineCurve2D(P2, K, M, 3));
         // 2 knots x degree 3 x the curve's range over the range asked for
         Assert.Equal(12, BRepBlend_HCurve2dTool.NbSamples(B, 0.0, 0.5));
         Assert.Equal(2, BRepBlend_HCurve2dTool.NbSamples(B, 0.0, 10.0));
         Assert.Equal(50, BRepBlend_HCurve2dTool.NbSamples(B, 0.0, 0.01));
-        Assert.Equal(7, BRepBlend_HCurve2dTool.NbSamples(new Geom2dAdaptor_Curve(new Geom2d_BezierCurve(P2)), 0, 1));
+        Assert.Equal(7, BRepBlend_HCurve2dTool.NbSamples(new CurveAdaptor2D(new BezierCurve2D(P2)), 0, 1));
     }
 
     [Fact]
     public void BlendTool_ProjectAndInters()
     {
-        Adaptor2d_Curve2d A = Segment(0, 1, 4, 1); // y = 1, 0 <= x <= 4
+        Curve2DAdaptorBase A = Segment(0, 1, 4, 1); // y = 1, 0 <= x <= 4
         Assert.True(BRepBlend_BlendTool.Project(new Point2D(1.5, 3), null, A, out double prm, out double dist));
         Assert.Equal(1.5, prm, 1.0e-9);
         Assert.Equal(2.0, dist, 1.0e-9);
@@ -202,7 +204,7 @@ public class BRepBlendTests
         Assert.False(BRepBlend_BlendTool.Inters(new Point2D(2, 0), new Point2D(2, 1.0e-9), null, A, ref p, ref d));
         Assert.Equal((-1.0, -1.0), (p, d));
 
-        Adaptor3d_HVertex V = new(new Point2D(4, 1), TopAbs_Orientation.TopAbs_REVERSED, 1.0e-6);
+        HVertex V = new(new Point2D(4, 1), Orientation.Reversed, 1.0e-6);
         Assert.Equal(4.0, BRepBlend_BlendTool.Parameter(V, A), 1.0e-12);
         Assert.Equal(1.0e-6, BRepBlend_BlendTool.Tolerance(V, A));
         BRepBlend_BlendTool.Bounds(A, out double f, out double l);
@@ -215,19 +217,19 @@ public class BRepBlendTests
     // A walked constant-radius line between two planes (the floor z = 0 and the wall y = 0) and its function.
     private static (BRepBlend_Line, BlendFunc_ConstRad) PlanePlaneLine()
     {
-        Adaptor3d_Surface S1 = new GeomAdaptor_Surface(((GeomAdaptor_Surface)BlendRecorder.Surf(0)).Surface()!, 0, 8, 0,
+        SurfaceAdaptorBase S1 = new SurfaceAdaptor(((SurfaceAdaptor)BlendRecorder.Surf(0)).Surface()!, 0, 8, 0,
                                                        5);
-        Adaptor3d_Surface S2 = new GeomAdaptor_Surface(((GeomAdaptor_Surface)BlendRecorder.Surf(1)).Surface()!, 1, 10,
+        SurfaceAdaptorBase S2 = new SurfaceAdaptor(((SurfaceAdaptor)BlendRecorder.Surf(1)).Surface()!, 1, 10,
                                                        -5, 0);
         ChFiDS_ElSpine G = new();
-        G.SetCurve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)));
+        G.SetCurve(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)));
         G.FirstParameter(0.0);
         G.LastParameter(10.0);
         BlendFunc_ConstRad F = new(S1, S2, G);
         F.Set(1.0, 1);
         BlendFunc_ConstRadInv FInv = new(S1, S2, G);
         FInv.Set(1.0, 1);
-        BRepBlend_Walking W = new(S1, S2, new Adaptor3d_TopolTool(S1), new Adaptor3d_TopolTool(S2), G);
+        BRepBlend_Walking W = new(S1, S2, new TopolTool(S1), new TopolTool(S2), G);
         Assert.ThrowsAny<NotDoneException>(() => W.Line());
         Assert.ThrowsAny<NotDoneException>(() => W.Complete(F, FInv, 0.0));
         math_Vector X0 = new(1, 4);
@@ -306,16 +308,16 @@ public class BRepBlendTests
     {
         // OCCT 8 declares CSWalking's IsDone and Line without defining them; the port defines them as the other
         // walkers' (decision 1059).
-        Adaptor3d_Surface S = new GeomAdaptor_Surface(((GeomAdaptor_Surface)BlendRecorder.Surf(0)).Surface()!, 0, 8, -3,
+        SurfaceAdaptorBase S = new SurfaceAdaptor(((SurfaceAdaptor)BlendRecorder.Surf(0)).Surface()!, 0, 8, -3,
                                                       3);
-        Adaptor3d_Curve C = BlendRecorder.Guide(4);
+        CurveAdaptorBase C = BlendRecorder.Guide(4);
         ChFiDS_ElSpine G = new();
-        G.SetCurve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)));
+        G.SetCurve(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)));
         G.FirstParameter(0.0);
         G.LastParameter(10.0);
         BlendFunc_CSConstRad F = new(S, C, G);
         F.Set(1.0, 1);
-        BRepBlend_CSWalking W = new(C, S, new Adaptor3d_TopolTool(S));
+        BRepBlend_CSWalking W = new(C, S, new TopolTool(S));
         Assert.False(W.IsDone());
         Assert.ThrowsAny<NotDoneException>(() => W.Line());
         math_Vector X3 = new(1, 3);

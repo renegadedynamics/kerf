@@ -6,13 +6,18 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BlendFunc_SectionShape;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFi3d_FilletShape;
 using static Occt.FilletSurf_StatusType;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -27,9 +32,9 @@ namespace Occt;
 /// </remarks>
 internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
 {
-    private static bool isinlist(in TopoDS_Shape E, NCollection_List<TopoDS_Shape> L)
+    private static bool isinlist(in Shape E, NCollection_List<Shape> L)
     {
-        NCollection_List<TopoDS_Shape>.Iterator It = new();
+        NCollection_List<Shape>.Iterator It = new();
         for (It.Initialize(L); It.More(); It.Next())
         {
             if (E.IsSame(It.Value()))
@@ -40,14 +45,14 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
         return false;
     }
 
-    private static bool IntPlanEdge(BRepAdaptor_Curve Ed, in Plane3D P, ref double w, double tol3d)
+    private static bool IntPlanEdge(EdgeCurveAdaptor Ed, in Plane3D P, ref double w, double tol3d)
     {
         bool done = false;
         double f = Ed.FirstParameter();
         double l = Ed.LastParameter();
         Point3D Or = P.Location();
-        Geom_Plane Pln = new(P);
-        GeomAdaptor_Surface Plan = new(Pln);
+        PlaneSurface Pln = new(P);
+        SurfaceAdaptor Plan = new(Pln);
 
         IntCurveSurface_HInter Intersection = new();
         int nbp, iip;
@@ -110,13 +115,13 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
         ChFiDS_ElSpine Guide = Spine.ElSpine(ind);
         Guide.D1(pelsp, out Point3D P, out Vector3D V);
         Plane3D pln = new(P, new Direction3D(V));
-        BRepAdaptor_Curve ed = (BRepAdaptor_Curve)Spine.CurrentElementarySpine(ind).ShallowCopy(); // OCCT: a new adaptor copying it
+        EdgeCurveAdaptor ed = (EdgeCurveAdaptor)Spine.CurrentElementarySpine(ind).ShallowCopy(); // OCCT: a new adaptor copying it
         return IntPlanEdge(ed, pln, ref ped, tol3d);
     }
 
     //=================================================================================================
 
-    internal FilletSurf_InternalBuilder(in TopoDS_Shape S, ChFi3d_FilletShape FShape = ChFi3d_Polynomial,
+    internal FilletSurf_InternalBuilder(in Shape S, ChFi3d_FilletShape FShape = ChFi3d_Polynomial,
                                         double Ta = 1.0e-2, double Tapp3d = 1.0e-4, double Tapp2d = 1.0e-5)
         : base(S, FShape, Ta)
     {
@@ -136,25 +141,25 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
     //  5 : edge is not alive
     //=======================================================================
 
-    internal int Add(NCollection_List<TopoDS_Shape> theE, double R)
+    internal int Add(NCollection_List<Shape> theE, double R)
     {
         if (theE.IsEmpty())
         {
             return 1;
         }
         // OCCT.NET: the caller's edges on the working copy (decision 1119)
-        NCollection_List<TopoDS_Shape> E = new();
-        foreach (TopoDS_Shape anE in theE)
+        NCollection_List<Shape> E = new();
+        foreach (Shape anE in theE)
         {
             E.Append(ToWork(anE));
         }
-        NCollection_List<TopoDS_Shape>.Iterator It = new();
+        NCollection_List<Shape>.Iterator It = new();
         // OCCT: the inner loop re-initializes It, the outer loop's iterator, on the edge's faces; the outer loop then
         // goes on over that list (or ends), so only the first edge is checked.
         for (It.Initialize(E); It.More(); It.Next())
         {
-            TopoDS_Edge cured = TopoDS.Edge(It.Value());
-            if (cured.IsNull())
+            Edge cured = ShapeCasts.Edge(It.Value());
+            if (cured.IsNull)
             {
                 return 4;
             }
@@ -163,23 +168,23 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
                 return 4;
             }
             // check if the edge is a fracture edge
-            TopoDS_Face ff1 = new(), ff2 = new();
+            Face ff1 = new(), ff2 = new();
             for (It.Initialize(myEFMap[cured]); It.More(); It.Next())
             {
-                if (ff1.IsNull())
+                if (ff1.IsNull)
                 {
-                    ff1 = TopoDS.Face(It.Value());
+                    ff1 = ShapeCasts.Face(It.Value());
                 }
                 else
                 {
-                    ff2 = TopoDS.Face(It.Value());
+                    ff2 = ShapeCasts.Face(It.Value());
                     if (!ff2.IsSame(ff1))
                     {
                         break;
                     }
                 }
             }
-            if (ff1.IsNull() || ff2.IsNull())
+            if (ff1.IsNull || ff2.IsNull)
             {
                 return 5;
             }
@@ -187,13 +192,13 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
             {
                 return 5;
             }
-            if (BRep_Tool.Continuity(cured, ff1, ff2) != C0)
+            if (Tool.Continuity(cured, ff1, ff2) != C0)
             {
                 return 5;
             }
         }
-        TopoDS_Edge ed = TopoDS.Edge(E.First());
-        ed.Orientation(TopAbs_FORWARD);
+        Edge ed = ShapeCasts.Edge(E.First());
+        ed.Orientation(Forward);
         base.Add(R, ed);
         ChFiDS_Stripe st = myListStripe.First();
         ref ChFiDS_Spine sp = ref st.ChangeSpine();
@@ -205,7 +210,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
 
         for (It.Initialize(E); It.More(); It.Next())
         {
-            TopoDS_Edge cured = TopoDS.Edge(It.Value());
+            Edge cured = ShapeCasts.Edge(It.Value());
             if (Contains(cured) == 0)
             {
                 return 2;
@@ -218,7 +223,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
         int yatrou = 0;
         for (int i = 1; i <= sp.NbEdges(); i++)
         {
-            TopoDS_Edge cured = sp.Edges(i);
+            Edge cured = sp.Edges(i);
             if (isinlist(cured, E))
             {
                 debut = true;
@@ -243,7 +248,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
             bool vraitrou = false, aLocalDebut = false;
             for (int i = sp.NbEdges(); i > yatrou; i--)
             {
-                TopoDS_Edge cured = sp.Edges(i);
+                Edge cured = sp.Edges(i);
                 if (isinlist(cured, E))
                 {
                     if (vraitrou)
@@ -291,7 +296,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
         ref NCollection_HSequence<ChFiDS_SurfData> HData = ref Stripe.ChangeSetOfSurfData();
         HData = new NCollection_HSequence<ChFiDS_SurfData>();
         ChFiDS_Spine Spine = Stripe.ChangeSpine();
-        TopAbs_Orientation RefOr1 = TopAbs_FORWARD, RefOr2 = TopAbs_FORWARD;
+        Orientation RefOr1 = Forward, RefOr2 = Forward;
         int RefChoix = 0;
         StripeOrientations(Spine, ref RefOr1, ref RefOr2, ref RefChoix);
         Stripe.OrientationOnFace1(RefOr1);
@@ -303,8 +308,8 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
     //=================================================================================================
 
     internal override bool PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine Guide,
-                                       ChFiDS_Spine Spine, int Choix, BRepAdaptor_Surface S1, Adaptor3d_TopolTool I1,
-                                       BRepAdaptor_Surface S2, Adaptor3d_TopolTool I2, double MaxStep, double Fleche,
+                                       ChFiDS_Spine Spine, int Choix, FaceSurfaceAdaptor S1, TopolTool I1,
+                                       FaceSurfaceAdaptor S2, TopolTool I2, double MaxStep, double Fleche,
                                        double TolGuide, ref double First, ref double Last, bool Inside, bool Appro,
                                        bool Forward, bool RecOnS1, bool RecOnS2, math_Vector Soldep, ref int Intf,
                                        ref int Intl)
@@ -316,7 +321,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
             throw new ConstructionErrorException("PerformSurf : this is not the spine of a fillet");
         }
         BRepBlend_Line lin = null;
-        TopAbs_Orientation Or = S1.Face().Orientation();
+        Orientation Or = S1.Face().Orientation();
         if (!fsp.IsConstant())
         {
             throw new ConstructionErrorException("PerformSurf : no variable radiuses");
@@ -381,16 +386,16 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
             ChFiDS_CommonPoint cpf1 = Data.VertexFirstOnS1();
             if (cpf1.IsOnArc())
             {
-                TopoDS_Face F1 = S1.Face();
-                TopoDS_Face bid = new();
+                Face F1 = S1.Face();
+                Face bid = new();
                 Intf = !SearchFace(Spine, cpf1, F1, ref bid) ? 1 : 0;
                 ok = Intf != 0;
             }
             ChFiDS_CommonPoint cpf2 = Data.VertexFirstOnS2();
             if (cpf2.IsOnArc() && !ok)
             {
-                TopoDS_Face F2 = S2.Face();
-                TopoDS_Face bid = new();
+                Face F2 = S2.Face();
+                Face bid = new();
                 Intf = !SearchFace(Spine, cpf2, F2, ref bid) ? 1 : 0;
             }
         }
@@ -399,16 +404,16 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
         ChFiDS_CommonPoint cpl1 = Data.VertexLastOnS1();
         if (cpl1.IsOnArc())
         {
-            TopoDS_Face F1 = S1.Face();
-            TopoDS_Face bid = new();
+            Face F1 = S1.Face();
+            Face bid = new();
             Intl = !SearchFace(Spine, cpl1, F1, ref bid) ? 1 : 0;
             ok = Intl != 0;
         }
         ChFiDS_CommonPoint cpl2 = Data.VertexLastOnS2();
         if (cpl2.IsOnArc() && !ok)
         {
-            TopoDS_Face F2 = S2.Face();
-            TopoDS_Face bid = new();
+            Face F2 = S2.Face();
+            Face bid = new();
             Intl = !SearchFace(Spine, cpl2, F2, ref bid) ? 1 : 0;
         }
         Data.FirstSpineParam(First);
@@ -420,10 +425,10 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
     }
 
     internal override void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine HGuide,
-                                       ChFiDS_Spine Spine, int Choix, BRepAdaptor_Surface HS1, Adaptor3d_TopolTool I1,
-                                       BRepAdaptor_Curve2d PC1, BRepAdaptor_Surface HSref1, BRepAdaptor_Curve2d PCref1,
-                                       ref bool Decroch1, BRepAdaptor_Surface HS2, Adaptor3d_TopolTool I2,
-                                       TopAbs_Orientation Or2, double MaxStep, double Fleche, double TolGuide,
+                                       ChFiDS_Spine Spine, int Choix, FaceSurfaceAdaptor HS1, TopolTool I1,
+                                       EdgeCurve2DAdaptor PC1, FaceSurfaceAdaptor HSref1, EdgeCurve2DAdaptor PCref1,
+                                       ref bool Decroch1, FaceSurfaceAdaptor HS2, TopolTool I2,
+                                       Orientation Or2, double MaxStep, double Fleche, double TolGuide,
                                        ref double First, ref double Last, bool Inside, bool Appro, bool Forward,
                                        bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
     {
@@ -431,9 +436,9 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
     }
 
     internal override void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine HGuide,
-                                       ChFiDS_Spine Spine, int Choix, BRepAdaptor_Surface HS1, Adaptor3d_TopolTool I1,
-                                       TopAbs_Orientation Or1, BRepAdaptor_Surface HS2, Adaptor3d_TopolTool I2,
-                                       BRepAdaptor_Curve2d PC2, BRepAdaptor_Surface HSref2, BRepAdaptor_Curve2d PCref2,
+                                       ChFiDS_Spine Spine, int Choix, FaceSurfaceAdaptor HS1, TopolTool I1,
+                                       Orientation Or1, FaceSurfaceAdaptor HS2, TopolTool I2,
+                                       EdgeCurve2DAdaptor PC2, FaceSurfaceAdaptor HSref2, EdgeCurve2DAdaptor PCref2,
                                        ref bool Decroch2, double MaxStep, double Fleche, double TolGuide,
                                        ref double First, ref double Last, bool Inside, bool Appro, bool Forward,
                                        bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
@@ -442,11 +447,11 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
     }
 
     internal override void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine HGuide,
-                                       ChFiDS_Spine Spine, int Choix, BRepAdaptor_Surface HS1, Adaptor3d_TopolTool I1,
-                                       BRepAdaptor_Curve2d PC1, BRepAdaptor_Surface HSref1, BRepAdaptor_Curve2d PCref1,
-                                       ref bool Decroch1, TopAbs_Orientation Or1, BRepAdaptor_Surface HS2,
-                                       Adaptor3d_TopolTool I2, BRepAdaptor_Curve2d PC2, BRepAdaptor_Surface HSref2,
-                                       BRepAdaptor_Curve2d PCref2, ref bool Decroch2, TopAbs_Orientation Or2,
+                                       ChFiDS_Spine Spine, int Choix, FaceSurfaceAdaptor HS1, TopolTool I1,
+                                       EdgeCurve2DAdaptor PC1, FaceSurfaceAdaptor HSref1, EdgeCurve2DAdaptor PCref1,
+                                       ref bool Decroch1, Orientation Or1, FaceSurfaceAdaptor HS2,
+                                       TopolTool I2, EdgeCurve2DAdaptor PC2, FaceSurfaceAdaptor HSref2,
+                                       EdgeCurve2DAdaptor PCref2, ref bool Decroch2, Orientation Or2,
                                        double MaxStep, double Fleche, double TolGuide, ref double First,
                                        ref double Last, bool Inside, bool Appro, bool Forward, bool RecP1,
                                        bool RecRst1, bool RecP2, bool RecRst2, math_Vector Soldep)
@@ -474,7 +479,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
     // purpose  : gives the NUBS surface of index Index
     //=======================================================================
 
-    internal Geom_Surface SurfaceFillet(int Index)
+    internal Surface SurfaceFillet(int Index)
     {
         int isurf = myListStripe.First().SetOfSurfData().Value(Index).Surf();
 
@@ -498,11 +503,11 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
     // purpose  : gives the first support  face relative to SurfaceFillet(Index)
     //=======================================================================
 
-    internal TopoDS_Face SupportFace1(int Index)
+    internal Face SupportFace1(int Index)
     {
         int isurf = myListStripe.First().SetOfSurfData().Value(Index).IndexOfS1();
 
-        return TopoDS.Face(FromWork(myDS.Shape(isurf))); // the caller's (OCCT.NET)
+        return ShapeCasts.Face(FromWork(myDS.Shape(isurf))); // the caller's (OCCT.NET)
     }
 
     //=======================================================================
@@ -510,11 +515,11 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
     // purpose  : gives the second support face relative to SurfaceFillet(Index)
     //=======================================================================
 
-    internal TopoDS_Face SupportFace2(int Index)
+    internal Face SupportFace2(int Index)
     {
         int isurf = myListStripe.First().SetOfSurfData().Value(Index).IndexOfS2();
 
-        return TopoDS.Face(FromWork(myDS.Shape(isurf))); // the caller's (OCCT.NET)
+        return ShapeCasts.Face(FromWork(myDS.Shape(isurf))); // the caller's (OCCT.NET)
     }
 
     //===============================================================================
@@ -522,7 +527,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
     // purpose  :  gives  the 3d curve  of SurfaceFillet(Index)  on SupportFace1(Index)
     //===============================================================================
 
-    internal Geom_Curve CurveOnFace1(int Index)
+    internal Curve3D CurveOnFace1(int Index)
     {
         int icurv = myListStripe.First().SetOfSurfData().Value(Index).InterferenceOnS1().LineIndex();
         return myDS.Curve(icurv).Curve();
@@ -533,7 +538,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
     // purpose  : gives the 3d  curve of  SurfaceFillet(Index) on SupportFace2(Index
     //=======================================================================
 
-    internal Geom_Curve CurveOnFace2(int Index)
+    internal Curve3D CurveOnFace2(int Index)
     {
         int icurv = myListStripe.First().SetOfSurfData().Value(Index).InterferenceOnS2().LineIndex();
         return myDS.Curve(icurv).Curve();
@@ -544,7 +549,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
     // purpose  : gives the  PCurve associated to CurvOnSup1(Index)  on the support face
     //=======================================================================
 
-    internal Geom2d_Curve PCurveOnFace1(int Index)
+    internal Curve2D PCurveOnFace1(int Index)
     {
         return myListStripe.First().SetOfSurfData().Value(Index).InterferenceOnS1().PCurveOnFace();
     }
@@ -554,7 +559,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
     // purpose  : gives the PCurve associated to CurveOnFace1(Index) on the Fillet
     //=======================================================================
 
-    internal Geom2d_Curve PCurve1OnFillet(int Index)
+    internal Curve2D PCurve1OnFillet(int Index)
     {
         return myListStripe.First().SetOfSurfData().Value(Index).InterferenceOnS1().PCurveOnSurf();
     }
@@ -564,7 +569,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
     // purpose  : gives the  PCurve associated to CurvOnSup2(Index)  on the support face
     //=======================================================================
 
-    internal Geom2d_Curve PCurveOnFace2(int Index)
+    internal Curve2D PCurveOnFace2(int Index)
     {
         return myListStripe.First().SetOfSurfData().Value(Index).InterferenceOnS2().PCurveOnFace();
     }
@@ -574,7 +579,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
     // purpose  : gives the PCurve associated to CurveOnFace2(Index) on the Fillet
     //=======================================================================
 
-    internal Geom2d_Curve PCurve2OnFillet(int Index)
+    internal Curve2D PCurve2OnFillet(int Index)
     {
         return myListStripe.First().SetOfSurfData().Value(Index).InterferenceOnS2().PCurveOnSurf();
     }
@@ -692,7 +697,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
         ref NCollection_HSequence<ChFiDS_SurfData> HData = ref Stripe.ChangeSetOfSurfData();
         HData = new NCollection_HSequence<ChFiDS_SurfData>();
         ChFiDS_Spine Spine = Stripe.ChangeSpine();
-        TopAbs_Orientation RefOr1 = TopAbs_FORWARD, RefOr2 = TopAbs_FORWARD;
+        Orientation RefOr1 = Forward, RefOr2 = Forward;
         int RefChoix = 0;
         StripeOrientations(Spine, ref RefOr1, ref RefOr2, ref RefChoix);
         Stripe.OrientationOnFace1(RefOr1);
@@ -718,10 +723,10 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
     //           trimmed curve is a Geom_Circle)
     //=======================================================================
 
-    internal Geom_TrimmedCurve Section(int IndexSurf, int IndexSec)
+    internal TrimmedCurve3D Section(int IndexSurf, int IndexSec)
     {
         Sect(1, IndexSurf).Value(IndexSec).Get(out Circle3D c, out double deb, out double fin);
-        Geom_Circle Gc = new(c);
-        return new Geom_TrimmedCurve(Gc, deb, fin);
+        CircleCurve3D Gc = new(c);
+        return new TrimmedCurve3D(Gc, deb, fin);
     }
 }

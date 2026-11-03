@@ -1,8 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.TestHarness;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -13,31 +17,31 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BOPAlgo_MakeConnectedTests
 {
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType) => BOPAlgo_MakePeriodicTests.Count(theShape, theType);
+    private static int Count(in Shape theShape, ShapeType theType) => BOPAlgo_MakePeriodicTests.Count(theShape, theType);
 
     // [0, 10]^3 and [10, 20] x [0, 10]^2: they touch along the face x = 10
-    private static TopoDS_Shape BoxA() => new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
+    private static Shape BoxA() => new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
 
-    private static TopoDS_Shape BoxB() => new BRepPrimAPI_MakeBox(new Point3D(10, 0, 0), 10.0, 10.0, 10.0).Shape();
+    private static Shape BoxB() => new BRepPrimAPI_MakeBox(new Point3D(10, 0, 0), 10.0, 10.0, 10.0).Shape();
 
-    private static TopoDS_Shape FaceAt(in TopoDS_Shape theShape, double theX)
+    private static Shape FaceAt(in Shape theShape, double theX)
     {
-        for (TopExp_Explorer anExp = new(theShape, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(theShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            var aProps = new GProp_GProps();
+            var aProps = new Properties();
             BRepGProp.SurfaceProperties(anExp.Current(), aProps);
             if (Math.Abs(aProps.CentreOfMass().X() - theX) < 1e-9)
             {
                 return anExp.Current();
             }
         }
-        return new TopoDS_Shape();
+        return new Shape();
     }
 
-    private static BOPAlgo_MakeConnected Connected(params TopoDS_Shape[] theShapes)
+    private static BOPAlgo_MakeConnected Connected(params Shape[] theShapes)
     {
         BOPAlgo_MakeConnected aTool = new();
-        foreach (TopoDS_Shape aS in theShapes)
+        foreach (Shape aS in theShapes)
         {
             aTool.AddArgument(aS);
         }
@@ -48,31 +52,31 @@ public class BOPAlgo_MakeConnectedTests
     [Fact]
     public void Touching_boxes_share_a_face_with_a_material_on_each_side()
     {
-        TopoDS_Shape aA = BoxA(), aB = BoxB();
+        Shape aA = BoxA(), aB = BoxB();
         string aTextA = BRepTextComparison.Write(aA), aTextB = BRepTextComparison.Write(aB);
         BOPAlgo_MakeConnected aTool = Connected(aA, aB);
         Assert.False(aTool.HasErrors());
-        TopoDS_Shape aC = aTool.Shape();
-        Assert.Equal(2, Count(aC, TopAbs_SOLID));
-        Assert.Equal(11, Count(aC, TopAbs_FACE));
+        Shape aC = aTool.Shape();
+        Assert.Equal(2, Count(aC, ShapeType.Solid));
+        Assert.Equal(11, Count(aC, ShapeType.Face));
         Assert.True(aC.TShape()!.IsFrozen);
         Assert.Equal(aTextA, BRepTextComparison.Write(aA));
         Assert.Equal(aTextB, BRepTextComparison.Write(aB));
 
         // The shared face: A on one side, B on the other
-        TopoDS_Shape aShared = FaceAt(aC, 10.0);
-        List<TopoDS_Shape> aSides = [.. aTool.MaterialsOnPositiveSide(aShared), .. aTool.MaterialsOnNegativeSide(aShared)];
+        Shape aShared = FaceAt(aC, 10.0);
+        List<Shape> aSides = [.. aTool.MaterialsOnPositiveSide(aShared), .. aTool.MaterialsOnNegativeSide(aShared)];
         Assert.Equal(2, aSides.Count);
         Assert.Contains(aSides, s => s.IsSame(aA));
         Assert.Contains(aSides, s => s.IsSame(aB));
         // An outer face: one material, on its inner side
-        TopoDS_Shape anOuter = FaceAt(aC, 0.0);
+        Shape anOuter = FaceAt(aC, 0.0);
         Assert.Equal(1, aTool.MaterialsOnPositiveSide(anOuter).Count + aTool.MaterialsOnNegativeSide(anOuter).Count);
 
         // Origins: the shared face comes from both boxes' faces
         Assert.Equal(2, aTool.GetOrigins(aShared).Count);
         // History: B's face at x = 10 is modified into the shared face (A's is kept)
-        TopoDS_Shape aFaceB = FaceAt(aB, 10.0), aFaceA = FaceAt(aA, 10.0);
+        Shape aFaceB = FaceAt(aB, 10.0), aFaceA = FaceAt(aA, 10.0);
         bool aModifiedB = aTool.GetModified(aFaceB).Any(s => s.IsSame(aShared));
         bool aKeptA = aFaceA.IsSame(aShared) || aTool.GetModified(aFaceA).Any(s => s.IsSame(aShared));
         Assert.True(aModifiedB || aKeptA);
@@ -82,7 +86,7 @@ public class BOPAlgo_MakeConnectedTests
     [Fact]
     public void One_argument_is_its_own_result()
     {
-        TopoDS_Shape aA = BoxA();
+        Shape aA = BoxA();
         BOPAlgo_MakeConnected aTool = Connected(aA);
         Assert.False(aTool.HasErrors());
         Assert.True(aTool.Shape().IsSame(aA));
@@ -96,12 +100,12 @@ public class BOPAlgo_MakeConnectedTests
         aTool.Perform();
         Assert.True(aTool.HasError(typeof(BOPAlgo_AlertTooFewArguments)));
 
-        TopoDS_Shape aFace = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).Shape();
+        Shape aFace = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).Shape();
         aTool = Connected(BoxA(), aFace);
         Assert.True(aTool.HasError(typeof(BOPAlgo_AlertMultiDimensionalArguments)));
 
-        TopoDS_Compound anEmpty = new();
-        new BRep_Builder().MakeCompound(ref anEmpty);
+        Compound anEmpty = new();
+        new BrepBuilder().MakeCompound(ref anEmpty);
         aTool = Connected(anEmpty);
         Assert.True(aTool.HasError(typeof(BOPAlgo_AlertTooFewArguments)));
 
@@ -114,7 +118,7 @@ public class BOPAlgo_MakeConnectedTests
     [Fact]
     public void The_connected_shape_is_made_periodic_and_repeated()
     {
-        TopoDS_Shape aA = BoxA(), aB = BoxB();
+        Shape aA = BoxA(), aB = BoxB();
         string aTextA = BRepTextComparison.Write(aA);
         BOPAlgo_MakeConnected aTool = Connected(aA, aB);
         var aParams = new BOPAlgo_MakePeriodic.PeriodicityParams();
@@ -124,27 +128,27 @@ public class BOPAlgo_MakeConnectedTests
         aParams.myPeriod[1] = 10.0;
         aTool.MakePeriodic(aParams);
         Assert.False(aTool.HasWarnings());
-        Assert.Equal(2, Count(aTool.PeriodicShape(), TopAbs_SOLID));
+        Assert.Equal(2, Count(aTool.PeriodicShape(), ShapeType.Solid));
         // the faces at x = 0 and x = 20 are twins
-        TopoDS_Shape aP = aTool.PeriodicShape();
+        Shape aP = aTool.PeriodicShape();
         Assert.True(aTool.PeriodicityTool().GetTwins(FaceAt(aP, 0.0)).Single().IsSame(FaceAt(aP, 20.0)));
         aTool.RepeatShape(0, 1);
         aTool.RepeatShape(1, -2);
         Assert.False(aTool.HasWarnings());
-        TopoDS_Shape aR = aTool.PeriodicShape();
-        Assert.Equal(12, Count(aR, TopAbs_SOLID));
+        Shape aR = aTool.PeriodicShape();
+        Assert.Equal(12, Count(aR, ShapeType.Solid));
         Assert.Equal(12000.0, BOPAlgo_MakePeriodicTests.Volume(aR), 1e-6);
         // the faces the copies share at x = 20 have a copy of A on one side and of B on the other, both from the
         // original arguments
-        TopoDS_Shape aShared20 = FaceAt(aR, 20.0);
-        List<TopoDS_Shape> aSides = [.. aTool.MaterialsOnPositiveSide(aShared20), .. aTool.MaterialsOnNegativeSide(aShared20)];
+        Shape aShared20 = FaceAt(aR, 20.0);
+        List<Shape> aSides = [.. aTool.MaterialsOnPositiveSide(aShared20), .. aTool.MaterialsOnNegativeSide(aShared20)];
         Assert.Equal(2, aSides.Count);
         // the A solid generates its copies
-        TopoDS_Shape aSolidA = new TopExp_Explorer(aA, TopAbs_SOLID).Current();
+        Shape aSolidA = new Explorer(aA, ShapeType.Solid).Current();
         Assert.True(aTool.History()!.Generated(aSolidA).Count >= 5);
 
         aTool.ClearRepetitions();
-        Assert.Equal(2, Count(aTool.PeriodicShape(), TopAbs_SOLID));
+        Assert.Equal(2, Count(aTool.PeriodicShape(), ShapeType.Solid));
         Assert.True(aTool.PeriodicShape().TShape()!.IsFrozen);
         Assert.Equal(aTextA, BRepTextComparison.Write(aA));
     }
@@ -154,7 +158,7 @@ public class BOPAlgo_MakeConnectedTests
     {
         // A period longer than the boxes: nothing is split, so natively every face of the result is an argument's own
         // face; the port works on copies of them (the arguments are frozen) and answers for the arguments' faces
-        TopoDS_Shape aA = BoxA(), aB = BoxB();
+        Shape aA = BoxA(), aB = BoxB();
         string aTextA = BRepTextComparison.Write(aA);
         BOPAlgo_MakeConnected aTool = Connected(aA, aB);
         var aParams = new BOPAlgo_MakePeriodic.PeriodicityParams();
@@ -162,10 +166,10 @@ public class BOPAlgo_MakeConnectedTests
         aParams.myPeriod[0] = 30.0;
         aTool.MakePeriodic(aParams);
         Assert.False(aTool.HasWarnings());
-        TopoDS_Shape anOuter = FaceAt(aA, 0.0);
+        Shape anOuter = FaceAt(aA, 0.0);
         Assert.Equal(1, aTool.MaterialsOnPositiveSide(anOuter).Count + aTool.MaterialsOnNegativeSide(anOuter).Count);
         aTool.RepeatShape(0, 1);
-        Assert.Equal(4, Count(aTool.PeriodicShape(), TopAbs_SOLID));
+        Assert.Equal(4, Count(aTool.PeriodicShape(), ShapeType.Solid));
         Assert.Equal(1, aTool.MaterialsOnPositiveSide(anOuter).Count + aTool.MaterialsOnNegativeSide(anOuter).Count);
         Assert.Equal(aTextA, BRepTextComparison.Write(aA));
     }
@@ -173,8 +177,8 @@ public class BOPAlgo_MakeConnectedTests
     [Fact]
     public void Serial_equals_parallel()
     {
-        TopoDS_Shape aA = BoxA();
-        TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(10, 5, 0), new Direction3D(0, 0, 1)), 3.0, 10.0).Shape();
+        Shape aA = BoxA();
+        Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(10, 5, 0), new Direction3D(0, 0, 1)), 3.0, 10.0).Shape();
         DeterminismHarness.AssertSerialEqualsParallel(() =>
         {
             BOPAlgo_MakeConnected aTool = new();

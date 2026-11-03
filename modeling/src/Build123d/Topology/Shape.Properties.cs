@@ -1,4 +1,9 @@
+using Kerf.Engine.Construction.Values;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -32,14 +37,14 @@ public abstract partial class Shape
                 throw new InvalidOperationException("Cannot determine geometry type of an empty shape");
             switch (_wrapped.ShapeType())
             {
-                case TopAbs_ShapeEnum.TopAbs_EDGE:
+                case global::Kerf.Topology.ShapeType.Edge:
                 {
-                    var curve = new BRepAdaptor_Curve(TopoDS.Edge(_wrapped));
+                    var curve = new EdgeCurveAdaptor(ShapeCasts.Edge(_wrapped));
                     return GeomTypeOf(curve.GetType());
                 }
-                case TopAbs_ShapeEnum.TopAbs_FACE:
+                case global::Kerf.Topology.ShapeType.Face:
                 {
-                    var surface = new BRepAdaptor_Surface(TopoDS.Face(_wrapped));
+                    var surface = new FaceSurfaceAdaptor(ShapeCasts.Face(_wrapped));
                     return GeomTypeOf(surface.GetType());
                 }
                 default:
@@ -120,16 +125,16 @@ public abstract partial class Shape
     public abstract double Volume { get; }
 
     /// <summary>Fills <paramref name="props"/> with the mass properties for the shape's kind; false for a vertex, which has none.</summary>
-    internal static bool MassProperties(TopoDS_Shape shape, GProp_GProps props)
+    internal static bool MassProperties(global::Kerf.Topology.Shape shape, Properties props)
     {
         switch (TopoUtil.ShapeTypeOf(shape))
         {
-            case TopAbs_ShapeEnum.TopAbs_VERTEX:
+            case global::Kerf.Topology.ShapeType.Vertex:
                 return false;
-            case TopAbs_ShapeEnum.TopAbs_EDGE or TopAbs_ShapeEnum.TopAbs_WIRE:
+            case global::Kerf.Topology.ShapeType.Edge or global::Kerf.Topology.ShapeType.Wire:
                 BRepGProp.LinearProperties(shape, props);
                 return true;
-            case TopAbs_ShapeEnum.TopAbs_FACE or TopAbs_ShapeEnum.TopAbs_SHELL:
+            case global::Kerf.Topology.ShapeType.Face or global::Kerf.Topology.ShapeType.Shell:
                 BRepGProp.SurfaceProperties(shape, props);
                 return true;
             default:
@@ -143,7 +148,7 @@ public abstract partial class Shape
     {
         if (IsEmpty || _wrapped.IsVertex())
             return 0.0;
-        var props = new GProp_GProps();
+        var props = new Properties();
         MassProperties(_wrapped, props);
         return props.Mass();
     }
@@ -155,7 +160,7 @@ public abstract partial class Shape
         {
             if (IsEmpty)
                 return [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
-            var props = new GProp_GProps();
+            var props = new Properties();
             BRepGProp.VolumeProperties(_wrapped, props);
             var m = props.MatrixOfInertia();
             return [.. Enumerable.Range(1, 3).Select(i => Enumerable.Range(1, 3).Select(j => m.Value(i, j)).ToArray())];
@@ -168,7 +173,7 @@ public abstract partial class Shape
         get
         {
             NeedsGeometry("principal axes");
-            var props = new GProp_GProps();
+            var props = new Properties();
             BRepGProp.VolumeProperties(_wrapped, props);
             var principal = props.PrincipalProperties();
             double m1 = 0, m2 = 0, m3 = 0;
@@ -187,7 +192,7 @@ public abstract partial class Shape
         {
             if (IsEmpty)
                 return (0, 0, 0);
-            var props = new GProp_GProps();
+            var props = new Properties();
             BRepGProp.VolumeProperties(_wrapped, props);
             double x = 0, y = 0, z = 0;
             props.StaticMoments(out x, out y, out z);
@@ -199,7 +204,7 @@ public abstract partial class Shape
     public double RadiusOfGyration(Axis axis)
     {
         NeedsGeometry("radius of gyration");
-        var props = new GProp_GProps();
+        var props = new Properties();
         BRepGProp.VolumeProperties(_wrapped, props);
         var ax1 = axis.ToGpAx1();
         return props.RadiusOfGyration(ax1);
@@ -263,13 +268,13 @@ public abstract partial class Shape
                 return false;
             foreach (var shape in TopoUtil.TopLevelShapes(_wrapped))
             {
-                var map = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-                TopExp.MapShapesAndAncestors(shape, TopAbs_ShapeEnum.TopAbs_EDGE, TopAbs_ShapeEnum.TopAbs_FACE, map);
+                var map = new NCollection_IndexedDataMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
+                Exploration.MapShapesAndAncestors(shape, global::Kerf.Topology.ShapeType.Edge, global::Kerf.Topology.ShapeType.Face, map);
                 for (int i = 1; i <= map.Extent(); i++)
                 {
-                    var edge = TopoDS.Edge(map.FindKey(i));
+                    var edge = ShapeCasts.Edge(map.FindKey(i));
                     // A degenerate edge (a sphere's pole, a cone's apex) belongs to one face only
-                    if (BRep_Tool.Degenerated(edge))
+                    if (Tool.Degenerated(edge))
                         continue;
                     var faces = map.FindFromIndex(i);
                     if (faces.Extent() != 2)
@@ -351,7 +356,7 @@ public abstract partial class Shape
         return DistanceToTopo(vertex);
     }
 
-    private (double, Vector, Vector) DistanceToTopo(TopoDS_Shape other)
+    private (double, Vector, Vector) DistanceToTopo(global::Kerf.Topology.Shape other)
     {
         var calc = new BRepExtrema_DistShapeShape();
         calc.LoadS1(_wrapped);
@@ -385,12 +390,12 @@ public abstract partial class Shape
         if (IsEmpty)
             return [];
         var ax1 = axis.ToGpAx1();
-        var makeLin = new gce_MakeLin(ax1);
+        var makeLin = new MakeLin(ax1);
         var line = makeLin.Value();
         var inter = new BRepIntCurveSurface_Inter();
         inter.Init(_wrapped, line, tolerance);
         var origin = axis.Position.ToGpPnt();
-        var found = new List<(TopoDS_Face Face, double Distance)>();
+        var found = new List<(global::Kerf.Topology.Face Face, double Distance)>();
         for (; inter.More(); inter.Next())
         {
             var point = inter.Pnt();
@@ -406,7 +411,7 @@ public abstract partial class Shape
     /// triangulation in the faces it's given, so it meshes a copy: the shape itself, and everything sharing its
     /// geometry, is untouched.
     /// </summary>
-    internal TopoDS_Shape MeshedCopy(double tolerance, double angularTolerance, bool relative = true)
+    internal global::Kerf.Topology.Shape MeshedCopy(double tolerance, double angularTolerance, bool relative = true)
     {
         if (IsEmpty)
             throw new InvalidOperationException("Cannot mesh an empty shape");
@@ -426,11 +431,11 @@ public abstract partial class Shape
         foreach (var face in meshed.Faces())
         {
             var loc = new Placement();
-            var poly = BRep_Tool.Triangulation(face.TopoFace, out loc);
+            var poly = Tool.Triangulation(face.TopoFace, out loc);
             if (poly is null)
                 continue;
             var trsf = loc.Transformation();
-            bool reverse = face.TopoShape.Orientation() == TopAbs_Orientation.TopAbs_REVERSED;
+            bool reverse = face.TopoShape.Orientation() == global::Kerf.Topology.Orientation.Reversed;
             int nodes = poly.NodeCount;
             for (int i = 1; i <= nodes; i++)
             {

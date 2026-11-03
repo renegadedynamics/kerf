@@ -14,7 +14,7 @@ public static class Bisector
     /// True if the curve is convex on the side Sign (1 left, -1 right): tested at its middle parameter, with a
     /// tolerance of 1e-5 on the cross product of its first and second derivatives.
     /// </summary>
-    public static bool IsConvex(Geom2d_Curve Cu, double Sign)
+    public static bool IsConvex(Curve2D Cu, double Sign)
     {
         double U1 = (Cu.LastParameter() + Cu.FirstParameter()) / 2.0;
         Cu.D2(U1, out Point2D _, out Vector2D V1, out Vector2D V2);

@@ -3,9 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -16,37 +21,37 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepExtrema_ExtFF
 {
-    private readonly Extrema_ExtSS myExtSS = new();
+    private readonly ExtSS myExtSS = new();
     private readonly NCollection_Sequence<double> mySqDist = new();
-    private readonly NCollection_Sequence<Extrema_POnSurf> myPointsOnS1 = new();
-    private readonly NCollection_Sequence<Extrema_POnSurf> myPointsOnS2 = new();
-    private BRepAdaptor_Surface? myHS;
+    private readonly NCollection_Sequence<POnSurf> myPointsOnS1 = new();
+    private readonly NCollection_Sequence<POnSurf> myPointsOnS2 = new();
+    private FaceSurfaceAdaptor? myHS;
 
     public BRepExtrema_ExtFF()
     {
     }
 
     /// <summary>Computes all the extrema between the faces.</summary>
-    public BRepExtrema_ExtFF(in TopoDS_Face F1, in TopoDS_Face F2)
+    public BRepExtrema_ExtFF(in Face F1, in Face F2)
     {
         Initialize(F2);
         Perform(F1, F2);
     }
 
-    public void Initialize(in TopoDS_Face F2)
+    public void Initialize(in Face F2)
     {
-        var Surf = new BRepAdaptor_Surface(F2);
+        var Surf = new FaceSurfaceAdaptor(F2);
         if (Surf.GetType() == OtherSurface)
         {
             return; // protect against non-geometric type (e.g. triangulation)
         }
 
         myHS = Surf;
-        double Tol = Min(BRep_Tool.Tolerance(F2), global::Kerf.Engine.Foundation.Precision.Confusion());
+        double Tol = Min(Tool.Tolerance(F2), global::Kerf.Engine.Foundation.Precision.Confusion());
         Tol = Min(Surf.UResolution(Tol), Surf.VResolution(Tol));
         Tol = Max(Tol, global::Kerf.Engine.Foundation.Precision.PConfusion());
         double U1, U2, V1, V2;
-        BRepTools.UVBounds(F2, out U1, out U2, out V1, out V2);
+        BrepTools.UVBounds(F2, out U1, out U2, out V1, out V2);
         myExtSS.Initialize(myHS, U1, U2, V1, V2, Tol);
     }
 
@@ -54,32 +59,32 @@ public sealed class BRepExtrema_ExtFF
     /// Computes the extrema for the face <paramref name="F1"/>. The face <paramref name="F2"/> is used only to classify
     /// the points, not for the surface (which is the one given to Initialize).
     /// </summary>
-    public void Perform(in TopoDS_Face F1, in TopoDS_Face F2)
+    public void Perform(in Face F1, in Face F2)
     {
         mySqDist.Clear();
         myPointsOnS1.Clear();
         myPointsOnS2.Clear();
 
-        var Surf1 = new BRepAdaptor_Surface(F1);
+        var Surf1 = new FaceSurfaceAdaptor(F1);
         if (myHS is null || Surf1.GetType() == OtherSurface)
         {
             return; // protect against non-geometric type (e.g. triangulation)
         }
 
-        BRepAdaptor_Surface HS1 = Surf1;
-        double Tol1 = Min(BRep_Tool.Tolerance(F1), global::Kerf.Engine.Foundation.Precision.Confusion());
+        FaceSurfaceAdaptor HS1 = Surf1;
+        double Tol1 = Min(Tool.Tolerance(F1), global::Kerf.Engine.Foundation.Precision.Confusion());
         Tol1 = Min(Surf1.UResolution(Tol1), Surf1.VResolution(Tol1));
         Tol1 = Max(Tol1, global::Kerf.Engine.Foundation.Precision.PConfusion());
         double U1, U2, V1, V2;
-        BRepTools.UVBounds(F1, out U1, out U2, out V1, out V2);
+        BrepTools.UVBounds(F1, out U1, out U2, out V1, out V2);
         myExtSS.Perform(HS1, U1, U2, V1, V2, Tol1);
 
-        if (!myExtSS.IsDone())
+        if (!myExtSS.IsDone)
         {
             return;
         }
 
-        if (myExtSS.IsParallel())
+        if (myExtSS.IsParallel)
         {
             mySqDist.Append(myExtSS.SquareDistance(1));
         }
@@ -87,23 +92,23 @@ public sealed class BRepExtrema_ExtFF
         {
             // Exploration of points and classification
             var classifier = new BRepClass_FaceClassifier();
-            double Tol2 = BRep_Tool.Tolerance(F2);
+            double Tol2 = Tool.Tolerance(F2);
 
             int i;
-            for (i = 1; i <= myExtSS.NbExt(); i++)
+            for (i = 1; i <= myExtSS.ExtCount; i++)
             {
-                myExtSS.Points(i, out Extrema_POnSurf P1, out Extrema_POnSurf P2);
+                myExtSS.Points(i, out POnSurf P1, out POnSurf P2);
                 P1.Parameter(out U1, out U2);
                 var Puv1 = new Point2D(U1, U2);
                 classifier.Perform(F1, Puv1, Tol1);
-                TopAbs_State state1 = classifier.State();
-                if (state1 == TopAbs_ON || state1 == TopAbs_IN)
+                Containment state1 = classifier.State();
+                if (state1 == On || state1 == In)
                 {
                     P2.Parameter(out U1, out U2);
                     var Puv2 = new Point2D(U1, U2);
                     classifier.Perform(F2, Puv2, Tol2);
-                    TopAbs_State state2 = classifier.State();
-                    if (state2 == TopAbs_ON || state2 == TopAbs_IN)
+                    Containment state2 = classifier.State();
+                    if (state2 == On || state2 == In)
                     {
                         mySqDist.Append(myExtSS.SquareDistance(i));
                         myPointsOnS1.Append(P1);
@@ -115,10 +120,10 @@ public sealed class BRepExtrema_ExtFF
     }
 
     /// <summary>True if the distances are found.</summary>
-    public bool IsDone() => myExtSS.IsDone();
+    public bool IsDone() => myExtSS.IsDone;
 
     /// <summary>True if the surfaces are parallel.</summary>
-    public bool IsParallel() => myExtSS.IsParallel();
+    public bool IsParallel() => myExtSS.IsParallel;
 
     /// <summary>The number of extremum distances.</summary>
     public int NbExt() => mySqDist.Length();

@@ -1,13 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
 using static Occt.BRepOffset_Error;
 using static Occt.BRepOffset_Mode;
 using static Kerf.Geometry.JoinKind;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite;
 
@@ -100,8 +102,8 @@ internal static partial class BRepTestFeatureCommands
         {
             return 1;
         }
-        TopoDS_Shape S = theDI.GetShape(a[2]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[2]);
+        if (S.IsNull)
         {
             return 1;
         }
@@ -136,7 +138,7 @@ internal static partial class BRepTestFeatureCommands
         BRepOffset_Error aRetCode = B.Error();
         reportOffsetState(theCommands, aRetCode);
 
-        if (!B.Shape().IsNull())
+        if (!B.Shape().IsNull)
         {
             theDI.SetShape(a[1], B.Shape());
         }
@@ -152,8 +154,8 @@ internal static partial class BRepTestFeatureCommands
         {
             return 0;
         }
-        TopoDS_Shape aShape = theDI.GetShape(theArgVec[2]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(theArgVec[2]);
+        if (aShape.IsNull)
         {
             theDIResult.Append("Shape is null");
             return 1;
@@ -224,8 +226,8 @@ internal static partial class BRepTestFeatureCommands
         {
             return 1;
         }
-        TopoDS_Shape S = theDI.GetShape(a[2]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[2]);
+        if (S.IsNull)
         {
             return 1;
         }
@@ -244,8 +246,8 @@ internal static partial class BRepTestFeatureCommands
         double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         if (n > 4)
         {
-            TopoDS_Shape SF = theDI.GetShape(a[4], TopAbs_FACE);
-            if (SF.IsNull())
+            Shape SF = theDI.GetShape(a[4], ShapeType.Face);
+            if (SF.IsNull)
             {
                 IB = 5;
                 Tol = theDI.Atof(a[4]);
@@ -259,11 +261,11 @@ internal static partial class BRepTestFeatureCommands
 
         for (int i = IB; i < n; i++)
         {
-            TopoDS_Shape SF = theDI.GetShape(a[i], TopAbs_FACE);
-            if (!SF.IsNull())
+            Shape SF = theDI.GetShape(a[i], ShapeType.Face);
+            if (!SF.IsNull)
             {
                 YaBouchon = true;
-                B.AddFace(TopoDS.Face(SF));
+                B.AddFace(ShapeCasts.Face(SF));
             }
         }
 
@@ -279,7 +281,7 @@ internal static partial class BRepTestFeatureCommands
         BRepOffset_Error aRetCode = B.Error();
         reportOffsetState(theCommands, aRetCode);
 
-        if (!B.Shape().IsNull())
+        if (!B.Shape().IsNull)
         {
             theDI.SetShape(a[1], B.Shape());
         }
@@ -370,8 +372,8 @@ internal static partial class BRepTestFeatureCommands
         {
             return 1;
         }
-        TopoDS_Shape S = theDI.GetShape(a[1]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[1]);
+        if (S.IsNull)
         {
             return 1;
         }
@@ -388,10 +390,10 @@ internal static partial class BRepTestFeatureCommands
         //----------------------------------------
         for (int i = 3; i < n; i++)
         {
-            TopoDS_Shape SF = theDI.GetShape(a[i], TopAbs_FACE);
-            if (!SF.IsNull())
+            Shape SF = theDI.GetShape(a[i], ShapeType.Face);
+            if (!SF.IsNull)
             {
-                s.TheOffset.AddFace(TopoDS.Face(SF));
+                s.TheOffset.AddFace(ShapeCasts.Face(SF));
             }
         }
         s.theYaBouchon = n >= 4;
@@ -412,12 +414,12 @@ internal static partial class BRepTestFeatureCommands
         OffsetState s = Offset(theDI);
         for (int i = 1; i < n; i += 2)
         {
-            TopoDS_Shape SF = theDI.GetShape(a[i], TopAbs_FACE);
-            if (!SF.IsNull())
+            Shape SF = theDI.GetShape(a[i], ShapeType.Face);
+            if (!SF.IsNull)
             {
                 // OCCT reads a[i + 1] past the arguments for an odd count; Draw-lite reads an empty word.
                 double Of = theDI.Atof(i + 1 < n ? a[i + 1] : "");
-                s.TheOffset.SetOffsetOnFace(TopoDS.Face(SF), Of);
+                s.TheOffset.SetOffsetOnFace(ShapeCasts.Face(SF), Of);
             }
         }
 
@@ -457,7 +459,7 @@ internal static partial class BRepTestFeatureCommands
         // Store the history of Boolean operation into the session
         if (BRepTestHistoryCommands.IsHistoryNeeded(theDI))
         {
-            NCollection_List<TopoDS_Shape> aLA = new();
+            NCollection_List<Shape> aLA = new();
             aLA.Append(s.TheOffset.InitShape());
             BRepTestHistoryCommands.SetHistory(theDI, aLA, new OffsetHistory(s.TheOffset));
         }
@@ -467,13 +469,13 @@ internal static partial class BRepTestFeatureCommands
 
     // OCCT's BRepTest_Objects::SetHistory<BRepOffset_MakeOffset> reads the algorithm's Generated, Modified and
     // IsDeleted through a template; the port's history takes the interface.
-    private sealed class OffsetHistory(BRepOffset_MakeOffset theAlgo) : BRepTools_History.IAlgorithm
+    private sealed class OffsetHistory(BRepOffset_MakeOffset theAlgo) : History.IAlgorithm
     {
-        public bool IsDeleted(in TopoDS_Shape theS) => theAlgo.IsDeleted(theS);
+        public bool IsDeleted(in Shape theS) => theAlgo.IsDeleted(theS);
 
-        public IEnumerable<TopoDS_Shape> Modified(in TopoDS_Shape theS) => theAlgo.Modified(theS);
+        public IEnumerable<Shape> Modified(in Shape theS) => theAlgo.Modified(theS);
 
-        public IEnumerable<TopoDS_Shape> Generated(in TopoDS_Shape theS) => theAlgo.Generated(theS);
+        public IEnumerable<Shape> Generated(in Shape theS) => theAlgo.Generated(theS);
     }
 
     //=================================================================================================
@@ -488,8 +490,8 @@ internal static partial class BRepTestFeatureCommands
         }
 
         // Input data.
-        TopoDS_Shape aShape = theDI.GetShape(a[2]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(a[2]);
+        if (aShape.IsNull)
         {
             theCommands.Append("Input shape is null");
             return 0;

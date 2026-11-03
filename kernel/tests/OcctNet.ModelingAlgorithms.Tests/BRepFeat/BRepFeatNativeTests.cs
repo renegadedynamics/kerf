@@ -1,12 +1,19 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -46,10 +53,10 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
 
     private static string Hex(ulong theValue) => theValue.ToString("x16", CultureInfo.InvariantCulture);
 
-    private static string Text(in TopoDS_Shape theShape)
+    private static string Text(in Shape theShape)
     {
         var aW = new StringWriter(CultureInfo.InvariantCulture) { NewLine = "\n" };
-        BRepTools.Write(theShape, aW, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3);
+        BrepTools.Write(theShape, aW, true, false, FormatVersion.FormatVersion_VERSION_3);
         return aW.ToString();
     }
 
@@ -76,11 +83,11 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
 
     private static string P(Point3D p) => Q(p.X()) + Q(p.Y()) + Q(p.Z());
 
-    private static List<TopoDS_Shape> Map(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static List<Shape> Map(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
-        var aList = new List<TopoDS_Shape>();
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
+        var aList = new List<Shape>();
         for (int i = 1; i <= aMap.Extent(); i++)
         {
             aList.Add(aMap[i]);
@@ -88,31 +95,31 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
         return aList;
     }
 
-    private static string Coarse(in TopoDS_Shape theShape)
+    private static string Coarse(in Shape theShape)
     {
         var aLines = new List<string>();
-        foreach (TopoDS_Shape aF in Map(theShape, TopAbs_FACE))
+        foreach (Shape aF in Map(theShape, ShapeType.Face))
         {
-            var aProps = new GProp_GProps();
+            var aProps = new Properties();
             BRepGProp.SurfaceProperties(aF, aProps);
-            aLines.Add($"F {Q(aProps.Mass())} {Map(aF, TopAbs_EDGE).Count}");
+            aLines.Add($"F {Q(aProps.Mass())} {Map(aF, ShapeType.Edge).Count}");
         }
-        foreach (TopoDS_Shape anE in Map(theShape, TopAbs_EDGE))
+        foreach (Shape anE in Map(theShape, ShapeType.Edge))
         {
-            TopExp.Vertices(TopoDS.Edge(anE), out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
-            string[] anEnds = [aV1.IsNull() ? "" : P(BRep_Tool.Pnt(aV1)), aV2.IsNull() ? "" : P(BRep_Tool.Pnt(aV2))];
+            Exploration.Vertices(ShapeCasts.Edge(anE), out Vertex aV1, out Vertex aV2);
+            string[] anEnds = [aV1.IsNull ? "" : P(Tool.Pnt(aV1)), aV2.IsNull ? "" : P(Tool.Pnt(aV2))];
             if (string.CompareOrdinal(anEnds[1], anEnds[0]) < 0)
             {
                 (anEnds[0], anEnds[1]) = (anEnds[1], anEnds[0]);
             }
-            aLines.Add($"E {Q(BRep_Tool.Tolerance(TopoDS.Edge(anE)))} {anEnds[0]} {anEnds[1]}");
+            aLines.Add($"E {Q(Tool.Tolerance(ShapeCasts.Edge(anE)))} {anEnds[0]} {anEnds[1]}");
         }
-        foreach (TopoDS_Shape aV in Map(theShape, TopAbs_VERTEX))
+        foreach (Shape aV in Map(theShape, ShapeType.Vertex))
         {
-            aLines.Add($"V {P(BRep_Tool.Pnt(TopoDS.Vertex(aV)))} {Q(BRep_Tool.Tolerance(TopoDS.Vertex(aV)))}");
+            aLines.Add($"V {P(Tool.Pnt(ShapeCasts.Vertex(aV)))} {Q(Tool.Tolerance(ShapeCasts.Vertex(aV)))}");
         }
         aLines.Sort(StringComparer.Ordinal);
-        var aVolume = new GProp_GProps();
+        var aVolume = new Properties();
         BRepGProp.VolumeProperties(theShape, aVolume);
         var aJoined = new StringBuilder();
         foreach (string aL in aLines)
@@ -148,25 +155,25 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
         theTally.Differences.Add($"{theWhat}: native {theNative}, port {thePort}");
     }
 
-    private static string Result(BRepBuilderAPI_MakeShape theMaker, string theStatus, List<TopoDS_Shape> theFaces,
-                                 List<TopoDS_Shape> theEdges)
+    private static string Result(BRepBuilderAPI_MakeShape theMaker, string theStatus, List<Shape> theFaces,
+                                 List<Shape> theEdges)
     {
         if (!theMaker.IsDone())
         {
             return "0 " + theStatus;
         }
-        TopoDS_Shape aRes = theMaker.Shape();
-        if (!aRes.IsNull() && !aRes.TShape()!.IsFrozen)
+        Shape aRes = theMaker.Shape();
+        if (!aRes.IsNull && !aRes.TShape()!.IsFrozen)
         {
             throw new InvalidOperationException("the result isn't frozen");
         }
-        var aLine = new StringBuilder("1 " + theStatus + " " + (aRes.IsNull() ? "NULL NULL" : Hex(Fnv(Masked(Text(aRes)))) + " " + Coarse(aRes)) + " ");
-        foreach (TopoDS_Shape aF in theFaces)
+        var aLine = new StringBuilder("1 " + theStatus + " " + (aRes.IsNull ? "NULL NULL" : Hex(Fnv(Masked(Text(aRes)))) + " " + Coarse(aRes)) + " ");
+        foreach (Shape aF in theFaces)
         {
             aLine.Append(theMaker.IsDeleted(aF) ? "d " : theMaker.Modified(aF).Count.ToString(CultureInfo.InvariantCulture) + " ");
         }
         aLine.Append('|');
-        foreach (TopoDS_Shape anE in theEdges)
+        foreach (Shape anE in theEdges)
         {
             aLine.Append(' ').Append(theMaker.Generated(anE).Count.ToString(CultureInfo.InvariantCulture));
         }
@@ -189,7 +196,7 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
     public void The_makers_on_primitives_with_profiles_as_native()
     {
         List<string> aLines = Recording();
-        var anInputs = new Dictionary<int, TopoDS_Shape>();
+        var anInputs = new Dictionary<int, Shape>();
         var aTexts = new Dictionary<int, string>();
         var aParams = new Dictionary<int, double[]>();
         var aTally = new Tally();
@@ -204,7 +211,7 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
                 {
                     aText.Append(aLines[i]).Append('\n');
                 }
-                BRepTools.Read(out TopoDS_Shape aShape, new StringReader(aText.ToString()));
+                BrepTools.Read(out Shape aShape, new StringReader(aText.ToString()));
                 aShape.TShape()!.FreezeGraph(); // a caller's shape
                 anInputs[k] = aShape;
                 aTexts[k] = Text(aShape);
@@ -219,17 +226,17 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
             string[] aParts = aLine.Split(" => ");
             string[] aHead = aParts[0].Split(' ');
             int aK = int.Parse(aHead[1], CultureInfo.InvariantCulture);
-            TopoDS_Shape anIn = anInputs[aK];
+            Shape anIn = anInputs[aK];
             double[] aPar = aParams[aK];
             var aC = new Point3D(aPar[0], aPar[1], aPar[2]);
             var aN = new Direction3D(aPar[3], aPar[4], aPar[5]);
             var aX = new Direction3D(aPar[6], aPar[7], aPar[8]);
             double aSize = aPar[9];
-            var anIt = new TopoDS_Iterator(anIn);
-            TopoDS_Shape aS = anIt.Value();
+            var anIt = new Iterator(anIn);
+            Shape aS = anIt.Value();
             anIt.Next();
-            TopoDS_Shape aSecond = anIt.Value();
-            List<TopoDS_Shape> aFaces = Map(aS, TopAbs_FACE);
+            Shape aSecond = anIt.Value();
+            List<Shape> aFaces = Map(aS, ShapeType.Face);
             string aPort;
             switch (aHead[0])
             {
@@ -237,14 +244,14 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
                 case "REVOL":
                 case "PIPE":
                 {
-                    TopoDS_Face aP = TopoDS.Face(aSecond);
-                    List<TopoDS_Shape> anEdges = Map(aP, TopAbs_EDGE);
+                    Face aP = ShapeCasts.Face(aSecond);
+                    List<Shape> anEdges = Map(aP, ShapeType.Edge);
                     int iF = int.Parse(aLines.Take(i).Last(l => l.StartsWith("INPUT " + aK + " ", StringComparison.Ordinal)).Split(' ')[2].Split('.')[1], CultureInfo.InvariantCulture);
-                    TopoDS_Face aSk = TopoDS.Face(aFaces[iF]);
+                    Face aSk = ShapeCasts.Face(aFaces[iF]);
                     int iUntil = -1;
                     for (int j = aFaces.Count - 1; j >= 0; j--)
                     {
-                        if (j != iF && new BRepAdaptor_Surface(TopoDS.Face(aFaces[j])).GetType() == SurfaceKind.Plane)
+                        if (j != iF && new FaceSurfaceAdaptor(ShapeCasts.Face(aFaces[j])).GetType() == SurfaceKind.Plane)
                         {
                             iUntil = j;
                             break;
@@ -283,8 +290,8 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
                         _ => Run(() =>
                         {
                             Direction3D aDir = aFuse != 0 ? aN : aN.Reversed();
-                            TopoDS_Edge aSpine = new BRepBuilderAPI_MakeEdge(aC, aC.Translated(new Vector3D(aDir) * 5.0)).Edge();
-                            TopoDS_Wire aW = new BRepBuilderAPI_MakeWire(aSpine).Wire();
+                            Edge aSpine = new BRepBuilderAPI_MakeEdge(aC, aC.Translated(new Vector3D(aDir) * 5.0)).Edge();
+                            Wire aW = new BRepBuilderAPI_MakeWire(aSpine).Wire();
                             var aM = new BRepFeat_MakePipe(aS, aP, aSk, aW, aFuse, isMod);
                             aM.Perform();
                             return Result(aM, ((int)aM.CurrentStatusError()).ToString(CultureInfo.InvariantCulture), aFaces, anEdges);
@@ -311,8 +318,8 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
                         string aRes = $"{(int)aM.Status()} {(aM.HasErrors() ? 1 : 0)}";
                         if (aM.Status() == BRepFeat_Status.BRepFeat_NoError && !aM.HasErrors())
                         {
-                            TopoDS_Shape aShape = aM.Shape();
-                            aRes += " " + (aShape.IsNull() ? "NULL NULL" : Hex(Fnv(Masked(Text(aShape)))) + " " + Coarse(aShape));
+                            Shape aShape = aM.Shape();
+                            aRes += " " + (aShape.IsNull ? "NULL NULL" : Hex(Fnv(Masked(Text(aShape)))) + " " + Coarse(aShape));
                         }
                         return aRes;
                     });
@@ -323,17 +330,17 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
                     aPort = Run(() =>
                     {
                         var aG = new BRepFeat_Gluer(aSecond, aS);
-                        TopoDS_Face aFnew = new();
-                        foreach (TopoDS_Shape aF in Map(aSecond, TopAbs_FACE))
+                        Face aFnew = new();
+                        foreach (Shape aF in Map(aSecond, ShapeType.Face))
                         {
-                            var aProps = new GProp_GProps();
+                            var aProps = new Properties();
                             BRepGProp.SurfaceProperties(aF, aProps);
                             if (aProps.CentreOfMass().Distance(aC) < 1e-7)
                             {
-                                aFnew = TopoDS.Face(aF);
+                                aFnew = ShapeCasts.Face(aF);
                             }
                         }
-                        aG.Bind(aFnew, TopoDS.Face(aFaces[0]));
+                        aG.Bind(aFnew, ShapeCasts.Face(aFaces[0]));
                         var aFE = new LocOpe_FindEdges(aFnew, aFaces[0]);
                         for (aFE.InitIterator(); aFE.More(); aFE.Next())
                         {

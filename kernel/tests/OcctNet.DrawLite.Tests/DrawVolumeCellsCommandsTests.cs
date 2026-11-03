@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using Occt;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
@@ -24,10 +26,10 @@ public class DrawVolumeCellsCommandsTests(ITestOutputHelper output)
         return anInterpreter;
     }
 
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
@@ -37,11 +39,11 @@ public class DrawVolumeCellsCommandsTests(ITestOutputHelper output)
         DrawInterpreter i = Load();
         i.Eval("box b1 10 10 10; box b2 5 5 5 10 10 10; explode b1 f; explode b2 f");
         i.Eval(("mkvolume r b1_1 b1_2 b1_3 b1_4 b1_5 b1_6 b2_1 b2_2 b2_3 b2_4 b2_5 b2_6"));
-        Assert.Equal(3, Count(i.GetShape("r"), TopAbs_ShapeEnum.TopAbs_SOLID));
+        Assert.Equal(3, Count(i.GetShape("r"), ShapeType.Solid));
         i.Eval("compound b1_1 b1_2 b1_3 b1_4 b1_5 b1_6 c1; mkvolume r c1 -c");
-        Assert.Equal(1, Count(i.GetShape("r"), TopAbs_ShapeEnum.TopAbs_SOLID));
+        Assert.Equal(1, Count(i.GetShape("r"), ShapeType.Solid));
         i.Eval("mkvolume r b1 -ni");
-        Assert.Equal(1, Count(i.GetShape("r"), TopAbs_ShapeEnum.TopAbs_SOLID));
+        Assert.Equal(1, Count(i.GetShape("r"), ShapeType.Solid));
         i.Eval("savehistory h");
         Assert.Equal("history", i.Eval("whatis h").Split(' ').Last().Trim());
         Assert.Contains("Usage: mkvolume", Assert.ThrowsAny<DrawException>(() => i.Eval("mkvolume r")).Reason);
@@ -53,19 +55,19 @@ public class DrawVolumeCellsCommandsTests(ITestOutputHelper output)
         DrawInterpreter i = Load();
         i.Eval("box b1 10 10 10; box b2 5 5 5 10 10 10");
         i.Eval("bclearobjects; bcleartools; baddobjects b1 b2; bfillds; bcbuild r");
-        Assert.Equal(3, Count(i.GetShape("r"), TopAbs_ShapeEnum.TopAbs_SOLID));
+        Assert.Equal(3, Count(i.GetShape("r"), ShapeType.Solid));
         i.Eval("bcadd res b1 1 b2 0");
-        Assert.Equal(1, Count(i.GetShape("res"), TopAbs_ShapeEnum.TopAbs_SOLID));
+        Assert.Equal(1, Count(i.GetShape("res"), ShapeType.Solid));
         i.Eval("bcadd res b2 1 -m 1");
-        Assert.Equal(3, Count(i.GetShape("res"), TopAbs_ShapeEnum.TopAbs_SOLID));
+        Assert.Equal(3, Count(i.GetShape("res"), ShapeType.Solid));
         i.Eval("bcremove res b1 1 b2 0");
-        Assert.Equal(2, Count(i.GetShape("res"), TopAbs_ShapeEnum.TopAbs_SOLID));
+        Assert.Equal(2, Count(i.GetShape("res"), ShapeType.Solid));
         i.Eval("bcremoveall; bcaddall res -m 1 -u");
-        Assert.Equal(1, Count(i.GetShape("res"), TopAbs_ShapeEnum.TopAbs_SOLID));
+        Assert.Equal(1, Count(i.GetShape("res"), ShapeType.Solid));
         i.Eval("bcremoveall; bcaddall res; bcmakecontainers res");
-        Assert.Equal(1, Count(i.GetShape("res"), TopAbs_ShapeEnum.TopAbs_COMPSOLID));
+        Assert.Equal(1, Count(i.GetShape("res"), ShapeType.CompSolid));
         i.Eval("savehistory h; modified m h b1");
-        Assert.Equal(2, Count(i.GetShape("m"), TopAbs_ShapeEnum.TopAbs_SOLID));
+        Assert.Equal(2, Count(i.GetShape("m"), ShapeType.Solid));
     }
 
     /// <summary>Draw-lite before unit 6G's volume and cells commands.</summary>

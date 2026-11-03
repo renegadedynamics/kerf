@@ -1,10 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.IntCurveSurface_TransitionOnCurve;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -15,11 +17,11 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepIntCurveSurfaceTests
 {
-    private static TopoDS_Shape Box10() => TestShapes.Frozen(TestShapes.Box(10, 10, 10));
+    private static Shape Box10() => TestShapes.Frozen(TestShapes.Box(10, 10, 10));
 
-    private static List<(Point3D P, double U, double V, double W, TopAbs_State S, IntCurveSurface_TransitionOnCurve T, TopoDS_Face F)> All(BRepIntCurveSurface_Inter theInter)
+    private static List<(Point3D P, double U, double V, double W, Containment S, IntCurveSurface_TransitionOnCurve T, Face F)> All(BRepIntCurveSurface_Inter theInter)
     {
-        var aList = new List<(Point3D, double, double, double, TopAbs_State, IntCurveSurface_TransitionOnCurve, TopoDS_Face)>();
+        var aList = new List<(Point3D, double, double, double, Containment, IntCurveSurface_TransitionOnCurve, Face)>();
         for (; theInter.More(); theInter.Next())
         {
             aList.Add((theInter.Pnt(), theInter.U(), theInter.V(), theInter.W(), theInter.State(), theInter.Transition(), theInter.Face()));
@@ -33,7 +35,7 @@ public class BRepIntCurveSurfaceTests
     [Fact]
     public void Ray_through_a_box()
     {
-        TopoDS_Shape aBox = Box10();
+        Shape aBox = Box10();
         var anInter = new BRepIntCurveSurface_Inter();
         anInter.Init(aBox, new Line3D(new Point3D(3, 4, -5), new Direction3D(0, 0, 1)), 1e-7);
         var aPoints = All(anInter);
@@ -43,7 +45,7 @@ public class BRepIntCurveSurfaceTests
         Assert.Equal(5.0, aPoints[0].W, 1e-9);
         Assert.True(aPoints[0].P.IsEqual(new Point3D(3, 4, 0), 1e-9));
         Assert.Equal(IntCurveSurface_In, aPoints[0].T);
-        Assert.Equal(TopAbs_IN, aPoints[0].S);
+        Assert.Equal(In, aPoints[0].S);
         Assert.True(aPoints[0].F.IsSame(BRepGPropTestShapes.Faces(aBox)[0]));
         Assert.Equal(15.0, aPoints[1].W, 1e-9);
         Assert.Equal(IntCurveSurface_Out, aPoints[1].T);
@@ -54,14 +56,14 @@ public class BRepIntCurveSurfaceTests
     [Fact]
     public void Ray_along_a_diagonal_and_through_an_edge()
     {
-        TopoDS_Shape aBox = Box10();
+        Shape aBox = Box10();
         var anInter = new BRepIntCurveSurface_Inter();
         // through the vertical edge x = 10, y = 0 at z = 5, from outside along the diagonal of the XY plane
         anInter.Init(aBox, new Line3D(new Point3D(15, -5, 5), new Direction3D(-1, 1, 0)), 1e-7);
         var aPoints = All(anInter);
         // the two faces meeting at the edge give an ON point each, then the opposite edge (0, 10) the same
         Assert.Equal(4, aPoints.Count);
-        Assert.All(aPoints, p => Assert.Equal(TopAbs_ON, p.S));
+        Assert.All(aPoints, p => Assert.Equal(On, p.S));
     }
 
     [Fact]
@@ -78,20 +80,20 @@ public class BRepIntCurveSurfaceTests
     [Fact]
     public void Located_box_and_holed_face()
     {
-        TopoDS_Shape aMoved = ClassificationTestShapes.Translated(Box10(), new Vector3D(0, 0, 100));
+        Shape aMoved = ClassificationTestShapes.Translated(Box10(), new Vector3D(0, 0, 100));
         var anInter = new BRepIntCurveSurface_Inter();
         anInter.Load(aMoved, 1e-7);
-        anInter.Init(new GeomAdaptor_Curve(new Geom_Line(new Point3D(3, 4, 0), new Direction3D(0, 0, 1))));
+        anInter.Init(new CurveAdaptor(new LineCurve3D(new Point3D(3, 4, 0), new Direction3D(0, 0, 1))));
         var aPoints = All(anInter);
         Assert.Equal(2, aPoints.Count);
         Assert.Equal(100.0, aPoints[0].W, 1e-9);
         Assert.Equal(110.0, aPoints[1].W, 1e-9);
 
-        TopoDS_Shape aHoled = TestShapes.Frozen(ClassificationTestShapes.HoledSquare());
+        Shape aHoled = TestShapes.Frozen(ClassificationTestShapes.HoledSquare());
         anInter.Load(aHoled, 1e-7);
-        anInter.Init(new GeomAdaptor_Curve(new Geom_Line(new Point3D(5, 5, 3), new Direction3D(0, 0, 1))));
+        anInter.Init(new CurveAdaptor(new LineCurve3D(new Point3D(5, 5, 3), new Direction3D(0, 0, 1))));
         Assert.False(anInter.More()); // through the hole
-        anInter.Init(new GeomAdaptor_Curve(new Geom_Line(new Point3D(2, 5, 3), new Direction3D(0, 0, -1))));
+        anInter.Init(new CurveAdaptor(new LineCurve3D(new Point3D(2, 5, 3), new Direction3D(0, 0, -1))));
         aPoints = All(anInter);
         Assert.Single(aPoints);
         Assert.Equal(3.0, aPoints[0].W, 1e-9);
@@ -100,18 +102,18 @@ public class BRepIntCurveSurfaceTests
     [Fact]
     public void Bounded_curves()
     {
-        TopoDS_Shape aBox = Box10();
+        Shape aBox = Box10();
         var anInter = new BRepIntCurveSurface_Inter();
         anInter.Load(aBox, 1e-7);
 
         // a segment ending inside the box meets only the bottom face
-        anInter.Init(new GeomAdaptor_Curve(new Geom_Line(new Point3D(3, 4, -5), new Direction3D(0, 0, 1)), 0.0, 10.0));
+        anInter.Init(new CurveAdaptor(new LineCurve3D(new Point3D(3, 4, -5), new Direction3D(0, 0, 1)), 0.0, 10.0));
         var aPoints = All(anInter);
         Assert.Single(aPoints);
         Assert.Equal(5.0, aPoints[0].W, 1e-9);
 
         // a circle around the box's centre crosses its four sides twice each
-        anInter.Init(new GeomAdaptor_Curve(new Geom_Circle(new Frame3D(new Point3D(5, 5, 5), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 6.0)));
+        anInter.Init(new CurveAdaptor(new CircleCurve3D(new Frame3D(new Point3D(5, 5, 5), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 6.0)));
         aPoints = All(anInter);
         Assert.Equal(8, aPoints.Count);
         Assert.All(aPoints, p => Assert.Equal(6.0, p.P.Distance(new Point3D(5, 5, 5)), 1e-9));

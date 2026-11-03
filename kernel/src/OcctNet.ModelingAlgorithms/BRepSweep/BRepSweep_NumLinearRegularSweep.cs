@@ -4,8 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -21,15 +23,15 @@ namespace Occt;
 internal abstract class BRepSweep_NumLinearRegularSweep
 {
     protected readonly BRepSweep_Builder myBuilder;
-    protected readonly TopoDS_Shape myGenShape;
+    protected readonly Shape myGenShape;
     protected readonly Sweep_NumShape myDirWire;
     protected readonly BRepSweep_Tool myGenShapeTool;
     protected readonly Sweep_NumShapeTool myDirShapeTool;
-    protected readonly NCollection_Array2<TopoDS_Shape> myShapes;
+    protected readonly NCollection_Array2<Shape> myShapes;
     protected readonly NCollection_Array2<bool> myBuiltShapes;
     protected readonly NCollection_Array2<bool> myUsedShapes;
 
-    protected BRepSweep_NumLinearRegularSweep(BRepSweep_Builder aBuilder, in TopoDS_Shape aGenShape, in Sweep_NumShape aDirShape)
+    protected BRepSweep_NumLinearRegularSweep(BRepSweep_Builder aBuilder, in Shape aGenShape, in Sweep_NumShape aDirShape)
     {
         myBuilder = aBuilder;
         myGenShape = aGenShape;
@@ -37,7 +39,7 @@ internal abstract class BRepSweep_NumLinearRegularSweep
         myGenShapeTool = new BRepSweep_Tool(aGenShape);
         myDirShapeTool = new Sweep_NumShapeTool(aDirShape);
         // Les Tableaux
-        myShapes = new NCollection_Array2<TopoDS_Shape>(1, myGenShapeTool.NbShapes(), 1, myDirShapeTool.NbShapes());
+        myShapes = new NCollection_Array2<Shape>(1, myGenShapeTool.NbShapes(), 1, myDirShapeTool.NbShapes());
         myBuiltShapes = new NCollection_Array2<bool>(1, myGenShapeTool.NbShapes(), 1, myDirShapeTool.NbShapes());
         myUsedShapes = new NCollection_Array2<bool>(1, myGenShapeTool.NbShapes(), 1, myDirShapeTool.NbShapes());
         myBuiltShapes.Init(false);
@@ -45,121 +47,121 @@ internal abstract class BRepSweep_NumLinearRegularSweep
     }
 
     /// <summary>Builds the vertex addressed by [aGenV,aDirV], with its geometric part, but without sub-shapes.</summary>
-    public abstract TopoDS_Shape MakeEmptyVertex(in TopoDS_Shape aGenV, in Sweep_NumShape aDirV);
+    public abstract Shape MakeEmptyVertex(in Shape aGenV, in Sweep_NumShape aDirV);
 
     /// <summary>Builds the edge addressed by [aGenV,aDirE], with its geometric part, but without sub-shapes.</summary>
-    public abstract TopoDS_Shape MakeEmptyDirectingEdge(in TopoDS_Shape aGenV, in Sweep_NumShape aDirE);
+    public abstract Shape MakeEmptyDirectingEdge(in Shape aGenV, in Sweep_NumShape aDirE);
 
     /// <summary>Builds the edge addressed by [aGenE,aDirV], with its geometric part, but without sub-shapes.</summary>
-    public abstract TopoDS_Shape MakeEmptyGeneratingEdge(in TopoDS_Shape aGenE, in Sweep_NumShape aDirV);
+    public abstract Shape MakeEmptyGeneratingEdge(in Shape aGenE, in Sweep_NumShape aDirV);
 
     /// <summary>Sets the parameters of the new vertex on the new face (directly in a cap face).</summary>
-    public abstract void SetParameters(in TopoDS_Shape aNewFace, ref TopoDS_Shape aNewVertex, in TopoDS_Shape aGenF,
-                                       in TopoDS_Shape aGenV, in Sweep_NumShape aDirV);
+    public abstract void SetParameters(in Shape aNewFace, ref Shape aNewVertex, in Shape aGenF,
+                                       in Shape aGenV, in Sweep_NumShape aDirV);
 
     /// <summary>Sets the parameter of the new vertex on the new edge (the edge was built from a vertex).</summary>
-    public abstract void SetDirectingParameter(in TopoDS_Shape aNewEdge, ref TopoDS_Shape aNewVertex, in TopoDS_Shape aGenV,
+    public abstract void SetDirectingParameter(in Shape aNewEdge, ref Shape aNewVertex, in Shape aGenV,
                                                in Sweep_NumShape aDirE, in Sweep_NumShape aDirV);
 
     /// <summary>Sets the parameter of the new vertex on the new edge (the edge was built from an edge).</summary>
-    public abstract void SetGeneratingParameter(in TopoDS_Shape aNewEdge, ref TopoDS_Shape aNewVertex, in TopoDS_Shape aGenE,
-                                                in TopoDS_Shape aGenV, in Sweep_NumShape aDirV);
+    public abstract void SetGeneratingParameter(in Shape aNewEdge, ref Shape aNewVertex, in Shape aGenE,
+                                                in Shape aGenV, in Sweep_NumShape aDirV);
 
     /// <summary>Builds the face addressed by [aGenS,aDirS], with its geometric part, but without sub-shapes.</summary>
-    public abstract TopoDS_Shape MakeEmptyFace(in TopoDS_Shape aGenS, in Sweep_NumShape aDirS);
+    public abstract Shape MakeEmptyFace(in Shape aGenS, in Sweep_NumShape aDirS);
 
     /// <summary>Sets the pcurve of the new edge on the new face (a cap face).</summary>
-    public abstract void SetPCurve(in TopoDS_Shape aNewFace, ref TopoDS_Shape aNewEdge, in TopoDS_Shape aGenF,
-                                   in TopoDS_Shape aGenE, in Sweep_NumShape aDirV, TopAbs_Orientation orien);
+    public abstract void SetPCurve(in Shape aNewFace, ref Shape aNewEdge, in Shape aGenF,
+                                   in Shape aGenE, in Sweep_NumShape aDirV, Orientation orien);
 
     /// <summary>Sets the pcurve of the new edge (built from an edge) on the new face.</summary>
-    public abstract void SetGeneratingPCurve(in TopoDS_Shape aNewFace, ref TopoDS_Shape aNewEdge, in TopoDS_Shape aGenE,
-                                             in Sweep_NumShape aDirE, in Sweep_NumShape aDirV, TopAbs_Orientation orien);
+    public abstract void SetGeneratingPCurve(in Shape aNewFace, ref Shape aNewEdge, in Shape aGenE,
+                                             in Sweep_NumShape aDirE, in Sweep_NumShape aDirV, Orientation orien);
 
     /// <summary>Sets the pcurve of the new edge (built from a vertex) on the new face.</summary>
-    public abstract void SetDirectingPCurve(in TopoDS_Shape aNewFace, ref TopoDS_Shape aNewEdge, in TopoDS_Shape aGenE,
-                                            in TopoDS_Shape aGenV, in Sweep_NumShape aDirE, TopAbs_Orientation orien);
+    public abstract void SetDirectingPCurve(in Shape aNewFace, ref Shape aNewEdge, in Shape aGenE,
+                                            in Shape aGenV, in Sweep_NumShape aDirE, Orientation orien);
 
     /// <summary>The orientation of the shell in the solid generated by the face and the directing edge.</summary>
-    public abstract TopAbs_Orientation DirectSolid(in TopoDS_Shape aGenS, in Sweep_NumShape aDirS);
+    public abstract Orientation DirectSolid(in Shape aGenS, in Sweep_NumShape aDirS);
 
     /// <summary>True if aNewSubShape (addressed by [aSubGenS,aDirS]) is to be added to aNewShape ([aGenS,aDirS]).</summary>
-    public abstract bool GGDShapeIsToAdd(in TopoDS_Shape aNewShape, in TopoDS_Shape aNewSubShape, in TopoDS_Shape aGenS,
-                                         in TopoDS_Shape aSubGenS, in Sweep_NumShape aDirS);
+    public abstract bool GGDShapeIsToAdd(in Shape aNewShape, in Shape aNewSubShape, in Shape aGenS,
+                                         in Shape aSubGenS, in Sweep_NumShape aDirS);
 
     /// <summary>True if aNewSubShape (addressed by [aGenS,aSubDirS]) is to be added to aNewShape ([aGenS,aDirS]).</summary>
-    public abstract bool GDDShapeIsToAdd(in TopoDS_Shape aNewShape, in TopoDS_Shape aNewSubShape, in TopoDS_Shape aGenS,
+    public abstract bool GDDShapeIsToAdd(in Shape aNewShape, in Shape aNewSubShape, in Shape aGenS,
                                          in Sweep_NumShape aDirS, in Sweep_NumShape aSubDirS);
 
     /// <summary>In some particular cases the topology of a generated face must be composed of independent closed wires.</summary>
-    public abstract bool SeparatedWires(in TopoDS_Shape aNewShape, in TopoDS_Shape aNewSubShape, in TopoDS_Shape aGenS,
-                                        in TopoDS_Shape aSubGenS, in Sweep_NumShape aDirS);
+    public abstract bool SeparatedWires(in Shape aNewShape, in Shape aNewSubShape, in Shape aGenS,
+                                        in Shape aSubGenS, in Sweep_NumShape aDirS);
 
     /// <summary>In some particular cases the topology of a generated shell must be split in several shells.</summary>
-    public virtual TopoDS_Shape SplitShell(in TopoDS_Shape aNewShape)
+    public virtual Shape SplitShell(in Shape aNewShape)
     {
-        TopoDS_Shape comp = new();
+        Shape comp = new();
         myBuilder.MakeCompound(ref comp);
         myBuilder.Add(comp, aNewShape);
         return comp;
     }
 
     /// <summary>Called to set the continuity of the new edges.</summary>
-    public abstract void SetContinuity(in TopoDS_Shape aGenS, in Sweep_NumShape aDirS);
+    public abstract void SetContinuity(in Shape aGenS, in Sweep_NumShape aDirS);
 
     /// <summary>True if the shape addressed by [aGenS,aDirS] exists.</summary>
-    public abstract bool HasShape(in TopoDS_Shape aGenS, in Sweep_NumShape aDirS);
+    public abstract bool HasShape(in Shape aGenS, in Sweep_NumShape aDirS);
 
     /// <summary>True if aGenS can't be transformed by the sweep.</summary>
-    public abstract bool IsInvariant(in TopoDS_Shape aGenS);
+    public abstract bool IsInvariant(in Shape aGenS);
 
     /// <summary>The resulting shape indexed by aDirS and aGenS.</summary>
-    public TopoDS_Shape Shape(in TopoDS_Shape aGenS, in Sweep_NumShape aDirS)
+    public Shape Shape(in Shape aGenS, in Sweep_NumShape aDirS)
     {
         int iGenS = myGenShapeTool.Index(aGenS);
         int iDirS = myDirShapeTool.Index(aDirS);
         if (!myBuiltShapes[iGenS, iDirS])
         {
-            TopoDS_Shape newShape;
-            TopoDS_Shape bGenS, cGenS, subGenS, subsubGenS;
+            Shape newShape;
+            Shape bGenS, cGenS, subGenS, subsubGenS;
             Sweep_NumShape bDirS, subDirS;
             var It = new BRepSweep_Iterator();
             var Kt = new Sweep_NumShapeIterator();
             var Lt = new BRepSweep_Iterator();
-            TopAbs_Orientation Or, Pr;
-            if (myDirShapeTool.Type(aDirS) == TopAbs_VERTEX)
+            Orientation Or, Pr;
+            if (myDirShapeTool.Type(aDirS) == ShapeType.Vertex)
             {
                 // Ici on construit les "planchers" du Shape.
-                TopAbs_ShapeEnum aGenSType = myGenShapeTool.Type(aGenS);
+                ShapeType aGenSType = myGenShapeTool.Type(aGenS);
                 switch (aGenSType)
                 {
-                    case TopAbs_VERTEX:
+                    case ShapeType.Vertex:
                         myShapes[iGenS, iDirS] = MakeEmptyVertex(aGenS, aDirS);
                         break;
-                    case TopAbs_EDGE:
+                    case ShapeType.Edge:
                         myShapes[iGenS, iDirS] = MakeEmptyGeneratingEdge(aGenS, aDirS);
                         break;
-                    case TopAbs_WIRE:
+                    case ShapeType.Wire:
                         myBuilder.MakeWire(ref myShapes[iGenS, iDirS]);
                         break;
-                    case TopAbs_FACE:
+                    case ShapeType.Face:
                         myShapes[iGenS, iDirS] = MakeEmptyFace(aGenS, aDirS);
                         break;
-                    case TopAbs_SHELL:
+                    case ShapeType.Shell:
                         myBuilder.MakeShell(ref myShapes[iGenS, iDirS]);
                         break;
-                    case TopAbs_SOLID:
+                    case ShapeType.Solid:
                         throw new NoSuchObjectException("Solids are not Processed");
-                    case TopAbs_COMPSOLID:
+                    case ShapeType.CompSolid:
                         throw new NoSuchObjectException("Solids are not Processed");
-                    case TopAbs_COMPOUND:
+                    case ShapeType.Compound:
                         myBuilder.MakeCompound(ref myShapes[iGenS, iDirS]);
                         break;
                     default:
                         throw new NoSuchObjectException("Unknown Shape");
                 }
                 bGenS = aGenS;
-                myGenShapeTool.SetOrientation(ref bGenS, TopAbs_FORWARD);
+                myGenShapeTool.SetOrientation(ref bGenS, Forward);
                 for (It.Init(bGenS); It.More(); It.Next())
                 {
                     subGenS = It.Value();
@@ -178,35 +180,35 @@ internal abstract class BRepSweep_NumLinearRegularSweep
                             // sur.
                             myBuilder.Add(myShapes[iGenS, iDirS], newShape, Or);
                             myUsedShapes[iNewGenS, iNewDirS] = true;
-                            TopAbs_ShapeEnum subGenSType = myGenShapeTool.Type(subGenS);
-                            if (aGenSType == TopAbs_FACE)
+                            ShapeType subGenSType = myGenShapeTool.Type(subGenS);
+                            if (aGenSType == ShapeType.Face)
                             {
-                                if (subGenSType == TopAbs_VERTEX)
+                                if (subGenSType == ShapeType.Vertex)
                                 {
                                     SetParameters(myShapes[iGenS, iDirS], ref newShape, aGenS, subGenS, aDirS);
                                 }
-                                else if (subGenSType == TopAbs_EDGE)
+                                else if (subGenSType == ShapeType.Edge)
                                 {
                                     SetPCurve(myShapes[iGenS, iDirS], ref newShape, aGenS, subGenS, aDirS, Or);
                                 }
-                                else if (subGenSType == TopAbs_WIRE)
+                                else if (subGenSType == ShapeType.Wire)
                                 {
                                     var Jt = new BRepSweep_Iterator();
                                     cGenS = subGenS;
-                                    myGenShapeTool.SetOrientation(ref cGenS, TopAbs_FORWARD);
+                                    myGenShapeTool.SetOrientation(ref cGenS, Forward);
                                     for (Jt.Init(cGenS); Jt.More(); Jt.Next())
                                     {
                                         subsubGenS = Jt.Value();
                                         Pr = Jt.Orientation();
                                         if (HasShape(subsubGenS, aDirS))
                                         {
-                                            TopoDS_Shape newsubEdge = Shape(subsubGenS, aDirS);
+                                            Shape newsubEdge = Shape(subsubGenS, aDirS);
                                             SetPCurve(myShapes[iGenS, iDirS], ref newsubEdge, aGenS, subsubGenS, aDirS, Pr);
                                         }
                                     }
                                 }
                             }
-                            else if (aGenSType == TopAbs_EDGE)
+                            else if (aGenSType == ShapeType.Edge)
                             {
                                 SetGeneratingParameter(myShapes[iGenS, iDirS], ref newShape, bGenS, subGenS, aDirS);
                             }
@@ -214,19 +216,19 @@ internal abstract class BRepSweep_NumLinearRegularSweep
                     }
                 }
             }
-            else if (myDirShapeTool.Type(aDirS) == TopAbs_EDGE)
+            else if (myDirShapeTool.Type(aDirS) == ShapeType.Edge)
             {
                 // Ici on construit les murs du Shape.
-                TopAbs_ShapeEnum aGenSType = myGenShapeTool.Type(aGenS);
-                TopoDS_Shape newWire = new(), newShell = new();
-                var WireSeq = new NCollection_Sequence<TopoDS_Shape>();
+                ShapeType aGenSType = myGenShapeTool.Type(aGenS);
+                Shape newWire = new(), newShell = new();
+                var WireSeq = new NCollection_Sequence<Shape>();
                 bool sepwires = false;
                 switch (aGenSType)
                 {
-                    case TopAbs_VERTEX:
+                    case ShapeType.Vertex:
                         myShapes[iGenS, iDirS] = MakeEmptyDirectingEdge(aGenS, aDirS);
                         break;
-                    case TopAbs_EDGE:
+                    case ShapeType.Edge:
                         // On cree un wire intermediaire qui contient tous les edges
                         // du montant (face) du Shape pour le cas standard, et une
                         // sequence de wires pour les cas merdiques necessitant des
@@ -234,31 +236,31 @@ internal abstract class BRepSweep_NumLinearRegularSweep
                         myBuilder.MakeWire(ref newWire);
                         myShapes[iGenS, iDirS] = MakeEmptyFace(aGenS, aDirS);
                         break;
-                    case TopAbs_WIRE:
+                    case ShapeType.Wire:
                         myBuilder.MakeShell(ref myShapes[iGenS, iDirS]);
                         break;
-                    case TopAbs_FACE:
+                    case ShapeType.Face:
                         // On cree un shell intermediaire dans lequel on jette toutes
                         // les faces en direct, pour eviter les empilages compliques
                         // de shells et sous shells dans la structure du solide.
                         myBuilder.MakeShell(ref newShell);
                         myBuilder.MakeSolid(ref myShapes[iGenS, iDirS]);
                         break;
-                    case TopAbs_SHELL:
+                    case ShapeType.Shell:
                         myBuilder.MakeCompSolid(ref myShapes[iGenS, iDirS]);
                         break;
-                    case TopAbs_SOLID:
+                    case ShapeType.Solid:
                         throw new NoSuchObjectException("Solids are not Processed");
-                    case TopAbs_COMPSOLID:
+                    case ShapeType.CompSolid:
                         throw new NoSuchObjectException("Solids are not Processed");
-                    case TopAbs_COMPOUND:
+                    case ShapeType.Compound:
                         myBuilder.MakeCompound(ref myShapes[iGenS, iDirS]);
                         break;
                     default:
                         throw new NoSuchObjectException("Unknown Shape");
                 }
                 bGenS = aGenS;
-                myGenShapeTool.SetOrientation(ref bGenS, TopAbs_FORWARD);
+                myGenShapeTool.SetOrientation(ref bGenS, Forward);
                 for (It.Init(bGenS); It.More(); It.Next())
                 {
                     subGenS = It.Value();
@@ -269,18 +271,18 @@ internal abstract class BRepSweep_NumLinearRegularSweep
                         int iNewDirS = iDirS;
                         if (GGDShapeIsToAdd(myShapes[iGenS, iDirS], newShape, aGenS, subGenS, aDirS))
                         {
-                            TopAbs_ShapeEnum subGenSType = myGenShapeTool.Type(subGenS);
-                            if (aGenSType == TopAbs_EDGE)
+                            ShapeType subGenSType = myGenShapeTool.Type(subGenS);
+                            if (aGenSType == ShapeType.Edge)
                             {
                                 Or = It.Orientation();
                                 if (SeparatedWires(myShapes[iGenS, iDirS], newShape, aGenS, subGenS, aDirS))
                                 {
                                     sepwires = true;
-                                    TopoDS_Shape wi = new();
+                                    Shape wi = new();
                                     myBuilder.MakeWire(ref wi);
                                     myBuilder.Add(wi, newShape, Or);
                                     myUsedShapes[iNewGenS, iNewDirS] = true;
-                                    wi.Closed(BRep_Tool.IsClosed(wi));
+                                    wi.Closed(Tool.IsClosed(wi));
                                     WireSeq.Append(wi);
                                 }
                                 else
@@ -290,37 +292,37 @@ internal abstract class BRepSweep_NumLinearRegularSweep
                                 }
                                 SetDirectingPCurve(myShapes[iGenS, iDirS], ref newShape, bGenS, subGenS, aDirS, Or);
                             }
-                            else if (aGenSType == TopAbs_WIRE)
+                            else if (aGenSType == ShapeType.Wire)
                             {
                                 Or = It.Orientation();
                                 myBuilder.Add(myShapes[iGenS, iDirS], newShape, Or);
                                 myUsedShapes[iNewGenS, iNewDirS] = true;
                             }
-                            else if (aGenSType == TopAbs_FACE)
+                            else if (aGenSType == ShapeType.Face)
                             {
                                 Or = It.Orientation();
-                                if (subGenSType == TopAbs_WIRE)
+                                if (subGenSType == ShapeType.Wire)
                                 {
                                     for (Lt.Init(newShape); Lt.More(); Lt.Next())
                                     {
-                                        myBuilder.Add(newShell, Lt.Value(), TopAbs.Compose(Lt.Orientation(), Or));
+                                        myBuilder.Add(newShell, Lt.Value(), global::Kerf.Engine.Topology.TopAbs.Compose(Lt.Orientation(), Or));
                                     }
                                 }
-                                else if (subGenSType == TopAbs_EDGE)
+                                else if (subGenSType == ShapeType.Edge)
                                 {
                                     myBuilder.Add(newShell, newShape, Or);
                                     myUsedShapes[iNewGenS, iNewDirS] = true;
                                 }
                             }
-                            else if (aGenSType == TopAbs_SHELL)
+                            else if (aGenSType == ShapeType.Shell)
                             {
-                                Or = TopAbs_FORWARD;
+                                Or = Forward;
                                 myBuilder.Add(myShapes[iGenS, iDirS], newShape, Or);
                                 myUsedShapes[iNewGenS, iNewDirS] = true;
                             }
-                            else if (aGenSType == TopAbs_COMPOUND)
+                            else if (aGenSType == ShapeType.Compound)
                             {
-                                Or = TopAbs_FORWARD;
+                                Or = Forward;
                                 myBuilder.Add(myShapes[iGenS, iDirS], newShape, Or);
                                 myUsedShapes[iNewGenS, iNewDirS] = true;
                             }
@@ -344,21 +346,21 @@ internal abstract class BRepSweep_NumLinearRegularSweep
                         int iNewDirS = myDirShapeTool.Index(subDirS);
                         if (GDDShapeIsToAdd(myShapes[iGenS, iDirS], newShape, aGenS, aDirS, subDirS))
                         {
-                            if (aGenSType == TopAbs_EDGE)
+                            if (aGenSType == ShapeType.Edge)
                             {
-                                Or = TopAbs.Reverse(Kt.Orientation());
+                                Or = global::Kerf.Engine.Topology.TopAbs.Reverse(Kt.Orientation());
                                 myBuilder.Add(newWire, newShape, Or);
                                 myUsedShapes[iNewGenS, iNewDirS] = true;
                                 SetGeneratingPCurve(myShapes[iGenS, iDirS], ref newShape, aGenS, aDirS, subDirS, Or);
                             }
-                            else if (aGenSType == TopAbs_VERTEX)
+                            else if (aGenSType == ShapeType.Vertex)
                             {
                                 Or = Kt.Orientation();
                                 myBuilder.Add(myShapes[iGenS, iDirS], newShape, Or);
                                 myUsedShapes[iNewGenS, iNewDirS] = true;
                                 SetDirectingParameter(myShapes[iGenS, iDirS], ref newShape, aGenS, aDirS, subDirS);
                             }
-                            else if (aGenSType == TopAbs_FACE)
+                            else if (aGenSType == ShapeType.Face)
                             {
                                 Or = Kt.Orientation();
                                 myBuilder.Add(newShell, newShape, Or);
@@ -367,7 +369,7 @@ internal abstract class BRepSweep_NumLinearRegularSweep
                         }
                     }
                 }
-                if (aGenSType == TopAbs_EDGE)
+                if (aGenSType == ShapeType.Edge)
                 {
                     if (sepwires)
                     {
@@ -378,21 +380,21 @@ internal abstract class BRepSweep_NumLinearRegularSweep
                     }
                     else
                     {
-                        newWire.Closed(BRep_Tool.IsClosed(newWire));
+                        newWire.Closed(Tool.IsClosed(newWire));
                         myBuilder.Add(myShapes[iGenS, iDirS], newWire);
                     }
                     myBuiltShapes[iGenS, iDirS] = true;
                     SetContinuity(aGenS, aDirS);
                 }
-                if (aGenSType == TopAbs_WIRE)
+                if (aGenSType == ShapeType.Wire)
                 {
                     SetContinuity(aGenS, aDirS);
                 }
-                if (aGenSType == TopAbs_FACE)
+                if (aGenSType == ShapeType.Face)
                 {
-                    newShell.Closed(BRep_Tool.IsClosed(newShell));
-                    TopoDS_Shape temp = SplitShell(newShell);
-                    TopAbs_Orientation ShellOri = DirectSolid(aGenS, aDirS);
+                    newShell.Closed(Tool.IsClosed(newShell));
+                    Shape temp = SplitShell(newShell);
+                    Orientation ShellOri = DirectSolid(aGenS, aDirS);
                     Lt.Init(temp);
                     if (Lt.More())
                     {
@@ -411,31 +413,31 @@ internal abstract class BRepSweep_NumLinearRegularSweep
                     }
                 }
             }
-            else if (myDirShapeTool.Type(aDirS) == TopAbs_WIRE)
+            else if (myDirShapeTool.Type(aDirS) == ShapeType.Wire)
             {
-                TopAbs_ShapeEnum aGenSType = myGenShapeTool.Type(aGenS);
+                ShapeType aGenSType = myGenShapeTool.Type(aGenS);
                 switch (aGenSType)
                 {
-                    case TopAbs_VERTEX:
+                    case ShapeType.Vertex:
                         myBuilder.MakeWire(ref myShapes[iGenS, iDirS]);
                         break;
-                    case TopAbs_EDGE:
+                    case ShapeType.Edge:
                         myBuilder.MakeShell(ref myShapes[iGenS, iDirS]);
                         break;
-                    case TopAbs_WIRE:
+                    case ShapeType.Wire:
                         myBuilder.MakeShell(ref myShapes[iGenS, iDirS]);
                         break;
-                    case TopAbs_FACE:
+                    case ShapeType.Face:
                         myBuilder.MakeCompSolid(ref myShapes[iGenS, iDirS]);
                         break;
-                    case TopAbs_SHELL:
+                    case ShapeType.Shell:
                         myBuilder.MakeCompSolid(ref myShapes[iGenS, iDirS]);
                         break;
-                    case TopAbs_SOLID:
+                    case ShapeType.Solid:
                         throw new NoSuchObjectException("Solids are not Processed");
-                    case TopAbs_COMPSOLID:
+                    case ShapeType.CompSolid:
                         throw new NoSuchObjectException("Solids are not Processed");
-                    case TopAbs_COMPOUND:
+                    case ShapeType.Compound:
                         myBuilder.MakeCompound(ref myShapes[iGenS, iDirS]);
                         break;
                     default:
@@ -459,11 +461,11 @@ internal abstract class BRepSweep_NumLinearRegularSweep
             myBuiltShapes[iGenS, iDirS] = true;
         }
         // Change the "Closed" flag only for Wires and Shells
-        if (myShapes[iGenS, iDirS].ShapeType() == TopAbs_WIRE || myShapes[iGenS, iDirS].ShapeType() == TopAbs_SHELL)
+        if (myShapes[iGenS, iDirS].ShapeType() == ShapeType.Wire || myShapes[iGenS, iDirS].ShapeType() == ShapeType.Shell)
         {
             // OCCT.NET: frozen. OCCT sets the flag again on each call; a result already published (frozen), or a
             // generating shape's own wire, is written only if the flag changes.
-            bool isClosed = BRep_Tool.IsClosed(myShapes[iGenS, iDirS]);
+            bool isClosed = Tool.IsClosed(myShapes[iGenS, iDirS]);
             if (myShapes[iGenS, iDirS].Closed() != isClosed)
             {
                 myShapes[iGenS, iDirS].Closed(isClosed);
@@ -473,7 +475,7 @@ internal abstract class BRepSweep_NumLinearRegularSweep
     }
 
     /// <summary>The resulting shape generated with aGenS (null if there is none).</summary>
-    public TopoDS_Shape Shape(in TopoDS_Shape aGenS)
+    public Shape Shape(in Shape aGenS)
     {
         if (myGenShapeTool.Index(aGenS) != 0 && HasShape(aGenS, myDirWire))
         {
@@ -481,13 +483,13 @@ internal abstract class BRepSweep_NumLinearRegularSweep
         }
         else
         {
-            TopoDS_Shape bidon = new();
+            Shape bidon = new();
             return bidon;
         }
     }
 
     /// <summary>True if the initial shape aGenS is used in the result shape.</summary>
-    public bool IsUsed(in TopoDS_Shape aGenS)
+    public bool IsUsed(in Shape aGenS)
     {
         int iGenS = myGenShapeTool.Index(aGenS);
         if (iGenS == 0)
@@ -504,7 +506,7 @@ internal abstract class BRepSweep_NumLinearRegularSweep
         }
         if (isUsed)
         {
-            if (aGenS.ShapeType() == TopAbs_VERTEX && IsInvariant(aGenS))
+            if (aGenS.ShapeType() == ShapeType.Vertex && IsInvariant(aGenS))
             {
                 if (myUsedShapes[iGenS, 1] || !Closed())
                 {
@@ -527,7 +529,7 @@ internal abstract class BRepSweep_NumLinearRegularSweep
             {
                 return true;
             }
-            else if (aGenS.ShapeType() == TopAbs_VERTEX && !Closed())
+            else if (aGenS.ShapeType() == ShapeType.Vertex && !Closed())
             {
                 if (!myBuiltShapes[iGenS, 1])
                 {
@@ -539,7 +541,7 @@ internal abstract class BRepSweep_NumLinearRegularSweep
     }
 
     /// <summary>True if the shape generated from theS (a sub-shape of the generating shape) is used in the result.</summary>
-    public bool GenIsUsed(in TopoDS_Shape aGenS)
+    public bool GenIsUsed(in Shape aGenS)
     {
         int iGenS = myGenShapeTool.Index(aGenS);
         if (iGenS == 0)
@@ -557,7 +559,7 @@ internal abstract class BRepSweep_NumLinearRegularSweep
     }
 
     /// <summary>The resulting shape (null if there is none).</summary>
-    public TopoDS_Shape Shape()
+    public Shape Shape()
     {
         if (HasShape(myGenShape, myDirWire))
         {
@@ -565,15 +567,15 @@ internal abstract class BRepSweep_NumLinearRegularSweep
         }
         else
         {
-            TopoDS_Shape bidon = new();
+            Shape bidon = new();
             return bidon;
         }
     }
 
     /// <summary>The resulting shape indexed by the first vertex of myDirWire and myGenShape.</summary>
-    public TopoDS_Shape FirstShape()
+    public Shape FirstShape()
     {
-        TopoDS_Shape result = new();
+        Shape result = new();
         if (myDirShapeTool.HasFirstVertex())
         {
             if (HasShape(myGenShape, myDirShapeTool.FirstVertex()))
@@ -585,9 +587,9 @@ internal abstract class BRepSweep_NumLinearRegularSweep
     }
 
     /// <summary>The resulting shape indexed by the last vertex of myDirWire and myGenShape.</summary>
-    public TopoDS_Shape LastShape()
+    public Shape LastShape()
     {
-        TopoDS_Shape result = new();
+        Shape result = new();
         if (myDirShapeTool.HasLastVertex())
         {
             if (HasShape(myGenShape, myDirShapeTool.LastVertex()))
@@ -599,9 +601,9 @@ internal abstract class BRepSweep_NumLinearRegularSweep
     }
 
     /// <summary>The resulting shape indexed by the first vertex of myDirWire and aGenS.</summary>
-    public TopoDS_Shape FirstShape(in TopoDS_Shape aGenS)
+    public Shape FirstShape(in Shape aGenS)
     {
-        TopoDS_Shape result = new();
+        Shape result = new();
         if (myDirShapeTool.HasFirstVertex())
         {
             if (HasShape(aGenS, myDirShapeTool.FirstVertex()))
@@ -613,9 +615,9 @@ internal abstract class BRepSweep_NumLinearRegularSweep
     }
 
     /// <summary>The resulting shape indexed by the last vertex of myDirWire and aGenS.</summary>
-    public TopoDS_Shape LastShape(in TopoDS_Shape aGenS)
+    public Shape LastShape(in Shape aGenS)
     {
-        TopoDS_Shape result = new();
+        Shape result = new();
         if (myDirShapeTool.HasLastVertex())
         {
             if (HasShape(aGenS, myDirShapeTool.LastVertex()))

@@ -1,5 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -33,23 +38,23 @@ internal static class SWDRAWShapeToolCommands
             return 1 /* Error */;
         }
         string arg1 = argv[1];
-        TopoDS_Shape Shape = theDI.GetShape(arg1);
-        if (Shape.IsNull())
+        Shape Shape = theDI.GetShape(arg1);
+        if (Shape.IsNull)
         {
             di.Append(arg1).Append(" inconnu\n");
             return 1 /* Error */;
         }
         int nbe = 0, nbf = 0;
 
-        for (var exp = new TopExp_Explorer(Shape, TopAbs_ShapeEnum.TopAbs_EDGE); exp.More(); exp.Next())
+        for (var exp = new Explorer(Shape, ShapeType.Edge); exp.More(); exp.Next())
         {
-            TopoDS_Edge Edge = TopoDS.Edge(exp.Current());
+            Edge Edge = ShapeCasts.Edge(exp.Current());
             nbe++;
-            if (BRep_Tool.Degenerated(Edge))
+            if (Tool.Degenerated(Edge))
             {
                 continue;
             }
-            Geom_Curve? curve3d = BRep_Tool.Curve(Edge, out _, out _);
+            Curve3D? curve3d = Tool.Curve(Edge, out _, out _);
             if (curve3d is null)
             {
                 nbf++;
@@ -69,34 +74,34 @@ internal static class SWDRAWShapeToolCommands
             return 1 /* Error */;
         }
         string arg1 = argv[1];
-        TopoDS_Shape Shape = theDI.GetShape(arg1);
-        if (Shape.IsNull())
+        Shape Shape = theDI.GetShape(arg1);
+        if (Shape.IsNull)
         {
             di.Append(arg1).Append(" inconnu\n");
             return 1 /* Error */;
         }
-        if (Shape.ShapeType() != TopAbs_ShapeEnum.TopAbs_WIRE)
+        if (Shape.ShapeType() != ShapeType.Wire)
         {
             di.Append("Pas un WIRE\n");
             return 1 /* Error */;
         }
-        TopoDS_Wire W = TopoDS.Wire(Shape);
-        TopoDS_Face F = new();
+        Wire W = ShapeCasts.Wire(Shape);
+        Face F = new();
         if (argc > 2)
         {
-            TopoDS_Shape aLocalShape = theDI.GetShape(argv[2]);
-            F = TopoDS.Face(aLocalShape);
+            Shape aLocalShape = theDI.GetShape(argv[2]);
+            F = ShapeCasts.Face(aLocalShape);
         }
 
         int i, num = 0, nbw, nbe = 0;
-        var map = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        for (var ext = new TopoDS_Iterator(W); ext.More(); ext.Next())
+        var map = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        for (var ext = new Iterator(W); ext.More(); ext.Next())
         {
-            if (ext.Value().ShapeType() != TopAbs_ShapeEnum.TopAbs_EDGE)
+            if (ext.Value().ShapeType() != ShapeType.Edge)
             {
                 continue;
             }
-            TopoDS_Edge E = TopoDS.Edge(ext.Value());
+            Edge E = ShapeCasts.Edge(ext.Value());
             nbe++;
             num = map.Add(E);
         }
@@ -105,14 +110,14 @@ internal static class SWDRAWShapeToolCommands
         di.Append("TopoDS_Iterator(EDGE)  donne ").Append(nbe).Append(" Edges dont ").Append(num).Append(" distinctes\n");
         nbe = num;
         nbw = 0;
-        for (var exe = new TopExp_Explorer(W.Oriented(TopAbs_Orientation.TopAbs_FORWARD), TopAbs_ShapeEnum.TopAbs_EDGE); exe.More(); exe.Next())
+        for (var exe = new Explorer(W.Oriented(Orientation.Forward), ShapeType.Edge); exe.More(); exe.Next())
         {
             nbw++;
         }
         di.Append("TopExp_Explorer(EDGE)  donne ").Append(nbw).Append(" Edges\n");
         nbw = 0;
-        var bwe = new BRepTools_WireExplorer();
-        if (F.IsNull())
+        var bwe = new WireExplorer();
+        if (F.IsNull)
         {
             bwe.Init(W);
         }
@@ -122,7 +127,7 @@ internal static class SWDRAWShapeToolCommands
         }
         for (; bwe.More(); bwe.Next())
         {
-            TopoDS_Edge E = TopoDS.Edge(bwe.Current());
+            Edge E = ShapeCasts.Edge(bwe.Current());
             nbw++;
             num = map.FindIndex(E);
             nbs[num]++;
@@ -157,19 +162,19 @@ internal static class SWDRAWShapeToolCommands
             return 1 /* Error */;
         }
         string arg1 = argv[1];
-        TopoDS_Shape Shape = theDI.GetShape(arg1);
-        if (Shape.IsNull())
+        Shape Shape = theDI.GetShape(arg1);
+        if (Shape.IsNull)
         {
             di.Append("Shape unknown : ").Append(arg1).Append("\n");
             return 1 /* Error */;
         }
-        TopAbs_ShapeEnum shen = Shape.ShapeType();
-        if (shen == TopAbs_ShapeEnum.TopAbs_SOLID)
+        ShapeType shen = Shape.ShapeType();
+        if (shen == ShapeType.Solid)
         {
             di.Append(" Already a Solide ! nothing done\n");
             return 0;
         }
-        if (shen != TopAbs_ShapeEnum.TopAbs_SHELL)
+        if (shen != ShapeType.Shell)
         {
             di.Append(" Not a Shell\n");
             return 1 /* Error */;
@@ -183,22 +188,22 @@ internal static class SWDRAWShapeToolCommands
                 Shape.Free(true);
             }
         }
-        TopoDS_Shell sh = TopoDS.Shell(Shape);
-        var B = new BRep_Builder();
-        var solid = new TopoDS_Solid();
+        Shell sh = ShapeCasts.Shell(Shape);
+        var B = new BrepBuilder();
+        var solid = new Solid();
         B.MakeSolid(ref solid);
         B.Add(solid, sh);
         //   Pas encore fini : il faut une bonne orientation
         var bsc3d = new BRepClass3d_SolidClassifier(solid);
         bsc3d.PerformInfinitePoint(BRepBuilderAPI.Precision());
-        if (bsc3d.State() == TopAbs_State.TopAbs_IN)
+        if (bsc3d.State() == Containment.In)
         {
             //         Ensuite, inverser C-A-D REPRENDRE LES SHELLS
             //         (l inversion du solide n est pas bien prise en compte)
             di.Append("NB : Shell to be reversed\n");
-            var soli2 = new TopoDS_Solid();
+            var soli2 = new Solid();
             B.MakeSolid(ref soli2); // on recommence
-            sh = TopoDS.Shell(sh.Reversed());
+            sh = ShapeCasts.Shell(sh.Reversed());
             B.Add(soli2, sh);
             solid = soli2;
         }
@@ -211,8 +216,8 @@ internal static class SWDRAWShapeToolCommands
         int argc = argv.Count;
         if (argc == 2)
         {
-            TopoDS_Shape Shape = theDI.GetShape(argv[1]);
-            if (Shape.IsNull())
+            Shape Shape = theDI.GetShape(argv[1]);
+            if (Shape.IsNull)
             {
                 // OCCT prints argv[2], past the words (a null pointer); Draw-lite prints nothing there
                 di.Append("Shape unknown: ").Append("\n");
@@ -222,9 +227,9 @@ internal static class SWDRAWShapeToolCommands
             // OCCT works on the shape itself: Draw-lite on an unfrozen copy, rebound afterwards
             SWDRAWShapeFixCommands.InPlace(theDI, Shape, aWork =>
             {
-                for (var exp = new TopExp_Explorer(aWork, TopAbs_ShapeEnum.TopAbs_EDGE); exp.More(); exp.Next())
+                for (var exp = new Explorer(aWork, ShapeType.Edge); exp.More(); exp.Next())
                 {
-                    TopoDS_Edge edge = TopoDS.Edge(exp.Current());
+                    Edge edge = ShapeCasts.Edge(exp.Current());
                     BRepLib.SameRange(edge, global::Kerf.Engine.Foundation.Precision.PConfusion());
                 }
                 return aWork;
@@ -232,7 +237,7 @@ internal static class SWDRAWShapeToolCommands
         }
         else if (argc == 7)
         {
-            Geom2d_Curve? C = DrawTrSurf.GetCurve2d(theDI, argv[2]);
+            Curve2D? C = DrawTrSurf.GetCurve2d(theDI, argv[2]);
             if (C is null)
             {
                 di.Append("Curve unknown: ").Append(argv[2]).Append("\n");
@@ -244,8 +249,8 @@ internal static class SWDRAWShapeToolCommands
             double current_first = theDI.Atof(argv[5]);
             double current_last = theDI.Atof(argv[6]);
             double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
-            Geom2d_Curve? NewC2d = null;
-            GeomLib.SameRange(Tol, C, oldFirst, oldLast, current_first, current_last, ref NewC2d);
+            Curve2D? NewC2d = null;
+            global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(Tol, C, oldFirst, oldLast, current_first, current_last, ref NewC2d);
             DrawTrSurf.Set(theDI, argv[1], NewC2d);
         }
         else
@@ -271,8 +276,8 @@ internal static class SWDRAWShapeToolCommands
             return 0;
         }
         string arg1 = argv[1];
-        TopoDS_Shape Shape = theDI.GetShape(arg1);
-        if (Shape.IsNull())
+        Shape Shape = theDI.GetShape(arg1);
+        if (Shape.IsNull)
         {
             di.Append("Shape unknown : ").Append(arg1).Append("\n");
             return 1 /* Error */;
@@ -284,7 +289,7 @@ internal static class SWDRAWShapeToolCommands
             for (int i = 0; i < 2; i++)
             {
                 bool viaCompound = i != 0;
-                TopAbs_ShapeEnum ts = sbx.ShapeType(Shape, viaCompound);
+                ShapeType ts = sbx.ShapeType(Shape, viaCompound);
                 if (!viaCompound)
                 {
                     di.Append("   Type (True) : ");
@@ -295,31 +300,31 @@ internal static class SWDRAWShapeToolCommands
                 }
                 switch (ts)
                 {
-                    case TopAbs_ShapeEnum.TopAbs_SHAPE:
+                    case ShapeType.Shape:
                         di.Append("SHAPE (empty)");
                         break;
-                    case TopAbs_ShapeEnum.TopAbs_VERTEX:
+                    case ShapeType.Vertex:
                         di.Append("VERTEX");
                         break;
-                    case TopAbs_ShapeEnum.TopAbs_EDGE:
+                    case ShapeType.Edge:
                         di.Append("EDGE");
                         break;
-                    case TopAbs_ShapeEnum.TopAbs_WIRE:
+                    case ShapeType.Wire:
                         di.Append("WIRE");
                         break;
-                    case TopAbs_ShapeEnum.TopAbs_FACE:
+                    case ShapeType.Face:
                         di.Append("FACE");
                         break;
-                    case TopAbs_ShapeEnum.TopAbs_SHELL:
+                    case ShapeType.Shell:
                         di.Append("SHELL");
                         break;
-                    case TopAbs_ShapeEnum.TopAbs_SOLID:
+                    case ShapeType.Solid:
                         di.Append("SOLID");
                         break;
-                    case TopAbs_ShapeEnum.TopAbs_COMPSOLID:
+                    case ShapeType.CompSolid:
                         di.Append("COMPSOLID");
                         break;
-                    case TopAbs_ShapeEnum.TopAbs_COMPOUND:
+                    case ShapeType.Compound:
                         di.Append("COMPOUND");
                         if (i > 0)
                         {
@@ -332,25 +337,25 @@ internal static class SWDRAWShapeToolCommands
             return 0;
         }
 
-        TopAbs_ShapeEnum tse = TopAbs_ShapeEnum.TopAbs_COMPOUND;
+        ShapeType tse = ShapeType.Compound;
         string aType = argv[3];
         char tsc = aType.Length > 0 ? aType[0] : '\0';
         switch (tsc)
         {
             case 'v':
-                tse = TopAbs_ShapeEnum.TopAbs_VERTEX;
+                tse = ShapeType.Vertex;
                 break;
             case 'e':
-                tse = TopAbs_ShapeEnum.TopAbs_EDGE;
+                tse = ShapeType.Edge;
                 break;
             case 'w':
-                tse = TopAbs_ShapeEnum.TopAbs_WIRE;
+                tse = ShapeType.Wire;
                 break;
             case 'f':
-                tse = TopAbs_ShapeEnum.TopAbs_FACE;
+                tse = ShapeType.Face;
                 break;
             case 's':
-                tse = aType.Length > 1 && aType[1] == 'o' ? TopAbs_ShapeEnum.TopAbs_SOLID : TopAbs_ShapeEnum.TopAbs_SHELL;
+                tse = aType.Length > 1 && aType[1] == 'o' ? ShapeType.Solid : ShapeType.Shell;
                 break;
         }
         bool modexp = false;
@@ -371,7 +376,7 @@ internal static class SWDRAWShapeToolCommands
             }
             var sbx = new ShapeExtend_Explorer();
             Shape = sbx.SortedCompound(Shape, tse, modexp, modcom);
-            if (Shape.IsNull())
+            if (Shape.IsNull)
             {
                 di.Append("Empty result\n");
                 return 0;

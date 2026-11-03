@@ -5,9 +5,12 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using static Occt.BOPAlgo_Operation;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -22,8 +25,8 @@ namespace Occt;
 /// </remarks>
 public class BRepFeat_Builder : BOPAlgo_BOP
 {
-    protected NCollection_Map<TopoDS_Shape> myShapes = new(TopTools_ShapeMapHasher.Instance);
-    protected NCollection_Map<TopoDS_Shape> myRemoved = new(TopTools_ShapeMapHasher.Instance);
+    protected NCollection_Map<Shape> myShapes = new(ShapeHasher.Instance);
+    protected NCollection_Map<Shape> myRemoved = new(ShapeHasher.Instance);
     protected int myFuse;
 
     public BRepFeat_Builder()
@@ -40,7 +43,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
     }
 
     /// <summary>Initializes the object of local boolean operation.</summary>
-    public void Init(in TopoDS_Shape theShape)
+    public void Init(in Shape theShape)
     {
         Clear();
         //
@@ -48,7 +51,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
     }
 
     /// <summary>Initializes the arguments of local boolean operation.</summary>
-    public void Init(in TopoDS_Shape theShape, in TopoDS_Shape theTool)
+    public void Init(in Shape theShape, in Shape theTool)
     {
         Clear();
         //
@@ -82,35 +85,35 @@ public class BRepFeat_Builder : BOPAlgo_BOP
     }
 
     /// <summary>Collects parts of the tool (the solids of the first step's result; not frozen).</summary>
-    public void PartsOfTool(NCollection_List<TopoDS_Shape> aLT)
+    public void PartsOfTool(NCollection_List<Shape> aLT)
     {
-        TopExp_Explorer aExp = new();
+        Explorer aExp = new();
         //
         aLT.Clear();
-        aExp.Init(myShape, TopAbs_SOLID);
+        aExp.Init(myShape, ShapeType.Solid);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Shape aS = aExp.Current();
+            Shape aS = aExp.Current();
             aLT.Append(aS);
         }
     }
 
     /// <summary>Initializes parts of the tool for the second step: collects the shapes and their sub-shapes.</summary>
-    public void KeepParts(NCollection_List<TopoDS_Shape> theIm)
+    public void KeepParts(NCollection_List<Shape> theIm)
     {
-        NCollection_List<TopoDS_Shape>.Iterator aItT = new();
+        NCollection_List<Shape>.Iterator aItT = new();
         aItT.Initialize(theIm);
         for (; aItT.More(); aItT.Next())
         {
-            TopoDS_Shape aTIm = aItT.Value();
+            Shape aTIm = aItT.Value();
             KeepPart(aTIm);
         }
     }
 
     /// <summary>Adds the shape and all its sub-shapes into the kept shapes.</summary>
-    public void KeepPart(in TopoDS_Shape thePart)
+    public void KeepPart(in Shape thePart)
     {
-        TopExp.MapShapes(thePart, myShapes);
+        Exploration.MapShapes(thePart, myShapes);
     }
 
     /// <summary>Prepares builder of local operation.</summary>
@@ -118,8 +121,8 @@ public class BRepFeat_Builder : BOPAlgo_BOP
     {
         GetReport().Clear();
         //
-        BRep_Builder aBB = new();
-        TopoDS_Compound aC = new();
+        BrepBuilder aBB = new();
+        Compound aC = new();
         aBB.MakeCompound(ref aC);
         myShape = aC;
         //
@@ -129,15 +132,15 @@ public class BRepFeat_Builder : BOPAlgo_BOP
     /// <summary>Collects the removed parts of the tool.</summary>
     public void FillRemoved()
     {
-        TopExp_Explorer aExp = new();
+        Explorer aExp = new();
         //
-        TopoDS_Shape aArgs0 = myArguments.First();
-        TopoDS_Shape aArgs1 = myTools.First();
+        Shape aArgs0 = myArguments.First();
+        Shape aArgs1 = myTools.First();
         //
-        aExp.Init(aArgs0, TopAbs_SOLID);
+        aExp.Init(aArgs0, ShapeType.Solid);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Shape aS = aExp.Current();
+            Shape aS = aExp.Current();
             myImages.UnBind(aS);
         }
         //
@@ -146,13 +149,13 @@ public class BRepFeat_Builder : BOPAlgo_BOP
             return;
         }
         //
-        NCollection_List<TopoDS_Shape>.Iterator aItIm = new();
+        NCollection_List<Shape>.Iterator aItIm = new();
         //
-        NCollection_List<TopoDS_Shape> aLS = myImages.ChangeFind(aArgs1);
+        NCollection_List<Shape> aLS = myImages.ChangeFind(aArgs1);
         aItIm.Initialize(aLS);
         for (; aItIm.More(); aItIm.Next())
         {
-            TopoDS_Shape aS = aItIm.Value();
+            Shape aS = aItIm.Value();
             FillRemoved(aS, myRemoved);
         }
     }
@@ -202,7 +205,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
         RebuildFaces();
         aPS.Next(aSteps[0]);
         //
-        FillImagesContainers(TopAbs_SHELL, aPS.Next(aSteps[1]));
+        FillImagesContainers(ShapeType.Shell, aPS.Next(aSteps[1]));
         if (HasErrors())
         {
             return;
@@ -216,7 +219,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
         //
         CheckSolidImages();
         //
-        BuildResult(TopAbs_SOLID);
+        BuildResult(ShapeType.Solid);
         if (HasErrors())
         {
             return;
@@ -228,7 +231,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
             return;
         }
         //
-        BuildResult(TopAbs_COMPOUND);
+        BuildResult(ShapeType.Compound);
         if (HasErrors())
         {
             return;
@@ -242,24 +245,24 @@ public class BRepFeat_Builder : BOPAlgo_BOP
     {
         int aNbS, i, iRank, nSp, j;
         bool bIsClosed, bIsDegenerated, bToReverse, bRem, bIm, bFlagSD, bVInShapes;
-        TopAbs_Orientation anOriF, anOriE;
-        TopoDS_Face aFF;
-        TopoDS_Edge aSp;
-        TopoDS_Shape aSx;
-        TopExp_Explorer aExp = new(), aExpE = new();
-        NCollection_Map<TopoDS_Shape> aME = new(TopTools_ShapeMapHasher.Instance), aMESplit = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape>.Iterator aItIm = new();
+        Orientation anOriF, anOriE;
+        Face aFF;
+        Edge aSp;
+        Shape aSx;
+        Explorer aExp = new(), aExpE = new();
+        NCollection_Map<Shape> aME = new(ShapeHasher.Instance), aMESplit = new(ShapeHasher.Instance);
+        NCollection_List<Shape>.Iterator aItIm = new();
         // OCCT's NCollection_Map<BOPTools_Set>, of which Added() returns the key in the map: an indexed map gives the
         // stored key back from its index, and the map is never iterated (as BOPAlgo_Builder_3)
         NCollection_IndexedMap<BOPTools_Set> aMST = new();
-        NCollection_List<TopoDS_Shape> aLE = new();
+        NCollection_List<Shape> aLE = new();
         //
-        foreach (TopoDS_Shape aS in myShapes)
+        foreach (Shape aS in myShapes)
         {
-            if (aS.ShapeType() == TopAbs_FACE)
+            if (aS.ShapeType() == ShapeType.Face)
             {
                 BOPTools_Set aST = new();
-                aST.Add(aS, TopAbs_EDGE);
+                aST.Add(aS, ShapeType.Edge);
                 aMST.Add(aST);
             }
         }
@@ -272,15 +275,15 @@ public class BRepFeat_Builder : BOPAlgo_BOP
             iRank = myDS.Rank(i);
             if (iRank == 1)
             {
-                TopoDS_Shape aS = aSI.Shape();
+                Shape aS = aSI.Shape();
                 //
                 if (myImages.IsBound(aS))
                 {
-                    NCollection_List<TopoDS_Shape> aLIm = myImages.ChangeFind(aS);
+                    NCollection_List<Shape> aLIm = myImages.ChangeFind(aS);
                     aItIm.Initialize(aLIm);
                     for (; aItIm.More();)
                     {
-                        TopoDS_Shape aSIm = aItIm.Value();
+                        Shape aSIm = aItIm.Value();
                         if (!myShapes.Contains(aSIm))
                         {
                             aLIm.Remove(aItIm);
@@ -292,13 +295,13 @@ public class BRepFeat_Builder : BOPAlgo_BOP
                 continue;
             }
             //
-            if (aSI.ShapeType() != TopAbs_FACE)
+            if (aSI.ShapeType() != ShapeType.Face)
             {
                 continue;
             }
             //
             BOPDS_FaceInfo aFI = myDS.FaceInfo(i);
-            TopoDS_Face aF = TopoDS.Face(aSI.Shape());
+            Face aF = ShapeCasts.Face(aSI.Shape());
             //
             if (!myImages.IsBound(aF))
             {
@@ -307,7 +310,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
             //
             anOriF = aF.Orientation();
             aFF = aF;
-            aFF.Orientation(TopAbs_FORWARD);
+            aFF.Orientation(Forward);
 
             NCollection_IndexedMap<BOPDS_PaveBlock> aMPBIn = aFI.PaveBlocksIn();
             NCollection_IndexedMap<BOPDS_PaveBlock> aMPBSc = aFI.PaveBlocksSc();
@@ -315,26 +318,26 @@ public class BRepFeat_Builder : BOPAlgo_BOP
             aLE.Clear();
 
             // bounding edges
-            aExp.Init(aFF, TopAbs_EDGE);
+            aExp.Init(aFF, ShapeType.Edge);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Edge aE = TopoDS.Edge(aExp.Current());
+                Edge aE = ShapeCasts.Edge(aExp.Current());
                 anOriE = aE.Orientation();
-                bIsDegenerated = BRep_Tool.Degenerated(aE);
-                bIsClosed = BRep_Tool.IsClosed(aE, aF);
+                bIsDegenerated = Tool.Degenerated(aE);
+                bIsClosed = Tool.IsClosed(aE, aF);
                 if (myImages.IsBound(aE))
                 {
-                    NCollection_List<TopoDS_Shape> aLEIm = myImages.ChangeFind(aE);
+                    NCollection_List<Shape> aLEIm = myImages.ChangeFind(aE);
                     //
                     bRem = false;
                     bIm = false;
                     aME.Clear();
-                    NCollection_List<TopoDS_Shape> aLEImNew = new();
+                    NCollection_List<Shape> aLEImNew = new();
                     //
                     aItIm.Initialize(aLEIm);
                     for (; aItIm.More(); aItIm.Next())
                     {
-                        TopoDS_Shape aS = aItIm.Value();
+                        Shape aS = aItIm.Value();
 
                         bVInShapes = false;
                         if (myShapes.Contains(aS))
@@ -343,10 +346,10 @@ public class BRepFeat_Builder : BOPAlgo_BOP
                         }
                         else
                         {
-                            aExpE.Init(aS, TopAbs_VERTEX);
+                            aExpE.Init(aS, ShapeType.Vertex);
                             for (; aExpE.More(); aExpE.Next())
                             {
-                                TopoDS_Shape aV = aExpE.Current();
+                                Shape aV = aExpE.Current();
                                 if (myShapes.Contains(aV))
                                 {
                                     bVInShapes = true;
@@ -395,7 +398,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
                     aItIm.Initialize(aLEIm);
                     for (; aItIm.More(); aItIm.Next())
                     {
-                        aSp = TopoDS.Edge(aItIm.Value());
+                        aSp = ShapeCasts.Edge(aItIm.Value());
 
                         if (bIsDegenerated)
                         {
@@ -404,25 +407,25 @@ public class BRepFeat_Builder : BOPAlgo_BOP
                             continue;
                         }
                         //
-                        if (anOriE == TopAbs_INTERNAL)
+                        if (anOriE == Internal)
                         {
-                            aSp.Orientation(TopAbs_FORWARD);
+                            aSp.Orientation(Forward);
                             aLE.Append(aSp);
-                            aSp.Orientation(TopAbs_REVERSED);
+                            aSp.Orientation(Reversed);
                             aLE.Append(aSp);
                             continue;
                         }
                         //
                         if (bIsClosed)
                         {
-                            if (!BRep_Tool.IsClosed(aSp, aFF))
+                            if (!Tool.IsClosed(aSp, aFF))
                             {
                                 BOPTools_AlgoTools3D.DoSplitSEAMOnFace(aSp, aFF);
                             }
                             //
-                            aSp.Orientation(TopAbs_FORWARD);
+                            aSp.Orientation(Forward);
                             aLE.Append(aSp);
-                            aSp.Orientation(TopAbs_REVERSED);
+                            aSp.Orientation(Reversed);
                             aLE.Append(aSp);
                             continue;
                         } // if (bIsClosed){
@@ -451,15 +454,15 @@ public class BRepFeat_Builder : BOPAlgo_BOP
             {
                 BOPDS_PaveBlock aPB = aMPBIn.FindKey(j);
                 nSp = aPB.Edge();
-                aSp = TopoDS.Edge(myDS.Shape(nSp));
+                aSp = ShapeCasts.Edge(myDS.Shape(nSp));
                 if (myRemoved.Contains(aSp))
                 {
                     continue;
                 }
                 //
-                aSp.Orientation(TopAbs_FORWARD);
+                aSp.Orientation(Forward);
                 aLE.Append(aSp);
-                aSp.Orientation(TopAbs_REVERSED);
+                aSp.Orientation(Reversed);
                 aLE.Append(aSp);
             }
             // section edges
@@ -467,15 +470,15 @@ public class BRepFeat_Builder : BOPAlgo_BOP
             {
                 BOPDS_PaveBlock aPB = aMPBSc.FindKey(j);
                 nSp = aPB.Edge();
-                aSp = TopoDS.Edge(myDS.Shape(nSp));
+                aSp = ShapeCasts.Edge(myDS.Shape(nSp));
                 if (myRemoved.Contains(aSp))
                 {
                     continue;
                 }
                 //
-                aSp.Orientation(TopAbs_FORWARD);
+                aSp.Orientation(Forward);
                 aLE.Append(aSp);
-                aSp.Orientation(TopAbs_REVERSED);
+                aSp.Orientation(Reversed);
                 aLE.Append(aSp);
             }
 
@@ -486,17 +489,17 @@ public class BRepFeat_Builder : BOPAlgo_BOP
 
             aBF.Perform();
 
-            NCollection_List<TopoDS_Shape> aLFIm = myImages.ChangeFind(aF);
+            NCollection_List<Shape> aLFIm = myImages.ChangeFind(aF);
             aLFIm.Clear();
 
-            NCollection_List<TopoDS_Shape> aLFR = aBF.Areas();
+            NCollection_List<Shape> aLFR = aBF.Areas();
             aItIm.Initialize(aLFR);
             for (; aItIm.More(); aItIm.Next())
             {
-                TopoDS_Shape aFR = aItIm.Value();
+                Shape aFR = aItIm.Value();
                 //
                 BOPTools_Set aST = new();
-                aST.Add(aFR, TopAbs_EDGE);
+                aST.Add(aFR, ShapeType.Edge);
                 bFlagSD = aMST.Contains(aST);
                 //
                 BOPTools_Set aSTx = aMST.FindKey(aMST.Add(aST));
@@ -504,9 +507,9 @@ public class BRepFeat_Builder : BOPAlgo_BOP
                 aSx.Orientation(anOriF);
                 aLFIm.Append(aSx);
                 //
-                if (!myOrigins.Find(aSx, out NCollection_List<TopoDS_Shape> pLOr))
+                if (!myOrigins.Find(aSx, out NCollection_List<Shape> pLOr))
                 {
-                    pLOr = myOrigins.Bound(aSx, new NCollection_List<TopoDS_Shape>());
+                    pLOr = myOrigins.Bound(aSx, new NCollection_List<Shape>());
                 }
                 pLOr.Append(aF);
                 //
@@ -524,17 +527,17 @@ public class BRepFeat_Builder : BOPAlgo_BOP
     }
 
     /// <summary>Rebuilds edges in accordance with the kept parts of the tool.</summary>
-    public void RebuildEdge(in TopoDS_Shape theE, in TopoDS_Face theF, NCollection_Map<TopoDS_Shape> aME,
-                            NCollection_List<TopoDS_Shape> aLIm)
+    public void RebuildEdge(in Shape theE, in Face theF, NCollection_Map<Shape> aME,
+                            NCollection_List<Shape> aLIm)
     {
         int nE, nSp, nV1, nV2, nE1, nV, nVx, nVSD = 0;
         int nV11, nV21;
         bool bOld;
         double aT11, aT21;
         double aT1, aT2;
-        TopoDS_Edge aE;
+        Edge aE;
         BOPDS_ShapeInfo aSI = new();
-        TopoDS_Vertex aV1, aV2;
+        Vertex aV1, aV2;
         BOPDS_PaveBlock aPBNew;
         NCollection_Map<int> aMI = new(), aMAdd = new(), aMV = new(), aMVOr = new();
         NCollection_List<BOPDS_PaveBlock>.Iterator aItPB = new();
@@ -542,7 +545,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
         // OCCT iterates this address-keyed map to find the one block with the same bounds: the order is not observable
         NCollection_Map<BOPDS_PaveBlock> aMPB = new(ReferenceEqualityComparer.Instance);
         //
-        aSI.SetShapeType(TopAbs_EDGE);
+        aSI.SetShapeType(ShapeType.Edge);
 
         // 1. collect origin vertices to aMV map.
         nE = myDS!.Index(theE);
@@ -570,7 +573,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
         {
             BOPDS_PaveBlock aPB = aItPB.Value();
             nE1 = aPB.Edge();
-            TopoDS_Shape aE1 = myDS.Shape(nE1);
+            Shape aE1 = myDS.Shape(nE1);
             //
             if (aME.Contains(aE1))
             {
@@ -621,8 +624,8 @@ public class BRepFeat_Builder : BOPAlgo_BOP
             }
         }
 
-        aE = TopoDS.Edge(theE);
-        aE.Orientation(TopAbs_FORWARD);
+        aE = ShapeCasts.Edge(theE);
+        aE.Orientation(Forward);
         //
         aLIm.Clear();
         //
@@ -648,7 +651,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
                 aPB1.Range(out aT11, out aT21);
                 if (nV1 == nV11 && nV2 == nV21 && aT1 == aT11 && aT2 == aT21)
                 {
-                    TopoDS_Shape aEIm = myDS.Shape(aPB1.Edge());
+                    Shape aEIm = myDS.Shape(aPB1.Edge());
                     aLIm.Append(aEIm);
                     bOld = true;
                     break;
@@ -659,13 +662,13 @@ public class BRepFeat_Builder : BOPAlgo_BOP
                 continue;
             }
             //
-            aV1 = TopoDS.Vertex(myDS.Shape(nV1));
-            aV1.Orientation(TopAbs_FORWARD);
+            aV1 = ShapeCasts.Vertex(myDS.Shape(nV1));
+            aV1.Orientation(Forward);
             //
-            aV2 = TopoDS.Vertex(myDS.Shape(nV2));
-            aV2.Orientation(TopAbs_REVERSED);
+            aV2 = ShapeCasts.Vertex(myDS.Shape(nV2));
+            aV2.Orientation(Reversed);
             //
-            BOPTools_AlgoTools.MakeSplitEdge(aE, aV1, aT1, aV2, aT2, out TopoDS_Edge aSp);
+            BOPTools_AlgoTools.MakeSplitEdge(aE, aV1, aT1, aV2, aT2, out Edge aSp);
             BOPTools_AlgoTools2D.BuildPCurveForEdgeOnFace(aSp, theF, myContext);
             //
             aSI.SetShape(aSp);
@@ -684,43 +687,43 @@ public class BRepFeat_Builder : BOPAlgo_BOP
     public void CheckSolidImages()
     {
         NCollection_IndexedMap<BOPTools_Set> aMST = new(); // OCCT's Map with Added(): see RebuildFaces
-        NCollection_List<TopoDS_Shape> aLSImNew = new();
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new();
-        TopExp_Explorer aExp = new();
+        NCollection_List<Shape> aLSImNew = new();
+        NCollection_List<Shape>.Iterator aIt = new();
+        Explorer aExp = new();
         bool bFlagSD;
         //
-        TopoDS_Shape aArgs0 = myArguments.First();
-        TopoDS_Shape aArgs1 = myTools.First();
+        Shape aArgs0 = myArguments.First();
+        Shape aArgs1 = myTools.First();
         //
-        NCollection_List<TopoDS_Shape> aLSIm = myImages.Find(aArgs1);
+        NCollection_List<Shape> aLSIm = myImages.Find(aArgs1);
         aIt.Initialize(aLSIm);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aSolIm = aIt.Value();
+            Shape aSolIm = aIt.Value();
             //
             BOPTools_Set aST = new();
-            aST.Add(aSolIm, TopAbs_FACE);
+            aST.Add(aSolIm, ShapeType.Face);
             aMST.Add(aST);
         }
         //
-        aExp.Init(aArgs0, TopAbs_SOLID);
+        aExp.Init(aArgs0, ShapeType.Solid);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Shape aSolid = aExp.Current();
+            Shape aSolid = aExp.Current();
             if (myImages.IsBound(aSolid))
             {
-                NCollection_List<TopoDS_Shape> aLSImSol = myImages.ChangeFind(aSolid);
+                NCollection_List<Shape> aLSImSol = myImages.ChangeFind(aSolid);
                 aIt.Initialize(aLSImSol);
                 for (; aIt.More(); aIt.Next())
                 {
-                    TopoDS_Shape aSolIm = aIt.Value();
+                    Shape aSolIm = aIt.Value();
                     //
                     BOPTools_Set aST = new();
-                    aST.Add(aSolIm, TopAbs_FACE);
+                    aST.Add(aSolIm, ShapeType.Face);
                     bFlagSD = aMST.Contains(aST);
                     //
                     BOPTools_Set aSTx = aMST.FindKey(aMST.Add(aST));
-                    TopoDS_Shape aSx = aSTx.Shape();
+                    Shape aSx = aSTx.Shape();
                     aLSImNew.Append(aSx);
                     //
                     if (bFlagSD)
@@ -734,7 +737,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
     }
 
     /// <summary>Adds the shape <paramref name="S"/> and its sub-shapes not kept into the map <paramref name="M"/>.</summary>
-    public void FillRemoved(in TopoDS_Shape S, NCollection_Map<TopoDS_Shape> M)
+    public void FillRemoved(in Shape S, NCollection_Map<Shape> M)
     {
         if (myShapes.Contains(S))
         {
@@ -742,7 +745,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
         }
         //
         M.Add(S);
-        TopoDS_Iterator It = new(S);
+        Iterator It = new(S);
         while (It.More())
         {
             FillRemoved(It.Value(), M);
@@ -751,7 +754,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
     }
 
     /// <summary>Redefined to avoid the usage of removed faces.</summary>
-    protected override void FillIn3DParts(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theDraftSolids,
+    protected override void FillIn3DParts(NCollection_DataMap<Shape, Shape> theDraftSolids,
                                           ProgressRange theRange)
     {
         GetReport().Clear();
@@ -759,10 +762,10 @@ public class BRepFeat_Builder : BOPAlgo_BOP
         base.FillIn3DParts(theDraftSolids, theRange);
 
         // Clear the IN parts of the solids from the removed faces
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> itM in myInParts)
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> itM in myInParts)
         {
-            NCollection_List<TopoDS_Shape> aList = itM.Value;
-            NCollection_List<TopoDS_Shape>.Iterator itL = new(aList);
+            NCollection_List<Shape> aList = itM.Value;
+            NCollection_List<Shape>.Iterator itL = new(aList);
             for (; itL.More();)
             {
                 if (myRemoved.Contains(itL.Value()))

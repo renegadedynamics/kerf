@@ -13,7 +13,7 @@ public class HelixGeom_ToolsTests
     [Fact]
     public void ApprHelix()
     {
-        Geom_BSplineCurve? aBSpline = null;
+        BSplineCurve3D? aBSpline = null;
         double aMaxError = 0;
 
         int aResult = HelixGeom_Tools.ApprHelix(0.0,         // T1
@@ -33,7 +33,7 @@ public class HelixGeom_ToolsTests
 
         // Test curve properties
         Assert.True(aBSpline.Degree() > 0);
-        Assert.True(aBSpline.NbPoles() > 0);
+        Assert.True(aBSpline.PoleCount > 0);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class HelixGeom_ToolsTests
         aHelix.Load(0.0, 2.0 * M_PI, 10.0, 3.0, 0.0, true);
         var aHAdaptor = new HelixGeom_HelixCurve(aHelix);
 
-        Geom_BSplineCurve? aBSpline = null;
+        BSplineCurve3D? aBSpline = null;
         double aMaxError = 0;
 
         int aResult = HelixGeom_Tools.ApprCurve3D(aHAdaptor,
@@ -86,7 +86,7 @@ public class HelixGeom_ToolsTests
         var aHAdaptor = new HelixGeom_HelixCurve(aHelix);
 
         // Test C0 continuity
-        Geom_BSplineCurve? aBSplineC0 = null;
+        BSplineCurve3D? aBSplineC0 = null;
         double aMaxErrorC0 = 0;
         int aResultC0 = HelixGeom_Tools.ApprCurve3D(aHAdaptor, myTolerance, C0, 30, 4, ref aBSplineC0, ref aMaxErrorC0);
 
@@ -94,7 +94,7 @@ public class HelixGeom_ToolsTests
         Assert.NotNull(aBSplineC0);
 
         // Test C2 continuity
-        Geom_BSplineCurve? aBSplineC2 = null;
+        BSplineCurve3D? aBSplineC2 = null;
         double aMaxErrorC2 = 0;
         int aResultC2 = HelixGeom_Tools.ApprCurve3D(aHAdaptor, myTolerance, C2, 30, 6, ref aBSplineC2, ref aMaxErrorC2);
 

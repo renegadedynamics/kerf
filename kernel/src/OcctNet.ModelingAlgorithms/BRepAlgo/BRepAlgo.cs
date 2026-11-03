@@ -4,14 +4,20 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.BRepCheck_Status;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -23,11 +29,11 @@ namespace Occt;
 /// <para>
 /// The results are frozen. <see cref="ConcatenateWireC0"/> computes missing 3D curves and fixes the wire before
 /// concatenating, which OCCT does on the caller's wire: the port works on a copy of a frozen wire
-/// (<see cref="BRepTools_CopyAtEntry"/>) and gives the caller's vertices back in the result where they weren't changed
+/// (<see cref="CopyAtEntry"/>) and gives the caller's vertices back in the result where they weren't changed
 /// (decision 793).
 /// </para>
 /// <para>
-/// <see cref="IsValid(NCollection_List{TopoDS_Shape}, in TopoDS_Shape, bool, bool)"/> resets the SameParameter flags
+/// <see cref="IsValid(NCollection_List{Shape}, in Shape, bool, bool)"/> resets the SameParameter flags
 /// of new faces' edges found invalid and recomputes them, as OCCT does, in the result: a frozen result throws at that
 /// write (BRepTools.Update skips frozen faces).
 /// </para>
@@ -39,7 +45,7 @@ public static class BRepAlgo
 
     private struct OrientedCurve
     {
-        public Geom2d_TrimmedCurve Curve;
+        public TrimmedCurve2D Curve;
         public bool IsReverse;
 
         public readonly Point2D Point(bool isEnd)
@@ -57,28 +63,28 @@ public static class BRepAlgo
     /// smooth where its tangents differ by less than <paramref name="theAngleTol"/>, within the largest tolerance of its
     /// edges (at least 1e-4); null if the wire has no edge.
     /// </summary>
-    public static TopoDS_Wire ConvertWire(in TopoDS_Wire theWire, double theAngleTol, in TopoDS_Face theFace)
+    public static Wire ConvertWire(in Wire theWire, double theAngleTol, in Face theFace)
     {
-        TopoDS_Wire aResult = InternalConvertWire(theWire, theAngleTol, theFace);
+        Wire aResult = InternalConvertWire(theWire, theAngleTol, theFace);
         aResult.TShape()?.FreezeGraph();
         return aResult;
     }
 
     /// <summary><see cref="ConvertWire"/> without freezing the result, for ported callers that build on it.</summary>
-    internal static TopoDS_Wire InternalConvertWire(in TopoDS_Wire theWire, double theAngleTol, in TopoDS_Face theFace)
+    internal static Wire InternalConvertWire(in Wire theWire, double theAngleTol, in Face theFace)
     {
-        TopoDS_Wire aResult = new();
+        Wire aResult = new();
         double aMaxTol = 0.0;
-        Geom_Surface aSurf = BRep_Tool.Surface(theFace)!;
+        Surface aSurf = Tool.Surface(theFace)!;
         NCollection_DynamicArray<OrientedCurve> vecCurve = new();
 
-        BRepTools_WireExplorer anExpE = new(theWire, theFace);
+        WireExplorer anExpE = new(theWire, theFace);
         // Explore the edges in the current wire, in their connection order
         for (; anExpE.More(); anExpE.Next())
         {
-            TopoDS_Edge anEdge = anExpE.Current();
-            BRepAdaptor_Curve2d aCurve = new(anEdge, theFace);
-            double aTol = BRep_Tool.Tolerance(anEdge);
+            Edge anEdge = anExpE.Current();
+            EdgeCurve2DAdaptor aCurve = new(anEdge, theFace);
+            double aTol = Tool.Tolerance(anEdge);
             if (aTol < MINIMAL_TOLERANCE)
             {
                 aTol = MINIMAL_TOLERANCE;
@@ -87,19 +93,19 @@ public static class BRepAlgo
             {
                 aMaxTol = aTol;
             }
-            Geom2dConvert_ApproxArcsSegments anAlgo = new(aCurve, aTol, theAngleTol);
-            ISchematiqList<Geom2d_Curve> aResultApprox = anAlgo.GetResult();
+            ApproxArcsSegments2D anAlgo = new(aCurve, aTol, theAngleTol);
+            ISchematiqList<Curve2D> aResultApprox = anAlgo.GetResult();
 
             // Form the array of approximated elementary curves
-            if (anEdge.Orientation() == TopAbs_REVERSED)
+            if (anEdge.Orientation() == Reversed)
             {
                 for (int iCrv = aResultApprox.Count; iCrv > 0; iCrv--)
                 {
-                    Geom2d_Curve? aCrv = aResultApprox[iCrv - 1];
+                    Curve2D? aCrv = aResultApprox[iCrv - 1];
                     if (aCrv is not null)
                     {
                         ref OrientedCurve anOCurve = ref vecCurve.Append(new OrientedCurve());
-                        anOCurve.Curve = (Geom2d_TrimmedCurve)aCrv;
+                        anOCurve.Curve = (TrimmedCurve2D)aCrv;
                         anOCurve.IsReverse = true;
                     }
                 }
@@ -108,11 +114,11 @@ public static class BRepAlgo
             {
                 for (int iCrv = 1; iCrv <= aResultApprox.Count; iCrv++)
                 {
-                    Geom2d_Curve? aCrv = aResultApprox[iCrv - 1];
+                    Curve2D? aCrv = aResultApprox[iCrv - 1];
                     if (aCrv is not null)
                     {
                         ref OrientedCurve anOCurve = ref vecCurve.Append(new OrientedCurve());
-                        anOCurve.Curve = (Geom2d_TrimmedCurve)aCrv;
+                        anOCurve.Curve = (TrimmedCurve2D)aCrv;
                         anOCurve.IsReverse = false;
                     }
                 }
@@ -122,7 +128,7 @@ public static class BRepAlgo
         if (vecCurve.Length() > 0)
         {
             // Build the first vertex
-            BRep_Builder aVBuilder = new();
+            BrepBuilder aVBuilder = new();
             Point2D[] aPnt = [vecCurve.Value(0).Point(false), vecCurve.Value(vecCurve.Length() - 1).Point(true)];
             double aDist = aPnt[0].Distance(aPnt[1]);
             if (aDist > aMaxTol + global::Kerf.Engine.Foundation.Precision.Confusion())
@@ -135,17 +141,17 @@ public static class BRepAlgo
                 aPnt[0] = new Point2D(0.5 * (aPnt[0].XY() + aPnt[1].XY()));
             }
             Point3D aPnt3d = aSurf.Value(aPnt[0].X(), aPnt[0].Y());
-            TopoDS_Vertex aFirstVertex = new();
+            Vertex aFirstVertex = new();
             aVBuilder.MakeVertex(ref aFirstVertex, aPnt3d, aDist);
 
             // Loop creating edges
             BRepBuilderAPI_MakeWire aMkWire = new();
-            TopoDS_Edge anEdgeRes;
-            TopoDS_Vertex aVertex = aFirstVertex;
+            Edge anEdgeRes;
+            Vertex aVertex = aFirstVertex;
             for (int iCrv = 0; iCrv < vecCurve.Length(); iCrv++)
             {
                 OrientedCurve anOCurve = vecCurve.Value(iCrv);
-                TopoDS_Vertex aNextVertex = new();
+                Vertex aNextVertex = new();
                 aPnt[0] = anOCurve.Point(true);
                 if (iCrv == vecCurve.Length() - 1)
                 {
@@ -174,7 +180,7 @@ public static class BRepAlgo
                 {
                     BRepBuilderAPI_MakeEdge aMkEdge = new(anOCurve.Curve, aSurf, aNextVertex, aVertex, aParam[0], aParam[1]);
                     anEdgeRes = aMkEdge.InternalEdge();
-                    anEdgeRes.Orientation(TopAbs_REVERSED);
+                    anEdgeRes.Orientation(Reversed);
                 }
                 else
                 {
@@ -197,17 +203,17 @@ public static class BRepAlgo
     /// The face <paramref name="theFace"/> with every wire converted by <see cref="ConvertWire"/>; null if the face
     /// couldn't be made.
     /// </summary>
-    public static TopoDS_Face ConvertFace(in TopoDS_Face theFace, double theAngleTolerance)
+    public static Face ConvertFace(in Face theFace, double theAngleTolerance)
     {
-        TopoDS_Face aResult = new();
-        Geom_Surface aSurf = BRep_Tool.Surface(theFace)!;
+        Face aResult = new();
+        Surface aSurf = Tool.Surface(theFace)!;
         BRepBuilderAPI_MakeFace aMkFace = new(aSurf, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        TopExp_Explorer anExp = new(theFace, TopAbs_WIRE);
+        Explorer anExp = new(theFace, ShapeType.Wire);
         for (; anExp.More(); anExp.Next())
         {
-            TopoDS_Wire aWire = TopoDS.Wire(anExp.Current());
-            TopoDS_Wire aNewWire = InternalConvertWire(aWire, theAngleTolerance, theFace);
+            Wire aWire = ShapeCasts.Wire(anExp.Current());
+            Wire aNewWire = InternalConvertWire(aWire, theAngleTolerance, theFace);
             aMkFace.Add(aNewWire);
         }
         if (aMkFace.IsDone())
@@ -222,15 +228,15 @@ public static class BRepAlgo
     /// A wire whose edges are C1 (or G1, with <paramref name="Option"/>) made from <paramref name="W"/>, whose edges
     /// may meet with G1 continuity: the vertices between such edges are removed.
     /// </summary>
-    public static TopoDS_Wire ConcatenateWire(in TopoDS_Wire W, Continuity Option, double TolAngular = 1.0e-4)
+    public static Wire ConcatenateWire(in Wire W, Continuity Option, double TolAngular = 1.0e-4)
     {
         int nb_curve, // number of curves in the Wire
             index;
-        BRepTools_WireExplorer WExp = new(W);
-        TopoDS_Edge edge;
+        WireExplorer WExp = new(W);
+        Edge edge;
         double First = 0.0, Last = 0.0, // extremal values for the curve
             First0 = 0.0, toler = 0.0, tolleft, tolright; // Vertex tolerances
-        TopoDS_Vertex Vfirst = new(), Vlast = new(); // Vertex of the Wire
+        Vertex Vfirst = new(), Vlast = new(); // Vertex of the Wire
         Point3D Pfirst, Plast; //, Pint;  corresponding points
 
         BRepLib_MakeWire MakeResult = new();
@@ -247,7 +253,7 @@ public static class BRepAlgo
 
         if (nb_curve > 1)
         {
-            NCollection_Array1<Geom_BSplineCurve> tab = new(0, nb_curve - 1); // array of the wire's curve
+            NCollection_Array1<BSplineCurve3D> tab = new(0, nb_curve - 1); // array of the wire's curve
             NCollection_Array1<double> tabtolvertex = new(0, nb_curve - 2); // array of the tolerance's vertex
 
             WExp.Init(W);
@@ -255,74 +261,74 @@ public static class BRepAlgo
             for (index = 0; index < nb_curve; index++)
             { // main loop
                 edge = WExp.Current();
-                Geom_Curve aCurve = BRep_Tool.Curve(edge, out Placement L, out First, out Last)!;
-                Geom_TrimmedCurve aTrCurve = new(aCurve, First, Last);
-                tab[index] = GeomConvert.CurveToBSplineCurve(aTrCurve); // storage in a array
+                Curve3D aCurve = Tool.Curve(edge, out Placement L, out First, out Last)!;
+                TrimmedCurve3D aTrCurve = new(aCurve, First, Last);
+                tab[index] = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aTrCurve); // storage in a array
                 tab[index].Transform(L.Transformation());
-                GeomConvert.C0BSplineToC1BSplineCurve(ref tab[index], global::Kerf.Engine.Foundation.Precision.Confusion());
+                global::Kerf.Engine.Geometry.Conversion.GeomConvert.C0BSplineToC1BSplineCurve(ref tab[index], global::Kerf.Engine.Foundation.Precision.Confusion());
 
                 if (index >= 1)
                 { // continuity test loop
-                    if (edge.Orientation() == TopAbs_REVERSED)
+                    if (edge.Orientation() == Reversed)
                     {
                         tab[index].Reverse();
                     }
-                    tolleft = BRep_Tool.Tolerance(TopExp.LastVertex(edge));
-                    tolright = BRep_Tool.Tolerance(TopExp.FirstVertex(edge));
+                    tolleft = Tool.Tolerance(Exploration.LastVertex(edge));
+                    tolright = Tool.Tolerance(Exploration.FirstVertex(edge));
                     tabtolvertex[index - 1] = Max(tolleft, tolright);
                 }
 
                 if (index == 0)
                 { // storage of the first edge features
                     First0 = First;
-                    if (edge.Orientation() == TopAbs_REVERSED)
+                    if (edge.Orientation() == Reversed)
                     { //(useful for the closed wire)
-                        Vfirst = TopExp.LastVertex(edge);
+                        Vfirst = Exploration.LastVertex(edge);
                         tab[index].Reverse();
                     }
                     else
                     {
-                        Vfirst = TopExp.FirstVertex(edge);
+                        Vfirst = Exploration.FirstVertex(edge);
                     }
                 }
 
                 if (index == nb_curve - 1)
                 { // storage of the last edge features
-                    if (edge.Orientation() == TopAbs_REVERSED)
+                    if (edge.Orientation() == Reversed)
                     {
-                        Vlast = TopExp.FirstVertex(edge);
+                        Vlast = Exploration.FirstVertex(edge);
                     }
                     else
                     {
-                        Vlast = TopExp.LastVertex(edge);
+                        Vlast = Exploration.LastVertex(edge);
                     }
                 }
                 WExp.Next();
             }
 
-            if (BRep_Tool.Tolerance(Vfirst) > BRep_Tool.Tolerance(Vlast))
+            if (Tool.Tolerance(Vfirst) > Tool.Tolerance(Vlast))
             { // computation of the closing tolerance
-                toler = BRep_Tool.Tolerance(Vfirst);
+                toler = Tool.Tolerance(Vfirst);
             }
             else
             {
-                toler = BRep_Tool.Tolerance(Vlast);
+                toler = Tool.Tolerance(Vlast);
             }
 
-            Pfirst = BRep_Tool.Pnt(Vfirst);
-            Plast = BRep_Tool.Pnt(Vlast);
+            Pfirst = Tool.Pnt(Vfirst);
+            Plast = Tool.Pnt(Vlast);
 
             if ((Pfirst.Distance(Plast) <= toler) && // C0 continuity test at the closing point
-                (GeomLProp.Continuity(tab[nb_curve - 1], tab[0], Last, First0, true, true, toler, TolAngular)
+                (global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(tab[nb_curve - 1], tab[0], Last, First0, true, true, toler, TolAngular)
                  >= G1))
             {
                 closed_tolerance = toler; // if ClosedG1!=0 it will be True and
                 closed_flag = true;
             } // with the toler value
-            NCollection_HArray1<Geom_BSplineCurve> concatcurve; // array of the concatenated curves
+            NCollection_HArray1<BSplineCurve3D> concatcurve; // array of the concatenated curves
             if (Option == G1)
             {
-                GeomConvert.ConcatG1(tab,
+                global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatG1(tab,
                                      tabtolvertex,
                                      out concatcurve,
                                      ref closed_flag,
@@ -330,7 +336,7 @@ public static class BRepAlgo
             }
             else
             {
-                GeomConvert.ConcatC1(tab,
+                global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatC1(tab,
                                      tabtolvertex,
                                      out _,
                                      out concatcurve,
@@ -350,11 +356,11 @@ public static class BRepAlgo
             WExp.Init(W);
 
             edge = WExp.Current();
-            Geom_Curve aC = BRep_Tool.Curve(edge, out Placement L, out First, out Last)!;
-            Geom_BSplineCurve aBS = GeomConvert.CurveToBSplineCurve(new Geom_TrimmedCurve(aC, First, Last));
+            Curve3D aC = Tool.Curve(edge, out Placement L, out First, out Last)!;
+            BSplineCurve3D aBS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(new TrimmedCurve3D(aC, First, Last));
             aBS.Transform(L.Transformation());
-            GeomConvert.C0BSplineToC1BSplineCurve(ref aBS, global::Kerf.Engine.Foundation.Precision.Confusion());
-            if (edge.Orientation() == TopAbs_REVERSED)
+            global::Kerf.Engine.Geometry.Conversion.GeomConvert.C0BSplineToC1BSplineCurve(ref aBS, global::Kerf.Engine.Foundation.Precision.Confusion());
+            if (edge.Orientation() == Reversed)
             {
                 aBS.Reverse();
             }
@@ -370,48 +376,48 @@ public static class BRepAlgo
     /// An edge made from the wire <paramref name="aWire"/> (whose edges are first given 3D curves and fixed), possibly
     /// with sharp corners: its curve may be C0. Consecutive edges on the same line or conic are merged first.
     /// </summary>
-    public static TopoDS_Edge ConcatenateWireC0(in TopoDS_Wire aWire)
+    public static Edge ConcatenateWireC0(in Wire aWire)
     {
         double LinTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         double AngTol = global::Kerf.Engine.Foundation.Precision.Angular();
 
-        TopoDS_Edge ResEdge = new();
+        Edge ResEdge = new();
 
         // OCCT.NET: copy at entry (decision 793): OCCT computes the 3D curves on the caller's wire
-        BRepTools_CopyAtEntry anEntry = new(aWire);
-        TopoDS_Wire theWire = TopoDS.Wire(anEntry.Shape());
+        CopyAtEntry anEntry = new(aWire);
+        Wire theWire = ShapeCasts.Wire(anEntry.Shape());
         BRepLib.BuildCurves3d(theWire);
         ShapeFix_Shape Fixer = new(theWire);
         Fixer.SetPrecision(LinTol);
         Fixer.SetMaxTolerance(LinTol);
         Fixer.Perform();
-        theWire = TopoDS.Wire(Fixer.InternalShape());
+        theWire = ShapeCasts.Wire(Fixer.InternalShape());
 
-        NCollection_Sequence<Geom_Curve> CurveSeq = new();
+        NCollection_Sequence<Curve3D> CurveSeq = new();
         NCollection_Sequence<double> FparSeq = new();
         NCollection_Sequence<double> LparSeq = new();
         NCollection_Sequence<double> TolSeq = new();
         NCollection_Sequence<bool> IsFwdSeq = new();
         CurveKind CurType = OtherCurve;
-        TopoDS_Vertex FirstVertex = new(), LastVertex;
+        Vertex FirstVertex = new(), LastVertex;
 
-        BRepTools_WireExplorer wexp = new(theWire);
+        WireExplorer wexp = new(theWire);
 
         for (; wexp.More(); wexp.Next())
         {
-            TopoDS_Edge anEdge = wexp.Current();
-            Geom_Curve? aCurve = BRep_Tool.Curve(anEdge, out double fpar, out double lpar);
+            Edge anEdge = wexp.Current();
+            Curve3D? aCurve = Tool.Curve(anEdge, out double fpar, out double lpar);
             if (aCurve is null)
             {
                 continue;
             }
 
-            GeomAdaptor_Curve aGACurve = new(aCurve);
+            CurveAdaptor aGACurve = new(aCurve);
             CurveKind aType = aGACurve.GetType();
-            Geom_Curve aBasisCurve = aGACurve.Curve()!;
-            bool isFwd = wexp.Orientation() != TopAbs_REVERSED;
+            Curve3D aBasisCurve = aGACurve.Curve()!;
+            bool isFwd = wexp.Orientation() != Reversed;
 
-            if (aBasisCurve.IsPeriodic())
+            if (aBasisCurve.IsPeriodic)
             {
                 global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(aBasisCurve.FirstParameter(),
                                       aBasisCurve.LastParameter(),
@@ -433,7 +439,7 @@ public static class BRepAlgo
             {
                 bool isSameCurve = false;
                 double NewFpar = RealFirst(), NewLpar = RealLast();
-                GeomAdaptor_Curve GAprevcurve = new(CurveSeq.Last());
+                CurveAdaptor GAprevcurve = new(CurveSeq.Last());
 
                 if (ReferenceEquals(aCurve, CurveSeq.Last()))
                 {
@@ -548,7 +554,7 @@ public static class BRepAlgo
                 {
                     bool isSameDir = isFwd == IsFwdSeq.Last();
 
-                    if (aBasisCurve.IsPeriodic())
+                    if (aBasisCurve.IsPeriodic)
                     {
                         // Treat periodic curves.
                         double aPeriod = aBasisCurve.Period();
@@ -623,14 +629,14 @@ public static class BRepAlgo
                     FparSeq.Append(fpar);
                     LparSeq.Append(lpar);
                     IsFwdSeq.Append(isFwd);
-                    TolSeq.Append(BRep_Tool.Tolerance(wexp.CurrentVertex()));
+                    TolSeq.Append(Tool.Tolerance(wexp.CurrentVertex()));
                     CurType = aType;
                 }
             }
         }
 
         LastVertex = wexp.CurrentVertex();
-        TolSeq.Append(BRep_Tool.Tolerance(LastVertex));
+        TolSeq.Append(Tool.Tolerance(LastVertex));
 
         bool isReverse = false;
         if (!IsFwdSeq.IsEmpty())
@@ -638,7 +644,7 @@ public static class BRepAlgo
             isReverse = !IsFwdSeq.Value(1);
         }
 
-        TopoDS_Vertex FirstVtx_final, LastVtx_final;
+        Vertex FirstVtx_final, LastVtx_final;
         if (isReverse)
         {
             FirstVtx_final = LastVertex;
@@ -649,8 +655,8 @@ public static class BRepAlgo
             FirstVtx_final = FirstVertex;
             LastVtx_final = LastVertex;
         }
-        FirstVtx_final.Orientation(TopAbs_FORWARD);
-        LastVtx_final.Orientation(TopAbs_REVERSED);
+        FirstVtx_final.Orientation(Forward);
+        LastVtx_final.Orientation(Reversed);
 
         if (CurveSeq.IsEmpty())
         {
@@ -659,7 +665,7 @@ public static class BRepAlgo
         }
 
         int nb_curve = CurveSeq.Length(); // number of curves
-        NCollection_Array1<Geom_BSplineCurve> tab = new(0, nb_curve - 1); // array of the curves
+        NCollection_Array1<BSplineCurve3D> tab = new(0, nb_curve - 1); // array of the curves
         NCollection_Array1<double> tabtolvertex = new(0, nb_curve - 1); //(0,nb_curve-2);  //array of the tolerances
 
         int i;
@@ -668,14 +674,14 @@ public static class BRepAlgo
         {
             for (i = 1; i <= nb_curve; i++)
             {
-                if (CurveSeq.Value(i).GetType() == typeof(Geom_TrimmedCurve))
+                if (CurveSeq.Value(i).GetType() == typeof(TrimmedCurve3D))
                 {
-                    CurveSeq[i] = ((Geom_TrimmedCurve)CurveSeq.Value(i)).BasisCurve();
+                    CurveSeq[i] = ((TrimmedCurve3D)CurveSeq.Value(i)).BasisCurve();
                 }
 
-                Geom_TrimmedCurve aTrCurve = new(CurveSeq.Value(i), FparSeq.Value(i), LparSeq.Value(i));
-                tab[i - 1] = GeomConvert.CurveToBSplineCurve(aTrCurve);
-                GeomConvert.C0BSplineToC1BSplineCurve(ref tab[i - 1], global::Kerf.Engine.Foundation.Precision.Confusion());
+                TrimmedCurve3D aTrCurve = new(CurveSeq.Value(i), FparSeq.Value(i), LparSeq.Value(i));
+                tab[i - 1] = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aTrCurve);
+                global::Kerf.Engine.Geometry.Conversion.GeomConvert.C0BSplineToC1BSplineCurve(ref tab[i - 1], global::Kerf.Engine.Foundation.Precision.Confusion());
 
                 if (!IsFwdSeq.Value(i))
                 {
@@ -692,7 +698,7 @@ public static class BRepAlgo
             bool closed_flag = false;
             double closed_tolerance = 0.0;
             if (FirstVertex.IsSame(LastVertex)
-                && GeomLProp.Continuity(tab[0],
+                && global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(tab[0],
                                         tab[nb_curve - 1],
                                         tab[0].FirstParameter(),
                                         tab[nb_curve - 1].LastParameter(),
@@ -703,13 +709,13 @@ public static class BRepAlgo
                    >= G1)
             {
                 closed_flag = true;
-                closed_tolerance = BRep_Tool.Tolerance(FirstVertex);
+                closed_tolerance = Tool.Tolerance(FirstVertex);
             }
 
-            GeomConvert.ConcatC1(tab,
+            global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatC1(tab,
                                  tabtolvertex,
                                  out _,
-                                 out NCollection_HArray1<Geom_BSplineCurve> concatcurve,
+                                 out NCollection_HArray1<BSplineCurve3D> concatcurve,
                                  ref closed_flag,
                                  closed_tolerance); // C1 concatenation
 
@@ -725,7 +731,7 @@ public static class BRepAlgo
                 }
                 MaxTolVer *= 5.0;
 
-                GeomConvert_CompCurveToBSplineCurve Concat = new(concatcurve.Value(concatcurve.Lower()));
+                CompCurveToBSplineCurve Concat = new(concatcurve.Value(concatcurve.Lower()));
                 for (i = concatcurve.Lower() + 1; i <= concatcurve.Upper(); i++)
                 {
                     Concat.Add(concatcurve.Value(i), MaxTolVer, true);
@@ -749,12 +755,12 @@ public static class BRepAlgo
         }
         else
         {
-            if (CurveSeq.Value(1).GetType() == typeof(Geom_TrimmedCurve))
+            if (CurveSeq.Value(1).GetType() == typeof(TrimmedCurve3D))
             {
-                CurveSeq[1] = ((Geom_TrimmedCurve)CurveSeq.Value(1)).BasisCurve();
+                CurveSeq[1] = ((TrimmedCurve3D)CurveSeq.Value(1)).BasisCurve();
             }
 
-            Geom_Curve aCopyCurve = (Geom_Curve)CurveSeq.Value(1).Copy();
+            Curve3D aCopyCurve = (Curve3D)CurveSeq.Value(1).Copy();
 
             BRepLib_MakeEdge aMkEdge = new(aCopyCurve, FirstVtx_final, LastVtx_final, FparSeq.Value(1), LparSeq.Value(1));
             ResEdge = aMkEdge.InternalEdge();
@@ -765,13 +771,13 @@ public static class BRepAlgo
             ResEdge.Reverse();
         }
 
-        ResEdge = TopoDS.Edge(anEntry.Finish(ResEdge));
+        ResEdge = ShapeCasts.Edge(anEntry.Finish(ResEdge));
         ResEdge.TShape()?.FreezeGraph();
         return ResEdge;
     }
 
     /// <summary>Whether the shape is valid (BRepCheck, geometry included).</summary>
-    public static bool IsValid(in TopoDS_Shape S)
+    public static bool IsValid(in Shape S)
     {
         BRepCheck_Analyzer ana = new(S);
         return ana.IsValid();
@@ -783,20 +789,20 @@ public static class BRepAlgo
     /// without <paramref name="GeomCtrl"/>, new vertices' and edges' geometry and wire self-intersections are not
     /// checked.
     /// </summary>
-    public static bool IsValid(NCollection_List<TopoDS_Shape> theArgs,
-                               in TopoDS_Shape theResult,
+    public static bool IsValid(NCollection_List<Shape> theArgs,
+                               in Shape theResult,
                                bool closedSolid = false,
                                bool GeomCtrl = true)
     {
-        if (theResult.IsNull())
+        if (theResult.IsNull)
         {
             return true;
         }
         bool validate = false;
 
-        NCollection_Map<TopoDS_Shape> allFaces = new(TopTools_ShapeMapHasher.Instance);
-        TopExp_Explorer tEx = new();
-        NCollection_List<TopoDS_Shape>.Iterator itLOS = new();
+        NCollection_Map<Shape> allFaces = new(ShapeHasher.Instance);
+        Explorer tEx = new();
+        NCollection_List<Shape>.Iterator itLOS = new();
         for (itLOS.Initialize(theArgs); itLOS.More(); itLOS.Next())
         {
             if (itLOS.Value().IsSame(theResult))
@@ -804,13 +810,13 @@ public static class BRepAlgo
                 validate = true;
                 break;
             }
-            for (tEx.Init(itLOS.Value(), TopAbs_FACE); tEx.More(); tEx.Next())
+            for (tEx.Init(itLOS.Value(), ShapeType.Face); tEx.More(); tEx.Next())
             {
                 allFaces.Add(tEx.Current());
             }
         }
 
-        TopoDS_Compound toCheck = new();
+        Compound toCheck = new();
 
         if (allFaces.IsEmpty())
         {
@@ -826,22 +832,22 @@ public static class BRepAlgo
         }
         else if (!validate)
         {
-            BRep_Builder bB = new();
-            TopoDS_Face curf;
-            for (tEx.Init(theResult, TopAbs_FACE); tEx.More(); tEx.Next())
+            BrepBuilder bB = new();
+            Face curf;
+            for (tEx.Init(theResult, ShapeType.Face); tEx.More(); tEx.Next())
             {
-                curf = TopoDS.Face(tEx.Current());
+                curf = ShapeCasts.Face(tEx.Current());
                 if (!allFaces.Contains(curf))
                 {
-                    if (toCheck.IsNull())
+                    if (toCheck.IsNull)
                     {
                         bB.MakeCompound(ref toCheck);
                     }
-                    BRepTools.Update(curf);
+                    BrepTools.Update(curf);
                     bB.Add(toCheck, curf);
                 }
             }
-            if (toCheck.IsNull())
+            if (toCheck.IsNull)
             {
                 validate = true;
             }
@@ -853,7 +859,7 @@ public static class BRepAlgo
                     // Check if the problem is not just BRepCheck_InvalidSameParameterFlag
                     NCollection_List<BRepCheck_Status>.Iterator itl = new();
                     BRepCheck_Status sta;
-                    for (tEx.Init(toCheck, TopAbs_FACE); tEx.More(); tEx.Next())
+                    for (tEx.Init(toCheck, ShapeType.Face); tEx.More(); tEx.Next())
                     {
                         if (ana.Result(tEx.Current()) is not null)
                         {
@@ -864,8 +870,8 @@ public static class BRepAlgo
                                 if (sta != BRepCheck_NoError)
                                 {
                                     NCollection_List<BRepCheck_Status>.Iterator ilt = new();
-                                    TopExp_Explorer exp = new();
-                                    for (exp.Init(tEx.Current(), TopAbs_EDGE); exp.More(); exp.Next())
+                                    Explorer exp = new();
+                                    for (exp.Init(tEx.Current(), ShapeType.Edge); exp.More(); exp.Next())
                                     {
                                         BRepCheck_Result res = ana.Result(exp.Current())!;
                                         for (res.InitContextIterator(); res.MoreShapeInContext(); res.NextShapeInContext())
@@ -880,10 +886,10 @@ public static class BRepAlgo
                                                     if (sta == BRepCheck_InvalidSameParameterFlag
                                                         || sta == BRepCheck_InvalidSameRangeFlag)
                                                     {
-                                                        bB.SameRange(TopoDS.Edge(exp.Current()), false);
-                                                        bB.SameParameter(TopoDS.Edge(exp.Current()), false);
-                                                        BRepLib.SameParameter(TopoDS.Edge(exp.Current()),
-                                                                              BRep_Tool.Tolerance(TopoDS.Edge(exp.Current())));
+                                                        bB.SameRange(ShapeCasts.Edge(exp.Current()), false);
+                                                        bB.SameParameter(ShapeCasts.Edge(exp.Current()), false);
+                                                        BRepLib.SameParameter(ShapeCasts.Edge(exp.Current()),
+                                                                              Tool.Tolerance(ShapeCasts.Edge(exp.Current())));
                                                         break;
                                                     }
                                                 }
@@ -907,11 +913,11 @@ public static class BRepAlgo
         }
 
         BRepCheck_Shell? HR = null;
-        for (tEx.Init(theResult, TopAbs_SHELL); tEx.More(); tEx.Next())
+        for (tEx.Init(theResult, ShapeType.Shell); tEx.More(); tEx.Next())
         {
             if (HR is null)
             {
-                HR = new BRepCheck_Shell(TopoDS.Shell(tEx.Current()));
+                HR = new BRepCheck_Shell(ShapeCasts.Shell(tEx.Current()));
             }
             else
             {
@@ -938,7 +944,7 @@ public static class BRepAlgo
     }
 
     /// <summary>Whether the shape is valid topologically (BRepCheck without the geometric controls).</summary>
-    public static bool IsTopologicallyValid(in TopoDS_Shape S)
+    public static bool IsTopologicallyValid(in Shape S)
     {
         BRepCheck_Analyzer ana = new(S, false);
         return ana.IsValid();

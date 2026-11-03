@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -58,22 +61,22 @@ public sealed class ShapeAnalysis_ShapeContents
     private bool myTrimmed3dMode;
     private bool myOffsetCurveMode;
     private bool myTrimmed2dMode;
-    private readonly NCollection_HSequence<TopoDS_Shape> myBigSplineSec;
-    private readonly NCollection_HSequence<TopoDS_Shape> myIndirectSec;
-    private readonly NCollection_HSequence<TopoDS_Shape> myOffsetSurfaceSec;
-    private readonly NCollection_HSequence<TopoDS_Shape> myTrimmed3dSec;
-    private readonly NCollection_HSequence<TopoDS_Shape> myOffsetCurveSec;
-    private readonly NCollection_HSequence<TopoDS_Shape> myTrimmed2dSec;
+    private readonly NCollection_HSequence<Shape> myBigSplineSec;
+    private readonly NCollection_HSequence<Shape> myIndirectSec;
+    private readonly NCollection_HSequence<Shape> myOffsetSurfaceSec;
+    private readonly NCollection_HSequence<Shape> myTrimmed3dSec;
+    private readonly NCollection_HSequence<Shape> myOffsetCurveSec;
+    private readonly NCollection_HSequence<Shape> myTrimmed2dSec;
 
     /// <summary>Initializes the fields and clears the flags.</summary>
     public ShapeAnalysis_ShapeContents()
     {
-        myBigSplineSec = new NCollection_HSequence<TopoDS_Shape>();
-        myIndirectSec = new NCollection_HSequence<TopoDS_Shape>();
-        myOffsetSurfaceSec = new NCollection_HSequence<TopoDS_Shape>();
-        myTrimmed3dSec = new NCollection_HSequence<TopoDS_Shape>();
-        myOffsetCurveSec = new NCollection_HSequence<TopoDS_Shape>();
-        myTrimmed2dSec = new NCollection_HSequence<TopoDS_Shape>();
+        myBigSplineSec = new NCollection_HSequence<Shape>();
+        myIndirectSec = new NCollection_HSequence<Shape>();
+        myOffsetSurfaceSec = new NCollection_HSequence<Shape>();
+        myTrimmed3dSec = new NCollection_HSequence<Shape>();
+        myOffsetCurveSec = new NCollection_HSequence<Shape>();
+        myTrimmed2dSec = new NCollection_HSequence<Shape>();
         ClearFlags();
     }
 
@@ -135,21 +138,21 @@ public sealed class ShapeAnalysis_ShapeContents
     }
 
     /// <summary>Counts the sub-shapes of the shape and stores sub-shapes according to the flags.</summary>
-    public void Perform(in TopoDS_Shape Shape)
+    public void Perform(in Shape Shape)
     {
         Clear();
         //  On y va
-        TopExp_Explorer exp = new();
-        var mapsh = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        Explorer exp = new();
+        var mapsh = new NCollection_Map<Shape>(ShapeHasher.Instance);
         //  On note pour les SOLIDES : ceux qui ont des trous (plus d un SHELL)
 
-        for (exp.Init(Shape, TopAbs_SOLID); exp.More(); exp.Next())
+        for (exp.Init(Shape, ShapeType.Solid); exp.More(); exp.Next())
         {
-            TopoDS_Solid sol = TopoDS.Solid(exp.Current());
+            Solid sol = ShapeCasts.Solid(exp.Current());
             sol.Location(new Placement());
             mapsh.Add(sol);
             int nbs = 0;
-            for (var shel = new TopExp_Explorer(sol, TopAbs_SHELL); shel.More(); shel.Next())
+            for (var shel = new Explorer(sol, ShapeType.Shell); shel.More(); shel.Next())
             {
                 nbs++;
             }
@@ -165,13 +168,13 @@ public sealed class ShapeAnalysis_ShapeContents
         //  Ensuite une soustraction, et on a les faces libres
         mapsh.Clear();
         int nbfaceshell = 0;
-        for (exp.Init(Shape, TopAbs_SHELL); exp.More(); exp.Next())
+        for (exp.Init(Shape, ShapeType.Shell); exp.More(); exp.Next())
         {
             myNbShells++;
-            TopoDS_Shell she = TopoDS.Shell(exp.Current());
+            Shell she = ShapeCasts.Shell(exp.Current());
             she.Location(new Placement());
             mapsh.Add(she);
-            for (var shel = new TopExp_Explorer(she, TopAbs_FACE); shel.More(); shel.Next())
+            for (var shel = new Explorer(she, ShapeType.Face); shel.More(); shel.Next())
             {
                 nbfaceshell++;
             }
@@ -186,14 +189,14 @@ public sealed class ShapeAnalysis_ShapeContents
         //  * Edge : OffsetCurve
 
         mapsh.Clear();
-        for (exp.Init(Shape, TopAbs_FACE); exp.More(); exp.Next())
+        for (exp.Init(Shape, ShapeType.Face); exp.More(); exp.Next())
         {
-            TopoDS_Face face = TopoDS.Face(exp.Current());
+            Face face = ShapeCasts.Face(exp.Current());
             myNbFaces++;
-            Geom_Surface? surf = BRep_Tool.Surface(face, out Placement _);
+            Surface? surf = Tool.Surface(face, out Placement _);
             face.Location(new Placement());
             mapsh.Add(face);
-            if (surf is Geom_RectangularTrimmedSurface trsu)
+            if (surf is TrimmedSurface trsu)
             {
                 myNbTrimSurf++;
                 surf = trsu.BasisSurface();
@@ -205,10 +208,10 @@ public sealed class ShapeAnalysis_ShapeContents
                 myNbC0Surfaces++;
             }
 
-            if (surf is Geom_BSplineSurface bsps)
+            if (surf is BSplineSurface bsps)
             {
                 myNbBSplibeSurf++;
-                if (bsps.NbUPoles() * bsps.NbVPoles() > 8192)
+                if (bsps.UPoleCount * bsps.VPoleCount > 8192)
                 {
                     myNbBigSplines++;
                     if (myBigSplineMode)
@@ -217,7 +220,7 @@ public sealed class ShapeAnalysis_ShapeContents
                     }
                 }
             }
-            if (surf is Geom_ElementarySurface els)
+            if (surf is ElementarySurface els)
             {
                 if (!els.Position().Direct())
                 {
@@ -229,7 +232,7 @@ public sealed class ShapeAnalysis_ShapeContents
                 }
             }
             // OCCT dereferences a null surface here (a face without one); the port throws NullReferenceException.
-            if (surf!.IsKind(typeof(Geom_OffsetSurface)))
+            if (surf!.IsKind(typeof(OffsetSurface)))
             {
                 myNbOffsetSurf++;
                 if (myOffsetSurfaceMode)
@@ -237,28 +240,28 @@ public sealed class ShapeAnalysis_ShapeContents
                     myOffsetSurfaceSec.Append(face);
                 }
             }
-            else if (surf.IsKind(typeof(Geom_BezierSurface)))
+            else if (surf.IsKind(typeof(BezierSurface)))
             {
                 myNbBezierSurf++;
             }
 
             int maxseam = 0, nbwires = 0;
-            for (var wires = new TopExp_Explorer(face, TopAbs_WIRE); wires.More(); wires.Next())
+            for (var wires = new Explorer(face, ShapeType.Wire); wires.More(); wires.Next())
             {
-                TopoDS_Wire wire = TopoDS.Wire(wires.Current());
+                Wire wire = ShapeCasts.Wire(wires.Current());
                 int nbseam = 0;
                 nbwires++;
-                for (var edg = new TopExp_Explorer(wire, TopAbs_EDGE); edg.More(); edg.Next())
+                for (var edg = new Explorer(wire, ShapeType.Edge); edg.More(); edg.Next())
                 {
-                    TopoDS_Edge edge = TopoDS.Edge(edg.Current());
-                    if (BRep_Tool.IsClosed(edge, face))
+                    Edge edge = ShapeCasts.Edge(edg.Current());
+                    if (Tool.IsClosed(edge, face))
                     {
                         nbseam++;
                     }
-                    Geom_Curve? c3d = BRep_Tool.Curve(edge, out double first, out double last);
+                    Curve3D? c3d = Tool.Curve(edge, out double first, out double last);
                     if (c3d is not null)
                     {
-                        if (c3d.IsKind(typeof(Geom_TrimmedCurve)))
+                        if (c3d.IsKind(typeof(TrimmedCurve3D)))
                         {
                             myNbTrimmedCurve3d++;
                             if (myTrimmed3dMode)
@@ -267,12 +270,12 @@ public sealed class ShapeAnalysis_ShapeContents
                             }
                         }
                     }
-                    Geom2d_Curve? c2d = BRep_Tool.CurveOnSurface(edge, face, out first, out last);
+                    Curve2D? c2d = Tool.CurveOnSurface(edge, face, out first, out last);
                     if (c2d is null)
                     {
                         myNbNoPCurve++;
                     }
-                    else if (c2d.IsKind(typeof(Geom2d_OffsetCurve)))
+                    else if (c2d.IsKind(typeof(OffsetCurve2D)))
                     {
                         myNbOffsetCurves++;
                         if (myOffsetCurveMode)
@@ -280,7 +283,7 @@ public sealed class ShapeAnalysis_ShapeContents
                             myOffsetCurveSec.Append(face);
                         }
                     }
-                    else if (c2d.IsKind(typeof(Geom2d_TrimmedCurve)))
+                    else if (c2d.IsKind(typeof(TrimmedCurve2D)))
                     {
                         myNbTrimmedCurve2d++;
                         if (myTrimmed2dMode)
@@ -310,9 +313,9 @@ public sealed class ShapeAnalysis_ShapeContents
         myNbSharedFaces = mapsh.Extent();
 
         mapsh.Clear();
-        for (exp.Init(Shape, TopAbs_WIRE); exp.More(); exp.Next())
+        for (exp.Init(Shape, ShapeType.Wire); exp.More(); exp.Next())
         {
-            TopoDS_Wire wire = TopoDS.Wire(exp.Current());
+            Wire wire = ShapeCasts.Wire(exp.Current());
             wire.Location(new Placement());
             mapsh.Add(wire);
             myNbWires++;
@@ -323,14 +326,14 @@ public sealed class ShapeAnalysis_ShapeContents
         myNbFreeFaces = myNbFaces - nbfaceshell;
 
         mapsh.Clear();
-        for (exp.Init(Shape, TopAbs_EDGE); exp.More(); exp.Next())
+        for (exp.Init(Shape, ShapeType.Edge); exp.More(); exp.Next())
         {
-            TopoDS_Edge edge = TopoDS.Edge(exp.Current());
+            Edge edge = ShapeCasts.Edge(exp.Current());
             edge.Location(new Placement());
             mapsh.Add(edge);
             myNbEdges++;
-            Geom_Curve? c3d = BRep_Tool.Curve(edge, out Placement _, out double _, out double _);
-            if (c3d is not null && c3d.IsKind(typeof(Geom_OffsetCurve)))
+            Curve3D? c3d = Tool.Curve(edge, out Placement _, out double _, out double _);
+            if (c3d is not null && c3d.IsKind(typeof(OffsetCurve3D)))
             {
                 myNbOffsetCurves++;
                 if (myOffsetCurveMode)
@@ -346,9 +349,9 @@ public sealed class ShapeAnalysis_ShapeContents
         myNbSharedEdges = mapsh.Extent();
 
         mapsh.Clear();
-        for (exp.Init(Shape, TopAbs_VERTEX); exp.More(); exp.Next())
+        for (exp.Init(Shape, ShapeType.Vertex); exp.More(); exp.Next())
         {
-            TopoDS_Vertex vert = TopoDS.Vertex(exp.Current());
+            Vertex vert = ShapeCasts.Vertex(exp.Current());
             vert.Location(new Placement());
             myNbVertices++;
             mapsh.Add(vert);
@@ -356,9 +359,9 @@ public sealed class ShapeAnalysis_ShapeContents
         myNbSharedVertices = mapsh.Extent();
 
         mapsh.Clear();
-        for (exp.Init(Shape, TopAbs_EDGE, TopAbs_FACE); exp.More(); exp.Next())
+        for (exp.Init(Shape, ShapeType.Edge, ShapeType.Face); exp.More(); exp.Next())
         {
-            TopoDS_Edge edge = TopoDS.Edge(exp.Current());
+            Edge edge = ShapeCasts.Edge(exp.Current());
             edge.Location(new Placement());
             myNbFreeEdges++;
             mapsh.Add(edge);
@@ -366,9 +369,9 @@ public sealed class ShapeAnalysis_ShapeContents
         myNbSharedFreeEdges = mapsh.Extent();
 
         mapsh.Clear();
-        for (exp.Init(Shape, TopAbs_WIRE, TopAbs_FACE); exp.More(); exp.Next())
+        for (exp.Init(Shape, ShapeType.Wire, ShapeType.Face); exp.More(); exp.Next())
         {
-            TopoDS_Wire wire = TopoDS.Wire(exp.Current());
+            Wire wire = ShapeCasts.Wire(exp.Current());
             wire.Location(new Placement());
             myNbFreeWires++;
             mapsh.Add(wire);
@@ -431,10 +434,10 @@ public sealed class ShapeAnalysis_ShapeContents
     public int NbSharedFreeEdges() => myNbSharedFreeEdges;
     public int NbSharedEdges() => myNbSharedEdges;
     public int NbSharedVertices() => myNbSharedVertices;
-    public NCollection_HSequence<TopoDS_Shape> BigSplineSec() => myBigSplineSec;
-    public NCollection_HSequence<TopoDS_Shape> IndirectSec() => myIndirectSec;
-    public NCollection_HSequence<TopoDS_Shape> OffsetSurfaceSec() => myOffsetSurfaceSec;
-    public NCollection_HSequence<TopoDS_Shape> Trimmed3dSec() => myTrimmed3dSec;
-    public NCollection_HSequence<TopoDS_Shape> OffsetCurveSec() => myOffsetCurveSec;
-    public NCollection_HSequence<TopoDS_Shape> Trimmed2dSec() => myTrimmed2dSec;
+    public NCollection_HSequence<Shape> BigSplineSec() => myBigSplineSec;
+    public NCollection_HSequence<Shape> IndirectSec() => myIndirectSec;
+    public NCollection_HSequence<Shape> OffsetSurfaceSec() => myOffsetSurfaceSec;
+    public NCollection_HSequence<Shape> Trimmed3dSec() => myTrimmed3dSec;
+    public NCollection_HSequence<Shape> OffsetCurveSec() => myOffsetCurveSec;
+    public NCollection_HSequence<Shape> Trimmed2dSec() => myTrimmed2dSec;
 }

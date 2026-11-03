@@ -1,14 +1,17 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -58,10 +61,10 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
         return aText;
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
+        Assert.True(BrepTools.Write(theShape, aFile, true, false, FormatVersion.FormatVersion_VERSION_3));
         string aText = File.ReadAllText(aFile);
         File.Delete(aFile);
         return aText;
@@ -71,7 +74,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
     /// Native writes the shape; both read it (the port twice: frozen, as a caller's, and unfrozen, as a ported caller's).
     /// Null if native OCCT can't write or read it.
     /// </summary>
-    private (N.TopoDS_Shape N, TopoDS_Shape P, TopoDS_Shape U)? Read(N.TopoDS_Shape theShape)
+    private (N.TopoDS_Shape N, Shape P, Shape U)? Read(N.TopoDS_Shape theShape)
     {
         string aFile = NewFile();
         if (!N.BRepTools.Write(theShape, aFile, true, false, N.TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3))
@@ -86,10 +89,10 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
                 return null;
             }
         }
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile), aFile);
-        Assert.True(BRepTools.Read(out TopoDS_Shape anUnfrozen, aFile), aFile);
+        Assert.True(BrepTools.Read(out Shape aPShape, aFile), aFile);
+        Assert.True(BrepTools.Read(out Shape anUnfrozen, aFile), aFile);
         File.Delete(aFile);
-        if (!aPShape.IsNull())
+        if (!aPShape.IsNull)
         {
             aPShape.TShape()!.FreezeGraph(); // a caller's shape
         }
@@ -100,7 +103,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
 
     // On the frozen input (the public path: a copy at the entry, the result frozen) or on an unfrozen one (a ported
     // caller's: fixed in place, InternalShape).
-    private static TopoDS_Shape PortFixShape(in TopoDS_Shape theShape, double thePrecision, double theMaxTol,
+    private static Shape PortFixShape(in Shape theShape, double thePrecision, double theMaxTol,
                                              out bool theStatus, out bool theDone1, out bool theDone2)
     {
         var aFix = new ShapeFix_Shape(theShape);
@@ -124,7 +127,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
 
     private void Compare(N.TopoDS_Shape theShape, string theWhat, double thePrecision = 1.0e-7, double theMaxTol = 1.0e-7)
     {
-        if (Read(theShape) is not (N.TopoDS_Shape aNS, TopoDS_Shape aPS, TopoDS_Shape aUS))
+        if (Read(theShape) is not (N.TopoDS_Shape aNS, Shape aPS, Shape aUS))
         {
             return;
         }
@@ -156,7 +159,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
         foreach (bool isFrozen in new[] { true, false })
         {
             string w = $"{theWhat} ({(isFrozen ? "frozen input" : "unfrozen input, in place")})";
-            TopoDS_Shape aPRes = new();
+            Shape aPRes = new();
             bool aPStatus = false, aPD1 = false, aPD2 = false;
             string? aPErr = null;
             try
@@ -203,7 +206,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
                 // both read from the native result's text: the canonical comparison of decision 581
                 string aFile = NewFile();
                 File.WriteAllText(aFile, aNT);
-                Assert.True(BRepTools.Read(out TopoDS_Shape aNP, aFile));
+                Assert.True(BrepTools.Read(out Shape aNP, aFile));
                 File.Delete(aFile);
                 CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aNP, aPRes, new CanonicalOptions { CheckValidity = false });
                 if (aCanon.IsIdentical)

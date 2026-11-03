@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Text;
@@ -12,10 +15,10 @@ namespace OcctNet.DataExchange.Tests.STEPControl;
 /// <summary>STEPControl's reader and writer, unit by unit (the comparison with native OCCT is in the oracle tests).</summary>
 public class STEPControlTests(ITestOutputHelper theOutput)
 {
-    private static string BRepText(in TopoDS_Shape theShape)
+    private static string BRepText(in Shape theShape)
     {
         using var aWriter = new StringWriter();
-        BRepTools.Write(theShape, aWriter);
+        BrepTools.Write(theShape, aWriter);
         return aWriter.ToString();
     }
 
@@ -36,8 +39,8 @@ public class STEPControlTests(ITestOutputHelper theOutput)
         Assert.True(aNbRoots > 0);
         int aNbTransferred = aReader.TransferRoots();
         Assert.True(aNbTransferred > 0);
-        TopoDS_Shape aShape = aReader.OneShape();
-        Assert.False(aShape.IsNull());
+        Shape aShape = aReader.OneShape();
+        Assert.False(aShape.IsNull);
         Assert.True(aShape.TShape()!.IsFrozen);
         theOutput.WriteLine($"{aNbRoots} roots, {aReader.NbShapes()} shapes, {BRepText(aShape).Length} chars of BRep");
     }
@@ -75,7 +78,7 @@ public class STEPControlTests(ITestOutputHelper theOutput)
                         aCancelled.ReadStream("screw.step", new MemoryStream(aBytes), anIndicator.Start()));
     }
 
-    private static TopoDS_Shape Box()
+    private static Shape Box()
     {
         return new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
     }
@@ -93,7 +96,7 @@ public class STEPControlTests(ITestOutputHelper theOutput)
     [Fact]
     public void WritesAndReadsBackABox()
     {
-        TopoDS_Shape aBox = Box();
+        Shape aBox = Box();
         string aBefore = BRepText(aBox);
         var aWriter = new STEPControl_Writer();
         Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, aWriter.Transfer(aBox, STEPControl_StepModelType.STEPControl_AsIs));
@@ -109,9 +112,9 @@ public class STEPControlTests(ITestOutputHelper theOutput)
         var aReader = new STEPControl_Reader();
         Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, aReader.ReadStream("box.stp", new MemoryStream(Encoding.UTF8.GetBytes(aText))));
         Assert.Equal(1, aReader.TransferRoots());
-        TopoDS_Shape aRead = aReader.OneShape();
-        Assert.Equal(TopAbs_ShapeEnum.TopAbs_SOLID, aRead.ShapeType());
-        var aProps = new GProp_GProps();
+        Shape aRead = aReader.OneShape();
+        Assert.Equal(ShapeType.Solid, aRead.ShapeType());
+        var aProps = new Properties();
         BRepGProp.VolumeProperties(aRead, aProps);
         Assert.Equal(6000.0, aProps.Mass(), 6);
     }
@@ -119,9 +122,9 @@ public class STEPControlTests(ITestOutputHelper theOutput)
     [Fact]
     public void WritesAnAssemblyOfLocatedInstances()
     {
-        TopoDS_Shape aBox = Box();
-        var aBuilder = new BRep_Builder();
-        var aCompound = new TopoDS_Compound();
+        Shape aBox = Box();
+        var aBuilder = new BrepBuilder();
+        var aCompound = new Compound();
         aBuilder.MakeCompound(ref aCompound);
         var aTrsf = new Transform3D();
         aTrsf.SetTranslation(new Vector3D(100.0, 0.0, 0.0));
@@ -137,9 +140,9 @@ public class STEPControlTests(ITestOutputHelper theOutput)
         var aReader = new STEPControl_Reader();
         aReader.ReadStream("asm.stp", new MemoryStream(Encoding.UTF8.GetBytes(aText)));
         aReader.TransferRoots();
-        TopoDS_Shape aRead = aReader.OneShape();
-        Assert.Equal(TopAbs_ShapeEnum.TopAbs_COMPOUND, aRead.ShapeType());
-        var aProps = new GProp_GProps();
+        Shape aRead = aReader.OneShape();
+        Assert.Equal(ShapeType.Compound, aRead.ShapeType());
+        var aProps = new Properties();
         BRepGProp.VolumeProperties(aRead, aProps);
         Assert.Equal(12000.0, aProps.Mass(), 6);
     }

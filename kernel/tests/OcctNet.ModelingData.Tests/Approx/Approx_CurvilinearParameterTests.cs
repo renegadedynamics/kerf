@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
 
@@ -9,11 +12,11 @@ namespace OcctNet.ModelingData.Tests;
 // Approx_CurvlinFunc and Approx_CurvilinearParameter on curves of known length (OCCT has no GTests for them).
 public class Approx_CurvilinearParameterTests
 {
-    private static GeomAdaptor_Curve Ellipse(out double theLength)
+    private static CurveAdaptor Ellipse(out double theLength)
     {
-        Geom_Ellipse anEllipse = new(new Frame3D(new Point3D(1.0, -2.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 3.0, 1.0);
-        GeomAdaptor_Curve aCurve = new(anEllipse, 0.0, 0.75 * 2.0 * Math.PI);
-        theLength = GCPnts_AbscissaPoint.Length(new GeomAdaptor_Curve(anEllipse, 0.0, 0.75 * 2.0 * Math.PI), 1.0e-12);
+        EllipseCurve3D anEllipse = new(new Frame3D(new Point3D(1.0, -2.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 3.0, 1.0);
+        CurveAdaptor aCurve = new(anEllipse, 0.0, 0.75 * 2.0 * Math.PI);
+        theLength = AbscissaPoint.Length(new CurveAdaptor(anEllipse, 0.0, 0.75 * 2.0 * Math.PI), 1.0e-12);
         return aCurve;
     }
 
@@ -26,8 +29,8 @@ public class Approx_CurvilinearParameterTests
     [Fact]
     public void CurvlinFunc_GetUParameter_InvertsGetSParameter()
     {
-        GeomAdaptor_Curve aCurve = Ellipse(out double aLength);
-        Approx_CurvlinFunc aFunc = new(aCurve, 1.0e-10);
+        CurveAdaptor aCurve = Ellipse(out double aLength);
+        CurvlinFunc aFunc = new(aCurve, 1.0e-10);
         Assert.Equal(0.0, aFunc.FirstParameter());
         Assert.Equal(1.0, aFunc.LastParameter());
         Assert.Equal(aLength, aFunc.GetLength(), 1.0e-8);
@@ -37,15 +40,15 @@ public class Approx_CurvilinearParameterTests
             double s = i / 20.0;
             double u = aFunc.GetUParameter(aCurve, s, 1);
             Assert.Equal(s, aFunc.GetSParameter(u), 1.0e-8);
-            Assert.Equal(s * aLength, GCPnts_AbscissaPoint.Length(aCurve, 0.0, u, 1.0e-12), 1.0e-7);
+            Assert.Equal(s * aLength, AbscissaPoint.Length(aCurve, 0.0, u, 1.0e-12), 1.0e-7);
         }
     }
 
     [Fact]
     public void CurvlinFunc_EvalCase1_HasUnitSpeedTimesLength()
     {
-        GeomAdaptor_Curve aCurve = Ellipse(out double aLength);
-        Approx_CurvlinFunc aFunc = new(aCurve, 1.0e-10);
+        CurveAdaptor aCurve = Ellipse(out double aLength);
+        CurvlinFunc aFunc = new(aCurve, 1.0e-10);
         NCollection_Array1<double> aRes = new(0, 2);
         for (int i = 0; i <= 10; i++)
         {
@@ -70,9 +73,9 @@ public class Approx_CurvilinearParameterTests
     [Fact]
     public void CurvlinFunc_Trim_KeepsTheCurvilinearParameter()
     {
-        GeomAdaptor_Curve aCurve = Ellipse(out _);
-        Approx_CurvlinFunc aWhole = new(aCurve, 1.0e-10);
-        Approx_CurvlinFunc aTrimmed = new(aCurve, 1.0e-10);
+        CurveAdaptor aCurve = Ellipse(out _);
+        CurvlinFunc aWhole = new(aCurve, 1.0e-10);
+        CurvlinFunc aTrimmed = new(aCurve, 1.0e-10);
         aTrimmed.Trim(0.25, 0.75, 1.0e-9);
         Assert.Equal(0.25, aTrimmed.FirstParameter());
         Assert.Equal(0.75, aTrimmed.LastParameter());
@@ -91,27 +94,27 @@ public class Approx_CurvilinearParameterTests
     [Fact]
     public void Curve3d_IsParametrisedByArcLength()
     {
-        GeomAdaptor_Curve aCurve = Ellipse(out double aLength);
-        Approx_CurvilinearParameter anApprox = new(aCurve, 1.0e-6, C2, 14, 30);
+        CurveAdaptor aCurve = Ellipse(out double aLength);
+        CurvilinearParameter anApprox = new(aCurve, 1.0e-6, C2, 14, 30);
 
-        Assert.True(anApprox.IsDone());
-        Assert.True(anApprox.HasResult());
+        Assert.True(anApprox.IsDone);
+        Assert.True(anApprox.HasResult);
         Assert.True(anApprox.MaxError3d() <= 1.0e-6);
         Assert.Equal(0.0, anApprox.MaxError2d1());
         Assert.Null(anApprox.Curve2d1());
-        Geom_BSplineCurve aResult = anApprox.Curve3d()!;
+        BSplineCurve3D aResult = anApprox.Curve3d()!;
         Assert.Same(aResult, anApprox.Curve3d());
         Assert.Equal(0.0, aResult.FirstParameter());
         Assert.Equal(1.0, aResult.LastParameter());
         Assert.True(aResult.Value(0.0).Distance(aCurve.Value(0.0)) < 1.0e-6);
         Assert.True(aResult.Value(1.0).Distance(aCurve.Value(aCurve.LastParameter())) < 1.0e-6);
 
-        GeomAdaptor_Curve aResultAdaptor = new(aResult);
+        CurveAdaptor aResultAdaptor = new(aResult);
         for (int i = 1; i <= 20; i++)
         {
             double s = i / 20.0;
             Assert.True(OnEllipse(aResult.Value(s)) < 1.0e-5);
-            Assert.Equal(s * aLength, GCPnts_AbscissaPoint.Length(aResultAdaptor, 0.0, s, 1.0e-10), 1.0e-4);
+            Assert.Equal(s * aLength, AbscissaPoint.Length(aResultAdaptor, 0.0, s, 1.0e-10), 1.0e-4);
             aResult.D1(s, out _, out Vector3D aD1);
             Assert.Equal(aLength, aD1.Magnitude(), 1.0e-3 * aLength);
         }
@@ -122,18 +125,18 @@ public class Approx_CurvilinearParameterTests
     [Fact]
     public void CurveOnSurface_HelixOnCylinder()
     {
-        Geom_CylindricalSurface aCylinder = new(new CoordinateSystem(), 2.0);
-        Geom2d_Line aLine = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.5));
-        Geom2dAdaptor_Curve aC2d = new(aLine, 0.0, 6.0);
-        GeomAdaptor_Surface aSurf = new(aCylinder);
-        double aLength = GCPnts_AbscissaPoint.Length(new Adaptor3d_CurveOnSurface(aC2d, aSurf), 1.0e-12);
+        CylindricalSurface aCylinder = new(new CoordinateSystem(), 2.0);
+        LineCurve2D aLine = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.5));
+        CurveAdaptor2D aC2d = new(aLine, 0.0, 6.0);
+        SurfaceAdaptor aSurf = new(aCylinder);
+        double aLength = AbscissaPoint.Length(new CurveOnSurface(aC2d, aSurf), 1.0e-12);
 
-        Approx_CurvilinearParameter anApprox = new(aC2d, aSurf, 1.0e-6, C1, 14, 30);
-        Assert.True(anApprox.HasResult());
+        CurvilinearParameter anApprox = new(aC2d, aSurf, 1.0e-6, C1, 14, 30);
+        Assert.True(anApprox.HasResult);
         Assert.True(anApprox.MaxError3d() <= 1.0e-6);
         Assert.True(anApprox.MaxError2d1() <= 1.0e-6);
-        Geom_BSplineCurve a3d = anApprox.Curve3d()!;
-        Geom2d_BSplineCurve a2d = anApprox.Curve2d1()!;
+        BSplineCurve3D a3d = anApprox.Curve3d()!;
+        BSplineCurve2D a2d = anApprox.Curve2d1()!;
         Assert.Null(anApprox.Curve2d2());
         for (int i = 0; i <= 20; i++)
         {
@@ -151,20 +154,20 @@ public class Approx_CurvilinearParameterTests
     [Fact]
     public void CurveOnTwoSurfaces_SameCircleOnShiftedPlanes()
     {
-        Geom_Plane aPlane1 = new(new CoordinateSystem());
-        Geom_Plane aPlane2 = new(new CoordinateSystem(new Point3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)));
+        PlaneSurface aPlane1 = new(new CoordinateSystem());
+        PlaneSurface aPlane2 = new(new CoordinateSystem(new Point3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)));
         // An ellipse's arc on plane 1 (non-uniform speed), and the same arc on plane 2, where u is shifted by -1.
-        Geom2d_Ellipse anE1 = new(new Frame2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0)), 2.0, 1.0);
-        Geom2d_Ellipse anE2 = new(new Frame2D(new Point2D(-1.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0)), 2.0, 1.0);
-        Geom2dAdaptor_Curve aC1 = new(anE1, 0.0, 3.0);
-        Geom2dAdaptor_Curve aC2 = new(anE2, 0.0, 3.0);
-        GeomAdaptor_Surface aS1 = new(aPlane1), aS2 = new(aPlane2);
-        double aLength = GCPnts_AbscissaPoint.Length(new Adaptor3d_CurveOnSurface(aC1, aS1), 1.0e-12);
+        EllipseCurve2D anE1 = new(new Frame2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0)), 2.0, 1.0);
+        EllipseCurve2D anE2 = new(new Frame2D(new Point2D(-1.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0)), 2.0, 1.0);
+        CurveAdaptor2D aC1 = new(anE1, 0.0, 3.0);
+        CurveAdaptor2D aC2 = new(anE2, 0.0, 3.0);
+        SurfaceAdaptor aS1 = new(aPlane1), aS2 = new(aPlane2);
+        double aLength = AbscissaPoint.Length(new CurveOnSurface(aC1, aS1), 1.0e-12);
 
-        Approx_CurvilinearParameter anApprox = new(aC1, aS1, aC2, aS2, 1.0e-6, C1, 14, 30);
-        Assert.True(anApprox.HasResult());
-        Geom_BSplineCurve a3d = anApprox.Curve3d()!;
-        Geom2d_BSplineCurve a2d1 = anApprox.Curve2d1()!, a2d2 = anApprox.Curve2d2()!;
+        CurvilinearParameter anApprox = new(aC1, aS1, aC2, aS2, 1.0e-6, C1, 14, 30);
+        Assert.True(anApprox.HasResult);
+        BSplineCurve3D a3d = anApprox.Curve3d()!;
+        BSplineCurve2D a2d1 = anApprox.Curve2d1()!, a2d2 = anApprox.Curve2d2()!;
         Assert.True(anApprox.MaxError2d2() <= 1.0e-6);
         for (int i = 0; i <= 20; i++)
         {
@@ -195,11 +198,11 @@ public class Approx_CurvilinearParameterTests
         NCollection_Array1<double> aKnots1 = new(1, 3), aKnots2 = new(1, 3);
         aKnots1[1] = 0.0; aKnots1[2] = 0.3; aKnots1[3] = 1.0;
         aKnots2[1] = 0.0; aKnots2[2] = 0.6; aKnots2[3] = 1.0;
-        Geom2d_BSplineCurve aB1 = new(aPoles, aKnots1, aMults, 2), aB2 = new(aPoles, aKnots2, aMults, 2);
-        GeomAdaptor_Surface aPlane = new(new Geom_Plane(new CoordinateSystem()));
-        Assert.Equal(2, new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aB2), aPlane).NbIntervals(C3));
+        BSplineCurve2D aB1 = new(aPoles, aKnots1, aMults, 2), aB2 = new(aPoles, aKnots2, aMults, 2);
+        SurfaceAdaptor aPlane = new(new PlaneSurface(new CoordinateSystem()));
+        Assert.Equal(2, new CurveOnSurface(new CurveAdaptor2D(aB2), aPlane).NbIntervals(C3));
 
-        Approx_CurvlinFunc aFunc = new(new Geom2dAdaptor_Curve(aB1), new Geom2dAdaptor_Curve(aB2), aPlane, aPlane, 1.0e-9);
+        CurvlinFunc aFunc = new(new CurveAdaptor2D(aB1), new CurveAdaptor2D(aB2), aPlane, aPlane, 1.0e-9);
         Assert.Equal(2, aFunc.NbIntervals(C3)); // 3 with the second curve's knot
         NCollection_Array1<double> aT = new(1, 3);
         aFunc.Intervals(aT, C3);

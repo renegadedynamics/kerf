@@ -1,3 +1,5 @@
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
 using Occt;
 
 namespace Build123d;
@@ -9,7 +11,7 @@ public partial class Shell : Shape2D
     public Shell() : base(null) { }
 
     /// <summary>A shell wrapping an OCCT shell.</summary>
-    public Shell(TopoDS_Shell shell, string label = "", Color? color = null) : base(shell, label, color) { }
+    public Shell(global::Kerf.Topology.Shell shell, string label = "", Color? color = null) : base(shell, label, color) { }
 
     /// <summary>A shell of one face.</summary>
     public Shell(Face face, string label = "", Color? color = null) : base(MakeFromFaces([face], Constants.Tolerance), label, color) { }
@@ -22,7 +24,7 @@ public partial class Shell : Shape2D
     public Shell(IEnumerable<Face> faces, string label = "", Color? color = null, double tolerance = Constants.Tolerance)
         : base(MakeFromFaces(faces.ToList(), tolerance), label, color) { }
 
-    private static TopoDS_Shell MakeFromFaces(IReadOnlyList<Face> faces, double tolerance)
+    private static global::Kerf.Topology.Shell MakeFromFaces(IReadOnlyList<Face> faces, double tolerance)
     {
         if (tolerance <= 0)
             throw new ArgumentException("tolerance must be positive");
@@ -31,7 +33,7 @@ public partial class Shell : Shape2D
         return TopoUtil.MakeShell(faces.Select(f => f.TopoFace), tolerance);
     }
 
-    internal TopoDS_Shell TopoShell => TopoDS.Shell(TopoShape);
+    internal global::Kerf.Topology.Shell TopoShell => ShapeCasts.Shell(TopoShape);
 
     internal override double Order => 2.5;
 
@@ -46,7 +48,7 @@ public partial class Shell : Shape2D
                 return 0.0;
             var fix = new ShapeFix_Solid();
             var solid = fix.SolidFromShell(TopoShell);
-            var props = new GProp_GProps();
+            var props = new Properties();
             MassProperties(solid, props);
             return props.Mass();
         }
@@ -56,7 +58,7 @@ public partial class Shell : Shape2D
     public override Vector Center()
     {
         NeedsGeometry("center");
-        var props = new GProp_GProps();
+        var props = new Properties();
         BRepGProp.LinearProperties(TopoShape, props);
         var c = props.CentreOfMass();
         return new Vector(c);
@@ -72,12 +74,12 @@ public partial class Shell : Shape2D
     // ---- Factories ----
 
     /// <summary>A wire extruded into a shell.</summary>
-    public static Shell Extrude(Wire obj, Vector direction) => new(TopoDS.Shell(TopoUtil.Extrude(obj.TopoShape, direction)));
+    public static Shell Extrude(Wire obj, Vector direction) => new(ShapeCasts.Shell(TopoUtil.Extrude(obj.TopoShape, direction)));
 
     /// <summary>
     /// A loft through wires (open or closed), optionally starting or ending with a vertex; ruled (stepped) or smooth.
     /// </summary>
-    public static Shell MakeLoft(IEnumerable<Shape> objs, bool ruled = false) => new(TopoDS.Shell(TopoUtil.MakeLoft(objs, false, ruled)));
+    public static Shell MakeLoft(IEnumerable<Shape> objs, bool ruled = false) => new(ShapeCasts.Shell(TopoUtil.MakeLoft(objs, false, ruled)));
 
     /// <summary>A 1D profile revolved through <paramref name="angle"/> degrees about an axis.</summary>
     public static Shell Revolve(Shape profile, double angle, Axis axis)
@@ -85,7 +87,7 @@ public partial class Shell : Shape2D
         var wire = new Wire(profile.Edges());
         var ax1 = axis.ToGpAx1();
         var builder = new BRepPrimAPI_MakeRevol(wire.TopoShape, ax1, angle * Constants.DegToRad, true);
-        return new Shell(TopoDS.Shell(builder.Shape()));
+        return new Shell(ShapeCasts.Shell(builder.Shape()));
     }
 
     /// <summary>A 1D profile swept along a 1D path.</summary>
@@ -97,7 +99,7 @@ public partial class Shell : Shape2D
         builder.Add(profileWire.TopoShape, false, false);
         builder.SetTransitionMode(Face.TransitionMode(transition));
         builder.Build();
-        var result = new Shell(TopoDS.Shell(builder.Shape()));
+        var result = new Shell(ShapeCasts.Shell(builder.Shape()));
         return SkipClean.Clean ? result.Clean() : result;
     }
 
@@ -212,8 +214,8 @@ public partial class Shell : Shape2D
             sewing.Add(face.TopoShape);
         sewing.Perform();
         var sewn = TopoUtil.Downcast(sewing.SewedShape());
-        var shell = sewn.IsFace() ? new Shell(new Face(TopoDS.Face(sewn)))   // one face is a sheet of one face
-            : sewn.IsShell() ? new Shell(TopoDS.Shell(sewn))
+        var shell = sewn.IsFace() ? new Shell(new Face(ShapeCasts.Face(sewn)))   // one face is a sheet of one face
+            : sewn.IsShell() ? new Shell(ShapeCasts.Shell(sewn))
             : throw new ArgumentException("Sheet faces must sew into one connected shell");
         if (!shell.IsValid)
             throw new ArgumentException("Sheet faces produced an invalid shell");
@@ -242,7 +244,7 @@ public static class TwoD
     }
 
     /// <summary>The pieces of an edge split at a vertex (<c>BOPAlgo_Splitter</c>).</summary>
-    internal static List<TopoDS_Edge> SplitEdgeAtVertex(Edge edge, Vertex splitVertex)
+    internal static List<global::Kerf.Topology.Edge> SplitEdgeAtVertex(Edge edge, Vertex splitVertex)
     {
         var splitter = new BOPAlgo_Splitter();
         splitter.SetNonDestructive(true);   // leave the inputs' tolerances alone
@@ -250,10 +252,10 @@ public static class TwoD
         splitter.AddTool(splitVertex.TopoShape);
         splitter.Perform();
         var result = splitter.Shape();
-        var edges = new List<TopoDS_Edge>();
-        var explorer = new TopExp_Explorer(result, TopAbs_ShapeEnum.TopAbs_EDGE);
+        var edges = new List<global::Kerf.Topology.Edge>();
+        var explorer = new Explorer(result, global::Kerf.Topology.ShapeType.Edge);
         for (; explorer.More(); explorer.Next())
-            edges.Add(TopoDS.Edge(explorer.Current()));
+            edges.Add(ShapeCasts.Edge(explorer.Current()));
         return edges;
     }
 

@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -15,14 +17,14 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepAlgo_AsDes : Transient
 {
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> up = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> down = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> up = new(ShapeHasher.Instance);
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> down = new(ShapeHasher.Instance);
 
     [ThreadStatic]
-    private static NCollection_List<TopoDS_Shape>? theEmpty;
+    private static NCollection_List<Shape>? theEmpty;
 
     // OCCT: the function-level static empty list, shared and writable through ChangeDescendant
-    private static NCollection_List<TopoDS_Shape> empty() => theEmpty ??= new NCollection_List<TopoDS_Shape>();
+    private static NCollection_List<Shape> empty() => theEmpty ??= new NCollection_List<Shape>();
 
     /// <summary>An empty store.</summary>
     public BRepAlgo_AsDes()
@@ -37,27 +39,27 @@ public sealed class BRepAlgo_AsDes : Transient
     }
 
     /// <summary>Stores <paramref name="SS"/> as a future sub-shape of <paramref name="S"/>.</summary>
-    public void Add(in TopoDS_Shape S, in TopoDS_Shape SS)
+    public void Add(in Shape S, in Shape SS)
     {
         if (!down.IsBound(S))
         {
-            NCollection_List<TopoDS_Shape> L = new();
+            NCollection_List<Shape> L = new();
             down.Bind(S, L);
         }
         down[S].Append(SS);
 
         if (!up.IsBound(SS))
         {
-            NCollection_List<TopoDS_Shape> L = new();
+            NCollection_List<Shape> L = new();
             up.Bind(SS, L);
         }
         up[SS].Append(S);
     }
 
     /// <summary>Stores the shapes of <paramref name="SS"/> as future sub-shapes of <paramref name="S"/>.</summary>
-    public void Add(in TopoDS_Shape S, NCollection_List<TopoDS_Shape> SS)
+    public void Add(in Shape S, NCollection_List<Shape> SS)
     {
-        NCollection_List<TopoDS_Shape>.Iterator it = new(SS);
+        NCollection_List<Shape>.Iterator it = new(SS);
         for (; it.More(); it.Next())
         {
             Add(S, it.Value());
@@ -65,13 +67,13 @@ public sealed class BRepAlgo_AsDes : Transient
     }
 
     /// <summary>Whether <paramref name="S"/> has ascendants.</summary>
-    public bool HasAscendant(in TopoDS_Shape S) => up.IsBound(S);
+    public bool HasAscendant(in Shape S) => up.IsBound(S);
 
     /// <summary>Whether <paramref name="S"/> has descendants.</summary>
-    public bool HasDescendant(in TopoDS_Shape S) => down.IsBound(S);
+    public bool HasDescendant(in Shape S) => down.IsBound(S);
 
     /// <summary>The shapes containing <paramref name="S"/>.</summary>
-    public NCollection_List<TopoDS_Shape> Ascendant(in TopoDS_Shape S)
+    public NCollection_List<Shape> Ascendant(in Shape S)
     {
         if (up.IsBound(S))
         {
@@ -81,7 +83,7 @@ public sealed class BRepAlgo_AsDes : Transient
     }
 
     /// <summary>The future sub-shapes of <paramref name="S"/>.</summary>
-    public NCollection_List<TopoDS_Shape> Descendant(in TopoDS_Shape S)
+    public NCollection_List<Shape> Descendant(in Shape S)
     {
         if (down.IsBound(S))
         {
@@ -91,7 +93,7 @@ public sealed class BRepAlgo_AsDes : Transient
     }
 
     /// <summary>The future sub-shapes of <paramref name="S"/>, to change.</summary>
-    public NCollection_List<TopoDS_Shape> ChangeDescendant(in TopoDS_Shape S)
+    public NCollection_List<Shape> ChangeDescendant(in Shape S)
     {
         if (down.IsBound(S))
         {
@@ -101,10 +103,10 @@ public sealed class BRepAlgo_AsDes : Transient
     }
 
     // Replaces OldS by NewS in L (with OldS's orientation), once per distinct shape (IsEqual)
-    private static void ReplaceInList(in TopoDS_Shape OldS, in TopoDS_Shape NewS, NCollection_List<TopoDS_Shape> L)
+    private static void ReplaceInList(in Shape OldS, in Shape NewS, NCollection_List<Shape> L)
     {
-        NCollection_Map<TopoDS_Shape> aMS = new(EqualityComparer<TopoDS_Shape>.Default);
-        NCollection_List<TopoDS_Shape>.Iterator it = new(L);
+        NCollection_Map<Shape> aMS = new(EqualityComparer<Shape>.Default);
+        NCollection_List<Shape>.Iterator it = new(L);
         for (; it.More(); it.Next())
         {
             aMS.Add(it.Value());
@@ -114,7 +116,7 @@ public sealed class BRepAlgo_AsDes : Transient
         {
             if (it.Value().IsSame(OldS))
             {
-                TopAbs_Orientation O = it.Value().Orientation();
+                Orientation O = it.Value().Orientation();
                 if (aMS.Add(NewS.Oriented(O)))
                 {
                     L.InsertBefore(NewS.Oriented(O), it);
@@ -128,9 +130,9 @@ public sealed class BRepAlgo_AsDes : Transient
         }
     }
 
-    private static void RemoveInList(in TopoDS_Shape S, NCollection_List<TopoDS_Shape> L)
+    private static void RemoveInList(in Shape S, NCollection_List<Shape> L)
     {
-        NCollection_List<TopoDS_Shape>.Iterator it = new(L);
+        NCollection_List<Shape>.Iterator it = new(L);
         while (it.More())
         {
             if (it.Value().IsSame(S))
@@ -145,19 +147,19 @@ public sealed class BRepAlgo_AsDes : Transient
     /// <summary>
     /// Whether <paramref name="S1"/> and <paramref name="S2"/> have common descendants, stored in <paramref name="LC"/>.
     /// </summary>
-    public bool HasCommonDescendant(in TopoDS_Shape S1, in TopoDS_Shape S2, NCollection_List<TopoDS_Shape> LC)
+    public bool HasCommonDescendant(in Shape S1, in Shape S2, NCollection_List<Shape> LC)
     {
         LC.Clear();
         if (HasDescendant(S1) && HasDescendant(S2))
         {
-            NCollection_List<TopoDS_Shape>.Iterator it1 = new(Descendant(S1));
+            NCollection_List<Shape>.Iterator it1 = new(Descendant(S1));
             for (; it1.More(); it1.Next())
             {
-                TopoDS_Shape DS1 = it1.Value();
-                NCollection_List<TopoDS_Shape>.Iterator it2 = new(Ascendant(DS1));
+                Shape DS1 = it1.Value();
+                NCollection_List<Shape>.Iterator it2 = new(Ascendant(DS1));
                 for (; it2.More(); it2.Next())
                 {
-                    TopoDS_Shape ADS1 = it2.Value();
+                    Shape ADS1 = it2.Value();
                     if (ADS1.IsSame(S2))
                     {
                         LC.Append(DS1);
@@ -168,12 +170,12 @@ public sealed class BRepAlgo_AsDes : Transient
         return !LC.IsEmpty();
     }
 
-    private void BackReplace(in TopoDS_Shape OldS, in TopoDS_Shape NewS, NCollection_List<TopoDS_Shape> L, bool InUp)
+    private void BackReplace(in Shape OldS, in Shape NewS, NCollection_List<Shape> L, bool InUp)
     {
-        NCollection_List<TopoDS_Shape>.Iterator it = new(L);
+        NCollection_List<Shape>.Iterator it = new(L);
         for (; it.More(); it.Next())
         {
-            TopoDS_Shape S = it.Value();
+            Shape S = it.Value();
             if (InUp)
             {
                 if (up.IsBound(S))
@@ -192,12 +194,12 @@ public sealed class BRepAlgo_AsDes : Transient
     }
 
     /// <summary>Replaces <paramref name="theOldS"/> by <paramref name="theNewS"/>; the old shape disappears.</summary>
-    public void Replace(in TopoDS_Shape theOldS, in TopoDS_Shape theNewS)
+    public void Replace(in Shape theOldS, in Shape theNewS)
     {
         for (int i = 0; i < 2; ++i)
         {
-            NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMap = i == 0 ? up : down;
-            if (!aMap.Find(theOldS, out NCollection_List<TopoDS_Shape> pLSOld))
+            NCollection_DataMap<Shape, NCollection_List<Shape>> aMap = i == 0 ? up : down;
+            if (!aMap.Find(theOldS, out NCollection_List<Shape> pLSOld))
             {
                 continue;
             }
@@ -205,11 +207,11 @@ public sealed class BRepAlgo_AsDes : Transient
             bool InUp = i != 0;
             BackReplace(theOldS, theNewS, pLSOld, InUp);
             //
-            if (!aMap.Find(theNewS, out NCollection_List<TopoDS_Shape> pLSNew))
+            if (!aMap.Find(theNewS, out NCollection_List<Shape> pLSNew))
             {
                 // filter the list
-                NCollection_Map<TopoDS_Shape> aMS = new(EqualityComparer<TopoDS_Shape>.Default);
-                NCollection_List<TopoDS_Shape>.Iterator aIt = new(pLSOld);
+                NCollection_Map<Shape> aMS = new(EqualityComparer<Shape>.Default);
+                NCollection_List<Shape>.Iterator aIt = new(pLSOld);
                 for (; aIt.More();)
                 {
                     if (!aMS.Add(aIt.Value()))
@@ -221,13 +223,13 @@ public sealed class BRepAlgo_AsDes : Transient
                         aIt.Next();
                     }
                 }
-                aMap.Bind(theNewS, new NCollection_List<TopoDS_Shape>(pLSOld));
+                aMap.Bind(theNewS, new NCollection_List<Shape>(pLSOld));
             }
             else
             {
                 // avoid duplicates
-                NCollection_Map<TopoDS_Shape> aMS = new(EqualityComparer<TopoDS_Shape>.Default);
-                NCollection_List<TopoDS_Shape>.Iterator aIt = new(pLSNew);
+                NCollection_Map<Shape> aMS = new(EqualityComparer<Shape>.Default);
+                NCollection_List<Shape>.Iterator aIt = new(pLSNew);
                 for (; aIt.More(); aIt.Next())
                 {
                     aMS.Add(aIt.Value());
@@ -236,7 +238,7 @@ public sealed class BRepAlgo_AsDes : Transient
                 aIt.Initialize(pLSOld);
                 for (; aIt.More(); aIt.Next())
                 {
-                    TopoDS_Shape aS = aIt.Value();
+                    Shape aS = aIt.Value();
                     if (aMS.Add(aS))
                     {
                         pLSNew.Append(aS);
@@ -250,7 +252,7 @@ public sealed class BRepAlgo_AsDes : Transient
 
     /// <summary>Removes <paramref name="SS"/>, which must have ascendants and no descendants.</summary>
     /// <exception cref="ConstructionErrorException">It has descendants, or no ascendants.</exception>
-    public void Remove(in TopoDS_Shape SS)
+    public void Remove(in Shape SS)
     {
         if (down.IsBound(SS))
         {
@@ -260,7 +262,7 @@ public sealed class BRepAlgo_AsDes : Transient
         {
             throw new ConstructionErrorException(" BRepAlgo_AsDes::Remove");
         }
-        NCollection_List<TopoDS_Shape>.Iterator it = new(up[SS]);
+        NCollection_List<Shape>.Iterator it = new(up[SS]);
         for (; it.More(); it.Next())
         {
             RemoveInList(SS, down.ChangeFind(it.Value()));

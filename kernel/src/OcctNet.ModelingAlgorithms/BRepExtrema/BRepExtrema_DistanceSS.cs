@@ -3,15 +3,21 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.BRepExtrema_SupportType;
-using static Occt.Extrema_ExtAlgo;
-using static Occt.Extrema_ExtFlag;
+using static Kerf.Engine.Extrema.ExtAlgo;
+using static Kerf.Engine.Extrema.ExtFlag;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -30,22 +36,22 @@ public sealed class BRepExtrema_DistanceSS
     private double myDstRef; //!< The minimal distance found
     private bool myModif; //!< Flag indicating whether the solution was improved or not
     private readonly double myEps; //!< Deflection
-    private readonly Extrema_ExtFlag myFlag; //!< Extrema flag indicating what solutions to look for
-    private readonly Extrema_ExtAlgo myAlgo; //!< Extrema algo to be used to look for solutions
+    private readonly ExtFlag myFlag; //!< Extrema flag indicating what solutions to look for
+    private readonly ExtAlgo myAlgo; //!< Extrema algo to be used to look for solutions
 
     /// <summary>
     /// Computes the distance between two shapes (face, edge or vertex), starting from the distance
     /// <paramref name="theDstRef"/>; solutions within <paramref name="theDeflection"/> of the minimum are kept. The
     /// flag and the algorithm apply only to point-face extrema.
     /// </summary>
-    public BRepExtrema_DistanceSS(in TopoDS_Shape theS1,
-                                  in TopoDS_Shape theS2,
+    public BRepExtrema_DistanceSS(in Shape theS1,
+                                  in Shape theS2,
                                   in Box theBox1,
                                   in Box theBox2,
                                   double theDstRef,
                                   double theDeflection = 1.0e-7, // Precision::Confusion()
-                                  Extrema_ExtFlag theExtFlag = Extrema_ExtFlag_MINMAX,
-                                  Extrema_ExtAlgo theExtAlgo = Extrema_ExtAlgo_Grad)
+                                  ExtFlag theExtFlag = ExtFlag_MINMAX,
+                                  ExtAlgo theExtAlgo = ExtAlgo_Grad)
     {
         myDstRef = theDstRef;
         myModif = false;
@@ -110,21 +116,21 @@ public sealed class BRepExtrema_DistanceSS
 
     //=================================================================================================
 
-    private static void TRIM_INFINIT_EDGE(in TopoDS_Edge S1,
-                                          in TopoDS_Edge S2,
-                                          ref TopoDS_Edge aResEdge,
+    private static void TRIM_INFINIT_EDGE(in Edge S1,
+                                          in Edge S2,
+                                          ref Edge aResEdge,
                                           ref bool bIsTrim1,
                                           ref bool bIsTrim2)
     {
-        if (BRep_Tool.Degenerated(S1) || BRep_Tool.Degenerated(S2))
+        if (Tool.Degenerated(S1) || Tool.Degenerated(S2))
         {
             return;
         }
 
         aResEdge = S2;
         double aFirst1, aLast1, aFirst2, aLast2;
-        Geom_Curve? pCurv1 = BRep_Tool.Curve(S1, out aFirst1, out aLast1);
-        Geom_Curve? pCurv2 = BRep_Tool.Curve(S2, out aFirst2, out aLast2);
+        Curve3D? pCurv1 = Tool.Curve(S1, out aFirst1, out aLast1);
+        Curve3D? pCurv2 = Tool.Curve(S2, out aFirst2, out aLast2);
 
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst1) && global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast1)
             && global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst2) && global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast2))
@@ -136,7 +142,7 @@ public sealed class BRepExtrema_DistanceSS
         bool bUmin, bUmax;
         bUmin = bUmax = false;
 
-        Geom_Curve? pCurv = null;
+        Curve3D? pCurv = null;
         if (pCurv1 is not null && (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast1)))
         {
             pCurv = pCurv1;
@@ -235,57 +241,57 @@ public sealed class BRepExtrema_DistanceSS
             double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
             if (bIsTrim1)
             {
-                tol = BRep_Tool.Tolerance(S1);
+                tol = Tool.Tolerance(S1);
             }
             else if (bIsTrim2)
             {
-                tol = BRep_Tool.Tolerance(S2);
+                tol = Tool.Tolerance(S2);
             }
 
-            double EpsU = new GeomAdaptor_Curve(pCurv!).Resolution(3.0 * tol);
+            double EpsU = new CurveAdaptor(pCurv!).Resolution(3.0 * tol);
             if (Math.Abs(Umin - Umax) < EpsU)
             {
                 Umin -= EpsU;
                 Umax += EpsU;
             }
 
-            Geom_Curve result = new Geom_TrimmedCurve(pCurv!, Umin, Umax);
+            Curve3D result = new TrimmedCurve3D(pCurv!, Umin, Umax);
             aResEdge = new BRepBuilderAPI_MakeEdge(result).Edge();
         }
     }
 
     //=================================================================================================
 
-    private static void TRIM_INFINIT_FACE(in TopoDS_Shape S1,
-                                          in TopoDS_Shape S2,
-                                          ref TopoDS_Face aResFace,
+    private static void TRIM_INFINIT_FACE(in Shape S1,
+                                          in Shape S2,
+                                          ref Face aResFace,
                                           out bool bIsInfinit)
     {
         bIsInfinit = false;
 
-        TopAbs_ShapeEnum Type1 = S1.ShapeType();
-        TopAbs_ShapeEnum Type2 = S2.ShapeType();
+        ShapeType Type1 = S1.ShapeType();
+        ShapeType Type2 = S2.ShapeType();
 
-        TopoDS_Edge aE;
-        TopoDS_Face aF;
+        Edge aE;
+        Face aF;
 
-        if (Type1 == TopAbs_EDGE && Type2 == TopAbs_FACE)
+        if (Type1 == ShapeType.Edge && Type2 == ShapeType.Face)
         {
-            aE = TopoDS.Edge(S1);
-            if (BRep_Tool.Degenerated(aE))
+            aE = ShapeCasts.Edge(S1);
+            if (Tool.Degenerated(aE))
             {
                 return;
             }
-            aF = TopoDS.Face(S2);
+            aF = ShapeCasts.Face(S2);
         }
-        else if (Type2 == TopAbs_EDGE && Type1 == TopAbs_FACE)
+        else if (Type2 == ShapeType.Edge && Type1 == ShapeType.Face)
         {
-            aE = TopoDS.Edge(S2);
-            if (BRep_Tool.Degenerated(aE))
+            aE = ShapeCasts.Edge(S2);
+            if (Tool.Degenerated(aE))
             {
                 return;
             }
-            aF = TopoDS.Face(S1);
+            aF = ShapeCasts.Face(S1);
         }
         else
         {
@@ -294,9 +300,9 @@ public sealed class BRepExtrema_DistanceSS
         }
 
         aResFace = aF;
-        Geom_Surface pSurf = BRep_Tool.Surface(aF)!;
+        Surface pSurf = Tool.Surface(aF)!;
 
-        bool bRestrict = BRep_Tool.NaturalRestriction(aF);
+        bool bRestrict = Tool.NaturalRestriction(aF);
 
         double U1, V1, U2, V2;
         double Umin = RealLast(), Umax = RealFirst(), Vmin = RealLast(), Vmax = RealFirst();
@@ -349,7 +355,7 @@ public sealed class BRepExtrema_DistanceSS
         }
         else
         {
-            BRepTools.UVBounds(aF, out U1, out U2, out V1, out V2);
+            BrepTools.UVBounds(aF, out U1, out U2, out V1, out V2);
             if (global::Kerf.Engine.Foundation.Precision.IsInfinite(U1) && global::Kerf.Engine.Foundation.Precision.IsInfinite(U2) && global::Kerf.Engine.Foundation.Precision.IsInfinite(V1)
                 && global::Kerf.Engine.Foundation.Precision.IsInfinite(V2))
             {
@@ -466,8 +472,8 @@ public sealed class BRepExtrema_DistanceSS
                 i++;
             }
 
-            var aGAS = new GeomAdaptor_Surface(pSurf);
-            double tol = BRep_Tool.Tolerance(aF);
+            var aGAS = new SurfaceAdaptor(pSurf);
+            double tol = Tool.Tolerance(aF);
 
             double EpsU = aGAS.UResolution(3.0 * tol);
             if (Math.Abs(Umin - Umax) < EpsU)
@@ -483,7 +489,7 @@ public sealed class BRepExtrema_DistanceSS
                 Vmax += EpsV;
             }
 
-            Geom_Surface result = new Geom_RectangularTrimmedSurface(pSurf, Umin, Umax, Vmin, Vmax);
+            Surface result = new TrimmedSurface(pSurf, Umin, Umax, Vmin, Vmax);
             aResFace = new BRepBuilderAPI_MakeFace(result, global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
 
             bIsInfinit = true;
@@ -496,15 +502,15 @@ public sealed class BRepExtrema_DistanceSS
 
     //=================================================================================================
 
-    private static void PERFORM_C0(in TopoDS_Edge S1,
-                                   in TopoDS_Edge S2,
+    private static void PERFORM_C0(in Edge S1,
+                                   in Edge S2,
                                    NCollection_Sequence<BRepExtrema_SolutionElem> SeqSol1,
                                    NCollection_Sequence<BRepExtrema_SolutionElem> SeqSol2,
                                    double DstRef,
                                    ref double mDstRef,
                                    double Eps)
     {
-        if (BRep_Tool.Degenerated(S1) || BRep_Tool.Degenerated(S2))
+        if (Tool.Degenerated(S1) || Tool.Degenerated(S2))
         {
             return;
         }
@@ -512,7 +518,7 @@ public sealed class BRepExtrema_DistanceSS
         int iE;
         for (iE = 0; iE < 2; iE++)
         {
-            TopoDS_Edge E, Eother;
+            Edge E, Eother;
             if (iE == 0)
             {
                 E = S1;
@@ -525,10 +531,10 @@ public sealed class BRepExtrema_DistanceSS
             }
 
             double aFirst, aLast;
-            Geom_Curve? pCurv = BRep_Tool.Curve(E, out aFirst, out aLast);
+            Curve3D? pCurv = Tool.Curve(E, out aFirst, out aLast);
 
             double aFOther, aLOther;
-            Geom_Curve? pCurvOther = BRep_Tool.Curve(Eother, out aFOther, out aLOther);
+            Curve3D? pCurvOther = Tool.Curve(Eother, out aFOther, out aLOther);
 
             if (pCurv is null)
             {
@@ -539,19 +545,19 @@ public sealed class BRepExtrema_DistanceSS
             {
                 double epsP = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
-                var aAdaptorCurve = new GeomAdaptor_Curve(pCurv, aFirst, aLast);
+                var aAdaptorCurve = new CurveAdaptor(pCurv, aFirst, aLast);
                 int nbIntervals = aAdaptorCurve.NbIntervals(C1);
 
                 var arrInter = new NCollection_Array1<double>(1, 1 + nbIntervals);
                 aAdaptorCurve.Intervals(arrInter, C1);
 
-                var aAdaptorCurveOther = new GeomAdaptor_Curve(pCurvOther!, aFOther, aLOther);
+                var aAdaptorCurveOther = new CurveAdaptor(pCurvOther!, aFOther, aLOther);
                 int nbIntervalsOther = aAdaptorCurveOther.NbIntervals(C1);
                 var arrInterOther = new NCollection_Array1<double>(1, 1 + nbIntervalsOther);
                 aAdaptorCurveOther.Intervals(arrInterOther, C1);
 
                 double Udeb, Ufin;
-                BRep_Tool.Range(Eother, out Udeb, out Ufin);
+                Tool.Range(Eother, out Udeb, out Ufin);
 
                 Point3D Pt;
                 int i, ii;
@@ -560,7 +566,7 @@ public sealed class BRepExtrema_DistanceSS
                     double aParameter = arrInter[i];
                     Point3D aPnt = aAdaptorCurve.Value(aParameter);
                     // a local vertex, never handed out: not frozen
-                    TopoDS_Vertex V1 = new BRepBuilderAPI_MakeVertex(aPnt).InternalVertex();
+                    Vertex V1 = new BRepBuilderAPI_MakeVertex(aPnt).InternalVertex();
 
                     var Ext = new BRepExtrema_ExtPC(V1, Eother);
                     int NbExtrema = Ext.IsDone() ? Ext.NbExt() : 0;
@@ -639,14 +645,14 @@ public sealed class BRepExtrema_DistanceSS
     // function : isOnBoundary
     // purpose  : Checks in 3d if the extrema point belongs to edge boundary
     //=======================================================================
-    private static bool isOnBoundary(in TopoDS_Edge theEdge, in Point3D theSol, double theParam, double thePTol)
+    private static bool isOnBoundary(in Edge theEdge, in Point3D theSol, double theParam, double thePTol)
     {
-        for (var it = new TopoDS_Iterator(theEdge); it.More(); it.Next())
+        for (var it = new Iterator(theEdge); it.More(); it.Next())
         {
-            TopoDS_Vertex aV = TopoDS.Vertex(it.Value());
-            double aVParam = BRep_Tool.Parameter(aV, theEdge);
+            Vertex aV = ShapeCasts.Vertex(it.Value());
+            double aVParam = Tool.Parameter(aV, theEdge);
             if (Math.Abs(aVParam - theParam) < thePTol
-                && BRep_Tool.Pnt(aV).Distance(theSol) < BRep_Tool.Tolerance(aV))
+                && Tool.Pnt(aV).Distance(theSol) < Tool.Tolerance(aV))
             {
                 return true;
             }
@@ -656,7 +662,7 @@ public sealed class BRepExtrema_DistanceSS
 
     //=================================================================================================
 
-    private void Perform(in TopoDS_Shape theS1, in TopoDS_Shape theS2, in Box theBox1, in Box theBox2)
+    private void Perform(in Shape theS1, in Shape theS2, in Box theBox1, in Box theBox2)
     {
         mySeqSolShape1.Clear();
         mySeqSolShape2.Clear();
@@ -672,26 +678,26 @@ public sealed class BRepExtrema_DistanceSS
 
         switch (theS1.ShapeType())
         {
-            case TopAbs_VERTEX:
+            case ShapeType.Vertex:
             {
-                TopoDS_Vertex aV1 = TopoDS.Vertex(theS1);
+                Vertex aV1 = ShapeCasts.Vertex(theS1);
                 switch (theS2.ShapeType())
                 {
-                    case TopAbs_VERTEX:
+                    case ShapeType.Vertex:
                     {
-                        TopoDS_Vertex aV2 = TopoDS.Vertex(theS2);
+                        Vertex aV2 = ShapeCasts.Vertex(theS2);
                         Perform(aV1, aV2, mySeqSolShape1, mySeqSolShape2);
                         break;
                     }
-                    case TopAbs_EDGE:
+                    case ShapeType.Edge:
                     {
-                        TopoDS_Edge aE2 = TopoDS.Edge(theS2);
+                        Edge aE2 = ShapeCasts.Edge(theS2);
                         Perform(aV1, aE2, mySeqSolShape1, mySeqSolShape2);
                         break;
                     }
-                    case TopAbs_FACE:
+                    case ShapeType.Face:
                     {
-                        TopoDS_Face aF2 = TopoDS.Face(theS2);
+                        Face aF2 = ShapeCasts.Face(theS2);
                         Perform(aV1, aF2, mySeqSolShape1, mySeqSolShape2);
                         break;
                     }
@@ -700,21 +706,21 @@ public sealed class BRepExtrema_DistanceSS
                 }
                 break;
             }
-            case TopAbs_EDGE:
+            case ShapeType.Edge:
             {
-                TopoDS_Edge aE1 = TopoDS.Edge(theS1);
+                Edge aE1 = ShapeCasts.Edge(theS1);
                 switch (theS2.ShapeType())
                 {
-                    case TopAbs_VERTEX:
+                    case ShapeType.Vertex:
                     {
-                        TopoDS_Vertex aV2 = TopoDS.Vertex(theS2);
+                        Vertex aV2 = ShapeCasts.Vertex(theS2);
                         Perform(aV2, aE1, mySeqSolShape2, mySeqSolShape1);
                         break;
                     }
-                    case TopAbs_EDGE:
+                    case ShapeType.Edge:
                     {
-                        TopoDS_Edge aE2 = TopoDS.Edge(theS2);
-                        var aTrimEdge = new TopoDS_Edge();
+                        Edge aE2 = ShapeCasts.Edge(theS2);
+                        var aTrimEdge = new Edge();
                         bool bIsTrim1 = false;
                         bool bIsTrim2 = false;
                         TRIM_INFINIT_EDGE(aE1, aE2, ref aTrimEdge, ref bIsTrim1, ref bIsTrim2);
@@ -729,10 +735,10 @@ public sealed class BRepExtrema_DistanceSS
                         Perform(aE1, aE2, mySeqSolShape1, mySeqSolShape2);
                         break;
                     }
-                    case TopAbs_FACE:
+                    case ShapeType.Face:
                     {
-                        TopoDS_Face aF2 = TopoDS.Face(theS2);
-                        var aTrimFace = new TopoDS_Face();
+                        Face aF2 = ShapeCasts.Face(theS2);
+                        var aTrimFace = new Face();
                         TRIM_INFINIT_FACE(aE1, aF2, ref aTrimFace, out bool bIsInfinit);
                         if (bIsInfinit)
                         {
@@ -746,21 +752,21 @@ public sealed class BRepExtrema_DistanceSS
                 }
                 break;
             }
-            case TopAbs_FACE:
+            case ShapeType.Face:
             {
-                TopoDS_Face aF1 = TopoDS.Face(theS1);
+                Face aF1 = ShapeCasts.Face(theS1);
                 switch (theS2.ShapeType())
                 {
-                    case TopAbs_VERTEX:
+                    case ShapeType.Vertex:
                     {
-                        TopoDS_Vertex aV2 = TopoDS.Vertex(theS2);
+                        Vertex aV2 = ShapeCasts.Vertex(theS2);
                         Perform(aV2, aF1, mySeqSolShape2, mySeqSolShape1);
                         break;
                     }
-                    case TopAbs_EDGE:
+                    case ShapeType.Edge:
                     {
-                        TopoDS_Edge aE2 = TopoDS.Edge(theS2);
-                        var aTrimFace = new TopoDS_Face();
+                        Edge aE2 = ShapeCasts.Edge(theS2);
+                        var aTrimFace = new Face();
                         TRIM_INFINIT_FACE(aF1, aE2, ref aTrimFace, out bool bIsInfinit);
                         if (bIsInfinit)
                         {
@@ -769,9 +775,9 @@ public sealed class BRepExtrema_DistanceSS
                         Perform(aE2, aF1, mySeqSolShape2, mySeqSolShape1);
                         break;
                     }
-                    case TopAbs_FACE:
+                    case ShapeType.Face:
                     {
-                        TopoDS_Face aF2 = TopoDS.Face(theS2);
+                        Face aF2 = ShapeCasts.Face(theS2);
                         Perform(aF1, aF2, mySeqSolShape1, mySeqSolShape2);
                         break;
                     }
@@ -788,13 +794,13 @@ public sealed class BRepExtrema_DistanceSS
     //=================================================================================================
 
     /// <summary>The distance between two vertices.</summary>
-    private void Perform(in TopoDS_Vertex theS1,
-                         in TopoDS_Vertex theS2,
+    private void Perform(in Vertex theS1,
+                         in Vertex theS2,
                          NCollection_Sequence<BRepExtrema_SolutionElem> theSeqSolShape1,
                          NCollection_Sequence<BRepExtrema_SolutionElem> theSeqSolShape2)
     {
-        Point3D aP1 = BRep_Tool.Pnt(theS1);
-        Point3D aP2 = BRep_Tool.Pnt(theS2);
+        Point3D aP1 = Tool.Pnt(theS1);
+        Point3D aP2 = Tool.Pnt(theS2);
 
         double Dst = aP1.Distance(aP2);
         if ((Dst < myDstRef - myEps) || (Math.Abs(Dst - myDstRef) < myEps))
@@ -814,12 +820,12 @@ public sealed class BRepExtrema_DistanceSS
     //=================================================================================================
 
     /// <summary>The minimum distance between a vertex and an edge.</summary>
-    private void Perform(in TopoDS_Vertex theS1,
-                         in TopoDS_Edge theS2,
+    private void Perform(in Vertex theS1,
+                         in Edge theS2,
                          NCollection_Sequence<BRepExtrema_SolutionElem> theSeqSolShape1,
                          NCollection_Sequence<BRepExtrema_SolutionElem> theSeqSolShape2)
     {
-        if (BRep_Tool.Degenerated(theS2))
+        if (Tool.Degenerated(theS2))
         {
             return;
         }
@@ -842,7 +848,7 @@ public sealed class BRepExtrema_DistanceSS
             Dstmin = Math.Sqrt(Dstmin);
             if ((Dstmin < myDstRef - myEps) || (Math.Abs(Dstmin - myDstRef) < myEps))
             {
-                Point3D Pt, P1 = BRep_Tool.Pnt(theS1);
+                Point3D Pt, P1 = Tool.Pnt(theS1);
                 double epsP = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
                 for (i = 1; i <= NbExtrema; i++)
@@ -876,8 +882,8 @@ public sealed class BRepExtrema_DistanceSS
     //=================================================================================================
 
     /// <summary>The minimum distance between a vertex and a face.</summary>
-    private void Perform(in TopoDS_Vertex theS1,
-                         in TopoDS_Face theS2,
+    private void Perform(in Vertex theS1,
+                         in Face theS2,
                          NCollection_Sequence<BRepExtrema_SolutionElem> theSeqSolShape1,
                          NCollection_Sequence<BRepExtrema_SolutionElem> theSeqSolShape2)
     {
@@ -900,9 +906,9 @@ public sealed class BRepExtrema_DistanceSS
             if ((Dstmin < myDstRef - myEps) || (Math.Abs(Dstmin - myDstRef) < myEps))
             {
                 double U, V;
-                Point3D Pt, P1 = BRep_Tool.Pnt(theS1);
+                Point3D Pt, P1 = Tool.Pnt(theS1);
                 var classifier = new BRepClass_FaceClassifier();
-                double tol = BRep_Tool.Tolerance(theS2);
+                double tol = Tool.Tolerance(theS2);
 
                 for (i = 1; i <= NbExtrema; i++)
                 {
@@ -915,7 +921,7 @@ public sealed class BRepExtrema_DistanceSS
                             Ext.Parameter(i, out U, out V);
                             var PUV = new Point2D(U, V);
                             classifier.Perform(theS2, PUV, tol);
-                            if (classifier.State() == TopAbs_IN)
+                            if (classifier.State() == In)
                             {
                                 if (myDstRef > Dstmin)
                                 {
@@ -937,12 +943,12 @@ public sealed class BRepExtrema_DistanceSS
     //=================================================================================================
 
     /// <summary>The minimum distance between two edges.</summary>
-    private void Perform(in TopoDS_Edge theS1,
-                         in TopoDS_Edge theS2,
+    private void Perform(in Edge theS1,
+                         in Edge theS2,
                          NCollection_Sequence<BRepExtrema_SolutionElem> theSeqSolShape1,
                          NCollection_Sequence<BRepExtrema_SolutionElem> theSeqSolShape2)
     {
-        if (BRep_Tool.Degenerated(theS1) || BRep_Tool.Degenerated(theS2))
+        if (Tool.Degenerated(theS1) || Tool.Degenerated(theS2))
         {
             return;
         }
@@ -1032,12 +1038,12 @@ public sealed class BRepExtrema_DistanceSS
     //=================================================================================================
 
     /// <summary>The minimum distance between an edge and a face.</summary>
-    private void Perform(in TopoDS_Edge theS1,
-                         in TopoDS_Face theS2,
+    private void Perform(in Edge theS1,
+                         in Face theS2,
                          NCollection_Sequence<BRepExtrema_SolutionElem> theSeqSolShape1,
                          NCollection_Sequence<BRepExtrema_SolutionElem> theSeqSolShape2)
     {
-        if (BRep_Tool.Degenerated(theS1))
+        if (Tool.Degenerated(theS1))
         {
             return;
         }
@@ -1063,7 +1069,7 @@ public sealed class BRepExtrema_DistanceSS
             if ((Dstmin < myDstRef - myEps) || (Math.Abs(Dstmin - myDstRef) < myEps))
             {
                 double U, V;
-                double tol = BRep_Tool.Tolerance(theS2);
+                double tol = Tool.Tolerance(theS2);
 
                 Point3D Pt1, Pt2;
                 double epsP = global::Kerf.Engine.Foundation.Precision.PConfusion();
@@ -1083,7 +1089,7 @@ public sealed class BRepExtrema_DistanceSS
                                 Ext.ParameterOnFace(i, out U, out V);
                                 var PUV = new Point2D(U, V);
                                 classifier.Perform(theS2, PUV, tol);
-                                if (classifier.State() == TopAbs_IN)
+                                if (classifier.State() == In)
                                 {
                                     if (myDstRef > Dstmin)
                                     {
@@ -1103,7 +1109,7 @@ public sealed class BRepExtrema_DistanceSS
         }
 
         double aFirst, aLast;
-        Geom_Curve? pCurv = BRep_Tool.Curve(theS1, out aFirst, out aLast);
+        Curve3D? pCurv = Tool.Curve(theS1, out aFirst, out aLast);
 
         if (pCurv is null)
         {
@@ -1115,14 +1121,14 @@ public sealed class BRepExtrema_DistanceSS
             var SeqSolution1 = new NCollection_Sequence<BRepExtrema_SolutionElem>();
             var SeqSolution2 = new NCollection_Sequence<BRepExtrema_SolutionElem>();
 
-            var aAdaptorCurve = new GeomAdaptor_Curve(pCurv, aFirst, aLast);
+            var aAdaptorCurve = new CurveAdaptor(pCurv, aFirst, aLast);
             int nbIntervals = aAdaptorCurve.NbIntervals(C1);
 
             var arrInter = new NCollection_Array1<double>(1, 1 + nbIntervals);
             aAdaptorCurve.Intervals(arrInter, C1);
 
             double U, V;
-            double tol = BRep_Tool.Tolerance(theS2);
+            double tol = Tool.Tolerance(theS2);
 
             int i;
             for (i = 1; i <= arrInter.Length(); i++)
@@ -1130,7 +1136,7 @@ public sealed class BRepExtrema_DistanceSS
                 double aParameter = arrInter[i];
                 Point3D aPnt = aAdaptorCurve.Value(aParameter);
                 // a local vertex, never handed out: not frozen
-                TopoDS_Vertex V1 = new BRepBuilderAPI_MakeVertex(aPnt).InternalVertex();
+                Vertex V1 = new BRepBuilderAPI_MakeVertex(aPnt).InternalVertex();
 
                 var ExtPF = new BRepExtrema_ExtPF(V1, theS2);
                 int NbExtremaPF = ExtPF.IsDone() ? ExtPF.NbExt() : 0;
@@ -1159,7 +1165,7 @@ public sealed class BRepExtrema_DistanceSS
                                 ExtPF.Parameter(ii, out U, out V);
                                 var PUV = new Point2D(U, V);
                                 classifier.Perform(theS2, PUV, tol);
-                                if (classifier.State() == TopAbs_IN)
+                                if (classifier.State() == In)
                                 {
                                     if (myDstRef > Dstmin)
                                     {
@@ -1195,8 +1201,8 @@ public sealed class BRepExtrema_DistanceSS
     //=================================================================================================
 
     /// <summary>The minimum distance between two faces.</summary>
-    private void Perform(in TopoDS_Face theS1,
-                         in TopoDS_Face theS2,
+    private void Perform(in Face theS1,
+                         in Face theS2,
                          NCollection_Sequence<BRepExtrema_SolutionElem> theSeqSolShape1,
                          NCollection_Sequence<BRepExtrema_SolutionElem> theSeqSolShape2)
     {
@@ -1218,8 +1224,8 @@ public sealed class BRepExtrema_DistanceSS
             Dstmin = Math.Sqrt(Dstmin);
             if ((Dstmin < myDstRef - myEps) || (Math.Abs(Dstmin - myDstRef) < myEps))
             {
-                double tol1 = BRep_Tool.Tolerance(theS1);
-                double tol2 = BRep_Tool.Tolerance(theS2);
+                double tol1 = Tool.Tolerance(theS1);
+                double tol2 = Tool.Tolerance(theS2);
 
                 Point3D Pt1, Pt2;
                 Point2D PUV;
@@ -1238,12 +1244,12 @@ public sealed class BRepExtrema_DistanceSS
                             Ext.ParameterOnFace1(i, out U1, out V1);
                             PUV = new Point2D(U1, V1);
                             classifier.Perform(theS1, PUV, tol1);
-                            if (classifier.State() == TopAbs_IN)
+                            if (classifier.State() == In)
                             {
                                 Ext.ParameterOnFace2(i, out U2, out V2);
                                 PUV = new Point2D(U2, V2);
                                 classifier.Perform(theS2, PUV, tol2);
-                                if (classifier.State() == TopAbs_IN)
+                                if (classifier.State() == In)
                                 {
                                     if (myDstRef > Dstmin)
                                     {

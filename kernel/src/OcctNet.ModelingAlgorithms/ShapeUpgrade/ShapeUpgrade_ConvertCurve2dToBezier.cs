@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.Continuity;
@@ -18,22 +19,22 @@ namespace Occt;
 /// <remarks>A working object (decision 21).</remarks>
 public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
 {
-    private readonly NCollection_HSequence<Geom2d_Curve> mySegments;
+    private readonly NCollection_HSequence<Curve2D> mySegments;
     private readonly NCollection_HSequence<double> mySplitParams;
 
     /// <summary>Empty constructor.</summary>
     public ShapeUpgrade_ConvertCurve2dToBezier()
     {
-        mySegments = new NCollection_HSequence<Geom2d_Curve>();
+        mySegments = new NCollection_HSequence<Curve2D>();
         mySplitParams = new NCollection_HSequence<double>();
     }
 
-    private static Geom2d_BezierCurve MakeBezier2d(Geom2d_Curve theCurve2d, double theFirst, double theLast)
+    private static BezierCurve2D MakeBezier2d(Curve2D theCurve2d, double theFirst, double theLast)
     {
         var poles = new NCollection_Array1<Point2D>(1, 2);
         poles[1] = theCurve2d.Value(theFirst);
         poles[2] = theCurve2d.Value(theLast);
-        var bezier = new Geom2d_BezierCurve(poles);
+        var bezier = new BezierCurve2D(poles);
         return bezier;
     }
 
@@ -47,11 +48,11 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
         double Last = mySplitValues.Value(mySplitValues.Length());
 
         // PTV Try to create line2d from myCurve
-        if (myCurve is Geom2d_BSplineCurve || myCurve is Geom2d_BezierCurve)
+        if (myCurve is BSplineCurve2D || myCurve is BezierCurve2D)
         {
             // static function`s code getted from ShapeConvert
             double tmpF = 0, tmpL = 0, aDeviation = 0;
-            Geom2d_Line? aTmpLine2d = ShapeCustom_Curve2d.ConvertToLine2d(myCurve,
+            LineCurve2D? aTmpLine2d = ShapeCustom_Curve2d.ConvertToLine2d(myCurve,
                                                                          First,
                                                                          Last,
                                                                          Kerf.Engine.Foundation.Precision.Approximation(),
@@ -60,7 +61,7 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
                                                                          ref aDeviation);
             if (aTmpLine2d is not null && (aDeviation <= Kerf.Engine.Foundation.Precision.Approximation()))
             {
-                Geom2d_BezierCurve bezier = MakeBezier2d(aTmpLine2d, tmpF, tmpL);
+                BezierCurve2D bezier = MakeBezier2d(aTmpLine2d, tmpF, tmpL);
                 mySegments.Append(bezier);
                 mySplitParams.Append(First);
                 mySplitParams.Append(Last);
@@ -70,9 +71,9 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
             }
         }
 
-        if (myCurve is Geom2d_TrimmedCurve tmp)
+        if (myCurve is TrimmedCurve2D tmp)
         {
-            Geom2d_Curve BasCurve = tmp.BasisCurve();
+            Curve2D BasCurve = tmp.BasisCurve();
             var converter = new ShapeUpgrade_ConvertCurve2dToBezier();
             // converter.Init(BasCurve,Max(First,BasCurve->FirstParameter()),Min(Last,BasCurve->LastParameter()));
             // //???
@@ -87,7 +88,7 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
             mySplitParams.ChangeSequence().Assign(converter.SplitParams().Sequence());
             return;
         }
-        else if (myCurve is Geom2d_BezierCurve bezier)
+        else if (myCurve is BezierCurve2D bezier)
         {
             myNbCurves = mySplitValues.Length() - 1;
             mySplitParams.Append(First);
@@ -99,16 +100,16 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
             }
             else
             {
-                var besNew = (Geom2d_BezierCurve)bezier.Copy();
+                var besNew = (BezierCurve2D)bezier.Copy();
                 besNew.Segment(First, Last);
                 mySegments.Append(besNew);
                 myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE2);
             }
             return;
         }
-        else if (myCurve is Geom2d_Line aLine2d)
+        else if (myCurve is LineCurve2D aLine2d)
         {
-            Geom2d_BezierCurve bezierLine = MakeBezier2d(aLine2d, First, Last);
+            BezierCurve2D bezierLine = MakeBezier2d(aLine2d, First, Last);
             mySegments.Append(bezierLine);
             mySplitParams.Append(First);
             mySplitParams.Append(Last);
@@ -118,32 +119,32 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
         }
         else
         {
-            Geom2d_BSplineCurve aBSpline2d;
+            BSplineCurve2D aBSpline2d;
             double Shift = 0.0;
-            if (myCurve is Geom2d_Conic)
+            if (myCurve is ConicCurve2D)
             {
-                Geom2d_Curve tcurve = new Geom2d_TrimmedCurve(myCurve, First, Last); // protection against parabols ets
-                var approx = new Geom2dConvert_ApproxCurve(tcurve, Kerf.Engine.Foundation.Precision.Approximation(), C1, 100, 6);
-                if (approx.HasResult())
+                Curve2D tcurve = new TrimmedCurve2D(myCurve, First, Last); // protection against parabols ets
+                var approx = new ApproxCurve2D(tcurve, Kerf.Engine.Foundation.Precision.Approximation(), C1, 100, 6);
+                if (approx.HasResult)
                 {
                     aBSpline2d = approx.Curve()!;
                 }
                 else
                 {
-                    aBSpline2d = Geom2dConvert.CurveToBSplineCurve(tcurve, QuasiAngular);
+                    aBSpline2d = Geom2dConvert2D.CurveToBSplineCurve(tcurve, QuasiAngular);
                 }
 
                 Shift = First - aBSpline2d.FirstParameter();
                 First = aBSpline2d.FirstParameter();
                 Last = aBSpline2d.LastParameter();
             }
-            else if (myCurve is not Geom2d_BSplineCurve)
+            else if (myCurve is not BSplineCurve2D)
             {
-                aBSpline2d = Geom2dConvert.CurveToBSplineCurve(myCurve!, QuasiAngular);
+                aBSpline2d = Geom2dConvert2D.CurveToBSplineCurve(myCurve!, QuasiAngular);
             }
             else
             {
-                aBSpline2d = (Geom2d_BSplineCurve)myCurve;
+                aBSpline2d = (BSplineCurve2D)myCurve;
             }
 
             double bf = aBSpline2d.FirstParameter();
@@ -174,8 +175,8 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
             // curve is simplified on a copy, given back through the ref (decision 974)
             ShapeCustom_Curve2d.SimplifyBSpline2d(ref aBSpline2d, Kerf.Engine.Foundation.Precision.Approximation());
 
-            var tool = new Geom2dConvert_BSplineCurveToBezierCurve(aBSpline2d, First, Last, precision);
-            int nbArcs = tool.NbArcs();
+            var tool = new BSplineCurveToBezierCurve2D(aBSpline2d, First, Last, precision);
+            int nbArcs = tool.ArcCount;
             var knots = new NCollection_Array1<double>(1, nbArcs + 1);
             tool.Knots(knots);
             mySplitParams.Append(First + Shift);
@@ -187,13 +188,13 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
                 double nextKnot = knots[j + 1] + Shift;
                 if (nextKnot - mySplitParams.Value(mySplitParams.Length()) > precision)
                 {
-                    Geom2d_Curve aCrv2d = tool.Arc(j);
-                    if (aCrv2d is Geom2d_BezierCurve)
+                    Curve2D aCrv2d = tool.Arc(j);
+                    if (aCrv2d is BezierCurve2D)
                     {
                         newFirst = newLast;
                         newLast = nextKnot;
                         double tmpF = 0, tmpL = 0, aDeviation = 0;
-                        Geom2d_Line? aTmpLine2d = ShapeCustom_Curve2d.ConvertToLine2d(aCrv2d,
+                        LineCurve2D? aTmpLine2d = ShapeCustom_Curve2d.ConvertToLine2d(aCrv2d,
                                                                                      newFirst,
                                                                                      newLast,
                                                                                      Kerf.Engine.Foundation.Precision.Approximation(),
@@ -202,7 +203,7 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
                                                                                      ref aDeviation);
                         if (aTmpLine2d is not null && (aDeviation <= Kerf.Engine.Foundation.Precision.Approximation()))
                         {
-                            Geom2d_BezierCurve bezierArc = MakeBezier2d(aBSpline2d, newFirst, newLast);
+                            BezierCurve2D bezierArc = MakeBezier2d(aBSpline2d, newFirst, newLast);
                             mySegments.Append(bezierArc);
                             mySplitParams.Append(newLast);
                             continue;
@@ -242,7 +243,7 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
     {
         double prec = Kerf.Engine.Foundation.Precision.PConfusion();
         int nb = mySplitValues!.Length();
-        myResultingCurves = new NCollection_HArray1<Geom2d_Curve>(1, nb - 1);
+        myResultingCurves = new NCollection_HArray1<Curve2D>(1, nb - 1);
         double prevPar = 0.0;
         int j = 2;
         for (int i = 2; i <= nb; i++)
@@ -261,7 +262,7 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
             }
 
             // OCCT down-casts the segment to a Bezier and dereferences it: every segment is one here
-            var bes = (Geom2d_BezierCurve)mySegments.Value(j - 1).Copy();
+            var bes = (BezierCurve2D)mySegments.Value(j - 1).Copy();
             double uFact = mySplitParams.Value(j) - mySplitParams.Value(j - 1);
             double pp = mySplitValues.Value(i - 1);
             double length = (par - pp) / uFact;
@@ -272,7 +273,7 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
     }
 
     // OCCT's private Segments(): the Bezier segments.
-    private NCollection_HSequence<Geom2d_Curve> Segments() => mySegments;
+    private NCollection_HSequence<Curve2D> Segments() => mySegments;
 
     /// <summary>Returns the parameters of the Bezier segments' ends.</summary>
     public NCollection_HSequence<double> SplitParams() => mySplitParams;

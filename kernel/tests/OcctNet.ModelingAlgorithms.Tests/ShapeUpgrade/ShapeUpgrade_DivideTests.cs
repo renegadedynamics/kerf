@@ -1,10 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Kerf.Geometry.Continuity;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -16,17 +20,17 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ShapeUpgrade_DivideTests
 {
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
-    private static bool AllFrozen(in TopoDS_Shape theShape)
+    private static bool AllFrozen(in Shape theShape)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, aMap);
         for (int i = 1; i <= aMap.Extent(); i++)
         {
             if (!aMap[i].TShape()!.IsFrozen)
@@ -37,32 +41,32 @@ public class ShapeUpgrade_DivideTests
         return true;
     }
 
-    private static double Area(in TopoDS_Shape theShape)
+    private static double Area(in Shape theShape)
     {
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.SurfaceProperties(theShape, aProps);
         return aProps.Mass();
     }
 
-    private static TopoDS_Shape Cylinder() => new BRepPrimAPI_MakeCylinder(5, 10).Shape();
+    private static Shape Cylinder() => new BRepPrimAPI_MakeCylinder(5, 10).Shape();
 
-    private static TopoDS_Face FirstFace(in TopoDS_Shape theShape) =>
-        TopoDS.Face(new TopExp_Explorer(theShape, TopAbs_FACE).Current());
+    private static Face FirstFace(in Shape theShape) =>
+        ShapeCasts.Face(new Explorer(theShape, ShapeType.Face).Current());
 
     [Fact]
     public void ShapeDivideAngle_OnACylinder_SplitsTheLateralFaceInFour_TheInputIsUnchanged()
     {
-        TopoDS_Shape aCyl = Cylinder();
+        Shape aCyl = Cylinder();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCyl);
 
         var aTool = new ShapeUpgrade_ShapeDivideAngle(95 * Math.PI / 180, aCyl);
         Assert.True(aTool.Perform());
-        TopoDS_Shape aRes = aTool.Result();
+        Shape aRes = aTool.Result();
 
         aSnap.AssertUnchanged(aCyl);
         Assert.True(AllFrozen(aRes));
         Assert.True(aTool.Status(ShapeExtend_DONE2));
-        Assert.Equal(6, Count(aRes, TopAbs_FACE));
+        Assert.Equal(6, Count(aRes, ShapeType.Face));
         Assert.Equal(Area(aCyl), Area(aRes), 6);
         Assert.Equal(95 * Math.PI / 180, aTool.MaxAngle());
         Assert.True(new BRepCheck_Analyzer(aRes).IsValid());
@@ -71,16 +75,16 @@ public class ShapeUpgrade_DivideTests
     [Fact]
     public void ShapeDivideClosed_OnACylinder_SplitsTheLateralFaceInTwo()
     {
-        TopoDS_Shape aCyl = Cylinder();
+        Shape aCyl = Cylinder();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCyl);
 
         var aTool = new ShapeUpgrade_ShapeDivideClosed(aCyl);
         Assert.True(aTool.Perform());
-        TopoDS_Shape aRes = aTool.Result();
+        Shape aRes = aTool.Result();
 
         aSnap.AssertUnchanged(aCyl);
         Assert.True(AllFrozen(aRes));
-        Assert.Equal(4, Count(aRes, TopAbs_FACE));
+        Assert.Equal(4, Count(aRes, ShapeType.Face));
         Assert.Equal(Area(aCyl), Area(aRes), 6);
         Assert.True(new BRepCheck_Analyzer(aRes).IsValid());
     }
@@ -90,8 +94,8 @@ public class ShapeUpgrade_DivideTests
     [InlineData(3, 5, 15)]
     public void ShapeDivideArea_ByNumber_SplitsTheSphericalFace(int theNumber1, int theNumber2, int theNbFaces)
     {
-        TopoDS_Shape aSphere = new BRepPrimAPI_MakeSphere(10, 0, Math.PI / 2).Shape();
-        TopoDS_Face aFace = TopoDS.Face(FirstFace(aSphere));
+        Shape aSphere = new BRepPrimAPI_MakeSphere(10, 0, Math.PI / 2).Shape();
+        Face aFace = ShapeCasts.Face(FirstFace(aSphere));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFace);
 
         // DT_SplitByNumber result a_1 n1 [n2] (heal/split_number, heal/split_two_numbers)
@@ -106,28 +110,28 @@ public class ShapeUpgrade_DivideTests
             aTool.SetNumbersUVSplits(theNumber1, theNumber2);
         }
         aTool.Perform();
-        TopoDS_Shape aRes = aTool.Result();
+        Shape aRes = aTool.Result();
 
         aSnap.AssertUnchanged(aFace);
         Assert.True(AllFrozen(aRes));
-        Assert.Equal(theNbFaces, Count(aRes, TopAbs_FACE));
+        Assert.Equal(theNbFaces, Count(aRes, ShapeType.Face));
         Assert.Equal(Area(aFace), Area(aRes), 6);
     }
 
     [Fact]
     public void ShapeDivideArea_ByMaximalArea_LeavesNoFaceLarger()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
         var aTool = new ShapeUpgrade_ShapeDivideArea(aBox);
         aTool.MaxArea() = 150;
         Assert.True(aTool.Perform());
-        TopoDS_Shape aRes = aTool.Result();
+        Shape aRes = aTool.Result();
 
         aSnap.AssertUnchanged(aBox);
         Assert.True(AllFrozen(aRes));
-        for (var anExp = new TopExp_Explorer(aRes, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aRes, ShapeType.Face); anExp.More(); anExp.Next())
         {
             Assert.True(Area(anExp.Current()) <= 150 + 1e-6, $"{Area(anExp.Current())}");
         }
@@ -135,7 +139,7 @@ public class ShapeUpgrade_DivideTests
     }
 
     // A C0 B-spline of degree 2 with a kink at its interior knot of multiplicity 2.
-    private static Geom_BSplineCurve KinkedCurve()
+    private static BSplineCurve3D KinkedCurve()
     {
         var aPoles = new NCollection_Array1<Point3D>(1, 5);
         aPoles[1] = new Point3D(0, 0, 0);
@@ -151,34 +155,34 @@ public class ShapeUpgrade_DivideTests
         aMults[1] = 3;
         aMults[2] = 2;
         aMults[3] = 3;
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 2);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 2);
     }
 
     [Fact]
     public void ShapeDivideContinuity_OnAFreeC0Edge_SplitsItAtTheKink()
     {
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(KinkedCurve()).Edge();
+        Edge anEdge = new BRepBuilderAPI_MakeEdge(KinkedCurve()).Edge();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anEdge);
 
         var aTool = new ShapeUpgrade_ShapeDivideContinuity(anEdge);
         Assert.True(aTool.Perform());
-        TopoDS_Shape aRes = aTool.Result();
+        Shape aRes = aTool.Result();
 
         aSnap.AssertUnchanged(anEdge);
         Assert.True(AllFrozen(aRes));
         Assert.True(aTool.Status(ShapeExtend_DONE1));
-        Assert.Equal(TopAbs_WIRE, aRes.ShapeType());
-        Assert.Equal(2, Count(aRes, TopAbs_EDGE));
-        for (var anExp = new TopExp_Explorer(aRes, TopAbs_EDGE); anExp.More(); anExp.Next())
+        Assert.Equal(ShapeType.Wire, aRes.ShapeType());
+        Assert.Equal(2, Count(aRes, ShapeType.Edge));
+        for (var anExp = new Explorer(aRes, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            Assert.True(BRep_Tool.Curve(TopoDS.Edge(anExp.Current()), out _, out _)!.Continuity() >= C1);
+            Assert.True(Tool.Curve(ShapeCasts.Edge(anExp.Current()), out _, out _)!.Continuity() >= C1);
         }
     }
 
     [Fact]
     public void ShapeDivideContinuity_OnASmoothShape_ReturnsTheCallersShape()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
         var aTool = new ShapeUpgrade_ShapeDivideContinuity(aBox);
         Assert.False(aTool.Perform());
         Assert.True(aTool.Result().IsEqual(aBox));
@@ -187,7 +191,7 @@ public class ShapeUpgrade_DivideTests
     [Fact]
     public void ShapeConvertToBezier_OnACylinder_ConvertsEverything_TheInputIsUnchanged()
     {
-        TopoDS_Shape aCyl = Cylinder();
+        Shape aCyl = Cylinder();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCyl);
 
         var aTool = new ShapeUpgrade_ShapeConvertToBezier(aCyl);
@@ -195,24 +199,24 @@ public class ShapeUpgrade_DivideTests
         aTool.Set2dConversion(true);
         aTool.Set3dConversion(true);
         Assert.True(aTool.Perform());
-        TopoDS_Shape aRes = aTool.Result();
+        Shape aRes = aTool.Result();
 
         aSnap.AssertUnchanged(aCyl);
         Assert.True(AllFrozen(aRes));
-        for (var anExp = new TopExp_Explorer(aRes, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aRes, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            TopoDS_Face aF = TopoDS.Face(anExp.Current());
-            Geom_Surface aS = BRep_Tool.Surface(aF)!;
-            Assert.True(aS is Geom_BezierSurface or Geom_CylindricalSurface or Geom_RectangularTrimmedSurface,
+            Face aF = ShapeCasts.Face(anExp.Current());
+            Surface aS = Tool.Surface(aF)!;
+            Assert.True(aS is BezierSurface or CylindricalSurface or TrimmedSurface,
                         global::Kerf.Engine.Foundation.OcctTypeNames.Of(aS.GetType()));
         }
-        for (var anExp = new TopExp_Explorer(aRes, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aRes, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            TopoDS_Edge anE = TopoDS.Edge(anExp.Current());
-            if (!BRep_Tool.Degenerated(anE))
+            Edge anE = ShapeCasts.Edge(anExp.Current());
+            if (!Tool.Degenerated(anE))
             {
-                Geom_Curve? aC = BRep_Tool.Curve(anE, out double cf, out double cl);
-                Assert.True(aC is Geom_BezierCurve, $"{aC?.GetType().Name} {cf} {cl} {(aC as Geom_TrimmedCurve)?.BasisCurve().GetType().Name}");
+                Curve3D? aC = Tool.Curve(anE, out double cf, out double cl);
+                Assert.True(aC is BezierCurve3D, $"{aC?.GetType().Name} {cf} {cl} {(aC as TrimmedCurve3D)?.BasisCurve().GetType().Name}");
             }
         }
         Assert.Equal(Area(aCyl), Area(aRes), 3);
@@ -221,14 +225,14 @@ public class ShapeUpgrade_DivideTests
     [Fact]
     public void ShapeConvertToBezier_WithNothingToConvert_ReturnsTheCallersShape()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
         var aTool = new ShapeUpgrade_ShapeConvertToBezier(aBox);
         aTool.Set3dConversion(true);
         aTool.Set3dLineConversion(false);
         aTool.Perform();
-        TopoDS_Shape aRes = aTool.Result();
+        Shape aRes = aTool.Result();
 
         aSnap.AssertUnchanged(aBox);
         Assert.True(ReferenceEquals(aRes.TShape(), aBox.TShape()));
@@ -237,13 +241,13 @@ public class ShapeUpgrade_DivideTests
     [Fact]
     public void ShapeConvertToBezier_TwiceOnItsOwnFrozenResult_GivesBezierEdgesWithRangeZeroOne()
     {
-        TopoDS_Shape aCyl = Cylinder();
+        Shape aCyl = Cylinder();
         var aTool = new ShapeUpgrade_ShapeConvertToBezier(aCyl);
         aTool.SetSurfaceConversion(true);
         aTool.Set2dConversion(true);
         aTool.Set3dConversion(true);
         aTool.Perform();
-        TopoDS_Shape aFirst = aTool.Result();
+        Shape aFirst = aTool.Result();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFirst);
 
         // the second run changes the frozen Bezier curves OCCT changes in place (decision 998)
@@ -252,14 +256,14 @@ public class ShapeUpgrade_DivideTests
         aTool2.Set2dConversion(true);
         aTool2.Set3dConversion(true);
         aTool2.Perform();
-        TopoDS_Shape aSecond = aTool2.Result();
+        Shape aSecond = aTool2.Result();
 
         aSnap.AssertUnchanged(aFirst);
         Assert.True(AllFrozen(aSecond));
-        for (var anExp = new TopExp_Explorer(aSecond, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aSecond, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            TopoDS_Edge anE = TopoDS.Edge(anExp.Current());
-            if (BRep_Tool.Curve(anE, out double f, out double l) is Geom_BezierCurve)
+            Edge anE = ShapeCasts.Edge(anExp.Current());
+            if (Tool.Curve(anE, out double f, out double l) is BezierCurve3D)
             {
                 Assert.Equal(0.0, f);
                 Assert.Equal(1.0, l);
@@ -270,16 +274,16 @@ public class ShapeUpgrade_DivideTests
     [Fact]
     public void RemoveInternalWires_RemovesTheHolesAndTheFaceInside()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
-        TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(5, 5, -1), new Direction3D(0, 0, 1)), 1, 12).Shape();
-        TopoDS_Shape aHoled = new BRepAlgoAPI_Cut(aBox, aCyl).Shape();
-        Assert.Equal(7, Count(aHoled, TopAbs_FACE));
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
+        Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(5, 5, -1), new Direction3D(0, 0, 1)), 1, 12).Shape();
+        Shape aHoled = new BRepAlgoAPI_Cut(aBox, aCyl).Shape();
+        Assert.Equal(7, Count(aHoled, ShapeType.Face));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aHoled);
 
         var aTool = new ShapeUpgrade_RemoveInternalWires(aHoled);
         aTool.MinArea() = 10;
         Assert.True(aTool.Perform());
-        TopoDS_Shape aRes = aTool.GetResult();
+        Shape aRes = aTool.GetResult();
 
         aSnap.AssertUnchanged(aHoled);
         Assert.True(AllFrozen(aRes));
@@ -287,65 +291,65 @@ public class ShapeUpgrade_DivideTests
         Assert.True(aTool.Status(ShapeExtend_DONE2));
         Assert.Equal(2, aTool.RemovedWires().Length());
         Assert.Equal(1, aTool.RemovedFaces().Length());
-        Assert.Equal(6, Count(aRes, TopAbs_FACE));
-        Assert.Equal(6, Count(aRes, TopAbs_WIRE));
+        Assert.Equal(6, Count(aRes, ShapeType.Face));
+        Assert.Equal(6, Count(aRes, ShapeType.Wire));
     }
 
     [Fact]
     public void ShellSewing_SewsAShellOfSeparateFaces()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
-        var B = new BRep_Builder();
-        var aShell = new TopoDS_Shell();
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
+        var B = new BrepBuilder();
+        var aShell = new Shell();
         B.MakeShell(ref aShell);
-        for (var anExp = new TopExp_Explorer(aBox, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aBox, ShapeType.Face); anExp.More(); anExp.Next())
         {
             B.Add(aShell, new BRepBuilderAPI_Copy(anExp.Current()).Shape());
         }
         aShell.TShape()!.FreezeGraph();
-        Assert.Equal(24, Count(aShell, TopAbs_EDGE));
+        Assert.Equal(24, Count(aShell, ShapeType.Edge));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShell);
 
-        TopoDS_Shape aRes = new ShapeUpgrade_ShellSewing().ApplySewing(aShell, 1e-6);
+        Shape aRes = new ShapeUpgrade_ShellSewing().ApplySewing(aShell, 1e-6);
 
         aSnap.AssertUnchanged(aShell);
-        Assert.False(aRes.IsNull());
+        Assert.False(aRes.IsNull);
         Assert.True(AllFrozen(aRes));
-        Assert.Equal(12, Count(aRes, TopAbs_EDGE));
-        Assert.Equal(8, Count(aRes, TopAbs_VERTEX));
+        Assert.Equal(12, Count(aRes, ShapeType.Edge));
+        Assert.Equal(8, Count(aRes, ShapeType.Vertex));
     }
 
     [Fact]
     public void ShellSewing_WithoutShells_ReturnsANullShape()
     {
-        TopoDS_Shape anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Shape();
-        Assert.True(new ShapeUpgrade_ShellSewing().ApplySewing(anEdge).IsNull());
+        Shape anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Shape();
+        Assert.True(new ShapeUpgrade_ShellSewing().ApplySewing(anEdge).IsNull);
     }
 
     [Fact]
     public void C0BSplineToSequenceOfC1BSplineCurve_SplitsAtTheKink_TheFrozenCurveIsUnchanged()
     {
-        Geom_BSplineCurve aCurve = KinkedCurve();
+        BSplineCurve3D aCurve = KinkedCurve();
         aCurve.Freeze();
-        NCollection_HSequence<Geom_BoundedCurve>? aSeq = null;
+        NCollection_HSequence<BoundedCurve3D>? aSeq = null;
 
         Assert.True(ShapeUpgrade.C0BSplineToSequenceOfC1BSplineCurve(aCurve, ref aSeq));
 
         Assert.Equal(2, aSeq!.Length());
-        Assert.Equal(3, aCurve.NbKnots());
-        Assert.Equal(new Point3D(2, 0, 0).X(), ((Geom_BSplineCurve)aSeq.Value(1)).EndPoint().X(), 12);
-        Assert.Equal(new Point3D(2, 0, 0).X(), ((Geom_BSplineCurve)aSeq.Value(2)).StartPoint().X(), 12);
+        Assert.Equal(3, aCurve.KnotCount);
+        Assert.Equal(new Point3D(2, 0, 0).X(), ((BSplineCurve3D)aSeq.Value(1)).EndPoint().X(), 12);
+        Assert.Equal(new Point3D(2, 0, 0).X(), ((BSplineCurve3D)aSeq.Value(2)).StartPoint().X(), 12);
 
         // a C1 curve: false, the sequence untouched
-        NCollection_HSequence<Geom_BoundedCurve>? aNone = null;
-        Assert.False(ShapeUpgrade.C0BSplineToSequenceOfC1BSplineCurve((Geom_BSplineCurve)aSeq.Value(1), ref aNone));
+        NCollection_HSequence<BoundedCurve3D>? aNone = null;
+        Assert.False(ShapeUpgrade.C0BSplineToSequenceOfC1BSplineCurve((BSplineCurve3D)aSeq.Value(1), ref aNone));
         Assert.Null(aNone);
     }
 
     [Fact]
     public void SplitCurve3d_SplitsABSplineAtTheValuesGiven_TheCurveGivenIsUnchanged()
     {
-        Geom_BSplineCurve aCurve = KinkedCurve();
+        BSplineCurve3D aCurve = KinkedCurve();
         aCurve.Freeze();
         var aTool = new ShapeUpgrade_SplitCurve3d();
         aTool.Init(aCurve, 0, 2);
@@ -361,23 +365,23 @@ public class ShapeUpgrade_DivideTests
         Assert.Equal(4, aTool.SplitValues()!.Length());
         Assert.Equal(3, aTool.GetCurves()!.Length());
         Assert.Equal(0.5, aTool.GetCurves()!.Value(1).LastParameter(), 12);
-        Assert.Equal(3, aCurve.NbKnots());
+        Assert.Equal(3, aCurve.KnotCount);
     }
 
     [Fact]
     public void ConvertCurve3dToBezier_OnACircle_GivesBezierArcs()
     {
-        var aCircle = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
+        var aCircle = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
         var aTool = new ShapeUpgrade_ConvertCurve3dToBezier();
         aTool.Init(aCircle, 0, 2 * Math.PI);
         aTool.Perform(true);
 
         Assert.True(aTool.Status(ShapeExtend_DONE1));
-        NCollection_HArray1<Geom_Curve> aCurves = aTool.GetCurves()!;
+        NCollection_HArray1<Curve3D> aCurves = aTool.GetCurves()!;
         Assert.True(aCurves.Length() > 1);
         for (int i = 1; i <= aCurves.Length(); i++)
         {
-            Assert.IsType<Geom_BezierCurve>(aCurves.Value(i));
+            Assert.IsType<BezierCurve3D>(aCurves.Value(i));
         }
         Assert.Equal(aCurves.Length() + 1, aTool.SplitParams().Length());
     }
@@ -399,7 +403,7 @@ public class ShapeUpgrade_DivideTests
         aMults[1] = 3;
         aMults[2] = 2;
         aMults[3] = 3;
-        var aCurve = new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 2);
+        var aCurve = new BSplineCurve2D(aPoles, aKnots, aMults, 2);
         aCurve.Freeze();
 
         var aTool = new ShapeUpgrade_SplitCurve2dContinuity();
@@ -442,8 +446,8 @@ public class ShapeAlgoTests
     public void AlgoContainer_OuterWireAndC0ShapeToC1Shape()
     {
         var aContainer = new ShapeAlgo_AlgoContainer();
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
-        TopoDS_Face aFace = TopoDS.Face(new TopExp_Explorer(aBox, TopAbs_FACE).Current());
+        Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
+        Face aFace = ShapeCasts.Face(new Explorer(aBox, ShapeType.Face).Current());
         Assert.True(aContainer.OuterWire(aFace).IsSame(ShapeAnalysis.OuterWire(aFace)));
         Assert.True(aContainer.C0ShapeToC1Shape(aBox, 1e-3).IsEqual(aBox));
         Assert.IsType<ShapeFix_Shape>(aContainer.ToolContainer()!.FixShape());
@@ -453,16 +457,16 @@ public class ShapeAlgoTests
     public void HomoWires_GivesWiresWithTheSameNumberOfEdges()
     {
         var aContainer = new ShapeAlgo_AlgoContainer();
-        TopoDS_Wire aW1 = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), true).Wire();
-        TopoDS_Wire aW2 = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 1), new Point3D(2, 0, 1), new Point3D(2, 2, 1),
+        Wire aW1 = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), true).Wire();
+        Wire aW2 = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 1), new Point3D(2, 0, 1), new Point3D(2, 2, 1),
                                                          new Point3D(0, 2, 1), true).Wire();
-        Assert.True(aContainer.HomoWires(aW1, aW2, out TopoDS_Wire aOut1, out TopoDS_Wire aOut2, false));
+        Assert.True(aContainer.HomoWires(aW1, aW2, out Wire aOut1, out Wire aOut2, false));
         int n1 = 0, n2 = 0;
-        for (var it = new TopoDS_Iterator(aOut1); it.More(); it.Next())
+        for (var it = new Iterator(aOut1); it.More(); it.Next())
         {
             n1++;
         }
-        for (var it = new TopoDS_Iterator(aOut2); it.More(); it.Next())
+        for (var it = new Iterator(aOut2); it.More(); it.Next())
         {
             n2++;
         }

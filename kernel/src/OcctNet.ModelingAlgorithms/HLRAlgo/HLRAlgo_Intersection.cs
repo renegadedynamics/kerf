@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -19,13 +20,13 @@ namespace Occt;
 /// </remarks>
 public partial struct HLRAlgo_Intersection : IEquatable<HLRAlgo_Intersection>
 {
-    private TopAbs_Orientation myOrien;
+    private Orientation myOrien;
     private int mySegIndex;
     private int myIndex;
     private int myLevel;
     private double myParam;
     private float myToler;
-    private TopAbs_State myState;
+    private Containment myState;
 
     public HLRAlgo_Intersection()
     {
@@ -36,8 +37,8 @@ public partial struct HLRAlgo_Intersection : IEquatable<HLRAlgo_Intersection>
         myToler = 0.0f;
     }
 
-    public HLRAlgo_Intersection(TopAbs_Orientation Ori, int Lev, int SegInd, int Ind, double P, float Tol,
-                                TopAbs_State S)
+    public HLRAlgo_Intersection(Orientation Ori, int Lev, int SegInd, int Ind, double P, float Tol,
+                                Containment S)
     {
         myOrien = Ori;
         mySegIndex = SegInd;
@@ -50,7 +51,7 @@ public partial struct HLRAlgo_Intersection : IEquatable<HLRAlgo_Intersection>
 
     // Mutators (internal: see docs/translation-rules.md)
 
-    internal void Orientation(TopAbs_Orientation Ori) => myOrien = Ori;
+    internal void Orientation(Orientation Ori) => myOrien = Ori;
 
     internal void Level(int Lev) => myLevel = Lev;
 
@@ -62,11 +63,11 @@ public partial struct HLRAlgo_Intersection : IEquatable<HLRAlgo_Intersection>
 
     internal void Tolerance(float T) => myToler = T;
 
-    internal void State(TopAbs_State St) => myState = St;
+    internal void State(Containment St) => myState = St;
 
     // Queries
 
-    public readonly TopAbs_Orientation Orientation() => myOrien;
+    public readonly Orientation Orientation() => myOrien;
 
     public readonly int Level() => myLevel;
 
@@ -78,9 +79,9 @@ public partial struct HLRAlgo_Intersection : IEquatable<HLRAlgo_Intersection>
 
     public readonly float Tolerance() => myToler;
 
-    public readonly TopAbs_State State() => myState;
+    public readonly Containment State() => myState;
 
-    public readonly HLRAlgo_Intersection WithOrientation(TopAbs_Orientation Ori)
+    public readonly HLRAlgo_Intersection WithOrientation(Orientation Ori)
     {
         HLRAlgo_Intersection aCopy = this;
         aCopy.Orientation(Ori);
@@ -122,7 +123,7 @@ public partial struct HLRAlgo_Intersection : IEquatable<HLRAlgo_Intersection>
         return aCopy;
     }
 
-    public readonly HLRAlgo_Intersection WithState(TopAbs_State St)
+    public readonly HLRAlgo_Intersection WithState(Containment St)
     {
         HLRAlgo_Intersection aCopy = this;
         aCopy.State(St);

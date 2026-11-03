@@ -34,14 +34,14 @@ internal static class GeometryTestProjCommands
         }
 
         double aTol = 1.0e-7;
-        Geom_Curve? aC = DrawTrSurf.GetCurve(theDI, a[1]);
+        Curve3D? aC = DrawTrSurf.GetCurve(theDI, a[1]);
         if (aC is null)
         {
             di.Append("Error: ").Append(a[1]).Append(" is not a curve!\n");
             return 0;
         }
 
-        Geom_Surface? aS = DrawTrSurf.GetSurface(theDI, a[2]);
+        Surface? aS = DrawTrSurf.GetSurface(theDI, a[2]);
         if (aS is null)
         {
             di.Append("Error: ").Append(a[2]).Append(" is not a surface!\n");

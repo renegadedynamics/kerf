@@ -5,6 +5,8 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -48,7 +50,7 @@ public static class HLRBRep_EdgeFaceTool
         U = 0.0;
         V = 0.0;
         double pfbid, plbid;
-        if (BRep_Tool.CurveOnSurface(E.Curve().Edge(), F.Surface().Face(), out pfbid, out plbid) is null)
+        if (Tool.CurveOnSurface(E.Curve().Edge(), F.Surface().Face(), out pfbid, out plbid) is null)
         {
             BRepExtrema_ExtPF proj = new(new BRepLib_MakeVertex(E.Value3D(Par)).InternalVertex(), F.Surface().Face());
             int i, index = 0;
@@ -72,7 +74,7 @@ public static class HLRBRep_EdgeFaceTool
         }
         else
         {
-            BRepAdaptor_Curve2d PC = new(E.Curve().Edge(), F.Surface().Face());
+            EdgeCurve2DAdaptor PC = new(E.Curve().Edge(), F.Surface().Face());
             PC.D0(Par, out Point2D P2d);
             U = P2d.X();
             V = P2d.Y();

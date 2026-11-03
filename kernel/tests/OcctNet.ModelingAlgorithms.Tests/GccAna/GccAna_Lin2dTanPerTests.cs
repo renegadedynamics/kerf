@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
@@ -60,8 +61,8 @@ public class GccAna_Lin2dTanPerTests
         Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).Distance(aI) < Tol);
         Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aC).Distance(aI) < Tol);
         // OCCT keeps the last intersection point IntAna2d returns, whatever its distance
-        IntAna2d_AnaIntersection anInt = new(aSol, aC);
-        Assert.Equal(anInt.Point(anInt.NbPoints()).Value(), aI);
+        AnalyticIntersection anInt = new(aSol, aC);
+        Assert.Equal(anInt.Point(anInt.PointCount).Value(), aI);
     }
 
     [Fact]

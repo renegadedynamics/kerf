@@ -2,6 +2,8 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static OcctNet.DataExchange.Tests.MeshTestKit;
@@ -18,10 +20,10 @@ public class XdeDocTests
     [Fact]
     public void PartsAreFrozenAndShared()
     {
-        TopoDS_Shape aBox = Box(1, 2, 3);
+        Shape aBox = Box(1, 2, 3);
         XdeDoc_Product aPart = XdeDoc_Product.Part(aBox, "B");
         Assert.True(aPart.Shape.TShape()!.IsFrozen);
-        Assert.Throws<ArgumentException>(() => XdeDoc_Product.Part(new TopoDS_Shape()));
+        Assert.Throws<ArgumentException>(() => XdeDoc_Product.Part(new Shape()));
 
         XdeDoc_Product anAssembly = XdeDoc_Product.Assembly("A", aPart.Placed(Translation(1, 0, 0)), aPart.Placed(Translation(2, 0, 0)));
         var aTree = new XdeDoc_Tree(anAssembly.Placed(new Placement()));
@@ -29,11 +31,11 @@ public class XdeDocTests
         Assert.Same(anAssembly.Components[0].Product, anAssembly.Components[1].Product);
 
         // the assembly's shape: the compound of its components, made once, frozen
-        TopoDS_Shape aCompound = anAssembly.Shape;
-        Assert.Equal(TopAbs_ShapeEnum.TopAbs_COMPOUND, aCompound.ShapeType());
+        Shape aCompound = anAssembly.Shape;
+        Assert.Equal(ShapeType.Compound, aCompound.ShapeType());
         Assert.True(aCompound.TShape()!.IsFrozen);
         Assert.True(aCompound.IsEqual(anAssembly.Shape));
-        Assert.Equal(2, new TopoDS_Iterator(aCompound).More() ? CountChildren(aCompound) : 0);
+        Assert.Equal(2, new Iterator(aCompound).More() ? CountChildren(aCompound) : 0);
 
         // With... makes new objects; the old ones keep their values
         XdeDoc_Product aRenamed = aPart.WithName("C");
@@ -46,10 +48,10 @@ public class XdeDocTests
         Assert.Same(aTree.Roots[0], aTree2.Roots[0]);
     }
 
-    private static int CountChildren(in TopoDS_Shape theShape)
+    private static int CountChildren(in Shape theShape)
     {
         int aCount = 0;
-        for (var anIt = new TopoDS_Iterator(theShape); anIt.More(); anIt.Next())
+        for (var anIt = new Iterator(theShape); anIt.More(); anIt.Next())
         {
             aCount++;
         }
@@ -122,8 +124,8 @@ public class XdeDocTests
     public void MeshedSharesWhatMeshingLeaves()
     {
         XdeDoc_Product aMeshed = XdeDoc_Product.Part(MeshedBox(1, 1, 1), "M");
-        TopoDS_Shape aBox = Box(2, 2, 2);
-        TopoDS_Shape aFace = new TopExp_Explorer(aBox, TopAbs_ShapeEnum.TopAbs_FACE).Current();
+        Shape aBox = Box(2, 2, 2);
+        Shape aFace = new Explorer(aBox, ShapeType.Face).Current();
         XdeDoc_Product aRaw = XdeDoc_Product.Part(aBox, "R").WithSubShape(aFace, new XdeDoc_Attributes { SurfaceColor = Red });
         var aTree = new XdeDoc_Tree([aMeshed.Placed(new Placement()), aRaw.Placed(Translation(5, 0, 0)), aRaw.Placed(Translation(9, 0, 0))]);
 
@@ -136,9 +138,9 @@ public class XdeDocTests
         Assert.Equal("R", aNew.Name);
         XdeDoc_SubShape aSub = Assert.Single(aNew.SubShapes);
         Assert.Equal(Red, aSub.Attributes.SurfaceColor);
-        Assert.NotNull(BRep_Tool.Triangulation(TopoDS.Face(aSub.Shape), out _));
-        Assert.True(CountShapes(aNew.Shape, TopAbs_ShapeEnum.TopAbs_FACE) == 6);
-        Assert.Null(BRep_Tool.Triangulation(TopoDS.Face(aFace), out _)); // the input isn't changed
+        Assert.NotNull(Tool.Triangulation(ShapeCasts.Face(aSub.Shape), out _));
+        Assert.True(CountShapes(aNew.Shape, ShapeType.Face) == 6);
+        Assert.Null(Tool.Triangulation(ShapeCasts.Face(aFace), out _)); // the input isn't changed
         Assert.Equal(12 * 3, WorldTriangles(aResult).Count);
 
         using var aCancel = new CancellationTokenSource();
@@ -152,7 +154,7 @@ public class XdeDocTests
     [Fact]
     public void DocumentBuildsAssembliesAsTheStepReaderDoes()
     {
-        TopoDS_Shape aBox = MeshedBox(10, 20, 30);
+        Shape aBox = MeshedBox(10, 20, 30);
         var aDoc = new XdeDoc_Document();
         XdeDoc_Label anAssembly = aDoc.NewShape();
         Assert.Equal("0:1:1:1", anAssembly.Entry());
@@ -179,7 +181,7 @@ public class XdeDocTests
 
         // the assembly's shape is the compound of its components
         aDoc.UpdateAssemblies();
-        TopoDS_Shape aCompound = aDoc.GetShape(anAssembly);
+        Shape aCompound = aDoc.GetShape(anAssembly);
         Assert.Equal(2, CountChildren(aCompound));
         Assert.True(aDoc.GetShape(aComp1).IsPartner(aBox));
 
@@ -188,7 +190,7 @@ public class XdeDocTests
         Assert.Equal(aComp2, aFound);
         Assert.True(aDoc.Search(aBox, out aFound));
         Assert.Equal(aPart, aFound);
-        TopoDS_Shape aFace = new TopExp_Explorer(aBox, TopAbs_ShapeEnum.TopAbs_FACE).Current();
+        Shape aFace = new Explorer(aBox, ShapeType.Face).Current();
         Assert.False(aDoc.Search(aFace, out aFound, true, true, false));
         Assert.True(aDoc.Search(aFace, out XdeDoc_Label aSub));
         Assert.Equal("0:1:1:2:1", aSub.Entry());
@@ -283,9 +285,9 @@ public class XdeDocTests
     [Fact]
     public void AddShapeMakesAssembliesAndReferencesAsXcaf()
     {
-        TopoDS_Shape aBox = Box(1, 1, 1);
-        var aBuilder = new BRep_Builder();
-        TopoDS_Compound aCompound = new();
+        Shape aBox = Box(1, 1, 1);
+        var aBuilder = new BrepBuilder();
+        Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
         aBuilder.Add(aCompound, aBox.Moved(Translation(5, 0, 0)));
         aBuilder.Add(aCompound, aBox.Moved(Translation(10, 0, 0)));
@@ -309,7 +311,7 @@ public class XdeDocTests
 
         // a located shape: a top-level reference to its unlocated shape, found with its location
         var aDoc3 = new XdeDoc_Document();
-        TopoDS_Shape aMoved = aBox.Moved(Translation(0, 0, 7));
+        Shape aMoved = aBox.Moved(Translation(0, 0, 7));
         XdeDoc_Label aRef = aDoc3.AddShape(aMoved);
         Assert.Equal("0:1:1:1", aRef.Entry());
         Assert.True(aDoc3.IsReference(aRef));

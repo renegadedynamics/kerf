@@ -5,7 +5,9 @@
 
 #nullable disable warnings
 
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -18,58 +20,58 @@ public class TransferBRep_ShapeBinder : TransferBRep_BinderOfShape
     }
 
     /// <summary>Creates a ShapeBinder with a result.</summary>
-    public TransferBRep_ShapeBinder(in TopoDS_Shape shape)
+    public TransferBRep_ShapeBinder(in Shape shape)
         : base(shape)
     {
     }
 
     /// <summary>Returns the Type of the Shape Result (under TopAbs form).</summary>
-    public TopAbs_ShapeEnum ShapeType()
+    public ShapeType ShapeType()
     {
         if (!HasResult())
         {
-            return TopAbs_SHAPE;
+            return global::Kerf.Topology.ShapeType.Shape;
         }
         return Result().ShapeType();
     }
 
-    public TopoDS_Vertex Vertex()
+    public Vertex Vertex()
     {
-        return TopoDS.Vertex(Result());
+        return ShapeCasts.Vertex(Result());
     }
 
-    public TopoDS_Edge Edge()
+    public Edge Edge()
     {
-        return TopoDS.Edge(Result());
+        return ShapeCasts.Edge(Result());
     }
 
-    public TopoDS_Wire Wire()
+    public Wire Wire()
     {
-        return TopoDS.Wire(Result());
+        return ShapeCasts.Wire(Result());
     }
 
-    public TopoDS_Face Face()
+    public Face Face()
     {
-        return TopoDS.Face(Result());
+        return ShapeCasts.Face(Result());
     }
 
-    public TopoDS_Shell Shell()
+    public Shell Shell()
     {
-        return TopoDS.Shell(Result());
+        return ShapeCasts.Shell(Result());
     }
 
-    public TopoDS_Solid Solid()
+    public Solid Solid()
     {
-        return TopoDS.Solid(Result());
+        return ShapeCasts.Solid(Result());
     }
 
-    public TopoDS_CompSolid CompSolid()
+    public CompSolid CompSolid()
     {
-        return TopoDS.CompSolid(Result());
+        return ShapeCasts.CompSolid(Result());
     }
 
-    public TopoDS_Compound Compound()
+    public Compound Compound()
     {
-        return TopoDS.Compound(Result());
+        return ShapeCasts.Compound(Result());
     }
 }

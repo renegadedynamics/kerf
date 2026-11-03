@@ -6,15 +6,18 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntRes2d_Position;
 using static Occt.IntRes2d_Situation;
 using static Occt.IntRes2d_TypeTrans;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -372,8 +375,8 @@ public class HLRBRep_Data : Transient
     private readonly int myNbVertices;
     private readonly int myNbEdges;
     private readonly int myNbFaces;
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myEMap = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myFMap = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myEMap = new(ShapeHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myFMap = new(ShapeHasher.Instance);
     private readonly NCollection_Array1<HLRBRep_EdgeData> myEData;
     private readonly NCollection_Array1<HLRBRep_FaceData> myFData;
     private readonly NCollection_Array1<int> myEdgeIndices;
@@ -410,7 +413,7 @@ public class HLRBRep_Data : Transient
     private CurveKind myLEType;
     private float myLETol;
     private int myFE;
-    private TopAbs_Orientation myFEOri;
+    private Orientation myFEOri;
     private bool myFEOutLine;
     private bool myFEInternal;
     private bool myFEDouble;
@@ -746,7 +749,7 @@ public class HLRBRep_Data : Transient
                     myFEInternal = myFaceItr1.Internal();
                     myFEDouble = myFaceItr1.Double();
                     HLRBRep_EdgeData EDataFE1 = myEData[myFE];
-                    if (!myFEDouble && (myFEOri == TopAbs_FORWARD || myFEOri == TopAbs_REVERSED))
+                    if (!myFEDouble && (myFEOri == Forward || myFEOri == Reversed))
                     {
                         myFEGeom = EDataFE1.ChangeGeometry();
                         HLRBRep_Curve EC = EDataFE1.Geometry();
@@ -790,16 +793,16 @@ public class HLRBRep_Data : Transient
                 {
                     switch (fd.Orientation())
                     {
-                        case TopAbs_REVERSED:
+                        case Reversed:
                             fd.Hiding(fd.Back());
                             break;
-                        case TopAbs_FORWARD:
+                        case Forward:
                             fd.Hiding(!fd.Back());
                             break;
-                        case TopAbs_EXTERNAL:
+                        case External:
                             fd.Hiding(true);
                             break;
-                        case TopAbs_INTERNAL:
+                        case Internal:
                             fd.Hiding(false);
                             break;
                     }
@@ -872,9 +875,9 @@ public class HLRBRep_Data : Transient
 
     public int NbFaces() => myNbFaces;
 
-    public NCollection_IndexedMap<TopoDS_Shape> EdgeMap() => myEMap;
+    public NCollection_IndexedMap<Shape> EdgeMap() => myEMap;
 
-    public NCollection_IndexedMap<TopoDS_Shape> FaceMap() => myFMap;
+    public NCollection_IndexedMap<Shape> FaceMap() => myFMap;
 
     /// <summary>Selects the edges e1 to e2 not all hidden whose boxes meet MinMaxTot, for the faces to hide.</summary>
     public void InitBoundSort(in HLRAlgo_EdgesBlock.MinMaxIndices MinMaxTot, int e1, int e2)
@@ -898,7 +901,7 @@ public class HLRBRep_Data : Transient
     }
 
     /// <summary>Starts the iteration on the edges the face FI may hide; MST caches the faces' classifiers.</summary>
-    public void InitEdge(int FI, NCollection_DataMap<TopoDS_Shape, BRepTopAdaptor_Tool> MST)
+    public void InitEdge(int FI, NCollection_DataMap<Shape, BRepTopAdaptor_Tool> MST)
     {
         myHideCount++;
         myHideCount++;
@@ -915,8 +918,8 @@ public class HLRBRep_Data : Transient
         myIntersector.Load(iFaceGeom);
 
         HLRBRep_Surface p1 = iFaceGeom;
-        BRepAdaptor_Surface bras = p1.Surface();
-        TopoDS_Face topodsface = bras.Face();
+        FaceSurfaceAdaptor bras = p1.Surface();
+        Face topodsface = bras.Face();
 
         if (MST.IsBound(topodsface))
         {
@@ -1117,7 +1120,7 @@ public class HLRBRep_Data : Transient
             myFETol = myFEData.Tolerance();
             myFEType = myFEGeom.GetType();
 
-            if (myFEOri == TopAbs_FORWARD || myFEOri == TopAbs_REVERSED)
+            if (myFEOri == Forward || myFEOri == Reversed)
             {
                 // Edge from the boundary
                 if (!myFEData.Vertical() && (!myFEDouble || myFEOutLine))
@@ -1307,7 +1310,7 @@ public class HLRBRep_Data : Transient
     {
         if (iInterf <= myNbPoints)
         {
-            return RejectedPoint(myIntersector.Point(iInterf), TopAbs_EXTERNAL, 0);
+            return RejectedPoint(myIntersector.Point(iInterf), External, 0);
         }
         else
         {
@@ -1327,12 +1330,12 @@ public class HLRBRep_Data : Transient
 
             if (firstPoint)
             {
-                bool ret1 = RejectedPoint(myIntersector.Segment(nseg).FirstPoint(), TopAbs_FORWARD, nseg);
+                bool ret1 = RejectedPoint(myIntersector.Segment(nseg).FirstPoint(), Forward, nseg);
                 return (ret1);
             }
             else
             {
-                bool ret2 = RejectedPoint(myIntersector.Segment(nseg).LastPoint(), TopAbs_REVERSED, -nseg);
+                bool ret2 = RejectedPoint(myIntersector.Segment(nseg).LastPoint(), Reversed, -nseg);
                 return (ret2);
             }
         }
@@ -1389,7 +1392,7 @@ public class HLRBRep_Data : Transient
     }
 
     /// <summary>The 3D states of the current edge before and after the point p1 where it is on the face boundary.</summary>
-    public void EdgeState(double p1, double p2, out TopAbs_State stbef, out TopAbs_State staft)
+    public void EdgeState(double p1, double p2, out Containment stbef, out Containment staft)
     {
         // compute the state of The Edge near the Intersection
         // this method should give the states before and after
@@ -1427,31 +1430,31 @@ public class HLRBRep_Data : Transient
 
                 if (scal > myToler * 10)
                 {
-                    stbef = TopAbs_IN;
-                    staft = TopAbs_OUT;
+                    stbef = In;
+                    staft = Out;
                 }
                 else if (scal < -myToler * 10)
                 {
-                    stbef = TopAbs_OUT;
-                    staft = TopAbs_IN;
+                    stbef = Out;
+                    staft = In;
                 }
                 else
                 {
-                    stbef = TopAbs_ON;
-                    staft = TopAbs_ON;
+                    stbef = On;
+                    staft = On;
                 }
             }
             else
             {
-                stbef = TopAbs_OUT;
-                staft = TopAbs_OUT;
+                stbef = Out;
+                staft = Out;
                 // OCCT_DEBUG trace left out
             }
         }
         else
         {
-            stbef = TopAbs_OUT;
-            staft = TopAbs_OUT;
+            stbef = Out;
+            staft = Out;
             // OCCT_DEBUG trace left out
         }
     }
@@ -1508,14 +1511,14 @@ public class HLRBRep_Data : Transient
                 switch (Int.Transition())
                 {
 
-                    case TopAbs_FORWARD:
+                    case Forward:
                         level -= Int.Intersection().Level();
                         break;
-                    case TopAbs_REVERSED:
+                    case Reversed:
                         level += Int.Intersection().Level();
                         break;
-                    case TopAbs_EXTERNAL:
-                    case TopAbs_INTERNAL:
+                    case External:
+                    case Internal:
                     default:
                         break;
                 }
@@ -1534,7 +1537,7 @@ public class HLRBRep_Data : Transient
     }
 
     /// <summary>The state of the edge ED against the current face (IN if hidden by it).</summary>
-    public TopAbs_State Compare(int E, HLRBRep_EdgeData ED)
+    public Containment Compare(int E, HLRBRep_EdgeData ED)
     {
         int level = 0;
         double parbid = 0.0;
@@ -1638,10 +1641,10 @@ public class HLRBRep_Data : Transient
                             {
                                 r = Nm.Z();
                             }
-                            myFEOri = (r > 0) ? TopAbs_FORWARD : TopAbs_REVERSED;
+                            myFEOri = (r > 0) ? Forward : Reversed;
                             if (!FD.Cut() && FD.Closed() && FirstInversion)
                             {
-                                if ((eb1.Orientation(ie1) == myFEOri) != (FD.Orientation() == TopAbs_FORWARD))
+                                if ((eb1.Orientation(ie1) == myFEOri) != (FD.Orientation() == Forward))
                                 {
                                     FirstInversion = false;
                                     inverted = true;
@@ -1706,7 +1709,7 @@ public class HLRBRep_Data : Transient
                             }
                             if (r < 0)
                             {
-                                myFEOri = TopAbs.Reverse(myFEOri);
+                                myFEOri = global::Kerf.Engine.Topology.TopAbs.Reverse(myFEOri);
                                 eb1.Orientation(ie1, myFEOri);
                             }
                         }
@@ -1760,7 +1763,7 @@ public class HLRBRep_Data : Transient
     /// The state of the edge ED against the current face: classifies a point of the edge (the parameter param with
     /// LevelFlag, counting in Level how many times the face covers it) by shooting a line of sight at the face.
     /// </summary>
-    public TopAbs_State Classify(int E, HLRBRep_EdgeData ED, bool LevelFlag, ref int Level, double param)
+    public Containment Classify(int E, HLRBRep_EdgeData ED, bool LevelFlag, ref int Level, double param)
     {
         _ = E; // avoid compiler warning
 
@@ -1771,7 +1774,7 @@ public class HLRBRep_Data : Transient
 
         int i;
         Level = 0;
-        TopAbs_State state = TopAbs_OUT;
+        Containment state = Out;
         //  Standard_Boolean rej = Standard_False;
         HLRBRep_Curve EC = ED.Geometry();
         double sta, xsta, ysta, zsta, end, xend, yend, zend;
@@ -1907,9 +1910,9 @@ public class HLRBRep_Data : Transient
                         }
 
                         Point2D pnt2d = new(u, v);
-                        if (myClassifier!.Classify(pnt2d, global::Kerf.Engine.Foundation.Precision.PConfusion()) != TopAbs_OUT)
+                        if (myClassifier!.Classify(pnt2d, global::Kerf.Engine.Foundation.Precision.PConfusion()) != Out)
                         {
-                            state = TopAbs_IN;
+                            state = In;
                             Level++;
                             if (!LevelFlag)
                             {
@@ -1924,7 +1927,7 @@ public class HLRBRep_Data : Transient
     }
 
     /// <summary>The state of the edge ED between p1 and p2 by Nbp points: OUT if one of them is rejected by the box.</summary>
-    public TopAbs_State SimplClassify(int E, HLRBRep_EdgeData ED, int Nbp, double p1, double p2)
+    public Containment SimplClassify(int E, HLRBRep_EdgeData ED, int Nbp, double p1, double p2)
     {
         nbClassification++;
         HLRAlgo_EdgesBlock.MinMaxIndices VertMin = new(), VertMax = new(), MinMaxVert = new();
@@ -1932,7 +1935,7 @@ public class HLRBRep_Data : Transient
         Span<double> TotMax = stackalloc double[16];
 
         int i;
-        TopAbs_State state = TopAbs_IN;
+        Containment state = In;
         //  Standard_Boolean rej = Standard_False;
         HLRBRep_Curve EC = ED.Geometry();
         double sta, xsta, ysta, zsta, dp;
@@ -1952,22 +1955,22 @@ public class HLRBRep_Data : Transient
             HLRAlgo.EncodeMinMax(ref VertMin, ref VertMax, ref MinMaxVert);
             if (ZRejected(iFaceMinMax, MinMaxVert))
             { //-- Rejection en Z
-                return TopAbs_OUT;
+                return Out;
             }
         }
         return state;
     }
 
     /// <summary>Builds the interference of the intersection point PInter; true if it is rejected.</summary>
-    private bool RejectedPoint(in IntRes2d_IntersectionPoint PInter, TopAbs_Orientation BoundOri, int NumSeg)
+    private bool RejectedPoint(in IntRes2d_IntersectionPoint PInter, Orientation BoundOri, int NumSeg)
     {
         int Ind = 0;
         int decal;
         double p1, p2, dz;
         float t1, t2;
-        TopAbs_State st;
-        TopAbs_Orientation Orie = TopAbs_FORWARD;
-        TopAbs_Orientation Or2 = TopAbs_INTERNAL;
+        Containment st;
+        Orientation Orie = Forward;
+        Orientation Or2 = Internal;
         bool inverted = false;
         IntRes2d_Transition Tr1;
         IntRes2d_Transition Tr2;
@@ -1995,7 +1998,7 @@ public class HLRBRep_Data : Transient
             return true;
         }
         myAboveIntf = false;
-        st = (dz <= -TolZ) ? TopAbs_IN : TopAbs_ON;
+        st = (dz <= -TolZ) ? In : On;
 
         if (inverted)
         {
@@ -2012,7 +2015,7 @@ public class HLRBRep_Data : Transient
         {
             if (myLE == myFE)
             {
-                if (st == TopAbs_IN)
+                if (st == In)
                 {
                     myLEData!.Simple(false);
                 }
@@ -2021,14 +2024,14 @@ public class HLRBRep_Data : Transient
             {
                 if (mySameVertex)
                 {
-                    if ((st == TopAbs_ON) || (Tr1.PositionOnCurve() != IntRes2d_Middle)
+                    if ((st == On) || (Tr1.PositionOnCurve() != IntRes2d_Middle)
                         || (Tr2.PositionOnCurve() != IntRes2d_Middle))
                     {
                         return true;
                     }
                 }
             }
-            if (st == TopAbs_IN)
+            if (st == In)
             {
                 iFaceSmpl = false;
             }
@@ -2037,19 +2040,19 @@ public class HLRBRep_Data : Transient
         switch (Tr1.TransitionType())
         { // compute the transition
             case IntRes2d_In:
-                Orie = (myFEOri == TopAbs_REVERSED ? TopAbs_REVERSED : TopAbs_FORWARD);
+                Orie = (myFEOri == Reversed ? Reversed : Forward);
                 break;
             case IntRes2d_Out:
-                Orie = (myFEOri == TopAbs_REVERSED ? TopAbs_FORWARD : TopAbs_REVERSED);
+                Orie = (myFEOri == Reversed ? Forward : Reversed);
                 break;
             case IntRes2d_Touch:
                 switch (Tr1.Situation())
                 {
                     case IntRes2d_Inside:
-                        Orie = (myFEOri == TopAbs_REVERSED ? TopAbs_EXTERNAL : TopAbs_INTERNAL);
+                        Orie = (myFEOri == Reversed ? External : Internal);
                         break;
                     case IntRes2d_Outside:
-                        Orie = (myFEOri == TopAbs_REVERSED ? TopAbs_INTERNAL : TopAbs_EXTERNAL);
+                        Orie = (myFEOri == Reversed ? Internal : External);
                         break;
                     case IntRes2d_Unknown:
                         return true;
@@ -2061,23 +2064,23 @@ public class HLRBRep_Data : Transient
 
         if (iFaceBack)
         {
-            Orie = TopAbs.Complement(Orie); // change the transition
+            Orie = global::Kerf.Engine.Topology.TopAbs.Complement(Orie); // change the transition
         }
-        TopAbs_Orientation Ori = TopAbs_FORWARD;
+        Orientation Ori = Forward;
         switch (Tr1.PositionOnCurve())
         {
             case IntRes2d_Head:
-                Ori = TopAbs_FORWARD;
+                Ori = Forward;
                 break;
             case IntRes2d_Middle:
-                Ori = TopAbs_INTERNAL;
+                Ori = Internal;
                 break;
             case IntRes2d_End:
-                Ori = TopAbs_REVERSED;
+                Ori = Reversed;
                 break;
         }
 
-        if (st != TopAbs_OUT)
+        if (st != Out)
         {
             if (Tr2.PositionOnCurve() != IntRes2d_Middle)
             { // correction de la transition  sur myFE
@@ -2093,7 +2096,7 @@ public class HLRBRep_Data : Transient
                 if (Tr2.PositionOnCurve() == IntRes2d_Head)
                 {
                     Ind = myFEData!.VSta();
-                    Or2 = TopAbs_FORWARD;
+                    Or2 = Forward;
                     AdjustParameter(myFEData, true, ref p2, out t2);
                     if (myFEData.VerAtSta())
                     {
@@ -2108,7 +2111,7 @@ public class HLRBRep_Data : Transient
                 else
                 {
                     Ind = myFEData!.VEnd();
-                    Or2 = TopAbs_REVERSED;
+                    Or2 = Reversed;
                     AdjustParameter(myFEData, false, ref p2, out t2);
                     if (myFEData.VerAtEnd())
                     {
@@ -2125,25 +2128,25 @@ public class HLRBRep_Data : Transient
                 {
                     if (TgFE.XY().Dot(Tgsav.XY()) < 0.0)
                     {
-                        if (Orie == TopAbs_FORWARD)
+                        if (Orie == Forward)
                         {
-                            Orie = TopAbs_REVERSED;
+                            Orie = Reversed;
                         }
-                        else if (Orie == TopAbs_REVERSED)
+                        else if (Orie == Reversed)
                         {
-                            Orie = TopAbs_FORWARD;
+                            Orie = Forward;
                         }
                     }
                 }
                 myIntf.ChangeBoundary().Set2D(myFE, p2);
             }
-            if (Ori != TopAbs_INTERNAL)
+            if (Ori != Internal)
             {                           // correction de la transition  sur myLE
                 bool douteux = false; // si intersection a une extremite verticale !
                 double psav = p1;
                 Point2D Ptsav;
                 Vector2D Tgsav = new(), Nmsav;
-                if (Ori == TopAbs_FORWARD)
+                if (Ori == Forward)
                 {
                     AdjustParameter(myLEData!, true, ref p1, out t1);
                     if (myLEData!.VerAtSta())
@@ -2174,20 +2177,20 @@ public class HLRBRep_Data : Transient
                     myLEGeom.D1(p1, out Ptsav, out Vector2D TgLE);
                     if (TgLE.XY().Dot(Tgsav.XY()) < 0.0)
                     {
-                        if (Orie == TopAbs_FORWARD)
+                        if (Orie == Forward)
                         {
-                            Orie = TopAbs_REVERSED;
+                            Orie = Reversed;
                         }
-                        else if (Orie == TopAbs_REVERSED)
+                        else if (Orie == Reversed)
                         {
-                            Orie = TopAbs_FORWARD;
+                            Orie = Forward;
                         }
                     }
                 }
             }
-            if (st == TopAbs_ON)
+            if (st == On)
             {
-                EdgeState(p1, p2, out TopAbs_State stbef, out TopAbs_State staft);
+                EdgeState(p1, p2, out Containment stbef, out Containment staft);
                 myIntf.ChangeBoundary().SetState3D(stbef, staft);
             }
         }
@@ -2199,7 +2202,7 @@ public class HLRBRep_Data : Transient
         else
         {
             decal = 1;
-            if (st == TopAbs_IN && Ori == TopAbs_FORWARD && Orie == TopAbs_FORWARD)
+            if (st == In && Ori == Forward && Orie == Forward)
             {
                 decal = 0;
             }

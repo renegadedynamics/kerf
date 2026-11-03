@@ -6,7 +6,9 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -56,13 +58,13 @@ public class XSControl_ConnectedShapes : IFSelect_SelectExplore
         {
             return false;
         }
-        TopoDS_Shape Shape = TransferBRep.ShapeResult(TP, ent);
-        if (Shape.IsNull())
+        Shape Shape = TransferBRep.ShapeResult(TP, ent);
+        if (Shape.IsNull)
         {
             return false;
         }
         NCollection_HSequence<Transient> li =
-            AdjacentEntities(Shape, TP, TopAbs_FACE);
+            AdjacentEntities(Shape, TP, ShapeType.Face);
         explored.AddList(li);
         return true;
     }
@@ -79,15 +81,15 @@ public class XSControl_ConnectedShapes : IFSelect_SelectExplore
     /// <summary>
     /// This functions considers a shape from a transfer and performs the search function explained above
     /// </summary>
-    public static NCollection_HSequence<Transient>? AdjacentEntities(TopoDS_Shape ashape, Transfer_TransientProcess? TP, TopAbs_ShapeEnum type)
+    public static NCollection_HSequence<Transient>? AdjacentEntities(Shape ashape, Transfer_TransientProcess? TP, ShapeType type)
     {
         NCollection_HSequence<Transient> li =
             new NCollection_HSequence<Transient>();
         int i, nb = TP.NbMapped();
         //  NCollection_Map<TopoDS_Shape, TopTools_ShapeMapHasher> adj (nb);
-        NCollection_Map<TopoDS_Shape> vtx = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> vtx = new NCollection_Map<Shape>(ShapeHasher.Instance);
 
-        for (TopExp_Explorer vert = new TopExp_Explorer(ashape, TopAbs_VERTEX); vert.More(); vert.Next())
+        for (Explorer vert = new Explorer(ashape, ShapeType.Vertex); vert.More(); vert.Next())
         {
             vtx.Add(vert.Current());
         }
@@ -95,8 +97,8 @@ public class XSControl_ConnectedShapes : IFSelect_SelectExplore
         for (i = 1; i <= nb; i++)
         {
             Transfer_Binder bnd = TP.MapItem(i);
-            TopoDS_Shape sh = TransferBRep.ShapeResult(bnd);
-            if (sh.IsNull())
+            Shape sh = TransferBRep.ShapeResult(bnd);
+            if (sh.IsNull)
             {
                 continue;
             }
@@ -104,9 +106,9 @@ public class XSControl_ConnectedShapes : IFSelect_SelectExplore
             {
                 continue;
             }
-            for (TopExp_Explorer vsh = new TopExp_Explorer(sh, TopAbs_VERTEX); vsh.More(); vsh.Next())
+            for (Explorer vsh = new Explorer(sh, ShapeType.Vertex); vsh.More(); vsh.Next())
             {
-                TopoDS_Shape avtx = vsh.Current();
+                Shape avtx = vsh.Current();
                 if (vtx.Contains(avtx))
                 {
                     li.Append(TP.Mapped(i));

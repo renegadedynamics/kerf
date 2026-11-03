@@ -306,10 +306,10 @@ public class BRepMesh_DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter
     {
         _ = theMidPoint;
         Direction3D aNorm1 = new(), aNorm2 = new();
-        Geom_Surface aSurf = getDFace().GetSurface().GeomSurfaceOriginal()!;
+        Surface aSurf = getDFace().GetSurface().GeomSurfaceOriginal()!;
 
-        if ((GeomLib.NormEstim(aSurf, new Point2D(theNodeInfo1.Point2d), global::Kerf.Engine.Foundation.Precision.Confusion(), ref aNorm1) == 0)
-            && (GeomLib.NormEstim(aSurf, new Point2D(theNodeInfo2.Point2d), global::Kerf.Engine.Foundation.Precision.Confusion(), ref aNorm2) == 0))
+        if ((global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(aSurf, new Point2D(theNodeInfo1.Point2d), global::Kerf.Engine.Foundation.Precision.Confusion(), ref aNorm1) == 0)
+            && (global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(aSurf, new Point2D(theNodeInfo2.Point2d), global::Kerf.Engine.Foundation.Precision.Confusion(), ref aNorm2) == 0))
         {
             double anAngle = aNorm1.Angle(aNorm2);
             if (anAngle > getParameters().AngleInterior)

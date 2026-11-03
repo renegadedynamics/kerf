@@ -2,30 +2,33 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Reflection;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
 /// The builder members the modelling layer calls (Kerf unit 10B, where they replaced its UnsafeAccessors): public, and
-/// building a shape that stays open until <see cref="TopoDS_TShape.FreezeGraph"/>.
+/// building a shape that stays open until <see cref="TShape.FreezeGraph"/>.
 /// </summary>
 public class PublicBuilderTests
 {
     [Theory]
-    [InlineData(typeof(TopoDS_Builder), ".ctor")]
-    [InlineData(typeof(TopoDS_Builder), "MakeWire")]
-    [InlineData(typeof(TopoDS_Builder), "MakeShell")]
-    [InlineData(typeof(TopoDS_Builder), "MakeSolid")]
-    [InlineData(typeof(TopoDS_Builder), "MakeCompSolid")]
-    [InlineData(typeof(TopoDS_Builder), "MakeCompound")]
-    [InlineData(typeof(TopoDS_Builder), "Add")]
-    [InlineData(typeof(TopoDS_Builder), "Remove")]
-    [InlineData(typeof(BRep_Builder), ".ctor")]
-    [InlineData(typeof(BRep_Builder), "MakeFace")]
-    [InlineData(typeof(TopoDS_TShape), "FreezeGraph")]
+    [InlineData(typeof(Builder), ".ctor")]
+    [InlineData(typeof(Builder), "MakeWire")]
+    [InlineData(typeof(Builder), "MakeShell")]
+    [InlineData(typeof(Builder), "MakeSolid")]
+    [InlineData(typeof(Builder), "MakeCompSolid")]
+    [InlineData(typeof(Builder), "MakeCompound")]
+    [InlineData(typeof(Builder), "Add")]
+    [InlineData(typeof(Builder), "Remove")]
+    [InlineData(typeof(BrepBuilder), ".ctor")]
+    [InlineData(typeof(BrepBuilder), "MakeFace")]
+    [InlineData(typeof(TShape), "FreezeGraph")]
     public void TheModellingLayersMembersArePublic(Type theType, string theName)
     {
         Assert.True(theType.IsPublic);
@@ -37,10 +40,10 @@ public class PublicBuilderTests
     [Fact]
     public void ABuiltCompoundStaysOpenUntilFrozen()
     {
-        var aBuilder = new TopoDS_Builder();
-        TopoDS_Compound aCompound = new();
+        var aBuilder = new Builder();
+        Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
         aBuilder.Add(aCompound, aBox);
         aBuilder.Add(aCompound, new BRepPrimAPI_MakeBox(4, 5, 6).Shape());
         aBuilder.Remove(aCompound, aBox);
@@ -50,7 +53,7 @@ public class PublicBuilderTests
 
         Assert.True(aCompound.TShape()!.IsFrozen);
         Assert.True(aCompound.Locked());
-        Assert.Equal(1, aCompound.NbChildren());
+        Assert.Equal(1, aCompound.ChildCount);
         Assert.ThrowsAny<FailureException>(() => aBuilder.Add(aCompound, aBox));
     }
 
@@ -62,13 +65,13 @@ public class PublicBuilderTests
         aTri.SetNode(2, new Point3D(1, 0, 0));
         aTri.SetNode(3, new Point3D(0, 1, 0));
         aTri.SetTriangle(1, new Triangle1(1, 2, 3));
-        TopoDS_Face aFace = new();
-        new BRep_Builder().MakeFace(ref aFace, aTri);
+        Face aFace = new();
+        new BrepBuilder().MakeFace(ref aFace, aTri);
         aFace.TShape()!.FreezeGraph();
 
-        Assert.Equal(TopAbs_FACE, aFace.ShapeType());
-        Assert.False(BRep_Tool.IsGeometric(aFace));
-        Assert.Same(aTri, BRep_Tool.Triangulation(aFace, out _));
+        Assert.Equal(ShapeType.Face, aFace.ShapeType());
+        Assert.False(Tool.IsGeometric(aFace));
+        Assert.Same(aTri, Tool.Triangulation(aFace, out _));
         Assert.True(aFace.TShape()!.IsFrozen);
     }
 }

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -16,13 +17,13 @@ namespace Occt;
 public sealed class Geom2dInt_MyImpParToolOfTheIntersectorOfTheIntConicCurveOfGInter
     : FunctionWithDerivative,
       IIntImpParGen_MyImpParTool<Geom2dInt_MyImpParToolOfTheIntersectorOfTheIntConicCurveOfGInter,
-                                 IntCurve_IConicTool, Adaptor2d_Curve2d>
+                                 IntCurve_IConicTool, Curve2DAdaptorBase>
 {
-    private readonly Adaptor2d_Curve2d TheParCurve;
+    private readonly Curve2DAdaptorBase TheParCurve;
     private readonly IntCurve_IConicTool TheImpTool;
 
     public Geom2dInt_MyImpParToolOfTheIntersectorOfTheIntConicCurveOfGInter(in IntCurve_IConicTool ITool,
-                                                                            Adaptor2d_Curve2d PC)
+                                                                            Curve2DAdaptorBase PC)
     {
         TheImpTool = ITool;
         TheParCurve = PC;
@@ -30,7 +31,7 @@ public sealed class Geom2dInt_MyImpParToolOfTheIntersectorOfTheIntConicCurveOfGI
 
     /// <summary>OCCT's constructor, for the generic intersector.</summary>
     public static Geom2dInt_MyImpParToolOfTheIntersectorOfTheIntConicCurveOfGInter Create(
-        in IntCurve_IConicTool IT, in Adaptor2d_Curve2d PC) => new(IT, PC);
+        in IntCurve_IConicTool IT, in Curve2DAdaptorBase PC) => new(IT, PC);
 
     /// <summary>The signed distance between the implicit curve and the point at <paramref name="Param"/>.</summary>
     public override bool Value(double Param, out double ApproxDistance)

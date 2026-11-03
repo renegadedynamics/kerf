@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_SpecPntType;
@@ -20,8 +21,8 @@ namespace Occt;
 /// </remarks>
 public class IntPatch_ALineToWLine
 {
-    private readonly Adaptor3d_Surface myS1;
-    private readonly Adaptor3d_Surface myS2;
+    private readonly SurfaceAdaptorBase myS1;
+    private readonly SurfaceAdaptorBase myS2;
     private IntSurf_Quadric myQuad1 = new();
     private IntSurf_Quadric myQuad2 = new();
 
@@ -87,7 +88,7 @@ public class IntPatch_ALineToWLine
     //           theSingularSurfaceID contains the ID of surface with
     //            special point (0 - none, 1 - theS1, 2 - theS2)
     //=======================================================================
-    private static IntPatch_SpecPntType IsPoleOrSeam(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
+    private static IntPatch_SpecPntType IsPoleOrSeam(SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
                                                      in IntSurf_PntOn2S thePIsoRef, IntSurf_LineOn2S theLine,
                                                      ref IntPatch_Point theVertex, ReadOnlySpan<double> theArrPeriods,
                                                      double theTol3d, out int theSingularSurfaceID)
@@ -150,7 +151,7 @@ public class IntPatch_ALineToWLine
 
     //=================================================================================================
 
-    public IntPatch_ALineToWLine(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2, int theNbPoints = 200)
+    public IntPatch_ALineToWLine(SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2, int theNbPoints = 200)
     {
         myS1 = theS1;
         myS2 = theS2;

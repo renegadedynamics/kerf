@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Collections.Concurrent;
@@ -8,7 +12,7 @@ using System.IO.Compression;
 using System.Reflection;
 using System.Text;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -92,29 +96,29 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
     }
 
     // The data/occ shapes, read once.
-    private static readonly ConcurrentDictionary<string, NCollection_IndexedMap<TopoDS_Shape>> OccFaces = new();
+    private static readonly ConcurrentDictionary<string, NCollection_IndexedMap<Shape>> OccFaces = new();
 
-    private static NCollection_IndexedMap<TopoDS_Shape> Faces(string theFile)
+    private static NCollection_IndexedMap<Shape> Faces(string theFile)
         => OccFaces.GetOrAdd(theFile, f =>
         {
-            Assert.True(BRepTools.Read(out TopoDS_Shape aShape,
+            Assert.True(BrepTools.Read(out Shape aShape,
                                        Path.Combine(Metadata("OcctSourceDir"), "data", "occ", f)));
-            NCollection_IndexedMap<TopoDS_Shape> aMap = new(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(aShape, TopAbs_FACE, aMap);
+            NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+            Exploration.MapShapes(aShape, ShapeType.Face, aMap);
             return aMap;
         });
 
-    private static (TopoDS_Face, TopoDS_Face) CaseFaces(Case theCase)
+    private static (Face, Face) CaseFaces(Case theCase)
     {
         if (theCase.FacesText is not null)
         {
-            BRepTools.Read(out TopoDS_Shape aShape, new StringReader(theCase.FacesText));
-            NCollection_IndexedMap<TopoDS_Shape> aMap = new(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(aShape, TopAbs_FACE, aMap);
-            return (TopoDS.Face(aMap.FindKey(1)), TopoDS.Face(aMap.FindKey(aMap.Extent()))); // the same face twice: held once
+            BrepTools.Read(out Shape aShape, new StringReader(theCase.FacesText));
+            NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+            Exploration.MapShapes(aShape, ShapeType.Face, aMap);
+            return (ShapeCasts.Face(aMap.FindKey(1)), ShapeCasts.Face(aMap.FindKey(aMap.Extent()))); // the same face twice: held once
         }
-        return (TopoDS.Face(Faces(theCase.File1!).FindKey(theCase.Index1)),
-                TopoDS.Face(Faces(theCase.File2!).FindKey(theCase.Index2)));
+        return (ShapeCasts.Face(Faces(theCase.File1!).FindKey(theCase.Index1)),
+                ShapeCasts.Face(Faces(theCase.File2!).FindKey(theCase.Index2)));
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -135,7 +139,7 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
 
     private static string PortRecord(Case theCase, bool theToRunParallel = false)
     {
-        (TopoDS_Face aF1, TopoDS_Face aF2) = CaseFaces(theCase);
+        (Face aF1, Face aF2) = CaseFaces(theCase);
         Variant aV = Variants[theCase.Variant];
         StringBuilder aRec = new();
         aRec.Append(CultureInfo.InvariantCulture,
@@ -172,16 +176,16 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
         NCollection_Sequence<IntTools_PntOn2Faces> aPoints = aFF.Points();
         aRec.Append(CultureInfo.InvariantCulture,
                     $"out done {(aFF.TangentFaces() ? 1 : 0)} {aLines.Length()} {aPoints.Length()}\n");
-        Geom_Plane aP1 = new(new Plane3D());
-        Geom_Plane aP2 = new(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)));
-        BRep_Builder aBB = new();
+        PlaneSurface aP1 = new(new Plane3D());
+        PlaneSurface aP2 = new(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)));
+        BrepBuilder aBB = new();
         for (int i = 1; i <= aLines.Length(); i++)
         {
             IntTools_Curve aIC = aLines.Value(i);
             aRec.Append(CultureInfo.InvariantCulture,
                         $"line {i} {(aIC.Curve() is null ? 0 : 1)} {(aIC.FirstCurve2d() is null ? 0 : 1)} {(aIC.SecondCurve2d() is null ? 0 : 1)}");
             aRec.Append(Hex(aIC.Tolerance())).Append(Hex(aIC.TangentialTolerance())).Append('\n');
-            TopoDS_Edge anE = new();
+            Edge anE = new();
             aBB.MakeEdge(ref anE);
             if (aIC.Curve() is not null)
             {
@@ -196,21 +200,21 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
                 aBB.UpdateEdge(anE, aIC.SecondCurve2d(), aP2, new Placement(), 1.0e-7);
             }
             StringWriter aWriter = new() { NewLine = "\n" };
-            BRepTools.Write(anE, aWriter, true, true, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3);
+            BrepTools.Write(anE, aWriter, true, true, FormatVersion.FormatVersion_VERSION_3);
             string aText = aWriter.ToString();
             aRec.Append(Record("c3", SectionTokens(aText, "Curves")));
             aRec.Append(Record("c2", SectionTokens(aText, "Curve2ds")));
-            if (aIC.Curve() is Geom_Curve aC3)
+            if (aIC.Curve() is Curve3D aC3)
             {
                 aRec.Append(Samples("s3", aC3.FirstParameter(), aC3.LastParameter(),
                                     t => { Point3D p = aC3.Value(t); return [p.X(), p.Y(), p.Z()]; }));
             }
-            if (aIC.FirstCurve2d() is Geom2d_Curve aC1)
+            if (aIC.FirstCurve2d() is Curve2D aC1)
             {
                 aRec.Append(Samples("s1", aC1.FirstParameter(), aC1.LastParameter(),
                                     t => { Point2D p = aC1.Value(t); return [p.X(), p.Y()]; }));
             }
-            if (aIC.SecondCurve2d() is Geom2d_Curve aC2)
+            if (aIC.SecondCurve2d() is Curve2D aC2)
             {
                 aRec.Append(Samples("s2", aC2.FirstParameter(), aC2.LastParameter(),
                                     t => { Point2D p = aC2.Value(t); return [p.X(), p.Y()]; }));

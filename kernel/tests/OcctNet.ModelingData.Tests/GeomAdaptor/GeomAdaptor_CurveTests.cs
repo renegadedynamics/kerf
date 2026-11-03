@@ -1,6 +1,7 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomAdaptor_Curve_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -8,27 +9,27 @@ namespace OcctNet.ModelingData.Tests;
 /// <summary>GeomAdaptor_Curve: degenerated curve handling.</summary>
 public class GeomAdaptor_Curve_Test
 {
-    private readonly Geom_Line myLine;
-    private readonly Geom_Circle myCircle;
+    private readonly LineCurve3D myLine;
+    private readonly CircleCurve3D myCircle;
 
     public GeomAdaptor_Curve_Test()
     {
         // Create a simple 3D line for testing
         Point3D aP1 = new(0.0, 0.0, 0.0);
         Line3D aLine = new(aP1, new Direction3D(1.0, 1.0, 0.0));
-        myLine = new Geom_Line(aLine);
+        myLine = new LineCurve3D(aLine);
 
         // Create a 3D circle for testing
         Point3D aCenter = new(5.0, 5.0, 0.0);
         Circle3D aCirc = new(new Frame3D(aCenter, new Direction3D(0.0, 0.0, 1.0)), 3.0);
-        myCircle = new Geom_Circle(aCirc);
+        myCircle = new CircleCurve3D(aCirc);
     }
 
     [Fact]
     public void Load_ValidParameters_Success()
     {
         // Test loading with valid parameters
-        GeomAdaptor_Curve anAdaptor = new();
+        CurveAdaptor anAdaptor = new();
         anAdaptor.Load(myLine, 0.0, 10.0);
 
         Assert.Equal(0.0, anAdaptor.FirstParameter());
@@ -40,7 +41,7 @@ public class GeomAdaptor_Curve_Test
     {
         // Test loading with equal parameters (degenerated curve)
         // This should be allowed as it represents a point
-        GeomAdaptor_Curve anAdaptor = new();
+        CurveAdaptor anAdaptor = new();
         anAdaptor.Load(myLine, 5.0, 5.0);
 
         Assert.Equal(5.0, anAdaptor.FirstParameter());
@@ -60,7 +61,7 @@ public class GeomAdaptor_Curve_Test
         double aParam1 = 5.0;
         double aParam2 = 5.0 + global::Kerf.Engine.Foundation.Precision.Confusion() * 0.5;
 
-        GeomAdaptor_Curve anAdaptor = new();
+        CurveAdaptor anAdaptor = new();
         anAdaptor.Load(myLine, aParam1, aParam2);
 
         Assert.Equal(aParam1, anAdaptor.FirstParameter());
@@ -74,7 +75,7 @@ public class GeomAdaptor_Curve_Test
         double aParam1 = 5.0;
         double aParam2 = 5.0 + global::Kerf.Engine.Foundation.Precision.Confusion();
 
-        GeomAdaptor_Curve anAdaptor = new();
+        CurveAdaptor anAdaptor = new();
         anAdaptor.Load(myLine, aParam1, aParam2);
 
         Assert.Equal(aParam1, anAdaptor.FirstParameter());
@@ -89,7 +90,7 @@ public class GeomAdaptor_Curve_Test
         double aParam1 = 5.0 + global::Kerf.Engine.Foundation.Precision.Confusion() * 0.5;
         double aParam2 = 5.0;
 
-        GeomAdaptor_Curve anAdaptor = new();
+        CurveAdaptor anAdaptor = new();
         anAdaptor.Load(myLine, aParam1, aParam2);
 
         Assert.Equal(aParam1, anAdaptor.FirstParameter());
@@ -101,7 +102,7 @@ public class GeomAdaptor_Curve_Test
     {
         // Test loading with UFirst > ULast + Precision::Confusion()
         // This should throw Standard_ConstructionError
-        GeomAdaptor_Curve anAdaptor = new();
+        CurveAdaptor anAdaptor = new();
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => anAdaptor.Load(myLine, 10.0, 5.0));
     }
 
@@ -112,7 +113,7 @@ public class GeomAdaptor_Curve_Test
         double aParam1 = 5.0;
         double aParam2 = 5.0 - global::Kerf.Engine.Foundation.Precision.Confusion() * 2.0;
 
-        GeomAdaptor_Curve anAdaptor = new();
+        CurveAdaptor anAdaptor = new();
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => anAdaptor.Load(myLine, aParam1, aParam2));
     }
 
@@ -120,7 +121,7 @@ public class GeomAdaptor_Curve_Test
     public void Constructor_DegeneratedCurve_Success()
     {
         // Test constructor with degenerated curve parameters
-        GeomAdaptor_Curve anAdaptor = new(myCircle, 0.0, 0.0);
+        CurveAdaptor anAdaptor = new(myCircle, 0.0, 0.0);
         Assert.Equal(0.0, anAdaptor.FirstParameter());
         Assert.Equal(0.0, anAdaptor.LastParameter());
     }
@@ -129,15 +130,15 @@ public class GeomAdaptor_Curve_Test
     public void Constructor_InvalidParameters_ThrowsException()
     {
         // Test constructor with invalid parameters
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new GeomAdaptor_Curve(myCircle, 10.0, 0.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new CurveAdaptor(myCircle, 10.0, 0.0));
     }
 
     [Fact]
     public void Load_NullCurve_ThrowsException()
     {
         // Test loading with null curve
-        Geom_Curve? aNullCurve = null;
-        GeomAdaptor_Curve anAdaptor = new();
+        Curve3D? aNullCurve = null;
+        CurveAdaptor anAdaptor = new();
 
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => anAdaptor.Load(aNullCurve!, 0.0, 10.0));
     }
@@ -148,7 +149,7 @@ public class GeomAdaptor_Curve_Test
         // Test degenerated circle (zero length arc)
         double aParam = M_PI;
 
-        GeomAdaptor_Curve anAdaptor = new();
+        CurveAdaptor anAdaptor = new();
         anAdaptor.Load(myCircle, aParam, aParam);
 
         // Verify the curve represents a single point
@@ -156,17 +157,17 @@ public class GeomAdaptor_Curve_Test
         Point3D aExpectedPoint = myCircle.Value(aParam);
 
         Assert.True(aPoint.IsEqual(aExpectedPoint, global::Kerf.Engine.Foundation.Precision.Confusion()));
-        Assert.True(anAdaptor.IsClosed() || anAdaptor.FirstParameter() == anAdaptor.LastParameter());
+        Assert.True(anAdaptor.IsClosed || anAdaptor.FirstParameter() == anAdaptor.LastParameter());
     }
 
     [Fact]
     public void DegeneratedCurve_TrimmedCurve_Success()
     {
         // Create a trimmed curve and test degenerated case
-        Geom_TrimmedCurve aTrimmedCurve = new(myLine, 0.0, 20.0);
+        TrimmedCurve3D aTrimmedCurve = new(myLine, 0.0, 20.0);
 
         double aParam = 10.0;
-        GeomAdaptor_Curve anAdaptor = new();
+        CurveAdaptor anAdaptor = new();
         anAdaptor.Load(aTrimmedCurve, aParam, aParam);
 
         Assert.Equal(aParam, anAdaptor.FirstParameter());
@@ -180,7 +181,7 @@ public class GeomAdaptor_Curve_Test
         double aParam1 = 5.0;
         double aParam2 = 5.0 - global::Kerf.Engine.Foundation.Precision.Confusion() - 1e-10;
 
-        GeomAdaptor_Curve anAdaptor = new();
+        CurveAdaptor anAdaptor = new();
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => anAdaptor.Load(myLine, aParam1, aParam2));
     }
 
@@ -188,12 +189,12 @@ public class GeomAdaptor_Curve_Test
     public void LoadWithoutParameters_Success()
     {
         // Test loading curve without specifying parameters (uses curve's own parameters)
-        GeomAdaptor_Curve anAdaptor = new();
+        CurveAdaptor anAdaptor = new();
         anAdaptor.Load(myCircle);
 
         Assert.Equal(myCircle.FirstParameter(), anAdaptor.FirstParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(myCircle.LastParameter(), anAdaptor.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(anAdaptor.IsPeriodic());
+        Assert.True(anAdaptor.IsPeriodic);
     }
 
     [Fact]
@@ -204,7 +205,7 @@ public class GeomAdaptor_Curve_Test
 
         foreach (double aParam in aParams)
         {
-            GeomAdaptor_Curve anAdaptor = new();
+            CurveAdaptor anAdaptor = new();
             anAdaptor.Load(myLine, aParam, aParam);
 
             Point3D aPoint1 = anAdaptor.Value(aParam);
@@ -220,7 +221,7 @@ public class GeomAdaptor_Curve_Test
         double aParam1 = 5.0;
         double aParam2 = 5.0 + global::Kerf.Engine.Foundation.Precision.Confusion() + 1e-12;
 
-        GeomAdaptor_Curve anAdaptor = new();
+        CurveAdaptor anAdaptor = new();
         anAdaptor.Load(myLine, aParam1, aParam2);
 
         Assert.Equal(aParam1, anAdaptor.FirstParameter());
@@ -234,7 +235,7 @@ public class GeomAdaptor_Curve_Test
         double aFirst = 0.0;
         double aLast = 2.0 * M_PI;
 
-        GeomAdaptor_Curve anAdaptor = new(myCircle, aFirst, aLast);
+        CurveAdaptor anAdaptor = new(myCircle, aFirst, aLast);
         Assert.Equal(aFirst, anAdaptor.FirstParameter());
         Assert.Equal(aLast, anAdaptor.LastParameter());
         Assert.Equal(CurveKind.Circle, anAdaptor.GetType());

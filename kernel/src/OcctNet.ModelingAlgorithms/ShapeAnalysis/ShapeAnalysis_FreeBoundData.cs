@@ -5,6 +5,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -13,28 +15,28 @@ namespace Occt;
 /// perimeter of the contour, the ratio of its average length to its average width, its average width, and its notches
 /// (narrow V-like sub-contours) with their maximum widths. Unset properties are -1.
 /// </summary>
-/// <remarks>A working object with OCCT's setters (decision 21). The notches are keyed by <see cref="TopTools_ShapeMapHasher"/>.</remarks>
+/// <remarks>A working object with OCCT's setters (decision 21). The notches are keyed by <see cref="ShapeHasher"/>.</remarks>
 public class ShapeAnalysis_FreeBoundData : Transient
 {
-    private TopoDS_Wire myBound = new();
+    private Wire myBound = new();
     private double myArea;
     private double myPerimeter;
     private double myRatio;
     private double myWidth;
-    private readonly NCollection_HSequence<TopoDS_Shape> myNotches;
-    private readonly NCollection_DataMap<TopoDS_Shape, double> myNotchesParams = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_HSequence<Shape> myNotches;
+    private readonly NCollection_DataMap<Shape, double> myNotchesParams = new(ShapeHasher.Instance);
 
     /// <summary>An empty data set.</summary>
     public ShapeAnalysis_FreeBoundData()
     {
-        myNotches = new NCollection_HSequence<TopoDS_Shape>();
+        myNotches = new NCollection_HSequence<Shape>();
         Clear();
     }
 
     /// <summary>The data of the contour.</summary>
-    public ShapeAnalysis_FreeBoundData(in TopoDS_Wire freebound)
+    public ShapeAnalysis_FreeBoundData(in Wire freebound)
     {
-        myNotches = new NCollection_HSequence<TopoDS_Shape>();
+        myNotches = new NCollection_HSequence<Shape>();
         Clear();
         SetFreeBound(freebound);
     }
@@ -51,7 +53,7 @@ public class ShapeAnalysis_FreeBoundData : Transient
     }
 
     /// <summary>Sets the contour.</summary>
-    public void SetFreeBound(in TopoDS_Wire freebound) => myBound = freebound;
+    public void SetFreeBound(in Wire freebound) => myBound = freebound;
 
     /// <summary>Sets the area of the contour.</summary>
     public void SetArea(double area) => myArea = area;
@@ -66,7 +68,7 @@ public class ShapeAnalysis_FreeBoundData : Transient
     public void SetWidth(double width) => myWidth = width;
 
     /// <summary>Adds a notch of the contour with its maximum width (ignored if already added).</summary>
-    public void AddNotch(in TopoDS_Wire notch, double width)
+    public void AddNotch(in Wire notch, double width)
     {
         if (myNotchesParams.IsBound(notch))
         {
@@ -77,7 +79,7 @@ public class ShapeAnalysis_FreeBoundData : Transient
     }
 
     /// <summary>The contour.</summary>
-    public TopoDS_Wire FreeBound() => myBound;
+    public Wire FreeBound() => myBound;
 
     /// <summary>The area of the contour.</summary>
     public double Area() => myArea;
@@ -95,18 +97,18 @@ public class ShapeAnalysis_FreeBoundData : Transient
     public int NbNotches() => myNotches.Length();
 
     /// <summary>The notches (the object's own sequence, as OCCT's handle).</summary>
-    public NCollection_HSequence<TopoDS_Shape> Notches() => myNotches;
+    public NCollection_HSequence<Shape> Notches() => myNotches;
 
     /// <summary>The notch of the given rank.</summary>
-    public TopoDS_Wire Notch(int index) => TopoDS.Wire(myNotches.Value(index));
+    public Wire Notch(int index) => ShapeCasts.Wire(myNotches.Value(index));
 
     /// <summary>The maximum width of the notch of the given rank.</summary>
     public double NotchWidth(int index)
     {
-        TopoDS_Wire wire = TopoDS.Wire(myNotches.Value(index));
+        Wire wire = ShapeCasts.Wire(myNotches.Value(index));
         return myNotchesParams.Find(wire);
     }
 
     /// <summary>The maximum width of the notch.</summary>
-    public double NotchWidth(in TopoDS_Wire notch) => myNotchesParams.Find(notch);
+    public double NotchWidth(in Wire notch) => myNotchesParams.Find(notch);
 }

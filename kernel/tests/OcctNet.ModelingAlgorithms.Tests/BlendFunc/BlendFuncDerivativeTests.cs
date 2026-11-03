@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static OcctNet.ModelingAlgorithms.Tests.BlendRecorder;
@@ -72,8 +73,8 @@ public class BlendFuncDerivativeTests
 
     private static IEnumerable<(string Name, Blend_Function F)> Functions(PairCase C)
     {
-        Adaptor3d_Surface S1 = Surf(C.S1), S2 = Surf(C.S2);
-        Adaptor3d_Curve G = Guide(C.G);
+        SurfaceAdaptorBase S1 = Surf(C.S1), S2 = Surf(C.S2);
+        CurveAdaptorBase G = Guide(C.G);
         BlendFunc_ConstRad aConstRad = new(S1, S2, G);
         aConstRad.Set(1.0, 1);
         yield return ("constrad", aConstRad);
@@ -136,8 +137,8 @@ public class BlendFuncDerivativeTests
 
     private static IEnumerable<(string Name, Blend_FuncInv F)> InverseFunctions(PairCase C)
     {
-        Adaptor3d_Surface S1 = Surf(C.S1), S2 = Surf(C.S2);
-        Adaptor3d_Curve G = Guide(C.G);
+        SurfaceAdaptorBase S1 = Surf(C.S1), S2 = Surf(C.S2);
+        CurveAdaptorBase G = Guide(C.G);
         BlendFunc_ConstRadInv aConstRad = new(S1, S2, G);
         aConstRad.Set(1.0, 1);
         yield return ("constradinv", aConstRad);
@@ -168,8 +169,8 @@ public class BlendFuncDerivativeTests
                                                                    double u, double v)
     {
         PairCase C = THE_PAIRS[thePair];
-        Adaptor2d_Curve2d R = new Geom2dAdaptor_Curve(
-            new Geom2d_Line(new Point2D(theX, theY), new Direction2D(theDX, theDY)), -10.0, 10.0);
+        Curve2DAdaptorBase R = new CurveAdaptor2D(
+            new LineCurve2D(new Point2D(theX, theY), new Direction2D(theDX, theDY)), -10.0, 10.0);
         foreach ((string aName, Blend_FuncInv F) in InverseFunctions(C))
         {
             F.Set(theOnFirst, R);
@@ -194,7 +195,7 @@ public class BlendFuncDerivativeTests
         PairCase C = THE_PAIRS[0];
         BlendFunc_ConstRadInv F = new(Surf(C.S1), Surf(C.S2), Guide(C.G));
         F.Set(1.0, 1);
-        F.Set(true, new Geom2dAdaptor_Curve(new Geom2d_Line(new Point2D(5, 0), new Direction2D(0, 1)), -10.0, 10.0));
+        F.Set(true, new CurveAdaptor2D(new LineCurve2D(new Point2D(5, 0), new Direction2D(0, 1)), -10.0, 10.0));
         math_Vector X = new(1, 4);
         X[1] = 1.0;
         X[2] = 5.0;
@@ -216,8 +217,8 @@ public class BlendFuncDerivativeTests
     [Fact]
     public void CSFunctions_DerivativesMatchFiniteDifferences()
     {
-        Adaptor3d_Surface S = Surf(0);
-        Adaptor3d_Curve C = Guide(4), G = Guide(0);
+        SurfaceAdaptorBase S = Surf(0);
+        CurveAdaptorBase C = Guide(4), G = Guide(0);
         BlendFunc_CSConstRad aCS = new(S, C, G);
         aCS.Set(1.0, 1);
         aCS.Set(3.0);
@@ -244,8 +245,8 @@ public class BlendFuncDerivativeTests
         // The derivative of the poles (Section with D2Poles) against finite differences of the first-order section
         // along the guide, on the plane/cylinder pair.
         PairCase C = THE_PAIRS[1];
-        Adaptor3d_Surface S1 = Surf(C.S1), S2 = Surf(C.S2);
-        Adaptor3d_Curve G = Guide(C.G);
+        SurfaceAdaptorBase S1 = Surf(C.S1), S2 = Surf(C.S2);
+        CurveAdaptorBase G = Guide(C.G);
         BlendFunc_ConstRad F = new(S1, S2, G);
         F.Set(1.0, 1);
         F.Set(G.FirstParameter(), G.LastParameter());

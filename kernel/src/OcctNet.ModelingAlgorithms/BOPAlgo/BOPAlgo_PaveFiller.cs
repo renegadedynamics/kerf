@@ -4,8 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using static Occt.BOPAlgo_GlueEnum;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -26,7 +27,7 @@ namespace Occt;
 /// </para>
 /// <para>
 /// <b>Non-destructive mode.</b> The filler turns non-destructive by itself when an argument is
-/// <see cref="TopoDS_Shape.Locked()"/> (<c>BOPAlgo_PaveFiller_10</c>), and frozen shapes are locked, so a published
+/// <see cref="Shape.Locked()"/> (<c>BOPAlgo_PaveFiller_10</c>), and frozen shapes are locked, so a published
 /// shape is never written (decision 577): an argument sub-shape that must change is replaced by a new one.
 /// </para>
 /// <para>
@@ -79,7 +80,7 @@ public partial class BOPAlgo_PaveFiller : BOPAlgo_Algo
         }
     }
 
-    protected NCollection_List<TopoDS_Shape> myArguments = new();
+    protected NCollection_List<Shape> myArguments = new();
     protected BOPDS_DS? myDS;
     protected BOPDS_Iterator? myIterator;
     protected IntTools_Context? myContext;
@@ -118,13 +119,13 @@ public partial class BOPAlgo_PaveFiller : BOPAlgo_Algo
     public BOPDS_Iterator? Iterator() => myIterator;
 
     /// <summary>Sets the arguments (copies the list).</summary>
-    public void SetArguments(NCollection_List<TopoDS_Shape> theLS) => myArguments = new NCollection_List<TopoDS_Shape>(theLS);
+    public void SetArguments(NCollection_List<Shape> theLS) => myArguments = new NCollection_List<Shape>(theLS);
 
     /// <summary>Adds an argument.</summary>
-    public void AddArgument(in TopoDS_Shape theShape) => myArguments.Append(theShape);
+    public void AddArgument(in Shape theShape) => myArguments.Append(theShape);
 
     /// <summary>The arguments.</summary>
-    public NCollection_List<TopoDS_Shape> Arguments() => myArguments;
+    public NCollection_List<Shape> Arguments() => myArguments;
 
     /// <summary>The intersection context (null before <see cref="Perform"/>).</summary>
     public IntTools_Context? Context() => myContext;
@@ -175,9 +176,9 @@ public partial class BOPAlgo_PaveFiller : BOPAlgo_Algo
         }
         //
         using var aPS = new ProgressScope(theRange, "Initialization of Intersection algorithm", 1);
-        for (NCollection_List<TopoDS_Shape>.Iterator aIt = new(myArguments); aIt.More(); aIt.Next())
+        for (NCollection_List<Shape>.Iterator aIt = new(myArguments); aIt.More(); aIt.Next())
         {
-            if (aIt.Value().IsNull())
+            if (aIt.Value().IsNull)
             {
                 AddError(new BOPAlgo_AlertNullInputShapes());
                 return;
@@ -353,7 +354,7 @@ public partial class BOPAlgo_PaveFiller : BOPAlgo_Algo
         for (int i = 0; i < aNbS; ++i)
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() != TopAbs_VERTEX)
+            if (aSI.ShapeType() != ShapeType.Vertex)
             {
                 continue;
             }
@@ -424,25 +425,25 @@ public partial class BOPAlgo_PaveFiller : BOPAlgo_Algo
         // Get number of all intersecting pairs
         int aVVSize = 0, aVESize = 0, aEESize = 0, aVFSize = 0, aEFSize = 0, aFFSize = 0;
 
-        myIterator!.Initialize(TopAbs_VERTEX, TopAbs_VERTEX);
+        myIterator!.Initialize(ShapeType.Vertex, ShapeType.Vertex);
         aVVSize = myIterator.ExpectedLength();
 
-        myIterator.Initialize(TopAbs_VERTEX, TopAbs_EDGE);
+        myIterator.Initialize(ShapeType.Vertex, ShapeType.Edge);
         aVESize = myIterator.ExpectedLength();
 
-        myIterator.Initialize(TopAbs_EDGE, TopAbs_EDGE);
+        myIterator.Initialize(ShapeType.Edge, ShapeType.Edge);
         aEESize = myIterator.ExpectedLength();
 
-        myIterator.Initialize(TopAbs_VERTEX, TopAbs_FACE);
+        myIterator.Initialize(ShapeType.Vertex, ShapeType.Face);
         aVFSize = myIterator.ExpectedLength();
 
         if (myGlue != BOPAlgo_GlueFull)
         {
-            myIterator.Initialize(TopAbs_EDGE, TopAbs_FACE);
+            myIterator.Initialize(ShapeType.Edge, ShapeType.Face);
             aEFSize = myIterator.ExpectedLength();
         }
 
-        myIterator.Initialize(TopAbs_FACE, TopAbs_FACE);
+        myIterator.Initialize(ShapeType.Face, ShapeType.Face);
         aFFSize = myIterator.ExpectedLength();
 
         theSteps.SetStep((int)BOPAlgo_PIOperation.PIOperation_PerformVV, aVVSize);

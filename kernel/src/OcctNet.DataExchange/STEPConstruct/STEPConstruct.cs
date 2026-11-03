@@ -20,7 +20,7 @@ public static class STEPConstruct
     /// Returns STEP entity of the (sub)type of RepresentationItem which is a result of the transfer of a Shape, or
     /// Null if not found
     /// </summary>
-    public static StepRepr_RepresentationItem FindEntity(Transfer_FinderProcess FinderProcess, TopoDS_Shape Shape)
+    public static StepRepr_RepresentationItem FindEntity(Transfer_FinderProcess FinderProcess, Shape Shape)
     {
         StepRepr_RepresentationItem item = null;
         TransferBRep_ShapeMapper mapper = TransferBRep.ShapeMapper(FinderProcess, Shape);
@@ -33,7 +33,7 @@ public static class STEPConstruct
     /// The same as above, but in the case if item not found, repeats search on the same shape without location. The
     /// Loc corresponds to the location with which result is found (either location of the Shape, or Null)
     /// </summary>
-    public static StepRepr_RepresentationItem FindEntity(Transfer_FinderProcess FinderProcess, TopoDS_Shape Shape,
+    public static StepRepr_RepresentationItem FindEntity(Transfer_FinderProcess FinderProcess, Shape Shape,
                                                          ref Placement Loc)
     {
         StepRepr_RepresentationItem item = null;
@@ -42,7 +42,7 @@ public static class STEPConstruct
         if (!FinderProcess.FindTypedTransient(mapper, typeof(StepRepr_RepresentationItem), ref item) && !Loc.IsIdentity)
         {
             Loc = new Placement();
-            TopoDS_Shape S = Shape.Located(Loc);
+            Shape S = Shape.Located(Loc);
             mapper = TransferBRep.ShapeMapper(FinderProcess, S);
             FinderProcess.FindTypedTransient(mapper, typeof(StepRepr_RepresentationItem), ref item);
         }
@@ -53,9 +53,9 @@ public static class STEPConstruct
     /// <summary>
     /// Returns Shape resulting from given STEP entity (Null if not mapped)
     /// </summary>
-    public static TopoDS_Shape FindShape(Transfer_TransientProcess TransientProcess, StepRepr_RepresentationItem item)
+    public static Shape FindShape(Transfer_TransientProcess TransientProcess, StepRepr_RepresentationItem item)
     {
-        TopoDS_Shape S = new TopoDS_Shape();
+        Shape S = new Shape();
         Transfer_Binder binder = TransientProcess.Find(item);
         if (binder is not null && binder.HasResult())
         {

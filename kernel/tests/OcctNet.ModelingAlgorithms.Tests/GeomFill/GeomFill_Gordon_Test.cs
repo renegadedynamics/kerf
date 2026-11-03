@@ -16,7 +16,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class GeomFill_Gordon_Test
 {
     //! Helper: create a linear BSpline curve from two points, parametrized on [0,1].
-    internal static Geom_BSplineCurve makeLinearBSpline(Point3D theP1, Point3D theP2)
+    internal static BSplineCurve3D makeLinearBSpline(Point3D theP1, Point3D theP2)
     {
         NCollection_Array1<Point3D> aPoles = new(1, 2);
         aPoles[1] = theP1;
@@ -27,11 +27,11 @@ public class GeomFill_Gordon_Test
         NCollection_Array1<int> aMults = new(1, 2);
         aMults[1] = 2;
         aMults[2] = 2;
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 1);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 1);
     }
 
     //! Helper: create a quadratic BSpline curve through 3 control points on [0,1].
-    internal static Geom_BSplineCurve makeQuadraticBSpline(Point3D theP1, Point3D theP2, Point3D theP3,
+    internal static BSplineCurve3D makeQuadraticBSpline(Point3D theP1, Point3D theP2, Point3D theP3,
                                                            double theFirstParameter = 0.0,
                                                            double theLastParameter = 1.0)
     {
@@ -45,10 +45,10 @@ public class GeomFill_Gordon_Test
         NCollection_Array1<int> aMults = new(1, 2);
         aMults[1] = 3;
         aMults[2] = 3;
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 2);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 2);
     }
 
-    private static NCollection_Array2<Point3D> makeIntersectionGrid(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
+    private static NCollection_Array2<Point3D> makeIntersectionGrid(NCollection_Array1<BSplineCurve3D?> theProfiles,
                                                                    NCollection_Array1<double> theGuideParams)
     {
         NCollection_Array2<Point3D> aPoints = new(1, theGuideParams.Size(), 1, theProfiles.Size());
@@ -62,7 +62,7 @@ public class GeomFill_Gordon_Test
         return aPoints;
     }
 
-    private static NCollection_Array2<double> makeUnitWeightGrid(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
+    private static NCollection_Array2<double> makeUnitWeightGrid(NCollection_Array1<BSplineCurve3D?> theProfiles,
                                                                  NCollection_Array1<double> theGuideParams)
     {
         NCollection_Array2<double> aWeights = new(1, theGuideParams.Size(), 1, theProfiles.Size());
@@ -70,7 +70,7 @@ public class GeomFill_Gordon_Test
         return aWeights;
     }
 
-    private static Geom_BSplineCurve makeRationalQuadraticBSpline(Point3D theP1, Point3D theP2, Point3D theP3,
+    private static BSplineCurve3D makeRationalQuadraticBSpline(Point3D theP1, Point3D theP2, Point3D theP3,
                                                                   double theMiddleWeight)
     {
         NCollection_Array1<Point3D> aPoles = new(1, 3);
@@ -87,10 +87,10 @@ public class GeomFill_Gordon_Test
         NCollection_Array1<int> aMults = new(1, 2);
         aMults[1] = 3;
         aMults[2] = 3;
-        return new Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, 2);
+        return new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, 2);
     }
 
-    private static Geom_BSplineCurve makeWeightedLinearBSpline(Point3D theP1, Point3D theP2, double theWeight)
+    private static BSplineCurve3D makeWeightedLinearBSpline(Point3D theP1, Point3D theP2, double theWeight)
     {
         NCollection_Array1<Point3D> aPoles = new(1, 2);
         aPoles[1] = theP1;
@@ -104,10 +104,10 @@ public class GeomFill_Gordon_Test
         NCollection_Array1<int> aMults = new(1, 2);
         aMults[1] = 2;
         aMults[2] = 2;
-        return new Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, 1, false, false);
+        return new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, 1, false, false);
     }
 
-    private static Geom_BSplineCurve makeRationalLineBSpline(Point3D theP1, Point3D theP2, int theDegree)
+    private static BSplineCurve3D makeRationalLineBSpline(Point3D theP1, Point3D theP2, int theDegree)
     {
         NCollection_Array1<Point3D> aPoles = new(1, theDegree + 1);
         NCollection_Array1<double> aWeights = new(1, theDegree + 1);
@@ -123,10 +123,10 @@ public class GeomFill_Gordon_Test
         NCollection_Array1<int> aMults = new(1, 2);
         aMults[1] = theDegree + 1;
         aMults[2] = theDegree + 1;
-        return new Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, theDegree);
+        return new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, theDegree);
     }
 
-    private static Geom_BSplineCurve makeRationalQuadraticLineBSpline(Point3D theP1, Point3D theP2,
+    private static BSplineCurve3D makeRationalQuadraticLineBSpline(Point3D theP1, Point3D theP2,
                                                                       double theStartWeight, double theMiddleWeight,
                                                                       double theEndWeight)
     {
@@ -144,10 +144,10 @@ public class GeomFill_Gordon_Test
         NCollection_Array1<int> aMults = new(1, 2);
         aMults[1] = 3;
         aMults[2] = 3;
-        return new Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, 2);
+        return new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, 2);
     }
 
-    private static Geom_BSplineCurve makePeriodicProfile(double theY)
+    private static BSplineCurve3D makePeriodicProfile(double theY)
     {
         NCollection_Array1<Point3D> aPoles = new(1, 5);
         aPoles[1] = new Point3D(1.0, theY, 0.0);
@@ -162,10 +162,10 @@ public class GeomFill_Gordon_Test
         }
         NCollection_Array1<int> aMults = new(1, 6);
         aMults.Init(1);
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 3, true);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 3, true);
     }
 
-    private static Geom_BSplineCurve makePeriodicGuide(double theX)
+    private static BSplineCurve3D makePeriodicGuide(double theX)
     {
         NCollection_Array1<Point3D> aPoles = new(1, 5);
         aPoles[1] = new Point3D(theX, 1.0, 0.0);
@@ -180,10 +180,10 @@ public class GeomFill_Gordon_Test
         }
         NCollection_Array1<int> aMults = new(1, 6);
         aMults.Init(1);
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 3, true);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 3, true);
     }
 
-    private static Geom_BSplineCurve makeClosedBSplineProfile(double theY, double theXRadius, double theZRadius)
+    private static BSplineCurve3D makeClosedBSplineProfile(double theY, double theXRadius, double theZRadius)
     {
         NCollection_Array1<Point3D> aPoles = new(1, 9);
         aPoles[1] = new Point3D(theXRadius, theY, 0.0);
@@ -207,10 +207,10 @@ public class GeomFill_Gordon_Test
         {
             aMults[aKnotIdx] = 1;
         }
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 3, false);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 3, false);
     }
 
-    private static Geom_BSplineCurve makeInterpolatedPeriodicProfile(double theY, int theSeamShift)
+    private static BSplineCurve3D makeInterpolatedPeriodicProfile(double theY, int theSeamShift)
     {
         const int THE_NB_POINTS = 8;
         const double THE_PI = 3.14159265358979323846;
@@ -226,7 +226,7 @@ public class GeomFill_Gordon_Test
     }
 
     //! Helper: create a cubic BSpline through 4 interpolation points on [0,1].
-    private static Geom_BSplineCurve makeCubicInterpBSpline(Point3D theP1, Point3D theP2, Point3D theP3, Point3D theP4)
+    private static BSplineCurve3D makeCubicInterpBSpline(Point3D theP1, Point3D theP2, Point3D theP3, Point3D theP4)
     {
         NCollection_HArray1<Point3D> aPnts = new(1, 4);
         aPnts.SetValue(1, theP1);
@@ -244,7 +244,7 @@ public class GeomFill_Gordon_Test
     }
 
     //! Helper: create a sinusoidal BSpline curve via interpolation.
-    private static Geom_BSplineCurve makeSineBSpline(double theXStart, double theXEnd, double theY, double theAmplitude,
+    private static BSplineCurve3D makeSineBSpline(double theXStart, double theXEnd, double theY, double theAmplitude,
                                                      int theNbPts = 11)
     {
         NCollection_HArray1<Point3D> aPnts = new(1, theNbPts);
@@ -262,7 +262,7 @@ public class GeomFill_Gordon_Test
         return anInterp.Curve();
     }
 
-    private static Geom_BSplineCurve makeMeanderingProfile(double theY)
+    private static BSplineCurve3D makeMeanderingProfile(double theY)
     {
         NCollection_HArray1<Point3D> aPnts = new(1, 7);
         aPnts.SetValue(1, new Point3D(0.0, theY, 0.0));
@@ -283,7 +283,7 @@ public class GeomFill_Gordon_Test
     }
 
     //! Helper: verify surface passes through a point at given parameters.
-    private static void verifyPointOnSurface(Geom_BSplineSurface theSurf, double theU, double theV, Point3D theExpected,
+    private static void verifyPointOnSurface(BSplineSurface theSurf, double theU, double theV, Point3D theExpected,
                                              double theTol)
     {
         Point3D aSurfPt = theSurf.Value(theU, theV);
@@ -308,8 +308,8 @@ public class GeomFill_Gordon_Test
 
     internal sealed class AnalyticNetwork
     {
-        public readonly NCollection_Array1<Geom_Curve> Profiles;
-        public readonly NCollection_Array1<Geom_Curve> Guides;
+        public readonly NCollection_Array1<Curve3D> Profiles;
+        public readonly NCollection_Array1<Curve3D> Guides;
 
         public AnalyticNetwork(int theNbProfiles, int theNbGuides, Func<double, double, double> theHeight)
             : this(theNbProfiles, theNbGuides, theHeight, new Xyz(0.0, 0.0, 0.0), 1.0)
@@ -319,8 +319,8 @@ public class GeomFill_Gordon_Test
         public AnalyticNetwork(int theNbProfiles, int theNbGuides, Func<double, double, double> theHeight,
                                Xyz theOrigin, double theScale)
         {
-            Profiles = new NCollection_Array1<Geom_Curve>(1, theNbProfiles);
-            Guides = new NCollection_Array1<Geom_Curve>(1, theNbGuides);
+            Profiles = new NCollection_Array1<Curve3D>(1, theNbProfiles);
+            Guides = new NCollection_Array1<Curve3D>(1, theNbGuides);
             for (int aProfileIdx = 0; aProfileIdx < theNbProfiles; ++aProfileIdx)
             {
                 double aV = (double)aProfileIdx / (theNbProfiles - 1);
@@ -357,15 +357,15 @@ public class GeomFill_Gordon_Test
         }
     }
 
-    internal static void verifyUniformNetworkInterpolation(Geom_BSplineSurface theSurface, AnalyticNetwork theNetwork,
+    internal static void verifyUniformNetworkInterpolation(BSplineSurface theSurface, AnalyticNetwork theNetwork,
                                                            double theTolerance)
     {
         Assert.NotNull(theSurface);
         const int THE_NB_SAMPLES = 32;
         double aUMin = theSurface.UKnot(1);
-        double aUMax = theSurface.UKnot(theSurface.NbUKnots());
+        double aUMax = theSurface.UKnot(theSurface.UKnotCount);
         double aVMin = theSurface.VKnot(1);
-        double aVMax = theSurface.VKnot(theSurface.NbVKnots());
+        double aVMax = theSurface.VKnot(theSurface.VKnotCount);
         for (int aProfileIdx = 0; aProfileIdx < theNetwork.Profiles.Size(); ++aProfileIdx)
         {
             double aV = aVMin + (double)aProfileIdx / (theNetwork.Profiles.Size() - 1) * (aVMax - aVMin);
@@ -388,12 +388,12 @@ public class GeomFill_Gordon_Test
         }
     }
 
-    private static Geom_TrimmedCurve Segment(Point3D theOrigin, Direction3D theDir, double theLength)
-        => new(new Geom_Line(theOrigin, theDir), 0.0, theLength);
+    private static TrimmedCurve3D Segment(Point3D theOrigin, Direction3D theDir, double theLength)
+        => new(new LineCurve3D(theOrigin, theDir), 0.0, theLength);
 
-    private static NCollection_Array1<Geom_Curve> Curves(params Geom_Curve[] theCurves)
+    private static NCollection_Array1<Curve3D> Curves(params Curve3D[] theCurves)
     {
-        NCollection_Array1<Geom_Curve> anArray = new(1, theCurves.Length);
+        NCollection_Array1<Curve3D> anArray = new(1, theCurves.Length);
         for (int i = 0; i < theCurves.Length; ++i)
         {
             anArray[i + 1] = theCurves[i];
@@ -401,9 +401,9 @@ public class GeomFill_Gordon_Test
         return anArray;
     }
 
-    private static NCollection_Array1<Geom_BSplineCurve?> BSplines(params Geom_BSplineCurve[] theCurves)
+    private static NCollection_Array1<BSplineCurve3D?> BSplines(params BSplineCurve3D[] theCurves)
     {
-        NCollection_Array1<Geom_BSplineCurve?> anArray = new(1, theCurves.Length);
+        NCollection_Array1<BSplineCurve3D?> anArray = new(1, theCurves.Length);
         for (int i = 0; i < theCurves.Length; ++i)
         {
             anArray[i + 1] = theCurves[i];
@@ -421,14 +421,14 @@ public class GeomFill_Gordon_Test
         return anArray;
     }
 
-    private static double UMid(Geom_BSplineSurface theSurf) => 0.5 * (theSurf.UKnot(1) + theSurf.UKnot(theSurf.NbUKnots()));
+    private static double UMid(BSplineSurface theSurf) => 0.5 * (theSurf.UKnot(1) + theSurf.UKnot(theSurf.UKnotCount));
 
-    private static double VMid(Geom_BSplineSurface theSurf) => 0.5 * (theSurf.VKnot(1) + theSurf.VKnot(theSurf.NbVKnots()));
+    private static double VMid(BSplineSurface theSurf) => 0.5 * (theSurf.VKnot(1) + theSurf.VKnot(theSurf.VKnotCount));
 
-    private static NCollection_Array1<Geom_Curve> UnitSquareProfiles() =>
+    private static NCollection_Array1<Curve3D> UnitSquareProfiles() =>
         Curves(Segment(new Point3D(0, 0, 0), new Direction3D(1, 0, 0), 1.0), Segment(new Point3D(0, 1, 0), new Direction3D(1, 0, 0), 1.0));
 
-    private static NCollection_Array1<Geom_Curve> UnitSquareGuides() =>
+    private static NCollection_Array1<Curve3D> UnitSquareGuides() =>
         Curves(Segment(new Point3D(0, 0, 0), new Direction3D(0, 1, 0), 1.0), Segment(new Point3D(1, 0, 0), new Direction3D(0, 1, 0), 1.0));
 
     [Fact]
@@ -447,7 +447,7 @@ public class GeomFill_Gordon_Test
         Assert.True(aGordon.Report().MaxProfileDeviation <= 1.0e-7);
         Assert.True(aGordon.Report().MaxGuideDeviation <= 1.0e-7);
 
-        Geom_BSplineSurface aSurf = aGordon.Surface();
+        BSplineSurface aSurf = aGordon.Surface();
         verifyPointOnSurface(aSurf, 0.0, 0.0, new Point3D(0, 0, 0), 1.0e-3);
         verifyPointOnSurface(aSurf, 1.0, 0.0, new Point3D(1, 0, 0), 1.0e-3);
         verifyPointOnSurface(aSurf, 0.0, 1.0, new Point3D(0, 1, 0), 1.0e-3);
@@ -540,20 +540,20 @@ public class GeomFill_Gordon_Test
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aGordon.Surface());
     }
 
-    private static NCollection_Array1<Geom_Curve> BumpProfiles() =>
+    private static NCollection_Array1<Curve3D> BumpProfiles() =>
         Curves(makeQuadraticBSpline(new Point3D(0, 0, 0), new Point3D(0.5, 0, 0.4), new Point3D(1, 0, 0)),
                makeQuadraticBSpline(new Point3D(0, 0.5, 0), new Point3D(0.5, 0.5, 0.6), new Point3D(1, 0.5, 0)),
                makeQuadraticBSpline(new Point3D(0, 1, 0), new Point3D(0.5, 1, 0.4), new Point3D(1, 1, 0)));
 
-    private static NCollection_Array1<Geom_Curve> LinearSideGuides() =>
+    private static NCollection_Array1<Curve3D> LinearSideGuides() =>
         Curves(makeLinearBSpline(new Point3D(0, 0, 0), new Point3D(0, 1, 0)),
                makeLinearBSpline(new Point3D(1, 0, 0), new Point3D(1, 1, 0)));
 
     [Fact]
     public void ParallelMode_DefaultSingleThreadAndMatchesParallelResult()
     {
-        NCollection_Array1<Geom_Curve> aProfiles = BumpProfiles();
-        NCollection_Array1<Geom_Curve> aGuides = LinearSideGuides();
+        NCollection_Array1<Curve3D> aProfiles = BumpProfiles();
+        NCollection_Array1<Curve3D> aGuides = LinearSideGuides();
 
         GeomFill_Gordon aSingleThread = new();
         Assert.False(aSingleThread.IsParallelMode());
@@ -580,7 +580,7 @@ public class GeomFill_Gordon_Test
         aGordon.Init(BumpProfiles(), LinearSideGuides(), global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
+        BSplineSurface aSurf = aGordon.Surface();
         Point3D aMidPt = aSurf.Value(UMid(aSurf), VMid(aSurf));
         Assert.Equal(0.3, aMidPt.Z(), 1.0e-6);
     }
@@ -588,7 +588,7 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void NonAffineProfileReparametrization_PreservesProfilesAndGuideContinuity()
     {
-        NCollection_Array1<Geom_Curve> aProfiles =
+        NCollection_Array1<Curve3D> aProfiles =
           Curves(makeCubicInterpBSpline(new Point3D(0, 0, 0), new Point3D(0.25, 0, 0.4), new Point3D(0.75, 0, -0.3), new Point3D(1, 0, 0)),
                  makeCubicInterpBSpline(new Point3D(0, 0.5, 0), new Point3D(0.25, 0.5, 0.2), new Point3D(0.75, 0.5, -0.5), new Point3D(1, 0.5, 0)),
                  makeCubicInterpBSpline(new Point3D(0, 1, 0), new Point3D(0.25, 1, 0.5), new Point3D(0.75, 1, -0.2), new Point3D(1, 1, 0)));
@@ -605,7 +605,7 @@ public class GeomFill_Gordon_Test
         anInterpolator.Perform();
         Assert.True(anInterpolator.IsDone());
 
-        NCollection_Array1<Geom_Curve> aGuides =
+        NCollection_Array1<Curve3D> aGuides =
           Curves(makeLinearBSpline(aProfiles[1].Value(0.0), aProfiles[3].Value(0.0)), anInterpolator.Curve(),
                  makeLinearBSpline(aProfiles[1].Value(1.0), aProfiles[3].Value(1.0)));
 
@@ -614,7 +614,7 @@ public class GeomFill_Gordon_Test
         aGordon.Perform();
 
         Assert.True(aGordon.IsDone(), aGordon.Status().ToString());
-        Geom_BSplineSurface aSurface = aGordon.Surface();
+        BSplineSurface aSurface = aGordon.Surface();
         Assert.True(aGordon.Report().MaxProfileDeviation <= global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aGordon.Report().MaxGuideDeviation <= global::Kerf.Engine.Foundation.Precision.Confusion());
         double aMiddleProfileV = VMid(aSurface);
@@ -622,12 +622,12 @@ public class GeomFill_Gordon_Test
         for (int aSampleIdx = 0; aSampleIdx <= THE_NB_SAMPLES; ++aSampleIdx)
         {
             double aRatio = (double)aSampleIdx / THE_NB_SAMPLES;
-            double aU = aSurface.UKnot(1) + aRatio * (aSurface.UKnot(aSurface.NbUKnots()) - aSurface.UKnot(1));
+            double aU = aSurface.UKnot(1) + aRatio * (aSurface.UKnot(aSurface.UKnotCount) - aSurface.UKnot(1));
             double aProfile1Param = aRatio <= 0.5 ? 0.8 * aRatio : 1.2 * aRatio - 0.2;
             double aProfile3Param = aRatio <= 0.5 ? 1.2 * aRatio : 0.2 + 0.8 * aRatio;
             Assert.True(aSurface.Value(aU, aSurface.VKnot(1)).Distance(aProfiles[1].Value(aProfile1Param)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
             Assert.True(aSurface.Value(aU, aMiddleProfileV).Distance(aProfiles[2].Value(aRatio)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
-            Assert.True(aSurface.Value(aU, aSurface.VKnot(aSurface.NbVKnots())).Distance(aProfiles[3].Value(aProfile3Param))
+            Assert.True(aSurface.Value(aU, aSurface.VKnot(aSurface.VKnotCount)).Distance(aProfiles[3].Value(aProfile3Param))
                         <= global::Kerf.Engine.Foundation.Precision.Confusion());
         }
 
@@ -635,7 +635,7 @@ public class GeomFill_Gordon_Test
         for (int aSampleIdx = 0; aSampleIdx <= THE_NB_SAMPLES; ++aSampleIdx)
         {
             double aRatio = (double)aSampleIdx / THE_NB_SAMPLES;
-            double aV = aSurface.VKnot(1) + aRatio * (aSurface.VKnot(aSurface.NbVKnots()) - aSurface.VKnot(1));
+            double aV = aSurface.VKnot(1) + aRatio * (aSurface.VKnot(aSurface.VKnotCount) - aSurface.VKnot(1));
             Assert.True(aSurface.Value(aGuideU, aV).Distance(aGuides[2].Value(aRatio)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
@@ -655,9 +655,9 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void PeriodicBSplineProfiles_AreExpandedBeforeConstruction()
     {
-        NCollection_Array1<Geom_Curve> aProfiles = Curves(makePeriodicProfile(0.0), makePeriodicProfile(0.5), makePeriodicProfile(1.0));
-        Assert.True(((Geom_BSplineCurve)aProfiles[1]).IsPeriodic());
-        NCollection_Array1<Geom_Curve> aGuides =
+        NCollection_Array1<Curve3D> aProfiles = Curves(makePeriodicProfile(0.0), makePeriodicProfile(0.5), makePeriodicProfile(1.0));
+        Assert.True(((BSplineCurve3D)aProfiles[1]).IsPeriodic);
+        NCollection_Array1<Curve3D> aGuides =
           Curves(makeLinearBSpline(aProfiles[1].Value(0.0), aProfiles[3].Value(0.0)),
                  makeLinearBSpline(aProfiles[1].Value(0.5), aProfiles[3].Value(0.5)),
                  makeLinearBSpline(aProfiles[1].Value(1.0), aProfiles[3].Value(1.0)));
@@ -665,15 +665,15 @@ public class GeomFill_Gordon_Test
         aGordon.Init(aProfiles, aGuides, global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Assert.True(aGordon.Surface().IsUPeriodic());
+        Assert.True(aGordon.Surface().IsUPeriodic);
     }
 
     [Fact]
     public void PeriodicBSplineGuides_AreExpandedBeforeConstruction()
     {
-        NCollection_Array1<Geom_Curve> aGuides = Curves(makePeriodicGuide(0.0), makePeriodicGuide(0.5), makePeriodicGuide(1.0));
-        Assert.True(((Geom_BSplineCurve)aGuides[1]).IsPeriodic());
-        NCollection_Array1<Geom_Curve> aProfiles =
+        NCollection_Array1<Curve3D> aGuides = Curves(makePeriodicGuide(0.0), makePeriodicGuide(0.5), makePeriodicGuide(1.0));
+        Assert.True(((BSplineCurve3D)aGuides[1]).IsPeriodic);
+        NCollection_Array1<Curve3D> aProfiles =
           Curves(makeLinearBSpline(aGuides[1].Value(0.0), aGuides[3].Value(0.0)),
                  makeLinearBSpline(aGuides[1].Value(0.5), aGuides[3].Value(0.5)),
                  makeLinearBSpline(aGuides[1].Value(1.0), aGuides[3].Value(1.0)));
@@ -681,16 +681,16 @@ public class GeomFill_Gordon_Test
         aGordon.Init(aProfiles, aGuides, global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Assert.True(aGordon.Surface().IsVPeriodic());
+        Assert.True(aGordon.Surface().IsVPeriodic);
     }
 
     [Fact]
     public void InterpolatedPeriodicProfilesWithAlignedSeams_InterpolateWithoutDeviation()
     {
-        NCollection_Array1<Geom_Curve> aProfiles = Curves(makeInterpolatedPeriodicProfile(0.0, 0), makeInterpolatedPeriodicProfile(1.0, 2));
+        NCollection_Array1<Curve3D> aProfiles = Curves(makeInterpolatedPeriodicProfile(0.0, 0), makeInterpolatedPeriodicProfile(1.0, 2));
 
-        Geom_BSplineCurve aFirstProfile = (Geom_BSplineCurve)aProfiles[1];
-        Geom_BSplineCurve aSecondProfile = (Geom_BSplineCurve)aProfiles[2];
+        BSplineCurve3D aFirstProfile = (BSplineCurve3D)aProfiles[1];
+        BSplineCurve3D aSecondProfile = (BSplineCurve3D)aProfiles[2];
         Point3D aFirstSeam = aFirstProfile.Value(aFirstProfile.FirstParameter());
         GeomAPI_ProjectPointOnCurve aSeamProjection = new(new Point3D(aFirstSeam.X(), 1.0, aFirstSeam.Z()), aSecondProfile);
         Assert.True(aSeamProjection.NbPoints() > 0);
@@ -705,7 +705,7 @@ public class GeomFill_Gordon_Test
         Assert.True(aFirstSeam.Distance(new Point3D(aSecondSeam.X(), aFirstSeam.Y(), aSecondSeam.Z())) <= global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aFirstMiddle.Distance(new Point3D(aSecondMiddle.X(), aFirstMiddle.Y(), aSecondMiddle.Z())) <= global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        NCollection_Array1<Geom_Curve> aGuides =
+        NCollection_Array1<Curve3D> aGuides =
           Curves(makeLinearBSpline(aFirstProfile.Value(aFirstProfile.FirstParameter()), aSecondProfile.Value(aSecondProfile.FirstParameter())),
                  makeLinearBSpline(aFirstProfile.Value(aFirstProfileMiddle), aSecondProfile.Value(aSecondProfileMiddle)),
                  makeLinearBSpline(aFirstProfile.Value(aFirstProfile.FirstParameter()), aSecondProfile.Value(aSecondProfile.FirstParameter())));
@@ -715,25 +715,25 @@ public class GeomFill_Gordon_Test
         aGordon.Perform();
 
         Assert.True(aGordon.IsDone(), aGordon.Status().ToString());
-        Geom_BSplineSurface aSurface = aGordon.Surface();
-        Assert.True(aSurface.IsUPeriodic());
+        BSplineSurface aSurface = aGordon.Surface();
+        Assert.True(aSurface.IsUPeriodic);
         Assert.True(aGordon.Report().MaxProfileDeviation <= global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aGordon.Report().MaxGuideDeviation <= global::Kerf.Engine.Foundation.Precision.Confusion());
 
         double aMiddleV = VMid(aSurface);
-        Geom_Surface.ResD1 aFirstSeamD1 = aSurface.EvalD1(aSurface.UKnot(1), aMiddleV);
-        Geom_Surface.ResD1 aLastSeamD1 = aSurface.EvalD1(aSurface.UKnot(aSurface.NbUKnots()), aMiddleV);
+        Surface.ResD1 aFirstSeamD1 = aSurface.EvalD1(aSurface.UKnot(1), aMiddleV);
+        Surface.ResD1 aLastSeamD1 = aSurface.EvalD1(aSurface.UKnot(aSurface.UKnotCount), aMiddleV);
         Assert.True(aFirstSeamD1.D1U.Angle(aLastSeamD1.D1U) <= global::Kerf.Engine.Foundation.Precision.Angular());
 
         const int THE_NB_SAMPLES = 16;
         for (int aSampleIdx = 0; aSampleIdx <= THE_NB_SAMPLES; ++aSampleIdx)
         {
             double aRatio = (double)aSampleIdx / THE_NB_SAMPLES;
-            double aU = aSurface.UKnot(1) + aRatio * (aSurface.UKnot(aSurface.NbUKnots()) - aSurface.UKnot(1));
+            double aU = aSurface.UKnot(1) + aRatio * (aSurface.UKnot(aSurface.UKnotCount) - aSurface.UKnot(1));
             double aFirstProfileParam = aFirstProfile.FirstParameter() + aRatio * (aFirstProfile.LastParameter() - aFirstProfile.FirstParameter());
             double aSecondProfileParam = aSecondProfile.FirstParameter() + aRatio * (aSecondProfile.LastParameter() - aSecondProfile.FirstParameter());
             Assert.True(aSurface.Value(aU, aSurface.VKnot(1)).Distance(aFirstProfile.Value(aFirstProfileParam)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
-            Assert.True(aSurface.Value(aU, aSurface.VKnot(aSurface.NbVKnots())).Distance(aSecondProfile.Value(aSecondProfileParam))
+            Assert.True(aSurface.Value(aU, aSurface.VKnot(aSurface.VKnotCount)).Distance(aSecondProfile.Value(aSecondProfileParam))
                         <= global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
@@ -741,8 +741,8 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void MultipleIntersections_SelectsMonotoneBranch()
     {
-        NCollection_Array1<Geom_Curve> aProfiles = Curves(makeMeanderingProfile(0.0), makeMeanderingProfile(0.5), makeMeanderingProfile(1.0));
-        NCollection_Array1<Geom_Curve> aGuides =
+        NCollection_Array1<Curve3D> aProfiles = Curves(makeMeanderingProfile(0.0), makeMeanderingProfile(0.5), makeMeanderingProfile(1.0));
+        NCollection_Array1<Curve3D> aGuides =
           Curves(makeLinearBSpline(new Point3D(0.0, 0.0, 0.0), new Point3D(0.0, 1.0, 0.0)),
                  makeLinearBSpline(new Point3D(0.5, 0.0, 0.0), new Point3D(0.5, 1.0, 0.0)),
                  makeLinearBSpline(new Point3D(1.0, 0.0, 0.0), new Point3D(1.0, 1.0, 0.0)));
@@ -767,10 +767,10 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void FourByThreeGrid_NonUniformParams()
     {
-        NCollection_Array1<Geom_Curve> aProfiles =
+        NCollection_Array1<Curve3D> aProfiles =
           Curves(Segment(new Point3D(0, 0.0, 0), new Direction3D(1, 0, 0), 1.0), Segment(new Point3D(0, 0.2, 0), new Direction3D(1, 0, 0), 1.0),
                  Segment(new Point3D(0, 0.7, 0), new Direction3D(1, 0, 0), 1.0), Segment(new Point3D(0, 1.0, 0), new Direction3D(1, 0, 0), 1.0));
-        NCollection_Array1<Geom_Curve> aGuides =
+        NCollection_Array1<Curve3D> aGuides =
           Curves(Segment(new Point3D(0.0, 0, 0), new Direction3D(0, 1, 0), 1.0), Segment(new Point3D(0.3, 0, 0), new Direction3D(0, 1, 0), 1.0),
                  Segment(new Point3D(1.0, 0, 0), new Direction3D(0, 1, 0), 1.0));
         GeomFill_Gordon aGordon = new();
@@ -787,9 +787,9 @@ public class GeomFill_Gordon_Test
         aGordon.Init(UnitSquareProfiles(), UnitSquareGuides(), global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
-        double aUMin = aSurf.UKnot(1), aUMax = aSurf.UKnot(aSurf.NbUKnots());
-        double aVMin = aSurf.VKnot(1), aVMax = aSurf.VKnot(aSurf.NbVKnots());
+        BSplineSurface aSurf = aGordon.Surface();
+        double aUMin = aSurf.UKnot(1), aUMax = aSurf.UKnot(aSurf.UKnotCount);
+        double aVMin = aSurf.VKnot(1), aVMax = aSurf.VKnot(aSurf.VKnotCount);
         const int THE_NB_SAMPLES = 20;
         for (int i = 0; i <= THE_NB_SAMPLES; ++i)
         {
@@ -816,9 +816,9 @@ public class GeomFill_Gordon_Test
                      global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
-        double aUMin = aSurf.UKnot(1), aUMax = aSurf.UKnot(aSurf.NbUKnots());
-        double aVMin = aSurf.VKnot(1), aVMax = aSurf.VKnot(aSurf.NbVKnots());
+        BSplineSurface aSurf = aGordon.Surface();
+        double aUMin = aSurf.UKnot(1), aUMax = aSurf.UKnot(aSurf.UKnotCount);
+        double aVMin = aSurf.VKnot(1), aVMax = aSurf.VKnot(aSurf.VKnotCount);
         Point3D[] aCorners = [aSurf.Value(aUMin, aVMin), aSurf.Value(aUMax, aVMin), aSurf.Value(aUMin, aVMax), aSurf.Value(aUMax, aVMax)];
         double aXMin = RealLast(), aXMax = -RealLast();
         double aYMin = RealLast(), aYMax = -RealLast();
@@ -839,7 +839,7 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void CubicInterpolatedNetwork_ProducesValidSurface()
     {
-        NCollection_Array1<Geom_Curve> aProfiles =
+        NCollection_Array1<Curve3D> aProfiles =
           Curves(makeCubicInterpBSpline(new Point3D(0, 0, 0), new Point3D(0.33, 0, 0.3), new Point3D(0.66, 0, -0.3), new Point3D(1, 0, 0)),
                  makeCubicInterpBSpline(new Point3D(0, 0.5, 0), new Point3D(0.33, 0.5, 0.5), new Point3D(0.66, 0.5, -0.5), new Point3D(1, 0.5, 0)),
                  makeCubicInterpBSpline(new Point3D(0, 1, 0), new Point3D(0.33, 1, 0.3), new Point3D(0.66, 1, -0.3), new Point3D(1, 1, 0)));
@@ -847,7 +847,7 @@ public class GeomFill_Gordon_Test
         aGordon.Init(aProfiles, LinearSideGuides(), 0.01);
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
+        BSplineSurface aSurf = aGordon.Surface();
         double aUMid = UMid(aSurf);
         double aVMid = VMid(aSurf);
         Point3D aP1 = aSurf.Value(aUMid * 0.5, aVMid);
@@ -864,7 +864,7 @@ public class GeomFill_Gordon_Test
                      LinearSideGuides(), 0.01);
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
+        BSplineSurface aSurf = aGordon.Surface();
         Assert.Equal(0.5, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z(), 0.05);
     }
 
@@ -879,9 +879,9 @@ public class GeomFill_Gordon_Test
                      global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
-        double aUMin = aSurf.UKnot(1), aUMax = aSurf.UKnot(aSurf.NbUKnots());
-        double aVMin = aSurf.VKnot(1), aVMax = aSurf.VKnot(aSurf.NbVKnots());
+        BSplineSurface aSurf = aGordon.Surface();
+        double aUMin = aSurf.UKnot(1), aUMax = aSurf.UKnot(aSurf.UKnotCount);
+        double aVMin = aSurf.VKnot(1), aVMax = aSurf.VKnot(aSurf.VKnotCount);
         const int THE_NB = 10;
         for (int i = 0; i <= THE_NB; ++i)
         {
@@ -904,7 +904,7 @@ public class GeomFill_Gordon_Test
                      0.1);
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
+        BSplineSurface aSurf = aGordon.Surface();
         Point3D aMidPt = aSurf.Value(UMid(aSurf), VMid(aSurf));
         Assert.Equal(500.0, aMidPt.X(), 1.0);
         Assert.Equal(500.0, aMidPt.Y(), 1.0);
@@ -946,7 +946,7 @@ public class GeomFill_Gordon_Test
                      global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
+        BSplineSurface aSurf = aGordon.Surface();
         Assert.Equal(0.0, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z(), 0.01);
     }
 
@@ -961,14 +961,14 @@ public class GeomFill_Gordon_Test
                      0.01);
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
+        BSplineSurface aSurf = aGordon.Surface();
         Assert.Equal(0.0, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z(), 0.5);
     }
 
     [Fact]
     public void AsymmetricNetwork_FiveProfilesTwoGuides()
     {
-        NCollection_Array1<Geom_Curve> aProfiles = new(1, 5);
+        NCollection_Array1<Curve3D> aProfiles = new(1, 5);
         for (int i = 0; i < 5; ++i)
         {
             aProfiles[i + 1] = Segment(new Point3D(0, i * 0.25, 0), new Direction3D(1, 0, 0), 1.0);
@@ -983,7 +983,7 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void AsymmetricNetwork_TwoProfilesFiveGuides()
     {
-        NCollection_Array1<Geom_Curve> aGuides = new(1, 5);
+        NCollection_Array1<Curve3D> aGuides = new(1, 5);
         for (int i = 0; i < 5; ++i)
         {
             aGuides[i + 1] = Segment(new Point3D(i * 0.25, 0, 0), new Direction3D(0, 1, 0), 1.0);
@@ -998,7 +998,7 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void NonPlanarNetwork_CurvesInBothDirections()
     {
-        NCollection_Array1<Geom_Curve> aProfiles = Curves(makeSineBSpline(0.0, 1.0, 0.0, 0.2), makeSineBSpline(0.0, 1.0, 1.0, 0.2));
+        NCollection_Array1<Curve3D> aProfiles = Curves(makeSineBSpline(0.0, 1.0, 0.0, 0.2), makeSineBSpline(0.0, 1.0, 1.0, 0.2));
         NCollection_HArray1<Point3D> aGuidPnts1 = new(1, 11);
         NCollection_HArray1<Point3D> aGuidPnts2 = new(1, 11);
         NCollection_HArray1<double> aGuidParams = new(1, 11);
@@ -1020,7 +1020,7 @@ public class GeomFill_Gordon_Test
         aGordon.Init(aProfiles, Curves(anInterp1.Curve(), anInterp2.Curve()), 0.01);
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
+        BSplineSurface aSurf = aGordon.Surface();
         Assert.Equal(0.35, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z(), 0.05);
     }
 
@@ -1034,8 +1034,8 @@ public class GeomFill_Gordon_Test
                      LinearSideGuides(), 0.01);
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
-        double aUMin = aSurf.UKnot(1), aUMax = aSurf.UKnot(aSurf.NbUKnots());
+        BSplineSurface aSurf = aGordon.Surface();
+        double aUMin = aSurf.UKnot(1), aUMax = aSurf.UKnot(aSurf.UKnotCount);
         double aV = VMid(aSurf);
         const int THE_NB = 50;
         const double THE_DERIV_TOL = 1.0;
@@ -1054,7 +1054,7 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void ArcLikeProfiles_NonRational()
     {
-        static Geom_BSplineCurve makeArcProfile(double theY)
+        static BSplineCurve3D makeArcProfile(double theY)
         {
             const int THE_NB = 9;
             NCollection_HArray1<Point3D> aPnts = new(1, THE_NB);
@@ -1077,7 +1077,7 @@ public class GeomFill_Gordon_Test
         aGordon.Init(Curves(makeArcProfile(0.0), makeArcProfile(1.0)), LinearSideGuides(), 0.01);
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
+        BSplineSurface aSurf = aGordon.Surface();
         Assert.Equal(0.3, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z(), 0.05);
     }
 
@@ -1100,12 +1100,12 @@ public class GeomFill_Gordon_Test
     public void HighDensityNetwork_SixBySix()
     {
         const int THE_NB = 6;
-        NCollection_Array1<Geom_Curve> aProfiles = new(1, THE_NB);
+        NCollection_Array1<Curve3D> aProfiles = new(1, THE_NB);
         for (int i = 0; i < THE_NB; ++i)
         {
             aProfiles[i + 1] = Segment(new Point3D(0, (double)i / (THE_NB - 1), 0), new Direction3D(1, 0, 0), 1.0);
         }
-        NCollection_Array1<Geom_Curve> aGuides = new(1, THE_NB);
+        NCollection_Array1<Curve3D> aGuides = new(1, THE_NB);
         for (int j = 0; j < THE_NB; ++j)
         {
             aGuides[j + 1] = Segment(new Point3D((double)j / (THE_NB - 1), 0, 0), new Direction3D(0, 1, 0), 1.0);
@@ -1114,9 +1114,9 @@ public class GeomFill_Gordon_Test
         aGordon.Init(aProfiles, aGuides, global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
-        double aUMin = aSurf.UKnot(1), aUMax = aSurf.UKnot(aSurf.NbUKnots());
-        double aVMin = aSurf.VKnot(1), aVMax = aSurf.VKnot(aSurf.NbVKnots());
+        BSplineSurface aSurf = aGordon.Surface();
+        double aUMin = aSurf.UKnot(1), aUMax = aSurf.UKnot(aSurf.UKnotCount);
+        double aVMin = aSurf.VKnot(1), aVMax = aSurf.VKnot(aSurf.VKnotCount);
         for (int i = 0; i < THE_NB; ++i)
         {
             for (int j = 0; j < THE_NB; ++j)
@@ -1132,16 +1132,16 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void QuadraticProfiles_SurfaceMatchesCurvesAtBoundaries()
     {
-        NCollection_Array1<Geom_Curve> aProfiles =
+        NCollection_Array1<Curve3D> aProfiles =
           Curves(makeQuadraticBSpline(new Point3D(0, 0, 0), new Point3D(0.5, 0, 1.0), new Point3D(1, 0, 0)),
                  makeQuadraticBSpline(new Point3D(0, 1, 0), new Point3D(0.5, 1, 1.0), new Point3D(1, 1, 0)));
         GeomFill_Gordon aGordon = new();
         aGordon.Init(aProfiles, LinearSideGuides(), 0.01);
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
-        double aUMin = aSurf.UKnot(1), aUMax = aSurf.UKnot(aSurf.NbUKnots());
-        double aVMin = aSurf.VKnot(1), aVMax = aSurf.VKnot(aSurf.NbVKnots());
+        BSplineSurface aSurf = aGordon.Surface();
+        double aUMin = aSurf.UKnot(1), aUMax = aSurf.UKnot(aSurf.UKnotCount);
+        double aVMin = aSurf.VKnot(1), aVMax = aSurf.VKnot(aSurf.VKnotCount);
         for (int i = 0; i <= 10; ++i)
         {
             double aT = i / 10.0;
@@ -1161,7 +1161,7 @@ public class GeomFill_Gordon_Test
                      global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
+        BSplineSurface aSurf = aGordon.Surface();
         Assert.Equal(aZ, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z(), 0.01);
     }
 
@@ -1174,9 +1174,9 @@ public class GeomFill_Gordon_Test
                      global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
-        double aUMin = aSurf.UKnot(1), aUMax = aSurf.UKnot(aSurf.NbUKnots());
-        double aVMin = aSurf.VKnot(1), aVMax = aSurf.VKnot(aSurf.NbVKnots());
+        BSplineSurface aSurf = aGordon.Surface();
+        double aUMin = aSurf.UKnot(1), aUMax = aSurf.UKnot(aSurf.UKnotCount);
+        double aVMin = aSurf.VKnot(1), aVMax = aSurf.VKnot(aSurf.VKnotCount);
         for (int i = 0; i <= 5; ++i)
         {
             for (int j = 0; j <= 5; ++j)
@@ -1196,7 +1196,7 @@ public class GeomFill_Gordon_Test
                      global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
+        BSplineSurface aSurf = aGordon.Surface();
         Point3D aMidPt = aSurf.Value(UMid(aSurf), VMid(aSurf));
         Assert.Equal(1.0, aMidPt.X(), 0.1);
         Assert.Equal(1.5, aMidPt.Y(), 0.1);
@@ -1210,7 +1210,7 @@ public class GeomFill_Gordon_Test
                      LinearSideGuides(), 0.01);
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
-        Geom_BSplineSurface aSurf = aGordon.Surface();
+        BSplineSurface aSurf = aGordon.Surface();
         Assert.Equal(0.6, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z(), 0.05);
     }
 
@@ -1219,11 +1219,11 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void NetworkSurface_UClosedNetwork_ProducesUPeriodicSurface()
     {
-        NCollection_Array1<Geom_BSplineCurve?> aProfiles =
+        NCollection_Array1<BSplineCurve3D?> aProfiles =
           BSplines(makeQuadraticBSpline(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(0, 0, 0)),
                    makeQuadraticBSpline(new Point3D(0, 1, 0), new Point3D(1, 1, 1), new Point3D(0, 1, 0)),
                    makeQuadraticBSpline(new Point3D(0, 2, 0), new Point3D(1, 2, 0), new Point3D(0, 2, 0)));
-        NCollection_Array1<Geom_BSplineCurve?> aGuides =
+        NCollection_Array1<BSplineCurve3D?> aGuides =
           BSplines(makeLinearBSpline(new Point3D(0, 0, 0), new Point3D(0, 2, 0)), makeLinearBSpline(new Point3D(1, 0, 0), new Point3D(1, 2, 0)),
                    makeLinearBSpline(new Point3D(0, 0, 0), new Point3D(0, 2, 0)));
         NCollection_Array1<double> aGuideParams = Halves();
@@ -1232,7 +1232,7 @@ public class GeomFill_Gordon_Test
                       makeUnitWeightGrid(aProfiles, aGuideParams), global::Kerf.Engine.Foundation.Precision.Confusion(), true, false);
         aNetwork.Perform();
         Assert.True(aNetwork.IsDone());
-        Assert.True(aNetwork.Surface().IsUPeriodic());
+        Assert.True(aNetwork.Surface().IsUPeriodic);
     }
 
     [Fact]
@@ -1240,11 +1240,11 @@ public class GeomFill_Gordon_Test
     {
         const double aSeamGap = 1.0e-5;
         const double aTolerance = 1.0e-4;
-        NCollection_Array1<Geom_BSplineCurve?> aProfiles =
+        NCollection_Array1<BSplineCurve3D?> aProfiles =
           BSplines(makeQuadraticBSpline(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(aSeamGap, 0, 0)),
                    makeQuadraticBSpline(new Point3D(0, 1, 0), new Point3D(1, 1, 1), new Point3D(aSeamGap, 1, 0)),
                    makeQuadraticBSpline(new Point3D(0, 2, 0), new Point3D(1, 2, 0), new Point3D(aSeamGap, 2, 0)));
-        NCollection_Array1<Geom_BSplineCurve?> aGuides =
+        NCollection_Array1<BSplineCurve3D?> aGuides =
           BSplines(makeLinearBSpline(new Point3D(0, 0, 0), new Point3D(0, 2, 0)), makeLinearBSpline(new Point3D(1, 0, 0), new Point3D(1, 2, 0)),
                    makeLinearBSpline(new Point3D(aSeamGap, 0, 0), new Point3D(aSeamGap, 2, 0)));
         NCollection_Array1<double> aGuideParams = Halves();
@@ -1253,14 +1253,14 @@ public class GeomFill_Gordon_Test
                       makeUnitWeightGrid(aProfiles, aGuideParams), aTolerance, true, false);
         aNetwork.Perform();
         Assert.True(aNetwork.IsDone(), aNetwork.Status().ToString());
-        Assert.True(aNetwork.Surface().IsUPeriodic());
+        Assert.True(aNetwork.Surface().IsUPeriodic);
     }
 
     [Fact]
     public void NetworkSurface_InvalidPreparedNetworkReportsStatus()
     {
-        NCollection_Array1<Geom_BSplineCurve?> aProfiles = BSplines(makeLinearBSpline(new Point3D(0, 0, 0), new Point3D(1, 0, 0)));
-        NCollection_Array1<Geom_BSplineCurve?> aGuides =
+        NCollection_Array1<BSplineCurve3D?> aProfiles = BSplines(makeLinearBSpline(new Point3D(0, 0, 0), new Point3D(1, 0, 0)));
+        NCollection_Array1<BSplineCurve3D?> aGuides =
           BSplines(makeLinearBSpline(new Point3D(0, 0, 0), new Point3D(0, 1, 0)), makeLinearBSpline(new Point3D(1, 0, 0), new Point3D(1, 1, 0)));
         NCollection_Array1<double> aGuideParams = Reals(0.0, 1.0);
         GeomFill_NetworkSurface aNetwork = new();
@@ -1276,9 +1276,9 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void NetworkSurface_InvalidWeightsReportsInvalidInput()
     {
-        NCollection_Array1<Geom_BSplineCurve?> aProfiles =
+        NCollection_Array1<BSplineCurve3D?> aProfiles =
           BSplines(makeLinearBSpline(new Point3D(0, 0, 0), new Point3D(1, 0, 0)), makeLinearBSpline(new Point3D(0, 1, 0), new Point3D(1, 1, 0)));
-        NCollection_Array1<Geom_BSplineCurve?> aGuides =
+        NCollection_Array1<BSplineCurve3D?> aGuides =
           BSplines(makeLinearBSpline(new Point3D(0, 0, 0), new Point3D(0, 1, 0)), makeLinearBSpline(new Point3D(1, 0, 0), new Point3D(1, 1, 0)));
         NCollection_Array1<double> aGuideParams = Reals(0.0, 1.0);
         NCollection_Array2<double> aWeights = makeUnitWeightGrid(aProfiles, aGuideParams);
@@ -1294,11 +1294,11 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void NetworkSurface_CompatibleRationalWeightsProducesRationalSurface()
     {
-        NCollection_Array1<Geom_BSplineCurve?> aProfiles =
+        NCollection_Array1<BSplineCurve3D?> aProfiles =
           BSplines(makeRationalQuadraticBSpline(new Point3D(0, 0, 0), new Point3D(0.5, 0, 0), new Point3D(1, 0, 0), 0.5),
                    makeRationalQuadraticBSpline(new Point3D(0, 0.5, 0), new Point3D(0.5, 0.5, 0), new Point3D(1, 0.5, 0), 0.5),
                    makeRationalQuadraticBSpline(new Point3D(0, 1, 0), new Point3D(0.5, 1, 0), new Point3D(1, 1, 0), 0.5));
-        NCollection_Array1<Geom_BSplineCurve?> aGuides =
+        NCollection_Array1<BSplineCurve3D?> aGuides =
           BSplines(makeWeightedLinearBSpline(new Point3D(0, 0, 0), new Point3D(0, 1, 0), 1.0),
                    makeWeightedLinearBSpline(new Point3D(0.5, 0, 0), new Point3D(0.5, 1, 0), 0.75),
                    makeWeightedLinearBSpline(new Point3D(1, 0, 0), new Point3D(1, 1, 0), 1.0));
@@ -1315,16 +1315,16 @@ public class GeomFill_Gordon_Test
                       global::Kerf.Engine.Foundation.Precision.Confusion(), false, false);
         aNetwork.Perform();
         Assert.True(aNetwork.IsDone());
-        Assert.True(aNetwork.Surface().IsURational() || aNetwork.Surface().IsVRational());
+        Assert.True(aNetwork.Surface().IsURational || aNetwork.Surface().IsVRational);
     }
 
     [Fact]
     public void NetworkSurface_IncompatibleRationalFamilyReportsStatus()
     {
-        NCollection_Array1<Geom_BSplineCurve?> aProfiles =
+        NCollection_Array1<BSplineCurve3D?> aProfiles =
           BSplines(makeRationalQuadraticBSpline(new Point3D(0, 0, 0), new Point3D(0.5, 0, 0), new Point3D(1, 0, 0), 0.5),
                    makeWeightedLinearBSpline(new Point3D(0, 1, 0), new Point3D(1, 1, 0), 1.0));
-        NCollection_Array1<Geom_BSplineCurve?> aGuides =
+        NCollection_Array1<BSplineCurve3D?> aGuides =
           BSplines(makeLinearBSpline(new Point3D(0, 0, 0), new Point3D(0, 1, 0)), makeLinearBSpline(new Point3D(1, 0, 0), new Point3D(1, 1, 0)));
         NCollection_Array1<double> aGuideParams = Reals(0.0, 1.0);
         GeomFill_NetworkSurface aNetwork = new();
@@ -1335,7 +1335,7 @@ public class GeomFill_Gordon_Test
         Assert.Equal(GeomFill_NetworkSurface.ResultStatus.CurveCompatibilityFailed, aNetwork.Status());
     }
 
-    private static (NCollection_Array1<Geom_Curve> Profiles, NCollection_Array1<Geom_Curve> Guides) DegreeNineNetwork()
+    private static (NCollection_Array1<Curve3D> Profiles, NCollection_Array1<Curve3D> Guides) DegreeNineNetwork()
     {
         const int aDegree = 9;
         return (Curves(makeRationalLineBSpline(new Point3D(0, 0, 0), new Point3D(1, 0, 0), aDegree),
@@ -1350,11 +1350,11 @@ public class GeomFill_Gordon_Test
     public void NetworkSurface_RationalDegreeOverflowReportsStatus()
     {
         const int aDegree = 9;
-        NCollection_Array1<Geom_BSplineCurve?> aProfiles =
+        NCollection_Array1<BSplineCurve3D?> aProfiles =
           BSplines(makeRationalLineBSpline(new Point3D(0, 0, 0), new Point3D(1, 0, 0), aDegree),
                    makeRationalLineBSpline(new Point3D(0, 0.5, 0), new Point3D(1, 0.5, 0), aDegree),
                    makeRationalLineBSpline(new Point3D(0, 1, 0), new Point3D(1, 1, 0), aDegree));
-        NCollection_Array1<Geom_BSplineCurve?> aGuides =
+        NCollection_Array1<BSplineCurve3D?> aGuides =
           BSplines(makeRationalLineBSpline(new Point3D(0, 0, 0), new Point3D(0, 1, 0), aDegree),
                    makeRationalLineBSpline(new Point3D(0.5, 0, 0), new Point3D(0.5, 1, 0), aDegree),
                    makeRationalLineBSpline(new Point3D(1, 0, 0), new Point3D(1, 1, 0), aDegree));
@@ -1380,7 +1380,7 @@ public class GeomFill_Gordon_Test
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
         Assert.False(aGordon.IsApproximate());
-        Assert.True(aGordon.Surface().IsURational() || aGordon.Surface().IsVRational());
+        Assert.True(aGordon.Surface().IsURational || aGordon.Surface().IsVRational);
         Assert.True(aGordon.Report().MaxProfileDeviation <= global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aGordon.Report().MaxGuideDeviation <= global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -1398,7 +1398,7 @@ public class GeomFill_Gordon_Test
         aGordon.Perform();
         Assert.True(aGordon.IsDone());
         Assert.False(aGordon.IsApproximate());
-        Assert.True(aGordon.Surface().IsURational() || aGordon.Surface().IsVRational());
+        Assert.True(aGordon.Surface().IsURational || aGordon.Surface().IsVRational);
         Assert.True(aGordon.Report().MaxProfileDeviation <= global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aGordon.Report().MaxGuideDeviation <= global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -1406,7 +1406,7 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void ApproximateFallbackCanRecoverRationalDegreeOverflow()
     {
-        (NCollection_Array1<Geom_Curve> aProfiles, NCollection_Array1<Geom_Curve> aGuides) = DegreeNineNetwork();
+        (NCollection_Array1<Curve3D> aProfiles, NCollection_Array1<Curve3D> aGuides) = DegreeNineNetwork();
         GeomFill_Gordon aGordon = new();
         aGordon.Init(aProfiles, aGuides, global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.SetApproximationMode(GeomFill_Gordon.ApproximationMode.AllowApproximateFallback);
@@ -1420,9 +1420,9 @@ public class GeomFill_Gordon_Test
         Assert.True(aGordon.Report().MaxApproximationDeviation <= 0.001);
 
         const int THE_NB_QUALITY_SAMPLES = 48;
-        Geom_BSplineSurface aSurface = aGordon.Surface();
-        double aUMin = aSurface.UKnot(1), aUMax = aSurface.UKnot(aSurface.NbUKnots());
-        double aVMin = aSurface.VKnot(1), aVMax = aSurface.VKnot(aSurface.NbVKnots());
+        BSplineSurface aSurface = aGordon.Surface();
+        double aUMin = aSurface.UKnot(1), aUMax = aSurface.UKnot(aSurface.UKnotCount);
+        double aVMin = aSurface.VKnot(1), aVMax = aSurface.VKnot(aSurface.VKnotCount);
         double aMaxDeviation = 0.0;
         for (int aUIdx = 0; aUIdx <= THE_NB_QUALITY_SAMPLES; ++aUIdx)
         {
@@ -1444,7 +1444,7 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void ExactOnlyReportsRationalDegreeOverflow()
     {
-        (NCollection_Array1<Geom_Curve> aProfiles, NCollection_Array1<Geom_Curve> aGuides) = DegreeNineNetwork();
+        (NCollection_Array1<Curve3D> aProfiles, NCollection_Array1<Curve3D> aGuides) = DegreeNineNetwork();
         GeomFill_Gordon aGordon = new();
         aGordon.Init(aProfiles, aGuides, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(GeomFill_Gordon.ApproximationMode.ExactOnly, aGordon.GetApproximationMode());
@@ -1457,7 +1457,7 @@ public class GeomFill_Gordon_Test
         Assert.False(aGordon.Report().IsApproximate);
     }
 
-    private static (NCollection_Array1<Geom_Curve> Profiles, NCollection_Array1<Geom_Curve> Guides) RationalLineNetwork() =>
+    private static (NCollection_Array1<Curve3D> Profiles, NCollection_Array1<Curve3D> Guides) RationalLineNetwork() =>
         (Curves(makeRationalQuadraticLineBSpline(new Point3D(0, 0, 0), new Point3D(1, 0, 0), 1.0, 0.45, 1.0),
                 makeRationalQuadraticLineBSpline(new Point3D(0, 0.4, 0), new Point3D(1, 0.4, 0), 1.0, 1.8, 0.7),
                 makeRationalQuadraticLineBSpline(new Point3D(0, 1, 0), new Point3D(1, 1, 0), 0.8, 0.65, 1.5)),
@@ -1467,7 +1467,7 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void ExactOnlyReparametrizesRationalCurves()
     {
-        (NCollection_Array1<Geom_Curve> aProfiles, NCollection_Array1<Geom_Curve> aGuides) = RationalLineNetwork();
+        (NCollection_Array1<Curve3D> aProfiles, NCollection_Array1<Curve3D> aGuides) = RationalLineNetwork();
         GeomFill_Gordon aGordon = new();
         aGordon.Init(aProfiles, aGuides, global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.Perform();
@@ -1483,7 +1483,7 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void ApproximationModeUsesExactRationalReparametrizationWhenPossible()
     {
-        (NCollection_Array1<Geom_Curve> aProfiles, NCollection_Array1<Geom_Curve> aGuides) = RationalLineNetwork();
+        (NCollection_Array1<Curve3D> aProfiles, NCollection_Array1<Curve3D> aGuides) = RationalLineNetwork();
         GeomFill_Gordon aGordon = new();
         aGordon.Init(aProfiles, aGuides, global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.SetApproximationMode(GeomFill_Gordon.ApproximationMode.AllowApproximateFallback);
@@ -1499,7 +1499,7 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void ExactRationalReparametrizationRepeatPerformKeepsReportStable()
     {
-        (NCollection_Array1<Geom_Curve> aProfiles, NCollection_Array1<Geom_Curve> aGuides) = RationalLineNetwork();
+        (NCollection_Array1<Curve3D> aProfiles, NCollection_Array1<Curve3D> aGuides) = RationalLineNetwork();
         GeomFill_Gordon aGordon = new();
         aGordon.Init(aProfiles, aGuides, global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.SetApproximationMode(GeomFill_Gordon.ApproximationMode.AllowApproximateFallback);
@@ -1528,10 +1528,10 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void NetworkSurface_VClosedNetwork_ProducesVPeriodicSurface()
     {
-        NCollection_Array1<Geom_BSplineCurve?> aProfiles =
+        NCollection_Array1<BSplineCurve3D?> aProfiles =
           BSplines(makeLinearBSpline(new Point3D(0, 0, 0), new Point3D(2, 0, 0)), makeLinearBSpline(new Point3D(0, 1, 0), new Point3D(2, 1, 1)),
                    makeLinearBSpline(new Point3D(0, 0, 0), new Point3D(2, 0, 0)));
-        NCollection_Array1<Geom_BSplineCurve?> aGuides =
+        NCollection_Array1<BSplineCurve3D?> aGuides =
           BSplines(makeQuadraticBSpline(new Point3D(0, 0, 0), new Point3D(0, 1, 0), new Point3D(0, 0, 0)),
                    makeQuadraticBSpline(new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(1, 0, 0)),
                    makeQuadraticBSpline(new Point3D(2, 0, 0), new Point3D(2, 1, 0), new Point3D(2, 0, 0)));
@@ -1541,7 +1541,7 @@ public class GeomFill_Gordon_Test
                       makeUnitWeightGrid(aProfiles, aGuideParams), global::Kerf.Engine.Foundation.Precision.Confusion(), false, true);
         aNetwork.Perform();
         Assert.True(aNetwork.IsDone());
-        Assert.True(aNetwork.Surface().IsVPeriodic());
+        Assert.True(aNetwork.Surface().IsVPeriodic);
     }
 
     private static void denseNetwork(int theNbProfiles, int theNbGuides, Func<double, double, double> theHeight)
@@ -1628,7 +1628,7 @@ public class GeomFill_Gordon_Test
         aGordon.Init(aNetwork.Profiles, aNetwork.Guides, global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.Perform();
         Assert.True(aGordon.IsDone(), aGordon.Status().ToString());
-        Geom_BSplineSurface aFirstSurface = aGordon.Surface();
+        BSplineSurface aFirstSurface = aGordon.Surface();
 
         aGordon.Perform();
         Assert.True(aGordon.IsDone(), aGordon.Status().ToString());
@@ -1654,13 +1654,13 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void ClosedBSplineProfilesWithInteriorGuides_ProducePeriodicSurface()
     {
-        NCollection_Array1<Geom_Curve> aProfiles = Curves(makeClosedBSplineProfile(0.0, 1.0, 1.0), makeClosedBSplineProfile(1.0, 1.15, 0.85));
-        Assert.False(((Geom_BSplineCurve)aProfiles[1]).IsPeriodic());
+        NCollection_Array1<Curve3D> aProfiles = Curves(makeClosedBSplineProfile(0.0, 1.0, 1.0), makeClosedBSplineProfile(1.0, 1.15, 0.85));
+        Assert.False(((BSplineCurve3D)aProfiles[1]).IsPeriodic);
         Assert.True(aProfiles[1].Value(aProfiles[1].FirstParameter()).Distance(aProfiles[1].Value(aProfiles[1].LastParameter()))
                     <= global::Kerf.Engine.Foundation.Precision.Confusion());
 
         NCollection_Array1<double> aGuideParameters = Reals(0.12, 0.34, 0.59, 0.83);
-        NCollection_Array1<Geom_Curve> aGuides = new(1, 4);
+        NCollection_Array1<Curve3D> aGuides = new(1, 4);
         for (int aGuideIdx = aGuides.Lower(); aGuideIdx <= aGuides.Upper(); ++aGuideIdx)
         {
             double aParameter = aGuideParameters[aGuideIdx];
@@ -1672,7 +1672,7 @@ public class GeomFill_Gordon_Test
         aGordon.Perform();
         Assert.True(aGordon.IsDone(), aGordon.Status().ToString());
         Assert.False(aGordon.IsApproximate());
-        Assert.True(aGordon.Surface().IsUPeriodic());
+        Assert.True(aGordon.Surface().IsUPeriodic);
         Assert.True(aGordon.Report().MaxProfileDeviation <= global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aGordon.Report().MaxGuideDeviation <= global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -1680,11 +1680,11 @@ public class GeomFill_Gordon_Test
     [Fact]
     public void NetworkSurface_ClosedNetworkWithNonUnitUParameters_ProducesUPeriodicSurface()
     {
-        NCollection_Array1<Geom_BSplineCurve?> aProfiles =
+        NCollection_Array1<BSplineCurve3D?> aProfiles =
           BSplines(makeQuadraticBSpline(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(0, 0, 0), 2.0, 5.0),
                    makeQuadraticBSpline(new Point3D(0, 1, 0), new Point3D(1, 1, 1), new Point3D(0, 1, 0), 2.0, 5.0));
         NCollection_Array1<double> aGuideParameters = Reals(2.0, 3.5);
-        NCollection_Array1<Geom_BSplineCurve?> aGuides = new(1, 2);
+        NCollection_Array1<BSplineCurve3D?> aGuides = new(1, 2);
         for (int aGuideIdx = aGuides.Lower(); aGuideIdx <= aGuides.Upper(); ++aGuideIdx)
         {
             double aParameter = aGuideParameters[aGuideIdx];
@@ -1696,6 +1696,6 @@ public class GeomFill_Gordon_Test
                       makeUnitWeightGrid(aProfiles, aGuideParameters), global::Kerf.Engine.Foundation.Precision.Confusion(), true, false);
         aNetwork.Perform();
         Assert.True(aNetwork.IsDone(), aNetwork.Status().ToString());
-        Assert.True(aNetwork.Surface().IsUPeriodic());
+        Assert.True(aNetwork.Surface().IsUPeriodic);
     }
 }

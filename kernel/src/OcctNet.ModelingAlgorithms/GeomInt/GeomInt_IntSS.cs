@@ -4,9 +4,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -20,7 +22,7 @@ namespace Occt;
 /// A working object, as OCCT's: each <c>Perform</c> computes a new result. The curves <see cref="Line"/>,
 /// <see cref="LineOnS1"/>, <see cref="LineOnS2"/> and <see cref="Boundary"/> return are frozen (design 4.2): they
 /// are the algorithm's results handed to the caller. The static helpers (<see cref="BuildPCurves(double, double, ref
-/// double, Geom_Surface, Geom_Curve, ref Geom2d_Curve?)"/>, <see cref="MakeBSpline"/>, <see cref="TreatRLine"/>, ...)
+/// double, Surface, Curve3D, ref Curve2D?)"/>, <see cref="MakeBSpline"/>, <see cref="TreatRLine"/>, ...)
 /// return new, unfrozen curves, as IntTools_FaceFace expects.
 /// </para>
 /// <para>
@@ -31,12 +33,12 @@ public partial class GeomInt_IntSS
 {
     private readonly IntPatch_Intersection myIntersector = new();
     private readonly GeomInt_LineConstructor myLConstruct = new();
-    private GeomAdaptor_Surface? myHS1;
-    private GeomAdaptor_Surface? myHS2;
+    private SurfaceAdaptor? myHS1;
+    private SurfaceAdaptor? myHS2;
     private int myNbrestr;
-    private readonly NCollection_Sequence<Geom_Curve> sline = new();
-    private readonly NCollection_Sequence<Geom2d_Curve?> slineS1 = new();
-    private readonly NCollection_Sequence<Geom2d_Curve?> slineS2 = new();
+    private readonly NCollection_Sequence<Curve3D> sline = new();
+    private readonly NCollection_Sequence<Curve2D?> slineS1 = new();
+    private readonly NCollection_Sequence<Curve2D?> slineS2 = new();
     private double myTolReached2d;
     private double myTolReached3d;
     private double myTolCheck;
@@ -51,9 +53,9 @@ public partial class GeomInt_IntSS
         myTolAngCheck = 1.0e-6;
     }
 
-    /// <summary>Intersects S1 and S2 with the tolerance Tol (see <see cref="Perform(Geom_Surface, Geom_Surface,
+    /// <summary>Intersects S1 and S2 with the tolerance Tol (see <see cref="Perform(Surface, Surface,
     /// double, bool, bool, bool)"/>).</summary>
-    public GeomInt_IntSS(Geom_Surface S1, Geom_Surface S2, double Tol, bool Approx = true, bool ApproxS1 = false,
+    public GeomInt_IntSS(Surface S1, Surface S2, double Tol, bool Approx = true, bool ApproxS1 = false,
                          bool ApproxS2 = false)
         : this()
     {
@@ -64,24 +66,24 @@ public partial class GeomInt_IntSS
     /// Intersects S1 and S2 with the tolerance Tol. Approx approximates the walking lines (otherwise they are
     /// polylines); ApproxS1 and ApproxS2 compute the 2D curves on S1 and S2.
     /// </summary>
-    public void Perform(Geom_Surface S1, Geom_Surface S2, double Tol, bool Approx = true, bool ApproxS1 = false,
+    public void Perform(Surface S1, Surface S2, double Tol, bool Approx = true, bool ApproxS1 = false,
                         bool ApproxS2 = false)
     {
-        myHS1 = new GeomAdaptor_Surface(S1);
+        myHS1 = new SurfaceAdaptor(S1);
         if (S1 == S2)
         {
             myHS2 = myHS1;
         }
         else
         {
-            myHS2 = new GeomAdaptor_Surface(S2);
+            myHS2 = new SurfaceAdaptor(S2);
         }
         InternalPerform(Tol, Approx, ApproxS1, ApproxS2, false, 0.0, 0.0, 0.0, 0.0);
     }
 
-    /// <summary>Intersects two surface adaptors (see <see cref="Perform(Geom_Surface, Geom_Surface, double, bool,
+    /// <summary>Intersects two surface adaptors (see <see cref="Perform(Surface, Surface, double, bool,
     /// bool, bool)"/>). The adaptors are kept, as OCCT keeps the handles.</summary>
-    public void Perform(GeomAdaptor_Surface HS1, GeomAdaptor_Surface HS2, double Tol, bool Approx = true,
+    public void Perform(SurfaceAdaptor HS1, SurfaceAdaptor HS2, double Tol, bool Approx = true,
                         bool ApproxS1 = false, bool ApproxS2 = false)
     {
         myHS1 = HS1;
@@ -90,23 +92,23 @@ public partial class GeomInt_IntSS
     }
 
     /// <summary>Intersects S1 and S2 from the starting point (U1, V1) on S1 and (U2, V2) on S2.</summary>
-    public void Perform(Geom_Surface S1, Geom_Surface S2, double Tol, double U1, double V1, double U2, double V2,
+    public void Perform(Surface S1, Surface S2, double Tol, double U1, double V1, double U2, double V2,
                         bool Approx = true, bool ApproxS1 = false, bool ApproxS2 = false)
     {
-        myHS1 = new GeomAdaptor_Surface(S1);
+        myHS1 = new SurfaceAdaptor(S1);
         if (S1 == S2)
         {
             myHS2 = myHS1;
         }
         else
         {
-            myHS2 = new GeomAdaptor_Surface(S2);
+            myHS2 = new SurfaceAdaptor(S2);
         }
         InternalPerform(Tol, Approx, ApproxS1, ApproxS2, true, U1, V1, U2, V2);
     }
 
     /// <summary>Intersects two surface adaptors from a starting point.</summary>
-    public void Perform(GeomAdaptor_Surface HS1, GeomAdaptor_Surface HS2, double Tol, double U1, double V1, double U2,
+    public void Perform(SurfaceAdaptor HS1, SurfaceAdaptor HS2, double Tol, double U1, double V1, double U2,
                         double V2, bool Approx = true, bool ApproxS1 = false, bool ApproxS2 = false)
     {
         myHS1 = HS1;
@@ -127,10 +129,10 @@ public partial class GeomInt_IntSS
     public int NbLines() => sline.Length() - myNbrestr;
 
     /// <summary>The intersection line of index Index, frozen. Throws StdFail_NotDone if not done.</summary>
-    public Geom_Curve Line(int Index)
+    public Curve3D Line(int Index)
     {
         StdFail_NotDone_Raise_if(!myIntersector.IsDone(), "GeomInt_IntSS::Line");
-        Geom_Curve aC = sline.Value(Index + myNbrestr);
+        Curve3D aC = sline.Value(Index + myNbrestr);
         aC.Freeze();
         return aC;
     }
@@ -145,10 +147,10 @@ public partial class GeomInt_IntSS
 
     /// <summary>The 2D curve on the first surface of the line of index Index, frozen, or null. Throws
     /// StdFail_NotDone if not done.</summary>
-    public Geom2d_Curve? LineOnS1(int Index)
+    public Curve2D? LineOnS1(int Index)
     {
         StdFail_NotDone_Raise_if(!myIntersector.IsDone(), "GeomInt_IntSS::LineOnS1");
-        Geom2d_Curve? aC = slineS1.Value(Index);
+        Curve2D? aC = slineS1.Value(Index);
         aC?.Freeze();
         return aC;
     }
@@ -163,10 +165,10 @@ public partial class GeomInt_IntSS
 
     /// <summary>The 2D curve on the second surface of the line of index Index, frozen, or null. Throws
     /// StdFail_NotDone if not done.</summary>
-    public Geom2d_Curve? LineOnS2(int Index)
+    public Curve2D? LineOnS2(int Index)
     {
         StdFail_NotDone_Raise_if(!myIntersector.IsDone(), "GeomInt_IntSS::LineOnS2");
-        Geom2d_Curve? aC = slineS2.Value(Index);
+        Curve2D? aC = slineS2.Value(Index);
         aC?.Freeze();
         return aC;
     }
@@ -181,11 +183,11 @@ public partial class GeomInt_IntSS
 
     /// <summary>The boundary line of index Index, frozen. Throws StdFail_NotDone if not done, Standard_OutOfRange if
     /// Index is out of range.</summary>
-    public Geom_Curve Boundary(int Index)
+    public Curve3D Boundary(int Index)
     {
         StdFail_NotDone_Raise_if(!myIntersector.IsDone(), "GeomInt_IntSS::Line");
         Standard_OutOfRange_Raise_if(Index <= 0 || Index > myNbrestr, "GeomInt_IntSS::Boundary");
-        Geom_Curve aC = sline.Value(Index);
+        Curve3D aC = sline.Value(Index);
         aC.Freeze();
         return aC;
     }
@@ -237,16 +239,16 @@ public partial class GeomInt_IntSS
         double TolArc = Tol;
         double TolTang = Tol;
         double Deflection = 0.1;
-        if (myHS1!.GetType() == BSplineSurface && myHS2!.GetType() == BSplineSurface)
+        if (myHS1!.GetType() == SurfaceKind.BSplineSurface && myHS2!.GetType() == SurfaceKind.BSplineSurface)
         {
             Deflection /= 10.0;
         }
 
-        Adaptor3d_TopolTool dom1 = new(myHS1);
-        Adaptor3d_TopolTool dom2 = new(myHS2!);
+        TopolTool dom1 = new(myHS1);
+        TopolTool dom2 = new(myHS2!);
 
-        NCollection_DynamicArray<Adaptor3d_Surface> aVecHS1 = new();
-        NCollection_DynamicArray<Adaptor3d_Surface> aVecHS2 = new();
+        NCollection_DynamicArray<SurfaceAdaptorBase> aVecHS1 = new();
+        NCollection_DynamicArray<SurfaceAdaptorBase> aVecHS2 = new();
 
         if (myHS1 == myHS2)
         {
@@ -260,15 +262,15 @@ public partial class GeomInt_IntSS
 
         for (int aNumOfHS1 = 0; aNumOfHS1 < aVecHS1.Length(); aNumOfHS1++)
         {
-            Adaptor3d_Surface aHS1 = aVecHS1.Value(aNumOfHS1);
+            SurfaceAdaptorBase aHS1 = aVecHS1.Value(aNumOfHS1);
             for (int aNumOfHS2 = 0; aNumOfHS2 < aVecHS2.Length(); aNumOfHS2++)
             {
-                Adaptor3d_Surface aHS2 = aVecHS2.Value(aNumOfHS2);
+                SurfaceAdaptorBase aHS2 = aVecHS2.Value(aNumOfHS2);
 
-                Adaptor3d_TopolTool aDom1 = new(aHS1);
-                Adaptor3d_TopolTool aDom2 = new(aHS2);
+                TopolTool aDom1 = new(aHS1);
+                TopolTool aDom2 = new(aHS2);
 
-                myLConstruct.Load(aDom1, aDom2, aHS1 as GeomAdaptor_Surface, aHS2 as GeomAdaptor_Surface);
+                myLConstruct.Load(aDom1, aDom2, aHS1 as SurfaceAdaptor, aHS2 as SurfaceAdaptor);
 
                 double UVMaxStep = IntPatch_Intersection.DefineUVMaxStep(aHS1, aDom1, aHS2, aDom2);
 
@@ -284,10 +286,10 @@ public partial class GeomInt_IntSS
                 }
                 else
                 {
-                    TopAbs_State aState1 = aDom1.Classify(new Point2D(U1, V1), Tol);
-                    TopAbs_State aState2 = aDom2.Classify(new Point2D(U2, V2), Tol);
+                    Containment aState1 = aDom1.Classify(new Point2D(U1, V1), Tol);
+                    Containment aState2 = aDom2.Classify(new Point2D(U2, V2), Tol);
 
-                    if ((aState1 == TopAbs_IN || aState1 == TopAbs_ON) && (aState2 == TopAbs_IN || aState2 == TopAbs_ON))
+                    if ((aState1 == In || aState1 == On) && (aState2 == In || aState2 == On))
                     {
                         myIntersector.Perform(aHS1, aDom1, aHS2, aDom2, U1, V1, U2, V2, TolArc, TolTang);
                     }

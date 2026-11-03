@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using static Kerf.Geometry.JoinKind;
 
@@ -22,7 +24,7 @@ namespace Occt;
 public sealed class MAT2d_Circuit : Transient
 {
     private double direction;
-    private NCollection_Sequence<Geom2d_Geometry> geomElements = new();
+    private NCollection_Sequence<Geometry2D> geomElements = new();
     private readonly NCollection_DataMap<int, MAT2d_Connexion> connexionMap = new();
     private readonly NCollection_DataMap<MAT2d_BiInt, NCollection_Sequence<int>> linkRefEqui = new();
     private readonly NCollection_Sequence<int> linesLength = new();
@@ -39,7 +41,7 @@ public sealed class MAT2d_Circuit : Transient
     /// <summary>Builds the circuit on the lines of FigItem (changed in place: corners and end points inserted, open
     /// lines doubled), IsClosed telling which are closed, from the line IndRefLine; Trigo if it turns in the
     /// trigonometric sense.</summary>
-    public void Perform(NCollection_Sequence<NCollection_Sequence<Geom2d_Geometry>> FigItem,
+    public void Perform(NCollection_Sequence<NCollection_Sequence<Geometry2D>> FigItem,
         NCollection_Sequence<bool> IsClosed, int IndRefLine, bool Trigo)
     {
         int NbLines = FigItem.Length();
@@ -70,10 +72,10 @@ public sealed class MAT2d_Circuit : Transient
         //----------------------------
         for (i = 1; i <= NbLines; i++)
         {
-            Geom2d_TrimmedCurve Curve;
-            Curve = (Geom2d_TrimmedCurve)FigItem.Value(i).First();
+            TrimmedCurve2D Curve;
+            Curve = (TrimmedCurve2D)FigItem.Value(i).First();
             Point2D P1 = Curve.StartPoint();
-            Curve = (Geom2d_TrimmedCurve)FigItem.Value(i).Last();
+            Curve = (TrimmedCurve2D)FigItem.Value(i).Last();
             Point2D P2 = Curve.EndPoint();
             if (IsClosed.Value(i))
             {
@@ -116,7 +118,7 @@ public sealed class MAT2d_Circuit : Transient
                 DoubleLine(FigItem.ChangeValue(1), SVide, ConnexionNul, direction);
                 linesLength.SetValue(1, FigItem.Value(1).Length());
             }
-            geomElements = new NCollection_Sequence<Geom2d_Geometry>(FigItem.Value(1));
+            geomElements = new NCollection_Sequence<Geometry2D>(FigItem.Value(1));
             UpDateLink(1, 1, 1, geomElements.Length());
             linesLength.Append(FigItem.Value(1).Length());
             return;
@@ -164,15 +166,15 @@ public sealed class MAT2d_Circuit : Transient
     }
 
     // True if the common point of Geom1 and Geom2 is a sharp (salient) corner with respect to Direction.
-    private bool IsSharpCorner(Geom2d_Geometry Geom1, Geom2d_Geometry Geom2, double Direction)
+    private bool IsSharpCorner(Geometry2D Geom1, Geometry2D Geom2, double Direction)
     {
         double ProVec = CrossProd(Geom1, Geom2, out double DotProd);
         int NbTest = 1;
         double DU = global::Kerf.Engine.Foundation.Precision.Confusion();
-        Geom2d_TrimmedCurve C1, C2;
+        TrimmedCurve2D C1, C2;
 
-        C1 = (Geom2d_TrimmedCurve)Geom1;
-        C2 = (Geom2d_TrimmedCurve)Geom2;
+        C1 = (TrimmedCurve2D)Geom1;
+        C2 = (TrimmedCurve2D)Geom2;
         // The same criterion as in InitOpen.
         double TolAng = 1.0E-8;
 
@@ -223,10 +225,10 @@ public sealed class MAT2d_Circuit : Transient
                 D = -D;
             }
 
-            Geom2dAdaptor_Curve HC1 = new(C1);
-            Geom2dAdaptor_Curve HC2 = new(C2);
-            Adaptor2d_OffsetCurve OC1 = new(HC1, D, MilC1, C1.LastParameter());
-            Adaptor2d_OffsetCurve OC2 = new(HC2, D, C2.FirstParameter(), MilC2);
+            CurveAdaptor2D HC1 = new(C1);
+            CurveAdaptor2D HC2 = new(C2);
+            OffsetCurveAdaptor2D OC1 = new(HC1, D, MilC1, C1.LastParameter());
+            OffsetCurveAdaptor2D OC2 = new(HC2, D, C2.FirstParameter(), MilC2);
             Geom2dInt_GInter Intersect = new();
             Intersect.Perform(OC1, OC2, Tol, Tol);
 
@@ -265,8 +267,8 @@ public sealed class MAT2d_Circuit : Transient
         return false;
     }
 
-    private static void SubSequence(NCollection_Sequence<Geom2d_Geometry> S1, int IF, int IL,
-        NCollection_Sequence<Geom2d_Geometry> S2)
+    private static void SubSequence(NCollection_Sequence<Geometry2D> S1, int IF, int IL,
+        NCollection_Sequence<Geometry2D> S2)
     {
         S2.Clear();
         for (int i = IF; i <= IL; i++)
@@ -275,12 +277,12 @@ public sealed class MAT2d_Circuit : Transient
         }
     }
 
-    private void ConstructCircuit(NCollection_Sequence<NCollection_Sequence<Geom2d_Geometry>> FigItem,
+    private void ConstructCircuit(NCollection_Sequence<NCollection_Sequence<Geometry2D>> FigItem,
         int IndRefLine, MAT2d_MiniPath Road)
     {
         MAT2d_Connexion PrevC;
         MAT2d_Connexion? CurC = null;
-        NCollection_Sequence<Geom2d_Geometry> SetOfItem = new();
+        NCollection_Sequence<Geometry2D> SetOfItem = new();
         int NbConnexions;
         int ILastItem;
         int IndLast;
@@ -355,31 +357,31 @@ public sealed class MAT2d_Circuit : Transient
         }
     }
 
-    private static void InitOpen(NCollection_Sequence<Geom2d_Geometry> Line)
+    private static void InitOpen(NCollection_Sequence<Geometry2D> Line)
     {
-        Geom2d_TrimmedCurve Curve;
+        TrimmedCurve2D Curve;
 
-        Curve = (Geom2d_TrimmedCurve)Line.First();
-        Line.InsertBefore(1, new Geom2d_CartesianPoint(Curve.StartPoint()));
-        Curve = (Geom2d_TrimmedCurve)Line.Last();
-        Line.Append(new Geom2d_CartesianPoint(Curve.EndPoint()));
+        Curve = (TrimmedCurve2D)Line.First();
+        Line.InsertBefore(1, new CartesianPoint2(Curve.StartPoint()));
+        Curve = (TrimmedCurve2D)Line.Last();
+        Line.Append(new CartesianPoint2(Curve.EndPoint()));
 
         for (int i = 2; i <= Line.Length() - 2; i++)
         {
             if (Math.Abs(CrossProd(Line.Value(i), Line.Value(i + 1), out double DotProd)) > 1.0E-8 || DotProd < 0.0)
             {
-                Curve = (Geom2d_TrimmedCurve)Line.Value(i);
-                Line.InsertAfter(i, new Geom2d_CartesianPoint(Curve.EndPoint()));
+                Curve = (TrimmedCurve2D)Line.Value(i);
+                Line.InsertAfter(i, new CartesianPoint2(Curve.EndPoint()));
                 i++;
             }
         }
     }
 
-    private void DoubleLine(NCollection_Sequence<Geom2d_Geometry> Line,
+    private void DoubleLine(NCollection_Sequence<Geometry2D> Line,
         NCollection_Sequence<MAT2d_Connexion> ConnexionFrom, MAT2d_Connexion? ConnexionFather, double SideRef)
     {
         Type Type;
-        Geom2d_TrimmedCurve Curve;
+        TrimmedCurve2D Curve;
         int NbItems = Line.Length();
         int i;
         double ProVec;
@@ -393,13 +395,13 @@ public sealed class MAT2d_Circuit : Transient
             for (i = NbItems - 1; i > 1; i--)
             {
                 Type = Line.Value(i).GetType();
-                if (Type == typeof(Geom2d_CartesianPoint))
+                if (Type == typeof(CartesianPoint2))
                 {
                     Line.Append(Line.Value(i));
                 }
                 else
                 {
-                    Curve = (Geom2d_TrimmedCurve)Line.Value(i).Copy();
+                    Curve = (TrimmedCurve2D)Line.Value(i).Copy();
                     Curve.Reverse();
                     Line.Append(Curve);
                 }
@@ -419,7 +421,7 @@ public sealed class MAT2d_Circuit : Transient
             IndCOF = CC.IndexItemOnFirst();
             Type = Line.Value(IndCOF).GetType();
 
-            if (Type == typeof(Geom2d_CartesianPoint))
+            if (Type == typeof(CartesianPoint2))
             {
                 if (IndCOF != NbItems && IndCOF != 1)
                 {
@@ -436,7 +438,7 @@ public sealed class MAT2d_Circuit : Transient
             }
             else if (Side(CC, Line) != SideRef)
             {
-                Curve = (Geom2d_TrimmedCurve)Line.Value(IndCOF);
+                Curve = (TrimmedCurve2D)Line.Value(IndCOF);
                 CC.IndexItemOnFirst(2 * NbItems - IndCOF);
                 CC.ParameterOnFirst(Curve.ReversedParameter(CC.ParameterOnFirst()));
                 ConnexionFrom.InsertAfter(IAfter, CC);
@@ -455,7 +457,7 @@ public sealed class MAT2d_Circuit : Transient
             IndCOF = CC.IndexItemOnFirst();
             Type = Line.Value(IndCOF).GetType();
 
-            if (Type == typeof(Geom2d_CartesianPoint))
+            if (Type == typeof(CartesianPoint2))
             {
                 if (IndCOF != NbItems && IndCOF != 1)
                 {
@@ -468,7 +470,7 @@ public sealed class MAT2d_Circuit : Transient
             }
             else if (Side(CC, Line) != SideRef)
             {
-                Curve = (Geom2d_TrimmedCurve)Line.Value(IndCOF);
+                Curve = (TrimmedCurve2D)Line.Value(IndCOF);
                 ConnexionFather.IndexItemOnSecond(2 * NbItems - IndCOF);
                 ConnexionFather.ParameterOnSecond(Curve.ReversedParameter(ConnexionFather.ParameterOnSecond()));
             }
@@ -485,7 +487,7 @@ public sealed class MAT2d_Circuit : Transient
         {
             Corres[ICorres] = IndLine;
             Type = Line.Value(IndLine).GetType();
-            if (Type == typeof(Geom2d_CartesianPoint) && ICorres != 1 && ICorres != NbItems)
+            if (Type == typeof(CartesianPoint2) && ICorres != 1 && ICorres != NbItems)
             {
                 if (!IsSharpCorner(Line.Value(IndLine - 1), Line.Value(IndLine + 1), SideRef))
                 {
@@ -525,10 +527,10 @@ public sealed class MAT2d_Circuit : Transient
         }
     }
 
-    private void InsertCorner(NCollection_Sequence<Geom2d_Geometry> Line)
+    private void InsertCorner(NCollection_Sequence<Geometry2D> Line)
     {
         int i, isuiv;
-        Geom2d_TrimmedCurve Curve;
+        TrimmedCurve2D Curve;
         bool Insert;
 
         for (i = 1; i <= Line.Length(); i++)
@@ -538,8 +540,8 @@ public sealed class MAT2d_Circuit : Transient
 
             if (Insert)
             {
-                Curve = (Geom2d_TrimmedCurve)Line.Value(isuiv);
-                Line.InsertAfter(i, new Geom2d_CartesianPoint(Curve.StartPoint()));
+                Curve = (TrimmedCurve2D)Line.Value(isuiv);
+                Line.InsertAfter(i, new CartesianPoint2(Curve.StartPoint()));
                 i++;
             }
         }
@@ -552,7 +554,7 @@ public sealed class MAT2d_Circuit : Transient
     public int LineLength(int I) => linesLength.Value(I);
 
     /// <summary>The item of index Index.</summary>
-    public Geom2d_Geometry Value(int Index) => geomElements.Value(Index);
+    public Geometry2D Value(int Index) => geomElements.Value(Index);
 
     /// <summary>The indices of the items of the circuit made from the curve IndCurve of the line IndLine of the
     /// initial figure.</summary>
@@ -589,13 +591,13 @@ public sealed class MAT2d_Circuit : Transient
     /// <summary>True if there is a connexion on the item I.</summary>
     public bool ConnexionOn(int I) => connexionMap.IsBound(I);
 
-    private static double Side(MAT2d_Connexion C1, NCollection_Sequence<Geom2d_Geometry> Line)
+    private static double Side(MAT2d_Connexion C1, NCollection_Sequence<Geometry2D> Line)
     {
-        Geom2d_TrimmedCurve Curve;
+        TrimmedCurve2D Curve;
 
         Vector2D Vect1 = new(C1.PointOnSecond().X() - C1.PointOnFirst().X(),
             C1.PointOnSecond().Y() - C1.PointOnFirst().Y());
-        Curve = (Geom2d_TrimmedCurve)Line.Value(C1.IndexItemOnFirst());
+        Curve = (TrimmedCurve2D)Line.Value(C1.IndexItemOnFirst());
         Vector2D Vect2 = Curve.DN(C1.ParameterOnFirst(), 1);
         if ((Vect1 ^ Vect2) > 0.0)
         {
@@ -663,13 +665,13 @@ public sealed class MAT2d_Circuit : Transient
 
     // The cross and dot products of the tangent directions at the end of Geom1 and at the start of Geom2 (both
     // curves).
-    private static double CrossProd(Geom2d_Geometry Geom1, Geom2d_Geometry Geom2, out double DotProd)
+    private static double CrossProd(Geometry2D Geom1, Geometry2D Geom2, out double DotProd)
     {
-        Geom2d_TrimmedCurve Curve;
+        TrimmedCurve2D Curve;
 
-        Curve = (Geom2d_TrimmedCurve)Geom1;
+        Curve = (TrimmedCurve2D)Geom1;
         Direction2D Dir1 = new(Curve.DN(Curve.LastParameter(), 1));
-        Curve = (Geom2d_TrimmedCurve)Geom2;
+        Curve = (TrimmedCurve2D)Geom2;
         Direction2D Dir2 = new(Curve.DN(Curve.FirstParameter(), 1));
         DotProd = Dir1.Dot(Dir2);
         return Dir1 ^ Dir2;

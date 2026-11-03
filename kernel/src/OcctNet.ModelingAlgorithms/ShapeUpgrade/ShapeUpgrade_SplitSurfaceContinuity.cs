@@ -100,14 +100,14 @@ public class ShapeUpgrade_SplitSurfaceContinuity : ShapeUpgrade_SplitSurface
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
         }
 
-        if (mySurface is Geom_SurfaceOfRevolution SurfaceRev)
+        if (mySurface is RevolutionSurface SurfaceRev)
         {
             if (SurfaceRev.Continuity() >= myCriterion && myUSplitValues.Length() == 2
                 && myVSplitValues.Length() == 2)
             {
                 return;
             }
-            Geom_Curve BasCurve = SurfaceRev.BasisCurve();
+            Curve3D BasCurve = SurfaceRev.BasisCurve();
             var spc = new ShapeUpgrade_SplitCurve3dContinuity();
             spc.Init(BasCurve, VFirst, VLast);
             spc.SetCriterion(myCriterion);
@@ -130,14 +130,14 @@ public class ShapeUpgrade_SplitSurfaceContinuity : ShapeUpgrade_SplitSurface
             }
             return;
         }
-        if (mySurface is Geom_SurfaceOfLinearExtrusion SurfaceExt)
+        if (mySurface is ExtrusionSurface SurfaceExt)
         {
             if (SurfaceExt.Continuity() >= myCriterion && myUSplitValues.Length() == 2
                 && myVSplitValues.Length() == 2)
             {
                 return;
             }
-            Geom_Curve BasCurve = SurfaceExt.BasisCurve();
+            Curve3D BasCurve = SurfaceExt.BasisCurve();
             var spc = new ShapeUpgrade_SplitCurve3dContinuity();
             spc.Init(BasCurve, UFirst, ULast);
             spc.SetCriterion(myCriterion);
@@ -157,12 +157,12 @@ public class ShapeUpgrade_SplitSurfaceContinuity : ShapeUpgrade_SplitSurface
             if (spc.Status(ShapeExtend_DONE3))
             {
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE3);
-                Geom_Curve aNewBascurve = spc.GetCurve()!;
+                Curve3D aNewBascurve = spc.GetCurve()!;
                 // OCCT.NET: OCCT sets the basis curve of the surface it was given (the face's own); a frozen surface
                 // is copied first and the copy becomes the tool's surface (decision 998)
                 if (SurfaceExt.IsFrozen)
                 {
-                    SurfaceExt = (Geom_SurfaceOfLinearExtrusion)SurfaceExt.Copy();
+                    SurfaceExt = (ExtrusionSurface)SurfaceExt.Copy();
                     mySurface = SurfaceExt;
                 }
                 SurfaceExt.SetBasisCurve(aNewBascurve);
@@ -170,7 +170,7 @@ public class ShapeUpgrade_SplitSurfaceContinuity : ShapeUpgrade_SplitSurface
             return;
         }
 
-        if (mySurface is Geom_RectangularTrimmedSurface tmpRect)
+        if (mySurface is TrimmedSurface tmpRect)
         {
             if (tmpRect.Continuity() >= myCriterion && myUSplitValues.Length() == 2
                 && myVSplitValues.Length() == 2)
@@ -179,7 +179,7 @@ public class ShapeUpgrade_SplitSurfaceContinuity : ShapeUpgrade_SplitSurface
             }
 
             tmpRect.Bounds(out double U1, out double U2, out double V1, out double V2);
-            Geom_Surface theSurf = tmpRect.BasisSurface();
+            Surface theSurf = tmpRect.BasisSurface();
             var sps = new ShapeUpgrade_SplitSurfaceContinuity();
             sps.Init(theSurf,
                      Math.Max(U1, UFirst),
@@ -198,7 +198,7 @@ public class ShapeUpgrade_SplitSurfaceContinuity : ShapeUpgrade_SplitSurface
             myStatus |= sps.myStatus;
             return;
         }
-        else if (mySurface is Geom_OffsetSurface tmpOffset)
+        else if (mySurface is OffsetSurface tmpOffset)
         {
             Continuity BasCriterion;
             switch (myCriterion)
@@ -215,7 +215,7 @@ public class ShapeUpgrade_SplitSurfaceContinuity : ShapeUpgrade_SplitSurface
                     BasCriterion = CN;
                     break;
             }
-            Geom_Surface theSurf = tmpOffset.BasisSurface();
+            Surface theSurf = tmpOffset.BasisSurface();
             if (theSurf.Continuity() >= BasCriterion && myUSplitValues.Length() == 2
                 && myVSplitValues.Length() == 2)
             {
@@ -237,10 +237,10 @@ public class ShapeUpgrade_SplitSurfaceContinuity : ShapeUpgrade_SplitSurface
             return;
         }
 
-        Geom_BSplineSurface? MyBSpline = null;
-        if (mySurface is Geom_BSplineSurface)
+        BSplineSurface? MyBSpline = null;
+        if (mySurface is BSplineSurface)
         {
-            MyBSpline = (Geom_BSplineSurface)mySurface.Copy();
+            MyBSpline = (BSplineSurface)mySurface.Copy();
         }
         if (MyBSpline is null)
         {
@@ -254,10 +254,10 @@ public class ShapeUpgrade_SplitSurfaceContinuity : ShapeUpgrade_SplitSurface
         // it is a BSplineSurface
         int UDeg = MyBSpline.UDegree();
         int VDeg = MyBSpline.VDegree();
-        int NbUKnots = MyBSpline.NbUKnots();
+        int NbUKnots = MyBSpline.UKnotCount;
         int UFirstInd = MyBSpline.FirstUKnotIndex() + 1, ULastInd = MyBSpline.LastUKnotIndex() - 1,
             VFirstInd = MyBSpline.FirstVKnotIndex() + 1, VLastInd = MyBSpline.LastVKnotIndex() - 1;
-        int NbVKnots = MyBSpline.NbVKnots();
+        int NbVKnots = MyBSpline.VKnotCount;
 
         if (NbUKnots > 2)
         {

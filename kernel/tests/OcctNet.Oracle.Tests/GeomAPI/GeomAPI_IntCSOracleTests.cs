@@ -38,8 +38,8 @@ public class GeomAPI_IntCSOracleTests(ITestOutputHelper output)
 
     private static void Run(Oracle theO, Stats theStats, int theCurveKind, int theSurfKind, int theCase)
     {
-        (N.Geom_Curve aNC, Geom_Curve aPC, double aRange) = RandomCurve(theO, theCurveKind);
-        (N.Geom_Surface aNS, Geom_Surface aPS) = RandomSurface(theO, theSurfKind);
+        (N.Geom_Curve aNC, Curve3D aPC, double aRange) = RandomCurve(theO, theCurveKind);
+        (N.Geom_Surface aNS, Surface aPS) = RandomSurface(theO, theSurfKind);
         using (aNC)
         using (aNS)
         {
@@ -161,7 +161,7 @@ public class GeomAPI_IntCSOracleTests(ITestOutputHelper output)
             {
                 try
                 {
-                    (N.Geom_Surface aNS, Geom_Surface aPS) = RandomSurface(anOracle, sk);
+                    (N.Geom_Surface aNS, Surface aPS) = RandomSurface(anOracle, sk);
                     using (aNS)
                     {
                         aPS.Bounds(out double u1, out double u2, out double v1, out double v2);
@@ -176,7 +176,7 @@ public class GeomAPI_IntCSOracleTests(ITestOutputHelper output)
                         }
                         Direction3D aDir = new(aT);
                         using N.Geom_Line aNL = new(Oracle.ToNative(aP), Oracle.ToNative(aDir));
-                        Geom_Line aPL = new(aP, aDir);
+                        LineCurve3D aPL = new(aP, aDir);
                         string aW = $"tangent line / {SurfaceKinds[sk]} #{c}";
                         aCases++;
 

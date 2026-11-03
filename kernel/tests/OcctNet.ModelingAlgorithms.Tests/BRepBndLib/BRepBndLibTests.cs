@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -29,7 +30,7 @@ public class BRepBndLibTests
     [Fact]
     public void Box_of_a_box()
     {
-        TopoDS_Shape aBox = TestShapes.Frozen(TestShapes.Box(10, 20, 30));
+        Shape aBox = TestShapes.Frozen(TestShapes.Box(10, 20, 30));
 
         // enlarged by the tolerances (1e-7)
         Box aB = new();
@@ -51,7 +52,7 @@ public class BRepBndLibTests
     [Fact]
     public void Add_enlarges_a_box_already_holding_something()
     {
-        TopoDS_Shape aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        Shape aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         Box aB = new(new Point3D(-5, -5, -5), new Point3D(-4, -4, -4));
         BRepBndLib.AddOptimal(aBox, ref aB, false, false);
         AssertBox(aB, -5, -5, -5, 1, 1, 1, 1e-12);
@@ -60,7 +61,7 @@ public class BRepBndLibTests
     [Fact]
     public void Box_of_a_cylinder()
     {
-        TopoDS_Shape aCylinder = TestShapes.Frozen(BRepGPropTestShapes.CylinderSolid(2.0, 3.0));
+        Shape aCylinder = TestShapes.Frozen(BRepGPropTestShapes.CylinderSolid(2.0, 3.0));
         Box aB = BRepBndLib.Box(aCylinder);
         aB.Get(out double x1, out double y1, out double z1, out double x2, out double y2, out double z2);
         Assert.True(x1 <= -2 && y1 <= -2 && z1 <= 0 && x2 >= 2 && y2 >= 2 && z2 >= 3);
@@ -72,20 +73,20 @@ public class BRepBndLibTests
     [Fact]
     public void Located_and_rotated_shapes()
     {
-        TopoDS_Shape aBox = TestShapes.Frozen(TestShapes.Box(10, 20, 30));
-        TopoDS_Shape aMoved = ClassificationTestShapes.Translated(aBox, new Vector3D(100, -50, 7));
+        Shape aBox = TestShapes.Frozen(TestShapes.Box(10, 20, 30));
+        Shape aMoved = ClassificationTestShapes.Translated(aBox, new Vector3D(100, -50, 7));
         AssertBox(BRepBndLib.BoxOptimal(aMoved, false, false), 100, -50, 7, 110, -30, 37, 1e-9);
 
-        TopoDS_Shape aRotated = ClassificationTestShapes.RotatedZ(aBox, Math.PI / 2);
+        Shape aRotated = ClassificationTestShapes.RotatedZ(aBox, Math.PI / 2);
         AssertBox(BRepBndLib.BoxOptimal(aRotated, false, false), -20, 0, 0, 0, 10, 30, 1e-9);
     }
 
     [Fact]
     public void Meshes_are_used_if_asked()
     {
-        TopoDS_Solid aMeshed = TestShapes.Box(4, 5, 6);
+        Solid aMeshed = TestShapes.Box(4, 5, 6);
         BRepGPropTestShapes.AttachQuadMeshes(aMeshed);
-        TopoDS_Shape aShape = TestShapes.Frozen(aMeshed);
+        Shape aShape = TestShapes.Frozen(aMeshed);
 
         // the meshes are exact here: the same box either way, but from the nodes with the mesh
         AssertBox(BRepBndLib.Box(aShape, true), 0, 0, 0, 4, 5, 6, 1e-6);
@@ -93,12 +94,12 @@ public class BRepBndLibTests
         AssertBox(BRepBndLib.BoxOptimal(aShape, true, false), 0, 0, 0, 4, 5, 6, 1e-6);
 
         // a face that is only a mesh gives its nodes' box, mesh asked for or not
-        TopoDS_Face aMeshFace = TestShapes.Frozen(BRepGPropTestShapes.MeshFace(
+        Face aMeshFace = TestShapes.Frozen(BRepGPropTestShapes.MeshFace(
             [new Point3D(0, 0, 0), new Point3D(3, 0, 0), new Point3D(0, 4, 1)], (1, 2, 3)));
         AssertBox(BRepBndLib.Box(aMeshFace, false), 0, 0, 0, 3, 4, 1, 1e-6);
 
         // an edge that is only a polygon
-        TopoDS_Edge aPolygon = TestShapes.Frozen(BRepGPropTestShapes.PolygonEdge(new Point3D(1, 2, 3), new Point3D(-1, 5, 0), new Point3D(2, 2, 2)));
+        Edge aPolygon = TestShapes.Frozen(BRepGPropTestShapes.PolygonEdge(new Point3D(1, 2, 3), new Point3D(-1, 5, 0), new Point3D(2, 2, 2)));
         AssertBox(BRepBndLib.Box(aPolygon), -1, 2, 0, 2, 5, 3, 1e-6);
         AssertBox(BRepBndLib.BoxOptimal(aPolygon), -1, 2, 0, 2, 5, 3, 1e-12);
     }
@@ -106,19 +107,19 @@ public class BRepBndLibTests
     [Fact]
     public void Free_vertices_and_edges()
     {
-        TopoDS_Vertex aV = TestShapes.Frozen(TestShapes.Vertex(new Point3D(1, 2, 3)));
+        Vertex aV = TestShapes.Frozen(TestShapes.Vertex(new Point3D(1, 2, 3)));
         AssertBox(BRepBndLib.Box(aV), 1, 2, 3, 1, 2, 3, 1e-6);
         AssertBox(BRepBndLib.BoxOptimal(aV), 1, 2, 3, 1, 2, 3, 0.0);
 
-        TopoDS_Edge anArc = TestShapes.Frozen(TestShapes.Edge(
-            new Geom_Circle(new Frame3D(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1.0), 0.0, Math.PI));
+        Edge anArc = TestShapes.Frozen(TestShapes.Edge(
+            new CircleCurve3D(new Frame3D(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1.0), 0.0, Math.PI));
         AssertBox(BRepBndLib.BoxOptimal(anArc), -1, 0, 0, 1, 1, 0, 1e-9);
     }
 
     [Fact]
     public void Oriented_box_of_boxes()
     {
-        TopoDS_Shape aBox = TestShapes.Frozen(TestShapes.Box(10, 20, 30));
+        Shape aBox = TestShapes.Frozen(TestShapes.Box(10, 20, 30));
         OrientedBox anOBB = BRepBndLib.OBB(aBox, true, false, false);
         Assert.False(anOBB.IsVoid);
         Assert.True(new Point3D(anOBB.Center()).IsEqual(new Point3D(5, 10, 15), 1e-9));
@@ -129,7 +130,7 @@ public class BRepBndLibTests
         Assert.Equal(15.0, aHalf[2], 1e-9);
 
         // rotated: the same sizes, the box turned with the shape
-        TopoDS_Shape aRotated = ClassificationTestShapes.RotatedZ(aBox, Math.PI / 6);
+        Shape aRotated = ClassificationTestShapes.RotatedZ(aBox, Math.PI / 6);
         OrientedBox aRotOBB = BRepBndLib.OBB(aRotated, true, true, false);
         double[] aRotHalf = [aRotOBB.XHSize(), aRotOBB.YHSize(), aRotOBB.ZHSize()];
         Array.Sort(aRotHalf);
@@ -148,7 +149,7 @@ public class BRepBndLibTests
     [Fact]
     public void Oriented_box_of_a_cylinder_uses_the_axes_of_inertia()
     {
-        TopoDS_Shape aCylinder = TestShapes.Frozen(BRepGPropTestShapes.CylinderSolid(2.0, 3.0));
+        Shape aCylinder = TestShapes.Frozen(BRepGPropTestShapes.CylinderSolid(2.0, 3.0));
         // curved faces without triangulations: the inertia path
         OrientedBox anOBB = BRepBndLib.OBB(aCylinder, true, true, false);
         Assert.False(anOBB.IsVoid);

@@ -20,7 +20,7 @@ public sealed class GeomToStep_MakeHyperbola : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D hyperbola.</summary>
-    public GeomToStep_MakeHyperbola(Geom2d_Hyperbola C, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeHyperbola(HyperbolaCurve2D C, in StepData_Factors theLocalFactors)
     {
         Hyperbola2D gpHyp;
         gpHyp = C.Hypr2d();
@@ -42,7 +42,7 @@ public sealed class GeomToStep_MakeHyperbola : GeomToStep_Root
     }
 
     /// <summary>A 2D hyperbola.</summary>
-    public GeomToStep_MakeHyperbola(Geom2d_Hyperbola C) : this(C, new StepData_Factors())
+    public GeomToStep_MakeHyperbola(HyperbolaCurve2D C) : this(C, new StepData_Factors())
     {
     }
 
@@ -52,7 +52,7 @@ public sealed class GeomToStep_MakeHyperbola : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D hyperbola, its position and radii divided by the length factor.</summary>
-    public GeomToStep_MakeHyperbola(Geom_Hyperbola C, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeHyperbola(HyperbolaCurve3D C, in StepData_Factors theLocalFactors)
     {
         Hyperbola3D gpHyp;
         gpHyp = C.Hypr();
@@ -75,7 +75,7 @@ public sealed class GeomToStep_MakeHyperbola : GeomToStep_Root
     }
 
     /// <summary>A 3D hyperbola (default factors).</summary>
-    public GeomToStep_MakeHyperbola(Geom_Hyperbola C) : this(C, new StepData_Factors())
+    public GeomToStep_MakeHyperbola(HyperbolaCurve3D C) : this(C, new StepData_Factors())
     {
     }
 

@@ -4,7 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -20,7 +21,7 @@ internal sealed class Sweep_NumShapeTool
 
     public int NbShapes()
     {
-        if (myNumShape.Type() == TopAbs_EDGE)
+        if (myNumShape.Type() == ShapeType.Edge)
         {
             if (myNumShape.Closed())
             {
@@ -39,7 +40,7 @@ internal sealed class Sweep_NumShapeTool
 
     public int Index(in Sweep_NumShape aShape)
     {
-        if (aShape.Type() == TopAbs_EDGE)
+        if (aShape.Type() == ShapeType.Edge)
         {
             return 1;
         }
@@ -64,17 +65,17 @@ internal sealed class Sweep_NumShapeTool
         }
         else
         {
-            return new Sweep_NumShape((anIndex - 1), TopAbs_VERTEX, myNumShape.Closed(), false, false);
+            return new Sweep_NumShape((anIndex - 1), ShapeType.Vertex, myNumShape.Closed(), false, false);
         }
     }
 
-    public TopAbs_ShapeEnum Type(in Sweep_NumShape aShape) => aShape.Type();
+    public ShapeType Type(in Sweep_NumShape aShape) => aShape.Type();
 
-    public TopAbs_Orientation Orientation(in Sweep_NumShape aShape) => aShape.Orientation();
+    public Orientation Orientation(in Sweep_NumShape aShape) => aShape.Orientation();
 
     public bool HasFirstVertex()
     {
-        if (myNumShape.Type() == TopAbs_EDGE)
+        if (myNumShape.Type() == ShapeType.Edge)
         {
             return !myNumShape.BegInfinite();
         }
@@ -83,7 +84,7 @@ internal sealed class Sweep_NumShapeTool
 
     public bool HasLastVertex()
     {
-        if (myNumShape.Type() == TopAbs_EDGE)
+        if (myNumShape.Type() == ShapeType.Edge)
         {
             return !myNumShape.EndInfinite();
         }
@@ -92,11 +93,11 @@ internal sealed class Sweep_NumShapeTool
 
     public Sweep_NumShape FirstVertex()
     {
-        if (myNumShape.Type() == TopAbs_EDGE)
+        if (myNumShape.Type() == ShapeType.Edge)
         {
             if (HasFirstVertex())
             {
-                return new Sweep_NumShape(1, TopAbs_VERTEX, myNumShape.Closed(), false, false);
+                return new Sweep_NumShape(1, ShapeType.Vertex, myNumShape.Closed(), false, false);
             }
             else
             {
@@ -108,11 +109,11 @@ internal sealed class Sweep_NumShapeTool
 
     public Sweep_NumShape LastVertex()
     {
-        if (myNumShape.Type() == TopAbs_EDGE)
+        if (myNumShape.Type() == ShapeType.Edge)
         {
             if (HasLastVertex())
             {
-                return new Sweep_NumShape(NbShapes() - 1, TopAbs_VERTEX, myNumShape.Closed(), false, false);
+                return new Sweep_NumShape(NbShapes() - 1, ShapeType.Vertex, myNumShape.Closed(), false, false);
             }
             else
             {

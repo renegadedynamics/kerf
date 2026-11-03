@@ -6,9 +6,12 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -26,8 +29,8 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
 {
     protected bool myIntersect;
     protected Box myBBox = new();
-    protected TopoDS_Solid mySBox = new();
-    protected NCollection_List<TopoDS_Shape> myFaces = new();
+    protected Solid mySBox = new();
+    protected NCollection_List<Shape> myFaces = new();
     protected bool myAvoidInternalShapes;
 
     /// <summary>Empty constructor.</summary>
@@ -55,17 +58,17 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
     public bool IsIntersect() => myIntersect;
 
     /// <summary>The solid box enclosing the faces (frozen).</summary>
-    public TopoDS_Solid Box()
+    public Solid Box()
     {
         mySBox.TShape()?.FreezeGraph();
         return mySBox;
     }
 
     /// <summary>The solid box, unfrozen, for ported code.</summary>
-    internal TopoDS_Solid InternalBox() => mySBox;
+    internal Solid InternalBox() => mySBox;
 
     /// <summary>The faces the solids are built from (each face in both orientations, and the box's faces).</summary>
-    public NCollection_List<TopoDS_Shape> Faces() => myFaces;
+    public NCollection_List<Shape> Faces() => myFaces;
 
     /// <summary>Prevents the addition of internal parts into the result's solids (they are added by default).</summary>
     public void SetAvoidInternalShapes(bool theAvoidInternal) => myAvoidInternalShapes = theAvoidInternal;
@@ -104,16 +107,16 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
         {
             // if there is no need to intersect the arguments, then it is necessary
             // to create the compound of them and use it as one argument
-            TopoDS_Compound anArgs = new();
-            BRep_Builder aBB = new();
-            NCollection_List<TopoDS_Shape>.Iterator aIt = new();
-            NCollection_List<TopoDS_Shape> aLS = new();
+            Compound anArgs = new();
+            BrepBuilder aBB = new();
+            NCollection_List<Shape>.Iterator aIt = new();
+            NCollection_List<Shape> aLS = new();
             //
             aBB.MakeCompound(ref anArgs);
             aIt.Initialize(myArguments);
             for (; aIt.More(); aIt.Next())
             {
-                TopoDS_Shape aS = aIt.Value();
+                Shape aS = aIt.Value();
                 aBB.Add(anArgs, aS);
             }
             aLS.Append(anArgs);
@@ -176,7 +179,7 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
                 return;
             }
             // 3.3. Wires
-            FillImagesContainers(TopAbs_WIRE, aPS.Next(aSteps.GetStep((int)BOPAlgo_Builder.BOPAlgo_PIOperation.PIOperation_TreatWires)));
+            FillImagesContainers(ShapeType.Wire, aPS.Next(aSteps.GetStep((int)BOPAlgo_Builder.BOPAlgo_PIOperation.PIOperation_TreatWires)));
             if (HasErrors())
             {
                 return;
@@ -196,8 +199,8 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
             return;
         }
         //
-        NCollection_Map<TopoDS_Shape> aBoxFaces = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape> aLSR = new();
+        NCollection_Map<Shape> aBoxFaces = new(ShapeHasher.Instance);
+        NCollection_List<Shape> aLSR = new();
         //
         // 5. Create bounding box
         MakeBox(aBoxFaces);
@@ -254,14 +257,14 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
     {
         //
         int i, aNbShapes;
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new();
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_List<Shape>.Iterator aIt = new();
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
         //
         aNbShapes = myDS!.NbSourceShapes();
         for (i = 0; i < aNbShapes; ++i)
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() != TopAbs_FACE)
+            if (aSI.ShapeType() != ShapeType.Face)
             {
                 continue;
             }
@@ -269,14 +272,14 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
             Box aB = aSI.Box();
             myBBox.Add(aB);
             //
-            TopoDS_Shape aF = aSI.Shape();
+            Shape aF = aSI.Shape();
             if (myImages.IsBound(aF))
             {
-                NCollection_List<TopoDS_Shape> aLFIm = myImages.Find(aF);
+                NCollection_List<Shape> aLFIm = myImages.Find(aF);
                 aIt.Initialize(aLFIm);
                 for (; aIt.More(); aIt.Next())
                 {
-                    TopoDS_Shape aFIm = aIt.Value();
+                    Shape aFIm = aIt.Value();
                     if (aMFence.Add(aFIm))
                     {
                         AddFace(aFIm, myFaces);
@@ -291,7 +294,7 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
     }
 
     /// <summary>Makes the solid box.</summary>
-    protected void MakeBox(NCollection_Map<TopoDS_Shape> theBoxFaces)
+    protected void MakeBox(NCollection_Map<Shape> theBoxFaces)
     {
         //
         double aXmin, aYmin, aZmin, aXmax, aYmax, aZmax, anExt;
@@ -304,17 +307,17 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
         //
         mySBox = new BRepPrimAPI_MakeBox(aPMin, aPMax).InternalSolid();
         //
-        TopExp_Explorer aExp = new(mySBox, TopAbs_FACE);
+        Explorer aExp = new(mySBox, ShapeType.Face);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Shape aF = aExp.Current();
+            Shape aF = aExp.Current();
             myFaces.Append(aF);
             theBoxFaces.Add(aF);
         }
     }
 
     /// <summary>Builds the solids.</summary>
-    protected void BuildSolids(NCollection_List<TopoDS_Shape> theLSR, ProgressRange theRange)
+    protected void BuildSolids(NCollection_List<Shape> theLSR, ProgressRange theRange)
     {
         BOPAlgo_BuilderSolid aBS = new();
         //
@@ -334,23 +337,23 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
     }
 
     /// <summary>Removes the covering box.</summary>
-    protected void RemoveBox(NCollection_List<TopoDS_Shape> theLSR, NCollection_Map<TopoDS_Shape> theBoxFaces)
+    protected void RemoveBox(NCollection_List<Shape> theLSR, NCollection_Map<Shape> theBoxFaces)
     {
         //
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new();
-        TopExp_Explorer aExp = new();
+        NCollection_List<Shape>.Iterator aIt = new();
+        Explorer aExp = new();
         bool bFound;
         //
         bFound = false;
         aIt.Initialize(theLSR);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aSR = aIt.Value();
+            Shape aSR = aIt.Value();
             //
-            aExp.Init(aSR, TopAbs_FACE);
+            aExp.Init(aSR, ShapeType.Face);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Shape aF = aExp.Current();
+                Shape aF = aExp.Current();
                 if (theBoxFaces.Contains(aF))
                 {
                     bFound = true;
@@ -366,7 +369,7 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
     }
 
     /// <summary>Builds the result.</summary>
-    protected void BuildShape(NCollection_List<TopoDS_Shape> theLSR)
+    protected void BuildShape(NCollection_List<Shape> theLSR)
     {
         if (theLSR.Extent() == 1)
         {
@@ -374,20 +377,20 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
         }
         else
         {
-            BRep_Builder aBB = new();
-            NCollection_List<TopoDS_Shape>.Iterator aIt = new();
+            BrepBuilder aBB = new();
+            NCollection_List<Shape>.Iterator aIt = new();
             //
             aIt.Initialize(theLSR);
             for (; aIt.More(); aIt.Next())
             {
-                TopoDS_Shape aSol = aIt.Value();
+                Shape aSol = aIt.Value();
                 aBB.Add(myShape, aSol);
             }
         }
     }
 
     /// <summary>Fills the solids with the internal shapes (the arguments' edges and vertices).</summary>
-    protected void FillInternalShapes(NCollection_List<TopoDS_Shape> theLSR)
+    protected void FillInternalShapes(NCollection_List<Shape> theLSR)
     {
         if (myAvoidInternalShapes)
         {
@@ -395,36 +398,36 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
         }
 
         // Get all non-compound shapes
-        NCollection_List<TopoDS_Shape> aLSC = new();
+        NCollection_List<Shape> aLSC = new();
         // Fence map
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
 
-        NCollection_List<TopoDS_Shape>.Iterator itLA = new(myDS!.Arguments());
+        NCollection_List<Shape>.Iterator itLA = new(myDS!.Arguments());
         for (; itLA.More(); itLA.Next())
         {
             BOPTools_AlgoTools.TreatCompound(itLA.Value(), aLSC, aMFence);
         }
 
         // Get only edges and vertices from arguments
-        NCollection_List<TopoDS_Shape> aLVE = new();
+        NCollection_List<Shape> aLVE = new();
 
         itLA.Initialize(aLSC);
         for (; itLA.More(); itLA.Next())
         {
-            TopoDS_Shape aS = itLA.Value();
-            TopAbs_ShapeEnum aType = aS.ShapeType();
-            if (aType == TopAbs_WIRE)
+            Shape aS = itLA.Value();
+            ShapeType aType = aS.ShapeType();
+            if (aType == ShapeType.Wire)
             {
-                for (TopoDS_Iterator it = new(aS); it.More(); it.Next())
+                for (Iterator it = new(aS); it.More(); it.Next())
                 {
-                    TopoDS_Shape aSS = it.Value();
+                    Shape aSS = it.Value();
                     if (aMFence.Add(aSS))
                     {
                         aLVE.Append(aSS);
                     }
                 }
             }
-            else if (aType == TopAbs_VERTEX || aType == TopAbs_EDGE)
+            else if (aType == ShapeType.Vertex || aType == ShapeType.Edge)
             {
                 aLVE.Append(aS);
             }
@@ -433,12 +436,12 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
         BOPAlgo_Tools.FillInternals(theLSR, aLVE, myImages, myContext!);
     }
 
-    private static void AddFace(in TopoDS_Shape theF, NCollection_List<TopoDS_Shape> theLF)
+    private static void AddFace(in Shape theF, NCollection_List<Shape> theLF)
     {
-        TopoDS_Shape aFF = theF;
-        aFF.Orientation(TopAbs_FORWARD);
+        Shape aFF = theF;
+        aFF.Orientation(Forward);
         theLF.Append(aFF);
-        aFF.Orientation(TopAbs_REVERSED);
+        aFF.Orientation(Reversed);
         theLF.Append(aFF);
     }
 }

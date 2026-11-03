@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
@@ -82,7 +84,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
     }
 
     /// <summary>Initializes the curve of the Frenet law; returns true.</summary>
-    public override bool SetCurve(Adaptor3d_Curve C)
+    public override bool SetCurve(CurveAdaptorBase C)
     {
         base.SetCurve(C);
         if (C is not null)
@@ -171,7 +173,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         }
         NCollection_Sequence<double> SnglSeq = new NCollection_Sequence<double>();
         double Value2, t;
-        Extrema_ExtPC Ext = new Extrema_ExtPC();
+        CurvePointExtrema Ext = new CurvePointExtrema();
         Point3D Origin = new Point3D(0, 0, 0);
 
         for (i = 1; i <= NbIntC2; i++)
@@ -181,9 +183,9 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
                 Func.SetRatio(1.0 / AveFunc[i]); // Normalization
                 Ext.Initialize(Func, myC2Disc.Value(i), myC2Disc.Value(i + 1), TolF);
                 Ext.Perform(Origin);
-                if (Ext.IsDone() && Ext.NbExt() != 0)
+                if (Ext.IsDone && Ext.ExtCount != 0)
                 {
-                    for (j = 1; j <= Ext.NbExt(); j++)
+                    for (j = 1; j <= Ext.ExtCount; j++)
                     {
                         Value2 = Ext.SquareDistance(j);
                         if (Value2 < Tol2)
@@ -233,9 +235,9 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
                     {
                         Ext.Initialize(Func, SeqArray[i][j], SeqArray[i][j + 1], TolF);
                         Ext.Perform(Origin);
-                        if (Ext.IsDone())
+                        if (Ext.IsDone)
                         {
-                            for (int k = 1; k <= Ext.NbExt(); k++)
+                            for (int k = 1; k <= Ext.ExtCount; k++)
                             {
                                 Value2 = Ext.SquareDistance(k);
                                 if (Value2 < Tol2)
@@ -698,7 +700,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         myCurve.Intervals(TrimInt, tmpS);
 
         NCollection_Sequence<double> Fusion = new NCollection_Sequence<double>();
-        GeomLib.FuseIntervals(TrimInt, mySngl!.Array1(), Fusion, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
+        global::Kerf.Engine.Geometry.Library.GeomLib.FuseIntervals(TrimInt, mySngl!.Array1(), Fusion, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
 
         return Fusion.Length() - 1;
     }
@@ -719,7 +721,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         myCurve.Intervals(TrimInt, tmpS);
 
         NCollection_Sequence<double> Fusion = new NCollection_Sequence<double>();
-        GeomLib.FuseIntervals(TrimInt, mySngl!.Array1(), Fusion, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
+        global::Kerf.Engine.Geometry.Library.GeomLib.FuseIntervals(TrimInt, mySngl!.Array1(), Fusion, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
 
         for (int i = 1; i <= Fusion.Length(); i++)
         {

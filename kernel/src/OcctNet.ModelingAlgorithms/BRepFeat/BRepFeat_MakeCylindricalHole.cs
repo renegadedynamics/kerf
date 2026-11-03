@@ -7,12 +7,15 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.BRepFeat_Status;
 using static Kerf.Engine.Geometry.NormalStatus;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -21,7 +24,7 @@ namespace Occt;
 /// parameters along the axis, or blind for a length.
 /// </summary>
 /// <remarks>
-/// <para>A BRepFeat_Builder: <see cref="BRepFeat_Builder.Init(in TopoDS_Shape)"/> or <see cref="Init(in TopoDS_Shape, in Axis3D)"/>
+/// <para>A BRepFeat_Builder: <see cref="BRepFeat_Builder.Init(in Shape)"/> or <see cref="Init(in Shape, in Axis3D)"/>
 /// gives the shape, a <c>Perform</c> method the hole, <see cref="Build"/> the result
 /// (<see cref="BOPAlgo_BuilderShape.Shape"/>, frozen) and <see cref="Status"/> its status. OCCT makes the Boolean's
 /// <c>Perform</c> protected; C# can't narrow it, so BOPAlgo_BOP's stays public.</para>
@@ -34,8 +37,8 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     private BRepFeat_Status myStatus;
     private bool myIsBlind;
     private bool myValidate;
-    private TopoDS_Face myTopFace = new();
-    private TopoDS_Face myBotFace = new();
+    private Face myTopFace = new();
+    private Face myBotFace = new();
 
     /// <summary>Empty constructor.</summary>
     public BRepFeat_MakeCylindricalHole()
@@ -54,7 +57,7 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     }
 
     /// <summary>Sets the shape and the axis of the hole.</summary>
-    public void Init(in TopoDS_Shape S, in Axis3D Axis)
+    public void Init(in Shape S, in Axis3D Axis)
     {
         base.Init(S);
         myAxis = Axis;
@@ -65,8 +68,8 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     /// <exception cref="ConstructionErrorException">No shape or no axis.</exception>
     public void Perform(double Radius)
     {
-        TopoDS_Shape aObject = myArguments.First();
-        if (aObject.IsNull() || !myAxDef)
+        Shape aObject = myArguments.First();
+        if (aObject.IsNull || !myAxDef)
         {
             throw new ConstructionErrorException();
         }
@@ -92,8 +95,8 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
 
         // Probably it is better to make cut directly
 
-        BRep_Builder B = new();
-        TopoDS_Solid theTool = new();
+        BrepBuilder B = new();
+        Solid theTool = new();
         B.MakeSolid(ref theTool);
         B.Add(theTool, theCylinder.Shell());
 
@@ -113,8 +116,8 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     public void PerformThruNext(double Radius, bool Cont = true)
     {
         //
-        TopoDS_Shape aObject = myArguments.First();
-        if (aObject.IsNull() || !myAxDef)
+        Shape aObject = myArguments.First();
+        if (aObject.IsNull || !myAxDef)
         {
             throw new ConstructionErrorException();
         }
@@ -131,18 +134,18 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
         }
 
         int IndFrom = 0, IndTo = 0;
-        TopAbs_Orientation theOr = TopAbs_FORWARD;
+        Orientation theOr = Forward;
         LocOpe_PntFace PntInfoFirst = new(), PntInfoLast = new();
         bool ok = theASI.LocalizeAfter(0.0, ref theOr, ref IndFrom, ref IndTo);
         if (ok)
         {
-            if (theOr == TopAbs_FORWARD)
+            if (theOr == Forward)
             {
                 PntInfoFirst = theASI.Point(IndFrom);
                 ok = theASI.LocalizeAfter(IndTo, ref theOr, ref IndFrom, ref IndTo);
                 if (ok)
                 {
-                    if (theOr != TopAbs_REVERSED)
+                    if (theOr != Reversed)
                     {
                         ok = false;
                     }
@@ -158,7 +161,7 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
                 ok = theASI.LocalizeBefore(IndFrom, ref theOr, ref IndFrom, ref IndTo);
                 if (ok)
                 {
-                    if (theOr != TopAbs_FORWARD)
+                    if (theOr != Forward)
                     {
                         ok = false;
                     }
@@ -175,10 +178,10 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
             return;
         }
 
-        CreateCyl(PntInfoFirst, PntInfoLast, Radius, myAxis, out TopoDS_Shell Cyl, out myTopFace, out myBotFace);
+        CreateCyl(PntInfoFirst, PntInfoLast, Radius, myAxis, out Shell Cyl, out myTopFace, out myBotFace);
 
-        BRep_Builder B = new();
-        TopoDS_Solid theTool = new();
+        BrepBuilder B = new();
+        Solid theTool = new();
         B.MakeSolid(ref theTool);
         B.Add(theTool, Cyl);
 
@@ -186,11 +189,11 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
         AddTool(theTool);
         SetOperation(Fuse ? 1 : 0);
         base.Perform();
-        NCollection_List<TopoDS_Shape> parts = new();
+        NCollection_List<Shape> parts = new();
         PartsOfTool(parts);
 
         int nbparts = 0;
-        NCollection_List<TopoDS_Shape>.Iterator its = new(parts);
+        NCollection_List<Shape>.Iterator its = new(parts);
         for (; its.More(); its.Next())
         {
             nbparts++;
@@ -206,7 +209,7 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
             // along the axis
             double First = PntInfoFirst.Parameter();
             double Last = PntInfoLast.Parameter();
-            TopoDS_Shape tokeep = new();
+            Shape tokeep = new();
             double parbar, parmin = Last;
             for (its.Initialize(parts); its.More(); its.Next())
             {
@@ -219,7 +222,7 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
                 }
             }
 
-            if (tokeep.IsNull())
+            if (tokeep.IsNull)
             { // preserve the closest interval
 
                 double dmin = RealLast();
@@ -261,8 +264,8 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     public void PerformUntilEnd(double Radius, bool Cont = true)
     {
         //
-        TopoDS_Shape aObject = myArguments.First();
-        if (aObject.IsNull() || !myAxDef)
+        Shape aObject = myArguments.First();
+        if (aObject.IsNull || !myAxDef)
         {
             throw new ConstructionErrorException();
         }
@@ -279,24 +282,24 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
         }
 
         int IndFrom = 0, IndTo = 0;
-        TopAbs_Orientation theOr = TopAbs_FORWARD;
+        Orientation theOr = Forward;
         bool ok = theASI.LocalizeAfter(0.0, ref theOr, ref IndFrom, ref IndTo);
         LocOpe_PntFace PntInfoFirst = new(), PntInfoLast = new();
 
         if (ok)
         {
-            if (theOr == TopAbs_REVERSED)
+            if (theOr == Reversed)
             {
                 ok = theASI.LocalizeBefore(IndFrom, ref theOr, ref IndFrom, ref IndTo); // on reset
                 // It is possible to search for the next.
             }
-            if (ok && theOr == TopAbs_FORWARD)
+            if (ok && theOr == Forward)
             {
                 PntInfoFirst = theASI.Point(IndFrom);
                 ok = theASI.LocalizeBefore(theASI.NbPoints() + 1, ref theOr, ref IndFrom, ref IndTo);
                 if (ok)
                 {
-                    if (theOr != TopAbs_REVERSED)
+                    if (theOr != Reversed)
                     {
                         ok = false;
                     }
@@ -313,10 +316,10 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
             return;
         }
 
-        CreateCyl(PntInfoFirst, PntInfoLast, Radius, myAxis, out TopoDS_Shell Cyl, out myTopFace, out myBotFace);
+        CreateCyl(PntInfoFirst, PntInfoLast, Radius, myAxis, out Shell Cyl, out myTopFace, out myBotFace);
 
-        BRep_Builder B = new();
-        TopoDS_Solid theTool = new();
+        BrepBuilder B = new();
+        Solid theTool = new();
         B.MakeSolid(ref theTool);
         B.Add(theTool, Cyl);
 
@@ -324,11 +327,11 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
         AddTool(theTool);
         SetOperation(Fuse ? 1 : 0);
         base.Perform();
-        NCollection_List<TopoDS_Shape> parts = new();
+        NCollection_List<Shape> parts = new();
         PartsOfTool(parts);
 
         int nbparts = 0;
-        NCollection_List<TopoDS_Shape>.Iterator its = new(parts);
+        NCollection_List<Shape>.Iterator its = new(parts);
         for (; its.More(); its.Next())
         {
             nbparts++;
@@ -362,8 +365,8 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     public void Perform(double Radius, double PFrom, double PTo, bool Cont = true)
     {
         //
-        TopoDS_Shape aObject = myArguments.First();
-        if (aObject.IsNull() || !myAxDef)
+        Shape aObject = myArguments.First();
+        if (aObject.IsNull || !myAxDef)
         {
             throw new ConstructionErrorException();
         }
@@ -393,26 +396,26 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
 
         LocOpe_PntFace PntInfoFirst = new(), PntInfoLast = new();
         int IndFrom = 0, IndTo = 0;
-        TopAbs_Orientation theOr = TopAbs_FORWARD;
+        Orientation theOr = Forward;
         bool ok = theASI.LocalizeAfter(thePFrom, ref theOr, ref IndFrom, ref IndTo);
         if (ok)
         {
-            if (theOr == TopAbs_REVERSED)
+            if (theOr == Reversed)
             {
                 ok = theASI.LocalizeBefore(IndFrom, ref theOr, ref IndFrom, ref IndTo); // reset
                 // It is possible to find the next.
             }
-            if (ok && theOr == TopAbs_FORWARD)
+            if (ok && theOr == Forward)
             {
                 PntInfoFirst = theASI.Point(IndFrom);
                 ok = theASI.LocalizeBefore(thePTo, ref theOr, ref IndFrom, ref IndTo);
                 if (ok)
                 {
-                    if (theOr == TopAbs_FORWARD)
+                    if (theOr == Forward)
                     {
                         ok = theASI.LocalizeAfter(IndTo, ref theOr, ref IndFrom, ref IndTo);
                     }
-                    if (ok && theOr == TopAbs_REVERSED)
+                    if (ok && theOr == Reversed)
                     {
                         PntInfoLast = theASI.Point(IndTo);
                     }
@@ -426,10 +429,10 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
             return;
         }
 
-        CreateCyl(PntInfoFirst, PntInfoLast, Radius, myAxis, out TopoDS_Shell Cyl, out myTopFace, out myBotFace);
+        CreateCyl(PntInfoFirst, PntInfoLast, Radius, myAxis, out Shell Cyl, out myTopFace, out myBotFace);
 
-        BRep_Builder B = new();
-        TopoDS_Solid theTool = new();
+        BrepBuilder B = new();
+        Solid theTool = new();
         B.MakeSolid(ref theTool);
         B.Add(theTool, Cyl);
 
@@ -437,11 +440,11 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
         AddTool(theTool);
         SetOperation(Fuse ? 1 : 0);
         base.Perform();
-        NCollection_List<TopoDS_Shape> parts = new();
+        NCollection_List<Shape> parts = new();
         PartsOfTool(parts);
 
         int nbparts = 0;
-        NCollection_List<TopoDS_Shape>.Iterator its = new(parts);
+        NCollection_List<Shape>.Iterator its = new(parts);
         for (; its.More(); its.Next())
         {
             nbparts++;
@@ -472,8 +475,8 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     public void PerformBlind(double Radius, double Length, bool Cont = true)
     {
         //
-        TopoDS_Shape aObject = myArguments.First();
-        if (aObject.IsNull() || !myAxDef || Length <= 0.0)
+        Shape aObject = myArguments.First();
+        if (aObject.IsNull || !myAxDef || Length <= 0.0)
         {
             throw new ConstructionErrorException();
         }
@@ -491,17 +494,17 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
 
         double First;
         int IndFrom = 0, IndTo = 0;
-        TopAbs_Orientation theOr = TopAbs_FORWARD;
+        Orientation theOr = Forward;
         bool ok = theASI.LocalizeAfter(0.0, ref theOr, ref IndFrom, ref IndTo);
 
         if (ok)
         {
-            if (theOr == TopAbs_REVERSED)
+            if (theOr == Reversed)
             {
                 ok = theASI.LocalizeBefore(IndFrom, ref theOr, ref IndFrom, ref IndTo); // reset
                 // it is possible to find the next
             }
-            ok = ok && theOr == TopAbs_FORWARD;
+            ok = ok && theOr == Forward;
         }
         if (!ok)
         {
@@ -523,7 +526,7 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
             return;
         }
 
-        NCollection_List<TopoDS_Shape> theList = new();
+        NCollection_List<Shape> theList = new();
         // version for advanced control
         for (int i = IndFrom; i <= ITNext; i++)
         {
@@ -547,8 +550,8 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
         Frame3D a5_ao1 = new(p5_ao1, myAxis.Direction());
         BRepPrim_Cylinder theCylinder = new(a5_ao1, Radius, Heigth);
 
-        BRep_Builder B = new();
-        TopoDS_Solid theTool = new();
+        BrepBuilder B = new();
+        Solid theTool = new();
         B.MakeSolid(ref theTool);
         B.Add(theTool, theCylinder.Shell());
 
@@ -559,11 +562,11 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
         AddTool(theTool);
         SetOperation(Fuse ? 1 : 0);
         base.Perform();
-        NCollection_List<TopoDS_Shape> parts = new();
+        NCollection_List<Shape> parts = new();
         PartsOfTool(parts);
 
         int nbparts = 0;
-        NCollection_List<TopoDS_Shape>.Iterator its = new(parts);
+        NCollection_List<Shape>.Iterator its = new(parts);
         for (; its.More(); its.Next())
         {
             nbparts++;
@@ -576,7 +579,7 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
 
         if (nbparts >= 2)
         { // preserve the smallest as parameter along the axis
-            TopoDS_Shape tokeep = new();
+            Shape tokeep = new();
             double parbar, parmin = RealLast();
             for (its.Initialize(parts); its.More(); its.Next())
             {
@@ -589,7 +592,7 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
                 }
             }
 
-            if (tokeep.IsNull())
+            if (tokeep.IsNull)
             { // preserve the closest interval
 
                 double dmin = RealLast();
@@ -642,7 +645,7 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     private BRepFeat_Status Validate()
     {
         BRepFeat_Status thestat = BRepFeat_NoError;
-        TopExp_Explorer ex = new(InternalShape(), TopAbs_FACE);
+        Explorer ex = new(InternalShape(), ShapeType.Face);
         if (myIsBlind)
         { // limit of the hole
             for (; ex.More(); ex.Next())
@@ -677,22 +680,22 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
         return thestat;
     }
 
-    private static void Baryc(in TopoDS_Shape S, out Point3D B)
+    private static void Baryc(in Shape S, out Point3D B)
     {
-        TopExp_Explorer exp = new(S, TopAbs_EDGE);
+        Explorer exp = new(S, ShapeType.Edge);
         Xyz Bar = new(0.0, 0.0, 0.0);
-        Geom_Curve C;
+        Curve3D C;
         double prm;
         int i, nbp = 0;
 
         for (; exp.More(); exp.Next())
         {
             // Calculate points by non-degenerated edges
-            TopoDS_Edge E = TopoDS.Edge(exp.Current());
-            if (!BRep_Tool.Degenerated(E))
+            Edge E = ShapeCasts.Edge(exp.Current());
+            if (!Tool.Degenerated(E))
             {
-                C = BRep_Tool.Curve(E, out Placement L, out double First, out double Last)!;
-                C = (Geom_Curve)C.Transformed(L.Transformation());
+                C = Tool.Curve(E, out Placement L, out double First, out double Last)!;
+                C = (Curve3D)C.Transformed(L.Transformation());
 
                 for (i = 1; i <= 11; i++)
                 {
@@ -707,7 +710,7 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
         B.SetXYZ(Bar);
     }
 
-    private static void BoxParameters(in TopoDS_Shape S, in Axis3D Axis, out double parmin, out double parmax)
+    private static void BoxParameters(in Shape S, in Axis3D Axis, out double parmin, out double parmax)
     {
         // calculate the parameters of a bounding box in the direction of the axis of the hole
         Box B = new();
@@ -739,8 +742,8 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     private static bool GetOffset(in LocOpe_PntFace PntInfo, double Radius, in Axis3D Axis, out double outOff)
     {
         outOff = 0.0; // OCCT leaves it unchanged when false
-        TopoDS_Face FF = PntInfo.Face();
-        BRepAdaptor_Surface FFA = new(FF);
+        Face FF = PntInfo.Face();
+        FaceSurfaceAdaptor FFA = new(FF);
 
         double Up = PntInfo.UParameter();
         double Vp = PntInfo.VParameter();
@@ -761,8 +764,8 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     }
 
     private static void CreateCyl(in LocOpe_PntFace PntInfoFirst, in LocOpe_PntFace PntInfoLast, double Radius,
-                                  in Axis3D Axis, out TopoDS_Shell Cyl, out TopoDS_Face CylTopF,
-                                  out TopoDS_Face CylBottF)
+                                  in Axis3D Axis, out Shell Cyl, out Face CylTopF,
+                                  out Face CylBottF)
     {
         double First = 0, Last = 0;
         double offF = 0.0, offL = 0.0;

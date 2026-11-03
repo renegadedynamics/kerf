@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
 
@@ -44,12 +45,12 @@ public class GeomConvert_SurfaceSplittingTests
         return aPoles;
     }
 
-    private static Geom_BSplineSurface Surface(bool theRational = false)
+    private static BSplineSurface Surface(bool theRational = false)
     {
         NCollection_Array2<Point3D> aPoles = Poles(7, 4);
         if (!theRational)
         {
-            return new Geom_BSplineSurface(aPoles, Array(s_UKnots), Array(s_VKnots), Array(s_UMults), Array(s_VMults), 3, 2);
+            return new BSplineSurface(aPoles, Array(s_UKnots), Array(s_VKnots), Array(s_UMults), Array(s_VMults), 3, 2);
         }
 
         var aWeights = new NCollection_Array2<double>(1, 7, 1, 4);
@@ -61,7 +62,7 @@ public class GeomConvert_SurfaceSplittingTests
             }
         }
 
-        return new Geom_BSplineSurface(aPoles, aWeights, Array(s_UKnots), Array(s_VKnots), Array(s_UMults),
+        return new BSplineSurface(aPoles, aWeights, Array(s_UKnots), Array(s_VKnots), Array(s_UMults),
                                        Array(s_VMults), 3, 2);
     }
 
@@ -71,33 +72,33 @@ public class GeomConvert_SurfaceSplittingTests
     [Fact]
     public void KnotSplitting_ByContinuity()
     {
-        Geom_BSplineSurface aSurf = Surface();
+        BSplineSurface aSurf = Surface();
 
-        var aC0 = new GeomConvert_BSplineSurfaceKnotSplitting(aSurf, 0, 0);
-        Assert.Equal(2, aC0.NbUSplits());
-        Assert.Equal(2, aC0.NbVSplits());
+        var aC0 = new BSplineSurfaceKnotSplitting(aSurf, 0, 0);
+        Assert.Equal(2, aC0.USplitCount);
+        Assert.Equal(2, aC0.VSplitCount);
         Assert.Equal(1, aC0.USplitValue(1));
         Assert.Equal(4, aC0.USplitValue(2));
         Assert.Equal(3, aC0.VSplitValue(2));
 
         // C1 required: only knots of multiplicity >= Degree split; none inside
-        var aC1 = new GeomConvert_BSplineSurfaceKnotSplitting(aSurf, 1, 1);
-        Assert.Equal(2, aC1.NbUSplits());
-        Assert.Equal(2, aC1.NbVSplits());
+        var aC1 = new BSplineSurfaceKnotSplitting(aSurf, 1, 1);
+        Assert.Equal(2, aC1.USplitCount);
+        Assert.Equal(2, aC1.VSplitCount);
 
         // C2 required: U splits at knot 3 (C1 only), V at knot 2 (C1 only)
-        var aC2 = new GeomConvert_BSplineSurfaceKnotSplitting(aSurf, 2, 2);
-        var aUSplit = new NCollection_Array1<int>(1, aC2.NbUSplits());
-        var aVSplit = new NCollection_Array1<int>(1, aC2.NbVSplits());
+        var aC2 = new BSplineSurfaceKnotSplitting(aSurf, 2, 2);
+        var aUSplit = new NCollection_Array1<int>(1, aC2.USplitCount);
+        var aVSplit = new NCollection_Array1<int>(1, aC2.VSplitCount);
         aC2.Splitting(aUSplit, aVSplit);
         Assert.Equal([1, 3, 4], aUSplit.AsSpan().ToArray());
         Assert.Equal([1, 2, 3], aVSplit.AsSpan().ToArray());
 
         // C3: every inner U knot (degree 3, so a simple knot is only C2)
-        var aC3 = new GeomConvert_BSplineSurfaceKnotSplitting(aSurf, 3, 0);
-        Assert.Equal(4, aC3.NbUSplits());
+        var aC3 = new BSplineSurfaceKnotSplitting(aSurf, 3, 0);
+        Assert.Equal(4, aC3.USplitCount);
 
-        Assert.ThrowsAny<RangeErrorException>(() => new GeomConvert_BSplineSurfaceKnotSplitting(aSurf, -1, 0));
+        Assert.ThrowsAny<RangeErrorException>(() => new BSplineSurfaceKnotSplitting(aSurf, -1, 0));
         Assert.ThrowsAny<RangeErrorException>(() => aC2.USplitValue(0));
         Assert.ThrowsAny<RangeErrorException>(() => aC2.VSplitValue(4));
     }
@@ -109,20 +110,20 @@ public class GeomConvert_SurfaceSplittingTests
         var aPoles = Poles(7, 4);
         var aVKnots = Array([0.0, 1.0, 2.0, 3.0, 4.0]);
         var aVMults = Array([1, 1, 1, 1, 1]);
-        var aSurf = new Geom_BSplineSurface(aPoles, Array(s_UKnots), aVKnots, Array(s_UMults), aVMults, 3, 2, false, true);
+        var aSurf = new BSplineSurface(aPoles, Array(s_UKnots), aVKnots, Array(s_UMults), aVMults, 3, 2, false, true);
 
-        var aSplit = new GeomConvert_BSplineSurfaceKnotSplitting(aSurf, 2, 1);
+        var aSplit = new BSplineSurfaceKnotSplitting(aSurf, 2, 1);
         // The U result (1, 3, 4) has been replaced by V's first and last indices
-        Assert.Equal(2, aSplit.NbUSplits());
+        Assert.Equal(2, aSplit.USplitCount);
         Assert.Equal(aSurf.FirstVKnotIndex(), aSplit.USplitValue(1));
         Assert.Equal(aSurf.LastVKnotIndex(), aSplit.USplitValue(2));
-        Assert.ThrowsAny<NullReferenceException>(() => aSplit.NbVSplits());
+        Assert.ThrowsAny<NullReferenceException>(() => aSplit.VSplitCount);
     }
 
-    private static void CheckPatches(Geom_BSplineSurface theSurf, GeomConvert_BSplineSurfaceToBezierSurface theConv,
+    private static void CheckPatches(BSplineSurface theSurf, BSplineSurfaceToBezierSurface theConv,
                                      double theU1, double theU2, double theV1, double theV2)
     {
-        int aNbU = theConv.NbUPatches(), aNbV = theConv.NbVPatches();
+        int aNbU = theConv.UPatchCount, aNbV = theConv.VPatchCount;
         var aUKnots = new NCollection_Array1<double>(1, aNbU + 1);
         var aVKnots = new NCollection_Array1<double>(1, aNbV + 1);
         theConv.UKnots(aUKnots);
@@ -132,13 +133,13 @@ public class GeomConvert_SurfaceSplittingTests
         Assert.Equal(theV1, aVKnots[1], 12);
         Assert.Equal(theV2, aVKnots[aNbV + 1], 12);
 
-        var aPatches = new NCollection_Array2<Geom_BezierSurface>(1, aNbU, 1, aNbV);
+        var aPatches = new NCollection_Array2<BezierSurface>(1, aNbU, 1, aNbV);
         theConv.Patches(aPatches);
         for (int i = 1; i <= aNbU; i++)
         {
             for (int j = 1; j <= aNbV; j++)
             {
-                Geom_BezierSurface aPatch = aPatches[i, j];
+                BezierSurface aPatch = aPatches[i, j];
                 Assert.False(aPatch.IsFrozen);
                 Assert.Equal(theSurf.UDegree(), aPatch.UDegree());
                 Assert.Equal(theSurf.VDegree(), aPatch.VDegree());
@@ -161,68 +162,68 @@ public class GeomConvert_SurfaceSplittingTests
     [InlineData(true)]
     public void BezierPatches_EvaluateAsTheSurface(bool theRational)
     {
-        Geom_BSplineSurface aSurf = Surface(theRational);
-        var aConv = new GeomConvert_BSplineSurfaceToBezierSurface(aSurf);
-        Assert.Equal(3, aConv.NbUPatches());
-        Assert.Equal(2, aConv.NbVPatches());
+        BSplineSurface aSurf = Surface(theRational);
+        var aConv = new BSplineSurfaceToBezierSurface(aSurf);
+        Assert.Equal(3, aConv.UPatchCount);
+        Assert.Equal(2, aConv.VPatchCount);
         CheckPatches(aSurf, aConv, 0.0, 3.0, 0.0, 1.0);
-        Assert.Equal(theRational, aConv.Patch(1, 1).IsURational() || aConv.Patch(1, 1).IsVRational());
+        Assert.Equal(theRational, aConv.Patch(1, 1).IsURational || aConv.Patch(1, 1).IsVRational);
         Assert.ThrowsAny<OutOfRangeException>(() => aConv.Patch(4, 1));
         Assert.ThrowsAny<OutOfRangeException>(() => aConv.Patch(1, 0));
 
         // The input is untouched (the converter works on a copy), and may be frozen
-        Assert.Equal(4, aSurf.NbUKnots());
+        Assert.Equal(4, aSurf.UKnotCount);
         aSurf.Freeze();
-        _ = new GeomConvert_BSplineSurfaceToBezierSurface(aSurf);
+        _ = new BSplineSurfaceToBezierSurface(aSurf);
     }
 
     [Fact]
     public void BezierPatches_OfARange()
     {
-        Geom_BSplineSurface aSurf = Surface();
-        var aConv = new GeomConvert_BSplineSurfaceToBezierSurface(aSurf, 0.5, 2.5, 0.2, 1.0, 1e-6);
-        Assert.Equal(3, aConv.NbUPatches());
-        Assert.Equal(2, aConv.NbVPatches());
+        BSplineSurface aSurf = Surface();
+        var aConv = new BSplineSurfaceToBezierSurface(aSurf, 0.5, 2.5, 0.2, 1.0, 1e-6);
+        Assert.Equal(3, aConv.UPatchCount);
+        Assert.Equal(2, aConv.VPatchCount);
         CheckPatches(aSurf, aConv, 0.5, 2.5, 0.2, 1.0);
 
         // Bounds within ParametricTolerance / 2 of a knot outside the range snap onto it
-        var aSnapped = new GeomConvert_BSplineSurfaceToBezierSurface(aSurf, 1.0 - 1e-8, 3.0, 0.0, 0.5 + 1e-8, 1e-6);
-        Assert.Equal(2, aSnapped.NbUPatches());
-        Assert.Equal(1, aSnapped.NbVPatches());
+        var aSnapped = new BSplineSurfaceToBezierSurface(aSurf, 1.0 - 1e-8, 3.0, 0.0, 0.5 + 1e-8, 1e-6);
+        Assert.Equal(2, aSnapped.UPatchCount);
+        Assert.Equal(1, aSnapped.VPatchCount);
         CheckPatches(aSurf, aSnapped, 1.0, 3.0, 0.0, 0.5);
 
-        Assert.ThrowsAny<DomainErrorException>(() => new GeomConvert_BSplineSurfaceToBezierSurface(aSurf, 1.0, 1.0 + 1e-8, 0.0, 1.0, 1e-6));
+        Assert.ThrowsAny<DomainErrorException>(() => new BSplineSurfaceToBezierSurface(aSurf, 1.0, 1.0 + 1e-8, 0.0, 1.0, 1e-6));
     }
 
-    private static NCollection_Array2<Geom_BezierSurface> Split(Geom_BSplineSurface theSurf)
+    private static NCollection_Array2<BezierSurface> Split(BSplineSurface theSurf)
     {
-        var aConv = new GeomConvert_BSplineSurfaceToBezierSurface(theSurf);
-        var aPatches = new NCollection_Array2<Geom_BezierSurface>(1, aConv.NbUPatches(), 1, aConv.NbVPatches());
+        var aConv = new BSplineSurfaceToBezierSurface(theSurf);
+        var aPatches = new NCollection_Array2<BezierSurface>(1, aConv.UPatchCount, 1, aConv.VPatchCount);
         aConv.Patches(aPatches);
         return aPatches;
     }
 
-    private static Geom_BSplineSurface Build(GeomConvert_CompBezierSurfacesToBSplineSurface theConv)
+    private static BSplineSurface Build(CompBezierSurfacesToBSplineSurface theConv)
         => new(theConv.Poles(), theConv.UKnots(), theConv.VKnots(), theConv.UMultiplicities(), theConv.VMultiplicities(),
                theConv.UDegree(), theConv.VDegree());
 
     [Fact]
     public void CompBezierSurfaces_PiecewiseBezier_RoundTrip()
     {
-        Geom_BSplineSurface aSurf = Surface();
-        NCollection_Array2<Geom_BezierSurface> aPatches = Split(aSurf);
-        var aConv = new GeomConvert_CompBezierSurfacesToBSplineSurface(aPatches);
-        Assert.True(aConv.IsDone());
+        BSplineSurface aSurf = Surface();
+        NCollection_Array2<BezierSurface> aPatches = Split(aSurf);
+        var aConv = new CompBezierSurfacesToBSplineSurface(aPatches);
+        Assert.True(aConv.IsDone);
         Assert.Equal(3, aConv.UDegree());
         Assert.Equal(2, aConv.VDegree());
-        Assert.Equal(4, aConv.NbUKnots());
-        Assert.Equal(3, aConv.NbVKnots());
-        Assert.Equal(10, aConv.NbUPoles());
-        Assert.Equal(5, aConv.NbVPoles());
+        Assert.Equal(4, aConv.UKnotCount);
+        Assert.Equal(3, aConv.VKnotCount);
+        Assert.Equal(10, aConv.UPoleCount);
+        Assert.Equal(5, aConv.VPoleCount);
         Assert.Equal([4, 3, 3, 4], aConv.UMultiplicities().AsSpan().ToArray());
         Assert.Equal([0.0, 1.0, 2.0], aConv.VKnots().AsSpan().ToArray());
 
-        Geom_BSplineSurface aResult = Build(aConv);
+        BSplineSurface aResult = Build(aConv);
         for (int i = 1; i <= 3; i++)
         {
             for (int j = 1; j <= 2; j++)
@@ -246,21 +247,21 @@ public class GeomConvert_SurfaceSplittingTests
     [Fact]
     public void CompBezierSurfaces_WithKnots_AndContinuity()
     {
-        Geom_BSplineSurface aSurf = Surface();
-        NCollection_Array2<Geom_BezierSurface> aPatches = Split(aSurf);
+        BSplineSurface aSurf = Surface();
+        NCollection_Array2<BezierSurface> aPatches = Split(aSurf);
 
         // C0 with the original knots: the original surface, with every inner knot of multiplicity = degree
-        var aC0 = new GeomConvert_CompBezierSurfacesToBSplineSurface(aPatches, Array(s_UKnots), Array(s_VKnots));
-        Assert.True(aC0.IsDone());
-        Geom_BSplineSurface aR0 = Build(aC0);
+        var aC0 = new CompBezierSurfacesToBSplineSurface(aPatches, Array(s_UKnots), Array(s_VKnots));
+        Assert.True(aC0.IsDone);
+        BSplineSurface aR0 = Build(aC0);
 
         // C1 in U and V: the knots go back to multiplicity 2 (U) and 1 (V)
-        var aC1 = new GeomConvert_CompBezierSurfacesToBSplineSurface(aPatches, Array(s_UKnots), Array(s_VKnots),
+        var aC1 = new CompBezierSurfacesToBSplineSurface(aPatches, Array(s_UKnots), Array(s_VKnots),
                                                                      C1, C1, 1e-7);
-        Assert.True(aC1.IsDone());
+        Assert.True(aC1.IsDone);
         Assert.Equal([4, 2, 2, 4], aC1.UMultiplicities().AsSpan().ToArray());
         Assert.Equal([3, 1, 3], aC1.VMultiplicities().AsSpan().ToArray());
-        Geom_BSplineSurface aR1 = Build(aC1);
+        BSplineSurface aR1 = Build(aC1);
 
         for (int s = 0; s <= 12; s++)
         {
@@ -273,16 +274,16 @@ public class GeomConvert_SurfaceSplittingTests
         }
 
         // C2 in U is impossible at knot 3 (the surface is only C1 there)
-        var aC2 = new GeomConvert_CompBezierSurfacesToBSplineSurface(aPatches, Array(s_UKnots), Array(s_VKnots),
+        var aC2 = new CompBezierSurfacesToBSplineSurface(aPatches, Array(s_UKnots), Array(s_VKnots),
                                                                      C2, C0, 1e-7);
-        Assert.False(aC2.IsDone());
+        Assert.False(aC2.IsDone);
 
         Assert.ThrowsAny<ConstructionErrorException>(
-            () => new GeomConvert_CompBezierSurfacesToBSplineSurface(aPatches, Array(s_UKnots), Array(s_VKnots),
+            () => new CompBezierSurfacesToBSplineSurface(aPatches, Array(s_UKnots), Array(s_VKnots),
                                                                      G1, C0, 1e-7));
         // C2 in V needs degree 3 with several V patches
         Assert.ThrowsAny<ConstructionErrorException>(
-            () => new GeomConvert_CompBezierSurfacesToBSplineSurface(aPatches, Array(s_UKnots), Array(s_VKnots),
+            () => new CompBezierSurfacesToBSplineSurface(aPatches, Array(s_UKnots), Array(s_VKnots),
                                                                      C0, C2, 1e-7));
     }
 
@@ -291,17 +292,17 @@ public class GeomConvert_SurfaceSplittingTests
     {
         // Two patches in U of a degree (2, 2) surface, the second raised to (3, 2), all frozen
         var aPoles = Poles(5, 3);
-        var aSurf = new Geom_BSplineSurface(aPoles, Array([0.0, 1.0, 2.0]), Array([0.0, 1.0]), Array([3, 2, 3]),
+        var aSurf = new BSplineSurface(aPoles, Array([0.0, 1.0, 2.0]), Array([0.0, 1.0]), Array([3, 2, 3]),
                                             Array([3, 3]), 2, 2);
-        NCollection_Array2<Geom_BezierSurface> aPatches = Split(aSurf);
+        NCollection_Array2<BezierSurface> aPatches = Split(aSurf);
         aPatches[2, 1] = aPatches[2, 1].Increased(3, 2);
         aPatches[1, 1].Freeze();
         aPatches[2, 1].Freeze();
 
-        var aConv = new GeomConvert_CompBezierSurfacesToBSplineSurface(aPatches);
+        var aConv = new CompBezierSurfacesToBSplineSurface(aPatches);
         Assert.Equal(3, aConv.UDegree());
         Assert.Equal(2, aPatches[1, 1].UDegree());
-        Geom_BSplineSurface aResult = Build(aConv);
+        BSplineSurface aResult = Build(aConv);
         for (int s = 0; s <= 8; s++)
         {
             double u = 2.0 * s / 8.0;
@@ -315,16 +316,16 @@ public class GeomConvert_SurfaceSplittingTests
         // One patch row in U, three in V of a surface that is C1 in V: OCCT's V removal loop tests the U
         // multiplicity, which stays 0 with a single U patch, so no V knot is removed (occt-issues.md)
         var aPoles = Poles(4, 5);
-        var aSurf = new Geom_BSplineSurface(aPoles, Array([0.0, 1.0]), Array([0.0, 1.0, 2.0, 3.0]), Array([4, 4]),
+        var aSurf = new BSplineSurface(aPoles, Array([0.0, 1.0]), Array([0.0, 1.0, 2.0, 3.0]), Array([4, 4]),
                                             Array([3, 1, 1, 3]), 3, 2);
-        NCollection_Array2<Geom_BezierSurface> aPatches = Split(aSurf);
-        var aConv = new GeomConvert_CompBezierSurfacesToBSplineSurface(aPatches, 1e-7);
-        Assert.True(aConv.IsDone());
+        NCollection_Array2<BezierSurface> aPatches = Split(aSurf);
+        var aConv = new CompBezierSurfacesToBSplineSurface(aPatches, 1e-7);
+        Assert.True(aConv.IsDone);
         Assert.Equal([3, 2, 2, 3], aConv.VMultiplicities().AsSpan().ToArray());
-        Assert.Equal(2, aConv.NbUKnots());
+        Assert.Equal(2, aConv.UKnotCount);
 
         // Corners of the grid are those of the surface
-        Geom_BSplineSurface aResult = Build(aConv);
+        BSplineSurface aResult = Build(aConv);
         aResult.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         AssertNear(aSurf.Value(0.0, 0.0), aResult.Value(aU1, aV1));
         AssertNear(aSurf.Value(1.0, 3.0), aResult.Value(aU2, aV2));
@@ -332,12 +333,12 @@ public class GeomConvert_SurfaceSplittingTests
         // Three patches in U of a C2 surface (simple knots): the U knots go back to multiplicity 1 (OCCT stops
         // before trying 0)
         var aPoles2 = Poles(6, 3);
-        var aSurf2 = new Geom_BSplineSurface(aPoles2, Array([0.0, 1.0, 2.0, 3.0]), Array([0.0, 1.0]),
+        var aSurf2 = new BSplineSurface(aPoles2, Array([0.0, 1.0, 2.0, 3.0]), Array([0.0, 1.0]),
                                              Array([4, 1, 1, 4]), Array([3, 3]), 3, 2);
-        var aConv2 = new GeomConvert_CompBezierSurfacesToBSplineSurface(Split(aSurf2), 1e-7);
+        var aConv2 = new CompBezierSurfacesToBSplineSurface(Split(aSurf2), 1e-7);
         Assert.Equal([4, 1, 1, 4], aConv2.UMultiplicities().AsSpan().ToArray());
-        Assert.Equal(6, aConv2.NbUPoles());
-        Geom_BSplineSurface aResult2 = Build(aConv2);
+        Assert.Equal(6, aConv2.UPoleCount);
+        BSplineSurface aResult2 = Build(aConv2);
         aResult2.Bounds(out aU1, out aU2, out aV1, out aV2);
         AssertNear(aSurf2.Value(0.0, 0.0), aResult2.Value(aU1, aV1), 1e-8);
         AssertNear(aSurf2.Value(3.0, 1.0), aResult2.Value(aU2, aV2), 1e-8);
@@ -346,7 +347,7 @@ public class GeomConvert_SurfaceSplittingTests
     [Fact]
     public void CompBezierSurfaces_Rational_NotImplemented()
     {
-        NCollection_Array2<Geom_BezierSurface> aPatches = Split(Surface(true));
-        Assert.ThrowsAny<MethodNotImplementedException>(() => new GeomConvert_CompBezierSurfacesToBSplineSurface(aPatches));
+        NCollection_Array2<BezierSurface> aPatches = Split(Surface(true));
+        Assert.ThrowsAny<MethodNotImplementedException>(() => new CompBezierSurfacesToBSplineSurface(aPatches));
     }
 }

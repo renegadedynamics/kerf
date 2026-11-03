@@ -1,9 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using OcctNet.TestHarness;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -26,14 +31,14 @@ public sealed partial class Build123dPhase7OracleTests
         aTally.Calls++;
         string anOperands = Build123dPhase7Capture.OperandsText(theCall.Operands);
         P7Native aN = Build123dPhase7Capture.RunNative(theCall, Build123dPhase7Capture.NativeOperands(anOperands));
-        List<TopoDS_Shape> aPOps = Build123dPhase7Capture.PortOperands(anOperands);
+        List<Shape> aPOps = Build123dPhase7Capture.PortOperands(anOperands);
         string aPOpsText = string.Concat(aPOps.Select(BRepTextComparison.Write));
         P7Port aP = Build123dPhase7Capture.RunPort(theCall, aPOps);
         if (string.Concat(aPOps.Select(BRepTextComparison.Write)) != aPOpsText)
         {
             aTally.Differences.Add($"{aWhat}: the port changed its frozen operands");
         }
-        if (aP.Result is TopoDS_Shape aPR && !aPR.IsNull() && !aPR.TShape()!.IsFrozen)
+        if (aP.Result is Shape aPR && !aPR.IsNull && !aPR.TShape()!.IsFrozen)
         {
             aTally.Differences.Add($"{aWhat}: the port's result isn't frozen");
         }
@@ -61,12 +66,12 @@ public sealed partial class Build123dPhase7OracleTests
             aTally.Identical++; // every probe's outcome and the radius
             return;
         }
-        if (aN.Result is null || aN.Result.IsNull() || aP.Result is not TopoDS_Shape aPRes || aPRes.IsNull())
+        if (aN.Result is null || aN.Result.IsNull() || aP.Result is not Shape aPRes || aPRes.IsNull)
         {
             aTally.Differences.Add($"{aWhat}: a result on one side only");
             return;
         }
-        TopoDS_Shape aNRes = BooleanOracleTests.ReadPort(Text(aN.Result));
+        Shape aNRes = BooleanOracleTests.ReadPort(Text(aN.Result));
         var aNOut = new BRepFilletAPIMakeFilletOracleTests.Outcome(null, "", aNRes, []);
         var aPOut = new BRepFilletAPIMakeFilletOracleTests.Outcome(null, "", aPRes, []);
         List<string> aDiffs = BRepFilletAPIMakeFilletOracleTests.Geometric(aNOut, aPOut);
@@ -156,20 +161,20 @@ public sealed partial class Build123dPhase7OracleTests
     // ---------------------------------------------------------------------------------------------------------------
     // The history as sets of measures of the result's sub-shapes
 
-    private static (string Type, double[] Values) Measure(in TopoDS_Shape theShape)
+    private static (string Type, double[] Values) Measure(in Shape theShape)
     {
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         switch (theShape.ShapeType())
         {
-            case TopAbs_FACE:
+            case ShapeType.Face:
                 BRepGProp.SurfaceProperties(theShape, aProps);
-                return ("F " + new BRepAdaptor_Surface(TopoDS.Face(theShape)).GetType(), [aProps.Mass()]);
-            case TopAbs_EDGE:
+                return ("F " + new FaceSurfaceAdaptor(ShapeCasts.Face(theShape)).GetType(), [aProps.Mass()]);
+            case ShapeType.Edge:
                 BRepGProp.LinearProperties(theShape, aProps);
-                return ("E " + new BRepAdaptor_Curve(TopoDS.Edge(theShape)).GetType(), [aProps.Mass()]);
-            case TopAbs_VERTEX:
+                return ("E " + new EdgeCurveAdaptor(ShapeCasts.Edge(theShape)).GetType(), [aProps.Mass()]);
+            case ShapeType.Vertex:
             {
-                Point3D aP = BRep_Tool.Pnt(TopoDS.Vertex(theShape));
+                Point3D aP = Tool.Pnt(ShapeCasts.Vertex(theShape));
                 return ("V", [aP.X(), aP.Y(), aP.Z()]);
             }
             default:
@@ -180,7 +185,7 @@ public sealed partial class Build123dPhase7OracleTests
 
     private static bool Close(double a, double b) => Math.Abs(a - b) <= 1.0e-5 * Math.Max(1.0, Math.Max(Math.Abs(a), Math.Abs(b)));
 
-    private static List<(string Type, double[] Values)> Measures(string theList, NCollection_IndexedMap<TopoDS_Shape> theMap) =>
+    private static List<(string Type, double[] Values)> Measures(string theList, NCollection_IndexedMap<Shape> theMap) =>
         [.. theList.Split(' ', StringSplitOptions.RemoveEmptyEntries)
                    .Select(s => int.Parse(s.TrimEnd('r'), CultureInfo.InvariantCulture))
                    .Select(i => i > 0 ? Measure(theMap[i]) : ("out", Array.Empty<double>()))
@@ -203,7 +208,7 @@ public sealed partial class Build123dPhase7OracleTests
 
     private static readonly System.Text.RegularExpressions.Regex s_historyLine = new(@"^(\d+):G\[([^\]]*)\]M\[([^\]]*)\](D?)(P?)$");
 
-    private static List<string> HistoryDifferences(string theNHistory, in TopoDS_Shape theNResult, string thePHistory, in TopoDS_Shape thePResult)
+    private static List<string> HistoryDifferences(string theNHistory, in Shape theNResult, string thePHistory, in Shape thePResult)
     {
         var aDiffs = new List<string>();
         string[] aNLines = theNHistory.Split('\n', StringSplitOptions.RemoveEmptyEntries);
@@ -213,10 +218,10 @@ public sealed partial class Build123dPhase7OracleTests
             aDiffs.Add($"history of {aNLines.Length} | {aPLines.Length} sub-shapes");
             return aDiffs;
         }
-        var aNMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theNResult, aNMap);
-        var aPMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(thePResult, aPMap);
+        var aNMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theNResult, aNMap);
+        var aPMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(thePResult, aPMap);
         for (int i = 0; i < aNLines.Length; i++)
         {
             System.Text.RegularExpressions.Match aN = s_historyLine.Match(aNLines[i]), aP = s_historyLine.Match(aPLines[i]);
@@ -228,7 +233,7 @@ public sealed partial class Build123dPhase7OracleTests
             string aKey = aN.Groups[1].Value;
             if (aN.Groups[3].Value.Length > 0 && aP.Groups[3].Value.Length == 0 && aN.Groups[4].Value.Length == 0 && aP.Groups[4].Value == "D"
                 && aN.Groups[2].Value == aP.Groups[2].Value && aN.Groups[5].Value == aP.Groups[5].Value
-                && Measures(aN.Groups[3].Value, aNMap) is [(string aType, _)] && aType == nameof(TopAbs_SOLID))
+                && Measures(aN.Groups[3].Value, aNMap) is [(string aType, _)] && aType == "TopAbs_SOLID")
             {
                 aDiffs.Add(SolidSplit + aKey);
                 continue;

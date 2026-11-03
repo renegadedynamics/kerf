@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -111,11 +114,11 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
     }
 
     /// <summary>The port's run: the outcome lines, the result's BRep text (null on errors) and the history text.</summary>
-    internal static (string Outcome, string? Result, string History, TopoDS_Shape Input) Run(Case theCase, bool theParallel)
+    internal static (string Outcome, string? Result, string History, Shape Input) Run(Case theCase, bool theParallel)
     {
-        BRepTools.Read(out TopoDS_Shape anInput, new StringReader(theCase.ShapeText));
-        var aFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(anInput, TopAbs_ShapeEnum.TopAbs_FACE, aFaces);
+        BrepTools.Read(out Shape anInput, new StringReader(theCase.ShapeText));
+        var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(anInput, ShapeType.Face, aFaces);
         BRepAlgoAPI_Defeaturing aDF = new();
         aDF.SetShape(anInput);
         foreach (int anIndex in theCase.Faces)
@@ -141,7 +144,7 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
         {
             return (anOutcome, "", "no history", anInput);
         }
-        TopoDS_Shape aResult = aDF.Shape();
+        Shape aResult = aDF.Shape();
         return (anOutcome, BRepTextComparison.Write(aResult), DeterminismHarness.HistoryText([anInput], aResult, aDF.History()), anInput);
     }
 
@@ -278,7 +281,7 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
             {
                 ++aNativeVaries;
             }
-            (string anOutcome, string? aResult, string aHistory, TopoDS_Shape anInput) = Run(aCase, aCase.Parallel);
+            (string anOutcome, string? aResult, string aHistory, Shape anInput) = Run(aCase, aCase.Parallel);
             Assert.True(anInput.TShape()!.IsFrozen);
             if (anOutcome != aCase.Native)
             {
@@ -301,8 +304,8 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
             }
             else
             {
-                BRepTools.Read(out TopoDS_Shape aN, new StringReader(aCase.NativeResult));
-                BRepTools.Read(out TopoDS_Shape aP, new StringReader(aResult!));
+                BrepTools.Read(out Shape aN, new StringReader(aCase.NativeResult));
+                BrepTools.Read(out Shape aP, new StringReader(aResult!));
                 CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aN, aP);
                 if (aCanon.IsIdentical)
                 {

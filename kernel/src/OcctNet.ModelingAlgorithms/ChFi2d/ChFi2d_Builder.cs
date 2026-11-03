@@ -5,12 +5,17 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.ChFi2d_ConstructionError;
 using static Occt.GccEnt_Position;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -26,11 +31,11 @@ namespace Occt;
 public sealed partial class ChFi2d_Builder
 {
     private ChFi2d_ConstructionError status;
-    private TopoDS_Face refFace = new();
-    private TopoDS_Face newFace = new();
-    private readonly NCollection_Sequence<TopoDS_Shape> fillets = new();
-    private readonly NCollection_Sequence<TopoDS_Shape> chamfers = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> history = new(TopTools_ShapeMapHasher.Instance);
+    private Face refFace = new();
+    private Face newFace = new();
+    private readonly NCollection_Sequence<Shape> fillets = new();
+    private readonly NCollection_Sequence<Shape> chamfers = new();
+    private readonly NCollection_DataMap<Shape, Shape> history = new(ShapeHasher.Instance);
 
     //=================================================================================================
 
@@ -44,12 +49,12 @@ public sealed partial class ChFi2d_Builder
     /// <summary>The face <paramref name="F"/> can be built on a closed or an open wire.</summary>
     /// <remarks>
     /// OCCT builds the 3D curves of the face's edges that have none, in place (BRepLib::BuildCurves3d). On a frozen face
-    /// with such an edge the port builds them on a copy (<see cref="BRepLib.Curves3dBuilt(in TopoDS_Shape, out bool)"/>),
+    /// with such an edge the port builds them on a copy (<see cref="BRepLib.Curves3dBuilt(in Shape, out bool)"/>),
     /// which then stands for the face (decision 854).
     /// </remarks>
-    public ChFi2d_Builder(in TopoDS_Face F)
+    public ChFi2d_Builder(in Face F)
     {
-        if (F.IsNull())
+        if (F.IsNull)
         {
             status = ChFi2d_NoFace;
             return;
@@ -57,15 +62,15 @@ public sealed partial class ChFi2d_Builder
         //  syntaxe invalide sur NT
         //  const occ::handle<Geom_Surface>&  surf = BRep_Tool::Surface( F, Loc);
         //  if (surf->IsKind(STANDARD_TYPE(Geom_Plane))) {
-        if (BRep_Tool.Surface(F, out _)!.IsKind(typeof(Geom_Plane)))
+        if (Tool.Surface(F, out _)!.IsKind(typeof(PlaneSurface)))
         {
             newFace = refFace = F;
-            newFace.Orientation(TopAbs_FORWARD);
-            if (BRepTools.HoldsFrozen(newFace) && HasEdgeWithout3dCurve(newFace)) // OCCT.NET: frozen
+            newFace.Orientation(Forward);
+            if (BrepTools.HoldsFrozen(newFace) && HasEdgeWithout3dCurve(newFace)) // OCCT.NET: frozen
             {
-                refFace = TopoDS.Face(BRepLib.Curves3dBuilt(F, out _));
+                refFace = ShapeCasts.Face(BRepLib.Curves3dBuilt(F, out _));
                 newFace = refFace;
-                newFace.Orientation(TopAbs_FORWARD);
+                newFace.Orientation(Forward);
             }
             else
             {
@@ -80,11 +85,11 @@ public sealed partial class ChFi2d_Builder
     } // ChFi2d_Builder
 
     // OCCT.NET: frozen. True if an edge of the face has no 3D curve (BuildCurves3d would write into it).
-    private static bool HasEdgeWithout3dCurve(in TopoDS_Face F)
+    private static bool HasEdgeWithout3dCurve(in Face F)
     {
-        for (var anExp = new TopExp_Explorer(F, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(F, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            if (BRep_Tool.Curve(TopoDS.Edge(anExp.Current()), out _, out _, out _) is null)
+            if (Tool.Curve(ShapeCasts.Edge(anExp.Current()), out _, out _, out _) is null)
             {
                 return true;
             }
@@ -94,9 +99,9 @@ public sealed partial class ChFi2d_Builder
 
     //=================================================================================================
 
-    public void Init(in TopoDS_Face F)
+    public void Init(in Face F)
     {
-        if (F.IsNull())
+        if (F.IsNull)
         {
             status = ChFi2d_NoFace;
             return;
@@ -107,10 +112,10 @@ public sealed partial class ChFi2d_Builder
         //  syntaxe invalide sur NT
         //  const occ::handle<Geom_Surface>&  surf = BRep_Tool::Surface( F, Loc);
         //  if (surf->IsKind(STANDARD_TYPE(Geom_Plane))) {
-        if (BRep_Tool.Surface(F, out _)!.IsKind(typeof(Geom_Plane)))
+        if (Tool.Surface(F, out _)!.IsKind(typeof(PlaneSurface)))
         {
             newFace = refFace = F;
-            newFace.Orientation(TopAbs_FORWARD);
+            newFace.Orientation(Forward);
             status = ChFi2d_Ready;
         }
         else
@@ -125,9 +130,9 @@ public sealed partial class ChFi2d_Builder
     /// Initialises the builder with a face <paramref name="RefFace"/> and a face <paramref name="ModFace"/> derived from
     /// it, to modify the fillets and chamfers already built on <paramref name="ModFace"/>.
     /// </summary>
-    public void Init(in TopoDS_Face RefFace, in TopoDS_Face ModFace)
+    public void Init(in Face RefFace, in Face ModFace)
     {
-        if (RefFace.IsNull() || ModFace.IsNull())
+        if (RefFace.IsNull || ModFace.IsNull)
         {
             status = ChFi2d_NoFace;
             return;
@@ -139,7 +144,7 @@ public sealed partial class ChFi2d_Builder
         //  syntaxe invalide sur NT
         //  const occ::handle<Geom_Surface>&  surf = BRep_Tool::Surface( RefFace, Loc);
         //  if (!surf->IsKind(STANDARD_TYPE(Geom_Plane))) {
-        if (!BRep_Tool.Surface(RefFace, out loc)!.IsKind(typeof(Geom_Plane)))
+        if (!Tool.Surface(RefFace, out loc)!.IsKind(typeof(PlaneSurface)))
         {
             status = ChFi2d_NotPlanar;
             return;
@@ -147,19 +152,19 @@ public sealed partial class ChFi2d_Builder
 
         refFace = RefFace;
         newFace = ModFace;
-        newFace.Orientation(TopAbs_FORWARD);
+        newFace.Orientation(Forward);
         status = ChFi2d_Ready;
 
         // Research in newFace all the edges which not appear in RefFace
         // The sequence newEdges will contains this edges.
 
-        NCollection_Sequence<TopoDS_Shape> newEdges = new();
-        NCollection_IndexedMap<TopoDS_Shape> refEdgesMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(refFace, TopAbs_ShapeEnum.TopAbs_EDGE, refEdgesMap);
-        var ex = new TopExp_Explorer(newFace, TopAbs_ShapeEnum.TopAbs_EDGE);
+        NCollection_Sequence<Shape> newEdges = new();
+        NCollection_IndexedMap<Shape> refEdgesMap = new(ShapeHasher.Instance);
+        Exploration.MapShapes(refFace, ShapeType.Edge, refEdgesMap);
+        var ex = new Explorer(newFace, ShapeType.Edge);
         while (ex.More())
         {
-            TopoDS_Edge currentEdge = TopoDS.Edge(ex.Current());
+            Edge currentEdge = ShapeCasts.Edge(ex.Current());
             if (!refEdgesMap.Contains(currentEdge))
             {
                 newEdges.Append(currentEdge);
@@ -170,10 +175,10 @@ public sealed partial class ChFi2d_Builder
         // update of history, fillets and chamfers fields
         int i = 1;
         double first, last;
-        TopoDS_Edge basisEdge = new();
+        Edge basisEdge = new();
         while (i <= newEdges.Length())
         {
-            TopoDS_Edge currentEdge = TopoDS.Edge(newEdges.Value(i));
+            Edge currentEdge = ShapeCasts.Edge(newEdges.Value(i));
             if (IsIssuedFrom(currentEdge, refEdgesMap, ref basisEdge))
             {
                 history.Bind(basisEdge, currentEdge);
@@ -184,12 +189,12 @@ public sealed partial class ChFi2d_Builder
                 //  syntaxe invalide sur NT
                 //      const occ::handle<Geom_Curve>& curve =
                 //	BRep_Tool::Curve(currentEdge, loc, first, last);
-                Geom_Curve? curve = BRep_Tool.Curve(currentEdge, out loc, out first, out last);
-                if (curve!.IsKind(typeof(Geom_Circle)))
+                Curve3D? curve = Tool.Curve(currentEdge, out loc, out first, out last);
+                if (curve!.IsKind(typeof(CircleCurve3D)))
                 {
                     fillets.Append(currentEdge);
                 }
-                else if (curve.IsKind(typeof(Geom_Line)))
+                else if (curve.IsKind(typeof(LineCurve3D)))
                 {
                     chamfers.Append(currentEdge);
                 }
@@ -209,21 +214,21 @@ public sealed partial class ChFi2d_Builder
     //           been find, this edge is returned in <BasisEdge>, else <E> is
     //           returned in <BasisEdge>.
     //=======================================================================
-    private static bool IsIssuedFrom(in TopoDS_Edge E, NCollection_IndexedMap<TopoDS_Shape> Map, ref TopoDS_Edge BasisEdge)
+    private static bool IsIssuedFrom(in Edge E, NCollection_IndexedMap<Shape> Map, ref Edge BasisEdge)
     {
         double f1, L1, f2, L2;
         //  syntaxe invalide sur NT
         //  const occ::handle<Geom_Curve>& c1 =
         //    BRep_Tool::Curve(E, loc1, f1, L1);
-        Geom_Curve? c1 = BRep_Tool.Curve(E, out _, out f1, out L1);
+        Curve3D? c1 = Tool.Curve(E, out _, out f1, out L1);
 
         for (int i = 1; i <= Map.Extent(); i++)
         {
-            TopoDS_Edge currentEdge = TopoDS.Edge(Map.FindKey(i));
+            Edge currentEdge = ShapeCasts.Edge(Map.FindKey(i));
             //  syntaxe invalide sur NT
             //    const occ::handle<Geom_Curve>& c2 =
             //      BRep_Tool::Curve(currentEdge, loc2, f2, L2);
-            Geom_Curve? c2 = BRep_Tool.Curve(currentEdge, out _, out f2, out L2);
+            Curve3D? c2 = Tool.Curve(currentEdge, out _, out f2, out L2);
             if (c1 == c2
                 && (((f1 > f2 && f1 < L2) || (L1 > f2 && L1 < L2))
                     || ((f1 > L2 && f1 < f2) || (L1 > L2 && L1 < f2))))
@@ -244,16 +249,16 @@ public sealed partial class ChFi2d_Builder
     /// <paramref name="V"/>, and returns it (frozen). The edge has sense only if <see cref="Status"/> is
     /// <see cref="ChFi2d_IsDone"/>.
     /// </summary>
-    public TopoDS_Edge AddFillet(in TopoDS_Vertex V, double Radius)
+    public Edge AddFillet(in Vertex V, double Radius)
     {
-        TopoDS_Edge aFillet = InternalAddFillet(V, Radius);
+        Edge aFillet = InternalAddFillet(V, Radius);
         return Published(aFillet);
     }
 
-    private TopoDS_Edge InternalAddFillet(in TopoDS_Vertex V, double Radius)
+    private Edge InternalAddFillet(in Vertex V, double Radius)
     {
-        TopoDS_Edge adjEdge1 = new(), adjEdge2 = new(), basisEdge1, basisEdge2;
-        TopoDS_Edge adjEdge1Mod = new(), adjEdge2Mod = new(), fillet = new();
+        Edge adjEdge1 = new(), adjEdge2 = new(), basisEdge1, basisEdge2;
+        Edge adjEdge1Mod = new(), adjEdge2Mod = new(), fillet = new();
         status = ChFi2d.FindConnectedEdges(newFace, V, ref adjEdge1, ref adjEdge2);
         if (status == ChFi2d_ConnexionError)
         {
@@ -281,7 +286,7 @@ public sealed partial class ChFi2d_Builder
             basisEdge2 = BasisEdge(adjEdge2);
             UpDateHistory(basisEdge1, basisEdge2, adjEdge1Mod, adjEdge2Mod, fillet, 1);
             status = ChFi2d_IsDone;
-            return TopoDS.Edge(fillets.Value(fillets.Length()));
+            return ShapeCasts.Edge(fillets.Value(fillets.Length()));
         }
         return fillet;
     } // AddFillet
@@ -292,10 +297,10 @@ public sealed partial class ChFi2d_Builder
     /// Modifies the radius of the fillet <paramref name="Fillet"/> and returns the new fillet (frozen). The edge has
     /// sense only if <see cref="Status"/> is <see cref="ChFi2d_IsDone"/>.
     /// </summary>
-    public TopoDS_Edge ModifyFillet(in TopoDS_Edge Fillet, double Radius)
+    public Edge ModifyFillet(in Edge Fillet, double Radius)
     {
-        TopoDS_Vertex aVertex = InternalRemoveFillet(Fillet);
-        TopoDS_Edge aFillet = InternalAddFillet(aVertex, Radius);
+        Vertex aVertex = InternalRemoveFillet(Fillet);
+        Edge aFillet = InternalAddFillet(aVertex, Radius);
         return Published(aFillet);
     } // ModifyFillet
 
@@ -305,21 +310,21 @@ public sealed partial class ChFi2d_Builder
     /// Removes the fillet <paramref name="Fillet"/> and returns the vertex connecting the two edges adjacent to it
     /// (frozen; null if <paramref name="Fillet"/> is not a fillet of this builder).
     /// </summary>
-    public TopoDS_Vertex RemoveFillet(in TopoDS_Edge Fillet)
+    public Vertex RemoveFillet(in Edge Fillet)
     {
-        TopoDS_Vertex aVertex = InternalRemoveFillet(Fillet);
+        Vertex aVertex = InternalRemoveFillet(Fillet);
         aVertex.TShape()?.FreezeGraph();
         return aVertex;
     }
 
-    private TopoDS_Vertex InternalRemoveFillet(in TopoDS_Edge Fillet)
+    private Vertex InternalRemoveFillet(in Edge Fillet)
     {
-        TopoDS_Vertex commonVertex = new();
+        Vertex commonVertex = new();
         int i = 1;
         bool IsFind = false;
         while (i <= fillets.Length())
         {
-            TopoDS_Edge aFillet = TopoDS.Edge(fillets.Value(i));
+            Edge aFillet = ShapeCasts.Edge(fillets.Value(i));
             if (aFillet.IsSame(Fillet))
             {
                 fillets.Remove(i);
@@ -333,16 +338,16 @@ public sealed partial class ChFi2d_Builder
             return commonVertex;
         }
 
-        TopExp.Vertices(Fillet, out TopoDS_Vertex firstVertex, out TopoDS_Vertex lastVertex);
+        Exploration.Vertices(Fillet, out Vertex firstVertex, out Vertex lastVertex);
 
-        TopoDS_Edge adjEdge1 = new(), adjEdge2 = new();
+        Edge adjEdge1 = new(), adjEdge2 = new();
         status = ChFi2d.FindConnectedEdges(newFace, firstVertex, ref adjEdge1, ref adjEdge2);
         if (status == ChFi2d_ConnexionError)
         {
             return commonVertex;
         }
 
-        TopoDS_Edge basisEdge1, basisEdge2, E1, E2;
+        Edge basisEdge1, basisEdge2, E1, E2;
         // E1 and E2 are the adjacent edges to Fillet
 
         if (adjEdge1.IsSame(Fillet))
@@ -368,7 +373,7 @@ public sealed partial class ChFi2d_Builder
             E2 = adjEdge1;
         }
         basisEdge2 = BasisEdge(E2);
-        TopoDS_Vertex connectionE1Fillet = new(), connectionE2Fillet = new();
+        Vertex connectionE1Fillet = new(), connectionE2Fillet = new();
         bool hasConnection = ChFi2d.CommonVertex(basisEdge1, basisEdge2, ref commonVertex);
         if (!hasConnection)
         {
@@ -389,14 +394,14 @@ public sealed partial class ChFi2d_Builder
         }
 
         // rebuild edges on wire
-        TopoDS_Edge newEdge1 = new(), newEdge2 = new();
-        TopoDS_Vertex v, v1, v2;
+        Edge newEdge1 = new(), newEdge2 = new();
+        Vertex v, v1, v2;
         var makeEdge = new BRepLib_MakeEdge();
         Placement loc;
         double first, last;
 
-        TopExp.Vertices(E1, out firstVertex, out lastVertex);
-        TopExp.Vertices(basisEdge1, out v1, out v2);
+        Exploration.Vertices(E1, out firstVertex, out lastVertex);
+        Exploration.Vertices(basisEdge1, out v1, out v2);
         if (v1.IsSame(commonVertex))
         {
             v = v2;
@@ -420,7 +425,7 @@ public sealed partial class ChFi2d_Builder
                 //  syntaxe invalide sur NT
                 //      const occ::handle<Geom_Curve>& curve =
                 //	BRep_Tool::Curve(E1, loc, first, last);
-                Geom_Curve? curve = BRep_Tool.Curve(E1, out loc, out first, out last);
+                Curve3D? curve = Tool.Curve(E1, out loc, out first, out last);
                 makeEdge.Init(curve!, commonVertex, lastVertex);
                 newEdge1 = makeEdge.InternalEdge();
                 newEdge1.Orientation(E1.Orientation());
@@ -431,7 +436,7 @@ public sealed partial class ChFi2d_Builder
                 //  syntax wrong on NT
                 //      const occ::handle<Geom_Curve>& curve =
                 //	BRep_Tool::Curve(E1, loc, first, last);
-                Geom_Curve? curve = BRep_Tool.Curve(E1, out loc, out first, out last);
+                Curve3D? curve = Tool.Curve(E1, out loc, out first, out last);
                 makeEdge.Init(curve!, firstVertex, commonVertex);
                 newEdge1 = makeEdge.InternalEdge();
                 newEdge1.Orientation(E1.Orientation());
@@ -439,7 +444,7 @@ public sealed partial class ChFi2d_Builder
             } // else if (lastVertex ...
         } // else ...
 
-        TopExp.Vertices(basisEdge2, out v1, out v2);
+        Exploration.Vertices(basisEdge2, out v1, out v2);
         if (v1.IsSame(commonVertex))
         {
             v = v2;
@@ -449,7 +454,7 @@ public sealed partial class ChFi2d_Builder
             v = v1;
         }
 
-        TopExp.Vertices(E2, out firstVertex, out lastVertex);
+        Exploration.Vertices(E2, out firstVertex, out lastVertex);
         if (firstVertex.IsSame(v) || lastVertex.IsSame(v))
         {
             // It means the edge support only one fillet. In this case
@@ -464,7 +469,7 @@ public sealed partial class ChFi2d_Builder
                 //  syntax wrong on NT
                 //      const occ::handle<Geom_Curve>& curve =
                 //	BRep_Tool::Curve(E2, loc, first, last);
-                Geom_Curve? curve = BRep_Tool.Curve(E2, out loc, out first, out last);
+                Curve3D? curve = Tool.Curve(E2, out loc, out first, out last);
                 makeEdge.Init(curve!, commonVertex, lastVertex);
                 newEdge2 = makeEdge.InternalEdge();
                 newEdge2.Orientation(E2.Orientation());
@@ -475,7 +480,7 @@ public sealed partial class ChFi2d_Builder
                 //  syntax wrong on NT
                 //      const occ::handle<Geom_Curve>& curve =
                 //	BRep_Tool::Curve(E2, loc, first, last);
-                Geom_Curve? curve = BRep_Tool.Curve(E2, out loc, out first, out last);
+                Curve3D? curve = Tool.Curve(E2, out loc, out first, out last);
                 makeEdge.Init(curve!, firstVertex, commonVertex);
                 newEdge2 = makeEdge.InternalEdge();
                 newEdge2.Orientation(E2.Orientation());
@@ -484,15 +489,15 @@ public sealed partial class ChFi2d_Builder
         } // else ...
 
         // rebuild the newFace
-        var Ex = new TopExp_Explorer(newFace, TopAbs_ShapeEnum.TopAbs_EDGE);
-        TopoDS_Wire newWire = new();
+        var Ex = new Explorer(newFace, ShapeType.Edge);
+        Wire newWire = new();
 
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         B.MakeWire(ref newWire);
 
         while (Ex.More())
         {
-            TopoDS_Edge theEdge = TopoDS.Edge(Ex.Current());
+            Edge theEdge = ShapeCasts.Edge(Ex.Current());
             if (!theEdge.IsSame(E1) && !theEdge.IsSame(E2) && !theEdge.IsSame(Fillet))
             {
                 B.Add(newWire, theEdge);
@@ -510,7 +515,7 @@ public sealed partial class ChFi2d_Builder
             } // else
             Ex.Next();
         } // while ...
-        var Adaptor3dSurface = new BRepAdaptor_Surface(refFace);
+        var Adaptor3dSurface = new FaceSurfaceAdaptor(refFace);
         var mFace = new BRepLib_MakeFace(Adaptor3dSurface.Plane(), newWire);
         newFace.Nullify();
         newFace = mFace.InternalFace();
@@ -522,15 +527,15 @@ public sealed partial class ChFi2d_Builder
 
     //=================================================================================================
 
-    private void ComputeFillet(in TopoDS_Vertex V,
-                               in TopoDS_Edge E1,
-                               in TopoDS_Edge E2,
+    private void ComputeFillet(in Vertex V,
+                               in Edge E1,
+                               in Edge E2,
                                double Radius,
-                               ref TopoDS_Edge TrimE1,
-                               ref TopoDS_Edge TrimE2,
-                               ref TopoDS_Edge Fillet)
+                               ref Edge TrimE1,
+                               ref Edge TrimE2,
+                               ref Edge Fillet)
     {
-        TopoDS_Vertex newExtr1 = new(), newExtr2 = new();
+        Vertex newExtr1 = new(), newExtr2 = new();
         bool Degen1, Degen2;
         Fillet = BuildFilletEdge(V, E1, E2, Radius, ref newExtr1, ref newExtr2);
         if (status != ChFi2d_IsDone)
@@ -557,34 +562,34 @@ public sealed partial class ChFi2d_Builder
 
     // Replaces in newFace OldE1 and OldE2 by E1, Fillet and E2, or by Fillet and E2 if E1 is degenerated, or by E1
     // and Fillet if E2 is degenerated, or by Fillet if both are.
-    private void BuildNewWire(in TopoDS_Edge OldE1,
-                              in TopoDS_Edge OldE2,
-                              in TopoDS_Edge E1,
-                              in TopoDS_Edge Fillet,
-                              in TopoDS_Edge E2)
+    private void BuildNewWire(in Edge OldE1,
+                              in Edge OldE2,
+                              in Edge E1,
+                              in Edge Fillet,
+                              in Edge E2)
     {
         bool aClosedStatus = true;
 
         // OCCT: every edge of the face goes into one wire, so a face with holes loses them as separate wires; the
         // closed flag is the first wire's
-        var Ex = new TopExp_Explorer(refFace, TopAbs_ShapeEnum.TopAbs_WIRE);
+        var Ex = new Explorer(refFace, ShapeType.Wire);
         while (Ex.More())
         {
-            TopoDS_Wire aWire = TopoDS.Wire(Ex.Current());
+            Wire aWire = ShapeCasts.Wire(Ex.Current());
             aClosedStatus = aWire.Closed();
             break;
         }
 
         bool filletIsAdded = false;
 
-        Ex.Init(newFace, TopAbs_ShapeEnum.TopAbs_EDGE);
-        TopoDS_Wire newWire = new();
-        var B = new BRep_Builder();
+        Ex.Init(newFace, ShapeType.Edge);
+        Wire newWire = new();
+        var B = new BrepBuilder();
         B.MakeWire(ref newWire);
 
         while (Ex.More())
         {
-            TopoDS_Edge theEdge = TopoDS.Edge(Ex.Current());
+            Edge theEdge = ShapeCasts.Edge(Ex.Current());
             if (!theEdge.IsSame(OldE1) && !theEdge.IsSame(OldE2))
             {
                 B.Add(newWire, theEdge);
@@ -620,7 +625,7 @@ public sealed partial class ChFi2d_Builder
         } // while ...
 
         newWire.Closed(aClosedStatus);
-        var Adaptor3dSurface = new BRepAdaptor_Surface(refFace);
+        var Adaptor3dSurface = new FaceSurfaceAdaptor(refFace);
         var mFace = new BRepLib_MakeFace(Adaptor3dSurface.Plane(), newWire);
         newFace = mFace.InternalFace();
     } // BuildNewWire
@@ -628,15 +633,15 @@ public sealed partial class ChFi2d_Builder
     //=================================================================================================
 
     // Changes OldExtr of E1 by NewExtr.
-    private TopoDS_Edge BuildNewEdge(in TopoDS_Edge E1, in TopoDS_Vertex OldExtr, in TopoDS_Vertex NewExtr)
+    private Edge BuildNewEdge(in Edge E1, in Vertex OldExtr, in Vertex NewExtr)
     {
         var makeEdge = new BRepLib_MakeEdge();
         double first, last;
-        TopExp.Vertices(E1, out TopoDS_Vertex firstVertex, out TopoDS_Vertex lastVertex);
+        Exploration.Vertices(E1, out Vertex firstVertex, out Vertex lastVertex);
         //  syntaxe invalide sur NT
         //      const occ::handle<Geom_Curve>& curve =
         //	BRep_Tool::Curve(E1, first, last);
-        Geom_Curve? curve = BRep_Tool.Curve(E1, out first, out last);
+        Curve3D? curve = Tool.Curve(E1, out first, out last);
         if (firstVertex.IsSame(OldExtr))
         {
             makeEdge.Init(curve!, NewExtr, lastVertex);
@@ -645,7 +650,7 @@ public sealed partial class ChFi2d_Builder
         {
             makeEdge.Init(curve!, firstVertex, NewExtr);
         }
-        TopoDS_Edge anEdge = makeEdge.InternalEdge();
+        Edge anEdge = makeEdge.InternalEdge();
         anEdge.Orientation(E1.Orientation());
         //  anEdge.Location(E1.Location());
         return anEdge;
@@ -657,32 +662,32 @@ public sealed partial class ChFi2d_Builder
     //=======================================================================
 
     // Changes OldExtr of E1 by NewExtr; returns E1 and IsDegenerated true if the new edge is degenerated.
-    private TopoDS_Edge BuildNewEdge(in TopoDS_Edge E1, in TopoDS_Vertex OldExtr, in TopoDS_Vertex NewExtr, out bool IsDegenerated)
+    private Edge BuildNewEdge(in Edge E1, in Vertex OldExtr, in Vertex NewExtr, out bool IsDegenerated)
     {
         var makeEdge = new BRepLib_MakeEdge();
         double first, last;
         IsDegenerated = false;
-        TopExp.Vertices(E1, out TopoDS_Vertex firstVertex, out TopoDS_Vertex lastVertex);
-        Point3D Pnew = BRep_Tool.Pnt(NewExtr);
+        Exploration.Vertices(E1, out Vertex firstVertex, out Vertex lastVertex);
+        Point3D Pnew = Tool.Pnt(NewExtr);
         bool PonctualEdge = false;
         double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         //  syntax wrong on NT
         //      const occ::handle<Geom_Curve>& curve =
         //	BRep_Tool::Curve(E1, first, last);
-        Geom_Curve? curve = BRep_Tool.Curve(E1, out first, out last);
+        Curve3D? curve = Tool.Curve(E1, out first, out last);
         if (firstVertex.IsSame(OldExtr))
         {
             makeEdge.Init(curve!, NewExtr, lastVertex);
-            Point3D PV = BRep_Tool.Pnt(lastVertex);
+            Point3D PV = Tool.Pnt(lastVertex);
             PonctualEdge = (Pnew.Distance(PV) < Tol);
         }
         else
         {
             makeEdge.Init(curve!, firstVertex, NewExtr);
-            Point3D PV = BRep_Tool.Pnt(firstVertex);
+            Point3D PV = Tool.Pnt(firstVertex);
             PonctualEdge = (Pnew.Distance(PV) < Tol);
         }
-        TopoDS_Edge anEdge;
+        Edge anEdge;
         BRepLib_EdgeError error = makeEdge.Error();
         if (error == BRepLib_EdgeError.BRepLib_LineThroughIdenticPoints || PonctualEdge)
         {
@@ -702,11 +707,11 @@ public sealed partial class ChFi2d_Builder
 
     // Writes NewEdge in fillets if Id is 1, or in chamfers if Id is 2, and the modifications in history: TrimE1 is given
     // by E1, TrimE2 by E2, if they are not degenerated.
-    private void UpDateHistory(in TopoDS_Edge E1,
-                               in TopoDS_Edge E2,
-                               in TopoDS_Edge TrimE1,
-                               in TopoDS_Edge TrimE2,
-                               in TopoDS_Edge NewEdge,
+    private void UpDateHistory(in Edge E1,
+                               in Edge E2,
+                               in Edge TrimE1,
+                               in Edge TrimE2,
+                               in Edge NewEdge,
                                int Id)
     {
         if (Id == 1) // the new edge is a fillet
@@ -739,7 +744,7 @@ public sealed partial class ChFi2d_Builder
     //=================================================================================================
 
     // Writes the modifications in history: TrimE1 is given by E1, TrimE2 by E2.
-    private void UpDateHistory(in TopoDS_Edge E1, in TopoDS_Edge E2, in TopoDS_Edge TrimE1, in TopoDS_Edge TrimE2)
+    private void UpDateHistory(in Edge E1, in Edge E2, in Edge TrimE1, in Edge TrimE2)
     {
         if (history.IsBound(E1))
         {
@@ -765,15 +770,15 @@ public sealed partial class ChFi2d_Builder
     /// The parent edge of <paramref name="E"/>: the edge of the initial face it was trimmed from, or
     /// <paramref name="E"/> itself if it is a basis edge (or not on the face).
     /// </summary>
-    public TopoDS_Edge BasisEdge(in TopoDS_Edge E)
+    public Edge BasisEdge(in Edge E)
     {
-        TopoDS_Edge anEdge;
-        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> iterator in history)
+        Edge anEdge;
+        foreach (KeyValuePair<Shape, Shape> iterator in history)
         {
-            anEdge = TopoDS.Edge(iterator.Value);
+            anEdge = ShapeCasts.Edge(iterator.Value);
             if (anEdge.IsSame(E))
             {
-                TopoDS_Edge anotherEdge = TopoDS.Edge(iterator.Key);
+                Edge anotherEdge = ShapeCasts.Edge(iterator.Key);
                 return anotherEdge;
             } // if (anEdge.IsSame ...
         } // while (Iterator.More ...
@@ -784,34 +789,34 @@ public sealed partial class ChFi2d_Builder
 
     // Builds the fillet edge between AdjEdge1 and AdjEdge2 at V; NewExtr1 and NewExtr2 receive the new extremities of
     // the two edges. The edge has sense only if the status is IsDone (or one of the degenerated statuses).
-    private TopoDS_Edge BuildFilletEdge(in TopoDS_Vertex V,
-                                        in TopoDS_Edge AdjEdge1,
-                                        in TopoDS_Edge AdjEdge2,
+    private Edge BuildFilletEdge(in Vertex V,
+                                        in Edge AdjEdge1,
+                                        in Edge AdjEdge2,
                                         double Radius,
-                                        ref TopoDS_Vertex NewExtr1,
-                                        ref TopoDS_Vertex NewExtr2)
+                                        ref Vertex NewExtr1,
+                                        ref Vertex NewExtr2)
     {
-        TopoDS_Edge E1, E2;
+        Edge E1, E2;
         E1 = AdjEdge1;
         E2 = AdjEdge2;
-        TopoDS_Vertex V1 = TopExp.FirstVertex(E1);
-        TopoDS_Vertex V2 = TopExp.LastVertex(E1);
-        TopoDS_Vertex V3 = TopExp.FirstVertex(E2);
-        TopoDS_Vertex V4 = TopExp.LastVertex(E2);
+        Vertex V1 = Exploration.FirstVertex(E1);
+        Vertex V2 = Exploration.LastVertex(E1);
+        Vertex V3 = Exploration.FirstVertex(E2);
+        Vertex V4 = Exploration.LastVertex(E2);
 
         //========================================================================
         //    The first arc is found.                                        +
         //========================================================================
 
-        TopAbs_Orientation O1;
-        TopAbs_Orientation OE1;
+        Orientation O1;
+        Orientation OE1;
         OE1 = E1.Orientation();
-        E1.Orientation(TopAbs_FORWARD);
-        E2.Orientation(TopAbs_FORWARD);
-        TopoDS_Shape aLocalShape = E1.EmptyCopied();
-        TopoDS_Edge Ebid1 = TopoDS.Edge(aLocalShape);
+        E1.Orientation(Forward);
+        E2.Orientation(Forward);
+        Shape aLocalShape = E1.EmptyCopied();
+        Edge Ebid1 = ShapeCasts.Edge(aLocalShape);
         aLocalShape = E2.EmptyCopied();
-        TopoDS_Edge Ebid2 = TopoDS.Edge(aLocalShape);
+        Edge Ebid2 = ShapeCasts.Edge(aLocalShape);
         //  TopoDS_Edge Ebid1 = TopoDS::Edge(E1.EmptyCopied());
         //  TopoDS_Edge Ebid2 = TopoDS::Edge(E2.EmptyCopied());
         _ = Ebid1; // unused, as in OCCT
@@ -824,36 +829,36 @@ public sealed partial class ChFi2d_Builder
 
         if (V1.IsSame(V))
         {
-            param1 = BRep_Tool.Parameter(V1, E1);
-            param2 = BRep_Tool.Parameter(V2, E1);
+            param1 = Tool.Parameter(V1, E1);
+            param2 = Tool.Parameter(V2, E1);
             O1 = V2.Orientation();
         }
         else
         {
-            param1 = BRep_Tool.Parameter(V2, E1);
-            param2 = BRep_Tool.Parameter(V1, E1);
+            param1 = Tool.Parameter(V2, E1);
+            param2 = Tool.Parameter(V1, E1);
             O1 = V1.Orientation();
         }
         if (V3.IsSame(V))
         {
-            param3 = BRep_Tool.Parameter(V3, E2);
-            param4 = BRep_Tool.Parameter(V4, E2);
+            param3 = Tool.Parameter(V3, E2);
+            param4 = Tool.Parameter(V4, E2);
         }
         else
         {
-            param3 = BRep_Tool.Parameter(V4, E2);
-            param4 = BRep_Tool.Parameter(V3, E2);
+            param3 = Tool.Parameter(V4, E2);
+            param4 = Tool.Parameter(V3, E2);
         }
 
         //========================================================================
         //    Restore geometric supports.                            +
         //========================================================================
 
-        Geom2d_Curve? C1, C2;
+        Curve2D? C1, C2;
         double ufirst1, ulast1, ufirst2, ulast2, U1, U2, PU1, PU2, Vv1, Vv2;
         double PPU1, PPU2;
-        C1 = BRep_Tool.CurveOnSurface(E1, newFace, out ufirst1, out ulast1);
-        C2 = BRep_Tool.CurveOnSurface(E2, newFace, out ufirst2, out ulast2);
+        C1 = Tool.CurveOnSurface(E1, newFace, out ufirst1, out ulast1);
+        C2 = Tool.CurveOnSurface(E2, newFace, out ufirst2, out ulast2);
 
         //========================================================================
         //   Determination of the face for fillet.                                +
@@ -864,8 +869,8 @@ public sealed partial class ChFi2d_Builder
         Vector2D Ve3, Ve4;
         bool Sens1, Sens2;
 
-        Geom2d_Curve basisC1, basisC2;
-        if (C1 is Geom2d_TrimmedCurve T1)
+        Curve2D basisC1, basisC2;
+        if (C1 is TrimmedCurve2D T1)
         {
             basisC1 = T1.BasisCurve();
         }
@@ -873,7 +878,7 @@ public sealed partial class ChFi2d_Builder
         {
             basisC1 = C1!;
         }
-        if (C2 is Geom2d_TrimmedCurve T2)
+        if (C2 is TrimmedCurve2D T2)
         {
             basisC2 = T2.BasisCurve();
         }
@@ -882,32 +887,32 @@ public sealed partial class ChFi2d_Builder
             basisC2 = C2!;
         }
 
-        if (basisC1.DynamicType() == typeof(Geom2d_Circle))
+        if (basisC1.DynamicType() == typeof(CircleCurve2D))
         {
-            var CC1 = (Geom2d_Circle)basisC1;
+            var CC1 = (CircleCurve2D)basisC1;
             global::Kerf.Engine.Geometry.ElCLib.D1(param1, CC1.Circ2d(), out p, out Ve1);
             Sens1 = (CC1.Circ2d()).IsDirect;
         } // if (C1->DynamicType() ...
         else
         {
-            var CC1 = (basisC1 as Geom2d_Line)!; // OCCT dereferences down_cast's result unchecked
+            var CC1 = (basisC1 as LineCurve2D)!; // OCCT dereferences down_cast's result unchecked
             global::Kerf.Engine.Geometry.ElCLib.D1(param1, CC1.Lin2d(), out p, out Ve1);
             Sens1 = true;
         } // else ...
-        if (basisC2.DynamicType() == typeof(Geom2d_Circle))
+        if (basisC2.DynamicType() == typeof(CircleCurve2D))
         {
-            var CC2 = (Geom2d_Circle)basisC2;
+            var CC2 = (CircleCurve2D)basisC2;
             global::Kerf.Engine.Geometry.ElCLib.D1(param3, CC2.Circ2d(), out p, out Ve2);
             Sens2 = (CC2.Circ2d()).IsDirect;
         } // if (C2->DynamicType() ...
         else
         {
-            var CC2 = (basisC2 as Geom2d_Line)!;
+            var CC2 = (basisC2 as LineCurve2D)!;
             global::Kerf.Engine.Geometry.ElCLib.D1(param3, CC2.Lin2d(), out p, out Ve2);
             Sens2 = true;
         } // else ...
 
-        TopoDS_Edge filletEdge = new();
+        Edge filletEdge = new();
 
         double cross = Ve1.Crossed(Ve2);
         Ve3 = Ve1;
@@ -1034,8 +1039,8 @@ public sealed partial class ChFi2d_Builder
 
         double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         // C++ converts the handles to adaptors implicitly (decision 805)
-        var Fillet = new Geom2dGcc_Circ2d2TanRad(new Geom2dGcc_QualifiedCurve(new Geom2dAdaptor_Curve(basisC1), Qual1),
-                                                 new Geom2dGcc_QualifiedCurve(new Geom2dAdaptor_Curve(basisC2), Qual2),
+        var Fillet = new Geom2dGcc_Circ2d2TanRad(new Geom2dGcc_QualifiedCurve(new CurveAdaptor2D(basisC1), Qual1),
+                                                 new Geom2dGcc_QualifiedCurve(new CurveAdaptor2D(basisC2), Qual2),
                                                  Radius,
                                                  Tol);
         if (!Fillet.IsDone() || Fillet.NbSolutions() == 0)
@@ -1048,7 +1053,7 @@ public sealed partial class ChFi2d_Builder
             status = ChFi2d_IsDone;
             int numsol = 1;
             int nsol = 1;
-            TopoDS_Vertex Vertex1 = new(), Vertex2 = new();
+            Vertex Vertex1 = new(), Vertex2 = new();
             Point2D Ptg1, Ptg2;
             double dist;
             double dist1 = 1.0e40;
@@ -1057,7 +1062,7 @@ public sealed partial class ChFi2d_Builder
             {
                 Fillet.Tangency1(nsol, out PU1, out PU2, out Ptg1);
                 dist = Ptg1.Distance(p);
-                if (basisC1.DynamicType() == typeof(Geom2d_Line))
+                if (basisC1.DynamicType() == typeof(LineCurve2D))
                 {
                     inside = (PU2 < param1 && PU2 > param2) || (PU2 < param2 && PU2 > param1);
                     if (inside && dist < dist1)
@@ -1072,7 +1077,7 @@ public sealed partial class ChFi2d_Builder
                     dist = Ptg2.Distance(p);
                     inside = (PPU2 < param3 && PPU2 > param4) || (PPU2 < param4 && PPU2 > param3);
                     //  case of arc of circle passing on the sewing
-                    if ((basisC2.DynamicType() == typeof(Geom2d_Circle))
+                    if ((basisC2.DynamicType() == typeof(CircleCurve2D))
                         && ((2 * M_PI < param3 && 2 * M_PI > param4)
                             || (2 * M_PI < param4 && 2 * M_PI > param3)))
                     {
@@ -1091,11 +1096,11 @@ public sealed partial class ChFi2d_Builder
                 nsol++;
             } // while (nsol ...
             var cir = Fillet.ThisSolution(numsol);
-            var circle = new Geom2d_Circle(cir);
+            var circle = new CircleCurve2D(cir);
 
-            var B = new BRep_Builder();
-            var Adaptor3dSurface = new BRepAdaptor_Surface(refFace);
-            var refSurf = new Geom_Plane(Adaptor3dSurface.Plane());
+            var B = new BrepBuilder();
+            var Adaptor3dSurface = new FaceSurfaceAdaptor(refFace);
+            var refSurf = new PlaneSurface(Adaptor3dSurface.Plane());
             Fillet.Tangency1(numsol, out U1, out U2, out Ptg1);
             Fillet.Tangency2(numsol, out Vv1, out Vv2, out Ptg2);
 
@@ -1104,7 +1109,7 @@ public sealed partial class ChFi2d_Builder
             // inside = (U2<param1 && U2>param2) || (U2<param2 && U2>param1);
             inside = (U2 < param1 && U2 >= param2) || (U2 <= param2 && U2 > param1);
             /////////////////////////////////////////////////////
-            if ((basisC1.DynamicType() == typeof(Geom2d_Circle))
+            if ((basisC1.DynamicType() == typeof(CircleCurve2D))
                 && ((2 * M_PI < param1 && 2 * M_PI > param2) || (2 * M_PI < param2 && 2 * M_PI > param1)))
             {
                 // arc of circle containing the circle origin
@@ -1123,7 +1128,7 @@ public sealed partial class ChFi2d_Builder
             // inside = (Vv2<param3 && Vv2>param4) || (Vv2<param4 && Vv2>param3);
             inside = (Vv2 < param3 && Vv2 >= param4) || (Vv2 <= param4 && Vv2 > param3);
             /////////////////////////////////////////////////////
-            if ((basisC2.DynamicType() == typeof(Geom2d_Circle))
+            if ((basisC2.DynamicType() == typeof(CircleCurve2D))
                 && ((2 * M_PI < param3 && 2 * M_PI > param4) || (2 * M_PI < param4 && 2 * M_PI > param3)))
             {
                 // arc of circle containing the circle origin
@@ -1167,19 +1172,19 @@ public sealed partial class ChFi2d_Builder
             //=======================================================================
             Point3D Pntbid;
             Point2D sommet;
-            Pntbid = BRep_Tool.Pnt(V);
+            Pntbid = Tool.Pnt(V);
             sommet = new Point2D(Pntbid.X(), Pntbid.Y());
 
             Point3D pntBid;
             Point2D somBid;
             if (V1.IsSame(V))
             {
-                pntBid = BRep_Tool.Pnt(V2);
+                pntBid = Tool.Pnt(V2);
                 somBid = new Point2D(pntBid.X(), pntBid.Y());
             }
             else
             {
-                pntBid = BRep_Tool.Pnt(V1);
+                pntBid = Tool.Pnt(V1);
                 somBid = new Point2D(pntBid.X(), pntBid.Y());
             }
 
@@ -1187,23 +1192,23 @@ public sealed partial class ChFi2d_Builder
             global::Kerf.Engine.Geometry.ElCLib.D1(U1, cir, out Ptg1, out vec);
 
             Vector2D vec1 = new();
-            if (basisC1.DynamicType() == typeof(Geom2d_Circle))
+            if (basisC1.DynamicType() == typeof(CircleCurve2D))
             {
-                var CC1 = (Geom2d_Circle)basisC1;
+                var CC1 = (CircleCurve2D)basisC1;
                 Circle2D cir2d = CC1.Circ2d();
                 double par = global::Kerf.Engine.Geometry.ElCLib.Parameter(cir2d, Ptg1);
                 global::Kerf.Engine.Geometry.ElCLib.D1(par, cir2d, out _, out vec1);
             } // if (C1->DynamicType() ...
-            else if (basisC1.DynamicType() == typeof(Geom2d_Line))
+            else if (basisC1.DynamicType() == typeof(LineCurve2D))
             {
-                var CC1 = (Geom2d_Line)basisC1;
+                var CC1 = (LineCurve2D)basisC1;
                 Line2D lin2d = CC1.Lin2d();
                 double par = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin2d, sommet);
                 vec1 = new Vector2D(sommet.X() - somBid.X(), sommet.Y() - somBid.Y()); // OCCT: overwritten at once
                 global::Kerf.Engine.Geometry.ElCLib.D1(par, lin2d, out _, out vec1);
             } // else if ...
 
-            if (OE1 == TopAbs_REVERSED)
+            if (OE1 == Reversed)
             {
                 vec1.Reverse();
             } // if (OE1 ...
@@ -1212,8 +1217,8 @@ public sealed partial class ChFi2d_Builder
             {
                 global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(0.0, 2.0 * M_PI, global::Kerf.Engine.Foundation.Precision.Confusion(), ref U1, ref Vv1);
             } // if (U1 ...
-            if ((O1 == TopAbs_FORWARD && OE1 == TopAbs_FORWARD)
-                || (O1 == TopAbs_REVERSED && OE1 == TopAbs_REVERSED))
+            if ((O1 == Forward && OE1 == Forward)
+                || (O1 == Reversed && OE1 == Reversed))
             {
                 filletEdge = new BRepLib_MakeEdge(circle, refSurf, NewExtr1, NewExtr2, U1, Vv1).InternalEdge();
             } // if (O1 == ...
@@ -1223,9 +1228,9 @@ public sealed partial class ChFi2d_Builder
             } // else ...
             if (!Sense)
             {
-                TopAbs_Orientation S1 = filletEdge.Orientation();
-                if ((O1 == TopAbs_FORWARD && OE1 == TopAbs_FORWARD)
-                    || (O1 == TopAbs_REVERSED && OE1 == TopAbs_REVERSED))
+                Orientation S1 = filletEdge.Orientation();
+                if ((O1 == Forward && OE1 == Forward)
+                    || (O1 == Reversed && OE1 == Reversed))
                 {
                     filletEdge = new BRepLib_MakeEdge(circle, refSurf, NewExtr2, NewExtr1, Vv1, U1).InternalEdge();
                 }
@@ -1233,13 +1238,13 @@ public sealed partial class ChFi2d_Builder
                 {
                     filletEdge = new BRepLib_MakeEdge(circle, refSurf, NewExtr1, NewExtr2, U1, Vv1).InternalEdge();
                 }
-                if (S1 == TopAbs_FORWARD)
+                if (S1 == Forward)
                 {
-                    filletEdge.Orientation(TopAbs_REVERSED);
+                    filletEdge.Orientation(Reversed);
                 }
                 else
                 {
-                    filletEdge.Orientation(TopAbs_FORWARD);
+                    filletEdge.Orientation(Forward);
                 }
             } // if (!Sense
 
@@ -1251,12 +1256,12 @@ public sealed partial class ChFi2d_Builder
 
     //=================================================================================================
 
-    private bool IsAFillet(in TopoDS_Edge E)
+    private bool IsAFillet(in Edge E)
     {
         int i = 1;
         while (i <= fillets.Length())
         {
-            TopoDS_Edge currentEdge = TopoDS.Edge(fillets.Value(i));
+            Edge currentEdge = ShapeCasts.Edge(fillets.Value(i));
             if (currentEdge.IsSame(E))
             {
                 return true;
@@ -1268,12 +1273,12 @@ public sealed partial class ChFi2d_Builder
 
     //=================================================================================================
 
-    private bool IsAChamfer(in TopoDS_Edge E)
+    private bool IsAChamfer(in Edge E)
     {
         int i = 1;
         while (i <= chamfers.Length())
         {
-            TopoDS_Edge currentEdge = TopoDS.Edge(chamfers.Value(i));
+            Edge currentEdge = ShapeCasts.Edge(chamfers.Value(i));
             if (currentEdge.IsSame(E))
             {
                 return true;
@@ -1286,15 +1291,15 @@ public sealed partial class ChFi2d_Builder
     //=================================================================================================
 
     // OCCT has this function twice, as a file-static in ChFi2d_Builder.cxx and in ChFi2d_Builder_0.cxx, identical.
-    private static bool IsLineOrCircle(in TopoDS_Edge E, in TopoDS_Face F)
+    private static bool IsLineOrCircle(in Edge E, in Face F)
     {
         double first, last;
         //  syntaxe invalide sur NT
         //      const occ::handle<Geom2d_Curve>& C =
         //	BRep_Tool::CurveOnSurface(E,F,first,last);
-        Geom2d_Curve? C = BRep_Tool.CurveOnSurface(E, F, out first, out last);
-        Geom2d_Curve basisC;
-        if (C is Geom2d_TrimmedCurve TC)
+        Curve2D? C = Tool.CurveOnSurface(E, F, out first, out last);
+        Curve2D basisC;
+        if (C is TrimmedCurve2D TC)
         {
             basisC = TC.BasisCurve();
         }
@@ -1303,39 +1308,39 @@ public sealed partial class ChFi2d_Builder
             basisC = C!;
         }
 
-        return basisC.DynamicType() == typeof(Geom2d_Circle)
-               || basisC.DynamicType() == typeof(Geom2d_Line); // else ...
+        return basisC.DynamicType() == typeof(CircleCurve2D)
+               || basisC.DynamicType() == typeof(LineCurve2D); // else ...
     } // IsLineOrCircle
 
     // ---- the inline accessors (ChFi2d_Builder.lxx) ----
 
     /// <summary>The modified face (frozen), with the initial face's orientation.</summary>
-    public TopoDS_Face Result()
+    public Face Result()
     {
-        TopoDS_Face aFace = InternalResult();
+        Face aFace = InternalResult();
         aFace.TShape()?.FreezeGraph();
         return aFace;
     }
 
     /// <summary><see cref="Result"/> without freezing, for ported code.</summary>
-    internal TopoDS_Face InternalResult()
+    internal Face InternalResult()
     {
-        TopoDS_Face aFace = newFace;
+        Face aFace = newFace;
         aFace.Orientation(refFace.Orientation());
         return aFace;
     }
 
     /// <summary>True if the edge <paramref name="E"/> of the initial face has been trimmed by a fillet or chamfer.</summary>
-    public bool IsModified(in TopoDS_Edge E)
+    public bool IsModified(in Edge E)
     {
         return history.IsBound(E);
     }
 
     /// <summary>The fillets built (frozen with the face that holds them).</summary>
-    public ISchematiqList<TopoDS_Shape> FilletEdges() => PublishedEdges(fillets);
+    public ISchematiqList<Shape> FilletEdges() => PublishedEdges(fillets);
 
     /// <summary>The builder's own sequence behind <see cref="FilletEdges"/>, unfrozen.</summary>
-    internal NCollection_Sequence<TopoDS_Shape> InternalFilletEdges() => fillets;
+    internal NCollection_Sequence<Shape> InternalFilletEdges() => fillets;
 
     public int NbFillet()
     {
@@ -1343,17 +1348,17 @@ public sealed partial class ChFi2d_Builder
     }
 
     /// <summary>The chamfers built (frozen with the face that holds them).</summary>
-    public ISchematiqList<TopoDS_Shape> ChamferEdges() => PublishedEdges(chamfers);
+    public ISchematiqList<Shape> ChamferEdges() => PublishedEdges(chamfers);
 
     /// <summary>The builder's own sequence behind <see cref="ChamferEdges"/>, unfrozen.</summary>
-    internal NCollection_Sequence<TopoDS_Shape> InternalChamferEdges() => chamfers;
+    internal NCollection_Sequence<Shape> InternalChamferEdges() => chamfers;
 
     public int NbChamfer()
     {
         return chamfers.Length();
     }
 
-    public bool HasDescendant(in TopoDS_Edge E)
+    public bool HasDescendant(in Edge E)
     {
         return history.IsBound(E);
     }
@@ -1362,16 +1367,16 @@ public sealed partial class ChFi2d_Builder
     /// The edge trimmed from <paramref name="E"/> (frozen with the face that holds it).
     /// </summary>
     /// <exception cref="NoSuchObjectException"><paramref name="E"/> has no descendant.</exception>
-    public TopoDS_Edge DescendantEdge(in TopoDS_Edge E)
+    public Edge DescendantEdge(in Edge E)
     {
         FreezeResult();
         return InternalDescendantEdge(E);
     }
 
     /// <summary><see cref="DescendantEdge"/> without freezing, for ported code.</summary>
-    internal TopoDS_Edge InternalDescendantEdge(in TopoDS_Edge E)
+    internal Edge InternalDescendantEdge(in Edge E)
     {
-        return TopoDS.Edge(history.Find(E));
+        return ShapeCasts.Edge(history.Find(E));
     } // DescendantEdge
 
     public ChFi2d_ConstructionError Status()
@@ -1387,21 +1392,21 @@ public sealed partial class ChFi2d_Builder
         newFace.TShape()?.FreezeGraph();
     }
 
-    private TopoDS_Edge Published(in TopoDS_Edge theEdge)
+    private Edge Published(in Edge theEdge)
     {
         FreezeResult();
         theEdge.TShape()?.FreezeGraph();
         return theEdge;
     }
 
-    private ISchematiqList<TopoDS_Shape> PublishedEdges(NCollection_Sequence<TopoDS_Shape> theEdges)
+    private ISchematiqList<Shape> PublishedEdges(NCollection_Sequence<Shape> theEdges)
     {
         FreezeResult();
         if (theEdges.IsEmpty())
         {
-            return PackedList<TopoDS_Shape>.Empty;
+            return PackedList<Shape>.Empty;
         }
-        var anEdges = new TopoDS_Shape[theEdges.Length()];
+        var anEdges = new Shape[theEdges.Length()];
         for (int i = 1; i <= theEdges.Length(); i++)
         {
             anEdges[i - 1] = theEdges.Value(i);

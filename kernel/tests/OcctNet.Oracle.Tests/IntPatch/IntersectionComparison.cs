@@ -1,9 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Text;
-using static Occt.TopTools_FormatVersion;
+using static Kerf.Engine.Exchange.Brep.FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -48,7 +52,7 @@ internal sealed class IntersectionComparison : IDisposable
     public void Dispose() => Directory.Delete(myDirectory, true);
 
     /// <summary>Compares two lists of 3D lines, in order.</summary>
-    public void CompareLines(IReadOnlyList<N.Geom_Curve> theNative, IReadOnlyList<Geom_Curve> thePort, string theWhat)
+    public void CompareLines(IReadOnlyList<N.Geom_Curve> theNative, IReadOnlyList<Curve3D> thePort, string theWhat)
     {
         Assert.True(theNative.Count == thePort.Count, $"{theWhat}: native {theNative.Count} lines, port {thePort.Count}");
         for (int i = 0; i < theNative.Count; i++)
@@ -58,7 +62,7 @@ internal sealed class IntersectionComparison : IDisposable
     }
 
     /// <summary>Compares two 3D lines.</summary>
-    public void CompareLine(N.Geom_Curve theNative, Geom_Curve thePort, string theWhat)
+    public void CompareLine(N.Geom_Curve theNative, Curve3D thePort, string theWhat)
     {
         string aNText = NativeText(new N.BRepBuilderAPI_MakeEdge(theNative).Edge());
         string aPText = PortText(new BRepBuilderAPI_MakeEdge(thePort).Edge());
@@ -68,7 +72,7 @@ internal sealed class IntersectionComparison : IDisposable
         }
 
         // The native line as the port reads it from the native text, to measure the distance between the lines.
-        Geom_Curve aNCurve = ReadCurve(aNText, out double aFirst, out double aLast);
+        Curve3D aNCurve = ReadCurve(aNText, out double aFirst, out double aLast);
         Deviation(aFirst, aLast, u => aNCurve.Value(u).Distance(thePort.Value(u)), theWhat);
     }
 
@@ -76,7 +80,7 @@ internal sealed class IntersectionComparison : IDisposable
     /// True if the two 3D lines' records are bit-identical (every token equal), without tallying or asserting: for
     /// matching lines whose order differs between the two sides (IntTools_FaceFace against GeomAPI_IntSS, unit 6D).
     /// </summary>
-    public bool SameRecord(N.Geom_Curve theNative, Geom_Curve thePort)
+    public bool SameRecord(N.Geom_Curve theNative, Curve3D thePort)
     {
         string aNText = Section(NativeText(new N.BRepBuilderAPI_MakeEdge(theNative).Edge()), "Curves");
         string aPText = Section(PortText(new BRepBuilderAPI_MakeEdge(thePort).Edge()), "Curves");
@@ -84,25 +88,25 @@ internal sealed class IntersectionComparison : IDisposable
     }
 
     /// <summary>Compares two 2D lines.</summary>
-    public void CompareLine2d(N.Geom2d_Curve theNative, Geom2d_Curve thePort, string theWhat)
+    public void CompareLine2d(N.Geom2d_Curve theNative, Curve2D thePort, string theWhat)
     {
         using var aNPlane = new N.Geom_Plane(new N.gp_Pln());
         string aNText = NativeText(new N.BRepBuilderAPI_MakeEdge(theNative, aNPlane).Edge());
-        string aPText = PortText(new BRepBuilderAPI_MakeEdge(thePort, new Geom_Plane(new Plane3D())).Edge());
+        string aPText = PortText(new BRepBuilderAPI_MakeEdge(thePort, new PlaneSurface(new Plane3D())).Edge());
         if (CompareRecords(Section(aNText, "Curve2ds"), Section(aPText, "Curve2ds"), theWhat))
         {
             return;
         }
 
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, Save(aNText)));
-        BRep_Tool.CurveOnSurface(TopoDS.Edge(aShape), out Geom2d_Curve? aNCurve, out _, out _, out double aFirst,
+        Assert.True(BrepTools.Read(out Shape aShape, Save(aNText)));
+        Tool.CurveOnSurface(ShapeCasts.Edge(aShape), out Curve2D? aNCurve, out _, out _, out double aFirst,
                                  out double aLast);
         Assert.NotNull(aNCurve);
         Deviation(aFirst, aLast, u => aNCurve.Value(u).Distance(thePort.Value(u)), theWhat);
     }
 
     /// <summary>A native curve as the port reads it from the native BRep text of an edge on it (the same bits).</summary>
-    public Geom_Curve PortCurve(N.Geom_Curve theNative)
+    public Curve3D PortCurve(N.Geom_Curve theNative)
         => ReadCurve(NativeText(new N.BRepBuilderAPI_MakeEdge(theNative).Edge()), out _, out _);
 
     /// <summary>
@@ -182,10 +186,10 @@ internal sealed class IntersectionComparison : IDisposable
         }
     }
 
-    private Geom_Curve ReadCurve(string theText, out double theFirst, out double theLast)
+    private Curve3D ReadCurve(string theText, out double theFirst, out double theLast)
     {
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, Save(theText)));
-        return BRep_Tool.Curve(TopoDS.Edge(aShape), out theFirst, out theLast)!;
+        Assert.True(BrepTools.Read(out Shape aShape, Save(theText)));
+        return Tool.Curve(ShapeCasts.Edge(aShape), out theFirst, out theLast)!;
     }
 
     private static string[] Tokens(string theSection)
@@ -227,10 +231,10 @@ internal sealed class IntersectionComparison : IDisposable
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile, true, true, TopTools_FormatVersion_VERSION_3));
+        Assert.True(BrepTools.Write(theShape, aFile, true, true, FormatVersion_VERSION_3));
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 }

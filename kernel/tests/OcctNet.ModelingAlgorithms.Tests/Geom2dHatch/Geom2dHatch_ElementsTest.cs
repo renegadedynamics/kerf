@@ -2,8 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -13,9 +15,9 @@ public class Geom2dHatch_ElementsTest
     private static Geom2dHatch_Element makeCircleElement()
     {
         Axis2D anAxis = new(new Point2D(0, 0), new Direction2D(1, 0));
-        Geom2d_Circle aCircle = new(anAxis, 1.0);
-        Geom2dAdaptor_Curve aCurve = new(aCircle);
-        Geom2dHatch_Element anElem = new(aCurve, TopAbs_FORWARD);
+        CircleCurve2D aCircle = new(anAxis, 1.0);
+        CurveAdaptor2D aCurve = new(aCircle);
+        Geom2dHatch_Element anElem = new(aCurve, Forward);
         return anElem;
     }
 
@@ -34,11 +36,11 @@ public class Geom2dHatch_ElementsTest
         anElements.InitEdges();
         Assert.True(anElements.MoreEdges());
 
-        Geom2dAdaptor_Curve aEdge = new();
-        TopAbs_Orientation anOr = TopAbs_INTERNAL;
+        CurveAdaptor2D aEdge = new();
+        Orientation anOr = Internal;
         anElements.CurrentEdge(ref aEdge, out anOr);
 
-        Assert.Equal(TopAbs_FORWARD, anOr);
+        Assert.Equal(Forward, anOr);
         // Circle has parameter range [0, 2*PI].
         Assert.Equal(0.0, aEdge.FirstParameter(), 1e-10);
         Assert.True(aEdge.LastParameter() > 6.0);
@@ -55,7 +57,7 @@ public class Geom2dHatch_ElementsTest
         Assert.True(anElements.IsBound(1));
 
         Geom2dHatch_Element anElem = anElements.Find(1);
-        Assert.Equal(TopAbs_FORWARD, anElem.Orientation());
+        Assert.Equal(Forward, anElem.Orientation());
     }
 
     // Clear removes all elements.

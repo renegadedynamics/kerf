@@ -6,6 +6,7 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -18,7 +19,7 @@ namespace Occt;
 /// base holding frozen TShapes (any shape a caller has) is swept as an exact copy, and the result holds the base's own
 /// sub-shapes wherever the sweep left them unchanged (<see cref="BRepPrimAPI_MakeSweep"/>); the history answers for
 /// the caller's sub-shapes, and the base is never changed.</para>
-/// <para>The result, <see cref="BRepPrimAPI_MakeSweep.FirstShape()"/>, <see cref="LastShape(in TopoDS_Shape)"/> and the
+/// <para>The result, <see cref="BRepPrimAPI_MakeSweep.FirstShape()"/>, <see cref="LastShape(in Shape)"/> and the
 /// history are frozen when returned (design 4.2).</para>
 /// </remarks>
 public class BRepPrimAPI_MakePrism : BRepPrimAPI_MakeSweep
@@ -26,7 +27,7 @@ public class BRepPrimAPI_MakePrism : BRepPrimAPI_MakeSweep
     private readonly BRepSweep_Prism myPrism;
 
     // perform checks on the argument
-    private static TopoDS_Shape check(in TopoDS_Shape S)
+    private static Shape check(in Shape S)
     {
         BRepLib.BuildCurves3d(S);
         return S;
@@ -37,7 +38,7 @@ public class BRepPrimAPI_MakePrism : BRepPrimAPI_MakeSweep
     /// sub-shapes are copied; with <paramref name="Canonize"/>, the extrusions of lines and circles are planes and
     /// cylinders.
     /// </summary>
-    public BRepPrimAPI_MakePrism(in TopoDS_Shape S, in Vector3D V, bool Copy = false, bool Canonize = true)
+    public BRepPrimAPI_MakePrism(in Shape S, in Vector3D V, bool Copy = false, bool Canonize = true)
     {
         myPrism = new BRepSweep_Prism(check(GeneratingShapeForWrite(S)), V, Copy, Canonize);
         Build();
@@ -47,7 +48,7 @@ public class BRepPrimAPI_MakePrism : BRepPrimAPI_MakeSweep
     /// A semi-infinite (<paramref name="Inf"/> false) or infinite prism of base <paramref name="S"/> along
     /// <paramref name="D"/>.
     /// </summary>
-    public BRepPrimAPI_MakePrism(in TopoDS_Shape S, in Direction3D D, bool Inf = true, bool Copy = false, bool Canonize = true)
+    public BRepPrimAPI_MakePrism(in Shape S, in Direction3D D, bool Inf = true, bool Copy = false, bool Canonize = true)
     {
         myPrism = new BRepSweep_Prism(check(GeneratingShapeForWrite(S)), D, Inf, Copy, Canonize);
         Build();
@@ -64,15 +65,15 @@ public class BRepPrimAPI_MakePrism : BRepPrimAPI_MakeSweep
         Done();
     }
 
-    internal override TopoDS_Shape InternalFirstShape() => FromSwept(myPrism.FirstShape());
+    internal override Shape InternalFirstShape() => FromSwept(myPrism.FirstShape());
 
-    internal override TopoDS_Shape InternalLastShape() => FromSwept(myPrism.LastShape());
+    internal override Shape InternalLastShape() => FromSwept(myPrism.LastShape());
 
     /// <summary>The list of shapes generated from the shape <paramref name="S"/>.</summary>
-    internal override NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape S)
+    internal override NCollection_List<Shape> InternalGenerated(in Shape S)
     {
         myGenerated.Clear();
-        TopoDS_Shape aS = ToSwept(S);
+        Shape aS = ToSwept(S);
         if (myPrism.IsUsed(aS) && myPrism.GenIsUsed(aS))
         {
             myGenerated.Append(FromSwept(myPrism.Shape(aS)));
@@ -81,19 +82,19 @@ public class BRepPrimAPI_MakePrism : BRepPrimAPI_MakeSweep
     }
 
     /// <summary>The shape at the bottom of the prism generated with <paramref name="theShape"/>, a sub-shape of the base (frozen).</summary>
-    public TopoDS_Shape FirstShape(in TopoDS_Shape theShape) => Published(InternalFirstShape(theShape));
+    public Shape FirstShape(in Shape theShape) => Published(InternalFirstShape(theShape));
 
-    /// <summary><see cref="FirstShape(in TopoDS_Shape)"/> without freezing.</summary>
-    internal TopoDS_Shape InternalFirstShape(in TopoDS_Shape theShape) => FromSwept(myPrism.FirstShape(ToSwept(theShape)));
+    /// <summary><see cref="FirstShape(in Shape)"/> without freezing.</summary>
+    internal Shape InternalFirstShape(in Shape theShape) => FromSwept(myPrism.FirstShape(ToSwept(theShape)));
 
     /// <summary>The shape at the top of the prism generated with <paramref name="theShape"/>, a sub-shape of the base (frozen).</summary>
-    public TopoDS_Shape LastShape(in TopoDS_Shape theShape) => Published(InternalLastShape(theShape));
+    public Shape LastShape(in Shape theShape) => Published(InternalLastShape(theShape));
 
-    /// <summary><see cref="LastShape(in TopoDS_Shape)"/> without freezing.</summary>
-    internal TopoDS_Shape InternalLastShape(in TopoDS_Shape theShape) => FromSwept(myPrism.LastShape(ToSwept(theShape)));
+    /// <summary><see cref="LastShape(in Shape)"/> without freezing.</summary>
+    internal Shape InternalLastShape(in Shape theShape) => FromSwept(myPrism.LastShape(ToSwept(theShape)));
 
     /// <summary>True if the shape <paramref name="S"/> has been deleted.</summary>
-    public override bool IsDeleted(in TopoDS_Shape S)
+    public override bool IsDeleted(in Shape S)
     {
         return !myPrism.IsUsed(ToSwept(S));
     }

@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepCheck_Status;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
@@ -167,7 +169,7 @@ public static class BRepCheck
     /// the intersecting edges (<paramref name="RetE2"/> unchanged for an edge that intersects itself or has no pcurve).
     /// </summary>
     /// <remarks>The edges are <c>ref</c>: OCCT leaves them unchanged when nothing is found.</remarks>
-    public static bool SelfIntersection(in TopoDS_Wire W, in TopoDS_Face myFace, ref TopoDS_Edge RetE1, ref TopoDS_Edge RetE2)
+    public static bool SelfIntersection(in Wire W, in Face myFace, ref Edge RetE1, ref Edge RetE2)
     {
         var chkw = new BRepCheck_Wire(W);
         BRepCheck_Status stat = chkw.SelfIntersect(myFace, ref RetE1, ref RetE2);
@@ -178,7 +180,7 @@ public static class BRepCheck
     /// The precision of the curve's numbers: Epsilon of the largest of an ellipse's centre coordinates and radii,
     /// RealEpsilon() for other curves.
     /// </summary>
-    public static double PrecCurve(Adaptor3d_Curve aAC3D)
+    public static double PrecCurve(CurveAdaptorBase aAC3D)
     {
         double aXEmax = RealEpsilon();
         //
@@ -215,7 +217,7 @@ public static class BRepCheck
     /// The precision of the surface's numbers: Epsilon of the largest of a cone's apex coordinates and reference
     /// radius, RealEpsilon() for other surfaces.
     /// </summary>
-    public static double PrecSurface(Adaptor3d_Surface aAHSurf)
+    public static double PrecSurface(SurfaceAdaptorBase aAHSurf)
     {
         double aXEmax = RealEpsilon();
         //

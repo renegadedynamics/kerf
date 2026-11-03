@@ -4,7 +4,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
@@ -32,11 +37,11 @@ namespace Occt;
 public sealed class ChFi2d_FilletAlgo
 {
     //! Initial edges where the fillet must be computed.
-    private TopoDS_Edge myEdge1 = new(), myEdge2 = new();
+    private Edge myEdge1 = new(), myEdge2 = new();
     //! Plane where fillet arc must be created.
-    private Geom_Plane? myPlane;
+    private PlaneSurface? myPlane;
     //! Underlying curves of the initial edges
-    private Geom2d_Curve? myCurve1, myCurve2;
+    private Curve2D? myCurve1, myCurve2;
     //! Start and end parameters of curves of initial edges.
     private double myStart1, myEnd1, myStart2, myEnd2, myRadius;
     //! List of params where roots were found.
@@ -65,14 +70,14 @@ public sealed class ChFi2d_FilletAlgo
     }
 
     /// <summary>A fillet algorithm on a wire of two edges in a plane.</summary>
-    public ChFi2d_FilletAlgo(in TopoDS_Wire theWire, in Plane3D thePlane)
+    public ChFi2d_FilletAlgo(in Wire theWire, in Plane3D thePlane)
         : this()
     {
         Init(theWire, thePlane);
     }
 
     /// <summary>A fillet algorithm on two edges in a plane.</summary>
-    public ChFi2d_FilletAlgo(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in Plane3D thePlane)
+    public ChFi2d_FilletAlgo(in Edge theEdge1, in Edge theEdge2, in Plane3D thePlane)
         : this()
     {
         myEdge1 = theEdge1;
@@ -82,26 +87,26 @@ public sealed class ChFi2d_FilletAlgo
 
     /// <summary>Initializes the algorithm by a wire of two edges in a plane.</summary>
     /// <exception cref="ConstructionErrorException">The wire has fewer than two edges.</exception>
-    public void Init(in TopoDS_Wire theWire, in Plane3D thePlane)
+    public void Init(in Wire theWire, in Plane3D thePlane)
     {
-        TopoDS_Edge theEdge1 = new(), theEdge2 = new();
-        var itr = new TopoDS_Iterator(theWire);
+        Edge theEdge1 = new(), theEdge2 = new();
+        var itr = new Iterator(theWire);
         for (; itr.More(); itr.Next())
         {
-            if (theEdge1.IsNull())
+            if (theEdge1.IsNull)
             {
-                theEdge1 = TopoDS.Edge(itr.Value());
+                theEdge1 = ShapeCasts.Edge(itr.Value());
             }
-            else if (theEdge2.IsNull())
+            else if (theEdge2.IsNull)
             {
-                theEdge2 = TopoDS.Edge(itr.Value());
+                theEdge2 = ShapeCasts.Edge(itr.Value());
             }
             else
             {
                 break;
             }
         }
-        if (theEdge1.IsNull() || theEdge2.IsNull())
+        if (theEdge1.IsNull || theEdge2.IsNull)
         {
             throw new ConstructionErrorException("The fillet algorithms expects a wire consisting of two edges.");
         }
@@ -109,14 +114,14 @@ public sealed class ChFi2d_FilletAlgo
     }
 
     /// <summary>Initializes the algorithm by two edges in a plane.</summary>
-    public void Init(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in Plane3D thePlane)
+    public void Init(in Edge theEdge1, in Edge theEdge2, in Plane3D thePlane)
     {
-        myPlane = new Geom_Plane(thePlane);
+        myPlane = new PlaneSurface(thePlane);
 
         myEdgesExchnged = false;
 
-        var aBAC1 = new BRepAdaptor_Curve(theEdge1);
-        var aBAC2 = new BRepAdaptor_Curve(theEdge2);
+        var aBAC1 = new EdgeCurveAdaptor(theEdge1);
+        var aBAC2 = new EdgeCurveAdaptor(theEdge2);
         if (aBAC1.GetType() < aBAC2.GetType())
         { // first curve must be more complicated
             myEdge1 = theEdge2;
@@ -129,17 +134,17 @@ public sealed class ChFi2d_FilletAlgo
             myEdge2 = theEdge2;
         }
 
-        Geom_Curve aCurve1 = BRep_Tool.Curve(myEdge1, out myStart1, out myEnd1)!;
-        Geom_Curve aCurve2 = BRep_Tool.Curve(myEdge2, out myStart2, out myEnd2)!;
+        Curve3D aCurve1 = Tool.Curve(myEdge1, out myStart1, out myEnd1)!;
+        Curve3D aCurve2 = Tool.Curve(myEdge2, out myStart2, out myEnd2)!;
 
-        myCurve1 = GeomProjLib.Curve2d(aCurve1, myStart1, myEnd1, myPlane)!;
-        myCurve2 = GeomProjLib.Curve2d(aCurve2, myStart2, myEnd2, myPlane)!;
+        myCurve1 = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(aCurve1, myStart1, myEnd1, myPlane)!;
+        myCurve2 = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(aCurve2, myStart2, myEnd2, myPlane)!;
 
-        while (myCurve1.IsPeriodic() && myStart1 >= myEnd1)
+        while (myCurve1.IsPeriodic && myStart1 >= myEnd1)
         {
             myEnd1 += myCurve1.Period();
         }
-        while (myCurve2.IsPeriodic() && myStart2 >= myEnd2)
+        while (myCurve2.IsPeriodic && myStart2 >= myEnd2)
         {
             myEnd2 += myCurve2.Period();
         }
@@ -148,10 +153,10 @@ public sealed class ChFi2d_FilletAlgo
         {
             if (myEnd2 - myStart2 < myEnd1 - myStart1)
             { // first curve must be parametrically shorter
-                TopoDS_Edge anEdge = myEdge1;
+                Edge anEdge = myEdge1;
                 myEdge1 = myEdge2;
                 myEdge2 = anEdge;
-                Geom2d_Curve aCurve = myCurve1;
+                Curve2D aCurve = myCurve1;
                 myCurve1 = myCurve2;
                 myCurve2 = aCurve;
                 double a = myStart1;
@@ -168,7 +173,7 @@ public sealed class ChFi2d_FilletAlgo
     //! This function returns true if linear segment from start point of the
     //! fillet arc to the end point is intersected by the first or second
     //! curve: in this case fillet is invalid.
-    private static bool IsRadiusIntersected(Geom2d_Curve theCurve,
+    private static bool IsRadiusIntersected(Curve2D theCurve,
                                             double theCurveMin,
                                             double theCurveMax,
                                             Point2D theStart,
@@ -181,7 +186,7 @@ public sealed class ChFi2d_FilletAlgo
         {
             return false;
         }
-        var line = new Geom2d_Line(theStart, new Direction2D(new Vector2D(theStart, theEnd)));
+        var line = new LineCurve2D(theStart, new Direction2D(new Vector2D(theStart, theEnd)));
         var anInter = new Geom2dAPI_InterCurveCurve(theCurve, line, global::Kerf.Engine.Foundation.Precision.Confusion());
         int a;
         Point2D aPoint;
@@ -211,7 +216,7 @@ public sealed class ChFi2d_FilletAlgo
                 return true;
             }
         }
-        Geom2d_Curve aCurve = theCurve;
+        Curve2D aCurve = theCurve;
         for (a = anInter.NbSegments(); a > 0; a--)
         {
             // anInter.Segment(a, aCurve); //not implemented (bug in OCC)
@@ -324,7 +329,7 @@ public sealed class ChFi2d_FilletAlgo
 
             // checking the right parameter
             double aParamProj = aProj.Parameter(a);
-            while (myCurve2!.IsPeriodic() && aParamProj < myStart2)
+            while (myCurve2!.IsPeriodic && aParamProj < myStart2)
             {
                 aParamProj += myCurve2.Period();
             }
@@ -363,7 +368,7 @@ public sealed class ChFi2d_FilletAlgo
         myResultOrientation.Clear();
 
         double aNBSteps;
-        var aGAC = new Geom2dAdaptor_Curve(myCurve1!);
+        var aGAC = new CurveAdaptor2D(myCurve1!);
         switch (aGAC.GetType())
         {
             case Line:
@@ -376,7 +381,7 @@ public sealed class ChFi2d_FilletAlgo
                 aNBSteps = 5;
                 break;
             case BSplineCurve:
-                aNBSteps = 2 + aGAC.Degree() * aGAC.NbPoles();
+                aNBSteps = 2 + aGAC.Degree() * aGAC.PoleCount;
                 break;
             default: // unknown: maximum
                 aNBSteps = 100;
@@ -605,9 +610,9 @@ public sealed class ChFi2d_FilletAlgo
     /// The fillet edge and the two edges it trims (all frozen): the solution nearest to <paramref name="thePoint"/> if
     /// <paramref name="iSolution"/> is -1, else that solution. A null edge if there is none.
     /// </summary>
-    public TopoDS_Edge Result(in Point3D thePoint, ref TopoDS_Edge theEdge1, ref TopoDS_Edge theEdge2, int iSolution = -1)
+    public Edge Result(in Point3D thePoint, ref Edge theEdge1, ref Edge theEdge2, int iSolution = -1)
     {
-        TopoDS_Edge aResult = new();
+        Edge aResult = new();
         Point2D aTargetPoint2d = new();
         double aX, aY;
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(myPlane!.Pln().Position(), thePoint, out aX, out aY);
@@ -657,7 +662,7 @@ public sealed class ChFi2d_FilletAlgo
         Point3D aCenter = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(aNearest.getCenter().X(),
                                            aNearest.getCenter().Y(),
                                            myPlane.Pln().Position());
-        var aCircle = new Geom_Circle(new Frame3D(aCenter, myPlane.Pln().Axis().Direction()), myRadius);
+        var aCircle = new CircleCurve3D(new Frame3D(aCenter, myPlane.Pln().Axis().Direction()), myRadius);
         myCurve1!.D0(aNearest.getParam(), out Point2D aPoint2d1);
         myCurve2!.D0(aNearest.getParam2(), out Point2D aPoint2d2);
         Point3D aPoint1 = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(aPoint2d1.X(), aPoint2d1.Y(), myPlane.Pln().Position());
@@ -693,7 +698,7 @@ public sealed class ChFi2d_FilletAlgo
 
         // divide edges
         double aStart, anEnd;
-        Geom_Curve aCurve = BRep_Tool.Curve(myEdge1, out aStart, out anEnd)!;
+        Curve3D aCurve = Tool.Curve(myEdge1, out aStart, out anEnd)!;
         aCurve.D1(aNearest.getParam(), out aPoint1, out Vector3D aDir);
 
         aCircle.D1(aParam1, out aPoint1, out Vector3D aCircleDir);
@@ -725,7 +730,7 @@ public sealed class ChFi2d_FilletAlgo
             theEdge1 = aDivider1.Edge();
         }
 
-        aCurve = BRep_Tool.Curve(myEdge2, out aStart, out anEnd)!;
+        aCurve = Tool.Curve(myEdge2, out aStart, out anEnd)!;
         aCurve.D1(aNearest.getParam2(), out aPoint2, out aDir);
 
         aCircle.D1(aParam2, out aPoint2, out aCircleDir);

@@ -5,9 +5,10 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using static Occt.IntAna_ResultType;
+using static Kerf.Engine.Intersection.ResultType;
 using static Occt.IntSurf_Situation;
 using static Occt.IntSurf_TypeTrans;
 
@@ -1374,7 +1375,7 @@ public sealed partial class IntPatch_ImpImpIntersection
     //=======================================================================
     private static bool CyCyAnalyticalIntersect(in IntSurf_Quadric Quad1,
                                                 in IntSurf_Quadric Quad2,
-                                                IntAna_QuadQuadGeo theInter,
+                                                QuadQuadGeo theInter,
                                                 double Tol,
                                                 ref bool Empty,
                                                 ref bool Same,
@@ -1387,7 +1388,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         int i;
 
         IntSurf_TypeTrans trans1, trans2;
-        IntAna_ResultType typint;
+        ResultType typint;
 
         Ellipse3D elipsol;
         Line3D linsol;
@@ -1396,25 +1397,25 @@ public sealed partial class IntPatch_ImpImpIntersection
         Cylinder Cy2 = Quad2.Cylinder();
 
         typint = theInter.TypeInter();
-        int NbSol = theInter.NbSolutions();
+        int NbSol = theInter.SolutionCount;
         Empty = false;
         Same = false;
 
         switch (typint)
         {
-            case IntAna_Empty:
+            case global::Kerf.Engine.Intersection.ResultType.Empty:
             {
                 Empty = true;
             }
             break;
 
-            case IntAna_Same:
+            case global::Kerf.Engine.Intersection.ResultType.Same:
             {
                 Same = true;
             }
             break;
 
-            case IntAna_Point:
+            case global::Kerf.Engine.Intersection.ResultType.Point:
             {
                 Point3D psol = theInter.Point(1);
                 ptsol.SetValue(psol, Tol, true);
@@ -1428,7 +1429,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case IntAna_Line:
+            case global::Kerf.Engine.Intersection.ResultType.Line:
             {
                 Point3D ptref;
                 if (NbSol == 1)
@@ -1550,7 +1551,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case IntAna_Ellipse:
+            case Ellipse:
             {
                 Vector3D Tgt;
                 Point3D ptref;
@@ -1708,14 +1709,14 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case IntAna_Parabola:
-            case IntAna_Hyperbola:
+            case Parabola:
+            case Hyperbola:
                 throw new FailureException("IntCyCy(): Wrong intersection type!");
 
-            case IntAna_Circle:
+            case Circle:
             // Circle is useful when we will work with trimmed surfaces
             // (two cylinders can be tangent by their basises, e.g. circle)
-            case IntAna_NoGeometricSolution:
+            case NoGeometricSolution:
             default:
                 return false;
         }
@@ -3751,14 +3752,14 @@ public sealed partial class IntPatch_ImpImpIntersection
 
         Cylinder aCyl1 = theQuad1.Cylinder(), aCyl2 = theQuad2.Cylinder();
 
-        IntAna_QuadQuadGeo anInter = new(aCyl1, aCyl2, theTol3D);
+        QuadQuadGeo anInter = new(aCyl1, aCyl2, theTol3D);
 
-        if (!anInter.IsDone())
+        if (!anInter.IsDone)
         {
             return IntStatus.IntStatus_Fail;
         }
 
-        if (anInter.TypeInter() != IntAna_NoGeometricSolution)
+        if (anInter.TypeInter() != NoGeometricSolution)
         {
             if (CyCyAnalyticalIntersect(theQuad1,
                                         theQuad2,

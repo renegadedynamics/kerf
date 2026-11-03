@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Evaluation;
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 
@@ -170,7 +173,7 @@ public class GeomGridEval_SurfaceConsistencyTest
         return aSum - theDeg - 1;
     }
 
-    private static Geom_BSplineSurface RandomBSplineSurface(Random theRnd, bool theRational, bool thePeriodic)
+    private static BSplineSurface RandomBSplineSurface(Random theRnd, bool theRational, bool thePeriodic)
     {
         int aUDeg = theRnd.Next(1, 5);
         int aVDeg = theRnd.Next(1, 5);
@@ -190,11 +193,11 @@ public class GeomGridEval_SurfaceConsistencyTest
             }
         }
         return theRational
-                   ? new Geom_BSplineSurface(aPoles, aWeights, aUKnots, aVKnots, aUMults, aVMults, aUDeg, aVDeg, aUPer, aVPer)
-                   : new Geom_BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, aUDeg, aVDeg, aUPer, aVPer);
+                   ? new BSplineSurface(aPoles, aWeights, aUKnots, aVKnots, aUMults, aVMults, aUDeg, aVDeg, aUPer, aVPer)
+                   : new BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, aUDeg, aVDeg, aUPer, aVPer);
     }
 
-    private static Geom_BezierSurface RandomBezierSurface(Random theRnd)
+    private static BezierSurface RandomBezierSurface(Random theRnd)
     {
         int aNbU = theRnd.Next(2, 6), aNbV = theRnd.Next(2, 6);
         NCollection_Array2<Point3D> aPoles = new(1, aNbU, 1, aNbV);
@@ -208,10 +211,10 @@ public class GeomGridEval_SurfaceConsistencyTest
                 aWeights[i, j] = Uniform(theRnd, 0.5, 2.0);
             }
         }
-        return theRnd.Next(2) == 0 ? new Geom_BezierSurface(aPoles) : new Geom_BezierSurface(aPoles, aWeights);
+        return theRnd.Next(2) == 0 ? new BezierSurface(aPoles) : new BezierSurface(aPoles, aWeights);
     }
 
-    private static Geom_BSplineCurve RandomBSplineCurve(Random theRnd)
+    private static BSplineCurve3D RandomBSplineCurve(Random theRnd)
     {
         int aDeg = theRnd.Next(1, 4);
         int aNb = RandomKnots(theRnd, aDeg, false, out NCollection_Array1<double> aKnots, out NCollection_Array1<int> aMults);
@@ -220,7 +223,7 @@ public class GeomGridEval_SurfaceConsistencyTest
         {
             aPoles[i] = new Point3D(Uniform(theRnd, 1.0, 4.0), Uniform(theRnd, -0.5, 0.5), i + Uniform(theRnd, -0.3, 0.3));
         }
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, aDeg);
     }
 
     private static Transform3D RandomTrsf(Random theRnd)
@@ -262,10 +265,10 @@ public class GeomGridEval_SurfaceConsistencyTest
 
     // Whether the grid point (i, j) of a B-spline surface is in a patch holding two grid points or more (OCCT's
     // cache path), from the grid's own span location: OCCT's countSpanSize on each direction.
-    private static bool[,] CachePattern(Geom_BSplineSurface theSurf, NCollection_Array1<double> theU, NCollection_Array1<double> theV)
+    private static bool[,] CachePattern(BSplineSurface theSurf, NCollection_Array1<double> theU, NCollection_Array1<double> theV)
     {
-        int[] aUSpan = Spans(theSurf.InternalUKnotSequence(), theSurf.UDegree(), theSurf.IsUPeriodic(), theU);
-        int[] aVSpan = Spans(theSurf.InternalVKnotSequence(), theSurf.VDegree(), theSurf.IsVPeriodic(), theV);
+        int[] aUSpan = Spans(theSurf.InternalUKnotSequence(), theSurf.UDegree(), theSurf.IsUPeriodic, theU);
+        int[] aVSpan = Spans(theSurf.InternalVKnotSequence(), theSurf.VDegree(), theSurf.IsVPeriodic, theV);
         bool[,] aRes = new bool[theU.Length() + 1, theV.Length() + 1];
         for (int i = 1; i <= theU.Length(); ++i)
         {
@@ -307,23 +310,23 @@ public class GeomGridEval_SurfaceConsistencyTest
     }
 
     private void CheckGrid(string theName,
-                           GeomGridEval_Surface theEval,
-                           Func<double, double, Geom_Surface.ResD3>? theGeomD3,
+                           SurfaceGrid theEval,
+                           Func<double, double, Surface.ResD3>? theGeomD3,
                            Func<double, double, Point3D>? theGeomD0,
-                           Func<double, double, Geom_Surface.ResD1>? theGeomD1,
-                           Func<double, double, Geom_Surface.ResD2>? theGeomD2,
+                           Func<double, double, Surface.ResD1>? theGeomD1,
+                           Func<double, double, Surface.ResD2>? theGeomD2,
                            Func<double, double, int, int, Vector3D>? theGeomDN,
-                           Adaptor3d_Surface? theAdaptor,
+                           SurfaceAdaptorBase? theAdaptor,
                            NCollection_Array1<double> theU,
                            NCollection_Array1<double> theV,
                            bool[,]? theCache,
-                           Geom_BSplineSurface? theRationalBSpline = null,
+                           BSplineSurface? theRationalBSpline = null,
                            bool theWithDN = true)
     {
         NCollection_Array2<Point3D> aD0 = theEval.EvaluateGrid(theU, theV);
-        NCollection_Array2<Geom_Surface.ResD1> aD1 = theEval.EvaluateGridD1(theU, theV);
-        NCollection_Array2<Geom_Surface.ResD2> aD2 = theEval.EvaluateGridD2(theU, theV);
-        NCollection_Array2<Geom_Surface.ResD3> aD3 = theEval.EvaluateGridD3(theU, theV);
+        NCollection_Array2<Surface.ResD1> aD1 = theEval.EvaluateGridD1(theU, theV);
+        NCollection_Array2<Surface.ResD2> aD2 = theEval.EvaluateGridD2(theU, theV);
+        NCollection_Array2<Surface.ResD3> aD3 = theEval.EvaluateGridD3(theU, theV);
         (int, int)[] anOrders = [(1, 0), (0, 1), (1, 1), (2, 0), (0, 2), (2, 1), (1, 2), (3, 0), (0, 3)];
         // The swept adaptors' DN is the basis curve's grid DN, one of OCCT's errors for a B-spline curve (wrong
         // span; pinned in GeomGridEval_CurveConsistencyTest): not compared (theWithDN false).
@@ -349,25 +352,25 @@ public class GeomGridEval_SurfaceConsistencyTest
                     {
                         continue;
                     }
-                    Func<double, double, Geom_Surface.ResD1> aRefD1 = r == 0 ? theGeomD1! : theAdaptor!.EvalD1;
-                    Func<double, double, Geom_Surface.ResD2> aRefD2 = r == 0 ? theGeomD2! : theAdaptor!.EvalD2;
-                    Func<double, double, Geom_Surface.ResD3> aRefD3 = r == 0 ? theGeomD3! : theAdaptor!.EvalD3;
+                    Func<double, double, Surface.ResD1> aRefD1 = r == 0 ? theGeomD1! : theAdaptor!.EvalD1;
+                    Func<double, double, Surface.ResD2> aRefD2 = r == 0 ? theGeomD2! : theAdaptor!.EvalD2;
+                    Func<double, double, Surface.ResD3> aRefD3 = r == 0 ? theGeomD3! : theAdaptor!.EvalD3;
                     Func<double, double, int, int, Vector3D>? aRefDN = r == 0 ? theGeomDN : theAdaptor!.EvalDN;
                     string aP = theName + (r == 0 ? " vs Geom " : " vs Adaptor ");
 
                     Compare(aP + "D0" + aTag, aD0.Value(i, j).XYZ(), aRefD0(u, v).XYZ());
-                    Geom_Surface.ResD1 r1 = aRefD1(u, v), g1 = aD1.Value(i, j);
+                    Surface.ResD1 r1 = aRefD1(u, v), g1 = aD1.Value(i, j);
                     Compare(aP + "D1" + aTag, g1.Point.XYZ(), r1.Point.XYZ());
                     Compare(aP + "D1" + aTag, g1.D1U.XYZ(), r1.D1U.XYZ());
                     Compare(aP + "D1" + aTag, g1.D1V.XYZ(), r1.D1V.XYZ());
-                    Geom_Surface.ResD2 r2 = aRefD2(u, v), g2 = aD2.Value(i, j);
+                    Surface.ResD2 r2 = aRefD2(u, v), g2 = aD2.Value(i, j);
                     Compare(aP + "D2" + aTag, g2.Point.XYZ(), r2.Point.XYZ());
                     Compare(aP + "D2" + aTag, g2.D1U.XYZ(), r2.D1U.XYZ());
                     Compare(aP + "D2" + aTag, g2.D1V.XYZ(), r2.D1V.XYZ());
                     Compare(aP + "D2" + aTag, g2.D2U.XYZ(), r2.D2U.XYZ());
                     Compare(aP + "D2" + aTag, g2.D2V.XYZ(), r2.D2V.XYZ());
                     Compare(aP + "D2" + aTag, g2.D2UV.XYZ(), r2.D2UV.XYZ());
-                    Geom_Surface.ResD3 r3 = aRefD3(u, v), g3 = aD3.Value(i, j);
+                    Surface.ResD3 r3 = aRefD3(u, v), g3 = aD3.Value(i, j);
                     Compare(aP + "D3", g3.Point.XYZ(), r3.Point.XYZ());
                     Compare(aP + "D3", g3.D1U.XYZ(), r3.D1U.XYZ());
                     Compare(aP + "D3", g3.D1V.XYZ(), r3.D1V.XYZ());
@@ -400,20 +403,20 @@ public class GeomGridEval_SurfaceConsistencyTest
         }
     }
 
-    private void CheckGeomSurface(string theName, Random theRnd, Geom_Surface theSurf, NCollection_Array1<double>? theUKnots,
+    private void CheckGeomSurface(string theName, Random theRnd, Surface theSurf, NCollection_Array1<double>? theUKnots,
                                   NCollection_Array1<double>? theVKnots, double theU1, double theU2, double theV1, double theV2)
     {
         NCollection_Array1<double> aU = GridParams(theRnd, theU1, theU2, theUKnots);
         NCollection_Array1<double> aV = GridParams(theRnd, theV1, theV2, theVKnots);
-        Geom_BSplineSurface? aBSpline = theSurf as Geom_BSplineSurface
-                                        ?? (theSurf as Geom_RectangularTrimmedSurface)?.BasisSurface() as Geom_BSplineSurface;
+        BSplineSurface? aBSpline = theSurf as BSplineSurface
+                                        ?? (theSurf as TrimmedSurface)?.BasisSurface() as BSplineSurface;
         bool[,]? aCache = aBSpline is null ? null : CachePattern(aBSpline, aU, aV);
-        Geom_BSplineSurface? aRational = aBSpline is not null && (aBSpline.IsURational() || aBSpline.IsVRational()) ? aBSpline : null;
-        GeomAdaptor_Surface anAdaptor = new(theSurf);
-        CheckGrid(theName, new GeomGridEval_Surface(theSurf), theSurf.EvalD3, theSurf.EvalD0, theSurf.EvalD1,
+        BSplineSurface? aRational = aBSpline is not null && (aBSpline.IsURational || aBSpline.IsVRational) ? aBSpline : null;
+        SurfaceAdaptor anAdaptor = new(theSurf);
+        CheckGrid(theName, new SurfaceGrid(theSurf), theSurf.EvalD3, theSurf.EvalD0, theSurf.EvalD1,
                   theSurf.EvalD2, theSurf.EvalDN, anAdaptor, aU, aV, aCache, aRational);
         // Through the adaptor: the same evaluator
-        CheckGrid(theName, new GeomGridEval_Surface(anAdaptor), theSurf.EvalD3, theSurf.EvalD0, theSurf.EvalD1,
+        CheckGrid(theName, new SurfaceGrid(anAdaptor), theSurf.EvalD3, theSurf.EvalD0, theSurf.EvalD1,
                   theSurf.EvalD2, theSurf.EvalDN, anAdaptor, aU, aV, aCache, aRational);
     }
 
@@ -426,7 +429,7 @@ public class GeomGridEval_SurfaceConsistencyTest
             // B-spline surfaces, non-rational, rational, periodic
             for (int aKind = 0; aKind < 3; ++aKind)
             {
-                Geom_BSplineSurface aBS = RandomBSplineSurface(aRnd, aKind == 1 || (aKind == 2 && aRnd.Next(2) == 0), aKind == 2);
+                BSplineSurface aBS = RandomBSplineSurface(aRnd, aKind == 1 || (aKind == 2 && aRnd.Next(2) == 0), aKind == 2);
                 aBS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
                 string aName = aKind == 0 ? "BSpline" : aKind == 1 ? "BSplineRational" : "BSplinePeriodic";
                 CheckGeomSurface(aName, aRnd, aBS, aBS.InternalUKnots(), aBS.InternalVKnots(), aU1, aU2, aV1, aV2);
@@ -434,28 +437,28 @@ public class GeomGridEval_SurfaceConsistencyTest
 
             // A trimmed B-spline surface: evaluated through its basis
             {
-                Geom_BSplineSurface aBS = RandomBSplineSurface(aRnd, aRnd.Next(2) == 0, false);
+                BSplineSurface aBS = RandomBSplineSurface(aRnd, aRnd.Next(2) == 0, false);
                 aBS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
                 double aTU1 = aU1 + 0.2 * (aU2 - aU1), aTU2 = aU2 - 0.1 * (aU2 - aU1);
-                Geom_RectangularTrimmedSurface aTrimmed = new(aBS, aTU1, aTU2, aV1, aV2);
+                TrimmedSurface aTrimmed = new(aBS, aTU1, aTU2, aV1, aV2);
                 CheckGeomSurface("Trimmed", aRnd, aTrimmed, aBS.InternalUKnots(), aBS.InternalVKnots(), aTU1, aTU2, aV1, aV2);
             }
 
             // Offsets of B-spline and Bezier surfaces (general path) and of a cylinder and a sphere (equivalent surface)
             {
-                Geom_BSplineSurface aBS = RandomBSplineSurface(aRnd, aRnd.Next(2) == 0, false);
+                BSplineSurface aBS = RandomBSplineSurface(aRnd, aRnd.Next(2) == 0, false);
                 aBS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
-                Geom_OffsetSurface anOffset = new(aBS, Uniform(aRnd, -0.3, 0.3), true); // C0 bases too
+                OffsetSurface anOffset = new(aBS, Uniform(aRnd, -0.3, 0.3), true); // C0 bases too
                 CheckGeomSurface("OffsetBSpline", aRnd, anOffset, aBS.InternalUKnots(), aBS.InternalVKnots(), aU1, aU2, aV1, aV2);
 
-                Geom_OffsetSurface anOffsetBz = new(RandomBezierSurface(aRnd), Uniform(aRnd, -0.3, 0.3));
+                OffsetSurface anOffsetBz = new(RandomBezierSurface(aRnd), Uniform(aRnd, -0.3, 0.3));
                 CheckGeomSurface("OffsetBezier", aRnd, anOffsetBz, null, null, 0.0, 1.0, 0.0, 1.0);
 
-                Geom_OffsetSurface anOffsetCyl = new(new Geom_CylindricalSurface(RandomAx3(aRnd), Uniform(aRnd, 1.0, 3.0)),
+                OffsetSurface anOffsetCyl = new(new CylindricalSurface(RandomAx3(aRnd), Uniform(aRnd, 1.0, 3.0)),
                                                      Uniform(aRnd, -0.5, 0.5));
                 CheckGeomSurface("OffsetCylinder", aRnd, anOffsetCyl, null, null, 0.0, 2 * M_PI, -3.0, 3.0);
 
-                Geom_OffsetSurface anOffsetSph = new(new Geom_SphericalSurface(RandomAx3(aRnd), Uniform(aRnd, 1.0, 3.0)),
+                OffsetSurface anOffsetSph = new(new SphericalSurface(RandomAx3(aRnd), Uniform(aRnd, 1.0, 3.0)),
                                                      Uniform(aRnd, -0.5, 0.5));
                 CheckGeomSurface("OffsetSphere", aRnd, anOffsetSph, null, null, 0.0, 2 * M_PI, -1.4, 1.4);
             }
@@ -463,19 +466,19 @@ public class GeomGridEval_SurfaceConsistencyTest
             // Other surfaces: a surface no evaluator knows (GeomEval_EllipsoidSurface), and an adaptor that isn't a
             // GeomAdaptor_Surface
             {
-                GeomEval_EllipsoidSurface anEllipsoid = new(RandomAx3(aRnd), Uniform(aRnd, 1, 3), Uniform(aRnd, 1, 3),
+                EllipsoidSurface anEllipsoid = new(RandomAx3(aRnd), Uniform(aRnd, 1, 3), Uniform(aRnd, 1, 3),
                                                             Uniform(aRnd, 1, 3));
                 NCollection_Array1<double> aU = GridParams(aRnd, 0.0, 2 * M_PI, null);
                 NCollection_Array1<double> aV = GridParams(aRnd, -1.4, 1.4, null);
-                GeomGridEval_Surface anEval = new(anEllipsoid);
+                SurfaceGrid anEval = new(anEllipsoid);
                 Assert.Equal(SurfaceKind.OtherSurface, anEval.GetType());
                 CheckGrid("OtherGeom", anEval, anEllipsoid.EvalD3, anEllipsoid.EvalD0, anEllipsoid.EvalD1, anEllipsoid.EvalD2,
-                          anEllipsoid.EvalDN, new GeomAdaptor_Surface(anEllipsoid), aU, aV, null);
+                          anEllipsoid.EvalDN, new SurfaceAdaptor(anEllipsoid), aU, aV, null);
 
-                Geom_BSplineSurface aBS = RandomBSplineSurface(aRnd, true, false);
+                BSplineSurface aBS = RandomBSplineSurface(aRnd, true, false);
                 aBS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
                 TestSurfaceAdaptor aTestAdaptor = new(aBS);
-                GeomGridEval_Surface anEvalA = new(aTestAdaptor);
+                SurfaceGrid anEvalA = new(aTestAdaptor);
                 Assert.Equal(SurfaceKind.BSplineSurface, anEvalA.GetType());
                 CheckGrid("OtherAdaptor", anEvalA, aBS.EvalD3, aBS.EvalD0, aBS.EvalD1, aBS.EvalD2, aBS.EvalDN, aTestAdaptor,
                           GridParams(aRnd, aU1, aU2, null), GridParams(aRnd, aV1, aV2, null), null);
@@ -484,40 +487,40 @@ public class GeomGridEval_SurfaceConsistencyTest
             // GeomAdaptor_TransformedSurface: the grid of the original surface, transformed
             {
                 Transform3D aTrsf = RandomTrsf(aRnd);
-                Geom_BSplineSurface aBS = RandomBSplineSurface(aRnd, aRnd.Next(2) == 0, false);
+                BSplineSurface aBS = RandomBSplineSurface(aRnd, aRnd.Next(2) == 0, false);
                 aBS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
-                GeomAdaptor_TransformedSurface aTransformed = new(aBS, aTrsf);
-                GeomGridEval_Surface anEval = new(aTransformed);
-                Assert.True(anEval.HasTransformation());
+                TransformedSurface aTransformed = new(aBS, aTrsf);
+                SurfaceGrid anEval = new(aTransformed);
+                Assert.True(anEval.HasTransformation);
                 NCollection_Array1<double> aU = GridParams(aRnd, aU1, aU2, aBS.InternalUKnots());
                 NCollection_Array1<double> aV = GridParams(aRnd, aV1, aV2, aBS.InternalVKnots());
                 CheckGrid("TransformedBSpline", anEval, null, null, null, null, null, aTransformed, aU, aV,
                           CachePattern(aBS, aU, aV),
-                          aBS.IsURational() || aBS.IsVRational() ? aBS : null);
+                          aBS.IsURational || aBS.IsVRational ? aBS : null);
 
-                Geom_CylindricalSurface aCyl = new(RandomAx3(aRnd), Uniform(aRnd, 1, 3));
-                GeomAdaptor_TransformedSurface aTransformedCyl = new(aCyl, aTrsf);
-                CheckGrid("TransformedCylinder", new GeomGridEval_Surface(aTransformedCyl), null, null, null, null, null,
+                CylindricalSurface aCyl = new(RandomAx3(aRnd), Uniform(aRnd, 1, 3));
+                TransformedSurface aTransformedCyl = new(aCyl, aTrsf);
+                CheckGrid("TransformedCylinder", new SurfaceGrid(aTransformedCyl), null, null, null, null, null,
                           aTransformedCyl,
                           GridParams(aRnd, 0.0, 2 * M_PI, null), GridParams(aRnd, -2.0, 2.0, null), null);
             }
 
             // The swept-surface adaptors without a Geom surface: rebuilt from the basis curve
             {
-                Geom_BSplineCurve aCurve = RandomBSplineCurve(aRnd);
-                GeomAdaptor_SurfaceOfRevolution aRev = new(new GeomAdaptor_Curve(aCurve), Constants.OZ());
-                GeomGridEval_Surface anEval = new(aRev);
+                BSplineCurve3D aCurve = RandomBSplineCurve(aRnd);
+                RevolutionSurfaceAdaptor aRev = new(new CurveAdaptor(aCurve), Constants.OZ());
+                SurfaceGrid anEval = new(aRev);
                 Assert.Equal(SurfaceKind.SurfaceOfRevolution, anEval.GetType());
-                Geom_SurfaceOfRevolution aRevSurf = new(aCurve, Constants.OZ());
+                RevolutionSurface aRevSurf = new(aCurve, Constants.OZ());
                 CheckGrid("RevolutionAdaptor", anEval, aRevSurf.EvalD3, aRevSurf.EvalD0, aRevSurf.EvalD1, aRevSurf.EvalD2,
                           null, null, GridParams(aRnd, 0.0, 2 * M_PI, null),
                           GridParams(aRnd, aCurve.FirstParameter(), aCurve.LastParameter(), null), null, null, false);
 
                 Direction3D aDir = RandomDir(aRnd);
-                GeomAdaptor_SurfaceOfLinearExtrusion anExt = new(new GeomAdaptor_Curve(aCurve), aDir);
-                GeomGridEval_Surface anEvalE = new(anExt);
+                SurfaceOfLinearExtrusion anExt = new(new CurveAdaptor(aCurve), aDir);
+                SurfaceGrid anEvalE = new(anExt);
                 Assert.Equal(SurfaceKind.SurfaceOfExtrusion, anEvalE.GetType());
-                Geom_SurfaceOfLinearExtrusion anExtSurf = new(aCurve, aDir);
+                ExtrusionSurface anExtSurf = new(aCurve, aDir);
                 CheckGrid("ExtrusionAdaptor", anEvalE, anExtSurf.EvalD3, anExtSurf.EvalD0, anExtSurf.EvalD1,
                           anExtSurf.EvalD2, null, null, GridParams(aRnd, aCurve.FirstParameter(), aCurve.LastParameter(), null),
                           GridParams(aRnd, -2.0, 2.0, null), null, null, false);
@@ -560,10 +563,10 @@ public class GeomGridEval_SurfaceConsistencyTest
             aWeights[2, j] = aW;
             aWeights[3, j] = 1.0;
         }
-        Geom_BSplineSurface aSurf = new(aPoles, aWeights, NCollection_Array1<double>.From([0.0, 1.0]),
+        BSplineSurface aSurf = new(aPoles, aWeights, NCollection_Array1<double>.From([0.0, 1.0]),
                                         NCollection_Array1<double>.From([0.0, 1.0]), NCollection_Array1<int>.From([3, 3]),
                                         NCollection_Array1<int>.From([2, 2]), 2, 1);
-        GeomGridEval_BSplineSurface anEval = new(aSurf);
+        BSplineSurfaceGrid anEval = new(aSurf);
         NCollection_Array1<double> aParams = NCollection_Array1<double>.From([0.25, 0.5]);
 
         NCollection_Array2<Vector3D> aGrid = anEval.EvaluateGridDN(aParams, aParams, 3, 0);

@@ -4,7 +4,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -18,16 +22,16 @@ namespace Occt;
 /// <para>
 /// A working object (decision 21; OCCT uses it by value). The connection writes into the edges of the shape it is given
 /// (vertices removed and added). A shape holding frozen shapes (any shape a caller holds) is copied first
-/// (<see cref="BRepTools_CopyAtEntry"/>, decision 583): the caller's shape never changes, and
+/// (<see cref="CopyAtEntry"/>, decision 583): the caller's shape never changes, and
 /// <see cref="GetShape"/> is the modified copy with the caller's own sub-shapes wherever they are unchanged (the shape
 /// itself when nothing changed). The results are frozen.
 /// </para>
 /// </remarks>
 public sealed class ShapeFix_FreeBounds
 {
-    private TopoDS_Compound myWires;
-    private TopoDS_Compound myEdges;
-    private TopoDS_Shape    myShape;
+    private Compound myWires;
+    private Compound myEdges;
+    private Shape    myShape;
     private readonly bool   myShared;
     private readonly double mySewToler;
     private readonly double myCloseToler;
@@ -37,9 +41,9 @@ public sealed class ShapeFix_FreeBounds
     /// <summary>Empty constructor.</summary>
     public ShapeFix_FreeBounds()
     {
-        myWires = new TopoDS_Compound();
-        myEdges = new TopoDS_Compound();
-        myShape = new TopoDS_Shape();
+        myWires = new Compound();
+        myEdges = new Compound();
+        myShape = new Shape();
     }
 
     /// <summary>
@@ -47,7 +51,7 @@ public sealed class ShapeFix_FreeBounds
     /// <paramref name="sewtoler"/>, and connects the open wires with <paramref name="closetoler"/> (which must be
     /// greater than <paramref name="sewtoler"/>, else the open wires aren't connected).
     /// </summary>
-    public ShapeFix_FreeBounds(in TopoDS_Shape shape, double sewtoler, double closetoler, bool splitclosed, bool splitopen)
+    public ShapeFix_FreeBounds(in Shape shape, double sewtoler, double closetoler, bool splitclosed, bool splitopen)
         : this()
     {
         myShared      = false;
@@ -63,7 +67,7 @@ public sealed class ShapeFix_FreeBounds
     /// Builds the actual free bounds of <paramref name="shape"/> (a compound of shells) and connects the open wires
     /// with <paramref name="closetoler"/>.
     /// </summary>
-    public ShapeFix_FreeBounds(in TopoDS_Shape shape, double closetoler, bool splitclosed, bool splitopen)
+    public ShapeFix_FreeBounds(in Shape shape, double closetoler, bool splitclosed, bool splitopen)
         : this()
     {
         myShared      = true;
@@ -76,19 +80,19 @@ public sealed class ShapeFix_FreeBounds
     }
 
     /// <summary>The compound of the closed wires of free edges, frozen.</summary>
-    public TopoDS_Compound GetClosedWires() => Published(myWires);
+    public Compound GetClosedWires() => Published(myWires);
 
     /// <summary>The compound of the open wires of free edges, frozen.</summary>
-    public TopoDS_Compound GetOpenWires() => Published(myEdges);
+    public Compound GetOpenWires() => Published(myEdges);
 
     /// <summary>The source shape, modified where open wires were connected; frozen.</summary>
-    public TopoDS_Shape GetShape()
+    public Shape GetShape()
     {
         myShape.TShape()?.FreezeGraph();
         return myShape;
     }
 
-    private static TopoDS_Compound Published(in TopoDS_Compound theShape)
+    private static Compound Published(in Compound theShape)
     {
         theShape.TShape()?.FreezeGraph();
         return theShape;
@@ -97,7 +101,7 @@ public sealed class ShapeFix_FreeBounds
     private bool Perform()
     {
         // OCCT.NET: the connection writes into the shape's edges; a frozen shape is copied (decision 583).
-        var anEntry = new BRepTools_CopyAtEntry(myShape);
+        var anEntry = new CopyAtEntry(myShape);
         myShape = anEntry.Shape();
 
         ShapeAnalysis_FreeBounds safb;
@@ -116,31 +120,31 @@ public sealed class ShapeFix_FreeBounds
         if (myCloseToler > mySewToler)
         {
             var see = new ShapeExtend_Explorer();
-            NCollection_HSequence<TopoDS_Shape> open = see.SeqFromCompound(myEdges, false);
-            var vertices = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            NCollection_HSequence<TopoDS_Shape> newwires =
+            NCollection_HSequence<Shape> open = see.SeqFromCompound(myEdges, false);
+            var vertices = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+            NCollection_HSequence<Shape> newwires =
                 ShapeAnalysis_FreeBounds.InternalConnectWiresToWires(open, myCloseToler, myShared, vertices);
             myEdges.Nullify();
             ShapeAnalysis_FreeBounds.InternalDispatchWires(newwires, ref myWires, ref myEdges);
 
-            for (var exp = new TopExp_Explorer(myShape, TopAbs_EDGE); exp.More(); exp.Next())
+            for (var exp = new Explorer(myShape, ShapeType.Edge); exp.More(); exp.Next())
             {
-                TopoDS_Edge Edge = TopoDS.Edge(exp.Current());
+                Edge Edge = ShapeCasts.Edge(exp.Current());
                 // OCCT removes and adds vertices of the edge while iterating over them (reading a freed list node);
                 // the port iterates over the vertices the edge had first (occt-issues.md).
-                var aVertices = new List<TopoDS_Shape>();
-                for (var iter = new TopoDS_Iterator(Edge); iter.More(); iter.Next())
+                var aVertices = new List<Shape>();
+                for (var iter = new Iterator(Edge); iter.More(); iter.Next())
                 {
                     aVertices.Add(iter.Value());
                 }
-                foreach (TopoDS_Shape aV in aVertices)
+                foreach (Shape aV in aVertices)
                 {
-                    TopoDS_Vertex V = TopoDS.Vertex(aV);
-                    var B = new BRep_Builder();
-                    TopoDS_Vertex newV;
+                    Vertex V = ShapeCasts.Vertex(aV);
+                    var B = new BrepBuilder();
+                    Vertex newV;
                     if (vertices.IsBound(V))
                     {
-                        newV = TopoDS.Vertex(vertices.Find(V));
+                        newV = ShapeCasts.Vertex(vertices.Find(V));
                         newV.Orientation(V.Orientation());
                         // OCCT removes and adds vertices of an edge that isn't free (it is in a wire): OCCT's release
                         // build skips the check, which raises TopoDS_FrozenShape in its debug build and in the port. The
@@ -157,8 +161,8 @@ public sealed class ShapeFix_FreeBounds
 
         // OCCT.NET: the caller's own sub-shapes back wherever they are unchanged
         myShape = anEntry.Finish(myShape, [myWires, myEdges]);
-        myWires = myWires.IsNull() ? myWires : TopoDS.Compound(anEntry.Final(myWires));
-        myEdges = myEdges.IsNull() ? myEdges : TopoDS.Compound(anEntry.Final(myEdges));
+        myWires = myWires.IsNull ? myWires : ShapeCasts.Compound(anEntry.Final(myWires));
+        myEdges = myEdges.IsNull ? myEdges : ShapeCasts.Compound(anEntry.Final(myEdges));
         return true;
     }
 }

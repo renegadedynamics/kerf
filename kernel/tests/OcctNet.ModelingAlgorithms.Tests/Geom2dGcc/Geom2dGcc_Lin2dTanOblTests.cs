@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
@@ -19,7 +20,7 @@ public class Geom2dGcc_Lin2dTanOblTests
     {
         Circle2D             c1    = new(new Axis2D(new Point2D(1, 2), DX), 3);
         Line2D              aLine = new(new Point2D(0, -4), new Direction2D(1, 0.5));
-        Geom2dGcc_Lin2dTanObl aLin  = new(Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(new Geom2d_Circle(c1))), aLine,
+        Geom2dGcc_Lin2dTanObl aLin  = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c1))), aLine,
                                           1e-9, 0.7);
         GccAna_Lin2dTanObl    anAna = new(GccEnt.Unqualified(c1), aLine, 0.7);
         Assert.True(aLin.IsDone());
@@ -42,7 +43,7 @@ public class Geom2dGcc_Lin2dTanOblTests
     [Fact]
     public void Ellipse_GivesTangentLinesAtTheAngle()
     {
-        Geom2dAdaptor_Curve   anEll = new(new Geom2d_Ellipse(new Axis2D(new Point2D(0, 0), DX), 3, 1));
+        CurveAdaptor2D   anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
         Line2D              aLine = new(new Point2D(0, -4), DX);
         Geom2dGcc_Lin2dTanObl aLin  = new(Geom2dGcc.Unqualified(anEll), aLine, 1e-6, M_PI / 4);
         Assert.True(aLin.IsDone());
@@ -66,7 +67,7 @@ public class Geom2dGcc_Lin2dTanOblTests
     {
         // OCCT: with an angle of 0 (or pi) the iterative solver's Intersection2 throws, and Add calls it on the first
         // solution found, so the constructor throws
-        Geom2dAdaptor_Curve anEll = new(new Geom2d_Ellipse(new Axis2D(new Point2D(0, 0), DX), 3, 1));
+        CurveAdaptor2D anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
         Line2D            aLine = new(new Point2D(0, -4), DX);
         Assert.Throws<Geom2dGcc_IsParallel>(() => new Geom2dGcc_Lin2dTanObl(Geom2dGcc.Unqualified(anEll), aLine, 1e-6, 0.0));
     }
@@ -74,7 +75,7 @@ public class Geom2dGcc_Lin2dTanOblTests
     [Fact]
     public void Accessors_ThrowAsOCCT()
     {
-        Geom2dAdaptor_Curve   anEll = new(new Geom2d_Ellipse(new Axis2D(new Point2D(0, 0), DX), 3, 1));
+        CurveAdaptor2D   anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
         Line2D              aLine = new(new Point2D(0, -4), DX);
         Geom2dGcc_Lin2dTanObl aLin  = new(Geom2dGcc.Unqualified(anEll), aLine, 1e-6, M_PI / 4);
         Assert.Throws<OutOfRangeException>(() => aLin.ThisSolution(3));

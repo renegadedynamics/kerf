@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.ModelingAlgorithms.Tests.EdgeIntersectorRecordings;
@@ -55,7 +56,7 @@ public class IntTools_EdgeIntersectorNativeTests(ITestOutputHelper theOutput)
         return true;
     }
 
-    private static bool IsCircle(in TopoDS_Edge theE) => new BRepAdaptor_Curve(theE).GetType() == CurveKind.Circle;
+    private static bool IsCircle(in global::Kerf.Topology.Edge theE) => new EdgeCurveAdaptor(theE).GetType() == CurveKind.Circle;
 
     private void Report(string theCase, List<string> theMismatches, int theTotal, string theWhat)
     {
@@ -75,7 +76,7 @@ public class IntTools_EdgeIntersectorNativeTests(ITestOutputHelper theOutput)
         int aNbNear = 0;
         foreach (EERun aRun in aCase.EE)
         {
-            TopoDS_Edge aE1 = Edge(aCase, aCase.EA, aRun.I), aE2 = Edge(aCase, aCase.EB, aRun.J);
+            global::Kerf.Topology.Edge aE1 = Edge(aCase, aCase.EA, aRun.I), aE2 = Edge(aCase, aCase.EB, aRun.J);
             string aPort = RunEE(aE1, aE2, aRun.Variant);
             if (!Agrees(aRun.Native, aPort, IsCircle(aE1) || IsCircle(aE2), ref aNbNear))
             {
@@ -106,7 +107,7 @@ public class IntTools_EdgeIntersectorNativeTests(ITestOutputHelper theOutput)
             aFresh[k] = RunEF(Edge(aCase, aCase.EA, aRun.I), Face(aCase, aRun.J), new IntTools_Context());
             if (!Agrees(aRun.Native, aFresh[k], IsCircle(Edge(aCase, aCase.EA, aRun.I)), ref aNbNear))
             {
-                aMismatches.Add($"EF {aRun.I} {aRun.J} L{(aRun.Localized ? 1 : 0)} {new BRepAdaptor_Curve(Edge(aCase, aCase.EA, aRun.I)).GetType()} {new BRepAdaptor_Surface(Face(aCase, aRun.J)).GetType()}\n  native {aRun.Native}\n  port   {aFresh[k]}");
+                aMismatches.Add($"EF {aRun.I} {aRun.J} L{(aRun.Localized ? 1 : 0)} {new EdgeCurveAdaptor(Edge(aCase, aCase.EA, aRun.I)).GetType()} {new FaceSurfaceAdaptor(Face(aCase, aRun.J)).GetType()}\n  native {aRun.Native}\n  port   {aFresh[k]}");
             }
         }
         theOutput.WriteLine($"{theCase}: {aCase.EF.Count} edge/face runs, {aNbNear} within 1e-8 on a circle, the rest identical");

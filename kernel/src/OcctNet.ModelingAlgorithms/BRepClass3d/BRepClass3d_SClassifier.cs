@@ -4,15 +4,20 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Numerics;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.Extrema_ExtFlag;
+using Kerf.Topology;
+using static Kerf.Engine.Extrema.ExtFlag;
 using static Occt.IntCurveSurface_TransitionOnCurve;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -20,7 +25,7 @@ namespace Occt;
 /// <remarks>A working object (decision 21). It only reads the shape.</remarks>
 public class BRepClass3d_SClassifier
 {
-    private TopoDS_Face myFace = new();
+    private Face myFace = new();
 
     //! This variable stores information about algorithm internal state.
     //! Type of this variable differs from TopAbs_State since it contains
@@ -86,7 +91,7 @@ public class BRepClass3d_SClassifier
         myState = 2;
 
         // Collect faces in sequence to iterate
-        var aFaces = new List<TopoDS_Face>();
+        var aFaces = new List<Face>();
         for (aSE.InitShell(); aSE.MoreShell(); aSE.NextShell())
         {
             for (aSE.InitFace(); aSE.MoreFace(); aSE.NextFace())
@@ -101,9 +106,9 @@ public class BRepClass3d_SClassifier
         {
             for (int iFace = 0; iFace < aFaces.Count; ++iFace)
             {
-                TopoDS_Face aF = aFaces[iFace];
+                Face aF = aFaces[iFace];
 
-                TopAbs_State aState = TopAbs_OUT;
+                Containment aState = Out;
                 IntCurveSurface_TransitionOnCurve aTransition = IntCurveSurface_Tangent;
 
                 aParam = 0.1 + 0.8 * aRandomGenerator.NextReal(); // random number in range [0.1, 0.9]
@@ -123,8 +128,8 @@ public class BRepClass3d_SClassifier
                         {
                             if (!aSE.RejectFace(aLin))
                             {
-                                TopoDS_Shape aLocalShape = aSE.CurrentFace();
-                                TopoDS_Face CurFace = TopoDS.Face(aLocalShape);
+                                Shape aLocalShape = aSE.CurrentFace();
+                                Face CurFace = ShapeCasts.Face(aLocalShape);
                                 IntCurvesFace_Intersector Intersector3d = aSE.Intersector(CurFace);
                                 Intersector3d.Perform(aLin, -RealLast(), parmin);
 
@@ -155,7 +160,7 @@ public class BRepClass3d_SClassifier
                     }
                 } // end of loop on the whole solid
 
-                if (aState == TopAbs_IN)
+                if (aState == In)
                 {
                     if (aTransition == IntCurveSurface_Out)
                     {
@@ -185,7 +190,7 @@ public class BRepClass3d_SClassifier
         }
 
         SpatialTree<int, Box> aTree = SolidExplorer.GetTree();
-        NCollection_IndexedMap<TopoDS_Shape> aMapEV = SolidExplorer.GetMapEV();
+        NCollection_IndexedMap<Shape> aMapEV = SolidExplorer.GetMapEV();
 
         // Vertices/Edges vs Point.
         var aSelectorPoint = new BRepClass3d_BndBoxTreeSelectorPoint(aMapEV);
@@ -201,8 +206,8 @@ public class BRepClass3d_SClassifier
             return;
         }
 
-        var mapEF = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(SolidExplorer.GetShape(), TopAbs_EDGE, TopAbs_FACE, mapEF);
+        var mapEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(SolidExplorer.GetShape(), ShapeType.Edge, global::Kerf.Topology.ShapeType.Face, mapEF);
 
         var aSelectorLine = new BRepClass3d_BndBoxTreeSelectorLine(aMapEV);
 
@@ -279,11 +284,11 @@ public class BRepClass3d_SClassifier
             {
                 // Line and edges / vertices interference.
                 int VLInterNb = aSelectorLine.GetNbVertParam();
-                var LVInts = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+                var LVInts = new NCollection_Map<Shape>(ShapeHasher.Instance);
                 for (int i = 1; i <= VLInterNb; i++)
                 {
                     // Line and vertex.
-                    aSelectorLine.GetVertParam(i, out TopoDS_Vertex V, out double LP);
+                    aSelectorLine.GetVertParam(i, out Vertex V, out double LP);
 
                     LVInts.Add(V);
                     if (Math.Abs(LP) < Math.Abs(NearFaultPar))
@@ -293,21 +298,21 @@ public class BRepClass3d_SClassifier
                 }
 
                 double param = 0.0;
-                TopoDS_Edge EE;
+                Edge EE;
                 double Lpar = RealLast();
                 for (int i = 1; i <= aSelectorLine.GetNbEdgeParam(); i++)
                 {
                     // Line and edge.
                     aSelectorLine.GetEdgeParam(i, out EE, out param, out Lpar);
-                    NCollection_List<TopoDS_Shape> ffs = mapEF.FindFromKey(EE); // ffs size == 2
+                    NCollection_List<Shape> ffs = mapEF.FindFromKey(EE); // ffs size == 2
                     if (ffs.Extent() != 2)
                     {
                         continue;
                     }
 
-                    TopoDS_Face f1 = TopoDS.Face(ffs.First());
-                    TopoDS_Face f2 = TopoDS.Face(ffs.Last());
-                    TopExp.Vertices(EE, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+                    Face f1 = ShapeCasts.Face(ffs.First());
+                    Face f2 = ShapeCasts.Face(ffs.Last());
+                    Exploration.Vertices(EE, out Vertex V1, out Vertex V2);
                     if (LVInts.Contains(V1) || LVInts.Contains(V2))
                     {
                         continue;
@@ -337,8 +342,8 @@ public class BRepClass3d_SClassifier
                     {
                         if (!SolidExplorer.RejectFace(L))
                         {
-                            TopoDS_Shape aLocalShape = SolidExplorer.CurrentFace();
-                            TopoDS_Face f = TopoDS.Face(aLocalShape);
+                            Shape aLocalShape = SolidExplorer.CurrentFace();
+                            Face f = ShapeCasts.Face(aLocalShape);
                             IntCurvesFace_Intersector Intersector3d = SolidExplorer.Intersector(f);
 
                             // Prolong segment, since there are cases when
@@ -368,17 +373,17 @@ public class BRepClass3d_SClassifier
                                     if (Intersector3d.IsParallel())
                                     {
                                         // Check distance between surface and point
-                                        var aBAS = new BRepAdaptor_Surface(f, false);
-                                        var aProj = new Extrema_ExtPS(P,
+                                        var aBAS = new FaceSurfaceAdaptor(f, false);
+                                        var aProj = new ExtPS(P,
                                                                       aBAS,
                                                                       global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                                                       global::Kerf.Engine.Foundation.Precision.PConfusion(),
-                                                                      Extrema_ExtFlag_MIN);
-                                        if (aProj.IsDone() && aProj.NbExt() > 0)
+                                                                      ExtFlag_MIN);
+                                        if (aProj.IsDone && aProj.ExtCount > 0)
                                         {
                                             int i, indmin = 0;
                                             double d = RealLast();
-                                            for (i = 1; i <= aProj.NbExt(); ++i)
+                                            for (i = 1; i <= aProj.ExtCount; ++i)
                                             {
                                                 if (aProj.SquareDistance(i) < d)
                                                 {
@@ -391,11 +396,11 @@ public class BRepClass3d_SClassifier
                                             {
                                                 if (d <= Tol * Tol)
                                                 {
-                                                    Extrema_POnSurf aPonS = aProj.Point(indmin);
+                                                    POnSurf aPonS = aProj.Point(indmin);
                                                     aPonS.Parameter(out double anU, out double anV);
                                                     Point2D aP2d = new(anU, anV);
-                                                    TopAbs_State aSt = Intersector3d.ClassifyUVPoint(aP2d);
-                                                    if (aSt == TopAbs_IN || aSt == TopAbs_ON)
+                                                    Containment aSt = Intersector3d.ClassifyUVPoint(aP2d);
+                                                    if (aSt == In || aSt == On)
                                                     {
                                                         myState = 2;
                                                         myFace = f;
@@ -414,7 +419,7 @@ public class BRepClass3d_SClassifier
                                         < Math.Abs(parmin) - global::Kerf.Engine.Foundation.Precision.PConfusion())
                                     {
                                         parmin = Intersector3d.WParameter(i);
-                                        TopAbs_State aState = Intersector3d.State(i);
+                                        Containment aState = Intersector3d.State(i);
                                         if (Math.Abs(parmin) <= Tol)
                                         {
                                             myState = 2;
@@ -422,7 +427,7 @@ public class BRepClass3d_SClassifier
                                             break;
                                         }
                                         //  Treatment of case TopAbs_ON separately.
-                                        else if (aState == TopAbs_IN)
+                                        else if (aState == In)
                                         {
                                             //-- The intersection point between the line and a face F
                                             // -- of the solid is in the face F
@@ -438,7 +443,7 @@ public class BRepClass3d_SClassifier
                                         }
                                         // If the state is TopAbs_ON, it is necessary to chose
                                         // another line and to repeat the whole procedure.
-                                        else if (aState == TopAbs_ON)
+                                        else if (aState == On)
                                         {
                                             isFaultyLine = true;
                                             break;
@@ -483,27 +488,27 @@ public class BRepClass3d_SClassifier
     }
 
     /// <summary>The result of the classification (OUT also when the algorithm failed).</summary>
-    public TopAbs_State State()
+    public Containment State()
     {
         if (myState == 2)
         {
-            return (TopAbs_ON);
+            return (On);
         }
         else if (myState == 3)
         {
-            return (TopAbs_IN);
+            return (In);
         }
         else if (myState == 4)
         {
-            return (TopAbs_OUT);
+            return (Out);
         }
 
         // return OUT state when there is an error during execution.
-        return (TopAbs_OUT);
+        return (Out);
     }
 
     /// <summary>The face that decided the classification; when the state is ON, the face holding the point.</summary>
-    public TopoDS_Face Face() => (myFace);
+    public Face Face() => (myFace);
 
     /// <summary>True if the classification failed (OCCT's name: the state is then OUT).</summary>
     public bool Rejected() => (myState == 1);
@@ -555,9 +560,9 @@ public class BRepClass3d_SClassifier
     }
 
     // modified by NIZHNY-MKK  Mon Jun 21 15:13:40 2004
-    private static bool FaceNormal(in TopoDS_Face aF, double U, double V, ref Direction3D aDN)
+    private static bool FaceNormal(in Face aF, double U, double V, ref Direction3D aDN)
     {
-        Geom_Surface aS = BRep_Tool.Surface(aF)!;
+        Surface aS = Tool.Surface(aF)!;
         aS.D1(U, V, out Point3D _, out Vector3D aD1U, out Vector3D aD1V);
         Vector3D aN = aD1U.Crossed(aD1V);
         if (aN.Magnitude() <= Constants.Resolution())
@@ -567,7 +572,7 @@ public class BRepClass3d_SClassifier
 
         aN.Normalize();
         aDN.SetXYZ(aN.XYZ());
-        if (aF.Orientation() == TopAbs_REVERSED)
+        if (aF.Orientation() == Reversed)
         {
             aDN.Reverse();
         }
@@ -575,9 +580,9 @@ public class BRepClass3d_SClassifier
         return true;
     }
 
-    private static bool GetNormalOnFaceBound(in TopoDS_Edge E, in TopoDS_Face F, double param, ref Direction3D OutDir)
+    private static bool GetNormalOnFaceBound(in Edge E, in Face F, double param, ref Direction3D OutDir)
     {
-        Geom2d_Curve? c2d = BRep_Tool.CurveOnSurface(E, F, out double f, out double l);
+        Curve2D? c2d = Tool.CurveOnSurface(E, F, out double f, out double l);
         if (c2d is null)
         {
             return false;
@@ -594,9 +599,9 @@ public class BRepClass3d_SClassifier
 
     // gets transition of line <L> passing through/near the edge <e> of faces <f1>, <f2>. <param> is
     //  a parameter on the edge where the minimum distance between <l> and <e> was found
-    private static int GetTransi(in TopoDS_Face f1,
-                                 in TopoDS_Face f2,
-                                 in TopoDS_Edge e,
+    private static int GetTransi(in Face f1,
+                                 in Face f2,
+                                 in Edge e,
                                  double param,
                                  in Line3D L,
                                  ref IntCurveSurface_TransitionOnCurve trans)

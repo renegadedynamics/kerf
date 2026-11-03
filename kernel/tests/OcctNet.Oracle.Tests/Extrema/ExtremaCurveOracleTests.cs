@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using Xunit.Abstractions;
@@ -44,7 +46,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
     }
 
     // A point near the curve (on it, or at a random distance from a point of it) or anywhere.
-    private static Point3D RandomPoint(Oracle theO, Adaptor3d_Curve theC)
+    private static Point3D RandomPoint(Oracle theO, CurveAdaptorBase theC)
     {
         int aKind = theO.Int(0, 3);
         if (aKind == 3)
@@ -61,7 +63,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
             aP.Z() + aScale * theO.Real(-1, 1));
     }
 
-    private static Point2D RandomPoint2d(Oracle theO, Adaptor2d_Curve2d theC, double theFirst, double theLast)
+    private static Point2D RandomPoint2d(Oracle theO, Curve2DAdaptorBase theC, double theFirst, double theLast)
     {
         int aKind = theO.Int(0, 3);
         if (aKind == 3)
@@ -77,20 +79,20 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
         return new Point2D(aP.X() + aScale * theO.Real(-1, 1), aP.Y() + aScale * theO.Real(-1, 1));
     }
 
-    private static void SameExtPC(Oracle theO, N.Extrema_ExtPC theN, Extrema_ExtPC theP, string theWhat,
+    private static void SameExtPC(Oracle theO, N.Extrema_ExtPC theN, CurvePointExtrema theP, string theWhat,
         double theTol = Oracle.Tolerance)
     {
-        theO.Same(theN.IsDone(), theP.IsDone(), $"{theWhat} IsDone");
-        if (!theP.IsDone())
+        theO.Same(theN.IsDone(), theP.IsDone, $"{theWhat} IsDone");
+        if (!theP.IsDone)
         {
             return;
         }
-        theO.Same(theN.NbExt(), theP.NbExt(), $"{theWhat} NbExt");
-        for (int j = 1; j <= theP.NbExt(); j++)
+        theO.Same(theN.NbExt(), theP.ExtCount, $"{theWhat} NbExt");
+        for (int j = 1; j <= theP.ExtCount; j++)
         {
             using N.Extrema_POnCurv aNPC = theN.Point(j);
             using N.gp_Pnt aNV = aNPC.Value();
-            Extrema_POnCurv aPC = theP.Point(j);
+            POnCurv aPC = theP.Point(j);
             theO.Same(aNPC.Parameter(), aPC.Parameter(), $"{theWhat} Parameter({j})", theTol);
             theO.Same(aNV, aPC.Value(), $"{theWhat} Point({j})", theTol);
             theO.Same(theN.SquareDistance(j), theP.SquareDistance(j), $"{theWhat} SquareDistance({j})", theTol);
@@ -116,7 +118,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
         int aExtrema = 0;
         for (int c = 0; c < Cases; c++)
         {
-            (N.Geom_Curve aNC, Geom_Curve aPC, string aKind) = TestAdaptorOracleTests.RandomCurve(anOracle);
+            (N.Geom_Curve aNC, Curve3D aPC, string aKind) = TestAdaptorOracleTests.RandomCurve(anOracle);
             if ((aKind.Contains("bezier", StringComparison.Ordinal) || aKind == "circle" || aKind == "ellipse")
                 && anOracle.Int(0, 2) == 0)
             {
@@ -128,16 +130,16 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                 {
                     aNC = new N.Geom_OffsetCurve(aNBasis, anOffset, aND);
                 }
-                aPC = new Geom_OffsetCurve(aPC, anOffset, aD);
+                aPC = new OffsetCurve3D(aPC, anOffset, aD);
                 aKind = "offset " + aKind;
             }
             double aTol = Oracle.Tolerance;
             using (aNC)
             {
                 (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(),
-                    aPC.LastParameter(), aPC.IsPeriodic());
+                    aPC.LastParameter(), aPC.IsPeriodic);
                 using var aNA = new N.GeomAdaptor_Curve(aNC, aFirst, aLast);
-                var aPA = new GeomAdaptor_Curve(aPC, aFirst, aLast);
+                var aPA = new CurveAdaptor(aPC, aFirst, aLast);
                 string aW = $"{aKind} #{c} [{aFirst:R}, {aLast:R}]";
 
                 for (int k = 0; k < 3; k++)
@@ -145,14 +147,14 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                     Point3D aP = RandomPoint(anOracle, aPA);
                     using N.gp_Pnt aNP = Oracle.ToNative(aP);
                     N.Extrema_ExtPC? aN = null;
-                    Extrema_ExtPC? aPort = null;
-                    if (Both(anOracle, () => aN = new N.Extrema_ExtPC(aNP, aNA), () => aPort = new Extrema_ExtPC(aP, aPA),
+                    CurvePointExtrema? aPort = null;
+                    if (Both(anOracle, () => aN = new N.Extrema_ExtPC(aNP, aNA), () => aPort = new CurvePointExtrema(aP, aPA),
                             $"{aW} (P, C)"))
                     {
                         using (aN)
                         {
                             SameExtPC(anOracle, aN!, aPort!, $"{aW} (P, C) {aP}", aTol);
-                            aExtrema += aPort!.IsDone() ? aPort.NbExt() : 0;
+                            aExtrema += aPort!.IsDone ? aPort.ExtCount : 0;
                         }
                     }
                 }
@@ -166,7 +168,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                 double aTolF = anOracle.Bool() ? 1.0e-10 : anOracle.Real(1e-12, 1e-6);
                 using var aNR = new N.Extrema_ExtPC();
                 aNR.Initialize(aNA, aU1, aU2, aTolF);
-                var aPR = new Extrema_ExtPC();
+                var aPR = new CurvePointExtrema();
                 aPR.Initialize(aPA, aU1, aU2, aTolF);
                 for (int k = 0; k < 3; k++)
                 {
@@ -175,7 +177,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                     if (Both(anOracle, () => aNR.Perform(aNP), () => aPR.Perform(aP), $"{aW} range [{aU1:R}, {aU2:R}]"))
                     {
                         SameExtPC(anOracle, aNR, aPR, $"{aW} range [{aU1:R}, {aU2:R}] {aP}", aTol);
-                        aExtrema += aPR.IsDone() ? aPR.NbExt() : 0;
+                        aExtrema += aPR.IsDone ? aPR.ExtCount : 0;
                     }
                 }
             }
@@ -196,15 +198,15 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
         int aPoints = 0;
         for (int c = 0; c < Cases; c++)
         {
-            (N.Geom_Curve aNC, Geom_Curve aPC, string aKind) = TestAdaptorOracleTests.RandomCurve(anOracle);
+            (N.Geom_Curve aNC, Curve3D aPC, string aKind) = TestAdaptorOracleTests.RandomCurve(anOracle);
             using (aNC)
             {
                 bool aWithRange = anOracle.Bool() || global::Kerf.Engine.Foundation.Precision.IsInfinite(aPC.FirstParameter())
                                   || global::Kerf.Engine.Foundation.Precision.IsInfinite(aPC.LastParameter());
                 (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(),
-                    aPC.LastParameter(), aPC.IsPeriodic());
+                    aPC.LastParameter(), aPC.IsPeriodic);
                 // For the random points only
-                var aMyC = aWithRange ? new GeomAdaptor_Curve(aPC, aFirst, aLast) : new GeomAdaptor_Curve(aPC);
+                var aMyC = aWithRange ? new CurveAdaptor(aPC, aFirst, aLast) : new CurveAdaptor(aPC);
                 string aW = $"{aKind} #{c}" + (aWithRange ? $" [{aFirst:R}, {aLast:R}]" : "");
                 for (int k = 0; k < 3; k++)
                 {
@@ -259,14 +261,14 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
         int aPoints = 0;
         for (int c = 0; c < Cases; c++)
         {
-            (N.Geom2d_Curve aNC, Geom2d_Curve aPC, string aKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
+            (N.Geom2d_Curve aNC, Curve2D aPC, string aKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
             using (aNC)
             {
                 bool aWithRange = anOracle.Bool();
                 (double aFirst, double aLast) = aWithRange
-                    ? TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(), aPC.LastParameter(), aPC.IsPeriodic())
+                    ? TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(), aPC.LastParameter(), aPC.IsPeriodic)
                     : (aPC.FirstParameter(), aPC.LastParameter());
-                var aMyC = new Geom2dAdaptor_Curve();
+                var aMyC = new CurveAdaptor2D();
                 aMyC.Load(aPC, aFirst, aLast);
                 (double aSF, double aSL) = global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast) ? (-50.0, 50.0) : (aFirst, aLast);
                 string aW = $"{aKind} #{c} [{aFirst:R}, {aLast:R}]";
@@ -275,18 +277,18 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                     Point2D aP = RandomPoint2d(anOracle, aMyC, aSF, aSL);
                     using N.gp_Pnt2d aNP = Oracle.ToNative(aP);
                     N.Geom2dAPI_ProjectPointOnCurve? aN = null;
-                    Extrema_ExtPC2d? aPort = null;
+                    ExtPC2d? aPort = null;
                     if (!Both(anOracle,
                             () => aN = aWithRange ? new N.Geom2dAPI_ProjectPointOnCurve(aNP, aNC, aFirst, aLast)
                                                   : new N.Geom2dAPI_ProjectPointOnCurve(aNP, aNC),
-                            () => aPort = new Extrema_ExtPC2d(aP, aMyC), aW))
+                            () => aPort = new ExtPC2d(aP, aMyC), aW))
                     {
                         continue;
                     }
                     using (aN)
                     {
-                        bool isDone = aPort!.IsDone() && aPort.NbExt() > 0;
-                        int aNb = isDone ? aPort.NbExt() : 0;
+                        bool isDone = aPort!.IsDone && aPort.ExtCount > 0;
+                        int aNb = isDone ? aPort.ExtCount : 0;
                         anOracle.Same(aN!.NbPoints(), aNb, $"{aW} NbPoints");
                         int anIndex = 0;
                         double aMin = 0.0;
@@ -332,8 +334,8 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
         int aCompared = 0, aSkipped = 0, aCases = 0;
         for (int c = 0; c < Cases / 2; c++)
         {
-            (N.Geom_Curve aNC1, Geom_Curve aPC1, string aKind1) = TestAdaptorOracleTests.RandomCurve(anOracle);
-            (N.Geom_Curve aNC2, Geom_Curve aPC2, string aKind2) = TestAdaptorOracleTests.RandomCurve(anOracle);
+            (N.Geom_Curve aNC1, Curve3D aPC1, string aKind1) = TestAdaptorOracleTests.RandomCurve(anOracle);
+            (N.Geom_Curve aNC2, Curve3D aPC2, string aKind2) = TestAdaptorOracleTests.RandomCurve(anOracle);
             using (aNC1)
             using (aNC2)
             {
@@ -364,9 +366,9 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                 using var aN = new N.BRepExtrema_DistShapeShape(aNE1, aNE2);
 
                 // The port's side of BRepExtrema_ExtCC(E1, E2): Initialize(E2), then Perform(E1)
-                var aC1 = new GeomAdaptor_Curve(aPC1, aF1, aL1);
-                var aC2 = new GeomAdaptor_Curve(aPC2, aF2, aL2);
-                var aPort = new Extrema_ExtCC();
+                var aC1 = new CurveAdaptor(aPC1, aF1, aL1);
+                var aC2 = new CurveAdaptor(aPC2, aF2, aL2);
+                var aPort = new ExtCC();
                 double aTol2 = Math.Max(aC2.Resolution(Math.Min(global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion())), global::Kerf.Engine.Foundation.Precision.PConfusion());
                 aPort.SetCurve(2, aC2, aF2, aL2);
                 aPort.SetTolerance(2, aTol2);
@@ -380,7 +382,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                 {
                     continue;
                 }
-                int aNbPort = aPort.IsDone() ? (aPort.IsParallel() ? 0 : aPort.NbExt()) : 0;
+                int aNbPort = aPort.IsDone ? (aPort.IsParallel ? 0 : aPort.ExtCount) : 0;
                 for (int i = 1; i <= aN.NbSolution(); i++)
                 {
                     if (aN.SupportTypeShape1(i) != N.BRepExtrema_SupportType.BRepExtrema_IsOnEdge
@@ -405,7 +407,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                     double aBest = double.MaxValue;
                     for (int j = 1; j <= aNbPort; j++)
                     {
-                        aPort.Points(j, out Extrema_POnCurv aP1, out Extrema_POnCurv aP2);
+                        aPort.Points(j, out POnCurv aP1, out POnCurv aP2);
                         double aD = Math.Abs(aP1.Parameter() - aT1) + Math.Abs(aP2.Parameter() - aT2);
                         if (aD < aBest)
                         {
@@ -422,7 +424,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                         aSkipped++;
                         continue;
                     }
-                    aPort.Points(aMatch, out Extrema_POnCurv aQ1, out Extrema_POnCurv aQ2);
+                    aPort.Points(aMatch, out POnCurv aQ1, out POnCurv aQ2);
                     using N.gp_Pnt aNP1 = aN.PointOnShape1(i);
                     using N.gp_Pnt aNP2 = aN.PointOnShape2(i);
                     anOracle.Same(aT1, aQ1.Parameter(), $"{aW} parameter on 1");
@@ -444,7 +446,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
     }
 
     // A range inside the curve's own (whole when finite and not periodic, half the time), so BRepLib_MakeEdge keeps it.
-    private static (double First, double Last) SubRange(Oracle theO, Geom_Curve theC)
+    private static (double First, double Last) SubRange(Oracle theO, Curve3D theC)
     {
         double aFirst = theC.FirstParameter(), aLast = theC.LastParameter();
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
@@ -452,7 +454,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
             double a = theO.Real(-5, 0), b = theO.Real(0.5, 5);
             return (a, a + b);
         }
-        if (!theC.IsPeriodic() && theO.Bool())
+        if (!theC.IsPeriodic && theO.Bool())
         {
             return (aFirst, aLast);
         }

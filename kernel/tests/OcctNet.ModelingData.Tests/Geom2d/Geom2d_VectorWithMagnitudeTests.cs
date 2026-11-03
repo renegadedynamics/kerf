@@ -2,19 +2,20 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
 
 public class Geom2d_VectorWithMagnitudeTest
 {
-    private readonly Geom2d_VectorWithMagnitude myVec1;
-    private readonly Geom2d_VectorWithMagnitude myVec2;
+    private readonly VectorWithMagnitude2 myVec1;
+    private readonly VectorWithMagnitude2 myVec2;
 
     public Geom2d_VectorWithMagnitudeTest()
     {
-        myVec1 = new Geom2d_VectorWithMagnitude(3.0, 4.0);
-        myVec2 = new Geom2d_VectorWithMagnitude(1.0, 0.0);
+        myVec1 = new VectorWithMagnitude2(3.0, 4.0);
+        myVec2 = new VectorWithMagnitude2(1.0, 0.0);
     }
 
     [Fact]
@@ -27,16 +28,16 @@ public class Geom2d_VectorWithMagnitudeTest
     [Fact]
     public void ConstructFromVec2d()
     {
-        Geom2d_VectorWithMagnitude aVec =
-            new Geom2d_VectorWithMagnitude(new Vector2D(5.0, 12.0));
+        VectorWithMagnitude2 aVec =
+            new VectorWithMagnitude2(new Vector2D(5.0, 12.0));
         Assert.Equal(13.0, aVec.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void ConstructFromTwoPoints()
     {
-        Geom2d_VectorWithMagnitude aVec =
-            new Geom2d_VectorWithMagnitude(new Point2D(1.0, 2.0), new Point2D(4.0, 6.0));
+        VectorWithMagnitude2 aVec =
+            new VectorWithMagnitude2(new Point2D(1.0, 2.0), new Point2D(4.0, 6.0));
         Assert.Equal(3.0, aVec.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(4.0, aVec.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(5.0, aVec.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -58,7 +59,7 @@ public class Geom2d_VectorWithMagnitudeTest
     [Fact]
     public void Added()
     {
-        Geom2d_VectorWithMagnitude aSum = myVec1.Added(myVec2);
+        VectorWithMagnitude2 aSum = myVec1.Added(myVec2);
         Assert.Equal(4.0, aSum.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(4.0, aSum.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -66,7 +67,7 @@ public class Geom2d_VectorWithMagnitudeTest
     [Fact]
     public void Subtracted()
     {
-        Geom2d_VectorWithMagnitude aDiff = myVec1.Subtracted(myVec2);
+        VectorWithMagnitude2 aDiff = myVec1.Subtracted(myVec2);
         Assert.Equal(2.0, aDiff.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(4.0, aDiff.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -74,7 +75,7 @@ public class Geom2d_VectorWithMagnitudeTest
     [Fact]
     public void Multiplied()
     {
-        Geom2d_VectorWithMagnitude aScaled = myVec1.Multiplied(2.0);
+        VectorWithMagnitude2 aScaled = myVec1.Multiplied(2.0);
         Assert.Equal(6.0, aScaled.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(8.0, aScaled.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(10.0, aScaled.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -83,7 +84,7 @@ public class Geom2d_VectorWithMagnitudeTest
     [Fact]
     public void Divided()
     {
-        Geom2d_VectorWithMagnitude aScaled = myVec1.Divided(5.0);
+        VectorWithMagnitude2 aScaled = myVec1.Divided(5.0);
         Assert.Equal(0.6, aScaled.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.8, aScaled.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -91,7 +92,7 @@ public class Geom2d_VectorWithMagnitudeTest
     [Fact]
     public void Normalize()
     {
-        Geom2d_VectorWithMagnitude aVec = new Geom2d_VectorWithMagnitude(3.0, 4.0);
+        VectorWithMagnitude2 aVec = new VectorWithMagnitude2(3.0, 4.0);
         aVec.Normalize();
         Assert.Equal(1.0, aVec.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.6, aVec.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -101,7 +102,7 @@ public class Geom2d_VectorWithMagnitudeTest
     [Fact]
     public void Normalized()
     {
-        Geom2d_VectorWithMagnitude aNorm = myVec1.Normalized();
+        VectorWithMagnitude2 aNorm = myVec1.Normalized();
         Assert.Equal(1.0, aNorm.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
         // Original unchanged
         Assert.Equal(5.0, myVec1.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -127,7 +128,7 @@ public class Geom2d_VectorWithMagnitudeTest
     public void Angle()
     {
         // Angle from (1,0) to (0,1) = PI/2
-        Geom2d_VectorWithMagnitude aVecY   = new Geom2d_VectorWithMagnitude(0.0, 1.0);
+        VectorWithMagnitude2 aVecY   = new VectorWithMagnitude2(0.0, 1.0);
         double                            anAngle = myVec2.Angle(aVecY);
         Assert.Equal(M_PI / 2.0, anAngle, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -136,7 +137,7 @@ public class Geom2d_VectorWithMagnitudeTest
     public void Angle_Negative()
     {
         // Angle from (0,1) to (1,0) = -PI/2
-        Geom2d_VectorWithMagnitude aVecY   = new Geom2d_VectorWithMagnitude(0.0, 1.0);
+        VectorWithMagnitude2 aVecY   = new VectorWithMagnitude2(0.0, 1.0);
         double                            anAngle = aVecY.Angle(myVec2);
         Assert.Equal(-M_PI / 2.0, anAngle, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -144,7 +145,7 @@ public class Geom2d_VectorWithMagnitudeTest
     [Fact]
     public void Reverse()
     {
-        Geom2d_VectorWithMagnitude aVec = new Geom2d_VectorWithMagnitude(3.0, 4.0);
+        VectorWithMagnitude2 aVec = new VectorWithMagnitude2(3.0, 4.0);
         aVec.Reverse();
         Assert.Equal(-3.0, aVec.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(-4.0, aVec.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -169,9 +170,9 @@ public class Geom2d_VectorWithMagnitudeTest
     [Fact]
     public void Copy()
     {
-        Geom2d_Geometry            aCopyGeom = myVec1.Copy();
-        Geom2d_VectorWithMagnitude aCopy =
-            (aCopyGeom as Geom2d_VectorWithMagnitude)!;
+        Geometry2D            aCopyGeom = myVec1.Copy();
+        VectorWithMagnitude2 aCopy =
+            (aCopyGeom as VectorWithMagnitude2)!;
 
         Assert.False(aCopy is null);
         Assert.Equal(3.0, aCopy.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -219,7 +220,7 @@ public class Geom2d_VectorWithMagnitudeTest
         Transform2D aTrsf = new();
         aTrsf.SetRotation(new Point2D(0.0, 0.0), M_PI / 2.0);
 
-        Geom2d_VectorWithMagnitude aVec = new Geom2d_VectorWithMagnitude(1.0, 0.0);
+        VectorWithMagnitude2 aVec = new VectorWithMagnitude2(1.0, 0.0);
         aVec.Transform(aTrsf);
 
         Assert.Equal(0.0, aVec.X(), global::Kerf.Engine.Foundation.Precision.Confusion());

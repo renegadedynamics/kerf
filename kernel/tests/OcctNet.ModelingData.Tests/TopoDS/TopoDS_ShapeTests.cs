@@ -2,10 +2,12 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -20,15 +22,15 @@ public class TopoDS_ShapeTests
     [Fact]
     public void A_new_shape_is_OCCTs_null_shape()
     {
-        TopoDS_Shape aShape = new();
-        Assert.True(aShape.IsNull());
-        Assert.Equal(TopAbs_EXTERNAL, aShape.Orientation());
+        Shape aShape = new();
+        Assert.True(aShape.IsNull);
+        Assert.Equal(External, aShape.Orientation());
         Assert.True(aShape.Location().IsIdentity);
-        Assert.Equal(0, aShape.NbChildren());
-        Assert.Equal(TopAbs_EXTERNAL, new TopoDS_Edge().Orientation());
+        Assert.Equal(0, aShape.ChildCount);
+        Assert.Equal(External, new Edge().Orientation());
         // default differs only in the orientation
-        Assert.Equal(TopAbs_FORWARD, default(TopoDS_Shape).Orientation());
-        Assert.True(default(TopoDS_Face).IsNull());
+        Assert.Equal(Forward, default(Shape).Orientation());
+        Assert.True(default(Face).IsNull);
         Assert.Equal("NULL", aShape.ToString());
 
         // queries that need the TShape throw on a null shape (OCCT: undefined behaviour)
@@ -39,22 +41,22 @@ public class TopoDS_ShapeTests
     [Fact]
     public void Copies_are_independent_values_sharing_the_TShape()
     {
-        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
-        TopoDS_Edge aCopy = anEdge;
+        Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
+        Edge aCopy = anEdge;
         aCopy.Reverse();
         aCopy.Move(theLoc);
-        Assert.Equal(TopAbs_FORWARD, anEdge.Orientation());
+        Assert.Equal(Forward, anEdge.Orientation());
         Assert.True(anEdge.Location().IsIdentity);
         Assert.True(aCopy.IsPartner(anEdge));
         Assert.False(aCopy.IsSame(anEdge));
 
         // the -ed forms leave their shape unchanged
-        TopoDS_Shape aRev = anEdge.Reversed();
-        Assert.Equal(TopAbs_REVERSED, aRev.Orientation());
-        Assert.Equal(TopAbs_FORWARD, anEdge.Orientation());
-        Assert.Equal(TopAbs_INTERNAL, anEdge.Oriented(TopAbs_INTERNAL).Orientation());
-        Assert.Equal(TopAbs_EXTERNAL, anEdge.Oriented(TopAbs_INTERNAL).Complemented().Orientation());
-        Assert.Equal(TopAbs_REVERSED, anEdge.Composed(TopAbs_REVERSED).Orientation());
+        Shape aRev = anEdge.Reversed();
+        Assert.Equal(Reversed, aRev.Orientation());
+        Assert.Equal(Forward, anEdge.Orientation());
+        Assert.Equal(Internal, anEdge.Oriented(Internal).Orientation());
+        Assert.Equal(External, anEdge.Oriented(Internal).Complemented().Orientation());
+        Assert.Equal(Reversed, anEdge.Composed(Reversed).Orientation());
         Assert.Equal(theLoc, anEdge.Located(theLoc).Location());
         Assert.Equal(theLoc * theLoc, anEdge.Moved(theLoc).Moved(theLoc).Location());
         // a Moved shape's location is the new position times the old one
@@ -65,7 +67,7 @@ public class TopoDS_ShapeTests
     [Fact]
     public void Scaled_or_mirrored_locations_are_refused_when_asked()
     {
-        TopoDS_Vertex aV = TestShapes.Vertex(new Point3D());
+        Vertex aV = TestShapes.Vertex(new Point3D());
         var aScale = new Placement(Transform3D.Scale(new Point3D(), 2.0));
         Assert.Throws<DomainErrorException>(() => aV.Located(aScale, true));
         Assert.Throws<DomainErrorException>(() => aV.Moved(aScale, true));
@@ -75,11 +77,11 @@ public class TopoDS_ShapeTests
     [Fact]
     public void Equality_is_IsEqual_and_the_hash_ignores_the_orientation()
     {
-        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
-        TopoDS_Shape aShape = anEdge;
-        TopoDS_Shape aReversed = anEdge.Reversed();
-        TopoDS_Shape aMoved = anEdge.Moved(theLoc);
-        TopoDS_Edge anOther = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
+        Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
+        Shape aShape = anEdge;
+        Shape aReversed = anEdge.Reversed();
+        Shape aMoved = anEdge.Moved(theLoc);
+        Edge anOther = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
 
         Assert.True(aShape == anEdge && aShape.Equals(anEdge) && anEdge.Equals(aShape) && aShape.IsEqual(anEdge));
         Assert.True(aShape != aReversed && aShape.IsSame(aReversed) && aShape.IsNotEqual(aReversed));
@@ -90,7 +92,7 @@ public class TopoDS_ShapeTests
         // the hash ignores the orientation, so it agrees with IsSame and IsEqual
         Assert.Equal(aShape.GetHashCode(), aReversed.GetHashCode());
         Assert.Equal(aShape.GetHashCode(), anEdge.GetHashCode());
-        Assert.Equal(aShape.GetHashCode(), TopoDS.Edge(aReversed).GetHashCode());
+        Assert.Equal(aShape.GetHashCode(), ShapeCasts.Edge(aReversed).GetHashCode());
         // equal locations built separately (from the same datum) hash the same
         Assert.Equal(aMoved.GetHashCode(), anEdge.Moved(theLoc).GetHashCode());
         Assert.True(aMoved == anEdge.Moved(theLoc));
@@ -104,23 +106,23 @@ public class TopoDS_ShapeTests
         Assert.Equal("EDGE REVERSED", aReversed.ToString());
 
         // null shapes are equal when their orientations are
-        Assert.True(new TopoDS_Shape() == new TopoDS_Shape());
-        Assert.True(new TopoDS_Shape() == new TopoDS_Face());
-        Assert.True(new TopoDS_Shape().IsSame(default(TopoDS_Shape)));
+        Assert.True(new Shape() == new Shape());
+        Assert.True(new Shape() == new Face());
+        Assert.True(new Shape().IsSame(default(Shape)));
     }
 
     [Fact]
     public void Map_hashers_choose_IsSame_or_IsEqual()
     {
-        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
-        var aSame = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
+        var aSame = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         Assert.Equal(1, aSame.Add(anEdge));
         Assert.Equal(1, aSame.Add(anEdge.Reversed()));
         Assert.Equal(2, aSame.Add(anEdge.Moved(theLoc)));
-        Assert.True(TopTools_ShapeMapHasher.Instance.Equals(anEdge, anEdge.Reversed()));
-        Assert.Equal(anEdge.GetHashCode(), TopTools_ShapeMapHasher.Instance.GetHashCode(anEdge.Reversed()));
+        Assert.True(ShapeHasher.Instance.Equals(anEdge, anEdge.Reversed()));
+        Assert.Equal(anEdge.GetHashCode(), ShapeHasher.Instance.GetHashCode(anEdge.Reversed()));
 
-        var anEqual = new NCollection_IndexedMap<TopoDS_Shape>(EqualityComparer<TopoDS_Shape>.Default);
+        var anEqual = new NCollection_IndexedMap<Shape>(EqualityComparer<Shape>.Default);
         Assert.Equal(1, anEqual.Add(anEdge));
         Assert.Equal(2, anEqual.Add(anEdge.Reversed()));
     }
@@ -128,76 +130,76 @@ public class TopoDS_ShapeTests
     [Fact]
     public void Narrowing_checks_the_type()
     {
-        TopoDS_Shape anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
-        TopoDS_Edge aNarrowed = TopoDS.Edge(anEdge);
+        Shape anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
+        Edge aNarrowed = ShapeCasts.Edge(anEdge);
         Assert.True(aNarrowed.IsEqual(anEdge));
-        Assert.Throws<TypeMismatchException>(() => TopoDS.Face(anEdge));
-        Assert.Throws<TypeMismatchException>(() => TopoDS.Vertex(anEdge));
+        Assert.Throws<TypeMismatchException>(() => ShapeCasts.Face(anEdge));
+        Assert.Throws<TypeMismatchException>(() => ShapeCasts.Vertex(anEdge));
         // a null shape narrows to any type
-        Assert.True(TopoDS.Solid(new TopoDS_Shape()).IsNull());
-        Assert.Equal(TopAbs_EXTERNAL, TopoDS.Compound(new TopoDS_Shape()).Orientation());
+        Assert.True(ShapeCasts.Solid(new Shape()).IsNull);
+        Assert.Equal(External, ShapeCasts.Compound(new Shape()).Orientation());
     }
 
     [Fact]
     public void AsShapeRef_writes_through_to_the_subtype_variable()
     {
-        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
-        ReverseInPlace(ref TopoDS.AsShapeRef(ref anEdge));
-        Assert.Equal(TopAbs_REVERSED, anEdge.Orientation());
+        Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
+        ReverseInPlace(ref ShapeCasts.AsShapeRef(ref anEdge));
+        Assert.Equal(Reversed, anEdge.Orientation());
 
-        static void ReverseInPlace(ref TopoDS_Shape theShape) => theShape.Reverse();
+        static void ReverseInPlace(ref Shape theShape) => theShape.Reverse();
     }
 
     [Fact]
     public void Each_subtype_converts_to_the_same_shape()
     {
-        var aBuilder = new BRep_Builder();
-        TopoDS_Wire aW = new();
+        var aBuilder = new BrepBuilder();
+        Wire aW = new();
         aBuilder.MakeWire(ref aW);
-        TopoDS_Shell aSh = new();
+        Shell aSh = new();
         aBuilder.MakeShell(ref aSh);
-        TopoDS_Solid aSo = new();
+        Solid aSo = new();
         aBuilder.MakeSolid(ref aSo);
-        TopoDS_CompSolid aCs = new();
+        CompSolid aCs = new();
         aBuilder.MakeCompSolid(ref aCs);
-        TopoDS_Compound aC = new();
+        Compound aC = new();
         aBuilder.MakeCompound(ref aC);
-        TopoDS_Face aF = new();
+        Face aF = new();
         aBuilder.MakeFace(ref aF);
-        TopoDS_Shape[] aShapes = [TestShapes.Vertex(new Point3D()), TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0)), aW, aF, aSh, aSo, aCs, aC];
-        TopAbs_ShapeEnum[] aTypes = [TopAbs_VERTEX, TopAbs_EDGE, TopAbs_WIRE, TopAbs_FACE, TopAbs_SHELL, TopAbs_SOLID, TopAbs_COMPSOLID, TopAbs_COMPOUND];
+        Shape[] aShapes = [TestShapes.Vertex(new Point3D()), TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0)), aW, aF, aSh, aSo, aCs, aC];
+        ShapeType[] aTypes = [ShapeType.Vertex, ShapeType.Edge, ShapeType.Wire, ShapeType.Face, ShapeType.Shell, ShapeType.Solid, ShapeType.CompSolid, ShapeType.Compound];
         for (int i = 0; i < aShapes.Length; i++)
         {
             Assert.Equal(aTypes[i], aShapes[i].ShapeType());
-            Assert.Equal(TopAbs_FORWARD, aShapes[i].Orientation());
+            Assert.Equal(Forward, aShapes[i].Orientation());
         }
 
-        Assert.True(TopoDS.Wire(aShapes[2]) == aW);
-        Assert.True(TopoDS.Face(aShapes[3]) == aF);
-        Assert.True(TopoDS.Shell(aShapes[4]) == aSh);
-        Assert.True(TopoDS.Solid(aShapes[5]) == aSo);
-        Assert.True(TopoDS.CompSolid(aShapes[6]) == aCs);
-        Assert.True(TopoDS.Compound(aShapes[7]) == aC);
+        Assert.True(ShapeCasts.Wire(aShapes[2]) == aW);
+        Assert.True(ShapeCasts.Face(aShapes[3]) == aF);
+        Assert.True(ShapeCasts.Shell(aShapes[4]) == aSh);
+        Assert.True(ShapeCasts.Solid(aShapes[5]) == aSo);
+        Assert.True(ShapeCasts.CompSolid(aShapes[6]) == aCs);
+        Assert.True(ShapeCasts.Compound(aShapes[7]) == aC);
     }
 
     [Fact]
     public void HShape_holds_a_shape()
     {
-        TopoDS_Vertex aV = TestShapes.Vertex(new Point3D());
+        Vertex aV = TestShapes.Vertex(new Point3D());
         var aH = new TopoDS_HShape(aV);
         Assert.True(aH.Shape() == aV);
         aH.ChangeShape().Reverse();
-        Assert.Equal(TopAbs_REVERSED, aH.Shape().Orientation());
-        Assert.True(new TopoDS_HShape().Shape().IsNull());
+        Assert.Equal(Reversed, aH.Shape().Orientation());
+        Assert.True(new TopoDS_HShape().Shape().IsNull);
     }
 
     [Fact]
     public void Generated_subtypes_are_up_to_date()
     {
         // tools/gen-topods-subtypes.cs copies TopoDS_Shape's members into the subtypes: the members match
-        string[] aShapeMembers = Members(typeof(TopoDS_Shape));
-        foreach (Type aType in new[] { typeof(TopoDS_Vertex), typeof(TopoDS_Edge), typeof(TopoDS_Wire), typeof(TopoDS_Face),
-                                       typeof(TopoDS_Shell), typeof(TopoDS_Solid), typeof(TopoDS_CompSolid), typeof(TopoDS_Compound) })
+        string[] aShapeMembers = Members(typeof(Shape));
+        foreach (Type aType in new[] { typeof(Vertex), typeof(Edge), typeof(Wire), typeof(Face),
+                                       typeof(Shell), typeof(Solid), typeof(CompSolid), typeof(Compound) })
         {
             Assert.Equal(aShapeMembers, Members(aType));
         }

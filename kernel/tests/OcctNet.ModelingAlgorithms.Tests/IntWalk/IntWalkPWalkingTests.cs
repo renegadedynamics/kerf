@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -18,19 +19,19 @@ public class IntWalkPWalkingTests
     private const double Deflection = 0.1;
     private const double Increment = 0.1;
 
-    private static Adaptor3d_Surface PlaneXY() =>
-        new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem()), -10.0, 10.0, -10.0, 10.0);
+    private static SurfaceAdaptorBase PlaneXY() =>
+        new SurfaceAdaptor(new PlaneSurface(new CoordinateSystem()), -10.0, 10.0, -10.0, 10.0);
 
-    private static Adaptor3d_Surface PlaneYZ() =>
-        new GeomAdaptor_Surface(new Geom_Plane(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), -10.0, 10.0, -10.0, 10.0);
+    private static SurfaceAdaptorBase PlaneYZ() =>
+        new SurfaceAdaptor(new PlaneSurface(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), -10.0, 10.0, -10.0, 10.0);
 
     private static readonly Plane3D PlaneX2 = new(new Point3D(2, 0, 0), new Direction3D(1, 0, 0));
 
     private static readonly Cylinder Cylinder5 = new(new CoordinateSystem(), 5.0);
 
-    private static (Adaptor3d_Surface Plane, Adaptor3d_Surface Cylinder) PlaneAndCylinder() =>
-        (new GeomAdaptor_Surface(new Geom_Plane(PlaneX2), -20.0, 20.0, -20.0, 20.0),
-         new GeomAdaptor_Surface(new Geom_CylindricalSurface(Cylinder5), 0.0, 2.0 * Math.PI, -10.0, 10.0));
+    private static (SurfaceAdaptorBase Plane, SurfaceAdaptorBase Cylinder) PlaneAndCylinder() =>
+        (new SurfaceAdaptor(new PlaneSurface(PlaneX2), -20.0, 20.0, -20.0, 20.0),
+         new SurfaceAdaptor(new CylindricalSurface(Cylinder5), 0.0, 2.0 * Math.PI, -10.0, 10.0));
 
     private static NCollection_Array1<double> StartOnPlaneAndCylinder()
     {
@@ -52,7 +53,7 @@ public class IntWalkPWalkingTests
         return aPar;
     }
 
-    private static void AssertOnSurfaces(IntWalk_PWalking theWalk, Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
+    private static void AssertOnSurfaces(IntWalk_PWalking theWalk, SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
                                          double theTol)
     {
         for (int i = 1; i <= theWalk.NbPoints(); i++)
@@ -67,7 +68,7 @@ public class IntWalkPWalkingTests
     [Fact]
     public void TwoPlanesGiveTheirStraightLine()
     {
-        Adaptor3d_Surface aS1 = PlaneXY(), aS2 = PlaneYZ();
+        SurfaceAdaptorBase aS1 = PlaneXY(), aS2 = PlaneYZ();
         IntWalk_PWalking aWalk = new(aS1, aS2, TolTangency, Epsilon, Deflection, Increment);
         aWalk.Perform(Origin());
 
@@ -95,7 +96,7 @@ public class IntWalkPWalkingTests
     [Fact]
     public void PlaneAndCylinderReachTheBoundary()
     {
-        (Adaptor3d_Surface aPlane, Adaptor3d_Surface aCyl) = PlaneAndCylinder();
+        (SurfaceAdaptorBase aPlane, SurfaceAdaptorBase aCyl) = PlaneAndCylinder();
         IntWalk_PWalking aWalk = new(aPlane, aCyl, TolTangency, Epsilon, Deflection, Increment);
         aWalk.Perform(StartOnPlaneAndCylinder());
 
@@ -123,7 +124,7 @@ public class IntWalkPWalkingTests
     [Fact]
     public void StepTraceSeesEveryTestedStep()
     {
-        (Adaptor3d_Surface aPlane, Adaptor3d_Surface aCyl) = PlaneAndCylinder();
+        (SurfaceAdaptorBase aPlane, SurfaceAdaptorBase aCyl) = PlaneAndCylinder();
         IntWalk_PWalking aWalk = new(aPlane, aCyl, TolTangency, Epsilon, Deflection, Increment);
         List<(IntWalk_StatusDeflection Status, IntSurf_PntOn2S Point)> aSteps = [];
         aWalk.StepTrace = (s, p) => aSteps.Add((s, p));
@@ -134,7 +135,7 @@ public class IntWalkPWalkingTests
         Assert.True(aSteps.Count >= aWalk.NbPoints() - 1);
     }
 
-    private static List<double> Signature(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
+    private static List<double> Signature(SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
                                           NCollection_Array1<double> theStart)
     {
         IntWalk_PWalking aWalk = new(theS1, theS2, TolTangency, Epsilon, Deflection, Increment);
@@ -154,7 +155,7 @@ public class IntWalkPWalkingTests
     {
         List<double> Run()
         {
-            (Adaptor3d_Surface aPlane, Adaptor3d_Surface aCyl) = PlaneAndCylinder();
+            (SurfaceAdaptorBase aPlane, SurfaceAdaptorBase aCyl) = PlaneAndCylinder();
             return Signature(aPlane, aCyl, StartOnPlaneAndCylinder());
         }
 

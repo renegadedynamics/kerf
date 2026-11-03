@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of SurfaceOfRevolution from Geom to a STEP surface_of_revolution.</summary>
@@ -18,7 +20,7 @@ public sealed class GeomToStep_MakeSurfaceOfRevolution : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A surface of revolution: its basis curve and its axis.</summary>
-    public GeomToStep_MakeSurfaceOfRevolution(Geom_SurfaceOfRevolution S, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeSurfaceOfRevolution(RevolutionSurface S, in StepData_Factors theLocalFactors)
     {
         StepGeom_SurfaceOfRevolution Surf;
         StepGeom_Curve aSweptCurve;
@@ -36,7 +38,7 @@ public sealed class GeomToStep_MakeSurfaceOfRevolution : GeomToStep_Root
     }
 
     /// <summary>A surface of revolution (default factors).</summary>
-    public GeomToStep_MakeSurfaceOfRevolution(Geom_SurfaceOfRevolution S) : this(S, new StepData_Factors())
+    public GeomToStep_MakeSurfaceOfRevolution(RevolutionSurface S) : this(S, new StepData_Factors())
     {
     }
 

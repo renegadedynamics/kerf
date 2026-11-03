@@ -4,7 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
@@ -14,7 +17,7 @@ namespace Occt;
 /// Only the parameters, D0 (<see cref="EvalD0"/>) and the type are defined; the other members throw
 /// <see cref="MethodNotImplementedException"/> (the base class's), and <see cref="Circle"/> Standard_NoSuchObject, as in OCCT.
 /// </summary>
-public sealed class BiTgte_CurveOnVertex : Adaptor3d_Curve
+public sealed class BiTgte_CurveOnVertex : CurveAdaptorBase
 {
     private double myFirst;
     private double myLast;
@@ -26,17 +29,17 @@ public sealed class BiTgte_CurveOnVertex : Adaptor3d_Curve
         myLast = 0.0;
     }
 
-    public BiTgte_CurveOnVertex(in TopoDS_Edge theEonF, in TopoDS_Vertex theVertex)
+    public BiTgte_CurveOnVertex(in Edge theEonF, in Vertex theVertex)
     {
         myFirst = 0.0;
         myLast = 0.0;
         Init(theEonF, theVertex);
     }
 
-    public void Init(in TopoDS_Edge EonF, in TopoDS_Vertex V)
+    public void Init(in Edge EonF, in Vertex V)
     {
-        BRep_Tool.Range(EonF, out myFirst, out myLast);
-        myPnt = BRep_Tool.Pnt(V);
+        Tool.Range(EonF, out myFirst, out myLast);
+        myPnt = Tool.Pnt(V);
     }
 
     public override double FirstParameter() => myFirst;

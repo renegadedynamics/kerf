@@ -4,10 +4,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -18,14 +22,14 @@ namespace Occt;
 /// <remarks>
 /// A working object (decision 21). <see cref="Init"/> only records the solid. <see cref="Perform"/> edits the shapes it
 /// works on in place, as OCCT's: a solid holding frozen shapes (any solid a caller holds) is copied first
-/// (<see cref="BRepTools_CopyAtEntry"/>, decision 583), the caller's solid never changes, and at the end the copies left
+/// (<see cref="CopyAtEntry"/>, decision 583), the caller's solid never changes, and at the end the copies left
 /// unchanged are the caller's own again, in the results and in the context. <see cref="Solid"/>, <see cref="Shape"/> and
 /// <see cref="SolidFromShell"/> freeze what they return; ported code reads the internal forms.
 /// </remarks>
 public class ShapeFix_Solid : ShapeFix_Root
 {
     /// <summary>The solid fixed.</summary>
-    protected TopoDS_Shape   mySolid;
+    protected Shape   mySolid;
     /// <summary>The shell fixing tool.</summary>
     protected ShapeFix_Shell myFixShell;
     /// <summary>The status.</summary>
@@ -40,7 +44,7 @@ public class ShapeFix_Solid : ShapeFix_Root
     /// <summary>Empty constructor.</summary>
     public ShapeFix_Solid()
     {
-        mySolid                   = new TopoDS_Shape();
+        mySolid                   = new Shape();
         myStatus                  = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         myFixShellMode            = -1;
         myFixShellOrientationMode = -1;
@@ -49,9 +53,9 @@ public class ShapeFix_Solid : ShapeFix_Root
     }
 
     /// <summary>Initializes by a solid.</summary>
-    public ShapeFix_Solid(in TopoDS_Solid solid)
+    public ShapeFix_Solid(in Solid solid)
     {
-        mySolid                   = new TopoDS_Shape();
+        mySolid                   = new Shape();
         myStatus                  = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         myFixShellMode            = -1;
         myFixShellOrientationMode = -1;
@@ -61,7 +65,7 @@ public class ShapeFix_Solid : ShapeFix_Root
     }
 
     /// <summary>Initializes by a solid.</summary>
-    public virtual void Init(in TopoDS_Solid solid)
+    public virtual void Init(in Solid solid)
     {
         mySolid = solid;
         // mySolid = TopoDS::Solid(shape.EmptyCopied());
@@ -73,43 +77,43 @@ public class ShapeFix_Solid : ShapeFix_Root
 
     //=================================================================================================
 
-    private static void CollectSolids(NCollection_Sequence<TopoDS_Shape> aSeqShells,
-                                      NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anIndexedMapShellHoles,
-                                      NCollection_DataMap<TopoDS_Shape, int> theMapStatus)
+    private static void CollectSolids(NCollection_Sequence<Shape> aSeqShells,
+                                      NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anIndexedMapShellHoles,
+                                      NCollection_DataMap<Shape, int> theMapStatus)
     {
-        var aMapHoles      = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var aMapShellHoles = new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+        var aMapHoles      = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var aMapShellHoles = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         for (int i1 = 1; i1 <= aSeqShells.Length(); i1++)
         {
-            TopoDS_Shell aShell1 = TopoDS.Shell(aSeqShells.Value(i1));
-            var          lshells = new NCollection_List<TopoDS_Shape>();
+            Shell aShell1 = ShapeCasts.Shell(aSeqShells.Value(i1));
+            var          lshells = new NCollection_List<Shape>();
             aMapShellHoles.Bind(aShell1, lshells);
         }
         // Finds roots shells and hole shells.
         for (int i = 1; i <= aSeqShells.Length(); i++)
         {
-            TopoDS_Shell aShell1   = TopoDS.Shell(aSeqShells.Value(i));
-            var          aExpEdges = new TopExp_Explorer(aShell1, TopAbs_EDGE);
-            if (!BRep_Tool.IsClosed(aShell1) || !aExpEdges.More())
+            Shell aShell1   = ShapeCasts.Shell(aSeqShells.Value(i));
+            var          aExpEdges = new Explorer(aShell1, ShapeType.Edge);
+            if (!Tool.IsClosed(aShell1) || !aExpEdges.More())
             {
                 continue;
             }
-            var solid = new TopoDS_Solid();
-            var B     = new BRep_Builder();
+            var solid = new Solid();
+            var B     = new BrepBuilder();
             B.MakeSolid(ref solid);
             B.Add(solid, aShell1);
             try
             {
-                TopAbs_State infinstatus = TopAbs_UNKNOWN;
+                Containment infinstatus = Unknown;
                 var          bsc3d       = new BRepClass3d_SolidClassifier(solid);
                 int          st          = 0;
                 if (!theMapStatus.IsBound(aShell1))
                 {
                     bsc3d.PerformInfinitePoint(Kerf.Engine.Foundation.Precision.Confusion());
                     infinstatus = bsc3d.State();
-                    if (infinstatus != TopAbs_UNKNOWN && infinstatus != TopAbs_ON)
+                    if (infinstatus != Unknown && infinstatus != On)
                     {
-                        st = (infinstatus == TopAbs_IN ? 1 : 2);
+                        st = (infinstatus == In ? 1 : 2);
                     }
                     theMapStatus.Bind(aShell1, st);
                 }
@@ -118,7 +122,7 @@ public class ShapeFix_Solid : ShapeFix_Root
                     st = theMapStatus.Find(aShell1);
                     if (st != 0)
                     {
-                        infinstatus = (theMapStatus.Find(aShell1) == 1 ? TopAbs_IN : TopAbs_OUT);
+                        infinstatus = (theMapStatus.Find(aShell1) == 1 ? In : Out);
                     }
                 }
                 if (st == 0)
@@ -131,8 +135,8 @@ public class ShapeFix_Solid : ShapeFix_Root
                     {
                         continue;
                     }
-                    TopoDS_Shape aShell2 = aSeqShells.Value(j);
-                    if (!BRep_Tool.IsClosed(aShell2))
+                    Shape aShell2 = aSeqShells.Value(j);
+                    if (!Tool.IsClosed(aShell2))
                     {
                         continue;
                     }
@@ -143,8 +147,8 @@ public class ShapeFix_Solid : ShapeFix_Root
                     if (aMapShellHoles.IsBound(aShell2))
                     {
                         bool                           isAnalysis = false;
-                        NCollection_List<TopoDS_Shape> ls         = aMapShellHoles.Find(aShell2);
-                        for (var li = new NCollection_List<TopoDS_Shape>.Iterator(ls); li.More() && !isAnalysis; li.Next())
+                        NCollection_List<Shape> ls         = aMapShellHoles.Find(aShell2);
+                        for (var li = new NCollection_List<Shape>.Iterator(ls); li.More() && !isAnalysis; li.Next())
                         {
                             isAnalysis = li.Value().IsSame(aShell1);
                         }
@@ -153,30 +157,30 @@ public class ShapeFix_Solid : ShapeFix_Root
                             continue;
                         }
                     }
-                    TopAbs_State pointstatus = TopAbs_UNKNOWN;
+                    Containment pointstatus = Unknown;
                     int          numon       = 0;
-                    var          amapVert    = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                    for (var aExpVert = new TopExp_Explorer(aShell2, TopAbs_VERTEX); aExpVert.More() && amapVert.Extent() < 10;
+                    var          amapVert    = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                    for (var aExpVert = new Explorer(aShell2, ShapeType.Vertex); aExpVert.More() && amapVert.Extent() < 10;
                          aExpVert.Next())
                     {
                         amapVert.Add(aExpVert.Current());
                     }
                     for (int k = 1;
-                         k <= amapVert.Extent() && (pointstatus == TopAbs_UNKNOWN || (pointstatus == TopAbs_ON && numon < 3));
+                         k <= amapVert.Extent() && (pointstatus == Unknown || (pointstatus == On && numon < 3));
                          k++)
                     {
-                        TopoDS_Vertex aV  = TopoDS.Vertex(amapVert.FindKey(k));
-                        Point3D        aPf = BRep_Tool.Pnt(aV);
+                        Vertex aV  = ShapeCasts.Vertex(amapVert.FindKey(k));
+                        Point3D        aPf = Tool.Pnt(aV);
                         bsc3d.Perform(aPf, Kerf.Engine.Foundation.Precision.Confusion());
                         pointstatus = bsc3d.State();
-                        if (pointstatus == TopAbs_ON)
+                        if (pointstatus == On)
                         {
                             numon++;
                         }
                     }
-                    if (numon == 3 && pointstatus == TopAbs_ON)
+                    if (numon == 3 && pointstatus == On)
                     {
-                        pointstatus = /*(bsc3d.State() == TopAbs_IN ? TopAbs_IN :*/ TopAbs_OUT;
+                        pointstatus = /*(bsc3d.State() == TopAbs_IN ? TopAbs_IN :*/ Out;
                     }
                     if (pointstatus != infinstatus)
                     {
@@ -197,39 +201,39 @@ public class ShapeFix_Solid : ShapeFix_Root
                 continue;
             }
         }
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aItShellHoles in aMapShellHoles)
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> aItShellHoles in aMapShellHoles)
         {
             if (aMapHoles.Contains(aItShellHoles.Key))
             {
                 continue;
             }
-            NCollection_List<TopoDS_Shape> lHoles = aItShellHoles.Value;
+            NCollection_List<Shape> lHoles = aItShellHoles.Value;
             if (lHoles.IsEmpty())
             {
                 continue;
             }
-            for (var lItHoles = new NCollection_List<TopoDS_Shape>.Iterator(lHoles); lItHoles.More(); lItHoles.Next())
+            for (var lItHoles = new NCollection_List<Shape>.Iterator(lHoles); lItHoles.More(); lItHoles.Next())
             {
                 if (aMapHoles.Contains(lItHoles.Value()))
                 {
-                    NCollection_List<TopoDS_Shape> lUnHoles = aMapShellHoles.Find(lItHoles.Value());
-                    for (var lItUnHoles = new NCollection_List<TopoDS_Shape>.Iterator(lUnHoles); lItUnHoles.More(); lItUnHoles.Next())
+                    NCollection_List<Shape> lUnHoles = aMapShellHoles.Find(lItHoles.Value());
+                    for (var lItUnHoles = new NCollection_List<Shape>.Iterator(lUnHoles); lItUnHoles.More(); lItUnHoles.Next())
                     {
                         aMapHoles.Remove(lItUnHoles.Value());
                     }
                 }
             }
         }
-        foreach (TopoDS_Shape aHole in aMapHoles)
+        foreach (Shape aHole in aMapHoles)
         {
             aMapShellHoles.UnBind(aHole);
         }
         for (int i = 1; i <= aSeqShells.Length(); ++i)
         {
-            TopoDS_Shape aShell1 = aSeqShells.Value(i);
+            Shape aShell1 = aSeqShells.Value(i);
             if (aMapShellHoles.IsBound(aShell1))
             {
-                NCollection_List<TopoDS_Shape> ls = aMapShellHoles.Find(aShell1);
+                NCollection_List<Shape> ls = aMapShellHoles.Find(aShell1);
                 anIndexedMapShellHoles.Add(aShell1, ls);
             }
         }
@@ -237,32 +241,32 @@ public class ShapeFix_Solid : ShapeFix_Root
 
     //=================================================================================================
 
-    private static bool CreateSolids(in TopoDS_Shape theShape, NCollection_IndexedMap<TopoDS_Shape> aMapSolids)
+    private static bool CreateSolids(in Shape theShape, NCollection_IndexedMap<Shape> aMapSolids)
     {
-        var  aSeqShells = new NCollection_Sequence<TopoDS_Shape>();
+        var  aSeqShells = new NCollection_Sequence<Shape>();
         bool isDone     = false;
-        for (var aExpShell = new TopExp_Explorer(theShape, TopAbs_SHELL); aExpShell.More(); aExpShell.Next())
+        for (var aExpShell = new Explorer(theShape, ShapeType.Shell); aExpShell.More(); aExpShell.Next())
         {
             aSeqShells.Append(aExpShell.Current());
         }
-        var aMapShellHoles = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        var aMapStatus     = new NCollection_DataMap<TopoDS_Shape, int>(TopTools_ShapeMapHasher.Instance);
+        var aMapShellHoles = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var aMapStatus     = new NCollection_DataMap<Shape, int>(ShapeHasher.Instance);
         CollectSolids(aSeqShells, aMapShellHoles, aMapStatus);
-        var ShellSolid = new NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var ShellSolid = new NCollection_IndexedDataMap<Shape, Shape>(ShapeHasher.Instance);
         // Defines correct orientation of shells
         for (int i = 1; i <= aMapShellHoles.Extent(); ++i)
         {
-            TopoDS_Shell aShell    = TopoDS.Shell(aMapShellHoles.FindKey(i));
-            var          aExpEdges = new TopExp_Explorer(aShell, TopAbs_EDGE);
-            if (!BRep_Tool.IsClosed(aShell) || !aExpEdges.More())
+            Shell aShell    = ShapeCasts.Shell(aMapShellHoles.FindKey(i));
+            var          aExpEdges = new Explorer(aShell, ShapeType.Edge);
+            if (!Tool.IsClosed(aShell) || !aExpEdges.More())
             {
                 ShellSolid.Add(aShell, aShell);
                 isDone = true;
                 continue;
             }
-            var          B           = new BRep_Builder();
-            TopAbs_State infinstatus = TopAbs_UNKNOWN;
-            var          aSolid      = new TopoDS_Solid();
+            var          B           = new BrepBuilder();
+            Containment infinstatus = Unknown;
+            var          aSolid      = new Solid();
             B.MakeSolid(ref aSolid);
             B.Add(aSolid, aShell);
             if (aMapStatus.IsBound(aShell))
@@ -270,7 +274,7 @@ public class ShapeFix_Solid : ShapeFix_Root
                 int st = aMapStatus.Find(aShell);
                 if (st != 0)
                 {
-                    infinstatus = (aMapStatus.Find(aShell) == 1 ? TopAbs_IN : TopAbs_OUT);
+                    infinstatus = (aMapStatus.Find(aShell) == 1 ? In : Out);
                 }
             }
             else
@@ -287,33 +291,33 @@ public class ShapeFix_Solid : ShapeFix_Root
                     continue;
                 }
             }
-            if (infinstatus == TopAbs_IN)
+            if (infinstatus == In)
             {
                 isDone = true;
                 aShell.Reverse();
-                var aTmpSolid = new TopoDS_Solid();
+                var aTmpSolid = new Solid();
                 B.MakeSolid(ref aTmpSolid);
                 B.Add(aTmpSolid, aShell);
                 aSolid = aTmpSolid;
             }
-            NCollection_List<TopoDS_Shape> lHoles = aMapShellHoles[i];
-            for (var lItHoles = new NCollection_List<TopoDS_Shape>.Iterator(lHoles); lItHoles.More(); lItHoles.Next())
+            NCollection_List<Shape> lHoles = aMapShellHoles[i];
+            for (var lItHoles = new NCollection_List<Shape>.Iterator(lHoles); lItHoles.More(); lItHoles.Next())
             {
-                TopoDS_Shell aShellHole = TopoDS.Shell(lItHoles.Value());
+                Shell aShellHole = ShapeCasts.Shell(lItHoles.Value());
                 if (aMapStatus.IsBound(aShellHole))
                 {
-                    infinstatus = (aMapStatus.Find(aShellHole) == 1 ? TopAbs_IN : TopAbs_OUT);
+                    infinstatus = (aMapStatus.Find(aShellHole) == 1 ? In : Out);
                 }
                 else
                 {
-                    var solid = new TopoDS_Solid();
+                    var solid = new Solid();
                     B.MakeSolid(ref solid);
                     B.Add(solid, aShellHole);
                     var bsc3dHol = new BRepClass3d_SolidClassifier(solid);
                     bsc3dHol.PerformInfinitePoint(Kerf.Engine.Foundation.Precision.Confusion());
                     infinstatus = bsc3dHol.State();
                 }
-                if (infinstatus == TopAbs_OUT)
+                if (infinstatus == Out)
                 {
                     aShellHole.Reverse();
                     isDone = true;
@@ -323,26 +327,26 @@ public class ShapeFix_Solid : ShapeFix_Root
             ShellSolid.Add(aShell, aSolid);
         }
         // Creation of compsolid from shells containing shared faces.
-        var aMapFaceShells = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(theShape, TopAbs_FACE, TopAbs_SHELL, aMapFaceShells);
+        var aMapFaceShells = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(theShape, ShapeType.Face, ShapeType.Shell, aMapFaceShells);
         for (int i = 1; i <= aMapFaceShells.Extent(); i++)
         {
-            NCollection_List<TopoDS_Shape> lshells = aMapFaceShells.FindFromIndex(i);
+            NCollection_List<Shape> lshells = aMapFaceShells.FindFromIndex(i);
             if (lshells.Extent() < 2)
             {
                 continue;
             }
-            var aCompSolid = new TopoDS_CompSolid();
-            var aB         = new BRep_Builder();
+            var aCompSolid = new CompSolid();
+            var aB         = new BrepBuilder();
             aB.MakeCompSolid(ref aCompSolid);
-            isDone = (theShape.ShapeType() != TopAbs_COMPSOLID || isDone);
+            isDone = (theShape.ShapeType() != ShapeType.CompSolid || isDone);
             int nbSol = 0;
-            for (var lItSh = new NCollection_List<TopoDS_Shape>.Iterator(lshells); lItSh.More(); lItSh.Next())
+            for (var lItSh = new NCollection_List<Shape>.Iterator(lshells); lItSh.More(); lItSh.Next())
             {
                 if (ShellSolid.Contains(lItSh.Value()))
                 {
-                    TopoDS_Shape aShape  = ShellSolid.FindFromKey(lItSh.Value());
-                    var          aExpSol = new TopExp_Explorer(aShape, TopAbs_SOLID);
+                    Shape aShape  = ShellSolid.FindFromKey(lItSh.Value());
+                    var          aExpSol = new Explorer(aShape, global::Kerf.Topology.ShapeType.Solid);
                     for (; aExpSol.More(); aExpSol.Next())
                     {
                         aB.Add(aCompSolid, aExpSol.Current());
@@ -352,7 +356,7 @@ public class ShapeFix_Solid : ShapeFix_Root
             }
             if (nbSol > 1)
             {
-                for (var lItSh1 = new NCollection_List<TopoDS_Shape>.Iterator(lshells); lItSh1.More(); lItSh1.Next())
+                for (var lItSh1 = new NCollection_List<Shape>.Iterator(lshells); lItSh1.More(); lItSh1.Next())
                 {
                     if (ShellSolid.Contains(lItSh1.Value()))
                     {
@@ -385,11 +389,11 @@ public class ShapeFix_Solid : ShapeFix_Root
         {
             SetContext(new ShapeBuild_ReShape());
         }
-        var anEntry = new BRepTools_CopyAtEntry(myShape, Context());
+        var anEntry = new CopyAtEntry(myShape, Context());
         myShape = anEntry.Shape();
         mySolid = anEntry.Copied(mySolid);
         bool status = perform(theProgress);
-        if (anEntry.IsCopied())
+        if (anEntry.IsCopied)
         {
             myShape = anEntry.Finish(myShape, [mySolid]);
             mySolid = anEntry.Final(mySolid);
@@ -412,11 +416,11 @@ public class ShapeFix_Solid : ShapeFix_Root
         ShapeBuild_ReShape aContext = Context()!;
         myFixShell.SetContext(aContext);
         int          NbShells = 0;
-        TopoDS_Shape S        = aContext.InternalApply(myShape);
+        Shape S        = aContext.InternalApply(myShape);
 
         // Calculate number of underlying shells
         int aNbShells = 0;
-        for (var aExpSh = new TopExp_Explorer(S, TopAbs_SHELL); aExpSh.More(); aExpSh.Next())
+        for (var aExpSh = new Explorer(S, ShapeType.Shell); aExpSh.More(); aExpSh.Next())
         {
             aNbShells++;
         }
@@ -430,11 +434,11 @@ public class ShapeFix_Solid : ShapeFix_Root
             using var aPSFixShell = new ProgressScope(aPS.Next(), "Fixing shell", aNbShells);
 
             // Fix shell by shell using ShapeFix_Shell tool
-            for (var aExpSh = new TopExp_Explorer(S, TopAbs_SHELL); aExpSh.More() && aPSFixShell.More(); aExpSh.Next())
+            for (var aExpSh = new Explorer(S, ShapeType.Shell); aExpSh.More() && aPSFixShell.More(); aExpSh.Next())
             {
-                TopoDS_Shape sh = aExpSh.Current();
+                Shape sh = aExpSh.Current();
 
-                myFixShell.Init(TopoDS.Shell(sh));
+                myFixShell.Init(ShapeCasts.Shell(sh));
                 if (myFixShell.Perform(aPSFixShell.Next()))
                 {
                     status = true;
@@ -462,22 +466,22 @@ public class ShapeFix_Solid : ShapeFix_Root
 
         if (NbShells == 1)
         {
-            TopoDS_Shape tmpShape = aContext.InternalApply(myShape);
-            var          aExp     = new TopExp_Explorer(tmpShape, TopAbs_SHELL);
+            Shape tmpShape = aContext.InternalApply(myShape);
+            var          aExp     = new Explorer(tmpShape, ShapeType.Shell);
             bool         isClosed = false;
             if (aExp.More())
             {
-                TopoDS_Shell    aShtmp  = TopoDS.Shell(aExp.Current());
+                Shell    aShtmp  = ShapeCasts.Shell(aExp.Current());
                 var             sfb     = new ShapeAnalysis_FreeBounds(aShtmp);
-                TopoDS_Compound aC1     = sfb.InternalGetClosedWires();
-                TopoDS_Compound aC2     = sfb.InternalGetOpenWires();
+                Compound aC1     = sfb.InternalGetClosedWires();
+                Compound aC2     = sfb.InternalGetOpenWires();
                 int             numedge = 0;
-                var             aExp1   = new TopExp_Explorer(aC1, TopAbs_EDGE);
+                var             aExp1   = new Explorer(aC1, ShapeType.Edge);
                 for (; aExp1.More(); aExp1.Next())
                 {
                     numedge++;
                 }
-                for (aExp1.Init(aC2, TopAbs_EDGE); aExp1.More(); aExp1.Next())
+                for (aExp1.Init(aC2, ShapeType.Edge); aExp1.More(); aExp1.Next())
                 {
                     numedge++;
                 }
@@ -487,15 +491,15 @@ public class ShapeFix_Solid : ShapeFix_Root
 
             if (isClosed || myCreateOpenSolidMode)
             {
-                var          itersh = new TopoDS_Iterator(tmpShape);
-                TopoDS_Shell aShell = new();
-                if (itersh.More() && itersh.Value().ShapeType() == TopAbs_SHELL)
+                var          itersh = new Iterator(tmpShape);
+                Shell aShell = new();
+                if (itersh.More() && itersh.Value().ShapeType() == ShapeType.Shell)
                 {
-                    aShell = TopoDS.Shell(itersh.Value());
+                    aShell = ShapeCasts.Shell(itersh.Value());
                 }
-                if (!aShell.IsNull())
+                if (!aShell.IsNull)
                 {
-                    TopoDS_Solid aSol = InternalSolidFromShell(aShell);
+                    Solid aSol = InternalSolidFromShell(aShell);
                     if (ShapeExtend.DecodeStatus(myStatus, ShapeExtend_DONE2))
                     {
                         SendWarning(new Msg("FixAdvSolid.FixOrientation.MSG20")); // Orientation of shell was corrected.
@@ -503,31 +507,31 @@ public class ShapeFix_Solid : ShapeFix_Root
                         tmpShape = aSol;
                     }
                 }
-                mySolid = TopoDS.Solid(tmpShape);
+                mySolid = ShapeCasts.Solid(tmpShape);
             }
             else
             {
                 status = true;
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE3);
-                var aIt = new TopoDS_Iterator(tmpShape, false);
+                var aIt = new Iterator(tmpShape, false);
                 aContext.Replace(tmpShape, aIt.Value());
                 SendFail(new Msg("FixAdvSolid.FixShell.MSG10")); // Solid can not be created from open shell.
             }
         }
         else
         {
-            TopoDS_Shape aResShape = aContext.InternalApply(myShape);
-            var          aMapSolids = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            Shape aResShape = aContext.InternalApply(myShape);
+            var          aMapSolids = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
             if (CreateSolids(aResShape, aMapSolids))
             {
                 SendWarning(new Msg("FixAdvSolid.FixOrientation.MSG20")); // Orientation of shell was corrected..
                 if (aMapSolids.Extent() == 1)
                 {
-                    TopoDS_Shape aResSol = aMapSolids.FindKey(1);
-                    if (aResShape.ShapeType() == TopAbs_SHELL && myCreateOpenSolidMode)
+                    Shape aResSol = aMapSolids.FindKey(1);
+                    if (aResShape.ShapeType() == ShapeType.Shell && myCreateOpenSolidMode)
                     {
-                        var solid = new TopoDS_Solid();
-                        var B     = new BRep_Builder();
+                        var solid = new Solid();
+                        var B     = new BrepBuilder();
                         B.MakeSolid(ref solid);
                         B.Add(solid, aResSol);
                         mySolid = solid;
@@ -535,7 +539,7 @@ public class ShapeFix_Solid : ShapeFix_Root
                     else
                     {
                         mySolid = aResSol;
-                        if (aResSol.ShapeType() == TopAbs_SHELL)
+                        if (aResSol.ShapeType() == ShapeType.Shell)
                         {
                             SendFail(new Msg("FixAdvSolid.FixShell.MSG10")); // Solid can not be created from open shell.
                         }
@@ -545,23 +549,23 @@ public class ShapeFix_Solid : ShapeFix_Root
                 else if (aMapSolids.Extent() > 1)
                 {
                     SendWarning(new Msg("FixAdvSolid.FixOrientation.MSG30")); // Bad connected solid a few solids were created.
-                    var aB    = new BRep_Builder();
-                    var aComp = new TopoDS_Compound();
+                    var aB    = new BrepBuilder();
+                    var aComp = new Compound();
                     aB.MakeCompound(ref aComp);
                     using var aPSCreatingSolid = new ProgressScope(aPS.Next(), "Creating solid", aMapSolids.Extent());
                     for (int i = 1; (i <= aMapSolids.Extent()) && (aPSCreatingSolid.More()); i++, aPSCreatingSolid.Next())
                     {
-                        TopoDS_Shape aResSh = aMapSolids.FindKey(i);
-                        if (aResShape.ShapeType() == TopAbs_SHELL && myCreateOpenSolidMode)
+                        Shape aResSh = aMapSolids.FindKey(i);
+                        if (aResShape.ShapeType() == ShapeType.Shell && myCreateOpenSolidMode)
                         {
                             aResSh.Closed(false);
-                            var solid = new TopoDS_Solid();
-                            var B     = new BRep_Builder();
+                            var solid = new Solid();
+                            var B     = new BrepBuilder();
                             B.MakeSolid(ref solid);
                             B.Add(solid, aResSh);
                             aResSh = solid;
                         }
-                        else if (aResShape.ShapeType() == TopAbs_SHELL)
+                        else if (aResShape.ShapeType() == ShapeType.Shell)
                         {
                             SendFail(new Msg("FixAdvSolid.FixShell.MSG10")); // Solid can not be created from open shell.
                         }
@@ -582,30 +586,30 @@ public class ShapeFix_Solid : ShapeFix_Root
     //=================================================================================================
 
     /// <summary>Returns the resulting shape, frozen.</summary>
-    public TopoDS_Shape Shape() => Published(myShape);
+    public Shape Shape() => Published(myShape);
 
     /// <summary>Returns the resulting shape, unfrozen, for ported callers working on shapes they own.</summary>
-    internal TopoDS_Shape InternalShape() => myShape;
+    internal Shape InternalShape() => myShape;
 
     /// <summary>
     /// Makes a solid from a shell, reversing the shell when the solid it makes would hold the infinite point (status
     /// DONE2). The shell is shared (a frozen shell is the caller's own); the solid is frozen.
     /// </summary>
-    public TopoDS_Solid SolidFromShell(in TopoDS_Shell shell) => TopoDS.Solid(Published(InternalSolidFromShell(shell)));
+    public Solid SolidFromShell(in Shell shell) => ShapeCasts.Solid(Published(InternalSolidFromShell(shell)));
 
     /// <summary>
     /// <see cref="SolidFromShell"/> without freezing the solid, for ported callers working on shapes they own (OCCT
     /// sets the Free flag of an unfrozen shell).
     /// </summary>
-    internal TopoDS_Solid InternalSolidFromShell(in TopoDS_Shell shell)
+    internal Solid InternalSolidFromShell(in Shell shell)
     {
-        TopoDS_Shell sh = shell;
+        Shell sh = shell;
         if (!sh.Free() && !sh.TShape()!.IsFrozen) // OCCT.NET: frozen: a frozen shell keeps its Free flag
         {
             sh.Free(true);
         }
-        var solid = new TopoDS_Solid();
-        var B     = new BRep_Builder();
+        var solid = new Solid();
+        var B     = new BrepBuilder();
         B.MakeSolid(ref solid);
         B.Add(solid, sh);
         //   Pas encore fini : il faut une bonne orientation
@@ -615,7 +619,7 @@ public class ShapeFix_Solid : ShapeFix_Root
             double t     = Kerf.Engine.Foundation.Precision.Confusion(); // tolerance moyenne
             bsc3d.PerformInfinitePoint(t);
 
-            if (bsc3d.State() == TopAbs_IN)
+            if (bsc3d.State() == In)
             {
                 //         Ensuite, inverser C-A-D REPRENDRE LES SHELLS
                 //         (l inversion du solide n est pas bien prise en compte)
@@ -624,7 +628,7 @@ public class ShapeFix_Solid : ShapeFix_Root
                 {
                     sh.Free(true);
                 }
-                var soli2 = new TopoDS_Solid();
+                var soli2 = new Solid();
                 B.MakeSolid(ref soli2); // on recommence
                 sh.Reverse();
                 B.Add(soli2, sh);
@@ -643,10 +647,10 @@ public class ShapeFix_Solid : ShapeFix_Root
     public bool Status(ShapeExtend_Status theStatus) => ShapeExtend.DecodeStatus(myStatus, theStatus);
 
     /// <summary>Returns the fixed solid, frozen.</summary>
-    public TopoDS_Shape Solid() => Published(mySolid);
+    public Shape Solid() => Published(mySolid);
 
     /// <summary>Returns the fixed solid, unfrozen, for ported callers working on shapes they own.</summary>
-    internal TopoDS_Shape InternalSolid() => mySolid;
+    internal Shape InternalSolid() => mySolid;
 
     /// <summary>Returns the shell fixing tool.</summary>
     public ShapeFix_Shell FixShellTool() => myFixShell;
@@ -688,7 +692,7 @@ public class ShapeFix_Solid : ShapeFix_Root
     /// <summary>Whether a solid is made from an open shell (false by default).</summary>
     public ref bool CreateOpenSolidMode() => ref myCreateOpenSolidMode;
 
-    private static TopoDS_Shape Published(in TopoDS_Shape theShape)
+    private static Shape Published(in Shape theShape)
     {
         theShape.TShape()?.FreezeGraph();
         return theShape;

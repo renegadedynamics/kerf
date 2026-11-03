@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
@@ -21,25 +23,25 @@ public class DrawShapeUpgradeCommandsTests(ITestOutputHelper output)
     }
 
     // Two coplanar rectangles sewn into a shell: [0, 5] x [0, 4] and [5, 10] x [0, 4]
-    private static TopoDS_Shape TwoCoplanarFaces(out TopoDS_Shape theSharedEdge)
+    private static Shape TwoCoplanarFaces(out Shape theSharedEdge)
     {
-        TopoDS_Face Rectangle(double x0, double x1)
+        Face Rectangle(double x0, double x1)
             => new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), x0, x1, 0, 4).Face();
         var aSewing = new BRepBuilderAPI_Sewing(1.0e-6);
         aSewing.Add(Rectangle(0, 5));
         aSewing.Add(Rectangle(5, 10));
         aSewing.Perform();
-        TopoDS_Shape aShell = aSewing.SewedShape();
-        var aMap = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(aShell, TopAbs_ShapeEnum.TopAbs_EDGE, TopAbs_ShapeEnum.TopAbs_FACE, aMap);
+        Shape aShell = aSewing.SewedShape();
+        var aMap = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aShell, ShapeType.Edge, ShapeType.Face, aMap);
         theSharedEdge = Enumerable.Range(1, aMap.Extent()).Select(aMap.FindKey).Single(e => aMap.FindFromKey(e).Extent() == 2);
         return aShell;
     }
 
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
@@ -47,27 +49,27 @@ public class DrawShapeUpgradeCommandsTests(ITestOutputHelper output)
     public void Unifysamedom_unifies_with_its_options_and_keeps_the_given_shapes()
     {
         DrawInterpreter i = Load();
-        i.SetShape("s", TwoCoplanarFaces(out TopoDS_Shape aShared));
+        i.SetShape("s", TwoCoplanarFaces(out Shape aShared));
         i.SetShape("e", aShared);
 
         i.Eval("unifysamedom r s");
-        Assert.Equal(1, Count(i.GetShape("r"), TopAbs_ShapeEnum.TopAbs_FACE));
-        Assert.Equal(4, Count(i.GetShape("r"), TopAbs_ShapeEnum.TopAbs_EDGE));
+        Assert.Equal(1, Count(i.GetShape("r"), ShapeType.Face));
+        Assert.Equal(4, Count(i.GetShape("r"), ShapeType.Edge));
 
         i.Eval("unifysamedom r s -e");
-        Assert.Equal(1, Count(i.GetShape("r"), TopAbs_ShapeEnum.TopAbs_FACE));
-        Assert.Equal(6, Count(i.GetShape("r"), TopAbs_ShapeEnum.TopAbs_EDGE));
+        Assert.Equal(1, Count(i.GetShape("r"), ShapeType.Face));
+        Assert.Equal(6, Count(i.GetShape("r"), ShapeType.Edge));
 
         i.Eval("unifysamedom r s -f");
-        Assert.Equal(2, Count(i.GetShape("r"), TopAbs_ShapeEnum.TopAbs_FACE));
+        Assert.Equal(2, Count(i.GetShape("r"), ShapeType.Face));
 
         i.Eval("unifysamedom r s e");
-        Assert.Equal(2, Count(i.GetShape("r"), TopAbs_ShapeEnum.TopAbs_FACE));
+        Assert.Equal(2, Count(i.GetShape("r"), ShapeType.Face));
 
         i.Eval("unifysamedom r s +b +i -nosafe -t 1e-5 -a 1");
-        Assert.Equal(1, Count(i.GetShape("r"), TopAbs_ShapeEnum.TopAbs_FACE));
+        Assert.Equal(1, Count(i.GetShape("r"), ShapeType.Face));
 
-        Assert.Equal(2, Count(i.GetShape("s"), TopAbs_ShapeEnum.TopAbs_FACE));
+        Assert.Equal(2, Count(i.GetShape("s"), ShapeType.Face));
         Assert.Contains("value expected after -t", Assert.ThrowsAny<DrawException>(() => i.Eval("unifysamedom r s -t")).Reason);
         Assert.Contains("Use unifysamedom result shape", Assert.ThrowsAny<DrawException>(() => i.Eval("unifysamedom r")).Reason);
     }

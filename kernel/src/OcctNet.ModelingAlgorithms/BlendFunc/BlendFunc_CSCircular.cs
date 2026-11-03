@@ -8,6 +8,7 @@
 // Modified 23/06/1997 PMN : Pb de division par 0.
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
@@ -25,9 +26,9 @@ public class BlendFunc_CSCircular : Blend_CSFunction
 {
     private const double Eps = 1.0e-15;
 
-    private readonly Adaptor3d_Surface surf;
-    private readonly Adaptor3d_Curve curv;
-    private readonly Adaptor3d_Curve guide;
+    private readonly SurfaceAdaptorBase surf;
+    private readonly CurveAdaptorBase curv;
+    private readonly CurveAdaptorBase guide;
     private readonly Law_Function law;
     private Point3D pts;
     private Point3D ptc;
@@ -49,7 +50,7 @@ public class BlendFunc_CSCircular : Blend_CSFunction
     private BlendFunc_SectionShape mySShape;
     private ParameterisationType myTConv;
 
-    public BlendFunc_CSCircular(Adaptor3d_Surface S, Adaptor3d_Curve C, Adaptor3d_Curve CGuide, Law_Function L)
+    public BlendFunc_CSCircular(SurfaceAdaptorBase S, CurveAdaptorBase C, CurveAdaptorBase CGuide, Law_Function L)
     {
         surf = S;
         curv = C;

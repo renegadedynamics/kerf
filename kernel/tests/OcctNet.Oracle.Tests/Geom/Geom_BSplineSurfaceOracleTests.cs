@@ -17,7 +17,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
     private static readonly int Cases = Tape.Cases(200, 4);
 
     /// <summary>A random surface, built natively and in the port from the same data.</summary>
-    private static (N.Geom_BSplineSurface Native, Geom_BSplineSurface Port) RandomSurface(Oracle theOracle)
+    private static (N.Geom_BSplineSurface Native, BSplineSurface Port) RandomSurface(Oracle theOracle)
     {
         int aUDeg = theOracle.Int(1, 5), aVDeg = theOracle.Int(1, 5);
         bool aUPer = theOracle.Int(0, 2) == 1, aVPer = theOracle.Int(0, 2) == 1;
@@ -58,27 +58,27 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
         if (!aRational)
         {
             return (new N.Geom_BSplineSurface(aNPoles, aNUKnots, aNVKnots, aNUMults, aNVMults, aUDeg, aVDeg, aUPer, aVPer),
-                    new Geom_BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, aUDeg, aVDeg, aUPer, aVPer));
+                    new BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, aUDeg, aVDeg, aUPer, aVPer));
         }
 
         using N.TColStd_Array2OfReal aNWeights = Oracle.ToNative(aWeights);
         return (new N.Geom_BSplineSurface(aNPoles, aNWeights, aNUKnots, aNVKnots, aNUMults, aNVMults, aUDeg, aVDeg, aUPer, aVPer),
-                new Geom_BSplineSurface(aPoles, aWeights, aUKnots, aVKnots, aUMults, aVMults, aUDeg, aVDeg, aUPer, aVPer));
+                new BSplineSurface(aPoles, aWeights, aUKnots, aVKnots, aUMults, aVMults, aUDeg, aVDeg, aUPer, aVPer));
     }
 
     /// <summary>Compares the data of the two surfaces.</summary>
-    private static void CompareData(Oracle theOracle, N.Geom_BSplineSurface theN, Geom_BSplineSurface theP, string theWhat)
+    private static void CompareData(Oracle theOracle, N.Geom_BSplineSurface theN, BSplineSurface theP, string theWhat)
     {
         theOracle.Same(theN.UDegree(), theP.UDegree(), theWhat + " UDegree");
         theOracle.Same(theN.VDegree(), theP.VDegree(), theWhat + " VDegree");
-        theOracle.Same(theN.NbUPoles(), theP.NbUPoles(), theWhat + " NbUPoles");
-        theOracle.Same(theN.NbVPoles(), theP.NbVPoles(), theWhat + " NbVPoles");
-        theOracle.Same(theN.NbUKnots(), theP.NbUKnots(), theWhat + " NbUKnots");
-        theOracle.Same(theN.NbVKnots(), theP.NbVKnots(), theWhat + " NbVKnots");
-        theOracle.Same(theN.IsUPeriodic(), theP.IsUPeriodic(), theWhat + " IsUPeriodic");
-        theOracle.Same(theN.IsVPeriodic(), theP.IsVPeriodic(), theWhat + " IsVPeriodic");
-        theOracle.Same(theN.IsURational(), theP.IsURational(), theWhat + " IsURational");
-        theOracle.Same(theN.IsVRational(), theP.IsVRational(), theWhat + " IsVRational");
+        theOracle.Same(theN.NbUPoles(), theP.UPoleCount, theWhat + " NbUPoles");
+        theOracle.Same(theN.NbVPoles(), theP.VPoleCount, theWhat + " NbVPoles");
+        theOracle.Same(theN.NbUKnots(), theP.UKnotCount, theWhat + " NbUKnots");
+        theOracle.Same(theN.NbVKnots(), theP.VKnotCount, theWhat + " NbVKnots");
+        theOracle.Same(theN.IsUPeriodic(), theP.IsUPeriodic, theWhat + " IsUPeriodic");
+        theOracle.Same(theN.IsVPeriodic(), theP.IsVPeriodic, theWhat + " IsVPeriodic");
+        theOracle.Same(theN.IsURational(), theP.IsURational, theWhat + " IsURational");
+        theOracle.Same(theN.IsVRational(), theP.IsVRational, theWhat + " IsVRational");
         theOracle.Same((int)theN.Continuity(), (int)theP.Continuity(), theWhat + " Continuity");
         theOracle.Same((int)theN.UKnotDistribution(), (int)theP.UKnotDistribution(), theWhat + " UKnotDistribution");
         theOracle.Same((int)theN.VKnotDistribution(), (int)theP.VKnotDistribution(), theWhat + " VKnotDistribution");
@@ -94,12 +94,12 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
 
         // Closure compares iso-curves, whose construction throws when a rational edit left a weight near zero
         bool aNC = false, aPC = false;
-        if (Both(() => aNC = theN.IsUClosed(), () => aPC = theP.IsUClosed(), theWhat + " IsUClosed"))
+        if (Both(() => aNC = theN.IsUClosed(), () => aPC = theP.IsUClosed, theWhat + " IsUClosed"))
         {
             theOracle.Same(aNC, aPC, theWhat + " IsUClosed");
         }
 
-        if (Both(() => aNC = theN.IsVClosed(), () => aPC = theP.IsVClosed(), theWhat + " IsVClosed"))
+        if (Both(() => aNC = theN.IsVClosed(), () => aPC = theP.IsVClosed, theWhat + " IsVClosed"))
         {
             theOracle.Same(aNC, aPC, theWhat + " IsVClosed");
         }
@@ -112,13 +112,13 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
         theOracle.Same(aNV1, aV1, theWhat + " V1");
         theOracle.Same(aNV2, aV2, theWhat + " V2");
 
-        for (int i = 1; i <= theP.NbUKnots(); i++)
+        for (int i = 1; i <= theP.UKnotCount; i++)
         {
             theOracle.Same(theN.UKnot(i), theP.UKnot(i), theWhat + " UKnot");
             theOracle.Same(theN.UMultiplicity(i), theP.UMultiplicity(i), theWhat + " UMult");
         }
 
-        for (int i = 1; i <= theP.NbVKnots(); i++)
+        for (int i = 1; i <= theP.VKnotCount; i++)
         {
             theOracle.Same(theN.VKnot(i), theP.VKnot(i), theWhat + " VKnot");
             theOracle.Same(theN.VMultiplicity(i), theP.VMultiplicity(i), theWhat + " VMult");
@@ -144,9 +144,9 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
             }
         }
 
-        for (int i = 1; i <= theP.NbUPoles(); i++)
+        for (int i = 1; i <= theP.UPoleCount; i++)
         {
-            for (int j = 1; j <= theP.NbVPoles(); j++)
+            for (int j = 1; j <= theP.VPoleCount; j++)
             {
                 using N.gp_Pnt aNP = theN.Pole(i, j);
                 theOracle.Same(aNP, theP.Pole(i, j), theWhat + " Pole");
@@ -156,7 +156,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>Compares the evaluations on a grid of parameters, some outside a periodic domain.</summary>
-    private static void CompareEvaluation(Oracle theOracle, N.Geom_BSplineSurface theN, Geom_BSplineSurface theP, string theWhat)
+    private static void CompareEvaluation(Oracle theOracle, N.Geom_BSplineSurface theN, BSplineSurface theP, string theWhat)
     {
         theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         const int n = 4;
@@ -164,8 +164,8 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
         {
             for (int jv = 0; jv <= n; jv++)
             {
-                double aU = aU1 + (aU2 - aU1) * ju / n + (theP.IsUPeriodic() && ju == 1 ? (aU2 - aU1) * 1.3 : 0.0);
-                double aV = aV1 + (aV2 - aV1) * jv / n + (theP.IsVPeriodic() && jv == 3 ? -(aV2 - aV1) * 2.2 : 0.0);
+                double aU = aU1 + (aU2 - aU1) * ju / n + (theP.IsUPeriodic && ju == 1 ? (aU2 - aU1) * 1.3 : 0.0);
+                double aV = aV1 + (aV2 - aV1) * jv / n + (theP.IsVPeriodic && jv == 3 ? -(aV2 - aV1) * 2.2 : 0.0);
                 CompareAt(theOracle, theN, theP, aU, aV, theWhat);
             }
         }
@@ -177,7 +177,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void CompareAt(Oracle theOracle, N.Geom_BSplineSurface theN, Geom_BSplineSurface theP, double aU, double aV,
+    private static void CompareAt(Oracle theOracle, N.Geom_BSplineSurface theN, BSplineSurface theP, double aU, double aV,
                                   string theWhat)
     {
         using (N.gp_Pnt aNP = theN.EvalD0(aU, aV))
@@ -284,7 +284,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            (N.Geom_BSplineSurface aN, Geom_BSplineSurface aP) = RandomSurface(anOracle);
+            (N.Geom_BSplineSurface aN, BSplineSurface aP) = RandomSurface(anOracle);
             using (aN)
             {
                 CompareData(anOracle, aN, aP, "new");
@@ -300,7 +300,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
                 aP.PeriodicNormalization(ref aPU, ref aPV);
                 anOracle.Same(aNU, aPU, "PeriodicNormalization U");
                 anOracle.Same(aNV, aPV, "PeriodicNormalization V");
-                if (aP.IsUPeriodic())
+                if (aP.IsUPeriodic)
                 {
                     anOracle.Same(aN.UPeriod(), aP.UPeriod(), "UPeriod");
                 }
@@ -314,7 +314,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
                     aP.LocateU(aU, aTol, out int aI1, out int aI2, aRep);
                     anOracle.Same(aNI1, aI1, "LocateU I1");
                     anOracle.Same(aNI2, aI2, "LocateU I2");
-                    double aKnotV = aP.VKnot(anOracle.Int(1, aP.NbVKnots()));
+                    double aKnotV = aP.VKnot(anOracle.Int(1, aP.VKnotCount));
                     aN.LocateV(aKnotV, aTol, ref aNI1, ref aNI2, aRep);
                     aP.LocateV(aKnotV, aTol, out aI1, out aI2, aRep);
                     anOracle.Same(aNI1, aI1, "LocateV I1");
@@ -330,7 +330,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
                 anOracle.SameRelative(aNVTol, aVTol, "Resolution V");
 
                 // Local evaluation on a random span
-                int aUK1 = anOracle.Int(1, aP.NbUKnots() - 1), aVK1 = anOracle.Int(1, aP.NbVKnots() - 1);
+                int aUK1 = anOracle.Int(1, aP.UKnotCount - 1), aVK1 = anOracle.Int(1, aP.VKnotCount - 1);
                 using (N.gp_Pnt aNL = aN.LocalValue(aU, aV, aUK1, aUK1 + 1, aVK1, aVK1 + 1))
                 {
                     anOracle.Same(aNL, aP.LocalValue(aU, aV, aUK1, aUK1 + 1, aVK1, aVK1 + 1), "LocalValue");
@@ -352,7 +352,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 20261029 + 200);
         for (int i = 0; i < Cases; i++)
         {
-            (N.Geom_BSplineSurface aN, Geom_BSplineSurface aP) = RandomSurface(anOracle);
+            (N.Geom_BSplineSurface aN, BSplineSurface aP) = RandomSurface(anOracle);
             using (aN)
             {
                 GeomIsoCurveCompare.SameIsos(anOracle, aN, aP, "B-spline surface");
@@ -383,7 +383,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
         int[] aDone = new int[20];
         for (int i = 0; i < Cases * 3; i++)
         {
-            (N.Geom_BSplineSurface aN, Geom_BSplineSurface aP) = RandomSurface(anOracle);
+            (N.Geom_BSplineSurface aN, BSplineSurface aP) = RandomSurface(anOracle);
             using (aN)
             {
                 for (int aStep = 0; aStep < 3; aStep++)
@@ -405,7 +405,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>Applies the same random edit natively and in the port; false if both threw.</summary>
-    private static bool Edit(Oracle theOracle, N.Geom_BSplineSurface theN, Geom_BSplineSurface theP, int theEdit, out string theWhat)
+    private static bool Edit(Oracle theOracle, N.Geom_BSplineSurface theN, BSplineSurface theP, int theEdit, out string theWhat)
     {
         theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         switch (theEdit)
@@ -424,7 +424,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
                 {
                     // Increasing, sometimes on an existing knot
                     aKnots[k] = theOracle.Int(0, 3) == 0
-                                    ? (anIsU ? theP.UKnot(theOracle.Int(1, theP.NbUKnots())) : theP.VKnot(theOracle.Int(1, theP.NbVKnots())))
+                                    ? (anIsU ? theP.UKnot(theOracle.Int(1, theP.UKnotCount)) : theP.VKnot(theOracle.Int(1, theP.VKnotCount)))
                                     : aFirst + (aLast - aFirst) * (k - 1 + theOracle.Real(0.05, 0.95)) / aNb;
                     aMults[k] = theOracle.Int(1, aDeg);
                 }
@@ -473,7 +473,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
             {
                 theWhat = "IncreaseDegree";
                 int aUD = theP.UDegree() + theOracle.Int(0, 2), aVD = theP.VDegree() + theOracle.Int(0, 2);
-                if ((theP.IsUPeriodic() && aUD != theP.UDegree()) || (theP.IsVPeriodic() && aVD != theP.VDegree()))
+                if ((theP.IsUPeriodic && aUD != theP.UDegree()) || (theP.IsVPeriodic && aVD != theP.VDegree()))
                 {
                     // Periodic IncreaseDegree is broken in OCCT (decision 91): not compared
                     return false;
@@ -510,7 +510,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
                 }
 
                 // CheckAndSegment over the whole range of a periodic direction breaks the surface (occt-issues.md)
-                if (theEdit == 6 && ((theP.IsUPeriodic() && aSU1 == aU1 && aSU2 == aU2) || (theP.IsVPeriodic() && aSV1 == aV1 && aSV2 == aV2)))
+                if (theEdit == 6 && ((theP.IsUPeriodic && aSU1 == aU1 && aSU2 == aU2) || (theP.IsVPeriodic && aSV1 == aV1 && aSV2 == aV2)))
                 {
                     return false;
                 }
@@ -521,7 +521,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
             case 7:
             {
                 theWhat = "SetPole";
-                int ii = theOracle.Int(1, theP.NbUPoles()), jj = theOracle.Int(1, theP.NbVPoles());
+                int ii = theOracle.Int(1, theP.UPoleCount), jj = theOracle.Int(1, theP.VPoleCount);
                 Point3D aPnt = theOracle.Pnt();
                 using N.gp_Pnt aNPnt = Oracle.ToNative(aPnt);
                 if (theOracle.Int(0, 1) == 0)
@@ -535,7 +535,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
             case 8:
             {
                 theWhat = "SetWeight";
-                int ii = theOracle.Int(1, theP.NbUPoles()), jj = theOracle.Int(1, theP.NbVPoles());
+                int ii = theOracle.Int(1, theP.UPoleCount), jj = theOracle.Int(1, theP.VPoleCount);
                 double aW = theOracle.Int(0, 3) == 0 ? 1.0 : theOracle.Real(0.5, 2);
                 return Both(() => theN.SetWeight(ii, jj, aW), () => theP.SetWeight(ii, jj, aW), theWhat);
             }
@@ -543,10 +543,10 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
             {
                 theWhat = "SetWeightRow/Col";
                 bool aRow = theOracle.Int(0, 1) == 0;
-                int aNb = aRow ? theP.NbVPoles() : theP.NbUPoles();
+                int aNb = aRow ? theP.VPoleCount : theP.UPoleCount;
                 NCollection_Array1<double> aWs = theOracle.Weights(aNb, true);
                 using N.TColStd_Array1OfReal aNWs = Oracle.ToNative(aWs);
-                int anIndex = theOracle.Int(1, aRow ? theP.NbUPoles() : theP.NbVPoles());
+                int anIndex = theOracle.Int(1, aRow ? theP.UPoleCount : theP.VPoleCount);
                 return aRow ? Both(() => theN.SetWeightRow(anIndex, aNWs), () => theP.SetWeightRow(anIndex, aWs), theWhat)
                             : Both(() => theN.SetWeightCol(anIndex, aNWs), () => theP.SetWeightCol(anIndex, aWs), theWhat);
             }
@@ -554,7 +554,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
             {
                 theWhat = "SetPoleRow/Col";
                 bool aRow = theOracle.Int(0, 1) == 0;
-                int aNb = aRow ? theP.NbVPoles() : theP.NbUPoles();
+                int aNb = aRow ? theP.VPoleCount : theP.UPoleCount;
                 var aPs = new NCollection_Array1<Point3D>(1, aNb);
                 for (int k = 1; k <= aNb; k++)
                 {
@@ -562,32 +562,32 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
                 }
 
                 using N.TColgp_Array1OfPnt aNPs = Oracle.ToNative(aPs);
-                int anIndex = theOracle.Int(1, aRow ? theP.NbUPoles() : theP.NbVPoles());
+                int anIndex = theOracle.Int(1, aRow ? theP.UPoleCount : theP.VPoleCount);
                 return aRow ? Both(() => theN.SetPoleRow(anIndex, aNPs), () => theP.SetPoleRow(anIndex, aPs), theWhat)
                             : Both(() => theN.SetPoleCol(anIndex, aNPs), () => theP.SetPoleCol(anIndex, aPs), theWhat);
             }
             case 11:
             {
-                theWhat = theP.IsUPeriodic() ? "SetUNotPeriodic" : "SetUPeriodic";
-                return theP.IsUPeriodic() ? Both(() => theN.SetUNotPeriodic(), () => theP.SetUNotPeriodic(), theWhat)
+                theWhat = theP.IsUPeriodic ? "SetUNotPeriodic" : "SetUPeriodic";
+                return theP.IsUPeriodic ? Both(() => theN.SetUNotPeriodic(), () => theP.SetUNotPeriodic(), theWhat)
                                           : Both(() => theN.SetUPeriodic(), () => theP.SetUPeriodic(), theWhat);
             }
             case 12:
             {
-                theWhat = theP.IsVPeriodic() ? "SetVNotPeriodic" : "SetVPeriodic";
-                return theP.IsVPeriodic() ? Both(() => theN.SetVNotPeriodic(), () => theP.SetVNotPeriodic(), theWhat)
+                theWhat = theP.IsVPeriodic ? "SetVNotPeriodic" : "SetVPeriodic";
+                return theP.IsVPeriodic ? Both(() => theN.SetVNotPeriodic(), () => theP.SetVNotPeriodic(), theWhat)
                                           : Both(() => theN.SetVPeriodic(), () => theP.SetVPeriodic(), theWhat);
             }
             case 13:
             {
                 theWhat = "SetUOrigin/SetVOrigin";
-                if (theP.IsUPeriodic())
+                if (theP.IsUPeriodic)
                 {
                     int anIndex = theOracle.Int(theP.FirstUKnotIndex(), theP.LastUKnotIndex());
                     return Both(() => theN.SetUOrigin(anIndex), () => theP.SetUOrigin(anIndex), theWhat);
                 }
 
-                if (theP.IsVPeriodic())
+                if (theP.IsVPeriodic)
                 {
                     int anIndex = theOracle.Int(theP.FirstVKnotIndex(), theP.LastVKnotIndex());
                     return Both(() => theN.SetVOrigin(anIndex), () => theP.SetVOrigin(anIndex), theWhat);
@@ -605,15 +605,15 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
                 theWhat = "MovePoint";
                 // Not on periodic surfaces, where OCCT reads poles past the array (occt-issues.md), and with the whole
                 // pole grid as window: a window away from the point reads past the basis matrix (occt-issues.md)
-                if (theP.IsUPeriodic() || theP.IsVPeriodic())
+                if (theP.IsUPeriodic || theP.IsVPeriodic)
                 {
                     return false;
                 }
 
                 double aU = theOracle.Real(aU1, aU2), aV = theOracle.Real(aV1, aV2);
                 Point3D aTarget = theP.Value(aU, aV).Translated(new Vector3D(theOracle.Real(-1, 1), theOracle.Real(-1, 1), theOracle.Real(-1, 1)));
-                int aUI1 = 1, aUI2 = theP.NbUPoles();
-                int aVI1 = 1, aVI2 = theP.NbVPoles();
+                int aUI1 = 1, aUI2 = theP.UPoleCount;
+                int aVI1 = 1, aVI2 = theP.VPoleCount;
                 using N.gp_Pnt aNTarget = Oracle.ToNative(aTarget);
                 int aNF1 = 0, aNL1 = 0, aNF2 = 0, aNL2 = 0, aF1 = 0, aL1 = 0, aF2 = 0, aL2 = 0;
                 bool anOk = Both(() => theN.MovePoint(aU, aV, aNTarget, aUI1, aUI2, aVI1, aVI2, ref aNF1, ref aNL1, ref aNF2, ref aNL2),
@@ -648,7 +648,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
             {
                 theWhat = "Increase/IncrementMultiplicity";
                 bool anIsU = theOracle.Int(0, 1) == 0;
-                int aNbKnots = anIsU ? theP.NbUKnots() : theP.NbVKnots();
+                int aNbKnots = anIsU ? theP.UKnotCount : theP.VKnotCount;
                 int aDeg = anIsU ? theP.UDegree() : theP.VDegree();
                 int anI1 = theOracle.Int(1, aNbKnots), anI2 = theOracle.Int(anI1, aNbKnots);
                 int aKind = theOracle.Int(0, 2);

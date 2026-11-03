@@ -7,6 +7,7 @@
 //                       + Utilisation de GeomFill::GetCircle dans Section.
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
@@ -21,9 +22,9 @@ namespace Occt;
 /// </summary>
 public class BlendFunc_CSConstRad : Blend_CSFunction
 {
-    private readonly Adaptor3d_Surface surf;
-    private readonly Adaptor3d_Curve curv;
-    private readonly Adaptor3d_Curve guide;
+    private readonly SurfaceAdaptorBase surf;
+    private readonly CurveAdaptorBase curv;
+    private readonly CurveAdaptorBase guide;
     private Point3D pts;
     private Point3D ptc;
     private Point2D pt2d;
@@ -45,7 +46,7 @@ public class BlendFunc_CSConstRad : Blend_CSFunction
     private BlendFunc_SectionShape mySShape;
     private ParameterisationType myTConv;
 
-    public BlendFunc_CSConstRad(Adaptor3d_Surface S, Adaptor3d_Curve C, Adaptor3d_Curve CGuide)
+    public BlendFunc_CSConstRad(SurfaceAdaptorBase S, CurveAdaptorBase C, CurveAdaptorBase CGuide)
     {
         surf = S;
         curv = C;

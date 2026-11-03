@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 
+using Kerf.Engine.Geometry.Bounds.Computation;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -18,11 +20,11 @@ public class GeomBndLib_CurveIssueTests
     public void TurnedParabola_BoxMissesCoordinateExtremum()
     {
         Frame3D anAx = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 1.0, 0.0));
-        Geom_Parabola aParab = new(anAx, 2.0);
+        ParabolaCurve3D aParab = new(anAx, 2.0);
 
-        Box aBox = new GeomBndLib_Curve(aParab).Box(-6.0, 6.0, 0.0);
+        Box aBox = new CurveBounds(aParab).Box(-6.0, 6.0, 0.0);
         Box anAdd = new();
-        BndLib_Add3dCurve.Add(new GeomAdaptor_Curve(aParab), -6.0, 6.0, 0.0, ref anAdd);
+        Add3dCurve.Add(new CurveAdaptor(aParab), -6.0, 6.0, 0.0, ref anAdd);
 
         double aTrueXmin = aParab.Value(4.0).X();
         Assert.Equal(-Math.Sqrt(2.0), aTrueXmin, 1e-12);

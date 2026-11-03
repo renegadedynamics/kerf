@@ -2,8 +2,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 
@@ -22,7 +25,7 @@ internal static partial class ChFi3d_Builder_0
     /// (<paramref name="wc"/> &lt; -1e100), the last one (&gt; 1e100), or the closest to <paramref name="wc"/>; its
     /// parameters on the surface and the curve.
     /// </summary>
-    internal static bool ChFi3d_IntCS(Adaptor3d_Surface S, Adaptor3d_Curve C, ref Point2D p2dS, ref double wc)
+    internal static bool ChFi3d_IntCS(SurfaceAdaptorBase S, CurveAdaptorBase C, ref Point2D p2dS, ref double wc)
     {
         IntCurveSurface_HInter Intersection = new();
 
@@ -50,11 +53,11 @@ internal static partial class ChFi3d_Builder_0
                 pint = Intersection.Point(i);
                 double up = pint.U();
                 double vp = pint.V();
-                if (S.IsUPeriodic())
+                if (S.IsUPeriodic)
                 {
                     up = ChFi3d_InPeriod(up, u1, u1 + S.UPeriod(), 1.0e-8);
                 }
-                if (S.IsVPeriodic())
+                if (S.IsVPeriodic)
                 {
                     vp = ChFi3d_InPeriod(vp, v1, v1 + S.VPeriod(), 1.0e-8);
                 }
@@ -84,11 +87,11 @@ internal static partial class ChFi3d_Builder_0
             pint = Intersection.Point(isol);
             double up2 = pint.U();
             double vp2 = pint.V();
-            if (S.IsUPeriodic())
+            if (S.IsUPeriodic)
             {
                 up2 = ChFi3d_InPeriod(up2, u1, u1 + S.UPeriod(), 1.0e-8);
             }
-            if (S.IsVPeriodic())
+            if (S.IsVPeriodic)
             {
                 vp2 = ChFi3d_InPeriod(vp2, v1, v1 + S.VPeriod(), 1.0e-8);
             }
@@ -109,7 +112,7 @@ internal static partial class ChFi3d_Builder_0
     /// <summary>Refines the crossing of the two traces on the fillets from the parameters
     /// <paramref name="UInt1"/> and <paramref name="UInt2"/>.</summary>
     internal static void ChFi3d_ComputesIntPC(in ChFiDS_FaceInterference Fi1, in ChFiDS_FaceInterference Fi2,
-                                              GeomAdaptor_Surface HS1, GeomAdaptor_Surface HS2, ref double UInt1,
+                                              SurfaceAdaptor HS1, SurfaceAdaptor HS2, ref double UInt1,
                                               ref double UInt2)
     {
         Point3D bid = new();
@@ -121,7 +124,7 @@ internal static partial class ChFi3d_Builder_0
     /// <summary>Refines the crossing of the two traces on the fillets from the parameters
     /// <paramref name="UInt1"/> and <paramref name="UInt2"/>; <paramref name="P"/> the point between them.</summary>
     internal static void ChFi3d_ComputesIntPC(in ChFiDS_FaceInterference Fi1, in ChFiDS_FaceInterference Fi2,
-                                              GeomAdaptor_Surface HS1, GeomAdaptor_Surface HS2, ref double UInt1,
+                                              SurfaceAdaptor HS1, SurfaceAdaptor HS2, ref double UInt1,
                                               ref double UInt2, ref Point3D P)
     {
         // Only one intersection to be carried out, however, the effort
@@ -137,18 +140,18 @@ internal static partial class ChFi3d_Builder_0
         P.SetXYZ(p3d1.XYZ().Added(p3d2.XYZ()).Multiplied(0.5));
         // recalculation of the extremums
         double delt1 = Math.Min(0.1, 0.05 * (Fi1.LastParameter() - Fi1.FirstParameter()));
-        Geom2dAdaptor_Curve hc2d1 = new(Fi1.PCurveOnSurf()!, UInt1 - delt1, UInt1 + delt1);
-        Adaptor3d_CurveOnSurface cons1 = new(hc2d1, HS1);
+        CurveAdaptor2D hc2d1 = new(Fi1.PCurveOnSurf()!, UInt1 - delt1, UInt1 + delt1);
+        CurveOnSurface cons1 = new(hc2d1, HS1);
         double delt2 = Math.Min(0.1, 0.05 * (Fi2.LastParameter() - Fi2.FirstParameter()));
-        Geom2dAdaptor_Curve hc2d2 = new(Fi2.PCurveOnSurf()!, UInt2 - delt2, UInt2 + delt2);
-        Adaptor3d_CurveOnSurface cons2 = new(hc2d2, HS2);
-        Extrema_LocateExtCC ext = new(cons1, cons2, UInt1, UInt2);
-        if (ext.IsDone())
+        CurveAdaptor2D hc2d2 = new(Fi2.PCurveOnSurf()!, UInt2 - delt2, UInt2 + delt2);
+        CurveOnSurface cons2 = new(hc2d2, HS2);
+        LocateExtCC ext = new(cons1, cons2, UInt1, UInt2);
+        if (ext.IsDone)
         {
             double dist2 = ext.SquareDistance();
             if (dist2 < distref2)
             {
-                ext.Point(out Extrema_POnCurv ponc1, out Extrema_POnCurv ponc2);
+                ext.Point(out POnCurv ponc1, out POnCurv ponc2);
                 UInt1 = ponc1.Parameter();
                 UInt2 = ponc2.Parameter();
                 Point3D Pnt1 = ponc1.Value();
@@ -166,7 +169,7 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The adaptor of the fillet surface of <paramref name="Fd1"/>, bounded around its traces on the sides
     /// <paramref name="IFaCo1"/> and <paramref name="IFaArc1"/> (unbounded when either is 0).</summary>
-    internal static GeomAdaptor_Surface ChFi3d_BoundSurf(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Fd1,
+    internal static SurfaceAdaptor ChFi3d_BoundSurf(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Fd1,
                                                          int IFaCo1, int IFaArc1)
     {
         // rmq : as in fact 2 interferences of Fd1 serve only to set limits
@@ -174,8 +177,8 @@ internal static partial class ChFi3d_Builder_0
         //       They are preserver here as an option in case it will be necessary to set
         //       more restrictive limits (with intersection points as additional argument).
 
-        GeomAdaptor_Surface HS1 = new();
-        GeomAdaptor_Surface S1 = HS1;
+        SurfaceAdaptor HS1 = new();
+        SurfaceAdaptor S1 = HS1;
         S1.Load(DStr.Surface(Fd1.Surf()).Surface()!);
 
         if ((IFaCo1 == 0) || (IFaArc1 == 0))
@@ -268,7 +271,7 @@ internal static partial class ChFi3d_Builder_0
     /// </summary>
     internal static bool ChFi3d_SearchFD(TopOpeBRepDS_DataStructure DStr, ChFiDS_Stripe cd1, ChFiDS_Stripe cd2,
                                          int sens1, int sens2, ref int i1, ref int i2, ref double p1, ref double p2,
-                                         int ind1, int ind2, ref TopoDS_Face face, ref bool sameside, ref int jf1,
+                                         int ind1, int ind2, ref Face face, ref bool sameside, ref int jf1,
                                          ref int jf2)
     {
         bool found = false;
@@ -279,7 +282,7 @@ internal static partial class ChFi3d_Builder_0
         int i;
         bool fini1 = false, fini2 = false;
         bool visavis = false, visavisok = false;
-        TopoDS_Vertex Vtx = new();
+        Vertex Vtx = new();
         while (!found)
         {
             for (i = id1; (i * sens1) <= (if1 * sens1) && !found && !fini2; i = i + sens1)
@@ -350,9 +353,9 @@ internal static partial class ChFi3d_Builder_0
     /// <summary>The parameters of <paramref name="p3d"/> on <paramref name="S"/>: analytic for the elementary
     /// surfaces, else by projection.</summary>
     /// <exception cref="NotDoneException">The projection does not give exactly one point.</exception>
-    internal static void ChFi3d_Parameters(Geom_Surface S, in Point3D p3d, out double u, out double v)
+    internal static void ChFi3d_Parameters(Surface S, in Point3D p3d, out double u, out double v)
     {
-        GeomAdaptor_Surface gas = new(S);
+        SurfaceAdaptor gas = new(S);
         switch (gas.GetType())
         {
             case Plane:
@@ -370,8 +373,8 @@ internal static partial class ChFi3d_Builder_0
             case SurfaceKind.Torus:
                 global::Kerf.Engine.Geometry.ElSLib.Parameters(gas.Torus(), p3d, out u, out v);
                 break;
-            case BezierSurface:
-            case BSplineSurface:
+            case SurfaceKind.BezierSurface:
+            case SurfaceKind.BSplineSurface:
             default:
             {
                 GeomAPI_ProjectPointOnSurf tool = new(p3d, S);
@@ -397,11 +400,11 @@ internal static partial class ChFi3d_Builder_0
     /// <summary><paramref name="gc"/> trimmed between the parameters of <paramref name="FirstP"/> and
     /// <paramref name="LastP"/>.</summary>
     /// <exception cref="NotDoneException">A projection does not give exactly one point.</exception>
-    internal static void ChFi3d_TrimCurve(Geom_Curve gc, in Point3D FirstP, in Point3D LastP,
-                                          out Geom_TrimmedCurve gtc)
+    internal static void ChFi3d_TrimCurve(Curve3D gc, in Point3D FirstP, in Point3D LastP,
+                                          out TrimmedCurve3D gtc)
     {
         double uf = 0.0, ul = 0.0;
-        GeomAdaptor_Curve gac = new(gc);
+        CurveAdaptor gac = new(gc);
         switch (gac.GetType())
         {
             case Line:
@@ -457,12 +460,12 @@ internal static partial class ChFi3d_Builder_0
             }
                 break;
         }
-        gtc = new Geom_TrimmedCurve(gc, uf, ul);
+        gtc = new TrimmedCurve3D(gc, uf, ul);
     }
 
     //=================================================================================================
 
-    private static bool GoodExt(Geom_Curve C, in Vector3D V, double f, double l, double a)
+    private static bool GoodExt(Curve3D C, in Vector3D V, double f, double l, double a)
     {
         for (int i = 0; i < 6; i++)
         {

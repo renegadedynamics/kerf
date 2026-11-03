@@ -8,6 +8,8 @@ using Kerf.Engine.Foundation.Std;
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Library;
 using Kerf.Engine.Geometry.Splines;
 
 using Kerf.Engine.Numerics;
@@ -90,7 +92,7 @@ internal static class GordonUtilities
     /// <summary>Returns a stable cubic degree when the OCCT degree limit allows it.</summary>
     internal static int interpolationDegree()
     {
-        return Min(3, Geom_BSplineCurve.MaxDegree());
+        return Min(3, BSplineCurve3D.MaxDegree());
     }
 
     /// <summary>Returns a parameter comparison tolerance scaled by the interval length.</summary>
@@ -184,9 +186,9 @@ internal static class GordonUtilities
     }
 
     /// <summary>Expands a periodic B-spline period into explicit non-periodic storage.</summary>
-    internal static bool exposePeriod(Geom_BSplineCurve theCurve)
+    internal static bool exposePeriod(BSplineCurve3D theCurve)
     {
-        if (!theCurve.IsPeriodic())
+        if (!theCurve.IsPeriodic)
         {
             return true;
         }
@@ -201,7 +203,7 @@ internal static class GordonUtilities
             }
 
             theCurve.Segment(aFirst, aLast, global::Kerf.Engine.Foundation.Precision.PConfusion());
-            if (theCurve.IsPeriodic())
+            if (theCurve.IsPeriodic)
             {
                 theCurve.SetNotPeriodic();
             }
@@ -210,15 +212,15 @@ internal static class GordonUtilities
         {
             return false;
         }
-        return !theCurve.IsPeriodic();
+        return !theCurve.IsPeriodic;
     }
 
     /// <summary>Normalizes an input curve family to explicit non-periodic B-splines on [0, 1].</summary>
-    internal static bool makeUnitCurves(NCollection_Array1<Geom_BSplineCurve?> theCurves)
+    internal static bool makeUnitCurves(NCollection_Array1<BSplineCurve3D?> theCurves)
     {
         for (int aCurveIdx = 0; aCurveIdx < theCurves.Size(); ++aCurveIdx)
         {
-            Geom_BSplineCurve? aCurve = theCurves.At(aCurveIdx);
+            BSplineCurve3D? aCurve = theCurves.At(aCurveIdx);
             if (aCurve is null || !exposePeriod(aCurve))
             {
                 return false;
@@ -263,11 +265,11 @@ internal static class GordonUtilities
     }
 
     /// <summary>Appends a unique contact candidate if the corresponding curve points match.</summary>
-    internal static void appendContact(Geom_BSplineCurve theProfile, Geom_BSplineCurve theGuide, double theProfileParam,
+    internal static void appendContact(BSplineCurve3D theProfile, BSplineCurve3D theGuide, double theProfileParam,
                                        double theGuideParam, double theTolerance, ContactSet theContacts)
     {
-        GeomAdaptor_Curve aProfileAdaptor = new(theProfile);
-        GeomAdaptor_Curve aGuideAdaptor = new(theGuide);
+        CurveAdaptor aProfileAdaptor = new(theProfile);
+        CurveAdaptor aGuideAdaptor = new(theGuide);
         Point3D aProfilePoint = aProfileAdaptor.EvalD0(theProfileParam);
         Point3D aGuidePoint = aGuideAdaptor.EvalD0(theGuideParam);
         double aGap = aProfilePoint.Distance(aGuidePoint);
@@ -292,7 +294,7 @@ internal static class GordonUtilities
     }
 
     /// <summary>Converts two close extrema points to an exact curve-parameter contact.</summary>
-    internal static void appendExtremaContact(Geom_BSplineCurve theProfile, Geom_BSplineCurve theGuide,
+    internal static void appendExtremaContact(BSplineCurve3D theProfile, BSplineCurve3D theGuide,
                                               in Point3D theProfilePoint, in Point3D theGuidePoint, double theTolerance,
                                               ContactSet theContacts)
     {
@@ -305,24 +307,24 @@ internal static class GordonUtilities
 
         double aProfileParam;
         double aGuideParam = 0.0;
-        if (GeomLib_Tool.Parameter(theProfile, aSharedPoint, theTolerance, out aProfileParam)
-            && GeomLib_Tool.Parameter(theGuide, aSharedPoint, theTolerance, out aGuideParam))
+        if (GeometryLibraryTool.Parameter(theProfile, aSharedPoint, theTolerance, out aProfileParam)
+            && GeometryLibraryTool.Parameter(theGuide, aSharedPoint, theTolerance, out aGuideParam))
         {
             appendContact(theProfile, theGuide, aProfileParam, aGuideParam, theTolerance, theContacts);
         }
     }
 
     /// <summary>Adds endpoint contacts; these are important for opening closed seams.</summary>
-    internal static void appendBoundaryContacts(Geom_BSplineCurve theProfile, Geom_BSplineCurve theGuide,
+    internal static void appendBoundaryContacts(BSplineCurve3D theProfile, BSplineCurve3D theGuide,
                                                 double theTolerance, ContactSet theContacts)
     {
         ReadOnlySpan<double> aProfileBounds = [theProfile.FirstParameter(), theProfile.LastParameter()];
         ReadOnlySpan<double> aGuideBounds = [theGuide.FirstParameter(), theGuide.LastParameter()];
-        GeomAdaptor_Curve aProfileAdaptor = new(theProfile);
-        GeomAdaptor_Curve aGuideAdaptor = new(theGuide);
+        CurveAdaptor aProfileAdaptor = new(theProfile);
+        CurveAdaptor aGuideAdaptor = new(theGuide);
         foreach (double aProfileParam in aProfileBounds)
         {
-            if (GeomLib_Tool.Parameter(theGuide, aProfileAdaptor.EvalD0(aProfileParam), theTolerance,
+            if (GeometryLibraryTool.Parameter(theGuide, aProfileAdaptor.EvalD0(aProfileParam), theTolerance,
                                        out double aGuideParam))
             {
                 appendContact(theProfile, theGuide, aProfileParam, aGuideParam, theTolerance, theContacts);
@@ -330,7 +332,7 @@ internal static class GordonUtilities
         }
         foreach (double aGuideParam in aGuideBounds)
         {
-            if (GeomLib_Tool.Parameter(theProfile, aGuideAdaptor.EvalD0(aGuideParam), theTolerance,
+            if (GeometryLibraryTool.Parameter(theProfile, aGuideAdaptor.EvalD0(aGuideParam), theTolerance,
                                        out double aProfileParam))
             {
                 appendContact(theProfile, theGuide, aProfileParam, aGuideParam, theTolerance, theContacts);
@@ -338,11 +340,11 @@ internal static class GordonUtilities
         }
     }
 
-    internal static bool appendLinearSegmentContact(Geom_BSplineCurve theProfile, Geom_BSplineCurve theGuide,
+    internal static bool appendLinearSegmentContact(BSplineCurve3D theProfile, BSplineCurve3D theGuide,
                                                     double theTolerance, ContactSet theContacts)
     {
-        if (theProfile.Degree() != 1 || theGuide.Degree() != 1 || theProfile.NbPoles() != 2
-            || theGuide.NbPoles() != 2)
+        if (theProfile.Degree() != 1 || theGuide.Degree() != 1 || theProfile.PoleCount != 2
+            || theGuide.PoleCount != 2)
         {
             return false;
         }
@@ -357,8 +359,8 @@ internal static class GordonUtilities
             return true;
         }
 
-        GeomAdaptor_Curve aProfileAdaptor = new(theProfile);
-        GeomAdaptor_Curve aGuideAdaptor = new(theGuide);
+        CurveAdaptor aProfileAdaptor = new(theProfile);
+        CurveAdaptor aGuideAdaptor = new(theGuide);
         Point3D aP0 = aProfileAdaptor.EvalD0(aProfileFirst);
         Point3D aP1 = aProfileAdaptor.EvalD0(aProfileLast);
         Point3D aQ0 = aGuideAdaptor.EvalD0(aGuideFirst);
@@ -404,7 +406,7 @@ internal static class GordonUtilities
     }
 
     /// <summary>Returns all close contacts detected for one profile/guide pair.</summary>
-    internal static ContactSet collectContacts(Geom_BSplineCurve theProfile, Geom_BSplineCurve theGuide,
+    internal static ContactSet collectContacts(BSplineCurve3D theProfile, BSplineCurve3D theGuide,
                                                double theTolerance)
     {
         ContactSet aContacts = new();
@@ -481,8 +483,8 @@ internal static class GordonUtilities
     /// Builds all profile/guide contacts. The pairs are independent, each writes only its own set, so a parallel run
     /// gives the serial result (decision 490).
     /// </summary>
-    internal static bool fillContactTable(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
-                                          NCollection_Array1<Geom_BSplineCurve?> theGuides,
+    internal static bool fillContactTable(NCollection_Array1<BSplineCurve3D?> theProfiles,
+                                          NCollection_Array1<BSplineCurve3D?> theGuides,
                                           NCollection_Array2<double> theProfileParams,
                                           NCollection_Array2<double> theGuideParams,
                                           NCollection_LinearVector<ContactSet> theContactSets, double theTolerance,
@@ -521,7 +523,7 @@ internal static class GordonUtilities
     }
 
     /// <summary>Snaps one parameter value to the curve boundary when it is close enough.</summary>
-    internal static double snappedParameter(Geom_BSplineCurve theCurve, double theParameter, double theTolerance)
+    internal static double snappedParameter(BSplineCurve3D theCurve, double theParameter, double theTolerance)
     {
         double aFirst = theCurve.FirstParameter();
         double aLast = theCurve.LastParameter();
@@ -538,8 +540,8 @@ internal static class GordonUtilities
     }
 
     /// <summary>Normalizes intersections after ordering and returns detected closed directions.</summary>
-    internal static bool normalizeContactTable(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
-                                               NCollection_Array1<Geom_BSplineCurve?> theGuides,
+    internal static bool normalizeContactTable(NCollection_Array1<BSplineCurve3D?> theProfiles,
+                                               NCollection_Array1<BSplineCurve3D?> theGuides,
                                                NCollection_Array2<double> theProfileParams,
                                                NCollection_Array2<double> theGuideParams, double theTolerance,
                                                ref bool theIsUClosed, ref bool theIsVClosed)
@@ -567,10 +569,10 @@ internal static class GordonUtilities
         // One pass validates all contacts and measures only the two possible seam gaps.
         for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
         {
-            GeomAdaptor_Curve aProfileAdaptor = new(theProfiles.At(aProfileIdx)!);
+            CurveAdaptor aProfileAdaptor = new(theProfiles.At(aProfileIdx)!);
             for (int aGuideIdx = 0; aGuideIdx < theGuides.Size(); ++aGuideIdx)
             {
-                GeomAdaptor_Curve aGuideAdaptor = new(theGuides.At(aGuideIdx)!);
+                CurveAdaptor aGuideAdaptor = new(theGuides.At(aGuideIdx)!);
                 Point3D aProfilePoint = aProfileAdaptor.EvalD0(theProfileParams.At(aProfileIdx, aGuideIdx));
                 Point3D aGuidePoint = aGuideAdaptor.EvalD0(theGuideParams.At(aProfileIdx, aGuideIdx));
                 if (aProfilePoint.Distance(aGuidePoint) > aTol)
@@ -680,8 +682,8 @@ internal static class GordonUtilities
     }
 
     /// <summary>Opens duplicated seam contacts to exact boundary parameters before monotone validation.</summary>
-    internal static void openClosedBoundaryCandidates(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
-                                                      NCollection_Array1<Geom_BSplineCurve?> theGuides,
+    internal static void openClosedBoundaryCandidates(NCollection_Array1<BSplineCurve3D?> theProfiles,
+                                                      NCollection_Array1<BSplineCurve3D?> theGuides,
                                                       NCollection_Array2<double> theProfileParams,
                                                       NCollection_Array2<double> theGuideParams, double theTolerance)
     {
@@ -691,7 +693,7 @@ internal static class GordonUtilities
         bool isURepeated = true;
         for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
         {
-            GeomAdaptor_Curve aProfileAdaptor = new(theProfiles.At(aProfileIdx)!);
+            CurveAdaptor aProfileAdaptor = new(theProfiles.At(aProfileIdx)!);
             Point3D aFirst = aProfileAdaptor.EvalD0(theProfileParams.At(aProfileIdx, 0));
             Point3D aLast = aProfileAdaptor.EvalD0(theProfileParams.At(aProfileIdx, aLastGuide));
             if (aFirst.Distance(aLast) > aTol)
@@ -712,7 +714,7 @@ internal static class GordonUtilities
         bool isVRepeated = true;
         for (int aGuideIdx = 0; aGuideIdx < theGuides.Size(); ++aGuideIdx)
         {
-            GeomAdaptor_Curve aGuideAdaptor = new(theGuides.At(aGuideIdx)!);
+            CurveAdaptor aGuideAdaptor = new(theGuides.At(aGuideIdx)!);
             Point3D aFirst = aGuideAdaptor.EvalD0(theGuideParams.At(0, aGuideIdx));
             Point3D aLast = aGuideAdaptor.EvalD0(theGuideParams.At(aLastProf, aGuideIdx));
             if (aFirst.Distance(aLast) > aTol)
@@ -732,9 +734,9 @@ internal static class GordonUtilities
     }
 
     /// <summary>Returns a curve handle oriented as requested (always a copy).</summary>
-    internal static Geom_BSplineCurve orientedCurve(Geom_BSplineCurve theCurve, bool theIsForward)
+    internal static BSplineCurve3D orientedCurve(BSplineCurve3D theCurve, bool theIsForward)
     {
-        Geom_BSplineCurve aCurve = (Geom_BSplineCurve)theCurve.Copy();
+        BSplineCurve3D aCurve = (BSplineCurve3D)theCurve.Copy();
         if (!theIsForward)
         {
             aCurve.Reverse();
@@ -743,7 +745,7 @@ internal static class GordonUtilities
     }
 
     /// <summary>Returns a parameter in the destination curve orientation.</summary>
-    internal static double orientedParameter(Geom_BSplineCurve theCurve, double theParameter, bool theIsForward)
+    internal static double orientedParameter(BSplineCurve3D theCurve, double theParameter, bool theIsForward)
     {
         return theIsForward ? theParameter : theCurve.FirstParameter() + theCurve.LastParameter() - theParameter;
     }
@@ -774,7 +776,7 @@ internal static class GordonUtilities
     }
 
     /// <summary>Returns the tangent mismatch between two parameters in the requested curve orientation.</summary>
-    internal static bool seamTangentMismatch(Geom_BSplineCurve theCurve, double theFirstParameter,
+    internal static bool seamTangentMismatch(BSplineCurve3D theCurve, double theFirstParameter,
                                              double theLastParameter, bool theIsForward, double theTolerance,
                                              ref double theMismatch)
     {
@@ -782,8 +784,8 @@ internal static class GordonUtilities
           theIsForward ? theFirstParameter : theCurve.FirstParameter() + theCurve.LastParameter() - theFirstParameter;
         double aLastRawParameter =
           theIsForward ? theLastParameter : theCurve.FirstParameter() + theCurve.LastParameter() - theLastParameter;
-        Geom_Curve.ResD1 aFirstD1 = theCurve.EvalD1(aFirstRawParameter);
-        Geom_Curve.ResD1 aLastD1 = theCurve.EvalD1(aLastRawParameter);
+        Curve3D.ResD1 aFirstD1 = theCurve.EvalD1(aFirstRawParameter);
+        Curve3D.ResD1 aLastD1 = theCurve.EvalD1(aLastRawParameter);
         if (aFirstD1.Point.Distance(aLastD1.Point) > Max(theTolerance, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             return false;
@@ -808,8 +810,8 @@ internal static class GordonUtilities
     }
 
     /// <summary>Selects one contact compatible with already selected row/column predecessors.</summary>
-    internal static bool chooseOrderedContact(ContactSet theContacts, Geom_BSplineCurve theProfile,
-                                              Geom_BSplineCurve theGuide, bool theProfileForward,
+    internal static bool chooseOrderedContact(ContactSet theContacts, BSplineCurve3D theProfile,
+                                              BSplineCurve3D theGuide, bool theProfileForward,
                                               bool theGuideForward, double theProfileTarget, double theGuideTarget,
                                               double thePreviousProfileParam, double thePreviousGuideParam,
                                               bool theHasPreviousProfile, bool theHasPreviousGuide,
@@ -875,8 +877,8 @@ internal static class GordonUtilities
     }
 
     /// <summary>Reorders curves and contact matrices into a consistent network layout.</summary>
-    internal static bool reorderNetwork(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
-                                        NCollection_Array1<Geom_BSplineCurve?> theGuides,
+    internal static bool reorderNetwork(NCollection_Array1<BSplineCurve3D?> theProfiles,
+                                        NCollection_Array1<BSplineCurve3D?> theGuides,
                                         NCollection_Array2<double> theProfileParams,
                                         NCollection_Array2<double> theGuideParams,
                                         NCollection_LinearVector<ContactSet> theContactSets, double theTolerance)
@@ -892,8 +894,8 @@ internal static class GordonUtilities
         NCollection_LinearVector<OrderedCurve> aProfileOrder = orderedCurves(rowMeans(aGuideParamMatrix));
         NCollection_LinearVector<OrderedCurve> aGuideOrder = orderedCurves(columnMeans(aProfileParamMatrix));
 
-        NCollection_Array1<Geom_BSplineCurve?> aProfiles = new(1, theProfiles.Size());
-        NCollection_Array1<Geom_BSplineCurve?> aGuides = new(1, theGuides.Size());
+        NCollection_Array1<BSplineCurve3D?> aProfiles = new(1, theProfiles.Size());
+        NCollection_Array1<BSplineCurve3D?> aGuides = new(1, theGuides.Size());
         NCollection_Array2<double> aProfileParams = new(theProfileParams.LowerRow(), theProfileParams.UpperRow(),
                                                         theProfileParams.LowerCol(), theProfileParams.UpperCol());
         NCollection_Array2<double> aGuideParams = new(theGuideParams.LowerRow(), theGuideParams.UpperRow(),
@@ -1062,9 +1064,9 @@ internal static class GordonUtilities
     }
 
     /// <summary>Reparametrizes a polynomial B-spline exactly using a piecewise-linear parameter law.</summary>
-    internal static bool reparametrizeExactly(Geom_BSplineCurve theCurve, math_Vector theSourceParams,
+    internal static bool reparametrizeExactly(BSplineCurve3D theCurve, math_Vector theSourceParams,
                                               math_Vector theTargetParams, int theNbConstraints, ScalarLaw theLaw,
-                                              ref Geom_BSplineCurve? theResult)
+                                              ref BSplineCurve3D? theResult)
     {
         if (theNbConstraints < 2)
         {
@@ -1121,13 +1123,13 @@ internal static class GordonUtilities
         NCollection_Array1<double> aNewKnots = toOneBasedArrayView(aNewKnotValues);
         NCollection_Array1<int> aNewMults = toOneBasedArrayView(aNewKnotMults);
         int aNbNewPoles = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aDegree, false, aNewMults);
-        NCollection_Array1<double> aSourceFlatKnots = new(1, theCurve.NbPoles() + aDegree + 1);
+        NCollection_Array1<double> aSourceFlatKnots = new(1, theCurve.PoleCount + aDegree + 1);
         NCollection_Array1<double> aTargetFlatKnots = new(1, aNbNewPoles + aDegree + 1);
         global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(aCurveKnots, aCurveMults, aSourceFlatKnots);
         global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(aNewKnots, aNewMults, aTargetFlatKnots);
 
         int aStatus;
-        if (!theCurve.IsRational())
+        if (!theCurve.IsRational)
         {
             NCollection_Array1<Point3D> aNewPoles = new(1, aNbNewPoles);
             global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(theLaw, aDegree, aSourceFlatKnots, theCurve.InternalPoles(),
@@ -1136,13 +1138,13 @@ internal static class GordonUtilities
             {
                 return false;
             }
-            theResult = new Geom_BSplineCurve(aNewPoles, aNewKnots, aNewMults, aDegree);
+            theResult = new BSplineCurve3D(aNewPoles, aNewKnots, aNewMults, aDegree);
             return theResult is not null;
         }
 
         NCollection_Array1<Point3D> aCurvePoles = theCurve.InternalPoles();
         NCollection_Array1<double> aCurveWeights = theCurve.InternalWeightsArray();
-        NCollection_Array1<double> aHomogeneousPoles = new(1, 4 * theCurve.NbPoles());
+        NCollection_Array1<double> aHomogeneousPoles = new(1, 4 * theCurve.PoleCount);
         for (int aPoleIdx = 0; aPoleIdx < aCurvePoles.Size(); ++aPoleIdx)
         {
             Point3D aPole = aCurvePoles.At(aPoleIdx);
@@ -1178,7 +1180,7 @@ internal static class GordonUtilities
             aNewWeights.ChangeAt(aPoleIdx) = aWeight;
         }
 
-        theResult = new Geom_BSplineCurve(aNewPoles2, aNewWeights, aNewKnots, aNewMults, aDegree);
+        theResult = new BSplineCurve3D(aNewPoles2, aNewWeights, aNewKnots, aNewMults, aDegree);
         return theResult is not null;
     }
 
@@ -1219,11 +1221,11 @@ internal static class GordonUtilities
     }
 
     /// <summary>Rebuilds one curve through target-parameter samples.</summary>
-    internal static bool rebuildCurve(ref Geom_BSplineCurve? theCurve, math_Vector theSourceParams,
+    internal static bool rebuildCurve(ref BSplineCurve3D? theCurve, math_Vector theSourceParams,
                                       math_Vector theTargetParams, bool theAllowApproximateRational,
                                       ref bool theDidApproximate, ref double theMaxDeviation)
     {
-        Geom_BSplineCurve aCurve = theCurve!;
+        BSplineCurve3D aCurve = theCurve!;
         math_Vector aSource = new(1, theSourceParams.Length() + 2);
         math_Vector aTarget = new(1, theTargetParams.Length() + 2);
         int aNbConstraints = 0;
@@ -1251,7 +1253,7 @@ internal static class GordonUtilities
             return false;
         }
 
-        Geom_BSplineCurve? anExactCurve = null;
+        BSplineCurve3D? anExactCurve = null;
         math_Vector aExactSource = new(1, aNbConstraints);
         math_Vector aExactTarget = new(1, aNbConstraints);
         for (int aConstraintIdx = 1; aConstraintIdx <= aNbConstraints; ++aConstraintIdx)
@@ -1265,7 +1267,7 @@ internal static class GordonUtilities
             return true;
         }
 
-        if (aCurve.IsRational())
+        if (aCurve.IsRational)
         {
             if (!theAllowApproximateRational)
             {
@@ -1274,8 +1276,8 @@ internal static class GordonUtilities
             theDidApproximate = true;
         }
 
-        GeomAdaptor_Curve aCurveAdaptor = new(aCurve);
-        NCollection_LinearVector<double> aSamples = samplingParameters(theTargetParams, aCurve.NbPoles());
+        CurveAdaptor aCurveAdaptor = new(aCurve);
+        NCollection_LinearVector<double> aSamples = samplingParameters(theTargetParams, aCurve.PoleCount);
         NCollection_LinearVector<Point3D> aPoints = new();
         NCollection_LinearVector<double> aParameters = new();
         for (int aSampleIdx = 0; aSampleIdx < aSamples.Size(); ++aSampleIdx)
@@ -1300,8 +1302,8 @@ internal static class GordonUtilities
         NCollection_Array1<Point3D> aPointArray = toOneBasedArrayView(aPoints);
         NCollection_Array1<double> aParamArray = toOneBasedArrayView(aParameters);
 
-        GeomLib_Interpolate anInterpolator = new(interpolationDegree(), aNbPoints, aPointArray, aParamArray);
-        if (!anInterpolator.IsDone())
+        Interpolate anInterpolator = new(interpolationDegree(), aNbPoints, aPointArray, aParamArray);
+        if (!anInterpolator.IsDone)
         {
             return false;
         }
@@ -1313,7 +1315,7 @@ internal static class GordonUtilities
             return false;
         }
 
-        GeomAdaptor_Curve aNewCurveAdaptor = new(theCurve);
+        CurveAdaptor aNewCurveAdaptor = new(theCurve);
         for (int aSampleIdx = 0; aSampleIdx < aSamples.Size(); ++aSampleIdx)
         {
             double aTargetParam = aSamples.Value(aSampleIdx);
@@ -1325,8 +1327,8 @@ internal static class GordonUtilities
     }
 
     /// <summary>Reconstructs curves so all intersections share averaged parameters.</summary>
-    internal static bool equalizeParameters(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
-                                            NCollection_Array1<Geom_BSplineCurve?> theGuides,
+    internal static bool equalizeParameters(NCollection_Array1<BSplineCurve3D?> theProfiles,
+                                            NCollection_Array1<BSplineCurve3D?> theGuides,
                                             NCollection_Array2<double> theProfileParams,
                                             NCollection_Array2<double> theGuideParams,
                                             bool theAllowApproximateRational, ref bool theDidApproximate,
@@ -1393,13 +1395,13 @@ internal static class GordonUtilities
     }
 
     /// <summary>Evaluates the validated profile parameters into a guide/profile point grid.</summary>
-    internal static NCollection_Array2<Point3D> contactPointGrid(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
+    internal static NCollection_Array2<Point3D> contactPointGrid(NCollection_Array1<BSplineCurve3D?> theProfiles,
                                                                 NCollection_Array2<double> theProfileParams)
     {
         NCollection_Array2<Point3D> aPoints = new(1, theProfileParams.RowLength(), 1, theProfileParams.ColLength());
         for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
         {
-            GeomAdaptor_Curve aProfileAdaptor = new(theProfiles.At(aProfileIdx)!);
+            CurveAdaptor aProfileAdaptor = new(theProfiles.At(aProfileIdx)!);
             for (int aGuideIdx = 0; aGuideIdx < theProfileParams.RowLength(); ++aGuideIdx)
             {
                 aPoints.ChangeAt(aGuideIdx, aProfileIdx) =
@@ -1410,22 +1412,22 @@ internal static class GordonUtilities
     }
 
     /// <summary>Evaluates the denominator of a rational B-spline curve at a contact parameter.</summary>
-    internal static double curveWeightAt(Geom_BSplineCurve theCurve, double theParameter)
+    internal static double curveWeightAt(BSplineCurve3D theCurve, double theParameter)
     {
-        if (!theCurve.IsRational())
+        if (!theCurve.IsRational)
         {
             return 1.0;
         }
 
         ReadOnlySpan<int> anExtrapMode = [theCurve.Degree(), theCurve.Degree()];
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.Eval(theParameter, theCurve.IsPeriodic(), false, anExtrapMode, theCurve.Degree(),
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Eval(theParameter, theCurve.IsPeriodic, false, anExtrapMode, theCurve.Degree(),
                       theCurve.InternalKnotSequence(), theCurve.InternalPoles(), theCurve.InternalWeightsArray(),
                       out Point3D _, out double aWeight);
         return aWeight;
     }
 
     /// <summary>Evaluates rational contact weights in guide/profile grid order.</summary>
-    internal static NCollection_Array2<double> contactWeightGrid(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
+    internal static NCollection_Array2<double> contactWeightGrid(NCollection_Array1<BSplineCurve3D?> theProfiles,
                                                                  NCollection_Array2<double> theProfileParams)
     {
         NCollection_Array2<double> aWeights = new(1, theProfileParams.RowLength(), 1, theProfileParams.ColLength());
@@ -1446,8 +1448,8 @@ internal static class GordonUtilities
     /// </summary>
     internal sealed class NetworkPreparation
     {
-        private readonly NCollection_Array1<Geom_BSplineCurve?> myProfiles;
-        private readonly NCollection_Array1<Geom_BSplineCurve?> myGuides;
+        private readonly NCollection_Array1<BSplineCurve3D?> myProfiles;
+        private readonly NCollection_Array1<BSplineCurve3D?> myGuides;
         private readonly NCollection_Array2<double> myProfileParams;
         private readonly NCollection_Array2<double> myGuideParams;
         private readonly NCollection_LinearVector<ContactSet> myContactSets = new();
@@ -1456,8 +1458,8 @@ internal static class GordonUtilities
         private double myMaxReparametrizationDeviation = 0.0;
         private readonly bool myToUseParallel;
 
-        public NetworkPreparation(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
-                                  NCollection_Array1<Geom_BSplineCurve?> theGuides,
+        public NetworkPreparation(NCollection_Array1<BSplineCurve3D?> theProfiles,
+                                  NCollection_Array1<BSplineCurve3D?> theGuides,
                                   NCollection_Array2<double> theProfileParams,
                                   NCollection_Array2<double> theGuideParams, double theTolerance,
                                   bool theToUseParallel)

@@ -1,10 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -14,60 +17,60 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepTopAdaptorTests
 {
-    private static TopoDS_Face Holed() => TestShapes.Frozen(ClassificationTestShapes.HoledSquare());
+    private static Face Holed() => TestShapes.Frozen(ClassificationTestShapes.HoledSquare());
 
     [Theory]
-    [InlineData(2.0, 2.0, TopAbs_IN)]
-    [InlineData(5.0, 5.0, TopAbs_OUT)]
-    [InlineData(11.0, 2.0, TopAbs_OUT)]
-    [InlineData(0.0, 5.0, TopAbs_ON)]
-    [InlineData(4.0, 5.0, TopAbs_ON)]
-    [InlineData(10.0, 10.0, TopAbs_ON)]
-    public void FClass2d_on_holed_square(double u, double v, TopAbs_State theExpected)
+    [InlineData(2.0, 2.0, In)]
+    [InlineData(5.0, 5.0, Out)]
+    [InlineData(11.0, 2.0, Out)]
+    [InlineData(0.0, 5.0, On)]
+    [InlineData(4.0, 5.0, On)]
+    [InlineData(10.0, 10.0, On)]
+    public void FClass2d_on_holed_square(double u, double v, Containment theExpected)
     {
         var aClass = new BRepTopAdaptor_FClass2d(Holed(), 1e-7);
         Assert.Equal(theExpected, aClass.Perform(new Point2D(u, v)));
         Assert.Equal(theExpected, aClass.Perform(new Point2D(u, v), false));
-        Assert.Equal(TopAbs_OUT, aClass.PerformInfinitePoint());
+        Assert.Equal(Out, aClass.PerformInfinitePoint());
     }
 
     [Fact]
     public void FClass2d_test_on_restriction()
     {
         var aClass = new BRepTopAdaptor_FClass2d(Holed(), 1e-7);
-        Assert.Equal(TopAbs_ON, aClass.TestOnRestriction(new Point2D(1e-4, 5), 1e-3));
-        Assert.Equal(TopAbs_IN, aClass.TestOnRestriction(new Point2D(2, 2), 1e-3));
-        Assert.Equal(TopAbs_OUT, aClass.TestOnRestriction(new Point2D(5, 5), 1e-3));
+        Assert.Equal(On, aClass.TestOnRestriction(new Point2D(1e-4, 5), 1e-3));
+        Assert.Equal(In, aClass.TestOnRestriction(new Point2D(2, 2), 1e-3));
+        Assert.Equal(Out, aClass.TestOnRestriction(new Point2D(5, 5), 1e-3));
     }
 
     [Fact]
     public void FClass2d_on_periodic_cylinder_brings_points_into_the_period()
     {
-        TopoDS_Face aFace = TestShapes.Frozen(TestShapes.CylinderFace(2.0, 3.0));
+        Face aFace = TestShapes.Frozen(TestShapes.CylinderFace(2.0, 3.0));
         var aClass = new BRepTopAdaptor_FClass2d(aFace, 1e-7);
-        Assert.Equal(TopAbs_IN, aClass.Perform(new Point2D(Math.PI, 1.0)));
+        Assert.Equal(In, aClass.Perform(new Point2D(Math.PI, 1.0)));
         // a period further: IN when brought back, OUT when not
-        Assert.Equal(TopAbs_IN, aClass.Perform(new Point2D(Math.PI + 2.0 * Math.PI, 1.0)));
-        Assert.Equal(TopAbs_IN, aClass.Perform(new Point2D(Math.PI - 4.0 * Math.PI, 1.0)));
-        Assert.Equal(TopAbs_OUT, aClass.Perform(new Point2D(Math.PI + 2.0 * Math.PI, 1.0), false));
-        Assert.Equal(TopAbs_OUT, aClass.Perform(new Point2D(Math.PI, 5.0)));
-        Assert.Equal(TopAbs_ON, aClass.Perform(new Point2D(Math.PI, 3.0)));
+        Assert.Equal(In, aClass.Perform(new Point2D(Math.PI + 2.0 * Math.PI, 1.0)));
+        Assert.Equal(In, aClass.Perform(new Point2D(Math.PI - 4.0 * Math.PI, 1.0)));
+        Assert.Equal(Out, aClass.Perform(new Point2D(Math.PI + 2.0 * Math.PI, 1.0), false));
+        Assert.Equal(Out, aClass.Perform(new Point2D(Math.PI, 5.0)));
+        Assert.Equal(On, aClass.Perform(new Point2D(Math.PI, 3.0)));
     }
 
     [Fact]
     public void FClass2d_natural_face_is_all_in()
     {
-        TopoDS_Face aFace = TestShapes.Frozen(BRepGPropTestShapes.NaturalFace(
-            new Geom_SphericalSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1.0)));
+        Face aFace = TestShapes.Frozen(BRepGPropTestShapes.NaturalFace(
+            new SphericalSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1.0)));
         var aClass = new BRepTopAdaptor_FClass2d(aFace, 1e-7);
-        Assert.Equal(TopAbs_IN, aClass.Perform(new Point2D(100, 100)));
+        Assert.Equal(In, aClass.Perform(new Point2D(100, 100)));
     }
 
     [Fact]
     public void TopolTool_explores_the_face()
     {
-        TopoDS_Face aFace = Holed();
-        var aSurf = new BRepAdaptor_Surface(aFace);
+        Face aFace = Holed();
+        var aSurf = new FaceSurfaceAdaptor(aFace);
         var aTool = new BRepTopAdaptor_TopolTool(aSurf);
         Assert.True(aTool.Has3d());
         Assert.False(aTool.DomainIsInfinite());
@@ -75,18 +78,18 @@ public class BRepTopAdaptorTests
         int aNbArcs = 0;
         for (aTool.Init(); aTool.More(); aTool.Next())
         {
-            Adaptor2d_Curve2d anArc = aTool.Value();
-            Assert.IsType<BRepAdaptor_Curve2d>(anArc);
-            Assert.Equal(TopAbs_FORWARD, aTool.Orientation(anArc));
+            Curve2DAdaptorBase anArc = aTool.Value();
+            Assert.IsType<EdgeCurve2DAdaptor>(anArc);
+            Assert.Equal(Forward, aTool.Orientation(anArc));
             Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aTool.Tol3d(anArc));
-            Assert.IsType<TopoDS_Edge>(aTool.Edge());
+            Assert.IsType<Edge>(aTool.Edge());
 
             // the vertices of the arc
             aTool.Initialize(anArc);
             int aNbVertices = 0;
             for (aTool.InitVertexIterator(); aTool.MoreVertex(); aTool.NextVertex())
             {
-                Adaptor3d_HVertex aV = aTool.Vertex();
+                HVertex aV = aTool.Vertex();
                 Assert.IsType<BRepTopAdaptor_HVertex>(aV);
                 Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aTool.Tol3d(aV));
                 Point3D aP = aTool.Pnt(aV);
@@ -104,8 +107,8 @@ public class BRepTopAdaptorTests
         }
 
         Assert.Equal(8, aNbArcs);
-        Assert.Equal(TopAbs_IN, aTool.Classify(new Point2D(2, 2), 1e-7));
-        Assert.Equal(TopAbs_OUT, aTool.Classify(new Point2D(5, 5), 1e-7));
+        Assert.Equal(In, aTool.Classify(new Point2D(2, 2), 1e-7));
+        Assert.Equal(Out, aTool.Classify(new Point2D(5, 5), 1e-7));
         Assert.True(aTool.IsThePointOn(new Point2D(0, 5), 1e-7));
         Assert.False(aTool.IsThePointOn(new Point2D(2, 2), 1e-7));
 
@@ -122,11 +125,11 @@ public class BRepTopAdaptorTests
     public void TopolTool_needs_brep_adaptors()
     {
         var aTool = new BRepTopAdaptor_TopolTool();
-        var aGeomSurf = new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem()));
+        var aGeomSurf = new SurfaceAdaptor(new PlaneSurface(new CoordinateSystem()));
         Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aTool.Initialize(aGeomSurf));
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aTool.Initialize(new Geom2dAdaptor_Curve(new Geom2d_Line(new Point2D(), new Direction2D()))));
+        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aTool.Initialize(new CurveAdaptor2D(new LineCurve2D(new Point2D(), new Direction2D()))));
         Assert.Throws<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aTool.Initialize());
-        Assert.Equal(TopAbs_UNKNOWN, aTool.Classify(new Point2D(), 1e-7));
+        Assert.Equal(Unknown, aTool.Classify(new Point2D(), 1e-7));
     }
 
     [Fact]
@@ -147,10 +150,10 @@ public class BRepTopAdaptorTests
         var aMults = new NCollection_Array1<int>(1, 2);
         aMults[1] = 6;
         aMults[2] = 6;
-        var aSurface = new Geom_BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 5, 5);
-        TopoDS_Face aFace = TestShapes.Frozen(BRepGPropTestShapes.NaturalFace(aSurface));
-        var aTool = new BRepTopAdaptor_TopolTool(new BRepAdaptor_Surface(aFace));
-        Assert.Equal(BSplineSurface, new BRepAdaptor_Surface(aFace).GetType());
+        var aSurface = new global::Kerf.Geometry.BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 5, 5);
+        Face aFace = TestShapes.Frozen(BRepGPropTestShapes.NaturalFace(aSurface));
+        var aTool = new BRepTopAdaptor_TopolTool(new FaceSurfaceAdaptor(aFace));
+        Assert.Equal(SurfaceKind.BSplineSurface, new FaceSurfaceAdaptor(aFace).GetType());
         Assert.True(aTool.NbSamplesU() >= 10);
         Assert.True(aTool.NbSamplesV() >= 10);
     }
@@ -158,10 +161,10 @@ public class BRepTopAdaptorTests
     [Fact]
     public void Tool_keeps_the_surface_and_its_topological_tool()
     {
-        TopoDS_Face aFace = Holed();
+        Face aFace = Holed();
         var aTool = new BRepTopAdaptor_Tool(aFace, 1e-7);
-        Assert.IsType<BRepAdaptor_Surface>(aTool.GetSurface());
-        Assert.Equal(TopAbs_IN, aTool.GetTopolTool().Classify(new Point2D(2, 2), 1e-7));
+        Assert.IsType<FaceSurfaceAdaptor>(aTool.GetSurface());
+        Assert.Equal(In, aTool.GetTopolTool().Classify(new Point2D(2, 2), 1e-7));
 
         var anEmpty = new BRepTopAdaptor_Tool();
         Assert.Null(anEmpty.GetSurface());

@@ -1,7 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -37,9 +42,9 @@ public sealed class BRepMeshGeomToolOracleTests(ITestOutputHelper output) : IDis
 
     private string NewFile() => Path.Combine(myDirectory, $"e{myFileNumber++}.brep");
 
-    private static TopoDS_Shape PortRead(string theFile)
+    private static Shape PortRead(string theFile)
     {
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, theFile), theFile);
+        Assert.True(BrepTools.Read(out Shape aShape, theFile), theFile);
         return aShape;
     }
 
@@ -106,9 +111,9 @@ public sealed class BRepMeshGeomToolOracleTests(ITestOutputHelper output) : IDis
             string aF2 = NewFile();
             Assert.True(N.BRepTools.Write(aNativeF1, aF2));
 
-            TopoDS_Edge anEdge = TopoDS.Edge(PortRead(aF1));
-            TopoDS_Edge aMeshed = TopoDS.Edge(PortRead(aF2));
-            Polygon3D aPoly = BRep_Tool.Polygon3D(aMeshed, out _)!;
+            Edge anEdge = ShapeCasts.Edge(PortRead(aF1));
+            Edge aMeshed = ShapeCasts.Edge(PortRead(aF2));
+            Polygon3D aPoly = Tool.Polygon3D(aMeshed, out _)!;
             Assert.NotNull(aPoly);
 
             // The edge's deflection (BRepMesh_Deflection), as the mesher's parameters are completed
@@ -120,7 +125,7 @@ public sealed class BRepMeshGeomToolOracleTests(ITestOutputHelper output) : IDis
             anOracle.Same(aPoly.Deflection(), aDEdge.GetDeflection(), $"edge {i} deflection");
 
             // The tessellation (BRepMesh_CurveTessellator's GCPnts_TangentialDeflection) through BRepMesh_GeomTool.
-            var aCurve = new BRepAdaptor_Curve(anEdge);
+            var aCurve = new EdgeCurveAdaptor(anEdge);
             double aLinDef = Math.Max(0.5 * aDEdge.GetDeflection(), global::Kerf.Engine.Foundation.Precision.Confusion());
             double anAngDef = Math.Max(0.5 * aDEdge.GetAngularDeflection(), global::Kerf.Engine.Foundation.Precision.Angular());
             var aTool = new BRepMesh_GeomTool(aCurve, aCurve.FirstParameter(), aCurve.LastParameter(), aLinDef, anAngDef,

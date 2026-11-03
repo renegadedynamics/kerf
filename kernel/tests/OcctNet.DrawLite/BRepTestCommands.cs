@@ -1,11 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Globalization;
 using System.Text;
 using Occt;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite;
 
@@ -89,8 +93,8 @@ internal static class BRepTestCommands
                         return 1;
                     }
 
-                    TopoDS_Shape SL = theDI.GetShape(a[n - 1]);
-                    if (SL.IsNull())
+                    Shape SL = theDI.GetShape(a[n - 1]);
+                    if (SL.IsNull)
                     {
                         return 0;
                     }
@@ -147,8 +151,8 @@ internal static class BRepTestCommands
             var L = new Placement(T);
             for (int i = 1; i < last; i++)
             {
-                TopoDS_Shape S = theDI.GetShape(a[i]);
-                if (S.IsNull())
+                Shape S = theDI.GetShape(a[i]);
+                if (S.IsNull)
                 {
                     theDI.Output.WriteLine($"Error: {a[i]} is not a valid shape");
                     return 1;
@@ -170,8 +174,8 @@ internal static class BRepTestCommands
             var trf = new BRepBuilderAPI_Transform(T);
             for (int i = 1; i < last; i++)
             {
-                TopoDS_Shape S = theDI.GetShape(a[i]);
-                if (S.IsNull())
+                Shape S = theDI.GetShape(a[i]);
+                if (S.IsNull)
                 {
                     theDI.Output.WriteLine($"Error: {a[i]} is not a valid shape");
                     return 1;
@@ -251,8 +255,8 @@ internal static class BRepTestCommands
             return 1;
         }
 
-        TopoDS_Shape TheShape = theDI.GetShape(a[1]);
-        if (TheShape.IsNull())
+        Shape TheShape = theDI.GetShape(a[1]);
+        if (TheShape.IsNull)
         {
             return 1;
         }
@@ -260,10 +264,10 @@ internal static class BRepTestCommands
         double TMF, TME, TMV, TmF, TmE, TmV;
         TMF = TME = TMV = -double.MaxValue;
         TmF = TmE = TmV = double.MaxValue;
-        var mapS = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        for (var ex = new TopExp_Explorer(TheShape, TopAbs_FACE); ex.More(); ex.Next())
+        var mapS = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        for (var ex = new Explorer(TheShape, ShapeType.Face); ex.More(); ex.Next())
         {
-            double T = BRep_Tool.Tolerance(TopoDS.Face(ex.Current()));
+            double T = Tool.Tolerance(ShapeCasts.Face(ex.Current()));
             TMF = Math.Max(TMF, T);
             TmF = Math.Min(TmF, T);
             mapS.Add(ex.Current());
@@ -271,9 +275,9 @@ internal static class BRepTestCommands
 
         int nbF = mapS.Extent();
         mapS.Clear();
-        for (var ex = new TopExp_Explorer(TheShape, TopAbs_EDGE); ex.More(); ex.Next())
+        for (var ex = new Explorer(TheShape, ShapeType.Edge); ex.More(); ex.Next())
         {
-            double T = BRep_Tool.Tolerance(TopoDS.Edge(ex.Current()));
+            double T = Tool.Tolerance(ShapeCasts.Edge(ex.Current()));
             TME = Math.Max(TME, T);
             TmE = Math.Min(TmE, T);
             mapS.Add(ex.Current());
@@ -281,9 +285,9 @@ internal static class BRepTestCommands
 
         int nbE = mapS.Extent();
         mapS.Clear();
-        for (var ex = new TopExp_Explorer(TheShape, TopAbs_VERTEX); ex.More(); ex.Next())
+        for (var ex = new Explorer(TheShape, ShapeType.Vertex); ex.More(); ex.Next())
         {
-            double T = BRep_Tool.Tolerance(TopoDS.Vertex(ex.Current()));
+            double T = Tool.Tolerance(ShapeCasts.Vertex(ex.Current()));
             TMV = Math.Max(TMV, T);
             TmV = Math.Min(TmV, T);
             mapS.Add(ex.Current());
@@ -315,15 +319,15 @@ internal static class BRepTestCommands
     // purgeloc res shape
     private static int PurgeLoc(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
-        TopoDS_Shape aShapeBase = theDI.GetShape(a.Count > 2 ? a[2] : "");
-        if (aShapeBase.IsNull())
+        Shape aShapeBase = theDI.GetShape(a.Count > 2 ? a[2] : "");
+        if (aShapeBase.IsNull)
         {
             return 1;
         }
 
-        var aRemLoc = new BRepTools_PurgeLocations();
+        var aRemLoc = new PurgeLocations();
         bool isDone = aRemLoc.Perform(aShapeBase);
-        TopoDS_Shape Result = aRemLoc.GetResult();
+        Shape Result = aRemLoc.GetResult();
         theDI.SetShape(a[1], Result);
         di.Append(isDone ? "All problematic locations are purged \n" : "Not all problematic locations are purged \n");
         return 0;
@@ -332,14 +336,14 @@ internal static class BRepTestCommands
     // checkloc shape
     private static int CheckLoc(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
-        TopoDS_Shape aShapeBase = theDI.GetShape(a.Count > 1 ? a[1] : "");
-        if (aShapeBase.IsNull())
+        Shape aShapeBase = theDI.GetShape(a.Count > 1 ? a[1] : "");
+        if (aShapeBase.IsNull)
         {
             return 1;
         }
 
-        var aLS = new NCollection_List<TopoDS_Shape>();
-        BRepTools.CheckLocations(aShapeBase, aLS);
+        var aLS = new NCollection_List<Shape>();
+        BrepTools.CheckLocations(aShapeBase, aLS);
         if (aLS.IsEmpty())
         {
             di.Append("There are no problematic shapes").Append("\n");
@@ -347,7 +351,7 @@ internal static class BRepTestCommands
         }
 
         int i = 1;
-        foreach (TopoDS_Shape aShape in aLS)
+        foreach (Shape aShape in aLS)
         {
             string aName = a[1] + "_" + i.ToString(CultureInfo.InvariantCulture);
             theDI.SetShape(aName, aShape);
@@ -402,13 +406,13 @@ internal static class BRepTestCommands
             --n;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[1]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[1]);
+        if (S.IsNull)
         {
             return 0;
         }
 
-        var G = new GProp_GProps();
+        var G = new Properties();
         static bool StartsWithC(string theArg) => theArg.Length > 0 && theArg[0] == 'c';
         bool onlyClosed = (n > 2 && StartsWithC(a[2])) || (n > 3 && StartsWithC(a[3]));
         double eps = 1.0;
@@ -466,7 +470,7 @@ internal static class BRepTestCommands
             theDI.SetNumber(a[shift + 4], P.Z());
         }
 
-        GProp_PrincipalProps Pr = G.PrincipalProperties();
+        PrincipalProperties Pr = G.PrincipalProperties();
         Pr.Moments(out double Ix, out double Iy, out double Iz);
 
         if (!isFullMode)
@@ -555,13 +559,13 @@ internal static class BRepTestCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[1]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[1]);
+        if (S.IsNull)
         {
             return 0;
         }
 
-        var G = new GProp_GProps();
+        var G = new Properties();
         bool SkipShared = false;
         if (n >= 2 && a[n - 1] == "-skip")
         {
@@ -621,7 +625,7 @@ internal static class BRepTestCommands
 
         if (IFlag)
         {
-            GProp_PrincipalProps Pr = G.PrincipalProperties();
+            PrincipalProperties Pr = G.PrincipalProperties();
             Pr.Moments(out double Ix, out double Iy, out double Iz);
             di.Append("Moments : \n" + "IX = " + W(Ix) + "\n" + "IY = " + W(Iy) + "\n" + "IZ = " + W(Iz) + "\n" + "\n" + "\n");
         }
@@ -645,8 +649,8 @@ internal static class BRepTestCommands
             return 0;
         }
 
-        TopoDS_Shape Shape = theDI.GetShape(argv[1]);
-        if (Shape.IsNull())
+        Shape Shape = theDI.GetShape(argv[1]);
+        if (Shape.IsNull)
         {
             di.Append("Shape unknown : ").Append(argv[1]).Append("\n");
             return 1;
@@ -655,7 +659,7 @@ internal static class BRepTestCommands
         var sat = new ShapeAnalysis_ShapeTolerance();
         if (argc == 2)
         {
-            void Line(string theLabel, TopAbs_ShapeEnum theType)
+            void Line(string theLabel, ShapeType theType)
             {
                 sat.InitTolerance();
                 sat.AddTolerance(Shape, theType);
@@ -663,17 +667,17 @@ internal static class BRepTestCommands
                   .Append(" MIN=").Append(sat.GlobalTolerance(-1)).Append("\n");
             }
 
-            Line("Tolerance ", TopAbs_SHAPE);
-            Line("FACE    : ", TopAbs_FACE);
-            Line("EDGE    : ", TopAbs_EDGE);
-            Line("VERTEX  : ", TopAbs_VERTEX);
+            Line("Tolerance ", global::Kerf.Topology.ShapeType.Shape);
+            Line("FACE    : ", ShapeType.Face);
+            Line("EDGE    : ", ShapeType.Edge);
+            Line("VERTEX  : ", ShapeType.Vertex);
             return 0;
         }
 
         // a closer analysis
         int nextarg = 2;
         char opt = argv[2].Length > 0 ? argv[2][0] : '\0';
-        TopAbs_ShapeEnum type = TopAbs_SHAPE;
+        ShapeType type = global::Kerf.Topology.ShapeType.Shape;
         switch (opt)
         {
             case 'a':
@@ -681,19 +685,19 @@ internal static class BRepTestCommands
                 break;
             case 'c':
                 nextarg = 3;
-                type = TopAbs_SHELL;
+                type = ShapeType.Shell;
                 break;
             case 'e':
                 nextarg = 3;
-                type = TopAbs_EDGE;
+                type = ShapeType.Edge;
                 break;
             case 'f':
                 nextarg = 3;
-                type = TopAbs_FACE;
+                type = ShapeType.Face;
                 break;
             case 'v':
                 nextarg = 3;
-                type = TopAbs_VERTEX;
+                type = ShapeType.Vertex;
                 break;
         }
 
@@ -708,14 +712,14 @@ internal static class BRepTestCommands
             tol2 = theDI.Atof(argv[nextarg + 1]);
         }
 
-        NCollection_HSequence<TopoDS_Shape> list = sat.InTolerance(Shape, tol1, tol2, type);
+        NCollection_HSequence<Shape> list = sat.InTolerance(Shape, tol1, tol2, type);
         int nb = list.Length();
         di.Append(type switch
         {
-            TopAbs_VERTEX => "Analysing Vertices gives ",
-            TopAbs_EDGE => "Analysing Edges gives ",
-            TopAbs_FACE => "Analysing Faces gives ",
-            TopAbs_SHELL => "Analysing Shells,Faces+content gives ",
+            ShapeType.Vertex => "Analysing Vertices gives ",
+            ShapeType.Edge => "Analysing Edges gives ",
+            ShapeType.Face => "Analysing Faces gives ",
+            ShapeType.Shell => "Analysing Shells,Faces+content gives ",
             _ => "Analysing all sub-shapes gives ",
         });
         if (tol1 == 0)

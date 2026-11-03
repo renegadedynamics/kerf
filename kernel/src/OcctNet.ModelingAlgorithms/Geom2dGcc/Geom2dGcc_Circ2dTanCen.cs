@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 
@@ -26,7 +28,7 @@ public sealed class Geom2dGcc_Circ2dTanCen
     private readonly NCollection_Array1<double> pararg1;
 
     /// <summary>Circles centred on PCenter tangent to the qualified curve.</summary>
-    public Geom2dGcc_Circ2dTanCen(in Geom2dGcc_QualifiedCurve Qualified1, Geom2d_Point PCenter, double Tolerance)
+    public Geom2dGcc_Circ2dTanCen(in Geom2dGcc_QualifiedCurve Qualified1, Point2 PCenter, double Tolerance)
     {
         cirsol     = new(1, 2);
         qualifier1 = new(1, 2);
@@ -35,8 +37,8 @@ public sealed class Geom2dGcc_Circ2dTanCen
         par1sol    = new(1, 2);
         pararg1    = new(1, 2);
 
-        Geom2dAdaptor_Curve C1    = Qualified1.Qualified();
-        Geom2d_Curve?       CC1   = C1.Curve();
+        CurveAdaptor2D C1    = Qualified1.Qualified();
+        Curve2D?       CC1   = C1.Curve();
         CurveKind   Type1 = C1.GetType();
 
         //=============================================================================
@@ -49,7 +51,7 @@ public sealed class Geom2dGcc_Circ2dTanCen
         {
             if (Type1 == Circle)
             {
-                Geom2d_Circle        CCC1 = (CC1 as Geom2d_Circle)!;
+                CircleCurve2D        CCC1 = (CC1 as CircleCurve2D)!;
                 Circle2D            c1   = CCC1.Circ2d();
                 GccEnt_QualifiedCirc Qc1  = new(c1, Qualified1.Qualifier());
                 GccAna_Circ2dTanCen  Circ = new(Qc1, pcenter, Tolerance);
@@ -72,7 +74,7 @@ public sealed class Geom2dGcc_Circ2dTanCen
             }
             else
             {
-                Geom2d_Line         LL1  = (CC1 as Geom2d_Line)!;
+                LineCurve2D         LL1  = (CC1 as LineCurve2D)!;
                 Line2D            l1   = LL1.Lin2d();
                 GccAna_Circ2dTanCen Circ = new(l1, pcenter);
                 WellDone                 = Circ.IsDone();

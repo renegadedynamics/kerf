@@ -1,8 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -12,54 +16,54 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ShapeFix_FreeBoundsTests
 {
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return 0;
         }
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
-    private static int NbChildren(in TopoDS_Shape theShape) => theShape.IsNull() ? 0 : theShape.NbChildren();
+    private static int NbChildren(in Shape theShape) => theShape.IsNull ? 0 : theShape.ChildCount;
 
-    private static TopoDS_Vertex Vertex(double x, double y, double z = 0)
+    private static Vertex Vertex(double x, double y, double z = 0)
     {
-        var aV = new TopoDS_Vertex();
-        var aB = new BRep_Builder();
+        var aV = new Vertex();
+        var aB = new BrepBuilder();
         aB.MakeVertex(ref aV, new Point3D(x, y, z), 1e-7);
         return aV;
     }
 
-    private static TopoDS_Edge Edge(in TopoDS_Vertex theV1, in TopoDS_Vertex theV2, bool theUnfrozen) =>
+    private static Edge Edge(in Vertex theV1, in Vertex theV2, bool theUnfrozen) =>
         theUnfrozen ? new BRepBuilderAPI_MakeEdge(theV1, theV2).InternalEdge() : new BRepBuilderAPI_MakeEdge(theV1, theV2).Edge();
 
     // A planar square face on z = 0 whose outer wire is built edge by edge: the last edge ends at a vertex of its own,
     // theGap away from the first vertex (so the wire is open, its ends not shared).
-    private static TopoDS_Face SquareWithOpenCorner(double theGap, bool theUnfrozen = false)
+    private static Face SquareWithOpenCorner(double theGap, bool theUnfrozen = false)
     {
-        TopoDS_Vertex v1 = Vertex(0, 0), v2 = Vertex(1, 0), v3 = Vertex(1, 1), v4 = Vertex(0, 1), v5 = Vertex(theGap, 0);
-        var aB = new BRep_Builder();
-        var aW = new TopoDS_Wire();
+        Vertex v1 = Vertex(0, 0), v2 = Vertex(1, 0), v3 = Vertex(1, 1), v4 = Vertex(0, 1), v5 = Vertex(theGap, 0);
+        var aB = new BrepBuilder();
+        var aW = new Wire();
         aB.MakeWire(ref aW);
         aB.Add(aW, Edge(v1, v2, theUnfrozen));
         aB.Add(aW, Edge(v2, v3, theUnfrozen));
         aB.Add(aW, Edge(v3, v4, theUnfrozen));
         aB.Add(aW, Edge(v4, v5, theUnfrozen));
-        var aF = new TopoDS_Face();
-        aB.MakeFace(ref aF, new Geom_Plane(new Plane3D()), 1e-7);
+        var aF = new Face();
+        aB.MakeFace(ref aF, new PlaneSurface(new Plane3D()), 1e-7);
         aB.Add(aF, aW);
         return aF;
     }
 
-    private static TopoDS_Compound Compound(params TopoDS_Shape[] theShapes)
+    private static Compound Compound(params Shape[] theShapes)
     {
-        var aC = new TopoDS_Compound();
-        var aB = new BRep_Builder();
+        var aC = new Compound();
+        var aB = new BrepBuilder();
         aB.MakeCompound(ref aC);
-        foreach (TopoDS_Shape aS in theShapes)
+        foreach (Shape aS in theShapes)
         {
             aB.Add(aC, aS);
         }
@@ -70,21 +74,21 @@ public class ShapeFix_FreeBoundsTests
     [Fact]
     public void ShellForm_BoxWithoutAFace_OneClosedWire_InputItself()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
-        TopoDS_Shell aShell = TopoDS.Shell(new TopExp_Explorer(aBox, TopAbs_SHELL).Current());
+        Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
+        Shell aShell = ShapeCasts.Shell(new Explorer(aBox, ShapeType.Shell).Current());
         // the box's shell without its first face
-        var aB = new BRep_Builder();
-        var anOpen = new TopoDS_Shell();
+        var aB = new BrepBuilder();
+        var anOpen = new Shell();
         aB.MakeShell(ref anOpen);
         int i = 0;
-        for (var anIt = new TopoDS_Iterator(aShell); anIt.More(); anIt.Next(), i++)
+        for (var anIt = new Iterator(aShell); anIt.More(); anIt.Next(), i++)
         {
             if (i > 0)
             {
                 aB.Add(anOpen, anIt.Value());
             }
         }
-        TopoDS_Compound aShape = Compound(anOpen);
+        Compound aShape = Compound(anOpen);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
 
         var aFB = new ShapeFix_FreeBounds(aShape, 1e-3, false, false);
@@ -92,13 +96,13 @@ public class ShapeFix_FreeBoundsTests
         aSnap.AssertUnchanged(aShape);
         Assert.Equal(1, NbChildren(aFB.GetClosedWires()));
         Assert.Equal(0, NbChildren(aFB.GetOpenWires()));
-        Assert.Equal(4, Count(aFB.GetClosedWires(), TopAbs_EDGE));
+        Assert.Equal(4, Count(aFB.GetClosedWires(), global::Kerf.Topology.ShapeType.Edge));
         Assert.True(aFB.GetClosedWires().TShape()!.IsFrozen);
         Assert.True(aFB.GetShape().IsSame(aShape)); // nothing to connect: the input itself
         // the free edges are the caller's own
-        var anEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aShape, TopAbs_EDGE, anEdges);
-        for (var anExp = new TopExp_Explorer(aFB.GetClosedWires(), TopAbs_EDGE); anExp.More(); anExp.Next())
+        var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(aShape, global::Kerf.Topology.ShapeType.Edge, anEdges);
+        for (var anExp = new Explorer(aFB.GetClosedWires(), global::Kerf.Topology.ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Assert.True(anEdges.Contains(anExp.Current()));
         }
@@ -107,8 +111,8 @@ public class ShapeFix_FreeBoundsTests
     [Fact]
     public void ShellForm_OpenWireConnected_CopiesTheFrozenInput()
     {
-        TopoDS_Face aFace = SquareWithOpenCorner(1e-4);
-        TopoDS_Compound aShape = Compound(aFace);
+        Face aFace = SquareWithOpenCorner(1e-4);
+        Compound aShape = Compound(aFace);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
 
         // the gap is beyond the closing tolerance: one open wire, the input itself
@@ -122,15 +126,15 @@ public class ShapeFix_FreeBoundsTests
         aSnap.AssertUnchanged(aShape);
         Assert.Equal(1, NbChildren(aFB2.GetClosedWires()));
         Assert.Equal(0, NbChildren(aFB2.GetOpenWires()));
-        TopoDS_Shape aResult = aFB2.GetShape();
+        Shape aResult = aFB2.GetShape();
         Assert.True(aResult.TShape()!.IsFrozen);
         Assert.False(aResult.IsSame(aShape));
-        Assert.Equal(4, Count(aResult, TopAbs_VERTEX)); // the two corner vertices merged
+        Assert.Equal(4, Count(aResult, global::Kerf.Topology.ShapeType.Vertex)); // the two corner vertices merged
         // the two edges not touching the corner are the caller's own
-        var anEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aShape, TopAbs_EDGE, anEdges);
+        var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(aShape, global::Kerf.Topology.ShapeType.Edge, anEdges);
         int aKept = 0;
-        for (var anExp = new TopExp_Explorer(aResult, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aResult, global::Kerf.Topology.ShapeType.Edge); anExp.More(); anExp.Next())
         {
             aKept += anEdges.Contains(anExp.Current()) ? 1 : 0;
         }
@@ -141,9 +145,9 @@ public class ShapeFix_FreeBoundsTests
     public void SewingForm_TwoSquaresSewn_OneClosedWire_SplitOptions()
     {
         // two unit squares side by side with their own edges, 1e-7 apart
-        TopoDS_Face aF1 = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).Face();
-        TopoDS_Face aF2 = new BRepBuilderAPI_MakeFace(new Plane3D(), 1 + 1e-7, 2, 0, 1).Face();
-        TopoDS_Compound aShape = Compound(aF1, aF2);
+        Face aF1 = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).Face();
+        Face aF2 = new BRepBuilderAPI_MakeFace(new Plane3D(), 1 + 1e-7, 2, 0, 1).Face();
+        Compound aShape = Compound(aF1, aF2);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
 
         // without sewing tolerance enough to merge: two closed wires
@@ -155,7 +159,7 @@ public class ShapeFix_FreeBoundsTests
             var aFB = new ShapeFix_FreeBounds(aShape, 1e-6, 1e-6, aSplitClosed, true);
             aSnap.AssertUnchanged(aShape);
             Assert.Equal(1, NbChildren(aFB.GetClosedWires()));
-            Assert.Equal(6, Count(aFB.GetClosedWires(), TopAbs_EDGE));
+            Assert.Equal(6, Count(aFB.GetClosedWires(), global::Kerf.Topology.ShapeType.Edge));
             Assert.Equal(0, NbChildren(aFB.GetOpenWires()));
             Assert.True(aFB.GetShape().IsSame(aShape));
         }
@@ -165,23 +169,23 @@ public class ShapeFix_FreeBoundsTests
     public void EmptyConstructor_GivesNullResults()
     {
         var aFB = new ShapeFix_FreeBounds();
-        Assert.True(aFB.GetShape().IsNull());
-        Assert.True(aFB.GetClosedWires().IsNull());
-        Assert.True(aFB.GetOpenWires().IsNull());
+        Assert.True(aFB.GetShape().IsNull);
+        Assert.True(aFB.GetClosedWires().IsNull);
+        Assert.True(aFB.GetOpenWires().IsNull);
     }
 
     [Fact]
     public void UnfrozenInput_IsConnectedInPlace()
     {
-        TopoDS_Face aFace = SquareWithOpenCorner(1e-4, true);
-        Assert.False(BRepTools.HoldsFrozen(aFace));
-        var aB = new BRep_Builder();
-        var aC = new TopoDS_Compound();
+        Face aFace = SquareWithOpenCorner(1e-4, true);
+        Assert.False(BrepTools.HoldsFrozen(aFace));
+        var aB = new BrepBuilder();
+        var aC = new Compound();
         aB.MakeCompound(ref aC);
         aB.Add(aC, aFace);
 
         var aFB = new ShapeFix_FreeBounds(aC, 1e-3, false, false);
         Assert.True(aFB.GetShape().IsSame(aC)); // the same compound, its edges changed in place
-        Assert.Equal(4, Count(aC, TopAbs_VERTEX));
+        Assert.Equal(4, Count(aC, global::Kerf.Topology.ShapeType.Vertex));
     }
 }

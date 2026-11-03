@@ -3,10 +3,13 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -16,39 +19,39 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class FreezingTests
 {
-    private static TopoDS_Edge FirstEdge(in TopoDS_Shape theShape) => TopoDS.Edge(new TopExp_Explorer(theShape, TopAbs_EDGE).Current());
+    private static Edge FirstEdge(in Shape theShape) => ShapeCasts.Edge(new Explorer(theShape, ShapeType.Edge).Current());
 
-    private static TopoDS_Face FirstFace(in TopoDS_Shape theShape) => TopoDS.Face(new TopExp_Explorer(theShape, TopAbs_FACE).Current());
+    private static Face FirstFace(in Shape theShape) => ShapeCasts.Face(new Explorer(theShape, ShapeType.Face).Current());
 
-    private static TopoDS_Vertex FirstVertex(in TopoDS_Shape theShape) => TopoDS.Vertex(new TopExp_Explorer(theShape, TopAbs_VERTEX).Current());
+    private static Vertex FirstVertex(in Shape theShape) => ShapeCasts.Vertex(new Explorer(theShape, ShapeType.Vertex).Current());
 
     // 4.1 Geometry, triangulations and polygons freeze when attached
 
     [Fact]
     public void Builder_freezes_the_geometry_it_attaches()
     {
-        var aBuilder = new BRep_Builder();
-        var aLine = new Geom_Line(new Point3D(), new Direction3D(1, 0, 0));
+        var aBuilder = new BrepBuilder();
+        var aLine = new LineCurve3D(new Point3D(), new Direction3D(1, 0, 0));
         Assert.False(aLine.IsFrozen);
-        TopoDS_Edge anEdge = new();
+        Edge anEdge = new();
         aBuilder.MakeEdge(ref anEdge, aLine, 1e-7);
         Assert.True(aLine.IsFrozen);
         // a frozen curve can't change; its copy can
         Assert.Throws<ImmutableObjectException>(() => aLine.SetLocation(new Point3D(1, 1, 1)));
-        var aCopy = (Geom_Line)aLine.Copy();
+        var aCopy = (LineCurve3D)aLine.Copy();
         Assert.False(aCopy.IsFrozen);
         aCopy.SetLocation(new Point3D(1, 1, 1));
 
-        var aPlane = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
-        TopoDS_Face aFace = new();
+        var aPlane = new PlaneSurface(new CoordinateSystem(Constants.XOY()));
+        Face aFace = new();
         aBuilder.MakeFace(ref aFace, aPlane, 1e-7);
         Assert.True(aPlane.IsFrozen);
 
-        var aPC = new Geom2d_Line(new Point2D(), new Direction2D(1, 0));
+        var aPC = new LineCurve2D(new Point2D(), new Direction2D(1, 0));
         aBuilder.UpdateEdge(anEdge, aPC, aFace, 1e-7);
         Assert.True(aPC.IsFrozen);
 
-        var aSurf2 = new Geom_Plane(new CoordinateSystem(Constants.YOZ()));
+        var aSurf2 = new PlaneSurface(new CoordinateSystem(Constants.YOZ()));
         aBuilder.UpdateFace(aFace, aSurf2, new Placement(), 1e-7);
         Assert.True(aSurf2.IsFrozen);
     }
@@ -56,23 +59,23 @@ public class FreezingTests
     [Fact]
     public void Representations_freeze_the_geometry_they_hold()
     {
-        var aCircle = new Geom_Circle(Constants.XOY(), 1.0);
-        _ = new BRep_Curve3D(aCircle, new Placement());
+        var aCircle = new CircleCurve3D(Constants.XOY(), 1.0);
+        _ = new Curve3DRepresentation(aCircle, new Placement());
         Assert.True(aCircle.IsFrozen);
 
-        var aPC1 = new Geom2d_Line(new Point2D(), new Direction2D(0, 1));
-        var aPC2 = new Geom2d_Line(new Point2D(1, 0), new Direction2D(0, 1));
-        var aCyl = new Geom_CylindricalSurface(new CoordinateSystem(Constants.XOY()), 1.0);
-        _ = new BRep_CurveOnClosedSurface(aPC1, aPC2, aCyl, new Placement(), Continuity.C0);
+        var aPC1 = new LineCurve2D(new Point2D(), new Direction2D(0, 1));
+        var aPC2 = new LineCurve2D(new Point2D(1, 0), new Direction2D(0, 1));
+        var aCyl = new CylindricalSurface(new CoordinateSystem(Constants.XOY()), 1.0);
+        _ = new CurveOnClosedSurface(aPC1, aPC2, aCyl, new Placement(), Continuity.C0);
         Assert.True(aPC1.IsFrozen && aPC2.IsFrozen && aCyl.IsFrozen);
 
-        var aS1 = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
-        var aS2 = new Geom_Plane(new CoordinateSystem(Constants.ZOX()));
-        _ = new BRep_CurveOn2Surfaces(aS1, aS2, new Placement(), new Placement(), Continuity.G1);
+        var aS1 = new PlaneSurface(new CoordinateSystem(Constants.XOY()));
+        var aS2 = new PlaneSurface(new CoordinateSystem(Constants.ZOX()));
+        _ = new CurveOn2Surfaces(aS1, aS2, new Placement(), new Placement(), Continuity.G1);
         Assert.True(aS1.IsFrozen && aS2.IsFrozen);
 
-        var aTFace = new BRep_TFace();
-        var aSurf = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
+        var aTFace = new BrepTFace();
+        var aSurf = new PlaneSurface(new CoordinateSystem(Constants.XOY()));
         aTFace.Surface(aSurf);
         Assert.True(aSurf.IsFrozen);
     }
@@ -85,8 +88,8 @@ public class FreezingTests
         aNodes[2] = new Point3D(1, 0, 0);
         var aPoly = new Polygon3D(aNodes);
         aPoly.Deflection(0.1); // a builder fills it before it is attached
-        var aBuilder = new BRep_Builder();
-        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
+        var aBuilder = new BrepBuilder();
+        Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
         aBuilder.UpdateEdge(anEdge, aPoly);
         Assert.True(aPoly.IsFrozen);
         Assert.Throws<ImmutableObjectException>(() => aPoly.Deflection(0.2));
@@ -98,7 +101,7 @@ public class FreezingTests
         aTri.SetNode(2, new Point3D(1, 0, 0));
         aTri.SetNode(3, new Point3D(0, 1, 0));
         aTri.SetTriangle(1, new Triangle1(1, 2, 3));
-        TopoDS_Face aFace = new();
+        Face aFace = new();
         aBuilder.MakeFace(ref aFace, aTri);
         Assert.Throws<ImmutableObjectException>(() => aTri.SetNode(1, new Point3D(5, 5, 5)));
         Assert.Throws<ImmutableObjectException>(() => aTri.ComputeNormals());
@@ -125,16 +128,16 @@ public class FreezingTests
     {
         // OCCT marks the active triangulation of a face in its purpose; a frozen one (here attached to another face)
         // keeps its purpose (docs/decisions.md, 3106)
-        var aBuilder = new BRep_Builder();
+        var aBuilder = new BrepBuilder();
         var aTri = new Triangulation(3, 1, false);
-        TopoDS_Face aFace1 = new(), aFace2 = new();
+        Face aFace1 = new(), aFace2 = new();
         aBuilder.MakeFace(ref aFace1, aTri);
         Assert.Equal(MeshPurpose.MeshPurpose_Active, aTri.MeshPurpose());
         aBuilder.MakeFace(ref aFace2, new Triangulation(3, 1, false));
         aBuilder.UpdateFace(aFace2, aTri, false); // replaces the active triangulation of face 2
-        Assert.Same(aTri, BRep_Tool.Triangulation(aFace2, out _));
+        Assert.Same(aTri, Tool.Triangulation(aFace2, out _));
         aBuilder.UpdateFace(aFace1, (Triangulation?)null); // clears face 1's
-        Assert.Null(BRep_Tool.Triangulation(aFace1, out _));
+        Assert.Null(Tool.Triangulation(aFace1, out _));
         Assert.Equal(MeshPurpose.MeshPurpose_Active, aTri.MeshPurpose());
     }
 
@@ -143,37 +146,37 @@ public class FreezingTests
     [Fact]
     public void Built_shapes_are_unfrozen_and_FreezeGraph_freezes_the_whole_graph()
     {
-        TopoDS_Solid aBox = TestShapes.Box(1, 2, 3);
+        Solid aBox = TestShapes.Box(1, 2, 3);
         Assert.False(aBox.TShape()!.IsFrozen);
         Assert.False(FirstEdge(aBox).TShape()!.IsFrozen);
 
         aBox.TShape()!.FreezeGraph();
-        foreach (TopAbs_ShapeEnum aType in new[] { TopAbs_SHELL, TopAbs_FACE, TopAbs_WIRE, TopAbs_EDGE, TopAbs_VERTEX })
+        foreach (ShapeType aType in new[] { ShapeType.Shell, ShapeType.Face, ShapeType.Wire, ShapeType.Edge, ShapeType.Vertex })
         {
-            for (var anExp = new TopExp_Explorer(aBox, aType); anExp.More(); anExp.Next())
+            for (var anExp = new Explorer(aBox, aType); anExp.More(); anExp.Next())
             {
                 Assert.True(anExp.Current().TShape()!.IsFrozen);
             }
         }
 
         // with the representations, and through them the geometry
-        TopoDS_Edge anEdge = FirstEdge(aBox);
-        foreach (BRep_CurveRepresentation aCR in ((BRep_TEdge)anEdge.TShape()!).CurveRepresentations())
+        Edge anEdge = FirstEdge(aBox);
+        foreach (CurveRepresentation aCR in ((BrepTEdge)anEdge.TShape()!).CurveRepresentations())
         {
             Assert.True(aCR.IsFrozen);
         }
 
-        Assert.Equal(3, ((BRep_TEdge)anEdge.TShape()!).CurveRepresentations().Count); // a 3D curve and two pcurves
+        Assert.Equal(3, ((BrepTEdge)anEdge.TShape()!).CurveRepresentations().Count); // a 3D curve and two pcurves
         // a vertex INTERNAL to an edge gets a point representation, frozen with it
-        var aBuilder = new BRep_Builder();
-        TopoDS_Edge anOther = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
-        TopoDS_Vertex aV = TestShapes.Vertex(new Point3D(0.5, 0, 0));
-        aBuilder.Add(anOther, aV.Oriented(TopAbs_INTERNAL));
-        aBuilder.UpdateVertex(TopoDS.Vertex(aV.Oriented(TopAbs_INTERNAL)), 0.5, anOther, 1e-7);
-        Assert.Single(((BRep_TVertex)aV.TShape()!).PointRepresentations());
-        Assert.Equal(0.5, BRep_Tool.Parameter(TopoDS.Vertex(aV.Oriented(TopAbs_INTERNAL)), anOther));
+        var aBuilder = new BrepBuilder();
+        Edge anOther = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
+        Vertex aV = TestShapes.Vertex(new Point3D(0.5, 0, 0));
+        aBuilder.Add(anOther, aV.Oriented(Internal));
+        aBuilder.UpdateVertex(ShapeCasts.Vertex(aV.Oriented(Internal)), 0.5, anOther, 1e-7);
+        Assert.Single(((BrepTVertex)aV.TShape()!).PointRepresentations());
+        Assert.Equal(0.5, Tool.Parameter(ShapeCasts.Vertex(aV.Oriented(Internal)), anOther));
         TestShapes.Frozen(anOther);
-        foreach (BRep_PointRepresentation aPR in ((BRep_TVertex)aV.TShape()!).PointRepresentations())
+        foreach (PointRepresentation aPR in ((BrepTVertex)aV.TShape()!).PointRepresentations())
         {
             Assert.True(aPR.IsFrozen);
         }
@@ -182,9 +185,9 @@ public class FreezingTests
     [Fact]
     public void Freezing_a_parent_keeps_frozen_children_and_freezes_new_ones()
     {
-        TopoDS_Vertex aFrozen = TestShapes.Frozen(TestShapes.Vertex(new Point3D()));
-        TopoDS_Vertex anUnfrozen = TestShapes.Vertex(new Point3D(1, 0, 0));
-        TopoDS_Edge anEdge = TestShapes.Edge(aFrozen, anUnfrozen); // a new shape sharing a frozen input
+        Vertex aFrozen = TestShapes.Frozen(TestShapes.Vertex(new Point3D()));
+        Vertex anUnfrozen = TestShapes.Vertex(new Point3D(1, 0, 0));
+        Edge anEdge = TestShapes.Edge(aFrozen, anUnfrozen); // a new shape sharing a frozen input
         Assert.False(anEdge.TShape()!.IsFrozen);
         TestShapes.Frozen(anEdge);
         Assert.True(anUnfrozen.TShape()!.IsFrozen);
@@ -193,96 +196,96 @@ public class FreezingTests
     [Fact]
     public void MakeCompound_returns_a_frozen_compound()
     {
-        TopoDS_Shape aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        TopoDS_Shape anEdge = TestShapes.Frozen(TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0)));
-        TopoDS_Compound aCompound = TopoDS_Builder.MakeCompound(aBox, anEdge, aBox.Moved(new Placement(Transform3D.Translation(new Vector3D(5, 0, 0)))));
+        Shape aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        Shape anEdge = TestShapes.Frozen(TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0)));
+        Compound aCompound = Builder.MakeCompound(aBox, anEdge, aBox.Moved(new Placement(Transform3D.Translation(new Vector3D(5, 0, 0)))));
         Assert.True(aCompound.TShape()!.IsFrozen);
         Assert.True(aCompound.Locked());
-        Assert.Equal(3, aCompound.NbChildren());
-        var anIt = new TopoDS_Iterator(aCompound);
+        Assert.Equal(3, aCompound.ChildCount);
+        var anIt = new Iterator(aCompound);
         Assert.True(anIt.Value() == aBox);
         // the children's Free flags don't change (OCCT clears them; docs/phase3-design.md, section 4.4)
         Assert.True(aBox.Free() && anEdge.Free());
 
         // from an enumerable, and unfrozen internal shapes are frozen with it
-        TopoDS_Vertex aV = TestShapes.Vertex(new Point3D());
-        TopoDS_Compound aSecond = TopoDS_Builder.MakeCompound(new List<TopoDS_Shape> { aV });
+        Vertex aV = TestShapes.Vertex(new Point3D());
+        Compound aSecond = Builder.MakeCompound(new List<Shape> { aV });
         Assert.True(aV.TShape()!.IsFrozen);
         Assert.True(aSecond.TShape()!.IsFrozen);
 
-        Assert.Equal(0, TopoDS_Builder.MakeCompound().NbChildren());
-        Assert.Throws<NullObjectException>(() => TopoDS_Builder.MakeCompound(new TopoDS_Shape()));
+        Assert.Equal(0, Builder.MakeCompound().ChildCount);
+        Assert.Throws<NullObjectException>(() => Builder.MakeCompound(new Shape()));
     }
 
     [Fact]
     public void MakeWire_MakeShell_MakeSolid_and_MakeCompSolid_return_frozen_shapes()
     {
         // decision 1104: OCCT's MakeX then Add, for callers, as MakeCompound
-        TopoDS_Edge anE1 = TestShapes.Frozen(TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0)));
-        TopoDS_Edge anE2 = TestShapes.Frozen(TestShapes.Edge(new Point3D(1, 0, 0), new Point3D(1, 1, 0)));
-        TopoDS_Wire aWire = TopoDS_Builder.MakeWire([anE1, anE2]);
+        Edge anE1 = TestShapes.Frozen(TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0)));
+        Edge anE2 = TestShapes.Frozen(TestShapes.Edge(new Point3D(1, 0, 0), new Point3D(1, 1, 0)));
+        Wire aWire = Builder.MakeWire([anE1, anE2]);
         Assert.True(aWire.TShape()!.IsFrozen);
-        Assert.Equal(2, aWire.NbChildren());
+        Assert.Equal(2, aWire.ChildCount);
         Assert.False(aWire.Closed());
-        Assert.True(new TopoDS_Iterator(aWire).Value() == anE1);
+        Assert.True(new Iterator(aWire).Value() == anE1);
 
-        TopoDS_Shape aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        var aFaces = new List<TopoDS_Shape>();
-        for (var anExp = new TopExp_Explorer(aBox, TopAbs_FACE); anExp.More(); anExp.Next())
+        Shape aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        var aFaces = new List<Shape>();
+        for (var anExp = new Explorer(aBox, ShapeType.Face); anExp.More(); anExp.Next())
         {
             aFaces.Add(anExp.Current());
         }
-        TopoDS_Shell aShell = TopoDS_Builder.MakeShell(aFaces);
+        Shell aShell = Builder.MakeShell(aFaces);
         Assert.True(aShell.TShape()!.IsFrozen);
-        Assert.Equal(6, aShell.NbChildren());
+        Assert.Equal(6, aShell.ChildCount);
         Assert.False(aShell.Closed()); // as OCCT's builder leaves it
-        TopoDS_Solid aSolid = TopoDS_Builder.MakeSolid([aShell]);
+        Solid aSolid = Builder.MakeSolid([aShell]);
         Assert.True(aSolid.TShape()!.IsFrozen);
-        Assert.True(new TopoDS_Iterator(aSolid).Value() == aShell);
-        TopoDS_CompSolid aCS = TopoDS_Builder.MakeCompSolid([aSolid, aSolid.Moved(new Placement(Transform3D.Translation(new Vector3D(1, 0, 0))))]);
+        Assert.True(new Iterator(aSolid).Value() == aShell);
+        CompSolid aCS = Builder.MakeCompSolid([aSolid, aSolid.Moved(new Placement(Transform3D.Translation(new Vector3D(1, 0, 0))))]);
         Assert.True(aCS.TShape()!.IsFrozen);
-        Assert.Equal(2, aCS.NbChildren());
+        Assert.Equal(2, aCS.ChildCount);
 
         // OCCT's rules: only faces into a shell, solids into a compsolid; no null shape
-        Assert.Throws<TopoDS_UnCompatibleShapes>(() => TopoDS_Builder.MakeShell([anE1]));
-        Assert.Throws<TopoDS_UnCompatibleShapes>(() => TopoDS_Builder.MakeCompSolid([aShell]));
-        Assert.Throws<TopoDS_UnCompatibleShapes>(() => TopoDS_Builder.MakeWire([aShell]));
-        Assert.Throws<NullObjectException>(() => TopoDS_Builder.MakeSolid([new TopoDS_Shape()]));
-        Assert.Equal(0, TopoDS_Builder.MakeShell([]).NbChildren());
+        Assert.Throws<IncompatibleShapesException>(() => Builder.MakeShell([anE1]));
+        Assert.Throws<IncompatibleShapesException>(() => Builder.MakeCompSolid([aShell]));
+        Assert.Throws<IncompatibleShapesException>(() => Builder.MakeWire([aShell]));
+        Assert.Throws<NullObjectException>(() => Builder.MakeSolid([new Shape()]));
+        Assert.Equal(0, Builder.MakeShell([]).ChildCount);
     }
 
     [Fact]
     public void A_history_copy_has_the_same_maps_and_is_independent()
     {
         // decision 1104: OCCT's implicit copy constructor
-        TopoDS_Edge anE1 = TestShapes.Frozen(TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0)));
-        TopoDS_Edge anE2 = TestShapes.Frozen(TestShapes.Edge(new Point3D(1, 0, 0), new Point3D(1, 1, 0)));
-        TopoDS_Edge anE3 = TestShapes.Frozen(TestShapes.Edge(new Point3D(1, 1, 0), new Point3D(0, 1, 0)));
-        var aH = new BRepTools_History();
+        Edge anE1 = TestShapes.Frozen(TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0)));
+        Edge anE2 = TestShapes.Frozen(TestShapes.Edge(new Point3D(1, 0, 0), new Point3D(1, 1, 0)));
+        Edge anE3 = TestShapes.Frozen(TestShapes.Edge(new Point3D(1, 1, 0), new Point3D(0, 1, 0)));
+        var aH = new History();
         aH.AddGenerated(anE1, anE3);
         aH.Remove(anE1); // a shape removed that also generated: Merge into an empty history drops the removal
         aH.AddModified(anE2, anE1);
-        var aCopy = new BRepTools_History(aH);
+        var aCopy = new History(aH);
         Assert.True(aCopy.IsRemoved(anE1));
         Assert.True(aCopy.Generated(anE1).Single().IsSame(anE3));
         Assert.True(aCopy.Modified(anE2).Single().IsSame(anE1));
         aH.AddModified(anE2, anE3);
         Assert.Single(aCopy.Modified(anE2));
         aH.Clear();
-        Assert.True(aCopy.HasModified() && aCopy.HasGenerated() && aCopy.HasRemoved());
+        Assert.True(aCopy.HasModified && aCopy.HasGenerated && aCopy.HasRemoved);
     }
 
     [Fact]
     public void FreezeGraph_survives_deep_nesting_and_cycles()
     {
         // built from the inside out, as OCCT requires (a shape is filled before it is added)
-        var aBuilder = new TopoDS_Builder();
-        TopoDS_Compound aLeaf = new();
+        var aBuilder = new Builder();
+        Compound aLeaf = new();
         aBuilder.MakeCompound(ref aLeaf);
-        TopoDS_Compound aRoot = aLeaf;
+        Compound aRoot = aLeaf;
         for (int i = 0; i < 100_000; i++)
         {
-            TopoDS_Compound aParent = new();
+            Compound aParent = new();
             aBuilder.MakeCompound(ref aParent);
             aBuilder.Add(aParent, aRoot);
             aRoot = aParent;
@@ -292,7 +295,7 @@ public class FreezingTests
         Assert.True(aLeaf.TShape()!.IsFrozen);
 
         // OCCT's Free flag prevents cycles, but Free(true) can make one
-        TopoDS_Compound aA = new(), aB = new();
+        Compound aA = new(), aB = new();
         aBuilder.MakeCompound(ref aA);
         aBuilder.MakeCompound(ref aB);
         aBuilder.Add(aA, aB);
@@ -307,42 +310,42 @@ public class FreezingTests
     [Fact]
     public void Frozen_shapes_are_locked_and_the_builder_refuses_them()
     {
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        TopoDS_Edge anEdge = FirstEdge(aBox);
-        TopoDS_Face aFace = FirstFace(aBox);
-        TopoDS_Vertex aVertex = FirstVertex(aBox);
+        Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        Edge anEdge = FirstEdge(aBox);
+        Face aFace = FirstFace(aBox);
+        Vertex aVertex = FirstVertex(aBox);
         Assert.True(anEdge.Locked());
         Assert.False(anEdge.TShape()!.LockedFlag()); // files carry the stored bit
 
-        var aBuilder = new BRep_Builder();
-        Assert.Throws<TopoDS_LockedShape>(() => aBuilder.UpdateEdge(anEdge, 0.1));
-        Assert.Throws<TopoDS_LockedShape>(() => aBuilder.UpdateEdge(anEdge, new Geom_Line(Constants.OX()), 0.1));
-        Assert.Throws<TopoDS_LockedShape>(() => aBuilder.UpdateEdge(anEdge, new Geom2d_Line(Constants.OX2d()), aFace, 0.1));
-        Assert.Throws<TopoDS_LockedShape>(() => aBuilder.Range(anEdge, 0, 1));
-        Assert.Throws<TopoDS_LockedShape>(() => aBuilder.SameParameter(anEdge, false));
-        Assert.Throws<TopoDS_LockedShape>(() => aBuilder.Degenerated(anEdge, true));
-        Assert.Throws<TopoDS_LockedShape>(() => aBuilder.Continuity(anEdge, aFace, aFace, Continuity.C1));
-        Assert.Throws<TopoDS_LockedShape>(() => aBuilder.UpdateVertex(aVertex, new Point3D(), 0.1));
-        Assert.Throws<TopoDS_LockedShape>(() => aBuilder.UpdateVertex(aVertex, 0.1));
-        Assert.Throws<TopoDS_LockedShape>(() => aBuilder.UpdateVertex(aVertex, 0.0, anEdge, 0.1));
-        Assert.Throws<TopoDS_LockedShape>(() => aBuilder.UpdateFace(aFace, 0.1));
-        Assert.Throws<TopoDS_LockedShape>(() => aBuilder.NaturalRestriction(aFace, true));
-        Assert.Throws<TopoDS_LockedShape>(() => aBuilder.UpdateFace(aFace, (Triangulation?)null));
+        var aBuilder = new BrepBuilder();
+        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateEdge(anEdge, 0.1));
+        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateEdge(anEdge, new LineCurve3D(Constants.OX()), 0.1));
+        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateEdge(anEdge, new LineCurve2D(Constants.OX2d()), aFace, 0.1));
+        Assert.Throws<LockedShapeException>(() => aBuilder.Range(anEdge, 0, 1));
+        Assert.Throws<LockedShapeException>(() => aBuilder.SameParameter(anEdge, false));
+        Assert.Throws<LockedShapeException>(() => aBuilder.Degenerated(anEdge, true));
+        Assert.Throws<LockedShapeException>(() => aBuilder.Continuity(anEdge, aFace, aFace, Continuity.C1));
+        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateVertex(aVertex, new Point3D(), 0.1));
+        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateVertex(aVertex, 0.1));
+        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateVertex(aVertex, 0.0, anEdge, 0.1));
+        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateFace(aFace, 0.1));
+        Assert.Throws<LockedShapeException>(() => aBuilder.NaturalRestriction(aFace, true));
+        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateFace(aFace, (Triangulation?)null));
         // the Make methods refuse to replace a variable holding a locked shape, as in OCCT
-        TopoDS_Edge aVariable = anEdge;
-        Assert.Throws<TopoDS_LockedShape>(() => aBuilder.MakeEdge(ref aVariable));
-        TopoDS_Face aFaceVariable = aFace;
-        Assert.Throws<TopoDS_LockedShape>(() => aBuilder.MakeFace(ref aFaceVariable, new Geom_Plane(new CoordinateSystem(Constants.XOY())), 1e-7));
+        Edge aVariable = anEdge;
+        Assert.Throws<LockedShapeException>(() => aBuilder.MakeEdge(ref aVariable));
+        Face aFaceVariable = aFace;
+        Assert.Throws<LockedShapeException>(() => aBuilder.MakeFace(ref aFaceVariable, new PlaneSurface(new CoordinateSystem(Constants.XOY())), 1e-7));
     }
 
     [Fact]
     public void Paths_around_the_builder_throw_ImmutableObject()
     {
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        TopoDS_Edge anEdge = FirstEdge(aBox);
-        var aTE = (BRep_TEdge)anEdge.TShape()!;
-        var aTV = (BRep_TVertex)FirstVertex(aBox).TShape()!;
-        var aTF = (BRep_TFace)FirstFace(aBox).TShape()!;
+        Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        Edge anEdge = FirstEdge(aBox);
+        var aTE = (BrepTEdge)anEdge.TShape()!;
+        var aTV = (BrepTVertex)FirstVertex(aBox).TShape()!;
+        var aTF = (BrepTFace)FirstFace(aBox).TShape()!;
 
         Assert.Throws<ImmutableObjectException>(() => aTE.ChangeCurves());
         Assert.Throws<ImmutableObjectException>(() => aTE.Tolerance(1.0));
@@ -350,18 +353,18 @@ public class FreezingTests
         Assert.Throws<ImmutableObjectException>(() => aTE.SameRange(false));
         Assert.Throws<ImmutableObjectException>(() => aTV.ChangePoints());
         Assert.Throws<ImmutableObjectException>(() => aTV.Pnt(new Point3D(1, 1, 1)));
-        Assert.Throws<ImmutableObjectException>(() => aTF.Surface(new Geom_Plane(new CoordinateSystem(Constants.XOY()))));
+        Assert.Throws<ImmutableObjectException>(() => aTF.Surface(new PlaneSurface(new CoordinateSystem(Constants.XOY()))));
         Assert.Throws<ImmutableObjectException>(() => aTF.Triangulation(null));
         Assert.Throws<ImmutableObjectException>(() => aTF.Location(new Placement()));
 
-        var aCR = (BRep_GCurve)aTE.Curves().First();
+        var aCR = (GCurve)aTE.Curves().First();
         Assert.Throws<ImmutableObjectException>(() => aCR.SetRange(0, 2));
         Assert.Throws<ImmutableObjectException>(() => aCR.Location(new Placement()));
-        BRep_CurveRepresentation aPCurveRep = aTE.CurveRepresentations().First(r => r.IsCurveOnSurface());
-        Assert.Throws<ImmutableObjectException>(() => aPCurveRep.PCurve(new Geom2d_Line(Constants.OX2d())));
-        Assert.Throws<ImmutableObjectException>(() => BRep_Tool.SetUVPoints(anEdge, FirstFace(aBox), new Point2D(), new Point2D()));
+        CurveRepresentation aPCurveRep = aTE.CurveRepresentations().First(r => r.IsCurveOnSurface());
+        Assert.Throws<ImmutableObjectException>(() => aPCurveRep.PCurve(new LineCurve2D(Constants.OX2d())));
+        Assert.Throws<ImmutableObjectException>(() => Tool.SetUVPoints(anEdge, FirstFace(aBox), new Point2D(), new Point2D()));
         // a copy of a representation is unfrozen and shares the geometry
-        BRep_CurveRepresentation aCopy = aCR.Copy();
+        CurveRepresentation aCopy = aCR.Copy();
         Assert.False(aCopy.IsFrozen);
         Assert.Same(aCR.Curve3D(), aCopy.Curve3D());
     }
@@ -369,33 +372,33 @@ public class FreezingTests
     [Fact]
     public void The_child_list_of_a_frozen_shape_cant_change()
     {
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        var aBuilder = new TopoDS_Builder();
+        Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        var aBuilder = new Builder();
         // the solid is free (it was never added to anything), so OCCT's Free check passes and the frozen check throws
         Assert.True(aBox.Free());
-        TopoDS_Shell aShell = new();
+        Shell aShell = new();
         aBuilder.MakeShell(ref aShell);
         Assert.Throws<ImmutableObjectException>(() => aBuilder.Add(aBox, aShell));
-        TopoDS_Shape anOldShell = new TopoDS_Iterator(aBox).Value();
+        Shape anOldShell = new Iterator(aBox).Value();
         Assert.Throws<ImmutableObjectException>(() => aBuilder.Remove(aBox, anOldShell));
-        Assert.Equal(1, aBox.NbChildren());
+        Assert.Equal(1, aBox.ChildCount);
         // a shape inside it isn't free: OCCT's own check throws first
-        TopoDS_Face aFace = FirstFace(aBox);
-        Assert.Throws<TopoDS_FrozenShape>(() => aBuilder.Remove(aFace, new TopoDS_Iterator(aFace).Value()));
+        Face aFace = FirstFace(aBox);
+        Assert.Throws<FrozenShapeException>(() => aBuilder.Remove(aFace, new Iterator(aFace).Value()));
     }
 
     [Fact]
     public void UpdateFaceUVPoints_stops_at_frozen_edges()
     {
         // a new face built on frozen edges (shared with a published shape) isn't frozen; its edges are
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        TopoDS_Face aFace = FirstFace(aBox);
-        var aBuilder = new BRep_Builder();
-        TopoDS_Face aNewFace = TopoDS.Face(aFace.EmptyCopied());
-        aBuilder.Add(aNewFace, new TopoDS_Iterator(aFace).Value());
+        Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        Face aFace = FirstFace(aBox);
+        var aBuilder = new BrepBuilder();
+        Face aNewFace = ShapeCasts.Face(aFace.EmptyCopied());
+        aBuilder.Add(aNewFace, new Iterator(aFace).Value());
         Assert.False(aNewFace.TShape()!.IsFrozen);
-        BRepTools.UpdateFaceUVPoints(aNewFace); // OCCT returns at the first locked edge
-        BRepTools.Update(aNewFace);
+        BrepTools.UpdateFaceUVPoints(aNewFace); // OCCT returns at the first locked edge
+        BrepTools.Update(aNewFace);
         Assert.True(aNewFace.Checked());
     }
 
@@ -404,10 +407,10 @@ public class FreezingTests
     [Fact]
     public void Free_flag_of_frozen_children_is_kept()
     {
-        var aBuilder = new TopoDS_Builder();
-        TopoDS_Vertex aFrozen = TestShapes.Frozen(TestShapes.Vertex(new Point3D()));
-        TopoDS_Vertex anUnfrozen = TestShapes.Vertex(new Point3D());
-        TopoDS_Compound aCompound = new();
+        var aBuilder = new Builder();
+        Vertex aFrozen = TestShapes.Frozen(TestShapes.Vertex(new Point3D()));
+        Vertex anUnfrozen = TestShapes.Vertex(new Point3D());
+        Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
         aBuilder.Add(aCompound, aFrozen);
         aBuilder.Add(aCompound, anUnfrozen);
@@ -429,16 +432,16 @@ public class FreezingTests
     [Fact]
     public void Cache_completions_return_at_once_on_frozen_shapes()
     {
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        TopoDS_Face aFace = FirstFace(aBox);
+        Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        Face aFace = FirstFace(aBox);
         Assert.False(aFace.Checked());
-        BRepTools.Update(aFace);
-        BRepTools.Update(aBox);
+        BrepTools.Update(aFace);
+        BrepTools.Update(aBox);
         Assert.False(aFace.Checked());
 
         // an unfrozen face is updated and marked
-        TopoDS_Solid anUnfrozen = TestShapes.Box(1, 1, 1);
-        BRepTools.Update(anUnfrozen);
+        Solid anUnfrozen = TestShapes.Box(1, 1, 1);
+        BrepTools.Update(anUnfrozen);
         Assert.True(FirstFace(anUnfrozen).Checked());
     }
 
@@ -447,22 +450,22 @@ public class FreezingTests
     [Fact]
     public void A_frozen_child_can_be_added_to_an_unfrozen_parent()
     {
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        var aBuilder = new BRep_Builder();
-        TopoDS_Compound aCompound = new();
+        Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        var aBuilder = new BrepBuilder();
+        Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
         aBuilder.Add(aCompound, aBox);
-        TopoDS_Wire aWire = new();
+        Wire aWire = new();
         aBuilder.MakeWire(ref aWire);
         aBuilder.Add(aWire, FirstEdge(aBox)); // a frozen edge in a new wire
         aBuilder.Add(aCompound, aWire);
-        Assert.Equal(2, aCompound.NbChildren());
+        Assert.Equal(2, aCompound.ChildCount);
 
         // and a new edge on frozen vertices can be given parameters: the vertices' point representations would
         // change, so this needs a copy (here it throws)
-        TopExp.Vertices(FirstEdge(aBox), out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
-        var aLine = new Geom_Line(BRep_Tool.Pnt(aV1), new Direction3D(new Vector3D(BRep_Tool.Pnt(aV1), BRep_Tool.Pnt(aV2))));
-        TopoDS_Edge aNewEdge = TestShapes.Edge(aLine, 0, 1, aV1, aV2);
-        Assert.Throws<TopoDS_LockedShape>(() => aBuilder.UpdateVertex(aV1, 0.5, aNewEdge, 1e-7));
+        Exploration.Vertices(FirstEdge(aBox), out Vertex aV1, out Vertex aV2);
+        var aLine = new LineCurve3D(Tool.Pnt(aV1), new Direction3D(new Vector3D(Tool.Pnt(aV1), Tool.Pnt(aV2))));
+        Edge aNewEdge = TestShapes.Edge(aLine, 0, 1, aV1, aV2);
+        Assert.Throws<LockedShapeException>(() => aBuilder.UpdateVertex(aV1, 0.5, aNewEdge, 1e-7));
     }
 }

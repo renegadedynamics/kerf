@@ -6,7 +6,9 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using static Kerf.Geometry.CurveKind;
 
@@ -25,7 +27,7 @@ namespace Occt;
 /// </remarks>
 public sealed class HLRBRep_Curve
 {
-    private readonly BRepAdaptor_Curve myCurve;
+    private readonly EdgeCurveAdaptor myCurve;
     private CurveKind myType;
     private StrongBox<HLRAlgo_Projector>? myProj;
     private double myOX;
@@ -37,12 +39,12 @@ public sealed class HLRBRep_Curve
     /// <summary>Creates an undefined curve.</summary>
     public HLRBRep_Curve()
     {
-        myCurve = new BRepAdaptor_Curve();
+        myCurve = new EdgeCurveAdaptor();
     }
 
     private HLRBRep_Curve(HLRBRep_Curve theOther)
     {
-        myCurve = (BRepAdaptor_Curve)theOther.myCurve.ShallowCopy();
+        myCurve = (EdgeCurveAdaptor)theOther.myCurve.ShallowCopy();
         myType = theOther.myType;
         myProj = theOther.myProj;
         myOX = theOther.myOX;
@@ -61,16 +63,16 @@ public sealed class HLRBRep_Curve
     private ref readonly HLRAlgo_Projector Proj() => ref myProj!.Value;
 
     /// <summary>Returns the 3D curve.</summary>
-    public BRepAdaptor_Curve Curve() => myCurve;
+    public EdgeCurveAdaptor Curve() => myCurve;
 
     /// <summary>Sets the 3D curve to be projected.</summary>
-    public void Curve(in TopoDS_Edge E)
+    public void Curve(in Edge E)
     {
         myCurve.Initialize(E);
     }
 
     /// <summary>Returns the 3D curve.</summary>
-    public BRepAdaptor_Curve GetCurve() => myCurve;
+    public EdgeCurveAdaptor GetCurve() => myCurve;
 
     /// <summary>Returns the parameter on the 2d curve from the parameter on the 3d curve.</summary>
     public double Parameter2d(double P3d)
@@ -482,7 +484,7 @@ public sealed class HLRBRep_Curve
     {
         Circle3D C = HLRBRep_BCurveTool.Circle(myCurve);
         C.Transform(Proj().Transformation());
-        return ProjLib.Project(new Plane3D(new CoordinateSystem(Constants.XOY())), C);
+        return global::Kerf.Engine.Geometry.Projection.ProjLib.Project(new Plane3D(new CoordinateSystem(Constants.XOY())), C);
     }
 
     public Ellipse2D Ellipse()
@@ -491,7 +493,7 @@ public sealed class HLRBRep_Curve
         {
             Ellipse3D E = HLRBRep_BCurveTool.Ellipse(myCurve);
             E.Transform(Proj().Transformation());
-            return ProjLib.Project(new Plane3D(new CoordinateSystem(Constants.XOY())), E);
+            return global::Kerf.Engine.Geometry.Projection.ProjLib.Project(new Plane3D(new CoordinateSystem(Constants.XOY())), E);
         }
         // this is a circle
         Circle3D C = HLRBRep_BCurveTool.Circle(myCurve);
@@ -528,7 +530,7 @@ public sealed class HLRBRep_Curve
         NCollection_Array1<Point3D> TP3 = new(i1, i2);
         if (HLRBRep_BCurveTool.GetType(myCurve) == BSplineCurve)
         {
-            Geom_BSplineCurve aBSpl = HLRBRep_BCurveTool.BSpline(myCurve);
+            BSplineCurve3D aBSpl = HLRBRep_BCurveTool.BSpline(myCurve);
             NCollection_Array1<Point3D> aSrcPoles = aBSpl.InternalPoles();
             for (int i = i1; i <= i2; i++)
             {
@@ -537,7 +539,7 @@ public sealed class HLRBRep_Curve
         }
         else
         {
-            Geom_BezierCurve aBez = HLRBRep_BCurveTool.Bezier(myCurve);
+            BezierCurve3D aBez = HLRBRep_BCurveTool.Bezier(myCurve);
             NCollection_Array1<Point3D> aSrcPoles = aBez.InternalPoles();
             for (int i = i1; i <= i2; i++)
             {
@@ -552,7 +554,7 @@ public sealed class HLRBRep_Curve
     }
 
     /// <summary>The projected poles of the given B-spline curve.</summary>
-    public void Poles(Geom_BSplineCurve aCurve, NCollection_Array1<Point2D> TP)
+    public void Poles(BSplineCurve3D aCurve, NCollection_Array1<Point2D> TP)
     {
         int i1 = TP.Lower();
         int i2 = TP.Upper();
@@ -577,7 +579,7 @@ public sealed class HLRBRep_Curve
         NCollection_Array1<Point3D> TP3 = new(i1, i2);
         if (HLRBRep_BCurveTool.GetType(myCurve) == BSplineCurve)
         {
-            Geom_BSplineCurve HB = (HLRBRep_BCurveTool.BSpline(myCurve));
+            BSplineCurve3D HB = (HLRBRep_BCurveTool.BSpline(myCurve));
             NCollection_Array1<Point3D> aSrcPoles = HB.InternalPoles();
             NCollection_Array1<double> aSrcWeights = HB.InternalWeightsArray();
             for (int i = i1; i <= i2; i++)
@@ -591,7 +593,7 @@ public sealed class HLRBRep_Curve
         }
         else
         {
-            Geom_BezierCurve HB = (HLRBRep_BCurveTool.Bezier(myCurve));
+            BezierCurve3D HB = (HLRBRep_BCurveTool.Bezier(myCurve));
             NCollection_Array1<Point3D> aSrcPoles = HB.InternalPoles();
             NCollection_Array1<double> aSrcWeights = HB.InternalWeightsArray();
             for (int i = i1; i <= i2; i++)
@@ -611,7 +613,7 @@ public sealed class HLRBRep_Curve
     }
 
     /// <summary>The projected poles and the weights of the given B-spline curve.</summary>
-    public void PolesAndWeights(Geom_BSplineCurve aCurve, NCollection_Array1<Point2D> TP,
+    public void PolesAndWeights(BSplineCurve3D aCurve, NCollection_Array1<Point2D> TP,
                                 NCollection_Array1<double> TW)
     {
         int i1 = TP.Lower();
@@ -641,7 +643,7 @@ public sealed class HLRBRep_Curve
     {
         if (HLRBRep_BCurveTool.GetType(myCurve) == BSplineCurve)
         {
-            Geom_BSplineCurve aBSpl = HLRBRep_BCurveTool.BSpline(myCurve);
+            BSplineCurve3D aBSpl = HLRBRep_BCurveTool.BSpline(myCurve);
             NCollection_Array1<double> aSrcKnots = aBSpl.InternalKnots();
             for (int i = kn.Lower(); i <= kn.Upper(); i++)
             {
@@ -655,7 +657,7 @@ public sealed class HLRBRep_Curve
     {
         if (HLRBRep_BCurveTool.GetType(myCurve) == BSplineCurve)
         {
-            Geom_BSplineCurve aBSpl = HLRBRep_BCurveTool.BSpline(myCurve);
+            BSplineCurve3D aBSpl = HLRBRep_BCurveTool.BSpline(myCurve);
             NCollection_Array1<int> aSrcMults = aBSpl.InternalMultiplicities();
             for (int i = mu.Lower(); i <= mu.Upper(); i++)
             {

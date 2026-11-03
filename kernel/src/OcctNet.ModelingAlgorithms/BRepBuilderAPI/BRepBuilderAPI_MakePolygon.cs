@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -49,19 +50,19 @@ public class BRepBuilderAPI_MakePolygon : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakePolygon(in TopoDS_Vertex V1, in TopoDS_Vertex V2)
+    public BRepBuilderAPI_MakePolygon(in Vertex V1, in Vertex V2)
     {
         myMakePolygon = new BRepLib_MakePolygon(V1, V2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakePolygon(in TopoDS_Vertex V1, in TopoDS_Vertex V2, in TopoDS_Vertex V3, bool Cl = false)
+    public BRepBuilderAPI_MakePolygon(in Vertex V1, in Vertex V2, in Vertex V3, bool Cl = false)
     {
         myMakePolygon = new BRepLib_MakePolygon(V1, V2, V3, Cl);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakePolygon(in TopoDS_Vertex V1, in TopoDS_Vertex V2, in TopoDS_Vertex V3, in TopoDS_Vertex V4, bool Cl = false)
+    public BRepBuilderAPI_MakePolygon(in Vertex V1, in Vertex V2, in Vertex V3, in Vertex V4, bool Cl = false)
     {
         myMakePolygon = new BRepLib_MakePolygon(V1, V2, V3, V4, Cl);
         TakeResult();
@@ -76,7 +77,7 @@ public class BRepBuilderAPI_MakePolygon : BRepBuilderAPI_MakeShape
         if (myMakePolygon.IsDone())
         {
             Done();
-            if (!myMakePolygon.InternalLastVertex().IsNull()) // OCCT: LastVertex()
+            if (!myMakePolygon.InternalLastVertex().IsNull) // OCCT: LastVertex()
             {
                 myShape = myMakePolygon.InternalShape();
             }
@@ -84,7 +85,7 @@ public class BRepBuilderAPI_MakePolygon : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Adds the vertex <paramref name="V"/> at the end of the polygon.</summary>
-    public void Add(in TopoDS_Vertex V)
+    public void Add(in Vertex V)
     {
         myMakePolygon.Add(V);
         if (myMakePolygon.IsDone())
@@ -108,25 +109,25 @@ public class BRepBuilderAPI_MakePolygon : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The first vertex of the polygon (frozen with it).</summary>
-    public TopoDS_Vertex FirstVertex()
+    public Vertex FirstVertex()
     {
         return myMakePolygon.FirstVertex();
     }
 
     /// <summary><see cref="FirstVertex"/> without freezing, for ported code.</summary>
-    internal TopoDS_Vertex InternalFirstVertex()
+    internal Vertex InternalFirstVertex()
     {
         return myMakePolygon.InternalFirstVertex();
     }
 
     /// <summary>The last vertex of the polygon (frozen with it).</summary>
-    public TopoDS_Vertex LastVertex()
+    public Vertex LastVertex()
     {
         return myMakePolygon.LastVertex();
     }
 
     /// <summary><see cref="LastVertex"/> without freezing, for ported code.</summary>
-    internal TopoDS_Vertex InternalLastVertex()
+    internal Vertex InternalLastVertex()
     {
         return myMakePolygon.InternalLastVertex();
     }
@@ -137,32 +138,32 @@ public class BRepBuilderAPI_MakePolygon : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The last edge built (frozen with the polygon).</summary>
-    public TopoDS_Edge Edge()
+    public Edge Edge()
     {
         return myMakePolygon.Edge();
     }
 
     /// <summary><see cref="Edge"/> without freezing, for ported code.</summary>
-    internal TopoDS_Edge InternalEdge()
+    internal Edge InternalEdge()
     {
         return myMakePolygon.InternalEdge();
     }
 
     /// <summary>The wire (frozen).</summary>
-    public TopoDS_Wire Wire()
+    public Wire Wire()
     {
         return myMakePolygon.Wire();
     }
 
     /// <summary><see cref="Wire"/> without freezing, for ported code.</summary>
-    internal TopoDS_Wire InternalWire()
+    internal Wire InternalWire()
     {
         return myMakePolygon.InternalWire();
     }
 
     /// <summary>The last edge (OCCT's conversion operator; frozen).</summary>
-    public static explicit operator TopoDS_Edge(BRepBuilderAPI_MakePolygon theMaker) => theMaker.Edge();
+    public static explicit operator Edge(BRepBuilderAPI_MakePolygon theMaker) => theMaker.Edge();
 
     /// <summary>The wire (OCCT's conversion operator; frozen).</summary>
-    public static explicit operator TopoDS_Wire(BRepBuilderAPI_MakePolygon theMaker) => theMaker.Wire();
+    public static explicit operator Wire(BRepBuilderAPI_MakePolygon theMaker) => theMaker.Wire();
 }

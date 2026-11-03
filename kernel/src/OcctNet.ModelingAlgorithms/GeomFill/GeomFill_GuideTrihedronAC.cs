@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -17,29 +19,29 @@ namespace Occt;
 /// </remarks>
 public class GeomFill_GuideTrihedronAC : GeomFill_TrihedronWithGuide
 {
-    private readonly Approx_CurvlinFunc myGuideAC;
+    private readonly CurvlinFunc myGuideAC;
     private readonly double Lguide;
-    private Approx_CurvlinFunc? myCurveAC;
+    private CurvlinFunc? myCurveAC;
     private double L;
-    private new Adaptor3d_Curve? myCurve;
+    private new CurveAdaptorBase? myCurve;
     private readonly double UTol;
     private readonly double STol;
     private double Orig1;
     private double Orig2;
 
-    public GeomFill_GuideTrihedronAC(Adaptor3d_Curve guide)
+    public GeomFill_GuideTrihedronAC(CurveAdaptorBase guide)
     {
         myCurve = null;
         myGuide = guide;
         myTrimG = guide;
-        myGuideAC = new Approx_CurvlinFunc(myGuide, 1.0e-7);
+        myGuideAC = new CurvlinFunc(myGuide, 1.0e-7);
         Lguide = myGuideAC.GetLength();
         UTol = STol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         Orig1 = 0; // origines pour le cas path multi-edges
         Orig2 = 1;
     }
 
-    public override Adaptor3d_Curve Guide() => myGuide!;
+    public override CurveAdaptorBase Guide() => myGuide!;
 
     public override bool D0(double Param, ref Vector3D Tangent, ref Vector3D Normal, ref Vector3D BiNormal)
     {
@@ -215,13 +217,13 @@ public class GeomFill_GuideTrihedronAC : GeomFill_TrihedronWithGuide
         return copy;
     }
 
-    public override bool SetCurve(Adaptor3d_Curve C)
+    public override bool SetCurve(CurveAdaptorBase C)
     {
         myCurve = C;
         myTrimmed = C;
         if (myCurve is not null)
         {
-            myCurveAC = new Approx_CurvlinFunc(C, 1.0e-7);
+            myCurveAC = new CurvlinFunc(C, 1.0e-7);
             L = myCurveAC.GetLength();
         }
         return true;
@@ -238,7 +240,7 @@ public class GeomFill_GuideTrihedronAC : GeomFill_TrihedronWithGuide
         myGuideAC.Intervals(DiscG, S);
 
         NCollection_Sequence<double> Seq = new NCollection_Sequence<double>();
-        GeomLib.FuseIntervals(DiscC, DiscG, Seq);
+        global::Kerf.Engine.Geometry.Library.GeomLib.FuseIntervals(DiscC, DiscG, Seq);
 
         return Seq.Length() - 1;
     }
@@ -254,7 +256,7 @@ public class GeomFill_GuideTrihedronAC : GeomFill_TrihedronWithGuide
         myGuideAC.Intervals(DiscG, S);
 
         NCollection_Sequence<double> Seq = new NCollection_Sequence<double>();
-        GeomLib.FuseIntervals(DiscC, DiscG, Seq);
+        global::Kerf.Engine.Geometry.Library.GeomLib.FuseIntervals(DiscC, DiscG, Seq);
         Nb = Seq.Length();
 
         for (ii = 1; ii <= Nb; ii++)

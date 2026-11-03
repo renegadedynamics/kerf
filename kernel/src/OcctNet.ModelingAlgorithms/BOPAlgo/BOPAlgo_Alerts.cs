@@ -7,6 +7,8 @@
 // algo.HasError(typeof(BOPAlgo_AlertSelfInterferingShape)). Their message texts are in BOPAlgo_BOPAlgo_msg.
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -66,72 +68,72 @@ public sealed class BOPAlgo_AlertTooFewArguments : Alert
 }
 
 /// <summary>The positioning of the shapes leads to creation of the small edges without valid range.</summary>
-public sealed class BOPAlgo_AlertBadPositioning(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertBadPositioning(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Some of the arguments are empty shapes.</summary>
-public sealed class BOPAlgo_AlertEmptyShape(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertEmptyShape(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Some edges are very small and have such a small valid range, that they cannot be split.</summary>
-public sealed class BOPAlgo_AlertNotSplittableEdge(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertNotSplittableEdge(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Removal of internal boundaries among Edges has failed.</summary>
-public sealed class BOPAlgo_AlertRemovalOfIBForEdgesFailed(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertRemovalOfIBForEdgesFailed(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Removal of internal boundaries among Faces has failed.</summary>
-public sealed class BOPAlgo_AlertRemovalOfIBForFacesFailed(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertRemovalOfIBForFacesFailed(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Removal of internal boundaries among the multi-dimensional shapes is not supported yet.</summary>
-public sealed class BOPAlgo_AlertRemovalOfIBForMDimShapes(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertRemovalOfIBForMDimShapes(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Removal of internal boundaries among Solids has failed.</summary>
-public sealed class BOPAlgo_AlertRemovalOfIBForSolidsFailed(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertRemovalOfIBForSolidsFailed(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Some of the arguments are self-interfering shapes.</summary>
-public sealed class BOPAlgo_AlertSelfInterferingShape(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertSelfInterferingShape(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>The positioning of the shapes leads to creation of the small edges without valid range.</summary>
-public sealed class BOPAlgo_AlertShellSplitterFailed(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertShellSplitterFailed(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Some edges are too small and have no valid range.</summary>
-public sealed class BOPAlgo_AlertTooSmallEdge(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertTooSmallEdge(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Intersection of pair of shapes has failed.</summary>
-public sealed class BOPAlgo_AlertIntersectionOfPairOfShapesFailed(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertIntersectionOfPairOfShapesFailed(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Building 2D curve of edge on face has failed.</summary>
-public sealed class BOPAlgo_AlertBuildingPCurveFailed(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertBuildingPCurveFailed(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Some sub-shapes of some of the argument become connected through other shapes and the argument became self-interfered.</summary>
-public sealed class BOPAlgo_AlertAcquiredSelfIntersection(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertAcquiredSelfIntersection(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Unsupported type of input shape.</summary>
-public sealed class BOPAlgo_AlertUnsupportedType(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertUnsupportedType(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
@@ -141,7 +143,7 @@ public sealed class BOPAlgo_AlertNoFacesToRemove : Alert
 }
 
 /// <summary>Unable to remove the feature.</summary>
-public sealed class BOPAlgo_AlertUnableToRemoveTheFeature(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertUnableToRemoveTheFeature(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
@@ -151,22 +153,22 @@ public sealed class BOPAlgo_AlertRemoveFeaturesFailed : Alert
 }
 
 /// <summary>Some of the faces passed to the Solid Builder algorithm have not been classified and not used for solids creation.</summary>
-public sealed class BOPAlgo_AlertSolidBuilderUnusedFaces(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertSolidBuilderUnusedFaces(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Some of the edges passed to the Face Builder algorithm have not been classified and not used for faces creation.</summary>
-public sealed class BOPAlgo_AlertFaceBuilderUnusedEdges(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertFaceBuilderUnusedEdges(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Unable to orient the shape correctly.</summary>
-public sealed class BOPAlgo_AlertUnableToOrientTheShape(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertUnableToOrientTheShape(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Shape is unknown for operation.</summary>
-public sealed class BOPAlgo_AlertUnknownShape(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertUnknownShape(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
@@ -176,17 +178,17 @@ public sealed class BOPAlgo_AlertNoPeriodicityRequired : Alert
 }
 
 /// <summary>Unable to trim the shape for making it periodic (BOP Common fails).</summary>
-public sealed class BOPAlgo_AlertUnableToTrim(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertUnableToTrim(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Unable to make the shape to look identical on opposite sides (Splitter fails).</summary>
-public sealed class BOPAlgo_AlertUnableToMakeIdentical(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertUnableToMakeIdentical(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Unable to repeat the shape (Gluer fails).</summary>
-public sealed class BOPAlgo_AlertUnableToRepeat(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertUnableToRepeat(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
@@ -196,21 +198,21 @@ public sealed class BOPAlgo_AlertMultiDimensionalArguments : Alert
 }
 
 /// <summary>Unable to make the shape periodic.</summary>
-public sealed class BOPAlgo_AlertUnableToMakePeriodic(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertUnableToMakePeriodic(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Unable to glue the shapes.</summary>
-public sealed class BOPAlgo_AlertUnableToGlue(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertUnableToGlue(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>The shape is not periodic.</summary>
-public sealed class BOPAlgo_AlertShapeIsNotPeriodic(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertShapeIsNotPeriodic(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Unable to make closed edge on face (to make a seam).</summary>
-public sealed class BOPAlgo_AlertUnableToMakeClosedEdgeOnFace(in TopoDS_Shape theShape) : TopoDS_AlertWithShape(theShape)
+public sealed class BOPAlgo_AlertUnableToMakeClosedEdgeOnFace(in Shape theShape) : AlertWithShape(theShape)
 {
 }

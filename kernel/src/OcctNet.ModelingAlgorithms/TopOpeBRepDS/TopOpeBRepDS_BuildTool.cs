@@ -3,9 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 using static Occt.TopOpeBRepTool_OutCurveType;
 
 namespace Occt;
@@ -29,7 +32,7 @@ namespace Occt;
 /// </remarks>
 public sealed class TopOpeBRepDS_BuildTool
 {
-    private readonly BRep_Builder myBuilder = new();
+    private readonly BrepBuilder myBuilder = new();
     private readonly TopOpeBRepTool_CurveTool myCurveTool;
     private bool myOverWrite;
     private bool myTranslate;
@@ -93,27 +96,27 @@ public sealed class TopOpeBRepDS_BuildTool
     // UpdateSurface and TranslateOnPeriodic: not ported (TopOpeBRepDS's data structure; plan 2.11).
 
     /// <summary>Makes an empty wire in <paramref name="W"/>.</summary>
-    internal void MakeWire(ref TopoDS_Shape W)
+    internal void MakeWire(ref Shape W)
     {
-        TopoDS_Wire aW = new();
+        Wire aW = new();
         myBuilder.MakeWire(ref aW);
         W = aW;
     }
 
     /// <summary>An empty copy of the face <paramref name="Fin"/> (same surface, tolerance and orientation, no wires).</summary>
-    internal void CopyFace(in TopoDS_Shape Fin, out TopoDS_Shape Fou)
+    internal void CopyFace(in Shape Fin, out Shape Fou)
     {
         Fou = Fin.EmptyCopied();
     }
 
     /// <summary>Adds the edge <paramref name="E"/> to the wire <paramref name="W"/>.</summary>
-    internal void AddWireEdge(in TopoDS_Shape W, in TopoDS_Shape E)
+    internal void AddWireEdge(in Shape W, in Shape E)
     {
         myBuilder.Add(W, E);
     }
 
     /// <summary>Adds the wire <paramref name="W"/> to the face <paramref name="F"/>.</summary>
-    internal void AddFaceWire(in TopoDS_Shape F, in TopoDS_Shape W)
+    internal void AddFaceWire(in Shape F, in Shape W)
     {
         myBuilder.Add(F, W);
     }
@@ -122,24 +125,24 @@ public sealed class TopOpeBRepDS_BuildTool
     /// Sets the parameter of the vertex <paramref name="V"/> on the edge <paramref name="E"/> to <paramref name="P"/>,
     /// brought into the period after the edge's first parameter for a REVERSED vertex on a periodic curve.
     /// </summary>
-    internal void Parameter(in TopoDS_Shape E, in TopoDS_Shape V, double P)
+    internal void Parameter(in Shape E, in Shape V, double P)
     {
-        TopoDS_Edge e = TopoDS.Edge(E);
-        TopoDS_Vertex v = TopoDS.Vertex(V);
+        Edge e = ShapeCasts.Edge(E);
+        Vertex v = ShapeCasts.Vertex(V);
         double p = P;
 
         // 13/07/95 :
-        Geom_Curve? C = BRep_Tool.Curve(e, out Placement _, out double f, out double _);
-        if (C is not null && C.IsPeriodic())
+        Curve3D? C = Tool.Curve(e, out Placement _, out double f, out double _);
+        if (C is not null && C.IsPeriodic)
         {
             double per = C.Period();
 
-            TopAbs_Orientation oV = TopAbs_FORWARD;
+            Orientation oV = Forward;
 
-            TopExp_Explorer exV = new(e, TopAbs_VERTEX);
+            Explorer exV = new(e, ShapeType.Vertex);
             for (; exV.More(); exV.Next())
             {
-                TopoDS_Vertex vofe = TopoDS.Vertex(exV.Current());
+                Vertex vofe = ShapeCasts.Vertex(exV.Current());
                 if (vofe.IsSame(v))
                 {
                     oV = vofe.Orientation();
@@ -148,7 +151,7 @@ public sealed class TopOpeBRepDS_BuildTool
             }
             if (exV.More())
             {
-                if (oV == TopAbs_REVERSED)
+                if (oV == Reversed)
                 {
                     if (p < f)
                     {
@@ -163,7 +166,7 @@ public sealed class TopOpeBRepDS_BuildTool
     }
 
     /// <summary>Sets the Closed flag of <paramref name="S"/>.</summary>
-    internal void Closed(in TopoDS_Shape S, bool B)
+    internal void Closed(in Shape S, bool B)
     {
         S.Closed(B);
     }

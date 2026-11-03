@@ -5,8 +5,9 @@
 using Kerf.Engine.Numerics.Utilities;
 
 using Kerf.Geometry;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.Extrema.PointCurve;
 
 /// <summary>
 /// Common types and utilities for point-curve extrema computation (OCCT 8's ExtremaPC package): the precision
@@ -132,112 +133,112 @@ public static partial class ExtremaPC
     /// <remarks>
     /// Non-copyable in OCCT: the evaluators return a reference to their own reusable result, which the next
     /// <c>Perform</c> overwrites. Its state is changed only inside OCCT.NET (internal setters and the internal
-    /// <see cref="Extrema"/> collection); callers read it through <see cref="NbExt"/> and the indexer.
+    /// <see cref="_extrema"/> collection); callers read it through <see cref="ExtCount"/> and the indexer.
     /// </remarks>
     public sealed class Result
     {
         /// <summary>Computation status.</summary>
-        public ExtremaPC.Status Status { get; internal set; } = ExtremaPC.Status.NotDone;
+        public global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status Status { get; internal set; } = global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status.NotDone;
 
         /// <summary>Collection of found extrema (0-based).</summary>
-        internal readonly NCollection_DynamicArray<ExtremumResult> Extrema = new(8);
+        internal readonly NCollection_DynamicArray<ExtremumResult> _extrema = new(8);
 
         /// <summary>For infinite solutions, the constant squared distance.</summary>
         public double InfiniteSquareDistance { get; internal set; } = 0.0;
 
         /// <summary>Returns true if computation succeeded with finite number of extrema.</summary>
-        public bool IsDone() => Status == ExtremaPC.Status.OK;
+        public bool IsDone => Status == global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status.OK;
 
         /// <summary>Returns true if there are infinite solutions.</summary>
-        public bool IsInfinite() => Status == ExtremaPC.Status.InfiniteSolutions;
+        public bool IsInfinite => Status == global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status.InfiniteSolutions;
 
         /// <summary>Returns number of extrema found (0 if infinite or failed).</summary>
-        public int NbExt() => Extrema.Length();
+        public int ExtCount => _extrema.Length();
 
         /// <summary>Access extremum by 0-based index.</summary>
-        public ExtremumResult this[int theIndex] => Extrema.Value(theIndex);
+        public ExtremumResult this[int index] => _extrema.Value(index);
 
         /// <summary>Returns the squared distance of the closest extremum, or infinity if no extrema found.</summary>
         public double MinSquareDistance()
         {
-            if (Extrema.IsEmpty())
+            if (_extrema.IsEmpty())
             {
                 return double.PositiveInfinity;
             }
-            double aMinSqDist = Extrema.Value(0).SquareDistance;
-            for (int i = 1; i < Extrema.Length(); ++i)
+            double minSqDist = _extrema.Value(0).SquareDistance;
+            for (int i = 1; i < _extrema.Length(); ++i)
             {
-                if (Extrema.Value(i).SquareDistance < aMinSqDist)
+                if (_extrema.Value(i).SquareDistance < minSqDist)
                 {
-                    aMinSqDist = Extrema.Value(i).SquareDistance;
+                    minSqDist = _extrema.Value(i).SquareDistance;
                 }
             }
-            return aMinSqDist;
+            return minSqDist;
         }
 
         /// <summary>Returns the index of the closest extremum (0-based), or -1 if no extrema found.</summary>
         public int MinIndex()
         {
-            if (Extrema.IsEmpty())
+            if (_extrema.IsEmpty())
             {
                 return -1;
             }
-            int aMinIdx = 0;
-            double aMinSqDist = Extrema.Value(0).SquareDistance;
-            for (int i = 1; i < Extrema.Length(); ++i)
+            int minIdx = 0;
+            double minSqDist = _extrema.Value(0).SquareDistance;
+            for (int i = 1; i < _extrema.Length(); ++i)
             {
-                if (Extrema.Value(i).SquareDistance < aMinSqDist)
+                if (_extrema.Value(i).SquareDistance < minSqDist)
                 {
-                    aMinSqDist = Extrema.Value(i).SquareDistance;
-                    aMinIdx = i;
+                    minSqDist = _extrema.Value(i).SquareDistance;
+                    minIdx = i;
                 }
             }
-            return aMinIdx;
+            return minIdx;
         }
 
         /// <summary>Returns the squared distance of the farthest extremum, or 0 if no extrema found.</summary>
         public double MaxSquareDistance()
         {
-            if (Extrema.IsEmpty())
+            if (_extrema.IsEmpty())
             {
                 return 0.0;
             }
-            double aMaxSqDist = Extrema.Value(0).SquareDistance;
-            for (int i = 1; i < Extrema.Length(); ++i)
+            double maxSqDist = _extrema.Value(0).SquareDistance;
+            for (int i = 1; i < _extrema.Length(); ++i)
             {
-                if (Extrema.Value(i).SquareDistance > aMaxSqDist)
+                if (_extrema.Value(i).SquareDistance > maxSqDist)
                 {
-                    aMaxSqDist = Extrema.Value(i).SquareDistance;
+                    maxSqDist = _extrema.Value(i).SquareDistance;
                 }
             }
-            return aMaxSqDist;
+            return maxSqDist;
         }
 
         /// <summary>Returns the index of the farthest extremum (0-based), or -1 if no extrema found.</summary>
         public int MaxIndex()
         {
-            if (Extrema.IsEmpty())
+            if (_extrema.IsEmpty())
             {
                 return -1;
             }
-            int aMaxIdx = 0;
-            double aMaxSqDist = Extrema.Value(0).SquareDistance;
-            for (int i = 1; i < Extrema.Length(); ++i)
+            int maxIdx = 0;
+            double maxSqDist = _extrema.Value(0).SquareDistance;
+            for (int i = 1; i < _extrema.Length(); ++i)
             {
-                if (Extrema.Value(i).SquareDistance > aMaxSqDist)
+                if (_extrema.Value(i).SquareDistance > maxSqDist)
                 {
-                    aMaxSqDist = Extrema.Value(i).SquareDistance;
-                    aMaxIdx = i;
+                    maxSqDist = _extrema.Value(i).SquareDistance;
+                    maxIdx = i;
                 }
             }
-            return aMaxIdx;
+            return maxIdx;
         }
 
         /// <summary>Clears the result for reuse.</summary>
         internal void Clear()
         {
-            Status = ExtremaPC.Status.NotDone;
-            Extrema.Clear();
+            Status = global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status.NotDone;
+            _extrema.Clear();
             InfiniteSquareDistance = 0.0;
         }
     }
@@ -261,13 +262,13 @@ public static partial class ExtremaPC
         {
         }
 
-        public Config(Config theOther)
+        public Config(Config other)
         {
-            Tolerance = theOther.Tolerance;
-            Domain = theOther.Domain;
-            NbSamples = theOther.NbSamples;
-            Mode = theOther.Mode;
-            IncludeEndpoints = theOther.IncludeEndpoints;
+            Tolerance = other.Tolerance;
+            Domain = other.Domain;
+            NbSamples = other.NbSamples;
+            Mode = other.Mode;
+            IncludeEndpoints = other.IncludeEndpoints;
         }
     }
 
@@ -278,134 +279,134 @@ public static partial class ExtremaPC
     public interface ICurveEvaluator
     {
         /// <summary>Evaluates the point on the curve at a parameter.</summary>
-        Point3D Value(double theU);
+        Point3D Value(double u);
 
         /// <summary>Interior extrema between a point and the curve.</summary>
-        Result Perform(in Point3D theP, double theTol, SearchMode theMode = SearchMode.MinMax);
+        Result Perform(in Point3D p, double tol, SearchMode mode = SearchMode.MinMax);
 
         /// <summary>Interior and endpoint extrema between a point and the curve.</summary>
-        Result PerformWithEndpoints(in Point3D theP, double theTol, SearchMode theMode = SearchMode.MinMax);
+        Result PerformWithEndpoints(in Point3D p, double tol, SearchMode mode = SearchMode.MinMax);
     }
 
     /// <summary>
     /// Adds the curve endpoints to a result when the domain is finite, the endpoint is a true local extremum
     /// (checked against a neighbouring point) and it doesn't duplicate an existing extremum.
     /// </summary>
-    internal static void AddEndpointExtrema<CurveEvaluator>(Result theResult,
-                                                            in Point3D theP,
-                                                            in global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D theDomain,
-                                                            CurveEvaluator theEval,
-                                                            double theTol,
-                                                            SearchMode theMode)
+    internal static void AddEndpointExtrema<CurveEvaluator>(Result result,
+                                                            in Point3D p,
+                                                            in global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D domain,
+                                                            CurveEvaluator eval,
+                                                            double tol,
+                                                            SearchMode mode)
         where CurveEvaluator : ICurveEvaluator
     {
         // Check for infinite bounds
-        if (!theDomain.IsFinite())
+        if (!domain.IsFinite())
         {
             return;
         }
 
-        double theUMin = theDomain.Min;
-        double theUMax = theDomain.Max;
+        double theUMin = domain.Min;
+        double theUMax = domain.Max;
 
         // Evaluate endpoints
-        Point3D aPtMin = theEval.Value(theUMin);
-        Point3D aPtMax = theEval.Value(theUMax);
+        Point3D ptMin = eval.Value(theUMin);
+        Point3D ptMax = eval.Value(theUMax);
 
-        double aSqDistMin = theP.SquareDistance(aPtMin);
-        double aSqDistMax = theP.SquareDistance(aPtMax);
+        double sqDistMin = p.SquareDistance(ptMin);
+        double sqDistMax = p.SquareDistance(ptMax);
 
         // Sample step for neighbor point evaluation
-        double aStep = (theUMax - theUMin) * THE_NEIGHBOR_STEP_RATIO;
-        if (aStep < theTol)
+        double step = (theUMax - theUMin) * THE_NEIGHBOR_STEP_RATIO;
+        if (step < tol)
         {
-            aStep = theTol;
+            step = tol;
         }
 
         // Check if UMin is a local extremum by comparing to neighbor
-        Point3D aNeighborMin = theEval.Value(theUMin + aStep);
-        double aNeighborDistMin = theP.SquareDistance(aNeighborMin);
-        bool aIsMinAtUMin = (aSqDistMin <= aNeighborDistMin);
-        bool aIsMaxAtUMin = (aSqDistMin >= aNeighborDistMin);
+        Point3D neighborMin = eval.Value(theUMin + step);
+        double neighborDistMin = p.SquareDistance(neighborMin);
+        bool isMinAtUMin = (sqDistMin <= neighborDistMin);
+        bool isMaxAtUMin = (sqDistMin >= neighborDistMin);
 
         // Check if UMax is a local extremum by comparing to neighbor
-        Point3D aNeighborMax = theEval.Value(theUMax - aStep);
-        double aNeighborDistMax = theP.SquareDistance(aNeighborMax);
-        bool aIsMinAtUMax = (aSqDistMax <= aNeighborDistMax);
-        bool aIsMaxAtUMax = (aSqDistMax >= aNeighborDistMax);
+        Point3D neighborMax = eval.Value(theUMax - step);
+        double neighborDistMax = p.SquareDistance(neighborMax);
+        bool isMinAtUMax = (sqDistMax <= neighborDistMax);
+        bool isMaxAtUMax = (sqDistMax >= neighborDistMax);
 
         // Also check if endpoints themselves are duplicates (for periodic curves)
-        bool aEndpointsAreSame = aPtMin.SquareDistance(aPtMax) < theTol * theTol;
+        bool endpointsAreSame = ptMin.SquareDistance(ptMax) < tol * tol;
 
         // For periodic/closed curves, there are no true endpoints to consider
-        if (aEndpointsAreSame)
+        if (endpointsAreSame)
         {
             return;
         }
 
         // Add endpoints only if they are true local extrema matching the search mode
-        if (theMode == SearchMode.Min || theMode == SearchMode.MinMax)
+        if (mode == SearchMode.Min || mode == SearchMode.MinMax)
         {
             // Add UMin if it's a local minimum
-            if (aIsMinAtUMin && !isDuplicate(theResult, theTol, theUMin, aPtMin))
+            if (isMinAtUMin && !IsDuplicate(result, tol, theUMin, ptMin))
             {
-                ExtremumResult anExt = new();
-                anExt.Parameter = theUMin;
-                anExt.Point = aPtMin;
-                anExt.SquareDistance = aSqDistMin;
-                anExt.IsMinimum = true;
-                theResult.Extrema.Append(anExt);
+                ExtremumResult ext = new();
+                ext.Parameter = theUMin;
+                ext.Point = ptMin;
+                ext.SquareDistance = sqDistMin;
+                ext.IsMinimum = true;
+                result._extrema.Append(ext);
             }
             // Add UMax if it's a local minimum (and not same point as UMin)
-            if (aIsMinAtUMax && !aEndpointsAreSame && !isDuplicate(theResult, theTol, theUMax, aPtMax))
+            if (isMinAtUMax && !endpointsAreSame && !IsDuplicate(result, tol, theUMax, ptMax))
             {
-                ExtremumResult anExt = new();
-                anExt.Parameter = theUMax;
-                anExt.Point = aPtMax;
-                anExt.SquareDistance = aSqDistMax;
-                anExt.IsMinimum = true;
-                theResult.Extrema.Append(anExt);
+                ExtremumResult ext = new();
+                ext.Parameter = theUMax;
+                ext.Point = ptMax;
+                ext.SquareDistance = sqDistMax;
+                ext.IsMinimum = true;
+                result._extrema.Append(ext);
             }
         }
 
-        if (theMode == SearchMode.Max || theMode == SearchMode.MinMax)
+        if (mode == SearchMode.Max || mode == SearchMode.MinMax)
         {
             // Add UMin if it's a local maximum
-            if (aIsMaxAtUMin && !aIsMinAtUMin && !isDuplicate(theResult, theTol, theUMin, aPtMin))
+            if (isMaxAtUMin && !isMinAtUMin && !IsDuplicate(result, tol, theUMin, ptMin))
             {
-                ExtremumResult anExt = new();
-                anExt.Parameter = theUMin;
-                anExt.Point = aPtMin;
-                anExt.SquareDistance = aSqDistMin;
-                anExt.IsMinimum = false;
-                theResult.Extrema.Append(anExt);
+                ExtremumResult ext = new();
+                ext.Parameter = theUMin;
+                ext.Point = ptMin;
+                ext.SquareDistance = sqDistMin;
+                ext.IsMinimum = false;
+                result._extrema.Append(ext);
             }
             // Add UMax if it's a local maximum (and not same point as UMin)
-            if (aIsMaxAtUMax && !aIsMinAtUMax && !aEndpointsAreSame && !isDuplicate(theResult, theTol, theUMax, aPtMax))
+            if (isMaxAtUMax && !isMinAtUMax && !endpointsAreSame && !IsDuplicate(result, tol, theUMax, ptMax))
             {
-                ExtremumResult anExt = new();
-                anExt.Parameter = theUMax;
-                anExt.Point = aPtMax;
-                anExt.SquareDistance = aSqDistMax;
-                anExt.IsMinimum = false;
-                theResult.Extrema.Append(anExt);
+                ExtremumResult ext = new();
+                ext.Parameter = theUMax;
+                ext.Point = ptMax;
+                ext.SquareDistance = sqDistMax;
+                ext.IsMinimum = false;
+                result._extrema.Append(ext);
             }
         }
     }
 
     // AddEndpointExtrema's lambda: whether a parameter or point already exists in the result
-    private static bool isDuplicate(Result theResult, double theTol, double theU, in Point3D thePt)
+    private static bool IsDuplicate(Result result, double tol, double u, in Point3D pt)
     {
-        for (int i = 0; i < theResult.Extrema.Length(); ++i)
+        for (int i = 0; i < result._extrema.Length(); ++i)
         {
             // Check parameter proximity
-            if (Math.Abs(theResult.Extrema.Value(i).Parameter - theU) < theTol)
+            if (Math.Abs(result._extrema.Value(i).Parameter - u) < tol)
             {
                 return true;
             }
             // Check point proximity (handles periodic curves where different params map to same point)
-            double aSqDist = theResult.Extrema.Value(i).Point.SquareDistance(thePt);
-            if (aSqDist < theTol * theTol)
+            double sqDist = result._extrema.Value(i).Point.SquareDistance(pt);
+            if (sqDist < tol * tol)
             {
                 return true;
             }

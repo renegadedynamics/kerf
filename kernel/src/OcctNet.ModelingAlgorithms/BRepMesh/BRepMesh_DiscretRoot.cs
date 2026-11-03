@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -11,21 +12,21 @@ namespace Occt;
 /// <remarks>A working object: the shape is set, then <see cref="Perform"/> meshes it.</remarks>
 public abstract class BRepMesh_DiscretRoot : Transient
 {
-    protected TopoDS_Shape myShape;
+    protected Shape myShape;
     protected bool myIsDone;
 
     /// <summary>An algorithm without a shape.</summary>
     protected BRepMesh_DiscretRoot()
     {
-        myShape = new TopoDS_Shape();
+        myShape = new Shape();
         myIsDone = false;
     }
 
     /// <summary>Sets the shape to triangulate.</summary>
-    public void SetShape(in TopoDS_Shape theShape) => myShape = theShape;
+    public void SetShape(in Shape theShape) => myShape = theShape;
 
     /// <summary>The shape to triangulate (for <see cref="BRepMesh_IncrementalMesh"/>, the meshed shape once done).</summary>
-    public TopoDS_Shape Shape() => myShape;
+    public Shape Shape() => myShape;
 
     /// <summary>True if the triangulation was performed and succeeded.</summary>
     public bool IsDone() => myIsDone;

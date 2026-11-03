@@ -3,9 +3,12 @@
 // and the port's own tests of the builder's frozen result.
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -16,12 +19,12 @@ public class HelixBRep_BuilderHelix_IntegrationTests
     private const double myTolerance = 1.0e-4;
 
     // Helper method to validate helix wire properties
-    private static void ValidateHelixWire(in TopoDS_Wire theWire, double theExpectedLength, double theTolerance = 0.05)
+    private static void ValidateHelixWire(in Wire theWire, double theExpectedLength, double theTolerance = 0.05)
     {
-        Assert.False(theWire.IsNull());
-        Assert.Equal(TopAbs_WIRE, theWire.ShapeType());
+        Assert.False(theWire.IsNull);
+        Assert.Equal(ShapeType.Wire, theWire.ShapeType());
         // Check that wire has edges
-        int aNbEdges = HelixBRep_BuilderHelixTests.CountShapes(theWire, TopAbs_EDGE);
+        int aNbEdges = HelixBRep_BuilderHelixTests.CountShapes(theWire, ShapeType.Edge);
         Assert.True(aNbEdges > 0);
         // Compute wire length
         double aWireLength = HelixBRep_BuilderHelixTests.ComputeWireLength(theWire);
@@ -47,14 +50,14 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
-        TopoDS_Shape aHelixWire = aBuilder.Shape();
-        Assert.False(aHelixWire.IsNull());
-        Assert.Equal(TopAbs_WIRE, aHelixWire.ShapeType());
+        Shape aHelixWire = aBuilder.Shape();
+        Assert.False(aHelixWire.IsNull);
+        Assert.Equal(ShapeType.Wire, aHelixWire.ShapeType());
         // Calculate expected helix length
         double aCircumference = M_PI * 100.0; // D1 = 100
         double aTurns = 100.0 / 20.0;         // Height/Pitch for number of turns mode (20 = 100/5)
         double aExpectedLength = aTurns * Math.Sqrt(aCircumference * aCircumference + 20.0 * 20.0);
-        ValidateHelixWire(TopoDS.Wire(aHelixWire), aExpectedLength);
+        ValidateHelixWire(ShapeCasts.Wire(aHelixWire), aExpectedLength);
     }
 
     // Test Case B1 - Pure cylindrical helix with comphelix (TCL test B1)
@@ -76,13 +79,13 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
-        TopoDS_Shape aHelixWire = aBuilder.Shape();
-        Assert.False(aHelixWire.IsNull());
+        Shape aHelixWire = aBuilder.Shape();
+        Assert.False(aHelixWire.IsNull);
         // Calculate expected helix length - same as A1 since geometry is identical
         double aCircumference = M_PI * 100.0;
         double aTurns = 100.0 / 20.0; // Height/Pitch
         double aExpectedLength = aTurns * Math.Sqrt(aCircumference * aCircumference + 20.0 * 20.0);
-        ValidateHelixWire(TopoDS.Wire(aHelixWire), aExpectedLength);
+        ValidateHelixWire(ShapeCasts.Wire(aHelixWire), aExpectedLength);
     }
 
     // Test Case C1 - Spiral helix (TCL test C1)
@@ -107,11 +110,11 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
-        TopoDS_Shape aHelixWire = aBuilder.Shape();
-        Assert.False(aHelixWire.IsNull());
+        Shape aHelixWire = aBuilder.Shape();
+        Assert.False(aHelixWire.IsNull);
         // For spiral helix, length calculation is more complex due to changing diameter
         // Just validate basic properties
-        ValidateHelixWire(TopoDS.Wire(aHelixWire), 0); // Don't check exact length for complex spiral
+        ValidateHelixWire(ShapeCasts.Wire(aHelixWire), 0); // Don't check exact length for complex spiral
     }
 
     // Test Case F1 - Using helix2 interface (TCL test F1)
@@ -132,13 +135,13 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
-        TopoDS_Shape aHelixWire = aBuilder.Shape();
-        Assert.False(aHelixWire.IsNull());
+        Shape aHelixWire = aBuilder.Shape();
+        Assert.False(aHelixWire.IsNull);
         // Calculate expected length for cylindrical helix with multiple parts
         double aCircumference = M_PI * 100.0;
         double aTotalTurns = 2.0 + 6.0 + 2.0; // Sum of turns
         double aExpectedLength = aTotalTurns * Math.Sqrt(aCircumference * aCircumference + 10.0 * 10.0);
-        ValidateHelixWire(TopoDS.Wire(aHelixWire), aExpectedLength);
+        ValidateHelixWire(ShapeCasts.Wire(aHelixWire), aExpectedLength);
     }
 
     // Test Case E1 - Complex customer example (TCL test E1)
@@ -177,10 +180,10 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
-        TopoDS_Shape aHelixWire = aBuilder.Shape();
-        Assert.False(aHelixWire.IsNull());
+        Shape aHelixWire = aBuilder.Shape();
+        Assert.False(aHelixWire.IsNull);
         // Complex customer example - just validate basic properties
-        ValidateHelixWire(TopoDS.Wire(aHelixWire), 0); // Don't check exact length for complex multi-part helix
+        ValidateHelixWire(ShapeCasts.Wire(aHelixWire), 0); // Don't check exact length for complex multi-part helix
     }
 
     // Test error conditions
@@ -286,14 +289,14 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
-        TopoDS_Shape aHelixWire = aBuilder.Shape();
-        Assert.False(aHelixWire.IsNull());
-        Assert.Equal(TopAbs_WIRE, aHelixWire.ShapeType());
+        Shape aHelixWire = aBuilder.Shape();
+        Assert.False(aHelixWire.IsNull);
+        Assert.Equal(ShapeType.Wire, aHelixWire.ShapeType());
         // Check that wire has multiple edges
-        int aNbEdges = HelixBRep_BuilderHelixTests.CountShapes(aHelixWire, TopAbs_EDGE);
+        int aNbEdges = HelixBRep_BuilderHelixTests.CountShapes(aHelixWire, ShapeType.Edge);
         Assert.True(aNbEdges > 1); // Should have multiple edges for multiple parts
         // Verify wire continuity by checking connectivity
-        TopoDS_Wire aWire = TopoDS.Wire(aHelixWire);
+        Wire aWire = ShapeCasts.Wire(aHelixWire);
         var aCheck = new BRepCheck_Analyzer(aWire);
         Assert.True(aCheck.IsValid());
     }
@@ -312,7 +315,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         Assert.Equal(1, aBuilder.WarningStatus());
         Assert.Equal(99.0, aBuilder.ToleranceReached());
         aBuilder.Perform(); // nothing set: does nothing
-        Assert.True(aBuilder.Shape().IsNull());
+        Assert.True(aBuilder.Shape().IsNull);
 
         NCollection_Array1<double> aDiams = new(1, 3);
         aDiams[1] = 80.0;
@@ -327,13 +330,13 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aBuilder.SetParameters(myAxis, aDiams, aPitches, aNbTurns);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
-        TopoDS_Shape aWire = aBuilder.Shape();
+        Shape aWire = aBuilder.Shape();
         Assert.True(aWire.TShape()!.IsFrozen);
-        for (var anExp = new TopExp_Explorer(aWire, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aWire, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
+            Edge anEdge = ShapeCasts.Edge(anExp.Current());
             Assert.True(anEdge.TShape()!.IsFrozen);
-            Assert.True(BRep_Tool.Curve(anEdge, out _, out _)!.IsFrozen);
+            Assert.True(Tool.Curve(anEdge, out _, out _)!.IsFrozen);
         }
         // a second Perform builds a new wire and leaves the first unchanged
         aBuilder.Perform();

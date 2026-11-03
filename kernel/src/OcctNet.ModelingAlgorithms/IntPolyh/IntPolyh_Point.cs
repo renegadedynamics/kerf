@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -91,7 +92,7 @@ public partial struct IntPolyh_Point : IEquatable<IntPolyh_Point>, IntPolyh_IDum
     internal void SetDegenerated(bool theFlag) => myDegenerated = theFlag;
 
     /// <summary>Makes this the middle of P1 and P2 in (U, V), with its 3D point on the surface.</summary>
-    internal void Middle(Adaptor3d_Surface MySurface, in IntPolyh_Point Point1, in IntPolyh_Point Point2)
+    internal void Middle(SurfaceAdaptorBase MySurface, in IntPolyh_Point Point1, in IntPolyh_Point Point2)
     {
         myU = (Point1.U() + Point2.U()) * 0.5;
         myV = (Point1.V() + Point2.V()) * 0.5;
@@ -170,7 +171,7 @@ public partial struct IntPolyh_Point : IEquatable<IntPolyh_Point>, IntPolyh_IDum
     }
 
     /// <summary>The middle of P1 and P2 in (U, V), on the surface; the twin of <c>Middle</c>.</summary>
-    public readonly IntPolyh_Point Middled(Adaptor3d_Surface MySurface, in IntPolyh_Point Point1, in IntPolyh_Point Point2)
+    public readonly IntPolyh_Point Middled(SurfaceAdaptorBase MySurface, in IntPolyh_Point Point1, in IntPolyh_Point Point2)
     {
         IntPolyh_Point aCopy = this;
         aCopy.Middle(MySurface, Point1, Point2);

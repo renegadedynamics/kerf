@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
+using Kerf.Geometry;
 using System.Reflection;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
@@ -46,27 +48,27 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
 
     private static string SurfacesSection(string theText) => Section(theText, "Surfaces", "Triangulations");
 
-    private static string PortWrite(Geom_Curve theCurve)
+    private static string PortWrite(Curve3D theCurve)
     {
-        var aSet = new GeomTools_CurveSet();
+        var aSet = new CurveSet();
         aSet.Add(theCurve);
         var aWriter = new StringWriter();
         aSet.Write(aWriter);
         return aWriter.ToString();
     }
 
-    private static string PortWrite(Geom2d_Curve theCurve)
+    private static string PortWrite(Curve2D theCurve)
     {
-        var aSet = new GeomTools_Curve2dSet();
+        var aSet = new Curve2dSet();
         aSet.Add(theCurve);
         var aWriter = new StringWriter();
         aSet.Write(aWriter);
         return aWriter.ToString();
     }
 
-    private static string PortWrite(Geom_Surface theSurface)
+    private static string PortWrite(Surface theSurface)
     {
-        var aSet = new GeomTools_SurfaceSet();
+        var aSet = new SurfaceSet();
         aSet.Add(theSurface);
         var aWriter = new StringWriter();
         aSet.Write(aWriter);
@@ -101,7 +103,7 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
         foreach (int i in Tape.Budget(1000))
         {
             int aKind = i % CurveKinds.Length;
-            (N.Geom_Curve aNative, Geom_Curve aPort, _) = RandomCurve(anOracle, aKind);
+            (N.Geom_Curve aNative, Curve3D aPort, _) = RandomCurve(anOracle, aKind);
             using (aNative)
             {
                 using var anEdge = new N.TopoDS_Edge();
@@ -114,7 +116,7 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
                 // and the port reads that text as native OCCT reads it: native OCCT reads the file and writes it again
                 // (reading normalises directions again, so the text can change in the last digits), and the port
                 // writes what it reads the same way
-                var aSet = new GeomTools_CurveSet();
+                var aSet = new CurveSet();
                 aSet.Read(new StringReader(anExpected));
                 Assert.Equal(CurvesSection(NativeRewrite()), PortWriteSet(aSet));
             }
@@ -123,7 +125,7 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
         aCounter.Report();
     }
 
-    private static string PortWriteSet(GeomTools_CurveSet theSet)
+    private static string PortWriteSet(CurveSet theSet)
     {
         var aWriter = new StringWriter();
         theSet.Write(aWriter);
@@ -139,7 +141,7 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
         foreach (int i in Tape.Budget(1100))
         {
             int aKind = i % SurfaceKinds.Length;
-            (N.Geom_Surface aNative, Geom_Surface aPort) = RandomSurface(anOracle, aKind);
+            (N.Geom_Surface aNative, Surface aPort) = RandomSurface(anOracle, aKind);
             using (aNative)
             {
                 using var aFace = new N.TopoDS_Face();
@@ -149,7 +151,7 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
                 Assert.Equal(anExpected, anActual);
                 aCounter.Add(SurfaceKinds[aKind], anActual);
 
-                var aSet = new GeomTools_SurfaceSet();
+                var aSet = new SurfaceSet();
                 aSet.Read(new StringReader(anExpected));
                 var aWriter = new StringWriter();
                 aSet.Write(aWriter);
@@ -168,7 +170,7 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
         using var aBuilder = new N.BRep_Builder();
         foreach (int i in Tape.Budget(300))
         {
-            (N.Geom_Surface aNative, Geom_Surface aPort) = RandomOffsetSurface(anOracle);
+            (N.Geom_Surface aNative, Surface aPort) = RandomOffsetSurface(anOracle);
             using (aNative)
             {
                 using var aFace = new N.TopoDS_Face();
@@ -195,12 +197,12 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
         using var aLocation = new N.TopLoc_Location();
         foreach (int i in Tape.Budget(1000))
         {
-            (N.Geom2d_Curve aNative, Geom2d_Curve aPort, string aKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
+            (N.Geom2d_Curve aNative, Curve2D aPort, string aKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
             if (anOracle.Int(0, 2) == 0)
             {
                 // a trimmed curve of it
                 double aF = aPort.FirstParameter(), aL = aPort.LastParameter();
-                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL) || aPort.IsPeriodic())
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL) || aPort.IsPeriodic)
                 {
                     aF = anOracle.Real(-7, 7);
                     aL = aF + anOracle.Real(0.5, 6);
@@ -210,7 +212,7 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
                 N.Geom2d_Curve aNTrimmed = new N.Geom2d_TrimmedCurve(aNative, aU1, aU2);
                 aNative.Dispose();
                 aNative = aNTrimmed;
-                aPort = new Geom2d_TrimmedCurve(aPort, aU1, aU2);
+                aPort = new TrimmedCurve2D(aPort, aU1, aU2);
                 aKind = "trimmed " + aKind;
             }
 
@@ -224,7 +226,7 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
                 Assert.Equal(anExpected, anActual);
                 aCounter.Add(aKind.Split(' ')[0] == "trimmed" ? "trimmed" : aKind.Split(' ')[0], anActual);
 
-                var aSet = new GeomTools_Curve2dSet();
+                var aSet = new Curve2dSet();
                 aSet.Read(new StringReader(anExpected));
                 var aWriter = new StringWriter();
                 aSet.Write(aWriter);
@@ -261,21 +263,21 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
             string aF1 = NativeReadWrite(aFile);
             string aF2 = NativeReadWrite(Path.Combine(myDirectory, $"s{myFileNumber - 1}.brep"));
 
-            var aCurves2d = new GeomTools_Curve2dSet();
+            var aCurves2d = new Curve2dSet();
             aCurves2d.Read(new StringReader(Curve2dsSection(aF1)));
             var aWriter = new StringWriter();
             aCurves2d.Write(aWriter);
             Assert.Equal(Curve2dsSection(aF2), aWriter.ToString());
             aBytes += aWriter.ToString().Length;
 
-            var aCurves = new GeomTools_CurveSet();
+            var aCurves = new CurveSet();
             aCurves.Read(new StringReader(CurvesSection(aF1)));
             aWriter = new StringWriter();
             aCurves.Write(aWriter);
             Assert.Equal(CurvesSection(aF2), aWriter.ToString());
             aBytes += aWriter.ToString().Length;
 
-            var aSurfaces = new GeomTools_SurfaceSet();
+            var aSurfaces = new SurfaceSet();
             aSurfaces.Read(new StringReader(SurfacesSection(aF1)));
             aWriter = new StringWriter();
             aSurfaces.Write(aWriter);

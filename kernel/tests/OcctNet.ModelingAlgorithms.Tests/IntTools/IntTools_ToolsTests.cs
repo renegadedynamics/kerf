@@ -1,25 +1,30 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>IntTools_Tools: known answers for each static.</summary>
 public class IntTools_ToolsTests
 {
-    private static TopoDS_Vertex Vertex(double theX, double theY, double theZ, double theTol)
+    private static Vertex Vertex(double theX, double theY, double theZ, double theTol)
     {
-        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(theX, theY, theZ)).Vertex();
-        TopoDS_Vertex aCopy = TopoDS.Vertex(BRepTools.ExactCopyForWrite(aV, out _));
-        new BRep_Builder().UpdateVertex(aCopy, theTol);
+        Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(theX, theY, theZ)).Vertex();
+        Vertex aCopy = ShapeCasts.Vertex(BrepTools.ExactCopyForWrite(aV, out _));
+        new BrepBuilder().UpdateVertex(aCopy, theTol);
         return aCopy;
     }
 
-    private static TopoDS_Edge Segment(double theX1, double theX2) =>
+    private static Edge Segment(double theX1, double theX2) =>
         new BRepBuilderAPI_MakeEdge(new Point3D(theX1, 0, 0), new Point3D(theX2, 0, 0)).Edge();
 
     [Fact]
@@ -32,11 +37,11 @@ public class IntTools_ToolsTests
     [Fact]
     public void IsVertex_overloads()
     {
-        TopoDS_Edge aE = Segment(0, 10);
+        Edge aE = Segment(0, 10);
         Assert.True(IntTools_Tools.IsVertex(aE, 0.0));
         Assert.True(IntTools_Tools.IsVertex(aE, 10.0));
         Assert.False(IntTools_Tools.IsVertex(aE, 1.0e-5)); // 1e-6 squared, whatever the vertex's tolerance
-        TopoDS_Vertex aV = Vertex(5, 0, 0, 0.5);
+        Vertex aV = Vertex(5, 0, 0, 0.5);
         Assert.True(IntTools_Tools.IsVertex(aE, aV, 5.4));
         Assert.False(IntTools_Tools.IsVertex(aE, aV, 5.6));
         Assert.True(IntTools_Tools.IsVertex(new Point3D(5.7, 0, 0), 0.2, aV));
@@ -55,26 +60,26 @@ public class IntTools_ToolsTests
     [Fact]
     public void HasInternalEdge_MakeFaceFromWireAndFace_ClassifyPointByFace()
     {
-        TopoDS_Face aF = TopoDS.Face(new TopExp_Explorer(new BRepPrimAPI_MakeBox(2, 2, 2).Shape(), TopAbs_FACE).Current());
-        TopoDS_Wire aW = TopoDS.Wire(new TopExp_Explorer(aF, TopAbs_WIRE).Current());
+        Face aF = ShapeCasts.Face(new Explorer(new BRepPrimAPI_MakeBox(2, 2, 2).Shape(), ShapeType.Face).Current());
+        Wire aW = ShapeCasts.Wire(new Explorer(aF, ShapeType.Wire).Current());
         Assert.False(IntTools_Tools.HasInternalEdge(aW));
-        TopoDS_Wire aWI = new();
-        BRep_Builder aBB = new();
+        Wire aWI = new();
+        BrepBuilder aBB = new();
         aBB.MakeWire(ref aWI);
-        aBB.Add(aWI, Segment(0, 1).Oriented(TopAbs_INTERNAL));
+        aBB.Add(aWI, Segment(0, 1).Oriented(Internal));
         Assert.True(IntTools_Tools.HasInternalEdge(aWI));
 
-        IntTools_Tools.MakeFaceFromWireAndFace(aW, TopoDS.Face(aF.Reversed()), out TopoDS_Face aFNew);
-        Assert.Equal(TopAbs_FORWARD, aFNew.Orientation());
-        Assert.Same(BRep_Tool.Surface(aF), BRep_Tool.Surface(aFNew));
+        IntTools_Tools.MakeFaceFromWireAndFace(aW, ShapeCasts.Face(aF.Reversed()), out Face aFNew);
+        Assert.Equal(Forward, aFNew.Orientation());
+        Assert.Same(Tool.Surface(aF), Tool.Surface(aFNew));
         Assert.False(aFNew.IsSame(aF));
-        Assert.Equal(1, new TopoDS_Iterator(aFNew).More() ? 1 : 0);
+        Assert.Equal(1, new Iterator(aFNew).More() ? 1 : 0);
 
-        BRepAdaptor_Surface aBAS = new(aF);
+        FaceSurfaceAdaptor aBAS = new(aF);
         double aUm = 0.5 * (aBAS.FirstUParameter() + aBAS.LastUParameter());
         double aVm = 0.5 * (aBAS.FirstVParameter() + aBAS.LastVParameter());
-        Assert.Equal(TopAbs_IN, IntTools_Tools.ClassifyPointByFace(aF, new Point2D(aUm, aVm)));
-        Assert.Equal(TopAbs_OUT, IntTools_Tools.ClassifyPointByFace(aF, new Point2D(aUm + 10, aVm)));
+        Assert.Equal(In, IntTools_Tools.ClassifyPointByFace(aF, new Point2D(aUm, aVm)));
+        Assert.Equal(Out, IntTools_Tools.ClassifyPointByFace(aF, new Point2D(aUm + 10, aVm)));
     }
 
     [Fact]
@@ -98,14 +103,14 @@ public class IntTools_ToolsTests
     [Fact]
     public void IsClosed_SplitCurve_RejectLines()
     {
-        Geom_Circle aCircle = new(new Frame3D(), 2.0);
+        CircleCurve3D aCircle = new(new Frame3D(), 2.0);
         Assert.False(IntTools_Tools.IsClosed(aCircle)); // not bounded
-        Geom_TrimmedCurve aClosed = new(aCircle, 0, 2 * Math.PI);
+        TrimmedCurve3D aClosed = new(aCircle, 0, 2 * Math.PI);
         Assert.True(IntTools_Tools.IsClosed(aClosed));
-        Assert.False(IntTools_Tools.IsClosed(new Geom_TrimmedCurve(aCircle, 0, 3)));
+        Assert.False(IntTools_Tools.IsClosed(new TrimmedCurve3D(aCircle, 0, 3)));
 
         NCollection_Sequence<IntTools_Curve> aCvs = new();
-        Assert.Equal(0, IntTools_Tools.SplitCurve(new IntTools_Curve(new Geom_TrimmedCurve(aCircle, 0, 3), null, null, 1e-7, 1e-7), aCvs));
+        Assert.Equal(0, IntTools_Tools.SplitCurve(new IntTools_Curve(new TrimmedCurve3D(aCircle, 0, 3), null, null, 1e-7, 1e-7), aCvs));
         Assert.Equal(2, IntTools_Tools.SplitCurve(new IntTools_Curve(aClosed, null, null, 1e-6, 1e-5), aCvs));
         Assert.Equal(Math.PI, aCvs.Value(1).Curve()!.LastParameter());
         Assert.Equal(Math.PI, aCvs.Value(2).Curve()!.FirstParameter());
@@ -113,18 +118,18 @@ public class IntTools_ToolsTests
         Assert.Equal(1e-5, aCvs.Value(2).TangentialTolerance());
 
         // lines: the first one, then the first non-parallel one
-        Geom_Line aL1 = new(new Point3D(), new Direction3D(1, 0, 0));
-        Geom_Line aL2 = new(new Point3D(0, 1, 0), new Direction3D(-1, 0, 0));
-        Geom_Line aL3 = new(new Point3D(), new Direction3D(0, 1, 0));
+        LineCurve3D aL1 = new(new Point3D(), new Direction3D(1, 0, 0));
+        LineCurve3D aL2 = new(new Point3D(0, 1, 0), new Direction3D(-1, 0, 0));
+        LineCurve3D aL3 = new(new Point3D(), new Direction3D(0, 1, 0));
         NCollection_Sequence<IntTools_Curve> aIn = new();
-        aIn.Append(new IntTools_Curve(new Geom_TrimmedCurve(aL1, 0, 1), null, null, 0, 0));
+        aIn.Append(new IntTools_Curve(new TrimmedCurve3D(aL1, 0, 1), null, null, 0, 0));
         aIn.Append(new IntTools_Curve(aL2, null, null, 0, 0));
         aIn.Append(new IntTools_Curve(aL3, null, null, 0, 0));
         NCollection_Sequence<IntTools_Curve> aOut = new();
         IntTools_Tools.RejectLines(aIn, aOut);
         Assert.Equal(2, aOut.Length());
         // the trimmed line is replaced by its basis (a copy of aL1, as Geom_TrimmedCurve copies), in the input too (OCCT)
-        Assert.IsType<Geom_Line>(aOut.Value(1).Curve());
+        Assert.IsType<LineCurve3D>(aOut.Value(1).Curve());
         Assert.Same(aOut.Value(1).Curve(), aIn.Value(1).Curve());
         Assert.Same(aL3, aOut.Value(2).Curve());
         // a non-line before a non-parallel line: everything
@@ -139,24 +144,24 @@ public class IntTools_ToolsTests
     [Fact]
     public void CurveTolerance_of_a_trimmed_parabola()
     {
-        Geom_Parabola aP = new(new Frame3D(), 0.5);
+        ParabolaCurve3D aP = new(new Frame3D(), 0.5);
         Assert.Equal(1e-3, IntTools_Tools.CurveTolerance(aP, 1e-3)); // not trimmed
         Assert.Equal(1e-3, IntTools_Tools.CurveTolerance(null, 1e-3));
         // at parameter t the point is (t^2/(4f), t): its projection on the axis is x = t^2/(4f) = t^2/2
-        double aTol = IntTools_Tools.CurveTolerance(new Geom_TrimmedCurve(aP, -1, 2), 1e-3);
+        double aTol = IntTools_Tools.CurveTolerance(new TrimmedCurve3D(aP, -1, 2), 1e-3);
         Assert.Equal(1e-3 * Math.Sqrt(0.5 * 2.0 / 0.5), aTol, 1e-15);
-        Assert.Equal(1e-3, IntTools_Tools.CurveTolerance(new Geom_TrimmedCurve(new Geom_Line(new Point3D(), new Direction3D(1, 0, 0)), 0, 1), 1e-3));
+        Assert.Equal(1e-3, IntTools_Tools.CurveTolerance(new TrimmedCurve3D(new LineCurve3D(new Point3D(), new Direction3D(1, 0, 0)), 0, 1), 1e-3));
     }
 
     [Fact]
     public void CheckCurve_rejects_short_curves()
     {
-        Geom_Line aL = new(new Point3D(), new Direction3D(1, 0, 0));
+        LineCurve3D aL = new(new Point3D(), new Direction3D(1, 0, 0));
         Box aBox = new();
-        Assert.True(IntTools_Tools.CheckCurve(new IntTools_Curve(new Geom_TrimmedCurve(aL, 0, 1), null, null, 1e-7, 1e-7), ref aBox));
+        Assert.True(IntTools_Tools.CheckCurve(new IntTools_Curve(new TrimmedCurve3D(aL, 0, 1), null, null, 1e-7, 1e-7), ref aBox));
         Assert.False(aBox.IsVoid);
         aBox = new Box();
-        Assert.False(IntTools_Tools.CheckCurve(new IntTools_Curve(new Geom_TrimmedCurve(aL, 0, 1e-8), null, null, 1e-7, 1e-7), ref aBox));
+        Assert.False(IntTools_Tools.CheckCurve(new IntTools_Curve(new TrimmedCurve3D(aL, 0, 1e-8), null, null, 1e-7, 1e-7), ref aBox));
         aBox = new Box();
         Assert.False(IntTools_Tools.CheckCurve(new IntTools_Curve(), ref aBox));
     }
@@ -212,9 +217,9 @@ public class IntTools_ToolsTests
     [Fact]
     public void ComputeTolerance_of_a_curve_on_a_plane()
     {
-        Geom_Plane aPlane = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
-        Geom_Line aL3 = new(new Point3D(0, 0, 0.01), new Direction3D(1, 0, 0));
-        Geom2d_Line aL2 = new(new Point2D(0, 0), new Direction2D(1, 0));
+        PlaneSurface aPlane = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
+        LineCurve3D aL3 = new(new Point3D(0, 0, 0.01), new Direction3D(1, 0, 0));
+        LineCurve2D aL2 = new(new Point2D(0, 0), new Direction2D(1, 0));
         Assert.True(IntTools_Tools.ComputeTolerance(aL3, aL2, aPlane, 0, 1, out double aD, out double aT));
         Assert.Equal(0.01 * (1.0 + 1.0e-5), aD, 1e-15);
         Assert.InRange(aT, 0.0, 1.0);

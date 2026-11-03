@@ -7,6 +7,7 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -23,17 +24,17 @@ namespace Occt;
 /// parametric functions are placeholders (<c>UIso</c>/<c>VIso</c> return null, <c>Continuity</c> GeomAbs_C0,
 /// <c>IsCNu</c>/<c>IsCNv</c> throw), and D3 and DN throw Geom_UndefinedDerivative.
 /// </remarks>
-public class GeomPlate_Surface : Geom_Surface
+public class GeomPlate_Surface : Surface
 {
     private readonly Plate_Plate mySurfinter;
-    private readonly Geom_Surface mySurfinit;
+    private readonly Surface mySurfinit;
     private double myUmin;
     private double myUmax;
     private double myVmin;
     private double myVmax;
 
     /// <summary>The surface <paramref name="Surfinit"/> deformed by a copy of the plate <paramref name="Surfinter"/>.</summary>
-    public GeomPlate_Surface(Geom_Surface Surfinit, Plate_Plate Surfinter)
+    public GeomPlate_Surface(Surface Surfinit, Plate_Plate Surfinter)
     {
         mySurfinter = new Plate_Plate(Surfinter);
         mySurfinit = Surfinit;
@@ -87,21 +88,21 @@ public class GeomPlate_Surface : Geom_Surface
         }
     }
 
-    public override bool IsUClosed() => false;
+    public override bool IsUClosed => false;
 
-    public override bool IsVClosed() => false;
+    public override bool IsVClosed => false;
 
-    public override bool IsUPeriodic() => false;
+    public override bool IsUPeriodic => false;
 
     public override double UPeriod() => 0.0; // OCCT returns false
 
-    public override bool IsVPeriodic() => false;
+    public override bool IsVPeriodic => false;
 
     public override double VPeriod() => 0.0; // OCCT returns false
 
-    public override Geom_Curve UIso(double U) => null!; // OCCT returns a null handle
+    public override Curve3D UIso(double U) => null!; // OCCT returns a null handle
 
-    public override Geom_Curve VIso(double V) => null!; // OCCT returns a null handle
+    public override Curve3D VIso(double V) => null!; // OCCT returns a null handle
 
     public override Continuity Continuity() => default; // GeomAbs_Shape(), GeomAbs_C0
 
@@ -159,16 +160,16 @@ public class GeomPlate_Surface : Geom_Surface
 
     public override ResD3 EvalD3(double U, double V)
     {
-        throw new Geom_UndefinedDerivative("GeomPlate_Surface::EvalD3");
+        throw new UndefinedDerivative3DException("GeomPlate_Surface::EvalD3");
     }
 
     public override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
-        throw new Geom_UndefinedDerivative("GeomPlate_Surface::EvalDN");
+        throw new UndefinedDerivative3DException("GeomPlate_Surface::EvalDN");
     }
 
     /// <summary>A new, unfrozen surface on the same initial surface and plate; as OCCT's, without the bounds.</summary>
-    public override Geom_Geometry Copy()
+    public override Geometry3D Copy()
     {
         GeomPlate_Surface GPS = new GeomPlate_Surface(mySurfinit, mySurfinter);
         return GPS;
@@ -180,7 +181,7 @@ public class GeomPlate_Surface : Geom_Surface
     }
 
     /// <summary>The initial surface.</summary>
-    public Geom_Surface CallSurfinit() => mySurfinit;
+    public Surface CallSurfinit() => mySurfinit;
 
     /// <exception cref="FailureException">The bounds are reversed or equal.</exception>
     internal void SetBounds(double Umin, double Umax, double Vmin, double Vmax)

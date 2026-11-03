@@ -6,12 +6,14 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.IFSelect_ReturnStatus;
 using static Kerf.Engine.Foundation.NameOfColor;
 using static Occt.STEPControl_StepModelType;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 using static Occt.XdeDoc_ColorType;
 
 namespace Occt;
@@ -464,12 +466,12 @@ public class STEPCAFControl_Writer
             }
 
             XdeDoc_Document aDoc = aCurL.Document;
-            TopoDS_Shape aCurShape = aDoc.GetShape(aCurL);
-            if (aCurShape.IsNull())
+            Shape aCurShape = aDoc.GetShape(aCurL);
+            if (aCurShape.IsNull)
             {
                 continue;
             }
-            TopoDS_Shape aShapeForBind = aCurShape;
+            Shape aShapeForBind = aCurShape;
             // write shape either as a whole, or as multifile (with extern refs)
             if (theIsMulti is null)
             {
@@ -488,8 +490,8 @@ public class STEPCAFControl_Writer
                 // assembly.
                 if (aDoc.IsReference(aCurL))
                 {
-                    TopoDS_Compound aComp = new TopoDS_Compound();
-                    BRep_Builder aB = new BRep_Builder();
+                    Compound aComp = new Compound();
+                    BrepBuilder aB = new BrepBuilder();
                     aB.MakeCompound(ref aComp);
                     aB.Add(aComp, aCurShape);
                     aCurShape = aComp;
@@ -523,8 +525,8 @@ public class STEPCAFControl_Writer
                     {
                         continue;
                     }
-                    TopoDS_Shape aCurSh = aDoc.GetShape(aCurSubShL);
-                    if (aCurSh.IsNull())
+                    Shape aCurSh = aDoc.GetShape(aCurSubShL);
+                    if (aCurSh.IsNull)
                     {
                         continue;
                     }
@@ -536,7 +538,7 @@ public class STEPCAFControl_Writer
                     }
                     if (!myLabels.IsBound(aRefL))
                     {
-                        TopoDS_Shape aRefSh = aDoc.GetShape(aRefL);
+                        Shape aRefSh = aDoc.GetShape(aRefL);
                         myLabels.Bind(aRefL, aRefSh);
                         aSubLabels.Append(aRefL);
                         if (aDoc.IsAssembly(aRefL))
@@ -560,7 +562,7 @@ public class STEPCAFControl_Writer
             {
                 // translate final solids
                 using ProgressScope aPS1 = new ProgressScope(aRange, null, 2);
-                TopoDS_Shape aSass = transferExternFiles(aCurL, theMode, aSubLabels, aLocalFactors, theIsMulti, aPS1.Next());
+                Shape aSass = transferExternFiles(aCurL, theMode, aSubLabels, aLocalFactors, theIsMulti, aPS1.Next());
                 if (aPS1.UserBreak())
                 {
                     return false;
@@ -628,7 +630,7 @@ public class STEPCAFControl_Writer
             // register all MDGPRs in model
             // OCCT.NET: OCCT iterates a map keyed by shapes (by address); here in the order the MDGPRs were made
             // (decision 1280)
-            foreach (KeyValuePair<TopoDS_Shape, Transient> anItr in myMapCompMDGPR)
+            foreach (KeyValuePair<Shape, Transient> anItr in myMapCompMDGPR)
             {
                 aModel.AddWithRefs(anItr.Value);
             }
@@ -673,8 +675,8 @@ public class STEPCAFControl_Writer
                     }
 
                     // Access topological data
-                    TopoDS_Shape aSubS = aSubL.Document.GetShape(aSubL);
-                    if (aSubS.IsNull())
+                    Shape aSubS = aSubL.Document.GetShape(aSubL);
+                    if (aSubS.IsNull)
                     {
                         continue;
                     }
@@ -701,7 +703,7 @@ public class STEPCAFControl_Writer
     /// label plus prefix Returns shape representing that assembly structure in the form of nested empty compounds
     /// (and a sequence of labels which are newly written nodes of this assembly)
     /// </summary>
-    protected TopoDS_Shape transferExternFiles(in XdeDoc_Label theLabel, STEPControl_StepModelType theMode,
+    protected Shape transferExternFiles(in XdeDoc_Label theLabel, STEPControl_StepModelType theMode,
                                                NCollection_Sequence<XdeDoc_Label> theLabels, in StepData_Factors theLocalFactors,
                                                string thePrefix, ProgressRange theProgress)
     {
@@ -712,8 +714,8 @@ public class STEPCAFControl_Writer
         }
 
         XdeDoc_Document aDoc = theLabel.Document;
-        TopoDS_Compound aComp = new TopoDS_Compound();
-        BRep_Builder aBuilder = new BRep_Builder();
+        Compound aComp = new Compound();
+        BrepBuilder aBuilder = new BrepBuilder();
         aBuilder.MakeCompound(ref aComp);
         // if not assembly, write to separate file
         if (!aDoc.IsAssembly(theLabel) && !aDoc.IsComponent(theLabel))
@@ -793,7 +795,7 @@ public class STEPCAFControl_Writer
             {
                 continue;
             }
-            TopoDS_Shape aShComp = transferExternFiles(aRefL, theMode, theLabels, theLocalFactors, thePrefix, aPS.Next());
+            Shape aShComp = transferExternFiles(aRefL, theMode, theLabels, theLocalFactors, thePrefix, aPS.Next());
             aShComp = aShComp.Located(aDoc.GetLocation(aCurL));
             aBuilder.Add(aComp, aShComp);
         }
@@ -833,7 +835,7 @@ public class STEPCAFControl_Writer
             {
                 continue; // not recorded as translated, skip
             }
-            TopoDS_Shape aShape = myLabels.Find(aLab);
+            Shape aShape = myLabels.Find(aLab);
 
             StepShape_ShapeDefinitionRepresentation aSDR = null;
             TransferBRep_ShapeMapper mapper = TransferBRep.ShapeMapper(aFP, aShape);
@@ -868,7 +870,7 @@ public class STEPCAFControl_Writer
         return true;
     }
 
-    private static int FindEntities(Transfer_FinderProcess theFP, TopoDS_Shape theShape, ref Placement theLocation,
+    private static int FindEntities(Transfer_FinderProcess theFP, Shape theShape, ref Placement theLocation,
                                     NCollection_Sequence<Transient> theSeqRI)
     {
         StepRepr_RepresentationItem anItem = STEPConstruct.FindEntity(theFP, theShape, ref theLocation);
@@ -891,7 +893,7 @@ public class STEPCAFControl_Writer
         int aResCount = 0;
         if (aTransientListBinder is null)
         {
-            for (TopoDS_Iterator anIter = new TopoDS_Iterator(theShape); anIter.More(); anIter.Next())
+            for (Iterator anIter = new Iterator(theShape); anIter.More(); anIter.Next())
             {
                 StepRepr_RepresentationItem aLocalItem = STEPConstruct.FindEntity(theFP, anIter.Value(), ref theLocation);
                 if (aLocalItem is null)
@@ -920,14 +922,14 @@ public class STEPCAFControl_Writer
         return aResCount;
     }
 
-    private static bool getStyledItem(TopoDS_Shape theShape, XdeDoc_Document theShapeTool, STEPConstruct_Styles theStyles,
+    private static bool getStyledItem(Shape theShape, XdeDoc_Document theShapeTool, STEPConstruct_Styles theStyles,
                                       ref StepVisual_StyledItem theResSelItem,
-                                      NCollection_DataMap<TopoDS_Shape, Transient> theMapCompMDGPR)
+                                      NCollection_DataMap<Shape, Transient> theMapCompMDGPR)
     {
         XdeDoc_Label aTopShL = theShapeTool.FindShape(theShape, false);
-        TopoDS_Shape aTopLevSh = aTopShL.IsNull() ? new TopoDS_Shape() : theShapeTool.GetShape(aTopShL);
+        Shape aTopLevSh = aTopShL.IsNull() ? new Shape() : theShapeTool.GetShape(aTopShL);
         bool anIsFound = false;
-        if (aTopLevSh.IsNull() || !theMapCompMDGPR.IsBound(aTopLevSh))
+        if (aTopLevSh.IsNull || !theMapCompMDGPR.IsBound(aTopLevSh))
         {
             return false;
         }
@@ -1043,10 +1045,10 @@ public class STEPCAFControl_Writer
         return anIsFound;
     }
 
-    private static void MakeSTEPStyles(STEPConstruct_Styles theStyles, TopoDS_Shape theShape,
-                                       NCollection_IndexedDataMap<TopoDS_Shape, Style> theSettings,
-                                       ref StepVisual_StyledItem theOverride, NCollection_Map<TopoDS_Shape> theMap,
-                                       NCollection_DataMap<TopoDS_Shape, Transient> theMapCompMDGPR,
+    private static void MakeSTEPStyles(STEPConstruct_Styles theStyles, Shape theShape,
+                                       NCollection_IndexedDataMap<Shape, Style> theSettings,
+                                       ref StepVisual_StyledItem theOverride, NCollection_Map<Shape> theMap,
+                                       NCollection_DataMap<Shape, Transient> theMapCompMDGPR,
                                        NCollection_DataMap<string, Transient> theDPDCs,
                                        NCollection_DataMap<Point3D, Transient> theColRGBs, XdeDoc_Document theShTool,
                                        Style theInherit, bool theIsComponent, bool theVisMaterialMode)
@@ -1101,7 +1103,7 @@ public class STEPCAFControl_Writer
         StepVisual_StyledItem aSTEPstyle = theOverride;
         if (aHasOwn)
         {
-            if (theShape.ShapeType() != TopAbs_COMPOUND || theIsComponent)
+            if (theShape.ShapeType() != ShapeType.Compound || theIsComponent)
             { // skip compounds, let subshapes inherit its colors
                 Placement aLocation = new Placement();
                 NCollection_Sequence<Transient> aSeqRI = new NCollection_Sequence<Transient>();
@@ -1150,7 +1152,7 @@ public class STEPCAFControl_Writer
         }
 
         // iterate on subshapes (except vertices :)
-        if (theShape.ShapeType() == TopAbs_EDGE)
+        if (theShape.ShapeType() == ShapeType.Edge)
         {
             return;
         }
@@ -1158,7 +1160,7 @@ public class STEPCAFControl_Writer
         {
             return;
         }
-        for (TopoDS_Iterator anIter = new TopoDS_Iterator(theShape); anIter.More(); anIter.Next())
+        for (Iterator anIter = new Iterator(theShape); anIter.More(); anIter.Next())
         {
             MakeSTEPStyles(theStyles, anIter.Value(), theSettings, ref aSTEPstyle, theMap, theMapCompMDGPR, theDPDCs,
                            theColRGBs, theShTool, aHasOwn ? aStyle : null, false, theVisMaterialMode);
@@ -1202,12 +1204,12 @@ public class STEPCAFControl_Writer
 
             // get a target shape and try to find corresponding context
             // (all the colors set under that label will be put into that context)
-            if (!aSTool.GetShape(aLabel, out TopoDS_Shape aShape))
+            if (!aSTool.GetShape(aLabel, out Shape aShape))
             {
                 continue;
             }
             bool anIsComponent = aSTool.IsComponent(aLabel) || myPureRefLabels.IsBound(aLabel);
-            TopoDS_Shape aTopSh = aShape;
+            Shape aTopSh = aShape;
             StepRepr_RepresentationContext aContext = Styles.FindContext(aShape);
             if (anIsComponent)
             {
@@ -1225,8 +1227,8 @@ public class STEPCAFControl_Writer
             }
 
             // collect settings set on that label
-            NCollection_IndexedDataMap<TopoDS_Shape, Style> aSettings =
-                new NCollection_IndexedDataMap<TopoDS_Shape, Style>(TopTools_ShapeMapHasher.Instance);
+            NCollection_IndexedDataMap<Shape, Style> aSettings =
+                new NCollection_IndexedDataMap<Shape, Style>(ShapeHasher.Instance);
             NCollection_Sequence<XdeDoc_Label> aSeq = new NCollection_Sequence<XdeDoc_Label>();
             aSeq.Append(aLabel);
             aSTool.GetSubShapes(aLabel, aSeq);
@@ -1262,7 +1264,7 @@ public class STEPCAFControl_Writer
                     continue;
                 }
 
-                TopoDS_Shape aSub = aSTool.GetShape(aSeqValue);
+                Shape aSub = aSTool.GetShape(aSeqValue);
                 if (aSettings.Contains(aSub))
                 {
                     aSettings.ChangeFromKey(aSub) = aStyle;
@@ -1280,7 +1282,7 @@ public class STEPCAFControl_Writer
 
             // iterate on subshapes and create STEP styles
             StepVisual_StyledItem anOverride = null;
-            NCollection_Map<TopoDS_Shape> aMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            NCollection_Map<Shape> aMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
 
             MakeSTEPStyles(Styles, aShape, aSettings, ref anOverride, aMap, myMapCompMDGPR, DPDCs, ColRGBs, aSTool, null,
                            anIsComponent, GetVisualMaterialMode());
@@ -1404,7 +1406,7 @@ public class STEPCAFControl_Writer
             {
                 continue;
             }
-            TopoDS_Shape aShape = myLabels.Find(aLabel);
+            Shape aShape = myLabels.Find(aLabel);
             StepShape_ShapeDefinitionRepresentation aSDR = null;
             StepShape_ContextDependentShapeRepresentation aCDSR = null;
             bool isComponent = aLabel.Document.IsComponent(aLabel) || myPureRefLabels.IsBound(aLabel);
@@ -1417,7 +1419,7 @@ public class STEPCAFControl_Writer
                 {
                     aNAUO.SetName(aHName);
                 }
-                if (myPureRefLabels.Find(aLabel, out TopoDS_Shape anInternalAssembly))
+                if (myPureRefLabels.Find(aLabel, out Shape anInternalAssembly))
                 {
                     TransferBRep_ShapeMapper aMapperOfInternalShape = TransferBRep.ShapeMapper(aFP, anInternalAssembly);
                     aFP.FindTypedTransient(aMapperOfInternalShape, typeof(StepShape_ShapeDefinitionRepresentation), ref aSDR);
@@ -1459,7 +1461,7 @@ public class STEPCAFControl_Writer
         return !theLabels.IsEmpty();
     }
 
-    private static bool WritePropsForLabel(XSControl_WorkSession theWS, NCollection_DataMap<XdeDoc_Label, TopoDS_Shape> theLabels,
+    private static bool WritePropsForLabel(XSControl_WorkSession theWS, NCollection_DataMap<XdeDoc_Label, Shape> theLabels,
                                            in XdeDoc_Label theLabel, string? theIsMulti)
     {
         _ = theLabels;
@@ -1471,8 +1473,8 @@ public class STEPCAFControl_Writer
         STEPConstruct_ValidationProps aProps = new STEPConstruct_ValidationProps(theWS);
 
         XdeDoc_Document aDoc = theLabel.Document;
-        TopoDS_Shape aShape = aDoc.GetShape(theLabel);
-        if (aShape.IsNull())
+        Shape aShape = aDoc.GetShape(theLabel);
+        if (aShape.IsNull)
         {
             return false;
         }
@@ -1597,7 +1599,7 @@ public class STEPCAFControl_Writer
                 }
 
                 // get target STEP entity
-                TopoDS_Shape anOneShape = aDoc.GetShape(aShLabel);
+                Shape anOneShape = aDoc.GetShape(aShLabel);
 
                 Placement aLoc = new Placement();
                 int aNb = FindEntities(aFP, anOneShape, ref aLoc, aSeqRI);
@@ -1693,12 +1695,12 @@ public class STEPCAFControl_Writer
     private STEPControl_Writer myWriter;
     private readonly NCollection_DataMap<string, STEPCAFControl_ExternFile> myFiles = new NCollection_DataMap<string, STEPCAFControl_ExternFile>();
     private readonly NCollection_DataMap<XdeDoc_Label, STEPCAFControl_ExternFile> myLabEF = new NCollection_DataMap<XdeDoc_Label, STEPCAFControl_ExternFile>();
-    private readonly NCollection_DataMap<XdeDoc_Label, TopoDS_Shape> myLabels = new NCollection_DataMap<XdeDoc_Label, TopoDS_Shape>();
-    private readonly NCollection_DataMap<XdeDoc_Label, TopoDS_Shape> myPureRefLabels = new NCollection_DataMap<XdeDoc_Label, TopoDS_Shape>();
+    private readonly NCollection_DataMap<XdeDoc_Label, Shape> myLabels = new NCollection_DataMap<XdeDoc_Label, Shape>();
+    private readonly NCollection_DataMap<XdeDoc_Label, Shape> myPureRefLabels = new NCollection_DataMap<XdeDoc_Label, Shape>();
     // OCCT: the documents' root labels (a map); here the documents, in the order given
     private readonly List<XdeDoc_Document> myRootLabels = new List<XdeDoc_Document>();
-    private readonly NCollection_DataMap<TopoDS_Shape, Transient> myMapCompMDGPR =
-        new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, Transient> myMapCompMDGPR =
+        new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
     private bool myColorMode = true;
     private bool myNameMode = true;
     private bool myLayerMode = true;

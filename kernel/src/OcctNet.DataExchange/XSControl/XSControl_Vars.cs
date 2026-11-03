@@ -7,7 +7,9 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -38,39 +40,39 @@ public class XSControl_Vars : Transient
         return val;
     }
 
-    public virtual Geom_Geometry? GetGeom(string name)
+    public virtual Geometry3D? GetGeom(string name)
     {
-        return (Get(name) as Geom_Geometry);
+        return (Get(name) as Geometry3D);
     }
 
-    public virtual Geom2d_Curve? GetCurve2d(string name)
+    public virtual Curve2D? GetCurve2d(string name)
     {
-        return (Get(name) as Geom2d_Curve);
+        return (Get(name) as Curve2D);
     }
 
-    public virtual Geom_Curve? GetCurve(string name)
+    public virtual Curve3D? GetCurve(string name)
     {
-        return (Get(name) as Geom_Curve);
+        return (Get(name) as Curve3D);
     }
 
-    public virtual Geom_Surface? GetSurface(string name)
+    public virtual Surface? GetSurface(string name)
     {
-        return (Get(name) as Geom_Surface);
+        return (Get(name) as Surface);
     }
 
     public virtual void SetPoint(string name, Point3D val)
     {
-        Set(name, new Geom_CartesianPoint(val));
+        Set(name, new CartesianPoint(val));
     }
 
     public virtual void SetPoint2d(string name, Point2D val)
     {
-        Set(name, new Geom2d_CartesianPoint(val));
+        Set(name, new CartesianPoint2(val));
     }
 
     public virtual bool GetPoint(string name, ref Point3D pnt)
     {
-        Geom_CartesianPoint val = Get(name) as Geom_CartesianPoint;
+        CartesianPoint val = Get(name) as CartesianPoint;
         if (val is null)
         {
             return false;
@@ -81,7 +83,7 @@ public class XSControl_Vars : Transient
 
     public virtual bool GetPoint2d(string name, ref Point2D pnt)
     {
-        Geom2d_CartesianPoint val = Get(name) as Geom2d_CartesianPoint;
+        CartesianPoint2 val = Get(name) as CartesianPoint2;
         if (val is null)
         {
             return false;
@@ -90,14 +92,14 @@ public class XSControl_Vars : Transient
         return true;
     }
 
-    public virtual void SetShape(string name, TopoDS_Shape val)
+    public virtual void SetShape(string name, Shape val)
     {
         Set(name, new TopoDS_HShape(val));
     }
 
-    public virtual TopoDS_Shape GetShape(string name)
+    public virtual Shape GetShape(string name)
     {
-        TopoDS_Shape sh = default;
+        Shape sh = default;
         TopoDS_HShape val = Get(name) as TopoDS_HShape;
         if (val is not null)
         {

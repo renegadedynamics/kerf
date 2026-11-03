@@ -1,10 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
 using static Occt.IntSurf_TypeTrans;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -281,7 +283,7 @@ internal sealed partial class BlendRecorder
         }
     }
 
-    private static ChFiDS_ElSpine ElGuide(Geom_Curve C, double theF, double theL)
+    private static ChFiDS_ElSpine ElGuide(Curve3D C, double theF, double theL)
     {
         ChFiDS_ElSpine E = new();
         E.SetCurve(C);
@@ -291,10 +293,10 @@ internal sealed partial class BlendRecorder
     }
 
     // A bounded copy of the walking surfaces of THE_PAIRS (Surf(theId)'s geometry).
-    private static Adaptor3d_Surface BSurf(int theId, double u1, double u2, double v1, double v2)
+    private static SurfaceAdaptorBase BSurf(int theId, double u1, double u2, double v1, double v2)
     {
-        GeomAdaptor_Surface S = (GeomAdaptor_Surface)Surf(theId);
-        return new GeomAdaptor_Surface(S.Surface()!, u1, u2, v1, v2);
+        SurfaceAdaptor S = (SurfaceAdaptor)Surf(theId);
+        return new SurfaceAdaptor(S.Surface()!, u1, u2, v1, v2);
     }
 
     private static Law_Function EvolLaw(double theF, double theL)
@@ -323,22 +325,22 @@ internal sealed partial class BlendRecorder
             3.0, 0.0, 0.0, false),
     ];
 
-    private static Geom_Curve WalkGuideCurve(int theG)
+    private static Curve3D WalkGuideCurve(int theG)
     {
         return theG switch
         {
-            0 => new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)),
-            1 => new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0),
-            _ => new Geom_Line(new Point3D(1.5, 0, 0), new Direction3D(0, 1, 0)),
+            0 => new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)),
+            1 => new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0),
+            _ => new LineCurve3D(new Point3D(1.5, 0, 0), new Direction3D(0, 1, 0)),
         };
     }
 
     private void RecWalk(WalkCase C, int choix)
     {
-        Adaptor3d_Surface S1 = BSurf(C.S1, C.B1[0], C.B1[1], C.B1[2], C.B1[3]);
-        Adaptor3d_Surface S2 = BSurf(C.S2, C.B2[0], C.B2[1], C.B2[2], C.B2[3]);
-        Adaptor3d_TopolTool D1 = new(S1);
-        Adaptor3d_TopolTool D2 = new(S2);
+        SurfaceAdaptorBase S1 = BSurf(C.S1, C.B1[0], C.B1[1], C.B1[2], C.B1[3]);
+        SurfaceAdaptorBase S2 = BSurf(C.S2, C.B2[0], C.B2[1], C.B2[2], C.B2[3]);
+        TopolTool D1 = new(S1);
+        TopolTool D2 = new(S2);
         ChFiDS_ElSpine G = ElGuide(WalkGuideCurve(C.G), C.GF, C.GL);
         math_Vector X0 = new(1, 4);
         for (int i = 1; i <= 4; i++)
@@ -401,10 +403,10 @@ internal sealed partial class BlendRecorder
     private void RecFirstSection(int choix)
     {
         WalkCase C = THE_WALKS[0];
-        Adaptor3d_Surface S1 = BSurf(C.S1, C.B1[0], C.B1[1], C.B1[2], C.B1[3]);
-        Adaptor3d_Surface S2 = BSurf(C.S2, C.B2[0], C.B2[1], C.B2[2], C.B2[3]);
-        Adaptor3d_TopolTool D1 = new(S1);
-        Adaptor3d_TopolTool D2 = new(S2);
+        SurfaceAdaptorBase S1 = BSurf(C.S1, C.B1[0], C.B1[1], C.B1[2], C.B1[3]);
+        SurfaceAdaptorBase S2 = BSurf(C.S2, C.B2[0], C.B2[1], C.B2[2], C.B2[3]);
+        TopolTool D1 = new(S1);
+        TopolTool D2 = new(S2);
         ChFiDS_ElSpine G = ElGuide(WalkGuideCurve(C.G), C.GF, C.GL);
         BlendFunc_ConstRad F = new(S1, S2, G);
         F.Set(C.R, choix);
@@ -417,7 +419,7 @@ internal sealed partial class BlendRecorder
         X0[2] = 1.2;
         X0[3] = 3.0;
         X0[4] = -0.8;
-        bool isOk1 = W1.PerformFirstSection(F, 3.0, X0, 1.0e-4, 1.0e-5, out TopAbs_State aPos1, out TopAbs_State aPos2);
+        bool isOk1 = W1.PerformFirstSection(F, 3.0, X0, 1.0e-4, 1.0e-5, out Containment aPos1, out Containment aPos2);
         Tag("firstsection");
         Int(isOk1 ? 1 : 0);
         Int((int)aPos1);
@@ -455,9 +457,9 @@ internal sealed partial class BlendRecorder
 
     private void RecCSWalk(int choix)
     {
-        Adaptor3d_Surface S = BSurf(0, 0.0, 8.0, -3.0, 3.0);
-        Adaptor3d_TopolTool D = new(S);
-        Adaptor3d_Curve C = Guide(4);
+        SurfaceAdaptorBase S = BSurf(0, 0.0, 8.0, -3.0, 3.0);
+        TopolTool D = new(S);
+        CurveAdaptorBase C = Guide(4);
         ChFiDS_ElSpine G = ElGuide(WalkGuideCurve(0), 0.0, 10.0);
         BlendFunc_CSConstRad F = new(S, C, G);
         F.Set(1.0, choix);
@@ -503,14 +505,14 @@ internal sealed partial class BlendRecorder
 
     private void RecSurfRstWalk(RstCase C, int choix, int bigchoix)
     {
-        Adaptor3d_Surface S1 = BSurf(0, C.B1[0], C.B1[1], C.B1[2], C.B1[3]);
-        Adaptor3d_Surface S2 = BSurf(1, 0.0, 10.0, -5.0, 0.0);
-        Adaptor3d_TopolTool D1 = new(S1);
-        Adaptor3d_TopolTool D2 = new(S2);
+        SurfaceAdaptorBase S1 = BSurf(0, C.B1[0], C.B1[1], C.B1[2], C.B1[3]);
+        SurfaceAdaptorBase S2 = BSurf(1, 0.0, 10.0, -5.0, 0.0);
+        TopolTool D1 = new(S1);
+        TopolTool D2 = new(S2);
         ChFiDS_ElSpine G = ElGuide(WalkGuideCurve(0), 0.0, 10.0);
-        Adaptor2d_Curve2d Rst = new Geom2dAdaptor_Curve(new Geom2d_Line(new Point2D(0.0, -1.0), new Direction2D(1.0, 0.0)),
+        Curve2DAdaptorBase Rst = new CurveAdaptor2D(new LineCurve2D(new Point2D(0.0, -1.0), new Direction2D(1.0, 0.0)),
                                                         C.R2[0], C.R2[1]);
-        Adaptor3d_CurveOnSurface HC = new();
+        CurveOnSurface HC = new();
         HC.Load(Rst, S2);
         math_Vector X0 = new(1, 3);
         X0[1] = 4.0;
@@ -580,18 +582,18 @@ internal sealed partial class BlendRecorder
 
     private void RecRstRstWalk(RstCase C, int choix)
     {
-        Adaptor3d_Surface S1 = BSurf(0, C.B1[0], C.B1[1], C.B1[2], C.B1[3]);
-        Adaptor3d_Surface S2 = BSurf(1, 0.0, 10.0, -5.0, 0.0);
-        Adaptor3d_TopolTool D1 = new(S1);
-        Adaptor3d_TopolTool D2 = new(S2);
+        SurfaceAdaptorBase S1 = BSurf(0, C.B1[0], C.B1[1], C.B1[2], C.B1[3]);
+        SurfaceAdaptorBase S2 = BSurf(1, 0.0, 10.0, -5.0, 0.0);
+        TopolTool D1 = new(S1);
+        TopolTool D2 = new(S2);
         ChFiDS_ElSpine G = ElGuide(WalkGuideCurve(0), 0.0, 10.0);
-        Adaptor2d_Curve2d Rst1 = new Geom2dAdaptor_Curve(
-            new Geom2d_Line(new Point2D(0.0, 1.0), new Direction2D(1.0, 0.0)), C.R1[0], C.R1[1]);
-        Adaptor2d_Curve2d Rst2 = new Geom2dAdaptor_Curve(
-            new Geom2d_Line(new Point2D(0.0, -1.0), new Direction2D(1.0, 0.0)), C.R2[0], C.R2[1]);
-        Adaptor3d_CurveOnSurface HC1 = new();
+        Curve2DAdaptorBase Rst1 = new CurveAdaptor2D(
+            new LineCurve2D(new Point2D(0.0, 1.0), new Direction2D(1.0, 0.0)), C.R1[0], C.R1[1]);
+        Curve2DAdaptorBase Rst2 = new CurveAdaptor2D(
+            new LineCurve2D(new Point2D(0.0, -1.0), new Direction2D(1.0, 0.0)), C.R2[0], C.R2[1]);
+        CurveOnSurface HC1 = new();
         HC1.Load(Rst1, S1);
-        Adaptor3d_CurveOnSurface HC2 = new();
+        CurveOnSurface HC2 = new();
         HC2.Load(Rst2, S2);
         math_Vector X0 = new(1, 2);
         X0[1] = 4.0;

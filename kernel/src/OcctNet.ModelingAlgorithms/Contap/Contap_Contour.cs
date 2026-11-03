@@ -6,16 +6,18 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.Contap_IType;
 using static Occt.Contap_TFunction;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntSurf_TypeTrans;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -49,7 +51,7 @@ public sealed class Contap_Contour
         modeset = false;
     }
 
-    /// <summary>A contour for the view direction <paramref name="Direction"/>, to compute with <see cref="Perform(Adaptor3d_Surface, Adaptor3d_TopolTool)"/>.</summary>
+    /// <summary>A contour for the view direction <paramref name="Direction"/>, to compute with <see cref="Perform(SurfaceAdaptorBase, TopolTool)"/>.</summary>
     public Contap_Contour(in Vector3D Direction)
     {
         done = false;
@@ -77,7 +79,7 @@ public sealed class Contap_Contour
     }
 
     /// <summary>Computes the contour of the surface in the direction <paramref name="Direction"/>.</summary>
-    public Contap_Contour(Adaptor3d_Surface Surf, Adaptor3d_TopolTool Domain, in Vector3D Direction)
+    public Contap_Contour(SurfaceAdaptorBase Surf, TopolTool Domain, in Vector3D Direction)
     {
         done = false;
         modeset = true;
@@ -85,7 +87,7 @@ public sealed class Contap_Contour
     }
 
     /// <summary>Computes the draft contour of angle <paramref name="Angle"/> in the direction <paramref name="Direction"/>.</summary>
-    public Contap_Contour(Adaptor3d_Surface Surf, Adaptor3d_TopolTool Domain, in Vector3D Direction, double Angle)
+    public Contap_Contour(SurfaceAdaptorBase Surf, TopolTool Domain, in Vector3D Direction, double Angle)
     {
         done = false;
         modeset = true;
@@ -93,7 +95,7 @@ public sealed class Contap_Contour
     }
 
     /// <summary>Computes the contour for the eye <paramref name="Eye"/> (a perspective view).</summary>
-    public Contap_Contour(Adaptor3d_Surface Surf, Adaptor3d_TopolTool Domain, in Point3D Eye)
+    public Contap_Contour(SurfaceAdaptorBase Surf, TopolTool Domain, in Point3D Eye)
     {
         done = false;
         modeset = true;
@@ -125,7 +127,7 @@ public sealed class Contap_Contour
     }
 
     /// <summary>Computes the contour with the view set at construction or by <c>Init</c>; throws Standard_ConstructionError if none was.</summary>
-    public void Perform(Adaptor3d_Surface Surf, Adaptor3d_TopolTool Domain)
+    public void Perform(SurfaceAdaptorBase Surf, TopolTool Domain)
     {
         if (!modeset)
         {
@@ -134,7 +136,7 @@ public sealed class Contap_Contour
         mySFunc.Set(Surf);
         myAFunc.Set(Surf);
 
-        SurfaceKind typS = Adaptor3d_HSurfaceTool.GetType(Surf);
+        SurfaceKind typS = HSurfaceTool.GetType(Surf);
         switch (typS)
         {
             case Plane:
@@ -151,21 +153,21 @@ public sealed class Contap_Contour
     }
 
     /// <summary>Computes the contour in the direction <paramref name="Direction"/>.</summary>
-    public void Perform(Adaptor3d_Surface Surf, Adaptor3d_TopolTool Domain, in Vector3D Direction)
+    public void Perform(SurfaceAdaptorBase Surf, TopolTool Domain, in Vector3D Direction)
     {
         Init(Direction);
         Perform(Surf, Domain);
     }
 
     /// <summary>Computes the draft contour of angle <paramref name="Angle"/> in the direction <paramref name="Direction"/>.</summary>
-    public void Perform(Adaptor3d_Surface Surf, Adaptor3d_TopolTool Domain, in Vector3D Direction, double Angle)
+    public void Perform(SurfaceAdaptorBase Surf, TopolTool Domain, in Vector3D Direction, double Angle)
     {
         Init(Direction, Angle);
         Perform(Surf, Domain);
     }
 
     /// <summary>Computes the contour for the eye <paramref name="Eye"/>.</summary>
-    public void Perform(Adaptor3d_Surface Surf, Adaptor3d_TopolTool Domain, in Point3D Eye)
+    public void Perform(SurfaceAdaptorBase Surf, TopolTool Domain, in Point3D Eye)
     {
         Init(Eye);
         Perform(Surf, Domain);
@@ -209,7 +211,7 @@ public sealed class Contap_Contour
     //-- --------------------------------------------------------------------------------
     //-- Recherche des portions utiles sur les lignes
 
-    private static void Recadre(Adaptor3d_Surface myHS1, ref double u1, ref double v1)
+    private static void Recadre(SurfaceAdaptorBase myHS1, ref double u1, ref double v1)
     {
         double f, l, lmf;
         SurfaceKind typs1 = myHS1.GetType();
@@ -260,8 +262,8 @@ public sealed class Contap_Contour
         }
     }
 
-    private static void LineConstructor(NCollection_Sequence<Contap_Line> slin, Adaptor3d_TopolTool Domain,
-                                        Contap_Line L, Adaptor3d_Surface Surf)
+    private static void LineConstructor(NCollection_Sequence<Contap_Line> slin, TopolTool Domain,
+                                        Contap_Line L, SurfaceAdaptorBase Surf)
     {
         //-- ------------------------------------------------------------
         //-- on decoupe la ligne en portions  entre 2 vertex
@@ -280,8 +282,8 @@ public sealed class Contap_Contour
                     IntSurf_PntOn2S Pmid = L.Point(pmid);
                     Pmid.Parameters(out _, out _, out double u2, out double v2);
                     Recadre(Surf, ref u2, ref v2);
-                    TopAbs_State in2 = Domain.Classify(new Point2D(u2, v2), Tol);
-                    if (in2 == TopAbs_OUT)
+                    Containment in2 = Domain.Classify(new Point2D(u2, v2), Tol);
+                    if (in2 == Out)
                     {
                     }
                     else
@@ -327,13 +329,13 @@ public sealed class Contap_Contour
                     double u2 = 0.0, v2 = 0.0; // OCCT leaves them unset on other surfaces
                     double pmid = (firstp + lastp) * 0.5;
                     Point3D Pmid = global::Kerf.Engine.Geometry.ElCLib.Value(pmid, L.Line());
-                    if (Adaptor3d_HSurfaceTool.GetType(Surf) == SurfaceKind.Cylinder)
+                    if (HSurfaceTool.GetType(Surf) == SurfaceKind.Cylinder)
                     {
-                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Adaptor3d_HSurfaceTool.Cylinder(Surf), Pmid, out u2, out v2);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(HSurfaceTool.Cylinder(Surf), Pmid, out u2, out v2);
                     }
-                    else if (Adaptor3d_HSurfaceTool.GetType(Surf) == SurfaceKind.Cone)
+                    else if (HSurfaceTool.GetType(Surf) == SurfaceKind.Cone)
                     {
-                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Adaptor3d_HSurfaceTool.Cone(Surf), Pmid, out u2, out v2);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(HSurfaceTool.Cone(Surf), Pmid, out u2, out v2);
                     }
                     else
                     {
@@ -341,8 +343,8 @@ public sealed class Contap_Contour
                     }
 
                     Recadre(Surf, ref u2, ref v2);
-                    TopAbs_State in2 = Domain.Classify(new Point2D(u2, v2), Tol);
-                    if (in2 == TopAbs_OUT)
+                    Containment in2 = Domain.Classify(new Point2D(u2, v2), Tol);
+                    if (in2 == Out)
                     {
                     }
                     else
@@ -381,17 +383,17 @@ public sealed class Contap_Contour
                     double u2 = 0.0, v2 = 0.0; // OCCT leaves them unset on other surfaces
                     double pmid = (firstp + lastp) * 0.5;
                     Point3D Pmid = global::Kerf.Engine.Geometry.ElCLib.Value(pmid, L.Circle());
-                    if (Adaptor3d_HSurfaceTool.GetType(Surf) == SurfaceKind.Cylinder)
+                    if (HSurfaceTool.GetType(Surf) == SurfaceKind.Cylinder)
                     {
-                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Adaptor3d_HSurfaceTool.Cylinder(Surf), Pmid, out u2, out v2);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(HSurfaceTool.Cylinder(Surf), Pmid, out u2, out v2);
                     }
-                    else if (Adaptor3d_HSurfaceTool.GetType(Surf) == SurfaceKind.Cone)
+                    else if (HSurfaceTool.GetType(Surf) == SurfaceKind.Cone)
                     {
-                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Adaptor3d_HSurfaceTool.Cone(Surf), Pmid, out u2, out v2);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(HSurfaceTool.Cone(Surf), Pmid, out u2, out v2);
                     }
-                    else if (Adaptor3d_HSurfaceTool.GetType(Surf) == SurfaceKind.Sphere)
+                    else if (HSurfaceTool.GetType(Surf) == SurfaceKind.Sphere)
                     {
-                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Adaptor3d_HSurfaceTool.Sphere(Surf), Pmid, out u2, out v2);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(HSurfaceTool.Sphere(Surf), Pmid, out u2, out v2);
                     }
                     else
                     {
@@ -399,8 +401,8 @@ public sealed class Contap_Contour
                     }
 
                     Recadre(Surf, ref u2, ref v2);
-                    TopAbs_State in2 = Domain.Classify(new Point2D(u2, v2), Tol);
-                    if (in2 == TopAbs_OUT)
+                    Containment in2 = Domain.Classify(new Point2D(u2, v2), Tol);
+                    if (in2 == Out)
                     {
                     }
                     else
@@ -429,17 +431,17 @@ public sealed class Contap_Contour
                     double u2 = 0.0, v2 = 0.0; // OCCT leaves them unset on other surfaces
                     double pmid = (firstp + lastp) * 0.5;
                     Point3D Pmid = global::Kerf.Engine.Geometry.ElCLib.Value(pmid, L.Circle());
-                    if (Adaptor3d_HSurfaceTool.GetType(Surf) == SurfaceKind.Cylinder)
+                    if (HSurfaceTool.GetType(Surf) == SurfaceKind.Cylinder)
                     {
-                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Adaptor3d_HSurfaceTool.Cylinder(Surf), Pmid, out u2, out v2);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(HSurfaceTool.Cylinder(Surf), Pmid, out u2, out v2);
                     }
-                    else if (Adaptor3d_HSurfaceTool.GetType(Surf) == SurfaceKind.Cone)
+                    else if (HSurfaceTool.GetType(Surf) == SurfaceKind.Cone)
                     {
-                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Adaptor3d_HSurfaceTool.Cone(Surf), Pmid, out u2, out v2);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(HSurfaceTool.Cone(Surf), Pmid, out u2, out v2);
                     }
-                    else if (Adaptor3d_HSurfaceTool.GetType(Surf) == SurfaceKind.Sphere)
+                    else if (HSurfaceTool.GetType(Surf) == SurfaceKind.Sphere)
                     {
-                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Adaptor3d_HSurfaceTool.Sphere(Surf), Pmid, out u2, out v2);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(HSurfaceTool.Sphere(Surf), Pmid, out u2, out v2);
                     }
                     else
                     {
@@ -447,8 +449,8 @@ public sealed class Contap_Contour
                     }
 
                     Recadre(Surf, ref u2, ref v2);
-                    TopAbs_State in2 = Domain.Classify(new Point2D(u2, v2), Tol);
-                    if (in2 == TopAbs_OUT)
+                    Containment in2 = Domain.Classify(new Point2D(u2, v2), Tol);
+                    if (in2 == Out)
                     {
                     }
                     else
@@ -485,7 +487,7 @@ public sealed class Contap_Contour
         int Nbp, indp, inda;
         Point2D toproj;
         bool projok, tokeep;
-        Adaptor3d_Surface Surf = Func.Surface();
+        SurfaceAdaptorBase Surf = Func.Surface();
 
         Nbp = solins.NbPoints();
         for (indp = 1; indp <= Nbp; indp++)
@@ -496,11 +498,11 @@ public sealed class Contap_Contour
             toproj = new Point2D(U, V);
             for (inda = 1; inda <= Nba; inda++)
             {
-                Adaptor2d_Curve2d thearc = solrst.Segment(inda).Curve();
+                Curve2DAdaptorBase thearc = solrst.Segment(inda).Curve();
                 projok = Contap_HContTool.Project(thearc, toproj, out _, out Point2D Ptproj);
                 if (projok)
                 {
-                    Point3D pprojete = Adaptor3d_HSurfaceTool.Value(Surf, Ptproj.X(), Ptproj.Y());
+                    Point3D pprojete = HSurfaceTool.Value(Surf, Ptproj.X(), Ptproj.Y());
                     if (pti.Value().Distance(pprojete) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         tokeep = false;
@@ -515,7 +517,7 @@ public sealed class Contap_Contour
         }
     }
 
-    private static void ComputeTangency(Contap_TheSearch solrst, Adaptor3d_TopolTool Domain,
+    private static void ComputeTangency(Contap_TheSearch solrst, TopolTool Domain,
                                         Contap_SurfFunction Func, NCollection_Sequence<IntSurf_PathPoint> seqpdep,
                                         NCollection_Array1<int> Destination)
     {
@@ -525,7 +527,7 @@ public sealed class Contap_Contour
 
         double theparam, test;
         bool fairpt;
-        TopAbs_Orientation arcorien, vtxorien;
+        Orientation arcorien, vtxorien;
         bool ispassing;
 
         math_Vector X = new(1, 2);
@@ -538,14 +540,14 @@ public sealed class Contap_Contour
         Point2D pt2d;
 
         IntSurf_PathPoint PPoint = new();
-        Adaptor3d_Surface Surf = Func.Surface();
+        SurfaceAdaptorBase Surf = Func.Surface();
 
         for (i = 1; i <= NbPoints; i++)
         {
             if (Destination[i] == 0)
             {
                 Contap_ThePathPointOfTheSearch PStart = solrst.Point(i);
-                Adaptor2d_Curve2d thearc = PStart.Arc();
+                Curve2DAdaptorBase thearc = PStart.Arc();
                 theparam = PStart.Parameter();
                 Point2D Ptoproj = Contap_HCurve2dTool.Value(thearc, theparam);
                 //-- lbr le 15 mai 97
@@ -554,13 +556,13 @@ public sealed class Contap_Contour
                 for (int restriction = 1; !SurUneRestrictionSolution && restriction <= solrst.NbSegments();
                      restriction++)
                 {
-                    Adaptor2d_Curve2d thearcsol = solrst.Segment(restriction).Curve();
+                    Curve2DAdaptorBase thearcsol = solrst.Segment(restriction).Curve();
                     bool projok = Contap_HContTool.Project(thearcsol, Ptoproj, out _, out Point2D pproj);
                     if (projok)
                     {
                         // gp_Pnt pprojete = Adaptor3d_HSurfaceTool::Value(Surf,Ptoproj.X(),Ptoproj.Y());
                         // IFV - begin
-                        Point3D pprojete = Adaptor3d_HSurfaceTool.Value(Surf, pproj.X(), pproj.Y());
+                        Point3D pprojete = HSurfaceTool.Value(Surf, pproj.X(), pproj.Y());
                         // IFV - end
                         if ((PStart.Value()).Distance(pprojete) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
@@ -571,7 +573,7 @@ public sealed class Contap_Contour
                 if (!SurUneRestrictionSolution)
                 {
                     arcorien = Domain.Orientation(thearc);
-                    ispassing = (arcorien == TopAbs_INTERNAL || arcorien == TopAbs_EXTERNAL);
+                    ispassing = (arcorien == Internal || arcorien == External);
 
                     Contap_HCurve2dTool.D1(thearc, theparam, out pt2d, out tg2drst);
                     X[1] = pt2d.X();
@@ -585,7 +587,7 @@ public sealed class Contap_Contour
                         Destination[i] = seqlength + 1;
                         if (!PStart.IsNew())
                         {
-                            Adaptor3d_HVertex vtx = PStart.Vertex();
+                            HVertex vtx = PStart.Vertex();
                             for (k = i + 1; k <= NbPoints; k++)
                             {
                                 if (Destination[k] == 0)
@@ -593,14 +595,14 @@ public sealed class Contap_Contour
                                     Contap_ThePathPointOfTheSearch PStart2 = solrst.Point(k);
                                     if (!PStart2.IsNew())
                                     {
-                                        Adaptor3d_HVertex vtx2 = PStart2.Vertex();
+                                        HVertex vtx2 = PStart2.Vertex();
                                         if (Domain.Identical(vtx, vtx2))
                                         {
-                                            Adaptor2d_Curve2d thearc2 = PStart2.Arc();
+                                            Curve2DAdaptorBase thearc2 = PStart2.Arc();
                                             theparam = PStart2.Parameter();
                                             arcorien = Domain.Orientation(thearc2);
                                             ispassing = ispassing
-                                                        && (arcorien == TopAbs_INTERNAL || arcorien == TopAbs_EXTERNAL);
+                                                        && (arcorien == Internal || arcorien == External);
 
                                             pt2d = Contap_HCurve2dTool.Value(thearc2, theparam);
                                             X[1] = pt2d.X();
@@ -640,8 +642,8 @@ public sealed class Contap_Contour
                                 double tbis = vectg.Normalized().Dot(tg3drst.Normalized());
                                 if (Math.Abs(tbis) < 1.0 - tole)
                                 {
-                                    if ((test < 0.0 && arcorien == TopAbs_FORWARD)
-                                        || (test > 0.0 && arcorien == TopAbs_REVERSED))
+                                    if ((test < 0.0 && arcorien == Forward)
+                                        || (test > 0.0 && arcorien == Reversed))
                                     {
                                         vectg.Reverse();
                                         dirtg.Reverse();
@@ -662,13 +664,13 @@ public sealed class Contap_Contour
                                 Direction3D bidnorm = new(1.0, 1.0, 1.0);
 
                                 bool tobeverified = false;
-                                TopAbs_Orientation LocTrans;
+                                Orientation LocTrans;
                                 TopTrans_CurveTransition comptrans = new();
                                 comptrans.Reset(new Direction3D(vectg), bidnorm, 0.0);
-                                if (arcorien != TopAbs_INTERNAL && arcorien != TopAbs_EXTERNAL)
+                                if (arcorien != Internal && arcorien != External)
                                 {
                                     // pour essai
-                                    Adaptor3d_HVertex vtx = PStart.Vertex();
+                                    HVertex vtx = PStart.Vertex();
                                     vtxorien = Domain.Orientation(vtx);
                                     test = test / (vectg.Magnitude());
                                     test = test / ((normale.Crossed(tg3drst)).Magnitude());
@@ -676,20 +678,20 @@ public sealed class Contap_Contour
                                     if (Math.Abs(test) <= tole)
                                     {
                                         tobeverified = true;
-                                        LocTrans = TopAbs_EXTERNAL; // et pourquoi pas INTERNAL
+                                        LocTrans = External; // et pourquoi pas INTERNAL
                                     }
                                     else
                                     {
-                                        if ((test > 0.0 && arcorien == TopAbs_FORWARD)
-                                            || (test < 0.0 && arcorien == TopAbs_REVERSED))
+                                        if ((test > 0.0 && arcorien == Forward)
+                                            || (test < 0.0 && arcorien == Reversed))
                                         {
-                                            LocTrans = TopAbs_FORWARD;
+                                            LocTrans = Forward;
                                         }
                                         else
                                         {
-                                            LocTrans = TopAbs_REVERSED;
+                                            LocTrans = Reversed;
                                         }
-                                        if (arcorien == TopAbs_REVERSED)
+                                        if (arcorien == Reversed)
                                         {
                                             tg3drst.Reverse();
                                         } // pas deja fait ???
@@ -705,10 +707,10 @@ public sealed class Contap_Contour
                                         Contap_ThePathPointOfTheSearch PStart2 = solrst.Point(k);
                                         if (!PStart2.IsNew())
                                         {
-                                            Adaptor3d_HVertex vtx2 = PStart2.Vertex();
+                                            HVertex vtx2 = PStart2.Vertex();
                                             if (Domain.Identical(PStart.Vertex(), vtx2))
                                             {
-                                                Adaptor2d_Curve2d thearc2 = PStart2.Arc();
+                                                Curve2DAdaptorBase thearc2 = PStart2.Arc();
                                                 theparam = PStart2.Parameter();
                                                 arcorien = Domain.Orientation(thearc2);
 
@@ -717,7 +719,7 @@ public sealed class Contap_Contour
                                                 X[2] = pt2d.Y();
                                                 PPoint.AddUV(X[1], X[2]);
 
-                                                if (arcorien != TopAbs_INTERNAL && arcorien != TopAbs_EXTERNAL)
+                                                if (arcorien != Internal && arcorien != External)
                                                 {
                                                     ispassing = false;
                                                     tg3drst = tg2drst.X() * v1 + tg2drst.Y() * v2;
@@ -729,20 +731,20 @@ public sealed class Contap_Contour
                                                     if (Math.Abs(test) <= tole)
                                                     {
                                                         tobeverified = true;
-                                                        LocTrans = TopAbs_EXTERNAL; // et pourquoi pas INTERNAL
+                                                        LocTrans = External; // et pourquoi pas INTERNAL
                                                     }
                                                     else
                                                     {
-                                                        if ((test > 0.0 && arcorien == TopAbs_FORWARD)
-                                                            || (test < 0.0 && arcorien == TopAbs_REVERSED))
+                                                        if ((test > 0.0 && arcorien == Forward)
+                                                            || (test < 0.0 && arcorien == Reversed))
                                                         {
-                                                            LocTrans = TopAbs_FORWARD;
+                                                            LocTrans = Forward;
                                                         }
                                                         else
                                                         {
-                                                            LocTrans = TopAbs_REVERSED;
+                                                            LocTrans = Reversed;
                                                         }
-                                                        if (arcorien == TopAbs_REVERSED)
+                                                        if (arcorien == Reversed)
                                                         {
                                                             tg3drst.Reverse();
                                                         } // deja fait????
@@ -759,15 +761,15 @@ public sealed class Contap_Contour
                                 fairpt = true;
                                 if (!ispassing)
                                 {
-                                    TopAbs_State Before = comptrans.StateBefore();
-                                    TopAbs_State After = comptrans.StateAfter();
-                                    if ((Before == TopAbs_UNKNOWN) || (After == TopAbs_UNKNOWN))
+                                    Containment Before = comptrans.StateBefore();
+                                    Containment After = comptrans.StateAfter();
+                                    if ((Before == Unknown) || (After == Unknown))
                                     {
                                         fairpt = false;
                                     }
-                                    else if (Before == TopAbs_IN)
+                                    else if (Before == In)
                                     {
-                                        if (After == TopAbs_IN)
+                                        if (After == In)
                                         {
                                             ispassing = true;
                                         }
@@ -779,7 +781,7 @@ public sealed class Contap_Contour
                                     }
                                     else
                                     {
-                                        if (After != TopAbs_IN)
+                                        if (After != In)
                                         {
                                             fairpt = false;
                                         }
@@ -795,16 +797,16 @@ public sealed class Contap_Contour
                                         if (Destination[k] == seqlength + 1)
                                         {
                                             theparam = solrst.Point(k).Parameter();
-                                            Adaptor2d_Curve2d thearc2 = solrst.Point(k).Arc();
+                                            Curve2DAdaptorBase thearc2 = solrst.Point(k).Arc();
                                             arcorien = Domain.Orientation(thearc2);
 
-                                            if (arcorien == TopAbs_FORWARD || arcorien == TopAbs_REVERSED)
+                                            if (arcorien == Forward || arcorien == Reversed)
                                             {
                                                 Contap_HCurve2dTool.D1(thearc2, theparam, out pt2d, out tg2drst);
                                                 tg3drst = tg2drst.X() * v1 + tg2drst.Y() * v2;
                                                 vtxorien = Domain.Orientation(solrst.Point(k).Vertex());
-                                                if ((arcorien == TopAbs_FORWARD && vtxorien == TopAbs_REVERSED)
-                                                    || (arcorien == TopAbs_REVERSED && vtxorien == TopAbs_FORWARD))
+                                                if ((arcorien == Forward && vtxorien == Reversed)
+                                                    || (arcorien == Reversed && vtxorien == Forward))
                                                 {
                                                     tg3drst.Reverse();
                                                 }
@@ -847,7 +849,7 @@ public sealed class Contap_Contour
     private static IntSurf_TypeTrans ComputeTransitionOnLine(Contap_SurfFunction SFunc, double u, double v,
                                                              in Vector3D tgline)
     {
-        Adaptor3d_HSurfaceTool.D1(SFunc.Surface(), u, v, out _, out Vector3D d1u, out Vector3D d1v);
+        HSurfaceTool.D1(SFunc.Surface(), u, v, out _, out Vector3D d1u, out Vector3D d1v);
 
         //------------------------------------------------------
         //--   Calcul de la tangente dans l espace uv        ---
@@ -903,7 +905,7 @@ public sealed class Contap_Contour
     }
 
     private static void ProcessSegments(Contap_TheSearch solrst, NCollection_Sequence<Contap_Line> slin,
-                                        double TolArc, Contap_SurfFunction SFunc, Adaptor3d_TopolTool Domain)
+                                        double TolArc, Contap_SurfFunction SFunc, TopolTool Domain)
     {
         int i, j, k;
         int nbedg = solrst.NbSegments();
@@ -965,7 +967,7 @@ public sealed class Contap_Contour
             }
 
             Contap_HCurve2dTool.D1(thesegsol.Curve(), U, out p2d, out Vector2D d2d);
-            Adaptor3d_HSurfaceTool.D1(SFunc.Surface(), p2d.X(), p2d.Y(), out _, out Vector3D d1u, out Vector3D d1v);
+            HSurfaceTool.D1(SFunc.Surface(), p2d.X(), p2d.Y(), out _, out Vector3D d1u, out Vector3D d1v);
             tgline.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
             IntSurf_TypeTrans tral = ComputeTransitionOnLine(SFunc, p2d.X(), p2d.Y(), tgline);
 
@@ -1075,9 +1077,9 @@ public sealed class Contap_Contour
             return;
         }
 
-        Adaptor2d_Curve2d thearc = Line.Arc();
+        Curve2DAdaptorBase thearc = Line.Arc();
 
-        Adaptor3d_Surface Surf = SFunc.Surface();
+        SurfaceAdaptorBase Surf = SFunc.Surface();
         Contap_TFunction TypeFunc = SFunc.FunctionType();
 
         int Nbpnts = Contap_HContTool.NbSamplesOnArc(thearc);
@@ -1090,7 +1092,7 @@ public sealed class Contap_Contour
         {
             paraminf = ((Nbpnts - indexinf) * Paramf + (indexinf - 1) * Paraml) / (Nbpnts - 1);
             Contap_HCurve2dTool.D1(thearc, paraminf, out p2d, out d2d);
-            Adaptor3d_HSurfaceTool.D1(Surf, p2d.X(), p2d.Y(), out pcour, out Vector3D d1u, out Vector3D d1v);
+            HSurfaceTool.D1(Surf, p2d.X(), p2d.Y(), out pcour, out Vector3D d1u, out Vector3D d1v);
             tgt.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
             if (tgt.Magnitude() > Constants.Resolution())
@@ -1122,7 +1124,7 @@ public sealed class Contap_Contour
         {
             paramsup = ((Nbpnts - indexsup) * Paramf + (indexsup - 1) * Paraml) / (Nbpnts - 1);
             Contap_HCurve2dTool.D1(thearc, paramsup, out p2d, out d2d);
-            Adaptor3d_HSurfaceTool.D1(Surf, p2d.X(), p2d.Y(), out pcour, out Vector3D d1u, out Vector3D d1v);
+            HSurfaceTool.D1(Surf, p2d.X(), p2d.Y(), out pcour, out Vector3D d1u, out Vector3D d1v);
             tgt.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
             if (tgt.Magnitude() > Constants.Resolution())
@@ -1152,7 +1154,7 @@ public sealed class Contap_Contour
                     {
                         paramp = (paraminf + paramsup) / 2.0;
                         Contap_HCurve2dTool.D1(thearc, paramp, out p2d, out d2d);
-                        Adaptor3d_HSurfaceTool.D1(Surf, p2d.X(), p2d.Y(), out pcour, out d1u, out d1v);
+                        HSurfaceTool.D1(Surf, p2d.X(), p2d.Y(), out pcour, out d1u, out d1v);
                         tgt.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
                         if (tgt.Magnitude() > Constants.Resolution())
@@ -1239,15 +1241,15 @@ public sealed class Contap_Contour
         }
 
         int Nbpnts = Line.NbPnts();
-        Adaptor3d_Surface Surf = SFunc.Surface();
+        SurfaceAdaptorBase Surf = SFunc.Surface();
         Contap_TFunction TypeFunc = SFunc.FunctionType();
 
         toler[1] = ureso; //-- Trop long !!! Adaptor3d_HSurfaceTool::UResolution(Surf,SFunc.Tolerance());
         toler[2] = vreso; //---Beaucoup trop long !!! Adaptor3d_HSurfaceTool::VResolution(Surf,SFunc.Tolerance());
-        infb[1] = Adaptor3d_HSurfaceTool.FirstUParameter(Surf);
-        infb[2] = Adaptor3d_HSurfaceTool.FirstVParameter(Surf);
-        supb[1] = Adaptor3d_HSurfaceTool.LastUParameter(Surf);
-        supb[2] = Adaptor3d_HSurfaceTool.LastVParameter(Surf);
+        infb[1] = HSurfaceTool.FirstUParameter(Surf);
+        infb[2] = HSurfaceTool.FirstVParameter(Surf);
+        supb[1] = HSurfaceTool.LastUParameter(Surf);
+        supb[2] = HSurfaceTool.LastVParameter(Surf);
 
         FunctionSetRoot rsnld = new(SFunc, toler, 30);
 
@@ -1462,7 +1464,7 @@ public sealed class Contap_Contour
         }
     }
 
-    private void Perform(Adaptor3d_TopolTool Domain)
+    private void Perform(TopolTool Domain)
     {
         done = false;
         slin.Clear();
@@ -1484,10 +1486,10 @@ public sealed class Contap_Contour
         //  double TolArc = 1.e-5;
         double TolArc = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-        Adaptor3d_Surface Surf = mySFunc.Surface();
+        SurfaceAdaptorBase Surf = mySFunc.Surface();
 
-        double EpsU = Adaptor3d_HSurfaceTool.UResolution(Surf, global::Kerf.Engine.Foundation.Precision.Confusion());
-        double EpsV = Adaptor3d_HSurfaceTool.VResolution(Surf, global::Kerf.Engine.Foundation.Precision.Confusion());
+        double EpsU = HSurfaceTool.UResolution(Surf, global::Kerf.Engine.Foundation.Precision.Confusion());
+        double EpsV = HSurfaceTool.VResolution(Surf, global::Kerf.Engine.Foundation.Precision.Confusion());
         double Preci = Min(EpsU, EpsV);
         //  double Fleche = 5.e-1;
         //  double Pas    = 5.e-2;
@@ -1517,7 +1519,7 @@ public sealed class Contap_Contour
         }
         else
         {
-            BndLib_AddSurface.Add(Surf, 1e-8, ref B1);
+            AddSurface.Add(Surf, 1e-8, ref B1);
         }
         double dx, dy, dz;
         if (Box1OK)
@@ -1581,10 +1583,10 @@ public sealed class Contap_Contour
             {
                 if (mySFunc.FunctionType() == Contap_ContourStd)
                 {
-                    Adaptor3d_Surface SurfToCheck = mySFunc.Surface();
-                    if (Adaptor3d_HSurfaceTool.GetType(SurfToCheck) == SurfaceKind.Torus)
+                    SurfaceAdaptorBase SurfToCheck = mySFunc.Surface();
+                    if (HSurfaceTool.GetType(SurfToCheck) == SurfaceKind.Torus)
                     {
-                        Torus aTor = Adaptor3d_HSurfaceTool.Torus(SurfToCheck);
+                        Torus aTor = HSurfaceTool.Torus(SurfToCheck);
                         Direction3D aTorDir = aTor.Axis().Direction();
                         Direction3D aProjDir = mySFunc.Direction();
 
@@ -1656,7 +1658,7 @@ public sealed class Contap_Contour
                             ptdeb.SetParameter(1.0);
 
                             Contap_ThePathPointOfTheSearch PStart = solrst.Point(i);
-                            Adaptor2d_Curve2d currentarc = PStart.Arc();
+                            Curve2DAdaptorBase currentarc = PStart.Arc();
                             currentparam = PStart.Parameter();
                             if (!iwline.IsTangentAtBegining())
                             {
@@ -1708,7 +1710,7 @@ public sealed class Contap_Contour
                             ptfin.SetValue(PPoint.Value(), U, V);
                             ptfin.SetParameter((double)(Nbpts));
                             Contap_ThePathPointOfTheSearch PStart = solrst.Point(i);
-                            Adaptor2d_Curve2d currentarc = PStart.Arc();
+                            Curve2DAdaptorBase currentarc = PStart.Arc();
                             currentparam = PStart.Parameter();
 
                             if (!iwline.IsTangentAtEnd())
@@ -1816,7 +1818,7 @@ public sealed class Contap_Contour
                             {
                                 if (slin.Value(k).TypeContour() == Contap_Restriction)
                                 {
-                                    Adaptor2d_Curve2d thearc = slin.Value(k).Arc();
+                                    Curve2DAdaptorBase thearc = slin.Value(k).Arc();
                                     projok = Contap_HContTool.Project(thearc, toproj, out double paramproj,
                                                                       out Point2D Ptproj);
 
@@ -1880,7 +1882,7 @@ public sealed class Contap_Contour
         done = true;
     }
 
-    private static bool FindLine(Contap_Line Line, Adaptor3d_Surface Surf, in Point2D Pt2d, out Point3D Ptref,
+    private static bool FindLine(Contap_Line Line, SurfaceAdaptorBase Surf, in Point2D Pt2d, out Point3D Ptref,
                                  ref double Paramin, ref Vector3D Tgmin, out Vector3D Norm)
     {
         Point3D pt, ptmin = new();
@@ -1914,7 +1916,7 @@ public sealed class Contap_Contour
         return ptmin.SquareDistance(Ptref) <= Tolpetit;
     }
 
-    private static void PutPointsOnLine(Contap_TheSearch solrst, Adaptor3d_Surface Surf,
+    private static void PutPointsOnLine(Contap_TheSearch solrst, SurfaceAdaptorBase Surf,
                                         NCollection_Sequence<Contap_Line> slin)
     {
         int i, l; //,index;
@@ -1938,7 +1940,7 @@ public sealed class Contap_Contour
             for (i = 1; i <= NbPoints; i++)
             {
                 Contap_ThePathPointOfTheSearch PStart = solrst.Point(i);
-                Adaptor2d_Curve2d thearc = PStart.Arc();
+                Curve2DAdaptorBase thearc = PStart.Arc();
                 theparam = PStart.Parameter();
 
                 Contap_HCurve2dTool.D1(thearc, theparam, out pt2d, out d2d);
@@ -1948,7 +1950,7 @@ public sealed class Contap_Contour
 
                 if (goon)
                 {
-                    Adaptor3d_HSurfaceTool.D1(Surf, pt2d.X(), pt2d.Y(), out _, out Vector3D d1u, out Vector3D d1v);
+                    HSurfaceTool.D1(Surf, pt2d.X(), pt2d.Y(), out _, out Vector3D d1u, out Vector3D d1v);
                     PPoint.SetValue(ptonsurf, pt2d.X(), pt2d.Y());
                     if (normale.Magnitude() < RealEpsilon())
                     {
@@ -1997,20 +1999,20 @@ public sealed class Contap_Contour
 
     private static IntSurf_TypeTrans ComputeTransitionOngpLine(Contap_SurfFunction SFunc, in Line3D L)
     {
-        Adaptor3d_Surface Surf = SFunc.Surface();
-        SurfaceKind typS = Adaptor3d_HSurfaceTool.GetType(Surf);
+        SurfaceAdaptorBase Surf = SFunc.Surface();
+        SurfaceKind typS = HSurfaceTool.GetType(Surf);
         global::Kerf.Engine.Geometry.ElCLib.D1(0.0, L, out Point3D P, out Vector3D T);
         double u = 0.0, v = 0.0;
         switch (typS)
         {
             case SurfaceKind.Cylinder:
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(Adaptor3d_HSurfaceTool.Cylinder(Surf), P, out u, out v);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(HSurfaceTool.Cylinder(Surf), P, out u, out v);
                 break;
             case SurfaceKind.Cone:
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(Adaptor3d_HSurfaceTool.Cone(Surf), P, out u, out v);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(HSurfaceTool.Cone(Surf), P, out u, out v);
                 break;
             case SurfaceKind.Sphere:
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(Adaptor3d_HSurfaceTool.Sphere(Surf), P, out u, out v);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(HSurfaceTool.Sphere(Surf), P, out u, out v);
                 break;
             default:
                 break;
@@ -2020,20 +2022,20 @@ public sealed class Contap_Contour
 
     private static IntSurf_TypeTrans ComputeTransitionOngpCircle(Contap_SurfFunction SFunc, in Circle3D C)
     {
-        Adaptor3d_Surface Surf = SFunc.Surface();
-        SurfaceKind typS = Adaptor3d_HSurfaceTool.GetType(Surf);
+        SurfaceAdaptorBase Surf = SFunc.Surface();
+        SurfaceKind typS = HSurfaceTool.GetType(Surf);
         global::Kerf.Engine.Geometry.ElCLib.D1(0.0, C, out Point3D P, out Vector3D T);
         double u = 0.0, v = 0.0;
         switch (typS)
         {
             case SurfaceKind.Cylinder:
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(Adaptor3d_HSurfaceTool.Cylinder(Surf), P, out u, out v);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(HSurfaceTool.Cylinder(Surf), P, out u, out v);
                 break;
             case SurfaceKind.Cone:
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(Adaptor3d_HSurfaceTool.Cone(Surf), P, out u, out v);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(HSurfaceTool.Cone(Surf), P, out u, out v);
                 break;
             case SurfaceKind.Sphere:
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(Adaptor3d_HSurfaceTool.Sphere(Surf), P, out u, out v);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(HSurfaceTool.Sphere(Surf), P, out u, out v);
                 break;
             default:
                 break;
@@ -2041,7 +2043,7 @@ public sealed class Contap_Contour
         return (ComputeTransitionOnLine(SFunc, u, v, T));
     }
 
-    private void PerformAna(Adaptor3d_TopolTool Domain)
+    private void PerformAna(TopolTool Domain)
     {
         done = false;
         slin.Clear();
@@ -2051,17 +2053,17 @@ public sealed class Contap_Contour
         int nbCont, nbPointRst, i;
         Contap_ContAna contana = new();
         Contap_Line theline = new();
-        Adaptor3d_Surface Surf = mySFunc.Surface();
+        SurfaceAdaptorBase Surf = mySFunc.Surface();
         Contap_TFunction TypeFunc = mySFunc.FunctionType();
         bool PerformSolRst = true;
 
-        SurfaceKind typS = Adaptor3d_HSurfaceTool.GetType(Surf);
+        SurfaceKind typS = HSurfaceTool.GetType(Surf);
 
         switch (typS)
         {
             case Plane:
             {
-                Plane3D pl = Adaptor3d_HSurfaceTool.Plane(Surf);
+                Plane3D pl = HSurfaceTool.Plane(Surf);
                 switch (TypeFunc)
                 {
                     case Contap_ContourStd:
@@ -2109,13 +2111,13 @@ public sealed class Contap_Contour
                 switch (TypeFunc)
                 {
                     case Contap_ContourStd:
-                        contana.Perform(Adaptor3d_HSurfaceTool.Sphere(Surf), mySFunc.Direction());
+                        contana.Perform(HSurfaceTool.Sphere(Surf), mySFunc.Direction());
                         break;
                     case Contap_ContourPrs:
-                        contana.Perform(Adaptor3d_HSurfaceTool.Sphere(Surf), mySFunc.Eye());
+                        contana.Perform(HSurfaceTool.Sphere(Surf), mySFunc.Eye());
                         break;
                     case Contap_DraftStd:
-                        contana.Perform(Adaptor3d_HSurfaceTool.Sphere(Surf), mySFunc.Direction(), mySFunc.Angle());
+                        contana.Perform(HSurfaceTool.Sphere(Surf), mySFunc.Direction(), mySFunc.Angle());
                         break;
                     case Contap_DraftPrs:
                     default:
@@ -2129,13 +2131,13 @@ public sealed class Contap_Contour
                 switch (TypeFunc)
                 {
                     case Contap_ContourStd:
-                        contana.Perform(Adaptor3d_HSurfaceTool.Cylinder(Surf), mySFunc.Direction());
+                        contana.Perform(HSurfaceTool.Cylinder(Surf), mySFunc.Direction());
                         break;
                     case Contap_ContourPrs:
-                        contana.Perform(Adaptor3d_HSurfaceTool.Cylinder(Surf), mySFunc.Eye());
+                        contana.Perform(HSurfaceTool.Cylinder(Surf), mySFunc.Eye());
                         break;
                     case Contap_DraftStd:
-                        contana.Perform(Adaptor3d_HSurfaceTool.Cylinder(Surf), mySFunc.Direction(), mySFunc.Angle());
+                        contana.Perform(HSurfaceTool.Cylinder(Surf), mySFunc.Direction(), mySFunc.Angle());
                         break;
                     case Contap_DraftPrs:
                     default:
@@ -2149,13 +2151,13 @@ public sealed class Contap_Contour
                 switch (TypeFunc)
                 {
                     case Contap_ContourStd:
-                        contana.Perform(Adaptor3d_HSurfaceTool.Cone(Surf), mySFunc.Direction());
+                        contana.Perform(HSurfaceTool.Cone(Surf), mySFunc.Direction());
                         break;
                     case Contap_ContourPrs:
-                        contana.Perform(Adaptor3d_HSurfaceTool.Cone(Surf), mySFunc.Eye());
+                        contana.Perform(HSurfaceTool.Cone(Surf), mySFunc.Eye());
                         break;
                     case Contap_DraftStd:
-                        contana.Perform(Adaptor3d_HSurfaceTool.Cone(Surf), mySFunc.Direction(), mySFunc.Angle());
+                        contana.Perform(HSurfaceTool.Cone(Surf), mySFunc.Direction(), mySFunc.Angle());
                         break;
                     case Contap_DraftPrs:
                     default:

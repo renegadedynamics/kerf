@@ -4,13 +4,19 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Numerics;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.GeomConvert_ConvType;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Engine.Geometry.Conversion.ConvType;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -25,38 +31,38 @@ namespace Occt;
 /// </remarks>
 public sealed class ShapeAnalysis_CanonicalRecognition
 {
-    private TopoDS_Shape myShape;
-    private TopAbs_ShapeEnum mySType;
+    private Shape myShape;
+    private ShapeType mySType;
     private double myGap;
     private int myStatus;
 
     /// <summary>Empty constructor (status -1: not initialised).</summary>
     public ShapeAnalysis_CanonicalRecognition()
     {
-        myShape = new TopoDS_Shape();
-        mySType = TopAbs_SHAPE;
+        myShape = new Shape();
+        mySType = ShapeType.Shape;
         myGap = -1.0;
         myStatus = -1;
     }
 
     /// <summary>Constructor with the shape.</summary>
-    public ShapeAnalysis_CanonicalRecognition(in TopoDS_Shape theShape)
+    public ShapeAnalysis_CanonicalRecognition(in Shape theShape)
     {
-        myShape = new TopoDS_Shape();
-        mySType = TopAbs_SHAPE;
+        myShape = new Shape();
+        mySType = ShapeType.Shape;
         myGap = -1.0;
         myStatus = -1;
         Init(theShape);
     }
 
     /// <summary>Sets the shape: a shell, a face, a wire or an edge (otherwise the status is 1).</summary>
-    public void SetShape(in TopoDS_Shape theShape)
+    public void SetShape(in Shape theShape)
     {
         Init(theShape);
     }
 
     /// <summary>The input shape.</summary>
-    public TopoDS_Shape GetShape() => myShape;
+    public Shape GetShape() => myShape;
 
     /// <summary>The deviation between the input geometry and the analytical entity.</summary>
     public double GetGap() => myGap;
@@ -73,15 +79,15 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         myStatus = 0;
     }
 
-    private void Init(in TopoDS_Shape theShape)
+    private void Init(in Shape theShape)
     {
-        TopAbs_ShapeEnum aT = theShape.ShapeType();
+        ShapeType aT = theShape.ShapeType();
         switch (aT)
         {
-            case TopAbs_SHELL:
-            case TopAbs_FACE:
-            case TopAbs_WIRE:
-            case TopAbs_EDGE:
+            case ShapeType.Shell:
+            case ShapeType.Face:
+            case ShapeType.Wire:
+            case ShapeType.Edge:
                 myShape = theShape;
                 mySType = aT;
                 myStatus = 0;
@@ -100,9 +106,9 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             return false;
         }
         //
-        if (mySType == TopAbs_FACE)
+        if (mySType == ShapeType.Face)
         {
-            Geom_Surface? anElemSurf = GetSurface(TopoDS.Face(myShape), theTol, GeomConvert_Target, theTarget, ref myGap, ref myStatus);
+            Surface? anElemSurf = GetSurface(ShapeCasts.Face(myShape), theTol, Target, theTarget, ref myGap, ref myStatus);
             if (anElemSurf is null)
             {
                 return false;
@@ -116,9 +122,9 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             }
             return true;
         }
-        else if (mySType == TopAbs_SHELL)
+        else if (mySType == ShapeType.Shell)
         {
-            Geom_Surface? anElemSurf = GetSurface(TopoDS.Shell(myShape), theTol, GeomConvert_Target, theTarget, ref myGap, ref myStatus);
+            Surface? anElemSurf = GetSurface(ShapeCasts.Shell(myShape), theTol, Target, theTarget, ref myGap, ref myStatus);
             if (anElemSurf is null)
             {
                 return false;
@@ -131,9 +137,9 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             }
             return true;
         }
-        else if (mySType == TopAbs_EDGE)
+        else if (mySType == ShapeType.Edge)
         {
-            Geom_Surface? anElemSurf = GetSurface(TopoDS.Edge(myShape), theTol, GeomConvert_Target, theTarget, ref thePos,
+            Surface? anElemSurf = GetSurface(ShapeCasts.Edge(myShape), theTol, Target, theTarget, ref thePos,
                                                   theParams, ref myGap, ref myStatus);
 
             bool isOK = SetSurfParams(theTarget, anElemSurf, ref thePos, theParams);
@@ -144,9 +150,9 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             }
             return true;
         }
-        else if (mySType == TopAbs_WIRE)
+        else if (mySType == ShapeType.Wire)
         {
-            Geom_Surface? anElemSurf = GetSurface(TopoDS.Wire(myShape), theTol, GeomConvert_Target, theTarget, ref thePos,
+            Surface? anElemSurf = GetSurface(ShapeCasts.Wire(myShape), theTol, Target, theTarget, ref thePos,
                                                   theParams, ref myGap, ref myStatus);
 
             bool isOK = SetSurfParams(theTarget, anElemSurf, ref thePos, theParams);
@@ -176,12 +182,12 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             return true;
         }
         // Try to build plane for wire or edge
-        if (mySType == TopAbs_EDGE || mySType == TopAbs_WIRE)
+        if (mySType == ShapeType.Edge || mySType == ShapeType.Wire)
         {
             BRepLib_FindSurface aFndSurf = new(myShape, theTol, true, false);
             if (aFndSurf.Found())
             {
-                var aPlane = aFndSurf.Surface() as Geom_Plane;
+                var aPlane = aFndSurf.Surface() as PlaneSurface;
                 thePln = aPlane!.Pln();
                 myGap = aFndSurf.ToleranceReached();
                 myStatus = 0;
@@ -219,10 +225,10 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             // Sample cylinder does not seem to be set, least square method is not applicable.
             return false;
         }
-        if (myShape.ShapeType() == TopAbs_EDGE || myShape.ShapeType() == TopAbs_WIRE)
+        if (myShape.ShapeType() == ShapeType.Edge || myShape.ShapeType() == ShapeType.Wire)
         {
             // Try to build surface by least square method;
-            TopoDS_Wire aWire = MakeWireOf(myShape);
+            Wire aWire = MakeWireOf(myShape);
             bool isDone = GetSurfaceByLS(aWire, theTol, aTarget, ref aPos, aParams, ref myGap, ref myStatus);
             if (isDone)
             {
@@ -260,10 +266,10 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             // Sample cone does not seem to be set, least square method is not applicable.
             return false;
         }
-        if (myShape.ShapeType() == TopAbs_EDGE || myShape.ShapeType() == TopAbs_WIRE)
+        if (myShape.ShapeType() == ShapeType.Edge || myShape.ShapeType() == ShapeType.Wire)
         {
             // Try to build surface by least square method;
-            TopoDS_Wire aWire = MakeWireOf(myShape);
+            Wire aWire = MakeWireOf(myShape);
             bool isDone = GetSurfaceByLS(aWire, theTol, aTarget, ref aPos, aParams, ref myGap, ref myStatus);
             if (isDone)
             {
@@ -300,10 +306,10 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             // Sample sphere does not seem to be set, least square method is not applicable.
             return false;
         }
-        if (myShape.ShapeType() == TopAbs_EDGE || myShape.ShapeType() == TopAbs_WIRE)
+        if (myShape.ShapeType() == ShapeType.Edge || myShape.ShapeType() == ShapeType.Wire)
         {
             // Try to build surface by least square method;
-            TopoDS_Wire aWire = MakeWireOf(myShape);
+            Wire aWire = MakeWireOf(myShape);
             bool isDone = GetSurfaceByLS(aWire, theTol, aTarget, ref aPos, aParams, ref myGap, ref myStatus);
             if (isDone)
             {
@@ -317,18 +323,18 @@ public sealed class ShapeAnalysis_CanonicalRecognition
 
     // OCCT.NET: the wire OCCT builds inline in IsCylinder, IsCone and IsSphere (a new wire holding the edge, or the wire
     // itself). Only that new wire is written.
-    private static TopoDS_Wire MakeWireOf(in TopoDS_Shape theShape)
+    private static Wire MakeWireOf(in Shape theShape)
     {
-        TopoDS_Wire aWire = new();
-        if (theShape.ShapeType() == TopAbs_EDGE)
+        Wire aWire = new();
+        if (theShape.ShapeType() == ShapeType.Edge)
         {
-            BRep_Builder aBB = new();
+            BrepBuilder aBB = new();
             aBB.MakeWire(ref aWire);
             aBB.Add(aWire, theShape);
         }
         else
         {
-            aWire = TopoDS.Wire(theShape);
+            aWire = ShapeCasts.Wire(theShape);
         }
         return aWire;
     }
@@ -340,9 +346,9 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             return false;
         }
 
-        if (mySType == TopAbs_EDGE)
+        if (mySType == ShapeType.Edge)
         {
-            Geom_Curve? aConic = GetCurve(TopoDS.Edge(myShape), theTol, GeomConvert_Target, theTarget, ref myGap, ref myStatus);
+            Curve3D? aConic = GetCurve(ShapeCasts.Edge(myShape), theTol, Target, theTarget, ref myGap, ref myStatus);
 
             if (aConic is null)
             {
@@ -358,9 +364,9 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             }
             return true;
         }
-        else if (mySType == TopAbs_WIRE)
+        else if (mySType == ShapeType.Wire)
         {
-            TopoDS_Iterator anIter = new(myShape);
+            Iterator anIter = new(myShape);
             if (!anIter.More())
             {
                 myStatus = 1;
@@ -368,9 +374,9 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             }
             Frame3D aPos = new();
             NCollection_Array1<double> aParams = new(1, theParams.Length());
-            TopoDS_Shape anEdge = anIter.Value();
+            Shape anEdge = anIter.Value();
 
-            Geom_Curve? aConic = GetCurve(TopoDS.Edge(anEdge), theTol, GeomConvert_Target, theTarget, ref myGap, ref myStatus);
+            Curve3D? aConic = GetCurve(ShapeCasts.Edge(anEdge), theTol, Target, theTarget, ref myGap, ref myStatus);
             if (aConic is null)
             {
                 return false;
@@ -391,7 +397,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             }
             for (; anIter.More(); anIter.Next())
             {
-                aConic = GetCurve(TopoDS.Edge(anIter.Value()), theTol, GeomConvert_Target, theTarget, ref myGap, ref myStatus);
+                aConic = GetCurve(ShapeCasts.Edge(anIter.Value()), theTol, Target, theTarget, ref myGap, ref myStatus);
                 if (aConic is null)
                 {
                     return false;
@@ -467,20 +473,20 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         return isOK;
     }
 
-    private static Geom_Surface? GetSurface(in TopoDS_Face theFace, double theTol, GeomConvert_ConvType theType,
+    private static Surface? GetSurface(in Face theFace, double theTol, ConvType theType,
                                             SurfaceKind theTarget, ref double theGap, ref int theStatus)
     {
         theStatus = 0;
-        Geom_Surface? aSurf = BRep_Tool.Surface(theFace, out Placement aLoc);
+        Surface? aSurf = Tool.Surface(theFace, out Placement aLoc);
         if (aSurf is null)
         {
             theStatus = 1;
             return aSurf;
         }
-        GeomConvert_SurfToAnaSurf aConv = new(aSurf);
+        SurfToAnaSurf aConv = new(aSurf);
         aConv.SetConvType(theType);
         aConv.SetTarget(theTarget);
-        Geom_Surface? anAnaSurf = aConv.ConvertToAnalytical(theTol);
+        Surface? anAnaSurf = aConv.ConvertToAnalytical(theTol);
         if (anAnaSurf is null)
         {
             return anAnaSurf;
@@ -495,11 +501,11 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         return anAnaSurf;
     }
 
-    private static Geom_Surface? GetSurface(in TopoDS_Shell theShell, double theTol, GeomConvert_ConvType theType,
+    private static Surface? GetSurface(in Shell theShell, double theTol, ConvType theType,
                                             SurfaceKind theTarget, ref double theGap, ref int theStatus)
     {
-        Geom_Surface? anElemSurf = null;
-        TopoDS_Iterator anIter = new(theShell);
+        Surface? anElemSurf = null;
+        Iterator anIter = new(theShell);
         if (!anIter.More())
         {
             theStatus = 1;
@@ -507,9 +513,9 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         }
         CoordinateSystem aPos1 = new();
         NCollection_Array1<double> aParams1 = new(1, Max(1, GetNbPars(theTarget)));
-        TopoDS_Shape aFace = anIter.Value();
+        Shape aFace = anIter.Value();
 
-        anElemSurf = GetSurface(TopoDS.Face(aFace), theTol, theType, theTarget, ref theGap, ref theStatus);
+        anElemSurf = GetSurface(ShapeCasts.Face(aFace), theTol, theType, theTarget, ref theGap, ref theStatus);
         if (anElemSurf is null)
         {
             return anElemSurf;
@@ -528,7 +534,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         bool isOK;
         for (; anIter.More(); anIter.Next())
         {
-            Geom_Surface? anElemSurf1 = GetSurface(TopoDS.Face(anIter.Value()), theTol, theType, theTarget, ref theGap, ref theStatus);
+            Surface? anElemSurf1 = GetSurface(ShapeCasts.Face(anIter.Value()), theTol, theType, theTarget, ref theGap, ref theStatus);
             if (anElemSurf1 is null)
             {
                 return anElemSurf1;
@@ -547,30 +553,30 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         return anElemSurf;
     }
 
-    private static Geom_Surface? GetSurface(in TopoDS_Edge theEdge, double theTol, GeomConvert_ConvType theType,
+    private static Surface? GetSurface(in Edge theEdge, double theTol, ConvType theType,
                                             SurfaceKind theTarget, ref CoordinateSystem thePos,
                                             NCollection_Array1<double> theParams, ref double theGap, ref int theStatus)
     {
         // Get surface list
-        NCollection_DynamicArray<Geom_Surface> aSurfs = new();
+        NCollection_DynamicArray<Surface> aSurfs = new();
         NCollection_DynamicArray<double> aGaps = new();
         int j = 0;
         for (;;)
         {
             j++;
-            Geom_Surface? aSurf = null;
+            Surface? aSurf = null;
             Placement aLoc = new();
-            Geom2d_Curve? aPCurve = null;
+            Curve2D? aPCurve = null;
             double ff = 0.0, ll = 0.0;
-            BRep_Tool.CurveOnSurface(theEdge, ref aPCurve, ref aSurf, ref aLoc, ref ff, ref ll, j);
+            Tool.CurveOnSurface(theEdge, ref aPCurve, ref aSurf, ref aLoc, ref ff, ref ll, j);
             if (aSurf is null)
             {
                 break;
             }
-            GeomConvert_SurfToAnaSurf aConv = new(aSurf);
+            SurfToAnaSurf aConv = new(aSurf);
             aConv.SetConvType(theType);
             aConv.SetTarget(theTarget);
-            Geom_Surface? anAnaSurf = aConv.ConvertToAnalytical(theTol);
+            Surface? anAnaSurf = aConv.ConvertToAnalytical(theTol);
             if (anAnaSurf is null)
             {
                 continue;
@@ -627,11 +633,11 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         }
     }
 
-    private static Geom_Surface? GetSurface(in TopoDS_Wire theWire, double theTol, GeomConvert_ConvType theType,
+    private static Surface? GetSurface(in Wire theWire, double theTol, ConvType theType,
                                             SurfaceKind theTarget, ref CoordinateSystem thePos,
                                             NCollection_Array1<double> theParams, ref double theGap, ref int theStatus)
     {
-        TopoDS_Iterator anIter = new(theWire);
+        Iterator anIter = new(theWire);
         if (!anIter.More())
         {
             // Empty wire
@@ -639,7 +645,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             return null;
         }
         // First edge
-        TopoDS_Edge anEdge1 = TopoDS.Edge(anIter.Value());
+        Edge anEdge1 = ShapeCasts.Edge(anIter.Value());
         CoordinateSystem aPos1 = thePos;
         int aNbPars = GetNbPars(theTarget);
         NCollection_Array1<double> aParams1 = new(1, Max(1, aNbPars));
@@ -649,7 +655,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         {
             aParams1[i] = theParams[i];
         }
-        Geom_Surface? anElemSurf1 = GetSurface(anEdge1, theTol, theType, theTarget, ref aPos1, aParams1, ref aGap1, ref theStatus);
+        Surface? anElemSurf1 = GetSurface(anEdge1, theTol, theType, theTarget, ref aPos1, aParams1, ref aGap1, ref theStatus);
         if (theStatus != 0 || anElemSurf1 is null)
         {
             return null;
@@ -665,8 +671,8 @@ public sealed class ShapeAnalysis_CanonicalRecognition
                 aParams[i] = aParams1[i];
             }
             double aGap = 0.0;
-            TopoDS_Edge anEdge = TopoDS.Edge(anIter.Value());
-            Geom_Surface? anElemSurf = GetSurface(anEdge, theTol, theType, theTarget, ref aPos, aParams, ref aGap, ref theStatus);
+            Edge anEdge = ShapeCasts.Edge(anIter.Value());
+            Surface? anElemSurf = GetSurface(anEdge, theTol, theType, theTarget, ref aPos, aParams, ref aGap, ref theStatus);
             if (theStatus != 0 || anElemSurf is null)
             {
                 return null;
@@ -683,7 +689,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         return anElemSurf1;
     }
 
-    private static bool GetSurfaceByLS(in TopoDS_Wire theWire, double theTol, SurfaceKind theTarget, ref CoordinateSystem thePos,
+    private static bool GetSurfaceByLS(in Wire theWire, double theTol, SurfaceKind theTarget, ref CoordinateSystem thePos,
                                        NCollection_Array1<double> theParams, ref double theGap, ref int theStatus)
     {
         int aNbMaxInt = 100;
@@ -730,9 +736,9 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         //
         double aTol = Kerf.Engine.Foundation.Precision.Confusion();
         MultipleVarFunction aPFunc;
-        GeomConvert_FuncSphereLSDist aFuncSph = new(aPoints!);
-        GeomConvert_FuncCylinderLSDist aFuncCyl = new(aPoints!, thePos.Direction());
-        GeomConvert_FuncConeLSDist aFuncCon = new(aPoints!, thePos.Direction());
+        FuncSphereLSDist aFuncSph = new(aPoints!);
+        FuncCylinderLSDist aFuncCyl = new(aPoints!, thePos.Direction());
+        FuncConeLSDist aFuncCon = new(aPoints!, thePos.Direction());
         if (theTarget == SurfaceKind.Sphere)
         {
             aPFunc = aFuncSph;
@@ -810,20 +816,20 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         return false;
     }
 
-    private static Geom_Curve? GetCurve(in TopoDS_Edge theEdge, double theTol, GeomConvert_ConvType theType,
+    private static Curve3D? GetCurve(in Edge theEdge, double theTol, ConvType theType,
                                         CurveKind theTarget, ref double theGap, ref int theStatus)
     {
         theStatus = 0;
-        Geom_Curve? aCurv = BRep_Tool.Curve(theEdge, out Placement aLoc, out double f, out double l);
+        Curve3D? aCurv = Tool.Curve(theEdge, out Placement aLoc, out double f, out double l);
         if (aCurv is null)
         {
             theStatus = 1;
             return aCurv;
         }
-        GeomConvert_CurveToAnaCurve aConv = new(aCurv);
+        CurveToAnaCurve aConv = new(aCurv);
         aConv.SetConvType(theType);
         aConv.SetTarget(theTarget);
-        Geom_Curve? anAnaCurv = null;
+        Curve3D? anAnaCurv = null;
         aConv.ConvertToAnalytical(theTol, ref anAnaCurv, f, l, out double _, out double _);
         if (anAnaCurv is null)
         {
@@ -837,7 +843,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             // the port transforms a copy; the result is the same, and the edge is unchanged.
             if (anAnaCurv.IsFrozen)
             {
-                anAnaCurv = (Geom_Curve)anAnaCurv.Copy();
+                anAnaCurv = (Curve3D)anAnaCurv.Copy();
             }
             anAnaCurv.Transform(aLoc.Transformation());
         }
@@ -893,14 +899,14 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         return aNbPars;
     }
 
-    private static bool SetConicParameters(CurveKind theTarget, Geom_Curve? theConic, ref Frame3D thePos,
+    private static bool SetConicParameters(CurveKind theTarget, Curve3D? theConic, ref Frame3D thePos,
                                            NCollection_Array1<double> theParams)
     {
         if (theConic is null)
         {
             return false;
         }
-        GeomAdaptor_Curve aGAC = new(theConic);
+        CurveAdaptor aGAC = new(theConic);
         if (aGAC.GetType() != theTarget)
         {
             return false;
@@ -959,7 +965,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         return aRef.IsCoaxial(anAx1, anAngTol, aTol) || aRef.IsCoaxial(anAx1Rev, anAngTol, aTol);
     }
 
-    private static bool SetSurfParams(SurfaceKind theTarget, Geom_Surface? theElemSurf, ref CoordinateSystem thePos,
+    private static bool SetSurfParams(SurfaceKind theTarget, Surface? theElemSurf, ref CoordinateSystem thePos,
                                       NCollection_Array1<double> theParams)
     {
         //
@@ -967,7 +973,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         {
             return false;
         }
-        GeomAdaptor_Surface aGAS = new(theElemSurf);
+        SurfaceAdaptor aGAS = new(theElemSurf);
         if (aGAS.GetType() != theTarget)
         {
             return false;
@@ -1081,25 +1087,25 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         return aDevPars;
     }
 
-    private static bool GetSamplePoints(in TopoDS_Wire theWire, double theTol, int theMaxNbInt,
+    private static bool GetSamplePoints(in Wire theWire, double theTol, int theMaxNbInt,
                                         out NCollection_HArray1<Xyz>? thePoints)
     {
         thePoints = null; // OCCT.NET: OCCT leaves the caller's handle unchanged (null) when it returns false
         NCollection_DynamicArray<double> aLengths = new();
-        NCollection_DynamicArray<BRepAdaptor_Curve> aCurves = new();
+        NCollection_DynamicArray<EdgeCurveAdaptor> aCurves = new();
         NCollection_DynamicArray<Xyz> aPoints = new();
         double aTol = Max(1.0e-3, theTol / 10.0);
         double aTotalLength = 0.0;
-        TopoDS_Iterator anEIter = new(theWire);
+        Iterator anEIter = new(theWire);
         for (; anEIter.More(); anEIter.Next())
         {
-            TopoDS_Edge anE = TopoDS.Edge(anEIter.Value());
-            if (BRep_Tool.Degenerated(anE))
+            Edge anE = ShapeCasts.Edge(anEIter.Value());
+            if (Tool.Degenerated(anE))
             {
                 continue;
             }
-            BRepAdaptor_Curve aBAC = new(anE);
-            double aClength = GCPnts_AbscissaPoint.Length(aBAC, aTol);
+            EdgeCurveAdaptor aBAC = new(anE);
+            double aClength = AbscissaPoint.Length(aBAC, aTol);
             aTotalLength += aClength;
             aCurves.Append(aBAC);
             aLengths.Append(aClength);
@@ -1113,16 +1119,16 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         int i, aNb = aLengths.Length();
         for (i = 0; i < aNb; ++i)
         {
-            BRepAdaptor_Curve aC = aCurves[i];
-            double aClength = GCPnts_AbscissaPoint.Length(aC, aTol);
+            EdgeCurveAdaptor aC = aCurves[i];
+            double aClength = AbscissaPoint.Length(aC, aTol);
             int aNbPoints = RealToInt(aClength / aTotalLength * theMaxNbInt + 1);
             aNbPoints = Max(2, aNbPoints);
-            GCPnts_QuasiUniformAbscissa aPointGen = new(aC, aNbPoints);
-            if (!aPointGen.IsDone())
+            QuasiUniformAbscissa aPointGen = new(aC, aNbPoints);
+            if (!aPointGen.IsDone)
             {
                 continue;
             }
-            aNbPoints = aPointGen.NbPoints();
+            aNbPoints = aPointGen.PointCount;
             int j;
             for (j = 1; j <= aNbPoints; ++j)
             {

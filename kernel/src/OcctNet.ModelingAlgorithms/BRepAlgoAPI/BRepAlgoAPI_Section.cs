@@ -5,9 +5,10 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BOPAlgo_Operation;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -40,42 +41,42 @@ public class BRepAlgoAPI_Section : BRepAlgoAPI_BooleanOperation
     }
 
     /// <summary>The section of two shapes, built at once unless <paramref name="PerformNow"/> is false.</summary>
-    public BRepAlgoAPI_Section(in TopoDS_Shape Sh1, in TopoDS_Shape Sh2, bool PerformNow = true)
+    public BRepAlgoAPI_Section(in Shape Sh1, in Shape Sh2, bool PerformNow = true)
         : base(Sh1, Sh2, BOPAlgo_SECTION)
     {
         Init(PerformNow);
     }
 
     /// <summary>The section of two shapes with the intersections already computed by <paramref name="aDSF"/>.</summary>
-    public BRepAlgoAPI_Section(in TopoDS_Shape aS1, in TopoDS_Shape aS2, BOPAlgo_PaveFiller aDSF, bool PerformNow = true)
+    public BRepAlgoAPI_Section(in Shape aS1, in Shape aS2, BOPAlgo_PaveFiller aDSF, bool PerformNow = true)
         : base(aS1, aS2, aDSF, BOPAlgo_SECTION)
     {
         Init(PerformNow);
     }
 
     /// <summary>The section of a shape by a plane.</summary>
-    public BRepAlgoAPI_Section(in TopoDS_Shape Sh, in Plane3D Pl, bool PerformNow = true)
-        : base(Sh, MakeShape(new Geom_Plane(Pl)), BOPAlgo_SECTION)
+    public BRepAlgoAPI_Section(in Shape Sh, in Plane3D Pl, bool PerformNow = true)
+        : base(Sh, MakeShape(new PlaneSurface(Pl)), BOPAlgo_SECTION)
     {
         Init(PerformNow);
     }
 
     /// <summary>The section of a shape by a surface.</summary>
-    public BRepAlgoAPI_Section(in TopoDS_Shape Sh, Geom_Surface Sf, bool PerformNow = true)
+    public BRepAlgoAPI_Section(in Shape Sh, Surface Sf, bool PerformNow = true)
         : base(Sh, MakeShape(Sf), BOPAlgo_SECTION)
     {
         Init(PerformNow);
     }
 
     /// <summary>The section of a surface by a shape.</summary>
-    public BRepAlgoAPI_Section(Geom_Surface Sf, in TopoDS_Shape Sh, bool PerformNow = true)
+    public BRepAlgoAPI_Section(Surface Sf, in Shape Sh, bool PerformNow = true)
         : base(MakeShape(Sf), Sh, BOPAlgo_SECTION)
     {
         Init(PerformNow);
     }
 
     /// <summary>The section of two surfaces.</summary>
-    public BRepAlgoAPI_Section(Geom_Surface Sf1, Geom_Surface Sf2, bool PerformNow = true)
+    public BRepAlgoAPI_Section(Surface Sf1, Surface Sf2, bool PerformNow = true)
         : base(MakeShape(Sf1), MakeShape(Sf2), BOPAlgo_SECTION)
     {
         Init(PerformNow);
@@ -96,30 +97,30 @@ public class BRepAlgoAPI_Section : BRepAlgoAPI_BooleanOperation
     }
 
     /// <summary>Sets the first argument (replacing the objects).</summary>
-    public void Init1(in TopoDS_Shape S1)
+    public void Init1(in Shape S1)
     {
         myArguments.Clear();
         myArguments.Append(S1);
     }
 
     /// <summary>Sets the first argument to a plane.</summary>
-    public void Init1(in Plane3D Pl) => Init1(MakeShape(new Geom_Plane(Pl)));
+    public void Init1(in Plane3D Pl) => Init1(MakeShape(new PlaneSurface(Pl)));
 
     /// <summary>Sets the first argument to a surface.</summary>
-    public void Init1(Geom_Surface Sf) => Init1(MakeShape(Sf));
+    public void Init1(Surface Sf) => Init1(MakeShape(Sf));
 
     /// <summary>Sets the second argument (replacing the tools).</summary>
-    public void Init2(in TopoDS_Shape S2)
+    public void Init2(in Shape S2)
     {
         myTools.Clear();
         myTools.Append(S2);
     }
 
     /// <summary>Sets the second argument to a plane.</summary>
-    public void Init2(in Plane3D Pl) => Init2(MakeShape(new Geom_Plane(Pl)));
+    public void Init2(in Plane3D Pl) => Init2(MakeShape(new PlaneSurface(Pl)));
 
     /// <summary>Sets the second argument to a surface.</summary>
-    public void Init2(Geom_Surface Sf) => Init2(MakeShape(Sf));
+    public void Init2(Surface Sf) => Init2(MakeShape(Sf));
 
     /// <summary>Approximates the section curves as B-splines.</summary>
     public void Approximation(bool B) => myApprox = B;
@@ -144,40 +145,40 @@ public class BRepAlgoAPI_Section : BRepAlgoAPI_BooleanOperation
     /// The face of the first argument on which the section edge <paramref name="E"/> lies, and true; false (and a null
     /// shape) if there is none. OCCT leaves the output untouched when it returns false. The face is published (frozen).
     /// </summary>
-    public bool HasAncestorFaceOn1(in TopoDS_Shape E, out TopoDS_Shape F)
+    public bool HasAncestorFaceOn1(in Shape E, out Shape F)
     {
         bool bRes;
-        F = new TopoDS_Shape();
+        F = new Shape();
         bRes = HasAncestorFace(myDSFiller, 1, E, ref F);
         F.TShape()?.FreezeGraph();
         return bRes;
     }
 
     /// <summary>The face of the second argument on which the section edge <paramref name="E"/> lies (see the first form).</summary>
-    public bool HasAncestorFaceOn2(in TopoDS_Shape E, out TopoDS_Shape F)
+    public bool HasAncestorFaceOn2(in Shape E, out Shape F)
     {
         bool bRes;
-        F = new TopoDS_Shape();
+        F = new Shape();
         bRes = HasAncestorFace(myDSFiller, 2, E, ref F);
         F.TShape()?.FreezeGraph();
         return bRes;
     }
 
-    private static bool HasAncestorFace(BOPAlgo_PaveFiller? pPF, int aIndex, in TopoDS_Shape aE, ref TopoDS_Shape aF)
+    private static bool HasAncestorFace(BOPAlgo_PaveFiller? pPF, int aIndex, in Shape aE, ref Shape aF)
     {
         bool bRes;
         //
         bRes = false;
-        if (aE.IsNull())
+        if (aE.IsNull)
         {
             return bRes;
         }
-        if (aE.ShapeType() != TopAbs_EDGE)
+        if (aE.ShapeType() != ShapeType.Edge)
         {
             return bRes;
         }
         //
-        TopoDS_Shape aF1 = new(), aF2 = new();
+        Shape aF1 = new(), aF2 = new();
         //
         bRes = HasAncestorFaces(pPF!, aE, ref aF1, ref aF2);
         if (!bRes)
@@ -189,7 +190,7 @@ public class BRepAlgoAPI_Section : BRepAlgoAPI_BooleanOperation
         return bRes;
     }
 
-    private static bool HasAncestorFaces(BOPAlgo_PaveFiller pPF, in TopoDS_Shape aEx, ref TopoDS_Shape aF1, ref TopoDS_Shape aF2)
+    private static bool HasAncestorFaces(BOPAlgo_PaveFiller pPF, in Shape aEx, ref Shape aF1, ref Shape aF2)
     {
         int aNbFF, i, j, nE, aNbVC;
         //
@@ -217,7 +218,7 @@ public class BRepAlgoAPI_Section : BRepAlgoAPI_BooleanOperation
                         continue;
                     }
                     //
-                    TopoDS_Shape aE = pDS.Shape(nE);
+                    Shape aE = pDS.Shape(nE);
                     if (aEx.IsSame(aE))
                     {
                         aF1 = pDS.Shape(nF1);
@@ -231,7 +232,7 @@ public class BRepAlgoAPI_Section : BRepAlgoAPI_BooleanOperation
     }
 
     // A face (C2 or smoother surfaces) or a shell on the whole surface, unfrozen (made here, as in OCCT).
-    private static TopoDS_Shape MakeShape(Geom_Surface S)
+    private static Shape MakeShape(Surface S)
     {
         Continuity c = S.Continuity();
         if (c >= C2)

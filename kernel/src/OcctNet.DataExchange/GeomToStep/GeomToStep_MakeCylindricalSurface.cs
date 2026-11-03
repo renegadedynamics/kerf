@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of CylindricalSurface from Geom to a STEP cylindrical_surface.</summary>
@@ -18,7 +20,7 @@ public sealed class GeomToStep_MakeCylindricalSurface : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A cylinder, its position and radius divided by the length factor.</summary>
-    public GeomToStep_MakeCylindricalSurface(Geom_CylindricalSurface CS, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeCylindricalSurface(CylindricalSurface CS, in StepData_Factors theLocalFactors)
     {
         StepGeom_CylindricalSurface CSstep;
         StepGeom_Axis2Placement3d aPosition;
@@ -35,7 +37,7 @@ public sealed class GeomToStep_MakeCylindricalSurface : GeomToStep_Root
     }
 
     /// <summary>A cylinder (default factors).</summary>
-    public GeomToStep_MakeCylindricalSurface(Geom_CylindricalSurface CS) : this(CS, new StepData_Factors())
+    public GeomToStep_MakeCylindricalSurface(CylindricalSurface CS) : this(CS, new StepData_Factors())
     {
     }
 

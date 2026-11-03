@@ -1,15 +1,20 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Text;
 using static Occt.ChFiDS_State;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -96,7 +101,7 @@ internal sealed partial class BlendRecorder
     // -----------------------------------------------------------------------------------------------------------------
     // Geometry
 
-    internal static Geom_BSplineSurface Patch()
+    internal static BSplineSurface Patch()
     {
         var aPoles = new NCollection_Array2<Point3D>(1, 4, 1, 4);
         double[,] aZ =
@@ -120,10 +125,10 @@ internal sealed partial class BlendRecorder
         var aMults = new NCollection_Array1<int>(1, 2);
         aMults[1] = 4;
         aMults[2] = 4;
-        return new Geom_BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 3, 3);
+        return new BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 3, 3);
     }
 
-    internal static Geom_BSplineSurface Wall()
+    internal static BSplineSurface Wall()
     {
         var aPoles = new NCollection_Array2<Point3D>(1, 2, 1, 2);
         for (int i = 1; i <= 2; i++)
@@ -140,35 +145,35 @@ internal sealed partial class BlendRecorder
         var aMults = new NCollection_Array1<int>(1, 2);
         aMults[1] = 2;
         aMults[2] = 2;
-        return new Geom_BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 1, 1);
+        return new BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 1, 1);
     }
 
-    internal static Adaptor3d_Surface Surf(int theId)
+    internal static SurfaceAdaptorBase Surf(int theId)
     {
-        Geom_Surface aS = theId switch
+        Surface aS = theId switch
         {
-            0 => new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))),
-            1 => new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 1, 0), new Direction3D(1, 0, 0))),
-            2 => new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0),
-            3 => new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 3.0),
-            4 => new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(5, 0, 0), new Direction3D(0, 0, 1)), 3.0),
-            5 => new Geom_ConicalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), Math.PI / 6.0, 5.0),
+            0 => new PlaneSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))),
+            1 => new PlaneSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 1, 0), new Direction3D(1, 0, 0))),
+            2 => new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0),
+            3 => new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 3.0),
+            4 => new CylindricalSurface(new CoordinateSystem(new Point3D(5, 0, 0), new Direction3D(0, 0, 1)), 3.0),
+            5 => new ConicalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), Math.PI / 6.0, 5.0),
             6 => Patch(),
             _ => Wall(),
         };
-        return new GeomAdaptor_Surface(aS);
+        return new SurfaceAdaptor(aS);
     }
 
-    internal static Adaptor3d_Curve Guide(int theId)
+    internal static CurveAdaptorBase Guide(int theId)
     {
         return theId switch
         {
-            0 => new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0.0, 10.0),
-            1 => new GeomAdaptor_Curve(new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0), 0.0,
+            0 => new CurveAdaptor(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0.0, 10.0),
+            1 => new CurveAdaptor(new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0), 0.0,
                                        2.0 * Math.PI),
-            2 => new GeomAdaptor_Curve(new Geom_Line(new Point3D(2.5, Math.Sqrt(2.75), 0), new Direction3D(0, 0, 1)), -5.0, 5.0),
-            3 => new GeomAdaptor_Curve(new Geom_Line(new Point3D(1.5, 0, 0), new Direction3D(0, 1, 0)), 0.0, 3.0),
-            _ => new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, -1, 1.5), new Direction3D(1, 0, 0)), -2.0, 12.0),
+            2 => new CurveAdaptor(new LineCurve3D(new Point3D(2.5, Math.Sqrt(2.75), 0), new Direction3D(0, 0, 1)), -5.0, 5.0),
+            3 => new CurveAdaptor(new LineCurve3D(new Point3D(1.5, 0, 0), new Direction3D(0, 1, 0)), 0.0, 3.0),
+            _ => new CurveAdaptor(new LineCurve3D(new Point3D(0, -1, 1.5), new Direction3D(1, 0, 0)), -2.0, 12.0),
         };
     }
 
@@ -600,8 +605,8 @@ internal sealed partial class BlendRecorder
         for (int ip = 0; ip < THE_PAIRS.Length; ip++)
         {
             PairCase C = THE_PAIRS[ip];
-            Adaptor3d_Surface S1 = Surf(C.S1), S2 = Surf(C.S2);
-            Adaptor3d_Curve G = Guide(C.G);
+            SurfaceAdaptorBase S1 = Surf(C.S1), S2 = Surf(C.S2);
+            CurveAdaptorBase G = Guide(C.G);
             for (int choix = 1; choix <= 8; choix++)
             {
                 Line($"case constrad {ip} {choix}");
@@ -698,10 +703,10 @@ internal sealed partial class BlendRecorder
         {
             var I = THE_INVS[ii];
             PairCase C = THE_PAIRS[I.Pair];
-            Adaptor3d_Surface S1 = Surf(C.S1), S2 = Surf(C.S2);
-            Adaptor3d_Curve G = Guide(C.G);
-            Adaptor2d_Curve2d R = new Geom2dAdaptor_Curve(
-                new Geom2d_Line(new Point2D(I.P0[0], I.P0[1]), new Direction2D(I.D0[0], I.D0[1])), -10.0, 10.0);
+            SurfaceAdaptorBase S1 = Surf(C.S1), S2 = Surf(C.S2);
+            CurveAdaptorBase G = Guide(C.G);
+            Curve2DAdaptorBase R = new CurveAdaptor2D(
+                new LineCurve2D(new Point2D(I.P0[0], I.P0[1]), new Direction2D(I.D0[0], I.D0[1])), -10.0, 10.0);
             math_Vector X0 = new(1, 4);
             for (int i = 1; i <= 4; i++)
             {
@@ -758,9 +763,9 @@ internal sealed partial class BlendRecorder
 
         // A surface and a curve.
         {
-            Adaptor3d_Surface S = Surf(0);
-            Adaptor3d_Curve C = Guide(4);
-            Adaptor3d_Curve G = Guide(0);
+            SurfaceAdaptorBase S = Surf(0);
+            CurveAdaptorBase C = Guide(4);
+            CurveAdaptorBase G = Guide(0);
             math_Vector X3 = new(1, 3), X2 = new(1, 2);
             X3[1] = 3.0;
             X3[2] = -0.5;
@@ -853,12 +858,12 @@ internal sealed partial class BlendRecorder
         Int(Sp.IsClosed() ? 1 : 0);
         Int(Sp.IsPeriodic() ? 1 : 0);
         Hex(Sp.GetTolesp());
-        Pnt(BRep_Tool.Pnt(Sp.FirstVertex()));
-        Pnt(BRep_Tool.Pnt(Sp.LastVertex()));
+        Pnt(Tool.Pnt(Sp.FirstVertex()));
+        Pnt(Tool.Pnt(Sp.LastVertex()));
         End();
         for (int i = 1; i <= n; i++)
         {
-            TopoDS_Edge E = Sp.Edges(i);
+            Edge E = Sp.Edges(i);
             Tag("edge");
             Int(i);
             Int((int)E.Orientation());
@@ -866,11 +871,11 @@ internal sealed partial class BlendRecorder
             Hex(Sp.LastParameter(i));
             Hex(Sp.Length(i));
             Int(Sp.Index(E));
-            TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+            Exploration.Vertices(E, out Vertex V1, out Vertex V2);
             Hex(Sp.Absc(V1));
             Hex(Sp.Absc(V2));
             End();
-            BRepAdaptor_Curve aC = Sp.CurrentElementarySpine(i);
+            EdgeCurveAdaptor aC = Sp.CurrentElementarySpine(i);
             double U = 0.3 * aC.FirstParameter() + 0.7 * aC.LastParameter();
             double A = Sp.Absc(U);
             Sp.Parameter(A, out double U1, true);
@@ -905,54 +910,54 @@ internal sealed partial class BlendRecorder
         RecSpineEval(Sp, Sp.FirstParameter(), Sp.LastParameter());
     }
 
-    internal static TopoDS_Face BoxFace()
+    internal static Face BoxFace()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
-        TopExp_Explorer anExpF = new(aBox, TopAbs_FACE);
-        return TopoDS.Face(anExpF.Current());
+        Shape aBox = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
+        Explorer anExpF = new(aBox, ShapeType.Face);
+        return ShapeCasts.Face(anExpF.Current());
     }
 
-    internal static TopoDS_Face CylinderTopFace()
+    internal static Face CylinderTopFace()
     {
-        TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(5.0, 10.0).Shape();
-        TopExp_Explorer anExpF2 = new(aCyl, TopAbs_FACE);
+        Shape aCyl = new BRepPrimAPI_MakeCylinder(5.0, 10.0).Shape();
+        Explorer anExpF2 = new(aCyl, ShapeType.Face);
         anExpF2.Next();
-        return TopoDS.Face(anExpF2.Current());
+        return ShapeCasts.Face(anExpF2.Current());
     }
 
-    internal static TopoDS_Face BSplineSolidFace(out Geom_BSplineCurve theCurve)
+    internal static Face BSplineSolidFace(out BSplineCurve3D theCurve)
     {
-        Geom_BSplineCurve aBS = GeomConvert.CurveToBSplineCurve(
-            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 4.0), QuasiAngular);
+        BSplineCurve3D aBS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(
+            new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 4.0), QuasiAngular);
         aBS.SetPole(2, new Point3D(aBS.Pole(2).X() * 1.3, aBS.Pole(2).Y() * 0.8, 0.0));
         double f = aBS.FirstParameter(), l = aBS.LastParameter(), m = 0.4 * f + 0.6 * l;
         BRepBuilderAPI_MakeWire aW = new();
         aW.Add(new BRepBuilderAPI_MakeEdge(aBS, f, m).Edge());
         aW.Add(new BRepBuilderAPI_MakeEdge(aBS, m, l).Edge());
-        TopoDS_Face aF = new BRepBuilderAPI_MakeFace(aW.Wire(), true).Face();
-        TopoDS_Shape aPrism = new BRepPrimAPI_MakePrism(aF, new Vector3D(0, 0, 5)).Shape();
-        TopExp_Explorer anExpF3 = new(aPrism, TopAbs_FACE);
+        Face aF = new BRepBuilderAPI_MakeFace(aW.Wire(), true).Face();
+        Shape aPrism = new BRepPrimAPI_MakePrism(aF, new Vector3D(0, 0, 5)).Shape();
+        Explorer anExpF3 = new(aPrism, ShapeType.Face);
         for (; anExpF3.More(); anExpF3.Next())
         {
-            if (BRep_Tool.Surface(TopoDS.Face(anExpF3.Current())) is Geom_Plane)
+            if (Tool.Surface(ShapeCasts.Face(anExpF3.Current())) is PlaneSurface)
             {
                 break;
             }
         }
 
         theCurve = aBS;
-        return TopoDS.Face(anExpF3.Current());
+        return ShapeCasts.Face(anExpF3.Current());
     }
 
     internal void RecSpines()
     {
-        TopoDS_Face aFace = BoxFace();
+        Face aFace = BoxFace();
         {
             Line("case spine-box");
             ChFiDS_Spine Sp = new(1.0e-7);
-            for (TopExp_Explorer anExp = new(aFace, TopAbs_EDGE); anExp.More(); anExp.Next())
+            for (Explorer anExp = new(aFace, ShapeType.Edge); anExp.More(); anExp.Next())
             {
-                Sp.SetEdges(TopoDS.Edge(anExp.Current()));
+                Sp.SetEdges(ShapeCasts.Edge(anExp.Current()));
             }
 
             RecSpine(Sp);
@@ -968,10 +973,10 @@ internal sealed partial class BlendRecorder
         {
             Line("case spine-box-ext");
             ChFiDS_Spine Sp = new();
-            TopExp_Explorer anExp = new(aFace, TopAbs_EDGE);
-            TopoDS_Edge E1 = TopoDS.Edge(anExp.Current());
+            Explorer anExp = new(aFace, ShapeType.Edge);
+            Edge E1 = ShapeCasts.Edge(anExp.Current());
             anExp.Next();
-            TopoDS_Edge E2 = TopoDS.Edge(anExp.Current());
+            Edge E2 = ShapeCasts.Edge(anExp.Current());
             Sp.SetEdges(E2);
             Sp.PutInFirst(E1);
             RecSpine(Sp);
@@ -1002,9 +1007,9 @@ internal sealed partial class BlendRecorder
         {
             Line("case spine-cylinder");
             ChFiDS_Spine Sp = new(1.0e-7);
-            for (TopExp_Explorer anExp = new(CylinderTopFace(), TopAbs_EDGE); anExp.More(); anExp.Next())
+            for (Explorer anExp = new(CylinderTopFace(), ShapeType.Edge); anExp.More(); anExp.Next())
             {
-                Sp.SetEdges(TopoDS.Edge(anExp.Current()));
+                Sp.SetEdges(ShapeCasts.Edge(anExp.Current()));
             }
 
             RecSpine(Sp);
@@ -1018,11 +1023,11 @@ internal sealed partial class BlendRecorder
 
         {
             Line("case spine-bspline");
-            TopoDS_Face aBSFace = BSplineSolidFace(out Geom_BSplineCurve aBS);
+            Face aBSFace = BSplineSolidFace(out BSplineCurve3D aBS);
             ChFiDS_FilSpine Sp = new(1.0e-7);
-            for (TopExp_Explorer anExp = new(aBSFace, TopAbs_EDGE); anExp.More(); anExp.Next())
+            for (Explorer anExp = new(aBSFace, ShapeType.Edge); anExp.More(); anExp.Next())
             {
-                Sp.SetEdges(TopoDS.Edge(anExp.Current()));
+                Sp.SetEdges(ShapeCasts.Edge(anExp.Current()));
             }
 
             RecSpine(Sp);
@@ -1067,8 +1072,8 @@ internal sealed partial class BlendRecorder
 
         {
             Line("case elspine");
-            Geom_BSplineCurve aBS = GeomConvert.CurveToBSplineCurve(
-                new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 4.0), QuasiAngular);
+            BSplineCurve3D aBS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(
+                new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 4.0), QuasiAngular);
             aBS.SetPeriodic();
             ChFiDS_ElSpine anEls = new();
             anEls.SetCurve(aBS);
@@ -1087,7 +1092,7 @@ internal sealed partial class BlendRecorder
             Int(anEls.NbVertices());
             Hex(anEls.Resolution(1.0e-3));
             End();
-            Adaptor3d_Curve aCopy = anEls.ShallowCopy();
+            CurveAdaptorBase aCopy = anEls.ShallowCopy();
             for (int k = 0; k <= 8; k++)
             {
                 double U = 6.0 * k / 8.0;

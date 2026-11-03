@@ -1,5 +1,8 @@
+using Kerf.Engine.Construction.Values;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -89,10 +92,10 @@ public class IntToolsTests
         Add(-1, 1.0, 1.0);   // unknown type: unchanged
         IntTools.FindRootStates(aSeq, 1.0e-10);
 
-        (TopAbs_State, TopAbs_State)[] anExpected =
+        (Containment, Containment)[] anExpected =
         [
-            (TopAbs_OUT, TopAbs_IN), (TopAbs_IN, TopAbs_OUT), (TopAbs_ON, TopAbs_ON), (TopAbs_OUT, TopAbs_ON),
-            (TopAbs_IN, TopAbs_ON), (TopAbs_ON, TopAbs_OUT), (TopAbs_ON, TopAbs_IN), (TopAbs_UNKNOWN, TopAbs_UNKNOWN),
+            (Out, In), (In, Out), (On, On), (Out, On),
+            (In, On), (On, Out), (On, In), (Unknown, Unknown),
         ];
         Assert.Equal(anExpected, aSeq.Select(r => (r.StateBefore(), r.StateAfter())));
     }
@@ -100,11 +103,11 @@ public class IntToolsTests
     [Fact]
     public void Length_OfEdges()
     {
-        TopoDS_Edge aLine = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(3, 4, 0)).Edge();
+        Edge aLine = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(3, 4, 0)).Edge();
         Assert.Equal(5.0, IntTools.Length(aLine), 1.0e-12);
 
         Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
-        TopoDS_Edge anArc = new BRepBuilderAPI_MakeEdge(aCirc, 0.0, Math.PI / 2).Edge();
+        Edge anArc = new BRepBuilderAPI_MakeEdge(aCirc, 0.0, Math.PI / 2).Edge();
         Assert.Equal(Math.PI, IntTools.Length(anArc), 1.0e-9);
 
     }
@@ -113,25 +116,25 @@ public class IntToolsTests
     public void Parameter_ByCurveType()
     {
         double aPar = -1.0;
-        Geom_Line aLine = new(new Point3D(1, 0, 0), new Direction3D(1, 0, 0));
+        LineCurve3D aLine = new(new Point3D(1, 0, 0), new Direction3D(1, 0, 0));
         Assert.Equal(0, IntTools.Parameter(new Point3D(4, 1, 0), aLine, ref aPar));
         Assert.Equal(3.0, aPar, 1.0e-15);
 
-        Geom_Circle aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
+        CircleCurve3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         Assert.Equal(0, IntTools.Parameter(new Point3D(0, 5, 0), aCircle, ref aPar));
         Assert.Equal(Math.PI / 2, aPar, 1.0e-15);
 
-        Geom_Ellipse anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 3.0, 1.0);
+        EllipseCurve3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 3.0, 1.0);
         Assert.Equal(0, IntTools.Parameter(new Point3D(-3, 0, 0), anEllipse, ref aPar));
         Assert.Equal(Math.PI, aPar, 1.0e-12);
 
         NCollection_Array1<Point3D> aPoles = NCollection_Array1<Point3D>.From([new Point3D(0, 0, 0), new Point3D(1, 2, 0), new Point3D(2, 0, 0)]);
-        Geom_BezierCurve aBezier = new(aPoles);
+        BezierCurve3D aBezier = new(aPoles);
         Assert.Equal(0, IntTools.Parameter(aBezier.Value(0.3), aBezier, ref aPar));
         Assert.Equal(0.3, aPar, 1.0e-9);
 
         aPar = -1.0;
-        Geom_OffsetCurve anOffset = new(aCircle, 1.0, new Direction3D(0, 0, 1));
+        OffsetCurve3D anOffset = new(aCircle, 1.0, new Direction3D(0, 0, 1));
         Assert.Equal(1, IntTools.Parameter(new Point3D(3, 0, 0), anOffset, ref aPar));
         Assert.Equal(-1.0, aPar); // untouched
     }
@@ -139,23 +142,23 @@ public class IntToolsTests
     [Fact]
     public void GetRadius_LineCircleAndThreePoints()
     {
-        TopoDS_Edge aLine = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(3, 4, 0)).Edge();
-        Assert.Equal(1, IntTools.GetRadius(new BRepAdaptor_Curve(aLine), 0.0, 1.0, out _));
+        Edge aLine = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(3, 4, 0)).Edge();
+        Assert.Equal(1, IntTools.GetRadius(new EdgeCurveAdaptor(aLine), 0.0, 1.0, out _));
 
         Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
-        TopoDS_Edge anArc = new BRepBuilderAPI_MakeEdge(aCirc, 0.0, Math.PI).Edge();
-        Assert.Equal(0, IntTools.GetRadius(new BRepAdaptor_Curve(anArc), 0.0, 1.0, out double aR));
+        Edge anArc = new BRepBuilderAPI_MakeEdge(aCirc, 0.0, Math.PI).Edge();
+        Assert.Equal(0, IntTools.GetRadius(new EdgeCurveAdaptor(anArc), 0.0, 1.0, out double aR));
         Assert.Equal(2.0, aR);
 
         // an ellipse: the circle through three points of it
         Ellipse3D anElips = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 3.0, 1.0);
-        TopoDS_Edge anEllipseEdge = new BRepBuilderAPI_MakeEdge(anElips, 0.0, Math.PI).Edge();
-        Assert.Equal(0, IntTools.GetRadius(new BRepAdaptor_Curve(anEllipseEdge), -0.1, 0.1, out aR));
-        gce_MakeCirc aCheck = new(global::Kerf.Engine.Geometry.ElCLib.Value(-0.1, anElips), global::Kerf.Engine.Geometry.ElCLib.Value(0.0, anElips), global::Kerf.Engine.Geometry.ElCLib.Value(0.1, anElips));
+        Edge anEllipseEdge = new BRepBuilderAPI_MakeEdge(anElips, 0.0, Math.PI).Edge();
+        Assert.Equal(0, IntTools.GetRadius(new EdgeCurveAdaptor(anEllipseEdge), -0.1, 0.1, out aR));
+        MakeCirc aCheck = new(global::Kerf.Engine.Geometry.ElCLib.Value(-0.1, anElips), global::Kerf.Engine.Geometry.ElCLib.Value(0.0, anElips), global::Kerf.Engine.Geometry.ElCLib.Value(0.1, anElips));
         Assert.Equal(aCheck.Value().Radius(), aR);
 
         // three coincident points: gce_MakeCirc makes a circle of radius 0
-        Assert.Equal(0, IntTools.GetRadius(new BRepAdaptor_Curve(anEllipseEdge), 0.5, 0.5, out aR));
+        Assert.Equal(0, IntTools.GetRadius(new EdgeCurveAdaptor(anEllipseEdge), 0.5, 0.5, out aR));
         Assert.Equal(0.0, aR);
     }
 
@@ -163,14 +166,14 @@ public class IntToolsTests
     public void PrepareArgs_LineAndCircle()
     {
         NCollection_Array1<double> anArgs = new(1, 1);
-        TopoDS_Edge aLine = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
-        Assert.Equal(0, IntTools.PrepareArgs(new BRepAdaptor_Curve(aLine), 10.0, 0.0, 4, 0.01, anArgs));
+        Edge aLine = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
+        Assert.Equal(0, IntTools.PrepareArgs(new EdgeCurveAdaptor(aLine), 10.0, 0.0, 4, 0.01, anArgs));
         Assert.Equal(0, anArgs.Lower());
         Assert.Equal(new[] { 0.0, 2.5, 5.0, 7.5, 10.0 }, Enumerable.Range(0, anArgs.Length()).Select(anArgs.Value));
 
         Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
-        TopoDS_Edge anArc = new BRepBuilderAPI_MakeEdge(aCirc, 0.0, Math.PI).Edge();
-        Assert.Equal(0, IntTools.PrepareArgs(new BRepAdaptor_Curve(anArc), Math.PI, 0.0, 2, 0.001, anArgs));
+        Edge anArc = new BRepBuilderAPI_MakeEdge(aCirc, 0.0, Math.PI).Edge();
+        Assert.Equal(0, IntTools.PrepareArgs(new EdgeCurveAdaptor(anArc), Math.PI, 0.0, 2, 0.001, anArgs));
         double[] aValues = Enumerable.Range(0, anArgs.Length()).Select(anArgs.Value).ToArray();
         Assert.True(aValues.Length > 3); // refined by the deflection
         Assert.Equal(0.0, aValues[0]);
@@ -182,7 +185,7 @@ public class IntToolsTests
         }
 
         // a step below 1e-5 isn't refined
-        Assert.Equal(0, IntTools.PrepareArgs(new BRepAdaptor_Curve(anArc), 1.0e-5, 0.0, 2, 0.001, anArgs));
+        Assert.Equal(0, IntTools.PrepareArgs(new EdgeCurveAdaptor(anArc), 1.0e-5, 0.0, 2, 0.001, anArgs));
         Assert.Equal(3, anArgs.Length());
     }
 }

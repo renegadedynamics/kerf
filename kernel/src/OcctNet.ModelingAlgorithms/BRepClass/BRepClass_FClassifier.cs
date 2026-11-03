@@ -6,6 +6,7 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -52,7 +53,7 @@ public class BRepClass_FClassifier
     }
 
     /// <summary>The result of the classification.</summary>
-    public TopAbs_State State() => TopClass_FaceClassifier.State(rejected, nowires, myClassifier);
+    public Containment State() => TopClass_FaceClassifier.State(rejected, nowires, myClassifier);
 
     /// <summary>True when the state was found by a rejection: it is OUT.</summary>
     public bool Rejected() => rejected;

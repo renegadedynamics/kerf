@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -66,15 +68,15 @@ internal static class SWDRAWShapeCustomCommands
         }
         string arg1 = argv[1];
         string arg2 = argv[2];
-        TopoDS_Shape Shape = theDI.GetShape(arg2);
-        if (Shape.IsNull())
+        Shape Shape = theDI.GetShape(arg2);
+        if (Shape.IsNull)
         {
             di.Append("Shape unknown : ").Append(arg2).Append("\n");
             return 1 /* Error */;
         }
 
-        TopoDS_Shape result = ShapeCustom.DirectFaces(Shape);
-        if (result.IsNull())
+        Shape result = ShapeCustom.DirectFaces(Shape);
+        if (result.IsNull)
         {
             di.Append("NO RESULT\n");
             return 1;
@@ -118,7 +120,7 @@ internal static class SWDRAWShapeCustomCommands
         return aNum;
     }
 
-    private static void expcurv2d(Geom2d_Curve? aCurve, NCollection_Array2<int> Nb, int Degree, int MaxSeg, int theCont,
+    private static void expcurv2d(Curve2D? aCurve, NCollection_Array2<int> Nb, int Degree, int MaxSeg, int theCont,
                                   double theFirst, double theLast)
     {
         if (aCurve is null)
@@ -126,32 +128,32 @@ internal static class SWDRAWShapeCustomCommands
             return;
         }
 
-        if (aCurve is Geom2d_TrimmedCurve aTrimmed)
+        if (aCurve is TrimmedCurve2D aTrimmed)
         {
             expcurv2d(aTrimmed.BasisCurve(), Nb, Degree, MaxSeg, theCont, theFirst, theLast);
             return;
         }
-        if (aCurve is Geom2d_OffsetCurve anOffset)
+        if (aCurve is OffsetCurve2D anOffset)
         {
             expcurv2d(anOffset.BasisCurve(), Nb, Degree, MaxSeg, theCont, theFirst, theLast);
             return;
         }
         int aCont = ContToInteger(aCurve.Continuity());
-        if (aCurve is Geom2d_BSplineCurve Bs)
+        if (aCurve is BSplineCurve2D Bs)
         {
             if (Bs.Degree() > Degree)
             {
                 Nb[1, 1]++;
             }
-            if (Bs.NbKnots() - 1 > MaxSeg)
+            if (Bs.KnotCount - 1 > MaxSeg)
             {
                 Nb[1, 2]++;
             }
-            if (Bs.IsRational())
+            if (Bs.IsRational)
             {
                 Nb[1, 3]++;
             }
-            if (aCont < theCont && Bs.NbKnots() > 2)
+            if (aCont < theCont && Bs.KnotCount > 2)
             {
                 int nbInt = ckeckKnots(Bs.Knots(), theFirst, theLast);
                 if (nbInt > 1)
@@ -161,13 +163,13 @@ internal static class SWDRAWShapeCustomCommands
             }
             return;
         }
-        if (aCurve is Geom2d_BezierCurve Bz)
+        if (aCurve is BezierCurve2D Bz)
         {
             if (Bz.Degree() > Degree)
             {
                 Nb[2, 1]++;
             }
-            if (Bz.IsRational())
+            if (Bz.IsRational)
             {
                 Nb[2, 3]++;
             }
@@ -183,40 +185,40 @@ internal static class SWDRAWShapeCustomCommands
         }
     }
 
-    private static void expcurv(Geom_Curve? aCurve, NCollection_Array2<int> Nb, int Degree, int MaxSeg, int theCont,
+    private static void expcurv(Curve3D? aCurve, NCollection_Array2<int> Nb, int Degree, int MaxSeg, int theCont,
                                 double theFirst, double theLast)
     {
         if (aCurve is null)
         {
             return;
         }
-        if (aCurve is Geom_TrimmedCurve aTrimmed)
+        if (aCurve is TrimmedCurve3D aTrimmed)
         {
             expcurv(aTrimmed.BasisCurve(), Nb, Degree, MaxSeg, theCont, theFirst, theLast);
             return;
         }
-        if (aCurve is Geom_OffsetCurve anOffset)
+        if (aCurve is OffsetCurve3D anOffset)
         {
             expcurv(anOffset.BasisCurve(), Nb, Degree, MaxSeg, theCont, theFirst, theLast);
             return;
         }
 
         int aCont = ContToInteger(aCurve.Continuity());
-        if (aCurve is Geom_BSplineCurve Bs)
+        if (aCurve is BSplineCurve3D Bs)
         {
             if (Bs.Degree() > Degree)
             {
                 Nb[1, 1]++;
             }
-            if (Bs.NbKnots() - 1 > MaxSeg)
+            if (Bs.KnotCount - 1 > MaxSeg)
             {
                 Nb[1, 2]++;
             }
-            if (Bs.IsRational())
+            if (Bs.IsRational)
             {
                 Nb[1, 3]++;
             }
-            if (aCont < theCont && Bs.NbKnots() > 2)
+            if (aCont < theCont && Bs.KnotCount > 2)
             {
                 int nbInt = ckeckKnots(Bs.Knots(), theFirst, theLast);
                 if (nbInt > 1)
@@ -226,13 +228,13 @@ internal static class SWDRAWShapeCustomCommands
             }
             return;
         }
-        if (aCurve is Geom_BezierCurve Bz)
+        if (aCurve is BezierCurve3D Bz)
         {
             if (Bz.Degree() > Degree)
             {
                 Nb[2, 1]++;
             }
-            if (Bz.IsRational())
+            if (Bz.IsRational)
             {
                 Nb[2, 3]++;
             }
@@ -248,41 +250,41 @@ internal static class SWDRAWShapeCustomCommands
         }
     }
 
-    private static void expsurf(Geom_Surface? aSurface, NCollection_Array2<int> NbSurf, int Degree, int MaxSeg, int theCont)
+    private static void expsurf(Surface? aSurface, NCollection_Array2<int> NbSurf, int Degree, int MaxSeg, int theCont)
     {
         if (aSurface is null)
         {
             return;
         }
-        if (aSurface is Geom_SweptSurface aSwept)
+        if (aSurface is SweptSurface aSwept)
         {
-            Geom_Curve BasCurve = aSwept.BasisCurve();
+            Curve3D BasCurve = aSwept.BasisCurve();
             expcurv(BasCurve, NbSurf, Degree, MaxSeg, theCont, BasCurve.FirstParameter(), BasCurve.LastParameter());
             return;
         }
-        if (aSurface is Geom_RectangularTrimmedSurface aTrimmed)
+        if (aSurface is TrimmedSurface aTrimmed)
         {
             expsurf(aTrimmed.BasisSurface(), NbSurf, Degree, MaxSeg, theCont);
             return;
         }
-        if (aSurface is Geom_OffsetSurface anOffset)
+        if (aSurface is OffsetSurface anOffset)
         {
             expsurf(anOffset.BasisSurface(), NbSurf, Degree, MaxSeg, theCont);
             return;
         }
         int aCont = ContToInteger(aSurface.Continuity());
 
-        if (aSurface is Geom_BSplineSurface BS)
+        if (aSurface is BSplineSurface BS)
         {
             if (BS.UDegree() > Degree || BS.VDegree() > Degree)
             {
                 NbSurf[1, 1]++;
             }
-            if (((BS.NbUKnots() - 1) * (BS.NbVKnots() - 1)) > MaxSeg)
+            if (((BS.UKnotCount - 1) * (BS.VKnotCount - 1)) > MaxSeg)
             {
                 NbSurf[1, 2]++;
             }
-            if (BS.IsURational() || BS.IsVRational())
+            if (BS.IsURational || BS.IsVRational)
             {
                 NbSurf[1, 3]++;
             }
@@ -292,13 +294,13 @@ internal static class SWDRAWShapeCustomCommands
             }
             return;
         }
-        if (aSurface is Geom_BezierSurface BZ)
+        if (aSurface is BezierSurface BZ)
         {
             if (BZ.UDegree() > Degree || BZ.VDegree() > Degree)
             {
                 NbSurf[2, 1]++;
             }
-            if (BZ.IsURational() || BZ.IsVRational())
+            if (BZ.IsURational || BZ.IsVRational)
             {
                 NbSurf[2, 3]++;
             }
@@ -308,7 +310,7 @@ internal static class SWDRAWShapeCustomCommands
             }
             return;
         }
-        if (aSurface is Geom_Plane)
+        if (aSurface is PlaneSurface)
         {
             NbSurf[1, 5]++;
         }
@@ -343,7 +345,7 @@ internal static class SWDRAWShapeCustomCommands
             return 1 /* Error */;
         }
         string arg2 = argv[1];
-        TopoDS_Shape Shape = theDI.GetShape(arg2);
+        Shape Shape = theDI.GetShape(arg2);
         int Degree = theDI.Atoi(argv[2]);
         int MaxSeg = theDI.Atoi(argv[3]);
         Continuity aCont3 = C0;
@@ -365,28 +367,28 @@ internal static class SWDRAWShapeCustomCommands
         NbSurf.Init(0);
         NbCurv.Init(0);
         NbCurv2d.Init(0);
-        if (Shape.IsNull())
+        if (Shape.IsNull)
         {
             di.Append("Shape unknown: ").Append(arg2).Append("\n");
             return 1 /* Error */;
         }
 
-        for (var Ex = new TopExp_Explorer(Shape, TopAbs_ShapeEnum.TopAbs_FACE); Ex.More(); Ex.Next())
+        for (var Ex = new Explorer(Shape, ShapeType.Face); Ex.More(); Ex.Next())
         {
-            TopoDS_Face F = TopoDS.Face(Ex.Current());
-            Geom_Surface? aSurface = BRep_Tool.Surface(F, out Placement L);
+            Face F = ShapeCasts.Face(Ex.Current());
+            Surface? aSurface = Tool.Surface(F, out Placement L);
             expsurf(aSurface, NbSurf, Degree, MaxSeg, aCont);
 
-            for (var exp = new TopExp_Explorer(F, TopAbs_ShapeEnum.TopAbs_EDGE); exp.More(); exp.Next())
+            for (var exp = new Explorer(F, ShapeType.Edge); exp.More(); exp.Next())
             {
-                TopoDS_Edge E = TopoDS.Edge(exp.Current());
-                if (BRep_Tool.IsClosed(E, F))
+                Edge E = ShapeCasts.Edge(exp.Current());
+                if (Tool.IsClosed(E, F))
                 {
                     nbSeam++;
                 }
-                Geom_Curve? aCurve = BRep_Tool.Curve(E, out L, out double First, out double Last);
+                Curve3D? aCurve = Tool.Curve(E, out L, out double First, out double Last);
                 expcurv(aCurve, NbCurv, Degree, MaxSeg, aCont, First, Last);
-                Geom2d_Curve? aCurve2d = BRep_Tool.CurveOnSurface(E, F, out double First2d, out double Last2d);
+                Curve2D? aCurve2d = Tool.CurveOnSurface(E, F, out double First2d, out double Last2d);
                 expcurv2d(aCurve2d, NbCurv2d, Degree, MaxSeg, aCont, First2d, Last2d);
             }
         }
@@ -432,15 +434,15 @@ internal static class SWDRAWShapeCustomCommands
             return 1 /* Error */;
         }
         string arg2 = argv[2];
-        TopoDS_Shape Shape = theDI.GetShape(arg2);
-        if (Shape.IsNull())
+        Shape Shape = theDI.GetShape(arg2);
+        if (Shape.IsNull)
         {
             di.Append("Shape unknown: ").Append(arg2).Append("\n");
             return 1 /* Error */;
         }
 
-        TopoDS_Shape result = ShapeCustom.ScaleShape(Shape, theDI.Atof(argv[3]));
-        if (result.IsNull())
+        Shape result = ShapeCustom.ScaleShape(Shape, theDI.Atof(argv[3]));
+        if (result.IsNull)
         {
             di.Append("NO RESULT\n");
             return 1;
@@ -462,8 +464,8 @@ internal static class SWDRAWShapeCustomCommands
             return 1 /* Error */;
         }
         string arg2 = argv[2];
-        TopoDS_Shape Shape = theDI.GetShape(arg2);
-        if (Shape.IsNull())
+        Shape Shape = theDI.GetShape(arg2);
+        if (Shape.IsNull)
         {
             di.Append("Shape unknown: ").Append(arg2).Append("\n");
             return 1 /* Error */;
@@ -480,10 +482,10 @@ internal static class SWDRAWShapeCustomCommands
         }
 
         var aParameters = new ShapeCustom_RestrictionParameters();
-        TopoDS_Shape result = ShapeCustom.BSplineRestriction(Shape, theDI.Atof(argv[3]), theDI.Atof(argv[4]),
+        Shape result = ShapeCustom.BSplineRestriction(Shape, theDI.Atof(argv[3]), theDI.Atof(argv[4]),
                                                              theDI.Atoi(argv[5]), theDI.Atoi(argv[6]), aCont3, aCont2,
                                                              theDI.Atoi(argv[9]) != 0, theDI.Atoi(argv[10]) != 0, aParameters);
-        if (result.IsNull())
+        if (result.IsNull)
         {
             di.Append("NO RESULT\n");
             return 1;
@@ -511,15 +513,15 @@ internal static class SWDRAWShapeCustomCommands
 
         string arg1 = argv[1];
         string arg2 = argv[2];
-        TopoDS_Shape Shape = theDI.GetShape(arg2);
-        if (Shape.IsNull())
+        Shape Shape = theDI.GetShape(arg2);
+        if (Shape.IsNull)
         {
             di.Append("Shape unknown : ").Append(arg2).Append("\n");
             return 1;
         }
 
-        TopoDS_Shape result = ShapeCustom.ConvertToRevolution(Shape);
-        if (result.IsNull())
+        Shape result = ShapeCustom.ConvertToRevolution(Shape);
+        if (result.IsNull)
         {
             di.Append("NO RESULT\n");
             return 1;

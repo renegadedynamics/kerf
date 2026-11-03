@@ -1,12 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Occt;
 using static Occt.BRepCheck_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite;
 
@@ -41,8 +44,8 @@ internal static class BRepTestCheckCommands
             return 1;
         }
 
-        TopoDS_Edge aE = TopoDS.Edge(theDI.GetShape(a[1], TopAbs_EDGE, true));
-        if (aE.IsNull())
+        Edge aE = ShapeCasts.Edge(theDI.GetShape(a[1], ShapeType.Edge, true));
+        if (aE.IsNull)
         {
             return 1;
         }
@@ -76,12 +79,12 @@ internal static class BRepTestCheckCommands
         public readonly DrawInterpreter DI = theDI;
 
         // OCCT: NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>, TopTools_ShapeMapHasher>
-        public readonly Dictionary<TopoDS_Shape, List<TopoDS_Shape>> theMap = new(TopTools_ShapeMapHasher.Instance);
+        public readonly Dictionary<Shape, List<Shape>> theMap = new(ShapeHasher.Instance);
 
         public int nbfaulty;
 
         // OCCT keeps the drawables; their names and shapes are what FindNamed reads
-        public readonly List<(string Name, TopoDS_Shape Shape)> lfaulty = [];
+        public readonly List<(string Name, Shape Shape)> lfaulty = [];
 
         public string checkfaultyname = "faulty_";
     }
@@ -89,9 +92,9 @@ internal static class BRepTestCheckCommands
     // -------------------------------------------------------------------------------------------------------------
     // checkshape
 
-    private static bool FindNamed(DumpState theState, in TopoDS_Shape S, out string Name)
+    private static bool FindNamed(DumpState theState, in Shape S, out string Name)
     {
-        foreach ((string aName, TopoDS_Shape aShape) in theState.lfaulty)
+        foreach ((string aName, Shape aShape) in theState.lfaulty)
         {
             if (aShape.IsSame(S))
             {
@@ -104,9 +107,9 @@ internal static class BRepTestCheckCommands
         return false;
     }
 
-    private static bool Contains(List<TopoDS_Shape> L, in TopoDS_Shape S)
+    private static bool Contains(List<Shape> L, in Shape S)
     {
-        foreach (TopoDS_Shape aShape in L)
+        foreach (Shape aShape in L)
         {
             if (aShape.IsSame(S))
             {
@@ -118,7 +121,7 @@ internal static class BRepTestCheckCommands
     }
 
     /// <summary>Names a faulty shape faulty_N and binds it (DBRep::Set), as Draw does.</summary>
-    private static string NewFaulty(DumpState theState, in TopoDS_Shape S)
+    private static string NewFaulty(DumpState theState, in Shape S)
     {
         theState.nbfaulty++;
         string aName = theState.checkfaultyname + theState.nbfaulty.ToString(CultureInfo.InvariantCulture);
@@ -127,12 +130,12 @@ internal static class BRepTestCheckCommands
         return aName;
     }
 
-    private static void PrintSub(StringBuilder OS, DumpState theState, BRepCheck_Analyzer Ana, in TopoDS_Shape S, TopAbs_ShapeEnum Subtype)
+    private static void PrintSub(StringBuilder OS, DumpState theState, BRepCheck_Analyzer Ana, in Shape S, ShapeType Subtype)
     {
-        for (var exp = new TopExp_Explorer(S, Subtype); exp.More(); exp.Next())
+        for (var exp = new Explorer(S, Subtype); exp.More(); exp.Next())
         {
             BRepCheck_Result res = Ana.Result(exp.Current())!;
-            TopoDS_Shape sub = exp.Current();
+            Shape sub = exp.Current();
             for (res.InitContextIterator(); res.MoreShapeInContext(); res.NextShapeInContext())
             {
                 if (res.ContextualShape().IsSame(S) && !Contains(theState.theMap[sub], S))
@@ -174,14 +177,14 @@ internal static class BRepTestCheckCommands
         }
     }
 
-    private static void Print(StringBuilder OS, DumpState theState, BRepCheck_Analyzer Ana, in TopoDS_Shape S)
+    private static void Print(StringBuilder OS, DumpState theState, BRepCheck_Analyzer Ana, in Shape S)
     {
-        for (var iter = new TopoDS_Iterator(S); iter.More(); iter.Next())
+        for (var iter = new Iterator(S); iter.More(); iter.Next())
         {
             Print(OS, theState, Ana, iter.Value());
         }
 
-        TopAbs_ShapeEnum styp = S.ShapeType();
+        ShapeType styp = S.ShapeType();
         if (Ana.Result(S) is { } aResult && !theState.theMap.ContainsKey(S))
         {
             NCollection_List<BRepCheck_Status> aStatuses = aResult.Status();
@@ -201,22 +204,22 @@ internal static class BRepTestCheckCommands
 
         switch (styp)
         {
-            case TopAbs_EDGE:
-                PrintSub(OS, theState, Ana, S, TopAbs_VERTEX);
+            case ShapeType.Edge:
+                PrintSub(OS, theState, Ana, S, ShapeType.Vertex);
                 break;
-            case TopAbs_WIRE:
-                PrintSub(OS, theState, Ana, S, TopAbs_EDGE);
-                PrintSub(OS, theState, Ana, S, TopAbs_VERTEX);
+            case ShapeType.Wire:
+                PrintSub(OS, theState, Ana, S, ShapeType.Edge);
+                PrintSub(OS, theState, Ana, S, ShapeType.Vertex);
                 break;
-            case TopAbs_FACE:
-                PrintSub(OS, theState, Ana, S, TopAbs_WIRE);
-                PrintSub(OS, theState, Ana, S, TopAbs_EDGE);
-                PrintSub(OS, theState, Ana, S, TopAbs_VERTEX);
+            case ShapeType.Face:
+                PrintSub(OS, theState, Ana, S, ShapeType.Wire);
+                PrintSub(OS, theState, Ana, S, ShapeType.Edge);
+                PrintSub(OS, theState, Ana, S, ShapeType.Vertex);
                 break;
-            case TopAbs_SHELL:
+            case ShapeType.Shell:
                 break;
-            case TopAbs_SOLID:
-                PrintSub(OS, theState, Ana, S, TopAbs_SHELL);
+            case ShapeType.Solid:
+                PrintSub(OS, theState, Ana, S, ShapeType.Shell);
                 break;
             default:
                 break;
@@ -224,7 +227,7 @@ internal static class BRepTestCheckCommands
     }
 
     /// <summary>Contextual (modeling) style of output.</summary>
-    private static void ContextualDump(DrawInterpreter theDI, DrawResult theCommands, BRepCheck_Analyzer theAna, in TopoDS_Shape theShape)
+    private static void ContextualDump(DrawInterpreter theDI, DrawResult theCommands, BRepCheck_Analyzer theAna, in Shape theShape)
     {
         var aState = new DumpState(theDI);
         var aSStream = new StringBuilder();
@@ -254,7 +257,7 @@ internal static class BRepTestCheckCommands
         NbProblems[anID]++;
     }
 
-    private static int IndexOfSame(List<TopoDS_Shape> sl, in TopoDS_Shape S)
+    private static int IndexOfSame(List<Shape> sl, in Shape S)
     {
         for (int ii = 0; ii < sl.Count; ii++)
         {
@@ -267,13 +270,13 @@ internal static class BRepTestCheckCommands
         return -1;
     }
 
-    private static void GetProblemSub(DumpState theState, BRepCheck_Analyzer Ana, in TopoDS_Shape Shape, List<TopoDS_Shape> sl, int[] NbProblems,
-                                      TopAbs_ShapeEnum Subtype)
+    private static void GetProblemSub(DumpState theState, BRepCheck_Analyzer Ana, in Shape Shape, List<Shape> sl, int[] NbProblems,
+                                      ShapeType Subtype)
     {
-        for (var exp = new TopExp_Explorer(Shape, Subtype); exp.More(); exp.Next())
+        for (var exp = new Explorer(Shape, Subtype); exp.More(); exp.Next())
         {
             BRepCheck_Result res = Ana.Result(exp.Current())!;
-            TopoDS_Shape sub = exp.Current();
+            Shape sub = exp.Current();
             for (res.InitContextIterator(); res.MoreShapeInContext(); res.NextShapeInContext())
             {
                 if (res.ContextualShape().IsSame(Shape) && !Contains(theState.theMap[sub], Shape))
@@ -301,14 +304,14 @@ internal static class BRepTestCheckCommands
         }
     }
 
-    private static void GetProblemShapes(DumpState theState, BRepCheck_Analyzer Ana, in TopoDS_Shape Shape, List<TopoDS_Shape> sl, int[] NbProblems)
+    private static void GetProblemShapes(DumpState theState, BRepCheck_Analyzer Ana, in Shape Shape, List<Shape> sl, int[] NbProblems)
     {
-        for (var iter = new TopoDS_Iterator(Shape); iter.More(); iter.Next())
+        for (var iter = new Iterator(Shape); iter.More(); iter.Next())
         {
             GetProblemShapes(theState, Ana, iter.Value(), sl, NbProblems);
         }
 
-        TopAbs_ShapeEnum styp = Shape.ShapeType();
+        ShapeType styp = Shape.ShapeType();
         if (Ana.Result(Shape) is { } aResult && !theState.theMap.ContainsKey(Shape))
         {
             BRepCheck_Status aFirst = aResult.Status().First();
@@ -323,18 +326,18 @@ internal static class BRepTestCheckCommands
 
         switch (styp)
         {
-            case TopAbs_EDGE:
-                GetProblemSub(theState, Ana, Shape, sl, NbProblems, TopAbs_VERTEX);
+            case ShapeType.Edge:
+                GetProblemSub(theState, Ana, Shape, sl, NbProblems, ShapeType.Vertex);
                 break;
-            case TopAbs_FACE:
-                GetProblemSub(theState, Ana, Shape, sl, NbProblems, TopAbs_WIRE);
-                GetProblemSub(theState, Ana, Shape, sl, NbProblems, TopAbs_EDGE);
-                GetProblemSub(theState, Ana, Shape, sl, NbProblems, TopAbs_VERTEX);
+            case ShapeType.Face:
+                GetProblemSub(theState, Ana, Shape, sl, NbProblems, ShapeType.Wire);
+                GetProblemSub(theState, Ana, Shape, sl, NbProblems, ShapeType.Edge);
+                GetProblemSub(theState, Ana, Shape, sl, NbProblems, ShapeType.Vertex);
                 break;
-            case TopAbs_SHELL:
+            case ShapeType.Shell:
                 break;
-            case TopAbs_SOLID:
-                GetProblemSub(theState, Ana, Shape, sl, NbProblems, TopAbs_SHELL);
+            case ShapeType.Solid:
+                GetProblemSub(theState, Ana, Shape, sl, NbProblems, ShapeType.Shell);
                 break;
             default:
                 break;
@@ -384,7 +387,7 @@ internal static class BRepTestCheckCommands
 
     /// <summary>Structural (data exchange) style of output.</summary>
     private static void StructuralDump(DrawInterpreter theDI, DrawResult theCommands, BRepCheck_Analyzer theAna, string ShName, string Pref,
-                                       in TopoDS_Shape theShape)
+                                       in Shape theShape)
     {
         theCommands.Append(" -- The Shape ").Append(ShName).Append(" has problems :\n");
         theCommands.Append("  Check                                    Count\n");
@@ -392,7 +395,7 @@ internal static class BRepTestCheckCommands
 
         // OCCT: NCollection_HArray1<int>(1, NumberOfStatus), zeroed
         int[] NbProblems = new int[NumberOfStatus + 1];
-        var sl = new List<TopoDS_Shape>();
+        var sl = new List<Shape>();
         var aState = new DumpState(theDI);
         GetProblemShapes(aState, theAna, theShape, sl, NbProblems);
         aState.theMap.Clear();
@@ -409,23 +412,23 @@ internal static class BRepTestCheckCommands
         theCommands.Append(" ------------------------------------------------\n");
         theCommands.Append("*** Shapes with problems : ").Append(sl.Count).Append("\n");
 
-        var aByType = new (TopAbs_ShapeEnum Type, string Label, string Suffix)[]
+        var aByType = new (ShapeType Type, string Label, string Suffix)[]
         {
-            (TopAbs_VERTEX, "VERTEX", "_v"), (TopAbs_EDGE, "EDGE", "_e"), (TopAbs_WIRE, "WIRE", "_w"), (TopAbs_FACE, "FACE", "_f"),
-            (TopAbs_SHELL, "SHELL", "_s"), (TopAbs_SOLID, "SOLID", "_o"),
+            (ShapeType.Vertex, "VERTEX", "_v"), (ShapeType.Edge, "EDGE", "_e"), (ShapeType.Wire, "WIRE", "_w"), (ShapeType.Face, "FACE", "_f"),
+            (ShapeType.Shell, "SHELL", "_s"), (ShapeType.Solid, "SOLID", "_o"),
         };
-        var B = new BRep_Builder();
-        foreach ((TopAbs_ShapeEnum aType, string aLabel, string aSuffix) in aByType)
+        var B = new BrepBuilder();
+        foreach ((ShapeType aType, string aLabel, string aSuffix) in aByType)
         {
-            List<TopoDS_Shape> aShapes = sl.Where(s => s.ShapeType() == aType).ToList();
+            List<Shape> aShapes = sl.Where(s => s.ShapeType() == aType).ToList();
             if (aShapes.Count == 0)
             {
                 continue;
             }
 
-            TopoDS_Compound comp = new();
+            Compound comp = new();
             B.MakeCompound(ref comp);
-            foreach (TopoDS_Shape aShape in aShapes)
+            foreach (Shape aShape in aShapes)
             {
                 B.Add(comp, aShape);
             }
@@ -480,8 +483,8 @@ internal static class BRepTestCheckCommands
         }
 
         string aShapeName = a[aCurInd];
-        TopoDS_Shape aShape = theDI.GetShape(aShapeName);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(aShapeName);
+        if (aShape.IsNull)
         {
             theCommands.Append(a[aCurInd]).Append(" is not a topological shape!!!\n");
             return 1;
@@ -587,7 +590,7 @@ internal static class BRepTestCheckCommands
         }
 
         int aCompareValue = -1;
-        TopoDS_Shape S = theDI.GetShape(a[1]);
+        Shape S = theDI.GetShape(a[1]);
 
         for (int anAI = 2; anAI < narg; anAI++)
         {
@@ -604,9 +607,9 @@ internal static class BRepTestCheckCommands
 
         // OCCT adds a vertex met an odd number of times and removes it when met again; its map's order follows the
         // TShapes' addresses. The port keeps the vertices met an odd number of times in the order they were first met.
-        var aParity = new Dictionary<TopoDS_Shape, bool>(TopTools_ShapeMapHasher.Instance);
-        var anOrder = new List<TopoDS_Shape>();
-        for (var exp = new TopExp_Explorer(S, TopAbs_VERTEX); exp.More(); exp.Next())
+        var aParity = new Dictionary<Shape, bool>(ShapeHasher.Instance);
+        var anOrder = new List<Shape>();
+        for (var exp = new Explorer(S, ShapeType.Vertex); exp.More(); exp.Next())
         {
             if (aParity.TryGetValue(exp.Current(), out bool anIsIn))
             {
@@ -619,7 +622,7 @@ internal static class BRepTestCheckCommands
             }
         }
 
-        List<TopoDS_Shape> theVertices = anOrder.Where(v => aParity[v]).ToList();
+        List<Shape> theVertices = anOrder.Where(v => aParity[v]).ToList();
         di.Append(" nb alone Vertices : ").Append(theVertices.Count).Append("\n");
 
         if (aCompareValue >= 0)
@@ -635,7 +638,7 @@ internal static class BRepTestCheckCommands
         }
 
         int ipp = 0;
-        foreach (TopoDS_Shape aVertex in theVertices)
+        foreach (Shape aVertex in theVertices)
         {
             ipp++;
             string Name = "alone_" + ipp.ToString(CultureInfo.InvariantCulture);
@@ -658,22 +661,22 @@ internal static class BRepTestCheckCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[1]);
+        Shape S = theDI.GetShape(a[1]);
         double tol;
-        if (S.ShapeType() == TopAbs_EDGE)
+        if (S.ShapeType() == ShapeType.Edge)
         {
-            var bce = new BRepCheck_Edge(TopoDS.Edge(S));
+            var bce = new BRepCheck_Edge(ShapeCasts.Edge(S));
             tol = bce.Tolerance();
             di.Append($"Tolerance de {Address(S)} : {StreamUtilities.FormatReal(tol, 6)}\n");
         }
         else
         {
-            var theEdges = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            for (var exp = new TopExp_Explorer(S, TopAbs_EDGE); exp.More(); exp.Next())
+            var theEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            for (var exp = new Explorer(S, ShapeType.Edge); exp.More(); exp.Next())
             {
                 if (theEdges.Add(exp.Current()))
                 {
-                    var bce = new BRepCheck_Edge(TopoDS.Edge(exp.Current()));
+                    var bce = new BRepCheck_Edge(ShapeCasts.Edge(exp.Current()));
                     tol = bce.Tolerance();
                     di.Append($"Tolerance de {Address(exp.Current())} : {StreamUtilities.FormatReal(tol, 6)}\n");
                 }
@@ -689,6 +692,6 @@ internal static class BRepTestCheckCommands
     /// <c>(void*)&amp;(*S.TShape())</c> as MSVC's stream writes a pointer (16 upper-case hex digits). The port has no
     /// addresses: it writes a number that stays the same for one TShape during the run.
     /// </summary>
-    private static string Address(in TopoDS_Shape S)
+    private static string Address(in Shape S)
         => ((long)RuntimeHelpers.GetHashCode(S.TShape()!)).ToString("X16", CultureInfo.InvariantCulture);
 }

@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using System.Globalization;
 using Occt;
@@ -66,16 +70,16 @@ internal static class GeometryTestCommands
                 var Point = new NCollection_HArray1<Point3D>(1, nbp);
                 for (i = 1; i <= nbp; i++)
                 {
-                    GeomTools.GetReal(iFile, out x);
-                    GeomTools.GetReal(iFile, out y);
-                    GeomTools.GetReal(iFile, out z);
+                    global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(iFile, out x);
+                    global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(iFile, out y);
+                    global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(iFile, out z);
                     Point.SetValue(i, new Point3D(x, y, z));
                 }
                 var anInterpolator = new GeomAPI_Interpolate(Point, false, 1.0e-5);
                 anInterpolator.Perform();
                 if (anInterpolator.IsDone())
                 {
-                    Geom_BSplineCurve C = anInterpolator.Curve();
+                    BSplineCurve3D C = anInterpolator.Curve();
                     DrawTrSurf.Set(theDI, a[1], C);
                 }
             }
@@ -84,15 +88,15 @@ internal static class GeometryTestCommands
                 var PointPtr = new NCollection_HArray1<Point2D>(1, nbp);
                 for (i = 1; i <= nbp; i++)
                 {
-                    GeomTools.GetReal(iFile, out x);
-                    GeomTools.GetReal(iFile, out y);
+                    global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(iFile, out x);
+                    global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(iFile, out y);
                     PointPtr.SetValue(i, new Point2D(x, y));
                 }
                 var a2dInterpolator = new Geom2dAPI_Interpolate(PointPtr, false, 1.0e-5);
                 a2dInterpolator.Perform();
                 if (a2dInterpolator.IsDone())
                 {
-                    Geom2d_BSplineCurve C = a2dInterpolator.Curve();
+                    BSplineCurve2D C = a2dInterpolator.Curve();
                     DrawTrSurf.Set(theDI, a[1], C);
                 }
             }
@@ -117,7 +121,7 @@ internal static class GeometryTestCommands
         Vector3D a_vector = new();
         tolerance = 1.0e-5;
 
-        Geom_BSplineCurve NewCurvePtr;
+        BSplineCurve3D NewCurvePtr;
 
         num_read = 2;
         if (a[num_read] == "p")
@@ -200,8 +204,8 @@ internal static class GeometryTestCommands
         di.Append(name).Append(" ");
         if (P.Distance(P1) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            var L = new Geom_Line(P, new Direction3D(new Vector3D(P, P1)));
-            var CT = new Geom_TrimmedCurve(L, 0.0, P.Distance(P1));
+            var L = new LineCurve3D(P, new Direction3D(new Vector3D(P, P1)));
+            var CT = new TrimmedCurve3D(L, 0.0, P.Distance(P1));
             DrawTrSurf.Set(theDI, name, CT);
         }
         else
@@ -239,13 +243,13 @@ internal static class GeometryTestCommands
 
         var P = new Point3D(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
 
-        Geom_Curve? GC = DrawTrSurf.GetCurve(theDI, a[1]);
-        Geom_Surface? GS;
-        Extrema_ExtAlgo aProjAlgo = Extrema_ExtAlgo.Extrema_ExtAlgo_Grad;
+        Curve3D? GC = DrawTrSurf.GetCurve(theDI, a[1]);
+        Surface? GS;
+        ExtAlgo aProjAlgo = ExtAlgo.ExtAlgo_Grad;
 
         if (n == 6 && a[5].Length > 0 && a[5][0] == 't')
         {
-            aProjAlgo = Extrema_ExtAlgo.Extrema_ExtAlgo_Tree;
+            aProjAlgo = ExtAlgo.ExtAlgo_Tree;
         }
 
         if (GC is null)
@@ -278,16 +282,16 @@ internal static class GeometryTestCommands
             else if (n == 7)
             {
                 var aP2d = new Xy(theDI.Atof(a[5]), theDI.Atof(a[6]));
-                var aGAS = new GeomAdaptor_Surface(GS);
-                var aProjector = new Extrema_GenLocateExtPS(aGAS, global::Kerf.Engine.Foundation.Precision.PConfusion(), global::Kerf.Engine.Foundation.Precision.PConfusion());
+                var aGAS = new SurfaceAdaptor(GS);
+                var aProjector = new GenLocateExtPS(aGAS, global::Kerf.Engine.Foundation.Precision.PConfusion(), global::Kerf.Engine.Foundation.Precision.PConfusion());
                 aProjector.Perform(P, aP2d.X(), aP2d.Y(), false);
-                if (!aProjector.IsDone())
+                if (!aProjector.IsDone)
                 {
                     di.Append("projection failed.");
                     return 0;
                 }
 
-                Extrema_POnSurf aP = aProjector.Point();
+                POnSurf aP = aProjector.Point();
                 aP.Parameter(out double UU, out double VV);
                 ShowProjSolution(theDI, di, 1, P, aP.Value(), UU, VV, true);
             }
@@ -322,12 +326,12 @@ internal static class GeometryTestCommands
             return 1;
         }
 
-        Geom_Surface? GS1 = null, GS2 = null;
+        Surface? GS1 = null, GS2 = null;
         bool isInfinitySolutions = false;
         double aMinDist = double.MaxValue;
         double U1f, U1l, U2f, U2l, V1f = 0.0, V1l = 0.0, V2f = 0.0, V2l = 0.0;
 
-        Geom_Curve? GC1 = DrawTrSurf.GetCurve(theDI, a[1]);
+        Curve3D? GC1 = DrawTrSurf.GetCurve(theDI, a[1]);
         if (GC1 is null)
         {
             GS1 = DrawTrSurf.GetSurface(theDI, a[1]);
@@ -344,7 +348,7 @@ internal static class GeometryTestCommands
             U1l = GC1.LastParameter();
         }
 
-        Geom_Curve? GC2 = DrawTrSurf.GetCurve(theDI, a[2]);
+        Curve3D? GC2 = DrawTrSurf.GetCurve(theDI, a[2]);
         if (GC2 is null)
         {
             GS2 = DrawTrSurf.GetSurface(theDI, a[2]);
@@ -367,7 +371,7 @@ internal static class GeometryTestCommands
         if (GC1 is not null && GC2 is not null)
         {
             var Ex = new GeomAPI_ExtremaCurveCurve(GC1, GC2, U1f, U1l, U2f, U2l);
-            isInfinitySolutions = Ex.Extrema().IsParallel();
+            isInfinitySolutions = Ex.Extrema().IsParallel;
             if (isInfinitySolutions)
             {
                 aMinDist = Ex.LowerDistance();
@@ -388,7 +392,7 @@ internal static class GeometryTestCommands
         else if (GC1 is not null && GS2 is not null)
         {
             var Ex = new GeomAPI_ExtremaCurveSurface(GC1, GS2, U1f, U1l, U2f, U2l, V2f, V2l);
-            isInfinitySolutions = Ex.Extrema().IsParallel();
+            isInfinitySolutions = Ex.Extrema().IsParallel;
             if (isInfinitySolutions)
             {
                 aMinDist = Ex.LowerDistance();
@@ -410,7 +414,7 @@ internal static class GeometryTestCommands
         else if (GS1 is not null && GC2 is not null)
         {
             var Ex = new GeomAPI_ExtremaCurveSurface(GC2, GS1, U2f, U2l, U1f, U1l, V1f, V1l);
-            isInfinitySolutions = Ex.Extrema().IsParallel();
+            isInfinitySolutions = Ex.Extrema().IsParallel;
             if (isInfinitySolutions)
             {
                 aMinDist = Ex.LowerDistance();
@@ -432,7 +436,7 @@ internal static class GeometryTestCommands
         else if (GS1 is not null && GS2 is not null)
         {
             var Ex = new GeomAPI_ExtremaSurfaceSurface(GS1, GS2, U1f, U1l, V1f, V1l, U2f, U2l, V2f, V2l);
-            isInfinitySolutions = Ex.Extrema().IsParallel();
+            isInfinitySolutions = Ex.Extrema().IsParallel;
             if (isInfinitySolutions)
             {
                 aMinDist = Ex.LowerDistance();
@@ -477,8 +481,8 @@ internal static class GeometryTestCommands
                 continue;
             }
 
-            var aL = new Geom_Line(aP1, new Direction3D(new Vector3D(aP1, aP2)));
-            var aCT = new Geom_TrimmedCurve(aL, 0.0, aP1.Distance(aP2));
+            var aL = new LineCurve3D(aP1, new Direction3D(new Vector3D(aP1, aP2)));
+            var aCT = new TrimmedCurve3D(aL, 0.0, aP1.Distance(aP2));
             string aName = $"ext_{aJ}";
             DrawTrSurf.Set(theDI, aName, aCT);
             di.Append(aName).Append(" ");
@@ -517,7 +521,7 @@ internal static class GeometryTestCommands
         {
             for (int i = 1; i <= theNb(); i++)
             {
-                Geom2d_Circle C = new(theSolution(i));
+                CircleCurve2D C = new(theSolution(i));
                 string solname = theName + "_" + i.ToString(CultureInfo.InvariantCulture);
                 DrawTrSurf.Set(theDI, solname, C);
                 di.Append(solname).Append(" ");
@@ -557,7 +561,7 @@ internal static class GeometryTestCommands
         string Word(int theI) => theI < theNArgs ? theArgVals[theI] : "";
 
         double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
-        Geom2d_Curve?[] aC = new Geom2d_Curve?[3];
+        Curve2D?[] aC = new Curve2D?[3];
         Point2D[] aP = [new(), new(), new()];
         double aRadius = -1.0;
 
@@ -618,7 +622,7 @@ internal static class GeometryTestCommands
             }
         }
 
-        static Geom2dGcc_QualifiedCurve Unqualified(Geom2d_Curve? theC) => Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(theC!));
+        static Geom2dGcc_QualifiedCurve Unqualified(Curve2D? theC) => Geom2dGcc.Unqualified(new CurveAdaptor2D(theC!));
 
         if (aNbCurves == 3)
         {
@@ -632,7 +636,7 @@ internal static class GeometryTestCommands
             if (aNbPnts >= 1)
             {
                 // C-C-P
-                Geom2dGcc_Circ2d3Tan aCt3 = new(Unqualified(aC[0]), Unqualified(aC[1]), new Geom2d_CartesianPoint(aP[0]), aTol, 0, 0);
+                Geom2dGcc_Circ2d3Tan aCt3 = new(Unqualified(aC[0]), Unqualified(aC[1]), new CartesianPoint2(aP[0]), aTol, 0, 0);
                 theResult.Append("Solution of type C-C-P is: ");
                 return Solutions(theDI, theResult, aCt3, theArgVals[1]);
             }
@@ -652,7 +656,7 @@ internal static class GeometryTestCommands
             if (aNbPnts == 2)
             {
                 // C-P-P
-                Geom2dGcc_Circ2d3Tan aCt3 = new(Unqualified(aC[0]), new Geom2d_CartesianPoint(aP[0]), new Geom2d_CartesianPoint(aP[1]),
+                Geom2dGcc_Circ2d3Tan aCt3 = new(Unqualified(aC[0]), new CartesianPoint2(aP[0]), new CartesianPoint2(aP[1]),
                                                 aTol, 0);
                 theResult.Append("Solution of type C-P-P is: ");
                 return Solutions(theDI, theResult, aCt3, theArgVals[1]);
@@ -662,14 +666,14 @@ internal static class GeometryTestCommands
                 if (aRadius > 0.0)
                 {
                     // C-P-R
-                    Geom2dGcc_Circ2d2TanRad aCt3 = new(Unqualified(aC[0]), new Geom2d_CartesianPoint(aP[0]), aRadius, aTol);
+                    Geom2dGcc_Circ2d2TanRad aCt3 = new(Unqualified(aC[0]), new CartesianPoint2(aP[0]), aRadius, aTol);
                     theResult.Append("Solution of type C-P-R is: ");
                     return Solutions(theDI, theResult, aCt3, theArgVals[1]);
                 }
                 else
                 {
                     // C-P
-                    Geom2dGcc_Circ2dTanCen aCt2 = new(Unqualified(aC[0]), new Geom2d_CartesianPoint(aP[0]), aTol);
+                    Geom2dGcc_Circ2dTanCen aCt2 = new(Unqualified(aC[0]), new CartesianPoint2(aP[0]), aTol);
                     theResult.Append("Solution of type C-P is: ");
                     return Solutions(theDI, theResult, aCt2, theArgVals[1]);
                 }
@@ -683,15 +687,15 @@ internal static class GeometryTestCommands
             if (aNbPnts == 3)
             {
                 // P-P-P
-                Geom2dGcc_Circ2d3Tan aCt3 = new(new Geom2d_CartesianPoint(aP[0]), new Geom2d_CartesianPoint(aP[1]),
-                                                new Geom2d_CartesianPoint(aP[2]), aTol);
+                Geom2dGcc_Circ2d3Tan aCt3 = new(new CartesianPoint2(aP[0]), new CartesianPoint2(aP[1]),
+                                                new CartesianPoint2(aP[2]), aTol);
                 theResult.Append("Solution of type P-P-P is: ");
                 return Solutions(theDI, theResult, aCt3, theArgVals[1]);
             }
             else if (aRadius > 0)
             {
                 // P-P-R
-                Geom2dGcc_Circ2d2TanRad aCt3 = new(new Geom2d_CartesianPoint(aP[0]), new Geom2d_CartesianPoint(aP[1]), aRadius, aTol);
+                Geom2dGcc_Circ2d2TanRad aCt3 = new(new CartesianPoint2(aP[0]), new CartesianPoint2(aP[1]), aRadius, aTol);
                 theResult.Append("Solution of type P-P-R is: ");
                 return Solutions(theDI, theResult, aCt3, theArgVals[1]);
             }
@@ -717,8 +721,8 @@ internal static class GeometryTestCommands
             return 1;
         }
 
-        Geom2d_Curve? C1 = DrawTrSurf.GetCurve2d(theDI, a[2]);
-        Geom2d_Curve? C2 = DrawTrSurf.GetCurve2d(theDI, a[3]);
+        Curve2D? C1 = DrawTrSurf.GetCurve2d(theDI, a[2]);
+        Curve2D? C2 = DrawTrSurf.GetCurve2d(theDI, a[3]);
 
         if (C1 is null || C2 is null)
         {
@@ -727,13 +731,13 @@ internal static class GeometryTestCommands
 
         if (n >= 5)
         {
-            if (C2 is not Geom2d_Line L)
+            if (C2 is not LineCurve2D L)
             {
                 di.Append("Second argument must be a line");
                 return 1;
             }
             double                ang = theDI.Atof(a[4]) * (Math.PI / 180.0);
-            Geom2dGcc_Lin2dTanObl ct3 = new(Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(C1)),
+            Geom2dGcc_Lin2dTanObl ct3 = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(C1)),
                                             L.Lin2d(),
                                             global::Kerf.Engine.Foundation.Precision.Angular(),
                                             (C1.FirstParameter() + C1.LastParameter()) / 2.0,
@@ -742,7 +746,7 @@ internal static class GeometryTestCommands
             {
                 for (int i = 1; i <= ct3.NbSolutions(); i++)
                 {
-                    Geom2d_Line LS = new(ct3.ThisSolution(i));
+                    LineCurve2D LS = new(ct3.ThisSolution(i));
                     string solname = a[1] + "_" + i.ToString(CultureInfo.InvariantCulture);
                     DrawTrSurf.Set(theDI, solname, LS);
                     di.Append(solname).Append(" ");
@@ -755,8 +759,8 @@ internal static class GeometryTestCommands
         }
         else
         {
-            Geom2dGcc_Lin2d2Tan ct3 = new(Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(C1)),
-                                          Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(C2)),
+            Geom2dGcc_Lin2d2Tan ct3 = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(C1)),
+                                          Geom2dGcc.Unqualified(new CurveAdaptor2D(C2)),
                                           global::Kerf.Engine.Foundation.Precision.Angular(),
                                           (C1.FirstParameter() + C1.LastParameter()) / 2.0,
                                           (C2.FirstParameter() + C2.LastParameter()) / 2.0);
@@ -764,7 +768,7 @@ internal static class GeometryTestCommands
             {
                 for (int i = 1; i <= ct3.NbSolutions(); i++)
                 {
-                    Geom2d_Line LS = new(ct3.ThisSolution(i));
+                    LineCurve2D LS = new(ct3.ThisSolution(i));
                     string solname = a[1] + "_" + i.ToString(CultureInfo.InvariantCulture);
                     DrawTrSurf.Set(theDI, solname, LS);
                     di.Append(solname).Append(" ");
@@ -794,7 +798,7 @@ internal static class GeometryTestCommands
             {
                 if (DrawTrSurf.GetPoint(theDI, a[3], ref P1) && DrawTrSurf.GetPoint(theDI, a[4], ref P2))
                 {
-                    DrawTrSurf.Set(theDI, a[1], new GC_MakeSegment(P1, P2).Value());
+                    DrawTrSurf.Set(theDI, a[1], new MakeSegment(P1, P2).Value());
                     // OCCT
                     return 1;
                 }
@@ -809,12 +813,12 @@ internal static class GeometryTestCommands
                     {
                         DrawTrSurf.GetPoint(theDI, a[6], ref P4);
                         var V1 = new Vector3D(P2, P3);
-                        DrawTrSurf.Set(theDI, a[1], new GC_MakeArcOfCircle(P1, V1, P4).Value());
+                        DrawTrSurf.Set(theDI, a[1], new MakeArcOfCircle(P1, V1, P4).Value());
                         // OCCT
                         return 1;
                     }
 
-                    DrawTrSurf.Set(theDI, a[1], new GC_MakeArcOfCircle(P1, P2, P3).Value());
+                    DrawTrSurf.Set(theDI, a[1], new MakeArcOfCircle(P1, P2, P3).Value());
                     // OCCT
                     return 1;
                 }

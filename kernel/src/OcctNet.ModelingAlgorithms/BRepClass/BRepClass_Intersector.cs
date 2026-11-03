@@ -3,11 +3,19 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Geometry.Properties;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntRes2d_Position;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -25,34 +33,34 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
     {
     }
 
-    private static double MaxTol2DCurEdge(in TopoDS_Vertex theV1,
-                                          in TopoDS_Vertex theV2,
-                                          in TopoDS_Face theF,
+    private static double MaxTol2DCurEdge(in Vertex theV1,
+                                          in Vertex theV2,
+                                          in Face theF,
                                           double theTol)
     {
         double aTolV3D1, aTolV3D2;
-        if (theV1.IsNull())
+        if (theV1.IsNull)
         {
             aTolV3D1 = 0.0;
         }
         else
         {
-            aTolV3D1 = BRep_Tool.Tolerance(theV1);
+            aTolV3D1 = Tool.Tolerance(theV1);
         }
 
-        if (theV2.IsNull())
+        if (theV2.IsNull)
         {
             aTolV3D2 = 0.0;
         }
         else
         {
-            aTolV3D2 = BRep_Tool.Tolerance(theV2);
+            aTolV3D2 = Tool.Tolerance(theV2);
         }
 
         double aTol2D, anUr, aVr;
 
         double aTolV3D = Max(aTolV3D1, aTolV3D2);
-        var aS = new BRepAdaptor_Surface(theF, false);
+        var aS = new FaceSurfaceAdaptor(theF, false);
 
         anUr = aS.UResolution(aTolV3D);
         aVr = aS.VResolution(aTolV3D);
@@ -80,19 +88,19 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
     }
 
     private static bool CheckOn(ref IntRes2d_IntersectionPoint thePntInter,
-                                in TopoDS_Face theF,
+                                in Face theF,
                                 in Line2D theL,
-                                Geom2dAdaptor_Curve theCur,
+                                CurveAdaptor2D theCur,
                                 ref double theTolZ,
                                 double theFin,
                                 double theDeb)
     {
-        var anExtPC2d = new Extrema_ExtPC2d(theL.Location(), theCur);
+        var anExtPC2d = new ExtPC2d(theL.Location(), theCur);
         double aMinDist = RealLast();
         int aMinInd = 0;
-        if (anExtPC2d.IsDone())
+        if (anExtPC2d.IsDone)
         {
-            int aNbPnts = anExtPC2d.NbExt();
+            int aNbPnts = anExtPC2d.ExtCount;
             for (int i = 1; i <= aNbPnts; ++i)
             {
                 double aDist = anExtPC2d.SquareDistance(i);
@@ -144,41 +152,41 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
     private static void CheckSkip(ref Geom2dInt_GInter theInter,
                                   in Line2D theL,
                                   in BRepClass_Edge theE,
-                                  Geom2d_Curve theC2D,
+                                  Curve2D theC2D,
                                   in IntRes2d_Domain theDL,
-                                  Geom2dAdaptor_Curve theCur,
-                                  Geom2dAdaptor_Curve theCGA,
+                                  CurveAdaptor2D theCur,
+                                  CurveAdaptor2D theCGA,
                                   ref double theFin,
                                   ref double theDeb,
                                   double theMaxTol,
                                   ref Point2D thePdeb,
                                   ref Point2D thePfin)
     {
-        if (theE.Edge().IsNull() || theE.Face().IsNull())
+        if (theE.Edge().IsNull || theE.Face().IsNull)
         {
             return;
         }
 
         bool anIsLSkip = false;
-        TopoDS_Vertex aVl; // the last vertex of current edge
+        Vertex aVl; // the last vertex of current edge
 
-        Geom2d_Curve? aSkipC2D;
+        Curve2D? aSkipC2D;
 
-        aVl = TopExp.LastVertex(theE.Edge(), true);
-        if (aVl.IsNull())
+        aVl = Exploration.LastVertex(theE.Edge(), true);
+        if (aVl.IsNull)
         {
             return;
         }
 
-        if (!(BRep_Tool.Tolerance(aVl) > theMaxTol) || theE.NextEdge().IsNull())
+        if (!(Tool.Tolerance(aVl) > theMaxTol) || theE.NextEdge().IsNull)
         {
             return;
         }
 
         double aLdeb = 0.0, aLfin = 0.0;
-        Geom2d_Curve? aLC2D; // the next curve
+        Curve2D? aLC2D; // the next curve
 
-        aLC2D = BRep_Tool.CurveOnSurface(theE.NextEdge(), theE.Face(), out aLdeb, out aLfin);
+        aLC2D = Tool.CurveOnSurface(theE.NextEdge(), theE.Face(), out aLdeb, out aLfin);
         if (aLC2D is null)
         {
             return;
@@ -191,13 +199,13 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
         theL.Coefficients(out anA, out aB, out aC);
 
         double at1 = theFin;
-        if (theE.Edge().Orientation() != TopAbs_FORWARD)
+        if (theE.Edge().Orientation() != Forward)
         {
             at1 = theDeb;
         }
 
         double at2 = aLdeb;
-        if (theE.NextEdge().Orientation() != TopAbs_FORWARD)
+        if (theE.NextEdge().Orientation() != Forward)
         {
             at2 = aLfin;
         }
@@ -230,8 +238,8 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
         else
         {
             anIsLSkip = true;
-            var aMkSeg = new GC_MakeSegment2d(aP1, aP2);
-            if (!aMkSeg.IsDone())
+            var aMkSeg = new MakeSegment2d(aP1, aP2);
+            if (!aMkSeg.IsDone)
             {
                 return;
             }
@@ -259,7 +267,7 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
 
             var aDE = new IntRes2d_Domain(thePdeb, theDeb, atoldeb, thePfin, theFin, atolfin);
             // temporary periodic domain
-            if (theCur.Curve()!.IsPeriodic())
+            if (theCur.Curve()!.IsPeriodic)
             {
                 aDE.SetEquivalentParameters(theCur.FirstParameter(),
                                             theCur.FirstParameter() + theCur.Curve()!.LastParameter()
@@ -279,13 +287,13 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
     public void Perform(in Line2D L, double P, double Tol, in BRepClass_Edge E)
     {
         double deb = 0.0, fin = 0.0, aTolZ = Tol;
-        Geom2d_Curve? aC2D;
+        Curve2D? aC2D;
         //
-        TopoDS_Edge EE = E.Edge();
-        TopoDS_Face F = E.Face();
+        Edge EE = E.Edge();
+        Face F = E.Face();
 
         //
-        aC2D = BRep_Tool.CurveOnSurface(EE, F, out deb, out fin);
+        aC2D = Tool.CurveOnSurface(EE, F, out deb, out fin);
         if (aC2D is null)
         {
             done = false; // !IsDone()
@@ -298,13 +306,13 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
         bool anUseBndBox = E.UseBndBox();
         if (anUseBndBox)
         {
-            BndLib_Add2dCurve.Add(aC2D, deb, fin, 0.0, ref aBond);
+            Add2dCurve.Add(aC2D, deb, fin, 0.0, ref aBond);
             aBond.SetGap(aTolZ);
             aPntF = L.Location();
         }
 
         //
-        var C = new Geom2dAdaptor_Curve(aC2D, deb, fin);
+        var C = new CurveAdaptor2D(aC2D, deb, fin);
         //
         // Case of "ON": direct check of belonging to edge
         // taking into account the tolerance
@@ -320,7 +328,7 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
                 aFinTol = fin + aTolZ;
             }
 
-            var aCurAdaptor = new Geom2dAdaptor_Curve(aC2D, aDebTol, aFinTol);
+            var aCurAdaptor = new CurveAdaptor2D(aC2D, aDebTol, aFinTol);
 
             aStatusOn = CheckOn(ref aPntInter, F, L, aCurAdaptor, ref aTolZ, fin, deb);
             if (aStatusOn)
@@ -334,7 +342,7 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
         //
         if (anUseBndBox)
         {
-            TopExp.Vertices(EE, out TopoDS_Vertex aVF, out TopoDS_Vertex aVL);
+            Exploration.Vertices(EE, out Vertex aVF, out Vertex aVL);
 
             aTolZ = MaxTol2DCurEdge(aVF, aVL, F, Tol);
             aBond.SetGap(aTolZ);
@@ -368,15 +376,15 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
 
         var DE = new IntRes2d_Domain(pdeb, deb, toldeb, pfin, fin, tolfin);
         // temporary periodic domain
-        if (C.Curve()!.IsPeriodic())
+        if (C.Curve()!.IsPeriodic)
         {
             DE.SetEquivalentParameters(C.FirstParameter(),
                                        C.FirstParameter() + C.Curve()!.LastParameter()
                                        - C.Curve()!.FirstParameter());
         }
 
-        var GL = new Geom2d_Line(L);
-        var CGA = new Geom2dAdaptor_Curve(GL);
+        var GL = new LineCurve2D(L);
+        var CGA = new CurveAdaptor2D(GL);
         var Inter = new Geom2dInt_GInter(CGA, DL, C, DE, global::Kerf.Engine.Foundation.Precision.PConfusion(), global::Kerf.Engine.Foundation.Precision.PIntersection());
         //
         // The check is for hitting the intersector to
@@ -402,8 +410,8 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
     {
         Tang = new Direction2D();
         Norm = new Direction2D();
-        Geom2d_Curve aPCurve = BRep_Tool.CurveOnSurface(E.Edge(), E.Face(), out double fpar, out double lpar)!;
-        var Prop = new GeomLProp_CLProps2d(aPCurve, U, 2, global::Kerf.Engine.Foundation.Precision.PConfusion());
+        Curve2D aPCurve = Tool.CurveOnSurface(E.Edge(), E.Face(), out double fpar, out double lpar)!;
+        var Prop = new CLProps2d(aPCurve, U, 2, global::Kerf.Engine.Foundation.Precision.PConfusion());
 
         C = 0.0;
         if (Prop.IsTangentDefined())
@@ -426,14 +434,14 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
         }
     }
 
-    private static void RefineTolerance(in TopoDS_Face aF,
-                                        Geom2dAdaptor_Curve aC,
+    private static void RefineTolerance(in Face aF,
+                                        CurveAdaptor2D aC,
                                         double aT,
                                         ref double aTolZ)
     {
         SurfaceKind aTypeS;
         //
-        var aBAS = new BRepAdaptor_Surface(aF, false);
+        var aBAS = new FaceSurfaceAdaptor(aF, false);
         //
         aTypeS = aBAS.GetType();
         if (aTypeS == SurfaceKind.Cylinder)
@@ -466,7 +474,7 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
         }
     }
 
-    private static void GetTangentAsChord(Geom2d_Curve thePCurve,
+    private static void GetTangentAsChord(Curve2D thePCurve,
                                           ref Direction2D theTangent,
                                           double theParam,
                                           double theFirst,

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
@@ -24,9 +25,9 @@ public class GeomFill_LocationDraft : GeomFill_LocationLaw
 
     private Matrix3x3 Trans;
     private readonly GeomFill_DraftTrihedron myLaw;
-    private Adaptor3d_Surface? mySurf;
-    private Adaptor3d_Curve? myCurve;
-    private Adaptor3d_Curve? myTrimmed;
+    private SurfaceAdaptorBase? mySurf;
+    private CurveAdaptorBase? myCurve;
+    private CurveAdaptorBase? myTrimmed;
     private readonly Direction3D myDir;
     private double myAngle;
     private readonly int myNbPts;
@@ -86,7 +87,7 @@ public class GeomFill_LocationDraft : GeomFill_LocationLaw
     /// Sets the curve and computes the poles on the stop surface (the intersections of the generatrix with the
     /// surface at myNbPts points of the curve).
     /// </summary>
-    public override bool SetCurve(Adaptor3d_Curve C)
+    public override bool SetCurve(CurveAdaptorBase C)
     {
         myCurve = C;
         myTrimmed = C;
@@ -97,7 +98,7 @@ public class GeomFill_LocationDraft : GeomFill_LocationLaw
     }
 
     /// <summary>Sets the stop surface (null for none).</summary>
-    public void SetStopSurf(Adaptor3d_Surface? Surf)
+    public void SetStopSurf(SurfaceAdaptorBase? Surf)
     {
         mySurf = Surf;
         Prepare();
@@ -124,7 +125,7 @@ public class GeomFill_LocationDraft : GeomFill_LocationLaw
         int ii, jj;
         double f, l, t;
         Vector3D D, T = new Vector3D(), N = new Vector3D(), B = new Vector3D();
-        Geom_Line L;
+        LineCurve3D L;
         IntCurveSurface_IntersectionPoint P1, P2;
         f = myCurve!.FirstParameter();
         l = myCurve.LastParameter();
@@ -139,10 +140,10 @@ public class GeomFill_LocationDraft : GeomFill_LocationLaw
             // Generatrice
             D = Math.Cos(myAngle) * B + Math.Sin(myAngle) * N;
 
-            L = new Geom_Line(P, new Direction3D(D));
+            L = new LineCurve3D(P, new Direction3D(D));
 
             IntCurveSurface_HInter Int = new IntCurveSurface_HInter(); // intersection surface / generatrice
-            GeomAdaptor_Curve AC = new GeomAdaptor_Curve(L);
+            CurveAdaptor AC = new CurveAdaptor(L);
             Int.Perform(AC, mySurf); // calcul de l'intersection
 
             if (Int.NbPoints() > 0) // il y a au moins 1 intersection
@@ -170,7 +171,7 @@ public class GeomFill_LocationDraft : GeomFill_LocationLaw
         } // for_ii
     }
 
-    public override Adaptor3d_Curve? GetCurve() => myCurve;
+    public override CurveAdaptorBase? GetCurve() => myCurve;
 
     public override bool D0(double Param, ref Matrix3x3 M, ref Vector3D V)
     {
@@ -263,8 +264,8 @@ public class GeomFill_LocationDraft : GeomFill_LocationLaw
             // la generatrice
             D = Math.Cos(myAngle) * B + Math.Sin(myAngle) * N;
 
-            Geom_Line L = new Geom_Line(P, new Direction3D(D));
-            GeomAdaptor_Curve G = new GeomAdaptor_Curve(L);
+            LineCurve3D L = new LineCurve3D(P, new Direction3D(D));
+            CurveAdaptor G = new CurveAdaptor(L);
 
             Seed(Param, out double W0, out double U0, out double V0);
 
@@ -341,8 +342,8 @@ public class GeomFill_LocationDraft : GeomFill_LocationLaw
             // la generatrice
             D = Math.Cos(myAngle) * B + Math.Sin(myAngle) * N;
 
-            Geom_Line L = new Geom_Line(P, new Direction3D(D));
-            GeomAdaptor_Curve G = new GeomAdaptor_Curve(L);
+            LineCurve3D L = new LineCurve3D(P, new Direction3D(D));
+            CurveAdaptor G = new CurveAdaptor(L);
 
             // recherche de la solution (pt d'intersection  generatrice / surface)
             Seed(Param, out double W0, out double U0, out double V0);
@@ -439,8 +440,8 @@ public class GeomFill_LocationDraft : GeomFill_LocationLaw
             // la generatrice
             D = Math.Cos(myAngle) * B + Math.Sin(myAngle) * N;
 
-            Geom_Line L = new Geom_Line(P, new Direction3D(D));
-            GeomAdaptor_Curve G = new GeomAdaptor_Curve(L);
+            LineCurve3D L = new LineCurve3D(P, new Direction3D(D));
+            CurveAdaptor G = new CurveAdaptor(L);
 
             Seed(Param, out double W0, out double U0, out double V0);
 

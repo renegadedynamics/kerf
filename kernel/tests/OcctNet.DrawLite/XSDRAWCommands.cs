@@ -6,6 +6,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Occt;
@@ -844,7 +846,7 @@ internal static class XSDRAWCommands
         int nbvar = 0;
         Transfer_Binder? binder = null;
         global::Kerf.Engine.Foundation.Transient? ent;
-        TopoDS_Shape sh = new();
+        Shape sh = new();
         string nomvar;
 
         int n1, n2, i, max = 0, index = 0;
@@ -938,7 +940,7 @@ internal static class XSDRAWCommands
                 continue;
             }
             sh = TransferBRep.ShapeResult(binder);
-            if (!sh.IsNull())
+            if (!sh.IsNull)
             {
                 nbvar++;
                 if (tout)
@@ -991,7 +993,7 @@ internal static class XSDRAWCommands
                         nbvar = 0;
                     }
                     nbvar++;
-                    if (sh.IsNull())
+                    if (sh.IsNull)
                     {
                         sout.Append(" (no Shape recorded)").Append('\n');
                         continue;
@@ -1017,7 +1019,7 @@ internal static class XSDRAWCommands
                 continue;
             }
 
-            if (sh.IsNull())
+            if (sh.IsNull)
             {
                 if (!tout)
                 {
@@ -1026,7 +1028,7 @@ internal static class XSDRAWCommands
             }
         }
 
-        if (sh.IsNull())
+        if (sh.IsNull)
         {
             sout.Append(" (No Shape)").Append('\n');
         }
@@ -1054,7 +1056,7 @@ internal static class XSDRAWCommands
             Send(di, sout);
             return 1;
         }
-        NCollection_HSequence<TopoDS_Shape>? list;
+        NCollection_HSequence<Shape>? list;
         if (argc == 2)
         {
             list = TransferBRep.Shapes(TP);
@@ -1079,8 +1081,8 @@ internal static class XSDRAWCommands
         }
         int nb = list.Length();
         sout.Append(nb).Append(" Shape(s) listed").Append('\n');
-        var C = new TopoDS_Compound();
-        var B = new BRep_Builder();
+        var C = new Compound();
+        var B = new BrepBuilder();
         B.MakeCompound(ref C);
         for (int i = 1; i <= nb; i++)
         {

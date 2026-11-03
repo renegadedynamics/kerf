@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 using static Occt.GccInt_IType;
@@ -72,7 +73,7 @@ public sealed partial class GccAna_Circ2d3Tan
                 GccInt_Bisec Sol2 = Bis2.ThisSolution();
                 GccInt_IType typ1 = Sol1.ArcType();
                 GccInt_IType typ2 = Sol2.ArcType();
-                IntAna2d_AnaIntersection Intp = new();
+                AnalyticIntersection Intp = new();
                 if (typ1 == GccInt_Lin)
                 {
                     if (typ2 == GccInt_Lin)
@@ -81,25 +82,25 @@ public sealed partial class GccAna_Circ2d3Tan
                     }
                     else if (typ2 == GccInt_Par)
                     {
-                        Intp.Perform(Sol1.Line(), new IntAna2d_Conic(Sol2.Parabola()));
+                        Intp.Perform(Sol1.Line(), new Conic(Sol2.Parabola()));
                     }
                 }
                 else if (typ1 == GccInt_Par)
                 {
                     if (typ2 == GccInt_Lin)
                     {
-                        Intp.Perform(Sol2.Line(), new IntAna2d_Conic(Sol1.Parabola()));
+                        Intp.Perform(Sol2.Line(), new Conic(Sol1.Parabola()));
                     }
                     else if (typ2 == GccInt_Par)
                     {
-                        Intp.Perform(Sol1.Parabola(), new IntAna2d_Conic(Sol2.Parabola()));
+                        Intp.Perform(Sol1.Parabola(), new Conic(Sol2.Parabola()));
                     }
                 }
-                if (Intp.IsDone())
+                if (Intp.IsDone)
                 {
-                    if (!Intp.IsEmpty())
+                    if (!Intp.IsEmpty)
                     {
-                        for (int j = 1; j <= Intp.NbPoints(); j++)
+                        for (int j = 1; j <= Intp.PointCount; j++)
                         {
                             Point2D Center = Intp.Point(j).Value();
                             double dist1 = Center.Distance(C1.Location());

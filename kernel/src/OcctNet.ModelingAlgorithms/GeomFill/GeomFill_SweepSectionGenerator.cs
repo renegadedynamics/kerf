@@ -5,6 +5,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.CurveKind;
@@ -22,12 +24,12 @@ namespace Occt;
 /// </remarks>
 public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<int>
 {
-    private Geom_BSplineCurve? myPath;
-    private Geom_BSplineCurve? myFirstSect;
-    private Geom_BSplineCurve? myLastSect;
-    private Adaptor3d_Curve? myAdpPath;
-    private Adaptor3d_Curve? myAdpFirstSect;
-    private Adaptor3d_Curve? myAdpLastSect;
+    private BSplineCurve3D? myPath;
+    private BSplineCurve3D? myFirstSect;
+    private BSplineCurve3D? myLastSect;
+    private CurveAdaptorBase? myAdpPath;
+    private CurveAdaptorBase? myAdpFirstSect;
+    private CurveAdaptorBase? myAdpLastSect;
     private Axis3D myCircPathAxis = new Axis3D();
     private double myRadius;
     // OCCT's myIsDone is written by Init and Perform but never read; it is left out.
@@ -45,34 +47,34 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
     }
 
     /// <summary>A circle of radius Radius along Path.</summary>
-    public GeomFill_SweepSectionGenerator(Geom_Curve Path, double Radius)
+    public GeomFill_SweepSectionGenerator(Curve3D Path, double Radius)
     {
         Init(Path, Radius);
     }
 
     /// <summary>The section FirstSect along Path.</summary>
-    public GeomFill_SweepSectionGenerator(Geom_Curve Path, Geom_Curve FirstSect)
+    public GeomFill_SweepSectionGenerator(Curve3D Path, Curve3D FirstSect)
     {
         Init(Path, FirstSect);
     }
 
     /// <summary>A section evolving from FirstSect to LastSect along Path.</summary>
-    public GeomFill_SweepSectionGenerator(Geom_Curve Path, Geom_Curve FirstSect, Geom_Curve LastSect)
+    public GeomFill_SweepSectionGenerator(Curve3D Path, Curve3D FirstSect, Curve3D LastSect)
     {
         Init(Path, FirstSect, LastSect);
     }
 
     /// <summary>The arcs of radius Radius from Curve1 to Curve2 around Path (a pipe on an edge).</summary>
-    public GeomFill_SweepSectionGenerator(Adaptor3d_Curve Path, Adaptor3d_Curve Curve1, Adaptor3d_Curve Curve2,
+    public GeomFill_SweepSectionGenerator(CurveAdaptorBase Path, CurveAdaptorBase Curve1, CurveAdaptorBase Curve2,
                                           double Radius)
     {
         Init(Path, Curve1, Curve2, Radius);
     }
 
-    public void Init(Geom_Curve Path, double Radius)
+    public void Init(Curve3D Path, double Radius)
     {
         myRadius = Radius;
-        GeomAdaptor_Curve ThePath = new GeomAdaptor_Curve(Path);
+        CurveAdaptor ThePath = new CurveAdaptor(Path);
 
         if (ThePath.GetType() == Circle)
         {
@@ -83,20 +85,20 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         {
             myType = 1;
         }
-        if (Path is Geom_BSplineCurve)
+        if (Path is BSplineCurve3D)
         {
-            myPath = (Geom_BSplineCurve)Path.Copy();
+            myPath = (BSplineCurve3D)Path.Copy();
         }
         else
         {
-            myPath = GeomConvert.CurveToBSplineCurve(Path);
+            myPath = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(Path);
         }
     }
 
-    public void Init(Geom_Curve Path, Geom_Curve FirstSect)
+    public void Init(Curve3D Path, Curve3D FirstSect)
     {
         myRadius = 0;
-        GeomAdaptor_Curve ThePath = new GeomAdaptor_Curve(Path);
+        CurveAdaptor ThePath = new CurveAdaptor(Path);
 
         if (ThePath.GetType() == Circle)
         {
@@ -109,33 +111,33 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
             myType = 2;
         }
 
-        if (Path is Geom_BSplineCurve)
+        if (Path is BSplineCurve3D)
         {
-            myPath = (Geom_BSplineCurve)Path.Copy();
+            myPath = (BSplineCurve3D)Path.Copy();
         }
         else
         {
-            myPath = GeomConvert.CurveToBSplineCurve(Path);
+            myPath = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(Path);
         }
-        if (FirstSect is Geom_BSplineCurve)
+        if (FirstSect is BSplineCurve3D)
         {
-            myFirstSect = (Geom_BSplineCurve)FirstSect.Copy();
+            myFirstSect = (BSplineCurve3D)FirstSect.Copy();
         }
         else
         {
             // JAG
-            myFirstSect = GeomConvert.CurveToBSplineCurve(FirstSect, QuasiAngular);
+            myFirstSect = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(FirstSect, QuasiAngular);
         }
-        if (myFirstSect.IsPeriodic())
+        if (myFirstSect.IsPeriodic)
         {
             myFirstSect.SetNotPeriodic();
         }
     }
 
-    public void Init(Geom_Curve Path, Geom_Curve FirstSect, Geom_Curve LastSect)
+    public void Init(Curve3D Path, Curve3D FirstSect, Curve3D LastSect)
     {
         myRadius = 0;
-        GeomAdaptor_Curve ThePath = new GeomAdaptor_Curve(Path);
+        CurveAdaptor ThePath = new CurveAdaptor(Path);
 
         if (ThePath.GetType() == Circle)
         {
@@ -147,38 +149,38 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
             myType = 3;
         }
 
-        if (Path is Geom_BSplineCurve)
+        if (Path is BSplineCurve3D)
         {
-            myPath = (Geom_BSplineCurve)Path.Copy();
+            myPath = (BSplineCurve3D)Path.Copy();
         }
         else
         {
-            myPath = GeomConvert.CurveToBSplineCurve(Path);
+            myPath = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(Path);
         }
 
         // JAG
-        if (FirstSect is Geom_BSplineCurve)
+        if (FirstSect is BSplineCurve3D)
         {
-            myFirstSect = (Geom_BSplineCurve)FirstSect.Copy();
+            myFirstSect = (BSplineCurve3D)FirstSect.Copy();
         }
         else
         {
-            myFirstSect = GeomConvert.CurveToBSplineCurve(FirstSect, QuasiAngular);
+            myFirstSect = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(FirstSect, QuasiAngular);
         }
-        if (LastSect is Geom_BSplineCurve)
+        if (LastSect is BSplineCurve3D)
         {
-            myLastSect = (Geom_BSplineCurve)LastSect.Copy();
+            myLastSect = (BSplineCurve3D)LastSect.Copy();
         }
         else
         {
-            myLastSect = GeomConvert.CurveToBSplineCurve(LastSect, QuasiAngular);
+            myLastSect = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(LastSect, QuasiAngular);
         }
 
-        if (myFirstSect.IsPeriodic())
+        if (myFirstSect.IsPeriodic)
         {
             myFirstSect.SetNotPeriodic();
         }
-        if (myLastSect.IsPeriodic())
+        if (myLastSect.IsPeriodic)
         {
             myLastSect.SetNotPeriodic();
         }
@@ -190,17 +192,17 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         Profil.AddCurve(myLastSect);
         Profil.Perform(global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        myFirstSect = Profil.InternalCurve(1) as Geom_BSplineCurve;
-        myLastSect = Profil.InternalCurve(2) as Geom_BSplineCurve;
+        myFirstSect = Profil.InternalCurve(1) as BSplineCurve3D;
+        myLastSect = Profil.InternalCurve(2) as BSplineCurve3D;
     }
 
-    public void Init(Adaptor3d_Curve Path, Adaptor3d_Curve Curve1, Adaptor3d_Curve Curve2, double Radius)
+    public void Init(CurveAdaptorBase Path, CurveAdaptorBase Curve1, CurveAdaptorBase Curve2, double Radius)
     {
         myRadius = Radius;
         myType = 0;
 
-        Geom_Curve CC = GeomAdaptor.MakeCurve(Path)!;
-        myPath = GeomConvert.CurveToBSplineCurve(CC);
+        Curve3D CC = global::Kerf.Engine.Geometry.Adaptors.GeomAdaptor.MakeCurve(Path)!;
+        myPath = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(CC);
         myAdpPath = Path;
         myAdpFirstSect = Curve1;
         myAdpLastSect = Curve2;
@@ -212,7 +214,7 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         myPolynomial = Polynomial;
 
         // eval myNbSections.
-        int NSpans = myPath!.NbKnots() - 1;
+        int NSpans = myPath!.KnotCount - 1;
 
         myNbSections = 21 * NSpans;
 
@@ -221,9 +223,9 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         double U1 = myPath.FirstParameter();
         double U2 = myPath.LastParameter();
 
-        GCPnts_QuasiUniformDeflection Samp = new GCPnts_QuasiUniformDeflection();
+        QuasiUniformDeflection Samp = new QuasiUniformDeflection();
         // Calcul de la longueur approximative de la courbe
-        GeomAdaptor_Curve AdpPath = new GeomAdaptor_Curve(myPath);
+        CurveAdaptor AdpPath = new CurveAdaptor(myPath);
         Point3D P1 = AdpPath.Value(U1);
         Point3D P2 = AdpPath.Value((U1 + U2) / 2.0);
         Point3D P3 = AdpPath.Value(U2);
@@ -231,9 +233,9 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         double Fleche = 1.0e-5 * Length;
         Samp.Initialize(AdpPath, Fleche);
 
-        if (Samp.IsDone() && (Samp.NbPoints() > myNbSections))
+        if (Samp.IsDone && (Samp.PointCount > myNbSections))
         {
-            myNbSections = Samp.NbPoints();
+            myNbSections = Samp.PointCount;
         }
         // the transformations are calculate on differents points of <myPath>
         // corresponding to the path parameter uniformly reparted.
@@ -261,9 +263,9 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
             // put in <myFirstSect>.
 
             Frame3D CircleAxis = new Frame3D(PRef, new Direction3D(D1Ref));
-            Geom_TrimmedCurve Circ = new Geom_TrimmedCurve(new Geom_Circle(CircleAxis, myRadius), 0.0, 2.0 * M_PI);
+            TrimmedCurve3D Circ = new TrimmedCurve3D(new CircleCurve3D(CircleAxis, myRadius), 0.0, 2.0 * M_PI);
 
-            myFirstSect = GeomConvert.CurveToBSplineCurve(Circ, QuasiAngular);
+            myFirstSect = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(Circ, QuasiAngular);
         }
 
         if (myType <= 3 && myType >= 1)
@@ -320,8 +322,8 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
     {
         if (myType != 0)
         {
-            NbPoles = myFirstSect!.NbPoles();
-            NbKnots = myFirstSect.NbKnots();
+            NbPoles = myFirstSect!.PoleCount;
+            NbKnots = myFirstSect.KnotCount;
             Degree = myFirstSect.Degree();
         }
         else
@@ -424,7 +426,7 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         if (c < Epsilon(1.0))
         {
             // null curvature : equivalent to a translation of the section
-            for (int i = 1; i <= myFirstSect!.NbPoles(); i++)
+            for (int i = 1; i <= myFirstSect!.PoleCount; i++)
             {
                 DPoles[i] = D1;
             }
@@ -435,7 +437,7 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
             Point3D Q = Pt.Translated((1.0 / c) * new Vector3D(N));
             double x, y;
             Vector3D V;
-            for (int i = 1; i <= myFirstSect!.NbPoles(); i++)
+            for (int i = 1; i <= myFirstSect!.PoleCount; i++)
             {
                 V = new Vector3D(Q, Poles[i]);
                 x = V * new Vector3D(T);
@@ -449,7 +451,7 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
             }
         }
 
-        for (int i = 1; i <= myFirstSect.NbPoles(); i++)
+        for (int i = 1; i <= myFirstSect.PoleCount; i++)
         {
             DWeigths[i] = 0.0;
         }
@@ -476,7 +478,7 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
 
                 if ((myType == 3) || (myType == 6))
                 {
-                    for (int i = 1; i <= myFirstSect.NbPoles(); i++)
+                    for (int i = 1; i <= myFirstSect.PoleCount; i++)
                     {
                         Poles[i].SetXYZ((myNbSections - P) * myFirstSect.Pole(i).XYZ()
                                         + (P - 1) * myLastSect!.Pole(i).XYZ());
@@ -551,16 +553,16 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
             }
             else
             {
-                Geom_Circle Circ = new Geom_Circle(Axis, myRadius);
-                Geom_TrimmedCurve CT = new Geom_TrimmedCurve(Circ, 0.0, Angle);
-                Geom_BSplineCurve BS;
+                CircleCurve3D Circ = new CircleCurve3D(Axis, myRadius);
+                TrimmedCurve3D CT = new TrimmedCurve3D(Circ, 0.0, Angle);
+                BSplineCurve3D BS;
                 if (myPolynomial)
                 {
-                    BS = GeomConvert.CurveToBSplineCurve(CT, Polynomial);
+                    BS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(CT, Polynomial);
                 }
                 else
                 {
-                    BS = GeomConvert.CurveToBSplineCurve(CT, QuasiAngular);
+                    BS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(CT, QuasiAngular);
                 }
 
                 Poles.Assign(BS.InternalPoles());

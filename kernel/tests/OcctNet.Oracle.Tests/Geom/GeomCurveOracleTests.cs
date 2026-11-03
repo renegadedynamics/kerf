@@ -52,7 +52,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>D0 to D3 and DN (1 to theMaxN) at theU.</summary>
-    private static void SameEval(Oracle theO, N.Geom_Curve theN, Geom_Curve theP, double theU, int theMaxN, string theWhat,
+    private static void SameEval(Oracle theO, N.Geom_Curve theN, Curve3D theP, double theU, int theMaxN, string theWhat,
                                  double theTol = Oracle.Tolerance)
     {
         using var aNP = new N.gp_Pnt();
@@ -99,12 +99,12 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>Bounds, closure, periodicity, continuity.</summary>
-    private static void SameProperties(Oracle theO, N.Geom_Curve theN, Geom_Curve theP, string theWhat)
+    private static void SameProperties(Oracle theO, N.Geom_Curve theN, Curve3D theP, string theWhat)
     {
         theO.Same(theN.FirstParameter(), theP.FirstParameter(), $"{theWhat} FirstParameter");
         theO.Same(theN.LastParameter(), theP.LastParameter(), $"{theWhat} LastParameter");
-        theO.Same(theN.IsClosed(), theP.IsClosed(), $"{theWhat} IsClosed");
-        theO.Same(theN.IsPeriodic(), theP.IsPeriodic(), $"{theWhat} IsPeriodic");
+        theO.Same(theN.IsClosed(), theP.IsClosed, $"{theWhat} IsClosed");
+        theO.Same(theN.IsPeriodic(), theP.IsPeriodic, $"{theWhat} IsPeriodic");
         Assert.Equal((int)theN.Continuity(), (int)theP.Continuity());
         for (int k = 0; k <= 5; k++)
         {
@@ -118,7 +118,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>Parameters to evaluate at: random ones inside the bounds (or theFallback), a few outside, and the bounds.</summary>
-    private static List<double> Params(Oracle theO, Geom_Curve theP, double theFallbackMin, double theFallbackMax, bool theOutside = true)
+    private static List<double> Params(Oracle theO, Curve3D theP, double theFallbackMin, double theFallbackMax, bool theOutside = true)
     {
         double aF = theP.FirstParameter(), aL = theP.LastParameter();
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL))
@@ -202,7 +202,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>Reversal and transformation, compared by evaluation.</summary>
-    private static void SameReversedAndTransformed(Oracle theO, N.Geom_Curve theN, Geom_Curve theP, List<double> theParams,
+    private static void SameReversedAndTransformed(Oracle theO, N.Geom_Curve theN, Curve3D theP, List<double> theParams,
                                                    int theMaxN, string theWhat, double theTol = Oracle.Tolerance)
     {
         foreach (double u in theParams)
@@ -212,7 +212,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
 
         using (var aNR = theN.Reversed()!)
         {
-            Geom_Curve aR = theP.Reversed();
+            Curve3D aR = theP.Reversed();
             SameProperties(theO, aNR, aR, $"{theWhat} reversed");
             foreach (double u in theParams)
             {
@@ -226,32 +226,32 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
             theO.Same(theN.ParametricTransformation(aNT), theP.ParametricTransformation(aT), $"{theWhat} ParametricTransformation");
             using var aNG = theN.Transformed(aNT);
             using var aNC = N.Geom_Curve.DownCast(aNG)!;
-            var aC = (Geom_Curve)theP.Transformed(aT);
+            var aC = (Curve3D)theP.Transformed(aT);
             SameProperties(theO, aNC, aC, $"{theWhat} transformed");
             // What Transform changes, at the default tolerance: the poles, or the conic's or line's axes
             switch (aC)
             {
-                case Geom_BezierCurve aBz:
+                case BezierCurve3D aBz:
                 {
                     using var aNBz = N.Geom_BezierCurve.DownCast(aNC)!;
-                    for (int i = 1; i <= aBz.NbPoles(); i++)
+                    for (int i = 1; i <= aBz.PoleCount; i++)
                     {
                         using var aNPole = aNBz.Pole(i);
                         theO.Same(Oracle.FromNative(aNPole).XYZ(), aBz.Pole(i).XYZ(), $"{theWhat} transformed Pole({i})");
                     }
                     break;
                 }
-                case Geom_BSplineCurve aBs:
+                case BSplineCurve3D aBs:
                 {
                     using var aNBs = N.Geom_BSplineCurve.DownCast(aNC)!;
-                    for (int i = 1; i <= aBs.NbPoles(); i++)
+                    for (int i = 1; i <= aBs.PoleCount; i++)
                     {
                         using var aNPole = aNBs.Pole(i);
                         theO.Same(Oracle.FromNative(aNPole).XYZ(), aBs.Pole(i).XYZ(), $"{theWhat} transformed Pole({i})");
                     }
                     break;
                 }
-                case Geom_Conic aCn:
+                case ConicCurve3D aCn:
                 {
                     using var aNCn = N.Geom_Conic.DownCast(aNC)!;
                     using var aNPos = aNCn.Position();
@@ -287,9 +287,9 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                                       int Degree,
                                       bool Periodic)
     {
-        public Geom_BSplineCurve Port() => Weights is null
-            ? new Geom_BSplineCurve(Poles, Knots, Mults, Degree, Periodic)
-            : new Geom_BSplineCurve(Poles, Weights, Knots, Mults, Degree, Periodic);
+        public BSplineCurve3D Port() => Weights is null
+            ? new BSplineCurve3D(Poles, Knots, Mults, Degree, Periodic)
+            : new BSplineCurve3D(Poles, Weights, Knots, Mults, Degree, Periodic);
 
         public N.Geom_BSplineCurve Native() => Oracle.ToNativeCurve(Poles, Weights, Knots, Mults, Degree, Periodic);
     }
@@ -349,7 +349,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static (N.Geom_BezierCurve Native, Geom_BezierCurve Port) RandomBezier(Oracle theO, int theMaxDegree = 10)
+    private static (N.Geom_BezierCurve Native, BezierCurve3D Port) RandomBezier(Oracle theO, int theMaxDegree = 10)
     {
         int aNbPoles = theO.Int(2, theMaxDegree + 1);
         var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
@@ -360,7 +360,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         using var aNPoles = Oracle.ToNative(aPoles);
         if (theO.Int(0, 1) == 0)
         {
-            return (new N.Geom_BezierCurve(aNPoles), new Geom_BezierCurve(aPoles));
+            return (new N.Geom_BezierCurve(aNPoles), new BezierCurve3D(aPoles));
         }
         var aWeights = new NCollection_Array1<double>(1, aNbPoles);
         for (int i = 1; i <= aNbPoles; i++)
@@ -368,11 +368,11 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
             aWeights[i] = theO.Real(0.5, 2);
         }
         using var aNWeights = Oracle.ToNative(aWeights);
-        return (new N.Geom_BezierCurve(aNPoles, aNWeights), new Geom_BezierCurve(aPoles, aWeights));
+        return (new N.Geom_BezierCurve(aNPoles, aNWeights), new BezierCurve3D(aPoles, aWeights));
     }
 
     /// <summary>A random conic or line; the second value is a sensible parameter range for unbounded curves.</summary>
-    private static (N.Geom_Curve Native, Geom_Curve Port, double Range, string Kind) RandomElementary(Oracle theO, bool theNoLine = false)
+    private static (N.Geom_Curve Native, Curve3D Port, double Range, string Kind) RandomElementary(Oracle theO, bool theNoLine = false)
     {
         (N.gp_Ax2 aNAx2, Frame3D anAx2) = Ax2sFromDirection(theO);
         using var aNAx2Owner = aNAx2;
@@ -382,27 +382,27 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
             {
                 (N.gp_Ax1 aNAx1, Axis3D anAx1) = Ax1s(theO);
                 using var aNAx1Owner = aNAx1;
-                return (new N.Geom_Line(aNAx1), new Geom_Line(anAx1), 100, "line");
+                return (new N.Geom_Line(aNAx1), new LineCurve3D(anAx1), 100, "line");
             }
             case 1:
             {
                 double aR = theO.Real(0.1, 50);
-                return (new N.Geom_Circle(aNAx2, aR), new Geom_Circle(anAx2, aR), 10, "circle");
+                return (new N.Geom_Circle(aNAx2, aR), new CircleCurve3D(anAx2, aR), 10, "circle");
             }
             case 2:
             {
                 double aMaj = theO.Real(0.1, 50), aMin = theO.Real(0.05, aMaj);
-                return (new N.Geom_Ellipse(aNAx2, aMaj, aMin), new Geom_Ellipse(anAx2, aMaj, aMin), 10, "ellipse");
+                return (new N.Geom_Ellipse(aNAx2, aMaj, aMin), new EllipseCurve3D(anAx2, aMaj, aMin), 10, "ellipse");
             }
             case 3:
             {
                 double aMaj = theO.Real(0.1, 50), aMin = theO.Real(0.1, 50);
-                return (new N.Geom_Hyperbola(aNAx2, aMaj, aMin), new Geom_Hyperbola(anAx2, aMaj, aMin), 3, "hyperbola");
+                return (new N.Geom_Hyperbola(aNAx2, aMaj, aMin), new HyperbolaCurve3D(anAx2, aMaj, aMin), 3, "hyperbola");
             }
             default:
             {
                 double aF = theO.Real(0.01, 20);
-                return (new N.Geom_Parabola(aNAx2, aF), new Geom_Parabola(anAx2, aF), 50, "parabola");
+                return (new N.Geom_Parabola(aNAx2, aF), new ParabolaCurve3D(anAx2, aF), 50, "parabola");
             }
         }
     }
@@ -417,7 +417,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            (N.Geom_Curve aN, Geom_Curve aP, double aRange, string aKind) = RandomElementary(anOracle);
+            (N.Geom_Curve aN, Curve3D aP, double aRange, string aKind) = RandomElementary(anOracle);
             using (aN)
             {
                 SameProperties(anOracle, aN, aP, aKind);
@@ -428,7 +428,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 }
                 SameReversedAndTransformed(anOracle, aN, aP, aParams, 4, aKind);
 
-                if (aP is Geom_Conic aConic)
+                if (aP is ConicCurve3D aConic)
                 {
                     using var aNConic = N.Geom_Conic.DownCast(aN)!;
                     double aNE = 0, aPE = 0;
@@ -439,7 +439,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 }
                 switch (aP)
                 {
-                    case Geom_Ellipse anE:
+                    case EllipseCurve3D anE:
                     {
                         using var aNE = N.Geom_Ellipse.DownCast(aN)!;
                         using var aF1 = aNE.Focus1();
@@ -450,7 +450,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                         anOracle.Same(aNE.Parameter(), anE.Parameter(), "ellipse Parameter");
                         break;
                     }
-                    case Geom_Hyperbola aH:
+                    case HyperbolaCurve3D aH:
                     {
                         using var aNH = N.Geom_Hyperbola.DownCast(aN)!;
                         using var aF1 = aNH.Focus1();
@@ -459,7 +459,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                         anOracle.Same(aNH.Parameter(), aH.Parameter(), "hyperbola Parameter");
                         break;
                     }
-                    case Geom_Parabola aPb:
+                    case ParabolaCurve3D aPb:
                     {
                         using var aNPb = N.Geom_Parabola.DownCast(aN)!;
                         using var aF = aNPb.Focus();
@@ -481,7 +481,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         for (int i = 0; i < Cases; i++)
         {
             N.Geom_Curve aNB;
-            Geom_Curve aPB;
+            Curve3D aPB;
             double aRange;
             if (anOracle.Int(0, 2) == 0)
             {
@@ -499,7 +499,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
             {
                 double aF = aPB.FirstParameter(), aL = aPB.LastParameter();
                 double aU1, aU2;
-                if (aPB.IsPeriodic())
+                if (aPB.IsPeriodic)
                 {
                     aU1 = anOracle.Real(-10, 10);
                     aU2 = anOracle.Real(-10, 10);
@@ -518,7 +518,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 bool anAdjust = anOracle.Int(0, 3) != 0;
 
                 using var aNT = new N.Geom_TrimmedCurve(aNB, aU1, aU2, aSense, anAdjust);
-                var aPT = new Geom_TrimmedCurve(aPB, aU1, aU2, aSense, anAdjust);
+                var aPT = new TrimmedCurve3D(aPB, aU1, aU2, aSense, anAdjust);
                 SameProperties(anOracle, aNT, aPT, "trimmed");
                 using (var aNS = aNT.StartPoint())
                 using (var aNE = aNT.EndPoint())
@@ -536,7 +536,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 // SetTrim on the trimmed curve, through WithTrim
                 double aV1 = anOracle.Real(aPT.FirstParameter(), aPT.LastParameter());
                 double aV2 = anOracle.Real(aPT.FirstParameter(), aPT.LastParameter());
-                Geom_TrimmedCurve? aPT2 = null;
+                TrimmedCurve3D? aPT2 = null;
                 if (SameOutcome(Catch(() => aNT.SetTrim(aV1, aV2, aSense, anAdjust)),
                                 Catch(() => aPT2 = aPT.WithTrim(aV1, aV2, aSense, anAdjust)), "SetTrim"))
                 {
@@ -559,11 +559,11 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         var aDirect = new Oracle(output, 1);
         for (int i = 0; i < Cases; i++)
         {
-            (N.Geom_BezierCurve aN, Geom_BezierCurve aP) = RandomBezier(anOracle, 15);
+            (N.Geom_BezierCurve aN, BezierCurve3D aP) = RandomBezier(anOracle, 15);
             using (aN)
             {
                 SameProperties(anOracle, aN, aP, "Bezier");
-                anOracle.Same(aN.IsRational(), aP.IsRational(), "Bezier IsRational");
+                anOracle.Same(aN.IsRational(), aP.IsRational, "Bezier IsRational");
                 List<double> aParams = Params(anOracle, aP, 0, 1);
                 foreach (double u in aParams)
                 {
@@ -582,18 +582,18 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         anOracle.Report("Geom_BezierCurve evaluation (the rest)");
     }
 
-    private static void SameBezier(Oracle theO, N.Geom_BezierCurve theN, Geom_BezierCurve theP, string theWhat)
+    private static void SameBezier(Oracle theO, N.Geom_BezierCurve theN, BezierCurve3D theP, string theWhat)
     {
-        Assert.Equal(theN.NbPoles(), theP.NbPoles());
-        theO.Same(theN.IsRational(), theP.IsRational(), $"{theWhat} IsRational");
-        if (theN.IsClosed() != theP.IsClosed())
+        Assert.Equal(theN.NbPoles(), theP.PoleCount);
+        theO.Same(theN.IsRational(), theP.IsRational, $"{theWhat} IsRational");
+        if (theN.IsClosed() != theP.IsClosed)
         {
             using var aN1 = theN.Value(theN.FirstParameter());
             using var aN2 = theN.Value(theN.LastParameter());
-            throw new Xunit.Sdk.XunitException($"{theWhat} IsClosed {Kerf.Engine.Foundation.OcctTypeNames.Of(theP.GetType())} {((object)theP as Geom_OffsetCurve)?.BasisCurve().GetType().Name}: native {Oracle.FromNative(aN1).SquareDistance(Oracle.FromNative(aN2)):R} port {theP.Value(theP.FirstParameter()).SquareDistance(theP.Value(theP.LastParameter())):R} np1 {Oracle.FromNative(aN1)} pp1 {theP.Value(theP.FirstParameter())} np2 {Oracle.FromNative(aN2)} pp2 {theP.Value(theP.LastParameter())}");
+            throw new Xunit.Sdk.XunitException($"{theWhat} IsClosed {Kerf.Engine.Foundation.OcctTypeNames.Of(theP.GetType())} {((object)theP as OffsetCurve3D)?.BasisCurve().GetType().Name}: native {Oracle.FromNative(aN1).SquareDistance(Oracle.FromNative(aN2)):R} port {theP.Value(theP.FirstParameter()).SquareDistance(theP.Value(theP.LastParameter())):R} np1 {Oracle.FromNative(aN1)} pp1 {theP.Value(theP.FirstParameter())} np2 {Oracle.FromNative(aN2)} pp2 {theP.Value(theP.LastParameter())}");
         }
-        theO.Same(theN.IsClosed(), theP.IsClosed(), $"{theWhat} IsClosed");
-        for (int i = 1; i <= theP.NbPoles(); i++)
+        theO.Same(theN.IsClosed(), theP.IsClosed, $"{theWhat} IsClosed");
+        for (int i = 1; i <= theP.PoleCount; i++)
         {
             using var aNP = theN.Pole(i);
             theO.Same(Oracle.FromNative(aNP).XYZ(), theP.Pole(i).XYZ(), $"{theWhat} Pole({i})");
@@ -611,20 +611,20 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            (N.Geom_BezierCurve aN, Geom_BezierCurve aP) = RandomBezier(anOracle, 12);
+            (N.Geom_BezierCurve aN, BezierCurve3D aP) = RandomBezier(anOracle, 12);
             using (aN)
             {
                 for (int aStep = 0; aStep < 4; aStep++)
                 {
-                    int aNb = aP.NbPoles();
-                    Geom_BezierCurve? aNext = null;
+                    int aNb = aP.PoleCount;
+                    BezierCurve3D? aNext = null;
                     string aWhat;
                     Exception? aNE, aPE;
                     switch (anOracle.Int(0, 7))
                     {
                         case 0:
                         {
-                            int aDeg = Math.Min(Geom_BezierCurve.MaxDegree(), aP.Degree() + anOracle.Int(0, 3));
+                            int aDeg = Math.Min(BezierCurve3D.MaxDegree(), aP.Degree() + anOracle.Int(0, 3));
                             aWhat = $"Increase({aDeg})";
                             aNE = Catch(() => aN.Increase(aDeg));
                             aPE = Catch(() => aNext = aP.Increased(aDeg));
@@ -704,7 +704,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                         {
                             aWhat = "Reverse";
                             aNE = Catch(() => aN.Reverse());
-                            aPE = Catch(() => aNext = (Geom_BezierCurve)aP.Reversed());
+                            aPE = Catch(() => aNext = (BezierCurve3D)aP.Reversed());
                             break;
                         }
                     }
@@ -720,23 +720,23 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         anOracle.Report("Geom_BezierCurve modifications");
     }
 
-    private static void SameBSpline(Oracle theO, N.Geom_BSplineCurve theN, Geom_BSplineCurve theP, string theWhat)
+    private static void SameBSpline(Oracle theO, N.Geom_BSplineCurve theN, BSplineCurve3D theP, string theWhat)
     {
         Assert.Equal(theN.Degree(), theP.Degree());
-        Assert.Equal(theN.NbPoles(), theP.NbPoles());
-        Assert.Equal(theN.NbKnots(), theP.NbKnots());
-        theO.Same(theN.IsRational(), theP.IsRational(), $"{theWhat} IsRational");
-        theO.Same(theN.IsPeriodic(), theP.IsPeriodic(), $"{theWhat} IsPeriodic");
+        Assert.Equal(theN.NbPoles(), theP.PoleCount);
+        Assert.Equal(theN.NbKnots(), theP.KnotCount);
+        theO.Same(theN.IsRational(), theP.IsRational, $"{theWhat} IsRational");
+        theO.Same(theN.IsPeriodic(), theP.IsPeriodic, $"{theWhat} IsPeriodic");
         Assert.Equal((int)theN.KnotDistribution(), (int)theP.KnotDistribution());
         Assert.Equal(theN.FirstUKnotIndex(), theP.FirstUKnotIndex());
         Assert.Equal(theN.LastUKnotIndex(), theP.LastUKnotIndex());
-        for (int i = 1; i <= theP.NbPoles(); i++)
+        for (int i = 1; i <= theP.PoleCount; i++)
         {
             using var aNP = theN.Pole(i);
             theO.Same(Oracle.FromNative(aNP).XYZ(), theP.Pole(i).XYZ(), $"{theWhat} Pole({i})");
             theO.Same(theN.Weight(i), theP.Weight(i), $"{theWhat} Weight({i})");
         }
-        for (int i = 1; i <= theP.NbKnots(); i++)
+        for (int i = 1; i <= theP.KnotCount; i++)
         {
             theO.Same(theN.Knot(i), theP.Knot(i), $"{theWhat} Knot({i})");
             Assert.Equal(theN.Multiplicity(i), theP.Multiplicity(i));
@@ -755,14 +755,14 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>The bounds, the knots and random parameters.</summary>
-    private static List<double> BSplineParams(Oracle theO, Geom_BSplineCurve theP)
+    private static List<double> BSplineParams(Oracle theO, BSplineCurve3D theP)
     {
         List<double> aParams = Params(theO, theP, 0, 0);
-        for (int i = 1; i <= theP.NbKnots(); i++)
+        for (int i = 1; i <= theP.KnotCount; i++)
         {
             aParams.Add(theP.Knot(i));
         }
-        if (theP.IsPeriodic())
+        if (theP.IsPeriodic)
         {
             double aPer = theP.Period();
             aParams.Add(theO.Real(theP.FirstParameter() - 3 * aPer, theP.LastParameter() + 3 * aPer));
@@ -779,7 +779,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         {
             BSplineData aData = RandomBSpline(anOracle);
             using N.Geom_BSplineCurve aN = aData.Native();
-            Geom_BSplineCurve aP = aData.Port();
+            BSplineCurve3D aP = aData.Port();
             SameBSpline(anOracle, aN, aP, "BSpline");
             using (var aNS = aN.StartPoint())
             using (var aNE = aN.EndPoint())
@@ -852,14 +852,14 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         {
             BSplineData aData = RandomBSpline(anOracle, theMaxDegree: 5);
             using N.Geom_BSplineCurve aN = aData.Native();
-            Geom_BSplineCurve aP = aData.Port();
+            BSplineCurve3D aP = aData.Port();
             for (int aStep = 0; aStep < 4; aStep++)
             {
-                Geom_BSplineCurve? aNext = null;
+                BSplineCurve3D? aNext = null;
                 string aWhat;
                 Exception? aNE, aPE;
                 double aF = aP.FirstParameter(), aL = aP.LastParameter();
-                int aNbKnots = aP.NbKnots(), aNbPoles = aP.NbPoles(), aDeg = aP.Degree();
+                int aNbKnots = aP.KnotCount, aNbPoles = aP.PoleCount, aDeg = aP.Degree();
                 switch (anOracle.Int(0, 12))
                 {
                     case 0:
@@ -893,7 +893,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                         double aTol = new[] { 1e-7, 1e-2, 10.0, 1000.0 }[anOracle.Int(0, 3)];
                         aWhat = $"RemoveKnot({anIndex}, {aM}, {aTol})";
                         bool aNR = false;
-                        Geom_BSplineCurve? aPR = null;
+                        BSplineCurve3D? aPR = null;
                         aNE = Catch(() => aNR = aN.RemoveKnot(anIndex, aM, aTol));
                         aPE = Catch(() => aPR = aP.KnotRemoved(anIndex, aM, aTol));
                         if (aNE is null && aPE is null)
@@ -905,7 +905,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                     }
                     case 3:
                     {
-                        int aNewDeg = Math.Min(Geom_BSplineCurve.MaxDegree(), aDeg + anOracle.Int(0, 3));
+                        int aNewDeg = Math.Min(BSplineCurve3D.MaxDegree(), aDeg + anOracle.Int(0, 3));
                         aWhat = $"IncreaseDegree({aNewDeg})";
                         aNE = Catch(() => aN.IncreaseDegree(aNewDeg));
                         aPE = Catch(() => aNext = aP.DegreeIncreased(aNewDeg));
@@ -915,7 +915,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                     {
                         double u1 = anOracle.Real(aF, aL), u2 = anOracle.Real(aF, aL);
                         double aU1 = Math.Min(u1, u2), aU2 = Math.Max(u1, u2);
-                        if (aP.IsPeriodic() && anOracle.Int(0, 1) == 0)
+                        if (aP.IsPeriodic && anOracle.Int(0, 1) == 0)
                         {
                             aU1 += aP.Period() * anOracle.Int(-2, 2);
                             aU2 = aU1 + anOracle.Real(0.1, 1) * aP.Period();
@@ -997,7 +997,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                     }
                     case 9:
                     {
-                        if (aP.IsPeriodic())
+                        if (aP.IsPeriodic)
                         {
                             switch (anOracle.Int(0, 2))
                             {
@@ -1067,7 +1067,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                     {
                         aWhat = "Reverse";
                         aNE = Catch(() => aN.Reverse());
-                        aPE = Catch(() => aNext = (Geom_BSplineCurve)aP.Reversed());
+                        aPE = Catch(() => aNext = (BSplineCurve3D)aP.Reversed());
                         break;
                     }
                 }
@@ -1100,7 +1100,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         for (int i = 0; i < Cases; i++)
         {
             N.Geom_Curve aNB;
-            Geom_Curve aPB;
+            Curve3D aPB;
             switch (anOracle.Int(0, 3))
             {
                 case 0:
@@ -1112,7 +1112,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 }
                 case 1:
                 {
-                    (N.Geom_BezierCurve aNBz, Geom_BezierCurve aPBz) = RandomBezier(anOracle, 8);
+                    (N.Geom_BezierCurve aNBz, BezierCurve3D aPBz) = RandomBezier(anOracle, 8);
                     aNB = aNBz;
                     aPB = aPBz;
                     break;
@@ -1125,7 +1125,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
             using (aNB)
             {
                 N.Geom_Curve aNBasis = aNB;
-                Geom_Curve aPBasis = aPB;
+                Curve3D aPBasis = aPB;
                 N.Geom_TrimmedCurve? aNTrim = null;
                 if (anOracle.Int(0, 3) == 0 && !global::Kerf.Engine.Foundation.Precision.IsInfinite(aPB.FirstParameter()))
                 {
@@ -1134,7 +1134,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                     double aU1 = anOracle.Real(aF, aF + 0.4 * (aL - aF)), aU2 = anOracle.Real(aF + 0.6 * (aL - aF), aL);
                     aNTrim = new N.Geom_TrimmedCurve(aNB, aU1, aU2);
                     aNBasis = aNTrim;
-                    aPBasis = new Geom_TrimmedCurve(aPB, aU1, aU2);
+                    aPBasis = new TrimmedCurve3D(aPB, aU1, aU2);
                 }
                 using (aNTrim)
                 {
@@ -1142,15 +1142,15 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                     using var aNDirOwner = aNDir;
                     double anOffset = anOracle.Real(0.1, 20) * (anOracle.Int(0, 1) == 0 ? 1 : -1);
                     using var aNO = new N.Geom_OffsetCurve(aNBasis, anOffset, aNDir);
-                    var aPO = new Geom_OffsetCurve(aPBasis, anOffset, aDir);
+                    var aPO = new OffsetCurve3D(aPBasis, anOffset, aDir);
 
                     // nested: an offset of the offset folds into one offset of the basis
                     using var aNDir2 = new N.gp_Dir(aNDir);
                     double anOffset2 = anOracle.Real(-5, 5);
                     using var aNO2 = new N.Geom_OffsetCurve(aNO, anOffset2, aNDir2);
-                    var aPO2 = new Geom_OffsetCurve(aPO, anOffset2, aDir);
+                    var aPO2 = new OffsetCurve3D(aPO, anOffset2, aDir);
 
-                    foreach ((N.Geom_OffsetCurve aN, Geom_OffsetCurve aP, string aWhat) in new[] { (aNO, aPO, "offset"), (aNO2, aPO2, "offset of offset") })
+                    foreach ((N.Geom_OffsetCurve aN, OffsetCurve3D aP, string aWhat) in new[] { (aNO, aPO, "offset"), (aNO2, aPO2, "offset of offset") })
                     {
                         anOracle.Same(aN.Offset(), aP.Offset(), $"{aWhat} Offset");
                         using (var aND = aN.Direction())
@@ -1174,7 +1174,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                     using var aNDir3Owner = aNDir3;
                     aNO.SetOffsetValue(anOffset3);
                     aNO.SetDirection(aNDir3);
-                    Geom_OffsetCurve aPO3 = aPO.WithOffsetValue(anOffset3).WithDirection(aDir3);
+                    OffsetCurve3D aPO3 = aPO.WithOffsetValue(anOffset3).WithDirection(aDir3);
                     foreach (double u in Params(anOracle, aPO3, -5, 5, theOutside: false))
                     {
                         SameEval(anOracle, aNO, aPO3, u, 3, "offset setters", 1e-10);
@@ -1197,12 +1197,12 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
             var aPoles = NCollection_Array1<Point3D>.From([new Point3D(0, 0, 0), new Point3D(a, h, 0), new Point3D(0, h, 0), new Point3D(a, 0, 0)]);
             using var aNPoles = Oracle.ToNative(aPoles);
             using var aNB = new N.Geom_BezierCurve(aNPoles);
-            var aPB = new Geom_BezierCurve(aPoles);
+            var aPB = new BezierCurve3D(aPoles);
             Direction3D aDir = new(0, 0, 1);
             using var aNDir = Oracle.ToNative(aDir);
             double anOffset = anOracle.Real(-3, 3);
             using var aNO = new N.Geom_OffsetCurve(aNB, anOffset, aNDir, true);
-            var aPO = new Geom_OffsetCurve(aPB, anOffset, aDir, true);
+            var aPO = new OffsetCurve3D(aPB, anOffset, aDir, true);
             foreach (double u in new[] { 0.0, 0.25, 0.5 - 1e-9, 0.5, 0.75, 1.0, anOracle.Real(0, 1) })
             {
                 SameEval(anOracle, aNO, aPO, u, 4, "cusp offset", 1e-9);

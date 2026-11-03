@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
 
 namespace Occt;
@@ -21,20 +23,20 @@ public class ShapeUpgrade_FixSmallCurves : ShapeUpgrade_Tool
     /// <summary>The tool splitting pcurves.</summary>
     protected ShapeUpgrade_SplitCurve2d? mySplitCurve2dTool;
     /// <summary>The edge.</summary>
-    protected TopoDS_Edge myEdge;
+    protected Edge myEdge;
     /// <summary>The face.</summary>
-    protected TopoDS_Face myFace;
+    protected Face myFace;
 
     /// <summary>Empty constructor.</summary>
     public ShapeUpgrade_FixSmallCurves()
     {
-        myEdge = new TopoDS_Edge();
-        myFace = new TopoDS_Face();
+        myEdge = new Edge();
+        myFace = new Face();
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
     }
 
     /// <summary>Initializes with the edge and the face.</summary>
-    public void Init(in TopoDS_Edge theEdge, in TopoDS_Face theFace)
+    public void Init(in Edge theEdge, in Face theFace)
     {
         myEdge = theEdge;
         myFace = theFace;
@@ -44,9 +46,9 @@ public class ShapeUpgrade_FixSmallCurves : ShapeUpgrade_Tool
     /// Approximates the edge's curves between <paramref name="First"/> and <paramref name="Last"/> by single segments;
     /// false if not done (always, in the base class).
     /// </summary>
-    public virtual bool Approx(ref Geom_Curve? Curve3d,
-                               ref Geom2d_Curve? Curve2d,
-                               ref Geom2d_Curve? Curve2dR,
+    public virtual bool Approx(ref Curve3D? Curve3d,
+                               ref Curve2D? Curve2d,
+                               ref Curve2D? Curve2dR,
                                ref double First,
                                ref double Last)
     {

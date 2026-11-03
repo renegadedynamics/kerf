@@ -6,6 +6,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Occt.Contap_TFunction;
@@ -24,7 +25,7 @@ namespace Occt;
 /// </remarks>
 public sealed class Contap_SurfFunction : FunctionSetWithDerivatives, IIntWalk_IWFunction<Contap_SurfFunction>
 {
-    private Adaptor3d_Surface? mySurf;
+    private SurfaceAdaptorBase? mySurf;
     private double myMean;
     private Contap_TFunction myType;
     private Direction3D myDir;
@@ -94,7 +95,7 @@ public sealed class Contap_SurfFunction : FunctionSetWithDerivatives, IIntWalk_I
         new(theOther);
 
     /// <summary>Sets the surface, and the mean length of its normal at its sample points.</summary>
-    public void Set(Adaptor3d_Surface S)
+    public void Set(SurfaceAdaptorBase S)
     {
         mySurf = S;
         int i;
@@ -328,7 +329,7 @@ public sealed class Contap_SurfFunction : FunctionSetWithDerivatives, IIntWalk_I
             else
             {
                 d2d = new Direction2D(-Fpv, Fpu);
-                Adaptor3d_HSurfaceTool.D1(mySurf!, Usol, Vsol, out solpt, out Vector3D d1u, out Vector3D d1v); // ajout jag 02.95
+                HSurfaceTool.D1(mySurf!, Usol, Vsol, out solpt, out Vector3D d1u, out Vector3D d1v); // ajout jag 02.95
 
                 Xyz d3dxyz = -Fpv * d1u.XYZ();
                 d3dxyz.Add(Fpu * d1v.XYZ());
@@ -372,8 +373,8 @@ public sealed class Contap_SurfFunction : FunctionSetWithDerivatives, IIntWalk_I
 
     public double Angle() => myAng;
 
-    public Adaptor3d_Surface Surface() => mySurf!;
+    public SurfaceAdaptorBase Surface() => mySurf!;
 
     /// <summary>The surface (the walking's name for it).</summary>
-    public Adaptor3d_Surface PSurface() => Surface();
+    public SurfaceAdaptorBase PSurface() => Surface();
 }

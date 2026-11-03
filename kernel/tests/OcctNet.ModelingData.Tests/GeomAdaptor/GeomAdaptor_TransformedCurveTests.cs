@@ -1,6 +1,7 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomAdaptor_TransformedCurve_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -38,26 +39,26 @@ public class GeomAdaptor_TransformedCurveTest
         return aTrsf;
     }
 
-    private static Geom_Circle UnitCircle2() => new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
+    private static CircleCurve3D UnitCircle2() => new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
 
     // Tests for GeomAdaptor_TransformedCurve construction
 
     [Fact]
     public void DefaultConstructor()
     {
-        GeomAdaptor_TransformedCurve aCurve = new();
+        TransformedCurve aCurve = new();
         Assert.True(aCurve.Is3DCurve());
-        Assert.False(aCurve.IsCurveOnSurface());
+        Assert.False(aCurve.IsCurveOnSurface);
         Assert.Equal(TransformForm.Identity, aCurve.Trsf().Form());
     }
 
     [Fact]
     public void ConstructWithCurveAndTrsf()
     {
-        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         Transform3D aTrsf = CreateTranslation(0, 0, 5);
 
-        GeomAdaptor_TransformedCurve aCurve = new(aLine, aTrsf);
+        TransformedCurve aCurve = new(aLine, aTrsf);
         Assert.True(aCurve.Is3DCurve());
         Assert.Equal(CurveKind.Line, aCurve.GetType());
         Assert.Equal(TransformForm.Translation, aCurve.Trsf().Form());
@@ -66,10 +67,10 @@ public class GeomAdaptor_TransformedCurveTest
     [Fact]
     public void ConstructWithBounds()
     {
-        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         Transform3D aTrsf = CreateTranslation(0, 0, 5);
 
-        GeomAdaptor_TransformedCurve aCurve = new(aLine, 0.0, 10.0, aTrsf);
+        TransformedCurve aCurve = new(aLine, 0.0, 10.0, aTrsf);
         Assert.Equal(0.0, aCurve.FirstParameter(), THE_TOLERANCE);
         Assert.Equal(10.0, aCurve.LastParameter(), THE_TOLERANCE);
     }
@@ -79,10 +80,10 @@ public class GeomAdaptor_TransformedCurveTest
     [Fact]
     public void Line_IdentityTransform()
     {
-        Geom_Line aLine = new(new Point3D(1, 2, 3), new Direction3D(1, 0, 0));
+        LineCurve3D aLine = new(new Point3D(1, 2, 3), new Direction3D(1, 0, 0));
         Transform3D aTrsf = new(); // identity
 
-        GeomAdaptor_TransformedCurve aCurve = new(aLine, aTrsf);
+        TransformedCurve aCurve = new(aLine, aTrsf);
 
         // With identity transform, results should match direct Geom_Line evaluation
         double aT = 5.0;
@@ -94,10 +95,10 @@ public class GeomAdaptor_TransformedCurveTest
     [Fact]
     public void Circle_IdentityTransform()
     {
-        Geom_Circle aCircle = UnitCircle2();
+        CircleCurve3D aCircle = UnitCircle2();
         Transform3D aTrsf = new(); // identity
 
-        GeomAdaptor_TransformedCurve aCurve = new(aCircle, aTrsf);
+        TransformedCurve aCurve = new(aCircle, aTrsf);
         Assert.Equal(CurveKind.Circle, aCurve.GetType());
 
         double[] aParams = [0.0, M_PI / 2, M_PI, 3 * M_PI / 2, 2 * M_PI];
@@ -114,8 +115,8 @@ public class GeomAdaptor_TransformedCurveTest
     [Fact]
     public void Line_Translation()
     {
-        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        GeomAdaptor_TransformedCurve aCurve = new(aLine, CreateTranslation(0, 0, 5));
+        LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        TransformedCurve aCurve = new(aLine, CreateTranslation(0, 0, 5));
 
         // Line along X at Z=0, translated to Z=5
         Point3D aPnt = aCurve.Value(3.0);
@@ -127,8 +128,8 @@ public class GeomAdaptor_TransformedCurveTest
     [Fact]
     public void Line_Rotation()
     {
-        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        GeomAdaptor_TransformedCurve aCurve = new(aLine, CreateRotationZ(M_PI / 2));
+        LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        TransformedCurve aCurve = new(aLine, CreateRotationZ(M_PI / 2));
 
         // Line along X rotated 90 degrees -> line along Y
         Point3D aPnt = aCurve.Value(3.0);
@@ -140,8 +141,8 @@ public class GeomAdaptor_TransformedCurveTest
     [Fact]
     public void Circle_Translation()
     {
-        Geom_Circle aCircle = UnitCircle2();
-        GeomAdaptor_TransformedCurve aCurve = new(aCircle, CreateTranslation(10, 20, 30));
+        CircleCurve3D aCircle = UnitCircle2();
+        TransformedCurve aCurve = new(aCircle, CreateTranslation(10, 20, 30));
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 2 * M_PI, 17);
 
@@ -159,8 +160,8 @@ public class GeomAdaptor_TransformedCurveTest
     [Fact]
     public void D1_Translation()
     {
-        Geom_Circle aCircle = UnitCircle2();
-        GeomAdaptor_TransformedCurve aCurve = new(aCircle, CreateTranslation(10, 20, 30));
+        CircleCurve3D aCircle = UnitCircle2();
+        TransformedCurve aCurve = new(aCircle, CreateTranslation(10, 20, 30));
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 2 * M_PI, 9);
 
@@ -182,8 +183,8 @@ public class GeomAdaptor_TransformedCurveTest
     [Fact]
     public void D1_Rotation()
     {
-        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        GeomAdaptor_TransformedCurve aCurve = new(aLine, CreateRotationZ(M_PI / 2));
+        LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        TransformedCurve aCurve = new(aLine, CreateRotationZ(M_PI / 2));
 
         aCurve.D1(3.0, out _, out Vector3D aD1);
 
@@ -196,8 +197,8 @@ public class GeomAdaptor_TransformedCurveTest
     [Fact]
     public void D2_Translation()
     {
-        Geom_Circle aCircle = UnitCircle2();
-        GeomAdaptor_TransformedCurve aCurve = new(aCircle, CreateTranslation(10, 20, 30));
+        CircleCurve3D aCircle = UnitCircle2();
+        TransformedCurve aCurve = new(aCircle, CreateTranslation(10, 20, 30));
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 2 * M_PI, 9);
 
@@ -214,9 +215,9 @@ public class GeomAdaptor_TransformedCurveTest
     [Fact]
     public void D3_Rotation()
     {
-        Geom_Circle aCircle = UnitCircle2();
+        CircleCurve3D aCircle = UnitCircle2();
         Transform3D aTrsf = CreateRotationZ(M_PI / 4);
-        GeomAdaptor_TransformedCurve aCurve = new(aCircle, aTrsf);
+        TransformedCurve aCurve = new(aCircle, aTrsf);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 2 * M_PI, 9);
 
@@ -241,9 +242,9 @@ public class GeomAdaptor_TransformedCurveTest
     [Fact]
     public void DN_Rotation()
     {
-        Geom_Circle aCircle = UnitCircle2();
+        CircleCurve3D aCircle = UnitCircle2();
         Transform3D aTrsf = CreateRotationZ(M_PI / 3);
-        GeomAdaptor_TransformedCurve aCurve = new(aCircle, aTrsf);
+        TransformedCurve aCurve = new(aCircle, aTrsf);
 
         for (int aOrder = 1; aOrder <= 3; ++aOrder)
         {
@@ -259,8 +260,8 @@ public class GeomAdaptor_TransformedCurveTest
     [Fact]
     public void LineExtraction_Transform()
     {
-        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        GeomAdaptor_TransformedCurve aCurve = new(aLine, CreateTranslation(0, 0, 5));
+        LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        TransformedCurve aCurve = new(aLine, CreateTranslation(0, 0, 5));
 
         Line3D aExtracted = aCurve.Line();
 
@@ -274,8 +275,8 @@ public class GeomAdaptor_TransformedCurveTest
     [Fact]
     public void CircleExtraction_Transform()
     {
-        Geom_Circle aCircle = UnitCircle2();
-        GeomAdaptor_TransformedCurve aCurve = new(aCircle, CreateTranslation(10, 0, 0));
+        CircleCurve3D aCircle = UnitCircle2();
+        TransformedCurve aCurve = new(aCircle, CreateTranslation(10, 0, 0));
 
         Circle3D aExtracted = aCurve.Circle();
 
@@ -291,10 +292,10 @@ public class GeomAdaptor_TransformedCurveTest
     [Fact]
     public void ShallowCopy()
     {
-        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        GeomAdaptor_TransformedCurve aCurve = new(aLine, 0.0, 10.0, CreateTranslation(0, 0, 5));
+        LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        TransformedCurve aCurve = new(aLine, 0.0, 10.0, CreateTranslation(0, 0, 5));
 
-        Adaptor3d_Curve aCopy = aCurve.ShallowCopy();
+        CurveAdaptorBase aCopy = aCurve.ShallowCopy();
         Assert.NotNull(aCopy);
 
         // Copy should evaluate the same

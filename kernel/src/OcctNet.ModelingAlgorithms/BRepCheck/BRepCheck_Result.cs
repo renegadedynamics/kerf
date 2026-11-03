@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using static Occt.BRepCheck_Status;
 
 namespace Occt;
@@ -19,32 +21,32 @@ namespace Occt;
 /// </remarks>
 public abstract class BRepCheck_Result : Transient
 {
-    protected TopoDS_Shape myShape;
+    protected Shape myShape;
     protected bool myMin;
     protected bool myBlind;
     protected bool myIsParallel;
 
     /// <summary>The status lists of the shape (keyed by itself) and of its contexts.</summary>
-    protected readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<BRepCheck_Status>> myMap =
-        new(TopTools_ShapeMapHasher.Instance);
+    protected readonly NCollection_DataMap<Shape, NCollection_List<BRepCheck_Status>> myMap =
+        new(ShapeHasher.Instance);
 
     /// <summary>OCCT's <c>std::mutex myMutex</c>, taken when <see cref="IsParallel"/>.</summary>
     /// <remarks>Internal as well: OCCT makes BRepCheck_ParallelAnalyzer a friend.</remarks>
     protected internal readonly Lock myMutex = new();
 
     // OCCT's map iterator: a snapshot of the map taken by InitContextIterator
-    private KeyValuePair<TopoDS_Shape, NCollection_List<BRepCheck_Status>>[] myIterItems = [];
+    private KeyValuePair<Shape, NCollection_List<BRepCheck_Status>>[] myIterItems = [];
     private int myIterIndex;
 
     protected BRepCheck_Result()
     {
-        myShape = new TopoDS_Shape();
+        myShape = new Shape();
         myMin = false;
         myBlind = false;
     }
 
     /// <summary>Starts a check of <paramref name="S"/>: clears the statuses and runs <see cref="Minimum"/>.</summary>
-    public void Init(in TopoDS_Shape S)
+    public void Init(in Shape S)
     {
         myShape = S;
         myMin = false;
@@ -54,7 +56,7 @@ public abstract class BRepCheck_Result : Transient
     }
 
     /// <summary>Checks the shape in the context of <paramref name="ContextShape"/>, which contains it.</summary>
-    public abstract void InContext(in TopoDS_Shape ContextShape);
+    public abstract void InContext(in Shape ContextShape);
 
     /// <summary>The checks of the shape on its own.</summary>
     public abstract void Minimum();
@@ -63,7 +65,7 @@ public abstract class BRepCheck_Result : Transient
     public abstract void Blind();
 
     /// <summary>Adds <see cref="BRepCheck_CheckFail"/> to the statuses on <paramref name="S"/>.</summary>
-    public void SetFailStatus(in TopoDS_Shape S)
+    public void SetFailStatus(in Shape S)
     {
         bool aLocked = myIsParallel;
         if (aLocked)
@@ -112,7 +114,7 @@ public abstract class BRepCheck_Result : Transient
 
     public bool MoreShapeInContext() => myIterIndex < myIterItems.Length;
 
-    public TopoDS_Shape ContextualShape() => myIterItems[myIterIndex].Key;
+    public Shape ContextualShape() => myIterItems[myIterIndex].Key;
 
     public NCollection_List<BRepCheck_Status> StatusOnShape() => myIterItems[myIterIndex].Value;
 
@@ -131,7 +133,7 @@ public abstract class BRepCheck_Result : Transient
     /// <summary>True if sub-algorithms should use parallel execution.</summary>
     public bool IsParallel() => myIsParallel;
 
-    public bool IsStatusOnShape(in TopoDS_Shape theShape) => myMap.IsBound(theShape);
+    public bool IsStatusOnShape(in Shape theShape) => myMap.IsBound(theShape);
 
-    public NCollection_List<BRepCheck_Status> StatusOnShape(in TopoDS_Shape theShape) => myMap.Find(theShape);
+    public NCollection_List<BRepCheck_Status> StatusOnShape(in Shape theShape) => myMap.Find(theShape);
 }

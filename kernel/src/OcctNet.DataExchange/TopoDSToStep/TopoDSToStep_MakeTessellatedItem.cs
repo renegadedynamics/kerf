@@ -8,9 +8,11 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -70,21 +72,21 @@ public sealed class TopoDSToStep_MakeTessellatedItem : TopoDSToStep_Root
     {
     }
 
-    public TopoDSToStep_MakeTessellatedItem(in TopoDS_Face theFace, TopoDSToStep_Tool theTool, Transfer_FinderProcess theFP,
+    public TopoDSToStep_MakeTessellatedItem(in Face theFace, TopoDSToStep_Tool theTool, Transfer_FinderProcess theFP,
                                             bool theToPreferSurfaceSet, in StepData_Factors theLocalFactors,
                                             ProgressRange theProgress = default)
     {
         Init(theFace, theTool, theFP, theToPreferSurfaceSet, theLocalFactors, theProgress);
     }
 
-    public TopoDSToStep_MakeTessellatedItem(in TopoDS_Shell theShell, TopoDSToStep_Tool theTool, Transfer_FinderProcess theFP,
+    public TopoDSToStep_MakeTessellatedItem(in Shell theShell, TopoDSToStep_Tool theTool, Transfer_FinderProcess theFP,
                                             in StepData_Factors theLocalFactors, ProgressRange theProgress = default)
     {
         Init(theShell, theTool, theFP, theLocalFactors, theProgress);
     }
 
     /// <summary>Creates a triangulated_face or a triangulated_surface_set from a face.</summary>
-    public void Init(in TopoDS_Face theFace, TopoDSToStep_Tool theTool, Transfer_FinderProcess theFP, bool theToPreferSurfaceSet,
+    public void Init(in Face theFace, TopoDSToStep_Tool theTool, Transfer_FinderProcess theFP, bool theToPreferSurfaceSet,
                      in StepData_Factors theLocalFactors, ProgressRange theProgress = default)
     {
         done = false;
@@ -93,7 +95,7 @@ public sealed class TopoDSToStep_MakeTessellatedItem : TopoDSToStep_Root
             return;
         }
 
-        Triangulation aMesh = BRep_Tool.Triangulation(theFace, out Placement aLoc);
+        Triangulation aMesh = Tool.Triangulation(theFace, out Placement aLoc);
         if (aMesh is null)
         {
             var anErrShape = new TransferBRep_ShapeMapper(theFace);
@@ -136,7 +138,7 @@ public sealed class TopoDSToStep_MakeTessellatedItem : TopoDSToStep_Root
     }
 
     /// <summary>Creates a tessellated_shell from a shell.</summary>
-    public void Init(in TopoDS_Shell theShell, TopoDSToStep_Tool theTool, Transfer_FinderProcess theFP, in StepData_Factors theLocalFactors,
+    public void Init(in Shell theShell, TopoDSToStep_Tool theTool, Transfer_FinderProcess theFP, in StepData_Factors theLocalFactors,
                      ProgressRange theProgress = default)
     {
         done = false;
@@ -147,18 +149,18 @@ public sealed class TopoDSToStep_MakeTessellatedItem : TopoDSToStep_Root
             return;
         }
 
-        var anExp = new TopExp_Explorer();
+        var anExp = new Explorer();
         int aNbFaces = 0;
-        for (anExp.Init(theShell, TopAbs_FACE); anExp.More(); anExp.Next(), ++aNbFaces)
+        for (anExp.Init(theShell, ShapeType.Face); anExp.More(); anExp.Next(), ++aNbFaces)
         {
         }
 
         using var aPS = new ProgressScope(theProgress, null, aNbFaces);
 
         var aTessFaces = new NCollection_Sequence<StepVisual_TessellatedStructuredItem>();
-        for (anExp.Init(theShell, TopAbs_FACE); anExp.More() && aPS.More(); anExp.Next(), aPS.Next())
+        for (anExp.Init(theShell, ShapeType.Face); anExp.More() && aPS.More(); anExp.Next(), aPS.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(anExp.Current());
+            Face aFace = ShapeCasts.Face(anExp.Current());
             var aMakeFace = new TopoDSToStep_MakeTessellatedItem(aFace, theTool, theFP, false, theLocalFactors, aPS.Next());
             if (aMakeFace.IsDone())
             {

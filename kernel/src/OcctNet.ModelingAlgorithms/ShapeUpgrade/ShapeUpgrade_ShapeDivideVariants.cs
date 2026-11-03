@@ -13,6 +13,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
 
 namespace Occt;
@@ -31,7 +32,7 @@ public class ShapeUpgrade_ShapeDivideAngle : ShapeUpgrade_ShapeDivide
     }
 
     /// <summary>Creates the tool with the maximal angle and the shape.</summary>
-    public ShapeUpgrade_ShapeDivideAngle(double MaxAngle, in TopoDS_Shape S) : base(S)
+    public ShapeUpgrade_ShapeDivideAngle(double MaxAngle, in Shape S) : base(S)
     {
         InitTool(MaxAngle);
     }
@@ -90,7 +91,7 @@ public class ShapeUpgrade_ShapeDivideArea : ShapeUpgrade_ShapeDivide
     }
 
     /// <summary>Initializes by a shape.</summary>
-    public ShapeUpgrade_ShapeDivideArea(in TopoDS_Shape S) : base(S)
+    public ShapeUpgrade_ShapeDivideArea(in Shape S) : base(S)
     {
         myMaxArea = Kerf.Engine.Foundation.Precision.Infinite();
         myNbParts = 0;
@@ -150,7 +151,7 @@ public class ShapeUpgrade_ShapeDivideArea : ShapeUpgrade_ShapeDivide
 public class ShapeUpgrade_ShapeDivideClosed : ShapeUpgrade_ShapeDivide
 {
     /// <summary>Initializes the tool with the shape and one cut.</summary>
-    public ShapeUpgrade_ShapeDivideClosed(in TopoDS_Shape S) : base(S)
+    public ShapeUpgrade_ShapeDivideClosed(in Shape S) : base(S)
     {
         SetNbSplitPoints(1);
     }
@@ -173,7 +174,7 @@ public class ShapeUpgrade_ShapeDivideClosed : ShapeUpgrade_ShapeDivide
 public class ShapeUpgrade_ShapeDivideClosedEdges : ShapeUpgrade_ShapeDivide
 {
     /// <summary>Initializes the tool with the shape and one cut.</summary>
-    public ShapeUpgrade_ShapeDivideClosedEdges(in TopoDS_Shape S) : base(S)
+    public ShapeUpgrade_ShapeDivideClosedEdges(in Shape S) : base(S)
     {
         SetNbSplitPoints(1);
     }
@@ -215,7 +216,7 @@ public class ShapeUpgrade_ShapeDivideContinuity : ShapeUpgrade_ShapeDivide
     }
 
     /// <summary>Initializes by a shape.</summary>
-    public ShapeUpgrade_ShapeDivideContinuity(in TopoDS_Shape S) : base(S)
+    public ShapeUpgrade_ShapeDivideContinuity(in Shape S) : base(S)
     {
         myCurve3dCriterion = C1;
         myCurve2dCriterion = C1;

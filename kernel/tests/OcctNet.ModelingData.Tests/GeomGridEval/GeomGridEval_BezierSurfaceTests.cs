@@ -1,6 +1,7 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomGridEval_BezierSurface_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -21,7 +22,7 @@ public class GeomGridEval_BezierSurfaceTest
     }
 
     // The 3x3 poles (i, j, sin(i + j)) used by several tests.
-    private static Geom_BezierSurface SinSurface3x3()
+    private static BezierSurface SinSurface3x3()
     {
         NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
         for (int i = 1; i <= 3; ++i)
@@ -31,7 +32,7 @@ public class GeomGridEval_BezierSurfaceTest
                 aPoles.SetValue(i, j, new Point3D(i, j, Math.Sin(i + j)));
             }
         }
-        return new Geom_BezierSurface(aPoles);
+        return new BezierSurface(aPoles);
     }
 
     // The 3x3 poles (i - 1, j - 1, sin((i - 1) * 0.5 + (j - 1) * 0.5)) of the isoline tests.
@@ -48,9 +49,9 @@ public class GeomGridEval_BezierSurfaceTest
         return aPoles;
     }
 
-    private static void CheckDN(Geom_BezierSurface theBezier, int theNU, int theNV)
+    private static void CheckDN(BezierSurface theBezier, int theNU, int theNV)
     {
-        GeomGridEval_BezierSurface anEval = new(theBezier);
+        BezierSurfaceGrid anEval = new(theBezier);
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 5);
         NCollection_Array2<Vector3D> aGrid = anEval.EvaluateGridDN(aParams, aParams, theNU, theNV);
         for (int i = 1; i <= 5; ++i)
@@ -73,9 +74,9 @@ public class GeomGridEval_BezierSurfaceTest
         aPoles.SetValue(1, 2, new Point3D(0, 1, 0));
         aPoles.SetValue(2, 2, new Point3D(1, 1, 0));
 
-        Geom_BezierSurface aBezier = new(aPoles);
+        BezierSurface aBezier = new(aPoles);
 
-        GeomGridEval_BezierSurface anEval = new(aBezier);
+        BezierSurfaceGrid anEval = new(aBezier);
         Assert.NotNull(anEval.Geometry());
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 3);
@@ -112,8 +113,8 @@ public class GeomGridEval_BezierSurfaceTest
         aWeights.SetValue(1, 2, 1.0);
         aWeights.SetValue(2, 2, 2.0); // Higher weight
 
-        Geom_BezierSurface aBezier = new(aPoles, aWeights);
-        GeomGridEval_BezierSurface anEval = new(aBezier);
+        BezierSurface aBezier = new(aPoles, aWeights);
+        BezierSurfaceGrid anEval = new(aBezier);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 5);
 
@@ -138,12 +139,12 @@ public class GeomGridEval_BezierSurfaceTest
         aPoles.SetValue(1, 2, new Point3D(0, 1, 0));
         aPoles.SetValue(2, 2, new Point3D(1, 1, 1));
 
-        Geom_BezierSurface aBezier = new(aPoles);
-        GeomGridEval_BezierSurface anEval = new(aBezier);
+        BezierSurface aBezier = new(aPoles);
+        BezierSurfaceGrid anEval = new(aBezier);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 5);
 
-        NCollection_Array2<Geom_Surface.ResD1> aGrid = anEval.EvaluateGridD1(aParams, aParams);
+        NCollection_Array2<Surface.ResD1> aGrid = anEval.EvaluateGridD1(aParams, aParams);
 
         for (int i = 1; i <= 5; ++i)
         {
@@ -160,12 +161,12 @@ public class GeomGridEval_BezierSurfaceTest
     [Fact]
     public void DerivativeD2()
     {
-        Geom_BezierSurface aBezier = SinSurface3x3();
-        GeomGridEval_BezierSurface anEval = new(aBezier);
+        BezierSurface aBezier = SinSurface3x3();
+        BezierSurfaceGrid anEval = new(aBezier);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 5);
 
-        NCollection_Array2<Geom_Surface.ResD2> aGrid = anEval.EvaluateGridD2(aParams, aParams);
+        NCollection_Array2<Surface.ResD2> aGrid = anEval.EvaluateGridD2(aParams, aParams);
 
         for (int i = 1; i <= 5; ++i)
         {
@@ -195,12 +196,12 @@ public class GeomGridEval_BezierSurfaceTest
             }
         }
 
-        Geom_BezierSurface aBezier = new(aPoles);
-        GeomGridEval_BezierSurface anEval = new(aBezier);
+        BezierSurface aBezier = new(aPoles);
+        BezierSurfaceGrid anEval = new(aBezier);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 5);
 
-        NCollection_Array2<Geom_Surface.ResD3> aGrid = anEval.EvaluateGridD3(aParams, aParams);
+        NCollection_Array2<Surface.ResD3> aGrid = anEval.EvaluateGridD3(aParams, aParams);
 
         for (int i = 1; i <= 5; ++i)
         {
@@ -243,8 +244,8 @@ public class GeomGridEval_BezierSurfaceTest
     public void DerivativeDN_BeyondDegree()
     {
         // Biquadratic Bezier (degree 2 in both directions)
-        Geom_BezierSurface aBezier = SinSurface3x3();
-        GeomGridEval_BezierSurface anEval = new(aBezier);
+        BezierSurface aBezier = SinSurface3x3();
+        BezierSurfaceGrid anEval = new(aBezier);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 5);
 
@@ -277,7 +278,7 @@ public class GeomGridEval_BezierSurfaceTest
         aWeights.SetValue(1, 2, 1.0);
         aWeights.SetValue(2, 2, 2.0);
 
-        Geom_BezierSurface aBezier = new(aPoles, aWeights);
+        BezierSurface aBezier = new(aPoles, aWeights);
 
         // Test DN(1,0), DN(0,1), and DN(1,1)
         for (int aNU = 0; aNU <= 1; ++aNU)
@@ -297,8 +298,8 @@ public class GeomGridEval_BezierSurfaceTest
     public void IsolineU_CompareToGeomD0()
     {
         // Create a non-planar Bezier surface
-        Geom_BezierSurface aBezier = new(HalfSinPoles3x3());
-        GeomGridEval_BezierSurface anEval = new(aBezier);
+        BezierSurface aBezier = new(HalfSinPoles3x3());
+        BezierSurfaceGrid anEval = new(aBezier);
 
         // U-isoline: 1 U param, multiple V params (triggers isoline path)
         NCollection_Array1<double> aUParams = new(1, 1);
@@ -323,8 +324,8 @@ public class GeomGridEval_BezierSurfaceTest
     public void IsolineV_CompareToGeomD0()
     {
         // Create a non-planar Bezier surface
-        Geom_BezierSurface aBezier = new(HalfSinPoles3x3());
-        GeomGridEval_BezierSurface anEval = new(aBezier);
+        BezierSurface aBezier = new(HalfSinPoles3x3());
+        BezierSurfaceGrid anEval = new(aBezier);
 
         // V-isoline: multiple U params, 1 V param (triggers isoline path)
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 10);
@@ -360,8 +361,8 @@ public class GeomGridEval_BezierSurfaceTest
             }
         }
 
-        Geom_BezierSurface aBezier = new(aPoles, aWeights);
-        GeomGridEval_BezierSurface anEval = new(aBezier);
+        BezierSurface aBezier = new(aPoles, aWeights);
+        BezierSurfaceGrid anEval = new(aBezier);
 
         // U-isoline on rational surface
         NCollection_Array1<double> aUParams = new(1, 1);

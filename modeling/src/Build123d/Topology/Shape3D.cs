@@ -1,5 +1,8 @@
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace Build123d;
@@ -7,19 +10,19 @@ namespace Build123d;
 /// <summary>The methods shared by solids and compounds (build123d's <c>Mixin3D</c>).</summary>
 public abstract partial class Shape3D : Shape
 {
-    private protected Shape3D(TopoDS_Shape? obj, string label = "", Color? color = null) : base(obj, label, color) { }
+    private protected Shape3D(global::Kerf.Topology.Shape? obj, string label = "", Color? color = null) : base(obj, label, color) { }
 
     internal override int? Dim => 3;
 
     /// <summary>A 3D operation's result as topology rather than as the source's class: a Solid, or a Part of several.</summary>
-    internal static Shape Make3DResult(TopoDS_Shape shape)
+    internal static Shape Make3DResult(global::Kerf.Topology.Shape shape)
     {
         var result = TopoUtil.Downcast(shape);
         if (result.IsCompound())
-            result = TopoUtil.Downcast(TopoUtil.UnwrapCompound(TopoDS.Compound(result)));
+            result = TopoUtil.Downcast(TopoUtil.UnwrapCompound(ShapeCasts.Compound(result)));
         if (result.IsCompound())
-            return MakeComposite(TopoUtil.TopLevelShapes(result).Select(s => new Solid(TopoDS.Solid(s))), 3);
-        return new Solid(TopoDS.Solid(result));
+            return MakeComposite(TopoUtil.TopLevelShapes(result).Select(s => new Solid(ShapeCasts.Solid(s))), 3);
+        return new Solid(ShapeCasts.Solid(result));
     }
 
     /// <summary>The centre of mass (by default) or of the bounding box; the geometric centre isn't supported.</summary>
@@ -35,7 +38,7 @@ public abstract partial class Shape3D : Shape
                 throw new ArgumentException("Center of GEOMETRY is not supported for this object");
             case CenterOf.Mass:
             {
-                var props = new GProp_GProps();
+                var props = new Properties();
                 MassProperties(TopoShape, props);
                 var c = props.CentreOfMass();
                 return new Vector(c);
@@ -59,19 +62,19 @@ public abstract partial class Shape3D : Shape
             if (edges.Any(e => !faceEdges.Contains(e)))
                 throw new ArgumentException("Some edges are not part of the face");
         }
-        var map = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(TopoShape, TopAbs_ShapeEnum.TopAbs_EDGE, TopAbs_ShapeEnum.TopAbs_FACE, map);
+        var map = new NCollection_IndexedDataMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(TopoShape, global::Kerf.Topology.ShapeType.Edge, global::Kerf.Topology.ShapeType.Face, map);
         var builder = new BRepFilletAPI_MakeChamfer(TopoShape);
         var distance2 = length2 is { } l2 && l2 != 0 ? l2 : length;
         foreach (var edge in edges)
         {
-            TopoDS_Face topoFace;
+            global::Kerf.Topology.Face topoFace;
             if (face is not null)
                 topoFace = face.TopoFace;
             else
             {
                 var ancestors = map.FindFromKey(edge.TopoShape);
-                topoFace = TopoDS.Face(ancestors.First());
+                topoFace = ShapeCasts.Face(ancestors.First());
             }
             builder.Add(length, distance2, edge.TopoEdge, topoFace);
         }
@@ -105,7 +108,7 @@ public abstract partial class Shape3D : Shape
     private Shape DPrismCore(Face? basis, IEnumerable<Face> faces, double? depth, double taper, Face? upToFace, bool thruAll, bool additive)
     {
         var shape = TopoShape;
-        var noBasis = new TopoDS_Face();
+        var noBasis = new global::Kerf.Topology.Face();
         foreach (var face in faces)
         {
             var feature = new BRepFeat_MakeDPrism(shape, face.TopoFace, basis?.TopoFace ?? noBasis,
@@ -155,7 +158,7 @@ public abstract partial class Shape3D : Shape
     }
 
     /// <summary>The faulty contours of a failed fillet, in terms of the caller's selected edges.</summary>
-    private static string FilletFailureDetails(BRepFilletAPI_MakeFillet builder, List<TopoDS_Edge> edges)
+    private static string FilletFailureDetails(BRepFilletAPI_MakeFillet builder, List<global::Kerf.Topology.Edge> edges)
     {
         var faulty = new Dictionary<string, HashSet<Edge>>();
         var order = new List<string>();
@@ -255,7 +258,7 @@ public abstract partial class Shape3D : Shape
         builder.Build();
         var shellShape = builder.Shape();
         // OCCT can report success and still hand back a null shape
-        if (shellShape.IsNull())
+        if (shellShape.IsNull)
             throw new InvalidOperationException("hollow Error, an alternative kind may resolve this error");
         if (faceList.Count > 0)
             return CastLike(shellShape);
@@ -273,7 +276,7 @@ public abstract partial class Shape3D : Shape
         var classifier = new BRepClass3d_SolidClassifier(TopoShape);
         var p = point.ToGpPnt();
         classifier.Perform(p, tolerance);
-        return classifier.State() == TopAbs_State.TopAbs_IN || classifier.IsOnAFace();
+        return classifier.State() == Containment.In || classifier.IsOnAFace();
     }
 
     /// <summary>
@@ -291,7 +294,7 @@ public abstract partial class Shape3D : Shape
         var builder = new BRepOffsetAPI_MakeThickSolid();
         builder.MakeThickSolidByJoin(TopoShape, faces, thickness, tolerance, BRepOffset_Mode.BRepOffset_Skin, true, false, join, true);
         builder.Build();
-        TopoDS_Shape solid;
+        global::Kerf.Topology.Shape solid;
         try
         {
             solid = builder.Shape();
@@ -300,10 +303,10 @@ public abstract partial class Shape3D : Shape
         {
             throw new InvalidOperationException("offset Error, an alternative kind may resolve this error", e);
         }
-        if (solid.IsNull())
+        if (solid.IsNull)
             throw new InvalidOperationException("offset Error, an alternative kind may resolve this error");
-        if (solid.ShapeType() == TopAbs_ShapeEnum.TopAbs_SOLID)
-            solid = ThreeD.ForwardSolid(TopoDS.Solid(solid));
+        if (solid.ShapeType() == global::Kerf.Topology.ShapeType.Solid)
+            solid = ThreeD.ForwardSolid(ShapeCasts.Solid(solid));
         var result = CastLike(solid);
         // The solid can be inverted: if so, reverse it
         return result.Volume < 0 ? result.Rewrapped(result.TopoShape.Reversed()) : result;
@@ -366,22 +369,22 @@ internal static class ThreeD
     /// whose faces point inward under a REVERSED flag on the solid, which <c>BRepFilletAPI_MakeFillet</c> misreads as an
     /// inside-out solid; rebuilding it FORWARD, each face carrying the orientation it had in effect, keeps the geometry.
     /// </summary>
-    internal static TopoDS_Shape ForwardSolid(TopoDS_Solid solid)
+    internal static global::Kerf.Topology.Shape ForwardSolid(global::Kerf.Topology.Solid solid)
     {
-        var flags = new List<TopAbs_Orientation> { solid.Orientation() };
-        var shells = new TopoDS_Iterator(solid, true, true);
+        var flags = new List<Orientation> { solid.Orientation() };
+        var shells = new Iterator(solid, true, true);
         for (; shells.More(); shells.Next())
             flags.Add(shells.Value().Orientation());
-        if (flags.All(f => f == TopAbs_Orientation.TopAbs_FORWARD))
+        if (flags.All(f => f == Orientation.Forward))
             return solid;
-        var forwardShells = new List<TopoDS_Shape>();
-        for (shells = new TopoDS_Iterator(solid, true, true); shells.More(); shells.Next())   // orientations composed
+        var forwardShells = new List<global::Kerf.Topology.Shape>();
+        for (shells = new Iterator(solid, true, true); shells.More(); shells.Next())   // orientations composed
         {
-            var faces = new List<TopoDS_Shape>();
-            for (var it = new TopoDS_Iterator(shells.Value(), true, true); it.More(); it.Next())
+            var faces = new List<global::Kerf.Topology.Shape>();
+            for (var it = new Iterator(shells.Value(), true, true); it.More(); it.Next())
                 faces.Add(it.Value());
-            forwardShells.Add(TopoDS_Builder.MakeShell(faces));
+            forwardShells.Add(Builder.MakeShell(faces));
         }
-        return TopoDS_Builder.MakeSolid(forwardShells);
+        return Builder.MakeSolid(forwardShells);
     }
 }

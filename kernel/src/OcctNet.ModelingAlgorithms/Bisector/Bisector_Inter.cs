@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -39,10 +40,10 @@ public sealed class Bisector_Inter : IntRes2d_Intersection
     //===================================================================================
     // Construction of a segment of line from PMin to PMax, parameterised from UMin.
     //===================================================================================
-    private static Geom2d_Line ConstructSegment(in Point2D PMin, in Point2D PMax, double UMin, double UMax)
+    private static LineCurve2D ConstructSegment(in Point2D PMin, in Point2D PMax, double UMin, double UMax)
     {
         Direction2D Dir = new(PMax.X() - PMin.X(), PMax.Y() - PMin.Y());
-        Geom2d_Line L = new(new Point2D(PMin.X() - UMin * Dir.X(), PMin.Y() - UMin * Dir.Y()), Dir);
+        LineCurve2D L = new(new Point2D(PMin.X() - UMin * Dir.X(), PMin.Y() - UMin * Dir.Y()), Dir);
         return L;
     }
 
@@ -57,8 +58,8 @@ public sealed class Bisector_Inter : IntRes2d_Intersection
         Bisector_Curve Bis1 = (Bisector_Curve)C1.Value().ChangeBasisCurve();
         Bisector_Curve Bis2 = (Bisector_Curve)C2.Value().ChangeBasisCurve();
 
-        Geom2d_Curve?[] SBis1 = new Geom2d_Curve?[Bis1.NbIntervals() + 1];
-        Geom2d_Curve?[] SBis2 = new Geom2d_Curve?[Bis2.NbIntervals() + 1];
+        Curve2D?[] SBis1 = new Curve2D?[Bis1.NbIntervals() + 1];
+        Curve2D?[] SBis2 = new Curve2D?[Bis2.NbIntervals() + 1];
         IntRes2d_Domain[] SD1 = new IntRes2d_Domain[Bis1.NbIntervals() + 1];
         IntRes2d_Domain[] SD2 = new IntRes2d_Domain[Bis2.NbIntervals() + 1];
         for (int i = 0; i < SD1.Length; i++)
@@ -195,18 +196,18 @@ public sealed class Bisector_Inter : IntRes2d_Intersection
         }
     }
 
-    private void SinglePerform(Geom2d_Curve CBis1, in IntRes2d_Domain D1, Geom2d_Curve CBis2, in IntRes2d_Domain D2,
+    private void SinglePerform(Curve2D CBis1, in IntRes2d_Domain D1, Curve2D CBis2, in IntRes2d_Domain D2,
                                double TolConf, double Tol, bool ComunElement)
     {
-        Geom2d_Curve Bis1 = CBis1;
-        Geom2d_Curve Bis2 = CBis2;
+        Curve2D Bis1 = CBis1;
+        Curve2D Bis2 = CBis2;
 
         Type Type1 = Bis1.GetType();
         Type Type2 = Bis2.GetType();
 
         if (Type1 == typeof(Bisector_BisecAna) || Type2 == typeof(Bisector_BisecAna))
         {
-            Geom2d_Curve C2Bis1, C2Bis2;
+            Curve2D C2Bis1, C2Bis2;
             if (Type1 == typeof(Bisector_BisecAna))
             {
                 C2Bis1 = ((Bisector_BisecAna)Bis1).Geom2dCurve();
@@ -225,25 +226,25 @@ public sealed class Bisector_Inter : IntRes2d_Intersection
             }
             Type1 = C2Bis1.GetType();
             Type2 = C2Bis2.GetType();
-            if (Type1 == typeof(Geom2d_Line) && Type2 != typeof(Geom2d_Line))
+            if (Type1 == typeof(LineCurve2D) && Type2 != typeof(LineCurve2D))
             {
-                TestBound((Geom2d_Line)C2Bis1, D1, C2Bis2, D2, TolConf, false);
+                TestBound((LineCurve2D)C2Bis1, D1, C2Bis2, D2, TolConf, false);
             }
-            else if (Type2 == typeof(Geom2d_Line) && Type1 != typeof(Geom2d_Line))
+            else if (Type2 == typeof(LineCurve2D) && Type1 != typeof(LineCurve2D))
             {
-                TestBound((Geom2d_Line)C2Bis2, D2, C2Bis1, D1, TolConf, true);
+                TestBound((LineCurve2D)C2Bis2, D2, C2Bis1, D1, TolConf, true);
             }
             Geom2dInt_GInter Intersect = new();
-            Geom2dAdaptor_Curve AC2Bis1 = new(C2Bis1);
-            Geom2dAdaptor_Curve AC2Bis2 = new(C2Bis2);
+            CurveAdaptor2D AC2Bis1 = new(C2Bis1);
+            CurveAdaptor2D AC2Bis2 = new(C2Bis2);
             Intersect.Perform(AC2Bis1, D1, AC2Bis2, D2, TolConf, Tol);
             Append(Intersect, D1.FirstParameter(), D1.LastParameter(), D2.FirstParameter(), D2.LastParameter());
         }
         else if (Type1 == typeof(Bisector_BisecPC) || Type2 == typeof(Bisector_BisecPC))
         {
             Geom2dInt_GInter Intersect = new();
-            Geom2dAdaptor_Curve ABis1 = new(Bis1);
-            Geom2dAdaptor_Curve ABis2 = new(Bis2);
+            CurveAdaptor2D ABis1 = new(Bis1);
+            CurveAdaptor2D ABis2 = new(Bis2);
             Intersect.Perform(ABis1, D1, ABis2, D2, TolConf, Tol);
             Append(Intersect, D1.FirstParameter(), D1.LastParameter(), D2.FirstParameter(), D2.LastParameter());
         }
@@ -257,17 +258,17 @@ public sealed class Bisector_Inter : IntRes2d_Intersection
             // If one of bissectrices is not a segment, it is tested if
             // its extremities are on the straight line.
 
-            if (Type1 == typeof(Geom2d_Line) && Type2 != typeof(Geom2d_Line))
+            if (Type1 == typeof(LineCurve2D) && Type2 != typeof(LineCurve2D))
             {
-                TestBound((Geom2d_Line)Bis1, D1, Bis2, D2, TolConf, false);
+                TestBound((LineCurve2D)Bis1, D1, Bis2, D2, TolConf, false);
             }
-            else if (Type2 == typeof(Geom2d_Line) && Type1 != typeof(Geom2d_Line))
+            else if (Type2 == typeof(LineCurve2D) && Type1 != typeof(LineCurve2D))
             {
-                TestBound((Geom2d_Line)Bis2, D2, Bis1, D1, TolConf, true);
+                TestBound((LineCurve2D)Bis2, D2, Bis1, D1, TolConf, true);
             }
             Geom2dInt_GInter Intersect = new();
-            Geom2dAdaptor_Curve ABis1 = new(Bis1);
-            Geom2dAdaptor_Curve ABis2 = new(Bis2);
+            CurveAdaptor2D ABis1 = new(Bis1);
+            CurveAdaptor2D ABis2 = new(Bis2);
             Intersect.Perform(ABis1, D1, ABis2, D2, TolConf, Tol);
             Append(Intersect, D1.FirstParameter(), D1.LastParameter(), D2.FirstParameter(), D2.LastParameter());
         }
@@ -291,7 +292,7 @@ public sealed class Bisector_Inter : IntRes2d_Intersection
         double Eps = global::Kerf.Engine.Foundation.Precision.PConfusion();
         Point2D PSol;
 
-        Geom2d_Curve Guide;
+        Curve2D Guide;
         Bisector_BisecCC BisTemp;
 
         // Change guiedline on Bis2.
@@ -334,7 +335,7 @@ public sealed class Bisector_Inter : IntRes2d_Intersection
         Append(PointInterSol);
     }
 
-    private void TestBound(Geom2d_Line Bis1, in IntRes2d_Domain D1, Geom2d_Curve Bis2, in IntRes2d_Domain D2,
+    private void TestBound(LineCurve2D Bis1, in IntRes2d_Domain D1, Curve2D Bis2, in IntRes2d_Domain D2,
                            double TolConf, bool Reverse)
     {
         IntRes2d_Transition Trans1 = new(), Trans2 = new();

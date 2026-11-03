@@ -4,7 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -15,7 +17,7 @@ namespace Occt;
 /// <remarks>
 /// <para>
 /// A working object. The maps of shapes already added compare with IsEqual (OCCT's default hasher), the map of
-/// sub-shapes with IsSame (TopTools_ShapeMapHasher). The checking of added shapes (<see cref="CheckShape(in TopoDS_Shape, bool)"/>)
+/// sub-shapes with IsSame (TopTools_ShapeMapHasher). The checking of added shapes (<see cref="CheckShape(in Shape, bool)"/>)
 /// is always off, as in OCCT (whose constructor turns it off, "temporary NYI").
 /// </para>
 /// <para>
@@ -25,21 +27,21 @@ namespace Occt;
 /// </remarks>
 public class TopOpeBRepBuild_ShapeSet
 {
-    protected TopAbs_ShapeEnum myShapeType;
-    protected TopAbs_ShapeEnum mySubShapeType;
+    protected ShapeType myShapeType;
+    protected ShapeType mySubShapeType;
     protected readonly TopOpeBRepTool_ShapeExplorer mySubShapeExplorer = new();
-    protected readonly NCollection_List<TopoDS_Shape> myStartShapes = new();
-    protected readonly NCollection_List<TopoDS_Shape>.Iterator myStartShapesIter = new();
-    protected readonly NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> mySubShapeMap =
-        new(TopTools_ShapeMapHasher.Instance);
-    protected readonly NCollection_List<TopoDS_Shape>.Iterator myIncidentShapesIter = new();
-    protected readonly NCollection_List<TopoDS_Shape> myShapes = new();
-    protected readonly NCollection_List<TopoDS_Shape>.Iterator myShapesIter = new();
-    protected TopoDS_Shape myCurrentShape = new();
-    protected readonly NCollection_List<TopoDS_Shape> myCurrentShapeNeighbours = new();
-    protected readonly NCollection_IndexedMap<TopoDS_Shape> myOMSS = new(EqualityComparer<TopoDS_Shape>.Default);
-    protected readonly NCollection_IndexedMap<TopoDS_Shape> myOMES = new(EqualityComparer<TopoDS_Shape>.Default);
-    protected readonly NCollection_IndexedMap<TopoDS_Shape> myOMSH = new(EqualityComparer<TopoDS_Shape>.Default);
+    protected readonly NCollection_List<Shape> myStartShapes = new();
+    protected readonly NCollection_List<Shape>.Iterator myStartShapesIter = new();
+    protected readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mySubShapeMap =
+        new(ShapeHasher.Instance);
+    protected readonly NCollection_List<Shape>.Iterator myIncidentShapesIter = new();
+    protected readonly NCollection_List<Shape> myShapes = new();
+    protected readonly NCollection_List<Shape>.Iterator myShapesIter = new();
+    protected Shape myCurrentShape = new();
+    protected readonly NCollection_List<Shape> myCurrentShapeNeighbours = new();
+    protected readonly NCollection_IndexedMap<Shape> myOMSS = new(EqualityComparer<Shape>.Default);
+    protected readonly NCollection_IndexedMap<Shape> myOMES = new(EqualityComparer<Shape>.Default);
+    protected readonly NCollection_IndexedMap<Shape> myOMSH = new(EqualityComparer<Shape>.Default);
     protected bool myCheckShape;
 
     /// <summary>
@@ -47,17 +49,17 @@ public class TopOpeBRepBuild_ShapeSet
     /// shells; VERTEX: edges into wires).
     /// </summary>
     /// <exception cref="ProgramErrorException">Another type.</exception>
-    public TopOpeBRepBuild_ShapeSet(TopAbs_ShapeEnum SubShapeType, bool checkshape = true)
+    public TopOpeBRepBuild_ShapeSet(ShapeType SubShapeType, bool checkshape = true)
     {
         mySubShapeType = SubShapeType;
         myCheckShape = checkshape;
-        if (SubShapeType == TopAbs_EDGE)
+        if (SubShapeType == ShapeType.Edge)
         {
-            myShapeType = TopAbs_FACE;
+            myShapeType = ShapeType.Face;
         }
-        else if (SubShapeType == TopAbs_VERTEX)
+        else if (SubShapeType == ShapeType.Vertex)
         {
-            myShapeType = TopAbs_EDGE;
+            myShapeType = ShapeType.Edge;
         }
         else
         {
@@ -68,7 +70,7 @@ public class TopOpeBRepBuild_ShapeSet
     }
 
     /// <summary>Adds <paramref name="S"/> (a wire or a shell) to the shapes.</summary>
-    public virtual void AddShape(in TopoDS_Shape S)
+    public virtual void AddShape(in Shape S)
     {
         bool chk = CheckShape(S);
         if (!chk)
@@ -79,7 +81,7 @@ public class TopOpeBRepBuild_ShapeSet
     }
 
     /// <summary>Adds <paramref name="S"/> (an edge or a face) to the start elements, and to the elements.</summary>
-    public virtual void AddStartElement(in TopoDS_Shape S)
+    public virtual void AddStartElement(in Shape S)
     {
         bool chk = CheckShape(S);
         if (!chk)
@@ -90,7 +92,7 @@ public class TopOpeBRepBuild_ShapeSet
     }
 
     /// <summary>Adds <paramref name="S"/> to the elements incident to each of its sub-shapes.</summary>
-    public virtual void AddElement(in TopoDS_Shape S)
+    public virtual void AddElement(in Shape S)
     {
         bool chk = CheckShape(S);
         if (!chk)
@@ -100,7 +102,7 @@ public class TopOpeBRepBuild_ShapeSet
         ProcessAddElement(S);
     }
 
-    protected void ProcessAddShape(in TopoDS_Shape S)
+    protected void ProcessAddShape(in Shape S)
     {
         if (!myOMSH.Contains(S))
         {
@@ -109,7 +111,7 @@ public class TopOpeBRepBuild_ShapeSet
         }
     }
 
-    protected void ProcessAddStartElement(in TopoDS_Shape S)
+    protected void ProcessAddStartElement(in Shape S)
     {
         if (!myOMSS.Contains(S))
         {
@@ -119,7 +121,7 @@ public class TopOpeBRepBuild_ShapeSet
         }
     }
 
-    protected void ProcessAddElement(in TopoDS_Shape S)
+    protected void ProcessAddElement(in Shape S)
     {
         if (!myOMES.Contains(S))
         {
@@ -127,12 +129,12 @@ public class TopOpeBRepBuild_ShapeSet
             TopOpeBRepTool_ShapeExplorer Ex = new(S, mySubShapeType);
             for (; Ex.More(); Ex.Next())
             {
-                TopoDS_Shape subshape = Ex.Current();
+                Shape subshape = Ex.Current();
                 bool b = !mySubShapeMap.Contains(subshape);
                 if (b)
                 {
                     // OCCT copies an empty list into the map
-                    mySubShapeMap.Add(subshape, new NCollection_List<TopoDS_Shape>());
+                    mySubShapeMap.Add(subshape, new NCollection_List<Shape>());
                 }
                 mySubShapeMap.ChangeFromKey(subshape).Append(S);
             }
@@ -140,7 +142,7 @@ public class TopOpeBRepBuild_ShapeSet
     }
 
     /// <summary>The start elements.</summary>
-    public NCollection_List<TopoDS_Shape> StartElements() => myStartShapes;
+    public NCollection_List<Shape> StartElements() => myStartShapes;
 
     /// <summary>Starts the iteration on the shapes.</summary>
     public void InitShapes()
@@ -162,9 +164,9 @@ public class TopOpeBRepBuild_ShapeSet
     }
 
     /// <summary>The current shape.</summary>
-    public TopoDS_Shape Shape()
+    public Shape Shape()
     {
-        TopoDS_Shape S = myShapesIter.Value();
+        Shape S = myShapesIter.Value();
         return S;
     }
 
@@ -188,14 +190,14 @@ public class TopOpeBRepBuild_ShapeSet
     }
 
     /// <summary>The current start element.</summary>
-    public TopoDS_Shape StartElement()
+    public Shape StartElement()
     {
-        TopoDS_Shape S = myStartShapesIter.Value();
+        Shape S = myStartShapesIter.Value();
         return S;
     }
 
     /// <summary>Starts the iteration on the neighbours of the element <paramref name="S"/>.</summary>
-    public virtual void InitNeighbours(in TopoDS_Shape S)
+    public virtual void InitNeighbours(in Shape S)
     {
         mySubShapeExplorer.Init(S, mySubShapeType);
         myCurrentShape = S;
@@ -226,14 +228,14 @@ public class TopOpeBRepBuild_ShapeSet
     }
 
     /// <summary>The current neighbour.</summary>
-    public TopoDS_Shape Neighbour()
+    public Shape Neighbour()
     {
-        TopoDS_Shape S = myIncidentShapesIter.Value();
+        Shape S = myIncidentShapesIter.Value();
         return S;
     }
 
     /// <summary>The start elements, to change.</summary>
-    public NCollection_List<TopoDS_Shape> ChangeStartShapes() => myStartShapes;
+    public NCollection_List<Shape> ChangeStartShapes() => myStartShapes;
 
     /// <summary>
     /// Finds the next sub-shape of the current element that has neighbours, and starts the iteration on them.
@@ -245,8 +247,8 @@ public class TopOpeBRepBuild_ShapeSet
             // l = list of edges neighbour of edge myCurrentShape through
             // the vertex mySubShapeExplorer.Current(), which is a vertex of the
             // edge myCurrentShape.
-            TopoDS_Shape V = mySubShapeExplorer.Current();
-            NCollection_List<TopoDS_Shape> l = MakeNeighboursList(myCurrentShape, V);
+            Shape V = mySubShapeExplorer.Current();
+            NCollection_List<Shape> l = MakeNeighboursList(myCurrentShape, V);
 
             // myIncidentShapesIter iterates on the neighbour edges of the edge
             // given as InitNeighbours() argument (this edge has been stored
@@ -265,27 +267,27 @@ public class TopOpeBRepBuild_ShapeSet
     }
 
     /// <summary>The elements incident to the sub-shape <paramref name="V"/> of <paramref name="E"/>.</summary>
-    public virtual NCollection_List<TopoDS_Shape> MakeNeighboursList(in TopoDS_Shape E, in TopoDS_Shape V)
+    public virtual NCollection_List<Shape> MakeNeighboursList(in Shape E, in Shape V)
     {
-        NCollection_List<TopoDS_Shape> l = mySubShapeMap.FindFromKey(V);
+        NCollection_List<Shape> l = mySubShapeMap.FindFromKey(V);
         return l;
     }
 
     /// <summary>The largest number of elements incident to one sub-shape of <paramref name="Shape"/>.</summary>
-    public int MaxNumberSubShape(in TopoDS_Shape Shape)
+    public int MaxNumberSubShape(in Shape Shape)
     {
         int i, m = 0;
         TopOpeBRepTool_ShapeExplorer SE = new(Shape, mySubShapeType);
-        NCollection_List<TopoDS_Shape>.Iterator LI = new();
+        NCollection_List<Shape>.Iterator LI = new();
         while (SE.More())
         {
-            TopoDS_Shape SubShape = SE.Current();
+            Shape SubShape = SE.Current();
             if (!mySubShapeMap.Contains(SubShape))
             {
                 SE.Next();
                 continue;
             }
-            NCollection_List<TopoDS_Shape> l = mySubShapeMap.FindFromKey(SubShape);
+            NCollection_List<Shape> l = mySubShapeMap.FindFromKey(SubShape);
             LI.Initialize(l);
             for (i = 0; LI.More(); LI.Next(), i++)
             {
@@ -306,7 +308,7 @@ public class TopOpeBRepBuild_ShapeSet
     public bool CheckShape() => myCheckShape;
 
     /// <summary>Whether <paramref name="S"/> is valid (BRepCheck), or true when checking is off.</summary>
-    public bool CheckShape(in TopoDS_Shape S, bool checkgeom = false)
+    public bool CheckShape(in Shape S, bool checkgeom = false)
     {
         if (!myCheckShape)
         {

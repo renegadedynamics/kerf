@@ -5,12 +5,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepFeat_PerfSelection;
 using static Occt.BRepFeat_StatusError;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -31,10 +35,10 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
     private double myHeight2;
     // OCCT: the class declares its own mySliding, hiding BRepFeat_RibSlot's, which stays false
     private new bool mySliding;
-    private Geom_Plane? myPln;
+    private PlaneSurface? myPln;
     private double myBnd;
-    private NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> mySlface = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_List<TopoDS_Shape> myListOfEdges = new();
+    private NCollection_DataMap<Shape, NCollection_List<Shape>> mySlface = new(ShapeHasher.Instance);
+    private readonly NCollection_List<Shape> myListOfEdges = new();
     private double myTol;
     private double myAngle1;
     private double myAngle2;
@@ -57,14 +61,14 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
     /// and <paramref name="Height2"/> on each side of the plane; <paramref name="Fuse"/> 0 cuts, 1 fuses;
     /// <paramref name="Sliding"/> asks for sliding (OCCT takes it by reference and never writes it).
     /// </summary>
-    public BRepFeat_MakeRevolutionForm(in TopoDS_Shape Sbase, in TopoDS_Wire W, Geom_Plane Plane, in Axis3D Axis,
+    public BRepFeat_MakeRevolutionForm(in Shape Sbase, in Wire W, PlaneSurface Plane, in Axis3D Axis,
                                        double Height1, double Height2, int Fuse, bool Sliding)
     {
         Init(Sbase, W, Plane, Axis, Height1, Height2, Fuse, Sliding);
     }
 
     /// <summary>Initializes the revolution form (see the constructor).</summary>
-    public void Init(in TopoDS_Shape Sbase, in TopoDS_Wire W, Geom_Plane Plane, in Axis3D Axis, double H1, double H2,
+    public void Init(in Shape Sbase, in Wire W, PlaneSurface Plane, in Axis3D Axis, double H1, double H2,
                      int Mode, bool Modify)
     {
         bool RevolRib = true;
@@ -75,11 +79,11 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
         bool Sliding = Modify;
 
         myAxe = Axis;
-        Geom_Line Line = new(Axis);
+        LineCurve3D Line = new(Axis);
         double LineFirst, LineLast;
 
         LocOpe_CSIntersector ASI = new(Sbase);
-        NCollection_Sequence<Geom_Curve?> scur = new();
+        NCollection_Sequence<Curve3D?> scur = new();
         scur.Clear();
         scur.Append(Line);
         ASI.Perform(scur);
@@ -94,17 +98,17 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
             LineLast = RealLast();
         }
 
-        Geom2d_Curve ln2d = GeomAPI.To2d(Line, Plane.Pln())!;
+        Curve2D ln2d = GeomAPI.To2d(Line, Plane.Pln())!;
 
-        TopExp_Explorer exx = new();
+        Explorer exx = new();
         double Rad = RealLast();
 
-        exx.Init(W, TopAbs_EDGE);
+        exx.Init(W, ShapeType.Edge);
         for (; exx.More(); exx.Next())
         {
-            TopoDS_Edge e = TopoDS.Edge(exx.Current());
-            Geom_Curve c = BRep_Tool.Curve(e, out double f, out double l)!;
-            Geom2d_Curve c2d = GeomAPI.To2d(c, Plane.Pln())!;
+            Edge e = ShapeCasts.Edge(exx.Current());
+            Curve3D c = Tool.Curve(e, out double f, out double l)!;
+            Curve2D c2d = GeomAPI.To2d(c, Plane.Pln())!;
             Geom2dAPI_ExtremaCurveCurve extr = new(ln2d, c2d, LineFirst, LineLast, f, l);
             double L = RealLast();
             if (extr.NbExtrema() >= 1)
@@ -161,28 +165,28 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
         // ---Determination Tolerance : tolerance max on parameters
         myTol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-        exx.Init(W, TopAbs_VERTEX);
+        exx.Init(W, ShapeType.Vertex);
         for (; exx.More(); exx.Next())
         {
-            double tol = BRep_Tool.Tolerance(TopoDS.Vertex(exx.Current()));
+            double tol = Tool.Tolerance(ShapeCasts.Vertex(exx.Current()));
             if (tol > myTol)
             {
                 myTol = tol;
             }
         }
 
-        exx.Init(Sbase, TopAbs_VERTEX);
+        exx.Init(Sbase, ShapeType.Vertex);
         for (; exx.More(); exx.Next())
         {
-            double tol = BRep_Tool.Tolerance(TopoDS.Vertex(exx.Current()));
+            double tol = Tool.Tolerance(ShapeCasts.Vertex(exx.Current()));
             if (tol > myTol)
             {
                 myTol = tol;
             }
         }
 
-        TopoDS_Shape aLocalShapeW = W.Oriented(TopAbs_FORWARD);
-        myWire = TopoDS.Wire(aLocalShapeW);
+        Shape aLocalShapeW = W.Oriented(Forward);
+        myWire = ShapeCasts.Wire(aLocalShapeW);
         myPln = Plane;
         myHeight1 = H1;
         myHeight2 = H2;
@@ -195,41 +199,41 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
         myLShape.Nullify();
 
         // ---Calculate bounding box
-        BRep_Builder BB = new();
+        BrepBuilder BB = new();
 
-        NCollection_List<TopoDS_Shape> theList = new();
+        NCollection_List<Shape> theList = new();
 
-        TopoDS_Shape U = new();
+        Shape U = new();
         U.Nullify();
         Point3D FirstCorner = new(), LastCorner = new();
         double bnd = HeightMax(mySbase, U, ref FirstCorner, ref LastCorner);
         myBnd = bnd;
 
         BRepPrimAPI_MakeBox Bndbox = new(FirstCorner, LastCorner);
-        TopoDS_Solid BndBox = Bndbox.InternalSolid();
+        Solid BndBox = Bndbox.InternalSolid();
 
         // ---Construction of the working plane face (section bounding box)
         BRepLib_MakeFace PlaneF = new(myPln.Pln(), -6.0 * myBnd, 6.0 * myBnd, -6.0 * myBnd, 6.0 * myBnd);
-        TopoDS_Face PlaneFace = TopoDS.Face(PlaneF.InternalShape());
+        Face PlaneFace = ShapeCasts.Face(PlaneF.InternalShape());
 
         BRepAlgoAPI_Common PlaneS = new(BndBox, PlaneFace);
-        TopExp_Explorer EXP = new();
-        TopoDS_Shape PlaneSect = PlaneS.InternalShape();
-        EXP.Init(PlaneSect, TopAbs_WIRE);
-        TopoDS_Wire www = TopoDS.Wire(EXP.Current());
+        Explorer EXP = new();
+        Shape PlaneSect = PlaneS.InternalShape();
+        EXP.Init(PlaneSect, ShapeType.Wire);
+        Wire www = ShapeCasts.Wire(EXP.Current());
         BRepLib_MakeFace Bndface = new(myPln.Pln(), www, true);
-        TopoDS_Face BndFace = TopoDS.Face(Bndface.InternalShape());
+        Face BndFace = ShapeCasts.Face(Bndface.InternalShape());
 
         // ---Find base faces of the rib
-        TopoDS_Edge FirstEdge = new(), LastEdge = new();
-        TopoDS_Face FirstFace = new(), LastFace = new();
-        TopoDS_Vertex FirstVertex = new(), LastVertex = new();
+        Edge FirstEdge = new(), LastEdge = new();
+        Face FirstFace = new(), LastFace = new();
+        Vertex FirstVertex = new(), LastVertex = new();
 
         bool OnFirstFace = false;
         bool OnLastFace = false;
         bool PtOnFirstEdge = false;
         bool PtOnLastEdge = false;
-        TopoDS_Edge OnFirstEdge = new(), OnLastEdge = new();
+        Edge OnFirstEdge = new(), OnLastEdge = new();
         OnFirstEdge.Nullify();
         OnLastEdge.Nullify();
 
@@ -251,22 +255,22 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
         // Many cases when the sliding is abandoned
         int Concavite = 3; // a priori the profile is not concave
 
-        myFirstPnt = BRep_Tool.Pnt(FirstVertex);
-        myLastPnt = BRep_Tool.Pnt(LastVertex);
+        myFirstPnt = Tool.Pnt(FirstVertex);
+        myLastPnt = Tool.Pnt(LastVertex);
 
         // SliList : list of faces concerned by the rib
-        NCollection_List<TopoDS_Shape> SliList = new();
+        NCollection_List<Shape> SliList = new();
         SliList.Append(FirstFace);
 
         if (Sliding)
         { // sliding
-            Geom_Surface s = BRep_Tool.Surface(FirstFace)!;
-            if (s.GetType() == typeof(Geom_RectangularTrimmedSurface))
+            Surface s = Tool.Surface(FirstFace)!;
+            if (s.GetType() == typeof(TrimmedSurface))
             {
-                s = ((Geom_RectangularTrimmedSurface)s).BasisSurface();
+                s = ((TrimmedSurface)s).BasisSurface();
             }
-            if (s.GetType() != typeof(Geom_Plane) && s.GetType() != typeof(Geom_CylindricalSurface)
-                && s.GetType() != typeof(Geom_ConicalSurface) && s.GetType() != typeof(Geom_ToroidalSurface))
+            if (s.GetType() != typeof(PlaneSurface) && s.GetType() != typeof(CylindricalSurface)
+                && s.GetType() != typeof(ConicalSurface) && s.GetType() != typeof(ToroidalSurface))
             {
                 Sliding = false;
             }
@@ -274,13 +278,13 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
 
         if (Sliding)
         { // sliding
-            Geom_Surface ss = BRep_Tool.Surface(LastFace)!;
-            if (ss.GetType() == typeof(Geom_RectangularTrimmedSurface))
+            Surface ss = Tool.Surface(LastFace)!;
+            if (ss.GetType() == typeof(TrimmedSurface))
             {
-                ss = ((Geom_RectangularTrimmedSurface)ss).BasisSurface();
+                ss = ((TrimmedSurface)ss).BasisSurface();
             }
-            if (ss.GetType() != typeof(Geom_Plane) && ss.GetType() != typeof(Geom_CylindricalSurface)
-                && ss.GetType() != typeof(Geom_ConicalSurface) && ss.GetType() != typeof(Geom_ToroidalSurface))
+            if (ss.GetType() != typeof(PlaneSurface) && ss.GetType() != typeof(CylindricalSurface)
+                && ss.GetType() != typeof(ConicalSurface) && ss.GetType() != typeof(ToroidalSurface))
             {
                 Sliding = false;
             }
@@ -290,7 +294,7 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
         // If make a control between Surface and segment 2 points limited
         // -> too expensive - to improve
         Circle3D FirstCircle, LastCircle;
-        Geom_Curve FirstCrv, LastCrv;
+        Curve3D FirstCrv, LastCrv;
 
         if (Sliding)
         { // sliding
@@ -325,8 +329,8 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
             Point3D RFirstPnt2 = myFirstPnt.Rotated(myAxe, -myAngle2);
             Point3D RLastPnt2 = myLastPnt.Rotated(myAxe, -myAngle2);
 
-            BRep_Builder Bu = new();
-            TopoDS_Vertex v1 = new(), v2 = new(), v3 = new(), v4 = new();
+            BrepBuilder Bu = new();
+            Vertex v1 = new(), v2 = new(), v3 = new(), v4 = new();
             Bu.MakeVertex(ref v1, RFirstPnt2, global::Kerf.Engine.Foundation.Precision.Confusion());
             Bu.MakeVertex(ref v2, RFirstPnt1, global::Kerf.Engine.Foundation.Precision.Confusion());
             Bu.MakeVertex(ref v3, RLastPnt2, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -337,7 +341,7 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
 
             if (Sliding && !PtOnFirstEdge)
             {
-                BRepExtrema_ExtCF ext1 = new(TopoDS.Edge(ee1.InternalShape()), FirstFace);
+                BRepExtrema_ExtCF ext1 = new(ShapeCasts.Edge(ee1.InternalShape()), FirstFace);
                 if (ext1.NbExt() < 1 || ext1.SquareDistance(1) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     Sliding = false;
@@ -353,14 +357,14 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
             }
             if (Sliding && PtOnFirstEdge)
             {
-                FirstCrv = BRep_Tool.Curve(OnFirstEdge, out double f, out double l)!;
-                if (FirstCrv.GetType() != typeof(Geom_Circle))
+                FirstCrv = Tool.Curve(OnFirstEdge, out double f, out double l)!;
+                if (FirstCrv.GetType() != typeof(CircleCurve3D))
                 {
                     Sliding = false;
                 }
                 else
                 {
-                    Geom_Circle C1 = (Geom_Circle)FirstCrv;
+                    CircleCurve3D C1 = (CircleCurve3D)FirstCrv;
                     Circle3D Circ = C1.Circ();
                     FirstCircle = Circ;
                     Axis3D circax = FirstCircle.Axis();
@@ -380,14 +384,14 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
 
             if (Sliding && PtOnLastEdge)
             {
-                LastCrv = BRep_Tool.Curve(OnLastEdge, out double f, out double l)!;
-                if (LastCrv.GetType() != typeof(Geom_Circle))
+                LastCrv = Tool.Curve(OnLastEdge, out double f, out double l)!;
+                if (LastCrv.GetType() != typeof(CircleCurve3D))
                 {
                     Sliding = false;
                 }
                 else
                 {
-                    Geom_Circle C1 = (Geom_Circle)LastCrv;
+                    CircleCurve3D C1 = (CircleCurve3D)LastCrv;
                     Circle3D Circ = C1.Circ();
                     LastCircle = Circ;
                     Axis3D circax = LastCircle.Axis();
@@ -415,7 +419,7 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
         // ---case of sliding : construction of the face profile
         if (Sliding)
         {
-            TopoDS_Face Prof = new();
+            Face Prof = new();
             bool ProfileOK;
             ProfileOK = SlidingProfile(ref Prof, RevolRib, myTol, ref Concavite, myPln, BndFace, CheckPnt, FirstFace,
                                        LastFace, FirstVertex, LastVertex, FirstEdge, LastEdge);
@@ -442,10 +446,10 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
 
         // ---Generation of the base profile of the rib
 
-        TopoDS_Wire w = new();
+        Wire w = new();
         BB.MakeWire(ref w);
-        TopoDS_Edge thePreviousEdge = new();
-        TopoDS_Vertex theFV = new();
+        Edge thePreviousEdge = new();
+        Vertex theFV = new();
         thePreviousEdge.Nullify();
 
         // counter of the number of edges to fill the map
@@ -454,22 +458,22 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
         // ---case of sliding
         if (Sliding && !myListOfEdges.IsEmpty())
         {
-            BRepTools_WireExplorer EX1 = new(myWire);
+            WireExplorer EX1 = new(myWire);
             for (; EX1.More(); EX1.Next())
             {
-                TopoDS_Edge E = EX1.Current();
+                Edge E = EX1.Current();
                 if (!myLFMap.IsBound(E))
                 {
-                    NCollection_List<TopoDS_Shape> theTmpList = new();
+                    NCollection_List<Shape> theTmpList = new();
                     myLFMap.Bind(E, theTmpList);
                 }
                 if (E.IsSame(FirstEdge))
                 {
-                    Geom_Curve cc = BRep_Tool.Curve(E, out double f, out double l)!;
+                    Curve3D cc = Tool.Curve(E, out double f, out double l)!;
                     Point3D pt;
                     if (!FirstEdge.IsSame(LastEdge))
                     {
-                        pt = BRep_Tool.Pnt(TopExp.LastVertex(E, true));
+                        pt = Tool.Pnt(Exploration.LastVertex(E, true));
                     }
                     else
                     {
@@ -481,26 +485,26 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                             cc = cc.Reversed();
                         }
                     }
-                    TopoDS_Edge ee1;
-                    if (thePreviousEdge.IsNull())
+                    Edge ee1;
+                    if (thePreviousEdge.IsNull)
                     {
                         BRepLib_MakeVertex v1 = new(myFirstPnt);
                         BRepLib_MakeVertex v2 = new(pt);
                         BRepLib_MakeEdge e = new(cc, v1.InternalVertex(), v2.InternalVertex());
-                        ee1 = TopoDS.Edge(e.InternalShape());
+                        ee1 = ShapeCasts.Edge(e.InternalShape());
                     }
                     else
                     {
-                        TopoDS_Vertex v1 = TopExp.LastVertex(thePreviousEdge, true);
+                        Vertex v1 = Exploration.LastVertex(thePreviousEdge, true);
                         BRepLib_MakeVertex v2 = new(pt);
                         BRepLib_MakeEdge e = new(cc, v1, v2.InternalVertex());
-                        ee1 = TopoDS.Edge(e.InternalShape());
+                        ee1 = ShapeCasts.Edge(e.InternalShape());
                     }
-                    TopoDS_Shape aLocalShape = ee1.Oriented(E.Orientation());
-                    ee1 = TopoDS.Edge(aLocalShape);
+                    Shape aLocalShape = ee1.Oriented(E.Orientation());
+                    ee1 = ShapeCasts.Edge(aLocalShape);
                     if (counter == 1)
                     {
-                        theFV = TopExp.FirstVertex(ee1, true);
+                        theFV = Exploration.FirstVertex(ee1, true);
                     }
                     myLFMap[E].Append(ee1);
                     BB.Add(w, ee1);
@@ -516,65 +520,65 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
             {
                 for (; EX1.More(); EX1.Next())
                 {
-                    TopoDS_Edge E = EX1.Current();
+                    Edge E = EX1.Current();
                     if (!myLFMap.IsBound(E))
                     {
-                        NCollection_List<TopoDS_Shape> thelist1 = new();
+                        NCollection_List<Shape> thelist1 = new();
                         myLFMap.Bind(E, thelist1);
                     }
                     theList.Append(E);
                     if (!E.IsSame(LastEdge))
                     {
-                        Geom_Curve ccc = BRep_Tool.Curve(E, out double f, out double l)!;
-                        TopoDS_Vertex v1, v2;
-                        if (!thePreviousEdge.IsNull())
+                        Curve3D ccc = Tool.Curve(E, out double f, out double l)!;
+                        Vertex v1, v2;
+                        if (!thePreviousEdge.IsNull)
                         {
-                            v1 = TopExp.LastVertex(thePreviousEdge, true);
-                            v2 = TopExp.LastVertex(E, true);
+                            v1 = Exploration.LastVertex(thePreviousEdge, true);
+                            v2 = Exploration.LastVertex(E, true);
                         }
                         else
                         {
-                            v1 = TopExp.FirstVertex(E, true);
-                            v2 = TopExp.LastVertex(E, true);
+                            v1 = Exploration.FirstVertex(E, true);
+                            v2 = Exploration.LastVertex(E, true);
                         }
                         BRepLib_MakeEdge E1 = new(ccc, v1, v2);
-                        TopoDS_Edge E11 = TopoDS.Edge(E1.InternalShape());
-                        TopoDS_Shape aLocalShape = E11.Oriented(E.Orientation());
-                        E11 = TopoDS.Edge(aLocalShape);
+                        Edge E11 = ShapeCasts.Edge(E1.InternalShape());
+                        Shape aLocalShape = E11.Oriented(E.Orientation());
+                        E11 = ShapeCasts.Edge(aLocalShape);
                         thePreviousEdge = E11;
                         myLFMap[E].Append(E11);
                         BB.Add(w, E11);
                         if (counter == 1)
                         {
-                            theFV = TopExp.FirstVertex(E11, true);
+                            theFV = Exploration.FirstVertex(E11, true);
                         }
                         counter++;
                     }
                     else
                     {
-                        Geom_Curve cc = BRep_Tool.Curve(E, out double f, out double l)!;
-                        Point3D pf = BRep_Tool.Pnt(TopExp.FirstVertex(E, true));
+                        Curve3D cc = Tool.Curve(E, out double f, out double l)!;
+                        Point3D pf = Tool.Pnt(Exploration.FirstVertex(E, true));
                         Point3D pl = myLastPnt;
-                        TopoDS_Edge ee;
-                        if (thePreviousEdge.IsNull())
+                        Edge ee;
+                        if (thePreviousEdge.IsNull)
                         {
                             BRepLib_MakeEdge e = new(cc, pf, pl);
-                            ee = TopoDS.Edge(e.InternalShape());
+                            ee = ShapeCasts.Edge(e.InternalShape());
                         }
                         else
                         {
-                            TopoDS_Vertex v1 = TopExp.LastVertex(thePreviousEdge, true);
+                            Vertex v1 = Exploration.LastVertex(thePreviousEdge, true);
                             BRepLib_MakeVertex v2 = new(pl);
                             BRepLib_MakeEdge e = new(cc, v1, v2.InternalVertex());
-                            ee = TopoDS.Edge(e.InternalShape());
+                            ee = ShapeCasts.Edge(e.InternalShape());
                         }
-                        TopoDS_Shape aLocalShape = ee.Oriented(E.Orientation());
-                        ee = TopoDS.Edge(aLocalShape);
+                        Shape aLocalShape = ee.Oriented(E.Orientation());
+                        ee = ShapeCasts.Edge(aLocalShape);
                         BB.Add(w, ee);
                         myLFMap[E].Append(ee);
                         if (counter == 1)
                         {
-                            theFV = TopExp.FirstVertex(ee, true);
+                            theFV = Exploration.FirstVertex(ee, true);
                         }
                         thePreviousEdge = ee;
                         counter++;
@@ -583,23 +587,23 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                 }
             }
 
-            NCollection_List<TopoDS_Shape>.Iterator it = new(myListOfEdges);
+            NCollection_List<Shape>.Iterator it = new(myListOfEdges);
             bool FirstOK = false;
             bool LastOK = false;
 
             Point3D theLastPnt = myLastPnt;
             int sens = 0;
-            TopoDS_Edge theEdge = new(), theLEdge = new(), theFEdge = new();
+            Edge theEdge = new(), theLEdge = new(), theFEdge = new();
             int counter1 = counter;
-            NCollection_List<TopoDS_Shape> NewListOfEdges = new();
+            NCollection_List<Shape> NewListOfEdges = new();
             NewListOfEdges.Clear();
             while (!FirstOK)
             {
-                TopoDS_Edge edg = TopoDS.Edge(it.Value());
+                Edge edg = ShapeCasts.Edge(it.Value());
                 Point3D fp, lp;
-                Geom_Curve ccc = BRep_Tool.Curve(edg, out double f, out double l)!;
-                Geom_TrimmedCurve cc = new(ccc, f, l);
-                if (edg.Orientation() == TopAbs_REVERSED)
+                Curve3D ccc = Tool.Curve(edg, out double f, out double l)!;
+                TrimmedCurve3D cc = new(ccc, f, l);
+                if (edg.Orientation() == Reversed)
                 {
                     cc.Reverse();
                 }
@@ -635,37 +639,37 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                 }
                 if (LastOK)
                 {
-                    TopoDS_Edge eeee;
+                    Edge eeee;
                     double fpar = cc.FirstParameter();
                     double lpar = cc.LastParameter();
                     if (!FirstOK)
                     {
-                        if (thePreviousEdge.IsNull())
+                        if (thePreviousEdge.IsNull)
                         {
                             BRepLib_MakeEdge e = new(cc, fpar, lpar);
-                            eeee = TopoDS.Edge(e.InternalShape());
+                            eeee = ShapeCasts.Edge(e.InternalShape());
                         }
                         else
                         {
-                            TopoDS_Vertex v1 = TopExp.LastVertex(thePreviousEdge, true);
+                            Vertex v1 = Exploration.LastVertex(thePreviousEdge, true);
                             BRepLib_MakeVertex v2 = new(cc.Value(lpar));
                             BRepLib_MakeEdge e = new(cc, v1, v2.InternalVertex());
-                            eeee = TopoDS.Edge(e.InternalShape());
+                            eeee = ShapeCasts.Edge(e.InternalShape());
                         }
                     }
                     else
                     {
-                        if (thePreviousEdge.IsNull())
+                        if (thePreviousEdge.IsNull)
                         {
                             BRepLib_MakeVertex v1 = new(cc.Value(fpar));
                             BRepLib_MakeEdge e = new(cc, v1.InternalVertex(), theFV);
-                            eeee = TopoDS.Edge(e.InternalShape());
+                            eeee = ShapeCasts.Edge(e.InternalShape());
                         }
                         else
                         {
-                            TopoDS_Vertex v1 = TopExp.LastVertex(thePreviousEdge, true);
+                            Vertex v1 = Exploration.LastVertex(thePreviousEdge, true);
                             BRepLib_MakeEdge e = new(cc, v1, theFV);
-                            eeee = TopoDS.Edge(e.InternalShape());
+                            eeee = ShapeCasts.Edge(e.InternalShape());
                         }
                     }
 
@@ -673,7 +677,7 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                     BB.Add(w, eeee);
                     if (counter == 1)
                     {
-                        theFV = TopExp.FirstVertex(eeee, true);
+                        theFV = Exploration.FirstVertex(eeee, true);
                     }
                     counter1++;
                     NewListOfEdges.Append(edg);
@@ -683,7 +687,7 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                     {
                         theFEdge = edg;
                     }
-                    theLastPnt = BRep_Tool.Pnt(TopExp.LastVertex(theEdge, true));
+                    theLastPnt = Tool.Pnt(Exploration.LastVertex(theEdge, true));
                 }
                 if (FirstFlag == 1)
                 {
@@ -711,16 +715,16 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                 sens = 0;
             }
 
-            NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> SlidMap = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_DataMap<Shape, NCollection_List<Shape>> SlidMap = new(ShapeHasher.Instance);
             SlidMap.Clear();
 
             if (Sliding && counter1 > counter)
             {
-                TopExp_Explorer EX2 = new(w, TopAbs_EDGE);
+                Explorer EX2 = new(w, ShapeType.Edge);
                 int ii = 0;
                 for (; EX2.More(); EX2.Next())
                 {
-                    TopoDS_Edge E = TopoDS.Edge(EX2.Current());
+                    Edge E = ShapeCasts.Edge(EX2.Current());
                     ii++;
                     if (ii >= counter && ii <= counter1)
                     {
@@ -728,23 +732,23 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                         int jj = 0;
                         for (; it.More(); it.Next())
                         {
-                            TopoDS_Edge e2 = TopoDS.Edge(it.Value());
+                            Edge e2 = ShapeCasts.Edge(it.Value());
                             jj++;
                             if (jj == (ii - counter + 1))
                             {
-                                foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> itm in mySlface)
+                                foreach (KeyValuePair<Shape, NCollection_List<Shape>> itm in mySlface)
                                 {
-                                    TopoDS_Face fac = TopoDS.Face(itm.Key);
-                                    NCollection_List<TopoDS_Shape> ledg = itm.Value;
-                                    NCollection_List<TopoDS_Shape>.Iterator itedg = new(ledg);
+                                    Face fac = ShapeCasts.Face(itm.Key);
+                                    NCollection_List<Shape> ledg = itm.Value;
+                                    NCollection_List<Shape>.Iterator itedg = new(ledg);
                                     for (; itedg.More(); itedg.Next())
                                     {
-                                        TopoDS_Edge e1 = TopoDS.Edge(itedg.Value());
+                                        Edge e1 = ShapeCasts.Edge(itedg.Value());
                                         if (e1.IsSame(e2))
                                         {
                                             if (!SlidMap.IsBound(fac))
                                             {
-                                                NCollection_List<TopoDS_Shape> thelist2 = new();
+                                                NCollection_List<Shape> thelist2 = new();
                                                 SlidMap.Bind(fac, thelist2);
                                             }
                                             SlidMap[fac].Append(E);
@@ -765,9 +769,9 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
         // sliding
         if (Sliding)
         {
-            TopoDS_Face F = new();
+            Face F = new();
             BB.MakeFace(ref F, myPln, myTol);
-            w.Closed(BRep_Tool.IsClosed(w));
+            w.Closed(Tool.IsClosed(w));
             BB.Add(F, w);
             mySkface = F;
             myPbase = mySkface;
@@ -777,27 +781,27 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
         // ---Case without sliding : construction of the face profile
         if (!Sliding)
         {
-            TopExp_Explorer explo1 = new(BndFace, TopAbs_WIRE);
-            TopoDS_Wire WWW = TopoDS.Wire(explo1.Current());
-            BRepTools_WireExplorer explo = new(WWW);
-            BRep_Builder Bu = new();
-            TopoDS_Wire Wiwiwi = new();
+            Explorer explo1 = new(BndFace, ShapeType.Wire);
+            Wire WWW = ShapeCasts.Wire(explo1.Current());
+            WireExplorer explo = new(WWW);
+            BrepBuilder Bu = new();
+            Wire Wiwiwi = new();
             Bu.MakeWire(ref Wiwiwi);
-            TopoDS_Vertex NewV1 = new(), NewV2 = new(), LastV = new();
+            Vertex NewV1 = new(), NewV2 = new(), LastV = new();
             NewV1.Nullify();
             NewV2.Nullify();
             LastV.Nullify();
 
             for (; explo.More(); explo.Next())
             {
-                TopoDS_Edge e = TopoDS.Edge(explo.Current());
-                TopoDS_Vertex v1 = TopExp.FirstVertex(e, true);
-                TopoDS_Vertex v2 = TopExp.LastVertex(e, true);
+                Edge e = ShapeCasts.Edge(explo.Current());
+                Vertex v1 = Exploration.FirstVertex(e, true);
+                Vertex v2 = Exploration.LastVertex(e, true);
 
-                Geom_Curve ln = BRep_Tool.Curve(e, out double f, out double l)!;
-                Geom2d_Curve l2d = GeomAPI.To2d(ln, Plane.Pln())!;
+                Curve3D ln = Tool.Curve(e, out double f, out double l)!;
+                Curve2D l2d = GeomAPI.To2d(ln, Plane.Pln())!;
                 Geom2dAPI_InterCurveCurve intcc = new(l2d, ln2d, global::Kerf.Engine.Foundation.Precision.Confusion());
-                TopoDS_Vertex VV = new();
+                Vertex VV = new();
                 VV.Nullify();
 
                 if (intcc.NbPoints() > 0)
@@ -811,12 +815,12 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                     }
                 }
 
-                if (VV.IsNull() && NewV1.IsNull())
+                if (VV.IsNull && NewV1.IsNull)
                 {
                     continue;
                 }
 
-                if (!VV.IsNull() && NewV1.IsNull())
+                if (!VV.IsNull && NewV1.IsNull)
                 {
                     NewV1 = VV;
                     LastV = v2;
@@ -825,7 +829,7 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                     continue;
                 }
 
-                if (VV.IsNull() && !NewV1.IsNull())
+                if (VV.IsNull && !NewV1.IsNull)
                 {
                     BRepLib_MakeEdge ee1 = new(LastV, v2);
                     LastV = v2;
@@ -833,7 +837,7 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                     continue;
                 }
 
-                if (!VV.IsNull() && !NewV1.IsNull())
+                if (!VV.IsNull && !NewV1.IsNull)
                 {
                     NewV2 = VV;
                     BRepLib_MakeEdge ee1 = new(LastV, NewV2);
@@ -845,20 +849,20 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                 }
             }
 
-            Wiwiwi.Closed(BRep_Tool.IsClosed(Wiwiwi));
+            Wiwiwi.Closed(Tool.IsClosed(Wiwiwi));
             BRepLib_MakeFace newbndface = new(myPln.Pln(), Wiwiwi, true);
-            TopoDS_Face NewBndFace = TopoDS.Face(newbndface.InternalShape());
+            Face NewBndFace = ShapeCasts.Face(newbndface.InternalShape());
 
             BRepTopAdaptor_FClass2d Cl = new(NewBndFace, global::Kerf.Engine.Foundation.Precision.Confusion());
             global::Kerf.Engine.Geometry.ElSLib.Parameters(myPln.Pln(), CheckPnt, out double paru, out double parv);
             Point2D checkpnt2d = new(paru, parv);
-            if (Cl.Perform(checkpnt2d, true) == TopAbs_OUT)
+            if (Cl.Perform(checkpnt2d, true) == Out)
             {
                 BRepAlgoAPI_Cut c = new(BndFace, NewBndFace);
-                TopExp_Explorer exp = new(c.InternalShape(), TopAbs_WIRE);
-                TopoDS_Wire aCurWire = TopoDS.Wire(exp.Current());
+                Explorer exp = new(c.InternalShape(), ShapeType.Wire);
+                Wire aCurWire = ShapeCasts.Wire(exp.Current());
                 BRepLib_MakeFace ff = new(myPln.Pln(), aCurWire, true);
-                NewBndFace = TopoDS.Face(ff.InternalShape());
+                NewBndFace = ShapeCasts.Face(ff.InternalShape());
             }
 
             if (!BRepAlgo.IsValid(NewBndFace))
@@ -870,7 +874,7 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
 
             BndFace = NewBndFace;
 
-            TopoDS_Face Prof = new();
+            Face Prof = new();
             bool ProfileOK;
             ProfileOK = NoSlidingProfile(ref Prof, RevolRib, myTol, ref Concavite, myPln, bnd, BndFace, CheckPnt,
                                          FirstFace, LastFace, FirstVertex, LastVertex, FirstEdge, LastEdge,
@@ -897,17 +901,17 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
 
             mySlface.Clear();
 
-            NCollection_List<TopoDS_Shape>.Iterator it = new();
+            NCollection_List<Shape>.Iterator it = new();
             it.Initialize(SliList);
 
-            TopoDS_Shell comp = new();
+            Shell comp = new();
             BB.MakeShell(ref comp);
 
             for (; it.More(); it.Next())
             {
                 BB.Add(comp, it.Value());
             }
-            comp.Closed(BRep_Tool.IsClosed(comp));
+            comp.Closed(Tool.IsClosed(comp));
 
             mySUntil = comp;
 
@@ -917,10 +921,10 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
 
         mySliding = Sliding;
 
-        TopExp_Explorer exp1 = new();
-        for (exp1.Init(mySbase, TopAbs_FACE); exp1.More(); exp1.Next())
+        Explorer exp1 = new();
+        for (exp1.Init(mySbase, ShapeType.Face); exp1.More(); exp1.Next())
         {
-            NCollection_List<TopoDS_Shape> thelist3 = new();
+            NCollection_List<Shape> thelist3 = new();
             myMap.Bind(exp1.Current(), thelist3);
             myMap[exp1.Current()].Append(exp1.Current());
         }
@@ -928,12 +932,12 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
 
     /// <summary>Adds an element of sliding: the edge <paramref name="E"/> slides on the face <paramref name="F"/>.</summary>
     /// <exception cref="ConstructionErrorException">F isn't a face of the basis shape.</exception>
-    public void Add(in TopoDS_Edge E, in TopoDS_Face F)
+    public void Add(in Edge E, in Face F)
     {
         if (mySlface.IsEmpty())
         {
-            TopExp_Explorer exp = new();
-            for (exp.Init(mySbase, TopAbs_FACE); exp.More(); exp.Next())
+            Explorer exp = new();
+            for (exp.Init(mySbase, ShapeType.Face); exp.More(); exp.Next())
             {
                 if (exp.Current().IsSame(F))
                 {
@@ -947,10 +951,10 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
 
             if (!mySlface.IsBound(F))
             {
-                NCollection_List<TopoDS_Shape> thelist = new();
+                NCollection_List<Shape> thelist = new();
                 mySlface.Bind(F, thelist);
             }
-            NCollection_List<TopoDS_Shape>.Iterator itl = new(mySlface[F]);
+            NCollection_List<Shape>.Iterator itl = new(mySlface[F]);
             for (; itl.More(); itl.Next())
             {
                 if (itl.Value().IsSame(E))
@@ -968,7 +972,7 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
     /// <summary>Builds the rib or groove.</summary>
     public void Perform()
     {
-        if (mySbase.IsNull() || mySkface.IsNull() || myPbase.IsNull())
+        if (mySbase.IsNull || mySkface.IsNull || myPbase.IsNull)
         {
             myStatusError = BRepFeat_NotInitialized;
             NotDone();
@@ -977,13 +981,13 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
 
         Point3D Pt = new();
 
-        TopExp_Explorer exx = new(myPbase, TopAbs_VERTEX);
+        Explorer exx = new(myPbase, ShapeType.Vertex);
         for (; exx.More(); exx.Next())
         {
-            TopoDS_Vertex vv = TopoDS.Vertex(exx.Current());
-            if (!vv.IsNull())
+            Vertex vv = ShapeCasts.Vertex(exx.Current());
+            if (!vv.IsNull)
             {
-                Pt = BRep_Tool.Pnt(vv);
+                Pt = Tool.Pnt(vv);
                 break;
             }
         }
@@ -994,12 +998,12 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
             T.SetRotation(myAxe, -myAngle2);
             BRepBuilderAPI_Transform trsf = new(T);
             trsf.Perform(myPbase, false);
-            TopoDS_Face Pbase = TopoDS.Face(trsf.InternalShape());
-            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> iter in myLFMap)
+            Face Pbase = ShapeCasts.Face(trsf.InternalShape());
+            foreach (KeyValuePair<Shape, NCollection_List<Shape>> iter in myLFMap)
             {
-                TopoDS_Shape e1 = iter.Value.First();
-                TopExp_Explorer ex1 = new(myPbase, TopAbs_EDGE);
-                TopExp_Explorer ex2 = new(Pbase, TopAbs_EDGE);
+                Shape e1 = iter.Value.First();
+                Explorer ex1 = new(myPbase, ShapeType.Edge);
+                Explorer ex2 = new(Pbase, ShapeType.Edge);
                 for (; ex1.More(); ex1.Next())
                 {
                     if (ex1.Current().IsSame(e1))
@@ -1012,11 +1016,11 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                 }
             }
 
-            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> iter1 in mySlface)
+            foreach (KeyValuePair<Shape, NCollection_List<Shape>> iter1 in mySlface)
             {
-                TopoDS_Shape e1 = iter1.Value.First();
-                TopExp_Explorer ex1 = new(myPbase, TopAbs_EDGE);
-                TopExp_Explorer ex2 = new(Pbase, TopAbs_EDGE);
+                Shape e1 = iter1.Value.First();
+                Explorer ex1 = new(myPbase, ShapeType.Edge);
+                Explorer ex2 = new(Pbase, ShapeType.Edge);
                 for (; ex1.More(); ex1.Next())
                 {
                     if (ex1.Current().IsSame(e1))
@@ -1030,12 +1034,12 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
             }
             myPbase = Pbase;
             trsf.Perform(mySkface, false);
-            mySkface = TopoDS.Face(trsf.InternalShape());
+            mySkface = ShapeCasts.Face(trsf.InternalShape());
         }
 
         LocOpe_RevolutionForm theForm = new();
         theForm.Perform(myPbase, myAxe, myAngle1 + myAngle2);
-        TopoDS_Shape VraiForm = theForm.InternalShape(); // uncut  primitive
+        Shape VraiForm = theForm.InternalShape(); // uncut  primitive
 
         // management of descendants
         MajMap(myPbase, theForm, myMap, ref myFShape, ref myLShape);
@@ -1053,16 +1057,16 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
 
         BRepLib_MakeFace ff1 = new(Pln1);
         BRepLib_MakeFace ff2 = new(Pln2);
-        TopoDS_Face f1 = TopoDS.Face(ff1.InternalShape());
-        TopoDS_Face f2 = TopoDS.Face(ff2.InternalShape());
+        Face f1 = ShapeCasts.Face(ff1.InternalShape());
+        Face f2 = ShapeCasts.Face(ff2.InternalShape());
         BRepFeat.FaceUntil(mySbase, ref f1);
         BRepFeat.FaceUntil(mySbase, ref f2);
 
         LocOpe_CSIntersector ASI1 = new(f1);
         LocOpe_CSIntersector ASI2 = new(f2);
 
-        Geom_Line normale = new(Pt, new Direction3D(vec1));
-        NCollection_Sequence<Geom_Curve?> scur = new();
+        LineCurve3D normale = new(Pt, new Direction3D(vec1));
+        NCollection_Sequence<Curve3D?> scur = new();
         scur.Append(normale);
 
         ASI1.Perform(scur);
@@ -1075,63 +1079,63 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
             return;
         }
 
-        TopAbs_Orientation Ori1 = ASI1.Point(1, 1).Orientation();
-        TopAbs_Orientation Ori2 = TopAbs.Reverse(ASI2.Point(1, 1).Orientation());
-        TopoDS_Face FF1 = ASI1.Point(1, 1).Face();
-        TopoDS_Face FF2 = ASI2.Point(1, 1).Face();
+        Orientation Ori1 = ASI1.Point(1, 1).Orientation();
+        Orientation Ori2 = global::Kerf.Engine.Topology.TopAbs.Reverse(ASI2.Point(1, 1).Orientation());
+        Face FF1 = ASI1.Point(1, 1).Face();
+        Face FF2 = ASI2.Point(1, 1).Face();
 
-        TopoDS_Compound Comp = new();
-        BRep_Builder B = new();
+        Compound Comp = new();
+        BrepBuilder B = new();
         B.MakeCompound(ref Comp);
-        TopoDS_Solid S1 = BRepFeat.Tool(f1, FF1, Ori1);
-        TopoDS_Solid S2 = BRepFeat.Tool(f2, FF2, Ori2);
-        if (!S1.IsNull())
+        Solid S1 = BRepFeat.Tool(f1, FF1, Ori1);
+        Solid S2 = BRepFeat.Tool(f2, FF2, Ori2);
+        if (!S1.IsNull)
         {
             B.Add(Comp, S1);
         }
-        if (!S2.IsNull())
+        if (!S2.IsNull)
         {
             B.Add(Comp, S2);
         }
 
         BRepAlgoAPI_Cut trP = new(VraiForm, Comp);
         // coupe de la nervure par deux plans parallels
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> SlidingMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> SlidingMap = new(ShapeHasher.Instance);
 
         // management of descendants
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> it1 in myMap)
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> it1 in myMap)
         {
-            TopoDS_Shape orig = it1.Key;
+            Shape orig = it1.Key;
             if (it1.Value.IsEmpty())
             {
                 continue;
             }
-            TopoDS_Shape sh = it1.Value.First();
-            exx.Init(VraiForm, TopAbs_FACE);
+            Shape sh = it1.Value.First();
+            exx.Init(VraiForm, ShapeType.Face);
             for (; exx.More(); exx.Next())
             {
-                TopoDS_Face fac = TopoDS.Face(exx.Current());
-                TopExp_Explorer exx1 = new(fac, TopAbs_WIRE);
-                TopoDS_Wire thew = TopoDS.Wire(exx1.Current());
+                Face fac = ShapeCasts.Face(exx.Current());
+                Explorer exx1 = new(fac, ShapeType.Wire);
+                Wire thew = ShapeCasts.Wire(exx1.Current());
                 if (thew.IsSame(myFShape))
                 {
-                    myMap[myFShape] = new NCollection_List<TopoDS_Shape>(trP.InternalModified(f2));
+                    myMap[myFShape] = new NCollection_List<Shape>(trP.InternalModified(f2));
                     continue;
                 }
                 else if (thew.IsSame(myLShape))
                 {
-                    myMap[myLShape] = new NCollection_List<TopoDS_Shape>(trP.InternalModified(f1));
+                    myMap[myLShape] = new NCollection_List<Shape>(trP.InternalModified(f1));
                     continue;
                 }
                 if (fac.IsSame(sh))
                 {
                     if (!trP.IsDeleted(fac))
                     {
-                        NCollection_List<TopoDS_Shape> desfaces = trP.InternalModified(fac);
+                        NCollection_List<Shape> desfaces = trP.InternalModified(fac);
                         if (!desfaces.IsEmpty())
                         {
                             myMap[orig].Clear();
-                            myMap[orig] = new NCollection_List<TopoDS_Shape>(trP.InternalModified(fac));
+                            myMap[orig] = new NCollection_List<Shape>(trP.InternalModified(fac));
                             break; // break the cycle (sh became a dead reference)
                         }
                     }
@@ -1139,21 +1143,21 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
             }
         }
 
-        exx.Init(VraiForm, TopAbs_FACE);
+        exx.Init(VraiForm, ShapeType.Face);
         for (; exx.More(); exx.Next())
         {
-            TopoDS_Face fac = TopoDS.Face(exx.Current());
-            NCollection_List<TopoDS_Shape> thelist = new();
+            Face fac = ShapeCasts.Face(exx.Current());
+            NCollection_List<Shape> thelist = new();
             SlidingMap.Bind(fac, thelist);
             if (trP.IsDeleted(fac))
             {
             }
             else
             {
-                NCollection_List<TopoDS_Shape> desfaces = trP.InternalModified(fac);
+                NCollection_List<Shape> desfaces = trP.InternalModified(fac);
                 if (!desfaces.IsEmpty())
                 {
-                    SlidingMap[fac] = new NCollection_List<TopoDS_Shape>(desfaces);
+                    SlidingMap[fac] = new NCollection_List<Shape>(desfaces);
                 }
                 else
                 {
@@ -1176,10 +1180,10 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
             myPerfSelection = BRepFeat_SelectionSh;
         }
 
-        exx.Init(myPbase, TopAbs_EDGE);
+        exx.Init(myPbase, ShapeType.Edge);
         for (; exx.More(); exx.Next())
         {
-            TopoDS_Edge e = TopoDS.Edge(exx.Current());
+            Edge e = ShapeCasts.Edge(exx.Current());
             if (!myMap.IsBound(e))
             {
                 myStatusError = BRepFeat_IncSlidFace;
@@ -1190,7 +1194,7 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
 
         myGShape = VraiForm;
 
-        if (!myGluedF.IsEmpty() && !mySUntil.IsNull())
+        if (!myGluedF.IsEmpty() && !mySUntil.IsNull)
         {
             myStatusError = BRepFeat_InvShape;
             NotDone();
@@ -1205,64 +1209,64 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
     /// <paramref name="SliList"/>, adding the faces the rib meets; <paramref name="falseside"/> becomes false when the
     /// material isn't on the profile's side.
     /// </summary>
-    public bool Propagate(NCollection_List<TopoDS_Shape> SliList, in TopoDS_Face fac, in Point3D Firstpnt,
+    public bool Propagate(NCollection_List<Shape> SliList, in Face fac, in Point3D Firstpnt,
                           in Point3D Lastpnt, ref bool falseside)
     {
         Point3D Firstpoint = Firstpnt;
         Point3D Lastpoint = Lastpnt;
 
         bool result = true;
-        TopoDS_Face CurrentFace, saveFace;
-        CurrentFace = TopoDS.Face(SliList.First());
+        Face CurrentFace, saveFace;
+        CurrentFace = ShapeCasts.Face(SliList.First());
         saveFace = CurrentFace;
 
         bool LastOK = false, FirstOK = false;
-        TopoDS_Vertex v1 = new(), v2 = new(), v3, v4, Vert;
+        Vertex v1 = new(), v2 = new(), v3, v4, Vert;
 
         BRepAlgoAPI_Section sect = new(fac, CurrentFace, false);
         sect.Approximation(true);
         sect.Build();
-        TopExp_Explorer Ex = new();
-        TopoDS_Edge e = new(), e1 = new();
+        Explorer Ex = new();
+        Edge e = new(), e1 = new();
         Point3D FP, LP;
         int ii = 0;
-        for (Ex.Init(sect.InternalShape(), TopAbs_EDGE); Ex.More(); Ex.Next())
+        for (Ex.Init(sect.InternalShape(), ShapeType.Edge); Ex.More(); Ex.Next())
         {
             ii++;
             if (ii == 1)
             {
-                e = TopoDS.Edge(Ex.Current());
+                e = ShapeCasts.Edge(Ex.Current());
             }
             else if (ii > 1)
             {
-                e1 = TopoDS.Edge(Ex.Current());
+                e1 = ShapeCasts.Edge(Ex.Current());
                 break;
             }
         }
-        if (e.IsNull())
+        if (e.IsNull)
         {
             falseside = false;
             return false;
         }
         //
-        if (!e1.IsNull())
+        if (!e1.IsNull)
         {
             double aTolV1, aTolV2;
             myListOfEdges.Clear();
-            NCollection_List<TopoDS_Shape> thelist = new();
+            NCollection_List<Shape> thelist = new();
             mySlface.Bind(CurrentFace, thelist);
             mySlface[CurrentFace].Append(e1);
 
             myListOfEdges.Append(e1);
 
-            v1 = TopExp.FirstVertex(e1, true);
-            v2 = TopExp.LastVertex(e1, true);
+            v1 = Exploration.FirstVertex(e1, true);
+            v2 = Exploration.LastVertex(e1, true);
 
-            FP = BRep_Tool.Pnt(v1);
-            LP = BRep_Tool.Pnt(v2);
+            FP = Tool.Pnt(v1);
+            LP = Tool.Pnt(v2);
 
-            aTolV1 = BRep_Tool.Tolerance(v1);
-            aTolV2 = BRep_Tool.Tolerance(v2);
+            aTolV1 = Tool.Tolerance(v1);
+            aTolV2 = Tool.Tolerance(v2);
 
             if (FP.Distance(Firstpoint) <= aTolV1 || FP.Distance(Lastpoint) <= aTolV1)
             {
@@ -1283,10 +1287,10 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
             }
         }
         //
-        if (!e1.IsNull())
+        if (!e1.IsNull)
         {
             myListOfEdges.Clear();
-            NCollection_List<TopoDS_Shape> thelist1 = new();
+            NCollection_List<Shape> thelist1 = new();
             mySlface.Bind(CurrentFace, thelist1);
             mySlface[CurrentFace].Append(e);
 
@@ -1294,25 +1298,25 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
 
             mySlface[CurrentFace].Append(e1);
 
-            v1 = TopExp.FirstVertex(e, true);
-            v2 = TopExp.LastVertex(e, true);
-            v3 = TopExp.FirstVertex(e1, true);
-            v4 = TopExp.LastVertex(e1, true);
+            v1 = Exploration.FirstVertex(e, true);
+            v2 = Exploration.LastVertex(e, true);
+            v3 = Exploration.FirstVertex(e1, true);
+            v4 = Exploration.LastVertex(e1, true);
             Point3D p1, p2, p3, p4;
-            p1 = BRep_Tool.Pnt(v1);
+            p1 = Tool.Pnt(v1);
             FP = p1;
-            p2 = BRep_Tool.Pnt(v2);
+            p2 = Tool.Pnt(v2);
             LP = p2;
-            p3 = BRep_Tool.Pnt(v3);
-            p4 = BRep_Tool.Pnt(v4);
-            if (p1.Distance(Firstpoint) <= BRep_Tool.Tolerance(v1))
+            p3 = Tool.Pnt(v3);
+            p4 = Tool.Pnt(v4);
+            if (p1.Distance(Firstpoint) <= Tool.Tolerance(v1))
             {
-                if (p3.Distance(Lastpoint) <= BRep_Tool.Tolerance(v3))
+                if (p3.Distance(Lastpoint) <= Tool.Tolerance(v3))
                 {
                     FirstOK = true;
                     Lastpoint = p4;
                 }
-                else if (p4.Distance(Lastpoint) <= BRep_Tool.Tolerance(v4))
+                else if (p4.Distance(Lastpoint) <= Tool.Tolerance(v4))
                 {
                     FirstOK = true;
                     Lastpoint = p3;
@@ -1322,14 +1326,14 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                     e1.Nullify();
                 }
             }
-            else if (p1.Distance(Lastpoint) <= BRep_Tool.Tolerance(v1))
+            else if (p1.Distance(Lastpoint) <= Tool.Tolerance(v1))
             {
-                if (p3.Distance(Firstpoint) <= BRep_Tool.Tolerance(v3))
+                if (p3.Distance(Firstpoint) <= Tool.Tolerance(v3))
                 {
                     FirstOK = true;
                     Firstpoint = p4;
                 }
-                else if (p4.Distance(Firstpoint) <= BRep_Tool.Tolerance(v4))
+                else if (p4.Distance(Firstpoint) <= Tool.Tolerance(v4))
                 {
                     FirstOK = true;
                     Firstpoint = p3;
@@ -1339,14 +1343,14 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                     e1.Nullify();
                 }
             }
-            else if (p2.Distance(Firstpoint) <= BRep_Tool.Tolerance(v2))
+            else if (p2.Distance(Firstpoint) <= Tool.Tolerance(v2))
             {
-                if (p3.Distance(Lastpoint) <= BRep_Tool.Tolerance(v3))
+                if (p3.Distance(Lastpoint) <= Tool.Tolerance(v3))
                 {
                     LastOK = true;
                     Lastpoint = p4;
                 }
-                else if (p4.Distance(Lastpoint) <= BRep_Tool.Tolerance(v4))
+                else if (p4.Distance(Lastpoint) <= Tool.Tolerance(v4))
                 {
                     LastOK = true;
                     Lastpoint = p3;
@@ -1356,14 +1360,14 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                     e1.Nullify();
                 }
             }
-            else if (p2.Distance(Lastpoint) <= BRep_Tool.Tolerance(v2))
+            else if (p2.Distance(Lastpoint) <= Tool.Tolerance(v2))
             {
-                if (p3.Distance(Firstpoint) <= BRep_Tool.Tolerance(v3))
+                if (p3.Distance(Firstpoint) <= Tool.Tolerance(v3))
                 {
                     LastOK = true;
                     Firstpoint = p4;
                 }
-                else if (p4.Distance(Firstpoint) <= BRep_Tool.Tolerance(v4))
+                else if (p4.Distance(Firstpoint) <= Tool.Tolerance(v4))
                 {
                     LastOK = true;
                     Firstpoint = p3;
@@ -1379,26 +1383,26 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                 e1.Nullify();
             }
         }
-        if (e1.IsNull())
+        if (e1.IsNull)
         {
             myListOfEdges.Clear();
-            NCollection_List<TopoDS_Shape> thelist2 = new();
+            NCollection_List<Shape> thelist2 = new();
             mySlface.Bind(CurrentFace, thelist2);
             mySlface[CurrentFace].Append(e);
 
             myListOfEdges.Append(e);
 
-            v1 = TopExp.FirstVertex(e, true);
-            v2 = TopExp.LastVertex(e, true);
+            v1 = Exploration.FirstVertex(e, true);
+            v2 = Exploration.LastVertex(e, true);
 
-            FP = BRep_Tool.Pnt(v1);
-            LP = BRep_Tool.Pnt(v2);
+            FP = Tool.Pnt(v1);
+            LP = Tool.Pnt(v2);
 
-            if (FP.Distance(Firstpoint) <= BRep_Tool.Tolerance(v1) || FP.Distance(Lastpoint) <= BRep_Tool.Tolerance(v1))
+            if (FP.Distance(Firstpoint) <= Tool.Tolerance(v1) || FP.Distance(Lastpoint) <= Tool.Tolerance(v1))
             {
                 FirstOK = true;
             }
-            if (LP.Distance(Firstpoint) <= BRep_Tool.Tolerance(v2) || LP.Distance(Lastpoint) <= BRep_Tool.Tolerance(v2))
+            if (LP.Distance(Firstpoint) <= Tool.Tolerance(v2) || LP.Distance(Lastpoint) <= Tool.Tolerance(v2))
             {
                 LastOK = true;
             }
@@ -1409,45 +1413,45 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
             }
         }
 
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> mapedges = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(mySbase, TopAbs_EDGE, TopAbs_FACE, mapedges);
-        TopExp_Explorer ex = new();
-        TopoDS_Edge FirstEdge = new();
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapedges = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(mySbase, ShapeType.Edge, ShapeType.Face, mapedges);
+        Explorer ex = new();
+        Edge FirstEdge = new();
 
-        TopoDS_Vertex Vprevious = new();
+        Vertex Vprevious = new();
         Vprevious.Nullify();
-        TopoDS_Vertex Vpreprevious = new();
+        Vertex Vpreprevious = new();
         Vpreprevious.Nullify();
 
         while (!FirstOK)
         {
             // find edge connected to v1:
             Point3D pt = new();
-            if (!v1.IsNull())
+            if (!v1.IsNull)
             {
-                pt = BRep_Tool.Pnt(v1);
+                pt = Tool.Pnt(v1);
             }
             Point3D ptprev = new();
-            if (!Vprevious.IsNull())
+            if (!Vprevious.IsNull)
             {
-                ptprev = BRep_Tool.Pnt(Vprevious);
+                ptprev = Tool.Pnt(Vprevious);
             }
             Point3D ptpreprev = new();
-            if (!Vpreprevious.IsNull())
+            if (!Vpreprevious.IsNull)
             {
-                ptpreprev = BRep_Tool.Pnt(Vpreprevious);
+                ptpreprev = Tool.Pnt(Vpreprevious);
             }
 
-            if ((!Vprevious.IsNull() && ptprev.Distance(pt) <= myTol)
-                || (!Vpreprevious.IsNull() && ptpreprev.Distance(pt) <= myTol))
+            if ((!Vprevious.IsNull && ptprev.Distance(pt) <= myTol)
+                || (!Vpreprevious.IsNull && ptpreprev.Distance(pt) <= myTol))
             {
                 falseside = false;
                 return false;
             }
 
-            for (ex.Init(CurrentFace, TopAbs_EDGE); ex.More(); ex.Next())
+            for (ex.Init(CurrentFace, ShapeType.Edge); ex.More(); ex.Next())
             {
-                TopoDS_Edge aCurEdge = TopoDS.Edge(ex.Current());
+                Edge aCurEdge = ShapeCasts.Edge(ex.Current());
 
                 BRepExtrema_ExtPC projF = new(v1, aCurEdge);
 
@@ -1465,7 +1469,7 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                     }
                     if (index != 0)
                     {
-                        if (dist2min <= BRep_Tool.Tolerance(aCurEdge) * BRep_Tool.Tolerance(aCurEdge))
+                        if (dist2min <= Tool.Tolerance(aCurEdge) * Tool.Tolerance(aCurEdge))
                         {
                             FirstEdge = aCurEdge;
                             break;
@@ -1474,12 +1478,12 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                 }
             }
 
-            NCollection_List<TopoDS_Shape> L = mapedges.FindFromKey(FirstEdge);
-            NCollection_List<TopoDS_Shape>.Iterator It = new(L);
+            NCollection_List<Shape> L = mapedges.FindFromKey(FirstEdge);
+            NCollection_List<Shape>.Iterator It = new(L);
 
             for (; It.More(); It.Next())
             {
-                TopoDS_Face FF = TopoDS.Face(It.Value());
+                Face FF = ShapeCasts.Face(It.Value());
                 if (!FF.IsSame(CurrentFace))
                 {
                     CurrentFace = FF;
@@ -1491,25 +1495,25 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
             sectf.Approximation(true);
             sectf.Build();
 
-            TopoDS_Edge edg1 = new();
-            for (Ex.Init(sectf.InternalShape(), TopAbs_EDGE); Ex.More(); Ex.Next())
+            Edge edg1 = new();
+            for (Ex.Init(sectf.InternalShape(), ShapeType.Edge); Ex.More(); Ex.Next())
             {
-                edg1 = TopoDS.Edge(Ex.Current());
-                Point3D ppp1 = BRep_Tool.Pnt(TopExp.FirstVertex(edg1, true));
-                Point3D ppp2 = BRep_Tool.Pnt(TopExp.LastVertex(edg1, true));
-                if (ppp1.Distance(BRep_Tool.Pnt(v1)) <= BRep_Tool.Tolerance(v1)
-                    || ppp2.Distance(BRep_Tool.Pnt(v1)) <= BRep_Tool.Tolerance(v1))
+                edg1 = ShapeCasts.Edge(Ex.Current());
+                Point3D ppp1 = Tool.Pnt(Exploration.FirstVertex(edg1, true));
+                Point3D ppp2 = Tool.Pnt(Exploration.LastVertex(edg1, true));
+                if (ppp1.Distance(Tool.Pnt(v1)) <= Tool.Tolerance(v1)
+                    || ppp2.Distance(Tool.Pnt(v1)) <= Tool.Tolerance(v1))
                 {
                     break;
                 }
             }
 
-            NCollection_List<TopoDS_Shape> thelist3 = new();
+            NCollection_List<Shape> thelist3 = new();
             mySlface.Bind(CurrentFace, thelist3);
             mySlface[CurrentFace].Append(edg1);
             myListOfEdges.Append(edg1);
 
-            if (!edg1.IsNull())
+            if (!edg1.IsNull)
             {
                 SliList.Prepend(CurrentFace);
             }
@@ -1518,11 +1522,11 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                 return false;
             }
 
-            Vert = TopExp.FirstVertex(edg1, true);
-            Point3D PP = BRep_Tool.Pnt(Vert);
-            FP = BRep_Tool.Pnt(v1);
-            double tol = BRep_Tool.Tolerance(edg1);
-            double tol1 = BRep_Tool.Tolerance(v1);
+            Vert = Exploration.FirstVertex(edg1, true);
+            Point3D PP = Tool.Pnt(Vert);
+            FP = Tool.Pnt(v1);
+            double tol = Tool.Tolerance(edg1);
+            double tol1 = Tool.Tolerance(v1);
             if (tol1 > tol)
             {
                 tol = tol1;
@@ -1532,7 +1536,7 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
             {
                 Vpreprevious = Vprevious;
                 Vprevious = v1;
-                v1 = TopExp.LastVertex(edg1, true);
+                v1 = Exploration.LastVertex(edg1, true);
             }
             else
             {
@@ -1541,9 +1545,9 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                 v1 = Vert;
             }
 
-            FP = BRep_Tool.Pnt(v1);
+            FP = Tool.Pnt(v1);
 
-            if (FP.Distance(Firstpoint) <= BRep_Tool.Tolerance(v1) || FP.Distance(Lastpoint) <= BRep_Tool.Tolerance(v1))
+            if (FP.Distance(Firstpoint) <= Tool.Tolerance(v1) || FP.Distance(Lastpoint) <= Tool.Tolerance(v1))
             {
                 FirstOK = true;
             }
@@ -1557,31 +1561,31 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
         {
             // find edge connected to v2:
             Point3D pt = new();
-            if (!v2.IsNull())
+            if (!v2.IsNull)
             {
-                pt = BRep_Tool.Pnt(v2);
+                pt = Tool.Pnt(v2);
             }
             Point3D ptprev = new();
-            if (!Vprevious.IsNull())
+            if (!Vprevious.IsNull)
             {
-                ptprev = BRep_Tool.Pnt(Vprevious);
+                ptprev = Tool.Pnt(Vprevious);
             }
             Point3D ptpreprev = new();
-            if (!Vpreprevious.IsNull())
+            if (!Vpreprevious.IsNull)
             {
-                ptpreprev = BRep_Tool.Pnt(Vpreprevious);
+                ptpreprev = Tool.Pnt(Vpreprevious);
             }
 
-            if ((!Vprevious.IsNull() && ptprev.Distance(pt) <= myTol)
-                || (!Vpreprevious.IsNull() && ptpreprev.Distance(pt) <= myTol))
+            if ((!Vprevious.IsNull && ptprev.Distance(pt) <= myTol)
+                || (!Vpreprevious.IsNull && ptpreprev.Distance(pt) <= myTol))
             {
                 falseside = false;
                 return false;
             }
 
-            for (ex.Init(CurrentFace, TopAbs_EDGE); ex.More(); ex.Next())
+            for (ex.Init(CurrentFace, ShapeType.Edge); ex.More(); ex.Next())
             {
-                TopoDS_Edge aCurEdge = TopoDS.Edge(ex.Current());
+                Edge aCurEdge = ShapeCasts.Edge(ex.Current());
                 BRepExtrema_ExtPC projF = new(v2, aCurEdge);
 
                 if (projF.IsDone() && projF.NbExt() >= 1)
@@ -1598,7 +1602,7 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                     }
                     if (index != 0)
                     {
-                        if (dist2min <= BRep_Tool.Tolerance(aCurEdge) * BRep_Tool.Tolerance(aCurEdge))
+                        if (dist2min <= Tool.Tolerance(aCurEdge) * Tool.Tolerance(aCurEdge))
                         {
                             FirstEdge = aCurEdge;
                             break;
@@ -1607,12 +1611,12 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                 }
             }
 
-            NCollection_List<TopoDS_Shape> L = mapedges.FindFromKey(FirstEdge);
-            NCollection_List<TopoDS_Shape>.Iterator It = new(L);
+            NCollection_List<Shape> L = mapedges.FindFromKey(FirstEdge);
+            NCollection_List<Shape>.Iterator It = new(L);
 
             for (; It.More(); It.Next())
             {
-                TopoDS_Face FF = TopoDS.Face(It.Value());
+                Face FF = ShapeCasts.Face(It.Value());
                 if (!FF.IsSame(CurrentFace))
                 {
                     CurrentFace = FF;
@@ -1626,24 +1630,24 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
             sectf.Approximation(true);
             sectf.Build();
 
-            TopoDS_Edge edg2 = new();
-            for (Ex.Init(sectf.InternalShape(), TopAbs_EDGE); Ex.More(); Ex.Next())
+            Edge edg2 = new();
+            for (Ex.Init(sectf.InternalShape(), ShapeType.Edge); Ex.More(); Ex.Next())
             {
-                edg2 = TopoDS.Edge(Ex.Current());
-                Point3D ppp1 = BRep_Tool.Pnt(TopExp.FirstVertex(edg2, true));
-                Point3D ppp2 = BRep_Tool.Pnt(TopExp.LastVertex(edg2, true));
-                if (ppp1.Distance(BRep_Tool.Pnt(v2)) <= BRep_Tool.Tolerance(v2)
-                    || ppp2.Distance(BRep_Tool.Pnt(v2)) <= BRep_Tool.Tolerance(v2))
+                edg2 = ShapeCasts.Edge(Ex.Current());
+                Point3D ppp1 = Tool.Pnt(Exploration.FirstVertex(edg2, true));
+                Point3D ppp2 = Tool.Pnt(Exploration.LastVertex(edg2, true));
+                if (ppp1.Distance(Tool.Pnt(v2)) <= Tool.Tolerance(v2)
+                    || ppp2.Distance(Tool.Pnt(v2)) <= Tool.Tolerance(v2))
                 {
                     break;
                 }
             }
-            NCollection_List<TopoDS_Shape> thelist4 = new();
+            NCollection_List<Shape> thelist4 = new();
             mySlface.Bind(CurrentFace, thelist4);
             mySlface[CurrentFace].Append(edg2);
             myListOfEdges.Append(edg2);
 
-            if (!edg2.IsNull())
+            if (!edg2.IsNull)
             {
                 SliList.Append(CurrentFace);
             }
@@ -1652,97 +1656,97 @@ public sealed class BRepFeat_MakeRevolutionForm : BRepFeat_RibSlot
                 return false;
             }
 
-            Vert = TopExp.FirstVertex(edg2, true);
-            Point3D PP = BRep_Tool.Pnt(Vert);
-            FP = BRep_Tool.Pnt(v2);
-            if (PP.Distance(FP) <= BRep_Tool.Tolerance(v2))
+            Vert = Exploration.FirstVertex(edg2, true);
+            Point3D PP = Tool.Pnt(Vert);
+            FP = Tool.Pnt(v2);
+            if (PP.Distance(FP) <= Tool.Tolerance(v2))
             {
                 Vpreprevious = Vprevious;
                 Vprevious = v2;
-                v2 = TopExp.LastVertex(edg2, true);
+                v2 = Exploration.LastVertex(edg2, true);
             }
             else
             {
                 v2 = Vert;
             }
-            FP = BRep_Tool.Pnt(v2);
+            FP = Tool.Pnt(v2);
 
-            if (FP.Distance(Firstpoint) <= BRep_Tool.Tolerance(v2) || FP.Distance(Lastpoint) <= BRep_Tool.Tolerance(v2))
+            if (FP.Distance(Firstpoint) <= Tool.Tolerance(v2) || FP.Distance(Lastpoint) <= Tool.Tolerance(v2))
             {
                 LastOK = true;
             }
         }
-        if (!e1.IsNull())
+        if (!e1.IsNull)
         {
             myListOfEdges.Append(e1);
         }
         return result;
     }
 
-    private static void MajMap(in TopoDS_Shape theB, LocOpe_RevolutionForm theP,
-                               NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMap,
-                               ref TopoDS_Shape theFShape, ref TopoDS_Shape theLShape)
+    private static void MajMap(in Shape theB, LocOpe_RevolutionForm theP,
+                               NCollection_DataMap<Shape, NCollection_List<Shape>> theMap,
+                               ref Shape theFShape, ref Shape theLShape)
     {
-        TopExp_Explorer exp = new(theP.InternalFirstShape(), TopAbs_WIRE);
+        Explorer exp = new(theP.InternalFirstShape(), ShapeType.Wire);
         if (exp.More())
         {
             theFShape = exp.Current();
-            NCollection_List<TopoDS_Shape> thelist = new();
+            NCollection_List<Shape> thelist = new();
             theMap.Bind(theFShape, thelist);
-            for (exp.Init(theP.InternalFirstShape(), TopAbs_FACE); exp.More(); exp.Next())
+            for (exp.Init(theP.InternalFirstShape(), ShapeType.Face); exp.More(); exp.Next())
             {
-                TopoDS_Shape sh = exp.Current();
+                Shape sh = exp.Current();
                 theMap[theFShape].Append(sh);
             }
         }
 
-        exp.Init(theP.InternalLastShape(), TopAbs_WIRE);
+        exp.Init(theP.InternalLastShape(), ShapeType.Wire);
         if (exp.More())
         {
             theLShape = exp.Current();
-            NCollection_List<TopoDS_Shape> thelist1 = new();
+            NCollection_List<Shape> thelist1 = new();
             theMap.Bind(theLShape, thelist1);
-            for (exp.Init(theP.InternalLastShape(), TopAbs_FACE); exp.More(); exp.Next())
+            for (exp.Init(theP.InternalLastShape(), ShapeType.Face); exp.More(); exp.Next())
             {
-                TopoDS_Shape sh = exp.Current();
+                Shape sh = exp.Current();
                 theMap[theLShape].Append(sh);
             }
         }
 
-        for (exp.Init(theB, TopAbs_EDGE); exp.More(); exp.Next())
+        for (exp.Init(theB, ShapeType.Edge); exp.More(); exp.Next())
         {
             if (!theMap.IsBound(exp.Current()))
             {
-                theMap.Bind(exp.Current(), new NCollection_List<TopoDS_Shape>(theP.InternalShapes(exp.Current())));
+                theMap.Bind(exp.Current(), new NCollection_List<Shape>(theP.InternalShapes(exp.Current())));
             }
         }
     }
 
-    private static void SetGluedFaces(NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theSlmap,
+    private static void SetGluedFaces(NCollection_DataMap<Shape, NCollection_List<Shape>> theSlmap,
                                       LocOpe_RevolutionForm thePrism,
-                                      NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> SlidingMap,
-                                      NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theMap)
+                                      NCollection_DataMap<Shape, NCollection_List<Shape>> SlidingMap,
+                                      NCollection_DataMap<Shape, Shape> theMap)
     {
         // Slidings
         if (!theSlmap.IsEmpty())
         {
-            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> itm in theSlmap)
+            foreach (KeyValuePair<Shape, NCollection_List<Shape>> itm in theSlmap)
             {
-                TopoDS_Face fac = TopoDS.Face(itm.Key);
-                NCollection_List<TopoDS_Shape> ledg = itm.Value;
-                NCollection_List<TopoDS_Shape>.Iterator it = new();
+                Face fac = ShapeCasts.Face(itm.Key);
+                NCollection_List<Shape> ledg = itm.Value;
+                NCollection_List<Shape>.Iterator it = new();
                 for (it.Initialize(ledg); it.More(); it.Next())
                 {
-                    NCollection_List<TopoDS_Shape> gfac = thePrism.InternalShapes(it.Value());
-                    foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> iterm in SlidingMap)
+                    NCollection_List<Shape> gfac = thePrism.InternalShapes(it.Value());
+                    foreach (KeyValuePair<Shape, NCollection_List<Shape>> iterm in SlidingMap)
                     {
-                        TopoDS_Face ff = TopoDS.Face(iterm.Key);
-                        NCollection_List<TopoDS_Shape> lfaces = iterm.Value;
+                        Face ff = ShapeCasts.Face(iterm.Key);
+                        NCollection_List<Shape> lfaces = iterm.Value;
                         if (lfaces.IsEmpty())
                         {
                             continue;
                         }
-                        TopoDS_Face fff = TopoDS.Face(lfaces.First());
+                        Face fff = ShapeCasts.Face(lfaces.First());
                         if (gfac.First().IsSame(ff))
                         {
                             theMap.Bind(fff, fac);

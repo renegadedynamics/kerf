@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests.BRepAlgoAPI;
 
@@ -50,68 +53,68 @@ public static class BOPTest_Utilities
     public static double DefaultFuzzyValue() => 1.0e-8;
 
     /// <summary>Calculate surface area of a shape.</summary>
-    public static double GetSurfaceArea(in TopoDS_Shape theShape)
+    public static double GetSurfaceArea(in Shape theShape)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return 0.0;
         }
-        GProp_GProps aProps = new();
+        Properties aProps = new();
         BRepGProp.SurfaceProperties(theShape, aProps);
         return aProps.Mass();
     }
 
     /// <summary>Calculate volume of a shape.</summary>
-    public static double GetVolume(in TopoDS_Shape theShape)
+    public static double GetVolume(in Shape theShape)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return 0.0;
         }
-        GProp_GProps aProps = new();
+        Properties aProps = new();
         BRepGProp.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
     /// <summary>Check if shape is effectively empty (very small surface area).</summary>
-    public static bool IsEmpty(in TopoDS_Shape theShape, double theTolerance = 1.0e-6) =>
+    public static bool IsEmpty(in Shape theShape, double theTolerance = 1.0e-6) =>
         GetSurfaceArea(theShape) <= theTolerance;
 
     /// <summary>Create unit box at origin (1x1x1).</summary>
-    public static TopoDS_Shape CreateUnitBox() => new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Shape();
+    public static Shape CreateUnitBox() => new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Shape();
 
     /// <summary>Create box at specific location.</summary>
-    public static TopoDS_Shape CreateBox(in Point3D theCorner, double theX, double theY, double theZ) =>
+    public static Shape CreateBox(in Point3D theCorner, double theX, double theY, double theZ) =>
         new BRepPrimAPI_MakeBox(theCorner, theX, theY, theZ).Shape();
 
     /// <summary>Create unit sphere (radius = 1.0).</summary>
-    public static TopoDS_Shape CreateUnitSphere() => new BRepPrimAPI_MakeSphere(1.0).Shape();
+    public static Shape CreateUnitSphere() => new BRepPrimAPI_MakeSphere(1.0).Shape();
 
     /// <summary>Create sphere at location with radius.</summary>
-    public static TopoDS_Shape CreateSphere(in Point3D theCenter, double theRadius) =>
+    public static Shape CreateSphere(in Point3D theCenter, double theRadius) =>
         new BRepPrimAPI_MakeSphere(theCenter, theRadius).Shape();
 
     /// <summary>Create cylinder.</summary>
-    public static TopoDS_Shape CreateCylinder(double theRadius, double theHeight) =>
+    public static Shape CreateCylinder(double theRadius, double theHeight) =>
         new BRepPrimAPI_MakeCylinder(theRadius, theHeight).Shape();
 
     /// <summary>Create cone.</summary>
-    public static TopoDS_Shape CreateCone(double theR1, double theR2, double theHeight) =>
+    public static Shape CreateCone(double theR1, double theR2, double theHeight) =>
         new BRepPrimAPI_MakeCone(theR1, theR2, theHeight).Shape();
 
     /// <summary>Convert shape to NURBS.</summary>
-    public static TopoDS_Shape ConvertToNurbs(in TopoDS_Shape theShape)
+    public static Shape ConvertToNurbs(in Shape theShape)
     {
         BRepBuilderAPI_NurbsConvert aNurbsConverter = new(theShape);
         if (!aNurbsConverter.IsDone())
         {
-            return new TopoDS_Shape(); // Return null shape on failure
+            return new Shape(); // Return null shape on failure
         }
         return aNurbsConverter.Shape();
     }
 
     /// <summary>Create rectangular polygon face.</summary>
-    public static TopoDS_Shape CreatePolygonFace(in Point3D theP1, in Point3D theP2, in Point3D theP3, in Point3D theP4)
+    public static Shape CreatePolygonFace(in Point3D theP1, in Point3D theP2, in Point3D theP3, in Point3D theP4)
     {
         BRepBuilderAPI_MakePolygon aPolygonMaker = new();
         aPolygonMaker.Add(theP1);
@@ -122,7 +125,7 @@ public static class BOPTest_Utilities
 
         if (!aPolygonMaker.IsDone())
         {
-            return new TopoDS_Shape();
+            return new Shape();
         }
 
         BRepBuilderAPI_MakeFace aFaceMaker = new(aPolygonMaker.Wire());
@@ -130,7 +133,7 @@ public static class BOPTest_Utilities
     }
 
     /// <summary>Rotate shape around axis.</summary>
-    public static TopoDS_Shape RotateShape(in TopoDS_Shape theShape, in Axis3D theAxis, double theAngle)
+    public static Shape RotateShape(in Shape theShape, in Axis3D theAxis, double theAngle)
     {
         Transform3D aTrsf = new();
         aTrsf.SetRotation(theAxis, theAngle);
@@ -139,7 +142,7 @@ public static class BOPTest_Utilities
     }
 
     /// <summary>Translate shape by vector.</summary>
-    public static TopoDS_Shape TranslateShape(in TopoDS_Shape theShape, in Vector3D theVector)
+    public static Shape TranslateShape(in Shape theShape, in Vector3D theVector)
     {
         Transform3D aTrsf = new();
         aTrsf.SetTranslation(theVector);
@@ -148,13 +151,13 @@ public static class BOPTest_Utilities
     }
 
     /// <summary>Create vertex from point.</summary>
-    public static TopoDS_Vertex CreateVertex(in Point3D thePoint) => new BRepBuilderAPI_MakeVertex(thePoint).Vertex();
+    public static Vertex CreateVertex(in Point3D thePoint) => new BRepBuilderAPI_MakeVertex(thePoint).Vertex();
 
     /// <summary>Create edge between two points.</summary>
-    public static TopoDS_Edge CreateEdge(in Point3D theP1, in Point3D theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
+    public static Edge CreateEdge(in Point3D theP1, in Point3D theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
 
     /// <summary>Create wire from list of points (closed polygon).</summary>
-    public static TopoDS_Wire CreatePolygonWire(IReadOnlyList<Point3D> thePoints, bool theClose = true)
+    public static Wire CreatePolygonWire(IReadOnlyList<Point3D> thePoints, bool theClose = true)
     {
         BRepBuilderAPI_MakePolygon aPolygonMaker = new();
         foreach (Point3D aPt in thePoints)
@@ -172,7 +175,7 @@ public static class BOPTest_Utilities
     /// Create complex profile using simplified approach (similar to TCL profile command). Simulates "profile rev S face
     /// F x y [commands...]" by creating a rectangular wire.
     /// </summary>
-    public static TopoDS_Wire CreateProfileWire(in Plane3D thePlane, in Point2D theStartPt, IReadOnlyList<string> theCommands)
+    public static Wire CreateProfileWire(in Plane3D thePlane, in Point2D theStartPt, IReadOnlyList<string> theCommands)
     {
         // Simplified profile creation - create a rectangular wire based on commands
         // This approximates the TCL profile behavior for basic geometric operations
@@ -219,7 +222,7 @@ public static class BOPTest_Utilities
     /// Create profile using typed commands (equivalent to TCL profile). plane: the reference plane/face (equivalent to
     /// "S face" in TCL); operations: list of profile operations.
     /// </summary>
-    public static TopoDS_Shape CreateProfile(in Plane3D thePlane, IReadOnlyList<ProfileOperation> theOperations)
+    public static Shape CreateProfile(in Plane3D thePlane, IReadOnlyList<ProfileOperation> theOperations)
     {
         BRepBuilderAPI_MakeWire aMakeWire = new();
 
@@ -404,7 +407,7 @@ public static class BOPTest_Utilities
         }
 
         Assert.True(aMakeWire.IsDone(), "Profile wire creation failed");
-        TopoDS_Wire aWire = aMakeWire.Wire();
+        Wire aWire = aMakeWire.Wire();
 
         // Create face from wire
         BRepBuilderAPI_MakeFace aFaceMaker = new(aWire);
@@ -413,7 +416,7 @@ public static class BOPTest_Utilities
     }
 
     /// <summary>Create profile from operations list (simplified version).</summary>
-    public static TopoDS_Shape CreateProfileFromOperations(IReadOnlyList<ProfileOperation> theOperations)
+    public static Shape CreateProfileFromOperations(IReadOnlyList<ProfileOperation> theOperations)
     {
         // Use default plane (XY plane)
         Plane3D aPlane = new(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
@@ -421,7 +424,7 @@ public static class BOPTest_Utilities
     }
 
     /// <summary>Create rectangular profile from corner and dimensions.</summary>
-    public static TopoDS_Wire CreateRectangularProfile(in Point3D theCorner, double theX, double theY)
+    public static Wire CreateRectangularProfile(in Point3D theCorner, double theX, double theY)
     {
         List<Point3D> aPoints =
         [
@@ -434,37 +437,37 @@ public static class BOPTest_Utilities
     }
 
     /// <summary>Create face from wire.</summary>
-    public static TopoDS_Shape CreateFaceFromWire(in TopoDS_Wire theWire)
+    public static Shape CreateFaceFromWire(in Wire theWire)
     {
         BRepBuilderAPI_MakeFace aFaceMaker = new(theWire);
         if (!aFaceMaker.IsDone())
         {
-            return new TopoDS_Shape();
+            return new Shape();
         }
         return aFaceMaker.Shape();
     }
 
     /// <summary>Create prism by extruding shape along vector.</summary>
-    public static TopoDS_Shape CreatePrism(in TopoDS_Shape theProfile, in Vector3D theDirection)
+    public static Shape CreatePrism(in Shape theProfile, in Vector3D theDirection)
     {
         BRepPrimAPI_MakePrism aPrismMaker = new(theProfile, theDirection);
         if (!aPrismMaker.IsDone())
         {
-            return new TopoDS_Shape();
+            return new Shape();
         }
         return aPrismMaker.Shape();
     }
 
     /// <summary>Create simple rectangular prism (like TCL profile operations).</summary>
-    public static TopoDS_Shape CreateRectangularPrism(in Point3D theCorner, double theX, double theY, double theZ)
+    public static Shape CreateRectangularPrism(in Point3D theCorner, double theX, double theY, double theZ)
     {
-        TopoDS_Wire aWire = CreateRectangularProfile(theCorner, theX, theY);
-        TopoDS_Shape aFace = CreateFaceFromWire(aWire);
+        Wire aWire = CreateRectangularProfile(theCorner, theX, theY);
+        Shape aFace = CreateFaceFromWire(aWire);
         return CreatePrism(aFace, new Vector3D(0, 0, theZ));
     }
 
     /// <summary>Create revolution of a profile around an axis.</summary>
-    public static TopoDS_Shape CreateRevolution(in TopoDS_Shape theProfile, in Axis3D theAxis, double theAngle)
+    public static Shape CreateRevolution(in Shape theProfile, in Axis3D theAxis, double theAngle)
     {
         BRepPrimAPI_MakeRevol aRevolMaker = new(theProfile, theAxis, theAngle);
         Assert.True(aRevolMaker.IsDone(), "Revolution operation failed");
@@ -472,25 +475,25 @@ public static class BOPTest_Utilities
     }
 
     /// <summary>Get a face from a shape by index (for nexplode simulation).</summary>
-    public static TopoDS_Face GetFaceByIndex(in TopoDS_Shape theShape, int theIndex)
+    public static Face GetFaceByIndex(in Shape theShape, int theIndex)
     {
-        TopExp_Explorer anExp = new(theShape, TopAbs_FACE);
+        Explorer anExp = new(theShape, ShapeType.Face);
         int aCurrentIndex = 1;
 
         while (anExp.More())
         {
             if (aCurrentIndex == theIndex)
             {
-                return TopoDS.Face(anExp.Current());
+                return ShapeCasts.Face(anExp.Current());
             }
             aCurrentIndex++;
             anExp.Next();
         }
-        return new TopoDS_Face(); // Return empty face if not found
+        return new Face(); // Return empty face if not found
     }
 
     /// <summary>Apply rotation around Z-axis (equivalent to "trotate shape 0 0 0 0 0 1 angle").</summary>
-    public static TopoDS_Shape RotateZ(in TopoDS_Shape theShape, double theAngleDeg)
+    public static Shape RotateZ(in Shape theShape, double theAngleDeg)
     {
         Transform3D aRotation = new();
         aRotation.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), theAngleDeg * M_PI / 180.0);
@@ -499,7 +502,7 @@ public static class BOPTest_Utilities
     }
 
     /// <summary>Apply rotation around Y-axis (equivalent to "trotate shape 0 0 0 0 1 0 angle").</summary>
-    public static TopoDS_Shape RotateY(in TopoDS_Shape theShape, double theAngleDeg)
+    public static Shape RotateY(in Shape theShape, double theAngleDeg)
     {
         Transform3D aRotation = new();
         aRotation.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Y)), theAngleDeg * M_PI / 180.0);
@@ -508,7 +511,7 @@ public static class BOPTest_Utilities
     }
 
     /// <summary>Apply rotation around X-axis (equivalent to "trotate shape 0 0 0 1 0 0 angle").</summary>
-    public static TopoDS_Shape RotateX(in TopoDS_Shape theShape, double theAngleDeg)
+    public static Shape RotateX(in Shape theShape, double theAngleDeg)
     {
         Transform3D aRotation = new();
         aRotation.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.X)), theAngleDeg * M_PI / 180.0);
@@ -517,14 +520,14 @@ public static class BOPTest_Utilities
     }
 
     /// <summary>Apply common test rotation: Z(-90deg) then Y(-45deg) - used in many TCL tests.</summary>
-    public static TopoDS_Shape RotateStandard(in TopoDS_Shape theShape)
+    public static Shape RotateStandard(in Shape theShape)
     {
-        TopoDS_Shape aResult = RotateZ(theShape, -90.0);
+        Shape aResult = RotateZ(theShape, -90.0);
         return RotateY(aResult, -45.0);
     }
 
     /// <summary>Apply translation (equivalent to "ttranslate shape dx dy dz").</summary>
-    public static TopoDS_Shape Translate(in TopoDS_Shape theShape, double theDx, double theDy, double theDz)
+    public static Shape Translate(in Shape theShape, double theDx, double theDy, double theDz)
     {
         Transform3D aTranslation = new();
         aTranslation.SetTranslation(new Vector3D(theDx, theDy, theDz));
@@ -533,7 +536,7 @@ public static class BOPTest_Utilities
     }
 
     /// <summary>Apply Y-axis 90-degree rotation (common pattern: "trotate shape 0 0 1 0 1 0 90").</summary>
-    public static TopoDS_Shape RotateY90(in TopoDS_Shape theShape)
+    public static Shape RotateY90(in Shape theShape)
     {
         Transform3D aRotation = new();
         aRotation.SetRotation(new Axis3D(new Point3D(0, 0, 1), new Direction3D(Direction3D.D.Y)), 90.0 * M_PI / 180.0);
@@ -542,21 +545,21 @@ public static class BOPTest_Utilities
     }
 
     /// <summary>Create unit sphere and box pair (most common test setup).</summary>
-    public static void CreateSphereAndBox(out TopoDS_Shape theSphere, out TopoDS_Shape theBox)
+    public static void CreateSphereAndBox(out Shape theSphere, out Shape theBox)
     {
         theSphere = CreateUnitSphere();
         theBox = CreateUnitBox();
     }
 
     /// <summary>Create two identical unit boxes at origin (common BOP test setup).</summary>
-    public static void CreateIdenticalBoxes(out TopoDS_Shape theBox1, out TopoDS_Shape theBox2)
+    public static void CreateIdenticalBoxes(out Shape theBox1, out Shape theBox2)
     {
         theBox1 = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
         theBox2 = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
     }
 
     /// <summary>Create NURBS box and regular box pair (common B-series test pattern).</summary>
-    public static void CreateNurbsAndRegularBox(out TopoDS_Shape theNurbsBox, out TopoDS_Shape theRegularBox,
+    public static void CreateNurbsAndRegularBox(out Shape theNurbsBox, out Shape theRegularBox,
                                                 Point3D? theNurbsCorner = null, Point3D? theRegularCorner = null,
                                                 double theNurbsX = 1.0, double theNurbsY = 1.0, double theNurbsZ = 1.0,
                                                 double theRegularX = 1.0, double theRegularY = 0.5, double theRegularZ = 1.0)
@@ -571,7 +574,7 @@ public static class BOPTest_Utilities
     internal const string NoFillets = "BOPTest_Utilities::CreateBlend needs BRepFilletAPI_MakeFillet (phase 7)";
 
     /// <summary>Create a cylinder on a specified plane (like TCL pcylinder command).</summary>
-    public static TopoDS_Shape CreateCylinderOnPlane(in Plane3D thePlane, double theRadius, double theHeight)
+    public static Shape CreateCylinderOnPlane(in Plane3D thePlane, double theRadius, double theHeight)
     {
         // Use DRAW pcylinder approach exactly:
         // S = BRepPrimAPI_MakeCylinder(P->Pln().Position().Ax2(), radius, height);
@@ -582,7 +585,7 @@ public static class BOPTest_Utilities
 
         if (!aCylinderMaker.IsDone())
         {
-            return new TopoDS_Shape();
+            return new Shape();
         }
 
         return aCylinderMaker.Shape();
@@ -595,7 +598,7 @@ public abstract class BRepAlgoAPI_TestBase
     protected double myTolerance = BOPTest_Utilities.DefaultTolerance();
 
     /// <summary>Perform BRepAlgoAPI Cut operation.</summary>
-    protected static TopoDS_Shape PerformCut(in TopoDS_Shape theObject, in TopoDS_Shape theTool)
+    protected static Shape PerformCut(in Shape theObject, in Shape theTool)
     {
         BRepAlgoAPI_Cut aCutter = new(theObject, theTool);
         Assert.True(aCutter.IsDone(), "BRepAlgoAPI_Cut operation failed");
@@ -603,7 +606,7 @@ public abstract class BRepAlgoAPI_TestBase
     }
 
     /// <summary>Perform BRepAlgoAPI Fuse operation.</summary>
-    protected static TopoDS_Shape PerformFuse(in TopoDS_Shape theShape1, in TopoDS_Shape theShape2)
+    protected static Shape PerformFuse(in Shape theShape1, in Shape theShape2)
     {
         BRepAlgoAPI_Fuse aFuser = new(theShape1, theShape2);
         Assert.True(aFuser.IsDone(), "BRepAlgoAPI_Fuse operation failed");
@@ -611,7 +614,7 @@ public abstract class BRepAlgoAPI_TestBase
     }
 
     /// <summary>Perform BRepAlgoAPI Common operation.</summary>
-    protected static TopoDS_Shape PerformCommon(in TopoDS_Shape theShape1, in TopoDS_Shape theShape2)
+    protected static Shape PerformCommon(in Shape theShape1, in Shape theShape2)
     {
         BRepAlgoAPI_Common aCommoner = new(theShape1, theShape2);
         Assert.True(aCommoner.IsDone(), "BRepAlgoAPI_Common operation failed");
@@ -619,7 +622,7 @@ public abstract class BRepAlgoAPI_TestBase
     }
 
     /// <summary>Validate result properties against expected values.</summary>
-    protected void ValidateResult(in TopoDS_Shape theResult, double theExpectedSurfaceArea = -1.0,
+    protected void ValidateResult(in Shape theResult, double theExpectedSurfaceArea = -1.0,
                                   double theExpectedVolume = -1.0, bool theExpectedEmpty = false)
     {
         if (theExpectedEmpty)
@@ -628,7 +631,7 @@ public abstract class BRepAlgoAPI_TestBase
             return;
         }
 
-        Assert.False(theResult.IsNull(), "Result shape should not be null");
+        Assert.False(theResult.IsNull, "Result shape should not be null");
 
         if (theExpectedSurfaceArea >= 0.0)
         {

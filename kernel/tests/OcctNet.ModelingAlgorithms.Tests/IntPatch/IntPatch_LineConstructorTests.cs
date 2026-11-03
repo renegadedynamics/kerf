@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 
@@ -15,27 +16,27 @@ public class IntPatch_LineConstructorTests
 {
     private const double Tol = 1.0e-7;
 
-    private static bool Inside(Adaptor3d_Surface theS, double u, double v) =>
+    private static bool Inside(SurfaceAdaptorBase theS, double u, double v) =>
         u >= theS.FirstUParameter() - 1e-9 && u <= theS.LastUParameter() + 1e-9 && v >= theS.FirstVParameter() - 1e-9
         && v <= theS.LastVParameter() + 1e-9;
 
     // The GLine branch reads the arcs' 3D tolerances (Tol3d), which a face's topology tool has
     // (BRepTopAdaptor_TopolTool) and Adaptor3d_TopolTool hasn't: it throws Standard_DomainError, as in OCCT.
-    private sealed class TopolTool3d(Adaptor3d_Surface theS) : Adaptor3d_TopolTool(theS)
+    private sealed class TopolTool3d(SurfaceAdaptorBase theS) : TopolTool(theS)
     {
         public override bool Has3d() => true;
 
-        public override double Tol3d(Adaptor2d_Curve2d C) => Tol;
+        public override double Tol3d(Curve2DAdaptorBase C) => Tol;
     }
 
     [Fact]
     public void Circle_of_plane_and_cylinder_split_by_the_square_face()
     {
         // The plane's face is the square [-1, 1]²; the circle of radius 1.2 leaves it around the axes: four arcs.
-        var aS1 = new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem()), -1, 1, -1, 1);
-        var aS2 = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new CoordinateSystem(), 1.2), 0, 2 * Math.PI, -1, 1);
-        Adaptor3d_TopolTool aD1 = new TopolTool3d(aS1);
-        Adaptor3d_TopolTool aD2 = new TopolTool3d(aS2);
+        var aS1 = new SurfaceAdaptor(new PlaneSurface(new CoordinateSystem()), -1, 1, -1, 1);
+        var aS2 = new SurfaceAdaptor(new CylindricalSurface(new CoordinateSystem(), 1.2), 0, 2 * Math.PI, -1, 1);
+        TopolTool aD1 = new TopolTool3d(aS1);
+        TopolTool aD2 = new TopolTool3d(aS2);
         var anInter = new IntPatch_ImpImpIntersection(aS1, aD1, aS2, aD2, Tol, Tol);
         Assert.True(anInter.IsDone());
         Assert.Equal(1, anInter.NbLines());
@@ -45,8 +46,8 @@ public class IntPatch_LineConstructorTests
         var aLC = new IntPatch_LineConstructor(2);
         var aSLin = new NCollection_Sequence<IntPatch_Line>();
         aSLin.Append(aL);
-        Assert.Throws<DomainErrorException>(() => aLC.Perform(aSLin, aL, aS1, new Adaptor3d_TopolTool(aS1), aS2,
-                                                               new Adaptor3d_TopolTool(aS2), Tol));
+        Assert.Throws<DomainErrorException>(() => aLC.Perform(aSLin, aL, aS1, new TopolTool(aS1), aS2,
+                                                               new TopolTool(aS2), Tol));
         aLC.Perform(aSLin, aL, aS1, aD1, aS2, aD2, Tol);
         Assert.Equal(4, aLC.NbLines());
         for (int i = 1; i <= aLC.NbLines(); i++)
@@ -78,10 +79,10 @@ public class IntPatch_LineConstructorTests
     public void Walking_line_half_outside_the_face_keeps_the_inside_part()
     {
         // The unit circle from t = 0 to π (21 points, vertices at points 1, 11 and 21) on the plane's face x >= 0.
-        var aS1 = new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem()), 0, 2, -2, 2);
-        var aS2 = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new CoordinateSystem(), 1.0), 0, 2 * Math.PI, -1, 1);
-        var aD1 = new Adaptor3d_TopolTool(aS1);
-        var aD2 = new Adaptor3d_TopolTool(aS2);
+        var aS1 = new SurfaceAdaptor(new PlaneSurface(new CoordinateSystem()), 0, 2, -2, 2);
+        var aS2 = new SurfaceAdaptor(new CylindricalSurface(new CoordinateSystem(), 1.0), 0, 2 * Math.PI, -1, 1);
+        var aD1 = new TopolTool(aS1);
+        var aD2 = new TopolTool(aS2);
         var aL = new IntSurf_LineOn2S();
         for (int i = 0; i <= 20; i++)
         {
@@ -121,12 +122,12 @@ public class IntPatch_LineConstructorTests
     [Fact]
     public void Analytic_lines_of_sphere_and_cylinder_split_at_their_vertices()
     {
-        var aS1 = new GeomAdaptor_Surface(new Geom_SphericalSurface(new CoordinateSystem(), 1.0));
-        var aS2 = new GeomAdaptor_Surface(new Geom_CylindricalSurface(
+        var aS1 = new SurfaceAdaptor(new SphericalSurface(new CoordinateSystem(), 1.0));
+        var aS2 = new SurfaceAdaptor(new CylindricalSurface(
                                               new CoordinateSystem(new Point3D(0.6, 0.1, 0), new Direction3D(0, 0, 1)), 0.5),
                                           0, 2 * Math.PI, -2, 2);
-        var aD1 = new Adaptor3d_TopolTool(aS1);
-        var aD2 = new Adaptor3d_TopolTool(aS2);
+        var aD1 = new TopolTool(aS1);
+        var aD2 = new TopolTool(aS2);
         var anInter = new IntPatch_ImpImpIntersection(aS1, aD1, aS2, aD2, Tol, Tol);
         Assert.True(anInter.IsDone());
         var aSLin = new NCollection_Sequence<IntPatch_Line>();

@@ -1,8 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using Xunit.Abstractions;
 using static Occt.BRepCheck_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -18,11 +21,11 @@ public class BRepCheckShellOracleTests(ITestOutputHelper output)
 {
     private const int Scenes = 240;
 
-    private static List<Twin<N.TopoDS_Shape, TopoDS_Shape>> Faces(Twin<N.TopoDS_Solid, TopoDS_Solid> theBox)
+    private static List<Twin<N.TopoDS_Shape, Shape>> Faces(Twin<N.TopoDS_Solid, Solid> theBox)
     {
-        var aFaces = new List<Twin<N.TopoDS_Shape, TopoDS_Shape>>();
+        var aFaces = new List<Twin<N.TopoDS_Shape, Shape>>();
         var aNExp = new N.TopExp_Explorer(theBox.N, N.TopAbs_ShapeEnum.TopAbs_FACE);
-        var anExp = new TopExp_Explorer(theBox.P, TopAbs_FACE);
+        var anExp = new Explorer(theBox.P, ShapeType.Face);
         for (; anExp.More(); anExp.Next(), aNExp.Next())
         {
             Assert.True(aNExp.More());
@@ -41,7 +44,7 @@ public class BRepCheckShellOracleTests(ITestOutputHelper output)
         for (int aScene = 0; aScene < Scenes; aScene++)
         {
             var aTwins = new TwinShapes();
-            List<Twin<N.TopoDS_Shape, TopoDS_Shape>> aFaces =
+            List<Twin<N.TopoDS_Shape, Shape>> aFaces =
                 Faces(aTwins.Box(anOracle.Real(0.5, 10), anOracle.Real(0.5, 10), anOracle.Real(0.5, 10)));
             switch (aScene % 6)
             {
@@ -77,12 +80,12 @@ public class BRepCheckShellOracleTests(ITestOutputHelper output)
 
             // the shell, and the solid holding it in two scenes out of three
             var aNB = new N.BRep_Builder();
-            var aB = new BRep_Builder();
+            var aB = new BrepBuilder();
             var aNShell = new N.TopoDS_Shell();
             aNB.MakeShell(aNShell);
-            TopoDS_Shell aShell = new();
+            Shell aShell = new();
             aB.MakeShell(ref aShell);
-            foreach (Twin<N.TopoDS_Shape, TopoDS_Shape> aF in aFaces)
+            foreach (Twin<N.TopoDS_Shape, Shape> aF in aFaces)
             {
                 aNB.Add(aNShell, aF.N);
                 aB.Add(aShell, aF.P);
@@ -90,13 +93,13 @@ public class BRepCheckShellOracleTests(ITestOutputHelper output)
 
             bool isInSolid = aScene % 3 != 0;
             N.TopoDS_Shape aNShape = aNShell;
-            TopoDS_Shape aShape = aShell;
+            Shape aShape = aShell;
             if (isInSolid)
             {
                 var aNSolid = new N.TopoDS_Solid();
                 aNB.MakeSolid(aNSolid);
                 aNB.Add(aNSolid, aNShell);
-                TopoDS_Solid aSolid = new();
+                Solid aSolid = new();
                 aB.MakeSolid(ref aSolid);
                 aB.Add(aSolid, aShell);
                 aNShape = aNSolid;
@@ -114,7 +117,7 @@ public class BRepCheckShellOracleTests(ITestOutputHelper output)
 
             bool isNativeValid = new N.BRepCheck_Analyzer(aNShape, false).IsValid();
 
-            TopoDS_Shell aPortShell = TopoDS.Shell(isInSolid ? new TopoDS_Iterator(aShape).Value() : aShape);
+            Shell aPortShell = ShapeCasts.Shell(isInSolid ? new Iterator(aShape).Value() : aShape);
             var aCheck = new BRepCheck_Shell(aPortShell);
             BRepCheck_Status aStatus = aCheck.Status().First();
             if (aStatus == BRepCheck_NoError && isInSolid)

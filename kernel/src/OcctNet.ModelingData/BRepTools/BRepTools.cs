@@ -4,14 +4,18 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Geometry.Library;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Occt;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Topology.Tools;
 
 /// <summary>
 /// Tools on BRep shapes: the UV bounds of faces, wires and edges, the outer wire of a face, comparisons, the update
@@ -25,109 +29,109 @@ namespace Occt;
 /// The statics that change the shape they are given (Update, UpdateFaceUVPoints, Clean, CleanGeometry,
 /// RemoveUnusedPCurves, the triangulation loaders, RemoveInternals, EvalAndUpdateTol) are internal: they work on
 /// unfrozen shapes inside OCCT.NET, and throw on frozen ones as BRep_Builder does. Their public functional twins,
-/// which return a changed copy (<see cref="Cleaned(in TopoDS_Shape, bool)"/>, <see cref="Updated(in TopoDS_Shape)"/>,
+/// which return a changed copy (<see cref="Cleaned(in Shape, bool)"/>, <see cref="Updated(in Shape)"/>,
 /// ...), are in BRepTools.Twins.cs (docs/phase3-design.md, section 4.6).
 /// </para>
 /// </remarks>
-public static partial class BRepTools
+public static partial class BrepTools
 {
     /// <summary>The UV bounds of the face (zeros if it has none).</summary>
-    public static void UVBounds(in TopoDS_Face F, out double UMin, out double UMax, out double VMin, out double VMax)
+    public static void UVBounds(in Face f, out double uMin, out double uMax, out double vMin, out double vMax)
     {
-        Box2d B = new Box2d();
-        AddUVBounds(F, ref B);
-        if (!B.IsVoid)
+        Box2d b = new Box2d();
+        AddUVBounds(f, ref b);
+        if (!b.IsVoid)
         {
-            B.Get(out UMin, out VMin, out UMax, out VMax);
+            b.Get(out uMin, out vMin, out uMax, out vMax);
         }
         else
         {
-            UMin = UMax = VMin = VMax = 0.0;
+            uMin = uMax = vMin = vMax = 0.0;
         }
     }
 
     /// <summary>The UV bounds of the wire on the face (zeros if it has none).</summary>
-    public static void UVBounds(in TopoDS_Face F,
-                                in TopoDS_Wire W,
-                                out double UMin,
-                                out double UMax,
-                                out double VMin,
-                                out double VMax)
+    public static void UVBounds(in Face f,
+                                in Wire w,
+                                out double uMin,
+                                out double uMax,
+                                out double vMin,
+                                out double vMax)
     {
-        Box2d B = new Box2d();
-        AddUVBounds(F, W, ref B);
-        if (!B.IsVoid)
+        Box2d b = new Box2d();
+        AddUVBounds(f, w, ref b);
+        if (!b.IsVoid)
         {
-            B.Get(out UMin, out VMin, out UMax, out VMax);
+            b.Get(out uMin, out vMin, out uMax, out vMax);
         }
         else
         {
-            UMin = UMax = VMin = VMax = 0.0;
+            uMin = uMax = vMin = vMax = 0.0;
         }
     }
 
     /// <summary>The UV bounds of the edge on the face (zeros if it has none).</summary>
-    public static void UVBounds(in TopoDS_Face F,
-                                in TopoDS_Edge E,
-                                out double UMin,
-                                out double UMax,
-                                out double VMin,
-                                out double VMax)
+    public static void UVBounds(in Face f,
+                                in Edge e,
+                                out double uMin,
+                                out double uMax,
+                                out double vMin,
+                                out double vMax)
     {
-        Box2d B = new Box2d();
-        AddUVBounds(F, E, ref B);
-        if (!B.IsVoid)
+        Box2d b = new Box2d();
+        AddUVBounds(f, e, ref b);
+        if (!b.IsVoid)
         {
-            B.Get(out UMin, out VMin, out UMax, out VMax);
+            b.Get(out uMin, out vMin, out uMax, out vMax);
         }
         else
         {
-            UMin = UMax = VMin = VMax = 0.0;
+            uMin = uMax = vMin = vMax = 0.0;
         }
     }
 
     /// <summary>
-    /// Adds the UV bounds of the face to <paramref name="B"/>: those of its edges' pcurves, or the surface's natural
+    /// Adds the UV bounds of the face to <paramref name="b"/>: those of its edges' pcurves, or the surface's natural
     /// bounds if there are none.
     /// </summary>
-    public static void AddUVBounds(in TopoDS_Face FF, ref Box2d B)
+    public static void AddUVBounds(in Face ff, ref Box2d b)
     {
-        TopoDS_Face F = FF;
-        F.Orientation(TopAbs_FORWARD);
-        var ex = new TopExp_Explorer(F, TopAbs_EDGE);
+        Face f = ff;
+        f.Orientation(Forward);
+        var ex = new Explorer(f, ShapeType.Edge);
 
         // fill box for the given face
-        Box2d aBox = new Box2d();
+        Box2d box = new Box2d();
         for (; ex.More(); ex.Next())
         {
-            BRepTools.AddUVBounds(F, TopoDS.Edge(ex.Current()), ref aBox);
+            BrepTools.AddUVBounds(f, ShapeCasts.Edge(ex.Current()), ref box);
         }
 
         // if the box is empty (face without edges or without pcurves),
         // get natural bounds
-        if (aBox.IsVoid)
+        if (box.IsVoid)
         {
-            Geom_Surface? aSurf = BRep_Tool.Surface(F, out Placement L);
-            if (aSurf is null)
+            Surface? surf = Tool.Surface(f, out Placement l);
+            if (surf is null)
             {
                 return;
             }
 
-            aSurf.Bounds(out double UMin, out double UMax, out double VMin, out double VMax);
-            aBox.Update(UMin, VMin, UMax, VMax);
+            surf.Bounds(out double uMin, out double uMax, out double vMin, out double vMax);
+            box.Update(uMin, vMin, uMax, vMax);
         }
 
         // add face box to result
-        B.Add(aBox);
+        b.Add(box);
     }
 
-    /// <summary>Adds the UV bounds of the wire on the face to <paramref name="B"/>.</summary>
-    public static void AddUVBounds(in TopoDS_Face F, in TopoDS_Wire W, ref Box2d B)
+    /// <summary>Adds the UV bounds of the wire on the face to <paramref name="b"/>.</summary>
+    public static void AddUVBounds(in Face f, in Wire w, ref Box2d b)
     {
-        var ex = new TopExp_Explorer();
-        for (ex.Init(W, TopAbs_EDGE); ex.More(); ex.Next())
+        var ex = new Explorer();
+        for (ex.Init(w, ShapeType.Edge); ex.More(); ex.Next())
         {
-            BRepTools.AddUVBounds(F, TopoDS.Edge(ex.Current()), ref B);
+            BrepTools.AddUVBounds(f, ShapeCasts.Edge(ex.Current()), ref b);
         }
     }
 
@@ -135,37 +139,37 @@ public static partial class BRepTools
     /// Adds the UV bounds of the edge's pcurve on the face to <paramref name="aB"/>, clipped to the surface's bounds in
     /// a non-periodic direction.
     /// </summary>
-    public static void AddUVBounds(in TopoDS_Face aF, in TopoDS_Edge aE, ref Box2d aB)
+    public static void AddUVBounds(in Face aF, in Edge aE, ref Box2d aB)
     {
-        double aXmin = 0.0, aYmin = 0.0, aXmax = 0.0, aYmax = 0.0;
-        double aUmin, aUmax, aVmin, aVmax;
-        Box2d aBoxC = new Box2d(), aBoxS = new Box2d();
+        double xmin = 0.0, ymin = 0.0, xmax = 0.0, ymax = 0.0;
+        double umin, umax, vmin, vmax;
+        Box2d boxC = new Box2d(), boxS = new Box2d();
         //
-        Geom2d_Curve? aC2D = BRep_Tool.CurveOnSurface(aE, aF, out double aT1, out double aT2);
-        if (aC2D is null)
+        Curve2D? c2D = Tool.CurveOnSurface(aE, aF, out double t1, out double t2);
+        if (c2D is null)
         {
             return;
         }
 
         //
-        BndLib_Add2dCurve.Add(aC2D, aT1, aT2, 0.0, ref aBoxC);
-        if (!aBoxC.IsVoid)
+        Add2dCurve.Add(c2D, t1, t2, 0.0, ref boxC);
+        if (!boxC.IsVoid)
         {
-            aBoxC.Get(out aXmin, out aYmin, out aXmax, out aYmax);
+            boxC.Get(out xmin, out ymin, out xmax, out ymax);
         }
 
         //
-        Geom_Surface aS = BRep_Tool.Surface(aF, out Placement aLoc)!;
-        aS.Bounds(out aUmin, out aUmax, out aVmin, out aVmax);
+        Surface s = Tool.Surface(aF, out Placement loc)!;
+        s.Bounds(out umin, out umax, out vmin, out vmax);
 
-        if (aS.DynamicType() == typeof(Geom_RectangularTrimmedSurface))
+        if (s.DynamicType() == typeof(TrimmedSurface))
         {
-            Geom_RectangularTrimmedSurface aSt = (Geom_RectangularTrimmedSurface)aS;
-            aS = aSt.BasisSurface();
+            TrimmedSurface st = (TrimmedSurface)s;
+            s = st.BasisSurface();
         }
 
         //
-        if (!aS.IsUPeriodic())
+        if (!s.IsUPeriodic)
         {
             bool isUPeriodic = false;
 
@@ -173,20 +177,20 @@ public static partial class BRepTools
             // 1. Verify that the surface is U-closed (if such flag is false). Verification uses 2 points
             // 2. Verify periodicity of surface inside UV-bounds of the edge. Verification uses 3 or 6
             // points.
-            if (aS.DynamicType() == typeof(Geom_BSplineSurface) && (aXmin < aUmin || aXmax > aUmax))
+            if (s.DynamicType() == typeof(BSplineSurface) && (xmin < umin || xmax > umax))
             {
-                double aTol2 = 100 * global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion();
+                double tol2 = 100 * global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion();
                 isUPeriodic = true;
-                Point3D P1, P2;
+                Point3D p1, p2;
                 // 1. Verify that the surface is U-closed
-                if (!aS.IsUClosed())
+                if (!s.IsUClosed)
                 {
-                    double aVStep = aVmax - aVmin;
-                    for (double aV = aVmin; aV <= aVmax; aV += aVStep)
+                    double vStep = vmax - vmin;
+                    for (double v = vmin; v <= vmax; v += vStep)
                     {
-                        P1 = aS.Value(aUmin, aV);
-                        P2 = aS.Value(aUmax, aV);
-                        if (P1.SquareDistance(P2) > aTol2)
+                        p1 = s.Value(umin, v);
+                        p2 = s.Value(umax, v);
+                        if (p1.SquareDistance(p2) > tol2)
                         {
                             isUPeriodic = false;
                             break;
@@ -197,37 +201,37 @@ public static partial class BRepTools
                 // 2. Verify periodicity of surface inside UV-bounds of the edge
                 if (isUPeriodic) // the flag still not changed
                 {
-                    double aV = (aVmin + aVmax) * 0.5;
-                    Span<double> aU = stackalloc double[6];   // values of U lying out of surface boundaries
-                    Span<double> aUpp = stackalloc double[6]; // corresponding U-values plus/minus period
-                    int aNbPnt = 0;
-                    if (aXmin < aUmin)
+                    double v = (vmin + vmax) * 0.5;
+                    Span<double> u = stackalloc double[6];   // values of U lying out of surface boundaries
+                    Span<double> upp = stackalloc double[6]; // corresponding U-values plus/minus period
+                    int nbPnt = 0;
+                    if (xmin < umin)
                     {
-                        aU[0] = aXmin;
-                        aU[1] = (aXmin + aUmin) * 0.5;
-                        aU[2] = aUmin;
-                        aUpp[0] = aU[0] + aUmax - aUmin;
-                        aUpp[1] = aU[1] + aUmax - aUmin;
-                        aUpp[2] = aU[2] + aUmax - aUmin;
-                        aNbPnt += 3;
+                        u[0] = xmin;
+                        u[1] = (xmin + umin) * 0.5;
+                        u[2] = umin;
+                        upp[0] = u[0] + umax - umin;
+                        upp[1] = u[1] + umax - umin;
+                        upp[2] = u[2] + umax - umin;
+                        nbPnt += 3;
                     }
 
-                    if (aXmax > aUmax)
+                    if (xmax > umax)
                     {
-                        aU[aNbPnt] = aUmax;
-                        aU[aNbPnt + 1] = (aXmax + aUmax) * 0.5;
-                        aU[aNbPnt + 2] = aXmax;
-                        aUpp[aNbPnt] = aU[aNbPnt] - aUmax + aUmin;
-                        aUpp[aNbPnt + 1] = aU[aNbPnt + 1] - aUmax + aUmin;
-                        aUpp[aNbPnt + 2] = aU[aNbPnt + 2] - aUmax + aUmin;
-                        aNbPnt += 3;
+                        u[nbPnt] = umax;
+                        u[nbPnt + 1] = (xmax + umax) * 0.5;
+                        u[nbPnt + 2] = xmax;
+                        upp[nbPnt] = u[nbPnt] - umax + umin;
+                        upp[nbPnt + 1] = u[nbPnt + 1] - umax + umin;
+                        upp[nbPnt + 2] = u[nbPnt + 2] - umax + umin;
+                        nbPnt += 3;
                     }
 
-                    for (int anInd = 0; anInd < aNbPnt; anInd++)
+                    for (int ind = 0; ind < nbPnt; ind++)
                     {
-                        P1 = aS.Value(aU[anInd], aV);
-                        P2 = aS.Value(aUpp[anInd], aV);
-                        if (P1.SquareDistance(P2) > aTol2)
+                        p1 = s.Value(u[ind], v);
+                        p2 = s.Value(upp[ind], v);
+                        if (p1.SquareDistance(p2) > tol2)
                         {
                             isUPeriodic = false;
                             break;
@@ -238,19 +242,19 @@ public static partial class BRepTools
 
             if (!isUPeriodic)
             {
-                if ((aXmin < aUmin) && (aUmin < aXmax))
+                if ((xmin < umin) && (umin < xmax))
                 {
-                    aXmin = aUmin;
+                    xmin = umin;
                 }
 
-                if ((aXmin < aUmax) && (aUmax < aXmax))
+                if ((xmin < umax) && (umax < xmax))
                 {
-                    aXmax = aUmax;
+                    xmax = umax;
                 }
             }
         }
 
-        if (!aS.IsVPeriodic())
+        if (!s.IsVPeriodic)
         {
             bool isVPeriodic = false;
 
@@ -258,20 +262,20 @@ public static partial class BRepTools
             // 1. Verify that the surface is V-closed (if such flag is false). Verification uses 2 points
             // 2. Verify periodicity of surface inside UV-bounds of the edge. Verification uses 3 or 6
             // points.
-            if (aS.DynamicType() == typeof(Geom_BSplineSurface) && (aYmin < aVmin || aYmax > aVmax))
+            if (s.DynamicType() == typeof(BSplineSurface) && (ymin < vmin || ymax > vmax))
             {
-                double aTol2 = 100 * global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion();
+                double tol2 = 100 * global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion();
                 isVPeriodic = true;
-                Point3D P1, P2;
+                Point3D p1, p2;
                 // 1. Verify that the surface is V-closed
-                if (!aS.IsVClosed())
+                if (!s.IsVClosed)
                 {
-                    double aUStep = aUmax - aUmin;
-                    for (double aU = aUmin; aU <= aUmax; aU += aUStep)
+                    double uStep = umax - umin;
+                    for (double u = umin; u <= umax; u += uStep)
                     {
-                        P1 = aS.Value(aU, aVmin);
-                        P2 = aS.Value(aU, aVmax);
-                        if (P1.SquareDistance(P2) > aTol2)
+                        p1 = s.Value(u, vmin);
+                        p2 = s.Value(u, vmax);
+                        if (p1.SquareDistance(p2) > tol2)
                         {
                             isVPeriodic = false;
                             break;
@@ -282,37 +286,37 @@ public static partial class BRepTools
                 // 2. Verify periodicity of surface inside UV-bounds of the edge
                 if (isVPeriodic) // the flag still not changed
                 {
-                    double aU = (aUmin + aUmax) * 0.5;
-                    Span<double> aV = stackalloc double[6];   // values of V lying out of surface boundaries
-                    Span<double> aVpp = stackalloc double[6]; // corresponding V-values plus/minus period
-                    int aNbPnt = 0;
-                    if (aYmin < aVmin)
+                    double u = (umin + umax) * 0.5;
+                    Span<double> v = stackalloc double[6];   // values of V lying out of surface boundaries
+                    Span<double> vpp = stackalloc double[6]; // corresponding V-values plus/minus period
+                    int nbPnt = 0;
+                    if (ymin < vmin)
                     {
-                        aV[0] = aYmin;
-                        aV[1] = (aYmin + aVmin) * 0.5;
-                        aV[2] = aVmin;
-                        aVpp[0] = aV[0] + aVmax - aVmin;
-                        aVpp[1] = aV[1] + aVmax - aVmin;
-                        aVpp[2] = aV[2] + aVmax - aVmin;
-                        aNbPnt += 3;
+                        v[0] = ymin;
+                        v[1] = (ymin + vmin) * 0.5;
+                        v[2] = vmin;
+                        vpp[0] = v[0] + vmax - vmin;
+                        vpp[1] = v[1] + vmax - vmin;
+                        vpp[2] = v[2] + vmax - vmin;
+                        nbPnt += 3;
                     }
 
-                    if (aYmax > aVmax)
+                    if (ymax > vmax)
                     {
-                        aV[aNbPnt] = aVmax;
-                        aV[aNbPnt + 1] = (aYmax + aVmax) * 0.5;
-                        aV[aNbPnt + 2] = aYmax;
-                        aVpp[aNbPnt] = aV[aNbPnt] - aVmax + aVmin;
-                        aVpp[aNbPnt + 1] = aV[aNbPnt + 1] - aVmax + aVmin;
-                        aVpp[aNbPnt + 2] = aV[aNbPnt + 2] - aVmax + aVmin;
-                        aNbPnt += 3;
+                        v[nbPnt] = vmax;
+                        v[nbPnt + 1] = (ymax + vmax) * 0.5;
+                        v[nbPnt + 2] = ymax;
+                        vpp[nbPnt] = v[nbPnt] - vmax + vmin;
+                        vpp[nbPnt + 1] = v[nbPnt + 1] - vmax + vmin;
+                        vpp[nbPnt + 2] = v[nbPnt + 2] - vmax + vmin;
+                        nbPnt += 3;
                     }
 
-                    for (int anInd = 0; anInd < aNbPnt; anInd++)
+                    for (int ind = 0; ind < nbPnt; ind++)
                     {
-                        P1 = aS.Value(aU, aV[anInd]);
-                        P2 = aS.Value(aU, aVpp[anInd]);
-                        if (P1.SquareDistance(P2) > aTol2)
+                        p1 = s.Value(u, v[ind]);
+                        p2 = s.Value(u, vpp[ind]);
+                        if (p1.SquareDistance(p2) > tol2)
                         {
                             isVPeriodic = false;
                             break;
@@ -323,133 +327,133 @@ public static partial class BRepTools
 
             if (!isVPeriodic)
             {
-                if ((aYmin < aVmin) && (aVmin < aYmax))
+                if ((ymin < vmin) && (vmin < ymax))
                 {
-                    aYmin = aVmin;
+                    ymin = vmin;
                 }
 
-                if ((aYmin < aVmax) && (aVmax < aYmax))
+                if ((ymin < vmax) && (vmax < ymax))
                 {
-                    aYmax = aVmax;
+                    ymax = vmax;
                 }
             }
         }
 
-        aBoxS.Update(aXmin, aYmin, aXmax, aYmax);
+        boxS.Update(xmin, ymin, xmax, ymax);
 
-        aB.Add(aBoxS);
+        aB.Add(boxS);
     }
 
     /// <summary>Updates the cached data of a vertex: nothing to do.</summary>
-    internal static void Update(in TopoDS_Vertex V)
+    internal static void Update(in Vertex v)
     {
     }
 
     /// <summary>Updates the cached data of an edge: nothing to do.</summary>
-    internal static void Update(in TopoDS_Edge E)
+    internal static void Update(in Edge e)
     {
     }
 
     /// <summary>Updates the cached data of a wire: nothing to do.</summary>
-    internal static void Update(in TopoDS_Wire W)
+    internal static void Update(in Wire w)
     {
     }
 
     /// <summary>Updates the UV points of the face's edges, unless the face is checked, and marks it checked.</summary>
-    internal static void Update(in TopoDS_Face F)
+    internal static void Update(in Face f)
     {
         // OCCT.NET: frozen: a frozen face can't have changed since it was frozen, and can't be marked
-        if (F.TShape()!.IsFrozen)
+        if (f.TShape()!.IsFrozen)
         {
             return;
         }
 
-        if (!F.Checked())
+        if (!f.Checked())
         {
-            UpdateFaceUVPoints(F);
-            F.TShape()!.Checked(true);
+            UpdateFaceUVPoints(f);
+            f.TShape()!.Checked(true);
         }
     }
 
     /// <summary>Updates the faces of the shell.</summary>
-    internal static void Update(in TopoDS_Shell S)
+    internal static void Update(in Shell s)
     {
-        var ex = new TopExp_Explorer(S, TopAbs_FACE);
+        var ex = new Explorer(s, ShapeType.Face);
         while (ex.More())
         {
-            Update(TopoDS.Face(ex.Current()));
+            Update(ShapeCasts.Face(ex.Current()));
             ex.Next();
         }
     }
 
     /// <summary>Updates the faces of the solid.</summary>
-    internal static void Update(in TopoDS_Solid S)
+    internal static void Update(in Solid s)
     {
-        var ex = new TopExp_Explorer(S, TopAbs_FACE);
+        var ex = new Explorer(s, ShapeType.Face);
         while (ex.More())
         {
-            Update(TopoDS.Face(ex.Current()));
+            Update(ShapeCasts.Face(ex.Current()));
             ex.Next();
         }
     }
 
     /// <summary>Updates the faces of the composite solid.</summary>
-    internal static void Update(in TopoDS_CompSolid CS)
+    internal static void Update(in CompSolid cs)
     {
-        var ex = new TopExp_Explorer(CS, TopAbs_FACE);
+        var ex = new Explorer(cs, ShapeType.Face);
         while (ex.More())
         {
-            Update(TopoDS.Face(ex.Current()));
+            Update(ShapeCasts.Face(ex.Current()));
             ex.Next();
         }
     }
 
     /// <summary>Updates the faces of the compound.</summary>
-    internal static void Update(in TopoDS_Compound C)
+    internal static void Update(in Compound c)
     {
-        var ex = new TopExp_Explorer(C, TopAbs_FACE);
+        var ex = new Explorer(c, ShapeType.Face);
         while (ex.More())
         {
-            Update(TopoDS.Face(ex.Current()));
+            Update(ShapeCasts.Face(ex.Current()));
             ex.Next();
         }
     }
 
     /// <summary>Updates the shape according to its type.</summary>
-    internal static void Update(in TopoDS_Shape S)
+    internal static void Update(in Shape s)
     {
-        switch (S.ShapeType())
+        switch (s.ShapeType())
         {
-            case TopAbs_VERTEX:
-                Update(TopoDS.Vertex(S));
+            case ShapeType.Vertex:
+                Update(ShapeCasts.Vertex(s));
                 break;
 
-            case TopAbs_EDGE:
-                Update(TopoDS.Edge(S));
+            case ShapeType.Edge:
+                Update(ShapeCasts.Edge(s));
                 break;
 
-            case TopAbs_WIRE:
-                Update(TopoDS.Wire(S));
+            case ShapeType.Wire:
+                Update(ShapeCasts.Wire(s));
                 break;
 
-            case TopAbs_FACE:
-                Update(TopoDS.Face(S));
+            case ShapeType.Face:
+                Update(ShapeCasts.Face(s));
                 break;
 
-            case TopAbs_SHELL:
-                Update(TopoDS.Shell(S));
+            case ShapeType.Shell:
+                Update(ShapeCasts.Shell(s));
                 break;
 
-            case TopAbs_SOLID:
-                Update(TopoDS.Solid(S));
+            case ShapeType.Solid:
+                Update(ShapeCasts.Solid(s));
                 break;
 
-            case TopAbs_COMPSOLID:
-                Update(TopoDS.CompSolid(S));
+            case ShapeType.CompSolid:
+                Update(ShapeCasts.CompSolid(s));
                 break;
 
-            case TopAbs_COMPOUND:
-                Update(TopoDS.Compound(S));
+            case ShapeType.Compound:
+                Update(ShapeCasts.Compound(s));
                 break;
 
             default:
@@ -461,37 +465,37 @@ public static partial class BRepTools
     /// Resets the UV points of the face's edges to the end points of their pcurves on it. Stops at the first locked
     /// (in the port: also frozen) edge.
     /// </summary>
-    internal static void UpdateFaceUVPoints(in TopoDS_Face theF)
+    internal static void UpdateFaceUVPoints(in Face f)
     {
         // For each edge of the face <F> reset the UV points to the bounding
         // points of the parametric curve of the edge on the face.
 
         // Get surface of the face
-        Geom_Surface? aSurf = BRep_Tool.Surface(theF, out Placement aLoc);
+        Surface? surf = Tool.Surface(f, out Placement loc);
         // Iterate on edges and reset UV points
-        var anExpE = new TopExp_Explorer(theF, TopAbs_EDGE);
-        for (; anExpE.More(); anExpE.Next())
+        var expE = new Explorer(f, ShapeType.Edge);
+        for (; expE.More(); expE.Next())
         {
-            TopoDS_Edge aE = TopoDS.Edge(anExpE.Current());
+            Edge e = ShapeCasts.Edge(expE.Current());
 
-            BRep_TEdge TE = (BRep_TEdge)aE.TShape()!;
-            if (TE.Locked())
+            BrepTEdge te = (BrepTEdge)e.TShape()!;
+            if (te.Locked())
             {
                 // OCCT (occt-issues.md): returns at the first locked edge instead of skipping it
                 return;
             }
 
-            Placement aELoc = aLoc.Predivided(aE.Location());
+            Placement eLoc = loc.Predivided(e.Location());
             // Edge representations
-            NCollection_List<BRep_CurveRepresentation> aLCR = TE.ChangeCurves();
-            var itLCR = new NCollection_List<BRep_CurveRepresentation>.Iterator(aLCR);
+            NCollection_List<CurveRepresentation> lcr = te.ChangeCurves();
+            var itLCR = new NCollection_List<CurveRepresentation>.Iterator(lcr);
             for (; itLCR.More(); itLCR.Next())
             {
-                BRep_GCurve? GC = itLCR.Value() as BRep_GCurve;
-                if (GC is not null && GC.IsCurveOnSurface(aSurf, aELoc))
+                GCurve? gc = itLCR.Value() as GCurve;
+                if (gc is not null && gc.IsCurveOnSurface(surf, eLoc))
                 {
                     // Update UV points
-                    GC.Update();
+                    gc.Update();
                     break;
                 }
             }
@@ -499,22 +503,22 @@ public static partial class BRepTools
     }
 
     /// <summary>True if the vertices are the same, or closer than either's tolerance.</summary>
-    public static bool Compare(in TopoDS_Vertex V1, in TopoDS_Vertex V2)
+    public static bool Compare(in Vertex v1, in Vertex v2)
     {
-        if (V1.IsSame(V2))
+        if (v1.IsSame(v2))
         {
             return true;
         }
 
-        Point3D p1 = BRep_Tool.Pnt(V1);
-        Point3D p2 = BRep_Tool.Pnt(V2);
+        Point3D p1 = Tool.Pnt(v1);
+        Point3D p2 = Tool.Pnt(v2);
         double l = p1.Distance(p2);
-        if (l <= BRep_Tool.Tolerance(V1))
+        if (l <= Tool.Tolerance(v1))
         {
             return true;
         }
 
-        if (l <= BRep_Tool.Tolerance(V2))
+        if (l <= Tool.Tolerance(v2))
         {
             return true;
         }
@@ -523,36 +527,36 @@ public static partial class BRepTools
     }
 
     /// <summary>True if the edges are the same (IsSame).</summary>
-    public static bool Compare(in TopoDS_Edge E1, in TopoDS_Edge E2) => E1.IsSame(E2);
+    public static bool Compare(in Edge e1, in Edge e2) => e1.IsSame(e2);
 
     /// <summary>
     /// The outer wire of the face: the one whose UV bounds contain all the others' (the first wire if there is one
     /// wire), or a null wire.
     /// </summary>
-    public static TopoDS_Wire OuterWire(in TopoDS_Face F)
+    public static Wire OuterWire(in Face f)
     {
-        TopoDS_Wire Wres = new TopoDS_Wire();
-        var expw = new TopExp_Explorer(F, TopAbs_WIRE);
+        Wire wres = new Wire();
+        var expw = new Explorer(f, ShapeType.Wire);
 
         if (expw.More())
         {
-            Wres = TopoDS.Wire(expw.Current());
+            wres = ShapeCasts.Wire(expw.Current());
             expw.Next();
             if (expw.More())
             {
-                BRepTools.UVBounds(F, Wres, out double UMin, out double UMax, out double VMin, out double VMax);
+                BrepTools.UVBounds(f, wres, out double uMin, out double uMax, out double vMin, out double vMax);
                 while (expw.More())
                 {
-                    TopoDS_Wire W = TopoDS.Wire(expw.Current());
-                    BRepTools.UVBounds(F, W, out double umin, out double umax, out double vmin, out double vmax);
-                    if (((umin - UMin) <= global::Kerf.Engine.Foundation.Precision.PConfusion()) && ((umax - UMax) >= -global::Kerf.Engine.Foundation.Precision.PConfusion())
-                        && ((vmin - VMin) <= global::Kerf.Engine.Foundation.Precision.PConfusion()) && ((vmax - VMax) >= -global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                    Wire w = ShapeCasts.Wire(expw.Current());
+                    BrepTools.UVBounds(f, w, out double umin, out double umax, out double vmin, out double vmax);
+                    if (((umin - uMin) <= global::Kerf.Engine.Foundation.Precision.PConfusion()) && ((umax - uMax) >= -global::Kerf.Engine.Foundation.Precision.PConfusion())
+                        && ((vmin - vMin) <= global::Kerf.Engine.Foundation.Precision.PConfusion()) && ((vmax - vMax) >= -global::Kerf.Engine.Foundation.Precision.PConfusion()))
                     {
-                        Wres = W;
-                        UMin = umin;
-                        UMax = umax;
-                        VMin = vmin;
-                        VMax = vmax;
+                        wres = w;
+                        uMin = umin;
+                        uMax = umax;
+                        vMin = vmin;
+                        vMax = vmax;
                     }
 
                     expw.Next();
@@ -560,60 +564,60 @@ public static partial class BRepTools
             }
         }
 
-        return Wres;
+        return wres;
     }
 
-    /// <summary>Adds the non-degenerated edges of the shape to <paramref name="M"/>.</summary>
-    public static void Map3DEdges(in TopoDS_Shape S, NCollection_IndexedMap<TopoDS_Shape> M)
+    /// <summary>Adds the non-degenerated edges of the shape to <paramref name="m"/>.</summary>
+    public static void Map3DEdges(in Shape s, NCollection_IndexedMap<Shape> m)
     {
-        var Ex = new TopExp_Explorer();
-        for (Ex.Init(S, TopAbs_EDGE); Ex.More(); Ex.Next())
+        var ex = new Explorer();
+        for (ex.Init(s, ShapeType.Edge); ex.More(); ex.Next())
         {
-            if (!BRep_Tool.Degenerated(TopoDS.Edge(Ex.Current())))
+            if (!Tool.Degenerated(ShapeCasts.Edge(ex.Current())))
             {
-                M.Add(Ex.Current());
+                m.Add(ex.Current());
             }
         }
     }
 
     /// <summary>
     /// Removes the triangulations of the faces that have a surface, and the polygons of the edges that have geometry
-    /// (with <paramref name="theForce"/>, all the polygons on triangulations).
+    /// (with <paramref name="force"/>, all the polygons on triangulations).
     /// </summary>
-    internal static void Clean(in TopoDS_Shape theShape, bool theForce = false)
+    internal static void Clean(in Shape shape, bool force = false)
     {
-        if (theShape.IsNull())
+        if (shape.IsNull)
         {
             return;
         }
 
-        BRep_Builder aBuilder = new BRep_Builder();
-        Triangulation? aNullTriangulation = null;
-        PolygonOnTriangulation? aNullPoly = null;
+        BrepBuilder builder = new BrepBuilder();
+        Triangulation? nullTriangulation = null;
+        PolygonOnTriangulation? nullPoly = null;
 
-        var aShapeMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        Placement anEmptyLoc = new Placement();
+        var shapeMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        Placement emptyLoc = new Placement();
 
-        var aFaceIt = new TopExp_Explorer(theShape, TopAbs_FACE);
-        for (; aFaceIt.More(); aFaceIt.Next())
+        var faceIt = new Explorer(shape, ShapeType.Face);
+        for (; faceIt.More(); faceIt.Next())
         {
-            TopoDS_Shape aFaceNoLoc = aFaceIt.Value();
-            aFaceNoLoc.Location(anEmptyLoc);
-            if (!aShapeMap.Add(aFaceNoLoc))
+            Shape faceNoLoc = faceIt.Value();
+            faceNoLoc.Location(emptyLoc);
+            if (!shapeMap.Add(faceNoLoc))
             {
                 // the face has already been processed
                 continue;
             }
 
-            TopoDS_Face aFace = TopoDS.Face(aFaceIt.Current());
-            if (!BRep_Tool.IsGeometric(aFace))
+            Face face = ShapeCasts.Face(faceIt.Current());
+            if (!Tool.IsGeometric(face))
             {
                 // Do not remove triangulation as there is no surface to recompute it.
                 continue;
             }
 
-            Triangulation? aTriangulation = BRep_Tool.Triangulation(aFace, out Placement aLoc);
-            if (aTriangulation is null)
+            Triangulation? triangulation = Tool.Triangulation(face, out Placement loc);
+            if (triangulation is null)
             {
                 continue;
             }
@@ -623,155 +627,155 @@ public static partial class BRepTools
             // (no curve 3d or 2d or both). Such faces should be considered as invalid and
             // are not supported by current implementation. So, both triangulation of the face
             // and polygon on triangulation of the edges are removed unconditionally.
-            var aEdgeIt = new TopExp_Explorer(aFace, TopAbs_EDGE);
-            for (; aEdgeIt.More(); aEdgeIt.Next())
+            var edgeIt = new Explorer(face, ShapeType.Edge);
+            for (; edgeIt.More(); edgeIt.Next())
             {
-                TopoDS_Edge anEdge = TopoDS.Edge(aEdgeIt.Current());
-                aBuilder.UpdateEdge(anEdge, aNullPoly, aTriangulation, aLoc);
+                Edge edge = ShapeCasts.Edge(edgeIt.Current());
+                builder.UpdateEdge(edge, nullPoly, triangulation, loc);
             }
 
-            aBuilder.UpdateFace(aFace, aNullTriangulation);
+            builder.UpdateFace(face, nullTriangulation);
         }
 
         // Iterate over all edges seeking for 3d polygons
-        Polygon3D? aNullPoly3d = null;
-        var aEdgeIt2 = new TopExp_Explorer(theShape, TopAbs_EDGE);
-        for (; aEdgeIt2.More(); aEdgeIt2.Next())
+        Polygon3D? nullPoly3d = null;
+        var edgeIt2 = new Explorer(shape, ShapeType.Edge);
+        for (; edgeIt2.More(); edgeIt2.Next())
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(aEdgeIt2.Value());
-            anEdge.Location(anEmptyLoc);
+            Edge edge = ShapeCasts.Edge(edgeIt2.Value());
+            edge.Location(emptyLoc);
 
-            if (!aShapeMap.Add(anEdge))
+            if (!shapeMap.Add(edge))
             {
                 // the edge has already been processed
                 continue;
             }
 
-            if (!BRep_Tool.IsGeometric(TopoDS.Edge(anEdge)))
+            if (!Tool.IsGeometric(ShapeCasts.Edge(edge)))
             {
                 // Do not remove polygon 3d as there is no curve to recompute it.
                 continue;
             }
 
-            Polygon3D? aPoly3d = BRep_Tool.Polygon3D(anEdge, out Placement aLoc);
-            if (aPoly3d is not null)
+            Polygon3D? poly3d = Tool.Polygon3D(edge, out Placement loc);
+            if (poly3d is not null)
             {
-                aBuilder.UpdateEdge(anEdge, aNullPoly3d);
+                builder.UpdateEdge(edge, nullPoly3d);
             }
 
-            if (theForce)
+            if (force)
             {
-                BRep_CurveRepresentation aCR;
-                BRep_TEdge aTE = (BRep_TEdge)anEdge.TShape()!;
-                NCollection_List<BRep_CurveRepresentation> aLCR = aTE.ChangeCurves();
-                var anIterCR = new NCollection_List<BRep_CurveRepresentation>.Iterator(aLCR);
+                CurveRepresentation cr;
+                BrepTEdge te = (BrepTEdge)edge.TShape()!;
+                NCollection_List<CurveRepresentation> lcr = te.ChangeCurves();
+                var iterCR = new NCollection_List<CurveRepresentation>.Iterator(lcr);
                 // find and remove all representations
-                while (anIterCR.More())
+                while (iterCR.More())
                 {
-                    aCR = anIterCR.Value();
-                    if (aCR.IsPolygonOnTriangulation())
+                    cr = iterCR.Value();
+                    if (cr.IsPolygonOnTriangulation())
                     {
-                        aLCR.Remove(anIterCR);
+                        lcr.Remove(iterCR);
                     }
                     else
                     {
-                        anIterCR.Next();
+                        iterCR.Next();
                     }
                 }
 
-                aTE.Modified(true);
+                te.Modified(true);
             }
         }
     }
 
     /// <summary>Removes the surfaces of the faces, the curves of the edges and the unused pcurves.</summary>
-    internal static void CleanGeometry(in TopoDS_Shape theShape)
+    internal static void CleanGeometry(in Shape shape)
     {
-        if (theShape.IsNull())
+        if (shape.IsNull)
         {
             return;
         }
 
-        BRep_Builder aBuilder = new BRep_Builder();
+        BrepBuilder builder = new BrepBuilder();
 
-        for (var aFaceIt = new TopExp_Explorer(theShape, TopAbs_FACE); aFaceIt.More(); aFaceIt.Next())
+        for (var faceIt = new Explorer(shape, ShapeType.Face); faceIt.More(); faceIt.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(aFaceIt.Current());
+            Face face = ShapeCasts.Face(faceIt.Current());
 
-            Geom_Surface? aSurface = BRep_Tool.Surface(aFace, out Placement aLocation);
+            Surface? surface = Tool.Surface(face, out Placement location);
 
-            for (var aEdgeIt = new TopExp_Explorer(aFace, TopAbs_EDGE); aEdgeIt.More(); aEdgeIt.Next())
+            for (var edgeIt = new Explorer(face, ShapeType.Edge); edgeIt.More(); edgeIt.Next())
             {
-                TopoDS_Edge anEdge = TopoDS.Edge(aEdgeIt.Current());
-                aBuilder.UpdateEdge(anEdge, (Geom2d_Curve?)null, aSurface, aLocation, BRep_Tool.Tolerance(anEdge));
+                Edge edge = ShapeCasts.Edge(edgeIt.Current());
+                builder.UpdateEdge(edge, (Curve2D?)null, surface, location, Tool.Tolerance(edge));
             }
 
-            aBuilder.UpdateFace(aFace, (Geom_Surface?)null, aFace.Location(), BRep_Tool.Tolerance(aFace));
+            builder.UpdateFace(face, (Surface?)null, face.Location(), Tool.Tolerance(face));
         }
 
-        for (var aEdgeIt2 = new TopExp_Explorer(theShape, TopAbs_EDGE); aEdgeIt2.More(); aEdgeIt2.Next())
+        for (var edgeIt2 = new Explorer(shape, ShapeType.Edge); edgeIt2.More(); edgeIt2.Next())
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(aEdgeIt2.Current());
+            Edge edge = ShapeCasts.Edge(edgeIt2.Current());
 
-            aBuilder.UpdateEdge(anEdge, (Geom_Curve?)null, new Placement(), BRep_Tool.Tolerance(anEdge));
+            builder.UpdateEdge(edge, (Curve3D?)null, new Placement(), Tool.Tolerance(edge));
         }
 
-        RemoveUnusedPCurves(theShape);
+        RemoveUnusedPCurves(shape);
     }
 
     /// <summary>Removes the pcurves and continuities on surfaces that none of the shape's faces uses.</summary>
-    internal static void RemoveUnusedPCurves(in TopoDS_Shape S)
+    internal static void RemoveUnusedPCurves(in Shape s)
     {
-        var UsedSurfaces = new NCollection_Map<object>(ReferenceEqualityComparer.Instance);
+        var usedSurfaces = new NCollection_Map<object>(ReferenceEqualityComparer.Instance);
 
-        var Explo = new TopExp_Explorer(S, TopAbs_FACE);
-        for (; Explo.More(); Explo.Next())
+        var explo = new Explorer(s, ShapeType.Face);
+        for (; explo.More(); explo.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(Explo.Current());
-            Geom_Surface? aSurf = BRep_Tool.Surface(aFace, out Placement aLoc);
+            Face face = ShapeCasts.Face(explo.Current());
+            Surface? surf = Tool.Surface(face, out Placement loc);
             // OCCT's map of handles holds the null handle too; a .NET set doesn't take null, and no curve
             // representation compares its surface with a null surface below except as "not used"
-            if (aSurf is not null)
+            if (surf is not null)
             {
-                UsedSurfaces.Add(aSurf);
+                usedSurfaces.Add(surf);
             }
             else
             {
-                UsedSurfaces.Add(theNullSurface);
+                usedSurfaces.Add(NullSurface);
             }
         }
 
-        var Emap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(S, TopAbs_EDGE, Emap);
+        var emap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(s, ShapeType.Edge, emap);
 
         int i;
-        for (i = 1; i <= Emap.Extent(); i++)
+        for (i = 1; i <= emap.Extent(); i++)
         {
-            BRep_TEdge TE = (BRep_TEdge)Emap.FindKey(i).TShape()!;
-            NCollection_List<BRep_CurveRepresentation> lcr = TE.ChangeCurves();
-            var itrep = new NCollection_List<BRep_CurveRepresentation>.Iterator(lcr);
+            BrepTEdge te = (BrepTEdge)emap.FindKey(i).TShape()!;
+            NCollection_List<CurveRepresentation> lcr = te.ChangeCurves();
+            var itrep = new NCollection_List<CurveRepresentation>.Iterator(lcr);
             while (itrep.More())
             {
-                bool ToRemove = false;
+                bool toRemove = false;
 
-                BRep_CurveRepresentation CurveRep = itrep.Value();
-                if (CurveRep.IsCurveOnSurface())
+                CurveRepresentation curveRep = itrep.Value();
+                if (curveRep.IsCurveOnSurface())
                 {
-                    Geom_Surface? aSurface = CurveRep.Surface();
-                    if (!UsedSurfaces.Contains((object?)aSurface ?? theNullSurface))
+                    Surface? surface = curveRep.Surface();
+                    if (!usedSurfaces.Contains((object?)surface ?? NullSurface))
                     {
-                        ToRemove = true;
+                        toRemove = true;
                     }
                 }
-                else if (CurveRep.IsRegularity())
+                else if (curveRep.IsRegularity())
                 {
-                    Geom_Surface? Surf1 = CurveRep.Surface();
-                    Geom_Surface? Surf2 = CurveRep.Surface2();
-                    ToRemove = (!UsedSurfaces.Contains((object?)Surf1 ?? theNullSurface)
-                                || !UsedSurfaces.Contains((object?)Surf2 ?? theNullSurface));
+                    Surface? surf1 = curveRep.Surface();
+                    Surface? surf2 = curveRep.Surface2();
+                    toRemove = (!usedSurfaces.Contains((object?)surf1 ?? NullSurface)
+                                || !usedSurfaces.Contains((object?)surf2 ?? NullSurface));
                 }
 
-                if (ToRemove)
+                if (toRemove)
                 {
                     lcr.Remove(itrep);
                 }
@@ -784,58 +788,58 @@ public static partial class BRepTools
     }
 
     // Stands for OCCT's null handle in the set of used surfaces
-    private static readonly object theNullSurface = new();
+    private static readonly object NullSurface = new();
 
     /// <summary>
-    /// True if every face of the shape has a triangulation with a deflection at most <paramref name="theLinDefl"/> and
-    /// every edge a polygon on it; with <paramref name="theToCheckFreeEdges"/>, also every free edge a 3D polygon (or a
+    /// True if every face of the shape has a triangulation with a deflection at most <paramref name="linDefl"/> and
+    /// every edge a polygon on it; with <paramref name="toCheckFreeEdges"/>, also every free edge a 3D polygon (or a
     /// polygon on a triangulation) with such a deflection.
     /// </summary>
-    public static bool Triangulation(in TopoDS_Shape theShape, double theLinDefl, bool theToCheckFreeEdges = false)
+    public static bool Triangulation(in Shape shape, double linDefl, bool toCheckFreeEdges = false)
     {
-        var anEdgeIter = new TopExp_Explorer();
-        Placement aDummyLoc;
-        for (var aFaceIter = new TopExp_Explorer(theShape, TopAbs_FACE); aFaceIter.More(); aFaceIter.Next())
+        var edgeIter = new Explorer();
+        Placement dummyLoc;
+        for (var faceIter = new Explorer(shape, ShapeType.Face); faceIter.More(); faceIter.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(aFaceIter.Current());
-            Triangulation? aTri = BRep_Tool.Triangulation(aFace, out aDummyLoc);
-            if (aTri is null || aTri.Deflection() > theLinDefl)
+            Face face = ShapeCasts.Face(faceIter.Current());
+            Triangulation? tri = Tool.Triangulation(face, out dummyLoc);
+            if (tri is null || tri.Deflection() > linDefl)
             {
                 return false;
             }
 
-            for (anEdgeIter.Init(aFace, TopAbs_EDGE); anEdgeIter.More(); anEdgeIter.Next())
+            for (edgeIter.Init(face, ShapeType.Edge); edgeIter.More(); edgeIter.Next())
             {
-                TopoDS_Edge anEdge = TopoDS.Edge(anEdgeIter.Current());
-                PolygonOnTriangulation? aPoly = BRep_Tool.PolygonOnTriangulation(anEdge, aTri, aDummyLoc);
-                if (aPoly is null)
+                Edge edge = ShapeCasts.Edge(edgeIter.Current());
+                PolygonOnTriangulation? poly = Tool.PolygonOnTriangulation(edge, tri, dummyLoc);
+                if (poly is null)
                 {
                     return false;
                 }
             }
         }
 
-        if (!theToCheckFreeEdges)
+        if (!toCheckFreeEdges)
         {
             return true;
         }
 
-        Triangulation? anEdgeTri;
-        for (anEdgeIter.Init(theShape, TopAbs_EDGE, TopAbs_FACE); anEdgeIter.More(); anEdgeIter.Next())
+        Triangulation? edgeTri;
+        for (edgeIter.Init(shape, ShapeType.Edge, ShapeType.Face); edgeIter.More(); edgeIter.Next())
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(anEdgeIter.Current());
-            Polygon3D? aPolygon = BRep_Tool.Polygon3D(anEdge, out aDummyLoc);
-            if (aPolygon is not null)
+            Edge edge = ShapeCasts.Edge(edgeIter.Current());
+            Polygon3D? polygon = Tool.Polygon3D(edge, out dummyLoc);
+            if (polygon is not null)
             {
-                if (aPolygon.Deflection() > theLinDefl)
+                if (polygon.Deflection() > linDefl)
                 {
                     return false;
                 }
             }
             else
             {
-                BRep_Tool.PolygonOnTriangulation(anEdge, out PolygonOnTriangulation? aPoly, out anEdgeTri, out aDummyLoc);
-                if (aPoly is null || anEdgeTri is null || anEdgeTri.Deflection() > theLinDefl)
+                Tool.PolygonOnTriangulation(edge, out PolygonOnTriangulation? poly, out edgeTri, out dummyLoc);
+                if (poly is null || edgeTri is null || edgeTri.Deflection() > linDefl)
                 {
                     return false;
                 }
@@ -846,62 +850,62 @@ public static partial class BRepTools
     }
 
     /// <summary>
-    /// Loads the deferred data of the faces' triangulations (the active one if <paramref name="theTriangulationIdx"/>
+    /// Loads the deferred data of the faces' triangulations (the active one if <paramref name="triangulationIdx"/>
     /// is -1, else the one of that index, from 0), activating them if asked. True if any was loaded.
     /// </summary>
     /// <remarks>OCCT's file-system argument is left out, as Poly_Triangulation's (decision 69).</remarks>
-    internal static bool LoadTriangulation(in TopoDS_Shape theShape, int theTriangulationIdx = -1, bool theToSetAsActive = false)
+    internal static bool LoadTriangulation(in Shape shape, int triangulationIdx = -1, bool toSetAsActive = false)
     {
-        Standard_ProgramError_Raise_if(!(theTriangulationIdx >= -1), "Invalid negative triangulation index!");
+        Standard_ProgramError_Raise_if(!(triangulationIdx >= -1), "Invalid negative triangulation index!");
 
         bool wasLoaded = false;
-        BRep_Builder aBuilder = new BRep_Builder();
-        for (var aFaceIter = new TopExp_Explorer(theShape, TopAbs_FACE); aFaceIter.More(); aFaceIter.Next())
+        BrepBuilder builder = new BrepBuilder();
+        for (var faceIter = new Explorer(shape, ShapeType.Face); faceIter.More(); faceIter.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(aFaceIter.Current());
-            Triangulation? aTriangulation = null;
-            if (theTriangulationIdx == -1)
+            Face face = ShapeCasts.Face(faceIter.Current());
+            Triangulation? triangulation = null;
+            if (triangulationIdx == -1)
             {
                 // load an active triangulation
-                aTriangulation = BRep_Tool.Triangulation(aFace, out _);
+                triangulation = Tool.Triangulation(face, out _);
             }
             else
             {
-                NCollection_List<Triangulation> aTriangulations = BRep_Tool.Triangulations(aFace, out _);
-                if (theTriangulationIdx >= aTriangulations.Extent())
+                NCollection_List<Triangulation> triangulations = Tool.Triangulations(face, out _);
+                if (triangulationIdx >= triangulations.Extent())
                 {
                     // triangulation index is out of range
                     continue;
                 }
 
                 int aTriangulationIdx = 0;
-                for (var anIter = new NCollection_List<Triangulation>.Iterator(aTriangulations);
-                     anIter.More();
-                     anIter.Next(), aTriangulationIdx++)
+                for (var iter = new NCollection_List<Triangulation>.Iterator(triangulations);
+                     iter.More();
+                     iter.Next(), aTriangulationIdx++)
                 {
-                    if (aTriangulationIdx != theTriangulationIdx)
+                    if (aTriangulationIdx != triangulationIdx)
                     {
                         continue;
                     }
 
-                    aTriangulation = anIter.Value();
+                    triangulation = iter.Value();
                     break;
                 }
             }
 
-            if (aTriangulation is null || !aTriangulation.HasDeferredData)
+            if (triangulation is null || !triangulation.HasDeferredData)
             {
                 // NULL triangulation, already loaded triangulation or triangulation without deferred storage
                 // cannot be loaded
                 continue;
             }
 
-            if (aTriangulation.LoadDeferredData())
+            if (triangulation.LoadDeferredData())
             {
                 wasLoaded = true;
-                if (theToSetAsActive && (theTriangulationIdx != -1)) // triangulation is already active
+                if (toSetAsActive && (triangulationIdx != -1)) // triangulation is already active
                 {
-                    aBuilder.UpdateFace(aFace, aTriangulation, false);
+                    builder.UpdateFace(face, triangulation, false);
                 }
             }
         }
@@ -911,25 +915,25 @@ public static partial class BRepTools
 
     /// <summary>Loads the deferred data of all the faces' triangulations. True if any was loaded.</summary>
     /// <remarks>OCCT's file-system argument is left out, as Poly_Triangulation's (decision 69).</remarks>
-    internal static bool LoadAllTriangulations(in TopoDS_Shape theShape)
+    internal static bool LoadAllTriangulations(in Shape shape)
     {
         bool wasLoaded = false;
-        for (var aFaceIter = new TopExp_Explorer(theShape, TopAbs_FACE); aFaceIter.More(); aFaceIter.Next())
+        for (var faceIter = new Explorer(shape, ShapeType.Face); faceIter.More(); faceIter.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(aFaceIter.Current());
-            for (var anIter = new NCollection_List<Triangulation>.Iterator(BRep_Tool.Triangulations(aFace, out _));
-                 anIter.More();
-                 anIter.Next())
+            Face face = ShapeCasts.Face(faceIter.Current());
+            for (var iter = new NCollection_List<Triangulation>.Iterator(Tool.Triangulations(face, out _));
+                 iter.More();
+                 iter.Next())
             {
-                Triangulation aTriangulation = anIter.Value();
-                if (aTriangulation is null || !aTriangulation.HasDeferredData)
+                Triangulation triangulation = iter.Value();
+                if (triangulation is null || !triangulation.HasDeferredData)
                 {
                     // NULL triangulation, already loaded triangulation or triangulation without deferred
                     // storage cannot be loaded
                     continue;
                 }
 
-                wasLoaded = aTriangulation.LoadDeferredData();
+                wasLoaded = triangulation.LoadDeferredData();
             }
         }
 
@@ -938,78 +942,78 @@ public static partial class BRepTools
 
     /// <summary>
     /// Releases the data of the faces' triangulations that have deferred storage (the active one if
-    /// <paramref name="theTriangulationIdx"/> is -1, else the one of that index). True if any was unloaded.
+    /// <paramref name="triangulationIdx"/> is -1, else the one of that index). True if any was unloaded.
     /// </summary>
-    internal static bool UnloadTriangulation(in TopoDS_Shape theShape, int theTriangulationIdx = -1)
+    internal static bool UnloadTriangulation(in Shape shape, int triangulationIdx = -1)
     {
-        Standard_ProgramError_Raise_if(!(theTriangulationIdx >= -1), "Invalid negative triangulation index!");
+        Standard_ProgramError_Raise_if(!(triangulationIdx >= -1), "Invalid negative triangulation index!");
 
         bool wasUnloaded = false;
-        for (var aFaceIter = new TopExp_Explorer(theShape, TopAbs_FACE); aFaceIter.More(); aFaceIter.Next())
+        for (var faceIter = new Explorer(shape, ShapeType.Face); faceIter.More(); faceIter.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(aFaceIter.Current());
-            Triangulation? aTriangulation = null;
-            if (theTriangulationIdx == -1)
+            Face face = ShapeCasts.Face(faceIter.Current());
+            Triangulation? triangulation = null;
+            if (triangulationIdx == -1)
             {
                 // unload an active triangulation
-                aTriangulation = BRep_Tool.Triangulation(aFace, out _);
+                triangulation = Tool.Triangulation(face, out _);
             }
             else
             {
                 int aTriangulationIdx = 0;
-                NCollection_List<Triangulation> aTriangulations = BRep_Tool.Triangulations(aFace, out _);
-                if (theTriangulationIdx >= aTriangulations.Extent())
+                NCollection_List<Triangulation> triangulations = Tool.Triangulations(face, out _);
+                if (triangulationIdx >= triangulations.Extent())
                 {
                     // triangulation index is out of range
                     continue;
                 }
 
-                for (var anIter = new NCollection_List<Triangulation>.Iterator(aTriangulations);
-                     anIter.More();
-                     anIter.Next(), aTriangulationIdx++)
+                for (var iter = new NCollection_List<Triangulation>.Iterator(triangulations);
+                     iter.More();
+                     iter.Next(), aTriangulationIdx++)
                 {
-                    if (aTriangulationIdx != theTriangulationIdx)
+                    if (aTriangulationIdx != triangulationIdx)
                     {
                         continue;
                     }
 
-                    aTriangulation = anIter.Value();
+                    triangulation = iter.Value();
                     break;
                 }
             }
 
-            if (aTriangulation is null || !aTriangulation.HasDeferredData)
+            if (triangulation is null || !triangulation.HasDeferredData)
             {
                 // NULL triangulation or triangulation without deferred storage cannot be unloaded
                 continue;
             }
 
-            wasUnloaded = aTriangulation.UnloadDeferredData();
+            wasUnloaded = triangulation.UnloadDeferredData();
         }
 
         return wasUnloaded;
     }
 
     /// <summary>Releases the data of all the faces' triangulations that have deferred storage. True if any was unloaded.</summary>
-    internal static bool UnloadAllTriangulations(in TopoDS_Shape theShape)
+    internal static bool UnloadAllTriangulations(in Shape shape)
     {
         bool wasUnloaded = false;
-        for (var aFaceIter = new TopExp_Explorer(theShape, TopAbs_FACE); aFaceIter.More(); aFaceIter.Next())
+        for (var faceIter = new Explorer(shape, ShapeType.Face); faceIter.More(); faceIter.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(aFaceIter.Current());
-            Triangulation? aTriangulation;
-            for (var anIter = new NCollection_List<Triangulation>.Iterator(BRep_Tool.Triangulations(aFace, out _));
-                 anIter.More();
-                 anIter.Next())
+            Face face = ShapeCasts.Face(faceIter.Current());
+            Triangulation? triangulation;
+            for (var iter = new NCollection_List<Triangulation>.Iterator(Tool.Triangulations(face, out _));
+                 iter.More();
+                 iter.Next())
             {
-                aTriangulation = anIter.Value();
-                if (aTriangulation is null || !aTriangulation.HasDeferredData)
+                triangulation = iter.Value();
+                if (triangulation is null || !triangulation.HasDeferredData)
                 {
                     // NULL triangulation or triangulation without deferred storage cannot be unloaded
                     continue;
                 }
 
-                wasUnloaded = aTriangulation.UnloadDeferredData();
+                wasUnloaded = triangulation.UnloadDeferredData();
             }
         }
 
@@ -1017,55 +1021,55 @@ public static partial class BRepTools
     }
 
     /// <summary>
-    /// Activates the triangulation of index <paramref name="theTriangulationIdx"/> (from 0) of each face; without
-    /// <paramref name="theToActivateStrictly"/>, the last one of a face with fewer. True if any was changed.
+    /// Activates the triangulation of index <paramref name="triangulationIdx"/> (from 0) of each face; without
+    /// <paramref name="toActivateStrictly"/>, the last one of a face with fewer. True if any was changed.
     /// </summary>
-    internal static bool ActivateTriangulation(in TopoDS_Shape theShape, int theTriangulationIdx, bool theToActivateStrictly = false)
+    internal static bool ActivateTriangulation(in Shape shape, int triangulationIdx, bool toActivateStrictly = false)
     {
-        Standard_ProgramError_Raise_if(!(theTriangulationIdx > -1), "Invalid negative triangulation index!");
+        Standard_ProgramError_Raise_if(!(triangulationIdx > -1), "Invalid negative triangulation index!");
 
         bool wasActivated = false;
-        BRep_Builder aBuilder = new BRep_Builder();
-        for (var aFaceIter = new TopExp_Explorer(theShape, TopAbs_FACE); aFaceIter.More(); aFaceIter.Next())
+        BrepBuilder builder = new BrepBuilder();
+        for (var faceIter = new Explorer(shape, ShapeType.Face); faceIter.More(); faceIter.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(aFaceIter.Current());
-            int aTriangulationIdx = theTriangulationIdx;
-            NCollection_List<Triangulation> aTriangulations = BRep_Tool.Triangulations(aFace, out _);
-            int aTriangulationsNb = aTriangulations.Extent();
-            if (theTriangulationIdx >= aTriangulationsNb)
+            Face face = ShapeCasts.Face(faceIter.Current());
+            int aTriangulationIdx = triangulationIdx;
+            NCollection_List<Triangulation> triangulations = Tool.Triangulations(face, out _);
+            int triangulationsNb = triangulations.Extent();
+            if (triangulationIdx >= triangulationsNb)
             {
                 // triangulation index is out of range
-                if (theToActivateStrictly)
+                if (toActivateStrictly)
                 {
                     // skip activation
                     continue;
                 }
 
                 // use last available
-                aTriangulationIdx = aTriangulationsNb - 1;
+                aTriangulationIdx = triangulationsNb - 1;
             }
 
-            Triangulation? anActiveTriangulation = null;
-            int aTriangulationIter = 0;
-            for (var anIter = new NCollection_List<Triangulation>.Iterator(aTriangulations);
-                 anIter.More();
-                 anIter.Next(), aTriangulationIter++)
+            Triangulation? activeTriangulation = null;
+            int triangulationIter = 0;
+            for (var iter = new NCollection_List<Triangulation>.Iterator(triangulations);
+                 iter.More();
+                 iter.Next(), triangulationIter++)
             {
-                if (aTriangulationIter != aTriangulationIdx)
+                if (triangulationIter != aTriangulationIdx)
                 {
                     continue;
                 }
 
-                anActiveTriangulation = anIter.Value();
+                activeTriangulation = iter.Value();
                 break;
             }
 
-            if (anActiveTriangulation is null)
+            if (activeTriangulation is null)
             {
                 continue;
             }
 
-            aBuilder.UpdateFace(aFace, anActiveTriangulation, false);
+            builder.UpdateFace(face, activeTriangulation, false);
             wasActivated = true;
         }
 
@@ -1073,18 +1077,18 @@ public static partial class BRepTools
     }
 
     /// <summary>True if the edge is closed on the face (a seam) and appears twice in it.</summary>
-    public static bool IsReallyClosed(in TopoDS_Edge E, in TopoDS_Face F)
+    public static bool IsReallyClosed(in Edge e, in Face f)
     {
-        if (!BRep_Tool.IsClosed(E, F))
+        if (!Tool.IsClosed(e, f))
         {
             return false;
         }
 
         int nbocc = 0;
-        var exp = new TopExp_Explorer();
-        for (exp.Init(F, TopAbs_EDGE); exp.More(); exp.Next())
+        var exp = new Explorer();
+        for (exp.Init(f, ShapeType.Edge); exp.More(); exp.Next())
         {
-            if (exp.Current().IsSame(E))
+            if (exp.Current().IsSame(e))
             {
                 nbocc++;
             }
@@ -1094,29 +1098,29 @@ public static partial class BRepTools
     }
 
     /// <summary>Whether the face is closed in U and in V: it has a seam along V (U-closed) or along U (V-closed).</summary>
-    public static void DetectClosedness(in TopoDS_Face theFace, out bool theUclosed, out bool theVclosed)
+    public static void DetectClosedness(in Face face, out bool uclosed, out bool vclosed)
     {
-        theUclosed = theVclosed = false;
+        uclosed = vclosed = false;
 
-        var Explo = new TopExp_Explorer(theFace, TopAbs_EDGE);
-        for (; Explo.More(); Explo.Next())
+        var explo = new Explorer(face, ShapeType.Edge);
+        for (; explo.More(); explo.Next())
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(Explo.Current());
-            if (BRep_Tool.IsClosed(anEdge, theFace) && BRepTools.IsReallyClosed(anEdge, theFace))
+            Edge edge = ShapeCasts.Edge(explo.Current());
+            if (Tool.IsClosed(edge, face) && BrepTools.IsReallyClosed(edge, face))
             {
-                Geom2d_Curve PCurve1 = BRep_Tool.CurveOnSurface(anEdge, theFace, out double fpar, out double lpar)!;
-                Geom2d_Curve PCurve2 =
-                    BRep_Tool.CurveOnSurface(TopoDS.Edge(anEdge.Reversed()), theFace, out fpar, out lpar)!;
-                Point2D Point1 = PCurve1.Value(fpar);
-                Point2D Point2 = PCurve2.Value(fpar);
-                bool IsUiso = (Math.Abs(Point1.X() - Point2.X()) > Math.Abs(Point1.Y() - Point2.Y()));
-                if (IsUiso)
+                Curve2D pCurve1 = Tool.CurveOnSurface(edge, face, out double fpar, out double lpar)!;
+                Curve2D pCurve2 =
+                    Tool.CurveOnSurface(ShapeCasts.Edge(edge.Reversed()), face, out fpar, out lpar)!;
+                Point2D point1 = pCurve1.Value(fpar);
+                Point2D point2 = pCurve2.Value(fpar);
+                bool isUiso = (Math.Abs(point1.X() - point2.X()) > Math.Abs(point1.Y() - point2.Y()));
+                if (isUiso)
                 {
-                    theUclosed = true;
+                    uclosed = true;
                 }
                 else
                 {
-                    theVclosed = true;
+                    vclosed = true;
                 }
             }
         }
@@ -1126,10 +1130,10 @@ public static partial class BRepTools
     /// The deviation of the edge's pcurve on the surface from its 3D curve over [f, l]; raises the edge's tolerance to
     /// it if larger. Returns the tolerance.
     /// </summary>
-    internal static double EvalAndUpdateTol(in TopoDS_Edge theE,
-                                            Geom_Curve C3d,
-                                            Geom2d_Curve C2d,
-                                            Geom_Surface S,
+    internal static double EvalAndUpdateTol(in Edge e,
+                                            Curve3D c3d,
+                                            Curve2D c2d,
+                                            Surface s,
                                             double f,
                                             double l)
     {
@@ -1138,51 +1142,51 @@ public static partial class BRepTools
         // Set first, last to avoid ErrosStatus = 2 because of
         // too strong checking of limits in class CheckCurveOnSurface
         //
-        if (!C3d.IsPeriodic())
+        if (!c3d.IsPeriodic)
         {
-            first = Max(first, C3d.FirstParameter());
-            last = Min(last, C3d.LastParameter());
+            first = Max(first, c3d.FirstParameter());
+            last = Min(last, c3d.LastParameter());
         }
-        if (!C2d.IsPeriodic())
+        if (!c2d.IsPeriodic)
         {
-            first = Max(first, C2d.FirstParameter());
-            last = Min(last, C2d.LastParameter());
+            first = Max(first, c2d.FirstParameter());
+            last = Min(last, c2d.LastParameter());
         }
-        Adaptor3d_Curve aGeomAdaptorCurve = new GeomAdaptor_Curve(C3d, first, last);
+        CurveAdaptorBase geomAdaptorCurve = new CurveAdaptor(c3d, first, last);
 
-        Adaptor2d_Curve2d aGeom2dAdaptorCurve = new Geom2dAdaptor_Curve(C2d, first, last);
-        GeomAdaptor_Surface aGeomAdaptorSurface = new GeomAdaptor_Surface(S);
+        Curve2DAdaptorBase geom2dAdaptorCurve = new CurveAdaptor2D(c2d, first, last);
+        SurfaceAdaptor geomAdaptorSurface = new SurfaceAdaptor(s);
 
-        Adaptor3d_CurveOnSurface anAdaptor3dCurveOnSurface =
-            new Adaptor3d_CurveOnSurface(aGeom2dAdaptorCurve, aGeomAdaptorSurface);
+        CurveOnSurface adaptor3dCurveOnSurface =
+            new CurveOnSurface(geom2dAdaptorCurve, geomAdaptorSurface);
 
-        GeomLib_CheckCurveOnSurface CT = new GeomLib_CheckCurveOnSurface(aGeomAdaptorCurve);
-        CT.Perform(anAdaptor3dCurveOnSurface);
-        if (CT.IsDone())
+        CheckCurveOnSurface ct = new CheckCurveOnSurface(geomAdaptorCurve);
+        ct.Perform(adaptor3dCurveOnSurface);
+        if (ct.IsDone)
         {
-            newtol = CT.MaxDistance();
+            newtol = ct.MaxDistance();
         }
         else
         {
-            if (CT.ErrorStatus() == 3
-                || (CT.ErrorStatus() == 2 && (C3d.IsPeriodic() || C2d.IsPeriodic())))
+            if (ct.ErrorStatus() == 3
+                || (ct.ErrorStatus() == 2 && (c3d.IsPeriodic || c2d.IsPeriodic)))
             {
                 // Try to estimate by sample points
                 int nbint = 22;
                 double dt = (last - first) / nbint;
                 dt = Max(dt, global::Kerf.Engine.Foundation.Precision.Confusion());
                 double d, dmax = 0.0;
-                Point2D aP2d;
-                Point3D aPC, aPS;
+                Point2D p2d;
+                Point3D pc, ps;
                 int cnt = 0;
                 double t = first;
                 for (; t <= last; t += dt)
                 {
                     cnt++;
-                    C2d.D0(t, out aP2d);
-                    C3d.D0(t, out aPC);
-                    S.D0(aP2d.X(), aP2d.Y(), out aPS);
-                    d = aPS.SquareDistance(aPC);
+                    c2d.D0(t, out p2d);
+                    c3d.D0(t, out pc);
+                    s.D0(p2d.X(), p2d.Y(), out ps);
+                    d = ps.SquareDistance(pc);
                     if (d > dmax)
                     {
                         dmax = d;
@@ -1191,10 +1195,10 @@ public static partial class BRepTools
                 if (cnt < nbint + 1)
                 {
                     t = last;
-                    C2d.D0(t, out aP2d);
-                    C3d.D0(t, out aPC);
-                    S.D0(aP2d.X(), aP2d.Y(), out aPS);
-                    d = aPS.SquareDistance(aPC);
+                    c2d.D0(t, out p2d);
+                    c3d.D0(t, out pc);
+                    s.D0(p2d.X(), p2d.Y(), out ps);
+                    d = ps.SquareDistance(pc);
                     if (d > dmax)
                     {
                         dmax = d;
@@ -1204,28 +1208,28 @@ public static partial class BRepTools
                 newtol = 1.2 * Math.Sqrt(dmax);
             }
         }
-        double Tol = BRep_Tool.Tolerance(theE);
-        if (newtol > Tol)
+        double tol = Tool.Tolerance(e);
+        if (newtol > tol)
         {
-            Tol = newtol;
-            BRep_Builder B = new BRep_Builder();
-            B.UpdateEdge(theE, Tol);
+            tol = newtol;
+            BrepBuilder b = new BrepBuilder();
+            b.UpdateEdge(e, tol);
         }
 
-        return Tol;
+        return tol;
     }
 
     /// <summary>The orientation of the edge in the face.</summary>
     /// <exception cref="ConstructionErrorException">The edge isn't in the face.</exception>
-    public static TopAbs_Orientation OriEdgeInFace(in TopoDS_Edge E, in TopoDS_Face F)
+    public static Orientation OriEdgeInFace(in Edge e, in Face f)
     {
-        var Exp = new TopExp_Explorer(F.Oriented(TopAbs_FORWARD), TopAbs_EDGE);
+        var exp = new Explorer(f.Oriented(Forward), ShapeType.Edge);
 
-        for (; Exp.More(); Exp.Next())
+        for (; exp.More(); exp.Next())
         {
-            if (Exp.Current().IsSame(E))
+            if (exp.Current().IsSame(e))
             {
-                return Exp.Current().Orientation();
+                return exp.Current().Orientation();
             }
         }
 
@@ -1233,92 +1237,92 @@ public static partial class BRepTools
     }
 
     // Looks for internal sub-shapes which has to be kept to preserve topological connectivity.
-    private static void findInternalsToKeep(in TopoDS_Shape theS,
-                                            NCollection_Map<TopoDS_Shape> theAllNonInternals,
-                                            NCollection_Map<TopoDS_Shape> theAllInternals,
-                                            NCollection_Map<TopoDS_Shape> theShapesToKeep)
+    private static void FindInternalsToKeep(in Shape s,
+                                            NCollection_Map<Shape> allNonInternals,
+                                            NCollection_Map<Shape> allInternals,
+                                            NCollection_Map<Shape> shapesToKeep)
     {
-        for (var it = new TopoDS_Iterator(theS, true); it.More(); it.Next())
+        for (var it = new Iterator(s, true); it.More(); it.Next())
         {
-            TopoDS_Shape aSS = it.Value();
-            findInternalsToKeep(aSS, theAllNonInternals, theAllInternals, theShapesToKeep);
+            Shape ss = it.Value();
+            FindInternalsToKeep(ss, allNonInternals, allInternals, shapesToKeep);
 
-            if (aSS.Orientation() == TopAbs_INTERNAL)
+            if (ss.Orientation() == Internal)
             {
-                theAllInternals.Add(aSS);
+                allInternals.Add(ss);
             }
             else
             {
-                theAllNonInternals.Add(aSS);
+                allNonInternals.Add(ss);
             }
 
-            if (theAllNonInternals.Contains(aSS) && theAllInternals.Contains(aSS))
+            if (allNonInternals.Contains(ss) && allInternals.Contains(ss))
             {
-                theShapesToKeep.Add(aSS);
+                shapesToKeep.Add(ss);
             }
         }
     }
 
     // Removes sub-shapes from the shape
-    private static void removeShapes(in TopoDS_Shape theS, NCollection_List<TopoDS_Shape> theLS)
+    private static void RemoveShapes(in Shape s, NCollection_List<Shape> ls)
     {
-        BRep_Builder aBB = new BRep_Builder();
-        bool isFree = theS.Free();
-        theS.Free(true);
+        BrepBuilder bb = new BrepBuilder();
+        bool isFree = s.Free();
+        s.Free(true);
 
-        for (var it = new NCollection_List<TopoDS_Shape>.Iterator(theLS); it.More(); it.Next())
+        for (var it = new NCollection_List<Shape>.Iterator(ls); it.More(); it.Next())
         {
-            aBB.Remove(theS, it.Value());
+            bb.Remove(s, it.Value());
         }
 
-        theS.Free(isFree);
+        s.Free(isFree);
     }
 
     // Removes recursively all internal sub-shapes from the given shape.
     // Returns true if all sub-shapes have been removed from the shape.
-    private static bool removeInternals(in TopoDS_Shape theS, NCollection_Map<TopoDS_Shape>? theShapesToKeep)
+    private static bool RemoveInternalsCore(in Shape s, NCollection_Map<Shape>? shapesToKeep)
     {
-        var aLRemove = new NCollection_List<TopoDS_Shape>();
-        for (var it = new TopoDS_Iterator(theS, true); it.More(); it.Next())
+        var lRemove = new NCollection_List<Shape>();
+        for (var it = new Iterator(s, true); it.More(); it.Next())
         {
-            TopoDS_Shape aSS = it.Value();
-            if (aSS.Orientation() == TopAbs_INTERNAL)
+            Shape ss = it.Value();
+            if (ss.Orientation() == Internal)
             {
-                if (theShapesToKeep is null || !theShapesToKeep.Contains(aSS))
+                if (shapesToKeep is null || !shapesToKeep.Contains(ss))
                 {
-                    aLRemove.Append(aSS);
+                    lRemove.Append(ss);
                 }
             }
             else
             {
                 // OCCT passes the iterator's current shape by non-const reference; only its TShape changes
-                if (removeInternals(aSS, theShapesToKeep))
+                if (RemoveInternalsCore(ss, shapesToKeep))
                 {
-                    aLRemove.Append(aSS);
+                    lRemove.Append(ss);
                 }
             }
         }
 
-        int aNbSToRemove = aLRemove.Extent();
-        if (aNbSToRemove != 0)
+        int nbSToRemove = lRemove.Extent();
+        if (nbSToRemove != 0)
         {
-            removeShapes(theS, aLRemove);
-            return (theS.NbChildren() == 0);
+            RemoveShapes(s, lRemove);
+            return (s.ChildCount == 0);
         }
 
         return false;
     }
 
     /// <summary>
-    /// Removes the INTERNAL sub-shapes of the shape, recursively; without <paramref name="theForce"/>, keeps those
+    /// Removes the INTERNAL sub-shapes of the shape, recursively; without <paramref name="force"/>, keeps those
     /// that connect the remaining sub-shapes.
     /// </summary>
     /// <remarks>Takes the shape by <c>in</c> (OCCT: a non-const reference): only its TShape changes.</remarks>
-    internal static void RemoveInternals(in TopoDS_Shape theS, bool theForce = false)
+    internal static void RemoveInternals(in Shape s, bool force = false)
     {
-        NCollection_Map<TopoDS_Shape>? pMKeep = null;
-        var aMKeep = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        if (!theForce)
+        NCollection_Map<Shape>? pMKeep = null;
+        var mKeep = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        if (!force)
         {
             // Find all internal sub-shapes which has to be kept to preserve topological connectivity.
             // Note that if the multi-connected shape is not directly contained in some shape,
@@ -1329,44 +1333,44 @@ public static partial class BRepTools
             // the vertex with one of the vertices of that wire. The vertex is not directly
             // contained in the face, thus will be removed as part of internal wire, and topological
             // connectivity between edge and face will be lost.
-            var anAllNonInternals = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            var anAllInternals = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            findInternalsToKeep(theS, anAllNonInternals, anAllInternals, aMKeep);
-            if (aMKeep.Extent() != 0)
+            var allNonInternals = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var allInternals = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            FindInternalsToKeep(s, allNonInternals, allInternals, mKeep);
+            if (mKeep.Extent() != 0)
             {
-                pMKeep = aMKeep;
+                pMKeep = mKeep;
             }
         }
 
-        removeInternals(theS, pMKeep);
+        RemoveInternalsCore(s, pMKeep);
     }
 
     /// <summary>
-    /// Adds to <paramref name="theProblemShapes"/> the sub-shapes (the shape included) whose own location has a scale
+    /// Adds to <paramref name="problemShapes"/> the sub-shapes (the shape included) whose own location has a scale
     /// or is negative.
     /// </summary>
-    public static void CheckLocations(in TopoDS_Shape theS, NCollection_List<TopoDS_Shape> theProblemShapes)
+    public static void CheckLocations(in Shape s, NCollection_List<Shape> problemShapes)
     {
-        if (theS.IsNull())
+        if (s.IsNull)
         {
             return;
         }
 
-        var aMapS = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theS, aMapS, false, false);
+        var mapS = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(s, mapS, false, false);
 
         int i;
-        for (i = 1; i <= aMapS.Extent(); ++i)
+        for (i = 1; i <= mapS.Extent(); ++i)
         {
-            TopoDS_Shape anS = aMapS.FindKey(i);
-            Placement aLoc = anS.Location();
-            Transform3D aTrsf = aLoc.Transformation();
-            bool isBadTrsf = aTrsf.IsNegative
-                             || (Math.Abs(Math.Abs(aTrsf.ScaleFactor()) - 1.0) > Placement.ScalePrec());
+            Shape anS = mapS.FindKey(i);
+            Placement loc = anS.Location();
+            Transform3D trsf = loc.Transformation();
+            bool isBadTrsf = trsf.IsNegative
+                             || (Math.Abs(Math.Abs(trsf.ScaleFactor()) - 1.0) > Placement.ScalePrec());
 
             if (isBadTrsf)
             {
-                theProblemShapes.Append(anS);
+                problemShapes.Append(anS);
             }
         }
     }

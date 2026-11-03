@@ -4,8 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -17,7 +18,7 @@ namespace Occt;
 /// curve by its tangent, normal and curvature; the boundary by a set of curve elements, each a curve or a
 /// half-curve (a curve and an orientation saying whether the boundary is before or after the intersection).
 /// A working object (decision 21): <see cref="Reset(in Direction3D, in Direction3D, double)"/> and
-/// <see cref="Compare(double, in Direction3D, in Direction3D, double, TopAbs_Orientation, TopAbs_Orientation)"/> are public,
+/// <see cref="Compare(double, in Direction3D, in Direction3D, double, Orientation, Orientation)"/> are public,
 /// as in OCCT. A class: OCCT holds it by value as a member of the classifiers, which pass it by reference.
 /// </remarks>
 public class TopTrans_CurveTransition
@@ -33,11 +34,11 @@ public class TopTrans_CurveTransition
     private Direction3D TgtFirst = new();
     private Direction3D NormFirst = new();
     private double CurvFirst;
-    private TopAbs_Orientation TranFirst;
+    private Orientation TranFirst;
     private Direction3D TgtLast = new();
     private Direction3D NormLast = new();
     private double CurvLast;
-    private TopAbs_Orientation TranLast;
+    private Orientation TranLast;
 
     /// <summary>Creates an empty curve transition.</summary>
     public TopTrans_CurveTransition()
@@ -46,8 +47,8 @@ public class TopTrans_CurveTransition
         Init = false;
         CurvFirst = 0.0;
         CurvLast = 0.0;
-        TranFirst = TopAbs_FORWARD;
-        TranLast = TopAbs_FORWARD;
+        TranFirst = Forward;
+        TranLast = Forward;
     }
 
     /// <summary>Initializes the transition with the local description of a curve.</summary>
@@ -71,19 +72,19 @@ public class TopTrans_CurveTransition
     /// Adds a curve element to the boundary. If <paramref name="Or"/> is REVERSED the curve is before the
     /// intersection, if FORWARD after it, and if INTERNAL the intersection is in the middle of the curve.
     /// </summary>
-    public void Compare(double Tole, in Direction3D T, in Direction3D N, double C, TopAbs_Orientation St, TopAbs_Orientation Or)
+    public void Compare(double Tole, in Direction3D T, in Direction3D N, double C, Orientation St, Orientation Or)
     {
         // S is the transition, how the curve cross the boundary
         // O is the orientation, how the intersection is set on the boundary
-        TopAbs_Orientation S = St;
-        TopAbs_Orientation O = Or;
+        Orientation S = St;
+        Orientation O = Or;
 
         // adjustment for INTERNAL transition
-        if (S == TopAbs_INTERNAL)
+        if (S == Internal)
         {
             if (T * myTgt < 0)
             {
-                S = TopAbs.Reverse(O);
+                S = global::Kerf.Engine.Topology.TopAbs.Reverse(O);
             }
             else
             {
@@ -106,11 +107,11 @@ public class TopTrans_CurveTransition
             switch (O)
             {
                 // Interference at the end of the edge: the tangent must be reversed
-                case TopAbs_REVERSED:
+                case Reversed:
                     TgtFirst.Reverse();
                     TgtLast.Reverse();
                     break;
-                case TopAbs_INTERNAL:
+                case Internal:
                     // Interference in the middle of the edge: reverse depending on the position of the
                     // reference tangent
                     if (myTgt * T > 0)
@@ -123,8 +124,8 @@ public class TopTrans_CurveTransition
                     }
 
                     break;
-                case TopAbs_FORWARD:
-                case TopAbs_EXTERNAL:
+                case Forward:
+                case External:
                     break;
             }
         }
@@ -135,18 +136,18 @@ public class TopTrans_CurveTransition
             double cosAngWithT = myTgt * T;
             switch (O)
             {
-                case TopAbs_REVERSED:
+                case Reversed:
                     cosAngWithT = -cosAngWithT;
                     break;
-                case TopAbs_INTERNAL:
+                case Internal:
                     if (cosAngWithT > 0)
                     {
                         cosAngWithT = -cosAngWithT;
                     }
 
                     break;
-                case TopAbs_FORWARD:
-                case TopAbs_EXTERNAL:
+                case Forward:
+                case External:
                     break;
             }
 
@@ -160,18 +161,18 @@ public class TopTrans_CurveTransition
                     TgtFirst = T;
                     switch (O)
                     {
-                        case TopAbs_REVERSED:
+                        case Reversed:
                             TgtFirst.Reverse();
                             break;
-                        case TopAbs_INTERNAL:
+                        case Internal:
                             if (myTgt * T > 0)
                             {
                                 TgtFirst.Reverse();
                             }
 
                             break;
-                        case TopAbs_FORWARD:
-                        case TopAbs_EXTERNAL:
+                        case Forward:
+                        case External:
                             break;
                     }
 
@@ -188,18 +189,18 @@ public class TopTrans_CurveTransition
                         TgtFirst = T;
                         switch (O)
                         {
-                            case TopAbs_REVERSED:
+                            case Reversed:
                                 TgtFirst.Reverse();
                                 break;
-                            case TopAbs_INTERNAL:
+                            case Internal:
                                 if (myTgt * T > 0)
                                 {
                                     TgtFirst.Reverse();
                                 }
 
                                 break;
-                            case TopAbs_FORWARD:
-                            case TopAbs_EXTERNAL:
+                            case Forward:
+                            case External:
                                 break;
                         }
 
@@ -214,10 +215,10 @@ public class TopTrans_CurveTransition
                     break;
             }
 
-            if (!FirstSet || O == TopAbs_INTERNAL)
+            if (!FirstSet || O == Internal)
             {
                 // In the tangent cases the first can also be the last
-                if (O == TopAbs_INTERNAL)
+                if (O == Internal)
                 {
                     cosAngWithT = -cosAngWithT;
                 }
@@ -231,18 +232,18 @@ public class TopTrans_CurveTransition
                         TgtLast = T;
                         switch (O)
                         {
-                            case TopAbs_REVERSED:
+                            case Reversed:
                                 TgtLast.Reverse();
                                 break;
-                            case TopAbs_INTERNAL:
+                            case Internal:
                                 if (myTgt * T < 0)
                                 {
                                     TgtLast.Reverse();
                                 }
 
                                 break;
-                            case TopAbs_FORWARD:
-                            case TopAbs_EXTERNAL:
+                            case Forward:
+                            case External:
                                 break;
                         }
 
@@ -258,18 +259,18 @@ public class TopTrans_CurveTransition
                             TgtLast = T;
                             switch (O)
                             {
-                                case TopAbs_REVERSED:
+                                case Reversed:
                                     TgtLast.Reverse();
                                     break;
-                                case TopAbs_INTERNAL:
+                                case Internal:
                                     if (myTgt * T < 0)
                                     {
                                         TgtLast.Reverse();
                                     }
 
                                     break;
-                                case TopAbs_FORWARD:
-                                case TopAbs_EXTERNAL:
+                                case Forward:
+                                case External:
                                     break;
                             }
 
@@ -288,48 +289,48 @@ public class TopTrans_CurveTransition
     /// The state of the curve before the intersection: the position relative to the boundary of a point very
     /// close to the intersection on the negative side of the tangent.
     /// </summary>
-    public TopAbs_State StateBefore()
+    public Containment StateBefore()
     {
         if (Init)
         {
-            return TopAbs_UNKNOWN;
+            return Unknown;
         }
 
         switch (TranFirst)
         {
-            case TopAbs_FORWARD:
-            case TopAbs_EXTERNAL:
-                return TopAbs_OUT;
-            case TopAbs_REVERSED:
-            case TopAbs_INTERNAL:
-                return TopAbs_IN;
+            case Forward:
+            case External:
+                return Out;
+            case Reversed:
+            case Internal:
+                return In;
         }
 
-        return TopAbs_OUT;
+        return Out;
     }
 
     /// <summary>
     /// The state of the curve after the intersection: the position relative to the boundary of a point very
     /// close to the intersection on the positive side of the tangent.
     /// </summary>
-    public TopAbs_State StateAfter()
+    public Containment StateAfter()
     {
         if (Init)
         {
-            return TopAbs_UNKNOWN;
+            return Unknown;
         }
 
         switch (TranLast)
         {
-            case TopAbs_FORWARD:
-            case TopAbs_INTERNAL:
-                return TopAbs_IN;
-            case TopAbs_REVERSED:
-            case TopAbs_EXTERNAL:
-                return TopAbs_OUT;
+            case Forward:
+            case Internal:
+                return In;
+            case Reversed:
+            case External:
+                return Out;
         }
 
-        return TopAbs_OUT;
+        return Out;
     }
 
     /// <summary>Compares the curvature of two transitions: true if (N1, C1) is before (N2, C2).</summary>

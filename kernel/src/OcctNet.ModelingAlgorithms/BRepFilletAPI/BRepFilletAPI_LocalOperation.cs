@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -11,7 +13,7 @@ namespace Occt;
 public abstract class BRepFilletAPI_LocalOperation : BRepBuilderAPI_MakeShape
 {
     /// <summary>Adds a contour in the builder (builds a contour of tangent edges).</summary>
-    public abstract void Add(in TopoDS_Edge E);
+    public abstract void Add(in Edge E);
 
     /// <summary>Resets the contour of index <paramref name="IC"/>: nothing is changed in the contour.</summary>
     public abstract void ResetContour(int IC);
@@ -20,31 +22,31 @@ public abstract class BRepFilletAPI_LocalOperation : BRepBuilderAPI_MakeShape
     public abstract int NbContours();
 
     /// <summary>The index of the contour containing the edge <paramref name="E"/>, 0 if none.</summary>
-    public abstract int Contour(in TopoDS_Edge E);
+    public abstract int Contour(in Edge E);
 
     /// <summary>The number of edges in the contour <paramref name="I"/>.</summary>
     public abstract int NbEdges(int I);
 
     /// <summary>The edge <paramref name="J"/> of the contour <paramref name="I"/>.</summary>
-    public abstract TopoDS_Edge Edge(int I, int J);
+    public abstract Edge Edge(int I, int J);
 
     /// <summary>Removes the contour containing the edge <paramref name="E"/>.</summary>
-    public abstract void Remove(in TopoDS_Edge E);
+    public abstract void Remove(in Edge E);
 
     /// <summary>The length of the contour <paramref name="IC"/>.</summary>
     public abstract double Length(int IC);
 
     /// <summary>The first vertex of the contour <paramref name="IC"/>.</summary>
-    public abstract TopoDS_Vertex FirstVertex(int IC);
+    public abstract Vertex FirstVertex(int IC);
 
     /// <summary>The last vertex of the contour <paramref name="IC"/>.</summary>
-    public abstract TopoDS_Vertex LastVertex(int IC);
+    public abstract Vertex LastVertex(int IC);
 
     /// <summary>The curvilinear abscissa of the vertex <paramref name="V"/> on the contour <paramref name="IC"/>.</summary>
-    public abstract double Abscissa(int IC, in TopoDS_Vertex V);
+    public abstract double Abscissa(int IC, in Vertex V);
 
     /// <summary>The relative curvilinear abscissa of the vertex <paramref name="V"/> on the contour <paramref name="IC"/>.</summary>
-    public abstract double RelativeAbscissa(int IC, in TopoDS_Vertex V);
+    public abstract double RelativeAbscissa(int IC, in Vertex V);
 
     /// <summary>True if the contour <paramref name="IC"/> is closed and tangent.</summary>
     public abstract bool ClosedAndTangent(int IC);

@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
 
@@ -18,7 +21,7 @@ internal static class BRepTestHistoryCommands
 {
     private sealed class Session
     {
-        public BRepTools_History? History;
+        public History? History;
         public bool FillHistory = true;
     }
 
@@ -27,22 +30,22 @@ internal static class BRepTestHistoryCommands
     private static Session Of(DrawInterpreter theDI) => theSessions.GetValue(theDI, static _ => new Session());
 
     /// <summary>BRepTest_Objects::SetHistory: the session's history becomes the given one.</summary>
-    public static void SetHistory(DrawInterpreter theDI, BRepTools_History? theHistory) => Of(theDI).History = theHistory;
+    public static void SetHistory(DrawInterpreter theDI, History? theHistory) => Of(theDI).History = theHistory;
 
     /// <summary>BRepTest_Objects::SetHistory(arguments, algorithm).</summary>
-    public static void SetHistory(DrawInterpreter theDI, NCollection_List<TopoDS_Shape> theArguments, BRepTools_History.IAlgorithm theAlgo)
-        => SetHistory(theDI, new BRepTools_History(theArguments, theAlgo));
+    public static void SetHistory(DrawInterpreter theDI, NCollection_List<Shape> theArguments, global::Kerf.Engine.Topology.History.IAlgorithm theAlgo)
+        => SetHistory(theDI, new History(theArguments, theAlgo));
 
     /// <summary>BRepTest_Objects::AddHistory: merges the given history into the session's.</summary>
-    public static void AddHistory(DrawInterpreter theDI, BRepTools_History? theHistory)
+    public static void AddHistory(DrawInterpreter theDI, History? theHistory)
     {
         Session aSession = Of(theDI);
-        aSession.History ??= new BRepTools_History();
+        aSession.History ??= new History();
         aSession.History.Merge(theHistory);
     }
 
     /// <summary>BRepTest_Objects::History.</summary>
-    public static BRepTools_History? History(DrawInterpreter theDI) => Of(theDI).History;
+    public static History? History(DrawInterpreter theDI) => Of(theDI).History;
 
     /// <summary>BRepTest_Objects::IsHistoryNeeded (<c>setfillhistory</c>).</summary>
     public static bool IsHistoryNeeded(DrawInterpreter theDI) => Of(theDI).FillHistory;
@@ -80,7 +83,7 @@ internal static class BRepTestHistoryCommands
             return 1;
         }
         // Get the history from the session
-        BRepTools_History? aHistory = History(theDI);
+        History? aHistory = History(theDI);
         if (aHistory is null)
         {
             di.Append("No history has been prepared yet.");
@@ -90,7 +93,7 @@ internal static class BRepTestHistoryCommands
         return 0;
     }
 
-    private static BRepTools_History? GetHistory(DrawInterpreter theDI, DrawResult di, string theName)
+    private static History? GetHistory(DrawInterpreter theDI, DrawResult di, string theName)
     {
         if (theDI.GetDrawable(theName) is not DrawHistory aHistory)
         {
@@ -100,32 +103,32 @@ internal static class BRepTestHistoryCommands
         return aHistory.History;
     }
 
-    private static TopoDS_Shape GetShape(DrawInterpreter theDI, DrawResult di, string theName)
+    private static Shape GetShape(DrawInterpreter theDI, DrawResult di, string theName)
     {
-        TopoDS_Shape aS = theDI.GetShape(theName);
-        if (aS.IsNull())
+        Shape aS = theDI.GetShape(theName);
+        if (aS.IsNull)
         {
             di.Append(theName).Append(" is a null shape.");
-            return new TopoDS_Shape();
+            return new Shape();
         }
-        if (!BRepTools_History.IsSupportedType(aS))
+        if (!global::Kerf.Engine.Topology.History.IsSupportedType(aS))
         {
             di.Append("History is not supported for this kind of shape.");
-            return new TopoDS_Shape();
+            return new Shape();
         }
         return aS;
     }
 
-    private static TopoDS_Shape MakeCompound(IReadOnlyList<TopoDS_Shape> theLS)
+    private static Shape MakeCompound(IReadOnlyList<Shape> theLS)
     {
         if (theLS.Count == 1)
         {
             return theLS[0];
         }
-        BRep_Builder aBB = new();
-        TopoDS_Compound aC = new();
+        BrepBuilder aBB = new();
+        Compound aC = new();
         aBB.MakeCompound(ref aC);
-        foreach (TopoDS_Shape aS in theLS)
+        foreach (Shape aS in theLS)
         {
             aBB.Add(aC, aS);
         }
@@ -138,17 +141,17 @@ internal static class BRepTestHistoryCommands
         {
             return 1;
         }
-        BRepTools_History? aHistory = GetHistory(theDI, di, a[2]);
+        History? aHistory = GetHistory(theDI, di, a[2]);
         if (aHistory is null)
         {
             return 1;
         }
-        TopoDS_Shape aS = GetShape(theDI, di, a[3]);
-        if (aS.IsNull())
+        Shape aS = GetShape(theDI, di, a[3]);
+        if (aS.IsNull)
         {
             return 1;
         }
-        List<TopoDS_Shape> aModified = [.. aHistory.Modified(aS)];
+        List<Shape> aModified = [.. aHistory.Modified(aS)];
         if (aModified.Count == 0)
         {
             di.Append("The shape has not been modified.");
@@ -164,17 +167,17 @@ internal static class BRepTestHistoryCommands
         {
             return 1;
         }
-        BRepTools_History? aHistory = GetHistory(theDI, di, a[2]);
+        History? aHistory = GetHistory(theDI, di, a[2]);
         if (aHistory is null)
         {
             return 1;
         }
-        TopoDS_Shape aS = GetShape(theDI, di, a[3]);
-        if (aS.IsNull())
+        Shape aS = GetShape(theDI, di, a[3]);
+        if (aS.IsNull)
         {
             return 1;
         }
-        List<TopoDS_Shape> aGenerated = [.. aHistory.Generated(aS)];
+        List<Shape> aGenerated = [.. aHistory.Generated(aS)];
         if (aGenerated.Count == 0)
         {
             di.Append("No shapes were generated from the shape.");
@@ -190,13 +193,13 @@ internal static class BRepTestHistoryCommands
         {
             return 1;
         }
-        BRepTools_History? aHistory = GetHistory(theDI, di, a[1]);
+        History? aHistory = GetHistory(theDI, di, a[1]);
         if (aHistory is null)
         {
             return 1;
         }
-        TopoDS_Shape aS = GetShape(theDI, di, a[2]);
-        if (aS.IsNull())
+        Shape aS = GetShape(theDI, di, a[2]);
+        if (aS.IsNull)
         {
             return 1;
         }
@@ -206,10 +209,10 @@ internal static class BRepTestHistoryCommands
 }
 
 /// <summary>A history (BRepTest_DrawableHistory), as <c>savehistory</c> stores it.</summary>
-public sealed class DrawHistory(BRepTools_History theHistory) : DrawDrawable
+public sealed class DrawHistory(History theHistory) : DrawDrawable
 {
     /// <summary>The history.</summary>
-    public BRepTools_History History { get; } = theHistory;
+    public History History { get; } = theHistory;
 
     public override string TypeName => "BRepTest_DrawableHistory";
 

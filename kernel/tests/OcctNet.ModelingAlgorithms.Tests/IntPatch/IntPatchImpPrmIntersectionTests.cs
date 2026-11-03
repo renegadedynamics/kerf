@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 
@@ -22,7 +23,7 @@ public class IntPatchImpPrmIntersectionTests
     private static readonly CoordinateSystem Axis = new(new Point3D(0.5, 0.5, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
 
     // A bicubic patch over [0, 1] x [0, 1], z = 0.2 + 0.1 x with a bump in the middle.
-    private static GeomAdaptor_Surface Patch()
+    private static SurfaceAdaptor Patch()
     {
         var aPoles = new NCollection_Array2<Point3D>(1, 4, 1, 4);
         for (int i = 1; i <= 4; i++)
@@ -40,11 +41,11 @@ public class IntPatchImpPrmIntersectionTests
         var aMults = new NCollection_Array1<int>(1, 2);
         aMults[1] = 4;
         aMults[2] = 4;
-        return new GeomAdaptor_Surface(new Geom_BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 3, 3));
+        return new SurfaceAdaptor(new BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 3, 3));
     }
 
     // A wavy wall: a cubic B-spline curve in the plane z = 0 extruded along Z, v in [-1, 1].
-    private static GeomAdaptor_Surface Wall()
+    private static SurfaceAdaptor Wall()
     {
         var aPoles = new NCollection_Array1<Point3D>(1, 4);
         aPoles[1] = new Point3D(-1, 0.3, 0);
@@ -57,27 +58,27 @@ public class IntPatchImpPrmIntersectionTests
         var aMults = new NCollection_Array1<int>(1, 2);
         aMults[1] = 4;
         aMults[2] = 4;
-        var aCurve = new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
-        return new GeomAdaptor_Surface(new Geom_SurfaceOfLinearExtrusion(aCurve, new Direction3D(0, 0, 1)), 0, 1, -1, 1);
+        var aCurve = new BSplineCurve3D(aPoles, aKnots, aMults, 3);
+        return new SurfaceAdaptor(new ExtrusionSurface(aCurve, new Direction3D(0, 0, 1)), 0, 1, -1, 1);
     }
 
-    private static GeomAdaptor_Surface Plane(double z) =>
-        new(new Geom_Plane(new Point3D(0, 0, z), new Direction3D(0, 0, 1)), -2, 2, -2, 2);
+    private static SurfaceAdaptor Plane(double z) =>
+        new(new PlaneSurface(new Point3D(0, 0, z), new Direction3D(0, 0, 1)), -2, 2, -2, 2);
 
-    private static GeomAdaptor_Surface Cylinder() => new(new Geom_CylindricalSurface(Axis, 0.35), 0, 2 * M_PI, -1, 2);
+    private static SurfaceAdaptor Cylinder() => new(new CylindricalSurface(Axis, 0.35), 0, 2 * M_PI, -1, 2);
 
-    private static GeomAdaptor_Surface Sphere() =>
-        new(new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0.5, 0.5, 0.25), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)),
+    private static SurfaceAdaptor Sphere() =>
+        new(new SphericalSurface(new CoordinateSystem(new Point3D(0.5, 0.5, 0.25), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)),
                                       0.3));
 
-    private static GeomAdaptor_Surface Cone() => new(new Geom_ConicalSurface(Axis, M_PI / 6, 0.2), 0, 2 * M_PI, -1, 2);
+    private static SurfaceAdaptor Cone() => new(new ConicalSurface(Axis, M_PI / 6, 0.2), 0, 2 * M_PI, -1, 2);
 
-    private static IntPatch_ImpPrmIntersection Run(GeomAdaptor_Surface theS1, GeomAdaptor_Surface theS2) =>
-        new(theS1, new Adaptor3d_TopolTool(theS1), theS2, new Adaptor3d_TopolTool(theS2), TolArc, TolTang, Fleche, Pas);
+    private static IntPatch_ImpPrmIntersection Run(SurfaceAdaptor theS1, SurfaceAdaptor theS2) =>
+        new(theS1, new TopolTool(theS1), theS2, new TopolTool(theS2), TolArc, TolTang, Fleche, Pas);
 
     // Every point of every walking line on both surfaces; end vertices present.
-    private static void CheckLines(IntPatch_ImpPrmIntersection theInt, GeomAdaptor_Surface theS1,
-                                   GeomAdaptor_Surface theS2, double theTol)
+    private static void CheckLines(IntPatch_ImpPrmIntersection theInt, SurfaceAdaptor theS1,
+                                   SurfaceAdaptor theS2, double theTol)
     {
         Assert.True(theInt.IsDone());
         for (int i = 1; i <= theInt.NbLines(); i++)
@@ -139,7 +140,7 @@ public class IntPatchImpPrmIntersectionTests
     public void FarPlane_IsEmpty()
     {
         // No restriction point and no interior point: the walking does not run.
-        GeomAdaptor_Surface aPln = Plane(5.0), aPatch = Patch();
+        SurfaceAdaptor aPln = Plane(5.0), aPatch = Patch();
         IntPatch_ImpPrmIntersection anInt = Run(aPln, aPatch);
         Assert.True(anInt.IsDone());
         Assert.True(anInt.IsEmpty());
@@ -150,10 +151,10 @@ public class IntPatchImpPrmIntersectionTests
     [Fact]
     public void NoQuadric_Throws()
     {
-        GeomAdaptor_Surface aTorus = new(new Geom_ToroidalSurface(Axis, 1.0, 0.2));
+        SurfaceAdaptor aTorus = new(new ToroidalSurface(Axis, 1.0, 0.2));
         IntPatch_ImpPrmIntersection anInt = new();
         Assert.Throws<ConstructionErrorException>(() =>
-            anInt.Perform(aTorus, new Adaptor3d_TopolTool(aTorus), Patch(), new Adaptor3d_TopolTool(Patch()), TolArc,
+            anInt.Perform(aTorus, new TopolTool(aTorus), Patch(), new TopolTool(Patch()), TolArc,
                           TolTang, Fleche, Pas));
         Assert.False(anInt.IsDone());
         Assert.Throws<NotDoneException>(() => anInt.NbLines());
@@ -162,7 +163,7 @@ public class IntPatchImpPrmIntersectionTests
     [Fact]
     public void Plane_BSpline_OpenLine()
     {
-        GeomAdaptor_Surface aPln = Plane(0.26), aPatch = Patch();
+        SurfaceAdaptor aPln = Plane(0.26), aPatch = Patch();
         IntPatch_ImpPrmIntersection anInt = Run(aPln, aPatch);
         CheckLines(anInt, aPln, aPatch, 1e-5);
         Assert.False(anInt.IsEmpty());
@@ -173,7 +174,7 @@ public class IntPatchImpPrmIntersectionTests
     public void BSpline_Plane_Reversed()
     {
         // The quadric second: the lines' first parameters are the patch's.
-        GeomAdaptor_Surface aPln = Plane(0.26), aPatch = Patch();
+        SurfaceAdaptor aPln = Plane(0.26), aPatch = Patch();
         IntPatch_ImpPrmIntersection anInt = Run(aPatch, aPln);
         CheckLines(anInt, aPatch, aPln, 1e-5);
         Assert.True(anInt.NbLines() >= 1);
@@ -182,7 +183,7 @@ public class IntPatchImpPrmIntersectionTests
     [Fact]
     public void Cylinder_BSpline_ClosedLine()
     {
-        GeomAdaptor_Surface aCyl = Cylinder(), aPatch = Patch();
+        SurfaceAdaptor aCyl = Cylinder(), aPatch = Patch();
         IntPatch_ImpPrmIntersection anInt = Run(aCyl, aPatch);
         CheckLines(anInt, aCyl, aPatch, 1e-5);
         Assert.True(anInt.NbLines() >= 1);
@@ -201,7 +202,7 @@ public class IntPatchImpPrmIntersectionTests
     [Fact]
     public void Sphere_BSpline()
     {
-        GeomAdaptor_Surface aSph = Sphere(), aPatch = Patch();
+        SurfaceAdaptor aSph = Sphere(), aPatch = Patch();
         IntPatch_ImpPrmIntersection anInt = Run(aSph, aPatch);
         CheckLines(anInt, aSph, aPatch, 1e-5);
         Assert.True(anInt.NbLines() >= 1);
@@ -210,7 +211,7 @@ public class IntPatchImpPrmIntersectionTests
     [Fact]
     public void Cone_Extrusion()
     {
-        GeomAdaptor_Surface aCone = Cone(), aWall = Wall();
+        SurfaceAdaptor aCone = Cone(), aWall = Wall();
         IntPatch_ImpPrmIntersection anInt = Run(aCone, aWall);
         CheckLines(anInt, aCone, aWall, 1e-5);
         Assert.True(anInt.NbLines() >= 1);

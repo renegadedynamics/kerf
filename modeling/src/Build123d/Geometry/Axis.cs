@@ -1,4 +1,5 @@
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Occt;
 
@@ -55,10 +56,10 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     public Axis(Edge edge)
     {
         double first = 0, last = 0;
-        var curve = BRep_Tool.Curve(edge.TopoEdge, out first, out last)
+        var curve = Tool.Curve(edge.TopoEdge, out first, out last)
                           ?? throw new ArgumentException($"Invalid edge argument: {edge}");
         double min = 0, max = 0;
-        BRep_Tool.Range(edge.TopoEdge, out min, out max);
+        Tool.Range(edge.TopoEdge, out min, out max);
         var origin = new Point3D();
         var tangent = new Vector3D();
         curve.D1(min, out origin, out tangent);

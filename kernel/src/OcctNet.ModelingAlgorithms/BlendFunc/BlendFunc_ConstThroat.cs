@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -37,7 +38,7 @@ public class BlendFunc_ConstThroat : BlendFunc_GenChamfer
     protected Vector3D d1gui;
     protected Vector3D d2gui;
 
-    public BlendFunc_ConstThroat(Adaptor3d_Surface S1, Adaptor3d_Surface S2, Adaptor3d_Curve C)
+    public BlendFunc_ConstThroat(SurfaceAdaptorBase S1, SurfaceAdaptorBase S2, CurveAdaptorBase C)
         : base(S1, S2, C)
     {
         istangent = false;

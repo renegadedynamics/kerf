@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.Continuity;
@@ -18,7 +19,7 @@ namespace Occt;
 /// <remarks>A working object (decision 21).</remarks>
 public class ShapeUpgrade_ConvertCurve3dToBezier : ShapeUpgrade_SplitCurve3d
 {
-    private readonly NCollection_HSequence<Geom_Curve> mySegments;
+    private readonly NCollection_HSequence<Curve3D> mySegments;
     private readonly NCollection_HSequence<double> mySplitParams;
     private bool myLineMode;
     private bool myCircleMode;
@@ -27,7 +28,7 @@ public class ShapeUpgrade_ConvertCurve3dToBezier : ShapeUpgrade_SplitCurve3d
     /// <summary>Empty constructor (all modes on).</summary>
     public ShapeUpgrade_ConvertCurve3dToBezier()
     {
-        mySegments = new NCollection_HSequence<Geom_Curve>();
+        mySegments = new NCollection_HSequence<Curve3D>();
         mySplitParams = new NCollection_HSequence<double>();
         myLineMode = true;
         myCircleMode = true;
@@ -69,9 +70,9 @@ public class ShapeUpgrade_ConvertCurve3dToBezier : ShapeUpgrade_SplitCurve3d
         double precision = Kerf.Engine.Foundation.Precision.PConfusion();
         double First = mySplitValues!.Value(1);
         double Last = mySplitValues.Value(mySplitValues.Length());
-        if (myCurve is Geom_TrimmedCurve tmp)
+        if (myCurve is TrimmedCurve3D tmp)
         {
-            Geom_Curve BasCurve = tmp.BasisCurve();
+            Curve3D BasCurve = tmp.BasisCurve();
             var converter = new ShapeUpgrade_ConvertCurve3dToBezier();
             converter.Init(BasCurve, First, Last);
             converter.SetSplitValues(mySplitValues);
@@ -83,7 +84,7 @@ public class ShapeUpgrade_ConvertCurve3dToBezier : ShapeUpgrade_SplitCurve3d
             mySplitParams.ChangeSequence().Assign(converter.SplitParams().Sequence());
             return;
         }
-        else if (myCurve is Geom_BezierCurve bezier)
+        else if (myCurve is BezierCurve3D bezier)
         {
             myNbCurves = mySplitValues.Length() - 1;
             mySplitParams.Append(First);
@@ -95,14 +96,14 @@ public class ShapeUpgrade_ConvertCurve3dToBezier : ShapeUpgrade_SplitCurve3d
             }
             else
             {
-                var besNew = (Geom_BezierCurve)bezier.Copy();
+                var besNew = (BezierCurve3D)bezier.Copy();
                 besNew.Segment(First, Last);
                 mySegments.Append(besNew);
                 myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE2);
             }
             return;
         }
-        else if (myCurve is Geom_Line aLine)
+        else if (myCurve is LineCurve3D aLine)
         {
             myNbCurves = mySplitValues.Length() - 1;
             mySplitParams.Append(First);
@@ -116,12 +117,12 @@ public class ShapeUpgrade_ConvertCurve3dToBezier : ShapeUpgrade_SplitCurve3d
             var poles = new NCollection_Array1<Point3D>(1, 2);
             poles[1] = aLine.Value(First);
             poles[2] = aLine.Value(Last);
-            var bezierLine = new Geom_BezierCurve(poles);
+            var bezierLine = new BezierCurve3D(poles);
             mySegments.Append(bezierLine);
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
             return;
         }
-        else if ((myCurve is Geom_Conic && !myConicMode) || (myCurve is Geom_Circle && !myCircleMode))
+        else if ((myCurve is ConicCurve3D && !myConicMode) || (myCurve is CircleCurve3D && !myCircleMode))
         {
             myNbCurves = mySplitValues.Length() - 1;
             mySplitParams.Append(First);
@@ -132,32 +133,32 @@ public class ShapeUpgrade_ConvertCurve3dToBezier : ShapeUpgrade_SplitCurve3d
         }
         else
         {
-            Geom_BSplineCurve aBSpline;
+            BSplineCurve3D aBSpline;
             double Shift = 0.0;
-            if (myCurve is Geom_Conic)
+            if (myCurve is ConicCurve3D)
             {
-                Geom_Curve tcurve = new Geom_TrimmedCurve(myCurve, First, Last); // protection against parabols ets
-                var approx = new GeomConvert_ApproxCurve(tcurve, Kerf.Engine.Foundation.Precision.Approximation(), C1, 100, 6);
-                if (approx.HasResult())
+                Curve3D tcurve = new TrimmedCurve3D(myCurve, First, Last); // protection against parabols ets
+                var approx = new ApproxCurve(tcurve, Kerf.Engine.Foundation.Precision.Approximation(), C1, 100, 6);
+                if (approx.HasResult)
                 {
                     aBSpline = approx.Curve()!;
                 }
                 else
                 {
-                    var t3d = new Geom_TrimmedCurve(myCurve, First, Last);
-                    aBSpline = GeomConvert.CurveToBSplineCurve(t3d, QuasiAngular);
+                    var t3d = new TrimmedCurve3D(myCurve, First, Last);
+                    aBSpline = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(t3d, QuasiAngular);
                 }
                 Shift = First - aBSpline.FirstParameter();
                 First = aBSpline.FirstParameter();
                 Last = aBSpline.LastParameter();
             }
-            else if (myCurve is not Geom_BSplineCurve)
+            else if (myCurve is not BSplineCurve3D)
             {
-                aBSpline = GeomConvert.CurveToBSplineCurve(myCurve!, QuasiAngular);
+                aBSpline = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(myCurve!, QuasiAngular);
             }
             else
             {
-                aBSpline = (Geom_BSplineCurve)myCurve;
+                aBSpline = (BSplineCurve3D)myCurve;
             }
 
             double bf = aBSpline.FirstParameter();
@@ -183,8 +184,8 @@ public class ShapeUpgrade_ConvertCurve3dToBezier : ShapeUpgrade_SplitCurve3d
                 mySplitValues.SetValue(mySplitValues.Length(), Last);
             }
 
-            var tool = new GeomConvert_BSplineCurveToBezierCurve(aBSpline, First, Last, precision);
-            int nbArcs = tool.NbArcs();
+            var tool = new BSplineCurveToBezierCurve(aBSpline, First, Last, precision);
+            int nbArcs = tool.ArcCount;
             var knots = new NCollection_Array1<double>(1, nbArcs + 1);
             tool.Knots(knots);
             mySplitParams.Append(First + Shift);
@@ -228,7 +229,7 @@ public class ShapeUpgrade_ConvertCurve3dToBezier : ShapeUpgrade_SplitCurve3d
     {
         double prec = Kerf.Engine.Foundation.Precision.PConfusion();
         int nb = mySplitValues!.Length();
-        myResultingCurves = new NCollection_HArray1<Geom_Curve>(1, nb - 1);
+        myResultingCurves = new NCollection_HArray1<Curve3D>(1, nb - 1);
         double prevPar = 0.0;
         int j = 2;
         for (int i = 2; i <= nb; i++)
@@ -246,8 +247,8 @@ public class ShapeUpgrade_ConvertCurve3dToBezier : ShapeUpgrade_SplitCurve3d
                 }
             }
 
-            var crv = (Geom_Curve)mySegments.Value(j - 1).Copy();
-            if (crv is Geom_BezierCurve bes)
+            var crv = (Curve3D)mySegments.Value(j - 1).Copy();
+            if (crv is BezierCurve3D bes)
             {
                 double uFact = mySplitParams.Value(j) - mySplitParams.Value(j - 1);
                 double pp = mySplitValues.Value(i - 1);
@@ -264,7 +265,7 @@ public class ShapeUpgrade_ConvertCurve3dToBezier : ShapeUpgrade_SplitCurve3d
     }
 
     // OCCT's private Segments(): the Bezier segments.
-    private NCollection_HSequence<Geom_Curve> Segments() => mySegments;
+    private NCollection_HSequence<Curve3D> Segments() => mySegments;
 
     /// <summary>Returns the parameters of the Bezier segments' ends.</summary>
     public NCollection_HSequence<double> SplitParams() => mySplitParams;

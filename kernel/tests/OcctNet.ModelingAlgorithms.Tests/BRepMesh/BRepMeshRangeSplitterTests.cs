@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
 using static OcctNet.ModelingAlgorithms.Tests.BRepMeshModelKit;
 
@@ -13,7 +15,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepMeshRangeSplitterTests
 {
-    private static TopoDS_Shape BezierFace()
+    private static Shape BezierFace()
     {
         var aPoles = new NCollection_Array2<Point3D>(1, 3, 1, 3);
         for (int i = 1; i <= 3; ++i)
@@ -23,17 +25,17 @@ public class BRepMeshRangeSplitterTests
                 aPoles[i, j] = new Point3D(i * 2.0, j * 2.0, (i == 2 && j == 2) ? 3.0 : 0.0);
             }
         }
-        return new BRepBuilderAPI_MakeFace(new Geom_BezierSurface(aPoles), global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
+        return new BRepBuilderAPI_MakeFace(new global::Kerf.Geometry.BezierSurface(aPoles), global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
     }
 
-    private static TopoDS_Shape ExtrusionFace()
+    private static Shape ExtrusionFace()
     {
         var aPoles = new NCollection_Array1<Point3D>(1, 4);
         aPoles[1] = new Point3D(0, 0, 0);
         aPoles[2] = new Point3D(1, 2, 0);
         aPoles[3] = new Point3D(3, -1, 0);
         aPoles[4] = new Point3D(4, 1, 0);
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Geom_BezierCurve(aPoles)).Edge();
+        Edge anEdge = new BRepBuilderAPI_MakeEdge(new BezierCurve3D(aPoles)).Edge();
         return new BRepPrimAPI_MakePrism(anEdge, new Vector3D(0, 0, 5)).Shape();
     }
 
@@ -108,7 +110,7 @@ public class BRepMeshRangeSplitterTests
 
     // Checks the splitter's nodes: inside the range, at least theMinNodes, the same bits from a new splitter and
     // after a Reset of the same one.
-    private static NCollection_List<Point2D> Check<TSplitter>(in TopoDS_Shape theShape, SurfaceKind theType,
+    private static NCollection_List<Point2D> Check<TSplitter>(in Shape theShape, SurfaceKind theType,
                                                                int theMinNodes, double theDeflection = 0.1)
         where TSplitter : BRepMesh_DefaultRangeSplitter, new()
     {
@@ -157,7 +159,7 @@ public class BRepMeshRangeSplitterTests
         var aSplitter = new BRepMesh_CylinderRangeSplitter();
         Split(aSplitter, aDFace, aParams);
         Assert.Equal(1.0, aSplitter.GetDelta().second);
-        double aDu = GCPnts_TangentialDeflection.ArcAngularStep(2.0, aDFace.GetDeflection(), aParams.Angle, aParams.MinSize);
+        double aDu = TangentialDeflection.ArcAngularStep(2.0, aDFace.GetDeflection(), aParams.Angle, aParams.MinSize);
         (double first, double second) aV = aSplitter.GetRangeV();
         Assert.Equal(aDu / Math.Max(5.0, aV.second - aV.first), aSplitter.GetDelta().first, 1e-9);
     }
@@ -202,7 +204,7 @@ public class BRepMeshRangeSplitterTests
     [Fact]
     public void NURBS_BezierFace()
     {
-        NCollection_List<Point2D> aNodes = Check<BRepMesh_NURBSRangeSplitter>(BezierFace(), BezierSurface, 4, 0.01);
+        NCollection_List<Point2D> aNodes = Check<BRepMesh_NURBSRangeSplitter>(BezierFace(), SurfaceKind.BezierSurface, 4, 0.01);
         Assert.All(aNodes, aNode => Assert.InRange(aNode.X(), 0.0, 1.0));
     }
 
@@ -223,7 +225,7 @@ public class BRepMeshRangeSplitterTests
     [Fact]
     public void BoundaryParams_BezierFace()
     {
-        Check<BRepMesh_BoundaryParamsRangeSplitter>(BezierFace(), BezierSurface, 4, 0.01);
+        Check<BRepMesh_BoundaryParamsRangeSplitter>(BezierFace(), SurfaceKind.BezierSurface, 4, 0.01);
     }
 
     [Fact]
@@ -238,7 +240,7 @@ public class BRepMeshRangeSplitterTests
         // One interval along each direction (the surface's own bounds), split at its middle where the normal is
         // defined: a grid of at most 3 by 3 parameters.
         NCollection_List<Point2D> aNodes =
-            Check<BRepMesh_UndefinedRangeSplitter>(BezierFace(), BezierSurface, 1, 0.01);
+            Check<BRepMesh_UndefinedRangeSplitter>(BezierFace(), SurfaceKind.BezierSurface, 1, 0.01);
         Assert.True(aNodes.Size() <= 9);
     }
 

@@ -6,31 +6,33 @@
 // as written (decisions 77 and 902). Properties returning a ReadOnlySpan over a constant array are stored in the
 // assembly's data section: reading them allocates nothing. Don't edit: regenerate.
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Approximation.Advanced;
 
 /// <summary>The <c>mlgdrtl_1_</c> common block: views of one constant table (decision 112).</summary>
-internal readonly ref struct mlgdrtl_1_
+internal readonly ref struct MlgdrtlCommon
 {
     /// <summary><c>double rootab[930]</c> (was [465][2]), from element 0.</summary>
-    public readonly F2cConstPtr<double> rootab;
+    public readonly global::Kerf.Engine.Approximation.Advanced.F2cConstPtr<double> rootab;
 
     /// <summary><c>double hiltab[930]</c> (was [465][2]), from element 930.</summary>
-    public readonly F2cConstPtr<double> hiltab;
+    public readonly global::Kerf.Engine.Approximation.Advanced.F2cConstPtr<double> hiltab;
 
     /// <summary><c>double hi0tab[31]</c>, from element 1860.</summary>
-    public readonly F2cConstPtr<double> hi0tab;
+    public readonly global::Kerf.Engine.Approximation.Advanced.F2cConstPtr<double> hi0tab;
 
-    internal mlgdrtl_1_(ReadOnlySpan<double> theTable)
+    internal MlgdrtlCommon(ReadOnlySpan<double> table)
     {
-        rootab = new F2cConstPtr<double>(theTable, 0);
-        hiltab = new F2cConstPtr<double>(theTable, 930);
-        hi0tab = new F2cConstPtr<double>(theTable, 1860);
+        rootab = new global::Kerf.Engine.Approximation.Advanced.F2cConstPtr<double>(table, 0);
+        hiltab = new global::Kerf.Engine.Approximation.Advanced.F2cConstPtr<double>(table, 930);
+        hi0tab = new global::Kerf.Engine.Approximation.Advanced.F2cConstPtr<double>(table, 1860);
     }
 }
 
-internal static partial class AdvApp2Var_Data
+internal static partial class Data
 {
-    public static mlgdrtl_1_ Getmlgdrtl() => new(s_e_Mlgdrtl);
+    public static MlgdrtlCommon Getmlgdrtl() => new(s_e_Mlgdrtl);
 
     // C++: static double e_1[1891], cast to mlgdrtl_1_.
     private static ReadOnlySpan<double> s_e_Mlgdrtl => [

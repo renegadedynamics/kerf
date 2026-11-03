@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.IntSurf_TypeTrans;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -16,11 +19,11 @@ public class IntPatch_RstIntTests
     public void PutVertexOnLine_puts_the_crossings_of_a_square_face_on_the_line()
     {
         // Surf: the square [0, 10] x [0, 10] of the plane z = 0 (u = x, v = y). OtherSurf: the plane x = 5.
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 10, 0, 10).Face();
-        BRepAdaptor_Surface aSurf = new(aFace);
+        Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 10, 0, 10).Face();
+        FaceSurfaceAdaptor aSurf = new(aFace);
         BRepTopAdaptor_TopolTool aDomain = new(aSurf);
         Plane3D aPln2 = new(new Point3D(5, 0, 0), new Direction3D(1, 0, 0));
-        GeomAdaptor_Surface aOther = new(new Geom_Plane(aPln2));
+        SurfaceAdaptor aOther = new(new PlaneSurface(aPln2));
 
         // The intersection line x = 5, z = 0, from y = -2.5 to 11.5 by steps of 1.
         IntSurf_LineOn2S aCurve = new();
@@ -55,7 +58,7 @@ public class IntPatch_RstIntTests
             Assert.False(aV.IsVertexOnS1());
 
             // The arc's parameter gives the crossing.
-            Adaptor2d_Curve2d anArc = aV.ArcOnS1();
+            Curve2DAdaptorBase anArc = aV.ArcOnS1();
             Assert.True(anArc.Value(aV.ParameterOnArc1()).Distance(new Point2D(5, aY[i - 2])) < 1e-7);
             aV.ParametersOnS1(out double u1, out double v1);
             Assert.Equal(5.0, u1, 1e-7);
@@ -76,8 +79,8 @@ public class IntPatch_RstIntTests
     [Fact]
     public void PutVertexOnLine_needs_the_points_of_a_restriction_line()
     {
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 10, 0, 10).Face();
-        BRepAdaptor_Surface aSurf = new(aFace);
+        Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 10, 0, 10).Face();
+        FaceSurfaceAdaptor aSurf = new(aFace);
         Assert.Throws<DomainErrorException>(() => IntPatch_RstInt.PutVertexOnLine(
             new IntPatch_RLine(false), aSurf, new BRepTopAdaptor_TopolTool(aSurf), aSurf, true, 1e-7));
     }

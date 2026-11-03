@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -17,7 +18,7 @@ namespace Occt;
 /// In cylindrical coordinates: x(t) = r(t) cos t, y(t) = r(t) sin t (negated when counter-clockwise),
 /// z(t) = pitch t / 2π, with r(t) = rStart + pitch tan(taper) t / 2π. An adaptor is a working object (decision 21).
 /// </remarks>
-public class HelixGeom_HelixCurve : Adaptor3d_Curve
+public class HelixGeom_HelixCurve : CurveAdaptorBase
 {
     protected double myFirst;
     protected double myLast;
@@ -130,10 +131,10 @@ public class HelixGeom_HelixCurve : Adaptor3d_Curve
     public override double Resolution(double R3d) => throw new MethodNotImplementedException("HelixGeom_HelixCurve::Resolution");
 
     /// <summary>Not implemented: throws <see cref="MethodNotImplementedException"/>.</summary>
-    public override bool IsClosed() => throw new MethodNotImplementedException("HelixGeom_HelixCurve::IsClosed");
+    public override bool IsClosed => throw new MethodNotImplementedException("HelixGeom_HelixCurve::IsClosed");
 
     /// <summary>Not implemented: throws <see cref="MethodNotImplementedException"/>.</summary>
-    public override bool IsPeriodic() => throw new MethodNotImplementedException("HelixGeom_HelixCurve::IsPeriodic");
+    public override bool IsPeriodic => throw new MethodNotImplementedException("HelixGeom_HelixCurve::IsPeriodic");
 
     /// <summary>Throws <see cref="DomainErrorException"/>: the helix isn't periodic.</summary>
     public override double Period() => throw new DomainErrorException("HelixGeom_HelixCurve::Period");
@@ -158,7 +159,7 @@ public class HelixGeom_HelixCurve : Adaptor3d_Curve
     }
 
     /// <summary>The point and first derivative at <paramref name="theT"/>.</summary>
-    public sealed override Geom_Curve.ResD1 EvalD1(double theT)
+    public sealed override Curve3D.ResD1 EvalD1(double theT)
     {
         double aST, aCT, aX, aY, aZ, a1, a2;
         // Calculate point and first derivative
@@ -187,11 +188,11 @@ public class HelixGeom_HelixCurve : Adaptor3d_Curve
         }
         aZ = myC1;
         Vector3D aV1 = new(aX, aY, aZ);
-        return new Geom_Curve.ResD1 { Point = aP, D1 = aV1 };
+        return new Curve3D.ResD1 { Point = aP, D1 = aV1 };
     }
 
     /// <summary>The point and first two derivatives at <paramref name="theT"/>.</summary>
-    public sealed override Geom_Curve.ResD2 EvalD2(double theT)
+    public sealed override Curve3D.ResD2 EvalD2(double theT)
     {
         double aST, aCT, aX, aY, aZ, a1, a2;
         // Calculate point, first and second derivatives
@@ -230,7 +231,7 @@ public class HelixGeom_HelixCurve : Adaptor3d_Curve
         }
         aZ = 0.0;
         Vector3D aV2 = new(aX, aY, aZ);
-        return new Geom_Curve.ResD2 { Point = aP, D1 = aV1, D2 = aV2 };
+        return new Curve3D.ResD2 { Point = aP, D1 = aV1, D2 = aV2 };
     }
 
     /// <summary>The derivative of order 1 or 2 at <paramref name="theT"/>; throws <see cref="MethodNotImplementedException"/> for other orders.</summary>
@@ -241,12 +242,12 @@ public class HelixGeom_HelixCurve : Adaptor3d_Curve
         {
             case 1:
             {
-                Geom_Curve.ResD1 aRes = EvalD1(theT);
+                Curve3D.ResD1 aRes = EvalD1(theT);
                 return aRes.D1;
             }
             case 2:
             {
-                Geom_Curve.ResD2 aRes = EvalD2(theT);
+                Curve3D.ResD2 aRes = EvalD2(theT);
                 return aRes.D2;
             }
             default:

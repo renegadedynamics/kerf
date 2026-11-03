@@ -2,9 +2,10 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.IntRes2d_Position;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -113,10 +114,10 @@ public class TopClassTests
 
         public bool RejectEdge(in Line2D L, double Par) => false;
 
-        public void CurrentEdge(ref TestEdge E, out TopAbs_Orientation Or)
+        public void CurrentEdge(ref TestEdge E, out Orientation Or)
         {
             E = theWires[myWire][myEdge];
-            Or = TopAbs_FORWARD;
+            Or = Forward;
         }
     }
 
@@ -126,7 +127,7 @@ public class TopClassTests
         private Line2D myLin = new();
         private double myParam;
         private double myTolerance;
-        private TopAbs_State myState = TopAbs_UNKNOWN;
+        private Containment myState = Unknown;
         private bool myFirstCompare = true;
         private bool myFirstTrans = true;
         private int myClosest;
@@ -139,7 +140,7 @@ public class TopClassTests
             => TopClass_Classifier2d.Reset(out myLin, out myParam, out myTolerance, out myState, out myFirstCompare,
                                            out myFirstTrans, out myClosest, out myIsSet, out myIsHeadOrEnd, L, P, Tol);
 
-        public void Compare(in TestEdge E, TopAbs_Orientation Or)
+        public void Compare(in TestEdge E, Orientation Or)
             => TopClass_Classifier2d.Compare(ref myClosest, myIntersector, myLin, ref myParam, myTolerance,
                                              ref myState, ref myFirstCompare, ref myFirstTrans, myTrans,
                                              ref myIsHeadOrEnd, E, Or);
@@ -150,7 +151,7 @@ public class TopClassTests
 
         public IntRes2d_Intersection Intersector() => myIntersector;
 
-        public TopAbs_State State() => myState;
+        public Containment State() => myState;
 
         public bool IsHeadOrEnd() => myIsHeadOrEnd;
 
@@ -174,7 +175,7 @@ public class TopClassTests
         new(new Point2D(0.6, 0.4), new Point2D(0.4, 0.4)),
     ];
 
-    private static (TopAbs_State State, TestEdge Edge, IntRes2d_Position Position, double Parameter) Classify(
+    private static (Containment State, TestEdge Edge, IntRes2d_Position Position, double Parameter) Classify(
         Point2D theP, TestEdge[][] theWires, params Point2D[] theTargets)
     {
         var aClassifier = new TestFClass2d();
@@ -186,7 +187,7 @@ public class TopClassTests
         TopClass_FaceClassifier.Perform(out bool aRejected, ref aNoWires, aClassifier, ref anEdge, ref aPosition,
                                         ref aParameter, anExplorer, theP, 1e-9);
         Assert.True(aClassifier.IsSet());
-        TopAbs_State aState = TopClass_FaceClassifier.State(aRejected, aNoWires, aClassifier);
+        Containment aState = TopClass_FaceClassifier.State(aRejected, aNoWires, aClassifier);
         if (aClassifier.ClosestIntersection() != 0)
         {
             Assert.Equal(aParameter, TopClass_FaceClassifier.EdgeParameter(aRejected, aParameter));
@@ -200,7 +201,7 @@ public class TopClassTests
     public void Inside_ThroughTheMiddleOfAnEdge()
     {
         var aResult = Classify(new Point2D(0.5, 0.25), [theSquare], new Point2D(1, 0.4));
-        Assert.Equal(TopAbs_IN, aResult.State);
+        Assert.Equal(In, aResult.State);
         Assert.Equal(theSquare[1], aResult.Edge);
         Assert.Equal(IntRes2d_Middle, aResult.Position);
         Assert.Equal(0.4, aResult.Parameter, 12);
@@ -211,7 +212,7 @@ public class TopClassTests
     {
         // From (2, 0.5) towards (0.5, 0): the half-line crosses the right edge first, entering the face.
         var aResult = Classify(new Point2D(2, 0.5), [theSquare], new Point2D(0.5, 0));
-        Assert.Equal(TopAbs_OUT, aResult.State);
+        Assert.Equal(Out, aResult.State);
         Assert.Equal(theSquare[1], aResult.Edge);
     }
 
@@ -219,7 +220,7 @@ public class TopClassTests
     public void On_AnEdge()
     {
         var aResult = Classify(new Point2D(1, 0.5), [theSquare], new Point2D(0, 0.3));
-        Assert.Equal(TopAbs_ON, aResult.State);
+        Assert.Equal(On, aResult.State);
         Assert.Equal(theSquare[1], aResult.Edge);
         Assert.Equal(0.5, aResult.Parameter, 12);
     }
@@ -229,7 +230,7 @@ public class TopClassTests
     {
         // Through the corner (1, 1): two edge ends, decided by the complex transition (TopTrans).
         var aResult = Classify(new Point2D(0.5, 0.5), [theSquare], new Point2D(1, 1));
-        Assert.Equal(TopAbs_IN, aResult.State);
+        Assert.Equal(In, aResult.State);
         Assert.True(aResult.Position is IntRes2d_Head or IntRes2d_End);
     }
 
@@ -237,27 +238,27 @@ public class TopClassTests
     public void Outside_ThroughAVertex()
     {
         var aResult = Classify(new Point2D(2, 2), [theSquare], new Point2D(1, 1));
-        Assert.Equal(TopAbs_OUT, aResult.State);
+        Assert.Equal(Out, aResult.State);
     }
 
     [Fact]
     public void Hole_InsideTheHoleIsOutside()
     {
-        Assert.Equal(TopAbs_OUT, Classify(new Point2D(0.5, 0.5), [theSquare, theHole], new Point2D(1, 0.55)).State);
-        Assert.Equal(TopAbs_IN, Classify(new Point2D(0.2, 0.5), [theSquare, theHole], new Point2D(1, 0.55)).State);
-        Assert.Equal(TopAbs_IN, Classify(new Point2D(0.8, 0.5), [theSquare, theHole], new Point2D(0, 0.45)).State);
+        Assert.Equal(Out, Classify(new Point2D(0.5, 0.5), [theSquare, theHole], new Point2D(1, 0.55)).State);
+        Assert.Equal(In, Classify(new Point2D(0.2, 0.5), [theSquare, theHole], new Point2D(1, 0.55)).State);
+        Assert.Equal(In, Classify(new Point2D(0.8, 0.5), [theSquare, theHole], new Point2D(0, 0.45)).State);
     }
 
     [Fact]
     public void NoWires_IsInside()
     {
-        Assert.Equal(TopAbs_IN, Classify(new Point2D(5, 5), [], new Point2D(0, 0)).State);
+        Assert.Equal(In, Classify(new Point2D(5, 5), [], new Point2D(0, 0)).State);
     }
 
     [Fact]
     public void Rejected_IsOutside()
     {
-        Assert.Equal(TopAbs_OUT, TopClass_FaceClassifier.State(true, false, new TestFClass2d()));
+        Assert.Equal(Out, TopClass_FaceClassifier.State(true, false, new TestFClass2d()));
         Assert.ThrowsAny<DomainErrorException>(() => TopClass_FaceClassifier.EdgeParameter(true, 0.5));
         Assert.ThrowsAny<DomainErrorException>(() => TopClass_FaceClassifier.Edge(true, theSquare[0]));
     }

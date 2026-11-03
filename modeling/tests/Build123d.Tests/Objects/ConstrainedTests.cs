@@ -8,6 +8,7 @@
 //   (an unexpected keyword, one tangency, a ("three", 0) tangency): argument-type checks the overloads rule out.
 // - test_higher_level_constrained_arcs/lines, the BuildLine parts: builder mode (phase 5); the selectors are
 //   checked in algebra form instead.
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Occt;
 
@@ -19,7 +20,7 @@ public class ConstrainedArcsTests
     internal static bool Have3DCurves(IEnumerable<Edge> edges) => edges.All(e =>
     {
         double f = 0, l = 0;
-        var curve = BRep_Tool.Curve(e.TopoEdge, out f, out l);
+        var curve = Tool.Curve(e.TopoEdge, out f, out l);
         return curve is not null;
     });
 

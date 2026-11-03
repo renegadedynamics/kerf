@@ -1,6 +1,7 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/ExtremaPC_BSplineCurve_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -12,7 +13,7 @@ public class ExtremaPC_BSplineCurveTest
     private const double THE_TOL = 1.0e-6;
 
     // Create a simple cubic BSpline curve (arc-like).
-    private Geom_BSplineCurve createCubicBSpline()
+    private BSplineCurve3D createCubicBSpline()
     {
         NCollection_Array1<Point3D> aPoles = new(1, 4);
         aPoles[1] = new Point3D(0, 0, 0);
@@ -28,11 +29,11 @@ public class ExtremaPC_BSplineCurveTest
         aMults[1] = 4;
         aMults[2] = 4;
 
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 3);
     }
 
     // Create a linear BSpline (degree 1).
-    private Geom_BSplineCurve createLinearBSpline()
+    private BSplineCurve3D createLinearBSpline()
     {
         NCollection_Array1<Point3D> aPoles = new(1, 2);
         aPoles[1] = new Point3D(0, 0, 0);
@@ -46,11 +47,11 @@ public class ExtremaPC_BSplineCurveTest
         aMults[1] = 2;
         aMults[2] = 2;
 
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 1);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 1);
     }
 
     // Create a quadratic BSpline.
-    private Geom_BSplineCurve createQuadraticBSpline()
+    private BSplineCurve3D createQuadraticBSpline()
     {
         NCollection_Array1<Point3D> aPoles = new(1, 3);
         aPoles[1] = new Point3D(0, 0, 0);
@@ -65,12 +66,12 @@ public class ExtremaPC_BSplineCurveTest
         aMults[1] = 3;
         aMults[2] = 3;
 
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 2);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 2);
     }
 
     // Create a BSpline with multiple knots (more spans).
     // For 5 poles and degree 2: sum of mults = 5 + 2 + 1 = 8
-    private Geom_BSplineCurve createMultiSpanBSpline()
+    private BSplineCurve3D createMultiSpanBSpline()
     {
         NCollection_Array1<Point3D> aPoles = new(1, 5);
         aPoles[1] = new Point3D(0, 0, 0);
@@ -91,11 +92,11 @@ public class ExtremaPC_BSplineCurveTest
         aMults[3] = 1;
         aMults[4] = 3;
 
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 2);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 2);
     }
 
     // Create a 3D BSpline (not in XY plane).
-    private Geom_BSplineCurve create3DBSpline()
+    private BSplineCurve3D create3DBSpline()
     {
         NCollection_Array1<Point3D> aPoles = new(1, 4);
         aPoles[1] = new Point3D(0, 0, 0);
@@ -111,7 +112,7 @@ public class ExtremaPC_BSplineCurveTest
         aMults[1] = 4;
         aMults[2] = 4;
 
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 3);
     }
 
     //==================================================================================================
@@ -121,15 +122,15 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void PointOnCurve_Start()
     {
-        Geom_BSplineCurve aBSpline = createCubicBSpline();
+        BSplineCurve3D aBSpline = createCubicBSpline();
         Point3D aPoint = new(0.0, 0.0, 0.0);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        CurveAdaptor anAdaptor = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         double aMinSqDist = aResult.MinSquareDistance();
         Assert.Equal(0.0, aMinSqDist, THE_TOL);
@@ -138,15 +139,15 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void PointOnCurve_End()
     {
-        Geom_BSplineCurve aBSpline = createCubicBSpline();
+        BSplineCurve3D aBSpline = createCubicBSpline();
         Point3D aPoint = new(3.0, 0.0, 0.0);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        CurveAdaptor anAdaptor = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         double aMinSqDist = aResult.MinSquareDistance();
         Assert.Equal(0.0, aMinSqDist, THE_TOL);
@@ -155,15 +156,15 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void PointOnCurve_Middle()
     {
-        Geom_BSplineCurve aBSpline = createCubicBSpline();
+        BSplineCurve3D aBSpline = createCubicBSpline();
         Point3D aPoint = aBSpline.Value(0.5);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        CurveAdaptor anAdaptor = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         double aMinSqDist = aResult.MinSquareDistance();
         Assert.Equal(0.0, aMinSqDist, THE_TOL);
@@ -176,15 +177,15 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void PointNearCurve_Above()
     {
-        Geom_BSplineCurve aBSpline = createCubicBSpline();
+        BSplineCurve3D aBSpline = createCubicBSpline();
         Point3D aPoint = new(1.5, 3.0, 0.0);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        CurveAdaptor anAdaptor = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify distance is reasonable
         double aMinSqDist = aResult.MinSquareDistance();
@@ -195,15 +196,15 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void PointNearCurve_Below()
     {
-        Geom_BSplineCurve aBSpline = createCubicBSpline();
+        BSplineCurve3D aBSpline = createCubicBSpline();
         Point3D aPoint = new(1.5, -1.0, 0.0);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        CurveAdaptor anAdaptor = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify closest point is on the curve
         int aMinIdx = aResult.MinIndex();
@@ -217,15 +218,15 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void PointNearCurve_OutOfPlane()
     {
-        Geom_BSplineCurve aBSpline = createCubicBSpline();
+        BSplineCurve3D aBSpline = createCubicBSpline();
         Point3D aPoint = new(1.5, 2.0, 5.0);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        CurveAdaptor anAdaptor = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Distance should include Z offset
         double aMinSqDist = aResult.MinSquareDistance();
@@ -239,15 +240,15 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void LinearBSpline_PointOnLine()
     {
-        Geom_BSplineCurve aBSpline = createLinearBSpline();
+        BSplineCurve3D aBSpline = createLinearBSpline();
         Point3D aPoint = new(5.0, 0.0, 0.0);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        CurveAdaptor anAdaptor = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         double aMinSqDist = aResult.MinSquareDistance();
         Assert.Equal(0.0, aMinSqDist, THE_TOL);
@@ -256,15 +257,15 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void LinearBSpline_PointOffLine()
     {
-        Geom_BSplineCurve aBSpline = createLinearBSpline();
+        BSplineCurve3D aBSpline = createLinearBSpline();
         Point3D aPoint = new(5.0, 3.0, 4.0);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        CurveAdaptor anAdaptor = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         double aMinSqDist = aResult.MinSquareDistance();
         Assert.Equal(25.0, aMinSqDist, THE_TOL); // 3^2 + 4^2 = 25
@@ -277,15 +278,15 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void QuadraticBSpline_PointNear()
     {
-        Geom_BSplineCurve aBSpline = createQuadraticBSpline();
+        BSplineCurve3D aBSpline = createQuadraticBSpline();
         Point3D aPoint = new(5.0, 8.0, 0.0);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        CurveAdaptor anAdaptor = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify closest point is on the curve and distance is consistent
         int aMinIdx = aResult.MinIndex();
@@ -297,15 +298,15 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void QuadraticBSpline_PointOnApex()
     {
-        Geom_BSplineCurve aBSpline = createQuadraticBSpline();
+        BSplineCurve3D aBSpline = createQuadraticBSpline();
         // Apex is approximately at middle
         Point3D aPoint = aBSpline.Value(0.5);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        CurveAdaptor anAdaptor = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         double aMinSqDist = aResult.MinSquareDistance();
         Assert.Equal(0.0, aMinSqDist, THE_TOL);
@@ -318,15 +319,15 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void MultiSpanBSpline_PointNear()
     {
-        Geom_BSplineCurve aBSpline = createMultiSpanBSpline();
+        BSplineCurve3D aBSpline = createMultiSpanBSpline();
         Point3D aPoint = new(2.5, 3.0, 0.0);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        CurveAdaptor anAdaptor = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify closest point is on the curve
         int aMinIdx = aResult.MinIndex();
@@ -340,19 +341,19 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void MultiSpanBSpline_MultipleExtrema()
     {
-        Geom_BSplineCurve aBSpline = createMultiSpanBSpline();
+        BSplineCurve3D aBSpline = createMultiSpanBSpline();
         Point3D aPoint = new(2.5, 1.0, 0.0);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        CurveAdaptor anAdaptor = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         // With oscillating curve, might find multiple local extrema
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify all extrema are on the curve
-        for (int i = 0; i < aResult.NbExt(); ++i)
+        for (int i = 0; i < aResult.ExtCount; ++i)
         {
             Point3D aPtOnCurve = aBSpline.Value(aResult[i].Parameter);
             Assert.Equal(0.0, aResult[i].Point.Distance(aPtOnCurve), THE_TOL);
@@ -366,14 +367,14 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void BSpline3D_PointOn()
     {
-        Geom_BSplineCurve aBSpline = create3DBSpline();
+        BSplineCurve3D aBSpline = create3DBSpline();
         Point3D aPoint = aBSpline.Value(0.5);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        CurveAdaptor anAdaptor = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         double aMinSqDist = aResult.MinSquareDistance();
         Assert.Equal(0.0, aMinSqDist, THE_TOL);
@@ -382,15 +383,15 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void BSpline3D_PointNear()
     {
-        Geom_BSplineCurve aBSpline = create3DBSpline();
+        BSplineCurve3D aBSpline = create3DBSpline();
         Point3D aPoint = new(1.5, 2.0, 1.5);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        CurveAdaptor anAdaptor = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify closest point is on the curve and distance is consistent
         int aMinIdx = aResult.MinIndex();
@@ -406,18 +407,18 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void PartialRange_FirstHalf()
     {
-        Geom_BSplineCurve aBSpline = createCubicBSpline();
+        BSplineCurve3D aBSpline = createCubicBSpline();
         Point3D aPoint = new(2.5, 1.0, 0.0);
 
         // Create evaluator with domain restricted to first half [0, 0.5]
-        ExtremaPC_BSplineCurve anEval = new(aBSpline, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(0.0, 0.5));
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(0.0, 0.5));
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // All parameters should be in first half
-        for (int i = 0; i < aResult.NbExt(); ++i)
+        for (int i = 0; i < aResult.ExtCount; ++i)
         {
             Assert.True(aResult[i].Parameter >= 0.0 - THE_TOL);
             Assert.True(aResult[i].Parameter <= 0.5 + THE_TOL);
@@ -427,18 +428,18 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void PartialRange_SecondHalf()
     {
-        Geom_BSplineCurve aBSpline = createCubicBSpline();
+        BSplineCurve3D aBSpline = createCubicBSpline();
         Point3D aPoint = new(0.5, 1.0, 0.0);
 
         // Create evaluator with domain restricted to second half [0.5, 1.0]
-        ExtremaPC_BSplineCurve anEval = new(aBSpline, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(0.5, 1.0));
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(0.5, 1.0));
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // All parameters should be in second half
-        for (int i = 0; i < aResult.NbExt(); ++i)
+        for (int i = 0; i < aResult.ExtCount; ++i)
         {
             Assert.True(aResult[i].Parameter >= 0.5 - THE_TOL);
             Assert.True(aResult[i].Parameter <= 1.0 + THE_TOL);
@@ -452,15 +453,15 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void VerifyProjectedPoint()
     {
-        Geom_BSplineCurve aBSpline = createCubicBSpline();
+        BSplineCurve3D aBSpline = createCubicBSpline();
         Point3D aPoint = new(1.5, 3.0, 0.0);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        CurveAdaptor anAdaptor = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify the projected point is on the curve
         int aMinIdx = aResult.MinIndex();
@@ -473,15 +474,15 @@ public class ExtremaPC_BSplineCurveTest
     [Fact]
     public void VerifyDistanceConsistency()
     {
-        Geom_BSplineCurve aBSpline = createCubicBSpline();
+        BSplineCurve3D aBSpline = createCubicBSpline();
         Point3D aPoint = new(2.0, 2.5, 1.0);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        CurveAdaptor anAdaptor = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify distance matches point distance
         int aMinIdx = aResult.MinIndex();
@@ -497,16 +498,16 @@ public class ExtremaPC_BSplineCurveTest
     public void RefinementConfig_DisableRefinement()
     {
         // Test that disabling refinement works
-        Geom_BSplineCurve aBSpline = createCubicBSpline();
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
+        BSplineCurve3D aBSpline = createCubicBSpline();
+        CurveAdaptor anAdaptor = new(aBSpline);
         Point3D aPoint = new(1.5, 2.0, 0.0);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         // Should work normally even with default refinement enabled
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
     }
 
     [Fact]
@@ -530,17 +531,17 @@ public class ExtremaPC_BSplineCurveTest
         aMults[1] = 8;
         aMults[2] = 8;
 
-        Geom_BSplineCurve aBSpline = new Geom_BSplineCurve(aPoles, aKnots, aMults, 7);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
+        BSplineCurve3D aBSpline = new BSplineCurve3D(aPoles, aKnots, aMults, 7);
+        CurveAdaptor anAdaptor = new(aBSpline);
 
         // Point that requires accurate projection
         Point3D aPoint = new(1.75, 0.8, 0.0);
 
-        ExtremaPC_BSplineCurve anEval = new(aBSpline);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.BSplineCurveExtrema anEval = new(aBSpline);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify the closest point is on the curve
         int aMinIdx = aResult.MinIndex();

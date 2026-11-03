@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -10,13 +12,13 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class IntTools_FaceFace_Test
 {
     //! Create a half-cylinder face.
-    private static TopoDS_Face CreateHalfCylinderFace(Point3D theCenter, Direction3D theAxis, double theRadius,
+    private static Face CreateHalfCylinderFace(Point3D theCenter, Direction3D theAxis, double theRadius,
                                                       double theVMin, double theVMax, double theUMin = 0.0,
                                                       double theUMax = Math.PI)
     {
         // Create cylinder surface
         CoordinateSystem anAx3 = new(theCenter, theAxis);
-        Geom_CylindricalSurface aCylSurf = new(anAx3, theRadius);
+        CylindricalSurface aCylSurf = new(anAx3, theRadius);
 
         // Create face with parameter bounds
         BRepBuilderAPI_MakeFace aFaceMaker = new(aCylSurf, theUMin, theUMax, theVMin, theVMax, 1e-7);
@@ -24,27 +26,27 @@ public class IntTools_FaceFace_Test
     }
 
     //! Create a full cylinder face with finite V range.
-    private static TopoDS_Face CreateCylinderFace(Point3D theCenter, Direction3D theAxis, double theRadius, double theVMin,
+    private static Face CreateCylinderFace(Point3D theCenter, Direction3D theAxis, double theRadius, double theVMin,
                                                   double theVMax)
         => CreateHalfCylinderFace(theCenter, theAxis, theRadius, theVMin, theVMax, 0.0, 2.0 * Math.PI);
 
     //! Create a circular planar face.
-    private static TopoDS_Face CreateCircularPlaneFace(Point3D theCenter, Direction3D theNormal, double theRadius)
+    private static Face CreateCircularPlaneFace(Point3D theCenter, Direction3D theNormal, double theRadius)
     {
         // Create plane
         Plane3D aPln = new(theCenter, theNormal);
-        Geom_Plane aPlane = new(aPln);
+        PlaneSurface aPlane = new(aPln);
 
         // Create circular edge on the plane
         Frame3D aCircAx = new(theCenter, theNormal);
         Circle3D aCirc = new(aCircAx, theRadius);
 
         BRepBuilderAPI_MakeEdge anEdgeMaker = new(aCirc);
-        TopoDS_Edge aCircEdge = anEdgeMaker.Edge();
+        Edge aCircEdge = anEdgeMaker.Edge();
 
         // Create wire from circular edge
         BRepBuilderAPI_MakeWire aWireMaker = new(aCircEdge);
-        TopoDS_Wire aWire = aWireMaker.Wire();
+        Wire aWire = aWireMaker.Wire();
 
         // Create face from plane with circular wire
         BRepBuilderAPI_MakeFace aFaceMaker = new(aPlane, aWire, true);
@@ -70,11 +72,11 @@ public class IntTools_FaceFace_Test
         const double aCyl2VMin = 0.0;
         const double aCyl2VMax = 4.0;
 
-        TopoDS_Face aFace1 = CreateCylinderFace(aCyl1Center, aCyl1Axis, aCyl1Radius, aCyl1VMin, aCyl1VMax);
-        TopoDS_Face aFace2 = CreateCylinderFace(aCyl2Center, aCyl2Axis, aCyl2Radius, aCyl2VMin, aCyl2VMax);
+        Face aFace1 = CreateCylinderFace(aCyl1Center, aCyl1Axis, aCyl1Radius, aCyl1VMin, aCyl1VMax);
+        Face aFace2 = CreateCylinderFace(aCyl2Center, aCyl2Axis, aCyl2Radius, aCyl2VMin, aCyl2VMax);
 
-        Assert.False(aFace1.IsNull(), "Failed to create first cylinder face");
-        Assert.False(aFace2.IsNull(), "Failed to create second cylinder face");
+        Assert.False(aFace1.IsNull, "Failed to create first cylinder face");
+        Assert.False(aFace2.IsNull, "Failed to create second cylinder face");
 
         IntTools_FaceFace aFF12 = new();
         aFF12.SetParameters(true, true, true, 1.0e-7);
@@ -112,11 +114,11 @@ public class IntTools_FaceFace_Test
         const double aVMin = -1.0;
         const double aVMax = 1.0;
 
-        TopoDS_Face aCircularPlane = CreateCircularPlaneFace(aPlaneCenter, aPlaneNormal, aPlaneRadius);
-        TopoDS_Face aHalfCylinder = CreateHalfCylinderFace(aCylCenter, aCylAxis, aCylRadius, aVMin, aVMax);
+        Face aCircularPlane = CreateCircularPlaneFace(aPlaneCenter, aPlaneNormal, aPlaneRadius);
+        Face aHalfCylinder = CreateHalfCylinderFace(aCylCenter, aCylAxis, aCylRadius, aVMin, aVMax);
 
-        Assert.False(aCircularPlane.IsNull(), "Failed to create circular plane face");
-        Assert.False(aHalfCylinder.IsNull(), "Failed to create half-cylinder face");
+        Assert.False(aCircularPlane.IsNull, "Failed to create circular plane face");
+        Assert.False(aHalfCylinder.IsNull, "Failed to create half-cylinder face");
 
         IntTools_FaceFace aFF = new();
         aFF.SetParameters(true, true, true, 1.0e-7);
@@ -144,11 +146,11 @@ public class IntTools_FaceFace_Test
         const double aVMin = -1.0;
         const double aVMax = 1.0;
 
-        TopoDS_Face aCircularPlane = CreateCircularPlaneFace(aPlaneCenter, aPlaneNormal, aPlaneRadius);
-        TopoDS_Face aHalfCylinder = CreateHalfCylinderFace(aCylCenter, aCylAxis, aCylRadius, aVMin, aVMax);
+        Face aCircularPlane = CreateCircularPlaneFace(aPlaneCenter, aPlaneNormal, aPlaneRadius);
+        Face aHalfCylinder = CreateHalfCylinderFace(aCylCenter, aCylAxis, aCylRadius, aVMin, aVMax);
 
-        Assert.False(aCircularPlane.IsNull(), "Failed to create circular plane face");
-        Assert.False(aHalfCylinder.IsNull(), "Failed to create half-cylinder face");
+        Assert.False(aCircularPlane.IsNull, "Failed to create circular plane face");
+        Assert.False(aHalfCylinder.IsNull, "Failed to create half-cylinder face");
 
         IntTools_FaceFace aFF = new();
         aFF.SetParameters(true, true, true, 1.0e-7);
@@ -175,12 +177,12 @@ public class IntTools_FaceFace_Test
         const double aVMax = 1.0;
 
         // Create the opposite half: U in [PI, 2*PI] (bulges toward +Z, toward plane center)
-        TopoDS_Face aCircularPlane = CreateCircularPlaneFace(aPlaneCenter, aPlaneNormal, aPlaneRadius);
-        TopoDS_Face aHalfCylinder = CreateHalfCylinderFace(aCylCenter, aCylAxis, aCylRadius, aVMin, aVMax, Math.PI,
+        Face aCircularPlane = CreateCircularPlaneFace(aPlaneCenter, aPlaneNormal, aPlaneRadius);
+        Face aHalfCylinder = CreateHalfCylinderFace(aCylCenter, aCylAxis, aCylRadius, aVMin, aVMax, Math.PI,
                                                            2.0 * Math.PI);
 
-        Assert.False(aCircularPlane.IsNull(), "Failed to create circular plane face");
-        Assert.False(aHalfCylinder.IsNull(), "Failed to create half-cylinder face");
+        Assert.False(aCircularPlane.IsNull, "Failed to create circular plane face");
+        Assert.False(aHalfCylinder.IsNull, "Failed to create half-cylinder face");
 
         IntTools_FaceFace aFF = new();
         aFF.SetParameters(true, true, true, 1.0e-7);
@@ -206,12 +208,12 @@ public class IntTools_FaceFace_Test
         const double aVMin = -1.0;
         const double aVMax = 1.0;
 
-        TopoDS_Face aCircularPlane = CreateCircularPlaneFace(aPlaneCenter, aPlaneNormal, aPlaneRadius);
-        TopoDS_Face aHalfCylinder = CreateHalfCylinderFace(aCylCenter, aCylAxis, aCylRadius, aVMin, aVMax, 0.0,
+        Face aCircularPlane = CreateCircularPlaneFace(aPlaneCenter, aPlaneNormal, aPlaneRadius);
+        Face aHalfCylinder = CreateHalfCylinderFace(aCylCenter, aCylAxis, aCylRadius, aVMin, aVMax, 0.0,
                                                            Math.PI);
 
-        Assert.False(aCircularPlane.IsNull(), "Failed to create circular plane face");
-        Assert.False(aHalfCylinder.IsNull(), "Failed to create half-cylinder face");
+        Assert.False(aCircularPlane.IsNull, "Failed to create circular plane face");
+        Assert.False(aHalfCylinder.IsNull, "Failed to create half-cylinder face");
 
         IntTools_FaceFace aFF = new();
         aFF.SetParameters(true, true, true, 1.0e-7);
@@ -238,12 +240,12 @@ public class IntTools_FaceFace_Test
         const double aVMax = 1.0;
 
         // Test first half
-        TopoDS_Face aCircularPlane = CreateCircularPlaneFace(aPlaneCenter, aPlaneNormal, aPlaneRadius);
-        TopoDS_Face aHalfCylinder1 = CreateHalfCylinderFace(aCylCenter, aCylAxis, aCylRadius, aVMin, aVMax, 0.0,
+        Face aCircularPlane = CreateCircularPlaneFace(aPlaneCenter, aPlaneNormal, aPlaneRadius);
+        Face aHalfCylinder1 = CreateHalfCylinderFace(aCylCenter, aCylAxis, aCylRadius, aVMin, aVMax, 0.0,
                                                             Math.PI);
 
-        Assert.False(aCircularPlane.IsNull());
-        Assert.False(aHalfCylinder1.IsNull());
+        Assert.False(aCircularPlane.IsNull);
+        Assert.False(aHalfCylinder1.IsNull);
 
         IntTools_FaceFace aFF1 = new();
         aFF1.SetParameters(true, true, true, 1.0e-7);
@@ -254,10 +256,10 @@ public class IntTools_FaceFace_Test
         Assert.Equal(0, aFF1.Points().Length());
 
         // Test opposite half
-        TopoDS_Face aHalfCylinder2 = CreateHalfCylinderFace(aCylCenter, aCylAxis, aCylRadius, aVMin, aVMax, Math.PI,
+        Face aHalfCylinder2 = CreateHalfCylinderFace(aCylCenter, aCylAxis, aCylRadius, aVMin, aVMax, Math.PI,
                                                             2.0 * Math.PI);
 
-        Assert.False(aHalfCylinder2.IsNull());
+        Assert.False(aHalfCylinder2.IsNull);
 
         IntTools_FaceFace aFF2 = new();
         aFF2.SetParameters(true, true, true, 1.0e-7);
@@ -274,18 +276,18 @@ public class IntTools_FaceFace_Test
     public void OCC24005_PlaneCylinderIntersection()
     {
         // Hardcoded geometry from the original regression test
-        Geom_Plane aPlane = new(new CoordinateSystem(new Point3D(-72.948737453424499, 754.30437716359393, 259.52151854671678),
+        PlaneSurface aPlane = new(new CoordinateSystem(new Point3D(-72.948737453424499, 754.30437716359393, 259.52151854671678),
                                            new Direction3D(6.2471473085930200e-007, -0.99999999999980493, 0.00000000000000000),
                                            new Direction3D(0.99999999999980493, 6.2471473085930200e-007, 0.00000000000000000)));
 
-        Geom_CylindricalSurface aCylinder =
+        CylindricalSurface aCylinder =
             new(new CoordinateSystem(new Point3D(-6.4812490053250649, 753.39408794522092, 279.16400974257465),
                            new Direction3D(1.0000000000000000, 0.0, 0.00000000000000000),
                            new Direction3D(0.0, 1.0000000000000000, 0.00000000000000000)),
                 19.712534607908712);
 
-        BRep_Builder aBuilder = new();
-        TopoDS_Face aFace1 = new(), aFace2 = new();
+        BrepBuilder aBuilder = new();
+        Face aFace1 = new(), aFace2 = new();
         aBuilder.MakeFace(ref aFace1, aPlane, global::Kerf.Engine.Foundation.Precision.Confusion());
         aBuilder.MakeFace(ref aFace2, aCylinder, global::Kerf.Engine.Foundation.Precision.Confusion());
 

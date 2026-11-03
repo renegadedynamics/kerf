@@ -3,9 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -27,11 +30,11 @@ public sealed class ShapeFix_SplitTool
     /// <paramref name="vert"/>, whose tolerance is raised to its distance from the edge if beyond
     /// <paramref name="tol3d"/>. False if the parameter is within <paramref name="tol2d"/> of an end.
     /// </summary>
-    internal bool SplitEdge(in TopoDS_Edge edge, double param, in TopoDS_Vertex vert, in TopoDS_Face face,
-                            ref TopoDS_Edge newE1, ref TopoDS_Edge newE2, double tol3d, double tol2d)
+    internal bool SplitEdge(in Edge edge, double param, in Vertex vert, in Face face,
+                            ref Edge newE1, ref Edge newE2, double tol3d, double tol2d)
     {
         var sae = new ShapeAnalysis_Edge();
-        sae.PCurve(edge, face, out Geom2d_Curve? c2d, out double a, out double b, true);
+        sae.PCurve(edge, face, out Curve2D? c2d, out double a, out double b, true);
         if (Math.Abs(a - param) < tol2d || Math.Abs(b - param) < tol2d)
         {
             return false;
@@ -39,9 +42,9 @@ public sealed class ShapeFix_SplitTool
         // check distance between edge and new vertex
         Point3D          P1;
         Placement L;
-        if (BRep_Tool.SameParameter(edge))
+        if (Tool.SameParameter(edge))
         {
-            Geom_Curve? c3d = BRep_Tool.Curve(edge, out L, out double f, out double l);
+            Curve3D? c3d = Tool.Curve(edge, out L, out double f, out double l);
             if (c3d is null)
             {
                 return false;
@@ -54,7 +57,7 @@ public sealed class ShapeFix_SplitTool
         }
         else
         {
-            Geom_Surface? surf = BRep_Tool.Surface(face, out L);
+            Surface? surf = Tool.Surface(face, out L);
             var           sas  = new ShapeAnalysis_Surface(surf);
             P1 = sas.Value(c2d!.Value(param));
             if (!L.IsIdentity)
@@ -62,11 +65,11 @@ public sealed class ShapeFix_SplitTool
                 P1 = P1.Transformed(L.Transformation());
             }
         }
-        Point3D P2 = BRep_Tool.Pnt(vert);
+        Point3D P2 = Tool.Pnt(vert);
         if (P1.Distance(P2) > tol3d)
         {
             // return false;
-            var BV = new BRep_Builder();
+            var BV = new BrepBuilder();
             BV.UpdateVertex(vert, P1.Distance(P2));
         }
 
@@ -87,19 +90,19 @@ public sealed class ShapeFix_SplitTool
 
         var                sbe    = new ShapeBuild_Edge();
         var                sfe    = new ShapeFix_Edge();
-        TopAbs_Orientation orient = edge.Orientation();
-        var                B      = new BRep_Builder();
-        TopoDS_Edge        wE     = edge;
-        wE.Orientation(TopAbs_FORWARD);
-        TopoDS_Shape aTmpShape = vert.Oriented(TopAbs_REVERSED); // for porting
-        newE1 = sbe.InternalCopyReplaceVertices(wE, sae.FirstVertex(wE), TopoDS.Vertex(aTmpShape));
+        Orientation orient = edge.Orientation();
+        var                B      = new BrepBuilder();
+        Edge        wE     = edge;
+        wE.Orientation(Forward);
+        Shape aTmpShape = vert.Oriented(Reversed); // for porting
+        newE1 = sbe.InternalCopyReplaceVertices(wE, sae.FirstVertex(wE), ShapeCasts.Vertex(aTmpShape));
         sbe.CopyPCurves(newE1, wE);
         transferParameters.TransferRange(newE1, first, param, true);
         B.SameRange(newE1, false);
         sfe.FixSameParameter(newE1);
         // B.SameParameter(newE1,false);
-        aTmpShape = vert.Oriented(TopAbs_FORWARD);
-        newE2 = sbe.InternalCopyReplaceVertices(wE, TopoDS.Vertex(aTmpShape), sae.LastVertex(wE));
+        aTmpShape = vert.Oriented(Forward);
+        newE2 = sbe.InternalCopyReplaceVertices(wE, ShapeCasts.Vertex(aTmpShape), sae.LastVertex(wE));
         sbe.CopyPCurves(newE2, wE);
         transferParameters.TransferRange(newE2, param, last, true);
         B.SameRange(newE2, false);
@@ -108,9 +111,9 @@ public sealed class ShapeFix_SplitTool
 
         newE1.Orientation(orient);
         newE2.Orientation(orient);
-        if (orient == TopAbs_REVERSED)
+        if (orient == Reversed)
         {
-            TopoDS_Edge tmp = newE2;
+            Edge tmp = newE2;
             newE2 = newE1;
             newE1 = tmp;
         }
@@ -122,8 +125,8 @@ public sealed class ShapeFix_SplitTool
     /// Splits the edge at the middle of [param1, param2] with the vertex, then cuts the two parts at param1 and
     /// param2.
     /// </summary>
-    internal bool SplitEdge(in TopoDS_Edge edge, double param1, double param2, in TopoDS_Vertex vert, in TopoDS_Face face,
-                            ref TopoDS_Edge newE1, ref TopoDS_Edge newE2, double tol3d, double tol2d)
+    internal bool SplitEdge(in Edge edge, double param1, double param2, in Vertex vert, in Face face,
+                            ref Edge newE1, ref Edge newE2, double tol3d, double tol2d)
     {
         double param = (param1 + param2) / 2;
         if (SplitEdge(edge, param, vert, face, ref newE1, ref newE2, tol3d, tol2d))
@@ -131,9 +134,9 @@ public sealed class ShapeFix_SplitTool
             // cut new edges by param1 and param2
             bool IsCutLine = false;
             var  sae       = new ShapeAnalysis_Edge();
-            if (sae.PCurve(newE1, face, out Geom2d_Curve? Crv1, out double fp1, out double lp1, false))
+            if (sae.PCurve(newE1, face, out Curve2D? Crv1, out double fp1, out double lp1, false))
             {
-                if (sae.PCurve(newE2, face, out Geom2d_Curve? Crv2, out double fp2, out double lp2, false))
+                if (sae.PCurve(newE2, face, out Curve2D? Crv2, out double fp2, out double lp2, false))
                 {
                     if (lp1 == param)
                     {
@@ -172,14 +175,14 @@ public sealed class ShapeFix_SplitTool
     /// Cuts the edge's range to [pend, cut] (as ordered); <paramref name="iscutline"/> tells whether a trimmed line
     /// pcurve of a non-SameParameter edge was cut by its 3D range. Writes into the edge.
     /// </summary>
-    internal bool CutEdge(in TopoDS_Edge edge, double pend, double cut, in TopoDS_Face face, ref bool iscutline)
+    internal bool CutEdge(in Edge edge, double pend, double cut, in Face face, ref bool iscutline)
     {
         if (Math.Abs(cut - pend) < 10.0 * Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
         double aRange = Math.Abs(cut - pend);
-        BRep_Tool.Range(edge, out double a, out double b);
+        Tool.Range(edge, out double a, out double b);
         iscutline = false;
         if (aRange < 10.0 * Kerf.Engine.Foundation.Precision.PConfusion())
         {
@@ -187,16 +190,16 @@ public sealed class ShapeFix_SplitTool
         }
 
         // case pcurve is trimm of line
-        if (!BRep_Tool.SameParameter(edge))
+        if (!Tool.SameParameter(edge))
         {
             var sae = new ShapeAnalysis_Edge();
-            if (sae.PCurve(edge, face, out Geom2d_Curve? Crv, out double fp, out double lp, false))
+            if (sae.PCurve(edge, face, out Curve2D? Crv, out double fp, out double lp, false))
             {
-                if (Crv is Geom2d_TrimmedCurve tc)
+                if (Crv is TrimmedCurve2D tc)
                 {
-                    if (tc.BasisCurve() is Geom2d_Line)
+                    if (tc.BasisCurve() is LineCurve2D)
                     {
-                        var BL = new BRep_Builder();
+                        var BL = new BrepBuilder();
                         BL.Range(edge, Min(pend, cut), Max(pend, cut));
                         if (Math.Abs(pend - lp) < Kerf.Engine.Foundation.Precision.PConfusion())
                         { // cut from the beginning
@@ -234,16 +237,16 @@ public sealed class ShapeFix_SplitTool
             return false;
         }
 
-        Geom_Curve? c   = BRep_Tool.Curve(edge, out a, out b);
+        Curve3D? c   = Tool.Curve(edge, out a, out b);
         var         sac = new ShapeAnalysis_Curve();
         a = Min(pend, cut);
         b = Max(pend, cut);
         double na = a, nb = b;
 
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         // ValidateRange reverses the curve only when the range is reversed, which min/max excludes: the edge's
         // (frozen) curve is only read.
-        if (!BRep_Tool.Degenerated(edge) && c is not null
+        if (!Tool.Degenerated(edge) && c is not null
             && sac.ValidateRange(c, ref na, ref nb, Kerf.Engine.Foundation.Precision.PConfusion()) && (na != a || nb != b))
         {
             B.Range(edge, na, nb, true);
@@ -270,8 +273,8 @@ public sealed class ShapeFix_SplitTool
     /// through the context); the parts are added to <paramref name="SeqE"/>, <paramref name="aNum"/> is the index of
     /// the middle part, and the context records the edge's replacement by the wire of the parts.
     /// </summary>
-    internal bool SplitEdge(in TopoDS_Edge edge, double fp, in TopoDS_Vertex V1, double lp, in TopoDS_Vertex V2,
-                            in TopoDS_Face face, NCollection_Sequence<TopoDS_Shape> SeqE, ref int aNum,
+    internal bool SplitEdge(in Edge edge, double fp, in Vertex V1, double lp, in Vertex V2,
+                            in Face face, NCollection_Sequence<Shape> SeqE, ref int aNum,
                             ShapeBuild_ReShape context, double tol3d, double tol2d)
     {
         if (Math.Abs(lp - fp) < tol2d)
@@ -280,19 +283,19 @@ public sealed class ShapeFix_SplitTool
         }
         aNum = 0;
         SeqE.Clear();
-        var B   = new BRep_Builder();
+        var B   = new BrepBuilder();
         var sae = new ShapeAnalysis_Edge();
         sae.PCurve(edge, face, out _, out double a, out double b, true);
-        TopoDS_Vertex VF    = sae.FirstVertex(edge);
-        TopoDS_Vertex VL    = sae.LastVertex(edge);
-        double        tolVF = BRep_Tool.Tolerance(VF);
-        double        tolVL = BRep_Tool.Tolerance(VL);
-        double        tolV1 = BRep_Tool.Tolerance(V1);
-        double        tolV2 = BRep_Tool.Tolerance(V2);
-        Point3D        PVF   = BRep_Tool.Pnt(VF);
-        Point3D        PVL   = BRep_Tool.Pnt(VL);
-        Point3D        PV1   = BRep_Tool.Pnt(V1);
-        Point3D        PV2   = BRep_Tool.Pnt(V2);
+        Vertex VF    = sae.FirstVertex(edge);
+        Vertex VL    = sae.LastVertex(edge);
+        double        tolVF = Tool.Tolerance(VF);
+        double        tolVL = Tool.Tolerance(VL);
+        double        tolV1 = Tool.Tolerance(V1);
+        double        tolV2 = Tool.Tolerance(V2);
+        Point3D        PVF   = Tool.Pnt(VF);
+        Point3D        PVL   = Tool.Pnt(VL);
+        Point3D        PV1   = Tool.Pnt(V1);
+        Point3D        PV2   = Tool.Pnt(V2);
 
         double par1, par2;
         bool   IsReverse = false;
@@ -325,7 +328,7 @@ public sealed class ShapeFix_SplitTool
                 else
                 {
                     context.Replace(VF, V2.Reversed());
-                    VF = TopoDS.Vertex(V2.Reversed());
+                    VF = ShapeCasts.Vertex(V2.Reversed());
                 }
                 newtol = tolVL + PVL.Distance(PV1);
                 if (tolV1 < newtol)
@@ -340,7 +343,7 @@ public sealed class ShapeFix_SplitTool
                 else
                 {
                     context.Replace(VL, V1.Reversed());
-                    VL = TopoDS.Vertex(V1.Reversed());
+                    VL = ShapeCasts.Vertex(V1.Reversed());
                 }
             }
             else
@@ -358,7 +361,7 @@ public sealed class ShapeFix_SplitTool
                 else
                 {
                     context.Replace(VF, V1.Reversed());
-                    VF = TopoDS.Vertex(V1.Reversed());
+                    VF = ShapeCasts.Vertex(V1.Reversed());
                 }
                 newtol = tolVL + PVL.Distance(PV2);
                 if (tolV2 < newtol)
@@ -373,7 +376,7 @@ public sealed class ShapeFix_SplitTool
                 else
                 {
                     context.Replace(VL, V2.Reversed());
-                    VL = TopoDS.Vertex(V2.Reversed());
+                    VL = ShapeCasts.Vertex(V2.Reversed());
                 }
             }
             SeqE.Append(edge);
@@ -382,7 +385,7 @@ public sealed class ShapeFix_SplitTool
 
         if (Math.Abs(a - par1) <= tol2d && Math.Abs(b - par2) > tol2d)
         {
-            TopoDS_Edge newE1 = new TopoDS_Edge(), newE2 = new TopoDS_Edge();
+            Edge newE1 = new Edge(), newE2 = new Edge();
             if (IsReverse)
             {
                 if (!SplitEdge(edge, par2, V1, face, ref newE1, ref newE2, tol3d, tol2d))
@@ -402,7 +405,7 @@ public sealed class ShapeFix_SplitTool
                 else
                 {
                     context.Replace(VF, V2.Reversed());
-                    VF = TopoDS.Vertex(V2.Reversed());
+                    VF = ShapeCasts.Vertex(V2.Reversed());
                 }
             }
             else
@@ -424,7 +427,7 @@ public sealed class ShapeFix_SplitTool
                 else
                 {
                     context.Replace(VF, V1.Reversed());
-                    VF = TopoDS.Vertex(V1.Reversed());
+                    VF = ShapeCasts.Vertex(V1.Reversed());
                 }
             }
             SeqE.Append(newE1);
@@ -434,7 +437,7 @@ public sealed class ShapeFix_SplitTool
 
         if (Math.Abs(a - par1) > tol2d && Math.Abs(b - par2) <= tol2d)
         {
-            TopoDS_Edge newE1 = new TopoDS_Edge(), newE2 = new TopoDS_Edge();
+            Edge newE1 = new Edge(), newE2 = new Edge();
             if (IsReverse)
             {
                 if (!SplitEdge(edge, par1, V2, face, ref newE1, ref newE2, tol3d, tol2d))
@@ -454,7 +457,7 @@ public sealed class ShapeFix_SplitTool
                 else
                 {
                     context.Replace(VL, V1.Reversed());
-                    VL = TopoDS.Vertex(V1.Reversed());
+                    VL = ShapeCasts.Vertex(V1.Reversed());
                 }
             }
             else
@@ -476,7 +479,7 @@ public sealed class ShapeFix_SplitTool
                 else
                 {
                     context.Replace(VL, V2.Reversed());
-                    VL = TopoDS.Vertex(V2.Reversed());
+                    VL = ShapeCasts.Vertex(V2.Reversed());
                 }
             }
             SeqE.Append(newE1);
@@ -486,8 +489,8 @@ public sealed class ShapeFix_SplitTool
 
         if (Math.Abs(a - par1) > tol2d && Math.Abs(b - par2) > tol2d)
         {
-            TopoDS_Edge newE1 = new TopoDS_Edge(), newE2 = new TopoDS_Edge(), newE3 = new TopoDS_Edge(),
-                        newE4 = new TopoDS_Edge();
+            Edge newE1 = new Edge(), newE2 = new Edge(), newE3 = new Edge(),
+                        newE4 = new Edge();
             if (IsReverse)
             {
                 if (!SplitEdge(edge, par1, V2, face, ref newE1, ref newE2, tol3d, tol2d))
@@ -527,10 +530,10 @@ public sealed class ShapeFix_SplitTool
             sewd.Add(SeqE.Value(i));
         }
         context.Replace(edge, sewd.InternalWire());
-        for (var exp = new TopExp_Explorer(sewd.InternalWire(), TopAbs_ShapeEnum.TopAbs_EDGE); exp.More(); exp.Next())
+        for (var exp = new Explorer(sewd.InternalWire(), ShapeType.Edge); exp.More(); exp.Next())
         {
-            TopoDS_Edge E = TopoDS.Edge(exp.Current());
-            BRepTools.Update(E);
+            Edge E = ShapeCasts.Edge(exp.Current());
+            BrepTools.Update(E);
         }
 
         return true;

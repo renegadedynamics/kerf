@@ -5,6 +5,7 @@
 
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
@@ -32,10 +33,10 @@ public class BlendFunc_EvolRad : Blend_Function
     [ThreadStatic] private static Point3D ptgui;
     [ThreadStatic] private static double invnormtg, dinvnormtg;
 
-    private readonly Adaptor3d_Surface surf1;
-    private readonly Adaptor3d_Surface surf2;
-    private readonly Adaptor3d_Curve curv;
-    private Adaptor3d_Curve tcurv;
+    private readonly SurfaceAdaptorBase surf1;
+    private readonly SurfaceAdaptorBase surf2;
+    private readonly CurveAdaptorBase curv;
+    private CurveAdaptorBase tcurv;
     private readonly Law_Function fevol;
     private Law_Function tevol;
     private Point3D pts1;
@@ -109,7 +110,7 @@ public class BlendFunc_EvolRad : Blend_Function
     private ParameterisationType myTConv;
 
     /// <remarks>OCCT leaves param, the radius and the "quadrant" uninitialised; here they are zero.</remarks>
-    public BlendFunc_EvolRad(Adaptor3d_Surface S1, Adaptor3d_Surface S2, Adaptor3d_Curve C, Law_Function Law)
+    public BlendFunc_EvolRad(SurfaceAdaptorBase S1, SurfaceAdaptorBase S2, CurveAdaptorBase C, Law_Function Law)
     {
         surf1 = S1;
         surf2 = S2;

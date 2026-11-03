@@ -1,12 +1,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Schematiq.Collections;
 using OcctNet.ModelingData.Tests;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -19,15 +23,15 @@ public class BRepLib_FuseEdgesTests
 {
     private const double Conf = 1e-7;
 
-    private static int Count(in TopoDS_Shape S, TopAbs_ShapeEnum T)
+    private static int Count(in Shape S, ShapeType T)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(S, T, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(S, T, aMap);
         return aMap.Extent();
     }
 
     // [0,2] x [0,1] on z = 0, six edges: A(0,0) B(1,0) C(2,0) D(2,1) E(1,1) F(0,1); AB-BC and DE-EF collinear.
-    private static TopoDS_Face SixEdgeRectangle(out TopoDS_Vertex[] theVertices, out Dictionary<(int, int), TopoDS_Edge> theEdges)
+    private static Face SixEdgeRectangle(out Vertex[] theVertices, out Dictionary<(int, int), Edge> theEdges)
     {
         theVertices =
         [
@@ -42,55 +46,55 @@ public class BRepLib_FuseEdgesTests
     [Fact]
     public void Collinear_segments_of_a_planar_face_are_fused()
     {
-        TopoDS_Face aF = SixEdgeRectangle(out TopoDS_Vertex[] aV, out _);
+        Face aF = SixEdgeRectangle(out Vertex[] aV, out _);
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aF);
 
         var aFuse = new BRepLib_FuseEdges(aF);
         Assert.Equal(2, aFuse.NbVertices());
 
-        IReadOnlyDictionary<int, ISchematiqList<TopoDS_Shape>> anEdges = aFuse.Edges();
+        IReadOnlyDictionary<int, ISchematiqList<Shape>> anEdges = aFuse.Edges();
         Assert.Equal(2, anEdges.Count);
         Assert.All(anEdges.Values, aList => Assert.Equal(2, aList.Count));
         Assert.All(anEdges.Values, aList => Assert.All(aList, anE => Assert.True(anE.TShape()!.IsFrozen)));
 
-        IReadOnlyDictionary<int, TopoDS_Shape> aResultEdges = aFuse.ResultEdges();
+        IReadOnlyDictionary<int, Shape> aResultEdges = aFuse.ResultEdges();
         Assert.Equal(2, aResultEdges.Count);
-        foreach (TopoDS_Shape aS in aResultEdges.Values)
+        foreach (Shape aS in aResultEdges.Values)
         {
-            TopoDS_Edge anE = TopoDS.Edge(aS);
+            Edge anE = ShapeCasts.Edge(aS);
             Assert.True(anE.TShape()!.IsFrozen);
-            Geom_Curve aC = BRep_Tool.Curve(anE, out double f, out double l)!;
-            Assert.IsType<Geom_Line>(aC);
+            Curve3D aC = Tool.Curve(anE, out double f, out double l)!;
+            Assert.IsType<LineCurve3D>(aC);
             Assert.Equal(2.0, l - f, 1e-12);
             // the pcurve on the face's plane is the old edge's, over the new range
-            Geom2d_Curve aPC = BRep_Tool.CurveOnSurface(anE, aF, out double pf, out double pl)!;
-            Assert.IsType<Geom2d_Line>(aPC);
+            Curve2D aPC = Tool.CurveOnSurface(anE, aF, out double pf, out double pl)!;
+            Assert.IsType<LineCurve2D>(aPC);
             Assert.Equal(2.0, pl - pf, 1e-12);
             Point3D aP3 = aC.Value(f);
             Point2D aP2 = aPC.Value(pf);
-            Point3D aOnPlane = BRep_Tool.Surface(aF)!.Value(aP2.X(), aP2.Y());
+            Point3D aOnPlane = Tool.Surface(aF)!.Value(aP2.X(), aP2.Y());
             Assert.True(aP3.Distance(aOnPlane) < Conf);
         }
 
-        TopoDS_Shape aResult = aFuse.Shape();
+        Shape aResult = aFuse.Shape();
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.Equal(TopAbs_FACE, aResult.ShapeType());
-        Assert.Equal(4, Count(aResult, TopAbs_EDGE));
-        Assert.Equal(4, Count(aResult, TopAbs_VERTEX));
-        var aVertices = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aResult, TopAbs_VERTEX, aVertices);
+        Assert.Equal(ShapeType.Face, aResult.ShapeType());
+        Assert.Equal(4, Count(aResult, ShapeType.Edge));
+        Assert.Equal(4, Count(aResult, ShapeType.Vertex));
+        var aVertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(aResult, ShapeType.Vertex, aVertices);
         Assert.False(aVertices.Contains(aV[1]));
         Assert.False(aVertices.Contains(aV[4]));
         Assert.True(aVertices.Contains(aV[0]) && aVertices.Contains(aV[2]) && aVertices.Contains(aV[3])
                     && aVertices.Contains(aV[5]));
 
-        IReadOnlyDictionary<TopoDS_Shape, TopoDS_Shape> aFaces = aFuse.Faces();
+        IReadOnlyDictionary<Shape, Shape> aFaces = aFuse.Faces();
         Assert.Single(aFaces);
         Assert.True(aFaces.ContainsKey(aF));
         Assert.True(aFaces[aF].IsSame(aResult));
 
         // the area is unchanged
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.SurfaceProperties(aResult, aProps);
         Assert.Equal(2.0, Math.Abs(aProps.Mass()), 1e-10);
 
@@ -100,18 +104,18 @@ public class BRepLib_FuseEdgesTests
     [Fact]
     public void Avoided_edges_are_not_fused()
     {
-        TopoDS_Face aF = SixEdgeRectangle(out _, out Dictionary<(int, int), TopoDS_Edge> anEdges);
-        var anAvoid = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        Face aF = SixEdgeRectangle(out _, out Dictionary<(int, int), Edge> anEdges);
+        var anAvoid = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         anAvoid.Add(anEdges[(0, 1)]);
 
         var aFuse = new BRepLib_FuseEdges(aF, true);
         aFuse.AvoidEdges(anAvoid);
         anAvoid.Clear(); // the algorithm keeps its own copy
         Assert.Equal(1, aFuse.NbVertices());
-        TopoDS_Shape aResult = aFuse.Shape();
-        Assert.Equal(5, Count(aResult, TopAbs_EDGE));
-        var aResultEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aResult, TopAbs_EDGE, aResultEdges);
+        Shape aResult = aFuse.Shape();
+        Assert.Equal(5, Count(aResult, ShapeType.Edge));
+        var aResultEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(aResult, ShapeType.Edge, aResultEdges);
         Assert.True(aResultEdges.Contains(anEdges[(0, 1)]));
         Assert.True(aResultEdges.Contains(anEdges[(1, 2)]));
     }
@@ -119,30 +123,30 @@ public class BRepLib_FuseEdgesTests
     [Fact]
     public void A_located_face_is_fused_in_place()
     {
-        TopoDS_Face aF0 = SixEdgeRectangle(out _, out _);
+        Face aF0 = SixEdgeRectangle(out _, out _);
         var aLoc = new Placement(Transform3D.Rotation(new Axis3D(new Point3D(1, 2, 3), new Direction3D(0, 1, 1)), 0.7));
-        TopoDS_Face aF = TopoDS.Face(aF0.Moved(aLoc));
+        Face aF = ShapeCasts.Face(aF0.Moved(aLoc));
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aF);
 
         var aFuse = new BRepLib_FuseEdges(aF);
-        TopoDS_Shape aResult = aFuse.Shape();
-        Assert.Equal(4, Count(aResult, TopAbs_EDGE));
+        Shape aResult = aFuse.Shape();
+        Assert.Equal(4, Count(aResult, ShapeType.Edge));
 
-        var aProps0 = new GProp_GProps();
+        var aProps0 = new Properties();
         BRepGProp.SurfaceProperties(aF, aProps0);
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.SurfaceProperties(aResult, aProps);
         Assert.Equal(aProps0.Mass(), aProps.Mass(), 1e-10);
         Assert.True(aProps0.CentreOfMass().Distance(aProps.CentreOfMass()) < 1e-9);
 
         // each fused edge's 3D ends are its vertices
-        for (var anExp = new TopExp_Explorer(aResult, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aResult, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            TopoDS_Edge anE = TopoDS.Edge(anExp.Current());
-            var aC = new BRepAdaptor_Curve(anE);
-            TopExp.Vertices(anE, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
-            Assert.True(aC.Value(aC.FirstParameter()).Distance(BRep_Tool.Pnt(aV1)) < Conf);
-            Assert.True(aC.Value(aC.LastParameter()).Distance(BRep_Tool.Pnt(aV2)) < Conf);
+            Edge anE = ShapeCasts.Edge(anExp.Current());
+            var aC = new EdgeCurveAdaptor(anE);
+            Exploration.Vertices(anE, out Vertex aV1, out Vertex aV2);
+            Assert.True(aC.Value(aC.FirstParameter()).Distance(Tool.Pnt(aV1)) < Conf);
+            Assert.True(aC.Value(aC.LastParameter()).Distance(Tool.Pnt(aV2)) < Conf);
         }
         aBefore.AssertUnchanged(aF);
     }
@@ -150,7 +154,7 @@ public class BRepLib_FuseEdgesTests
     [Fact]
     public void A_shape_without_collinear_edges_is_returned_as_is()
     {
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
+        Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
         var aFuse = new BRepLib_FuseEdges(aBox);
         Assert.Equal(0, aFuse.NbVertices());
         Assert.Empty(aFuse.Edges());
@@ -162,34 +166,34 @@ public class BRepLib_FuseEdgesTests
     [Fact]
     public void Null_shape_throws()
     {
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new BRepLib_FuseEdges(new TopoDS_Shape()));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new BRepLib_FuseEdges(new Shape()));
     }
 
     [Fact]
     public void Circle_arcs_on_a_cylinder_face_are_fused_into_the_circle()
     {
         // the cylinder's lateral face with its bottom circle in two arcs [0, pi] and [pi, 2 pi]
-        var aB = new BRep_Builder();
+        var aB = new BrepBuilder();
         double r = 2, h = 3, aTwoPi = 2 * Math.PI;
-        var aSurf = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
-        TopoDS_Vertex aV0 = TestShapes.Vertex(new Point3D(r, 0, 0));
-        TopoDS_Vertex aVPi = TestShapes.Vertex(new Point3D(-r, 0, 0));
-        TopoDS_Vertex aV1 = TestShapes.Vertex(new Point3D(r, 0, h));
-        var aCircle = new Geom_Circle(new Frame3D(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
-        TopoDS_Edge anArc1 = TestShapes.Edge(aCircle, 0, Math.PI, aV0, aVPi);
-        TopoDS_Edge anArc2 = TestShapes.Edge(new Geom_Circle(aCircle.Circ()), Math.PI, aTwoPi, aVPi, aV0);
-        TopoDS_Edge aTop = TestShapes.Edge(new Geom_Circle(new Frame3D(new Point3D(0, 0, h), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r),
+        var aSurf = new CylindricalSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
+        Vertex aV0 = TestShapes.Vertex(new Point3D(r, 0, 0));
+        Vertex aVPi = TestShapes.Vertex(new Point3D(-r, 0, 0));
+        Vertex aV1 = TestShapes.Vertex(new Point3D(r, 0, h));
+        var aCircle = new CircleCurve3D(new Frame3D(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
+        Edge anArc1 = TestShapes.Edge(aCircle, 0, Math.PI, aV0, aVPi);
+        Edge anArc2 = TestShapes.Edge(new CircleCurve3D(aCircle.Circ()), Math.PI, aTwoPi, aVPi, aV0);
+        Edge aTop = TestShapes.Edge(new CircleCurve3D(new Frame3D(new Point3D(0, 0, h), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r),
                                            0, aTwoPi, aV1, aV1);
-        TopoDS_Edge aSeam = TestShapes.Edge(new Geom_Line(new Point3D(r, 0, 0), new Direction3D(0, 0, 1)), 0, h, aV0, aV1);
-        TopoDS_Face aF = new();
+        Edge aSeam = TestShapes.Edge(new LineCurve3D(new Point3D(r, 0, 0), new Direction3D(0, 0, 1)), 0, h, aV0, aV1);
+        Face aF = new();
         aB.MakeFace(ref aF, aSurf, global::Kerf.Engine.Foundation.Precision.Confusion());
-        var aBottom2d = new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0));
+        var aBottom2d = new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0));
         aB.UpdateEdge(anArc1, aBottom2d, aF, global::Kerf.Engine.Foundation.Precision.Confusion());
         aB.UpdateEdge(anArc2, aBottom2d, aF, global::Kerf.Engine.Foundation.Precision.Confusion());
-        aB.UpdateEdge(aTop, new Geom2d_Line(new Point2D(0, h), new Direction2D(1, 0)), aF, global::Kerf.Engine.Foundation.Precision.Confusion());
-        aB.UpdateEdge(aSeam, new Geom2d_Line(new Point2D(aTwoPi, 0), new Direction2D(0, 1)),
-                      new Geom2d_Line(new Point2D(0, 0), new Direction2D(0, 1)), aF, global::Kerf.Engine.Foundation.Precision.Confusion());
-        TopoDS_Wire aW = new();
+        aB.UpdateEdge(aTop, new LineCurve2D(new Point2D(0, h), new Direction2D(1, 0)), aF, global::Kerf.Engine.Foundation.Precision.Confusion());
+        aB.UpdateEdge(aSeam, new LineCurve2D(new Point2D(aTwoPi, 0), new Direction2D(0, 1)),
+                      new LineCurve2D(new Point2D(0, 0), new Direction2D(0, 1)), aF, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Wire aW = new();
         aB.MakeWire(ref aW);
         aB.Add(aW, anArc1);
         aB.Add(aW, anArc2);
@@ -203,42 +207,42 @@ public class BRepLib_FuseEdgesTests
 
         var aFuse = new BRepLib_FuseEdges(aF);
         Assert.Equal(1, aFuse.NbVertices());
-        TopoDS_Shape aResult = aFuse.Shape();
-        Assert.Equal(3, Count(aResult, TopAbs_EDGE));
-        Assert.Equal(2, Count(aResult, TopAbs_VERTEX));
+        Shape aResult = aFuse.Shape();
+        Assert.Equal(3, Count(aResult, ShapeType.Edge));
+        Assert.Equal(2, Count(aResult, ShapeType.Vertex));
 
-        TopoDS_Edge aFused = TopoDS.Edge(Assert.Single(aFuse.ResultEdges().Values));
-        Geom_Curve aC = BRep_Tool.Curve(aFused, out double f, out double l)!;
-        Assert.IsType<Geom_Circle>(aC);
+        Edge aFused = ShapeCasts.Edge(Assert.Single(aFuse.ResultEdges().Values));
+        Curve3D aC = Tool.Curve(aFused, out double f, out double l)!;
+        Assert.IsType<CircleCurve3D>(aC);
         Assert.Equal(aTwoPi, l - f, 1e-12);
-        Assert.True(BRep_Tool.IsClosed(aFused));
-        Geom2d_Curve aPC = BRep_Tool.CurveOnSurface(aFused, TopoDS.Face(aResult), out double pf, out double pl)!;
+        Assert.True(Tool.IsClosed(aFused));
+        Curve2D aPC = Tool.CurveOnSurface(aFused, ShapeCasts.Face(aResult), out double pf, out double pl)!;
         Assert.Equal(f, pf);
         Assert.Equal(l, pl);
         Assert.Equal(0.0, aPC.Value(pf).X(), 1e-12);
         Assert.Equal(0.0, aPC.Value(pf).Y(), 1e-12);
 
-        var aProps0 = new GProp_GProps();
+        var aProps0 = new Properties();
         BRepGProp.SurfaceProperties(aF, aProps0);
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.SurfaceProperties(aResult, aProps);
         Assert.Equal(aProps0.Mass(), aProps.Mass(), 1e-9);
         aBefore.AssertUnchanged(aF);
     }
 
-    private static Geom_BSplineCurve BSpline(params Point3D[] thePoles)
+    private static BSplineCurve3D BSpline(params Point3D[] thePoles)
     {
         var aKnots = NCollection_Array1<double>.From([0.0, 1.0]);
         var aMults = NCollection_Array1<int>.From([thePoles.Length, thePoles.Length]);
-        return new Geom_BSplineCurve(NCollection_Array1<Point3D>.From(thePoles), aKnots, aMults, thePoles.Length - 1);
+        return new BSplineCurve3D(NCollection_Array1<Point3D>.From(thePoles), aKnots, aMults, thePoles.Length - 1);
     }
 
-    private static TopoDS_Wire Wire(params TopoDS_Edge[] theEdges)
+    private static Wire Wire(params Edge[] theEdges)
     {
-        var aB = new BRep_Builder();
-        TopoDS_Wire aW = new();
+        var aB = new BrepBuilder();
+        Wire aW = new();
         aB.MakeWire(ref aW);
-        foreach (TopoDS_Edge anE in theEdges)
+        foreach (Edge anE in theEdges)
         {
             aB.Add(aW, anE);
         }
@@ -246,16 +250,16 @@ public class BRepLib_FuseEdgesTests
     }
 
     // Two G1 B-splines (0,0)-(2,1) and (2,1)-(4,0) on z = 0.
-    private static (Geom_BSplineCurve, Geom_BSplineCurve) G1BSplines()
+    private static (BSplineCurve3D, BSplineCurve3D) G1BSplines()
         => (BSpline(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 1, 0)),
             BSpline(new Point3D(2, 1, 0), new Point3D(3, 1, 0), new Point3D(4, 0, 0)));
 
     [Fact]
     public void Different_BSplines_are_not_fused_without_SetConcatBSpl()
     {
-        (Geom_BSplineCurve aC1, Geom_BSplineCurve aC2) = G1BSplines();
-        TopoDS_Vertex aV0 = TestShapes.Vertex(aC1.Value(0)), aVm = TestShapes.Vertex(aC1.Value(1)), aV2 = TestShapes.Vertex(aC2.Value(1));
-        TopoDS_Wire aW = TestShapes.Frozen(Wire(TestShapes.Edge(aC1, 0, 1, aV0, aVm), TestShapes.Edge(aC2, 0, 1, aVm, aV2)));
+        (BSplineCurve3D aC1, BSplineCurve3D aC2) = G1BSplines();
+        Vertex aV0 = TestShapes.Vertex(aC1.Value(0)), aVm = TestShapes.Vertex(aC1.Value(1)), aV2 = TestShapes.Vertex(aC2.Value(1));
+        Wire aW = TestShapes.Frozen(Wire(TestShapes.Edge(aC1, 0, 1, aV0, aVm), TestShapes.Edge(aC2, 0, 1, aVm, aV2)));
 
         var aFuse = new BRepLib_FuseEdges(aW);
         Assert.Equal(0, aFuse.NbVertices());
@@ -265,20 +269,20 @@ public class BRepLib_FuseEdgesTests
     [Fact]
     public void G1_BSplines_of_a_wire_are_concatenated_with_SetConcatBSpl()
     {
-        (Geom_BSplineCurve aC1, Geom_BSplineCurve aC2) = G1BSplines();
-        TopoDS_Vertex aV0 = TestShapes.Vertex(aC1.Value(0)), aVm = TestShapes.Vertex(aC1.Value(1)), aV2 = TestShapes.Vertex(aC2.Value(1));
-        TopoDS_Wire aW = TestShapes.Frozen(Wire(TestShapes.Edge(aC1, 0, 1, aV0, aVm), TestShapes.Edge(aC2, 0, 1, aVm, aV2)));
+        (BSplineCurve3D aC1, BSplineCurve3D aC2) = G1BSplines();
+        Vertex aV0 = TestShapes.Vertex(aC1.Value(0)), aVm = TestShapes.Vertex(aC1.Value(1)), aV2 = TestShapes.Vertex(aC2.Value(1));
+        Wire aW = TestShapes.Frozen(Wire(TestShapes.Edge(aC1, 0, 1, aV0, aVm), TestShapes.Edge(aC2, 0, 1, aVm, aV2)));
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aW);
 
         var aFuse = new BRepLib_FuseEdges(aW);
         aFuse.SetConcatBSpl();
         Assert.Equal(1, aFuse.NbVertices());
-        TopoDS_Shape aResult = aFuse.Shape();
-        Assert.Equal(TopAbs_WIRE, aResult.ShapeType());
-        Assert.Equal(1, Count(aResult, TopAbs_EDGE));
+        Shape aResult = aFuse.Shape();
+        Assert.Equal(global::Kerf.Topology.ShapeType.Wire, aResult.ShapeType());
+        Assert.Equal(1, Count(aResult, ShapeType.Edge));
 
-        TopoDS_Edge anE = TopoDS.Edge(Assert.Single(aFuse.ResultEdges().Values));
-        Geom_BSplineCurve aC = Assert.IsType<Geom_BSplineCurve>(BRep_Tool.Curve(anE, out double f, out double l));
+        Edge anE = ShapeCasts.Edge(Assert.Single(aFuse.ResultEdges().Values));
+        BSplineCurve3D aC = Assert.IsType<BSplineCurve3D>(Tool.Curve(anE, out double f, out double l));
         Assert.True(aC.IsFrozen);
         Assert.True(aC.Value(f).Distance(new Point3D(0, 0, 0)) < Conf);
         Assert.True(aC.Value(l).Distance(new Point3D(4, 0, 0)) < Conf);
@@ -291,14 +295,14 @@ public class BRepLib_FuseEdgesTests
     [Fact]
     public void Edges_of_one_BSpline_are_fused_without_SetConcatBSpl()
     {
-        Geom_BSplineCurve aC = BSpline(new Point3D(0, 0, 0), new Point3D(1, 2, 0), new Point3D(3, -1, 1), new Point3D(4, 0, 0));
-        TopoDS_Vertex aV0 = TestShapes.Vertex(aC.Value(0)), aVm = TestShapes.Vertex(aC.Value(0.4)), aV1 = TestShapes.Vertex(aC.Value(1));
-        TopoDS_Wire aW = TestShapes.Frozen(Wire(TestShapes.Edge(aC, 0, 0.4, aV0, aVm), TestShapes.Edge(aC, 0.4, 1, aVm, aV1)));
+        BSplineCurve3D aC = BSpline(new Point3D(0, 0, 0), new Point3D(1, 2, 0), new Point3D(3, -1, 1), new Point3D(4, 0, 0));
+        Vertex aV0 = TestShapes.Vertex(aC.Value(0)), aVm = TestShapes.Vertex(aC.Value(0.4)), aV1 = TestShapes.Vertex(aC.Value(1));
+        Wire aW = TestShapes.Frozen(Wire(TestShapes.Edge(aC, 0, 0.4, aV0, aVm), TestShapes.Edge(aC, 0.4, 1, aVm, aV1)));
 
         var aFuse = new BRepLib_FuseEdges(aW);
         Assert.Equal(1, aFuse.NbVertices());
-        TopoDS_Edge anE = TopoDS.Edge(Assert.Single(aFuse.ResultEdges().Values));
-        Assert.Same(aC, BRep_Tool.Curve(anE, out double f, out double l));
+        Edge anE = ShapeCasts.Edge(Assert.Single(aFuse.ResultEdges().Values));
+        Assert.Same(aC, Tool.Curve(anE, out double f, out double l));
         Assert.Equal(0.0, f);
         Assert.Equal(1.0, l);
     }
@@ -311,9 +315,9 @@ public class BRepLib_FuseEdgesTests
         var aPoles = NCollection_Array1<Point3D>.From([new Point3D(0, 0, 0), new Point3D(4, 0, 0), new Point3D(4, 4, 0), new Point3D(0, 4, 0)]);
         var aKnots = NCollection_Array1<double>.From([0.0, 1.0, 2.0, 3.0, 4.0]);
         var aMults = NCollection_Array1<int>.From([1, 1, 1, 1, 1]);
-        var aC = new Geom_BSplineCurve(aPoles, aKnots, aMults, 2, true);
-        TopoDS_Vertex aVa = TestShapes.Vertex(aC.Value(1)), aVb = TestShapes.Vertex(aC.Value(3));
-        TopoDS_Wire aW = Wire(TestShapes.Edge(aC, 1, 3, aVa, aVb), TestShapes.Edge(aC, 3, 5, aVb, aVa));
+        var aC = new BSplineCurve3D(aPoles, aKnots, aMults, 2, true);
+        Vertex aVa = TestShapes.Vertex(aC.Value(1)), aVb = TestShapes.Vertex(aC.Value(3));
+        Wire aW = Wire(TestShapes.Edge(aC, 1, 3, aVa, aVb), TestShapes.Edge(aC, 3, 5, aVb, aVa));
         aW.Closed(true);
         aW = TestShapes.Frozen(aW);
         Assert.True(aC.IsFrozen);
@@ -322,15 +326,15 @@ public class BRepLib_FuseEdgesTests
 
         var aFuse = new BRepLib_FuseEdges(aW);
         Assert.Equal(1, aFuse.NbVertices());
-        TopoDS_Shape aResult = aFuse.Shape();
-        TopoDS_Edge anE = TopoDS.Edge(Assert.Single(aFuse.ResultEdges().Values));
-        Geom_Curve aNewC = BRep_Tool.Curve(anE, out double f, out double l)!;
+        Shape aResult = aFuse.Shape();
+        Edge anE = ShapeCasts.Edge(Assert.Single(aFuse.ResultEdges().Values));
+        Curve3D aNewC = Tool.Curve(anE, out double f, out double l)!;
         Assert.NotSame(aC, aNewC);
-        TopExp.Vertices(anE, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
+        Exploration.Vertices(anE, out Vertex aV1, out Vertex aV2);
         Assert.True(aV1.IsSame(aV2));
-        Assert.True(aNewC.Value(f).Distance(BRep_Tool.Pnt(aV1)) < Conf);
-        Assert.True(aNewC.Value(l).Distance(BRep_Tool.Pnt(aV1)) < Conf);
-        Assert.Equal(1, Count(aResult, TopAbs_EDGE));
+        Assert.True(aNewC.Value(f).Distance(Tool.Pnt(aV1)) < Conf);
+        Assert.True(aNewC.Value(l).Distance(Tool.Pnt(aV1)) < Conf);
+        Assert.Equal(1, Count(aResult, ShapeType.Edge));
 
         Assert.Equal(aFirst, aC.FirstParameter());
         aBefore.AssertUnchanged(aW);
@@ -339,16 +343,16 @@ public class BRepLib_FuseEdgesTests
     [Fact]
     public void Internal_forms_do_not_freeze()
     {
-        TopoDS_Face aF = SixEdgeRectangle(out _, out _);
+        Face aF = SixEdgeRectangle(out _, out _);
         var aFuse = new BRepLib_FuseEdges(aF);
-        var aResultEdges = new NCollection_DataMap<int, TopoDS_Shape>();
+        var aResultEdges = new NCollection_DataMap<int, Shape>();
         aFuse.ResultEdges(aResultEdges);
         Assert.All(aResultEdges, anItem => Assert.False(anItem.Value.TShape()!.IsFrozen));
-        var aFaces = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aFaces = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
         aFuse.Faces(aFaces);
         Assert.Equal(1, aFaces.Extent());
         Assert.False(aFuse.InternalShape().TShape()!.IsFrozen);
-        var anEdges = new NCollection_DataMap<int, NCollection_List<TopoDS_Shape>>();
+        var anEdges = new NCollection_DataMap<int, NCollection_List<Shape>>();
         aFuse.Edges(anEdges);
         Assert.Equal(2, anEdges.Extent());
         Assert.True(aFuse.Shape().TShape()!.IsFrozen);
@@ -359,28 +363,28 @@ public class BRepLib_FuseEdgesTests
     [Fact]
     public void G1_BSplines_of_a_planar_face_are_concatenated_with_their_pcurves()
     {
-        (Geom_BSplineCurve aC1, Geom_BSplineCurve aC2) = G1BSplines();
-        var aB = new BRep_Builder();
-        var aPlane = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
-        TopoDS_Vertex aV0 = TestShapes.Vertex(aC1.Value(0)), aVm = TestShapes.Vertex(aC1.Value(1)), aV2 = TestShapes.Vertex(aC2.Value(1));
-        TopoDS_Edge anE1 = TestShapes.Edge(aC1, 0, 1, aV0, aVm), anE2 = TestShapes.Edge(aC2, 0, 1, aVm, aV2);
-        TopoDS_Edge anE3 = TestShapes.Edge(aV2, aV0);
-        TopoDS_Face aF = new();
+        (BSplineCurve3D aC1, BSplineCurve3D aC2) = G1BSplines();
+        var aB = new BrepBuilder();
+        var aPlane = new PlaneSurface(new CoordinateSystem(Constants.XOY()));
+        Vertex aV0 = TestShapes.Vertex(aC1.Value(0)), aVm = TestShapes.Vertex(aC1.Value(1)), aV2 = TestShapes.Vertex(aC2.Value(1));
+        Edge anE1 = TestShapes.Edge(aC1, 0, 1, aV0, aVm), anE2 = TestShapes.Edge(aC2, 0, 1, aVm, aV2);
+        Edge anE3 = TestShapes.Edge(aV2, aV0);
+        Face aF = new();
         aB.MakeFace(ref aF, aPlane, global::Kerf.Engine.Foundation.Precision.Confusion());
-        static Geom2d_BSplineCurve To2d(Geom_BSplineCurve theC)
+        static BSplineCurve2D To2d(BSplineCurve3D theC)
         {
-            var aPoles = new NCollection_Array1<Point2D>(1, theC.NbPoles());
-            for (int i = 1; i <= theC.NbPoles(); i++)
+            var aPoles = new NCollection_Array1<Point2D>(1, theC.PoleCount);
+            for (int i = 1; i <= theC.PoleCount; i++)
             {
                 aPoles[i] = new Point2D(theC.Pole(i).X(), theC.Pole(i).Y());
             }
-            return new Geom2d_BSplineCurve(aPoles, NCollection_Array1<double>.From([0.0, 1.0]),
-                                           NCollection_Array1<int>.From([theC.NbPoles(), theC.NbPoles()]), theC.Degree());
+            return new BSplineCurve2D(aPoles, NCollection_Array1<double>.From([0.0, 1.0]),
+                                           NCollection_Array1<int>.From([theC.PoleCount, theC.PoleCount]), theC.Degree());
         }
         aB.UpdateEdge(anE1, To2d(aC1), aF, global::Kerf.Engine.Foundation.Precision.Confusion());
         aB.UpdateEdge(anE2, To2d(aC2), aF, global::Kerf.Engine.Foundation.Precision.Confusion());
-        aB.UpdateEdge(anE3, new Geom2d_Line(new Point2D(4, 0), new Direction2D(-1, 0)), aF, global::Kerf.Engine.Foundation.Precision.Confusion());
-        TopoDS_Wire aW = Wire(anE1, anE2, anE3);
+        aB.UpdateEdge(anE3, new LineCurve2D(new Point2D(4, 0), new Direction2D(-1, 0)), aF, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Wire aW = Wire(anE1, anE2, anE3);
         aW.Closed(true);
         aB.Add(aF, aW);
         aF = TestShapes.Frozen(aF);
@@ -388,13 +392,13 @@ public class BRepLib_FuseEdgesTests
 
         var aFuse = new BRepLib_FuseEdges(aF);
         aFuse.SetConcatBSpl();
-        TopoDS_Shape aResult = aFuse.Shape();
-        Assert.Equal(2, Count(aResult, TopAbs_EDGE));
-        TopoDS_Edge anE = TopoDS.Edge(Assert.Single(aFuse.ResultEdges().Values));
-        Assert.True(BRep_Tool.SameParameter(anE));
-        Geom2d_Curve aPC = BRep_Tool.CurveOnSurface(anE, TopoDS.Face(aResult), out double pf, out double pl)!;
-        Assert.IsType<Geom2d_BSplineCurve>(aPC);
-        BRep_Tool.Range(anE, out double f, out double l);
+        Shape aResult = aFuse.Shape();
+        Assert.Equal(2, Count(aResult, ShapeType.Edge));
+        Edge anE = ShapeCasts.Edge(Assert.Single(aFuse.ResultEdges().Values));
+        Assert.True(Tool.SameParameter(anE));
+        Curve2D aPC = Tool.CurveOnSurface(anE, ShapeCasts.Face(aResult), out double pf, out double pl)!;
+        Assert.IsType<BSplineCurve2D>(aPC);
+        Tool.Range(anE, out double f, out double l);
         Assert.Equal(f, pf, 1e-9);
         Assert.Equal(l, pl, 1e-9);
         aBefore.AssertUnchanged(aF);

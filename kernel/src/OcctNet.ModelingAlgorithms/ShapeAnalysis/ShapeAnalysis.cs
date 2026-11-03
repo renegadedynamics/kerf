@@ -5,10 +5,14 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -47,44 +51,44 @@ public static class ShapeAnalysis
     /// Finds the start and end vertices of a shape: of a wire (TopExp.Vertices), of an edge (with its orientation),
     /// or of a vertex (the vertex twice). Null vertices for other shapes.
     /// </summary>
-    public static void FindBounds(in TopoDS_Shape shape, out TopoDS_Vertex V1, out TopoDS_Vertex V2)
+    public static void FindBounds(in Shape shape, out Vertex V1, out Vertex V2)
     {
-        V1 = new TopoDS_Vertex();
-        V2 = new TopoDS_Vertex();
+        V1 = new Vertex();
+        V2 = new Vertex();
         ShapeAnalysis_Edge EA = new ShapeAnalysis_Edge();
-        if (shape.ShapeType() == TopAbs_WIRE)
+        if (shape.ShapeType() == ShapeType.Wire)
         {
-            TopoDS_Wire W = TopoDS.Wire(shape);
+            Wire W = ShapeCasts.Wire(shape);
             // invalid work with reversed wires replaced on TopExp
-            TopExp.Vertices(W, out V1, out V2);
+            Exploration.Vertices(W, out V1, out V2);
         }
-        else if (shape.ShapeType() == TopAbs_EDGE)
+        else if (shape.ShapeType() == ShapeType.Edge)
         {
-            V1 = EA.FirstVertex(TopoDS.Edge(shape));
-            V2 = EA.LastVertex(TopoDS.Edge(shape));
+            V1 = EA.FirstVertex(ShapeCasts.Edge(shape));
+            V2 = EA.LastVertex(ShapeCasts.Edge(shape));
         }
-        else if (shape.ShapeType() == TopAbs_VERTEX)
+        else if (shape.ShapeType() == ShapeType.Vertex)
         {
-            V1 = V2 = TopoDS.Vertex(shape);
+            V1 = V2 = ShapeCasts.Vertex(shape);
         }
     }
 
     /// <summary>Returns the total signed area of the 2d wire on the face: positive for an outer (counter-clockwise) contour.</summary>
-    public static double TotCross2D(ShapeExtend_WireData sewd, in TopoDS_Face aFace)
+    public static double TotCross2D(ShapeExtend_WireData sewd, in Face aFace)
     {
         int      i, nbc = 0;
         Point2D fuv = new Point2D(), luv, uv0 = new Point2D();
         double   totcross = 0;
         for (i = 1; i <= sewd.NbEdges(); i++)
         {
-            TopoDS_Edge   edge = sewd.Edge(i);
-            Geom2d_Curve? c2d  = BRep_Tool.CurveOnSurface(edge, aFace, out double f2d, out double l2d);
+            Edge   edge = sewd.Edge(i);
+            Curve2D? c2d  = Tool.CurveOnSurface(edge, aFace, out double f2d, out double l2d);
             if (c2d is not null)
             {
                 nbc++;
                 NCollection_Sequence<Point2D> SeqPnt = new NCollection_Sequence<Point2D>();
                 ShapeAnalysis_Curve.GetSamplePoints(c2d, f2d, l2d, SeqPnt);
-                if (edge.Orientation() == TopAbs_REVERSED)
+                if (edge.Orientation() == Reversed)
                 {
                     SeqPnt.Reverse();
                 }
@@ -110,16 +114,16 @@ public static class ShapeAnalysis
     }
 
     /// <summary>Returns the total area of the 3d wire, from sample points of its 3d curves.</summary>
-    public static double ContourArea(in TopoDS_Wire theWire)
+    public static double ContourArea(in Wire theWire)
     {
         int    nbc = 0;
         Point3D fuv = new Point3D(), luv, uv0 = new Point3D();
         Xyz aTotal = new Xyz(0.0, 0.0, 0.0);
-        TopoDS_Iterator aIte = new TopoDS_Iterator(theWire, false);
+        Iterator aIte = new Iterator(theWire, false);
         for (; aIte.More(); aIte.Next())
         {
-            TopoDS_Edge edge = TopoDS.Edge(aIte.Value());
-            Geom_Curve? c3d  = BRep_Tool.Curve(edge, out double first, out double last);
+            Edge edge = ShapeCasts.Edge(aIte.Value());
+            Curve3D? c3d  = Tool.Curve(edge, out double first, out double last);
             if (c3d is not null)
             {
                 NCollection_Sequence<Point3D> aSeqPnt = new NCollection_Sequence<Point3D>();
@@ -129,7 +133,7 @@ public static class ShapeAnalysis
                 }
 
                 nbc++;
-                if (edge.Orientation() == TopAbs_REVERSED)
+                if (edge.Orientation() == Reversed)
                 {
                     aSeqPnt.Reverse();
                 }
@@ -156,15 +160,15 @@ public static class ShapeAnalysis
     }
 
     /// <summary>Returns true if the face has an outer bound.</summary>
-    public static bool IsOuterBound(in TopoDS_Face face)
+    public static bool IsOuterBound(in Face face)
     {
-        TopoDS_Face F = face;
-        TopoDS_Wire W = new TopoDS_Wire();
-        F.Orientation(TopAbs_FORWARD);
+        Face F = face;
+        Wire W = new Wire();
+        F.Orientation(Forward);
         int nbw = 0;
-        for (TopExp_Explorer exp = new TopExp_Explorer(F, TopAbs_WIRE); exp.More(); exp.Next())
+        for (Explorer exp = new Explorer(F, ShapeType.Wire); exp.More(); exp.Next())
         {
-            W = TopoDS.Wire(exp.Current());
+            W = ShapeCasts.Wire(exp.Current());
             nbw++;
         }
 
@@ -177,11 +181,11 @@ public static class ShapeAnalysis
         }
         else
         {
-            BRepAdaptor_Surface Ads = new BRepAdaptor_Surface(F, false);
-            double tol   = BRep_Tool.Tolerance(F);
+            FaceSurfaceAdaptor Ads = new FaceSurfaceAdaptor(F, false);
+            double tol   = Tool.Tolerance(F);
             double toluv = Min(Ads.UResolution(tol), Ads.VResolution(tol));
             BRepTopAdaptor_FClass2d fcl = new BRepTopAdaptor_FClass2d(F, toluv);
-            bool rescl = (fcl.PerformInfinitePoint() == TopAbs_OUT);
+            bool rescl = (fcl.PerformInfinitePoint() == Out);
             return rescl;
         }
     }
@@ -190,15 +194,15 @@ public static class ShapeAnalysis
     /// Returns the positively oriented wire of the face (its outer wire); if there is none, the last wire of the face.
     /// A null wire for a face without wires.
     /// </summary>
-    public static TopoDS_Wire OuterWire(in TopoDS_Face theFace)
+    public static Wire OuterWire(in Face theFace)
     {
-        TopoDS_Face aF = theFace;
-        aF.Orientation(TopAbs_FORWARD);
+        Face aF = theFace;
+        aF.Orientation(Forward);
 
-        TopExp_Explorer anIt = new TopExp_Explorer(aF, TopAbs_WIRE);
+        Explorer anIt = new Explorer(aF, ShapeType.Wire);
         while (anIt.More())
         {
-            TopoDS_Wire aWire = TopoDS.Wire(anIt.Value());
+            Wire aWire = ShapeCasts.Wire(anIt.Value());
             anIt.Next();
 
             // if current wire is the last one, return it without analysis
@@ -216,21 +220,21 @@ public static class ShapeAnalysis
             }
         }
 
-        return new TopoDS_Wire();
+        return new Wire();
     }
 
     /// <summary>
     /// Computes the exact UV bounds of the face from the pcurves of its edges, or the surface's bounds for a face without
     /// edges.
     /// </summary>
-    public static void GetFaceUVBounds(in TopoDS_Face F, out double UMin, out double UMax, out double VMin, out double VMax)
+    public static void GetFaceUVBounds(in Face F, out double UMin, out double UMax, out double VMin, out double VMax)
     {
-        TopoDS_Face FF = F;
-        FF.Orientation(TopAbs_FORWARD);
-        TopExp_Explorer ex = new TopExp_Explorer(FF, TopAbs_EDGE);
+        Face FF = F;
+        FF.Orientation(Forward);
+        Explorer ex = new Explorer(FF, ShapeType.Edge);
         if (!ex.More())
         {
-            BRep_Tool.Surface(F, out _)!.Bounds(out UMin, out UMax, out VMin, out VMax);
+            Tool.Surface(F, out _)!.Bounds(out UMin, out UMax, out VMin, out VMax);
             return;
         }
 
@@ -239,8 +243,8 @@ public static class ShapeAnalysis
         ShapeAnalysis_Curve sac = new ShapeAnalysis_Curve();
         for (; ex.More(); ex.Next())
         {
-            TopoDS_Edge edge = TopoDS.Edge(ex.Current());
-            if (!sae.PCurve(edge, F, out Geom2d_Curve? c2d, out double f, out double l, false))
+            Edge edge = ShapeCasts.Edge(ex.Current());
+            if (!sae.PCurve(edge, F, out Curve2D? c2d, out double f, out double l, false))
             {
                 continue;
             }

@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -40,17 +44,17 @@ internal sealed class ShapeFixOracleRun(ITestOutputHelper output, string thePref
         return aText;
     }
 
-    public string PortText(in TopoDS_Shape theShape)
+    public string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
+        Assert.True(BrepTools.Write(theShape, aFile, true, false, FormatVersion.FormatVersion_VERSION_3));
         string aText = File.ReadAllText(aFile);
         File.Delete(aFile);
         return aText;
     }
 
     /// <summary>Native writes the shape; both read it, the port's frozen. Null if native OCCT can't write or read it.</summary>
-    public (N.TopoDS_Shape N, TopoDS_Shape P)? Read(N.TopoDS_Shape theShape)
+    public (N.TopoDS_Shape N, Shape P)? Read(N.TopoDS_Shape theShape)
     {
         string aFile = NewFile();
         if (!N.BRepTools.Write(theShape, aFile, true, false, N.TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3))
@@ -65,9 +69,9 @@ internal sealed class ShapeFixOracleRun(ITestOutputHelper output, string thePref
                 return null;
             }
         }
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile), aFile);
+        Assert.True(BrepTools.Read(out Shape aPShape, aFile), aFile);
         File.Delete(aFile);
-        if (aPShape.IsNull())
+        if (aPShape.IsNull)
         {
             return null;
         }
@@ -87,8 +91,8 @@ internal sealed class ShapeFixOracleRun(ITestOutputHelper output, string thePref
     /// input (its text before the fix given).
     /// </summary>
     public void Check(string theWhat, N.TopoDS_Shape? theNative, string? theNativeError, string theNativeStatus,
-                      TopoDS_Shape? thePort, string? thePortError, string thePortStatus,
-                      N.TopoDS_Shape theNativeInput, TopoDS_Shape thePortInput, string thePortInputText)
+                      Shape? thePort, string? thePortError, string thePortStatus,
+                      N.TopoDS_Shape theNativeInput, Shape thePortInput, string thePortInputText)
     {
         Compared++;
         if (PortText(thePortInput) == thePortInputText)
@@ -116,9 +120,9 @@ internal sealed class ShapeFixOracleRun(ITestOutputHelper output, string thePref
         {
             Differences.Add($"{theWhat}: status {theNativeStatus} natively, {thePortStatus} in the port");
         }
-        if (theNative is null || theNative.IsNull() || thePort is not TopoDS_Shape aPRes || aPRes.IsNull())
+        if (theNative is null || theNative.IsNull() || thePort is not Shape aPRes || aPRes.IsNull)
         {
-            if ((theNative is null || theNative.IsNull()) != (thePort is null || thePort.Value.IsNull()))
+            if ((theNative is null || theNative.IsNull()) != (thePort is null || thePort.Value.IsNull))
             {
                 Differences.Add($"{theWhat}: a null result on one side only");
             }
@@ -158,7 +162,7 @@ internal sealed class ShapeFixOracleRun(ITestOutputHelper output, string thePref
         {
             string aFile = NewFile();
             File.WriteAllText(aFile, aNT);
-            Assert.True(BRepTools.Read(out TopoDS_Shape aNP, aFile));
+            Assert.True(BrepTools.Read(out Shape aNP, aFile));
             File.Delete(aFile);
             CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aNP, aPRes, new CanonicalOptions { CheckValidity = false });
             if (aCanon.IsIdentical)
@@ -172,16 +176,16 @@ internal sealed class ShapeFixOracleRun(ITestOutputHelper output, string thePref
         }
     }
 
-    private void CountKept(in TopoDS_Shape theInput, in TopoDS_Shape theResult)
+    private void CountKept(in Shape theInput, in Shape theResult)
     {
-        foreach ((TopAbs_ShapeEnum aType, bool isFace) in new[] { (TopAbs_ShapeEnum.TopAbs_FACE, true), (TopAbs_ShapeEnum.TopAbs_EDGE, false) })
+        foreach ((ShapeType aType, bool isFace) in new[] { (ShapeType.Face, true), (ShapeType.Edge, false) })
         {
-            var anInput = new HashSet<TopoDS_TShape>(ReferenceEqualityComparer.Instance);
-            foreach (TopoDS_Shape aS in CanonicalShapeComparer.SubShapes(theInput, aType))
+            var anInput = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
+            foreach (Shape aS in CanonicalShapeComparer.SubShapes(theInput, aType))
             {
                 anInput.Add(aS.TShape()!);
             }
-            foreach (TopoDS_Shape aS in CanonicalShapeComparer.SubShapes(theResult, aType))
+            foreach (Shape aS in CanonicalShapeComparer.SubShapes(theResult, aType))
             {
                 bool isKept = anInput.Contains(aS.TShape()!);
                 if (isFace)
@@ -313,7 +317,7 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
     private static void CompareFixShape(ShapeFixOracleRun theRun, N.TopoDS_Shape theShape, string theWhat, double thePrecision = -1.0,
                                         double theMaxTol = -1.0)
     {
-        if (theRun.Read(theShape) is not (N.TopoDS_Shape aNS, TopoDS_Shape aPS))
+        if (theRun.Read(theShape) is not (N.TopoDS_Shape aNS, Shape aPS))
         {
             return;
         }
@@ -339,7 +343,7 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
             aNErr = ShapeFixOracleRun.ErrorOf(e);
         }
 
-        TopoDS_Shape? aPRes = null;
+        Shape? aPRes = null;
         string? aPErr = null;
         string aPStatus = "";
         try
@@ -363,7 +367,7 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
 
     private static void CompareSolidFromShell(ShapeFixOracleRun theRun, N.TopoDS_Shape theShell, string theWhat)
     {
-        if (theRun.Read(theShell) is not (N.TopoDS_Shape aNS, TopoDS_Shape aPS))
+        if (theRun.Read(theShell) is not (N.TopoDS_Shape aNS, Shape aPS))
         {
             return;
         }
@@ -382,11 +386,11 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
         {
             aNErr = ShapeFixOracleRun.ErrorOf(e);
         }
-        TopoDS_Shape? aPRes = null;
+        Shape? aPRes = null;
         try
         {
             var aFix = new ShapeFix_Solid();
-            aPRes = aFix.SolidFromShell(TopoDS.Shell(aPS));
+            aPRes = aFix.SolidFromShell(ShapeCasts.Shell(aPS));
             aPStatus = $"{aFix.Status(ShapeExtend_DONE2)}";
         }
         catch (FailureException e)

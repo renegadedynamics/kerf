@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -19,7 +20,7 @@ public class GeomEval_AHTBezierSurfaceTest
 
     // Helper to create a pure polynomial AHT-Bezier surface.
     // Basis: {1, t, t^2} in each direction => 3x3 poles, algDegree=2, alpha=0, beta=0
-    private static GeomEval_AHTBezierSurface createPolynomialSurface()
+    private static AhtBezierSurface createPolynomialSurface()
     {
         NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
         for (int i = 1; i <= 3; ++i)
@@ -29,10 +30,10 @@ public class GeomEval_AHTBezierSurfaceTest
                 aPoles.SetValue(i, j, new Point3D((double)(i - 1), (double)(j - 1), (double)((i - 1) * (j - 1)) * 0.1));
             }
         }
-        return new GeomEval_AHTBezierSurface(aPoles, 2, 2, 0.0, 0.0, 0.0, 0.0);
+        return new AhtBezierSurface(aPoles, 2, 2, 0.0, 0.0, 0.0, 0.0);
     }
 
-    private static GeomEval_AHTBezierSurface createPolynomialSurfaceRationalUniformWeight(double theWeight)
+    private static AhtBezierSurface createPolynomialSurfaceRationalUniformWeight(double theWeight)
     {
         NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
         NCollection_Array2<double> aWeights = new(1, 3, 1, 3);
@@ -44,15 +45,15 @@ public class GeomEval_AHTBezierSurfaceTest
                 aWeights.SetValue(i, j, theWeight);
             }
         }
-        return new GeomEval_AHTBezierSurface(aPoles, aWeights, 2, 2, 0.0, 0.0, 0.0, 0.0);
+        return new AhtBezierSurface(aPoles, aWeights, 2, 2, 0.0, 0.0, 0.0, 0.0);
     }
 
     [Fact]
     public void Construction_ValidParams()
     {
-        GeomEval_AHTBezierSurface aSurf = createPolynomialSurface();
-        Assert.Equal(3, aSurf.NbPolesU());
-        Assert.Equal(3, aSurf.NbPolesV());
+        AhtBezierSurface aSurf = createPolynomialSurface();
+        Assert.Equal(3, aSurf.PolesUCount);
+        Assert.Equal(3, aSurf.PolesVCount);
         Assert.Equal(2, aSurf.AlgDegreeU());
         Assert.Equal(2, aSurf.AlgDegreeV());
         Assert.Equal(0.0, aSurf.AlphaU(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -64,7 +65,7 @@ public class GeomEval_AHTBezierSurfaceTest
     [Fact]
     public void ParameterRange()
     {
-        GeomEval_AHTBezierSurface aSurf = createPolynomialSurface();
+        AhtBezierSurface aSurf = createPolynomialSurface();
         double aU1, aU2, aV1, aV2;
         aSurf.Bounds(out aU1, out aU2, out aV1, out aV2);
         Assert.Equal(0.0, aU1, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -76,7 +77,7 @@ public class GeomEval_AHTBezierSurfaceTest
     [Fact]
     public void EvalD0_Corners()
     {
-        GeomEval_AHTBezierSurface aSurf = createPolynomialSurface();
+        AhtBezierSurface aSurf = createPolynomialSurface();
 
         Point3D aP00 = aSurf.EvalD0(0.0, 0.0);
         Point3D aP10 = aSurf.EvalD0(1.0, 0.0);
@@ -92,10 +93,10 @@ public class GeomEval_AHTBezierSurfaceTest
     [Fact]
     public void EvalD1_ConsistentWithD0()
     {
-        GeomEval_AHTBezierSurface aSurf = createPolynomialSurface();
+        AhtBezierSurface aSurf = createPolynomialSurface();
         double aU = 0.3, aV = 0.7;
 
-        Geom_Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
+        Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
         Point3D aPu1 = aSurf.EvalD0(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Point3D aPu2 = aSurf.EvalD0(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Point3D aPv1 = aSurf.EvalD0(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -115,17 +116,17 @@ public class GeomEval_AHTBezierSurfaceTest
     [Fact]
     public void Periodicity()
     {
-        GeomEval_AHTBezierSurface aSurf = createPolynomialSurface();
-        Assert.False(aSurf.IsUPeriodic());
-        Assert.False(aSurf.IsVPeriodic());
-        Assert.False(aSurf.IsUClosed());
-        Assert.False(aSurf.IsVClosed());
+        AhtBezierSurface aSurf = createPolynomialSurface();
+        Assert.False(aSurf.IsUPeriodic);
+        Assert.False(aSurf.IsVPeriodic);
+        Assert.False(aSurf.IsUClosed);
+        Assert.False(aSurf.IsVClosed);
     }
 
     [Fact]
     public void Reverse_NotImplemented()
     {
-        GeomEval_AHTBezierSurface aSurf = createPolynomialSurface();
+        AhtBezierSurface aSurf = createPolynomialSurface();
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReverse());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReverse());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReversedParameter(0.5));
@@ -135,7 +136,7 @@ public class GeomEval_AHTBezierSurfaceTest
     [Fact]
     public void Iso_NotImplemented()
     {
-        GeomEval_AHTBezierSurface aSurf = createPolynomialSurface();
+        AhtBezierSurface aSurf = createPolynomialSurface();
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UIso(0.5));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VIso(0.5));
     }
@@ -143,7 +144,7 @@ public class GeomEval_AHTBezierSurfaceTest
     [Fact]
     public void Transform_NotImplemented()
     {
-        GeomEval_AHTBezierSurface aSurf = createPolynomialSurface();
+        AhtBezierSurface aSurf = createPolynomialSurface();
         Transform3D aTrsf = new();
         aTrsf.SetTranslation(new Vector3D(1.0, 2.0, 3.0));
 
@@ -154,27 +155,27 @@ public class GeomEval_AHTBezierSurfaceTest
     [Fact]
     public void Copy_Independent()
     {
-        GeomEval_AHTBezierSurface aSurf = createPolynomialSurface();
-        Geom_Geometry aCopy = aSurf.Copy();
+        AhtBezierSurface aSurf = createPolynomialSurface();
+        Geometry3D aCopy = aSurf.Copy();
         Assert.NotNull(aCopy);
-        GeomEval_AHTBezierSurface? aCopySurf = aCopy as GeomEval_AHTBezierSurface;
+        AhtBezierSurface? aCopySurf = aCopy as AhtBezierSurface;
         Assert.NotNull(aCopySurf);
-        Assert.Equal(3, aCopySurf.NbPolesU());
-        Assert.Equal(3, aCopySurf.NbPolesV());
+        Assert.Equal(3, aCopySurf.PolesUCount);
+        Assert.Equal(3, aCopySurf.PolesVCount);
         Assert.Equal(2, aCopySurf.AlgDegreeU());
     }
 
     [Fact]
     public void EvalD2_ConsistentWithD1()
     {
-        GeomEval_AHTBezierSurface aSurf = createPolynomialSurface();
+        AhtBezierSurface aSurf = createPolynomialSurface();
         double aU = 0.3, aV = 0.4;
 
-        Geom_Surface.ResD2 aD2 = aSurf.EvalD2(aU, aV);
+        Surface.ResD2 aD2 = aSurf.EvalD2(aU, aV);
 
         // D2U: finite difference of D1U w.r.t. U
-        Geom_Surface.ResD1 aD1Uplus = aSurf.EvalD1(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
-        Geom_Surface.ResD1 aD1Uminus = aSurf.EvalD1(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
+        Surface.ResD1 aD1Uplus = aSurf.EvalD1(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
+        Surface.ResD1 aD1Uminus = aSurf.EvalD1(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Vector3D aFD_D2U = new((aD1Uplus.D1U.XYZ() - aD1Uminus.D1U.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
         Assert.Equal(aFD_D2U.X(), aD2.D2U.X(), THE_FD_TOL_D2);
@@ -182,8 +183,8 @@ public class GeomEval_AHTBezierSurfaceTest
         Assert.Equal(aFD_D2U.Z(), aD2.D2U.Z(), THE_FD_TOL_D2);
 
         // D2V: finite difference of D1V w.r.t. V
-        Geom_Surface.ResD1 aD1Vplus = aSurf.EvalD1(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
-        Geom_Surface.ResD1 aD1Vminus = aSurf.EvalD1(aU, aV - global::Kerf.Engine.Foundation.Precision.Confusion());
+        Surface.ResD1 aD1Vplus = aSurf.EvalD1(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Surface.ResD1 aD1Vminus = aSurf.EvalD1(aU, aV - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector3D aFD_D2V = new((aD1Vplus.D1V.XYZ() - aD1Vminus.D1V.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
         Assert.Equal(aFD_D2V.X(), aD2.D2V.X(), THE_FD_TOL_D2);
@@ -201,14 +202,14 @@ public class GeomEval_AHTBezierSurfaceTest
     [Fact]
     public void EvalD3_ConsistentWithD2()
     {
-        GeomEval_AHTBezierSurface aSurf = createPolynomialSurface();
+        AhtBezierSurface aSurf = createPolynomialSurface();
         double aU = 0.4, aV = 0.3;
 
-        Geom_Surface.ResD3 aD3 = aSurf.EvalD3(aU, aV);
+        Surface.ResD3 aD3 = aSurf.EvalD3(aU, aV);
 
         // D3U: finite difference of D2U w.r.t. U
-        Geom_Surface.ResD2 aD2Uplus = aSurf.EvalD2(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
-        Geom_Surface.ResD2 aD2Uminus = aSurf.EvalD2(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
+        Surface.ResD2 aD2Uplus = aSurf.EvalD2(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
+        Surface.ResD2 aD2Uminus = aSurf.EvalD2(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Vector3D aFD_D3U = new((aD2Uplus.D2U.XYZ() - aD2Uminus.D2U.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
         Assert.Equal(aFD_D3U.X(), aD3.D3U.X(), THE_FD_TOL_D2);
@@ -216,8 +217,8 @@ public class GeomEval_AHTBezierSurfaceTest
         Assert.Equal(aFD_D3U.Z(), aD3.D3U.Z(), THE_FD_TOL_D2);
 
         // D3V: finite difference of D2V w.r.t. V
-        Geom_Surface.ResD2 aD2Vplus = aSurf.EvalD2(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
-        Geom_Surface.ResD2 aD2Vminus = aSurf.EvalD2(aU, aV - global::Kerf.Engine.Foundation.Precision.Confusion());
+        Surface.ResD2 aD2Vplus = aSurf.EvalD2(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Surface.ResD2 aD2Vminus = aSurf.EvalD2(aU, aV - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector3D aFD_D3V = new((aD2Vplus.D2V.XYZ() - aD2Vminus.D2V.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
         Assert.Equal(aFD_D3V.X(), aD3.D3V.X(), THE_FD_TOL_D2);
@@ -242,10 +243,10 @@ public class GeomEval_AHTBezierSurfaceTest
     [Fact]
     public void EvalDN_ConsistentWithD1()
     {
-        GeomEval_AHTBezierSurface aSurf = createPolynomialSurface();
+        AhtBezierSurface aSurf = createPolynomialSurface();
         double aU = 0.5, aV = 0.5;
 
-        Geom_Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
+        Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
         Vector3D aDN_U = aSurf.EvalDN(aU, aV, 1, 0);
         Vector3D aDN_V = aSurf.EvalDN(aU, aV, 0, 1);
 
@@ -261,26 +262,26 @@ public class GeomEval_AHTBezierSurfaceTest
     [Fact]
     public void RationalUniformScale_Invariant()
     {
-        GeomEval_AHTBezierSurface aRatW1 = createPolynomialSurfaceRationalUniformWeight(1.0);
-        GeomEval_AHTBezierSurface aRatW5 = createPolynomialSurfaceRationalUniformWeight(5.0);
+        AhtBezierSurface aRatW1 = createPolynomialSurfaceRationalUniformWeight(1.0);
+        AhtBezierSurface aRatW5 = createPolynomialSurfaceRationalUniformWeight(5.0);
         double aU = 0.37;
         double aV = 0.62;
 
         Assert.Equal(0.0, aRatW1.EvalD0(aU, aV).Distance(aRatW5.EvalD0(aU, aV)), 1e-12);
 
-        Geom_Surface.ResD1 aD1W1 = aRatW1.EvalD1(aU, aV);
-        Geom_Surface.ResD1 aD1W5 = aRatW5.EvalD1(aU, aV);
+        Surface.ResD1 aD1W1 = aRatW1.EvalD1(aU, aV);
+        Surface.ResD1 aD1W5 = aRatW5.EvalD1(aU, aV);
         Assert.Equal(0.0, vecDiff(aD1W1.D1U, aD1W5.D1U), 1e-12);
         Assert.Equal(0.0, vecDiff(aD1W1.D1V, aD1W5.D1V), 1e-12);
 
-        Geom_Surface.ResD2 aD2W1 = aRatW1.EvalD2(aU, aV);
-        Geom_Surface.ResD2 aD2W5 = aRatW5.EvalD2(aU, aV);
+        Surface.ResD2 aD2W1 = aRatW1.EvalD2(aU, aV);
+        Surface.ResD2 aD2W5 = aRatW5.EvalD2(aU, aV);
         Assert.Equal(0.0, vecDiff(aD2W1.D2U, aD2W5.D2U), 1e-12);
         Assert.Equal(0.0, vecDiff(aD2W1.D2V, aD2W5.D2V), 1e-12);
         Assert.Equal(0.0, vecDiff(aD2W1.D2UV, aD2W5.D2UV), 1e-12);
 
-        Geom_Surface.ResD3 aD3W1 = aRatW1.EvalD3(aU, aV);
-        Geom_Surface.ResD3 aD3W5 = aRatW5.EvalD3(aU, aV);
+        Surface.ResD3 aD3W1 = aRatW1.EvalD3(aU, aV);
+        Surface.ResD3 aD3W5 = aRatW5.EvalD3(aU, aV);
         Assert.Equal(0.0, vecDiff(aD3W1.D3U, aD3W5.D3U), 1e-12);
         Assert.Equal(0.0, vecDiff(aD3W1.D3V, aD3W5.D3V), 1e-12);
         Assert.Equal(0.0, vecDiff(aD3W1.D3UUV, aD3W5.D3UUV), 1e-12);
@@ -314,8 +315,8 @@ public class GeomEval_AHTBezierSurfaceTest
                 aWeights.SetValue(i, j, (i == 1 && j == 1) ? 4.0 : 0.5 + 0.1 * i + 0.05 * j);
             }
         }
-        GeomEval_AHTBezierSurface aSurf = new(aPoles, theDegU, theDegV, theAlphaU, theAlphaV, theBetaU, theBetaV);
-        GeomEval_AHTBezierSurface aRational =
+        AhtBezierSurface aSurf = new(aPoles, theDegU, theDegV, theAlphaU, theAlphaV, theBetaU, theBetaV);
+        AhtBezierSurface aRational =
             new(aPoles, aWeights, theDegU, theDegV, theAlphaU, theAlphaV, theBetaU, theBetaV);
         double[] aParams = [0.0, 0.15, 0.5, 0.85];
         foreach (double aU in aParams)

@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
@@ -44,7 +45,7 @@ public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
     }
 
     /// <summary>Initializes the curve; returns true when the Frenet law is used (lines and conics).</summary>
-    public override bool SetCurve(Adaptor3d_Curve C)
+    public override bool SetCurve(CurveAdaptorBase C)
     {
         base.SetCurve(C);
         if (C is not null)

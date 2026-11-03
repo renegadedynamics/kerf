@@ -7,7 +7,12 @@
 #pragma warning disable CS0168 // locals OCCT declares and never uses
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_Orientation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 using static Occt.TopoDSToStep_MakeWireError;
 
 namespace Occt;
@@ -27,18 +32,18 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
         done = false;
     }
 
-    public TopoDSToStep_MakeStepWire(in TopoDS_Wire W, TopoDSToStep_Tool T, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
+    public TopoDSToStep_MakeStepWire(in Wire W, TopoDSToStep_Tool T, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
     {
         done = false;
         Init(W, T, FP, theLocalFactors);
     }
 
-    public TopoDSToStep_MakeStepWire(in TopoDS_Wire W, TopoDSToStep_Tool T, Transfer_FinderProcess FP)
+    public TopoDSToStep_MakeStepWire(in Wire W, TopoDSToStep_Tool T, Transfer_FinderProcess FP)
         : this(W, T, FP, new StepData_Factors())
     {
     }
 
-    public void Init(in TopoDS_Wire aWire, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
+    public void Init(in Wire aWire, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
     {
         // ----------------------------------------------------------------
         // The Wire is given in its relative orientation (i.e. in the face)
@@ -53,7 +58,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
             return;
         }
 
-        if (aWire.Orientation() == TopAbs_INTERNAL || aWire.Orientation() == TopAbs_EXTERNAL)
+        if (aWire.Orientation() == Internal || aWire.Orientation() == External)
         {
             var errShape = new TransferBRep_ShapeMapper(aWire);
             FP.AddWarning(errShape, " Wire(internal/external) from Non Manifold Topology");
@@ -73,20 +78,20 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
             StepShape_VertexPoint VertexPoint;
             StepGeom_Point Point;
             StepShape_TopologicalRepresentationItem Gpms;
-            TopoDS_Vertex TopoDSVertex1, TopoDSVertex2;
+            Vertex TopoDSVertex1, TopoDSVertex2;
 
             var MkVertex = new TopoDSToStep_MakeStepVertex();
 
-            for (var ItW = new BRepTools_WireExplorer(aWire, aTool.CurrentFace()); ItW.More(); ItW.Next())
+            for (var ItW = new WireExplorer(aWire, aTool.CurrentFace()); ItW.More(); ItW.Next())
             {
-                TopoDS_Edge CurrentEdge = ItW.Current();
-                if (CurrentEdge.Orientation() == TopAbs_FORWARD)
+                Edge CurrentEdge = ItW.Current();
+                if (CurrentEdge.Orientation() == Forward)
                 {
-                    TopExp.Vertices(CurrentEdge, out TopoDSVertex1, out TopoDSVertex2);
+                    Exploration.Vertices(CurrentEdge, out TopoDSVertex1, out TopoDSVertex2);
                 }
                 else
                 {
-                    TopExp.Vertices(CurrentEdge, out TopoDSVertex2, out TopoDSVertex1);
+                    Exploration.Vertices(CurrentEdge, out TopoDSVertex2, out TopoDSVertex1);
                 }
 
                 MkVertex.Init(TopoDSVertex1, aTool, FP, theLocalFactors);
@@ -147,7 +152,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
 
             var MkEdge = new TopoDSToStep_MakeStepEdge();
 
-            TopoDS_Wire ForwardWire = TopoDS.Wire(aWire.Oriented(TopAbs_FORWARD));
+            Wire ForwardWire = ShapeCasts.Wire(aWire.Oriented(Forward));
             var STW = new ShapeFix_Wire(ForwardWire, aTool.CurrentFace(), global::Kerf.Engine.Foundation.Precision.Confusion());
             // for toroidal like surfaces we need to use both (3d and 2d) mode to correctly reorder the
             // edges
@@ -165,8 +170,8 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
             var anExtWire2 = new ShapeExtend_WireData();
             for (int ie = 1; ie <= anExtWire.NbEdges(); ie++)
             {
-                TopoDS_Edge anEdge = anExtWire.Edge(ie);
-                if (!BRep_Tool.Degenerated(anEdge))
+                Edge anEdge = anExtWire.Edge(ie);
+                if (!Tool.Degenerated(anEdge))
                 {
                     anExtWire2.Add(anEdge);
                 }
@@ -203,7 +208,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
                     {
                         // make vertex_loop
                         var sae = new ShapeAnalysis_Edge();
-                        TopoDS_Vertex V = sae.FirstVertex(anExtWire2.Edge(1));
+                        Vertex V = sae.FirstVertex(anExtWire2.Edge(1));
                         var mkV = new TopoDSToStep_MakeStepVertex(V, aTool, FP, theLocalFactors);
                         var vloop = new StepShape_VertexLoop();
                         var name = new TCollection_HAsciiString("");
@@ -219,14 +224,14 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
 
             for (int nEdge = 1; nEdge <= anExtWire.NbEdges(); nEdge++)
             {
-                TopoDS_Edge anEdge = anExtWire.Edge(nEdge);
+                Edge anEdge = anExtWire.Edge(nEdge);
 
                 // ---------------------------------
                 // --- Is the edge Degenerated ? ---
                 // ---------------------------------
 
-                Geom2d_Curve theC2d = BRep_Tool.CurveOnSurface(anEdge, aTool.CurrentFace(), out double cf, out double cl);
-                if (BRep_Tool.Degenerated(anEdge))
+                Curve2D theC2d = Tool.CurveOnSurface(anEdge, aTool.CurrentFace(), out double cf, out double cl);
+                if (Tool.Degenerated(anEdge))
                 {
                     var errShape = new TransferBRep_ShapeMapper(aWire);
                     FP.AddWarning(errShape, " EdgeLoop: Degenerated Pcurve not mapped");
@@ -240,7 +245,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
                         OrientedEdge = new StepShape_OrientedEdge();
                         Epms = MkEdge.Value() as StepShape_Edge;
                         var aName = new TCollection_HAsciiString("");
-                        OrientedEdge.Init(aName, Epms, (anEdge.Orientation() == TopAbs_FORWARD));
+                        OrientedEdge.Init(aName, Epms, (anEdge.Orientation() == Forward));
                         mySeq.Append(OrientedEdge);
                     }
                     else
@@ -282,7 +287,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
         }
     }
 
-    public void Init(in TopoDS_Wire aWire, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP)
+    public void Init(in Wire aWire, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP)
         => Init(aWire, aTool, FP, new StepData_Factors());
 
     /// <exception cref="NotDoneException">The mapping wasn't done.</exception>

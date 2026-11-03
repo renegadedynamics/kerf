@@ -6,7 +6,10 @@
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Collections;
 using static Occt.BRepMesh_DegreeOfFreedom;
 
@@ -561,8 +564,8 @@ public sealed class BRepMesh_DataStructureOfDelaun : Transient
             return "Error: file name or mesh data is null";
         }
 
-        TopoDS_Compound aMesh = new();
-        BRep_Builder aBuilder = new();
+        Compound aMesh = new();
+        BrepBuilder aBuilder = new();
         aBuilder.MakeCompound(ref aMesh);
 
         try
@@ -601,7 +604,7 @@ public sealed class BRepMesh_DataStructureOfDelaun : Transient
                 }
             }
 
-            if (!BRepTools.Write(aMesh, theFileNameStr))
+            if (!BrepTools.Write(aMesh, theFileNameStr))
             {
                 return "Error: write failed";
             }

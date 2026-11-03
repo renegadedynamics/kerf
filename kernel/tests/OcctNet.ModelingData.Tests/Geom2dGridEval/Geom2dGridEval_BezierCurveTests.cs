@@ -1,6 +1,7 @@
 // Port of OCCT's src/ModelingData/TKG2d/GTests/Geom2dGridEval_BezierCurve_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -20,22 +21,22 @@ public class Geom2dGridEval_BezierCurveTest
         return aParams;
     }
 
-    private static Geom2d_BezierCurve CubicBezier()
+    private static BezierCurve2D CubicBezier()
     {
         NCollection_Array1<Point2D> aPoles = new(1, 4);
         aPoles.SetValue(1, new Point2D(0, 0));
         aPoles.SetValue(2, new Point2D(1, 2));
         aPoles.SetValue(3, new Point2D(3, 2));
         aPoles.SetValue(4, new Point2D(4, 0));
-        return new Geom2d_BezierCurve(aPoles);
+        return new BezierCurve2D(aPoles);
     }
 
     [Fact]
     public void BasicD0()
     {
-        Geom2d_BezierCurve aBezier = CubicBezier();
+        BezierCurve2D aBezier = CubicBezier();
 
-        Geom2dGridEval_BezierCurve anEval = new(aBezier);
+        BezierCurveGrid2D anEval = new(aBezier);
         Assert.NotNull(anEval.Geometry());
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 11);
@@ -53,12 +54,12 @@ public class Geom2dGridEval_BezierCurveTest
     [Fact]
     public void D1()
     {
-        Geom2d_BezierCurve aBezier = CubicBezier();
-        Geom2dGridEval_BezierCurve anEval = new(aBezier);
+        BezierCurve2D aBezier = CubicBezier();
+        BezierCurveGrid2D anEval = new(aBezier);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 11);
 
-        NCollection_Array1<Geom2d_Curve.ResD1> aGrid = anEval.EvaluateGridD1(aParams);
+        NCollection_Array1<Curve2D.ResD1> aGrid = anEval.EvaluateGridD1(aParams);
 
         for (int i = 1; i <= 11; ++i)
         {
@@ -71,12 +72,12 @@ public class Geom2dGridEval_BezierCurveTest
     [Fact]
     public void D2()
     {
-        Geom2d_BezierCurve aBezier = CubicBezier();
-        Geom2dGridEval_BezierCurve anEval = new(aBezier);
+        BezierCurve2D aBezier = CubicBezier();
+        BezierCurveGrid2D anEval = new(aBezier);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 11);
 
-        NCollection_Array1<Geom2d_Curve.ResD2> aGrid = anEval.EvaluateGridD2(aParams);
+        NCollection_Array1<Curve2D.ResD2> aGrid = anEval.EvaluateGridD2(aParams);
 
         for (int i = 1; i <= 11; ++i)
         {
@@ -90,12 +91,12 @@ public class Geom2dGridEval_BezierCurveTest
     [Fact]
     public void D3()
     {
-        Geom2d_BezierCurve aBezier = CubicBezier();
-        Geom2dGridEval_BezierCurve anEval = new(aBezier);
+        BezierCurve2D aBezier = CubicBezier();
+        BezierCurveGrid2D anEval = new(aBezier);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 11);
 
-        NCollection_Array1<Geom2d_Curve.ResD3> aGrid = anEval.EvaluateGridD3(aParams);
+        NCollection_Array1<Curve2D.ResD3> aGrid = anEval.EvaluateGridD3(aParams);
 
         for (int i = 1; i <= 11; ++i)
         {
@@ -110,8 +111,8 @@ public class Geom2dGridEval_BezierCurveTest
     [Fact]
     public void DN_BeyondDegree()
     {
-        Geom2d_BezierCurve aBezier = CubicBezier();
-        Geom2dGridEval_BezierCurve anEval = new(aBezier);
+        BezierCurve2D aBezier = CubicBezier();
+        BezierCurveGrid2D anEval = new(aBezier);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 11);
 
@@ -136,8 +137,8 @@ public class Geom2dGridEval_BezierCurveTest
         aWeights.SetValue(2, 1.0 / Math.Sqrt(2.0));
         aWeights.SetValue(3, 1.0);
 
-        Geom2d_BezierCurve aBezier = new(aPoles, aWeights);
-        Geom2dGridEval_BezierCurve anEval = new(aBezier);
+        BezierCurve2D aBezier = new(aPoles, aWeights);
+        BezierCurveGrid2D anEval = new(aBezier);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 21);
 

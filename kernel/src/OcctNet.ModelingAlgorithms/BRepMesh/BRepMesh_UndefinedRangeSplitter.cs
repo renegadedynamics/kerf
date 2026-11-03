@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -16,7 +17,7 @@ public class BRepMesh_UndefinedRangeSplitter : BRepMesh_NURBSRangeSplitter
     }
 
     /// <summary>The number of intervals computed from the available geometrical parameters: 1.</summary>
-    protected override int getUndefinedIntervalNb(Adaptor3d_Surface theSurface,
+    protected override int getUndefinedIntervalNb(SurfaceAdaptorBase theSurface,
                                                   bool isU,
                                                   Continuity theContinuity)
     {

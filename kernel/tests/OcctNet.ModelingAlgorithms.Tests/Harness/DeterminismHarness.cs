@@ -11,6 +11,8 @@
 // interfere.
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using System.Globalization;
 using System.Text;
 
@@ -54,13 +56,13 @@ internal static class DeterminismHarness
     }
 
     /// <summary>As <see cref="AssertSerialEqualsParallel(Func{string}, int, int[])"/>, comparing the result's BRep text.</summary>
-    public static TopoDS_Shape AssertSerialEqualsParallel(Func<TopoDS_Shape> theRun, int theRepeats = 3, params int[] theDegrees)
+    public static Shape AssertSerialEqualsParallel(Func<Shape> theRun, int theRepeats = 3, params int[] theDegrees)
     {
-        TopoDS_Shape aReference = new();
+        Shape aReference = new();
         AssertSerialEqualsParallel(() =>
         {
-            TopoDS_Shape aShape = theRun();
-            if (aReference.IsNull())
+            Shape aShape = theRun();
+            if (aReference.IsNull)
             {
                 aReference = aShape;
             }
@@ -73,13 +75,13 @@ internal static class DeterminismHarness
     /// As <see cref="AssertSerialEqualsParallel(Func{string}, int, int[])"/>, comparing the result's BRep text and its
     /// history over the arguments (<see cref="HistoryText"/>).
     /// </summary>
-    public static void AssertSerialEqualsParallel(IReadOnlyList<TopoDS_Shape> theArguments,
-                                                  Func<(TopoDS_Shape Result, BRepTools_History? History)> theRun,
+    public static void AssertSerialEqualsParallel(IReadOnlyList<Shape> theArguments,
+                                                  Func<(Shape Result, History? History)> theRun,
                                                   int theRepeats = 3, params int[] theDegrees)
     {
         AssertSerialEqualsParallel(() =>
         {
-            (TopoDS_Shape aResult, BRepTools_History? aHistory) = theRun();
+            (Shape aResult, History? aHistory) = theRun();
             return BRepTextComparison.Write(aResult) + "\n" + HistoryText(theArguments, aResult, aHistory);
         }, theRepeats, theDegrees);
     }
@@ -89,31 +91,31 @@ internal static class DeterminismHarness
     /// order over the arguments in turn), the indices of its modified and generated shapes in the result's
     /// TopExp.MapShapes numbering (0 for a shape not in the result), and whether it is removed.
     /// </summary>
-    public static string HistoryText(IReadOnlyList<TopoDS_Shape> theArguments, TopoDS_Shape theResult, BRepTools_History? theHistory)
+    public static string HistoryText(IReadOnlyList<Shape> theArguments, Shape theResult, History? theHistory)
     {
         if (theHistory is null)
         {
             return "no history";
         }
-        var aResultMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        if (!theResult.IsNull())
+        var aResultMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        if (!theResult.IsNull)
         {
-            TopExp.MapShapes(theResult, aResultMap);
+            Exploration.MapShapes(theResult, aResultMap);
         }
-        var anArgumentMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        foreach (TopoDS_Shape anArgument in theArguments)
+        var anArgumentMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        foreach (Shape anArgument in theArguments)
         {
-            TopExp.MapShapes(anArgument, anArgumentMap);
+            Exploration.MapShapes(anArgument, anArgumentMap);
         }
         var aText = new StringBuilder();
         for (int i = 1; i <= anArgumentMap.Extent(); ++i)
         {
-            TopoDS_Shape aShape = anArgumentMap.FindKey(i);
-            if (!BRepTools_History.IsSupportedType(aShape))
+            Shape aShape = anArgumentMap.FindKey(i);
+            if (!History.IsSupportedType(aShape))
             {
                 continue;
             }
-            aText.Append(CultureInfo.InvariantCulture, $"{i} {aShape.ShapeType()} M[");
+            aText.Append(CultureInfo.InvariantCulture, $"{i} {Kerf.Engine.Foundation.OcctTypeNames.Of(aShape.ShapeType())} M[");
             aText.AppendJoin(' ', theHistory.Modified(aShape).Select(s => aResultMap.FindIndex(s)));
             aText.Append("] G[");
             aText.AppendJoin(' ', theHistory.Generated(aShape).Select(s => aResultMap.FindIndex(s)));

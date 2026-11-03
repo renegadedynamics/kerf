@@ -1,89 +1,93 @@
 // OCCT.NET: copying the frozen parts of a shape an algorithm works on in place (unit 6G). Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Kerf.Topology;
 
-public static partial class BRepTools
+using Occt;
+
+namespace Kerf.Engine.Topology.Tools;
+
+public static partial class BrepTools
 {
     /// <summary>
     /// Makes an unfrozen shape that an algorithm is about to write into in place (its own intermediate result) free of
     /// frozen TShapes: each frozen sub-graph is replaced, in its unfrozen parents, by an exact copy
-    /// (<see cref="ExactCopyForWrite(in TopoDS_Shape, out BRepTools_History)"/>'s), and a frozen shape is replaced as a
+    /// (<see cref="ExactCopyForWrite(in Shape, out History)"/>'s), and a frozen shape is replaced as a
     /// whole. The unfrozen TShapes stay the same objects, so the in-place writes still reach every shape that holds
     /// them, as in OCCT, while the frozen originals (a caller's or published shapes) are never written.
     /// </summary>
-    /// <param name="theShape">The shape (it is returned as is when nothing in it is frozen).</param>
-    /// <param name="theHistory">Records each vertex, edge, face and solid of the shape, as placed in it, replaced by its
+    /// <param name="shape">The shape (it is returned as is when nothing in it is frozen).</param>
+    /// <param name="history">Records each vertex, edge, face and solid of the shape, as placed in it, replaced by its
     /// copy as modified into the copy.</param>
     /// <returns>The shape, or its copy when it is frozen itself.</returns>
-    internal static TopoDS_Shape CopyFrozenForWrite(in TopoDS_Shape theShape, BRepTools_History theHistory)
+    internal static Shape CopyFrozenForWrite(in Shape shape, History history)
     {
-        if (theShape.IsNull() || !HoldsFrozen(theShape))
+        if (shape.IsNull || !HoldsFrozen(shape))
         {
-            return theShape;
+            return shape;
         }
 
         // the sub-shapes as placed in the shape, before the replacement
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, aMap);
+        var map = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(shape, map);
 
-        var aCopies = new Dictionary<TopoDS_TShape, TopoDS_TShape>(ReferenceEqualityComparer.Instance);
-        var aVisited = new HashSet<TopoDS_TShape>(ReferenceEqualityComparer.Instance);
-        TopoDS_Shape aResult = theShape;
-        aResult.TShape(replaceFrozen(theShape.TShape()!, aCopies, aVisited));
+        var copies = new Dictionary<TShape, TShape>(ReferenceEqualityComparer.Instance);
+        var visited = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
+        Shape result = shape;
+        result.TShape(ReplaceFrozen(shape.TShape()!, copies, visited));
 
-        for (int i = 1; i <= aMap.Extent(); i++)
+        for (int i = 1; i <= map.Extent(); i++)
         {
-            TopoDS_Shape aS = aMap[i];
-            if (BRepTools_History.IsSupportedType(aS) && aCopies.TryGetValue(aS.TShape()!, out TopoDS_TShape? aCopy)
-                && !ReferenceEquals(aCopy, aS.TShape()))
+            Shape s = map[i];
+            if (History.IsSupportedType(s) && copies.TryGetValue(s.TShape()!, out TShape? copy)
+                && !ReferenceEquals(copy, s.TShape()))
             {
-                TopoDS_Shape aNew = aS;
-                aNew.TShape(aCopy);
-                theHistory.AddModified(aS, aNew);
+                Shape aNew = s;
+                aNew.TShape(copy);
+                history.AddModified(s, aNew);
             }
         }
-        return aResult;
+        return result;
     }
 
     // A frozen TShape is copied; an unfrozen one gets its frozen children replaced in place (each TShape once)
-    private static TopoDS_TShape replaceFrozen(TopoDS_TShape theTShape, Dictionary<TopoDS_TShape, TopoDS_TShape> theCopies,
-                                               HashSet<TopoDS_TShape> theVisited)
+    private static TShape ReplaceFrozen(TShape tShape, Dictionary<TShape, TShape> copies,
+                                               HashSet<TShape> visited)
     {
-        if (theTShape.IsFrozen)
+        if (tShape.IsFrozen)
         {
-            return exactCopy(theTShape, theCopies);
+            return ExactCopy(tShape, copies);
         }
 
-        if (!theVisited.Add(theTShape))
+        if (!visited.Add(tShape))
         {
-            return theTShape;
+            return tShape;
         }
 
-        bool aChanged = false;
-        List<TopoDS_Shape> aChildren = [];
-        for (var anIt = new NCollection_List<TopoDS_Shape>.Iterator(theTShape.myShapes); anIt.More(); anIt.Next())
+        bool changed = false;
+        List<Shape> children = [];
+        for (var it = new NCollection_List<Shape>.Iterator(tShape._shapes); it.More(); it.Next())
         {
-            TopoDS_Shape aChild = anIt.Value();
-            TopoDS_TShape aChildT = aChild.TShape()!;
-            TopoDS_TShape aNewT = replaceFrozen(aChildT, theCopies, theVisited);
-            if (!ReferenceEquals(aNewT, aChildT))
+            Shape child = it.Value();
+            TShape childT = child.TShape()!;
+            TShape newT = ReplaceFrozen(childT, copies, visited);
+            if (!ReferenceEquals(newT, childT))
             {
-                aNewT.Free(false); // as TopoDS_Builder::Add clears it
-                aChild.TShape(aNewT);
-                aChanged = true;
+                newT.Free(false); // as TopoDS_Builder::Add clears it
+                child.TShape(newT);
+                changed = true;
             }
-            aChildren.Add(aChild);
+            children.Add(child);
         }
 
-        if (aChanged)
+        if (changed)
         {
-            theTShape.myShapes.Clear();
-            foreach (TopoDS_Shape aChild in aChildren)
+            tShape._shapes.Clear();
+            foreach (Shape child in children)
             {
-                theTShape.myShapes.Append(aChild);
+                tShape._shapes.Append(child);
             }
         }
-        return theTShape;
+        return tShape;
     }
 }

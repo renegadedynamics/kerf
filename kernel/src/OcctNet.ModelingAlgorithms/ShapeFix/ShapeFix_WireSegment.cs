@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_Orientation;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -30,8 +31,8 @@ namespace Occt;
 public struct ShapeFix_WireSegment
 {
     private ShapeExtend_WireData        myWire;
-    private TopoDS_Vertex               myVertex;
-    private TopAbs_Orientation          myOrient;
+    private Vertex               myVertex;
+    private Orientation          myOrient;
     private NCollection_HSequence<int>  myIUMin;
     private NCollection_HSequence<int>  myIUMax;
     private NCollection_HSequence<int>  myIVMin;
@@ -44,11 +45,11 @@ public struct ShapeFix_WireSegment
     public ShapeFix_WireSegment()
     {
         Clear();
-        myOrient = TopAbs_FORWARD;
+        myOrient = Forward;
     }
 
     /// <summary>Creates a segment and initializes it with a wire and an orientation.</summary>
-    public ShapeFix_WireSegment(ShapeExtend_WireData wire, TopAbs_Orientation ori = TopAbs_EXTERNAL)
+    public ShapeFix_WireSegment(ShapeExtend_WireData wire, Orientation ori = External)
     {
         Load(wire);
         myOrient = ori;
@@ -65,7 +66,7 @@ public struct ShapeFix_WireSegment
         myIUMax               = new NCollection_HSequence<int>();
         myIVMin               = new NCollection_HSequence<int>();
         myIVMax               = new NCollection_HSequence<int>();
-        myVertex              = new TopoDS_Vertex();
+        myVertex              = new Vertex();
     }
 
     /// <summary>Loads a wire (its edges are added to a new wire data, with indefinite patch indices).</summary>
@@ -86,23 +87,23 @@ public struct ShapeFix_WireSegment
     public readonly ShapeExtend_WireData WireData() => myWire;
 
     /// <summary>Sets the orientation flag.</summary>
-    internal void Orientation(TopAbs_Orientation ori)
+    internal void Orientation(Orientation ori)
     {
         myOrient = ori;
     }
 
     /// <summary>Returns the orientation flag.</summary>
-    public readonly TopAbs_Orientation Orientation() => myOrient;
+    public readonly Orientation Orientation() => myOrient;
 
     /// <summary>Returns the first vertex of the first edge of the wire (whatever <see cref="Orientation()"/>).</summary>
-    public readonly TopoDS_Vertex FirstVertex()
+    public readonly Vertex FirstVertex()
     {
         var sae = new ShapeAnalysis_Edge();
         return sae.FirstVertex(myWire.Edge(1));
     }
 
     /// <summary>Returns the last vertex of the last edge of the wire (whatever <see cref="Orientation()"/>).</summary>
-    public readonly TopoDS_Vertex LastVertex()
+    public readonly Vertex LastVertex()
     {
         var sae = new ShapeAnalysis_Edge();
         return sae.LastVertex(myWire.Edge(myWire.NbEdges()));
@@ -111,7 +112,7 @@ public struct ShapeFix_WireSegment
     /// <summary>True if FirstVertex() is LastVertex().</summary>
     public readonly bool IsClosed()
     {
-        TopoDS_Vertex v;
+        Vertex v;
         v = FirstVertex();
         return v.IsSame(LastVertex());
     }
@@ -122,10 +123,10 @@ public struct ShapeFix_WireSegment
     public readonly int NbEdges() => myWire.NbEdges();
 
     /// <summary>Returns the edge of index <paramref name="i"/>.</summary>
-    public readonly TopoDS_Edge Edge(int i) => myWire.Edge(i);
+    public readonly Edge Edge(int i) => myWire.Edge(i);
 
     /// <summary>Replaces the edge of index <paramref name="i"/>.</summary>
-    internal readonly void SetEdge(int i, in TopoDS_Edge edge)
+    internal readonly void SetEdge(int i, in Edge edge)
     {
         myWire.Set(edge, i);
     }
@@ -133,13 +134,13 @@ public struct ShapeFix_WireSegment
     /// <summary>
     /// Inserts an edge at index <paramref name="i"/> (at the end if 0) with indefinite patch indices.
     /// </summary>
-    internal readonly void AddEdge(int i, in TopoDS_Edge edge)
+    internal readonly void AddEdge(int i, in Edge edge)
     {
         AddEdge(i, edge, MININD, MAXIND, MININD, MAXIND);
     }
 
     /// <summary>Inserts an edge at index <paramref name="i"/> (at the end if 0) with the given patch indices.</summary>
-    internal readonly void AddEdge(int i, in TopoDS_Edge edge, int iumin, int iumax, int ivmin, int ivmax)
+    internal readonly void AddEdge(int i, in Edge edge, int iumin, int iumax, int ivmin, int ivmax)
     {
         myWire.Add(edge, i);
         if (i == 0)
@@ -221,13 +222,13 @@ public struct ShapeFix_WireSegment
         return ok;
     }
 
-    internal void SetVertex(in TopoDS_Vertex theVertex)
+    internal void SetVertex(in Vertex theVertex)
     {
         myVertex = theVertex;
         // SetVertex(theVertex, MININD, MAXIND, MININD, MAXIND);
     }
 
-    public readonly TopoDS_Vertex GetVertex() => myVertex;
+    public readonly Vertex GetVertex() => myVertex;
 
-    public readonly bool IsVertex() => !myVertex.IsNull();
+    public readonly bool IsVertex() => !myVertex.IsNull;
 }

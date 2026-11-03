@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Library;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -29,20 +31,20 @@ public class GeomLib_CheckCurveOnSurfaceParallelTest
             aPoles[i] = new Point3D(i, Math.Sin(i), 0.0);
             aPoles2d[i] = new Point2D(i, Math.Sin(i) + 0.001 * Math.Cos(3.0 * i));
         }
-        Geom_BSplineCurve aCurve = new(aPoles, aKnots, aMults, 3);
-        Geom2d_BSplineCurve aPCurve = new(aPoles2d, aKnots, aMults, 3);
-        Geom_Plane aPlane = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)));
+        BSplineCurve3D aCurve = new(aPoles, aKnots, aMults, 3);
+        BSplineCurve2D aPCurve = new(aPoles2d, aKnots, aMults, 3);
+        PlaneSurface aPlane = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)));
 
-        GeomAdaptor_Curve aC3d = new(aCurve);
-        Adaptor3d_CurveOnSurface aCoS = new(new Geom2dAdaptor_Curve(aPCurve), new GeomAdaptor_Surface(aPlane));
-        GeomLib_CheckCurveOnSurface aCheck = new();
+        CurveAdaptor aC3d = new(aCurve);
+        CurveOnSurface aCoS = new(new CurveAdaptor2D(aPCurve), new SurfaceAdaptor(aPlane));
+        CheckCurveOnSurface aCheck = new();
         aCheck.Init(aC3d, global::Kerf.Engine.Foundation.Precision.PConfusion());
         aCheck.SetParallel(theIsParallel);
         using (theIsForcedSerial ? global::Kerf.Engine.Foundation.OsdParallel.ForceSerialScope() : null)
         {
             aCheck.Perform(aCoS);
         }
-        Assert.True(aCheck.IsDone());
+        Assert.True(aCheck.IsDone);
         return (aCheck.MaxDistance(), aCheck.MaxParameter());
     }
 

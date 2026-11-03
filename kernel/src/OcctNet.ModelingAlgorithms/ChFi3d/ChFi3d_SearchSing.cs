@@ -15,10 +15,10 @@ namespace Occt;
 /// </summary>
 internal sealed class ChFi3d_SearchSing : FunctionWithDerivative
 {
-    private readonly Geom_Curve myC1;
-    private readonly Geom_Curve myC2;
+    private readonly Curve3D myC1;
+    private readonly Curve3D myC2;
 
-    public ChFi3d_SearchSing(Geom_Curve C1, Geom_Curve C2)
+    public ChFi3d_SearchSing(Curve3D C1, Curve3D C2)
     {
         myC1 = C1;
         myC2 = C2;

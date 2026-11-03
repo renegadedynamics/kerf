@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Security.Cryptography;
 using System.Text;
 using OcctNet.DataExchange.Tests.StepGen;
@@ -206,7 +208,7 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
             {
                 aJobs.Add(() =>
                 {
-                    Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aFile));
+                    Assert.True(BrepTools.Read(out Shape aShape, aFile));
                     return WriteLine(XdeDocDump.MakePartDoc(aShape, aShort, aPartIndex), "part src/data/occ/" + aShort, aSchema, aDump);
                 });
             }
@@ -217,7 +219,7 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
             {
                 aJobs.Add(() =>
                 {
-                    Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aPaths[aName]));
+                    Assert.True(BrepTools.Read(out Shape aShape, aPaths[aName]));
                     return WriteLine(XdeDocDump.MakeAssemblyDoc(aShape), "assembly " + aName, aSchema, aDump);
                 });
             }

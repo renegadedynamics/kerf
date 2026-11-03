@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>A connexity block: a set of connected shapes, the loops made of them, and whether the block is regular.</summary>
@@ -13,30 +15,30 @@ namespace Occt;
 public sealed class BOPTools_ConnexityBlock
 {
     private bool myRegular;
-    private readonly NCollection_List<TopoDS_Shape> myShapes;
-    private readonly NCollection_List<TopoDS_Shape> myLoops;
+    private readonly NCollection_List<Shape> myShapes;
+    private readonly NCollection_List<Shape> myLoops;
 
     /// <summary>An empty, regular block.</summary>
     public BOPTools_ConnexityBlock()
     {
         myRegular = true;
-        myShapes = new NCollection_List<TopoDS_Shape>();
-        myLoops = new NCollection_List<TopoDS_Shape>();
+        myShapes = new NCollection_List<Shape>();
+        myLoops = new NCollection_List<Shape>();
     }
 
     /// <summary>A copy of the block (OCCT's implicit copy constructor): the lists are copied.</summary>
     public BOPTools_ConnexityBlock(BOPTools_ConnexityBlock theOther)
     {
         myRegular = theOther.myRegular;
-        myShapes = new NCollection_List<TopoDS_Shape>(theOther.myShapes);
-        myLoops = new NCollection_List<TopoDS_Shape>(theOther.myLoops);
+        myShapes = new NCollection_List<Shape>(theOther.myShapes);
+        myLoops = new NCollection_List<Shape>(theOther.myLoops);
     }
 
     /// <summary>The shapes of the block (the block's own list).</summary>
-    public NCollection_List<TopoDS_Shape> Shapes() => myShapes;
+    public NCollection_List<Shape> Shapes() => myShapes;
 
     /// <summary>The shapes of the block, to change.</summary>
-    internal NCollection_List<TopoDS_Shape> ChangeShapes() => myShapes;
+    internal NCollection_List<Shape> ChangeShapes() => myShapes;
 
     /// <summary>Sets whether the block is regular.</summary>
     internal void SetRegular(bool theFlag) => myRegular = theFlag;
@@ -45,8 +47,8 @@ public sealed class BOPTools_ConnexityBlock
     public bool IsRegular() => myRegular;
 
     /// <summary>The loops made of the block's shapes (the block's own list).</summary>
-    public NCollection_List<TopoDS_Shape> Loops() => myLoops;
+    public NCollection_List<Shape> Loops() => myLoops;
 
     /// <summary>The loops, to change.</summary>
-    internal NCollection_List<TopoDS_Shape> ChangeLoops() => myLoops;
+    internal NCollection_List<Shape> ChangeLoops() => myLoops;
 }

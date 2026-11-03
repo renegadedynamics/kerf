@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 
@@ -18,7 +19,7 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
         { Continuity.C0, Continuity.C1, Continuity.C2, Continuity.C3, Continuity.CN };
 
     /// <summary>D0 to D3, Value, DN and the Eval forms at U.</summary>
-    private static void SameEval(Oracle theOracle, N.Geom2dAdaptor_Curve theNative, Geom2dAdaptor_Curve thePort, double U,
+    private static void SameEval(Oracle theOracle, N.Geom2dAdaptor_Curve theNative, CurveAdaptor2D thePort, double U,
                                  string theWhat, int theMaxN)
     {
         using var aNP = new N.gp_Pnt2d();
@@ -67,20 +68,20 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>Range, closure, periodicity, continuity, intervals of every continuity, resolution, samples, type.</summary>
-    private static void SameQueries(Oracle theOracle, N.Geom2dAdaptor_Curve theNative, Geom2dAdaptor_Curve thePort,
+    private static void SameQueries(Oracle theOracle, N.Geom2dAdaptor_Curve theNative, CurveAdaptor2D thePort,
                                     string theWhat)
     {
         theOracle.Same((int)theNative.GetType_(), (int)thePort.GetType(), $"{theWhat} GetType");
         theOracle.Same(theNative.FirstParameter(), thePort.FirstParameter(), $"{theWhat} FirstParameter");
         theOracle.Same(theNative.LastParameter(), thePort.LastParameter(), $"{theWhat} LastParameter");
-        theOracle.Same(theNative.IsClosed(), thePort.IsClosed(), $"{theWhat} IsClosed");
-        theOracle.Same(theNative.IsPeriodic(), thePort.IsPeriodic(), $"{theWhat} IsPeriodic");
-        if (thePort.IsPeriodic())
+        theOracle.Same(theNative.IsClosed(), thePort.IsClosed, $"{theWhat} IsClosed");
+        theOracle.Same(theNative.IsPeriodic(), thePort.IsPeriodic, $"{theWhat} IsPeriodic");
+        if (thePort.IsPeriodic)
         {
             theOracle.Same(theNative.Period(), thePort.Period(), $"{theWhat} Period");
         }
         theOracle.Same((int)theNative.Continuity(), (int)thePort.Continuity(), $"{theWhat} Continuity");
-        theOracle.Same(theNative.NbSamples(), thePort.NbSamples(), $"{theWhat} NbSamples");
+        theOracle.Same(theNative.NbSamples(), thePort.SampleCount, $"{theWhat} NbSamples");
         foreach (double aR in new[] { 1e-7, 1e-3, 0.1, theOracle.Real(0.0, 2.0) })
         {
             theOracle.SameRelative(theNative.Resolution(aR), thePort.Resolution(aR), $"{theWhat} Resolution({aR})");
@@ -102,17 +103,17 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void SameBSplineQueries(Oracle theOracle, N.Geom2dAdaptor_Curve theNative, Geom2dAdaptor_Curve thePort,
+    private static void SameBSplineQueries(Oracle theOracle, N.Geom2dAdaptor_Curve theNative, CurveAdaptor2D thePort,
                                            string theWhat)
     {
         theOracle.Same(theNative.Degree(), thePort.Degree(), $"{theWhat} Degree");
-        theOracle.Same(theNative.IsRational(), thePort.IsRational(), $"{theWhat} IsRational");
-        theOracle.Same(theNative.NbPoles(), thePort.NbPoles(), $"{theWhat} NbPoles");
-        theOracle.Same(theNative.NbKnots(), thePort.NbKnots(), $"{theWhat} NbKnots");
+        theOracle.Same(theNative.IsRational(), thePort.IsRational, $"{theWhat} IsRational");
+        theOracle.Same(theNative.NbPoles(), thePort.PoleCount, $"{theWhat} NbPoles");
+        theOracle.Same(theNative.NbKnots(), thePort.KnotCount, $"{theWhat} NbKnots");
     }
 
     /// <summary>Evaluates at the ends (B-spline boundary spans), at the knots and at random parameters.</summary>
-    private static void EvalAll(Oracle theOracle, N.Geom2dAdaptor_Curve theNative, Geom2dAdaptor_Curve thePort,
+    private static void EvalAll(Oracle theOracle, N.Geom2dAdaptor_Curve theNative, CurveAdaptor2D thePort,
                                 string theWhat, int theMaxN, IReadOnlyList<double>? theKnots = null)
     {
         double aF = thePort.FirstParameter(), aL = thePort.LastParameter();
@@ -139,12 +140,12 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
             (aU1, aU2) = (aU2, aU1);
         }
         using var aNTrim = N.Geom2dAdaptor_Curve.DownCast(theNative.Trim(aU1, aU2, 1e-7));
-        Geom2dAdaptor_Curve aTrim = (Geom2dAdaptor_Curve)thePort.Trim(aU1, aU2, 1e-7);
+        CurveAdaptor2D aTrim = (CurveAdaptor2D)thePort.Trim(aU1, aU2, 1e-7);
         SameEval(theOracle, aNTrim!, aTrim, aU1, $"{theWhat} trimmed first", theMaxN);
         SameEval(theOracle, aNTrim!, aTrim, theOracle.Real(aU1, aU2), $"{theWhat} trimmed", theMaxN);
         SameQueries(theOracle, aNTrim!, aTrim, $"{theWhat} trimmed");
         using var aNCopy = N.Geom2dAdaptor_Curve.DownCast(theNative.ShallowCopy());
-        Geom2dAdaptor_Curve aCopy = (Geom2dAdaptor_Curve)thePort.ShallowCopy();
+        CurveAdaptor2D aCopy = (CurveAdaptor2D)thePort.ShallowCopy();
         SameEval(theOracle, aNCopy!, aCopy, theOracle.Real(aF, aL), $"{theWhat} copy", theMaxN);
     }
 
@@ -156,7 +157,7 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
         {
             BSplineSpec aSpec = Geom2dOracle.RandomBSpline(anOracle);
             using var aNCurve = Geom2dOracle.ToNative(aSpec);
-            Geom2d_BSplineCurve aCurve = Geom2dOracle.ToPort(aSpec);
+            BSplineCurve2D aCurve = Geom2dOracle.ToPort(aSpec);
             double aF = aCurve.FirstParameter(), aL = aCurve.LastParameter();
 
             // The whole curve, a random part of it, and (periodic curves) a range shifted beyond the first period
@@ -174,7 +175,7 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
                 }
                 else if (r == 2)
                 {
-                    if (!aCurve.IsPeriodic())
+                    if (!aCurve.IsPeriodic)
                     {
                         continue;
                     }
@@ -183,7 +184,7 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
                     aU2 = aU1 + anOracle.Real(0.1, 1.5) * aP;
                 }
                 using var aNative = new N.Geom2dAdaptor_Curve(aNCurve, aU1, aU2);
-                var aPort = new Geom2dAdaptor_Curve(aCurve, aU1, aU2);
+                var aPort = new CurveAdaptor2D(aCurve, aU1, aU2);
                 string aWhat = $"case {i}.{r}";
                 SameQueries(anOracle, aNative, aPort, aWhat);
                 SameBSplineQueries(anOracle, aNative, aPort, aWhat);
@@ -194,14 +195,14 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
             double aT1 = anOracle.Real(aF, aL), aT2 = anOracle.Real(aF, aL);
             if (Math.Abs(aT1 - aT2) > 1e-3)
             {
-                if (aT1 > aT2 && !aCurve.IsPeriodic())
+                if (aT1 > aT2 && !aCurve.IsPeriodic)
                 {
                     (aT1, aT2) = (aT2, aT1);
                 }
                 using var aNTrimmed = new N.Geom2d_TrimmedCurve(aNCurve, aT1, aT2);
-                var aTrimmed = new Geom2d_TrimmedCurve(aCurve, aT1, aT2);
+                var aTrimmed = new TrimmedCurve2D(aCurve, aT1, aT2);
                 using var aNative = new N.Geom2dAdaptor_Curve(aNTrimmed);
-                var aPort = new Geom2dAdaptor_Curve(aTrimmed);
+                var aPort = new CurveAdaptor2D(aTrimmed);
                 SameQueries(anOracle, aNative, aPort, $"case {i} trimmed curve");
                 EvalAll(anOracle, aNative, aPort, $"case {i} trimmed curve", aSpec.Degree + 1, aSpec.Knots);
             }
@@ -209,7 +210,7 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
             // Reloading the same curve with another range drops the cache
             {
                 using var aNative = new N.Geom2dAdaptor_Curve(aNCurve);
-                var aPort = new Geom2dAdaptor_Curve(aCurve);
+                var aPort = new CurveAdaptor2D(aCurve);
                 SameEval(anOracle, aNative, aPort, anOracle.Real(aF, aL), $"case {i} before reload", 2);
                 double aU1 = anOracle.Real(aF, aL);
                 double aU2 = anOracle.Real(aU1, aL);
@@ -249,18 +250,18 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
             {
                 int aKind = i % 3;
                 N.Geom2d_Curve aNCurve;
-                Geom2d_Curve aCurve;
+                Curve2D aCurve;
                 switch (aKind)
                 {
                     case 0:
                         aNCurve = new N.Geom2d_Line(aNAx);
-                        aCurve = new Geom2d_Line(anAx);
+                        aCurve = new LineCurve2D(anAx);
                         break;
                     case 1:
                     {
                         double aR = anOracle.Real(0.01, 50);
                         aNCurve = new N.Geom2d_Circle(aNAx, aR);
-                        aCurve = new Geom2d_Circle(anAx, aR);
+                        aCurve = new CircleCurve2D(anAx, aR);
                         break;
                     }
                     default:
@@ -268,7 +269,7 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
                         double aMin = anOracle.Real(0.01, 20);
                         double aMaj = aMin + anOracle.Real(0, 20);
                         aNCurve = new N.Geom2d_Ellipse(aNAx, aMaj, aMin);
-                        aCurve = new Geom2d_Ellipse(anAx, aMaj, aMin);
+                        aCurve = new EllipseCurve2D(anAx, aMaj, aMin);
                         break;
                     }
                 }
@@ -277,7 +278,7 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
                     double aU1 = aKind == 0 ? anOracle.Real(-50, 50) : anOracle.Real(-7, 7);
                     double aU2 = aU1 + anOracle.Real(0, aKind == 0 ? 50 : 7);
                     using var aNative = new N.Geom2dAdaptor_Curve(aNCurve, aU1, aU2);
-                    var aPort = new Geom2dAdaptor_Curve(aCurve, aU1, aU2);
+                    var aPort = new CurveAdaptor2D(aCurve, aU1, aU2);
                     string aWhat = $"case {i} ({aPort.GetType()})";
                     SameQueries(anOracle, aNative, aPort, aWhat);
                     EvalAll(anOracle, aNative, aPort, aWhat, 5);
@@ -318,9 +319,9 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
 
                     // Through a trimmed curve
                     using var aNTrimmed = new N.Geom2d_TrimmedCurve(aNCurve, aU1, aU2 + 0.5);
-                    var aTrimmed = new Geom2d_TrimmedCurve(aCurve, aU1, aU2 + 0.5);
+                    var aTrimmed = new TrimmedCurve2D(aCurve, aU1, aU2 + 0.5);
                     using var aNT = new N.Geom2dAdaptor_Curve(aNTrimmed);
-                    var aT = new Geom2dAdaptor_Curve(aTrimmed);
+                    var aT = new CurveAdaptor2D(aTrimmed);
                     SameQueries(anOracle, aNT, aT, $"{aWhat} trimmed curve");
                     EvalAll(anOracle, aNT, aT, $"{aWhat} trimmed curve", 5);
                 }

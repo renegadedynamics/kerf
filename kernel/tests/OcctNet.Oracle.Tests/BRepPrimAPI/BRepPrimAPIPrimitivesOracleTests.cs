@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Text;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
@@ -42,10 +45,10 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile));
+        Assert.True(BrepTools.Write(theShape, aFile));
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 
@@ -66,7 +69,7 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
 
     private readonly Tally myTally = new();
 
-    private void Compare(string theWhat, N.TopoDS_Shape theNative, in TopoDS_Shape thePort)
+    private void Compare(string theWhat, N.TopoDS_Shape theNative, in Shape thePort)
     {
         string aN = NativeText(theNative);
         string aP = PortText(thePort);
@@ -177,12 +180,12 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
     }
 
     // A shape read from both makers, or a throw on both sides.
-    private void Shapes(string theWhat, Func<N.TopoDS_Shape> theNative, Func<TopoDS_Shape> thePort)
+    private void Shapes(string theWhat, Func<N.TopoDS_Shape> theNative, Func<Shape> thePort)
     {
         N.TopoDS_Shape? aN = null;
         bool aNThrew = false, aPThrew = false;
         string aPMessage = "";
-        TopoDS_Shape aP = new();
+        Shape aP = new();
         try
         {
             aN = theNative();
@@ -558,22 +561,22 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
             _ => new BRepPrimAPI_MakeSphere(anAx, a),
         };
         using N.TopoDS_Shape aNSolid = aNBase.Shape();
-        TopoDS_Shape aPSolid = aPBase.Shape();
+        Shape aPSolid = aPBase.Shape();
 
         // the shell, or the face of that index in the solid (both sides explore the same structure)
         N.TopoDS_Shape aNBound;
-        TopoDS_Shape aPBound;
+        Shape aPBound;
         {
             var aType = isShell ? N.TopAbs_ShapeEnum.TopAbs_SHELL : N.TopAbs_ShapeEnum.TopAbs_FACE;
             int aCount = 0;
-            for (var aPExp0 = new TopExp_Explorer(aPSolid, isShell ? TopAbs_ShapeEnum.TopAbs_SHELL : TopAbs_ShapeEnum.TopAbs_FACE);
+            for (var aPExp0 = new Explorer(aPSolid, isShell ? ShapeType.Shell : ShapeType.Face);
                  aPExp0.More(); aPExp0.Next())
             {
                 aCount++;
             }
             int aK = Math.Min(aFaceIndex, aCount);
             using var aNExp = new N.TopExp_Explorer(aNSolid, aType);
-            var aPExp = new TopExp_Explorer(aPSolid, isShell ? TopAbs_ShapeEnum.TopAbs_SHELL : TopAbs_ShapeEnum.TopAbs_FACE);
+            var aPExp = new Explorer(aPSolid, isShell ? ShapeType.Shell : ShapeType.Face);
             for (int i = 1; i < aK; i++)
             {
                 aNExp.Next();
@@ -592,8 +595,8 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
                      ? new N.BRepPrimAPI_MakeHalfSpace(N.TopoDS.Shell(aNBound), aNRef)
                      : new N.BRepPrimAPI_MakeHalfSpace(N.TopoDS.Face(aNBound), aNRef),
                  () => isShell
-                     ? new BRepPrimAPI_MakeHalfSpace(TopoDS.Shell(aPBound), aRef)
-                     : new BRepPrimAPI_MakeHalfSpace(TopoDS.Face(aPBound), aRef),
+                     ? new BRepPrimAPI_MakeHalfSpace(ShapeCasts.Shell(aPBound), aRef)
+                     : new BRepPrimAPI_MakeHalfSpace(ShapeCasts.Face(aPBound), aRef),
                  (aN, aPM) =>
                  {
                      Assert.Equal(aN.IsDone(), aPM.IsDone());

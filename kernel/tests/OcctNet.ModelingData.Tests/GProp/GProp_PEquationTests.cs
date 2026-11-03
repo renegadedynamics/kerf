@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -18,8 +19,8 @@ public class GProp_PEquationTest
         aPnts[2] = new Point3D(1.0, 2.0, 3.0);
         aPnts[3] = new Point3D(1.0, 2.0, 3.0);
 
-        var anEq = new GProp_PEquation(aPnts, 1e-6);
-        Assert.True(anEq.IsPoint());
+        var anEq = new PEquation(aPnts, 1e-6);
+        Assert.True(anEq.IsPoint);
 
         Point3D aP = anEq.Point();
         Assert.Equal(1.0, aP.X(), Conf);
@@ -35,8 +36,8 @@ public class GProp_PEquationTest
         aPnts[2] = new Point3D(1.0, 0.0, 0.0);
         aPnts[3] = new Point3D(2.0, 0.0, 0.0);
 
-        var anEq = new GProp_PEquation(aPnts, 1e-6);
-        Assert.True(anEq.IsLinear());
+        var anEq = new PEquation(aPnts, 1e-6);
+        Assert.True(anEq.IsLinear);
 
         Line3D aLin = anEq.Line();
         Assert.Equal(1.0, Math.Abs(aLin.Direction().X()), Conf);
@@ -51,8 +52,8 @@ public class GProp_PEquationTest
         aPnts[3] = new Point3D(0.0, 1.0, 0.0);
         aPnts[4] = new Point3D(1.0, 1.0, 0.0);
 
-        var anEq = new GProp_PEquation(aPnts, 1e-6);
-        Assert.True(anEq.IsPlanar());
+        var anEq = new PEquation(aPnts, 1e-6);
+        Assert.True(anEq.IsPlanar);
 
         Plane3D aPln = anEq.Plane();
         Assert.Equal(1.0, Math.Abs(aPln.Axis().Direction().Z()), Conf);
@@ -67,8 +68,8 @@ public class GProp_PEquationTest
         aPnts[3] = new Point3D(0.0, 1.0, 0.0);
         aPnts[4] = new Point3D(0.0, 0.0, 1.0);
 
-        var anEq = new GProp_PEquation(aPnts, 1e-6);
-        Assert.True(anEq.IsSpace());
+        var anEq = new PEquation(aPnts, 1e-6);
+        Assert.True(anEq.IsSpace);
 
         anEq.Box(out Point3D _, out Vector3D aV1, out Vector3D aV2, out Vector3D aV3);
         Assert.True(aV1.Magnitude() > Conf);
@@ -86,8 +87,8 @@ public class GProp_PEquationTest
         aPnts[2] = new Point3D(1.0, 0.0, 0.0);
         aPnts[3] = new Point3D(2.0, 0.0, 0.0);
 
-        var anEq = new GProp_PEquation(aPnts, 1e-6);
-        Assert.Equal(GProp_PEquation.Type.Line, anEq.GetType());
+        var anEq = new PEquation(aPnts, 1e-6);
+        Assert.Equal(PEquation.Type.Line, anEq.GetType());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEq.Plane());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEq.Point());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEq.Box(out _, out _, out _, out _));

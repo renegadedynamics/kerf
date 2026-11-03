@@ -1,6 +1,7 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/BndLib_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 
 using Kerf.Geometry;
@@ -19,12 +20,12 @@ public class BndLib_Add3dCurveTest
     public void Circle_Full()
     {
         // Create a 3D circle using Geom_Circle
-        Geom_Circle aCircle = new(Ax2(0.0, 0.0, 1.0), 5.0);
-        GeomAdaptor_Curve aCurve = new(aCircle);
+        CircleCurve3D aCircle = new(Ax2(0.0, 0.0, 1.0), 5.0);
+        CurveAdaptor aCurve = new(aCircle);
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib_Add3dCurve.Add(aCurve, aTol, ref aBox);
+        Add3dCurve.Add(aCurve, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 
@@ -40,12 +41,12 @@ public class BndLib_Add3dCurveTest
     public void Circle_Arc()
     {
         // Circle arc from 0 to PI/2
-        Geom_Circle aCircle = new(Ax2(0.0, 0.0, 1.0), 5.0);
-        GeomAdaptor_Curve aCurve = new(aCircle);
+        CircleCurve3D aCircle = new(Ax2(0.0, 0.0, 1.0), 5.0);
+        CurveAdaptor aCurve = new(aCircle);
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib_Add3dCurve.Add(aCurve, 0.0, M_PI / 2.0, aTol, ref aBox);
+        Add3dCurve.Add(aCurve, 0.0, M_PI / 2.0, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out _, out double aXmax, out double aYmax, out _);
 
@@ -59,12 +60,12 @@ public class BndLib_Add3dCurveTest
     public void Ellipse_Full()
     {
         // Ellipse with major radius 10, minor radius 5
-        Geom_Ellipse anEllipse = new(Ax2(0.0, 0.0, 1.0), 10.0, 5.0);
-        GeomAdaptor_Curve aCurve = new(anEllipse);
+        EllipseCurve3D anEllipse = new(Ax2(0.0, 0.0, 1.0), 10.0, 5.0);
+        CurveAdaptor aCurve = new(anEllipse);
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib_Add3dCurve.Add(aCurve, aTol, ref aBox);
+        Add3dCurve.Add(aCurve, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out _, out double aXmax, out double aYmax, out _);
 
@@ -78,13 +79,13 @@ public class BndLib_Add3dCurveTest
     public void Line_Segment()
     {
         // Line segment from (0,0,0) to (10,0,0)
-        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
-        Geom_TrimmedCurve aTrimmed = new(aLine, 0.0, 10.0);
-        GeomAdaptor_Curve aCurve = new(aTrimmed);
+        LineCurve3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        TrimmedCurve3D aTrimmed = new(aLine, 0.0, 10.0);
+        CurveAdaptor aCurve = new(aTrimmed);
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib_Add3dCurve.Add(aCurve, aTol, ref aBox);
+        Add3dCurve.Add(aCurve, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 
@@ -106,12 +107,12 @@ public class BndLib_Add3dCurveTest
         aPoles[3] = new Point3D(3.0, 2.0, 0.0);
         aPoles[4] = new Point3D(4.0, 0.0, 0.0);
 
-        Geom_BezierCurve aBezier = new(aPoles);
-        GeomAdaptor_Curve aCurve = new(aBezier);
+        BezierCurve3D aBezier = new(aPoles);
+        CurveAdaptor aCurve = new(aBezier);
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib_Add3dCurve.Add(aCurve, aTol, ref aBox);
+        Add3dCurve.Add(aCurve, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out _, out double aXmax, out double aYmax, out _);
 
@@ -144,12 +145,12 @@ public class BndLib_Add3dCurveTest
         aMults[1] = 4;
         aMults[2] = 4;
 
-        Geom_BSplineCurve aBSpline = new(aPoles, aKnots, aMults, 3);
-        GeomAdaptor_Curve aCurve = new(aBSpline);
+        BSplineCurve3D aBSpline = new(aPoles, aKnots, aMults, 3);
+        CurveAdaptor aCurve = new(aBSpline);
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib_Add3dCurve.Add(aCurve, aTol, ref aBox);
+        Add3dCurve.Add(aCurve, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out _, out _, out double aXmax, out _, out _);
 
@@ -162,12 +163,12 @@ public class BndLib_Add3dCurveTest
     public void AddOptimal_Circle()
     {
         // Test AddOptimal method with a circle
-        Geom_Circle aCircle = new(Ax2(0.0, 0.0, 1.0), 5.0);
-        GeomAdaptor_Curve aCurve = new(aCircle);
+        CircleCurve3D aCircle = new(Ax2(0.0, 0.0, 1.0), 5.0);
+        CurveAdaptor aCurve = new(aCircle);
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib_Add3dCurve.AddOptimal(aCurve, aTol, ref aBox);
+        Add3dCurve.AddOptimal(aCurve, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out _, out double aXmax, out double aYmax, out _);
 
@@ -181,12 +182,12 @@ public class BndLib_Add3dCurveTest
     public void Circle_Rotated()
     {
         // Circle in YZ plane (axis along X)
-        Geom_Circle aCircle = new(Ax2(1.0, 0.0, 0.0), 4.0);
-        GeomAdaptor_Curve aCurve = new(aCircle);
+        CircleCurve3D aCircle = new(Ax2(1.0, 0.0, 0.0), 4.0);
+        CurveAdaptor aCurve = new(aCircle);
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib_Add3dCurve.Add(aCurve, aTol, ref aBox);
+        Add3dCurve.Add(aCurve, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 

@@ -22,7 +22,7 @@ public sealed class GeomToStep_MakeSurfaceOfLinearExtrusion : GeomToStep_Root
     /// <summary>
     /// An extrusion: its basis curve, and its unit direction as a vector (magnitude 1 divided by the length factor).
     /// </summary>
-    public GeomToStep_MakeSurfaceOfLinearExtrusion(Geom_SurfaceOfLinearExtrusion S, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeSurfaceOfLinearExtrusion(ExtrusionSurface S, in StepData_Factors theLocalFactors)
     {
         StepGeom_SurfaceOfLinearExtrusion Surf;
         StepGeom_Curve aSweptCurve;
@@ -42,7 +42,7 @@ public sealed class GeomToStep_MakeSurfaceOfLinearExtrusion : GeomToStep_Root
     }
 
     /// <summary>An extrusion (default factors).</summary>
-    public GeomToStep_MakeSurfaceOfLinearExtrusion(Geom_SurfaceOfLinearExtrusion S) : this(S, new StepData_Factors())
+    public GeomToStep_MakeSurfaceOfLinearExtrusion(ExtrusionSurface S) : this(S, new StepData_Factors())
     {
     }
 

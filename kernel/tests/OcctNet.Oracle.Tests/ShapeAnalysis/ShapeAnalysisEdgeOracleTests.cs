@@ -1,10 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopTools_FormatVersion;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Engine.Exchange.Brep.FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -32,7 +35,7 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
         GC.SuppressFinalize(this);
     }
 
-    private (N.TopoDS_Shape N, TopoDS_Shape P, string What) Scene(Oracle theOracle, int theIndex)
+    private (N.TopoDS_Shape N, Shape P, string What) Scene(Oracle theOracle, int theIndex)
     {
         N.TopoDS_Shape aShape = BRepToolsIOOracleTests.NativeShape(theOracle, theIndex, out string aWhat);
         string aFile = Path.Combine(myDirectory, $"s{myFileNumber++}.brep");
@@ -43,7 +46,7 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
             Assert.True(N.BRepTools.Read(aNShape, aFile, aBuilder));
         }
 
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile));
+        Assert.True(BrepTools.Read(out Shape aPShape, aFile));
         return (aNShape, aPShape, $"scene {theIndex} ({aWhat})");
     }
 
@@ -64,32 +67,32 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
         int aPairs = 0, anOverlaps = 0;
         foreach (int i in Tape.Budget(Scenes))
         {
-            (N.TopoDS_Shape aNS, TopoDS_Shape aPS, string aWhat) = Scene(anOracle, i);
+            (N.TopoDS_Shape aNS, Shape aPS, string aWhat) = Scene(anOracle, i);
             var aNSae = new N.ShapeAnalysis_Edge();
             var aPSae = new ShapeAnalysis_Edge();
 
             var aNFExp = new N.TopExp_Explorer(aNS, N.TopAbs_ShapeEnum.TopAbs_FACE);
-            var aPFExp = new TopExp_Explorer(aPS, TopAbs_FACE);
+            var aPFExp = new Explorer(aPS, ShapeType.Face);
             int aFaceIndex = 0;
             for (; aNFExp.More(); aNFExp.Next(), aPFExp.Next(), aFaceIndex++)
             {
                 Assert.True(aPFExp.More());
                 N.TopoDS_Face aNF = N.TopoDS.Face(aNFExp.Current());
-                TopoDS_Face aPF = TopoDS.Face(aPFExp.Current());
+                Face aPF = ShapeCasts.Face(aPFExp.Current());
                 var aNLoc = new N.TopLoc_Location();
                 N.Geom_Surface? aNSurf = N.BRep_Tool.Surface(aNF, aNLoc);
-                Geom_Surface? aPSurf = BRep_Tool.Surface(aPF, out Placement aPLoc);
+                Surface? aPSurf = Tool.Surface(aPF, out Placement aPLoc);
 
                 var aNEExp = new N.TopExp_Explorer(aNF, N.TopAbs_ShapeEnum.TopAbs_EDGE);
-                var aPEExp = new TopExp_Explorer(aPF, TopAbs_EDGE);
+                var aPEExp = new Explorer(aPF, ShapeType.Edge);
                 N.TopoDS_Edge? aNPrev = null;
-                TopoDS_Edge aPPrev = new();
+                Edge aPPrev = new();
                 int anEdgeIndex = 0;
                 for (; aNEExp.More(); aNEExp.Next(), aPEExp.Next(), anEdgeIndex++)
                 {
                     Assert.True(aPEExp.More());
                     N.TopoDS_Edge aNE = N.TopoDS.Edge(aNEExp.Current());
-                    TopoDS_Edge aPE = TopoDS.Edge(aPEExp.Current());
+                    Edge aPE = ShapeCasts.Edge(aPEExp.Current());
                     string w = $"{aWhat}, face {aFaceIndex}, edge {anEdgeIndex}";
                     aPairs++;
                     CompareEdgeOnFace(anOracle, aNSae, aPSae, aNE, aPE, aNF, aPF, aNSurf, aPSurf, aNLoc, aPLoc, w);
@@ -97,8 +100,8 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
                     // overlapping with the previous edge of the face, on a few faces (it is costly). Not with a degenerated
                     // edge: its length is 0, so IsOverlapPartEdges' step is 0 and its loop never ends when the vertex is
                     // within the tolerance of the other edge (native OCCT hangs as the port does; occt-issues.md)
-                    if (aNPrev is not null && anEdgeIndex <= 2 && aFaceIndex % 3 == 0 && !BRep_Tool.Degenerated(aPE)
-                        && !BRep_Tool.Degenerated(aPPrev))
+                    if (aNPrev is not null && anEdgeIndex <= 2 && aFaceIndex % 3 == 0 && !Tool.Degenerated(aPE)
+                        && !Tool.Degenerated(aPPrev))
                     {
                         anOverlaps++;
                         double aDomain = anEdgeIndex == 1 ? 0.0 : 0.5;
@@ -121,8 +124,8 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
         anOracle.Report("ShapeAnalysis_Edge");
     }
 
-    private static void CompareEdgeOnFace(Oracle o, N.ShapeAnalysis_Edge n, ShapeAnalysis_Edge p, N.TopoDS_Edge aNE, TopoDS_Edge aPE,
-                                          N.TopoDS_Face aNF, TopoDS_Face aPF, N.Geom_Surface? aNSurf, Geom_Surface? aPSurf,
+    private static void CompareEdgeOnFace(Oracle o, N.ShapeAnalysis_Edge n, ShapeAnalysis_Edge p, N.TopoDS_Edge aNE, Edge aPE,
+                                          N.TopoDS_Face aNF, Face aPF, N.Geom_Surface? aNSurf, Surface? aPSurf,
                                           N.TopLoc_Location aNLoc, Placement aPLoc, string w)
     {
         SameBool(o, n.HasCurve3d(aNE), p.HasCurve3d(aPE), w + ", HasCurve3d");
@@ -134,17 +137,17 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
 
         // vertices
         N.TopoDS_Vertex aNV1 = n.FirstVertex(aNE), aNV2 = n.LastVertex(aNE);
-        TopoDS_Vertex aPV1 = p.FirstVertex(aPE), aPV2 = p.LastVertex(aPE);
-        SameBool(o, aNV1.IsNull(), aPV1.IsNull(), w + ", FirstVertex null");
-        SameBool(o, aNV2.IsNull(), aPV2.IsNull(), w + ", LastVertex null");
-        if (!aPV1.IsNull())
+        Vertex aPV1 = p.FirstVertex(aPE), aPV2 = p.LastVertex(aPE);
+        SameBool(o, aNV1.IsNull(), aPV1.IsNull, w + ", FirstVertex null");
+        SameBool(o, aNV2.IsNull(), aPV2.IsNull, w + ", LastVertex null");
+        if (!aPV1.IsNull)
         {
-            o.Same(N.BRep_Tool.Pnt(aNV1), BRep_Tool.Pnt(aPV1), w + ", FirstVertex");
+            o.Same(N.BRep_Tool.Pnt(aNV1), Tool.Pnt(aPV1), w + ", FirstVertex");
             o.Same((int)aNV1.Orientation(), (int)aPV1.Orientation(), w + ", FirstVertex orientation");
         }
-        if (!aPV2.IsNull())
+        if (!aPV2.IsNull)
         {
-            o.Same(N.BRep_Tool.Pnt(aNV2), BRep_Tool.Pnt(aPV2), w + ", LastVertex");
+            o.Same(N.BRep_Tool.Pnt(aNV2), Tool.Pnt(aPV2), w + ", LastVertex");
             o.Same((int)aNV2.Orientation(), (int)aPV2.Orientation(), w + ", LastVertex orientation");
         }
 
@@ -243,7 +246,7 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
         // the pcurve's range, as it is and widened
         double aNF1 = 0, aNL1 = 0;
         N.Geom2d_Curve? aNPC = N.BRep_Tool.CurveOnSurface(aNE, aNF, ref aNF1, ref aNL1);
-        Geom2d_Curve? aPPC = BRep_Tool.CurveOnSurface(aPE, aPF, out double aPF1, out double aPL1);
+        Curve2D? aPPC = Tool.CurveOnSurface(aPE, aPF, out double aPF1, out double aPL1);
         SameBool(o, aNPC is null, aPPC is null, w + ", pcurve");
         if (aNPC is not null && aPPC is not null)
         {

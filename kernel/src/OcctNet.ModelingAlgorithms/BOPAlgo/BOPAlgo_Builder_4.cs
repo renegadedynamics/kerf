@@ -3,7 +3,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -14,7 +16,7 @@ public partial class BOPAlgo_Builder
     /// edge/edge and edge/face intersections, a face those of its edge/face intersections and its section edges and
     /// vertices.
     /// </summary>
-    protected virtual NCollection_List<TopoDS_Shape> LocGenerated(in TopoDS_Shape theS)
+    protected virtual NCollection_List<Shape> LocGenerated(in Shape theS)
     {
         // The rules for Generated shapes are these:
         // 1. The EDGE may be generated from the FACES as an intersection edge;
@@ -25,14 +27,14 @@ public partial class BOPAlgo_Builder
 
         myHistShapes.Clear();
 
-        if (theS.IsNull())
+        if (theS.IsNull)
         {
             return myHistShapes;
         }
 
         // Only EDGES and FACES should be considered
-        TopAbs_ShapeEnum aType = theS.ShapeType();
-        if (aType != TopAbs_EDGE && aType != TopAbs_FACE)
+        ShapeType aType = theS.ShapeType();
+        if (aType != ShapeType.Edge && aType != ShapeType.Face)
         {
             // Wrong type
             return myHistShapes;
@@ -65,7 +67,7 @@ public partial class BOPAlgo_Builder
         // Analyze each interference and find those in which the given shape has participated
 
         // No need to analyze Edge/Edge interferences for the shapes of type FACE
-        bool isFace = aType == TopAbs_FACE;
+        bool isFace = aType == ShapeType.Face;
 
         for (int k = isFace ? 1 : 0; k < 2; ++k)
         {
@@ -92,7 +94,7 @@ public partial class BOPAlgo_Builder
                 }
 
                 // Get the new vertex
-                TopoDS_Shape aVNew = myDS.Shape(nVNew);
+                Shape aVNew = myDS.Shape(nVNew);
 
                 // Check that the result shape contains vertex
                 if (myMapShape.Contains(aVNew))
@@ -119,7 +121,7 @@ public partial class BOPAlgo_Builder
         int aNb = aMPBSc.Extent();
         for (int i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aENew = myDS.Shape(aMPBSc[i].Edge());
+            Shape aENew = myDS.Shape(aMPBSc[i].Edge());
             if (myMapShape.Contains(aENew))
             {
                 myHistShapes.Append(aENew);
@@ -131,7 +133,7 @@ public partial class BOPAlgo_Builder
         // Save section vertices contained in the result shape (OCCT's order, decision 784)
         foreach (int aItM in aMVSc)
         {
-            TopoDS_Shape aVNew = myDS.Shape(aItM);
+            Shape aVNew = myDS.Shape(aItM);
             if (myMapShape.Contains(aVNew))
             {
                 myHistShapes.Append(aVNew);
@@ -142,8 +144,8 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>The splits of <paramref name="theS"/> (null if it has no images).</summary>
-    protected virtual NCollection_List<TopoDS_Shape>? LocModified(in TopoDS_Shape theS)
-        => myImages.Find(theS, out NCollection_List<TopoDS_Shape> aList) ? aList : null;
+    protected virtual NCollection_List<Shape>? LocModified(in Shape theS)
+        => myImages.Find(theS, out NCollection_List<Shape> aList) ? aList : null;
 
     /// <summary>OCCT's history of the result: modified, generated and deleted argument sub-shapes.</summary>
     protected void PrepareHistory(ProgressRange theRange)
@@ -154,11 +156,11 @@ public partial class BOPAlgo_Builder
         }
 
         // Initializing history tool
-        myHistory = new BRepTools_History();
+        myHistory = new History();
 
         // Map the result shape
         myMapShape.Clear();
-        TopExp.MapShapes(myShape, myMapShape);
+        Exploration.MapShapes(myShape, myMapShape);
 
         // Among all input shapes find:
         // - Shapes that have been modified (split). Add the splits kept in the result
@@ -171,10 +173,10 @@ public partial class BOPAlgo_Builder
         using var aPS = new ProgressScope(theRange, "Preparing history information", aNbS);
         for (int i = 0; i < aNbS; ++i, aPS.Next())
         {
-            TopoDS_Shape aS = myDS.Shape(i);
+            Shape aS = myDS.Shape(i);
 
             // Check if History information is available for this kind of shape.
-            if (!BRepTools_History.IsSupportedType(aS))
+            if (!global::Kerf.Engine.Topology.History.IsSupportedType(aS))
             {
                 continue;
             }
@@ -187,20 +189,20 @@ public partial class BOPAlgo_Builder
             bool isModified = false;
 
             // Check if the shape has any splits
-            NCollection_List<TopoDS_Shape>? pLSp = LocModified(aS);
+            NCollection_List<Shape>? pLSp = LocModified(aS);
             if (pLSp is not null)
             {
                 // Find all splits of the shape which are kept in the result
-                NCollection_List<TopoDS_Shape>.Iterator aIt0 = new(pLSp);
+                NCollection_List<Shape>.Iterator aIt0 = new(pLSp);
                 for (; aIt0.More(); aIt0.Next())
                 {
-                    TopoDS_Shape aSp = aIt0.Value();
+                    Shape aSp = aIt0.Value();
                     // Check if the result shape contains the split
                     if (myMapShape.Contains(aSp))
                     {
                         // Add modified shape with proper orientation
-                        TopAbs_ShapeEnum aType = aSp.ShapeType();
-                        if (aType == TopAbs_VERTEX || aType == TopAbs_SOLID)
+                        ShapeType aType = aSp.ShapeType();
+                        if (aType == ShapeType.Vertex || aType == ShapeType.Solid)
                         {
                             aSp.Orientation(aS.Orientation());
                         }
@@ -216,11 +218,11 @@ public partial class BOPAlgo_Builder
             }
 
             // Check if the shape has Generated elements
-            NCollection_List<TopoDS_Shape> aGenShapes = LocGenerated(aS);
-            NCollection_List<TopoDS_Shape>.Iterator aIt = new(aGenShapes);
+            NCollection_List<Shape> aGenShapes = LocGenerated(aS);
+            NCollection_List<Shape>.Iterator aIt = new(aGenShapes);
             for (; aIt.More(); aIt.Next())
             {
-                TopoDS_Shape aG = aIt.Value();
+                Shape aG = aIt.Value();
                 if (myMapShape.Contains(aG))
                 {
                     myHistory.AddGenerated(aS, aG);

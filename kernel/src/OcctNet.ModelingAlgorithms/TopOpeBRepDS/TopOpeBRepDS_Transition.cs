@@ -4,9 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -20,29 +21,29 @@ namespace Occt;
 /// </remarks>
 public partial struct TopOpeBRepDS_Transition : IEquatable<TopOpeBRepDS_Transition>
 {
-    private TopAbs_State myStateBefore;
-    private TopAbs_State myStateAfter;
-    private TopAbs_ShapeEnum myShapeBefore;
-    private TopAbs_ShapeEnum myShapeAfter;
+    private Containment myStateBefore;
+    private Containment myStateAfter;
+    private ShapeType myShapeBefore;
+    private ShapeType myShapeAfter;
     private int myIndexBefore;
     private int myIndexAfter;
 
     /// <summary>An unknown transition: UNKNOWN before and after, on faces, indices 0.</summary>
     public TopOpeBRepDS_Transition()
     {
-        myStateBefore = TopAbs_UNKNOWN;
-        myStateAfter = TopAbs_UNKNOWN;
-        myShapeBefore = TopAbs_FACE;
-        myShapeAfter = TopAbs_FACE;
+        myStateBefore = Unknown;
+        myStateAfter = Unknown;
+        myShapeBefore = ShapeType.Face;
+        myShapeAfter = ShapeType.Face;
         myIndexBefore = 0;
         myIndexAfter = 0;
     }
 
     /// <summary>The transition from <paramref name="SB"/> to <paramref name="SA"/>, on shapes of the given kinds.</summary>
-    public TopOpeBRepDS_Transition(TopAbs_State SB,
-                                   TopAbs_State SA,
-                                   TopAbs_ShapeEnum ONB = TopAbs_FACE,
-                                   TopAbs_ShapeEnum ONA = TopAbs_FACE)
+    public TopOpeBRepDS_Transition(Containment SB,
+                                   Containment SA,
+                                   ShapeType ONB = ShapeType.Face,
+                                   ShapeType ONA = ShapeType.Face)
     {
         myStateBefore = SB;
         myStateAfter = SA;
@@ -52,22 +53,22 @@ public partial struct TopOpeBRepDS_Transition : IEquatable<TopOpeBRepDS_Transiti
         myIndexAfter = 0;
     }
 
-    /// <summary>The transition of the orientation <paramref name="O"/> (see <see cref="Set(TopAbs_Orientation)"/>).</summary>
-    public TopOpeBRepDS_Transition(TopAbs_Orientation O)
+    /// <summary>The transition of the orientation <paramref name="O"/> (see <see cref="Set(Orientation)"/>).</summary>
+    public TopOpeBRepDS_Transition(Orientation O)
     {
         // OCCT leaves the states unset for an orientation outside the four; the port's are IN (C#'s zero)
-        myShapeBefore = TopAbs_FACE;
-        myShapeAfter = TopAbs_FACE;
+        myShapeBefore = ShapeType.Face;
+        myShapeAfter = ShapeType.Face;
         myIndexBefore = 0;
         myIndexAfter = 0;
         Set(O);
     }
 
     /// <summary>Sets the states and the kinds of shape before and after.</summary>
-    internal void Set(TopAbs_State SB,
-                      TopAbs_State SA,
-                      TopAbs_ShapeEnum ONB = TopAbs_FACE,
-                      TopAbs_ShapeEnum ONA = TopAbs_FACE)
+    internal void Set(Containment SB,
+                      Containment SA,
+                      ShapeType ONB = ShapeType.Face,
+                      ShapeType ONA = ShapeType.Face)
     {
         myStateBefore = SB;
         myStateAfter = SA;
@@ -75,33 +76,33 @@ public partial struct TopOpeBRepDS_Transition : IEquatable<TopOpeBRepDS_Transiti
         myShapeAfter = ONA;
     }
 
-    internal void StateBefore(TopAbs_State S)
+    internal void StateBefore(Containment S)
     {
         myStateBefore = S;
     }
 
-    internal void StateAfter(TopAbs_State S)
+    internal void StateAfter(Containment S)
     {
         myStateAfter = S;
     }
 
-    internal void ShapeBefore(TopAbs_ShapeEnum SE)
+    internal void ShapeBefore(ShapeType SE)
     {
         myShapeBefore = SE;
     }
 
-    internal void ShapeAfter(TopAbs_ShapeEnum SE)
+    internal void ShapeAfter(ShapeType SE)
     {
         myShapeAfter = SE;
     }
 
-    internal void Before(TopAbs_State S, TopAbs_ShapeEnum ONB = TopAbs_FACE)
+    internal void Before(Containment S, ShapeType ONB = ShapeType.Face)
     {
         myStateBefore = S;
         myShapeBefore = ONB;
     }
 
-    internal void After(TopAbs_State S, TopAbs_ShapeEnum ONA = TopAbs_FACE)
+    internal void After(Containment S, ShapeType ONA = ShapeType.Face)
     {
         myStateAfter = S;
         myShapeAfter = ONA;
@@ -124,22 +125,22 @@ public partial struct TopOpeBRepDS_Transition : IEquatable<TopOpeBRepDS_Transiti
     }
 
     /// <summary>The state before.</summary>
-    public readonly TopAbs_State Before() => myStateBefore;
+    public readonly Containment Before() => myStateBefore;
 
     /// <summary>The kind of shape before.</summary>
-    public readonly TopAbs_ShapeEnum ONBefore() => myShapeBefore;
+    public readonly ShapeType ONBefore() => myShapeBefore;
 
     /// <summary>The state after.</summary>
-    public readonly TopAbs_State After() => myStateAfter;
+    public readonly Containment After() => myStateAfter;
 
     /// <summary>The kind of shape after.</summary>
-    public readonly TopAbs_ShapeEnum ONAfter() => myShapeAfter;
+    public readonly ShapeType ONAfter() => myShapeAfter;
 
     /// <summary>The kind of shape before.</summary>
-    public readonly TopAbs_ShapeEnum ShapeBefore() => myShapeBefore;
+    public readonly ShapeType ShapeBefore() => myShapeBefore;
 
     /// <summary>The kind of shape after.</summary>
-    public readonly TopAbs_ShapeEnum ShapeAfter() => myShapeAfter;
+    public readonly ShapeType ShapeAfter() => myShapeAfter;
 
     /// <summary>The index of the shape before and after.</summary>
     /// <exception cref="FailureException">The indices before and after differ.</exception>
@@ -162,25 +163,25 @@ public partial struct TopOpeBRepDS_Transition : IEquatable<TopOpeBRepDS_Transiti
     /// Sets the states of the orientation <paramref name="O"/>: FORWARD is (OUT, IN), REVERSED (IN, OUT), INTERNAL
     /// (IN, IN), EXTERNAL (OUT, OUT).
     /// </summary>
-    internal void Set(TopAbs_Orientation O)
+    internal void Set(Orientation O)
     {
         switch (O)
         {
-            case TopAbs_FORWARD:
-                myStateBefore = TopAbs_OUT;
-                myStateAfter = TopAbs_IN;
+            case Forward:
+                myStateBefore = Out;
+                myStateAfter = In;
                 break;
-            case TopAbs_REVERSED:
-                myStateBefore = TopAbs_IN;
-                myStateAfter = TopAbs_OUT;
+            case Reversed:
+                myStateBefore = In;
+                myStateAfter = Out;
                 break;
-            case TopAbs_INTERNAL:
-                myStateBefore = TopAbs_IN;
-                myStateAfter = TopAbs_IN;
+            case Internal:
+                myStateBefore = In;
+                myStateAfter = In;
                 break;
-            case TopAbs_EXTERNAL:
-                myStateBefore = TopAbs_OUT;
-                myStateAfter = TopAbs_OUT;
+            case External:
+                myStateBefore = Out;
+                myStateAfter = Out;
                 break;
         }
     }
@@ -189,9 +190,9 @@ public partial struct TopOpeBRepDS_Transition : IEquatable<TopOpeBRepDS_Transiti
     /// The orientation corresponding to the state <paramref name="S"/>: REVERSED when leaving it, FORWARD when
     /// entering it, INTERNAL when staying in it, EXTERNAL when staying outside it (with ON states, see OCCT).
     /// </summary>
-    public readonly TopAbs_Orientation Orientation(TopAbs_State S, TopAbs_ShapeEnum T = TopAbs_FACE)
+    public readonly Orientation Orientation(Containment S, ShapeType T = ShapeType.Face)
     {
-        if (myStateBefore == TopAbs_ON || myStateAfter == TopAbs_ON)
+        if (myStateBefore == On || myStateAfter == On)
         {
             return OrientationON(S, T);
         }
@@ -201,68 +202,68 @@ public partial struct TopOpeBRepDS_Transition : IEquatable<TopOpeBRepDS_Transiti
             {
                 if (myStateAfter == S)
                 {
-                    return TopAbs_INTERNAL;
+                    return Internal;
                 }
                 else
                 {
-                    return TopAbs_REVERSED;
+                    return Reversed;
                 }
             }
             else
             {
                 if (myStateAfter == S)
                 {
-                    return TopAbs_FORWARD;
+                    return Forward;
                 }
                 else
                 {
-                    return TopAbs_EXTERNAL;
+                    return External;
                 }
             }
         }
     }
 
     // the orientation corresponding to state S, when at least one of the states is ON
-    private readonly TopAbs_Orientation OrientationON(TopAbs_State S, TopAbs_ShapeEnum T)
+    private readonly Orientation OrientationON(Containment S, ShapeType T)
     {
         _ = T;
-        TopAbs_Orientation result = TopAbs_FORWARD;
+        Orientation result = Forward;
 
-        if (myStateBefore == TopAbs_ON && myStateAfter == TopAbs_ON)
+        if (myStateBefore == On && myStateAfter == On)
         {
-            if (S == TopAbs_IN)
+            if (S == In)
             {
-                result = TopAbs_INTERNAL;
+                result = Internal;
             }
-            else if (S == TopAbs_OUT)
+            else if (S == Out)
             {
-                result = TopAbs_EXTERNAL;
+                result = External;
             }
-            else if (S == TopAbs_ON)
+            else if (S == On)
             {
-                result = TopAbs_INTERNAL;
+                result = Internal;
             }
         }
-        else if (myStateBefore == TopAbs_ON)
+        else if (myStateBefore == On)
         {
             if (myStateAfter == S)
             {
-                return TopAbs_FORWARD;
+                return Forward;
             }
             else
             {
-                return TopAbs_REVERSED;
+                return Reversed;
             }
         }
-        else if (myStateAfter == TopAbs_ON)
+        else if (myStateAfter == On)
         {
             if (myStateBefore == S)
             {
-                return TopAbs_REVERSED;
+                return Reversed;
             }
             else
             {
-                return TopAbs_FORWARD;
+                return Forward;
             }
         }
 
@@ -277,35 +278,35 @@ public partial struct TopOpeBRepDS_Transition : IEquatable<TopOpeBRepDS_Transiti
         T.myIndexAfter = myIndexAfter;
 
         // xpu : 14-01-98
-        if (myStateBefore == TopAbs_UNKNOWN && myStateAfter == TopAbs_UNKNOWN)
+        if (myStateBefore == Unknown && myStateAfter == Unknown)
         {
             T.Set(myStateAfter, myStateBefore, myShapeAfter, myShapeBefore);
             return T;
         }
         // xpu : 14-01-98
 
-        if (myStateBefore == TopAbs_ON || myStateAfter == TopAbs_ON)
+        if (myStateBefore == On || myStateAfter == On)
         {
             T.Set(myStateAfter, myStateBefore, myShapeAfter, myShapeBefore);
         }
         else
         {
-            TopAbs_Orientation o = Orientation(TopAbs_IN);
-            if (o == TopAbs_FORWARD)
+            Orientation o = Orientation(In);
+            if (o == Forward)
             { // (OUT,IN) --> (IN,OUT)
-                T.Set(TopAbs_IN, TopAbs_OUT, myShapeBefore, myShapeAfter);
+                T.Set(In, Out, myShapeBefore, myShapeAfter);
             }
-            else if (o == TopAbs_REVERSED)
+            else if (o == Reversed)
             { // (IN,OUT) --> (OUT,IN)
-                T.Set(TopAbs_OUT, TopAbs_IN, myShapeBefore, myShapeAfter);
+                T.Set(Out, In, myShapeBefore, myShapeAfter);
             }
-            else if (o == TopAbs_EXTERNAL)
+            else if (o == External)
             { // (OUT,OUT) --> (IN,IN)
-                T.Set(TopAbs_IN, TopAbs_IN, myShapeBefore, myShapeAfter);
+                T.Set(In, In, myShapeBefore, myShapeAfter);
             }
-            else if (o == TopAbs_INTERNAL)
+            else if (o == Internal)
             { // (IN,IN) --> (OUT,OUT)
-                T.Set(TopAbs_OUT, TopAbs_OUT, myShapeBefore, myShapeAfter);
+                T.Set(Out, Out, myShapeBefore, myShapeAfter);
             }
         }
 
@@ -313,7 +314,7 @@ public partial struct TopOpeBRepDS_Transition : IEquatable<TopOpeBRepDS_Transiti
     }
 
     /// <summary>Whether both states are UNKNOWN.</summary>
-    public readonly bool IsUnknown() => (myStateBefore == TopAbs_UNKNOWN) && (myStateAfter == TopAbs_UNKNOWN);
+    public readonly bool IsUnknown() => (myStateBefore == Unknown) && (myStateAfter == Unknown);
 
     /// <summary>A copy with the indices before and after set to <paramref name="I"/>.</summary>
     public readonly TopOpeBRepDS_Transition WithIndex(int I)
@@ -324,10 +325,10 @@ public partial struct TopOpeBRepDS_Transition : IEquatable<TopOpeBRepDS_Transiti
     }
 
     /// <summary>A copy with the states and kinds of shape set.</summary>
-    public readonly TopOpeBRepDS_Transition WithSet(TopAbs_State SB,
-                                                    TopAbs_State SA,
-                                                    TopAbs_ShapeEnum ONB = TopAbs_FACE,
-                                                    TopAbs_ShapeEnum ONA = TopAbs_FACE)
+    public readonly TopOpeBRepDS_Transition WithSet(Containment SB,
+                                                    Containment SA,
+                                                    ShapeType ONB = ShapeType.Face,
+                                                    ShapeType ONA = ShapeType.Face)
     {
         TopOpeBRepDS_Transition aCopy = this;
         aCopy.Set(SB, SA, ONB, ONA);

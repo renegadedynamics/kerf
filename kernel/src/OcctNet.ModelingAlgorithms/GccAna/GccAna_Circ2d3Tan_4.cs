@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 using static Occt.GccInt_IType;
@@ -71,7 +72,7 @@ public sealed partial class GccAna_Circ2d3Tan
             {
                 GccInt_Bisec Sol1 = Bis1.ThisSolution(i);
                 GccInt_IType typ1 = Sol1.ArcType();
-                IntAna2d_AnaIntersection Intp = new();
+                AnalyticIntersection Intp = new();
                 for (int k = 1; k <= nbsolution2; k++)
                 {
                     GccInt_Bisec Sol2 = Bis2.ThisSolution(k);
@@ -88,30 +89,30 @@ public sealed partial class GccAna_Circ2d3Tan
                         }
                         else if (typ2 == GccInt_Hpr)
                         {
-                            Intp.Perform(Sol1.Circle(), new IntAna2d_Conic(Sol2.Hyperbola()));
+                            Intp.Perform(Sol1.Circle(), new Conic(Sol2.Hyperbola()));
                         }
                         else if (typ2 == GccInt_Ell)
                         {
-                            Intp.Perform(Sol1.Circle(), new IntAna2d_Conic(Sol2.Ellipse()));
+                            Intp.Perform(Sol1.Circle(), new Conic(Sol2.Ellipse()));
                         }
                     }
                     else if (typ1 == GccInt_Ell)
                     {
                         if (typ2 == GccInt_Cir)
                         {
-                            Intp.Perform(Sol2.Circle(), new IntAna2d_Conic(Sol1.Ellipse()));
+                            Intp.Perform(Sol2.Circle(), new Conic(Sol1.Ellipse()));
                         }
                         else if (typ2 == GccInt_Lin)
                         {
-                            Intp.Perform(Sol2.Line(), new IntAna2d_Conic(Sol1.Ellipse()));
+                            Intp.Perform(Sol2.Line(), new Conic(Sol1.Ellipse()));
                         }
                         else if (typ2 == GccInt_Hpr)
                         {
-                            Intp.Perform(Sol1.Ellipse(), new IntAna2d_Conic(Sol2.Hyperbola()));
+                            Intp.Perform(Sol1.Ellipse(), new Conic(Sol2.Hyperbola()));
                         }
                         else if (typ2 == GccInt_Ell)
                         {
-                            Intp.Perform(Sol1.Ellipse(), new IntAna2d_Conic(Sol2.Ellipse()));
+                            Intp.Perform(Sol1.Ellipse(), new Conic(Sol2.Ellipse()));
                         }
                     }
                     else if (typ1 == GccInt_Lin)
@@ -126,37 +127,37 @@ public sealed partial class GccAna_Circ2d3Tan
                         }
                         else if (typ2 == GccInt_Hpr)
                         {
-                            Intp.Perform(Sol1.Line(), new IntAna2d_Conic(Sol2.Hyperbola()));
+                            Intp.Perform(Sol1.Line(), new Conic(Sol2.Hyperbola()));
                         }
                         else if (typ2 == GccInt_Ell)
                         {
-                            Intp.Perform(Sol1.Line(), new IntAna2d_Conic(Sol2.Ellipse()));
+                            Intp.Perform(Sol1.Line(), new Conic(Sol2.Ellipse()));
                         }
                     }
                     else if (typ1 == GccInt_Hpr)
                     {
                         if (typ2 == GccInt_Cir)
                         {
-                            Intp.Perform(Sol2.Circle(), new IntAna2d_Conic(Sol1.Hyperbola()));
+                            Intp.Perform(Sol2.Circle(), new Conic(Sol1.Hyperbola()));
                         }
                         else if (typ2 == GccInt_Lin)
                         {
-                            Intp.Perform(Sol2.Line(), new IntAna2d_Conic(Sol1.Hyperbola()));
+                            Intp.Perform(Sol2.Line(), new Conic(Sol1.Hyperbola()));
                         }
                         else if (typ2 == GccInt_Hpr)
                         {
-                            Intp.Perform(Sol2.Hyperbola(), new IntAna2d_Conic(Sol1.Hyperbola()));
+                            Intp.Perform(Sol2.Hyperbola(), new Conic(Sol1.Hyperbola()));
                         }
                         else if (typ2 == GccInt_Ell)
                         {
-                            Intp.Perform(Sol2.Ellipse(), new IntAna2d_Conic(Sol1.Hyperbola()));
+                            Intp.Perform(Sol2.Ellipse(), new Conic(Sol1.Hyperbola()));
                         }
                     }
-                    if (Intp.IsDone())
+                    if (Intp.IsDone)
                     {
-                        if (!Intp.IsEmpty())
+                        if (!Intp.IsEmpty)
                         {
-                            for (int j = 1; j <= Intp.NbPoints(); j++)
+                            for (int j = 1; j <= Intp.PointCount; j++)
                             {
                                 double Rradius = 0;
                                 Point2D Center = Intp.Point(j).Value();

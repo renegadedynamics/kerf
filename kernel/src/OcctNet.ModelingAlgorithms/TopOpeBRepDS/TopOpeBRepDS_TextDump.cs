@@ -3,9 +3,12 @@
 // the same format; keep the two in step.
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -74,7 +77,7 @@ internal static class TopOpeBRepDS_TextDump
            + theTypeNames[(int)T.ShapeAfter()] + " " + I(T.IndexBefore()) + "/" + I(T.IndexAfter());
 
     /// <summary>The text of the data structure <paramref name="DS"/>, whose shapes are referred to <paramref name="theInput"/>'s.</summary>
-    internal static string Write(TopOpeBRepDS_DataStructure DS, in TopoDS_Shape theInput)
+    internal static string Write(TopOpeBRepDS_DataStructure DS, in Shape theInput)
     {
         Writer aW = new(DS, theInput);
         return aW.Run();
@@ -87,27 +90,27 @@ internal static class TopOpeBRepDS_TextDump
         private readonly Dictionary<TopOpeBRepDS_Interference, int> Ids = new(ReferenceEqualityComparer.Instance);
         private readonly List<TopOpeBRepDS_Interference> Order = [];
         private readonly HashSet<int> Written = [];
-        private readonly NCollection_IndexedMap<TopoDS_Shape>[] InMaps = new NCollection_IndexedMap<TopoDS_Shape>[9];
+        private readonly NCollection_IndexedMap<Shape>[] InMaps = new NCollection_IndexedMap<Shape>[9];
 
-        internal Writer(TopOpeBRepDS_DataStructure theDS, in TopoDS_Shape theInput)
+        internal Writer(TopOpeBRepDS_DataStructure theDS, in Shape theInput)
         {
             DS = theDS;
             StreamUtilities.Precision(OS, 17);
             for (int t = 0; t < 9; t++)
             {
-                InMaps[t] = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                if (t < 8 && !theInput.IsNull())
+                InMaps[t] = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                if (t < 8 && !theInput.IsNull)
                 {
-                    TopExp.MapShapes(theInput, (TopAbs_ShapeEnum)t, InMaps[t]);
+                    Exploration.MapShapes(theInput, (ShapeType)t, InMaps[t]);
                 }
             }
         }
 
         private void W(string s) => OS.Write(s);
 
-        private string ShapeRef(in TopoDS_Shape S)
+        private string ShapeRef(in Shape S)
         {
-            if (S.IsNull())
+            if (S.IsNull)
             {
                 return "null";
             }
@@ -118,9 +121,9 @@ internal static class TopOpeBRepDS_TextDump
                 return s + " in " + I(k);
             }
             s += " new";
-            if (S.ShapeType() == TopAbs_VERTEX)
+            if (S.ShapeType() == ShapeType.Vertex)
             {
-                Point3D P = BRep_Tool.Pnt(TopoDS.Vertex(S));
+                Point3D P = Tool.Pnt(ShapeCasts.Vertex(S));
                 s += " " + R(P.X()) + " " + R(P.Y()) + " " + R(P.Z());
             }
             return s;
@@ -146,7 +149,7 @@ internal static class TopOpeBRepDS_TextDump
 
         private string IdRef(TopOpeBRepDS_Interference? theI) => theI is null ? "-" : "#" + I(Ids[theI]);
 
-        private void Geom3d(string theTag, Geom_Curve? C)
+        private void Geom3d(string theTag, Curve3D? C)
         {
             if (C is null)
             {
@@ -154,10 +157,10 @@ internal static class TopOpeBRepDS_TextDump
                 return;
             }
             W(theTag + "\n");
-            GeomTools.Write(C, OS);
+            global::Kerf.Engine.Exchange.Brep.GeomTools.Write(C, OS);
         }
 
-        private void Geom2d(string theTag, Geom2d_Curve? C)
+        private void Geom2d(string theTag, Curve2D? C)
         {
             if (C is null)
             {
@@ -165,10 +168,10 @@ internal static class TopOpeBRepDS_TextDump
                 return;
             }
             W(theTag + "\n");
-            GeomTools.Write(C, OS);
+            global::Kerf.Engine.Exchange.Brep.GeomTools.Write(C, OS);
         }
 
-        private void GeomS(string theTag, Geom_Surface? S)
+        private void GeomS(string theTag, Surface? S)
         {
             if (S is null)
             {
@@ -176,7 +179,7 @@ internal static class TopOpeBRepDS_TextDump
                 return;
             }
             W(theTag + "\n");
-            GeomTools.Write(S, OS);
+            global::Kerf.Engine.Exchange.Brep.GeomTools.Write(S, OS);
         }
 
         private void Interf(TopOpeBRepDS_Interference theI)
@@ -265,12 +268,12 @@ internal static class TopOpeBRepDS_TextDump
             W("shapes " + I(nS) + "\n");
             for (int i = 1; i <= nS; i++)
             {
-                TopoDS_Shape S = DS.Shape(i, false);
-                NCollection_List<TopoDS_Shape> SD = DS.ShapeSameDomain(i);
+                Shape S = DS.Shape(i, false);
+                NCollection_List<Shape> SD = DS.ShapeSameDomain(i);
                 W("shape " + I(i) + " " + ShapeRef(S) + " keep " + (DS.KeepShape(i) ? "1" : "0") + " sdref " + I(DS.SameDomainRef(i))
                   + " sdori " + theConfigNames[(int)DS.SameDomainOri(i)] + " sdind " + I(DS.SameDomainInd(i)) + " rank "
                   + I(DS.AncestorRank(i)) + " sd " + I(SD.Extent()));
-                for (NCollection_List<TopoDS_Shape>.Iterator it = new(SD); it.More(); it.Next())
+                for (NCollection_List<Shape>.Iterator it = new(SD); it.More(); it.Next())
                 {
                     W(" " + I(DS.Shape(it.Value(), false)));
                 }
@@ -341,22 +344,22 @@ internal static class TopOpeBRepDS_TextDump
             }
 
             // the new surfaces of faces: the input's faces in order, then the data structure's other faces
-            List<TopoDS_Shape> aFaces = [];
-            NCollection_IndexedMap<TopoDS_Shape> aInFaces = InMaps[(int)TopAbs_FACE];
+            List<Shape> aFaces = [];
+            NCollection_IndexedMap<Shape> aInFaces = InMaps[(int)ShapeType.Face];
             for (int k = 1; k <= aInFaces.Extent(); k++)
             {
                 aFaces.Add(aInFaces.FindKey(k));
             }
             for (int i = 1; i <= nS; i++)
             {
-                TopoDS_Shape S = DS.Shape(i, false);
-                if (S.ShapeType() == TopAbs_FACE && aInFaces.FindIndex(S) == 0)
+                Shape S = DS.Shape(i, false);
+                if (S.ShapeType() == ShapeType.Face && aInFaces.FindIndex(S) == 0)
                 {
                     aFaces.Add(S);
                 }
             }
             int nNew = 0;
-            foreach (TopoDS_Shape F in aFaces)
+            foreach (Shape F in aFaces)
             {
                 if (DS.HasNewSurface(F))
                 {
@@ -364,7 +367,7 @@ internal static class TopOpeBRepDS_TextDump
                 }
             }
             W("newsurfaces " + I(nNew) + "\n");
-            foreach (TopoDS_Shape F in aFaces)
+            foreach (Shape F in aFaces)
             {
                 if (DS.HasNewSurface(F))
                 {
@@ -389,7 +392,7 @@ internal static class TopOpeBRepDS_TextDump
     /// it), its shapes taken from <paramref name="theInput"/>.
     /// </summary>
     /// <exception cref="FormatException">The text is not a dump, or names a shape that is not in the input ("new").</exception>
-    internal static TopOpeBRepDS_HDataStructure Read(string theText, in TopoDS_Shape theInput)
+    internal static TopOpeBRepDS_HDataStructure Read(string theText, in Shape theInput)
     {
         Reader aR = new(new StringReader(theText), theInput);
         return aR.Run();
@@ -398,20 +401,20 @@ internal static class TopOpeBRepDS_TextDump
     private sealed class Reader
     {
         private readonly TextReader IS;
-        private readonly NCollection_IndexedMap<TopoDS_Shape>[] InMaps = new NCollection_IndexedMap<TopoDS_Shape>[9];
+        private readonly NCollection_IndexedMap<Shape>[] InMaps = new NCollection_IndexedMap<Shape>[9];
         private readonly Dictionary<int, TopOpeBRepDS_Interference> Ids = [];
         private readonly TopOpeBRepDS_HDataStructure HDS = new();
         private TopOpeBRepDS_DataStructure DS => HDS.ChangeDS();
 
-        internal Reader(TextReader theIS, in TopoDS_Shape theInput)
+        internal Reader(TextReader theIS, in Shape theInput)
         {
             IS = theIS;
             for (int t = 0; t < 9; t++)
             {
-                InMaps[t] = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                if (t < 8 && !theInput.IsNull())
+                InMaps[t] = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                if (t < 8 && !theInput.IsNull)
                 {
-                    TopExp.MapShapes(theInput, (TopAbs_ShapeEnum)t, InMaps[t]);
+                    Exploration.MapShapes(theInput, (ShapeType)t, InMaps[t]);
                 }
             }
         }
@@ -453,15 +456,15 @@ internal static class TopOpeBRepDS_TextDump
         }
 
         // a shape-ref starting at t[k]; returns the shape and the next token's index
-        private TopoDS_Shape Shape(string[] t, int k, out int theNext)
+        private Shape Shape(string[] t, int k, out int theNext)
         {
             if (t[k] == "null")
             {
                 theNext = k + 1;
-                return new TopoDS_Shape();
+                return new Shape();
             }
             int aType = Index(theTypeNames, t[k]);
-            TopAbs_Orientation anOri = (TopAbs_Orientation)Index(theOriNames, t[k + 1]);
+            Orientation anOri = (Orientation)Index(theOriNames, t[k + 1]);
             if (t[k + 2] != "in")
             {
                 throw new FormatException("TopOpeBRepDS dump: a shape not in the input cannot be rebuilt");
@@ -470,36 +473,36 @@ internal static class TopOpeBRepDS_TextDump
             return InMaps[aType].FindKey(Int(t[k + 3])).Oriented(anOri);
         }
 
-        private Geom_Curve? Curve3d(string theTag)
+        private Curve3D? Curve3d(string theTag)
         {
             string[] t = Line(theTag);
             if (t.Length > 1)
             {
                 return null;
             }
-            GeomTools.Read(out Geom_Curve? C, IS);
+            global::Kerf.Engine.Exchange.Brep.GeomTools.Read(out Curve3D? C, IS);
             return C;
         }
 
-        private Geom2d_Curve? Curve2d(string theTag)
+        private Curve2D? Curve2d(string theTag)
         {
             string[] t = Line(theTag);
             if (t.Length > 1)
             {
                 return null;
             }
-            GeomTools.Read(out Geom2d_Curve? C, IS);
+            global::Kerf.Engine.Exchange.Brep.GeomTools.Read(out Curve2D? C, IS);
             return C;
         }
 
-        private Geom_Surface? Surf(string theTag)
+        private Surface? Surf(string theTag)
         {
             string[] t = Line(theTag);
             if (t.Length > 1)
             {
                 return null;
             }
-            GeomTools.Read(out Geom_Surface? S, IS);
+            global::Kerf.Engine.Exchange.Brep.GeomTools.Read(out Surface? S, IS);
             return S;
         }
 
@@ -517,8 +520,8 @@ internal static class TopOpeBRepDS_TextDump
             int id = Int(t[1][1..]);
             string cls = t[2];
             string[] st = t[3].Split('/'), sh = t[4].Split('/'), ix = t[5].Split('/');
-            TopOpeBRepDS_Transition T = new((TopAbs_State)Index(theStateNames, st[0]), (TopAbs_State)Index(theStateNames, st[1]),
-                                            (TopAbs_ShapeEnum)Index(theTypeNames, sh[0]), (TopAbs_ShapeEnum)Index(theTypeNames, sh[1]));
+            TopOpeBRepDS_Transition T = new((Containment)Index(theStateNames, st[0]), (Containment)Index(theStateNames, st[1]),
+                                            (ShapeType)Index(theTypeNames, sh[0]), (ShapeType)Index(theTypeNames, sh[1]));
             T.IndexBefore(Int(ix[0]));
             T.IndexAfter(Int(ix[1]));
             TopOpeBRepDS_Kind SK = (TopOpeBRepDS_Kind)Index(theKindNames, t[6]);
@@ -584,7 +587,7 @@ internal static class TopOpeBRepDS_TextDump
             for (int i = 1; i <= nS; i++)
             {
                 string[] t = Line("shape");
-                TopoDS_Shape S = Shape(t, 2, out int k);
+                Shape S = Shape(t, 2, out int k);
                 if (DS.AddShape(S) != i)
                 {
                     throw new FormatException("TopOpeBRepDS dump: shape " + I(i) + " is not new");
@@ -638,8 +641,8 @@ internal static class TopOpeBRepDS_TextDump
                     continue;
                 }
                 // curve i tol range r f l keep k mother m index x walk w sci a b
-                TopoDS_Shape S1 = Shape(Line("s1"), 1, out _);
-                TopoDS_Shape S2 = Shape(Line("s2"), 1, out _);
+                Shape S1 = Shape(Line("s1"), 1, out _);
+                Shape S2 = Shape(Line("s2"), 1, out _);
                 TopOpeBRepDS_Curve C = new(Curve3d("c3d"), Real(t[2]), t[14] == "1");
                 if (t[4] == "1")
                 {
@@ -683,14 +686,14 @@ internal static class TopOpeBRepDS_TextDump
             int nN = Int(Line("newsurfaces")[1]);
             for (int k = 0; k < nN; k++)
             {
-                TopoDS_Shape F = Shape(Line("newsurface"), 1, out _);
+                Shape F = Shape(Line("newsurface"), 1, out _);
                 DS.SetNewSurface(F, Surf("surf")!);
             }
 
             int nE = Int(Line("sectionedges")[1]);
             for (int k = 0; k < nE; k++)
             {
-                DS.AddSectionEdge(TopoDS.Edge(Shape(Line("sectionedge"), 1, out _)));
+                DS.AddSectionEdge(ShapeCasts.Edge(Shape(Line("sectionedge"), 1, out _)));
             }
             DS.Isfafa(Line("isfafa")[1] == "1");
             Line("end");

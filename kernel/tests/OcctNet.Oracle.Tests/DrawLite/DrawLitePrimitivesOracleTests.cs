@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -44,10 +46,10 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile));
+        Assert.True(BrepTools.Write(theShape, aFile));
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 
@@ -98,7 +100,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
     private readonly List<string> myDifferences = [];
     private readonly Dictionary<string, int> myByCommand = [];
 
-    private void Compare(string theScript, N.TopoDS_Shape theNative, in TopoDS_Shape thePort)
+    private void Compare(string theScript, N.TopoDS_Shape theNative, in Shape thePort)
     {
         string aN = NativeText(theNative);
         string aP = PortText(thePort);
@@ -150,7 +152,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
             isPortDone = false;
         }
 
-        if (aNative is not null && aNative.IsNull() && isPortDone && theDI.GetShape("r").IsNull())
+        if (aNative is not null && aNative.IsNull() && isPortDone && theDI.GetShape("r").IsNull)
         {
             // a null result on both sides (an edge on the axis of a revolution: done, and null)
             myNullBoth++;
@@ -622,7 +624,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
             anAx3 = anAx3.ZReversed();
         }
 
-        var aPlane = new Geom_Plane(anAx3);
+        var aPlane = new PlaneSurface(anAx3);
         theDI.SetDrawable("pl", DrawGeometry.Of(aPlane));
         using N.gp_Ax3 aNAx3 = Oracle.ToNative(anAx3);
         using var aNPlane = new N.Geom_Plane(aNAx3);

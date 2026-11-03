@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using static Kerf.Engine.Geometry.NormalStatus;
 using static Kerf.Geometry.Continuity;
@@ -14,7 +16,7 @@ namespace Occt;
 /// The Darboux trihedron law of a curve on a surface: the tangent, the surface normal (as binormal) and their
 /// cross product.
 /// </summary>
-/// <remarks>The curve must be an <see cref="Adaptor3d_CurveOnSurface"/> (OCCT casts it unchecked; the port checks).</remarks>
+/// <remarks>The curve must be an <see cref="CurveOnSurface"/> (OCCT casts it unchecked; the port checks).</remarks>
 public class GeomFill_Darboux : GeomFill_TrihedronLaw
 {
     /// <summary>Computes (F/|F|)'.</summary>
@@ -36,7 +38,7 @@ public class GeomFill_Darboux : GeomFill_TrihedronLaw
     }
 
     /// <summary>The normal to the surface (OCCT's file-static NormalD0).</summary>
-    private static void NormalD0(double U, double V, Adaptor3d_Surface Surf, ref Direction3D Normal, out int OrderU,
+    private static void NormalD0(double U, double V, SurfaceAdaptorBase Surf, ref Direction3D Normal, out int OrderU,
                                  out int OrderV)
     {
         Continuity Cont = (Surf.UContinuity() < Surf.VContinuity()) ? (Surf.UContinuity()) : (Surf.VContinuity());
@@ -51,7 +53,7 @@ public class GeomFill_Darboux : GeomFill_TrihedronLaw
         {
             if (Cont == C0 || Cont == C1)
             {
-                throw new Geom_UndefinedValue();
+                throw new UndefinedValue3DException();
             }
             int MaxOrder = 3;
             NCollection_Array2<Vector3D> DerNUV = new NCollection_Array2<Vector3D>(0, MaxOrder, 0, MaxOrder);
@@ -88,13 +90,13 @@ public class GeomFill_Darboux : GeomFill_TrihedronLaw
 
             if (NStatus != Defined)
             {
-                throw new Geom_UndefinedValue();
+                throw new UndefinedValue3DException();
             }
         }
     }
 
     /// <summary>The normal to the surface and its first derivatives (OCCT's file-static NormalD1).</summary>
-    private static void NormalD1(double U, double V, Adaptor3d_Surface Surf, ref Direction3D Normal, out Vector3D D1UNormal,
+    private static void NormalD1(double U, double V, SurfaceAdaptorBase Surf, ref Direction3D Normal, out Vector3D D1UNormal,
                                  out Vector3D D1VNormal)
     {
         Surf.D2(U, V, out _, out D1UNormal, out D1VNormal, out Vector3D d2u, out Vector3D d2v, out Vector3D d2uv);
@@ -150,7 +152,7 @@ public class GeomFill_Darboux : GeomFill_TrihedronLaw
                      out int OrderV);
         if (NStatus != Defined)
         {
-            throw new Geom_UndefinedValue();
+            throw new UndefinedValue3DException();
         }
 
         D1UNormal = global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 0, DerNUV, OrderU, OrderV);
@@ -158,7 +160,7 @@ public class GeomFill_Darboux : GeomFill_TrihedronLaw
     }
 
     /// <summary>The normal to the surface and its first and second derivatives (OCCT's file-static NormalD2).</summary>
-    private static void NormalD2(double U, double V, Adaptor3d_Surface Surf, ref Direction3D Normal, out Vector3D D1UNormal,
+    private static void NormalD2(double U, double V, SurfaceAdaptorBase Surf, ref Direction3D Normal, out Vector3D D1UNormal,
                                  out Vector3D D1VNormal, out Vector3D D2UNormal, out Vector3D D2VNormal,
                                  out Vector3D D2UVNormal)
     {
@@ -220,7 +222,7 @@ public class GeomFill_Darboux : GeomFill_TrihedronLaw
                      out int OrderV);
         if (NStatus != Defined)
         {
-            throw new Geom_UndefinedValue();
+            throw new UndefinedValue3DException();
         }
 
         D1UNormal = global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 0, DerNUV, OrderU, OrderV);
@@ -246,8 +248,8 @@ public class GeomFill_Darboux : GeomFill_TrihedronLaw
 
     public override bool D0(double Param, ref Vector3D Tangent, ref Vector3D Normal, ref Vector3D BiNormal)
     {
-        Adaptor2d_Curve2d myCurve2d = ((Adaptor3d_CurveOnSurface)myTrimmed!).GetCurve()!;
-        Adaptor3d_Surface mySupport = ((Adaptor3d_CurveOnSurface)myTrimmed).GetSurface()!;
+        Curve2DAdaptorBase myCurve2d = ((CurveOnSurface)myTrimmed!).GetCurve()!;
+        SurfaceAdaptorBase mySupport = ((CurveOnSurface)myTrimmed).GetSurface()!;
 
         myCurve2d.D1(Param, out Point2D C2d, out Vector2D D2d);
 
@@ -270,8 +272,8 @@ public class GeomFill_Darboux : GeomFill_TrihedronLaw
                             ref Vector3D BiNormal, ref Vector3D DBiNormal)
     {
         Vector3D F, DF;
-        Adaptor2d_Curve2d myCurve2d = ((Adaptor3d_CurveOnSurface)myTrimmed!).GetCurve()!;
-        Adaptor3d_Surface mySupport = ((Adaptor3d_CurveOnSurface)myTrimmed).GetSurface()!;
+        Curve2DAdaptorBase myCurve2d = ((CurveOnSurface)myTrimmed!).GetCurve()!;
+        SurfaceAdaptorBase mySupport = ((CurveOnSurface)myTrimmed).GetSurface()!;
 
         myCurve2d.D2(Param, out Point2D C2d, out Vector2D D2d, out Vector2D D2_2d);
         mySupport.D2(C2d.X(), C2d.Y(), out _, out Vector3D dS_du, out Vector3D dS_dv, out Vector3D d2S_du, out Vector3D d2S_dv,
@@ -300,8 +302,8 @@ public class GeomFill_Darboux : GeomFill_TrihedronLaw
                             ref Vector3D D2BiNormal)
     {
         Vector3D F, DF, D2F;
-        Adaptor2d_Curve2d myCurve2d = ((Adaptor3d_CurveOnSurface)myTrimmed!).GetCurve()!;
-        Adaptor3d_Surface mySupport = ((Adaptor3d_CurveOnSurface)myTrimmed).GetSurface()!;
+        Curve2DAdaptorBase myCurve2d = ((CurveOnSurface)myTrimmed!).GetCurve()!;
+        SurfaceAdaptorBase mySupport = ((CurveOnSurface)myTrimmed).GetSurface()!;
 
         myCurve2d.D3(Param, out Point2D C2d, out Vector2D D2d, out Vector2D D2_2d, out Vector2D D3_2d);
         mySupport.D3(C2d.X(), C2d.Y(), out _, out Vector3D dS_du, out Vector3D dS_dv, out Vector3D d2S_du, out Vector3D d2S_dv,

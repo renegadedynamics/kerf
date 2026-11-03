@@ -6,10 +6,14 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.StepGeom_TrimmingPreference;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 using static Occt.TopoDSToStep_BuilderError;
 
 namespace Occt;
@@ -28,26 +32,26 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
         done = false;
     }
 
-    public TopoDSToStep_WireframeBuilder(in TopoDS_Shape aShape, TopoDSToStep_Tool aTool, in StepData_Factors theLocalFactors)
+    public TopoDSToStep_WireframeBuilder(in Shape aShape, TopoDSToStep_Tool aTool, in StepData_Factors theLocalFactors)
     {
         done = false;
         Init(aShape, aTool, theLocalFactors);
     }
 
-    public TopoDSToStep_WireframeBuilder(in TopoDS_Shape aShape, TopoDSToStep_Tool aTool) : this(aShape, aTool, new StepData_Factors())
+    public TopoDSToStep_WireframeBuilder(in Shape aShape, TopoDSToStep_Tool aTool) : this(aShape, aTool, new StepData_Factors())
     {
     }
 
-    public void Init(in TopoDS_Shape aShape, TopoDSToStep_Tool T, in StepData_Factors theLocalFactors)
+    public void Init(in Shape aShape, TopoDSToStep_Tool T, in StepData_Factors theLocalFactors)
     {
         _ = T;
         var itemList = new NCollection_HSequence<Transient>();
-        var aPmsMap = new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
+        var aPmsMap = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
         done = GetTrimmedCurveFromShape(aShape, aPmsMap, ref itemList, theLocalFactors);
         myResult = itemList;
     }
 
-    public void Init(in TopoDS_Shape aShape, TopoDSToStep_Tool T) => Init(aShape, T, new StepData_Factors());
+    public void Init(in Shape aShape, TopoDSToStep_Tool T) => Init(aShape, T, new StepData_Factors());
 
     public TopoDSToStep_BuilderError Error() => myError;
 
@@ -84,18 +88,18 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
     }
 
     /// <summary>Extracts the trimmed curve of an edge (on a face, which may be null), into the list.</summary>
-    public bool GetTrimmedCurveFromEdge(in TopoDS_Edge theEdge, in TopoDS_Face theFace, NCollection_DataMap<TopoDS_Shape, Transient> theMap,
+    public bool GetTrimmedCurveFromEdge(in Edge theEdge, in Face theFace, NCollection_DataMap<Shape, Transient> theMap,
                                         ref NCollection_HSequence<Transient> theCurveList, in StepData_Factors theLocalFactors)
     {
-        if (theEdge.Orientation() == TopAbs_INTERNAL || theEdge.Orientation() == TopAbs_EXTERNAL)
+        if (theEdge.Orientation() == Internal || theEdge.Orientation() == External)
         {
             // OCCT_DEBUG output left out
             return false;
         }
 
         // szv#4:S4163:12Mar99 SGI warns
-        TopoDS_Shape aSh = theEdge.Oriented(TopAbs_FORWARD);
-        TopoDS_Edge anEdge = TopoDS.Edge(aSh);
+        Shape aSh = theEdge.Oriented(Forward);
+        Edge anEdge = ShapeCasts.Edge(aSh);
 
         // resulting curve
         StepGeom_Curve aSGC = null;
@@ -104,7 +108,7 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
             aSGC = aTransient as StepGeom_Curve; // OCCT: found, then made again
         }
 
-        var aCA = new BRepAdaptor_Curve();
+        var aCA = new EdgeCurveAdaptor();
         try
         {
             aCA.Initialize(anEdge);
@@ -114,13 +118,13 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
             return false;
         }
 
-        TopoDS_Vertex aVFirst = new TopoDS_Vertex(), aVLast = new TopoDS_Vertex();
+        Vertex aVFirst = new Vertex(), aVLast = new Vertex();
         StepGeom_CartesianPoint aSGCP1 = null, aSGCP2 = null;
-        for (var anExp = new TopExp_Explorer(anEdge, TopAbs_VERTEX); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(anEdge, ShapeType.Vertex); anExp.More(); anExp.Next())
         {
-            TopoDS_Vertex aVertex = TopoDS.Vertex(anExp.Value());
-            Point3D aGpP = BRep_Tool.Pnt(aVertex);
-            if (aVertex.Orientation() == TopAbs_FORWARD)
+            Vertex aVertex = ShapeCasts.Vertex(anExp.Value());
+            Point3D aGpP = Tool.Pnt(aVertex);
+            if (aVertex.Orientation() == Forward)
             {
                 aVFirst = aVertex;
                 // 1.point for trimming
@@ -128,7 +132,7 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
                 aSGCP1 = aGTSMCP.Value();
             }
 
-            if (aVertex.Orientation() == TopAbs_REVERSED)
+            if (aVertex.Orientation() == Reversed)
             {
                 aVLast = aVertex;
                 // 2.point for trimming
@@ -137,11 +141,11 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
             }
         }
 
-        Geom_Curve aC = BRep_Tool.Curve(anEdge, out double aFirst, out double aLast);
+        Curve3D aC = Tool.Curve(anEdge, out double aFirst, out double aLast);
 
         if (aC is not null)
         {
-            if (aC is Geom_TrimmedCurve aTrimmed)
+            if (aC is TrimmedCurve3D aTrimmed)
             {
                 aC = aTrimmed.BasisCurve();
             }
@@ -158,7 +162,7 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
             double aTrim1 = aCA.FirstParameter();
             double aTrim2 = aCA.LastParameter();
 
-            if (aVFirst.IsNull() && aVLast.IsNull() && global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) && global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
+            if (aVFirst.IsNull && aVLast.IsNull && global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) && global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
             {
                 var aCurveMaker = new GeomToStep_MakeCurve(aC, theLocalFactors);
                 if (aCurveMaker.IsDone())
@@ -171,13 +175,13 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
                 return false;
             }
 
-            if (aVFirst.IsNull())
+            if (aVFirst.IsNull)
             {
                 var aGTSMCP = new GeomToStep_MakeCartesianPoint(aCA.Value(aFirst), theLocalFactors.LengthFactor());
                 aSGCP1 = aGTSMCP.Value();
             }
 
-            if (aVLast.IsNull())
+            if (aVLast.IsNull)
             {
                 var aGTSMCP = new GeomToStep_MakeCartesianPoint(aCA.Value(aLast), theLocalFactors.LengthFactor());
                 aSGCP2 = aGTSMCP.Value();
@@ -191,11 +195,11 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
             // a 3D Curve is constructed
             // -------------------------
             bool aIPlan = false;
-            if (!theFace.IsNull())
+            if (!theFace.IsNull)
             {
-                Geom2d_Curve aC2d = BRep_Tool.CurveOnSurface(anEdge, theFace, out double aCF, out double aCL);
-                Geom_Surface aS = BRep_Tool.Surface(theFace);
-                if (aS is Geom_Plane && aC2d is Geom2d_Line)
+                Curve2D aC2d = Tool.CurveOnSurface(anEdge, theFace, out double aCF, out double aCL);
+                Surface aS = Tool.Surface(theFace);
+                if (aS is PlaneSurface && aC2d is LineCurve2D)
                 {
                     aIPlan = true;
                 }
@@ -210,7 +214,7 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
                 double aLength = aV.Magnitude();
                 if (aLength >= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
-                    var aL = new Geom_Line(aPnt1, new Direction3D(aV));
+                    var aL = new LineCurve3D(aPnt1, new Direction3D(aV));
                     var aGTSML = new GeomToStep_MakeLine(aL, theLocalFactors);
                     aSGC = aGTSML.Value();
                     aSGC = MakeTrimmedCurve(aGTSML.Value(), aSGCP1, aSGCP2, 0, aLength, true);
@@ -233,11 +237,11 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
                     aMult.SetValue(i, 1);
                 }
 
-                aPoints.SetValue(1, BRep_Tool.Pnt(aVFirst));
-                aPoints.SetValue(Nbpt, BRep_Tool.Pnt(aVLast));
+                aPoints.SetValue(1, Tool.Pnt(aVFirst));
+                aPoints.SetValue(Nbpt, Tool.Pnt(aVLast));
                 aMult.SetValue(1, 2);
                 aMult.SetValue(Nbpt, 2);
-                Geom_Curve aBSCurve = new Geom_BSplineCurve(aPoints, aKnots, aMult, 1);
+                Curve3D aBSCurve = new BSplineCurve3D(aPoints, aKnots, aMult, 1);
                 var aGTSMC = new GeomToStep_MakeCurve(aBSCurve, theLocalFactors);
                 aSGC = aGTSMC.Value();
             }
@@ -254,18 +258,18 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
     }
 
     /// <summary>Extracts the trimmed curves of a face's edges, into the list.</summary>
-    public bool GetTrimmedCurveFromFace(in TopoDS_Face aFace, NCollection_DataMap<TopoDS_Shape, Transient> aMap,
+    public bool GetTrimmedCurveFromFace(in Face aFace, NCollection_DataMap<Shape, Transient> aMap,
                                         ref NCollection_HSequence<Transient> aCurveList, in StepData_Factors theLocalFactors)
     {
-        TopoDS_Shape curShape;
-        TopoDS_Edge curEdge;
-        var exp = new TopExp_Explorer();
+        Shape curShape;
+        Edge curEdge;
+        var exp = new Explorer();
         bool result = false; // szv#4:S4163:12Mar99 `done` hid one from this, initialisation needed
 
-        for (exp.Init(aFace, TopAbs_EDGE); exp.More(); exp.Next())
+        for (exp.Init(aFace, ShapeType.Edge); exp.More(); exp.Next())
         {
             curShape = exp.Current();
-            curEdge = TopoDS.Edge(curShape);
+            curEdge = ShapeCasts.Edge(curShape);
             if (GetTrimmedCurveFromEdge(curEdge, aFace, aMap, ref aCurveList, theLocalFactors))
             {
                 result = true;
@@ -276,33 +280,33 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
     }
 
     /// <summary>Extracts the trimmed curves of a shape's edges, into the list.</summary>
-    public bool GetTrimmedCurveFromShape(in TopoDS_Shape aShape, NCollection_DataMap<TopoDS_Shape, Transient> aMap,
+    public bool GetTrimmedCurveFromShape(in Shape aShape, NCollection_DataMap<Shape, Transient> aMap,
                                          ref NCollection_HSequence<Transient> aCurveList, in StepData_Factors theLocalFactors)
     {
-        var It = new TopoDS_Iterator();
+        var It = new Iterator();
         bool result = false; // szv#4:S4163:12Mar99 `done` hid one from this, initialisation needed
 
         // szv#4:S4163:12Mar99 optimized
         switch (aShape.ShapeType())
         {
-            case TopAbs_EDGE:
+            case ShapeType.Edge:
             {
-                TopoDS_Edge curEdge = TopoDS.Edge(aShape);
-                TopoDS_Face nulFace = new TopoDS_Face();
+                Edge curEdge = ShapeCasts.Edge(aShape);
+                Face nulFace = new Face();
                 result = GetTrimmedCurveFromEdge(curEdge, nulFace, aMap, ref aCurveList, theLocalFactors);
                 break;
             }
-            case TopAbs_WIRE:
+            case ShapeType.Wire:
             {
-                TopoDS_Face nulFace = new TopoDS_Face();
-                TopoDS_Shape curShape;
-                TopoDS_Edge curEdge;
-                var exp = new TopExp_Explorer();
+                Face nulFace = new Face();
+                Shape curShape;
+                Edge curEdge;
+                var exp = new Explorer();
 
-                for (exp.Init(aShape, TopAbs_EDGE); exp.More(); exp.Next())
+                for (exp.Init(aShape, ShapeType.Edge); exp.More(); exp.Next())
                 {
                     curShape = exp.Current();
-                    curEdge = TopoDS.Edge(curShape);
+                    curEdge = ShapeCasts.Edge(curShape);
                     if (GetTrimmedCurveFromEdge(curEdge, nulFace, aMap, ref aCurveList, theLocalFactors))
                     {
                         result = true;
@@ -311,19 +315,19 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
 
                 break;
             }
-            case TopAbs_FACE:
+            case ShapeType.Face:
             {
-                TopoDS_Face curFace = TopoDS.Face(aShape);
+                Face curFace = ShapeCasts.Face(aShape);
                 result = GetTrimmedCurveFromFace(curFace, aMap, ref aCurveList, theLocalFactors);
                 break;
             }
-            case TopAbs_SHELL:
+            case ShapeType.Shell:
             {
-                TopoDS_Shell Sh = TopoDS.Shell(aShape);
+                Shell Sh = ShapeCasts.Shell(aShape);
                 It.Initialize(Sh);
                 for (; It.More(); It.Next())
                 {
-                    TopoDS_Face curFace = TopoDS.Face(It.Value());
+                    Face curFace = ShapeCasts.Face(It.Value());
                     if (GetTrimmedCurveFromFace(curFace, aMap, ref aCurveList, theLocalFactors))
                     {
                         result = true;
@@ -333,12 +337,12 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
                 break;
             }
 
-            case TopAbs_SOLID:
+            case ShapeType.Solid:
             {
                 It.Initialize(aShape);
                 for (; It.More(); It.Next())
                 {
-                    if (It.Value().ShapeType() == TopAbs_SHELL)
+                    if (It.Value().ShapeType() == ShapeType.Shell)
                     {
                         if (GetTrimmedCurveFromShape(It.Value(), aMap, ref aCurveList, theLocalFactors))
                         {
@@ -350,7 +354,7 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
                 break;
             }
 
-            case TopAbs_COMPOUND:
+            case ShapeType.Compound:
             {
                 It.Initialize(aShape);
                 for (; It.More(); It.Next())

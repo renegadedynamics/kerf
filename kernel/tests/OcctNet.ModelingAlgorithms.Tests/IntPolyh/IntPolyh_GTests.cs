@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -137,11 +138,11 @@ public class IntPolyh_IntersectionTest
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
 
-        Geom_SphericalSurface aSphere = new(anAxis, 1.0);
-        GeomAdaptor_Surface aSurfS = new(aSphere);
+        SphericalSurface aSphere = new(anAxis, 1.0);
+        SurfaceAdaptor aSurfS = new(aSphere);
 
-        Geom_Plane aPlane = new(anAxis);
-        GeomAdaptor_Surface aSurfP = new(aPlane);
+        PlaneSurface aPlane = new(anAxis);
+        SurfaceAdaptor aSurfP = new(aPlane);
 
         IntPolyh_Intersection anInter = new(aSurfS, aSurfP);
 
@@ -171,12 +172,12 @@ public class IntPolyh_IntersectionTest
     {
         CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
 
-        Geom_SphericalSurface aSphere = new(anAxis, 2.0);
-        GeomAdaptor_Surface aSurfS = new(aSphere);
+        SphericalSurface aSphere = new(anAxis, 2.0);
+        SurfaceAdaptor aSurfS = new(aSphere);
 
         CoordinateSystem aCylAxis = new(new Point3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_CylindricalSurface aCyl = new(aCylAxis, 1.0);
-        GeomAdaptor_Surface aSurfC = new(aCyl);
+        CylindricalSurface aCyl = new(aCylAxis, 1.0);
+        SurfaceAdaptor aSurfC = new(aCyl);
 
         IntPolyh_Intersection anInter = new(aSurfS, aSurfC);
         Assert.True(anInter.IsDone());
@@ -209,11 +210,11 @@ public class IntPolyh_IntersectionTest
         CoordinateSystem anAxis1 = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         CoordinateSystem anAxis2 = new(new Point3D(0, 0, 0), new Direction3D(0, 1, 1));
 
-        Geom_Plane aPlane1 = new(anAxis1);
-        GeomAdaptor_Surface aSurf1 = new(aPlane1, -5.0, 5.0, -5.0, 5.0);
+        PlaneSurface aPlane1 = new(anAxis1);
+        SurfaceAdaptor aSurf1 = new(aPlane1, -5.0, 5.0, -5.0, 5.0);
 
-        Geom_Plane aPlane2 = new(anAxis2);
-        GeomAdaptor_Surface aSurf2 = new(aPlane2, -5.0, 5.0, -5.0, 5.0);
+        PlaneSurface aPlane2 = new(anAxis2);
+        SurfaceAdaptor aSurf2 = new(aPlane2, -5.0, 5.0, -5.0, 5.0);
 
         IntPolyh_Intersection anInter = new(aSurf1, aSurf2);
         Assert.True(anInter.IsDone());

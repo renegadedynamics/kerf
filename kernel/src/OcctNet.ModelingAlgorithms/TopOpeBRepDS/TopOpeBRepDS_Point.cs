@@ -6,6 +6,7 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -39,7 +40,7 @@ public partial struct TopOpeBRepDS_Point : IEquatable<TopOpeBRepDS_Point>
 
     /// <summary>The point and tolerance of the vertex <paramref name="S"/>.</summary>
     /// <exception cref="ProgramErrorException"><paramref name="S"/> is not a vertex.</exception>
-    public TopOpeBRepDS_Point(in TopoDS_Shape S)
+    public TopOpeBRepDS_Point(in Shape S)
     {
         myPoint = TopOpeBRepTool_ShapeTool.Pnt(S);
         myTolerance = TopOpeBRepTool_ShapeTool.Tolerance(S);

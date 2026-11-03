@@ -4,13 +4,18 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Geometry.Projection;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.BRepCheck_Status;
 using static Kerf.Geometry.TransformForm;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -23,13 +28,13 @@ public class BRepCheck_Edge : BRepCheck_Result
 {
     private const int NCONTROL = 23;
 
-    private BRep_CurveRepresentation? myCref;
-    private Adaptor3d_Curve? myHCurve;
+    private CurveRepresentation? myCref;
+    private CurveAdaptorBase? myHCurve;
     private bool myGctrl;
     private bool myIsExactMethod;
 
     /// <summary>Checks the edge on its own (<see cref="Minimum"/>).</summary>
-    public BRepCheck_Edge(in TopoDS_Edge E)
+    public BRepCheck_Edge(in Edge E)
     {
         Init(E);
         myGctrl = true;
@@ -49,8 +54,8 @@ public class BRepCheck_Edge : BRepCheck_Result
             myCref = null;
 
             // Existence et unicite d`une representation 3D
-            var TE = (BRep_TEdge)myShape.TShape()!;
-            var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(TE.Curves());
+            var TE = (BrepTEdge)myShape.TShape()!;
+            var itcr = new NCollection_List<CurveRepresentation>.Iterator(TE.Curves());
             bool exist = false;
             bool unique = true;
             // Search for a 3D reference. If no existent one, creates it with the
@@ -66,8 +71,8 @@ public class BRepCheck_Edge : BRepCheck_Result
 
             while (itcr.More())
             {
-                BRep_CurveRepresentation cr = itcr.Value();
-                if (cr.IsCurve3D())
+                CurveRepresentation cr = itcr.Value();
+                if (cr.IsCurve3D)
                 {
                     if (!exist)
                     {
@@ -102,7 +107,7 @@ public class BRepCheck_Edge : BRepCheck_Result
                 itcr.Initialize(TE.Curves());
                 while (itcr.More())
                 {
-                    BRep_CurveRepresentation cr = itcr.Value();
+                    CurveRepresentation cr = itcr.Value();
                     if (cr.IsCurveOnSurface())
                     {
                         myCref = cr;
@@ -119,7 +124,7 @@ public class BRepCheck_Edge : BRepCheck_Result
 
             if (myCref is not null)
             {
-                var GCref = (BRep_GCurve)myCref;
+                var GCref = (GCurve)myCref;
                 double eps = global::Kerf.Engine.Foundation.Precision.PConfusion();
                 GCref.Range(out double First, out double Last);
                 if (Last <= First)
@@ -129,14 +134,14 @@ public class BRepCheck_Edge : BRepCheck_Result
                 }
                 else
                 {
-                    if (myCref.IsCurve3D())
+                    if (myCref.IsCurve3D)
                     {
                         // eap 6 Jun 2002 occ332
                         // better transform C3d instead of transforming Surf upto C3d initial location,
                         // on transformed BSpline surface 'same parameter' may seem wrong
                         Placement L = myShape.Location() * myCref.Location();
-                        var C3d = (Geom_Curve)myCref.Curve3D()!.Transformed(L.Transformation());
-                        bool IsPeriodic = C3d.IsPeriodic();
+                        var C3d = (Curve3D)myCref.Curve3D()!.Transformed(L.Transformation());
+                        bool IsPeriodic = C3d.IsPeriodic;
                         double aPeriod = RealLast();
                         if (IsPeriodic)
                         {
@@ -144,12 +149,12 @@ public class BRepCheck_Edge : BRepCheck_Result
                         }
 
                         double f = C3d.FirstParameter(), l = C3d.LastParameter();
-                        if (C3d.GetType() == typeof(Geom_TrimmedCurve))
+                        if (C3d.GetType() == typeof(TrimmedCurve3D))
                         {
-                            Geom_Curve aC = ((Geom_TrimmedCurve)C3d).BasisCurve();
+                            Curve3D aC = ((TrimmedCurve3D)C3d).BasisCurve();
                             f = aC.FirstParameter();
                             l = aC.LastParameter();
-                            IsPeriodic = aC.IsPeriodic();
+                            IsPeriodic = aC.IsPeriodic;
                             if (IsPeriodic)
                             {
                                 aPeriod = aC.Period();
@@ -168,7 +173,7 @@ public class BRepCheck_Edge : BRepCheck_Result
                         }
                         else
                         {
-                            var GAC3d = new GeomAdaptor_Curve(C3d,
+                            var GAC3d = new CurveAdaptor(C3d,
                                                               C3d.TransformedParameter(First, L.Transformation()),
                                                               C3d.TransformedParameter(Last, L.Transformation()));
                             myHCurve = GAC3d;
@@ -177,10 +182,10 @@ public class BRepCheck_Edge : BRepCheck_Result
                     else
                     {
                         // curve on surface
-                        Geom_Surface Sref = myCref.Surface()!;
-                        Sref = (Geom_Surface)Sref.Transformed(myCref.Location().Transformation());
-                        Geom2d_Curve PCref = myCref.PCurve()!;
-                        bool IsPeriodic = PCref.IsPeriodic();
+                        Surface Sref = myCref.Surface()!;
+                        Sref = (Surface)Sref.Transformed(myCref.Location().Transformation());
+                        Curve2D PCref = myCref.PCurve()!;
+                        bool IsPeriodic = PCref.IsPeriodic;
                         double aPeriod = RealLast();
                         if (IsPeriodic)
                         {
@@ -188,12 +193,12 @@ public class BRepCheck_Edge : BRepCheck_Result
                         }
 
                         double f = PCref.FirstParameter(), l = PCref.LastParameter();
-                        if (PCref.GetType() == typeof(Geom2d_TrimmedCurve))
+                        if (PCref.GetType() == typeof(TrimmedCurve2D))
                         {
-                            Geom2d_Curve aC = ((Geom2d_TrimmedCurve)PCref).BasisCurve();
+                            Curve2D aC = ((TrimmedCurve2D)PCref).BasisCurve();
                             f = aC.FirstParameter();
                             l = aC.LastParameter();
-                            IsPeriodic = aC.IsPeriodic();
+                            IsPeriodic = aC.IsPeriodic;
                             if (IsPeriodic)
                             {
                                 aPeriod = aC.Period();
@@ -212,9 +217,9 @@ public class BRepCheck_Edge : BRepCheck_Result
                         }
                         else
                         {
-                            var GAHSref = new GeomAdaptor_Surface(Sref);
-                            var GHPCref = new Geom2dAdaptor_Curve(PCref, First, Last);
-                            var ACSref = new Adaptor3d_CurveOnSurface(GHPCref, GAHSref);
+                            var GAHSref = new SurfaceAdaptor(Sref);
+                            var GHPCref = new CurveAdaptor2D(PCref, First, Last);
+                            var ACSref = new CurveOnSurface(GHPCref, GAHSref);
                             myHCurve = ACSref;
                         }
                     }
@@ -234,7 +239,7 @@ public class BRepCheck_Edge : BRepCheck_Result
     /// Checks the edge in a wire (nothing), a face (flags, range and the distance between the reference curve and
     /// the pcurves on the face, or the projection on a plane without pcurve) or a solid (bounds two faces).
     /// </summary>
-    public override void InContext(in TopoDS_Shape S)
+    public override void InContext(in Shape S)
     {
         NCollection_List<BRepCheck_Status> aHList;
         {
@@ -265,11 +270,11 @@ public class BRepCheck_Edge : BRepCheck_Result
 
         NCollection_List<BRepCheck_Status> lst = aHList;
 
-        var TE = (BRep_TEdge)myShape.TShape()!;
-        double Tol = BRep_Tool.Tolerance(TopoDS.Edge(myShape));
+        var TE = (BrepTEdge)myShape.TShape()!;
+        double Tol = Tool.Tolerance(ShapeCasts.Edge(myShape));
 
-        TopAbs_ShapeEnum styp = S.ShapeType();
-        var exp = new TopExp_Explorer(S, TopAbs_EDGE);
+        ShapeType styp = S.ShapeType();
+        var exp = new Explorer(S, ShapeType.Edge);
         for (; exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(myShape))
@@ -286,13 +291,13 @@ public class BRepCheck_Edge : BRepCheck_Result
 
         switch (styp)
         {
-            case TopAbs_WIRE:
+            case ShapeType.Wire:
             {
             }
 
                 break;
 
-            case TopAbs_FACE:
+            case ShapeType.Face:
                 if (myCref is not null)
                 {
                     bool SameParameter = TE.SameParameter();
@@ -320,30 +325,30 @@ public class BRepCheck_Edge : BRepCheck_Result
                     // OCCT.NET: in parallel mode the analyzer may check this edge in several faces at once, and the
                     // reference adaptor's evaluation cache isn't thread-safe; each call evaluates its own copy
                     // (OCCT shares the adaptor: occt-issues.md)
-                    Adaptor3d_Curve aHCurve = myIsParallel ? myHCurve.ShallowCopy() : myHCurve;
+                    CurveAdaptorBase aHCurve = myIsParallel ? myHCurve.ShallowCopy() : myHCurve;
 
-                    var TF = (BRep_TFace)S.TShape()!;
+                    var TF = (BrepTFace)S.TShape()!;
                     Placement Floc = S.Location();
                     Placement TFloc = TF.Location();
-                    Geom_Surface? Su = TF.Surface();
+                    Surface? Su = TF.Surface();
                     Placement L = (Floc * TFloc).Predivided(myShape.Location());
                     Placement LE = myShape.Location() * myCref.Location();
                     Transform3D Etrsf = LE.Transformation();
                     bool pcurvefound = false;
 
-                    var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(TE.Curves());
+                    var itcr = new NCollection_List<CurveRepresentation>.Iterator(TE.Curves());
                     double eps = global::Kerf.Engine.Foundation.Precision.PConfusion();
                     bool toRunParallel = myIsParallel;
                     while (itcr.More())
                     {
-                        BRep_CurveRepresentation cr = itcr.Value();
+                        CurveRepresentation cr = itcr.Value();
                         if (cr != myCref && cr.IsCurveOnSurface(Su, L))
                         {
                             pcurvefound = true;
-                            var GC = (BRep_GCurve)cr;
+                            var GC = (GCurve)cr;
                             GC.Range(out double f, out double l);
                             double ff = f, ll = l;
-                            if (myCref.IsCurve3D())
+                            if (myCref.IsCurve3D)
                             {
                                 ff = myCref.Curve3D()!.TransformedParameter(f, Etrsf);
                                 ll = myCref.Curve3D()!.TransformedParameter(l, Etrsf);
@@ -359,8 +364,8 @@ public class BRepCheck_Edge : BRepCheck_Result
 
                             //  Modified by skv - Tue Apr 27 11:50:37 2004 End
                             //
-                            Geom2d_Curve pc = cr.PCurve()!;
-                            bool IsPeriodic = pc.IsPeriodic();
+                            Curve2D pc = cr.PCurve()!;
+                            bool IsPeriodic = pc.IsPeriodic;
                             double aPeriod = RealLast();
                             if (IsPeriodic)
                             {
@@ -368,12 +373,12 @@ public class BRepCheck_Edge : BRepCheck_Result
                             }
 
                             double fp = pc.FirstParameter(), lp = pc.LastParameter();
-                            if (pc.GetType() == typeof(Geom2d_TrimmedCurve))
+                            if (pc.GetType() == typeof(TrimmedCurve2D))
                             {
-                                Geom2d_Curve aC = ((Geom2d_TrimmedCurve)pc).BasisCurve();
+                                Curve2D aC = ((TrimmedCurve2D)pc).BasisCurve();
                                 fp = aC.FirstParameter();
                                 lp = aC.LastParameter();
-                                IsPeriodic = aC.IsPeriodic();
+                                IsPeriodic = aC.IsPeriodic;
                                 if (IsPeriodic)
                                 {
                                     aPeriod = aC.Period();
@@ -393,11 +398,11 @@ public class BRepCheck_Edge : BRepCheck_Result
 
                             if (myGctrl)
                             {
-                                var Sb = (Geom_Surface)Su!.Transformed((Floc * TFloc).Transformation());
-                                Geom2d_Curve PC = cr.PCurve()!;
-                                var GAHS = new GeomAdaptor_Surface(Sb);
-                                var GHPC = new Geom2dAdaptor_Curve(PC, f, l);
-                                var ACS = new Adaptor3d_CurveOnSurface(GHPC, GAHS);
+                                var Sb = (Surface)Su!.Transformed((Floc * TFloc).Transformation());
+                                Curve2D PC = cr.PCurve()!;
+                                var GAHS = new SurfaceAdaptor(Sb);
+                                var GHPC = new CurveAdaptor2D(PC, f, l);
+                                var ACS = new CurveOnSurface(GHPC, GAHS);
 
                                 var aValidateEdge = new BRepLib_ValidateEdge(aHCurve, ACS, SameParameter);
                                 aValidateEdge.SetExitIfToleranceExceeded(Tol);
@@ -406,7 +411,7 @@ public class BRepCheck_Edge : BRepCheck_Result
                                 aValidateEdge.Process();
                                 if (!aValidateEdge.IsDone() || !aValidateEdge.CheckTolerance(Tol))
                                 {
-                                    if (cr.IsCurveOnClosedSurface())
+                                    if (cr.IsCurveOnClosedSurface)
                                     {
                                         BRepCheck.Add(lst, BRepCheck_InvalidCurveOnClosedSurface);
                                     }
@@ -420,7 +425,7 @@ public class BRepCheck_Edge : BRepCheck_Result
                                     //  Modified by skv - Tue Apr 27 11:53:01 2004 End
                                 }
 
-                                if (cr.IsCurveOnClosedSurface())
+                                if (cr.IsCurveOnClosedSurface)
                                 {
                                     GHPC.Load(cr.PCurve2()!, f, l); // same bounds
                                     ACS.Load(GHPC, GAHS); // sans doute inutile
@@ -451,14 +456,14 @@ public class BRepCheck_Edge : BRepCheck_Result
 
                     if (!pcurvefound)
                     {
-                        Geom_Plane? P;
-                        if (Su is Geom_RectangularTrimmedSurface aRTS && Su.GetType() == typeof(Geom_RectangularTrimmedSurface))
+                        PlaneSurface? P;
+                        if (Su is TrimmedSurface aRTS && Su.GetType() == typeof(TrimmedSurface))
                         {
-                            P = aRTS.BasisSurface() as Geom_Plane;
+                            P = aRTS.BasisSurface() as PlaneSurface;
                         }
                         else
                         {
-                            P = Su as Geom_Plane;
+                            P = Su as PlaneSurface;
                         }
 
                         if (P is null)
@@ -472,28 +477,28 @@ public class BRepCheck_Edge : BRepCheck_Result
                             // plan en position
                             if (myGctrl)
                             {
-                                P = (Geom_Plane)P.Transformed((Floc * TFloc).Transformation()); // eap occ332
+                                P = (PlaneSurface)P.Transformed((Floc * TFloc).Transformation()); // eap occ332
                                 // on projette Cref sur ce plan
-                                var GAHS = new GeomAdaptor_Surface(P);
+                                var GAHS = new SurfaceAdaptor(P);
 
                                 // Dub - Normalement myHCurve est une GeomAdaptor_Curve
                                 // OCCT down-casts and dereferences: a reference curve on a surface (no 3D curve)
                                 // gives a null handle here, which the analyzer catches as a failure
-                                var Gac = aHCurve as GeomAdaptor_Curve
+                                var Gac = aHCurve as CurveAdaptor
                                           ?? throw new NullObjectException("BRepCheck_Edge::InContext - no 3D curve");
-                                Geom_Curve C3d = Gac.Curve()!;
-                                Geom_Curve ProjOnPlane =
-                                    GeomProjLib.ProjectOnPlane(new Geom_TrimmedCurve(C3d, First, Last),
+                                Curve3D C3d = Gac.Curve()!;
+                                Curve3D ProjOnPlane =
+                                    global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(new TrimmedCurve3D(C3d, First, Last),
                                                                P,
                                                                P.Position().Direction(),
                                                                true)!;
-                                var aProjCurve = new GeomAdaptor_Curve(ProjOnPlane);
+                                var aProjCurve = new CurveAdaptor(ProjOnPlane);
 
-                                var proj = new ProjLib_ProjectedCurve(GAHS, aProjCurve);
-                                Geom2d_Curve PC = Geom2dAdaptor.MakeCurve(proj);
-                                var GHPC = new Geom2dAdaptor_Curve(PC, aHCurve.FirstParameter(), aHCurve.LastParameter());
+                                var proj = new ProjectedCurve(GAHS, aProjCurve);
+                                Curve2D PC = global::Kerf.Engine.Geometry.Adaptors.Geom2dAdaptor.MakeCurve(proj);
+                                var GHPC = new CurveAdaptor2D(PC, aHCurve.FirstParameter(), aHCurve.LastParameter());
 
-                                var ACS = new Adaptor3d_CurveOnSurface(GHPC, GAHS);
+                                var ACS = new CurveOnSurface(GHPC, GAHS);
 
                                 var aValidateEdgeProj = new BRepLib_ValidateEdge(aHCurve, ACS, SameParameter);
                                 aValidateEdgeProj.SetExitIfToleranceExceeded(Tol);
@@ -510,15 +515,15 @@ public class BRepCheck_Edge : BRepCheck_Result
                 }
 
                 break;
-            case TopAbs_SOLID:
+            case ShapeType.Solid:
             {
                 // on verifie que l`edge est bien connectee 2 fois (pas de bord libre)
                 int nbconnection = 0;
-                for (exp.Init(S, TopAbs_FACE); exp.More(); exp.Next())
+                for (exp.Init(S, ShapeType.Face); exp.More(); exp.Next())
                 {
-                    TopoDS_Face fac = TopoDS.Face(exp.Current());
-                    var exp2 = new TopExp_Explorer();
-                    for (exp2.Init(fac, TopAbs_EDGE); exp2.More(); exp2.Next())
+                    Face fac = ShapeCasts.Face(exp.Current());
+                    var exp2 = new Explorer();
+                    for (exp2.Init(fac, ShapeType.Edge); exp2.More(); exp2.Next())
                     {
                         if (exp2.Current().IsSame(myShape))
                         {
@@ -606,14 +611,14 @@ public class BRepCheck_Edge : BRepCheck_Result
     /// </summary>
     public double Tolerance()
     {
-        var TE = (BRep_TEdge)myShape.TShape()!;
+        var TE = (BrepTEdge)myShape.TShape()!;
         int it, iRep = 1, nbRep = TE.Curves().Extent();
         if (nbRep <= 1)
         {
             return global::Kerf.Engine.Foundation.Precision.Confusion();
         }
 
-        var theRep = new NCollection_Array1<Adaptor3d_Curve?>(1, nbRep * 2);
+        var theRep = new NCollection_Array1<CurveAdaptorBase?>(1, nbRep * 2);
         double First, Last;
         if (myHCurve is not null)
         {
@@ -622,20 +627,20 @@ public class BRepCheck_Edge : BRepCheck_Result
         }
         else
         {
-            BRep_Tool.Range(TopoDS.Edge(myShape), out First, out Last);
+            Tool.Range(ShapeCasts.Edge(myShape), out First, out Last);
         }
 
-        var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(TE.Curves());
+        var itcr = new NCollection_List<CurveRepresentation>.Iterator(TE.Curves());
         for (; itcr.More(); itcr.Next())
         {
-            BRep_CurveRepresentation cr = itcr.Value();
-            if (cr.IsCurve3D() && !TE.Degenerated())
+            CurveRepresentation cr = itcr.Value();
+            if (cr.IsCurve3D && !TE.Degenerated())
             {
                 //// modified by jgv, 20.03.03 ////
                 Placement Loc = myShape.Location() * cr.Location();
-                var C3d = (Geom_Curve)cr.Curve3D()!.Transformed(Loc.Transformation());
+                var C3d = (Curve3D)cr.Curve3D()!.Transformed(Loc.Transformation());
                 ///////////////////////////////////
-                var GAC3d = new GeomAdaptor_Curve(C3d, First, Last);
+                var GAC3d = new CurveAdaptor(C3d, First, Last);
                 it = iRep;
                 if (iRep > 1)
                 {
@@ -649,27 +654,27 @@ public class BRepCheck_Edge : BRepCheck_Result
             else if (cr.IsCurveOnSurface())
             {
                 {
-                    Geom_Surface Sref = cr.Surface()!;
+                    Surface Sref = cr.Surface()!;
                     //// modified by jgv, 20.03.03 ////
                     Placement Loc = myShape.Location() * cr.Location();
-                    Sref = (Geom_Surface)Sref.Transformed(Loc.Transformation());
+                    Sref = (Surface)Sref.Transformed(Loc.Transformation());
                     ///////////////////////////////////
-                    Geom2d_Curve PCref = cr.PCurve()!;
-                    var GAHSref = new GeomAdaptor_Surface(Sref);
-                    var GHPCref = new Geom2dAdaptor_Curve(PCref, First, Last);
-                    theRep[iRep] = new Adaptor3d_CurveOnSurface(GHPCref, GAHSref);
+                    Curve2D PCref = cr.PCurve()!;
+                    var GAHSref = new SurfaceAdaptor(Sref);
+                    var GHPCref = new CurveAdaptor2D(PCref, First, Last);
+                    theRep[iRep] = new CurveOnSurface(GHPCref, GAHSref);
                     iRep++;
                 }
 
-                if (cr.IsCurveOnClosedSurface())
+                if (cr.IsCurveOnClosedSurface)
                 {
-                    Geom_Surface Sref = cr.Surface()!;
+                    Surface Sref = cr.Surface()!;
                     // OCCT: the second pcurve's surface is placed without the edge's location, unlike the first
-                    Sref = (Geom_Surface)Sref.Transformed(cr.Location().Transformation());
-                    Geom2d_Curve PCref = cr.PCurve2()!;
-                    var GAHSref = new GeomAdaptor_Surface(Sref);
-                    var GHPCref = new Geom2dAdaptor_Curve(PCref, First, Last);
-                    theRep[iRep] = new Adaptor3d_CurveOnSurface(GHPCref, GAHSref);
+                    Sref = (Surface)Sref.Transformed(cr.Location().Transformation());
+                    Curve2D PCref = cr.PCurve2()!;
+                    var GAHSref = new SurfaceAdaptor(Sref);
+                    var GHPCref = new CurveAdaptor2D(PCref, First, Last);
+                    theRep[iRep] = new CurveOnSurface(GHPCref, GAHSref);
                     iRep++;
                     nbRep++;
                 }
@@ -724,23 +729,23 @@ public class BRepCheck_Edge : BRepCheck_Result
     /// Checks that the edge's polygons on triangulations lie within their deflection plus the edge's tolerance of
     /// its 3D curve.
     /// </summary>
-    public BRepCheck_Status CheckPolygonOnTriangulation(in TopoDS_Edge theEdge)
+    public BRepCheck_Status CheckPolygonOnTriangulation(in Edge theEdge)
     {
         // OCCT.NET: OCCT takes ChangeCurves() and only reads it
-        NCollection_List<BRep_CurveRepresentation> aListOfCR = ((BRep_TEdge)theEdge.TShape()!).Curves();
+        NCollection_List<CurveRepresentation> aListOfCR = ((BrepTEdge)theEdge.TShape()!).Curves();
         bool aHasPolygonOnTriangulation = false;
         bool aHasCurve3D = false;
-        for (var anITCR = new NCollection_List<BRep_CurveRepresentation>.Iterator(aListOfCR);
+        for (var anITCR = new NCollection_List<CurveRepresentation>.Iterator(aListOfCR);
              anITCR.More();
              anITCR.Next())
         {
-            BRep_CurveRepresentation aCR = anITCR.Value();
+            CurveRepresentation aCR = anITCR.Value();
             if (aCR.IsPolygonOnTriangulation())
             {
                 aHasPolygonOnTriangulation = true;
             }
 
-            if (aCR.IsCurve3D() && aCR.Curve3D() is not null)
+            if (aCR.IsCurve3D && aCR.Curve3D() is not null)
             {
                 aHasCurve3D = true;
             }
@@ -756,7 +761,7 @@ public class BRepCheck_Edge : BRepCheck_Result
             return BRepCheck_NoError;
         }
 
-        var aBC = new BRepAdaptor_Curve();
+        var aBC = new EdgeCurveAdaptor();
         aBC.Initialize(theEdge);
 
         if (!aBC.Is3DCurve())
@@ -764,7 +769,7 @@ public class BRepCheck_Edge : BRepCheck_Result
             return BRepCheck_NoError;
         }
 
-        var anIt = new NCollection_List<BRep_CurveRepresentation>.Iterator(aListOfCR);
+        var anIt = new NCollection_List<CurveRepresentation>.Iterator(aListOfCR);
 
         while (anIt.More())
         {
@@ -774,20 +779,20 @@ public class BRepCheck_Edge : BRepCheck_Result
                 continue;
             }
 
-            BRep_CurveRepresentation aCR = anIt.Value();
-            var aPT = (BRep_PolygonOnTriangulation)aCR;
+            CurveRepresentation aCR = anIt.Value();
+            var aPT = (PolygonOnTriangulationRepresentation)aCR;
 
             Placement aLL = theEdge.Location() * aPT.Location();
             Transform3D aTrsf = aLL.Transformation();
 
             Triangulation aTriang = aCR.Triangulation()!;
-            PolygonOnTriangulation aPOnTriag = aCR.IsPolygonOnClosedTriangulation()
+            PolygonOnTriangulation aPOnTriag = aCR.IsPolygonOnClosedTriangulation
                 ? aCR.PolygonOnTriangulation2()!
                 : aCR.PolygonOnTriangulation()!;
             NCollection_Array1<int> anIndices = aPOnTriag.Nodes();
             int aNbNodes = anIndices.Length();
 
-            double aTol = aPOnTriag.Deflection() + BRep_Tool.Tolerance(theEdge);
+            double aTol = aPOnTriag.Deflection() + Tool.Tolerance(theEdge);
 
             if (aPOnTriag.HasParameters)
             {

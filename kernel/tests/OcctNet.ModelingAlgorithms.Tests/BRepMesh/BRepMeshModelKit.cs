@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -28,9 +30,9 @@ internal static class BRepMeshModelKit
                                                      .Single(a => a.Key == "OcctSourceDir").Value!,
                         "data", "occ");
 
-    public static TopoDS_Shape ReadDataOcc(string theName)
+    public static Shape ReadDataOcc(string theName)
     {
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, Path.Combine(DataOcc, theName)), theName);
+        Assert.True(BrepTools.Read(out Shape aShape, Path.Combine(DataOcc, theName)), theName);
         return aShape;
     }
 
@@ -52,7 +54,7 @@ internal static class BRepMeshModelKit
     }
 
     /// <summary>A context with unit 4C's tools (and the given face mesher), as BRepMesh_Context sets them.</summary>
-    public static IMeshTools_Context Context(in TopoDS_Shape theShape, in IMeshTools_Parameters theParameters,
+    public static IMeshTools_Context Context(in Shape theShape, in IMeshTools_Parameters theParameters,
                                              IMeshTools_ModelAlgo? theFaceDiscret = null)
     {
         var aContext = new IMeshTools_Context();
@@ -68,7 +70,7 @@ internal static class BRepMeshModelKit
     }
 
     /// <summary>The discrete model of the shape, up to the stage.</summary>
-    public static IMeshData_Model Model(in TopoDS_Shape theShape, in IMeshTools_Parameters theParameters,
+    public static IMeshData_Model Model(in Shape theShape, in IMeshTools_Parameters theParameters,
                                         Stage theStage = Stage.PreProcessed)
     {
         IMeshTools_Context aContext = Context(theShape, theParameters);

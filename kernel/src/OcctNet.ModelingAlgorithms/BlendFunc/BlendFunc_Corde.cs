@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -20,8 +21,8 @@ namespace Occt;
 /// </remarks>
 public sealed class BlendFunc_Corde
 {
-    private readonly Adaptor3d_Surface surf;
-    private readonly Adaptor3d_Curve guide;
+    private readonly SurfaceAdaptorBase surf;
+    private readonly CurveAdaptorBase guide;
     private Point3D pts;
     // OCCT's pt2d is never used: left out.
     private double dis;
@@ -35,7 +36,7 @@ public sealed class BlendFunc_Corde
     private Vector2D tg2d;
     private bool istangent;
 
-    public BlendFunc_Corde(Adaptor3d_Surface S, Adaptor3d_Curve CG)
+    public BlendFunc_Corde(SurfaceAdaptorBase S, CurveAdaptorBase CG)
     {
         surf = S;
         guide = CG;

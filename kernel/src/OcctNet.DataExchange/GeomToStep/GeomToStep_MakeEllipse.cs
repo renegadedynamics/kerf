@@ -36,7 +36,7 @@ public sealed class GeomToStep_MakeEllipse : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D ellipse, its position and radii divided by the length factor.</summary>
-    public GeomToStep_MakeEllipse(Geom_Ellipse Cer, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeEllipse(EllipseCurve3D Cer, in StepData_Factors theLocalFactors)
     {
         Ellipse3D E;
         E = Cer.Elips();
@@ -44,7 +44,7 @@ public sealed class GeomToStep_MakeEllipse : GeomToStep_Root
     }
 
     /// <summary>A 3D ellipse (default factors).</summary>
-    public GeomToStep_MakeEllipse(Geom_Ellipse Cer) : this(Cer, new StepData_Factors())
+    public GeomToStep_MakeEllipse(EllipseCurve3D Cer) : this(Cer, new StepData_Factors())
     {
     }
 
@@ -54,7 +54,7 @@ public sealed class GeomToStep_MakeEllipse : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D ellipse.</summary>
-    public GeomToStep_MakeEllipse(Geom2d_Ellipse Cer, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeEllipse(EllipseCurve2D Cer, in StepData_Factors theLocalFactors)
     {
         Ellipse2D E2d;
         E2d = Cer.Elips2d();
@@ -76,7 +76,7 @@ public sealed class GeomToStep_MakeEllipse : GeomToStep_Root
     }
 
     /// <summary>A 2D ellipse.</summary>
-    public GeomToStep_MakeEllipse(Geom2d_Ellipse Cer) : this(Cer, new StepData_Factors())
+    public GeomToStep_MakeEllipse(EllipseCurve2D Cer) : this(Cer, new StepData_Factors())
     {
     }
 

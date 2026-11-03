@@ -42,7 +42,7 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
 
         public void Expect(string theToken) => Assert.Equal(theToken, Next());
 
-        public Geom_BSplineCurve Curve()
+        public BSplineCurve3D Curve()
         {
             int aDegree = Int();
             bool isPeriodic = Int() != 0;
@@ -63,27 +63,27 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
                 aKnots[i] = Real();
                 aMults[i] = Int();
             }
-            return isRational ? new Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, aDegree, isPeriodic)
-                              : new Geom_BSplineCurve(aPoles, aKnots, aMults, aDegree, isPeriodic);
+            return isRational ? new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, aDegree, isPeriodic)
+                              : new BSplineCurve3D(aPoles, aKnots, aMults, aDegree, isPeriodic);
         }
     }
 
-    private static void PutSurface(List<string> theOut, Geom_BSplineSurface theSurface)
+    private static void PutSurface(List<string> theOut, BSplineSurface theSurface)
     {
         theOut.Add("ud:" + theSurface.UDegree());
         theOut.Add("vd:" + theSurface.VDegree());
-        theOut.Add("up:" + (theSurface.IsUPeriodic() ? "1" : "0"));
-        theOut.Add("vp:" + (theSurface.IsVPeriodic() ? "1" : "0"));
-        theOut.Add("ur:" + (theSurface.IsURational() ? "1" : "0"));
-        theOut.Add("vr:" + (theSurface.IsVRational() ? "1" : "0"));
-        theOut.Add("nu:" + theSurface.NbUPoles());
-        theOut.Add("nv:" + theSurface.NbVPoles());
-        bool isRational = theSurface.IsURational() || theSurface.IsVRational();
+        theOut.Add("up:" + (theSurface.IsUPeriodic ? "1" : "0"));
+        theOut.Add("vp:" + (theSurface.IsVPeriodic ? "1" : "0"));
+        theOut.Add("ur:" + (theSurface.IsURational ? "1" : "0"));
+        theOut.Add("vr:" + (theSurface.IsVRational ? "1" : "0"));
+        theOut.Add("nu:" + theSurface.UPoleCount);
+        theOut.Add("nv:" + theSurface.VPoleCount);
+        bool isRational = theSurface.IsURational || theSurface.IsVRational;
         ulong aHash = 14695981039346656037ul;
         int aCount = 0;
-        for (int i = 1; i <= theSurface.NbUPoles(); ++i)
+        for (int i = 1; i <= theSurface.UPoleCount; ++i)
         {
-            for (int j = 1; j <= theSurface.NbVPoles(); ++j)
+            for (int j = 1; j <= theSurface.VPoleCount; ++j)
             {
                 Point3D aP = theSurface.Pole(i, j);
                 double aW = isRational ? theSurface.Weight(i, j) : 1.0;
@@ -108,16 +108,16 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
             }
         }
         theOut.Add("ph:" + aHash.ToString("x16", CultureInfo.InvariantCulture));
-        for (int i = 1; i <= theSurface.NbUKnots(); ++i)
+        for (int i = 1; i <= theSurface.UKnotCount; ++i)
         {
             theOut.Add("uk:" + Hex(theSurface.UKnot(i)) + "," + theSurface.UMultiplicity(i));
         }
-        for (int i = 1; i <= theSurface.NbVKnots(); ++i)
+        for (int i = 1; i <= theSurface.VKnotCount; ++i)
         {
             theOut.Add("vk:" + Hex(theSurface.VKnot(i)) + "," + theSurface.VMultiplicity(i));
         }
-        double aU0 = theSurface.UKnot(1), aU1 = theSurface.UKnot(theSurface.NbUKnots());
-        double aV0 = theSurface.VKnot(1), aV1 = theSurface.VKnot(theSurface.NbVKnots());
+        double aU0 = theSurface.UKnot(1), aU1 = theSurface.UKnot(theSurface.UKnotCount);
+        double aV0 = theSurface.VKnot(1), aV1 = theSurface.VKnot(theSurface.VKnotCount);
         for (int i = 0; i <= 4; ++i)
         {
             for (int j = 0; j <= 4; ++j)
@@ -144,14 +144,14 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
             double aTol = aIn.Real();
             aIn.Expect("P");
             int n = aIn.Int();
-            NCollection_Array1<Geom_Curve> aProfiles = new(1, n);
+            NCollection_Array1<Curve3D> aProfiles = new(1, n);
             for (int i = 1; i <= n; ++i)
             {
                 aProfiles[i] = aIn.Curve();
             }
             aIn.Expect("Q");
             int m = aIn.Int();
-            NCollection_Array1<Geom_Curve> aGuides = new(1, m);
+            NCollection_Array1<Curve3D> aGuides = new(1, m);
             for (int j = 1; j <= m; ++j)
             {
                 aGuides[j] = aIn.Curve();
@@ -192,14 +192,14 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
             bool isVClosed = aIn.Int() != 0;
             aIn.Expect("P");
             int n = aIn.Int();
-            NCollection_Array1<Geom_BSplineCurve?> aProfiles = new(1, n);
+            NCollection_Array1<BSplineCurve3D?> aProfiles = new(1, n);
             for (int i = 1; i <= n; ++i)
             {
                 aProfiles[i] = aIn.Curve();
             }
             aIn.Expect("Q");
             int m = aIn.Int();
-            NCollection_Array1<Geom_BSplineCurve?> aGuides = new(1, m);
+            NCollection_Array1<BSplineCurve3D?> aGuides = new(1, m);
             for (int j = 1; j <= m; ++j)
             {
                 aGuides[j] = aIn.Curve();

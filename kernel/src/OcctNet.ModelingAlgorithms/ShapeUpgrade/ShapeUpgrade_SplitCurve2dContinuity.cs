@@ -76,9 +76,9 @@ public class ShapeUpgrade_SplitCurve2dContinuity : ShapeUpgrade_SplitCurve2d
         double precision = Kerf.Engine.Foundation.Precision.PConfusion();
         double First = mySplitValues.Value(1);
         double Last = mySplitValues.Value(mySplitValues.Length());
-        if (myCurve is Geom2d_TrimmedCurve tmp)
+        if (myCurve is TrimmedCurve2D tmp)
         {
-            Geom2d_Curve BasCurve = tmp.BasisCurve();
+            Curve2D BasCurve = tmp.BasisCurve();
             var spc = new ShapeUpgrade_SplitCurve2dContinuity();
             //    spc.Init(BasCurve,Max(First,tmp->FirstParameter()),Min(Last,tmp->LastParameter()));
             spc.Init(BasCurve, First, Last);
@@ -92,7 +92,7 @@ public class ShapeUpgrade_SplitCurve2dContinuity : ShapeUpgrade_SplitCurve2d
             myStatus |= spc.myStatus;
             return;
         }
-        else if (myCurve is Geom2d_OffsetCurve tmpOffset)
+        else if (myCurve is OffsetCurve2D tmpOffset)
         {
             Continuity BasCriterion;
             switch (myCriterion)
@@ -109,7 +109,7 @@ public class ShapeUpgrade_SplitCurve2dContinuity : ShapeUpgrade_SplitCurve2d
                     BasCriterion = CN;
                     break;
             }
-            Geom2d_Curve BasCurve = tmpOffset.BasisCurve();
+            Curve2D BasCurve = tmpOffset.BasisCurve();
             // double Offset = tmp->Offset(); // Offset not used (skl)
             var spc = new ShapeUpgrade_SplitCurve2dContinuity();
             //    spc.Init(BasCurve,Max(tmp->FirstParameter(),First),Min(tmp->LastParameter(),Last));
@@ -124,7 +124,7 @@ public class ShapeUpgrade_SplitCurve2dContinuity : ShapeUpgrade_SplitCurve2d
             return;
         }
 
-        Geom2d_BSplineCurve? MyBSpline = myCurve as Geom2d_BSplineCurve;
+        BSplineCurve2D? MyBSpline = myCurve as BSplineCurve2D;
         if (MyBSpline is null)
         {
             return;
@@ -132,7 +132,7 @@ public class ShapeUpgrade_SplitCurve2dContinuity : ShapeUpgrade_SplitCurve2d
 
         myNbCurves = 1;
         int Deg = MyBSpline.Degree();
-        int NbKnots = MyBSpline.NbKnots();
+        int NbKnots = MyBSpline.KnotCount;
         if (NbKnots <= 2)
         {
             return;

@@ -7,10 +7,13 @@
 #pragma warning disable CS0168 // locals OCCT declares and never uses
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.StepToTopoDS_TranslateEdgeLoopError;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -19,26 +22,26 @@ namespace Occt;
 public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
 {
     private StepToTopoDS_TranslateEdgeLoopError myError;
-    private TopoDS_Shape myResult = new TopoDS_Shape();
+    private Shape myResult = new Shape();
 
-    private static void RemoveSinglePCurve(in TopoDS_Edge aEdge, in TopoDS_Face aFace)
+    private static void RemoveSinglePCurve(in Edge aEdge, in Face aFace)
     {
         new ShapeBuild_Edge().RemovePCurve(aEdge, aFace);
     }
 
-    private static void RemovePCurves(in TopoDS_Wire aWire, in TopoDS_Face aFace)
+    private static void RemovePCurves(in Wire aWire, in Face aFace)
     {
-        var EdgeExp = new TopExp_Explorer(aWire, TopAbs_EDGE);
+        var EdgeExp = new Explorer(aWire, ShapeType.Edge);
         while (EdgeExp.More())
         {
-            TopoDS_Edge myEdge = TopoDS.Edge(EdgeExp.Current());
+            Edge myEdge = ShapeCasts.Edge(EdgeExp.Current());
             RemoveSinglePCurve(myEdge, aFace);
             EdgeExp.Next();
         }
     }
 
     // Checks the pcurves topological trimming parameter consistency and deviation between 2D ans 3D
-    private static void CheckPCurves(in TopoDS_Wire aWire, in TopoDS_Face aFace, bool isPlane, double preci, bool theStdSameParameterMode)
+    private static void CheckPCurves(in Wire aWire, in Face aFace, bool isPlane, double preci, bool theStdSameParameterMode)
     {
         if (isPlane)
         {
@@ -46,21 +49,21 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
             return;
         }
 
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         double w1, w2, cf, cl;
-        Geom_Surface mySurf = BRep_Tool.Surface(aFace);
+        Surface mySurf = Tool.Surface(aFace);
 
         var sbwd = new ShapeExtend_WireData(aWire);
         for (int i = 1; i <= sbwd.NbEdges(); i++)
         {
-            TopoDS_Edge myEdge = sbwd.Edge(i);
+            Edge myEdge = sbwd.Edge(i);
 
             // First Check : 2D Parameters on Edge :
             // Case 1 : w1 == w2 illegal => Drop the PCurve
             // Case 2 : on bounded curve w1 < FirstParameter => w1 = FirstParameter
             //                           w2 > LastParameter  => w2 = LastParameter
 
-            Geom2d_Curve thePC;
+            Curve2D thePC;
             var sae = new ShapeAnalysis_Edge();
             if (!sae.PCurve(myEdge, aFace, out thePC, out w1, out w2, false))
             {
@@ -77,7 +80,7 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
             }
 
             // check parameters of range only for not periodic curves
-            if (!thePC.IsPeriodic())
+            if (!thePC.IsPeriodic)
             {
                 if (w1 < cf)
                 {
@@ -92,7 +95,7 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
                 }
             }
 
-            if (w1 > w2 && mySurf.IsUPeriodic())
+            if (w1 > w2 && mySurf.IsUPeriodic)
             {
                 mySurf.Bounds(out double u1, out double u2, out double v1, out double v2);
                 global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(u1, u2, Min(Math.Abs(w2 - w1) / 2, Kerf.Engine.Foundation.Precision.PConfusion()), ref w1, ref w2);
@@ -110,13 +113,13 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
         done = false;
     }
 
-    public StepToTopoDS_TranslateEdgeLoop(StepShape_FaceBound FB, in TopoDS_Face Face, Geom_Surface GeomSurf, StepGeom_Surface StepSurf,
+    public StepToTopoDS_TranslateEdgeLoop(StepShape_FaceBound FB, in Face Face, Surface GeomSurf, StepGeom_Surface StepSurf,
                                           bool sameSense, StepToTopoDS_Tool T, StepToTopoDS_NMTool NMTool, in StepData_Factors theLocalFactors)
     {
         Init(FB, Face, GeomSurf, StepSurf, sameSense, T, NMTool, theLocalFactors);
     }
 
-    public StepToTopoDS_TranslateEdgeLoop(StepShape_FaceBound FB, in TopoDS_Face Face, Geom_Surface GeomSurf, StepGeom_Surface StepSurf,
+    public StepToTopoDS_TranslateEdgeLoop(StepShape_FaceBound FB, in Face Face, Surface GeomSurf, StepGeom_Surface StepSurf,
                                           bool sameSense, StepToTopoDS_Tool T, StepToTopoDS_NMTool NMTool)
         : this(FB, Face, GeomSurf, StepSurf, sameSense, T, NMTool, new StepData_Factors())
     {
@@ -127,7 +130,7 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
     /// <see cref="StepData_StepModel.InternalParameters"/> (OCCT: the static read.stdsameparameter.mode, decision
     /// 13003). Needs <see cref="ShapeAlgo.Init"/>.
     /// </remarks>
-    public void Init(StepShape_FaceBound FaceBound, in TopoDS_Face Face, Geom_Surface GeomSurf, StepGeom_Surface StepSurf, bool sameSense,
+    public void Init(StepShape_FaceBound FaceBound, in Face Face, Surface GeomSurf, StepGeom_Surface StepSurf, bool sameSense,
                      StepToTopoDS_Tool aTool, StepToTopoDS_NMTool NMTool, in StepData_Factors theLocalFactors)
     {
         done = true;
@@ -135,13 +138,13 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
 
         if (aTool.IsBound(EL))
         {
-            myResult = TopoDS.Wire(aTool.Find(EL));
+            myResult = ShapeCasts.Wire(aTool.Find(EL));
             myError = StepToTopoDS_TranslateEdgeLoopDone;
             done = true;
             return;
         }
 
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         Transfer_TransientProcess TP = aTool.TransientProcess();
 
         StepData_StepModel aStepModel = TP.Model() as StepData_StepModel;
@@ -151,9 +154,9 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
         //  0,1 : suivre le code,  2 : ne prendre que pcurve,  3 : ne prendre que C3D
 
         double preci = Precision();
-        TopoDS_Wire W = new TopoDS_Wire();
-        TopoDS_Edge E = new TopoDS_Edge();
-        TopoDS_Vertex V = new TopoDS_Vertex();
+        Wire W = new Wire();
+        Edge E = new Edge();
+        Vertex V = new Vertex();
 
         bool isSeam, isLikeSeam;
 
@@ -161,8 +164,8 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
         StepGeom_Curve StepCurve, StepCurve1, StepCurve2;
         StepRepr_DefinitionalRepresentation DRI, Dri1, Dri2;
 
-        Geom2d_Curve C2d = null, C2d1 = null, C2d2 = null, WhichC2d1, WhichC2d2;
-        TopoDS_Edge suspectE = new TopoDS_Edge(); //: f1, degEdge;
+        Curve2D C2d = null, C2d1 = null, C2d2 = null, WhichC2d1, WhichC2d2;
+        Edge suspectE = new Edge(); //: f1, degEdge;
 
         int j, NbEdge = EL.NbEdgeList();
         if (NbEdge == 0)
@@ -175,9 +178,9 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
         // PTV 16.09.2000
         // default value set as true (if not correct see logic of algorithm).
         bool hasPcurve = true;
-        bool isPlane = GeomSurf is Geom_Plane;
-        Geom_Surface ConvSurf = GeomSurf;
-        if (GeomSurf is Geom_RectangularTrimmedSurface theRTS)
+        bool isPlane = GeomSurf is PlaneSurface;
+        Surface ConvSurf = GeomSurf;
+        if (GeomSurf is TrimmedSurface theRTS)
         {
             ConvSurf = theRTS.BasisSurface();
         }
@@ -234,12 +237,12 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
                 }
             }
 
-            Geom_Curve C1 = null;
+            Curve3D C1 = null;
             if (C is not null)
             {
                 try
                 {
-                    C1 = TP.FindTransient(C) as Geom_Curve;
+                    C1 = TP.FindTransient(C) as Curve3D;
                     if (C1 is null)
                     {
                         C1 = StepToGeom.MakeCurve(C, theLocalFactors);
@@ -274,20 +277,20 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
 
             bool istV = aTool.IsBound(Vstart);
             bool iseV = aTool.IsBound(Vend);
-            TopoDS_Vertex V1 = new TopoDS_Vertex(), V2 = new TopoDS_Vertex();
+            Vertex V1 = new Vertex(), V2 = new Vertex();
             var myTranVertex1 = new StepToTopoDS_TranslateVertex(Vstart, aTool, NMTool, theLocalFactors);
             var myTranVertex2 = new StepToTopoDS_TranslateVertex(Vend, aTool, NMTool, theLocalFactors);
 
             if (myTranVertex1.IsDone())
             {
-                V1 = TopoDS.Vertex(myTranVertex1.InternalValue());
+                V1 = ShapeCasts.Vertex(myTranVertex1.InternalValue());
             }
 
             if (myTranVertex2.IsDone())
             {
-                V2 = TopoDS.Vertex(myTranVertex2.InternalValue());
-                Point3D p1 = BRep_Tool.Pnt(V1);
-                Point3D p2 = BRep_Tool.Pnt(V2);
+                V2 = ShapeCasts.Vertex(myTranVertex2.InternalValue());
+                Point3D p1 = Tool.Pnt(V1);
+                Point3D p2 = Tool.Pnt(V2);
                 if (p1.Distance(p2) <= Kerf.Engine.Foundation.Precision.Confusion())
                 { //: S4136: preci) {
                     bool Fixed = true;
@@ -304,7 +307,7 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
                         aTool.Bind(Vend, V1);
                     }
 
-                    if (C1 is not null && !C1.IsClosed() && Fixed)
+                    if (C1 is not null && !C1.IsClosed && Fixed)
                     {
                         TP.AddWarning(EL.EdgeListValue(j), "Vertex of same coordinates, set confused");
                     }
@@ -348,18 +351,18 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
             var myTranVertex1 = new StepToTopoDS_TranslateVertex(Vs1, aTool, NMTool, theLocalFactors);
             var myTranVertex2 = new StepToTopoDS_TranslateVertex(Vs2, aTool, NMTool, theLocalFactors);
 
-            TopoDS_Vertex V1 = new TopoDS_Vertex(), V2 = new TopoDS_Vertex();
+            Vertex V1 = new Vertex(), V2 = new Vertex();
             if (myTranVertex1.IsDone())
             {
-                V1 = TopoDS.Vertex(myTranVertex1.InternalValue());
+                V1 = ShapeCasts.Vertex(myTranVertex1.InternalValue());
             }
 
             if (myTranVertex2.IsDone())
             {
-                V2 = TopoDS.Vertex(myTranVertex2.InternalValue());
+                V2 = ShapeCasts.Vertex(myTranVertex2.InternalValue());
             }
 
-            if (V1.IsNull() || V2.IsNull())
+            if (V1.IsNull || V2.IsNull)
             {
                 continue; // not treated
             }
@@ -369,8 +372,8 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
                 continue; // OK
             }
 
-            Point3D p1 = BRep_Tool.Pnt(V1);
-            Point3D p2 = BRep_Tool.Pnt(V2);
+            Point3D p1 = Tool.Pnt(V1);
+            Point3D p2 = Tool.Pnt(V2);
             bool locFixed = true;
             if (p1.Distance(p2) <= preci)
             {
@@ -440,8 +443,8 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
 
             if (myTranEdge.IsDone())
             {
-                E = TopoDS.Edge(myTranEdge.InternalValue());
-                if (E.IsNull())
+                E = ShapeCasts.Edge(myTranEdge.InternalValue());
+                if (E.IsNull)
                 {
                     continue; // NULL, on saute
                 }
@@ -450,15 +453,15 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
 
                 if (OrEdge1.Orientation() && EC.SameSense())
                 {
-                    E.Orientation(TopAbs_FORWARD);
+                    E.Orientation(Forward);
                 }
                 else if (!OrEdge1.Orientation() && !EC.SameSense())
                 {
-                    E.Orientation(TopAbs_FORWARD);
+                    E.Orientation(Forward);
                 }
                 else
                 {
-                    E.Orientation(TopAbs_REVERSED);
+                    E.Orientation(Reversed);
                 }
 
                 isSeam = isLikeSeam = false;
@@ -599,30 +602,30 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
 
                     if ((C2d1 is not null) && (C2d2 is not null))
                     {
-                        TopAbs_Orientation CumulO, EdgeO, WireO, FaceO;
+                        Orientation CumulO, EdgeO, WireO, FaceO;
                         EdgeO = E.Orientation();
                         if (ForwardWire)
                         {
-                            WireO = TopAbs_FORWARD;
+                            WireO = Forward;
                         }
                         else
                         {
-                            WireO = TopAbs_REVERSED;
+                            WireO = Reversed;
                         }
 
                         if (sameSense)
                         {
-                            FaceO = TopAbs_FORWARD;
+                            FaceO = Forward;
                         }
                         else
                         {
-                            FaceO = TopAbs_REVERSED;
+                            FaceO = Reversed;
                         }
 
-                        CumulO = TopAbs.Compose(EdgeO, WireO);
-                        CumulO = TopAbs.Compose(CumulO, FaceO);
+                        CumulO = global::Kerf.Engine.Topology.TopAbs.Compose(EdgeO, WireO);
+                        CumulO = global::Kerf.Engine.Topology.TopAbs.Compose(CumulO, FaceO);
 
-                        bool ForwardEdge = (CumulO == TopAbs_FORWARD);
+                        bool ForwardEdge = (CumulO == Forward);
 
                         int forwardPC = new ShapeAnalysis_Curve().SelectForwardSeam(C2d1, C2d2);
                         if (forwardPC == 0)
@@ -699,7 +702,7 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
                     }
                 }
 
-                if (E.IsNull())
+                if (E.IsNull)
                 {
                     TP.AddFail(EC, " an Edge not mapped");
                     done = false;
@@ -738,7 +741,7 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
             return;
         }
 
-        W.Closed(BRep_Tool.IsClosed(W));
+        W.Closed(Tool.IsClosed(W));
         aTool.Bind(EL, W);
 
         // ----------------------------------------------
@@ -747,9 +750,9 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
         // pdn compute parameter of Vertices using projecting
         if (!aTool.ComputePCurve())
         {
-            for (var EdgeIt = new TopoDS_Iterator(W); EdgeIt.More(); EdgeIt.Next())
+            for (var EdgeIt = new Iterator(W); EdgeIt.More(); EdgeIt.Next())
             {
-                TopoDS_Edge edge = TopoDS.Edge(EdgeIt.Value());
+                Edge edge = ShapeCasts.Edge(EdgeIt.Value());
                 ShapeFix_EdgeProjAux myEdgePro = ShapeAlgo.AlgoContainer().ToolContainer().EdgeProjAux();
                 myEdgePro.Init(Face, edge);
                 myEdgePro.Compute(preci);
@@ -777,21 +780,21 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
         CheckPCurves(W, Face, isPlane, preci, aStdSameParameterMode);
     }
 
-    public void Init(StepShape_FaceBound FaceBound, in TopoDS_Face Face, Geom_Surface GeomSurf, StepGeom_Surface StepSurf, bool sameSense,
+    public void Init(StepShape_FaceBound FaceBound, in Face Face, Surface GeomSurf, StepGeom_Surface StepSurf, bool sameSense,
                      StepToTopoDS_Tool aTool, StepToTopoDS_NMTool NMTool)
         => Init(FaceBound, Face, GeomSurf, StepSurf, sameSense, aTool, NMTool, new StepData_Factors());
 
     /// <summary>The wire, frozen.</summary>
     /// <exception cref="NotDoneException">The translation wasn't done.</exception>
-    public TopoDS_Shape Value()
+    public Shape Value()
     {
-        TopoDS_Shape aShape = InternalValue();
+        Shape aShape = InternalValue();
         aShape.TShape()?.FreezeGraph();
         return aShape;
     }
 
     /// <summary>As <see cref="Value"/>, without freezing: the reader's working shape.</summary>
-    internal TopoDS_Shape InternalValue()
+    internal Shape InternalValue()
     {
         StdFail_NotDone_Raise_if(!done, "StepToTopoDS_TranslateEdgeLoop::Value() - no result");
         return myResult;

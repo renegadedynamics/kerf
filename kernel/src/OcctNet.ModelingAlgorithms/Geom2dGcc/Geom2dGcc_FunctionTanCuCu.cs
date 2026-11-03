@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Occt.Geom2dGcc_Type3;
@@ -16,8 +17,8 @@ namespace Occt;
 /// <remarks>OCCT copies the adaptors; the port shares the solver's, which nothing writes (decision 797).</remarks>
 public sealed class Geom2dGcc_FunctionTanCuCu : FunctionSetWithDerivatives
 {
-    private readonly Geom2dAdaptor_Curve TheCurve1 = new();
-    private readonly Geom2dAdaptor_Curve TheCurve2 = new();
+    private readonly CurveAdaptor2D TheCurve1 = new();
+    private readonly CurveAdaptor2D TheCurve2 = new();
     private readonly Circle2D TheCirc1 = new();
     private readonly Geom2dGcc_Type3 TheType;
 
@@ -57,14 +58,14 @@ public sealed class Geom2dGcc_FunctionTanCuCu : FunctionSetWithDerivatives
         }
     }
 
-    public Geom2dGcc_FunctionTanCuCu(Geom2dAdaptor_Curve C1, Geom2dAdaptor_Curve C2)
+    public Geom2dGcc_FunctionTanCuCu(CurveAdaptor2D C1, CurveAdaptor2D C2)
     {
         TheCurve1 = C1;
         TheCurve2 = C2;
         TheType   = Geom2dGcc_CuCu;
     }
 
-    public Geom2dGcc_FunctionTanCuCu(in Circle2D C1, Geom2dAdaptor_Curve C2)
+    public Geom2dGcc_FunctionTanCuCu(in Circle2D C1, CurveAdaptor2D C2)
     {
         TheCirc1  = C1;
         TheCurve2 = C2;

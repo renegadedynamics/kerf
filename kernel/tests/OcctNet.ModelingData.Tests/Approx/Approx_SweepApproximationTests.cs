@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
@@ -12,7 +13,7 @@ public class Approx_SweepApproximationTests
 {
     // A rational circle (nine poles, degree 2) of radius 1 + 0.5 v, centred at (0, 0, v), translated along Z; with
     // one 2d curve (v, 2 v) when With2d.
-    private sealed class GrowingCircle : Approx_SweepFunction
+    private sealed class GrowingCircle : SweepFunction
     {
         private static readonly double[] theQx = [1, 1, 0, -1, -1, -1, 0, 1, 1];
         private static readonly double[] theQy = [0, 1, 1, 1, 0, -1, -1, -1, 0];
@@ -33,7 +34,7 @@ public class Approx_SweepApproximationTests
         public static Point3D Pole(int i, double v) =>
             new(Radius(v) * theQx[i - 1], Radius(v) * theQy[i - 1], v);
 
-        public static Geom_BSplineCurve Section(double v)
+        public static BSplineCurve3D Section(double v)
         {
             NCollection_Array1<Point3D> aPoles = new(1, 9);
             NCollection_Array1<double> aWeights = new(1, 9);
@@ -45,7 +46,7 @@ public class Approx_SweepApproximationTests
             NCollection_Array1<double> aKnots = new(1, 5);
             NCollection_Array1<int> aMults = new(1, 5);
             SectionKnots(aKnots, aMults);
-            return new Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, 2);
+            return new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, 2);
         }
 
         private static void SectionKnots(NCollection_Array1<double> theKnots, NCollection_Array1<int> theMults)
@@ -131,7 +132,7 @@ public class Approx_SweepApproximationTests
         public override void Mults(NCollection_Array1<int> TMults) =>
             SectionKnots(new NCollection_Array1<double>(1, 5), TMults);
 
-        public override bool IsRational() => true;
+        public override bool IsRational => true;
 
         public override int NbIntervals(Continuity S) => 1;
 
@@ -170,7 +171,7 @@ public class Approx_SweepApproximationTests
     }
 
     // A non-rational quadratic section (three poles) moved along a sine, without derivatives.
-    private sealed class SineSection : Approx_SweepFunction
+    private sealed class SineSection : SweepFunction
     {
         public static Point3D Pole(int i, double v) => new(i, Math.Sin(v) * (i == 2 ? 1.0 : 0.25), v);
 
@@ -206,7 +207,7 @@ public class Approx_SweepApproximationTests
             TMults[2] = 3;
         }
 
-        public override bool IsRational() => false;
+        public override bool IsRational => false;
 
         public override int NbIntervals(Continuity S) => 1;
 
@@ -228,7 +229,7 @@ public class Approx_SweepApproximationTests
         }
     }
 
-    private static Geom_BSplineSurface BuildSurface(Approx_SweepApproximation theApprox)
+    private static BSplineSurface BuildSurface(SweepApproximation theApprox)
     {
         theApprox.SurfShape(out int aUDeg, out int aVDeg, out int aNbUP, out int aNbVP, out int aNbUK, out int aNbVK);
         NCollection_Array2<Point3D> aPoles = new(1, aNbUP, 1, aNbVP);
@@ -238,7 +239,7 @@ public class Approx_SweepApproximationTests
         theApprox.Surface(aPoles, aWeights, aUKnots, aVKnots, aUMults, aVMults);
         Assert.Equal(aUDeg, theApprox.UDegree());
         Assert.Equal(aVDeg, theApprox.VDegree());
-        return new Geom_BSplineSurface(aPoles, aWeights, aUKnots, aVKnots, aUMults, aVMults, aUDeg, aVDeg);
+        return new BSplineSurface(aPoles, aWeights, aUKnots, aVKnots, aUMults, aVMults, aUDeg, aVDeg);
     }
 
     [Theory]
@@ -249,23 +250,23 @@ public class Approx_SweepApproximationTests
     public void RationalGrowingCircle_WithA2dCurve(Continuity theContinuity, bool theDerivatives)
     {
         GrowingCircle aFunc = new(true, theDerivatives);
-        Approx_SweepApproximation anApprox = new(aFunc);
-        Assert.False(anApprox.IsDone());
+        SweepApproximation anApprox = new(aFunc);
+        Assert.False(anApprox.IsDone);
         Assert.Throws<NotDoneException>(() => anApprox.UDegree());
         anApprox.Perform(0.0, 2.0, 1.0e-6, 1.0e-6, 1.0e-5, 1.0e-4, theContinuity, 11, 50);
 
-        Assert.True(anApprox.IsDone());
+        Assert.True(anApprox.IsDone);
         Assert.True(anApprox.SurfWeights()[1, 1] > 0.0);
         Assert.Equal(2, anApprox.UDegree());
         Assert.True(anApprox.MaxErrorOnSurf() < 1.0e-5);
         Assert.True(anApprox.AverageErrorOnSurf() <= anApprox.MaxErrorOnSurf());
         Assert.True(aFunc.NbSetInterval > 0);
 
-        Geom_BSplineSurface aSurf = BuildSurface(anApprox);
+        BSplineSurface aSurf = BuildSurface(anApprox);
         for (int j = 0; j <= 10; j++)
         {
             double v = 0.2 * j;
-            Geom_BSplineCurve aSection = GrowingCircle.Section(v);
+            BSplineCurve3D aSection = GrowingCircle.Section(v);
             for (int i = 0; i <= 8; i++)
             {
                 double u = 2.0 * Math.PI * i / 8.0;
@@ -273,7 +274,7 @@ public class Approx_SweepApproximationTests
             }
         }
 
-        Assert.Equal(1, anApprox.NbCurves2d());
+        Assert.Equal(1, anApprox.Curves2dCount);
         anApprox.Curves2dShape(out int aDeg2d, out int aNbPoles2d, out int aNbKnots2d);
         Assert.Equal(anApprox.VDegree(), aDeg2d);
         NCollection_Array1<Point2D> aPoles2d = new(1, aNbPoles2d);
@@ -281,7 +282,7 @@ public class Approx_SweepApproximationTests
         NCollection_Array1<int> aMults2d = new(1, aNbKnots2d);
         anApprox.Curve2d(1, aPoles2d, aKnots2d, aMults2d);
         Assert.Equal(aPoles2d[1], anApprox.Curve2dPoles(1)[1]);
-        Geom2d_BSplineCurve aC2d = new(aPoles2d, aKnots2d, aMults2d, aDeg2d);
+        BSplineCurve2D aC2d = new(aPoles2d, aKnots2d, aMults2d, aDeg2d);
         for (int j = 0; j <= 10; j++)
         {
             double v = 0.2 * j;
@@ -297,17 +298,17 @@ public class Approx_SweepApproximationTests
     public void NonRationalSine_WithoutDerivatives()
     {
         SineSection aFunc = new();
-        Approx_SweepApproximation anApprox = new(aFunc);
+        SweepApproximation anApprox = new(aFunc);
         anApprox.Perform(0.0, 6.0, 1.0e-7, 1.0e-7, 1.0e-5, 1.0e-4);
 
-        Assert.True(anApprox.IsDone());
-        Assert.Equal(0, anApprox.NbCurves2d());
+        Assert.True(anApprox.IsDone);
+        Assert.Equal(0, anApprox.Curves2dCount);
         Assert.Throws<DomainErrorException>(() => anApprox.Curves2dDegree());
         Assert.True(anApprox.MaxErrorOnSurf() < 1.0e-6);
         Assert.Equal(1.0, anApprox.SurfWeights()[2, 2]);
 
-        Geom_BSplineSurface aSurf = BuildSurface(anApprox);
-        Assert.False(aSurf.IsURational());
+        BSplineSurface aSurf = BuildSurface(anApprox);
+        Assert.False(aSurf.IsURational);
         for (int j = 0; j <= 12; j++)
         {
             double v = 0.5 * j;
@@ -326,7 +327,7 @@ public class Approx_SweepApproximationTests
     public void C1WithoutD1_ThrowsNotImplemented()
     {
         // OCCT checks D1 by calling it; the base class's D1 throws.
-        Approx_SweepApproximation anApprox = new(new SineSection());
+        SweepApproximation anApprox = new(new SineSection());
         Assert.Throws<MethodNotImplementedException>(
             () => anApprox.Perform(0.0, 6.0, 1.0e-7, 1.0e-7, 1.0e-5, 1.0e-4, C1));
         Assert.Contains(" Not Done ", anApprox.ToString());

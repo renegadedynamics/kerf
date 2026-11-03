@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -23,7 +25,7 @@ public class TransferBRep_BinderOfShape : Transfer_Binder
     }
 
     /// <summary>Constructor which in the same time defines the result.</summary>
-    public TransferBRep_BinderOfShape(in TopoDS_Shape res)
+    public TransferBRep_BinderOfShape(in Shape res)
     {
         theres = res;
         SetResultPresent();
@@ -43,14 +45,14 @@ public class TransferBRep_BinderOfShape : Transfer_Binder
 
     /// <summary>Defines the Result.</summary>
     /// <exception cref="Transfer_TransferFailure">The result is already set and used.</exception>
-    public void SetResult(in TopoDS_Shape res)
+    public void SetResult(in Shape res)
     {
         SetResultPresent();
         theres = res;
     }
 
     /// <summary>Returns the defined Result, if there is one.</summary>
-    public TopoDS_Shape Result()
+    public Shape Result()
     {
         return theres;
     }
@@ -59,11 +61,11 @@ public class TransferBRep_BinderOfShape : Transfer_Binder
     /// Returns the defined Result, if there is one, and allows to change it (avoids Result + SetResult). Admits that
     /// Result can be not yet defined. Warning : a call to CResult causes Result to be known as defined.
     /// </summary>
-    public ref TopoDS_Shape CResult()
+    public ref Shape CResult()
     {
         SetResultPresent();
         return ref theres;
     }
 
-    private TopoDS_Shape theres;
+    private Shape theres;
 }

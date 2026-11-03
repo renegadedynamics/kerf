@@ -6,6 +6,8 @@ using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Meshing;
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 
 using Kerf.Topology;
@@ -151,19 +153,19 @@ public class BRepMesh_DelaunTest
         Assert.True(anInnerWireMaker.IsDone());
 
         // Create face with hole
-        Geom_Plane aPlane = new(new Plane3D(Constants.Origin(), Constants.DZ()));
+        PlaneSurface aPlane = new(new Plane3D(Constants.Origin(), Constants.DZ()));
         BRepBuilderAPI_MakeFace aFaceMaker = new(aPlane, anOuterWireMaker.Wire());
         aFaceMaker.Add(anInnerWireMaker.Wire());
         Assert.True(aFaceMaker.IsDone());
 
-        TopoDS_Face aFace = aFaceMaker.Face();
+        Face aFace = aFaceMaker.Face();
 
         // Mesh the face
         BRepMesh_IncrementalMesh aMesher = new(aFace, 0.1);
         Assert.True(aMesher.IsDone(), "Meshing should succeed");
 
         // Verify triangulation exists
-        Triangulation? aTri = BRep_Tool.Triangulation(TopoDS.Face(aMesher.Shape()), out Placement _);
+        Triangulation? aTri = Tool.Triangulation(ShapeCasts.Face(aMesher.Shape()), out Placement _);
         Assert.NotNull(aTri);
         Assert.True(aTri.TriangleCount > 0, "Should have triangles");
         Assert.True(aTri.NodeCount > 0, "Should have nodes");
@@ -173,17 +175,17 @@ public class BRepMesh_DelaunTest
     public void MeshBoxAllFaces()
     {
         // Create and mesh a box - tests triangulation on faces with different orientations
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
 
         BRepMesh_IncrementalMesh aMesher = new(aBox, 0.5);
         Assert.True(aMesher.IsDone(), "Meshing should succeed");
 
         // Verify all faces are triangulated
         int aFaceCount = 0;
-        for (TopExp_Explorer anExp = new(aMesher.Shape(), TopAbs_ShapeEnum.TopAbs_FACE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(aMesher.Shape(), ShapeType.Face); anExp.More(); anExp.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(anExp.Current());
-            Triangulation? aTri = BRep_Tool.Triangulation(aFace, out Placement _);
+            Face aFace = ShapeCasts.Face(anExp.Current());
+            Triangulation? aTri = Tool.Triangulation(aFace, out Placement _);
 
             Assert.True(aTri is not null, $"Face {aFaceCount} should have triangulation");
             Assert.True(aTri.TriangleCount > 0, $"Face {aFaceCount} should have triangles");
@@ -197,17 +199,17 @@ public class BRepMesh_DelaunTest
     public void MeshCylinderCurvedFaces()
     {
         // Create and mesh a cylinder - curved faces may have different polygon orientations
-        TopoDS_Shape aCylinder = new BRepPrimAPI_MakeCylinder(5.0, 10.0).Shape();
+        Shape aCylinder = new BRepPrimAPI_MakeCylinder(5.0, 10.0).Shape();
 
         BRepMesh_IncrementalMesh aMesher = new(aCylinder, 0.5);
         Assert.True(aMesher.IsDone(), "Meshing should succeed");
 
         // Verify faces are triangulated
         int aTotalTriangles = 0;
-        for (TopExp_Explorer anExp = new(aMesher.Shape(), TopAbs_ShapeEnum.TopAbs_FACE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(aMesher.Shape(), ShapeType.Face); anExp.More(); anExp.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(anExp.Current());
-            Triangulation? aTri = BRep_Tool.Triangulation(aFace, out Placement _);
+            Face aFace = ShapeCasts.Face(anExp.Current());
+            Triangulation? aTri = Tool.Triangulation(aFace, out Placement _);
 
             Assert.True(aTri is not null, "Face should have triangulation");
             aTotalTriangles += aTri.TriangleCount;

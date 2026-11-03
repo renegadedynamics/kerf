@@ -4,13 +4,18 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.Extrema_ExtFlag;
+using Kerf.Topology;
+using static Kerf.Engine.Extrema.ExtFlag;
 using static Kerf.Geometry.Continuity;
 using static Occt.LocOpe_Operation;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -30,36 +35,36 @@ namespace Occt;
 public sealed class LocOpe_Gluer
 {
     private bool myDone;
-    private TopoDS_Shape mySb = new();
-    private TopoDS_Shape mySn = new();
-    private TopoDS_Shape myRes = new();
-    private TopAbs_Orientation myOri;
+    private Shape mySb = new();
+    private Shape mySn = new();
+    private Shape myRes = new();
+    private Orientation myOri;
     private LocOpe_Operation myOpe;
-    private readonly NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> myMapEF = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedDataMap<Shape, Shape> myMapEF = new(ShapeHasher.Instance);
     // OCCT iterates this map keyed by the edges' addresses; the port in insertion order
-    private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myMapEE = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myDescF = new(TopTools_ShapeMapHasher.Instance);
-    private NCollection_List<TopoDS_Shape> myEdges = new();
-    private NCollection_List<TopoDS_Shape> myTgtEdges = new();
+    private readonly NCollection_DataMap<Shape, Shape> myMapEE = new(ShapeHasher.Instance);
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> myDescF = new(ShapeHasher.Instance);
+    private NCollection_List<Shape> myEdges = new();
+    private NCollection_List<Shape> myTgtEdges = new();
     private LocOpe_WorkingShapes myWork = new();
 
     public LocOpe_Gluer()
     {
         myDone = false;
-        myOri = TopAbs_INTERNAL;
+        myOri = Internal;
         myOpe = LocOpe_INVALID;
     }
 
-    public LocOpe_Gluer(in TopoDS_Shape Sbase, in TopoDS_Shape Snew)
+    public LocOpe_Gluer(in Shape Sbase, in Shape Snew)
     {
         myDone = false;
         mySb = Sbase;
         mySn = Snew;
-        myOri = TopAbs_INTERNAL;
+        myOri = Internal;
         myOpe = LocOpe_INVALID;
     }
 
-    public void Init(in TopoDS_Shape Sbase, in TopoDS_Shape Snew)
+    public void Init(in Shape Sbase, in Shape Snew)
     {
         mySb = Sbase;
         mySn = Snew;
@@ -67,14 +72,14 @@ public sealed class LocOpe_Gluer
         myMapEE.Clear();
         myDescF.Clear();
         myDone = false;
-        myOri = TopAbs_INTERNAL;
+        myOri = Internal;
         myOpe = LocOpe_INVALID;
     }
 
     /// <summary>Binds the face <paramref name="Fnew"/> of the new shape to the face <paramref name="Fbase"/> of the basis shape it lies on.</summary>
-    public void Bind(in TopoDS_Face Fnew, in TopoDS_Face Fbase)
+    public void Bind(in Face Fnew, in Face Fbase)
     {
-        TopExp_Explorer exp = new(mySn, TopAbs_FACE);
+        Explorer exp = new(mySn, ShapeType.Face);
 
         for (; exp.More(); exp.Next())
         {
@@ -88,10 +93,10 @@ public sealed class LocOpe_Gluer
             throw new ConstructionErrorException();
         }
 
-        TopoDS_Shape aLocalFace = Fnew.Oriented(exp.Current().Orientation());
-        TopoDS_Face Fnor = TopoDS.Face(aLocalFace);
+        Shape aLocalFace = Fnew.Oriented(exp.Current().Orientation());
+        Face Fnor = ShapeCasts.Face(aLocalFace);
 
-        for (exp.Init(mySb, TopAbs_FACE); exp.More(); exp.Next())
+        for (exp.Init(mySb, ShapeType.Face); exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(Fbase))
             {
@@ -104,13 +109,13 @@ public sealed class LocOpe_Gluer
         }
 
         aLocalFace = Fbase.Oriented(exp.Current().Orientation());
-        TopoDS_Face Fbor = TopoDS.Face(aLocalFace);
-        TopAbs_Orientation Ori = GetOrientation(Fnor, Fbor);
+        Face Fbor = ShapeCasts.Face(aLocalFace);
+        Orientation Ori = GetOrientation(Fnor, Fbor);
 
-        if (myOri == TopAbs_INTERNAL)
+        if (myOri == Internal)
         {
             myOri = Ori;
-            if (myOri == TopAbs_REVERSED)
+            if (myOri == Reversed)
             {
                 mySn.Reverse();
                 myOpe = LocOpe_CUT;
@@ -120,14 +125,14 @@ public sealed class LocOpe_Gluer
                 myOpe = LocOpe_FUSE;
             }
         }
-        else if (Ori != TopAbs_FORWARD)
+        else if (Ori != Forward)
         {
             myOpe = LocOpe_INVALID;
         }
 
-        for (exp.Init(Fnor, TopAbs_EDGE); exp.More(); exp.Next())
+        for (exp.Init(Fnor, ShapeType.Edge); exp.More(); exp.Next())
         {
-            TopoDS_Edge edg = TopoDS.Edge(exp.Current());
+            Edge edg = ShapeCasts.Edge(exp.Current());
             if (!myMapEF.Contains(edg))
             {
                 myMapEF.Add(edg, Fbor);
@@ -142,7 +147,7 @@ public sealed class LocOpe_Gluer
     }
 
     /// <summary>Binds the edge <paramref name="Enew"/> of the new shape to the edge <paramref name="Ebase"/> of the basis shape.</summary>
-    public void Bind(in TopoDS_Edge Enew, in TopoDS_Edge Ebase)
+    public void Bind(in Edge Enew, in Edge Ebase)
     {
         if (myMapEE.IsBound(Enew) && !myMapEE[Enew].IsSame(Ebase))
         {
@@ -160,15 +165,15 @@ public sealed class LocOpe_Gluer
         {
             return;
         }
-        if (mySb.IsNull() || mySn.IsNull() || myMapEF.IsEmpty() || myOpe == LocOpe_INVALID)
+        if (mySb.IsNull || mySn.IsNull || myMapEF.IsEmpty() || myOpe == LocOpe_INVALID)
         {
             throw new ConstructionErrorException();
         }
 
         // OCCT.NET: the basis shape and the new shape as worked on (their copies if frozen); the bindings are mapped
         myWork = new LocOpe_WorkingShapes();
-        TopoDS_Shape aSb = myWork.Working(mySb);
-        TopoDS_Shape aSn = myWork.Working(mySn);
+        Shape aSb = myWork.Working(mySb);
+        Shape aSn = myWork.Working(mySn);
 
         LocOpe_WiresOnShape theWOnS = new(aSb, myWork);
         LocOpe_GluedShape theGS = new(aSn);
@@ -177,24 +182,24 @@ public sealed class LocOpe_Gluer
 
         for (ind = 1; ind <= lmap; ind++)
         {
-            TopoDS_Shape S = myWork.Working(myMapEF.FindKey(ind));
-            if (S.ShapeType() == TopAbs_EDGE)
+            Shape S = myWork.Working(myMapEF.FindKey(ind));
+            if (S.ShapeType() == ShapeType.Edge)
             {
-                TopoDS_Shape S2 = myWork.Working(myMapEF[ind]);
-                if (!S2.IsNull())
+                Shape S2 = myWork.Working(myMapEF[ind]);
+                if (!S2.IsNull)
                 {
-                    theWOnS.Bind(TopoDS.Edge(S), TopoDS.Face(S2));
+                    theWOnS.Bind(ShapeCasts.Edge(S), ShapeCasts.Face(S2));
                 }
             }
             else
             { // TopAbs_FACE
-                theGS.GlueOnFace(TopoDS.Face(S));
+                theGS.GlueOnFace(ShapeCasts.Face(S));
             }
         }
 
-        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> itm in myMapEE)
+        foreach (KeyValuePair<Shape, Shape> itm in myMapEE)
         {
-            theWOnS.Bind(TopoDS.Edge(myWork.Working(itm.Key)), TopoDS.Edge(myWork.Working(itm.Value)));
+            theWOnS.Bind(ShapeCasts.Edge(myWork.Working(itm.Key)), ShapeCasts.Edge(myWork.Working(itm.Value)));
         }
 
         theWOnS.BindAll();
@@ -211,15 +216,15 @@ public sealed class LocOpe_Gluer
             return;
         }
         // Mise a jour des descendants
-        TopExp_Explorer exp = new(aSb, TopAbs_FACE);
+        Explorer exp = new(aSb, ShapeType.Face);
         for (; exp.More(); exp.Next())
         {
-            myDescF.Bind(exp.Current(), new NCollection_List<TopoDS_Shape>(theSplit.InternalDescendantShapes(exp.Current())));
+            myDescF.Bind(exp.Current(), new NCollection_List<Shape>(theSplit.InternalDescendantShapes(exp.Current())));
         }
 
-        for (exp.Init(aSn, TopAbs_FACE); exp.More(); exp.Next())
+        for (exp.Init(aSn, ShapeType.Face); exp.More(); exp.Next())
         {
-            NCollection_List<TopoDS_Shape> thelist = new();
+            NCollection_List<Shape> thelist = new();
             myDescF.Bind(exp.Current(), thelist);
             if (Contains(theGS.OrientedFaces(), exp.Current()))
             {
@@ -238,17 +243,17 @@ public sealed class LocOpe_Gluer
             AddEdges(aSn);
 
             // Mise a jour des descendants
-            foreach (TopoDS_Shape aKey in myDescF.Keys.ToList())
+            foreach (Shape aKey in myDescF.Keys.ToList())
             {
-                NCollection_List<TopoDS_Shape> newDesc = new();
-                NCollection_List<TopoDS_Shape>.Iterator itl = new();
+                NCollection_List<Shape> newDesc = new();
+                NCollection_List<Shape>.Iterator itl = new();
                 for (itl.Initialize(myDescF[aKey]); itl.More(); itl.Next())
                 {
-                    NCollection_List<TopoDS_Shape>.Iterator itl2 = new(theGen.InternalDescendantFace(TopoDS.Face(itl.Value())));
+                    NCollection_List<Shape>.Iterator itl2 = new(theGen.InternalDescendantFace(ShapeCasts.Face(itl.Value())));
                     for (; itl2.More(); itl2.Next())
                     {
-                        TopoDS_Face descface = TopoDS.Face(itl2.Value());
-                        if (!descface.IsNull())
+                        Face descface = ShapeCasts.Face(itl2.Value());
+                        if (!descface.IsNull)
                         { // sinon la face a disparu
                             newDesc.Append(descface);
                         }
@@ -259,37 +264,37 @@ public sealed class LocOpe_Gluer
         }
 
         // recodage des regularites
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMapEF1 = new(TopTools_ShapeMapHasher.Instance),
-                                                                                   theMapEF2 = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(aSn, TopAbs_EDGE, TopAbs_FACE, theMapEF1);
-        TopExp.MapShapesAndAncestors(myRes, TopAbs_EDGE, TopAbs_FACE, theMapEF2);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMapEF1 = new(ShapeHasher.Instance),
+                                                                                   theMapEF2 = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aSn, ShapeType.Edge, ShapeType.Face, theMapEF1);
+        Exploration.MapShapesAndAncestors(myRes, ShapeType.Edge, ShapeType.Face, theMapEF2);
 
         for (ind = 1; ind <= theMapEF1.Extent(); ind++)
         {
-            TopoDS_Edge edg = TopoDS.Edge(theMapEF1.FindKey(ind));
-            NCollection_List<TopoDS_Shape> LL = theMapEF1[ind];
+            Edge edg = ShapeCasts.Edge(theMapEF1.FindKey(ind));
+            NCollection_List<Shape> LL = theMapEF1[ind];
             if (LL.Extent() == 2)
             {
-                TopoDS_Face fac1 = TopoDS.Face(LL.First());
-                TopoDS_Face fac2 = TopoDS.Face(LL.Last());
-                Continuity thecont = BRep_Tool.Continuity(edg, fac1, fac2);
+                Face fac1 = ShapeCasts.Face(LL.First());
+                Face fac2 = ShapeCasts.Face(LL.Last());
+                Continuity thecont = Tool.Continuity(edg, fac1, fac2);
                 if (thecont >= G1)
                 {
                     // on essaie de recoder
                     int ind2 = theMapEF2.FindIndex(edg);
                     if (ind2 != 0)
                     {
-                        NCollection_List<TopoDS_Shape> LL2 = theMapEF2[ind2];
+                        NCollection_List<Shape> LL2 = theMapEF2[ind2];
                         if (LL2.Extent() == 2)
                         {
-                            TopoDS_Face ff1 = TopoDS.Face(LL2.First());
-                            TopoDS_Face ff2 = TopoDS.Face(LL2.Last());
+                            Face ff1 = ShapeCasts.Face(LL2.First());
+                            Face ff2 = ShapeCasts.Face(LL2.Last());
                             if ((ff1.IsSame(fac1) && ff2.IsSame(fac2)) || (ff1.IsSame(fac2) && ff2.IsSame(fac1)))
                             {
                             }
                             else
                             {
-                                BRep_Builder B = new();
+                                BrepBuilder B = new();
                                 B.Continuity(edg, ff1, ff2, thecont);
                             }
                         }
@@ -301,26 +306,26 @@ public sealed class LocOpe_Gluer
         theWOnS.InitEdgeIterator();
         while (theWOnS.MoreEdge())
         {
-            TopoDS_Edge edg = theWOnS.InternalEdge();
+            Edge edg = theWOnS.InternalEdge();
             for (ind = 1; ind <= theMapEF2.Extent(); ind++)
             {
-                TopoDS_Edge edg1 = TopoDS.Edge(theMapEF2.FindKey(ind));
+                Edge edg1 = ShapeCasts.Edge(theMapEF2.FindKey(ind));
                 if (edg1.IsSame(edg))
                 {
                     myEdges.Append(edg);
                     // recodage eventuel des regularites sur cet edge
-                    NCollection_List<TopoDS_Shape> L = theMapEF2[ind];
+                    NCollection_List<Shape> L = theMapEF2[ind];
                     if (L.Extent() == 2)
                     {
-                        TopoDS_Face fac1 = TopoDS.Face(L.First());
-                        TopoDS_Face fac2 = TopoDS.Face(L.Last());
+                        Face fac1 = ShapeCasts.Face(L.First());
+                        Face fac2 = ShapeCasts.Face(L.Last());
                         if (LocOpe.TgtFaces(edg, fac1, fac2))
                         {
                             myTgtEdges.Append(edg);
-                            Continuity thecont = BRep_Tool.Continuity(edg, fac1, fac2);
+                            Continuity thecont = Tool.Continuity(edg, fac1, fac2);
                             if (thecont < G1)
                             {
-                                BRep_Builder B = new();
+                                BrepBuilder B = new();
                                 B.Continuity(edg, fac1, fac2, G1);
                             }
                         }
@@ -335,8 +340,8 @@ public sealed class LocOpe_Gluer
         // OCCT.NET: the end of the working shapes: the caller's sub-shapes left unchanged come back
         if (myWork.IsCopied())
         {
-            var aShapes = new List<TopoDS_Shape> { myRes };
-            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anItem in myDescF)
+            var aShapes = new List<Shape> { myRes };
+            foreach (KeyValuePair<Shape, NCollection_List<Shape>> anItem in myDescF)
             {
                 aShapes.AddRange(anItem.Value);
             }
@@ -344,7 +349,7 @@ public sealed class LocOpe_Gluer
             aShapes.AddRange(myTgtEdges);
             myWork.Finish(aShapes);
             myRes = myWork.Final(myRes);
-            foreach (TopoDS_Shape aKey in myDescF.Keys.ToList())
+            foreach (Shape aKey in myDescF.Keys.ToList())
             {
                 myDescF[aKey] = myWork.Final(myDescF[aKey]);
             }
@@ -356,10 +361,10 @@ public sealed class LocOpe_Gluer
     public bool IsDone() => myDone;
 
     /// <summary>The glued shape (frozen).</summary>
-    public TopoDS_Shape ResultingShape() => LocOpe_WorkingShapes.Published(InternalResultingShape());
+    public Shape ResultingShape() => LocOpe_WorkingShapes.Published(InternalResultingShape());
 
     /// <summary><see cref="ResultingShape"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shape InternalResultingShape()
+    internal Shape InternalResultingShape()
     {
         if (!myDone)
         {
@@ -372,61 +377,61 @@ public sealed class LocOpe_Gluer
     /// The faces of the result descending from <paramref name="F"/>, a face of the basis shape or of the new shape
     /// (frozen).
     /// </summary>
-    public NCollection_List<TopoDS_Shape> DescendantFaces(in TopoDS_Face F) =>
+    public NCollection_List<Shape> DescendantFaces(in Face F) =>
         LocOpe_WorkingShapes.Published(InternalDescendantFaces(F));
 
     /// <summary>
     /// <see cref="DescendantFaces"/> without freezing, for ported code (of the caller's face or of its working copy).
     /// </summary>
-    internal NCollection_List<TopoDS_Shape> InternalDescendantFaces(in TopoDS_Face F)
+    internal NCollection_List<Shape> InternalDescendantFaces(in Face F)
     {
         if (!myDone)
         {
             throw new NotDoneException();
         }
-        TopoDS_Shape aF = myWork.Copied(F);
+        Shape aF = myWork.Copied(F);
         if (myDescF.IsBound(aF))
         {
             return myDescF[aF];
         }
-        return new NCollection_List<TopoDS_Shape>();
+        return new NCollection_List<Shape>();
     }
 
     /// <summary>The basis shape (the caller's).</summary>
-    public TopoDS_Shape BasisShape() => mySb;
+    public Shape BasisShape() => mySb;
 
     /// <summary>The new shape (the caller's, reversed for a cut).</summary>
-    public TopoDS_Shape GluedShape() => mySn;
+    public Shape GluedShape() => mySn;
 
     /// <summary>The edges of the result along which the new shape is glued (frozen).</summary>
-    public NCollection_List<TopoDS_Shape> Edges() => LocOpe_WorkingShapes.Published(myEdges);
+    public NCollection_List<Shape> Edges() => LocOpe_WorkingShapes.Published(myEdges);
 
     /// <summary><see cref="Edges"/> without freezing, for ported code.</summary>
-    internal NCollection_List<TopoDS_Shape> InternalEdges() => myEdges;
+    internal NCollection_List<Shape> InternalEdges() => myEdges;
 
     /// <summary>The edges of <see cref="Edges"/> where the faces are tangent (frozen).</summary>
-    public NCollection_List<TopoDS_Shape> TgtEdges() => LocOpe_WorkingShapes.Published(myTgtEdges);
+    public NCollection_List<Shape> TgtEdges() => LocOpe_WorkingShapes.Published(myTgtEdges);
 
     /// <summary><see cref="TgtEdges"/> without freezing, for ported code.</summary>
-    internal NCollection_List<TopoDS_Shape> InternalTgtEdges() => myTgtEdges;
+    internal NCollection_List<Shape> InternalTgtEdges() => myTgtEdges;
 
     /// <summary>The working shapes of the last <see cref="Perform"/>, for ported code (BRepFeat's descendants).</summary>
     internal LocOpe_WorkingShapes WorkingShapes() => myWork;
 
-    private static TopAbs_Orientation GetOrientation(in TopoDS_Face Fn, in TopoDS_Face Fb)
+    private static Orientation GetOrientation(in Face Fn, in Face Fb)
     {
-        Geom_Surface Sn = BRep_Tool.Surface(Fn)!;
-        Geom_Surface Sb = BRep_Tool.Surface(Fb)!;
+        Surface Sn = Tool.Surface(Fn)!;
+        Surface Sb = Tool.Surface(Fb)!;
 
         // Find a point on Sb
-        TopExp_Explorer exp = new();
+        Explorer exp = new();
         Vector3D n1, n2;
 
         // Initialize extrema projector once for the target surface
-        GeomAdaptor_Surface GAS = new(Sb);
+        SurfaceAdaptor GAS = new(Sb);
         double TolU = GAS.UResolution(global::Kerf.Engine.Foundation.Precision.Confusion());
         double TolV = GAS.VResolution(global::Kerf.Engine.Foundation.Precision.Confusion());
-        Extrema_ExtPS anExtPS = new();
+        ExtPS anExtPS = new();
         anExtPS.Initialize(GAS,
                            GAS.FirstUParameter(),
                            GAS.LastUParameter(),
@@ -434,12 +439,12 @@ public sealed class LocOpe_Gluer
                            GAS.LastVParameter(),
                            TolU,
                            TolV);
-        anExtPS.SetFlag(Extrema_ExtFlag_MIN);
+        anExtPS.SetFlag(ExtFlag_MIN);
 
-        for (exp.Init(Fn, TopAbs_EDGE); exp.More(); exp.Next())
+        for (exp.Init(Fn, ShapeType.Edge); exp.More(); exp.Next())
         {
-            TopoDS_Edge edg = TopoDS.Edge(exp.Current());
-            Geom2d_Curve C2d = BRep_Tool.CurveOnSurface(edg, Fn, out double f, out double l)!;
+            Edge edg = ShapeCasts.Edge(exp.Current());
+            Curve2D C2d = Tool.CurveOnSurface(edg, Fn, out double f, out double l)!;
             if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(f) && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(l))
             {
                 f = -100.0;
@@ -462,18 +467,18 @@ public sealed class LocOpe_Gluer
                 if (n1.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     n1.Normalize();
-                    if (Fn.Orientation() == TopAbs_REVERSED)
+                    if (Fn.Orientation() == Reversed)
                     {
                         n1.Reverse();
                     }
 
                     // Projection sur Sb
                     anExtPS.Perform(pvt);
-                    if (anExtPS.IsDone())
+                    if (anExtPS.IsDone)
                     {
                         double dist2min = RealLast();
                         int jmin = 0;
-                        for (int j = 1; j <= anExtPS.NbExt(); j++)
+                        for (int j = 1; j <= anExtPS.ExtCount; j++)
                         {
                             if (anExtPS.SquareDistance(j) < dist2min)
                             {
@@ -489,27 +494,27 @@ public sealed class LocOpe_Gluer
                             if (n2.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 n2.Normalize();
-                                if (Fb.Orientation() == TopAbs_REVERSED)
+                                if (Fb.Orientation() == Reversed)
                                 {
                                     n2.Reverse();
                                 }
                                 if (n1.Dot(n2) > 0.0)
                                 {
-                                    return TopAbs_REVERSED;
+                                    return Reversed;
                                 }
-                                return TopAbs_FORWARD;
+                                return Forward;
                             }
                         }
                     }
                 }
             }
         }
-        return TopAbs_INTERNAL;
+        return Internal;
     }
 
-    private static bool Contains(NCollection_List<TopoDS_Shape> L, in TopoDS_Shape S)
+    private static bool Contains(NCollection_List<Shape> L, in Shape S)
     {
-        NCollection_List<TopoDS_Shape>.Iterator it = new();
+        NCollection_List<Shape>.Iterator it = new();
         for (it.Initialize(L); it.More(); it.Next())
         {
             if (it.Value().IsSame(S))
@@ -522,38 +527,38 @@ public sealed class LocOpe_Gluer
 
     // OCCT computes, for each face of the result not of the new shape, which edges of the new shape touch it, and
     // keeps nothing of it: ported for its cost and its exceptions. On the working new shape.
-    private void AddEdges(in TopoDS_Shape theSn)
+    private void AddEdges(in Shape theSn)
     {
-        TopExp_Explorer exp = new(), expsb = new();
-        exp.Init(theSn, TopAbs_EDGE);
+        Explorer exp = new(), expsb = new();
+        exp.Init(theSn, ShapeType.Edge);
 
-        NCollection_IndexedMap<TopoDS_Shape> MapV = new(TopTools_ShapeMapHasher.Instance),
-                                             MapFPrism = new(TopTools_ShapeMapHasher.Instance),
-                                             MapE = new(TopTools_ShapeMapHasher.Instance);
-        TopExp_Explorer vexp = new();
+        NCollection_IndexedMap<Shape> MapV = new(ShapeHasher.Instance),
+                                             MapFPrism = new(ShapeHasher.Instance),
+                                             MapE = new(ShapeHasher.Instance);
+        Explorer vexp = new();
         int flag, i;
 
-        TopExp.MapShapes(theSn, TopAbs_FACE, MapFPrism);
+        Exploration.MapShapes(theSn, ShapeType.Face, MapFPrism);
 
-        for (expsb.Init(myRes, TopAbs_FACE); expsb.More(); expsb.Next())
+        for (expsb.Init(myRes, ShapeType.Face); expsb.More(); expsb.Next())
         {
             if (!MapFPrism.Contains(expsb.Current()))
             {
                 MapV.Clear();
-                TopExp.MapShapes(expsb.Current(), TopAbs_VERTEX, MapV);
-                TopExp.MapShapes(expsb.Current(), TopAbs_EDGE, MapE);
-                for (exp.Init(theSn, TopAbs_EDGE); exp.More(); exp.Next())
+                Exploration.MapShapes(expsb.Current(), ShapeType.Vertex, MapV);
+                Exploration.MapShapes(expsb.Current(), ShapeType.Edge, MapE);
+                for (exp.Init(theSn, ShapeType.Edge); exp.More(); exp.Next())
                 {
-                    TopoDS_Edge e = TopoDS.Edge(exp.Current());
+                    Edge e = ShapeCasts.Edge(exp.Current());
                     if (MapE.Contains(e))
                     {
                         continue;
                     }
                     flag = 0;
-                    vexp.Init(e, TopAbs_VERTEX);
+                    vexp.Init(e, ShapeType.Vertex);
                     for (; vexp.More(); vexp.Next())
                     {
-                        TopoDS_Vertex v = TopoDS.Vertex(vexp.Current());
+                        Vertex v = ShapeCasts.Vertex(vexp.Current());
                         if (MapV.Contains(v))
                         {
                             flag = 1;
@@ -561,16 +566,16 @@ public sealed class LocOpe_Gluer
                     }
                     if (flag == 1)
                     {
-                        vexp.Init(e, TopAbs_VERTEX);
+                        vexp.Init(e, ShapeType.Vertex);
                         BRepExtrema_ExtPF ext = new();
-                        ext.Initialize(TopoDS.Face(expsb.Current()));
+                        ext.Initialize(ShapeCasts.Face(expsb.Current()));
                         flag = 0;
                         for (; vexp.More(); vexp.Next())
                         {
-                            TopoDS_Vertex v = TopoDS.Vertex(vexp.Current());
+                            Vertex v = ShapeCasts.Vertex(vexp.Current());
                             if (!MapV.Contains(v))
                             {
-                                ext.Perform(v, TopoDS.Face(expsb.Current()));
+                                ext.Perform(v, ShapeCasts.Face(expsb.Current()));
                                 if (!ext.IsDone() || ext.NbExt() == 0)
                                 {
                                     flag = 0;
@@ -583,7 +588,7 @@ public sealed class LocOpe_Gluer
                                     {
                                         dist2min = Min(dist2min, ext.SquareDistance(i));
                                     }
-                                    if (dist2min >= BRep_Tool.Tolerance(v) * BRep_Tool.Tolerance(v))
+                                    if (dist2min >= Tool.Tolerance(v) * Tool.Tolerance(v))
                                     {
                                         flag = 0;
                                         break;

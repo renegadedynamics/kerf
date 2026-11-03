@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
 using Schematiq.Collections;
 
 namespace Occt;
@@ -20,11 +21,11 @@ namespace Occt;
 /// </remarks>
 public sealed class BOPAlgo_CheckResult
 {
-    private TopoDS_Shape myShape1 = new();
-    private TopoDS_Shape myShape2 = new();
+    private Shape myShape1 = new();
+    private Shape myShape2 = new();
     private BOPAlgo_CheckStatus myStatus;
-    private readonly NCollection_List<TopoDS_Shape> myFaulty1 = new();
-    private readonly NCollection_List<TopoDS_Shape> myFaulty2 = new();
+    private readonly NCollection_List<Shape> myFaulty1 = new();
+    private readonly NCollection_List<Shape> myFaulty2 = new();
     private double myMaxDist1;
     private double myMaxDist2;
     private double myMaxPar1;
@@ -41,40 +42,40 @@ public sealed class BOPAlgo_CheckResult
     }
 
     /// <summary>Sets the ancestor shape (object) of the faulty sub-shapes.</summary>
-    internal void SetShape1(in TopoDS_Shape TheShape) => myShape1 = TheShape;
+    internal void SetShape1(in Shape TheShape) => myShape1 = TheShape;
 
     /// <summary>Adds a faulty sub-shape of the object.</summary>
-    internal void AddFaultyShape1(in TopoDS_Shape TheShape) => myFaulty1.Append(TheShape);
+    internal void AddFaultyShape1(in Shape TheShape) => myFaulty1.Append(TheShape);
 
     /// <summary>Sets the ancestor shape (tool) of the faulty sub-shapes.</summary>
-    internal void SetShape2(in TopoDS_Shape TheShape) => myShape2 = TheShape;
+    internal void SetShape2(in Shape TheShape) => myShape2 = TheShape;
 
     /// <summary>Adds a faulty sub-shape of the tool.</summary>
-    internal void AddFaultyShape2(in TopoDS_Shape TheShape) => myFaulty2.Append(TheShape);
+    internal void AddFaultyShape2(in Shape TheShape) => myFaulty2.Append(TheShape);
 
     /// <summary>The ancestor shape (object) of the faulty shapes (frozen; null if the fault isn't the object's).</summary>
-    public TopoDS_Shape GetShape1() => Published(myShape1);
+    public Shape GetShape1() => Published(myShape1);
 
     /// <summary>The ancestor shape (tool) of the faulty shapes (frozen; null if the fault isn't the tool's).</summary>
-    public TopoDS_Shape GetShape2() => Published(myShape2);
+    public Shape GetShape2() => Published(myShape2);
 
     /// <summary>The faulty shapes of the object (frozen).</summary>
-    public ISchematiqList<TopoDS_Shape> GetFaultyShapes1() => Published(myFaulty1);
+    public ISchematiqList<Shape> GetFaultyShapes1() => Published(myFaulty1);
 
     /// <summary>The faulty shapes of the tool (frozen).</summary>
-    public ISchematiqList<TopoDS_Shape> GetFaultyShapes2() => Published(myFaulty2);
+    public ISchematiqList<Shape> GetFaultyShapes2() => Published(myFaulty2);
 
     /// <summary>OCCT's <c>GetShape1</c>, without freezing.</summary>
-    internal TopoDS_Shape InternalGetShape1() => myShape1;
+    internal Shape InternalGetShape1() => myShape1;
 
     /// <summary>OCCT's <c>GetShape2</c>, without freezing.</summary>
-    internal TopoDS_Shape InternalGetShape2() => myShape2;
+    internal Shape InternalGetShape2() => myShape2;
 
     /// <summary>OCCT's <c>GetFaultyShapes1</c>, without freezing (the result's own list).</summary>
-    internal NCollection_List<TopoDS_Shape> InternalGetFaultyShapes1() => myFaulty1;
+    internal NCollection_List<Shape> InternalGetFaultyShapes1() => myFaulty1;
 
     /// <summary>OCCT's <c>GetFaultyShapes2</c>, without freezing (the result's own list).</summary>
-    internal NCollection_List<TopoDS_Shape> InternalGetFaultyShapes2() => myFaulty2;
+    internal NCollection_List<Shape> InternalGetFaultyShapes2() => myFaulty2;
 
     /// <summary>Sets the status of the fault.</summary>
     internal void SetCheckStatus(BOPAlgo_CheckStatus TheStatus) => myStatus = TheStatus;
@@ -106,17 +107,17 @@ public sealed class BOPAlgo_CheckResult
     /// <summary>The parameter on the curve of the largest distance for the second shape.</summary>
     public double GetMaxParameter2() => myMaxPar2;
 
-    private static TopoDS_Shape Published(in TopoDS_Shape theShape)
+    private static Shape Published(in Shape theShape)
     {
         theShape.TShape()?.FreezeGraph();
         return theShape;
     }
 
-    private static ISchematiqList<TopoDS_Shape> Published(NCollection_List<TopoDS_Shape> theShapes)
+    private static ISchematiqList<Shape> Published(NCollection_List<Shape> theShapes)
     {
-        TopoDS_Shape[] aShapes = new TopoDS_Shape[theShapes.Extent()];
+        Shape[] aShapes = new Shape[theShapes.Extent()];
         int i = 0;
-        foreach (TopoDS_Shape aS in theShapes)
+        foreach (Shape aS in theShapes)
         {
             aShapes[i++] = Published(aS);
         }

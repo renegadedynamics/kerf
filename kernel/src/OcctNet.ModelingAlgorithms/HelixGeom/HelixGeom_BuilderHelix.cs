@@ -64,8 +64,8 @@ public sealed class HelixGeom_BuilderHelix : HelixGeom_BuilderHelixGen
                 myErrorStatus = 2;
                 return;
             }
-            NCollection_Sequence<Geom_Curve> aSC = aBHC.InternalCurves();
-            Geom_Curve aC = aSC[1];
+            NCollection_Sequence<Curve3D> aSC = aBHC.InternalCurves();
+            Curve3D aC = aSC[1];
             myCurves.Append(aC);
             myTolReached = aBHC.ToleranceReached();
         }
@@ -84,13 +84,13 @@ public sealed class HelixGeom_BuilderHelix : HelixGeom_BuilderHelixGen
                 if (i > 1 && bIsCylindrical)
                 {
                     // Optimization: for cylindrical helixes, reuse first coil with translation
-                    Geom_Curve aCi;
+                    Curve3D aCi;
                     Point3D aP1, aPi = new();
 
-                    Geom_Curve aC1 = myCurves[1];
+                    Curve3D aC1 = myCurves[1];
                     aC1.D0(aC1.FirstParameter(), out aP1);
                     aPi.SetCoord(aP1.X(), aP1.Y(), aP1.Z() + (i - 1) * myPitch);
-                    aCi = (Geom_Curve)aC1.Translated(aP1, aPi);
+                    aCi = (Curve3D)aC1.Translated(aP1, aPi);
 
                     myCurves.Append(aCi);
                     aT1x = aT2x;
@@ -109,8 +109,8 @@ public sealed class HelixGeom_BuilderHelix : HelixGeom_BuilderHelixGen
                     return;
                 }
                 // Extract approximated curves from builder
-                NCollection_Sequence<Geom_Curve> aSC = aBHC.InternalCurves();
-                Geom_Curve aC = aSC[1];
+                NCollection_Sequence<Curve3D> aSC = aBHC.InternalCurves();
+                Curve3D aC = aSC[1];
                 myCurves.Append(aC);
                 aTR = aBHC.ToleranceReached();
                 if (aTR > myTolReached)
@@ -135,8 +135,8 @@ public sealed class HelixGeom_BuilderHelix : HelixGeom_BuilderHelixGen
                     return;
                 }
                 // Extract curves from the final partial segment
-                NCollection_Sequence<Geom_Curve> aSC = aBHC.InternalCurves();
-                Geom_Curve aC = aSC[1];
+                NCollection_Sequence<Curve3D> aSC = aBHC.InternalCurves();
+                Curve3D aC = aSC[1];
                 myCurves.Append(aC);
                 aTR = aBHC.ToleranceReached();
                 if (aTR > myTolReached)
@@ -155,7 +155,7 @@ public sealed class HelixGeom_BuilderHelix : HelixGeom_BuilderHelixGen
         aNbC = myCurves.Length();
         for (i = 1; i <= aNbC; ++i)
         {
-            Geom_Curve aC = myCurves[i];
+            Curve3D aC = myCurves[i];
             aC.Transform(aTrsf);
         }
     }

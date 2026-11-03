@@ -5,7 +5,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_Orientation;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -25,8 +27,8 @@ public sealed class ChFiDS_Stripe : Transient
     private double parfin2;
     private ChFiDS_Spine? mySpine;
     private NCollection_HSequence<ChFiDS_SurfData>? myHdata;
-    private Geom2d_Curve? pcrv1;
-    private Geom2d_Curve? pcrv2;
+    private Curve2D? pcrv1;
+    private Curve2D? pcrv2;
     private int myChoix;
     private int indexOfSolid;
     private int indexOfcurve1;
@@ -37,10 +39,10 @@ public sealed class ChFiDS_Stripe : Transient
     private int indexlastPOnS2;
     private int begfilled;
     private int endfilled;
-    private TopAbs_Orientation myOr1;
-    private TopAbs_Orientation myOr2;
-    private TopAbs_Orientation orcurv1;
-    private TopAbs_Orientation orcurv2;
+    private Orientation myOr1;
+    private Orientation myOr2;
+    private Orientation orcurv1;
+    private Orientation orcurv2;
 
     public ChFiDS_Stripe()
     {
@@ -58,17 +60,17 @@ public sealed class ChFiDS_Stripe : Transient
         indexlastPOnS2 = 0;
         begfilled = /*false*/ 0; // eap, Apr 29 2002, occ293
         endfilled = /*false*/ 0;
-        myOr1 = TopAbs_FORWARD;
-        myOr2 = TopAbs_FORWARD;
-        orcurv1 = TopAbs_FORWARD;
-        orcurv2 = TopAbs_FORWARD;
+        myOr1 = Forward;
+        myOr2 = Forward;
+        orcurv1 = Forward;
+        orcurv2 = Forward;
     }
 
     /// <summary>Forgets the fillet surfaces and the end pcurves, and resets the spine.</summary>
     internal void Reset()
     {
         myHdata = null;
-        orcurv1 = orcurv2 = TopAbs_FORWARD;
+        orcurv1 = orcurv2 = Forward;
         pcrv1 = null;
         pcrv1 = null; // OCCT: pcrv1 twice; pcrv2 is kept (decision 1040)
         mySpine!.Reset();
@@ -85,12 +87,12 @@ public sealed class ChFiDS_Stripe : Transient
         return mySpine;
     }
 
-    public TopAbs_Orientation OrientationOnFace1()
+    public Orientation OrientationOnFace1()
     {
         return myOr1;
     }
 
-    public TopAbs_Orientation OrientationOnFace2()
+    public Orientation OrientationOnFace2()
     {
         return myOr2;
     }
@@ -105,12 +107,12 @@ public sealed class ChFiDS_Stripe : Transient
 
     internal ref ChFiDS_Spine? ChangeSpine() => ref mySpine;
 
-    internal void OrientationOnFace1(TopAbs_Orientation Or1)
+    internal void OrientationOnFace1(Orientation Or1)
     {
         myOr1 = Or1;
     }
 
-    internal void OrientationOnFace2(TopAbs_Orientation Or2)
+    internal void OrientationOnFace2(Orientation Or2)
     {
         myOr2 = Or2;
     }
@@ -164,36 +166,36 @@ public sealed class ChFiDS_Stripe : Transient
         indexOfcurve2 = Index;
     }
 
-    public Geom2d_Curve? FirstPCurve()
+    public Curve2D? FirstPCurve()
     {
         return pcrv1;
     }
 
-    public Geom2d_Curve? LastPCurve()
+    public Curve2D? LastPCurve()
     {
         return pcrv2;
     }
 
-    internal ref Geom2d_Curve? ChangeFirstPCurve() => ref pcrv1;
+    internal ref Curve2D? ChangeFirstPCurve() => ref pcrv1;
 
-    internal ref Geom2d_Curve? ChangeLastPCurve() => ref pcrv2;
+    internal ref Curve2D? ChangeLastPCurve() => ref pcrv2;
 
-    public TopAbs_Orientation FirstPCurveOrientation()
+    public Orientation FirstPCurveOrientation()
     {
         return orcurv1;
     }
 
-    public TopAbs_Orientation LastPCurveOrientation()
+    public Orientation LastPCurveOrientation()
     {
         return orcurv2;
     }
 
-    internal void FirstPCurveOrientation(TopAbs_Orientation O)
+    internal void FirstPCurveOrientation(Orientation O)
     {
         orcurv1 = O;
     }
 
-    internal void LastPCurveOrientation(TopAbs_Orientation O)
+    internal void LastPCurveOrientation(Orientation O)
     {
         orcurv2 = O;
     }
@@ -290,7 +292,7 @@ public sealed class ChFiDS_Stripe : Transient
         }
     }
 
-    public Geom2d_Curve? PCurve(bool First)
+    public Curve2D? PCurve(bool First)
     {
         if (First)
         {
@@ -302,7 +304,7 @@ public sealed class ChFiDS_Stripe : Transient
         }
     }
 
-    internal ref Geom2d_Curve? ChangePCurve(bool First)
+    internal ref Curve2D? ChangePCurve(bool First)
     {
         if (First)
         {
@@ -315,7 +317,7 @@ public sealed class ChFiDS_Stripe : Transient
     }
 
     /// <summary>The orientation on face <paramref name="OnS"/> (1 or 2).</summary>
-    public TopAbs_Orientation Orientation(int OnS)
+    public Orientation Orientation(int OnS)
     {
         if (OnS == 1)
         {
@@ -327,7 +329,7 @@ public sealed class ChFiDS_Stripe : Transient
         }
     }
 
-    internal void SetOrientation(TopAbs_Orientation Or, int OnS)
+    internal void SetOrientation(Orientation Or, int OnS)
     {
         if (OnS == 1)
         {
@@ -340,7 +342,7 @@ public sealed class ChFiDS_Stripe : Transient
     }
 
     /// <summary>The orientation of the first or last pcurve.</summary>
-    public TopAbs_Orientation Orientation(bool First)
+    public Orientation Orientation(bool First)
     {
         if (First)
         {
@@ -352,7 +354,7 @@ public sealed class ChFiDS_Stripe : Transient
         }
     }
 
-    internal void SetOrientation(TopAbs_Orientation Or, bool First)
+    internal void SetOrientation(Orientation Or, bool First)
     {
         if (First)
         {

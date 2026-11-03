@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using static Occt.StepData_Logical;
 using static Occt.StepGeom_BSplineCurveForm;
@@ -59,7 +60,7 @@ public sealed class StepToGeomTests
     [Fact]
     public void Points_are_scaled_by_the_length_factor()
     {
-        Geom_CartesianPoint? P = StepToGeom.MakeCartesianPoint(Point(1, -2, 0.5), Inches);
+        CartesianPoint? P = StepToGeom.MakeCartesianPoint(Point(1, -2, 0.5), Inches);
         Assert.NotNull(P);
         Assert.Equal(new Point3D(25.4, -50.8, 12.7), P.Pnt());
         Assert.Null(StepToGeom.MakeCartesianPoint(Point2d(1, 2)));
@@ -84,13 +85,13 @@ public sealed class StepToGeomTests
     [Fact]
     public void A_placement_without_directions_takes_the_defaults()
     {
-        Geom_Axis2Placement? A = StepToGeom.MakeAxis2Placement(Placement());
+        Axis2Placement? A = StepToGeom.MakeAxis2Placement(Placement());
         Assert.NotNull(A);
         Assert.Equal(new Point3D(1, 2, 3), A.Ax2().Location());
         Assert.Equal(new Direction3D(0, 0, 1), A.Ax2().Direction());
 
         // a reference direction parallel to the axis is ignored
-        Geom_Axis2Placement? B = StepToGeom.MakeAxis2Placement(Placement(Direction(1, 0, 0), Direction(-2, 0, 0)));
+        Axis2Placement? B = StepToGeom.MakeAxis2Placement(Placement(Direction(1, 0, 0), Direction(-2, 0, 0)));
         Assert.Equal(new Direction3D(1, 0, 0), B!.Ax2().Direction());
         Assert.True(B.Ax2().XDirection().IsNormal(new Direction3D(1, 0, 0), 1e-12));
     }
@@ -100,7 +101,7 @@ public sealed class StepToGeomTests
     {
         var E = new StepGeom_Ellipse();
         E.Init(Name(), Select(Placement(Direction(0, 0, 1), Direction(1, 0, 0))), 2, 5);
-        Geom_Ellipse? G = StepToGeom.MakeEllipse(E);
+        EllipseCurve3D? G = StepToGeom.MakeEllipse(E);
         Assert.NotNull(G);
         Assert.Equal(5, G.MajorRadius());
         Assert.Equal(2, G.MinorRadius());
@@ -112,7 +113,7 @@ public sealed class StepToGeomTests
     {
         var C = new StepGeom_ConicalSurface();
         C.Init(Name(), Placement(), 2, 30);
-        Geom_ConicalSurface? G = StepToGeom.MakeConicalSurface(C, Inches);
+        ConicalSurface? G = StepToGeom.MakeConicalSurface(C, Inches);
         Assert.NotNull(G);
         Assert.Equal(30 * (M_PI / 180.0), G.SemiAngle());
         Assert.Equal(2 * 25.4, G.RefRadius());
@@ -137,11 +138,11 @@ public sealed class StepToGeomTests
         var T = new StepGeom_TrimmedCurve();
         T.Init(Name(), aCircle, aTrim1, aTrim2, true, StepGeom_tpParameter);
 
-        Geom_TrimmedCurve? G = StepToGeom.MakeTrimmedCurve(T, Inches);
+        TrimmedCurve3D? G = StepToGeom.MakeTrimmedCurve(T, Inches);
         Assert.NotNull(G);
         Assert.Equal(M_PI / 2, G.FirstParameter(), 1e-14);
         Assert.Equal(M_PI, G.LastParameter(), 1e-14);
-        Assert.Equal(254, (G.BasisCurve() as Geom_Circle)!.Radius());
+        Assert.Equal(254, (G.BasisCurve() as CircleCurve3D)!.Radius());
     }
 
     [Fact]
@@ -163,9 +164,9 @@ public sealed class StepToGeomTests
         var B = new StepGeom_BSplineCurveWithKnots();
         B.Init(Name(), 1, aPoles, StepGeom_bscfUnspecified, StepData_LFalse, StepData_LFalse, aMults, aKnots, StepGeom_ktUnspecified);
 
-        Geom_BSplineCurve? G = StepToGeom.MakeBSplineCurve(B);
+        BSplineCurve3D? G = StepToGeom.MakeBSplineCurve(B);
         Assert.NotNull(G);
-        Assert.Equal(2, G.NbPoles());
+        Assert.Equal(2, G.PoleCount);
         Assert.Equal(new Point3D(2, 4, 0), G.Pole(1));
         Assert.Equal(new Point3D(3, 9, 0), G.Pole(2));
     }

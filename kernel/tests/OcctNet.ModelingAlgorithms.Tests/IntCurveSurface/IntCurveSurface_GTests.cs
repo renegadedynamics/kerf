@@ -7,6 +7,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
 using static Occt.IntCurveSurface_TransitionOnCurve;
@@ -124,8 +125,8 @@ public class IntCurveSurface_ThePolygonOfHInter_Test
     [Fact]
     public void ClosedFlagReflectsStoredState()
     {
-        Geom_Line aLine = new(new Axis3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0)));
-        GeomAdaptor_Curve anAdaptor = new(aLine);
+        LineCurve3D aLine = new(new Axis3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0)));
+        CurveAdaptor anAdaptor = new(aLine);
         IntCurveSurface_ThePolygonOfHInter aPolygon = new(anAdaptor, 6);
 
         Assert.False(aPolygon.Closed());
@@ -137,18 +138,18 @@ public class IntCurveSurface_ThePolygonOfHInter_Test
 /// <summary>OCCT's IntCurveSurface_ThePolyhedronOfHInter GTest.</summary>
 public class IntCurveSurface_ThePolyhedronOfHInterTest
 {
-    private static GeomAdaptor_Surface makeTestPlane()
+    private static SurfaceAdaptor makeTestPlane()
     {
         CoordinateSystem anAxis = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
-        Geom_Plane aPlane = new(anAxis);
-        return new GeomAdaptor_Surface(aPlane, -1.0, 1.0, -1.0, 1.0);
+        PlaneSurface aPlane = new(anAxis);
+        return new SurfaceAdaptor(aPlane, -1.0, 1.0, -1.0, 1.0);
     }
 
     // Regression test for bug #55: singularity flags must be initialized to false.
     [Fact]
     public void SingularityFlags_InitializedFalse()
     {
-        GeomAdaptor_Surface aSurf = makeTestPlane();
+        SurfaceAdaptor aSurf = makeTestPlane();
         IntCurveSurface_ThePolyhedronOfHInter aPoly = new(aSurf, 3, 3, -1.0, -1.0, 1.0, 1.0);
 
         Assert.False(aPoly.HasUMinSingularity());
@@ -161,7 +162,7 @@ public class IntCurveSurface_ThePolyhedronOfHInterTest
     [Fact]
     public void SingularitySetters_UpdateFlags()
     {
-        GeomAdaptor_Surface aSurf = makeTestPlane();
+        SurfaceAdaptor aSurf = makeTestPlane();
         IntCurveSurface_ThePolyhedronOfHInter aPoly = new(aSurf, 3, 3, -1.0, -1.0, 1.0, 1.0);
 
         aPoly.UMinSingularity(true);
@@ -177,7 +178,7 @@ public class IntCurveSurface_ThePolyhedronOfHInterTest
     [Fact]
     public void BasicConstruction_ValidMesh()
     {
-        GeomAdaptor_Surface aSurf = makeTestPlane();
+        SurfaceAdaptor aSurf = makeTestPlane();
         IntCurveSurface_ThePolyhedronOfHInter aPoly = new(aSurf, 4, 4, -1.0, -1.0, 1.0, 1.0);
 
         aPoly.Size(out int nbU, out int nbV);
@@ -192,7 +193,7 @@ public class IntCurveSurface_ThePolyhedronOfHInterTest
     [Fact]
     public void ParamArrayConstructor_MinimumSize()
     {
-        GeomAdaptor_Surface aSurf = makeTestPlane();
+        SurfaceAdaptor aSurf = makeTestPlane();
 
         NCollection_Array1<double> aUpars = new(1, 2);
         aUpars[1] = -1.0;
@@ -214,7 +215,7 @@ public class IntCurveSurface_ThePolyhedronOfHInterTest
     [Fact]
     public void ParamArrayConstructor_RejectsSingleValueArrays()
     {
-        GeomAdaptor_Surface aSurf = makeTestPlane();
+        SurfaceAdaptor aSurf = makeTestPlane();
 
         NCollection_Array1<double> aUpars = new(1, 1);
         aUpars[1] = 0.0;
@@ -239,7 +240,7 @@ public class IntCurveSurface_ThePolyhedronOfHInterTest
     [Fact]
     public void PlaneEquation_FiniteResults()
     {
-        GeomAdaptor_Surface aSurf = makeTestPlane();
+        SurfaceAdaptor aSurf = makeTestPlane();
         IntCurveSurface_ThePolyhedronOfHInter aPoly = new(aSurf, 3, 3, -1.0, -1.0, 1.0, 1.0);
 
         aPoly.PlaneEquation(1, out Xyz aNormal, out double aPolarDist);

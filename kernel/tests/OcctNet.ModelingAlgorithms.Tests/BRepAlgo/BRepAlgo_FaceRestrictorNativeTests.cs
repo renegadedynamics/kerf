@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -131,21 +133,21 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
     // The port's record of a tool case, in the recording's normalised format
     private static string AlgoRecord(Case theCase)
     {
-        BRepTools.Read(out TopoDS_Shape aRead, new StringReader(theCase.Input));
+        BrepTools.Read(out Shape aRead, new StringReader(theCase.Input));
         if (theCase.Kind.StartsWith("loop", StringComparison.Ordinal))
         {
             // BRepAlgo_Loop writes into the edges it is given, as in OCCT: an unfrozen copy
-            aRead = BRepTools.ExactCopyForWrite(aRead, out _);
+            aRead = BrepTools.ExactCopyForWrite(aRead, out _);
         }
-        List<TopoDS_Shape> anIn = [];
-        for (TopoDS_Iterator anIt = new(aRead); anIt.More(); anIt.Next())
+        List<Shape> anIn = [];
+        for (global::Kerf.Engine.Topology.Iterator anIt = new(aRead); anIt.More(); anIt.Next())
         {
             anIn.Add(anIt.Value());
         }
         StringBuilder aRec = new();
-        void Result(string theTag, in TopoDS_Shape theShape)
+        void Result(string theTag, in Shape theShape)
         {
-            if (theShape.IsNull())
+            if (theShape.IsNull)
             {
                 aRec.Append(theTag).Append(" null\n");
             }
@@ -159,8 +161,8 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
             case "convertwire":
                 try
                 {
-                    Result("result", BRepAlgo.ConvertWire(TopoDS.Wire(anIn[1]), 0.01, TopoDS.Face(anIn[0])));
-                    Result("face", BRepAlgo.ConvertFace(TopoDS.Face(anIn[0]), 0.01));
+                    Result("result", BRepAlgo.ConvertWire(global::Kerf.Engine.Topology.ShapeCasts.Wire(anIn[1]), 0.01, global::Kerf.Engine.Topology.ShapeCasts.Face(anIn[0])));
+                    Result("face", BRepAlgo.ConvertFace(global::Kerf.Engine.Topology.ShapeCasts.Face(anIn[0]), 0.01));
                 }
                 catch (FailureException)
                 {
@@ -169,7 +171,7 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
                 break;
             case "concatenate":
             {
-                TopoDS_Wire aRW = TopoDS.Wire(anIn[0]);
+                Wire aRW = global::Kerf.Engine.Topology.ShapeCasts.Wire(anIn[0]);
                 try
                 {
                     Result("c1", BRepAlgo.ConcatenateWire(aRW, Continuity.C1));
@@ -190,37 +192,37 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
                 try
                 {
                     BRepAlgo_Loop aLoop = new();
-                    aLoop.Init(TopoDS.Face(anIn[0]));
-                    TopoDS_Edge aCut = TopoDS.Edge(anIn[3]);
-                    NCollection_List<TopoDS_Shape> aLV = new();
-                    aLV.Append(anIn[1].Oriented(TopAbs_Orientation.TopAbs_REVERSED));
-                    aLV.Append(anIn[1].Oriented(TopAbs_Orientation.TopAbs_FORWARD));
+                    aLoop.Init(global::Kerf.Engine.Topology.ShapeCasts.Face(anIn[0]));
+                    Edge aCut = global::Kerf.Engine.Topology.ShapeCasts.Edge(anIn[3]);
+                    NCollection_List<Shape> aLV = new();
+                    aLV.Append(anIn[1].Oriented(Orientation.Reversed));
+                    aLV.Append(anIn[1].Oriented(Orientation.Forward));
                     aLoop.AddEdge(aCut, aLV);
                     for (int i = 4; i < anIn.Count; i++)
                     {
-                        aLoop.AddConstEdge(TopoDS.Edge(anIn[i]));
+                        aLoop.AddConstEdge(global::Kerf.Engine.Topology.ShapeCasts.Edge(anIn[i]));
                     }
                     if (withHole)
                     {
-                        for (TopExp_Explorer anExp = new(anIn[2], TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+                        for (global::Kerf.Engine.Topology.Explorer anExp = new(anIn[2], ShapeType.Edge); anExp.More(); anExp.Next())
                         {
-                            aLoop.AddConstEdge(TopoDS.Edge(anExp.Current()));
+                            aLoop.AddConstEdge(global::Kerf.Engine.Topology.ShapeCasts.Edge(anExp.Current()));
                         }
                     }
                     aLoop.Perform();
                     aLoop.WiresToFaces();
                     aRec.Append(CultureInfo.InvariantCulture, $"wires {aLoop.NewWires().Extent()}\n");
-                    for (NCollection_List<TopoDS_Shape>.Iterator it = new(aLoop.NewWires()); it.More(); it.Next())
+                    for (NCollection_List<Shape>.Iterator it = new(aLoop.NewWires()); it.More(); it.Next())
                     {
                         Result("wire", it.Value());
                     }
                     aRec.Append(CultureInfo.InvariantCulture, $"faces {aLoop.NewFaces().Extent()}\n");
-                    for (NCollection_List<TopoDS_Shape>.Iterator it = new(aLoop.NewFaces()); it.More(); it.Next())
+                    for (NCollection_List<Shape>.Iterator it = new(aLoop.NewFaces()); it.More(); it.Next())
                     {
                         Result("face", it.Value());
                     }
                     aRec.Append(CultureInfo.InvariantCulture, $"newedges {aLoop.NewEdges(aCut).Extent()}\n");
-                    for (NCollection_List<TopoDS_Shape>.Iterator it = new(aLoop.NewEdges(aCut)); it.More(); it.Next())
+                    for (NCollection_List<Shape>.Iterator it = new(aLoop.NewEdges(aCut)); it.More(); it.Next())
                     {
                         Result("edge", it.Value());
                     }
@@ -244,22 +246,22 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
         Compare(aCase, AlgoRecord(aCase));
     }
 
-    private static string Text(in TopoDS_Shape theShape)
+    private static string Text(in Shape theShape)
     {
         StringWriter aWriter = new(CultureInfo.InvariantCulture) { NewLine = "\n" };
-        BRepTools.Write(theShape, aWriter);
+        BrepTools.Write(theShape, aWriter);
         return aWriter.ToString();
     }
 
     // The input: the face, then the wires
-    private static (TopoDS_Face, List<TopoDS_Wire>) Input(in TopoDS_Shape theCompound)
+    private static (Face, List<Wire>) Input(in Shape theCompound)
     {
-        TopoDS_Iterator anIt = new(theCompound);
-        TopoDS_Face aFace = TopoDS.Face(anIt.Value());
-        List<TopoDS_Wire> aWires = [];
+        global::Kerf.Engine.Topology.Iterator anIt = new(theCompound);
+        Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(anIt.Value());
+        List<Wire> aWires = [];
         for (anIt.Next(); anIt.More(); anIt.Next())
         {
-            aWires.Add(TopoDS.Wire(anIt.Value()));
+            aWires.Add(global::Kerf.Engine.Topology.ShapeCasts.Wire(anIt.Value()));
         }
         return (aFace, aWires);
     }
@@ -267,22 +269,22 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
     // The port's record, in the recorder's format; with theInPlace, the internal forms run on an unfrozen copy
     private static string PortRecord(Case theCase, bool theInPlace = false)
     {
-        BRepTools.Read(out TopoDS_Shape aRead, new StringReader(theCase.Input));
-        Assert.False(aRead.IsNull());
+        BrepTools.Read(out Shape aRead, new StringReader(theCase.Input));
+        Assert.False(aRead.IsNull);
         if (theInPlace)
         {
-            aRead = BRepTools.ExactCopyForWrite(aRead, out _);
+            aRead = BrepTools.ExactCopyForWrite(aRead, out _);
         }
-        (TopoDS_Face aFace, List<TopoDS_Wire> aWires) = Input(aRead);
+        (Face aFace, List<Wire> aWires) = Input(aRead);
         StringBuilder aRec = new();
         try
         {
-            NCollection_List<TopoDS_Shape> aFaces = new();
+            NCollection_List<Shape> aFaces = new();
             bool isDone = true;
             if (theCase.Mode == 3)
             {
                 TopOpeBRepBuild_WireToFace aWTF = new();
-                foreach (TopoDS_Wire aW in aWires)
+                foreach (Wire aW in aWires)
                 {
                     aWTF.AddWire(aW);
                 }
@@ -299,7 +301,7 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
             {
                 BRepAlgo_FaceRestrictor aFR = new();
                 aFR.Init(aFace, theCase.Mode == 1, theCase.Mode == 2);
-                foreach (TopoDS_Wire aW in aWires)
+                foreach (Wire aW in aWires)
                 {
                     aFR.Add(aW);
                 }
@@ -318,7 +320,7 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
                 }
             }
             aRec.Append(CultureInfo.InvariantCulture, $"done {(isDone ? 1 : 0)} faces {aFaces.Extent()}\n");
-            for (NCollection_List<TopoDS_Shape>.Iterator it = new(aFaces); it.More(); it.Next())
+            for (NCollection_List<Shape>.Iterator it = new(aFaces); it.More(); it.Next())
             {
                 aRec.Append("face\n").Append(Text(it.Value())).Append('\n');
             }
@@ -396,29 +398,29 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
         // Frozen input wires: the copy at entry runs, and the input's text doesn't change
         foreach (Case aCase in Cases.Where(c => c.Id % 3 == 0))
         {
-            BRepTools.Read(out TopoDS_Shape aRead, new StringReader(aCase.Input));
+            BrepTools.Read(out Shape aRead, new StringReader(aCase.Input));
             string aBefore = Text(aRead);
             PortRecordOn(aRead, aCase.Mode);
             Assert.Equal(aBefore, Text(aRead));
         }
     }
 
-    private static void PortRecordOn(in TopoDS_Shape theInput, int theMode)
+    private static void PortRecordOn(in Shape theInput, int theMode)
     {
-        (TopoDS_Face aFace, List<TopoDS_Wire> aWires) = Input(theInput);
+        (Face aFace, List<Wire> aWires) = Input(theInput);
         if (theMode == 3)
         {
             TopOpeBRepBuild_WireToFace aWTF = new();
-            foreach (TopoDS_Wire aW in aWires)
+            foreach (Wire aW in aWires)
             {
                 aWTF.AddWire(aW);
             }
-            aWTF.MakeFaces(aFace, new NCollection_List<TopoDS_Shape>());
+            aWTF.MakeFaces(aFace, new NCollection_List<Shape>());
             return;
         }
         BRepAlgo_FaceRestrictor aFR = new();
         aFR.Init(aFace, theMode == 1, theMode == 2);
-        foreach (TopoDS_Wire aW in aWires)
+        foreach (Wire aW in aWires)
         {
             aFR.Add(aW);
         }

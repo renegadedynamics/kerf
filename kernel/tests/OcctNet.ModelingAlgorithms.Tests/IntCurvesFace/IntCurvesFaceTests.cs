@@ -1,11 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntCurveSurface_TransitionOnCurve;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -16,16 +19,16 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class IntCurvesFaceTests
 {
-    private static TopoDS_Shape Box10() => TestShapes.Frozen(TestShapes.Box(10, 10, 10));
+    private static Shape Box10() => TestShapes.Frozen(TestShapes.Box(10, 10, 10));
 
-    private static TopoDS_Face FaceAt(in TopoDS_Shape theShape, int theIndex)
+    private static Face FaceAt(in Shape theShape, int theIndex)
         => BRepGPropTestShapes.Faces(theShape)[theIndex];
 
     [Fact]
     public void Line_through_the_top_and_bottom_faces_of_a_box()
     {
-        TopoDS_Shape aBox = Box10();
-        TopoDS_Face aBottom = FaceAt(aBox, 0), aTop = FaceAt(aBox, 1);
+        Shape aBox = Box10();
+        Face aBottom = FaceAt(aBox, 0), aTop = FaceAt(aBox, 1);
         var aLine = new Line3D(new Point3D(3, 4, -5), new Direction3D(0, 0, 1));
 
         var aTopInter = new IntCurvesFace_Intersector(aTop, 1e-7);
@@ -36,7 +39,7 @@ public class IntCurvesFaceTests
         Assert.Equal(1, aTopInter.NbPnt());
         Assert.Equal(15.0, aTopInter.WParameter(1), 1e-9);
         Assert.True(aTopInter.Pnt(1).IsEqual(new Point3D(3, 4, 10), 1e-9));
-        Assert.Equal(TopAbs_IN, aTopInter.State(1));
+        Assert.Equal(In, aTopInter.State(1));
         Assert.True(aTopInter.Face().IsSame(aTop));
         // the box's faces point out: the line leaves the box at the top and enters it at the bottom
         Assert.Equal(IntCurveSurface_Out, aTopInter.Transition(1));
@@ -48,7 +51,7 @@ public class IntCurvesFaceTests
         Assert.Equal(IntCurveSurface_In, aBottomInter.Transition(1));
 
         // the reversed face reverses the transition
-        var aReversed = new IntCurvesFace_Intersector(TopoDS.Face(aTop.Reversed()), 1e-7);
+        var aReversed = new IntCurvesFace_Intersector(ShapeCasts.Face(aTop.Reversed()), 1e-7);
         aReversed.Perform(aLine, -RealLast(), RealLast());
         Assert.Equal(IntCurveSurface_In, aReversed.Transition(1));
 
@@ -61,7 +64,7 @@ public class IntCurvesFaceTests
     [Fact]
     public void Line_outside_on_and_in_the_plane_of_a_face()
     {
-        TopoDS_Face aTop = FaceAt(Box10(), 1);
+        Face aTop = FaceAt(Box10(), 1);
         var anInter = new IntCurvesFace_Intersector(aTop, 1e-7);
 
         // misses the face
@@ -71,20 +74,20 @@ public class IntCurvesFaceTests
         // through an edge: ON
         anInter.Perform(new Line3D(new Point3D(10, 4, -5), new Direction3D(0, 0, 1)), -RealLast(), RealLast());
         Assert.Equal(1, anInter.NbPnt());
-        Assert.Equal(TopAbs_ON, anInter.State(1));
+        Assert.Equal(On, anInter.State(1));
 
         // in the face's plane
         anInter.Perform(new Line3D(new Point3D(-5, 4, 10), new Direction3D(1, 0, 0)), -RealLast(), RealLast());
         Assert.Equal(0, anInter.NbPnt());
         Assert.True(anInter.IsParallel());
 
-        Assert.Equal(TopAbs_IN, anInter.ClassifyUVPoint(new Point2D(1, 1)));
+        Assert.Equal(In, anInter.ClassifyUVPoint(new Point2D(1, 1)));
     }
 
     [Fact]
     public void Extruded_tube_is_met_through_its_polyhedron()
     {
-        TopoDS_Face aTube = TestShapes.Frozen(ClassificationTestShapes.ExtrudedTube(2.0, 3.0));
+        Face aTube = TestShapes.Frozen(ClassificationTestShapes.ExtrudedTube(2.0, 3.0));
         var anInter = new IntCurvesFace_Intersector(aTube, 1e-7);
         Assert.Equal(SurfaceOfExtrusion, anInter.SurfaceType());
         Box aBox = anInter.Bounding();
@@ -103,10 +106,10 @@ public class IntCurvesFaceTests
         Assert.Equal(0, anInter.NbPnt());
 
         // a circle around the axis, inside the tube's radius: no point; through it: two
-        var aCircle = new GeomAdaptor_Curve(new Geom_Circle(new Frame3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0)), 1.0));
+        var aCircle = new CurveAdaptor(new CircleCurve3D(new Frame3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0)), 1.0));
         anInter.Perform(aCircle, -RealLast(), RealLast());
         Assert.Equal(0, anInter.NbPnt());
-        var aBigCircle = new GeomAdaptor_Curve(new Geom_Circle(new Frame3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0)), 2.5));
+        var aBigCircle = new CurveAdaptor(new CircleCurve3D(new Frame3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0)), 2.5));
         anInter.Perform(aBigCircle, -RealLast(), RealLast());
         Assert.Equal(2, anInter.NbPnt());
         for (int i = 1; i <= 2; i++)
@@ -119,7 +122,7 @@ public class IntCurvesFaceTests
     [Fact]
     public void ShapeIntersector_sorts_the_points_along_the_line()
     {
-        TopoDS_Shape aBox = Box10();
+        Shape aBox = Box10();
         var anInter = new IntCurvesFace_ShapeIntersector();
         anInter.Load(aBox, 1e-7);
         var aLine = new Line3D(new Point3D(3, 4, -5), new Direction3D(0, 0, 1));
@@ -132,7 +135,7 @@ public class IntCurvesFaceTests
         Assert.True(anInter.Face(2).IsSame(FaceAt(aBox, 1)));
         Assert.Equal(IntCurveSurface_In, anInter.Transition(1));
         Assert.Equal(IntCurveSurface_Out, anInter.Transition(2));
-        Assert.Equal(TopAbs_IN, anInter.State(1));
+        Assert.Equal(In, anInter.State(1));
         Assert.Equal(3.0, anInter.UParameter(2), 1e-9);
         Assert.Equal(4.0, anInter.VParameter(2), 1e-9);
         Assert.True(anInter.Pnt(2).IsEqual(new Point3D(3, 4, 10), 1e-9));
@@ -147,7 +150,7 @@ public class IntCurvesFaceTests
         }
 
         // a curve: a circle around the box's centre crossing its four sides twice each
-        var aCircle = new GeomAdaptor_Curve(new Geom_Circle(new Frame3D(new Point3D(5, 5, 5), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 6.0));
+        var aCircle = new CurveAdaptor(new CircleCurve3D(new Frame3D(new Point3D(5, 5, 5), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 6.0));
         anInter.Perform(aCircle, -RealLast(), RealLast());
         Assert.Equal(8, anInter.NbPnt());
         for (int i = 2; i <= 8; i++)
@@ -161,8 +164,8 @@ public class IntCurvesFaceTests
     {
         // OCCT's Load doesn't clear the faces loaded before, and counts only the new ones: after loading a second box
         // the intersector still meets the first box's faces (occt-issues.md, pinned)
-        TopoDS_Shape aBox = Box10();
-        TopoDS_Shape aFar = ClassificationTestShapes.Translated(aBox, new Vector3D(100, 0, 0));
+        Shape aBox = Box10();
+        Shape aFar = ClassificationTestShapes.Translated(aBox, new Vector3D(100, 0, 0));
         var anInter = new IntCurvesFace_ShapeIntersector();
         anInter.Load(aBox, 1e-7);
         anInter.Load(aFar, 1e-7);

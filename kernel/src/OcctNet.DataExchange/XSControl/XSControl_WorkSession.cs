@@ -6,6 +6,7 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using static Occt.IFSelect_ReturnStatus;
 
 namespace Occt;
@@ -643,7 +644,7 @@ public class XSControl_WorkSession : IFSelect_WorkSession
     /// SetModeWriteShape Returns status :Done if OK, Fail if error during transfer, Error if transfer badly
     /// initialised
     /// </summary>
-    public IFSelect_ReturnStatus TransferWriteShape(TopoDS_Shape shape, bool compgraph = true, ProgressRange theProgress = default)
+    public IFSelect_ReturnStatus TransferWriteShape(Shape shape, bool compgraph = true, ProgressRange theProgress = default)
     {
         lock (WS_GLOBAL_MUTEX)
         {
@@ -651,7 +652,7 @@ public class XSControl_WorkSession : IFSelect_WorkSession
         }
     }
 
-    private IFSelect_ReturnStatus TransferWriteShapeLocked(TopoDS_Shape shape, bool compgraph, ProgressRange theProgress)
+    private IFSelect_ReturnStatus TransferWriteShapeLocked(Shape shape, bool compgraph, ProgressRange theProgress)
     {
         IFSelect_ReturnStatus status;
         if (myController is null)
@@ -659,7 +660,7 @@ public class XSControl_WorkSession : IFSelect_WorkSession
             return IFSelect_RetError;
         }
         Interface_InterfaceModel model = Model();
-        if (model is null || shape.IsNull())
+        if (model is null || shape.IsNull)
         {
             return IFSelect_RetVoid;
         }

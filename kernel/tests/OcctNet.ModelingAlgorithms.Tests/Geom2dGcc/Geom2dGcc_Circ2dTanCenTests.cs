@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
@@ -19,8 +21,8 @@ public class Geom2dGcc_Circ2dTanCenTests
     {
         Circle2D              c1      = new(new Axis2D(new Point2D(1, 2), DX), 3);
         Point2D               aCenter = new(2, 2.5);
-        Geom2dGcc_Circ2dTanCen aCirc   = new(Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(new Geom2d_Circle(c1))),
-                                             new Geom2d_CartesianPoint(aCenter), 1e-9);
+        Geom2dGcc_Circ2dTanCen aCirc   = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c1))),
+                                             new CartesianPoint2(aCenter), 1e-9);
         GccAna_Circ2dTanCen    anAna   = new(GccEnt.Unqualified(c1), aCenter, 1e-9);
         Assert.True(aCirc.IsDone());
         Assert.Equal(anAna.NbSolutions(), aCirc.NbSolutions());
@@ -43,8 +45,8 @@ public class Geom2dGcc_Circ2dTanCenTests
     {
         Line2D               l1      = new(new Point2D(0, 1), new Direction2D(1, 1));
         Point2D               aCenter = new(3, -1);
-        Geom2dGcc_Circ2dTanCen aCirc   = new(Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(new Geom2d_Line(l1))),
-                                             new Geom2d_CartesianPoint(aCenter), 1e-9);
+        Geom2dGcc_Circ2dTanCen aCirc   = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(new LineCurve2D(l1))),
+                                             new CartesianPoint2(aCenter), 1e-9);
         GccAna_Circ2dTanCen    anAna   = new(l1, aCenter);
         Assert.Equal(1, aCirc.NbSolutions());
         Assert.Equal(anAna.ThisSolution(1), aCirc.ThisSolution(1));
@@ -55,8 +57,8 @@ public class Geom2dGcc_Circ2dTanCenTests
     {
         // From the ellipse's centre, the nearest extrema are at the minor radius. OCCT compares two uninitialised
         // indices to decide whether to add the farthest one; the port's are 0, so it keeps the nearest only.
-        Geom2dAdaptor_Curve    anEll = new(new Geom2d_Ellipse(new Axis2D(new Point2D(1, 1), DX), 3, 1));
-        Geom2dGcc_Circ2dTanCen aCirc = new(Geom2dGcc.Unqualified(anEll), new Geom2d_CartesianPoint(1, 1), 1e-9);
+        CurveAdaptor2D    anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(1, 1), DX), 3, 1));
+        Geom2dGcc_Circ2dTanCen aCirc = new(Geom2dGcc.Unqualified(anEll), new CartesianPoint2(1, 1), 1e-9);
         Assert.True(aCirc.IsDone());
         Assert.Equal(1, aCirc.NbSolutions());
         Assert.Equal(1.0, aCirc.ThisSolution(1).Radius(), 1e-9);
@@ -72,8 +74,8 @@ public class Geom2dGcc_Circ2dTanCenTests
     [Fact]
     public void Accessors_ThrowAsOCCT()
     {
-        Geom2dAdaptor_Curve    anEll = new(new Geom2d_Ellipse(new Axis2D(new Point2D(1, 1), DX), 3, 1));
-        Geom2dGcc_Circ2dTanCen aCirc = new(Geom2dGcc.Unqualified(anEll), new Geom2d_CartesianPoint(1, 1), 1e-9);
+        CurveAdaptor2D    anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(1, 1), DX), 3, 1));
+        Geom2dGcc_Circ2dTanCen aCirc = new(Geom2dGcc.Unqualified(anEll), new CartesianPoint2(1, 1), 1e-9);
         Assert.Throws<OutOfRangeException>(() => aCirc.ThisSolution(0));
         Assert.Throws<OutOfRangeException>(() => aCirc.ThisSolution(2));
         Assert.Throws<OutOfRangeException>(() => aCirc.Tangency1(2, out _, out _, out _));

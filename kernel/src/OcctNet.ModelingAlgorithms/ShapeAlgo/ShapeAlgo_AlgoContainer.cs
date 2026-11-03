@@ -4,12 +4,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -20,7 +23,7 @@ namespace Occt;
 /// <remarks>
 /// A working object (decision 21), to be derived from to substitute other algorithms. The public results built here
 /// (shapes, wires) are frozen; geometry given is never changed (see
-/// <see cref="ShapeUpgrade.C0BSplineToSequenceOfC1BSplineCurve(Geom_BSplineCurve?, ref NCollection_HSequence{Geom_BoundedCurve}?)"/>).
+/// <see cref="ShapeUpgrade.C0BSplineToSequenceOfC1BSplineCurve(BSplineCurve3D?, ref NCollection_HSequence{BoundedCurve3D}?)"/>).
 /// </remarks>
 public class ShapeAlgo_AlgoContainer : Transient
 {
@@ -104,11 +107,11 @@ public class ShapeAlgo_AlgoContainer : Transient
     /// Approximates a degree-1 B-spline curve: it is cut where it has repeated poles and each part with more than two
     /// poles is approximated (GeomInt_WLApprox); other curves are returned as they are.
     /// </summary>
-    public virtual void ApproxBSplineCurve(Geom_BSplineCurve bspline, NCollection_Sequence<Geom_Curve> seq)
+    public virtual void ApproxBSplineCurve(BSplineCurve3D bspline, NCollection_Sequence<Curve3D> seq)
     {
         seq.Clear();
-        Geom_BSplineCurve modifCurve;
-        var SCurve = new NCollection_Sequence<Geom_Curve>();
+        BSplineCurve3D modifCurve;
+        var SCurve = new NCollection_Sequence<Curve3D>();
 
         // si la BSpline est de degre 1 , on approxime .
         // on passe par le programme des intersections ou tout le travail
@@ -124,7 +127,7 @@ public class ShapeAlgo_AlgoContainer : Transient
         // on detecte d`eventuelles cassures par la multiplicite des poles.
         // Puis on approxime chaque "partie" de BSpline
 
-        int NbPoles = bspline.NbPoles();
+        int NbPoles = bspline.PoleCount;
         NCollection_Array1<Point3D> Poles = bspline.InternalPoles();
         NCollection_Array1<double> Weigs = bspline.InternalWeightsArray();
         NCollection_Array1<double> Knots = bspline.InternalKnots();
@@ -163,7 +166,7 @@ public class ShapeAlgo_AlgoContainer : Transient
                         newPoles[j] = Poles[PoleIndex++];
                     }
 
-                    var newC = new Geom_BSplineCurve(newPoles, newWeigs, newKnots, newMults, deg);
+                    var newC = new BSplineCurve3D(newPoles, newWeigs, newKnots, newMults, deg);
                     SCurve.Append(newC);
                     I1 = ipole + 1;
                     jpole = 1;
@@ -175,7 +178,7 @@ public class ShapeAlgo_AlgoContainer : Transient
             }
         }
 
-        Geom_BSplineCurve mycurve;
+        BSplineCurve3D mycurve;
         int nbcurves = SCurve.Length();
         if (nbcurves == 0)
         {
@@ -185,8 +188,8 @@ public class ShapeAlgo_AlgoContainer : Transient
 
         for (int itab = 1; itab <= nbcurves; itab++)
         {
-            mycurve = (Geom_BSplineCurve)SCurve.Value(itab);
-            jpole = mycurve.NbPoles();
+            mycurve = (BSplineCurve3D)SCurve.Value(itab);
+            jpole = mycurve.PoleCount;
             if (jpole > 2)
             {
                 NCollection_Array1<Point3D> newP = mycurve.InternalPoles();
@@ -217,11 +220,11 @@ public class ShapeAlgo_AlgoContainer : Transient
                 }
                 else
                 {
-                    AppParCurves_MultiBSpCurve mbspc = theapp3d.Value(1);
+                    MultiBSpCurve mbspc = theapp3d.Value(1);
                     int nbpoles = mbspc.NbPoles();
                     var tpoles = new NCollection_Array1<Point3D>(1, nbpoles);
                     mbspc.Curve(1, tpoles);
-                    modifCurve = new Geom_BSplineCurve(tpoles, mbspc.Knots(), mbspc.Multiplicities(), mbspc.Degree());
+                    modifCurve = new BSplineCurve3D(tpoles, mbspc.Knots(), mbspc.Multiplicities(), mbspc.Degree());
                 }
             }
             else
@@ -233,12 +236,12 @@ public class ShapeAlgo_AlgoContainer : Transient
         }
     }
 
-    /// <summary>The 2D form of <see cref="ApproxBSplineCurve(Geom_BSplineCurve, NCollection_Sequence{Geom_Curve})"/> (parts with more than ten poles).</summary>
-    public virtual void ApproxBSplineCurve(Geom2d_BSplineCurve bspline, NCollection_Sequence<Geom2d_Curve> seq)
+    /// <summary>The 2D form of <see cref="ApproxBSplineCurve(BSplineCurve3D, NCollection_Sequence{Curve3D})"/> (parts with more than ten poles).</summary>
+    public virtual void ApproxBSplineCurve(BSplineCurve2D bspline, NCollection_Sequence<Curve2D> seq)
     {
         seq.Clear();
-        Geom2d_BSplineCurve modifCurve;
-        var SCurve = new NCollection_Sequence<Geom2d_Curve>();
+        BSplineCurve2D modifCurve;
+        var SCurve = new NCollection_Sequence<Curve2D>();
 
         // si la BSpline est de degre 1 , on approxime .
         // on passe par le programme des intersections ou tout le travail
@@ -256,7 +259,7 @@ public class ShapeAlgo_AlgoContainer : Transient
         // Puis on approxime chaque "partie" de BSpline et on reconstruit
         // une BSpline = somme des BSplines traitees
 
-        int NbPoles = bspline.NbPoles();
+        int NbPoles = bspline.PoleCount;
         NCollection_Array1<Point2D> Poles = bspline.InternalPoles();
         NCollection_Array1<double> Weigs = bspline.InternalWeightsArray();
         NCollection_Array1<double> Knots = bspline.InternalKnots();
@@ -295,7 +298,7 @@ public class ShapeAlgo_AlgoContainer : Transient
                         newPoles[j] = Poles[PoleIndex++];
                     }
 
-                    var newC = new Geom2d_BSplineCurve(newPoles, newWeigs, newKnots, newMults, deg);
+                    var newC = new BSplineCurve2D(newPoles, newWeigs, newKnots, newMults, deg);
                     SCurve.Append(newC);
                     I1 = ipole + 1;
                     jpole = 1;
@@ -307,7 +310,7 @@ public class ShapeAlgo_AlgoContainer : Transient
             }
         }
 
-        Geom2d_BSplineCurve mycurve;
+        BSplineCurve2D mycurve;
         int nbcurves = SCurve.Length();
         if (nbcurves == 0)
         {
@@ -317,8 +320,8 @@ public class ShapeAlgo_AlgoContainer : Transient
 
         for (int itab = 1; itab <= nbcurves; itab++)
         {
-            mycurve = (Geom2d_BSplineCurve)SCurve.Value(itab);
-            jpole = mycurve.NbPoles();
+            mycurve = (BSplineCurve2D)SCurve.Value(itab);
+            jpole = mycurve.PoleCount;
             if (jpole > 10)
             {
                 var P = new NCollection_Array1<Point3D>(1, jpole);
@@ -349,11 +352,11 @@ public class ShapeAlgo_AlgoContainer : Transient
                 }
                 else
                 {
-                    AppParCurves_MultiBSpCurve mbspc = theapp3d.Value(1);
+                    MultiBSpCurve mbspc = theapp3d.Value(1);
                     int nbpoles = mbspc.NbPoles();
                     var tpoles = new NCollection_Array1<Point2D>(1, nbpoles);
                     mbspc.Curve(1, tpoles);
-                    modifCurve = new Geom2d_BSplineCurve(tpoles, mbspc.Knots(), mbspc.Multiplicities(), mbspc.Degree());
+                    modifCurve = new BSplineCurve2D(tpoles, mbspc.Knots(), mbspc.Multiplicities(), mbspc.Degree());
                 }
             }
             else
@@ -366,21 +369,21 @@ public class ShapeAlgo_AlgoContainer : Transient
     }
 
     /// <summary>Converts a C0 B-spline curve into a sequence of C1 B-spline curves (ShapeUpgrade's package function).</summary>
-    public virtual bool C0BSplineToSequenceOfC1BSplineCurve(Geom_BSplineCurve BS,
-                                                            ref NCollection_HSequence<Geom_BoundedCurve>? seqBS)
+    public virtual bool C0BSplineToSequenceOfC1BSplineCurve(BSplineCurve3D BS,
+                                                            ref NCollection_HSequence<BoundedCurve3D>? seqBS)
     {
         return ShapeUpgrade.C0BSplineToSequenceOfC1BSplineCurve(BS, ref seqBS);
     }
 
     /// <summary>Converts a C0 2D B-spline curve into a sequence of C1 B-spline curves (ShapeUpgrade's package function).</summary>
-    public virtual bool C0BSplineToSequenceOfC1BSplineCurve(Geom2d_BSplineCurve BS,
-                                                            ref NCollection_HSequence<Geom2d_BoundedCurve>? seqBS)
+    public virtual bool C0BSplineToSequenceOfC1BSplineCurve(BSplineCurve2D BS,
+                                                            ref NCollection_HSequence<BoundedCurve2D>? seqBS)
     {
         return ShapeUpgrade.C0BSplineToSequenceOfC1BSplineCurve(BS, ref seqBS);
     }
 
     /// <summary>Converts a shape on C0 geometry into a shape on C1 geometry (ShapeUpgrade_ShapeDivideContinuity), frozen.</summary>
-    public virtual TopoDS_Shape C0ShapeToC1Shape(in TopoDS_Shape shape, double tol)
+    public virtual Shape C0ShapeToC1Shape(in Shape shape, double tol)
     {
         var sdc = new ShapeUpgrade_ShapeDivideContinuity(shape);
         sdc.SetTolerance(tol);
@@ -391,7 +394,7 @@ public class ShapeAlgo_AlgoContainer : Transient
     }
 
     /// <summary>Converts a surface to a B-spline (ShapeConstruct).</summary>
-    public virtual Geom_BSplineSurface? ConvertSurfaceToBSpline(Geom_Surface surf, double UF, double UL, double VF, double VL)
+    public virtual BSplineSurface? ConvertSurfaceToBSpline(Surface surf, double UF, double UL, double VF, double VL)
     {
         return ShapeConstruct.ConvertSurfaceToBSpline(surf,
                                                       UF,
@@ -401,23 +404,23 @@ public class ShapeAlgo_AlgoContainer : Transient
                                                       Kerf.Engine.Foundation.Precision.Confusion(),
                                                       C1,
                                                       100,
-                                                      Geom_BSplineSurface.MaxDegree());
+                                                      BSplineSurface.MaxDegree());
     }
 
     /// <summary>
     /// Makes two wires with the same number of edges, the edges of the same rank having the same ratio between their
     /// parameter length and their wire's; the results are frozen. False if it failed.
     /// </summary>
-    public virtual bool HomoWires(in TopoDS_Wire wireIn1,
-                                  in TopoDS_Wire wireIn2,
-                                  out TopoDS_Wire wireOut1,
-                                  out TopoDS_Wire wireOut2,
+    public virtual bool HomoWires(in Wire wireIn1,
+                                  in Wire wireIn2,
+                                  out Wire wireOut1,
+                                  out Wire wireOut2,
                                   bool byParam)
     {
-        wireOut1 = new TopoDS_Wire();
-        wireOut2 = new TopoDS_Wire();
-        TopoDS_Iterator Cook = new(), Perry = new();
-        TopoDS_Edge edge1, edge2;
+        wireOut1 = new Wire();
+        wireOut2 = new Wire();
+        Iterator Cook = new(), Perry = new();
+        Edge edge1, edge2;
         Placement loc1, loc2;
         //  BRepBuilderAPI_MakeWire makeWire1, makeWire2;
         var makeWire1 = new ShapeExtend_WireData();
@@ -429,8 +432,8 @@ public class ShapeAlgo_AlgoContainer : Transient
         double last1, last2;
         double delta1, delta2;
 
-        Geom_Curve? crv1;
-        Geom_Curve? crv2;
+        Curve3D? crv1;
+        Curve3D? crv2;
 
         int nbCreatedEdges = 0;
         // gka
@@ -438,10 +441,10 @@ public class ShapeAlgo_AlgoContainer : Transient
         var sfw = new ShapeFix_Wire();
         sfw.Load(wireIn1);
         sfw.FixReorder();
-        TopoDS_Wire wireIn11 = sfw.Wire();
+        Wire wireIn11 = sfw.Wire();
         sfw.Load(wireIn2);
         sfw.FixReorder();
-        TopoDS_Wire wireIn22 = sfw.Wire();
+        Wire wireIn22 = sfw.Wire();
 
         iterCook = iterPerry = true;
         length1 = length2 = 0.0;
@@ -449,15 +452,15 @@ public class ShapeAlgo_AlgoContainer : Transient
         for (Cook.Initialize(wireIn11); Cook.More(); Cook.Next())
         {
             nEdges1++;
-            edge1 = TopoDS.Edge(Cook.Value());
-            crv1 = BRep_Tool.Curve(edge1, out loc1, out first1, out last1);
+            edge1 = ShapeCasts.Edge(Cook.Value());
+            crv1 = Tool.Curve(edge1, out loc1, out first1, out last1);
             length1 += last1 - first1;
         }
         for (Perry.Initialize(wireIn22); Perry.More(); Perry.Next())
         {
             nEdges2++;
-            edge2 = TopoDS.Edge(Perry.Value());
-            crv2 = BRep_Tool.Curve(edge2, out loc2, out first2, out last2);
+            edge2 = ShapeCasts.Edge(Perry.Value());
+            crv2 = Tool.Curve(edge2, out loc2, out first2, out last2);
             length2 += last2 - first2;
         }
         double epsilon = Kerf.Engine.Foundation.Precision.PConfusion() * (length1 + length2);
@@ -473,7 +476,7 @@ public class ShapeAlgo_AlgoContainer : Transient
             Cook.Initialize(wireIn11);
             for (Perry.Initialize(wireIn22); Perry.More(); Perry.Next())
             {
-                edge1 = TopoDS.Edge(Cook.Value());
+                edge1 = ShapeCasts.Edge(Cook.Value());
                 makeWire1.Add(edge1);
             }
             wireOut1 = makeWire1.Wire();
@@ -485,7 +488,7 @@ public class ShapeAlgo_AlgoContainer : Transient
             Perry.Initialize(wireIn22);
             for (Cook.Initialize(wireIn11); Cook.More(); Cook.Next())
             {
-                edge2 = TopoDS.Edge(Perry.Value());
+                edge2 = ShapeCasts.Edge(Perry.Value());
                 makeWire2.Add(edge2);
             }
             wireOut1 = wireIn11;
@@ -498,21 +501,21 @@ public class ShapeAlgo_AlgoContainer : Transient
         Cook.Initialize(wireIn11);
         int cookIndex = 1;
         Perry.Initialize(wireIn22);
-        edge1 = TopoDS.Edge(Cook.Value());
-        edge2 = TopoDS.Edge(Perry.Value());
+        edge1 = ShapeCasts.Edge(Cook.Value());
+        edge2 = ShapeCasts.Edge(Perry.Value());
         // essai mjm du 22/05/97
         bool IsToReverse1 = false;
         bool IsToReverse2 = false;
-        if (edge1.Orientation() == TopAbs_REVERSED)
+        if (edge1.Orientation() == Reversed)
         {
             IsToReverse1 = true;
         }
-        if (edge2.Orientation() == TopAbs_REVERSED)
+        if (edge2.Orientation() == Reversed)
         {
             IsToReverse2 = true;
         }
-        crv1 = BRep_Tool.Curve(edge1, out loc1, out first1, out last1);
-        crv2 = BRep_Tool.Curve(edge2, out loc2, out first2, out last2);
+        crv1 = Tool.Curve(edge1, out loc1, out first1, out last1);
+        crv2 = Tool.Curve(edge2, out loc2, out first2, out last2);
         delta1 = last1 - first1;
         delta2 = last2 - first2;
         while (nbCreatedEdges < (nEdges1 + nEdges2 - 1))
@@ -602,17 +605,17 @@ public class ShapeAlgo_AlgoContainer : Transient
             {
                 Cook.Next();
                 cookIndex++;
-                edge1 = TopoDS.Edge(Cook.Value());
-                IsToReverse1 = edge1.Orientation() == TopAbs_REVERSED;
-                crv1 = BRep_Tool.Curve(edge1, out loc1, out first1, out last1);
+                edge1 = ShapeCasts.Edge(Cook.Value());
+                IsToReverse1 = edge1.Orientation() == Reversed;
+                crv1 = Tool.Curve(edge1, out loc1, out first1, out last1);
                 delta1 = last1 - first1;
             }
             if (iterPerry)
             {
                 Perry.Next();
-                edge2 = TopoDS.Edge(Perry.Value());
-                IsToReverse2 = edge2.Orientation() == TopAbs_REVERSED;
-                crv2 = BRep_Tool.Curve(edge2, out loc2, out first2, out last2);
+                edge2 = ShapeCasts.Edge(Perry.Value());
+                IsToReverse2 = edge2.Orientation() == Reversed;
+                crv2 = Tool.Curve(edge2, out loc2, out first2, out last2);
                 delta2 = last2 - first2;
             }
         }
@@ -620,26 +623,26 @@ public class ShapeAlgo_AlgoContainer : Transient
     }
 
     /// <summary>Returns the outer wire of the face.</summary>
-    public virtual TopoDS_Wire OuterWire(in TopoDS_Face face)
+    public virtual Wire OuterWire(in Face face)
     {
         return ShapeAnalysis.OuterWire(face);
     }
 
     /// <summary>Converts a surface to its periodic form (ShapeCustom_Surface); null if it isn't converted.</summary>
-    public virtual Geom_Surface? ConvertToPeriodic(Geom_Surface surf)
+    public virtual Surface? ConvertToPeriodic(Surface surf)
     {
         var scs = new ShapeCustom_Surface(surf);
         return scs.ConvertToPeriodic(false);
     }
 
     /// <summary>Computes the exact UV bounds of all the wires of the face.</summary>
-    public virtual void GetFaceUVBounds(in TopoDS_Face F, out double Umin, out double Umax, out double Vmin, out double Vmax)
+    public virtual void GetFaceUVBounds(in Face F, out double Umin, out double Umax, out double Vmin, out double Vmax)
     {
         ShapeAnalysis.GetFaceUVBounds(F, out Umin, out Umax, out Vmin, out Vmax);
     }
 
     /// <summary>Converts a curve to a B-spline (ShapeConstruct).</summary>
-    public virtual Geom_BSplineCurve? ConvertCurveToBSpline(Geom_Curve C3D,
+    public virtual BSplineCurve3D? ConvertCurveToBSpline(Curve3D C3D,
                                                             double First,
                                                             double Last,
                                                             double Tol3d,

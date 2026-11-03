@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of ToroidalSurface from Geom to a STEP toroidal_surface.</summary>
@@ -18,7 +20,7 @@ public sealed class GeomToStep_MakeToroidalSurface : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A torus, its position and radii divided by the length factor.</summary>
-    public GeomToStep_MakeToroidalSurface(Geom_ToroidalSurface S, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeToroidalSurface(ToroidalSurface S, in StepData_Factors theLocalFactors)
     {
         StepGeom_ToroidalSurface Surf;
         StepGeom_Axis2Placement3d aPosition;
@@ -37,7 +39,7 @@ public sealed class GeomToStep_MakeToroidalSurface : GeomToStep_Root
     }
 
     /// <summary>A torus (default factors).</summary>
-    public GeomToStep_MakeToroidalSurface(Geom_ToroidalSurface S) : this(S, new StepData_Factors())
+    public GeomToStep_MakeToroidalSurface(ToroidalSurface S) : this(S, new StepData_Factors())
     {
     }
 

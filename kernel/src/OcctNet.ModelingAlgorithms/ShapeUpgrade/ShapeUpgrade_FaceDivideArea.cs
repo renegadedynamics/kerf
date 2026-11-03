@@ -4,8 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -38,7 +42,7 @@ public class ShapeUpgrade_FaceDivideArea : ShapeUpgrade_FaceDivide
     }
 
     /// <summary>Initializes by a face.</summary>
-    public ShapeUpgrade_FaceDivideArea(in TopoDS_Face F) : this()
+    public ShapeUpgrade_FaceDivideArea(in Face F) : this()
     {
         Init(F);
     }
@@ -73,7 +77,7 @@ public class ShapeUpgrade_FaceDivideArea : ShapeUpgrade_FaceDivide
     public override bool Perform(double theArea = 0.0)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
-        var aGprop = new GProp_GProps();
+        var aGprop = new Properties();
 
         BRepGProp.SurfaceProperties(myFace, aGprop, Precision());
         double anArea = aGprop.Mass();
@@ -111,8 +115,8 @@ public class ShapeUpgrade_FaceDivideArea : ShapeUpgrade_FaceDivide
             return false;
         }
 
-        TopoDS_Shape aResult = InternalResult();
-        if (aResult.ShapeType() == TopAbs_FACE)
+        Shape aResult = InternalResult();
+        if (aResult.ShapeType() == ShapeType.Face)
         {
             return false;
         }
@@ -120,21 +124,21 @@ public class ShapeUpgrade_FaceDivideArea : ShapeUpgrade_FaceDivide
 
         if (!myIsSplittingByNumber)
         {
-            var aExpF = new TopExp_Explorer(aResult, TopAbs_FACE);
-            TopoDS_Shape aCopyRes = aResult.EmptyCopied();
+            var aExpF = new Explorer(aResult, ShapeType.Face);
+            Shape aCopyRes = aResult.EmptyCopied();
 
             bool isModified = false;
             for (; aExpF.More(); aExpF.Next())
             {
-                TopoDS_Shape aSh = Context()!.InternalApply(aExpF.Current());
-                TopoDS_Face aFace = TopoDS.Face(aSh);
+                Shape aSh = Context()!.InternalApply(aExpF.Current());
+                Face aFace = ShapeCasts.Face(aSh);
                 Init(aFace);
-                var aB = new BRep_Builder();
+                var aB = new BrepBuilder();
                 if (Perform())
                 {
                     isModified = true;
-                    TopoDS_Shape aRes = InternalResult();
-                    var aExpR = new TopExp_Explorer(aRes, TopAbs_FACE);
+                    Shape aRes = InternalResult();
+                    var aExpR = new Explorer(aRes, ShapeType.Face);
                     for (; aExpR.More(); aExpR.Next())
                     {
                         aB.Add(aCopyRes, aExpR.Current());
@@ -147,9 +151,9 @@ public class ShapeUpgrade_FaceDivideArea : ShapeUpgrade_FaceDivide
             }
             if (isModified)
             {
-                if (aCopyRes.ShapeType() == TopAbs_WIRE || aCopyRes.ShapeType() == TopAbs_SHELL)
+                if (aCopyRes.ShapeType() == ShapeType.Wire || aCopyRes.ShapeType() == ShapeType.Shell)
                 {
-                    aCopyRes.Closed(BRep_Tool.IsClosed(aCopyRes));
+                    aCopyRes.Closed(Tool.IsClosed(aCopyRes));
                 }
                 Context()!.Replace(aResult, aCopyRes);
             }

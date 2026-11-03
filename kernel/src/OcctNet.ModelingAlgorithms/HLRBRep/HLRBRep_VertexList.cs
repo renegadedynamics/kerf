@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -87,7 +88,7 @@ public sealed class HLRBRep_VertexList
     public bool IsInterference() => fromInterf;
 
     /// <exception cref="DomainErrorException">The current vertex is not a boundary.</exception>
-    public TopAbs_Orientation Orientation()
+    public Orientation Orientation()
     {
         if (fromEdge)
         {
@@ -100,7 +101,7 @@ public sealed class HLRBRep_VertexList
     }
 
     /// <exception cref="DomainErrorException">The current vertex is not an interference.</exception>
-    public TopAbs_Orientation Transition()
+    public Orientation Transition()
     {
         if (fromInterf)
         {
@@ -113,7 +114,7 @@ public sealed class HLRBRep_VertexList
     }
 
     /// <exception cref="DomainErrorException">The current vertex is not an interference.</exception>
-    public TopAbs_Orientation BoundaryTransition()
+    public Orientation BoundaryTransition()
     {
         if (fromInterf)
         {

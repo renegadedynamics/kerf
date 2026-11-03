@@ -6,6 +6,8 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -26,7 +28,7 @@ public class TransferBRep_Reader
         theDone = false;
         theFilest = 0;
         theNewpr = false;
-        theShapes = new NCollection_HSequence<TopoDS_Shape>();
+        theShapes = new NCollection_HSequence<Shape>();
         theTransi = new NCollection_HSequence<Transient>();
     }
 
@@ -163,7 +165,7 @@ public class TransferBRep_Reader
     /// <summary>Ebds a Transfer (one, roots or list) by recording its result; the shapes are published (frozen).</summary>
     public void EndTransfer()
     {
-        NCollection_HSequence<TopoDS_Shape> aShapes = TransferBRep.Shapes(theProc, true);
+        NCollection_HSequence<Shape> aShapes = TransferBRep.Shapes(theProc, true);
         for (int i = 1; i <= aShapes.Length(); i++)
         {
             aShapes.Value(i).TShape()?.FreezeGraph(); // OCCT.NET: the reader's results are published (decision 1205)
@@ -304,13 +306,13 @@ public class TransferBRep_Reader
     }
 
     /// <summary>Returns the complete list of produced Shapes.</summary>
-    public NCollection_HSequence<TopoDS_Shape> Shapes()
+    public NCollection_HSequence<Shape> Shapes()
     {
         return theShapes;
     }
 
     /// <summary>Returns a Shape given its rank, by default the first one.</summary>
-    public TopoDS_Shape Shape(int num = 1)
+    public Shape Shape(int num = 1)
     {
         return theShapes.Value(num);
     }
@@ -319,7 +321,7 @@ public class TransferBRep_Reader
     /// Returns a Shape produced from a given entity (if it was individually transferred or if an entity is a
     /// subpart of the one which was transferred). Returns a Null Shape if there is no result.
     /// </summary>
-    public TopoDS_Shape ShapeResult(Transient? ent)
+    public Shape ShapeResult(Transient? ent)
     {
         return TransferBRep.ShapeResult(theProc, ent);
     }
@@ -328,9 +330,9 @@ public class TransferBRep_Reader
     /// Returns a unique Shape for the result : a void shape if no result; if the result is only one shape, this
     /// shape; else, a compound of the shapes (frozen).
     /// </summary>
-    public TopoDS_Shape OneShape()
+    public Shape OneShape()
     {
-        TopoDS_Shape res = new TopoDS_Shape();
+        Shape res = new Shape();
         int nb = theShapes.Length();
         if (nb == 0)
         {
@@ -342,8 +344,8 @@ public class TransferBRep_Reader
         }
         else
         {
-            TopoDS_Compound C = new TopoDS_Compound();
-            var B = new BRep_Builder();
+            Compound C = new Compound();
+            var B = new BrepBuilder();
             B.MakeCompound(ref C);
             for (int i = 1; i <= nb; i++)
             {
@@ -421,6 +423,6 @@ public class TransferBRep_Reader
     private Interface_InterfaceModel? theModel;
     private int theFilest;
     private bool theNewpr;
-    private readonly NCollection_HSequence<TopoDS_Shape> theShapes;
+    private readonly NCollection_HSequence<Shape> theShapes;
     private readonly NCollection_HSequence<Transient> theTransi;
 }

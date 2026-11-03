@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Security.Cryptography;
@@ -334,8 +337,8 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
 
     private static string TopKey(string theText)
     {
-        TopoDS_Shape aShape = BooleanOracleTests.ReadPort(theText);
-        return aShape.ShapeType() + ":" + CanonicalKeys.Build(aShape).Key(aShape);
+        Shape aShape = BooleanOracleTests.ReadPort(theText);
+        return Kerf.Engine.Foundation.OcctTypeNames.Of(aShape.ShapeType()) + ":" + CanonicalKeys.Build(aShape).Key(aShape);
     }
 
     // "seq class type": the header without its byte count and the build123d calls, which inlining varies
@@ -372,18 +375,18 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
     {
         try
         {
-            TopoDS_Shape aShape = BooleanOracleTests.ReadPort(theText);
+            Shape aShape = BooleanOracleTests.ReadPort(theText);
             var aCounts = new List<int>();
-            foreach (TopAbs_ShapeEnum aType in new[] { TopAbs_ShapeEnum.TopAbs_SOLID, TopAbs_ShapeEnum.TopAbs_SHELL, TopAbs_ShapeEnum.TopAbs_FACE,
-                                                       TopAbs_ShapeEnum.TopAbs_WIRE, TopAbs_ShapeEnum.TopAbs_EDGE, TopAbs_ShapeEnum.TopAbs_VERTEX })
+            foreach (ShapeType aType in new[] { ShapeType.Solid, ShapeType.Shell, ShapeType.Face,
+                                                       ShapeType.Wire, ShapeType.Edge, ShapeType.Vertex })
             {
-                var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                TopExp.MapShapes(aShape, aType, aMap);
+                var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                Exploration.MapShapes(aShape, aType, aMap);
                 aCounts.Add(aMap.Extent());
             }
-            var aVolume = new GProp_GProps();
+            var aVolume = new Properties();
             BRepGProp.VolumeProperties(aShape, aVolume);
-            var anArea = new GProp_GProps();
+            var anArea = new Properties();
             BRepGProp.SurfaceProperties(aShape, anArea);
             var aBox = new Box();
             BRepBndLib.Add(aShape, ref aBox);

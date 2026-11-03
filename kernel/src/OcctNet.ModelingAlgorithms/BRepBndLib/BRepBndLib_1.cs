@@ -3,27 +3,32 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Geometry.TransformForm;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
 public static partial class BRepBndLib
 {
     // Returns TRUE if theC is line-like.
-    private static bool IsLinear(Adaptor3d_Curve theC)
+    private static bool IsLinear(CurveAdaptorBase theC)
     {
         CurveKind aCT = theC.GetType();
         if (aCT == OffsetCurve)
         {
-            return IsLinear(new GeomAdaptor_Curve(theC.OffsetCurve().BasisCurve()));
+            return IsLinear(new CurveAdaptor(theC.OffsetCurve().BasisCurve()));
         }
 
         if ((aCT == BSplineCurve) || (aCT == BezierCurve))
@@ -44,10 +49,10 @@ public static partial class BRepBndLib
     }
 
     // Returns TRUE if theS is plane-like.
-    private static bool IsPlanar(Adaptor3d_Surface theS)
+    private static bool IsPlanar(SurfaceAdaptorBase theS)
     {
         SurfaceKind aST = theS.GetType();
-        if (aST == OffsetSurface)
+        if (aST == SurfaceKind.OffsetSurface)
         {
             return IsPlanar(theS.BasisSurface());
         }
@@ -57,7 +62,7 @@ public static partial class BRepBndLib
             return IsLinear(theS.BasisCurve());
         }
 
-        if ((aST == BSplineSurface) || (aST == BezierSurface))
+        if ((aST == SurfaceKind.BSplineSurface) || (aST == SurfaceKind.BezierSurface))
         {
             if ((theS.UDegree() != 1) || (theS.VDegree() != 1))
             {
@@ -85,28 +90,28 @@ public static partial class BRepBndLib
     //  1. Start index for thePts must be 0 strictly.
     //  2. Currently, infinite edges/faces (e.g. half-space) are not
     //      processed correctly because computation of UV-bounds is a costly operation.
-    private static int PointsForOBB(in TopoDS_Shape theS,
+    private static int PointsForOBB(in Shape theS,
                                     bool theIsTriangulationUsed,
                                     NCollection_Array1<Point3D>? thePts = null,
                                     NCollection_Array1<double>? theArrOfToler = null)
     {
         int aRetVal = 0;
-        var anExpF = new TopExp_Explorer();
-        var anExpE = new TopExp_Explorer();
+        var anExpF = new Explorer();
+        var anExpE = new Explorer();
 
         // get all vertices from the shape
-        for (anExpF.Init(theS, TopAbs_VERTEX); anExpF.More(); anExpF.Next())
+        for (anExpF.Init(theS, ShapeType.Vertex); anExpF.More(); anExpF.Next())
         {
-            TopoDS_Vertex aVert = TopoDS.Vertex(anExpF.Current());
+            Vertex aVert = ShapeCasts.Vertex(anExpF.Current());
             if (thePts is not null)
             {
-                Point3D aP = BRep_Tool.Pnt(aVert);
+                Point3D aP = Tool.Pnt(aVert);
                 thePts[aRetVal] = aP;
             }
 
             if (theArrOfToler is not null)
             {
-                theArrOfToler[aRetVal] = BRep_Tool.Tolerance(aVert);
+                theArrOfToler[aRetVal] = Tool.Tolerance(aVert);
             }
 
             ++aRetVal;
@@ -119,10 +124,10 @@ public static partial class BRepBndLib
 
         // analyze the faces of the shape on planarity and existence of triangulation
         Placement aLoc;
-        for (anExpF.Init(theS, TopAbs_FACE); anExpF.More(); anExpF.Next())
+        for (anExpF.Init(theS, ShapeType.Face); anExpF.More(); anExpF.Next())
         {
-            TopoDS_Face aF = TopoDS.Face(anExpF.Current());
-            var anAS = new BRepAdaptor_Surface(aF, false);
+            Face aF = ShapeCasts.Face(anExpF.Current());
+            var anAS = new FaceSurfaceAdaptor(aF, false);
 
             if (!IsPlanar(anAS))
             {
@@ -135,12 +140,12 @@ public static partial class BRepBndLib
             else
             {
                 // planar face
-                for (anExpE.Init(aF, TopAbs_EDGE); anExpE.More(); anExpE.Next())
+                for (anExpE.Init(aF, ShapeType.Edge); anExpE.More(); anExpE.Next())
                 {
-                    TopoDS_Edge anE = TopoDS.Edge(anExpE.Current());
-                    if (BRep_Tool.IsGeometric(anE))
+                    Edge anE = ShapeCasts.Edge(anExpE.Current());
+                    if (Tool.IsGeometric(anE))
                     {
-                        var anAC = new BRepAdaptor_Curve(anE);
+                        var anAC = new EdgeCurveAdaptor(anE);
                         if (!IsLinear(anAC))
                         {
                             if (!theIsTriangulationUsed)
@@ -162,7 +167,7 @@ public static partial class BRepBndLib
             }
 
             // Use triangulation of the face
-            Triangulation? aTrng = BRep_Tool.Triangulation(aF, out aLoc);
+            Triangulation? aTrng = Tool.Triangulation(aF, out aLoc);
             if (aTrng is null)
             {
                 // no triangulation on the face
@@ -190,12 +195,12 @@ public static partial class BRepBndLib
 
         // Consider edges without faces
 
-        for (anExpE.Init(theS, TopAbs_EDGE, TopAbs_FACE); anExpE.More(); anExpE.Next())
+        for (anExpE.Init(theS, ShapeType.Edge, ShapeType.Face); anExpE.More(); anExpE.Next())
         {
-            TopoDS_Edge anE = TopoDS.Edge(anExpE.Current());
-            if (BRep_Tool.IsGeometric(anE))
+            Edge anE = ShapeCasts.Edge(anExpE.Current());
+            if (Tool.IsGeometric(anE))
             {
-                var anAC = new BRepAdaptor_Curve(anE);
+                var anAC = new EdgeCurveAdaptor(anE);
                 if (IsLinear(anAC))
                 {
                     // skip linear edge as its vertices have already been added
@@ -209,7 +214,7 @@ public static partial class BRepBndLib
                 return 0;
             }
 
-            Polygon3D? aPolygon = BRep_Tool.Polygon3D(anE, out aLoc);
+            Polygon3D? aPolygon = Tool.Polygon3D(anE, out aLoc);
             if (aPolygon is null)
             {
                 return 0;
@@ -268,7 +273,7 @@ public static partial class BRepBndLib
     // Collects points for DiTO algorithm for OBB construction on
     // linear/planar shapes and shapes having triangulation
     // (http://www.idt.mdh.se/~tla/publ/FastOBBs.pdf).
-    private static bool CheckPoints(in TopoDS_Shape theS,
+    private static bool CheckPoints(in Shape theS,
                                     bool theIsTriangulationUsed,
                                     bool theIsOptimal,
                                     bool theIsShapeToleranceUsed,
@@ -304,46 +309,46 @@ public static partial class BRepBndLib
         return (!theOBB.IsVoid);
     }
 
-    private static void ComputeProperties(in TopoDS_Shape theS, GProp_GProps theGCommon)
+    private static void ComputeProperties(in Shape theS, Properties theGCommon)
     {
-        var anExp = new TopExp_Explorer();
-        for (anExp.Init(theS, TopAbs_SOLID); anExp.More(); anExp.Next())
+        var anExp = new Explorer();
+        for (anExp.Init(theS, ShapeType.Solid); anExp.More(); anExp.Next())
         {
-            var aG = new GProp_GProps();
+            var aG = new Properties();
             BRepGProp.VolumeProperties(anExp.Current(), aG, true);
             theGCommon.Add(aG);
         }
 
-        for (anExp.Init(theS, TopAbs_FACE, TopAbs_SOLID); anExp.More(); anExp.Next())
+        for (anExp.Init(theS, ShapeType.Face, ShapeType.Solid); anExp.More(); anExp.Next())
         {
-            var aG = new GProp_GProps();
+            var aG = new Properties();
             BRepGProp.SurfaceProperties(anExp.Current(), aG, true);
             theGCommon.Add(aG);
         }
 
-        for (anExp.Init(theS, TopAbs_EDGE, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (anExp.Init(theS, ShapeType.Edge, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            var aG = new GProp_GProps();
+            var aG = new Properties();
             BRepGProp.LinearProperties(anExp.Current(), aG, true);
             theGCommon.Add(aG);
         }
 
-        for (anExp.Init(theS, TopAbs_VERTEX, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (anExp.Init(theS, ShapeType.Vertex, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            var aG = new GProp_GProps(BRep_Tool.Pnt(TopoDS.Vertex(anExp.Current())));
+            var aG = new Properties(Tool.Pnt(ShapeCasts.Vertex(anExp.Current())));
             theGCommon.Add(aG);
         }
     }
 
     // Creates OBB with axes of inertia.
-    private static void ComputePCA(in TopoDS_Shape theS,
+    private static void ComputePCA(in Shape theS,
                                    ref OrientedBox theOBB,
                                    bool theIsTriangulationUsed,
                                    bool theIsOptimal,
                                    bool theIsShapeToleranceUsed)
     {
         // Compute the transformation matrix to obtain more tight bounding box
-        var aGCommon = new GProp_GProps();
+        var aGCommon = new Properties();
         ComputeProperties(theS, aGCommon);
 
         // Transform the shape to the local coordinate system
@@ -362,7 +367,7 @@ public static partial class BRepBndLib
             aTrsf.SetTransformation(aLocCoordSys);
         }
 
-        TopoDS_Shape aST = (aTrsf.Form() == Identity) ? theS : theS.Moved(new Placement(aTrsf));
+        Shape aST = (aTrsf.Form() == Identity) ? theS : theS.Moved(new Placement(aTrsf));
 
         // Initial axis-aligned BndBox
         Box aShapeBox = new();
@@ -456,7 +461,7 @@ public static partial class BRepBndLib
     /// <paramref name="theIsShapeToleranceUsed"/> enlarges the box by the shapes' tolerances;
     /// <paramref name="theIsOptimal"/> looks for a tighter box, more slowly.
     /// </summary>
-    public static void AddOBB(in TopoDS_Shape theS,
+    public static void AddOBB(in Shape theS,
                               ref OrientedBox theOBB,
                               bool theIsTriangulationUsed = true,
                               bool theIsOptimal = false,
@@ -471,7 +476,7 @@ public static partial class BRepBndLib
     }
 
     /// <summary>The oriented box of the shape: a new box given to <see cref="AddOBB"/> (not in OCCT).</summary>
-    public static OrientedBox OBB(in TopoDS_Shape theS,
+    public static OrientedBox OBB(in Shape theS,
                               bool theIsTriangulationUsed = true,
                               bool theIsOptimal = false,
                               bool theIsShapeToleranceUsed = true)

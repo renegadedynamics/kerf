@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Geometry;
 using static OcctNet.ModelingData.Tests.GeomEval_SurfaceTestHelpers;
 
@@ -18,7 +19,7 @@ public class GeomEval_ParaboloidSurfaceTest
     public void Construction_ValidParams()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_ParaboloidSurface aSurf = new(anAx3, 1.0);
+        ParaboloidSurface aSurf = new(anAx3, 1.0);
         Assert.Equal(1.0, aSurf.Focal(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
@@ -27,8 +28,8 @@ public class GeomEval_ParaboloidSurfaceTest
     public void Construction_InvalidFocal_Throws()
     {
         CoordinateSystem anAx3 = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new GeomEval_ParaboloidSurface(anAx3, -1.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new GeomEval_ParaboloidSurface(anAx3, 0.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new ParaboloidSurface(anAx3, -1.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new ParaboloidSurface(anAx3, 0.0));
     }
 
     // Test EvalD0 at known point: u=0, v=0 should give origin
@@ -36,7 +37,7 @@ public class GeomEval_ParaboloidSurfaceTest
     public void EvalD0_Origin()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_ParaboloidSurface aSurf = new(anAx3, 1.0);
+        ParaboloidSurface aSurf = new(anAx3, 1.0);
         Point3D aP = aSurf.EvalD0(0.0, 0.0);
         Assert.Equal(0.0, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -48,7 +49,7 @@ public class GeomEval_ParaboloidSurfaceTest
     public void EvalD0_KnownPoint()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_ParaboloidSurface aSurf = new(anAx3, 1.0);
+        ParaboloidSurface aSurf = new(anAx3, 1.0);
         Point3D aP = aSurf.EvalD0(0.0, 2.0);
         Assert.Equal(2.0, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -60,10 +61,10 @@ public class GeomEval_ParaboloidSurfaceTest
     public void EvalD1_ConsistentWithD0()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_ParaboloidSurface aSurf = new(anAx3, 2.0);
+        ParaboloidSurface aSurf = new(anAx3, 2.0);
         const double aU = 1.0, aV = 1.5;
 
-        Geom_Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
+        Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
         Point3D aPu1 = aSurf.EvalD0(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Point3D aPu2 = aSurf.EvalD0(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Point3D aPv1 = aSurf.EvalD0(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -81,21 +82,21 @@ public class GeomEval_ParaboloidSurfaceTest
     public void Bounds_Periodicity()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_ParaboloidSurface aSurf = new(anAx3, 1.0);
+        ParaboloidSurface aSurf = new(anAx3, 1.0);
         aSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal(0.0, aU1, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(2.0 * M_PI, aU2, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aSurf.IsUPeriodic());
-        Assert.True(aSurf.IsUClosed());
-        Assert.False(aSurf.IsVPeriodic());
-        Assert.False(aSurf.IsVClosed());
+        Assert.True(aSurf.IsUPeriodic);
+        Assert.True(aSurf.IsUClosed);
+        Assert.False(aSurf.IsVPeriodic);
+        Assert.False(aSurf.IsVClosed);
     }
 
     [Fact]
     public void Iso_NotImplemented()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_ParaboloidSurface aSurf = new(anAx3, 1.0);
+        ParaboloidSurface aSurf = new(anAx3, 1.0);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UIso(0.5));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VIso(0.5));
     }
@@ -104,7 +105,7 @@ public class GeomEval_ParaboloidSurfaceTest
     public void Reverse_NotImplemented()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_ParaboloidSurface aSurf = new(anAx3, 1.0);
+        ParaboloidSurface aSurf = new(anAx3, 1.0);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReverse());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReverse());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReversedParameter(0.5));
@@ -116,7 +117,7 @@ public class GeomEval_ParaboloidSurfaceTest
     public void Coefficients_SatisfiedAtEvalPoints()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_ParaboloidSurface aSurf = new(anAx3, 1.5);
+        ParaboloidSurface aSurf = new(anAx3, 1.5);
         aSurf.Coefficients(out double aA1, out double aA2, out double aA3, out double aB1, out double aB2,
                            out double aB3, out double aC1, out double aC2, out double aC3, out double aD);
 
@@ -136,7 +137,7 @@ public class GeomEval_ParaboloidSurfaceTest
     public void Transform_NotImplemented()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_ParaboloidSurface aSurf = new(anAx3, 1.0);
+        ParaboloidSurface aSurf = new(anAx3, 1.0);
         Transform3D aTrsf = new();
         aTrsf.SetTranslation(new Vector3D(1.0, 2.0, 3.0));
 
@@ -149,10 +150,10 @@ public class GeomEval_ParaboloidSurfaceTest
     public void Copy_Independent()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_ParaboloidSurface aSurf = new(anAx3, 2.0);
-        Geom_Geometry aCopy = aSurf.Copy();
+        ParaboloidSurface aSurf = new(anAx3, 2.0);
+        Geometry3D aCopy = aSurf.Copy();
         Assert.NotNull(aCopy);
-        GeomEval_ParaboloidSurface? aCopySurf = aCopy as GeomEval_ParaboloidSurface;
+        ParaboloidSurface? aCopySurf = aCopy as ParaboloidSurface;
         Assert.NotNull(aCopySurf);
         Assert.Equal(2.0, aCopySurf.Focal(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -162,15 +163,15 @@ public class GeomEval_ParaboloidSurfaceTest
     public void EvalD2_ConsistentWithD1()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_ParaboloidSurface aSurf = new(anAx3, 2.0);
+        ParaboloidSurface aSurf = new(anAx3, 2.0);
         const double aU = 1.0, aV = 1.5;
 
-        Geom_Surface.ResD2 aD2 = aSurf.EvalD2(aU, aV);
+        Surface.ResD2 aD2 = aSurf.EvalD2(aU, aV);
 
-        Geom_Surface.ResD1 aD1Uf = aSurf.EvalD1(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
-        Geom_Surface.ResD1 aD1Ub = aSurf.EvalD1(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
-        Geom_Surface.ResD1 aD1Vf = aSurf.EvalD1(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
-        Geom_Surface.ResD1 aD1Vb = aSurf.EvalD1(aU, aV - global::Kerf.Engine.Foundation.Precision.Confusion());
+        Surface.ResD1 aD1Uf = aSurf.EvalD1(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
+        Surface.ResD1 aD1Ub = aSurf.EvalD1(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
+        Surface.ResD1 aD1Vf = aSurf.EvalD1(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Surface.ResD1 aD1Vb = aSurf.EvalD1(aU, aV - global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Vector3D aFD_D2U = new((aD1Uf.D1U.XYZ() - aD1Ub.D1U.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
         Vector3D aFD_D2V = new((aD1Vf.D1V.XYZ() - aD1Vb.D1V.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
@@ -186,15 +187,15 @@ public class GeomEval_ParaboloidSurfaceTest
     public void EvalD3_ConsistentWithD2()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_ParaboloidSurface aSurf = new(anAx3, 2.0);
+        ParaboloidSurface aSurf = new(anAx3, 2.0);
         const double aU = 0.7, aV = 1.2;
 
-        Geom_Surface.ResD3 aD3 = aSurf.EvalD3(aU, aV);
+        Surface.ResD3 aD3 = aSurf.EvalD3(aU, aV);
 
-        Geom_Surface.ResD2 aD2Uf = aSurf.EvalD2(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
-        Geom_Surface.ResD2 aD2Ub = aSurf.EvalD2(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
-        Geom_Surface.ResD2 aD2Vf = aSurf.EvalD2(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
-        Geom_Surface.ResD2 aD2Vb = aSurf.EvalD2(aU, aV - global::Kerf.Engine.Foundation.Precision.Confusion());
+        Surface.ResD2 aD2Uf = aSurf.EvalD2(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
+        Surface.ResD2 aD2Ub = aSurf.EvalD2(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
+        Surface.ResD2 aD2Vf = aSurf.EvalD2(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Surface.ResD2 aD2Vb = aSurf.EvalD2(aU, aV - global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Vector3D aFD_D3U = new((aD2Uf.D2U.XYZ() - aD2Ub.D2U.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
         Vector3D aFD_D3V = new((aD2Vf.D2V.XYZ() - aD2Vb.D2V.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
@@ -214,10 +215,10 @@ public class GeomEval_ParaboloidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         const double aFocal = 2.0;
-        GeomEval_ParaboloidSurface aSurf = new(anAx3, aFocal);
+        ParaboloidSurface aSurf = new(anAx3, aFocal);
         const double aU = M_PI / 4.0, aV = 2.0;
 
-        Geom_Surface.ResD2 aD2 = aSurf.EvalD2(aU, aV);
+        Surface.ResD2 aD2 = aSurf.EvalD2(aU, aV);
 
         // D2UU = (-v*cos(u), -v*sin(u), 0)
         double aExpX = -aV * Math.Cos(aU);
@@ -235,10 +236,10 @@ public class GeomEval_ParaboloidSurfaceTest
     public void EvalDN_Consistency()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_ParaboloidSurface aSurf = new(anAx3, 2.0);
+        ParaboloidSurface aSurf = new(anAx3, 2.0);
         const double aU = 1.0, aV = 1.0;
 
-        Geom_Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
+        Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
         Vector3D aDN10 = aSurf.EvalDN(aU, aV, 1, 0);
         Vector3D aDN01 = aSurf.EvalDN(aU, aV, 0, 1);
 
@@ -251,7 +252,7 @@ public class GeomEval_ParaboloidSurfaceTest
     public void Derivatives_MatchFiniteDifferences()
     {
         CoordinateSystem anAx3 = new(new Point3D(1.0, -2.0, 0.5), new Direction3D(1.0, 1.0, 1.0), new Direction3D(1.0, -1.0, 0.0));
-        GeomEval_ParaboloidSurface aSurf = new(anAx3, 0.75);
+        ParaboloidSurface aSurf = new(anAx3, 0.75);
         for (double aU = 0.1; aU < 2.0 * M_PI; aU += 0.7)
         {
             for (double aV = -2.0; aV <= 2.0; aV += 0.7)
@@ -265,8 +266,8 @@ public class GeomEval_ParaboloidSurfaceTest
     [Fact]
     public void Setters_WithTwins_Freeze()
     {
-        GeomEval_ParaboloidSurface aSurf = new(new CoordinateSystem(), 2.0);
-        GeomEval_ParaboloidSurface aCopy = aSurf.WithFocal(3.0);
+        ParaboloidSurface aSurf = new(new CoordinateSystem(), 2.0);
+        ParaboloidSurface aCopy = aSurf.WithFocal(3.0);
         Assert.Equal(2.0, aSurf.Focal());
         Assert.Equal(3.0, aCopy.Focal());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aSurf.WithFocal(0.0));

@@ -4,11 +4,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -18,22 +22,22 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// A working object (decision 21). To intersect several curves with one shape, <see cref="Load"/> it once and
-/// <see cref="Init(GeomAdaptor_Curve)"/> each curve; the faces' boxes are computed once. It only reads the shape.
+/// <see cref="Init(CurveAdaptor)"/> each curve; the faces' boxes are computed once. It only reads the shape.
 /// </remarks>
 public class BRepIntCurveSurface_Inter
 {
     private double myTolerance;
-    private GeomAdaptor_Curve? myCurve;
+    private CurveAdaptor? myCurve;
     private readonly IntCurveSurface_HInter myIntcs = new();
     private int myCurrentindex;
     private int myCurrentnbpoints;
     private readonly BRepTopAdaptor_TopolTool myFastClass;
-    private TopAbs_State myCurrentstate;
+    private Containment myCurrentstate;
     private double myCurrentU;
     private double myCurrentV;
     private Box myCurveBox = new();
     private int myIndFace;
-    private readonly NCollection_Sequence<TopoDS_Shape> myFaces = new();
+    private readonly NCollection_Sequence<Shape> myFaces = new();
     private NCollection_HArray1<Box>? myFaceBoxes;
 
     /// <summary>An empty intersector.</summary>
@@ -44,17 +48,17 @@ public class BRepIntCurveSurface_Inter
     }
 
     /// <summary>Loads the shape and the curve, with the tolerance <paramref name="theTol"/> of the classification.</summary>
-    public void Init(in TopoDS_Shape theShape, GeomAdaptor_Curve theCurve, double theTol)
+    public void Init(in Shape theShape, CurveAdaptor theCurve, double theTol)
     {
         Load(theShape, theTol);
         Init(theCurve);
     }
 
     /// <summary>Loads the shape and the line, with the tolerance <paramref name="theTol"/> of the classification.</summary>
-    public void Init(in TopoDS_Shape theShape, in Line3D theLine, double theTol)
+    public void Init(in Shape theShape, in Line3D theLine, double theTol)
     {
-        var geomline = new Geom_Line(theLine);
-        var aCurve = new GeomAdaptor_Curve(geomline);
+        var geomline = new LineCurve3D(theLine);
+        var aCurve = new CurveAdaptor(geomline);
         Load(theShape, theTol);
         Init(aCurve);
     }
@@ -65,19 +69,19 @@ public class BRepIntCurveSurface_Inter
         myCurrentindex = 0;
         myCurrentnbpoints = 0;
         myIndFace = 0;
-        myCurrentstate = TopAbs_UNKNOWN;
+        myCurrentstate = Unknown;
         myCurrentU = 0;
         myCurrentV = 0;
     }
 
     /// <summary>Loads the shape, with the tolerance <paramref name="theTol"/> of the classification.</summary>
-    public void Load(in TopoDS_Shape theShape, double theTol)
+    public void Load(in Shape theShape, double theTol)
     {
         Clear();
         myFaces.Clear();
         myFaceBoxes = null;
         myTolerance = theTol;
-        var explorer = new TopExp_Explorer(theShape, TopAbs_FACE);
+        var explorer = new Explorer(theShape, global::Kerf.Topology.ShapeType.Face);
         for (; explorer.More(); explorer.Next())
         {
             myFaces.Append(explorer.Current());
@@ -86,16 +90,16 @@ public class BRepIntCurveSurface_Inter
 
     /// <summary>Intersects the curve with the loaded shape and moves to the first point.</summary>
     /// <remarks>The intersector keeps a copy of the adaptor (OCCT's), sharing its curve.</remarks>
-    public void Init(GeomAdaptor_Curve theCurve)
+    public void Init(CurveAdaptor theCurve)
     {
         Clear();
         myCurveBox.SetVoid();
         double aFirst = theCurve.FirstParameter();
         double aLast = theCurve.LastParameter();
-        myCurve = (GeomAdaptor_Curve)theCurve.ShallowCopy();
+        myCurve = (CurveAdaptor)theCurve.ShallowCopy();
         if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
         {
-            BndLib_Add3dCurve.Add(myCurve, 0.0, ref myCurveBox);
+            Add3dCurve.Add(myCurve, 0.0, ref myCurveBox);
         }
 
         Find();
@@ -129,7 +133,7 @@ public class BRepIntCurveSurface_Inter
         int i = myIndFace + 1;
         for (; i <= myFaces.Length(); i++)
         {
-            TopoDS_Shape aCurface = myFaces[i];
+            Shape aCurface = myFaces[i];
             myFaceBoxes ??= new NCollection_HArray1<Box>(1, myFaces.Length());
 
             ref Box aFaceBox = ref myFaceBoxes[i];
@@ -147,7 +151,7 @@ public class BRepIntCurveSurface_Inter
                 continue;
             }
 
-            var aSurfForFastClass = new BRepAdaptor_Surface(TopoDS.Face(aCurface));
+            var aSurfForFastClass = new FaceSurfaceAdaptor(ShapeCasts.Face(aCurface));
             myIntcs.Perform(myCurve, aSurfForFastClass);
             myCurrentnbpoints = myIntcs.NbPoints();
             if (myCurrentnbpoints == 0)
@@ -155,7 +159,7 @@ public class BRepIntCurveSurface_Inter
                 continue;
             }
 
-            myFastClass.Initialize((Adaptor3d_Surface)aSurfForFastClass);
+            myFastClass.Initialize((SurfaceAdaptorBase)aSurfForFastClass);
             myIndFace = i;
             if (FindPoint())
             {
@@ -185,7 +189,7 @@ public class BRepIntCurveSurface_Inter
             Point2D Puv = new(anU, aV);
 
             myCurrentstate = myFastClass.Classify(Puv, myTolerance);
-            if (myCurrentstate == TopAbs_ON || myCurrentstate == TopAbs_IN)
+            if (myCurrentstate == On || myCurrentstate == In)
             {
                 myCurrentindex = j;
                 myCurrentU = anU;
@@ -255,7 +259,7 @@ public class BRepIntCurveSurface_Inter
 
     /// <summary>The state of the current point in the current face: IN or ON.</summary>
     /// <exception cref="NotDoneException">There is no current point.</exception>
-    public TopAbs_State State()
+    public Containment State()
     {
         if (myCurrentindex == 0)
         {
@@ -279,7 +283,7 @@ public class BRepIntCurveSurface_Inter
     }
 
     /// <summary>The current face.</summary>
-    public TopoDS_Face Face() => (TopoDS.Face(myFaces.Value(myIndFace)));
+    public Face Face() => (ShapeCasts.Face(myFaces.Value(myIndFace)));
 
     /// <summary>The current point.</summary>
     /// <exception cref="NotDoneException">There is no current point.</exception>

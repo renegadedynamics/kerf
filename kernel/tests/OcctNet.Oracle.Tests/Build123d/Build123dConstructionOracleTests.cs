@@ -1,6 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Text.Json;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
@@ -77,9 +83,9 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         }
     }
 
-    private static List<TopoDS_Shape> PortOperands(string theText, bool theFrozen = true)
+    private static List<Shape> PortOperands(string theText, bool theFrozen = true)
     {
-        TopoDS_Shape aC = BooleanOracleTests.ReadPort(theText);
+        Shape aC = BooleanOracleTests.ReadPort(theText);
         if (theFrozen)
         {
             aC.TShape()!.FreezeGraph(); // a caller's shapes
@@ -87,10 +93,10 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         else
         {
             // a copy the algorithm may write into, as native's operands (the shapes read are frozen)
-            aC = BRepTools.ExactCopyForWrite(aC, out _);
+            aC = BrepTools.ExactCopyForWrite(aC, out _);
         }
-        var aList = new List<TopoDS_Shape>();
-        for (var anIt = new TopoDS_Iterator(aC); anIt.More(); anIt.Next())
+        var aList = new List<Shape>();
+        for (var anIt = new Iterator(aC); anIt.More(); anIt.Next())
         {
             aList.Add(anIt.Value());
         }
@@ -116,13 +122,13 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
     /// repeats itself.
     /// </summary>
     private void Compare(string theAlgo, string theName, string theOperands, Func<List<N.TopoDS_Shape>, N.TopoDS_Shape> theNative,
-                         Func<List<TopoDS_Shape>, TopoDS_Shape> thePort, string? theAttribution = null)
+                         Func<List<Shape>, Shape> thePort, string? theAttribution = null)
     {
         Tally aTally = TallyOf(theAlgo);
         aTally.Cases++;
         (string? aNText, string? aNErr) = RunNative(theOperands, theNative);
 
-        List<TopoDS_Shape> aPOps = PortOperands(theOperands);
+        List<Shape> aPOps = PortOperands(theOperands);
         string aPOpsText = string.Concat(aPOps.Select(BRepTextComparison.Write));
         string? aPText = null, aPErr = null;
         try
@@ -202,7 +208,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
 
     // The port on unfrozen operands (read afresh, not frozen), as native's are: true if it then gives native's bytes,
     // the Free column masked
-    private bool DestructiveMatches(string theNText, string theOperands, Func<List<TopoDS_Shape>, TopoDS_Shape> thePort)
+    private bool DestructiveMatches(string theNText, string theOperands, Func<List<Shape>, Shape> thePort)
     {
         try
         {
@@ -217,7 +223,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
 
     /// <summary>One solver case: the records of both sides, token for token.</summary>
     private void CompareSolver(string theName, string theOperands, Func<List<N.TopoDS_Shape>, G.Rec> theNative,
-                               Func<List<TopoDS_Shape>, G.Rec> thePort, Func<string, bool>? theMasked = null)
+                               Func<List<Shape>, G.Rec> thePort, Func<string, bool>? theMasked = null)
     {
         Tally aTally = TallyOf("Geom2dGcc");
         aTally.Cases++;
@@ -268,7 +274,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         return aC;
     }
 
-    private static TopoDS_Compound PCompound(params TopoDS_Shape[] theShapes) => TopoDS_Builder.MakeCompound(theShapes);
+    private static Compound PCompound(params Shape[] theShapes) => Builder.MakeCompound(theShapes);
 
     // ---------------------------------------------------------------------------------------------------------------
     // Sweeps: BRepOffsetAPI_MakePipeShell
@@ -415,7 +421,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
             return aB.Shape();
         }, o =>
         {
-            var aB = new BRepOffsetAPI_MakePipeShell(TopoDS.Wire(o[0]));
+            var aB = new BRepOffsetAPI_MakePipeShell(ShapeCasts.Wire(o[0]));
             switch (theCall.Mode)
             {
                 case 1:
@@ -430,7 +436,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
                     break;
                 }
                 case 3:
-                    aB.SetMode(TopoDS.Wire(o[^1]), theCall.Curvilinear);
+                    aB.SetMode(ShapeCasts.Wire(o[^1]), theCall.Curvilinear);
                     break;
             }
             if (theCall.Transition is { } t && !theCall.TransitionAfterAdd)
@@ -488,15 +494,15 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         }, o =>
         {
             var aLoft = new BRepOffsetAPI_ThruSections(theFilled, theRuled);
-            foreach (TopoDS_Shape aS in o)
+            foreach (Shape aS in o)
             {
-                if (aS.ShapeType() == TopAbs_ShapeEnum.TopAbs_VERTEX)
+                if (aS.ShapeType() == ShapeType.Vertex)
                 {
-                    aLoft.AddVertex(TopoDS.Vertex(aS));
+                    aLoft.AddVertex(ShapeCasts.Vertex(aS));
                 }
                 else
                 {
-                    aLoft.AddWire(TopoDS.Wire(new BRepBuilderAPI_Copy(aS, false, false).Shape()));
+                    aLoft.AddWire(ShapeCasts.Wire(new BRepBuilderAPI_Copy(aS, false, false).Shape()));
                 }
             }
             aLoft.Build();
@@ -544,12 +550,12 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         }, o =>
         {
             var aF = new BRepOffsetAPI_MakeFilling(3, 15, 2, false, 0.00001, 0.0001, 0.01, 0.1, 8, 9);
-            foreach (TopoDS_Shape anE in o)
+            foreach (Shape anE in o)
             {
-                aF.Add(TopoDS.Edge(anE), Continuity.C0);
+                aF.Add(ShapeCasts.Edge(anE), Continuity.C0);
             }
             aF.Build();
-            TopoDS_Shape aFirst = aF.Shape();
+            Shape aFirst = aF.Shape();
             if (thePoints.Length == 0)
             {
                 return aFirst;
@@ -591,11 +597,11 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
             var aF = new BRepOffsetAPI_MakeFilling();
             for (int i = 0; i < aNbOnFaces; i++)
             {
-                aF.Add(TopoDS.Edge(o[2 * i]), TopoDS.Face(o[2 * i + 1]), Continuity.G1);
+                aF.Add(ShapeCasts.Edge(o[2 * i]), ShapeCasts.Face(o[2 * i + 1]), Continuity.G1);
             }
-            foreach (TopoDS_Shape anE in o.Skip(2 * aNbOnFaces))
+            foreach (Shape anE in o.Skip(2 * aNbOnFaces))
             {
-                aF.Add(TopoDS.Edge(anE), Continuity.C0);
+                aF.Add(ShapeCasts.Edge(anE), Continuity.C0);
             }
             foreach (Vec3 p in thePoints)
             {
@@ -656,11 +662,11 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
 
     private void RunRuledFace(string theName, string theOperands) =>
         Compare("BRepFill", theName, theOperands, o => N.BRepFill.Face(N.TopoDS.Edge(o[0]), N.TopoDS.Edge(o[1])),
-                o => BRepFill.Face(TopoDS.Edge(o[0]), TopoDS.Edge(o[1])));
+                o => BRepFill.Face(ShapeCasts.Edge(o[0]), ShapeCasts.Edge(o[1])));
 
     private void RunRuledShell(string theName, string theOperands) =>
         Compare("BRepFill", theName, theOperands, o => N.BRepFill.Shell(N.TopoDS.Wire(o[0]), N.TopoDS.Wire(o[1])),
-                o => BRepFill.Shell(TopoDS.Wire(o[0]), TopoDS.Wire(o[1])));
+                o => BRepFill.Shell(ShapeCasts.Wire(o[0]), ShapeCasts.Wire(o[1])));
 
     [Fact]
     public void Surfaces_of_build123d_tests_as_native()
@@ -729,18 +735,18 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
             return aB.Shape();
         }, o =>
         {
-            var aB = new BRepFilletAPI_MakeFillet2d(TopoDS.Face(o[0]));
-            var aMap = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapesAndAncestors(o[0], TopAbs_ShapeEnum.TopAbs_VERTEX, TopAbs_ShapeEnum.TopAbs_EDGE, aMap);
+            var aB = new BRepFilletAPI_MakeFillet2d(ShapeCasts.Face(o[0]));
+            var aMap = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            Exploration.MapShapesAndAncestors(o[0], ShapeType.Vertex, ShapeType.Edge, aMap);
             for (int i = 1; i <= aNbV; i++)
             {
-                NCollection_List<TopoDS_Shape> aList = aMap.FindFromKey(o[i]);
-                TopoDS_Shape e1 = aList.First(), e2 = aList.Last();
+                NCollection_List<Shape> aList = aMap.FindFromKey(o[i]);
+                Shape e1 = aList.First(), e2 = aList.Last();
                 if (hasReference && e2.IsSame(o[^1]))
                 {
                     (e1, e2) = (e2, e1);
                 }
-                aB.AddChamfer(TopoDS.Edge(e1), TopoDS.Edge(e2), theD1, theD2);
+                aB.AddChamfer(ShapeCasts.Edge(e1), ShapeCasts.Edge(e2), theD1, theD2);
             }
             aB.Build();
             return aB.Shape();
@@ -781,13 +787,13 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
             var aB = new BRepOffsetAPI_MakeOffset();
             if (o.Count > 1)
             {
-                aB.Init(TopoDS.Face(o[1]), aJoin);
+                aB.Init(ShapeCasts.Face(o[1]), aJoin);
             }
             else
             {
                 aB.Init(aJoin);
             }
-            aB.AddWire(TopoDS.Wire(o[0]));
+            aB.AddWire(ShapeCasts.Wire(o[0]));
             aB.Perform(aDistance);
             return aB.Shape();
         });
@@ -818,8 +824,8 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
     private sealed class PArg
     {
         public Geom2dGcc_QualifiedCurve? Q;
-        public Geom2d_CartesianPoint? P;
-        public Geom2dAdaptor_Curve? Adaptor;
+        public CartesianPoint2? P;
+        public CurveAdaptor2D? Adaptor;
         public double First, Last;
     }
 
@@ -849,7 +855,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         return anArgs;
     }
 
-    private static List<PArg> PArgs(TargetData[] theTargets, List<TopoDS_Shape> theOps)
+    private static List<PArg> PArgs(TargetData[] theTargets, List<Shape> theOps)
     {
         var anArgs = new List<PArg>();
         int k = 0;
@@ -857,14 +863,14 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         {
             if (!t.HasEdge)
             {
-                anArgs.Add(new PArg { P = new Geom2d_CartesianPoint(new Point2D(t.X, t.Y)) });
+                anArgs.Add(new PArg { P = new CartesianPoint2(new Point2D(t.X, t.Y)) });
                 continue;
             }
-            TopoDS_Edge anE = TopoDS.Edge(theOps[k++]);
-            Geom_Curve aC = BRep_Tool.Curve(anE, out _, out _)!;
-            BRep_Tool.Range(anE, out double aFirst, out double aLast);
-            Geom2d_Curve aH = GeomAPI.To2d(aC, s_pPlnXY)!;
-            var anA = new Geom2dAdaptor_Curve(aH, aFirst, aLast);
+            Edge anE = ShapeCasts.Edge(theOps[k++]);
+            Curve3D aC = Tool.Curve(anE, out _, out _)!;
+            Tool.Range(anE, out double aFirst, out double aLast);
+            Curve2D aH = GeomAPI.To2d(aC, s_pPlnXY)!;
+            var anA = new CurveAdaptor2D(aH, aFirst, aLast);
             anArgs.Add(new PArg { Q = new Geom2dGcc_QualifiedCurve(anA, (GccEnt_Position)t.Tangency), Adaptor = anA, First = aFirst, Last = aLast });
         }
         return anArgs;
@@ -958,7 +964,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         }, o =>
         {
             var a = PArgs(aTs, o);
-            return G.RunPort(() => G.PCirc2dTanCen(new Geom2dGcc_Circ2dTanCen(a[0].Q!.Value, new Geom2d_CartesianPoint(new Point2D(theX, theY)), Tol)));
+            return G.RunPort(() => G.PCirc2dTanCen(new Geom2dGcc_Circ2dTanCen(a[0].Q!.Value, new CartesianPoint2(new Point2D(theX, theY)), Tol)));
         });
     }
 

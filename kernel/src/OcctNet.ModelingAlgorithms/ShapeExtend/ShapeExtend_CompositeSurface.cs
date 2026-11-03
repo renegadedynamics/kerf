@@ -30,9 +30,9 @@ namespace Occt;
 /// arrays are copies, and <c>Transform</c> copies a frozen patch before transforming it.
 /// </para>
 /// </remarks>
-public class ShapeExtend_CompositeSurface : Geom_Surface
+public class ShapeExtend_CompositeSurface : Surface
 {
-    private NCollection_HArray2<Geom_Surface>? myPatches;
+    private NCollection_HArray2<Surface>? myPatches;
     private NCollection_HArray1<double>? myUJointValues;
     private NCollection_HArray1<double>? myVJointValues;
     private bool myUClosed;
@@ -44,13 +44,13 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     }
 
     /// <summary>A surface on the grid of patches, with joint values computed for the parametrisation.</summary>
-    public ShapeExtend_CompositeSurface(NCollection_HArray2<Geom_Surface>? GridSurf, ShapeExtend_Parametrisation param = ShapeExtend_Natural)
+    public ShapeExtend_CompositeSurface(NCollection_HArray2<Surface>? GridSurf, ShapeExtend_Parametrisation param = ShapeExtend_Natural)
     {
         Init(GridSurf, param);
     }
 
     /// <summary>A surface on the grid of patches with the given joint values.</summary>
-    public ShapeExtend_CompositeSurface(NCollection_HArray2<Geom_Surface>? GridSurf, NCollection_Array1<double> UJoints,
+    public ShapeExtend_CompositeSurface(NCollection_HArray2<Surface>? GridSurf, NCollection_Array1<double> UJoints,
                                         NCollection_Array1<double> VJoints)
     {
         Init(GridSurf, UJoints, VJoints);
@@ -60,14 +60,14 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     /// Initializes the surface with the grid of patches and joint values computed for the parametrisation. False if
     /// the grid is null, or the patches aren't connected (then the surface is initialized anyway).
     /// </summary>
-    internal bool Init(NCollection_HArray2<Geom_Surface>? GridSurf, ShapeExtend_Parametrisation param = ShapeExtend_Natural)
+    internal bool Init(NCollection_HArray2<Surface>? GridSurf, ShapeExtend_Parametrisation param = ShapeExtend_Natural)
     {
         CheckMutable();
         if (GridSurf is null)
         {
             return false;
         }
-        myPatches = new NCollection_HArray2<Geom_Surface>(GridSurf); // OCCT.NET: OCCT shares the caller's array
+        myPatches = new NCollection_HArray2<Surface>(GridSurf); // OCCT.NET: OCCT shares the caller's array
         ComputeJointValues(param);
         return CheckConnectivity(Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -77,14 +77,14 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     /// not the numbers of patches + 1, or not increasing), the natural ones are computed and false is returned; false
     /// also if the patches aren't connected.
     /// </summary>
-    internal bool Init(NCollection_HArray2<Geom_Surface>? GridSurf, NCollection_Array1<double> UJoints, NCollection_Array1<double> VJoints)
+    internal bool Init(NCollection_HArray2<Surface>? GridSurf, NCollection_Array1<double> UJoints, NCollection_Array1<double> VJoints)
     {
         CheckMutable();
         if (GridSurf is null)
         {
             return false;
         }
-        myPatches = new NCollection_HArray2<Geom_Surface>(GridSurf); // OCCT.NET: OCCT shares the caller's array
+        myPatches = new NCollection_HArray2<Surface>(GridSurf); // OCCT.NET: OCCT shares the caller's array
 
         bool ok = true;
         if (!SetUJointValues(UJoints) || !SetVJointValues(VJoints))
@@ -103,16 +103,16 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     public int NbVPatches() => myPatches!.RowLength();
 
     /// <summary>The patch (i, j). Frozen (shared, not copied).</summary>
-    public Geom_Surface Patch(int i, int j) => Shared(myPatches!.Value(i, j));
+    public Surface Patch(int i, int j) => Shared(myPatches!.Value(i, j));
 
     /// <summary>A copy of the grid of patches (the patches themselves shared, and frozen).</summary>
-    public NCollection_HArray2<Geom_Surface>? Patches()
+    public NCollection_HArray2<Surface>? Patches()
     {
         if (myPatches is null)
         {
             return null;
         }
-        var aCopy = new NCollection_HArray2<Geom_Surface>(myPatches);
+        var aCopy = new NCollection_HArray2<Surface>(myPatches);
         for (int i = aCopy.LowerRow(); i <= aCopy.UpperRow(); i++)
         {
             for (int j = aCopy.LowerCol(); j <= aCopy.UpperCol(); j++)
@@ -309,10 +309,10 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     }
 
     /// <summary>The patch holding the global point (U, V). Frozen.</summary>
-    public Geom_Surface Patch(double U, double V) => Shared(myPatches!.Value(LocateUParameter(U), LocateVParameter(V)));
+    public Surface Patch(double U, double V) => Shared(myPatches!.Value(LocateUParameter(U), LocateVParameter(V)));
 
     /// <summary>The patch holding the global point. Frozen.</summary>
-    public Geom_Surface Patch(in Point2D pnt) => Shared(myPatches!.Value(LocateUParameter(pnt.X()), LocateVParameter(pnt.Y())));
+    public Surface Patch(in Point2D pnt) => Shared(myPatches!.Value(LocateUParameter(pnt.X()), LocateVParameter(pnt.Y())));
 
     /// <summary>The global U of the local parameter u on patch (i, j).</summary>
     public double ULocalToGlobal(int i, int j, double u)
@@ -415,10 +415,10 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
             {
                 // OCCT.NET: frozen: OCCT transforms the patch in place, which may be shared; the port transforms its
                 // own copy of a frozen patch.
-                Geom_Surface aPatch = myPatches.Value(i, j);
+                Surface aPatch = myPatches.Value(i, j);
                 if (aPatch.IsFrozen)
                 {
-                    aPatch = (Geom_Surface)aPatch.Copy();
+                    aPatch = (Surface)aPatch.Copy();
                     myPatches.SetValue(i, j, aPatch);
                 }
                 aPatch.Transform(T);
@@ -430,7 +430,7 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     /// A copy with copies of the patches, initialized with the natural parametrisation as OCCT's (the joint values
     /// aren't kept).
     /// </summary>
-    public override Geom_Geometry Copy()
+    public override Geometry3D Copy()
     {
         var surf = new ShapeExtend_CompositeSurface();
         if (myPatches is null)
@@ -438,12 +438,12 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
             return surf;
         }
 
-        var patches = new NCollection_HArray2<Geom_Surface>(1, NbUPatches(), 1, NbVPatches());
+        var patches = new NCollection_HArray2<Surface>(1, NbUPatches(), 1, NbVPatches());
         for (int i = 1; i <= NbUPatches(); i++)
         {
             for (int j = 1; j <= NbVPatches(); j++)
             {
-                patches.SetValue(i, j, (Geom_Surface)myPatches.Value(i, j).Copy());
+                patches.SetValue(i, j, (Surface)myPatches.Value(i, j).Copy());
             }
         }
         surf.Init(patches); // OCCT: the copy gets natural joint values, whatever this surface's are
@@ -491,16 +491,16 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     }
 
     /// <summary>False.</summary>
-    public override bool IsUPeriodic() => false;
+    public override bool IsUPeriodic => false;
 
     /// <summary>False.</summary>
-    public override bool IsVPeriodic() => false;
+    public override bool IsVPeriodic => false;
 
     /// <summary>A null curve: not implemented (as OCCT).</summary>
-    public override Geom_Curve UIso(double U) => null!; // OCCT returns a null handle
+    public override Curve3D UIso(double U) => null!; // OCCT returns a null handle
 
     /// <summary>A null curve: not implemented (as OCCT).</summary>
-    public override Geom_Curve VIso(double V) => null!; // OCCT returns a null handle
+    public override Curve3D VIso(double V) => null!; // OCCT returns a null handle
 
     /// <summary>C0.</summary>
     public override Continuity Continuity() => C0;
@@ -512,10 +512,10 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     public override bool IsCNv(int N) => N <= 0;
 
     /// <summary>True if the first and last U rows meet (computed by <see cref="CheckConnectivity"/>).</summary>
-    public override bool IsUClosed() => myUClosed;
+    public override bool IsUClosed => myUClosed;
 
     /// <summary>True if the first and last V columns meet (computed by <see cref="CheckConnectivity"/>).</summary>
-    public override bool IsVClosed() => myVClosed;
+    public override bool IsVClosed => myVClosed;
 
     public override Point3D EvalD0(double U, double V)
     {
@@ -628,7 +628,7 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     private static double LimitValue(double par) =>
         Kerf.Engine.Foundation.Precision.IsInfinite(par) ? (par < 0 ? -10000.0 : 10000.0) : par;
 
-    private static void GetLimitedBounds(Geom_Surface surf, out double U1, out double U2, out double V1, out double V2)
+    private static void GetLimitedBounds(Surface surf, out double U1, out double U2, out double V1, out double V2)
     {
         surf.Bounds(out U1, out U2, out V1, out V2);
         U1 = LimitValue(U1);
@@ -656,8 +656,8 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
             double maxdist2 = 0.0;
             for (int k = 1; k <= NbV; k++)
             {
-                Geom_Surface sj = myPatches!.Value(j, k);
-                Geom_Surface si = myPatches.Value(i, k);
+                Surface sj = myPatches!.Value(j, k);
+                Surface si = myPatches.Value(i, k);
                 GetLimitedBounds(sj, out _, out double Uj2, out double Vj1, out double Vj2);
                 GetLimitedBounds(si, out double Ui1, out _, out double Vi1, out double Vi2);
                 double stepj = (Vj2 - Vj1) / (NPOINTS - 1);
@@ -689,8 +689,8 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
             double maxdist2 = 0.0;
             for (int k = 1; k <= NbU; k++)
             {
-                Geom_Surface sj = myPatches!.Value(k, j);
-                Geom_Surface si = myPatches.Value(k, i);
+                Surface sj = myPatches!.Value(k, j);
+                Surface si = myPatches.Value(k, i);
                 GetLimitedBounds(sj, out double Uj1, out double Uj2, out _, out double Vj2);
                 GetLimitedBounds(si, out double Ui1, out double Ui2, out double Vi1, out _);
                 double stepj = (Uj2 - Uj1) / (NPOINTS - 1);
@@ -720,7 +720,7 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     }
 
     // Freezes a patch handed out (shared, not copied), as Geom_RectangularTrimmedSurface's BasisSurface.
-    private static Geom_Surface Shared(Geom_Surface thePatch)
+    private static Surface Shared(Surface thePatch)
     {
         thePatch.Freeze();
         return thePatch;

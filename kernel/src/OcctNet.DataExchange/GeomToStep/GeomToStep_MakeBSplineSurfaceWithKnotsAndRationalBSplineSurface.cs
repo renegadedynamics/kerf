@@ -28,7 +28,7 @@ public sealed class GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurf
     //=============================================================================
 
     /// <summary>A B-spline surface with its weights, its poles divided by the length factor.</summary>
-    public GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface(Geom_BSplineSurface BS, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface(BSplineSurface BS, in StepData_Factors theLocalFactors)
     {
         StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface BSWK;
         int aUDegree, aVDegree, NU, NV, i, j, NUknots, NVknots, itampon;
@@ -46,8 +46,8 @@ public sealed class GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurf
         aUDegree = BS.UDegree();
         aVDegree = BS.VDegree();
 
-        NU = BS.NbUPoles();
-        NV = BS.NbVPoles();
+        NU = BS.UPoleCount;
+        NV = BS.VPoleCount;
         NCollection_Array2<Point3D> P = BS.InternalPoles();
         aControlPointsList = new NCollection_HArray2<StepGeom_CartesianPoint>(1, NU, 1, NV);
         for (i = P.LowerRow(); i <= P.UpperRow(); i++)
@@ -62,7 +62,7 @@ public sealed class GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurf
 
         aSurfaceForm = StepGeom_bssfUnspecified;
 
-        if (BS.IsUClosed())
+        if (BS.IsUClosed)
         {
             aUClosed = StepData_LTrue;
         }
@@ -71,7 +71,7 @@ public sealed class GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurf
             aUClosed = StepData_LFalse;
         }
 
-        if (BS.IsVClosed())
+        if (BS.IsVClosed)
         {
             aVClosed = StepData_LTrue;
         }
@@ -82,8 +82,8 @@ public sealed class GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurf
 
         aSelfIntersect = StepData_LFalse;
 
-        NUknots = BS.NbUKnots();
-        NVknots = BS.NbVKnots();
+        NUknots = BS.UKnotCount;
+        NVknots = BS.VKnotCount;
         NCollection_Array1<int> MU = BS.InternalUMultiplicities();
         aUMultiplicities = new NCollection_HArray1<int>(1, NUknots);
         for (i = MU.Lower(); i <= MU.Upper(); i++)
@@ -169,7 +169,7 @@ public sealed class GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurf
     }
 
     /// <summary>A B-spline surface with its weights (default factors).</summary>
-    public GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface(Geom_BSplineSurface BS) : this(BS, new StepData_Factors())
+    public GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface(BSplineSurface BS) : this(BS, new StepData_Factors())
     {
     }
 

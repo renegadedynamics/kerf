@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Properties;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -15,24 +16,24 @@ namespace Occt;
 /// out.</remarks>
 public sealed class MAT2d_CutCurve
 {
-    private readonly NCollection_Sequence<Geom2d_Curve> theCurves = new();
+    private readonly NCollection_Sequence<Curve2D> theCurves = new();
 
     public MAT2d_CutCurve()
     {
     }
 
-    public MAT2d_CutCurve(Geom2d_Curve C)
+    public MAT2d_CutCurve(Curve2D C)
     {
         Perform(C);
     }
 
     /// <summary>Cuts C at the extrema of curvature and at the inflections.</summary>
-    public void Perform(Geom2d_Curve C)
+    public void Perform(Curve2D C)
     {
         theCurves.Clear();
 
-        GeomLProp_CurAndInf2d Sommets = new();
-        Geom2d_TrimmedCurve TrimC;
+        CurAndInf2d Sommets = new();
+        TrimmedCurve2D TrimC;
         double UF, UL, UC;
         Point2D PF, PL, PC;
         double PTol = global::Kerf.Engine.Foundation.Precision.PConfusion() * 10;
@@ -40,14 +41,14 @@ public sealed class MAT2d_CutCurve
         bool YaCut = false;
         Sommets.Perform(C);
 
-        if (Sommets.IsDone() && !Sommets.IsEmpty())
+        if (Sommets.IsDone && !Sommets.IsEmpty)
         {
             UF = C.FirstParameter();
             UL = C.LastParameter();
             PF = C.Value(UF);
             PL = C.Value(UL);
 
-            for (int i = 1; i <= Sommets.NbPoints(); i++)
+            for (int i = 1; i <= Sommets.PointCount; i++)
             {
                 UC = Sommets.Parameter(i);
 
@@ -58,7 +59,7 @@ public sealed class MAT2d_CutCurve
                     {
                         break;
                     }
-                    TrimC = new Geom2d_TrimmedCurve(C, UF, UC);
+                    TrimC = new TrimmedCurve2D(C, UF, UC);
                     theCurves.Append(TrimC);
                     UF = UC;
                     PF = PC;
@@ -67,7 +68,7 @@ public sealed class MAT2d_CutCurve
             }
             if (YaCut)
             {
-                TrimC = new Geom2d_TrimmedCurve(C, UF, UL);
+                TrimC = new TrimmedCurve2D(C, UF, UL);
                 theCurves.Append(TrimC);
             }
         }
@@ -87,7 +88,7 @@ public sealed class MAT2d_CutCurve
     }
 
     /// <summary>The curve of index Index.</summary>
-    public Geom2d_TrimmedCurve Value(int Index)
+    public TrimmedCurve2D Value(int Index)
     {
         if (UnModified())
         {
@@ -97,6 +98,6 @@ public sealed class MAT2d_CutCurve
         {
             throw new OutOfRangeException();
         }
-        return (Geom2d_TrimmedCurve)theCurves.Value(Index);
+        return (TrimmedCurve2D)theCurves.Value(Index);
     }
 }

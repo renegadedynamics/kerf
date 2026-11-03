@@ -6,6 +6,7 @@
 using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 
 namespace Occt;
 
@@ -21,12 +22,12 @@ namespace Occt;
 /// </remarks>
 public class NLPlate_NLPlate
 {
-    private readonly Geom_Surface myInitialSurface;
+    private readonly Surface myInitialSurface;
     private readonly NCollection_Sequence<NLPlate_HGPPConstraint> myHGPPConstraints = new();
     private readonly NCollection_List<Plate_Plate> mySOP = new();
     private bool OK;
 
-    public NLPlate_NLPlate(Geom_Surface InitialSurface)
+    public NLPlate_NLPlate(Surface InitialSurface)
     {
         myInitialSurface = InitialSurface;
         OK = false;

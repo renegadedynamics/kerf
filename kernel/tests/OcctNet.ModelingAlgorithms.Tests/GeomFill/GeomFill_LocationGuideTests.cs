@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static OcctNet.ModelingAlgorithms.Tests.LocationLawTestSupport;
 
@@ -18,17 +19,17 @@ public class GeomFill_LocationGuideTests
     // The path: the Z axis over [0, 4]; the guide: the parallel line at radius 2 and angle Theta.
     private static (GeomFill_LocationGuide Law, TestFixedGuideTrihedron Tri) Guided()
     {
-        var aGuide = new GeomAdaptor_Curve(
-            new Geom_Line(new Point3D(2 * Math.Cos(Theta), 2 * Math.Sin(Theta), 0), new Direction3D(0, 0, 1)), -1, 5);
+        var aGuide = new CurveAdaptor(
+            new LineCurve3D(new Point3D(2 * Math.Cos(Theta), 2 * Math.Sin(Theta), 0), new Direction3D(0, 0, 1)), -1, 5);
         var aTri = new TestFixedGuideTrihedron(aGuide, new Vector3D(0, 0, 1), new Vector3D(1, 0, 0));
         var aLaw = new GeomFill_LocationGuide(aTri);
-        Assert.True(aLaw.SetCurve(new GeomAdaptor_Curve(new Geom_Line(Constants.OZ()), 0, 4)));
+        Assert.True(aLaw.SetCurve(new CurveAdaptor(new LineCurve3D(Constants.OZ()), 0, 4)));
         return (aLaw, aTri);
     }
 
     // The section: the radial segment [0, 3] along X, which the rotation must turn onto the guide.
     private static GeomFill_UniformSection Segment() =>
-        new(new Geom_TrimmedCurve(new Geom_Line(Constants.OX()), 0, 3), 0, 4);
+        new(new TrimmedCurve3D(new LineCurve3D(Constants.OX()), 0, 3), 0, 4);
 
     [Fact]
     public void WithoutRotation_IsTheTrihedron()
@@ -98,7 +99,7 @@ public class GeomFill_LocationGuideTests
         Assert.False(aLaw.D1(1, ref Mx, ref Vx, ref DMx, ref DVx, P, DP));
         Assert.False(aLaw.D2(1, ref Mx, ref Vx, ref DMx, ref DVx, ref D2Mx, ref D2Vx, P, DP, DP));
 
-        Assert.IsType<Geom_TrimmedCurve>(aLaw.Section());
+        Assert.IsType<TrimmedCurve3D>(aLaw.Section());
 
         aLaw.EraseRotation();
         Matrix3x3 M3 = new();

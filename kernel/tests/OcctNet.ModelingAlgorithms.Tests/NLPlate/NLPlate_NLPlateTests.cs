@@ -11,7 +11,7 @@ public class NLPlate_NLPlateTests
 {
     private static readonly Xyz s_zero = new(0.0, 0.0, 0.0);
 
-    private static Geom_Plane XYPlane() => new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+    private static PlaneSurface XYPlane() => new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
 
     private static void AssertNear(in Xyz theExpected, in Xyz theActual, double theTol)
     {

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation.Advanced;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
@@ -21,15 +22,15 @@ namespace Occt;
 public class GeomPlate_MakeApprox
 {
     private readonly GeomPlate_Surface myPlate;
-    private readonly Geom_BSplineSurface? mySurface;
+    private readonly BSplineSurface? mySurface;
     private readonly double myAppError;
     private readonly double myCritError;
 
-    private sealed class GeomPlate_MakeApprox_Eval : AdvApp2Var_EvaluatorFunc2Var
+    private sealed class GeomPlate_MakeApprox_Eval : EvaluatorFunc2Var
     {
-        private readonly Geom_Surface mySurf;
+        private readonly Surface mySurf;
 
-        public GeomPlate_MakeApprox_Eval(Geom_Surface theSurf)
+        public GeomPlate_MakeApprox_Eval(Surface theSurf)
         {
             mySurf = theSurf;
         }
@@ -222,7 +223,7 @@ public class GeomPlate_MakeApprox
 
     /// <summary>Approximates <paramref name="SurfPlate"/> under the criterion <paramref name="PlateCrit"/>.</summary>
     /// <exception cref="ConstructionErrorException">The approximation fails.</exception>
-    public GeomPlate_MakeApprox(GeomPlate_Surface SurfPlate, AdvApp2Var_Criterion PlateCrit, double Tol3d, int Nbmax,
+    public GeomPlate_MakeApprox(GeomPlate_Surface SurfPlate, Criterion PlateCrit, double Tol3d, int Nbmax,
                                 int dgmax, Continuity Continuity = C1, double EnlargeCoeff = 1.1)
     {
         myPlate = SurfPlate;
@@ -246,10 +247,10 @@ public class GeomPlate_MakeApprox
         IsoType myType = IsoType.IsoV;
         int myPrec = 0;
 
-        AdvApprox_DichoCutting myDec = new AdvApprox_DichoCutting();
+        DichoCutting myDec = new DichoCutting();
 
         GeomPlate_MakeApprox_Eval ev = new GeomPlate_MakeApprox_Eval(myPlate);
-        AdvApp2Var_ApproxAFunc2Var AppPlate = new AdvApp2Var_ApproxAFunc2Var(nb1, nb2, nb3, nul1, nul1, eps3D, nul2, nul2,
+        ApproxAFunc2Var AppPlate = new ApproxAFunc2Var(nb1, nb2, nb3, nul1, nul1, eps3D, nul2, nul2,
                                                                             epsfr, U0, U1, V0, V1, myType, Continuity,
                                                                             Continuity, myPrec, dgmax, dgmax, Nbmax, ev,
                                                                             PlateCrit, myDec, myDec);
@@ -331,13 +332,13 @@ public class GeomPlate_MakeApprox
         IsoType myType = IsoType.IsoV;
         int myPrec = 0;
 
-        AdvApprox_DichoCutting myDec = new AdvApprox_DichoCutting();
+        DichoCutting myDec = new DichoCutting();
 
         if (CritOrder == -1)
         {
             myPrec = 1;
             GeomPlate_MakeApprox_Eval ev = new GeomPlate_MakeApprox_Eval(myPlate);
-            AdvApp2Var_ApproxAFunc2Var AppPlate = new AdvApp2Var_ApproxAFunc2Var(nb1, nb2, nb3, nul1, nul1, eps3D, nul2,
+            ApproxAFunc2Var AppPlate = new ApproxAFunc2Var(nb1, nb2, nb3, nul1, nul1, eps3D, nul2,
                                                                                 nul2, epsfr, U0, U1, V0, V1, myType,
                                                                                 Continuity, Continuity, myPrec, dgmax,
                                                                                 dgmax, Nbmax, ev, myDec, myDec);
@@ -349,7 +350,7 @@ public class GeomPlate_MakeApprox
         {
             GeomPlate_PlateG0Criterion Crit0 = new GeomPlate_PlateG0Criterion(Seq2d, Seq3d, seuil);
             GeomPlate_MakeApprox_Eval ev = new GeomPlate_MakeApprox_Eval(myPlate);
-            AdvApp2Var_ApproxAFunc2Var AppPlate = new AdvApp2Var_ApproxAFunc2Var(nb1, nb2, nb3, nul1, nul1, eps3D, nul2,
+            ApproxAFunc2Var AppPlate = new ApproxAFunc2Var(nb1, nb2, nb3, nul1, nul1, eps3D, nul2,
                                                                                 nul2, epsfr, U0, U1, V0, V1, myType,
                                                                                 Continuity, Continuity, myPrec, dgmax,
                                                                                 dgmax, Nbmax, ev, Crit0, myDec, myDec);
@@ -361,7 +362,7 @@ public class GeomPlate_MakeApprox
         {
             GeomPlate_PlateG1Criterion Crit1 = new GeomPlate_PlateG1Criterion(Seq2d, Seq3d, seuil);
             GeomPlate_MakeApprox_Eval ev = new GeomPlate_MakeApprox_Eval(myPlate);
-            AdvApp2Var_ApproxAFunc2Var AppPlate = new AdvApp2Var_ApproxAFunc2Var(nb1, nb2, nb3, nul1, nul1, eps3D, nul2,
+            ApproxAFunc2Var AppPlate = new ApproxAFunc2Var(nb1, nb2, nb3, nul1, nul1, eps3D, nul2,
                                                                                 nul2, epsfr, U0, U1, V0, V1, myType,
                                                                                 Continuity, Continuity, myPrec, dgmax,
                                                                                 dgmax, Nbmax, ev, Crit1, myDec, myDec);
@@ -373,14 +374,14 @@ public class GeomPlate_MakeApprox
     }
 
     /// <summary>The approximating surface (frozen; null for a criterion order other than -1, 0 or 1).</summary>
-    public Geom_BSplineSurface? Surface()
+    public BSplineSurface? Surface()
     {
         mySurface?.Freeze();
         return mySurface;
     }
 
     /// <summary>The approximating surface, not frozen, for ported code.</summary>
-    internal Geom_BSplineSurface? InternalSurface() => mySurface;
+    internal BSplineSurface? InternalSurface() => mySurface;
 
     public double ApproxError() => myAppError;
 

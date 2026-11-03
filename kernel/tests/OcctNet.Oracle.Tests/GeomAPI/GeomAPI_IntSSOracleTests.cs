@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Reflection;
@@ -68,13 +72,13 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
     }
 
     /// <summary>The BRep text of a face on the port's surface (corpus surfaces, made by Draw-lite).</summary>
-    private string FaceText(Geom_Surface theSurface)
+    private string FaceText(Surface theSurface)
     {
-        var aBuilder = new BRep_Builder();
-        var aFace = new TopoDS_Face();
+        var aBuilder = new BrepBuilder();
+        var aFace = new Face();
         aBuilder.MakeFace(ref aFace, theSurface, Tol);
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(aFace, aFile));
+        Assert.True(BrepTools.Write(aFace, aFile));
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 
@@ -88,12 +92,12 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
         return N.BRep_Tool.Surface(N.TopoDS.Face(aShape))!;
     }
 
-    private Geom_Surface PortSurface(string theText)
+    private Surface PortSurface(string theText)
     {
         string aFile = NewFile();
         File.WriteAllText(aFile, theText, Encoding.Latin1);
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aFile));
-        return BRep_Tool.Surface(TopoDS.Face(aShape))!;
+        Assert.True(BrepTools.Read(out Shape aShape, aFile));
+        return Tool.Surface(ShapeCasts.Face(aShape))!;
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -124,7 +128,7 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
         }
     }
 
-    private static Outcome<Geom_Curve> RunPort(Geom_Surface theS1, Geom_Surface theS2)
+    private static Outcome<Curve3D> RunPort(Surface theS1, Surface theS2)
     {
         try
         {
@@ -133,7 +137,7 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
             {
                 return new("not done", []);
             }
-            List<Geom_Curve> aLines = [];
+            List<Curve3D> aLines = [];
             for (int i = 1; i <= anInter.NbLines(); i++)
             {
                 aLines.Add(anInter.Line(i));
@@ -152,13 +156,13 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
     }
 
     /// <summary>The port's lines as text (the BRep text of an edge on each), for the determinism checks.</summary>
-    private string PortText(Outcome<Geom_Curve> theOutcome)
+    private string PortText(Outcome<Curve3D> theOutcome)
     {
         var aText = new StringBuilder(theOutcome.Status).Append('\n');
-        foreach (Geom_Curve aLine in theOutcome.Lines)
+        foreach (Curve3D aLine in theOutcome.Lines)
         {
             string aFile = NewFile();
-            Assert.True(BRepTools.Write(new BRepBuilderAPI_MakeEdge(aLine).Edge(), aFile));
+            Assert.True(BrepTools.Write(new BRepBuilderAPI_MakeEdge(aLine).Edge(), aFile));
             aText.Append(File.ReadAllText(aFile, Encoding.Latin1));
         }
         return aText.ToString();
@@ -213,12 +217,12 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
     {
         using N.Geom_Surface aN1 = NativeSurface(thePair.Text1);
         using N.Geom_Surface aN2 = NativeSurface(thePair.Text2);
-        Geom_Surface aP1 = PortSurface(thePair.Text1), aP2 = PortSurface(thePair.Text2);
+        Surface aP1 = PortSurface(thePair.Text1), aP2 = PortSurface(thePair.Text2);
 
         Outcome<N.Geom_Curve> aNative = RunNative(aN1, aN2);
         Outcome<N.Geom_Curve> aNative2 = RunNative(aN1, aN2);
         bool aNativeStable = NativeText(aNative) == NativeText(aNative2);
-        Outcome<Geom_Curve> aPort = RunPort(aP1, aP2);
+        Outcome<Curve3D> aPort = RunPort(aP1, aP2);
 
         theTally.Pairs++;
         if (aNative.Lines.Count > 0)
@@ -490,18 +494,18 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
         return aPairs;
     }
 
-    private static string KindOf(Geom_Surface theS) => theS switch
+    private static string KindOf(Surface theS) => theS switch
     {
-        Geom_Plane => Kinds[0],
-        Geom_CylindricalSurface => Kinds[1],
-        Geom_ConicalSurface => Kinds[2],
-        Geom_SphericalSurface => Kinds[3],
-        Geom_ToroidalSurface => Kinds[4],
-        Geom_SurfaceOfRevolution => Kinds[5],
-        Geom_SurfaceOfLinearExtrusion => Kinds[6],
-        Geom_BezierSurface => Kinds[7],
-        Geom_BSplineSurface => Kinds[8],
-        Geom_OffsetSurface => Kinds[9],
+        PlaneSurface => Kinds[0],
+        CylindricalSurface => Kinds[1],
+        ConicalSurface => Kinds[2],
+        SphericalSurface => Kinds[3],
+        ToroidalSurface => Kinds[4],
+        RevolutionSurface => Kinds[5],
+        ExtrusionSurface => Kinds[6],
+        BezierSurface => Kinds[7],
+        BSplineSurface => Kinds[8],
+        OffsetSurface => Kinds[9],
         _ => Kinds[10],
     };
 
@@ -552,7 +556,7 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
         aScanner.LoadDrawResources(aResources);
         List<DrawTestCase> aCases = aCorpus.Cases().Where(c => c.Group == "lowalgos" && c.Grid == "intss")
                                            .Where(c => aCorpus.Scan(c, aScanner).IsRunnable).ToList();
-        var aRecorded = new ConcurrentBag<(string Case, int Call, Geom_Surface S1, Geom_Surface S2)>();
+        var aRecorded = new ConcurrentBag<(string Case, int Call, Surface S1, Surface S2)>();
         int anOtherForms = 0;
         foreach (DrawTestCase aCase in Tape.Budget(aCases, isSpread: true))
         {
@@ -563,8 +567,8 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
                 theDI.Register("intersect", (i, a) =>
                 {
                     if (a.Count is 4 or 5
-                        && (i.GetDrawable(a[2]) as DrawGeometry)?.Geometry is Geom_Surface aS1
-                        && (i.GetDrawable(a[3]) as DrawGeometry)?.Geometry is Geom_Surface aS2
+                        && (i.GetDrawable(a[2]) as DrawGeometry)?.Geometry is Surface aS1
+                        && (i.GetDrawable(a[3]) as DrawGeometry)?.Geometry is Surface aS2
                         && (a.Count == 4 || i.Atof(a[4]) == Tol))
                     {
                         aRecorded.Add((aCase.Id, ++aCall, aS1, aS2));

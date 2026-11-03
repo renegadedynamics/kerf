@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2015-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -14,7 +15,7 @@ namespace Occt;
 /// </summary>
 public class BlendFunc_ConstThroatWithPenetrationInv : BlendFunc_ConstThroatInv
 {
-    public BlendFunc_ConstThroatWithPenetrationInv(Adaptor3d_Surface S1, Adaptor3d_Surface S2, Adaptor3d_Curve C)
+    public BlendFunc_ConstThroatWithPenetrationInv(SurfaceAdaptorBase S1, SurfaceAdaptorBase S2, CurveAdaptorBase C)
         : base(S1, S2, C)
     {
     }

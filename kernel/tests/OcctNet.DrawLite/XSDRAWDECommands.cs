@@ -8,7 +8,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2023-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Globalization;
 using System.Text;
 using Occt;
@@ -117,7 +121,7 @@ internal static class XSDRAWDECommands
         {
             if (isNoDoc)
             {
-                aStat = aConf.Read(theDI, aFilePath, out TopoDS_Shape aShape);
+                aStat = aConf.Read(theDI, aFilePath, out Shape aShape);
                 if (aStat)
                 {
                     theDI.SetShape(aDocShapeName, aShape);
@@ -188,8 +192,8 @@ internal static class XSDRAWDECommands
         {
             if (isNoDoc)
             {
-                TopoDS_Shape aShape = theDI.GetShape(aDocShapeName);
-                if (aShape.IsNull())
+                Shape aShape = theDI.GetShape(aDocShapeName);
+                if (aShape.IsNull)
                 {
                     theResult.Append("Error: incorrect shape ").Append(aDocShapeName).Append('\n');
                     return 1;
@@ -297,8 +301,8 @@ internal static class XSDRAWDECommands
 
         // DEBREP_ConfigurationNode
         private bool myBrepWriteBinary = true;
-        private BinTools_FormatVersion myBrepVersionBin = BinTools_FormatVersion.BinTools_FormatVersion_CURRENT;
-        private TopTools_FormatVersion myBrepVersionAscii = TopTools_FormatVersion.TopTools_FormatVersion_CURRENT;
+        private global::Kerf.Engine.Exchange.Brep.Binary.BinaryFormatVersion myBrepVersionBin = global::Kerf.Engine.Exchange.Brep.Binary.BinaryFormatVersion.FormatVersion_CURRENT;
+        private FormatVersion myBrepVersionAscii = FormatVersion.FormatVersion_CURRENT;
         private bool myBrepWriteTriangles = true;
         private bool myBrepWriteNormals = true;
 
@@ -321,8 +325,8 @@ internal static class XSDRAWDECommands
             myGltfMergeFaces = aResource.BooleanVal("write.merge.faces", myGltfMergeFaces, "provider.GLTF.OCC");
             const string aBrep = "provider.BREP.OCC";
             myBrepWriteBinary = aResource.BooleanVal("write.binary", myBrepWriteBinary, aBrep);
-            myBrepVersionBin = (BinTools_FormatVersion)aResource.IntegerVal("write.version.binary", (int)myBrepVersionBin, aBrep);
-            myBrepVersionAscii = (TopTools_FormatVersion)aResource.IntegerVal("write.version.ascii", (int)myBrepVersionAscii, aBrep);
+            myBrepVersionBin = (global::Kerf.Engine.Exchange.Brep.Binary.BinaryFormatVersion)aResource.IntegerVal("write.version.binary", (int)myBrepVersionBin, aBrep);
+            myBrepVersionAscii = (FormatVersion)aResource.IntegerVal("write.version.ascii", (int)myBrepVersionAscii, aBrep);
             myBrepWriteTriangles = aResource.BooleanVal("write.triangles", myBrepWriteTriangles, aBrep);
             myBrepWriteNormals = aResource.BooleanVal("write.normals", myBrepWriteNormals, aBrep);
             return true;
@@ -446,16 +450,16 @@ internal static class XSDRAWDECommands
             => find(theDI, thePath, true) switch
             {
                 Format.Step => readStep(theDI, thePath, theDocument),
-                Format.Stl => readStl(theDI, thePath, out TopoDS_Shape aShape) && addShape(theDocument, aShape),
+                Format.Stl => readStl(theDI, thePath, out Shape aShape) && addShape(theDocument, aShape),
                 Format.Gltf => readGltf(theDI, thePath, theName, theDocument),
-                Format.Brep => readBrep(theDI, thePath, out TopoDS_Shape aShape) && addShape(theDocument, aShape),
+                Format.Brep => readBrep(theDI, thePath, out Shape aShape) && addShape(theDocument, aShape),
                 Format aFormat => unsupported(theDI, thePath, aFormat),
             };
 
         // DE_Wrapper::Read(path, shape, session)
-        public bool Read(DrawInterpreter theDI, string thePath, out TopoDS_Shape theShape)
+        public bool Read(DrawInterpreter theDI, string thePath, out Shape theShape)
         {
-            theShape = new TopoDS_Shape();
+            theShape = new Shape();
             switch (find(theDI, thePath, true))
             {
                 case Format.Step:
@@ -476,14 +480,14 @@ internal static class XSDRAWDECommands
             => find(theDI, thePath, false) switch
             {
                 Format.Step => writeStep(theDI, thePath, theDocument),
-                Format.Stl => freeShape(theDI, thePath, theDocument, "DESTL_Provider", out TopoDS_Shape aShape) && writeStl(theDI, thePath, aShape),
+                Format.Stl => freeShape(theDI, thePath, theDocument, "DESTL_Provider", out Shape aShape) && writeStl(theDI, thePath, aShape),
                 Format.Gltf => writeGltf(theDI, thePath, theDocument),
-                Format.Brep => freeShape(theDI, thePath, theDocument, "DEBREP_Provider", out TopoDS_Shape aShape) && writeBrep(theDI, thePath, aShape),
+                Format.Brep => freeShape(theDI, thePath, theDocument, "DEBREP_Provider", out Shape aShape) && writeBrep(theDI, thePath, aShape),
                 Format aFormat => unsupported(theDI, thePath, aFormat),
             };
 
         // DE_Wrapper::Write(path, shape, session)
-        public bool Write(DrawInterpreter theDI, string thePath, TopoDS_Shape theShape)
+        public bool Write(DrawInterpreter theDI, string thePath, Shape theShape)
         {
             switch (find(theDI, thePath, false))
             {
@@ -505,16 +509,16 @@ internal static class XSDRAWDECommands
             }
         }
 
-        private static bool addShape(XdeDoc_Document theDocument, TopoDS_Shape theShape)
+        private static bool addShape(XdeDoc_Document theDocument, Shape theShape)
         {
             theDocument.AddShape(theShape);
             return true;
         }
 
         // DESTL_Provider and DEBREP_Provider::Write(document): the free shape, or a compound of the free shapes
-        private static bool freeShape(DrawInterpreter theDI, string thePath, XdeDoc_Document theDocument, string theProvider, out TopoDS_Shape theShape)
+        private static bool freeShape(DrawInterpreter theDI, string thePath, XdeDoc_Document theDocument, string theProvider, out Shape theShape)
         {
-            theShape = new TopoDS_Shape();
+            theShape = new Shape();
             var aLabels = new NCollection_Sequence<XdeDoc_Label>();
             theDocument.GetFreeShapes(aLabels);
             if (aLabels.Length() <= 0)
@@ -527,8 +531,8 @@ internal static class XSDRAWDECommands
             }
             else
             {
-                TopoDS_Compound aComp = new();
-                var aBuilder = new BRep_Builder();
+                Compound aComp = new();
+                var aBuilder = new BrepBuilder();
                 aBuilder.MakeCompound(ref aComp);
                 for (int anIndex = 1; anIndex <= aLabels.Length(); anIndex++)
                 {
@@ -571,9 +575,9 @@ internal static class XSDRAWDECommands
             return true;
         }
 
-        private bool readStep(DrawInterpreter theDI, string thePath, out TopoDS_Shape theShape)
+        private bool readStep(DrawInterpreter theDI, string thePath, out Shape theShape)
         {
-            theShape = new TopoDS_Shape();
+            theShape = new Shape();
             XSControl_WorkSession aWS = XSDRAWCommands.Session(theDI);
             STEPControl_Controller.SelectFor(aWS);
             var aReader = new STEPControl_Reader();
@@ -636,7 +640,7 @@ internal static class XSDRAWDECommands
             };
         }
 
-        private bool writeStep(DrawInterpreter theDI, string thePath, TopoDS_Shape theShape)
+        private bool writeStep(DrawInterpreter theDI, string thePath, Shape theShape)
         {
             XSControl_WorkSession aWS = XSDRAWCommands.Session(theDI);
             STEPControl_Controller.SelectFor(aWS);
@@ -672,9 +676,9 @@ internal static class XSDRAWDECommands
         // ---------------------------------------------------------------------------------------------------------
         // DESTL_Provider
 
-        private bool readStl(DrawInterpreter theDI, string thePath, out TopoDS_Shape theShape)
+        private bool readStl(DrawInterpreter theDI, string thePath, out Shape theShape)
         {
-            theShape = new TopoDS_Shape();
+            theShape = new Shape();
             warn(theDI, "OCCT Stl reader does not support model scaling according to custom length unit");
             double aMergeAngle = myStlMergeAngle * Math.PI / 180.0;
             if (aMergeAngle != Math.PI / 2 && (aMergeAngle < 0.0 || aMergeAngle > Math.PI / 2))
@@ -693,8 +697,8 @@ internal static class XSDRAWDECommands
             if (!myStlReadBRep)
             {
                 Triangulation? aTriangulation = aBytes.Length > 0 ? RWStl.ReadFile(new MemoryStream(aBytes), aMergeAngle) : null;
-                TopoDS_Face aFace = new();
-                var aB = new BRep_Builder();
+                Face aFace = new();
+                var aB = new BrepBuilder();
                 aB.MakeFace(ref aFace);
                 aB.UpdateFace(aFace, aTriangulation);
                 theShape = aFace;
@@ -706,7 +710,7 @@ internal static class XSDRAWDECommands
             return true;
         }
 
-        private bool writeStl(DrawInterpreter theDI, string thePath, TopoDS_Shape theShape)
+        private bool writeStl(DrawInterpreter theDI, string thePath, Shape theShape)
         {
             warn(theDI, "OCCT Stl writer does not support model scaling according to custom length unit");
             if (myLengthUnit != 1.0)
@@ -746,9 +750,9 @@ internal static class XSDRAWDECommands
             return true;
         }
 
-        private bool readGltf(DrawInterpreter theDI, string thePath, out TopoDS_Shape theShape)
+        private bool readGltf(DrawInterpreter theDI, string thePath, out Shape theShape)
         {
-            theShape = new TopoDS_Shape();
+            theShape = new Shape();
             XdeDoc_Tree? aTree = XSDRAWMeshCommands.ReadGltfTree(theDI, thePath, myLengthUnit / 1000.0);
             if (aTree is null)
             {
@@ -780,9 +784,9 @@ internal static class XSDRAWDECommands
         // ---------------------------------------------------------------------------------------------------------
         // DEBREP_Provider
 
-        private static bool readBrep(DrawInterpreter theDI, string thePath, out TopoDS_Shape theShape)
+        private static bool readBrep(DrawInterpreter theDI, string thePath, out Shape theShape)
         {
-            theShape = new TopoDS_Shape();
+            theShape = new Shape();
             if (!theDI.Files.TryReadBytes(thePath, out byte[] aBytes) || aBytes.Length < 255)
             {
                 // the 255 bytes read to recognise the format
@@ -791,16 +795,16 @@ internal static class XSDRAWDECommands
             bool isBinaryFormat = !aBytes.AsSpan().StartsWith("DBRep_DrawableShape"u8);
             if (isBinaryFormat)
             {
-                BinTools.Read(out theShape, new MemoryStream(aBytes, false));
+                global::Kerf.Engine.Exchange.Brep.Binary.BinTools.Read(out theShape, new MemoryStream(aBytes, false));
                 return true;
             }
             // BRepTools::Read(shape, file): the shape set, then the shape
             string aText = Encoding.Latin1.GetString(aBytes);
             var aReader = new StringReader(aText);
             global::Kerf.Engine.Foundation.StreamUtilities.SetInputLength(aReader, aText.Length);
-            var aShapeSet = new BRepTools_ShapeSet();
+            var aShapeSet = new BrepShapeSet();
             aShapeSet.Read(aReader);
-            if (aShapeSet.NbShapes() == 0)
+            if (aShapeSet.ShapeCount == 0)
             {
                 return fail(theDI, "Error in the DEBREP_Provider during reading the file " + thePath + "\t: Cannot read from the file");
             }
@@ -808,7 +812,7 @@ internal static class XSDRAWDECommands
             return true;
         }
 
-        private bool writeBrep(DrawInterpreter theDI, string thePath, TopoDS_Shape theShape)
+        private bool writeBrep(DrawInterpreter theDI, string thePath, Shape theShape)
         {
             if (myLengthUnit != 1.0)
             {
@@ -817,35 +821,35 @@ internal static class XSDRAWDECommands
             }
             if (myBrepWriteBinary)
             {
-                if (myBrepVersionBin > (BinTools_FormatVersion)BinTools_FormatVersionBounds.BinTools_FormatVersion_UPPER
-                    || myBrepVersionBin < (BinTools_FormatVersion)BinTools_FormatVersionBounds.BinTools_FormatVersion_LOWER)
+                if (myBrepVersionBin > (global::Kerf.Engine.Exchange.Brep.Binary.BinaryFormatVersion)global::Kerf.Engine.Exchange.Brep.Binary.BinaryFormatVersionBounds.BinTools_FormatVersion_UPPER
+                    || myBrepVersionBin < (global::Kerf.Engine.Exchange.Brep.Binary.BinaryFormatVersion)global::Kerf.Engine.Exchange.Brep.Binary.BinaryFormatVersionBounds.BinTools_FormatVersion_LOWER)
                 {
                     return fail(theDI, "Error in the DEBREP_Provider during writing the file " + thePath + "\t: Unknown format version");
                 }
-                if (myBrepWriteNormals && myBrepVersionBin < BinTools_FormatVersion.BinTools_FormatVersion_VERSION_4)
+                if (myBrepWriteNormals && myBrepVersionBin < global::Kerf.Engine.Exchange.Brep.Binary.BinaryFormatVersion.FormatVersion_VERSION_4)
                 {
                     return fail(theDI, "Error in the DEBREP_Provider during writing the file " + thePath
                                        + "\t: Vertex normals require binary format version 4 or later");
                 }
                 var aStream = new MemoryStream();
-                BinTools.Write(theShape, aStream, myBrepWriteTriangles, myBrepWriteNormals, myBrepVersionBin);
+                global::Kerf.Engine.Exchange.Brep.Binary.BinTools.Write(theShape, aStream, myBrepWriteTriangles, myBrepWriteNormals, myBrepVersionBin);
                 theDI.Files.WriteBytes(thePath, aStream.ToArray());
             }
             else
             {
-                if (myBrepVersionAscii > (TopTools_FormatVersion)TopTools_FormatVersionBounds.TopTools_FormatVersion_UPPER
-                    || myBrepVersionAscii < (TopTools_FormatVersion)TopTools_FormatVersionBounds.TopTools_FormatVersion_LOWER)
+                if (myBrepVersionAscii > (FormatVersion)FormatVersionBounds.TopTools_FormatVersion_UPPER
+                    || myBrepVersionAscii < (FormatVersion)FormatVersionBounds.TopTools_FormatVersion_LOWER)
                 {
                     return fail(theDI, "Error in the DEBREP_Provider during writing the file " + thePath + "\t: Unknown format version");
                 }
-                if (myBrepWriteNormals && myBrepVersionAscii < TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3)
+                if (myBrepWriteNormals && myBrepVersionAscii < FormatVersion.FormatVersion_VERSION_3)
                 {
                     return fail(theDI, "Error in the DEBREP_Provider during writing the file " + thePath
                                        + "\t: Error: vertex normals require ascii format version 3 or later");
                 }
                 // BRepTools::Write(shape, file): without Draw's "DBRep_DrawableShape" line
                 var aStream = new StringWriter { NewLine = "\n" };
-                BRepTools.Write(theShape, aStream, myBrepWriteTriangles, myBrepWriteNormals, myBrepVersionAscii);
+                BrepTools.Write(theShape, aStream, myBrepWriteTriangles, myBrepWriteNormals, myBrepVersionAscii);
                 theDI.Files.WriteBytes(thePath, Encoding.Latin1.GetBytes(aStream.ToString()));
             }
             return true;

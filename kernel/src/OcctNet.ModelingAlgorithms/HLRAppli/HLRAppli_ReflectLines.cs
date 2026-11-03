@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.HLRBRep_TypeOfResultingEdge;
 
 namespace Occt;
@@ -20,10 +21,10 @@ public class HLRAppli_ReflectLines
 {
     private HLRAlgo_Projector myProjector = new();
     private HLRBRep_Algo? myHLRAlgo;
-    private readonly TopoDS_Shape myShape;
+    private readonly Shape myShape;
 
     /// <summary>Constructor.</summary>
-    public HLRAppli_ReflectLines(in TopoDS_Shape aShape)
+    public HLRAppli_ReflectLines(in Shape aShape)
     {
         myShape = aShape;
     }
@@ -64,14 +65,14 @@ public class HLRAppli_ReflectLines
     }
 
     /// <summary>The visible outlines, in 3D.</summary>
-    public TopoDS_Shape GetResult() => GetCompoundOf3dEdges(HLRBRep_OutLine, true, true);
+    public Shape GetResult() => GetCompoundOf3dEdges(HLRBRep_OutLine, true, true);
 
     /// <summary>The visible or hidden edges of a type, in 3D (on the shape) or in 2D (in the view).</summary>
-    public TopoDS_Shape GetCompoundOf3dEdges(HLRBRep_TypeOfResultingEdge type, bool visible, bool In3d)
+    public Shape GetCompoundOf3dEdges(HLRBRep_TypeOfResultingEdge type, bool visible, bool In3d)
     {
         HLRBRep_HLRToShape aHLRToShape = new(myHLRAlgo!);
 
-        TopoDS_Shape theCompound = aHLRToShape.InternalCompoundOfEdges(new TopoDS_Shape(), type, visible, In3d);
+        Shape theCompound = aHLRToShape.InternalCompoundOfEdges(new Shape(), type, visible, In3d);
 
         BRepLib.SameParameter(theCompound, global::Kerf.Engine.Foundation.Precision.PConfusion(), false);
 

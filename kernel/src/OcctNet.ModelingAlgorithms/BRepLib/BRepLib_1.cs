@@ -2,7 +2,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
@@ -15,7 +20,7 @@ public static partial class BRepLib
     //           point on the curve that is an intersection with the sphere with
     //           center theVertPnt and radius theTol.
     //=======================================================================
-    private static bool findNearestValidPoint(Adaptor3d_Curve theCurve,
+    private static bool findNearestValidPoint(CurveAdaptorBase theCurve,
                                               double theFirst,
                                               double theLast,
                                               bool isFirst,
@@ -58,9 +63,9 @@ public static partial class BRepLib
         CurveKind aType = theCurve.GetType();
         if (aType == OffsetCurve)
         {
-            Geom_OffsetCurve anOffsetCurve = theCurve.OffsetCurve();
-            Geom_Curve aBaseCurve = anOffsetCurve.BasisCurve();
-            aType = new GeomAdaptor_Curve(aBaseCurve).GetType();
+            OffsetCurve3D anOffsetCurve = theCurve.OffsetCurve();
+            Curve3D aBaseCurve = anOffsetCurve.BasisCurve();
+            aType = new CurveAdaptor(aBaseCurve).GetType();
         }
         if (aType == BezierCurve || aType == BSplineCurve)
         {
@@ -160,7 +165,7 @@ public static partial class BRepLib
     /// otherwise sets <paramref name="theFirst"/> and <paramref name="theLast"/> (which may be written before a false
     /// return, as in OCCT).
     /// </summary>
-    public static bool FindValidRange(Adaptor3d_Curve theCurve,
+    public static bool FindValidRange(CurveAdaptorBase theCurve,
                                       double theTolE,
                                       double theParV1,
                                       in Point3D thePntV1,
@@ -236,13 +241,13 @@ public static partial class BRepLib
     /// The range of the edge's 3D curve that its vertices' tolerances (increased by the confusion precision) don't
     /// cover. Returns false if there is none.
     /// </summary>
-    public static bool FindValidRange(in TopoDS_Edge theEdge, ref double theFirst, ref double theLast)
+    public static bool FindValidRange(in Edge theEdge, ref double theFirst, ref double theLast)
     {
-        if (BRep_Tool.Curve(theEdge, out _, out _, out _) is null)
+        if (Tool.Curve(theEdge, out _, out _, out _) is null)
         {
             return false;
         }
-        var anAC = new BRepAdaptor_Curve(theEdge);
+        var anAC = new EdgeCurveAdaptor(theEdge);
         Span<double> aParV = [anAC.FirstParameter(), anAC.LastParameter()];
         if (aParV[1] - aParV[0] < Kerf.Engine.Foundation.Precision.PConfusion())
         {
@@ -250,20 +255,20 @@ public static partial class BRepLib
         }
 
         // get vertices
-        var aV = new TopoDS_Vertex[2];
-        TopExp.Vertices(theEdge, out aV[0], out aV[1]);
+        var aV = new Vertex[2];
+        Exploration.Vertices(theEdge, out aV[0], out aV[1]);
 
-        double aTolE = BRep_Tool.Tolerance(theEdge);
+        double aTolE = Tool.Tolerance(theEdge);
         // to have correspondence with intersection precision
         // the tolerances of vertices are increased on Precision::Confusion()
         Span<double> aTolV = [Kerf.Engine.Foundation.Precision.Confusion(), Kerf.Engine.Foundation.Precision.Confusion()];
         var aPntV = new Point3D[] { new(), new() };
         for (int i = 0; i < 2; i++)
         {
-            if (!aV[i].IsNull())
+            if (!aV[i].IsNull)
             {
-                aTolV[i] += BRep_Tool.Tolerance(aV[i]);
-                aPntV[i] = BRep_Tool.Pnt(aV[i]);
+                aTolV[i] += Tool.Tolerance(aV[i]);
+                aPntV[i] = Tool.Pnt(aV[i]);
             }
             else if (!Kerf.Engine.Foundation.Precision.IsInfinite(aParV[i]))
             {
@@ -278,16 +283,16 @@ public static partial class BRepLib
     /// Stores on the edge its pcurve on the face when the face is a plane and the pcurve was only computed (in place:
     /// internal).
     /// </summary>
-    internal static void BuildPCurveForEdgeOnPlane(in TopoDS_Edge aE, in TopoDS_Face aF)
+    internal static void BuildPCurveForEdgeOnPlane(in Edge aE, in Face aF)
     {
         bool bToUpdate;
         double aTolE;
-        var aBB = new BRep_Builder();
+        var aBB = new BrepBuilder();
         //
-        BuildPCurveForEdgeOnPlane(aE, aF, out Geom2d_Curve? aC2D, out bToUpdate);
+        BuildPCurveForEdgeOnPlane(aE, aF, out Curve2D? aC2D, out bToUpdate);
         if (bToUpdate)
         {
-            aTolE = BRep_Tool.Tolerance(aE);
+            aTolE = Tool.Tolerance(aE);
             aBB.UpdateEdge(aE, aC2D, aF, aTolE);
         }
     }
@@ -296,19 +301,19 @@ public static partial class BRepLib
     /// The pcurve of the edge on the face, and whether it would have to be stored on the edge: true when it was
     /// computed (the face is a plane and the edge has no pcurve on it). Reads only.
     /// </summary>
-    public static void BuildPCurveForEdgeOnPlane(in TopoDS_Edge aE, in TopoDS_Face aF, out Geom2d_Curve? aC2D, out bool bToUpdate)
+    public static void BuildPCurveForEdgeOnPlane(in Edge aE, in Face aF, out Curve2D? aC2D, out bool bToUpdate)
     {
-        aC2D = BRep_Tool.CurveOnSurface(aE, aF, out _, out _, out bool isStored);
+        aC2D = Tool.CurveOnSurface(aE, aF, out _, out _, out bool isStored);
         bToUpdate = !isStored && aC2D is not null;
     }
 
     /// <summary>Builds the pcurves of the edges of <paramref name="theLE"/> on the face if it is a plane (in place: internal).</summary>
-    internal static void BuildPCurveForEdgesOnPlane(IEnumerable<TopoDS_Shape> theLE, in TopoDS_Face theF)
+    internal static void BuildPCurveForEdgesOnPlane(IEnumerable<Shape> theLE, in Face theF)
     {
-        foreach (TopoDS_Shape aS in theLE)
+        foreach (Shape aS in theLE)
         {
-            TopoDS_Edge aE = TopoDS.Edge(aS);
-            if (!aE.IsNull())
+            Edge aE = ShapeCasts.Edge(aS);
+            if (!aE.IsNull)
             {
                 BuildPCurveForEdgeOnPlane(aE, theF);
             }

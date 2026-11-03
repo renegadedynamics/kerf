@@ -6,6 +6,7 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -40,11 +41,11 @@ public class MoniTool_SignShape : MoniTool_SignText
         {
             return ent.DynamicTypeName();
         }
-        TopoDS_Shape sh = HS.Shape();
-        if (sh.IsNull())
+        Shape sh = HS.Shape();
+        if (sh.IsNull)
         {
             return "SHAPE";
         }
-        return TopAbs.ShapeTypeToString(sh.ShapeType());
+        return global::Kerf.Engine.Topology.TopAbs.ShapeTypeToString(sh.ShapeType());
     }
 }

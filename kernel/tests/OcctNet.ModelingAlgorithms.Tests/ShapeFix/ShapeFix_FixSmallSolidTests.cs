@@ -1,10 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Reflection;
 using OcctNet.ModelingData.Tests;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -29,24 +34,24 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         return File.Exists(aFile) ? aFile : null;
     }
 
-    private static TopoDS_Shape ReadFrozen(string theFile)
+    private static Shape ReadFrozen(string theFile)
     {
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, theFile), theFile);
+        Assert.True(BrepTools.Read(out Shape aShape, theFile), theFile);
         aShape.TShape()!.FreezeGraph();
         return aShape;
     }
 
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
     // The center of gravity and the matrix of inertia, as Draw's vprops/sprops/lprops print them.
-    private static double[] Props(in TopoDS_Shape theShape, int theKind)
+    private static double[] Props(in Shape theShape, int theKind)
     {
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         switch (theKind)
         {
             case 0:
@@ -94,8 +99,8 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
             output.WriteLine("OcctTestDataDir isn't set: nothing to do");
             return;
         }
-        TopoDS_Shape aShape = ReadFrozen(anInput);
-        TopoDS_Shape aRef = ReadFrozen(aRefFile);
+        Shape aShape = ReadFrozen(anInput);
+        Shape aRef = ReadFrozen(aRefFile);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
 
         // as ShapeProcess's DropSmallSolids operator
@@ -109,11 +114,11 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
             aFSS.SetWidthFactorThreshold(theWidth);
         }
         var aReShape = new ShapeBuild_ReShape();
-        TopoDS_Shape aResult = theMerge ? aFSS.Merge(aShape, aReShape) : aFSS.Remove(aShape, aReShape);
+        Shape aResult = theMerge ? aFSS.Merge(aShape, aReShape) : aFSS.Remove(aShape, aReShape);
 
         aSnap.AssertUnchanged(aShape);
         Assert.True(aResult.TShape()!.IsFrozen);
-        foreach (TopAbs_ShapeEnum aType in new[] { TopAbs_SOLID, TopAbs_SHELL, TopAbs_FACE, TopAbs_EDGE, TopAbs_VERTEX })
+        foreach (ShapeType aType in new[] { ShapeType.Solid, ShapeType.Shell, ShapeType.Face, ShapeType.Edge, ShapeType.Vertex })
         {
             Assert.True(Count(aRef, aType) == Count(aResult, aType), $"{theCase}: {aType}");
         }
@@ -127,9 +132,9 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         }
 
         // the faces of the result are the caller's own (removing and merging only rebuild shells and solids)
-        var anInputFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aShape, TopAbs_FACE, anInputFaces);
-        for (var anExp = new TopExp_Explorer(aResult, TopAbs_FACE); anExp.More(); anExp.Next())
+        var anInputFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(aShape, ShapeType.Face, anInputFaces);
+        for (var anExp = new Explorer(aResult, ShapeType.Face); anExp.More(); anExp.Next())
         {
             Assert.True(anInputFaces.Contains(anExp.Current()), theCase);
         }
@@ -139,15 +144,15 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         }
     }
 
-    private static TopoDS_Shape Box(double x, double y, double z, double dx, double dy, double dz) =>
+    private static Shape Box(double x, double y, double z, double dx, double dy, double dz) =>
         new BRepPrimAPI_MakeBox(new Point3D(x, y, z), dx, dy, dz).Shape();
 
-    private static TopoDS_Compound Compound(params TopoDS_Shape[] theShapes)
+    private static Compound Compound(params Shape[] theShapes)
     {
-        var aC = new TopoDS_Compound();
-        var aB = new BRep_Builder();
+        var aC = new Compound();
+        var aB = new BrepBuilder();
         aB.MakeCompound(ref aC);
-        foreach (TopoDS_Shape aS in theShapes)
+        foreach (Shape aS in theShapes)
         {
             aB.Add(aC, aS);
         }
@@ -158,9 +163,9 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
     [Fact]
     public void Remove_ByVolumeOrWidth_AndFixModes()
     {
-        TopoDS_Shape aBig = Box(0, 0, 0, 10, 10, 10);   // volume 1000, width factor 2 * 1000 / 600 = 3.33
-        TopoDS_Shape aThin = Box(20, 0, 0, 10, 10, 0.1); // volume 10, width factor 2 * 10 / 204 = 0.098
-        TopoDS_Compound aShape = Compound(aBig, aThin);
+        Shape aBig = Box(0, 0, 0, 10, 10, 10);   // volume 1000, width factor 2 * 1000 / 600 = 3.33
+        Shape aThin = Box(20, 0, 0, 10, 10, 0.1); // volume 10, width factor 2 * 10 / 204 = 0.098
+        Compound aShape = Compound(aBig, aThin);
 
         // no threshold: nothing done, the input itself
         var aFSS = new ShapeFix_FixSmallSolid();
@@ -168,31 +173,31 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
 
         // volume only
         aFSS.SetVolumeThreshold(100);
-        TopoDS_Shape aResult = aFSS.Remove(aShape, new ShapeBuild_ReShape());
-        Assert.Equal(1, Count(aResult, TopAbs_SOLID));
-        Assert.True(Count(aResult, TopAbs_FACE) == 6);
+        Shape aResult = aFSS.Remove(aShape, new ShapeBuild_ReShape());
+        Assert.Equal(1, Count(aResult, ShapeType.Solid));
+        Assert.True(Count(aResult, ShapeType.Face) == 6);
 
         // both thresholds in mode 0: the thin solid must pass both (width factor 0.098 < 1, volume 10 < 100)
         aFSS.SetWidthFactorThreshold(0.05);
-        Assert.Equal(2, Count(aFSS.Remove(aShape, new ShapeBuild_ReShape()), TopAbs_SOLID));
+        Assert.Equal(2, Count(aFSS.Remove(aShape, new ShapeBuild_ReShape()), ShapeType.Solid));
         aFSS.SetWidthFactorThreshold(1);
-        Assert.Equal(1, Count(aFSS.Remove(aShape, new ShapeBuild_ReShape()), TopAbs_SOLID));
+        Assert.Equal(1, Count(aFSS.Remove(aShape, new ShapeBuild_ReShape()), ShapeType.Solid));
 
         // mode 2: volume only; mode 1: width only
         aFSS.SetWidthFactorThreshold(0.05);
         aFSS.SetFixMode(2);
-        Assert.Equal(1, Count(aFSS.Remove(aShape, new ShapeBuild_ReShape()), TopAbs_SOLID));
+        Assert.Equal(1, Count(aFSS.Remove(aShape, new ShapeBuild_ReShape()), ShapeType.Solid));
         aFSS.SetFixMode(1);
-        Assert.Equal(2, Count(aFSS.Remove(aShape, new ShapeBuild_ReShape()), TopAbs_SOLID));
+        Assert.Equal(2, Count(aFSS.Remove(aShape, new ShapeBuild_ReShape()), ShapeType.Solid));
         aFSS.SetWidthFactorThreshold(5); // both solids are thinner than that
-        Assert.Equal(0, Count(aFSS.Remove(aShape, new ShapeBuild_ReShape()), TopAbs_SOLID));
+        Assert.Equal(0, Count(aFSS.Remove(aShape, new ShapeBuild_ReShape()), ShapeType.Solid));
         aFSS.SetFixMode(7); // out of range: 0
         aFSS.SetVolumeThreshold(-1); // cleared
         aFSS.SetWidthFactorThreshold(-1);
         Assert.True(aFSS.Remove(aShape, new ShapeBuild_ReShape()).IsSame(aShape));
 
         // a face or a shell isn't a valid input
-        TopoDS_Shape aFace = new TopExp_Explorer(aBig, TopAbs_FACE).Current();
+        Shape aFace = new Explorer(aBig, ShapeType.Face).Current();
         aFSS.SetVolumeThreshold(1e9);
         Assert.True(aFSS.Remove(aFace, new ShapeBuild_ReShape()).IsSame(aFace));
     }
@@ -201,48 +206,48 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
     public void Merge_IntoTheAdjacentSolid_SharingTheFace()
     {
         // a big and a small box sharing the face x = 10 (a compsolid-like compound with one shared face)
-        TopoDS_Shape aBig = Box(0, 0, 0, 10, 10, 10);
-        TopoDS_Shape aSmall = Box(10, 0, 0, 1, 10, 10);
+        Shape aBig = Box(0, 0, 0, 10, 10, 10);
+        Shape aSmall = Box(10, 0, 0, 1, 10, 10);
         // build the shared-face compound by hand: the small box's face at x = 10 replaced by the big box's
-        TopoDS_Face aBigFace = new(), aSmallFace = new();
-        for (var anExp = new TopExp_Explorer(aBig, TopAbs_FACE); anExp.More(); anExp.Next())
+        Face aBigFace = new(), aSmallFace = new();
+        for (var anExp = new Explorer(aBig, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            var aProps = new GProp_GProps();
+            var aProps = new Properties();
             BRepGProp.SurfaceProperties(anExp.Current(), aProps);
             if (Math.Abs(aProps.CentreOfMass().X() - 10) < 1e-9)
             {
-                aBigFace = TopoDS.Face(anExp.Current());
+                aBigFace = ShapeCasts.Face(anExp.Current());
             }
         }
-        for (var anExp = new TopExp_Explorer(aSmall, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aSmall, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            var aProps = new GProp_GProps();
+            var aProps = new Properties();
             BRepGProp.SurfaceProperties(anExp.Current(), aProps);
             if (Math.Abs(aProps.CentreOfMass().X() - 10) < 1e-9)
             {
-                aSmallFace = TopoDS.Face(anExp.Current());
+                aSmallFace = ShapeCasts.Face(anExp.Current());
             }
         }
-        var aRe = new BRepTools_ReShape();
+        var aRe = new ReShape();
         aRe.Replace(aSmallFace, aBigFace.Reversed());
-        TopoDS_Shape aSmallShared = aRe.Apply(aSmall);
-        TopoDS_Compound aShape = Compound(aBig, aSmallShared);
+        Shape aSmallShared = aRe.Apply(aSmall);
+        Compound aShape = Compound(aBig, aSmallShared);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
 
         var aFSS = new ShapeFix_FixSmallSolid();
         aFSS.SetFixMode(2);
         aFSS.SetVolumeThreshold(200);
         var aContext = new ShapeBuild_ReShape();
-        TopoDS_Shape aResult = aFSS.Merge(aShape, aContext);
+        Shape aResult = aFSS.Merge(aShape, aContext);
 
         aSnap.AssertUnchanged(aShape);
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.Equal(1, Count(aResult, TopAbs_SOLID));
+        Assert.Equal(1, Count(aResult, ShapeType.Solid));
         // the merged shell: 5 + 5 faces, the shared one dropped
-        Assert.Equal(10, Count(aResult, TopAbs_FACE));
-        var aProps2 = new GProp_GProps();
+        Assert.Equal(10, Count(aResult, ShapeType.Face));
+        var aProps2 = new Properties();
         BRepGProp.VolumeProperties(aResult, aProps2);
         Assert.Equal(1100, aProps2.Mass(), 6);
-        Assert.True(aContext.IsRecorded(new TopExp_Explorer(aSmallShared, TopAbs_SOLID).Current()));
+        Assert.True(aContext.IsRecorded(new Explorer(aSmallShared, ShapeType.Solid).Current()));
     }
 }

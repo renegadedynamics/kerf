@@ -4,8 +4,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -16,8 +19,8 @@ namespace Occt;
 /// </remarks>
 public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
 {
-    protected NCollection_List<TopoDS_Shape> myStartShapes = new();
-    protected NCollection_List<TopoDS_Shape> myShells = new();
+    protected NCollection_List<Shape> myStartShapes = new();
+    protected NCollection_List<Shape> myShells = new();
     protected NCollection_List<BOPTools_ConnexityBlock> myLCB = new();
 
     public BOPAlgo_ShellSplitter()
@@ -25,13 +28,13 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
     }
 
     /// <summary>Adds a face to process.</summary>
-    public void AddStartElement(in TopoDS_Shape aE) => myStartShapes.Append(aE);
+    public void AddStartElement(in Shape aE) => myStartShapes.Append(aE);
 
     /// <summary>The faces to process.</summary>
-    public NCollection_List<TopoDS_Shape> StartElements() => myStartShapes;
+    public NCollection_List<Shape> StartElements() => myStartShapes;
 
     /// <summary>The shells built.</summary>
-    public NCollection_List<TopoDS_Shape> Shells() => myShells;
+    public NCollection_List<Shape> Shells() => myShells;
 
     /// <summary>Builds the shells.</summary>
     public override void Perform(ProgressRange theRange = default)
@@ -39,7 +42,7 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
         GetReport().Clear();
         using var aPS = new ProgressScope(theRange, "Building shells", 1);
         //
-        BOPTools_AlgoTools.MakeConnexityBlocks(myStartShapes, TopAbs_EDGE, TopAbs_FACE, myLCB);
+        BOPTools_AlgoTools.MakeConnexityBlocks(myStartShapes, ShapeType.Edge, ShapeType.Face, myLCB);
         if (UserBreak(aPS))
         {
             return;
@@ -53,27 +56,27 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
     {
         int aNbLF, aNbOff, aNbFP;
         int i;
-        TopAbs_Orientation anOr;
-        TopoDS_Edge aEL = new();
-        BRep_Builder aBB = new();
-        TopoDS_Iterator aItS = new();
-        TopExp_Explorer aExp = new();
-        NCollection_List<TopoDS_Shape>.Iterator aItF = new();
+        Orientation anOr;
+        Edge aEL = new();
+        BrepBuilder aBB = new();
+        Iterator aItS = new();
+        Explorer aExp = new();
+        NCollection_List<Shape>.Iterator aItF = new();
         BOPTools_CoupleOfShape aCSOff = new();
-        NCollection_Map<TopoDS_Shape> AddedFacesMap = new(EqualityComparer<TopoDS_Shape>.Default);
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aEFMap = new(TopTools_ShapeMapHasher.Instance),
-                                                                                  aMEFP = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> AddedFacesMap = new(EqualityComparer<Shape>.Default);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aEFMap = new(ShapeHasher.Instance),
+                                                                                  aMEFP = new(ShapeHasher.Instance);
         IntTools_Context aContext;
         //
         aContext = new IntTools_Context();
         //
-        NCollection_List<TopoDS_Shape> myShapes = aCB.Shapes();
+        NCollection_List<Shape> myShapes = aCB.Shapes();
         //
-        NCollection_List<TopoDS_Shape> myLoops = aCB.ChangeLoops();
+        NCollection_List<Shape> myLoops = aCB.ChangeLoops();
         myLoops.Clear();
         //
         // Copy faces into the map, for recursive search of free bounds
-        NCollection_Map<TopoDS_Shape> aMFaces = new(EqualityComparer<TopoDS_Shape>.Default);
+        NCollection_Map<Shape> aMFaces = new(EqualityComparer<Shape>.Default);
         aItF.Initialize(myShapes);
         for (; aItF.More(); aItF.Next())
         {
@@ -88,10 +91,10 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
             aItF.Initialize(myShapes);
             for (; aItF.More(); aItF.Next())
             {
-                TopoDS_Shape aF = aItF.Value();
+                Shape aF = aItF.Value();
                 if (aMFaces.Contains(aF))
                 {
-                    TopExp.MapShapesAndAncestors(aF, TopAbs_EDGE, TopAbs_FACE, aEFMap);
+                    Exploration.MapShapesAndAncestors(aF, ShapeType.Edge, ShapeType.Face, aEFMap);
                 }
             }
             //
@@ -100,10 +103,10 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
             int aNbE = aEFMap.Extent();
             for (i = 1; i <= aNbE; ++i)
             {
-                TopoDS_Edge aE = TopoDS.Edge(aEFMap.FindKey(i));
-                if (!BRep_Tool.Degenerated(aE) && aE.Orientation() != TopAbs_INTERNAL)
+                Edge aE = ShapeCasts.Edge(aEFMap.FindKey(i));
+                if (!Tool.Degenerated(aE) && aE.Orientation() != Internal)
                 {
-                    NCollection_List<TopoDS_Shape> aLF = aEFMap[i];
+                    NCollection_List<Shape> aLF = aEFMap[i];
                     if (aLF.Extent() == 1)
                     {
                         // remove the face
@@ -126,13 +129,13 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
         }
         //
         // use only connected faces
-        NCollection_List<TopoDS_Shape> aLFConnected = new();
+        NCollection_List<Shape> aLFConnected = new();
         // Boundary faces
-        NCollection_Map<TopoDS_Shape> aBoundaryFaces = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aBoundaryFaces = new(ShapeHasher.Instance);
         aItF.Initialize(myShapes);
         for (; aItF.More(); aItF.Next())
         {
-            TopoDS_Shape aF = aItF.Value();
+            Shape aF = aItF.Value();
             if (aMFaces.Contains(aF))
             {
                 aLFConnected.Append(aF);
@@ -150,38 +153,38 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
         aItF.Initialize(aLFConnected);
         for (i = 1; aItF.More() && !bAllFacesTaken; aItF.Next(), ++i)
         {
-            TopoDS_Shape aFF = aItF.Value();
+            Shape aFF = aItF.Value();
             if (!AddedFacesMap.Add(aFF))
             {
                 continue;
             }
             //
             // make a new shell
-            TopoDS_Shell aShell = new();
+            Shell aShell = new();
             aBB.MakeShell(ref aShell);
             aBB.Add(aShell, aFF);
 
             aMEFP.Clear();
-            TopExp.MapShapesAndAncestors(aShell, TopAbs_EDGE, TopAbs_FACE, aMEFP);
+            Exploration.MapShapesAndAncestors(aShell, ShapeType.Edge, ShapeType.Face, aMEFP);
             //
             // loop on faces added to Shell;
             // add their neighbor faces to Shell and so on
             aItS.Initialize(aShell);
             for (; aItS.More(); aItS.Next())
             {
-                TopoDS_Face aF = TopoDS.Face(aItS.Value());
+                Face aF = ShapeCasts.Face(aItS.Value());
                 bool isBoundary = aBoundaryFaces.Contains(aF);
                 //
                 // loop on edges of aF; find a good neighbor face of aF by aE
-                aExp.Init(aF, TopAbs_EDGE);
+                aExp.Init(aF, ShapeType.Edge);
                 for (; aExp.More(); aExp.Next())
                 {
-                    TopoDS_Edge aE = TopoDS.Edge(aExp.Current());
+                    Edge aE = ShapeCasts.Edge(aExp.Current());
                     //
                     // proceed only free edges in this shell
                     if (aMEFP.Contains(aE))
                     {
-                        NCollection_List<TopoDS_Shape> aLFP = aMEFP.FindFromKey(aE);
+                        NCollection_List<Shape> aLFP = aMEFP.FindFromKey(aE);
                         aNbFP = aLFP.Extent();
                         if (aNbFP > 1)
                         {
@@ -190,18 +193,18 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
                     }
                     // avoid processing of internal edges
                     anOr = aE.Orientation();
-                    if (anOr == TopAbs_INTERNAL)
+                    if (anOr == Internal)
                     {
                         continue;
                     }
                     // avoid processing of degenerated edges
-                    if (BRep_Tool.Degenerated(aE))
+                    if (Tool.Degenerated(aE))
                     {
                         continue;
                     }
                     //
                     // candidate faces list
-                    NCollection_List<TopoDS_Shape> aLF = aEFMap.FindFromKey(aE);
+                    NCollection_List<Shape> aLF = aEFMap.FindFromKey(aE);
                     aNbLF = aLF.Extent();
                     if (aNbLF == 0)
                     {
@@ -213,11 +216,11 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
                     NCollection_List<BOPTools_CoupleOfShape> aLCSOff = new();
                     //
                     int aNbWaysInside = 0;
-                    TopoDS_Face aSelF = new();
-                    NCollection_List<TopoDS_Shape>.Iterator aItLF = new(aLF);
+                    Face aSelF = new();
+                    NCollection_List<Shape>.Iterator aItLF = new(aLF);
                     for (; aItLF.More(); aItLF.Next())
                     {
-                        TopoDS_Face aFL = TopoDS.Face(aItLF.Value());
+                        Face aFL = ShapeCasts.Face(aItLF.Value());
                         if (aF.IsSame(aFL) || AddedFacesMap.Contains(aFL))
                         {
                             continue;
@@ -251,7 +254,7 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
                     {
                         if (aNbOff == 1)
                         {
-                            aSelF = TopoDS.Face(aLCSOff.First().Shape2());
+                            aSelF = ShapeCasts.Face(aLCSOff.First().Shape2());
                         }
                         else if (aNbOff > 1)
                         {
@@ -259,27 +262,27 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
                         }
                     }
                     //
-                    if (!aSelF.IsNull() && AddedFacesMap.Add(aSelF))
+                    if (!aSelF.IsNull && AddedFacesMap.Add(aSelF))
                     {
                         aBB.Add(aShell, aSelF);
-                        TopExp.MapShapesAndAncestors(aSelF, TopAbs_EDGE, TopAbs_FACE, aMEFP);
+                        Exploration.MapShapesAndAncestors(aSelF, ShapeType.Edge, ShapeType.Face, aMEFP);
                     }
                 } // for (; aExp.More(); aExp.Next()) {
             } // for (; aItS.More(); aItS.Next()) {
             //
             // split the shell on multi-connected edges
-            NCollection_List<TopoDS_Shape> aLShSp = new();
+            NCollection_List<Shape> aLShSp = new();
             RefineShell(aShell, aMEFP, aLShSp);
             //
             // collect the not closed shells for further processing
-            NCollection_List<TopoDS_Shape> aLShNC = new();
+            NCollection_List<Shape> aLShNC = new();
             //
-            NCollection_List<TopoDS_Shape>.Iterator aItLShSp = new(aLShSp);
+            NCollection_List<Shape>.Iterator aItLShSp = new(aLShSp);
             for (; aItLShSp.More(); aItLShSp.Next())
             {
-                TopoDS_Shell aShSp = TopoDS.Shell(aItLShSp.Value());
+                Shell aShSp = ShapeCasts.Shell(aItLShSp.Value());
                 //
-                if (BRep_Tool.IsClosed(aShSp))
+                if (Tool.IsClosed(aShSp))
                 {
                     aShSp.Closed(true);
                     myLoops.Append(aShSp);
@@ -307,10 +310,10 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
             // remove th faces of not closed shells from the map of processed faces
             // and try to rebuild the shells using all not processed faces,
             // because faces of one shell might be needed for building the other
-            NCollection_List<TopoDS_Shape>.Iterator aItLShNC = new(aLShNC);
+            NCollection_List<Shape>.Iterator aItLShNC = new(aLShNC);
             for (; aItLShNC.More(); aItLShNC.Next())
             {
-                TopoDS_Iterator aItNC = new(aItLShNC.Value());
+                Iterator aItNC = new(aItLShNC.Value());
                 for (; aItNC.More(); aItNC.Next())
                 {
                     AddedFacesMap.Remove(aItNC.Value());
@@ -320,13 +323,13 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
     }
 
     // The sub-shape of theShape that is the same as theShapeToFind (OCCT's file-level FindShape).
-    private static TopoDS_Shape FindShape(in TopoDS_Shape theShapeToFind, in TopoDS_Shape theShape)
+    private static Shape FindShape(in Shape theShapeToFind, in Shape theShape)
     {
-        TopoDS_Shape aRes = new();
-        TopExp_Explorer anExp = new(theShape, theShapeToFind.ShapeType());
+        Shape aRes = new();
+        Explorer anExp = new(theShape, theShapeToFind.ShapeType());
         for (; anExp.More(); anExp.Next())
         {
-            TopoDS_Shape aShape = anExp.Current();
+            Shape aShape = anExp.Current();
             if (aShape.IsSame(theShapeToFind))
             {
                 aRes = aShape;
@@ -337,11 +340,11 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
     }
 
     // Splits the shell on its branch edges (OCCT's file-static RefineShell).
-    private static void RefineShell(in TopoDS_Shell theShell,
-                                    NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMEF,
-                                    NCollection_List<TopoDS_Shape> theLShSp)
+    private static void RefineShell(in Shell theShell,
+                                    NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMEF,
+                                    NCollection_List<Shape> theLShSp)
     {
-        TopoDS_Iterator aIt = new(theShell);
+        Iterator aIt = new(theShell);
         if (!aIt.More())
         {
             return;
@@ -349,13 +352,13 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
         //
         // Find edges with more than 2 adjacent faces - branch edges -
         // edges on which the input shell should be split
-        NCollection_Map<TopoDS_Shape> aMEStop = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMEStop = new(ShapeHasher.Instance);
         //
         int i, aNbMEF = theMEF.Extent();
         for (i = 1; i <= aNbMEF; ++i)
         {
-            TopoDS_Edge aE = TopoDS.Edge(theMEF.FindKey(i));
-            NCollection_List<TopoDS_Shape> aLF = theMEF[i];
+            Edge aE = ShapeCasts.Edge(theMEF.FindKey(i));
+            NCollection_List<Shape> aLF = theMEF[i];
             if (aLF.Extent() > 2)
             {
                 aMEStop.Add(aE);
@@ -364,11 +367,11 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
 
             if (aLF.Extent() == 2)
             {
-                TopoDS_Face aF1 = TopoDS.Face(aLF.First());
-                TopoDS_Face aF2 = TopoDS.Face(aLF.Last());
+                Face aF1 = ShapeCasts.Face(aLF.First());
+                Face aF2 = ShapeCasts.Face(aLF.Last());
 
-                TopoDS_Shape aE1 = FindShape(aE, aF1);
-                TopoDS_Shape aE2 = FindShape(aE, aF2);
+                Shape aE1 = FindShape(aE, aF1);
+                Shape aE2 = FindShape(aE, aF2);
 
                 if (aE1.Orientation() == aE2.Orientation())
                 {
@@ -380,18 +383,18 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
             // check for internal edges - count faces, in which the edge
             // is internal, twice
             int aNbF = 0;
-            NCollection_List<TopoDS_Shape>.Iterator aItLF0 = new(aLF);
+            NCollection_List<Shape>.Iterator aItLF0 = new(aLF);
             for (; aItLF0.More() && aNbF <= 2; aItLF0.Next())
             {
-                TopoDS_Face aF = TopoDS.Face(aItLF0.Value());
+                Face aF = ShapeCasts.Face(aItLF0.Value());
                 ++aNbF;
-                TopExp_Explorer aExp0 = new(aF, TopAbs_EDGE);
+                Explorer aExp0 = new(aF, ShapeType.Edge);
                 for (; aExp0.More(); aExp0.Next())
                 {
-                    TopoDS_Shape aEF = aExp0.Current();
+                    Shape aEF = aExp0.Current();
                     if (aEF.IsSame(aE))
                     {
-                        if (aEF.Orientation() == TopAbs_INTERNAL)
+                        if (aEF.Orientation() == Internal)
                         {
                             ++aNbF;
                         }
@@ -412,17 +415,17 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
             return;
         }
         //
-        TopoDS_Builder aBB = new();
-        TopExp_Explorer aExp = new();
-        NCollection_IndexedMap<TopoDS_Shape> aMFB = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_Map<TopoDS_Shape> aMFProcessed = new(EqualityComparer<TopoDS_Shape>.Default);
-        NCollection_List<TopoDS_Shape> aLFP = new(), aLFP1 = new();
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new(), aItLFP = new();
+        Builder aBB = new();
+        Explorer aExp = new();
+        NCollection_IndexedMap<Shape> aMFB = new(ShapeHasher.Instance);
+        NCollection_Map<Shape> aMFProcessed = new(EqualityComparer<Shape>.Default);
+        NCollection_List<Shape> aLFP = new(), aLFP1 = new();
+        NCollection_List<Shape>.Iterator aItLF = new(), aItLFP = new();
         //
         // The first Face
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aF1 = aIt.Value();
+            Shape aF1 = aIt.Value();
             if (!aMFProcessed.Add(aF1))
             {
                 continue;
@@ -440,33 +443,33 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
                 aItLFP.Initialize(aLFP);
                 for (; aItLFP.More(); aItLFP.Next())
                 {
-                    TopoDS_Shape aFP = aItLFP.Value();
+                    Shape aFP = aItLFP.Value();
                     //
-                    aExp.Init(aFP, TopAbs_EDGE);
+                    aExp.Init(aFP, ShapeType.Edge);
                     for (; aExp.More(); aExp.Next())
                     {
-                        TopoDS_Edge aE = TopoDS.Edge(aExp.Current());
+                        Edge aE = ShapeCasts.Edge(aExp.Current());
                         if (aMEStop.Contains(aE))
                         {
                             continue;
                         }
                         //
-                        if (aE.Orientation() == TopAbs_INTERNAL)
+                        if (aE.Orientation() == Internal)
                         {
                             continue;
                         }
                         //
-                        if (BRep_Tool.Degenerated(aE))
+                        if (Tool.Degenerated(aE))
                         {
                             continue;
                         }
                         //
-                        NCollection_List<TopoDS_Shape> aLF = theMEF.FindFromKey(aE);
+                        NCollection_List<Shape> aLF = theMEF.FindFromKey(aE);
                         //
                         aItLF.Initialize(aLF);
                         for (; aItLF.More(); aItLF.Next())
                         {
-                            TopoDS_Shape aFP1 = aItLF.Value();
+                            Shape aFP1 = aItLF.Value();
                             if (aFP1.IsSame(aFP))
                             {
                                 continue;
@@ -498,12 +501,12 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
             int aNbMFB = aMFB.Extent();
             if (aNbMFB != 0)
             {
-                TopoDS_Shell aShSp = new();
+                Shell aShSp = new();
                 aBB.MakeShell(ref aShSp);
                 //
                 for (i = 1; i <= aNbMFB; ++i)
                 {
-                    TopoDS_Shape aFB = aMFB[i];
+                    Shape aFB = aMFB[i];
                     aBB.Add(aShSp, aFB);
                 }
                 theLShSp.Append(aShSp);
@@ -517,7 +520,7 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
         bool bIsRegular;
         int aNbVCBK, k;
         NCollection_List<BOPTools_ConnexityBlock>.Iterator aItCB = new();
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new();
+        NCollection_List<Shape>.Iterator aIt = new();
         NCollection_DynamicArray<BOPAlgo_CBK> aVCBK = new();
         //
         using var aPSOuter = new ProgressScope(theRange, null, 1);
@@ -534,9 +537,9 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
             bIsRegular = aCB.IsRegular();
             if (bIsRegular)
             {
-                TopoDS_Shell aShell = new();
+                Shell aShell = new();
                 //
-                NCollection_List<TopoDS_Shape> aLF = aCB.Shapes();
+                NCollection_List<Shape> aLF = aCB.Shapes();
                 MakeShell(aLF, ref aShell);
                 aShell.Closed(true);
                 myShells.Append(aShell);
@@ -561,11 +564,11 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
         {
             BOPAlgo_CBK aCBK = aVCBK[k];
             BOPTools_ConnexityBlock aCB = aCBK.ConnexityBlock();
-            NCollection_List<TopoDS_Shape> aLS = aCB.Loops();
+            NCollection_List<Shape> aLS = aCB.Loops();
             aIt.Initialize(aLS);
             for (; aIt.More(); aIt.Next())
             {
-                TopoDS_Shape aShell = aIt.Value();
+                Shape aShell = aIt.Value();
                 aShell.Closed(true);
                 myShells.Append(aShell);
             }
@@ -573,23 +576,23 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
     }
 
     // Makes a shell of the faces and orients them (OCCT's file-static MakeShell).
-    private static void MakeShell(NCollection_List<TopoDS_Shape> aLS, ref TopoDS_Shell aShell)
+    private static void MakeShell(NCollection_List<Shape> aLS, ref Shell aShell)
     {
-        BRep_Builder aBB = new();
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new();
+        BrepBuilder aBB = new();
+        NCollection_List<Shape>.Iterator aIt = new();
         //
         aBB.MakeShell(ref aShell);
         //
         aIt.Initialize(aLS);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aF = aIt.Value();
+            Shape aF = aIt.Value();
             aBB.Add(aShell, aF);
         }
         //
-        TopoDS_Shape aSh = aShell;
+        Shape aSh = aShell;
         BOPTools_AlgoTools.OrientFacesOnShell(ref aSh);
-        aShell = TopoDS.Shell(aSh);
+        aShell = ShapeCasts.Shell(aSh);
     }
 }
 

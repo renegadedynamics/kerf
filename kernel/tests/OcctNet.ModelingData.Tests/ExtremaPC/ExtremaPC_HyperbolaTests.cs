@@ -22,11 +22,11 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         Point3D aPoint = new(50.0, 0.0, 0.0);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // For point (50, 0) on major axis, the closest point is NOT the vertex!
         // The extremum condition gives cosh(u) = 2 (u ~= 1.317), yielding
@@ -41,10 +41,10 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         Point3D aPoint = new(20.0, 0.0, 0.0);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         double aMinSqDist = aResult.MinSquareDistance();
         Assert.Equal(0.0, aMinSqDist, THE_TOL);
@@ -56,10 +56,10 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         Point3D aPoint = new(0.0, 0.0, 0.0); // Center
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         // Closest point is at vertex (20, 0, 0), distance = 20
         double aMinSqDist = aResult.MinSquareDistance();
@@ -76,11 +76,11 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         Point3D aPoint = new(30.0, 15.0, 0.0);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify the point is on the hyperbola
         int aMinIdx = aResult.MinIndex();
@@ -95,11 +95,11 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         Point3D aPoint = new(30.0, -15.0, 0.0);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify the closest point is on the hyperbola
         int aMinIdx = aResult.MinIndex();
@@ -117,11 +117,11 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         Point3D aPoint = new(25.0, 5.0, 0.0);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify the closest point is on the hyperbola
         int aMinIdx = aResult.MinIndex();
@@ -142,11 +142,11 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         Point3D aPoint = new(30.0, 0.0, 5.0);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Distance should include Z component
         double aMinSqDist = aResult.MinSquareDistance();
@@ -159,10 +159,10 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         Point3D aPoint = new(20.0, 0.0, -8.0);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         // Closest point is at vertex (20, 0, 0), distance = 8
         double aMinSqDist = aResult.MinSquareDistance();
@@ -180,14 +180,14 @@ public class ExtremaPC_HyperbolaTest
         Point3D aPoint = new(30.0, -20.0, 0.0);
 
         // Create evaluator with positive parameter domain [0, 10]
-        ExtremaPC_Hyperbola anEval = new(aHyperbola, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(0.0, 10.0));
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(0.0, 10.0));
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // All parameters should be positive
-        for (int i = 0; i < aResult.NbExt(); ++i)
+        for (int i = 0; i < aResult.ExtCount; ++i)
         {
             Assert.True(aResult[i].Parameter >= 0.0 - THE_TOL);
         }
@@ -200,14 +200,14 @@ public class ExtremaPC_HyperbolaTest
         Point3D aPoint = new(30.0, 20.0, 0.0);
 
         // Create evaluator with negative parameter domain [-10, 0]
-        ExtremaPC_Hyperbola anEval = new(aHyperbola, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-10.0, 0.0));
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-10.0, 0.0));
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // All parameters should be negative or zero
-        for (int i = 0; i < aResult.NbExt(); ++i)
+        for (int i = 0; i < aResult.ExtCount; ++i)
         {
             Assert.True(aResult[i].Parameter <= 0.0 + THE_TOL);
         }
@@ -220,14 +220,14 @@ public class ExtremaPC_HyperbolaTest
         Point3D aPoint = new(30.0, 10.0, 0.0);
 
         // Create evaluator with narrow domain [0.5, 1.5]
-        ExtremaPC_Hyperbola anEval = new(aHyperbola, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(0.5, 1.5));
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(0.5, 1.5));
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Parameter should be within bounds
-        for (int i = 0; i < aResult.NbExt(); ++i)
+        for (int i = 0; i < aResult.ExtCount; ++i)
         {
             Assert.True(aResult[i].Parameter >= 0.5 - THE_TOL);
             Assert.True(aResult[i].Parameter <= 1.5 + THE_TOL);
@@ -244,11 +244,11 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0, 1.0);
         Point3D aPoint = new(5.0, 2.0, 0.0);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify point is on hyperbola
         int aMinIdx = aResult.MinIndex();
@@ -263,11 +263,11 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 200.0, 100.0);
         Point3D aPoint = new(300.0, 100.0, 0.0);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify point is on hyperbola
         int aMinIdx = aResult.MinIndex();
@@ -281,11 +281,11 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0, 10.0);
         Point3D aPoint = new(20.0, 15.0, 0.0);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify point is on hyperbola and distance is consistent
         int aMinIdx = aResult.MinIndex();
@@ -304,10 +304,10 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         Point3D aPoint = global::Kerf.Engine.Geometry.ElCLib.Value(0.0, aHyperbola);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         double aMinSqDist = aResult.MinSquareDistance();
         Assert.Equal(0.0, aMinSqDist, THE_TOL);
@@ -319,10 +319,10 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         Point3D aPoint = global::Kerf.Engine.Geometry.ElCLib.Value(1.5, aHyperbola);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         double aMinSqDist = aResult.MinSquareDistance();
         Assert.Equal(0.0, aMinSqDist, THE_TOL);
@@ -334,10 +334,10 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         Point3D aPoint = global::Kerf.Engine.Geometry.ElCLib.Value(-2.0, aHyperbola);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         double aMinSqDist = aResult.MinSquareDistance();
         Assert.Equal(0.0, aMinSqDist, THE_TOL);
@@ -353,10 +353,10 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(100, 200, 50), new Direction3D(0, 0, 1)), 20.0, 10.0);
         Point3D aPoint = new(120.0, 200.0, 50.0);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         // Point is at vertex
         double aMinSqDist = aResult.MinSquareDistance();
@@ -369,11 +369,11 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(100, 200, 50), new Direction3D(0, 0, 1)), 20.0, 10.0);
         Point3D aPoint = new(150.0, 210.0, 50.0);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify point is on hyperbola and distance is consistent
         int aMinIdx = aResult.MinIndex();
@@ -392,11 +392,11 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 20.0, 10.0);
         Point3D aPoint = new(5.0, 30.0, 10.0);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify point is on hyperbola
         int aMinIdx = aResult.MinIndex();
@@ -413,11 +413,11 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 0)), 20.0, 10.0);
         Point3D aPoint = new(30.0, 5.0, 10.0);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify point is on hyperbola
         int aMinIdx = aResult.MinIndex();
@@ -438,11 +438,11 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         Point3D aPoint = new(35.0, 20.0, 0.0);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify the projected point is on the hyperbola
         int aMinIdx = aResult.MinIndex();
@@ -458,11 +458,11 @@ public class ExtremaPC_HyperbolaTest
         Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         Point3D aPoint = new(40.0, 25.0, 3.0);
 
-        ExtremaPC_Hyperbola anEval = new(aHyperbola);
-        ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.HyperbolaExtrema anEval = new(aHyperbola);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbExt() >= 1);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.ExtCount >= 1);
 
         // Verify distance matches point distance
         int aMinIdx = aResult.MinIndex();

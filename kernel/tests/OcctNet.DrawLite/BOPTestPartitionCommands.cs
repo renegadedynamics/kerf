@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using System.Diagnostics;
 using Occt;
 
@@ -106,11 +107,11 @@ internal static class BOPTestPartitionCommands
         aSession.SetBuilderDefault();
         BOPAlgo_Builder aBuilder = aSession.Builder();
         aBuilder.Clear();
-        foreach (TopoDS_Shape aS in aSession.Shapes)
+        foreach (Shape aS in aSession.Shapes)
         {
             aBuilder.AddArgument(aS);
         }
-        foreach (TopoDS_Shape aS in aSession.Tools)
+        foreach (Shape aS in aSession.Tools)
         {
             aBuilder.AddArgument(aS);
         }
@@ -148,8 +149,8 @@ internal static class BOPTestPartitionCommands
         {
             di.Append(Tps(aTimer));
         }
-        TopoDS_Shape aR = aBuilder.Shape();
-        if (aR.IsNull())
+        Shape aR = aBuilder.Shape();
+        if (aR.IsNull)
         {
             di.Append("Result is a null shape\n");
             return 0;
@@ -205,14 +206,14 @@ internal static class BOPTestPartitionCommands
             pBuilder = aSession.Section();
         }
         pBuilder.Clear();
-        foreach (TopoDS_Shape aS in aSession.Shapes)
+        foreach (Shape aS in aSession.Shapes)
         {
             pBuilder.AddArgument(aS);
         }
         if (anOp != BOPAlgo_Operation.BOPAlgo_SECTION)
         {
             BOPAlgo_BOP pBOP = (BOPAlgo_BOP)pBuilder;
-            foreach (TopoDS_Shape aS in aSession.Tools)
+            foreach (Shape aS in aSession.Tools)
             {
                 pBOP.AddTool(aS);
             }
@@ -220,7 +221,7 @@ internal static class BOPTestPartitionCommands
         }
         else
         {
-            foreach (TopoDS_Shape aS in aSession.Tools)
+            foreach (Shape aS in aSession.Tools)
             {
                 pBuilder.AddArgument(aS);
             }
@@ -246,8 +247,8 @@ internal static class BOPTestPartitionCommands
         {
             di.Append(Tps(aTimer));
         }
-        TopoDS_Shape aR = pBuilder.Shape();
-        if (aR.IsNull())
+        Shape aR = pBuilder.Shape();
+        if (aR.IsNull)
         {
             di.Append("Result is a null shape\n");
             return 0;
@@ -308,8 +309,8 @@ internal static class BOPTestPartitionCommands
             }
         }
         aSession.SetBuilder(pSplitter);
-        TopoDS_Shape aR = pSplitter.Shape();
-        if (aR.IsNull())
+        Shape aR = pSplitter.Shape();
+        if (aR.IsNull)
         {
             di.Append(" null shape\n");
             return 0;
@@ -345,13 +346,13 @@ internal static class BOPTestPartitionCommands
             return 0;
         }
 
-        if (pBuilder.Arguments().IsEmpty() || pBuilder.InternalShape().IsNull())
+        if (pBuilder.Arguments().IsEmpty() || pBuilder.InternalShape().IsNull)
         {
             di.Append("Error: it seems the GF has not been yet performed");
             return 1;
         }
 
-        NCollection_List<TopoDS_Shape> aLObjects = new(), aLTools = new();
+        NCollection_List<Shape> aLObjects = new(), aLTools = new();
         BOPAlgo_Operation anOp = BOPAlgo_Operation.BOPAlgo_UNKNOWN;
 
         for (int i = 2; i < n; ++i)
@@ -364,7 +365,7 @@ internal static class BOPTestPartitionCommands
                     return 1;
                 }
 
-                NCollection_List<TopoDS_Shape> aList = a[i] == "-o" ? aLObjects : aLTools;
+                NCollection_List<Shape> aList = a[i] == "-o" ? aLObjects : aLTools;
                 int j = i + 1;
                 for (; j < n; ++j)
                 {
@@ -375,13 +376,13 @@ internal static class BOPTestPartitionCommands
                     }
                     else
                     {
-                        TopoDS_Shape aS = theDI.GetShape(a[j]);
-                        if (aS.IsNull())
+                        Shape aS = theDI.GetShape(a[j]);
+                        if (aS.IsNull)
                         {
                             di.Append("Error: ").Append(a[j]).Append(" is a null shape");
                             return 1;
                         }
-                        if (aS.ShapeType() != TopAbs_ShapeEnum.TopAbs_SOLID)
+                        if (aS.ShapeType() != ShapeType.Solid)
                         {
                             di.Append("Error: ").Append(a[j]).Append(" is not a solid");
                             return 1;
@@ -466,7 +467,7 @@ internal static class BOPTestPartitionCommands
             BRepTestHistoryCommands.SetHistory(theDI, pDS.Arguments(), new BOPTestBuilderHistory(pBuilder));
         }
 
-        TopoDS_Shape aR = pBuilder.Shape();
+        Shape aR = pBuilder.Shape();
         theDI.SetShape(a[1], aR);
 
         return 0;

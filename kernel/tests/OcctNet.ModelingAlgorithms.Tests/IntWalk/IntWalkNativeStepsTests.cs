@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using System.Globalization;
 using System.Reflection;
@@ -19,7 +20,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class IntWalkNativeStepsTests
 {
     // tools/walkrec's main.cpp, line for line.
-    private static Geom_BSplineSurface Patch(double theX0, double theX1, double theY0, double theY1, int theTable = 0)
+    private static BSplineSurface Patch(double theX0, double theX1, double theY0, double theY1, int theTable = 0)
     {
         var aPoles = new NCollection_Array2<Point3D>(1, 4, 1, 4);
         double[,] aZ =
@@ -50,10 +51,10 @@ public class IntWalkNativeStepsTests
         var aMults = new NCollection_Array1<int>(1, 2);
         aMults[1] = 4;
         aMults[2] = 4;
-        return new Geom_BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 3, 3);
+        return new BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 3, 3);
     }
 
-    private static Geom_CylindricalSurface Cylinder() =>
+    private static CylindricalSurface Cylinder() =>
         new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
 
     private static void Hex(StringBuilder theOut, double theValue) =>
@@ -125,13 +126,13 @@ public class IntWalkNativeStepsTests
         }
     }
 
-    private static string ImpPrm(Geom_Surface theS1, Geom_Surface theS2, double theFleche, double thePas)
+    private static string ImpPrm(Surface theS1, Surface theS2, double theFleche, double thePas)
     {
         var aOut = new StringBuilder();
-        var aS1 = new GeomAdaptor_Surface(theS1);
-        var aS2 = new GeomAdaptor_Surface(theS2);
-        var aD1 = new Adaptor3d_TopolTool(aS1);
-        var aD2 = new Adaptor3d_TopolTool(aS2);
+        var aS1 = new SurfaceAdaptor(theS1);
+        var aS2 = new SurfaceAdaptor(theS2);
+        var aD1 = new TopolTool(aS1);
+        var aD2 = new TopolTool(aS2);
         IntPatch_TheIWalking.ThreadStepTrace = (theStatus, theP) => RecPnt(aOut, "S", (int)theStatus, theP);
         try
         {
@@ -145,12 +146,12 @@ public class IntWalkNativeStepsTests
         return aOut.ToString();
     }
 
-    private static string PWalk(Geom_Surface theS1, Geom_Surface theS2, double theU1, double theV1, double theU2,
+    private static string PWalk(Surface theS1, Surface theS2, double theU1, double theV1, double theU2,
                                 double theV2)
     {
         var aOut = new StringBuilder();
-        var aS1 = new GeomAdaptor_Surface(theS1);
-        var aS2 = new GeomAdaptor_Surface(theS2);
+        var aS1 = new SurfaceAdaptor(theS1);
+        var aS2 = new SurfaceAdaptor(theS2);
         var aPW = new IntWalk_PWalking(aS1, aS2, 1.0e-8, 1.0e-8, 0.01, 0.05);
         aPW.StepTrace = (theStatus, theP) => RecPnt(aOut, "S", (int)theStatus, theP);
         var aParDep = new NCollection_Array1<double>(1, 4);
@@ -175,19 +176,19 @@ public class IntWalkNativeStepsTests
     {
         "cyl-bspline-closed" => ImpPrm(Cylinder(), Patch(-2.0, 2.0, -2.0, 2.0), 0.01, 0.05),
         "cyl-bspline-open" => ImpPrm(Cylinder(), Patch(0.0, 3.0, -2.0, 2.0), 0.01, 0.05),
-        "plane-torus" => ImpPrm(new Geom_Plane(new Point3D(0, 0, 0.2), new Direction3D(0.1, 0.05, 1.0)),
-                                new Geom_ToroidalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0, 0.5),
+        "plane-torus" => ImpPrm(new PlaneSurface(new Point3D(0, 0, 0.2), new Direction3D(0.1, 0.05, 1.0)),
+                                new ToroidalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0, 0.5),
                                 0.01, 0.05),
-        "pwalk-cyl-bspline" => PWalk(new Geom_RectangularTrimmedSurface(Cylinder(), 0.0, 2.0 * M_PI, -2.0, 2.0),
+        "pwalk-cyl-bspline" => PWalk(new TrimmedSurface(Cylinder(), 0.0, 2.0 * M_PI, -2.0, 2.0),
                                      Patch(0.0, 3.0, -2.0, 2.0), 0.3, 0.1, 0.4, 0.55),
-        "sphere-bspline" => ImpPrm(new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.2),
+        "sphere-bspline" => ImpPrm(new SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.2),
                                    Patch(-2.0, 2.0, -2.0, 2.0), 0.01, 0.05),
-        "cone-bspline" => ImpPrm(new Geom_ConicalSurface(new CoordinateSystem(new Point3D(0.1, -0.2, -1.0), new Direction3D(0, 0, 1)),
+        "cone-bspline" => ImpPrm(new ConicalSurface(new CoordinateSystem(new Point3D(0.1, -0.2, -1.0), new Direction3D(0, 0, 1)),
                                                          M_PI / 6, 0.5),
                                  Patch(-2.0, 2.0, -2.0, 2.0), 0.01, 0.05),
         "bspline-plane" => ImpPrm(Patch(-2.0, 2.0, -2.0, 2.0, 1),
-                                  new Geom_Plane(new Point3D(0, 0, 0.05), new Direction3D(0.2, -0.1, 1.0)), 0.01, 0.05),
-        "pwalk-torus-bspline" => PWalk(new Geom_ToroidalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0, 0.5),
+                                  new PlaneSurface(new Point3D(0, 0, 0.05), new Direction3D(0.2, -0.1, 1.0)), 0.01, 0.05),
+        "pwalk-torus-bspline" => PWalk(new ToroidalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0, 0.5),
                                        Patch(-2.0, 2.0, -2.0, 2.0), 0.0, M_PI, 0.875, 0.5),
         "pwalk-bspline-bspline" => PWalk(Patch(-2.0, 2.0, -2.0, 2.0), Patch(-2.0, 2.0, -2.0, 2.0, 1), 0.5, 0.5, 0.5, 0.5),
         _ => throw new ArgumentOutOfRangeException(nameof(theCase)),

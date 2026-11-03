@@ -1,10 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation.Advanced;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using static Occt.AdvApp2Var_CriterionRepartition;
-using static Occt.AdvApp2Var_CriterionType;
+using static Kerf.Engine.Approximation.Advanced.CriterionRepartition;
+using static Kerf.Engine.Approximation.Advanced.CriterionType;
 using static Kerf.Engine.Geometry.IsoType;
 using static Kerf.Geometry.Continuity;
 
@@ -21,7 +22,7 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     internal delegate void Function(double u, double v, int du, int dv, Span<double> xyz);
 
     /// <summary>An evaluator over a <see cref="Function"/>, counting its calls.</summary>
-    internal sealed class Evaluator(Function theF) : AdvApp2Var_EvaluatorFunc2Var
+    internal sealed class Evaluator(Function theF) : EvaluatorFunc2Var
     {
         public int NbCalls;
 
@@ -98,29 +99,29 @@ public class AdvApp2Var_ApproxAFunc2VarTests
 
     internal static NCollection_HArray2<double> Tol2(double theTol) => new(1, 1, 1, 4, theTol);
 
-    internal static AdvApp2Var_ApproxAFunc2Var Approximate(Function theF, double theU0, double theU1, double theV0,
+    internal static ApproxAFunc2Var Approximate(Function theF, double theU0, double theU1, double theV0,
                                                           double theV1, double theTol, Continuity theUCont,
                                                           Continuity theVCont, int theMaxDegU = 11,
                                                           int theMaxDegV = 11, int theMaxPatch = 50,
                                                           int thePrecisCode = 1,
                                                           IsoType theIso = IsoV,
-                                                          AdvApp2Var_Criterion? theCrit = null)
+                                                          Criterion? theCrit = null)
     {
         Evaluator anEval = new(theF);
-        AdvApprox_DichoCutting aCut = new();
+        DichoCutting aCut = new();
         NCollection_HArray1<double> aNul1 = Tol1(0.0);
         NCollection_HArray2<double> aNul2 = Tol2(0.0);
         return theCrit is null
-            ? new AdvApp2Var_ApproxAFunc2Var(0, 0, 1, aNul1, aNul1, Tol1(theTol), aNul2, aNul2, Tol2(theTol), theU0,
+            ? new ApproxAFunc2Var(0, 0, 1, aNul1, aNul1, Tol1(theTol), aNul2, aNul2, Tol2(theTol), theU0,
                                              theU1, theV0, theV1, theIso, theUCont, theVCont, thePrecisCode, theMaxDegU,
                                              theMaxDegV, theMaxPatch, anEval, aCut, aCut)
-            : new AdvApp2Var_ApproxAFunc2Var(0, 0, 1, aNul1, aNul1, Tol1(theTol), aNul2, aNul2, Tol2(theTol), theU0,
+            : new ApproxAFunc2Var(0, 0, 1, aNul1, aNul1, Tol1(theTol), aNul2, aNul2, Tol2(theTol), theU0,
                                              theU1, theV0, theV1, theIso, theUCont, theVCont, thePrecisCode, theMaxDegU,
                                              theMaxDegV, theMaxPatch, anEval, theCrit, aCut, aCut);
     }
 
     /// <summary>The largest distance between the surface and F on an n x n grid of the domain.</summary>
-    internal static double MaxDeviation(Geom_Surface theS, Function theF, double theU0, double theU1, double theV0,
+    internal static double MaxDeviation(Surface theS, Function theF, double theU0, double theU1, double theV0,
                                         double theV1, int theN = 23)
     {
         double aMax = 0;
@@ -141,25 +142,25 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     [Fact]
     public void Plane_IsReproduced()
     {
-        AdvApp2Var_ApproxAFunc2Var anApprox = Approximate(Plane, -1, 2, 0, 3, 1e-6, C1, C1);
-        Assert.True(anApprox.IsDone());
-        Assert.True(anApprox.HasResult());
-        Geom_BSplineSurface aS = anApprox.Surface(1);
+        ApproxAFunc2Var anApprox = Approximate(Plane, -1, 2, 0, 3, 1e-6, C1, C1);
+        Assert.True(anApprox.IsDone);
+        Assert.True(anApprox.HasResult);
+        BSplineSurface aS = anApprox.Surface(1);
         Assert.True(aS.IsFrozen);
         Assert.True(anApprox.MaxError(3, 1) < 1e-12);
         Assert.True(MaxDeviation(aS, Plane, -1, 2, 0, 3) < 1e-12);
-        Assert.Equal(1, aS.NbUKnots() - 1);
-        Assert.Equal(1, aS.NbVKnots() - 1);
+        Assert.Equal(1, aS.UKnotCount - 1);
+        Assert.Equal(1, aS.VKnotCount - 1);
     }
 
     [Fact]
     public void Polynomial_IsReproduced()
     {
-        AdvApp2Var_ApproxAFunc2Var anApprox = Approximate(Poly, -1, 1.5, -2, 1, 1e-7, C2, C1);
-        Assert.True(anApprox.IsDone());
-        Geom_BSplineSurface aS = anApprox.Surface(1);
+        ApproxAFunc2Var anApprox = Approximate(Poly, -1, 1.5, -2, 1, 1e-7, C2, C1);
+        Assert.True(anApprox.IsDone);
+        BSplineSurface aS = anApprox.Surface(1);
         Assert.True(MaxDeviation(aS, Poly, -1, 1.5, -2, 1) < 1e-11, anApprox.ToString());
-        Assert.Equal(1, aS.NbUKnots() - 1);
+        Assert.Equal(1, aS.UKnotCount - 1);
     }
 
     [Theory]
@@ -171,10 +172,10 @@ public class AdvApp2Var_ApproxAFunc2VarTests
                                          IsoType theIso)
     {
         double u1 = 2 * Math.PI, v1 = 2 * Math.PI;
-        AdvApp2Var_ApproxAFunc2Var anApprox =
+        ApproxAFunc2Var anApprox =
             Approximate(SinCos, 0, u1, 0, v1, theTol, theUCont, theVCont, theIso: theIso);
-        Assert.True(anApprox.IsDone(), anApprox.ToString());
-        Geom_BSplineSurface aS = anApprox.Surface(1);
+        Assert.True(anApprox.IsDone, anApprox.ToString());
+        BSplineSurface aS = anApprox.Surface(1);
         Assert.True(anApprox.MaxError(3, 1) <= theTol);
         Assert.True(MaxDeviation(aS, SinCos, 0, u1, 0, v1) <= theTol, anApprox.ToString());
         AssertContinuity(aS, theUCont, theVCont);
@@ -189,9 +190,9 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     public void SinCos_C0_ReproducesOcctsUnderestimatedError()
     {
         double u1 = 2 * Math.PI, v1 = 2 * Math.PI;
-        AdvApp2Var_ApproxAFunc2Var anApprox =
+        ApproxAFunc2Var anApprox =
             Approximate(SinCos, 0, u1, 0, v1, 1e-4, C0, C0, theIso: IsoV);
-        Assert.True(anApprox.IsDone());
+        Assert.True(anApprox.IsDone);
         Assert.Equal(1.0346934213069106E-05, anApprox.MaxError(3, 1));
         Assert.Equal(0.8660254037952803, anApprox.AverageError(3, 1));
         Assert.Equal(9, anApprox.UDegree());
@@ -200,15 +201,15 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     }
 
     /// <summary>The knots' multiplicities give at least the requested continuity.</summary>
-    internal static void AssertContinuity(Geom_BSplineSurface theS, Continuity theUCont, Continuity theVCont)
+    internal static void AssertContinuity(BSplineSurface theS, Continuity theUCont, Continuity theVCont)
     {
         int anOrdU = theUCont == C0 ? 0 : theUCont == C1 ? 1 : 2;
         int anOrdV = theVCont == C0 ? 0 : theVCont == C1 ? 1 : 2;
-        for (int i = 2; i < theS.NbUKnots(); i++)
+        for (int i = 2; i < theS.UKnotCount; i++)
         {
             Assert.True(theS.UDegree() - theS.UMultiplicity(i) >= anOrdU);
         }
-        for (int i = 2; i < theS.NbVKnots(); i++)
+        for (int i = 2; i < theS.VKnotCount; i++)
         {
             Assert.True(theS.VDegree() - theS.VMultiplicity(i) >= anOrdV);
         }
@@ -221,11 +222,11 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     public void SpherePatch_IsWithinTolerance(Continuity theUCont, Continuity theVCont, double theTol,
                                               int thePrecisCode)
     {
-        AdvApp2Var_ApproxAFunc2Var anApprox =
+        ApproxAFunc2Var anApprox =
             Approximate(Sphere, 0, Math.PI, -Math.PI / 3, Math.PI / 3, theTol, theUCont, theVCont,
                         thePrecisCode: thePrecisCode);
-        Assert.True(anApprox.IsDone(), anApprox.ToString());
-        Geom_BSplineSurface aS = anApprox.Surface(1);
+        Assert.True(anApprox.IsDone, anApprox.ToString());
+        BSplineSurface aS = anApprox.Surface(1);
         Assert.True(MaxDeviation(aS, Sphere, 0, Math.PI, -Math.PI / 3, Math.PI / 3) <= theTol, anApprox.ToString());
         AssertContinuity(aS, theUCont, theVCont);
     }
@@ -237,57 +238,57 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     [Fact]
     public void LargeUDegree_SmallVDegree_Completes()
     {
-        AdvApp2Var_ApproxAFunc2Var anApprox =
+        ApproxAFunc2Var anApprox =
             Approximate(Plane, -1, 2, 0, 3, 1e-6, C0, C2, theMaxDegU: 14, theMaxDegV: 5);
-        Assert.True(anApprox.IsDone());
+        Assert.True(anApprox.IsDone);
         Assert.True(MaxDeviation(anApprox.Surface(1), Plane, -1, 2, 0, 3) < 1e-12);
     }
 
     /// <summary>A criterion on the patches' maximum error.</summary>
-    internal sealed class MaxErrorCriterion : AdvApp2Var_Criterion
+    internal sealed class MaxErrorCriterion : Criterion
     {
-        public MaxErrorCriterion(double theMax, AdvApp2Var_CriterionType theType,
-                                 AdvApp2Var_CriterionRepartition theRepartition)
+        public MaxErrorCriterion(double theMax, CriterionType theType,
+                                 CriterionRepartition theRepartition)
         {
-            myMaxValue = theMax;
-            myType = theType;
-            myRepartition = theRepartition;
+            _maxValue = theMax;
+            _type = theType;
+            _repartition = theRepartition;
         }
 
-        public override void Value(AdvApp2Var_Patch P, AdvApp2Var_Context C) =>
+        public override void Value(Patch P, Context C) =>
             P.SetCritValue(P.MaxErrors()!.Value(1));
 
-        public override bool IsSatisfied(AdvApp2Var_Patch P) => P.CritValue() < myMaxValue;
+        public override bool IsSatisfied(Patch P) => P.CritValue() < _maxValue;
     }
 
     [Theory]
-    [InlineData(AdvApp2Var_Absolute, AdvApp2Var_Regular)]
-    [InlineData(AdvApp2Var_Absolute, AdvApp2Var_Incremental)]
-    [InlineData(AdvApp2Var_Relative, AdvApp2Var_Regular)]
-    [InlineData(AdvApp2Var_Relative, AdvApp2Var_Incremental)]
-    public void Criterion_DrivesTheCutting(AdvApp2Var_CriterionType theType,
-                                                  AdvApp2Var_CriterionRepartition theRepartition)
+    [InlineData(Absolute, Regular)]
+    [InlineData(Absolute, Incremental)]
+    [InlineData(Relative, Regular)]
+    [InlineData(Relative, Incremental)]
+    public void Criterion_DrivesTheCutting(CriterionType theType,
+                                                  CriterionRepartition theRepartition)
     {
         const double aCrit = 1e-6;
         MaxErrorCriterion aCriterion = new(aCrit, theType, theRepartition);
         Assert.Equal(aCrit, aCriterion.MaxValue());
         Assert.Equal(theType, aCriterion.Type());
         Assert.Equal(theRepartition, aCriterion.Repartition());
-        AdvApp2Var_ApproxAFunc2Var anApprox = Approximate(SinCos, 0, 4, 0, 4, 1e-5, C1, C1,
+        ApproxAFunc2Var anApprox = Approximate(SinCos, 0, 4, 0, 4, 1e-5, C1, C1,
                                                           theMaxDegU: 7, theMaxDegV: 7, theMaxPatch: 400,
                                                           theCrit: aCriterion);
-        Assert.True(anApprox.HasResult());
+        Assert.True(anApprox.HasResult);
         // the criterion is the patches' maximum error, read after their errors are complete: its maximum over the
         // patches is the approximation's maximum error
         Assert.Equal(anApprox.MaxError(3, 1), anApprox.CritError(3, 1));
-        Geom_BSplineSurface aS = anApprox.Surface(1);
-        Assert.True(aS.NbUKnots() > 2, anApprox.ToString());
-        if (theRepartition == AdvApp2Var_Regular)
+        BSplineSurface aS = anApprox.Surface(1);
+        Assert.True(aS.UKnotCount > 2, anApprox.ToString());
+        if (theRepartition == Regular)
         {
             // a regular grid: NbInt x NbInt equal intervals
-            Assert.Equal(aS.NbUKnots(), aS.NbVKnots());
-            double aStep = 4.0 / (aS.NbUKnots() - 1);
-            for (int i = 1; i <= aS.NbUKnots(); i++)
+            Assert.Equal(aS.UKnotCount, aS.VKnotCount);
+            double aStep = 4.0 / (aS.UKnotCount - 1);
+            for (int i = 1; i <= aS.UKnotCount; i++)
             {
                 Assert.Equal((i - 1) * aStep, aS.UKnot(i), 1e-14);
             }
@@ -305,27 +306,27 @@ public class AdvApp2Var_ApproxAFunc2VarTests
             (Poly, 1.5, 1.0, C2, 1e-8),
             (SinCos, 3.0, 5.0, C2, 1e-7),
         ];
-        Geom_BSplineSurface Run(int i)
+        BSplineSurface Run(int i)
         {
             var c = aCases[i % aCases.Length];
             return Approximate(c.F, 0, c.U1, 0, c.V1, c.Tol, c.C, c.C).Surface(1);
         }
-        Geom_BSplineSurface[] aSequential = new Geom_BSplineSurface[aCases.Length];
+        BSplineSurface[] aSequential = new BSplineSurface[aCases.Length];
         for (int i = 0; i < aCases.Length; i++)
         {
             aSequential[i] = Run(i);
         }
-        Geom_BSplineSurface[] aParallel = new Geom_BSplineSurface[64];
+        BSplineSurface[] aParallel = new BSplineSurface[64];
         Parallel.For(0, aParallel.Length, new ParallelOptions { MaxDegreeOfParallelism = 8 },
                      i => aParallel[i] = Run(i));
         for (int i = 0; i < aParallel.Length; i++)
         {
-            Geom_BSplineSurface aRef = aSequential[i % aCases.Length], aS = aParallel[i];
-            Assert.Equal(aRef.NbUPoles(), aS.NbUPoles());
-            Assert.Equal(aRef.NbVPoles(), aS.NbVPoles());
-            for (int iu = 1; iu <= aRef.NbUPoles(); iu++)
+            BSplineSurface aRef = aSequential[i % aCases.Length], aS = aParallel[i];
+            Assert.Equal(aRef.UPoleCount, aS.UPoleCount);
+            Assert.Equal(aRef.VPoleCount, aS.VPoleCount);
+            for (int iu = 1; iu <= aRef.UPoleCount; iu++)
             {
-                for (int iv = 1; iv <= aRef.NbVPoles(); iv++)
+                for (int iv = 1; iv <= aRef.VPoleCount; iv++)
                 {
                     Assert.Equal(aRef.Pole(iu, iv), aS.Pole(iu, iv));
                 }
@@ -336,7 +337,7 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     [Fact]
     public void Accessors_ReturnCopies_AndNullForMissingDimensions()
     {
-        AdvApp2Var_ApproxAFunc2Var anApprox = Approximate(Sphere, 0, 1, 0, 1, 1e-6, C1, C1);
+        ApproxAFunc2Var anApprox = Approximate(Sphere, 0, 1, 0, 1, 1e-6, C1, C1);
         Assert.Equal(0, anApprox.NumSubSpaces(1));
         Assert.Equal(0, anApprox.NumSubSpaces(2));
         Assert.Equal(1, anApprox.NumSubSpaces(3));
@@ -378,9 +379,9 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     {
         // one 1D subspace, which the evaluator refuses (it answers only in dimension 3): the iso approximation fails
         Evaluator anEval = new(Plane);
-        AdvApprox_DichoCutting aCut = new();
+        DichoCutting aCut = new();
         Assert.ThrowsAny<ConstructionErrorException>(
-            () => new AdvApp2Var_ApproxAFunc2Var(1, 0, 0, Tol1(1e-6), null, null, Tol2(1e-6), null, null, 0, 1, 0, 1,
+            () => new ApproxAFunc2Var(1, 0, 0, Tol1(1e-6), null, null, Tol2(1e-6), null, null, 0, 1, 0, 1,
                                                  IsoV, C1, C1, 1, 8, 8, 4, anEval, aCut,
                                                  aCut));
     }

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static OcctNet.ModelingAlgorithms.Tests.LocationLawTestSupport;
 
@@ -14,10 +15,10 @@ public class GeomFill_LocationDraftTests
     private static GeomFill_LocationDraft Draft(bool theWithStop = true)
     {
         var aLaw = new GeomFill_LocationDraft(new Direction3D(0, 0, 1), Angle);
-        aLaw.SetCurve(new GeomAdaptor_Curve(new Geom_Circle(Constants.XOY(), 5), 0, 3));
+        aLaw.SetCurve(new CurveAdaptor(new CircleCurve3D(Constants.XOY(), 5), 0, 3));
         if (theWithStop)
         {
-            aLaw.SetStopSurf(new GeomAdaptor_Surface(new Geom_Plane(new Point3D(0, 0, -4), new Direction3D(0, 0, 1))));
+            aLaw.SetStopSurf(new SurfaceAdaptor(new PlaneSurface(new Point3D(0, 0, -4), new Direction3D(0, 0, 1))));
         }
         return aLaw;
     }
@@ -57,8 +58,8 @@ public class GeomFill_LocationDraftTests
         Assert.True(aLaw.HasLastRestriction());
         Assert.Equal(2, aLaw.Nb2dCurves()); // the trace and the last restriction
 
-        var aPlane = new Geom_Plane(new Point3D(0, 0, -4), new Direction3D(0, 0, 1));
-        var aCircle = new Geom_Circle(Constants.XOY(), 5);
+        var aPlane = new PlaneSurface(new Point3D(0, 0, -4), new Direction3D(0, 0, 1));
+        var aCircle = new CircleCurve3D(Constants.XOY(), 5);
         var aPoles = new NCollection_Array1<Point2D>(1, 2);
         foreach (double t in new[] { 0.0, 0.37, 1.5, 2.999 })
         {
@@ -96,8 +97,8 @@ public class GeomFill_LocationDraftTests
     {
         // a straight path (a constant trihedron) and a tilted stop plane: the trace moves along the plane
         var aLaw = new GeomFill_LocationDraft(new Direction3D(0, 0, 1), Angle);
-        aLaw.SetCurve(new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 4));
-        aLaw.SetStopSurf(new GeomAdaptor_Surface(new Geom_Plane(new Point3D(0, 0, -4), new Direction3D(0.2, 0.1, 1))));
+        aLaw.SetCurve(new CurveAdaptor(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 4));
+        aLaw.SetStopSurf(new SurfaceAdaptor(new PlaneSurface(new Point3D(0, 0, -4), new Direction3D(0.2, 0.1, 1))));
         Assert.True(aLaw.IsIntersec());
         (Vector2D aSurf, Vector2D aCurve, Vector2D aFDSurf, Vector2D aFDCurve) = PoleDerivatives(aLaw, 1.7);
         Assert.True(aFDSurf.Subtracted(aSurf).Magnitude() < 1e-6, $"{aFDSurf} and {aSurf}");

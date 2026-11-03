@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of SphericalSurface from Geom to a STEP spherical_surface.</summary>
@@ -18,7 +20,7 @@ public sealed class GeomToStep_MakeSphericalSurface : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A sphere, its position and radius divided by the length factor.</summary>
-    public GeomToStep_MakeSphericalSurface(Geom_SphericalSurface S, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeSphericalSurface(SphericalSurface S, in StepData_Factors theLocalFactors)
     {
         StepGeom_SphericalSurface Surf;
         StepGeom_Axis2Placement3d aPosition;
@@ -35,7 +37,7 @@ public sealed class GeomToStep_MakeSphericalSurface : GeomToStep_Root
     }
 
     /// <summary>A sphere (default factors).</summary>
-    public GeomToStep_MakeSphericalSurface(Geom_SphericalSurface S) : this(S, new StepData_Factors())
+    public GeomToStep_MakeSphericalSurface(SphericalSurface S) : this(S, new StepData_Factors())
     {
     }
 

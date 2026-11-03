@@ -3,9 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -23,9 +26,9 @@ namespace Occt;
 public class ShapeUpgrade_FaceDivide : ShapeUpgrade_Tool
 {
     /// <summary>The face.</summary>
-    protected TopoDS_Face myFace;
+    protected Face myFace;
     /// <summary>The result (a face or a shell).</summary>
-    protected TopoDS_Shape myResult;
+    protected Shape myResult;
     /// <summary>The mode for trimming (segmenting) the surface by the wire's UV bounds.</summary>
     protected bool mySegmentMode;
     /// <summary>The status.</summary>
@@ -37,8 +40,8 @@ public class ShapeUpgrade_FaceDivide : ShapeUpgrade_Tool
     /// <summary>Empty constructor.</summary>
     public ShapeUpgrade_FaceDivide()
     {
-        myFace = new TopoDS_Face();
-        myResult = new TopoDS_Shape();
+        myFace = new Face();
+        myResult = new Shape();
         myStatus = 0;
         mySegmentMode = true;
         mySplitSurfaceTool = new ShapeUpgrade_SplitSurface();
@@ -46,13 +49,13 @@ public class ShapeUpgrade_FaceDivide : ShapeUpgrade_Tool
     }
 
     /// <summary>Initializes by a face.</summary>
-    public ShapeUpgrade_FaceDivide(in TopoDS_Face F) : this()
+    public ShapeUpgrade_FaceDivide(in Face F) : this()
     {
         Init(F);
     }
 
     /// <summary>Initializes by a face.</summary>
-    public void Init(in TopoDS_Face F)
+    public void Init(in Face F)
     {
         myResult = myFace = F;
     }
@@ -70,7 +73,7 @@ public class ShapeUpgrade_FaceDivide : ShapeUpgrade_Tool
     public virtual bool Perform(double theArea = 0.0)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
-        if (myFace.IsNull())
+        if (myFace.IsNull)
         {
             return false;
         }
@@ -97,14 +100,14 @@ public class ShapeUpgrade_FaceDivide : ShapeUpgrade_Tool
         }
 
         // myResult should be face; else return with FAIL
-        if (myResult.IsNull() || myResult.ShapeType() != TopAbs_FACE)
+        if (myResult.IsNull || myResult.ShapeType() != ShapeType.Face)
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL3);
             return false;
         }
-        TopoDS_Face face = TopoDS.Face(myResult);
+        Face face = ShapeCasts.Face(myResult);
 
-        Geom_Surface surf = BRep_Tool.Surface(face, out Placement L)!;
+        Surface surf = Tool.Surface(face, out Placement L)!;
 
         //  BRepTools::UVBounds(myFace,Uf,Ul,Vf,Vl);
         ShapeAnalysis.GetFaceUVBounds(face, out double Uf, out double Ul, out double Vf, out double Vl);
@@ -116,7 +119,7 @@ public class ShapeUpgrade_FaceDivide : ShapeUpgrade_Tool
 
         // make little extension to ensure all pcurves fit inside new surface bounds
         surf.Bounds(out double aSUf, out double aSUl, out double aSVf, out double aSVl);
-        if (!surf.IsUPeriodic())
+        if (!surf.IsUPeriodic)
         {
             double dU = (Ul - Uf) * 0.01;
             if (Uf > aSUf)
@@ -128,7 +131,7 @@ public class ShapeUpgrade_FaceDivide : ShapeUpgrade_Tool
                 Ul += Math.Min(dU, aSUl - Ul);
             }
         }
-        if (!surf.IsVPeriodic())
+        if (!surf.IsVPeriodic)
         {
             double dV = (Vl - Vf) * 0.01;
             if (Vf > aSVf)
@@ -154,14 +157,14 @@ public class ShapeUpgrade_FaceDivide : ShapeUpgrade_Tool
         // to protect original shape from increasing tolerance after SameParameter
         if (SplitSurf.Status(ShapeExtend_DONE3))
         {
-            for (var exp = new TopExp_Explorer(face, TopAbs_VERTEX); exp.More(); exp.Next())
+            for (var exp = new Explorer(face, ShapeType.Vertex); exp.More(); exp.Next())
             {
                 if (Context()!.IsRecorded(exp.Current()))
                 {
                     continue;
                 }
-                TopoDS_Shape emptyCopied = exp.Current().EmptyCopied();
-                TopoDS_Vertex V = TopoDS.Vertex(emptyCopied);
+                Shape emptyCopied = exp.Current().EmptyCopied();
+                Vertex V = ShapeCasts.Vertex(emptyCopied);
                 Context()!.Replace(exp.Current(), V);
             }
         }
@@ -200,29 +203,29 @@ public class ShapeUpgrade_FaceDivide : ShapeUpgrade_Tool
         }
 
         SplitWire.SetMaxTolerance(MaxTolerance());
-        for (var explf = new TopExp_Explorer(myResult, TopAbs_FACE); explf.More(); explf.Next())
+        for (var explf = new Explorer(myResult, ShapeType.Face); explf.More(); explf.Next())
         {
-            TopoDS_Shape S = Context()!.InternalApply(explf.Current(), TopAbs_SHAPE);
+            Shape S = Context()!.InternalApply(explf.Current(), ShapeType.Shape);
 
             // S should be face; else return with FAIL
-            if (S.IsNull() || S.ShapeType() != TopAbs_FACE)
+            if (S.IsNull || S.ShapeType() != ShapeType.Face)
             {
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL3);
                 return false;
             }
 
-            TopoDS_Face F = TopoDS.Face(S);
+            Face F = ShapeCasts.Face(S);
             SplitWire.SetFace(F);
-            for (var wi = new TopoDS_Iterator(F, false); wi.More(); wi.Next())
+            for (var wi = new Iterator(F, false); wi.More(); wi.Next())
             {
                 // TopoDS_Wire wire = TopoDS::Wire ( wi.Value() );
                 //  modifications already defined in context are to be applied inside SplitWire
-                if (wi.Value().ShapeType() != TopAbs_WIRE)
+                if (wi.Value().ShapeType() != ShapeType.Wire)
                 {
                     continue;
                 }
 
-                TopoDS_Wire wire = TopoDS.Wire(wi.Value());
+                Wire wire = ShapeCasts.Wire(wi.Value());
                 SplitWire.Load(wire);
                 SplitWire.SetContext(Context());
                 SplitWire.Perform();
@@ -242,14 +245,14 @@ public class ShapeUpgrade_FaceDivide : ShapeUpgrade_Tool
     }
 
     /// <summary>Gives the resulting shell or face (the initial face if not done, null if not initialized), frozen.</summary>
-    public TopoDS_Shape Result()
+    public Shape Result()
     {
         myResult.TShape()?.FreezeGraph();
         return myResult;
     }
 
     /// <summary><see cref="Result"/> without freezing it, for ported callers.</summary>
-    internal TopoDS_Shape InternalResult() => myResult;
+    internal Shape InternalResult() => myResult;
 
     /// <summary>
     /// Queries the status of the last <see cref="Perform"/>: OK (no splitting done), DONE1 (some edges split), DONE2

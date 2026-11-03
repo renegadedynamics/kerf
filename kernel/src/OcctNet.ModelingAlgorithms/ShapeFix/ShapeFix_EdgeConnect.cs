@@ -4,9 +4,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -16,56 +20,56 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A working object (decision 21). <see cref="Add(in TopoDS_Edge, in TopoDS_Edge)"/> and
-/// <see cref="Add(in TopoDS_Shape)"/> only record the connections; OCCT's <see cref="Build()"/> then writes into the
+/// A working object (decision 21). <see cref="Add(in Edge, in Edge)"/> and
+/// <see cref="Add(in Shape)"/> only record the connections; OCCT's <see cref="Build()"/> then writes into the
 /// recorded edges and vertices in place (vertices removed and added, a shared vertex moved and its tolerance raised),
 /// so it is internal: ported code calls it on shapes it owns.
 /// </para>
 /// <para>
-/// The public form is <see cref="Built(in TopoDS_Shape)"/>: the connections recorded on a shape's edges are built on
-/// an exact copy of that shape (<see cref="BRepTools_CopyAtEntry"/>, decision 583), whose unchanged sub-shapes are the
+/// The public form is <see cref="Built(in Shape)"/>: the connections recorded on a shape's edges are built on
+/// an exact copy of that shape (<see cref="CopyAtEntry"/>, decision 583), whose unchanged sub-shapes are the
 /// caller's own, and the result is frozen.
 /// </para>
 /// </remarks>
 public sealed class ShapeFix_EdgeConnect
 {
-    private NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>                   myVertices;
-    private NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myLists;
+    private NCollection_DataMap<Shape, Shape>                   myVertices;
+    private NCollection_DataMap<Shape, NCollection_List<Shape>> myLists;
 
     // #define POSITION_USES_MEAN_POINT
 
     /// <summary>Empty constructor.</summary>
     public ShapeFix_EdgeConnect()
     {
-        myVertices = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        myLists    = new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+        myVertices = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        myLists    = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
     }
 
     /// <summary>
     /// Adds the connection between the end vertex of the first edge and the start vertex of the second edge, taking
     /// the edges' orientations into account.
     /// </summary>
-    public void Add(in TopoDS_Edge aFirst, in TopoDS_Edge aSecond)
+    public void Add(in Edge aFirst, in Edge aSecond)
     {
         // Select vertices to connect
-        TopoDS_Vertex theFirstVertex  = TopExp.LastVertex(aFirst, true);
-        TopoDS_Vertex theSecondVertex = TopExp.FirstVertex(aSecond, true);
+        Vertex theFirstVertex  = Exploration.LastVertex(aFirst, true);
+        Vertex theSecondVertex = Exploration.FirstVertex(aSecond, true);
 
         // Make necessary bindings
         if (myVertices.IsBound(theFirstVertex))
         {
             // First vertex is bound - find shared vertex
-            TopoDS_Vertex theFirstShared = TopoDS.Vertex(myVertices[theFirstVertex]);
+            Vertex theFirstShared = ShapeCasts.Vertex(myVertices[theFirstVertex]);
             if (myVertices.IsBound(theSecondVertex))
             {
                 // Second vertex is bound - find shared vertex
-                TopoDS_Vertex theSecondShared = TopoDS.Vertex(myVertices[theSecondVertex]);
+                Vertex theSecondShared = ShapeCasts.Vertex(myVertices[theSecondVertex]);
                 if (!theFirstShared.IsSame(theSecondShared))
                 {
                     // Concatenate lists
-                    NCollection_List<TopoDS_Shape> theFirstList  = myLists[theFirstShared];
-                    NCollection_List<TopoDS_Shape> theSecondList = myLists[theSecondShared];
-                    for (var theIterator = new NCollection_List<TopoDS_Shape>.Iterator(theSecondList);
+                    NCollection_List<Shape> theFirstList  = myLists[theFirstShared];
+                    NCollection_List<Shape> theSecondList = myLists[theSecondShared];
+                    for (var theIterator = new NCollection_List<Shape>.Iterator(theSecondList);
                          theIterator.More();
                          theIterator.Next())
                     {
@@ -85,7 +89,7 @@ public sealed class ShapeFix_EdgeConnect
                 // Bind second vertex with shared vertex of the first one
                 myVertices.Bind(theSecondVertex, theFirstShared);
                 // Add second vertex and second edge to the list
-                NCollection_List<TopoDS_Shape> theFirstList = myLists[theFirstShared];
+                NCollection_List<Shape> theFirstList = myLists[theFirstShared];
                 theFirstList.Append(theSecondVertex);
                 theFirstList.Append(aSecond);
             }
@@ -95,11 +99,11 @@ public sealed class ShapeFix_EdgeConnect
             if (myVertices.IsBound(theSecondVertex))
             {
                 // Second vertex is bound - find shared vertex
-                TopoDS_Vertex theSecondShared = TopoDS.Vertex(myVertices[theSecondVertex]);
+                Vertex theSecondShared = ShapeCasts.Vertex(myVertices[theSecondVertex]);
                 // Bind first vertex with shared vertex of the second one
                 myVertices.Bind(theFirstVertex, theSecondShared);
                 // Add first vertex and first edge to the list
-                NCollection_List<TopoDS_Shape> theSecondList = myLists[theSecondShared];
+                NCollection_List<Shape> theSecondList = myLists[theSecondShared];
                 theSecondList.Append(theFirstVertex);
                 theSecondList.Append(aFirst);
             }
@@ -108,7 +112,7 @@ public sealed class ShapeFix_EdgeConnect
                 // None is bound - create new bindings
                 myVertices.Bind(theFirstVertex, theFirstVertex);
                 myVertices.Bind(theSecondVertex, theFirstVertex);
-                var theNewList = new NCollection_List<TopoDS_Shape>();
+                var theNewList = new NCollection_List<Shape>();
                 theNewList.Append(theFirstVertex);
                 theNewList.Append(aFirst);
                 theNewList.Append(theSecondVertex);
@@ -122,22 +126,22 @@ public sealed class ShapeFix_EdgeConnect
     /// Adds the connections of the whole shape: the consecutive edges of each wire (well ordered), and the last and
     /// first edges of each wire flagged Closed.
     /// </summary>
-    public void Add(in TopoDS_Shape aShape)
+    public void Add(in Shape aShape)
     {
-        for (var expw = new TopExp_Explorer(aShape, TopAbs_WIRE); expw.More(); expw.Next())
+        for (var expw = new Explorer(aShape, ShapeType.Wire); expw.More(); expw.Next())
         {
-            TopoDS_Wire theWire = TopoDS.Wire(expw.Current());
-            var         expe    = new TopExp_Explorer(theWire, TopAbs_EDGE);
+            Wire theWire = ShapeCasts.Wire(expw.Current());
+            var         expe    = new Explorer(theWire, ShapeType.Edge);
             if (expe.More())
             {
                 // Obtain the first edge and remember it
-                TopoDS_Edge theEdge  = TopoDS.Edge(expe.Current());
-                TopoDS_Edge theFirst = theEdge;
+                Edge theEdge  = ShapeCasts.Edge(expe.Current());
+                Edge theFirst = theEdge;
                 expe.Next();
                 for (; expe.More(); expe.Next())
                 {
                     // Obtain second edge and connect it
-                    TopoDS_Edge theNext = TopoDS.Edge(expe.Current());
+                    Edge theNext = ShapeCasts.Edge(expe.Current());
                     Add(theEdge, theNext);
                     theEdge = theNext;
                 }
@@ -152,46 +156,46 @@ public sealed class ShapeFix_EdgeConnect
 
     /// <summary>
     /// Builds the shared vertices, updates their positions and tolerances, puts them into the recorded edges in place
-    /// and clears the connections. Throws on frozen edges or vertices: see <see cref="Built(in TopoDS_Shape)"/>.
+    /// and clears the connections. Throws on frozen edges or vertices: see <see cref="Built(in Shape)"/>.
     /// </summary>
     internal void Build()
     {
-        var theLIterator = new NCollection_List<TopoDS_Shape>.Iterator();
+        var theLIterator = new NCollection_List<Shape>.Iterator();
 
         var    thePositions = new NCollection_Sequence<Xyz>();
         Xyz thePosition;
         double theMaxDev;
-        var    theBuilder = new BRep_Builder();
+        var    theBuilder = new BrepBuilder();
 
         // Iterate on shared vertices (the port's map order, decision 18: each shared vertex is built on its own)
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theSIterator in myLists)
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> theSIterator in myLists)
         {
-            TopoDS_Vertex                  theSharedVertex = TopoDS.Vertex(theSIterator.Key);
-            NCollection_List<TopoDS_Shape> theList         = theSIterator.Value;
+            Vertex                  theSharedVertex = ShapeCasts.Vertex(theSIterator.Key);
+            NCollection_List<Shape> theList         = theSIterator.Value;
 
             thePositions.Clear();
 
             // Iterate on edges, accumulating positions
             for (theLIterator.Initialize(theList); theLIterator.More(); theLIterator.Next())
             {
-                TopoDS_Vertex theVertex = TopoDS.Vertex(theLIterator.Value());
+                Vertex theVertex = ShapeCasts.Vertex(theLIterator.Value());
                 theLIterator.Next();
-                ref TopoDS_Shape theEdgeShape = ref theLIterator.ChangeValue();
+                ref Shape theEdgeShape = ref theLIterator.ChangeValue();
 
                 // Determine usage of curve bound points
-                theEdgeShape.Orientation(TopAbs_FORWARD);
-                TopoDS_Edge theEdge = TopoDS.Edge(theEdgeShape);
-                TopExp.Vertices(theEdge, out TopoDS_Vertex theStart, out TopoDS_Vertex theEnd);
+                theEdgeShape.Orientation(Forward);
+                Edge theEdge = ShapeCasts.Edge(theEdgeShape);
+                Exploration.Vertices(theEdge, out Vertex theStart, out Vertex theEnd);
                 bool use_start = (theVertex.IsSame(theStart));
                 bool use_end   = (theVertex.IsSame(theEnd));
 
                 // Iterate on edge curves, accumulating positions (OCCT.NET: frozen: read through Curves(), where OCCT
                 // walks ChangeCurves())
                 var theCIterator =
-                    new NCollection_List<BRep_CurveRepresentation>.Iterator(((BRep_TEdge)theEdge.TShape()!).Curves());
+                    new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)theEdge.TShape()!).Curves());
                 for (; theCIterator.More(); theCIterator.Next())
                 {
-                    if (theCIterator.Value() is not BRep_GCurve GC)
+                    if (theCIterator.Value() is not GCurve GC)
                     {
                         continue;
                     }
@@ -282,19 +286,19 @@ public sealed class ShapeFix_EdgeConnect
             // Iterate on edges, adding shared vertex
             for (theLIterator.Initialize(theList); theLIterator.More(); theLIterator.Next())
             {
-                TopoDS_Vertex theVertex = TopoDS.Vertex(theLIterator.Value());
+                Vertex theVertex = ShapeCasts.Vertex(theLIterator.Value());
                 theLIterator.Next();
-                ref TopoDS_Shape theEdgeShape = ref theLIterator.ChangeValue();
+                ref Shape theEdgeShape = ref theLIterator.ChangeValue();
 
                 // Determine usage of old vertices
-                theEdgeShape.Orientation(TopAbs_FORWARD);
-                TopoDS_Edge theEdge = TopoDS.Edge(theEdgeShape);
-                TopExp.Vertices(theEdge, out TopoDS_Vertex theStart, out TopoDS_Vertex theEnd);
+                theEdgeShape.Orientation(Forward);
+                Edge theEdge = ShapeCasts.Edge(theEdgeShape);
+                Exploration.Vertices(theEdge, out Vertex theStart, out Vertex theEnd);
                 bool use_start = (theVertex.IsSame(theStart));
                 bool use_end   = (theVertex.IsSame(theEnd));
 
                 // Prepare vertex to remove
-                TopoDS_Vertex theOldVertex;
+                Vertex theOldVertex;
                 if (use_start)
                 {
                     theOldVertex = theStart; // start is preferred for closed edges
@@ -305,17 +309,17 @@ public sealed class ShapeFix_EdgeConnect
                 }
 
                 // Prepare vertex to add
-                TopoDS_Vertex theNewVertex;
+                Vertex theNewVertex;
                 // smh#8 Porting AIX
                 if (use_start)
                 {
-                    TopoDS_Shape tmpshapeFwd = theSharedVertex.Oriented(TopAbs_FORWARD);
-                    theNewVertex             = TopoDS.Vertex(tmpshapeFwd);
+                    Shape tmpshapeFwd = theSharedVertex.Oriented(Forward);
+                    theNewVertex             = ShapeCasts.Vertex(tmpshapeFwd);
                 }
                 else
                 {
-                    TopoDS_Shape tmpshapeRev = theSharedVertex.Oriented(TopAbs_REVERSED);
-                    theNewVertex             = TopoDS.Vertex(tmpshapeRev);
+                    Shape tmpshapeRev = theSharedVertex.Oriented(Reversed);
+                    theNewVertex             = ShapeCasts.Vertex(tmpshapeRev);
                 }
                 if (!theOldVertex.IsSame(theNewVertex))
                 {
@@ -327,8 +331,8 @@ public sealed class ShapeFix_EdgeConnect
                     if (use_start && use_end)
                     {
                         // process special case for closed edge
-                        theBuilder.Remove(theEdge, theOldVertex.Oriented(TopAbs_REVERSED)); // remove reversed from closed edge
-                        theBuilder.Add(theEdge, theNewVertex.Oriented(TopAbs_REVERSED)); // add reversed to closed edge
+                        theBuilder.Remove(theEdge, theOldVertex.Oriented(Reversed)); // remove reversed from closed edge
+                        theBuilder.Add(theEdge, theNewVertex.Oriented(Reversed)); // add reversed to closed edge
                     }
                     theEdge.Free(freeflag);
                 }
@@ -344,22 +348,22 @@ public sealed class ShapeFix_EdgeConnect
     /// <paramref name="theShape"/>, which must hold every edge recorded, and returns it frozen, with the caller's own
     /// sub-shapes wherever nothing changed (<paramref name="theShape"/> itself when nothing did). Clears the connections.
     /// </summary>
-    public TopoDS_Shape Built(in TopoDS_Shape theShape)
+    public Shape Built(in Shape theShape)
     {
-        var anEntry = new BRepTools_CopyAtEntry(theShape);
-        if (anEntry.IsCopied())
+        var anEntry = new CopyAtEntry(theShape);
+        if (anEntry.IsCopied)
         {
             // the recorded vertices and edges onto their copies
-            var aVertices = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> aPair in myVertices)
+            var aVertices = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+            foreach (KeyValuePair<Shape, Shape> aPair in myVertices)
             {
                 aVertices.Bind(anEntry.Copied(aPair.Key), anEntry.Copied(aPair.Value));
             }
-            var aLists = new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aPair in myLists)
+            var aLists = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            foreach (KeyValuePair<Shape, NCollection_List<Shape>> aPair in myLists)
             {
-                var aList = new NCollection_List<TopoDS_Shape>();
-                for (var anIt = new NCollection_List<TopoDS_Shape>.Iterator(aPair.Value); anIt.More(); anIt.Next())
+                var aList = new NCollection_List<Shape>();
+                for (var anIt = new NCollection_List<Shape>.Iterator(aPair.Value); anIt.More(); anIt.Next())
                 {
                     aList.Append(anEntry.Copied(anIt.Value()));
                 }
@@ -369,7 +373,7 @@ public sealed class ShapeFix_EdgeConnect
             myLists    = aLists;
         }
         Build();
-        TopoDS_Shape aResult = anEntry.Finish(anEntry.Shape());
+        Shape aResult = anEntry.Finish(anEntry.Shape());
         aResult.TShape()?.FreezeGraph();
         return aResult;
     }

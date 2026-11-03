@@ -1,11 +1,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -50,33 +55,33 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
         return aText;
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
+        Assert.True(BrepTools.Write(theShape, aFile, true, false, FormatVersion.FormatVersion_VERSION_3));
         string aText = File.ReadAllText(aFile);
         File.Delete(aFile);
         return aText;
     }
 
-    private (N.TopoDS_Shape[] N, TopoDS_Shape[] P) Both(params TopoDS_Shape[] theShapes)
+    private (N.TopoDS_Shape[] N, Shape[] P) Both(params Shape[] theShapes)
     {
-        BRep_Builder aB = new();
-        TopoDS_Compound aComp = new();
+        BrepBuilder aB = new();
+        Compound aComp = new();
         aB.MakeCompound(ref aComp);
-        foreach (TopoDS_Shape aS in theShapes)
+        foreach (Shape aS in theShapes)
         {
             aB.Add(aComp, aS);
         }
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(aComp, aFile, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
+        Assert.True(BrepTools.Write(aComp, aFile, true, false, FormatVersion.FormatVersion_VERSION_3));
         string aText = File.ReadAllText(aFile);
         var aNShape = new N.TopoDS_Shape();
         using (var aBuilder = new N.BRep_Builder())
         {
             Assert.True(N.BRepTools.Read(aNShape, aFile, aBuilder));
         }
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile));
+        Assert.True(BrepTools.Read(out Shape aPShape, aFile));
         File.Delete(aFile);
         aPShape.TShape()!.FreezeGraph();
         var aN = new List<N.TopoDS_Shape>();
@@ -85,8 +90,8 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
             aN.Add(anIt.Value());
         }
         GC.KeepAlive(aNShape); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
-        var aP = new List<TopoDS_Shape>();
-        for (TopoDS_Iterator anIt = new(aPShape); anIt.More(); anIt.Next())
+        var aP = new List<Shape>();
+        for (Iterator anIt = new(aPShape); anIt.More(); anIt.Next())
         {
             aP.Add(anIt.Value());
         }
@@ -99,7 +104,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
     private readonly Dictionary<N.TopoDS_Shape[], string> mySourceTexts = new(ReferenceEqualityComparer.Instance);
 
     // 0: identical text, 1: Free masked, 2: canonical, -1: different
-    private int Compare(N.TopoDS_Shape theN, in TopoDS_Shape theP, out string theDiff)
+    private int Compare(N.TopoDS_Shape theN, in Shape theP, out string theDiff)
     {
         theDiff = "";
         string aNT = NativeText(theN), aPT = PortText(theP);
@@ -114,9 +119,9 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
         }
         string aTextFile = NewFile();
         File.WriteAllText(aTextFile, aNT);
-        Assert.True(BRepTools.Read(out TopoDS_Shape aNP, aTextFile));
+        Assert.True(BrepTools.Read(out Shape aNP, aTextFile));
         File.WriteAllText(aTextFile, aPT);
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPP, aTextFile));
+        Assert.True(BrepTools.Read(out Shape aPP, aTextFile));
         File.Delete(aTextFile);
         CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aNP, aPP);
         if (aCanon.IsIdentical)
@@ -135,7 +140,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
     }
 
     // Projects input 0 onto input 1 on both sides, along theDir or from thePnt
-    private void Run(string theName, N.TopoDS_Shape[] theNIn, TopoDS_Shape[] thePIn, Direction3D? theDir, Point3D? thePnt)
+    private void Run(string theName, N.TopoDS_Shape[] theNIn, Shape[] thePIn, Direction3D? theDir, Point3D? thePnt)
     {
         myCases++;
         string[] anInputTexts = [.. thePIn.Select(s => PortText(s))];
@@ -202,7 +207,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
             {
                 aNW.Add(aN.Current());
             }
-            var aPW = new List<TopoDS_Wire>();
+            var aPW = new List<Wire>();
             for (aP.Init(); aP.More(); aP.Next())
             {
                 aPW.Add(aP.Current());
@@ -280,7 +285,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
     // Native run again on new TShapes of the same inputs, at other heap addresses: true if one run gives the port's
     // wires as BRep text, in order. The new TShapes are read from the text both sides read, not from a write of
     // native's shapes, which moves curve and surface directions by an ulp (decision 944).
-    private bool NativeRerunMatches(N.TopoDS_Shape[] theNIn, List<TopoDS_Wire> thePW, Direction3D? theDir, Point3D? thePnt)
+    private bool NativeRerunMatches(N.TopoDS_Shape[] theNIn, List<Wire> thePW, Direction3D? theDir, Point3D? thePnt)
     {
         List<N.TopoDS_Shape> aBallast = [];
         for (int anAttempt = 0; anAttempt < 8; anAttempt++)
@@ -318,12 +323,12 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
 
     // The port on unfrozen copies of its inputs (so its section runs destructively, as native's): true if every wire is
     // then the same BRep text as native's
-    private bool DestructiveMatches(List<N.TopoDS_Wire> theNW, TopoDS_Shape[] thePIn, Direction3D? theDir, Point3D? thePnt)
+    private bool DestructiveMatches(List<N.TopoDS_Wire> theNW, Shape[] thePIn, Direction3D? theDir, Point3D? thePnt)
     {
-        var aIn = thePIn.Select(s => BRepTools.ExactCopyForWrite(s, out _)).ToArray();
+        var aIn = thePIn.Select(s => BrepTools.ExactCopyForWrite(s, out _)).ToArray();
         BRepProj_Projection aP = theDir is { } d ? new BRepProj_Projection(aIn[0], aIn[1], d)
                                                  : new BRepProj_Projection(aIn[0], aIn[1], thePnt!.Value);
-        var aPW = new List<TopoDS_Wire>();
+        var aPW = new List<Wire>();
         for (aP.Init(); aP.More(); aP.Next())
         {
             aPW.Add(aP.Current());
@@ -346,10 +351,10 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
 
     // ---- inputs ----
 
-    private static TopoDS_Wire Wire(params TopoDS_Edge[] theEdges)
+    private static Wire Wire(params Edge[] theEdges)
     {
         BRepBuilderAPI_MakeWire aMW = new();
-        foreach (TopoDS_Edge anE in theEdges)
+        foreach (Edge anE in theEdges)
         {
             aMW.Add(anE);
         }
@@ -360,7 +365,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
         theAx.Location().Translated(new Vector3D(theAx.XDirection()) * theU + new Vector3D(theAx.YDirection()) * theV);
 
     // A wire (or an edge) to project, in the plane theAx
-    private static (TopoDS_Shape Shape, string Kind) Projected(Oracle theOracle, in Frame3D theAx, double theSize)
+    private static (Shape Shape, string Kind) Projected(Oracle theOracle, in Frame3D theAx, double theSize)
     {
         double r = theSize;
         switch (theOracle.Int(0, 6))
@@ -382,7 +387,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
             case 2:
                 return (Wire(new BRepBuilderAPI_MakeEdge(new Ellipse3D(theAx, r, r * 0.6)).Edge()), "ellipse");
             case 3:
-                return (new BRepBuilderAPI_MakeEdge(new GC_MakeArcOfCircle(new Circle3D(theAx, r), 0.2, 2.5, true).Value()).Edge(), "arc edge");
+                return (new BRepBuilderAPI_MakeEdge(new MakeArcOfCircle(new Circle3D(theAx, r), 0.2, 2.5, true).Value()).Edge(), "arc edge");
             case 4:
             {
                 NCollection_HArray1<Point3D> aPts = new(1, 5);
@@ -408,7 +413,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
     }
 
     // A target around the origin
-    private static (TopoDS_Shape Shape, string Kind) Target(Oracle theOracle)
+    private static (Shape Shape, string Kind) Target(Oracle theOracle)
     {
         switch (theOracle.Int(0, 8))
         {
@@ -416,8 +421,8 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
                 return (new BRepPrimAPI_MakeBox(new Point3D(-5, -5, -2), 10, 10, 4).Shape(), "box");
             case 1:
             {
-                TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, -2), 10, 10, 4).Shape();
-                TopoDS_Shape aPocket = new BRepPrimAPI_MakeBox(new Point3D(-2.5, -2.5, 0), 5, 5, 2).Shape();
+                Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, -2), 10, 10, 4).Shape();
+                Shape aPocket = new BRepPrimAPI_MakeBox(new Point3D(-2.5, -2.5, 0), 5, 5, 2).Shape();
                 return (new BRepAlgoAPI_Cut(aBox, aPocket).Shape(), "pocketed box");
             }
             case 2:
@@ -431,16 +436,16 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
             case 6:
             {
                 // a cylindrical face alone (build123d.NET projects onto faces)
-                TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, -6, 0), new Direction3D(0, 1, 0)), 4, 12).Shape();
-                TopExp_Explorer anExp = new(aCyl, TopAbs_FACE);
+                Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, -6, 0), new Direction3D(0, 1, 0)), 4, 12).Shape();
+                Explorer anExp = new(aCyl, ShapeType.Face);
                 return (anExp.Current(), "cylindrical face");
             }
             case 7:
             {
                 // an extruded elliptical arc (build123d.NET's tip-arc test)
-                Geom_TrimmedCurve anArc = new GC_MakeArcOfEllipse(new Ellipse3D(new Frame3D(), 6, 3), 3.5, 5.9, true).Value();
-                TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(anArc).Edge();
-                TopoDS_Shape aFace = new BRepPrimAPI_MakePrism(anEdge, new Vector3D(0, 0, 4)).Shape();
+                TrimmedCurve3D anArc = new MakeArcOfEllipse(new Ellipse3D(new Frame3D(), 6, 3), 3.5, 5.9, true).Value();
+                Edge anEdge = new BRepBuilderAPI_MakeEdge(anArc).Edge();
+                Shape aFace = new BRepPrimAPI_MakePrism(anEdge, new Vector3D(0, 0, 4)).Shape();
                 Transform3D aT = new();
                 aT.SetTranslation(new Vector3D(0, 0, -2));
                 return (aFace.Moved(new Placement(aT)), "extruded elliptical face");
@@ -448,12 +453,12 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
             default:
             {
                 // a compound of faces of a box and a vertex (the section takes the faces only)
-                BRep_Builder aB = new();
-                TopoDS_Compound aC = new();
+                BrepBuilder aB = new();
+                Compound aC = new();
                 aB.MakeCompound(ref aC);
-                TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-4, -4, -1), 8, 8, 2).Shape();
+                Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-4, -4, -1), 8, 8, 2).Shape();
                 int i = 0;
-                for (TopExp_Explorer anExp = new(aBox, TopAbs_FACE); anExp.More(); anExp.Next(), i++)
+                for (Explorer anExp = new(aBox, ShapeType.Face); anExp.More(); anExp.Next(), i++)
                 {
                     if (i % 2 == 0)
                     {
@@ -474,11 +479,11 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
         var anOracle = new Oracle(output, 20261111);
         foreach (int aCase in Tape.Budget(140))
         {
-            (TopoDS_Shape aTarget, string aTK) = Target(anOracle);
+            (Shape aTarget, string aTK) = Target(anOracle);
             Direction3D aDir = Oracle.Settled(new Direction3D(anOracle.Real(-0.4, 0.4), anOracle.Real(-0.4, 0.4), -1));
             Frame3D aPlane = new(new Point3D(anOracle.Real(-1, 1), anOracle.Real(-1, 1), 10), new Direction3D(0, 0, 1));
-            (TopoDS_Shape aWire, string aWK) = Projected(anOracle, aPlane, anOracle.Real(0.5, 3));
-            (N.TopoDS_Shape[] aNIn, TopoDS_Shape[] aPIn) = Both(aWire, aTarget);
+            (Shape aWire, string aWK) = Projected(anOracle, aPlane, anOracle.Real(0.5, 3));
+            (N.TopoDS_Shape[] aNIn, Shape[] aPIn) = Both(aWire, aTarget);
             Run($"case {aCase} {aWK} onto {aTK}", aNIn, aPIn, aDir, null);
         }
         Report("cylindrical");
@@ -491,11 +496,11 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
         var anOracle = new Oracle(output, 20261112);
         foreach (int aCase in Tape.Budget(120))
         {
-            (TopoDS_Shape aTarget, string aTK) = Target(anOracle);
+            (Shape aTarget, string aTK) = Target(anOracle);
             Point3D aCenter = new(anOracle.Real(-1, 1), anOracle.Real(-1, 1), anOracle.Real(14, 20));
             Frame3D aPlane = new(new Point3D(anOracle.Real(-1, 1), anOracle.Real(-1, 1), 10), new Direction3D(0, 0, 1));
-            (TopoDS_Shape aWire, string aWK) = Projected(anOracle, aPlane, anOracle.Real(0.5, 2));
-            (N.TopoDS_Shape[] aNIn, TopoDS_Shape[] aPIn) = Both(aWire, aTarget);
+            (Shape aWire, string aWK) = Projected(anOracle, aPlane, anOracle.Real(0.5, 2));
+            (N.TopoDS_Shape[] aNIn, Shape[] aPIn) = Both(aWire, aTarget);
             Run($"case {aCase} {aWK} onto {aTK}", aNIn, aPIn, null, aCenter);
         }
         Report("conical");
@@ -507,14 +512,14 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
     {
         // build123d.NET's ProjectionTests: a circle onto a box with a pocket (two wires and more), a circle edge onto a
         // unit box from below, a circle onto a sphere from its centre; then the errors
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, -2), 10, 10, 4).Shape();
-        TopoDS_Shape aPocket = new BRepPrimAPI_MakeBox(new Point3D(-2.5, -2.5, 0), 5, 5, 2).Shape();
-        TopoDS_Shape aTarget = new BRepAlgoAPI_Cut(aBox, aPocket).Shape();
-        TopoDS_Wire aCircle = Wire(new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 10), new Direction3D(0, 0, 1)), 3)).Edge());
-        (N.TopoDS_Shape[] aNIn, TopoDS_Shape[] aPIn) = Both(aCircle, aTarget);
+        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, -2), 10, 10, 4).Shape();
+        Shape aPocket = new BRepPrimAPI_MakeBox(new Point3D(-2.5, -2.5, 0), 5, 5, 2).Shape();
+        Shape aTarget = new BRepAlgoAPI_Cut(aBox, aPocket).Shape();
+        Wire aCircle = Wire(new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 10), new Direction3D(0, 0, 1)), 3)).Edge());
+        (N.TopoDS_Shape[] aNIn, Shape[] aPIn) = Both(aCircle, aTarget);
         Run("circle onto a pocketed box", aNIn, aPIn, new Direction3D(0, 0, -1), null);
 
-        TopoDS_Edge aCircleEdge = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, -5), new Direction3D(0, 0, 1)), 1)).Edge();
+        Edge aCircleEdge = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, -5), new Direction3D(0, 0, 1)), 1)).Edge();
         (aNIn, aPIn) = Both(aCircleEdge, new BRepPrimAPI_MakeBox(1, 1, 1).Shape());
         Run("circle edge onto a unit box", aNIn, aPIn, new Direction3D(0, 0, 1), null);
 
@@ -522,14 +527,14 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
         Run("circle onto a sphere from its centre", aNIn, aPIn, null, new Point3D(0, 0, 0.5));
 
         // errors: a vertex projected, a target without faces, the point on the wire's first vertex
-        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 10)).Vertex();
+        Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 10)).Vertex();
         (aNIn, aPIn) = Both(aV, aTarget);
         Run("a vertex projected", aNIn, aPIn, new Direction3D(0, 0, -1), null);
         (aNIn, aPIn) = Both(aCircle, aCircle);
         Run("onto a wire", aNIn, aPIn, new Direction3D(0, 0, -1), null);
         (aNIn, aPIn) = Both(aCircle, aTarget);
-        TopExp_Explorer anExp = new(aCircle, TopAbs_VERTEX);
-        Run("from the first vertex", aNIn, aPIn, null, BRep_Tool.Pnt(TopoDS.Vertex(anExp.Current())));
+        Explorer anExp = new(aCircle, ShapeType.Vertex);
+        Run("from the first vertex", aNIn, aPIn, null, Tool.Pnt(ShapeCasts.Vertex(anExp.Current())));
         Report("build123d.NET cases");
         Assert.Empty(myDifferences);
     }

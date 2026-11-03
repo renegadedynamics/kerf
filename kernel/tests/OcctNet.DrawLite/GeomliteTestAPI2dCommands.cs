@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using Occt;
 
@@ -37,7 +39,7 @@ internal static class GeomliteTestAPI2dCommands
             return 1;
         }
 
-        Geom2d_Curve? GC = DrawTrSurf.GetCurve2d(theDI, a[1]);
+        Curve2D? GC = DrawTrSurf.GetCurve2d(theDI, a[1]);
         if (GC is null)
         {
             di.Append("Syntax error: '").Append(a[1]).Append("' is NULL");
@@ -53,8 +55,8 @@ internal static class GeomliteTestAPI2dCommands
             string aName = $"ext_{i}";
             if (aDist > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                var L = new Geom2d_Line(P, new Direction2D(aP1.XY() - P.XY()));
-                var CT = new Geom2d_TrimmedCurve(L, 0.0, aDist);
+                var L = new LineCurve2D(P, new Direction2D(aP1.XY() - P.XY()));
+                var CT = new TrimmedCurve2D(L, 0.0, aDist);
                 DrawTrSurf.Set(theDI, aName, CT);
             }
             else
@@ -78,8 +80,8 @@ internal static class GeomliteTestAPI2dCommands
             return 1;
         }
 
-        Geom2d_Curve? GC1 = DrawTrSurf.GetCurve2d(theDI, a[1]);
-        Geom2d_Curve? GC2 = DrawTrSurf.GetCurve2d(theDI, a[2]);
+        Curve2D? GC1 = DrawTrSurf.GetCurve2d(theDI, a[1]);
+        Curve2D? GC2 = DrawTrSurf.GetCurve2d(theDI, a[2]);
         if (GC1 is null)
         {
             di.Append("Syntax error: '").Append(a[1]).Append("' is NULL");
@@ -97,7 +99,7 @@ internal static class GeomliteTestAPI2dCommands
         double U2l = GC2.LastParameter();
 
         var Ex = new Geom2dAPI_ExtremaCurveCurve(GC1, GC2, U1f, U1l, U2f, U2l);
-        bool isInfinitySolutions = Ex.Extrema().IsParallel();
+        bool isInfinitySolutions = Ex.Extrema().IsParallel;
         int aNExtr = Ex.NbExtrema();
 
         if (aNExtr == 0 || isInfinitySolutions)
@@ -125,8 +127,8 @@ internal static class GeomliteTestAPI2dCommands
             }
             else
             {
-                var L = new Geom2d_Line(P1, new Direction2D(new Vector2D(P1, P2)));
-                var CT = new Geom2d_TrimmedCurve(L, 0.0, P1.Distance(P2));
+                var L = new LineCurve2D(P1, new Direction2D(new Vector2D(P1, P2)));
+                var CT = new TrimmedCurve2D(L, 0.0, P1.Distance(P2));
                 DrawTrSurf.Set(theDI, aName, CT);
             }
             di.Append(aName).Append("\n");
@@ -139,7 +141,7 @@ internal static class GeomliteTestAPI2dCommands
     private static int Intersect(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
         int n = a.Count;
-        Geom2d_Curve? C1 = null, C2 = null;
+        Curve2D? C1 = null, C2 = null;
         double Tol = 0.001;
         bool bPrintState = false;
 
@@ -247,18 +249,18 @@ internal static class GeomliteTestAPI2dCommands
             return 1;
         }
 
-        Geom2d_Curve? C1 = DrawTrSurf.GetCurve2d(theDI, a[1]);
-        Geom2d_Curve? C2 = DrawTrSurf.GetCurve2d(theDI, a[2]);
-        var aCir1 = C1 as Geom2d_Circle;
-        var aCir2 = C2 as Geom2d_Circle;
+        Curve2D? C1 = DrawTrSurf.GetCurve2d(theDI, a[1]);
+        Curve2D? C2 = DrawTrSurf.GetCurve2d(theDI, a[2]);
+        var aCir1 = C1 as CircleCurve2D;
+        var aCir2 = C2 as CircleCurve2D;
         if (aCir1 is null || aCir2 is null)
         {
             di.Append("Syntax error: '").Append(a[aCir1 is null ? 1 : 2]).Append("' is not a circle");
             return 1;
         }
 
-        var Intersector = new IntAna2d_AnaIntersection(aCir1.Circ2d(), aCir2.Circ2d());
-        for (int i = 1; i <= Intersector.NbPoints(); i++)
+        var Intersector = new AnalyticIntersection(aCir1.Circ2d(), aCir2.Circ2d());
+        for (int i = 1; i <= Intersector.PointCount; i++)
         {
             Point2D P = Intersector.Point(i).Value();
             di.Append("Intersection point ").Append(i).Append(" : ").Append(P.X()).Append(" ").Append(P.Y()).Append("\n");
@@ -278,47 +280,47 @@ internal static class GeomliteTestAPI2dCommands
             return 1;
         }
 
-        Geom2d_Curve? C1 = DrawTrSurf.GetCurve2d(theDI, a[1]);
+        Curve2D? C1 = DrawTrSurf.GetCurve2d(theDI, a[1]);
         if (C1 is null)
         {
             di.Append("Syntax error: '").Append(a[1]).Append("' is Null");
             return 1;
         }
 
-        Geom2d_Curve? C2 = DrawTrSurf.GetCurve2d(theDI, a[2]);
+        Curve2D? C2 = DrawTrSurf.GetCurve2d(theDI, a[2]);
         if (C2 is null)
         {
             di.Append("Syntax error: '").Append(a[2]).Append("' is Null");
             return 1;
         }
 
-        var AC1 = new Geom2dAdaptor_Curve(C1);
-        var AC2 = new Geom2dAdaptor_Curve(C2);
+        var AC1 = new CurveAdaptor2D(C1);
+        var AC2 = new CurveAdaptor2D(C2);
         CurveKind T1 = AC1.GetType(), T2 = AC2.GetType();
-        IntAna2d_Conic pCon;
+        Conic pCon;
         switch (T2)
         {
             case CurveKind.Line:
-                pCon = new IntAna2d_Conic(AC2.Line());
+                pCon = new Conic(AC2.Line());
                 break;
             case CurveKind.Circle:
-                pCon = new IntAna2d_Conic(AC2.Circle());
+                pCon = new Conic(AC2.Circle());
                 break;
             case CurveKind.Ellipse:
-                pCon = new IntAna2d_Conic(AC2.Ellipse());
+                pCon = new Conic(AC2.Ellipse());
                 break;
             case CurveKind.Hyperbola:
-                pCon = new IntAna2d_Conic(AC2.Hyperbola());
+                pCon = new Conic(AC2.Hyperbola());
                 break;
             case CurveKind.Parabola:
-                pCon = new IntAna2d_Conic(AC2.Parabola());
+                pCon = new Conic(AC2.Parabola());
                 break;
             default:
                 di.Append("Syntax error: '").Append(a[2]).Append("' is not conic");
                 return 1;
         }
 
-        var Intersector = new IntAna2d_AnaIntersection();
+        var Intersector = new AnalyticIntersection();
         switch (T1)
         {
             case CurveKind.Line:
@@ -341,7 +343,7 @@ internal static class GeomliteTestAPI2dCommands
                 return 1;
         }
 
-        for (int i = 1; i <= Intersector.NbPoints(); i++)
+        for (int i = 1; i <= Intersector.PointCount; i++)
         {
             Point2D P = Intersector.Point(i).Value();
             di.Append("Intersection point ").Append(i).Append(" : ").Append(P.X()).Append(" ").Append(P.Y()).Append("\n");

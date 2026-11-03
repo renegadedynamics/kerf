@@ -4,7 +4,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -55,18 +59,18 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
     }
 
     // Check if an input shape is valid
-    private static bool IsValidInput(in TopoDS_Shape theShape)
+    private static bool IsValidInput(in Shape theShape)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return false;
         }
 
         switch (theShape.ShapeType())
         {
-            case TopAbs_COMPOUND:
-            case TopAbs_COMPSOLID:
-            case TopAbs_SOLID:
+            case ShapeType.Compound:
+            case ShapeType.CompSolid:
+            case ShapeType.Solid:
                 return true;
             default:
                 return false;
@@ -77,11 +81,11 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
     /// Removes the small solids from the given shape, recording them in <paramref name="theContext"/>; returns the
     /// context applied to the shape, frozen (the shape itself when nothing is small or no threshold is set).
     /// </summary>
-    public TopoDS_Shape Remove(in TopoDS_Shape theShape, ShapeBuild_ReShape theContext) =>
+    public Shape Remove(in Shape theShape, ShapeBuild_ReShape theContext) =>
         Published(InternalRemove(theShape, theContext));
 
     /// <summary>As <see cref="Remove"/>, without freezing the result (ported code).</summary>
-    internal TopoDS_Shape InternalRemove(in TopoDS_Shape theShape, ShapeBuild_ReShape theContext)
+    internal Shape InternalRemove(in Shape theShape, ShapeBuild_ReShape theContext)
     {
         // Check if at least one smallness criterion is set and the shape is valid
         if (!IsThresholdsSet() || !IsValidInput(theShape))
@@ -90,10 +94,10 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
         }
 
         // Find and remove all small solids
-        var aSolidIter = new TopExp_Explorer(theShape, TopAbs_SOLID);
+        var aSolidIter = new Explorer(theShape, ShapeType.Solid);
         for (; aSolidIter.More(); aSolidIter.Next())
         {
-            TopoDS_Shape aSolid = aSolidIter.Current();
+            Shape aSolid = aSolidIter.Current();
             if (IsSmall(aSolid))
             {
                 theContext.Remove(aSolid);
@@ -105,36 +109,36 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
         return theContext.InternalApply(theShape);
     }
 
-    private static TopoDS_Shape Published(in TopoDS_Shape theShape)
+    private static Shape Published(in Shape theShape)
     {
         theShape.TShape()?.FreezeGraph();
         return theShape;
     }
 
     // Calculate surface area of a shape
-    private static double ShapeArea(in TopoDS_Shape theShape)
+    private static double ShapeArea(in Shape theShape)
     {
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.SurfaceProperties(theShape, aProps);
         return aProps.Mass();
     }
 
     // Calculate volume of a shape
-    private static double ShapeVolume(in TopoDS_Shape theShape)
+    private static double ShapeVolume(in Shape theShape)
     {
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
     // Append an item to a list of shapes mapped to a shape
-    private static void AddToMap(NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMap,
-                                 in TopoDS_Shape theKey,
-                                 in TopoDS_Shape theItem)
+    private static void AddToMap(NCollection_DataMap<Shape, NCollection_List<Shape>> theMap,
+                                 in Shape theKey,
+                                 in Shape theItem)
     {
-        if (!theMap.Find(theKey, out NCollection_List<TopoDS_Shape> aList))
+        if (!theMap.Find(theKey, out NCollection_List<Shape> aList))
         {
-            var aNewList = new NCollection_List<TopoDS_Shape>();
+            var aNewList = new NCollection_List<Shape>();
             aNewList.Append(theItem);
             theMap.Bind(theKey, aNewList);
         }
@@ -145,19 +149,19 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
     }
 
     // Append items to a list of shapes mapped to a shape
-    private static void AddToMap(NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMap,
-                                 in TopoDS_Shape theKey,
-                                 NCollection_List<TopoDS_Shape> theItems)
+    private static void AddToMap(NCollection_DataMap<Shape, NCollection_List<Shape>> theMap,
+                                 in Shape theKey,
+                                 NCollection_List<Shape> theItems)
     {
         if (theItems.IsEmpty())
         {
             return;
         }
 
-        if (!theMap.Find(theKey, out NCollection_List<TopoDS_Shape> aList))
+        if (!theMap.Find(theKey, out NCollection_List<Shape> aList))
         {
             // OCCT binds a copy of the list
-            var aCopy = new NCollection_List<TopoDS_Shape>();
+            var aCopy = new NCollection_List<Shape>();
             aCopy.Append(theItems);
             theMap.Bind(theKey, aCopy);
         }
@@ -169,22 +173,22 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
 
     // Map faces from a solid with their shells;
     // unmap faces shared between two shells
-    private static void MapFacesToShells(in TopoDS_Shape theSolid, NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theMap)
+    private static void MapFacesToShells(in Shape theSolid, NCollection_DataMap<Shape, Shape> theMap)
     {
-        var aShellIter = new TopoDS_Iterator(theSolid);
+        var aShellIter = new Iterator(theSolid);
         for (; aShellIter.More(); aShellIter.Next())
         {
-            TopoDS_Shape aShell = aShellIter.Value();
-            if (aShell.ShapeType() != TopAbs_SHELL)
+            Shape aShell = aShellIter.Value();
+            if (aShell.ShapeType() != ShapeType.Shell)
             {
                 continue;
             }
 
-            var aFaceIter = new TopoDS_Iterator(aShell);
+            var aFaceIter = new Iterator(aShell);
             for (; aFaceIter.More(); aFaceIter.Next())
             {
-                TopoDS_Shape aFace = aFaceIter.Value();
-                if (aFace.ShapeType() != TopAbs_FACE)
+                Shape aFace = aFaceIter.Value();
+                if (aFace.ShapeType() != ShapeType.Face)
                 {
                     continue;
                 }
@@ -199,40 +203,40 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
 
     // Find an outer shell having greatest sum area of
     // all faces shared with the solid
-    private static bool FindMostSharedShell(in TopoDS_Shape theSolid,
-                                            NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theMapFacesToOuterShells,
-                                            ref TopoDS_Shape theMostSharedOuterShell,
-                                            ref TopoDS_Shape theMostSharedSolidShell,
-                                            NCollection_List<TopoDS_Shape> theOtherSolidShells)
+    private static bool FindMostSharedShell(in Shape theSolid,
+                                            NCollection_DataMap<Shape, Shape> theMapFacesToOuterShells,
+                                            ref Shape theMostSharedOuterShell,
+                                            ref Shape theMostSharedSolidShell,
+                                            NCollection_List<Shape> theOtherSolidShells)
     {
-        var aSharedAreas = new NCollection_DataMap<TopoDS_Shape, double>(TopTools_ShapeMapHasher.Instance);
+        var aSharedAreas = new NCollection_DataMap<Shape, double>(ShapeHasher.Instance);
         double aMaxSharedArea = 0.0;
-        TopoDS_Shape? aMostSharedOuterShellPtr = null;
-        TopoDS_Shape? aMostSharedSolidShellPtr = null;
+        Shape? aMostSharedOuterShellPtr = null;
+        Shape? aMostSharedSolidShellPtr = null;
 
         // check every shell in the solid for faces shared with outer shells
-        var aShellIter = new TopoDS_Iterator(theSolid);
+        var aShellIter = new Iterator(theSolid);
         for (; aShellIter.More(); aShellIter.Next())
         {
-            TopoDS_Shape aSolidShell = aShellIter.Value();
-            if (aSolidShell.ShapeType() != TopAbs_SHELL)
+            Shape aSolidShell = aShellIter.Value();
+            if (aSolidShell.ShapeType() != ShapeType.Shell)
             {
                 continue;
             }
 
             theOtherSolidShells.Append(aSolidShell);
 
-            var aFaceIter = new TopoDS_Iterator(aSolidShell);
+            var aFaceIter = new Iterator(aSolidShell);
             for (; aFaceIter.More(); aFaceIter.Next())
             {
-                TopoDS_Shape aFace = aFaceIter.Value();
-                if (aFace.ShapeType() != TopAbs_FACE)
+                Shape aFace = aFaceIter.Value();
+                if (aFace.ShapeType() != ShapeType.Face)
                 {
                     continue;
                 }
 
                 // find an outer shell that shares the current face
-                if (!theMapFacesToOuterShells.Find(aFace, out TopoDS_Shape anOuterShell))
+                if (!theMapFacesToOuterShells.Find(aFace, out Shape anOuterShell))
                 {
                     continue;
                 }
@@ -270,7 +274,7 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
         theMostSharedSolidShell = aMostSharedSolidShellPtr.Value;
 
         // remove the most shared solid's shell from the returned list of its other shells
-        var anOtherShellIter = new NCollection_List<TopoDS_Shape>.Iterator(theOtherSolidShells);
+        var anOtherShellIter = new NCollection_List<Shape>.Iterator(theOtherSolidShells);
         while (!anOtherShellIter.Value().IsSame(theMostSharedSolidShell))
         {
             anOtherShellIter.Next();
@@ -281,14 +285,14 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
     }
 
     // Merge some shells to a base shell
-    private static TopoDS_Shape MergeShells(in TopoDS_Shape theBaseShell,
-                                            NCollection_List<TopoDS_Shape> theShellsToMerge,
-                                            NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theMapFacesToOuterShells,
-                                            NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theMapNewFreeFacesToShells)
+    private static Shape MergeShells(in Shape theBaseShell,
+                                            NCollection_List<Shape> theShellsToMerge,
+                                            NCollection_DataMap<Shape, Shape> theMapFacesToOuterShells,
+                                            NCollection_DataMap<Shape, Shape> theMapNewFreeFacesToShells)
     {
         // Create a new shell
-        var aBuilder = new BRep_Builder();
-        TopoDS_Shape aNewShell = theBaseShell.EmptyCopied();
+        var aBuilder = new BrepBuilder();
+        Shape aNewShell = theBaseShell.EmptyCopied();
 
         // Sort the faces belogning to the merged shells:
         // - faces shared with the base shell:
@@ -297,27 +301,27 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
         //     add to the new shell;
         // - faces not shared with any outer or any merged shell:
         //     keep to add to the new shell and to the new map.
-        var aRemoveFaces  = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aRemoveFaces  = new NCollection_Map<Shape>(ShapeHasher.Instance);
         // OCCT iterates its map of the new free faces in hash order (TShape addresses); the port's iterates in a
         // deterministic order, so the order of these faces in the new shell may differ from native (occt-issues.md).
-        var aNewFreeFaces = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var aShellIter = new NCollection_List<TopoDS_Shape>.Iterator(theShellsToMerge);
+        var aNewFreeFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var aShellIter = new NCollection_List<Shape>.Iterator(theShellsToMerge);
         for (; aShellIter.More(); aShellIter.Next())
         {
-            var aFaceIter = new TopoDS_Iterator(aShellIter.Value());
+            var aFaceIter = new Iterator(aShellIter.Value());
             for (; aFaceIter.More(); aFaceIter.Next())
             {
-                TopoDS_Shape aFace = aFaceIter.Value();
+                Shape aFace = aFaceIter.Value();
 
                 // non-face element in a shell - just add it to the new shell
-                if (aFace.ShapeType() != TopAbs_FACE)
+                if (aFace.ShapeType() != ShapeType.Face)
                 {
                     aBuilder.Add(aNewShell, aFace);
                     continue;
                 }
 
                 // classify the face
-                if (theMapFacesToOuterShells.Find(aFace, out TopoDS_Shape anOuterShell))
+                if (theMapFacesToOuterShells.Find(aFace, out Shape anOuterShell))
                 {
                     if (anOuterShell.IsSame(theBaseShell))
                     {
@@ -344,7 +348,7 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
         theShellsToMerge.Clear();
 
         // Add the kept faces from the merged shells to the new shell
-        foreach (TopoDS_Shape aFace in aNewFreeFaces)
+        foreach (Shape aFace in aNewFreeFaces)
         {
             aBuilder.Add(aNewShell, aFace);
             theMapNewFreeFacesToShells.Bind(aFace, aNewShell);
@@ -352,10 +356,10 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
         aNewFreeFaces.Clear();
 
         // Add needed faces from the base shell to the new shell
-        var aBaseFaceIter = new TopoDS_Iterator(theBaseShell);
+        var aBaseFaceIter = new Iterator(theBaseShell);
         for (; aBaseFaceIter.More(); aBaseFaceIter.Next())
         {
-            TopoDS_Shape aFace = aBaseFaceIter.Value();
+            Shape aFace = aBaseFaceIter.Value();
             if (!aRemoveFaces.Contains(aFace))
             {
                 aBuilder.Add(aNewShell, aFace);
@@ -363,30 +367,30 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
         }
 
         // If there are no elements in the new shell, return null shape
-        if (aNewShell.NbChildren() == 0)
+        if (aNewShell.ChildCount == 0)
         {
-            return new TopoDS_Shape();
+            return new Shape();
         }
 
         return aNewShell;
     }
 
     // Add some shells to a base shell
-    private static TopoDS_Compound AddShells(in TopoDS_Shape theBaseShell, NCollection_List<TopoDS_Shape> theShellsToAdd)
+    private static Compound AddShells(in Shape theBaseShell, NCollection_List<Shape> theShellsToAdd)
     {
         // Create a compound
-        var aBuilder = new BRep_Builder();
-        var aCompound = new TopoDS_Compound();
+        var aBuilder = new BrepBuilder();
+        var aCompound = new Compound();
         aBuilder.MakeCompound(ref aCompound);
 
         // Add the base shell to the compound
-        if (!theBaseShell.IsNull())
+        if (!theBaseShell.IsNull)
         {
             aBuilder.Add(aCompound, theBaseShell);
         }
 
         // Add other shells to the compound
-        var aShellIter = new NCollection_List<TopoDS_Shape>.Iterator(theShellsToAdd);
+        var aShellIter = new NCollection_List<Shape>.Iterator(theShellsToAdd);
         for (; aShellIter.More(); aShellIter.Next())
         {
             aBuilder.Add(aCompound, aShellIter.Value());
@@ -401,11 +405,11 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
     /// greatest area of faces with each), recording the changes in <paramref name="theContext"/>; returns the context
     /// applied to the shape, frozen.
     /// </summary>
-    public TopoDS_Shape Merge(in TopoDS_Shape theShape, ShapeBuild_ReShape theContext) =>
+    public Shape Merge(in Shape theShape, ShapeBuild_ReShape theContext) =>
         Published(InternalMerge(theShape, theContext));
 
     /// <summary>As <see cref="Merge"/>, without freezing the result (ported code).</summary>
-    internal TopoDS_Shape InternalMerge(in TopoDS_Shape theShape, ShapeBuild_ReShape theContext)
+    internal Shape InternalMerge(in Shape theShape, ShapeBuild_ReShape theContext)
     {
         // Check if at least one smallness criterion is set and the shape is valid
         if (!IsThresholdsSet() || !IsValidInput(theShape))
@@ -416,12 +420,12 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
         // Find all small solids and put them in a list;
         // Build a map of faces belonging to non-small solids
         // but not shared between two non-small solids
-        var aSmallSolids = new NCollection_List<TopoDS_Shape>();
-        var aMapFacesToShells = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var aSolidIter = new TopExp_Explorer(theShape, TopAbs_SOLID);
+        var aSmallSolids = new NCollection_List<Shape>();
+        var aMapFacesToShells = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var aSolidIter = new Explorer(theShape, ShapeType.Solid);
         for (; aSolidIter.More(); aSolidIter.Next())
         {
-            TopoDS_Shape aSolid = aSolidIter.Current();
+            Shape aSolid = aSolidIter.Current();
             if (IsSmall(aSolid))
             {
                 aSmallSolids.Append(aSolid);
@@ -434,26 +438,26 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
 
         // Merge all small solids adjacent to at least one non-small one;
         // repeat this until no small solids remain or no new solids can be merged
-        var aNewMapFacesToShells = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aMapFacesToShellsPtr = aMapFacesToShells;
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aNewMapFacesToShellsPtr = aNewMapFacesToShells;
+        var aNewMapFacesToShells = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, Shape> aMapFacesToShellsPtr = aMapFacesToShells;
+        NCollection_DataMap<Shape, Shape> aNewMapFacesToShellsPtr = aNewMapFacesToShells;
         while (!aSmallSolids.IsEmpty())
         {
             // find small solids that may be merged on the current iteration;
             // compose their shells in lists associated with non-small solids' shells
             // which they should be merged to
-            var aShellsToMerge = new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-            var aShellsToAdd = new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-            var aSmallIter = new NCollection_List<TopoDS_Shape>.Iterator(aSmallSolids);
+            var aShellsToMerge = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var aShellsToAdd = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var aSmallIter = new NCollection_List<Shape>.Iterator(aSmallSolids);
             while (aSmallIter.More())
             {
-                TopoDS_Shape aSmallSolid = aSmallIter.Value();
+                Shape aSmallSolid = aSmallIter.Value();
 
                 // find a non-small solid's shell having greatest sum area of
                 // all faces shared with the current small solid
-                var aNonSmallSolidShell = new TopoDS_Shape();
-                var anAdjacentShell = new TopoDS_Shape();
-                var aNotAdjacentShells = new NCollection_List<TopoDS_Shape>();
+                var aNonSmallSolidShell = new Shape();
+                var anAdjacentShell = new Shape();
+                var aNotAdjacentShells = new NCollection_List<Shape>();
                 if (FindMostSharedShell(aSmallSolid,
                                         aMapFacesToShellsPtr,
                                         ref aNonSmallSolidShell,
@@ -485,16 +489,16 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
 
             // update needed non-small solids' shells by
             // merging and adding the listed small solids' shells to them
-            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aShellIter in aShellsToMerge)
+            foreach (KeyValuePair<Shape, NCollection_List<Shape>> aShellIter in aShellsToMerge)
             {
                 // get the current non-small solid's shell
                 // and corresponding small solids' shells
-                TopoDS_Shape aBaseShell = aShellIter.Key;
-                NCollection_List<TopoDS_Shape> aShellsToBeMerged = aShellIter.Value;
-                aShellsToAdd.Find(aBaseShell, out NCollection_List<TopoDS_Shape>? aShellsToBeAddedPtr);
+                Shape aBaseShell = aShellIter.Key;
+                NCollection_List<Shape> aShellsToBeMerged = aShellIter.Value;
+                aShellsToAdd.Find(aBaseShell, out NCollection_List<Shape>? aShellsToBeAddedPtr);
 
                 // merge needed shells
-                TopoDS_Shape aNewShell =
+                Shape aNewShell =
                     MergeShells(aBaseShell, aShellsToBeMerged, aMapFacesToShellsPtr, aNewMapFacesToShellsPtr);
 
                 // add new shells if needed
@@ -522,7 +526,7 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
         || (IsUsedWidthFactorThreshold() && myWidthFactorThreshold < Kerf.Engine.Foundation.Precision.Infinite());
 
     // Check if a solid meets the smallness criteria
-    private bool IsSmall(in TopoDS_Shape theSolid)
+    private bool IsSmall(in Shape theSolid)
     {
         // If the volume threshold is used and set, and the solid's volume exceeds
         // threshold value, consider the solid as not small

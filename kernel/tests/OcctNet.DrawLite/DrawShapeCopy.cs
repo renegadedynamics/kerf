@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -18,37 +21,37 @@ namespace OcctNet.DrawLite;
 /// </remarks>
 internal static class DrawShapeCopy
 {
-    public static TopoDS_Shape Copy(in TopoDS_Shape theShape)
-        => Copy(theShape, new Dictionary<TopoDS_TShape, TopoDS_TShape>(ReferenceEqualityComparer.Instance));
+    public static Shape Copy(in Shape theShape)
+        => Copy(theShape, new Dictionary<TShape, TShape>(ReferenceEqualityComparer.Instance));
 
-    private static TopoDS_Shape Copy(in TopoDS_Shape theShape, Dictionary<TopoDS_TShape, TopoDS_TShape> theMap)
+    private static Shape Copy(in Shape theShape, Dictionary<TShape, TShape> theMap)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return theShape;
         }
 
-        TopoDS_TShape aTShape = theShape.TShape()!;
-        if (!theMap.TryGetValue(aTShape, out TopoDS_TShape? aCopy))
+        TShape aTShape = theShape.TShape()!;
+        if (!theMap.TryGetValue(aTShape, out TShape? aCopy))
         {
             aCopy = CopyNode(aTShape);
-            foreach (TopoDS_Shape aChild in aTShape.myShapes)
+            foreach (Shape aChild in aTShape._shapes)
             {
-                aCopy.myShapes.Append(Copy(aChild, theMap));
+                aCopy._shapes.Append(Copy(aChild, theMap));
             }
 
             theMap.Add(aTShape, aCopy);
         }
 
-        TopoDS_Shape aResult = theShape;
+        Shape aResult = theShape;
         aResult.TShape(aCopy);
         return aResult;
     }
 
     /// <summary>A copy of the TShape without its children: its flags and its representations.</summary>
-    internal static TopoDS_TShape CopyNode(TopoDS_TShape theTShape)
+    internal static TShape CopyNode(TShape theTShape)
     {
-        TopoDS_TShape aCopy = CopyRepresentations(theTShape);
+        TShape aCopy = CopyRepresentations(theTShape);
         aCopy.Free(theTShape.Free());
         aCopy.Modified(theTShape.Modified());
         aCopy.Checked(theTShape.Checked());
@@ -59,15 +62,15 @@ internal static class DrawShapeCopy
         return aCopy;
     }
 
-    private static TopoDS_TShape CopyRepresentations(TopoDS_TShape theTShape)
+    private static TShape CopyRepresentations(TShape theTShape)
     {
         switch (theTShape)
         {
-            case BRep_TEdge anEdge:
+            case BrepTEdge anEdge:
             {
-                var aCopy = new BRep_TEdge();
+                var aCopy = new BrepTEdge();
                 aCopy.Tolerance(anEdge.Tolerance());
-                foreach (BRep_CurveRepresentation aRep in anEdge.Curves())
+                foreach (CurveRepresentation aRep in anEdge.Curves())
                 {
                     aCopy.ChangeCurves().Append(aRep.Copy());
                 }
@@ -78,11 +81,11 @@ internal static class DrawShapeCopy
                 return aCopy;
             }
 
-            case BRep_TFace aFace:
+            case BrepTFace aFace:
             {
-                var aCopy = (BRep_TFace)aFace.EmptyCopy();
+                var aCopy = (BrepTFace)aFace.EmptyCopy();
                 aCopy.NaturalRestriction(aFace.NaturalRestriction());
-                if (aFace.NbTriangulations() > 0)
+                if (aFace.TriangulationCount > 0)
                 {
                     aCopy.Triangulations(new NCollection_List<Triangulation>(aFace.Triangulations()), aFace.ActiveTriangulation());
                 }
@@ -90,10 +93,10 @@ internal static class DrawShapeCopy
                 return aCopy;
             }
 
-            case BRep_TVertex aVertex:
+            case BrepTVertex aVertex:
             {
-                var aCopy = (BRep_TVertex)aVertex.EmptyCopy();
-                foreach (BRep_PointRepresentation aRep in aVertex.Points())
+                var aCopy = (BrepTVertex)aVertex.EmptyCopy();
+                foreach (PointRepresentation aRep in aVertex.Points())
                 {
                     aCopy.ChangePoints().Append(aRep);
                 }

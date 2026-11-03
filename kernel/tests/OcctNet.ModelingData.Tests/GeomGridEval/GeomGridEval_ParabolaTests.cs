@@ -1,6 +1,7 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomGridEval_Parabola_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -21,7 +22,7 @@ public class GeomGridEval_ParabolaTest
     }
 
     // Parabola in XY plane, Focal=1.0, center at origin
-    private static Geom_Parabola MakeCurve() => new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
+    private static ParabolaCurve3D MakeCurve() => new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
 
     [Fact]
     public void BasicEvaluation()
@@ -32,9 +33,9 @@ public class GeomGridEval_ParabolaTest
         // XAxis is symmetry axis.
         // P(u) = O + u^2/(4f)*XDir + u*YDir
         // So X = u^2/4, Y = u
-        Geom_Parabola aCurve = MakeCurve();
+        ParabolaCurve3D aCurve = MakeCurve();
 
-        GeomGridEval_Parabola anEval = new(aCurve);
+        ParabolaGrid anEval = new(aCurve);
         Assert.NotNull(anEval.Geometry());
 
         // Test from -2 to 2
@@ -54,11 +55,11 @@ public class GeomGridEval_ParabolaTest
     [Fact]
     public void DerivativeD1()
     {
-        Geom_Parabola aCurve = MakeCurve();
-        GeomGridEval_Parabola anEval = new(aCurve);
+        ParabolaCurve3D aCurve = MakeCurve();
+        ParabolaGrid anEval = new(aCurve);
 
         NCollection_Array1<double> aParams = CreateUniformParams(-2.0, 2.0, 9);
-        NCollection_Array1<Geom_Curve.ResD1> aGrid = anEval.EvaluateGridD1(aParams);
+        NCollection_Array1<Curve3D.ResD1> aGrid = anEval.EvaluateGridD1(aParams);
 
         for (int i = 1; i <= 9; ++i)
         {
@@ -71,11 +72,11 @@ public class GeomGridEval_ParabolaTest
     [Fact]
     public void DerivativeD2()
     {
-        Geom_Parabola aCurve = MakeCurve();
-        GeomGridEval_Parabola anEval = new(aCurve);
+        ParabolaCurve3D aCurve = MakeCurve();
+        ParabolaGrid anEval = new(aCurve);
 
         NCollection_Array1<double> aParams = CreateUniformParams(-2.0, 2.0, 9);
-        NCollection_Array1<Geom_Curve.ResD2> aGrid = anEval.EvaluateGridD2(aParams);
+        NCollection_Array1<Curve3D.ResD2> aGrid = anEval.EvaluateGridD2(aParams);
 
         for (int i = 1; i <= 9; ++i)
         {
@@ -89,11 +90,11 @@ public class GeomGridEval_ParabolaTest
     [Fact]
     public void DerivativeD3()
     {
-        Geom_Parabola aCurve = MakeCurve();
-        GeomGridEval_Parabola anEval = new(aCurve);
+        ParabolaCurve3D aCurve = MakeCurve();
+        ParabolaGrid anEval = new(aCurve);
 
         NCollection_Array1<double> aParams = CreateUniformParams(-2.0, 2.0, 9);
-        NCollection_Array1<Geom_Curve.ResD3> aGrid = anEval.EvaluateGridD3(aParams);
+        NCollection_Array1<Curve3D.ResD3> aGrid = anEval.EvaluateGridD3(aParams);
 
         for (int i = 1; i <= 9; ++i)
         {

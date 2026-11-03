@@ -6,9 +6,10 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using static Kerf.Engine.Foundation.Gravity;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -22,7 +23,7 @@ namespace Occt;
 /// </remarks>
 public static class TransferBRep
 {
-    private static void ShapeAppend(Transfer_Binder? binder, NCollection_HSequence<TopoDS_Shape> shapes)
+    private static void ShapeAppend(Transfer_Binder? binder, NCollection_HSequence<Shape> shapes)
     {
         if (binder is null)
         {
@@ -62,9 +63,9 @@ public static class TransferBRep
     }
 
     /// <summary>Get the Shape recorded in a Binder. If the Binder brings a multiple result, search for the Shape.</summary>
-    public static TopoDS_Shape ShapeResult(Transfer_Binder? binder)
+    public static Shape ShapeResult(Transfer_Binder? binder)
     {
-        TopoDS_Shape shape = new TopoDS_Shape();
+        Shape shape = new Shape();
         Transfer_Binder? bnd = binder;
         while (bnd is not null)
         {
@@ -91,9 +92,9 @@ public static class TransferBRep
     /// Get the Shape recorded in a TransientProcess as result of the Transfer of an entity. I.E. in the binder bound to
     /// that Entity. If no result or result not a single Shape, returns a Null Shape.
     /// </summary>
-    public static TopoDS_Shape ShapeResult(Transfer_TransientProcess TP, Transient? ent)
+    public static Shape ShapeResult(Transfer_TransientProcess TP, Transient? ent)
     {
-        TopoDS_Shape shape = new TopoDS_Shape();
+        Shape shape = new Shape();
         Transfer_Binder? binder = TP.Find(ent);
         if (binder is null)
         {
@@ -115,9 +116,9 @@ public static class TransferBRep
     /// Sets a Shape as a result for a starting entity <paramref name="ent"/> (reverse of ShapeResult). It simply
     /// creates a ShapeBinder then binds it to the entity.
     /// </summary>
-    public static void SetShapeResult(Transfer_TransientProcess? TP, Transient? ent, in TopoDS_Shape result)
+    public static void SetShapeResult(Transfer_TransientProcess? TP, Transient? ent, in Shape result)
     {
-        if (result.IsNull() || ent is null || TP is null)
+        if (result.IsNull || ent is null || TP is null)
         {
             return;
         }
@@ -128,14 +129,14 @@ public static class TransferBRep
     /// Gets the Shapes recorded in a TransientProcess as result of a Transfer, considers roots only or all results
     /// according <paramref name="roots"/>, returns them as a HSequence.
     /// </summary>
-    public static NCollection_HSequence<TopoDS_Shape>? Shapes(Transfer_TransientProcess? TP, bool roots = true)
+    public static NCollection_HSequence<Shape>? Shapes(Transfer_TransientProcess? TP, bool roots = true)
     {
-        NCollection_HSequence<TopoDS_Shape>? shapes = null;
+        NCollection_HSequence<Shape>? shapes = null;
         if (TP is null)
         {
             return shapes;
         }
-        shapes = new NCollection_HSequence<TopoDS_Shape>();
+        shapes = new NCollection_HSequence<Shape>();
 
         Transfer_IteratorOfProcessForTransient list = roots ? TP.RootResult() : TP.CompleteResult();
 
@@ -151,15 +152,15 @@ public static class TransferBRep
     /// Gets the Shapes recorded in a TransientProcess as result of a Transfer, for a given list of starting entities,
     /// returns the shapes as a HSequence.
     /// </summary>
-    public static NCollection_HSequence<TopoDS_Shape>? Shapes(Transfer_TransientProcess? TP,
+    public static NCollection_HSequence<Shape>? Shapes(Transfer_TransientProcess? TP,
                                                               NCollection_HSequence<Transient>? list)
     {
-        NCollection_HSequence<TopoDS_Shape>? shapes = null;
+        NCollection_HSequence<Shape>? shapes = null;
         if (TP is null && list is null) // OCCT: && where || is meant (either null is dereferenced below)
         {
             return shapes;
         }
-        shapes = new NCollection_HSequence<TopoDS_Shape>();
+        shapes = new NCollection_HSequence<Shape>();
 
         int ie, ne = list.Length();
         for (ie = 1; ie <= ne; ie++)
@@ -175,37 +176,37 @@ public static class TransferBRep
     /// Returns a Status regarding a Shape in a FinderProcess: FORWARD means bound with SAME Orientation; REVERSED
     /// means bound with REVERSE Orientation; EXTERNAL means NOT BOUND; INTERNAL is not used.
     /// </summary>
-    public static TopAbs_Orientation ShapeState(Transfer_FinderProcess? FP, in TopoDS_Shape shape)
+    public static Orientation ShapeState(Transfer_FinderProcess? FP, in Shape shape)
     {
-        if (FP is null || shape.IsNull())
+        if (FP is null || shape.IsNull)
         {
-            return TopAbs_EXTERNAL;
+            return External;
         }
         TransferBRep_ShapeMapper? sm = new TransferBRep_ShapeMapper(shape);
         int index = FP.MapIndex(sm);
         if (index == 0)
         {
-            return TopAbs_EXTERNAL;
+            return External;
         }
         sm = FP.Mapped(index) as TransferBRep_ShapeMapper;
         if (sm is null)
         {
-            return TopAbs_EXTERNAL;
+            return External;
         }
-        TopoDS_Shape mapped = sm.Value();
+        Shape mapped = sm.Value();
         //  equality is assumed, we only test the orientation
         if (mapped.Orientation() != shape.Orientation())
         {
-            return TopAbs_REVERSED;
+            return Reversed;
         }
-        return TopAbs_FORWARD;
+        return Forward;
     }
 
     /// <summary>Returns the result (as a Binder) attached to a given Shape. Null if none.</summary>
-    public static Transfer_Binder? ResultFromShape(Transfer_FinderProcess? FP, in TopoDS_Shape shape)
+    public static Transfer_Binder? ResultFromShape(Transfer_FinderProcess? FP, in Shape shape)
     {
         Transfer_Binder? res = null;
-        if (FP is null || shape.IsNull())
+        if (FP is null || shape.IsNull)
         {
             return res;
         }
@@ -214,10 +215,10 @@ public static class TransferBRep
     }
 
     /// <summary>Returns the result as pure Transient attached to a Shape; first one if multiple result.</summary>
-    public static Transient? TransientFromShape(Transfer_FinderProcess? FP, in TopoDS_Shape shape)
+    public static Transient? TransientFromShape(Transfer_FinderProcess? FP, in Shape shape)
     {
         Transient? res = null;
-        if (FP is null || shape.IsNull())
+        if (FP is null || shape.IsNull)
         {
             return res;
         }
@@ -226,9 +227,9 @@ public static class TransferBRep
     }
 
     /// <summary>Binds a Transient Result to a Shape in a FinderProcess (as first result if multiple : does not add it to existing one).</summary>
-    public static void SetTransientFromShape(Transfer_FinderProcess? FP, in TopoDS_Shape shape, Transient? result)
+    public static void SetTransientFromShape(Transfer_FinderProcess? FP, in Shape shape, Transient? result)
     {
-        if (FP is null || shape.IsNull())
+        if (FP is null || shape.IsNull)
         {
             return;
         }
@@ -241,7 +242,7 @@ public static class TransferBRep
     /// then its Mapper is returned. Or it is not, then a new one is created then returned, BUT it is not mapped here
     /// (use Bind or FindElseBind to do this).
     /// </summary>
-    public static TransferBRep_ShapeMapper ShapeMapper(Transfer_FinderProcess FP, in TopoDS_Shape shape)
+    public static TransferBRep_ShapeMapper ShapeMapper(Transfer_FinderProcess FP, in Shape shape)
     {
         var mapper = new TransferBRep_ShapeMapper(shape);
         int index = FP.MapIndex(mapper);
@@ -380,16 +381,16 @@ public static class TransferBRep
             }
             Interface_Check Check = Binder.Check();
 
-            TopoDS_Shape S = Mapper.Value();
-            TopAbs_ShapeEnum ShapeType = S.ShapeType();
+            Shape S = Mapper.Value();
+            ShapeType ShapeType = S.ShapeType();
 
             // find appropriate element in the Sequence
             for (int index = 1; index <= SeqLen; index++)
             {
                 // JR/Hp :
-                TopAbs_ShapeEnum CurrentType = (TopAbs_ShapeEnum)ShapeTypes.Value(index);
+                ShapeType CurrentType = (ShapeType)ShapeTypes.Value(index);
                 //      TopAbs_ShapeEnum CurrentType = (TopAbs_ShapeEnum)ShapeTypes->Value (index);
-                if (CurrentType == ShapeType || CurrentType == TopAbs_SHAPE)
+                if (CurrentType == ShapeType || CurrentType == ShapeType.Shape)
                 {
                     TransferBRep_TransferResultInfo Info = InfoSeq.Value(index);
                     // fill element
@@ -477,9 +478,9 @@ public static class TransferBRep
     }
 
     /// <summary>Returns the list of shapes to which a non-empty Check is bound in a check-list.</summary>
-    public static NCollection_HSequence<TopoDS_Shape> CheckedShapes(Interface_CheckIterator chl)
+    public static NCollection_HSequence<Shape> CheckedShapes(Interface_CheckIterator chl)
     {
-        var ls = new NCollection_HSequence<TopoDS_Shape>();
+        var ls = new NCollection_HSequence<Shape>();
         for (chl.Start(); chl.More(); chl.Next())
         {
             Interface_Check ach = chl.Value();
@@ -517,7 +518,7 @@ public static class TransferBRep
     /// </summary>
     public static Interface_CheckIterator CheckObject(Interface_CheckIterator chl, Transient? obj)
     {
-        TopoDS_Shape S = new TopoDS_Shape();
+        Shape S = new Shape();
         TopoDS_HShape? hs = obj as TopoDS_HShape;
         TransferBRep_BinderOfShape? sb = obj as TransferBRep_BinderOfShape;
         TransferBRep_ShapeMapper? sm = obj as TransferBRep_ShapeMapper;
@@ -547,7 +548,7 @@ public static class TransferBRep
             {
                 continue;
             }
-            if (S.IsNull())
+            if (S.IsNull)
             {
                 if (ent == obj)
                 {
@@ -558,7 +559,7 @@ public static class TransferBRep
             }
             else
             {
-                TopoDS_Shape sh = new TopoDS_Shape();
+                Shape sh = new Shape();
                 TopoDS_HShape? hsh = ent as TopoDS_HShape;
                 TransferBRep_BinderOfShape? sbs = ent as TransferBRep_BinderOfShape;
                 TransferBRep_ShapeMapper? smp = ent as TransferBRep_ShapeMapper;

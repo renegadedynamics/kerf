@@ -6,10 +6,13 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -20,7 +23,7 @@ namespace Occt;
 /// </para>
 /// <para>
 /// <b>Writing into shapes.</b> Only this class attaches meshes. <see cref="AddInFace"/>, <see cref="NullifyFace"/>,
-/// <see cref="NullifyEdge(in TopoDS_Edge, Triangulation?, in Placement)"/> and the <c>UpdateEdge</c>
+/// <see cref="NullifyEdge(in Edge, Triangulation?, in Placement)"/> and the <c>UpdateEdge</c>
 /// overloads write into the face or edge they are given, as OCCT's do, through BRep_Builder's internal non-freezing
 /// forms (decision 488): the mesher's triangulations and polygons stay unfrozen, so its post-processor can set each
 /// triangulation's deflection and parameters in place, and they freeze with the result when it is published
@@ -31,12 +34,12 @@ namespace Occt;
 public static class BRepMesh_ShapeTool
 {
     /// <summary>The maximum tolerance of the face, its edges and its vertices.</summary>
-    public static double MaxFaceTolerance(in TopoDS_Face theFace)
+    public static double MaxFaceTolerance(in Face theFace)
     {
-        double aMaxTolerance = BRep_Tool.Tolerance(theFace);
+        double aMaxTolerance = Tool.Tolerance(theFace);
 
-        double aTolerance = Max(MaxTolerance(theFace, TopAbs_EDGE),
-                                MaxTolerance(theFace, TopAbs_VERTEX));
+        double aTolerance = Max(MaxTolerance(theFace, ShapeType.Edge),
+                                MaxTolerance(theFace, ShapeType.Vertex));
 
         return Max(aMaxTolerance, aTolerance);
     }
@@ -69,17 +72,17 @@ public static class BRepMesh_ShapeTool
             return;
         }
 
-        TopoDS_Edge aEdge = theEdge.GetEdge();
-        TopoDS_Face aFace = thePCurve.GetFace().GetFace();
+        Edge aEdge = theEdge.GetEdge();
+        Face aFace = thePCurve.GetFace().GetFace();
 
-        Range(aEdge, out Geom_Curve? aCurve, out double aFirstParam, out double aLastParam);
+        Range(aEdge, out Curve3D? aCurve, out double aFirstParam, out double aLastParam);
         if (aCurve is null)
         {
             theEdge.SetDegenerated(true);
             return;
         }
 
-        BRepAdaptor_Curve aCurveOnSurf = new(aEdge, aFace);
+        EdgeCurveAdaptor aCurveOnSurf = new(aEdge, aFace);
         if (theEdge.GetSameParam() || theEdge.GetSameRange())
         {
             if (theEdge.GetSameRange())
@@ -98,8 +101,8 @@ public static class BRepMesh_ShapeTool
 
         if (!theEdge.GetDegenerated() /* || theEdge->GetSameParam ()*/)
         {
-            TopExp.Vertices(aEdge, out TopoDS_Vertex aStartVertex, out TopoDS_Vertex aEndVertex);
-            if (aStartVertex.IsNull() || aEndVertex.IsNull())
+            Exploration.Vertices(aEdge, out Vertex aStartVertex, out Vertex aEndVertex);
+            if (aStartVertex.IsNull || aEndVertex.IsNull)
             {
                 theEdge.SetDegenerated(true);
                 return;
@@ -108,7 +111,7 @@ public static class BRepMesh_ShapeTool
             if (aStartVertex.IsSame(aEndVertex))
             {
                 const int aPointsNb = 20;
-                double aVertexTolerance = BRep_Tool.Tolerance(aStartVertex);
+                double aVertexTolerance = Tool.Tolerance(aStartVertex);
                 double aDu = (aLastParam - aFirstParam) / aPointsNb;
 
                 aCurve.D0(aFirstParam, out Point3D aPrevPnt);
@@ -142,7 +145,7 @@ public static class BRepMesh_ShapeTool
     /// Writes the nodes of <paramref name="theTriangulation"/> (unfrozen: the mesher's own) and attaches it to the face
     /// unfrozen (decision 488). OCCT passes the handle by reference without changing it; so does the port.
     /// </remarks>
-    public static void AddInFace(in TopoDS_Face theFace, Triangulation theTriangulation)
+    public static void AddInFace(in Face theFace, Triangulation theTriangulation)
     {
         Placement aLoc = theFace.Location();
         if (!aLoc.IsIdentity)
@@ -157,37 +160,37 @@ public static class BRepMesh_ShapeTool
             }
         }
 
-        BRep_Builder aBuilder = new();
+        BrepBuilder aBuilder = new();
         aBuilder.UpdateFaceUnfrozen(theFace, theTriangulation); // OCCT.NET: the mesher's non-freezing attach (decision 488)
     }
 
     /// <summary>Removes the face's triangulation.</summary>
-    public static void NullifyFace(in TopoDS_Face theFace)
+    public static void NullifyFace(in Face theFace)
     {
-        BRep_Builder aBuilder = new();
+        BrepBuilder aBuilder = new();
         aBuilder.UpdateFaceUnfrozen(theFace, null);
     }
 
     /// <summary>Removes the edge's polygon on the triangulation of the face with the given location.</summary>
-    public static void NullifyEdge(in TopoDS_Edge theEdge, Triangulation? theTriangulation, in Placement theLocation)
+    public static void NullifyEdge(in Edge theEdge, Triangulation? theTriangulation, in Placement theLocation)
     {
         UpdateEdge(theEdge, (PolygonOnTriangulation?)null, theTriangulation, theLocation);
     }
 
     /// <summary>Removes the edge's 3D polygon.</summary>
-    public static void NullifyEdge(in TopoDS_Edge theEdge, in Placement theLocation)
+    public static void NullifyEdge(in Edge theEdge, in Placement theLocation)
     {
-        BRep_Builder aBuilder = new();
+        BrepBuilder aBuilder = new();
         aBuilder.UpdateEdgeUnfrozen(theEdge, (Polygon3D?)null, theLocation);
     }
 
     /// <summary>Stores the polygon on the triangulation of the face with the given location into the edge.</summary>
-    public static void UpdateEdge(in TopoDS_Edge theEdge,
+    public static void UpdateEdge(in Edge theEdge,
                                   PolygonOnTriangulation? thePolygon,
                                   Triangulation? theTriangulation,
                                   in Placement theLocation)
     {
-        BRep_Builder aBuilder = new();
+        BrepBuilder aBuilder = new();
         aBuilder.UpdateEdgeUnfrozen(theEdge, thePolygon, theTriangulation, theLocation);
     }
 
@@ -195,20 +198,20 @@ public static class BRepMesh_ShapeTool
     /// Stores the polygons of the seam edge (for its forward and its reversed orientation) on the triangulation of the
     /// face with the given location into the edge.
     /// </summary>
-    public static void UpdateEdge(in TopoDS_Edge theEdge,
+    public static void UpdateEdge(in Edge theEdge,
                                   PolygonOnTriangulation? thePolygon1,
                                   PolygonOnTriangulation? thePolygon2,
                                   Triangulation? theTriangulation,
                                   in Placement theLocation)
     {
-        BRep_Builder aBuilder = new();
+        BrepBuilder aBuilder = new();
         aBuilder.UpdateEdgeUnfrozen(theEdge, thePolygon1, thePolygon2, theTriangulation, theLocation);
     }
 
     /// <summary>Stores the 3D polygon into the edge.</summary>
-    public static void UpdateEdge(in TopoDS_Edge theEdge, Polygon3D? thePolygon)
+    public static void UpdateEdge(in Edge theEdge, Polygon3D? thePolygon)
     {
-        BRep_Builder aBuilder = new();
+        BrepBuilder aBuilder = new();
         aBuilder.UpdateEdgeUnfrozen(theEdge, thePolygon, new Placement());
     }
 
@@ -224,15 +227,15 @@ public static class BRepMesh_ShapeTool
     }
 
     /// <summary>The UV points of the edge's ends on its pcurve on the face.</summary>
-    public static bool UVPoints(in TopoDS_Edge theEdge,
-                                in TopoDS_Face theFace,
+    public static bool UVPoints(in Edge theEdge,
+                                in Face theFace,
                                 out Point2D theFirstPoint2d,
                                 out Point2D theLastPoint2d,
                                 bool isConsiderOrientation = false)
     {
         theFirstPoint2d = new Point2D();
         theLastPoint2d = new Point2D();
-        if (!Range(theEdge, theFace, out Geom2d_Curve? aCurve2d, out double aFirstParam, out double aLastParam,
+        if (!Range(theEdge, theFace, out Curve2D? aCurve2d, out double aFirstParam, out double aLastParam,
                    isConsiderOrientation))
         {
             return false;
@@ -244,9 +247,9 @@ public static class BRepMesh_ShapeTool
     }
 
     /// <summary>The pcurve of the edge on the face and its range (ShapeAnalysis_Edge::PCurve).</summary>
-    public static bool Range(in TopoDS_Edge theEdge,
-                             in TopoDS_Face theFace,
-                             out Geom2d_Curve? thePCurve,
+    public static bool Range(in Edge theEdge,
+                             in Face theFace,
+                             out Curve2D? thePCurve,
                              out double theFirstParam,
                              out double theLastParam,
                              bool isConsiderOrientation = false)
@@ -257,8 +260,8 @@ public static class BRepMesh_ShapeTool
     }
 
     /// <summary>The 3D curve of the edge, located, and its range (ShapeAnalysis_Edge::Curve3d).</summary>
-    public static bool Range(in TopoDS_Edge theEdge,
-                             out Geom_Curve? theCurve,
+    public static bool Range(in Edge theEdge,
+                             out Curve3D? theCurve,
                              out double theFirstParam,
                              out double theLastParam,
                              bool isConsiderOrientation = false)
@@ -269,15 +272,15 @@ public static class BRepMesh_ShapeTool
 
     // Returns maximum tolerance of face element of the specified type (OCCT's template over the shape type and the
     // tolerance extractor).
-    private static double MaxTolerance(in TopoDS_Face theFace, TopAbs_ShapeEnum theShapeType)
+    private static double MaxTolerance(in Face theFace, ShapeType theShapeType)
     {
         double aMaxTolerance = RealFirst();
-        TopExp_Explorer aExplorer = new(theFace, theShapeType);
+        Explorer aExplorer = new(theFace, theShapeType);
         for (; aExplorer.More(); aExplorer.Next())
         {
-            double aTolerance = theShapeType == TopAbs_EDGE
-                                    ? BRep_Tool.Tolerance(TopoDS.Edge(aExplorer.Current()))
-                                    : BRep_Tool.Tolerance(TopoDS.Vertex(aExplorer.Current()));
+            double aTolerance = theShapeType == ShapeType.Edge
+                                    ? Tool.Tolerance(ShapeCasts.Edge(aExplorer.Current()))
+                                    : Tool.Tolerance(ShapeCasts.Vertex(aExplorer.Current()));
             if (aTolerance > aMaxTolerance)
             {
                 aMaxTolerance = aTolerance;

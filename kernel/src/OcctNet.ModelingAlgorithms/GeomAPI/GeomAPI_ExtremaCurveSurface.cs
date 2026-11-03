@@ -4,12 +4,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
 
 /// <summary>
-/// Computes the extrema of the distance between a 3D curve and a surface (through <see cref="Extrema_ExtCS"/>), and
+/// Computes the extrema of the distance between a 3D curve and a surface (through <see cref="ExtCS"/>), and
 /// the nearest pair among them.
 /// </summary>
 /// <remarks>
@@ -21,7 +23,7 @@ public class GeomAPI_ExtremaCurveSurface
 {
     private bool myIsDone;
     private int myIndex;
-    private readonly Extrema_ExtCS myExtCS = new();
+    private readonly ExtCS myExtCS = new();
 
     /// <summary>An empty algorithm, to be initialised with <c>Init</c>.</summary>
     public GeomAPI_ExtremaCurveSurface()
@@ -31,7 +33,7 @@ public class GeomAPI_ExtremaCurveSurface
     }
 
     /// <summary>The extrema between the whole <paramref name="Curve"/> and <paramref name="Surface"/>.</summary>
-    public GeomAPI_ExtremaCurveSurface(Geom_Curve Curve, Geom_Surface Surface)
+    public GeomAPI_ExtremaCurveSurface(Curve3D Curve, Surface Surface)
     {
         Init(Curve, Surface);
     }
@@ -40,22 +42,22 @@ public class GeomAPI_ExtremaCurveSurface
     /// The extrema between <paramref name="Curve"/> on [Wmin, Wmax] and <paramref name="Surface"/> on
     /// [Umin, Umax] x [Vmin, Vmax].
     /// </summary>
-    public GeomAPI_ExtremaCurveSurface(Geom_Curve Curve, Geom_Surface Surface, double Wmin, double Wmax, double Umin,
+    public GeomAPI_ExtremaCurveSurface(Curve3D Curve, Surface Surface, double Wmin, double Wmax, double Umin,
                                        double Umax, double Vmin, double Vmax)
     {
         Init(Curve, Surface, Wmin, Wmax, Umin, Umax, Vmin, Vmax);
     }
 
     /// <summary>Computes the extrema between the whole <paramref name="Curve"/> and <paramref name="Surface"/>.</summary>
-    public void Init(Geom_Curve Curve, Geom_Surface Surface)
+    public void Init(Curve3D Curve, Surface Surface)
     {
-        GeomAdaptor_Curve TheCurve = new(Curve);
-        GeomAdaptor_Surface TheSurface = new(Surface);
+        CurveAdaptor TheCurve = new(Curve);
+        SurfaceAdaptor TheSurface = new(Surface);
 
         double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         myExtCS.Initialize(TheSurface, Tol, Tol);
         myExtCS.Perform(TheCurve, TheCurve.FirstParameter(), TheCurve.LastParameter());
-        myIsDone = myExtCS.IsDone() && (myExtCS.IsParallel() || myExtCS.NbExt() > 0);
+        myIsDone = myExtCS.IsDone && (myExtCS.IsParallel || myExtCS.ExtCount > 0);
 
         if (myIsDone)
         {
@@ -63,7 +65,7 @@ public class GeomAPI_ExtremaCurveSurface
             double Dist2, Dist2Min = myExtCS.SquareDistance(1);
             myIndex = 1;
 
-            for (int i = 2; i <= myExtCS.NbExt(); i++)
+            for (int i = 2; i <= myExtCS.ExtCount; i++)
             {
                 Dist2 = myExtCS.SquareDistance(i);
                 if (Dist2 < Dist2Min)
@@ -79,16 +81,16 @@ public class GeomAPI_ExtremaCurveSurface
     /// Computes the extrema between <paramref name="Curve"/> on [Wmin, Wmax] and <paramref name="Surface"/> on
     /// [Umin, Umax] x [Vmin, Vmax].
     /// </summary>
-    public void Init(Geom_Curve Curve, Geom_Surface Surface, double Wmin, double Wmax, double Umin, double Umax,
+    public void Init(Curve3D Curve, Surface Surface, double Wmin, double Wmax, double Umin, double Umax,
                      double Vmin, double Vmax)
     {
-        GeomAdaptor_Curve TheCurve = new(Curve, Wmin, Wmax);
-        GeomAdaptor_Surface TheSurface = new(Surface, Umin, Umax, Vmin, Vmax);
+        CurveAdaptor TheCurve = new(Curve, Wmin, Wmax);
+        SurfaceAdaptor TheSurface = new(Surface, Umin, Umax, Vmin, Vmax);
 
         double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         myExtCS.Initialize(TheSurface, Umin, Umax, Vmin, Vmax, Tol, Tol);
         myExtCS.Perform(TheCurve, Wmin, Wmax);
-        myIsDone = myExtCS.IsDone() && (myExtCS.IsParallel() || myExtCS.NbExt() > 0);
+        myIsDone = myExtCS.IsDone && (myExtCS.IsParallel || myExtCS.ExtCount > 0);
 
         if (myIsDone)
         {
@@ -96,7 +98,7 @@ public class GeomAPI_ExtremaCurveSurface
             double Dist2, Dist2Min = myExtCS.SquareDistance(1);
             myIndex = 1;
 
-            for (int i = 2; i <= myExtCS.NbExt(); i++)
+            for (int i = 2; i <= myExtCS.ExtCount; i++)
             {
                 Dist2 = myExtCS.SquareDistance(i);
                 if (Dist2 < Dist2Min)
@@ -113,7 +115,7 @@ public class GeomAPI_ExtremaCurveSurface
     {
         if (myIsDone)
         {
-            return myExtCS.NbExt();
+            return myExtCS.ExtCount;
         }
         else
         {
@@ -129,7 +131,7 @@ public class GeomAPI_ExtremaCurveSurface
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > NbExtrema(), "GeomAPI_ExtremaCurveCurve::Points");
 
-        myExtCS.Points(Index, out Extrema_POnCurv PC, out Extrema_POnSurf PS);
+        myExtCS.Points(Index, out POnCurv PC, out POnSurf PS);
 
         P1 = PC.Value();
         P2 = PS.Value();
@@ -140,7 +142,7 @@ public class GeomAPI_ExtremaCurveSurface
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > NbExtrema(), "GeomAPI_ExtremaCurveCurve::Parameters");
 
-        myExtCS.Points(Index, out Extrema_POnCurv PC, out Extrema_POnSurf PS);
+        myExtCS.Points(Index, out POnCurv PC, out POnSurf PS);
 
         W = PC.Parameter();
         PS.Parameter(out U, out V);
@@ -155,7 +157,7 @@ public class GeomAPI_ExtremaCurveSurface
     }
 
     /// <summary>True if the curve lies on a surface parallel to the surface.</summary>
-    public bool IsParallel() => myExtCS.IsParallel();
+    public bool IsParallel() => myExtCS.IsParallel;
 
     /// <summary>The points of the nearest extremum. Throws StdFail_NotDone if there is none.</summary>
     public void NearestPoints(out Point3D PC, out Point3D PS)
@@ -185,5 +187,5 @@ public class GeomAPI_ExtremaCurveSurface
     public static explicit operator double(GeomAPI_ExtremaCurveSurface theExt) => theExt.LowerDistance();
 
     /// <summary>The extrema algorithm, for advanced use.</summary>
-    public Extrema_ExtCS Extrema() => myExtCS;
+    public ExtCS Extrema() => myExtCS;
 }

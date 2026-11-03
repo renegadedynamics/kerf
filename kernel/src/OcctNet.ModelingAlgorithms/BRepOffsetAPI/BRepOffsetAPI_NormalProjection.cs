@@ -6,6 +6,7 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -24,16 +25,16 @@ public sealed class BRepOffsetAPI_NormalProjection : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The projection on the shape <paramref name="S"/>.</summary>
-    public BRepOffsetAPI_NormalProjection(in TopoDS_Shape S)
+    public BRepOffsetAPI_NormalProjection(in Shape S)
     {
         myNormalProjector.Init(S);
     }
 
     /// <summary>Sets the shape to project on.</summary>
-    public void Init(in TopoDS_Shape S) => myNormalProjector.Init(S);
+    public void Init(in Shape S) => myNormalProjector.Init(S);
 
     /// <summary>Adds an edge or a wire to project.</summary>
-    public void Add(in TopoDS_Shape ToProj) => myNormalProjector.Add(ToProj);
+    public void Add(in Shape ToProj) => myNormalProjector.Add(ToProj);
 
     /// <summary>Sets the approximation's parameters (<see cref="BRepAlgo_NormalProjection.SetParams"/>).</summary>
     public void SetParams(double Tol3D, double Tol2D, Continuity InternalContinuity, int MaxDegree, int MaxSeg) =>
@@ -60,17 +61,17 @@ public sealed class BRepOffsetAPI_NormalProjection : BRepBuilderAPI_MakeShape
     public override bool IsDone() => myNormalProjector.IsDone();
 
     /// <summary>The result (frozen).</summary>
-    public TopoDS_Shape Projection() => myNormalProjector.Projection();
+    public Shape Projection() => myNormalProjector.Projection();
 
     /// <summary>The face on which the edge <paramref name="E"/> of the result lies.</summary>
-    public TopoDS_Shape Couple(in TopoDS_Edge E) => myNormalProjector.Couple(E);
+    public Shape Couple(in Edge E) => myNormalProjector.Couple(E);
 
-    internal override NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape S) =>
+    internal override NCollection_List<Shape> InternalGenerated(in Shape S) =>
         myNormalProjector.InternalGenerated(S);
 
     /// <summary>The edge or wire's edge projected into the edge <paramref name="E"/> of the result.</summary>
-    public TopoDS_Shape Ancestor(in TopoDS_Edge E) => myNormalProjector.Ancestor(E);
+    public Shape Ancestor(in Edge E) => myNormalProjector.Ancestor(E);
 
     /// <summary>The result as one wire, if its edges make one (<see cref="BRepAlgo_NormalProjection.BuildWire"/>).</summary>
-    public bool BuildWire(NCollection_List<TopoDS_Shape> ListOfWire) => myNormalProjector.BuildWire(ListOfWire);
+    public bool BuildWire(NCollection_List<Shape> ListOfWire) => myNormalProjector.BuildWire(ListOfWire);
 }

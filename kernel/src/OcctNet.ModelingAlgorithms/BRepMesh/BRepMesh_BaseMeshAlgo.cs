@@ -6,9 +6,10 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepMesh_DegreeOfFreedom;
 using static Occt.IMeshData_Status;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -150,7 +151,7 @@ public abstract class BRepMesh_BaseMeshAlgo : IMeshTools_MeshAlgo
                 // A wire defines one topological occurrence of an edge. Registering every
                 // pcurve attached to its face would create duplicate constraints at a periodic seam.
                 IMeshData_PCurve aPCurve = aDEdge.GetPCurve(aDFace, aDWire.GetEdgeOrientation(aEdgeIt));
-                TopAbs_Orientation aOri = fixSeamEdgeOrientation(aDEdge, aPCurve);
+                Orientation aOri = fixSeamEdgeOrientation(aDEdge, aPCurve);
 
                 int aPrevNodeIndex = -1;
                 int aLastPoint = aPCurve.ParametersNb() - 1;
@@ -209,7 +210,7 @@ public abstract class BRepMesh_BaseMeshAlgo : IMeshTools_MeshAlgo
 
     // If the given edge has another pcurve for current face coinciding with specified one,
     // returns TopAbs_INTERNAL flag. Elsewhere returns orientation of specified pcurve.
-    private TopAbs_Orientation fixSeamEdgeOrientation(IMeshData_Edge theDEdge, IMeshData_PCurve thePCurve)
+    private Orientation fixSeamEdgeOrientation(IMeshData_Edge theDEdge, IMeshData_PCurve thePCurve)
     {
         for (int aPCurveIt = 0; aPCurveIt < theDEdge.PCurvesNb(); ++aPCurveIt)
         {
@@ -229,7 +230,7 @@ public abstract class BRepMesh_BaseMeshAlgo : IMeshTools_MeshAlgo
                     Min(aPnt2_1.SquareDistance(aPnt1_2), aPnt2_1.SquareDistance(aPnt2_2));
                 if (aSqDist1 < global::Kerf.Engine.Foundation.Precision.SquareConfusion() && aSqDist2 < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
-                    return TopAbs_INTERNAL;
+                    return Internal;
                 }
             }
         }
@@ -239,15 +240,15 @@ public abstract class BRepMesh_BaseMeshAlgo : IMeshTools_MeshAlgo
 
     // Adds new link to the mesh data structure.
     // Movability of the link and order of nodes depend on orientation parameter.
-    private int addLinkToMesh(int theFirstNodeId, int theLastNodeId, TopAbs_Orientation theOrientation)
+    private int addLinkToMesh(int theFirstNodeId, int theLastNodeId, Orientation theOrientation)
     {
         int aLinkIndex;
-        if (theOrientation == TopAbs_REVERSED)
+        if (theOrientation == Reversed)
         {
             aLinkIndex =
                 myStructure!.AddLink(new BRepMesh_Edge(theLastNodeId, theFirstNodeId, BRepMesh_Frontier));
         }
-        else if (theOrientation == TopAbs_INTERNAL)
+        else if (theOrientation == Internal)
         {
             aLinkIndex = myStructure!.AddLink(new BRepMesh_Edge(theFirstNodeId, theLastNodeId, BRepMesh_Fixed));
         }

@@ -3,10 +3,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Projection;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -34,7 +40,7 @@ public static partial class BOPTools_AlgoTools
     /// sub-shapes in <paramref name="aMapToAvoid"/> are not changed. Writes into the shape's edges and vertices.
     /// </summary>
     /// <remarks><paramref name="bRunParallel"/> is ignored: the corrections run serially (decision 6430).</remarks>
-    public static void CorrectTolerances(in TopoDS_Shape aShape, NCollection_IndexedMap<TopoDS_Shape> aMapToAvoid, double aMaxTol = 0.0001,
+    public static void CorrectTolerances(in Shape aShape, NCollection_IndexedMap<Shape> aMapToAvoid, double aMaxTol = 0.0001,
                                          bool bRunParallel = false)
     {
         CorrectPointOnCurve(aShape, aMapToAvoid, aMaxTol, bRunParallel);
@@ -46,16 +52,16 @@ public static partial class BOPTools_AlgoTools
     /// grows to cover its distance to the points of its edges' 3D curves. Writes into the shape's vertices.
     /// </summary>
     /// <remarks><paramref name="bRunParallel"/> is ignored: the corrections run serially (decision 6430).</remarks>
-    public static void CorrectPointOnCurve(in TopoDS_Shape aS, NCollection_IndexedMap<TopoDS_Shape> aMapToAvoid, double aMaxTol = 0.0001,
+    public static void CorrectPointOnCurve(in Shape aS, NCollection_IndexedMap<Shape> aMapToAvoid, double aMaxTol = 0.0001,
                                            bool bRunParallel = false)
     {
-        TopExp_Explorer aExp = new();
+        Explorer aExp = new();
         List<BOPTools_CPC> aVCPC = [];
         //
-        aExp.Init(aS, TopAbs_EDGE);
+        aExp.Init(aS, ShapeType.Edge);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Edge aE = TopoDS.Edge(aExp.Current());
+            Edge aE = ShapeCasts.Edge(aExp.Current());
             BOPTools_CPC aCPC = new();
             aVCPC.Add(aCPC);
             aCPC.SetEdge(aE);
@@ -75,27 +81,27 @@ public static partial class BOPTools_AlgoTools
     /// of their pcurves from their 3D curves. Writes into the shape's edges and vertices.
     /// </summary>
     /// <remarks><paramref name="bRunParallel"/> is ignored: the corrections run serially (decision 6430).</remarks>
-    public static void CorrectCurveOnSurface(in TopoDS_Shape aS, NCollection_IndexedMap<TopoDS_Shape> aMapToAvoid, double aMaxTol = 0.0001,
+    public static void CorrectCurveOnSurface(in Shape aS, NCollection_IndexedMap<Shape> aMapToAvoid, double aMaxTol = 0.0001,
                                              bool bRunParallel = false)
     {
-        TopExp_Explorer aExpF = new(), aExpE = new();
+        Explorer aExpF = new(), aExpE = new();
         List<BOPTools_CWT> aVCWT = [];
         List<BOPTools_CDT> aVCDT = [];
         //
-        aExpF.Init(aS, TopAbs_FACE);
+        aExpF.Init(aS, ShapeType.Face);
         for (; aExpF.More(); aExpF.Next())
         {
-            TopoDS_Face aF = TopoDS.Face(aExpF.Current());
+            Face aF = ShapeCasts.Face(aExpF.Current());
             //
             BOPTools_CWT aCWT = new();
             aVCWT.Add(aCWT);
             aCWT.SetFace(aF);
             aCWT.SetMapToAvoid(aMapToAvoid);
             //
-            aExpE.Init(aF, TopAbs_EDGE);
+            aExpE.Init(aF, ShapeType.Edge);
             for (; aExpE.More(); aExpE.Next())
             {
-                TopoDS_Edge aE = TopoDS.Edge(aExpE.Current());
+                Edge aE = ShapeCasts.Edge(aExpE.Current());
                 //
                 BOPTools_CDT aCDT = new();
                 aVCDT.Add(aCDT);
@@ -119,17 +125,17 @@ public static partial class BOPTools_AlgoTools
     /// each edge and vertex of a face at least the face's. Writes into the shape's edges and vertices.
     /// </summary>
     /// <remarks><paramref name="bRunParallel"/> is ignored: the corrections run serially (decision 6430).</remarks>
-    public static void CorrectShapeTolerances(in TopoDS_Shape aShape, NCollection_IndexedMap<TopoDS_Shape> aMapToAvoid,
+    public static void CorrectShapeTolerances(in Shape aShape, NCollection_IndexedMap<Shape> aMapToAvoid,
                                               bool bRunParallel = false)
     {
-        TopExp_Explorer aExp = new();
+        Explorer aExp = new();
         List<BOPTools_CVT> aVCVT = [];
         List<BOPTools_CET> aVCET = [];
         //
-        aExp.Init(aShape, TopAbs_EDGE);
+        aExp.Init(aShape, ShapeType.Edge);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Edge aE = TopoDS.Edge(aExp.Current());
+            Edge aE = ShapeCasts.Edge(aExp.Current());
             BOPTools_CVT aCVT = new();
             aVCVT.Add(aCVT);
             aCVT.SetEdge(aE);
@@ -141,10 +147,10 @@ public static partial class BOPTools_AlgoTools
         BOPTools_Parallel.Perform(theToRunCorrectionsInParallel, aVCVT);
         //======================================================
         //
-        aExp.Init(aShape, TopAbs_FACE);
+        aExp.Init(aShape, ShapeType.Face);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Face aF = TopoDS.Face(aExp.Current());
+            Face aF = ShapeCasts.Face(aExp.Current());
             BOPTools_CET aCET = new();
             aVCET.Add(aCET);
             aCET.SetFace(aF);
@@ -161,7 +167,7 @@ public static partial class BOPTools_AlgoTools
     /// distance between its 3D curve and its pcurve, and the parameter where it is reached. False if the check
     /// fails (the outputs are then 0, where OCCT leaves them unchanged).
     /// </summary>
-    public static bool ComputeTolerance(in TopoDS_Face theFace, in TopoDS_Edge theEdge, out double theMaxDist, out double theMaxPar)
+    public static bool ComputeTolerance(in Face theFace, in Edge theEdge, out double theMaxDist, out double theMaxPar)
     {
         BRepLib_CheckCurveOnSurface aCS = new();
         //
@@ -185,18 +191,18 @@ public static partial class BOPTools_AlgoTools
     private sealed class BOPTools_CPC : BOPTools_Parallel.ISolver
     {
         private double myMaxTol = 1.0e-7;
-        private TopoDS_Edge myEdge;
-        private NCollection_IndexedMap<TopoDS_Shape>? mypMapToAvoid;
+        private Edge myEdge;
+        private NCollection_IndexedMap<Shape>? mypMapToAvoid;
 
-        internal void SetEdge(in TopoDS_Edge aE) => myEdge = aE;
+        internal void SetEdge(in Edge aE) => myEdge = aE;
 
-        internal TopoDS_Edge Edge() => myEdge;
+        internal Edge Edge() => myEdge;
 
         internal void SetMaxTol(double aMaxTol) => myMaxTol = aMaxTol;
 
         internal double MaxTol() => myMaxTol;
 
-        internal void SetMapToAvoid(NCollection_IndexedMap<TopoDS_Shape> aMapToAvoid) => mypMapToAvoid = aMapToAvoid;
+        internal void SetMapToAvoid(NCollection_IndexedMap<Shape> aMapToAvoid) => mypMapToAvoid = aMapToAvoid;
 
         public void Perform()
         {
@@ -207,12 +213,12 @@ public static partial class BOPTools_AlgoTools
 
     private sealed class BOPTools_CWT : BOPTools_Parallel.ISolver
     {
-        private TopoDS_Face myFace;
-        private NCollection_IndexedMap<TopoDS_Shape>? mypMapToAvoid;
+        private Face myFace;
+        private NCollection_IndexedMap<Shape>? mypMapToAvoid;
 
-        internal void SetFace(in TopoDS_Face aF) => myFace = aF;
+        internal void SetFace(in Face aF) => myFace = aF;
 
-        internal void SetMapToAvoid(NCollection_IndexedMap<TopoDS_Shape> aMapToAvoid) => mypMapToAvoid = aMapToAvoid;
+        internal void SetMapToAvoid(NCollection_IndexedMap<Shape> aMapToAvoid) => mypMapToAvoid = aMapToAvoid;
 
         public void Perform()
         {
@@ -224,17 +230,17 @@ public static partial class BOPTools_AlgoTools
     private sealed class BOPTools_CDT : BOPTools_Parallel.ISolver
     {
         private double myMaxTol = 1.0e-7;
-        private TopoDS_Edge myEdge;
-        private TopoDS_Face myFace;
-        private NCollection_IndexedMap<TopoDS_Shape>? mypMapToAvoid;
+        private Edge myEdge;
+        private Face myFace;
+        private NCollection_IndexedMap<Shape>? mypMapToAvoid;
 
-        internal void SetEdge(in TopoDS_Edge aE) => myEdge = aE;
+        internal void SetEdge(in Edge aE) => myEdge = aE;
 
-        internal void SetFace(in TopoDS_Face aF) => myFace = aF;
+        internal void SetFace(in Face aF) => myFace = aF;
 
         internal void SetMaxTol(double aMaxTol) => myMaxTol = aMaxTol;
 
-        internal void SetMapToAvoid(NCollection_IndexedMap<TopoDS_Shape> aMapToAvoid) => mypMapToAvoid = aMapToAvoid;
+        internal void SetMapToAvoid(NCollection_IndexedMap<Shape> aMapToAvoid) => mypMapToAvoid = aMapToAvoid;
 
         public void Perform()
         {
@@ -245,12 +251,12 @@ public static partial class BOPTools_AlgoTools
 
     private sealed class BOPTools_CVT : BOPTools_Parallel.ISolver
     {
-        private TopoDS_Edge myEdge;
-        private NCollection_IndexedMap<TopoDS_Shape>? mypMapToAvoid;
+        private Edge myEdge;
+        private NCollection_IndexedMap<Shape>? mypMapToAvoid;
 
-        internal void SetEdge(in TopoDS_Edge aE) => myEdge = aE;
+        internal void SetEdge(in Edge aE) => myEdge = aE;
 
-        internal void SetMapToAvoid(NCollection_IndexedMap<TopoDS_Shape> aMapToAvoid) => mypMapToAvoid = aMapToAvoid;
+        internal void SetMapToAvoid(NCollection_IndexedMap<Shape> aMapToAvoid) => mypMapToAvoid = aMapToAvoid;
 
         public void Perform()
         {
@@ -261,12 +267,12 @@ public static partial class BOPTools_AlgoTools
 
     private sealed class BOPTools_CET : BOPTools_Parallel.ISolver
     {
-        private TopoDS_Face myFace;
-        private NCollection_IndexedMap<TopoDS_Shape>? mypMapToAvoid;
+        private Face myFace;
+        private NCollection_IndexedMap<Shape>? mypMapToAvoid;
 
-        internal void SetFace(in TopoDS_Face aF) => myFace = aF;
+        internal void SetFace(in Face aF) => myFace = aF;
 
-        internal void SetMapToAvoid(NCollection_IndexedMap<TopoDS_Shape> aMapToAvoid) => mypMapToAvoid = aMapToAvoid;
+        internal void SetMapToAvoid(NCollection_IndexedMap<Shape> aMapToAvoid) => mypMapToAvoid = aMapToAvoid;
 
         public void Perform()
         {
@@ -276,44 +282,44 @@ public static partial class BOPTools_AlgoTools
     }
 
     // Correct tolerances for Vertices on Edge
-    private static void CheckEdge(in TopoDS_Edge Ed, double aMaxTol, NCollection_IndexedMap<TopoDS_Shape> aMapToAvoid)
+    private static void CheckEdge(in Edge Ed, double aMaxTol, NCollection_IndexedMap<Shape> aMapToAvoid)
     {
-        TopoDS_Edge aE = Ed;
-        aE.Orientation(TopAbs_FORWARD);
-        double aTolE = BRep_Tool.Tolerance(aE);
+        Edge aE = Ed;
+        aE.Orientation(Forward);
+        double aTolE = Tool.Tolerance(aE);
         //
-        BRep_TEdge TE = (BRep_TEdge)aE.TShape()!;
+        BrepTEdge TE = (BrepTEdge)aE.TShape()!;
         //
         Placement Eloc = aE.Location();
 
-        TopoDS_Iterator aItS = new(aE);
+        Iterator aItS = new(aE);
         for (; aItS.More(); aItS.Next())
         {
-            TopoDS_Vertex aV = TopoDS.Vertex(aItS.Value());
+            Vertex aV = ShapeCasts.Vertex(aItS.Value());
             //
-            BRep_TVertex TV = (BRep_TVertex)aV.TShape()!;
+            BrepTVertex TV = (BrepTVertex)aV.TShape()!;
             Point3D aPV = TV.Pnt();
             //
-            double aTol = BRep_Tool.Tolerance(aV);
+            double aTol = Tool.Tolerance(aV);
             aTol = Max(aTol, aTolE);
             double dd = 0.1 * aTol;
             aTol *= aTol;
             //
-            NCollection_List<BRep_CurveRepresentation>.Iterator aItCR = new(TE.Curves());
+            NCollection_List<CurveRepresentation>.Iterator aItCR = new(TE.Curves());
             while (aItCR.More())
             {
-                BRep_CurveRepresentation aCR = aItCR.Value();
+                CurveRepresentation aCR = aItCR.Value();
                 //
-                if (aCR.IsCurve3D())
+                if (aCR.IsCurve3D)
                 {
-                    Geom_Curve? aC = aCR.Curve3D();
+                    Curve3D? aC = aCR.Curve3D();
                     if (aC is not null)
                     {
                         Placement L = (Eloc * aCR.Location()).Predivided(aV.Location());
-                        NCollection_List<BRep_PointRepresentation>.Iterator aItPR = new(TV.Points());
+                        NCollection_List<PointRepresentation>.Iterator aItPR = new(TV.Points());
                         while (aItPR.More())
                         {
-                            BRep_PointRepresentation aPR = aItPR.Value();
+                            PointRepresentation aPR = aItPR.Value();
                             if (aPR.IsPointOnCurve(aC, L))
                             {
                                 Point3D aPC = aC.Value(aPR.Parameter());
@@ -331,12 +337,12 @@ public static partial class BOPTools_AlgoTools
                             aItPR.Next();
                         }
                         //
-                        TopAbs_Orientation aOrV = aV.Orientation();
-                        if (aOrV == TopAbs_FORWARD || aOrV == TopAbs_REVERSED)
+                        Orientation aOrV = aV.Orientation();
+                        if (aOrV == Forward || aOrV == Reversed)
                         {
-                            BRep_GCurve aGC = (BRep_GCurve)aCR;
+                            GCurve aGC = (GCurve)aCR;
                             Point3D aPC;
-                            if (aOrV == TopAbs_FORWARD)
+                            if (aOrV == Forward)
                             {
                                 aPC = aC.Value(aGC.First());
                             }
@@ -364,15 +370,15 @@ public static partial class BOPTools_AlgoTools
     }
 
     // Compute edge length and cache it in the map
-    private static double MapEdgeLength(in TopoDS_Edge theEdge, NCollection_DataMap<TopoDS_Shape, double> theMapEdgeLen)
+    private static double MapEdgeLength(in Edge theEdge, NCollection_DataMap<Shape, double> theMapEdgeLen)
     {
         if (!theMapEdgeLen.Find(theEdge, out double aLen))
         {
             aLen = 0.0;
-            if (!BRep_Tool.Degenerated(theEdge))
+            if (!Tool.Degenerated(theEdge))
             {
-                BRepAdaptor_Curve aCurve = new(theEdge);
-                aLen = GCPnts_AbscissaPoint.Length(aCurve);
+                EdgeCurveAdaptor aCurve = new(theEdge);
+                aLen = AbscissaPoint.Length(aCurve);
             }
             theMapEdgeLen.Bind(theEdge, aLen);
         }
@@ -380,19 +386,19 @@ public static partial class BOPTools_AlgoTools
     }
 
     // OCCT's anonymous EdgeData: the data of an edge around a vertex, kept to avoid recomputing it.
-    private readonly struct EdgeData(in TopoDS_Edge theEdge, double theVParameter, bool theIsClosed, Geom2dAdaptor_Curve theGAdaptor,
+    private readonly struct EdgeData(in Edge theEdge, double theVParameter, bool theIsClosed, CurveAdaptor2D theGAdaptor,
                                      double theFirst, double theLast)
     {
-        public readonly TopoDS_Edge Edge = theEdge;                   // Edge
+        public readonly Edge Edge = theEdge;                   // Edge
         public readonly double VParameter = theVParameter;            // Parameter of the vertex on the edge
         public readonly bool IsClosed = theIsClosed;                  // Closed flag of the edge
-        public readonly Geom2dAdaptor_Curve GAdaptor = theGAdaptor;   // 2D adaptor for PCurve of the edge on the face
+        public readonly CurveAdaptor2D GAdaptor = theGAdaptor;   // 2D adaptor for PCurve of the edge on the face
         public readonly double First = theFirst;                      // First parameter in the range
         public readonly double Last = theLast;                        // Last parameter in the rage
     }
 
-    private static double IntersectCurves2d(in TopoDS_Vertex theV, Geom_Surface theS, in EdgeData theEData1, in EdgeData theEData2,
-                                            NCollection_DataMap<TopoDS_Shape, double> theMapEdgeLen)
+    private static double IntersectCurves2d(in Vertex theV, Surface theS, in EdgeData theEData1, in EdgeData theEData2,
+                                            NCollection_DataMap<Shape, double> theMapEdgeLen)
     {
         Geom2dInt_GInter anInter = new();
         // Range of the first edge
@@ -431,7 +437,7 @@ public static partial class BOPTools_AlgoTools
         NCollection_List<IntRes2d_IntersectionPoint> aLP = new();
         NCollection_List<IntRes2d_IntersectionPoint>.Iterator aItLP;
         //
-        aPV = BRep_Tool.Pnt(theV);
+        aPV = Tool.Pnt(theV);
         aT1 = theEData1.VParameter;
         aT2 = theEData2.VParameter;
         //
@@ -492,50 +498,50 @@ public static partial class BOPTools_AlgoTools
         return aMaxDist;
     }
 
-    private static void CorrectWires(in TopoDS_Face aFx, NCollection_IndexedMap<TopoDS_Shape> aMapToAvoid)
+    private static void CorrectWires(in Face aFx, NCollection_IndexedMap<Shape> aMapToAvoid)
     {
         int i, aNbV;
         double aTol, aTol2, aD2, aD2max;
         Point3D aP, aPV;
         Point2D aP2D;
-        TopoDS_Face aF;
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMVE = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new();
+        Face aF;
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMVE = new(ShapeHasher.Instance);
+        NCollection_List<Shape>.Iterator aIt = new();
         //
         aF = aFx;
-        aF.Orientation(TopAbs_FORWARD);
-        Geom_Surface aS = BRep_Tool.Surface(aFx)!;
+        aF.Orientation(Forward);
+        Surface aS = Tool.Surface(aFx)!;
 
-        TopExp.MapShapesAndUniqueAncestors(aF, TopAbs_VERTEX, TopAbs_EDGE, aMVE, true);
+        Exploration.MapShapesAndUniqueAncestors(aF, ShapeType.Vertex, ShapeType.Edge, aMVE, true);
 
         // OCCT's NCollection_DataMap<TopoDS_Shape, double> hashes with std::hash and compares with operator== (orientation included)
-        NCollection_DataMap<TopoDS_Shape, double> aMapEdgeLen = new(EqualityComparer<TopoDS_Shape>.Default);
+        NCollection_DataMap<Shape, double> aMapEdgeLen = new(EqualityComparer<Shape>.Default);
         aNbV = aMVE.Extent();
         for (i = 1; i <= aNbV; ++i)
         {
-            TopoDS_Vertex aV = TopoDS.Vertex(aMVE.FindKey(i));
-            aPV = BRep_Tool.Pnt(aV);
-            aTol = BRep_Tool.Tolerance(aV);
+            Vertex aV = ShapeCasts.Vertex(aMVE.FindKey(i));
+            aPV = Tool.Pnt(aV);
+            aTol = Tool.Tolerance(aV);
             aTol2 = aTol * aTol;
             //
             aD2max = -1.0;
             // Save edge's data to avoid its recalculation during intersection of 2d curves
             List<EdgeData> aLEPars = [];
-            NCollection_List<TopoDS_Shape> aLE = aMVE.FindFromIndex(i);
+            NCollection_List<Shape> aLE = aMVE.FindFromIndex(i);
             aIt.Initialize(aLE);
             for (; aIt.More(); aIt.Next())
             {
-                TopoDS_Edge aE = TopoDS.Edge(aIt.Value());
-                Geom2d_Curve? aC2D = BRep_Tool.CurveOnSurface(aE, aF, out double aT1, out double aT2);
+                Edge aE = ShapeCasts.Edge(aIt.Value());
+                Curve2D? aC2D = Tool.CurveOnSurface(aE, aF, out double aT1, out double aT2);
                 if (aC2D is null)
                 {
                     continue;
                 }
 
-                double aT = BRep_Tool.Parameter(aV, aE);
+                double aT = Tool.Parameter(aV, aE);
                 bool isClosed = false;
                 {
-                    TopExp.Vertices(aE, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
+                    Exploration.Vertices(aE, out Vertex aV1, out Vertex aV2);
                     isClosed = aV1.IsSame(aV2);
                 }
                 //
@@ -546,7 +552,7 @@ public static partial class BOPTools_AlgoTools
                 {
                     aD2max = aD2;
                 }
-                EdgeData anEData = new(aE, aT, isClosed, new Geom2dAdaptor_Curve(aC2D), aT1, aT2);
+                EdgeData anEData = new(aE, aT, isClosed, new CurveAdaptor2D(aC2D), aT1, aT2);
                 aLEPars.Add(anEData);
             }
             //
@@ -554,12 +560,12 @@ public static partial class BOPTools_AlgoTools
             for (int i1 = 0; i1 < aLEPars.Count; ++i1)
             {
                 EdgeData aEData1 = aLEPars[i1];
-                TopoDS_Shape aE1 = aEData1.Edge;
+                Shape aE1 = aEData1.Edge;
 
                 for (int i2 = i1 + 1; i2 < aLEPars.Count; ++i2)
                 {
                     EdgeData aEData2 = aLEPars[i2];
-                    TopoDS_Shape aE2 = aEData2.Edge;
+                    Shape aE2 = aEData2.Edge;
 
                     if (aE1.IsSame(aE2))
                     {
@@ -582,16 +588,16 @@ public static partial class BOPTools_AlgoTools
         } // for (i=1; i<=aNbV; ++i) {
     }
 
-    private static void CorrectEdgeTolerance(in TopoDS_Edge myShape, in TopoDS_Face S, double aMaxTol,
-                                             NCollection_IndexedMap<TopoDS_Shape> aMapToAvoid)
+    private static void CorrectEdgeTolerance(in Edge myShape, in Face S, double aMaxTol,
+                                             NCollection_IndexedMap<Shape> aMapToAvoid)
     {
         //
         // 1. Minimum of conditions to Perform
-        BRep_CurveRepresentation? myCref = null;
-        Adaptor3d_Curve? myHCurve = null;
+        CurveRepresentation? myCref = null;
+        CurveAdaptorBase? myHCurve = null;
 
-        BRep_TEdge TEx = (BRep_TEdge)myShape.TShape()!;
-        NCollection_List<BRep_CurveRepresentation>.Iterator itcrx = new(TEx.Curves());
+        BrepTEdge TEx = (BrepTEdge)myShape.TShape()!;
+        NCollection_List<CurveRepresentation>.Iterator itcrx = new(TEx.Curves());
         bool Degenerated, SameParameterx, SameRangex;
 
         int unique = 0;
@@ -607,8 +613,8 @@ public static partial class BOPTools_AlgoTools
 
         while (itcrx.More())
         {
-            BRep_CurveRepresentation cr = itcrx.Value();
-            if (cr.IsCurve3D())
+            CurveRepresentation cr = itcrx.Value();
+            if (cr.IsCurve3D)
             {
                 unique++;
                 if (myCref is null && cr.Curve3D() is not null)
@@ -633,7 +639,7 @@ public static partial class BOPTools_AlgoTools
             itcrx.Initialize(TEx.Curves());
             while (itcrx.More())
             {
-                BRep_CurveRepresentation cr = itcrx.Value();
+                CurveRepresentation cr = itcrx.Value();
                 if (cr.IsCurveOnSurface())
                 {
                     myCref = cr;
@@ -650,7 +656,7 @@ public static partial class BOPTools_AlgoTools
 
         if (myCref is not null)
         {
-            BRep_GCurve GCref = (BRep_GCurve)myCref;
+            GCurve GCref = (GCurve)myCref;
             GCref.Range(out double First, out double Last);
             if (Last <= First)
             {
@@ -659,20 +665,20 @@ public static partial class BOPTools_AlgoTools
 
             else
             {
-                if (myCref.IsCurve3D())
+                if (myCref.IsCurve3D)
                 {
-                    Geom_Curve C3dx = (Geom_Curve)myCref.Curve3D()!.Transformed(myCref.Location().Transformation());
-                    GeomAdaptor_Curve GAC3d = new(C3dx, First, Last);
+                    Curve3D C3dx = (Curve3D)myCref.Curve3D()!.Transformed(myCref.Location().Transformation());
+                    CurveAdaptor GAC3d = new(C3dx, First, Last);
                     myHCurve = GAC3d;
                 }
                 else
                 { // curve on surface
-                    Geom_Surface Sref = myCref.Surface()!;
-                    Sref = (Geom_Surface)Sref.Transformed(myCref.Location().Transformation());
-                    Geom2d_Curve PCref = myCref.PCurve()!;
-                    GeomAdaptor_Surface GAHSref = new(Sref);
-                    Geom2dAdaptor_Curve GHPCref = new(PCref, First, Last);
-                    Adaptor3d_CurveOnSurface ACSref = new(GHPCref, GAHSref);
+                    Surface Sref = myCref.Surface()!;
+                    Sref = (Surface)Sref.Transformed(myCref.Location().Transformation());
+                    Curve2D PCref = myCref.PCurve()!;
+                    SurfaceAdaptor GAHSref = new(Sref);
+                    CurveAdaptor2D GHPCref = new(PCref, First, Last);
+                    CurveOnSurface ACSref = new(GHPCref, GAHSref);
                     myHCurve = ACSref;
                 }
             }
@@ -686,8 +692,8 @@ public static partial class BOPTools_AlgoTools
                 return;
             }
 
-            BRep_TEdge TE = (BRep_TEdge)myShape.TShape()!;
-            double Tol = BRep_Tool.Tolerance(TopoDS.Edge(myShape));
+            BrepTEdge TE = (BrepTEdge)myShape.TShape()!;
+            double Tol = Tool.Tolerance(ShapeCasts.Edge(myShape));
             double aNewTol = Tol;
 
             bool SameParameter = TE.SameParameter();
@@ -695,34 +701,34 @@ public static partial class BOPTools_AlgoTools
             double First = myHCurve!.FirstParameter();
             double Last = myHCurve.LastParameter();
 
-            BRep_TFace TF = (BRep_TFace)S.TShape()!;
+            BrepTFace TF = (BrepTFace)S.TShape()!;
             Placement Floc = S.Location();
             Placement TFloc = TF.Location();
-            Geom_Surface? Su = TF.Surface();
+            Surface? Su = TF.Surface();
             Placement L = (Floc * TFloc).Predivided(myShape.Location());
             bool pcurvefound = false;
 
-            NCollection_List<BRep_CurveRepresentation>.Iterator itcr = new(TE.Curves());
+            NCollection_List<CurveRepresentation>.Iterator itcr = new(TE.Curves());
             while (itcr.More())
             {
-                BRep_CurveRepresentation cr = itcr.Value();
+                CurveRepresentation cr = itcr.Value();
                 if (!ReferenceEquals(cr, myCref) && cr.IsCurveOnSurface(Su, L))
                 {
                     pcurvefound = true;
-                    BRep_GCurve GC = (BRep_GCurve)cr;
+                    GCurve GC = (GCurve)cr;
                     GC.Range(out double f, out double l);
                     if (SameRange && (f != First || l != Last))
                     {
                         return; // BRepCheck_InvalidSameRangeFlag;
                     }
 
-                    Geom_Surface Sb;
+                    Surface Sb;
                     _ = cr.Surface();
-                    Sb = (Geom_Surface)Su!.Transformed(L.Transformation());
-                    Geom2d_Curve PC = cr.PCurve()!;
-                    GeomAdaptor_Surface GAHS = new(Sb);
-                    Geom2dAdaptor_Curve GHPC = new(PC, f, l);
-                    Adaptor3d_CurveOnSurface ACS = new(GHPC, GAHS);
+                    Sb = (Surface)Su!.Transformed(L.Transformation());
+                    Curve2D PC = cr.PCurve()!;
+                    SurfaceAdaptor GAHS = new(Sb);
+                    CurveAdaptor2D GHPC = new(PC, f, l);
+                    CurveOnSurface ACS = new(GHPC, GAHS);
 
                     BRepLib_ValidateEdge aValidateEdge = new(myHCurve, ACS, SameParameter);
                     aValidateEdge.Process();
@@ -736,7 +742,7 @@ public static partial class BOPTools_AlgoTools
                         }
                     }
 
-                    if (cr.IsCurveOnClosedSurface())
+                    if (cr.IsCurveOnClosedSurface)
                     {
                         GHPC.Load(cr.PCurve2()!, f, l); // same bounds
                         ACS.Load(GHPC, GAHS);           // sans doute inutile
@@ -759,14 +765,14 @@ public static partial class BOPTools_AlgoTools
 
             if (!pcurvefound)
             {
-                Geom_Plane? P;
-                if (Su is Geom_RectangularTrimmedSurface aRTS)
+                PlaneSurface? P;
+                if (Su is TrimmedSurface aRTS)
                 {
-                    P = aRTS.BasisSurface() as Geom_Plane;
+                    P = aRTS.BasisSurface() as PlaneSurface;
                 }
                 else
                 {
-                    P = Su as Geom_Plane;
+                    P = Su as PlaneSurface;
                 }
                 if (P is null)
                 { // not a plane
@@ -775,28 +781,28 @@ public static partial class BOPTools_AlgoTools
 
                 else
                 { // on fait la projection a la volee, comme BRep_Tool
-                    P = (Geom_Plane)P.Transformed(L.Transformation());
+                    P = (PlaneSurface)P.Transformed(L.Transformation());
                     // on projette Cref sur ce plan
-                    GeomAdaptor_Surface GAHS = new(P);
+                    SurfaceAdaptor GAHS = new(P);
 
                     // Dub - Normalement myHCurve est une GeomAdaptor_Curve
                     // OCCT down-casts and dereferences: a reference curve on a surface gives a null handle here
-                    GeomAdaptor_Curve Gac = myHCurve as GeomAdaptor_Curve
+                    CurveAdaptor Gac = myHCurve as CurveAdaptor
                                             ?? throw new NullObjectException("BOPTools_AlgoTools::CorrectEdgeTolerance - no 3D curve");
-                    Geom_Curve C3dx = Gac.Curve()!;
-                    Geom_Curve ProjOnPlane =
-                        GeomProjLib.ProjectOnPlane(new Geom_TrimmedCurve(C3dx, First, Last),
+                    Curve3D C3dx = Gac.Curve()!;
+                    Curve3D ProjOnPlane =
+                        global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(new TrimmedCurve3D(C3dx, First, Last),
                                                    P,
                                                    P.Position().Direction(),
                                                    true)!;
 
-                    GeomAdaptor_Curve aHCurve = new(ProjOnPlane);
+                    CurveAdaptor aHCurve = new(ProjOnPlane);
 
-                    ProjLib_ProjectedCurve proj = new(GAHS, aHCurve);
-                    Geom2d_Curve PC = Geom2dAdaptor.MakeCurve(proj);
-                    Geom2dAdaptor_Curve GHPC = new(PC, myHCurve.FirstParameter(), myHCurve.LastParameter());
+                    ProjectedCurve proj = new(GAHS, aHCurve);
+                    Curve2D PC = global::Kerf.Engine.Geometry.Adaptors.Geom2dAdaptor.MakeCurve(proj);
+                    CurveAdaptor2D GHPC = new(PC, myHCurve.FirstParameter(), myHCurve.LastParameter());
 
-                    Adaptor3d_CurveOnSurface ACS = new(GHPC, GAHS);
+                    CurveOnSurface ACS = new(GHPC, GAHS);
 
                     BRepLib_ValidateEdge aValidateProjEdge = new(myHCurve, ACS, true);
                     aValidateProjEdge.Process();
@@ -814,17 +820,17 @@ public static partial class BOPTools_AlgoTools
         } // end of  2. Tolerances in InContext
     }
 
-    private static void CorrectVertexTolerance(in TopoDS_Edge aE, NCollection_IndexedMap<TopoDS_Shape> aMapToAvoid)
+    private static void CorrectVertexTolerance(in Edge aE, NCollection_IndexedMap<Shape> aMapToAvoid)
     {
         double aTolE, aTolV;
-        TopoDS_Iterator aIt = new();
+        Iterator aIt = new();
         //
-        aTolE = BRep_Tool.Tolerance(aE);
+        aTolE = Tool.Tolerance(aE);
         aIt.Initialize(aE);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Vertex aV = TopoDS.Vertex(aIt.Value());
-            aTolV = BRep_Tool.Tolerance(aV);
+            Vertex aV = ShapeCasts.Vertex(aIt.Value());
+            aTolV = Tool.Tolerance(aV);
             if (aTolV < aTolE)
             {
                 UpdateShape(aV, aTolE, aMapToAvoid);
@@ -832,23 +838,23 @@ public static partial class BOPTools_AlgoTools
         }
     }
 
-    private static void UpdateEdges(in TopoDS_Face aF, NCollection_IndexedMap<TopoDS_Shape> aMapToAvoid)
+    private static void UpdateEdges(in Face aF, NCollection_IndexedMap<Shape> aMapToAvoid)
     {
         double aTolF, aTolE, aTolV;
-        TopoDS_Iterator aItF = new(), aItW = new();
+        Iterator aItF = new(), aItW = new();
         //
-        aTolE = aTolF = BRep_Tool.Tolerance(aF);
+        aTolE = aTolF = Tool.Tolerance(aF);
         aItF.Initialize(aF);
         for (; aItF.More(); aItF.Next())
         {
-            TopoDS_Shape aS = aItF.Value();
-            if (aS.ShapeType() == TopAbs_WIRE)
+            Shape aS = aItF.Value();
+            if (aS.ShapeType() == ShapeType.Wire)
             {
                 aItW.Initialize(aS);
                 for (; aItW.More(); aItW.Next())
                 {
-                    TopoDS_Edge aE = TopoDS.Edge(aItW.Value());
-                    aTolE = BRep_Tool.Tolerance(aE);
+                    Edge aE = ShapeCasts.Edge(aItW.Value());
+                    aTolE = Tool.Tolerance(aE);
                     if (aTolE < aTolF)
                     {
                         UpdateShape(aE, aTolF, aMapToAvoid);
@@ -858,8 +864,8 @@ public static partial class BOPTools_AlgoTools
             }
             else
             {
-                TopoDS_Vertex aV = TopoDS.Vertex(aItF.Value());
-                aTolV = BRep_Tool.Tolerance(aV);
+                Vertex aV = ShapeCasts.Vertex(aItF.Value());
+                aTolV = Tool.Tolerance(aV);
                 if (aTolV < aTolE)
                 {
                     UpdateShape(aV, aTolF, aMapToAvoid);
@@ -869,25 +875,25 @@ public static partial class BOPTools_AlgoTools
     }
 
     // The only write site of the corrections: grows the edge's or vertex's tolerance (never shrinks it).
-    private static void UpdateShape(in TopoDS_Shape aS, double aTol, NCollection_IndexedMap<TopoDS_Shape> aMapToAvoid)
+    private static void UpdateShape(in Shape aS, double aTol, NCollection_IndexedMap<Shape> aMapToAvoid)
     {
         if (aMapToAvoid.Contains(aS))
         {
             return;
         }
         //
-        TopAbs_ShapeEnum aType;
-        BRep_Builder aBB = new();
+        ShapeType aType;
+        BrepBuilder aBB = new();
         //
         aType = aS.ShapeType();
-        if (aType == TopAbs_EDGE)
+        if (aType == ShapeType.Edge)
         {
-            TopoDS_Edge aE = TopoDS.Edge(aS);
+            Edge aE = ShapeCasts.Edge(aS);
             aBB.UpdateEdge(aE, aTol);
         }
-        else if (aType == TopAbs_VERTEX)
+        else if (aType == ShapeType.Vertex)
         {
-            TopoDS_Vertex aV = TopoDS.Vertex(aS);
+            Vertex aV = ShapeCasts.Vertex(aS);
             aBB.UpdateVertex(aV, aTol);
         }
     }

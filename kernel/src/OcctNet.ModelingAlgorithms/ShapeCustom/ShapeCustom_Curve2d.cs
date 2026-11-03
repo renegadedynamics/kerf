@@ -88,7 +88,7 @@ public static class ShapeCustom_Curve2d
     /// line's parameters of the curve's points at c1 and c2, and <paramref name="theDeviation"/> the poles' largest
     /// distance to the line. Null otherwise (the outputs then left unchanged).
     /// </summary>
-    public static Geom2d_Line? ConvertToLine2d(Geom2d_Curve theCurve,
+    public static LineCurve2D? ConvertToLine2d(Curve2D theCurve,
                                                double c1,
                                                double c2,
                                                double theTolerance,
@@ -96,7 +96,7 @@ public static class ShapeCustom_Curve2d
                                                ref double cl,
                                                ref double theDeviation)
     {
-        Geom2d_Line? aLine2d = null;
+        LineCurve2D? aLine2d = null;
         Point2D P1 = theCurve.Value(c1);
         Point2D P2 = theCurve.Value(c2);
         double dPreci = theTolerance * theTolerance;
@@ -105,25 +105,25 @@ public static class ShapeCustom_Curve2d
             return aLine2d; // it is not a line
         }
 
-        if (theCurve is Geom2d_BSplineCurve bsc)
+        if (theCurve is BSplineCurve2D bsc)
         {
             if (!ShapeCustom_Curve2d.IsLinear(bsc.InternalPoles(), theTolerance, ref theDeviation))
             {
                 return aLine2d; // non
             }
             Line2D alin = GetLine(P1, P2, c1, out cf, out cl);
-            aLine2d = new Geom2d_Line(alin);
+            aLine2d = new LineCurve2D(alin);
             return aLine2d;
         }
 
-        if (theCurve is Geom2d_BezierCurve bzc)
+        if (theCurve is BezierCurve2D bzc)
         {
             if (!ShapeCustom_Curve2d.IsLinear(bzc.InternalPoles(), theTolerance, ref theDeviation))
             {
                 return aLine2d; // non
             }
             Line2D alin = GetLine(P1, P2, c1, out cf, out cl);
-            aLine2d = new Geom2d_Line(alin);
+            aLine2d = new LineCurve2D(alin);
             return aLine2d;
         }
 
@@ -139,13 +139,13 @@ public static class ShapeCustom_Curve2d
     /// and gives the copy back through <paramref name="theBSpline2d"/> (decision 974); an unfrozen curve is changed in
     /// place, as in OCCT.
     /// </remarks>
-    public static bool SimplifyBSpline2d(ref Geom2d_BSplineCurve theBSpline2d, double theTolerance)
+    public static bool SimplifyBSpline2d(ref BSplineCurve2D theBSpline2d, double theTolerance)
     {
         // OCCT.NET: copy on write of a frozen curve (decision 974); the copy is given back only if a knot was removed
-        Geom2d_BSplineCurve anOriginal = theBSpline2d;
-        Geom2d_BSplineCurve aBSpline2d = anOriginal.IsFrozen ? (Geom2d_BSplineCurve)anOriginal.Copy() : anOriginal;
+        BSplineCurve2D anOriginal = theBSpline2d;
+        BSplineCurve2D aBSpline2d = anOriginal.IsFrozen ? (BSplineCurve2D)anOriginal.Copy() : anOriginal;
         int aInitNbK;
-        int NbK = aInitNbK = aBSpline2d.NbKnots();
+        int NbK = aInitNbK = aBSpline2d.KnotCount;
         // search knot to remove
         bool IsToRemove = true;
         int aKnotIndx = NbK - 1;
@@ -173,7 +173,7 @@ public static class ShapeCustom_Curve2d
             }
             aKnotIndx--;
 
-            NbK = aBSpline2d.NbKnots();
+            NbK = aBSpline2d.KnotCount;
             if (aKnotIndx == 1 || aKnotIndx == NbK)
             {
                 IsToRemove = false;

@@ -4,6 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -16,7 +20,7 @@ namespace Occt;
 /// <para>
 /// OCCT's <c>Tessellate</c> writes the meshes into the shape. The port's meshing algorithm meshes a shape holding
 /// frozen TShapes on a copy (decision 489), so
-/// <see cref="Tessellate(in TopoDS_Shape, Prs3d_Drawer, out TopoDS_Shape, out BRepTools_History)"/> also returns the
+/// <see cref="Tessellate(in Shape, Prs3d_Drawer, out Shape, out History)"/> also returns the
 /// meshed shape and the history from the input's sub-shapes to it.
 /// </para>
 /// <para>
@@ -28,12 +32,12 @@ namespace Occt;
 public static class StdPrs_ToolTriangulatedShape
 {
     /// <summary>True if every face of the shape has a triangulation.</summary>
-    public static bool IsTriangulated(in TopoDS_Shape theShape)
+    public static bool IsTriangulated(in Shape theShape)
     {
-        for (var aFaceIter = new TopExp_Explorer(theShape, TopAbs_ShapeEnum.TopAbs_FACE); aFaceIter.More(); aFaceIter.Next())
+        for (var aFaceIter = new Explorer(theShape, ShapeType.Face); aFaceIter.More(); aFaceIter.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(aFaceIter.Current());
-            if (BRep_Tool.Triangulation(aFace, out _) is null)
+            Face aFace = ShapeCasts.Face(aFaceIter.Current());
+            if (Tool.Triangulation(aFace, out _) is null)
             {
                 return false;
             }
@@ -47,7 +51,7 @@ public static class StdPrs_ToolTriangulatedShape
     /// type of deflection the deviation coefficient applied to the shape's bounding box (without triangulations), which
     /// is then stored into the drawer as its maximal chordial deviation.
     /// </summary>
-    public static double GetDeflection(in TopoDS_Shape theShape, Prs3d_Drawer theDrawer)
+    public static double GetDeflection(in Shape theShape, Prs3d_Drawer theDrawer)
     {
         if (theDrawer.TypeOfDeflection() != Aspect_TypeOfDeflection.Aspect_TOD_RELATIVE)
         {
@@ -81,8 +85,8 @@ public static class StdPrs_ToolTriangulatedShape
     /// True if the shape is meshed finely enough for the drawer: every face triangulated within
     /// <see cref="GetDeflection"/>, with polygons on its edges, and every free edge's polygon within it.
     /// </summary>
-    public static bool IsTessellated(in TopoDS_Shape theShape, Prs3d_Drawer theDrawer)
-        => BRepTools.Triangulation(theShape, GetDeflection(theShape, theDrawer), true);
+    public static bool IsTessellated(in Shape theShape, Prs3d_Drawer theDrawer)
+        => BrepTools.Triangulation(theShape, GetDeflection(theShape, theDrawer), true);
 
     /// <summary>
     /// Meshes the shape with the drawer's deflection and deviation angle, through
@@ -90,19 +94,19 @@ public static class StdPrs_ToolTriangulatedShape
     /// was meshed. An unfrozen shape is meshed in place, as in OCCT; a shape holding frozen TShapes is meshed on a
     /// copy, which only the other overload returns.
     /// </summary>
-    public static bool Tessellate(in TopoDS_Shape theShape, Prs3d_Drawer theDrawer)
+    public static bool Tessellate(in Shape theShape, Prs3d_Drawer theDrawer)
         => Tessellate(theShape, theDrawer, out _, out _);
 
     /// <summary>
-    /// <see cref="Tessellate(in TopoDS_Shape, Prs3d_Drawer)"/>, with the meshed shape (the input itself when it wasn't
+    /// <see cref="Tessellate(in Shape, Prs3d_Drawer)"/>, with the meshed shape (the input itself when it wasn't
     /// meshed, or was meshed in place) and the history from the input's sub-shapes to the meshed shape's (empty when the
     /// algorithm isn't a <see cref="BRepMesh_IncrementalMesh"/>, or meshed in place).
     /// </summary>
-    public static bool Tessellate(in TopoDS_Shape theShape, Prs3d_Drawer theDrawer, out TopoDS_Shape theMeshed,
-                                  out BRepTools_History theHistory)
+    public static bool Tessellate(in Shape theShape, Prs3d_Drawer theDrawer, out Shape theMeshed,
+                                  out History theHistory)
     {
         theMeshed = theShape;
-        theHistory = new BRepTools_History();
+        theHistory = new History();
         bool wasRecomputed = false;
 
         // Check if it is possible to avoid unnecessary recomputation of shape triangulation

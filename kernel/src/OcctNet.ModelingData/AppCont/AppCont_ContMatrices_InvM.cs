@@ -6,9 +6,11 @@
 // copied as written (decision 77). Properties returning a ReadOnlySpan over a constant array are stored in the
 // assembly's data section: reading them allocates nothing. Don't edit: regenerate.
 
-namespace Occt;
+using Occt;
 
-internal static partial class AppCont_ContMatrices
+namespace Kerf.Engine.Approximation;
+
+internal static partial class ContMatrices
 {
     /// <summary>The inverses of the Bernstein mass matrices for classe 2 to 26, classe × classe each, row by row. 6200 values.</summary>
     internal static ReadOnlySpan<double> THE_INV_MMATRIX_DATA => [

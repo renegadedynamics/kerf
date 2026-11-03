@@ -6,6 +6,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -54,7 +55,7 @@ public sealed class GeomToStep_MakeAxis1Placement : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D axis, its location divided by the length factor.</summary>
-    public GeomToStep_MakeAxis1Placement(Geom_Axis1Placement Axis1, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeAxis1Placement(Axis1Placement Axis1, in StepData_Factors theLocalFactors)
     {
         Axis3D A;
         A = Axis1.Ax1();
@@ -62,7 +63,7 @@ public sealed class GeomToStep_MakeAxis1Placement : GeomToStep_Root
     }
 
     /// <summary>A 3D axis (default factors).</summary>
-    public GeomToStep_MakeAxis1Placement(Geom_Axis1Placement Axis1) : this(Axis1, new StepData_Factors())
+    public GeomToStep_MakeAxis1Placement(Axis1Placement Axis1) : this(Axis1, new StepData_Factors())
     {
     }
 
@@ -72,7 +73,7 @@ public sealed class GeomToStep_MakeAxis1Placement : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D axis.</summary>
-    public GeomToStep_MakeAxis1Placement(Geom2d_AxisPlacement Axis1, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeAxis1Placement(AxisPlacement2 Axis1, in StepData_Factors theLocalFactors)
     {
         Axis2D A;
         A = Axis1.Ax2d();
@@ -80,7 +81,7 @@ public sealed class GeomToStep_MakeAxis1Placement : GeomToStep_Root
     }
 
     /// <summary>A 2D axis.</summary>
-    public GeomToStep_MakeAxis1Placement(Geom2d_AxisPlacement Axis1) : this(Axis1, new StepData_Factors())
+    public GeomToStep_MakeAxis1Placement(AxisPlacement2 Axis1) : this(Axis1, new StepData_Factors())
     {
     }
 

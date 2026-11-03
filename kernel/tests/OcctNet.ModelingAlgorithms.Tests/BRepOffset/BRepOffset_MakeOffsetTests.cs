@@ -1,11 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.BRepOffset_Error;
 using static Occt.BRepOffset_Mode;
 using static Kerf.Geometry.JoinKind;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -15,11 +19,11 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepOffset_MakeOffsetTests
 {
-    internal static List<TopoDS_Shape> SubShapes(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    internal static List<Shape> SubShapes(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
-        var aList = new List<TopoDS_Shape>();
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
+        var aList = new List<Shape>();
         for (int i = 1; i <= aMap.Extent(); i++)
         {
             aList.Add(aMap[i]);
@@ -27,16 +31,16 @@ public class BRepOffset_MakeOffsetTests
         return aList;
     }
 
-    internal static bool AllFrozen(in TopoDS_Shape theShape)
+    internal static bool AllFrozen(in Shape theShape)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, aMap);
         return aMap.All(s => s.TShape()!.IsFrozen);
     }
 
-    internal static double Volume(in TopoDS_Shape theShape)
+    internal static double Volume(in Shape theShape)
     {
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
@@ -44,7 +48,7 @@ public class BRepOffset_MakeOffsetTests
     [Fact]
     public void Arc_OfAFrozenBox_IsTheRoundedBox_TheInputIsUnchanged()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
         var anAlgo = new BRepOffset_MakeOffset();
@@ -53,10 +57,10 @@ public class BRepOffset_MakeOffsetTests
 
         aSnap.AssertUnchanged(aBox);
         Assert.True(anAlgo.IsDone(), anAlgo.Error().ToString());
-        TopoDS_Shape aResult = anAlgo.Shape();
+        Shape aResult = anAlgo.Shape();
         Assert.True(AllFrozen(aResult));
-        Assert.Equal(TopAbs_SOLID, aResult.ShapeType());
-        Assert.Equal(26, SubShapes(aResult, TopAbs_FACE).Count);
+        Assert.Equal(ShapeType.Solid, aResult.ShapeType());
+        Assert.Equal(26, SubShapes(aResult, ShapeType.Face).Count);
         double a = 10, b = 20, c = 30, r = 1;
         double anExpected = a * b * c + 2 * (a * b + b * c + c * a) * r + Math.PI * r * r * (a + b + c)
                             + 4.0 / 3.0 * Math.PI * r * r * r;
@@ -67,7 +71,7 @@ public class BRepOffset_MakeOffsetTests
     [Fact]
     public void Intersection_OfAFrozenBox_IsTheLargerBox()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
         var anAlgo = new BRepOffset_MakeOffset();
@@ -76,41 +80,41 @@ public class BRepOffset_MakeOffsetTests
 
         aSnap.AssertUnchanged(aBox);
         Assert.True(anAlgo.IsDone(), anAlgo.Error().ToString());
-        TopoDS_Shape aResult = anAlgo.Shape();
-        Assert.Equal(6, SubShapes(aResult, TopAbs_FACE).Count);
+        Shape aResult = anAlgo.Shape();
+        Assert.Equal(6, SubShapes(aResult, ShapeType.Face).Count);
         Assert.Equal(12.0 * 22.0 * 32.0, Volume(aResult), 6);
     }
 
     [Fact]
     public void ThickSolid_OfAFrozenBox_KeepsTheCallersFaces()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        TopoDS_Shape aTop = SubShapes(aBox, TopAbs_FACE)[5];
+        Shape aTop = SubShapes(aBox, ShapeType.Face)[5];
 
         var anAlgo = new BRepOffsetAPI_MakeThickSolid();
-        var aClosing = new NCollection_List<TopoDS_Shape>();
+        var aClosing = new NCollection_List<Shape>();
         aClosing.Append(aTop);
         anAlgo.MakeThickSolidByJoin(aBox, aClosing, -1.0, 1.0e-3, BRepOffset_Skin, false, false, Arc);
 
         aSnap.AssertUnchanged(aBox);
         Assert.True(anAlgo.IsDone());
-        TopoDS_Shape aResult = anAlgo.Shape();
+        Shape aResult = anAlgo.Shape();
         Assert.True(AllFrozen(aResult));
-        Assert.Equal(TopAbs_SOLID, aResult.ShapeType());
+        Assert.Equal(ShapeType.Solid, aResult.ShapeType());
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
         Assert.Equal(10.0 * 20.0 * 30.0 - 8.0 * 18.0 * 29.0, Volume(aResult), 3);
 
         // the result holds the caller's own faces where the algorithm left them unchanged: the bottom face; the four
         // side faces share edges with the closing face, whose edges get new vertices (changed copies)
-        List<TopoDS_Shape> aResultFaces = SubShapes(aResult, TopAbs_FACE);
-        int aKept = SubShapes(aBox, TopAbs_FACE).Count(f => aResultFaces.Any(r => r.IsSame(f)));
+        List<Shape> aResultFaces = SubShapes(aResult, ShapeType.Face);
+        int aKept = SubShapes(aBox, ShapeType.Face).Count(f => aResultFaces.Any(r => r.IsSame(f)));
         Assert.Equal(1, aKept);
         // the history answers for the caller's sub-shapes, with frozen shapes of the result
         Assert.True(anAlgo.IsDeleted(aTop) || anAlgo.Modified(aTop).Count > 0);
-        foreach (TopoDS_Shape aF in SubShapes(aBox, TopAbs_FACE))
+        foreach (Shape aF in SubShapes(aBox, ShapeType.Face))
         {
-            foreach (TopoDS_Shape aG in anAlgo.Generated(aF).Concat(anAlgo.Modified(aF)))
+            foreach (Shape aG in anAlgo.Generated(aF).Concat(anAlgo.Modified(aF)))
             {
                 Assert.True(aG.TShape()!.IsFrozen);
                 Assert.Contains(aResultFaces, r => r.IsSame(aG));
@@ -121,8 +125,8 @@ public class BRepOffset_MakeOffsetTests
     [Fact]
     public void Thicken_AFrozenFace_KeepsTheCallersFace_AndItsHistory()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
-        TopoDS_Shape aFace = SubShapes(aBox, TopAbs_FACE)[0];
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+        Shape aFace = SubShapes(aBox, ShapeType.Face)[0];
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
         var anAlgo = new BRepOffset_MakeOffset();
@@ -131,17 +135,17 @@ public class BRepOffset_MakeOffsetTests
 
         aSnap.AssertUnchanged(aBox);
         Assert.True(anAlgo.IsDone(), anAlgo.Error().ToString());
-        TopoDS_Shape aResult = anAlgo.Shape();
+        Shape aResult = anAlgo.Shape();
         Assert.True(AllFrozen(aResult));
-        Assert.Equal(TopAbs_SOLID, aResult.ShapeType());
-        var anArea = new GProp_GProps();
+        Assert.Equal(ShapeType.Solid, aResult.ShapeType());
+        var anArea = new Properties();
         BRepGProp.SurfaceProperties(aFace, anArea);
         Assert.Equal(anArea.Mass() * 2.0, Math.Abs(Volume(aResult)), 6);
         Assert.False(anAlgo.IsDeleted(aFace));
         Assert.Single(anAlgo.Generated(aFace));
         // the thickened face's edges get pcurves on the walls: changed copies, so the caller's edges are not in the
         // result, but they are not deleted either (OCCT keeps its own, changed in place)
-        foreach (TopoDS_Shape anE in SubShapes(aFace, TopAbs_EDGE))
+        foreach (Shape anE in SubShapes(aFace, ShapeType.Edge))
         {
             Assert.False(anAlgo.IsDeleted(anE));
         }
@@ -150,25 +154,25 @@ public class BRepOffset_MakeOffsetTests
     [Fact]
     public void Initialize_ReusesTheAlgorithm_OnFrozenInputs()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
-        TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 10).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+        Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 10).Shape();
         var anAlgo = new BRepOffset_MakeOffset();
         anAlgo.Initialize(aBox, 1.0, 1.0e-7, BRepOffset_Skin, false, false, Arc);
         anAlgo.MakeOffsetShape();
-        TopoDS_Shape aFirst = anAlgo.Shape();
+        Shape aFirst = anAlgo.Shape();
         anAlgo.Initialize(aCyl, -1.0, 1.0e-7, BRepOffset_Skin, false, false, Arc);
         anAlgo.MakeOffsetShape();
         Assert.True(anAlgo.IsDone());
         Assert.Equal(Math.PI * 16 * 8, Volume(anAlgo.Shape()), 4);
-        Assert.Equal(26, SubShapes(aFirst, TopAbs_FACE).Count);
+        Assert.Equal(26, SubShapes(aFirst, ShapeType.Face).Count);
         Assert.True(anAlgo.InitShape().IsSame(aCyl));
     }
 
     [Fact]
     public void ClosingFaces_AndImages_AnswerForTheCallersShapes()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
-        TopoDS_Face aTop = TopoDS.Face(SubShapes(aBox, TopAbs_FACE)[5]);
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+        Face aTop = ShapeCasts.Face(SubShapes(aBox, ShapeType.Face)[5]);
         var anAlgo = new BRepOffset_MakeOffset();
         anAlgo.Initialize(aBox, -1.0, 1.0e-7, BRepOffset_Skin, false, false, Arc);
         anAlgo.AddFace(aTop);
@@ -176,10 +180,10 @@ public class BRepOffset_MakeOffsetTests
         Assert.True(anAlgo.IsDone());
         Assert.True(anAlgo.ClosingFaces().Contains(aTop));
         BRepAlgo_Image anImage = anAlgo.OffsetFacesFromShapes();
-        foreach (TopoDS_Shape aF in SubShapes(aBox, TopAbs_FACE))
+        foreach (Shape aF in SubShapes(aBox, ShapeType.Face))
         {
             Assert.True(anImage.HasImage(aF));
-            foreach (TopoDS_Shape anIm in anImage.Image(aF))
+            foreach (Shape anIm in anImage.Image(aF))
             {
                 Assert.True(anIm.TShape()!.IsFrozen);
             }
@@ -191,13 +195,13 @@ public class BRepOffset_MakeOffsetTests
     [Fact]
     public void CheckInputData_ReportsANullOffset()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
         var anAlgo = new BRepOffset_MakeOffset();
         anAlgo.Initialize(aBox, 0.0, 1.0e-7);
         anAlgo.MakeOffsetShape();
         Assert.False(anAlgo.IsDone());
         Assert.Equal(BRepOffset_NullOffset, anAlgo.Error());
-        Assert.True(anAlgo.Shape().IsNull());
+        Assert.True(anAlgo.Shape().IsNull);
     }
 
     [Theory]
@@ -205,12 +209,12 @@ public class BRepOffset_MakeOffsetTests
     [InlineData(-1.0)]
     public void CompleteIntersection_OfAnLShape_IsValid(double theOffset)
     {
-        TopoDS_Shape aBox1 = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
-        TopoDS_Shape aBox2 = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), 20, 5, 5).Shape();
-        TopoDS_Shape aL = new BRepAlgoAPI_Fuse(aBox1, aBox2).Shape();
+        Shape aBox1 = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
+        Shape aBox2 = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), 20, 5, 5).Shape();
+        Shape aL = new BRepAlgoAPI_Fuse(aBox1, aBox2).Shape();
         var aL2 = new ShapeUpgrade_UnifySameDomain(aL);
         aL2.Build();
-        TopoDS_Shape anL = aL2.Shape();
+        Shape anL = aL2.Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anL);
 
         var anAlgo = new BRepOffset_MakeOffset();
@@ -219,7 +223,7 @@ public class BRepOffset_MakeOffsetTests
 
         aSnap.AssertUnchanged(anL);
         Assert.True(anAlgo.IsDone(), anAlgo.Error().ToString());
-        TopoDS_Shape aResult = anAlgo.Shape();
+        Shape aResult = anAlgo.Shape();
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
         Assert.True(Volume(aResult) > 0);
     }
@@ -237,20 +241,20 @@ public class BRepOffset_MakeOffsetTests
         {
             return; // the data isn't available
         }
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aFile));
+        Assert.True(BrepTools.Read(out Shape aShape, aFile));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
-        var aClosing = new NCollection_List<TopoDS_Shape>();
-        aClosing.Append(SubShapes(aShape, TopAbs_FACE)[5]); // a_6
+        var aClosing = new NCollection_List<Shape>();
+        aClosing.Append(SubShapes(aShape, ShapeType.Face)[5]); // a_6
         var anAlgo = new BRepOffsetAPI_MakeThickSolid();
         anAlgo.MakeThickSolidByJoin(aShape, aClosing, -1.0, 1.0e-7);
         aSnap.AssertUnchanged(aShape);
         Assert.True(anAlgo.IsDone());
-        TopoDS_Shape aResult = anAlgo.Shape();
+        Shape aResult = anAlgo.Shape();
         Assert.True(AllFrozen(aResult));
-        Assert.Equal(7, SubShapes(aResult, TopAbs_FACE).Count);
-        Assert.Single(SubShapes(aResult, TopAbs_SHELL));
-        Assert.Equal(15, SubShapes(aResult, TopAbs_EDGE).Count);
-        var aProps = new GProp_GProps();
+        Assert.Equal(7, SubShapes(aResult, ShapeType.Face).Count);
+        Assert.Single(SubShapes(aResult, ShapeType.Shell));
+        Assert.Equal(15, SubShapes(aResult, ShapeType.Edge).Count);
+        var aProps = new Properties();
         BRepGProp.SurfaceProperties(aResult, aProps);
         Assert.Equal(1185.03, aProps.Mass(), 2);
     }

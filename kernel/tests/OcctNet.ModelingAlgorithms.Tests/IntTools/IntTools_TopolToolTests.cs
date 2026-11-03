@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -12,7 +13,7 @@ public class IntTools_TopolToolTests
     [Fact]
     public void Plane_TenByTenInsideTheRange()
     {
-        var aS = new GeomAdaptor_Surface(new Geom_Plane(new Plane3D()), 0, 11, 0, 22);
+        var aS = new SurfaceAdaptor(new PlaneSurface(new Plane3D()), 0, 11, 0, 22);
         var aTool = new IntTools_TopolTool(aS);
         Assert.Equal(10, aTool.NbSamplesU());
         Assert.Equal(10, aTool.NbSamplesV());
@@ -30,7 +31,7 @@ public class IntTools_TopolToolTests
     [Fact]
     public void Cylinder_SamplesFromTheDeflection()
     {
-        var aS = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new CoordinateSystem(), 10.0), 0, 2 * M_PI, 0, 100);
+        var aS = new SurfaceAdaptor(new CylindricalSurface(new CoordinateSystem(), 10.0), 0, 2 * M_PI, 0, 100);
         var aTool = new IntTools_TopolTool(aS);
         double aMaxAngle = Math.Acos(1.0 - 1e-2 / 10.0) * 2.0;
         Assert.Equal(Math.Min(50, (int)(2 * M_PI / aMaxAngle)), aTool.NbSamplesU());
@@ -40,11 +41,11 @@ public class IntTools_TopolToolTests
     [Fact]
     public void Sphere_AtLeastTen_AtMostFifty()
     {
-        var aS = new GeomAdaptor_Surface(new Geom_SphericalSurface(new CoordinateSystem(), 0.001));
+        var aS = new SurfaceAdaptor(new SphericalSurface(new CoordinateSystem(), 0.001));
         var aTool = new IntTools_TopolTool(aS);
         Assert.Equal(10, aTool.NbSamplesU());
         Assert.Equal(10, aTool.NbSamplesV());
-        var aBig = new IntTools_TopolTool(new GeomAdaptor_Surface(new Geom_SphericalSurface(new CoordinateSystem(), 1000.0)));
+        var aBig = new IntTools_TopolTool(new SurfaceAdaptor(new SphericalSurface(new CoordinateSystem(), 1000.0)));
         Assert.Equal(50, aBig.NbSamplesU());
         Assert.Equal(50, aBig.NbSamplesV());
     }
@@ -52,7 +53,7 @@ public class IntTools_TopolToolTests
     [Fact]
     public void InfiniteRanges_AreBounded()
     {
-        var aTool = new IntTools_TopolTool(new GeomAdaptor_Surface(new Geom_Plane(new Plane3D())));
+        var aTool = new IntTools_TopolTool(new SurfaceAdaptor(new PlaneSurface(new Plane3D())));
         aTool.SamplePoint(1, out Point2D aP2d, out _);
         // As OCCT, index 1 is the second sample in U: the grid is read from index 0 (occt-issues.md)
         double aDU = 2.0e5 / 11;
@@ -84,8 +85,8 @@ public class IntTools_TopolToolTests
         aVK[1] = 0;
         aVK[2] = 1;
         aVM[1] = aVM[2] = 4;
-        var aSurf = new Geom_BSplineSurface(aPoles, aUK, aVK, aUM, aVM, 1, 3);
-        var aTool = new IntTools_TopolTool(new GeomAdaptor_Surface(aSurf));
+        var aSurf = new BSplineSurface(aPoles, aUK, aVK, aUM, aVM, 1, 3);
+        var aTool = new IntTools_TopolTool(new SurfaceAdaptor(aSurf));
         Assert.True(aTool.NbSamplesU() >= 10);
         Assert.True(aTool.NbSamplesV() >= 10);
         Assert.Equal(aTool.NbSamplesU() * aTool.NbSamplesV(), aTool.NbSamples());

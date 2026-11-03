@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 using static Kerf.Geometry.CurveKind;
@@ -22,33 +23,33 @@ namespace OcctNet.Oracle.Tests;
 public class GeomLibOracleTests(ITestOutputHelper output)
 {
     // BRepLib.cxx's evaluateMaxSegment, as OCCT writes it.
-    private static int evaluateMaxSegment(int aMaxSegment, Adaptor3d_CurveOnSurface aCurveOnSurface)
+    private static int evaluateMaxSegment(int aMaxSegment, CurveOnSurface aCurveOnSurface)
     {
         if (aMaxSegment != 0)
         {
             return aMaxSegment;
         }
 
-        Adaptor3d_Surface aSurf = aCurveOnSurface.GetSurface()!;
-        Adaptor2d_Curve2d aCurv2d = aCurveOnSurface.GetCurve()!;
+        SurfaceAdaptorBase aSurf = aCurveOnSurface.GetSurface()!;
+        Curve2DAdaptorBase aCurv2d = aCurveOnSurface.GetCurve()!;
 
         double aNbSKnots = 0, aNbC2dKnots = 0;
 
-        if (aSurf.GetType() == BSplineSurface)
+        if (aSurf.GetType() == SurfaceKind.BSplineSurface)
         {
-            Geom_BSplineSurface aBSpline = aSurf.BSpline();
-            aNbSKnots = Math.Max(aBSpline.NbUKnots(), aBSpline.NbVKnots());
+            global::Kerf.Geometry.BSplineSurface aBSpline = aSurf.BSpline();
+            aNbSKnots = Math.Max(aBSpline.UKnotCount, aBSpline.VKnotCount);
         }
         if (aCurv2d.GetType() == BSplineCurve)
         {
-            aNbC2dKnots = aCurv2d.NbKnots();
+            aNbC2dKnots = aCurv2d.KnotCount;
         }
         int aReturn = (int)(30 + Math.Max(aNbSKnots, aNbC2dKnots));
         return aReturn;
     }
 
     // A finite box inside the surface's bounds.
-    private static (double U1, double U2, double V1, double V2) Box(Oracle theO, Geom_Surface theS)
+    private static (double U1, double U2, double V1, double V2) Box(Oracle theO, Surface theS)
     {
         theS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aU1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aU2))
@@ -69,7 +70,7 @@ public class GeomLibOracleTests(ITestOutputHelper output)
 
     private sealed class PCurve
     {
-        public required Geom2d_Curve Port;
+        public required Curve2D Port;
         public required N.Geom2d_Curve Native;
         public double First, Last;
         public required string Kind;
@@ -96,13 +97,13 @@ public class GeomLibOracleTests(ITestOutputHelper output)
                     Point2D aP = new(aS.X() - c * dx, aS.Y() - c * dy);
                     using var aNP = Oracle.ToNative(aP);
                     using var aND = new N.gp_Dir2d(dx, dy);
-                    return new PCurve { Port = new Geom2d_Line(aP, new Direction2D(dx, dy)), Native = new N.Geom2d_Line(aNP, aND),
+                    return new PCurve { Port = new LineCurve2D(aP, new Direction2D(dx, dy)), Native = new N.Geom2d_Line(aNP, aND),
                         First = c, Last = c + aLen, Kind = "iso line" };
                 }
                 NCollection_Array1<Point2D> aPoles = NCollection_Array1<Point2D>.From([aS, aE]);
                 NCollection_Array1<double> aKnots = NCollection_Array1<double>.From([c, c + aLen]);
                 NCollection_Array1<int> aMults = NCollection_Array1<int>.From([2, 2]);
-                return new PCurve { Port = new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 1),
+                return new PCurve { Port = new BSplineCurve2D(aPoles, aKnots, aMults, 1),
                     Native = Oracle.ToNativeCurve(aPoles, null, aKnots, aMults, 1, false), First = c, Last = c + aLen,
                     Kind = "iso B-spline" };
             }
@@ -123,7 +124,7 @@ public class GeomLibOracleTests(ITestOutputHelper output)
                 Direction2D aD = new(dx, dy);
                 using var aNP = Oracle.ToNative(aS);
                 using var aND = new N.gp_Dir2d(dx, dy);
-                return new PCurve { Port = new Geom2d_Line(aS, aD), Native = new N.Geom2d_Line(aNP, aND), First = 0.0,
+                return new PCurve { Port = new LineCurve2D(aS, aD), Native = new N.Geom2d_Line(aNP, aND), First = 0.0,
                     Last = aLen, Kind = "line" };
             }
             case 3:
@@ -134,7 +135,7 @@ public class GeomLibOracleTests(ITestOutputHelper output)
                 using var aNX = new N.gp_Dir2d(1, 0);
                 using var aNA = new N.gp_Ax2d(aNC, aNX);
                 double a = theO.Real(0, 3), b = a + theO.Real(0.3, 3);
-                return new PCurve { Port = new Geom2d_Circle(new Axis2D(aC, new Direction2D(1, 0)), r),
+                return new PCurve { Port = new CircleCurve2D(new Axis2D(aC, new Direction2D(1, 0)), r),
                     Native = new N.Geom2d_Circle(aNA, r), First = a, Last = b, Kind = "circle" };
             }
             default:
@@ -156,7 +157,7 @@ public class GeomLibOracleTests(ITestOutputHelper output)
                 {
                     aPoles[i] = new Point2D(theO.Real(u1, u2), theO.Real(v1, v2));
                 }
-                return new PCurve { Port = new Geom2d_BSplineCurve(aPoles, aKnots, aMults, aDeg),
+                return new PCurve { Port = new BSplineCurve2D(aPoles, aKnots, aMults, aDeg),
                     Native = Oracle.ToNativeCurve(aPoles, null, aKnots, aMults, aDeg, false), First = aKnots[1],
                     Last = aKnots[aNbKnots], Kind = $"B-spline deg {aDeg}" };
             }
@@ -164,24 +165,24 @@ public class GeomLibOracleTests(ITestOutputHelper output)
     }
 
     // The 3D curves: B-splines by structure; every curve by its values and first derivatives on [theF, theL].
-    private static void SameCurve(Oracle theO, N.Geom_Curve theN, Geom_Curve theP, double theF, double theL, string theWhat)
+    private static void SameCurve(Oracle theO, N.Geom_Curve theN, Curve3D theP, double theF, double theL, string theWhat)
     {
-        if (theP is Geom_BSplineCurve aBSpline)
+        if (theP is BSplineCurve3D aBSpline)
         {
             using var aNBSpline = N.Geom_BSplineCurve.DownCast(theN);
             Assert.True(aNBSpline is not null, $"{theWhat}: native result is not a B-spline");
             theO.Same(aNBSpline!.Degree(), aBSpline.Degree(), theWhat + " degree");
-            theO.Same(aNBSpline.IsRational(), aBSpline.IsRational(), theWhat + " IsRational");
-            theO.Same(aNBSpline.IsPeriodic(), aBSpline.IsPeriodic(), theWhat + " IsPeriodic");
-            theO.Same(aNBSpline.NbPoles(), aBSpline.NbPoles(), theWhat + " NbPoles");
-            theO.Same(aNBSpline.NbKnots(), aBSpline.NbKnots(), theWhat + " NbKnots");
-            for (int i = 1; i <= aBSpline.NbPoles(); i++)
+            theO.Same(aNBSpline.IsRational(), aBSpline.IsRational, theWhat + " IsRational");
+            theO.Same(aNBSpline.IsPeriodic(), aBSpline.IsPeriodic, theWhat + " IsPeriodic");
+            theO.Same(aNBSpline.NbPoles(), aBSpline.PoleCount, theWhat + " NbPoles");
+            theO.Same(aNBSpline.NbKnots(), aBSpline.KnotCount, theWhat + " NbKnots");
+            for (int i = 1; i <= aBSpline.PoleCount; i++)
             {
                 using N.gp_Pnt aNPole = aNBSpline.Pole(i);
                 theO.Same(aNPole, aBSpline.Pole(i), theWhat + " pole");
                 theO.Same(aNBSpline.Weight(i), aBSpline.Weight(i), theWhat + " weight");
             }
-            for (int i = 1; i <= aBSpline.NbKnots(); i++)
+            for (int i = 1; i <= aBSpline.KnotCount; i++)
             {
                 theO.Same(aNBSpline.Knot(i), aBSpline.Knot(i), theWhat + " knot");
                 theO.Same(aNBSpline.Multiplicity(i), aBSpline.Multiplicity(i), theWhat + " multiplicity");
@@ -209,18 +210,18 @@ public class GeomLibOracleTests(ITestOutputHelper output)
         for (int c = 0; c < 440; c++)
         {
             int aKind = aKinds[c % aKinds.Length];
-            (N.Geom_Surface aNS, Geom_Surface aPS) = AdaptorOracleInputs.RandomSurface(anOracle, aKind);
+            (N.Geom_Surface aNS, Surface aPS) = AdaptorOracleInputs.RandomSurface(anOracle, aKind);
             using var aNSOwner = aNS;
             PCurve aPC;
             if (aKind == 0)
             {
                 // On a plane, any 2D curve (BRepLib calls GeomLib::To3d on the stored pcurve)
-                (N.Geom2d_Curve aNC, Geom2d_Curve aC, string aCKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
+                (N.Geom2d_Curve aNC, Curve2D aC, string aCKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
                 (double f, double l) = TestAdaptorOracleTests.Bounds(anOracle, aC.FirstParameter(), aC.LastParameter(),
-                                                                     aC.IsPeriodic());
+                                                                     aC.IsPeriodic);
                 if (anOracle.Bool())
                 {
-                    aPC = new PCurve { Port = new Geom2d_TrimmedCurve(aC, f, l), Native = new N.Geom2d_TrimmedCurve(aNC, f, l),
+                    aPC = new PCurve { Port = new TrimmedCurve2D(aC, f, l), Native = new N.Geom2d_TrimmedCurve(aNC, f, l),
                         First = f, Last = l, Kind = "trimmed " + aCKind };
                     aNC.Dispose();
                 }
@@ -254,21 +255,21 @@ public class GeomLibOracleTests(ITestOutputHelper output)
             using N.Geom_Curve? aNC3d = N.BRep_Tool.Curve(aNE, ref aNF, ref aNL);
 
             // Port: BRepLib's path
-            Geom2dAdaptor_Curve AnAdaptor3dCurve2d = new(aPC.Port, aPC.First, aPC.Last);
-            GeomAdaptor_Surface AnAdaptor3dSurface = new(aPS);
-            Adaptor3d_CurveOnSurface CurveOnSurface = new(AnAdaptor3dCurve2d, AnAdaptor3dSurface);
-            Geom_Curve? NewCurvePtr = null;
+            CurveAdaptor2D AnAdaptor3dCurve2d = new(aPC.Port, aPC.First, aPC.Last);
+            SurfaceAdaptor AnAdaptor3dSurface = new(aPS);
+            CurveOnSurface CurveOnSurface = new(AnAdaptor3dCurve2d, AnAdaptor3dSurface);
+            Curve3D? NewCurvePtr = null;
             double aMaxDev = -1.0;
-            Geom_Plane? P = aPS is Geom_RectangularTrimmedSurface RT ? RT.BasisSurface() as Geom_Plane : aPS as Geom_Plane;
+            PlaneSurface? P = aPS is TrimmedSurface RT ? RT.BasisSurface() as PlaneSurface : aPS as PlaneSurface;
             if (P is not null)
             {
                 // BRepLib's own plane branch: To3d of the stored pcurve (GeomLib::BuildCurve3d's plane branch would
                 // read the adaptor's curve, which is the basis of a trimmed pcurve)
-                NewCurvePtr = GeomLib.To3d(P.Position().Ax2(), aPC.Port);
+                NewCurvePtr = global::Kerf.Engine.Geometry.Library.GeomLib.To3d(P.Position().Ax2(), aPC.Port);
             }
             else
             {
-                GeomLib.BuildCurve3d(aTol, CurveOnSurface, aPC.First, aPC.Last, ref NewCurvePtr, out aMaxDev,
+                global::Kerf.Engine.Geometry.Library.GeomLib.BuildCurve3d(aTol, CurveOnSurface, aPC.First, aPC.Last, ref NewCurvePtr, out aMaxDev,
                                      out double anAvgDev, aCont, aMaxDeg, evaluateMaxSegment(aMaxSeg, CurveOnSurface));
             }
 
@@ -280,7 +281,7 @@ public class GeomLibOracleTests(ITestOutputHelper output)
             }
             Assert.True(aNC3d is not null, aWhat + ": no native curve");
             SameCurve(anOracle, aNC3d!, NewCurvePtr, aPC.First, aPC.Last, aWhat);
-            if (aKind != 0 && NewCurvePtr is Geom_BSplineCurve && aMaxDev == 0.0)
+            if (aKind != 0 && NewCurvePtr is BSplineCurve3D && aMaxDev == 0.0)
             {
                 anIsos++;
             }
@@ -302,19 +303,19 @@ public class GeomLibOracleTests(ITestOutputHelper output)
         int aCompared = 0;
         for (int c = 0; c < 600; c++)
         {
-            (N.Geom_Surface aNS, Geom_Surface aPS) = AdaptorOracleInputs.RandomSurface(anOracle, 0);
+            (N.Geom_Surface aNS, Surface aPS) = AdaptorOracleInputs.RandomSurface(anOracle, 0);
             using var aNSOwner = aNS;
-            (N.Geom2d_Curve aNC, Geom2d_Curve aC, string aCKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
+            (N.Geom2d_Curve aNC, Curve2D aC, string aCKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
             using var aNCOwner = aNC;
             (double f, double l) = TestAdaptorOracleTests.Bounds(anOracle, aC.FirstParameter(), aC.LastParameter(),
-                                                                 aC.IsPeriodic());
+                                                                 aC.IsPeriodic);
             N.Geom2d_Curve aNPC = aNC;
-            Geom2d_Curve aPPC = aC;
+            Curve2D aPPC = aC;
             string aKind = aCKind;
             if (anOracle.Int(0, 3) == 0)
             {
                 aNPC = new N.Geom2d_TrimmedCurve(aNC, f, l);
-                aPPC = new Geom2d_TrimmedCurve(aC, f, l);
+                aPPC = new TrimmedCurve2D(aC, f, l);
                 aKind = "trimmed " + aCKind;
             }
             // The 3D range: the same length moved (or not), or another length
@@ -340,8 +341,8 @@ public class GeomLibOracleTests(ITestOutputHelper output)
             using N.Geom2d_Curve? aNRes = aNErr is null ? N.BRep_Tool.CurveOnSurface(aNE, aNS, aLoc, ref aNF, ref aNL) : null;
 
             // Port: BRepLib::SameRange calls GeomLib::SameRange with the pcurve's range and the 3D range
-            Geom2d_Curve? aPRes = null;
-            Exception? aPErr = AdaptorOracleInputs.Catch(() => GeomLib.SameRange(aTol, aPPC, f, l, aRF, aRL, ref aPRes));
+            Curve2D? aPRes = null;
+            Exception? aPErr = AdaptorOracleInputs.Catch(() => global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(aTol, aPPC, f, l, aRF, aRL, ref aPRes));
             if (!AdaptorOracleInputs.SameOutcome(aNErr, aPErr, aWhat))
             {
                 continue;
@@ -350,7 +351,7 @@ public class GeomLibOracleTests(ITestOutputHelper output)
             Assert.True(aPRes is not null && aNRes is not null, aWhat + ": no pcurve");
             anOracle.Same(aNF, aRF, aWhat + " first");
             anOracle.Same(aNL, aRL, aWhat + " last");
-            if (aPRes is Geom2d_BSplineCurve aPB)
+            if (aPRes is BSplineCurve2D aPB)
             {
                 using N.Geom2d_BSplineCurve? aNB = N.Geom2d_BSplineCurve.DownCast(aNRes);
                 Assert.True(aNB is not null, $"{aWhat}: native pcurve is not a B-spline");

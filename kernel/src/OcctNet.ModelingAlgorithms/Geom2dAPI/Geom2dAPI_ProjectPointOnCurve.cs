@@ -4,8 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -20,10 +22,10 @@ public class Geom2dAPI_ProjectPointOnCurve
 {
     private bool myIsDone;
     private int myIndex;
-    private Extrema_ExtPC2d myExtPC = new();
-    private readonly Geom2dAdaptor_Curve myC = new();
+    private ExtPC2d myExtPC = new();
+    private readonly CurveAdaptor2D myC = new();
 
-    /// <summary>An empty projector; use <see cref="Init(in Point2D, Geom2d_Curve)"/>.</summary>
+    /// <summary>An empty projector; use <see cref="Init(in Point2D, Curve2D)"/>.</summary>
     public Geom2dAPI_ProjectPointOnCurve()
     {
         myIndex = -1;
@@ -31,7 +33,7 @@ public class Geom2dAPI_ProjectPointOnCurve
     }
 
     /// <summary>The projections of <paramref name="P"/> on <paramref name="Curve"/>.</summary>
-    public Geom2dAPI_ProjectPointOnCurve(in Point2D P, Geom2d_Curve Curve)
+    public Geom2dAPI_ProjectPointOnCurve(in Point2D P, Curve2D Curve)
     {
         Init(P, Curve);
     }
@@ -40,13 +42,13 @@ public class Geom2dAPI_ProjectPointOnCurve
     /// The projections of <paramref name="P"/> on the part of <paramref name="Curve"/> between the parameters
     /// <paramref name="Umin"/> and <paramref name="Usup"/>.
     /// </summary>
-    public Geom2dAPI_ProjectPointOnCurve(in Point2D P, Geom2d_Curve Curve, double Umin, double Usup)
+    public Geom2dAPI_ProjectPointOnCurve(in Point2D P, Curve2D Curve, double Umin, double Usup)
     {
         Init(P, Curve, Umin, Usup);
     }
 
     /// <summary>Computes the projections of <paramref name="P"/> on <paramref name="Curve"/>.</summary>
-    public void Init(in Point2D P, Geom2d_Curve Curve)
+    public void Init(in Point2D P, Curve2D Curve)
     {
         Init(P, Curve, Curve.FirstParameter(), Curve.LastParameter());
     }
@@ -55,12 +57,12 @@ public class Geom2dAPI_ProjectPointOnCurve
     /// Computes the projections of <paramref name="P"/> on the part of <paramref name="Curve"/> between the
     /// parameters <paramref name="Umin"/> and <paramref name="Usup"/>.
     /// </summary>
-    public void Init(in Point2D P, Geom2d_Curve Curve, double Umin, double Usup)
+    public void Init(in Point2D P, Curve2D Curve, double Umin, double Usup)
     {
         myC.Load(Curve, Umin, Usup);
-        Extrema_ExtPC2d theExtPC2d = new(P, myC);
+        ExtPC2d theExtPC2d = new(P, myC);
         myExtPC = theExtPC2d;
-        myIsDone = myExtPC.IsDone() && (myExtPC.NbExt() > 0);
+        myIsDone = myExtPC.IsDone && (myExtPC.ExtCount > 0);
 
         // evaluate the lower distance and its index;
         if (myIsDone)
@@ -68,7 +70,7 @@ public class Geom2dAPI_ProjectPointOnCurve
             double Dist2, Dist2Min = myExtPC.SquareDistance(1);
             myIndex = 1;
 
-            for (int i = 2; i <= myExtPC.NbExt(); i++)
+            for (int i = 2; i <= myExtPC.ExtCount; i++)
             {
                 Dist2 = myExtPC.SquareDistance(i);
                 if (Dist2 < Dist2Min)
@@ -85,7 +87,7 @@ public class Geom2dAPI_ProjectPointOnCurve
     {
         if (myIsDone)
         {
-            return myExtPC.NbExt();
+            return myExtPC.ExtCount;
         }
         else
         {
@@ -150,7 +152,7 @@ public class Geom2dAPI_ProjectPointOnCurve
     }
 
     /// <summary>The Extrema algorithm used.</summary>
-    public Extrema_ExtPC2d Extrema() => myExtPC;
+    public ExtPC2d Extrema() => myExtPC;
 
     /// <summary>OCCT's <c>operator int()</c>: <see cref="NbPoints"/>.</summary>
     public static explicit operator int(Geom2dAPI_ProjectPointOnCurve theProj) => theProj.NbPoints();

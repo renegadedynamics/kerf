@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -49,8 +51,8 @@ internal static class BRepTestSweepCommands
         bool isVolume = false;
         bool hasToComputeAxes = false;
         double aTolerance = 0.0;
-        TopoDS_Shape Base = new();
-        TopoDS_Wire Prof = new();
+        Shape Base = new();
+        Wire Prof = new();
         bool isParallel = true;
 
         for (int i = 2; i < n; i++)
@@ -77,17 +79,17 @@ internal static class BRepTestSweepCommands
             {
                 case 's':
                     {
-                        Base = theDI.GetShape(a[++i], TopAbs_ShapeEnum.TopAbs_WIRE, false);
-                        if (Base.IsNull())
+                        Base = theDI.GetShape(a[++i], ShapeType.Wire, false);
+                        if (Base.IsNull)
                         {
-                            Base = theDI.GetShape(a[i], TopAbs_ShapeEnum.TopAbs_FACE, false);
+                            Base = theDI.GetShape(a[i], ShapeType.Face, false);
                         }
                     }
                     break;
 
                 case 'p':
                     {
-                        Prof = TopoDS.Wire(theDI.GetShape(a[++i], TopAbs_ShapeEnum.TopAbs_WIRE, false));
+                        Prof = ShapeCasts.Wire(theDI.GetShape(a[++i], ShapeType.Wire, false));
                     }
                     break;
 
@@ -115,13 +117,13 @@ internal static class BRepTestSweepCommands
             }
         }
 
-        if (Base.IsNull() || Prof.IsNull())
+        if (Base.IsNull || Prof.IsNull)
         {
             di.Append("spine (face or wire) and profile (wire) are expected\n");
             return 1;
         }
 
-        TopoDS_Shape Volevo = (TopoDS_Shape)new BRepOffsetAPI_MakeEvolved(Base,
+        Shape Volevo = (Shape)new BRepOffsetAPI_MakeEvolved(Base,
                                                                            Prof,
                                                                            JoinKind.Arc,
                                                                            !hasToComputeAxes,
@@ -147,8 +149,8 @@ internal static class BRepTestSweepCommands
             return 1;
         }
 
-        TopoDS_Shape @base = theDI.GetShape(a[2]);
-        if (@base.IsNull())
+        Shape @base = theDI.GetShape(a[2]);
+        if (@base.IsNull)
         {
             return 1;
         }
@@ -166,7 +168,7 @@ internal static class BRepTestSweepCommands
             sinf = First(a[6]) == 's' || First(a[6]) == 'S';
         }
 
-        TopoDS_Shape res;
+        Shape res;
 
         BRepPrimAPI_MakePrism Prism;
         if (inf || sinf)
@@ -183,7 +185,7 @@ internal static class BRepTestSweepCommands
         theDI.SetShape(a[1], res);
 
         // History
-        var anArgs = new NCollection_List<TopoDS_Shape>();
+        var anArgs = new NCollection_List<Shape>();
         anArgs.Append(@base);
         BRepTestHistoryCommands.SetHistory(theDI, anArgs, Prism);
 
@@ -198,8 +200,8 @@ internal static class BRepTestSweepCommands
             return 1;
         }
 
-        TopoDS_Shape @base = theDI.GetShape(a[2]);
-        if (@base.IsNull())
+        Shape @base = theDI.GetShape(a[2]);
+        if (@base.IsNull)
         {
             return 1;
         }
@@ -216,12 +218,12 @@ internal static class BRepTestSweepCommands
 
         if (Revol.IsDone())
         {
-            TopoDS_Shape res = Revol.Shape();
+            Shape res = Revol.Shape();
 
             theDI.SetShape(a[1], res);
 
             // History
-            var anArgs = new NCollection_List<TopoDS_Shape>();
+            var anArgs = new NCollection_List<Shape>();
             anArgs.Append(@base);
             BRepTestHistoryCommands.SetHistory(theDI, anArgs, Revol);
         }
@@ -251,14 +253,14 @@ internal static class BRepTestSweepCommands
             return 1;
         }
 
-        TopoDS_Shape Spine = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_WIRE);
-        if (Spine.IsNull())
+        Shape Spine = theDI.GetShape(a[2], ShapeType.Wire);
+        if (Spine.IsNull)
         {
             return 1;
         }
 
-        TopoDS_Shape Profile = theDI.GetShape(a[3]);
-        if (Profile.IsNull())
+        Shape Profile = theDI.GetShape(a[3]);
+        if (Profile.IsNull)
         {
             return 1;
         }
@@ -283,15 +285,15 @@ internal static class BRepTestSweepCommands
             ForceApproxC1 = true;
         }
 
-        var PipeBuilder = new BRepOffsetAPI_MakePipe(TopoDS.Wire(Spine), Profile, Mode, ForceApproxC1);
-        TopoDS_Shape S = PipeBuilder.Shape();
+        var PipeBuilder = new BRepOffsetAPI_MakePipe(ShapeCasts.Wire(Spine), Profile, Mode, ForceApproxC1);
+        Shape S = PipeBuilder.Shape();
 
         theDI.SetShape(a[1], S);
 
         // Save history of pipe
         if (BRepTestHistoryCommands.IsHistoryNeeded(theDI))
         {
-            var aList = new NCollection_List<TopoDS_Shape>();
+            var aList = new NCollection_List<Shape>();
             aList.Append(Profile);
             aList.Append(Spine);
             BRepTestHistoryCommands.SetHistory(theDI, aList, PipeBuilder);

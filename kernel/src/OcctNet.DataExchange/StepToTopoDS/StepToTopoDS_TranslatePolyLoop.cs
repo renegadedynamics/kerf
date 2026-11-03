@@ -6,9 +6,13 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.StepToTopoDS_TranslatePolyLoopError;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -17,7 +21,7 @@ namespace Occt;
 public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
 {
     private StepToTopoDS_TranslatePolyLoopError myError;
-    private TopoDS_Shape myResult = new TopoDS_Shape();
+    private Shape myResult = new Shape();
 
     public StepToTopoDS_TranslatePolyLoop()
     {
@@ -25,39 +29,39 @@ public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
         done = false;
     }
 
-    public StepToTopoDS_TranslatePolyLoop(StepShape_PolyLoop PL, StepToTopoDS_Tool T, Geom_Surface S, in TopoDS_Face F,
+    public StepToTopoDS_TranslatePolyLoop(StepShape_PolyLoop PL, StepToTopoDS_Tool T, Surface S, in Face F,
                                           in StepData_Factors theLocalFactors)
     {
         Init(PL, T, S, F, theLocalFactors);
     }
 
-    public StepToTopoDS_TranslatePolyLoop(StepShape_PolyLoop PL, StepToTopoDS_Tool T, Geom_Surface S, in TopoDS_Face F)
+    public StepToTopoDS_TranslatePolyLoop(StepShape_PolyLoop PL, StepToTopoDS_Tool T, Surface S, in Face F)
         : this(PL, T, S, F, new StepData_Factors())
     {
     }
 
     /// <remarks>Writes the pcurves of the edges into <paramref name="TopoFace"/>, which must be the reader's own.</remarks>
-    public void Init(StepShape_PolyLoop PL, StepToTopoDS_Tool aTool, Geom_Surface GeomSurf, in TopoDS_Face TopoFace,
+    public void Init(StepShape_PolyLoop PL, StepToTopoDS_Tool aTool, Surface GeomSurf, in Face TopoFace,
                      in StepData_Factors theLocalFactors)
     {
         if (!aTool.IsBound(PL))
         {
-            var B = new BRep_Builder();
+            var B = new BrepBuilder();
             Transfer_TransientProcess TP = aTool.TransientProcess();
 
             //: S4136    double preci = BRepAPI::Precision();
             int i;
             StepGeom_CartesianPoint P1, P2;
-            Geom_CartesianPoint GP1, GP2;
-            TopoDS_Vertex V1 = new TopoDS_Vertex(), V2 = new TopoDS_Vertex();
-            TopoDS_Edge E = new TopoDS_Edge();
-            TopoDS_Wire W = new TopoDS_Wire();
-            Geom_Line L;
-            Geom2d_Line L2d;
+            CartesianPoint GP1, GP2;
+            Vertex V1 = new Vertex(), V2 = new Vertex();
+            Edge E = new Edge();
+            Wire W = new Wire();
+            LineCurve3D L;
+            LineCurve2D L2d;
             Vector3D V;
             Vector2D V2d;
             double Magn;
-            Geom_Plane SP = GeomSurf as Geom_Plane;
+            PlaneSurface SP = GeomSurf as PlaneSurface;
             if (SP is null)
             {
                 TP.AddFail(PL, "Surface not planar in a FacetedBRep !");
@@ -97,7 +101,7 @@ public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
 
                 var PP = new StepToTopoDS_PointPair(P1, P2);
                 GP2 = StepToGeom.MakeCartesianPoint(P2, theLocalFactors);
-                TopoDS_Shape aBoundEdge;
+                Shape aBoundEdge;
                 bool isbound = aTool.IsEdgeBound(PP);
                 if (!isbound)
                 {
@@ -112,10 +116,10 @@ public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
                     }
 
                     V = new Vector3D(GP1.Pnt(), GP2.Pnt());
-                    L = new Geom_Line(GP1.Pnt(), new Direction3D(V));
+                    L = new LineCurve3D(GP1.Pnt(), new Direction3D(V));
                     B.MakeEdge(ref E, L, Kerf.Engine.Foundation.Precision.Confusion()); //: S4136: preci
-                    V1.Orientation(TopAbs_FORWARD);
-                    V2.Orientation(TopAbs_REVERSED);
+                    V1.Orientation(Forward);
+                    V2.Orientation(Reversed);
                     B.Add(E, V1);
                     B.Add(E, V2);
                     Magn = V.Magnitude();
@@ -125,11 +129,11 @@ public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
                 else
                 {
                     aBoundEdge = aTool.FindEdge(PP);
-                    E = TopoDS.Edge(aBoundEdge);
+                    E = ShapeCasts.Edge(aBoundEdge);
                     //  Il faut qu en finale l edge soit vue
                     //  - via sa premiere face, orientation combinee = celle de cette premiere face
                     //  - via sa deuxieme face, orientation combinee INVERSE de la precedente
-                    if (TopoFace.Orientation() == TopAbs_FORWARD)
+                    if (TopoFace.Orientation() == Forward)
                     {
                         E.Reverse();
                     }
@@ -139,26 +143,26 @@ public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
 
                 Point2D V2p1 = STSU.ValueOfUV(GP1.Pnt(), Precision());
                 Point2D V2p2 = STSU.ValueOfUV(GP2.Pnt(), Precision());
-                if (E.Orientation() == TopAbs_FORWARD)
+                if (E.Orientation() == Forward)
                 {
                     V2d = new Vector2D(V2p1, V2p2);
-                    L2d = new Geom2d_Line(V2p1, new Direction2D(V2d));
+                    L2d = new LineCurve2D(V2p1, new Direction2D(V2d));
                 }
                 else
                 {
                     V2d = new Vector2D(V2p2, V2p1);
-                    L2d = new Geom2d_Line(V2p2, new Direction2D(V2d));
+                    L2d = new LineCurve2D(V2p2, new Direction2D(V2d));
                 }
 
                 B.UpdateEdge(E, L2d, TopoFace, 0.0);
-                TopoDS_Edge EB = E; // pour le binding : cumul des orientations !
+                Edge EB = E; // pour le binding : cumul des orientations !
                 EB.Orientation(TopoFace.Orientation());
                 if (!isbound)
                 {
                     aTool.BindEdge(PP, EB);
                 }
 
-                if (!E.IsNull())
+                if (!E.IsNull)
                 {
                     B.Add(W, E);
                 }
@@ -168,7 +172,7 @@ public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
                 V1 = V2;
             }
 
-            W.Closed(BRep_Tool.IsClosed(W));
+            W.Closed(Tool.IsClosed(W));
             aTool.Bind(PL, W);
             myResult = W;
             myError = StepToTopoDS_TranslatePolyLoopDone;
@@ -176,26 +180,26 @@ public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
         }
         else
         {
-            myResult = TopoDS.Wire(aTool.Find(PL));
+            myResult = ShapeCasts.Wire(aTool.Find(PL));
             myError = StepToTopoDS_TranslatePolyLoopDone;
             done = true;
         }
     }
 
-    public void Init(StepShape_PolyLoop PL, StepToTopoDS_Tool aTool, Geom_Surface GeomSurf, in TopoDS_Face TopoFace)
+    public void Init(StepShape_PolyLoop PL, StepToTopoDS_Tool aTool, Surface GeomSurf, in Face TopoFace)
         => Init(PL, aTool, GeomSurf, TopoFace, new StepData_Factors());
 
     /// <summary>The wire, frozen.</summary>
     /// <exception cref="NotDoneException">The translation wasn't done.</exception>
-    public TopoDS_Shape Value()
+    public Shape Value()
     {
-        TopoDS_Shape aShape = InternalValue();
+        Shape aShape = InternalValue();
         aShape.TShape()?.FreezeGraph();
         return aShape;
     }
 
     /// <summary>As <see cref="Value"/>, without freezing: the reader's working shape.</summary>
-    internal TopoDS_Shape InternalValue()
+    internal Shape InternalValue()
     {
         StdFail_NotDone_Raise_if(!done, "StepToTopoDS_TranslatePolyLoop::Value() - no result");
         return myResult;

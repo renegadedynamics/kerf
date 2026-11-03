@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
@@ -22,7 +23,7 @@ internal static class ApproxIntRecordings
         public double Tol3d, Tol2d;
         public int DegMin, DegMax, NbIter, NbPntMax;
         public bool Tangency;
-        public Approx_ParametrizationType ParType;
+        public ParametrizationType ParType;
         public bool Xyz, U1V1, U2V2;
         public int IMin, IMax;
 
@@ -43,7 +44,7 @@ internal static class ApproxIntRecordings
         public int Index;
         public double[][] Points = [];
         public bool PtXyz, PtU1V1, PtU2V2;
-        public Approx_ParametrizationType ParType;
+        public ParametrizationType ParType;
         public List<Approx> Approxes = [];
     }
 
@@ -141,7 +142,7 @@ internal static class ApproxIntRecordings
                     aLine!.PtXyz = t[1] == "1";
                     aLine.PtU1V1 = t[2] == "1";
                     aLine.PtU2V2 = t[3] == "1";
-                    aLine.ParType = (Approx_ParametrizationType)I(t[6]);
+                    aLine.ParType = (ParametrizationType)I(t[6]);
                     break;
                 case "APPROX":
                     anApprox = new Approx
@@ -156,7 +157,7 @@ internal static class ApproxIntRecordings
                         NbIter = I(t[8]),
                         NbPntMax = I(t[9]),
                         Tangency = t[10] == "1",
-                        ParType = (Approx_ParametrizationType)I(t[11]),
+                        ParType = (ParametrizationType)I(t[11]),
                         Xyz = t[12] == "1",
                         U1V1 = t[13] == "1",
                         U2V2 = t[14] == "1",
@@ -205,10 +206,10 @@ internal static class ApproxIntRecordings
         return aRec;
     }
 
-    internal static Geom_Surface ReadSurface(string theText)
+    internal static Surface ReadSurface(string theText)
     {
         using StringReader aReader = new(theText);
-        GeomTools.Read(out Geom_Surface? aSurf, aReader);
+        global::Kerf.Engine.Exchange.Brep.GeomTools.Read(out Surface? aSurf, aReader);
         return aSurf!;
     }
 
@@ -241,7 +242,7 @@ internal static class ApproxIntRecordings
         }
         mu[1] = 2;
         mu[n] = 2;
-        return new BRepApprox_ApproxLine(new Geom_BSplineCurve(p3, kn, mu, 1), new Geom2d_BSplineCurve(pa, kn, mu, 1),
-                                         new Geom2d_BSplineCurve(pb, kn, mu, 1));
+        return new BRepApprox_ApproxLine(new BSplineCurve3D(p3, kn, mu, 1), new BSplineCurve2D(pa, kn, mu, 1),
+                                         new BSplineCurve2D(pb, kn, mu, 1));
     }
 }

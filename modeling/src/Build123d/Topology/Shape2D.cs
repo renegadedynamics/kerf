@@ -7,7 +7,7 @@ namespace Build123d;
 /// <summary>The methods shared by faces and shells (build123d's <c>Mixin2D</c>).</summary>
 public abstract partial class Shape2D : Shape
 {
-    private protected Shape2D(TopoDS_Shape? obj, string label = "", Color? color = null) : base(obj, label, color) { }
+    private protected Shape2D(global::Kerf.Topology.Shape? obj, string label = "", Color? color = null) : base(obj, label, color) { }
 
     internal override int? Dim => 2;
 
@@ -94,7 +94,7 @@ public abstract partial class Shape2D : Shape
         }
 
         // Split each perimeter edge where it crosses a seam, so the pieces lie in one patch of the surface
-        var perimeterEdges = new NCollection_Sequence<TopoDS_Shape>();
+        var perimeterEdges = new NCollection_Sequence<global::Kerf.Topology.Shape>();
         var seams = Faces().SelectMany(f => f.Seams).ToList();
         foreach (var edge in perimeter.Edges())
         {
@@ -118,7 +118,7 @@ public abstract partial class Shape2D : Shape
         var constructor = new BRepFeat_SplitShape(TopoShape);
         constructor.Add(perimeterEdges);
         constructor.Build();
-        List<Shape> Sides(IEnumerable<TopoDS_Shape> list) => [.. list.Where(s => !s.IsNull()).Select(CastLike)];
+        List<Shape> Sides(IEnumerable<global::Kerf.Topology.Shape> list) => [.. list.Where(s => !s.IsNull).Select(CastLike)];
         Shape left, right;
         var lefts = constructor.Left();
         left = ProcessSides(Sides(lefts));
@@ -306,7 +306,7 @@ public abstract partial class Shape2D : Shape
                            JoinKind.Intersection, false, true);
         builder.MakeOffsetShape();
         var offset = builder.Shape();
-        if (offset.IsNull())
+        if (offset.IsNull)
             throw new InvalidOperationException($"Unable to offset {GetType().Name} by {amount}");
         var result = Cast(offset);
         // The builder always returns a shell; a face offsets to a single face

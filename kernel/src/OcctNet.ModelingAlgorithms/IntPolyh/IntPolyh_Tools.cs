@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.SurfaceKind;
 
@@ -14,17 +15,17 @@ public static class IntPolyh_Tools
 {
     /// <summary>Whether the surface can be enlarged in U and in V: B-spline and Bézier surfaces only, in a direction in
     /// which they are neither closed, periodic nor infinite.</summary>
-    public static void IsEnlargePossible(Adaptor3d_Surface theSurf, out bool theUEnlarge, out bool theVEnlarge)
+    public static void IsEnlargePossible(SurfaceAdaptorBase theSurf, out bool theUEnlarge, out bool theVEnlarge)
     {
         theUEnlarge = false;
         theVEnlarge = false;
 
         // In the context of IntPolyh_Intersection only BSpline and Bezier surfaces
         // should be enlarged
-        if (theSurf.GetType() == BSplineSurface || theSurf.GetType() == BezierSurface)
+        if (theSurf.GetType() == SurfaceKind.BSplineSurface || theSurf.GetType() == SurfaceKind.BezierSurface)
         {
             // Check U periodicity and closeness
-            if (!theSurf.IsUClosed() && !theSurf.IsUPeriodic())
+            if (!theSurf.IsUClosed && !theSurf.IsUPeriodic)
             {
                 // Check that surface is not infinite in U direction
                 if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(theSurf.FirstUParameter()) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(theSurf.LastUParameter()))
@@ -34,7 +35,7 @@ public static class IntPolyh_Tools
             }
 
             // Check V periodicity and closeness
-            if (!theSurf.IsVClosed() && !theSurf.IsVPeriodic())
+            if (!theSurf.IsVClosed && !theSurf.IsVPeriodic)
             {
                 // Check that surface is not infinite in V direction
                 if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(theSurf.FirstVParameter()) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(theSurf.LastVParameter()))
@@ -46,7 +47,7 @@ public static class IntPolyh_Tools
     }
 
     // Enlarges the sampling zone of the surface by 1% at each end, where possible
-    private static void EnlargeZone(Adaptor3d_Surface theSurf, ref double u0, ref double u1, ref double v0, ref double v1)
+    private static void EnlargeZone(SurfaceAdaptorBase theSurf, ref double u0, ref double u1, ref double v0, ref double v1)
     {
         IsEnlargePossible(theSurf, out bool isToEnlargeU, out bool isToEnlargeV);
         // Enlarge U
@@ -69,7 +70,7 @@ public static class IntPolyh_Tools
     /// Samples the surface: <paramref name="theNbSU"/> x <paramref name="theNbSV"/> evenly spaced parameters over its
     /// bounds (enlarged when <paramref name="theEnlargeZone"/>), into the arrays (resized from 1).
     /// </summary>
-    public static void MakeSampling(Adaptor3d_Surface theSurf, int theNbSU, int theNbSV, bool theEnlargeZone,
+    public static void MakeSampling(SurfaceAdaptorBase theSurf, int theNbSU, int theNbSV, bool theEnlargeZone,
                                     NCollection_Array1<double> theUPars, NCollection_Array1<double> theVPars)
     {
         // Resize arrays
@@ -121,7 +122,7 @@ public static class IntPolyh_Tools
     }
 
     /// <summary>The deflection tolerance of the sampling: IntCurveSurface's polyhedron's over-estimation.</summary>
-    public static double ComputeDeflection(Adaptor3d_Surface theSurf, NCollection_Array1<double> theUPars,
+    public static double ComputeDeflection(SurfaceAdaptorBase theSurf, NCollection_Array1<double> theUPars,
                                            NCollection_Array1<double> theVPars)
     {
         IntCurveSurface_ThePolyhedronOfHInter polyhedron = new(theSurf, theUPars, theVPars);
@@ -131,7 +132,7 @@ public static class IntPolyh_Tools
 
     /// <summary>Fills the array with the surface's points at the sampling (U major) and its unit normals there (zero
     /// where the normal vanishes).</summary>
-    public static void FillArrayOfPointNormal(Adaptor3d_Surface theSurf, NCollection_Array1<double> theUPars,
+    public static void FillArrayOfPointNormal(SurfaceAdaptorBase theSurf, NCollection_Array1<double> theUPars,
                                               NCollection_Array1<double> theVPars,
                                               IntPolyh_Array<IntPolyh_PointNormal> thePoints)
     {

@@ -1,8 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using Occt;
 using static Occt.ChFiDS_ChamfMode;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite;
 
@@ -33,8 +35,8 @@ internal static class BRepTestChamferCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[2]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[2]);
+        if (S.IsNull)
         {
             return 1;
         }
@@ -47,11 +49,11 @@ internal static class BRepTestChamferCommands
 
         while (i + NbArg <= narg)
         {
-            TopoDS_Shape aLocalEdge = theDI.GetShape(a[i], TopAbs_EDGE);
-            TopoDS_Edge E = TopoDS.Edge(aLocalEdge);
-            TopoDS_Shape aLocalFace = theDI.GetShape(a[i + 1], TopAbs_FACE);
-            TopoDS_Face F = TopoDS.Face(aLocalFace);
-            if (!E.IsNull() && !F.IsNull() && (aMCh.Contour(E) == 0))
+            Shape aLocalEdge = theDI.GetShape(a[i], ShapeType.Edge);
+            Edge E = ShapeCasts.Edge(aLocalEdge);
+            Shape aLocalFace = theDI.GetShape(a[i + 1], ShapeType.Face);
+            Face F = ShapeCasts.Face(aLocalFace);
+            if (!E.IsNull && !F.IsNull && (aMCh.Contour(E) == 0))
             {
                 double offset = theDI.Atof(a[i + 2]);
                 double throat = theDI.Atof(a[i + 3]);
@@ -99,8 +101,8 @@ internal static class BRepTestChamferCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[2]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[2]);
+        if (S.IsNull)
         {
             return 1;
         }
@@ -112,9 +114,9 @@ internal static class BRepTestChamferCommands
 
         while (i + 1 < narg)
         {
-            TopoDS_Shape aLocalEdge = theDI.GetShape(a[i], TopAbs_EDGE);
-            TopoDS_Edge E = TopoDS.Edge(aLocalEdge);
-            if (!E.IsNull() && (aMCh.Contour(E) == 0))
+            Shape aLocalEdge = theDI.GetShape(a[i], ShapeType.Edge);
+            Edge E = ShapeCasts.Edge(aLocalEdge);
+            if (!E.IsNull && (aMCh.Contour(E) == 0))
             {
                 double throat = theDI.Atof(a[i + 1]);
 
@@ -151,8 +153,8 @@ internal static class BRepTestChamferCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[2]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[2]);
+        if (S.IsNull)
         {
             return 1;
         }
@@ -163,14 +165,14 @@ internal static class BRepTestChamferCommands
 
         while (i + 1 < narg)
         {
-            TopoDS_Shape aLocalEdge = theDI.GetShape(a[i], TopAbs_EDGE);
-            if (aLocalEdge.IsNull())
+            Shape aLocalEdge = theDI.GetShape(a[i], ShapeType.Edge);
+            if (aLocalEdge.IsNull)
             {
                 return 1;
             }
-            TopoDS_Edge E = TopoDS.Edge(aLocalEdge);
-            TopoDS_Shape aLocalFace = theDI.GetShape(a[i + 1], TopAbs_FACE);
-            if (aLocalFace.IsNull())
+            Edge E = ShapeCasts.Edge(aLocalEdge);
+            Shape aLocalFace = theDI.GetShape(a[i + 1], ShapeType.Face);
+            if (aLocalFace.IsNull)
             {
                 // symmetric chamfer (one distance)
                 double d1 = Atof(a[i + 1]); // C's atof, not Draw::Atof
@@ -182,7 +184,7 @@ internal static class BRepTestChamferCommands
             }
             else
             {
-                TopoDS_Face F = TopoDS.Face(aLocalFace);
+                Face F = ShapeCasts.Face(aLocalFace);
 
                 if (i + 3 < narg)
                 {

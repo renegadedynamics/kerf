@@ -4,10 +4,13 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -15,16 +18,16 @@ namespace Occt;
 internal sealed class BOPAlgo_SplitEdge : BOPAlgo_ParallelAlgo, BOPTools_Parallel.IContextSolver<IntTools_Context>
 {
     // ->
-    private TopoDS_Edge myE = new();
-    private TopoDS_Vertex myV1 = new();
+    private Edge myE = new();
+    private Vertex myV1 = new();
     private double myT1;
-    private TopoDS_Vertex myV2 = new();
+    private Vertex myV2 = new();
     private double myT2;
     // <->
     private BOPDS_PaveBlock? myPB;
     private BOPDS_CommonBlock? myCB;
     // <-
-    private TopoDS_Edge myESp = new();
+    private Edge myESp = new();
     private Box myBox = new();
     private double myTol;
     //
@@ -38,7 +41,7 @@ internal sealed class BOPAlgo_SplitEdge : BOPAlgo_ParallelAlgo, BOPTools_Paralle
         myTol = 0.0;
     }
 
-    public void SetData(in TopoDS_Edge aE, in TopoDS_Vertex aV1, double aT1, in TopoDS_Vertex aV2, double aT2)
+    public void SetData(in Edge aE, in Vertex aV1, double aT1, in Vertex aV2, double aT2)
     {
         myE = aE;
         myV1 = aV1;
@@ -56,7 +59,7 @@ internal sealed class BOPAlgo_SplitEdge : BOPAlgo_ParallelAlgo, BOPTools_Paralle
 
     public BOPDS_CommonBlock? CommonBlock() => myCB;
 
-    public TopoDS_Edge SplitEdge() => myESp;
+    public Edge SplitEdge() => myESp;
 
     public Box Box() => myBox;
 
@@ -89,14 +92,14 @@ internal sealed class BOPAlgo_SplitEdge : BOPAlgo_ParallelAlgo, BOPTools_Paralle
 internal sealed class BOPAlgo_MPC : BOPAlgo_ParallelAlgo, BOPTools_Parallel.IContextSolver<IntTools_Context>
 {
     private bool myFlag;
-    private TopoDS_Edge myE = new();
-    private TopoDS_Face myF = new();
-    private TopoDS_Edge myEz = new();
-    private TopoDS_Vertex myV1 = new();
+    private Edge myE = new();
+    private Face myF = new();
+    private Edge myEz = new();
+    private Vertex myV1 = new();
     private double myT1;
-    private TopoDS_Vertex myV2 = new();
+    private Vertex myV2 = new();
     private double myT2;
-    private Geom2d_Curve? myNewC2d;
+    private Curve2D? myNewC2d;
     private double myNewTol;
     //
     private IntTools_Context? myContext;
@@ -106,19 +109,19 @@ internal sealed class BOPAlgo_MPC : BOPAlgo_ParallelAlgo, BOPTools_Parallel.ICon
         myFlag = false;
     }
 
-    public void SetEdge(in TopoDS_Edge aE) => myE = aE;
+    public void SetEdge(in Edge aE) => myE = aE;
 
-    public TopoDS_Edge Edge() => myE;
+    public Edge Edge() => myE;
 
-    public void SetFace(in TopoDS_Face aF) => myF = aF;
+    public void SetFace(in Face aF) => myF = aF;
 
-    public TopoDS_Face Face() => myF;
+    public Face Face() => myF;
 
     public void SetFlag(bool bFlag) => myFlag = bFlag;
 
     public bool Flag() => myFlag;
 
-    public void SetData(in TopoDS_Edge aEz, in TopoDS_Vertex aV1, double aT1, in TopoDS_Vertex aV2, double aT2)
+    public void SetData(in Edge aEz, in Vertex aV1, double aT1, in Vertex aV2, double aT2)
     {
         myEz = aEz;
         myV1 = aV1;
@@ -142,18 +145,18 @@ internal sealed class BOPAlgo_MPC : BOPAlgo_ParallelAlgo, BOPTools_Parallel.ICon
         {
             // Check if edge has pcurve. If no then make its copy to avoid data races,
             // and use it to build pcurve.
-            TopoDS_Edge aCopyE = myE;
+            Edge aCopyE = myE;
             double f, l;
-            Geom2d_Curve? aC2d = BRep_Tool.CurveOnSurface(aCopyE, myF, out f, out l);
+            Curve2D? aC2d = Tool.CurveOnSurface(aCopyE, myF, out f, out l);
             if (aC2d is null)
             {
                 aCopyE = BOPTools_AlgoTools.CopyEdge(aCopyE);
 
                 int iErr = 1;
-                if (!myEz.IsNull())
+                if (!myEz.IsNull)
                 {
                     // Attach pcurve from the original edge
-                    BOPTools_AlgoTools.MakeSplitEdge(myEz, myV1, myT1, myV2, myT2, out TopoDS_Edge aSpz);
+                    BOPTools_AlgoTools.MakeSplitEdge(myEz, myV1, myT1, myV2, myT2, out Edge aSpz);
                     iErr = BOPTools_AlgoTools2D.AttachExistingPCurve(aSpz, aCopyE, myF, myContext);
                 }
                 if (iErr != 0)
@@ -161,27 +164,27 @@ internal sealed class BOPAlgo_MPC : BOPAlgo_ParallelAlgo, BOPTools_Parallel.ICon
                     BOPTools_AlgoTools2D.BuildPCurveForEdgeOnFace(aCopyE, myF, myContext);
                 }
 
-                myNewC2d = BRep_Tool.CurveOnSurface(aCopyE, myF, out f, out l);
+                myNewC2d = Tool.CurveOnSurface(aCopyE, myF, out f, out l);
                 if (myNewC2d is null)
                 {
-                    AddError(new BOPAlgo_AlertBuildingPCurveFailed(new TopoDS_Shape()));
+                    AddError(new BOPAlgo_AlertBuildingPCurveFailed(new Shape()));
                     return;
                 }
                 else
                 {
-                    myNewTol = BRep_Tool.Tolerance(aCopyE);
+                    myNewTol = Tool.Tolerance(aCopyE);
                 }
             }
             else
             {
-                BRepAdaptor_Surface aBAS = myContext!.SurfaceAdaptor(myF);
-                if (aBAS.IsUPeriodic() || aBAS.IsVPeriodic())
+                FaceSurfaceAdaptor aBAS = myContext!.SurfaceAdaptor(myF);
+                if (aBAS.IsUPeriodic || aBAS.IsVPeriodic)
                 {
                     // The curve already exists. Adjust it for periodic cases.
                     BOPTools_AlgoTools2D.AdjustPCurveOnSurf(myContext.SurfaceAdaptor(myF), f, l, aC2d, out myNewC2d);
                     if (myNewC2d != aC2d)
                     {
-                        myNewTol = BRep_Tool.Tolerance(aCopyE);
+                        myNewTol = Tool.Tolerance(aCopyE);
                     }
                     else
                     {
@@ -200,11 +203,11 @@ internal sealed class BOPAlgo_MPC : BOPAlgo_ParallelAlgo, BOPTools_Parallel.ICon
         }
         catch (FailureException)
         {
-            AddError(new BOPAlgo_AlertBuildingPCurveFailed(new TopoDS_Shape()));
+            AddError(new BOPAlgo_AlertBuildingPCurveFailed(new Shape()));
         }
     }
 
-    public Geom2d_Curve? GetNewPCurve() => myNewC2d;
+    public Curve2D? GetNewPCurve() => myNewC2d;
 
     public double GetNewTolerance() => myNewTol;
 }
@@ -212,21 +215,21 @@ internal sealed class BOPAlgo_MPC : BOPAlgo_ParallelAlgo, BOPTools_Parallel.ICon
 /// <summary>The p-curve of an edge on a planar face (<c>BRepLib.BuildPCurveForEdgeOnPlane</c>), as a parallel solver.</summary>
 internal sealed class BOPAlgo_BPC : BOPTools_Parallel.ISolver
 {
-    private TopoDS_Edge myE = new();
-    private TopoDS_Face myF = new();
-    private Geom2d_Curve? myCurve;
+    private Edge myE = new();
+    private Face myF = new();
+    private Curve2D? myCurve;
     private bool myToUpdate;
     private ProgressRange myRange;
 
-    public void SetFace(in TopoDS_Face aF) => myF = aF;
+    public void SetFace(in Face aF) => myF = aF;
 
-    public void SetEdge(in TopoDS_Edge aE) => myE = aE;
+    public void SetEdge(in Edge aE) => myE = aE;
 
-    public TopoDS_Edge GetEdge() => myE;
+    public Edge GetEdge() => myE;
 
-    public TopoDS_Face GetFace() => myF;
+    public Face GetFace() => myF;
 
-    public Geom2d_Curve? GetCurve2d() => myCurve;
+    public Curve2D? GetCurve2d() => myCurve;
 
     public bool IsToUpdate() => myToUpdate;
 
@@ -261,8 +264,8 @@ public partial class BOPAlgo_PaveFiller
         NCollection_List<BOPDS_PaveBlock>.Iterator aItPB = new();
         BOPDS_PaveBlock aPB;
         NCollection_Map<BOPDS_CommonBlock> aMCB = new();
-        TopoDS_Vertex aV1, aV2;
-        TopoDS_Edge aE;
+        Vertex aV1, aV2;
+        Edge aE;
         NCollection_DynamicArray<BOPAlgo_SplitEdge> aVBSE = new();
 
         //
@@ -353,14 +356,14 @@ public partial class BOPAlgo_PaveFiller
                 }
                 aPB.Range(out aT1, out aT2);
                 //
-                aE = TopoDS.Edge(myDS.Shape(nE));
-                aE.Orientation(TopAbs_FORWARD);
+                aE = ShapeCasts.Edge(myDS.Shape(nE));
+                aE.Orientation(Forward);
                 //
-                aV1 = TopoDS.Vertex(myDS.Shape(nV1));
-                aV1.Orientation(TopAbs_FORWARD);
+                aV1 = ShapeCasts.Vertex(myDS.Shape(nV1));
+                aV1.Orientation(Forward);
                 //
-                aV2 = TopoDS.Vertex(myDS.Shape(nV2));
-                aV2.Orientation(TopAbs_REVERSED);
+                aV2 = ShapeCasts.Vertex(myDS.Shape(nV2));
+                aV2.Orientation(Reversed);
                 //
                 BOPAlgo_SplitEdge aBSE = aVBSE.Append(new BOPAlgo_SplitEdge());
                 //
@@ -397,14 +400,14 @@ public partial class BOPAlgo_PaveFiller
             }
             BOPAlgo_SplitEdge aBSE = aVBSE[k];
             //
-            TopoDS_Edge aSp = aBSE.SplitEdge();
+            Edge aSp = aBSE.SplitEdge();
             Box aBox = aBSE.Box();
             //
             BOPDS_PaveBlock aPBk = aBSE.PaveBlock();
             BOPDS_CommonBlock? aCBk = aBSE.CommonBlock();
             //
             BOPDS_ShapeInfo aSI = new();
-            aSI.SetShapeType(TopAbs_EDGE);
+            aSI.SetShapeType(ShapeType.Edge);
             aSI.SetShape(aSp);
             aSI.ChangeBox() = aBox;
             NCollection_List<int> aSubShapes = aSI.ChangeSubShapes();
@@ -429,20 +432,20 @@ public partial class BOPAlgo_PaveFiller
     protected int SplitEdge(int nE, int nV1, double aT1, int nV2, double aT2)
     {
         int nSp;
-        TopoDS_Vertex aV1, aV2;
-        TopoDS_Edge aE, aSp;
+        Vertex aV1, aV2;
+        Edge aE, aSp;
         BOPDS_ShapeInfo aSI = new();
         //
-        aSI.SetShapeType(TopAbs_EDGE);
+        aSI.SetShapeType(ShapeType.Edge);
         //
-        aE = TopoDS.Edge(myDS!.Shape(nE));
-        aE.Orientation(TopAbs_FORWARD);
+        aE = ShapeCasts.Edge(myDS!.Shape(nE));
+        aE.Orientation(Forward);
         //
-        aV1 = TopoDS.Vertex(myDS.Shape(nV1));
-        aV1.Orientation(TopAbs_FORWARD);
+        aV1 = ShapeCasts.Vertex(myDS.Shape(nV1));
+        aV1.Orientation(Forward);
         //
-        aV2 = TopoDS.Vertex(myDS.Shape(nV2));
-        aV2.Orientation(TopAbs_REVERSED);
+        aV2 = ShapeCasts.Vertex(myDS.Shape(nV2));
+        aV2.Orientation(Reversed);
         //
         BOPTools_AlgoTools.MakeSplitEdge(aE, aV1, aT1, aV2, aT2, out aSp);
         //
@@ -477,7 +480,7 @@ public partial class BOPAlgo_PaveFiller
         int i, nF1, aNbC, k, nE, aNbFF, aNbFI, nEx;
         int j, aNbPBIn, aNbPBOn;
         NCollection_List<BOPDS_PaveBlock>.Iterator aItLPB = new();
-        TopoDS_Face aF1F;
+        Face aF1F;
         NCollection_DynamicArray<BOPAlgo_MPC> aVMPC = new();
         //
         // 1. Process Common Blocks
@@ -493,8 +496,8 @@ public partial class BOPAlgo_PaveFiller
             BOPDS_FaceInfo aFI = aFIP[i];
             nF1 = aFI.Index();
             //
-            aF1F = TopoDS.Face(myDS.Shape(nF1));
-            aF1F.Orientation(TopAbs_FORWARD);
+            aF1F = ShapeCasts.Face(myDS.Shape(nF1));
+            aF1F.Orientation(Forward);
             // In
             NCollection_IndexedMap<BOPDS_PaveBlock> aMPBIn = aFI.PaveBlocksIn();
             aNbPBIn = aMPBIn.Extent();
@@ -507,7 +510,7 @@ public partial class BOPAlgo_PaveFiller
                 {
                     continue;
                 }
-                TopoDS_Edge aE = TopoDS.Edge(myDS.Shape(nE));
+                Edge aE = ShapeCasts.Edge(myDS.Shape(nE));
                 //
                 BOPAlgo_MPC aMPC = aVMPC.Append(new BOPAlgo_MPC());
                 aMPC.SetEdge(aE);
@@ -521,7 +524,7 @@ public partial class BOPAlgo_PaveFiller
             {
                 BOPDS_PaveBlock aPB = aMPBOn[j];
                 nE = aPB.Edge();
-                TopoDS_Edge aE = TopoDS.Edge(myDS.Shape(nE));
+                Edge aE = ShapeCasts.Edge(myDS.Shape(nE));
                 bHasPC = BOPTools_AlgoTools2D.HasCurveOnSurface(aE, aF1F);
                 if (bHasPC)
                 {
@@ -547,7 +550,7 @@ public partial class BOPAlgo_PaveFiller
                             }
                             //
                             nEx = aPBx.OriginalEdge();
-                            TopoDS_Edge aEx = TopoDS.Edge(myDS.Shape(nEx));
+                            Edge aEx = ShapeCasts.Edge(myDS.Shape(nEx));
                             bHasPC = BOPTools_AlgoTools2D.HasCurveOnSurface(aEx, aF1F);
                             if (!bHasPC)
                             {
@@ -556,20 +559,20 @@ public partial class BOPAlgo_PaveFiller
                             //
                             int nV1x, nV2x;
                             double aT1x, aT2x;
-                            TopoDS_Vertex aV1x, aV2x;
-                            TopoDS_Edge aEz;
+                            Vertex aV1x, aV2x;
+                            Edge aEz;
                             //
                             aEz = aEx;
-                            aEz.Orientation(TopAbs_FORWARD);
+                            aEz.Orientation(Forward);
                             //
                             aPBx.Indices(out nV1x, out nV2x);
                             aPBx.Range(out aT1x, out aT2x);
                             //
-                            aV1x = TopoDS.Vertex(myDS.Shape(nV1x));
-                            aV1x.Orientation(TopAbs_FORWARD);
+                            aV1x = ShapeCasts.Vertex(myDS.Shape(nV1x));
+                            aV1x.Orientation(Forward);
                             //
-                            aV2x = TopoDS.Vertex(myDS.Shape(nV2x));
-                            aV2x.Orientation(TopAbs_REVERSED);
+                            aV2x = ShapeCasts.Vertex(myDS.Shape(nV2x));
+                            aV2x.Orientation(Reversed);
                             //
                             aMPC.SetData(aEz, aV1x, aT1x, aV2x, aT2x);
                             //
@@ -596,7 +599,7 @@ public partial class BOPAlgo_PaveFiller
             NCollection_DynamicArray<BOPDS_InterfFF> aFFs = myDS.InterfFF();
             aNbFF = aFFs.Length();
             Span<int> nF = stackalloc int[2];
-            TopoDS_Face[] aFf = new TopoDS_Face[2];
+            Face[] aFf = new Face[2];
             for (i = 0; i < aNbFF; ++i)
             {
                 BOPDS_InterfFF aFF = aFFs[i];
@@ -608,11 +611,11 @@ public partial class BOPAlgo_PaveFiller
                 }
                 aFF.Indices(out nF[0], out nF[1]);
                 //
-                aFf[0] = TopoDS.Face(myDS.Shape(nF[0]));
-                aFf[0].Orientation(TopAbs_FORWARD);
+                aFf[0] = ShapeCasts.Face(myDS.Shape(nF[0]));
+                aFf[0].Orientation(Forward);
                 //
-                aFf[1] = TopoDS.Face(myDS.Shape(nF[1]));
-                aFf[1].Orientation(TopAbs_FORWARD);
+                aFf[1] = ShapeCasts.Face(myDS.Shape(nF[1]));
+                aFf[1].Orientation(Forward);
                 //
                 for (k = 0; k < aNbC; ++k)
                 {
@@ -623,7 +626,7 @@ public partial class BOPAlgo_PaveFiller
                     {
                         BOPDS_PaveBlock aPB = aItLPB.Value();
                         nE = aPB.Edge();
-                        TopoDS_Edge aE = TopoDS.Edge(myDS.Shape(nE));
+                        Edge aE = ShapeCasts.Edge(myDS.Shape(nE));
                         //
                         for (int m = 0; m < 2; ++m)
                         {
@@ -665,20 +668,20 @@ public partial class BOPAlgo_PaveFiller
             BOPAlgo_MPC aMPC = aVMPC[i];
             if (aMPC.HasErrors())
             {
-                TopoDS_Compound aWC = new();
-                new BRep_Builder().MakeCompound(ref aWC);
-                new BRep_Builder().Add(aWC, aMPC.Edge());
-                new BRep_Builder().Add(aWC, aMPC.Face());
+                Compound aWC = new();
+                new BrepBuilder().MakeCompound(ref aWC);
+                new BrepBuilder().Add(aWC, aMPC.Edge());
+                new BrepBuilder().Add(aWC, aMPC.Face());
                 AddWarning(new BOPAlgo_AlertBuildingPCurveFailed(aWC));
             }
             else
             {
-                Geom2d_Curve? aNewPC = aMPC.GetNewPCurve();
+                Curve2D? aNewPC = aMPC.GetNewPCurve();
                 // if aNewPC is null we do not need to update the edge because it already contains
                 // valid p-curve, and only vertices have been updated.
                 if (aNewPC is not null)
                 {
-                    new BRep_Builder().UpdateEdge(aMPC.Edge(), aNewPC, aMPC.Face(), aMPC.GetNewTolerance());
+                    new BrepBuilder().UpdateEdge(aMPC.Edge(), aNewPC, aMPC.Face(), aMPC.GetNewTolerance());
                 }
             }
         }
@@ -690,7 +693,7 @@ public partial class BOPAlgo_PaveFiller
     /// Updates the tolerances of the edge's vertices comparing the extremities of its 3D curve and of its p-curve on
     /// the face (OCCT's file-static <c>UpdateVertices</c>; writes into the vertices in place).
     /// </summary>
-    internal static void UpdateVertices(in TopoDS_Edge aE, in TopoDS_Face aF)
+    internal static void UpdateVertices(in Edge aE, in Face aF)
     {
         // OCCT.NET: the solvers of MakePCurves run this in parallel on section edges that share vertices. OCCT's
         // tolerance update (a read-compare-write in BRep_TVertex::UpdateTolerance) can lose a larger value to a
@@ -701,25 +704,25 @@ public partial class BOPAlgo_PaveFiller
         Span<double> aT = stackalloc double[2];
         Point3D aP3D, aP3Dx;
         Point2D aP2Dx;
-        Geom_Surface aS;
-        Geom_Curve aC3D;
-        Geom2d_Curve aC2D;
-        TopoDS_Edge aEf;
-        TopoDS_Vertex[] aV = new TopoDS_Vertex[2];
-        BRep_Builder aBB = new();
+        Surface aS;
+        Curve3D aC3D;
+        Curve2D aC2D;
+        Edge aEf;
+        Vertex[] aV = new Vertex[2];
+        BrepBuilder aBB = new();
         //
         aEf = aE;
-        aEf.Orientation(TopAbs_FORWARD);
+        aEf.Orientation(Forward);
         //
-        TopExp.Vertices(aEf, out aV[0], out aV[1]);
+        Exploration.Vertices(aEf, out aV[0], out aV[1]);
         //
-        aS = BRep_Tool.Surface(aF)!;
-        aC3D = BRep_Tool.Curve(aEf, out aT[0], out aT[1])!;
-        aC2D = BRep_Tool.CurveOnSurface(aEf, aF, out aT[0], out aT[1])!;
+        aS = Tool.Surface(aF)!;
+        aC3D = Tool.Curve(aEf, out aT[0], out aT[1])!;
+        aC2D = Tool.CurveOnSurface(aEf, aF, out aT[0], out aT[1])!;
         //
         for (j = 0; j < 2; ++j)
         {
-            aTolV2 = BRep_Tool.Tolerance(aV[j]);
+            aTolV2 = Tool.Tolerance(aV[j]);
             aTolV2 = aTolV2 * aTolV2;
             //
             aC3D.D0(aT[j], out aP3D);
@@ -749,11 +752,11 @@ public partial class BOPAlgo_PaveFiller
             // do not allow storing pcurves in original edges if non-destructive mode is on
             return;
         }
-        Span<TopAbs_ShapeEnum> aType = [TopAbs_VERTEX, TopAbs_EDGE, TopAbs_FACE];
+        Span<ShapeType> aType = [ShapeType.Vertex, ShapeType.Edge, ShapeType.Face];
         bool bIsBasedOnPlane;
         int i, aNb, n1, nF, aNbF;
-        TopExp_Explorer aExp = new();
-        NCollection_IndexedMap<TopoDS_Shape> aMF = new(TopTools_ShapeMapHasher.Instance);
+        Explorer aExp = new();
+        NCollection_IndexedMap<Shape> aMF = new(ShapeHasher.Instance);
         //
         aNb = 3;
         using var aPSOuter = new ProgressScope(theRange, null, 1);
@@ -763,7 +766,7 @@ public partial class BOPAlgo_PaveFiller
             for (; myIterator.More(); myIterator.Next())
             {
                 myIterator.Value(out n1, out nF);
-                TopoDS_Face aF = TopoDS.Face(myDS!.Shape(nF));
+                Face aF = ShapeCasts.Face(myDS!.Shape(nF));
                 //
                 bIsBasedOnPlane = IsBasedOnPlane(aF);
                 if (bIsBasedOnPlane)
@@ -784,11 +787,11 @@ public partial class BOPAlgo_PaveFiller
         //
         for (i = 1; i <= aNbF; ++i)
         {
-            TopoDS_Face aF = TopoDS.Face(aMF[i]);
+            Face aF = ShapeCasts.Face(aMF[i]);
             aExp.Init(aF, aType[1]);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Edge aE = TopoDS.Edge(aExp.Current());
+                Edge aE = ShapeCasts.Edge(aExp.Current());
                 BOPAlgo_BPC aBPC = aVBPC.Append(new BOPAlgo_BPC());
                 aBPC.SetEdge(aE);
                 aBPC.SetFace(aF);
@@ -809,7 +812,7 @@ public partial class BOPAlgo_PaveFiller
             return;
         }
         // pcurves are built, and now update edges
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
         for (i = 0; i < aVBPC.Length(); i++)
         {
             if (UserBreak(aPSOuter))
@@ -819,27 +822,27 @@ public partial class BOPAlgo_PaveFiller
             BOPAlgo_BPC aBPC = aVBPC[i];
             if (aBPC.IsToUpdate())
             {
-                double aTolE = BRep_Tool.Tolerance(aBPC.GetEdge());
+                double aTolE = Tool.Tolerance(aBPC.GetEdge());
                 aBB.UpdateEdge(aBPC.GetEdge(), aBPC.GetCurve2d(), aBPC.GetFace(), aTolE);
             }
         }
     }
 
     // Whether the face's surface is a plane (or a trimmed plane).
-    private static bool IsBasedOnPlane(in TopoDS_Face aF)
+    private static bool IsBasedOnPlane(in Face aF)
     {
-        Geom_RectangularTrimmedSurface? aGRTS;
-        Geom_Plane? aGP;
+        TrimmedSurface? aGRTS;
+        PlaneSurface? aGP;
 
-        Geom_Surface? aS = BRep_Tool.Surface(aF, out Placement _);
-        aGRTS = aS as Geom_RectangularTrimmedSurface;
+        Surface? aS = Tool.Surface(aF, out Placement _);
+        aGRTS = aS as TrimmedSurface;
         if (aGRTS is not null)
         {
-            aGP = aGRTS.BasisSurface() as Geom_Plane;
+            aGP = aGRTS.BasisSurface() as PlaneSurface;
         }
         else
         {
-            aGP = aS as Geom_Plane;
+            aGP = aS as PlaneSurface;
         }
         //
         return aGP is not null;

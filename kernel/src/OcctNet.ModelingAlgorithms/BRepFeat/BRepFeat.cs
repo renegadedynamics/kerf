@@ -3,13 +3,19 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 using static Occt.BRepFeat_StatusError;
 
 namespace Occt;
@@ -27,32 +33,32 @@ public static class BRepFeat
     private const int NECHANTBARYC = 11;
 
     /// <summary>Sample points on the edges of <paramref name="theShape"/> (LocOpe's).</summary>
-    public static void SampleEdges(in TopoDS_Shape theShape, NCollection_Sequence<Point3D> theSeq)
+    public static void SampleEdges(in Shape theShape, NCollection_Sequence<Point3D> theSeq)
     {
         LocOpe.SampleEdges(theShape, theSeq);
     }
 
     /// <summary>The barycentre of the edges and vertices of a shape.</summary>
-    public static void Barycenter(in TopoDS_Shape S, out Point3D B)
+    public static void Barycenter(in Shape S, out Point3D B)
     {
-        NCollection_Map<TopoDS_Shape> theMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp_Explorer exp = new(S, TopAbs_EDGE);
-        Geom_Curve C;
+        NCollection_Map<Shape> theMap = new(ShapeHasher.Instance);
+        Explorer exp = new(S, ShapeType.Edge);
+        Curve3D C;
         double prm;
         Xyz Bar = new(0.0, 0.0, 0.0);
         int i, nbp = 0;
 
         for (; exp.More(); exp.Next())
         {
-            TopoDS_Edge edg = TopoDS.Edge(exp.Current());
+            Edge edg = ShapeCasts.Edge(exp.Current());
             if (!theMap.Add(edg))
             {
                 continue;
             }
-            if (!BRep_Tool.Degenerated(edg))
+            if (!global::Kerf.Engine.Topology.Brep.Tool.Degenerated(edg))
             {
-                C = BRep_Tool.Curve(edg, out Placement Loc, out double f, out double l)!;
-                C = (Geom_Curve)C.Transformed(Loc.Transformation());
+                C = global::Kerf.Engine.Topology.Brep.Tool.Curve(edg, out Placement Loc, out double f, out double l)!;
+                C = (Curve3D)C.Transformed(Loc.Transformation());
                 for (i = 1; i < NECHANTBARYC; i++)
                 {
                     prm = ((NECHANTBARYC - i) * f + i * l) / NECHANTBARYC;
@@ -62,11 +68,11 @@ public static class BRepFeat
             }
         }
         // Adds every vertex
-        for (exp.Init(S, TopAbs_VERTEX); exp.More(); exp.Next())
+        for (exp.Init(S, ShapeType.Vertex); exp.More(); exp.Next())
         {
             if (theMap.Add(exp.Current()))
             {
-                Bar += BRep_Tool.Pnt(TopoDS.Vertex(exp.Current())).XYZ();
+                Bar += global::Kerf.Engine.Topology.Brep.Tool.Pnt(ShapeCasts.Vertex(exp.Current())).XYZ();
                 nbp++;
             }
         }
@@ -77,40 +83,40 @@ public static class BRepFeat
     }
 
     /// <summary>The "parametric" barycentre of a shape on a curve.</summary>
-    public static double ParametricBarycenter(in TopoDS_Shape S, Geom_Curve CC)
+    public static double ParametricBarycenter(in Shape S, Curve3D CC)
     {
-        NCollection_Map<TopoDS_Shape> theMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp_Explorer exp = new(S, TopAbs_EDGE);
-        Geom_Curve C;
+        NCollection_Map<Shape> theMap = new(ShapeHasher.Instance);
+        Explorer exp = new(S, ShapeType.Edge);
+        Curve3D C;
         double prm;
         int i, nbp = 0;
-        GeomAdaptor_Curve TheCurve = new(CC);
-        Extrema_ExtPC extpc = new();
+        CurveAdaptor TheCurve = new(CC);
+        CurvePointExtrema extpc = new();
         extpc.Initialize(TheCurve, CC.FirstParameter(), CC.LastParameter());
         double parbar = 0;
 
         for (; exp.More(); exp.Next())
         {
-            TopoDS_Edge edg = TopoDS.Edge(exp.Current());
+            Edge edg = ShapeCasts.Edge(exp.Current());
             if (!theMap.Add(edg))
             {
                 continue;
             }
-            if (!BRep_Tool.Degenerated(edg))
+            if (!global::Kerf.Engine.Topology.Brep.Tool.Degenerated(edg))
             {
-                C = BRep_Tool.Curve(edg, out Placement Loc, out double f, out double l)!;
-                C = (Geom_Curve)C.Transformed(Loc.Transformation());
+                C = global::Kerf.Engine.Topology.Brep.Tool.Curve(edg, out Placement Loc, out double f, out double l)!;
+                C = (Curve3D)C.Transformed(Loc.Transformation());
                 for (i = 1; i < NECHANTBARYC; i++)
                 {
                     prm = ((NECHANTBARYC - i) * f + i * l) / NECHANTBARYC;
                     Point3D pone = C.Value(prm);
                     // On projette sur CC
                     extpc.Perform(pone);
-                    if (extpc.IsDone() && extpc.NbExt() >= 1)
+                    if (extpc.IsDone && extpc.ExtCount >= 1)
                     {
                         double Dist2Min = extpc.SquareDistance(1);
                         int kmin = 1;
-                        for (int k = 2; k <= extpc.NbExt(); k++)
+                        for (int k = 2; k <= extpc.ExtCount; k++)
                         {
                             double Dist2 = extpc.SquareDistance(k);
                             if (Dist2 < Dist2Min)
@@ -127,17 +133,17 @@ public static class BRepFeat
             }
         }
         // Adds every vertex
-        for (exp.Init(S, TopAbs_VERTEX); exp.More(); exp.Next())
+        for (exp.Init(S, ShapeType.Vertex); exp.More(); exp.Next())
         {
             if (theMap.Add(exp.Current()))
             {
-                Point3D pone = BRep_Tool.Pnt(TopoDS.Vertex(exp.Current()));
+                Point3D pone = global::Kerf.Engine.Topology.Brep.Tool.Pnt(ShapeCasts.Vertex(exp.Current()));
                 // On projette sur CC
                 extpc.Perform(pone);
-                if (extpc.IsDone() && extpc.NbExt() >= 1)
+                if (extpc.IsDone && extpc.ExtCount >= 1)
                 {
                     double Dist2Min = extpc.SquareDistance(1);
-                    for (int k = 2; k <= extpc.NbExt(); k++)
+                    for (int k = 2; k <= extpc.ExtCount; k++)
                     {
                         double Dist2 = extpc.SquareDistance(k);
                         if (Dist2 < Dist2Min)
@@ -158,11 +164,11 @@ public static class BRepFeat
     /// The parameters on <paramref name="CC"/> of the intersections with the shape (taking account of their orientation
     /// when <paramref name="theOri"/> is true) and of the projections of its edges and vertices.
     /// </summary>
-    public static void ParametricMinMax(in TopoDS_Shape S, Geom_Curve CC, out double prmin, out double prmax,
+    public static void ParametricMinMax(in Shape S, Curve3D CC, out double prmin, out double prmax,
                                         out double prbmin, out double prbmax, out bool flag, bool theOri = false)
     {
         LocOpe_CSIntersector ASI = new(S);
-        NCollection_Sequence<Geom_Curve?> scur = new();
+        NCollection_Sequence<Curve3D?> scur = new();
         scur.Append(CC);
         ASI.Perform(scur);
         if (ASI.IsDone() && ASI.NbPoints(1) >= 1)
@@ -174,8 +180,8 @@ public static class BRepFeat
             }
             else
             {
-                TopAbs_Orientation Ori = ASI.Point(1, 1).Orientation();
-                if (Ori == TopAbs_FORWARD)
+                Orientation Ori = ASI.Point(1, 1).Orientation();
+                if (Ori == Forward)
                 {
                     prmin = ASI.Point(1, 1).Parameter();
                     prmax = ASI.Point(1, ASI.NbPoints(1)).Parameter();
@@ -195,38 +201,38 @@ public static class BRepFeat
             flag = false;
         }
 
-        NCollection_Map<TopoDS_Shape> theMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp_Explorer exp = new(S, TopAbs_EDGE);
-        Geom_Curve C;
+        NCollection_Map<Shape> theMap = new(ShapeHasher.Instance);
+        Explorer exp = new(S, ShapeType.Edge);
+        Curve3D C;
         double prm;
         int i;
-        GeomAdaptor_Curve TheCurve = new(CC);
-        Extrema_ExtPC extpc = new();
+        CurveAdaptor TheCurve = new(CC);
+        CurvePointExtrema extpc = new();
         extpc.Initialize(TheCurve, CC.FirstParameter(), CC.LastParameter());
         prbmin = RealLast();
         prbmax = RealFirst();
         for (; exp.More(); exp.Next())
         {
-            TopoDS_Edge edg = TopoDS.Edge(exp.Current());
+            Edge edg = ShapeCasts.Edge(exp.Current());
             if (!theMap.Add(edg))
             {
                 continue;
             }
-            if (!BRep_Tool.Degenerated(edg))
+            if (!global::Kerf.Engine.Topology.Brep.Tool.Degenerated(edg))
             {
-                C = BRep_Tool.Curve(edg, out Placement Loc, out double f, out double l)!;
-                C = (Geom_Curve)C.Transformed(Loc.Transformation());
+                C = global::Kerf.Engine.Topology.Brep.Tool.Curve(edg, out Placement Loc, out double f, out double l)!;
+                C = (Curve3D)C.Transformed(Loc.Transformation());
                 for (i = 1; i < NECHANTBARYC; i++)
                 {
                     prm = ((NECHANTBARYC - i) * f + i * l) / NECHANTBARYC;
                     Point3D pone = C.Value(prm);
                     // On projette sur CC
                     extpc.Perform(pone);
-                    if (extpc.IsDone() && extpc.NbExt() >= 1)
+                    if (extpc.IsDone && extpc.ExtCount >= 1)
                     {
                         double Dist2Min = extpc.SquareDistance(1);
                         int kmin = 1;
-                        for (int k = 2; k <= extpc.NbExt(); k++)
+                        for (int k = 2; k <= extpc.ExtCount; k++)
                         {
                             double Dist2 = extpc.SquareDistance(k);
                             if (Dist2 < Dist2Min)
@@ -249,18 +255,18 @@ public static class BRepFeat
             }
         }
         // Adds every vertex
-        for (exp.Init(S, TopAbs_VERTEX); exp.More(); exp.Next())
+        for (exp.Init(S, ShapeType.Vertex); exp.More(); exp.Next())
         {
             if (theMap.Add(exp.Current()))
             {
-                Point3D pone = BRep_Tool.Pnt(TopoDS.Vertex(exp.Current()));
+                Point3D pone = global::Kerf.Engine.Topology.Brep.Tool.Pnt(ShapeCasts.Vertex(exp.Current()));
                 // On projette sur CC
                 extpc.Perform(pone);
-                if (extpc.IsDone() && extpc.NbExt() >= 1)
+                if (extpc.IsDone && extpc.ExtCount >= 1)
                 {
                     double Dist2Min = extpc.SquareDistance(1);
                     int kmin = 1;
-                    for (int k = 2; k <= extpc.NbExt(); k++)
+                    for (int k = 2; k <= extpc.ExtCount; k++)
                     {
                         double Dist2 = extpc.SquareDistance(k);
                         if (Dist2 < Dist2Min)
@@ -283,15 +289,15 @@ public static class BRepFeat
         }
     }
 
-    private static bool IsIn(BRepTopAdaptor_FClass2d FC, Geom2dAdaptor_Curve AC)
+    private static bool IsIn(BRepTopAdaptor_FClass2d FC, CurveAdaptor2D AC)
     {
         double Def = 100 * global::Kerf.Engine.Foundation.Precision.Confusion();
-        GCPnts_QuasiUniformDeflection QU = new(AC, Def);
+        QuasiUniformDeflection QU = new(AC, Def);
 
-        for (int i = 1; i <= QU.NbPoints(); i++)
+        for (int i = 1; i <= QU.PointCount; i++)
         {
             Point2D P = AC.Value(QU.Parameter(i));
-            if (FC.Perform(P, false) == TopAbs_OUT)
+            if (FC.Perform(P, false) == Out)
             {
                 return false;
             }
@@ -301,7 +307,7 @@ public static class BRepFeat
 
     // Recadre en U.
     private static void PutInBoundsU(double umin, double umax, double eps, double period, double f, double l,
-                                     ref Geom2d_Curve C2d)
+                                     ref Curve2D C2d)
     {
         Point2D Pf = C2d.Value(f);
         Point2D Pl = C2d.Value(l);
@@ -347,7 +353,7 @@ public static class BRepFeat
 
     // Recadre en V.
     private static void PutInBoundsV(double vmin, double vmax, double eps, double period, double f, double l,
-                                     ref Geom2d_Curve C2d)
+                                     ref Curve2D C2d)
     {
         Point2D Pf = C2d.Value(f);
         Point2D Pl = C2d.Value(l);
@@ -392,42 +398,42 @@ public static class BRepFeat
     }
 
     // OCCT.NET: OCCT translates the projected curve in place; a frozen one is translated on a copy (decision 974).
-    private static Geom2d_Curve Writable(Geom2d_Curve theCurve) =>
-        theCurve.IsFrozen ? (Geom2d_Curve)theCurve.Copy() : theCurve;
+    private static Curve2D Writable(Curve2D theCurve) =>
+        theCurve.IsFrozen ? (Curve2D)theCurve.Copy() : theCurve;
 
     /// <summary>True when the edges of <paramref name="F1"/>, projected on <paramref name="F2"/>, lie inside it.</summary>
-    public static bool IsInside(in TopoDS_Face F1, in TopoDS_Face F2)
+    public static bool IsInside(in Face F1, in Face F2)
     {
-        TopExp_Explorer exp = new();
-        exp.Init(F1, TopAbs_EDGE);
+        Explorer exp = new();
+        exp.Init(F1, ShapeType.Edge);
 
         double uperiod = 0, vperiod = 0;
         int flagu = 0, flagv = 0;
-        Geom_Surface S = BRep_Tool.Surface(F2)!;
-        BRepTools.UVBounds(F2, out double umin, out double umax, out double vmin, out double vmax);
+        Surface S = global::Kerf.Engine.Topology.Brep.Tool.Surface(F2)!;
+        BrepTools.UVBounds(F2, out double umin, out double umax, out double vmin, out double vmax);
 
-        if (S.IsUPeriodic())
+        if (S.IsUPeriodic)
         {
             flagu = 1;
             uperiod = S.UPeriod();
         }
 
-        if (S.IsVPeriodic())
+        if (S.IsVPeriodic)
         {
             flagv = 1;
             vperiod = S.VPeriod();
         }
-        TopoDS_Shape aLocalShape = F2.Oriented(TopAbs_FORWARD);
-        BRepTopAdaptor_FClass2d FC = new(TopoDS.Face(aLocalShape), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Shape aLocalShape = F2.Oriented(Forward);
+        BRepTopAdaptor_FClass2d FC = new(ShapeCasts.Face(aLocalShape), global::Kerf.Engine.Foundation.Precision.Confusion());
         for (; exp.More(); exp.Next())
         {
-            Geom_Curve C0 = BRep_Tool.Curve(TopoDS.Edge(exp.Current()), out double f1, out double l1)!;
-            Geom2d_Curve C = GeomProjLib.Curve2d(C0, f1, l1, S)!;
-            TopoDS_Edge E = TopoDS.Edge(exp.Current());
+            Curve3D C0 = global::Kerf.Engine.Topology.Brep.Tool.Curve(ShapeCasts.Edge(exp.Current()), out double f1, out double l1)!;
+            Curve2D C = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(C0, f1, l1, S)!;
+            Edge E = ShapeCasts.Edge(exp.Current());
             if (flagu == 1 || flagv == 1)
             {
-                double eps = BRep_Tool.Tolerance(E);
-                BRep_Tool.Range(E, out f1, out l1);
+                double eps = global::Kerf.Engine.Topology.Brep.Tool.Tolerance(E);
+                global::Kerf.Engine.Topology.Brep.Tool.Range(E, out f1, out l1);
                 if (flagu == 1)
                 {
                     PutInBoundsU(umin, umax, eps, uperiod, f1, l1, ref C);
@@ -437,7 +443,7 @@ public static class BRepFeat
                     PutInBoundsV(vmin, vmax, eps, vperiod, f1, l1, ref C);
                 }
             }
-            Geom2dAdaptor_Curve AC = new(C, f1, l1);
+            CurveAdaptor2D AC = new(C, f1, l1);
             if (!IsIn(FC, AC))
             {
                 return false;
@@ -450,7 +456,7 @@ public static class BRepFeat
     /// Replaces <paramref name="FUntil"/> by a face on its surface (a plane, cylinder or cone, else a null face) large
     /// enough to cut through <paramref name="Sbase"/>.
     /// </summary>
-    public static void FaceUntil(in TopoDS_Shape Sbase, ref TopoDS_Face FUntil)
+    public static void FaceUntil(in Shape Sbase, ref Face FUntil)
     {
         Box B = new();
         BRepBndLib.Add(Sbase, ref B);
@@ -458,15 +464,15 @@ public static class BRepFeat
         B.Get(out x[0], out y[0], out z[0], out x[1], out y[1], out z[1]);
         double diam = 10.0 * Math.Sqrt(B.SquareExtent());
 
-        Geom_Surface s = BRep_Tool.Surface(FUntil)!;
-        if (s is Geom_RectangularTrimmedSurface aTrimmed)
+        Surface s = global::Kerf.Engine.Topology.Brep.Tool.Surface(FUntil)!;
+        if (s is TrimmedSurface aTrimmed)
         {
             s = aTrimmed.BasisSurface();
         }
-        Geom_RectangularTrimmedSurface str;
-        if (s.GetType() == typeof(Geom_Plane))
+        TrimmedSurface str;
+        if (s.GetType() == typeof(PlaneSurface))
         {
-            Plane3D aPln = ((Geom_Plane)s).Pln();
+            Plane3D aPln = ((PlaneSurface)s).Pln();
             double u, v, umin = RealLast(), umax = -umin, vmin = RealLast(), vmax = -vmin;
             for (int i = 0; i < 2; i++)
             {
@@ -499,11 +505,11 @@ public static class BRepFeat
             umax += diam;
             vmin -= diam;
             vmax += diam;
-            str = new Geom_RectangularTrimmedSurface(s, umin, umax, vmin, vmax, true, true);
+            str = new TrimmedSurface(s, umin, umax, vmin, vmax, true, true);
         }
-        else if (s.GetType() == typeof(Geom_CylindricalSurface))
+        else if (s.GetType() == typeof(CylindricalSurface))
         {
-            Cylinder aCyl = ((Geom_CylindricalSurface)s).Cylinder();
+            Cylinder aCyl = ((CylindricalSurface)s).Cylinder();
             double u, v, vmin = RealLast(), vmax = -vmin;
             for (int i = 0; i < 2; i++)
             {
@@ -526,11 +532,11 @@ public static class BRepFeat
             }
             vmin -= diam;
             vmax += diam;
-            str = new Geom_RectangularTrimmedSurface(s, vmin, vmax, false, true);
+            str = new TrimmedSurface(s, vmin, vmax, false, true);
         }
-        else if (s.GetType() == typeof(Geom_ConicalSurface))
+        else if (s.GetType() == typeof(ConicalSurface))
         {
-            Cone aCon = ((Geom_ConicalSurface)s).Cone();
+            Cone aCon = ((ConicalSurface)s).Cone();
             double u, v, vmin = RealLast(), vmax = -vmin;
             for (int i = 0; i < 2; i++)
             {
@@ -553,7 +559,7 @@ public static class BRepFeat
             }
             vmin -= diam;
             vmax += diam;
-            str = new Geom_RectangularTrimmedSurface(s, vmin, vmax, false, true);
+            str = new TrimmedSurface(s, vmin, vmax, false, true);
         }
         else
         {
@@ -568,30 +574,30 @@ public static class BRepFeat
     /// A solid made of the faces of <paramref name="SRef"/>, oriented so that <paramref name="Fac"/> has the
     /// orientation <paramref name="Orf"/> (a null solid when the faces don't make one shell).
     /// </summary>
-    public static TopoDS_Solid Tool(in TopoDS_Shape SRef, in TopoDS_Face Fac, TopAbs_Orientation Orf)
+    public static Solid Tool(in Shape SRef, in Face Fac, Orientation Orf)
     {
-        NCollection_List<TopoDS_Shape> lfaces = new();
-        TopExp_Explorer exp = new(SRef, TopAbs_FACE);
+        NCollection_List<Shape> lfaces = new();
+        Explorer exp = new(SRef, ShapeType.Face);
         for (; exp.More(); exp.Next())
         {
-            if (exp.Current().ShapeType() == TopAbs_FACE)
+            if (exp.Current().ShapeType() == ShapeType.Face)
             {
                 lfaces.Append(exp.Current());
             }
         }
 
         LocOpe_BuildShape bs = new(lfaces);
-        TopoDS_Shape Res = bs.InternalShape();
-        TopoDS_Shell Sh = new();
-        if (Res.ShapeType() == TopAbs_SHELL)
+        Shape Res = bs.InternalShape();
+        Shell Sh = new();
+        if (Res.ShapeType() == ShapeType.Shell)
         {
             // faire un solide
-            Sh = TopoDS.Shell(Res);
+            Sh = ShapeCasts.Shell(Res);
         }
-        else if (Res.ShapeType() == TopAbs_SOLID)
+        else if (Res.ShapeType() == ShapeType.Solid)
         {
-            exp.Init(Res, TopAbs_SHELL);
-            Sh = TopoDS.Shell(exp.Current());
+            exp.Init(Res, ShapeType.Shell);
+            Sh = ShapeCasts.Shell(exp.Current());
             exp.Next();
             if (exp.More())
             {
@@ -599,17 +605,17 @@ public static class BRepFeat
             }
         }
 
-        if (Sh.IsNull())
+        if (Sh.IsNull)
         {
-            TopoDS_Solid So = new();
+            Solid So = new();
             return So;
         }
 
-        Sh.Orientation(TopAbs_FORWARD);
+        Sh.Orientation(Forward);
 
-        TopAbs_Orientation orient = TopAbs_FORWARD;
+        Orientation orient = Forward;
 
-        for (exp.Init(Sh, TopAbs_FACE); exp.More(); exp.Next())
+        for (exp.Init(Sh, ShapeType.Face); exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(Fac))
             {
@@ -619,8 +625,8 @@ public static class BRepFeat
         }
 
         bool reverse = false;
-        if ((orient == Fac.Orientation() && Orf == TopAbs_REVERSED)
-            || (orient != Fac.Orientation() && Orf == TopAbs_FORWARD))
+        if ((orient == Fac.Orientation() && Orf == Reversed)
+            || (orient != Fac.Orientation() && Orf == Forward))
         {
             reverse = true;
         }
@@ -630,8 +636,8 @@ public static class BRepFeat
             Sh.Reverse();
         }
 
-        BRep_Builder B = new();
-        TopoDS_Solid Soc = new();
+        BrepBuilder B = new();
+        Solid Soc = new();
         B.MakeSolid(ref Soc);
         B.Add(Soc, Sh);
         return Soc;

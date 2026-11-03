@@ -1,4 +1,5 @@
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Occt;
 
@@ -13,18 +14,18 @@ public partial class Solid : Shape3D
     public Solid() : base(null) { }
 
     /// <summary>A solid wrapping an OCCT solid.</summary>
-    public Solid(TopoDS_Solid solid, string label = "", Color? color = null) : base(solid, label, color) { }
+    public Solid(global::Kerf.Topology.Solid solid, string label = "", Color? color = null) : base(solid, label, color) { }
 
     /// <summary>The solid a closed shell bounds.</summary>
     public Solid(Shell shell, string label = "", Color? color = null) : base(MakeSolid(shell), label, color) { }
 
-    private static TopoDS_Solid MakeSolid(Shell shell)
+    private static global::Kerf.Topology.Solid MakeSolid(Shell shell)
     {
         var fix = new ShapeFix_Solid();
         return fix.SolidFromShell(shell.TopoShell);
     }
 
-    internal TopoDS_Solid TopoSolid => TopoDS.Solid(TopoShape);
+    internal global::Kerf.Topology.Solid TopoSolid => ShapeCasts.Solid(TopoShape);
 
     internal override double Order => 3.0;
 
@@ -40,7 +41,7 @@ public partial class Solid : Shape3D
     {
         var ax2 = (plane ?? Plane.XY).ToGpAx2();
         var maker = new BRepPrimAPI_MakeBox(ax2, length, width, height);
-        return new Solid(TopoDS.Solid(maker.Shape()));
+        return new Solid(ShapeCasts.Solid(maker.Shape()));
     }
 
     /// <summary>A full or partial cone from the plane's origin (default XY).</summary>
@@ -48,7 +49,7 @@ public partial class Solid : Shape3D
     {
         var ax2 = (plane ?? Plane.XY).ToGpAx2();
         var maker = new BRepPrimAPI_MakeCone(ax2, baseRadius, topRadius, height, angle * Constants.DegToRad);
-        return new Solid(TopoDS.Solid(maker.Shape()));
+        return new Solid(ShapeCasts.Solid(maker.Shape()));
     }
 
     /// <summary>A full or partial cylinder with its base centred on the plane's origin (default XY).</summary>
@@ -56,7 +57,7 @@ public partial class Solid : Shape3D
     {
         var ax2 = (plane ?? Plane.XY).ToGpAx2();
         var maker = new BRepPrimAPI_MakeCylinder(ax2, radius, height, angle * Constants.DegToRad);
-        return new Solid(TopoDS.Solid(maker.Shape()));
+        return new Solid(ShapeCasts.Solid(maker.Shape()));
     }
 
     /// <summary>A full or partial sphere centred on the plane's origin (default XY).</summary>
@@ -65,7 +66,7 @@ public partial class Solid : Shape3D
         var ax2 = (plane ?? Plane.XY).ToGpAx2();
         var maker = new BRepPrimAPI_MakeSphere(ax2, radius, angle1 * Constants.DegToRad, angle2 * Constants.DegToRad,
                                                      angle3 * Constants.DegToRad);
-        return new Solid(TopoDS.Solid(maker.Shape()));
+        return new Solid(ShapeCasts.Solid(maker.Shape()));
     }
 
     /// <summary>A full or partial torus centred on the plane's origin (default XY).</summary>
@@ -75,7 +76,7 @@ public partial class Solid : Shape3D
         var ax2 = (plane ?? Plane.XY).ToGpAx2();
         var maker = new BRepPrimAPI_MakeTorus(ax2, majorRadius, minorRadius, startAngle * Constants.DegToRad,
                                                     endAngle * Constants.DegToRad, majorAngle * Constants.DegToRad);
-        return new Solid(TopoDS.Solid(maker.Shape()));
+        return new Solid(ShapeCasts.Solid(maker.Shape()));
     }
 
     /// <summary>A wedge on the plane (default XY).</summary>
@@ -90,7 +91,7 @@ public partial class Solid : Shape3D
     /// <summary>A loft through wires, optionally starting or ending with a vertex; ruled (stepped) or smooth.</summary>
     public static Solid MakeLoft(IEnumerable<Shape> objs, bool ruled = false)
     {
-        return Result(new Solid(TopoDS.Solid(TopoUtil.MakeLoft(objs, true, ruled))));
+        return Result(new Solid(ShapeCasts.Solid(TopoUtil.MakeLoft(objs, true, ruled))));
     }
 
     /// <summary>A box the size of a bounding box, where it is.</summary>
@@ -108,7 +109,7 @@ public partial class Solid : Shape3D
     /// <summary>A face extruded into a solid.</summary>
     public static Solid Extrude(Face obj, Vector direction)
     {
-        return Result(new Solid(TopoDS.Solid(TopoUtil.Extrude(obj.TopoShape, direction))));
+        return Result(new Solid(ShapeCasts.Solid(TopoUtil.Extrude(obj.TopoShape, direction))));
     }
 
     /// <summary>
@@ -123,7 +124,7 @@ public partial class Solid : Shape3D
     /// <inheritdoc cref="ExtrudeLinearWithRotation(Shape2D, Vector, Vector, double)"/>
     public static Solid ExtrudeLinearWithRotation(Wire section, Vector center, Vector normal, double angle, IEnumerable<Wire>? innerWires = null)
     {
-        static TopoDS_Shape ExtrudeAuxSpine(TopoDS_Wire wire, TopoDS_Wire spine, TopoDS_Wire auxSpine)
+        static global::Kerf.Topology.Shape ExtrudeAuxSpine(global::Kerf.Topology.Wire wire, global::Kerf.Topology.Wire spine, global::Kerf.Topology.Wire auxSpine)
         {
             var builder = new BRepOffsetAPI_MakePipeShell(spine);
             builder.SetMode(auxSpine, false);   // an auxiliary spine
@@ -144,11 +145,11 @@ public partial class Solid : Shape3D
         // The result may be wrapped in a compound
         try
         {
-            return Result(new Solid(TopoDS.Solid(difference)));
+            return Result(new Solid(ShapeCasts.Solid(difference)));
         }
         catch (FailureException e) when (e.OcctType == "Standard_TypeMismatch")
         {
-            return Result(new Solid(TopoDS.Solid(TopoUtil.UnwrapCompound(TopoDS.Compound(difference)))));
+            return Result(new Solid(ShapeCasts.Solid(TopoUtil.UnwrapCompound(ShapeCasts.Compound(difference)))));
         }
     }
 
@@ -167,7 +168,7 @@ public partial class Solid : Shape3D
         // The prism shares the profile's face, which the draft would edit: the profile is a copy
         var original = profile;
         var copier = new BRepBuilderAPI_Copy(original.TopoShape, false, false);
-        profile = new Face(TopoDS.Face(copier.Shape()));
+        profile = new Face(ShapeCasts.Face(copier.Shape()));
         var copyHistory = ShapeHistory.FromAlgorithm(copier, [original.TopoShape], profile.TopoShape);
         profileWires = [profile.OuterWire(), .. profile.InnerWires()];
 
@@ -175,7 +176,7 @@ public partial class Solid : Shape3D
         var directionVec = direction.ToGpVec();
         var prismBuilder = new BRepPrimAPI_MakePrism(profile.TopoShape, directionVec);
         var prism = prismBuilder.Shape();
-        var sideFaces = new List<(TopoDS_Face Face, double Angle)>();
+        var sideFaces = new List<(global::Kerf.Topology.Face Face, double Angle)>();
         for (int i = 0; i < profileWires.Count; i++)
         {
             var angle = i > 0 && !flipInner ? -taper : taper;
@@ -183,7 +184,7 @@ public partial class Solid : Shape3D
             {
                 var generated = prismBuilder.Generated(edge.TopoShape);
                 foreach (var side in generated)
-                    sideFaces.Add((TopoDS.Face(side), angle));
+                    sideFaces.Add((ShapeCasts.Face(side), angle));
             }
         }
         bool alongNormal = Math.Abs(pull.Dot(profile.NormalAt())) > 1 - Constants.Tolerance;
@@ -211,7 +212,7 @@ public partial class Solid : Shape3D
                 {
                     draft.Build();
                     if (draft.IsDone())
-                        result = new Solid(TopoDS.Solid(draft.Shape()));
+                        result = new Solid(ShapeCasts.Solid(draft.Shape()));
                 }
             }
             catch (FailureException)
@@ -282,24 +283,24 @@ public partial class Solid : Shape3D
         intersectOp.SetNonDestructive(true);   // leave the target's tolerances alone
         intersectOp.Build();
         var intersection = intersectOp.Shape();
-        var faceExp = new TopExp_Explorer(intersection, TopAbs_ShapeEnum.TopAbs_FACE);
+        var faceExp = new Explorer(intersection, global::Kerf.Topology.ShapeType.Face);
         if (!faceExp.More())
             throw new ArgumentException("No intersection: extrusion does not contact target");
         var history = intersectOp.History()!;
-        var modifiedTargetFaces = new List<TopoDS_Shape>();
-        var faceExplorer = new TopExp_Explorer(target.TopoShape, TopAbs_ShapeEnum.TopAbs_FACE);
+        var modifiedTargetFaces = new List<global::Kerf.Topology.Shape>();
+        var faceExplorer = new Explorer(target.TopoShape, global::Kerf.Topology.ShapeType.Face);
         for (; faceExplorer.More(); faceExplorer.Next())
         {
-            var targetFace = TopoDS.Face(faceExplorer.Current());
+            var targetFace = ShapeCasts.Face(faceExplorer.Current());
             var modified = history.Modified(targetFace);
-            modifiedTargetFaces.AddRange(modified.Select(m => (TopoDS_Shape)TopoDS.Face(m)));
+            modifiedTargetFaces.AddRange(modified.Select(m => (global::Kerf.Topology.Shape)ShapeCasts.Face(m)));
         }
 
         // 3: sewn into one shell per surface passed through, sorted by distance from the profile
         var sewn = TopoUtil.SewFaces(modifiedTargetFaces);
         var surfaces = new ShapeList<Shape2D>(TopoUtil.TopLevelShapes(sewn).Select(s =>
-            s.IsFace() ? (Shape2D)new Face(TopoDS.Face(s))
-            : s.IsShell() ? new Shell(TopoDS.Shell(s))
+            s.IsFace() ? (Shape2D)new Face(ShapeCasts.Face(s))
+            : s.IsShell() ? new Shell(ShapeCasts.Shell(s))
             : throw new InvalidOperationException($"Invalid sewn shape {TopoUtil.TypeName(s)}"))).SortBy(s => s.DistanceTo(profile));
         var limit = surfaces[until == Until.Next ? 0 : surfaces.Count - 1];
 
@@ -327,7 +328,7 @@ public partial class Solid : Shape3D
     {
         var ax1 = axis.ToGpAx1();
         var builder = new BRepPrimAPI_MakeRevol(section.TopoShape, ax1, angle * Constants.DegToRad, true);
-        return Result(new Solid(TopoDS.Solid(builder.Shape())));
+        return Result(new Solid(ShapeCasts.Solid(builder.Shape())));
     }
 
     /// <inheritdoc cref="Revolve(Face, double, Axis)"/>
@@ -427,7 +428,7 @@ public partial class Solid : Shape3D
         builder.Build();
         if (makeSolid)
             builder.MakeSolid();
-        var swept = Result(new Solid(TopoDS.Solid(builder.Shape())));
+        var swept = Result(new Solid(ShapeCasts.Solid(builder.Shape())));
         if (makeSolid && !swept.IsValid)
             Warnings.Warn("sweep_multi created an invalid solid. The profiles may be too large for the curvature of the path "
                           + "or cross each other along it.");
@@ -452,7 +453,7 @@ public partial class Solid : Shape3D
         builder.Initialize(surface.TopoShape, adjusted, 1.0e-5, BRepOffset_Mode.BRepOffset_Skin, true, false,
                            JoinKind.Intersection, true, true);
         builder.MakeOffsetShape();
-        TopoDS_Shape thickened;
+        global::Kerf.Topology.Shape thickened;
         try
         {
             thickened = builder.Shape();
@@ -461,9 +462,9 @@ public partial class Solid : Shape3D
         {
             throw new InvalidOperationException("Error applying thicken to given surface", e);
         }
-        if (thickened.IsNull())
+        if (thickened.IsNull)
             throw new InvalidOperationException("Error applying thicken to given surface");
-        return Result(new Solid(TopoDS.Solid(thickened)));
+        return Result(new Solid(ShapeCasts.Solid(thickened)));
     }
 
     /// <summary>The solid with a draft of <paramref name="angle"/> degrees applied to planar, cylindrical or conical faces.</summary>
@@ -489,7 +490,7 @@ public partial class Solid : Shape3D
         try
         {
             builder.Build();
-            result = new Solid(TopoDS.Solid(builder.Shape()));
+            result = new Solid(ShapeCasts.Solid(builder.Shape()));
         }
         catch (FailureException e) when (e.OcctType == "StdFail_NotDone")
         {
@@ -638,7 +639,7 @@ public partial class Solid : Shape3D
 public sealed class DraftAngleError : InvalidOperationException
 {
     /// <summary>Creates the error.</summary>
-    public DraftAngleError(string message, Face? face = null, TopoDS_Shape? problematicShape = null, Exception? inner = null)
+    public DraftAngleError(string message, Face? face = null, global::Kerf.Topology.Shape? problematicShape = null, Exception? inner = null)
         : base(message, inner)
     {
         Face = face;
@@ -649,5 +650,5 @@ public sealed class DraftAngleError : InvalidOperationException
     public Face? Face { get; }
 
     /// <summary>The shape OCCT reports as problematic.</summary>
-    public TopoDS_Shape? ProblematicShape { get; }
+    public global::Kerf.Topology.Shape? ProblematicShape { get; }
 }

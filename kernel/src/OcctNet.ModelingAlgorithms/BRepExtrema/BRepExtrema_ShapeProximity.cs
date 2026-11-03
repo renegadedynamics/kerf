@@ -3,9 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2014-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using ProxPnt_Status = Occt.BRepExtrema_ProximityDistTool.ProxPnt_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -24,8 +26,8 @@ public sealed class BRepExtrema_ShapeProximity
     private double myTolerance;
     private bool myIsInitS1;
     private bool myIsInitS2;
-    private readonly NCollection_DynamicArray<TopoDS_Shape> myShapeList1 = new();
-    private readonly NCollection_DynamicArray<TopoDS_Shape> myShapeList2 = new();
+    private readonly NCollection_DynamicArray<Shape> myShapeList1 = new();
+    private readonly NCollection_DynamicArray<Shape> myShapeList2 = new();
     private BRepExtrema_TriangleSet myElementSet1;
     private BRepExtrema_TriangleSet myElementSet2;
     private int myNbSamples1;
@@ -49,7 +51,7 @@ public sealed class BRepExtrema_ShapeProximity
     }
 
     /// <summary>A proximity tool for the two shapes.</summary>
-    public BRepExtrema_ShapeProximity(in TopoDS_Shape theShape1, in TopoDS_Shape theShape2, double theTolerance = 2.0e+100)
+    public BRepExtrema_ShapeProximity(in Shape theShape1, in Shape theShape2, double theTolerance = 2.0e+100)
     {
         myTolerance = theTolerance;
         myElementSet1 = new BRepExtrema_TriangleSet();
@@ -85,10 +87,10 @@ public sealed class BRepExtrema_ShapeProximity
     public NCollection_DataMap<int, NCollection_PackedMapOfInteger> OverlapSubShapes2() => myOverlapTool.OverlapSubShapes2();
 
     /// <summary>The sub-shape of the first shape with the given index (from 0).</summary>
-    public TopoDS_Shape GetSubShape1(int theID) => myShapeList1.Value(theID);
+    public Shape GetSubShape1(int theID) => myShapeList1.Value(theID);
 
     /// <summary>The sub-shape of the second shape with the given index (from 0).</summary>
-    public TopoDS_Shape GetSubShape2(int theID) => myShapeList2.Value(theID);
+    public Shape GetSubShape2(int theID) => myShapeList2.Value(theID);
 
     /// <summary>The set of all the face triangles of the first shape.</summary>
     public BRepExtrema_TriangleSet ElementSet1() => myElementSet1;
@@ -109,18 +111,18 @@ public sealed class BRepExtrema_ShapeProximity
     public ProxPnt_Status ProxPntStatus2() => myProxPntStatus2;
 
     // Assign a map of sub-shapes (edges/faces) of a given shape
-    private static bool initSubShapes(in TopoDS_Shape theShape,
-                                      NCollection_DynamicArray<TopoDS_Shape> theSubshapesList,
+    private static bool initSubShapes(in Shape theShape,
+                                      NCollection_DynamicArray<Shape> theSubshapesList,
                                       ref BRepExtrema_TriangleSet theTriangleSet)
     {
         theSubshapesList.Clear();
 
-        for (var anIter = new TopExp_Explorer(theShape, TopAbs_FACE); anIter.More(); anIter.Next())
+        for (var anIter = new Explorer(theShape, ShapeType.Face); anIter.More(); anIter.Next())
         {
             theSubshapesList.Append(anIter.Current());
         }
 
-        for (var anIter = new TopExp_Explorer(theShape, TopAbs_EDGE); anIter.More(); anIter.Next())
+        for (var anIter = new Explorer(theShape, ShapeType.Edge); anIter.More(); anIter.Next())
         {
             theSubshapesList.Append(anIter.Current());
         }
@@ -131,7 +133,7 @@ public sealed class BRepExtrema_ShapeProximity
     }
 
     /// <summary>Loads the first shape.</summary>
-    public bool LoadShape1(in TopoDS_Shape theShape1)
+    public bool LoadShape1(in Shape theShape1)
     {
         myIsInitS1 = initSubShapes(theShape1, myShapeList1, ref myElementSet1);
 
@@ -148,7 +150,7 @@ public sealed class BRepExtrema_ShapeProximity
     }
 
     /// <summary>Loads the second shape.</summary>
-    public bool LoadShape2(in TopoDS_Shape theShape2)
+    public bool LoadShape2(in Shape theShape2)
     {
         myIsInitS2 = initSubShapes(theShape2, myShapeList2, ref myElementSet2);
 

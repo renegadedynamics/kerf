@@ -7,7 +7,9 @@
 #pragma warning disable CS0168 // locals OCCT declares and never uses
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -17,14 +19,14 @@ public sealed class TopoDSToStep_MakeBrepWithVoids : TopoDSToStep_Root
     private StepShape_BrepWithVoids theBrepWithVoids;
     private StepVisual_TessellatedItem theTessellatedItem;
 
-    public TopoDSToStep_MakeBrepWithVoids(in TopoDS_Solid aSolid, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
+    public TopoDSToStep_MakeBrepWithVoids(in Solid aSolid, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
                                           ProgressRange theProgress = default)
     {
         done = false;
-        TopoDS_Iterator It = new TopoDS_Iterator();
-        var aMap = new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
+        Iterator It = new Iterator();
+        var aMap = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
         var S = new NCollection_Sequence<Transient>();
-        TopoDS_Shell aOutShell = new TopoDS_Shell();
+        Shell aOutShell = new Shell();
 
         StepShape_TopologicalRepresentationItem aItem;
         StepShape_ClosedShell aOuter = null, aCShell;
@@ -51,7 +53,7 @@ public sealed class TopoDSToStep_MakeBrepWithVoids : TopoDSToStep_Root
         int nbshapes = 0;
         for (It.Initialize(aSolid); It.More(); It.Next())
         {
-            if (It.Value().ShapeType() == TopAbs_SHELL)
+            if (It.Value().ShapeType() == ShapeType.Shell)
             {
                 nbshapes++;
             }
@@ -60,10 +62,10 @@ public sealed class TopoDSToStep_MakeBrepWithVoids : TopoDSToStep_Root
         using var aPS = new ProgressScope(theProgress, null, nbshapes);
         for (It.Initialize(aSolid); It.More() && aPS.More(); It.Next())
         {
-            if (It.Value().ShapeType() == TopAbs_SHELL)
+            if (It.Value().ShapeType() == ShapeType.Shell)
             {
-                TopoDS_Shell CurrentShell = TopoDS.Shell(It.Value());
-                if (!aOutShell.IsNull() && !aOutShell.IsEqual(CurrentShell))
+                Shell CurrentShell = ShapeCasts.Shell(It.Value());
+                if (!aOutShell.IsNull && !aOutShell.IsEqual(CurrentShell))
                 { //: e0 abv 25 Mar 98: voids should be reversed
                     //: according to EXPRESS for ABSR
                     CurrentShell.Reverse();
@@ -95,7 +97,7 @@ public sealed class TopoDSToStep_MakeBrepWithVoids : TopoDSToStep_Root
                         aTessShells.Append(aTessShell);
                     }
 
-                    if (!aOutShell.IsNull() && aCShell is not null)
+                    if (!aOutShell.IsNull && aCShell is not null)
                     {
                         if (aOutShell.IsEqual(It.Value()))
                         {
@@ -165,7 +167,7 @@ public sealed class TopoDSToStep_MakeBrepWithVoids : TopoDSToStep_Root
         }
     }
 
-    public TopoDSToStep_MakeBrepWithVoids(in TopoDS_Solid aSolid, Transfer_FinderProcess FP)
+    public TopoDSToStep_MakeBrepWithVoids(in Solid aSolid, Transfer_FinderProcess FP)
         : this(aSolid, FP, new StepData_Factors())
     {
     }

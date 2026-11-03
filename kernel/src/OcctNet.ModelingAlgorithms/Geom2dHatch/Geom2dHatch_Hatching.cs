@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.HatchGen_ErrorStatus;
 
@@ -19,7 +20,7 @@ namespace Occt;
 /// </remarks>
 public sealed class Geom2dHatch_Hatching
 {
-    private readonly Geom2dAdaptor_Curve myCurve;
+    private readonly CurveAdaptor2D myCurve;
     private bool myTrimDone;
     private bool myTrimFailed;
     private readonly NCollection_Sequence<HatchGen_PointOnHatching> myPoints = new();
@@ -30,7 +31,7 @@ public sealed class Geom2dHatch_Hatching
     /// <summary>A hatching on an empty curve.</summary>
     public Geom2dHatch_Hatching()
     {
-        myCurve = new Geom2dAdaptor_Curve();
+        myCurve = new CurveAdaptor2D();
         myTrimDone = false;
         myTrimFailed = false;
         myIsDone = false;
@@ -38,9 +39,9 @@ public sealed class Geom2dHatch_Hatching
     }
 
     /// <summary>A hatching on (a copy of) <paramref name="Curve"/>.</summary>
-    public Geom2dHatch_Hatching(Geom2dAdaptor_Curve Curve)
+    public Geom2dHatch_Hatching(CurveAdaptor2D Curve)
     {
-        myCurve = (Geom2dAdaptor_Curve)Curve.ShallowCopy();
+        myCurve = (CurveAdaptor2D)Curve.ShallowCopy();
         myTrimDone = false;
         myTrimFailed = false;
         myIsDone = false;
@@ -48,10 +49,10 @@ public sealed class Geom2dHatch_Hatching
     }
 
     /// <summary>The curve of the hatching.</summary>
-    public Geom2dAdaptor_Curve Curve() => myCurve;
+    public CurveAdaptor2D Curve() => myCurve;
 
     /// <summary>The curve of the hatching (OCCT's non-const reference: the same object).</summary>
-    public Geom2dAdaptor_Curve ChangeCurve() => myCurve;
+    public CurveAdaptor2D ChangeCurve() => myCurve;
 
     /// <summary>Sets the flag that the trimmings were computed.</summary>
     public void TrimDone(bool Flag)

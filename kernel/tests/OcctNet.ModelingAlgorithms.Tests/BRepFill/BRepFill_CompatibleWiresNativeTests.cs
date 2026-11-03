@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -76,10 +80,10 @@ public class BRepFill_CompatibleWiresNativeTests(ITestOutputHelper output)
         return aText.ToString();
     }
 
-    private static string Text(in TopoDS_Shape theShape)
+    private static string Text(in Shape theShape)
     {
         using StringWriter aW = new(CultureInfo.InvariantCulture) { NewLine = "\n" };
-        BRepTools.Write(theShape, aW);
+        BrepTools.Write(theShape, aW);
         return aW.ToString();
     }
 
@@ -94,11 +98,11 @@ public class BRepFill_CompatibleWiresNativeTests(ITestOutputHelper output)
         return $"{theTag} {aCount}\n{theText}";
     }
 
-    private static string Orient(TopAbs_Orientation theO) => theO switch
+    private static string Orient(Orientation theO) => theO switch
     {
-        TopAbs_Orientation.TopAbs_FORWARD => "F",
-        TopAbs_Orientation.TopAbs_REVERSED => "R",
-        TopAbs_Orientation.TopAbs_INTERNAL => "I",
+        Orientation.Forward => "F",
+        Orientation.Reversed => "R",
+        Orientation.Internal => "I",
         _ => "E",
     };
 
@@ -108,11 +112,11 @@ public class BRepFill_CompatibleWiresNativeTests(ITestOutputHelper output)
     /// <summary>Runs one recorded case on the port and writes what cwrec writes after the input block.</summary>
     private static string Run(Case theCase, out string theInputBefore, out string theInputAfter)
     {
-        BRepTools.Read(out TopoDS_Shape anIn, new StringReader(theCase.Input));
+        BrepTools.Read(out Shape anIn, new StringReader(theCase.Input));
         anIn.TShape()!.FreezeGraph();
         theInputBefore = Text(anIn);
-        NCollection_Sequence<TopoDS_Shape> aSeq = new();
-        for (TopoDS_Iterator anIt = new(anIn); anIt.More(); anIt.Next())
+        NCollection_Sequence<Shape> aSeq = new();
+        for (Iterator anIt = new(anIn); anIt.More(); anIt.Next())
         {
             aSeq.Append(anIt.Value());
         }
@@ -131,21 +135,21 @@ public class BRepFill_CompatibleWiresNativeTests(ITestOutputHelper output)
             }
             aCW.Perform(theCase.WithRotation);
             aOut.Append($"STATUS {(int)aCW.GetStatus()} {(aCW.IsDone() ? 1 : 0)} {(aCW.IsDegeneratedFirstSection() ? 1 : 0)} {(aCW.IsDegeneratedLastSection() ? 1 : 0)}\n");
-            BRep_Builder B = new();
-            TopoDS_Compound anOut = new();
+            BrepBuilder B = new();
+            Compound anOut = new();
             B.MakeCompound(ref anOut);
-            foreach (TopoDS_Shape aW in aCW.Shape())
+            foreach (Shape aW in aCW.Shape())
             {
                 B.Add(anOut, aW);
             }
             aOut.Append(Block("OUT", Text(anOut)));
-            NCollection_IndexedMap<TopoDS_Shape> anInEdges = new(TopTools_ShapeMapHasher.Instance), anOutEdges = new(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(anIn, TopAbs_ShapeEnum.TopAbs_EDGE, anInEdges);
-            TopExp.MapShapes(anOut, TopAbs_ShapeEnum.TopAbs_EDGE, anOutEdges);
+            NCollection_IndexedMap<Shape> anInEdges = new(ShapeHasher.Instance), anOutEdges = new(ShapeHasher.Instance);
+            Exploration.MapShapes(anIn, ShapeType.Edge, anInEdges);
+            Exploration.MapShapes(anOut, ShapeType.Edge, anOutEdges);
             aOut.Append("GEN ");
             for (int i = 1; i <= anInEdges.Extent(); i++)
             {
-                aOut.Append(string.Join(",", aCW.GeneratedShapes(TopoDS.Edge(anInEdges.FindKey(i)))
+                aOut.Append(string.Join(",", aCW.GeneratedShapes(ShapeCasts.Edge(anInEdges.FindKey(i)))
                                               .Select(s => anOutEdges.FindIndex(s) + Orient(s.Orientation()))));
                 aOut.Append(';');
             }

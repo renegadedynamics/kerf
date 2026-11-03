@@ -8,6 +8,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -116,10 +117,10 @@ internal sealed class BRepPrim_Cone : BRepPrim_Revolution
     }
 
     /// <summary>The surface normal should be directed towards the outside.</summary>
-    public override TopoDS_Face MakeEmptyLateralFace()
+    public override Face MakeEmptyLateralFace()
     {
-        Geom_ConicalSurface C = new(new CoordinateSystem(Axes()), myHalfAngle, myRadius);
-        TopoDS_Face F = new();
+        ConicalSurface C = new(new CoordinateSystem(Axes()), myHalfAngle, myRadius);
+        Face F = new();
         myBuilder.Builder().MakeFace(ref F, C, global::Kerf.Engine.Foundation.Precision.Confusion());
         return F;
     }
@@ -131,8 +132,8 @@ internal sealed class BRepPrim_Cone : BRepPrim_Revolution
         Vector3D V = new(Axes().XDirection());
         V *= myRadius;
         A.Translate(V);
-        Geom_Line L = new(A);
-        Geom2d_Line L2d = new(new Point2D(myRadius, 0), new Direction2D(Math.Sin(myHalfAngle), Math.Cos(myHalfAngle)));
+        LineCurve3D L = new(A);
+        LineCurve2D L2d = new(new Point2D(myRadius, 0), new Direction2D(Math.Sin(myHalfAngle), Math.Cos(myHalfAngle)));
         Meridian(L, L2d);
     }
 

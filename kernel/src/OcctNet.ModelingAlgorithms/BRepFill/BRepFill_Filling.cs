@@ -5,11 +5,16 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Schematiq.Collections;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -33,12 +38,12 @@ public class BRepFill_Filling
     private readonly NCollection_Sequence<BRepFill_EdgeFaceAndOrder> myConstraints = new();
     private readonly NCollection_Sequence<BRepFill_FaceAndOrder> myFreeConstraints = new();
     private readonly NCollection_Sequence<GeomPlate_PointConstraint> myPoints = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myOldNewMap = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, Shape> myOldNewMap = new(ShapeHasher.Instance);
     // OCCT.NET: frozen. The boundary's vertices BuildWires' MakeWire replaced by its copies for write (see BuildWires).
-    private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myVertexCopies = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_List<TopoDS_Shape> myGenerated = new();
-    private TopoDS_Face myFace = new();
-    private TopoDS_Face myInitFace = new();
+    private readonly NCollection_DataMap<Shape, Shape> myVertexCopies = new(ShapeHasher.Instance);
+    private readonly NCollection_List<Shape> myGenerated = new();
+    private Face myFace = new();
+    private Face myInitFace = new();
     private double myTol2d;
     private double myTol3d;
     private double myTolAng;
@@ -52,13 +57,13 @@ public class BRepFill_Filling
     private bool myIsInitFaceGiven;
     private bool myIsDone;
 
-    private static Vector3D MakeFinVec(in TopoDS_Wire aWire, in TopoDS_Vertex aVertex)
+    private static Vector3D MakeFinVec(in Wire aWire, in Vertex aVertex)
     {
-        TopoDS_Vertex Vfirst, Vlast, Origin = new TopoDS_Vertex();
-        BRepTools_WireExplorer Explo = new BRepTools_WireExplorer(aWire);
+        Vertex Vfirst, Vlast, Origin = new Vertex();
+        WireExplorer Explo = new WireExplorer(aWire);
         for (; Explo.More(); Explo.Next())
         {
-            TopExp.Vertices(Explo.Current(), out Vfirst, out Vlast);
+            Exploration.Vertices(Explo.Current(), out Vfirst, out Vlast);
             if (Vfirst.IsSame(aVertex))
             {
                 Origin = Vlast;
@@ -70,29 +75,29 @@ public class BRepFill_Filling
                 break;
             }
         }
-        return new Vector3D(BRep_Tool.Pnt(Origin), BRep_Tool.Pnt(aVertex));
+        return new Vector3D(Tool.Pnt(Origin), Tool.Pnt(aVertex));
     }
 
-    private static TopoDS_Wire WireFromList(NCollection_List<TopoDS_Shape> Edges)
+    private static Wire WireFromList(NCollection_List<Shape> Edges)
     {
-        BRep_Builder BB = new BRep_Builder();
-        TopoDS_Wire aWire = new TopoDS_Wire();
+        BrepBuilder BB = new BrepBuilder();
+        Wire aWire = new Wire();
         BB.MakeWire(ref aWire);
-        TopoDS_Edge anEdge = TopoDS.Edge(Edges.First());
+        Edge anEdge = ShapeCasts.Edge(Edges.First());
         BB.Add(aWire, anEdge);
         Edges.RemoveFirst();
 
-        TopoDS_Vertex V1, V2;
-        TopExp.Vertices(anEdge, out V1, out V2, true); // with orientation
+        Vertex V1, V2;
+        Exploration.Vertices(anEdge, out V1, out V2, true); // with orientation
 
         while (!Edges.IsEmpty())
         {
-            NCollection_List<TopoDS_Shape>.Iterator itl = new NCollection_List<TopoDS_Shape>.Iterator(Edges);
+            NCollection_List<Shape>.Iterator itl = new NCollection_List<Shape>.Iterator(Edges);
             for (; itl.More(); itl.Next())
             {
-                anEdge = TopoDS.Edge(itl.Value());
-                TopoDS_Vertex V3, V4;
-                TopExp.Vertices(anEdge, out V3, out V4, true); // with orientation
+                anEdge = ShapeCasts.Edge(itl.Value());
+                Vertex V3, V4;
+                Exploration.Vertices(anEdge, out V3, out V4, true); // with orientation
                 if (V1.IsSame(V3) || V1.IsSame(V4) || V2.IsSame(V3) || V2.IsSame(V4))
                 {
                     if (V1.IsSame(V3))
@@ -178,7 +183,7 @@ public class BRepFill_Filling
     }
 
     /// <summary>Loads the face whose surface the filling starts from.</summary>
-    public void LoadInitSurface(in TopoDS_Face aFace)
+    public void LoadInitSurface(in Face aFace)
     {
         myInitFace = aFace;
         myIsInitFaceGiven = true;
@@ -186,9 +191,9 @@ public class BRepFill_Filling
 
     /// <summary>Adds a boundary edge (or, with <paramref name="IsBound"/> false, a free edge) of order G0 (no face).</summary>
     /// <returns>The index of the constraint.</returns>
-    public int Add(in TopoDS_Edge anEdge, Continuity Order, bool IsBound = true)
+    public int Add(in Edge anEdge, Continuity Order, bool IsBound = true)
     {
-        TopoDS_Face NullFace = new TopoDS_Face();
+        Face NullFace = new Face();
         BRepFill_EdgeFaceAndOrder EdgeFaceAndOrder = new BRepFill_EdgeFaceAndOrder(anEdge, NullFace, Order);
         if (IsBound)
         {
@@ -204,7 +209,7 @@ public class BRepFill_Filling
 
     /// <summary>Adds an edge with its support face as a constraint of order <paramref name="Order"/>.</summary>
     /// <returns>The index of the constraint.</returns>
-    public int Add(in TopoDS_Edge anEdge, in TopoDS_Face Support, Continuity Order, bool IsBound = true)
+    public int Add(in Edge anEdge, in Face Support, Continuity Order, bool IsBound = true)
     {
         BRepFill_EdgeFaceAndOrder EdgeFaceAndOrder = new BRepFill_EdgeFaceAndOrder(anEdge, Support, Order);
         if (IsBound)
@@ -221,7 +226,7 @@ public class BRepFill_Filling
 
     /// <summary>Adds a "free constraint": a face that bounds the filling where its boundary has a gap.</summary>
     /// <returns>The index of the constraint.</returns>
-    public int Add(in TopoDS_Face Support, Continuity Order)
+    public int Add(in Face Support, Continuity Order)
     {
         BRepFill_FaceAndOrder FaceAndOrder = new BRepFill_FaceAndOrder(Support, Order);
         myFreeConstraints.Append(FaceAndOrder);
@@ -239,11 +244,11 @@ public class BRepFill_Filling
 
     /// <summary>Adds a point constraint on a face, of order <paramref name="Order"/>.</summary>
     /// <returns>The index of the constraint.</returns>
-    public int Add(double U, double V, in TopoDS_Face Support, Continuity Order)
+    public int Add(double U, double V, in Face Support, Continuity Order)
     {
-        BRepAdaptor_Surface HSurf = new BRepAdaptor_Surface();
+        FaceSurfaceAdaptor HSurf = new FaceSurfaceAdaptor();
         HSurf.Initialize(Support);
-        GeomPlate_PointConstraint aPC = new GeomPlate_PointConstraint(U, V, BRep_Tool.Surface(HSurf.Face())!, (int)Order,
+        GeomPlate_PointConstraint aPC = new GeomPlate_PointConstraint(U, V, Tool.Surface(HSurf.Face())!, (int)Order,
                                                                       myTol3d, myTolAng, myTolCurv);
         myPoints.Append(aPC);
         return (myBoundary.Length() + myFreeConstraints.Length() + myConstraints.Length() + myPoints.Length());
@@ -254,24 +259,24 @@ public class BRepFill_Filling
     // on the face the sweep made, and the constraint would read a null pcurve (OCCT's comment below). For a frozen edge
     // without a pcurve on the support, the support's edge on the same 3D curve, location and range stands for it, as it
     // is OCCT's edge itself (decision 1103).
-    private static TopoDS_Edge EdgeOnSupport(in TopoDS_Edge theEdge, in TopoDS_Face theSupport)
+    private static Edge EdgeOnSupport(in Edge theEdge, in Face theSupport)
     {
-        if (!theEdge.TShape()!.IsFrozen || BRep_Tool.CurveOnSurface(theEdge, theSupport, out _, out _) is not null)
+        if (!theEdge.TShape()!.IsFrozen || Tool.CurveOnSurface(theEdge, theSupport, out _, out _) is not null)
         {
             return theEdge;
         }
-        Geom_Curve? aCurve = BRep_Tool.Curve(theEdge, out Placement aLoc, out double aFirst, out double aLast);
+        Curve3D? aCurve = Tool.Curve(theEdge, out Placement aLoc, out double aFirst, out double aLast);
         if (aCurve is null)
         {
             return theEdge;
         }
-        for (TopExp_Explorer anExp = new(theSupport, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(theSupport, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
-            Geom_Curve? aC = BRep_Tool.Curve(anEdge, out Placement aL, out double aF, out double aLa);
+            Edge anEdge = ShapeCasts.Edge(anExp.Current());
+            Curve3D? aC = Tool.Curve(anEdge, out Placement aL, out double aF, out double aLa);
             if (ReferenceEquals(aC, aCurve) && aL == aLoc && aF == aFirst && aLa == aLast)
             {
-                return TopoDS.Edge(anEdge.Oriented(theEdge.Orientation()));
+                return ShapeCasts.Edge(anEdge.Oriented(theEdge.Orientation()));
             }
         }
         return theEdge;
@@ -279,8 +284,8 @@ public class BRepFill_Filling
 
     private void AddConstraints(NCollection_Sequence<BRepFill_EdgeFaceAndOrder> SeqOfConstraints)
     {
-        TopoDS_Edge CurEdge;
-        TopoDS_Face CurFace;
+        Edge CurEdge;
+        Face CurFace;
         Continuity CurOrder;
 
         GeomPlate_CurveConstraint Constr;
@@ -291,34 +296,34 @@ public class BRepFill_Filling
             CurFace = SeqOfConstraints.Value(i).myFace;
             CurOrder = SeqOfConstraints.Value(i).myOrder;
 
-            if (CurFace.IsNull())
+            if (CurFace.IsNull)
             {
                 if (CurOrder == C0)
                 {
-                    BRepAdaptor_Curve HCurve = new BRepAdaptor_Curve();
+                    EdgeCurveAdaptor HCurve = new EdgeCurveAdaptor();
                     HCurve.Initialize(CurEdge);
-                    Adaptor3d_Curve aHCurve = HCurve; // to avoid ambiguity
+                    CurveAdaptorBase aHCurve = HCurve; // to avoid ambiguity
                     Constr = new BRepFill_CurveConstraint(aHCurve, (int)CurOrder, myNbPtsOnCur, myTol3d);
                 }
                 else
                 { // Pas de representation Topologique
                   // On prend une representation Geometrique : au pif !
-                    Geom_Surface? Surface;
-                    Geom2d_Curve? C2d;
+                    Surface? Surface;
+                    Curve2D? C2d;
                     Placement loc;
                     double f, l;
-                    BRep_Tool.CurveOnSurface(CurEdge, out C2d, out Surface, out loc, out f, out l);
+                    Tool.CurveOnSurface(CurEdge, out C2d, out Surface, out loc, out f, out l);
                     if (Surface is null)
                     {
                         throw new FailureException("Add");
                     }
-                    Surface = (Geom_Surface)Surface.Copy();
+                    Surface = (Surface)Surface.Copy();
                     Surface.Transform(loc.Transformation());
-                    GeomAdaptor_Surface Surf = new GeomAdaptor_Surface(Surface);
-                    Geom2dAdaptor_Curve Curve2d = new Geom2dAdaptor_Curve(C2d!);
+                    SurfaceAdaptor Surf = new SurfaceAdaptor(Surface);
+                    CurveAdaptor2D Curve2d = new CurveAdaptor2D(C2d!);
 
-                    Adaptor3d_CurveOnSurface CurvOnSurf = new Adaptor3d_CurveOnSurface(Curve2d, Surf);
-                    Adaptor3d_CurveOnSurface HCurvOnSurf = CurvOnSurf;
+                    CurveOnSurface CurvOnSurf = new CurveOnSurface(Curve2d, Surf);
+                    CurveOnSurface HCurvOnSurf = CurvOnSurf;
 
                     Constr = new GeomPlate_CurveConstraint(HCurvOnSurf, (int)CurOrder, myNbPtsOnCur, myTol3d, myTolAng,
                                                            myTolCurv);
@@ -326,27 +331,27 @@ public class BRepFill_Filling
             }
             else
             {
-                BRepAdaptor_Surface Surf = new BRepAdaptor_Surface();
+                FaceSurfaceAdaptor Surf = new FaceSurfaceAdaptor();
                 Surf.Initialize(CurFace);
-                BRepAdaptor_Curve2d Curve2d = new BRepAdaptor_Curve2d();
+                EdgeCurve2DAdaptor Curve2d = new EdgeCurve2DAdaptor();
                 Curve2d.Initialize(EdgeOnSupport(CurEdge, CurFace), CurFace);
                 // If CurEdge has no 2d representation on CurFace,
                 // there will be exception "Attempt to access to null object"
                 // in this initialization (null pcurve).
-                Adaptor3d_CurveOnSurface CurvOnSurf = new Adaptor3d_CurveOnSurface(Curve2d, Surf);
-                Adaptor3d_CurveOnSurface HCurvOnSurf = CurvOnSurf;
+                CurveOnSurface CurvOnSurf = new CurveOnSurface(Curve2d, Surf);
+                CurveOnSurface HCurvOnSurf = CurvOnSurf;
 
                 Constr = new BRepFill_CurveConstraint(HCurvOnSurf, (int)CurOrder, myNbPtsOnCur, myTol3d, myTolAng,
                                                       myTolCurv);
             }
             if (myIsInitFaceGiven)
             {
-                Geom2d_Curve? Curve2d;
+                Curve2D? Curve2d;
                 double FirstPar, LastPar;
-                Curve2d = BRep_Tool.CurveOnSurface(CurEdge, myInitFace, out FirstPar, out LastPar);
+                Curve2d = Tool.CurveOnSurface(CurEdge, myInitFace, out FirstPar, out LastPar);
                 if (Curve2d is not null)
                 {
-                    Curve2d = new Geom2d_TrimmedCurve(Curve2d, FirstPar, LastPar);
+                    Curve2d = new TrimmedCurve2D(Curve2d, FirstPar, LastPar);
                     Constr.SetCurve2dOnSurf(Curve2d);
                 }
             }
@@ -354,29 +359,29 @@ public class BRepFill_Filling
         }
     }
 
-    private void BuildWires(NCollection_List<TopoDS_Shape> EdgeList, NCollection_List<TopoDS_Shape> WireList)
+    private void BuildWires(NCollection_List<Shape> EdgeList, NCollection_List<Shape> WireList)
     {
-        NCollection_List<TopoDS_Shape>.Iterator Itl = new NCollection_List<TopoDS_Shape>.Iterator();
+        NCollection_List<Shape>.Iterator Itl = new NCollection_List<Shape>.Iterator();
         int i, j;
 
         while (!EdgeList.IsEmpty())
         {
             BRepLib_MakeWire MW = new BRepLib_MakeWire();
-            TopoDS_Edge FirstEdge = TopoDS.Edge(EdgeList.First());
+            Edge FirstEdge = ShapeCasts.Edge(EdgeList.First());
             MW.Add(FirstEdge);
-            var anAdded = new List<(TopoDS_Edge, TopoDS_Edge)> { (FirstEdge, FirstEdge) }; // OCCT.NET: frozen
+            var anAdded = new List<(Edge, Edge)> { (FirstEdge, FirstEdge) }; // OCCT.NET: frozen
             EdgeList.RemoveFirst();
-            TopoDS_Vertex[] V_wire = new TopoDS_Vertex[2], V_edge = new TopoDS_Vertex[2];
+            Vertex[] V_wire = new Vertex[2], V_edge = new Vertex[2];
 
             for (; ; )
             {
-                TopoDS_Wire CurWire = MW.InternalWire();
-                TopExp.Vertices(CurWire, out V_wire[0], out V_wire[1]);
+                Wire CurWire = MW.InternalWire();
+                Exploration.Vertices(CurWire, out V_wire[0], out V_wire[1]);
                 bool found = false;
                 for (Itl.Initialize(EdgeList); Itl.More(); Itl.Next())
                 {
-                    TopoDS_Edge CurEdge = TopoDS.Edge(Itl.Value());
-                    TopExp.Vertices(CurEdge, out V_edge[0], out V_edge[1]);
+                    Edge CurEdge = ShapeCasts.Edge(Itl.Value());
+                    Exploration.Vertices(CurEdge, out V_edge[0], out V_edge[1]);
                     for (i = 0; i < 2; i++)
                     {
                         for (j = 0; j < 2; j++)
@@ -403,22 +408,22 @@ public class BRepFill_Filling
                 if (!found) // try to find geometric coincidence
                 {
                     Point3D[] P_wire = new Point3D[2];
-                    P_wire[0] = BRep_Tool.Pnt(V_wire[0]);
-                    P_wire[1] = BRep_Tool.Pnt(V_wire[1]);
+                    P_wire[0] = Tool.Pnt(V_wire[0]);
+                    P_wire[1] = Tool.Pnt(V_wire[1]);
                     for (Itl.Initialize(EdgeList); Itl.More(); Itl.Next())
                     {
-                        TopoDS_Edge CurEdge = TopoDS.Edge(Itl.Value());
-                        TopExp.Vertices(CurEdge, out V_edge[0], out V_edge[1]);
+                        Edge CurEdge = ShapeCasts.Edge(Itl.Value());
+                        Exploration.Vertices(CurEdge, out V_edge[0], out V_edge[1]);
                         for (i = 0; i < 2; i++)
                         {
                             for (j = 0; j < 2; j++)
                             {
-                                double aDist = P_wire[i].Distance(BRep_Tool.Pnt(V_edge[j]));
-                                if (aDist < BRep_Tool.Tolerance(V_wire[i]) && aDist < BRep_Tool.Tolerance(V_edge[j]))
+                                double aDist = P_wire[i].Distance(Tool.Pnt(V_edge[j]));
+                                if (aDist < Tool.Tolerance(V_wire[i]) && aDist < Tool.Tolerance(V_edge[j]))
                                 {
                                     MW.Add(CurEdge);
-                                    TopoDS_Edge NewEdge = MW.InternalEdge();
-                                    myOldNewMap.Bind(CurEdge.Oriented(TopAbs_FORWARD), NewEdge.Oriented(TopAbs_FORWARD));
+                                    Edge NewEdge = MW.InternalEdge();
+                                    myOldNewMap.Bind(CurEdge.Oriented(Forward), NewEdge.Oriented(Forward));
                                     anAdded.Add((CurEdge, NewEdge));
                                     EdgeList.Remove(Itl);
                                     found = true;
@@ -451,19 +456,19 @@ public class BRepFill_Filling
     // the moved vertex, and the final edges share it. The port's MakeWire goes on with a copy for write of the wire built
     // so far when the vertex is frozen (BRepLib_MakeWire's remarks): each boundary edge is bound here to the edge
     // standing for it in the finished wire, and each of its vertices that was copied is recorded for Generated.
-    private void BindCopiesForWrite(BRepLib_MakeWire theMW, List<(TopoDS_Edge, TopoDS_Edge)> theAdded)
+    private void BindCopiesForWrite(BRepLib_MakeWire theMW, List<(Edge, Edge)> theAdded)
     {
-        BRepTools_History? aHistory = theMW.InternalHistory();
+        History? aHistory = theMW.InternalHistory();
         if (aHistory is null)
         {
             return;
         }
 
-        static TopoDS_Shape Final(BRepTools_History theHistory, TopoDS_Shape theS)
+        static Shape Final(History theHistory, Shape theS)
         {
             for (int aGuard = 0; aGuard < 100; aGuard++)
             {
-                ISchematiqList<TopoDS_Shape> aModified = theHistory.Modified(theS);
+                ISchematiqList<Shape> aModified = theHistory.Modified(theS);
                 if (aModified.Count == 0 || aModified[0].IsSame(theS))
                 {
                     break;
@@ -473,17 +478,17 @@ public class BRepFill_Filling
             return theS;
         }
 
-        foreach ((TopoDS_Edge anOriginal, TopoDS_Edge anInWire) in theAdded)
+        foreach ((Edge anOriginal, Edge anInWire) in theAdded)
         {
-            TopoDS_Shape aFinal = Final(aHistory, anInWire.Oriented(TopAbs_FORWARD));
+            Shape aFinal = Final(aHistory, anInWire.Oriented(Forward));
             if (!aFinal.IsSame(anInWire))
             {
-                myOldNewMap.Bind(anOriginal.Oriented(TopAbs_FORWARD), aFinal);
+                myOldNewMap.Bind(anOriginal.Oriented(Forward), aFinal);
             }
-            for (var anIt = new TopoDS_Iterator(anOriginal.Oriented(TopAbs_FORWARD)); anIt.More(); anIt.Next())
+            for (var anIt = new Iterator(anOriginal.Oriented(Forward)); anIt.More(); anIt.Next())
             {
-                TopoDS_Shape aV = anIt.Value().Oriented(TopAbs_FORWARD);
-                TopoDS_Shape aFinalV = Final(aHistory, aV);
+                Shape aV = anIt.Value().Oriented(Forward);
+                Shape aFinalV = Final(aHistory, aV);
                 if (!aFinalV.IsSame(aV))
                 {
                     myVertexCopies.Bind(aV, aFinalV);
@@ -492,26 +497,26 @@ public class BRepFill_Filling
         }
     }
 
-    private void FindExtremitiesOfHoles(NCollection_List<TopoDS_Shape> WireList, NCollection_Sequence<TopoDS_Shape> VerSeq)
+    private void FindExtremitiesOfHoles(NCollection_List<Shape> WireList, NCollection_Sequence<Shape> VerSeq)
     {
-        NCollection_Sequence<TopoDS_Shape> WireSeq = new NCollection_Sequence<TopoDS_Shape>();
-        NCollection_List<TopoDS_Shape>.Iterator Itl = new NCollection_List<TopoDS_Shape>.Iterator(WireList);
+        NCollection_Sequence<Shape> WireSeq = new NCollection_Sequence<Shape>();
+        NCollection_List<Shape>.Iterator Itl = new NCollection_List<Shape>.Iterator(WireList);
         for (; Itl.More(); Itl.Next())
         {
             WireSeq.Append(Itl.Value());
         }
 
-        TopoDS_Wire theWire;
-        theWire = TopoDS.Wire(WireSeq.Value(1));
+        Wire theWire;
+        theWire = ShapeCasts.Wire(WireSeq.Value(1));
         WireSeq.Remove(1);
 
-        if (BRep_Tool.IsClosed(theWire))
+        if (Tool.IsClosed(theWire))
         {
             return;
         }
 
-        TopoDS_Vertex Vfirst, Vlast;
-        TopExp.Vertices(theWire, out Vfirst, out Vlast);
+        Vertex Vfirst, Vlast;
+        Exploration.Vertices(theWire, out Vfirst, out Vlast);
 
         if (Vfirst.IsSame(Vlast))
         {
@@ -522,22 +527,22 @@ public class BRepFill_Filling
         }
 
         Vector3D FinVec = MakeFinVec(theWire, Vlast);
-        TopoDS_Vertex theVertex = Vlast;
+        Vertex theVertex = Vlast;
         VerSeq.Append(Vlast);
 
         while (!WireSeq.IsEmpty())
         {
-            TopoDS_Vertex MinVtx = new TopoDS_Vertex();
+            Vertex MinVtx = new Vertex();
             int i, MinInd = 1;
             bool IsLast = false;
             double MinAngle = M_PI;
 
             for (i = 1; i <= WireSeq.Length(); i++)
             {
-                TopoDS_Wire CurWire = TopoDS.Wire(WireSeq.Value(i));
-                TopExp.Vertices(CurWire, out Vfirst, out Vlast);
+                Wire CurWire = ShapeCasts.Wire(WireSeq.Value(i));
+                Exploration.Vertices(CurWire, out Vfirst, out Vlast);
 
-                double angle = FinVec.Angle(new Vector3D(BRep_Tool.Pnt(theVertex), BRep_Tool.Pnt(Vfirst)));
+                double angle = FinVec.Angle(new Vector3D(Tool.Pnt(theVertex), Tool.Pnt(Vfirst)));
                 if (angle < MinAngle)
                 {
                     MinAngle = angle;
@@ -545,7 +550,7 @@ public class BRepFill_Filling
                     MinInd = i;
                     IsLast = true;
                 }
-                angle = FinVec.Angle(new Vector3D(BRep_Tool.Pnt(theVertex), BRep_Tool.Pnt(Vlast)));
+                angle = FinVec.Angle(new Vector3D(Tool.Pnt(theVertex), Tool.Pnt(Vlast)));
                 if (angle < MinAngle)
                 {
                     MinAngle = angle;
@@ -555,8 +560,8 @@ public class BRepFill_Filling
                 }
             }
             VerSeq.Append(MinVtx);
-            TopoDS_Wire MinWire = TopoDS.Wire(WireSeq.Value(MinInd));
-            TopExp.Vertices(MinWire, out Vfirst, out Vlast);
+            Wire MinWire = ShapeCasts.Wire(WireSeq.Value(MinInd));
+            Exploration.Vertices(MinWire, out Vfirst, out Vlast);
             if (IsLast)
             {
                 FinVec = MakeFinVec(MinWire, Vlast);
@@ -570,7 +575,7 @@ public class BRepFill_Filling
             VerSeq.Append(theVertex);
             WireSeq.Remove(MinInd);
         }
-        TopExp.Vertices(theWire, out Vfirst, out Vlast);
+        Exploration.Vertices(theWire, out Vfirst, out Vlast);
         VerSeq.Append(Vfirst);
     }
 
@@ -586,15 +591,15 @@ public class BRepFill_Filling
             return;
         }
 
-        TopoDS_Face CurFace;
+        Face CurFace;
         int i, j;
 
         // Creating array of vertices: extremities of wires
-        NCollection_Sequence<TopoDS_Shape> VerSeq = new NCollection_Sequence<TopoDS_Shape>();
+        NCollection_Sequence<Shape> VerSeq = new NCollection_Sequence<Shape>();
 
         // Building missing bounds
-        NCollection_List<TopoDS_Shape> EdgeList = new NCollection_List<TopoDS_Shape>(),
-                                       WireList = new NCollection_List<TopoDS_Shape>();
+        NCollection_List<Shape> EdgeList = new NCollection_List<Shape>(),
+                                       WireList = new NCollection_List<Shape>();
         for (i = 1; i <= myBoundary.Length(); i++)
         {
             EdgeList.Append(myBoundary.Value(i).myEdge);
@@ -610,16 +615,16 @@ public class BRepFill_Filling
             double U1, V1, U2, V2;
 
             CurFace = myFreeConstraints.Value(j).myFace;
-            BRepAdaptor_Surface HSurf = new BRepAdaptor_Surface();
+            FaceSurfaceAdaptor HSurf = new FaceSurfaceAdaptor();
             HSurf.Initialize(CurFace);
-            Geom_Surface CurSurface = BRep_Tool.Surface(HSurf.Face())!;
+            Surface CurSurface = Tool.Surface(HSurf.Face())!;
 
             for (i = 1; i <= VerSeq.Length(); i += 2)
             {
-                TopoDS_Vertex FirstVtx = TopoDS.Vertex(VerSeq.Value(i));
-                TopoDS_Vertex LastVtx = TopoDS.Vertex(VerSeq.Value(i + 1));
+                Vertex FirstVtx = ShapeCasts.Vertex(VerSeq.Value(i));
+                Vertex LastVtx = ShapeCasts.Vertex(VerSeq.Value(i + 1));
 
-                Point3D FirstPnt = BRep_Tool.Pnt(FirstVtx);
+                Point3D FirstPnt = Tool.Pnt(FirstVtx);
                 Projector.Init(FirstPnt, CurSurface);
                 if (Projector.LowerDistance() > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
@@ -627,7 +632,7 @@ public class BRepFill_Filling
                 }
                 Projector.LowerDistanceParameters(out U1, out V1);
 
-                Point3D LastPnt = BRep_Tool.Pnt(LastVtx);
+                Point3D LastPnt = Tool.Pnt(LastVtx);
                 Projector.Init(LastPnt, CurSurface);
                 if (Projector.LowerDistance() > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
@@ -639,8 +644,8 @@ public class BRepFill_Filling
                 NCollection_Array1<Point2D> Points = new NCollection_Array1<Point2D>(1, 2);
                 Points[1] = new Point2D(U1, V1);
                 Points[2] = new Point2D(U2, V2);
-                Geom2d_BezierCurve Line2d = new Geom2d_BezierCurve(Points);
-                TopoDS_Edge E = new BRepLib_MakeEdge(Line2d, CurSurface, FirstVtx, LastVtx).InternalEdge();
+                BezierCurve2D Line2d = new BezierCurve2D(Points);
+                Edge E = new BRepLib_MakeEdge(Line2d, CurSurface, FirstVtx, LastVtx).InternalEdge();
                 Add(E, CurFace, myFreeConstraints.Value(j).myOrder);
                 VerSeq.Remove(i, i + 1);
                 break;
@@ -650,9 +655,9 @@ public class BRepFill_Filling
         // Load initial surface to myBuilder if it is given
         if (myIsInitFaceGiven)
         {
-            BRepAdaptor_Surface HSurfInit = new BRepAdaptor_Surface();
+            FaceSurfaceAdaptor HSurfInit = new FaceSurfaceAdaptor();
             HSurfInit.Initialize(myInitFace);
-            myBuilder.LoadInitSurface(BRep_Tool.Surface(HSurfInit.Face())!);
+            myBuilder.LoadInitSurface(Tool.Surface(HSurfInit.Face())!);
         }
 
         // Adding constraints to myBuilder
@@ -676,7 +681,7 @@ public class BRepFill_Filling
         }
 
         GeomPlate_Surface GPlate = myBuilder.Surface()!;
-        Geom_BSplineSurface Surface;
+        BSplineSurface Surface;
         // Approximation
         double dmax = 1.1 * myBuilder.G0Error(); //???????????
         if (!myIsInitFaceGiven)
@@ -699,62 +704,62 @@ public class BRepFill_Filling
         }
 
         // Build the final wire and final face
-        NCollection_List<TopoDS_Shape> FinalEdges = new NCollection_List<TopoDS_Shape>();
-        NCollection_HArray1<Geom2d_Curve?> CurvesOnPlate = myBuilder.Curves2d();
-        BRep_Builder BB = new BRep_Builder();
+        NCollection_List<Shape> FinalEdges = new NCollection_List<Shape>();
+        NCollection_HArray1<Curve2D?> CurvesOnPlate = myBuilder.Curves2d();
+        BrepBuilder BB = new BrepBuilder();
         for (i = 1; i <= myBoundary.Length(); i++)
         {
-            TopoDS_Edge InitEdge = myBoundary.Value(i).myEdge;
-            TopoDS_Edge anEdge = InitEdge;
-            anEdge.Orientation(TopAbs_FORWARD);
+            Edge InitEdge = myBoundary.Value(i).myEdge;
+            Edge anEdge = InitEdge;
+            anEdge.Orientation(Forward);
             if (myOldNewMap.IsBound(anEdge))
             {
-                anEdge = TopoDS.Edge(myOldNewMap.Find(anEdge));
+                anEdge = ShapeCasts.Edge(myOldNewMap.Find(anEdge));
             }
 
-            Geom2d_Curve? aCurveOnPlate = CurvesOnPlate.Value(i);
+            Curve2D? aCurveOnPlate = CurvesOnPlate.Value(i);
 
-            TopoDS_Edge NewEdge = TopoDS.Edge(anEdge.EmptyCopied());
+            Edge NewEdge = ShapeCasts.Edge(anEdge.EmptyCopied());
 
-            TopoDS_Vertex V1, V2, NewV1, NewV2;
-            TopExp.Vertices(anEdge, out V1, out V2);
+            Vertex V1, V2, NewV1, NewV2;
+            Exploration.Vertices(anEdge, out V1, out V2);
 
             if (myOldNewMap.IsBound(V1))
             {
-                NewV1 = TopoDS.Vertex(myOldNewMap.Find(V1));
+                NewV1 = ShapeCasts.Vertex(myOldNewMap.Find(V1));
             }
             else
             {
-                Point3D aPnt = BRep_Tool.Pnt(V1);
+                Point3D aPnt = Tool.Pnt(V1);
                 NewV1 = new BRepLib_MakeVertex(aPnt).InternalVertex();
                 BB.UpdateVertex(NewV1, dmax);
-                myOldNewMap.Bind(V1.Oriented(TopAbs_FORWARD), NewV1);
+                myOldNewMap.Bind(V1.Oriented(Forward), NewV1);
             }
 
             if (myOldNewMap.IsBound(V2))
             {
-                NewV2 = TopoDS.Vertex(myOldNewMap.Find(V2));
+                NewV2 = ShapeCasts.Vertex(myOldNewMap.Find(V2));
             }
             else
             {
-                Point3D aPnt = BRep_Tool.Pnt(V2);
+                Point3D aPnt = Tool.Pnt(V2);
                 NewV2 = new BRepLib_MakeVertex(aPnt).InternalVertex();
                 BB.UpdateVertex(NewV2, dmax);
-                myOldNewMap.Bind(V2.Oriented(TopAbs_FORWARD), NewV2);
+                myOldNewMap.Bind(V2.Oriented(Forward), NewV2);
             }
 
-            NewV1.Orientation(TopAbs_FORWARD);
+            NewV1.Orientation(Forward);
             BB.Add(NewEdge, NewV1);
-            NewV2.Orientation(TopAbs_REVERSED);
+            NewV2.Orientation(Reversed);
             BB.Add(NewEdge, NewV2);
             Placement Loc = new Placement();
             BB.UpdateEdge(NewEdge, aCurveOnPlate, Surface, Loc, dmax);
             BRepLib.SameParameter(NewEdge, dmax, true);
             FinalEdges.Append(NewEdge);
-            myOldNewMap.Bind(InitEdge.Oriented(TopAbs_FORWARD), NewEdge.Oriented(TopAbs_FORWARD));
+            myOldNewMap.Bind(InitEdge.Oriented(Forward), NewEdge.Oriented(Forward));
         }
 
-        TopoDS_Wire FinalWire = WireFromList(FinalEdges);
+        Wire FinalWire = WireFromList(FinalEdges);
 
         myFace = new BRepLib_MakeFace(Surface, FinalWire).InternalFace();
     }
@@ -762,30 +767,30 @@ public class BRepFill_Filling
     public bool IsDone() => myIsDone;
 
     /// <summary>The filling face (frozen; a null face if the filling wasn't built).</summary>
-    public TopoDS_Face Face()
+    public Face Face()
     {
         myFace.TShape()?.FreezeGraph();
         return myFace;
     }
 
     /// <summary>The filling face, not frozen, for ported code (BRepOffsetAPI_MakeFilling).</summary>
-    internal TopoDS_Face InternalFace() => myFace;
+    internal Face InternalFace() => myFace;
 
     /// <summary>
     /// The new edge or vertex made from the boundary edge or vertex <paramref name="S"/> (a list of one shape, or
     /// empty; frozen, with the face).
     /// </summary>
-    public ISchematiqList<TopoDS_Shape> Generated(in TopoDS_Shape S)
+    public ISchematiqList<Shape> Generated(in Shape S)
     {
-        NCollection_List<TopoDS_Shape> aList = InternalGenerated(S);
+        NCollection_List<Shape> aList = InternalGenerated(S);
         myFace.TShape()?.FreezeGraph();
         if (aList.IsEmpty())
         {
-            return PackedList<TopoDS_Shape>.Empty;
+            return PackedList<Shape>.Empty;
         }
-        TopoDS_Shape[] aShapes = new TopoDS_Shape[aList.Extent()];
+        Shape[] aShapes = new Shape[aList.Extent()];
         int i = 0;
-        for (NCollection_List<TopoDS_Shape>.Iterator anIt = new(aList); anIt.More(); anIt.Next())
+        for (NCollection_List<Shape>.Iterator anIt = new(aList); anIt.More(); anIt.Next())
         {
             aShapes[i] = anIt.Value();
             aShapes[i].TShape()?.FreezeGraph();
@@ -795,7 +800,7 @@ public class BRepFill_Filling
     }
 
     /// <summary><see cref="Generated"/>: the filling's own list, unfrozen (OCCT's reference), for ported code.</summary>
-    internal NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape S)
+    internal NCollection_List<Shape> InternalGenerated(in Shape S)
     {
         myGenerated.Clear();
 
@@ -804,7 +809,7 @@ public class BRepFill_Filling
             myGenerated.Append(myOldNewMap.Find(S));
         }
         // OCCT.NET: frozen. A boundary vertex BuildWires' MakeWire copied (OCCT moves it in place): its copy's
-        else if (myVertexCopies.Find(S, out TopoDS_Shape aCopy) && myOldNewMap.IsBound(aCopy))
+        else if (myVertexCopies.Find(S, out Shape aCopy) && myOldNewMap.IsBound(aCopy))
         {
             myGenerated.Append(myOldNewMap.Find(aCopy));
         }

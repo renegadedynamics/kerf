@@ -4,7 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -13,7 +15,7 @@ namespace Occt;
 public sealed class BRepFill_OffsetAncestors
 {
     private bool myIsPerform;
-    private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myMap = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, Shape> myMap = new(ShapeHasher.Instance);
 
     /// <summary>An empty tool.</summary>
     public BRepFill_OffsetAncestors()
@@ -30,13 +32,13 @@ public sealed class BRepFill_OffsetAncestors
     /// <summary>Computes the ancestors of the parallel of <paramref name="Paral"/>.</summary>
     public void Perform(BRepFill_OffsetWire Paral)
     {
-        TopoDS_Face Spine = Paral.InternalSpine();
+        Face Spine = Paral.InternalSpine();
 
-        TopExp_Explorer Exp = new();
-        NCollection_List<TopoDS_Shape>.Iterator it = new();
+        Explorer Exp = new();
+        NCollection_List<Shape>.Iterator it = new();
 
         // on itere sur les edges.
-        for (Exp.Init(Spine, TopAbs_EDGE); Exp.More(); Exp.Next())
+        for (Exp.Init(Spine, ShapeType.Edge); Exp.More(); Exp.Next())
         {
             for (it.Initialize(Paral.InternalGeneratedShapes(Exp.Current())); it.More(); it.Next())
             {
@@ -45,7 +47,7 @@ public sealed class BRepFill_OffsetAncestors
         }
 
         // on itere sur les vertex.
-        for (Exp.Init(Spine, TopAbs_VERTEX); Exp.More(); Exp.Next())
+        for (Exp.Init(Spine, ShapeType.Vertex); Exp.More(); Exp.Next())
         {
             for (it.Initialize(Paral.InternalGeneratedShapes(Exp.Current())); it.More(); it.Next())
             {
@@ -60,11 +62,11 @@ public sealed class BRepFill_OffsetAncestors
     public bool IsDone() => myIsPerform;
 
     /// <summary>True if the edge <paramref name="S1"/> of the parallel has an ancestor.</summary>
-    public bool HasAncestor(in TopoDS_Edge S1) => myMap.IsBound(S1);
+    public bool HasAncestor(in Edge S1) => myMap.IsBound(S1);
 
     /// <summary>The ancestor of the edge <paramref name="S1"/> of the parallel.</summary>
     /// <exception cref="NotDoneException"><see cref="Perform"/> hasn't run.</exception>
-    public TopoDS_Shape Ancestor(in TopoDS_Edge S1)
+    public Shape Ancestor(in Edge S1)
     {
         StdFail_NotDone_Raise_if(!myIsPerform,
             "BRepFill_OffsetAncestors::Ancestor() - Perform() should be called before accessing results");

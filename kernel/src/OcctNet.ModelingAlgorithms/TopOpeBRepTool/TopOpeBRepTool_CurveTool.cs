@@ -4,7 +4,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Projection;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 
@@ -66,25 +72,25 @@ public sealed class TopOpeBRepTool_CurveTool
 
     /// <summary>The pcurve of a projected curve, as a Geom2d curve of its type (OCCT's file-level <c>MakePCurve</c>).</summary>
     /// <exception cref="MethodNotImplementedException">The projection is of another type.</exception>
-    internal static Geom2d_Curve MakePCurve(ProjLib_ProjectedCurve PC)
+    internal static Curve2D MakePCurve(ProjectedCurve PC)
     {
-        Geom2d_Curve C2D;
+        Curve2D C2D;
         switch (PC.GetType())
         {
             case Line:
-                C2D = new Geom2d_Line(PC.Line());
+                C2D = new LineCurve2D(PC.Line());
                 break;
             case Circle:
-                C2D = new Geom2d_Circle(PC.Circle());
+                C2D = new CircleCurve2D(PC.Circle());
                 break;
             case Ellipse:
-                C2D = new Geom2d_Ellipse(PC.Ellipse());
+                C2D = new EllipseCurve2D(PC.Ellipse());
                 break;
             case Parabola:
-                C2D = new Geom2d_Parabola(PC.Parabola());
+                C2D = new ParabolaCurve2D(PC.Parabola());
                 break;
             case Hyperbola:
-                C2D = new Geom2d_Hyperbola(PC.Hyperbola());
+                C2D = new HyperbolaCurve2D(PC.Hyperbola());
                 break;
             case BSplineCurve:
                 C2D = PC.BSpline();
@@ -100,8 +106,8 @@ public sealed class TopOpeBRepTool_CurveTool
     /// first &lt; last) on the face <paramref name="S"/>, shifted into the face's bounds on a periodic surface, and the
     /// tolerance reached.
     /// </summary>
-    public static Geom2d_Curve MakePCurveOnFace(in TopoDS_Shape S,
-                                                Geom_Curve C3D,
+    public static Curve2D MakePCurveOnFace(in Shape S,
+                                                Curve3D C3D,
                                                 out double TolReached2d,
                                                 double first = 0.0,
                                                 double last = 0.0)
@@ -112,10 +118,10 @@ public sealed class TopOpeBRepTool_CurveTool
             trim = true;
         }
 
-        TopoDS_Face F = TopoDS.Face(S);
+        Face F = ShapeCasts.Face(S);
         bool compminmaxUV = false;
-        BRepAdaptor_Surface BAS = new(F, compminmaxUV);
-        GeomAdaptor_Curve GAC = new();
+        FaceSurfaceAdaptor BAS = new(F, compminmaxUV);
+        CurveAdaptor GAC = new();
         if (trim)
         {
             GAC.Load(C3D, first, last);
@@ -126,13 +132,13 @@ public sealed class TopOpeBRepTool_CurveTool
         }
 
         // OCCT copies the two adaptors into handles; neither is changed afterwards
-        BRepAdaptor_Surface BAHS = BAS;
-        GeomAdaptor_Curve BAHC = GAC;
-        ProjLib_ProjectedCurve projcurv = new(BAHS, BAHC);
-        Geom2d_Curve C2D = MakePCurve(projcurv);
+        FaceSurfaceAdaptor BAHS = BAS;
+        CurveAdaptor BAHC = GAC;
+        ProjectedCurve projcurv = new(BAHS, BAHC);
+        Curve2D C2D = MakePCurve(projcurv);
         TolReached2d = projcurv.GetTolerance();
 
-        BRepTools.UVBounds(F, out double UMin, out double UMax, out double VMin, out double VMax);
+        BrepTools.UVBounds(F, out double UMin, out double UMax, out double VMin, out double VMax);
 
         double f = GAC.FirstParameter();
         double l = GAC.LastParameter();
@@ -150,7 +156,7 @@ public sealed class TopOpeBRepTool_CurveTool
             bool maxcond = v2 > VLast;
             if (mincond || maxcond)
             {
-                Geom2d_Curve PCT = (Geom2d_Curve)C2D.Copy();
+                Curve2D PCT = (Curve2D)C2D.Copy();
                 // make mirror relative to the isoline of apex -PI/2 or PI/2
                 Transform2D aTrsf = new();
                 Point2D po = new(0, -M_PI / 2);
@@ -177,7 +183,7 @@ public sealed class TopOpeBRepTool_CurveTool
         }
 
         double du = 0.0;
-        if (BAHS.IsUPeriodic())
+        if (BAHS.IsUPeriodic)
         {
             // modified by NIZHNY-MZV  Thu Mar 30 10:03:15 2000
             bool mincond = UMin - u2 > 1e-7;
@@ -189,7 +195,7 @@ public sealed class TopOpeBRepTool_CurveTool
             }
         }
         double dv = 0.0;
-        if (BAHS.IsVPeriodic())
+        if (BAHS.IsVPeriodic)
         {
             // modified by NIZHNY-MZV  Thu Mar 30 10:06:24 2000
             bool mincond = VMin - v2 > 1e-7;
@@ -203,7 +209,7 @@ public sealed class TopOpeBRepTool_CurveTool
 
         if (du != 0.0 || dv != 0.0)
         {
-            Geom2d_Curve PCT = (Geom2d_Curve)C2D.Copy();
+            Curve2D PCT = (Curve2D)C2D.Copy();
             PCT.Translate(new Vector2D(du, dv));
             C2D = PCT;
         }

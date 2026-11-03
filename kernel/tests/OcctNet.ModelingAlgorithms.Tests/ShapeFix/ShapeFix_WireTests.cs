@@ -1,10 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -17,49 +22,49 @@ public class ShapeFix_WireTests
 {
     private const double Conf = 1e-7;
 
-    private static Geom_Plane XOY() => new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
+    private static PlaneSurface XOY() => new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
 
-    private static TopoDS_Face PlaneFace()
+    private static Face PlaneFace()
     {
-        var aB = new BRep_Builder();
-        TopoDS_Face aF = new();
+        var aB = new BrepBuilder();
+        Face aF = new();
         aB.MakeFace(ref aF, XOY(), Conf);
         return TestShapes.Frozen(aF);
     }
 
-    private static TopoDS_Wire MakeWire(params TopoDS_Edge[] theEdges)
+    private static Wire MakeWire(params Edge[] theEdges)
     {
-        var aB = new BRep_Builder();
-        TopoDS_Wire aW = new();
+        var aB = new BrepBuilder();
+        Wire aW = new();
         aB.MakeWire(ref aW);
-        foreach (TopoDS_Edge anE in theEdges)
+        foreach (Edge anE in theEdges)
         {
             aB.Add(aW, anE);
         }
         return aW;
     }
 
-    private static List<TopoDS_Edge> Edges(in TopoDS_Shape theShape)
+    private static List<Edge> Edges(in Shape theShape)
     {
-        var aList = new List<TopoDS_Edge>();
-        for (var anIt = new TopoDS_Iterator(theShape); anIt.More(); anIt.Next())
+        var aList = new List<Edge>();
+        for (var anIt = new Iterator(theShape); anIt.More(); anIt.Next())
         {
-            aList.Add(TopoDS.Edge(anIt.Value()));
+            aList.Add(ShapeCasts.Edge(anIt.Value()));
         }
         return aList;
     }
 
-    private static bool Shares(in TopoDS_Shape theA, in TopoDS_Shape theB) => ReferenceEquals(theA.TShape(), theB.TShape());
+    private static bool Shares(in Shape theA, in Shape theB) => ReferenceEquals(theA.TShape(), theB.TShape());
 
     // the square [0, 10]^2 in XOY, its vertices shared
-    private static TopoDS_Edge[] Square(out TopoDS_Vertex[] theVertices)
+    private static Edge[] Square(out Vertex[] theVertices)
     {
         theVertices =
         [
             TestShapes.Vertex(new Point3D(0, 0, 0)), TestShapes.Vertex(new Point3D(10, 0, 0)),
             TestShapes.Vertex(new Point3D(10, 10, 0)), TestShapes.Vertex(new Point3D(0, 10, 0)),
         ];
-        var anEdges = new TopoDS_Edge[4];
+        var anEdges = new Edge[4];
         for (int i = 0; i < 4; i++)
         {
             anEdges[i] = TestShapes.Edge(theVertices[i], theVertices[(i + 1) % 4]);
@@ -67,10 +72,10 @@ public class ShapeFix_WireTests
         return anEdges;
     }
 
-    private static void AssertConnected(in TopoDS_Wire theWire)
+    private static void AssertConnected(in Wire theWire)
     {
         var sawo = new ShapeAnalysis_WireOrder();
-        var saw = new ShapeAnalysis_Wire(theWire, new TopoDS_Face(), Conf);
+        var saw = new ShapeAnalysis_Wire(theWire, new Face(), Conf);
         saw.CheckOrder(sawo, true, true);
         Assert.False(saw.StatusOrder(ShapeExtend_DONE));
         Assert.True(saw.CheckConnected() == false || !saw.StatusConnected(ShapeExtend_FAIL));
@@ -79,36 +84,36 @@ public class ShapeFix_WireTests
     [Fact]
     public void FixReorder_ShuffledSquare_KeepsTheCallersEdges()
     {
-        TopoDS_Edge[] anE = Square(out _);
-        TopoDS_Wire aW = TestShapes.Frozen(MakeWire(anE[2], anE[0], anE[3], anE[1]));
+        Edge[] anE = Square(out _);
+        Wire aW = TestShapes.Frozen(MakeWire(anE[2], anE[0], anE[3], anE[1]));
         var aSnap = ShapeSnapshot.Of(aW);
 
         var sfw = new ShapeFix_Wire(aW, PlaneFace(), Conf);
         Assert.True(sfw.FixReorder());
         Assert.True(sfw.StatusReorder(ShapeExtend_DONE1));
-        TopoDS_Wire aRes = sfw.Wire();
+        Wire aRes = sfw.Wire();
 
         aSnap.AssertUnchanged(aW);
         Assert.True(aRes.TShape()!.IsFrozen);
-        List<TopoDS_Edge> aResEdges = Edges(aRes);
+        List<Edge> aResEdges = Edges(aRes);
         Assert.Equal(4, aResEdges.Count);
         // only the order changed: the edges are the caller's own
         Assert.All(aResEdges, e => Assert.Contains(anE, c => Shares(c, e)));
         for (int i = 0; i < 4; i++)
         {
-            Assert.True(Shares(TopExp.LastVertex(aResEdges[i], true), TopExp.FirstVertex(aResEdges[(i + 1) % 4], true)));
+            Assert.True(Shares(Exploration.LastVertex(aResEdges[i], true), Exploration.FirstVertex(aResEdges[(i + 1) % 4], true)));
         }
     }
 
     [Fact]
     public void FixSmall_RemovesATinyEdge()
     {
-        TopoDS_Edge[] anE = Square(out TopoDS_Vertex[] aV);
+        Edge[] anE = Square(out Vertex[] aV);
         // a 1e-9 edge after the first corner, the next edge starting at its end
-        TopoDS_Vertex aV1b = TestShapes.Vertex(new Point3D(10, 1e-9, 0));
-        TopoDS_Edge aTiny = TestShapes.Edge(aV[1], aV1b);
-        TopoDS_Edge aSide = TestShapes.Edge(aV1b, aV[2]);
-        TopoDS_Wire aW = TestShapes.Frozen(MakeWire(anE[0], aTiny, aSide, anE[2], anE[3]));
+        Vertex aV1b = TestShapes.Vertex(new Point3D(10, 1e-9, 0));
+        Edge aTiny = TestShapes.Edge(aV[1], aV1b);
+        Edge aSide = TestShapes.Edge(aV1b, aV[2]);
+        Wire aW = TestShapes.Frozen(MakeWire(anE[0], aTiny, aSide, anE[2], anE[3]));
         var aSnap = ShapeSnapshot.Of(aW);
 
         var sfw = new ShapeFix_Wire(aW, PlaneFace(), 1e-7);
@@ -116,7 +121,7 @@ public class ShapeFix_WireTests
         Assert.True(sfw.FixSmall(false, 1e-6) > 0);
         Assert.True(sfw.StatusSmall(ShapeExtend_DONE));
         Assert.Equal(4, sfw.NbEdges());
-        TopoDS_Wire aRes = sfw.Wire();
+        Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aW);
         Assert.Equal(4, Edges(aRes).Count);
         AssertConnected(aRes);
@@ -127,14 +132,14 @@ public class ShapeFix_WireTests
     {
         // four segments, each with its own vertices, the ends 1e-5 apart
         var aP = new[] { new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0), new Point3D(0, 10, 0) };
-        var anEdges = new TopoDS_Edge[4];
+        var anEdges = new Edge[4];
         for (int i = 0; i < 4; i++)
         {
             anEdges[i] = TestShapes.Edge(aP[i], aP[(i + 1) % 4].Translated(new Vector3D(1e-5, 0, 0)));
         }
-        TopoDS_Wire aW = TestShapes.Frozen(MakeWire(anEdges));
+        Wire aW = TestShapes.Frozen(MakeWire(anEdges));
         var aSnap = ShapeSnapshot.Of(aW);
-        TopoDS_Vertex aCallersV = TopExp.LastVertex(anEdges[0], true);
+        Vertex aCallersV = Exploration.LastVertex(anEdges[0], true);
 
         var aContext = new ShapeBuild_ReShape();
         var sfw = new ShapeFix_Wire();
@@ -143,70 +148,70 @@ public class ShapeFix_WireTests
         sfw.SetPrecision(1e-4);
         Assert.True(sfw.FixConnected());
         Assert.True(sfw.StatusConnected(ShapeExtend_DONE));
-        TopoDS_Wire aRes = sfw.Wire();
+        Wire aRes = sfw.Wire();
 
         aSnap.AssertUnchanged(aW);
-        List<TopoDS_Edge> aResEdges = Edges(aRes);
+        List<Edge> aResEdges = Edges(aRes);
         for (int i = 0; i < 4; i++)
         {
-            Assert.True(Shares(TopExp.LastVertex(aResEdges[i], true), TopExp.FirstVertex(aResEdges[(i + 1) % 4], true)));
+            Assert.True(Shares(Exploration.LastVertex(aResEdges[i], true), Exploration.FirstVertex(aResEdges[(i + 1) % 4], true)));
         }
         // the caller's vertex was replaced by a merged one, which is in the result
-        TopoDS_Shape aNewV = aContext.Value(aCallersV);
+        Shape aNewV = aContext.Value(aCallersV);
         Assert.False(Shares(aNewV, aCallersV));
-        Assert.Contains(aResEdges, e => Shares(TopExp.FirstVertex(e, true), aNewV) || Shares(TopExp.LastVertex(e, true), aNewV));
+        Assert.Contains(aResEdges, e => Shares(Exploration.FirstVertex(e, true), aNewV) || Shares(Exploration.LastVertex(e, true), aNewV));
     }
 
     [Fact]
     public void FixEdgeCurves_AddsThePCurvesOnACylinder_AndTheSeam()
     {
         const double R = 5.0, H = 10.0;
-        TopoDS_Face aF = TestShapes.Frozen(TestShapes.CylinderFace(R, H));
+        Face aF = TestShapes.Frozen(TestShapes.CylinderFace(R, H));
         // the cylinder's boundary rebuilt from 3d curves only
         var aV0 = TestShapes.Vertex(new Point3D(R, 0, 0));
         var aV1 = TestShapes.Vertex(new Point3D(R, 0, H));
-        var aCirc0 = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), R);
-        var aCirc1 = new Geom_Circle(new Frame3D(new Point3D(0, 0, H), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), R);
-        TopoDS_Edge aBottom = TestShapes.Edge(aCirc0, 0, 2 * Math.PI, aV0, aV0);
-        TopoDS_Edge aTop = TestShapes.Edge(aCirc1, 0, 2 * Math.PI, aV1, aV1);
-        TopoDS_Edge aSeam = TestShapes.Edge(new Geom_Line(new Point3D(R, 0, 0), new Direction3D(0, 0, 1)), 0, H, aV0, aV1);
-        TopoDS_Wire aW = TestShapes.Frozen(MakeWire(aBottom, aSeam, TopoDS.Edge(aTop.Reversed()), TopoDS.Edge(aSeam.Reversed())));
+        var aCirc0 = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), R);
+        var aCirc1 = new CircleCurve3D(new Frame3D(new Point3D(0, 0, H), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), R);
+        Edge aBottom = TestShapes.Edge(aCirc0, 0, 2 * Math.PI, aV0, aV0);
+        Edge aTop = TestShapes.Edge(aCirc1, 0, 2 * Math.PI, aV1, aV1);
+        Edge aSeam = TestShapes.Edge(new LineCurve3D(new Point3D(R, 0, 0), new Direction3D(0, 0, 1)), 0, H, aV0, aV1);
+        Wire aW = TestShapes.Frozen(MakeWire(aBottom, aSeam, ShapeCasts.Edge(aTop.Reversed()), ShapeCasts.Edge(aSeam.Reversed())));
         var aSnap = ShapeSnapshot.Of(aW);
 
         var sfw = new ShapeFix_Wire(aW, aF, Conf);
         Assert.True(sfw.FixEdgeCurves());
         Assert.True(sfw.StatusEdgeCurves(ShapeExtend_DONE));
-        TopoDS_Wire aRes = sfw.Wire();
+        Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aW);
-        foreach (TopoDS_Edge anE in Edges(aRes))
+        foreach (Edge anE in Edges(aRes))
         {
-            Assert.NotNull(BRep_Tool.CurveOnSurface(anE, aF, out _, out _));
+            Assert.NotNull(Tool.CurveOnSurface(anE, aF, out _, out _));
         }
-        TopoDS_Edge aResSeam = Edges(aRes)[1];
-        Assert.True(BRep_Tool.IsClosed(aResSeam, aF));
+        Edge aResSeam = Edges(aRes)[1];
+        Assert.True(Tool.IsClosed(aResSeam, aF));
         // the caller's edges have no pcurve still
-        Assert.Null(BRep_Tool.CurveOnSurface(aSeam, aF, out _, out _));
+        Assert.Null(Tool.CurveOnSurface(aSeam, aF, out _, out _));
     }
 
     [Fact]
     public void FixDegenerated_AddsTheApexEdgeOfACone()
     {
-        TopoDS_Shape aCone = new BRepPrimAPI_MakeCone(0.0, 5.0, 10.0).Shape();
-        TopoDS_Face aLateral = new();
-        for (var anExp = new TopExp_Explorer(aCone, TopAbs_FACE); anExp.More(); anExp.Next())
+        Shape aCone = new BRepPrimAPI_MakeCone(0.0, 5.0, 10.0).Shape();
+        Face aLateral = new();
+        for (var anExp = new Explorer(aCone, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            if (BRep_Tool.Surface(TopoDS.Face(anExp.Current())) is Geom_ConicalSurface)
+            if (Tool.Surface(ShapeCasts.Face(anExp.Current())) is ConicalSurface)
             {
-                aLateral = TopoDS.Face(anExp.Current());
+                aLateral = ShapeCasts.Face(anExp.Current());
             }
         }
-        Assert.False(aLateral.IsNull());
+        Assert.False(aLateral.IsNull);
         // the lateral face's wire without its degenerated edge
-        var aKept = new List<TopoDS_Edge>();
+        var aKept = new List<Edge>();
         int aNbDegenerated = 0;
-        for (var anIt = new BRepTools_WireExplorer(ShapeAnalysis.OuterWire(aLateral), aLateral); anIt.More(); anIt.Next())
+        for (var anIt = new WireExplorer(ShapeAnalysis.OuterWire(aLateral), aLateral); anIt.More(); anIt.Next())
         {
-            if (BRep_Tool.Degenerated(anIt.Current()))
+            if (Tool.Degenerated(anIt.Current()))
             {
                 aNbDegenerated++;
             }
@@ -216,16 +221,16 @@ public class ShapeFix_WireTests
             }
         }
         Assert.Equal(1, aNbDegenerated);
-        TopoDS_Wire aW = TestShapes.Frozen(MakeWire([.. aKept]));
+        Wire aW = TestShapes.Frozen(MakeWire([.. aKept]));
         var aSnap = ShapeSnapshot.Of(aW);
 
         var sfw = new ShapeFix_Wire(aW, aLateral, Conf);
         Assert.True(sfw.FixDegenerated());
         Assert.True(sfw.StatusDegenerated(ShapeExtend_DONE));
-        TopoDS_Wire aRes = sfw.Wire();
+        Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aW);
         Assert.Equal(aKept.Count + 1, Edges(aRes).Count);
-        Assert.Contains(Edges(aRes), e => BRep_Tool.Degenerated(e));
+        Assert.Contains(Edges(aRes), e => Tool.Degenerated(e));
     }
 
     [Fact]
@@ -236,12 +241,12 @@ public class ShapeFix_WireTests
             TestShapes.Vertex(new Point3D(0, 0, 0)), TestShapes.Vertex(new Point3D(2, 2, 0)),
             TestShapes.Vertex(new Point3D(2, 0, 0)), TestShapes.Vertex(new Point3D(0, 2, 0)),
         };
-        var anEdges = new TopoDS_Edge[4];
+        var anEdges = new Edge[4];
         for (int i = 0; i < 4; i++)
         {
             anEdges[i] = TestShapes.Edge(aV[i], aV[(i + 1) % 4]);
         }
-        TopoDS_Wire aW = TestShapes.Frozen(MakeWire(anEdges));
+        Wire aW = TestShapes.Frozen(MakeWire(anEdges));
         var aSnap = ShapeSnapshot.Of(aW);
 
         var aContext = new ShapeBuild_ReShape();
@@ -249,7 +254,7 @@ public class ShapeFix_WireTests
         sfw.SetContext(aContext);
         Assert.True(sfw.FixSelfIntersection());
         Assert.True(sfw.StatusSelfIntersection(ShapeExtend_DONE5));
-        TopoDS_Wire aRes = sfw.Wire();
+        Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aW);
         Assert.Equal(6, Edges(aRes).Count);
         // the two crossing edges are recorded as split
@@ -264,19 +269,19 @@ public class ShapeFix_WireTests
         var aV0 = TestShapes.Vertex(new Point3D(0, 0, 0));
         var aV2 = TestShapes.Vertex(new Point3D(10, 10, 0));
         var aV3 = TestShapes.Vertex(new Point3D(0, 10, 0));
-        var aB = new BRep_Builder();
-        TopoDS_Vertex aV1 = new();
+        var aB = new BrepBuilder();
+        Vertex aV1 = new();
         aB.MakeVertex(ref aV1, new Point3D(10, 0, 0), 0.1);
-        TopoDS_Edge aE0 = TestShapes.Edge(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 10, aV0, aV1);
-        TopoDS_Edge aE1 = TestShapes.Edge(new Geom_Line(new Point3D(10, 0.05, 0), new Direction3D(0, 1, 0)), 0, 9.95, aV1, aV2);
-        TopoDS_Wire aW = TestShapes.Frozen(MakeWire(aE0, aE1, TestShapes.Edge(aV2, aV3), TestShapes.Edge(aV3, aV0)));
+        Edge aE0 = TestShapes.Edge(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 10, aV0, aV1);
+        Edge aE1 = TestShapes.Edge(new LineCurve3D(new Point3D(10, 0.05, 0), new Direction3D(0, 1, 0)), 0, 9.95, aV1, aV2);
+        Wire aW = TestShapes.Frozen(MakeWire(aE0, aE1, TestShapes.Edge(aV2, aV3), TestShapes.Edge(aV3, aV0)));
         var aSnap = ShapeSnapshot.Of(aW);
 
         var sfw = new ShapeFix_Wire(aW, PlaneFace(), Conf);
         sfw.ModifyTopologyMode() = true;
         Assert.True(sfw.FixLacking(true));
         Assert.True(sfw.StatusLacking(ShapeExtend_DONE));
-        TopoDS_Wire aRes = sfw.Wire();
+        Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aW);
         Assert.Equal(5, Edges(aRes).Count);
     }
@@ -285,26 +290,26 @@ public class ShapeFix_WireTests
     public void FixGaps3d_MovesTheCurveEnds_OnCopiesOfTheCurves()
     {
         // edges sharing a tolerant vertex, their curves ending 1e-3 apart
-        var aB = new BRep_Builder();
-        TopoDS_Vertex aV1 = new();
+        var aB = new BrepBuilder();
+        Vertex aV1 = new();
         aB.MakeVertex(ref aV1, new Point3D(10, 0, 0), 1e-2);
         var aV0 = TestShapes.Vertex(new Point3D(0, 0, 0));
         var aV2 = TestShapes.Vertex(new Point3D(10, 10, 0));
-        var aL0 = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        var aL1 = new Geom_Line(new Point3D(10, 1e-3, 0), new Direction3D(0, 1, 0));
-        TopoDS_Edge aE0 = TestShapes.Edge(aL0, 0, 10, aV0, aV1);
-        TopoDS_Edge aE1 = TestShapes.Edge(aL1, 0, 10 - 1e-3, aV1, aV2);
-        TopoDS_Wire aW = TestShapes.Frozen(MakeWire(aE0, aE1, TestShapes.Edge(aV2, aV0)));
+        var aL0 = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        var aL1 = new LineCurve3D(new Point3D(10, 1e-3, 0), new Direction3D(0, 1, 0));
+        Edge aE0 = TestShapes.Edge(aL0, 0, 10, aV0, aV1);
+        Edge aE1 = TestShapes.Edge(aL1, 0, 10 - 1e-3, aV1, aV2);
+        Wire aW = TestShapes.Frozen(MakeWire(aE0, aE1, TestShapes.Edge(aV2, aV0)));
         var aSnap = ShapeSnapshot.Of(aW);
 
-        var sfw = new ShapeFix_Wire(aW, new TopoDS_Face(), 1e-5);
+        var sfw = new ShapeFix_Wire(aW, new Face(), 1e-5);
         Assert.True(sfw.FixGaps3d());
         Assert.True(sfw.StatusGaps3d(ShapeExtend_DONE));
-        TopoDS_Wire aRes = sfw.Wire();
+        Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aW);
-        List<TopoDS_Edge> aResEdges = Edges(aRes);
-        Geom_Curve aC0 = BRep_Tool.Curve(aResEdges[0], out double f0, out double l0)!;
-        Geom_Curve aC1 = BRep_Tool.Curve(aResEdges[1], out double f1, out _)!;
+        List<Edge> aResEdges = Edges(aRes);
+        Curve3D aC0 = Tool.Curve(aResEdges[0], out double f0, out double l0)!;
+        Curve3D aC1 = Tool.Curve(aResEdges[1], out double f1, out _)!;
         Assert.True(aC0.Value(l0).Distance(aC1.Value(f1)) < 1e-5);
         // the caller's curves didn't move
         Assert.Equal(1e-3, aL1.Value(0).Y(), 15);
@@ -314,15 +319,15 @@ public class ShapeFix_WireTests
     public void FixGaps2d_ClosesAGapBetweenPCurves()
     {
         // a square on the plane whose pcurves are stored, one of them ending 1e-3 short of the next
-        TopoDS_Edge[] anE = Square(out _);
-        var aB = new BRep_Builder();
-        TopoDS_Face aF = PlaneFace();
+        Edge[] anE = Square(out _);
+        var aB = new BrepBuilder();
+        Face aF = PlaneFace();
         for (int i = 0; i < 4; i++)
         {
-            Geom2d_Curve aPC = BRep_Tool.CurveOnSurface(anE[i], aF, out double f, out double l)!;
+            Curve2D aPC = Tool.CurveOnSurface(anE[i], aF, out double f, out double l)!;
             if (i == 1)
             {
-                aPC = new Geom2d_Line(new Point2D(10, 1e-3), new Direction2D(0, 1));
+                aPC = new LineCurve2D(new Point2D(10, 1e-3), new Direction2D(0, 1));
                 aB.UpdateEdge(anE[i], aPC, aF, 1e-2);
                 aB.Range(anE[i], aF, 0, 10 - 1e-3);
             }
@@ -332,17 +337,17 @@ public class ShapeFix_WireTests
                 aB.Range(anE[i], aF, f, l);
             }
         }
-        TopoDS_Wire aW = TestShapes.Frozen(MakeWire(anE));
+        Wire aW = TestShapes.Frozen(MakeWire(anE));
         var aSnap = ShapeSnapshot.Of(aW);
 
         var sfw = new ShapeFix_Wire(aW, aF, 1e-5);
         Assert.True(sfw.FixGaps2d());
         Assert.True(sfw.StatusGaps2d(ShapeExtend_DONE));
-        TopoDS_Wire aRes = sfw.Wire();
+        Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aW);
-        List<TopoDS_Edge> aResEdges = Edges(aRes);
-        Geom2d_Curve aP0 = BRep_Tool.CurveOnSurface(aResEdges[0], aF, out _, out double l0)!;
-        Geom2d_Curve aP1 = BRep_Tool.CurveOnSurface(aResEdges[1], aF, out double f1, out _)!;
+        List<Edge> aResEdges = Edges(aRes);
+        Curve2D aP0 = Tool.CurveOnSurface(aResEdges[0], aF, out _, out double l0)!;
+        Curve2D aP1 = Tool.CurveOnSurface(aResEdges[1], aF, out double f1, out _)!;
         Assert.True(aP0.Value(l0).Distance(aP1.Value(f1)) < 1e-5);
     }
 
@@ -350,41 +355,41 @@ public class ShapeFix_WireTests
     public void FixShifted_BringsAPCurveBackByAPeriod()
     {
         const double R = 5.0, H = 10.0;
-        TopoDS_Face aF = TestShapes.CylinderFace(R, H);
-        TopoDS_Wire anOuter = ShapeAnalysis.OuterWire(aF);
+        Face aF = TestShapes.CylinderFace(R, H);
+        Wire anOuter = ShapeAnalysis.OuterWire(aF);
         // the wire's edges copied, the pcurve of the top circle moved by 2 pi
-        var aEdges = new List<TopoDS_Edge>();
-        var aB = new BRep_Builder();
-        foreach (TopoDS_Edge anE in Edges(anOuter))
+        var aEdges = new List<Edge>();
+        var aB = new BrepBuilder();
+        foreach (Edge anE in Edges(anOuter))
         {
             aEdges.Add(anE);
         }
-        TopoDS_Wire aW = MakeWire([.. aEdges]);
-        TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(aW, out _);
-        List<TopoDS_Edge> aCopied = Edges(aCopy);
+        Wire aW = MakeWire([.. aEdges]);
+        Shape aCopy = BrepTools.ExactCopyForWrite(aW, out _);
+        List<Edge> aCopied = Edges(aCopy);
         int aShifted = -1;
         for (int i = 0; i < aCopied.Count; i++)
         {
-            TopoDS_Edge anE = aCopied[i];
-            if (!BRep_Tool.IsClosed(anE, aF) && !BRep_Tool.Degenerated(anE))
+            Edge anE = aCopied[i];
+            if (!Tool.IsClosed(anE, aF) && !Tool.Degenerated(anE))
             {
-                Geom2d_Curve aPC = BRep_Tool.CurveOnSurface(anE, aF, out double f, out double l)!;
-                var aMoved = (Geom2d_Curve)aPC.Translated(new Vector2D(2 * Math.PI, 0));
-                aB.UpdateEdge(anE, aMoved, aF, BRep_Tool.Tolerance(anE));
+                Curve2D aPC = Tool.CurveOnSurface(anE, aF, out double f, out double l)!;
+                var aMoved = (Curve2D)aPC.Translated(new Vector2D(2 * Math.PI, 0));
+                aB.UpdateEdge(anE, aMoved, aF, Tool.Tolerance(anE));
                 aB.Range(anE, aF, f, l);
                 aShifted = i;
                 break;
             }
         }
         Assert.True(aShifted >= 0);
-        TopoDS_Wire aShiftedWire = TestShapes.Frozen(TopoDS.Wire(aCopy));
+        Wire aShiftedWire = TestShapes.Frozen(ShapeCasts.Wire(aCopy));
         var aSnap = ShapeSnapshot.Of(aShiftedWire);
 
         var sfw = new ShapeFix_Wire(aShiftedWire, TestShapes.Frozen(aF), Conf);
         Assert.True(sfw.FixShifted());
-        TopoDS_Wire aRes = sfw.Wire();
+        Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aShiftedWire);
-        Geom2d_Curve aResPC = BRep_Tool.CurveOnSurface(Edges(aRes)[aShifted], aF, out double rf, out double rl)!;
+        Curve2D aResPC = Tool.CurveOnSurface(Edges(aRes)[aShifted], aF, out double rf, out double rl)!;
         double aU = aResPC.Value((rf + rl) / 2).X();
         Assert.InRange(aU, -1e-9, 2 * Math.PI + 1e-9);
     }
@@ -398,12 +403,12 @@ public class ShapeFix_WireTests
         {
             TestShapes.Vertex(new Point3D(-1, 0, 0)), TestShapes.Vertex(new Point3D(9, 0, 0)), TestShapes.Vertex(new Point3D(1, 1, 0)),
         };
-        var anEdges = new TopoDS_Edge[3];
+        var anEdges = new Edge[3];
         for (int i = 0; i < 3; i++)
         {
             anEdges[i] = TestShapes.Edge(aV[i], aV[(i + 1) % 3]);
         }
-        TopoDS_Wire aW = TestShapes.Frozen(MakeWire(anEdges));
+        Wire aW = TestShapes.Frozen(MakeWire(anEdges));
         var aSnap = ShapeSnapshot.Of(aW);
         var sfw = new ShapeFix_Wire(aW, PlaneFace(), Conf);
         sfw.SetMaxTailAngle(10 * Math.PI / 180);
@@ -411,12 +416,12 @@ public class ShapeFix_WireTests
         sfw.FixTailMode() = 1;
         sfw.ModifyTopologyMode() = true;
         sfw.Perform();
-        TopoDS_Wire aRes = sfw.Wire();
+        Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aW);
         double aLength = 0;
-        foreach (TopoDS_Edge anE in Edges(aRes))
+        foreach (Edge anE in Edges(aRes))
         {
-            var aProps = new GProp_GProps();
+            var aProps = new Properties();
             BRepGProp.LinearProperties(anE, aProps);
             aLength += aProps.Mass();
         }
@@ -427,17 +432,17 @@ public class ShapeFix_WireTests
     [Fact]
     public void Perform_PublishedThenFixedAgain_CopiesAgain()
     {
-        TopoDS_Edge[] anE = Square(out _);
-        TopoDS_Wire aW = TestShapes.Frozen(MakeWire(anE[1], anE[0], anE[2], anE[3]));
+        Edge[] anE = Square(out _);
+        Wire aW = TestShapes.Frozen(MakeWire(anE[1], anE[0], anE[2], anE[3]));
         var sfw = new ShapeFix_Wire(aW, PlaneFace(), Conf);
         Assert.True(sfw.Perform());
-        TopoDS_Wire aFirst = sfw.Wire();
+        Wire aFirst = sfw.Wire();
         Assert.True(aFirst.TShape()!.IsFrozen);
         // the published edges are frozen: a further fix works on copies again, and the first result never changes
         var aSnap = ShapeSnapshot.Of(aFirst);
         sfw.FixConnected(1e-3);
         sfw.FixEdgeCurves();
-        TopoDS_Wire aSecond = sfw.Wire();
+        Wire aSecond = sfw.Wire();
         aSnap.AssertUnchanged(aFirst);
         Assert.Equal(4, Edges(aSecond).Count);
     }
@@ -445,11 +450,11 @@ public class ShapeFix_WireTests
     [Fact]
     public void Perform_OnUnfrozenEdges_WorksInPlace()
     {
-        TopoDS_Edge[] anE = Square(out _);
-        TopoDS_Wire aW = MakeWire(anE[1], anE[0], anE[2], anE[3]);
+        Edge[] anE = Square(out _);
+        Wire aW = MakeWire(anE[1], anE[0], anE[2], anE[3]);
         var sfw = new ShapeFix_Wire(aW, PlaneFace(), Conf);
         Assert.True(sfw.Perform());
-        TopoDS_Wire aRes = sfw.InternalWire();
+        Wire aRes = sfw.InternalWire();
         Assert.False(aRes.TShape()!.IsFrozen);
         Assert.All(Edges(aRes), e => Assert.Contains(anE, c => Shares(c, e)));
     }
@@ -457,8 +462,8 @@ public class ShapeFix_WireTests
     [Fact]
     public void LoadWireData_WithFrozenEdges_IsCopiedAtTheFirstFix()
     {
-        TopoDS_Edge[] anE = Square(out _);
-        foreach (TopoDS_Edge e in anE)
+        Edge[] anE = Square(out _);
+        foreach (Edge e in anE)
         {
             TestShapes.Frozen(e);
         }
@@ -473,7 +478,7 @@ public class ShapeFix_WireTests
         Assert.True(sfw.Perform());
         // between the first fix and the result the wire data holds copies
         Assert.False(sbwd.Edge(1).TShape()!.IsFrozen);
-        TopoDS_Wire aRes = sfw.Wire();
+        Wire aRes = sfw.Wire();
         Assert.All(Edges(aRes), e => Assert.Contains(anE, c => Shares(c, e)));
     }
 }

@@ -1,9 +1,12 @@
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Collections.Concurrent;
 using OcctNet.TestHarness;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests.Harness;
 
@@ -11,9 +14,9 @@ public class HarnessTests
 {
     // ---- Shapes
 
-    private static TopoDS_Shape Box() => new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
+    private static Shape Box() => new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
 
-    private static IEnumerable<TopoDS_Shape> Primitives()
+    private static IEnumerable<Shape> Primitives()
     {
         yield return Box();
         yield return new BRepPrimAPI_MakeCylinder(5.0, 12.0).Shape();
@@ -25,13 +28,13 @@ public class HarnessTests
     }
 
     // A compound of several solids, one of them twice at different locations (shared, located sub-shapes).
-    private static TopoDS_Shape SharedCompound()
+    private static Shape SharedCompound()
     {
-        TopoDS_Shape aBox = Box();
+        Shape aBox = Box();
         var aTrsf = new Transform3D();
         aTrsf.SetTranslation(new Vector3D(100.0, 0.0, 0.0));
-        var aBuilder = new BRep_Builder();
-        var aCompound = new TopoDS_Compound();
+        var aBuilder = new BrepBuilder();
+        var aCompound = new Compound();
         aBuilder.MakeCompound(ref aCompound);
         aBuilder.Add(aCompound, aBox);
         aBuilder.Add(aCompound, aBox.Located(new Placement(aTrsf)));
@@ -41,13 +44,13 @@ public class HarnessTests
     }
 
     // A shell of a box's faces, without the face of the given index (-1: all six).
-    private static TopoDS_Shape BoxShell(int skipFace)
+    private static Shape BoxShell(int skipFace)
     {
-        var aBuilder = new BRep_Builder();
-        var aShell = new TopoDS_Shell();
+        var aBuilder = new BrepBuilder();
+        var aShell = new Shell();
         aBuilder.MakeShell(ref aShell);
         int i = 0;
-        foreach (TopoDS_Shape aFace in CanonicalShapeComparer.SubShapes(Box(), TopAbs_FACE))
+        foreach (Shape aFace in CanonicalShapeComparer.SubShapes(Box(), ShapeType.Face))
         {
             if (i++ != skipFace)
             {
@@ -58,15 +61,15 @@ public class HarnessTests
     }
 
     // The same shape with the children of every compound, compsolid, solid and shell in a random order.
-    private static TopoDS_Shape Renumber(TopoDS_Shape theShape, Random theRandom)
+    private static Shape Renumber(Shape theShape, Random theRandom)
     {
-        TopAbs_ShapeEnum aType = theShape.ShapeType();
-        if (aType is not (TopAbs_COMPOUND or TopAbs_COMPSOLID or TopAbs_SOLID or TopAbs_SHELL))
+        ShapeType aType = theShape.ShapeType();
+        if (aType is not (ShapeType.Compound or ShapeType.CompSolid or ShapeType.Solid or ShapeType.Shell))
         {
             return theShape;
         }
-        var aChildren = new List<TopoDS_Shape>();
-        for (var anIt = new TopoDS_Iterator(theShape, false, false); anIt.More(); anIt.Next())
+        var aChildren = new List<Shape>();
+        for (var anIt = new Iterator(theShape, false, false); anIt.More(); anIt.Next())
         {
             aChildren.Add(Renumber(anIt.Value(), theRandom));
         }
@@ -81,32 +84,32 @@ public class HarnessTests
             aChildren = [.. anOrder.Select(i => aChildren[i])];
         }
 
-        var aBuilder = new BRep_Builder();
-        TopoDS_Shape aNew;
+        var aBuilder = new BrepBuilder();
+        Shape aNew;
         switch (aType)
         {
-            case TopAbs_COMPOUND:
-                var aCompound = new TopoDS_Compound();
+            case ShapeType.Compound:
+                var aCompound = new Compound();
                 aBuilder.MakeCompound(ref aCompound);
                 aNew = aCompound;
                 break;
-            case TopAbs_COMPSOLID:
-                var aCompSolid = new TopoDS_CompSolid();
+            case ShapeType.CompSolid:
+                var aCompSolid = new CompSolid();
                 aBuilder.MakeCompSolid(ref aCompSolid);
                 aNew = aCompSolid;
                 break;
-            case TopAbs_SOLID:
-                var aSolid = new TopoDS_Solid();
+            case ShapeType.Solid:
+                var aSolid = new Solid();
                 aBuilder.MakeSolid(ref aSolid);
                 aNew = aSolid;
                 break;
             default:
-                var aShell = new TopoDS_Shell();
+                var aShell = new Shell();
                 aBuilder.MakeShell(ref aShell);
                 aNew = aShell;
                 break;
         }
-        foreach (TopoDS_Shape aChild in aChildren)
+        foreach (Shape aChild in aChildren)
         {
             aBuilder.Add(aNew, aChild);
         }
@@ -167,12 +170,12 @@ public class HarnessTests
     public void Canonical_SameShapeRenumberedAtRandom_IsIdentical()
     {
         int aShapeIndex = 0;
-        foreach (TopoDS_Shape aShape in Primitives())
+        foreach (Shape aShape in Primitives())
         {
             string aText = BRepTextComparison.Write(aShape);
             for (int aSeed = 1; aSeed <= 4; ++aSeed)
             {
-                TopoDS_Shape aRenumbered = Renumber(aShape, new Random(aSeed * 31 + aShapeIndex));
+                Shape aRenumbered = Renumber(aShape, new Random(aSeed * 31 + aShapeIndex));
                 string aRenumberedText = BRepTextComparison.Write(aRenumbered);
                 if (CountChildren(aShape) > 1)
                 {
@@ -186,15 +189,15 @@ public class HarnessTests
     }
 
     // Whether some container of the shape has two children (so that a renumbering changes the BRep text).
-    private static int CountChildren(TopoDS_Shape theShape)
+    private static int CountChildren(Shape theShape)
     {
         int aMax = 0;
-        foreach (TopAbs_ShapeEnum aType in new[] { TopAbs_COMPOUND, TopAbs_COMPSOLID, TopAbs_SOLID, TopAbs_SHELL })
+        foreach (ShapeType aType in new[] { ShapeType.Compound, ShapeType.CompSolid, ShapeType.Solid, ShapeType.Shell })
         {
-            foreach (TopoDS_Shape aContainer in CanonicalShapeComparer.SubShapes(theShape, aType))
+            foreach (Shape aContainer in CanonicalShapeComparer.SubShapes(theShape, aType))
             {
                 int aNb = 0;
-                for (var anIt = new TopoDS_Iterator(aContainer); anIt.More(); anIt.Next())
+                for (var anIt = new Iterator(aContainer); anIt.More(); anIt.Next())
                 {
                     ++aNb;
                 }
@@ -207,13 +210,13 @@ public class HarnessTests
     [Fact]
     public void Canonical_Copies_AreIdentical()
     {
-        foreach (TopoDS_Shape aShape in Primitives())
+        foreach (Shape aShape in Primitives())
         {
-            TopoDS_Shape aCopy = new BRepBuilderAPI_Copy(aShape).Shape();
+            Shape aCopy = new BRepBuilderAPI_Copy(aShape).Shape();
             CanonicalComparison aComparison = CanonicalShapeComparer.Compare(aShape, aCopy);
             Assert.True(aComparison.IsIdentical, aComparison.ToString());
 
-            TopoDS_Shape anExact = BRepTools.ExactCopyForWrite(aShape, out _);
+            Shape anExact = BrepTools.ExactCopyForWrite(aShape, out _);
             CanonicalShapeComparer.AssertIdentical(aShape, anExact);
         }
     }
@@ -221,11 +224,11 @@ public class HarnessTests
     [Fact]
     public void Canonical_VertexMoved_DetectedExactly_MatchedWithTolerance()
     {
-        TopoDS_Shape aBox = Box();
-        TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(aBox, out _);
-        TopoDS_Vertex aVertex = TopoDS.Vertex(CanonicalShapeComparer.SubShapes(aCopy, TopAbs_VERTEX)[0]);
-        Point3D aP = BRep_Tool.Pnt(aVertex);
-        new BRep_Builder().UpdateVertex(aVertex, new Point3D(aP.X() + 1.0e-12, aP.Y(), aP.Z()), BRep_Tool.Tolerance(aVertex));
+        Shape aBox = Box();
+        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out _);
+        Vertex aVertex = ShapeCasts.Vertex(CanonicalShapeComparer.SubShapes(aCopy, ShapeType.Vertex)[0]);
+        Point3D aP = Tool.Pnt(aVertex);
+        new BrepBuilder().UpdateVertex(aVertex, new Point3D(aP.X() + 1.0e-12, aP.Y(), aP.Z()), Tool.Tolerance(aVertex));
 
         CanonicalComparison anExact = CanonicalShapeComparer.Compare(aBox, aCopy);
         Assert.False(anExact.IsIdentical);
@@ -238,10 +241,10 @@ public class HarnessTests
     [Fact]
     public void Canonical_ToleranceChanged_ReportedAsAttributeDifference()
     {
-        TopoDS_Shape aBox = Box();
-        TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(aBox, out _);
-        TopoDS_Vertex aVertex = TopoDS.Vertex(CanonicalShapeComparer.SubShapes(aCopy, TopAbs_VERTEX)[3]);
-        new BRep_Builder().UpdateVertex(aVertex, 1.0e-4);
+        Shape aBox = Box();
+        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out _);
+        Vertex aVertex = ShapeCasts.Vertex(CanonicalShapeComparer.SubShapes(aCopy, ShapeType.Vertex)[3]);
+        new BrepBuilder().UpdateVertex(aVertex, 1.0e-4);
 
         CanonicalComparison aComparison = CanonicalShapeComparer.Compare(aBox, aCopy);
         Assert.False(aComparison.IsIdentical);
@@ -257,14 +260,14 @@ public class HarnessTests
                                                                          new CanonicalOptions { CheckValidity = false });
         Assert.False(aComparison.IsIdentical);
         Assert.False(aComparison.CountsEqual);
-        Assert.Equal((6, 5), aComparison.Counts[TopAbs_FACE]);
+        Assert.Equal((6, 5), aComparison.Counts[ShapeType.Face]);
         Assert.Contains(aComparison.Unmatched, l => l.StartsWith("TopAbs_FACE", StringComparison.Ordinal));
     }
 
     [Fact]
     public void Canonical_TranslatedShape_IsNotIdentical()
     {
-        TopoDS_Shape aBox = Box();
+        Shape aBox = Box();
         var aTrsf = new Transform3D();
         aTrsf.SetTranslation(new Vector3D(0.0, 0.0, 1.0e-6));
         CanonicalComparison aComparison = CanonicalShapeComparer.Compare(aBox, aBox.Located(new Placement(aTrsf)));
@@ -277,8 +280,8 @@ public class HarnessTests
     [Fact]
     public void Canonical_Orientation_IgnoredByDefault_CheckedOnRequest()
     {
-        TopoDS_Shape aBox = Box();
-        TopoDS_Shape aReversed = aBox.Reversed();
+        Shape aBox = Box();
+        Shape aReversed = aBox.Reversed();
         Assert.True(CanonicalShapeComparer.Compare(aBox, aReversed, new CanonicalOptions { CheckProperties = false }).IsIdentical);
         CanonicalComparison aChecked = CanonicalShapeComparer.Compare(aBox, aReversed,
                                                                       new CanonicalOptions { CheckOrientation = true, CheckProperties = false });
@@ -318,17 +321,17 @@ public class HarnessTests
     [Fact]
     public void Determinism_ShapeAndHistory()
     {
-        TopoDS_Shape aBox = Box();
-        TopoDS_Shape aResult = DeterminismHarness.AssertSerialEqualsParallel(() => new BRepBuilderAPI_Copy(aBox).Shape(), 2);
-        Assert.False(aResult.IsNull());
+        Shape aBox = Box();
+        Shape aResult = DeterminismHarness.AssertSerialEqualsParallel(() => new BRepBuilderAPI_Copy(aBox).Shape(), 2);
+        Assert.False(aResult.IsNull);
 
         DeterminismHarness.AssertSerialEqualsParallel([aBox], () =>
         {
-            TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(aBox, out BRepTools_History aHistory);
+            Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out History aHistory);
             return (aCopy, aHistory);
         }, 2);
 
-        TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(aBox, out BRepTools_History aHistory);
+        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out History aHistory);
         string aText = DeterminismHarness.HistoryText([aBox], aCopy, aHistory);
         Assert.Contains("TopAbs_FACE M[", aText, StringComparison.Ordinal);
         Assert.DoesNotContain("M[0", aText, StringComparison.Ordinal);
@@ -340,31 +343,31 @@ public class HarnessTests
     public void History_SameUpToRenumbering_Agrees()
     {
         // Arguments and result renumbered at the top level only: the history knows the solids and below
-        TopoDS_Shape anArgument = SharedCompound();
-        TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(anArgument, out BRepTools_History aHistory);
-        TopoDS_Shape aPortArgument = ShuffleTopLevel(anArgument, new Random(5));
-        TopoDS_Shape aPortCopy = ShuffleTopLevel(aCopy, new Random(6));
+        Shape anArgument = SharedCompound();
+        Shape aCopy = BrepTools.ExactCopyForWrite(anArgument, out History aHistory);
+        Shape aPortArgument = ShuffleTopLevel(anArgument, new Random(5));
+        Shape aPortCopy = ShuffleTopLevel(aCopy, new Random(6));
         Assert.NotEqual(BRepTextComparison.Write(aCopy), BRepTextComparison.Write(aPortCopy));
 
         HistoryComparison.AssertSame([anArgument], aCopy, aHistory, [aPortArgument], aPortCopy, aHistory);
 
         // An independent copy: different TShapes on the port side, the same geometry
-        TopoDS_Shape aCopy2 = BRepTools.ExactCopyForWrite(anArgument, out BRepTools_History aHistory2);
+        Shape aCopy2 = BrepTools.ExactCopyForWrite(anArgument, out History aHistory2);
         HistoryComparison.AssertSame([anArgument], aCopy, aHistory, [anArgument], aCopy2, aHistory2);
     }
 
     // The compound with its direct children in reverse order (the children kept as they are).
-    private static TopoDS_Shape ShuffleTopLevel(TopoDS_Shape theCompound, Random theRandom)
+    private static Shape ShuffleTopLevel(Shape theCompound, Random theRandom)
     {
-        var aChildren = new List<TopoDS_Shape>();
-        for (var anIt = new TopoDS_Iterator(theCompound, false, false); anIt.More(); anIt.Next())
+        var aChildren = new List<Shape>();
+        for (var anIt = new Iterator(theCompound, false, false); anIt.More(); anIt.Next())
         {
             aChildren.Add(anIt.Value());
         }
-        var aBuilder = new BRep_Builder();
-        var aNew = new TopoDS_Compound();
+        var aBuilder = new BrepBuilder();
+        var aNew = new Compound();
         aBuilder.MakeCompound(ref aNew);
-        foreach (TopoDS_Shape aChild in aChildren.OrderBy(_ => theRandom.Next()).Reverse())
+        foreach (Shape aChild in aChildren.OrderBy(_ => theRandom.Next()).Reverse())
         {
             aBuilder.Add(aNew, aChild);
         }
@@ -374,10 +377,10 @@ public class HarnessTests
     [Fact]
     public void History_Different_IsReported()
     {
-        TopoDS_Shape aBox = Box();
-        TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(aBox, out BRepTools_History aHistory);
-        var anEmpty = new BRepTools_History();
-        TopoDS_Shape aFace = CanonicalShapeComparer.SubShapes(aBox, TopAbs_FACE)[0];
+        Shape aBox = Box();
+        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out History aHistory);
+        var anEmpty = new History();
+        Shape aFace = CanonicalShapeComparer.SubShapes(aBox, ShapeType.Face)[0];
         anEmpty.Remove(aFace);
 
         List<string> aDifferences = HistoryComparison.Compare([aBox], aCopy, aHistory, [aBox], aCopy, anEmpty);

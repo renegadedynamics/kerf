@@ -24,7 +24,7 @@ public partial class BndLibTest
         Line3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         Box aBox = new();
 
-        BndLib.Add(aLine, 0.0, 10.0, 0.0, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aLine, 0.0, 10.0, 0.0, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 
@@ -44,7 +44,7 @@ public partial class BndLibTest
         Line3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         Box aBox = new();
 
-        BndLib.Add(aLine, -THE_INF, 5.0, 0.0, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aLine, -THE_INF, 5.0, 0.0, ref aBox);
 
         Assert.True(aBox.IsOpenXmin, "Xmin should be open for line in +X direction with P1=-Inf");
         Assert.False(aBox.IsOpenXmax, "Xmax should not be open");
@@ -59,7 +59,7 @@ public partial class BndLibTest
         Line3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(-1.0, 0.0, 0.0));
         Box aBox = new();
 
-        BndLib.Add(aLine, -THE_INF, 5.0, 0.0, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aLine, -THE_INF, 5.0, 0.0, ref aBox);
 
         Assert.True(aBox.IsOpenXmax, "Xmax should be open for line in -X direction with P1=-Inf");
         Assert.False(aBox.IsOpenXmin, "Xmin should not be open");
@@ -74,7 +74,7 @@ public partial class BndLibTest
         Line3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(-1.0, 0.0, 0.0));
         Box aBox = new();
 
-        BndLib.Add(aLine, -5.0, THE_INF, 0.0, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aLine, -5.0, THE_INF, 0.0, ref aBox);
 
         Assert.True(aBox.IsOpenXmin, "Xmin should be open for line in -X direction with P2=+Inf");
         Assert.False(aBox.IsOpenXmax, "Xmax should not be open");
@@ -89,7 +89,7 @@ public partial class BndLibTest
         Line3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(-1.0, -1.0, -1.0));
         Box aBox = new();
 
-        BndLib.Add(aLine, -THE_INF, THE_INF, 0.0, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aLine, -THE_INF, THE_INF, 0.0, ref aBox);
 
         Assert.True(aBox.IsOpenXmin, "Xmin should be open");
         Assert.True(aBox.IsOpenXmax, "Xmax should be open");
@@ -112,7 +112,7 @@ public partial class BndLibTest
         Box aBoxArc = new();
         double aTol = 0.0;
 
-        BndLib.Add(aCirc, aTol, ref aBoxFull);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aCirc, aTol, ref aBoxFull);
 
         aBoxFull.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 
@@ -124,7 +124,7 @@ public partial class BndLibTest
         Assert.Equal(0.0, aZmax, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Full circle via parameters [0, 2*PI]
-        BndLib.Add(aCirc, 0.0, 2.0 * M_PI, aTol, ref aBoxArc);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aCirc, 0.0, 2.0 * M_PI, aTol, ref aBoxArc);
         aBoxArc.Get(out aXmin, out aYmin, out aZmin, out aXmax, out aYmax, out aZmax);
 
         Assert.Equal(-5.0, aXmin, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -141,7 +141,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aCirc, 0.0, M_PI / 2.0, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aCirc, 0.0, M_PI / 2.0, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out _, out double aXmax, out double aYmax, out _);
 
@@ -159,7 +159,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aCirc, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aCirc, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 
@@ -183,7 +183,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aElips, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aElips, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 
@@ -203,7 +203,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aElips, 0.0, M_PI / 2.0, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aElips, 0.0, M_PI / 2.0, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out _, out double aXmax, out double aYmax, out _);
 
@@ -227,7 +227,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aHypr, -1.0, 1.0, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aHypr, -1.0, 1.0, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out _, out double aXmax, out double aYmax, out _);
 
@@ -256,7 +256,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aHypr, -2.0, 2.0, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aHypr, -2.0, 2.0, aTol, ref aBox);
 
         // Verify box is valid and contains reasonable bounds
         Assert.False(aBox.IsVoid, "Box should not be void");
@@ -277,7 +277,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aHypr, 0.0, THE_INF, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aHypr, 0.0, THE_INF, aTol, ref aBox);
 
         Assert.True(aBox.IsOpenXmax, "Xmax should be open for hyperbola with P2=+Inf");
         Assert.True(aBox.IsOpenYmax, "Ymax should be open for hyperbola with P2=+Inf");
@@ -296,7 +296,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aParab, -4.0, 4.0, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aParab, -4.0, 4.0, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out _, out double aXmax, out double aYmax, out _);
 
@@ -316,7 +316,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aParab, 0.0, THE_INF, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aParab, 0.0, THE_INF, aTol, ref aBox);
 
         Assert.True(aBox.IsOpenXmax, "Xmax should be open for parabola with P2=+Inf");
         Assert.True(aBox.IsOpenYmax, "Ymax should be open for parabola with P2=+Inf");
@@ -334,7 +334,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aSphere, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aSphere, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 
@@ -355,7 +355,7 @@ public partial class BndLibTest
         double aTol = 0.0;
 
         // Full U range, V from 0 to PI/2 (upper hemisphere)
-        BndLib.Add(aSphere, 0.0, 2.0 * M_PI, 0.0, M_PI / 2.0, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aSphere, 0.0, 2.0 * M_PI, 0.0, M_PI / 2.0, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 
@@ -375,7 +375,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aSphere, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aSphere, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 
@@ -400,7 +400,7 @@ public partial class BndLibTest
         double aTol = 0.0;
 
         // Full U range, V from 0 to 10
-        BndLib.Add(aCyl, 0.0, 2.0 * M_PI, 0.0, 10.0, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aCyl, 0.0, 2.0 * M_PI, 0.0, 10.0, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 
@@ -420,7 +420,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aCyl, 0.0, THE_INF, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aCyl, 0.0, THE_INF, aTol, ref aBox);
 
         Assert.True(aBox.IsOpenZmax, "Zmax should be open for cylinder with VMax=+Inf");
         Assert.False(aBox.IsOpenZmin, "Zmin should not be open");
@@ -435,7 +435,7 @@ public partial class BndLibTest
         double aTol = 0.0;
 
         // U from 0 to PI/2 (first quadrant), V from 0 to 10
-        BndLib.Add(aCyl, 0.0, M_PI / 2.0, 0.0, 10.0, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aCyl, 0.0, M_PI / 2.0, 0.0, 10.0, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 
@@ -462,7 +462,7 @@ public partial class BndLibTest
         double aTol = 0.0;
 
         // Full U range, V from 0 to 5
-        BndLib.Add(aCone, 0.0, 2.0 * M_PI, 0.0, 5.0, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aCone, 0.0, 2.0 * M_PI, 0.0, 5.0, aTol, ref aBox);
 
         aBox.Get(out _, out _, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 
@@ -486,7 +486,7 @@ public partial class BndLibTest
         double aTol = 0.0;
 
         // Full U range, V from -5 to 0
-        BndLib.Add(aCone, 0.0, 2.0 * M_PI, -5.0, 0.0, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aCone, 0.0, 2.0 * M_PI, -5.0, 0.0, aTol, ref aBox);
 
         aBox.Get(out _, out _, out double aZmin, out _, out _, out double aZmax);
 
@@ -507,7 +507,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aCone, 0.0, THE_INF, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aCone, 0.0, THE_INF, aTol, ref aBox);
 
         // For cone with infinite V, the Z direction should be open
         Assert.True(aBox.IsOpenZmax, "Zmax should be open for cone with VMax=+Inf");
@@ -525,7 +525,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aTorus, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aTorus, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 
@@ -550,7 +550,7 @@ public partial class BndLibTest
         double aTol = 0.0;
 
         // U from 0 to PI/2, V from 0 to PI
-        BndLib.Add(aTorus, 0.0, M_PI / 2.0, 0.0, M_PI, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aTorus, 0.0, M_PI / 2.0, 0.0, M_PI, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out _, out _, out _, out double aZmax);
 
@@ -578,7 +578,7 @@ public partial class BndLibTest
         double aTol = 0.0;
 
         // Full U, V from -PI to 0
-        BndLib.Add(aTorus, 0.0, 2.0 * M_PI, -M_PI, 0.0, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aTorus, 0.0, 2.0 * M_PI, -M_PI, 0.0, aTol, ref aBox);
 
         aBox.Get(out _, out _, out double aZmin, out _, out _, out _);
 
@@ -602,7 +602,7 @@ public partial class BndLibTest
         double aTol = 0.0;
 
         // V from -3*PI to -2*PI covers one full revolution
-        BndLib.Add(aTorus, 0.0, 2.0 * M_PI, -3.0 * M_PI, -2.0 * M_PI, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aTorus, 0.0, 2.0 * M_PI, -3.0 * M_PI, -2.0 * M_PI, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out _, out double aXmax, out double aYmax, out _);
 
@@ -625,7 +625,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aTorus, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aTorus, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 
@@ -648,7 +648,7 @@ public partial class BndLibTest
         Box2d aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aLine, 0.0, 10.0, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aLine, 0.0, 10.0, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aXmax, out double aYmax);
 
@@ -668,7 +668,7 @@ public partial class BndLibTest
         Box2d aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aCirc, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aCirc, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aXmax, out double aYmax);
 
@@ -685,7 +685,7 @@ public partial class BndLibTest
         Box2d aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aElips, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aElips, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aXmax, out double aYmax);
 
@@ -702,7 +702,7 @@ public partial class BndLibTest
         Box2d aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aHypr, -1.0, 1.0, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aHypr, -1.0, 1.0, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aXmax, out double aYmax);
 
@@ -719,7 +719,7 @@ public partial class BndLibTest
         Box2d aBox = new();
         double aTol = 0.0;
 
-        BndLib.Add(aParab, -4.0, 4.0, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aParab, -4.0, 4.0, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aXmax, out double aYmax);
 
@@ -740,7 +740,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 0.5;
 
-        BndLib.Add(aCirc, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aCirc, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 
@@ -760,7 +760,7 @@ public partial class BndLibTest
         Box aBox = new();
         double aTol = 1.0;
 
-        BndLib.Add(aSphere, aTol, ref aBox);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(aSphere, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
 

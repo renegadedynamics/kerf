@@ -15,7 +15,7 @@ namespace Occt;
 /// <remarks>A working object (decision 21). <see cref="Surface"/> hands out the surface frozen.</remarks>
 public class GeomFill_Generator : GeomFill_Profiler
 {
-    private Geom_Surface? mySurface;
+    private Surface? mySurface;
 
     public GeomFill_Generator()
     {
@@ -54,7 +54,7 @@ public class GeomFill_Generator : GeomFill_Profiler
 
         for (j = 1; j <= NbVPoles; j++)
         {
-            Geom_BSplineCurve Cj = (Geom_BSplineCurve)mySequence[j];
+            BSplineCurve3D Cj = (BSplineCurve3D)mySequence[j];
             NCollection_Array1<Point3D> aPoles = Cj.InternalPoles();
             NCollection_Array1<double> aWeights = Cj.InternalWeightsArray();
             VKnots[j] = (double)(j - 1);
@@ -65,17 +65,17 @@ public class GeomFill_Generator : GeomFill_Profiler
             }
         }
 
-        mySurface = new Geom_BSplineSurface(Poles, Weights, UKnots, VKnots, UMults, VMults, Degree(), 1,
+        mySurface = new BSplineSurface(Poles, Weights, UKnots, VKnots, UMults, VMults, Degree(), 1,
                                             isUPeriodic, isVPeriodic);
     }
 
     /// <summary>The surface (null before <see cref="Perform"/>), frozen.</summary>
-    public Geom_Surface? Surface()
+    public Surface? Surface()
     {
         mySurface?.Freeze();
         return mySurface;
     }
 
     /// <summary>The surface, not frozen, for ported callers.</summary>
-    internal Geom_Surface? InternalSurface() => mySurface;
+    internal Surface? InternalSurface() => mySurface;
 }

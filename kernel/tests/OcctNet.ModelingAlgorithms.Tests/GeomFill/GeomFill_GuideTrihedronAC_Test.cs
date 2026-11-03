@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -10,7 +11,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class GeomFill_GuideTrihedronAC_Test
 {
     // Helper: create a cubic BSpline curve suitable for C2 evaluation.
-    private static GeomAdaptor_Curve makeBSplineCurve(Point3D theP1, Point3D theP2, Point3D theP3, Point3D theP4)
+    private static CurveAdaptor makeBSplineCurve(Point3D theP1, Point3D theP2, Point3D theP3, Point3D theP4)
     {
         NCollection_Array1<Point3D> aPoles = new(1, 4);
         aPoles[1] = theP1;
@@ -26,15 +27,15 @@ public class GeomFill_GuideTrihedronAC_Test
         aMults[1] = 4;
         aMults[2] = 4;
 
-        Geom_BSplineCurve aCurve = new(aPoles, aKnots, aMults, 3);
-        return new GeomAdaptor_Curve(aCurve);
+        BSplineCurve3D aCurve = new(aPoles, aKnots, aMults, 3);
+        return new CurveAdaptor(aCurve);
     }
 
     [Fact]
     public void D0_ReturnsTrue()
     {
-        Adaptor3d_Curve aGuide = makeBSplineCurve(new Point3D(0, 0, 1), new Point3D(1, 0, 1), new Point3D(1, 1, 1), new Point3D(0, 1, 1));
-        Adaptor3d_Curve aPath = makeBSplineCurve(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
+        CurveAdaptorBase aGuide = makeBSplineCurve(new Point3D(0, 0, 1), new Point3D(1, 0, 1), new Point3D(1, 1, 1), new Point3D(0, 1, 1));
+        CurveAdaptorBase aPath = makeBSplineCurve(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
 
         GeomFill_GuideTrihedronAC aTrihedron = new(aGuide);
         aTrihedron.SetCurve(aPath);
@@ -50,8 +51,8 @@ public class GeomFill_GuideTrihedronAC_Test
     [Fact]
     public void D1_ReturnsTrue()
     {
-        Adaptor3d_Curve aGuide = makeBSplineCurve(new Point3D(0, 0, 1), new Point3D(1, 0, 1), new Point3D(1, 1, 1), new Point3D(0, 1, 1));
-        Adaptor3d_Curve aPath = makeBSplineCurve(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
+        CurveAdaptorBase aGuide = makeBSplineCurve(new Point3D(0, 0, 1), new Point3D(1, 0, 1), new Point3D(1, 1, 1), new Point3D(0, 1, 1));
+        CurveAdaptorBase aPath = makeBSplineCurve(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
 
         GeomFill_GuideTrihedronAC aTrihedron = new(aGuide);
         aTrihedron.SetCurve(aPath);
@@ -68,8 +69,8 @@ public class GeomFill_GuideTrihedronAC_Test
     [Fact]
     public void D2_ReturnsTrue()
     {
-        Adaptor3d_Curve aGuide = makeBSplineCurve(new Point3D(0, 0, 1), new Point3D(1, 0, 1), new Point3D(1, 1, 1), new Point3D(0, 1, 1));
-        Adaptor3d_Curve aPath = makeBSplineCurve(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
+        CurveAdaptorBase aGuide = makeBSplineCurve(new Point3D(0, 0, 1), new Point3D(1, 0, 1), new Point3D(1, 1, 1), new Point3D(0, 1, 1));
+        CurveAdaptorBase aPath = makeBSplineCurve(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
 
         GeomFill_GuideTrihedronAC aTrihedron = new(aGuide);
         aTrihedron.SetCurve(aPath);
@@ -92,8 +93,8 @@ public class GeomFill_GuideTrihedronAC_Test
     [Fact]
     public void D2_ConsistentAtMultipleParams()
     {
-        Adaptor3d_Curve aGuide = makeBSplineCurve(new Point3D(0, 0, 2), new Point3D(2, 0, 2), new Point3D(2, 2, 2), new Point3D(0, 2, 2));
-        Adaptor3d_Curve aPath = makeBSplineCurve(new Point3D(0, 0, 0), new Point3D(2, 0, 0), new Point3D(2, 2, 0), new Point3D(0, 2, 0));
+        CurveAdaptorBase aGuide = makeBSplineCurve(new Point3D(0, 0, 2), new Point3D(2, 0, 2), new Point3D(2, 2, 2), new Point3D(0, 2, 2));
+        CurveAdaptorBase aPath = makeBSplineCurve(new Point3D(0, 0, 0), new Point3D(2, 0, 0), new Point3D(2, 2, 0), new Point3D(0, 2, 0));
 
         GeomFill_GuideTrihedronAC aTrihedron = new(aGuide);
         aTrihedron.SetCurve(aPath);

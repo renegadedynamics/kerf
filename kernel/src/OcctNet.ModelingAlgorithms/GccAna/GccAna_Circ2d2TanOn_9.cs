@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
@@ -76,13 +77,13 @@ public sealed partial class GccAna_Circ2d2TanOn
             }
             if (ok)
             {
-                IntAna2d_AnaIntersection Intp = new(Bis.ThisSolution(1), OnCirc);
-                if (Intp.IsDone())
+                AnalyticIntersection Intp = new(Bis.ThisSolution(1), OnCirc);
+                if (Intp.IsDone)
                 {
                     WellDone = true;
-                    if (!Intp.IsEmpty())
+                    if (!Intp.IsEmpty)
                     {
-                        for (int l = 1; l <= Intp.NbPoints(); l++)
+                        for (int l = 1; l <= Intp.PointCount; l++)
                         {
                             NbrSol++;
                             Point2D pt = Intp.Point(l).Value();
@@ -274,12 +275,12 @@ public sealed partial class GccAna_Circ2d2TanOn
                 for (int k = i; k <= i + j - 1; k++)
                 {
                     kk++;
-                    IntAna2d_AnaIntersection Intp = new(Bis.ThisSolution(k), OnCirc);
-                    if (Intp.IsDone())
+                    AnalyticIntersection Intp = new(Bis.ThisSolution(k), OnCirc);
+                    if (Intp.IsDone)
                     {
-                        if (!Intp.IsEmpty())
+                        if (!Intp.IsEmpty)
                         {
-                            for (int l = 1; l <= Intp.NbPoints(); l++)
+                            for (int l = 1; l <= Intp.PointCount; l++)
                             {
                                 Vector2D V = new(Intp.Point(l).Value(), Bis.ThisSolution(k).Location());
                                 if ((kk == 1 && sgn * V.Dot(new Vector2D(Bis.ThisSolution(k).Direction())) >= 0.0)

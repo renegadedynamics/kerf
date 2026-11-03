@@ -1,10 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -34,7 +38,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
     }
 
     // The native shape written to a file and read back by both sides (the port's frozen).
-    private Twin<N.TopoDS_Shape, TopoDS_Shape> ReadBoth(N.TopoDS_Shape theShape)
+    private Twin<N.TopoDS_Shape, Shape> ReadBoth(N.TopoDS_Shape theShape)
     {
         string aFile = Path.Combine(myDirectory, $"s{myFileNumber++}.brep");
         Assert.True(N.BRepTools.Write(theShape, aFile));
@@ -44,20 +48,20 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
             Assert.True(N.BRepTools.Read(aNShape, aFile, aBuilder));
         }
 
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile));
+        Assert.True(BrepTools.Read(out Shape aPShape, aFile));
         return new(aNShape, aPShape);
     }
 
     // Modified(S) of every input sub-shape: the number of images and each one's place in the result.
-    private static void CompareModified(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theInput, N.TopoDS_Shape theNResult,
-                                        in TopoDS_Shape theResult, Func<N.TopoDS_Shape, N.TopoDS_Shape[]> theNModified,
-                                        Func<TopoDS_Shape, ISchematiqList<TopoDS_Shape>> theModified)
+    private static void CompareModified(Oracle theOracle, Twin<N.TopoDS_Shape, Shape> theInput, N.TopoDS_Shape theNResult,
+                                        in Shape theResult, Func<N.TopoDS_Shape, N.TopoDS_Shape[]> theNModified,
+                                        Func<Shape, ISchematiqList<Shape>> theModified)
     {
-        Twin<N.TopoDS_Shape, TopoDS_Shape> aTwin = new(theNResult, theResult);
-        foreach (Twin<N.TopoDS_Shape, TopoDS_Shape> aS in BRepToolsModifierOracleTests.AllSubShapes(theInput))
+        Twin<N.TopoDS_Shape, Shape> aTwin = new(theNResult, theResult);
+        foreach (Twin<N.TopoDS_Shape, Shape> aS in BRepToolsModifierOracleTests.AllSubShapes(theInput))
         {
             N.TopoDS_Shape[] aN = theNModified(aS.N);
-            ISchematiqList<TopoDS_Shape> aP = theModified(aS.P);
+            ISchematiqList<Shape> aP = theModified(aS.P);
             theOracle.Same(aN.Length, aP.Count, "Modified count");
             for (int i = 0; i < Math.Min(aN.Length, aP.Count); i++)
             {
@@ -83,12 +87,12 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
                 // two shapes through one framework
                 for (int aRound = 0; aRound < 2; aRound++)
                 {
-                    Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = BRepToolsModifierOracleTests.MeshedScene(anOracle, 2 * aScene + aRound);
+                    Twin<N.TopoDS_Shape, Shape> aShape = BRepToolsModifierOracleTests.MeshedScene(anOracle, 2 * aScene + aRound);
                     bool aCopyGeom = anOracle.Bool(), aCopyMesh = anOracle.Bool();
                     aNTransform.Perform(aShape.N, aCopyGeom, aCopyMesh);
                     aTransform.Perform(aShape.P, aCopyGeom, aCopyMesh);
                     anOracle.Same(aNTransform.IsDone(), aTransform.IsDone(), "IsDone");
-                    TopoDS_Shape aResult = aTransform.InternalShape();
+                    Shape aResult = aTransform.InternalShape();
                     if (aResult.IsPartner(aShape.P))
                     {
                         aMoved++;
@@ -114,14 +118,14 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
         var aCounts = new TopologyOracleTests.Counts();
         foreach (int aScene in Tape.Budget(Scenes))
         {
-            Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = BRepToolsModifierOracleTests.MeshedScene(anOracle, aScene);
+            Twin<N.TopoDS_Shape, Shape> aShape = BRepToolsModifierOracleTests.MeshedScene(anOracle, aScene);
             bool aCopyGeom = anOracle.Bool(), aCopyMesh = anOracle.Bool();
             using var aNCopy = new N.BRepBuilderAPI_Copy();
             var aCopy = new BRepBuilderAPI_Copy();
             // the same shape twice through one framework (OCCT's second copy keeps the first one's shapes but makes
             // new vertices), then another shape
-            Twin<N.TopoDS_Shape, TopoDS_Shape>[] aShapes = [aShape, aShape, BRepToolsModifierOracleTests.MeshedScene(anOracle, aScene + 1)];
-            foreach (Twin<N.TopoDS_Shape, TopoDS_Shape> anInput in aShapes)
+            Twin<N.TopoDS_Shape, Shape>[] aShapes = [aShape, aShape, BRepToolsModifierOracleTests.MeshedScene(anOracle, aScene + 1)];
+            foreach (Twin<N.TopoDS_Shape, Shape> anInput in aShapes)
             {
                 aNCopy.Perform(anInput.N, aCopyGeom, aCopyMesh);
                 aCopy.Perform(anInput.P, aCopyGeom, aCopyMesh);
@@ -148,7 +152,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
         var aCounts = new TopologyOracleTests.Counts();
         foreach (int aScene in Tape.Budget(Scenes))
         {
-            Twin<N.TopoDS_Shape, TopoDS_Shape> aShape;
+            Twin<N.TopoDS_Shape, Shape> aShape;
             if (aScene % 8 == 7)
             {
                 aShape = BRepToolsModifierOracleTests.BSplineScene(anOracle);
@@ -194,7 +198,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
         int aSurfaceless = 0;
         foreach (int k in Tape.Budget(Shapes))
         {
-            Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = ReadBoth(BRepToolsIOOracleTests.NativeShape(anOracle, k, out _));
+            Twin<N.TopoDS_Shape, Shape> aShape = ReadBoth(BRepToolsIOOracleTests.NativeShape(anOracle, k, out _));
             switch (k % 3)
             {
                 case 0:
@@ -236,10 +240,10 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
                         // OCCT: a meshed face on a B-spline or Bezier surface comes out of the NURBS conversion without
                         // its surface (occt-issues.md), on both sides; native BRepTools::UVBounds can't read such a face
                         bool aGeometry = true;
-                        foreach (Twin<N.TopoDS_Shape, TopoDS_Shape> aF in TopologyOracleTests.Explore(new(aN.Shape(), aP.InternalShape()), TopAbs_FACE))
+                        foreach (Twin<N.TopoDS_Shape, Shape> aF in TopologyOracleTests.Explore(new(aN.Shape(), aP.InternalShape()), ShapeType.Face))
                         {
                             bool aNNull = N.BRep_Tool.Surface(N.TopoDS.Face(aF.N)) is null;
-                            anOracle.Same(aNNull, BRep_Tool.Surface(TopoDS.Face(aF.P)) is null, "face without surface");
+                            anOracle.Same(aNNull, Tool.Surface(ShapeCasts.Face(aF.P)) is null, "face without surface");
                             aGeometry &= !aNNull;
                         }
                         if (!aGeometry)

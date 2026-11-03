@@ -64,7 +64,7 @@ public class ProjLibOracleTests(ITestOutputHelper output)
                 using var aNLine = N.Geom2d_Line.DownCast(aN2d)!;
                 using var aNLoc = aNLine.Location();
                 using var aNDir = aNLine.Direction();
-                Line2D aPort = ProjLib.Project(aPln, aLin);
+                Line2D aPort = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, aLin);
                 anOracle.Same(aNLoc, aPort.Location(), $"case {i} line location");
                 anOracle.Same(aNDir.X(), aPort.Direction().X(), $"case {i} line direction X");
                 anOracle.Same(aNDir.Y(), aPort.Direction().Y(), $"case {i} line direction Y");
@@ -75,7 +75,7 @@ public class ProjLibOracleTests(ITestOutputHelper output)
                 using var aNC = new N.Geom_Circle(aNCAx, aMaj);
                 using var aN2d = N.GeomAPI.To2d(aNC, aNPln)!;
                 using var aNCirc = N.Geom2d_Circle.DownCast(aN2d)!;
-                Circle2D aPort = ProjLib.Project(aPln, new Circle3D(aCAx, aMaj));
+                Circle2D aPort = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, new Circle3D(aCAx, aMaj));
                 SamePosition(anOracle, aN2d, aPort.Position(), $"case {i} circle");
                 anOracle.Same(aNCirc.Radius(), aPort.Radius(), $"case {i} circle radius");
             }
@@ -85,7 +85,7 @@ public class ProjLibOracleTests(ITestOutputHelper output)
                 using var aNC = new N.Geom_Ellipse(aNCAx, aMaj, aMin);
                 using var aN2d = N.GeomAPI.To2d(aNC, aNPln)!;
                 using var aNElips = N.Geom2d_Ellipse.DownCast(aN2d)!;
-                Ellipse2D aPort = ProjLib.Project(aPln, new Ellipse3D(aCAx, aMaj, aMin));
+                Ellipse2D aPort = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, new Ellipse3D(aCAx, aMaj, aMin));
                 SamePosition(anOracle, aN2d, aPort.Axis(), $"case {i} ellipse");
                 anOracle.Same(aNElips.MajorRadius(), aPort.MajorRadius(), $"case {i} ellipse major radius");
                 anOracle.Same(aNElips.MinorRadius(), aPort.MinorRadius(), $"case {i} ellipse minor radius");
@@ -95,13 +95,13 @@ public class ProjLibOracleTests(ITestOutputHelper output)
             {
                 using var aNC = new N.Geom_Parabola(aNCAx, aMin);
                 using var aN2d = N.GeomAPI.To2d(aNC, aNPln)!;
-                Parabola2D aPort = ProjLib.Project(aPln, new Parabola3D(aCAx, aMin));
+                Parabola2D aPort = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, new Parabola3D(aCAx, aMin));
                 SamePosition(anOracle, aN2d, aPort.Axis(), $"case {i} parabola");
             }
             {
                 using var aNC = new N.Geom_Hyperbola(aNCAx, aMaj, aMin);
                 using var aN2d = N.GeomAPI.To2d(aNC, aNPln)!;
-                Hyperbola2D aPort = ProjLib.Project(aPln, new Hyperbola3D(aCAx, aMaj, aMin));
+                Hyperbola2D aPort = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, new Hyperbola3D(aCAx, aMaj, aMin));
                 SamePosition(anOracle, aN2d, aPort.Axis(), $"case {i} hyperbola");
             }
         }

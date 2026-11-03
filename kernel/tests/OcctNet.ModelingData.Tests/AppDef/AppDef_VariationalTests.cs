@@ -1,11 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
+using Kerf.Engine.Approximation.FiniteElements;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Numerics;
 using Kerf.Engine.Numerics.Polynomials;
 using Kerf.Geometry;
 using Xunit.Abstractions;
-using static Occt.AppParCurves_Constraint;
+using static Kerf.Engine.Approximation.Constraint;
 using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingData.Tests;
@@ -13,33 +15,33 @@ namespace OcctNet.ModelingData.Tests;
 // AppDef_Variational and AppDef_LinearCriteria on sampled curves with known shapes (OCCT has no GTests for them).
 public class AppDef_VariationalTests(ITestOutputHelper output)
 {
-    private static AppDef_MultiLine Line3d(int theNb, Func<double, Point3D> theF)
+    private static MultiLine Line3d(int theNb, Func<double, Point3D> theF)
     {
         NCollection_Array1<Point3D> aPnts = new(1, theNb);
         for (int i = 1; i <= theNb; i++)
         {
             aPnts[i] = theF((i - 1) / (double)(theNb - 1));
         }
-        return new AppDef_MultiLine(aPnts);
+        return new MultiLine(aPnts);
     }
 
-    private static AppDef_MultiLine Line2d(int theNb, Func<double, Point2D> theF)
+    private static MultiLine Line2d(int theNb, Func<double, Point2D> theF)
     {
         NCollection_Array1<Point2D> aPnts = new(1, theNb);
         for (int i = 1; i <= theNb; i++)
         {
             aPnts[i] = theF((i - 1) / (double)(theNb - 1));
         }
-        return new AppDef_MultiLine(aPnts);
+        return new MultiLine(aPnts);
     }
 
-    private static NCollection_HArray1<AppParCurves_ConstraintCouple> Constraints(
-        params (int Index, AppParCurves_Constraint Cons)[] theCouples)
+    private static NCollection_HArray1<ConstraintCouple> Constraints(
+        params (int Index, Constraint Cons)[] theCouples)
     {
-        NCollection_HArray1<AppParCurves_ConstraintCouple> aTab = new(1, theCouples.Length);
+        NCollection_HArray1<ConstraintCouple> aTab = new(1, theCouples.Length);
         for (int i = 0; i < theCouples.Length; i++)
         {
-            aTab[i + 1] = new AppParCurves_ConstraintCouple(theCouples[i].Index, theCouples[i].Cons);
+            aTab[i + 1] = new ConstraintCouple(theCouples[i].Index, theCouples[i].Cons);
         }
         return aTab;
     }
@@ -47,12 +49,12 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
     private static Point3D Circle(double t) => new(Math.Cos(t * 2.0), Math.Sin(t * 2.0), 0.0);
 
     // The largest distance between the points of a 3d line and the result, at the computed parameters.
-    private static double MaxDistance3d(AppDef_Variational theV, AppDef_MultiLine theLine)
+    private static double MaxDistance3d(Variational theV, MultiLine theLine)
     {
-        AppParCurves_MultiBSpCurve aC = theV.Value();
+        MultiBSpCurve aC = theV.Value();
         NCollection_HArray1<double> aPar = theV.Parameters();
         double aMax = 0.0;
-        for (int i = 1; i <= theLine.NbMultiPoints(); i++)
+        for (int i = 1; i <= theLine.MultiPointCount; i++)
         {
             aC.Value(1, aPar[i], out Point3D aP);
             aMax = Math.Max(aMax, aP.Distance(theLine.Value(i).Point(1)));
@@ -63,12 +65,12 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
     [Fact]
     public void Line3d_IsReproduced()
     {
-        AppDef_MultiLine aLine = Line3d(20, t => new Point3D(1.0 + 2.0 * t, -t, 0.5 + 3.0 * t));
-        AppDef_Variational aV = new(aLine, 1, 20, Constraints((1, AppParCurves_PassPoint), (20, AppParCurves_PassPoint)),
+        MultiLine aLine = Line3d(20, t => new Point3D(1.0 + 2.0 * t, -t, 0.5 + 3.0 * t));
+        Variational aV = new(aLine, 1, 20, Constraints((1, PassPoint), (20, PassPoint)),
                                     8, 10, C2, false, true, 1.0e-6);
-        Assert.True(aV.IsCreated());
+        Assert.True(aV.IsCreated);
         aV.Approximate();
-        Assert.True(aV.IsDone());
+        Assert.True(aV.IsDone);
         output.WriteLine($"MaxError {aV.MaxError()}, average {aV.AverageError()}, quadratic {aV.QuadraticError()}");
         Assert.True(aV.MaxError() < 1.0e-9);
         Assert.True(MaxDistance3d(aV, aLine) < 1.0e-9);
@@ -78,18 +80,18 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
     [Fact]
     public void Parabola3d_IsApproximated()
     {
-        AppDef_MultiLine aLine = Line3d(30, t => new Point3D(t, t * t, 0.5 * t * t - t));
-        AppDef_Variational aV = new(aLine, 1, 30, Constraints((1, AppParCurves_PassPoint), (30, AppParCurves_PassPoint)),
+        MultiLine aLine = Line3d(30, t => new Point3D(t, t * t, 0.5 * t * t - t));
+        Variational aV = new(aLine, 1, 30, Constraints((1, PassPoint), (30, PassPoint)),
                                     8, 10, C2, false, true, 1.0e-5);
         aV.Approximate();
-        Assert.True(aV.IsDone());
+        Assert.True(aV.IsDone);
         output.WriteLine($"MaxError {aV.MaxError()}, average {aV.AverageError()}");
         Assert.True(aV.MaxError() < 1.0e-5);
         // MaxError is measured on the FEmTool curve, before its conversion to a B-spline
         output.WriteLine($"B-spline distance {MaxDistance3d(aV, aLine)}");
         Assert.Equal(aV.MaxError(), MaxDistance3d(aV, aLine), 1.0e-9);
         // the pass points are interpolated
-        AppParCurves_MultiBSpCurve aC = aV.Value();
+        MultiBSpCurve aC = aV.Value();
         aC.Value(1, aV.Parameters()[1], out Point3D aFirst);
         aC.Value(1, aV.Parameters()[30], out Point3D aLast);
         Assert.True(aFirst.Distance(aLine.Value(1).Point(1)) < 1.0e-10);
@@ -105,13 +107,13 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
     [InlineData(C2)]
     public void Circle3d_WithEachContinuity(Continuity theCont)
     {
-        AppDef_MultiLine aLine = Line3d(40, Circle);
-        AppDef_Variational aV = new(aLine, 1, 40, Constraints((1, AppParCurves_PassPoint), (40, AppParCurves_PassPoint)),
+        MultiLine aLine = Line3d(40, Circle);
+        Variational aV = new(aLine, 1, 40, Constraints((1, PassPoint), (40, PassPoint)),
                                     10, 20, theCont, false, true, 1.0e-4);
         Assert.Equal(theCont, aV.Continuity());
         aV.Approximate();
-        Assert.True(aV.IsDone());
-        AppParCurves_MultiBSpCurve aC = aV.Value();
+        Assert.True(aV.IsDone);
+        MultiBSpCurve aC = aV.Value();
         output.WriteLine($"{theCont}: MaxError {aV.MaxError()}, degree {aC.Degree()}, knots {aV.Knots().Length()}");
         Assert.True(aV.MaxError() < 1.0e-4);
         Assert.True(MaxDistance3d(aV, aLine) < 1.0e-4);
@@ -127,21 +129,21 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
     [Fact]
     public void Circle3d_TangencyAtEnds()
     {
-        AppDef_MultiLine aLine = Line3d(25, Circle);
+        MultiLine aLine = Line3d(25, Circle);
         foreach (int i in new[] { 1, 25 })
         {
             double t = (i - 1) / 24.0;
-            AppDef_MultiPointConstraint aMPC = aLine.Value(i);
+            MultiPointConstraint aMPC = aLine.Value(i);
             aMPC.SetTang(1, new Vector3D(-Math.Sin(2.0 * t), Math.Cos(2.0 * t), 0.0));
         }
-        AppDef_Variational aV = new(aLine, 1, 25,
-                                    Constraints((1, AppParCurves_TangencyPoint), (25, AppParCurves_TangencyPoint)), 10,
+        Variational aV = new(aLine, 1, 25,
+                                    Constraints((1, TangencyPoint), (25, TangencyPoint)), 10,
                                     20, C2, false, true, 1.0e-4);
         aV.Approximate();
-        Assert.True(aV.IsDone());
+        Assert.True(aV.IsDone);
         output.WriteLine($"MaxError {aV.MaxError()}");
         Assert.True(aV.MaxError() < 1.0e-4);
-        AppParCurves_MultiBSpCurve aC = aV.Value();
+        MultiBSpCurve aC = aV.Value();
         foreach (int i in new[] { 1, 25 })
         {
             aC.D1(1, aV.Parameters()[i], out Point3D aP, out Vector3D aD);
@@ -153,23 +155,23 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
     [Fact]
     public void Circle2d_CurvatureAndInteriorPassPoint()
     {
-        AppDef_MultiLine aLine = Line2d(31, t => new Point2D(2.0 * Math.Cos(t * 1.5), 2.0 * Math.Sin(t * 1.5)));
+        MultiLine aLine = Line2d(31, t => new Point2D(2.0 * Math.Cos(t * 1.5), 2.0 * Math.Sin(t * 1.5)));
         double t0 = 0.0, t1 = 1.0;
-        AppDef_MultiPointConstraint aFirst = aLine.Value(1), aLast = aLine.Value(31);
+        MultiPointConstraint aFirst = aLine.Value(1), aLast = aLine.Value(31);
         // unit tangents and the curvature vectors (towards the centre, length 1/R)
         aFirst.SetTang2d(1, new Vector2D(-Math.Sin(1.5 * t0), Math.Cos(1.5 * t0)));
         aFirst.SetCurv2d(1, new Vector2D(-0.5 * Math.Cos(1.5 * t0), -0.5 * Math.Sin(1.5 * t0)));
         aLast.SetTang2d(1, new Vector2D(-Math.Sin(1.5 * t1), Math.Cos(1.5 * t1)));
         aLast.SetCurv2d(1, new Vector2D(-0.5 * Math.Cos(1.5 * t1), -0.5 * Math.Sin(1.5 * t1)));
-        AppDef_Variational aV = new(aLine, 1, 31,
-                                    Constraints((1, AppParCurves_CurvaturePoint), (16, AppParCurves_PassPoint),
-                                                (31, AppParCurves_CurvaturePoint)),
+        Variational aV = new(aLine, 1, 31,
+                                    Constraints((1, CurvaturePoint), (16, PassPoint),
+                                                (31, CurvaturePoint)),
                                     12, 20, C2, false, true, 1.0e-5);
         aV.Approximate();
-        Assert.True(aV.IsDone());
+        Assert.True(aV.IsDone);
         output.WriteLine($"MaxError {aV.MaxError()}");
         Assert.True(aV.MaxError() < 1.0e-4);
-        AppParCurves_MultiBSpCurve aC = aV.Value();
+        MultiBSpCurve aC = aV.Value();
         foreach (int i in new[] { 1, 16, 31 })
         {
             aC.D2(1, aV.Parameters()[i], out Point2D aP, out Vector2D aD1, out Vector2D aD2);
@@ -188,7 +190,7 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
     public void Line3dAnd2d_TwoCurvesInParallel()
     {
         int aNb = 21;
-        NCollection_Array1<AppDef_MultiPointConstraint> aTab = new(1, aNb);
+        NCollection_Array1<MultiPointConstraint> aTab = new(1, aNb);
         for (int i = 1; i <= aNb; i++)
         {
             double t = (i - 1) / (double)(aNb - 1);
@@ -196,15 +198,15 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
             NCollection_Array1<Point2D> aP2 = new(1, 1);
             aP3[1] = new Point3D(t, Math.Sin(t), t * t);
             aP2[1] = new Point2D(2.0 * t, 1.0 - t * t);
-            aTab[i] = new AppDef_MultiPointConstraint(aP3, aP2);
+            aTab[i] = new MultiPointConstraint(aP3, aP2);
         }
-        AppDef_MultiLine aLine = new(aTab);
-        AppDef_Variational aV = new(aLine, 1, aNb,
-                                    Constraints((1, AppParCurves_PassPoint), (aNb, AppParCurves_PassPoint)), 8, 10,
+        MultiLine aLine = new(aTab);
+        Variational aV = new(aLine, 1, aNb,
+                                    Constraints((1, PassPoint), (aNb, PassPoint)), 8, 10,
                                     C2, false, true, 1.0e-5);
         aV.Approximate();
-        Assert.True(aV.IsDone());
-        AppParCurves_MultiBSpCurve aC = aV.Value();
+        Assert.True(aV.IsDone);
+        MultiBSpCurve aC = aV.Value();
         Assert.Equal(2, aC.NbCurves());
         Matrix aDist = new(1, 2, 1, aNb);
         aV.Distance(aDist);
@@ -221,11 +223,11 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
     [Fact]
     public void NoConstraints_IsApproximated()
     {
-        AppDef_MultiLine aLine = Line3d(30, t => new Point3D(t, Math.Sin(3.0 * t), 0.0));
-        AppDef_Variational aV = new(aLine, 1, 30, new NCollection_HArray1<AppParCurves_ConstraintCouple>(1, 0), 10, 10,
+        MultiLine aLine = Line3d(30, t => new Point3D(t, Math.Sin(3.0 * t), 0.0));
+        Variational aV = new(aLine, 1, 30, new NCollection_HArray1<ConstraintCouple>(1, 0), 10, 10,
                                     C2, false, true, 1.0e-5);
         aV.Approximate();
-        Assert.True(aV.IsDone());
+        Assert.True(aV.IsDone);
         output.WriteLine($"MaxError {aV.MaxError()}");
         Assert.True(aV.MaxError() < 1.0e-4);
     }
@@ -233,13 +235,13 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
     [Fact]
     public void WithMinMax_ReducesTheMaximumError()
     {
-        AppDef_MultiLine aLine = Line3d(40, t => new Point3D(t, Math.Sin(6.0 * t), Math.Cos(4.0 * t)));
-        NCollection_HArray1<AppParCurves_ConstraintCouple> aCons =
-            Constraints((1, AppParCurves_PassPoint), (40, AppParCurves_PassPoint));
-        AppDef_Variational aV = new(aLine, 1, 40, aCons, 8, 4, C2, true, true, 1.0e-3);
+        MultiLine aLine = Line3d(40, t => new Point3D(t, Math.Sin(6.0 * t), Math.Cos(4.0 * t)));
+        NCollection_HArray1<ConstraintCouple> aCons =
+            Constraints((1, PassPoint), (40, PassPoint));
+        Variational aV = new(aLine, 1, 40, aCons, 8, 4, C2, true, true, 1.0e-3);
         Assert.True(aV.WithMinMax());
         aV.Approximate();
-        Assert.True(aV.IsDone());
+        Assert.True(aV.IsDone);
         output.WriteLine($"MinMax: MaxError {aV.MaxError()}, average {aV.AverageError()}");
         Assert.True(aV.MaxError() < 1.0e-2);
         Assert.True(aV.AverageError() <= aV.MaxError());
@@ -248,8 +250,8 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
     [Fact]
     public void CriteriumWeight_IsNormalised()
     {
-        AppDef_MultiLine aLine = Line3d(20, Circle);
-        AppDef_Variational aV = new(aLine, 1, 20, Constraints((1, AppParCurves_PassPoint), (20, AppParCurves_PassPoint)));
+        MultiLine aLine = Line3d(20, Circle);
+        Variational aV = new(aLine, 1, 20, Constraints((1, PassPoint), (20, PassPoint)));
         aV.CriteriumWeight(out double p1, out double p2, out double p3);
         Assert.Equal((0.4, 0.2, 0.4), (p1, p2, p3));
         aV.SetCriteriumWeight(1.0, 1.0, 2.0);
@@ -267,16 +269,16 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
     [Fact]
     public void SmoothingWeights_ChangeTheResult()
     {
-        AppDef_MultiLine aLine = Line3d(30, t => new Point3D(t, 0.2 * Math.Sin(9.0 * t), 0.0));
-        NCollection_HArray1<AppParCurves_ConstraintCouple> aCons =
-            Constraints((1, AppParCurves_PassPoint), (30, AppParCurves_PassPoint));
-        AppDef_Variational aTension = new(aLine, 1, 30, aCons, 8, 1, C2, false, false, 0.05);
+        MultiLine aLine = Line3d(30, t => new Point3D(t, 0.2 * Math.Sin(9.0 * t), 0.0));
+        NCollection_HArray1<ConstraintCouple> aCons =
+            Constraints((1, PassPoint), (30, PassPoint));
+        Variational aTension = new(aLine, 1, 30, aCons, 8, 1, C2, false, false, 0.05);
         aTension.SetCriteriumWeight(1.0, 0.0, 0.0);
         aTension.Approximate();
-        AppDef_Variational aJerk = new(aLine, 1, 30, aCons, 8, 1, C2, false, false, 0.05);
+        Variational aJerk = new(aLine, 1, 30, aCons, 8, 1, C2, false, false, 0.05);
         aJerk.SetCriteriumWeight(0.0, 0.0, 1.0);
         aJerk.Approximate();
-        Assert.True(aTension.IsDone() && aJerk.IsDone());
+        Assert.True(aTension.IsDone && aJerk.IsDone);
         aTension.Criterium(out double t1, out double t2, out double t3);
         aJerk.Criterium(out double j1, out double j2, out double j3);
         output.WriteLine($"tension-weighted: {t1} {t2} {t3}, err {aTension.MaxError()}");
@@ -289,12 +291,12 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
     [Fact]
     public void SetKnots_WithoutCutting_KeepsTheKnots()
     {
-        AppDef_MultiLine aLine = Line3d(60, t => new Point3D(t, Math.Sin(9.0 * t), Math.Cos(7.0 * t)));
-        AppDef_Variational aV = new(aLine, 1, 60, Constraints((1, AppParCurves_PassPoint), (60, AppParCurves_PassPoint)),
+        MultiLine aLine = Line3d(60, t => new Point3D(t, Math.Sin(9.0 * t), Math.Cos(7.0 * t)));
+        Variational aV = new(aLine, 1, 60, Constraints((1, PassPoint), (60, PassPoint)),
                                     6, 10, C2, false, false, 1.0e-5);
         Assert.False(aV.WithCutting());
         aV.Approximate();
-        Assert.True(aV.IsDone());
+        Assert.True(aV.IsDone);
         Assert.Equal(2, aV.Knots().Length());
         Assert.Equal(0.0, aV.Knots()[1]);
         Assert.Equal(1.0, aV.Knots()[2]);
@@ -319,15 +321,15 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
     [Fact]
     public void Accessors_AndSetters()
     {
-        AppDef_MultiLine aLine = Line3d(20, Circle);
-        AppDef_Variational aV = new(aLine, 1, 20, Constraints((1, AppParCurves_PassPoint), (20, AppParCurves_PassPoint)),
+        MultiLine aLine = Line3d(20, Circle);
+        Variational aV = new(aLine, 1, 20, Constraints((1, PassPoint), (20, PassPoint)),
                                     9, 7, C1, false, true, 0.01, 3);
         Assert.Equal(9, aV.MaxDegree());
         Assert.Equal(7, aV.MaxSegment());
         Assert.Equal(C1, aV.Continuity());
         Assert.Equal(0.01, aV.Tolerance());
-        Assert.Equal(3, aV.NbIterations());
-        Assert.False(aV.IsDone());
+        Assert.Equal(3, aV.IterationCount);
+        Assert.False(aV.IsDone);
         Assert.Throws<NotDoneException>(() => aV.Value());
         Assert.Throws<NotDoneException>(() => aV.MaxError());
         Assert.True(aV.SetMaxDegree(6));
@@ -336,50 +338,50 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
         Assert.True(aV.SetContinuity(C2));
         Assert.Throws<ConstructionErrorException>(() => aV.SetContinuity(C3));
         aV.SetNbIterations(1);
-        Assert.Equal(1, aV.NbIterations());
+        Assert.Equal(1, aV.IterationCount);
         aV.Approximate();
-        Assert.True(aV.IsDone());
+        Assert.True(aV.IsDone);
         Assert.True(aV.Value().Degree() <= 6);
         // OCCT clamps MaxDegree to 30, but FEmTool's criteria take at most 14 (decision 148)
-        Assert.Throws<ConstructionErrorException>(() => new AppDef_Variational(aLine, 1, 20, Constraints(), 40));
+        Assert.Throws<ConstructionErrorException>(() => new Variational(aLine, 1, 20, Constraints(), 40));
     }
 
     [Fact]
     public void OverConstrained_IsDetected()
     {
-        AppDef_MultiLine aLine = Line3d(10, Circle);
-        (int, AppParCurves_Constraint)[] aAll = new (int, AppParCurves_Constraint)[10];
+        MultiLine aLine = Line3d(10, Circle);
+        (int, Constraint)[] aAll = new (int, Constraint)[10];
         for (int i = 0; i < 10; i++)
         {
-            aAll[i] = (i + 1, AppParCurves_PassPoint);
+            aAll[i] = (i + 1, PassPoint);
         }
         // (6 - 2) * 1 - 10 < 0
-        AppDef_Variational aV = new(aLine, 1, 10, Constraints(aAll), 6, 1, C2, false, false);
-        Assert.True(aV.IsOverConstrained());
-        Assert.False(aV.IsCreated());
+        Variational aV = new(aLine, 1, 10, Constraints(aAll), 6, 1, C2, false, false);
+        Assert.True(aV.IsOverConstrained);
+        Assert.False(aV.IsCreated);
         Assert.Throws<NotDoneException>(() => aV.Approximate());
         // fewer constraints: no longer over-constrained, but OCCT's Init never clears the flag, so SetConstraints
         // still returns false (occt-issues.md)
-        Assert.False(aV.SetConstraints(Constraints((1, AppParCurves_PassPoint))));
-        Assert.True(aV.IsCreated());
-        Assert.True(aV.IsOverConstrained());
+        Assert.False(aV.SetConstraints(Constraints((1, PassPoint))));
+        Assert.True(aV.IsCreated);
+        Assert.True(aV.IsOverConstrained);
         aV.Approximate();
-        Assert.True(aV.IsDone());
+        Assert.True(aV.IsDone);
     }
 
     [Fact]
     public void InvalidArguments_Throw()
     {
-        AppDef_MultiLine aLine = Line3d(10, Circle);
-        Assert.Throws<DomainErrorException>(() => new AppDef_Variational(aLine, 1, 10, Constraints(), 0));
-        Assert.Throws<DomainErrorException>(() => new AppDef_Variational(aLine, 1, 10, Constraints(), 8, 0));
-        Assert.Throws<ConstructionErrorException>(() => new AppDef_Variational(aLine, 1, 10, Constraints(), 8, 10, G1));
+        MultiLine aLine = Line3d(10, Circle);
+        Assert.Throws<DomainErrorException>(() => new Variational(aLine, 1, 10, Constraints(), 0));
+        Assert.Throws<DomainErrorException>(() => new Variational(aLine, 1, 10, Constraints(), 8, 0));
+        Assert.Throws<ConstructionErrorException>(() => new Variational(aLine, 1, 10, Constraints(), 8, 10, G1));
         // a tangency point without tangents
         Assert.Throws<ConstructionErrorException>(
-            () => new AppDef_Variational(aLine, 1, 10, Constraints((1, AppParCurves_TangencyPoint))));
+            () => new Variational(aLine, 1, 10, Constraints((1, TangencyPoint))));
         // coincident points: no length
-        AppDef_MultiLine aPoint = Line3d(5, _ => new Point3D(1, 2, 3));
-        Assert.Throws<ConstructionErrorException>(() => new AppDef_Variational(aPoint, 1, 5, Constraints()));
+        MultiLine aPoint = Line3d(5, _ => new Point3D(1, 2, 3));
+        Assert.Throws<ConstructionErrorException>(() => new Variational(aPoint, 1, 5, Constraints()));
     }
 
     [Fact]
@@ -387,15 +389,15 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
     {
         // OCCT estimates a tangent at the third point of a two-point line, reading past the points (occt-issues.md);
         // the port's range checks throw.
-        AppDef_MultiLine aLine = Line3d(2, t => new Point3D(t, 0, 0));
-        Assert.ThrowsAny<FailureException>(() => new AppDef_Variational(aLine, 1, 2, Constraints()));
+        MultiLine aLine = Line3d(2, t => new Point3D(t, 0, 0));
+        Assert.ThrowsAny<FailureException>(() => new Variational(aLine, 1, 2, Constraints()));
     }
 
     [Fact]
     public void LinearCriteria_Basics()
     {
-        AppDef_MultiLine aLine = Line3d(10, Circle);
-        AppDef_LinearCriteria aJ = new(aLine, 1, 10);
+        MultiLine aLine = Line3d(10, Circle);
+        LinearCriteria aJ = new(aLine, 1, 10);
         Assert.Null(aJ.Curve());
         Assert.Throws<DomainErrorException>(() => aJ.AssemblyTable());
         Assert.Throws<DomainErrorException>(() => aJ.SetWeight(-1.0, 1.0, 1.0, 1.0, 1.0));
@@ -413,7 +415,7 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
 
         // a curve of 2 elements, dimension 3, degree 7 with C1 Hermite constraints
         HermitJacobi aBase = new(7, C1);
-        FEmTool_Curve aCurve = new(3, 2, aBase, 1.0e-9);
+        Curve aCurve = new(3, 2, aBase, 1.0e-9);
         aCurve.Knots()[1] = 0.0;
         aCurve.Knots()[2] = 0.5;
         aCurve.Knots()[3] = 1.0;

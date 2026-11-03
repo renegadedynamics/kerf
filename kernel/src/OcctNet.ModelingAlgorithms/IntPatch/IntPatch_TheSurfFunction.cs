@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+
 namespace Occt;
 
 /// <summary>
@@ -10,13 +12,13 @@ namespace Occt;
 /// intersection (OCCT's instantiation of IntImp_ZerImpFunc.gxx over Adaptor3d_Surface, decision 607).
 /// </summary>
 public sealed class IntPatch_TheSurfFunction
-    : IntImp_ZerImpFunc<Adaptor3d_Surface, IntCurveSurface_TheHSurfaceTool>, IIntWalk_IWFunction<IntPatch_TheSurfFunction>
+    : IntImp_ZerImpFunc<SurfaceAdaptorBase, IntCurveSurface_TheHSurfaceTool>, IIntWalk_IWFunction<IntPatch_TheSurfFunction>
 {
     public IntPatch_TheSurfFunction()
     {
     }
 
-    public IntPatch_TheSurfFunction(Adaptor3d_Surface PS, in IntSurf_Quadric IS)
+    public IntPatch_TheSurfFunction(SurfaceAdaptorBase PS, in IntSurf_Quadric IS)
         : base(PS, IS)
     {
     }

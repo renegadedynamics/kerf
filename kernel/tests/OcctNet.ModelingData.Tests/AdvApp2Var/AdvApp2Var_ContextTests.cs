@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation.Advanced;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class AdvApp2Var_ContextTest
@@ -23,7 +25,7 @@ public class AdvApp2Var_ContextTest
         aTof2D.Init(100.0);
         aTof3D.Init(100.0);
 
-        AdvApp2Var_Context aContext = new(0, 0, 0, 2, 2, 0, 1, 1, 1, aTol1D, aTol2D, aTol3D, aTof1D, aTof2D, aTof3D);
+        Context aContext = new(0, 0, 0, 2, 2, 0, 1, 1, 1, aTol1D, aTol2D, aTol3D, aTof1D, aTof2D, aTof3D);
 
         Assert.Equal(3, aContext.TotalNumberSSP());
         Assert.Equal(6, aContext.TotalDimension());

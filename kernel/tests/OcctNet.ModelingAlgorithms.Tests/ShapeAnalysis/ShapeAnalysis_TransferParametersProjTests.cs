@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -20,13 +23,13 @@ public class ShapeAnalysis_TransferParametersProjTests
         return 3 * t * t * s * 0.1 + 3 * t * s * s * 0.2 + s * s * s * 2.0;
     }
 
-    private static (TopoDS_Edge Edge, TopoDS_Face Face) BezierEdge(bool theSameParameter, TopoDS_Face? theFace = null)
+    private static (Edge Edge, Face Face) BezierEdge(bool theSameParameter, Face? theFace = null)
     {
-        var aB = new BRep_Builder();
-        TopoDS_Face aFace = theFace ?? new();
+        var aB = new BrepBuilder();
+        Face aFace = theFace ?? new();
         if (theFace is null)
         {
-            aB.MakeFace(ref aFace, new Geom_Plane(new Plane3D()), Tol);
+            aB.MakeFace(ref aFace, new PlaneSurface(new Plane3D()), Tol);
         }
 
         var aPoles = new NCollection_Array1<Point3D>(1, 4);
@@ -34,14 +37,14 @@ public class ShapeAnalysis_TransferParametersProjTests
         aPoles[2] = new Point3D(0.1, 0, 0);
         aPoles[3] = new Point3D(0.2, 0, 0);
         aPoles[4] = new Point3D(2, 0, 0);
-        TopoDS_Edge anE = new();
-        aB.MakeEdge(ref anE, new Geom_BezierCurve(aPoles), Tol);
-        TopoDS_Vertex aV1 = new(), aV2 = new();
+        Edge anE = new();
+        aB.MakeEdge(ref anE, new BezierCurve3D(aPoles), Tol);
+        Vertex aV1 = new(), aV2 = new();
         aB.MakeVertex(ref aV1, new Point3D(0, 0, 0), Tol);
         aB.MakeVertex(ref aV2, new Point3D(2, 0, 0), Tol);
-        aB.Add(anE, aV1.Oriented(TopAbs_FORWARD));
-        aB.Add(anE, aV2.Oriented(TopAbs_REVERSED));
-        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aFace, Tol);
+        aB.Add(anE, aV1.Oriented(Forward));
+        aB.Add(anE, aV2.Oriented(Reversed));
+        aB.UpdateEdge(anE, new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0)), aFace, Tol);
         aB.Range(anE, aFace, 0.0, 2.0);
         aB.Range(anE, 0.0, 1.0, true);
         aB.SameRange(anE, false);
@@ -52,7 +55,7 @@ public class ShapeAnalysis_TransferParametersProjTests
     [Fact]
     public void Perform_ProjectsWhenNotSameParameter()
     {
-        (TopoDS_Edge anE, TopoDS_Face aFace) = BezierEdge(false);
+        (Edge anE, Face aFace) = BezierEdge(false);
         var aTool = new ShapeAnalysis_TransferParametersProj(anE, aFace);
         Assert.False(aTool.IsSameRange());
         // 3d to 2d: the pcurve parameter is the point's x
@@ -75,7 +78,7 @@ public class ShapeAnalysis_TransferParametersProjTests
     [Fact]
     public void Perform_IsLinearOnSameParameterEdges_UnlessForced()
     {
-        (TopoDS_Edge anE, TopoDS_Face aFace) = BezierEdge(true);
+        (Edge anE, Face aFace) = BezierEdge(true);
         var aTool = new ShapeAnalysis_TransferParametersProj(anE, aFace);
         // linear: [0, 1] to [0, 2]
         Assert.Equal(1.0, aTool.Perform(0.5, true), 1e-12);
@@ -87,41 +90,41 @@ public class ShapeAnalysis_TransferParametersProjTests
     [Fact]
     public void TransferRange_ProjectsTheEnds()
     {
-        (TopoDS_Edge anE, TopoDS_Face aFace) = BezierEdge(false);
-        (TopoDS_Edge aNew, _) = BezierEdge(false, aFace);
+        (Edge anE, Face aFace) = BezierEdge(false);
+        (Edge aNew, _) = BezierEdge(false, aFace);
 
         var aTool = new ShapeAnalysis_TransferParametersProj(anE, aFace);
         aTool.TransferRange(aNew, 0.25, 0.75, false);
-        BRep_Tool.Range(aNew, out double aF, out double aL);
+        Tool.Range(aNew, out double aF, out double aL);
         Assert.Equal(0.25, aF);
         Assert.Equal(0.75, aL);
-        BRep_Tool.Range(aNew, aFace, out aF, out aL);
+        Tool.Range(aNew, aFace, out aF, out aL);
         Assert.Equal(BezierX(0.25), aF, 1e-7);
         Assert.Equal(BezierX(0.75), aL, 1e-7);
-        Assert.False(BRep_Tool.SameRange(aNew));
+        Assert.False(Tool.SameRange(aNew));
     }
 
     [Fact]
     public void TransferRange_ThrowsOnAFrozenEdge()
     {
-        (TopoDS_Edge anE, TopoDS_Face aFace) = BezierEdge(false);
-        (TopoDS_Edge aNew, _) = BezierEdge(false);
+        (Edge anE, Face aFace) = BezierEdge(false);
+        (Edge aNew, _) = BezierEdge(false);
         aNew.TShape()!.FreezeGraph();
         var aTool = new ShapeAnalysis_TransferParametersProj(anE, aFace);
         Assert.ThrowsAny<Exception>(() => aTool.TransferRange(aNew, 0.25, 0.75, false));
     }
 
     /// <summary>An unfrozen straight edge from (0, 0, 0) to (4, 0, 0), built with BRep_Builder.</summary>
-    private static TopoDS_Edge LineEdge()
+    private static Edge LineEdge()
     {
-        var aB = new BRep_Builder();
-        TopoDS_Vertex aV1 = new(), aV2 = new();
+        var aB = new BrepBuilder();
+        Vertex aV1 = new(), aV2 = new();
         aB.MakeVertex(ref aV1, new Point3D(0, 0, 0), Tol);
         aB.MakeVertex(ref aV2, new Point3D(4, 0, 0), Tol);
-        TopoDS_Edge anE = new();
-        aB.MakeEdge(ref anE, new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), Tol);
-        aB.Add(anE, aV1.Oriented(TopAbs_FORWARD));
-        aB.Add(anE, aV2.Oriented(TopAbs_REVERSED));
+        Edge anE = new();
+        aB.MakeEdge(ref anE, new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), Tol);
+        aB.Add(anE, aV1.Oriented(Forward));
+        aB.Add(anE, aV2.Oriented(Reversed));
         aB.Range(anE, 0.0, 4.0);
         return anE;
     }
@@ -129,29 +132,29 @@ public class ShapeAnalysis_TransferParametersProjTests
     [Fact]
     public void CopyNMVertex_CopiesAnInternalVertexFrozen()
     {
-        var aB = new BRep_Builder();
-        TopoDS_Edge anE = LineEdge();
-        TopoDS_Edge aTo = LineEdge();
-        TopoDS_Vertex aV = new();
+        var aB = new BrepBuilder();
+        Edge anE = LineEdge();
+        Edge aTo = LineEdge();
+        Vertex aV = new();
         aB.MakeVertex(ref aV, new Point3D(1, 0, 0), Tol);
         aB.UpdateVertex(aV, 1.0, anE, Tol);
-        TopoDS_Vertex anInternal = TopoDS.Vertex(aV.Oriented(TopAbs_INTERNAL));
+        Vertex anInternal = ShapeCasts.Vertex(aV.Oriented(Internal));
         anE.TShape()!.FreezeGraph();
         aV.TShape()!.FreezeGraph();
 
-        TopoDS_Vertex aCopy = ShapeAnalysis_TransferParametersProj.CopyNMVertex(anInternal, aTo, anE);
-        Assert.False(aCopy.IsNull());
+        Vertex aCopy = ShapeAnalysis_TransferParametersProj.CopyNMVertex(anInternal, aTo, anE);
+        Assert.False(aCopy.IsNull);
         Assert.False(aCopy.IsSame(aV));
         Assert.True(aCopy.TShape()!.IsFrozen);
-        Assert.True(BRep_Tool.Pnt(aCopy).IsEqual(new Point3D(1, 0, 0), 0.0));
-        Assert.True(BRep_Tool.Parameter(aCopy, aTo, out double aPar));
+        Assert.True(Tool.Pnt(aCopy).IsEqual(new Point3D(1, 0, 0), 0.0));
+        Assert.True(Tool.Parameter(aCopy, aTo, out double aPar));
         Assert.Equal(1.0, aPar, 1e-12);
 
         // a FORWARD vertex isn't copied
-        Assert.True(ShapeAnalysis_TransferParametersProj.CopyNMVertex(aV, aTo, anE).IsNull());
+        Assert.True(ShapeAnalysis_TransferParametersProj.CopyNMVertex(aV, aTo, anE).IsNull);
 
         // the target edge must be writable: BRep_Builder.UpdateVertex refuses a locked (frozen) edge, as OCCT does
         aTo.TShape()!.FreezeGraph();
-        Assert.Throws<TopoDS_LockedShape>(() => ShapeAnalysis_TransferParametersProj.CopyNMVertex(anInternal, aTo, anE));
+        Assert.Throws<LockedShapeException>(() => ShapeAnalysis_TransferParametersProj.CopyNMVertex(anInternal, aTo, anE));
     }
 }

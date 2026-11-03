@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -51,11 +52,11 @@ internal static class BOPTestCellsCommands
         BOPAlgo_CellsBuilder aCBuilder = aSession.CellsBuilder();
         aCBuilder.Clear();
         //
-        foreach (TopoDS_Shape aS in aSession.Shapes)
+        foreach (Shape aS in aSession.Shapes)
         {
             aCBuilder.AddArgument(aS);
         }
-        foreach (TopoDS_Shape aS in aSession.Tools)
+        foreach (Shape aS in aSession.Tools)
         {
             aCBuilder.AddArgument(aS);
         }
@@ -80,8 +81,8 @@ internal static class BOPTestCellsCommands
         //
         aSession.SetBuilder(aCBuilder);
         //
-        TopoDS_Shape aR = aCBuilder.GetAllParts();
-        if (aR.IsNull())
+        Shape aR = aCBuilder.GetAllParts();
+        if (aR.IsNull)
         {
             di.Append("no parts were built\n");
             return 0;
@@ -122,7 +123,7 @@ internal static class BOPTestCellsCommands
         aCBuilder.AddAllToResult(iMaterial, bUpdate);
         BOPTestObjects.ReportAlerts(theDI, di, aCBuilder.GetReport());
         //
-        TopoDS_Shape aR = aCBuilder.Shape();
+        Shape aR = aCBuilder.Shape();
         StoreHistory(theDI, aCBuilder);
         theDI.SetShape(a[1], aR);
         return 0;
@@ -152,7 +153,7 @@ internal static class BOPTestCellsCommands
             return 1;
         }
         //
-        NCollection_List<TopoDS_Shape> aLSToTake = new(), aLSToAvoid = new();
+        NCollection_List<Shape> aLSToTake = new(), aLSToAvoid = new();
         int i, iMaterial, iTake, n1;
         bool bUpdate;
         //
@@ -174,8 +175,8 @@ internal static class BOPTestCellsCommands
         //
         for (i = 2; i < n1; i += 2)
         {
-            TopoDS_Shape aS = theDI.GetShape(a[i]);
-            if (aS.IsNull())
+            Shape aS = theDI.GetShape(a[i]);
+            if (aS.IsNull)
             {
                 di.Append(a[i]).Append(" is a null shape\n");
                 continue;
@@ -205,7 +206,7 @@ internal static class BOPTestCellsCommands
         aCBuilder.AddToResult(aLSToTake, aLSToAvoid, iMaterial, bUpdate);
         BOPTestObjects.ReportAlerts(theDI, di, aCBuilder.GetReport());
         //
-        TopoDS_Shape aR = aCBuilder.Shape();
+        Shape aR = aCBuilder.Shape();
         StoreHistory(theDI, aCBuilder);
         theDI.SetShape(a[1], aR);
         return 0;
@@ -220,11 +221,11 @@ internal static class BOPTestCellsCommands
             return 1;
         }
         //
-        NCollection_List<TopoDS_Shape> aLSToTake = new(), aLSToAvoid = new();
+        NCollection_List<Shape> aLSToTake = new(), aLSToAvoid = new();
         for (int i = 2; i < n; i += 2)
         {
-            TopoDS_Shape aS = theDI.GetShape(a[i]);
-            if (aS.IsNull())
+            Shape aS = theDI.GetShape(a[i]);
+            if (aS.IsNull)
             {
                 di.Append(a[i]).Append(" is a null shape\n");
                 return 1;
@@ -250,7 +251,7 @@ internal static class BOPTestCellsCommands
         BOPAlgo_CellsBuilder aCBuilder = BOPTestObjects.Of(theDI).CellsBuilder();
         aCBuilder.RemoveFromResult(aLSToTake, aLSToAvoid);
         //
-        TopoDS_Shape aR = aCBuilder.Shape();
+        Shape aR = aCBuilder.Shape();
         StoreHistory(theDI, aCBuilder);
         theDI.SetShape(a[1], aR);
         return 0;
@@ -270,7 +271,7 @@ internal static class BOPTestCellsCommands
         aCBuilder.RemoveInternalBoundaries();
         BOPTestObjects.ReportAlerts(theDI, di, aCBuilder.GetReport());
         //
-        TopoDS_Shape aR = aCBuilder.Shape();
+        Shape aR = aCBuilder.Shape();
         StoreHistory(theDI, aCBuilder);
         theDI.SetShape(a[1], aR);
         return 0;

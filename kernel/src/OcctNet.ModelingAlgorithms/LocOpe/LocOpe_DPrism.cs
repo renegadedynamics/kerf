@@ -5,10 +5,13 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -27,71 +30,71 @@ public sealed class LocOpe_DPrism
     private const int NECHANT = 7; // voir BRepFeat.cxx
 
     private readonly BRepFill_Evolved myDPrism = new();
-    private TopoDS_Shape myRes = new();
-    private readonly TopoDS_Face mySpine;
-    private TopoDS_Wire myProfile = new();
-    private TopoDS_Edge myProfile1 = new();
-    private TopoDS_Edge myProfile2 = new();
-    private TopoDS_Edge myProfile3 = new();
+    private Shape myRes = new();
+    private readonly Face mySpine;
+    private Wire myProfile = new();
+    private Edge myProfile1 = new();
+    private Edge myProfile2 = new();
+    private Edge myProfile3 = new();
     private readonly double myHeight;
-    private TopoDS_Shape myFirstShape = new();
-    private TopoDS_Shape myLastShape = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myMap = new(TopTools_ShapeMapHasher.Instance);
+    private Shape myFirstShape = new();
+    private Shape myLastShape = new();
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> myMap = new(ShapeHasher.Instance);
     private readonly LocOpe_WorkingShapes myWork = new();
 
-    public LocOpe_DPrism(in TopoDS_Face Spine, double Height1, double Height2, double Angle)
+    public LocOpe_DPrism(in Face Spine, double Height1, double Height2, double Angle)
     {
         mySpine = Spine;
         myHeight = Height1 + Height2;
         double y = Height1 * Math.Sin(Angle);
         double z = Height1 * Math.Cos(Angle);
 
-        TopoDS_Vertex Vert2 = new BRepLib_MakeVertex(new Point3D(0, y, z)).InternalVertex();
+        Vertex Vert2 = new BRepLib_MakeVertex(new Point3D(0, y, z)).InternalVertex();
 
         double y1 = -Height2 * Math.Sin(Angle);
         double z1 = -Height2 * Math.Cos(Angle);
 
-        TopoDS_Vertex Vert1 = new BRepLib_MakeVertex(new Point3D(0, y1, z1)).InternalVertex();
+        Vertex Vert1 = new BRepLib_MakeVertex(new Point3D(0, y1, z1)).InternalVertex();
 
         myProfile2 = new BRepLib_MakeEdge(Vert1, Vert2).InternalEdge();
 
         double Umin, Umax, Vmin, Vmax;
-        BRepTools.UVBounds(Spine, out Umin, out Umax, out Vmin, out Vmax);
+        BrepTools.UVBounds(Spine, out Umin, out Umax, out Vmin, out Vmax);
         double Deltay = Max(Umax - Umin, Vmax - Vmin) + Math.Abs(y);
         Deltay *= 2;
 
-        TopoDS_Vertex Vert3 = new BRepLib_MakeVertex(new Point3D(0, y + Deltay, z)).InternalVertex();
+        Vertex Vert3 = new BRepLib_MakeVertex(new Point3D(0, y + Deltay, z)).InternalVertex();
         myProfile3 = new BRepLib_MakeEdge(Vert2, Vert3).InternalEdge();
 
-        BRepTools.UVBounds(Spine, out Umin, out Umax, out Vmin, out Vmax);
+        BrepTools.UVBounds(Spine, out Umin, out Umax, out Vmin, out Vmax);
         double Deltay1 = Max(Umax - Umin, Vmax - Vmin) + Math.Abs(y1);
         Deltay1 *= 2;
 
-        TopoDS_Vertex Vert4 = new BRepLib_MakeVertex(new Point3D(0, y1 + Deltay1, z1)).InternalVertex();
+        Vertex Vert4 = new BRepLib_MakeVertex(new Point3D(0, y1 + Deltay1, z1)).InternalVertex();
         myProfile1 = new BRepLib_MakeEdge(Vert4, Vert1).InternalEdge();
 
         myProfile = new BRepLib_MakeWire(myProfile1, myProfile2, myProfile3).InternalWire();
 
         // OCCT.NET: the evolved shape shares the spine's sub-shapes, whose tolerances are raised below (decision 1014)
-        TopoDS_Face aSpine = TopoDS.Face(myWork.Working(mySpine));
+        Face aSpine = ShapeCasts.Face(myWork.Working(mySpine));
         myDPrism.Perform(aSpine, myProfile, new CoordinateSystem(Constants.XOY()));
 
         if (myDPrism.IsDone())
         {
             LocOpe_BuildShape BS = new();
-            BRep_Builder B = new();
-            TopoDS_Compound C = new();
-            TopoDS_Compound D = new();
-            NCollection_List<TopoDS_Shape> lfaces = new(), lcomplete = new();
+            BrepBuilder B = new();
+            Compound C = new();
+            Compound D = new();
+            NCollection_List<Shape> lfaces = new(), lcomplete = new();
 
             B.MakeCompound(ref C);
-            NCollection_List<TopoDS_Shape>.Iterator it = new();
-            TopExp_Explorer ExpS = new(aSpine, TopAbs_EDGE);
-            NCollection_Map<TopoDS_Shape> View = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_List<Shape>.Iterator it = new();
+            Explorer ExpS = new(aSpine, ShapeType.Edge);
+            NCollection_Map<Shape> View = new(ShapeHasher.Instance);
             for (; ExpS.More(); ExpS.Next())
             {
-                TopoDS_Shape ES = ExpS.Current();
-                NCollection_List<TopoDS_Shape> lffs = myDPrism.InternalGeneratedShapes(ES, myProfile1);
+                Shape ES = ExpS.Current();
+                NCollection_List<Shape> lffs = myDPrism.InternalGeneratedShapes(ES, myProfile1);
                 for (it.Initialize(lffs); it.More(); it.Next())
                 {
                     if (View.Add(it.Value()))
@@ -113,8 +116,8 @@ public sealed class LocOpe_DPrism
 
             for (; ExpS.More(); ExpS.Next())
             {
-                TopoDS_Shape ES = ExpS.Current();
-                NCollection_List<TopoDS_Shape> lfls = myDPrism.InternalGeneratedShapes(ES, myProfile3);
+                Shape ES = ExpS.Current();
+                NCollection_List<Shape> lfls = myDPrism.InternalGeneratedShapes(ES, myProfile3);
                 for (it.Initialize(lfls); it.More(); it.Next())
                 {
                     if (View.Add(it.Value()))
@@ -133,46 +136,46 @@ public sealed class LocOpe_DPrism
 
             for (ExpS.ReInit(); ExpS.More(); ExpS.Next())
             {
-                TopoDS_Shape ES = ExpS.Current();
-                NCollection_List<TopoDS_Shape> lffs = myDPrism.InternalGeneratedShapes(ES, myProfile2);
+                Shape ES = ExpS.Current();
+                NCollection_List<Shape> lffs = myDPrism.InternalGeneratedShapes(ES, myProfile2);
 
                 for (it.Initialize(lffs); it.More(); it.Next())
                 {
-                    if (it.Value().ShapeType() == TopAbs_EDGE)
+                    if (it.Value().ShapeType() == ShapeType.Edge)
                     {
                         break;
                     }
                 }
                 if (it.More())
                 {
-                    TopoDS_Shape RemovedEdge = it.Value();
-                    TopoDS_Face NewFace = new();
-                    TopoDS_Wire NewWire = new();
+                    Shape RemovedEdge = it.Value();
+                    Face NewFace = new();
+                    Wire NewWire = new();
                     B.MakeWire(ref NewWire);
-                    TopAbs_Orientation Orref = TopAbs_FORWARD;
-                    TopExp_Explorer exp = new();
+                    Orientation Orref = Forward;
+                    Explorer exp = new();
                     for (it.Initialize(lffs); it.More(); it.Next())
                     {
-                        if (it.Value().ShapeType() == TopAbs_FACE)
+                        if (it.Value().ShapeType() == ShapeType.Face)
                         {
-                            exp.Init(it.Value().Oriented(TopAbs_FORWARD), TopAbs_WIRE);
-                            TopoDS_Shape theWire = exp.Current();
-                            if (NewFace.IsNull())
+                            exp.Init(it.Value().Oriented(Forward), ShapeType.Wire);
+                            Shape theWire = exp.Current();
+                            if (NewFace.IsNull)
                             {
-                                Geom_Surface S = BRep_Tool.Surface(TopoDS.Face(it.Value()))!;
-                                if (S.GetType() == typeof(Geom_RectangularTrimmedSurface))
+                                Surface S = Tool.Surface(ShapeCasts.Face(it.Value()))!;
+                                if (S.GetType() == typeof(TrimmedSurface))
                                 {
-                                    S = ((Geom_RectangularTrimmedSurface)S).BasisSurface();
+                                    S = ((TrimmedSurface)S).BasisSurface();
                                 }
-                                if (S.GetType() != typeof(Geom_Plane))
+                                if (S.GetType() != typeof(PlaneSurface))
                                 {
                                     break;
                                 }
 
-                                B.MakeFace(ref NewFace, S, BRep_Tool.Tolerance(TopoDS.Face(it.Value())));
-                                NewFace.Orientation(TopAbs_FORWARD);
+                                B.MakeFace(ref NewFace, S, Tool.Tolerance(ShapeCasts.Face(it.Value())));
+                                NewFace.Orientation(Forward);
                                 Orref = theWire.Orientation();
-                                for (exp.Init(theWire.Oriented(TopAbs_FORWARD), TopAbs_EDGE); exp.More(); exp.Next())
+                                for (exp.Init(theWire.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
                                 {
                                     if (!exp.Current().IsSame(RemovedEdge))
                                     {
@@ -182,7 +185,7 @@ public sealed class LocOpe_DPrism
                             }
                             else
                             {
-                                for (exp.Init(theWire.Oriented(TopAbs_FORWARD), TopAbs_EDGE); exp.More(); exp.Next())
+                                for (exp.Init(theWire.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
                                 {
                                     if (!exp.Current().IsSame(RemovedEdge))
                                     {
@@ -199,11 +202,11 @@ public sealed class LocOpe_DPrism
                             }
                         }
                     }
-                    if (!NewFace.IsNull())
+                    if (!NewFace.IsNull)
                     {
                         B.Add(NewFace, NewWire.Oriented(Orref));
                         lcomplete.Append(NewFace);
-                        NCollection_List<TopoDS_Shape> thelist = new();
+                        NCollection_List<Shape> thelist = new();
                         myMap.Bind(ES, thelist);
                         myMap[ES].Append(NewFace);
                     }
@@ -211,7 +214,7 @@ public sealed class LocOpe_DPrism
                     {
                         for (it.Initialize(lffs); it.More(); it.Next())
                         {
-                            if (View.Add(it.Value()) && it.Value().ShapeType() == TopAbs_FACE)
+                            if (View.Add(it.Value()) && it.Value().ShapeType() == ShapeType.Face)
                             {
                                 lcomplete.Append(it.Value());
                             }
@@ -222,20 +225,20 @@ public sealed class LocOpe_DPrism
                 {
                     for (it.Initialize(lffs); it.More(); it.Next())
                     {
-                        if (View.Add(it.Value()) && it.Value().ShapeType() == TopAbs_FACE)
+                        if (View.Add(it.Value()) && it.Value().ShapeType() == ShapeType.Face)
                         {
                             lcomplete.Append(it.Value());
                         }
                     }
                 }
 
-                TopExp_Explorer ExpS2 = new();
-                for (ExpS2.Init(ES, TopAbs_VERTEX); ExpS2.More(); ExpS2.Next())
+                Explorer ExpS2 = new();
+                for (ExpS2.Init(ES, ShapeType.Vertex); ExpS2.More(); ExpS2.Next())
                 {
-                    NCollection_List<TopoDS_Shape> ls2 = myDPrism.InternalGeneratedShapes(ExpS2.Current(), myProfile2);
+                    NCollection_List<Shape> ls2 = myDPrism.InternalGeneratedShapes(ExpS2.Current(), myProfile2);
                     for (it.Initialize(ls2); it.More(); it.Next())
                     {
-                        if (View.Add(it.Value()) && it.Value().ShapeType() == TopAbs_FACE)
+                        if (View.Add(it.Value()) && it.Value().ShapeType() == ShapeType.Face)
                         {
                             lcomplete.Append(it.Value());
                         }
@@ -250,49 +253,49 @@ public sealed class LocOpe_DPrism
         }
     }
 
-    public LocOpe_DPrism(in TopoDS_Face Spine, double Height, double Angle)
+    public LocOpe_DPrism(in Face Spine, double Height, double Angle)
     {
         mySpine = Spine;
         myHeight = Height;
         double y = Height * Math.Sin(Angle);
         double z = Height * Math.Cos(Angle);
 
-        TopoDS_Vertex Vert1 = new BRepLib_MakeVertex(new Point3D(0, 0, 0)).InternalVertex();
-        TopoDS_Vertex Vert2 = new BRepLib_MakeVertex(new Point3D(0, y, z)).InternalVertex();
+        Vertex Vert1 = new BRepLib_MakeVertex(new Point3D(0, 0, 0)).InternalVertex();
+        Vertex Vert2 = new BRepLib_MakeVertex(new Point3D(0, y, z)).InternalVertex();
         myProfile2 = new BRepLib_MakeEdge(Vert1, Vert2).InternalEdge();
 
-        BRepTools.UVBounds(Spine, out double Umin, out double Umax, out double Vmin, out double Vmax);
+        BrepTools.UVBounds(Spine, out double Umin, out double Umax, out double Vmin, out double Vmax);
         double Deltay = Max(Umax - Umin, Vmax - Vmin) + Math.Abs(y);
         Deltay *= 2;
 
-        TopoDS_Vertex Vert3 = new BRepLib_MakeVertex(new Point3D(0, y + Deltay, z)).InternalVertex();
+        Vertex Vert3 = new BRepLib_MakeVertex(new Point3D(0, y + Deltay, z)).InternalVertex();
         myProfile3 = new BRepLib_MakeEdge(Vert2, Vert3).InternalEdge();
 
-        TopoDS_Vertex Vert4 = new BRepLib_MakeVertex(new Point3D(0, Deltay, 0)).InternalVertex();
+        Vertex Vert4 = new BRepLib_MakeVertex(new Point3D(0, Deltay, 0)).InternalVertex();
         myProfile1 = new BRepLib_MakeEdge(Vert4, Vert1).InternalEdge();
 
         myProfile = new BRepLib_MakeWire(myProfile1, myProfile2, myProfile3).InternalWire();
 
         // OCCT.NET: the evolved shape shares the spine's sub-shapes, whose tolerances are raised below (decision 1014)
-        TopoDS_Face aSpine = TopoDS.Face(myWork.Working(mySpine));
+        Face aSpine = ShapeCasts.Face(myWork.Working(mySpine));
         myDPrism.Perform(aSpine, myProfile, new CoordinateSystem(Constants.XOY()));
 
         if (myDPrism.IsDone())
         {
             LocOpe_BuildShape BS = new();
-            BRep_Builder B = new();
-            TopoDS_Compound C = new();
-            TopoDS_Compound D = new();
-            NCollection_List<TopoDS_Shape> lfaces = new(), lcomplete = new();
+            BrepBuilder B = new();
+            Compound C = new();
+            Compound D = new();
+            NCollection_List<Shape> lfaces = new(), lcomplete = new();
 
             B.MakeCompound(ref C);
-            NCollection_List<TopoDS_Shape>.Iterator it = new();
-            TopExp_Explorer ExpS = new(aSpine, TopAbs_EDGE);
-            NCollection_Map<TopoDS_Shape> View = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_List<Shape>.Iterator it = new();
+            Explorer ExpS = new(aSpine, ShapeType.Edge);
+            NCollection_Map<Shape> View = new(ShapeHasher.Instance);
             for (; ExpS.More(); ExpS.Next())
             {
-                TopoDS_Shape ES = ExpS.Current();
-                NCollection_List<TopoDS_Shape> lffs = myDPrism.InternalGeneratedShapes(ES, myProfile1);
+                Shape ES = ExpS.Current();
+                NCollection_List<Shape> lffs = myDPrism.InternalGeneratedShapes(ES, myProfile1);
                 for (it.Initialize(lffs); it.More(); it.Next())
                 {
                     if (View.Add(it.Value()))
@@ -314,8 +317,8 @@ public sealed class LocOpe_DPrism
 
             for (; ExpS.More(); ExpS.Next())
             {
-                TopoDS_Shape ES = ExpS.Current();
-                NCollection_List<TopoDS_Shape> lfls = myDPrism.InternalGeneratedShapes(ES, myProfile3);
+                Shape ES = ExpS.Current();
+                NCollection_List<Shape> lfls = myDPrism.InternalGeneratedShapes(ES, myProfile3);
                 for (it.Initialize(lfls); it.More(); it.Next())
                 {
                     if (View.Add(it.Value()))
@@ -333,8 +336,8 @@ public sealed class LocOpe_DPrism
             View.Clear();
             for (ExpS.ReInit(); ExpS.More(); ExpS.Next())
             {
-                TopoDS_Shape ES = ExpS.Current();
-                NCollection_List<TopoDS_Shape> ls = myDPrism.InternalGeneratedShapes(ES, myProfile2);
+                Shape ES = ExpS.Current();
+                NCollection_List<Shape> ls = myDPrism.InternalGeneratedShapes(ES, myProfile2);
                 for (it.Initialize(ls); it.More(); it.Next())
                 {
                     if (View.Add(it.Value()))
@@ -342,13 +345,13 @@ public sealed class LocOpe_DPrism
                         lcomplete.Append(it.Value());
                     }
                 }
-                TopExp_Explorer ExpS2 = new();
-                for (ExpS2.Init(ES, TopAbs_VERTEX); ExpS2.More(); ExpS2.Next())
+                Explorer ExpS2 = new();
+                for (ExpS2.Init(ES, ShapeType.Vertex); ExpS2.More(); ExpS2.Next())
                 {
-                    NCollection_List<TopoDS_Shape> ls2 = myDPrism.InternalGeneratedShapes(ExpS2.Current(), myProfile2);
+                    NCollection_List<Shape> ls2 = myDPrism.InternalGeneratedShapes(ExpS2.Current(), myProfile2);
                     for (it.Initialize(ls2); it.More(); it.Next())
                     {
-                        if (View.Add(it.Value()) && it.Value().ShapeType() == TopAbs_FACE)
+                        if (View.Add(it.Value()) && it.Value().ShapeType() == ShapeType.Face)
                         {
                             lcomplete.Append(it.Value());
                         }
@@ -365,27 +368,27 @@ public sealed class LocOpe_DPrism
 
     // The faces of the compound with a free edge, each rebuilt with the wire holding that edge (OCCT repeats this
     // block for the first and last shapes in both constructors)
-    private static void EndFaces(in TopoDS_Compound C, NCollection_List<TopoDS_Shape> lfaces, NCollection_List<TopoDS_Shape> lcomplete)
+    private static void EndFaces(in Compound C, NCollection_List<Shape> lfaces, NCollection_List<Shape> lcomplete)
     {
-        BRep_Builder B = new();
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMapEF = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(C, TopAbs_EDGE, TopAbs_FACE, theMapEF);
-        NCollection_Map<TopoDS_Shape> View = new(TopTools_ShapeMapHasher.Instance);
+        BrepBuilder B = new();
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMapEF = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(C, ShapeType.Edge, ShapeType.Face, theMapEF);
+        NCollection_Map<Shape> View = new(ShapeHasher.Instance);
 
         for (int i = 1; i <= theMapEF.Extent(); i++)
         {
             if (theMapEF[i].Extent() == 1)
             {
-                TopoDS_Edge edg = TopoDS.Edge(theMapEF.FindKey(i));
-                TopoDS_Face fac = TopoDS.Face(theMapEF[i].First());
+                Edge edg = ShapeCasts.Edge(theMapEF.FindKey(i));
+                Face fac = ShapeCasts.Face(theMapEF[i].First());
                 if (View.Add(fac))
                 {
-                    TopoDS_Shape aLocalShape = fac.EmptyCopied();
-                    TopoDS_Face newFace = TopoDS.Face(aLocalShape);
-                    TopExp_Explorer exp = new();
-                    for (exp.Init(fac.Oriented(TopAbs_FORWARD), TopAbs_WIRE); exp.More(); exp.Next())
+                    Shape aLocalShape = fac.EmptyCopied();
+                    Face newFace = ShapeCasts.Face(aLocalShape);
+                    Explorer exp = new();
+                    for (exp.Init(fac.Oriented(Forward), ShapeType.Wire); exp.More(); exp.Next())
                     {
-                        TopExp_Explorer exp2 = new(exp.Current(), TopAbs_EDGE);
+                        Explorer exp2 = new(exp.Current(), ShapeType.Edge);
                         for (; exp2.More(); exp2.Next())
                         {
                             if (exp2.Current().IsSame(edg))
@@ -413,8 +416,8 @@ public sealed class LocOpe_DPrism
         {
             return;
         }
-        var aShapes = new List<TopoDS_Shape> { myRes, myFirstShape, myLastShape };
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anItem in myMap)
+        var aShapes = new List<Shape> { myRes, myFirstShape, myLastShape };
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> anItem in myMap)
         {
             aShapes.AddRange(anItem.Value);
         }
@@ -422,7 +425,7 @@ public sealed class LocOpe_DPrism
         myRes = myWork.Final(myRes);
         myFirstShape = myWork.Final(myFirstShape);
         myLastShape = myWork.Final(myLastShape);
-        foreach (TopoDS_Shape aKey in myMap.Keys.ToList())
+        foreach (Shape aKey in myMap.Keys.ToList())
         {
             myMap[aKey] = myWork.Final(myMap[aKey]);
         }
@@ -431,10 +434,10 @@ public sealed class LocOpe_DPrism
     public bool IsDone() => myDPrism.IsDone();
 
     /// <summary>The drafted prism (frozen).</summary>
-    public TopoDS_Shape Shape() => LocOpe_WorkingShapes.Published(InternalShape());
+    public Shape Shape() => LocOpe_WorkingShapes.Published(InternalShape());
 
     /// <summary><see cref="Shape"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shape InternalShape()
+    internal Shape InternalShape()
     {
         if (!myDPrism.IsDone())
         {
@@ -444,34 +447,34 @@ public sealed class LocOpe_DPrism
     }
 
     /// <summary>The spine (the caller's face).</summary>
-    public TopoDS_Shape Spine() => mySpine;
+    public Shape Spine() => mySpine;
 
     /// <summary>The profile (frozen).</summary>
-    public TopoDS_Shape Profile() => LocOpe_WorkingShapes.Published(myProfile);
+    public Shape Profile() => LocOpe_WorkingShapes.Published(myProfile);
 
     /// <summary>The faces at the start (frozen).</summary>
-    public TopoDS_Shape FirstShape() => LocOpe_WorkingShapes.Published(myFirstShape);
+    public Shape FirstShape() => LocOpe_WorkingShapes.Published(myFirstShape);
 
     /// <summary><see cref="FirstShape"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shape InternalFirstShape() => myFirstShape;
+    internal Shape InternalFirstShape() => myFirstShape;
 
     /// <summary>The faces at the end (frozen).</summary>
-    public TopoDS_Shape LastShape() => LocOpe_WorkingShapes.Published(myLastShape);
+    public Shape LastShape() => LocOpe_WorkingShapes.Published(myLastShape);
 
     /// <summary><see cref="LastShape"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shape InternalLastShape() => myLastShape;
+    internal Shape InternalLastShape() => myLastShape;
 
     /// <summary>The shapes generated by the sub-shape <paramref name="S"/> of the spine (frozen).</summary>
-    public NCollection_List<TopoDS_Shape> Shapes(in TopoDS_Shape S) => LocOpe_WorkingShapes.Published(InternalShapes(S));
+    public NCollection_List<Shape> Shapes(in Shape S) => LocOpe_WorkingShapes.Published(InternalShapes(S));
 
     /// <summary><see cref="Shapes"/> without freezing, for ported code (of the caller's shape or its working copy).</summary>
-    internal NCollection_List<TopoDS_Shape> InternalShapes(in TopoDS_Shape S)
+    internal NCollection_List<Shape> InternalShapes(in Shape S)
     {
         if (!myDPrism.IsDone())
         {
             throw new NotDoneException();
         }
-        TopoDS_Shape aS = myWork.Copied(S);
+        Shape aS = myWork.Copied(S);
         if (myMap.IsBound(aS))
         {
             return myMap[aS];
@@ -483,22 +486,22 @@ public sealed class LocOpe_DPrism
     }
 
     /// <summary>Lines along the draft through points sampled on the spine's edges.</summary>
-    public void Curves(NCollection_Sequence<Geom_Curve> Scurves)
+    public void Curves(NCollection_Sequence<Curve3D> Scurves)
     {
         // Retrieves dy and dz with myProfile2
-        TopExp.Vertices(myProfile2, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-        Point3D P1 = BRep_Tool.Pnt(V1);
-        Point3D P2 = BRep_Tool.Pnt(V2);
+        Exploration.Vertices(myProfile2, out Vertex V1, out Vertex V2);
+        Point3D P1 = Tool.Pnt(V1);
+        Point3D P2 = Tool.Pnt(V2);
         double dy = P2.Y() - P1.Y();
         double dz = P2.Z() - P1.Z();
         Scurves.Clear();
-        Geom_Surface S = BRep_Tool.Surface(mySpine)!;
-        if (S.GetType() == typeof(Geom_RectangularTrimmedSurface))
+        Surface S = Tool.Surface(mySpine)!;
+        if (S.GetType() == typeof(TrimmedSurface))
         {
-            S = ((Geom_RectangularTrimmedSurface)S).BasisSurface();
+            S = ((TrimmedSurface)S).BasisSurface();
         }
 
-        Geom_Plane PP = S as Geom_Plane ?? throw new ConstructionErrorException();
+        PlaneSurface PP = S as PlaneSurface ?? throw new ConstructionErrorException();
 
         Plane3D P = PP.Pln();
         Direction3D Normale = P.Axis().Direction();
@@ -507,22 +510,22 @@ public sealed class LocOpe_DPrism
             Normale.Reverse();
         }
 
-        NCollection_Map<TopoDS_Shape> theMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp_Explorer exp = new(mySpine.Oriented(TopAbs_FORWARD), TopAbs_EDGE);
+        NCollection_Map<Shape> theMap = new(ShapeHasher.Instance);
+        Explorer exp = new(mySpine.Oriented(Forward), ShapeType.Edge);
         double prm;
         int i;
 
         for (; exp.More(); exp.Next())
         {
-            TopoDS_Edge edg = TopoDS.Edge(exp.Current());
+            Edge edg = ShapeCasts.Edge(exp.Current());
             if (!theMap.Add(edg))
             {
                 continue;
             }
-            if (!BRep_Tool.Degenerated(edg))
+            if (!Tool.Degenerated(edg))
             {
-                Geom_Curve C = BRep_Tool.Curve(edg, out Placement Loc, out double f, out double l)!;
-                C = (Geom_Curve)C.Transformed(Loc.Transformation());
+                Curve3D C = Tool.Curve(edg, out Placement Loc, out double f, out double l)!;
+                C = (Curve3D)C.Transformed(Loc.Transformation());
                 double u1 = -2 * Math.Abs(myHeight);
                 double u2 = 2 * Math.Abs(myHeight);
 
@@ -530,7 +533,7 @@ public sealed class LocOpe_DPrism
                 {
                     prm = ((NECHANT - i) * f + i * l) / NECHANT;
                     C.D1(prm, out Point3D pt, out Vector3D d1);
-                    if (exp.Current().Orientation() == TopAbs_REVERSED)
+                    if (exp.Current().Orientation() == Reversed)
                     {
                         d1.Reverse();
                     }
@@ -538,8 +541,8 @@ public sealed class LocOpe_DPrism
                     Direction3D locy = Normale.Crossed(new Direction3D(d1));
                     Vector3D ldir = new(dy * locy.XYZ() + dz * Normale.XYZ());
                     Line3D lin = new(pt, new Direction3D(ldir));
-                    Geom_Line Lin = new(lin);
-                    Geom_TrimmedCurve trlin = new(Lin, u1, u2, true);
+                    LineCurve3D Lin = new(lin);
+                    TrimmedCurve3D trlin = new(Lin, u1, u2, true);
                     Scurves.Append(trlin);
                 }
             }
@@ -547,20 +550,20 @@ public sealed class LocOpe_DPrism
     }
 
     /// <summary>The line along the draft through the barycentre of points sampled on the first shape (or the spine).</summary>
-    public Geom_Curve BarycCurve()
+    public Curve3D BarycCurve()
     {
-        TopExp.Vertices(myProfile2, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-        Point3D P1 = BRep_Tool.Pnt(V1);
-        Point3D P2 = BRep_Tool.Pnt(V2);
+        Exploration.Vertices(myProfile2, out Vertex V1, out Vertex V2);
+        Point3D P1 = Tool.Pnt(V1);
+        Point3D P2 = Tool.Pnt(V2);
         double dz = P2.Z() - P1.Z();
 
-        Geom_Surface S = BRep_Tool.Surface(mySpine)!;
-        if (S.GetType() == typeof(Geom_RectangularTrimmedSurface))
+        Surface S = Tool.Surface(mySpine)!;
+        if (S.GetType() == typeof(TrimmedSurface))
         {
-            S = ((Geom_RectangularTrimmedSurface)S).BasisSurface();
+            S = ((TrimmedSurface)S).BasisSurface();
         }
 
-        Geom_Plane PP = S as Geom_Plane ?? throw new ConstructionErrorException();
+        PlaneSurface PP = S as PlaneSurface ?? throw new ConstructionErrorException();
 
         Plane3D P = PP.Pln();
         Direction3D Normale = P.Axis().Direction();
@@ -568,7 +571,7 @@ public sealed class LocOpe_DPrism
         {
             Normale.Reverse();
         }
-        if (mySpine.Orientation() == TopAbs_REVERSED)
+        if (mySpine.Orientation() == Reversed)
         {
             // OCCT_DEBUG trace left out
             //    Normale.Reverse();  //cts20871
@@ -576,7 +579,7 @@ public sealed class LocOpe_DPrism
         Vector3D Vec = new(dz * Normale.XYZ());
 
         NCollection_Sequence<Point3D> spt = new();
-        if (!myFirstShape.IsNull())
+        if (!myFirstShape.IsNull)
         {
             LocOpe.SampleEdges(myFirstShape, spt);
         }
@@ -593,7 +596,7 @@ public sealed class LocOpe_DPrism
         aBar.Divide(spt.Length());
         Point3D bar = new(aBar);
         Axis3D newAx = new(bar, new Direction3D(Vec));
-        Geom_Line theLin = new(newAx);
+        LineCurve3D theLin = new(newAx);
         return theLin;
     }
 }

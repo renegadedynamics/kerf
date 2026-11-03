@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
 using static Occt.StepData_Logical;
 
 namespace Occt;
@@ -21,30 +22,30 @@ public sealed class GeomToStep_MakeSurface : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A surface.</summary>
-    public GeomToStep_MakeSurface(Geom_Surface S, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeSurface(Surface S, in StepData_Factors theLocalFactors)
     {
         done = true;
-        if (S is Geom_BoundedSurface)
+        if (S is BoundedSurface)
         {
-            Geom_BoundedSurface S1 = S as Geom_BoundedSurface;
+            BoundedSurface S1 = S as BoundedSurface;
             GeomToStep_MakeBoundedSurface MkBoundedS = new GeomToStep_MakeBoundedSurface(S1, theLocalFactors);
             theSurface = MkBoundedS.Value();
         }
-        else if (S is Geom_ElementarySurface)
+        else if (S is ElementarySurface)
         {
-            Geom_ElementarySurface S1 = S as Geom_ElementarySurface;
+            ElementarySurface S1 = S as ElementarySurface;
             GeomToStep_MakeElementarySurface MkElementaryS = new GeomToStep_MakeElementarySurface(S1, theLocalFactors);
             theSurface = MkElementaryS.Value();
         }
-        else if (S is Geom_SweptSurface)
+        else if (S is SweptSurface)
         {
-            Geom_SweptSurface S1 = S as Geom_SweptSurface;
+            SweptSurface S1 = S as SweptSurface;
             GeomToStep_MakeSweptSurface MkSwept = new GeomToStep_MakeSweptSurface(S1, theLocalFactors);
             theSurface = MkSwept.Value();
         }
-        else if (S is Geom_OffsetSurface)
+        else if (S is OffsetSurface)
         {
-            Geom_OffsetSurface S1 = S as Geom_OffsetSurface;
+            OffsetSurface S1 = S as OffsetSurface;
             GeomToStep_MakeSurface MkBasis = new GeomToStep_MakeSurface(S1.BasisSurface(), theLocalFactors);
             done = MkBasis.IsDone();
             if (!done)
@@ -63,7 +64,7 @@ public sealed class GeomToStep_MakeSurface : GeomToStep_Root
     }
 
     /// <summary>A surface (default factors).</summary>
-    public GeomToStep_MakeSurface(Geom_Surface S) : this(S, new StepData_Factors())
+    public GeomToStep_MakeSurface(Surface S) : this(S, new StepData_Factors())
     {
     }
 

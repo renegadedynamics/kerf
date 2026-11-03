@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -16,7 +17,7 @@ public class Geom2dEval_SineWaveCurveTest
     public void Construction_ValidParams()
     {
         Axis2D anAx2d = new();
-        Geom2dEval_SineWaveCurve aCurve = new(anAx2d, 2.0, 3.0, 0.0);
+        SineWaveCurve2D aCurve = new(anAx2d, 2.0, 3.0, 0.0);
         Assert.Equal(2.0, aCurve.Amplitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(3.0, aCurve.Omega(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -25,8 +26,8 @@ public class Geom2dEval_SineWaveCurveTest
     public void Construction_InvalidParams_Throws()
     {
         Axis2D anAx2d = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Geom2dEval_SineWaveCurve(anAx2d, 0.0, 1.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Geom2dEval_SineWaveCurve(anAx2d, 1.0, 0.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new SineWaveCurve2D(anAx2d, 0.0, 1.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new SineWaveCurve2D(anAx2d, 1.0, 0.0));
     }
 
     [Fact]
@@ -34,7 +35,7 @@ public class Geom2dEval_SineWaveCurveTest
     {
         Axis2D anAx2d = new();
         const double aA = 2.0, aOm = 3.0;
-        Geom2dEval_SineWaveCurve aCurve = new(anAx2d, aA, aOm, 0.0);
+        SineWaveCurve2D aCurve = new(anAx2d, aA, aOm, 0.0);
 
         // t=0: C(0) = (0, 0)
         Point2D aP0 = aCurve.EvalD0(0.0);
@@ -52,8 +53,8 @@ public class Geom2dEval_SineWaveCurveTest
     public void IsPeriodic()
     {
         Axis2D anAx2d = new();
-        Geom2dEval_SineWaveCurve aCurve = new(anAx2d, 2.0, 3.0, 0.0);
-        Assert.False(aCurve.IsPeriodic());
+        SineWaveCurve2D aCurve = new(anAx2d, 2.0, 3.0, 0.0);
+        Assert.False(aCurve.IsPeriodic);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCurve.Period());
     }
 
@@ -61,7 +62,7 @@ public class Geom2dEval_SineWaveCurveTest
     public void Reverse_NotImplemented()
     {
         Axis2D anAx2d = new();
-        Geom2dEval_SineWaveCurve aCurve = new(anAx2d, 2.0, 3.0, 0.0);
+        SineWaveCurve2D aCurve = new(anAx2d, 2.0, 3.0, 0.0);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Reverse());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.ReversedParameter(0.5));
     }
@@ -70,7 +71,7 @@ public class Geom2dEval_SineWaveCurveTest
     public void Transform_NotImplemented()
     {
         Axis2D anAx2d = new();
-        Geom2dEval_SineWaveCurve aCurve = new(anAx2d, 2.0, 3.0, 0.0);
+        SineWaveCurve2D aCurve = new(anAx2d, 2.0, 3.0, 0.0);
         Transform2D aTrsf = new();
         aTrsf.SetTranslation(new Vector2D(1.0, 2.0));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
@@ -81,10 +82,10 @@ public class Geom2dEval_SineWaveCurveTest
     public void EvalD1_ConsistentWithD0()
     {
         Axis2D anAx2d = new();
-        Geom2dEval_SineWaveCurve aCurve = new(anAx2d, 2.0, 3.0, 0.5);
+        SineWaveCurve2D aCurve = new(anAx2d, 2.0, 3.0, 0.5);
         const double aT = 1.0;
 
-        Geom2d_Curve.ResD1 aD1 = aCurve.EvalD1(aT);
+        Curve2D.ResD1 aD1 = aCurve.EvalD1(aT);
         Point2D aP1 = aCurve.EvalD0(aT + global::Kerf.Engine.Foundation.Precision.Confusion());
         Point2D aP2 = aCurve.EvalD0(aT - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector2D aFD = new((aP1.XY() - aP2.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
@@ -97,12 +98,12 @@ public class Geom2dEval_SineWaveCurveTest
     public void EvalD2_ConsistentWithD1()
     {
         Axis2D anAx2d = new();
-        Geom2dEval_SineWaveCurve aCurve = new(anAx2d, 2.0, 3.0, 0.5);
+        SineWaveCurve2D aCurve = new(anAx2d, 2.0, 3.0, 0.5);
         const double aT = 1.0;
 
-        Geom2d_Curve.ResD2 aD2 = aCurve.EvalD2(aT);
-        Geom2d_Curve.ResD1 aD1p = aCurve.EvalD1(aT + global::Kerf.Engine.Foundation.Precision.Confusion());
-        Geom2d_Curve.ResD1 aD1m = aCurve.EvalD1(aT - global::Kerf.Engine.Foundation.Precision.Confusion());
+        Curve2D.ResD2 aD2 = aCurve.EvalD2(aT);
+        Curve2D.ResD1 aD1p = aCurve.EvalD1(aT + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Curve2D.ResD1 aD1m = aCurve.EvalD1(aT - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector2D aFD = new((aD1p.D1.XY() - aD1m.D1.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
         Assert.Equal(aFD.X(), aD2.D2.X(), THE_FD_TOL);
@@ -113,12 +114,12 @@ public class Geom2dEval_SineWaveCurveTest
     public void EvalD3_ConsistentWithD2()
     {
         Axis2D anAx2d = new();
-        Geom2dEval_SineWaveCurve aCurve = new(anAx2d, 2.0, 3.0, 0.5);
+        SineWaveCurve2D aCurve = new(anAx2d, 2.0, 3.0, 0.5);
         const double aT = 1.0;
 
-        Geom2d_Curve.ResD3 aD3 = aCurve.EvalD3(aT);
-        Geom2d_Curve.ResD2 aD2p = aCurve.EvalD2(aT + global::Kerf.Engine.Foundation.Precision.Confusion());
-        Geom2d_Curve.ResD2 aD2m = aCurve.EvalD2(aT - global::Kerf.Engine.Foundation.Precision.Confusion());
+        Curve2D.ResD3 aD3 = aCurve.EvalD3(aT);
+        Curve2D.ResD2 aD2p = aCurve.EvalD2(aT + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Curve2D.ResD2 aD2m = aCurve.EvalD2(aT - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector2D aFD = new((aD2p.D2.XY() - aD2m.D2.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
         Assert.Equal(aFD.X(), aD3.D3.X(), THE_FD_TOL);
@@ -129,7 +130,7 @@ public class Geom2dEval_SineWaveCurveTest
     public void EvalDN_HigherOrder_ConsistentWithPreviousOrder()
     {
         Axis2D anAx2d = new();
-        Geom2dEval_SineWaveCurve aCurve = new(anAx2d, 2.0, 3.0, 0.5);
+        SineWaveCurve2D aCurve = new(anAx2d, 2.0, 3.0, 0.5);
         const double aT = 1.2;
         const int aN = 6;
 
@@ -146,10 +147,10 @@ public class Geom2dEval_SineWaveCurveTest
     public void Copy_Independent()
     {
         Axis2D anAx2d = new();
-        Geom2dEval_SineWaveCurve aCurve = new(anAx2d, 2.0, 3.0, 0.5);
-        Geom2d_Geometry aCopy = aCurve.Copy();
+        SineWaveCurve2D aCurve = new(anAx2d, 2.0, 3.0, 0.5);
+        Geometry2D aCopy = aCurve.Copy();
         Assert.NotNull(aCopy);
-        Geom2dEval_SineWaveCurve? aCopyCurve = aCopy as Geom2dEval_SineWaveCurve;
+        SineWaveCurve2D? aCopyCurve = aCopy as SineWaveCurve2D;
         Assert.NotNull(aCopyCurve);
         Assert.Equal(2.0, aCopyCurve.Amplitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -159,7 +160,7 @@ public class Geom2dEval_SineWaveCurveTest
     public void Derivatives_MatchFiniteDifferences()
     {
         Axis2D anAx2d = new(new Point2D(1.0, -2.0), new Direction2D(1.0, 2.0));
-        Geom2dEval_SineWaveCurve aCurve = new(anAx2d, 1.5, 2.5, 0.3);
+        SineWaveCurve2D aCurve = new(anAx2d, 1.5, 2.5, 0.3);
         for (double aT = -2.0; aT <= 2.0; aT += 0.37)
         {
             EvalTestUtils.CheckCurveDerivatives(aCurve, aT);

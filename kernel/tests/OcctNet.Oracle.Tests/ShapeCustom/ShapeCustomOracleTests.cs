@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Diagnostics;
 using Xunit.Abstractions;
 
@@ -22,7 +23,7 @@ namespace OcctNet.Oracle.Tests;
 public class ShapeCustomOracleTests(ITestOutputHelper output)
 {
     /// <summary>One operation, on both sides.</summary>
-    internal sealed record Op(string Name, Func<N.TopoDS_Shape, N.TopoDS_Shape> Native, Func<TopoDS_Shape, TopoDS_Shape> Port);
+    internal sealed record Op(string Name, Func<N.TopoDS_Shape, N.TopoDS_Shape> Native, Func<Shape, Shape> Port);
 
     private static N.GeomAbs_Shape NC(Continuity theShape) => (N.GeomAbs_Shape)(int)theShape;
 
@@ -60,7 +61,7 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
             s => ShapeCustom.ConvertToBSpline(s, true, true, false, true)),
     ];
 
-    private static (TopoDS_Shape?, string?) RunPort(Op theOp, TopoDS_Shape theShape)
+    private static (Shape?, string?) RunPort(Op theOp, Shape theShape)
     {
         try
         {
@@ -92,13 +93,13 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
 
     internal static void Compare(ShapeFixOracleRun theRun, string theName, N.TopoDS_Shape theShape, Op theOp)
     {
-        if (theRun.Read(theShape) is not (N.TopoDS_Shape aNIn, TopoDS_Shape aPIn))
+        if (theRun.Read(theShape) is not (N.TopoDS_Shape aNIn, Shape aPIn))
         {
             return;
         }
         string aPInText = theRun.PortText(aPIn);
         (N.TopoDS_Shape? aNRes, string? aNError) = RunNative(theOp, aNIn);
-        (TopoDS_Shape? aPRes, string? aPError) = RunPort(theOp, aPIn);
+        (Shape? aPRes, string? aPError) = RunPort(theOp, aPIn);
         // The Free and Checked columns are masked where native clears the Checked bit of its own input's sub-shapes that
         // the modification leaves alone (BRepTools_Modifier's SetShapeFlags(S, S): Modified(true) clears Checked), which
         // the port's frozen input keeps (decision 347)

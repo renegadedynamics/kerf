@@ -4,8 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using static Occt.BRepCheck_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -34,13 +36,13 @@ namespace Occt;
 /// </remarks>
 public class BRepCheck_Analyzer
 {
-    private TopoDS_Shape myShape;
+    private Shape myShape;
 
     // OCCT declares this map without a hasher: the default one compares shapes with operator== (IsEqual), so a shape
     // met with two orientations (a seam edge, a vertex shared by edges) has one result per orientation, and the face
     // check (which skips shapes already seen with IsSame) puts the context on the first one only
-    private readonly NCollection_IndexedDataMap<TopoDS_Shape, BRepCheck_Result?> myMap =
-        new(EqualityComparer<TopoDS_Shape>.Default);
+    private readonly NCollection_IndexedDataMap<Shape, BRepCheck_Result?> myMap =
+        new(EqualityComparer<Shape>.Default);
 
     private bool myIsParallel;
     private bool myIsExact;
@@ -50,12 +52,12 @@ public class BRepCheck_Analyzer
     /// checked. <paramref name="theIsParallel"/> checks the sub-shapes on several threads;
     /// <paramref name="theIsExact"/> measures edges on faces exactly (see <see cref="SetExactMethod"/>).
     /// </summary>
-    public BRepCheck_Analyzer(in TopoDS_Shape S,
+    public BRepCheck_Analyzer(in Shape S,
                               bool GeomControls = true,
                               bool theIsParallel = false,
                               bool theIsExact = false)
     {
-        myShape = new TopoDS_Shape();
+        myShape = new Shape();
         myIsParallel = theIsParallel;
         myIsExact = theIsExact;
         Init(S, GeomControls);
@@ -65,9 +67,9 @@ public class BRepCheck_Analyzer
     /// Checks <paramref name="theShape"/> again, from scratch; with <paramref name="B"/> false only topological
     /// information is checked.
     /// </summary>
-    public void Init(in TopoDS_Shape theShape, bool B = true)
+    public void Init(in Shape theShape, bool B = true)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             throw new NullObjectException("BRepCheck_Analyzer::Init() - NULL shape");
         }
@@ -99,7 +101,7 @@ public class BRepCheck_Analyzer
     /// sub-shapes, on its own or in its context in <paramref name="S"/>. Only the first status of each list is read,
     /// as in OCCT.
     /// </summary>
-    public bool IsValid(in TopoDS_Shape S)
+    public bool IsValid(in Shape S)
     {
         if (myMap.FindFromKey(S) is { } aResult)
         {
@@ -112,7 +114,7 @@ public class BRepCheck_Analyzer
             }
         }
 
-        for (var theIterator = new TopoDS_Iterator(S); theIterator.More(); theIterator.Next())
+        for (var theIterator = new Iterator(S); theIterator.More(); theIterator.Next())
         {
             if (!IsValid(theIterator.Value()))
             {
@@ -122,21 +124,21 @@ public class BRepCheck_Analyzer
 
         switch (S.ShapeType())
         {
-            case TopAbs_EDGE:
+            case ShapeType.Edge:
             {
-                return ValidSub(S, TopAbs_VERTEX);
+                return ValidSub(S, ShapeType.Vertex);
             }
-            case TopAbs_FACE:
+            case ShapeType.Face:
             {
-                bool valid = ValidSub(S, TopAbs_WIRE);
-                valid = valid && ValidSub(S, TopAbs_EDGE);
-                valid = valid && ValidSub(S, TopAbs_VERTEX);
+                bool valid = ValidSub(S, ShapeType.Wire);
+                valid = valid && ValidSub(S, ShapeType.Edge);
+                valid = valid && ValidSub(S, ShapeType.Vertex);
                 return valid;
             }
-            case TopAbs_SHELL:
+            case ShapeType.Shell:
                 break;
-            case TopAbs_SOLID:
-                return ValidSub(S, TopAbs_SHELL);
+            case ShapeType.Solid:
+                return ValidSub(S, ShapeType.Shell);
             default:
                 break;
         }
@@ -154,7 +156,7 @@ public class BRepCheck_Analyzer
     /// The check of <paramref name="theSubS"/>, a sub-shape of the checked shape (null for compounds and
     /// compsolids). Throws <see cref="NoSuchObjectException"/> for a shape that isn't a sub-shape.
     /// </summary>
-    public BRepCheck_Result? Result(in TopoDS_Shape theSubS) => myMap.FindFromKey(theSubS);
+    public BRepCheck_Result? Result(in Shape theSubS) => myMap.FindFromKey(theSubS);
 
     // The exceptions OCCT's catch (Standard_Failure) handles under OCC_CATCH_SIGNALS
     private static bool IsCaught(Exception theException)
@@ -164,7 +166,7 @@ public class BRepCheck_Analyzer
                or IndexOutOfRangeException
                or DivideByZeroException;
 
-    private void Put(in TopoDS_Shape theShape, bool B)
+    private void Put(in Shape theShape, bool B)
     {
         if (myMap.Contains(theShape))
         {
@@ -174,39 +176,39 @@ public class BRepCheck_Analyzer
         BRepCheck_Result? HR = null;
         switch (theShape.ShapeType())
         {
-            case TopAbs_VERTEX:
-                HR = new BRepCheck_Vertex(TopoDS.Vertex(theShape));
+            case ShapeType.Vertex:
+                HR = new BRepCheck_Vertex(ShapeCasts.Vertex(theShape));
                 break;
-            case TopAbs_EDGE:
+            case ShapeType.Edge:
             {
-                var aResEdge = new BRepCheck_Edge(TopoDS.Edge(theShape));
+                var aResEdge = new BRepCheck_Edge(ShapeCasts.Edge(theShape));
                 aResEdge.GeometricControls(B);
                 aResEdge.SetExactMethod(myIsExact);
                 HR = aResEdge;
                 break;
             }
-            case TopAbs_WIRE:
+            case ShapeType.Wire:
             {
-                var aResWire = new BRepCheck_Wire(TopoDS.Wire(theShape));
+                var aResWire = new BRepCheck_Wire(ShapeCasts.Wire(theShape));
                 aResWire.GeometricControls(B);
                 HR = aResWire;
                 break;
             }
-            case TopAbs_FACE:
+            case ShapeType.Face:
             {
-                var aResFace = new BRepCheck_Face(TopoDS.Face(theShape));
+                var aResFace = new BRepCheck_Face(ShapeCasts.Face(theShape));
                 aResFace.GeometricControls(B);
                 HR = aResFace;
                 break;
             }
-            case TopAbs_SHELL:
-                HR = new BRepCheck_Shell(TopoDS.Shell(theShape));
+            case ShapeType.Shell:
+                HR = new BRepCheck_Shell(ShapeCasts.Shell(theShape));
                 break;
-            case TopAbs_SOLID:
-                HR = new BRepCheck_Solid(TopoDS.Solid(theShape));
+            case ShapeType.Solid:
+                HR = new BRepCheck_Solid(ShapeCasts.Solid(theShape));
                 break;
-            case TopAbs_COMPSOLID:
-            case TopAbs_COMPOUND:
+            case ShapeType.CompSolid:
+            case ShapeType.Compound:
                 break;
             default:
                 break;
@@ -216,7 +218,7 @@ public class BRepCheck_Analyzer
 
         myMap.Add(theShape, HR);
 
-        for (var theIterator = new TopoDS_Iterator(theShape); theIterator.More(); theIterator.Next())
+        for (var theIterator = new Iterator(theShape); theIterator.More(); theIterator.Next())
         {
             Put(theIterator.Value(), B); // performs minimum on each shape
         }
@@ -236,7 +238,7 @@ public class BRepCheck_Analyzer
             aNbTasks = (int)Math.Ceiling((double)aMapSize / aTaskSize);
         }
 
-        var aArrayOfArray = new NCollection_Array1<TopoDS_Shape[]>(0, aNbTasks - 1);
+        var aArrayOfArray = new NCollection_Array1<Shape[]>(0, aNbTasks - 1);
         // OCCT's arrays are default-constructed empty: chunks past the last shape stay empty
         for (int anI = 0; anI < aNbTasks; ++anI)
         {
@@ -256,7 +258,7 @@ public class BRepCheck_Analyzer
                     aVectorSize = aTailSize;
                 }
 
-                aArrayOfArray[aVectIndex] = new TopoDS_Shape[aVectorSize];
+                aArrayOfArray[aVectIndex] = new Shape[aVectorSize];
             }
 
             aArrayOfArray[aVectIndex][aShapeIndex] = myMap.FindKey(anI);
@@ -266,10 +268,10 @@ public class BRepCheck_Analyzer
         OsdParallel.For(0, aArrayOfArray.Length(), aParallelAnalyzer.Perform, !myIsParallel);
     }
 
-    private bool ValidSub(in TopoDS_Shape S, TopAbs_ShapeEnum SubType)
+    private bool ValidSub(in Shape S, ShapeType SubType)
     {
         var itl = new NCollection_List<BRepCheck_Status>.Iterator();
-        var exp = new TopExp_Explorer();
+        var exp = new Explorer();
         for (exp.Init(S, SubType); exp.More(); exp.Next())
         {
             BRepCheck_Result RV = myMap.FindFromKey(exp.Current())!;
@@ -301,18 +303,18 @@ public class BRepCheck_Analyzer
     /// <summary>OCCT's functor for multi-threaded execution: checks one chunk of the sub-shapes in their contexts.</summary>
     private sealed class BRepCheck_ParallelAnalyzer
     {
-        private readonly NCollection_Array1<TopoDS_Shape[]> myArray;
-        private readonly NCollection_IndexedDataMap<TopoDS_Shape, BRepCheck_Result?> myMap;
+        private readonly NCollection_Array1<Shape[]> myArray;
+        private readonly NCollection_IndexedDataMap<Shape, BRepCheck_Result?> myMap;
 
-        public BRepCheck_ParallelAnalyzer(NCollection_Array1<TopoDS_Shape[]> theArray,
-                                          NCollection_IndexedDataMap<TopoDS_Shape, BRepCheck_Result?> theMap)
+        public BRepCheck_ParallelAnalyzer(NCollection_Array1<Shape[]> theArray,
+                                          NCollection_IndexedDataMap<Shape, BRepCheck_Result?> theMap)
         {
             myArray = theArray;
             myMap = theMap;
         }
 
         /// <summary>A status list of a result, read under the result's lock in parallel mode.</summary>
-        private static bool HasStatusOnShape(BRepCheck_Result theResult, in TopoDS_Shape theShape,
+        private static bool HasStatusOnShape(BRepCheck_Result theResult, in Shape theShape,
                                              Func<BRepCheck_Status, bool> theStop)
         {
             bool aLocked = theResult.IsParallel();
@@ -348,26 +350,26 @@ public class BRepCheck_Analyzer
 
         public void Perform(int theVectorIndex)
         {
-            var exp = new TopExp_Explorer();
-            TopoDS_Shape[] aVector = myArray[theVectorIndex];
+            var exp = new Explorer();
+            Shape[] aVector = myArray[theVectorIndex];
             for (int aShapeIter = 0; aShapeIter < aVector.Length; ++aShapeIter)
             {
-                TopoDS_Shape aShape = aVector[aShapeIter];
-                TopAbs_ShapeEnum aType = aShape.ShapeType();
+                Shape aShape = aVector[aShapeIter];
+                ShapeType aType = aShape.ShapeType();
                 BRepCheck_Result? aResult = myMap.FindFromKey(aShape);
                 switch (aType)
                 {
-                    case TopAbs_VERTEX:
+                    case ShapeType.Vertex:
                     {
                         // There is no need to check anything.
                         break;
                     }
-                    case TopAbs_EDGE:
+                    case ShapeType.Edge:
                     {
                         try
                         {
                             var aResEdge = (BRepCheck_Edge)aResult!;
-                            BRepCheck_Status ste = aResEdge.CheckPolygonOnTriangulation(TopoDS.Edge(aShape));
+                            BRepCheck_Status ste = aResEdge.CheckPolygonOnTriangulation(ShapeCasts.Edge(aShape));
                             if (ste != BRepCheck_NoError)
                             {
                                 aResEdge.SetStatus(ste);
@@ -378,10 +380,10 @@ public class BRepCheck_Analyzer
                             aResult?.SetFailStatus(aShape);
                         }
 
-                        var MapS = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                        for (exp.Init(aShape, TopAbs_VERTEX); exp.More(); exp.Next())
+                        var MapS = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                        for (exp.Init(aShape, ShapeType.Vertex); exp.More(); exp.Next())
                         {
-                            TopoDS_Shape aVertex = exp.Current();
+                            Shape aVertex = exp.Current();
                             BRepCheck_Result? aResOfVertex = myMap.FindFromKey(aVertex);
                             try
                             {
@@ -404,14 +406,14 @@ public class BRepCheck_Analyzer
 
                         break;
                     }
-                    case TopAbs_WIRE:
+                    case ShapeType.Wire:
                     {
                         break;
                     }
-                    case TopAbs_FACE:
+                    case ShapeType.Face:
                     {
-                        var MapS = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                        for (exp.Init(aShape, TopAbs_VERTEX); exp.More(); exp.Next())
+                        var MapS = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                        for (exp.Init(aShape, ShapeType.Vertex); exp.More(); exp.Next())
                         {
                             BRepCheck_Result? aFaceVertexRes = myMap.FindFromKey(exp.Current());
                             try
@@ -436,7 +438,7 @@ public class BRepCheck_Analyzer
                         bool performwire = true;
                         bool isInvalidTolerance = false;
                         MapS.Clear();
-                        for (exp.Init(aShape, TopAbs_EDGE); exp.More(); exp.Next())
+                        for (exp.Init(aShape, ShapeType.Edge); exp.More(); exp.Next())
                         {
                             BRepCheck_Result? aFaceEdgeRes = myMap.FindFromKey(exp.Current());
                             try
@@ -472,7 +474,7 @@ public class BRepCheck_Analyzer
                         }
 
                         bool orientofwires = performwire;
-                        for (exp.Init(aShape, TopAbs_WIRE); exp.More(); exp.Next())
+                        for (exp.Init(aShape, ShapeType.Wire); exp.More(); exp.Next())
                         {
                             BRepCheck_Result? aFaceWireRes = myMap.FindFromKey(exp.Current());
                             try
@@ -526,7 +528,7 @@ public class BRepCheck_Analyzer
                         {
                             aResult?.SetFailStatus(aShape);
 
-                            for (exp.Init(aShape, TopAbs_WIRE); exp.More(); exp.Next())
+                            for (exp.Init(aShape, ShapeType.Wire); exp.More(); exp.Next())
                             {
                                 BRepCheck_Result? aFaceCatchRes = myMap.FindFromKey(exp.Current());
                                 if (aFaceCatchRes is not null)
@@ -540,16 +542,16 @@ public class BRepCheck_Analyzer
 
                         break;
                     }
-                    case TopAbs_SHELL:
+                    case ShapeType.Shell:
                     {
                         break;
                     }
-                    case TopAbs_SOLID:
+                    case ShapeType.Solid:
                     {
-                        exp.Init(aShape, TopAbs_SHELL);
+                        exp.Init(aShape, ShapeType.Shell);
                         for (; exp.More(); exp.Next())
                         {
-                            TopoDS_Shape aShell = exp.Current();
+                            Shape aShell = exp.Current();
                             BRepCheck_Result? aSolidRes = myMap.FindFromKey(aShell);
                             try
                             {

@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation.Advanced;
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -16,11 +18,11 @@ namespace Occt;
 /// </remarks>
 public static class HelixGeom_Tools
 {
-    private sealed class HelixGeom_Tools_Eval : AdvApprox_EvaluatorFunction
+    private sealed class HelixGeom_Tools_Eval : EvaluatorFunction
     {
-        private readonly Adaptor3d_Curve fonct;
+        private readonly CurveAdaptorBase fonct;
 
-        public HelixGeom_Tools_Eval(Adaptor3d_Curve theFunc)
+        public HelixGeom_Tools_Eval(CurveAdaptorBase theFunc)
         {
             fonct = theFunc;
         }
@@ -74,19 +76,19 @@ public static class HelixGeom_Tools
     /// <paramref name="theMaxDeg"/>. Returns 0 on success (with the curve and the maximum error), 1 if the
     /// approximation failed, 2 if it has no result.
     /// </summary>
-    public static int ApprCurve3D(Adaptor3d_Curve theHC,
+    public static int ApprCurve3D(CurveAdaptorBase theHC,
                                   double theTol,
                                   Continuity theCont,
                                   int theMaxSeg,
                                   int theMaxDeg,
-                                  ref Geom_BSplineCurve? theBSpl,
+                                  ref BSplineCurve3D? theBSpl,
                                   ref double theMaxError)
     {
         bool anIsDone, aHasResult;
         int Num1DSS, Num2DSS, Num3DSS;
         double First, Last;
         NCollection_HArray1<double>? OneDTolNul = null, TwoDTolNul = null, ThreeDTol;
-        AdvApprox_DichoCutting aCutTool = new();
+        DichoCutting aCutTool = new();
         // Setup approximation dimensions and tolerances
         Num1DSS = 0;
         Num2DSS = 0;
@@ -98,7 +100,7 @@ public static class HelixGeom_Tools
         Last = theHC.LastParameter();
         // Setup approximation function and perform approximation
         HelixGeom_Tools_Eval ev = new(theHC);
-        AdvApprox_ApproxAFunction aApprox = new(Num1DSS,
+        ApproxAFunction aApprox = new(Num1DSS,
                                                 Num2DSS,
                                                 Num3DSS,
                                                 OneDTolNul,
@@ -112,7 +114,7 @@ public static class HelixGeom_Tools
                                                 ev,
                                                 aCutTool);
         // Check if approximation was successful
-        anIsDone = aApprox.IsDone();
+        anIsDone = aApprox.IsDone;
         if (!anIsDone)
         {
             return 1;
@@ -120,7 +122,7 @@ public static class HelixGeom_Tools
         // Initialize error and check for results
         theMaxError = 0.0;
         // Verify approximation has results
-        aHasResult = aApprox.HasResult();
+        aHasResult = aApprox.HasResult;
         if (!aHasResult)
         {
             return 2;
@@ -131,7 +133,7 @@ public static class HelixGeom_Tools
         NCollection_HArray1<double> Knots = aApprox.Knots()!;
         NCollection_HArray1<int> Mults = aApprox.Multiplicities()!;
         int Degree = aApprox.Degree();
-        theBSpl = new Geom_BSplineCurve(Poles, Knots.Array1(), Mults.Array1(), Degree);
+        theBSpl = new BSplineCurve3D(Poles, Knots.Array1(), Mults.Array1(), Degree);
         theMaxError = aApprox.MaxError(3, 1);
         // Return success
         return 0;
@@ -150,7 +152,7 @@ public static class HelixGeom_Tools
                                 double aTaperAngle,
                                 bool aIsCW,
                                 double theTol,
-                                ref Geom_BSplineCurve? theBSpl,
+                                ref BSplineCurve3D? theBSpl,
                                 ref double theMaxError)
     {
         int iErr, aMaxDegree, aMaxSeg;

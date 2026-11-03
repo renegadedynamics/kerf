@@ -72,19 +72,19 @@ internal static class GeometryTestPipeCommands
 
         if (Option == GeomFill_IsDarboux)
         {
-            Geom2d_Curve? path = DrawTrSurf.GetCurve2d(theDI, a[ipath]);
+            Curve2D? path = DrawTrSurf.GetCurve2d(theDI, a[ipath]);
             if (path is null)
             {
                 return 1;
             }
 
-            Geom_Surface? Support = DrawTrSurf.GetSurface(theDI, a[ipath + 1]);
+            Surface? Support = DrawTrSurf.GetSurface(theDI, a[ipath + 1]);
             if (Support is null)
             {
                 return 1;
             }
 
-            Geom_Curve? firstS = DrawTrSurf.GetCurve(theDI, a[ipath + 2]);
+            Curve3D? firstS = DrawTrSurf.GetCurve(theDI, a[ipath + 2]);
             if (firstS is null)
             {
                 return 1;
@@ -95,19 +95,19 @@ internal static class GeometryTestPipeCommands
         else if (Option == GeomFill_IsConstantNormal)
         {
             Direction3D D = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
-            Geom_Curve path = DrawTrSurf.GetCurve(theDI, a[6])!;
-            Geom_Curve firstS = DrawTrSurf.GetCurve(theDI, a[7])!;
+            Curve3D path = DrawTrSurf.GetCurve(theDI, a[6])!;
+            Curve3D firstS = DrawTrSurf.GetCurve(theDI, a[7])!;
             Pipe.Init(path, firstS, D);
         }
         else
         {
-            Geom_Curve? path = DrawTrSurf.GetCurve(theDI, a[ipath]);
+            Curve3D? path = DrawTrSurf.GetCurve(theDI, a[ipath]);
             if (path is null)
             {
                 return 1;
             }
 
-            Geom_Curve? firstS = DrawTrSurf.GetCurve(theDI, a[ipath + 1]);
+            Curve3D? firstS = DrawTrSurf.GetCurve(theDI, a[ipath + 1]);
             if (firstS is null)
             {
                 return 1;
@@ -160,14 +160,14 @@ internal static class GeometryTestPipeCommands
             indice_path++;
             narg--;
         }
-        Geom_Curve? path = DrawTrSurf.GetCurve(theDI, a[indice_path]);
+        Curve3D? path = DrawTrSurf.GetCurve(theDI, a[indice_path]);
         if (path is null)
         {
             return 1;
         }
 
         int isect = indice_path + 1;
-        Geom_Curve? firstS = DrawTrSurf.GetCurve(theDI, a[isect]);
+        Curve3D? firstS = DrawTrSurf.GetCurve(theDI, a[isect]);
         if (firstS is null)
         {
             if (narg == 4)
@@ -192,7 +192,7 @@ internal static class GeometryTestPipeCommands
                 if (narg == 5 && !Option_NS)
                 {
                     // tuyau a section evolutive
-                    Geom_Curve lastS = DrawTrSurf.GetCurve(theDI, a[isect + 1])!;
+                    Curve3D lastS = DrawTrSurf.GetCurve(theDI, a[isect + 1])!;
                     Cont = C2;
                     Pipe.Init(path, firstS, lastS);
                 }
@@ -200,11 +200,11 @@ internal static class GeometryTestPipeCommands
                 {
                     if (narg == 6 && !Option_NS && theDI.Atof(a[5]) != 0)
                     {
-                        Geom_Curve lastS = DrawTrSurf.GetCurve(theDI, a[isect + 1])!;
+                        Curve3D lastS = DrawTrSurf.GetCurve(theDI, a[isect + 1])!;
                         Cont = C2;
                         Pipe = new GeomFill_Pipe(path, firstS, lastS, theDI.Atof(a[5]));
                         Pipe.Perform(true);
-                        Geom_Surface? aSurface = null;
+                        Surface? aSurface = null;
                         if (Pipe.IsDone())
                         {
                             aSurface = Pipe.Surface();
@@ -213,12 +213,12 @@ internal static class GeometryTestPipeCommands
                         return 0;
                     }
                     // tuyau a N sections, N>=2
-                    NCollection_Sequence<Geom_Curve> Seq = new();
+                    NCollection_Sequence<Curve3D> Seq = new();
                     Seq.Clear();
                     Seq.Append(firstS);
                     for (int i = isect + 1; i < n; i++)
                     {
-                        Geom_Curve nextS = DrawTrSurf.GetCurve(theDI, a[i])!;
+                        Curve3D nextS = DrawTrSurf.GetCurve(theDI, a[i])!;
                         Seq.Append(nextS);
                     }
                     Cont = C2;

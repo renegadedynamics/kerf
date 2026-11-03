@@ -36,12 +36,12 @@ public class StepAssemblyTests
     }
 
     // The shape as OCCT.NET holds it, from the same BRep text (shared sub-shapes stay shared)
-    private static O.TopoDS_Shape Occt(Shape shape)
+    private static global::Kerf.Topology.Shape Occt(Shape shape)
     {
         var text = Encoding.ASCII.GetString(Extras.WriteBRep(shape.Wrapped));
         var reader = new StringReader(text);
         global::Kerf.Engine.Foundation.StreamUtilities.SetInputLength(reader, text.Length);
-        O.BRepTools.Read(out var read, reader);
+        global::Kerf.Engine.Topology.Tools.BrepTools.Read(out var read, reader);
         return read;
     }
 
@@ -68,11 +68,11 @@ public class StepAssemblyTests
             if (node.Color is { } c)
                 doc.SetColor(label, Linear(c), node.Faces().Count > 0 ? O.XdeDoc_ColorType.XdeDoc_ColorSurf : O.XdeDoc_ColorType.XdeDoc_ColorCurv);
         }
-        O.XdeDoc_Label Assembly(Compound assembly, O.TopoDS_Shape s)
+        O.XdeDoc_Label Assembly(Compound assembly, global::Kerf.Topology.Shape s)
         {
             var label = doc.NewShape();
             Attributes(assembly, label);
-            var it = new O.TopoDS_Iterator(s);
+            var it = new global::Kerf.Engine.Topology.Iterator(s);
             foreach (var child in assembly.AssemblyChildren)
             {
                 var c = it.Value();

@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepOffset_Mode;
 using static Kerf.Geometry.JoinKind;
 
@@ -60,7 +61,7 @@ public class BRepOffsetAPI_MakeOffsetShape : BRepBuilderAPI_MakeShape
     /// pipes and spheres (GeomAbs_Arc) or by extending and intersecting them (GeomAbs_Intersection);
     /// <paramref name="RemoveIntEdges"/> removes the INTERNAL edges from the result.
     /// </summary>
-    public void PerformByJoin(in TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode = BRepOffset_Skin,
+    public void PerformByJoin(in Shape S, double Offset, double Tol, BRepOffset_Mode Mode = BRepOffset_Skin,
                               bool Intersection = false, bool SelfInter = false, JoinKind Join = Arc,
                               bool RemoveIntEdges = false, ProgressRange theRange = default)
     {
@@ -82,7 +83,7 @@ public class BRepOffsetAPI_MakeOffsetShape : BRepBuilderAPI_MakeShape
     //=================================================================================================
 
     /// <summary>Constructs the offset shape with the simple algorithm, without computing intersections.</summary>
-    public void PerformBySimple(in TopoDS_Shape theS, double theOffsetValue)
+    public void PerformBySimple(in Shape theS, double theOffsetValue)
     {
         NotDone();
         myLastUsedAlgo = OffsetAlgo_Type.OffsetAlgo_SIMPLE;
@@ -111,7 +112,7 @@ public class BRepOffsetAPI_MakeOffsetShape : BRepBuilderAPI_MakeShape
 
     //=================================================================================================
 
-    internal override NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape S)
+    internal override NCollection_List<Shape> InternalGenerated(in Shape S)
     {
         myGenerated.Clear();
         if (myLastUsedAlgo == OffsetAlgo_Type.OffsetAlgo_JOIN)
@@ -120,8 +121,8 @@ public class BRepOffsetAPI_MakeOffsetShape : BRepBuilderAPI_MakeShape
         }
         else if (myLastUsedAlgo == OffsetAlgo_Type.OffsetAlgo_SIMPLE)
         {
-            TopoDS_Shape aGenShape = mySimpleOffsetShape.InternalGenerated(S);
-            if (!aGenShape.IsNull() && !aGenShape.IsSame(S))
+            Shape aGenShape = mySimpleOffsetShape.InternalGenerated(S);
+            if (!aGenShape.IsNull && !aGenShape.IsSame(S))
             {
                 myGenerated.Append(aGenShape);
             }
@@ -132,7 +133,7 @@ public class BRepOffsetAPI_MakeOffsetShape : BRepBuilderAPI_MakeShape
 
     //=================================================================================================
 
-    internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape S)
+    internal override NCollection_List<Shape> InternalModified(in Shape S)
     {
         myGenerated.Clear();
         if (myLastUsedAlgo == OffsetAlgo_Type.OffsetAlgo_JOIN)
@@ -141,8 +142,8 @@ public class BRepOffsetAPI_MakeOffsetShape : BRepBuilderAPI_MakeShape
         }
         else if (myLastUsedAlgo == OffsetAlgo_Type.OffsetAlgo_SIMPLE)
         {
-            TopoDS_Shape aGenShape = mySimpleOffsetShape.InternalModified(S);
-            if (!aGenShape.IsNull() && !aGenShape.IsSame(S))
+            Shape aGenShape = mySimpleOffsetShape.InternalModified(S);
+            if (!aGenShape.IsNull && !aGenShape.IsSame(S))
             {
                 myGenerated.Append(aGenShape);
             }
@@ -154,7 +155,7 @@ public class BRepOffsetAPI_MakeOffsetShape : BRepBuilderAPI_MakeShape
     //=================================================================================================
 
     /// <summary>True if the shape has been removed from the result.</summary>
-    public override bool IsDeleted(in TopoDS_Shape S)
+    public override bool IsDeleted(in Shape S)
     {
         if (myLastUsedAlgo == OffsetAlgo_Type.OffsetAlgo_JOIN)
         {

@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using static Occt.TopOpeBRepTool_OutCurveType;
 
 namespace Occt;
@@ -18,14 +22,14 @@ namespace Occt;
 /// </para>
 /// <para>
 /// OCCT flags every wire closed and stores computed pcurves on edges without one: it writes into the caller's wires.
-/// The port's <see cref="MakeFaces"/> works on a copy of frozen wires (<see cref="BRepTools_CopyAtEntry"/>) and gives
+/// The port's <see cref="MakeFaces"/> works on a copy of frozen wires (<see cref="CopyAtEntry"/>) and gives
 /// the caller's wires and edges back wherever nothing was written, so the faces hold the caller's own wires as
 /// native's do when the wires are already flagged closed (decision 793). The faces handed out are frozen.
 /// </para>
 /// </remarks>
 public sealed class TopOpeBRepBuild_WireToFace
 {
-    private readonly NCollection_List<TopoDS_Shape> myLW = new();
+    private readonly NCollection_List<Shape> myLW = new();
 
     /// <summary>An empty set of wires.</summary>
     public TopOpeBRepBuild_WireToFace()
@@ -39,7 +43,7 @@ public sealed class TopOpeBRepBuild_WireToFace
     }
 
     /// <summary>Adds the wire <paramref name="W"/>.</summary>
-    public void AddWire(in TopoDS_Wire W)
+    public void AddWire(in Wire W)
     {
         myLW.Append(W);
     }
@@ -47,20 +51,20 @@ public sealed class TopOpeBRepBuild_WireToFace
     /// <summary>
     /// Replaces the contents of <paramref name="LF"/> by the faces the wires bound on <paramref name="F"/> (frozen).
     /// </summary>
-    public void MakeFaces(in TopoDS_Face F, NCollection_List<TopoDS_Shape> LF)
+    public void MakeFaces(in Face F, NCollection_List<Shape> LF)
     {
         // OCCT.NET: copy at entry (decision 793)
-        TopoDS_Shape aHolder = HolderOf(myLW);
-        BRepTools_CopyAtEntry anEntry = new(aHolder);
-        if (!anEntry.IsCopied())
+        Shape aHolder = HolderOf(myLW);
+        CopyAtEntry anEntry = new(aHolder);
+        if (!anEntry.IsCopied)
         {
             InternalMakeFaces(F, LF);
         }
         else
         {
-            NCollection_List<TopoDS_Shape> aSaved = new(myLW);
+            NCollection_List<Shape> aSaved = new(myLW);
             myLW.Clear();
-            for (NCollection_List<TopoDS_Shape>.Iterator it = new(aSaved); it.More(); it.Next())
+            for (NCollection_List<Shape>.Iterator it = new(aSaved); it.More(); it.Next())
             {
                 myLW.Append(anEntry.Copied(it.Value()));
             }
@@ -72,21 +76,21 @@ public sealed class TopOpeBRepBuild_WireToFace
             {
                 myLW.Assign(aSaved);
             }
-            anEntry.Finish(new TopoDS_Shape(), LF);
+            anEntry.Finish(new Shape(), LF);
         }
-        for (NCollection_List<TopoDS_Shape>.Iterator it = new(LF); it.More(); it.Next())
+        for (NCollection_List<Shape>.Iterator it = new(LF); it.More(); it.Next())
         {
             it.Value().TShape()?.FreezeGraph();
         }
     }
 
     /// <summary>OCCT's <c>MakeFaces</c>, in place and without freezing, for ported callers.</summary>
-    internal void InternalMakeFaces(in TopoDS_Face F, NCollection_List<TopoDS_Shape> LF)
+    internal void InternalMakeFaces(in Face F, NCollection_List<Shape> LF)
     {
         LF.Clear();
 
         TopOpeBRepBuild_WireEdgeSet wes = new(F);
-        for (NCollection_List<TopoDS_Shape>.Iterator it = new(myLW); it.More(); it.Next())
+        for (NCollection_List<Shape>.Iterator it = new(myLW); it.More(); it.Next())
         {
             wes.AddShape(it.Value());
         }
@@ -102,19 +106,19 @@ public sealed class TopOpeBRepBuild_WireToFace
 
     /// <summary>
     /// OCCT.NET: an unfrozen compound holding <paramref name="theShapes"/> as children, appended directly so their
-    /// Free flags don't change, to copy them at once with <see cref="BRepTools_CopyAtEntry"/> (shared sub-shapes stay
+    /// Free flags don't change, to copy them at once with <see cref="CopyAtEntry"/> (shared sub-shapes stay
     /// shared).
     /// </summary>
-    internal static TopoDS_Shape HolderOf(NCollection_List<TopoDS_Shape> theShapes)
+    internal static Shape HolderOf(NCollection_List<Shape> theShapes)
     {
-        TopoDS_Compound aHolder = new();
-        new BRep_Builder().MakeCompound(ref aHolder);
-        TopoDS_TShape aHolderTShape = aHolder.TShape()!;
-        for (NCollection_List<TopoDS_Shape>.Iterator it = new(theShapes); it.More(); it.Next())
+        Compound aHolder = new();
+        new BrepBuilder().MakeCompound(ref aHolder);
+        TShape aHolderTShape = aHolder.TShape()!;
+        for (NCollection_List<Shape>.Iterator it = new(theShapes); it.More(); it.Next())
         {
-            if (!it.Value().IsNull())
+            if (!it.Value().IsNull)
             {
-                aHolderTShape.myShapes.Append(it.Value());
+                aHolderTShape._shapes.Append(it.Value());
             }
         }
         return aHolder;

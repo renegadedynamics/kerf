@@ -1,7 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -33,7 +37,7 @@ public class ReconstructionTests
         Assert.Same(aRun.HDS, aRun.Builder.DataStructure());
         Assert.Single(aRun.Builder.NewFaces(1));
         Assert.Empty(aRun.Builder.NewFaces(2)); // a second copy of the surface, without interferences
-        Assert.Equal(TopAbs_FACE, aRun.Builder.NewFaces(1).First().ShapeType());
+        Assert.Equal(ShapeType.Face, aRun.Builder.NewFaces(1).First().ShapeType());
         for (int iC = 1; iC <= aDS.NbCurves(); iC++)
         {
             // curves 3 and 4 have no points: no edge, as natively
@@ -43,21 +47,21 @@ public class ReconstructionTests
         Assert.Equal(100.0, ReconComparison.EdgeLength(aRun.Builder.NewEdges(1).First()), 9);
 
         // the solid merged: one solid, of one closed shell, of seven faces
-        TopoDS_Shape aSolid = aDS.Shape(1);
-        Assert.Equal(TopAbs_SOLID, aSolid.ShapeType());
-        NCollection_List<TopoDS_Shape> aMerged = aRun.Builder.Merged(aSolid, TopAbs_IN);
+        Shape aSolid = aDS.Shape(1);
+        Assert.Equal(ShapeType.Solid, aSolid.ShapeType());
+        NCollection_List<Shape> aMerged = aRun.Builder.Merged(aSolid, In);
         Assert.Single(aMerged);
-        Assert.Equal(TopAbs_SOLID, aMerged.First().ShapeType());
-        Assert.Equal(7, ReconComparison.Count(aMerged.First(), TopAbs_FACE));
+        Assert.Equal(ShapeType.Solid, aMerged.First().ShapeType());
+        Assert.Equal(7, ReconComparison.Count(aMerged.First(), ShapeType.Face));
         Assert.Equal(1.0e6 - (100.0 - 25.0 * Math.PI) * 100.0, ReconComparison.Volume(aMerged.First()), 6);
         // the solid and its shell are split too, as the HBuilder answers (decision 1161: BRepFilletAPI's history)
-        Assert.True(aRun.Builder.IsSplit(aSolid, TopAbs_IN));
-        Assert.True(aRun.Builder.Splits(aSolid, TopAbs_IN).First().IsSame(aMerged.First()));
-        TopoDS_Shape aShell = aDS.Shape(14);
-        Assert.Equal(TopAbs_SHELL, aShell.ShapeType());
-        Assert.Single(aRun.Builder.Splits(aShell, TopAbs_IN));
-        Assert.Empty(aRun.Builder.Merged(aSolid, TopAbs_OUT));
-        Assert.Empty(aRun.Builder.Merged(aSolid, TopAbs_ON));
+        Assert.True(aRun.Builder.IsSplit(aSolid, In));
+        Assert.True(aRun.Builder.Splits(aSolid, In).First().IsSame(aMerged.First()));
+        Shape aShell = aDS.Shape(14);
+        Assert.Equal(ShapeType.Shell, aShell.ShapeType());
+        Assert.Single(aRun.Builder.Splits(aShell, In));
+        Assert.Empty(aRun.Builder.Merged(aSolid, Out));
+        Assert.Empty(aRun.Builder.Merged(aSolid, On));
         Assert.True(new BRepCheck_Analyzer(aRun.Result).IsValid());
     }
 
@@ -70,19 +74,19 @@ public class ReconstructionTests
         int aNbEdges = 0;
         for (int i = 1; i <= aDS.NbShapes(); i++)
         {
-            TopoDS_Shape E = aDS.Shape(i);
-            if (E.ShapeType() != TopAbs_EDGE)
+            Shape E = aDS.Shape(i);
+            if (E.ShapeType() != ShapeType.Edge)
             {
                 continue;
             }
             aNbEdges++;
-            Assert.True(aRun.Builder.IsSplit(E, TopAbs_IN));
-            Assert.False(aRun.Builder.IsSplit(E, TopAbs_OUT));
-            Assert.False(aRun.Builder.IsSplit(E, TopAbs_ON));
-            NCollection_List<TopoDS_Shape> aParts = aRun.Builder.Splits(E, TopAbs_IN);
+            Assert.True(aRun.Builder.IsSplit(E, In));
+            Assert.False(aRun.Builder.IsSplit(E, Out));
+            Assert.False(aRun.Builder.IsSplit(E, On));
+            NCollection_List<Shape> aParts = aRun.Builder.Splits(E, In);
             Assert.Single(aParts);
             Assert.Equal(90.0, ReconComparison.EdgeLength(aParts.First()), 9);
-            Assert.Empty(aRun.Builder.Splits(E, TopAbs_OUT));
+            Assert.Empty(aRun.Builder.Splits(E, Out));
         }
         Assert.Equal(4, aNbEdges);
     }
@@ -92,22 +96,22 @@ public class ReconstructionTests
     {
         // box_edge: the two faces along the edge and the two at its ends are cut; the two others are left whole
         ReconComparison.Run aRun = Box();
-        NCollection_IndexedMap<TopoDS_Shape> aFaces = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aRun.Input, TopAbs_FACE, aFaces);
-        NCollection_IndexedMap<TopoDS_Shape> aResultFaces = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aRun.Result, TopAbs_FACE, aResultFaces);
+        NCollection_IndexedMap<Shape> aFaces = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aRun.Input, ShapeType.Face, aFaces);
+        NCollection_IndexedMap<Shape> aResultFaces = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aRun.Result, ShapeType.Face, aResultFaces);
         int aNbSplit = 0;
         for (int i = 1; i <= aFaces.Extent(); i++)
         {
-            TopoDS_Shape F = aFaces[i];
-            if (aRun.Builder.IsSplit(F, TopAbs_IN))
+            Shape F = aFaces[i];
+            if (aRun.Builder.IsSplit(F, In))
             {
                 aNbSplit++;
-                Assert.Single(aRun.Builder.Splits(F, TopAbs_IN));
+                Assert.Single(aRun.Builder.Splits(F, In));
                 Assert.False(aResultFaces.Contains(F));
-                Assert.True(aResultFaces.Contains(aRun.Builder.Splits(F, TopAbs_IN).First()));
+                Assert.True(aResultFaces.Contains(aRun.Builder.Splits(F, In).First()));
                 // HBuilder's Merged binds only solids and shells for the fillets (FilBuilder::SetRegul reads it)
-                Assert.Empty(aRun.Builder.Merged(F, TopAbs_IN));
+                Assert.Empty(aRun.Builder.Merged(F, In));
             }
             else
             {
@@ -127,12 +131,12 @@ public class ReconstructionTests
             ReconCase aCase = ReconRecordings.Cases[aName];
             ReconComparison.Reconstruct(aCase, theFreezeInput: true);
 
-            TopoDS_Shape anInput = aCase.Input;
+            Shape anInput = aCase.Input;
             string aBefore = BRepText(anInput);
             TopOpeBRepDS_HDataStructure aHDS = TopOpeBRepDS_TextDump.Read(aCase.DsText, anInput);
             ChFi3d_BOPReconstruction R = new(new TopOpeBRepDS_BuildTool());
             R.Perform(aHDS);
-            R.MergeSolid(aHDS.DS().Shape(1), TopAbs_IN);
+            R.MergeSolid(aHDS.DS().Shape(1), In);
             Assert.Equal(aBefore, BRepText(anInput));
         }
     }
@@ -141,20 +145,20 @@ public class ReconstructionTests
     public void PerformAgainStartsAfresh()
     {
         ReconCase aCase = ReconRecordings.Cases["box_edge"];
-        TopoDS_Shape anInput = aCase.Input;
+        Shape anInput = aCase.Input;
         TopOpeBRepDS_HDataStructure aHDS = TopOpeBRepDS_TextDump.Read(aCase.DsText, anInput);
         ChFi3d_BOPReconstruction R = new(new TopOpeBRepDS_BuildTool());
         R.Perform(aHDS);
-        TopoDS_Shape aSolid = aHDS.DS().Shape(1);
-        R.MergeSolid(aSolid, TopAbs_IN);
-        TopoDS_Shape aFirst = R.Merged(aSolid, TopAbs_IN).First();
-        R.MergeSolid(aSolid, TopAbs_OUT); // only IN is built, as ChFi3d asks
-        Assert.Single(R.Merged(aSolid, TopAbs_IN));
+        Shape aSolid = aHDS.DS().Shape(1);
+        R.MergeSolid(aSolid, In);
+        Shape aFirst = R.Merged(aSolid, In).First();
+        R.MergeSolid(aSolid, Out); // only IN is built, as ChFi3d asks
+        Assert.Single(R.Merged(aSolid, In));
         R.Perform(aHDS);
-        Assert.Empty(R.Merged(aSolid, TopAbs_IN));
-        R.MergeSolid(aSolid, TopAbs_IN);
-        Assert.False(aFirst.IsSame(R.Merged(aSolid, TopAbs_IN).First()));
-        Assert.Equal(ReconComparison.Volume(aFirst), ReconComparison.Volume(R.Merged(aSolid, TopAbs_IN).First()), 6);
+        Assert.Empty(R.Merged(aSolid, In));
+        R.MergeSolid(aSolid, In);
+        Assert.False(aFirst.IsSame(R.Merged(aSolid, In).First()));
+        Assert.Equal(ReconComparison.Volume(aFirst), ReconComparison.Volume(R.Merged(aSolid, In).First()), 6);
     }
 
     [Fact]
@@ -162,11 +166,11 @@ public class ReconstructionTests
     {
         // cylinder_top_edge: the torus's seam carries two pcurves; the circles are closed edges on one vertex
         ReconComparison.Run aRun = Box("cylinder_top_edge");
-        TopoDS_Face aTorus = TopoDS.Face(aRun.Builder.NewFaces(1).First());
-        TopoDS_Edge aSeam = TopoDS.Edge(aRun.Builder.NewEdges(5).First());
-        Assert.True(BRep_Tool.IsClosed(aSeam, aTorus));
-        TopoDS_Edge aCircle = TopoDS.Edge(aRun.Builder.NewEdges(2).First());
-        TopExp.Vertices(aCircle, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+        Face aTorus = ShapeCasts.Face(aRun.Builder.NewFaces(1).First());
+        Edge aSeam = ShapeCasts.Edge(aRun.Builder.NewEdges(5).First());
+        Assert.True(Tool.IsClosed(aSeam, aTorus));
+        Edge aCircle = ShapeCasts.Edge(aRun.Builder.NewEdges(2).First());
+        Exploration.Vertices(aCircle, out Vertex V1, out Vertex V2);
         Assert.True(V1.IsSame(V2));
         Assert.True(new BRepCheck_Analyzer(aRun.Result).IsValid());
     }
@@ -175,26 +179,26 @@ public class ReconstructionTests
     public void AShellStaysAShell()
     {
         ReconComparison.Run aRun = Box("shell_box_without_top");
-        TopoDS_Shape aShell = aRun.HDS.DS().Shape(1);
-        Assert.Equal(TopAbs_SHELL, aShell.ShapeType());
-        NCollection_List<TopoDS_Shape> aMerged = aRun.Builder.Merged(aShell, TopAbs_IN);
+        Shape aShell = aRun.HDS.DS().Shape(1);
+        Assert.Equal(ShapeType.Shell, aShell.ShapeType());
+        NCollection_List<Shape> aMerged = aRun.Builder.Merged(aShell, In);
         Assert.Single(aMerged);
-        Assert.Equal(TopAbs_SHELL, aMerged.First().ShapeType());
-        Assert.False(BRep_Tool.IsClosed(aMerged.First()));
+        Assert.Equal(ShapeType.Shell, aMerged.First().ShapeType());
+        Assert.False(Tool.IsClosed(aMerged.First()));
     }
 
     [Fact]
     public void AVoidKeepsItsShell()
     {
         ReconComparison.Run aRun = Box("solid_with_void_inner_edge");
-        TopoDS_Shape aSolid = aRun.Builder.Merged(aRun.HDS.DS().Shape(1), TopAbs_IN).First();
-        Assert.Equal(2, ReconComparison.Count(aSolid, TopAbs_SHELL));
+        Shape aSolid = aRun.Builder.Merged(aRun.HDS.DS().Shape(1), In).First();
+        Assert.Equal(2, ReconComparison.Count(aSolid, ShapeType.Shell));
     }
 
-    private static string BRepText(in TopoDS_Shape S)
+    private static string BRepText(in Shape S)
     {
         StringWriter w = new();
-        BRepTools.Write(S, w);
+        BrepTools.Write(S, w);
         return w.ToString();
     }
 }

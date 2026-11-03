@@ -4,9 +4,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -18,18 +20,18 @@ public static class BRepExtrema_Poly
     /// if either has no triangulated face. <paramref name="P1"/> and <paramref name="P2"/> are left unchanged when the
     /// method fails, as in OCCT.
     /// </summary>
-    public static bool Distance(in TopoDS_Shape S1, in TopoDS_Shape S2, ref Point3D P1, ref Point3D P2, out double dist)
+    public static bool Distance(in Shape S1, in Shape S2, ref Point3D P1, ref Point3D P2, out double dist)
     {
         dist = global::Kerf.Engine.Foundation.Precision.Infinite();
         Placement L;
         Triangulation? Tr;
-        var exFace = new TopExp_Explorer();
+        var exFace = new Explorer();
 
         int nbn1 = 0;
-        for (exFace.Init(S1, TopAbs_FACE); exFace.More(); exFace.Next())
+        for (exFace.Init(S1, ShapeType.Face); exFace.More(); exFace.Next())
         {
-            TopoDS_Face F = TopoDS.Face(exFace.Current());
-            Tr = BRep_Tool.Triangulation(F, out L);
+            Face F = ShapeCasts.Face(exFace.Current());
+            Tr = Tool.Triangulation(F, out L);
             if (Tr is not null)
             {
                 nbn1 += Tr.NodeCount;
@@ -41,10 +43,10 @@ public static class BRepExtrema_Poly
         }
 
         int nbn2 = 0;
-        for (exFace.Init(S2, TopAbs_FACE); exFace.More(); exFace.Next())
+        for (exFace.Init(S2, ShapeType.Face); exFace.More(); exFace.Next())
         {
-            TopoDS_Face F = TopoDS.Face(exFace.Current());
-            Tr = BRep_Tool.Triangulation(F, out L);
+            Face F = ShapeCasts.Face(exFace.Current());
+            Tr = Tool.Triangulation(F, out L);
             if (Tr is not null)
             {
                 nbn2 += Tr.NodeCount;
@@ -58,10 +60,10 @@ public static class BRepExtrema_Poly
         int i, n;
         var TP1 = new NCollection_Array1<Point3D>(1, nbn1);
         nbn1 = 0;
-        for (exFace.Init(S1, TopAbs_FACE); exFace.More(); exFace.Next())
+        for (exFace.Init(S1, ShapeType.Face); exFace.More(); exFace.Next())
         {
-            TopoDS_Face F = TopoDS.Face(exFace.Current());
-            Tr = BRep_Tool.Triangulation(F, out L);
+            Face F = ShapeCasts.Face(exFace.Current());
+            Tr = Tool.Triangulation(F, out L);
             if (Tr is not null)
             {
                 Transform3D aTrsf = L.Transformation();
@@ -76,10 +78,10 @@ public static class BRepExtrema_Poly
 
         var TP2 = new NCollection_Array1<Point3D>(1, nbn2);
         nbn2 = 0;
-        for (exFace.Init(S2, TopAbs_FACE); exFace.More(); exFace.Next())
+        for (exFace.Init(S2, ShapeType.Face); exFace.More(); exFace.Next())
         {
-            TopoDS_Face F = TopoDS.Face(exFace.Current());
-            Tr = BRep_Tool.Triangulation(F, out L);
+            Face F = ShapeCasts.Face(exFace.Current());
+            Tr = Tool.Triangulation(F, out L);
             if (Tr is not null)
             {
                 Transform3D aTrsf = L.Transformation();

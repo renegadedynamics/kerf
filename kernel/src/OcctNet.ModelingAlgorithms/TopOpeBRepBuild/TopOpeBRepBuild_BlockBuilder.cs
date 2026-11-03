@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -18,7 +19,7 @@ namespace Occt;
 public sealed class TopOpeBRepBuild_BlockBuilder
 {
     private readonly NCollection_DataMap<int, int> myOrientedShapeMapIsValid = new();
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myOrientedShapeMap = new(EqualityComparer<TopoDS_Shape>.Default);
+    private readonly NCollection_IndexedMap<Shape> myOrientedShapeMap = new(EqualityComparer<Shape>.Default);
     private readonly NCollection_Sequence<int> myBlocks = new();
     private int myBlockIndex;
 #pragma warning disable CS0414 // OCCT sets the flag and never reads it
@@ -69,7 +70,7 @@ public sealed class TopOpeBRepBuild_BlockBuilder
 
         for (SS.InitStartElements(); SS.MoreStartElements(); SS.NextStartElement())
         {
-            TopoDS_Shape E = SS.StartElement();
+            Shape E = SS.StartElement();
             Mextent = myOrientedShapeMap.Extent();
             Eindex = AddElement(E);
 
@@ -96,7 +97,7 @@ public sealed class TopOpeBRepBuild_BlockBuilder
                     // E = element of M on which neighbours must be searched
                     // first step : Eindex = index of starting element of SS
                     // next steps : Eindex = index of neighbours of starting element of SS
-                    TopoDS_Shape E1 = myOrientedShapeMap.FindKey(Eindex);
+                    Shape E1 = myOrientedShapeMap.FindKey(Eindex);
                     CurNei = SS.MaxNumberSubShape(E1);
                     bool condregu = true;
                     if (CurNei > 2)
@@ -109,7 +110,7 @@ public sealed class TopOpeBRepBuild_BlockBuilder
 
                     for (; SS.MoreNeighbours(); SS.NextNeighbour())
                     {
-                        TopoDS_Shape N = SS.Neighbour();
+                        Shape N = SS.Neighbour();
                         AddElement(N);
                     }
 
@@ -161,7 +162,7 @@ public sealed class TopOpeBRepBuild_BlockBuilder
 
     /// <summary>The current element of <paramref name="BI"/>.</summary>
     /// <exception cref="FailureException">The iterator is at its end.</exception>
-    public TopoDS_Shape Element(in TopOpeBRepBuild_BlockIterator BI)
+    public Shape Element(in TopOpeBRepBuild_BlockIterator BI)
     {
         bool isbound = BI.More();
         if (!isbound)
@@ -170,13 +171,13 @@ public sealed class TopOpeBRepBuild_BlockBuilder
         }
 
         int index = BI.Value();
-        TopoDS_Shape E = myOrientedShapeMap.FindKey(index);
+        Shape E = myOrientedShapeMap.FindKey(index);
         return E;
     }
 
     /// <summary>The element of index <paramref name="index"/>.</summary>
     /// <exception cref="FailureException">There is none.</exception>
-    public TopoDS_Shape Element(int index)
+    public Shape Element(int index)
     {
         bool isbound = myOrientedShapeMapIsValid.IsBound(index);
         if (!isbound)
@@ -184,13 +185,13 @@ public sealed class TopOpeBRepBuild_BlockBuilder
             throw new FailureException("OutOfRange");
         }
 
-        TopoDS_Shape E = myOrientedShapeMap.FindKey(index);
+        Shape E = myOrientedShapeMap.FindKey(index);
         return E;
     }
 
     /// <summary>The index of the element <paramref name="E"/>.</summary>
     /// <exception cref="FailureException">It isn't an element.</exception>
-    public int Element(in TopoDS_Shape E)
+    public int Element(in Shape E)
     {
         bool isbound = myOrientedShapeMap.Contains(E);
         if (!isbound)
@@ -234,7 +235,7 @@ public sealed class TopOpeBRepBuild_BlockBuilder
     }
 
     /// <summary>Adds <paramref name="S"/> (valid) to the elements; its index.</summary>
-    public int AddElement(in TopoDS_Shape S)
+    public int AddElement(in Shape S)
     {
         int Sindex = myOrientedShapeMap.Add(S);
         myOrientedShapeMapIsValid.Bind(Sindex, 1);

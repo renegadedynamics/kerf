@@ -1,12 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 
 namespace Occt;
 
 /// <summary>
-/// The options of a fillet for the functional twin <see cref="BRepFilletAPI.Fillet(in TopoDS_Shape, IReadOnlyList{TopoDS_Edge}, double, in BRepFilletAPI_FilletOptions, out BRepTools_History)"/>
+/// The options of a fillet for the functional twin <see cref="BRepFilletAPI.Fillet(in Shape, IReadOnlyList{Edge}, double, in BRepFilletAPI_FilletOptions, out History)"/>
 /// (decision 1139): BRepFilletAPI_MakeFillet's options under OCCT's names, with OCCT's defaults.
 /// </summary>
 /// <remarks>
@@ -89,7 +91,7 @@ public struct BRepFilletAPI_FilletOptions : IEquatable<BRepFilletAPI_FilletOptio
 }
 
 /// <summary>
-/// The options of a chamfer for the functional twin <see cref="BRepFilletAPI.Chamfer(in TopoDS_Shape, IReadOnlyList{TopoDS_Edge}, double, in BRepFilletAPI_ChamferOptions, out BRepTools_History)"/>
+/// The options of a chamfer for the functional twin <see cref="BRepFilletAPI.Chamfer(in Shape, IReadOnlyList{Edge}, double, in BRepFilletAPI_ChamferOptions, out History)"/>
 /// (decision 1139): BRepFilletAPI_MakeChamfer's one option, <c>SetMode</c>, with OCCT's default.
 /// </summary>
 public struct BRepFilletAPI_ChamferOptions : IEquatable<BRepFilletAPI_ChamferOptions>

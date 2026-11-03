@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 using static Occt.GccInt_IType;
@@ -163,20 +164,20 @@ public sealed partial class GccAna_Circ2d2TanOn
             {
                 GccInt_Bisec Sol = Bis.ThisSolution(i);
                 GccInt_IType type = Sol.ArcType();
-                IntAna2d_AnaIntersection Intp = new();
+                AnalyticIntersection Intp = new();
                 if (type == GccInt_Lin)
                 {
                     Intp.Perform(Sol.Line(), OnCirc);
                 }
                 else if (type == GccInt_Par)
                 {
-                    Intp.Perform(OnCirc, new IntAna2d_Conic(Sol.Parabola()));
+                    Intp.Perform(OnCirc, new Conic(Sol.Parabola()));
                 }
-                if (Intp.IsDone())
+                if (Intp.IsDone)
                 {
-                    if ((!Intp.IsEmpty()) && (!Intp.ParallelElements()) && (!Intp.IdenticalElements()))
+                    if ((!Intp.IsEmpty) && (!Intp.ParallelElements()) && (!Intp.IdenticalElements()))
                     {
-                        for (int j = 1; j <= Intp.NbPoints(); j++)
+                        for (int j = 1; j <= Intp.PointCount; j++)
                         {
                             Point2D Center = Intp.Point(j).Value();
                             double dist1 = Center.Distance(center1);

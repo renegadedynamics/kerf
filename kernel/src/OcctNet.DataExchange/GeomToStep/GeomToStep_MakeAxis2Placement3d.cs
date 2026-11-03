@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -120,7 +121,7 @@ public sealed class GeomToStep_MakeAxis2Placement3d : GeomToStep_Root
     //=============================================================================
 
     /// <summary>An Axis2Placement, its location divided by the length factor.</summary>
-    public GeomToStep_MakeAxis2Placement3d(Geom_Axis2Placement Axis2, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeAxis2Placement3d(Axis2Placement Axis2, in StepData_Factors theLocalFactors)
     {
         Frame3D A;
         A = Axis2.Ax2();
@@ -131,7 +132,7 @@ public sealed class GeomToStep_MakeAxis2Placement3d : GeomToStep_Root
     }
 
     /// <summary>An Axis2Placement (default factors).</summary>
-    public GeomToStep_MakeAxis2Placement3d(Geom_Axis2Placement Axis2) : this(Axis2, new StepData_Factors())
+    public GeomToStep_MakeAxis2Placement3d(Axis2Placement Axis2) : this(Axis2, new StepData_Factors())
     {
     }
 

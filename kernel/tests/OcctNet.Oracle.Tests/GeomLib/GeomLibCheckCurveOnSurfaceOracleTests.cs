@@ -1,6 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Library;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -14,34 +19,34 @@ namespace OcctNet.Oracle.Tests;
 public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
 {
     // The port's BRepTools::EvalAndUpdateTol, for an edge of tolerance theTol.
-    private static double EvalAndUpdateTol(double theTol, Geom_Curve C3d, Geom2d_Curve C2d, Geom_Surface S, double f,
+    private static double EvalAndUpdateTol(double theTol, Curve3D C3d, Curve2D C2d, Surface S, double f,
                                            double l, out int theStatus)
     {
         double newtol = 0.0;
         double first = f, last = l;
-        if (!C3d.IsPeriodic())
+        if (!C3d.IsPeriodic)
         {
             first = Math.Max(first, C3d.FirstParameter());
             last = Math.Min(last, C3d.LastParameter());
         }
-        if (!C2d.IsPeriodic())
+        if (!C2d.IsPeriodic)
         {
             first = Math.Max(first, C2d.FirstParameter());
             last = Math.Min(last, C2d.LastParameter());
         }
-        GeomAdaptor_Curve aGeomAdaptorCurve = new(C3d, first, last);
-        Geom2dAdaptor_Curve aGeom2dAdaptorCurve = new(C2d, first, last);
-        GeomAdaptor_Surface aGeomAdaptorSurface = new(S);
-        Adaptor3d_CurveOnSurface anAdaptor3dCurveOnSurface = new(aGeom2dAdaptorCurve, aGeomAdaptorSurface);
+        CurveAdaptor aGeomAdaptorCurve = new(C3d, first, last);
+        CurveAdaptor2D aGeom2dAdaptorCurve = new(C2d, first, last);
+        SurfaceAdaptor aGeomAdaptorSurface = new(S);
+        CurveOnSurface anAdaptor3dCurveOnSurface = new(aGeom2dAdaptorCurve, aGeomAdaptorSurface);
 
-        GeomLib_CheckCurveOnSurface CT = new(aGeomAdaptorCurve);
+        CheckCurveOnSurface CT = new(aGeomAdaptorCurve);
         CT.Perform(anAdaptor3dCurveOnSurface);
         theStatus = CT.ErrorStatus();
-        if (CT.IsDone())
+        if (CT.IsDone)
         {
             newtol = CT.MaxDistance();
         }
-        else if (CT.ErrorStatus() == 3 || (CT.ErrorStatus() == 2 && (C3d.IsPeriodic() || C2d.IsPeriodic())))
+        else if (CT.ErrorStatus() == 3 || (CT.ErrorStatus() == 2 && (C3d.IsPeriodic || C2d.IsPeriodic)))
         {
             // Try to estimate by sample points
             int nbint = 22;
@@ -90,11 +95,11 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
         {
             int aKind = c % 4;
             N.Geom_Surface aNS;
-            Geom_Surface aPS;
+            Surface aPS;
             N.Geom_Curve aNC;
-            Geom_Curve aPC;
+            Curve3D aPC;
             N.Geom2d_Curve aNC2;
-            Geom2d_Curve aPC2;
+            Curve2D aPC2;
             double aF, aL;
             (N.gp_Ax3 aNAx3, CoordinateSystem aAx3) = GeomOracleInputs.Ax3s(anOracle);
             using (aNAx3)
@@ -103,12 +108,12 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
                 {
                     double aR = anOracle.Real(0.5, 5.0);
                     aNS = new N.Geom_CylindricalSurface(aNAx3, aR);
-                    aPS = new Geom_CylindricalSurface(aAx3, aR);
+                    aPS = new CylindricalSurface(aAx3, aR);
                 }
                 else
                 {
                     aNS = new N.Geom_Plane(aNAx3);
-                    aPS = new Geom_Plane(aAx3);
+                    aPS = new PlaneSurface(aAx3);
                 }
             }
 
@@ -139,8 +144,8 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
                 NCollection_Array1<int> aMults = NCollection_Array1<int>.From(aSpec.Mults);
                 aNC = Oracle.ToNativeCurve(aPoles3d, aWeights, aKnots, aMults, aSpec.Degree, false);
                 aPC = aWeights is null
-                          ? new Geom_BSplineCurve(aPoles3d, aKnots, aMults, aSpec.Degree)
-                          : new Geom_BSplineCurve(aPoles3d, aWeights!, aKnots, aMults, aSpec.Degree);
+                          ? new BSplineCurve3D(aPoles3d, aKnots, aMults, aSpec.Degree)
+                          : new BSplineCurve3D(aPoles3d, aWeights!, aKnots, aMults, aSpec.Degree);
                 aNC2 = Geom2dOracle.ToNative(aSpec);
                 aPC2 = Geom2dOracle.ToPort(aSpec);
                 aF = aPC.FirstParameter();
@@ -162,13 +167,13 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
                     if (anOracle.Bool())
                     {
                         aNC2 = new N.Geom2d_Circle(aNAx2d, aR);
-                        aPC2 = new Geom2d_Circle(aAx2d, aR);
+                        aPC2 = new CircleCurve2D(aAx2d, aR);
                     }
                     else
                     {
                         double aMinor = aR * anOracle.Real(0.2, 1.0);
                         aNC2 = new N.Geom2d_Ellipse(aNAx2d, aR, aMinor);
-                        aPC2 = new Geom2d_Ellipse(aAx2d, aR, aMinor);
+                        aPC2 = new EllipseCurve2D(aAx2d, aR, aMinor);
                     }
                 }
                 (N.gp_Ax2 aNAx2, Frame3D aAx2) = GeomOracleInputs.Ax2s(anOracle);
@@ -176,7 +181,7 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
                 using (aNAx2)
                 {
                     aNC = new N.Geom_Circle(aNAx2, aR3);
-                    aPC = new Geom_Circle(aAx2, aR3);
+                    aPC = new CircleCurve3D(aAx2, aR3);
                 }
                 aF = anOracle.Real(-Math.PI, Math.PI);
                 aL = aF + anOracle.Real(0.5, 2 * Math.PI);
@@ -188,13 +193,13 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
                 using (aNAx2d)
                 {
                     aNC2 = new N.Geom2d_Line(aNAx2d);
-                    aPC2 = new Geom2d_Line(aAx2d);
+                    aPC2 = new LineCurve2D(aAx2d);
                 }
                 (N.gp_Ax1 aNAx1, Axis3D aAx1) = GeomOracleInputs.Ax1s(anOracle);
                 using (aNAx1)
                 {
                     aNC = new N.Geom_Line(aNAx1);
-                    aPC = new Geom_Line(aAx1);
+                    aPC = new LineCurve3D(aAx1);
                 }
                 aF = anOracle.Real(-20, 10);
                 aL = aF + anOracle.Real(0.1, 20);
@@ -214,20 +219,20 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
                 anOracle.Same(aNative, aPort, $"kind {aKind} #{c} [{aF:R}, {aL:R}] status {aStatus}");
 
                 // the port's own EvalAndUpdateTol on an unfrozen edge, and its functional twin on a frozen one
-                var aB = new BRep_Builder();
-                TopoDS_Edge anE = new();
+                var aB = new BrepBuilder();
+                Edge anE = new();
                 aB.MakeEdge(ref anE);
                 aB.UpdateEdge(anE, aTol);
-                TopoDS_Edge aFrozenE = new();
+                Edge aFrozenE = new();
                 aB.MakeEdge(ref aFrozenE);
                 aB.UpdateEdge(aFrozenE, aTol);
                 aFrozenE.TShape()!.FreezeGraph();
-                anOracle.Same(aNative, BRepTools.EvalAndUpdateTol(anE, aPC, aPC2, aPS, aF, aL), "BRepTools.EvalAndUpdateTol");
-                anOracle.Same(N.BRep_Tool.Tolerance(aNE), BRep_Tool.Tolerance(anE), "the edge's updated tolerance");
-                TopoDS_Edge aTwinE = BRepTools.TolEvaluatedAndUpdated(aFrozenE, aPC, aPC2, aPS, aF, aL, out double aTwinTol);
+                anOracle.Same(aNative, BrepTools.EvalAndUpdateTol(anE, aPC, aPC2, aPS, aF, aL), "BRepTools.EvalAndUpdateTol");
+                anOracle.Same(N.BRep_Tool.Tolerance(aNE), Tool.Tolerance(anE), "the edge's updated tolerance");
+                Edge aTwinE = BrepTools.TolEvaluatedAndUpdated(aFrozenE, aPC, aPC2, aPS, aF, aL, out double aTwinTol);
                 anOracle.Same(aNative, aTwinTol, "BRepTools.TolEvaluatedAndUpdated");
-                anOracle.Same(N.BRep_Tool.Tolerance(aNE), BRep_Tool.Tolerance(aTwinE), "the twin's tolerance");
-                Assert.Equal(aTol, BRep_Tool.Tolerance(aFrozenE));
+                anOracle.Same(N.BRep_Tool.Tolerance(aNE), Tool.Tolerance(aTwinE), "the twin's tolerance");
+                Assert.Equal(aTol, Tool.Tolerance(aFrozenE));
                 aCases++;
                 aKinds[aKind]++;
                 if (aNative > aTol)

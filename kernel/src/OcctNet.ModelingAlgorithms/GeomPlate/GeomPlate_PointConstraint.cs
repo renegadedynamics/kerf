@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Properties;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -20,10 +21,10 @@ namespace Occt;
 public class GeomPlate_PointConstraint : Transient
 {
     protected int myOrder;
-    private readonly GeomLProp_SLProps myLProp;
+    private readonly SLProps myLProp;
     private readonly Point3D myPoint;
     private Point2D myPt2d;
-    private readonly Geom_Surface? mySurf;
+    private readonly Surface? mySurf;
     private readonly Vector3D myD11;
     private readonly Vector3D myD12;
     private readonly Vector3D myD21;
@@ -40,7 +41,7 @@ public class GeomPlate_PointConstraint : Transient
     public GeomPlate_PointConstraint(in Point3D Pt, int Order, double TolDist = 0.0001)
     {
         myOrder = Order;
-        myLProp = new GeomLProp_SLProps(2, TolDist);
+        myLProp = new SLProps(2, TolDist);
         myPoint = Pt;
         myPt2d = new Point2D();
         myU = 0.0;
@@ -56,11 +57,11 @@ public class GeomPlate_PointConstraint : Transient
     }
 
     /// <summary>The point of <paramref name="Surf"/> at (U, V), with the surface's derivatives there.</summary>
-    public GeomPlate_PointConstraint(double U, double V, Geom_Surface Surf, int Order, double TolDist = 0.0001,
+    public GeomPlate_PointConstraint(double U, double V, Surface Surf, int Order, double TolDist = 0.0001,
                                      double TolAng = 0.01, double TolCurv = 0.1)
     {
         myOrder = Order;
-        myLProp = new GeomLProp_SLProps(2, TolDist);
+        myLProp = new SLProps(2, TolDist);
         mySurf = Surf;
         myPt2d = new Point2D();
         myU = U;
@@ -117,7 +118,7 @@ public class GeomPlate_PointConstraint : Transient
     public double G2Criterion() => myTolCurv;
 
     /// <summary>The local properties of the surface at the constraint's parameters (the object the constraint keeps).</summary>
-    public GeomLProp_SLProps LPropSurf()
+    public SLProps LPropSurf()
     {
         myLProp.SetParameters(myU, myV);
         return myLProp;

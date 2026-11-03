@@ -5,12 +5,16 @@
 
 using Kerf.Engine.Foundation.Std;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -26,15 +30,15 @@ namespace Occt;
 /// </remarks>
 public abstract class BRepLib_PointCloudShape
 {
-    protected TopoDS_Shape myShape;
+    protected Shape myShape;
     protected double myDist;
     protected double myTol;
-    protected NCollection_DataMap<TopoDS_Shape, double> myFaceArea = new(TopTools_ShapeMapHasher.Instance);
-    protected NCollection_DataMap<TopoDS_Shape, int> myFacePoints = new(TopTools_ShapeMapHasher.Instance);
+    protected NCollection_DataMap<Shape, double> myFaceArea = new(ShapeHasher.Instance);
+    protected NCollection_DataMap<Shape, int> myFacePoints = new(ShapeHasher.Instance);
     protected int myNbPoints;
 
     /// <summary>A generator for the shape (null by default) with the tolerance.</summary>
-    protected BRepLib_PointCloudShape(in TopoDS_Shape theShape, double theTol = 1.0e-7)
+    protected BRepLib_PointCloudShape(in Shape theShape, double theTol = 1.0e-7)
     {
         myShape = theShape;
         myDist = 0.0;
@@ -44,15 +48,15 @@ public abstract class BRepLib_PointCloudShape
 
     /// <summary>A generator without a shape.</summary>
     protected BRepLib_PointCloudShape()
-        : this(new TopoDS_Shape(), global::Kerf.Engine.Foundation.Precision.Confusion())
+        : this(new Shape(), global::Kerf.Engine.Foundation.Precision.Confusion())
     {
     }
 
     /// <summary>The loaded shape.</summary>
-    public TopoDS_Shape Shape() => myShape;
+    public Shape Shape() => myShape;
 
     /// <summary>Sets the shape.</summary>
-    public void SetShape(in TopoDS_Shape theShape) => myShape = theShape;
+    public void SetShape(in Shape theShape) => myShape = theShape;
 
     /// <summary>The tolerance.</summary>
     public double Tolerance() => myTol;
@@ -77,7 +81,7 @@ public abstract class BRepLib_PointCloudShape
         }
 
         int aNbPoints = 0;
-        for (var aExpF = new TopExp_Explorer(myShape, TopAbs_FACE); aExpF.More(); aExpF.Next())
+        for (var aExpF = new Explorer(myShape, ShapeType.Face); aExpF.More(); aExpF.Next())
         {
             double anArea = faceArea(aExpF.Current());
 
@@ -95,9 +99,9 @@ public abstract class BRepLib_PointCloudShape
     {
         // at first step find the face with smallest area
         int aNbPoints = 0;
-        for (var aExpF = new TopExp_Explorer(myShape, TopAbs_FACE); aExpF.More(); aExpF.Next())
+        for (var aExpF = new Explorer(myShape, ShapeType.Face); aExpF.More(); aExpF.Next())
         {
-            Triangulation? aTriangulation = BRep_Tool.Triangulation(TopoDS.Face(aExpF.Current()), out _);
+            Triangulation? aTriangulation = Tool.Triangulation(ShapeCasts.Face(aExpF.Current()), out _);
             if (aTriangulation is null)
             {
                 continue;
@@ -120,7 +124,7 @@ public abstract class BRepLib_PointCloudShape
         }
 
         int aNbAdded = 0;
-        for (var aExpF = new TopExp_Explorer(myShape, TopAbs_FACE); aExpF.More(); aExpF.Next())
+        for (var aExpF = new Explorer(myShape, ShapeType.Face); aExpF.More(); aExpF.Next())
         {
             if (addDensityPoints(aExpF.Current()))
             {
@@ -136,7 +140,7 @@ public abstract class BRepLib_PointCloudShape
         clear();
 
         int aNbAdded = 0;
-        for (var aExpF = new TopExp_Explorer(myShape, TopAbs_FACE); aExpF.More(); aExpF.Next())
+        for (var aExpF = new Explorer(myShape, ShapeType.Face); aExpF.More(); aExpF.Next())
         {
             if (addTriangulationPoints(aExpF.Current()))
             {
@@ -147,14 +151,14 @@ public abstract class BRepLib_PointCloudShape
     }
 
     /// <summary>The area of the face (cached).</summary>
-    protected double faceArea(in TopoDS_Shape theShape)
+    protected double faceArea(in Shape theShape)
     {
         if (myFaceArea.Find(theShape, out double anArea))
         {
             return anArea;
         }
 
-        var aFaceProps = new GProp_GProps();
+        var aFaceProps = new Properties();
         BRepGProp.SurfaceProperties(theShape, aFaceProps);
         anArea = aFaceProps.Mass();
         myFaceArea.Bind(theShape, anArea);
@@ -166,7 +170,7 @@ public abstract class BRepLib_PointCloudShape
     {
         // at first step find the face with smallest area
         double anAreaMin = global::Kerf.Engine.Foundation.Precision.Infinite();
-        for (var aExpF = new TopExp_Explorer(myShape, TopAbs_FACE); aExpF.More(); aExpF.Next())
+        for (var aExpF = new Explorer(myShape, ShapeType.Face); aExpF.More(); aExpF.Next())
         {
             double anArea = faceArea(aExpF.Current());
             if (anArea < myTol * myTol)
@@ -183,7 +187,7 @@ public abstract class BRepLib_PointCloudShape
     }
 
     /// <summary>Adds the face's points for the density, at random inside it.</summary>
-    protected bool addDensityPoints(in TopoDS_Shape theFace)
+    protected bool addDensityPoints(in Shape theFace)
     {
         // addition of the points with specified density on the face by random way
         int aNbPnts = (myFacePoints.IsBound(theFace) ? myFacePoints.Find(theFace) : 0);
@@ -192,13 +196,13 @@ public abstract class BRepLib_PointCloudShape
             return false;
         }
 
-        TopoDS_Face aFace = TopoDS.Face(theFace);
-        BRepTools.UVBounds(aFace, out double anUMin, out double anUMax, out double aVMin, out double aVMax);
+        Face aFace = ShapeCasts.Face(theFace);
+        BrepTools.UVBounds(aFace, out double anUMin, out double anUMax, out double aVMin, out double aVMax);
         var aClassifier = new BRepTopAdaptor_FClass2d(aFace, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Placement aLoc = theFace.Location();
         Transform3D aTrsf = aLoc.Transformation();
-        Geom_Surface? aSurf = BRep_Tool.Surface(aFace, out _);
+        Surface? aSurf = Tool.Surface(aFace, out _);
         if (aSurf is null)
         {
             return false;
@@ -210,8 +214,8 @@ public abstract class BRepLib_PointCloudShape
             double aU = uniformReal(aRandomGenerator, anUMin, anUMax);
             double aV = uniformReal(aRandomGenerator, aVMin, aVMax);
             var aUVNode = new Point2D(aU, aV);
-            TopAbs_State aState = aClassifier.Perform(aUVNode);
-            if (aState == TopAbs_OUT)
+            Containment aState = aClassifier.Perform(aUVNode);
+            if (aState == Out)
             {
                 continue;
             }
@@ -221,7 +225,7 @@ public abstract class BRepLib_PointCloudShape
             aSurf.D1(aU, aV, out Point3D aP1, out Vector3D dU, out Vector3D dV);
 
             Vector3D aNorm = dU ^ dV;
-            if (aFace.Orientation() == TopAbs_REVERSED)
+            if (aFace.Orientation() == Reversed)
             {
                 aNorm.Reverse();
             }
@@ -246,10 +250,10 @@ public abstract class BRepLib_PointCloudShape
     }
 
     /// <summary>Adds the nodes of the face's triangulation, with their normals.</summary>
-    protected bool addTriangulationPoints(in TopoDS_Shape theFace)
+    protected bool addTriangulationPoints(in Shape theFace)
     {
-        TopoDS_Face aFace = TopoDS.Face(theFace);
-        Triangulation? aTriangulation = BRep_Tool.Triangulation(aFace, out Placement aLoc);
+        Face aFace = ShapeCasts.Face(theFace);
+        Triangulation? aTriangulation = Tool.Triangulation(aFace, out Placement aLoc);
         if (aTriangulation is null)
         {
             return false;
@@ -284,7 +288,7 @@ public abstract class BRepLib_PointCloudShape
     }
 
     /// <summary>Receives a point, the surface normal there, its UV parameters and its face.</summary>
-    protected abstract void addPoint(in Point3D thePoint, in Vector3D theNorm, in Point2D theUV, in TopoDS_Shape theFace);
+    protected abstract void addPoint(in Point3D thePoint, in Vector3D theNorm, in Point2D theUV, in Shape theFace);
 
     // std::uniform_real_distribution<double>(a, b) on std::mt19937: generate_canonical<double, 53> takes two 32-bit
     // draws, (x0 + x1 * 2^32) / 2^64, then a + u * (b - a) (the same in MSVC's and GCC's libraries).

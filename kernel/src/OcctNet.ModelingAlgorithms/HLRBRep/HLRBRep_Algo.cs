@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -28,19 +29,19 @@ public class HLRBRep_Algo : HLRBRep_InternalAlgo
     }
 
     /// <summary>Adds the shape S, with the shape data SData and nbIso isolines per face direction.</summary>
-    public void Add(in TopoDS_Shape S, Transient? SData, int nbIso = 0)
+    public void Add(in Shape S, Transient? SData, int nbIso = 0)
     {
         Load(new HLRTopoBRep_OutLiner(S), SData, nbIso);
     }
 
     /// <summary>Adds the shape S, with nbIso isolines per face direction.</summary>
-    public void Add(in TopoDS_Shape S, int nbIso = 0)
+    public void Add(in Shape S, int nbIso = 0)
     {
         Load(new HLRTopoBRep_OutLiner(S), nbIso);
     }
 
     /// <summary>The index of the shape S (its original or outlined shape), 0 if it isn't loaded.</summary>
-    public int Index(in TopoDS_Shape S)
+    public int Index(in Shape S)
     {
         int n = NbShapes();
 
@@ -66,7 +67,7 @@ public class HLRBRep_Algo : HLRBRep_InternalAlgo
 
         for (int i = 1; i <= n; i++)
         {
-            ShapeBounds(i).Shape()!.OutLinedShape(new TopoDS_Shape());
+            ShapeBounds(i).Shape()!.OutLinedShape(new Shape());
             ShapeBounds(i).Shape()!.DataStructure().Clear();
         }
     }

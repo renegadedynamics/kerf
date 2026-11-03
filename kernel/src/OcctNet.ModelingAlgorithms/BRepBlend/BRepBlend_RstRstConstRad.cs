@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
@@ -21,14 +22,14 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
 {
     private const double Eps = 1.0e-15;
 
-    private readonly Adaptor3d_Surface surf1;
-    private readonly Adaptor3d_Surface surf2;
-    private readonly Adaptor2d_Curve2d rst1;
-    private readonly Adaptor2d_Curve2d rst2;
-    private readonly Adaptor3d_CurveOnSurface cons1;
-    private readonly Adaptor3d_CurveOnSurface cons2;
-    private readonly Adaptor3d_Curve guide;
-    private Adaptor3d_Curve tguide;
+    private readonly SurfaceAdaptorBase surf1;
+    private readonly SurfaceAdaptorBase surf2;
+    private readonly Curve2DAdaptorBase rst1;
+    private readonly Curve2DAdaptorBase rst2;
+    private readonly CurveOnSurface cons1;
+    private readonly CurveOnSurface cons2;
+    private readonly CurveAdaptorBase guide;
+    private CurveAdaptorBase tguide;
     private Point3D ptrst1;
     private Point3D ptrst2;
     private Point2D pt2drst1;
@@ -48,10 +49,10 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
     private Vector3D nplan;
     private double normtg;
     private double theD;
-    private Adaptor3d_Surface? surfref1;
-    private Adaptor2d_Curve2d? rstref1;
-    private Adaptor3d_Surface? surfref2;
-    private Adaptor2d_Curve2d? rstref2;
+    private SurfaceAdaptorBase? surfref1;
+    private Curve2DAdaptorBase? rstref1;
+    private SurfaceAdaptorBase? surfref2;
+    private Curve2DAdaptorBase? rstref2;
     private double maxang;
     private double minang;
     private double distmin;
@@ -71,15 +72,15 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
         b = (AC * BB - AB * BC) / deno;
     }
 
-    public BRepBlend_RstRstConstRad(Adaptor3d_Surface Surf1, Adaptor2d_Curve2d Rst1, Adaptor3d_Surface Surf2,
-                                    Adaptor2d_Curve2d Rst2, Adaptor3d_Curve CGuide)
+    public BRepBlend_RstRstConstRad(SurfaceAdaptorBase Surf1, Curve2DAdaptorBase Rst1, SurfaceAdaptorBase Surf2,
+                                    Curve2DAdaptorBase Rst2, CurveAdaptorBase CGuide)
     {
         surf1 = Surf1;
         surf2 = Surf2;
         rst1 = Rst1;
         rst2 = Rst2;
-        cons1 = new Adaptor3d_CurveOnSurface(Rst1, Surf1);
-        cons2 = new Adaptor3d_CurveOnSurface(Rst2, Surf2);
+        cons1 = new CurveOnSurface(Rst1, Surf1);
+        cons2 = new CurveOnSurface(Rst2, Surf2);
         guide = CGuide;
         tguide = CGuide;
         prmrst1 = 0.0;
@@ -141,8 +142,8 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
     }
 
     /// <summary>The reference surfaces and restrictions <see cref="Decroch"/> tests against.</summary>
-    public void Set(Adaptor3d_Surface SurfRef1, Adaptor2d_Curve2d RstRef1, Adaptor3d_Surface SurfRef2,
-                    Adaptor2d_Curve2d RstRef2)
+    public void Set(SurfaceAdaptorBase SurfRef1, Curve2DAdaptorBase RstRef1, SurfaceAdaptorBase SurfRef2,
+                    Curve2DAdaptorBase RstRef2)
     {
         surfref1 = SurfRef1;
         surfref2 = SurfRef2;

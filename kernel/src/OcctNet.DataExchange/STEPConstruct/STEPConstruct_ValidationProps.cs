@@ -7,9 +7,10 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.StepBasic_SiPrefix;
 using static Occt.StepBasic_SiUnitName;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -52,7 +53,7 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
     /// Finds target STEP entity to which validation props should be assigned, and corresponding context, starting
     /// from shape Returns True if success, False in case of fail
     /// </summary>
-    public bool FindTarget(TopoDS_Shape Shape, StepRepr_CharacterizedDefinition target,
+    public bool FindTarget(Shape Shape, StepRepr_CharacterizedDefinition target,
                            ref StepRepr_RepresentationContext Context, bool instance = false)
     {
         // find the target STEP entity corresponding to a shape
@@ -66,7 +67,7 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
         }
 
         // for Compounds, search for SDR
-        else if (Shape.ShapeType() == TopAbs_COMPOUND)
+        else if (Shape.ShapeType() == ShapeType.Compound)
         {
             StepBasic_ProductDefinition ProdDef = null;
             if (FinderProcess().FindTypedTransient(mapper, typeof(StepBasic_ProductDefinition), ref ProdDef))
@@ -293,7 +294,7 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
     /// itself. It uses FindTarget() to find target STEP entity resulting from given shape, and associated context
     /// Returns True if success, False in case of fail
     /// </summary>
-    public bool AddProp(TopoDS_Shape Shape, StepRepr_RepresentationItem Prop, string Descr, bool instance = false)
+    public bool AddProp(Shape Shape, StepRepr_RepresentationItem Prop, string Descr, bool instance = false)
     {
         StepRepr_CharacterizedDefinition target = new StepRepr_CharacterizedDefinition();
         StepRepr_RepresentationContext Context = null;
@@ -305,7 +306,7 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
     }
 
     /// <summary>Adds volume property for given shape (already mapped). Returns True if success, False in case of fail</summary>
-    public bool AddVolume(TopoDS_Shape Shape, double Vol)
+    public bool AddVolume(Shape Shape, double Vol)
     {
         StepBasic_MeasureValueMember Val = new StepBasic_MeasureValueMember();
         Val.SetReal(Vol);
@@ -338,7 +339,7 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
     }
 
     /// <summary>Adds surface area property for given shape (already mapped). Returns True if success, False in case of fail</summary>
-    public bool AddArea(TopoDS_Shape Shape, double Area)
+    public bool AddArea(Shape Shape, double Area)
     {
         StepBasic_MeasureValueMember Val = new StepBasic_MeasureValueMember();
         Val.SetReal(Area);
@@ -374,7 +375,7 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
     /// Adds centroid property for given shape (already mapped). Returns True if success, False in case of fail If
     /// instance is True, then centroid is assigned to an instance of component in assembly
     /// </summary>
-    public bool AddCentroid(TopoDS_Shape Shape, in Point3D Pnt, bool instance = false)
+    public bool AddCentroid(Shape Shape, in Point3D Pnt, bool instance = false)
     {
         TCollection_HAsciiString CPName = new TCollection_HAsciiString("centre point");
         StepGeom_CartesianPoint CP = new StepGeom_CartesianPoint();
@@ -486,10 +487,10 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
     }
 
     /// <summary>Returns Shape associated with given SDR or Null Shape if not found</summary>
-    public TopoDS_Shape GetPropShape(StepBasic_ProductDefinition ProdDef)
+    public Shape GetPropShape(StepBasic_ProductDefinition ProdDef)
     {
         // find target shape
-        TopoDS_Shape S = new TopoDS_Shape();
+        Shape S = new Shape();
         Transfer_Binder binder = TransientProcess().Find(ProdDef);
         if (binder is not null && binder.HasResult())
         {
@@ -500,10 +501,10 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
     }
 
     /// <summary>Returns Shape associated with given PpD or Null Shape if not found</summary>
-    public TopoDS_Shape GetPropShape(StepRepr_PropertyDefinition PD)
+    public Shape GetPropShape(StepRepr_PropertyDefinition PD)
     {
         StepBasic_ProductDefinition ProdDef = GetPropPD(PD);
-        TopoDS_Shape S = new TopoDS_Shape();
+        Shape S = new Shape();
         if (ProdDef is not null)
         {
             S = GetPropShape(ProdDef);
@@ -634,7 +635,7 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
     }
 
     /// <summary>Sets current assembly shape SDR (for FindCDSR calls)</summary>
-    public void SetAssemblyShape(TopoDS_Shape shape)
+    public void SetAssemblyShape(Shape shape)
     {
         TransferBRep_ShapeMapper mapper = TransferBRep.ShapeMapper(FinderProcess(), shape);
         FinderProcess().FindTypedTransient(mapper, typeof(StepBasic_ProductDefinition), ref myAssemblyPD);

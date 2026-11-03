@@ -42,7 +42,7 @@ public sealed class BRepMAT2d_BisectingLocus
     {
         MAT2d_Mat2d TheMAT = new(IsOpenResult);
         MAT_ListOfBisector TheRoots = new();
-        NCollection_Sequence<NCollection_Sequence<Geom2d_Geometry>> Figure = new();
+        NCollection_Sequence<NCollection_Sequence<Geometry2D>> Figure = new();
         int i;
 
         nbSect.Clear();
@@ -56,7 +56,7 @@ public sealed class BRepMAT2d_BisectingLocus
         // The data of anExplo.
         for (i = 1; i <= anExplo.NumberOfContours(); i++)
         {
-            NCollection_Sequence<Geom2d_Geometry> Line = new();
+            NCollection_Sequence<Geometry2D> Line = new();
             Figure.Append(Line);
             for (anExplo.Init(i); anExplo.More(); anExplo.Next())
             {
@@ -195,7 +195,7 @@ public sealed class BRepMAT2d_BisectingLocus
     {
         Reverse = false;
 
-        Geom2d_Curve Bis = theTool.GeomBis(anArc.GeomIndex()).Value();
+        Curve2D Bis = theTool.GeomBis(anArc.GeomIndex()).Value();
 
         if (Bis.FirstParameter() <= -global::Kerf.Engine.Foundation.Precision.Infinite())
         {
@@ -215,14 +215,14 @@ public sealed class BRepMAT2d_BisectingLocus
     }
 
     /// <summary>The geometry of the basic element aBasicElt.</summary>
-    public Geom2d_Geometry GeomElt(MAT_BasicElt aBasicElt) => theTool.GeomElt(aBasicElt.GeomIndex());
+    public Geometry2D GeomElt(MAT_BasicElt aBasicElt) => theTool.GeomElt(aBasicElt.GeomIndex());
 
     /// <summary>The point of the node aNode.</summary>
     public Point2D GeomElt(MAT_Node aNode) => theTool.GeomPnt(aNode.GeomIndex());
 
     // Cuts the curves of the figure at their extrema of curvature and inflections; NbSect counts the sections of
     // each initial curve.
-    private static void CutSketch(NCollection_Sequence<NCollection_Sequence<Geom2d_Geometry>> Figure,
+    private static void CutSketch(NCollection_Sequence<NCollection_Sequence<Geometry2D>> Figure,
         NCollection_DataMap<MAT2d_BiInt, int> NbSect)
     {
         MAT2d_CutCurve Cuter = new();
@@ -232,13 +232,13 @@ public sealed class BRepMAT2d_BisectingLocus
 
         for (i = 1; i <= Figure.Length(); i++)
         {
-            NCollection_Sequence<Geom2d_Geometry> Contour = Figure.ChangeValue(i);
+            NCollection_Sequence<Geometry2D> Contour = Figure.ChangeValue(i);
             ICurveInit = 0;
 
             for (j = 1; j <= Contour.Length(); j++)
             {
                 ICurveInit++;
-                Cuter.Perform((Geom2d_Curve)Contour.ChangeValue(j));
+                Cuter.Perform((Curve2D)Contour.ChangeValue(j));
                 NbSection = 1;
                 if (!Cuter.UnModified())
                 {

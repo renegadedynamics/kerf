@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.DrawLite;
 
 namespace OcctNet.DrawLite.Tests;
@@ -260,14 +261,14 @@ public class DrawShapeCommandsTests
         Assert.Equal("", i.Eval("compound f s nothing c"));
         Assert.Equal("shape COMPOUND FORWARD Free Modified", i.Eval("dtyp c"));
         Assert.Contains(" SHAPE     : 60\n", i.Eval("nbshapes c"));
-        TopoDS_Shape aBefore = i.GetShape("c");
+        Shape aBefore = i.GetShape("c");
 
         // add what where: a new compound with one more child; the old one is unchanged
         i.Eval("compound c2; add f c2; add s c2");
-        Assert.Equal(2, i.GetShape("c2").NbChildren());
+        Assert.Equal(2, i.GetShape("c2").ChildCount);
         i.Eval("add f c");
-        Assert.Equal(3, i.GetShape("c").NbChildren());
-        Assert.Equal(2, aBefore.NbChildren());
+        Assert.Equal(3, i.GetShape("c").ChildCount);
+        Assert.Equal(2, aBefore.ChildCount);
         Assert.True(i.GetShape("c").TShape()!.IsFrozen);
 
         // a sub-shape isn't free: OCCT's builder refuses it
@@ -275,9 +276,9 @@ public class DrawShapeCommandsTests
         Assert.Equal("An exception was caught TopoDS_FrozenShape: TopoDS_Builder::Add", Error(i, "add f f_1"));
 
         Assert.Equal("", i.Eval("emptycopy e c"));
-        Assert.Equal(0, i.GetShape("e").NbChildren());
+        Assert.Equal(0, i.GetShape("e").ChildCount);
         Assert.Equal("", i.Eval("emptycopy f"));
-        Assert.Equal(0, i.GetShape("f").NbChildren());
+        Assert.Equal(0, i.GetShape("f").ChildCount);
     }
 
     [Fact]
@@ -307,7 +308,7 @@ public class DrawShapeCommandsTests
     {
         (DrawInterpreter i, _) = Load();
         i.Eval($"restore {DataOcc}/face.brep f");
-        TopoDS_Shape aBefore = i.GetShape("f");
+        Shape aBefore = i.GetShape("f");
         i.Eval("setflags f free -orientable closed convex infinite");
         Assert.Equal("shape FACE REVERSED Free Modified Closed Infinite Convex", i.Eval("dtyp f"));
         i.Eval("explode f v");
@@ -406,7 +407,7 @@ public class DrawShapeCommandsTests
     {
         (DrawInterpreter i, StringWriter aLog) = Load();
         i.Eval($"restore {DataOcc}/solid.brep s");
-        TopoDS_Shape anOriginal = i.GetShape("s");
+        Shape anOriginal = i.GetShape("s");
 
         // a rigid move only locates the shape
         i.Eval("ttranslate s 1 2 3");
@@ -435,7 +436,7 @@ public class DrawShapeCommandsTests
 
         // b and f forms move by locations, f without checking the scale
         i.Eval($"restore {DataOcc}/solid.brep b");
-        TopoDS_Shape aB = i.GetShape("b");
+        Shape aB = i.GetShape("b");
         i.Eval("bscale b 0 0 0 1");
         Assert.True(i.GetShape("b").IsPartner(aB));
         aLog.GetStringBuilder().Clear();

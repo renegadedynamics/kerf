@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 
 using Kerf.Topology;
@@ -24,18 +25,18 @@ public class ShapeCustom_ConvertToRevolution : ShapeCustom_Modification
     }
 
     // Analyze surface: is it to be converted?
-    private static bool IsToConvert(Geom_Surface? S, out Geom_ElementarySurface? ES)
+    private static bool IsToConvert(Surface? S, out ElementarySurface? ES)
     {
-        ES = S as Geom_ElementarySurface;
+        ES = S as ElementarySurface;
         if (ES is null)
         {
-            if (S is Geom_RectangularTrimmedSurface RTS)
+            if (S is TrimmedSurface RTS)
             {
-                ES = RTS.BasisSurface() as Geom_ElementarySurface;
+                ES = RTS.BasisSurface() as ElementarySurface;
             }
-            else if (S is Geom_OffsetSurface OS)
+            else if (S is OffsetSurface OS)
             {
-                ES = OS.BasisSurface() as Geom_ElementarySurface;
+                ES = OS.BasisSurface() as ElementarySurface;
             }
             if (ES is null)
             {
@@ -43,18 +44,18 @@ public class ShapeCustom_ConvertToRevolution : ShapeCustom_Modification
             }
         }
 
-        return ES is Geom_SphericalSurface
-               || ES is Geom_ToroidalSurface
-               || ES is Geom_CylindricalSurface
-               || ES is Geom_ConicalSurface;
+        return ES is SphericalSurface
+               || ES is ToroidalSurface
+               || ES is CylindricalSurface
+               || ES is ConicalSurface;
     }
 
     /// <summary>
     /// True if the face lies on a sphere, torus, cylinder or cone (possibly trimmed or offset): then S is the surface
     /// of revolution of its meridian (trimmed or offset in the same way).
     /// </summary>
-    public override bool NewSurface(in TopoDS_Face F,
-                                    out Geom_Surface? S,
+    public override bool NewSurface(in Face F,
+                                    out Surface? S,
                                     out Placement L,
                                     out double Tol,
                                     out bool RevWires,
@@ -62,9 +63,9 @@ public class ShapeCustom_ConvertToRevolution : ShapeCustom_Modification
     {
         Tol = 0.0;
         RevWires = RevFace = false;
-        S = BRep_Tool.Surface(F, out L);
+        S = Tool.Surface(F, out L);
 
-        if (!IsToConvert(S, out Geom_ElementarySurface? ES))
+        if (!IsToConvert(S, out ElementarySurface? ES))
         {
             return false;
         }
@@ -87,28 +88,28 @@ public class ShapeCustom_ConvertToRevolution : ShapeCustom_Modification
         Direction3D X = Ax3.XDirection();
 
         // create basis line to rotate
-        Geom_Curve? BasisCurve = null;
-        if (ES is Geom_SphericalSurface SS)
+        Curve3D? BasisCurve = null;
+        if (ES is SphericalSurface SS)
         {
             Frame3D Ax2 = new Frame3D(pos, X.Crossed(dir), X);
-            Geom_Circle Circ = new Geom_Circle(Ax2, SS.Radius());
-            BasisCurve = new Geom_TrimmedCurve(Circ, -M_PI / 2.0, M_PI / 2.0);
+            CircleCurve3D Circ = new CircleCurve3D(Ax2, SS.Radius());
+            BasisCurve = new TrimmedCurve3D(Circ, -M_PI / 2.0, M_PI / 2.0);
         }
-        else if (ES is Geom_ToroidalSurface TS)
+        else if (ES is ToroidalSurface TS)
         {
             Frame3D Ax2 = new Frame3D(new Point3D(pos.XYZ() + X.XYZ() * TS.MajorRadius()), X.Crossed(dir), X);
-            BasisCurve = new Geom_Circle(Ax2, TS.MinorRadius());
+            BasisCurve = new CircleCurve3D(Ax2, TS.MinorRadius());
         }
-        else if (ES is Geom_CylindricalSurface CS)
+        else if (ES is CylindricalSurface CS)
         {
             Axis3D Ax1 = new Axis3D(new Point3D(pos.XYZ() + X.XYZ() * CS.Radius()), dir);
-            BasisCurve = new Geom_Line(Ax1);
+            BasisCurve = new LineCurve3D(Ax1);
         }
-        else if (ES is Geom_ConicalSurface CoS)
+        else if (ES is ConicalSurface CoS)
         {
             Direction3D N = new Direction3D(dir.XYZ() + X.XYZ() * Math.Tan(CoS.SemiAngle()));
             Axis3D Ax1 = new Axis3D(new Point3D(pos.XYZ() + X.XYZ() * CoS.RefRadius()), N);
-            BasisCurve = new Geom_Line(Ax1);
+            BasisCurve = new LineCurve3D(Ax1);
         }
 
         // create revolution with proper U parametrization
@@ -129,7 +130,7 @@ public class ShapeCustom_ConvertToRevolution : ShapeCustom_Modification
             Axis.Reverse();
         }
 
-        Geom_SurfaceOfRevolution Rev = new Geom_SurfaceOfRevolution(BasisCurve!, Axis);
+        RevolutionSurface Rev = new RevolutionSurface(BasisCurve!, Axis);
 
         // set resulting surface and restore trimming or offsetting if necessary
         if (ReferenceEquals(ES, S))
@@ -138,14 +139,14 @@ public class ShapeCustom_ConvertToRevolution : ShapeCustom_Modification
         }
         else
         {
-            if (S is Geom_RectangularTrimmedSurface RTS)
+            if (S is TrimmedSurface RTS)
             {
                 RTS.Bounds(out double U1, out double U2, out double V1, out double V2);
-                S = new Geom_RectangularTrimmedSurface(Rev, U1, U2, V1, V2);
+                S = new TrimmedSurface(Rev, U1, U2, V1, V2);
             }
-            else if (S is Geom_OffsetSurface OS)
+            else if (S is OffsetSurface OS)
             {
-                S = new Geom_OffsetSurface(Rev, OS.Offset());
+                S = new OffsetSurface(Rev, OS.Offset());
             }
             else
             {
@@ -154,7 +155,7 @@ public class ShapeCustom_ConvertToRevolution : ShapeCustom_Modification
         }
         SendMsg(F, new Msg("ConvertToRevolution.NewSurface.MSG0"));
 
-        Tol = BRep_Tool.Tolerance(F);
+        Tol = Tool.Tolerance(F);
         RevWires = false;
         RevFace = false;
         return true;
@@ -164,40 +165,40 @@ public class ShapeCustom_ConvertToRevolution : ShapeCustom_Modification
     /// True if the edge has a pcurve on a surface to convert (so that the edge is copied): then C is a copy of its 3D
     /// curve.
     /// </summary>
-    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out Placement L, out double Tol)
+    public override bool NewCurve(in Edge E, out Curve3D? C, out Placement L, out double Tol)
     {
         C = null;
         L = new Placement();
         Tol = 0.0;
         //: p5 abv 26 Feb 99: force copying of edge if any its pcurve will be replaced
-        BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
+        BrepTEdge TE = (BrepTEdge)E.TShape()!;
 
         // iterate on pcurves
-        var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(TE.Curves());
+        var itcr = new NCollection_List<CurveRepresentation>.Iterator(TE.Curves());
         for (; itcr.More(); itcr.Next())
         {
-            if (itcr.Value() is not BRep_GCurve GC || !GC.IsCurveOnSurface())
+            if (itcr.Value() is not GCurve GC || !GC.IsCurveOnSurface())
             {
                 continue;
             }
-            Geom_Surface? S = GC.Surface();
+            Surface? S = GC.Surface();
             if (!IsToConvert(S, out _))
             {
                 continue;
             }
-            C = BRep_Tool.Curve(E, out L, out double f, out double l);
+            C = Tool.Curve(E, out L, out double f, out double l);
             if (C is not null)
             {
-                C = (Geom_Curve)C.Copy();
+                C = (Curve3D)C.Copy();
             }
-            Tol = BRep_Tool.Tolerance(E);
+            Tol = Tool.Tolerance(E);
             return true;
         }
         return false;
     }
 
     /// <summary>False: 3D points are never modified.</summary>
-    public override bool NewPoint(in TopoDS_Vertex V, out Point3D P, out double Tol)
+    public override bool NewPoint(in Vertex V, out Point3D P, out double Tol)
     {
         P = new Point3D();
         Tol = 0.0;
@@ -209,55 +210,55 @@ public class ShapeCustom_ConvertToRevolution : ShapeCustom_Modification
     /// True if the face's surface is converted or the edge was copied: C is a copy of the pcurve, shifted by 2π in V
     /// on a sphere.
     /// </summary>
-    public override bool NewCurve2d(in TopoDS_Edge E,
-                                    in TopoDS_Face F,
-                                    in TopoDS_Edge NewE,
-                                    in TopoDS_Face NewF,
-                                    out Geom2d_Curve? C,
+    public override bool NewCurve2d(in Edge E,
+                                    in Face F,
+                                    in Edge NewE,
+                                    in Face NewF,
+                                    out Curve2D? C,
                                     out double Tol)
     {
         C = null;
         Tol = 0.0;
-        Geom_Surface? S = BRep_Tool.Surface(F, out Placement L);
+        Surface? S = Tool.Surface(F, out Placement L);
 
         // just copy pcurve if either its surface is changing or edge was copied
-        if (!IsToConvert(S, out Geom_ElementarySurface? ES) && E.IsSame(NewE))
+        if (!IsToConvert(S, out ElementarySurface? ES) && E.IsSame(NewE))
         {
             return false;
         }
 
-        C = BRep_Tool.CurveOnSurface(E, F, out double f, out double l);
+        C = Tool.CurveOnSurface(E, F, out double f, out double l);
         if (C is not null)
         {
-            C = (Geom2d_Curve)C.Copy();
+            C = (Curve2D)C.Copy();
 
             // for spherical surface, surface of revolution since based on TrimmedCurve
             // has V parametrisation shifted on 2PI; translate pcurve accordingly
-            if (ES is Geom_SphericalSurface)
+            if (ES is SphericalSurface)
             {
                 Vector2D shift = new Vector2D(0.0, 2 * M_PI);
                 C.Translate(shift);
             }
         }
 
-        Tol = BRep_Tool.Tolerance(E);
+        Tol = Tool.Tolerance(E);
         return true;
     }
 
     /// <summary>False: parameters are never modified.</summary>
-    public override bool NewParameter(in TopoDS_Vertex V, in TopoDS_Edge E, ref double P, ref double Tol)
+    public override bool NewParameter(in Vertex V, in Edge E, ref double P, ref double Tol)
     {
         return false;
     }
 
     /// <summary>The continuity of the edge between the faces, unchanged.</summary>
-    public override Continuity Continuity(in TopoDS_Edge E,
-                                             in TopoDS_Face F1,
-                                             in TopoDS_Face F2,
-                                             in TopoDS_Edge NewE,
-                                             in TopoDS_Face NewF1,
-                                             in TopoDS_Face NewF2)
+    public override Continuity Continuity(in Edge E,
+                                             in Face F1,
+                                             in Face F2,
+                                             in Edge NewE,
+                                             in Face NewF1,
+                                             in Face NewF2)
     {
-        return BRep_Tool.Continuity(E, F1, F2);
+        return Tool.Continuity(E, F1, F2);
     }
 }

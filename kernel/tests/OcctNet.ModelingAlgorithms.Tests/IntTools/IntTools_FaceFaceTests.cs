@@ -1,7 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -11,21 +15,21 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class IntTools_FaceFaceTests
 {
-    private static TopoDS_Face Face(in TopoDS_Shape theShape, int theIndex = 1)
+    private static Face Face(in Shape theShape, int theIndex = 1)
     {
-        NCollection_IndexedMap<TopoDS_Shape> aMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, TopAbs_FACE, aMap);
-        return TopoDS.Face(aMap.FindKey(theIndex));
+        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, global::Kerf.Topology.ShapeType.Face, aMap);
+        return ShapeCasts.Face(aMap.FindKey(theIndex));
     }
 
-    private static TopoDS_Face PlaneFace(Plane3D thePln, double theSize)
+    private static Face PlaneFace(Plane3D thePln, double theSize)
         => new BRepBuilderAPI_MakeFace(thePln, -theSize, theSize, -theSize, theSize).Face();
 
     [Fact]
     public void Lines_are_frozen_InternalLines_are_not()
     {
-        TopoDS_Face aCyl = Face(new BRepPrimAPI_MakeCylinder(1.0, 2.0).Shape());
-        TopoDS_Face aPln = PlaneFace(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0.2, 0, 1)), 3);
+        Face aCyl = Face(new BRepPrimAPI_MakeCylinder(1.0, 2.0).Shape());
+        Face aPln = PlaneFace(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0.2, 0, 1)), 3);
         IntTools_FaceFace aFF = new();
         aFF.Perform(aPln, aCyl);
         Assert.True(aFF.IsDone());
@@ -40,7 +44,7 @@ public class IntTools_FaceFaceTests
         Assert.True(aFF.Lines().Length() >= 1);
         // the tolerances: at least the faces' (plus half the fuzzy value each), tangential at least the larger
         IntTools_Curve aIC = aFF.Lines().Value(1);
-        Assert.True(aIC.TangentialTolerance() >= BRep_Tool.Tolerance(aCyl) + 0.5 * global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aIC.TangentialTolerance() >= Tool.Tolerance(aCyl) + 0.5 * global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -60,19 +64,19 @@ public class IntTools_FaceFaceTests
         aFF.SetFuzzyValue(1.0e-3);
         Assert.Equal(1.0e-3, aFF.FuzzyValue());
         Assert.Null(aFF.Context());
-        TopoDS_Face aF1 = PlaneFace(new Plane3D(), 1), aF2 = PlaneFace(new Plane3D(new Point3D(), new Direction3D(1, 0, 0)), 1);
+        Face aF1 = PlaneFace(new Plane3D(), 1), aF2 = PlaneFace(new Plane3D(new Point3D(), new Direction3D(1, 0, 0)), 1);
         aFF.Perform(aF1, aF2);
         Assert.NotNull(aFF.Context());
         Assert.True(aFF.Face1().IsSame(aF1) && aFF.Face2().IsSame(aF2));
         Assert.Equal(1, aFF.Lines().Length());
         // the fuzzy value enters the curve's tolerance: the larger face tolerance plus half of it
-        Assert.Equal(BRep_Tool.Tolerance(aF1) + 0.5e-3, aFF.Lines().Value(1).Tolerance(), 1.0e-15);
+        Assert.Equal(Tool.Tolerance(aF1) + 0.5e-3, aFF.Lines().Value(1).Tolerance(), 1.0e-15);
     }
 
     [Fact]
     public void Plane_plane_tangent_and_reversed_order()
     {
-        TopoDS_Face aF1 = PlaneFace(new Plane3D(), 2), aF2 = PlaneFace(new Plane3D(), 1);
+        Face aF1 = PlaneFace(new Plane3D(), 2), aF2 = PlaneFace(new Plane3D(), 1);
         IntTools_FaceFace aFF = new();
         aFF.Perform(aF1, aF2);
         Assert.True(aFF.IsDone());
@@ -81,15 +85,15 @@ public class IntTools_FaceFaceTests
 
         // a plane before a cylinder is sorted after it (the higher IndexType first); the 2D curves come back in the
         // caller's order
-        TopoDS_Face aCyl = Face(new BRepPrimAPI_MakeCylinder(1.0, 2.0).Shape());
-        TopoDS_Face aPln = PlaneFace(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), 3);
+        Face aCyl = Face(new BRepPrimAPI_MakeCylinder(1.0, 2.0).Shape());
+        Face aPln = PlaneFace(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), 3);
         IntTools_FaceFace aFF12 = new(), aFF21 = new();
         aFF12.Perform(aPln, aCyl);
         aFF21.Perform(aCyl, aPln);
         Assert.Equal(aFF12.Lines().Length(), aFF21.Lines().Length());
         Assert.True(aFF12.Face1().IsSame(aCyl) && aFF21.Face1().IsSame(aCyl)); // the faces as sorted
-        Geom2d_Curve aOnPln = aFF12.Lines().Value(1).FirstCurve2d()!;
-        Geom2d_Curve aOnPln21 = aFF21.Lines().Value(1).SecondCurve2d()!;
+        Curve2D aOnPln = aFF12.Lines().Value(1).FirstCurve2d()!;
+        Curve2D aOnPln21 = aFF21.Lines().Value(1).SecondCurve2d()!;
         double t = 0.5 * (aOnPln.FirstParameter() + aOnPln.LastParameter());
         Assert.Equal(0.0, aOnPln.Value(t).Distance(aOnPln21.Value(t)), 12);
     }
@@ -99,7 +103,7 @@ public class IntTools_FaceFaceTests
     [Fact]
     public void OCCT_plane_plane_without_second_pcurve_loses_the_first()
     {
-        TopoDS_Face aF1 = PlaneFace(new Plane3D(), 1), aF2 = PlaneFace(new Plane3D(new Point3D(), new Direction3D(1, 0, 0)), 1);
+        Face aF1 = PlaneFace(new Plane3D(), 1), aF2 = PlaneFace(new Plane3D(new Point3D(), new Direction3D(1, 0, 0)), 1);
         IntTools_FaceFace aFF = new();
         aFF.SetParameters(true, true, false, 1.0e-7);
         aFF.Perform(aF1, aF2);
@@ -113,8 +117,8 @@ public class IntTools_FaceFaceTests
     [Fact]
     public void OCCT_points_accumulate_over_Performs()
     {
-        TopoDS_Face aSph = Face(new BRepPrimAPI_MakeSphere(new Point3D(0.3, 0.2, 1.0), 1.0).Shape());
-        TopoDS_Face aPln = PlaneFace(new Plane3D(), 3);
+        Face aSph = Face(new BRepPrimAPI_MakeSphere(new Point3D(0.3, 0.2, 1.0), 1.0).Shape());
+        Face aPln = PlaneFace(new Plane3D(), 3);
         IntTools_FaceFace aFF = new();
         aFF.Perform(aSph, aPln);
         Assert.Equal(0, aFF.Lines().Length());
@@ -131,10 +135,10 @@ public class IntTools_FaceFaceTests
     [Fact]
     public void OCCT_unbounded_planes_throw()
     {
-        BRep_Builder aBB = new();
-        TopoDS_Face aF1 = new(), aF2 = new();
-        aBB.MakeFace(ref aF1, new Geom_Plane(new CoordinateSystem(new Point3D(0, -0.2, 0.3), new Direction3D(0, 1, 0.3))), 1.0e-7);
-        aBB.MakeFace(ref aF2, new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(1, 0, 0.5))), 1.0e-7);
+        BrepBuilder aBB = new();
+        Face aF1 = new(), aF2 = new();
+        aBB.MakeFace(ref aF1, new PlaneSurface(new CoordinateSystem(new Point3D(0, -0.2, 0.3), new Direction3D(0, 1, 0.3))), 1.0e-7);
+        aBB.MakeFace(ref aF2, new PlaneSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(1, 0, 0.5))), 1.0e-7);
         IntTools_FaceFace aFF = new();
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aFF.Perform(aF1, aF2));
     }
@@ -142,8 +146,8 @@ public class IntTools_FaceFaceTests
     [Fact]
     public void PrepareLines3D_splits_closed_curves()
     {
-        TopoDS_Face aCyl = Face(new BRepPrimAPI_MakeCylinder(1.0, 2.0).Shape());
-        TopoDS_Face aPln = PlaneFace(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), 3);
+        Face aCyl = Face(new BRepPrimAPI_MakeCylinder(1.0, 2.0).Shape());
+        Face aPln = PlaneFace(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), 3);
         IntTools_FaceFace aFF = new();
         aFF.Perform(aPln, aCyl);
         int aBefore = aFF.Lines().Length();
@@ -156,8 +160,8 @@ public class IntTools_FaceFaceTests
     [Fact]
     public void WLineTool_NotUseSurfacesForApprox_at_a_pole()
     {
-        Geom_Surface aSph = GeomConvert.SurfaceToBSplineSurface(new Geom_SphericalSurface(new CoordinateSystem(), 1.0));
-        TopoDS_Face aF = new BRepBuilderAPI_MakeFace(aSph, 1.0e-7).Face();
+        Surface aSph = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(new SphericalSurface(new CoordinateSystem(), 1.0));
+        Face aF = new BRepBuilderAPI_MakeFace(aSph, 1.0e-7).Face();
         aSph.Bounds(out double u1, out _, out double v1, out double v2);
         IntSurf_LineOn2S aLine = new();
         IntSurf_PntOn2S aP = new();
@@ -176,9 +180,9 @@ public class IntTools_FaceFaceTests
     [Fact]
     public void WLineTool_DecompositionOfWLine_without_boundary_points_is_false()
     {
-        Geom_Surface aS1 = new Geom_Plane(new CoordinateSystem());
-        Geom_Surface aS2 = new Geom_Plane(new CoordinateSystem(new Point3D(), new Direction3D(1, 0, 0)));
-        TopoDS_Face aF1 = PlaneFace(new Plane3D(), 2), aF2 = PlaneFace(new Plane3D(new Point3D(), new Direction3D(1, 0, 0)), 2);
+        Surface aS1 = new PlaneSurface(new CoordinateSystem());
+        Surface aS2 = new PlaneSurface(new CoordinateSystem(new Point3D(), new Direction3D(1, 0, 0)));
+        Face aF1 = PlaneFace(new Plane3D(), 2), aF2 = PlaneFace(new Plane3D(new Point3D(), new Direction3D(1, 0, 0)), 2);
         IntSurf_LineOn2S aLine = new();
         for (int i = 0; i < 4; i++)
         {
@@ -188,8 +192,8 @@ public class IntTools_FaceFaceTests
         }
         IntPatch_WLine aWL = new(aLine, false);
         NCollection_Sequence<IntPatch_Line> aNew = new();
-        Assert.False(IntTools_WLineTool.DecompositionOfWLine(aWL, new GeomAdaptor_Surface(aS1),
-                                                             new GeomAdaptor_Surface(aS2), aF1, aF2,
+        Assert.False(IntTools_WLineTool.DecompositionOfWLine(aWL, new SurfaceAdaptor(aS1),
+                                                             new SurfaceAdaptor(aS2), aF1, aF2,
                                                              new GeomInt_LineConstructor(), true, 1.0e-7, aNew,
                                                              new IntTools_Context()));
         Assert.Equal(0, aNew.Length());

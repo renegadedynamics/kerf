@@ -4,7 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -27,7 +28,7 @@ public class BRepClass3d_SolidClassifier : BRepClass3d_SClassifier
     }
 
     /// <summary>Loads the shape <paramref name="S"/>.</summary>
-    public void Load(in TopoDS_Shape S)
+    public void Load(in Shape S)
     {
         if (aSolidLoaded)
         {
@@ -39,7 +40,7 @@ public class BRepClass3d_SolidClassifier : BRepClass3d_SClassifier
     }
 
     /// <summary>A classifier of the shape <paramref name="S"/>.</summary>
-    public BRepClass3d_SolidClassifier(in TopoDS_Shape S)
+    public BRepClass3d_SolidClassifier(in Shape S)
     {
         aSolidLoaded = true;
         explorer = new BRepClass3d_SolidExplorer(S);
@@ -47,7 +48,7 @@ public class BRepClass3d_SolidClassifier : BRepClass3d_SClassifier
     }
 
     /// <summary>Classifies the point <paramref name="P"/> with the tolerance <paramref name="Tol"/> in the shape <paramref name="S"/>.</summary>
-    public BRepClass3d_SolidClassifier(in TopoDS_Shape S, in Point3D P, double Tol)
+    public BRepClass3d_SolidClassifier(in Shape S, in Point3D P, double Tol)
     {
         explorer = new BRepClass3d_SolidExplorer(S);
         aSolidLoaded = true;
@@ -69,7 +70,7 @@ public class BRepClass3d_SolidClassifier : BRepClass3d_SClassifier
         if (aSolidLoaded)
         {
             PerformInfinitePoint(explorer, Tol);
-            isaholeinspace = State() != TopAbs_OUT;
+            isaholeinspace = State() != Out;
         }
     }
 

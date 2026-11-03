@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -16,14 +20,14 @@ namespace Occt;
 /// </remarks>
 public partial struct TopOpeBRepDS_Curve : IEquatable<TopOpeBRepDS_Curve>
 {
-    private Geom_Curve? myCurve;
+    private Curve3D? myCurve;
     private double myFirst;
     private double myLast;
     private bool myRangeDefined;
     private double myTolerance;
     private bool myIsWalk;
-    private TopoDS_Shape myS1;
-    private TopoDS_Shape myS2;
+    private Shape myS1;
+    private Shape myS2;
     private TopOpeBRepDS_Interference? mySCI1;
     private TopOpeBRepDS_Interference? mySCI2;
     private bool myKeep;
@@ -39,8 +43,8 @@ public partial struct TopOpeBRepDS_Curve : IEquatable<TopOpeBRepDS_Curve>
         myRangeDefined = false;
         myTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
         myIsWalk = false;
-        myS1 = new TopoDS_Shape();
-        myS2 = new TopoDS_Shape();
+        myS1 = new Shape();
+        myS2 = new Shape();
         mySCI1 = null;
         mySCI2 = null;
         myKeep = true;
@@ -52,13 +56,13 @@ public partial struct TopOpeBRepDS_Curve : IEquatable<TopOpeBRepDS_Curve>
     /// The curve <paramref name="C"/> with the tolerance <paramref name="T"/>; <paramref name="IsWalk"/> if it comes
     /// from a walking line.
     /// </summary>
-    public TopOpeBRepDS_Curve(Geom_Curve? C, double T, bool IsWalk = false)
+    public TopOpeBRepDS_Curve(Curve3D? C, double T, bool IsWalk = false)
     {
         myFirst = 0.0;
         myLast = 0.0;
         myRangeDefined = false;
-        myS1 = new TopoDS_Shape();
-        myS2 = new TopoDS_Shape();
+        myS1 = new Shape();
+        myS2 = new Shape();
         mySCI1 = null;
         mySCI2 = null;
         myKeep = true;
@@ -67,7 +71,7 @@ public partial struct TopOpeBRepDS_Curve : IEquatable<TopOpeBRepDS_Curve>
         DefineCurve(C, T, IsWalk);
     }
 
-    internal void DefineCurve(Geom_Curve? C, double T, bool IsWalk)
+    internal void DefineCurve(Curve3D? C, double T, bool IsWalk)
     {
         myCurve = C;
         myTolerance = T;
@@ -99,33 +103,33 @@ public partial struct TopOpeBRepDS_Curve : IEquatable<TopOpeBRepDS_Curve>
     /// <summary>The surface/curve interference on the second shape.</summary>
     public readonly TopOpeBRepDS_Interference? GetSCI2() => mySCI2;
 
-    internal void SetShapes(in TopoDS_Shape S1, in TopoDS_Shape S2)
+    internal void SetShapes(in Shape S1, in Shape S2)
     {
         myS1 = S1;
         myS2 = S2;
     }
 
     /// <summary>The two shapes the curve lies on.</summary>
-    public readonly void GetShapes(out TopoDS_Shape S1, out TopoDS_Shape S2)
+    public readonly void GetShapes(out Shape S1, out Shape S2)
     {
         S1 = myS1;
         S2 = myS2;
     }
 
     /// <summary>The first shape.</summary>
-    public readonly TopoDS_Shape Shape1() => myS1;
+    public readonly Shape Shape1() => myS1;
 
     [System.Diagnostics.CodeAnalysis.UnscopedRef]
-    internal ref TopoDS_Shape ChangeShape1() => ref myS1;
+    internal ref Shape ChangeShape1() => ref myS1;
 
     /// <summary>The second shape.</summary>
-    public readonly TopoDS_Shape Shape2() => myS2;
+    public readonly Shape Shape2() => myS2;
 
     [System.Diagnostics.CodeAnalysis.UnscopedRef]
-    internal ref TopoDS_Shape ChangeShape2() => ref myS2;
+    internal ref Shape ChangeShape2() => ref myS2;
 
     /// <summary>The 3D curve (null for a degenerated curve).</summary>
-    public readonly Geom_Curve? Curve() => myCurve;
+    public readonly Curve3D? Curve() => myCurve;
 
     internal void SetRange(double First, double Last)
     {
@@ -152,9 +156,9 @@ public partial struct TopOpeBRepDS_Curve : IEquatable<TopOpeBRepDS_Curve>
     public readonly double Tolerance() => myTolerance;
 
     [System.Diagnostics.CodeAnalysis.UnscopedRef]
-    internal ref Geom_Curve? ChangeCurve() => ref myCurve;
+    internal ref Curve3D? ChangeCurve() => ref myCurve;
 
-    internal void Curve(Geom_Curve? C3D, double Tol)
+    internal void Curve(Curve3D? C3D, double Tol)
     {
         myCurve = C3D;
         myTolerance = Tol;
@@ -162,7 +166,7 @@ public partial struct TopOpeBRepDS_Curve : IEquatable<TopOpeBRepDS_Curve>
 
     /// <summary>The pcurve on the first shape: that of its surface/curve interference, or null.</summary>
     /// <exception cref="InvalidCastException">The first interference is not a surface/curve interference.</exception>
-    public readonly Geom2d_Curve? Curve1()
+    public readonly Curve2D? Curve1()
     {
         if (mySCI1 is not null)
         {
@@ -175,7 +179,7 @@ public partial struct TopOpeBRepDS_Curve : IEquatable<TopOpeBRepDS_Curve>
         }
     }
 
-    internal readonly void Curve1(Geom2d_Curve? PC1)
+    internal readonly void Curve1(Curve2D? PC1)
     {
         if (mySCI1 is not null)
         {
@@ -185,7 +189,7 @@ public partial struct TopOpeBRepDS_Curve : IEquatable<TopOpeBRepDS_Curve>
 
     /// <summary>The pcurve on the second shape: that of its surface/curve interference, or null.</summary>
     /// <exception cref="InvalidCastException">The second interference is not a surface/curve interference.</exception>
-    public readonly Geom2d_Curve? Curve2()
+    public readonly Curve2D? Curve2()
     {
         if (mySCI2 is not null)
         {
@@ -197,7 +201,7 @@ public partial struct TopOpeBRepDS_Curve : IEquatable<TopOpeBRepDS_Curve>
         }
     }
 
-    internal readonly void Curve2(Geom2d_Curve? PC2)
+    internal readonly void Curve2(Curve2D? PC2)
     {
         if (mySCI2 is not null)
         {

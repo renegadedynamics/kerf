@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -29,7 +32,7 @@ public sealed class MAT2d_MiniPath
 
     /// <summary>Computes the path linking the lines of Figure, starting on the line IndStart. Sense is true if the
     /// circuit turns in the trigonometric sense.</summary>
-    public void Perform(NCollection_Sequence<NCollection_Sequence<Geom2d_Geometry>> Figure, int IndStart, bool Sense)
+    public void Perform(NCollection_Sequence<NCollection_Sequence<Geometry2D>> Figure, int IndStart, bool Sense)
     {
         int i, j;
         int NbLines = Figure.Length();
@@ -214,17 +217,17 @@ public sealed class MAT2d_MiniPath
 
     // The connexion realising the minimum of distance between the lines IL1 and IL2 of Figure, oriented from IL1
     // to IL2.
-    private static MAT2d_Connexion MinimumL1L2(NCollection_Sequence<NCollection_Sequence<Geom2d_Geometry>> Figure,
+    private static MAT2d_Connexion MinimumL1L2(NCollection_Sequence<NCollection_Sequence<Geometry2D>> Figure,
         int IL1, int IL2)
     {
-        Extrema_POnCurv2d PointOnCurv1, PointOnCurv2;
+        POnCurv2d PointOnCurv1, PointOnCurv2;
         int IC1, IC2, IMinC1 = 0, IMinC2 = 0, i;
         double DistL1L2_2, DistP1P2_2;
         double ParameterOnC1 = 0.0, ParameterOnC2 = 0.0;
-        NCollection_Sequence<Geom2d_Geometry> L1, L2;
+        NCollection_Sequence<Geometry2D> L1, L2;
         Point2D Point1 = new(), Point2 = new(), P1 = new(), P2 = new();
-        Geom2d_Curve? Item1 = null;
-        Geom2d_Curve? Item2 = null;
+        Curve2D? Item1 = null;
+        Curve2D? Item2 = null;
 
         L1 = Figure.Value(IL1);
         L2 = Figure.Value(IL2);
@@ -235,28 +238,28 @@ public sealed class MAT2d_MiniPath
         for (IC1 = 1; IC1 <= L1.Length(); IC1++)
         {
             Type Type1 = L1.Value(IC1).GetType();
-            if (Type1 != typeof(Geom2d_CartesianPoint))
+            if (Type1 != typeof(CartesianPoint2))
             {
-                Item1 = (Geom2d_Curve)L1.Value(IC1);
+                Item1 = (Curve2D)L1.Value(IC1);
             }
             else
             {
-                P1 = ((Geom2d_Point)L1.Value(IC1)).Pnt2d();
+                P1 = ((Point2)L1.Value(IC1)).Pnt2d();
             }
 
             for (IC2 = 1; IC2 <= L2.Length(); IC2++)
             {
                 Type Type2 = L2.Value(IC2).GetType();
-                if (Type2 != typeof(Geom2d_CartesianPoint))
+                if (Type2 != typeof(CartesianPoint2))
                 {
-                    Item2 = (Geom2d_Curve)L2.Value(IC2);
+                    Item2 = (Curve2D)L2.Value(IC2);
                 }
                 else
                 {
-                    P2 = ((Geom2d_Point)L2.Value(IC2)).Pnt2d();
+                    P2 = ((Point2)L2.Value(IC2)).Pnt2d();
                 }
 
-                if (Type1 == typeof(Geom2d_CartesianPoint) && Type2 == typeof(Geom2d_CartesianPoint))
+                if (Type1 == typeof(CartesianPoint2) && Type2 == typeof(CartesianPoint2))
                 {
                     DistP1P2_2 = P1.SquareDistance(P2);
                     if (DistP1P2_2 <= DistL1L2_2)
@@ -270,13 +273,13 @@ public sealed class MAT2d_MiniPath
                         ParameterOnC2 = 0.0;
                     }
                 }
-                else if (Type1 == typeof(Geom2d_CartesianPoint))
+                else if (Type1 == typeof(CartesianPoint2))
                 {
-                    Geom2dAdaptor_Curve C2 = new(Item2!);
-                    Extrema_ExtPC2d Extremas = new(P1, C2);
-                    if (Extremas.IsDone())
+                    CurveAdaptor2D C2 = new(Item2!);
+                    ExtPC2d Extremas = new(P1, C2);
+                    if (Extremas.IsDone)
                     {
-                        for (i = 1; i <= Extremas.NbExt(); i++)
+                        for (i = 1; i <= Extremas.ExtCount; i++)
                         {
                             if (Extremas.SquareDistance(i) < DistL1L2_2)
                             {
@@ -292,13 +295,13 @@ public sealed class MAT2d_MiniPath
                         }
                     }
                 }
-                else if (Type2 == typeof(Geom2d_CartesianPoint))
+                else if (Type2 == typeof(CartesianPoint2))
                 {
-                    Geom2dAdaptor_Curve C1 = new(Item1!);
-                    Extrema_ExtPC2d Extremas = new(P2, C1);
-                    if (Extremas.IsDone())
+                    CurveAdaptor2D C1 = new(Item1!);
+                    ExtPC2d Extremas = new(P2, C1);
+                    if (Extremas.IsDone)
                     {
-                        for (i = 1; i <= Extremas.NbExt(); i++)
+                        for (i = 1; i <= Extremas.ExtCount; i++)
                         {
                             if (Extremas.SquareDistance(i) < DistL1L2_2)
                             {
@@ -316,12 +319,12 @@ public sealed class MAT2d_MiniPath
                 }
                 else
                 {
-                    Geom2dAdaptor_Curve C1 = new(Item1!);
-                    Geom2dAdaptor_Curve C2 = new(Item2!);
-                    Extrema_ExtCC2d Extremas = new(C1, C2);
-                    if (!Extremas.IsParallel() && Extremas.IsDone())
+                    CurveAdaptor2D C1 = new(Item1!);
+                    CurveAdaptor2D C2 = new(Item2!);
+                    ExtCC2d Extremas = new(C1, C2);
+                    if (!Extremas.IsParallel && Extremas.IsDone)
                     {
-                        for (i = 1; i <= Extremas.NbExt(); i++)
+                        for (i = 1; i <= Extremas.ExtCount; i++)
                         {
                             if (Extremas.SquareDistance(i) < DistL1L2_2)
                             {

@@ -14,7 +14,7 @@ public class Geom_BezierSurfaceOracleTests(ITestOutputHelper output)
 {
     private static readonly int Cases = Tape.Cases(200, 6);
 
-    private static (N.Geom_BezierSurface Native, Geom_BezierSurface Port) RandomSurface(Oracle theOracle)
+    private static (N.Geom_BezierSurface Native, BezierSurface Port) RandomSurface(Oracle theOracle)
     {
         int aNbU = theOracle.Int(2, 9), aNbV = theOracle.Int(2, 9);
         bool aRational = theOracle.Int(0, 1) == 1;
@@ -44,28 +44,28 @@ public class Geom_BezierSurfaceOracleTests(ITestOutputHelper output)
         using N.TColgp_Array2OfPnt aNPoles = Oracle.ToNative(aPoles);
         if (!aRational)
         {
-            return (new N.Geom_BezierSurface(aNPoles), new Geom_BezierSurface(aPoles));
+            return (new N.Geom_BezierSurface(aNPoles), new BezierSurface(aPoles));
         }
 
         using N.TColStd_Array2OfReal aNWeights = Oracle.ToNative(aWeights);
-        return (new N.Geom_BezierSurface(aNPoles, aNWeights), new Geom_BezierSurface(aPoles, aWeights));
+        return (new N.Geom_BezierSurface(aNPoles, aNWeights), new BezierSurface(aPoles, aWeights));
     }
 
-    private static void Compare(Oracle theOracle, N.Geom_BezierSurface theN, Geom_BezierSurface theP, string theWhat)
+    private static void Compare(Oracle theOracle, N.Geom_BezierSurface theN, BezierSurface theP, string theWhat)
     {
-        theOracle.Same(theN.NbUPoles(), theP.NbUPoles(), theWhat + " NbUPoles");
-        theOracle.Same(theN.NbVPoles(), theP.NbVPoles(), theWhat + " NbVPoles");
+        theOracle.Same(theN.NbUPoles(), theP.UPoleCount, theWhat + " NbUPoles");
+        theOracle.Same(theN.NbVPoles(), theP.VPoleCount, theWhat + " NbVPoles");
         theOracle.Same(theN.UDegree(), theP.UDegree(), theWhat + " UDegree");
         theOracle.Same(theN.VDegree(), theP.VDegree(), theWhat + " VDegree");
-        theOracle.Same(theN.IsURational(), theP.IsURational(), theWhat + " IsURational");
-        theOracle.Same(theN.IsVRational(), theP.IsVRational(), theWhat + " IsVRational");
-        theOracle.Same(theN.IsUClosed(), theP.IsUClosed(), theWhat + " IsUClosed");
-        theOracle.Same(theN.IsVClosed(), theP.IsVClosed(), theWhat + " IsVClosed");
-        theOracle.Same(theN.IsUPeriodic(), theP.IsUPeriodic(), theWhat + " IsUPeriodic");
+        theOracle.Same(theN.IsURational(), theP.IsURational, theWhat + " IsURational");
+        theOracle.Same(theN.IsVRational(), theP.IsVRational, theWhat + " IsVRational");
+        theOracle.Same(theN.IsUClosed(), theP.IsUClosed, theWhat + " IsUClosed");
+        theOracle.Same(theN.IsVClosed(), theP.IsVClosed, theWhat + " IsVClosed");
+        theOracle.Same(theN.IsUPeriodic(), theP.IsUPeriodic, theWhat + " IsUPeriodic");
         theOracle.Same((int)theN.Continuity(), (int)theP.Continuity(), theWhat + " Continuity");
-        for (int i = 1; i <= theP.NbUPoles(); i++)
+        for (int i = 1; i <= theP.UPoleCount; i++)
         {
-            for (int j = 1; j <= theP.NbVPoles(); j++)
+            for (int j = 1; j <= theP.VPoleCount; j++)
             {
                 using N.gp_Pnt aNP = theN.Pole(i, j);
                 theOracle.Same(aNP, theP.Pole(i, j), theWhat + " Pole");
@@ -211,7 +211,7 @@ public class Geom_BezierSurfaceOracleTests(ITestOutputHelper output)
         int[] aDone = new int[14];
         for (int i = 0; i < Cases; i++)
         {
-            (N.Geom_BezierSurface aN, Geom_BezierSurface aP) = RandomSurface(anOracle);
+            (N.Geom_BezierSurface aN, BezierSurface aP) = RandomSurface(anOracle);
             using (aN)
             {
                 Compare(anOracle, aN, aP, "new");
@@ -239,7 +239,7 @@ public class Geom_BezierSurfaceOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 20261029 + 300);
         for (int i = 0; i < Cases; i++)
         {
-            (N.Geom_BezierSurface aN, Geom_BezierSurface aP) = RandomSurface(anOracle);
+            (N.Geom_BezierSurface aN, BezierSurface aP) = RandomSurface(anOracle);
             using (aN)
             {
                 GeomIsoCurveCompare.SameIsos(anOracle, aN, aP, "Bezier surface");
@@ -248,9 +248,9 @@ public class Geom_BezierSurfaceOracleTests(ITestOutputHelper output)
         anOracle.Report("Geom_BezierSurface UIso and VIso");
     }
 
-    private static bool Edit(Oracle theOracle, N.Geom_BezierSurface theN, Geom_BezierSurface theP, int theEdit, out string theWhat)
+    private static bool Edit(Oracle theOracle, N.Geom_BezierSurface theN, BezierSurface theP, int theEdit, out string theWhat)
     {
-        int aNbU = theP.NbUPoles(), aNbV = theP.NbVPoles();
+        int aNbU = theP.UPoleCount, aNbV = theP.VPoleCount;
         switch (theEdit)
         {
             case 0:

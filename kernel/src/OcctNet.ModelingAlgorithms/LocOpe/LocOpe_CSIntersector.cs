@@ -5,10 +5,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.IntCurveSurface_TransitionOnCurve;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -20,7 +23,7 @@ namespace Occt;
 public sealed class LocOpe_CSIntersector
 {
     private bool myDone;
-    private TopoDS_Shape myShape = new();
+    private Shape myShape = new();
     private NCollection_Sequence<LocOpe_PntFace>[]? myPoints;
     private int myNbelem;
 
@@ -33,7 +36,7 @@ public sealed class LocOpe_CSIntersector
     }
 
     /// <summary>Creates the intersection with the shape <paramref name="S"/>.</summary>
-    public LocOpe_CSIntersector(in TopoDS_Shape S)
+    public LocOpe_CSIntersector(in Shape S)
     {
         myDone = false;
         myShape = S;
@@ -42,7 +45,7 @@ public sealed class LocOpe_CSIntersector
     }
 
     /// <summary>Initializes the intersection with the shape <paramref name="S"/>.</summary>
-    public void Init(in TopoDS_Shape S)
+    public void Init(in Shape S)
     {
         myDone = false;
         myShape = S;
@@ -61,7 +64,7 @@ public sealed class LocOpe_CSIntersector
 
     public void Perform(NCollection_Sequence<Line3D> Slin)
     {
-        if (myShape.IsNull() || Slin.Length() <= 0)
+        if (myShape.IsNull || Slin.Length() <= 0)
         {
             throw new ConstructionErrorException();
         }
@@ -72,10 +75,10 @@ public sealed class LocOpe_CSIntersector
 
         double binf = RealFirst();
         double bsup = RealLast();
-        TopExp_Explorer exp = new(myShape, TopAbs_FACE);
+        Explorer exp = new(myShape, ShapeType.Face);
         for (; exp.More(); exp.Next())
         {
-            TopoDS_Face theface = TopoDS.Face(exp.Current());
+            Face theface = ShapeCasts.Face(exp.Current());
             IntCurvesFace_Intersector theInt = new(theface, global::Kerf.Engine.Foundation.Precision.PConfusion());
             for (int i = 1; i <= myNbelem; i++)
             {
@@ -91,7 +94,7 @@ public sealed class LocOpe_CSIntersector
 
     public void Perform(NCollection_Sequence<Circle3D> Scir)
     {
-        if (myShape.IsNull() || Scir.Length() <= 0)
+        if (myShape.IsNull || Scir.Length() <= 0)
         {
             throw new ConstructionErrorException();
         }
@@ -100,18 +103,18 @@ public sealed class LocOpe_CSIntersector
         myNbelem = Scir.Length();
         newPoints();
 
-        TopExp_Explorer exp = new(myShape, TopAbs_FACE);
-        GeomAdaptor_Curve HC = new();
+        Explorer exp = new(myShape, ShapeType.Face);
+        CurveAdaptor HC = new();
         double binf = 0.0;
         double bsup = 2.0 * Math.PI;
 
         for (; exp.More(); exp.Next())
         {
-            TopoDS_Face theface = TopoDS.Face(exp.Current());
+            Face theface = ShapeCasts.Face(exp.Current());
             IntCurvesFace_Intersector theInt = new(theface, 0.0);
             for (int i = 1; i <= myNbelem; i++)
             {
-                HC.Load(new Geom_Circle(Scir[i]));
+                HC.Load(new CircleCurve3D(Scir[i]));
                 theInt.Perform(HC, binf, bsup);
                 if (theInt.IsDone())
                 {
@@ -122,9 +125,9 @@ public sealed class LocOpe_CSIntersector
         myDone = true;
     }
 
-    public void Perform(NCollection_Sequence<Geom_Curve?> Scur)
+    public void Perform(NCollection_Sequence<Curve3D?> Scur)
     {
-        if (myShape.IsNull() || Scur.Length() <= 0)
+        if (myShape.IsNull || Scur.Length() <= 0)
         {
             throw new ConstructionErrorException();
         }
@@ -133,15 +136,15 @@ public sealed class LocOpe_CSIntersector
         myNbelem = Scur.Length();
         newPoints();
 
-        TopExp_Explorer exp = new(myShape, TopAbs_FACE);
-        GeomAdaptor_Curve HC = new();
+        Explorer exp = new(myShape, ShapeType.Face);
+        CurveAdaptor HC = new();
         for (; exp.More(); exp.Next())
         {
-            TopoDS_Face theface = TopoDS.Face(exp.Current());
+            Face theface = ShapeCasts.Face(exp.Current());
             IntCurvesFace_Intersector theInt = new(theface, 0.0);
             for (int i = 1; i <= myNbelem; i++)
             {
-                Geom_Curve? aCur = Scur[i];
+                Curve3D? aCur = Scur[i];
                 if (aCur is null)
                 {
                     continue;
@@ -205,7 +208,7 @@ public sealed class LocOpe_CSIntersector
     /// points it gathers. <paramref name="Tol"/> decides when two parameters are equal. The outputs are left unchanged
     /// where OCCT leaves them.
     /// </summary>
-    public bool LocalizeAfter(int I, double From, double Tol, ref TopAbs_Orientation Or, ref int IndFrom, ref int IndTo)
+    public bool LocalizeAfter(int I, double From, double Tol, ref Orientation Or, ref int IndFrom, ref int IndTo)
     {
         if (!myDone)
         {
@@ -220,9 +223,9 @@ public sealed class LocOpe_CSIntersector
 
     /// <summary>
     /// On the element of range <paramref name="I"/>, searches the first intersection point located before the
-    /// parameter <paramref name="From"/> whose orientation is not EXTERNAL (see <see cref="LocalizeAfter(int, double, double, ref TopAbs_Orientation, ref int, ref int)"/>).
+    /// parameter <paramref name="From"/> whose orientation is not EXTERNAL (see <see cref="LocalizeAfter(int, double, double, ref Orientation, ref int, ref int)"/>).
     /// </summary>
-    public bool LocalizeBefore(int I, double From, double Tol, ref TopAbs_Orientation Or, ref int IndFrom, ref int IndTo)
+    public bool LocalizeBefore(int I, double From, double Tol, ref Orientation Or, ref int IndFrom, ref int IndTo)
     {
         if (!myDone)
         {
@@ -239,7 +242,7 @@ public sealed class LocOpe_CSIntersector
     /// On the element of range <paramref name="I"/>, searches the first intersection point after the index
     /// <paramref name="FromInd"/> whose orientation is not EXTERNAL.
     /// </summary>
-    public bool LocalizeAfter(int I, int FromInd, double Tol, ref TopAbs_Orientation Or, ref int IndFrom, ref int IndTo)
+    public bool LocalizeAfter(int I, int FromInd, double Tol, ref Orientation Or, ref int IndFrom, ref int IndTo)
     {
         if (!myDone)
         {
@@ -257,7 +260,7 @@ public sealed class LocOpe_CSIntersector
     /// <paramref name="FromInd"/> whose orientation is not EXTERNAL. As in OCCT, the index is taken as a parameter
     /// (occt-issues.md).
     /// </summary>
-    public bool LocalizeBefore(int I, int FromInd, double Tol, ref TopAbs_Orientation Or, ref int IndFrom, ref int IndTo)
+    public bool LocalizeBefore(int I, int FromInd, double Tol, ref Orientation Or, ref int IndFrom, ref int IndTo)
     {
         if (!myDone)
         {
@@ -272,7 +275,7 @@ public sealed class LocOpe_CSIntersector
     }
 
     private static bool LocAfter(NCollection_Sequence<LocOpe_PntFace> Spt, double From, double Tol,
-                                 ref TopAbs_Orientation Or, ref int IndFrom, ref int IndTo)
+                                 ref Orientation Or, ref int IndFrom, ref int IndTo)
     {
         double param, FMEPS = From - Tol;
         int i, ifirst, nbpoints = Spt.Length();
@@ -298,9 +301,9 @@ public sealed class LocOpe_CSIntersector
                 {
                     if (Spt.Value(i).Parameter() - param <= Tol)
                     {
-                        if (Or != TopAbs_EXTERNAL && Or != Spt.Value(i).Orientation())
+                        if (Or != External && Or != Spt.Value(i).Orientation())
                         {
-                            Or = TopAbs_EXTERNAL;
+                            Or = External;
                         }
                         i++;
                     }
@@ -309,7 +312,7 @@ public sealed class LocOpe_CSIntersector
                         break;
                     }
                 }
-                if (Or == TopAbs_EXTERNAL)
+                if (Or == External)
                 {
                     found = (i > nbpoints);
                     IndFrom = i;
@@ -327,7 +330,7 @@ public sealed class LocOpe_CSIntersector
     }
 
     private static bool LocBefore(NCollection_Sequence<LocOpe_PntFace> Spt, double From, double Tol,
-                                  ref TopAbs_Orientation Or, ref int IndFrom, ref int IndTo)
+                                  ref Orientation Or, ref int IndFrom, ref int IndTo)
     {
         double param, FPEPS = From + Tol;
         int i, ifirst, nbpoints = Spt.Length();
@@ -353,9 +356,9 @@ public sealed class LocOpe_CSIntersector
                 {
                     if (param - Spt.Value(i).Parameter() <= Tol)
                     {
-                        if (Or != TopAbs_EXTERNAL && Or != Spt.Value(i).Orientation())
+                        if (Or != External && Or != Spt.Value(i).Orientation())
                         {
-                            Or = TopAbs_EXTERNAL;
+                            Or = External;
                         }
                         i--;
                     }
@@ -364,7 +367,7 @@ public sealed class LocOpe_CSIntersector
                         break;
                     }
                 }
-                if (Or == TopAbs_EXTERNAL)
+                if (Or == External)
                 {
                     found = (i < 1);
                     IndTo = i;
@@ -382,7 +385,7 @@ public sealed class LocOpe_CSIntersector
     }
 
     private static bool LocAfter(NCollection_Sequence<LocOpe_PntFace> Spt, int FromInd, double Tol,
-                                 ref TopAbs_Orientation Or, ref int IndFrom, ref int IndTo)
+                                 ref Orientation Or, ref int IndFrom, ref int IndTo)
     {
         int nbpoints = Spt.Length();
         if (FromInd >= nbpoints)
@@ -423,9 +426,9 @@ public sealed class LocOpe_CSIntersector
                 {
                     if (Spt.Value(i).Parameter() - param <= Tol)
                     {
-                        if (Or != TopAbs_EXTERNAL && Or != Spt.Value(i).Orientation())
+                        if (Or != External && Or != Spt.Value(i).Orientation())
                         {
-                            Or = TopAbs_EXTERNAL;
+                            Or = External;
                         }
                         i++;
                     }
@@ -434,7 +437,7 @@ public sealed class LocOpe_CSIntersector
                         break;
                     }
                 }
-                if (Or == TopAbs_EXTERNAL)
+                if (Or == External)
                 {
                     found = (i > nbpoints);
                     IndFrom = i;
@@ -454,7 +457,7 @@ public sealed class LocOpe_CSIntersector
     /// Adds the points of <paramref name="theInt"/> on <paramref name="theface"/> to <paramref name="theSeq"/>, sorted
     /// by parameter (shared with LocOpe_CurveShapeIntersector, as in OCCT's two files).
     /// </summary>
-    internal static void AddPoints(IntCurvesFace_Intersector theInt, NCollection_Sequence<LocOpe_PntFace> theSeq, in TopoDS_Face theface)
+    internal static void AddPoints(IntCurvesFace_Intersector theInt, NCollection_Sequence<LocOpe_PntFace> theSeq, in Face theface)
     {
         int nbpoints = theSeq.Length();
         int newpnt = theInt.NbPnt();
@@ -466,18 +469,18 @@ public sealed class LocOpe_CSIntersector
             paramu = theInt.UParameter(j);
             paramv = theInt.VParameter(j);
 
-            TopAbs_Orientation theor = TopAbs_FORWARD;
+            Orientation theor = Forward;
 
             switch (theInt.Transition(j))
             {
                 case IntCurveSurface_In:
-                    theor = TopAbs_FORWARD;
+                    theor = Forward;
                     break;
                 case IntCurveSurface_Out:
-                    theor = TopAbs_REVERSED;
+                    theor = Reversed;
                     break;
                 case IntCurveSurface_Tangent:
-                    theor = TopAbs_EXTERNAL;
+                    theor = External;
                     break;
             }
             LocOpe_PntFace newpt = new(thept, theface, theor, param, paramu, paramv);

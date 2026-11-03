@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
@@ -25,13 +29,13 @@ public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output)
     public void Removefeatures_on_a_hand_made_hole()
     {
         DrawInterpreter i = Load();
-        TopoDS_Shape aTool = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(5, 5, -1), new Direction3D(0, 0, 1)), 2.0, 12.0).Shape();
-        TopoDS_Shape aShape = new BRepAlgoAPI_Cut(new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape(), aTool).Shape();
+        Shape aTool = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(5, 5, -1), new Direction3D(0, 0, 1)), 2.0, 12.0).Shape();
+        Shape aShape = new BRepAlgoAPI_Cut(new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape(), aTool).Shape();
         i.SetShape("s", aShape);
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aShape, TopAbs_ShapeEnum.TopAbs_FACE, aMap);
-        TopoDS_Shape aHole = Enumerable.Range(1, aMap.Extent()).Select(aMap.FindKey)
-                                       .First(f => BRep_Tool.Surface(TopoDS.Face(f)) is Geom_CylindricalSurface);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(aShape, ShapeType.Face, aMap);
+        Shape aHole = Enumerable.Range(1, aMap.Extent()).Select(aMap.FindKey)
+                                       .First(f => Tool.Surface(ShapeCasts.Face(f)) is CylindricalSurface);
         i.SetShape("f", aHole);
         i.Eval("removefeatures r s f nothere -parallel");
         Assert.Contains("1000", i.Eval("vprops r"), StringComparison.Ordinal);
@@ -130,25 +134,25 @@ public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output)
             i.Eval("rename removefeatures __capture_removefeatures");
             i.Register("removefeatures", (theDI, a) =>
             {
-                if (a.Count >= 4 && theDI.GetShape(a[2]) is { } anInput && !anInput.IsNull())
+                if (a.Count >= 4 && theDI.GetShape(a[2]) is { } anInput && !anInput.IsNull)
                 {
-                    var aFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                    TopExp.MapShapes(anInput, TopAbs_ShapeEnum.TopAbs_FACE, aFaces);
+                    var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                    Exploration.MapShapes(anInput, ShapeType.Face, aFaces);
                     List<int> anIndices = [];
                     for (int k = 3; k < a.Count; ++k)
                     {
-                        TopoDS_Shape aFeature = theDI.GetShape(a[k]);
-                        if (aFeature.IsNull())
+                        Shape aFeature = theDI.GetShape(a[k]);
+                        if (aFeature.IsNull)
                         {
                             continue;
                         }
-                        for (TopExp_Explorer anExp = new(aFeature, TopAbs_ShapeEnum.TopAbs_FACE); anExp.More(); anExp.Next())
+                        for (Explorer anExp = new(aFeature, ShapeType.Face); anExp.More(); anExp.Next())
                         {
                             anIndices.Add(aFaces.FindIndex(anExp.Current()));
                         }
                     }
                     using var aText = new StringWriter(System.Globalization.CultureInfo.InvariantCulture) { NewLine = "\n" };
-                    BRepTools.Write(anInput, aText);
+                    BrepTools.Write(anInput, aText);
                     aCalls.Add(new DrawCapture.Call([.. a, "#faces " + string.Join(' ', anIndices)],
                                                     new Dictionary<string, string>(StringComparer.Ordinal) { [a[2]] = aText.ToString() }));
                 }

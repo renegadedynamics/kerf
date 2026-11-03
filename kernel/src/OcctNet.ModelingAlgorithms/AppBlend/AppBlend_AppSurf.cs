@@ -3,12 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
 using static Occt.AppBlend_Debug;
-using static Occt.AppParCurves_Constraint;
-using static Occt.Approx_ParametrizationType;
+using static Kerf.Engine.Approximation.Constraint;
+using static Kerf.Engine.Approximation.ParametrizationType;
 using static Kerf.Geometry.Continuity;
 
 namespace Occt;
@@ -55,7 +56,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     private readonly NCollection_Sequence<NCollection_HArray1<Point2D>> seqPoles2d = new();
     private double tol3dreached;
     private double tol2dreached;
-    private Approx_ParametrizationType paramtype;
+    private ParametrizationType paramtype;
     private Continuity continuity;
     private readonly double[] critweights = new double[3];
 
@@ -72,7 +73,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         knownp = false;
         tol3dreached = 0.0;
         tol2dreached = 0.0;
-        paramtype = Approx_ChordLength;
+        paramtype = ChordLength;
         continuity = C2;
         critweights[0] = 0.4;
         critweights[1] = 0.2;
@@ -92,7 +93,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         knownp = KnownParameters;
         tol3dreached = 0.0;
         tol2dreached = 0.0;
-        paramtype = Approx_ChordLength;
+        paramtype = ChordLength;
         continuity = C2;
         critweights[0] = 0.4;
         critweights[1] = 0.2;
@@ -109,7 +110,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         nbit = NbIt;
         knownp = KnownParameters;
         continuity = C2;
-        paramtype = Approx_ChordLength;
+        paramtype = ChordLength;
         critweights[0] = 0.4;
         critweights[1] = 0.2;
         critweights[2] = 0.4;
@@ -144,12 +145,12 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     public Continuity Continuity() => continuity;
 
     /// <summary>The type of parametrisation of the approximation.</summary>
-    public void SetParType(Approx_ParametrizationType ParType)
+    public void SetParType(ParametrizationType ParType)
     {
         paramtype = ParType;
     }
 
-    public Approx_ParametrizationType ParType() => paramtype;
+    public ParametrizationType ParType() => paramtype;
 
     /// <summary>
     /// Approximates the sections of <paramref name="Lin"/>: Bezier pieces joined (AppDef_Compute), or with
@@ -176,7 +177,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         int i, j, k, NbPoint;
         int NbUPoles, NbUKnots, NbPoles2d, NbVPoles;
         bool withderiv;
-        AppParCurves_Constraint Cfirst, Clast;
+        Constraint Cfirst, Clast;
 
         double mytol3d, mytol2d;
         Xyz newDv = new();
@@ -184,8 +185,8 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         seqPoles2d.Clear();
 
         NbPoint = Lin.NbPoints();
-        AppDef_MultiPointConstraint multP;
-        AppDef_MultiLine multL = new(NbPoint);
+        MultiPointConstraint multP;
+        MultiLine multL = new(NbPoint);
 
         F.GetShape(out NbUPoles, out NbUKnots, out udeg, out NbPoles2d);
 
@@ -206,7 +207,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         NCollection_Array1<Point2D> tabAppP2d = new(1, NbPoles2d + NbUPoles); // points2d + poids
         NCollection_Array1<Vector2D> tabAppV2d = new(1, NbPoles2d + NbUPoles);
 
-        AppParCurves_MultiBSpCurve multC;
+        MultiBSpCurve multC;
 
         withderiv = F.Section(Lin.Point(1), tabAppP, tabAppV, tabP2d, tabV2d, tabW, tabDW);
 
@@ -239,13 +240,13 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
 
         if (withderiv)
         {
-            multP = new AppDef_MultiPointConstraint(tabAppP, tabAppP2d, tabAppV, tabAppV2d);
-            Cfirst = AppParCurves_TangencyPoint;
+            multP = new MultiPointConstraint(tabAppP, tabAppP2d, tabAppV, tabAppV2d);
+            Cfirst = TangencyPoint;
         }
         else
         {
-            multP = new AppDef_MultiPointConstraint(tabAppP, tabAppP2d);
-            Cfirst = AppParCurves_PassPoint;
+            multP = new MultiPointConstraint(tabAppP, tabAppP2d);
+            Cfirst = PassPoint;
         }
         multL.SetValue(1, multP);
 
@@ -265,7 +266,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
                     tabAppP[j].SetXYZ(tabAppP[j].XYZ() * tabW[j]);
                     tabAppP2d[NbPoles2d + j].SetCoord(tabW[j], 0.0);
                 }
-                multP = new AppDef_MultiPointConstraint(tabAppP, tabAppP2d);
+                multP = new MultiPointConstraint(tabAppP, tabAppP2d);
                 multL.SetValue(i, multP);
             }
             // ***********************
@@ -300,11 +301,11 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
                 }
                 if (withderiv)
                 {
-                    multP = new AppDef_MultiPointConstraint(tabAppP, tabAppP2d, tabAppV, tabAppV2d);
+                    multP = new MultiPointConstraint(tabAppP, tabAppP2d, tabAppV, tabAppV2d);
                 }
                 else
                 {
-                    multP = new AppDef_MultiPointConstraint(tabAppP, tabAppP2d);
+                    multP = new MultiPointConstraint(tabAppP, tabAppP2d);
                 }
                 multL.SetValue(i, multP);
             }
@@ -341,13 +342,13 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
 
         if (withderiv)
         {
-            multP = new AppDef_MultiPointConstraint(tabAppP, tabAppP2d, tabAppV, tabAppV2d);
-            Clast = AppParCurves_TangencyPoint;
+            multP = new MultiPointConstraint(tabAppP, tabAppP2d, tabAppV, tabAppV2d);
+            Clast = TangencyPoint;
         }
         else
         {
-            multP = new AppDef_MultiPointConstraint(tabAppP, tabAppP2d);
-            Clast = AppParCurves_PassPoint;
+            multP = new MultiPointConstraint(tabAppP, tabAppP2d);
+            Clast = PassPoint;
         }
         multL.SetValue(NbPoint, multP);
 
@@ -355,7 +356,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         if (NbPoint == 2)
         {
             dmin = 1;
-            if (Cfirst == AppParCurves_PassPoint && Clast == AppParCurves_PassPoint)
+            if (Cfirst == PassPoint && Clast == PassPoint)
             {
                 dmax = 1;
             }
@@ -363,7 +364,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
 
         if (!SpApprox)
         {
-            AppDef_Compute theapprox = new(dmin, dmax, tol3d, tol2d, nbit, true, paramtype);
+            Compute theapprox = new(dmin, dmax, tol3d, tol2d, nbit, true, paramtype);
             if (knownp)
             {
                 math_Vector theParams = new(1, NbPoint);
@@ -377,7 +378,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
                 {
                     theParams[i] = (F.Parameter(Lin.Point(i)) - Uf) / Ul;
                 }
-                AppDef_Compute theAppDef = new(theParams, dmin, dmax, tol3d, tol2d, nbit, true, true);
+                Compute theAppDef = new(theParams, dmin, dmax, tol3d, tol2d, nbit, true, true);
                 theapprox = theAppDef;
             }
             theapprox.SetConstraints(Cfirst, Clast);
@@ -385,7 +386,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
 
             double TheTol3d, TheTol2d;
             mytol3d = mytol2d = 0.0;
-            for (int Index = 1; Index <= theapprox.NbMultiCurves(); Index++)
+            for (int Index = 1; Index <= theapprox.MultiCurveCount; Index++)
             {
                 theapprox.Error(Index, out TheTol3d, out TheTol2d);
                 mytol3d = Max(TheTol3d, mytol3d);
@@ -403,7 +404,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
                 {
                     UseSquares = true;
                 }
-                AppDef_BSplineCompute theapprox = new(dmin, dmax, tol3d, tol2d, nbit, true, paramtype, UseSquares);
+                BSplineCompute theapprox = new(dmin, dmax, tol3d, tol2d, nbit, true, paramtype, UseSquares);
                 if (continuity == C0)
                 {
                     theapprox.SetContinuity(0);
@@ -437,7 +438,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
                         theParams[i] = (F.Parameter(Lin.Point(i)) - Uf) / Ul;
                     }
 
-                    theapprox.Init(dmin, dmax, tol3d, tol2d, nbit, true, Approx_IsoParametric, true);
+                    theapprox.Init(dmin, dmax, tol3d, tol2d, nbit, true, IsoParametric, true);
                     theapprox.SetParameters(theParams);
                 }
                 theapprox.Perform(multL);
@@ -449,19 +450,19 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
             else
             {
                 // Variational algo
-                NCollection_HArray1<AppParCurves_ConstraintCouple> TABofCC = new(1, NbPoint);
-                AppParCurves_Constraint Constraint = AppParCurves_NoConstraint;
+                NCollection_HArray1<ConstraintCouple> TABofCC = new(1, NbPoint);
+                Constraint Constraint = NoConstraint;
 
                 for (i = 1; i <= NbPoint; ++i)
                 {
-                    AppParCurves_ConstraintCouple ACC = new(i, Constraint);
+                    ConstraintCouple ACC = new(i, Constraint);
                     TABofCC.SetValue(i, ACC);
                 }
 
                 TABofCC.ChangeValue(1).SetConstraint(Cfirst);
                 TABofCC.ChangeValue(NbPoint).SetConstraint(Clast);
 
-                AppDef_Variational Variation = new(multL, 1, NbPoint, TABofCC);
+                Variational Variation = new(multL, 1, NbPoint, TABofCC);
 
                 //===================================
                 int theMaxSegments = 1000;
@@ -480,12 +481,12 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
 
                 Variation.SetCriteriumWeight(critweights[0], critweights[1], critweights[2]);
 
-                if (!Variation.IsCreated())
+                if (!Variation.IsCreated)
                 {
                     return;
                 }
 
-                if (Variation.IsOverConstrained())
+                if (Variation.IsOverConstrained)
                 {
                     return;
                 }
@@ -499,7 +500,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
                     return;
                 }
 
-                if (!Variation.IsDone())
+                if (!Variation.IsDone)
                 {
                     return;
                 }
@@ -575,7 +576,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         int i, j, k;
         int NbUPoles, NbUKnots, NbPoles2d, NbVPoles;
         bool withderiv;
-        AppParCurves_Constraint Cfirst = AppParCurves_NoConstraint, Clast = AppParCurves_NoConstraint;
+        Constraint Cfirst = NoConstraint, Clast = NoConstraint;
 
         double mytol3d = 0.0, mytol2d = 0.0;
         Xyz newDv = new();
@@ -751,7 +752,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         }
         //  modified by EAP Thu Jan  3 14:45:41 2002 ___END___
 
-        Approx_MCurvesToBSpCurve concat = new();
+        MCurvesToBSpCurve concat = new();
 
         // On calcule le nombre de troncons.
         int nbtronc = NbPointTot / NbMaxP;
@@ -803,8 +804,8 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         {
             int NbPoint = troncsize[itronc];
             int StPoint = troncstart[itronc];
-            AppDef_MultiPointConstraint multP;
-            AppDef_MultiLine multL = new(NbPoint);
+            MultiPointConstraint multP;
+            MultiLine multL = new(NbPoint);
 
             for (i = 1; i <= NbPoint; i++)
             {
@@ -843,26 +844,26 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
                 }
                 if (withderiv)
                 {
-                    multP = new AppDef_MultiPointConstraint(tabAppP, tabAppP2d, tabAppV, tabAppV2d);
+                    multP = new MultiPointConstraint(tabAppP, tabAppP2d, tabAppV, tabAppV2d);
                     if (i == 1)
                     {
-                        Cfirst = AppParCurves_TangencyPoint;
+                        Cfirst = TangencyPoint;
                     }
                     else if (i == NbPoint)
                     {
-                        Clast = AppParCurves_TangencyPoint;
+                        Clast = TangencyPoint;
                     }
                 }
                 else
                 {
-                    multP = new AppDef_MultiPointConstraint(tabAppP, tabAppP2d);
+                    multP = new MultiPointConstraint(tabAppP, tabAppP2d);
                     if (i == 1)
                     {
-                        Cfirst = AppParCurves_PassPoint;
+                        Cfirst = PassPoint;
                     }
                     else if (i == NbPoint)
                     {
-                        Clast = AppParCurves_PassPoint;
+                        Clast = PassPoint;
                     }
                 }
                 multL.SetValue(i, multP);
@@ -872,7 +873,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
             if (NbPoint == 2)
             {
                 dmin = 1;
-                if (Cfirst == AppParCurves_PassPoint && Clast == AppParCurves_PassPoint)
+                if (Cfirst == PassPoint && Clast == PassPoint)
                 {
                     dmax = 1;
                 }
@@ -880,7 +881,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
 
             //  modified by EAP Thu Jan  3 15:44:13 2002 ___BEGIN___
             double Ufloc = 0.0, Ulloc = 0.0;
-            AppDef_Compute theapprox = new(dmin, dmax, tol3d, tol2d, nbit);
+            Compute theapprox = new(dmin, dmax, tol3d, tol2d, nbit);
             if (knownp)
             {
                 math_Vector theParams = new(1, NbPoint);
@@ -893,7 +894,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
                     int iLin = StPoint + i - 1;
                     theParams[i] = (F.Parameter(Lin.Point(iLin)) - Ufloc) / (Ulloc - Ufloc);
                 }
-                AppDef_Compute theAppDef1 = new(theParams, dmin, dmax, tol3d, tol2d, nbit, true, true);
+                Compute theAppDef1 = new(theParams, dmin, dmax, tol3d, tol2d, nbit, true, true);
                 theapprox = theAppDef1;
             }
             theapprox.SetConstraints(Cfirst, Clast);
@@ -905,9 +906,9 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
             double aWholeDist = 0;
             //  modified by EAP Thu Jan  3 16:45:48 2002 ___END___
             double TheTol3d, TheTol2d;
-            for (int Index = 1; Index <= theapprox.NbMultiCurves(); Index++)
+            for (int Index = 1; Index <= theapprox.MultiCurveCount; Index++)
             {
-                AppParCurves_MultiCurve mucu = theapprox.ChangeValue(Index);
+                MultiCurve mucu = theapprox.ChangeValue(Index);
                 theapprox.Error(Index, out TheTol3d, out TheTol2d);
                 mytol3d = Max(TheTol3d / DX, mytol3d);
                 mytol3d = Max(TheTol3d / DY, mytol3d);
@@ -925,7 +926,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
                 concat.Append(mucu);
 
                 //  modified by EAP Thu Jan  3 15:45:23 2002 ___BEGIN___
-                if (knownp && theapprox.NbMultiCurves() > 1)
+                if (knownp && theapprox.MultiCurveCount > 1)
                 {
                     // OCCT: the poles of curve Index (the piece's number), not of the first curve (occt-issues.md)
                     Point3D aFirstPole = mucu.Pole(Index, 1);
@@ -950,7 +951,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         tol3dreached = mytol3d;
         tol2dreached = mytol2d;
         concat.Perform();
-        AppParCurves_MultiBSpCurve multC = concat.Value();
+        MultiBSpCurve multC = concat.Value();
         vdeg = multC.Degree();
         NbVPoles = multC.NbPoles();
 

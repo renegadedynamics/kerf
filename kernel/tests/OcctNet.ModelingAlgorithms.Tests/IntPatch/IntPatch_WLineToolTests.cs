@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
 using static Occt.IntPatch_IType;
@@ -17,7 +18,7 @@ public class IntPatch_WLineToolTests
 {
     private const double Tol = 1.0e-7;
 
-    private static void AssertOnBoth(IntPatch_WLine theWL, Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
+    private static void AssertOnBoth(IntPatch_WLine theWL, SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
                                      double theTol)
     {
         for (int k = 1; k <= theWL.NbPnts(); k++)
@@ -39,10 +40,10 @@ public class IntPatch_WLineToolTests
     [Fact]
     public void ComputePurgedWLine_on_BSpline_lines_keeps_ends_and_surfaces()
     {
-        var aS1 = new GeomAdaptor_Surface(IntPatchPrmPrmNativeTests.PatchA());
-        var aS2 = new GeomAdaptor_Surface(IntPatchPrmPrmNativeTests.PatchB());
-        var aD1 = new Adaptor3d_TopolTool(aS1);
-        var aD2 = new Adaptor3d_TopolTool(aS2);
+        var aS1 = new SurfaceAdaptor(IntPatchPrmPrmNativeTests.PatchA());
+        var aS2 = new SurfaceAdaptor(IntPatchPrmPrmNativeTests.PatchB());
+        var aD1 = new TopolTool(aS1);
+        var aD2 = new TopolTool(aS2);
         var anInt = new IntPatch_PrmPrmIntersection();
         anInt.Perform(aS1, aD1, aS2, aD2, Tol, Tol, 0.01, 0.05);
         Assert.True(anInt.NbLines() > 0);
@@ -73,10 +74,10 @@ public class IntPatch_WLineToolTests
     public void ComputePurgedWLine_on_ImpPrm_line()
     {
         // A plane against a patch, as ImpPrmIntersection walks it.
-        var aS1 = new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 0.1), new Direction3D(0.1, 0.2, 1))));
-        var aS2 = new GeomAdaptor_Surface(IntPatchPrmPrmNativeTests.PatchA());
-        var aD1 = new Adaptor3d_TopolTool(aS1);
-        var aD2 = new Adaptor3d_TopolTool(aS2);
+        var aS1 = new SurfaceAdaptor(new PlaneSurface(new CoordinateSystem(new Point3D(0, 0, 0.1), new Direction3D(0.1, 0.2, 1))));
+        var aS2 = new SurfaceAdaptor(IntPatchPrmPrmNativeTests.PatchA());
+        var aD1 = new TopolTool(aS1);
+        var aD2 = new TopolTool(aS2);
         var anInt = new IntPatch_ImpPrmIntersection(aS1, aD1, aS2, aD2, Tol, Tol, 0.01, 0.05);
         Assert.True(anInt.IsDone());
         int aNbW = 0;
@@ -125,8 +126,8 @@ public class IntPatch_WLineToolTests
         aW.AddVertex(Vtx(0, 1));
         aW.AddVertex(Vtx(2, 4));
         aW.AddVertex(Vtx(3, 5));
-        var aS = new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem()));
-        var aD = new Adaptor3d_TopolTool(aS);
+        var aS = new SurfaceAdaptor(new PlaneSurface(new CoordinateSystem()));
+        var aD = new TopolTool(aS);
         IntPatch_WLine? aRW = IntPatch_WLineTool.ComputePurgedWLine(aW, aS, aS, aD, aD);
         Assert.NotNull(aRW);
         Assert.Equal(4, aRW.NbPnts());
@@ -138,8 +139,8 @@ public class IntPatch_WLineToolTests
     [Fact]
     public void ComputePurgedWLine_drops_degenerate_lines()
     {
-        var aS = new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem()));
-        var aD = new Adaptor3d_TopolTool(aS);
+        var aS = new SurfaceAdaptor(new PlaneSurface(new CoordinateSystem()));
+        var aD = new TopolTool(aS);
 
         var aL2 = new IntSurf_LineOn2S();
         aL2.Add(Pnt(1));
@@ -167,13 +168,13 @@ public class IntPatch_WLineToolTests
         new(new Point3D(x, y, z), new Direction3D(dx, dy, dz), new Direction3D(xx, xy, xz));
 
     // IntPatch_Intersection's GeomGeomPerfom on two cylinders: the ImpImp lines and points, then JoinWLines.
-    private static (NCollection_Sequence<IntPatch_Line>, GeomAdaptor_Surface, GeomAdaptor_Surface) JoinCylinders(
-        Geom_Surface theC1, Geom_Surface theC2)
+    private static (NCollection_Sequence<IntPatch_Line>, SurfaceAdaptor, SurfaceAdaptor) JoinCylinders(
+        Surface theC1, Surface theC2)
     {
-        var aS1 = new GeomAdaptor_Surface(theC1);
-        var aS2 = new GeomAdaptor_Surface(theC2);
-        var anInter = new IntPatch_ImpImpIntersection(aS1, new Adaptor3d_TopolTool(aS1), aS2,
-                                                      new Adaptor3d_TopolTool(aS2), Tol, Tol);
+        var aS1 = new SurfaceAdaptor(theC1);
+        var aS2 = new SurfaceAdaptor(theC2);
+        var anInter = new IntPatch_ImpImpIntersection(aS1, new TopolTool(aS1), aS2,
+                                                      new TopolTool(aS2), Tol, Tol);
         Assert.True(anInter.IsDone());
         var aSLin = new NCollection_Sequence<IntPatch_Line>();
         var aSPnt = new NCollection_Sequence<IntPatch_Point>();
@@ -202,8 +203,8 @@ public class IntPatch_WLineToolTests
     public void JoinWLines_bug23178_and_bug28222_2()
     {
         var (a23178, aS1, aS2) = JoinCylinders(
-            new Geom_CylindricalSurface(Ax(4.999999999813, 1.35836143386791, 0.20975890778078, -1, 0, 0, 0, 0, 1), 10),
-            new Geom_CylindricalSurface(Ax(9.999999999813, 9.1401960568287, 0.11837300583107, 0, -0.75870713028692,
+            new CylindricalSurface(Ax(4.999999999813, 1.35836143386791, 0.20975890778078, -1, 0, 0, 0, 0, 1), 10),
+            new CylindricalSurface(Ax(9.999999999813, 9.1401960568287, 0.11837300583107, 0, -0.75870713028692,
                                            0.651431877061437, 0, -0.651431877061437, -0.75870713028692), 5));
         Assert.Equal(6, a23178.Length());
         for (int i = 1; i <= a23178.Length(); i++)
@@ -212,9 +213,9 @@ public class IntPatch_WLineToolTests
         }
 
         var (a28222, aT1, aT2) = JoinCylinders(
-            new Geom_CylindricalSurface(Ax(-35, 13.3706576198285, 30.5814570420266, 0, -0.258819045102521,
+            new CylindricalSurface(Ax(-35, 13.3706576198285, 30.5814570420266, 0, -0.258819045102521,
                                            -0.965925826289068, 0, 0.965925826289068, -0.258819045102521), 11),
-            new Geom_CylindricalSurface(Ax(0, 0, 0, 1, 0, 0, 0, 0, -1), 16.5));
+            new CylindricalSurface(Ax(0, 0, 0, 1, 0, 0, 0, 0, -1), 16.5));
         Assert.Equal(4, a28222.Length());
         for (int i = 1; i <= a28222.Length(); i++)
         {
@@ -228,9 +229,9 @@ public class IntPatch_WLineToolTests
         string Run()
         {
             var (aSLin, _, _) = JoinCylinders(
-                new Geom_CylindricalSurface(Ax(4.999999999813, 1.35836143386791, 0.20975890778078, -1, 0, 0, 0, 0, 1),
+                new CylindricalSurface(Ax(4.999999999813, 1.35836143386791, 0.20975890778078, -1, 0, 0, 0, 0, 1),
                                             10),
-                new Geom_CylindricalSurface(Ax(9.999999999813, 9.1401960568287, 0.11837300583107, 0, -0.75870713028692,
+                new CylindricalSurface(Ax(9.999999999813, 9.1401960568287, 0.11837300583107, 0, -0.75870713028692,
                                                0.651431877061437, 0, -0.651431877061437, -0.75870713028692), 5));
             var aSb = new System.Text.StringBuilder();
             for (int i = 1; i <= aSLin.Length(); i++)
@@ -277,10 +278,10 @@ public class IntPatch_WLineToolTests
         return aW;
     }
 
-    private static (GeomAdaptor_Surface, GeomAdaptor_Surface, Box2d, Box2d, double[]) PlaneCylinder()
+    private static (SurfaceAdaptor, SurfaceAdaptor, Box2d, Box2d, double[]) PlaneCylinder()
     {
-        var aS1 = new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem()));
-        var aS2 = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new CoordinateSystem(), 1.0));
+        var aS1 = new SurfaceAdaptor(new PlaneSurface(new CoordinateSystem()));
+        var aS2 = new SurfaceAdaptor(new CylindricalSurface(new CoordinateSystem(), 1.0));
         var aB1 = new Box2d();
         aB1.Update(-2, -2, 2, 2);
         var aB2 = new Box2d();

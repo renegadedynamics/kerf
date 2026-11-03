@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 
 using Kerf.Geometry;
@@ -16,7 +17,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class IntPolyhTests
 {
     // A bicubic B-spline surface on [x0, x0 + L] x [y0, y0 + L] with 5 x 5 poles, z = f(x, y) at the poles
-    private static GeomAdaptor_Surface MakeBSpline(double x0, double y0, double L, Func<double, double, double> f)
+    private static SurfaceAdaptor MakeBSpline(double x0, double y0, double L, Func<double, double, double> f)
     {
         NCollection_Array2<Point3D> aPoles = new(1, 5, 1, 5);
         for (int i = 1; i <= 5; i++)
@@ -36,11 +37,11 @@ public class IntPolyhTests
         aMults[1] = 4;
         aMults[2] = 1;
         aMults[3] = 4;
-        return new GeomAdaptor_Surface(new Geom_BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 3, 3));
+        return new SurfaceAdaptor(new BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 3, 3));
     }
 
     // A vertical B-spline surface x = x(y, z), as the image of the (y, z) square
-    private static GeomAdaptor_Surface MakeVerticalBSpline(Func<double, double, double> theX, double y0, double z0, double L)
+    private static SurfaceAdaptor MakeVerticalBSpline(Func<double, double, double> theX, double y0, double z0, double L)
     {
         NCollection_Array2<Point3D> aPoles = new(1, 5, 1, 5);
         for (int i = 1; i <= 5; i++)
@@ -60,11 +61,11 @@ public class IntPolyhTests
         aMults[1] = 4;
         aMults[2] = 1;
         aMults[3] = 4;
-        return new GeomAdaptor_Surface(new Geom_BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 3, 3));
+        return new SurfaceAdaptor(new BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 3, 3));
     }
 
     // A wavy surface and a tilted, gently curved one crossing it
-    private static (GeomAdaptor_Surface, GeomAdaptor_Surface) CrossingPair()
+    private static (SurfaceAdaptor, SurfaceAdaptor) CrossingPair()
         => (MakeBSpline(0.0, 0.0, 4.0, (x, y) => 0.6 * Math.Sin(1.3 * x) * Math.Cos(0.9 * y)),
             MakeBSpline(-0.5, -0.3, 5.0, (x, y) => 0.25 * x - 0.5 + 0.05 * (y - 2.0) * (y - 2.0)));
 
@@ -101,7 +102,7 @@ public class IntPolyhTests
     }
 
     // The steps of IntPolyh_Intersection's standard intersection (ComputeIntersection)
-    private static IntPolyh_MaillageAffinage Triangulate(GeomAdaptor_Surface theS1, GeomAdaptor_Surface theS2, int theNbS)
+    private static IntPolyh_MaillageAffinage Triangulate(SurfaceAdaptor theS1, SurfaceAdaptor theS2, int theNbS)
     {
         IntPolyh_MaillageAffinage aMaillage = new(theS1, theNbS, theNbS, theS2, theNbS, theNbS, 0);
         aMaillage.FillArrayOfPnt(1);
@@ -134,7 +135,7 @@ public class IntPolyhTests
     [Fact]
     public void BSplinePair_Couples_AreContactsOfMarkedTriangles()
     {
-        (GeomAdaptor_Surface aS1, GeomAdaptor_Surface aS2) = CrossingPair();
+        (SurfaceAdaptor aS1, SurfaceAdaptor aS2) = CrossingPair();
         IntPolyh_MaillageAffinage aMaillage = Triangulate(aS1, aS2, 10);
 
         NCollection_List<IntPolyh_Couple> aCouples = aMaillage.GetCouples();
@@ -176,7 +177,7 @@ public class IntPolyhTests
     [Fact]
     public void BSplinePair_CouplesAndStartPoints_SameEveryRunAndSerial()
     {
-        (GeomAdaptor_Surface aS1, GeomAdaptor_Surface aS2) = CrossingPair();
+        (SurfaceAdaptor aS1, SurfaceAdaptor aS2) = CrossingPair();
         List<long> aFirst = CouplesFingerprint(Triangulate(aS1, aS2, 10));
         for (int i = 0; i < 3; ++i)
         {
@@ -192,7 +193,7 @@ public class IntPolyhTests
         List<long> aLines = Fingerprint(new IntPolyh_Intersection(aS1, aS2));
         for (int i = 0; i < 3; ++i)
         {
-            (GeomAdaptor_Surface aT1, GeomAdaptor_Surface aT2) = CrossingPair();
+            (SurfaceAdaptor aT1, SurfaceAdaptor aT2) = CrossingPair();
             Assert.Equal(aLines, Fingerprint(new IntPolyh_Intersection(aT1, aT2)));
         }
 
@@ -205,7 +206,7 @@ public class IntPolyhTests
     [Fact]
     public void BSplinePair_SectionLines_LieOnBothSurfaces()
     {
-        (GeomAdaptor_Surface aS1, GeomAdaptor_Surface aS2) = CrossingPair();
+        (SurfaceAdaptor aS1, SurfaceAdaptor aS2) = CrossingPair();
         IntPolyh_Intersection anInter = new(aS1, 15, 15, aS2, 15, 15);
         Assert.True(anInter.IsDone());
         Assert.False(anInter.IsParallel());
@@ -235,8 +236,8 @@ public class IntPolyhTests
     {
         // A bump touching a plane at its top: the standard intersection finds few nearly parallel couples, and the
         // four shifted intersections run
-        GeomAdaptor_Surface aBump = MakeBSpline(0.0, 0.0, 2.0, (x, y) => -0.5 * ((x - 1) * (x - 1) + (y - 1) * (y - 1)));
-        GeomAdaptor_Surface aTop = MakeBSpline(0.0, 0.0, 2.0, (x, y) => -0.0001);
+        SurfaceAdaptor aBump = MakeBSpline(0.0, 0.0, 2.0, (x, y) => -0.5 * ((x - 1) * (x - 1) + (y - 1) * (y - 1)));
+        SurfaceAdaptor aTop = MakeBSpline(0.0, 0.0, 2.0, (x, y) => -0.0001);
 
         // IntPolyh_Intersection::IsAdvRequired: no couple, or at most 10 with one nearly parallel
         NCollection_List<IntPolyh_Couple> aStd = Triangulate(aBump, aTop, 10).GetCouples();
@@ -258,8 +259,8 @@ public class IntPolyhTests
         // The vertical surface is just beyond the end of the other: only the enlarged sampling (1% at each end) reaches
         // it. OCCT retries on the same MaillageAffinage, whose triangles keep the first pass's flags and cached boxes
         // (occt-issues.md, unit 5E): every triangle was out of the (empty) common box, so the retry finds nothing.
-        GeomAdaptor_Surface aFlat = MakeBSpline(0.0, 0.0, 1.0, (x, y) => 0.1 * x * y);
-        GeomAdaptor_Surface aWall = MakeVerticalBSpline((y, z) => 1.004, -0.2, -0.5, 1.4);
+        SurfaceAdaptor aFlat = MakeBSpline(0.0, 0.0, 1.0, (x, y) => 0.1 * x * y);
+        SurfaceAdaptor aWall = MakeVerticalBSpline((y, z) => 1.004, -0.2, -0.5, 1.4);
 
         IntPolyh_MaillageAffinage aMaillage = Triangulate(aFlat, aWall, 10);
         Assert.Equal(0, aMaillage.GetCouples().Extent());
@@ -309,7 +310,7 @@ public class IntPolyhTests
     public void FillArrayOfPnt_ShiftedWithSampling_FillsTheFirstSurface()
     {
         // OCCT: FillArrayOfPnt(SurfID, isShiftFwd, Upars, Vpars) always fills the first surface's points
-        (GeomAdaptor_Surface aS1, GeomAdaptor_Surface aS2) = CrossingPair();
+        (SurfaceAdaptor aS1, SurfaceAdaptor aS2) = CrossingPair();
         IntPolyh_MaillageAffinage aMaillage = new(aS1, 10, 10, aS2, 10, 10, 0);
         NCollection_Array1<double> aU = new(), aV = new();
         aMaillage.MakeSampling(2, aU, aV);

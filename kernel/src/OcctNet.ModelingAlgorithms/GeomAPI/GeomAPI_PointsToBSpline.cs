@@ -3,10 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using static Occt.Approx_ParametrizationType;
+using static Kerf.Engine.Approximation.ParametrizationType;
 using static Kerf.Geometry.Continuity;
 
 namespace Occt;
@@ -23,7 +24,7 @@ namespace Occt;
 public class GeomAPI_PointsToBSpline
 {
     private bool myIsDone;
-    private Geom_BSplineCurve? myCurve;
+    private BSplineCurve3D? myCurve;
 
     private static bool hasMeaningfulSpan(double theSpan)
     {
@@ -46,7 +47,7 @@ public class GeomAPI_PointsToBSpline
     }
 
     /// <summary>Approximates <paramref name="Points"/> with the parametrisation <paramref name="ParType"/>.</summary>
-    public GeomAPI_PointsToBSpline(NCollection_Array1<Point3D> Points, Approx_ParametrizationType ParType,
+    public GeomAPI_PointsToBSpline(NCollection_Array1<Point3D> Points, ParametrizationType ParType,
                                    int DegMin = 3, int DegMax = 8, Continuity Continuity = C2,
                                    double Tol3D = 1.0e-3)
     {
@@ -79,11 +80,11 @@ public class GeomAPI_PointsToBSpline
                      Continuity Continuity = C2, double Tol3D = 1.0e-3)
     {
         myIsDone = false;
-        Init(Points, Approx_ChordLength, DegMin, DegMax, Continuity, Tol3D);
+        Init(Points, ChordLength, DegMin, DegMax, Continuity, Tol3D);
     }
 
     /// <summary>Approximates <paramref name="Points"/> with the parametrisation <paramref name="ParType"/>.</summary>
-    public void Init(NCollection_Array1<Point3D> Points, Approx_ParametrizationType ParType, int DegMin = 3,
+    public void Init(NCollection_Array1<Point3D> Points, ParametrizationType ParType, int DegMin = 3,
                      int DegMax = 8, Continuity Continuity = C2, double Tol3D = 1.0e-3)
     {
         myIsDone = false;
@@ -95,19 +96,19 @@ public class GeomAPI_PointsToBSpline
             UseSquares = true;
         }
 
-        AppDef_BSplineCompute TheComputer = new(DegMin, DegMax, Tol3D, Tol2D, nbit, true, ParType, UseSquares);
+        BSplineCompute TheComputer = new(DegMin, DegMax, Tol3D, Tol2D, nbit, true, ParType, UseSquares);
 
         SetContinuity(TheComputer, Continuity);
 
-        TheComputer.Perform(new AppDef_MultiLine(Points));
+        TheComputer.Perform(new MultiLine(Points));
 
-        AppParCurves_MultiBSpCurve TheCurve = TheComputer.Value();
+        MultiBSpCurve TheCurve = TheComputer.Value();
 
         NCollection_Array1<Point3D> Poles = new(1, TheCurve.NbPoles());
 
         TheCurve.Curve(1, Poles);
 
-        myCurve = new Geom_BSplineCurve(Poles, TheCurve.Knots(), TheCurve.Multiplicities(), TheCurve.Degree());
+        myCurve = new BSplineCurve3D(Poles, TheCurve.Knots(), TheCurve.Multiplicities(), TheCurve.Degree());
         myIsDone = true;
     }
 
@@ -139,15 +140,15 @@ public class GeomAPI_PointsToBSpline
             theParams[i] = (Params[i] - Uf) / Ul;
         }
 
-        AppDef_BSplineCompute TheComputer = new(DegMin, DegMax, Tol3D, Tol2D, 0, true, Approx_IsoParametric, true);
+        BSplineCompute TheComputer = new(DegMin, DegMax, Tol3D, Tol2D, 0, true, IsoParametric, true);
 
         TheComputer.SetParameters(theParams);
 
         SetContinuity(TheComputer, Continuity);
 
-        TheComputer.Perform(new AppDef_MultiLine(Points));
+        TheComputer.Perform(new MultiLine(Points));
 
-        AppParCurves_MultiBSpCurve TheCurve = TheComputer.Value();
+        MultiBSpCurve TheCurve = TheComputer.Value();
 
         NCollection_Array1<Point3D> Poles = new(1, TheCurve.NbPoles());
         NCollection_Array1<double> Knots;
@@ -157,7 +158,7 @@ public class GeomAPI_PointsToBSpline
 
         global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(Params[Params.Lower()], Params[Params.Upper()], Knots);
 
-        myCurve = new Geom_BSplineCurve(Poles, Knots, TheCurve.Multiplicities(), TheCurve.Degree());
+        myCurve = new BSplineCurve3D(Poles, Knots, TheCurve.Multiplicities(), TheCurve.Degree());
         myIsDone = true;
     }
 
@@ -178,24 +179,24 @@ public class GeomAPI_PointsToBSpline
         }
 
         // Variational algo
-        AppDef_MultiLine multL = new(NbPoint);
+        MultiLine multL = new(NbPoint);
         for (i = 1; i <= NbPoint; ++i)
         {
-            AppDef_MultiPointConstraint mpc = new(1, 0);
+            MultiPointConstraint mpc = new(1, 0);
             mpc.SetPoint(1, Points.Value(Points.Lower() + i - 1));
             multL.SetValue(i, mpc);
         }
 
-        NCollection_HArray1<AppParCurves_ConstraintCouple> TABofCC = new(1, NbPoint);
-        AppParCurves_Constraint Constraint = AppParCurves_Constraint.AppParCurves_NoConstraint;
+        NCollection_HArray1<ConstraintCouple> TABofCC = new(1, NbPoint);
+        Constraint Constraint = global::Kerf.Engine.Approximation.Constraint.NoConstraint;
 
         for (i = 1; i <= NbPoint; ++i)
         {
-            AppParCurves_ConstraintCouple ACC = new(i, Constraint);
+            ConstraintCouple ACC = new(i, Constraint);
             TABofCC.SetValue(i, ACC);
         }
 
-        AppDef_Variational Variation = new(multL, 1, NbPoint, TABofCC);
+        Variational Variation = new(multL, 1, NbPoint, TABofCC);
 
         //===================================
         int theMaxSegments = 1000;
@@ -212,12 +213,12 @@ public class GeomAPI_PointsToBSpline
 
         Variation.SetCriteriumWeight(W1, W2, W3);
 
-        if (!Variation.IsCreated())
+        if (!Variation.IsCreated)
         {
             return;
         }
 
-        if (Variation.IsOverConstrained())
+        if (Variation.IsOverConstrained)
         {
             return;
         }
@@ -231,24 +232,24 @@ public class GeomAPI_PointsToBSpline
             return;
         }
 
-        if (!Variation.IsDone())
+        if (!Variation.IsDone)
         {
             return;
         }
 
-        AppParCurves_MultiBSpCurve TheCurve = Variation.Value();
+        MultiBSpCurve TheCurve = Variation.Value();
 
         NCollection_Array1<Point3D> Poles = new(1, TheCurve.NbPoles());
 
         TheCurve.Curve(1, Poles);
 
-        myCurve = new Geom_BSplineCurve(Poles, TheCurve.Knots(), TheCurve.Multiplicities(), TheCurve.Degree());
+        myCurve = new BSplineCurve3D(Poles, TheCurve.Knots(), TheCurve.Multiplicities(), TheCurve.Degree());
 
         myIsDone = true;
     }
 
     // The switch on the continuity that OCCT writes out in both least-squares Init.
-    private static void SetContinuity(AppDef_BSplineCompute TheComputer, Continuity Continuity)
+    private static void SetContinuity(BSplineCompute TheComputer, Continuity Continuity)
     {
         switch (Continuity)
         {
@@ -273,7 +274,7 @@ public class GeomAPI_PointsToBSpline
     }
 
     /// <summary>The approximating curve (frozen). Throws StdFail_NotDone if the approximation failed.</summary>
-    public Geom_BSplineCurve Curve()
+    public BSplineCurve3D Curve()
     {
         if (!myIsDone)
         {
@@ -284,7 +285,7 @@ public class GeomAPI_PointsToBSpline
     }
 
     /// <summary>OCCT's <c>operator occ::handle&lt;Geom_BSplineCurve&gt;</c>: the curve, null if not computed.</summary>
-    public static explicit operator Geom_BSplineCurve?(GeomAPI_PointsToBSpline theApprox)
+    public static explicit operator BSplineCurve3D?(GeomAPI_PointsToBSpline theApprox)
     {
         theApprox.myCurve?.Freeze();
         return theApprox.myCurve;

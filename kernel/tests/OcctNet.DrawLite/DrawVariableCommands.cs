@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Text;
 using Occt;
 
@@ -110,7 +112,7 @@ internal static class DrawVariableCommands
             return 1;
         }
 
-        if (aDrawable is DrawShape aShape && !aShape.Shape.IsNull())
+        if (aDrawable is DrawShape aShape && !aShape.Shape.IsNull)
         {
             aShape.Shape.TShape()!.FreezeGraph();
         }
@@ -135,9 +137,9 @@ internal static class DrawVariableCommands
             case "DBRep_DrawableShape":
             {
                 // DBRep_DrawableShape::Restore
-                var aShapeSet = new BRepTools_ShapeSet();
+                var aShapeSet = new BrepShapeSet();
                 aShapeSet.Read(theStream);
-                aShapeSet.Read(out TopoDS_Shape aShape, theStream);
+                aShapeSet.Read(out Shape aShape, theStream);
                 return new DrawShape(aShape);
             }
 

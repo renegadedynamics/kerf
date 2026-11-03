@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 
 namespace Occt;
@@ -109,13 +110,13 @@ public class HLRAlgo_EdgesBlock : Transient
 
     public int Edge(int I) => myEdges[I];
 
-    public void Orientation(int I, TopAbs_Orientation Or)
+    public void Orientation(int I, Orientation Or)
     {
         myFlags[I] &= ~EMaskOrient;
         myFlags[I] |= ((int)Or & EMaskOrient);
     }
 
-    public TopAbs_Orientation Orientation(int I) => (TopAbs_Orientation)(myFlags[I] & EMaskOrient);
+    public Orientation Orientation(int I) => (Orientation)(myFlags[I] & EMaskOrient);
 
     public bool OutLine(int I) => (myFlags[I] & EMaskOutLine) != 0;
 

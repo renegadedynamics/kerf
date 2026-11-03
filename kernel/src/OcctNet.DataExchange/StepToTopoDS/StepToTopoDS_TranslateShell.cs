@@ -6,6 +6,9 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using static Occt.StepToTopoDS_TranslateShellError;
 
 namespace Occt;
@@ -15,7 +18,7 @@ namespace Occt;
 public sealed class StepToTopoDS_TranslateShell : StepToTopoDS_Root
 {
     private StepToTopoDS_TranslateShellError myError;
-    private TopoDS_Shape myResult = new TopoDS_Shape();
+    private Shape myResult = new Shape();
 
     public StepToTopoDS_TranslateShell()
     {
@@ -35,14 +38,14 @@ public sealed class StepToTopoDS_TranslateShell : StepToTopoDS_Root
 
         if (!aTool.IsBound(CFS))
         {
-            var B = new BRep_Builder();
+            var B = new BrepBuilder();
             Transfer_TransientProcess TP = aTool.TransientProcess();
 
             int NbFc = CFS.NbCfsFaces();
-            TopoDS_Shell Sh = new TopoDS_Shell();
+            Shell Sh = new Shell();
             B.MakeShell(ref Sh);
-            TopoDS_Face F;
-            TopoDS_Shape S;
+            Face F;
+            Shape S;
             StepShape_Face StepFace;
 
             var myTranFace = new StepToTopoDS_TranslateFace();
@@ -60,7 +63,7 @@ public sealed class StepToTopoDS_TranslateShell : StepToTopoDS_Root
                     if (myTranFace.IsDone())
                     {
                         S = myTranFace.InternalValue();
-                        F = TopoDS.Face(S);
+                        F = ShapeCasts.Face(S);
                         B.Add(Sh, F);
                     }
                     else
@@ -74,7 +77,7 @@ public sealed class StepToTopoDS_TranslateShell : StepToTopoDS_Root
                 }
             }
 
-            Sh.Closed(BRep_Tool.IsClosed(Sh));
+            Sh.Closed(Tool.IsClosed(Sh));
             myResult = Sh;
             aTool.Bind(CFS, myResult);
             myError = StepToTopoDS_TranslateShellDone;
@@ -82,7 +85,7 @@ public sealed class StepToTopoDS_TranslateShell : StepToTopoDS_Root
         }
         else
         {
-            myResult = TopoDS.Shell(aTool.Find(CFS));
+            myResult = ShapeCasts.Shell(aTool.Find(CFS));
             myError = StepToTopoDS_TranslateShellDone;
             done = true;
         }
@@ -105,8 +108,8 @@ public sealed class StepToTopoDS_TranslateShell : StepToTopoDS_Root
             return;
         }
 
-        var aB = new BRep_Builder();
-        TopoDS_Shell aSh = new TopoDS_Shell();
+        var aB = new BrepBuilder();
+        Shell aSh = new Shell();
 
         int aNb = theTSh.NbItems();
         using var aPS = new ProgressScope(theProgress, "Face", theTSh.HasTopologicalLink() ? aNb + 1 : aNb);
@@ -124,7 +127,7 @@ public sealed class StepToTopoDS_TranslateShell : StepToTopoDS_Root
         }
 
         bool aNewShell = false;
-        if (aSh.IsNull())
+        if (aSh.IsNull)
         {
             aB.MakeShell(ref aSh);
             aNewShell = true;
@@ -147,7 +150,7 @@ public sealed class StepToTopoDS_TranslateShell : StepToTopoDS_Root
                 {
                     if (aNewShell)
                     {
-                        aB.Add(aSh, TopoDS.Face(aTranTF.InternalValue()));
+                        aB.Add(aSh, ShapeCasts.Face(aTranTF.InternalValue()));
                     }
 
                     theHasGeom &= aHasFaceGeom;
@@ -163,7 +166,7 @@ public sealed class StepToTopoDS_TranslateShell : StepToTopoDS_Root
             }
         }
 
-        aSh.Closed(BRep_Tool.IsClosed(aSh));
+        aSh.Closed(Tool.IsClosed(aSh));
 
         myResult = aSh;
         myError = StepToTopoDS_TranslateShellDone;
@@ -176,15 +179,15 @@ public sealed class StepToTopoDS_TranslateShell : StepToTopoDS_Root
 
     /// <summary>The shell, frozen.</summary>
     /// <exception cref="NotDoneException">The translation wasn't done.</exception>
-    public TopoDS_Shape Value()
+    public Shape Value()
     {
-        TopoDS_Shape aShape = InternalValue();
+        Shape aShape = InternalValue();
         aShape.TShape()?.FreezeGraph();
         return aShape;
     }
 
     /// <summary>As <see cref="Value"/>, without freezing: the reader's working shape.</summary>
-    internal TopoDS_Shape InternalValue()
+    internal Shape InternalValue()
     {
         StdFail_NotDone_Raise_if(!done, "StepToTopoDS_TranslateShell::Value() - no result");
         return myResult;

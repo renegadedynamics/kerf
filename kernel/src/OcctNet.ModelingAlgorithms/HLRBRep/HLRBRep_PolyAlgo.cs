@@ -5,7 +5,11 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
@@ -13,8 +17,8 @@ using static Kerf.Engine.Geometry.DerivativeStatus;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.HLRAlgo_PolyMask;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -52,18 +56,18 @@ public class HLRBRep_PolyAlgo : Transient
     private readonly double[] TTLo = new double[3];
     private readonly double[,] TIMa = new double[3, 3];
     private readonly double[] TILo = new double[3];
-    private readonly NCollection_Sequence<TopoDS_Shape> myShapes = new();
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myEMap = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myFMap = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_Sequence<Shape> myShapes = new();
+    private readonly NCollection_IndexedMap<Shape> myEMap = new(ShapeHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myFMap = new(ShapeHasher.Instance);
     private readonly HLRAlgo_PolyAlgo myAlgo;
     private bool myDebug;
     private double myTolSta;
     private double myTolEnd;
     private double myTolAngular;
-    private Geom_Surface? myGSurf;
-    private readonly BRepAdaptor_Surface myBSurf = new();
-    private readonly BRepAdaptor_Curve myBCurv = new();
-    private readonly BRepAdaptor_Curve2d myPC = new();
+    private Surface? myGSurf;
+    private readonly FaceSurfaceAdaptor myBSurf = new();
+    private readonly EdgeCurveAdaptor myBCurv = new();
+    private readonly EdgeCurve2DAdaptor myPC = new();
 
     public HLRBRep_PolyAlgo()
     {
@@ -91,7 +95,7 @@ public class HLRBRep_PolyAlgo : Transient
         }
     }
 
-    public HLRBRep_PolyAlgo(in TopoDS_Shape theShape)
+    public HLRBRep_PolyAlgo(in Shape theShape)
     {
         myDebug = false;
         myTolSta = 0.1;
@@ -104,7 +108,7 @@ public class HLRBRep_PolyAlgo : Transient
     public int NbShapes() => myShapes.Length();
 
     /// <summary>The shape of index theIndex.</summary>
-    public TopoDS_Shape Shape(int theIndex) => myShapes.Value(theIndex);
+    public Shape Shape(int theIndex) => myShapes.Value(theIndex);
 
     /// <summary>Removes the shape of index theIndex.</summary>
     public void Remove(int theIndex)
@@ -117,7 +121,7 @@ public class HLRBRep_PolyAlgo : Transient
     }
 
     /// <summary>The index of the shape theShape, 0 if it isn't loaded.</summary>
-    public int Index(in TopoDS_Shape theShape)
+    public int Index(in Shape theShape)
     {
         int i = 1;
         for (int k = 1; k <= myShapes.Length(); ++k, ++i)
@@ -131,7 +135,7 @@ public class HLRBRep_PolyAlgo : Transient
     }
 
     /// <summary>Adds the shape theShape (meshed: its faces' triangulations are used).</summary>
-    public void Load(in TopoDS_Shape theShape) => myShapes.Append(theShape);
+    public void Load(in Shape theShape) => myShapes.Append(theShape);
 
     public HLRAlgo_PolyAlgo Algo() => myAlgo;
 
@@ -158,8 +162,8 @@ public class HLRBRep_PolyAlgo : Transient
         myEMap.Clear();
         myFMap.Clear();
 
-        TopoDS_Shape aShape = MakeShape();
-        if (aShape.IsNull())
+        Shape aShape = MakeShape();
+        if (aShape.IsNull)
         {
             return;
         }
@@ -171,18 +175,18 @@ public class HLRBRep_PolyAlgo : Transient
             return;
         }
 
-        TopExp.MapShapes(aShape, TopAbs_EDGE, myEMap);
-        TopExp.MapShapes(aShape, TopAbs_FACE, myFMap);
+        Exploration.MapShapes(aShape, ShapeType.Edge, myEMap);
+        Exploration.MapShapes(aShape, ShapeType.Face, myFMap);
         int aNbEdge = myEMap.Extent();
         int aNbFace = myFMap.Extent();
         NCollection_Array1<int> anES = new(0, aNbEdge); // index of the Shell
         NCollection_Array1<HLRAlgo_PolyData?> aPD = new(0, aNbFace);
         NCollection_Array1<HLRAlgo_PolyInternalData?> aPID = new(0, aNbFace);
-        NCollection_Map<TopoDS_Shape> aShapeMap1 = new(TopTools_ShapeMapHasher.Instance),
-                                      aShapeMap2 = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aShapeMap1 = new(ShapeHasher.Instance),
+                                      aShapeMap2 = new(ShapeHasher.Instance);
         NCollection_Array1<HLRAlgo_PolyShellData?> aShell = myAlgo.ChangePolyShell();
         int iShell = 0;
-        for (TopExp_Explorer aShellIter = new(aShape, TopAbs_SHELL); aShellIter.More(); aShellIter.Next())
+        for (Explorer aShellIter = new(aShape, ShapeType.Shell); aShellIter.More(); aShellIter.Next())
         {
             StoreShell(aShellIter.Current(), ref iShell, aShell, false, false, anES, aPD, aPID, aShapeMap1, aShapeMap2);
         }
@@ -207,7 +211,7 @@ public class HLRBRep_PolyAlgo : Transient
     /// Hides the current segment: sets theStatus to its visible and hidden parts and returns its points; theShape is
     /// the edge it comes from (the face, for an internal outline).
     /// </summary>
-    public ref HLRAlgo_BiPoint.PointsT Hide(HLRAlgo_EdgeStatus theStatus, out TopoDS_Shape theShape, out bool theReg1,
+    public ref HLRAlgo_BiPoint.PointsT Hide(HLRAlgo_EdgeStatus theStatus, out Shape theShape, out bool theReg1,
                                            out bool theRegn, out bool theOutl, out bool theIntl)
     {
         int anIndex = 0;
@@ -224,7 +228,7 @@ public class HLRBRep_PolyAlgo : Transient
     public void NextShow() => myAlgo.NextShow();
 
     /// <summary>The current segment without hiding: its points, and the edge (or face) it comes from.</summary>
-    public ref HLRAlgo_BiPoint.PointsT Show(out TopoDS_Shape theShape, out bool theReg1, out bool theRegn,
+    public ref HLRAlgo_BiPoint.PointsT Show(out Shape theShape, out bool theReg1, out bool theRegn,
                                            out bool theOutl, out bool theIntl)
     {
         int anIndex = 0;
@@ -237,15 +241,15 @@ public class HLRBRep_PolyAlgo : Transient
 
     public void Debug(bool theDebug) => myDebug = theDebug;
 
-    private TopoDS_Shape MakeShape()
+    private Shape MakeShape()
     {
         if (myShapes.IsEmpty())
         {
-            return new TopoDS_Shape();
+            return new Shape();
         }
 
-        BRep_Builder aBuilder = new();
-        TopoDS_Compound aComp = new();
+        BrepBuilder aBuilder = new();
+        Compound aComp = new();
         aBuilder.MakeCompound(ref aComp);
         for (int i = 1; i <= myShapes.Length(); i++)
         {
@@ -254,22 +258,22 @@ public class HLRBRep_PolyAlgo : Transient
         return aComp;
     }
 
-    private int InitShape(in TopoDS_Shape theShape, ref bool theIsoledF, ref bool theIsoledE)
+    private int InitShape(in Shape theShape, ref bool theIsoledF, ref bool theIsoledE)
     {
-        NCollection_Map<TopoDS_Shape> aShapeMap0 = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aShapeMap0 = new(ShapeHasher.Instance);
         int aNbShell = 0;
         theIsoledF = false;
         theIsoledE = false;
-        TopExp_Explorer aFaceIter = new();
+        Explorer aFaceIter = new();
         Placement aLoc;
 
-        for (TopExp_Explorer aShellIter = new(theShape, TopAbs_SHELL); aShellIter.More(); aShellIter.Next())
+        for (Explorer aShellIter = new(theShape, ShapeType.Shell); aShellIter.More(); aShellIter.Next())
         {
             bool hasTrian = false;
-            for (aFaceIter.Init(aShellIter.Current(), TopAbs_FACE); aFaceIter.More(); aFaceIter.Next())
+            for (aFaceIter.Init(aShellIter.Current(), ShapeType.Face); aFaceIter.More(); aFaceIter.Next())
             {
-                TopoDS_Face aFace = TopoDS.Face(aFaceIter.Current());
-                if (BRep_Tool.Triangulation(aFace, out aLoc) is not null)
+                Face aFace = ShapeCasts.Face(aFaceIter.Current());
+                if (Tool.Triangulation(aFace, out aLoc) is not null)
                 {
                     if (aShapeMap0.Add(aFace))
                     {
@@ -283,10 +287,10 @@ public class HLRBRep_PolyAlgo : Transient
             }
         }
 
-        for (aFaceIter.Init(theShape, TopAbs_FACE, TopAbs_SHELL); aFaceIter.More() && !theIsoledF; aFaceIter.Next())
+        for (aFaceIter.Init(theShape, ShapeType.Face, ShapeType.Shell); aFaceIter.More() && !theIsoledF; aFaceIter.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(aFaceIter.Current());
-            if (BRep_Tool.Triangulation(aFace, out aLoc) is not null)
+            Face aFace = ShapeCasts.Face(aFaceIter.Current());
+            if (Tool.Triangulation(aFace, out aLoc) is not null)
             {
                 if (aShapeMap0.Add(aFace))
                 {
@@ -299,8 +303,8 @@ public class HLRBRep_PolyAlgo : Transient
             ++aNbShell;
         }
 
-        for (TopExp_Explorer anEdgeIter = new(theShape, TopAbs_EDGE,
-            TopAbs_FACE); anEdgeIter.More() && !theIsoledE; anEdgeIter.Next())
+        for (Explorer anEdgeIter = new(theShape, ShapeType.Edge,
+            ShapeType.Face); anEdgeIter.More() && !theIsoledE; anEdgeIter.Next())
         {
             theIsoledE = true;
         }
@@ -316,14 +320,14 @@ public class HLRBRep_PolyAlgo : Transient
     }
 
 
-    private void StoreShell(in TopoDS_Shape theShape, ref int theIShell,
+    private void StoreShell(in Shape theShape, ref int theIShell,
         NCollection_Array1<HLRAlgo_PolyShellData?> theShell, bool theIsoledF, bool theIsoledE,
         NCollection_Array1<int> theES, NCollection_Array1<HLRAlgo_PolyData?> thePD,
-        NCollection_Array1<HLRAlgo_PolyInternalData?> thePID, NCollection_Map<TopoDS_Shape> theShapeMap1,
-        NCollection_Map<TopoDS_Shape> theShapeMap2)
+        NCollection_Array1<HLRAlgo_PolyInternalData?> thePID, NCollection_Map<Shape> theShapeMap1,
+        NCollection_Map<Shape> theShapeMap2)
     {
         Placement aLoc;
-        TopExp_Explorer aFaceExp = new(), anEdgeExp = new();
+        Explorer aFaceExp = new(), anEdgeExp = new();
         int aNbFaceShell = 0;
         bool isClosed = false;
         Transform3D aProjTrsf = myProj.Transformation();
@@ -369,23 +373,23 @@ public class HLRBRep_PolyAlgo : Transient
                 isClosed = theShape.Closed();
                 if (!isClosed)
                 {
-                    NCollection_IndexedMap<TopoDS_Shape> anEM = new(TopTools_ShapeMapHasher.Instance);
-                    TopExp.MapShapes(theShape, TopAbs_EDGE, anEM);
+                    NCollection_IndexedMap<Shape> anEM = new(ShapeHasher.Instance);
+                    Exploration.MapShapes(theShape, ShapeType.Edge, anEM);
                     int aNbEdge = anEM.Extent();
                     NCollection_Array1<int> aFlagArray = new(1, Max(aNbEdge, 1));
                     aFlagArray.Init(0);
-                    for (anEdgeExp.Init(theShape, TopAbs_EDGE); anEdgeExp.More(); anEdgeExp.Next())
+                    for (anEdgeExp.Init(theShape, ShapeType.Edge); anEdgeExp.More(); anEdgeExp.Next())
                     {
-                        TopoDS_Edge anEdge = TopoDS.Edge(anEdgeExp.Current());
+                        Edge anEdge = ShapeCasts.Edge(anEdgeExp.Current());
                         int anEdgeIndex = anEM.FindIndex(anEdge);
-                        TopAbs_Orientation anEdgeOrient = anEdge.Orientation();
-                        if (!BRep_Tool.Degenerated(anEdge))
+                        Orientation anEdgeOrient = anEdge.Orientation();
+                        if (!Tool.Degenerated(anEdge))
                         {
-                            if (anEdgeOrient == TopAbs_FORWARD)
+                            if (anEdgeOrient == Forward)
                             {
                                 aFlagArray[anEdgeIndex] += 1;
                             }
-                            else if (anEdgeOrient == TopAbs_REVERSED)
+                            else if (anEdgeOrient == Reversed)
                             {
                                 aFlagArray[anEdgeIndex] -= 1;
                             }
@@ -399,17 +403,17 @@ public class HLRBRep_PolyAlgo : Transient
                     }
                 }
 
-                aFaceExp.Init(theShape, TopAbs_FACE);
+                aFaceExp.Init(theShape, ShapeType.Face);
             }
             else
             {
-                aFaceExp.Init(theShape, TopAbs_FACE, TopAbs_SHELL);
+                aFaceExp.Init(theShape, ShapeType.Face, ShapeType.Shell);
             }
 
             for (; aFaceExp.More(); aFaceExp.Next())
             {
-                TopoDS_Face aFace = TopoDS.Face(aFaceExp.Current());
-                if (BRep_Tool.Triangulation(aFace, out aLoc) is not null)
+                Face aFace = ShapeCasts.Face(aFaceExp.Current());
+                if (Tool.Triangulation(aFace, out aLoc) is not null)
                 {
                     if (theShapeMap1.Add(aFace))
                     {
@@ -430,24 +434,24 @@ public class HLRBRep_PolyAlgo : Transient
             int iFace = 0;
             if (!theIsoledF)
             {
-                aFaceExp.Init(theShape, TopAbs_FACE);
+                aFaceExp.Init(theShape, ShapeType.Face);
             }
             else
             {
-                aFaceExp.Init(theShape, TopAbs_FACE, TopAbs_SHELL);
+                aFaceExp.Init(theShape, ShapeType.Face, ShapeType.Shell);
             }
 
             for (; aFaceExp.More(); aFaceExp.Next())
             {
-                TopoDS_Face aFace = TopoDS.Face(aFaceExp.Current());
-                Triangulation? aTr = BRep_Tool.Triangulation(aFace, out aLoc);
+                Face aFace = ShapeCasts.Face(aFaceExp.Current());
+                Triangulation? aTr = Tool.Triangulation(aFace, out aLoc);
                 if (aTr is not null)
                 {
                     if (theShapeMap2.Add(aFace))
                     {
                         iFace++;
                         int aFaceIndex = myFMap.FindIndex(aFace);
-                        bool isReversed = aFace.Orientation() == TopAbs_REVERSED;
+                        bool isReversed = aFace.Orientation() == Reversed;
                         Transform3D aTT = aLoc.Transformation();
                         aTT.PreMultiply(aProjTrsf);
                         {
@@ -473,14 +477,14 @@ public class HLRBRep_PolyAlgo : Transient
                         aPsd.PolyData().SetValue(iFace, thePD.Value(aFaceIndex));
                         thePID.SetValue(aFaceIndex, new HLRAlgo_PolyInternalData(aNbNodes, aNbTris));
                         HLRAlgo_PolyInternalData aPid = thePID[aFaceIndex]!;
-                        Geom_Surface? aSurf = BRep_Tool.Surface(aFace);
+                        Surface? aSurf = Tool.Surface(aFace);
                         if (aSurf is not null)
                         {
-                            if (aSurf is Geom_RectangularTrimmedSurface aRectTrimSurf)
+                            if (aSurf is TrimmedSurface aRectTrimSurf)
                             {
                                 aSurf = aRectTrimSurf.BasisSurface();
                             }
-                            GeomAdaptor_Surface aSurfAdapt = new(aSurf);
+                            SurfaceAdaptor aSurfAdapt = new(aSurf);
                             aPid.Planar(aSurfAdapt.GetType() == Plane);
                         }
                         else
@@ -520,7 +524,7 @@ public class HLRBRep_PolyAlgo : Transient
                         aPid.UpdateLinks(aTData, aPISeg, aPINod);
                         if (aTr.HasUVNodes)
                         {
-                            bool hasSurf = BRep_Tool.IsGeometric(aFace);
+                            bool hasSurf = Tool.IsGeometric(aFace);
                             myBSurf.Initialize(aFace, false);
                             for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
                             {
@@ -565,15 +569,15 @@ public class HLRBRep_PolyAlgo : Transient
 
             int aNbFaces = myFMap.Extent();
             NCollection_List<HLRAlgo_BiPoint> aList = aPsd.Edges();
-            NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> EF = new(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapesAndAncestors(theShape, TopAbs_EDGE, TopAbs_FACE, EF);
+            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> EF = new(ShapeHasher.Instance);
+            Exploration.MapShapesAndAncestors(theShape, ShapeType.Edge, ShapeType.Face, EF);
             for (int aFaceIter = 1; aFaceIter <= aNbFaces; ++aFaceIter)
             {
                 if (thePID.Value(aFaceIter) is not null)
                 {
-                    for (anEdgeExp.Init(myFMap[aFaceIter], TopAbs_EDGE); anEdgeExp.More(); anEdgeExp.Next())
+                    for (anEdgeExp.Init(myFMap[aFaceIter], ShapeType.Edge); anEdgeExp.More(); anEdgeExp.Next())
                     {
-                        TopoDS_Edge anEdge = TopoDS.Edge(anEdgeExp.Current());
+                        Edge anEdge = ShapeCasts.Edge(anEdgeExp.Current());
                         if (theShapeMap1.Add(anEdge))
                         {
                             int anEdgeIndex = myEMap.FindIndex(anEdge);
@@ -581,12 +585,12 @@ public class HLRBRep_PolyAlgo : Transient
                             int anIndexE = EF.FindIndex(anEdge);
                             if (anIndexE > 0)
                             {
-                                NCollection_List<TopoDS_Shape> LS = EF[anIndexE];
+                                NCollection_List<Shape> LS = EF[anIndexE];
                                 InitBiPointsWithConnexity(anEdgeIndex, ref anEdge, aList, thePID, LS, true);
                             }
                             else
                             {
-                                NCollection_List<TopoDS_Shape> LS = new();
+                                NCollection_List<Shape> LS = new();
                                 InitBiPointsWithConnexity(anEdgeIndex, ref anEdge, aList, thePID, LS, false);
                             }
                         }
@@ -608,14 +612,14 @@ public class HLRBRep_PolyAlgo : Transient
         {
             HLRAlgo_PolyShellData aPsd = theShell[theIShell]!;
             NCollection_List<HLRAlgo_BiPoint> aList = aPsd.Edges();
-            for (anEdgeExp.Init(theShape, TopAbs_EDGE, TopAbs_FACE); anEdgeExp.More(); anEdgeExp.Next())
+            for (anEdgeExp.Init(theShape, ShapeType.Edge, ShapeType.Face); anEdgeExp.More(); anEdgeExp.Next())
             {
-                TopoDS_Edge anEdge = TopoDS.Edge(anEdgeExp.Current());
+                Edge anEdge = ShapeCasts.Edge(anEdgeExp.Current());
                 if (theShapeMap1.Add(anEdge))
                 {
                     int anEdgeIndex = myEMap.FindIndex(anEdge);
                     theES.SetValue(anEdgeIndex, theIShell);
-                    NCollection_List<TopoDS_Shape> aLS = new();
+                    NCollection_List<Shape> aLS = new();
                     InitBiPointsWithConnexity(anEdgeIndex, ref anEdge, aList, thePID, aLS, false);
                 }
             }
@@ -841,9 +845,9 @@ public class HLRBRep_PolyAlgo : Transient
     }
 
 
-    private void InitBiPointsWithConnexity(int theIEdge, ref TopoDS_Edge theEdge,
+    private void InitBiPointsWithConnexity(int theIEdge, ref Edge theEdge,
         NCollection_List<HLRAlgo_BiPoint> theList, NCollection_Array1<HLRAlgo_PolyInternalData?> thePID,
-        NCollection_List<TopoDS_Shape> theLS, bool theIsConnex)
+        NCollection_List<Shape> theLS, bool theIsConnex)
     {
         double X1, Y1, Z1, X2, Y2, Z2;
         double XTI1, YTI1, ZTI1, XTI2, YTI2, ZTI2;
@@ -856,11 +860,11 @@ public class HLRBRep_PolyAlgo : Transient
             int aNbConnex = theLS.Extent();
             if (aNbConnex == 1)
             {
-                NCollection_List<TopoDS_Shape>.Iterator itn = new(theLS);
-                TopoDS_Face aF1 = TopoDS.Face(itn.Value());
+                NCollection_List<Shape>.Iterator itn = new(theLS);
+                Face aF1 = ShapeCasts.Face(itn.Value());
                 int i1 = myFMap.FindIndex(aF1);
-                Triangulation? aTr1 = BRep_Tool.Triangulation(aF1, out aLoc);
-                aHPol[0] = BRep_Tool.PolygonOnTriangulation(theEdge, aTr1, aLoc);
+                Triangulation? aTr1 = Tool.Triangulation(aF1, out aLoc);
+                aHPol[0] = Tool.PolygonOnTriangulation(theEdge, aTr1, aLoc);
                 HLRAlgo_PolyInternalData pid1 = thePID.Value(i1)!;
                 if (aHPol[0] is not null)
                 {
@@ -913,12 +917,12 @@ public class HLRBRep_PolyAlgo : Transient
                     }
                     aNode12Indices.Flag |= NMsk_Edge;
                     TIMultiply(ref XTI2, ref YTI2, ref ZTI2);
-                    if (aPol1[1] == aPol1[aNbPol] && myPC.IsPeriodic())
+                    if (aPol1[1] == aPol1[aNbPol] && myPC.IsPeriodic)
                     {
                         U2 = U2 - myPC.Period();
                     }
 
-                    if (aNbPol == 2 && BRep_Tool.Degenerated(theEdge))
+                    if (aNbPol == 2 && Tool.Degenerated(theEdge))
                     {
                         CheckDegeneratedSegment(ref aNode11Indices, ref aNod11RValues, ref aNode12Indices, ref aNod12RValues);
                         UpdateAroundNode(aPol1[1], ref aNode11Indices, aTData1, aPISeg1, aPINod1);
@@ -966,21 +970,21 @@ public class HLRBRep_PolyAlgo : Transient
             }
             else if (aNbConnex == 2)
             {
-                NCollection_List<TopoDS_Shape>.Iterator itn = new(theLS);
-                TopoDS_Face aF1 = TopoDS.Face(itn.Value());
+                NCollection_List<Shape>.Iterator itn = new(theLS);
+                Face aF1 = ShapeCasts.Face(itn.Value());
                 int i1 = myFMap.FindIndex(aF1);
-                Triangulation? aTr1 = BRep_Tool.Triangulation(aF1, out aLoc);
-                aHPol[0] = BRep_Tool.PolygonOnTriangulation(theEdge, aTr1, aLoc);
+                Triangulation? aTr1 = Tool.Triangulation(aF1, out aLoc);
+                aHPol[0] = Tool.PolygonOnTriangulation(theEdge, aTr1, aLoc);
                 itn.Next();
-                TopoDS_Face aF2 = TopoDS.Face(itn.Value());
+                Face aF2 = ShapeCasts.Face(itn.Value());
                 int i2 = myFMap.FindIndex(aF2);
                 if (i1 == i2)
                 {
                     theEdge.Reverse();
                 }
-                Triangulation? aTr2 = BRep_Tool.Triangulation(aF2, out aLoc);
-                aHPol[1] = BRep_Tool.PolygonOnTriangulation(theEdge, aTr2, aLoc);
-                Continuity rg = BRep_Tool.Continuity(theEdge, aF1, aF2);
+                Triangulation? aTr2 = Tool.Triangulation(aF2, out aLoc);
+                aHPol[1] = Tool.PolygonOnTriangulation(theEdge, aTr2, aLoc);
+                Continuity rg = Tool.Continuity(theEdge, aF1, aF2);
                 HLRAlgo_PolyInternalData pid1 = thePID.Value(i1)!;
                 HLRAlgo_PolyInternalData pid2 = thePID.Value(i2)!;
                 if (aHPol[0] is not null && aHPol[1] is not null)
@@ -1064,12 +1068,12 @@ public class HLRBRep_PolyAlgo : Transient
                     aNode12Indices.Flag |= NMsk_Edge;
                     aNod22Indices.Flag |= NMsk_Edge;
                     TIMultiply(ref XTI2, ref YTI2, ref ZTI2);
-                    if (aPol1[1] == aPol1[aNbPol1] && myPC.IsPeriodic())
+                    if (aPol1[1] == aPol1[aNbPol1] && myPC.IsPeriodic)
                     {
                         U2 = U2 - myPC.Period();
                     }
 
-                    if (aNbPol1 == 2 && BRep_Tool.Degenerated(theEdge))
+                    if (aNbPol1 == 2 && Tool.Degenerated(theEdge))
                     {
                         CheckDegeneratedSegment(ref aNode11Indices, ref aNod11RValues, ref aNode12Indices, ref aNod12RValues);
                         CheckDegeneratedSegment(ref aNod21Indices, ref aNod21RValues, ref aNod22Indices, ref aNod22RValues);
@@ -1130,7 +1134,7 @@ public class HLRBRep_PolyAlgo : Transient
         }
         else
         { // no connexity
-            Polygon3D? aPolyg = BRep_Tool.Polygon3D(theEdge, out aLoc);
+            Polygon3D? aPolyg = Tool.Polygon3D(theEdge, out aLoc);
             if (aPolyg is not null)
             {
                 NCollection_Array1<Point3D> aPol = aPolyg.Nodes();
@@ -1803,10 +1807,10 @@ public class HLRBRep_PolyAlgo : Transient
             NCollection_Array1<HLRAlgo_TriangleData> aTData1 = aPid.TData();
             NCollection_Array1<HLRAlgo_PolyInternalSegment> aPISeg1 = aPid.PISeg();
             NCollection_Array1<HLRAlgo_PolyInternalNode?> aPINod1 = aPid.PINod();
-            TopoDS_Shape aLocalShape = myFMap[aFaceIter];
-            TopoDS_Face aFace = TopoDS.Face(aLocalShape);
+            Shape aLocalShape = myFMap[aFaceIter];
+            Face aFace = ShapeCasts.Face(aLocalShape);
             myBSurf.Initialize(aFace, false);
-            myGSurf = BRep_Tool.Surface(aFace, out aLoc);
+            myGSurf = Tool.Surface(aFace, out aLoc);
             {
                 Transform3D aTT = aLoc.Transformation();
                 aTT.PreMultiply(aProjTrsf);
@@ -2867,15 +2871,15 @@ public class HLRBRep_PolyAlgo : Transient
     /// The shape theShape in a compound with the internal outlines found on its faces' meshes (3D segments), or
     /// theShape alone before <see cref="Update"/>.
     /// </summary>
-    public TopoDS_Shape OutLinedShape(in TopoDS_Shape theShape)
+    public Shape OutLinedShape(in Shape theShape)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
-            return new TopoDS_Shape();
+            return new Shape();
         }
 
-        TopoDS_Compound aResult = new();
-        BRep_Builder aBuilder = new();
+        Compound aResult = new();
+        BrepBuilder aBuilder = new();
         aBuilder.MakeCompound(ref aResult);
         aBuilder.Add(aResult, theShape);
         if (myFMap.IsEmpty())
@@ -2884,14 +2888,14 @@ public class HLRBRep_PolyAlgo : Transient
             return aResult;
         }
 
-        NCollection_Map<TopoDS_Shape> aMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMap = new(ShapeHasher.Instance);
         {
-            TopExp_Explorer aShapeExp = new();
-            for (aShapeExp.Init(theShape, TopAbs_EDGE); aShapeExp.More(); aShapeExp.Next())
+            Explorer aShapeExp = new();
+            for (aShapeExp.Init(theShape, ShapeType.Edge); aShapeExp.More(); aShapeExp.Next())
             {
                 aMap.Add(aShapeExp.Current());
             }
-            for (aShapeExp.Init(theShape, TopAbs_FACE); aShapeExp.More(); aShapeExp.Next())
+            for (aShapeExp.Init(theShape, ShapeType.Face); aShapeExp.More(); aShapeExp.Next())
             {
                 aMap.Add(aShapeExp.Current());
             }

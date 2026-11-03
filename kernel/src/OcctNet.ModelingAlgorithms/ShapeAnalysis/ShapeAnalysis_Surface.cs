@@ -4,7 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
 using static Kerf.Engine.Geometry.IsoType;
@@ -37,9 +39,9 @@ namespace Occt;
 /// </remarks>
 public class ShapeAnalysis_Surface : Transient
 {
-    protected Geom_Surface?         mySurf;
-    protected GeomAdaptor_Surface?  myAdSur;
-    protected Extrema_ExtPS         myExtPS = new Extrema_ExtPS();
+    protected Surface?         mySurf;
+    protected SurfaceAdaptor?  myAdSur;
+    protected ExtPS         myExtPS = new ExtPS();
     protected bool                  myExtOK;
     protected int                   myNbDeg;
     protected double[]              myPreci    = new double[4];
@@ -54,10 +56,10 @@ public class ShapeAnalysis_Surface : Transient
     protected double                myUL;
     protected double                myVF;
     protected double                myVL;
-    protected Geom_Curve?           myIsoUF;
-    protected Geom_Curve?           myIsoUL;
-    protected Geom_Curve?           myIsoVF;
-    protected Geom_Curve?           myIsoVL;
+    protected Curve3D?           myIsoUF;
+    protected Curve3D?           myIsoUL;
+    protected Curve3D?           myIsoVF;
+    protected Curve3D?           myIsoVL;
     protected bool                  myIsoBoxes;
     protected Box               myBndUF = new Box();
     protected Box               myBndUL = new Box();
@@ -102,7 +104,7 @@ public class ShapeAnalysis_Surface : Transient
     /// A null surface leaves the analyzer empty, as in OCCT (which sends a warning through Message, whose default
     /// messenger sends nothing in the port).
     /// </remarks>
-    public ShapeAnalysis_Surface(Geom_Surface? S)
+    public ShapeAnalysis_Surface(Surface? S)
     {
         mySurf      = S;
         myExtOK     = false; //: 30
@@ -122,11 +124,11 @@ public class ShapeAnalysis_Surface : Transient
         }
 
         mySurf.Bounds(out myUF, out myUL, out myVF, out myVL);
-        myAdSur = new GeomAdaptor_Surface(mySurf);
+        myAdSur = new SurfaceAdaptor(mySurf);
     }
 
     /// <summary>Loads an existing surface.</summary>
-    public void Init(Geom_Surface? theSurface)
+    public void Init(Surface? theSurface)
     {
         if (ReferenceEquals(mySurf, theSurface))
         {
@@ -146,7 +148,7 @@ public class ShapeAnalysis_Surface : Transient
         myUCloseVal = myVCloseVal = -1;
         myGap       = 0.0;
         mySurf.Bounds(out myUF, out myUL, out myVF, out myVL);
-        myAdSur    = new GeomAdaptor_Surface(mySurf);
+        myAdSur    = new SurfaceAdaptor(mySurf);
         myIsos     = false;
         myIsoBoxes = false;
         myIsoUF    = null;
@@ -178,13 +180,13 @@ public class ShapeAnalysis_Surface : Transient
     }
 
     /// <summary>Returns the surface being analysed.</summary>
-    public Geom_Surface? Surface() => mySurf;
+    public Surface? Surface() => mySurf;
 
     /// <summary>Returns the adaptor of the surface.</summary>
-    public GeomAdaptor_Surface? Adaptor3d() => myAdSur;
+    public SurfaceAdaptor? Adaptor3d() => myAdSur;
 
     /// <summary>Returns the adaptor (null when the surface is null).</summary>
-    public GeomAdaptor_Surface? TrueAdaptor3d() => myAdSur;
+    public SurfaceAdaptor? TrueAdaptor3d() => myAdSur;
 
     /// <summary>
     /// Returns the 3D distance found by the last of IsDegenerated, DegeneratedValues, ProjectDegenerated (to the found
@@ -218,7 +220,7 @@ public class ShapeAnalysis_Surface : Transient
 
         myNbDeg = 0; //: r3
 
-        if (mySurf is Geom_ConicalSurface conicS)
+        if (mySurf is ConicalSurface conicS)
         {
             double vApex = -conicS.RefRadius() / Math.Sin(conicS.SemiAngle());
             myPreci[0] = 0;
@@ -230,7 +232,7 @@ public class ShapeAnalysis_Surface : Transient
             myUIsoDeg[0]  = false;
             myNbDeg       = 1;
         }
-        else if (mySurf is Geom_ToroidalSurface toroidS)
+        else if (mySurf is ToroidalSurface toroidS)
         {
             double minorR = toroidS.MinorRadius();
             double majorR = toroidS.MajorRadius();
@@ -248,7 +250,7 @@ public class ShapeAnalysis_Surface : Transient
             myUIsoDeg[0]  = myUIsoDeg[1]  = false;
             myNbDeg       = (majorR > minorR ? 1 : 2);
         }
-        else if (mySurf is Geom_SphericalSurface)
+        else if (mySurf is SphericalSurface)
         {
             myPreci[0] = myPreci[1] = 0;
             myP3d[0]   = mySurf.Value(su1, sv2); // Northern pole is first
@@ -262,8 +264,8 @@ public class ShapeAnalysis_Surface : Transient
             myUIsoDeg[0]  = myUIsoDeg[1]  = false;
             myNbDeg       = 2;
         }
-        else if (mySurf is Geom_BoundedSurface || mySurf is Geom_SurfaceOfRevolution //: b2 abv 18 Feb 98
-                 || mySurf is Geom_OffsetSurface)
+        else if (mySurf is BoundedSurface || mySurf is RevolutionSurface //: b2 abv 18 Feb 98
+                 || mySurf is global::Kerf.Geometry.OffsetSurface)
         { // rln S4135
 
             // rln S4135 //:r3
@@ -594,7 +596,7 @@ public class ShapeAnalysis_Surface : Transient
             return false;
         }
 
-        GeomAdaptor_Surface SA = Adaptor3d()!;
+        SurfaceAdaptor SA = Adaptor3d()!;
         double              RU = SA.UResolution(1.0);
         double              RV = SA.VResolution(1.0);
 
@@ -610,9 +612,9 @@ public class ShapeAnalysis_Surface : Transient
     }
 
     // The iso-curve, frozen (it is cached and handed out), or null where the surface can't make it
-    private static Geom_Curve? ComputeIso(Geom_Surface surf, bool utype, double par)
+    private static Curve3D? ComputeIso(Surface surf, bool utype, double par)
     {
-        Geom_Curve? iso;
+        Curve3D? iso;
         try
         {
             if (utype)
@@ -649,7 +651,7 @@ public class ShapeAnalysis_Surface : Transient
     }
 
     /// <summary>Returns a U iso-curve (frozen; the bound ones are cached), or null if it can't be made.</summary>
-    public Geom_Curve? UIso(double U)
+    public Curve3D? UIso(double U)
     {
         if (U == myUF)
         {
@@ -667,7 +669,7 @@ public class ShapeAnalysis_Surface : Transient
     }
 
     /// <summary>Returns a V iso-curve (frozen; the bound ones are cached), or null if it can't be made.</summary>
-    public Geom_Curve? VIso(double V)
+    public Curve3D? VIso(double V)
     {
         if (V == myVF)
         {
@@ -701,7 +703,7 @@ public class ShapeAnalysis_Surface : Transient
             RestrictBounds(ref uf, ref ul, ref vf, ref vl);
             myUDelt = Math.Abs(ul - uf) / 20; // modified by rln 11/11/97 instead of 10
                                               // because of the example when 10 was not enough
-            if (mySurf!.IsUClosed())
+            if (mySurf!.IsUClosed)
             {
                 myUCloseVal = 0.0;
                 myUDelt     = 0.0;
@@ -711,9 +713,9 @@ public class ShapeAnalysis_Surface : Transient
 
             // Adapted computations
             // #67 rln S4135
-            GeomAdaptor_Surface SurfAdapt = Adaptor3d()!;
+            SurfaceAdaptor SurfAdapt = Adaptor3d()!;
             SurfaceKind surftype  = SurfAdapt.GetType();
-            if (mySurf is Geom_RectangularTrimmedSurface)
+            if (mySurf is TrimmedSurface)
             {
                 surftype = OtherSurface;
             }
@@ -727,8 +729,8 @@ public class ShapeAnalysis_Surface : Transient
                 }
                 case SurfaceOfExtrusion:
                 { //: c8 abv 03 Mar 98: UKI60094 #753: process Geom_SurfaceOfLinearExtrusion
-                    var        extr = (Geom_SurfaceOfLinearExtrusion)mySurf;
-                    Geom_Curve crv  = extr.BasisCurve();
+                    var        extr = (ExtrusionSurface)mySurf;
+                    Curve3D crv  = extr.BasisCurve();
                     double     f    = crv.FirstParameter();
                     double     l    = crv.LastParameter();
                     //: r3 abv (smh) 30 Mar 99: protect against unexpected signals
@@ -747,12 +749,12 @@ public class ShapeAnalysis_Surface : Transient
 
                     break;
                 }
-                case BSplineSurface:
+                case SurfaceKind.BSplineSurface:
                 {
-                    var    bs      = (Geom_BSplineSurface)mySurf;
-                    int    nbup    = bs.NbUPoles();
+                    var    bs      = (global::Kerf.Geometry.BSplineSurface)mySurf;
+                    int    nbup    = bs.UPoleCount;
                     double distmin = RealLast();
-                    if (bs.IsUPeriodic())
+                    if (bs.IsUPeriodic)
                     {
                         myUCloseVal = 0;
                         myUDelt     = 0;
@@ -761,13 +763,13 @@ public class ShapeAnalysis_Surface : Transient
                     { // modified by rln on 12/11/97
                         myUCloseVal = RealLast();
                     }
-                    else if (bs.IsURational() ||
+                    else if (bs.IsURational ||
                              // #6 rln 20/02/98 ProSTEP ug_exhaust-A.stp entity #18360 (Uclosed BSpline,
                              // but multiplicity of boundary knots != degree + 1)
                              bs.UMultiplicity(1) != bs.UDegree() + 1 || // #6 //:h4: #6 moved
-                             bs.UMultiplicity(bs.NbUKnots()) != bs.UDegree() + 1)
+                             bs.UMultiplicity(bs.UKnotCount) != bs.UDegree() + 1)
                     { // #6 //:h4
-                        int    nbvk = bs.NbVKnots();
+                        int    nbvk = bs.VKnotCount;
                         double v    = bs.VKnot(1);
                         Point3D p1   = SurfAdapt.Value(uf, v);
                         Point3D p2   = SurfAdapt.Value(ul, v);
@@ -798,7 +800,7 @@ public class ShapeAnalysis_Surface : Transient
                     }
                     else
                     {
-                        int nbvp = bs.NbVPoles();
+                        int nbvp = bs.VPoleCount;
                         myUCloseVal = bs.Pole(1, 1).SquareDistance(bs.Pole(nbup, 1));
                         anUmidVal   = bs.Pole(1, 1).SquareDistance(bs.Pole(nbup / 2 + 1, 1));
                         distmin     = myUCloseVal;
@@ -822,10 +824,10 @@ public class ShapeAnalysis_Surface : Transient
 
                     break;
                 }
-                case BezierSurface:
+                case SurfaceKind.BezierSurface:
                 {
-                    var    bz      = (Geom_BezierSurface)mySurf;
-                    int    nbup    = bz.NbUPoles();
+                    var    bz      = (global::Kerf.Geometry.BezierSurface)mySurf;
+                    int    nbup    = bz.UPoleCount;
                     double distmin = RealLast();
                     if (nbup < 3)
                     {
@@ -833,7 +835,7 @@ public class ShapeAnalysis_Surface : Transient
                     }
                     else
                     {
-                        int nbvp = bz.NbVPoles();
+                        int nbvp = bz.VPoleCount;
                         myUCloseVal = bz.Pole(1, 1).SquareDistance(bz.Pole(nbup, 1));
                         anUmidVal   = bz.Pole(1, 1).SquareDistance(bz.Pole(nbup / 2 + 1, 1));
                         distmin     = myUCloseVal;
@@ -919,7 +921,7 @@ public class ShapeAnalysis_Surface : Transient
             RestrictBounds(ref uf, ref ul, ref vf, ref vl);
             myVDelt = Math.Abs(vl - vf) / 20; // 2; rln S4135
                                               // because of the example when 10 was not enough
-            if (mySurf!.IsVClosed())
+            if (mySurf!.IsVClosed)
             {
                 myVCloseVal = 0.0;
                 myVDelt     = 0.0;
@@ -929,9 +931,9 @@ public class ShapeAnalysis_Surface : Transient
 
             // Adapted computations
             // #67 rln S4135
-            GeomAdaptor_Surface SurfAdapt = Adaptor3d()!;
+            SurfaceAdaptor SurfAdapt = Adaptor3d()!;
             SurfaceKind surftype  = SurfAdapt.GetType();
-            if (mySurf is Geom_RectangularTrimmedSurface)
+            if (mySurf is TrimmedSurface)
             {
                 surftype = OtherSurface;
             }
@@ -949,19 +951,19 @@ public class ShapeAnalysis_Surface : Transient
                 }
                 case SurfaceOfRevolution:
                 {
-                    var        revol = (Geom_SurfaceOfRevolution)mySurf;
-                    Geom_Curve crv   = revol.BasisCurve();
+                    var        revol = (RevolutionSurface)mySurf;
+                    Curve3D crv   = revol.BasisCurve();
                     Point3D     p1    = crv.Value(crv.FirstParameter());
                     Point3D     p2    = crv.Value(crv.LastParameter());
                     myVCloseVal = p1.SquareDistance(p2);
                     break;
                 }
-                case BSplineSurface:
+                case SurfaceKind.BSplineSurface:
                 {
-                    var    bs      = (Geom_BSplineSurface)mySurf;
-                    int    nbvp    = bs.NbVPoles();
+                    var    bs      = (global::Kerf.Geometry.BSplineSurface)mySurf;
+                    int    nbvp    = bs.VPoleCount;
                     double distmin = RealLast();
-                    if (bs.IsVPeriodic())
+                    if (bs.IsVPeriodic)
                     {
                         myVCloseVal = 0;
                         myVDelt     = 0;
@@ -970,10 +972,10 @@ public class ShapeAnalysis_Surface : Transient
                     { // modified by rln on 12/11/97
                         myVCloseVal = RealLast();
                     }
-                    else if (bs.IsVRational() || bs.VMultiplicity(1) != bs.VDegree() + 1 || // #6 //:h4
-                             bs.VMultiplicity(bs.NbVKnots()) != bs.VDegree() + 1)
+                    else if (bs.IsVRational || bs.VMultiplicity(1) != bs.VDegree() + 1 || // #6 //:h4
+                             bs.VMultiplicity(bs.VKnotCount) != bs.VDegree() + 1)
                     { // #6 //:h4
-                        int    nbuk = bs.NbUKnots();
+                        int    nbuk = bs.UKnotCount;
                         double u    = bs.UKnot(1);
                         Point3D p1   = SurfAdapt.Value(u, vf);
                         Point3D p2   = SurfAdapt.Value(u, vl);
@@ -1004,7 +1006,7 @@ public class ShapeAnalysis_Surface : Transient
                     }
                     else
                     {
-                        int nbup = bs.NbUPoles();
+                        int nbup = bs.UPoleCount;
                         myVCloseVal = bs.Pole(1, 1).SquareDistance(bs.Pole(1, nbvp));
                         aVmidVal    = bs.Pole(1, 1).SquareDistance(bs.Pole(1, nbvp / 2 + 1));
                         distmin     = myVCloseVal;
@@ -1028,10 +1030,10 @@ public class ShapeAnalysis_Surface : Transient
 
                     break;
                 }
-                case BezierSurface:
+                case SurfaceKind.BezierSurface:
                 {
-                    var    bz      = (Geom_BezierSurface)mySurf;
-                    int    nbvp    = bz.NbVPoles();
+                    var    bz      = (global::Kerf.Geometry.BezierSurface)mySurf;
+                    int    nbvp    = bz.VPoleCount;
                     double distmin = RealLast();
                     if (nbvp < 3)
                     {
@@ -1039,7 +1041,7 @@ public class ShapeAnalysis_Surface : Transient
                     }
                     else
                     {
-                        int nbup = bz.NbUPoles();
+                        int nbup = bz.UPoleCount;
                         myVCloseVal = bz.Pole(1, 1).SquareDistance(bz.Pole(1, nbvp));
                         aVmidVal    = bz.Pole(1, 1).SquareDistance(bz.Pole(1, nbvp / 2 + 1));
                         distmin     = myVCloseVal;
@@ -1113,7 +1115,7 @@ public class ShapeAnalysis_Surface : Transient
     // Newton algo (S4030); returns 0 (failed), 1 or 2 (found, near a singular point)
     private int SurfaceNewton(in Point2D p2dPrev, in Point3D P3D, double preci, ref Point2D sol)
     {
-        GeomAdaptor_Surface SurfAdapt = Adaptor3d()!;
+        SurfaceAdaptor SurfAdapt = Adaptor3d()!;
         Bounds(out double uf, out double ul, out double vf, out double vl);
         double du = SurfAdapt.UResolution(preci);
         double dv = SurfAdapt.VResolution(preci);
@@ -1195,20 +1197,20 @@ public class ShapeAnalysis_Surface : Transient
     /// </summary>
     public Point2D NextValueOfUV(in Point2D p2dPrev, in Point3D P3D, double preci, double maxpreci = -1.0)
     {
-        GeomAdaptor_Surface SurfAdapt = Adaptor3d()!;
+        SurfaceAdaptor SurfAdapt = Adaptor3d()!;
         SurfaceKind surftype  = SurfAdapt.GetType();
 
         switch (surftype)
         {
-            case BezierSurface:
-            case BSplineSurface:
+            case SurfaceKind.BezierSurface:
+            case SurfaceKind.BSplineSurface:
             case SurfaceOfExtrusion:
             case SurfaceOfRevolution:
-            case OffsetSurface:
+            case SurfaceKind.OffsetSurface:
             {
-                if (surftype == BSplineSurface)
+                if (surftype == SurfaceKind.BSplineSurface)
                 {
-                    Geom_BSplineSurface aBSpline = SurfAdapt.BSpline();
+                    global::Kerf.Geometry.BSplineSurface aBSpline = SurfAdapt.BSpline();
 
                     // Check near to knot position ~ near to C0 points on U isoline.
                     if (SurfAdapt.UContinuity() == C0)
@@ -1278,7 +1280,7 @@ public class ShapeAnalysis_Surface : Transient
     /// </summary>
     public Point2D ValueOfUV(in Point3D P3D, double preci)
     {
-        GeomAdaptor_Surface SurfAdapt = Adaptor3d()!;
+        SurfaceAdaptor SurfAdapt = Adaptor3d()!;
         double              S         = 0.0, T = 0.0;
         myGap = -1.0;          // to be computed
         bool computed = true; // a priori
@@ -1326,11 +1328,11 @@ public class ShapeAnalysis_Surface : Transient
                         T += ShapeAnalysis.AdjustByPeriod(T, 0.5 * (vf + vl), 2 * M_PI);
                         break;
                     }
-                    case BezierSurface:
-                    case BSplineSurface:
+                    case SurfaceKind.BezierSurface:
+                    case SurfaceKind.BSplineSurface:
                     case SurfaceOfExtrusion:
                     case SurfaceOfRevolution:
-                    case OffsetSurface: //: d0 abv 3 Mar 98: UKI60107-1 #350
+                    case SurfaceKind.OffsetSurface: //: d0 abv 3 Mar 98: UKI60107-1 #350
                     {
                         S = (uf + ul) / 2;
                         T = (vf + vl) / 2; // there will be at least something
@@ -1370,7 +1372,7 @@ public class ShapeAnalysis_Surface : Transient
                             double du = 0.0, dv = 0.0;
                             // extension of the surface range is limited to non-offset surfaces as the latter
                             // can throw exception (e.g. Geom_UndefinedValue) when computing value - see id23943
-                            if (mySurf is not Geom_OffsetSurface)
+                            if (mySurf is not global::Kerf.Geometry.OffsetSurface)
                             {
                                 // modified by rln during fixing CSR # BUC60035 entity #D231
                                 du = Min(myUDelt, SurfAdapt.UResolution(preci));
@@ -1378,13 +1380,13 @@ public class ShapeAnalysis_Surface : Transient
                             }
 
                             double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
-                            myExtPS.SetFlag(Extrema_ExtFlag.Extrema_ExtFlag_MIN);
+                            myExtPS.SetFlag(ExtFlag.ExtFlag_MIN);
                             myExtPS.Initialize(SurfAdapt, uf - du, ul + du, vf - dv, vl + dv, Tol, Tol);
                             myExtOK = true;
                         }
 
                         myExtPS.Perform(P3D);
-                        int nPSurf = (myExtPS.IsDone() ? myExtPS.NbExt() : 0);
+                        int nPSurf = (myExtPS.IsDone ? myExtPS.ExtCount : 0);
 
                         if (nPSurf > 0)
                         {
@@ -1550,12 +1552,12 @@ public class ShapeAnalysis_Surface : Transient
             // modified by rln on 04/12/97 in order to use these variables later
             bool        UV  = true;
             double      par = 0.0, other = 0.0, dist = 0.0;
-            Geom_Curve? iso;
-            var         anIsoCurve = new Adaptor3d_IsoCurve(Adaptor3d()!);
+            Curve3D? iso;
+            var         anIsoCurve = new IsoCurve(Adaptor3d()!);
             for (int num = 0; num < 6; num++)
             {
                 UV = (num < 3); // 0-1-2 : iso-U  3-4-5 : iso-V
-                if (!(Adaptor3d()!.GetType() == OffsetSurface))
+                if (!(Adaptor3d()!.GetType() == SurfaceKind.OffsetSurface))
                 {
                     Box? anIsoBox = null;
                     iso = null;
@@ -1618,8 +1620,8 @@ public class ShapeAnalysis_Surface : Transient
                 }
                 else
                 {
-                    Adaptor3d_Curve? anAdaptor  = null;
-                    var              aGeomCurve = new GeomAdaptor_Curve();
+                    CurveAdaptorBase? anAdaptor  = null;
+                    var              aGeomCurve = new CurveAdaptor();
 
                     Box? anIsoBox = null;
                     switch (num)
@@ -1680,7 +1682,7 @@ public class ShapeAnalysis_Surface : Transient
             // added by rln on 04/12/97 iterational process
             double PrevU    = U, PrevV = V;
             int    MaxIters = 5, Iters = 0;
-            if (!(Adaptor3d()!.GetType() == OffsetSurface))
+            if (!(Adaptor3d()!.GetType() == SurfaceKind.OffsetSurface))
             {
                 while (((PrevU != UU) || (PrevV != VV)) && (Iters < MaxIters) && (theMin > preci))
                 {
@@ -1899,22 +1901,22 @@ public class ShapeAnalysis_Surface : Transient
         ComputeBoundIsos();
         if (myIsoUF is not null)
         {
-            BndLib_Add3dCurve.Add(new GeomAdaptor_Curve(myIsoUF), global::Kerf.Engine.Foundation.Precision.Confusion(), ref myBndUF);
+            Add3dCurve.Add(new CurveAdaptor(myIsoUF), global::Kerf.Engine.Foundation.Precision.Confusion(), ref myBndUF);
         }
 
         if (myIsoUL is not null)
         {
-            BndLib_Add3dCurve.Add(new GeomAdaptor_Curve(myIsoUL), global::Kerf.Engine.Foundation.Precision.Confusion(), ref myBndUL);
+            Add3dCurve.Add(new CurveAdaptor(myIsoUL), global::Kerf.Engine.Foundation.Precision.Confusion(), ref myBndUL);
         }
 
         if (myIsoVF is not null)
         {
-            BndLib_Add3dCurve.Add(new GeomAdaptor_Curve(myIsoVF), global::Kerf.Engine.Foundation.Precision.Confusion(), ref myBndVF);
+            Add3dCurve.Add(new CurveAdaptor(myIsoVF), global::Kerf.Engine.Foundation.Precision.Confusion(), ref myBndVF);
         }
 
         if (myIsoVL is not null)
         {
-            BndLib_Add3dCurve.Add(new GeomAdaptor_Curve(myIsoVL), global::Kerf.Engine.Foundation.Precision.Confusion(), ref myBndVL);
+            Add3dCurve.Add(new CurveAdaptor(myIsoVL), global::Kerf.Engine.Foundation.Precision.Confusion(), ref myBndVL);
         }
     }
 

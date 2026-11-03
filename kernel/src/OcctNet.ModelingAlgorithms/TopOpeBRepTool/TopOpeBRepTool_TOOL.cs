@@ -3,8 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -18,12 +22,12 @@ namespace Occt;
 public static class TopOpeBRepTool_TOOL
 {
     // The edge is longer than the confusion tolerance (measured on ten chords), or doesn't have exactly one vertex
-    private static bool CheckEdgeLength(in TopoDS_Edge E)
+    private static bool CheckEdgeLength(in Edge E)
     {
-        BRepAdaptor_Curve BC = new(E);
+        EdgeCurveAdaptor BC = new(E);
 
-        NCollection_IndexedMap<TopoDS_Shape> aM = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(E, TopAbs_VERTEX, aM);
+        NCollection_IndexedMap<Shape> aM = new(ShapeHasher.Instance);
+        Exploration.MapShapes(E, ShapeType.Vertex, aM);
         int i, anExtent, aN = 10;
         double ln = 0.0, d, t, f, l, dt;
         anExtent = aM.Extent();
@@ -66,7 +70,7 @@ public static class TopOpeBRepTool_TOOL
     /// The unit tangent <paramref name="Tg"/> of the curve <paramref name="BC"/> at <paramref name="par"/>; false if
     /// the parameter is out of the curve's range (by more than the parametric resolution of its tolerance).
     /// </summary>
-    public static bool TggeomE(double par, BRepAdaptor_Curve BC, out Vector3D Tg)
+    public static bool TggeomE(double par, EdgeCurveAdaptor BC, out Vector3D Tg)
     {
         Tg = new Vector3D();
         double f = BC.FirstParameter(), l = BC.LastParameter();
@@ -92,16 +96,16 @@ public static class TopOpeBRepTool_TOOL
     /// The unit tangent <paramref name="Tg"/> of the edge <paramref name="E"/> at <paramref name="par"/>; false for a
     /// degenerated edge, a closed edge no longer than the confusion tolerance, or a parameter out of range.
     /// </summary>
-    public static bool TggeomE(double par, in TopoDS_Edge E, out Vector3D Tg)
+    public static bool TggeomE(double par, in Edge E, out Vector3D Tg)
     {
         Tg = new Vector3D();
-        bool isdgE = BRep_Tool.Degenerated(E);
+        bool isdgE = Tool.Degenerated(E);
         if (isdgE)
         {
             return false;
         }
 
-        BRepAdaptor_Curve BC = new(E);
+        EdgeCurveAdaptor BC = new(E);
         // modified by NIZNHY-PKV Fri Aug  4 09:49:31 2000 f
         if (!CheckEdgeLength(E))
         {
@@ -118,7 +122,7 @@ public static class TopOpeBRepTool_TOOL
     /// The unit normal <paramref name="normt"/> of the face <paramref name="f"/> at <paramref name="uv"/>, with the
     /// face's orientation; false (and <paramref name="normt"/> unchanged) where the geometric normal can't be computed.
     /// </summary>
-    public static bool Nt(in Point2D uv, in TopoDS_Face f, ref Direction3D normt)
+    public static bool Nt(in Point2D uv, in Face f, ref Direction3D normt)
     {
         bool ok = NggeomF(uv, f, out Vector3D nggeom);
         if (!ok)
@@ -126,7 +130,7 @@ public static class TopOpeBRepTool_TOOL
             return false;
         }
         normt = new Direction3D(nggeom);
-        if (f.Orientation() == TopAbs_Orientation.TopAbs_REVERSED)
+        if (f.Orientation() == Orientation.Reversed)
         {
             normt.Reverse();
         }
@@ -135,9 +139,9 @@ public static class TopOpeBRepTool_TOOL
 
     //=================================================================================================
 
-    private static bool FUN_ngF(in Point2D uv, in TopoDS_Face F, ref Vector3D ngF)
+    private static bool FUN_ngF(in Point2D uv, in Face F, ref Vector3D ngF)
     {
-        BRepAdaptor_Surface bs = new(F);
+        FaceSurfaceAdaptor bs = new(F);
         double tol3d = bs.Tolerance();
         double tolu = bs.UResolution(tol3d);
         double tolv = bs.VResolution(tol3d);
@@ -225,7 +229,7 @@ public static class TopOpeBRepTool_TOOL
     /// The geometric normal <paramref name="ng"/> (not unit at a cone's apex or a degenerate place) of the face's
     /// surface at <paramref name="uv"/>, without the face's orientation; false where it can't be computed.
     /// </summary>
-    public static bool NggeomF(in Point2D uv, in TopoDS_Face f, out Vector3D ng)
+    public static bool NggeomF(in Point2D uv, in Face f, out Vector3D ng)
     {
         ng = new Vector3D();
         return FUN_ngF(uv, f, ref ng);
@@ -234,9 +238,9 @@ public static class TopOpeBRepTool_TOOL
     //=================================================================================================
 
     /// <summary>The smaller of the face's parametric extents in U and V.</summary>
-    public static double minDUV(in TopoDS_Face F)
+    public static double minDUV(in Face F)
     {
-        BRepAdaptor_Surface BS = new(F);
+        FaceSurfaceAdaptor BS = new(F);
         double delta = BS.LastUParameter() - BS.FirstUParameter();
         double tmp = BS.LastVParameter() - BS.FirstVParameter();
         delta = (tmp < delta) ? tmp : delta;

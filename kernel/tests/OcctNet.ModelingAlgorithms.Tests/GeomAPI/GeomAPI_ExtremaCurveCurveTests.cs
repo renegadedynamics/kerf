@@ -243,16 +243,16 @@ public class GeomAPI_ExtremaCurveCurve_Test
         }
 
         const int aDegree = 14;
-        Geom_BSplineCurve aC1 = new(aPolesArray, aKnotsArray, aMultsArray, aDegree);
+        BSplineCurve3D aC1 = new(aPolesArray, aKnotsArray, aMultsArray, aDegree);
 
         Xyz aP1 = new(60000, -7504.83, 6000);
         Xyz aP2 = new(60000, 7504.83, 6000);
-        Geom_Line aLine = new(new Point3D(aP1), new Direction3D(aP2 - aP1));
-        Geom_TrimmedCurve aC2 = new(aLine, 0.0, (aP2 - aP1).Modulus());
+        LineCurve3D aLine = new(new Point3D(aP1), new Direction3D(aP2 - aP1));
+        TrimmedCurve3D aC2 = new(aLine, 0.0, (aP2 - aP1).Modulus());
 
         GeomAPI_ExtremaCurveCurve anEx = new(aC1, aC2);
 
-        if (anEx.Extrema().IsParallel())
+        if (anEx.Extrema().IsParallel)
         {
             Assert.True(anEx.LowerDistance() > 0.0, "Parallel curves should have a distance");
         }

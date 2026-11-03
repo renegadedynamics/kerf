@@ -5,8 +5,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Diagnostics.CodeAnalysis;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -22,20 +24,20 @@ public partial struct ChFiDS_FaceInterference : IEquatable<ChFiDS_FaceInterferen
 {
     private double firstParam;
     private double lastParam;
-    private Geom2d_Curve? pCurveOnFace;
-    private Geom2d_Curve? pCurveOnSurf;
+    private Curve2D? pCurveOnFace;
+    private Curve2D? pCurveOnSurf;
     private int lineindex;
-    private TopAbs_Orientation LineTransition;
+    private Orientation LineTransition;
 
     public ChFiDS_FaceInterference()
     {
         firstParam = 0.0;
         lastParam = 0.0;
         lineindex = 0;
-        LineTransition = TopAbs_FORWARD;
+        LineTransition = Forward;
     }
 
-    internal void SetInterference(int LineIndex, TopAbs_Orientation Trans, Geom2d_Curve? PCurv1, Geom2d_Curve? PCurv2)
+    internal void SetInterference(int LineIndex, Orientation Trans, Curve2D? PCurv1, Curve2D? PCurv2)
     {
         lineindex = LineIndex;
         LineTransition = Trans;
@@ -43,7 +45,7 @@ public partial struct ChFiDS_FaceInterference : IEquatable<ChFiDS_FaceInterferen
         pCurveOnSurf = PCurv2;
     }
 
-    internal void SetTransition(TopAbs_Orientation Trans)
+    internal void SetTransition(Orientation Trans)
     {
         LineTransition = Trans;
     }
@@ -77,21 +79,21 @@ public partial struct ChFiDS_FaceInterference : IEquatable<ChFiDS_FaceInterferen
 
     /// <summary>OCCT's <c>ChangePCurveOnFace</c>: the pcurve on the face, for reading and writing.</summary>
     [UnscopedRef]
-    internal ref Geom2d_Curve? ChangePCurveOnFace() => ref pCurveOnFace;
+    internal ref Curve2D? ChangePCurveOnFace() => ref pCurveOnFace;
 
     /// <summary>OCCT's <c>ChangePCurveOnSurf</c>: the pcurve on the fillet, for reading and writing.</summary>
     [UnscopedRef]
-    internal ref Geom2d_Curve? ChangePCurveOnSurf() => ref pCurveOnSurf;
+    internal ref Curve2D? ChangePCurveOnSurf() => ref pCurveOnSurf;
 
-    public readonly ChFiDS_FaceInterference WithInterference(int LineIndex, TopAbs_Orientation Trans,
-                                                             Geom2d_Curve? PCurv1, Geom2d_Curve? PCurv2)
+    public readonly ChFiDS_FaceInterference WithInterference(int LineIndex, Orientation Trans,
+                                                             Curve2D? PCurv1, Curve2D? PCurv2)
     {
         ChFiDS_FaceInterference aCopy = this;
         aCopy.SetInterference(LineIndex, Trans, PCurv1, PCurv2);
         return aCopy;
     }
 
-    public readonly ChFiDS_FaceInterference WithTransition(TopAbs_Orientation Trans)
+    public readonly ChFiDS_FaceInterference WithTransition(Orientation Trans)
     {
         ChFiDS_FaceInterference aCopy = this;
         aCopy.SetTransition(Trans);
@@ -132,17 +134,17 @@ public partial struct ChFiDS_FaceInterference : IEquatable<ChFiDS_FaceInterferen
         return lineindex;
     }
 
-    public readonly TopAbs_Orientation Transition()
+    public readonly Orientation Transition()
     {
         return LineTransition;
     }
 
-    public readonly Geom2d_Curve? PCurveOnFace()
+    public readonly Curve2D? PCurveOnFace()
     {
         return pCurveOnFace;
     }
 
-    public readonly Geom2d_Curve? PCurveOnSurf()
+    public readonly Curve2D? PCurveOnSurf()
     {
         return pCurveOnSurf;
     }

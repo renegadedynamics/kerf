@@ -9,6 +9,8 @@
 // IsIdenticalMaskingFree holds; FreeFlagDifferences is reported apart. Otherwise fall back to CanonicalShapeComparer.
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 
 namespace OcctNet.TestHarness;
 
@@ -43,11 +45,11 @@ internal sealed class BRepTextDiff
 /// <summary>BRep text of shapes, and its comparison with the Free flag masked (decision 581).</summary>
 internal static class BRepTextComparison
 {
-    /// <summary>The shape's BRep text, as <see cref="BRepTools.Write(in TopoDS_Shape, TextWriter, ProgressRange)"/> writes it.</summary>
-    public static string Write(TopoDS_Shape theShape)
+    /// <summary>The shape's BRep text, as <see cref="BrepTools.Write(in Shape, TextWriter, ProgressRange)"/> writes it.</summary>
+    public static string Write(Shape theShape)
     {
         using var aWriter = new StringWriter(System.Globalization.CultureInfo.InvariantCulture);
-        BRepTools.Write(theShape, aWriter);
+        BrepTools.Write(theShape, aWriter);
         return aWriter.ToString();
     }
 

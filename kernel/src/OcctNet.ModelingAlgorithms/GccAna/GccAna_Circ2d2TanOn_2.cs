@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
@@ -48,16 +49,16 @@ public sealed partial class GccAna_Circ2d2TanOn
 
                 for (int k = 1; k <= Bis.NbSolutions(); k++)
                 {
-                    IntAna2d_AnaIntersection Intp = new(Bis.ThisSolution(k), OnLine);
-                    if (Intp.IsDone())
+                    AnalyticIntersection Intp = new(Bis.ThisSolution(k), OnLine);
+                    if (Intp.IsDone)
                     {
                         WellDone = true;
                         // for degenerated cases, no acceptable solution
                         // (OnLine and bisectrice strictly parallel or not)
-                        if (!Intp.IdenticalElements() && !Intp.ParallelElements() && !Intp.IsEmpty())
+                        if (!Intp.IdenticalElements() && !Intp.ParallelElements() && !Intp.IsEmpty)
                         {
                             // at maximum 1 point of intersection !
-                            for (int l = 1; l <= Intp.NbPoints(); l++)
+                            for (int l = 1; l <= Intp.PointCount; l++)
                             {
                                 Point2D pt = Intp.Point(l).Value();
                                 Axis2D axe = new(pt, dirx);

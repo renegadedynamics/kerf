@@ -4,9 +4,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -28,7 +31,7 @@ public sealed class TopOpeBRepBuild_FaceBuilder
     private const int UNCLOSEDW = 2;
     private const int CLOSEDW = 10;
 
-    private TopoDS_Face myFace = new();
+    private Face myFace = new();
     private readonly TopOpeBRepBuild_LoopSet myLoopSet = new();
     private TopOpeBRepBuild_BlockIterator myBlockIterator = new();
     private readonly TopOpeBRepBuild_BlockBuilder myBlockBuilder = new();
@@ -43,15 +46,15 @@ public sealed class TopOpeBRepBuild_FaceBuilder
     /// The faces of <paramref name="WES"/> on the face <paramref name="F"/>; with <paramref name="ForceClass"/>, the
     /// wires are classified as the blocks are.
     /// </summary>
-    public TopOpeBRepBuild_FaceBuilder(TopOpeBRepBuild_WireEdgeSet WES, in TopoDS_Shape F, bool ForceClass = false)
+    public TopOpeBRepBuild_FaceBuilder(TopOpeBRepBuild_WireEdgeSet WES, in Shape F, bool ForceClass = false)
     {
         InitFaceBuilder(WES, F, ForceClass);
     }
 
     /// <summary>Builds the faces of <paramref name="WES"/> on the face <paramref name="F"/>.</summary>
-    public void InitFaceBuilder(TopOpeBRepBuild_WireEdgeSet WES, in TopoDS_Shape F, bool ForceClass)
+    public void InitFaceBuilder(TopOpeBRepBuild_WireEdgeSet WES, in Shape F, bool ForceClass)
     {
-        myFace = TopoDS.Face(F);
+        myFace = ShapeCasts.Face(F);
         MakeLoops(WES);
         TopOpeBRepBuild_BlockBuilder BB = myBlockBuilder;
         TopOpeBRepBuild_WireEdgeClassifier WEC = new(F, BB);
@@ -60,30 +63,30 @@ public sealed class TopOpeBRepBuild_FaceBuilder
     }
 
     // The vertices of W (not INTERNAL) on one edge only (not INTERNAL or EXTERNAL), with that edge
-    private static void FUN_DetectVerticesOn1Edge(in TopoDS_Shape W,
-                                                  NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> mapVon1E)
+    private static void FUN_DetectVerticesOn1Edge(in Shape W,
+                                                  NCollection_IndexedDataMap<Shape, Shape> mapVon1E)
     {
         // Fills up map <mapVon1E>, with vertices of W, connected to only one edge
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> mapVedges =
-            new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(W, TopAbs_VERTEX, TopAbs_EDGE, mapVedges);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapVedges =
+            new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(W, ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, mapVedges);
         int nV = mapVedges.Extent();
 
         for (int i = 1; i <= nV; i++)
         {
-            TopoDS_Shape V = mapVedges.FindKey(i);
-            if (V.Orientation() == TopAbs_INTERNAL)
+            Shape V = mapVedges.FindKey(i);
+            if (V.Orientation() == Internal)
             {
                 continue;
             }
 
-            NCollection_List<TopoDS_Shape> loE = mapVedges.FindFromIndex(i);
+            NCollection_List<Shape> loE = mapVedges.FindFromIndex(i);
             if (loE.Extent() < 2)
             {
                 // Keep INTERNAL edges
-                TopoDS_Shape E = loE.First();
-                TopAbs_Orientation oriE = E.Orientation();
-                if ((oriE == TopAbs_INTERNAL) || (oriE == TopAbs_EXTERNAL))
+                Shape E = loE.First();
+                Orientation oriE = E.Orientation();
+                if ((oriE == Internal) || (oriE == External))
                 {
                     continue;
                 }
@@ -95,8 +98,8 @@ public sealed class TopOpeBRepBuild_FaceBuilder
 
     // What the vertices on one edge make of the wire: ISVERTEX, CLOSEDW, GCLOSEDW (closed geometrically: the vertices
     // pair up by position, in mapVV) or UNCLOSEDW
-    private static int FUN_AnalyzemapVon1E(NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> mapVon1E,
-                                           NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> mapVV)
+    private static int FUN_AnalyzemapVon1E(NCollection_IndexedDataMap<Shape, Shape> mapVon1E,
+                                           NCollection_IndexedDataMap<Shape, Shape> mapVV)
     {
         int res = ISUNKNOWN;
 
@@ -107,9 +110,9 @@ public sealed class TopOpeBRepBuild_FaceBuilder
         }
         else if (nV == 1)
         {
-            TopoDS_Shape E = mapVon1E.FindFromIndex(1);
-            bool Eclosed = BRep_Tool.IsClosed(E);
-            bool dgE = BRep_Tool.Degenerated(TopoDS.Edge(E));
+            Shape E = mapVon1E.FindFromIndex(1);
+            bool Eclosed = Tool.IsClosed(E);
+            bool dgE = Tool.Degenerated(ShapeCasts.Edge(E));
             if (dgE)
             {
                 res = ISVERTEX;
@@ -131,12 +134,12 @@ public sealed class TopOpeBRepBuild_FaceBuilder
             double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
             for (int i = 1; i <= nV; i++)
             {
-                TopoDS_Vertex vi = TopoDS.Vertex(mapVon1E.FindKey(i));
-                Point3D pi = BRep_Tool.Pnt(vi);
+                Vertex vi = ShapeCasts.Vertex(mapVon1E.FindKey(i));
+                Point3D pi = Tool.Pnt(vi);
                 for (int j = i + 1; j <= nV; j++)
                 {
-                    TopoDS_Vertex vj = TopoDS.Vertex(mapVon1E.FindKey(j));
-                    Point3D pj = BRep_Tool.Pnt(vj);
+                    Vertex vj = ShapeCasts.Vertex(mapVon1E.FindKey(j));
+                    Point3D pj = Tool.Pnt(vj);
                     bool same = pi.IsEqual(pj, tol);
                     if (same)
                     {
@@ -164,8 +167,8 @@ public sealed class TopOpeBRepBuild_FaceBuilder
     /// <paramref name="mapVVsameG"/> and <paramref name="mapVon1Edge"/> with the vertices of the wires closed only
     /// geometrically (see <see cref="CorrectGclosedWire"/>).
     /// </summary>
-    public void DetectUnclosedWire(NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> mapVVsameG,
-                                   NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> mapVon1Edge)
+    public void DetectUnclosedWire(NCollection_IndexedDataMap<Shape, Shape> mapVVsameG,
+                                   NCollection_IndexedDataMap<Shape, Shape> mapVon1Edge)
     {
         // wire unclosed : has vertices connected to only one edge.
         // edges of wire unclosed : (only one ancestor edge per vertex)
@@ -191,19 +194,19 @@ public sealed class TopOpeBRepBuild_FaceBuilder
                     continue;
                 }
 
-                TopoDS_Compound cmp = new();
-                BRep_Builder BB = new();
+                Compound cmp = new();
+                BrepBuilder BB = new();
                 BB.MakeCompound(ref cmp);
                 InitEdge();
                 for (; MoreEdge(); NextEdge())
                 {
                     AddEdgeWire(Edge(), cmp);
                 }
-                TopoDS_Shape W = cmp;
-                NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> mapVon1E = new(TopTools_ShapeMapHasher.Instance);
+                Shape W = cmp;
+                NCollection_IndexedDataMap<Shape, Shape> mapVon1E = new(ShapeHasher.Instance);
                 FUN_DetectVerticesOn1Edge(W, mapVon1E);
 
-                NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> mapVV = new(TopTools_ShapeMapHasher.Instance);
+                NCollection_IndexedDataMap<Shape, Shape> mapVV = new(ShapeHasher.Instance);
                 int res = FUN_AnalyzemapVon1E(mapVon1E, mapVV);
                 if (res == ISVERTEX)
                 {
@@ -227,8 +230,8 @@ public sealed class TopOpeBRepBuild_FaceBuilder
                 }
                 else if (res == UNCLOSEDW)
                 {
-                    TopExp_Explorer ex = new();
-                    for (ex.Init(W, TopAbs_EDGE); ex.More(); ex.Next())
+                    Explorer ex = new();
+                    for (ex.Init(W, global::Kerf.Topology.ShapeType.Edge); ex.More(); ex.Next())
                     {
                         int I = myBlockBuilder.Element(ex.Current());
                         myBlockBuilder.SetValid(I, false);
@@ -242,29 +245,29 @@ public sealed class TopOpeBRepBuild_FaceBuilder
     /// Makes the wires closed only geometrically closed topologically: on the edge of each vertex of
     /// <paramref name="mapVVref"/>, replaces it by its reference vertex. Writes into the edges.
     /// </summary>
-    public void CorrectGclosedWire(NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> mapVVref,
-                                   NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> mapVon1Edge)
+    public void CorrectGclosedWire(NCollection_IndexedDataMap<Shape, Shape> mapVVref,
+                                   NCollection_IndexedDataMap<Shape, Shape> mapVon1Edge)
     {
         // prequesitory : edges described by <mapVon1Edge> are not shared
         int nVV = mapVVref.Extent();
         for (int i = 1; i <= nVV; i++)
         {
-            TopoDS_Vertex V = TopoDS.Vertex(mapVVref.FindKey(i));
-            TopoDS_Vertex Vref = TopoDS.Vertex(mapVVref.FindFromIndex(i));
+            Vertex V = ShapeCasts.Vertex(mapVVref.FindKey(i));
+            Vertex Vref = ShapeCasts.Vertex(mapVVref.FindFromIndex(i));
 
             if (V.IsSame(Vref))
             {
                 continue;
             }
 
-            TopoDS_Edge E = TopoDS.Edge(mapVon1Edge.FindFromKey(V));
-            double paronE = BRep_Tool.Parameter(V, E);
+            Edge E = ShapeCasts.Edge(mapVon1Edge.FindFromKey(V));
+            double paronE = Tool.Parameter(V, E);
 
-            BRep_Builder BB = new();
+            BrepBuilder BB = new();
             E.Free(true);
             BB.Remove(E, V);
-            TopoDS_Shape aLocalShape = Vref.Oriented(V.Orientation());
-            TopoDS_Vertex newVref = TopoDS.Vertex(aLocalShape);
+            Shape aLocalShape = Vref.Oriented(V.Orientation());
+            Vertex newVref = ShapeCasts.Vertex(aLocalShape);
             BB.Add(E, newVref);
             TopOpeBRepDS_BuildTool BT = new();
             BT.Parameter(E, newVref, paronE);
@@ -275,10 +278,10 @@ public sealed class TopOpeBRepBuild_FaceBuilder
     /// Invalidates the edges that appear twice (FORWARD and REVERSED) at a vertex of the new wires shared by no other
     /// edge; <paramref name="MapE"/> receives them.
     /// </summary>
-    public void DetectPseudoInternalEdge(NCollection_IndexedMap<TopoDS_Shape> MapE)
+    public void DetectPseudoInternalEdge(NCollection_IndexedMap<Shape> MapE)
     {
-        TopoDS_Compound cmp = new();
-        BRep_Builder BB = new();
+        Compound cmp = new();
+        BrepBuilder BB = new();
         BB.MakeCompound(ref cmp);
 
         // Wire unclosed : edges have vertices connected to only one edge.
@@ -301,25 +304,25 @@ public sealed class TopOpeBRepBuild_FaceBuilder
             } // MoreWire
         } // MoreFace
 
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> mapVOE = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(cmp, TopAbs_VERTEX, TopAbs_EDGE, mapVOE);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapVOE = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(cmp, ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, mapVOE);
         int nv = mapVOE.Extent();
 
         MapE.Clear();
         for (int i = 1; i <= nv; i++)
         {
-            NCollection_List<TopoDS_Shape> le = mapVOE.FindFromIndex(i);
+            NCollection_List<Shape> le = mapVOE.FindFromIndex(i);
             int ne = le.Extent();
             if (ne == 2)
             {
-                NCollection_List<TopoDS_Shape>.Iterator ile = new(le);
-                TopoDS_Shape e1 = ile.Value();
+                NCollection_List<Shape>.Iterator ile = new(le);
+                Shape e1 = ile.Value();
                 ile.Next();
-                TopoDS_Shape e2 = ile.Value();
+                Shape e2 = ile.Value();
                 bool same = e1.IsSame(e2);
-                TopAbs_Orientation o1 = e1.Orientation();
-                TopAbs_Orientation o2 = e2.Orientation();
-                bool o1co2 = o1 == TopAbs.Complement(o2);
+                Orientation o1 = e1.Orientation();
+                Orientation o2 = e2.Orientation();
+                bool o1co2 = o1 == global::Kerf.Engine.Topology.TopAbs.Complement(o2);
 
                 if (same && o1co2)
                 {
@@ -336,7 +339,7 @@ public sealed class TopOpeBRepBuild_FaceBuilder
     }
 
     /// <summary>The face the faces are built on.</summary>
-    public TopoDS_Shape Face() => myFace;
+    public Shape Face() => myFace;
 
     /// <summary>Starts the iteration on the faces; their number.</summary>
     public int InitFace()
@@ -387,10 +390,10 @@ public sealed class TopOpeBRepBuild_FaceBuilder
     }
 
     /// <summary>The current wire, when it is an old one.</summary>
-    public TopoDS_Shape OldWire()
+    public Shape OldWire()
     {
         TopOpeBRepBuild_Loop L = myFaceAreaBuilder.Loop();
-        TopoDS_Shape B = L.Shape();
+        Shape B = L.Shape();
         return B;
     }
 
@@ -451,7 +454,7 @@ public sealed class TopOpeBRepBuild_FaceBuilder
 
     /// <summary>The current edge of the current new wire.</summary>
     /// <exception cref="FailureException">There is none, or it isn't valid.</exception>
-    public TopoDS_Shape Edge()
+    public Shape Edge()
     {
         if (!myBlockIterator.More())
         {
@@ -465,18 +468,18 @@ public sealed class TopOpeBRepBuild_FaceBuilder
             throw new FailureException("Edge not Valid");
         }
 
-        TopoDS_Shape E = myBlockBuilder.Element(i);
+        Shape E = myBlockBuilder.Element(i);
         return E;
     }
 
     /// <summary>0: OCCT's release build has the edge connexity management disabled.</summary>
-    public int EdgeConnexity(in TopoDS_Shape E) => 0;
+    public int EdgeConnexity(in Shape E) => 0;
 
     /// <summary>Adds the edge <paramref name="E"/> to <paramref name="W"/>; 1.</summary>
-    public int AddEdgeWire(in TopoDS_Shape E, in TopoDS_Shape W)
+    public int AddEdgeWire(in Shape E, in Shape W)
     {
         int nadd = 0;
-        BRep_Builder BB = new();
+        BrepBuilder BB = new();
         BB.Add(W, E);
         nadd++;
         return nadd;
@@ -498,7 +501,7 @@ public sealed class TopOpeBRepBuild_FaceBuilder
         LL.Clear();
         for (SS.InitShapes(); SS.MoreShapes(); SS.NextShape())
         {
-            TopoDS_Shape S = SS.Shape();
+            Shape S = SS.Shape();
             TopOpeBRepBuild_Loop ShapeLoop = new(S);
             LL.Append(ShapeLoop);
         }

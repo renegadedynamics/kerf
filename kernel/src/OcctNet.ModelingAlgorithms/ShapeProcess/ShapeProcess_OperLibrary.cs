@@ -4,12 +4,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -36,42 +39,42 @@ public static class ShapeProcess_OperLibrary
     /// With <paramref name="theMutableInput"/>, the modifier may update the input's vertices in place; on a shape holding
     /// frozen shapes the port then runs it in its immutable mode (decision 1022). The result is frozen.
     /// </summary>
-    public static TopoDS_Shape ApplyModifier(in TopoDS_Shape S,
+    public static Shape ApplyModifier(in Shape S,
                                              ShapeProcess_ShapeContext context,
-                                             BRepTools_Modification M,
-                                             NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> map,
+                                             Modification M,
+                                             NCollection_DataMap<Shape, Shape> map,
                                              ShapeExtend_MsgRegistrator? msg = null,
                                              bool theMutableInput = false)
     {
-        TopoDS_Shape aResult = InternalApplyModifier(S, context, M, map, msg, theMutableInput && !BRepTools.HoldsFrozen(S));
+        Shape aResult = InternalApplyModifier(S, context, M, map, msg, theMutableInput && !BrepTools.HoldsFrozen(S));
         aResult.TShape()?.FreezeGraph();
         return aResult;
     }
 
     /// <summary><see cref="ApplyModifier"/> without freezing the result, for the operators.</summary>
-    internal static TopoDS_Shape InternalApplyModifier(in TopoDS_Shape S,
+    internal static Shape InternalApplyModifier(in Shape S,
                                                        ShapeProcess_ShapeContext context,
-                                                       BRepTools_Modification M,
-                                                       NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> map,
+                                                       Modification M,
+                                                       NCollection_DataMap<Shape, Shape> map,
                                                        ShapeExtend_MsgRegistrator? msg,
                                                        bool theMutableInput)
     {
         // protect against INTERNAL/EXTERNAL shapes
-        TopoDS_Shape SF = S.Oriented(TopAbs_FORWARD);
+        Shape SF = S.Oriented(Forward);
 
         // Process COMPOUNDs separately in order to handle sharing in assemblies
-        if (SF.ShapeType() == TopAbs_COMPOUND)
+        if (SF.ShapeType() == ShapeType.Compound)
         {
             bool locModified = false;
-            var C = new TopoDS_Compound();
-            var B = new BRep_Builder();
+            var C = new Compound();
+            var B = new BrepBuilder();
             B.MakeCompound(ref C);
-            for (var it = new TopoDS_Iterator(SF); it.More(); it.Next())
+            for (var it = new Iterator(SF); it.More(); it.Next())
             {
-                TopoDS_Shape shape = it.Value();
+                Shape shape = it.Value();
                 Placement L = shape.Location(), nullLoc = new();
                 shape.Location(nullLoc);
-                TopoDS_Shape res;
+                Shape res;
                 if (map.IsBound(shape))
                 {
                     res = map.Find(shape).Oriented(shape.Orientation());
@@ -98,7 +101,7 @@ public static class ShapeProcess_OperLibrary
         }
 
         // Modify the shape
-        var MD = new BRepTools_Modifier(SF);
+        var MD = new Modifier(SF);
         MD.SetMutableInput(theMutableInput);
         MD.Perform(M);
         context.RecordModification(SF, MD, msg);
@@ -110,12 +113,12 @@ public static class ShapeProcess_OperLibrary
         => ctx.Messages() is not null ? new ShapeExtend_MsgRegistrator() : null;
 
     // The modifiers run on the context's working copy, in the mutable-input mode as OCCT's (decision 1022)
-    private static bool ApplyModification(ShapeProcess_ShapeContext ctx, BRepTools_Modification theModification,
+    private static bool ApplyModification(ShapeProcess_ShapeContext ctx, Modification theModification,
                                           ShapeExtend_MsgRegistrator? msg)
     {
-        var map = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopoDS_Shape aWork = ctx.InternalResult();
-        TopoDS_Shape res = InternalApplyModifier(aWork, ctx, theModification, map, msg, !BRepTools.HoldsFrozen(aWork));
+        var map = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        Shape aWork = ctx.InternalResult();
+        Shape res = InternalApplyModifier(aWork, ctx, theModification, map, msg, !BrepTools.HoldsFrozen(aWork));
         ctx.RecordModification(map, msg);
         ctx.SetResult(res);
         return true;
@@ -496,7 +499,7 @@ public static class ShapeProcess_OperLibrary
         }
 
         FSC.Perform();
-        TopoDS_Shape newsh = FSC.InternalShape();
+        Shape newsh = FSC.InternalShape();
 
         if (newsh != ctx.InternalResult())
         {
@@ -524,7 +527,7 @@ public static class ShapeProcess_OperLibrary
         sfwf.SetContext(reshape);
         sfwf.SetPrecision(aTol3d);
         sfwf.FixWireGaps();
-        TopoDS_Shape result = sfwf.InternalShape();
+        Shape result = sfwf.InternalShape();
 
         if (result != ctx.InternalResult())
         {
@@ -566,7 +569,7 @@ public static class ShapeProcess_OperLibrary
 
         var aReShape = new ShapeBuild_ReShape();
 
-        TopoDS_Shape aResult;
+        Shape aResult;
         if (aMerge)
         {
             aResult = FSS.InternalMerge(ctx.InternalResult(), aReShape);
@@ -696,7 +699,7 @@ public static class ShapeProcess_OperLibrary
                 return false;
             }
 
-            TopoDS_Shape result0 = sfs.InternalShape();
+            Shape result0 = sfs.InternalShape();
             if (result0 != ctx.InternalResult() || (msg is not null && !msg.MapShape().IsEmpty()))
             {
                 ctx.RecordModification(sfs.Context()!, msg);
@@ -711,7 +714,7 @@ public static class ShapeProcess_OperLibrary
             return false;
         }
 
-        TopoDS_Shape result = sfs.InternalShape();
+        Shape result = sfs.InternalShape();
         if ((result != ctx.InternalResult()) || (msg is not null && !msg.MapShape().IsEmpty()))
         {
             ctx.RecordModification(sfs.Context()!, msg);
@@ -766,7 +769,7 @@ public static class ShapeProcess_OperLibrary
         SCV.SetMsgRegistrator(msg);
 
         SCV.Perform();
-        TopoDS_Shape newsh = SCV.InternalShape();
+        Shape newsh = SCV.InternalShape();
 
         if (newsh != ctx.InternalResult())
         {

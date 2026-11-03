@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using System.Diagnostics;
 using Xunit.Abstractions;
 using static Occt.ShapeExtend_Status;
@@ -35,7 +36,7 @@ public class ShapeFixWireframeOracleTests(ITestOutputHelper output)
     private static void Compare(ShapeFixOracleRun theRun, N.TopoDS_Shape theShape, string theWhat, Fix theFix, double thePrecision,
                                 double theMaxTol = -1.0, double theLimitAngle = -1.0)
     {
-        if (theRun.Read(theShape) is not (N.TopoDS_Shape aNS, TopoDS_Shape aPS))
+        if (theRun.Read(theShape) is not (N.TopoDS_Shape aNS, Shape aPS))
         {
             return;
         }
@@ -66,7 +67,7 @@ public class ShapeFixWireframeOracleTests(ITestOutputHelper output)
             aNErr = ShapeFixOracleRun.ErrorOf(e);
         }
 
-        TopoDS_Shape? aPRes = null;
+        Shape? aPRes = null;
         string? aPErr = null;
         string aPStatus = "";
         try

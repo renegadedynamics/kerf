@@ -5,7 +5,9 @@
 
 #nullable disable warnings
 
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -22,7 +24,7 @@ public class STEPCAFControl_ActorWrite : STEPControl_ActorWrite
     /// <summary>
     /// Check whether shape S is assembly Returns True if shape is registered in assemblies map
     /// </summary>
-    public override bool IsAssembly(StepData_StepModel theModel, ref TopoDS_Shape S)
+    public override bool IsAssembly(StepData_StepModel theModel, ref Shape S)
     {
         if (myStdMode)
         {
@@ -51,14 +53,14 @@ public class STEPCAFControl_ActorWrite : STEPControl_ActorWrite
     }
 
     /// <summary>Registers shape to be written as assembly The shape should be TopoDS_Compound (else does nothing)</summary>
-    public void RegisterAssembly(TopoDS_Shape S)
+    public void RegisterAssembly(Shape S)
     {
-        if (!myStdMode && S.ShapeType() == TopAbs_COMPOUND)
+        if (!myStdMode && S.ShapeType() == ShapeType.Compound)
         {
             myMap.Add(S);
         }
     }
 
     private bool myStdMode;
-    private readonly NCollection_Map<TopoDS_Shape> myMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_Map<Shape> myMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
 }

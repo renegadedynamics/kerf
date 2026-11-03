@@ -5,10 +5,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -32,11 +35,11 @@ namespace Occt;
 /// </remarks>
 public sealed class LocOpe_Generator
 {
-    private TopoDS_Shape myShape = new();
+    private Shape myShape = new();
     private LocOpe_GeneratedShape? myGen;
     private bool myDone;
-    private TopoDS_Shape myRes = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myModShapes = new(TopTools_ShapeMapHasher.Instance);
+    private Shape myRes = new();
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> myModShapes = new(ShapeHasher.Instance);
     private LocOpe_WorkingShapes myWork = new();
     private bool myOwnsWork = true;
     // the generated shape answers for its own shapes (a caller's), not the working copies
@@ -49,7 +52,7 @@ public sealed class LocOpe_Generator
     }
 
     /// <summary>Creates the algorithm on the shape <paramref name="S"/>.</summary>
-    public LocOpe_Generator(in TopoDS_Shape S)
+    public LocOpe_Generator(in Shape S)
     {
         myShape = S;
         myDone = false;
@@ -59,7 +62,7 @@ public sealed class LocOpe_Generator
     /// For LocOpe_Gluer: the algorithm on its working shape, sharing its working shapes (it ends them), with a generated
     /// shape built on working shapes.
     /// </summary>
-    internal LocOpe_Generator(in TopoDS_Shape S, LocOpe_WorkingShapes theWork)
+    internal LocOpe_Generator(in Shape S, LocOpe_WorkingShapes theWork)
     {
         myWork = theWork;
         myOwnsWork = false;
@@ -69,7 +72,7 @@ public sealed class LocOpe_Generator
     }
 
     /// <summary>Initializes the algorithm on the shape <paramref name="S"/>.</summary>
-    public void Init(in TopoDS_Shape S)
+    public void Init(in Shape S)
     {
         myShape = S;
         myDone = false;
@@ -78,10 +81,10 @@ public sealed class LocOpe_Generator
     public bool IsDone() => myDone;
 
     /// <summary>Returns the new shape (frozen).</summary>
-    public TopoDS_Shape ResultingShape() => LocOpe_WorkingShapes.Published(InternalResultingShape());
+    public Shape ResultingShape() => LocOpe_WorkingShapes.Published(InternalResultingShape());
 
     /// <summary><see cref="ResultingShape"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shape InternalResultingShape()
+    internal Shape InternalResultingShape()
     {
         if (!myDone)
         {
@@ -91,29 +94,29 @@ public sealed class LocOpe_Generator
     }
 
     /// <summary>Returns the initial shape (the caller's).</summary>
-    public TopoDS_Shape Shape() => myWork.Original(myShape);
+    public Shape Shape() => myWork.Original(myShape);
 
     // The generated shape's answers, as working shapes
-    private NCollection_List<TopoDS_Shape> GeneratingEdges(LocOpe_GeneratedShape G) => WorkingList(G.GeneratingEdges());
+    private NCollection_List<Shape> GeneratingEdges(LocOpe_GeneratedShape G) => WorkingList(G.GeneratingEdges());
 
-    private TopoDS_Edge Generated(LocOpe_GeneratedShape G, in TopoDS_Vertex V) =>
-        TopoDS.Edge(myWork.Working(G.Generated(TopoDS.Vertex(GOriginal(V)))));
+    private Edge Generated(LocOpe_GeneratedShape G, in Vertex V) =>
+        ShapeCasts.Edge(myWork.Working(G.Generated(ShapeCasts.Vertex(GOriginal(V)))));
 
-    private TopoDS_Face Generated(LocOpe_GeneratedShape G, in TopoDS_Edge E) =>
-        TopoDS.Face(myWork.Working(G.Generated(TopoDS.Edge(GOriginal(E)))));
+    private Face Generated(LocOpe_GeneratedShape G, in Edge E) =>
+        ShapeCasts.Face(myWork.Working(G.Generated(ShapeCasts.Edge(GOriginal(E)))));
 
-    private NCollection_List<TopoDS_Shape> OrientedFaces(LocOpe_GeneratedShape G) => WorkingList(G.OrientedFaces());
+    private NCollection_List<Shape> OrientedFaces(LocOpe_GeneratedShape G) => WorkingList(G.OrientedFaces());
 
-    private TopoDS_Shape GOriginal(in TopoDS_Shape theShape) => myMapsG ? myWork.Original(theShape) : theShape;
+    private Shape GOriginal(in Shape theShape) => myMapsG ? myWork.Original(theShape) : theShape;
 
-    private NCollection_List<TopoDS_Shape> WorkingList(NCollection_List<TopoDS_Shape> theList)
+    private NCollection_List<Shape> WorkingList(NCollection_List<Shape> theList)
     {
         if (!myMapsG)
         {
             return theList;
         }
-        var aList = new NCollection_List<TopoDS_Shape>();
-        for (NCollection_List<TopoDS_Shape>.Iterator anIt = new(theList); anIt.More(); anIt.Next())
+        var aList = new NCollection_List<Shape>();
+        for (NCollection_List<Shape>.Iterator anIt = new(theList); anIt.More(); anIt.Next())
         {
             aList.Append(myWork.Working(anIt.Value()));
         }
@@ -126,7 +129,7 @@ public sealed class LocOpe_Generator
     /// </summary>
     public void Perform(LocOpe_GeneratedShape G)
     {
-        if (myShape.IsNull())
+        if (myShape.IsNull)
         {
             throw new NullObjectException();
         }
@@ -141,14 +144,14 @@ public sealed class LocOpe_Generator
             return;
         }
 
-        var aShapes = new List<TopoDS_Shape> { myRes };
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anItem in myModShapes)
+        var aShapes = new List<Shape> { myRes };
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> anItem in myModShapes)
         {
             aShapes.AddRange(anItem.Value);
         }
         myWork.Finish(aShapes);
         myRes = myWork.Final(myRes);
-        foreach (TopoDS_Shape aKey in myModShapes.Keys.ToList())
+        foreach (Shape aKey in myModShapes.Keys.ToList())
         {
             myModShapes[aKey] = myWork.Final(myModShapes[aKey]);
         }
@@ -157,7 +160,7 @@ public sealed class LocOpe_Generator
     // Perform on the working shapes
     internal void InternalPerform(LocOpe_GeneratedShape G)
     {
-        if (myShape.IsNull())
+        if (myShape.IsNull)
         {
             throw new NullObjectException();
         }
@@ -166,43 +169,43 @@ public sealed class LocOpe_Generator
         myModShapes.Clear();
         myGen = G;
 
-        NCollection_List<TopoDS_Shape> ledges = GeneratingEdges(G);
+        NCollection_List<Shape> ledges = GeneratingEdges(G);
 
         // On genere une liste des faces a gauche du wire. Equivalent du LeftOf.
         // Attention : il faudra bien propager pour ne pas oublier des faces
         // a l`interieur
 
-        TopExp_Explorer exp = new(), exp2 = new(), exp3 = new();
-        NCollection_Map<TopoDS_Shape> theLeft = new(TopTools_ShapeMapHasher.Instance); // Faces a gauche
+        Explorer exp = new(), exp2 = new(), exp3 = new();
+        NCollection_Map<Shape> theLeft = new(ShapeHasher.Instance); // Faces a gauche
 
         // Edges et vertex generateurs; OCCT iterates GEdg keyed by the edges' addresses, the port in their order
-        NCollection_IndexedMap<TopoDS_Shape> GEdg = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_Map<TopoDS_Shape> GVtx = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> GEdg = new(ShapeHasher.Instance);
+        NCollection_Map<Shape> GVtx = new(ShapeHasher.Instance);
 
-        NCollection_List<TopoDS_Shape>.Iterator itl = new(), itl2 = new();
+        NCollection_List<Shape>.Iterator itl = new(), itl2 = new();
 
         for (itl.Initialize(ledges); itl.More(); itl.Next())
         {
-            TopoDS_Edge edg = TopoDS.Edge(itl.Value());
+            Edge edg = ShapeCasts.Edge(itl.Value());
 
             GEdg.Add(edg);
-            for (exp2.Init(edg, TopAbs_VERTEX); exp2.More(); exp2.Next())
+            for (exp2.Init(edg, ShapeType.Vertex); exp2.More(); exp2.Next())
             {
-                TopoDS_Vertex vtx = TopoDS.Vertex(exp2.Current());
+                Vertex vtx = ShapeCasts.Vertex(exp2.Current());
                 if (!GVtx.Contains(vtx))
                 {
                     GVtx.Add(vtx);
                 }
             }
-            for (exp2.Init(myShape, TopAbs_FACE); exp2.More(); exp2.Next())
+            for (exp2.Init(myShape, ShapeType.Face); exp2.More(); exp2.Next())
             {
-                TopoDS_Face fac = TopoDS.Face(exp2.Current());
-                for (exp3.Init(fac, TopAbs_EDGE); exp3.More(); exp3.Next())
+                Face fac = ShapeCasts.Face(exp2.Current());
+                for (exp3.Init(fac, ShapeType.Edge); exp3.More(); exp3.Next())
                 {
                     if (exp3.Current().IsSame(edg) && exp3.Current().Orientation() == edg.Orientation())
                     {
                         theLeft.Add(fac);
-                        NCollection_List<TopoDS_Shape> emptylist = new();
+                        NCollection_List<Shape> emptylist = new();
                         if (!myModShapes.IsBound(fac))
                         {
                             myModShapes.Bind(fac, emptylist);
@@ -217,18 +220,18 @@ public sealed class LocOpe_Generator
             }
         }
 
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEFMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(myShape, TopAbs_EDGE, TopAbs_FACE, theEFMap);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theEFMap = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(myShape, ShapeType.Edge, ShapeType.Face, theEFMap);
 
         // OCCT iterates these maps keyed by the shapes' addresses; the port in insertion order
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEEMap = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theFFMap = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_Map<TopoDS_Shape> toRemove = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> theEEMap = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> theFFMap = new(ShapeHasher.Instance);
+        NCollection_Map<Shape> toRemove = new(ShapeHasher.Instance);
 
         // search for face fusions
         for (int itm = 1; itm <= GEdg.Extent(); itm++)
         {
-            TopoDS_Edge edg = TopoDS.Edge(GEdg[itm]);
+            Edge edg = ShapeCasts.Edge(GEdg[itm]);
             if (!theEFMap.Contains(edg))
             {
                 continue;
@@ -245,13 +248,13 @@ public sealed class LocOpe_Generator
             }
             else
             {
-                TopoDS_Face fac = TopoDS.Face(itl2.Value());
-                TopoDS_Face facbis = Generated(G, edg);
+                Face fac = ShapeCasts.Face(itl2.Value());
+                Face facbis = Generated(G, edg);
                 if (ToFuse(fac, facbis))
                 {
                     // On recherche si une face a deja fusionne avec facbis
                     bool facbisfound = false;
-                    foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> itf in theFFMap)
+                    foreach (KeyValuePair<Shape, NCollection_List<Shape>> itf in theFFMap)
                     {
                         if (itf.Key.IsSame(fac))
                         {
@@ -278,7 +281,7 @@ public sealed class LocOpe_Generator
                     {
                         if (!theFFMap.IsBound(fac))
                         {
-                            NCollection_List<TopoDS_Shape> thelist = new();
+                            NCollection_List<Shape> thelist = new();
                             theFFMap.Bind(fac, thelist);
                         }
                         for (itl.Initialize(theFFMap[fac]); itl.More(); itl.Next())
@@ -306,13 +309,13 @@ public sealed class LocOpe_Generator
         // Il faut ici ajouter dans toRemove les edges de connexites entre faces
         // a fusionner avec une meme face de base
 
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> itf in theFFMap)
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> itf in theFFMap)
         {
             for (itl.Initialize(itf.Value); itl.More(); itl.Next())
             {
-                for (exp.Init(itl.Value(), TopAbs_EDGE); exp.More(); exp.Next())
+                for (exp.Init(itl.Value(), ShapeType.Edge); exp.More(); exp.Next())
                 {
-                    TopoDS_Edge ed = TopoDS.Edge(exp.Current());
+                    Edge ed = ShapeCasts.Edge(exp.Current());
                     if (toRemove.Contains(ed))
                     {
                         continue;
@@ -321,7 +324,7 @@ public sealed class LocOpe_Generator
                     {
                         if (!itl2.Value().IsSame(itl.Value()))
                         {
-                            for (exp2.Init(itl2.Value(), TopAbs_EDGE); exp2.More(); exp2.Next())
+                            for (exp2.Init(itl2.Value(), ShapeType.Edge); exp2.More(); exp2.Next())
                             {
                                 if (ed.IsSame(exp2.Current()))
                                 {
@@ -339,81 +342,81 @@ public sealed class LocOpe_Generator
             }
         }
 
-        NCollection_List<TopoDS_Shape> RebuildFace = new();
-        NCollection_Map<TopoDS_Shape> mapTreated = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> DontFuse = new(TopTools_ShapeMapHasher.Instance);
-        TopAbs_Orientation orient, orface;
+        NCollection_List<Shape> RebuildFace = new();
+        NCollection_Map<Shape> mapTreated = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, Shape> DontFuse = new(ShapeHasher.Instance);
+        Orientation orient, orface;
 
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> itf in theFFMap)
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> itf in theFFMap)
         {
-            TopoDS_Face fac = TopoDS.Face(itf.Key);
-            for (exp.Init(fac, TopAbs_EDGE); exp.More(); exp.Next())
+            Face fac = ShapeCasts.Face(itf.Key);
+            for (exp.Init(fac, ShapeType.Edge); exp.More(); exp.Next())
             {
-                TopoDS_Edge edg = TopoDS.Edge(exp.Current());
+                Edge edg = ShapeCasts.Edge(exp.Current());
                 if (mapTreated.Contains(edg))
                 {
                     continue; // on saute l`edge
                 }
 
                 mapTreated.Add(edg);
-                for (exp2.Init(edg, TopAbs_VERTEX); exp2.More(); exp2.Next())
+                for (exp2.Init(edg, ShapeType.Vertex); exp2.More(); exp2.Next())
                 {
-                    TopoDS_Vertex vtx = TopoDS.Vertex(exp2.Current());
+                    Vertex vtx = ShapeCasts.Vertex(exp2.Current());
                     if (GVtx.Contains(vtx))
                     {
-                        TopoDS_Edge edgbis = Generated(G, vtx);
+                        Edge edgbis = Generated(G, vtx);
 
-                        if ((edgbis.IsNull() || BRep_Tool.Degenerated(edgbis)) ||
+                        if ((edgbis.IsNull || Tool.Degenerated(edgbis)) ||
                             //	      toRemove.Contains(edgbis) ||
                             !ToFuse(edg, edgbis))
                         {
                             continue;
                         }
                         // a voir
-                        if (BRepTools.IsReallyClosed(edg, fac))
+                        if (BrepTools.IsReallyClosed(edg, fac))
                         {
                             if (!theEEMap.IsBound(edg))
                             {
-                                NCollection_List<TopoDS_Shape> thelist1 = new();
+                                NCollection_List<Shape> thelist1 = new();
                                 theEEMap.Bind(edg, thelist1);
                                 theEEMap[edg].Append(edgbis);
                                 toRemove.Add(edgbis); // toujours vrai pour edge double
                                 bool FuseEdge = true;
-                                TopExp.Vertices(edg, out TopoDS_Vertex Vf, out TopoDS_Vertex Vl);
+                                Exploration.Vertices(edg, out Vertex Vf, out Vertex Vl);
                                 bool ConnectLast = (Vl.IsSame(vtx));
-                                for (exp3.Init(fac.Oriented(TopAbs_FORWARD), TopAbs_EDGE); exp3.More(); exp3.Next())
+                                for (exp3.Init(fac.Oriented(Forward), ShapeType.Edge); exp3.More(); exp3.Next())
                                 {
-                                    TopoDS_Edge eee = TopoDS.Edge(exp3.Current());
+                                    Edge eee = ShapeCasts.Edge(exp3.Current());
                                     orient = eee.Orientation();
                                     if (!eee.IsSame(edg))
                                     {
-                                        TopExp.Vertices(eee, out Vf, out Vl);
+                                        Exploration.Vertices(eee, out Vf, out Vl);
                                         if ((Vf.IsSame(vtx) || Vl.IsSame(vtx)) && !toRemove.Contains(eee))
                                         {
                                             FuseEdge = false;
                                             // On recherche celui qu`il ne faut pas fusionner
 
-                                            if ((Vf.IsSame(vtx) && orient == TopAbs_FORWARD)
-                                                || (Vl.IsSame(vtx) && orient == TopAbs_REVERSED))
+                                            if ((Vf.IsSame(vtx) && orient == Forward)
+                                                || (Vl.IsSame(vtx) && orient == Reversed))
                                             {
                                                 if (ConnectLast)
                                                 {
-                                                    DontFuse.Bind(edg, fac.Oriented(TopAbs_FORWARD));
+                                                    DontFuse.Bind(edg, fac.Oriented(Forward));
                                                 }
                                                 else
                                                 {
-                                                    DontFuse.Bind(edg, fac.Oriented(TopAbs_REVERSED));
+                                                    DontFuse.Bind(edg, fac.Oriented(Reversed));
                                                 }
                                             }
                                             else
                                             {
                                                 if (ConnectLast)
                                                 {
-                                                    DontFuse.Bind(edg, fac.Oriented(TopAbs_REVERSED));
+                                                    DontFuse.Bind(edg, fac.Oriented(Reversed));
                                                 }
                                                 else
                                                 {
-                                                    DontFuse.Bind(edg, fac.Oriented(TopAbs_FORWARD));
+                                                    DontFuse.Bind(edg, fac.Oriented(Forward));
                                                 }
                                             }
                                             break;
@@ -434,12 +437,12 @@ public sealed class LocOpe_Generator
                             */
                             if (!theEEMap.IsBound(edg))
                             {
-                                NCollection_List<TopoDS_Shape> thelist2 = new();
+                                NCollection_List<Shape> thelist2 = new();
                                 theEEMap.Bind(edg, thelist2);
                             }
                             theEEMap[edg].Append(edgbis);
-                            NCollection_List<TopoDS_Shape> L = theEEMap[edg];
-                            NCollection_List<TopoDS_Shape>.Iterator Lit = new(L);
+                            NCollection_List<Shape> L = theEEMap[edg];
+                            NCollection_List<Shape>.Iterator Lit = new(L);
                             bool OK = true;
                             for (; Lit.More(); Lit.Next())
                             {
@@ -468,7 +471,7 @@ public sealed class LocOpe_Generator
                                     {
                                         if (theFFMap.IsBound(itl.Value()))
                                         {
-                                            FuseEdge = ToFuse(edg, TopoDS.Face(itl.Value()), vtx, toRemove);
+                                            FuseEdge = ToFuse(edg, ShapeCasts.Face(itl.Value()), vtx, toRemove);
                                             // edge a fusionner
                                             if (FuseEdge)
                                             {
@@ -505,41 +508,41 @@ public sealed class LocOpe_Generator
 
         for (itl.Initialize(RebuildFace); itl.More(); itl.Next())
         {
-            NCollection_List<TopoDS_Shape> thelist3 = new();
+            NCollection_List<Shape> thelist3 = new();
             theFFMap.Bind(itl.Value(), thelist3);
         }
 
-        BRep_Builder B = new();
-        TopoDS_Face newface;
-        TopoDS_Edge newedg;
-        TopoDS_Vertex newvtx = new();
+        BrepBuilder B = new();
+        Face newface;
+        Edge newedg;
+        Vertex newvtx = new();
         Placement loc;
         double tol = 0.0, prm = 0.0, f, l, Uminc = 0.0, Umaxc = 0.0;
         Point2D pf, pl;
 
-        Geom_Surface S;
-        Geom_Plane? P;
-        Geom_Curve C = null!;
+        Surface S;
+        PlaneSurface? P;
+        Curve3D C = null!;
 
         // Fusion des edges
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> ite in theEEMap)
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> ite in theEEMap)
         {
             bool KeepNewEdge = false;
-            TopoDS_Edge edg = TopoDS.Edge(ite.Key);
-            BRep_Tool.Range(edg, out f, out l);
-            TopoDS_Shape aLocalEdge = edg.EmptyCopied();
-            newedg = TopoDS.Edge(aLocalEdge);
-            newedg.Orientation(TopAbs_FORWARD);
-            for (exp.Init(edg.Oriented(TopAbs_FORWARD), TopAbs_VERTEX); exp.More(); exp.Next())
+            Edge edg = ShapeCasts.Edge(ite.Key);
+            Tool.Range(edg, out f, out l);
+            Shape aLocalEdge = edg.EmptyCopied();
+            newedg = ShapeCasts.Edge(aLocalEdge);
+            newedg.Orientation(Forward);
+            for (exp.Init(edg.Oriented(Forward), ShapeType.Vertex); exp.More(); exp.Next())
             {
-                TopoDS_Vertex vtx = TopoDS.Vertex(exp.Current());
-                prm = BRep_Tool.Parameter(vtx, edg);
+                Vertex vtx = ShapeCasts.Vertex(exp.Current());
+                prm = Tool.Parameter(vtx, edg);
 
                 newvtx.Nullify();
                 for (itl.Initialize(theEEMap[edg]); itl.More(); itl.Next())
                 {
-                    TopoDS_Edge edgbis = TopoDS.Edge(itl.Value());
-                    for (exp2.Init(edgbis, TopAbs_VERTEX); exp2.More(); exp2.Next())
+                    Edge edgbis = ShapeCasts.Edge(itl.Value());
+                    for (exp2.Init(edgbis, ShapeType.Vertex); exp2.More(); exp2.Next())
                     {
                         if (exp2.Current().IsSame(vtx))
                         {
@@ -552,7 +555,7 @@ public sealed class LocOpe_Generator
                         {
                             if (!exp2.Current().IsSame(vtx))
                             {
-                                newvtx = TopoDS.Vertex(exp2.Current());
+                                newvtx = ShapeCasts.Vertex(exp2.Current());
                                 prm = NewParameter(edg, vtx, newedg, newvtx);
                                 break;
                             }
@@ -564,7 +567,7 @@ public sealed class LocOpe_Generator
                 if (toRemove.Contains(vtx) || (prm < l && prm > f))
                 {
                     B.Add(newedg, newvtx.Oriented(vtx.Orientation()));
-                    tol = BRep_Tool.Tolerance(newvtx);
+                    tol = Tool.Tolerance(newvtx);
                     B.UpdateVertex(newvtx, prm, newedg, tol);
                     toRemove.Add(itl.Value()); // i-e edgbis
                     KeepNewEdge = true;
@@ -572,13 +575,13 @@ public sealed class LocOpe_Generator
                 else
                 {
                     B.Add(newedg, vtx.Oriented(vtx.Orientation()));
-                    tol = BRep_Tool.Tolerance(vtx);
+                    tol = Tool.Tolerance(vtx);
                     B.UpdateVertex(vtx, prm, newedg, tol);
                 }
             }
             if (KeepNewEdge)
             {
-                NCollection_List<TopoDS_Shape> emptylist = new();
+                NCollection_List<Shape> emptylist = new();
                 if (!myModShapes.IsBound(edg))
                 {
                     myModShapes.Bind(edg, emptylist);
@@ -588,18 +591,18 @@ public sealed class LocOpe_Generator
             }
         }
 
-        NCollection_Map<TopoDS_Shape> EdgAdded = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> EdgAdded = new(ShapeHasher.Instance);
 
         // Fusion des faces, ou reconstruction
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> itf in theFFMap)
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> itf in theFFMap)
         {
-            TopoDS_Face fac = TopoDS.Face(itf.Key);
+            Face fac = ShapeCasts.Face(itf.Key);
             bool ModFace = false;
-            NCollection_List<TopoDS_Shape> listofedg = new();
+            NCollection_List<Shape> listofedg = new();
 
             EdgAdded.Clear();
 
-            for (exp.Init(myShape, TopAbs_FACE); exp.More(); exp.Next())
+            for (exp.Init(myShape, ShapeType.Face); exp.More(); exp.Next())
             {
                 if (exp.Current().IsSame(fac))
                 {
@@ -607,22 +610,22 @@ public sealed class LocOpe_Generator
                 }
             }
             orface = exp.Current().Orientation();
-            TopoDS_Shape aLocalFaceEmptyCopied = fac.EmptyCopied();
-            newface = TopoDS.Face(aLocalFaceEmptyCopied);
-            newface.Orientation(TopAbs_FORWARD);
-            S = BRep_Tool.Surface(fac)!;
-            if (S.GetType() == typeof(Geom_RectangularTrimmedSurface))
+            Shape aLocalFaceEmptyCopied = fac.EmptyCopied();
+            newface = ShapeCasts.Face(aLocalFaceEmptyCopied);
+            newface.Orientation(Forward);
+            S = Tool.Surface(fac)!;
+            if (S.GetType() == typeof(TrimmedSurface))
             {
-                S = ((Geom_RectangularTrimmedSurface)S).BasisSurface();
+                S = ((TrimmedSurface)S).BasisSurface();
             }
-            P = S as Geom_Plane;
-            TopoDS_Wire wir;
-            for (exp.Init(fac.Oriented(TopAbs_FORWARD), TopAbs_WIRE); exp.More(); exp.Next())
+            P = S as PlaneSurface;
+            Wire wir;
+            for (exp.Init(fac.Oriented(Forward), ShapeType.Wire); exp.More(); exp.Next())
             {
-                wir = TopoDS.Wire(exp.Current());
-                for (exp2.Init(wir, TopAbs_EDGE); exp2.More(); exp2.Next())
+                wir = ShapeCasts.Wire(exp.Current());
+                for (exp2.Init(wir, ShapeType.Edge); exp2.More(); exp2.Next())
                 {
-                    TopoDS_Edge edg = TopoDS.Edge(exp2.Current());
+                    Edge edg = ShapeCasts.Edge(exp2.Current());
                     if (toRemove.Contains(edg) || myModShapes.IsBound(edg))
                     {
                         break;
@@ -630,7 +633,7 @@ public sealed class LocOpe_Generator
                 }
                 if (!exp2.More())
                 { // wire non modifie
-                    for (exp2.Init(wir, TopAbs_EDGE); exp2.More(); exp2.Next())
+                    for (exp2.Init(wir, ShapeType.Edge); exp2.More(); exp2.Next())
                     {
                         listofedg.Append(exp2.Current());
                     }
@@ -642,7 +645,7 @@ public sealed class LocOpe_Generator
                         // Petit truc crad pour les p-curves sur les cylindres...
                         if (P is null)
                         {
-                            BRepTools.UVBounds(fac, out Uminc, out Umaxc, out _, out _);
+                            BrepTools.UVBounds(fac, out Uminc, out Umaxc, out _, out _);
                         }
 
                         // premier passage : on met les wires non touches des faces
@@ -650,8 +653,8 @@ public sealed class LocOpe_Generator
 
                         for (itl.Initialize(itf.Value); itl.More(); itl.Next())
                         {
-                            TopoDS_Face facbis = TopoDS.Face(itl.Value());
-                            NCollection_List<TopoDS_Shape> aGFaces = OrientedFaces(G);
+                            Face facbis = ShapeCasts.Face(itl.Value());
+                            NCollection_List<Shape> aGFaces = OrientedFaces(G);
                             for (itl2.Initialize(aGFaces); itl2.More(); itl2.Next())
                             {
                                 if (itl2.Value().IsSame(facbis))
@@ -666,7 +669,7 @@ public sealed class LocOpe_Generator
                             }
                             else
                             { // on fusionne avec une autre face du shape...
-                                for (exp2.Init(myShape, TopAbs_FACE); exp2.More(); exp2.Next())
+                                for (exp2.Init(myShape, ShapeType.Face); exp2.More(); exp2.Next())
                                 {
                                     if (exp2.Current().IsSame(facbis))
                                     {
@@ -676,9 +679,9 @@ public sealed class LocOpe_Generator
                                 }
                             }
 
-                            for (exp3.Init(facbis, TopAbs_WIRE); exp3.More(); exp3.Next())
+                            for (exp3.Init(facbis, ShapeType.Wire); exp3.More(); exp3.Next())
                             {
-                                for (exp2.Init(exp3.Current(), TopAbs_EDGE); exp2.More(); exp2.Next())
+                                for (exp2.Init(exp3.Current(), ShapeType.Edge); exp2.More(); exp2.Next())
                                 {
                                     if (toRemove.Contains(exp2.Current()))
                                     {
@@ -687,32 +690,32 @@ public sealed class LocOpe_Generator
                                 }
                                 if (!exp2.More())
                                 {
-                                    TopoDS_Wire theNew = new();
+                                    Wire theNew = new();
                                     B.MakeWire(ref theNew); // FORWARD
                                     for (exp2.ReInit(); exp2.More(); exp2.Next())
                                     {
-                                        TopoDS_Edge edg = TopoDS.Edge(exp2.Current());
+                                        Edge edg = ShapeCasts.Edge(exp2.Current());
 
-                                        orient = TopAbs.Compose(orface, edg.Orientation());
+                                        orient = global::Kerf.Engine.Topology.TopAbs.Compose(orface, edg.Orientation());
                                         listofedg.Append(edg.Oriented(orient));
                                         EdgAdded.Add(edg);
                                         if (P is null)
                                         {
                                             // on met les courbes 2d si on n`est pas sur un plan
                                             // on ne devrait pas avoir de pb d`edge de couture.
-                                            tol = BRep_Tool.Tolerance(edg);
-                                            C = BRep_Tool.Curve(edg, out loc, out f, out l)!;
+                                            tol = Tool.Tolerance(edg);
+                                            C = Tool.Curve(edg, out loc, out f, out l)!;
                                             if (!loc.IsIdentity)
                                             {
-                                                Geom_Geometry GG = C.Transformed(loc.Transformation());
-                                                C = (Geom_Curve)GG;
+                                                Geometry3D GG = C.Transformed(loc.Transformation());
+                                                C = (Curve3D)GG;
                                             }
-                                            if (C.GetType() == typeof(Geom_TrimmedCurve))
+                                            if (C.GetType() == typeof(TrimmedCurve3D))
                                             {
-                                                C = ((Geom_TrimmedCurve)C).BasisCurve();
+                                                C = ((TrimmedCurve3D)C).BasisCurve();
                                             }
 
-                                            Geom2d_Curve C2d0 = Translatable(GeomProjLib.Curve2d(C, f, l, S, ref tol)!);
+                                            Curve2D C2d0 = Translatable(global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(C, f, l, S, ref tol)!);
 
                                             // Tentative de recalage dans la facette
                                             pf = C2d0.Value(f);
@@ -732,7 +735,7 @@ public sealed class LocOpe_Generator
                                                 pl = C2d0.Value(l);
                                             }
 
-                                            if (!BRepTools.IsReallyClosed(edg, facbis))
+                                            if (!BrepTools.IsReallyClosed(edg, facbis))
                                             {
                                                 B.UpdateEdge(edg, C2d0, newface, tol);
                                             }
@@ -746,11 +749,11 @@ public sealed class LocOpe_Generator
 
                     // reconstruction du wire
 
-                    Geom2d_Curve? C2d, C2d1 = null;
+                    Curve2D? C2d, C2d1 = null;
 
-                    for (exp2.Init(wir, TopAbs_EDGE); exp2.More(); exp2.Next())
+                    for (exp2.Init(wir, ShapeType.Edge); exp2.More(); exp2.Next())
                     {
-                        TopoDS_Edge edg = TopoDS.Edge(exp2.Current());
+                        Edge edg = ShapeCasts.Edge(exp2.Current());
                         orient = edg.Orientation();
                         if (!toRemove.Contains(edg) && !theEEMap.IsBound(edg))
                         {
@@ -760,33 +763,33 @@ public sealed class LocOpe_Generator
                         {
                             if (myModShapes.IsBound(edg))
                             {
-                                newedg = TopoDS.Edge(myModShapes[edg].First());
+                                newedg = ShapeCasts.Edge(myModShapes[edg].First());
                             }
                             else
                             {
                                 newedg = edg;
                             }
                             listofedg.Append(newedg.Oriented(orient));
-                            C = BRep_Tool.Curve(newedg, out loc, out f, out l)!;
+                            C = Tool.Curve(newedg, out loc, out f, out l)!;
                             if (!loc.IsIdentity)
                             {
-                                Geom_Geometry GG = C.Transformed(loc.Transformation());
-                                C = (Geom_Curve)GG;
+                                Geometry3D GG = C.Transformed(loc.Transformation());
+                                C = (Curve3D)GG;
                             }
-                            if (C.GetType() == typeof(Geom_TrimmedCurve))
+                            if (C.GetType() == typeof(TrimmedCurve3D))
                             {
-                                C = ((Geom_TrimmedCurve)C).BasisCurve();
+                                C = ((TrimmedCurve3D)C).BasisCurve();
                             }
                             if (P is null)
                             { // on met les courbes 2d si on n`est pas
                                 // sur un plan
-                                TopAbs_Orientation oredonfafw = orient;
-                                tol = BRep_Tool.Tolerance(newedg);
-                                TopoDS_Shape aLocalEdge = edg.Oriented(oredonfafw);
-                                TopoDS_Shape aLocalFace = fac.Oriented(TopAbs_FORWARD);
-                                C2d = BRep_Tool.CurveOnSurface(TopoDS.Edge(aLocalEdge), TopoDS.Face(aLocalFace), out f, out l);
+                                Orientation oredonfafw = orient;
+                                tol = Tool.Tolerance(newedg);
+                                Shape aLocalEdge = edg.Oriented(oredonfafw);
+                                Shape aLocalFace = fac.Oriented(Forward);
+                                C2d = Tool.CurveOnSurface(ShapeCasts.Edge(aLocalEdge), ShapeCasts.Face(aLocalFace), out f, out l);
 
-                                if (!BRepTools.IsReallyClosed(edg, fac))
+                                if (!BrepTools.IsReallyClosed(edg, fac))
                                 {
                                     B.UpdateEdge(newedg, C2d, newface, tol);
                                 }
@@ -796,7 +799,7 @@ public sealed class LocOpe_Generator
                                 }
                                 else
                                 {
-                                    if (orient == TopAbs_FORWARD)
+                                    if (orient == Forward)
                                     {
                                         B.UpdateEdge(newedg, C2d, C2d1, newface, tol);
                                     }
@@ -809,7 +812,7 @@ public sealed class LocOpe_Generator
                             bool AddPart = false;
                             if (DontFuse.IsBound(edg))
                             {
-                                if (!BRepTools.IsReallyClosed(edg, fac))
+                                if (!BrepTools.IsReallyClosed(edg, fac))
                                 {
                                     if (DontFuse[edg].IsSame(fac))
                                     {
@@ -834,7 +837,7 @@ public sealed class LocOpe_Generator
                                     }
                                     else
                                     {
-                                        if (orient == TopAbs.Reverse(DontFuse[edg].Orientation()))
+                                        if (orient == global::Kerf.Engine.Topology.TopAbs.Reverse(DontFuse[edg].Orientation()))
                                         {
                                             AddPart = true;
                                         }
@@ -851,8 +854,8 @@ public sealed class LocOpe_Generator
                                     {
                                         continue;
                                     }
-                                    TopoDS_Edge edgbis = TopoDS.Edge(itl2.Value());
-                                    TopoDS_Iterator it1 = new(newedg), it2 = new();
+                                    Edge edgbis = ShapeCasts.Edge(itl2.Value());
+                                    Iterator it1 = new(newedg), it2 = new();
                                     for (; it1.More(); it1.Next())
                                     {
                                         for (it2.Initialize(edgbis); it2.More(); it2.Next())
@@ -870,20 +873,20 @@ public sealed class LocOpe_Generator
 
                                     if (it1.More())
                                     {
-                                        double prmvt = BRep_Tool.Parameter(TopoDS.Vertex(it1.Value()), newedg);
+                                        double prmvt = Tool.Parameter(ShapeCasts.Vertex(it1.Value()), newedg);
                                         C.D1(prmvt, out Point3D ptbid, out dir1);
 
-                                        C = BRep_Tool.Curve(edgbis, out loc, out f, out l)!;
+                                        C = Tool.Curve(edgbis, out loc, out f, out l)!;
                                         if (!loc.IsIdentity)
                                         {
-                                            Geom_Geometry GG = C.Transformed(loc.Transformation());
-                                            C = (Geom_Curve)GG;
+                                            Geometry3D GG = C.Transformed(loc.Transformation());
+                                            C = (Curve3D)GG;
                                         }
-                                        if (C.GetType() == typeof(Geom_TrimmedCurve))
+                                        if (C.GetType() == typeof(TrimmedCurve3D))
                                         {
-                                            C = ((Geom_TrimmedCurve)C).BasisCurve();
+                                            C = ((TrimmedCurve3D)C).BasisCurve();
                                         }
-                                        prmvt = BRep_Tool.Parameter(TopoDS.Vertex(it1.Value()), edgbis);
+                                        prmvt = Tool.Parameter(ShapeCasts.Vertex(it1.Value()), edgbis);
                                         C.D1(prmvt, out ptbid, out dir2);
                                     }
                                     else
@@ -893,7 +896,7 @@ public sealed class LocOpe_Generator
                                     EdgAdded.Add(edgbis);
                                     if (dir1.Dot(dir2) < 0.0)
                                     {
-                                        listofedg.Append(edgbis.Oriented(TopAbs.Reverse(orient)));
+                                        listofedg.Append(edgbis.Oriented(global::Kerf.Engine.Topology.TopAbs.Reverse(orient)));
                                     }
                                     else
                                     {
@@ -904,30 +907,30 @@ public sealed class LocOpe_Generator
                                     {
                                         // on met les courbes 2d si on n`est pas sur un plan
                                         // C est la courbe de edgbis, f et l s`y rapportent
-                                        Geom2d_Curve PTC = Translatable(GeomProjLib.Curve2d(C, f, l, S, ref tol)!);
-                                        if (S.IsUPeriodic())
+                                        Curve2D PTC = Translatable(global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(C, f, l, S, ref tol)!);
+                                        if (S.IsUPeriodic)
                                         {
                                             double Uref;
                                             if (DontFuse.IsBound(edg))
                                             {
-                                                TopAbs_Orientation oredge = DontFuse[edg].Orientation();
+                                                Orientation oredge = DontFuse[edg].Orientation();
                                                 if (myModShapes.IsBound(edg))
                                                 { // edge raccourci...
-                                                    TopoDS_Shape aLocalShape = edg.Oriented(oredge);
-                                                    TopoDS_Shape aLocalFace = fac.Oriented(TopAbs_FORWARD);
-                                                    BRep_Tool.UVPoints(TopoDS.Edge(aLocalShape), TopoDS.Face(aLocalFace), out pf, out pl);
+                                                    Shape aLocalShape = edg.Oriented(oredge);
+                                                    Shape aLocalFace = fac.Oriented(Forward);
+                                                    Tool.UVPoints(ShapeCasts.Edge(aLocalShape), ShapeCasts.Face(aLocalFace), out pf, out pl);
                                                 }
                                                 else
                                                 {
-                                                    TopoDS_Shape aLocalShape = edg.Oriented(TopAbs.Reverse(oredge));
-                                                    TopoDS_Shape aLocalFace = fac.Oriented(TopAbs_FORWARD);
-                                                    BRep_Tool.UVPoints(TopoDS.Edge(aLocalShape), TopoDS.Face(aLocalFace), out pf, out pl);
+                                                    Shape aLocalShape = edg.Oriented(global::Kerf.Engine.Topology.TopAbs.Reverse(oredge));
+                                                    Shape aLocalFace = fac.Oriented(Forward);
+                                                    Tool.UVPoints(ShapeCasts.Edge(aLocalShape), ShapeCasts.Face(aLocalFace), out pf, out pl);
                                                 }
                                                 Uref = pf.X();
                                             }
                                             else
                                             {
-                                                BRep_Tool.UVPoints(edg, fac, out pf, out pl);
+                                                Tool.UVPoints(edg, fac, out pf, out pl);
                                                 Uref = pf.X();
                                             }
 
@@ -953,9 +956,9 @@ public sealed class LocOpe_Generator
                     bool includeinw = false;
                     for (itl.Initialize(itf.Value); itl.More(); itl.Next())
                     {
-                        TopoDS_Face facbis = TopoDS.Face(itl.Value());
+                        Face facbis = ShapeCasts.Face(itl.Value());
                         bool genface = true;
-                        NCollection_List<TopoDS_Shape> aGFaces = OrientedFaces(G);
+                        NCollection_List<Shape> aGFaces = OrientedFaces(G);
                         for (itl2.Initialize(aGFaces); itl2.More(); itl2.Next())
                         {
                             if (itl2.Value().IsSame(facbis))
@@ -971,7 +974,7 @@ public sealed class LocOpe_Generator
                         else
                         { // on fusionne avec une autre face du shape...
                             genface = false;
-                            for (exp2.Init(myShape, TopAbs_FACE); exp2.More(); exp2.Next())
+                            for (exp2.Init(myShape, ShapeType.Face); exp2.More(); exp2.Next())
                             {
                                 if (exp2.Current().IsSame(facbis))
                                 {
@@ -981,9 +984,9 @@ public sealed class LocOpe_Generator
                             }
                         }
 
-                        for (exp3.Init(facbis, TopAbs_WIRE); exp3.More(); exp3.Next())
+                        for (exp3.Init(facbis, ShapeType.Wire); exp3.More(); exp3.Next())
                         {
-                            for (exp2.Init(exp3.Current(), TopAbs_EDGE); exp2.More(); exp2.Next())
+                            for (exp2.Init(exp3.Current(), ShapeType.Edge); exp2.More(); exp2.Next())
                             {
                                 if (toRemove.Contains(exp2.Current()))
                                 {
@@ -1005,9 +1008,9 @@ public sealed class LocOpe_Generator
                                         {
                                             continue;
                                         }
-                                        TopExp.Vertices(TopoDS.Edge(exp2.Current()), out TopoDS_Vertex VF, out TopoDS_Vertex VL);
-                                        TopExp_Explorer exp4 = new();
-                                        for (exp4.Init(wir, TopAbs_VERTEX); exp4.More(); exp4.Next())
+                                        Exploration.Vertices(ShapeCasts.Edge(exp2.Current()), out Vertex VF, out Vertex VL);
+                                        Explorer exp4 = new();
+                                        for (exp4.Init(wir, ShapeType.Vertex); exp4.More(); exp4.Next())
                                         {
                                             if (exp4.Current().IsSame(VF) || exp4.Current().IsSame(VL))
                                             {
@@ -1031,29 +1034,29 @@ public sealed class LocOpe_Generator
 
                             for (exp2.ReInit(); exp2.More(); exp2.Next())
                             {
-                                TopoDS_Edge edg = TopoDS.Edge(exp2.Current());
+                                Edge edg = ShapeCasts.Edge(exp2.Current());
                                 if (!toRemove.Contains(edg) && !EdgAdded.Contains(edg))
                                 {
-                                    orient = TopAbs.Compose(orface, edg.Orientation());
+                                    orient = global::Kerf.Engine.Topology.TopAbs.Compose(orface, edg.Orientation());
                                     listofedg.Append(edg.Oriented(orient));
                                     EdgAdded.Add(edg);
                                     if (P is null)
                                     {
                                         // on met les courbes 2d si on n`est pas sur un plan
                                         // on ne devrait pas avoir de pb d`edge de couture.
-                                        tol = BRep_Tool.Tolerance(edg);
-                                        C = BRep_Tool.Curve(edg, out loc, out f, out l)!;
+                                        tol = Tool.Tolerance(edg);
+                                        C = Tool.Curve(edg, out loc, out f, out l)!;
                                         if (!loc.IsIdentity)
                                         {
-                                            Geom_Geometry GG = C.Transformed(loc.Transformation());
-                                            C = (Geom_Curve)GG;
+                                            Geometry3D GG = C.Transformed(loc.Transformation());
+                                            C = (Curve3D)GG;
                                         }
-                                        if (C.GetType() == typeof(Geom_TrimmedCurve))
+                                        if (C.GetType() == typeof(TrimmedCurve3D))
                                         {
-                                            C = ((Geom_TrimmedCurve)C).BasisCurve();
+                                            C = ((TrimmedCurve3D)C).BasisCurve();
                                         }
 
-                                        C2d = Translatable(GeomProjLib.Curve2d(C, f, l, S, ref tol)!);
+                                        C2d = Translatable(global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(C, f, l, S, ref tol)!);
 
                                         // Tentative de recalage dans la facette
                                         pf = C2d.Value(f);
@@ -1073,7 +1076,7 @@ public sealed class LocOpe_Generator
                                             pl = C2d.Value(l);
                                         }
 
-                                        if (!BRepTools.IsReallyClosed(edg, facbis))
+                                        if (!BrepTools.IsReallyClosed(edg, facbis))
                                         {
                                             B.UpdateEdge(edg, C2d, newface, tol);
                                         }
@@ -1091,12 +1094,12 @@ public sealed class LocOpe_Generator
                 L.AddConstEdges(listofedg);
                 L.Perform();
                 L.WiresToFaces();
-                NCollection_List<TopoDS_Shape> listoffaces = L.NewFaces();
+                NCollection_List<Shape> listoffaces = L.NewFaces();
                 toRemove.Add(fac);
-                myModShapes.Bind(fac, new NCollection_List<TopoDS_Shape>(listoffaces));
+                myModShapes.Bind(fac, new NCollection_List<Shape>(listoffaces));
                 for (itl.Initialize(itf.Value); itl.More(); itl.Next())
                 {
-                    myModShapes.Bind(itl.Value(), new NCollection_List<TopoDS_Shape>(listoffaces));
+                    myModShapes.Bind(itl.Value(), new NCollection_List<Shape>(listoffaces));
                 }
             }
         }
@@ -1107,12 +1110,12 @@ public sealed class LocOpe_Generator
         // Debug temporaire. Il faudra prevoir un syntaxe de BuildShape
         // qui impose une ori de certaines faces.
 
-        TopoDS_Face FaceRefOri = new();
+        Face FaceRefOri = new();
 
-        NCollection_List<TopoDS_Shape> lfres = new();
-        for (exp.Init(myShape, TopAbs_FACE); exp.More(); exp.Next())
+        NCollection_List<Shape> lfres = new();
+        for (exp.Init(myShape, ShapeType.Face); exp.More(); exp.Next())
         {
-            TopoDS_Face fac = TopoDS.Face(exp.Current());
+            Face fac = ShapeCasts.Face(exp.Current());
             if (!theLeft.Contains(fac))
             {
                 if (!toRemove.Contains(exp.Current()))
@@ -1120,11 +1123,11 @@ public sealed class LocOpe_Generator
                     lfres.Append(fac);
                     if (!myModShapes.IsBound(fac))
                     {
-                        NCollection_List<TopoDS_Shape> emptylist = new();
+                        NCollection_List<Shape> emptylist = new();
                         myModShapes.Bind(fac, emptylist);
                     }
                     myModShapes[fac].Append(fac);
-                    if (FaceRefOri.IsNull())
+                    if (FaceRefOri.IsNull)
                     {
                         FaceRefOri = fac;
                     }
@@ -1136,16 +1139,16 @@ public sealed class LocOpe_Generator
             }
         }
 
-        TopAbs_Orientation orsolid = myShape.Orientation();
+        Orientation orsolid = myShape.Orientation();
         for (itl.Initialize(OrientedFaces(G)); itl.More(); itl.Next())
         {
-            TopoDS_Face fac = TopoDS.Face(itl.Value());
+            Face fac = ShapeCasts.Face(itl.Value());
             if (toRemove.Contains(fac))
             {
                 continue;
             }
 
-            if (orsolid == TopAbs_FORWARD)
+            if (orsolid == Forward)
             {
                 lfres.Append(fac);
             }
@@ -1155,7 +1158,7 @@ public sealed class LocOpe_Generator
             }
             if (!myModShapes.IsBound(fac))
             {
-                NCollection_List<TopoDS_Shape> emptylist = new();
+                NCollection_List<Shape> emptylist = new();
                 myModShapes.Bind(fac, emptylist);
             }
             myModShapes[fac].Append(fac);
@@ -1164,9 +1167,9 @@ public sealed class LocOpe_Generator
         LocOpe_BuildShape BS = new(lfres);
         myRes = BS.InternalShape();
         // Suite debug du 06.11.96
-        if (myRes.ShapeType() == TopAbs_SOLID)
+        if (myRes.ShapeType() == ShapeType.Solid)
         {
-            for (exp.Init(myRes, TopAbs_FACE); exp.More(); exp.Next())
+            for (exp.Init(myRes, ShapeType.Face); exp.More(); exp.Next())
             {
                 if (exp.Current().IsSame(FaceRefOri))
                 {
@@ -1176,9 +1179,9 @@ public sealed class LocOpe_Generator
             if (exp.More() && exp.Current().Orientation() != FaceRefOri.Orientation())
             {
                 // Si un seul Shell, on change son orientation
-                TopoDS_Solid NewSol = new();
+                Solid NewSol = new();
                 B.MakeSolid(ref NewSol);
-                exp.Init(myRes, TopAbs_SHELL);
+                exp.Init(myRes, ShapeType.Shell);
                 B.Add(NewSol, exp.Current().Reversed());
                 myRes.Nullify();
                 myRes = NewSol;
@@ -1194,13 +1197,13 @@ public sealed class LocOpe_Generator
     /// Returns the descendant faces of <paramref name="F"/> (frozen). <paramref name="F"/> may belong to the original
     /// shape or to the "generated" shape. The list may hold a null face (when <paramref name="F"/> disappears).
     /// </summary>
-    public NCollection_List<TopoDS_Shape> DescendantFace(in TopoDS_Face F) =>
+    public NCollection_List<Shape> DescendantFace(in Face F) =>
         LocOpe_WorkingShapes.Published(InternalDescendantFace(F));
 
     /// <summary>
     /// <see cref="DescendantFace"/> without freezing, for ported code (of the caller's face or of its working copy).
     /// </summary>
-    internal NCollection_List<TopoDS_Shape> InternalDescendantFace(in TopoDS_Face F)
+    internal NCollection_List<Shape> InternalDescendantFace(in Face F)
     {
         if (!myDone)
         {
@@ -1210,12 +1213,12 @@ public sealed class LocOpe_Generator
     }
 
     // OCCT.NET: OCCT translates the projected pcurve in place; a frozen one (shared) is translated on a copy
-    private static Geom2d_Curve Translatable(Geom2d_Curve theCurve) =>
-        theCurve.IsFrozen ? (Geom2d_Curve)theCurve.Copy() : theCurve;
+    private static Curve2D Translatable(Curve2D theCurve) =>
+        theCurve.IsFrozen ? (Curve2D)theCurve.Copy() : theCurve;
 
-    private static bool ToFuse(in TopoDS_Face F1, in TopoDS_Face F2)
+    private static bool ToFuse(in Face F1, in Face F2)
     {
-        if (F1.IsNull() || F2.IsNull())
+        if (F1.IsNull || F2.IsNull)
         {
             return false;
         }
@@ -1223,17 +1226,17 @@ public sealed class LocOpe_Generator
         double tollin = global::Kerf.Engine.Foundation.Precision.Confusion();
         double tolang = global::Kerf.Engine.Foundation.Precision.Angular();
 
-        Geom_Surface S1 = BRep_Tool.Surface(F1, out Placement loc1)!;
-        Geom_Surface S2 = BRep_Tool.Surface(F2, out Placement loc2)!;
+        Surface S1 = Tool.Surface(F1, out Placement loc1)!;
+        Surface S2 = Tool.Surface(F2, out Placement loc2)!;
 
-        if (S1.GetType() == typeof(Geom_RectangularTrimmedSurface))
+        if (S1.GetType() == typeof(TrimmedSurface))
         {
-            S1 = ((Geom_RectangularTrimmedSurface)S1).BasisSurface();
+            S1 = ((TrimmedSurface)S1).BasisSurface();
         }
 
-        if (S2.GetType() == typeof(Geom_RectangularTrimmedSurface))
+        if (S2.GetType() == typeof(TrimmedSurface))
         {
-            S2 = ((Geom_RectangularTrimmedSurface)S2).BasisSurface();
+            S2 = ((TrimmedSurface)S2).BasisSurface();
         }
 
         if (S1.GetType() != S2.GetType())
@@ -1242,10 +1245,10 @@ public sealed class LocOpe_Generator
         }
 
         bool ValRet = false;
-        if (S1.GetType() == typeof(Geom_Plane))
+        if (S1.GetType() == typeof(PlaneSurface))
         {
-            Plane3D pl1 = ((Geom_Plane)S1).Pln();
-            Plane3D pl2 = ((Geom_Plane)S2).Pln();
+            Plane3D pl1 = ((PlaneSurface)S1).Pln();
+            Plane3D pl2 = ((PlaneSurface)S2).Pln();
 
             pl1.Transform(loc1.Transformation());
             pl2.Transform(loc2.Transformation());
@@ -1259,9 +1262,9 @@ public sealed class LocOpe_Generator
         return ValRet;
     }
 
-    private static bool ToFuse(in TopoDS_Edge E1, in TopoDS_Edge E2)
+    private static bool ToFuse(in Edge E1, in Edge E2)
     {
-        if (E1.IsNull() || E2.IsNull())
+        if (E1.IsNull || E2.IsNull)
         {
             return false;
         }
@@ -1269,27 +1272,27 @@ public sealed class LocOpe_Generator
         double tollin = global::Kerf.Engine.Foundation.Precision.Confusion();
         double tolang = global::Kerf.Engine.Foundation.Precision.Angular();
 
-        Geom_Curve C1 = BRep_Tool.Curve(E1, out Placement loc1, out _, out _)!;
+        Curve3D C1 = Tool.Curve(E1, out Placement loc1, out _, out _)!;
         if (!loc1.IsIdentity)
         {
-            Geom_Geometry CC1 = C1.Transformed(loc1.Transformation());
-            C1 = (Geom_Curve)CC1;
+            Geometry3D CC1 = C1.Transformed(loc1.Transformation());
+            C1 = (Curve3D)CC1;
         }
 
-        Geom_Curve C2 = BRep_Tool.Curve(E2, out Placement loc2, out _, out _)!;
+        Curve3D C2 = Tool.Curve(E2, out Placement loc2, out _, out _)!;
         if (!loc2.IsIdentity)
         {
-            Geom_Geometry CC2 = C2.Transformed(loc2.Transformation());
-            C2 = (Geom_Curve)CC2;
+            Geometry3D CC2 = C2.Transformed(loc2.Transformation());
+            C2 = (Curve3D)CC2;
         }
 
-        if (C1.GetType() == typeof(Geom_TrimmedCurve))
+        if (C1.GetType() == typeof(TrimmedCurve3D))
         {
-            C1 = ((Geom_TrimmedCurve)C1).BasisCurve();
+            C1 = ((TrimmedCurve3D)C1).BasisCurve();
         }
-        if (C2.GetType() == typeof(Geom_TrimmedCurve))
+        if (C2.GetType() == typeof(TrimmedCurve3D))
         {
-            C2 = ((Geom_TrimmedCurve)C2).BasisCurve();
+            C2 = ((TrimmedCurve3D)C2).BasisCurve();
         }
 
         if (C1.GetType() != C2.GetType())
@@ -1298,10 +1301,10 @@ public sealed class LocOpe_Generator
         }
 
         bool ValRet = false;
-        if (C1.GetType() == typeof(Geom_Line))
+        if (C1.GetType() == typeof(LineCurve3D))
         {
-            Line3D li1 = ((Geom_Line)C1).Lin();
-            Line3D li2 = ((Geom_Line)C2).Lin();
+            Line3D li1 = ((LineCurve3D)C1).Lin();
+            Line3D li2 = ((LineCurve3D)C2).Lin();
 
             if (li1.Position().IsCoaxial(li2.Position(), tolang, tollin))
             {
@@ -1312,15 +1315,15 @@ public sealed class LocOpe_Generator
         return ValRet;
     }
 
-    private static bool ToFuse(in TopoDS_Edge E, in TopoDS_Face F, in TopoDS_Vertex V, NCollection_Map<TopoDS_Shape> toRemove)
+    private static bool ToFuse(in Edge E, in Face F, in Vertex V, NCollection_Map<Shape> toRemove)
     {
-        TopExp_Explorer exp = new();
-        for (exp.Init(F, TopAbs_EDGE); exp.More(); exp.Next())
+        Explorer exp = new();
+        for (exp.Init(F, ShapeType.Edge); exp.More(); exp.Next())
         {
-            TopoDS_Edge eee = TopoDS.Edge(exp.Current());
+            Edge eee = ShapeCasts.Edge(exp.Current());
             if (!eee.IsSame(E))
             {
-                TopExp.Vertices(eee, out TopoDS_Vertex Vf, out TopoDS_Vertex Vl);
+                Exploration.Vertices(eee, out Vertex Vf, out Vertex Vl);
                 if ((Vf.IsSame(V) || Vl.IsSame(V)) && !toRemove.Contains(eee))
                 {
                     return false;
@@ -1330,34 +1333,34 @@ public sealed class LocOpe_Generator
         return true;
     }
 
-    private static double NewParameter(in TopoDS_Edge Edg, in TopoDS_Vertex Vtx, in TopoDS_Edge NewEdg, in TopoDS_Vertex NewVtx)
+    private static double NewParameter(in Edge Edg, in Vertex Vtx, in Edge NewEdg, in Vertex NewVtx)
     {
-        Point3D P = BRep_Tool.Pnt(NewVtx);
+        Point3D P = Tool.Pnt(NewVtx);
 
-        Geom_Curve C = BRep_Tool.Curve(Edg, out Placement loc, out _, out _)!;
+        Curve3D C = Tool.Curve(Edg, out Placement loc, out _, out _)!;
         if (!loc.IsIdentity)
         {
-            Geom_Geometry GG = C.Transformed(loc.Transformation());
-            C = (Geom_Curve)GG;
+            Geometry3D GG = C.Transformed(loc.Transformation());
+            C = (Curve3D)GG;
         }
-        if (C.GetType() == typeof(Geom_TrimmedCurve))
+        if (C.GetType() == typeof(TrimmedCurve3D))
         {
-            C = ((Geom_TrimmedCurve)C).BasisCurve();
+            C = ((TrimmedCurve3D)C).BasisCurve();
         }
 
-        if (C.GetType() == typeof(Geom_Line))
+        if (C.GetType() == typeof(LineCurve3D))
         {
-            return global::Kerf.Engine.Geometry.ElCLib.Parameter(((Geom_Line)C).Lin(), P);
+            return global::Kerf.Engine.Geometry.ElCLib.Parameter(((LineCurve3D)C).Lin(), P);
         }
-        else if (C.GetType() == typeof(Geom_Circle))
+        else if (C.GetType() == typeof(CircleCurve3D))
         {
-            double prm = global::Kerf.Engine.Geometry.ElCLib.Parameter(((Geom_Circle)C).Circ(), P);
+            double prm = global::Kerf.Engine.Geometry.ElCLib.Parameter(((CircleCurve3D)C).Circ(), P);
             // Vtx vient d`une exploration de Edg orientee FORWARD
 
-            TopAbs_Orientation orient = TopAbs.Reverse(Vtx.Orientation());
-            if (orient == TopAbs_FORWARD || orient == TopAbs_REVERSED)
+            Orientation orient = global::Kerf.Engine.Topology.TopAbs.Reverse(Vtx.Orientation());
+            if (orient == Forward || orient == Reversed)
             {
-                TopExp_Explorer exp = new(NewEdg.Oriented(TopAbs_FORWARD), TopAbs_VERTEX);
+                Explorer exp = new(NewEdg.Oriented(Forward), ShapeType.Vertex);
                 for (; exp.More(); exp.Next())
                 {
                     if (exp.Current().Orientation() == orient)
@@ -1367,10 +1370,10 @@ public sealed class LocOpe_Generator
                 }
                 if (exp.More())
                 {
-                    double prmmax = BRep_Tool.Parameter(TopoDS.Vertex(exp.Current()), NewEdg);
+                    double prmmax = Tool.Parameter(ShapeCasts.Vertex(exp.Current()), NewEdg);
                     if (Math.Abs(prmmax - prm) <= Epsilon(2.0 * Math.PI))
                     {
-                        if (orient == TopAbs_REVERSED)
+                        if (orient == Reversed)
                         {
                             prm -= 2.0 * Math.PI;
                         }

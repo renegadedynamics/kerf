@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Kerf.Geometry.SurfaceKind;
@@ -26,8 +28,8 @@ public static class IntPatch_SpecialPoints
     /// <summary>The function whose zero is an intersection point lying on a seam (isoline) of the quadric.</summary>
     private sealed class FuncPreciseSeam : FunctionSetWithDerivatives
     {
-        private readonly Adaptor3d_Surface myQSurf;
-        private readonly Adaptor3d_Surface myPSurf;
+        private readonly SurfaceAdaptorBase myQSurf;
+        private readonly SurfaceAdaptorBase myPSurf;
 
         // 1 for U-coordinate, 0 - for V one.
         private readonly int mySeamCoordInd;
@@ -35,7 +37,7 @@ public static class IntPatch_SpecialPoints
         // Constant parameter of iso-line
         private readonly double myIsoParameter;
 
-        public FuncPreciseSeam(Adaptor3d_Surface theQSurf, Adaptor3d_Surface thePSurf, bool isTheUSeam,
+        public FuncPreciseSeam(SurfaceAdaptorBase theQSurf, SurfaceAdaptorBase thePSurf, bool isTheUSeam,
                                double theIsoParameter)
         {
             myQSurf = theQSurf;
@@ -129,7 +131,7 @@ public static class IntPatch_SpecialPoints
 
     // Checks if thePt is in theSurf (with given tolerance). Returns the foot of projection (theProjPt) and its
     // parameters on theSurf.
-    private static bool IsPointOnSurface(Adaptor3d_Surface theSurf, in Point3D thePt, double theTol,
+    private static bool IsPointOnSurface(SurfaceAdaptorBase theSurf, in Point3D thePt, double theTol,
                                          ref Point3D theProjPt, ref double theUpar, ref double theVpar)
     {
         bool aRetVal = false;
@@ -144,9 +146,9 @@ public static class IntPatch_SpecialPoints
             case SurfaceOfExtrusion:
             case SurfaceOfRevolution:
             {
-                Extrema_ExtPS anExtr = new(thePt, theSurf, theSurf.UResolution(theTol), theSurf.VResolution(theTol),
-                                           Extrema_ExtFlag.Extrema_ExtFlag_MIN);
-                if (!anExtr.IsDone() || (anExtr.NbExt() < 1))
+                ExtPS anExtr = new(thePt, theSurf, theSurf.UResolution(theTol), theSurf.VResolution(theTol),
+                                           ExtFlag.ExtFlag_MIN);
+                if (!anExtr.IsDone || (anExtr.ExtCount < 1))
                 {
                     aRetVal = false;
                 }
@@ -154,7 +156,7 @@ public static class IntPatch_SpecialPoints
                 {
                     int anExtrIndex = 1;
                     double aSqDistMin = anExtr.SquareDistance(anExtrIndex);
-                    for (int i = anExtrIndex + 1; i <= anExtr.NbExt(); i++)
+                    for (int i = anExtrIndex + 1; i <= anExtr.ExtCount; i++)
                     {
                         double aSqD = anExtr.SquareDistance(i);
                         if (aSqD < aSqDistMin)
@@ -179,9 +181,9 @@ public static class IntPatch_SpecialPoints
             break;
             default:
             {
-                Extrema_GenLocateExtPS anExtr = new(theSurf);
+                GenLocateExtPS anExtr = new(theSurf);
                 anExtr.Perform(thePt, theUpar, theVpar);
-                if (!anExtr.IsDone() || (anExtr.SquareDistance() > theTol * theTol))
+                if (!anExtr.IsDone || (anExtr.SquareDistance() > theTol * theTol))
                 {
                     aRetVal = false;
                 }
@@ -203,7 +205,7 @@ public static class IntPatch_SpecialPoints
     /// <paramref name="thePSurf"/>, adjusted to <paramref name="theRefPt"/>'s periods. If
     /// <paramref name="theIsReversed"/>, theQSurf is the second surface of the point.
     /// </summary>
-    public static bool AddCrossUVIsoPoint(Adaptor3d_Surface theQSurf, Adaptor3d_Surface thePSurf,
+    public static bool AddCrossUVIsoPoint(SurfaceAdaptorBase theQSurf, SurfaceAdaptorBase thePSurf,
                                           in IntSurf_PntOn2S theRefPt, double theTol,
                                           ref IntSurf_PntOn2S theAddedPoint, bool theIsReversed = false)
     {
@@ -226,10 +228,10 @@ public static class IntPatch_SpecialPoints
 
         theQSurf.D0(aUquad, aVquad, out Point3D aPQuad);
 
-        Extrema_GenLocateExtPS anExtr = new(thePSurf);
+        GenLocateExtPS anExtr = new(thePSurf);
         anExtr.Perform(aPQuad, aU0, aV0);
 
-        if (!anExtr.IsDone())
+        if (!anExtr.IsDone)
         {
             return false;
         }
@@ -262,7 +264,7 @@ public static class IntPatch_SpecialPoints
     /// <paramref name="thePSurf"/>. The vectors hold the U and V parameters on thePSurf, then the free parameter on
     /// theQSurf.
     /// </summary>
-    public static bool AddPointOnUorVIso(Adaptor3d_Surface theQSurf, Adaptor3d_Surface thePSurf,
+    public static bool AddPointOnUorVIso(SurfaceAdaptorBase theQSurf, SurfaceAdaptorBase thePSurf,
                                          in IntSurf_PntOn2S theRefPt, bool theIsU, double theIsoParameter,
                                          math_Vector theToler, math_Vector theInitPoint, math_Vector theInfBound,
                                          math_Vector theSupBound, ref IntSurf_PntOn2S theAddedPoint,
@@ -542,7 +544,7 @@ public static class IntPatch_SpecialPoints
     /// initialized (it may be updated). If <paramref name="theIsReqRefCheck"/>, the vertex must be the pole. Throws
     /// Standard_TypeMismatch for other quadrics.
     /// </summary>
-    public static bool AddSingularPole(Adaptor3d_Surface theQSurf, Adaptor3d_Surface thePSurf,
+    public static bool AddSingularPole(SurfaceAdaptorBase theQSurf, SurfaceAdaptorBase thePSurf,
                                        in IntSurf_PntOn2S thePtIso, ref IntPatch_Point theVertex,
                                        ref IntSurf_PntOn2S theAddedPoint, bool theIsReversed = false,
                                        bool theIsReqRefCheck = false)
@@ -679,7 +681,7 @@ public static class IntPatch_SpecialPoints
     /// After a special point added to a line: the point (<paramref name="theNewPoint"/>, in and out) with which the
     /// line continues or a new line starts, adjusted to <paramref name="theRefPt"/>.
     /// </summary>
-    public static bool ContinueAfterSpecialPoint(Adaptor3d_Surface theQSurf, Adaptor3d_Surface thePSurf,
+    public static bool ContinueAfterSpecialPoint(SurfaceAdaptorBase theQSurf, SurfaceAdaptorBase thePSurf,
                                                  in IntSurf_PntOn2S theRefPt, IntPatch_SpecPntType theSPType,
                                                  double theTol2D, ref IntSurf_PntOn2S theNewPoint,
                                                  bool theIsReversed = false)
@@ -733,10 +735,10 @@ public static class IntPatch_SpecialPoints
 
         double aPeriod = (theSPType == IntPatch_SPntPole) ? M_PI_2 : 2.0 * M_PI;
 
-        double aUpPeriod = thePSurf.IsUPeriodic() ? thePSurf.UPeriod() : 0.0;
-        double aUqPeriod = theQSurf.IsUPeriodic() ? aPeriod : 0.0;
-        double aVpPeriod = thePSurf.IsVPeriodic() ? thePSurf.VPeriod() : 0.0;
-        double aVqPeriod = theQSurf.IsVPeriodic() ? aPeriod : 0.0;
+        double aUpPeriod = thePSurf.IsUPeriodic ? thePSurf.UPeriod() : 0.0;
+        double aUqPeriod = theQSurf.IsUPeriodic ? aPeriod : 0.0;
+        double aVpPeriod = thePSurf.IsVPeriodic ? thePSurf.VPeriod() : 0.0;
+        double aVqPeriod = theQSurf.IsVPeriodic ? aPeriod : 0.0;
 
         Span<double> anArrOfPeriod =
         [

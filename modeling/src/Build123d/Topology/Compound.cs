@@ -1,3 +1,5 @@
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
 using Occt;
 
 namespace Build123d;
@@ -16,7 +18,7 @@ public partial class Compound : Shape3D
     public Compound() : base(null) { }
 
     /// <summary>A compound wrapping an OCCT compound (or comp-solid).</summary>
-    public Compound(TopoDS_Shape compound, string label = "", Color? color = null) : base(compound, label, color) { }
+    public Compound(global::Kerf.Topology.Shape compound, string label = "", Color? color = null) : base(compound, label, color) { }
 
     /// <summary>A compound of shapes; empty shapes add nothing, so a compound of only those is empty.</summary>
     public Compound(IEnumerable<Shape> shapes, string label = "", Color? color = null)
@@ -55,7 +57,7 @@ public partial class Compound : Shape3D
         ElementsOfType<Solid>().Sum(s => s.Volume) + ElementsOfType<Shell>().Sum(s => s.Volume);
 
     /// <summary>A shell extruded into a compound of solids.</summary>
-    public static Compound Extrude(Shell obj, Vector direction) => new(TopoDS.Compound(TopoUtil.Extrude(obj.TopoShape, direction)));
+    public static Compound Extrude(Shell obj, Vector direction) => new(ShapeCasts.Compound(TopoUtil.Extrude(obj.TopoShape, direction)));
 
     // ---- Children ----
 
@@ -64,7 +66,7 @@ public partial class Compound : Shape3D
     {
         if (IsEmpty)
             yield break;
-        var it = new TopoDS_Iterator(TopoShape);
+        var it = new Iterator(TopoShape);
         for (; it.More(); it.Next())
             yield return CastLike(it.Value());
     }
@@ -91,19 +93,19 @@ public partial class Compound : Shape3D
     {
         var type = typeof(T) switch
         {
-            var t when t == typeof(Vertex) => TopAbs_ShapeEnum.TopAbs_VERTEX,
-            var t when t == typeof(Edge) => TopAbs_ShapeEnum.TopAbs_EDGE,
-            var t when t == typeof(Wire) => TopAbs_ShapeEnum.TopAbs_WIRE,
-            var t when t == typeof(Face) => TopAbs_ShapeEnum.TopAbs_FACE,
-            var t when t == typeof(Shell) => TopAbs_ShapeEnum.TopAbs_SHELL,
-            var t when t == typeof(Solid) => TopAbs_ShapeEnum.TopAbs_SOLID,
-            var t when t == typeof(Compound) => TopAbs_ShapeEnum.TopAbs_COMPOUND,
+            var t when t == typeof(Vertex) => global::Kerf.Topology.ShapeType.Vertex,
+            var t when t == typeof(Edge) => global::Kerf.Topology.ShapeType.Edge,
+            var t when t == typeof(Wire) => global::Kerf.Topology.ShapeType.Wire,
+            var t when t == typeof(Face) => global::Kerf.Topology.ShapeType.Face,
+            var t when t == typeof(Shell) => global::Kerf.Topology.ShapeType.Shell,
+            var t when t == typeof(Solid) => global::Kerf.Topology.ShapeType.Solid,
+            var t when t == typeof(Compound) => global::Kerf.Topology.ShapeType.Compound,
             _ => throw new ArgumentException($"Can't extract {typeof(T).Name}s from a compound"),
         };
         var results = new List<T>();
         foreach (var comp in Compounds())
         {
-            var it = new TopoDS_Iterator();
+            var it = new Iterator();
             it.Initialize(comp.TopoShape);
             for (; it.More(); it.Next())
             {
@@ -268,15 +270,15 @@ public partial class Compound : Shape3D
                 throw new ArgumentException("Center of GEOMETRY is not supported for this object");
             case CenterOf.Mass:
             {
-                var props = new GProp_GProps();
+                var props = new Properties();
                 switch (TopoUtil.UnwrappedShapeType(this))
                 {
-                    case TopAbs_ShapeEnum.TopAbs_VERTEX:
+                    case global::Kerf.Topology.ShapeType.Vertex:
                         throw new NotSupportedException("The centre of mass of a compound of vertices isn't defined");
-                    case TopAbs_ShapeEnum.TopAbs_EDGE or TopAbs_ShapeEnum.TopAbs_WIRE:
+                    case global::Kerf.Topology.ShapeType.Edge or global::Kerf.Topology.ShapeType.Wire:
                         BRepGProp.LinearProperties(TopoShape, props);
                         break;
-                    case TopAbs_ShapeEnum.TopAbs_FACE or TopAbs_ShapeEnum.TopAbs_SHELL:
+                    case global::Kerf.Topology.ShapeType.Face or global::Kerf.Topology.ShapeType.Shell:
                         BRepGProp.SurfaceProperties(TopoShape, props);
                         break;
                     default:
@@ -327,7 +329,7 @@ public partial class Curve : Compound
     public Curve(IEnumerable<Shape> shapes, string label = "", Color? color = null) : base(shapes, label, color) { }
 
     /// <summary>A curve wrapping an OCCT compound.</summary>
-    public Curve(TopoDS_Shape compound, string label = "", Color? color = null) : base(compound, label, color) { }
+    public Curve(global::Kerf.Topology.Shape compound, string label = "", Color? color = null) : base(compound, label, color) { }
 
     internal override int? Dim => 1;
 
@@ -359,7 +361,7 @@ public partial class Sketch : Compound
     public Sketch(IEnumerable<Shape> shapes, string label = "", Color? color = null) : base(shapes, label, color) { }
 
     /// <summary>A sketch wrapping an OCCT compound.</summary>
-    public Sketch(TopoDS_Shape compound, string label = "", Color? color = null) : base(compound, label, color) { }
+    public Sketch(global::Kerf.Topology.Shape compound, string label = "", Color? color = null) : base(compound, label, color) { }
 
     internal override int? Dim => 2;
 
@@ -376,7 +378,7 @@ public partial class Part : Compound
     public Part(IEnumerable<Shape> shapes, string label = "", Color? color = null) : base(shapes, label, color) { }
 
     /// <summary>A part wrapping an OCCT compound.</summary>
-    public Part(TopoDS_Shape compound, string label = "", Color? color = null) : base(compound, label, color) { }
+    public Part(global::Kerf.Topology.Shape compound, string label = "", Color? color = null) : base(compound, label, color) { }
 
     internal override int? Dim => 3;
 

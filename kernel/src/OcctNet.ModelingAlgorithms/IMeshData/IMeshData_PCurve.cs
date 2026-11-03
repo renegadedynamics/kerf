@@ -4,7 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -15,10 +16,10 @@ namespace Occt;
 public abstract class IMeshData_PCurve : IMeshData_ParametersList
 {
     private readonly IMeshData_Face myDFace;
-    private readonly TopAbs_Orientation myOrientation;
+    private readonly Orientation myOrientation;
 
     /// <summary>An empty pcurve on the discrete face, for the edge with the given orientation.</summary>
-    protected IMeshData_PCurve(IMeshData_Face theDFace, TopAbs_Orientation theOrientation)
+    protected IMeshData_PCurve(IMeshData_Face theDFace, Orientation theOrientation)
     {
         myDFace = theDFace;
         myOrientation = theOrientation;
@@ -40,13 +41,13 @@ public abstract class IMeshData_PCurve : IMeshData_ParametersList
     public abstract void RemovePoint(int theIndex);
 
     /// <summary>True unless the edge is reversed on the face.</summary>
-    public bool IsForward() => (myOrientation != TopAbs_REVERSED);
+    public bool IsForward() => (myOrientation != Reversed);
 
     /// <summary>True if the edge is internal to the face.</summary>
-    public bool IsInternal() => (myOrientation == TopAbs_INTERNAL);
+    public bool IsInternal() => (myOrientation == Internal);
 
     /// <summary>The orientation of the edge on the face.</summary>
-    public TopAbs_Orientation GetOrientation() => myOrientation;
+    public Orientation GetOrientation() => myOrientation;
 
     /// <summary>The discrete face of the pcurve.</summary>
     public IMeshData_Face GetFace() => myDFace;

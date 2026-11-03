@@ -6,6 +6,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Buffers.Binary;
@@ -556,7 +557,7 @@ public sealed class RWGltf_TreeReader
                 myPS?.Next();
             }
             string? aName = text(aMesh, "name");
-            var aFaces = new List<(TopoDS_Face Face, ColorWithAlpha? Color)>();
+            var aFaces = new List<(Face Face, ColorWithAlpha? Color)>();
             int aPrimIndex = 0;
             foreach (JsonElement aPrim in array(aMesh, "primitives"))
             {
@@ -569,8 +570,8 @@ public sealed class RWGltf_TreeReader
                 {
                     continue;
                 }
-                TopoDS_Face aFace = new();
-                new BRep_Builder().MakeFace(ref aFace, aTri);
+                Face aFace = new();
+                new BrepBuilder().MakeFace(ref aFace, aTri);
                 ColorWithAlpha? aColor = aPrim.TryGetProperty("material", out _) ? materialColor(index(aPrim, "material")) : null;
                 aFaces.Add((aFace, aColor));
             }
@@ -582,11 +583,11 @@ public sealed class RWGltf_TreeReader
             }
             else if (aFaces.Count > 1)
             {
-                var aBuilder = new BRep_Builder();
-                TopoDS_Compound aCompound = new();
+                var aBuilder = new BrepBuilder();
+                Compound aCompound = new();
                 aBuilder.MakeCompound(ref aCompound);
                 var aSubs = new List<XdeDoc_SubShape>();
-                foreach ((TopoDS_Face aFace, ColorWithAlpha? aColor) in aFaces)
+                foreach ((Face aFace, ColorWithAlpha? aColor) in aFaces)
                 {
                     aBuilder.Add(aCompound, aFace);
                     if (aColor is not null)

@@ -1,12 +1,18 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Xunit.Abstractions;
 
 using static Kerf.Geometry.JoinKind;
 using static Occt.MAT_Side;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -28,10 +34,10 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     private const string Bow = "1 W 1 4 0 0 S 3 -2 7 -2 10 0 L 10 10 L 0 10 L";
     private const string OpenPolyline = "1 W 0 3 0 0 L 10 0 L 10 10 -";
 
-    private static (BRepMAT2d_Explorer, BRepMAT2d_BisectingLocus, TopoDS_Face) Compute(string theFace,
+    private static (BRepMAT2d_Explorer, BRepMAT2d_BisectingLocus, Face) Compute(string theFace,
         MAT_Side theSide = MAT_Left, JoinKind theJoin = Arc, bool theOpen = false)
     {
-        TopoDS_Face aFace = MatRecordings.Face("M L 0 0 " + theFace);
+        Face aFace = MatRecordings.Face("M L 0 0 " + theFace);
         BRepMAT2d_Explorer anExplo = new(aFace);
         BRepMAT2d_BisectingLocus aLocus = new();
         aLocus.Compute(anExplo, 1, theSide, theJoin, theOpen);
@@ -107,17 +113,17 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
         }
     }
 
-    private static double DistanceTo(Geom2d_Geometry theElt, Point2D theP)
+    private static double DistanceTo(Geometry2D theElt, Point2D theP)
     {
-        if (theElt is Geom2d_CartesianPoint aPnt)
+        if (theElt is CartesianPoint2 aPnt)
         {
             return aPnt.Pnt2d().Distance(theP);
         }
-        Geom2d_Curve aC = (Geom2d_Curve)theElt;
-        Geom2dAdaptor_Curve anAd = new(aC);
-        Extrema_ExtPC2d anExt = new(theP, anAd);
+        Curve2D aC = (Curve2D)theElt;
+        CurveAdaptor2D anAd = new(aC);
+        ExtPC2d anExt = new(theP, anAd);
         double aMin = Math.Min(aC.Value(aC.FirstParameter()).Distance(theP), aC.Value(aC.LastParameter()).Distance(theP));
-        for (int i = 1; anExt.IsDone() && i <= anExt.NbExt(); i++)
+        for (int i = 1; anExt.IsDone && i <= anExt.ExtCount; i++)
         {
             aMin = Math.Min(aMin, Math.Sqrt(anExt.SquareDistance(i)));
         }
@@ -211,10 +217,10 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     [Fact]
     public void LinkTopoBilo_EveryEdgeHasItsElements()
     {
-        (BRepMAT2d_Explorer anExplo, BRepMAT2d_BisectingLocus aLocus, TopoDS_Face aFace) = Compute(LShape);
+        (BRepMAT2d_Explorer anExplo, BRepMAT2d_BisectingLocus aLocus, Face aFace) = Compute(LShape);
         BRepMAT2d_LinkTopoBilo aLink = new(anExplo, aLocus);
-        NCollection_IndexedMap<TopoDS_Shape> anEdges = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aFace, TopAbs_EDGE, anEdges);
+        NCollection_IndexedMap<Shape> anEdges = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aFace, ShapeType.Edge, anEdges);
         int aNb = 0;
         for (int k = 1; k <= anEdges.Extent(); k++)
         {
@@ -229,7 +235,7 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
         }
         // The L's reflex corner is a point element, linked to its vertex.
         Assert.Equal(aLocus.Graph().NumberOfBasicElts(), aNb + 1);
-        aLink.Init(new TopoDS_Shape());
+        aLink.Init(new Shape());
         Assert.False(aLink.More());
     }
 
@@ -245,22 +251,22 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     [Fact]
     public void FrozenFace_IsNotWritten_AndGivesTheSameLocus()
     {
-        TopoDS_Face aFace = MatRecordings.Face("M L 0 0 " + Stadium);
+        Face aFace = MatRecordings.Face("M L 0 0 " + Stadium);
         Assert.True(aFace.TShape()!.IsFrozen);
         string aBefore = Brep(aFace);
         List<string> aFirst = MatRecordings.Run("M L 0 0 " + Stadium);
         BRepMAT2d_Explorer anExplo = new(aFace);
         Assert.True(anExplo.IsModified(aFace));
-        TopoDS_Shape aNew = anExplo.ModifiedShape(aFace);
+        Shape aNew = anExplo.ModifiedShape(aFace);
         Assert.False(aNew.IsSame(aFace));
         Assert.Equal(aBefore, Brep(aFace));
         Assert.Equal(aFirst, MatRecordings.Run("M L 0 0 " + Stadium));
     }
 
-    private static string Brep(in TopoDS_Shape theS)
+    private static string Brep(in Shape theS)
     {
         StringWriter aW = new();
-        BRepTools.Write(theS, aW);
+        BrepTools.Write(theS, aW);
         return aW.ToString();
     }
 
@@ -272,7 +278,7 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     [InlineData("2 W 1 4 0 0 S 4 -2 8 2 12 0 L 12 12 L 0 12 L W 1 4 4 4 L 4 8 L 8 8 S 7 6 9 5 8 4 L")]
     public void Throws_WhereNativeCrashes(string theFace)
     {
-        TopoDS_Face aFace = MatRecordings.Face("M L 0 0 " + theFace);
+        Face aFace = MatRecordings.Face("M L 0 0 " + theFace);
         BRepMAT2d_Explorer anExplo = new(aFace);
         BRepMAT2d_BisectingLocus aLocus = new();
         Exception anE = Assert.ThrowsAny<Exception>(() => aLocus.Compute(anExplo));

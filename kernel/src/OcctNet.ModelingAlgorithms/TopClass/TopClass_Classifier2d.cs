@@ -3,11 +3,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.IntRes2d_Position;
 using static Occt.IntRes2d_Situation;
 using static Occt.IntRes2d_TypeTrans;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -41,7 +42,7 @@ internal static class TopClass_Classifier2d
     internal static void Reset(out Line2D theLin,
                                out double theParam,
                                out double theTolerance,
-                               out TopAbs_State theState,
+                               out Containment theState,
                                out bool theFirstCompare,
                                out bool theFirstTrans,
                                out int theClosest,
@@ -54,7 +55,7 @@ internal static class TopClass_Classifier2d
         theLin = theL;
         theParam = theP;
         theTolerance = theTol;
-        theState = TopAbs_UNKNOWN;
+        theState = Unknown;
         theFirstCompare = true;
         theFirstTrans = true;
         theClosest = 0;
@@ -72,13 +73,13 @@ internal static class TopClass_Classifier2d
                                                           in Line2D theLin,
                                                           ref double theParam,
                                                           double theTolerance,
-                                                          ref TopAbs_State theState,
+                                                          ref Containment theState,
                                                           ref bool theFirstCompare,
                                                           ref bool theFirstTrans,
                                                           TopTrans_CurveTransition theTrans,
                                                           ref bool theIsHeadOrEnd,
                                                           in TheEdge theEdge,
-                                                          TopAbs_Orientation theOr)
+                                                          Orientation theOr)
         where TheIntersector : IntRes2d_Intersection, ITopClass_Intersector<TheEdge>
     {
         // Intersect the edge and the segment.
@@ -109,7 +110,7 @@ internal static class TopClass_Classifier2d
             if (aPInter.TransitionOfFirst().PositionOnCurve() == IntRes2d_Head)
             {
                 theClosest = aPoint;
-                theState = TopAbs_ON;
+                theState = On;
                 return;
             }
 
@@ -131,7 +132,7 @@ internal static class TopClass_Classifier2d
             if (aPInter.TransitionOfFirst().PositionOnCurve() == IntRes2d_Head)
             {
                 theClosest = aNbPoints + aSegment + aSegment - 1;
-                theState = TopAbs_ON;
+                theState = On;
                 return;
             }
 
@@ -151,14 +152,14 @@ internal static class TopClass_Classifier2d
         }
 
         // If the edge is INTERNAL or EXTERNAL, no problem.
-        if (theOr == TopAbs_INTERNAL)
+        if (theOr == Internal)
         {
-            theState = TopAbs_IN;
+            theState = In;
             return;
         }
-        else if (theOr == TopAbs_EXTERNAL)
+        else if (theOr == External)
         {
-            theState = TopAbs_OUT;
+            theState = Out;
             return;
         }
 
@@ -185,25 +186,25 @@ internal static class TopClass_Classifier2d
             (aT2.PositionOnCurve() == IntRes2d_Head) || (aT2.PositionOnCurve() == IntRes2d_End);
 
         // Transition on the segment.
-        TopAbs_Orientation aSegTrans = TopAbs_FORWARD;
+        Orientation aSegTrans = Forward;
 
         IntRes2d_Transition aT1 = aPClosest.TransitionOfFirst();
         switch (aT1.TransitionType())
         {
             case IntRes2d_In:
-                aSegTrans = (theOr == TopAbs_REVERSED) ? TopAbs_REVERSED : TopAbs_FORWARD;
+                aSegTrans = (theOr == Reversed) ? Reversed : Forward;
                 break;
             case IntRes2d_Out:
-                aSegTrans = (theOr == TopAbs_REVERSED) ? TopAbs_FORWARD : TopAbs_REVERSED;
+                aSegTrans = (theOr == Reversed) ? Forward : Reversed;
                 break;
             case IntRes2d_Touch:
                 switch (aT1.Situation())
                 {
                     case IntRes2d_Inside:
-                        aSegTrans = (theOr == TopAbs_REVERSED) ? TopAbs_EXTERNAL : TopAbs_INTERNAL;
+                        aSegTrans = (theOr == Reversed) ? External : Internal;
                         break;
                     case IntRes2d_Outside:
-                        aSegTrans = (theOr == TopAbs_REVERSED) ? TopAbs_INTERNAL : TopAbs_EXTERNAL;
+                        aSegTrans = (theOr == Reversed) ? Internal : External;
                         break;
                     case IntRes2d_Unknown:
                         return;
@@ -220,13 +221,13 @@ internal static class TopClass_Classifier2d
             // aPClosest is inside the edge.
             switch (aSegTrans)
             {
-                case TopAbs_FORWARD:
-                case TopAbs_EXTERNAL:
-                    theState = TopAbs_OUT;
+                case Forward:
+                case External:
+                    theState = Out;
                     break;
-                case TopAbs_REVERSED:
-                case TopAbs_INTERNAL:
-                    theState = TopAbs_IN;
+                case Reversed:
+                case Internal:
+                    theState = In;
                     break;
             }
         }
@@ -246,8 +247,8 @@ internal static class TopClass_Classifier2d
                 theFirstTrans = false;
             }
 
-            TopAbs_Orientation aOrt =
-                (aT2.PositionOnCurve() == IntRes2d_Head) ? TopAbs_FORWARD : TopAbs_REVERSED;
+            Orientation aOrt =
+                (aT2.PositionOnCurve() == IntRes2d_Head) ? Forward : Reversed;
             theTrans.Compare(RealEpsilon(), aTang, aNorm, aCurv, aSegTrans, aOrt);
             theState = theTrans.StateBefore();
         }

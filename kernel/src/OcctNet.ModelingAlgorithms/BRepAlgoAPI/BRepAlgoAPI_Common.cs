@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using static Occt.BOPAlgo_Operation;
 
 namespace Occt;
@@ -25,14 +26,14 @@ public class BRepAlgoAPI_Common : BRepAlgoAPI_BooleanOperation
     }
 
     /// <summary>The common part of S1 and S2 (built at once).</summary>
-    public BRepAlgoAPI_Common(in TopoDS_Shape S1, in TopoDS_Shape S2, ProgressRange theRange = default)
+    public BRepAlgoAPI_Common(in Shape S1, in Shape S2, ProgressRange theRange = default)
         : base(S1, S2, BOPAlgo_COMMON)
     {
         Build(theRange);
     }
 
     /// <summary>The common part of S1 and S2, with the intersections already computed by <paramref name="aDSF"/> (built at once).</summary>
-    public BRepAlgoAPI_Common(in TopoDS_Shape S1, in TopoDS_Shape S2, BOPAlgo_PaveFiller aDSF, ProgressRange theRange = default)
+    public BRepAlgoAPI_Common(in Shape S1, in Shape S2, BOPAlgo_PaveFiller aDSF, ProgressRange theRange = default)
         : base(S1, S2, aDSF, BOPAlgo_COMMON)
     {
         Build(theRange);

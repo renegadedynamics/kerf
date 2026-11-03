@@ -9,8 +9,8 @@ namespace OcctNet.ModelingData.Tests;
 public class Geom2d_HyperbolaTest
 {
     // Hyperbola centered at origin, a=5, b=3
-    private readonly Geom2d_Hyperbola myHyperbola =
-        new Geom2d_Hyperbola(new Hyperbola2D(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 5.0, 3.0));
+    private readonly HyperbolaCurve2D myHyperbola =
+        new HyperbolaCurve2D(new Hyperbola2D(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 5.0, 3.0));
 
     [Fact]
     public void Radii()
@@ -22,8 +22,8 @@ public class Geom2d_HyperbolaTest
     [Fact]
     public void IsNotClosedNotPeriodic()
     {
-        Assert.False(myHyperbola.IsClosed());
-        Assert.False(myHyperbola.IsPeriodic());
+        Assert.False(myHyperbola.IsClosed);
+        Assert.False(myHyperbola.IsPeriodic);
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public class Geom2d_HyperbolaTest
     [Fact]
     public void EvalD1_AtZero()
     {
-        Geom2d_Curve.ResD1 aR = myHyperbola.EvalD1(0.0);
+        Curve2D.ResD1 aR = myHyperbola.EvalD1(0.0);
         // At U=0: dx/du = a*sinh(0) = 0, dy/du = b*cosh(0) = b = 3
         Assert.Equal(0.0, aR.D1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(3.0, aR.D1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -108,8 +108,8 @@ public class Geom2d_HyperbolaTest
     [Fact]
     public void Copy()
     {
-        Geom2d_Geometry aCopyGeom = myHyperbola.Copy();
-        Geom2d_Hyperbola? aCopy = aCopyGeom as Geom2d_Hyperbola;
+        Geometry2D aCopyGeom = myHyperbola.Copy();
+        HyperbolaCurve2D? aCopy = aCopyGeom as HyperbolaCurve2D;
         Assert.NotNull(aCopy);
         Assert.Equal(5.0, aCopy.MajorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(3.0, aCopy.MinorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());

@@ -8,8 +8,8 @@ using static Occt.HatchGen_IntersectionType;
 using static Occt.IntRes2d_Position;
 using static Occt.IntRes2d_Situation;
 using static Occt.IntRes2d_TypeTrans;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -49,13 +49,13 @@ public sealed class HatchGen_PointOnElement : HatchGen_IntersectionPoint
         switch (TrsE.PositionOnCurve())
         {
             case IntRes2d_Head:
-                myPosit = TopAbs_FORWARD;
+                myPosit = Forward;
                 break;
             case IntRes2d_Middle:
-                myPosit = TopAbs_INTERNAL;
+                myPosit = Internal;
                 break;
             case IntRes2d_End:
-                myPosit = TopAbs_REVERSED;
+                myPosit = Reversed;
                 break;
         }
 
@@ -63,16 +63,16 @@ public sealed class HatchGen_PointOnElement : HatchGen_IntersectionPoint
         {
             case IntRes2d_In:
             {
-                myBefore = TopAbs_OUT;
-                myAfter = TopAbs_IN;
-                myType = (myPosit == TopAbs_INTERNAL) ? HatchGen_TRUE : HatchGen_TOUCH;
+                myBefore = Out;
+                myAfter = In;
+                myType = (myPosit == Internal) ? HatchGen_TRUE : HatchGen_TOUCH;
                 break;
             }
             case IntRes2d_Out:
             {
-                myBefore = TopAbs_IN;
-                myAfter = TopAbs_OUT;
-                myType = (myPosit == TopAbs_INTERNAL) ? HatchGen_TRUE : HatchGen_TOUCH;
+                myBefore = In;
+                myAfter = Out;
+                myType = (myPosit == Internal) ? HatchGen_TRUE : HatchGen_TOUCH;
                 break;
             }
             //  Modified by Sergey KHROMOV - Fri Jan  5 12:07:34 2001 Begin
@@ -85,41 +85,41 @@ public sealed class HatchGen_PointOnElement : HatchGen_IntersectionPoint
                         myType = HatchGen_TANGENT;
                         switch (myPosit)
                         {
-                            case TopAbs_FORWARD:
+                            case Forward:
                             {
                                 if (TrsE.IsOpposite())
                                 {
-                                    myBefore = TopAbs_IN;
-                                    myAfter = TopAbs_OUT;
+                                    myBefore = In;
+                                    myAfter = Out;
                                 }
                                 else
                                 {
-                                    myBefore = TopAbs_OUT;
-                                    myAfter = TopAbs_IN;
+                                    myBefore = Out;
+                                    myAfter = In;
                                 }
                                 break;
                             }
-                            case TopAbs_INTERNAL:
+                            case Internal:
                             {
-                                myBefore = TopAbs_IN;
-                                myAfter = TopAbs_IN;
+                                myBefore = In;
+                                myAfter = In;
                                 break;
                             }
-                            case TopAbs_REVERSED:
+                            case Reversed:
                             {
                                 if (TrsE.IsOpposite())
                                 {
-                                    myBefore = TopAbs_OUT;
-                                    myAfter = TopAbs_IN;
+                                    myBefore = Out;
+                                    myAfter = In;
                                 }
                                 else
                                 {
-                                    myBefore = TopAbs_IN;
-                                    myAfter = TopAbs_OUT;
+                                    myBefore = In;
+                                    myAfter = Out;
                                 }
                                 break;
                             }
-                            case TopAbs_EXTERNAL:
+                            case External:
                                 break;
                         }
                         break;
@@ -129,49 +129,49 @@ public sealed class HatchGen_PointOnElement : HatchGen_IntersectionPoint
                         myType = HatchGen_TANGENT;
                         switch (myPosit)
                         {
-                            case TopAbs_FORWARD:
+                            case Forward:
                             {
                                 if (TrsE.IsOpposite())
                                 {
-                                    myBefore = TopAbs_OUT;
-                                    myAfter = TopAbs_IN;
+                                    myBefore = Out;
+                                    myAfter = In;
                                 }
                                 else
                                 {
-                                    myBefore = TopAbs_IN;
-                                    myAfter = TopAbs_OUT;
+                                    myBefore = In;
+                                    myAfter = Out;
                                 }
                                 break;
                             }
-                            case TopAbs_INTERNAL:
+                            case Internal:
                             {
-                                myBefore = TopAbs_OUT;
-                                myAfter = TopAbs_OUT;
+                                myBefore = Out;
+                                myAfter = Out;
                                 break;
                             }
-                            case TopAbs_REVERSED:
+                            case Reversed:
                             {
                                 if (TrsE.IsOpposite())
                                 {
-                                    myBefore = TopAbs_IN;
-                                    myAfter = TopAbs_OUT;
+                                    myBefore = In;
+                                    myAfter = Out;
                                 }
                                 else
                                 {
-                                    myBefore = TopAbs_OUT;
-                                    myAfter = TopAbs_IN;
+                                    myBefore = Out;
+                                    myAfter = In;
                                 }
                                 break;
                             }
-                            case TopAbs_EXTERNAL:
+                            case External:
                                 break;
                         }
                         break;
                     }
                     case IntRes2d_Unknown:
                     {
-                        myBefore = TopAbs_UNKNOWN;
-                        myAfter = TopAbs_UNKNOWN;
+                        myBefore = Unknown;
+                        myAfter = Unknown;
                         myType = HatchGen_TANGENT;
                         break;
                     }
@@ -181,8 +181,8 @@ public sealed class HatchGen_PointOnElement : HatchGen_IntersectionPoint
             //  Modified by Sergey KHROMOV - Fri Jan  5 12:07:46 2001 End
             case IntRes2d_Undecided:
             {
-                myBefore = TopAbs_UNKNOWN;
-                myAfter = TopAbs_UNKNOWN;
+                myBefore = Unknown;
+                myAfter = Unknown;
                 myType = HatchGen_UNDETERMINED;
                 break;
             }

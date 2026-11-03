@@ -5,7 +5,10 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using static Occt.IMeshData_Status;
 
@@ -215,8 +218,8 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
                 IMeshData_Edge aCurrEdge = aDWire.GetEdge(aEdgeIt);
                 IMeshData_Edge aNextEdge = aDWire.GetEdge(aNextEdgeIt);
 
-                bool isConnected = !getCommonVertex(aCurrEdge, aNextEdge).IsNull()
-                                   && !getCommonVertex(aPrevEdge, aCurrEdge).IsNull();
+                bool isConnected = !getCommonVertex(aCurrEdge, aNextEdge).IsNull
+                                   && !getCommonVertex(aPrevEdge, aCurrEdge).IsNull;
 
                 if (isConnected)
                 {
@@ -251,9 +254,9 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
     }
 
     // Returns common vertex of two edges or null ptr in case if there is no such vertex.
-    private static TopoDS_Vertex getCommonVertex(IMeshData_Edge theEdge1, IMeshData_Edge theEdge2)
+    private static Vertex getCommonVertex(IMeshData_Edge theEdge1, IMeshData_Edge theEdge2)
     {
-        TopExp.Vertices(theEdge1.GetEdge(), out TopoDS_Vertex aVertex1_1, out TopoDS_Vertex aVertex1_2);
+        Exploration.Vertices(theEdge1.GetEdge(), out Vertex aVertex1_1, out Vertex aVertex1_2);
 
         // Test bugs moddata_2 bug428.
         //   restore [locate_data_file OCC428.brep] rr
@@ -265,21 +268,21 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
 
         // This shape is invalid and can lead to exception in this code.
 
-        if (aVertex1_1.IsNull() || aVertex1_2.IsNull())
+        if (aVertex1_1.IsNull || aVertex1_2.IsNull)
         {
-            return new TopoDS_Vertex();
+            return new Vertex();
         }
 
         if (theEdge1.GetEdge().IsSame(theEdge2.GetEdge()))
         {
-            return aVertex1_1.IsSame(aVertex1_2) ? aVertex1_1 : new TopoDS_Vertex();
+            return aVertex1_1.IsSame(aVertex1_2) ? aVertex1_1 : new Vertex();
         }
 
-        TopExp.Vertices(theEdge2.GetEdge(), out TopoDS_Vertex aVertex2_1, out TopoDS_Vertex aVertex2_2);
+        Exploration.Vertices(theEdge2.GetEdge(), out Vertex aVertex2_1, out Vertex aVertex2_2);
 
-        if (aVertex2_1.IsNull() || aVertex2_2.IsNull())
+        if (aVertex2_1.IsNull || aVertex2_2.IsNull)
         {
-            return new TopoDS_Vertex();
+            return new Vertex();
         }
 
         if (isSameWithSomeOf(aVertex1_1, aVertex2_1, aVertex2_2))
@@ -291,15 +294,15 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
             return aVertex1_2;
         }
 
-        Point3D aPnt1_1 = BRep_Tool.Pnt(aVertex1_1);
-        Point3D aPnt1_2 = BRep_Tool.Pnt(aVertex1_2);
-        double aTol1_1 = BRep_Tool.Tolerance(aVertex1_1);
-        double aTol1_2 = BRep_Tool.Tolerance(aVertex1_2);
+        Point3D aPnt1_1 = Tool.Pnt(aVertex1_1);
+        Point3D aPnt1_2 = Tool.Pnt(aVertex1_2);
+        double aTol1_1 = Tool.Tolerance(aVertex1_1);
+        double aTol1_2 = Tool.Tolerance(aVertex1_2);
 
-        Point3D aPnt2_1 = BRep_Tool.Pnt(aVertex2_1);
-        Point3D aPnt2_2 = BRep_Tool.Pnt(aVertex2_2);
-        double aTol2_1 = BRep_Tool.Tolerance(aVertex2_1);
-        double aTol2_2 = BRep_Tool.Tolerance(aVertex2_2);
+        Point3D aPnt2_1 = Tool.Pnt(aVertex2_1);
+        Point3D aPnt2_2 = Tool.Pnt(aVertex2_2);
+        double aTol2_1 = Tool.Tolerance(aVertex2_1);
+        double aTol2_2 = Tool.Tolerance(aVertex2_2);
 
         if (isInToleranceWithSomeOf(aPnt1_1, aPnt2_1, aPnt2_2, aTol1_1 + Max(aTol2_1, aTol2_2)))
         {
@@ -310,7 +313,7 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
             return aVertex1_2;
         }
 
-        return new TopoDS_Vertex();
+        return new Vertex();
     }
 
     // Connects pcurves of previous and current edge on the specified face according to topological connectivity. Uses
@@ -449,9 +452,9 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
     }
 
     // Returns True if some of two vertcies is same with reference one.
-    private static bool isSameWithSomeOf(in TopoDS_Vertex theRefVertex,
-                                         in TopoDS_Vertex theVertex1,
-                                         in TopoDS_Vertex theVertex2)
+    private static bool isSameWithSomeOf(in Vertex theRefVertex,
+                                         in Vertex theVertex1,
+                                         in Vertex theVertex2)
     {
         return (theRefVertex.IsSame(theVertex1) || theRefVertex.IsSame(theVertex2));
     }

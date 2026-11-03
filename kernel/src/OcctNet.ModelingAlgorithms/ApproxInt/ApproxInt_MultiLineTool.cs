@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
+using Kerf.Engine.Approximation.Interfaces;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -12,12 +14,12 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// OCCT's generic file ApproxInt_MultiLineTool.lxx, ported once as a generic struct of static members implementing
-/// <see cref="IApprox_LineTool{MultiLine}"/> (decisions 142, 202 and 607). OCCT's instantiations
+/// <see cref="IApproxLineTool{MultiLine}"/> (decisions 142, 202 and 607). OCCT's instantiations
 /// (GeomInt_TheMultiLineToolOfWLApprox, BRepApprox_TheMultiLineToolOfApprox) are this struct over IntPatch_WLine and
 /// BRepApprox_ApproxLine: a struct can't be derived, and no caller names them.
 /// </remarks>
 /// <typeparam name="TheLine">The walking line.</typeparam>
-public readonly struct ApproxInt_MultiLineTool<TheLine> : IApprox_LineTool<ApproxInt_MultiLine<TheLine>>
+public readonly struct ApproxInt_MultiLineTool<TheLine> : IApproxLineTool<ApproxInt_MultiLine<TheLine>>
     where TheLine : class, IApproxInt_WLine<TheLine>
 {
     public static int NbP2d(ApproxInt_MultiLine<TheLine> ML) => (ML.NbP2d());
@@ -79,7 +81,7 @@ public readonly struct ApproxInt_MultiLineTool<TheLine> : IApprox_LineTool<Appro
         return false;
     }
 
-    public static Approx_Status WhatStatus(ApproxInt_MultiLine<TheLine> ML, int I1, int I2)
+    public static Status WhatStatus(ApproxInt_MultiLine<TheLine> ML, int I1, int I2)
     {
         //--  PointsAdded,
         //--  NoPointsAdded,

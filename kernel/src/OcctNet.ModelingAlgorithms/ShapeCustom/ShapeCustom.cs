@@ -4,10 +4,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -15,7 +18,7 @@ namespace Occt;
 /// Converts the geometry of shapes: B-spline and Bezier surfaces to analytical ones, indirect elementary surfaces
 /// (left-handed frames) to direct ones, elementary surfaces to surfaces of revolution, extrusions, revolutions,
 /// offsets and planes to B-splines, the degree and number of spans of B-splines, and scales shapes. Each function
-/// applies a <see cref="BRepTools_Modification"/> with <see cref="BRepTools_Modifier"/>.
+/// applies a <see cref="Modification"/> with <see cref="Modifier"/>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -28,11 +31,11 @@ namespace Occt;
 public static class ShapeCustom
 {
     // Updates the reshaper by the info of the given shape.
-    private static bool UpdateHistoryShape(in TopoDS_Shape theShape,
-                                           BRepTools_Modifier theModifier,
+    private static bool UpdateHistoryShape(in Shape theShape,
+                                           Modifier theModifier,
                                            ShapeBuild_ReShape theReShape)
     {
-        TopoDS_Shape aResult;
+        Shape aResult;
         try
         {
             // OCCT.NET: the internal accessor, so the shapes recorded aren't frozen before the whole result is built
@@ -42,10 +45,10 @@ public static class ShapeCustom
         catch (NoSuchObjectException)
         {
             // the sub shape isn't in the map
-            aResult = new TopoDS_Shape();
+            aResult = new Shape();
         }
 
-        if (!aResult.IsNull() && !theShape.IsSame(aResult))
+        if (!aResult.IsNull && !theShape.IsSame(aResult))
         {
             theReShape.Replace(theShape, aResult);
             return true;
@@ -55,13 +58,13 @@ public static class ShapeCustom
     }
 
     // Recursively updates the reshaper to add information of all sub-shapes.
-    private static void UpdateHistory(in TopoDS_Shape theShape,
-                                      BRepTools_Modifier theModifier,
+    private static void UpdateHistory(in Shape theShape,
+                                      Modifier theModifier,
                                       ShapeBuild_ReShape theReShape)
     {
-        for (var theIterator = new TopoDS_Iterator(theShape, false); theIterator.More(); theIterator.Next())
+        for (var theIterator = new Iterator(theShape, false); theIterator.More(); theIterator.Next())
         {
-            TopoDS_Shape aCurrent = theIterator.Value();
+            Shape aCurrent = theIterator.Value();
             if (UpdateHistoryShape(aCurrent, theModifier, theReShape))
             {
                 UpdateHistory(aCurrent, theModifier, theReShape);
@@ -70,8 +73,8 @@ public static class ShapeCustom
     }
 
     // Recursively updates the reshaper to add information of all sub-shapes.
-    private static void UpdateShapeBuild(in TopoDS_Shape theShape,
-                                         BRepTools_Modifier theModifier,
+    private static void UpdateShapeBuild(in Shape theShape,
+                                         Modifier theModifier,
                                          ShapeBuild_ReShape theReShape)
     {
         UpdateHistoryShape(theShape, theModifier, theReShape);
@@ -86,16 +89,16 @@ public static class ShapeCustom
     /// <remarks>
     /// The modifier keeps its maps from one call to the next, as OCCT's: a modifier reused for a shape that shares
     /// sub-shapes with an earlier call's result would add pcurves to that result's edges, which are frozen, and throws
-    /// <see cref="TopoDS_LockedShape"/> (decision 973). Use a new modifier for each call.
+    /// <see cref="LockedShapeException"/> (decision 973). Use a new modifier for each call.
     /// </remarks>
-    public static TopoDS_Shape ApplyModifier(in TopoDS_Shape S,
-                                             BRepTools_Modification M,
-                                             NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> context,
-                                             BRepTools_Modifier MD,
+    public static Shape ApplyModifier(in Shape S,
+                                             Modification M,
+                                             NCollection_DataMap<Shape, Shape> context,
+                                             Modifier MD,
                                              ProgressRange theProgress = default,
                                              ShapeBuild_ReShape? aReShape = null)
     {
-        TopoDS_Shape aResult = InternalApplyModifier(S, M, context, MD, theProgress, aReShape);
+        Shape aResult = InternalApplyModifier(S, M, context, MD, theProgress, aReShape);
         aResult.TShape()?.FreezeGraph();
         return aResult;
     }
@@ -105,36 +108,36 @@ public static class ShapeCustom
     /// 8101). The shapes it returns, binds in the context and records in the reshaper are frozen once the caller
     /// freezes the result.
     /// </summary>
-    internal static TopoDS_Shape InternalApplyModifier(in TopoDS_Shape S,
-                                                       BRepTools_Modification M,
-                                                       NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> context,
-                                                       BRepTools_Modifier MD,
+    internal static Shape InternalApplyModifier(in Shape S,
+                                                       Modification M,
+                                                       NCollection_DataMap<Shape, Shape> context,
+                                                       Modifier MD,
                                                        ProgressRange theProgress = default,
                                                        ShapeBuild_ReShape? aReShape = null)
     {
         // protect against INTERNAL/EXTERNAL shapes
-        TopoDS_Shape SF = S.Oriented(TopAbs_FORWARD);
+        Shape SF = S.Oriented(Forward);
 
         // Process COMPOUNDs separately in order to handle sharing in assemblies
-        if (SF.ShapeType() == TopAbs_COMPOUND)
+        if (SF.ShapeType() == ShapeType.Compound)
         {
             bool locModified = false;
-            TopoDS_Compound C = new();
-            BRep_Builder B = new BRep_Builder();
+            Compound C = new();
+            BrepBuilder B = new BrepBuilder();
             B.MakeCompound(ref C);
 
             SF.Location(new Placement());
-            int aShapeCount = SF.NbChildren();
+            int aShapeCount = SF.ChildCount;
             using var aPS = new ProgressScope(theProgress, "Applying Modifier For Solids", aShapeCount);
-            for (var it = new TopoDS_Iterator(SF); it.More() && aPS.More(); it.Next())
+            for (var it = new Iterator(SF); it.More() && aPS.More(); it.Next())
             {
                 ProgressRange aRange = aPS.Next();
 
-                TopoDS_Shape shape = it.Value();
-                TopoDS_Shape aShapeNoLoc = it.Value();
+                Shape shape = it.Value();
+                Shape aShapeNoLoc = it.Value();
                 aShapeNoLoc.Location(new Placement());
 
-                TopoDS_Shape res;
+                Shape res;
                 if (context.Find(aShapeNoLoc, out res))
                 {
                     res.Orientation(shape.Orientation());
@@ -178,13 +181,13 @@ public static class ShapeCustom
         MD.Init(SF);
         MD.Perform(M, aPS2.Next());
 
-        if (!aPS2.More() || !MD.IsDone())
+        if (!aPS2.More() || !MD.IsDone)
         {
             return S;
         }
 
         // OCCT.NET: the internal accessor; the result is frozen at the publication point (decision 973)
-        TopoDS_Shape aResult = MD.InternalModifiedShape(SF);
+        Shape aResult = MD.InternalModifiedShape(SF);
         aResult.Orientation(S.Orientation());
 
         if (!SF.IsSame(aResult))
@@ -201,24 +204,24 @@ public static class ShapeCustom
     }
 
     /// <summary>A new shape without indirect surfaces (frozen).</summary>
-    public static TopoDS_Shape DirectFaces(in TopoDS_Shape S)
+    public static Shape DirectFaces(in Shape S)
     {
         // Create a modification description
         ShapeCustom_DirectModification DM = new ShapeCustom_DirectModification();
-        var context = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        BRepTools_Modifier MD = new BRepTools_Modifier();
+        var context = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        Modifier MD = new Modifier();
         return ApplyModifier(S, DM, context, MD);
     }
 
     /// <summary>A new shape, the original scaled about the origin (frozen).</summary>
-    public static TopoDS_Shape ScaleShape(in TopoDS_Shape S, double scale)
+    public static Shape ScaleShape(in Shape S, double scale)
     {
         // Create a modification description
         Transform3D T = new Transform3D();
         T.SetScale(new Point3D(0, 0, 0), scale);
         ShapeCustom_TrsfModification TM = new ShapeCustom_TrsfModification(T);
-        var context = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        BRepTools_Modifier MD = new BRepTools_Modifier();
+        var context = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        Modifier MD = new Modifier();
         return ShapeCustom.ApplyModifier(S, TM, context, MD);
     }
 
@@ -228,7 +231,7 @@ public static class ShapeCustom
     /// <paramref name="MaxNbSegment"/>, as the priority <paramref name="Degree"/> says. <paramref name="Rational"/>
     /// converts rational ones into polynomial B-splines; <paramref name="aParameters"/> says which geometry to convert.
     /// </summary>
-    public static TopoDS_Shape BSplineRestriction(in TopoDS_Shape S,
+    public static Shape BSplineRestriction(in Shape S,
                                                   double Tol3d,
                                                   double Tol2d,
                                                   int MaxDegree,
@@ -252,18 +255,18 @@ public static class ShapeCustom
         BSR.SetConvRational(Rational);
         BSR.SetRestrictionParameters(aParameters);
         // Modify the shape
-        var context = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        BRepTools_Modifier MD = new BRepTools_Modifier();
+        var context = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        Modifier MD = new Modifier();
         return ShapeCustom.ApplyModifier(S, BSR, context, MD);
     }
 
     /// <summary>A new shape (frozen) with all elementary periodic surfaces converted to Geom_SurfaceOfRevolution.</summary>
-    public static TopoDS_Shape ConvertToRevolution(in TopoDS_Shape S)
+    public static Shape ConvertToRevolution(in Shape S)
     {
         // Create a modification description
         ShapeCustom_ConvertToRevolution CRev = new ShapeCustom_ConvertToRevolution();
-        var context = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        BRepTools_Modifier MD = new BRepTools_Modifier();
+        var context = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        Modifier MD = new Modifier();
         return ShapeCustom.ApplyModifier(S, CRev, context, MD);
     }
 
@@ -271,12 +274,12 @@ public static class ShapeCustom
     /// A new shape (frozen) with all surfaces of revolution and linear extrusion converted to elementary periodic
     /// surfaces where they are such.
     /// </summary>
-    public static TopoDS_Shape SweptToElementary(in TopoDS_Shape S)
+    public static Shape SweptToElementary(in Shape S)
     {
         // Create a modification description
         ShapeCustom_SweptToElementary SE = new ShapeCustom_SweptToElementary();
-        var context = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        BRepTools_Modifier MD = new BRepTools_Modifier();
+        var context = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        Modifier MD = new Modifier();
         return ShapeCustom.ApplyModifier(S, SE, context, MD);
     }
 
@@ -284,7 +287,7 @@ public static class ShapeCustom
     /// A new shape (frozen) with its surfaces of linear extrusion, revolution, offset surfaces and planes converted to
     /// Geom_BSplineSurface (with the same parametrisation), as the flags say.
     /// </summary>
-    public static TopoDS_Shape ConvertToBSpline(in TopoDS_Shape S,
+    public static Shape ConvertToBSpline(in Shape S,
                                                 bool extrMode,
                                                 bool revolMode,
                                                 bool offsetMode,
@@ -296,8 +299,8 @@ public static class ShapeCustom
         BSRev.SetRevolutionMode(revolMode);
         BSRev.SetOffsetMode(offsetMode);
         BSRev.SetPlaneMode(planeMode);
-        var context = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        BRepTools_Modifier MD = new BRepTools_Modifier();
+        var context = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        Modifier MD = new Modifier();
         return ShapeCustom.ApplyModifier(S, BSRev, context, MD);
     }
 }

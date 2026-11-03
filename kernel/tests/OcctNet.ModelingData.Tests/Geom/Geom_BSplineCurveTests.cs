@@ -10,7 +10,7 @@ namespace OcctNet.ModelingData.Tests;
 
 public class Geom_BSplineCurve_Test
 {
-    private readonly Geom_BSplineCurve myOriginalCurve;
+    private readonly BSplineCurve3D myOriginalCurve;
 
     public Geom_BSplineCurve_Test()
     {
@@ -19,7 +19,7 @@ public class Geom_BSplineCurve_Test
         NCollection_Array1<double> aKnots = Reals(0.0, 1.0);
         NCollection_Array1<int> aMults = Ints(4, 4);
 
-        myOriginalCurve = new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
+        myOriginalCurve = new BSplineCurve3D(aPoles, aKnots, aMults, 3);
     }
 
     // OCCT's tests fill 1-based arrays element by element; these build the same arrays.
@@ -29,9 +29,9 @@ public class Geom_BSplineCurve_Test
 
     private static NCollection_Array1<int> Ints(params int[] theValues) => NCollection_Array1<int>.From(theValues);
 
-    private static Geom_BSplineCurve RationalQuadratic(double w2)
+    private static BSplineCurve3D RationalQuadratic(double w2)
     {
-        return new Geom_BSplineCurve(Pnts(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
+        return new BSplineCurve3D(Pnts(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
                                      Reals(1.0, w2, 1.0),
                                      Reals(0.0, 1.0),
                                      Ints(3, 3),
@@ -59,23 +59,23 @@ public class Geom_BSplineCurve_Test
     public void CopyConstructorBasicProperties()
     {
         // Test copy constructor
-        Geom_BSplineCurve aCopiedCurve = new(myOriginalCurve);
+        BSplineCurve3D aCopiedCurve = new(myOriginalCurve);
 
         // Verify basic properties are identical
         Assert.Equal(myOriginalCurve.Degree(), aCopiedCurve.Degree());
-        Assert.Equal(myOriginalCurve.NbPoles(), aCopiedCurve.NbPoles());
-        Assert.Equal(myOriginalCurve.NbKnots(), aCopiedCurve.NbKnots());
-        Assert.Equal(myOriginalCurve.IsPeriodic(), aCopiedCurve.IsPeriodic());
-        Assert.Equal(myOriginalCurve.IsRational(), aCopiedCurve.IsRational());
+        Assert.Equal(myOriginalCurve.PoleCount, aCopiedCurve.PoleCount);
+        Assert.Equal(myOriginalCurve.KnotCount, aCopiedCurve.KnotCount);
+        Assert.Equal(myOriginalCurve.IsPeriodic, aCopiedCurve.IsPeriodic);
+        Assert.Equal(myOriginalCurve.IsRational, aCopiedCurve.IsRational);
     }
 
     [Fact]
     public void CopyConstructorPoles()
     {
-        Geom_BSplineCurve aCopiedCurve = new(myOriginalCurve);
+        BSplineCurve3D aCopiedCurve = new(myOriginalCurve);
 
         // Verify all poles are identical
-        for (int i = 1; i <= myOriginalCurve.NbPoles(); ++i)
+        for (int i = 1; i <= myOriginalCurve.PoleCount; ++i)
         {
             Point3D anOrigPole = myOriginalCurve.Pole(i);
             Point3D aCopyPole = aCopiedCurve.Pole(i);
@@ -86,10 +86,10 @@ public class Geom_BSplineCurve_Test
     [Fact]
     public void CopyConstructorKnots()
     {
-        Geom_BSplineCurve aCopiedCurve = new(myOriginalCurve);
+        BSplineCurve3D aCopiedCurve = new(myOriginalCurve);
 
         // Verify all knots are identical
-        for (int i = 1; i <= myOriginalCurve.NbKnots(); ++i)
+        for (int i = 1; i <= myOriginalCurve.KnotCount; ++i)
         {
             Assert.Equal(myOriginalCurve.Knot(i), aCopiedCurve.Knot(i));
             Assert.Equal(myOriginalCurve.Multiplicity(i), aCopiedCurve.Multiplicity(i));
@@ -100,12 +100,12 @@ public class Geom_BSplineCurve_Test
     public void CopyMethodUsesOptimizedConstructor()
     {
         // Test that Copy() method uses the optimized copy constructor
-        Geom_BSplineCurve? aCopiedCurve = myOriginalCurve.Copy() as Geom_BSplineCurve;
+        BSplineCurve3D? aCopiedCurve = myOriginalCurve.Copy() as BSplineCurve3D;
         Assert.NotNull(aCopiedCurve);
 
         // Verify the copy is functionally identical
         Assert.Equal(myOriginalCurve.Degree(), aCopiedCurve.Degree());
-        Assert.Equal(myOriginalCurve.NbPoles(), aCopiedCurve.NbPoles());
+        Assert.Equal(myOriginalCurve.PoleCount, aCopiedCurve.PoleCount);
 
         // Test evaluation at several points
         for (double u = 0.0; u <= 1.0; u += 0.25)
@@ -120,13 +120,13 @@ public class Geom_BSplineCurve_Test
     public void RationalCurveCopyConstructor()
     {
         // Create a rational BSpline curve
-        Geom_BSplineCurve aRationalCurve = RationalQuadratic(2.0);
-        Geom_BSplineCurve aCopiedRational = new(aRationalCurve);
+        BSplineCurve3D aRationalCurve = RationalQuadratic(2.0);
+        BSplineCurve3D aCopiedRational = new(aRationalCurve);
 
-        Assert.True(aCopiedRational.IsRational());
+        Assert.True(aCopiedRational.IsRational);
 
         // Verify weights are copied correctly
-        for (int i = 1; i <= aRationalCurve.NbPoles(); ++i)
+        for (int i = 1; i <= aRationalCurve.PoleCount; ++i)
         {
             Assert.Equal(aRationalCurve.Weight(i), aCopiedRational.Weight(i));
         }
@@ -201,12 +201,12 @@ public class Geom_BSplineCurve_Test
     public void SetWeight()
     {
         // Create rational curve
-        Geom_BSplineCurve aCurve = RationalQuadratic(1.0);
+        BSplineCurve3D aCurve = RationalQuadratic(1.0);
         Point3D aMidBefore = aCurve.Value(0.5);
 
         aCurve.SetWeight(2, 5.0);
         Assert.Equal(5.0, aCurve.Weight(2));
-        Assert.True(aCurve.IsRational());
+        Assert.True(aCurve.IsRational);
 
         Point3D aMidAfter = aCurve.Value(0.5);
         Assert.False(aMidBefore.IsEqual(aMidAfter, 1e-6));
@@ -227,7 +227,7 @@ public class Geom_BSplineCurve_Test
     {
         Point3D aValBefore = myOriginalCurve.Value(0.5);
         myOriginalCurve.InsertKnot(0.5);
-        Assert.Equal(3, myOriginalCurve.NbKnots());
+        Assert.Equal(3, myOriginalCurve.KnotCount);
         Point3D aValAfter = myOriginalCurve.Value(0.5);
         Assert.True(aValBefore.IsEqual(aValAfter, 1e-10));
     }
@@ -236,12 +236,12 @@ public class Geom_BSplineCurve_Test
     public void RemoveKnot()
     {
         myOriginalCurve.InsertKnot(0.5);
-        Assert.Equal(3, myOriginalCurve.NbKnots());
+        Assert.Equal(3, myOriginalCurve.KnotCount);
 
         Point3D aValBefore = myOriginalCurve.Value(0.25);
         bool isRemoved = myOriginalCurve.RemoveKnot(2, 0, 1e-6);
         Assert.True(isRemoved);
-        Assert.Equal(2, myOriginalCurve.NbKnots());
+        Assert.Equal(2, myOriginalCurve.KnotCount);
         Point3D aValAfter = myOriginalCurve.Value(0.25);
         Assert.True(aValBefore.IsEqual(aValAfter, 1e-6));
     }
@@ -279,9 +279,9 @@ public class Geom_BSplineCurve_Test
     public void Properties()
     {
         Assert.Equal(3, myOriginalCurve.Degree());
-        Assert.False(myOriginalCurve.IsPeriodic());
-        Assert.False(myOriginalCurve.IsRational());
-        Assert.False(myOriginalCurve.IsClosed());
+        Assert.False(myOriginalCurve.IsPeriodic);
+        Assert.False(myOriginalCurve.IsRational);
+        Assert.False(myOriginalCurve.IsClosed);
         Assert.True(myOriginalCurve.IsCN(3));
         Assert.Equal(Continuity.CN, myOriginalCurve.Continuity());
     }
@@ -307,12 +307,12 @@ public class Geom_BSplineCurve_Test
         NCollection_Array1<int> aMults = new(1, 6);
         aMults.Init(1);
 
-        Geom_BSplineCurve aCurve = new(PentagonPoles(), PentagonKnots(), aMults, 3, true);
-        Assert.True(aCurve.IsPeriodic());
+        BSplineCurve3D aCurve = new(PentagonPoles(), PentagonKnots(), aMults, 3, true);
+        Assert.True(aCurve.IsPeriodic);
 
         Point3D aVal1 = aCurve.Value(0.5);
         aCurve.SetNotPeriodic();
-        Assert.False(aCurve.IsPeriodic());
+        Assert.False(aCurve.IsPeriodic);
         Point3D aVal2 = aCurve.Value(0.5);
         Assert.True(aVal1.IsEqual(aVal2, 1e-10));
     }
@@ -327,9 +327,9 @@ public class Geom_BSplineCurve_Test
                                                  new Point3D(2, 0, 0),
                                                  new Point3D(3, 2, 0),
                                                  new Point3D(4, 0, 0));
-        Geom_BSplineCurve aCurve = new(aPoles, Reals(0.0, 1.0, 2.0, 3.0), Ints(3, 1, 1, 3), 2);
-        Assert.Equal(4, aCurve.NbKnots());
-        Assert.Equal(5, aCurve.NbPoles());
+        BSplineCurve3D aCurve = new(aPoles, Reals(0.0, 1.0, 2.0, 3.0), Ints(3, 1, 1, 3), 2);
+        Assert.Equal(4, aCurve.KnotCount);
+        Assert.Equal(5, aCurve.PoleCount);
 
         // Evaluate at knot boundaries
         aCurve.D0(0.0, out Point3D aPnt);
@@ -343,7 +343,7 @@ public class Geom_BSplineCurve_Test
     {
         // Add a knot first to have an interior knot
         myOriginalCurve.InsertKnot(0.5, 1);
-        Assert.Equal(3, myOriginalCurve.NbKnots());
+        Assert.Equal(3, myOriginalCurve.KnotCount);
         Assert.Equal(1, myOriginalCurve.Multiplicity(2));
 
         Point3D aValBefore = myOriginalCurve.Value(0.5);
@@ -393,7 +393,7 @@ public class Geom_BSplineCurve_Test
     [Fact]
     public void WeightsAccess_Rational()
     {
-        Geom_BSplineCurve aCurve = RationalQuadratic(2.0);
+        BSplineCurve3D aCurve = RationalQuadratic(2.0);
         PackedList<double>? aW = aCurve.Weights();
         Assert.NotNull(aW);
         Assert.Equal(2.0, aW[1]);
@@ -405,7 +405,7 @@ public class Geom_BSplineCurve_Test
     {
         // Insert a knot to create 2 spans
         myOriginalCurve.InsertKnot(0.5);
-        Assert.Equal(3, myOriginalCurve.NbKnots());
+        Assert.Equal(3, myOriginalCurve.KnotCount);
 
         Point3D aGlobal = myOriginalCurve.Value(0.25);
         Point3D aLocal = myOriginalCurve.LocalValue(0.25, 1, 2);
@@ -418,7 +418,7 @@ public class Geom_BSplineCurve_Test
         // Create a curve with 3 knots, degree 2
         // NbPoles = 3+3-3+1 = 4
         NCollection_Array1<Point3D> aPoles = Pnts(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0), new Point3D(3, 1, 0));
-        Geom_BSplineCurve aCurve = new(aPoles, Reals(0.0, 0.5, 1.0), Ints(3, 1, 3), 2);
+        BSplineCurve3D aCurve = new(aPoles, Reals(0.0, 0.5, 1.0), Ints(3, 1, 3), 2);
         aCurve.SetKnot(2, 0.6);
         Assert.Equal(0.6, aCurve.Knot(2));
     }
@@ -426,7 +426,7 @@ public class Geom_BSplineCurve_Test
     [Fact]
     public void CopyIndependence()
     {
-        Geom_BSplineCurve aCopy = new(myOriginalCurve);
+        BSplineCurve3D aCopy = new(myOriginalCurve);
         myOriginalCurve.SetPole(2, new Point3D(10, 10, 10));
         Assert.False(aCopy.Pole(2).IsEqual(new Point3D(10, 10, 10), 1e-10));
     }
@@ -435,7 +435,7 @@ public class Geom_BSplineCurve_Test
     public void MovePoint()
     {
         Point3D aTarget = new(1.5, 0.8, 0);
-        myOriginalCurve.MovePoint(0.5, aTarget, 1, myOriginalCurve.NbPoles(), out int aFirst, out int aLast);
+        myOriginalCurve.MovePoint(0.5, aTarget, 1, myOriginalCurve.PoleCount, out int aFirst, out int aLast);
         Assert.True(aFirst > 0);
         Point3D aMoved = myOriginalCurve.Value(0.5);
         Assert.True(aMoved.IsEqual(aTarget, 1e-6));
@@ -447,7 +447,7 @@ public class Geom_BSplineCurve_Test
         myOriginalCurve.InsertKnot(0.5);
         myOriginalCurve.LocateU(0.25, 1e-10, out int anI1, out int anI2);
         Assert.True(anI1 >= 1);
-        Assert.True(anI2 <= myOriginalCurve.NbKnots());
+        Assert.True(anI2 <= myOriginalCurve.KnotCount);
         Assert.True(myOriginalCurve.Knot(anI1) <= 0.25 + 1e-10);
         Assert.True(myOriginalCurve.Knot(anI2) >= 0.25 - 1e-10);
     }
@@ -455,7 +455,7 @@ public class Geom_BSplineCurve_Test
     [Fact]
     public void IsEqual()
     {
-        Geom_BSplineCurve aCopy = new(myOriginalCurve);
+        BSplineCurve3D aCopy = new(myOriginalCurve);
         Assert.True(myOriginalCurve.IsEqual(aCopy, 1e-10));
 
         aCopy.SetPole(2, new Point3D(10, 10, 10));
@@ -473,28 +473,28 @@ public class Geom_BSplineCurve_Test
     [Fact]
     public void RationalCurveSegment()
     {
-        Geom_BSplineCurve aCurve = new(Pnts(new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0)),
+        BSplineCurve3D aCurve = new(Pnts(new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0)),
                                        Reals(1.0, 1.0 / Math.Sqrt(2.0), 1.0),
                                        Reals(0.0, 1.0),
                                        Ints(3, 3),
                                        2);
-        Assert.True(aCurve.IsRational());
+        Assert.True(aCurve.IsRational);
 
         Point3D aMid = aCurve.Value(0.5);
         aCurve.Segment(0.25, 0.75);
         Point3D aMidAfter = aCurve.Value(0.5);
         Assert.True(aMid.IsEqual(aMidAfter, 1e-6));
-        Assert.True(aCurve.IsRational());
+        Assert.True(aCurve.IsRational);
     }
 
     [Fact]
     public void RationalCurveIncreaseDegree()
     {
-        Geom_BSplineCurve aCurve = RationalQuadratic(2.0);
+        BSplineCurve3D aCurve = RationalQuadratic(2.0);
         Point3D aValBefore = aCurve.Value(0.5);
         aCurve.IncreaseDegree(4);
         Assert.Equal(4, aCurve.Degree());
-        Assert.True(aCurve.IsRational());
+        Assert.True(aCurve.IsRational);
         Point3D aValAfter = aCurve.Value(0.5);
         Assert.True(aValBefore.IsEqual(aValAfter, 1e-10));
     }
@@ -505,11 +505,11 @@ public class Geom_BSplineCurve_Test
         NCollection_Array1<int> aMults = new(1, 6);
         aMults.Init(1);
 
-        Geom_BSplineCurve aCurve = new(PentagonPoles(), PentagonKnots(), aMults, 3, true);
-        Assert.True(aCurve.IsPeriodic());
+        BSplineCurve3D aCurve = new(PentagonPoles(), PentagonKnots(), aMults, 3, true);
+        Assert.True(aCurve.IsPeriodic);
 
         aCurve.SetOrigin(3);
-        Assert.True(aCurve.IsPeriodic());
+        Assert.True(aCurve.IsPeriodic);
         // Curve shape unchanged, just reparameterized -- can evaluate without crash
         Point3D aVal2 = aCurve.Value(aCurve.FirstParameter());
         Assert.True(aVal2.X() * aVal2.X() + aVal2.Y() * aVal2.Y() > 0.0);
@@ -523,7 +523,7 @@ public class Geom_BSplineCurve_Test
 
         Point3D aValBefore = myOriginalCurve.Value(0.5);
         myOriginalCurve.InsertKnots(aNewKnots, aNewMults);
-        Assert.Equal(4, myOriginalCurve.NbKnots());
+        Assert.Equal(4, myOriginalCurve.KnotCount);
         Point3D aValAfter = myOriginalCurve.Value(0.5);
         Assert.True(aValBefore.IsEqual(aValAfter, 1e-10));
     }
@@ -533,8 +533,8 @@ public class Geom_BSplineCurve_Test
     {
         // Create a closed BSpline (first pole == last pole)
         NCollection_Array1<Point3D> aPoles = Pnts(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0), new Point3D(0, 0, 0));
-        Geom_BSplineCurve aCurve = new(aPoles, Reals(0.0, 1.0), Ints(4, 4), 3);
-        Assert.True(aCurve.IsClosed());
+        BSplineCurve3D aCurve = new(aPoles, Reals(0.0, 1.0), Ints(4, 4), 3);
+        Assert.True(aCurve.IsClosed);
     }
 
     [Fact]
@@ -554,9 +554,9 @@ public class Geom_BSplineCurve_Test
     [Fact]
     public void WeightsArray_NonRational_ReturnsUnitWeights()
     {
-        Assert.False(myOriginalCurve.IsRational());
+        Assert.False(myOriginalCurve.IsRational);
         NCollection_Array1<double> aWeights = myOriginalCurve.InternalWeightsArray();
-        Assert.Equal(myOriginalCurve.NbPoles(), aWeights.Length());
+        Assert.Equal(myOriginalCurve.PoleCount, aWeights.Length());
         Assert.False(aWeights.IsDeletable());
         for (int i = 1; i <= aWeights.Length(); ++i)
         {
@@ -572,8 +572,8 @@ public class Geom_BSplineCurve_Test
     {
         // Create a rational BSpline
         NCollection_Array1<Point3D> aPoles = Pnts(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 1, 0), new Point3D(3, 0, 0));
-        Geom_BSplineCurve aRational = new(aPoles, Reals(1.0, 2.0, 3.0, 1.0), Reals(0.0, 1.0), Ints(4, 4), 3);
-        Assert.True(aRational.IsRational());
+        BSplineCurve3D aRational = new(aPoles, Reals(1.0, 2.0, 3.0, 1.0), Reals(0.0, 1.0), Ints(4, 4), 3);
+        Assert.True(aRational.IsRational);
 
         NCollection_Array1<double> aWeights = aRational.InternalWeightsArray();
         Assert.Equal(4, aWeights.Length());

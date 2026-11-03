@@ -3,7 +3,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -16,15 +17,15 @@ public partial struct HLRAlgo_Coincidence : IEquatable<HLRAlgo_Coincidence>
 {
     private int myFE;
     private double myParam;
-    private TopAbs_State myStBef;
-    private TopAbs_State myStAft;
+    private Containment myStBef;
+    private Containment myStAft;
 
     public HLRAlgo_Coincidence()
     {
         myFE = 0;
         myParam = 0.0;
-        myStBef = TopAbs_IN;
-        myStAft = TopAbs_IN;
+        myStBef = In;
+        myStAft = In;
     }
 
     // Mutators (internal: see docs/translation-rules.md)
@@ -35,7 +36,7 @@ public partial struct HLRAlgo_Coincidence : IEquatable<HLRAlgo_Coincidence>
         myParam = Param;
     }
 
-    internal void SetState3D(TopAbs_State stbef, TopAbs_State staft)
+    internal void SetState3D(Containment stbef, Containment staft)
     {
         myStBef = stbef;
         myStAft = staft;
@@ -49,7 +50,7 @@ public partial struct HLRAlgo_Coincidence : IEquatable<HLRAlgo_Coincidence>
         Param = myParam;
     }
 
-    public readonly void State3D(out TopAbs_State stbef, out TopAbs_State staft)
+    public readonly void State3D(out Containment stbef, out Containment staft)
     {
         stbef = myStBef;
         staft = myStAft;
@@ -62,7 +63,7 @@ public partial struct HLRAlgo_Coincidence : IEquatable<HLRAlgo_Coincidence>
         return aCopy;
     }
 
-    public readonly HLRAlgo_Coincidence WithState3D(TopAbs_State stbef, TopAbs_State staft)
+    public readonly HLRAlgo_Coincidence WithState3D(Containment stbef, Containment staft)
     {
         HLRAlgo_Coincidence aCopy = this;
         aCopy.SetState3D(stbef, staft);

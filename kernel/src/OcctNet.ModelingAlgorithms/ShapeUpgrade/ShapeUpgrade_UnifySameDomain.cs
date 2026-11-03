@@ -9,12 +9,17 @@
 
 // OCCT's typedefs of the class
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using DataMapOfFacePlane = Occt.NCollection_DataMap<Occt.TopoDS_Shape, Occt.Geom_Plane>;
-using DataMapOfShapeMapOfShape = Occt.NCollection_DataMap<Occt.TopoDS_Shape, Occt.NCollection_Map<Occt.TopoDS_Shape>>;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using DataMapOfFacePlane = Occt.NCollection_DataMap<Kerf.Topology.Shape, Kerf.Geometry.PlaneSurface>;
+using DataMapOfShapeMapOfShape = Occt.NCollection_DataMap<Kerf.Topology.Shape, Occt.NCollection_Map<Kerf.Topology.Shape>>;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -32,7 +37,7 @@ namespace Occt;
 /// <para>
 /// A working object (decision 21). <see cref="Build"/> edits the shape it works on in place, as OCCT's does (even in
 /// the safe input mode OCCT adds pcurves to the input's edges): a shape holding frozen shapes (any shape a caller
-/// holds) is copied first (<see cref="BRepTools_CopyAtEntry"/>, decision 583), so the caller's shape never changes,
+/// holds) is copied first (<see cref="CopyAtEntry"/>, decision 583), so the caller's shape never changes,
 /// whatever <see cref="SetSafeInputMode"/> says; the algorithm then runs on the copy with the mode given, so its
 /// results are OCCT's for that mode. At the end the copied sub-shapes left unchanged are the caller's own again: a
 /// shape needing nothing gives back the input itself. An unfrozen input (ported code's) is worked on in place, as in
@@ -47,7 +52,7 @@ namespace Occt;
 /// </remarks>
 public partial class ShapeUpgrade_UnifySameDomain : Transient
 {
-    private TopoDS_Shape                  myInitShape;
+    private Shape                  myInitShape;
     private double                        myLinTol;
     private double                        myAngTol;
     private bool                          myUnifyFaces;
@@ -55,24 +60,24 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
     private bool                          myConcatBSplines;
     private bool                          myAllowInternal;
     private bool                          mySafeInputMode;
-    private TopoDS_Shape                  myShape;
+    private Shape                  myShape;
     private readonly ShapeBuild_ReShape   myContext;
-    private NCollection_Map<TopoDS_Shape> myKeepShapes = new(TopTools_ShapeMapHasher.Instance);
-    private readonly DataMapOfFacePlane   myFacePlaneMap = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myEFmap =
-      new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myFaceNewFace = new(TopTools_ShapeMapHasher.Instance);
+    private NCollection_Map<Shape> myKeepShapes = new(ShapeHasher.Instance);
+    private readonly DataMapOfFacePlane   myFacePlaneMap = new(ShapeHasher.Instance);
+    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> myEFmap =
+      new(ShapeHasher.Instance);
+    private readonly NCollection_DataMap<Shape, Shape> myFaceNewFace = new(ShapeHasher.Instance);
 
-    private BRepTools_History? myHistory; //!< The history.
+    private History? myHistory; //!< The history.
 
     // OCCT.NET: the history FillHistory made over the shape worked on, merged into myHistory by Build once the copy at
     // the entry is finished (composed onto the caller's sub-shapes).
-    private BRepTools_History? myUSDHistory;
+    private History? myUSDHistory;
 
     /// <summary>Empty constructor.</summary>
     public ShapeUpgrade_UnifySameDomain()
     {
-        myInitShape      = new TopoDS_Shape();
+        myInitShape      = new Shape();
         myLinTol         = global::Kerf.Engine.Foundation.Precision.Confusion();
         myAngTol         = global::Kerf.Engine.Foundation.Precision.Angular();
         myUnifyFaces     = true;
@@ -80,13 +85,13 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
         myConcatBSplines = false;
         myAllowInternal  = false;
         mySafeInputMode  = true;
-        myShape          = new TopoDS_Shape();
-        myHistory        = new BRepTools_History();
+        myShape          = new Shape();
+        myHistory        = new History();
         myContext        = new ShapeBuild_ReShape();
     }
 
     /// <summary>Constructor defining the input shape and the flags. It does not perform unification.</summary>
-    public ShapeUpgrade_UnifySameDomain(in TopoDS_Shape aShape,
+    public ShapeUpgrade_UnifySameDomain(in Shape aShape,
                                         bool            UnifyEdges     = true,
                                         bool            UnifyFaces     = true,
                                         bool            ConcatBSplines = false)
@@ -100,7 +105,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
         myAllowInternal  = false;
         mySafeInputMode  = true;
         myShape          = aShape;
-        myHistory        = new BRepTools_History();
+        myHistory        = new History();
         myContext        = new ShapeBuild_ReShape();
     }
 
@@ -108,7 +113,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
     /// Initializes with a shape and the flags. It does not perform unification. If you intend to nullify the history
     /// place holder, do it after initialization.
     /// </summary>
-    public void Initialize(in TopoDS_Shape aShape,
+    public void Initialize(in Shape aShape,
                            bool            UnifyEdges     = true,
                            bool            UnifyFaces     = true,
                            bool            ConcatBSplines = false)
@@ -142,9 +147,9 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
     /// it forbids merging of connected edges. If the shape is a edge it forbids merging of connected faces. This
     /// method can be called several times to keep several shapes.
     /// </summary>
-    public void KeepShape(in TopoDS_Shape theShape)
+    public void KeepShape(in Shape theShape)
     {
-        if (theShape.ShapeType() == TopAbs_EDGE || theShape.ShapeType() == TopAbs_VERTEX)
+        if (theShape.ShapeType() == ShapeType.Edge || theShape.ShapeType() == ShapeType.Vertex)
         {
             myKeepShapes.Add(theShape);
         }
@@ -154,11 +159,11 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
     /// Sets the map of shapes for avoid merging of the faces/edges. It allows passing a ready to use map instead of
     /// calling many times the method KeepShape.
     /// </summary>
-    public void KeepShapes(NCollection_Map<TopoDS_Shape> theShapes)
+    public void KeepShapes(NCollection_Map<Shape> theShapes)
     {
-        foreach (TopoDS_Shape aShape in theShapes)
+        foreach (Shape aShape in theShapes)
         {
-            if (aShape.ShapeType() == TopAbs_EDGE || aShape.ShapeType() == TopAbs_VERTEX)
+            if (aShape.ShapeType() == ShapeType.Edge || aShape.ShapeType() == ShapeType.Vertex)
             {
                 myKeepShapes.Add(aShape);
             }
@@ -199,20 +204,20 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
     }
 
     /// <summary>The resulting shape, frozen.</summary>
-    public TopoDS_Shape Shape()
+    public Shape Shape()
     {
         myShape.TShape()?.FreezeGraph();
         return myShape;
     }
 
     /// <summary>The resulting shape, as <see cref="Shape"/>, without freezing it (ported code).</summary>
-    internal TopoDS_Shape InternalShape() => myShape;
+    internal Shape InternalShape() => myShape;
 
     /// <summary>
     /// The history of the processed shapes, null if it isn't collected. The result is frozen first, so every shape
     /// the history lists is frozen.
     /// </summary>
-    public BRepTools_History? History()
+    public History? History()
     {
         myShape.TShape()?.FreezeGraph();
         return myHistory;
@@ -222,28 +227,28 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
     /// Sets the place holder of the history (OCCT's assignment to the non-const <c>History()</c>): null to collect no
     /// history. The history of each <see cref="Build"/> is merged into it.
     /// </summary>
-    public void History(BRepTools_History? theHistory)
+    public void History(History? theHistory)
     {
         myHistory = theHistory;
     }
 
     /// <summary>The history, as <see cref="History()"/>, without freezing the result (ported code).</summary>
-    internal BRepTools_History? InternalHistory() => myHistory;
+    internal History? InternalHistory() => myHistory;
 
     /// <summary>Performs unification and builds the resulting shape.</summary>
     public void Build()
     {
         // OCCT.NET: frozen. The copy at the entry (decision 583): OCCT writes into the shape it works on (pcurves added
         // to the edges of the faces it unifies, even in the safe input mode)
-        var          anEntry    = new BRepTools_CopyAtEntry(myInitShape, myContext);
-        TopoDS_Shape anInput    = myInitShape;
-        NCollection_Map<TopoDS_Shape> aKeepShapes = myKeepShapes;
-        if (anEntry.IsCopied())
+        var          anEntry    = new CopyAtEntry(myInitShape, myContext);
+        Shape anInput    = myInitShape;
+        NCollection_Map<Shape> aKeepShapes = myKeepShapes;
+        if (anEntry.IsCopied)
         {
             myInitShape  = anEntry.Shape();
             myShape      = anEntry.Shape();
-            myKeepShapes = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            foreach (TopoDS_Shape aKeepShape in aKeepShapes)
+            myKeepShapes = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            foreach (Shape aKeepShape in aKeepShapes)
             {
                 myKeepShapes.Add(anEntry.Copied(aKeepShape));
             }
@@ -271,7 +276,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
     // OCCT's Build, on the shape worked on
     private void build()
     {
-        TopExp.MapShapesAndAncestors(myInitShape, TopAbs_EDGE, TopAbs_FACE, myEFmap);
+        Exploration.MapShapesAndAncestors(myInitShape, ShapeType.Edge, ShapeType.Face, myEFmap);
 
         if (myUnifyFaces)
         {
@@ -291,49 +296,49 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
     {
         // creating map of edge faces for the whole shape
         var aGMapEdgeFaces =
-          new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+          new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
 
-        var aFaceMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(myShape, TopAbs_FACE, aFaceMap);
+        var aFaceMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(myShape, ShapeType.Face, aFaceMap);
         for (int i = 1; i <= aFaceMap.Extent(); i++)
         {
-            TopExp.MapShapesAndAncestors(aFaceMap[i], TopAbs_EDGE, TopAbs_FACE, aGMapEdgeFaces);
+            Exploration.MapShapesAndAncestors(aFaceMap[i], ShapeType.Edge, ShapeType.Face, aGMapEdgeFaces);
         }
 
         // creating map of face shells for the whole shape to avoid
         // unification of faces belonging to the different shells
-        var aGMapFaceShells = new DataMapOfShapeMapOfShape(TopTools_ShapeMapHasher.Instance);
-        for (var anExp = new TopExp_Explorer(myShape, TopAbs_SHELL); anExp.More(); anExp.Next())
+        var aGMapFaceShells = new DataMapOfShapeMapOfShape(ShapeHasher.Instance);
+        for (var anExp = new Explorer(myShape, ShapeType.Shell); anExp.More(); anExp.Next())
         {
-            TopoDS_Shape aShell = anExp.Current();
-            for (var anItF = new TopoDS_Iterator(aShell); anItF.More(); anItF.Next())
+            Shape aShell = anExp.Current();
+            for (var anItF = new Iterator(aShell); anItF.More(); anItF.Next())
             {
-                TopoDS_Shape aF = anItF.Value();
-                if (aGMapFaceShells.Find(aF, out NCollection_Map<TopoDS_Shape> pShells))
+                Shape aF = anItF.Value();
+                if (aGMapFaceShells.Find(aF, out NCollection_Map<Shape> pShells))
                 {
                     pShells.Add(aShell);
                 }
                 else
                 {
-                    aGMapFaceShells.Bound(aF, new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance)).Add(aShell);
+                    aGMapFaceShells.Bound(aF, new NCollection_Map<Shape>(ShapeHasher.Instance)).Add(aShell);
                 }
             }
         }
 
         // creating map of free boundaries
-        var aFreeBoundMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aFreeBoundMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
         // look at only shells not belonging to solids
-        var anExplo = new TopExp_Explorer(myShape, TopAbs_SHELL, TopAbs_SOLID);
+        var anExplo = new Explorer(myShape, ShapeType.Shell, ShapeType.Solid);
         for (; anExplo.More(); anExplo.Next())
         {
-            TopoDS_Shape aShell = anExplo.Current();
-            var aEFmap = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapesAndAncestors(aShell, TopAbs_EDGE, TopAbs_FACE, aEFmap);
+            Shape aShell = anExplo.Current();
+            var aEFmap = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            Exploration.MapShapesAndAncestors(aShell, ShapeType.Edge, ShapeType.Face, aEFmap);
             for (int ii = 1; ii <= aEFmap.Extent(); ii++)
             {
-                TopoDS_Edge                    anEdge    = TopoDS.Edge(aEFmap.FindKey(ii));
-                NCollection_List<TopoDS_Shape> aFaceList = aEFmap[ii];
-                if (!BRep_Tool.Degenerated(anEdge) && aFaceList.Extent() == 1)
+                Edge                    anEdge    = ShapeCasts.Edge(aEFmap.FindKey(ii));
+                NCollection_List<Shape> aFaceList = aEFmap[ii];
+                if (!Tool.Degenerated(anEdge) && aFaceList.Extent() == 1)
                 {
                     aFreeBoundMap.Add(anEdge);
                 }
@@ -341,18 +346,18 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
         }
 
         // unify faces in each shell separately
-        var exps = new TopExp_Explorer();
-        for (exps.Init(myShape, TopAbs_SHELL); exps.More(); exps.Next())
+        var exps = new Explorer();
+        for (exps.Init(myShape, ShapeType.Shell); exps.More(); exps.Next())
         {
             IntUnifyFaces(exps.Current(), aGMapEdgeFaces, aGMapFaceShells, aFreeBoundMap);
         }
 
         // gather all faces out of shells in one compound and unify them at once
-        var aBB  = new BRep_Builder();
-        var aCmp = new TopoDS_Compound();
+        var aBB  = new BrepBuilder();
+        var aCmp = new Compound();
         aBB.MakeCompound(ref aCmp);
         int nbf = 0;
-        for (exps.Init(myShape, TopAbs_FACE, TopAbs_SHELL); exps.More(); exps.Next(), nbf++)
+        for (exps.Init(myShape, ShapeType.Face, ShapeType.Shell); exps.More(); exps.Next(), nbf++)
         {
             aBB.Add(aCmp, exps.Current());
         }
@@ -360,36 +365,36 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
         if (nbf > 0)
         {
             // No connection to shells, thus no need to pass the face-shell map
-            IntUnifyFaces(aCmp, aGMapEdgeFaces, new DataMapOfShapeMapOfShape(TopTools_ShapeMapHasher.Instance), aFreeBoundMap);
+            IntUnifyFaces(aCmp, aGMapEdgeFaces, new DataMapOfShapeMapOfShape(ShapeHasher.Instance), aFreeBoundMap);
         }
 
         myShape = myContext.InternalApply(myShape);
     }
 
-    private void IntUnifyFaces(in TopoDS_Shape                                                          theInpShape,
-                               NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theGMapEdgeFaces,
+    private void IntUnifyFaces(in Shape                                                          theInpShape,
+                               NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theGMapEdgeFaces,
                                DataMapOfShapeMapOfShape                                                 theGMapFaceShells,
-                               NCollection_Map<TopoDS_Shape>                                            theFreeBoundMap)
+                               NCollection_Map<Shape>                                            theFreeBoundMap)
     {
         // creating map of edge faces for the shape
         var aMapEdgeFaces =
-          new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(theInpShape, TopAbs_EDGE, TopAbs_FACE, aMapEdgeFaces);
+          new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(theInpShape, ShapeType.Edge, ShapeType.Face, aMapEdgeFaces);
 
         // map of processed shapes
-        var aProcessed = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aProcessed = new NCollection_Map<Shape>(ShapeHasher.Instance);
 
         // processing each face
-        var exp = new TopExp_Explorer();
-        for (exp.Init(theInpShape, TopAbs_FACE); exp.More(); exp.Next())
+        var exp = new Explorer();
+        for (exp.Init(theInpShape, ShapeType.Face); exp.More(); exp.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(exp.Current());
+            Face aFace = ShapeCasts.Face(exp.Current());
             if (aProcessed.Contains(aFace))
             {
                 continue;
             }
 
-            Geom_Surface? aBaseSurface = ClearRts(BRep_Tool.Surface(aFace));
+            Surface? aBaseSurface = ClearRts(Tool.Surface(aFace));
             // Bug 33894: Prevent crash when face has no surface
             if (aBaseSurface is null)
             {
@@ -397,49 +402,49 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
             }
 
             // Boundary edges for the new face
-            var edges        = new NCollection_Sequence<TopoDS_Shape>();
-            var RemovedEdges = new NCollection_Sequence<TopoDS_Shape>();
+            var edges        = new NCollection_Sequence<Shape>();
+            var RemovedEdges = new NCollection_Sequence<Shape>();
 
             int dummy = 0;
             AddOrdinaryEdges(edges, aFace, ref dummy, RemovedEdges);
 
             // Faces to get unified with the current faces
-            var faces = new NCollection_Sequence<TopoDS_Shape>();
+            var faces = new NCollection_Sequence<Shape>();
 
             // Add the current face for unification
             faces.Append(aFace);
 
             // surface and location to construct result
             var                aBaseLocation      = new Placement();
-            TopAbs_Orientation RefFaceOrientation = aFace.Orientation();
+            Orientation RefFaceOrientation = aFace.Orientation();
 
             // Take original surface
-            var RefFace = new TopoDS_Face();
-            var BB      = new BRep_Builder();
+            var RefFace = new Face();
+            var BB      = new BrepBuilder();
             BB.MakeFace(ref RefFace, aBaseSurface, aBaseLocation, 0.0);
             RefFace.Orientation(RefFaceOrientation);
             // map of edges not lying on RefFace; these edges may be updated by temporary pcurves
-            var MapEdgesWithTemporaryPCurves = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            var MapEdgesWithTemporaryPCurves = new NCollection_Map<Shape>(ShapeHasher.Instance);
 
-            double Uperiod = (aBaseSurface.IsUPeriodic()) ? aBaseSurface.UPeriod() : 0.0;
-            double Vperiod = (aBaseSurface.IsVPeriodic()) ? aBaseSurface.VPeriod() : 0.0;
+            double Uperiod = (aBaseSurface.IsUPeriodic) ? aBaseSurface.UPeriod() : 0.0;
+            double Vperiod = (aBaseSurface.IsVPeriodic) ? aBaseSurface.VPeriod() : 0.0;
 
             // Get shells connected to the face (in normal cases should not be more than 2)
-            NCollection_Map<TopoDS_Shape>? pFShells1 =
-              theGMapFaceShells.Find(aFace, out NCollection_Map<TopoDS_Shape> aFShells1) ? aFShells1 : null;
+            NCollection_Map<Shape>? pFShells1 =
+              theGMapFaceShells.Find(aFace, out NCollection_Map<Shape> aFShells1) ? aFShells1 : null;
 
             // find adjacent faces to union
             int i;
             for (i = 1; i <= edges.Length(); i++)
             {
-                TopoDS_Edge edge = TopoDS.Edge(edges[i]);
-                if (BRep_Tool.Degenerated(edge))
+                Edge edge = ShapeCasts.Edge(edges[i]);
+                if (Tool.Degenerated(edge))
                 {
                     continue;
                 }
 
                 // get connectivity of the edge in the global shape
-                NCollection_List<TopoDS_Shape> aGList = theGMapEdgeFaces.FindFromKey(edge);
+                NCollection_List<Shape> aGList = theGMapEdgeFaces.FindFromKey(edge);
                 if (!myAllowInternal
                     && (aGList.Extent() != 2 || myKeepShapes.Contains(edge) || theFreeBoundMap.Contains(edge)))
                 {
@@ -448,7 +453,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                 }
                 //
                 // Get the faces connected through the edge in the current shape
-                NCollection_List<TopoDS_Shape> aList = aMapEdgeFaces.FindFromKey(edge);
+                NCollection_List<Shape> aList = aMapEdgeFaces.FindFromKey(edge);
                 if (aList.Extent() < 2)
                 {
                     continue;
@@ -456,7 +461,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
 
                 // for a planar face create and store pcurve of edge on face
                 // to speed up all operations
-                if (!mySafeInputMode && aBaseSurface is Geom_Plane)
+                if (!mySafeInputMode && aBaseSurface is PlaneSurface)
                 {
                     BRepLib.BuildPCurveForEdgeOnPlane(edge, aFace);
                 }
@@ -465,16 +470,16 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                 var aDN1 = new Direction3D();
                 //
                 // take intermediate point on edge to compute the normal
-                BRep_Tool.Range(edge, out double f, out double l);
+                Tool.Range(edge, out double f, out double l);
                 double aTMid = (f + l) * .5;
                 //
                 bool bCheckNormals = GetNormalToSurface(aFace, edge, aTMid, ref aDN1);
                 //
                 // Process the faces
-                var anIter = new NCollection_List<TopoDS_Shape>.Iterator(aList);
+                var anIter = new NCollection_List<Shape>.Iterator(aList);
                 for (; anIter.More(); anIter.Next())
                 {
-                    TopoDS_Face aCheckedFace = TopoDS.Face(anIter.Value());
+                    Face aCheckedFace = ShapeCasts.Face(anIter.Value());
                     if (aCheckedFace.IsSame(aFace))
                     {
                         continue;
@@ -486,8 +491,8 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                     }
 
                     // Get shells connected to the checked face
-                    NCollection_Map<TopoDS_Shape>? pFShells2 =
-                      theGMapFaceShells.Find(aCheckedFace, out NCollection_Map<TopoDS_Shape> aFShells2) ? aFShells2 : null;
+                    NCollection_Map<Shape>? pFShells2 =
+                      theGMapFaceShells.Find(aCheckedFace, out NCollection_Map<Shape> aFShells2) ? aFShells2 : null;
                     // Faces can be unified only if the shells of faces connected to
                     // these faces are the same. Otherwise, topology would be broken.
                     if (!isSameSets(pFShells1, pFShells2))
@@ -529,32 +534,32 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
             {
                 if (myFacePlaneMap.IsBound(faces[1]))
                 {
-                    Geom_Plane aPlane = myFacePlaneMap[faces[1]];
+                    PlaneSurface aPlane = myFacePlaneMap[faces[1]];
                     var        aLoc   = new Placement();
                     BB.UpdateFace(RefFace, aPlane, aLoc, global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
                 // Add correct pcurves for the reference surface to the edges of other faces
-                TopoDS_Face F_RefFace0 = RefFace;
-                F_RefFace0.Orientation(TopAbs_FORWARD);
+                Face F_RefFace0 = RefFace;
+                F_RefFace0.Orientation(Forward);
                 AddPCurves(faces, F_RefFace0, MapEdgesWithTemporaryPCurves);
 
                 // fill in the connectivity map for selected faces
                 var aMapEF0 =
-                  new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+                  new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
                 for (i = 1; i <= faces.Length(); i++)
                 {
-                    TopExp.MapShapesAndAncestors(faces[i], TopAbs_EDGE, TopAbs_FACE, aMapEF0);
+                    Exploration.MapShapesAndAncestors(faces[i], ShapeType.Edge, ShapeType.Face, aMapEF0);
                 }
                 // Collect keep edges and multi-connected edges, i.e. edges that are internal to
                 // the set of selected faces and have connections to other faces.
-                var aKeepEdges = new NCollection_List<TopoDS_Shape>();
+                var aKeepEdges = new NCollection_List<Shape>();
                 for (i = 1; i <= aMapEF0.Extent(); i++)
                 {
-                    NCollection_List<TopoDS_Shape> aLF = aMapEF0[i];
+                    NCollection_List<Shape> aLF = aMapEF0[i];
                     if (aLF.Extent() == 2)
                     {
-                        TopoDS_Shape                   aE   = aMapEF0.FindKey(i);
-                        NCollection_List<TopoDS_Shape> aGLF = theGMapEdgeFaces.FindFromKey(aE);
+                        Shape                   aE   = aMapEF0.FindKey(i);
+                        NCollection_List<Shape> aGLF = theGMapEdgeFaces.FindFromKey(aE);
                         if (aGLF.Extent() > 2 || myKeepShapes.Contains(aE) || theFreeBoundMap.Contains(aE))
                         {
                             aKeepEdges.Append(aE);
@@ -567,12 +572,12 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                     {
                         // Remove from the selection the faces which have no other connect edges
                         // and contain multi-connected edges and/or keep edges.
-                        var anAvoidFaces = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                        var it           = new NCollection_List<TopoDS_Shape>.Iterator(aKeepEdges);
+                        var anAvoidFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                        var it           = new NCollection_List<Shape>.Iterator(aKeepEdges);
                         for (; it.More(); it.Next())
                         {
-                            TopoDS_Shape                   aE  = it.Value();
-                            NCollection_List<TopoDS_Shape> aLF = aMapEF0.FindFromKey(aE);
+                            Shape                   aE  = it.Value();
+                            NCollection_List<Shape> aLF = aMapEF0.FindFromKey(aE);
                             anAvoidFaces.Add(aLF.First());
                             anAvoidFaces.Add(aLF.Last());
                         }
@@ -584,11 +589,11 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                                 // remove from 'edges' the edges of this face and add to 'edges'
                                 // the edges of this face that were not present in 'edges' before
                                 bool hasConnectAnotherFaces = false;
-                                var  ex                     = new TopExp_Explorer(faces[i], TopAbs_EDGE);
+                                var  ex                     = new Explorer(faces[i], ShapeType.Edge);
                                 for (; ex.More() && !hasConnectAnotherFaces; ex.Next())
                                 {
-                                    TopoDS_Shape                   aE  = ex.Current();
-                                    NCollection_List<TopoDS_Shape> aLF = aMapEF0.FindFromKey(aE);
+                                    Shape                   aE  = ex.Current();
+                                    NCollection_List<Shape> aLF = aMapEF0.FindFromKey(aE);
                                     if (aLF.Extent() > 1)
                                     {
                                         for (it.Initialize(aLF); it.More() && !hasConnectAnotherFaces; it.Next())
@@ -612,15 +617,15 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                         // already updated the boundaries of merged area
                         if (!faces.IsEmpty())
                         {
-                            var aMapFaces = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+                            var aMapFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
                             for (i = 1; i <= faces.Length(); i++)
                             {
                                 aMapFaces.Add(faces[i]);
                             }
                             for (it.Initialize(aKeepEdges); it.More(); it.Next())
                             {
-                                TopoDS_Shape                   aE  = it.Value();
-                                NCollection_List<TopoDS_Shape> aLF = aMapEF0.FindFromKey(aE);
+                                Shape                   aE  = it.Value();
+                                NCollection_List<Shape> aLF = aMapEF0.FindFromKey(aE);
                                 if (aLF.Extent() < 2)
                                 {
                                     continue;
@@ -643,47 +648,47 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                     else
                     { // internal edges are allowed
                         // add multi-connected and keep edges as internal in new face
-                        var it = new NCollection_List<TopoDS_Shape>.Iterator(aKeepEdges);
+                        var it = new NCollection_List<Shape>.Iterator(aKeepEdges);
                         for (; it.More(); it.Next())
                         {
-                            TopoDS_Shape aE = it.Value();
-                            edges.Append(aE.Oriented(TopAbs_INTERNAL));
+                            Shape aE = it.Value();
+                            edges.Append(aE.Oriented(Internal));
                         }
                     }
                 } // if (!aKeepEdges.IsEmpty())
             } // if (faces.Length() > 1)
 
             var aMapEF =
-              new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+              new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             for (i = 1; i <= faces.Length(); i++)
             {
-                TopExp.MapShapesAndUniqueAncestors(faces[i], TopAbs_EDGE, TopAbs_FACE, aMapEF);
+                Exploration.MapShapesAndUniqueAncestors(faces[i], ShapeType.Edge, ShapeType.Face, aMapEF);
             }
 
             // Correct orientation of edges
             for (int ii = 1; ii <= edges.Length(); ii++)
             {
-                ref TopoDS_Shape               anEdge = ref edges[ii];
+                ref Shape               anEdge = ref edges[ii];
                 int                            indE   = aMapEF.FindIndex(anEdge);
-                NCollection_List<TopoDS_Shape> aLF    = aMapEF[indE];
+                NCollection_List<Shape> aLF    = aMapEF[indE];
                 if (myAllowInternal && myKeepShapes.Contains(anEdge) && aLF.Extent() == 2)
                 {
-                    edges[ii].Orientation(TopAbs_INTERNAL);
+                    edges[ii].Orientation(Internal);
                 }
 
-                if (anEdge.Orientation() != TopAbs_INTERNAL)
+                if (anEdge.Orientation() != Internal)
                 {
                     edges[ii] = aMapEF.FindKey(indE);
                 }
             }
 
             // Exclude internal edges
-            var InternalEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            var InternalEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
             int ind_e         = 1;
             while (ind_e <= edges.Length())
             {
-                TopoDS_Shape anEdge = edges[ind_e];
-                if (anEdge.Orientation() == TopAbs_INTERNAL)
+                Shape anEdge = edges[ind_e];
+                if (anEdge.Orientation() == Internal)
                 {
                     InternalEdges.Add(anEdge);
                     edges.Remove(ind_e);
@@ -694,46 +699,46 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                 }
             }
 
-            if (RefFaceOrientation == TopAbs_REVERSED)
+            if (RefFaceOrientation == Reversed)
             {
                 for (int ii = 1; ii <= edges.Length(); ii++)
                 {
                     edges[ii].Reverse();
                 }
             }
-            TopoDS_Face F_RefFace = RefFace;
-            F_RefFace.Orientation(TopAbs_FORWARD);
+            Face F_RefFace = RefFace;
+            F_RefFace.Orientation(Forward);
 
             // all faces collected in the sequence. Perform union of faces
             if (faces.Length() > 1)
             {
                 double CoordTol;
-                var    edgesMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+                var    edgesMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
                 CoordTol =  ComputeMinEdgeSize(edges, F_RefFace, edgesMap);
                 CoordTol /= 10.0;
                 CoordTol =  Max(CoordTol, global::Kerf.Engine.Foundation.Precision.Confusion());
 
                 var VEmap =
-                  new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+                  new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
                 for (int ind = 1; ind <= edges.Length(); ind++)
                 {
-                    TopExp.MapShapesAndUniqueAncestors(edges[ind], TopAbs_VERTEX, TopAbs_EDGE, VEmap);
+                    Exploration.MapShapesAndUniqueAncestors(edges[ind], ShapeType.Vertex, ShapeType.Edge, VEmap);
                 }
 
                 // Try to find seam edge and an edge that is not seam but has 2 pcurves on the surface
                 bool SeamFound, UseamFound = false, VseamFound = false;
-                var  EdgeWith2pcurves = new TopoDS_Edge();
+                var  EdgeWith2pcurves = new Edge();
                 for (int ii = 1; ii <= faces.Length(); ii++)
                 {
-                    TopoDS_Face face_ii     = TopoDS.Face(faces[ii]);
-                    TopoDS_Wire anOuterWire = BRepTools.OuterWire(face_ii);
-                    var         itw         = new TopoDS_Iterator(anOuterWire);
+                    Face face_ii     = ShapeCasts.Face(faces[ii]);
+                    Wire anOuterWire = BrepTools.OuterWire(face_ii);
+                    var         itw         = new Iterator(anOuterWire);
                     for (; itw.More(); itw.Next())
                     {
-                        TopoDS_Edge anEdge = TopoDS.Edge(itw.Value());
-                        if (BRep_Tool.IsClosed(anEdge, face_ii))
+                        Edge anEdge = ShapeCasts.Edge(itw.Value());
+                        if (Tool.IsClosed(anEdge, face_ii))
                         {
-                            if (BRepTools.IsReallyClosed(anEdge, face_ii))
+                            if (BrepTools.IsReallyClosed(anEdge, face_ii))
                             {
                                 if (IsUiso(anEdge, face_ii))
                                 {
@@ -754,20 +759,20 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                 SeamFound = UseamFound || VseamFound;
 
                 bool aIsEdgeWith2pcurvesSmooth = false;
-                if (myConcatBSplines && !EdgeWith2pcurves.IsNull() && !SeamFound)
+                if (myConcatBSplines && !EdgeWith2pcurves.IsNull && !SeamFound)
                 {
-                    NCollection_List<TopoDS_Shape> aFaceList = theGMapEdgeFaces.FindFromKey(EdgeWith2pcurves);
-                    TopoDS_Face                    aFace1    = TopoDS.Face(aFaceList.First());
-                    TopoDS_Face                    aFace2    = TopoDS.Face(aFaceList.Last());
+                    NCollection_List<Shape> aFaceList = theGMapEdgeFaces.FindFromKey(EdgeWith2pcurves);
+                    Face                    aFace1    = ShapeCasts.Face(aFaceList.First());
+                    Face                    aFace2    = ShapeCasts.Face(aFaceList.Last());
                     Continuity anOrderOfCont = BRepLib.ContinuityOfFaces(EdgeWith2pcurves, aFace1, aFace2, myAngTol);
                     aIsEdgeWith2pcurvesSmooth = (anOrderOfCont >= Continuity.G1);
                 }
 
                 if (aIsEdgeWith2pcurvesSmooth)
                 {
-                    Geom2d_Curve aPC1 = BRep_Tool.CurveOnSurface(EdgeWith2pcurves, F_RefFace, out double aFirst, out double aLast)!;
+                    Curve2D aPC1 = Tool.CurveOnSurface(EdgeWith2pcurves, F_RefFace, out double aFirst, out double aLast)!;
                     EdgeWith2pcurves.Reverse();
-                    Geom2d_Curve aPC2       = BRep_Tool.CurveOnSurface(EdgeWith2pcurves, F_RefFace, out aFirst, out aLast)!;
+                    Curve2D aPC2       = Tool.CurveOnSurface(EdgeWith2pcurves, F_RefFace, out aFirst, out aLast)!;
                     Point2D     aPnt1      = aPC1.Value(aFirst);
                     Point2D     aPnt2      = aPC2.Value(aFirst);
                     bool         anIsUclosed = (Math.Abs(aPnt1.X() - aPnt2.X()) > Math.Abs(aPnt1.Y() - aPnt2.Y()));
@@ -783,7 +788,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
 
                     if (aToMakeUPeriodic || aToMakeVPeriodic)
                     {
-                        var  aBSplineSurface = aBaseSurface as Geom_BSplineSurface;
+                        var  aBSplineSurface = aBaseSurface as BSplineSurface;
                         bool isPeriodicCopy  = false;
                         if (aBSplineSurface is null)
                         {
@@ -792,12 +797,12 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                             int           degU   = 14, degV = 14;
                             int           nmax   = 16;
                             int           aPrec  = 1;
-                            var Approximator = new GeomConvert_ApproxSurface(aBaseSurface, aTol, aUCont, aVCont, degU, degV, nmax, aPrec);
+                            var Approximator = new ApproxSurface(aBaseSurface, aTol, aUCont, aVCont, degU, degV, nmax, aPrec);
                             aBSplineSurface = Approximator.Surface()!;
                             if (aBSplineSurface.IsFrozen)
                             {
                                 // a new surface, but frozen by the approximation: its copy is the same new surface
-                                aBSplineSurface = (Geom_BSplineSurface)aBSplineSurface.Copy();
+                                aBSplineSurface = (BSplineSurface)aBSplineSurface.Copy();
                             }
                         }
                         else if (aBSplineSurface.IsFrozen)
@@ -807,7 +812,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                             // sharing it sees a periodic surface, the input's faces included (occt-issues.md). The
                             // port makes a periodic copy and puts it in the original's place in the shape it works on
                             // (its copy of the input, see Build), which is what OCCT's edit does to that shape.
-                            aBSplineSurface = (Geom_BSplineSurface)aBSplineSurface.Copy();
+                            aBSplineSurface = (BSplineSurface)aBSplineSurface.Copy();
                             isPeriodicCopy  = true;
                         }
 
@@ -831,14 +836,14 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                         // Update ref face and pcurves if the surface changed
                         if (!ReferenceEquals(aBSplineSurface, aBaseSurface))
                         {
-                            TopoDS_Face   OldRefFace = RefFace;
-                            Geom2d_Curve? NullPCurve = null;
+                            Face   OldRefFace = RefFace;
+                            Curve2D? NullPCurve = null;
                             RefFace.Nullify();
                             BB.MakeFace(ref RefFace, aBSplineSurface, aBaseLocation, 0.0);
                             for (int ii = 1; ii <= edges.Length(); ii++)
                             {
-                                TopoDS_Edge   anEdge  = TopoDS.Edge(edges[ii]);
-                                Geom2d_Curve? aPCurve = BRep_Tool.CurveOnSurface(anEdge, OldRefFace, out aFirst, out aLast);
+                                Edge   anEdge  = ShapeCasts.Edge(edges[ii]);
+                                Curve2D? aPCurve = Tool.CurveOnSurface(anEdge, OldRefFace, out aFirst, out aLast);
                                 if (MapEdgesWithTemporaryPCurves.Contains(anEdge))
                                 {
                                     BB.UpdateEdge(anEdge, NullPCurve, OldRefFace, 0.0);
@@ -846,7 +851,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                                 BB.UpdateEdge(anEdge, aPCurve, RefFace, 0.0);
                             }
                             F_RefFace = RefFace;
-                            F_RefFace.Orientation(TopAbs_FORWARD);
+                            F_RefFace.Orientation(Forward);
                         }
                     }
                 } // if (myConcatBSplines && !EdgeWith2pcurves.IsNull() && !SeamFound)
@@ -890,8 +895,8 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                             }
                             else if (aNumberOfIntervals == 2)
                             {
-                                var UsedEdges0    = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                                var EdgeNewPCurve = new NCollection_DataMap<TopoDS_Shape, Geom2d_Curve>(EqualityComparer<TopoDS_Shape>.Default);
+                                var UsedEdges0    = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                                var EdgeNewPCurve = new NCollection_DataMap<Shape, Curve2D>(EqualityComparer<Shape>.Default);
 
                                 // Relocate pcurves to new U-origin
                                 if (!RelocatePCurvesToNewUorigin(edges,
@@ -907,7 +912,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                                     VEmap.Clear();
                                     for (int ind = 1; ind <= edges.Length(); ind++)
                                     {
-                                        TopExp.MapShapesAndUniqueAncestors(edges[ind], TopAbs_VERTEX, TopAbs_EDGE, VEmap);
+                                        Exploration.MapShapesAndUniqueAncestors(edges[ind], ShapeType.Vertex, ShapeType.Edge, VEmap);
                                     }
                                     break;
                                 }
@@ -915,17 +920,17 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                                 // PCurves from unused edges (may be degenerated edges)
                                 for (int ind = 1; ind <= edges.Length(); ind++)
                                 {
-                                    TopoDS_Edge anEdge = TopoDS.Edge(edges[ind]);
+                                    Edge anEdge = ShapeCasts.Edge(edges[ind]);
                                     if (!UsedEdges0.Contains(anEdge))
                                     {
-                                        Geom2d_Curve? aPCurve =
-                                          BRep_Tool.CurveOnSurface(anEdge, F_RefFace, out double fpar, out double lpar);
+                                        Curve2D? aPCurve =
+                                          Tool.CurveOnSurface(anEdge, F_RefFace, out double fpar, out double lpar);
                                         if (aPCurve is null)
                                         {
                                             EdgeNewPCurve.Clear();
                                             break;
                                         }
-                                        aPCurve = new Geom2d_TrimmedCurve(aPCurve, fpar, lpar);
+                                        aPCurve = new TrimmedCurve2D(aPCurve, fpar, lpar);
                                         EdgeNewPCurve.Bind(anEdge, aPCurve);
                                     }
                                 }
@@ -938,14 +943,14 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                                 VEmap.Clear();
                                 for (int ind = 1; ind <= edges.Length(); ind++)
                                 {
-                                    TopExp.MapShapesAndUniqueAncestors(edges[ind], TopAbs_VERTEX, TopAbs_EDGE, VEmap);
+                                    Exploration.MapShapesAndUniqueAncestors(edges[ind], ShapeType.Vertex, ShapeType.Edge, VEmap);
                                 }
 
                                 // Find NewUmin and NewUmax
                                 double NewCoordMin = RealLast(), NewCoordMax = RealFirst();
                                 for (int jj = 1; jj <= edges.Length(); jj++)
                                 {
-                                    Geom2d_Curve aPCurve = EdgeNewPCurve[edges[jj]];
+                                    Curve2D aPCurve = EdgeNewPCurve[edges[jj]];
                                     UpdateBoundaries(aPCurve,
                                                      aPCurve.FirstParameter(),
                                                      aPCurve.LastParameter(),
@@ -969,7 +974,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                                     {
                                         NewCoordOrigin = aSurfMin[ii];
                                     }
-                                    Geom_Surface NewSurf;
+                                    Surface NewSurf;
                                     bool         anIsInU = (ii == 0);
                                     if (NewCoordOrigin == aSurfMin[ii])
                                     {
@@ -977,23 +982,23 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                                     }
                                     else
                                     {
-                                        NewSurf = new Geom_RectangularTrimmedSurface(aBaseSurface,
+                                        NewSurf = new TrimmedSurface(aBaseSurface,
                                                                                      NewCoordOrigin,
                                                                                      NewCoordOrigin + aPeriods[ii],
                                                                                      anIsInU); // trim in U or V
                                     }
-                                    TopoDS_Face   OldRefFace = RefFace;
-                                    Geom2d_Curve? NullPCurve = null;
+                                    Face   OldRefFace = RefFace;
+                                    Curve2D? NullPCurve = null;
                                     RefFace.Nullify();
                                     BB.MakeFace(ref RefFace, NewSurf, aBaseLocation, 0.0);
                                     for (int jj = 1; jj <= edges.Length(); jj++)
                                     {
-                                        TopoDS_Edge anEdge = TopoDS.Edge(edges[jj]);
+                                        Edge anEdge = ShapeCasts.Edge(edges[jj]);
                                         if (MapEdgesWithTemporaryPCurves.Contains(anEdge))
                                         {
                                             BB.UpdateEdge(anEdge, NullPCurve, OldRefFace, 0.0);
                                         }
-                                        Geom2d_Curve aPCurve = EdgeNewPCurve[anEdge];
+                                        Curve2D aPCurve = EdgeNewPCurve[anEdge];
                                         BB.UpdateEdge(anEdge, aPCurve, RefFace, 0.0);
                                     }
                                 }
@@ -1005,39 +1010,39 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                 VseamFound = anIsSeamFound[1];
                 ////////////////////////////////////
                 F_RefFace = RefFace;
-                F_RefFace.Orientation(TopAbs_FORWARD);
+                F_RefFace.Orientation(Forward);
 
-                var NewFaces = new NCollection_Sequence<TopoDS_Shape>();
-                var NewWires = new NCollection_Sequence<TopoDS_Shape>();
+                var NewFaces = new NCollection_Sequence<Shape>();
+                var NewWires = new NCollection_Sequence<Shape>();
 
                 if (Uperiod == 0 || Vperiod == 0)
                 {
                     // Set the "periods" for closed non-periodic surface
-                    Geom_Surface aSurf = BRep_Tool.Surface(RefFace, out Placement _)!;
-                    if (aSurf is Geom_RectangularTrimmedSurface aRTS)
+                    Surface aSurf = Tool.Surface(RefFace, out Placement _)!;
+                    if (aSurf is TrimmedSurface aRTS)
                     {
                         aSurf = aRTS.BasisSurface();
                     }
                     aSurf.Bounds(out double Ufirst, out double Ulast, out double Vfirst, out double Vlast);
-                    if (Uperiod == 0 && aSurf.IsUClosed())
+                    if (Uperiod == 0 && aSurf.IsUClosed)
                     {
                         Uperiod = Ulast - Ufirst;
                     }
-                    if (Vperiod == 0 && aSurf.IsVClosed())
+                    if (Vperiod == 0 && aSurf.IsVClosed)
                     {
                         Vperiod = Vlast - Vfirst;
                     }
                 }
 
-                var  UsedEdges            = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+                var  UsedEdges            = new NCollection_Map<Shape>(ShapeHasher.Instance);
                 bool isWireBuildingFailed = false;
 
                 double FaceUmin = RealLast();
                 double FaceVmin = RealLast();
                 for (int ii = 1; ii <= edges.Length(); ii++)
                 {
-                    TopoDS_Edge anEdge   = TopoDS.Edge(edges[ii]);
-                    var         aBAcurve = new BRepAdaptor_Curve2d(anEdge, F_RefFace);
+                    Edge anEdge   = ShapeCasts.Edge(edges[ii]);
+                    var         aBAcurve = new EdgeCurve2DAdaptor(anEdge, F_RefFace);
                     if (aBAcurve.Curve() is null)
                     {
                         continue;
@@ -1070,30 +1075,30 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                 while (!edges.IsEmpty())
                 {
                     // try to find non-degenerated edge
-                    TopoDS_Edge StartEdge = TopoDS.Edge(edges[1]);
+                    Edge StartEdge = ShapeCasts.Edge(edges[1]);
                     int         istart    = 1;
-                    while (BRep_Tool.Degenerated(StartEdge) && istart < edges.Length())
+                    while (Tool.Degenerated(StartEdge) && istart < edges.Length())
                     {
                         istart++;
-                        StartEdge = TopoDS.Edge(edges[istart]);
+                        StartEdge = ShapeCasts.Edge(edges[istart]);
                     }
 
-                    var aNewWire = new TopoDS_Wire();
+                    var aNewWire = new Wire();
                     BB.MakeWire(ref aNewWire);
                     BB.Add(aNewWire, StartEdge);
                     RemoveEdgeFromMap(StartEdge, VEmap);
-                    var SplittingVertices = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+                    var SplittingVertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
 
                     double        fpar, lpar;
-                    Geom2d_Curve? StartPCurve = BRep_Tool.CurveOnSurface(StartEdge, F_RefFace, out fpar, out lpar);
+                    Curve2D? StartPCurve = Tool.CurveOnSurface(StartEdge, F_RefFace, out fpar, out lpar);
                     if (StartPCurve is null)
                     {
                         edges.Remove(istart);
                         continue;
                     }
-                    TopExp.Vertices(StartEdge, out TopoDS_Vertex StartVertex, out TopoDS_Vertex CurVertex, true); // with orientation
+                    Exploration.Vertices(StartEdge, out Vertex StartVertex, out Vertex CurVertex, true); // with orientation
                     double StartParam, CurParam;
-                    if (StartEdge.Orientation() == TopAbs_FORWARD)
+                    if (StartEdge.Orientation() == Forward)
                     {
                         StartParam = fpar;
                         CurParam   = lpar;
@@ -1106,19 +1111,19 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                     Point2D StartPoint = StartPCurve.Value(StartParam);
                     Point2D CurPoint   = StartPCurve.Value(CurParam);
 
-                    TopoDS_Edge CurEdge = StartEdge;
+                    Edge CurEdge = StartEdge;
                     for (;;) // loop till the end of current new wire
                     {
-                        var NextEdge  = new TopoDS_Edge();
+                        var NextEdge  = new Edge();
                         var NextPoint = new Point2D();
 
-                        var Elist = new NCollection_List<TopoDS_Shape>();
+                        var Elist = new NCollection_List<Shape>();
                         // const NCollection_List<TopoDS_Shape>& Elist = VEmap.FindFromKey(CurVertex);
                         if (VEmap.Contains(CurVertex))
                         {
-                            Elist = new NCollection_List<TopoDS_Shape>(VEmap.FindFromKey(CurVertex));
+                            Elist = new NCollection_List<Shape>(VEmap.FindFromKey(CurVertex));
                         }
-                        var itl = new NCollection_List<TopoDS_Shape>.Iterator(Elist);
+                        var itl = new NCollection_List<Shape>.Iterator(Elist);
                         if (Elist.IsEmpty())
                         {
                             if (CurVertex.IsSame(StartVertex))
@@ -1146,7 +1151,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                             }
                         }
 
-                        if (NextEdge.IsNull())
+                        if (NextEdge.IsNull)
                         {
                             bool EndOfWire = false;
 
@@ -1156,24 +1161,24 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                                 SplittingVertices.Add(CurVertex);
                             }
 
-                            var TmpElist  = new NCollection_List<TopoDS_Shape>();
-                            var TrueElist = new NCollection_List<TopoDS_Shape>();
+                            var TmpElist  = new NCollection_List<Shape>();
+                            var TrueElist = new NCollection_List<Shape>();
                             //<TrueElist> will be the list of candidates to become <NextEdge>
                             for (itl.Initialize(Elist); itl.More(); itl.Next())
                             {
-                                TopoDS_Edge anEdge = TopoDS.Edge(itl.Value());
+                                Edge anEdge = ShapeCasts.Edge(itl.Value());
                                 if (UsedEdges.Contains(anEdge))
                                 {
                                     continue;
                                 }
-                                TopoDS_Vertex aFirstVertex = TopExp.FirstVertex(anEdge, true);
+                                Vertex aFirstVertex = Exploration.FirstVertex(anEdge, true);
                                 if (!aFirstVertex.IsSame(CurVertex))
                                 {
                                     continue;
                                 }
                                 TmpElist.Append(anEdge);
                             }
-                            Geom2d_Curve? CurPCurve = BRep_Tool.CurveOnSurface(CurEdge, F_RefFace, out fpar, out lpar);
+                            Curve2D? CurPCurve = Tool.CurveOnSurface(CurEdge, F_RefFace, out fpar, out lpar);
                             if (TmpElist.Extent() <= 1 || (Uperiod != 0.0 || Vperiod != 0) || CurPCurve is null)
                             {
                                 TrueElist.Assign(TmpElist);
@@ -1182,29 +1187,29 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                             {
                                 // we must choose the closest direction - the biggest angle
                                 double MaxAngle = RealFirst();
-                                var    TrueEdge = new TopoDS_Edge();
-                                CurParam = (CurEdge.Orientation() == TopAbs_FORWARD) ? lpar : fpar;
-                                Geom2d_Curve.ResD1 aCurD1 = CurPCurve.EvalD1(CurParam);
+                                var    TrueEdge = new Edge();
+                                CurParam = (CurEdge.Orientation() == Forward) ? lpar : fpar;
+                                Curve2D.ResD1 aCurD1 = CurPCurve.EvalD1(CurParam);
                                 CurPoint = aCurD1.Point;
                                 Vector2D CurDir = aCurD1.D1;
                                 CurDir.Normalize();
-                                if (CurEdge.Orientation() == TopAbs_REVERSED)
+                                if (CurEdge.Orientation() == Reversed)
                                 {
                                     CurDir.Reverse();
                                 }
                                 for (itl.Initialize(TmpElist); itl.More(); itl.Next())
                                 {
-                                    TopoDS_Edge   anEdge  = TopoDS.Edge(itl.Value());
-                                    Geom2d_Curve? aPCurve = BRep_Tool.CurveOnSurface(anEdge, F_RefFace, out fpar, out lpar);
+                                    Edge   anEdge  = ShapeCasts.Edge(itl.Value());
+                                    Curve2D? aPCurve = Tool.CurveOnSurface(anEdge, F_RefFace, out fpar, out lpar);
                                     if (aPCurve is null)
                                     {
                                         // edge has no pcurve on the reference face, skip it as a direction candidate
                                         continue;
                                     }
-                                    double   aParam = (anEdge.Orientation() == TopAbs_FORWARD) ? fpar : lpar;
+                                    double   aParam = (anEdge.Orientation() == Forward) ? fpar : lpar;
                                     Vector2D aDir   = aPCurve.EvalD1(aParam).D1;
                                     aDir.Normalize();
-                                    if (anEdge.Orientation() == TopAbs_REVERSED)
+                                    if (anEdge.Orientation() == Reversed)
                                     {
                                         aDir.Reverse();
                                     }
@@ -1215,7 +1220,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                                         TrueEdge = anEdge;
                                     }
                                 }
-                                if (!TrueEdge.IsNull())
+                                if (!TrueEdge.IsNull)
                                 {
                                     TrueElist.Append(TrueEdge);
                                 }
@@ -1224,15 +1229,15 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                             // Find next edge in TrueElist
                             for (itl.Initialize(TrueElist); itl.More(); itl.Next())
                             {
-                                TopoDS_Edge anEdge = TopoDS.Edge(itl.Value());
+                                Edge anEdge = ShapeCasts.Edge(itl.Value());
 
-                                Geom2d_Curve? aPCurve = BRep_Tool.CurveOnSurface(anEdge, F_RefFace, out fpar, out lpar);
+                                Curve2D? aPCurve = Tool.CurveOnSurface(anEdge, F_RefFace, out fpar, out lpar);
                                 if (aPCurve is null)
                                 {
                                     // edge has no pcurve on the reference face, skip it as a next-edge candidate
                                     continue;
                                 }
-                                double   aParam = (anEdge.Orientation() == TopAbs_FORWARD) ? fpar : lpar;
+                                double   aParam = (anEdge.Orientation() == Forward) ? fpar : lpar;
                                 Point2D aPoint = aPCurve.Value(aParam);
                                 double   DiffU  = Math.Abs(aPoint.X() - CurPoint.X());
                                 double   DiffV  = Math.Abs(aPoint.Y() - CurPoint.Y());
@@ -1251,7 +1256,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                                 {
                                     //<edges> do not contain seams => we must reconstruct the seam up to <NextEdge>
                                     var StartOfNextEdge  = new Point2D();
-                                    var LastVertexOfSeam = new TopoDS_Vertex();
+                                    var LastVertexOfSeam = new Vertex();
                                     ReconstructMissedSeam(RemovedEdges,
                                                           F_RefFace,
                                                           CurEdge,
@@ -1275,7 +1280,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                                 else
                                 {
                                     NextEdge = anEdge;
-                                    double LastParam = (NextEdge.Orientation() == TopAbs_FORWARD) ? lpar : fpar;
+                                    double LastParam = (NextEdge.Orientation() == Forward) ? lpar : fpar;
                                     NextPoint = aPCurve.Value(LastParam);
                                     break;
                                 }
@@ -1287,7 +1292,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                             }
                         }
 
-                        if (NextEdge.IsNull())
+                        if (NextEdge.IsNull)
                         {
                             if (Uperiod != 0.0 || Vperiod != 0.0)
                             {
@@ -1307,7 +1312,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                                                       Vperiod,
                                                       ref NextEdge,
                                                       ref NextPoint);
-                                if (NextEdge.IsNull())
+                                if (NextEdge.IsNull)
                                 {
                                     isWireBuildingFailed = true;
                                     break;
@@ -1321,7 +1326,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                         }
                         CurPoint  = NextPoint;
                         CurEdge   = NextEdge;
-                        CurVertex = TopExp.LastVertex(CurEdge, true); // with orientation
+                        CurVertex = Exploration.LastVertex(CurEdge, true); // with orientation
                         BB.Add(aNewWire, CurEdge);
                         UsedEdges.Add(CurEdge);
                         RemoveEdgeFromMap(CurEdge, VEmap);
@@ -1351,11 +1356,11 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
 
                     // add just built wire to current face or save it in the sequence of wires
                     bool EdgeOnBoundOfSurfFound = false;
-                    var  itw                    = new TopoDS_Iterator(aNewWire);
+                    var  itw                    = new Iterator(aNewWire);
                     for (; itw.More(); itw.Next())
                     {
-                        TopoDS_Edge anEdge = TopoDS.Edge(itw.Value());
-                        if (BRep_Tool.IsClosed(anEdge, RefFace))
+                        Edge anEdge = ShapeCasts.Edge(itw.Value());
+                        if (Tool.IsClosed(anEdge, RefFace))
                         {
                             EdgeOnBoundOfSurfFound = true;
                             break;
@@ -1363,8 +1368,8 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                     }
                     if (EdgeOnBoundOfSurfFound) // this wire can not be a hole
                     {
-                        Geom_Surface? aSurf   = BRep_Tool.Surface(RefFace, out Placement aLoc);
-                        var           aResult = new TopoDS_Face();
+                        Surface? aSurf   = Tool.Surface(RefFace, out Placement aLoc);
+                        var           aResult = new Face();
                         BB.MakeFace(ref aResult, aSurf, aLoc, 0);
                         BB.Add(aResult, aNewWire);
                         aResult.Orientation(RefFaceOrientation);
@@ -1391,24 +1396,24 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
 
                 // Build wires from internal edges
                 var IntVEmap =
-                  new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+                  new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
                 for (int ii = 1; ii <= InternalEdges.Extent(); ii++)
                 {
-                    TopExp.MapShapesAndAncestors(InternalEdges[ii], TopAbs_VERTEX, TopAbs_EDGE, IntVEmap);
+                    Exploration.MapShapesAndAncestors(InternalEdges[ii], ShapeType.Vertex, ShapeType.Edge, IntVEmap);
                 }
-                var InternalWires = new NCollection_Sequence<TopoDS_Shape>();
+                var InternalWires = new NCollection_Sequence<Shape>();
                 while (!InternalEdges.IsEmpty())
                 {
-                    TopoDS_Edge aFirstEdge = TopoDS.Edge(InternalEdges[1]);
+                    Edge aFirstEdge = ShapeCasts.Edge(InternalEdges[1]);
                     InternalEdges.RemoveFromIndex(1);
                     RemoveEdgeFromMap(aFirstEdge, IntVEmap);
-                    var anInternalWire = new TopoDS_Wire();
+                    var anInternalWire = new Wire();
                     BB.MakeWire(ref anInternalWire);
                     BB.Add(anInternalWire, aFirstEdge);
-                    var EndEdges = new TopoDS_Edge[2];
+                    var EndEdges = new Edge[2];
                     EndEdges[0] = EndEdges[1] = aFirstEdge;
-                    var VV = new TopoDS_Vertex[2];
-                    TopExp.Vertices(aFirstEdge, out VV[0], out VV[1]);
+                    var VV = new Vertex[2];
+                    Exploration.Vertices(aFirstEdge, out VV[0], out VV[1]);
                     for (;;)
                     {
                         if (VV[0].IsSame(VV[1]))
@@ -1418,11 +1423,11 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                         bool found = false;
                         for (int ii = 0; ii < 2; ii++)
                         {
-                            NCollection_List<TopoDS_Shape> Elist = IntVEmap.FindFromKey(VV[ii]);
-                            var                            itl   = new NCollection_List<TopoDS_Shape>.Iterator(Elist);
+                            NCollection_List<Shape> Elist = IntVEmap.FindFromKey(VV[ii]);
+                            var                            itl   = new NCollection_List<Shape>.Iterator(Elist);
                             for (; itl.More(); itl.Next())
                             {
-                                TopoDS_Edge anEdge = TopoDS.Edge(itl.Value());
+                                Edge anEdge = ShapeCasts.Edge(itl.Value());
                                 if (anEdge.IsSame(EndEdges[ii]))
                                 {
                                     continue;
@@ -1431,7 +1436,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                                 InternalEdges.RemoveKey(anEdge);
                                 RemoveEdgeFromMap(anEdge, IntVEmap);
                                 BB.Add(anInternalWire, anEdge);
-                                TopExp.Vertices(anEdge, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+                                Exploration.Vertices(anEdge, out Vertex V1, out Vertex V2);
                                 VV[ii]       = (V1.IsSame(VV[ii])) ? V2 : V1;
                                 EndEdges[ii] = anEdge;
                                 break;
@@ -1449,8 +1454,8 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                 if (NewFaces.IsEmpty())
                 {
                     // one face without seam
-                    Geom_Surface? aSurf   = BRep_Tool.Surface(RefFace, out Placement aLoc);
-                    var           aResult = new TopoDS_Face();
+                    Surface? aSurf   = Tool.Surface(RefFace, out Placement aLoc);
+                    var           aResult = new Face();
                     BB.MakeFace(ref aResult, aSurf, aLoc, 0.0);
                     for (int ii = 1; ii <= NewWires.Length(); ii++)
                     {
@@ -1470,7 +1475,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                 }
                 else if (NewFaces.Length() == 1)
                 {
-                    TopoDS_Shape aNewFace = NewFaces[1].Oriented(TopAbs_FORWARD);
+                    Shape aNewFace = NewFaces[1].Oriented(Forward);
                     for (int ii = 1; ii <= NewWires.Length(); ii++)
                     {
                         BB.Add(aNewFace, NewWires[ii]);
@@ -1492,22 +1497,22 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
                     InsertWiresIntoFaces(NewWires, NewFaces, RefFace);
                     InsertWiresIntoFaces(InternalWires, NewFaces, RefFace);
 
-                    var Emaps = new NCollection_Sequence<NCollection_Map<TopoDS_Shape>>();
+                    var Emaps = new NCollection_Sequence<NCollection_Map<Shape>>();
                     for (int ii = 1; ii <= faces.Length(); ii++)
                     {
-                        var aEmap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                        TopExp.MapShapes(faces[ii], aEmap);
+                        var aEmap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                        Exploration.MapShapes(faces[ii], aEmap);
                         Emaps.Append(aEmap);
                     }
                     for (int ii = 1; ii <= NewFaces.Length(); ii++)
                     {
-                        var facesForThisFace = new NCollection_Sequence<TopoDS_Shape>();
-                        var UsedFaces        = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                        var Explo            = new TopExp_Explorer(NewFaces[ii], TopAbs_EDGE);
+                        var facesForThisFace = new NCollection_Sequence<Shape>();
+                        var UsedFaces        = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                        var Explo            = new Explorer(NewFaces[ii], ShapeType.Edge);
                         for (; Explo.More(); Explo.Next())
                         {
-                            TopoDS_Edge anEdge = TopoDS.Edge(Explo.Current());
-                            if (BRep_Tool.Degenerated(anEdge) || BRep_Tool.IsClosed(anEdge, RefFace))
+                            Edge anEdge = ShapeCasts.Edge(Explo.Current());
+                            if (Tool.Degenerated(anEdge) || Tool.IsClosed(anEdge, RefFace))
                             {
                                 continue;
                             }
@@ -1542,19 +1547,19 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
     /// </summary>
     protected void UnifyEdges()
     {
-        TopoDS_Shape aRes = myContext.InternalApply(myShape);
+        Shape aRes = myContext.InternalApply(myShape);
         // creating map of edge faces
         var aMapEdgeFaces =
-          new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(aRes, TopAbs_EDGE, TopAbs_FACE, aMapEdgeFaces);
+          new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aRes, ShapeType.Edge, ShapeType.Face, aMapEdgeFaces);
         // creating map of vertex edges
         var aMapEdgesVertex =
-          new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndUniqueAncestors(aRes, TopAbs_VERTEX, TopAbs_EDGE, aMapEdgesVertex);
+          new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndUniqueAncestors(aRes, ShapeType.Vertex, ShapeType.Edge, aMapEdgesVertex);
         // creating map of vertex faces
         var aVFmap =
-          new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndUniqueAncestors(aRes, TopAbs_VERTEX, TopAbs_FACE, aVFmap);
+          new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndUniqueAncestors(aRes, ShapeType.Vertex, ShapeType.Face, aVFmap);
 
         if (mySafeInputMode)
         {
@@ -1562,7 +1567,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
         }
 
         // Sequence of the edges of the shape
-        var aSeqEdges = new NCollection_Sequence<TopoDS_Shape>();
+        var aSeqEdges = new NCollection_Sequence<Shape>();
         int aNbE      = aMapEdgeFaces.Extent();
         for (int i = 1; i <= aNbE; ++i)
         {
@@ -1570,20 +1575,20 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
         }
 
         // Prepare map of shared vertices (with the number of connected edges greater then 2)
-        var aSharedVert = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aSharedVert = new NCollection_Map<Shape>(ShapeHasher.Instance);
         CheckSharedVertices(aSeqEdges, aMapEdgesVertex, myKeepShapes, aSharedVert);
         // Merge the edges avoiding removal of the shared vertices
         bool isMerged = MergeSeq(aSeqEdges, aVFmap, aSharedVert);
         // Collect faces to rebuild
-        var aChangedFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aChangedFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         if (isMerged)
         {
             for (int i = 1; i <= aNbE; ++i)
             {
-                TopoDS_Shape aE = aMapEdgeFaces.FindKey(i);
+                Shape aE = aMapEdgeFaces.FindKey(i);
                 if (myContext.IsRecorded(aE))
                 {
-                    var it = new NCollection_List<TopoDS_Shape>.Iterator(aMapEdgeFaces[i]);
+                    var it = new NCollection_List<Shape>.Iterator(aMapEdgeFaces[i]);
                     for (; it.More(); it.Next())
                     {
                         aChangedFaces.Add(it.Value());
@@ -1596,8 +1601,8 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
         double aPrec = global::Kerf.Engine.Foundation.Precision.Confusion();
         for (int i = 1; i <= aChangedFaces.Extent(); i++)
         {
-            TopoDS_Face aFace = TopoDS.Face(myContext.InternalApply(aChangedFaces.FindKey(i)));
-            if (aFace.IsNull())
+            Face aFace = ShapeCasts.Face(myContext.InternalApply(aChangedFaces.FindKey(i)));
+            if (aFace.IsNull)
             {
                 continue;
             }
@@ -1606,12 +1611,12 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
             // to speed up all operations; but this is allowed only when non-safe mode in force
             if (!mySafeInputMode)
             {
-                Geom_Surface? aSurface = BRep_Tool.Surface(aFace, out Placement _);
+                Surface? aSurface = Tool.Surface(aFace, out Placement _);
                 aSurface = ClearRts(aSurface);
-                if (aSurface is Geom_Plane)
+                if (aSurface is PlaneSurface)
                 {
-                    var aLE = new NCollection_List<TopoDS_Shape>();
-                    for (var anEx = new TopExp_Explorer(aFace, TopAbs_EDGE); anEx.More(); anEx.Next())
+                    var aLE = new NCollection_List<Shape>();
+                    for (var anEx = new Explorer(aFace, ShapeType.Edge); anEx.More(); anEx.Next())
                     {
                         aLE.Append(anEx.Current());
                     }
@@ -1635,22 +1640,22 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
             sff.FixPeriodicDegeneratedMode() = 0;
             SetFixWireModes(sff);
             sff.Perform();
-            TopoDS_Shape aNewFace = sff.InternalFace();
+            Shape aNewFace = sff.InternalFace();
             myContext.Replace(aFace, aNewFace);
         }
 
         if (aChangedFaces.Extent() > 0)
         {
             // fix changed shell and replace it in the local context
-            TopoDS_Shape aRes1     = myContext.InternalApply(aRes);
+            Shape aRes1     = myContext.InternalApply(aRes);
             bool         isChanged = false;
-            var          expsh     = new TopExp_Explorer();
-            for (expsh.Init(aRes1, TopAbs_SHELL); expsh.More(); expsh.Next())
+            var          expsh     = new Explorer();
+            for (expsh.Init(aRes1, ShapeType.Shell); expsh.More(); expsh.Next())
             {
-                TopoDS_Shell aShell = TopoDS.Shell(expsh.Current());
+                Shell aShell = ShapeCasts.Shell(expsh.Current());
                 var          sfsh   = new ShapeFix_Shell();
                 sfsh.FixFaceOrientation(aShell);
-                TopoDS_Shape aNewShell = sfsh.InternalShell();
+                Shape aNewShell = sfsh.InternalShell();
                 if (!aNewShell.IsSame(aShell))
                 {
                     myContext.Replace(aShell, aNewShell);
@@ -1682,31 +1687,31 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
         // Get history from the context.
         // It contains all modifications of the operation. Some of these
         // modifications become not relevant and should be filtered.
-        BRepTools_History aCtxHistory = myContext.InternalHistory();
+        History aCtxHistory = myContext.InternalHistory();
 
         // Explore the history of the context and fill
         // the history of UnifySameDomain algorithm
-        var aUSDHistory = new BRepTools_History();
+        var aUSDHistory = new History();
 
         // Map all Vertices, Edges, Faces and Solids in the input shape
-        var aMapInputShape = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(myInitShape, TopAbs_VERTEX, aMapInputShape);
-        TopExp.MapShapes(myInitShape, TopAbs_EDGE, aMapInputShape);
-        TopExp.MapShapes(myInitShape, TopAbs_FACE, aMapInputShape);
-        TopExp.MapShapes(myInitShape, TopAbs_SOLID, aMapInputShape);
+        var aMapInputShape = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(myInitShape, ShapeType.Vertex, aMapInputShape);
+        Exploration.MapShapes(myInitShape, ShapeType.Edge, aMapInputShape);
+        Exploration.MapShapes(myInitShape, ShapeType.Face, aMapInputShape);
+        Exploration.MapShapes(myInitShape, ShapeType.Solid, aMapInputShape);
 
         // Map all Vertices, Edges, Faces and Solids in the result shape
-        var aMapResultShapes = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(myShape, TopAbs_VERTEX, aMapResultShapes);
-        TopExp.MapShapes(myShape, TopAbs_EDGE, aMapResultShapes);
-        TopExp.MapShapes(myShape, TopAbs_FACE, aMapResultShapes);
-        TopExp.MapShapes(myShape, TopAbs_SOLID, aMapResultShapes);
+        var aMapResultShapes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(myShape, ShapeType.Vertex, aMapResultShapes);
+        Exploration.MapShapes(myShape, ShapeType.Edge, aMapResultShapes);
+        Exploration.MapShapes(myShape, ShapeType.Face, aMapResultShapes);
+        Exploration.MapShapes(myShape, ShapeType.Solid, aMapResultShapes);
 
         // Iterate on all input shapes and get their modifications
         int i, aNb = aMapInputShape.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aS = aMapInputShape[i];
+            Shape aS = aMapInputShape[i];
 
             // Check the shape itself to be present in the result
             if (aMapResultShapes.Contains(aS))
@@ -1727,7 +1732,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Transient
 
             // Check the images of the shape to be present in the result
             bool bRemoved = true;
-            foreach (TopoDS_Shape aSIm in aLSImages)
+            foreach (Shape aSIm in aLSImages)
             {
                 if (aMapResultShapes.Contains(aSIm))
                 {

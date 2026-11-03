@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_TypeTrans;
@@ -34,26 +35,26 @@ public class IntPatch_ImpImpIntersectionTests
                              double xz) =>
         new(new Point3D(x, y, z), new Direction3D(dx, dy, dz), new Direction3D(xx, xy, xz));
 
-    private static Geom_Plane Pln(CoordinateSystem theAx) => new(theAx);
+    private static PlaneSurface Pln(CoordinateSystem theAx) => new(theAx);
 
-    private static Geom_CylindricalSurface Cyl(CoordinateSystem theAx, double theR) => new(theAx, theR);
+    private static CylindricalSurface Cyl(CoordinateSystem theAx, double theR) => new(theAx, theR);
 
-    private static Geom_ConicalSurface Cone(CoordinateSystem theAx, double theAng, double theR) => new(theAx, theAng, theR);
+    private static ConicalSurface Cone(CoordinateSystem theAx, double theAng, double theR) => new(theAx, theAng, theR);
 
-    private static Geom_SphericalSurface Sph(CoordinateSystem theAx, double theR) => new(theAx, theR);
+    private static SphericalSurface Sph(CoordinateSystem theAx, double theR) => new(theAx, theR);
 
-    private static Geom_ToroidalSurface Tor(CoordinateSystem theAx, double theR, double ther) => new(theAx, theR, ther);
+    private static ToroidalSurface Tor(CoordinateSystem theAx, double theR, double ther) => new(theAx, theR, ther);
 
-    private sealed record Result(IntPatch_ImpImpIntersection Inter, GeomAdaptor_Surface S1, GeomAdaptor_Surface S2);
+    private sealed record Result(IntPatch_ImpImpIntersection Inter, SurfaceAdaptor S1, SurfaceAdaptor S2);
 
     // The intersection as GeomInt_IntSS runs it; bounds {u1, u2, v1, v2} trim a surface.
-    private static Result Run(Geom_Surface theS1, Geom_Surface theS2, double[]? theB1 = null, double[]? theB2 = null,
+    private static Result Run(Surface theS1, Surface theS2, double[]? theB1 = null, double[]? theB2 = null,
                               double theTol = Tol, bool theCheck = true)
     {
-        GeomAdaptor_Surface aS1 = theB1 is null ? new(theS1) : new(theS1, theB1[0], theB1[1], theB1[2], theB1[3]);
-        GeomAdaptor_Surface aS2 = theB2 is null ? new(theS2) : new(theS2, theB2[0], theB2[1], theB2[2], theB2[3]);
-        var anInter = new IntPatch_ImpImpIntersection(aS1, new Adaptor3d_TopolTool(aS1), aS2,
-                                                      new Adaptor3d_TopolTool(aS2), theTol, theTol);
+        SurfaceAdaptor aS1 = theB1 is null ? new(theS1) : new(theS1, theB1[0], theB1[1], theB1[2], theB1[3]);
+        SurfaceAdaptor aS2 = theB2 is null ? new(theS2) : new(theS2, theB2[0], theB2[1], theB2[2], theB2[3]);
+        var anInter = new IntPatch_ImpImpIntersection(aS1, new TopolTool(aS1), aS2,
+                                                      new TopolTool(aS2), theTol, theTol);
         var aResult = new Result(anInter, aS1, aS2);
         if (theCheck && anInter.IsDone())
         {
@@ -62,7 +63,7 @@ public class IntPatch_ImpImpIntersectionTests
         return aResult;
     }
 
-    private static IntSurf_Quadric Quadric(GeomAdaptor_Surface theS) => theS.GetType() switch
+    private static IntSurf_Quadric Quadric(SurfaceAdaptor theS) => theS.GetType() switch
     {
         SurfaceKind.Plane => new IntSurf_Quadric(theS.Plane()),
         SurfaceKind.Cylinder => new IntSurf_Quadric(theS.Cylinder()),
@@ -316,7 +317,7 @@ public class IntPatch_ImpImpIntersectionTests
     [Fact]
     public void Plane_cone_conics()
     {
-        Geom_ConicalSurface aCone = Cone(Ax(0, 0, 0, 0, 0, 1), Math.PI / 6, 1);
+        ConicalSurface aCone = Cone(Ax(0, 0, 0, 0, 0, 1), Math.PI / 6, 1);
         Result aCircle = Run(Pln(Ax(0, 0, 2, 0, 0, 1)), aCone);
         Lines(aCircle, IntPatch_Circle);
         Near(1.0 + 2.0 * Math.Tan(Math.PI / 6), G(aCircle, 1).Circle().Radius(), 1.0e-15);
@@ -636,9 +637,9 @@ public class IntPatch_ImpImpIntersectionTests
         Assert.False(anInter.IsDone());
         Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInter.IsEmpty());
 
-        GeomAdaptor_Surface aBezier = new(new Geom_BezierSurface(new NCollection_Array2<Point3D>(1, 2, 1, 2)));
-        GeomAdaptor_Surface aPlane = new(Pln(Ax(0, 0, 0, 0, 0, 1)));
+        SurfaceAdaptor aBezier = new(new BezierSurface(new NCollection_Array2<Point3D>(1, 2, 1, 2)));
+        SurfaceAdaptor aPlane = new(Pln(Ax(0, 0, 0, 0, 0, 1)));
         Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new IntPatch_ImpImpIntersection(
-            aBezier, new Adaptor3d_TopolTool(aBezier), aPlane, new Adaptor3d_TopolTool(aPlane), Tol, Tol));
+            aBezier, new TopolTool(aBezier), aPlane, new TopolTool(aPlane), Tol, Tol));
     }
 }

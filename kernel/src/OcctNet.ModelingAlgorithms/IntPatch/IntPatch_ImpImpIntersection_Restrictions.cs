@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_TypeTrans;
@@ -47,7 +49,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                                          ref Vector3D d1u, ref Vector3D d1v, ref Vector3D tgarc,
                                          ref IntSurf_Transition TRest, ref IntSurf_Transition TArc)
     {
-        Adaptor2d_Curve2d thearc = OnS1 ? ptvtx.ArcOnS1() : ptvtx.ArcOnS2();
+        Curve2DAdaptorBase thearc = OnS1 ? ptvtx.ArcOnS1() : ptvtx.ArcOnS2();
         double aParOnArc = OnS1 ? ptvtx.ParameterOnArc1() : ptvtx.ParameterOnArc2();
         thearc.D1(aParOnArc, out Point2D p2d, out Vector2D d2d);
         Quad.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
@@ -76,7 +78,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         int nbedg = listedg.Length();
         int Nblines, Nbpts;
 
-        Adaptor2d_Curve2d arcRef;
+        Curve2DAdaptorBase arcRef;
         // OCCT: ptvtx lives across the segments and the vertex loop: an end point that no line carries is built
         // from the last vertex read, keeping that vertex's arcs, vertices and flags where it sets none.
         IntPatch_Point ptvtx = new(), newptvtx;
@@ -377,7 +379,7 @@ public sealed partial class IntPatch_ImpImpIntersection
 
     private static Point3D VertexValue(IntPatch_RLine theRLine, int theIndex) => theRLine.Vertex(theIndex).Value();
 
-    private static double SquareDistance(IntPatch_GLine theGLine, in Point3D theP, Extrema_ExtPC theExtr)
+    private static double SquareDistance(IntPatch_GLine theGLine, in Point3D theP, CurvePointExtrema theExtr)
     {
         double aSQDist = RealLast();
         switch (theGLine.ArcType())
@@ -390,14 +392,14 @@ public sealed partial class IntPatch_ImpImpIntersection
                 break;
             default:
                 theExtr.Perform(theP);
-                if (!theExtr.IsDone() || theExtr.NbExt() == 0)
+                if (!theExtr.IsDone || theExtr.ExtCount == 0)
                 {
                     // Lines are not overlapped
                     return aSQDist;
                 }
 
                 aSQDist = theExtr.SquareDistance(1);
-                int aNbExtr = theExtr.NbExt();
+                int aNbExtr = theExtr.ExtCount;
                 for (int i = 2; i <= aNbExtr; i++)
                 {
                     double aSQD = theExtr.SquareDistance(i);
@@ -440,21 +442,21 @@ public sealed partial class IntPatch_ImpImpIntersection
             return false;
         }
 
-        Extrema_ExtPC anExtr = new();
-        GeomAdaptor_Curve anAC = new();
-        Geom_Curve? aCurv = null;
+        CurvePointExtrema anExtr = new();
+        CurveAdaptor anAC = new();
+        Curve3D? aCurv = null;
 
         if (aGType == IntPatch_Ellipse)
         {
-            aCurv = new Geom_Ellipse(theGLine.Ellipse());
+            aCurv = new EllipseCurve3D(theGLine.Ellipse());
         }
         else if (aGType == IntPatch_Parabola)
         {
-            aCurv = new Geom_Parabola(theGLine.Parabola());
+            aCurv = new ParabolaCurve3D(theGLine.Parabola());
         }
         else if (aGType == IntPatch_Hyperbola)
         {
-            aCurv = new Geom_Hyperbola(theGLine.Hyperbola());
+            aCurv = new HyperbolaCurve3D(theGLine.Hyperbola());
         }
 
         if (aCurv is not null)
@@ -477,14 +479,14 @@ public sealed partial class IntPatch_ImpImpIntersection
             Point3D aPMid;
             if (theRLine.IsArcOnS1())
             {
-                Adaptor2d_Curve2d anAC2d = theRLine.ArcOnS1()!;
+                Curve2DAdaptorBase anAC2d = theRLine.ArcOnS1()!;
                 double aParF = anAC2d.FirstParameter(), aParL = anAC2d.LastParameter();
                 Point2D aP2d = anAC2d.Value(0.5 * (aParF + aParL));
                 aPMid = Quad1.Value(aP2d.X(), aP2d.Y());
             }
             else
             {
-                Adaptor2d_Curve2d anAC2d = theRLine.ArcOnS2()!;
+                Curve2DAdaptorBase anAC2d = theRLine.ArcOnS2()!;
                 double aParF = anAC2d.FirstParameter(), aParL = anAC2d.LastParameter();
                 Point2D aP2d = anAC2d.Value(0.5 * (aParF + aParL));
                 aPMid = Quad2.Value(aP2d.X(), aP2d.Y());
@@ -530,7 +532,7 @@ public sealed partial class IntPatch_ImpImpIntersection
 
         bool OnFirst = false, project = false, keeppoint = false;
 
-        Adaptor2d_Curve2d? arcref = null;
+        Curve2DAdaptorBase? arcref = null;
         double paramproj, paramf, paraml;
 
         NCollection_Sequence<Point3D> seq_Pnt3d = new();
@@ -718,7 +720,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                                             Quad1.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
                                             tgrest.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
-                                            Adaptor2d_Curve2d thearc = Ptvtx.ArcOnS2();
+                                            Curve2DAdaptorBase thearc = Ptvtx.ArcOnS2();
                                             thearc.D1(Ptvtx.ParameterOnArc2(), out p2d, out d2d);
                                             Quad2.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
                                             tgarc.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
@@ -740,7 +742,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                                             Quad2.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
                                             tgrest.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
-                                            Adaptor2d_Curve2d thearc = Ptvtx.ArcOnS1();
+                                            Curve2DAdaptorBase thearc = Ptvtx.ArcOnS1();
                                             thearc.D1(Ptvtx.ParameterOnArc1(), out p2d, out d2d);
                                             Quad1.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
                                             tgarc.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);

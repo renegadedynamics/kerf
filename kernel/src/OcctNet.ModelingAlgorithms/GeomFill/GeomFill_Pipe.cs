@@ -4,8 +4,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Properties;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
@@ -33,10 +36,10 @@ public sealed class GeomFill_Pipe
     private GeomFill_PipeError myStatus; //!< Execution status
     private double myRadius;
     private double myError;
-    private Adaptor3d_Curve? myAdpPath;
-    private Adaptor3d_Curve? myAdpFirstSect;
-    private Adaptor3d_Curve? myAdpLastSect;
-    private Geom_Surface? mySurface;
+    private CurveAdaptorBase? myAdpPath;
+    private CurveAdaptorBase? myAdpFirstSect;
+    private CurveAdaptorBase? myAdpLastSect;
+    private Surface? mySurface;
     private GeomFill_LocationLaw? myLoc;
     private GeomFill_SectionLaw? mySec;
     private int myType;
@@ -44,13 +47,13 @@ public sealed class GeomFill_Pipe
     private bool myKPart;
     private bool myPolynomial;
 
-    private static bool CheckSense(NCollection_Sequence<Geom_Curve> Seq1, NCollection_Sequence<Geom_Curve> Seq2)
+    private static bool CheckSense(NCollection_Sequence<Curve3D> Seq1, NCollection_Sequence<Curve3D> Seq2)
     {
         // initialisation
         bool no_sing = true;
         Seq2.Clear();
 
-        Geom_Curve C1 = Seq1.Value(1);
+        Curve3D C1 = Seq1.Value(1);
         double f = C1.FirstParameter(), l = C1.LastParameter();
         int iP, NP = 21;
         NCollection_Array1<Point3D> Tab = new(1, NP);
@@ -67,7 +70,7 @@ public sealed class GeomFill_Pipe
         Frame3D AxeRef, Axe;
         Point3D Pos;
         bool sing;
-        GeomLib.AxeOfInertia(Tab, out AxeRef, out sing);
+        global::Kerf.Engine.Geometry.Library.GeomLib.AxeOfInertia(Tab, out AxeRef, out sing);
 
         // si la section est une droite, ca ne marche pas
         if (sing)
@@ -96,7 +99,7 @@ public sealed class GeomFill_Pipe
         for (int iseq = 2; iseq <= Seq1.Length(); iseq++)
         {
             // discretisation de C2
-            Geom_Curve C2 = Seq1.Value(iseq);
+            Curve3D C2 = Seq1.Value(iseq);
             f = C2.FirstParameter();
             l = C2.LastParameter();
             u = f;
@@ -109,7 +112,7 @@ public sealed class GeomFill_Pipe
                     u = l;
                 }
             }
-            GeomLib.AxeOfInertia(Tab, out Axe, out sing);
+            global::Kerf.Engine.Geometry.Library.GeomLib.AxeOfInertia(Tab, out Axe, out sing);
 
             // si la section est une droite, ca ne marche pas
             if (sing)
@@ -195,28 +198,28 @@ public sealed class GeomFill_Pipe
     }
 
     /// <summary>A pipe of constant radius Radius along Path.</summary>
-    public GeomFill_Pipe(Geom_Curve Path, double Radius)
+    public GeomFill_Pipe(Curve3D Path, double Radius)
         : this()
     {
         Init(Path, Radius);
     }
 
     /// <summary>A pipe of the constant section FirstSect along Path, with the trihedron Option.</summary>
-    public GeomFill_Pipe(Geom_Curve Path, Geom_Curve FirstSect, GeomFill_Trihedron Option = GeomFill_IsCorrectedFrenet)
+    public GeomFill_Pipe(Curve3D Path, Curve3D FirstSect, GeomFill_Trihedron Option = GeomFill_IsCorrectedFrenet)
         : this()
     {
         Init(Path, FirstSect, Option);
     }
 
     /// <summary>A pipe of the constant section FirstSect along the curve Path on Support (Darboux trihedron).</summary>
-    public GeomFill_Pipe(Geom2d_Curve Path, Geom_Surface Support, Geom_Curve FirstSect)
+    public GeomFill_Pipe(Curve2D Path, Surface Support, Curve3D FirstSect)
         : this()
     {
         Init(Path, Support, FirstSect);
     }
 
     /// <summary>A pipe of the constant section FirstSect along Path, with the fixed binormal Dir.</summary>
-    public GeomFill_Pipe(Geom_Curve Path, Geom_Curve FirstSect, in Direction3D Dir)
+    public GeomFill_Pipe(Curve3D Path, Curve3D FirstSect, in Direction3D Dir)
     {
         myStatus = GeomFill_PipeNotOk;
         myExchUV = false;
@@ -225,32 +228,32 @@ public sealed class GeomFill_Pipe
     }
 
     /// <summary>A pipe whose section evolves from FirstSect to LastSect along Path.</summary>
-    public GeomFill_Pipe(Geom_Curve Path, Geom_Curve FirstSect, Geom_Curve LastSect)
+    public GeomFill_Pipe(Curve3D Path, Curve3D FirstSect, Curve3D LastSect)
         : this()
     {
         Init(Path, FirstSect, LastSect);
     }
 
     /// <summary>A pipe through the sections NSections along Path.</summary>
-    public GeomFill_Pipe(Geom_Curve Path, NCollection_Sequence<Geom_Curve> NSections)
+    public GeomFill_Pipe(Curve3D Path, NCollection_Sequence<Curve3D> NSections)
         : this()
     {
         Init(Path, NSections);
     }
 
     /// <summary>A pipe of constant radius Radius between the guide lines Curve1 and Curve2 around Path.</summary>
-    public GeomFill_Pipe(Geom_Curve Path, Geom_Curve Curve1, Geom_Curve Curve2, double Radius)
+    public GeomFill_Pipe(Curve3D Path, Curve3D Curve1, Curve3D Curve2, double Radius)
         : this()
     {
-        GeomAdaptor_Curve AdpPath = new GeomAdaptor_Curve(Path);
-        GeomAdaptor_Curve AdpCurve1 = new GeomAdaptor_Curve(Curve1);
-        GeomAdaptor_Curve AdpCurve2 = new GeomAdaptor_Curve(Curve2);
+        CurveAdaptor AdpPath = new CurveAdaptor(Path);
+        CurveAdaptor AdpCurve1 = new CurveAdaptor(Curve1);
+        CurveAdaptor AdpCurve2 = new CurveAdaptor(Curve2);
 
         Init(AdpPath, AdpCurve1, AdpCurve2, Radius);
     }
 
     /// <summary>A pipe of constant radius Radius between the guide lines Curve1 and Curve2 around Path.</summary>
-    public GeomFill_Pipe(Adaptor3d_Curve Path, Adaptor3d_Curve Curve1, Adaptor3d_Curve Curve2, double Radius)
+    public GeomFill_Pipe(CurveAdaptorBase Path, CurveAdaptorBase Curve1, CurveAdaptorBase Curve2, double Radius)
         : this()
     {
         Init(Path, Curve1, Curve2, Radius);
@@ -260,7 +263,7 @@ public sealed class GeomFill_Pipe
     /// A pipe of the constant section FirstSect along Path following the guide Guide: by curvilinear abscissa if
     /// ByACR, else by orthogonal planes; rotat lets the section rotate to follow the guide.
     /// </summary>
-    public GeomFill_Pipe(Geom_Curve Path, Adaptor3d_Curve Guide, Geom_Curve FirstSect, bool ByACR, bool rotat)
+    public GeomFill_Pipe(Curve3D Path, CurveAdaptorBase Guide, Curve3D FirstSect, bool ByACR, bool rotat)
         : this()
     // Path : trajectoire
     // Guide : courbe guide
@@ -270,7 +273,7 @@ public sealed class GeomFill_Pipe
         Init(Path, Guide, FirstSect, ByACR, rotat);
     }
 
-    public void Init(Geom_Curve Path, Adaptor3d_Curve Guide, Geom_Curve FirstSect, bool byACR, bool rotat)
+    public void Init(Curve3D Path, CurveAdaptorBase Guide, Curve3D FirstSect, bool byACR, bool rotat)
     // Path : trajectoire
     // Guide : courbe guide
     // FirstSect : section
@@ -278,7 +281,7 @@ public sealed class GeomFill_Pipe
     // triedre : AC pour absc. curv. ou P pour plan ortho
     {
         double angle = 0;
-        myAdpPath = new GeomAdaptor_Curve((Geom_Curve)Path.Copy());
+        myAdpPath = new CurveAdaptor((Curve3D)Path.Copy());
 
         GeomFill_TrihedronWithGuide TLaw;
 
@@ -326,7 +329,7 @@ public sealed class GeomFill_Pipe
         mySec = null;
     }
 
-    public void Init(Geom_Curve Path, double Radius)
+    public void Init(Curve3D Path, double Radius)
     {
         // Ancienne methode
         myType = 1;
@@ -334,8 +337,8 @@ public sealed class GeomFill_Pipe
         myRadius = Radius;
 
         // Nouvelle methode
-        myAdpPath = new GeomAdaptor_Curve(Path);
-        Geom_Circle C = new Geom_Circle(Constants.XOY(), Radius);
+        myAdpPath = new CurveAdaptor(Path);
+        CircleCurve3D C = new CircleCurve3D(Constants.XOY(), Radius);
         C.Rotate(Constants.OZ(), M_PI / 2.0);
 
         mySec = new GeomFill_UniformSection(C, Path.FirstParameter(), Path.LastParameter());
@@ -344,11 +347,11 @@ public sealed class GeomFill_Pipe
         myLoc.SetCurve(myAdpPath);
     }
 
-    public void Init(Geom_Curve Path, Geom_Curve FirstSect, GeomFill_Trihedron Option = GeomFill_IsCorrectedFrenet)
+    public void Init(Curve3D Path, Curve3D FirstSect, GeomFill_Trihedron Option = GeomFill_IsCorrectedFrenet)
     {
-        Geom_Curve Sect;
+        Curve3D Sect;
         GeomFill_TrihedronLaw? TLaw = null;
-        myAdpPath = new GeomAdaptor_Curve((Geom_Curve)Path.Copy());
+        myAdpPath = new CurveAdaptor((Curve3D)Path.Copy());
         double param = Path.FirstParameter();
 
         // Construction de la loi de triedre
@@ -372,7 +375,7 @@ public sealed class GeomFill_Pipe
                     double Eps = 1.0e-9;
                     Vector3D V1 = new Vector3D(0, 0, 1), V2 = new Vector3D(0, 1, 0);
                     Direction3D D;
-                    GeomLProp_CLProps CP = new GeomLProp_CLProps(Path, param, 2, Eps);
+                    CLProps CP = new CLProps(Path, param, 2, Eps);
                     if (CP.IsTangentDefined())
                     {
                         CP.Tangent(out D);
@@ -409,7 +412,7 @@ public sealed class GeomFill_Pipe
                     double Eps = 1.0e-9;
                     Vector3D V = new Vector3D(0, 1, 0);
                     Direction3D D;
-                    GeomLProp_CLProps CP = new GeomLProp_CLProps(FirstSect, ponsec, 2, Eps);
+                    CLProps CP = new CLProps(FirstSect, ponsec, 2, Eps);
                     if (CP.IsTangentDefined())
                     {
                         CP.Tangent(out D);
@@ -456,11 +459,11 @@ public sealed class GeomFill_Pipe
     // purpose  : sweep using Darboux's trihedron
     //=======================================================================
 
-    public void Init(Geom2d_Curve Path, Geom_Surface Support, Geom_Curve FirstSect)
+    public void Init(Curve2D Path, Surface Support, Curve3D FirstSect)
     {
-        Geom_Curve Sect;
+        Curve3D Sect;
         GeomFill_TrihedronLaw TLaw = new GeomFill_Darboux();
-        myAdpPath = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(Path), new GeomAdaptor_Surface(Support));
+        myAdpPath = new CurveOnSurface(new CurveAdaptor2D(Path), new SurfaceAdaptor(Support));
 
         myLoc = new GeomFill_CurveAndTrihedron(TLaw);
         myLoc.SetCurve(myAdpPath);
@@ -471,12 +474,12 @@ public sealed class GeomFill_Pipe
         mySec = new GeomFill_UniformSection(Sect, myAdpPath.FirstParameter(), myAdpPath.LastParameter());
     }
 
-    public void Init(Geom_Curve Path, Geom_Curve FirstSect, in Direction3D Direction)
+    public void Init(Curve3D Path, Curve3D FirstSect, in Direction3D Direction)
     {
         Init();
 
-        Geom_Curve Sect;
-        myAdpPath = new GeomAdaptor_Curve((Geom_Curve)Path.Copy());
+        Curve3D Sect;
+        myAdpPath = new CurveAdaptor((Curve3D)Path.Copy());
         Vector3D V = new Vector3D();
         V.SetXYZ(Direction.XYZ());
         GeomFill_ConstantBiNormal TLaw = new GeomFill_ConstantBiNormal(new Direction3D(V));
@@ -490,7 +493,7 @@ public sealed class GeomFill_Pipe
         mySec = new GeomFill_UniformSection(Sect, Path.FirstParameter(), Path.LastParameter());
     }
 
-    public void Init(Geom_Curve Path, NCollection_Sequence<Geom_Curve> NSections)
+    public void Init(Curve3D Path, NCollection_Sequence<Curve3D> NSections)
     {
         myType = 3;
         myError = 0;
@@ -498,12 +501,12 @@ public sealed class GeomFill_Pipe
 
         GeomFill_TrihedronLaw? TLaw;
         TLaw = new GeomFill_CorrectedFrenet();
-        myAdpPath = new GeomAdaptor_Curve((Geom_Curve)Path.Copy());
+        myAdpPath = new CurveAdaptor((Curve3D)Path.Copy());
         if (TLaw is not null)
         {
             myLoc = new GeomFill_CurveAndTrihedron(TLaw);
             myLoc.SetCurve(myAdpPath);
-            NCollection_Sequence<Geom_Curve> SeqC = new();
+            NCollection_Sequence<Curve3D> SeqC = new();
             NCollection_Sequence<double> SeqP = new();
             SeqC.Clear();
             SeqP.Clear();
@@ -517,7 +520,7 @@ public sealed class GeomFill_Pipe
             }
 
             // verification des orientations
-            NCollection_Sequence<Geom_Curve> NewSeq = new();
+            NCollection_Sequence<Curve3D> NewSeq = new();
             if (CheckSense(SeqC, NewSeq))
             {
                 SeqC.Assign(NewSeq);
@@ -558,7 +561,7 @@ public sealed class GeomFill_Pipe
         }
     }
 
-    public void Init(Geom_Curve Path, Geom_Curve FirstSect, Geom_Curve LastSect)
+    public void Init(Curve3D Path, Curve3D FirstSect, Curve3D LastSect)
     {
         myType = 3;
         myError = 0;
@@ -566,7 +569,7 @@ public sealed class GeomFill_Pipe
         double first = Path.FirstParameter(), last = Path.LastParameter();
         GeomFill_TrihedronLaw? TLaw;
         TLaw = new GeomFill_CorrectedFrenet();
-        myAdpPath = new GeomAdaptor_Curve((Geom_Curve)Path.Copy());
+        myAdpPath = new CurveAdaptor((Curve3D)Path.Copy());
 
         if (TLaw is not null)
         {
@@ -580,7 +583,7 @@ public sealed class GeomFill_Pipe
                 return;
             }
 
-            NCollection_Sequence<Geom_Curve> SeqC = new();
+            NCollection_Sequence<Curve3D> SeqC = new();
             NCollection_Sequence<double> SeqP = new();
             SeqC.Clear();
             SeqP.Clear();
@@ -596,7 +599,7 @@ public sealed class GeomFill_Pipe
             SeqP.Append(last);
 
             // orientation verification
-            NCollection_Sequence<Geom_Curve> NewSeq = new();
+            NCollection_Sequence<Curve3D> NewSeq = new();
             if (CheckSense(SeqC, NewSeq))
             {
                 SeqC.Assign(NewSeq);
@@ -610,7 +613,7 @@ public sealed class GeomFill_Pipe
         }
     }
 
-    public void Init(Adaptor3d_Curve Path, Adaptor3d_Curve Curve1, Adaptor3d_Curve Curve2, double Radius)
+    public void Init(CurveAdaptorBase Path, CurveAdaptorBase Curve1, CurveAdaptorBase Curve2, double Radius)
     {
         myType = 4;
         myError = 0;
@@ -681,7 +684,7 @@ public sealed class GeomFill_Pipe
                 TheConti = C2; // On ne sait pas faire mieux !
                 break;
         }
-        Approx_SweepFunction? Func;
+        SweepFunction? Func;
         Func = null;
 
         if (myType == 4)
@@ -690,7 +693,7 @@ public sealed class GeomFill_Pipe
             {
                 Func = new GeomFill_CircularBlendFunc(myAdpPath!, myAdpFirstSect!, myAdpLastSect!, myRadius, Polynomial);
 
-                Approx_SweepApproximation App = new Approx_SweepApproximation(Func);
+                SweepApproximation App = new SweepApproximation(Func);
                 App.Perform(myAdpPath!.FirstParameter(),
                             myAdpPath.LastParameter(),
                             Tol,
@@ -700,9 +703,9 @@ public sealed class GeomFill_Pipe
                             TheConti,
                             DegMax,
                             NbMaxSegment);
-                if (App.IsDone())
+                if (App.IsDone)
                 {
-                    mySurface = new Geom_BSplineSurface(App.SurfPoles(),
+                    mySurface = new BSplineSurface(App.SurfPoles(),
                                                         App.SurfWeights(),
                                                         App.SurfUKnots(),
                                                         App.SurfVKnots(),
@@ -796,9 +799,9 @@ public sealed class GeomFill_Pipe
             // rotate the surface to set the iso U = 0 not in the result.
             Axis.Rotate(new Axis3D(P0, ZRef), -M_PI / 2.0);
 
-            mySurface = new Geom_CylindricalSurface(Axis, myRadius);
+            mySurface = new CylindricalSurface(Axis, myRadius);
             double Alpha = V1.AngleWithRef(V2, ZRef);
-            mySurface = new Geom_RectangularTrimmedSurface(mySurface,
+            mySurface = new TrimmedSurface(mySurface,
                                                            M_PI / 2.0,
                                                            M_PI / 2.0 + Alpha,
                                                            myAdpPath.FirstParameter(),
@@ -868,7 +871,7 @@ public sealed class GeomFill_Pipe
                 VV1 = -VV1;
                 VV2 = 2 * M_PI + VV1 - deltaV;
             }
-            mySurface = new Geom_RectangularTrimmedSurface(new Geom_ToroidalSurface(T),
+            mySurface = new TrimmedSurface(new ToroidalSurface(T),
                                                            myAdpPath.FirstParameter(),
                                                            myAdpPath.LastParameter(),
                                                            VV1,
@@ -912,7 +915,7 @@ public sealed class GeomFill_Pipe
         {
             App.SurfShape(out _, out _, out _, out _, out _, out _);
 
-            mySurface = new Geom_BSplineSurface(App.SurfPoles(),
+            mySurface = new BSplineSurface(App.SurfPoles(),
                                                 App.SurfWeights(),
                                                 App.SurfUKnots(),
                                                 App.SurfVKnots(),
@@ -926,14 +929,14 @@ public sealed class GeomFill_Pipe
     }
 
     /// <summary>The surface built (frozen); null before it is built.</summary>
-    public Geom_Surface? Surface()
+    public Surface? Surface()
     {
         mySurface?.Freeze();
         return mySurface;
     }
 
     /// <summary>The surface built, not frozen, for ported callers.</summary>
-    internal Geom_Surface? InternalSurface() => mySurface;
+    internal Surface? InternalSurface() => mySurface;
 
     /// <summary>Whether the surface is parametrised with u along the path (some elementary surfaces).</summary>
     public bool ExchangeUV() => myExchUV;

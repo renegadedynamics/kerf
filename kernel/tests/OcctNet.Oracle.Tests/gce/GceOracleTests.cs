@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Values;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 
@@ -37,13 +38,13 @@ public class GceOracleTests(ITestOutputHelper output)
             using (var aN = new N.gce_MakeLin(aNAx))
             using (var aNL = aN.Value())
             {
-                SameLin(anOracle, aNL, new gce_MakeLin(anAx).Value(), "axis");
+                SameLin(anOracle, aNL, new MakeLin(anAx).Value(), "axis");
             }
 
             using (var aN = new N.gce_MakeLin(aNP1, aND))
             using (var aNL = aN.Value())
             {
-                SameLin(anOracle, aNL, new gce_MakeLin(aP1, aD).Value(), "point and direction");
+                SameLin(anOracle, aNL, new MakeLin(aP1, aD).Value(), "point and direction");
             }
 
             // Two points, coincident one time in ten
@@ -51,8 +52,8 @@ public class GceOracleTests(ITestOutputHelper output)
             using var aNQ = Oracle.ToNative(aQ);
             using (var aN = new N.gce_MakeLin(aNP1, aNQ))
             {
-                var aPort = new gce_MakeLin(aP1, aQ);
-                anOracle.Same(aN.IsDone(), aPort.IsDone(), "IsDone");
+                var aPort = new MakeLin(aP1, aQ);
+                anOracle.Same(aN.IsDone(), aPort.IsDone, "IsDone");
                 anOracle.Same((int)aN.Status(), (int)aPort.Status(), "Status");
                 if (aN.IsDone())
                 {
@@ -66,7 +67,7 @@ public class GceOracleTests(ITestOutputHelper output)
             using (var aN = new N.gce_MakeLin(aNLin, aNP2))
             using (var aNL = aN.Value())
             {
-                SameLin(anOracle, aNL, new gce_MakeLin(aLin, aP2).Value(), "parallel through a point");
+                SameLin(anOracle, aNL, new MakeLin(aLin, aP2).Value(), "parallel through a point");
             }
         }
 
@@ -88,9 +89,9 @@ public class GceOracleTests(ITestOutputHelper output)
             using var aNP2 = Oracle.ToNative(aP2);
             using var aNP3 = Oracle.ToNative(aP3);
 
-            var aPort = new gce_MakeCirc(aP1, aP2, aP3);
+            var aPort = new MakeCirc(aP1, aP2, aP3);
             using var aNArc = new N.GC_MakeArcOfCircle(aNP1, aNP2, aNP3);
-            anOracle.Same(aNArc.IsDone(), aPort.IsDone(), "IsDone");
+            anOracle.Same(aNArc.IsDone(), aPort.IsDone, "IsDone");
             if (!aNArc.IsDone())
             {
                 continue;

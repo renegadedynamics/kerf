@@ -3,13 +3,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>Adds the tools to the arguments of the General Fuse builder.</summary>
 public class BOPAlgo_ToolsProvider : BOPAlgo_Builder
 {
-    protected NCollection_List<TopoDS_Shape> myTools = new();
-    protected NCollection_Map<TopoDS_Shape> myMapTools = new(TopTools_ShapeMapHasher.Instance);
+    protected NCollection_List<Shape> myTools = new();
+    protected NCollection_Map<Shape> myMapTools = new(ShapeHasher.Instance);
 
     public BOPAlgo_ToolsProvider()
     {
@@ -23,7 +27,7 @@ public class BOPAlgo_ToolsProvider : BOPAlgo_Builder
     }
 
     /// <summary>Adds a tool (once).</summary>
-    public virtual void AddTool(in TopoDS_Shape theShape)
+    public virtual void AddTool(in Shape theShape)
     {
         if (myMapTools.Add(theShape))
         {
@@ -32,15 +36,15 @@ public class BOPAlgo_ToolsProvider : BOPAlgo_Builder
     }
 
     /// <summary>Sets the tools.</summary>
-    public virtual void SetTools(NCollection_List<TopoDS_Shape> theShapes)
+    public virtual void SetTools(NCollection_List<Shape> theShapes)
     {
         myTools.Clear();
-        for (NCollection_List<TopoDS_Shape>.Iterator aIt = new(theShapes); aIt.More(); aIt.Next())
+        for (NCollection_List<Shape>.Iterator aIt = new(theShapes); aIt.More(); aIt.Next())
         {
             AddTool(aIt.Value());
         }
     }
 
     /// <summary>The tools.</summary>
-    public NCollection_List<TopoDS_Shape> Tools() => myTools;
+    public NCollection_List<Shape> Tools() => myTools;
 }

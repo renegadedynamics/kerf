@@ -7,12 +7,17 @@
 #pragma warning disable CS0168 // locals OCCT declares and never uses
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.StepGeom_PreferredSurfaceCurveRepresentation;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 using static Occt.TopoDSToStep_MakeEdgeError;
 
 namespace Occt;
@@ -34,18 +39,18 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
         done = false;
     }
 
-    public TopoDSToStep_MakeStepEdge(in TopoDS_Edge E, TopoDSToStep_Tool T, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
+    public TopoDSToStep_MakeStepEdge(in Edge E, TopoDSToStep_Tool T, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
     {
         done = false;
         Init(E, T, FP, theLocalFactors);
     }
 
-    public TopoDSToStep_MakeStepEdge(in TopoDS_Edge E, TopoDSToStep_Tool T, Transfer_FinderProcess FP)
+    public TopoDSToStep_MakeStepEdge(in Edge E, TopoDSToStep_Tool T, Transfer_FinderProcess FP)
         : this(E, T, FP, new StepData_Factors())
     {
     }
 
-    public void Init(in TopoDS_Edge aEdge, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
+    public void Init(in Edge aEdge, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
     {
         // ------------------------------------------------------------------
         // The edge is given with its relative orientation (i.e. in the wire)
@@ -81,7 +86,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
         double U, U1, U2;
         Point3D P;
 
-        bool isSeam = BRep_Tool.IsClosed(aEdge, aTool.CurrentFace());
+        bool isSeam = Tool.IsClosed(aEdge, aTool.CurrentFace());
 
         //: i4 abv 02 Sep 98: ProSTEP TR8 Motor.rle f3 & f62: check that edge
         // participates twice in the wires of the face before making it seam
@@ -92,7 +97,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
         if (isSeam)
         {
             int count = 0;
-            var exp = new TopExp_Explorer(aTool.CurrentFace(), TopAbs_EDGE);
+            var exp = new Explorer(aTool.CurrentFace(), ShapeType.Edge);
             for (; exp.More(); exp.Next())
             {
                 if (aEdge.IsSame(exp.Current()))
@@ -107,7 +112,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
             }
         }
 
-        if (aEdge.Orientation() == TopAbs_INTERNAL || aEdge.Orientation() == TopAbs_EXTERNAL)
+        if (aEdge.Orientation() == Internal || aEdge.Orientation() == External)
         {
             var errShape = new TransferBRep_ShapeMapper(aEdge);
             FP.AddWarning(errShape, " Edge(internal/external) from Non Manifold Topology");
@@ -120,7 +125,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
 
         StepShape_Vertex V1, V2;
         StepShape_TopologicalRepresentationItem Gpms2;
-        TopExp.Vertices(aEdge, out TopoDS_Vertex Vfirst, out TopoDS_Vertex Vlast);
+        Exploration.Vertices(aEdge, out Vertex Vfirst, out Vertex Vlast);
 
         var MkVertex = new TopoDSToStep_MakeStepVertex();
 
@@ -156,13 +161,13 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
         // Translate 3D representation of the Edge
         // ---------------------------------------
 
-        var CA = new BRepAdaptor_Curve(aEdge);
+        var CA = new EdgeCurveAdaptor(aEdge);
         StepGeom_Curve Gpms;
-        Geom_Curve C = CA.Curve().Curve();
+        Curve3D C = CA.Curve().Curve();
 
         if (C is not null)
         {
-            C = (Geom_Curve)C.Copy();
+            C = (Curve3D)C.Copy();
             Transform3D Tr1 = CA.Trsf();
             C.Transform(Tr1);
             // Special treatment is needed for very short edges based on periodic curves.
@@ -170,7 +175,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
             // on import by projecting vertices on a curve, and for periodic curve this may
             // lead to use of wrong part of the curve if end vertices are too close to each other
             // (often whole curve is taken instead of its very small fragment).
-            if (C.IsPeriodic())
+            if (C.IsPeriodic)
             {
                 double dpar = CA.LastParameter() - CA.FirstParameter();
                 if (dpar <= 0)
@@ -181,8 +186,8 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
                 // if range obtained from projection of vertices contradicts with range
                 // of the edge tnen vertices are swapped to keep results correct after import
                 // (see test de step_5 A1)
-                Point3D aP1 = BRep_Tool.Pnt(Vfirst);
-                Point3D aP2 = BRep_Tool.Pnt(Vlast);
+                Point3D aP1 = Tool.Pnt(Vfirst);
+                Point3D aP2 = Tool.Pnt(Vlast);
                 var sac = new ShapeAnalysis_Curve();
                 sac.Project(C, aP1, Tolerance(), out Point3D pproj, out U1, false);
                 sac.Project(C, aP2, Tolerance(), out pproj, out U2, false);
@@ -201,10 +206,10 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
                 // If vertices overlap, we cut only needed part of the BSpline curve.
                 // Note that this method cannot be used for canonic curves
                 // (STEP does not support trimmed curves in AIC 514).
-                if (C is Geom_BSplineCurve)
+                if (C is BSplineCurve3D)
                 {
-                    double aTolV1 = BRep_Tool.Tolerance(Vfirst);
-                    double aTolV2 = BRep_Tool.Tolerance(Vlast);
+                    double aTolV1 = Tool.Tolerance(Vfirst);
+                    double aTolV2 = Tool.Tolerance(Vlast);
                     Point3D aP11 = CA.Value(CA.FirstParameter());
                     Point3D aP12 = CA.Value(CA.LastParameter());
                     Point3D aPm = CA.Value((CA.FirstParameter() + CA.LastParameter()) * 0.5);
@@ -213,10 +218,10 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
                     double aDist2m = aP12.Distance(aPm);
                     double aDistMax = Max(Max(aDist1m, aDist2m), aDist11);
                     bool isSmallCurve = (aDistMax <= aTolV1 || aDistMax <= aTolV2);
-                    if (BRepTools.Compare(Vfirst, Vlast) && isSmallCurve && dpar > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                    if (BrepTools.Compare(Vfirst, Vlast) && isSmallCurve && dpar > global::Kerf.Engine.Foundation.Precision.PConfusion()
                         && dpar <= 0.1 * C.Period())
                     {
-                        Geom_BSplineCurve aBspl1 = (Geom_BSplineCurve)C.Copy();
+                        BSplineCurve3D aBspl1 = (BSplineCurve3D)C.Copy();
                         aBspl1.Segment(CA.FirstParameter(), CA.LastParameter());
                         C = aBspl1;
                     }
@@ -232,14 +237,14 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
             // a 3D Curve is constructed
             // -------------------------
             // OCCT_DEBUG output left out
-            var SA = new BRepAdaptor_Surface(aTool.CurrentFace());
+            var SA = new FaceSurfaceAdaptor(aTool.CurrentFace());
 
             if ((SA.GetType() == Plane) && (CA.GetType() == Line))
             {
                 U1 = CA.FirstParameter();
                 U2 = CA.LastParameter();
                 Vector3D V = new Vector3D(CA.Value(U1), CA.Value(U2));
-                var L = new Geom_Line(CA.Value(U1), new Direction3D(V));
+                var L = new LineCurve3D(CA.Value(U1), new Direction3D(V));
                 var MkLine = new GeomToStep_MakeLine(L, theLocalFactors);
                 Gpms = MkLine.Value();
             }
@@ -265,7 +270,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
                 // Points.SetValue(Nbpt, BRep_Tool::Pnt(Vlast));
                 Mult.SetValue(1, 2);
                 Mult.SetValue(Nbpt, 2);
-                Geom_Curve Bs = new Geom_BSplineCurve(Points, Knots, Mult, 1);
+                Curve3D Bs = new BSplineCurve3D(Points, Knots, Mult, 1);
                 var MkCurve = new GeomToStep_MakeCurve(Bs, theLocalFactors);
                 Gpms = MkCurve.Value();
             }
@@ -313,7 +318,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
         done = true;
     }
 
-    public void Init(in TopoDS_Edge aEdge, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP)
+    public void Init(in Edge aEdge, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP)
         => Init(aEdge, aTool, FP, new StepData_Factors());
 
     /// <exception cref="NotDoneException">The mapping wasn't done.</exception>

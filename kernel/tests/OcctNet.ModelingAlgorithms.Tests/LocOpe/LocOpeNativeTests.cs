@@ -1,8 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO.Compression;
@@ -10,8 +16,8 @@ using System.Reflection;
 using System.Text;
 using OcctNet.ModelingData.Tests;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -74,10 +80,10 @@ public class LocOpeNativeTests(ITestOutputHelper output)
     [ThreadStatic]
     private static int s_nbDumped;
 
-    private static ulong ShapeHash(in TopoDS_Shape theShape)
+    private static ulong ShapeHash(in Shape theShape)
     {
         var aS = new StringWriter(CultureInfo.InvariantCulture) { NewLine = "\n" };
-        BRepTools.Write(theShape, aS, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3);
+        BrepTools.Write(theShape, aS, true, false, FormatVersion.FormatVersion_VERSION_3);
         if (s_dump is not null && s_tag is not null)
         {
             File.WriteAllText(Path.Combine(s_dump, $"{s_tag}.{s_nbDumped++}.brep"), aS.ToString());
@@ -85,12 +91,12 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         return ShapeUpgradeNativeTests.Hash(aS.ToString());
     }
 
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType) =>
-        theShape.IsNull() ? 0 : LocOpeTests.Count(theShape, theType);
+    private static int Count(in Shape theShape, ShapeType theType) =>
+        theShape.IsNull ? 0 : LocOpeTests.Count(theShape, theType);
 
-    private static string Rec(in TopoDS_Shape theShape)
+    private static string Rec(in Shape theShape)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return "NULL";
         }
@@ -99,13 +105,13 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             throw new InvalidOperationException("a result isn't frozen");
         }
         return string.Create(CultureInfo.InvariantCulture,
-                             $"{Hex(ShapeHash(theShape))} {Count(theShape, TopAbs_FACE)} {Count(theShape, TopAbs_EDGE)} {Count(theShape, TopAbs_VERTEX)}");
+                             $"{Hex(ShapeHash(theShape))} {Count(theShape, ShapeType.Face)} {Count(theShape, ShapeType.Edge)} {Count(theShape, ShapeType.Vertex)}");
     }
 
-    private static string SetHash(NCollection_List<TopoDS_Shape> theList)
+    private static string SetHash(NCollection_List<Shape> theList)
     {
         var aHashes = new List<string>();
-        foreach (TopoDS_Shape aS in theList)
+        foreach (Shape aS in theList)
         {
             aHashes.Add(Hex(ShapeHash(aS)));
         }
@@ -125,7 +131,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         {
             aLine = theRun();
         }
-        catch (Exception e) when (e is FailureException or NullReferenceException && e is not (ImmutableObjectException or TopoDS_LockedShape))
+        catch (Exception e) when (e is FailureException or NullReferenceException && e is not (ImmutableObjectException or LockedShapeException))
         {
             // an access violation natively (decision 977)
             aLine = "THROW " + (e is NullReferenceException ? "OSD_Exception_ACCESS_VIOLATION" : global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
@@ -134,7 +140,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
     }
 
     /// <summary>The recorder's inputs: a primitive, or a file (a file of wires stands for the face of its first wire).</summary>
-    internal static TopoDS_Shape Make(string theName, IReadOnlyDictionary<string, string> thePaths)
+    internal static Shape Make(string theName, IReadOnlyDictionary<string, string> thePaths)
     {
         switch (theName)
         {
@@ -150,8 +156,8 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 return new BRepPrimAPI_MakeTorus(10, 3).Shape();
             case "PRIM_BOXHOLE":
             {
-                TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
-                TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(5, 10, -1), Constants.DZ()), 3, 32).Shape();
+                Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+                Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(5, 10, -1), Constants.DZ()), 3, 32).Shape();
                 return new BRepAlgoAPI_Cut(aBox, aCyl).Shape();
             }
             case "PRIM_HEXAGON":
@@ -166,54 +172,54 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             }
         }
 
-        if (!thePaths.TryGetValue(theName, out string? aPath) || !BRepTools.Read(out TopoDS_Shape aShape, aPath))
+        if (!thePaths.TryGetValue(theName, out string? aPath) || !BrepTools.Read(out Shape aShape, aPath))
         {
-            return new TopoDS_Shape();
+            return new Shape();
         }
         aShape.TShape()?.FreezeGraph(); // a caller's shape
-        if (!aShape.IsNull() && Count(aShape, TopAbs_FACE) == 0)
+        if (!aShape.IsNull && Count(aShape, ShapeType.Face) == 0)
         {
-            var anExp = new TopExp_Explorer(aShape, TopAbs_WIRE);
+            var anExp = new Explorer(aShape, ShapeType.Wire);
             if (anExp.More())
             {
-                var aMF = new BRepBuilderAPI_MakeFace(TopoDS.Wire(anExp.Current()), true);
-                return aMF.IsDone() ? aMF.Shape() : new TopoDS_Shape();
+                var aMF = new BRepBuilderAPI_MakeFace(ShapeCasts.Wire(anExp.Current()), true);
+                return aMF.IsDone() ? aMF.Shape() : new Shape();
             }
-            return new TopoDS_Shape();
+            return new Shape();
         }
         return aShape;
     }
 
-    private static NCollection_IndexedMap<TopoDS_Shape> Map(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static NCollection_IndexedMap<Shape> Map(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap;
     }
 
-    private static bool IsPlanar(in TopoDS_Face theFace)
+    private static bool IsPlanar(in Face theFace)
     {
-        Geom_Surface? aS = BRep_Tool.Surface(theFace);
+        Surface? aS = Tool.Surface(theFace);
         if (aS is null)
         {
             return false;
         }
-        if (aS is Geom_RectangularTrimmedSurface aTrimmed)
+        if (aS is TrimmedSurface aTrimmed)
         {
             aS = aTrimmed.BasisSurface();
         }
-        return aS is Geom_Plane;
+        return aS is PlaneSurface;
     }
 
-    private static bool Middle(in TopoDS_Edge theEdge, out double thePrm, out Point3D thePnt)
+    private static bool Middle(in Edge theEdge, out double thePrm, out Point3D thePnt)
     {
         thePrm = 0;
         thePnt = new Point3D();
-        if (BRep_Tool.Degenerated(theEdge))
+        if (Tool.Degenerated(theEdge))
         {
             return false;
         }
-        Geom_Curve? aC = BRep_Tool.Curve(theEdge, out double f, out double l);
+        Curve3D? aC = Tool.Curve(theEdge, out double f, out double l);
         if (aC is null)
         {
             return false;
@@ -223,16 +229,16 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         return true;
     }
 
-    private static TopoDS_Edge IsoEdge(in TopoDS_Face theFace)
+    private static Edge IsoEdge(in Face theFace)
     {
-        Geom_Surface aS = BRep_Tool.Surface(theFace)!;
-        BRepTools.UVBounds(theFace, out double u1, out double u2, out double v1, out double v2);
-        Geom_Curve anIso = aS.UIso((u1 + u2) / 2);
+        Surface aS = Tool.Surface(theFace)!;
+        BrepTools.UVBounds(theFace, out double u1, out double u2, out double v1, out double v2);
+        Curve3D anIso = aS.UIso((u1 + u2) / 2);
         var aME = new BRepBuilderAPI_MakeEdge(anIso, v1, v2);
-        return aME.IsDone() ? aME.Edge() : new TopoDS_Edge();
+        return aME.IsDone() ? aME.Edge() : new Edge();
     }
 
-    private static string Spliter(LocOpe_WiresOnShape theWOnS, in TopoDS_Shape theShape)
+    private static string Spliter(LocOpe_WiresOnShape theWOnS, in Shape theShape)
     {
         var aSpliter = new LocOpe_Spliter(theShape);
         aSpliter.Perform(theWOnS);
@@ -240,7 +246,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         {
             return "NOTDONE";
         }
-        NCollection_IndexedMap<TopoDS_Shape> aFaces = Map(theShape, TopAbs_FACE);
+        NCollection_IndexedMap<Shape> aFaces = Map(theShape, ShapeType.Face);
         var aDesc = new StringBuilder();
         for (int i = 1; i <= Math.Min(30, aFaces.Extent()); i++)
         {
@@ -255,9 +261,9 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         ((long)Math.Round(theValue * 1e6, MidpointRounding.AwayFromZero)).ToString(CultureInfo.InvariantCulture) + ";";
 
     // The recorder's canonical record of a shape whose BRep text natively varies run to run (DPrism's)
-    private static string Canonical(in TopoDS_Shape theShape)
+    private static string Canonical(in Shape theShape)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return "NULL";
         }
@@ -266,25 +272,25 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             throw new InvalidOperationException("a result isn't frozen");
         }
         var aLines = new List<string>();
-        NCollection_IndexedMap<TopoDS_Shape> aMap = Map(theShape, TopAbs_FACE);
+        NCollection_IndexedMap<Shape> aMap = Map(theShape, ShapeType.Face);
         for (int i = 1; i <= aMap.Extent(); i++)
         {
-            var aProps = new GProp_GProps();
+            var aProps = new Properties();
             BRepGProp.SurfaceProperties(aMap[i], aProps);
-            aLines.Add($"F {Q(aProps.Mass())} {Count(aMap[i], TopAbs_EDGE).ToString(CultureInfo.InvariantCulture)}");
+            aLines.Add($"F {Q(aProps.Mass())} {Count(aMap[i], ShapeType.Edge).ToString(CultureInfo.InvariantCulture)}");
         }
-        aMap = Map(theShape, TopAbs_EDGE);
+        aMap = Map(theShape, ShapeType.Edge);
         for (int i = 1; i <= aMap.Extent(); i++)
         {
-            TopoDS_Edge anE = TopoDS.Edge(aMap[i]);
-            TopExp.Vertices(anE, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
+            Edge anE = ShapeCasts.Edge(aMap[i]);
+            Exploration.Vertices(anE, out Vertex aV1, out Vertex aV2);
             string[] anEnds = ["", ""];
             for (int k = 0; k < 2; k++)
             {
-                TopoDS_Vertex aV = k == 0 ? aV1 : aV2;
-                if (!aV.IsNull())
+                Vertex aV = k == 0 ? aV1 : aV2;
+                if (!aV.IsNull)
                 {
-                    Point3D aP = BRep_Tool.Pnt(aV);
+                    Point3D aP = Tool.Pnt(aV);
                     anEnds[k] = Q(aP.X()) + Q(aP.Y()) + Q(aP.Z());
                 }
             }
@@ -292,39 +298,39 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             {
                 (anEnds[0], anEnds[1]) = (anEnds[1], anEnds[0]);
             }
-            aLines.Add($"E {Q(BRep_Tool.Tolerance(anE))} {anEnds[0]} {anEnds[1]}");
+            aLines.Add($"E {Q(Tool.Tolerance(anE))} {anEnds[0]} {anEnds[1]}");
         }
-        aMap = Map(theShape, TopAbs_VERTEX);
+        aMap = Map(theShape, ShapeType.Vertex);
         for (int i = 1; i <= aMap.Extent(); i++)
         {
-            TopoDS_Vertex aV = TopoDS.Vertex(aMap[i]);
-            Point3D aP = BRep_Tool.Pnt(aV);
-            aLines.Add($"V {Q(aP.X())}{Q(aP.Y())}{Q(aP.Z())} {Q(BRep_Tool.Tolerance(aV))}");
+            Vertex aV = ShapeCasts.Vertex(aMap[i]);
+            Point3D aP = Tool.Pnt(aV);
+            aLines.Add($"V {Q(aP.X())}{Q(aP.Y())}{Q(aP.Z())} {Q(Tool.Tolerance(aV))}");
         }
         aLines.Sort(StringComparer.Ordinal);
         string aJoined = string.Concat(aLines.Select(l => l + "\n"));
         return string.Create(CultureInfo.InvariantCulture,
-                             $"C{Hex(Fnv(aJoined))} {Count(theShape, TopAbs_FACE)} {Count(theShape, TopAbs_EDGE)} {Count(theShape, TopAbs_VERTEX)}");
+                             $"C{Hex(Fnv(aJoined))} {Count(theShape, ShapeType.Face)} {Count(theShape, ShapeType.Edge)} {Count(theShape, ShapeType.Vertex)}");
     }
 
-    private static string Swept(TopoDS_Shape theShape, TopoDS_Shape theFirst, TopoDS_Shape theLast,
-                                Func<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theShapes, in TopoDS_Face theFace,
+    private static string Swept(Shape theShape, Shape theFirst, Shape theLast,
+                                Func<Shape, NCollection_List<Shape>> theShapes, in Face theFace,
                                 bool theCanonical = false)
     {
         var aRes = new StringBuilder(theCanonical ? $"{Canonical(theShape)} {Canonical(theFirst)} {Canonical(theLast)} "
                                                   : $"{Rec(theShape)} {Rec(theFirst)} {Rec(theLast)} ");
         int i = 0;
-        for (var anExp = new TopExp_Explorer(theFace, TopAbs_EDGE); anExp.More() && i < 16; anExp.Next(), i++)
+        for (var anExp = new Explorer(theFace, ShapeType.Edge); anExp.More() && i < 16; anExp.Next(), i++)
         {
             aRes.Append(i > 0 ? "," : "").Append(theShapes(anExp.Current()).Extent().ToString(CultureInfo.InvariantCulture));
         }
         return aRes.ToString();
     }
 
-    private static string Curves(NCollection_Sequence<Geom_Curve> theCurves, Geom_Curve? theBary)
+    private static string Curves(NCollection_Sequence<Curve3D> theCurves, Curve3D? theBary)
     {
         string aRes = " " + theCurves.Length().ToString(CultureInfo.InvariantCulture);
-        if (theBary is Geom_Line aLine)
+        if (theBary is LineCurve3D aLine)
         {
             Point3D aP = aLine.Lin().Location();
             aRes += $" {D(aP.X())} {D(aP.Y())} {D(aP.Z())}";
@@ -332,11 +338,11 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         return aRes;
     }
 
-    private static string Split(NCollection_List<TopoDS_Shape> theRes) =>
+    private static string Split(NCollection_List<Shape> theRes) =>
         theRes.Extent() == 1 ? Rec(theRes.First()) : "N" + theRes.Extent().ToString(CultureInfo.InvariantCulture);
 
     /// <summary>The recorder's runs on the frozen shape <paramref name="S"/>.</summary>
-    internal static List<string> Tools(TopoDS_Shape S)
+    internal static List<string> Tools(Shape S)
     {
         var aRecords = new List<string>();
         void add(string? theLine)
@@ -347,7 +353,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             }
         }
 
-        NCollection_IndexedMap<TopoDS_Shape> aFMap = Map(S, TopAbs_FACE), anEMap = Map(S, TopAbs_EDGE);
+        NCollection_IndexedMap<Shape> aFMap = Map(S, ShapeType.Face), anEMap = Map(S, ShapeType.Edge);
         int aNbF = Math.Min(8, aFMap.Extent());
         int aNbE = Math.Min(12, anEMap.Extent());
 
@@ -360,7 +366,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             var aSplit = new LocOpe_SplitShape(S);
             for (int i = 1; i <= aNbE; i++)
             {
-                TopoDS_Edge anE = TopoDS.Edge(anEMap[i]);
+                Edge anE = ShapeCasts.Edge(anEMap[i]);
                 if (Middle(anE, out double aPrm, out Point3D aP) && aSplit.CanSplit(anE))
                 {
                     aSplit.Add(new BRepBuilderAPI_MakeVertex(aP).Vertex(), aPrm, anE);
@@ -376,19 +382,19 @@ public class LocOpeNativeTests(ITestOutputHelper output)
 
         for (int f = 1; f <= aNbF; f++)
         {
-            TopoDS_Face aF = TopoDS.Face(aFMap[f]);
+            Face aF = ShapeCasts.Face(aFMap[f]);
             if (!IsPlanar(aF))
             {
                 continue;
             }
             add(Run("SPLITW", f, () =>
             {
-                var anEdges = new List<TopoDS_Edge>();
-                for (var anExp = new TopExp_Explorer(BRepTools.OuterWire(aF), TopAbs_EDGE); anExp.More(); anExp.Next())
+                var anEdges = new List<Edge>();
+                for (var anExp = new Explorer(BrepTools.OuterWire(aF), ShapeType.Edge); anExp.More(); anExp.Next())
                 {
-                    TopoDS_Edge anE = TopoDS.Edge(anExp.Current());
+                    Edge anE = ShapeCasts.Edge(anExp.Current());
                     bool isNew = true;
-                    foreach (TopoDS_Edge anOther in anEdges)
+                    foreach (Edge anOther in anEdges)
                     {
                         isNew = isNew && !anOther.IsSame(anE);
                     }
@@ -401,20 +407,20 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 {
                     return null;
                 }
-                TopoDS_Edge anE1 = anEdges[0];
-                TopoDS_Edge anE2 = anEdges[anEdges.Count / 2];
+                Edge anE1 = anEdges[0];
+                Edge anE2 = anEdges[anEdges.Count / 2];
                 Middle(anE1, out double aPrm1, out Point3D aP1);
                 Middle(anE2, out double aPrm2, out Point3D aP2);
                 if (aP1.Distance(aP2) < 1e-3)
                 {
                     return null;
                 }
-                TopoDS_Vertex aV1 = new BRepBuilderAPI_MakeVertex(aP1).Vertex();
-                TopoDS_Vertex aV2 = new BRepBuilderAPI_MakeVertex(aP2).Vertex();
+                Vertex aV1 = new BRepBuilderAPI_MakeVertex(aP1).Vertex();
+                Vertex aV2 = new BRepBuilderAPI_MakeVertex(aP2).Vertex();
                 var aSplit = new LocOpe_SplitShape(S);
                 aSplit.Add(aV1, aPrm1, anE1);
                 aSplit.Add(aV2, aPrm2, anE2);
-                TopoDS_Wire aW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aV1, aV2).Edge()).Wire();
+                Wire aW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aV1, aV2).Edge()).Wire();
                 bool isOk = aSplit.Add(aW, aF);
                 string aLine = (isOk ? "1 " : "0 ") + Split(aSplit.DescendantShapes(S));
                 return aLine + string.Create(CultureInfo.InvariantCulture,
@@ -423,23 +429,23 @@ public class LocOpeNativeTests(ITestOutputHelper output)
 
             add(Run("SPLITC", f, () =>
             {
-                BRepTools.UVBounds(aF, out double u1, out double u2, out double v1, out double v2);
+                BrepTools.UVBounds(aF, out double u1, out double u2, out double v1, out double v2);
                 var aUV = new Point2D((u1 + u2) / 2, (v1 + v2) / 2);
                 var aClass = new BRepTopAdaptor_FClass2d(aF, 1e-9);
-                if (aClass.Perform(aUV) != TopAbs_IN)
+                if (aClass.Perform(aUV) != In)
                 {
                     return null;
                 }
-                Geom_Surface aSurf = BRep_Tool.Surface(aF)!;
-                if (aSurf is Geom_RectangularTrimmedSurface aTrimmed)
+                Surface aSurf = Tool.Surface(aF)!;
+                if (aSurf is TrimmedSurface aTrimmed)
                 {
                     aSurf = aTrimmed.BasisSurface();
                 }
-                Plane3D aPln = ((Geom_Plane)aSurf).Pln();
-                Point3D aC = BRep_Tool.Surface(aF)!.Value(aUV.X(), aUV.Y());
+                Plane3D aPln = ((PlaneSurface)aSurf).Pln();
+                Point3D aC = Tool.Surface(aF)!.Value(aUV.X(), aUV.Y());
                 double aR = 0.1 * Math.Min(u2 - u1, v2 - v1);
                 var aCirc = new Circle3D(new Frame3D(aC, aPln.Axis().Direction()), aR);
-                TopoDS_Wire aW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aCirc).Edge()).Wire();
+                Wire aW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aCirc).Edge()).Wire();
                 var aSplit = new LocOpe_SplitShape(S);
                 bool isOk = aSplit.Add(aW, aF);
                 return (isOk ? "1 " : "0 ") + Split(aSplit.DescendantShapes(S))
@@ -449,11 +455,11 @@ public class LocOpeNativeTests(ITestOutputHelper output)
 
         for (int f = 1; f <= aNbF; f++)
         {
-            TopoDS_Face aF = TopoDS.Face(aFMap[f]);
+            Face aF = ShapeCasts.Face(aFMap[f]);
             add(Run("SPLITTER", f, () =>
             {
-                TopoDS_Edge anE = IsoEdge(aF);
-                if (anE.IsNull())
+                Edge anE = IsoEdge(aF);
+                if (anE.IsNull)
                 {
                     return null;
                 }
@@ -465,11 +471,11 @@ public class LocOpeNativeTests(ITestOutputHelper output)
 
         add(Run("SPLITADD", 0, () =>
         {
-            var anEdges = new NCollection_Sequence<TopoDS_Shape>();
+            var anEdges = new NCollection_Sequence<Shape>();
             for (int f = 1; f <= Math.Min(4, aNbF); f++)
             {
-                TopoDS_Edge anE = IsoEdge(TopoDS.Face(aFMap[f]));
-                if (!anE.IsNull())
+                Edge anE = IsoEdge(ShapeCasts.Face(aFMap[f]));
+                if (!anE.IsNull)
                 {
                     anEdges.Append(anE);
                 }
@@ -485,11 +491,11 @@ public class LocOpeNativeTests(ITestOutputHelper output)
 
         for (int f = 1; f <= Math.Min(6, aNbF); f++)
         {
-            TopoDS_Face aF = TopoDS.Face(aFMap[f]);
+            Face aF = ShapeCasts.Face(aFMap[f]);
             add(Run("PRISM", f, () =>
             {
                 var aPrism = new LocOpe_Prism(aF, new Vector3D(3, 4, 12));
-                var aCurves = new NCollection_Sequence<Geom_Curve>();
+                var aCurves = new NCollection_Sequence<Curve3D>();
                 aPrism.Curves(aCurves);
                 return Swept(aPrism.Shape(), aPrism.FirstShape(), aPrism.LastShape(), s => aPrism.Shapes(s), aF)
                        + Curves(aCurves, aPrism.BarycCurve());
@@ -505,9 +511,9 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 add(Run(aDec1 == 1 ? "REVOLD" : "REVOL", f, () =>
                 {
                     double[] aMin = [1e100, 1e100, 1e100];
-                    for (var anExp = new TopExp_Explorer(aF, TopAbs_VERTEX); anExp.More(); anExp.Next())
+                    for (var anExp = new Explorer(aF, ShapeType.Vertex); anExp.More(); anExp.Next())
                     {
-                        Point3D aP = BRep_Tool.Pnt(TopoDS.Vertex(anExp.Current()));
+                        Point3D aP = Tool.Pnt(ShapeCasts.Vertex(anExp.Current()));
                         aMin[0] = Min(aMin[0], aP.X());
                         aMin[1] = Min(aMin[1], aP.Y());
                         aMin[2] = Min(aMin[2], aP.Z());
@@ -538,8 +544,8 @@ public class LocOpeNativeTests(ITestOutputHelper output)
 
         for (int f = 1; f <= aNbF; f++)
         {
-            TopoDS_Face aF = TopoDS.Face(aFMap[f]);
-            if (!IsPlanar(aF) || Count(aF, TopAbs_EDGE) > 16)
+            Face aF = ShapeCasts.Face(aFMap[f]);
+            if (!IsPlanar(aF) || Count(aF, ShapeType.Edge) > 16)
             {
                 continue;
             }
@@ -554,7 +560,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                     {
                         return "NOTDONE";
                     }
-                    var aCurves = new NCollection_Sequence<Geom_Curve>();
+                    var aCurves = new NCollection_Sequence<Curve3D>();
                     string aLine = Swept(aDPrism.Shape(), aDPrism.FirstShape(), aDPrism.LastShape(), s => aDPrism.Shapes(s), aF, true);
                     aDPrism.Curves(aCurves);
                     return aLine + Curves(aCurves, aDPrism.BarycCurve());
@@ -564,22 +570,22 @@ public class LocOpeNativeTests(ITestOutputHelper output)
 
         for (int f = 1; f <= aNbF; f++)
         {
-            TopoDS_Face aF = TopoDS.Face(aFMap[f]);
+            Face aF = ShapeCasts.Face(aFMap[f]);
             if (!IsPlanar(aF))
             {
                 continue;
             }
             add(Run("DRAFT", f, () =>
             {
-                TopoDS_Edge anE = IsoEdge(aF);
-                if (anE.IsNull())
+                Edge anE = IsoEdge(aF);
+                if (anE.IsNull)
                 {
                     return null;
                 }
                 double aZMin = 1e100;
-                for (var anExp = new TopExp_Explorer(aF, TopAbs_VERTEX); anExp.More(); anExp.Next())
+                for (var anExp = new Explorer(aF, ShapeType.Vertex); anExp.More(); anExp.Next())
                 {
-                    aZMin = Min(aZMin, BRep_Tool.Pnt(TopoDS.Vertex(anExp.Current())).Z());
+                    aZMin = Min(aZMin, Tool.Pnt(ShapeCasts.Vertex(anExp.Current())).Z());
                 }
                 var aDrafts = new LocOpe_SplitDrafts(S);
                 aDrafts.Perform(aF, new BRepBuilderAPI_MakeWire(anE).Wire(), Constants.DZ(), new Plane3D(new Point3D(0, 0, aZMin), Constants.DZ()),
@@ -594,7 +600,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
 
         for (int f = 1; f <= aNbF; f++)
         {
-            TopoDS_Face aF = TopoDS.Face(aFMap[f]);
+            Face aF = ShapeCasts.Face(aFMap[f]);
             add(Run("FIND", f, () =>
             {
                 var aFind = new LocOpe_FindEdges(aF, S);
@@ -651,8 +657,8 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             {
                 File.AppendAllText(aTrace, aSections[i].Name + "\n");
             }
-            TopoDS_Shape aShape = Make(aSections[i].Name, aByName);
-            if (aShape.IsNull())
+            Shape aShape = Make(aSections[i].Name, aByName);
+            if (aShape.IsNull)
             {
                 Interlocked.Increment(ref aMissing);
                 return;

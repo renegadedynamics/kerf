@@ -12,7 +12,7 @@ public class GeomProjLibTests
 {
     private static readonly CoordinateSystem Std = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0));
 
-    private static Geom_BSplineCurve Helix(double theR, double theT0, double theT1)
+    private static BSplineCurve3D Helix(double theR, double theT0, double theT1)
     {
         // A helix-like curve on the cylinder of radius theR, interpolated through its points.
         int aNb = 9;
@@ -29,22 +29,22 @@ public class GeomProjLibTests
             aKnots[i] = i - 1;
             aMults[i] = (i == 1 || i == aNb - 2) ? 4 : 1;
         }
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 3);
     }
 
     [Fact]
     public void Curve2d_LineOnPlane_TrimmedAndNot()
     {
-        var aPln = new Geom_Plane(Std);
-        var aLine = new Geom_Line(new Line3D(new Point3D(1, 2, 0), new Direction3D(1, 1, 0)));
-        Geom2d_Curve? aC2d = GeomProjLib.Curve2d(aLine, 0.0, 2.0, aPln);
-        var aL2d = Assert.IsType<Geom2d_Line>(aC2d);
+        var aPln = new PlaneSurface(Std);
+        var aLine = new LineCurve3D(new Line3D(new Point3D(1, 2, 0), new Direction3D(1, 1, 0)));
+        Curve2D? aC2d = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(aLine, 0.0, 2.0, aPln);
+        var aL2d = Assert.IsType<LineCurve2D>(aC2d);
         Assert.Equal(1.0, aL2d.Location().X(), 1.0e-15);
         Assert.Equal(2.0, aL2d.Location().Y(), 1.0e-15);
 
-        var aTrimmed = new Geom_TrimmedCurve(aLine, 0.5, 1.5);
-        Geom2d_Curve? aT2d = GeomProjLib.Curve2d(aTrimmed, aPln);
-        var aT = Assert.IsType<Geom2d_TrimmedCurve>(aT2d);
+        var aTrimmed = new TrimmedCurve3D(aLine, 0.5, 1.5);
+        Curve2D? aT2d = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(aTrimmed, aPln);
+        var aT = Assert.IsType<TrimmedCurve2D>(aT2d);
         Assert.Equal(0.5, aT.FirstParameter());
         Assert.Equal(1.5, aT.LastParameter());
         Assert.False(aT.IsFrozen);
@@ -53,12 +53,12 @@ public class GeomProjLibTests
     [Fact]
     public void Curve2d_HelixOnCylinder_ToleranceAndOwnership()
     {
-        var aCyl = new Geom_CylindricalSurface(Std, 2.0);
-        Geom_BSplineCurve aHelix = Helix(2.0, 0.2, 2.8);
+        var aCyl = new CylindricalSurface(Std, 2.0);
+        BSplineCurve3D aHelix = Helix(2.0, 0.2, 2.8);
         double aTol = 1.0e-4;
         // The interpolating B-spline lies near the cylinder only; the projection approximates it.
-        Geom2d_Curve? aC2d = GeomProjLib.Curve2d(aHelix, aHelix.FirstParameter(), aHelix.LastParameter(), aCyl, ref aTol);
-        var aBS = Assert.IsType<Geom2d_BSplineCurve>(aC2d);
+        Curve2D? aC2d = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(aHelix, aHelix.FirstParameter(), aHelix.LastParameter(), aCyl, ref aTol);
+        var aBS = Assert.IsType<BSplineCurve2D>(aC2d);
         Assert.False(aBS.IsFrozen);
         Assert.True(aTol > 0.0 && aTol < 1.0);
         for (int i = 0; i <= 20; i++)
@@ -77,16 +77,16 @@ public class GeomProjLibTests
     [Fact]
     public void Curve2d_Overloads_Agree()
     {
-        var aCyl = new Geom_CylindricalSurface(Std, 1.0);
-        var aCirc = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0.7), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1.0);
+        var aCyl = new CylindricalSurface(Std, 1.0);
+        var aCirc = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0.7), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1.0);
         double aTol = 1.0e-7;
-        Geom2d_Curve? a1 = GeomProjLib.Curve2d(aCirc, aCyl);
-        Geom2d_Curve? a2 = GeomProjLib.Curve2d(aCirc, aCyl, 0.0, 2.0 * M_PI, -10.0, 10.0);
-        Geom2d_Curve? a3 = GeomProjLib.Curve2d(aCirc, aCyl, 0.0, 2.0 * M_PI, -10.0, 10.0, ref aTol);
-        Geom2d_Curve? a4 = GeomProjLib.Curve2d(aCirc, 0.0, 1.0, aCyl, ref aTol);
-        foreach (Geom2d_Curve? aC in new[] { a1, a2, a3, a4 })
+        Curve2D? a1 = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(aCirc, aCyl);
+        Curve2D? a2 = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(aCirc, aCyl, 0.0, 2.0 * M_PI, -10.0, 10.0);
+        Curve2D? a3 = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(aCirc, aCyl, 0.0, 2.0 * M_PI, -10.0, 10.0, ref aTol);
+        Curve2D? a4 = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(aCirc, 0.0, 1.0, aCyl, ref aTol);
+        foreach (Curve2D? aC in new[] { a1, a2, a3, a4 })
         {
-            var aLine = Assert.IsType<Geom2d_Line>(aC);
+            var aLine = Assert.IsType<LineCurve2D>(aC);
             Assert.Equal(0.7, aLine.Value(0.3).Y(), 1.0e-14);
             Assert.Equal(0.3, aLine.Value(0.3).X(), 1.0e-14);
         }
@@ -95,19 +95,19 @@ public class GeomProjLibTests
     [Fact]
     public void Project_OnPlane_ConicsAndBSpline()
     {
-        var aPln = new Geom_Plane(Std);
-        var aCirc = new Geom_Circle(new Frame3D(new Point3D(1, 2, 5), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2.0);
-        var aRes = Assert.IsType<Geom_Circle>(GeomProjLib.Project(aCirc, aPln));
+        var aPln = new PlaneSurface(Std);
+        var aCirc = new CircleCurve3D(new Frame3D(new Point3D(1, 2, 5), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2.0);
+        var aRes = Assert.IsType<CircleCurve3D>(global::Kerf.Engine.Geometry.Projection.GeomProjLib.Project(aCirc, aPln));
         Assert.Equal(0.0, aRes.Location().Z(), 1.0e-15);
         Assert.Equal(2.0, aRes.Radius(), 1.0e-15);
 
-        var aTrimmed = new Geom_TrimmedCurve(aCirc, 0.5, 2.0);
-        var aT = Assert.IsType<Geom_TrimmedCurve>(GeomProjLib.Project(aTrimmed, aPln));
+        var aTrimmed = new TrimmedCurve3D(aCirc, 0.5, 2.0);
+        var aT = Assert.IsType<TrimmedCurve3D>(global::Kerf.Engine.Geometry.Projection.GeomProjLib.Project(aTrimmed, aPln));
         Assert.Equal(0.5, aT.FirstParameter());
         Assert.Equal(2.0, aT.LastParameter());
 
-        Geom_BSplineCurve aHelix = Helix(2.0, 0.2, 2.8);
-        var aBS = Assert.IsType<Geom_BSplineCurve>(GeomProjLib.Project(aHelix, aPln));
+        BSplineCurve3D aHelix = Helix(2.0, 0.2, 2.8);
+        var aBS = Assert.IsType<BSplineCurve3D>(global::Kerf.Engine.Geometry.Projection.GeomProjLib.Project(aHelix, aPln));
         Assert.False(aBS.IsFrozen);
         for (int i = 0; i <= 10; i++)
         {
@@ -120,11 +120,11 @@ public class GeomProjLibTests
     [Fact]
     public void Project_OnCylinder_Approximated3dCurve()
     {
-        var aCyl = new Geom_CylindricalSurface(Std, 1.0);
+        var aCyl = new CylindricalSurface(Std, 1.0);
         // A segment outside the cylinder: its normal projection is an arc of a helix-like curve.
-        var aLine = new Geom_TrimmedCurve(new Geom_Line(new Line3D(new Point3D(2, -1, 0), new Direction3D(0, 1, 0.5))), 0.0, 2.0);
-        Geom_Curve? aRes = GeomProjLib.Project(aLine, aCyl);
-        var aBS = Assert.IsType<Geom_BSplineCurve>(aRes);
+        var aLine = new TrimmedCurve3D(new LineCurve3D(new Line3D(new Point3D(2, -1, 0), new Direction3D(0, 1, 0.5))), 0.0, 2.0);
+        Curve3D? aRes = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Project(aLine, aCyl);
+        var aBS = Assert.IsType<BSplineCurve3D>(aRes);
         Assert.False(aBS.IsFrozen);
         for (int i = 0; i <= 10; i++)
         {
@@ -143,7 +143,7 @@ public class GeomProjLibTests
     {
         public bool Ok { get; }
 
-        public GeomAPI_ProjectPointOnCurveLike(Geom_Curve theLine, in Point3D theP)
+        public GeomAPI_ProjectPointOnCurveLike(Curve3D theLine, in Point3D theP)
         {
             double aBest = double.MaxValue;
             for (int i = 0; i <= 2000; i++)
@@ -161,10 +161,10 @@ public class GeomProjLibTests
     [Fact]
     public void ProjectOnPlane_CircleAlongOblique_IsEllipse()
     {
-        var aPln = new Geom_Plane(Std);
-        var aCirc = new Geom_Circle(new Frame3D(new Point3D(0, 0, 3), new Direction3D(0, 1, 1), new Direction3D(1, 0, 0)), 1.0);
-        Geom_Curve? aRes = GeomProjLib.ProjectOnPlane(aCirc, aPln, new Direction3D(0, 0, 1), true);
-        var anEl = Assert.IsType<Geom_Ellipse>(aRes);
+        var aPln = new PlaneSurface(Std);
+        var aCirc = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 3), new Direction3D(0, 1, 1), new Direction3D(1, 0, 0)), 1.0);
+        Curve3D? aRes = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(aCirc, aPln, new Direction3D(0, 0, 1), true);
+        var anEl = Assert.IsType<EllipseCurve3D>(aRes);
         Assert.Equal(1.0, anEl.MajorRadius(), 1.0e-12);
         Assert.Equal(Math.Sqrt(0.5), anEl.MinorRadius(), 1.0e-12);
         for (int i = 0; i <= 8; i++)
@@ -174,8 +174,8 @@ public class GeomProjLibTests
             Assert.True(anEl.Value(t).Distance(new Point3D(aP.X(), aP.Y(), 0.0)) < 1.0e-12);
         }
 
-        var aTrimmed = new Geom_TrimmedCurve(aCirc, 0.5, 2.0);
-        var aT = Assert.IsType<Geom_TrimmedCurve>(GeomProjLib.ProjectOnPlane(aTrimmed, aPln, new Direction3D(0, 0, 1), true));
+        var aTrimmed = new TrimmedCurve3D(aCirc, 0.5, 2.0);
+        var aT = Assert.IsType<TrimmedCurve3D>(global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(aTrimmed, aPln, new Direction3D(0, 0, 1), true));
         Assert.Equal(0.5, aT.FirstParameter(), 1.0e-15);
         Assert.Equal(2.0, aT.LastParameter(), 1.0e-15);
     }
@@ -183,11 +183,11 @@ public class GeomProjLibTests
     [Fact]
     public void ProjectOnPlane_BSpline_UnfrozenAndCallerUnchanged()
     {
-        var aPln = new Geom_Plane(Std);
-        Geom_BSplineCurve aHelix = Helix(2.0, 0.2, 2.8);
+        var aPln = new PlaneSurface(Std);
+        BSplineCurve3D aHelix = Helix(2.0, 0.2, 2.8);
         Point3D aPole = aHelix.Pole(3);
-        Geom_Curve? aRes = GeomProjLib.ProjectOnPlane(aHelix, aPln, new Direction3D(0.2, 0.0, 1.0), true);
-        var aBS = Assert.IsType<Geom_BSplineCurve>(aRes);
+        Curve3D? aRes = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(aHelix, aPln, new Direction3D(0.2, 0.0, 1.0), true);
+        var aBS = Assert.IsType<BSplineCurve3D>(aRes);
         Assert.False(aBS.IsFrozen);
         Assert.NotSame(aHelix, aBS);
         Assert.Equal(aPole, aHelix.Pole(3));

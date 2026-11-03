@@ -6,8 +6,11 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using static Occt.StepToTopoDS_TranslateVertexLoopError;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -16,7 +19,7 @@ namespace Occt;
 public sealed class StepToTopoDS_TranslateVertexLoop : StepToTopoDS_Root
 {
     private StepToTopoDS_TranslateVertexLoopError myError;
-    private TopoDS_Shape myResult = new TopoDS_Shape();
+    private Shape myResult = new Shape();
 
     public StepToTopoDS_TranslateVertexLoop()
     {
@@ -38,20 +41,20 @@ public sealed class StepToTopoDS_TranslateVertexLoop : StepToTopoDS_Root
         // A Vertex Loop shall be mapped onto a Vertex + Edge + Wire;
         if (!aTool.IsBound(VL))
         {
-            var B = new BRep_Builder();
+            var B = new BrepBuilder();
             Transfer_TransientProcess TP = aTool.TransientProcess();
 
             //: S4136    double preci = BRepAPI::Precision();
             StepShape_Vertex Vtx;
-            TopoDS_Vertex V1 = new TopoDS_Vertex(), V2 = new TopoDS_Vertex();
-            TopoDS_Edge E = new TopoDS_Edge();
-            TopoDS_Wire W = new TopoDS_Wire();
+            Vertex V1 = new Vertex(), V2 = new Vertex();
+            Edge E = new Edge();
+            Wire W = new Wire();
             Vtx = VL.LoopVertex();
             var myTranVtx = new StepToTopoDS_TranslateVertex(Vtx, aTool, NMTool, theLocalFactors);
             if (myTranVtx.IsDone())
             {
-                V1 = TopoDS.Vertex(myTranVtx.InternalValue());
-                V2 = TopoDS.Vertex(myTranVtx.InternalValue());
+                V1 = ShapeCasts.Vertex(myTranVtx.InternalValue());
+                V2 = ShapeCasts.Vertex(myTranVtx.InternalValue());
             }
             else
             {
@@ -61,8 +64,8 @@ public sealed class StepToTopoDS_TranslateVertexLoop : StepToTopoDS_Root
                 return;
             }
 
-            V1.Orientation(TopAbs_FORWARD);
-            V2.Orientation(TopAbs_REVERSED);
+            V1.Orientation(Forward);
+            V2.Orientation(Reversed);
             B.MakeEdge(ref E);
             B.Add(E, V1);
             B.Add(E, V2);
@@ -78,7 +81,7 @@ public sealed class StepToTopoDS_TranslateVertexLoop : StepToTopoDS_Root
         }
         else
         {
-            myResult = TopoDS.Wire(aTool.Find(VL));
+            myResult = ShapeCasts.Wire(aTool.Find(VL));
             myError = StepToTopoDS_TranslateVertexLoopDone;
             done = true;
         }
@@ -89,15 +92,15 @@ public sealed class StepToTopoDS_TranslateVertexLoop : StepToTopoDS_Root
 
     /// <summary>The wire, frozen.</summary>
     /// <exception cref="NotDoneException">The translation wasn't done.</exception>
-    public TopoDS_Shape Value()
+    public Shape Value()
     {
-        TopoDS_Shape aShape = InternalValue();
+        Shape aShape = InternalValue();
         aShape.TShape()?.FreezeGraph();
         return aShape;
     }
 
     /// <summary>As <see cref="Value"/>, without freezing: the reader's working shape.</summary>
-    internal TopoDS_Shape InternalValue()
+    internal Shape InternalValue()
     {
         StdFail_NotDone_Raise_if(!done, "StepToTopoDS_TranslateVertexLoop::Value() - no result");
         return myResult;

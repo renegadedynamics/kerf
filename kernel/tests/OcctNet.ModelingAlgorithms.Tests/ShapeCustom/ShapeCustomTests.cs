@@ -1,10 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -16,11 +20,11 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ShapeCustomTests
 {
-    private static List<TopoDS_Shape> SubShapes(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static List<Shape> SubShapes(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
-        var aList = new List<TopoDS_Shape>();
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
+        var aList = new List<Shape>();
         for (int i = 1; i <= aMap.Extent(); i++)
         {
             aList.Add(aMap[i]);
@@ -28,31 +32,31 @@ public class ShapeCustomTests
         return aList;
     }
 
-    private static bool AllFrozen(in TopoDS_Shape theShape)
+    private static bool AllFrozen(in Shape theShape)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, aMap);
         return aMap.All(s => s.TShape()!.IsFrozen);
     }
 
-    private static Geom_Surface BasisOf(Geom_Surface theSurface)
-        => theSurface is Geom_RectangularTrimmedSurface aRTS ? aRTS.BasisSurface() : theSurface;
+    private static Surface BasisOf(Surface theSurface)
+        => theSurface is TrimmedSurface aRTS ? aRTS.BasisSurface() : theSurface;
 
-    private static TopoDS_Shape Mirrored(in TopoDS_Shape theShape)
+    private static Shape Mirrored(in Shape theShape)
     {
         var aT = new Transform3D();
         aT.SetMirror(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)));
         return new BRepBuilderAPI_Transform(theShape, aT, true).Shape();
     }
 
-    private static TopoDS_Shape Box() => new BRepPrimAPI_MakeBox(new Point3D(1, 2, 3), new Point3D(11, 12, 13)).Shape();
+    private static Shape Box() => new BRepPrimAPI_MakeBox(new Point3D(1, 2, 3), new Point3D(11, 12, 13)).Shape();
 
-    private static TopoDS_Shape Compound(params TopoDS_Shape[] theShapes)
+    private static Shape Compound(params Shape[] theShapes)
     {
-        var B = new BRep_Builder();
-        var aC = new TopoDS_Compound();
+        var B = new BrepBuilder();
+        var aC = new Compound();
         B.MakeCompound(ref aC);
-        foreach (TopoDS_Shape aS in theShapes)
+        foreach (Shape aS in theShapes)
         {
             B.Add(aC, aS);
         }
@@ -63,30 +67,30 @@ public class ShapeCustomTests
     [Fact]
     public void DirectFaces_OnAMirroredBox_MakesEveryFaceDirect_TheInputIsUnchanged()
     {
-        TopoDS_Shape aBox = Mirrored(Box());
+        Shape aBox = Mirrored(Box());
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        foreach (TopoDS_Shape aF in SubShapes(aBox, TopAbs_FACE))
+        foreach (Shape aF in SubShapes(aBox, ShapeType.Face))
         {
-            Assert.False(((Geom_ElementarySurface)BRep_Tool.Surface(TopoDS.Face(aF))!).Position().Direct());
+            Assert.False(((ElementarySurface)Tool.Surface(ShapeCasts.Face(aF))!).Position().Direct());
         }
 
-        TopoDS_Shape aResult = ShapeCustom.DirectFaces(aBox);
+        Shape aResult = ShapeCustom.DirectFaces(aBox);
 
         aSnap.AssertUnchanged(aBox);
         Assert.True(AllFrozen(aResult));
-        Assert.Equal(6, SubShapes(aResult, TopAbs_FACE).Count);
-        Assert.Equal(12, SubShapes(aResult, TopAbs_EDGE).Count);
-        foreach (TopoDS_Shape aF in SubShapes(aResult, TopAbs_FACE))
+        Assert.Equal(6, SubShapes(aResult, ShapeType.Face).Count);
+        Assert.Equal(12, SubShapes(aResult, ShapeType.Edge).Count);
+        foreach (Shape aF in SubShapes(aResult, ShapeType.Face))
         {
-            Assert.True(((Geom_ElementarySurface)BRep_Tool.Surface(TopoDS.Face(aF))!).Position().Direct());
+            Assert.True(((ElementarySurface)Tool.Surface(ShapeCasts.Face(aF))!).Position().Direct());
         }
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
         Assert.Equal(1000.0, VolumeOf(aResult), 6);
     }
 
-    private static double VolumeOf(in TopoDS_Shape theShape)
+    private static double VolumeOf(in Shape theShape)
     {
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
@@ -94,8 +98,8 @@ public class ShapeCustomTests
     [Fact]
     public void DirectFaces_OnADirectShape_GivesBackTheInputItself()
     {
-        TopoDS_Shape aBox = Box();
-        TopoDS_Shape aResult = ShapeCustom.DirectFaces(aBox);
+        Shape aBox = Box();
+        Shape aResult = ShapeCustom.DirectFaces(aBox);
         Assert.Same(aBox.TShape(), aResult.TShape());
     }
 
@@ -104,54 +108,54 @@ public class ShapeCustomTests
     {
         // each face is a child of the compound, modified in turn by the same modifier: a later face adds its pcurve to
         // an edge an earlier face's result holds (the reason for the internal accessors, decision 973)
-        TopoDS_Shape aBox = Mirrored(Box());
-        TopoDS_Shape aFaces = Compound([.. SubShapes(aBox, TopAbs_FACE)]);
+        Shape aBox = Mirrored(Box());
+        Shape aFaces = Compound([.. SubShapes(aBox, ShapeType.Face)]);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFaces);
 
-        TopoDS_Shape aResult = ShapeCustom.DirectFaces(aFaces);
+        Shape aResult = ShapeCustom.DirectFaces(aFaces);
 
         aSnap.AssertUnchanged(aFaces);
         Assert.True(AllFrozen(aResult));
-        Assert.Equal(6, SubShapes(aResult, TopAbs_FACE).Count);
-        Assert.Equal(12, SubShapes(aResult, TopAbs_EDGE).Count); // still shared
-        foreach (TopoDS_Shape anE in SubShapes(aResult, TopAbs_EDGE))
+        Assert.Equal(6, SubShapes(aResult, ShapeType.Face).Count);
+        Assert.Equal(12, SubShapes(aResult, ShapeType.Edge).Count); // still shared
+        foreach (Shape anE in SubShapes(aResult, ShapeType.Edge))
         {
             // two pcurves, one per face
-            Assert.Equal(2, ((BRep_TEdge)anE.TShape()!).CurveRepresentations().Count(c => c is BRep_GCurve g && g.IsCurveOnSurface()));
+            Assert.Equal(2, ((BrepTEdge)anE.TShape()!).CurveRepresentations().Count(c => c is GCurve g && g.IsCurveOnSurface()));
         }
     }
 
     [Fact]
     public void ApplyModifier_ReusedAcrossPublicCalls_OnSharedSubShapes_Throws_TheFirstResultIsUnchanged()
     {
-        TopoDS_Shape aBox = Mirrored(Box());
-        List<TopoDS_Shape> aFaces = SubShapes(aBox, TopAbs_FACE);
+        Shape aBox = Mirrored(Box());
+        List<Shape> aFaces = SubShapes(aBox, ShapeType.Face);
         var aDM = new ShapeCustom_DirectModification();
-        var aContext = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var aMD = new BRepTools_Modifier();
+        var aContext = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var aMD = new Modifier();
 
-        TopoDS_Shape aFirst = ShapeCustom.ApplyModifier(aFaces[0], aDM, aContext, aMD);
+        Shape aFirst = ShapeCustom.ApplyModifier(aFaces[0], aDM, aContext, aMD);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFirst);
         // the second face shares an edge with the first: the modifier would add a pcurve to the first result's edge
-        TopoDS_Shape aNeighbour = aFaces.Skip(1).First(f => SubShapes(f, TopAbs_EDGE).Any(e => SubShapes(aFaces[0], TopAbs_EDGE).Any(e0 => e0.IsSame(e))));
-        Assert.Throws<TopoDS_LockedShape>(() => ShapeCustom.ApplyModifier(aNeighbour, aDM, aContext, aMD));
+        Shape aNeighbour = aFaces.Skip(1).First(f => SubShapes(f, ShapeType.Edge).Any(e => SubShapes(aFaces[0], ShapeType.Edge).Any(e0 => e0.IsSame(e))));
+        Assert.Throws<LockedShapeException>(() => ShapeCustom.ApplyModifier(aNeighbour, aDM, aContext, aMD));
         aSnap.AssertUnchanged(aFirst);
     }
 
     [Fact]
     public void ApplyModifier_RecordsTheReplacementsOfTheCallersSubShapes()
     {
-        TopoDS_Shape aBox = Mirrored(Box());
+        Shape aBox = Mirrored(Box());
         var aReShape = new ShapeBuild_ReShape();
-        var aContext = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopoDS_Shape aResult = ShapeCustom.ApplyModifier(aBox, new ShapeCustom_DirectModification(), aContext, new BRepTools_Modifier(),
+        var aContext = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        Shape aResult = ShapeCustom.ApplyModifier(aBox, new ShapeCustom_DirectModification(), aContext, new Modifier(),
                                                          default, aReShape);
         Assert.True(AllFrozen(aResult));
-        foreach (TopoDS_Shape aF in SubShapes(aBox, TopAbs_FACE))
+        foreach (Shape aF in SubShapes(aBox, ShapeType.Face))
         {
-            TopoDS_Shape aNew = aReShape.Value(aF);
+            Shape aNew = aReShape.Value(aF);
             Assert.False(aNew.IsSame(aF));
-            Assert.Contains(SubShapes(aResult, TopAbs_FACE), f => f.IsSame(aNew));
+            Assert.Contains(SubShapes(aResult, ShapeType.Face), f => f.IsSame(aNew));
         }
         Assert.True(aReShape.Value(aBox).IsSame(aResult));
     }
@@ -159,12 +163,12 @@ public class ShapeCustomTests
     [Fact]
     public void ApplyModifier_ACompoundSharingAChild_IsModifiedOnce()
     {
-        TopoDS_Shape aBox = Mirrored(Box());
-        TopoDS_Shape aCompound = Compound(aBox, aBox.Located(new Placement(new Transform3D())), aBox);
-        var aContext = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopoDS_Shape aResult = ShapeCustom.ApplyModifier(aCompound, new ShapeCustom_DirectModification(), aContext, new BRepTools_Modifier());
-        var aChildren = new List<TopoDS_Shape>();
-        for (var it = new TopoDS_Iterator(aResult); it.More(); it.Next())
+        Shape aBox = Mirrored(Box());
+        Shape aCompound = Compound(aBox, aBox.Located(new Placement(new Transform3D())), aBox);
+        var aContext = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        Shape aResult = ShapeCustom.ApplyModifier(aCompound, new ShapeCustom_DirectModification(), aContext, new Modifier());
+        var aChildren = new List<Shape>();
+        for (var it = new Iterator(aResult); it.More(); it.Next())
         {
             aChildren.Add(it.Value());
         }
@@ -176,43 +180,43 @@ public class ShapeCustomTests
     [Fact]
     public void ScaleShape_ScalesTheShapeAndItsOwnTolerances()
     {
-        TopoDS_Shape aBox = Box();
+        Shape aBox = Box();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        TopoDS_Shape aResult = ShapeCustom.ScaleShape(aBox, 0.5);
+        Shape aResult = ShapeCustom.ScaleShape(aBox, 0.5);
         aSnap.AssertUnchanged(aBox);
         Assert.True(AllFrozen(aResult));
         Assert.Equal(125.0, VolumeOf(aResult), 6);
-        foreach (TopoDS_Shape aV in SubShapes(aResult, TopAbs_VERTEX))
+        foreach (Shape aV in SubShapes(aResult, ShapeType.Vertex))
         {
             // the vertex's own tolerance (1e-7) halved, below Precision::Confusion()
-            Assert.Equal(0.5e-7, ((BRep_TVertex)aV.TShape()!).Tolerance(), 15);
+            Assert.Equal(0.5e-7, ((BrepTVertex)aV.TShape()!).Tolerance(), 15);
         }
     }
 
     [Fact]
     public void ConvertToRevolution_ConvertsElementarySurfaces_KeepsTheBoxOfACompound()
     {
-        TopoDS_Shape aBox = Box();
-        TopoDS_Shape aSphere = new BRepPrimAPI_MakeSphere(new Point3D(30, 0, 0), 5).Shape();
-        TopoDS_Shape aCylinder = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(-30, 0, 0), new Direction3D(0, 0, 1)), 3, 7).Shape();
-        TopoDS_Shape aCompound = Compound(aBox, aSphere, aCylinder);
+        Shape aBox = Box();
+        Shape aSphere = new BRepPrimAPI_MakeSphere(new Point3D(30, 0, 0), 5).Shape();
+        Shape aCylinder = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(-30, 0, 0), new Direction3D(0, 0, 1)), 3, 7).Shape();
+        Shape aCompound = Compound(aBox, aSphere, aCylinder);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCompound);
         double aVolume = VolumeOf(aCompound);
 
-        TopoDS_Shape aResult = ShapeCustom.ConvertToRevolution(aCompound);
+        Shape aResult = ShapeCustom.ConvertToRevolution(aCompound);
 
         aSnap.AssertUnchanged(aCompound);
         Assert.True(AllFrozen(aResult));
-        var aChildren = new List<TopoDS_Shape>();
-        for (var it = new TopoDS_Iterator(aResult); it.More(); it.Next())
+        var aChildren = new List<Shape>();
+        for (var it = new Iterator(aResult); it.More(); it.Next())
         {
             aChildren.Add(it.Value());
         }
         Assert.Same(aBox.TShape(), aChildren[0].TShape()); // planes only: the caller's own
         int aRevolutions = 0;
-        foreach (TopoDS_Shape aF in SubShapes(aResult, TopAbs_FACE))
+        foreach (Shape aF in SubShapes(aResult, ShapeType.Face))
         {
-            aRevolutions += BasisOf(BRep_Tool.Surface(TopoDS.Face(aF))!) is Geom_SurfaceOfRevolution ? 1 : 0;
+            aRevolutions += BasisOf(Tool.Surface(ShapeCasts.Face(aF))!) is RevolutionSurface ? 1 : 0;
         }
         Assert.Equal(2, aRevolutions); // the sphere and the cylinder's side
         Assert.Equal(aVolume, VolumeOf(aResult), 3);
@@ -222,32 +226,32 @@ public class ShapeCustomTests
     public void SweptToElementary_ConvertsARevolutionOfASegment_ToACylinder()
     {
         // (BRepPrimAPI_MakeRevol would make a cylinder itself)
-        var aSurface = new Geom_SurfaceOfRevolution(new Geom_Line(new Point3D(4, 0, 0), new Direction3D(0, 0, 1)),
+        var aSurface = new RevolutionSurface(new LineCurve3D(new Point3D(4, 0, 0), new Direction3D(0, 0, 1)),
                                                     new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
-        TopoDS_Shape aRevol = new BRepBuilderAPI_MakeFace(aSurface, 0, 2 * Math.PI, 0, 10, global::Kerf.Engine.Foundation.Precision.Confusion()).Shape();
-        TopoDS_Face aFace = TopoDS.Face(SubShapes(aRevol, TopAbs_FACE)[0]);
-        Assert.IsType<Geom_SurfaceOfRevolution>(BRep_Tool.Surface(aFace));
+        Shape aRevol = new BRepBuilderAPI_MakeFace(aSurface, 0, 2 * Math.PI, 0, 10, global::Kerf.Engine.Foundation.Precision.Confusion()).Shape();
+        Face aFace = ShapeCasts.Face(SubShapes(aRevol, ShapeType.Face)[0]);
+        Assert.IsType<RevolutionSurface>(Tool.Surface(aFace));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aRevol);
 
-        TopoDS_Shape aResult = ShapeCustom.SweptToElementary(aRevol);
+        Shape aResult = ShapeCustom.SweptToElementary(aRevol);
 
         aSnap.AssertUnchanged(aRevol);
         Assert.True(AllFrozen(aResult));
-        Geom_Surface aNew = BRep_Tool.Surface(TopoDS.Face(SubShapes(aResult, TopAbs_FACE)[0]))!;
-        Assert.IsType<Geom_CylindricalSurface>(aNew);
-        Assert.Equal(4.0, ((Geom_CylindricalSurface)aNew).Radius(), 12);
+        Surface aNew = Tool.Surface(ShapeCasts.Face(SubShapes(aResult, ShapeType.Face)[0]))!;
+        Assert.IsType<CylindricalSurface>(aNew);
+        Assert.Equal(4.0, ((CylindricalSurface)aNew).Radius(), 12);
     }
 
     [Fact]
     public void ConvertToBSpline_WithThePlaneMode_ConvertsPlanes()
     {
-        TopoDS_Shape aBox = Box();
+        Shape aBox = Box();
         Assert.Same(aBox.TShape(), ShapeCustom.ConvertToBSpline(aBox, true, true, true).TShape());
-        TopoDS_Shape aResult = ShapeCustom.ConvertToBSpline(aBox, true, true, true, true);
+        Shape aResult = ShapeCustom.ConvertToBSpline(aBox, true, true, true, true);
         Assert.True(AllFrozen(aResult));
-        foreach (TopoDS_Shape aF in SubShapes(aResult, TopAbs_FACE))
+        foreach (Shape aF in SubShapes(aResult, ShapeType.Face))
         {
-            Assert.IsType<Geom_BSplineSurface>(BasisOf(BRep_Tool.Surface(TopoDS.Face(aF))!));
+            Assert.IsType<BSplineSurface>(BasisOf(Tool.Surface(ShapeCasts.Face(aF))!));
         }
         Assert.Equal(1000.0, VolumeOf(aResult), 6);
     }
@@ -255,21 +259,21 @@ public class ShapeCustomTests
     [Fact]
     public void BSplineRestriction_AsToSplines_ConvertsEverySurface_TheInputIsUnchanged()
     {
-        TopoDS_Shape aCylinder = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 1, 1)), 3, 7).Shape();
+        Shape aCylinder = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 1, 1)), 3, 7).Shape();
         var aParameters = new ShapeCustom_RestrictionParameters();
         aParameters.ConvertPlane() = true;
         aParameters.ConvertCylindricalSurf() = true;
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCylinder);
 
-        TopoDS_Shape aResult = ShapeCustom.BSplineRestriction(aCylinder, 1e-3, 1e-3, 3, 1, C0, C0, true, true, aParameters);
+        Shape aResult = ShapeCustom.BSplineRestriction(aCylinder, 1e-3, 1e-3, 3, 1, C0, C0, true, true, aParameters);
 
         aSnap.AssertUnchanged(aCylinder);
         Assert.True(AllFrozen(aResult));
-        foreach (TopoDS_Shape aF in SubShapes(aResult, TopAbs_FACE))
+        foreach (Shape aF in SubShapes(aResult, ShapeType.Face))
         {
-            Geom_Surface aS = BRep_Tool.Surface(TopoDS.Face(aF))!;
-            Assert.IsType<Geom_BSplineSurface>(aS);
-            Assert.True(((Geom_BSplineSurface)aS).UDegree() <= 3 && ((Geom_BSplineSurface)aS).VDegree() <= 3);
+            Surface aS = Tool.Surface(ShapeCasts.Face(aF))!;
+            Assert.IsType<BSplineSurface>(aS);
+            Assert.True(((BSplineSurface)aS).UDegree() <= 3 && ((BSplineSurface)aS).VDegree() <= 3);
         }
         Assert.Equal(Math.PI * 9 * 7, VolumeOf(aResult), 1);
     }
@@ -277,12 +281,12 @@ public class ShapeCustomTests
     [Fact]
     public void BSplineRestriction_TheModificationsErrorsAndSpans()
     {
-        TopoDS_Shape aCylinder = new BRepPrimAPI_MakeCylinder(3, 7).Shape();
+        Shape aCylinder = new BRepPrimAPI_MakeCylinder(3, 7).Shape();
         var aParameters = new ShapeCustom_RestrictionParameters();
         aParameters.ConvertCylindricalSurf() = true;
         var aBSR = new ShapeCustom_BSplineRestriction(true, true, true, 1e-3, 1e-5, C1, C2, 6, 10, true, false, aParameters);
-        var aContext = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        ShapeCustom.ApplyModifier(aCylinder, aBSR, aContext, new BRepTools_Modifier());
+        var aContext = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        ShapeCustom.ApplyModifier(aCylinder, aBSR, aContext, new Modifier());
         Assert.True(aBSR.NbOfSpan() > 0);
         double aSurfaceError = aBSR.MaxErrors(out double a3d, out double a2d);
         Assert.True(aSurfaceError <= 1e-3 && aSurfaceError >= global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -297,15 +301,15 @@ public class ShapeCustomTests
         // what ShapeExtend.Init loads, loaded unconditionally: Init skips it once another test's Msg has stored an
         // unknown-keyword text under its probe keyword (see SHMessageTests)
         global::Kerf.Engine.Foundation.MsgFile.LoadFromString(SHMessage_SHAPE_us.Text);
-        TopoDS_Shape aBox = Mirrored(Box());
+        Shape aBox = Mirrored(Box());
         var aDM = new ShapeCustom_DirectModification();
         var aMsg = new ShapeExtend_MsgRegistrator();
         aDM.SetMsgRegistrator(aMsg);
         Assert.Same(aMsg, aDM.MsgRegistrator());
-        var aContext = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        ShapeCustom.ApplyModifier(aBox, aDM, aContext, new BRepTools_Modifier());
+        var aContext = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        ShapeCustom.ApplyModifier(aBox, aDM, aContext, new Modifier());
         Assert.Equal(6, aMsg.MapShape().Extent());
-        foreach (TopoDS_Shape aF in SubShapes(aBox, TopAbs_FACE))
+        foreach (Shape aF in SubShapes(aBox, ShapeType.Face))
         {
             Assert.Equal("Direction of Face of revolution corrected", aMsg.MapShape()[aF].First().Value());
         }

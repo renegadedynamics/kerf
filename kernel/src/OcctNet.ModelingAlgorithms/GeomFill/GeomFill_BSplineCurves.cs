@@ -21,7 +21,7 @@ namespace Occt;
 /// </remarks>
 public class GeomFill_BSplineCurves
 {
-    private Geom_BSplineSurface? mySurface;
+    private BSplineSurface? mySurface;
 
     // Arrange: prepares the filling. The curves are arranged in this way:
     //
@@ -37,16 +37,16 @@ public class GeomFill_BSplineCurves
     //                   CC1 = C1
     //
     // A curve degenerated to a point that matches the last end point is taken first.
-    private static bool Arrange(Geom_BSplineCurve C1, Geom_BSplineCurve C2, Geom_BSplineCurve C3, Geom_BSplineCurve C4,
-                                out Geom_BSplineCurve CC1, out Geom_BSplineCurve CC2, out Geom_BSplineCurve CC3,
-                                out Geom_BSplineCurve CC4, double Tol)
+    private static bool Arrange(BSplineCurve3D C1, BSplineCurve3D C2, BSplineCurve3D C3, BSplineCurve3D C4,
+                                out BSplineCurve3D CC1, out BSplineCurve3D CC2, out BSplineCurve3D CC3,
+                                out BSplineCurve3D CC4, double Tol)
     {
-        Geom_BSplineCurve[] GC = new Geom_BSplineCurve[4];
-        Geom_BSplineCurve Dummy;
-        GC[0] = (Geom_BSplineCurve)C1.Copy();
-        GC[1] = (Geom_BSplineCurve)C2.Copy();
-        GC[2] = (Geom_BSplineCurve)C3.Copy();
-        GC[3] = (Geom_BSplineCurve)C4.Copy();
+        BSplineCurve3D[] GC = new BSplineCurve3D[4];
+        BSplineCurve3D Dummy;
+        GC[0] = (BSplineCurve3D)C1.Copy();
+        GC[1] = (BSplineCurve3D)C2.Copy();
+        GC[2] = (BSplineCurve3D)C3.Copy();
+        GC[3] = (BSplineCurve3D)C4.Copy();
         CC1 = CC2 = CC3 = CC4 = null!;
 
         int i, j;
@@ -84,7 +84,7 @@ public class GeomFill_BSplineCurves
                     }
                     else if (GC[j].EndPoint().Distance(GC[i - 1].EndPoint()) < Tol)
                     {
-                        GC[j] = (Geom_BSplineCurve)GC[j].Reversed();
+                        GC[j] = (BSplineCurve3D)GC[j].Reversed();
                         Dummy = GC[i];
                         GC[i] = GC[j];
                         GC[j] = Dummy;
@@ -101,13 +101,13 @@ public class GeomFill_BSplineCurves
 
         CC1 = GC[0];
         CC2 = GC[1];
-        CC3 = (Geom_BSplineCurve)GC[2].Reversed();
-        CC4 = (Geom_BSplineCurve)GC[3].Reversed();
+        CC3 = (BSplineCurve3D)GC[2].Reversed();
+        CC4 = (BSplineCurve3D)GC[3].Reversed();
 
         return true;
     }
 
-    private static int SetSameDistribution(ref Geom_BSplineCurve C1, ref Geom_BSplineCurve C2)
+    private static int SetSameDistribution(ref BSplineCurve3D C1, ref BSplineCurve3D C2)
     {
         NCollection_Array1<Point3D> P1 = new(C1.InternalPoles());
         NCollection_Array1<double> W1 = C1.InternalWeightsArray();
@@ -148,23 +148,23 @@ public class GeomFill_BSplineCurves
             NCollection_Array1<int> NewM = new(1, NK);
             global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(C1.Degree(), false, P1, W1, K1, M1, K2, M2, NewP, NewW, NewK, NewM,
                                  global::Kerf.Engine.Foundation.Precision.PConfusion(), false);
-            if (C1.IsRational())
+            if (C1.IsRational)
             {
-                C1 = new Geom_BSplineCurve(NewP, NewW, NewK, NewM, C1.Degree());
+                C1 = new BSplineCurve3D(NewP, NewW, NewK, NewM, C1.Degree());
             }
             else
             {
-                C1 = new Geom_BSplineCurve(NewP, NewK, NewM, C1.Degree());
+                C1 = new BSplineCurve3D(NewP, NewK, NewM, C1.Degree());
             }
             global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(C2.Degree(), false, P2, W2, K2, M2, K1, M1, NewP, NewW, NewK, NewM,
                                  global::Kerf.Engine.Foundation.Precision.PConfusion(), false);
-            if (C2.IsRational())
+            if (C2.IsRational)
             {
-                C2 = new Geom_BSplineCurve(NewP, NewW, NewK, NewM, C2.Degree());
+                C2 = new BSplineCurve3D(NewP, NewW, NewK, NewM, C2.Degree());
             }
             else
             {
-                C2 = new Geom_BSplineCurve(NewP, NewK, NewM, C2.Degree());
+                C2 = new BSplineCurve3D(NewP, NewK, NewM, C2.Degree());
             }
         }
         else
@@ -172,7 +172,7 @@ public class GeomFill_BSplineCurves
             throw new ConstructionErrorException(" ");
         }
 
-        return C1.NbPoles();
+        return C1.PoleCount;
     }
 
     public GeomFill_BSplineCurves()
@@ -180,21 +180,21 @@ public class GeomFill_BSplineCurves
     }
 
     /// <summary>The filling of four contiguous curves in the style <paramref name="Type"/>.</summary>
-    public GeomFill_BSplineCurves(Geom_BSplineCurve C1, Geom_BSplineCurve C2, Geom_BSplineCurve C3,
-                                  Geom_BSplineCurve C4, GeomFill_FillingStyle Type)
+    public GeomFill_BSplineCurves(BSplineCurve3D C1, BSplineCurve3D C2, BSplineCurve3D C3,
+                                  BSplineCurve3D C4, GeomFill_FillingStyle Type)
     {
         Init(C1, C2, C3, C4, Type);
     }
 
     /// <summary>The filling of three contiguous curves, closed by a segment, in the style <paramref name="Type"/>.</summary>
-    public GeomFill_BSplineCurves(Geom_BSplineCurve C1, Geom_BSplineCurve C2, Geom_BSplineCurve C3,
+    public GeomFill_BSplineCurves(BSplineCurve3D C1, BSplineCurve3D C2, BSplineCurve3D C3,
                                   GeomFill_FillingStyle Type)
     {
         Init(C1, C2, C3, Type);
     }
 
     /// <summary>The filling between two curves in the style <paramref name="Type"/>.</summary>
-    public GeomFill_BSplineCurves(Geom_BSplineCurve C1, Geom_BSplineCurve C2, GeomFill_FillingStyle Type)
+    public GeomFill_BSplineCurves(BSplineCurve3D C1, BSplineCurve3D C2, GeomFill_FillingStyle Type)
     {
         Init(C1, C2, Type);
     }
@@ -203,11 +203,11 @@ public class GeomFill_BSplineCurves
     /// Fills four contiguous curves. Throws Standard_ConstructionError if they don't join, or for the Coons style
     /// with fewer than four poles on a side.
     /// </summary>
-    public void Init(Geom_BSplineCurve C1, Geom_BSplineCurve C2, Geom_BSplineCurve C3, Geom_BSplineCurve C4,
+    public void Init(BSplineCurve3D C1, BSplineCurve3D C2, BSplineCurve3D C3, BSplineCurve3D C4,
                      GeomFill_FillingStyle Type)
     {
         // On ordonne les courbes
-        Geom_BSplineCurve CC1, CC2, CC3, CC4;
+        BSplineCurve3D CC1, CC2, CC3, CC4;
 
         double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         bool IsOK = Arrange(C1, C2, C3, C4, out CC1, out CC2, out CC3, out CC4, Tol);
@@ -256,7 +256,7 @@ public class GeomFill_BSplineCurves
         NCollection_Array1<Point3D> P4 = CC4.InternalPoles();
 
         // Traitement des courbes rationelles
-        bool isRat = (CC1.IsRational() || CC2.IsRational() || CC3.IsRational() || CC4.IsRational());
+        bool isRat = (CC1.IsRational || CC2.IsRational || CC3.IsRational || CC4.IsRational);
 
         NCollection_Array1<double> W1 = CC1.InternalWeightsArray();
         NCollection_Array1<double> W2 = CC2.InternalWeightsArray();
@@ -311,19 +311,19 @@ public class GeomFill_BSplineCurves
         {
             NCollection_Array2<double> Weights = new(1, NbUPoles, 1, NbVPoles);
             Caro.Weights(Weights);
-            mySurface = new Geom_BSplineSurface(Poles, Weights, UKnots, VKnots, UMults, VMults, CC1.Degree(),
+            mySurface = new BSplineSurface(Poles, Weights, UKnots, VKnots, UMults, VMults, CC1.Degree(),
                                                 CC2.Degree());
         }
         else
         {
-            mySurface = new Geom_BSplineSurface(Poles, UKnots, VKnots, UMults, VMults, CC1.Degree(), CC2.Degree());
+            mySurface = new BSplineSurface(Poles, UKnots, VKnots, UMults, VMults, CC1.Degree(), CC2.Degree());
         }
     }
 
     /// <summary>Fills three contiguous curves, the fourth side being the segment between the free ends.</summary>
-    public void Init(Geom_BSplineCurve C1, Geom_BSplineCurve C2, Geom_BSplineCurve C3, GeomFill_FillingStyle Type)
+    public void Init(BSplineCurve3D C1, BSplineCurve3D C2, BSplineCurve3D C3, GeomFill_FillingStyle Type)
     {
-        Geom_BSplineCurve C4;
+        BSplineCurve3D C4;
         NCollection_Array1<Point3D> Poles = new(1, 2);
         NCollection_Array1<double> Knots = new(1, 2);
         NCollection_Array1<int> Mults = new(1, 2);
@@ -352,7 +352,7 @@ public class GeomFill_BSplineCurves
         Knots[1] = C2.Knot(C2.FirstUKnotIndex());
         Knots[2] = C2.Knot(C2.LastUKnotIndex());
         Mults[1] = Mults[2] = 2;
-        C4 = new Geom_BSplineCurve(Poles, Knots, Mults, 1);
+        C4 = new BSplineCurve3D(Poles, Knots, Mults, 1);
         Init(C1, C2, C3, C4, Type);
     }
 
@@ -360,15 +360,15 @@ public class GeomFill_BSplineCurves
     /// Fills between two curves: a ruled surface for the Stretch and Coons styles, the first curve translated along
     /// the second for the Curved style (which needs the curves to share an end; else Standard_OutOfRange).
     /// </summary>
-    public void Init(Geom_BSplineCurve C1, Geom_BSplineCurve C2, GeomFill_FillingStyle Type)
+    public void Init(BSplineCurve3D C1, BSplineCurve3D C2, GeomFill_FillingStyle Type)
     {
-        Geom_BSplineCurve CC1 = (Geom_BSplineCurve)C1.Copy();
-        Geom_BSplineCurve CC2 = (Geom_BSplineCurve)C2.Copy();
+        BSplineCurve3D CC1 = (BSplineCurve3D)C1.Copy();
+        BSplineCurve3D CC2 = (BSplineCurve3D)C2.Copy();
 
         int Deg1 = CC1.Degree();
         int Deg2 = CC2.Degree();
 
-        bool isRat = (CC1.IsRational() || CC2.IsRational());
+        bool isRat = (CC1.IsRational || CC2.IsRational);
 
         if (Type != GeomFill_CurvedStyle)
         {
@@ -415,12 +415,12 @@ public class GeomFill_BSplineCurves
                     Weights[i, 1] = W1[i];
                     Weights[i, 2] = W2[i];
                 }
-                mySurface = new Geom_BSplineSurface(Poles, Weights, UKnots, VKnots, UMults, VMults, CC1.Degree(), 1,
-                                                    CC1.IsPeriodic(), false);
+                mySurface = new BSplineSurface(Poles, Weights, UKnots, VKnots, UMults, VMults, CC1.Degree(), 1,
+                                                    CC1.IsPeriodic, false);
             }
             else
             {
-                mySurface = new Geom_BSplineSurface(Poles, UKnots, VKnots, UMults, VMults, CC1.Degree(), 1);
+                mySurface = new BSplineSurface(Poles, UKnots, VKnots, UMults, VMults, CC1.Degree(), 1);
             }
         }
         else
@@ -455,8 +455,8 @@ public class GeomFill_BSplineCurves
                 throw new OutOfRangeException("GeomFill_BSplineCurves: Courbes non jointives");
             }
 
-            int NbUPoles = CC1.NbPoles();
-            int NbVPoles = CC2.NbPoles();
+            int NbUPoles = CC1.PoleCount;
+            int NbVPoles = CC2.PoleCount;
             NCollection_Array1<Point3D> P1 = CC1.InternalPoles();
             NCollection_Array1<Point3D> P2 = CC2.InternalPoles();
 
@@ -486,23 +486,23 @@ public class GeomFill_BSplineCurves
             {
                 NCollection_Array2<double> Weights = new(1, NbUPoles, 1, NbVPoles);
                 Caro.Weights(Weights);
-                mySurface = new Geom_BSplineSurface(Poles, Weights, UKnots, VKnots, UMults, VMults, Deg1, Deg2, false,
+                mySurface = new BSplineSurface(Poles, Weights, UKnots, VKnots, UMults, VMults, Deg1, Deg2, false,
                                                     false);
             }
             else
             {
-                mySurface = new Geom_BSplineSurface(Poles, UKnots, VKnots, UMults, VMults, Deg1, Deg2, false, false);
+                mySurface = new BSplineSurface(Poles, UKnots, VKnots, UMults, VMults, Deg1, Deg2, false, false);
             }
         }
     }
 
     /// <summary>The surface (null before <c>Init</c>), frozen.</summary>
-    public Geom_BSplineSurface? Surface()
+    public BSplineSurface? Surface()
     {
         mySurface?.Freeze();
         return mySurface;
     }
 
     /// <summary>The surface, not frozen, for ported callers.</summary>
-    internal Geom_BSplineSurface? InternalSurface() => mySurface;
+    internal BSplineSurface? InternalSurface() => mySurface;
 }

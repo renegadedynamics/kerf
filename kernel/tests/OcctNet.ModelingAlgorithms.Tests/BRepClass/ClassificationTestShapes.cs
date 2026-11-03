@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
@@ -19,11 +21,11 @@ internal static class ClassificationTestShapes
     /// The square [0, 10] x [0, 10] of the plane z = 0 (normal +Z, UV = XY) with the square hole [4, 6] x [4, 6]:
     /// the outer wire counter-clockwise, the hole's clockwise. Unfrozen.
     /// </summary>
-    public static TopoDS_Face HoledSquare()
+    public static Face HoledSquare()
     {
-        var aB = new BRep_Builder();
-        var aPlane = new Geom_Plane(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
-        TopoDS_Face aF = new();
+        var aB = new BrepBuilder();
+        var aPlane = new PlaneSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
+        Face aF = new();
         aB.MakeFace(ref aF, aPlane, Tol);
         aB.Add(aF, PolygonWire(aF, (0, 0), (10, 0), (10, 10), (0, 10)));
         aB.Add(aF, PolygonWire(aF, (4, 4), (4, 6), (6, 6), (6, 4)));
@@ -31,24 +33,24 @@ internal static class ClassificationTestShapes
     }
 
     /// <summary>A closed wire of segments through the (x, y) corners of the plane z = 0, with pcurves on the face.</summary>
-    private static TopoDS_Wire PolygonWire(in TopoDS_Face theFace, params (double X, double Y)[] theCorners)
+    private static Wire PolygonWire(in Face theFace, params (double X, double Y)[] theCorners)
     {
-        var aB = new BRep_Builder();
+        var aB = new BrepBuilder();
         int n = theCorners.Length;
-        var aV = new TopoDS_Vertex[n];
+        var aV = new Vertex[n];
         for (int i = 0; i < n; i++)
         {
             aV[i] = TestShapes.Vertex(new Point3D(theCorners[i].X, theCorners[i].Y, 0));
         }
 
-        TopoDS_Wire aW = new();
+        Wire aW = new();
         aB.MakeWire(ref aW);
         for (int i = 0; i < n; i++)
         {
             (double x1, double y1) = theCorners[i];
             (double x2, double y2) = theCorners[(i + 1) % n];
-            TopoDS_Edge anE = TestShapes.Edge(aV[i], aV[(i + 1) % n]);
-            aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(x1, y1), new Direction2D(x2 - x1, y2 - y1)), theFace, Tol);
+            Edge anE = TestShapes.Edge(aV[i], aV[(i + 1) % n]);
+            aB.UpdateEdge(anE, new LineCurve2D(new Point2D(x1, y1), new Direction2D(x2 - x1, y2 - y1)), theFace, Tol);
             aB.Add(aW, anE);
         }
 
@@ -61,11 +63,11 @@ internal static class ClassificationTestShapes
     /// around Z, trimmed to [0, 2 Pi] x [0, <paramref name="h"/>]: a cylinder that IntCurvesFace meets through a
     /// polyhedron.
     /// </summary>
-    public static TopoDS_Face ExtrudedTube(double r, double h)
+    public static Face ExtrudedTube(double r, double h)
     {
-        var aCircle = new Geom_Circle(new Frame3D(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
-        var anExtr = new Geom_SurfaceOfLinearExtrusion(aCircle, new Direction3D(0, 0, 1));
-        var aTrimmed = new Geom_RectangularTrimmedSurface(anExtr, 0.0, 2.0 * Math.PI, 0.0, h);
+        var aCircle = new CircleCurve3D(new Frame3D(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
+        var anExtr = new ExtrusionSurface(aCircle, new Direction3D(0, 0, 1));
+        var aTrimmed = new TrimmedSurface(anExtr, 0.0, 2.0 * Math.PI, 0.0, h);
         return BRepGPropTestShapes.NaturalFace(aTrimmed);
     }
 
@@ -73,30 +75,30 @@ internal static class ClassificationTestShapes
     /// A box [0, 10]^3 with a cubic void [3, 5]^3: the outer box's shell and the inner box's shell reversed, in one
     /// solid. Unfrozen.
     /// </summary>
-    public static TopoDS_Solid BoxWithVoid(out TopoDS_Shell theOuter, out TopoDS_Shell theInner)
+    public static Solid BoxWithVoid(out Shell theOuter, out Shell theInner)
     {
-        var aB = new BRep_Builder();
-        TopoDS_Solid anOuterBox = TestShapes.Box(10, 10, 10);
-        TopoDS_Solid anInnerBox = TestShapes.Box(2, 2, 2);
+        var aB = new BrepBuilder();
+        Solid anOuterBox = TestShapes.Box(10, 10, 10);
+        Solid anInnerBox = TestShapes.Box(2, 2, 2);
         theOuter = FirstShell(anOuterBox);
         var aT = new Transform3D();
         aT.SetTranslation(new Vector3D(3, 3, 3));
-        theInner = TopoDS.Shell(FirstShell(anInnerBox).Moved(new Placement(aT)).Reversed());
-        TopoDS_Solid aSolid = new();
+        theInner = ShapeCasts.Shell(FirstShell(anInnerBox).Moved(new Placement(aT)).Reversed());
+        Solid aSolid = new();
         aB.MakeSolid(ref aSolid);
         aB.Add(aSolid, theInner);
         aB.Add(aSolid, theOuter);
         return aSolid;
     }
 
-    private static TopoDS_Shell FirstShell(in TopoDS_Shape theSolid)
+    private static Shell FirstShell(in Shape theSolid)
     {
-        var anIt = new TopoDS_Iterator(theSolid);
-        return TopoDS.Shell(anIt.Value());
+        var anIt = new Iterator(theSolid);
+        return ShapeCasts.Shell(anIt.Value());
     }
 
     /// <summary>The shape moved by the translation <paramref name="theV"/>.</summary>
-    public static TopoDS_Shape Translated(in TopoDS_Shape theShape, in Vector3D theV)
+    public static Shape Translated(in Shape theShape, in Vector3D theV)
     {
         var aT = new Transform3D();
         aT.SetTranslation(theV);
@@ -104,7 +106,7 @@ internal static class ClassificationTestShapes
     }
 
     /// <summary>The shape rotated by <paramref name="theAngle"/> around the Z axis.</summary>
-    public static TopoDS_Shape RotatedZ(in TopoDS_Shape theShape, double theAngle)
+    public static Shape RotatedZ(in Shape theShape, double theAngle)
     {
         var aT = new Transform3D();
         aT.SetRotation(new Axis3D(new Point3D(), new Direction3D(0, 0, 1)), theAngle);

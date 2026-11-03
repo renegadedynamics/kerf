@@ -4,8 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -21,7 +22,7 @@ namespace Occt;
 /// </remarks>
 public sealed class HLRBRep_EdgeBuilder
 {
-    private TopAbs_State toBuild;
+    private Containment toBuild;
     private HLRBRep_AreaLimit? myLimits;
     private HLRBRep_AreaLimit? left;
     private HLRBRep_AreaLimit? right;
@@ -41,36 +42,36 @@ public sealed class HLRBRep_EdgeBuilder
         // Standard_DomainError_Raise_if(!VList.More(), ...): compiled out by No_Exception (see the remarks)
 
         HLRBRep_AreaLimit? last = null, cur;
-        TopAbs_State before, after, ebefore, eafter;
+        Containment before, after, ebefore, eafter;
         HLRAlgo_Intersection V;
 
         // loop on the Vertices
         for (; VList.More(); VList.Next())
         {
-            before = after = ebefore = eafter = TopAbs_UNKNOWN;
+            before = after = ebefore = eafter = Unknown;
             // compute the states
             if (VList.IsBoundary())
             {
                 switch (VList.Orientation())
                 {
-                    case TopAbs_FORWARD:
-                        ebefore = TopAbs_OUT;
-                        eafter = TopAbs_IN;
+                    case Forward:
+                        ebefore = Out;
+                        eafter = In;
                         break;
 
-                    case TopAbs_REVERSED:
-                        ebefore = TopAbs_IN;
-                        eafter = TopAbs_OUT;
+                    case Reversed:
+                        ebefore = In;
+                        eafter = Out;
                         break;
 
-                    case TopAbs_INTERNAL:
-                        ebefore = TopAbs_IN;
-                        eafter = TopAbs_IN;
+                    case Internal:
+                        ebefore = In;
+                        eafter = In;
                         break;
 
-                    case TopAbs_EXTERNAL:
-                        ebefore = TopAbs_OUT;
-                        eafter = TopAbs_OUT;
+                    case External:
+                        ebefore = Out;
+                        eafter = Out;
                         break;
                 }
             }
@@ -79,43 +80,43 @@ public sealed class HLRBRep_EdgeBuilder
             {
                 switch (VList.Transition())
                 {
-                    case TopAbs_FORWARD:
-                        before = TopAbs_OUT;
-                        after = TopAbs_IN;
+                    case Forward:
+                        before = Out;
+                        after = In;
                         break;
 
-                    case TopAbs_REVERSED:
-                        before = TopAbs_IN;
-                        after = TopAbs_OUT;
+                    case Reversed:
+                        before = In;
+                        after = Out;
                         break;
 
-                    case TopAbs_INTERNAL:
-                        before = TopAbs_IN;
-                        after = TopAbs_IN;
+                    case Internal:
+                        before = In;
+                        after = In;
                         break;
 
-                    case TopAbs_EXTERNAL:
-                        before = TopAbs_OUT;
-                        after = TopAbs_OUT;
+                    case External:
+                        before = Out;
+                        after = Out;
                         break;
                 }
 
                 switch (VList.BoundaryTransition())
                 {
-                    case TopAbs_FORWARD:
-                        after = TopAbs_ON;
+                    case Forward:
+                        after = On;
                         break;
 
-                    case TopAbs_REVERSED:
-                        before = TopAbs_ON;
+                    case Reversed:
+                        before = On;
                         break;
 
-                    case TopAbs_INTERNAL:
-                        before = TopAbs_ON;
-                        after = TopAbs_ON;
+                    case Internal:
+                        before = On;
+                        after = On;
                         break;
 
-                    case TopAbs_EXTERNAL:
+                    case External:
                         break;
                 }
             }
@@ -144,24 +145,24 @@ public sealed class HLRBRep_EdgeBuilder
         }
 
         // process UNKNOWN areas
-        TopAbs_State stat = TopAbs_UNKNOWN;
-        TopAbs_State estat = TopAbs_UNKNOWN;
+        Containment stat = Unknown;
+        Containment estat = Unknown;
 
         cur = myLimits;
         while (cur is not null)
         {
-            if (stat == TopAbs_UNKNOWN)
+            if (stat == Unknown)
             {
                 stat = cur.StateBefore();
-                if (stat == TopAbs_UNKNOWN)
+                if (stat == Unknown)
                 {
                     stat = cur.StateAfter();
                 }
             }
-            if (estat == TopAbs_UNKNOWN)
+            if (estat == Unknown)
             {
                 estat = cur.EdgeBefore();
-                if (estat == TopAbs_UNKNOWN)
+                if (estat == Unknown)
                 {
                     estat = cur.EdgeAfter();
                 }
@@ -177,16 +178,16 @@ public sealed class HLRBRep_EdgeBuilder
         // error if no interferences
         // Standard_DomainError_Raise_if(stat == TopAbs_UNKNOWN, ...): compiled out by No_Exception (see the remarks)
         // if no boundary the edge covers the whole curve
-        if (estat == TopAbs_UNKNOWN)
+        if (estat == Unknown)
         {
-            estat = TopAbs_IN;
+            estat = In;
         }
 
         // propagate states
         cur = myLimits;
         while (cur is not null)
         {
-            if (cur.StateBefore() == TopAbs_UNKNOWN)
+            if (cur.StateBefore() == Unknown)
             {
                 cur.StateBefore(stat);
             }
@@ -194,11 +195,11 @@ public sealed class HLRBRep_EdgeBuilder
             {
                 stat = cur.StateAfter();
             }
-            if (cur.StateAfter() == TopAbs_UNKNOWN)
+            if (cur.StateAfter() == Unknown)
             {
                 cur.StateAfter(stat);
             }
-            if (cur.EdgeBefore() == TopAbs_UNKNOWN)
+            if (cur.EdgeBefore() == Unknown)
             {
                 cur.EdgeBefore(estat);
             }
@@ -206,7 +207,7 @@ public sealed class HLRBRep_EdgeBuilder
             {
                 estat = cur.EdgeAfter();
             }
-            if (cur.EdgeAfter() == TopAbs_UNKNOWN)
+            if (cur.EdgeAfter() == Unknown)
             {
                 cur.EdgeAfter(estat);
             }
@@ -219,7 +220,7 @@ public sealed class HLRBRep_EdgeBuilder
         }
 
         // initialise with IN parts
-        Builds(TopAbs_IN);
+        Builds(In);
     }
 
     /// <summary>Initialize an iteration on the areas.</summary>
@@ -267,9 +268,9 @@ public sealed class HLRBRep_EdgeBuilder
     }
 
     /// <summary>Returns the state of the current area.</summary>
-    public TopAbs_State AreaState()
+    public Containment AreaState()
     {
-        TopAbs_State stat = TopAbs_UNKNOWN;
+        Containment stat = Unknown;
         if (left is not null)
         {
             stat = left.StateAfter();
@@ -282,9 +283,9 @@ public sealed class HLRBRep_EdgeBuilder
     }
 
     /// <summary>Returns the edge state of the current area.</summary>
-    public TopAbs_State AreaEdgeState()
+    public Containment AreaEdgeState()
     {
-        TopAbs_State stat = TopAbs_UNKNOWN;
+        Containment stat = Unknown;
         if (left is not null)
         {
             stat = left.EdgeAfter();
@@ -306,13 +307,13 @@ public sealed class HLRBRep_EdgeBuilder
     /// Reinitialize the results iteration to the parts with State ToBuild. If this method is not called after
     /// construction the default is ToBuild = IN.
     /// </summary>
-    public void Builds(TopAbs_State ToBuild)
+    public void Builds(Containment ToBuild)
     {
         toBuild = ToBuild;
         InitAreas();
         do
         {
-            if ((AreaState() == toBuild) && (AreaEdgeState() == TopAbs_IN))
+            if ((AreaState() == toBuild) && (AreaEdgeState() == In))
             {
                 if (left is null)
                 {
@@ -343,7 +344,7 @@ public sealed class HLRBRep_EdgeBuilder
         // go to the next edge
         while (HasArea())
         {
-            if ((AreaState() == toBuild) && (AreaEdgeState() == TopAbs_IN))
+            if ((AreaState() == toBuild) && (AreaEdgeState() == In))
             {
                 if (left is null)
                 {
@@ -376,7 +377,7 @@ public sealed class HLRBRep_EdgeBuilder
         else if (current == 2)
         {
             NextArea();
-            if ((AreaState() == toBuild) && (AreaEdgeState() == TopAbs_IN))
+            if ((AreaState() == toBuild) && (AreaEdgeState() == In))
             {
                 current = 2;
             }
@@ -443,31 +444,31 @@ public sealed class HLRBRep_EdgeBuilder
     }
 
     /// <summary>Returns the new orientation of the current vertex.</summary>
-    public TopAbs_Orientation Orientation()
+    public Orientation Orientation()
     {
         if (current == 1)
         {
             if ((left!.StateBefore() == left.StateAfter()) && (left.EdgeBefore() == left.EdgeAfter()))
             {
-                return TopAbs_INTERNAL;
+                return Internal;
             }
             else
             {
-                return TopAbs_FORWARD;
+                return Forward;
             }
         }
         else if (current == 2)
         {
             if ((right!.StateBefore() == right.StateAfter()) && (right.EdgeBefore() == right.EdgeAfter()))
             {
-                return TopAbs_INTERNAL;
+                return Internal;
             }
             else
             {
-                return TopAbs_REVERSED;
+                return Reversed;
             }
         }
-        return TopAbs_EXTERNAL; // only for WNT.
+        return External; // only for WNT.
     }
 
     /// <summary>Unlinks the area limits (OCCT's destructor breaks the circular list of handles).</summary>

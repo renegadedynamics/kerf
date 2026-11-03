@@ -1,10 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using OcctNet.DataExchange.Tests.Interface;
 using OcctNet.DataExchange.Tests.Transfer;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 using static OcctNet.DataExchange.Tests.Interface.ToyNorm;
 
 namespace OcctNet.DataExchange.Tests.TransferBRep;
@@ -13,12 +15,12 @@ namespace OcctNet.DataExchange.Tests.TransferBRep;
 [Collection(ProcessWideMessages.Name)]
 public class TransferBRepTests
 {
-    private readonly TopoDS_Shape myBox = new BRepPrimAPI_MakeBox(1.0, 2.0, 3.0).Shape();
-    private readonly List<TopoDS_Shape> myFaces = [];
+    private readonly Shape myBox = new BRepPrimAPI_MakeBox(1.0, 2.0, 3.0).Shape();
+    private readonly List<Shape> myFaces = [];
 
     public TransferBRepTests()
     {
-        for (var anExp = new TopExp_Explorer(myBox, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(myBox, ShapeType.Face); anExp.More(); anExp.Next())
         {
             myFaces.Add(anExp.Current());
         }
@@ -28,11 +30,11 @@ public class TransferBRepTests
     public void Shape_binders()
     {
         var aBinder = new TransferBRep_ShapeBinder();
-        Assert.Equal(TopAbs_SHAPE, aBinder.ShapeType());
+        Assert.Equal(ShapeType.Shape, aBinder.ShapeType());
         Assert.Equal("TopoDS_Shape", aBinder.ResultTypeName());
-        Assert.Equal(typeof(TopoDS_TShape), aBinder.ResultType());
+        Assert.Equal(typeof(TShape), aBinder.ResultType());
         aBinder.SetResult(myFaces[0]);
-        Assert.Equal(TopAbs_FACE, aBinder.ShapeType());
+        Assert.Equal(ShapeType.Face, aBinder.ShapeType());
         Assert.Equal("TopoDS_Face", aBinder.ResultTypeName());
         Assert.True(aBinder.Face().IsSame(myFaces[0]));
         Assert.Throws<TypeMismatchException>(() => aBinder.Edge());
@@ -41,7 +43,7 @@ public class TransferBRepTests
 
         var aSolid = new TransferBRep_ShapeBinder(myBox);
         Assert.True(aSolid.HasResult());
-        Assert.Equal(TopAbs_SOLID, aSolid.ShapeType());
+        Assert.Equal(ShapeType.Solid, aSolid.ShapeType());
         Assert.True(aSolid.Solid().IsSame(myBox));
 
         var anOfShape = new TransferBRep_BinderOfShape();
@@ -57,7 +59,7 @@ public class TransferBRepTests
         aList.SetResult(1, myFaces[2]);
         Assert.True(aList.IsMultiple());
         Assert.Equal(2, aList.NbShapes());
-        Assert.Equal(TopAbs_SOLID, aList.ShapeType(2));
+        Assert.Equal(ShapeType.Solid, aList.ShapeType(2));
         Assert.True(aList.Face(1).IsSame(myFaces[2]));
         Assert.True(aList.Solid(2).IsSame(myBox));
         Assert.Equal("list(TopoDS_Shape)", aList.ResultTypeName());
@@ -67,7 +69,7 @@ public class TransferBRepTests
     [Fact]
     public void Shape_mappers_key_a_finder_process()
     {
-        TopoDS_Shape aFace = myFaces[0];
+        Shape aFace = myFaces[0];
         var m1 = new TransferBRep_ShapeMapper(aFace);
         var m2 = new TransferBRep_ShapeMapper(aFace.Reversed());
         var m3 = new TransferBRep_ShapeMapper(myFaces[1]);
@@ -75,22 +77,22 @@ public class TransferBRepTests
         Assert.False(m1.Equates(m3));
         Assert.False(m1.Equates(new Transfer_TransientMapper(null)));
         Assert.Equal("TopoDS_Face", m1.ValueTypeName());
-        Assert.Equal(typeof(TopoDS_TShape), m1.ValueType());
+        Assert.Equal(typeof(TShape), m1.ValueType());
 
         var FP = new Transfer_FinderProcess();
-        Assert.Equal(TopAbs_EXTERNAL, Occt.TransferBRep.ShapeState(FP, aFace));
-        Assert.Equal(TopAbs_EXTERNAL, Occt.TransferBRep.ShapeState(null, aFace));
+        Assert.Equal(External, Occt.TransferBRep.ShapeState(FP, aFace));
+        Assert.Equal(External, Occt.TransferBRep.ShapeState(null, aFace));
         Assert.Null(Occt.TransferBRep.ResultFromShape(FP, aFace));
         var aRes = new TCollection_HAsciiString("face");
         Occt.TransferBRep.SetTransientFromShape(FP, aFace, aRes);
         Assert.Same(aRes, Occt.TransferBRep.TransientFromShape(FP, aFace.Reversed()));
-        Assert.Equal(TopAbs_FORWARD, Occt.TransferBRep.ShapeState(FP, aFace));
-        Assert.Equal(TopAbs_REVERSED, Occt.TransferBRep.ShapeState(FP, aFace.Reversed()));
+        Assert.Equal(Forward, Occt.TransferBRep.ShapeState(FP, aFace));
+        Assert.Equal(Reversed, Occt.TransferBRep.ShapeState(FP, aFace.Reversed()));
         Assert.NotNull(Occt.TransferBRep.ResultFromShape(FP, aFace));
         TransferBRep_ShapeMapper aMapped = Occt.TransferBRep.ShapeMapper(FP, aFace.Reversed());
         Assert.Same(FP.Mapped(1), aMapped);
         Assert.NotSame(FP.Mapped(1), Occt.TransferBRep.ShapeMapper(FP, myFaces[1]));
-        Assert.Null(Occt.TransferBRep.TransientFromShape(FP, new TopoDS_Shape()));
+        Assert.Null(Occt.TransferBRep.TransientFromShape(FP, new Shape()));
         Assert.Equal(" Type:TopoDS_Face", Trace(FP, aMapped));
     }
 
@@ -108,7 +110,7 @@ public class TransferBRepTests
         var TP = new Transfer_TransientProcess();
         TP.SetRootManagement(true);
         Occt.TransferBRep.SetShapeResult(TP, A, myFaces[0]);
-        Occt.TransferBRep.SetShapeResult(TP, B, new TopoDS_Shape()); // a null shape: nothing bound
+        Occt.TransferBRep.SetShapeResult(TP, B, new Shape()); // a null shape: nothing bound
         Assert.Null(TP.Find(B));
         var aList = new TransferBRep_ShapeListBinder();
         aList.AddResult(myFaces[1]);
@@ -123,10 +125,10 @@ public class TransferBRepTests
 
         Assert.True(Occt.TransferBRep.ShapeResult(TP, A).IsSame(myFaces[0]));
         Assert.True(Occt.TransferBRep.ShapeResult(TP, C).IsSame(myBox)); // an HShape result
-        Assert.True(Occt.TransferBRep.ShapeResult(TP, B).IsNull()); // a list: no single shape
+        Assert.True(Occt.TransferBRep.ShapeResult(TP, B).IsNull); // a list: no single shape
         Assert.True(Occt.TransferBRep.ShapeResult(TP, new TopoDS_HShape(myFaces[5])).IsSame(myFaces[5]));
         Assert.True(Occt.TransferBRep.ShapeResult(TP, aChain).IsSame(myFaces[3])); // a binder as entity
-        Assert.True(Occt.TransferBRep.ShapeResult(TP, new ToyEntity("Z")).IsNull());
+        Assert.True(Occt.TransferBRep.ShapeResult(TP, new ToyEntity("Z")).IsNull);
 
         Assert.Equal(3, Occt.TransferBRep.Shapes(TP)!.Length()); // the roots: A, and D with its next result
         Assert.Equal(6, Occt.TransferBRep.Shapes(TP, false)!.Length());
@@ -160,8 +162,8 @@ public class TransferBRepTests
         Occt.TransferBRep.SetTransientFromShape(FP, myFaces[0], A);
         Occt.TransferBRep.SetTransientFromShape(FP, myBox, B);
         var aShapeTypes = new NCollection_HSequence<int>();
-        aShapeTypes.Append((int)TopAbs_FACE);
-        aShapeTypes.Append((int)TopAbs_SHAPE);
+        aShapeTypes.Append((int)ShapeType.Face);
+        aShapeTypes.Append((int)ShapeType.Shape);
         Occt.TransferBRep.TransferResultInfo(FP, aShapeTypes, out anInfos);
         Assert.Equal(1, anInfos.Value(1).Result());
         Assert.Equal(2, anInfos.Value(2).Result());
@@ -205,7 +207,7 @@ public class TransferBRepTests
 
         Assert.Equal(1, Occt.TransferBRep.Checked(aChecks).Length()); // the entity only
         Assert.Equal(3, Occt.TransferBRep.Checked(aChecks, true).Length());
-        NCollection_HSequence<TopoDS_Shape> aShapes = Occt.TransferBRep.CheckedShapes(aChecks);
+        NCollection_HSequence<Shape> aShapes = Occt.TransferBRep.CheckedShapes(aChecks);
         Assert.Equal(2, aShapes.Length());
         Assert.True(aShapes.Value(1).IsSame(myFaces[0]));
 
@@ -263,8 +265,8 @@ public class TransferBRepTests
         Assert.True(aReader.IsDone());
         Assert.Equal(2, aReader.NbShapes()); // A and C
         Assert.True(aReader.Shape(1).TShape()!.IsFrozen);
-        TopoDS_Shape aOne = aReader.OneShape();
-        Assert.Equal(TopAbs_COMPOUND, aOne.ShapeType());
+        Shape aOne = aReader.OneShape();
+        Assert.Equal(ShapeType.Compound, aOne.ShapeType());
         Assert.True(aOne.TShape()!.IsFrozen);
         Assert.Equal(0, aReader.NbTransients());
         Assert.True(aReader.ShapeResult(C).IsSame(aReader.Shape(2)));
@@ -275,7 +277,7 @@ public class TransferBRepTests
         Assert.Equal(3, aReader.NbShapes());
         aReader.Clear();
         Assert.True(aReader.Transfer(2));
-        Assert.Equal(TopAbs_SOLID, aReader.OneShape().ShapeType());
+        Assert.Equal(ShapeType.Solid, aReader.OneShape().ShapeType());
         Assert.False(aReader.Transfer(4));
         aReader.ModeNewTransfer() = true;
         Transfer_TransientProcess? aBefore = aReader.TransientProcess();
@@ -294,6 +296,6 @@ public class TransferBRepTests
         Assert.False(aReader.CheckListResult().IsEmpty(true));
         aReader.Clear();
         Assert.Equal(0, aReader.NbShapes());
-        Assert.True(aReader.OneShape().IsNull());
+        Assert.True(aReader.OneShape().IsNull);
     }
 }

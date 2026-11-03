@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
@@ -14,7 +15,7 @@ namespace Occt;
 // The file-static functions of IntPatch_LineConstructor.cxx.
 public partial class IntPatch_LineConstructor
 {
-    private static void Recadre(Adaptor3d_Surface myHS1, Adaptor3d_Surface myHS2, ref double u1, ref double v1,
+    private static void Recadre(SurfaceAdaptorBase myHS1, SurfaceAdaptorBase myHS2, ref double u1, ref double v1,
                                 ref double u2, ref double v2)
     {
         double f, l, lmf;
@@ -126,7 +127,7 @@ public partial class IntPatch_LineConstructor
         }
     }
 
-    private static void Parameters(Adaptor3d_Surface myHS1, Adaptor3d_Surface myHS2, in Point3D Ptref, ref double U1,
+    private static void Parameters(SurfaceAdaptorBase myHS1, SurfaceAdaptorBase myHS2, in Point3D Ptref, ref double U1,
                                    ref double V1, ref double U2, ref double V2)
     {
         IntSurf_Quadric quad1 = new IntSurf_Quadric(), quad2 = new IntSurf_Quadric();
@@ -848,7 +849,7 @@ public partial class IntPatch_LineConstructor
                     bool onFirst = @is == 0;
                     if ((onFirst && rlin.IsArcOnS1()) || (!onFirst && rlin.IsArcOnS2()))
                     {
-                        Adaptor2d_Curve2d arc;
+                        Curve2DAdaptorBase arc;
                         double u, v, u1, v1;
                         if (onFirst)
                         {
@@ -867,7 +868,7 @@ public partial class IntPatch_LineConstructor
                             u = (u + u1) * 0.5;
                             v = (v + v1) * 0.5;
                         }
-                        Adaptor2d_Curve2d C2d = arc;
+                        Curve2DAdaptorBase C2d = arc;
                         Point2D PObt, P2d = new Point2D(u, v);
                         double par = Geom2dInt_TheProjPCurOfGInter.FindParameter(C2d, P2d, 1e-7);
                         PObt = C2d.Value(par);
@@ -883,8 +884,8 @@ public partial class IntPatch_LineConstructor
     }
 
     private static bool TestIfWLineIsRestriction(NCollection_Sequence<IntPatch_Line> slinref, IntPatch_WLine wlin,
-                                                 Adaptor3d_Surface S1, Adaptor3d_TopolTool D1, Adaptor3d_Surface S2,
-                                                 Adaptor3d_TopolTool D2, double TolArc)
+                                                 SurfaceAdaptorBase S1, TopolTool D1, SurfaceAdaptorBase S2,
+                                                 TopolTool D2, double TolArc)
     {
         int NbPnts = wlin.NbPnts();
         int allon1 = 0, allon2 = 0, i;
@@ -934,14 +935,14 @@ public partial class IntPatch_LineConstructor
         return false;
     }
 
-    private static bool ProjectOnArc(double u, double v, Adaptor2d_Curve2d arc, Adaptor3d_Surface surf, double TolArc,
+    private static bool ProjectOnArc(double u, double v, Curve2DAdaptorBase arc, SurfaceAdaptorBase surf, double TolArc,
                                      out double par, out double dist)
     {
         Point3D aPbid = new Point3D();
         Vector3D ad1u = new Vector3D(), ad1v = new Vector3D();
         surf.D1(u, v, out aPbid, out ad1u, out ad1v);
         double tol2d = ComputeParametricTolerance(TolArc, ad1u, ad1v);
-        Adaptor2d_Curve2d C2d = arc;
+        Curve2DAdaptorBase C2d = arc;
         Point2D aP = new Point2D(u, v), aPprj;
         par = Geom2dInt_TheProjPCurOfGInter.FindParameter(C2d, aP, 1e-7);
         aPprj = C2d.Value(par);
@@ -964,15 +965,15 @@ public partial class IntPatch_LineConstructor
 
     private static bool IsOnDomS(bool onFirst, in IntPatch_Point P) => onFirst ? P.IsOnDomS1() : P.IsOnDomS2();
 
-    private static Adaptor2d_Curve2d ArcOnS(bool onFirst, in IntPatch_Point P) => onFirst ? P.ArcOnS1() : P.ArcOnS2();
+    private static Curve2DAdaptorBase ArcOnS(bool onFirst, in IntPatch_Point P) => onFirst ? P.ArcOnS1() : P.ArcOnS2();
 
     private static double ParOnArc(bool onFirst, in IntPatch_Point P) =>
         onFirst ? P.ParameterOnArc1() : P.ParameterOnArc2();
 
     private static void TestWLineToRLine(NCollection_Sequence<IntPatch_Line> slinref,
-                                         NCollection_Sequence<IntPatch_Line> slin, Adaptor3d_Surface mySurf1,
-                                         Adaptor3d_TopolTool myDom1, Adaptor3d_Surface mySurf2,
-                                         Adaptor3d_TopolTool myDom2, double TolArc)
+                                         NCollection_Sequence<IntPatch_Line> slin, SurfaceAdaptorBase mySurf1,
+                                         TopolTool myDom1, SurfaceAdaptorBase mySurf2,
+                                         TopolTool myDom2, double TolArc)
     {
         int lastwline = slin.Length();
         IntPatch_WLine WLine = (IntPatch_WLine)slin.Value(lastwline);
@@ -1014,8 +1015,8 @@ public partial class IntPatch_LineConstructor
             bool onFirst = @is == 0;
             if ((onFirst && WLine.HasArcOnS1()) || (!onFirst && WLine.HasArcOnS2()))
             {
-                Adaptor3d_Surface surf;
-                Adaptor3d_TopolTool aDomain;
+                SurfaceAdaptorBase surf;
+                TopolTool aDomain;
                 if (onFirst)
                 {
                     surf = mySurf1;
@@ -1030,7 +1031,7 @@ public partial class IntPatch_LineConstructor
                 // resolve arcs for vertices not having a link to an arc
                 double utst, vtst;
                 NCollection_Array1<double> paramsResolved = new(1, nbvtx);
-                NCollection_Array1<Adaptor2d_Curve2d?> arcsResolved = new(1, nbvtx);
+                NCollection_Array1<Curve2DAdaptorBase?> arcsResolved = new(1, nbvtx);
                 arcsResolved.Init(null);
                 for (iv = 1; iv <= nbvtx; iv++)
                 {
@@ -1041,7 +1042,7 @@ public partial class IntPatch_LineConstructor
                         double distmin = RealLast();
                         for (aDomain.Init(); aDomain.More(); aDomain.Next())
                         {
-                            Adaptor2d_Curve2d arc = aDomain.Value();
+                            Curve2DAdaptorBase arc = aDomain.Value();
                             if (ProjectOnArc(utst, vtst, arc, surf, TolArc, out double par, out double dist)
                                 && dist < distmin)
                             {
@@ -1054,13 +1055,13 @@ public partial class IntPatch_LineConstructor
                 }
 
                 // prepare list of common arcs for both ends of wline
-                NCollection_IndexedMap<Adaptor2d_Curve2d> mapArcsV1 = new(ReferenceEqualityComparer.Instance),
+                NCollection_IndexedMap<Curve2DAdaptorBase> mapArcsV1 = new(ReferenceEqualityComparer.Instance),
                                                           mapArcs = new(ReferenceEqualityComparer.Instance);
                 int i;
                 for (i = 1; i <= indicesV1.Length(); i++)
                 {
                     iv = indicesV1[i];
-                    Adaptor2d_Curve2d? arc;
+                    Curve2DAdaptorBase? arc;
                     if (IsOnDomS(onFirst, WLine.Vertex(iv)))
                     {
                         arc = ArcOnS(onFirst, WLine.Vertex(iv));
@@ -1077,7 +1078,7 @@ public partial class IntPatch_LineConstructor
                 for (i = 1; i <= indicesV2.Length(); i++)
                 {
                     iv = indicesV2[i];
-                    Adaptor2d_Curve2d? arc;
+                    Curve2DAdaptorBase? arc;
                     if (IsOnDomS(onFirst, WLine.Vertex(iv)))
                     {
                         arc = ArcOnS(onFirst, WLine.Vertex(iv));
@@ -1095,13 +1096,13 @@ public partial class IntPatch_LineConstructor
                 // for each common arc
                 for (int ia = 1; ia <= mapArcs.Extent(); ia++)
                 {
-                    Adaptor2d_Curve2d arc = mapArcs.FindKey(ia);
+                    Curve2DAdaptorBase arc = mapArcs.FindKey(ia);
                     // get end vertices of wline linked with this arc
                     int iv1 = 0, iv2 = 0;
                     for (i = 1; i <= indicesV1.Length() && iv1 == 0; i++)
                     {
                         iv = indicesV1[i];
-                        Adaptor2d_Curve2d? arc1;
+                        Curve2DAdaptorBase? arc1;
                         if (IsOnDomS(onFirst, WLine.Vertex(iv)))
                         {
                             arc1 = ArcOnS(onFirst, WLine.Vertex(iv));
@@ -1118,7 +1119,7 @@ public partial class IntPatch_LineConstructor
                     for (i = 1; i <= indicesV2.Length() && iv2 == 0; i++)
                     {
                         iv = indicesV2[i];
-                        Adaptor2d_Curve2d? arc1;
+                        Curve2DAdaptorBase? arc1;
                         if (IsOnDomS(onFirst, WLine.Vertex(iv)))
                         {
                             arc1 = ArcOnS(onFirst, WLine.Vertex(iv));

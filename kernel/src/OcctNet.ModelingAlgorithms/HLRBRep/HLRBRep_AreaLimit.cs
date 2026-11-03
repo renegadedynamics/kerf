@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -17,16 +18,16 @@ public class HLRBRep_AreaLimit : Transient
     private readonly HLRAlgo_Intersection myVertex;
     private readonly bool myBoundary;
     private readonly bool myInterference;
-    private TopAbs_State myStateBefore;
-    private TopAbs_State myStateAfter;
-    private TopAbs_State myEdgeBefore;
-    private TopAbs_State myEdgeAfter;
+    private Containment myStateBefore;
+    private Containment myStateAfter;
+    private Containment myEdgeBefore;
+    private Containment myEdgeAfter;
     private HLRBRep_AreaLimit? myPrevious;
     private HLRBRep_AreaLimit? myNext;
 
     /// <summary>The vertex V, a boundary and/or an interference, with the states around it.</summary>
-    public HLRBRep_AreaLimit(in HLRAlgo_Intersection V, bool Boundary, bool Interference, TopAbs_State StateBefore,
-                             TopAbs_State StateAfter, TopAbs_State EdgeBefore, TopAbs_State EdgeAfter)
+    public HLRBRep_AreaLimit(in HLRAlgo_Intersection V, bool Boundary, bool Interference, Containment StateBefore,
+                             Containment StateAfter, Containment EdgeBefore, Containment EdgeAfter)
     {
         myVertex = V;
         myBoundary = Boundary;
@@ -37,13 +38,13 @@ public class HLRBRep_AreaLimit : Transient
         myEdgeAfter = EdgeAfter;
     }
 
-    public void StateBefore(TopAbs_State Stat) => myStateBefore = Stat;
+    public void StateBefore(Containment Stat) => myStateBefore = Stat;
 
-    public void StateAfter(TopAbs_State Stat) => myStateAfter = Stat;
+    public void StateAfter(Containment Stat) => myStateAfter = Stat;
 
-    public void EdgeBefore(TopAbs_State Stat) => myEdgeBefore = Stat;
+    public void EdgeBefore(Containment Stat) => myEdgeBefore = Stat;
 
-    public void EdgeAfter(TopAbs_State Stat) => myEdgeAfter = Stat;
+    public void EdgeAfter(Containment Stat) => myEdgeAfter = Stat;
 
     public void Previous(HLRBRep_AreaLimit? P) => myPrevious = P;
 
@@ -55,13 +56,13 @@ public class HLRBRep_AreaLimit : Transient
 
     public bool IsInterference() => myInterference;
 
-    public TopAbs_State StateBefore() => myStateBefore;
+    public Containment StateBefore() => myStateBefore;
 
-    public TopAbs_State StateAfter() => myStateAfter;
+    public Containment StateAfter() => myStateAfter;
 
-    public TopAbs_State EdgeBefore() => myEdgeBefore;
+    public Containment EdgeBefore() => myEdgeBefore;
 
-    public TopAbs_State EdgeAfter() => myEdgeAfter;
+    public Containment EdgeAfter() => myEdgeAfter;
 
     public HLRBRep_AreaLimit? Previous() => myPrevious;
 

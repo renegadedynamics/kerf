@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -15,7 +17,7 @@ public static class BRepBlend_BlendTool
     /// Projects the point <paramref name="P"/> on the arc <paramref name="C"/>: <paramref name="Paramproj"/> is the
     /// parameter of the nearest point (the ends included) and <paramref name="Dist"/> its distance. Always true.
     /// </summary>
-    public static bool Project(in Point2D P, Adaptor3d_Surface? S, Adaptor2d_Curve2d C, out double Paramproj,
+    public static bool Project(in Point2D P, SurfaceAdaptorBase? S, Curve2DAdaptorBase C, out double Paramproj,
                                out double Dist)
     {
         Paramproj = BRepBlend_HCurve2dTool.FirstParameter(C);
@@ -34,13 +36,13 @@ public static class BRepBlend_BlendTool
         const double epsX = 1.0e-8;
         const int Nbu = 20;
         const double Tol = 1.0e-5;
-        Extrema_EPCOfExtPC2d extrema = new(P, C, Nbu, epsX, Tol);
-        if (!extrema.IsDone())
+        EpcOfExtPC2d extrema = new(P, C, Nbu, epsX, Tol);
+        if (!extrema.IsDone)
         {
             return true;
         }
 
-        int Nbext = extrema.NbExt();
+        int Nbext = extrema.ExtCount;
         double aDist2 = Dist * Dist;
         for (int i = 1; i <= Nbext; i++)
         {
@@ -60,7 +62,7 @@ public static class BRepBlend_BlendTool
     /// <paramref name="C"/>: the first intersection's parameter on the arc and its distance to <paramref name="P1"/>.
     /// </summary>
     /// <remarks><paramref name="Param"/> and <paramref name="Dist"/> are left unchanged on failure, as OCCT's.</remarks>
-    public static bool Inters(in Point2D P1, in Point2D P2, Adaptor3d_Surface? S, Adaptor2d_Curve2d C,
+    public static bool Inters(in Point2D P1, in Point2D P2, SurfaceAdaptorBase? S, Curve2DAdaptorBase C,
                               ref double Param, ref double Dist)
     {
         const double Tol = 1.0e-8;
@@ -72,8 +74,8 @@ public static class BRepBlend_BlendTool
         }
 
         Direction2D d = new(v);
-        Geom2d_Line bid = new(P1, d);
-        Geom2dAdaptor_Curve seg = new(bid, -0.01 * mag, 1.01 * mag);
+        LineCurve2D bid = new(P1, d);
+        CurveAdaptor2D seg = new(bid, -0.01 * mag, 1.01 * mag);
 
         Geom2dInt_GInter inter = new(seg, C, Tol, Tol);
         if (!inter.IsDone())
@@ -94,37 +96,37 @@ public static class BRepBlend_BlendTool
     }
 
     /// <summary>The parameter of the vertex <paramref name="V"/> on the arc <paramref name="C"/>.</summary>
-    public static double Parameter(Adaptor3d_HVertex V, Adaptor2d_Curve2d C)
+    public static double Parameter(HVertex V, Curve2DAdaptorBase C)
     {
         return V.Parameter(C);
     }
 
     /// <summary>The parametric tolerance on the arc <paramref name="A"/> within which a point meets the vertex.</summary>
-    public static double Tolerance(Adaptor3d_HVertex V, Adaptor2d_Curve2d A)
+    public static double Tolerance(HVertex V, Curve2DAdaptorBase A)
     {
         return V.Resolution(A);
     }
 
-    public static bool SingularOnUMin(Adaptor3d_Surface S) => false;
+    public static bool SingularOnUMin(SurfaceAdaptorBase S) => false;
 
-    public static bool SingularOnUMax(Adaptor3d_Surface S) => false;
+    public static bool SingularOnUMax(SurfaceAdaptorBase S) => false;
 
-    public static bool SingularOnVMin(Adaptor3d_Surface S) => false;
+    public static bool SingularOnVMin(SurfaceAdaptorBase S) => false;
 
-    public static bool SingularOnVMax(Adaptor3d_Surface S) => false;
+    public static bool SingularOnVMax(SurfaceAdaptorBase S) => false;
 
-    public static int NbSamplesU(Adaptor3d_Surface S, double u1, double u2) => 10;
+    public static int NbSamplesU(SurfaceAdaptorBase S, double u1, double u2) => 10;
 
-    public static int NbSamplesV(Adaptor3d_Surface S, double v1, double v2) => 10;
+    public static int NbSamplesV(SurfaceAdaptorBase S, double v1, double v2) => 10;
 
     /// <summary>The parametric limits of the arc <paramref name="A"/>.</summary>
-    public static void Bounds(Adaptor2d_Curve2d A, out double Ufirst, out double Ulast)
+    public static void Bounds(Curve2DAdaptorBase A, out double Ufirst, out double Ulast)
     {
         Ufirst = BRepBlend_HCurve2dTool.FirstParameter(A);
         Ulast = BRepBlend_HCurve2dTool.LastParameter(A);
     }
 
-    public static Adaptor2d_Curve2d CurveOnSurf(Adaptor2d_Curve2d C, Adaptor3d_Surface S)
+    public static Curve2DAdaptorBase CurveOnSurf(Curve2DAdaptorBase C, SurfaceAdaptorBase S)
     {
         return C;
     }

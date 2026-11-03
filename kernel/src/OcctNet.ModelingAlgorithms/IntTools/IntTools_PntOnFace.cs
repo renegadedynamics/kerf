@@ -6,6 +6,7 @@
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -20,7 +21,7 @@ public partial struct IntTools_PntOnFace : IEquatable<IntTools_PntOnFace>
     private Point3D myPnt;
     private double myU;
     private double myV;
-    private TopoDS_Face myFace;
+    private Face myFace;
 
     /// <summary>An invalid point with the parameters (99, 99).</summary>
     public IntTools_PntOnFace()
@@ -29,11 +30,11 @@ public partial struct IntTools_PntOnFace : IEquatable<IntTools_PntOnFace>
         myPnt = new Point3D();
         myU = 99.0;
         myV = 99.0;
-        myFace = new TopoDS_Face();
+        myFace = new Face();
     }
 
     /// <summary>Sets the face, the point and its parameters (not the validity flag).</summary>
-    internal void Init(in TopoDS_Face aF, in Point3D aP, double anU, double aV)
+    internal void Init(in Face aF, in Point3D aP, double anU, double aV)
     {
         myFace = aF;
         myPnt = aP;
@@ -41,7 +42,7 @@ public partial struct IntTools_PntOnFace : IEquatable<IntTools_PntOnFace>
         myV = aV;
     }
 
-    internal void SetFace(in TopoDS_Face aF) => myFace = aF;
+    internal void SetFace(in Face aF) => myFace = aF;
 
     internal void SetPnt(in Point3D aP) => myPnt = aP;
 
@@ -55,7 +56,7 @@ public partial struct IntTools_PntOnFace : IEquatable<IntTools_PntOnFace>
 
     public readonly bool Valid() => myIsValid;
 
-    public readonly TopoDS_Face Face() => myFace;
+    public readonly Face Face() => myFace;
 
     public readonly Point3D Pnt() => myPnt;
 
@@ -68,14 +69,14 @@ public partial struct IntTools_PntOnFace : IEquatable<IntTools_PntOnFace>
     // ---- OCCT.NET additions
 
     /// <summary>A copy initialised as <c>Init</c> does.</summary>
-    public readonly IntTools_PntOnFace Inited(in TopoDS_Face aF, in Point3D aP, double anU, double aV)
+    public readonly IntTools_PntOnFace Inited(in Face aF, in Point3D aP, double anU, double aV)
     {
         IntTools_PntOnFace aCopy = this;
         aCopy.Init(aF, aP, anU, aV);
         return aCopy;
     }
 
-    public readonly IntTools_PntOnFace WithFace(in TopoDS_Face aF)
+    public readonly IntTools_PntOnFace WithFace(in Face aF)
     {
         IntTools_PntOnFace aCopy = this;
         aCopy.SetFace(aF);
@@ -103,7 +104,7 @@ public partial struct IntTools_PntOnFace : IEquatable<IntTools_PntOnFace>
         return aCopy;
     }
 
-    /// <summary>Field by field: the face by <see cref="TopoDS_Shape.IsEqual"/>, the numbers exactly.</summary>
+    /// <summary>Field by field: the face by <see cref="Shape.IsEqual"/>, the numbers exactly.</summary>
     public readonly bool Equals(IntTools_PntOnFace theOther) =>
         myIsValid == theOther.myIsValid && myPnt.Equals(theOther.myPnt) && myU.Equals(theOther.myU)
         && myV.Equals(theOther.myV) && myFace.Equals(theOther.myFace);

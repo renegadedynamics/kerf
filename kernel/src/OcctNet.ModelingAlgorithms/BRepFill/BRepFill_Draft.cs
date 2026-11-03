@@ -5,7 +5,13 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Geometry.Properties;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Schematiq.Collections;
@@ -14,9 +20,9 @@ using static Occt.BOPAlgo_Operation;
 using static Occt.BRepFill_TransitionStyle;
 using static Occt.BRepLib_WireError;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -42,13 +48,13 @@ public sealed class BRepFill_Draft
     private double myTol;
     private BRepFill_DraftLaw? myLoc;
     private BRepFill_SectionLaw? mySec;
-    private NCollection_HArray2<TopoDS_Shape>? mySections;
-    private NCollection_HArray2<TopoDS_Shape>? myFaces;
-    private readonly NCollection_List<TopoDS_Shape> myGenerated = new();
-    private TopoDS_Shape myShape = new();
-    private readonly TopoDS_Shape myTop;
-    private TopoDS_Shell myShell = new();
-    private TopoDS_Wire myWire = new();
+    private NCollection_HArray2<Shape>? mySections;
+    private NCollection_HArray2<Shape>? myFaces;
+    private readonly NCollection_List<Shape> myGenerated = new();
+    private Shape myShape = new();
+    private readonly Shape myTop;
+    private Shell myShell = new();
+    private Wire myWire = new();
     private readonly Continuity myCont;
     private BRepFill_TransitionStyle myStyle;
     private bool IsInternal;
@@ -56,10 +62,10 @@ public sealed class BRepFill_Draft
 
     //=================================================================================================
 
-    private static void ComputeTrsf(in TopoDS_Wire W, in Direction3D D, ref Box Box, ref Transform3D Tf)
+    private static void ComputeTrsf(in Wire W, in Direction3D D, ref Box Box, ref Transform3D Tf)
     {
         // Calculate approximate barycenter
-        BRepTools_WireExplorer Exp = new(W);
+        WireExplorer Exp = new(W);
         // Class BRep_Tool without fields and without Constructor :
         //  BRep_Tool BT;
         Xyz Bary = new(0.0, 0.0, 0.0);
@@ -68,7 +74,7 @@ public sealed class BRepFill_Draft
         for (nb = 0; Exp.More(); Exp.Next())
         {
             //    Bary += BT.Pnt(Exp.CurrentVertex()).XYZ();
-            Bary += BRep_Tool.Pnt(Exp.CurrentVertex()).XYZ();
+            Bary += Tool.Pnt(Exp.CurrentVertex()).XYZ();
             nb++;
         }
         Bary /= nb;
@@ -76,11 +82,11 @@ public sealed class BRepFill_Draft
         // Calculate the Transformation
         CoordinateSystem N = new(new Point3D(Bary), D);
         Tf.SetTransformation(N);
-        BRepAdaptor_Curve AC = new();
+        EdgeCurveAdaptor AC = new();
         //  BndLib_Add3dCurve BC;
 
         // transformation to the wire
-        TopoDS_Wire TheW = W;
+        Wire TheW = W;
         Placement Loc = new(Tf);
         TheW.Location(Loc);
 
@@ -90,7 +96,7 @@ public sealed class BRepFill_Draft
         {
             AC.Initialize(Exp.Current());
             //    BC.Add(AC, 0.1, Box);
-            BndLib_Add3dCurve.Add(AC, 0.1, ref Box);
+            Add3dCurve.Add(AC, 0.1, ref Box);
         }
     }
 
@@ -146,7 +152,7 @@ public sealed class BRepFill_Draft
         Nb++; // Number of points
 
         NCollection_Array1<Point3D> Pnts = new(1, Nb);
-        Adaptor3d_Curve AC;
+        CurveAdaptorBase AC;
         Xyz Bary = new(0.0, 0.0, 0.0);
 
         for (ii = 1; ii <= Nb; ii++)
@@ -180,7 +186,7 @@ public sealed class BRepFill_Draft
     /// <paramref name="Angle"/>.
     /// </summary>
     /// <exception cref="ConstructionErrorException">Another shape type, or a shell without a free boundary wire.</exception>
-    public BRepFill_Draft(in TopoDS_Shape S, in Direction3D Dir, double Angle)
+    public BRepFill_Draft(in Shape S, in Direction3D Dir, double Angle)
     {
         myLoc = null;
         mySec = null;
@@ -189,29 +195,29 @@ public sealed class BRepFill_Draft
 
         switch (S.ShapeType())
         {
-            case TopAbs_WIRE:
+            case ShapeType.Wire:
             {
-                myWire = TopoDS.Wire(S);
+                myWire = ShapeCasts.Wire(S);
                 break;
             }
-            case TopAbs_FACE:
+            case ShapeType.Face:
             {
-                TopoDS_Iterator Exp = new(S);
-                myWire = TopoDS.Wire(Exp.Value());
+                Iterator Exp = new(S);
+                myWire = ShapeCasts.Wire(Exp.Value());
                 break;
             }
-            case TopAbs_SHELL:
+            case global::Kerf.Topology.ShapeType.Shell:
             {
-                NCollection_List<TopoDS_Shape> List = new();
-                NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> edgemap =
-                    new(TopTools_ShapeMapHasher.Instance);
-                TopExp.MapShapesAndAncestors(S, TopAbs_EDGE, TopAbs_FACE, edgemap);
+                NCollection_List<Shape> List = new();
+                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> edgemap =
+                    new(ShapeHasher.Instance);
+                Exploration.MapShapesAndAncestors(S, ShapeType.Edge, ShapeType.Face, edgemap);
                 int iedge, nbf;
                 for (iedge = 1; iedge <= edgemap.Extent(); iedge++)
                 {
-                    TopoDS_Edge theEdge = TopoDS.Edge(edgemap.FindKey(iedge));
+                    Edge theEdge = ShapeCasts.Edge(edgemap.FindKey(iedge));
                     // skip degenerated edges
-                    if (!BRep_Tool.Degenerated(theEdge))
+                    if (!Tool.Degenerated(theEdge))
                     {
                         nbf = edgemap[iedge].Extent();
                         if (nbf == 1)
@@ -248,16 +254,16 @@ public sealed class BRepFill_Draft
         // Attention to closed non declared wires !
         if (!myWire.Closed())
         {
-            TopExp.Vertices(myWire, out TopoDS_Vertex Vf, out TopoDS_Vertex Vl);
+            Exploration.Vertices(myWire, out Vertex Vf, out Vertex Vl);
             if (Vf.IsSame(Vl))
             {
                 // OCCT.NET: OCCT sets the flag on the caller's wire; a frozen one is replaced by a new wire with the same
                 // edges (decision 1045).
                 if (myWire.TShape()!.IsFrozen)
                 {
-                    TopoDS_Wire aNewWire = TopoDS.Wire(myWire.EmptyCopied());
-                    BRep_Builder aBB = new();
-                    for (TopoDS_Iterator anIt = new(myWire, false, false); anIt.More(); anIt.Next())
+                    Wire aNewWire = ShapeCasts.Wire(myWire.EmptyCopied());
+                    BrepBuilder aBB = new();
+                    for (Iterator anIt = new(myWire, false, false); anIt.More(); anIt.Next())
                     {
                         aBB.Add(aNewWire, anIt.Value());
                     }
@@ -302,7 +308,7 @@ public sealed class BRepFill_Draft
     /// <summary>Builds the draft up to the length <paramref name="LengthMax"/>.</summary>
     public void Perform(double LengthMax)
     {
-        Geom_Surface? S = null;
+        Surface? S = null;
         Box WBox = new(); //, SBox;
         Transform3D Trsf = new();
 
@@ -317,7 +323,7 @@ public sealed class BRepFill_Draft
     // purpose  : calculate a surface of skinning
     //======================================================================
     /// <summary>Builds the draft up to the surface <paramref name="Surface"/>.</summary>
-    public void Perform(Geom_Surface Surface, bool KeepInsideSurface = true)
+    public void Perform(Surface Surface, bool KeepInsideSurface = true)
     {
         Box WBox = new(), SBox = new();
         Transform3D Trsf = new();
@@ -327,12 +333,12 @@ public sealed class BRepFill_Draft
         ComputeTrsf(myWire, myDir, ref WBox, ref Trsf);
 
         // box with bounds of the stop surface
-        Geom_Surface Surf;
-        Surf = (Geom_Surface)Surface.Transformed(Trsf);
-        GeomAdaptor_Surface S1 = new(Surf);
+        Surface Surf;
+        Surf = (Surface)Surface.Transformed(Trsf);
+        SurfaceAdaptor S1 = new(Surf);
         //  BndLib_AddSurface AS;
         //  AS.Add(S1, 0.1, SBox);
-        BndLib_AddSurface.Add(S1, 0.1, ref SBox);
+        AddSurface.Add(S1, 0.1, ref SBox);
 
         // calculate the maximum length of the rule.
         L = Longueur(WBox, SBox, ref myDir, ref Pt);
@@ -349,7 +355,7 @@ public sealed class BRepFill_Draft
     // purpose  : calculate the surface of skinning, stopped by a shape
     //================================================================
     /// <summary>Builds the draft up to the shape <paramref name="StopShape"/>.</summary>
-    public void Perform(in TopoDS_Shape StopShape, bool KeepOutSide = true)
+    public void Perform(in Shape StopShape, bool KeepOutSide = true)
     {
         Box WBox = new(), SBox = new();
         Transform3D Trsf = new();
@@ -363,22 +369,22 @@ public sealed class BRepFill_Draft
         double Umin, Umax, Vmin, Vmax;
         //  BRepTools B;
         //  BRep_Tool BT;
-        Geom_Surface Surf;
+        Surface Surf;
 
         //  BndLib_AddSurface AS;
 
-        TopExp_Explorer Ex = new(StopShape, TopAbs_FACE);
+        Explorer Ex = new(StopShape, ShapeType.Face);
 
         SBox.SetVoid();
         while (Ex.More())
         { // parse faces of the stop shape
             //    B.UVBounds(TopoDS::Face(Ex.Current()), Umin,Umax,Vmin,Vmax);
-            BRepTools.UVBounds(TopoDS.Face(Ex.Current()), out Umin, out Umax, out Vmin, out Vmax);
-            Surf = (Geom_Surface)BRep_Tool.Surface(TopoDS.Face(Ex.Current()))!.Transformed(Trsf);
-            GeomAdaptor_Surface S1 = new(Surf);
+            BrepTools.UVBounds(ShapeCasts.Face(Ex.Current()), out Umin, out Umax, out Vmin, out Vmax);
+            Surf = (Surface)Tool.Surface(ShapeCasts.Face(Ex.Current()))!.Transformed(Trsf);
+            SurfaceAdaptor S1 = new(Surf);
             // bounding box of the current face
             //    AS.Add(S1, Umin, Umax, Vmin, Vmax, 0.1, BSurf);
-            BndLib_AddSurface.Add(S1, Umin, Umax, Vmin, Vmax, 0.1, ref BSurf);
+            AddSurface.Add(S1, Umin, Umax, Vmin, Vmax, 0.1, ref BSurf);
             SBox.Add(BSurf); // group boxes
             Ex.Next();
         } // while_Ex
@@ -391,8 +397,8 @@ public sealed class BRepFill_Draft
         Transform3D Inv;
         Inv = Trsf.Inverted(); // inverted transformation
         Pt.Transform(Inv); // coordinate in the absolute reference
-        Geom_Plane Plan = new(Pt, myDir);
-        Surf = new Geom_RectangularTrimmedSurface(Plan, -L, L, -L, L);
+        PlaneSurface Plan = new(Pt, myDir);
+        Surf = new TrimmedSurface(Plan, -L, L, -L, L);
 
         // Sweeping and restriction
         Init(Plan, L * 1.01, WBox);
@@ -403,7 +409,7 @@ public sealed class BRepFill_Draft
 
     //=================================================================================================
 
-    private void Init(Geom_Surface? Surf, double Length, in Box Box)
+    private void Init(Surface? Surf, double Length, in Box Box)
     {
         bool B;
 
@@ -440,15 +446,15 @@ public sealed class BRepFill_Draft
         {
             D.Reverse();
         }
-        Geom_Line L = new(P, new Direction3D(D));
+        LineCurve3D L = new(P, new Direction3D(D));
 
-        Geom_Curve TC = new Geom_TrimmedCurve(L, 0, Length);
+        Curve3D TC = new TrimmedCurve3D(L, 0, Length);
 
         BRepLib_MakeEdge ME = new(TC);
-        TopoDS_Edge EG = ME.InternalEdge();
+        Edge EG = ME.InternalEdge();
 
         BRepLib_MakeWire MW = new(EG);
-        TopoDS_Wire G = MW.InternalWire();
+        Wire G = MW.InternalWire();
 
         mySec = new BRepFill_ShapeLaw(G, true);
     }
@@ -457,36 +463,36 @@ public sealed class BRepFill_Draft
     // function : BuildShell
     // purpose  : Construction of the skinning surface
     //======================================================================
-    private void BuildShell(Geom_Surface? Surf, bool KeepOutSide = false)
+    private void BuildShell(Surface? Surf, bool KeepOutSide = false)
     {
         // construction of the surface
         BRepFill_Sweep Sweep = new(mySec!, myLoc!, true);
         Sweep.SetTolerance(myTol);
         Sweep.SetAngularControl(angmin, angmax);
-        NCollection_Map<TopoDS_Shape> Dummy = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_DataMap<TopoDS_Shape, NCollection_HArray2<TopoDS_Shape>> Dummy2 = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_DataMap<TopoDS_Shape, NCollection_HArray2<TopoDS_Shape>> Dummy3 = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> Dummy = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_HArray2<Shape>> Dummy2 = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_HArray2<Shape>> Dummy3 = new(ShapeHasher.Instance);
         Sweep.Build(Dummy, Dummy2, Dummy3, myStyle, myCont);
         if (Sweep.IsDone())
         {
             myShape = Sweep.Shape();
-            myShell = TopoDS.Shell(myShape);
+            myShell = ShapeCasts.Shell(myShape);
             myFaces = Sweep.SubShape();
             mySections = Sweep.Sections();
             myDone = true;
             // Control of the orientation
             bool @out = true;
-            TopExp_Explorer ex = new(myShell, TopAbs_FACE);
-            TopoDS_Face F;
-            F = TopoDS.Face(ex.Current());
-            BRepAdaptor_Surface SF = new(F);
+            Explorer ex = new(myShell, ShapeType.Face);
+            Face F;
+            F = ShapeCasts.Face(ex.Current());
+            FaceSurfaceAdaptor SF = new(F);
             double u, v;
             Vector3D V;
             u = SF.FirstUParameter();
             v = SF.FirstVParameter();
             SF.D1(u, v, out Point3D P, out Vector3D V1, out Vector3D V2);
             V = V1.Crossed(V2);
-            if (F.Orientation() == TopAbs_REVERSED)
+            if (F.Orientation() == Reversed)
             {
                 V.Reverse();
             }
@@ -522,16 +528,16 @@ public sealed class BRepFill_Draft
     // purpose  : Boolean operation between the skin and the
     //           stop shape
     //======================================================================
-    private bool Fuse(in TopoDS_Shape StopShape, bool KeepOutSide)
+    private bool Fuse(in Shape StopShape, bool KeepOutSide)
     {
-        BRep_Builder B = new();
+        BrepBuilder B = new();
         bool issolid = false;
-        TopoDS_Solid Sol1 = new(), Sol2 = new();
-        TopAbs_State State1 = TopAbs_OUT, State2 = TopAbs_OUT;
+        Solid Sol1 = new(), Sol2 = new();
+        Containment State1 = Out, State2 = Out;
 
-        if (myShape.ShapeType() == TopAbs_SOLID)
+        if (myShape.ShapeType() == ShapeType.Solid)
         {
-            Sol1 = TopoDS.Solid(myShape);
+            Sol1 = ShapeCasts.Solid(myShape);
             issolid = true;
         }
         else
@@ -542,29 +548,29 @@ public sealed class BRepFill_Draft
 
         switch (StopShape.ShapeType())
         {
-            case TopAbs_COMPOUND:
+            case ShapeType.Compound:
             {
-                TopoDS_Iterator It = new(StopShape);
+                Iterator It = new(StopShape);
                 return Fuse(It.Value(), KeepOutSide);
             }
-            case TopAbs_SOLID:
+            case ShapeType.Solid:
             {
-                Sol2 = TopoDS.Solid(StopShape);
+                Sol2 = ShapeCasts.Solid(StopShape);
                 break;
             }
-            case TopAbs_SHELL:
+            case global::Kerf.Topology.ShapeType.Shell:
             {
                 B.MakeSolid(ref Sol2);
                 B.Add(Sol2, StopShape); // shell => solid (for fusion)
                 break;
             }
 
-            case TopAbs_FACE:
+            case ShapeType.Face:
             {
-                TopoDS_Shell S = new();
+                Shell S = new();
                 B.MakeShell(ref S);
                 B.Add(S, StopShape);
-                S.Closed(BRep_Tool.IsClosed(S));
+                S.Closed(Tool.IsClosed(S));
                 B.MakeSolid(ref Sol2);
                 B.Add(Sol2, S); // shell => solid (for fusion)
                 break;
@@ -578,7 +584,7 @@ public sealed class BRepFill_Draft
 
         // Perform intersection of solids
         BOPAlgo_PaveFiller aPF = new();
-        NCollection_List<TopoDS_Shape> anArgs = new();
+        NCollection_List<Shape> anArgs = new();
         anArgs.Append(Sol1);
         anArgs.Append(Sol2);
         aPF.SetArguments(anArgs);
@@ -589,28 +595,28 @@ public sealed class BRepFill_Draft
         }
 
         BRepAlgoAPI_Section aSec = new(Sol1, Sol2, aPF);
-        TopoDS_Shape aSection = aSec.InternalShape();
+        Shape aSection = aSec.InternalShape();
 
-        TopExp_Explorer exp = new(aSection, TopAbs_EDGE);
+        Explorer exp = new(aSection, ShapeType.Edge);
         if (!exp.More())
         {
             // No section edges produced
             return false;
         }
 
-        if (StopShape.ShapeType() != TopAbs_SOLID)
+        if (StopShape.ShapeType() != ShapeType.Solid)
         {
             // It is required to choose the state by the geometry
 
             // We need to find the section edge, closest to myWire
-            TopoDS_Edge aSEMin = new();
+            Edge aSEMin = new();
             double Dmin = global::Kerf.Engine.Foundation.Precision.Infinite();
             BRepExtrema_DistShapeShape DistTool = new();
             DistTool.LoadS1(myWire);
 
             for (; exp.More(); exp.Next())
             {
-                TopoDS_Shape aSE = exp.Current();
+                Shape aSE = exp.Current();
                 DistTool.LoadS2(aSE);
                 DistTool.Perform();
                 if (DistTool.IsDone())
@@ -619,7 +625,7 @@ public sealed class BRepFill_Draft
                     if (D < Dmin)
                     {
                         Dmin = D;
-                        aSEMin = TopoDS.Edge(aSE);
+                        aSEMin = ShapeCasts.Edge(aSE);
                         if (Dmin < global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             break;
@@ -628,40 +634,40 @@ public sealed class BRepFill_Draft
                 }
             }
 
-            if (!aSEMin.IsNull())
+            if (!aSEMin.IsNull)
             {
                 // Get geometry of StopShape
-                Geom_Surface? S = null;
-                Geom2d_Curve? C2d = null;
+                Surface? S = null;
+                Curve2D? C2d = null;
                 double f = 0.0, l = 0.0;
                 Placement L = new();
-                BRep_Tool.CurveOnSurface(aSEMin, ref C2d, ref S, ref L, ref f, ref l, 2);
+                Tool.CurveOnSurface(aSEMin, ref C2d, ref S, ref L, ref f, ref l, 2);
 
                 // Find a normal.
                 // OCCT dereferences the second pcurve without a check.
                 C2d!.D0((f + l) / 2, out Point2D P2d);
-                GeomLProp_SLProps SP = new(S!, P2d.X(), P2d.Y(), 1, 1.0e-12);
-                if (!SP.IsNormalDefined())
+                SLProps SP = new(S!, P2d.X(), P2d.Y(), 1, 1.0e-12);
+                if (!SP.IsNormalDefined)
                 {
                     C2d.D0((3 * f + l) / 4, out P2d);
                     SP.SetParameters(P2d.X(), P2d.Y());
-                    if (!SP.IsNormalDefined())
+                    if (!SP.IsNormalDefined)
                     {
                         C2d.D0((f + 3 * l) / 4, out P2d);
                         SP.SetParameters(P2d.X(), P2d.Y());
                     }
                 }
 
-                if (SP.IsNormalDefined())
+                if (SP.IsNormalDefined)
                 {
                     // Subtract State1
                     if (myDir.Angle(SP.Normal()) < M_PI / 2)
                     {
-                        State1 = TopAbs_IN;
+                        State1 = In;
                     }
                     else
                     {
-                        State1 = TopAbs_OUT;
+                        State1 = Out;
                     }
                 }
             }
@@ -669,13 +675,13 @@ public sealed class BRepFill_Draft
 
         if (!KeepOutSide)
         { // Invert State2;
-            if (State2 == TopAbs_IN)
+            if (State2 == In)
             {
-                State2 = TopAbs_OUT;
+                State2 = Out;
             }
             else
             {
-                State2 = TopAbs_IN;
+                State2 = In;
             }
         }
 
@@ -689,24 +695,24 @@ public sealed class BRepFill_Draft
             return false;
         }
 
-        TopoDS_Shape result = new();
-        BRepTools_History aHistory = new();
+        Shape result = new();
+        History aHistory = new();
 
         bool isSingleOpNeeded = true;
         // To get rid of the unnecessary parts of first solid make the cutting first
-        if (State1 == TopAbs_OUT)
+        if (State1 == Out)
         {
-            NCollection_List<TopoDS_Shape> aLO = new(), aLT = new();
+            NCollection_List<Shape> aLO = new(), aLT = new();
             aLO.Append(Sol1);
             aLT.Append(Sol2);
             aBuilder.BuildBOP(aLO, aLT, BOPAlgo_CUT, new ProgressRange());
             if (!aBuilder.HasErrors())
             {
-                TopoDS_Solid aCutMin = new();
-                TopExp_Explorer anExpS = new(aBuilder.InternalShape(), TopAbs_SOLID);
+                Solid aCutMin = new();
+                Explorer anExpS = new(aBuilder.InternalShape(), ShapeType.Solid);
                 if (anExpS.More())
                 {
-                    aCutMin = TopoDS.Solid(anExpS.Current());
+                    aCutMin = ShapeCasts.Solid(anExpS.Current());
                     anExpS.Next();
                     if (anExpS.More())
                     {
@@ -716,7 +722,7 @@ public sealed class BRepFill_Draft
 
                         for (anExpS.ReInit(); anExpS.More(); anExpS.Next())
                         {
-                            TopoDS_Shape aCut = anExpS.Current();
+                            Shape aCut = anExpS.Current();
                             DistTool.LoadS2(aCut);
                             DistTool.Perform();
                             if (DistTool.IsDone())
@@ -725,14 +731,14 @@ public sealed class BRepFill_Draft
                                 if (D < aDMin)
                                 {
                                     aDMin = D;
-                                    aCutMin = TopoDS.Solid(aCut);
+                                    aCutMin = ShapeCasts.Solid(aCut);
                                 }
                             }
                         }
                     }
                 }
 
-                if (!aCutMin.IsNull())
+                if (!aCutMin.IsNull)
                 {
                     // Save history for first argument only
                     aHistory.Merge(aLO, new BuilderHistory(aBuilder));
@@ -753,7 +759,7 @@ public sealed class BRepFill_Draft
                         aHistory.Merge(aGluer.InternalHistory());
 
                         result = aGluer.InternalShape();
-                        anExpS.Init(result, TopAbs_SOLID);
+                        anExpS.Init(result, ShapeType.Solid);
                         isSingleOpNeeded = !anExpS.More();
                     }
                 }
@@ -764,7 +770,7 @@ public sealed class BRepFill_Draft
         {
             aHistory.Clear();
 
-            NCollection_List<TopoDS_Shape> aLO = new(), aLT = new();
+            NCollection_List<Shape> aLO = new(), aLT = new();
             aLO.Append(Sol1);
             aLT.Append(Sol2);
 
@@ -784,8 +790,8 @@ public sealed class BRepFill_Draft
         }
         else
         {
-            TopExp_Explorer Exp = new();
-            Exp.Init(result, TopAbs_SHELL);
+            Explorer Exp = new();
+            Exp.Init(result, global::Kerf.Topology.ShapeType.Shell);
             if (Exp.More())
             {
                 myShape = Exp.Current();
@@ -816,13 +822,13 @@ public sealed class BRepFill_Draft
 
     // OCCT builds a BRepTools_History from any algorithm with Modified, Generated and IsDeleted (a template); the
     // port's history takes the interface, which the Boolean builder doesn't implement.
-    private sealed class BuilderHistory(BOPAlgo_BuilderShape theAlgo) : BRepTools_History.IAlgorithm
+    private sealed class BuilderHistory(BOPAlgo_BuilderShape theAlgo) : History.IAlgorithm
     {
-        public bool IsDeleted(in TopoDS_Shape theS) => theAlgo.IsDeleted(theS);
+        public bool IsDeleted(in Shape theS) => theAlgo.IsDeleted(theS);
 
-        public IEnumerable<TopoDS_Shape> Modified(in TopoDS_Shape theS) => theAlgo.Modified(theS);
+        public IEnumerable<Shape> Modified(in Shape theS) => theAlgo.Modified(theS);
 
-        public IEnumerable<TopoDS_Shape> Generated(in TopoDS_Shape theS) => theAlgo.Generated(theS);
+        public IEnumerable<Shape> Generated(in Shape theS) => theAlgo.Generated(theS);
     }
 
     //=======================================================================
@@ -833,7 +839,7 @@ public sealed class BRepFill_Draft
     {
         bool ToAss;
         bool Ok = false;
-        ToAss = (myTop.ShapeType() != TopAbs_WIRE);
+        ToAss = (myTop.ShapeType() != ShapeType.Wire);
 
         if ((!ToAss) || (!myDone))
         {
@@ -854,16 +860,16 @@ public sealed class BRepFill_Draft
 
         if (NbCE > 0)
         {
-            TopoDS_Shape res;
+            Shape res;
             res = Ass.InternalSewedShape();
-            if ((res.ShapeType() == TopAbs_SHELL) || (res.ShapeType() == TopAbs_SOLID))
+            if ((res.ShapeType() == global::Kerf.Topology.ShapeType.Shell) || (res.ShapeType() == ShapeType.Solid))
             {
                 myShape = res;
                 Ok = true;
             }
-            else if (res.ShapeType() == TopAbs_COMPOUND)
+            else if (res.ShapeType() == ShapeType.Compound)
             {
-                TopoDS_Iterator It = new(res);
+                Iterator It = new(res);
                 res = It.Value();
                 It.Next();
                 if (!It.More())
@@ -895,18 +901,18 @@ public sealed class BRepFill_Draft
 
             if (myShape.Closed())
             { // Make a Solid
-                TopoDS_Solid solid = new();
-                BRep_Builder BS = new();
+                Solid solid = new();
+                BrepBuilder BS = new();
                 BS.MakeSolid(ref solid);
-                BS.Add(solid, TopoDS.Shell(myShape));
+                BS.Add(solid, ShapeCasts.Shell(myShape));
 
                 BRepClass3d_SolidClassifier SC = new(solid);
                 SC.PerformInfinitePoint(global::Kerf.Engine.Foundation.Precision.Confusion());
-                if (SC.State() == TopAbs_IN)
+                if (SC.State() == In)
                 {
                     BS.MakeSolid(ref solid);
                     myShape.Reverse();
-                    BS.Add(solid, TopoDS.Shell(myShape));
+                    BS.Add(solid, ShapeCasts.Shell(myShape));
                 }
                 myShape = solid;
             }
@@ -919,11 +925,11 @@ public sealed class BRepFill_Draft
     // purpose  : return a sub-part generated by sweeping
     //======================================================================
     /// <summary>The face generated from an edge of the wire (frozen).</summary>
-    public ISchematiqList<TopoDS_Shape> Generated(in TopoDS_Shape S)
+    public ISchematiqList<Shape> Generated(in Shape S)
     {
-        NCollection_List<TopoDS_Shape> aList = InternalGenerated(S);
-        var aShapes = new List<TopoDS_Shape>();
-        for (NCollection_List<TopoDS_Shape>.Iterator anIt = new(aList); anIt.More(); anIt.Next())
+        NCollection_List<Shape> aList = InternalGenerated(S);
+        var aShapes = new List<Shape>();
+        for (NCollection_List<Shape>.Iterator anIt = new(aList); anIt.More(); anIt.Next())
         {
             anIt.Value().TShape()?.FreezeGraph();
             aShapes.Add(anIt.Value());
@@ -932,13 +938,13 @@ public sealed class BRepFill_Draft
     }
 
     /// <summary><see cref="Generated"/> without freezing, for ported code.</summary>
-    internal NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape S)
+    internal NCollection_List<Shape> InternalGenerated(in Shape S)
     {
         myGenerated.Clear();
-        TopoDS_Edge E;
+        Edge E;
         int ii;
-        E = TopoDS.Edge(S);
-        if (E.IsNull())
+        E = ShapeCasts.Edge(S);
+        if (E.IsNull)
         {
             // OCCT: E is null here, so no vertex matches (a vertex's S throws in TopoDS::Edge above).
             for (ii = 0; ii <= myLoc!.NbLaw(); ii++)
@@ -968,26 +974,26 @@ public sealed class BRepFill_Draft
     //=================================================================================================
 
     /// <summary>The result (frozen): the skin sewn to the input face or shell, as a shell or solid.</summary>
-    public TopoDS_Shape Shape()
+    public Shape Shape()
     {
         myShape.TShape()?.FreezeGraph();
         return myShape;
     }
 
-    internal TopoDS_Shape InternalShape() => myShape;
+    internal Shape InternalShape() => myShape;
 
     //=====================================================================
     // function : Shell
     // purpose  : surface of skinning with the input face (=>shell)
     //=====================================================================
     /// <summary>The draft skin alone (frozen).</summary>
-    public TopoDS_Shell Shell()
+    public Shell Shell()
     {
         myShell.TShape()?.FreezeGraph();
         return myShell;
     }
 
-    internal TopoDS_Shell InternalShell() => myShell;
+    internal Shell InternalShell() => myShell;
 
     //=================================================================================================
 

@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -18,13 +19,13 @@ namespace Occt;
 /// </summary>
 public class BRepBlend_SurfPointConstRadInv : Blend_SurfPointFuncInv
 {
-    private readonly Adaptor3d_Surface surf;
-    private readonly Adaptor3d_Curve curv;
+    private readonly SurfaceAdaptorBase surf;
+    private readonly CurveAdaptorBase curv;
     private Point3D point;
     private double ray;
     private int choix;
 
-    public BRepBlend_SurfPointConstRadInv(Adaptor3d_Surface S, Adaptor3d_Curve C)
+    public BRepBlend_SurfPointConstRadInv(SurfaceAdaptorBase S, CurveAdaptorBase C)
     {
         surf = S;
         curv = C;

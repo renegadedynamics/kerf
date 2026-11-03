@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
@@ -23,7 +24,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
         [Continuity.C0, Continuity.G1, Continuity.C1, Continuity.G2,
          Continuity.C2, Continuity.C3, Continuity.CN];
 
-    private static void SameIntervals(Oracle theO, N.GeomAdaptor_Surface theN, GeomAdaptor_Surface theP, bool theU,
+    private static void SameIntervals(Oracle theO, N.GeomAdaptor_Surface theN, SurfaceAdaptor theP, bool theU,
                                       string theWhat)
     {
         string aDir = theU ? "U" : "V";
@@ -76,7 +77,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void SameQueries(Oracle theO, N.GeomAdaptor_Surface theN, GeomAdaptor_Surface theP, string theWhat)
+    private static void SameQueries(Oracle theO, N.GeomAdaptor_Surface theN, SurfaceAdaptor theP, string theWhat)
     {
         theO.Same(theN.FirstUParameter(), theP.FirstUParameter(), theWhat + " FirstUParameter");
         theO.Same(theN.LastUParameter(), theP.LastUParameter(), theWhat + " LastUParameter");
@@ -85,20 +86,20 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
         theO.Same(theN.ToleranceU(), theP.ToleranceU(), theWhat + " ToleranceU");
         theO.Same(theN.ToleranceV(), theP.ToleranceV(), theWhat + " ToleranceV");
         theO.Same((int)theN.GetType_(), (int)theP.GetType(), theWhat + " GetType");
-        theO.Same(theN.IsUClosed(), theP.IsUClosed(), theWhat + " IsUClosed");
-        theO.Same(theN.IsVClosed(), theP.IsVClosed(), theWhat + " IsVClosed");
-        theO.Same(theN.IsUPeriodic(), theP.IsUPeriodic(), theWhat + " IsUPeriodic");
-        theO.Same(theN.IsVPeriodic(), theP.IsVPeriodic(), theWhat + " IsVPeriodic");
-        if (theP.IsUPeriodic())
+        theO.Same(theN.IsUClosed(), theP.IsUClosed, theWhat + " IsUClosed");
+        theO.Same(theN.IsVClosed(), theP.IsVClosed, theWhat + " IsVClosed");
+        theO.Same(theN.IsUPeriodic(), theP.IsUPeriodic, theWhat + " IsUPeriodic");
+        theO.Same(theN.IsVPeriodic(), theP.IsVPeriodic, theWhat + " IsVPeriodic");
+        if (theP.IsUPeriodic)
         {
             theO.Same(theN.UPeriod(), theP.UPeriod(), theWhat + " UPeriod");
         }
-        if (theP.IsVPeriodic())
+        if (theP.IsVPeriodic)
         {
             theO.Same(theN.VPeriod(), theP.VPeriod(), theWhat + " VPeriod");
         }
-        theO.Same(theN.IsURational(), theP.IsURational(), theWhat + " IsURational");
-        theO.Same(theN.IsVRational(), theP.IsVRational(), theWhat + " IsVRational");
+        theO.Same(theN.IsURational(), theP.IsURational, theWhat + " IsURational");
+        theO.Same(theN.IsVRational(), theP.IsVRational, theWhat + " IsVRational");
         foreach (double aR3d in new[] { 1e-7, 1e-3, 0.5, 30.0 })
         {
             double aNR = 0, aPR = 0;
@@ -116,8 +117,8 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
         (Func<int> N, Func<int> P, string What)[] aCounts =
         [
             (theN.UDegree, theP.UDegree, "UDegree"), (theN.VDegree, theP.VDegree, "VDegree"),
-            (theN.NbUPoles, () => theP.NbUPoles(), "NbUPoles"), (theN.NbVPoles, () => theP.NbVPoles(), "NbVPoles"),
-            (theN.NbUKnots, () => theP.NbUKnots(), "NbUKnots"), (theN.NbVKnots, () => theP.NbVKnots(), "NbVKnots"),
+            (theN.NbUPoles, () => theP.UPoleCount, "NbUPoles"), (theN.NbVPoles, () => theP.VPoleCount, "NbVPoles"),
+            (theN.NbUKnots, () => theP.UKnotCount, "NbUKnots"), (theN.NbVKnots, () => theP.VKnotCount, "NbVKnots"),
         ];
         foreach ((Func<int> aNF, Func<int> aPF, string aCountWhat) in aCounts)
         {
@@ -174,17 +175,17 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
             case SurfaceKind.BezierSurface:
             {
                 using N.Geom_BezierSurface aN = theN.Bezier()!;
-                Geom_BezierSurface aP = theP.Bezier();
-                theO.Same(aN.NbUPoles(), aP.NbUPoles(), theWhat + " Bezier() NbUPoles");
+                BezierSurface aP = theP.Bezier();
+                theO.Same(aN.NbUPoles(), aP.UPoleCount, theWhat + " Bezier() NbUPoles");
                 SameSurfaceEval(theO, aN, aP, 0.3, 0.6, 2, theWhat + " Bezier()");
                 break;
             }
             case SurfaceKind.BSplineSurface:
             {
                 using N.Geom_BSplineSurface aN = theN.BSpline()!;
-                Geom_BSplineSurface aP = theP.BSpline();
-                theO.Same(aN.NbUPoles(), aP.NbUPoles(), theWhat + " BSpline() NbUPoles");
-                SameSurfaceEval(theO, aN, aP, aP.UKnot(1), aP.VKnot(aP.NbVKnots()), 2, theWhat + " BSpline()");
+                BSplineSurface aP = theP.BSpline();
+                theO.Same(aN.NbUPoles(), aP.UPoleCount, theWhat + " BSpline() NbUPoles");
+                SameSurfaceEval(theO, aN, aP, aP.UKnot(1), aP.VKnot(aP.VKnotCount), 2, theWhat + " BSpline()");
                 break;
             }
             case SurfaceKind.SurfaceOfRevolution:
@@ -192,7 +193,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
                 using N.gp_Ax1 aNA = theN.AxeOfRevolution();
                 SameAx1(theO, aNA, theP.AxeOfRevolution(), theWhat + " AxeOfRevolution");
                 using N.Adaptor3d_Curve aNC = theN.BasisCurve()!;
-                Adaptor3d_Curve aPC = theP.BasisCurve();
+                CurveAdaptorBase aPC = theP.BasisCurve();
                 SameCurveEval(theO, aNC, aPC, Param(theO, aPC.FirstParameter(), aPC.LastParameter()), 2, theWhat + " BasisCurve");
                 break;
             }
@@ -201,7 +202,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
                 using N.gp_Dir aND = theN.Direction();
                 SameDir(theO, aND, theP.Direction(), theWhat + " Direction");
                 using N.Adaptor3d_Curve aNC = theN.BasisCurve()!;
-                Adaptor3d_Curve aPC = theP.BasisCurve();
+                CurveAdaptorBase aPC = theP.BasisCurve();
                 SameCurveEval(theO, aNC, aPC, Param(theO, aPC.FirstParameter(), aPC.LastParameter()), 2, theWhat + " BasisCurve");
                 break;
             }
@@ -209,7 +210,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
             {
                 theO.Same(theN.OffsetValue(), theP.OffsetValue(), theWhat + " OffsetValue");
                 using N.Adaptor3d_Surface aNS = theN.BasisSurface()!;
-                Adaptor3d_Surface aPS = theP.BasisSurface();
+                SurfaceAdaptorBase aPS = theP.BasisSurface();
                 double U = Param(theO, aPS.FirstUParameter(), aPS.LastUParameter());
                 double V = Param(theO, aPS.FirstVParameter(), aPS.LastVParameter());
                 SameSurfaceEval(theO, aNS, aPS, U, V, 2, theWhat + " BasisSurface");
@@ -222,7 +223,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
     /// A sequence of (U, V): random ones, the bounds and corners exactly, points within the snapping tolerances of
     /// the bounds, the knots of a B-spline surface; shuffled.
     /// </summary>
-    private static List<(double U, double V)> Params(Oracle theO, GeomAdaptor_Surface theP)
+    private static List<(double U, double V)> Params(Oracle theO, SurfaceAdaptor theP)
     {
         double aU1 = theP.FirstUParameter(), aU2 = theP.LastUParameter();
         double aV1 = theP.FirstVParameter(), aV2 = theP.LastVParameter();
@@ -249,15 +250,15 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
         }
         if (theP.GetType() == SurfaceKind.BSplineSurface)
         {
-            Geom_BSplineSurface aBS = theP.BSpline();
-            for (int i = 1; i <= aBS.NbUKnots(); i++)
+            BSplineSurface aBS = theP.BSpline();
+            for (int i = 1; i <= aBS.UKnotCount; i++)
             {
                 if (aBS.UKnot(i) >= aU1 && aBS.UKnot(i) <= aU2)
                 {
                     aUs.Add(aBS.UKnot(i));
                 }
             }
-            for (int i = 1; i <= aBS.NbVKnots(); i++)
+            for (int i = 1; i <= aBS.VKnotCount; i++)
             {
                 if (aBS.VKnot(i) >= aV1 && aBS.VKnot(i) <= aV2)
                 {
@@ -274,7 +275,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
         return aParams;
     }
 
-    private static void CompareAdaptors(Oracle theO, N.GeomAdaptor_Surface theN, GeomAdaptor_Surface theP, string theWhat)
+    private static void CompareAdaptors(Oracle theO, N.GeomAdaptor_Surface theN, SurfaceAdaptor theP, string theWhat)
     {
         SameQueries(theO, theN, theP, theWhat);
         SameIntervals(theO, theN, theP, true, theWhat);
@@ -293,7 +294,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
         }
         using (N.Adaptor3d_Surface aNT = theN.UTrim(aT1, aT2, 1e-6)!)
         {
-            Adaptor3d_Surface aPT = theP.UTrim(aT1, aT2, 1e-6);
+            SurfaceAdaptorBase aPT = theP.UTrim(aT1, aT2, 1e-6);
             theO.Same(aNT.FirstUParameter(), aPT.FirstUParameter(), theWhat + " UTrim first");
             SameSurfaceEval(theO, aNT, aPT, aT1, Param(theO, aV1, aV2), 2, theWhat + " UTrim");
         }
@@ -305,13 +306,13 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
         }
         using (N.Adaptor3d_Surface aNT = theN.VTrim(aT1, aT2, 1e-6)!)
         {
-            Adaptor3d_Surface aPT = theP.VTrim(aT1, aT2, 1e-6);
+            SurfaceAdaptorBase aPT = theP.VTrim(aT1, aT2, 1e-6);
             theO.Same(aNT.LastVParameter(), aPT.LastVParameter(), theWhat + " VTrim last");
             SameSurfaceEval(theO, aNT, aPT, Param(theO, aU1, aU2), aT2, 2, theWhat + " VTrim");
         }
         using (N.Adaptor3d_Surface aNS = theN.ShallowCopy()!)
         {
-            Adaptor3d_Surface aPS = theP.ShallowCopy();
+            SurfaceAdaptorBase aPS = theP.ShallowCopy();
             SameSurfaceEval(theO, aNS, aPS, Param(theO, aU1, aU2), Param(theO, aV1, aV2), 2, theWhat + " ShallowCopy");
         }
     }
@@ -324,12 +325,12 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
             var anOracle = new Oracle(output, 20261111 + aKind);
             for (int i = 0; i < Cases; i++)
             {
-                (N.Geom_Surface aNS, Geom_Surface aPS) = RandomSurface(anOracle, aKind);
+                (N.Geom_Surface aNS, Surface aPS) = RandomSurface(anOracle, aKind);
                 using (aNS)
                 {
                     string aWhat = SurfaceKinds[aKind];
                     using var aNA = new N.GeomAdaptor_Surface(aNS);
-                    var aPA = new GeomAdaptor_Surface(aPS);
+                    var aPA = new SurfaceAdaptor(aPS);
                     CompareAdaptors(anOracle, aNA, aPA, aWhat);
 
                     // random bounds within the surface's, with and without snapping tolerances
@@ -339,7 +340,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
                     double aTolU = anOracle.Bool() ? 0.0 : anOracle.Real(1e-9, 1e-4);
                     double aTolV = anOracle.Bool() ? 0.0 : anOracle.Real(1e-9, 1e-4);
                     using var aNB = new N.GeomAdaptor_Surface(aNS, aUF, aUL, aVF, aVL, aTolU, aTolV);
-                    var aPB = new GeomAdaptor_Surface(aPS, aUF, aUL, aVF, aVL, aTolU, aTolV);
+                    var aPB = new SurfaceAdaptor(aPS, aUF, aUL, aVF, aVL, aTolU, aTolV);
                     CompareAdaptors(anOracle, aNB, aPB, aWhat + " bounded");
 
                     // Load on an existing adaptor: the same surface with other bounds

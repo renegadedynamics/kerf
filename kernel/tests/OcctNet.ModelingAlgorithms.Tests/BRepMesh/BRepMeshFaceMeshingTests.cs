@@ -2,7 +2,10 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.IMeshTools_MeshAlgoType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -14,7 +17,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepMeshFaceMeshingTests
 {
-    private static IEnumerable<(string Name, TopoDS_Shape Shape)> Shapes()
+    private static IEnumerable<(string Name, Shape Shape)> Shapes()
     {
         Frame3D anAx2 = new(new Point3D(1, 2, 3), new Direction3D(0.2, 0.3, 1.0));
         yield return ("box", new BRepPrimAPI_MakeBox(anAx2, 3, 4, 5).Shape());
@@ -29,8 +32,8 @@ public class BRepMeshFaceMeshingTests
         {
             aPoles[i] = new Point3D(2 + 0.4 * Math.Sin(i), 0, i);
         }
-        Geom_BezierCurve aCurve = new(aPoles);
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(aCurve).Edge();
+        BezierCurve3D aCurve = new(aPoles);
+        Edge anEdge = new BRepBuilderAPI_MakeEdge(aCurve).Edge();
         yield return ("revolution", new BRepPrimAPI_MakeRevol(anEdge, new Axis3D(Constants.Origin(), Constants.DZ()), 4.0).Shape());
         yield return ("extrusion", new BRepPrimAPI_MakePrism(anEdge, new Vector3D(3, 1, 0)).Shape());
         NCollection_Array2<Point3D> aNet = new(1, 3, 1, 3);
@@ -41,22 +44,22 @@ public class BRepMeshFaceMeshingTests
                 aNet[i, j] = new Point3D(i, j, (i == 2 && j == 2) ? 1.5 : 0.0);
             }
         }
-        Geom_BezierSurface aSurface = new(aNet);
+        BezierSurface aSurface = new(aNet);
         yield return ("bezier", new BRepBuilderAPI_MakeFace(aSurface, global::Kerf.Engine.Foundation.Precision.Confusion()).Face());
     }
 
-    private static List<Triangulation?> Triangulations(in TopoDS_Shape theShape)
+    private static List<Triangulation?> Triangulations(in Shape theShape)
     {
         List<Triangulation?> aList = [];
-        for (TopExp_Explorer anExp = new(theShape, TopAbs_ShapeEnum.TopAbs_FACE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(theShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            aList.Add(BRep_Tool.Triangulation(TopoDS.Face(anExp.Current()), out _));
+            aList.Add(Tool.Triangulation(ShapeCasts.Face(anExp.Current()), out _));
         }
         return aList;
     }
 
     // Every face meshed with valid triangles; the mesh's area within the given share of the exact area.
-    private static void CheckMesh(string theWhat, in TopoDS_Shape theShape, double theAreaTolerance)
+    private static void CheckMesh(string theWhat, in Shape theShape, double theAreaTolerance)
     {
         double aMeshArea = 0.0;
         foreach (Triangulation? aT in Triangulations(theShape))
@@ -78,7 +81,7 @@ public class BRepMeshFaceMeshingTests
                     $"{theWhat}: mesh area {aMeshArea}, exact {anArea}");
     }
 
-    private static string Dump(in TopoDS_Shape theShape)
+    private static string Dump(in Shape theShape)
     {
         System.Text.StringBuilder aBuilder = new();
         foreach (Triangulation? aT in Triangulations(theShape))
@@ -111,14 +114,14 @@ public class BRepMeshFaceMeshingTests
     [InlineData(IMeshTools_MeshAlgoType_Delabella)]
     public void Every_face_is_meshed_close_to_its_surface(IMeshTools_MeshAlgoType theAlgo)
     {
-        foreach ((string aName, TopoDS_Shape aShape) in Shapes())
+        foreach ((string aName, Shape aShape) in Shapes())
         {
             if (theAlgo == IMeshTools_MeshAlgoType_Delabella && aName == "extrusion")
             {
                 continue; // OCCT's Delabella factory can't mesh it (Delabella_leaves_an_extrusion_unmeshed_as_OCCT_does)
             }
             IMeshTools_Parameters aParams = new() { Deflection = 0.01, Angle = 0.3, MeshAlgo = theAlgo };
-            TopoDS_Shape aMeshed = BRepMesh_IncrementalMesh.Meshed(aShape, aParams);
+            Shape aMeshed = BRepMesh_IncrementalMesh.Meshed(aShape, aParams);
             CheckMesh($"{aName} {theAlgo}", aMeshed, 0.01);
         }
     }
@@ -126,7 +129,7 @@ public class BRepMeshFaceMeshingTests
     [Fact]
     public void Delabella_meshes_in_parallel_as_serially_and_every_run()
     {
-        foreach ((string aName, TopoDS_Shape aShape) in Shapes())
+        foreach ((string aName, Shape aShape) in Shapes())
         {
             IMeshTools_Parameters aParams = new() { Deflection = 0.02, Angle = 0.2, MeshAlgo = IMeshTools_MeshAlgoType_Delabella };
             string aSerial = Dump(BRepMesh_IncrementalMesh.Meshed(aShape, aParams));
@@ -146,7 +149,7 @@ public class BRepMeshFaceMeshingTests
     [Fact]
     public void Delabella_leaves_an_extrusion_unmeshed_as_OCCT_does_ReproducesOcctError()
     {
-        (string _, TopoDS_Shape anExtrusion) = Shapes().Single(s => s.Name == "extrusion");
+        (string _, Shape anExtrusion) = Shapes().Single(s => s.Name == "extrusion");
         IMeshTools_Parameters aParams = new() { Deflection = 0.01, Angle = 0.3, MeshAlgo = IMeshTools_MeshAlgoType_Delabella };
         BRepMesh_IncrementalMesh aMesh = new(anExtrusion, aParams);
         Assert.Equal(0, aMesh.GetStatusFlags());
@@ -159,11 +162,11 @@ public class BRepMeshFaceMeshingTests
     [Fact]
     public void Surface_deflection_control_on_all_surfaces_refines_planes_and_cylinders()
     {
-        TopoDS_Shape aCylinder = new BRepPrimAPI_MakeCylinder(2, 5).Shape();
+        Shape aCylinder = new BRepPrimAPI_MakeCylinder(2, 5).Shape();
         IMeshTools_Parameters aParams = new() { Deflection = 0.05, Angle = 0.5 };
         int aDefault = Triangulations(BRepMesh_IncrementalMesh.Meshed(aCylinder, aParams)).Sum(t => t!.NodeCount);
         aParams.EnableControlSurfaceDeflectionAllSurfaces = true;
-        TopoDS_Shape aControlled = BRepMesh_IncrementalMesh.Meshed(aCylinder, aParams);
+        Shape aControlled = BRepMesh_IncrementalMesh.Meshed(aCylinder, aParams);
         CheckMesh("cylinder, all surfaces controlled", aControlled, 0.01);
         Assert.True(Triangulations(aControlled).Sum(t => t!.NodeCount) >= aDefault);
     }
@@ -171,9 +174,9 @@ public class BRepMeshFaceMeshingTests
     [Fact]
     public void A_larger_min_size_and_no_surface_control_give_coarser_meshes()
     {
-        (string _, TopoDS_Shape aSphere) = Shapes().Single(s => s.Name == "sphere");
-        (string _, TopoDS_Shape aBezier) = Shapes().Single(s => s.Name == "bezier");
-        foreach (TopoDS_Shape aShape in new[] { aSphere, aBezier })
+        (string _, Shape aSphere) = Shapes().Single(s => s.Name == "sphere");
+        (string _, Shape aBezier) = Shapes().Single(s => s.Name == "bezier");
+        foreach (Shape aShape in new[] { aSphere, aBezier })
         {
             IMeshTools_Parameters aParams = new() { Deflection = 0.002, Angle = 0.2 };
             int aDefault = Triangulations(BRepMesh_IncrementalMesh.Meshed(aShape, aParams)).Sum(t => t!.NodeCount);
@@ -185,7 +188,7 @@ public class BRepMeshFaceMeshingTests
 
             IMeshTools_Parameters aNoControl = aParams;
             aNoControl.ControlSurfaceDeflection = false;
-            TopoDS_Shape aMeshed = BRepMesh_IncrementalMesh.Meshed(aShape, aNoControl);
+            Shape aMeshed = BRepMesh_IncrementalMesh.Meshed(aShape, aNoControl);
             Assert.True(Triangulations(aMeshed).Sum(t => t!.NodeCount) <= aDefault);
         }
     }
@@ -194,14 +197,14 @@ public class BRepMeshFaceMeshingTests
     public void Failed_faces_are_reported_and_the_rest_meshed()
     {
         // A face whose wire crosses itself (a bow tie) fails with SelfIntersectingWire; the box beside it is meshed.
-        TopoDS_Wire aBowTieWire = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(1, 0, 0),
+        Wire aBowTieWire = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(1, 0, 0),
                                                                  new Point3D(0, 1, 0), true).Wire();
-        BRep_Builder aFaceBuilder = new();
-        TopoDS_Face aBowTie = new();
-        aFaceBuilder.MakeFace(ref aBowTie, new Geom_Plane(new Plane3D()), global::Kerf.Engine.Foundation.Precision.Confusion());
+        BrepBuilder aFaceBuilder = new();
+        Face aBowTie = new();
+        aFaceBuilder.MakeFace(ref aBowTie, new PlaneSurface(new Plane3D()), global::Kerf.Engine.Foundation.Precision.Confusion());
         aFaceBuilder.Add(aBowTie, aBowTieWire);
-        BRep_Builder aBuilder = new();
-        TopoDS_Compound aCompound = new();
+        BrepBuilder aBuilder = new();
+        Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
         aBuilder.Add(aCompound, aBowTie);
         aBuilder.Add(aCompound, new BRepPrimAPI_MakeBox(new Point3D(5, 0, 0), 1, 1, 1).Shape());

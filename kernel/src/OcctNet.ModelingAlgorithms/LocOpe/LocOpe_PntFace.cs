@@ -5,6 +5,7 @@
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -16,8 +17,8 @@ namespace Occt;
 public partial struct LocOpe_PntFace : IEquatable<LocOpe_PntFace>
 {
     private Point3D myPnt;
-    private TopoDS_Face myFace;
-    private TopAbs_Orientation myOri;
+    private Face myFace;
+    private Orientation myOri;
     private double myPar;
     private double myUPar;
     private double myVPar;
@@ -26,14 +27,14 @@ public partial struct LocOpe_PntFace : IEquatable<LocOpe_PntFace>
     public LocOpe_PntFace()
     {
         myPnt = new Point3D();
-        myFace = new TopoDS_Face();
-        myOri = TopAbs_Orientation.TopAbs_FORWARD; // OCCT: uninitialised
+        myFace = new Face();
+        myOri = global::Kerf.Topology.Orientation.Forward; // OCCT: uninitialised
         myPar = 0.0;
         myUPar = 0.0;
         myVPar = 0.0;
     }
 
-    public LocOpe_PntFace(in Point3D P, in TopoDS_Face F, TopAbs_Orientation Or, double Param, double UPar, double VPar)
+    public LocOpe_PntFace(in Point3D P, in Face F, Orientation Or, double Param, double UPar, double VPar)
     {
         myPnt = P;
         myFace = F;
@@ -45,12 +46,12 @@ public partial struct LocOpe_PntFace : IEquatable<LocOpe_PntFace>
 
     public readonly Point3D Pnt() => myPnt;
 
-    public readonly TopoDS_Face Face() => myFace;
+    public readonly Face Face() => myFace;
 
-    public readonly TopAbs_Orientation Orientation() => myOri;
+    public readonly Orientation Orientation() => myOri;
 
     [System.Diagnostics.CodeAnalysis.UnscopedRef]
-    internal ref TopAbs_Orientation ChangeOrientation() => ref myOri;
+    internal ref Orientation ChangeOrientation() => ref myOri;
 
     public readonly double Parameter() => myPar;
 
@@ -59,7 +60,7 @@ public partial struct LocOpe_PntFace : IEquatable<LocOpe_PntFace>
     public readonly double VParameter() => myVPar;
 
     /// <summary>A copy with the orientation <paramref name="theOri"/>.</summary>
-    public readonly LocOpe_PntFace WithOrientation(TopAbs_Orientation theOri)
+    public readonly LocOpe_PntFace WithOrientation(Orientation theOri)
     {
         LocOpe_PntFace aCopy = this;
         aCopy.myOri = theOri;

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using Xunit.Abstractions;
 
 namespace OcctNet.DataExchange.Tests.TopoStep;
@@ -147,7 +149,7 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
                 continue;
             }
 
-            bool isRead = BRepTools.Read(out TopoDS_Shape aShape, aPath);
+            bool isRead = BrepTools.Read(out Shape aShape, aPath);
             Assert.Equal(aBlock.ReadFail, !isRead);
             if (!isRead)
             {

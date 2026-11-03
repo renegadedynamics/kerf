@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Occt.Geom2dGcc_Type1;
@@ -21,9 +22,9 @@ namespace Occt;
 /// </remarks>
 public sealed class Geom2dGcc_FunctionTanCuCuCu : FunctionSetWithDerivatives
 {
-    private readonly Geom2dAdaptor_Curve Curv1 = new();
-    private readonly Geom2dAdaptor_Curve Curv2 = new();
-    private readonly Geom2dAdaptor_Curve Curv3 = new();
+    private readonly CurveAdaptor2D Curv1 = new();
+    private readonly CurveAdaptor2D Curv2 = new();
+    private readonly CurveAdaptor2D Curv3 = new();
     private readonly Circle2D Circ1 = new();
     private readonly Circle2D Circ2 = new();
     private readonly Line2D Lin1 = new();
@@ -96,7 +97,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuCu : FunctionSetWithDerivatives
         }
     }
 
-    public Geom2dGcc_FunctionTanCuCuCu(Geom2dAdaptor_Curve C1, Geom2dAdaptor_Curve C2, Geom2dAdaptor_Curve C3)
+    public Geom2dGcc_FunctionTanCuCuCu(CurveAdaptor2D C1, CurveAdaptor2D C2, CurveAdaptor2D C3)
     {
         Curv1   = C1;
         Curv2   = C2;
@@ -104,7 +105,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuCu : FunctionSetWithDerivatives
         TheType = Geom2dGcc_CuCuCu;
     }
 
-    public Geom2dGcc_FunctionTanCuCuCu(in Circle2D C1, Geom2dAdaptor_Curve C2, Geom2dAdaptor_Curve C3)
+    public Geom2dGcc_FunctionTanCuCuCu(in Circle2D C1, CurveAdaptor2D C2, CurveAdaptor2D C3)
     {
         Circ1   = C1;
         Curv2   = C2;
@@ -112,7 +113,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuCu : FunctionSetWithDerivatives
         TheType = Geom2dGcc_CiCuCu;
     }
 
-    public Geom2dGcc_FunctionTanCuCuCu(in Circle2D C1, in Circle2D C2, Geom2dAdaptor_Curve C3)
+    public Geom2dGcc_FunctionTanCuCuCu(in Circle2D C1, in Circle2D C2, CurveAdaptor2D C3)
     {
         Circ1   = C1;
         Circ2   = C2;
@@ -120,7 +121,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuCu : FunctionSetWithDerivatives
         TheType = Geom2dGcc_CiCiCu;
     }
 
-    public Geom2dGcc_FunctionTanCuCuCu(in Circle2D C1, in Line2D L2, Geom2dAdaptor_Curve C3)
+    public Geom2dGcc_FunctionTanCuCuCu(in Circle2D C1, in Line2D L2, CurveAdaptor2D C3)
     {
         Circ1   = C1;
         Lin2    = L2;
@@ -128,7 +129,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuCu : FunctionSetWithDerivatives
         TheType = Geom2dGcc_CiLiCu;
     }
 
-    public Geom2dGcc_FunctionTanCuCuCu(in Line2D L1, in Line2D L2, Geom2dAdaptor_Curve C3)
+    public Geom2dGcc_FunctionTanCuCuCu(in Line2D L1, in Line2D L2, CurveAdaptor2D C3)
     {
         Lin1    = L1;
         Lin2    = L2;
@@ -136,7 +137,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuCu : FunctionSetWithDerivatives
         TheType = Geom2dGcc_LiLiCu;
     }
 
-    public Geom2dGcc_FunctionTanCuCuCu(in Line2D L1, Geom2dAdaptor_Curve C2, Geom2dAdaptor_Curve C3)
+    public Geom2dGcc_FunctionTanCuCuCu(in Line2D L1, CurveAdaptor2D C2, CurveAdaptor2D C3)
     {
         Lin1    = L1;
         Curv2   = C2;

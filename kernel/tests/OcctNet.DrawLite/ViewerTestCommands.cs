@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
 
@@ -34,9 +37,9 @@ internal static class ViewerTestCommands
     private const int AIS_Shaded = 1;
 
     /// <summary>An AIS_Shape: the shape, its drawer and what AIS has computed of it.</summary>
-    private sealed class AisShape(TopoDS_Shape theShape, Prs3d_Drawer theDrawer)
+    private sealed class AisShape(Shape theShape, Prs3d_Drawer theDrawer)
     {
-        public TopoDS_Shape Shape = theShape;
+        public Shape Shape = theShape;
         public readonly Prs3d_Drawer Drawer = theDrawer;
         public int OwnDisplayMode = -1;
         public bool IsDisplayed;
@@ -118,7 +121,7 @@ internal static class ViewerTestCommands
     }
 
     /// <summary>Gives the shapes the context holds their rebound form (DrawShapeRebind).</summary>
-    internal static void RebindDisplayed(DrawInterpreter theDI, Func<TopoDS_Shape, TopoDS_Shape> theRebind)
+    internal static void RebindDisplayed(DrawInterpreter theDI, Func<Shape, Shape> theRebind)
     {
         if (Context(theDI) is { } aContext)
         {
@@ -132,13 +135,13 @@ internal static class ViewerTestCommands
     // -----------------------------------------------------------------------------------------------------------------
     // AIS
 
-    private static bool IsEmpty(in TopoDS_Shape theShape)
-        => theShape.IsNull() || (theShape.ShapeType() == TopAbs_ShapeEnum.TopAbs_COMPOUND && theShape.NbChildren() == 0);
+    private static bool IsEmpty(in Shape theShape)
+        => theShape.IsNull || (theShape.ShapeType() == ShapeType.Compound && theShape.ChildCount == 0);
 
     /// <summary>AIS_Shape::Compute, for its meshing: the shaded mode tessellates the shape (StdPrs_ShadedShape::Add).</summary>
     private static void Compute(DrawInterpreter theDI, AisShape theObject, int theMode)
     {
-        TopoDS_Shape aShape = theObject.Shape;
+        Shape aShape = theObject.Shape;
         if (IsEmpty(aShape) || theMode != AIS_Shaded || (int)aShape.ShapeType() > 4 || !theObject.Drawer.IsAutoTriangulation())
         {
             // the wireframe and bounding box modes, and wires, edges and vertices, draw without meshing
@@ -147,7 +150,7 @@ internal static class ViewerTestCommands
 
         try
         {
-            if (StdPrs_ToolTriangulatedShape.Tessellate(aShape, theObject.Drawer, out TopoDS_Shape aMeshed, out _))
+            if (StdPrs_ToolTriangulatedShape.Tessellate(aShape, theObject.Drawer, out Shape aMeshed, out _))
             {
                 DrawShapeRebind.Rebind(theDI, aShape, aMeshed);
             }
@@ -165,7 +168,7 @@ internal static class ViewerTestCommands
     /// </summary>
     private static void ComputeSelection(DrawInterpreter theDI, AisShape theObject)
     {
-        TopoDS_Shape aShape = theObject.Shape;
+        Shape aShape = theObject.Shape;
         if (IsEmpty(aShape))
         {
             return;
@@ -174,7 +177,7 @@ internal static class ViewerTestCommands
         try
         {
             double aDeflection = StdPrs_ToolTriangulatedShape.GetDeflection(aShape, theObject.Drawer);
-            if (theObject.Drawer.IsAutoTriangulation() && !BRepTools.Triangulation(aShape, global::Kerf.Engine.Foundation.Precision.Infinite(), true))
+            if (theObject.Drawer.IsAutoTriangulation() && !BrepTools.Triangulation(aShape, global::Kerf.Engine.Foundation.Precision.Infinite(), true))
             {
                 var aMesher = new BRepMesh_IncrementalMesh(aShape, aDeflection, false, theObject.Drawer.DeviationAngle());
                 DrawShapeRebind.Rebind(theDI, aShape, aMesher.Shape());
@@ -359,8 +362,8 @@ internal static class ViewerTestCommands
             if (!aCtx.Objects.TryGetValue(aName, out AisShape? aShape))
             {
                 // create the AIS_Shape from a name
-                TopoDS_Shape aDrawShape = theDI.GetShape(aName);
-                if (aDrawShape.IsNull())
+                Shape aDrawShape = theDI.GetShape(aName);
+                if (aDrawShape.IsNull)
                 {
                     // OCCT: "Error: object with name ... does not exist!", or another AIS object (decision 560)
                     continue;
@@ -417,7 +420,7 @@ internal static class ViewerTestCommands
             }
 
             // update the Shape in the AIS_Shape
-            TopoDS_Shape aNewShape = theDI.GetShape(aName);
+            Shape aNewShape = theDI.GetShape(aName);
             bool toReDisplayThis = toReDisplay;
             if (!aShape.Shape.IsEqual(aNewShape))
             {
@@ -751,7 +754,7 @@ internal static class ViewerTestCommands
     {
         int theArgNb = theArgVec.Count;
         string aHlrName = "";
-        TopoDS_Shape aSh = new();
+        Shape aSh = new();
         Point3D anEye = new();
         Direction3D aDir;
         Frame3D aProjAx = new();
@@ -811,16 +814,16 @@ internal static class ViewerTestCommands
             {
                 aNbIsolines = theDI.Atoi(theArgVec[++anArgIter]);
             }
-            else if (aSh.IsNull())
+            else if (aSh.IsNull)
             {
                 aSh = theDI.GetShape(theArgVec[anArgIter]);
-                if (aSh.IsNull())
+                if (aSh.IsNull)
                 {
                     if (File.Exists(theArgVec[anArgIter]))
                     {
-                        BRepTools.Read(out aSh, theArgVec[anArgIter]);
+                        BrepTools.Read(out aSh, theArgVec[anArgIter]);
                     }
-                    if (aSh.IsNull())
+                    if (aSh.IsNull)
                     {
                         theDI.Output.WriteLine("Syntax error: no shape with name " + theArgVec[anArgIter] + " found");
                         return 1;
@@ -852,15 +855,15 @@ internal static class ViewerTestCommands
             }
         }
 
-        if (aHlrName.Length == 0 || aSh.IsNull() || (aContext is not { NbViews: > 0 } && !hasViewDirArg))
+        if (aHlrName.Length == 0 || aSh.IsNull || (aContext is not { NbViews: > 0 } && !hasViewDirArg))
         {
             theDI.Output.WriteLine("Syntax error: wrong number of arguments");
             return 1;
         }
 
         HLRAlgo_Projector aProjector = new(aProjAx);
-        TopoDS_Shape[] aVisible = new TopoDS_Shape[6];
-        TopoDS_Shape[] aHidden = new TopoDS_Shape[6];
+        Shape[] aVisible = new Shape[6];
+        Shape[] aHidden = new Shape[6];
         const int Sharp = (int)HLRBRep_TypeOfResultingEdge.HLRBRep_Sharp;
         const int OutLine = (int)HLRBRep_TypeOfResultingEdge.HLRBRep_OutLine;
         const int Rg1Line = (int)HLRBRep_TypeOfResultingEdge.HLRBRep_Rg1Line;
@@ -925,9 +928,9 @@ internal static class ViewerTestCommands
             }
         }
 
-        TopoDS_Shape aCompVis = TopoDS_Builder.MakeCompound(aVisible.Where(v => !v.IsNull()).ToArray());
-        TopoDS_Shape aCompHid = TopoDS_Builder.MakeCompound(aHidden.Where(h => !h.IsNull()).ToArray());
-        TopoDS_Shape aCompRes = TopoDS_Builder.MakeCompound(aCompVis, aCompHid);
+        Shape aCompVis = Builder.MakeCompound(aVisible.Where(v => !v.IsNull).ToArray());
+        Shape aCompHid = Builder.MakeCompound(aHidden.Where(h => !h.IsNull).ToArray());
+        Shape aCompRes = Builder.MakeCompound(aCompVis, aCompHid);
         theDI.SetShape(aHlrName, aCompRes);
         return 0;
     }

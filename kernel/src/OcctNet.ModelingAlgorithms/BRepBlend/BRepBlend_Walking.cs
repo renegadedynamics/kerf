@@ -3,15 +3,19 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Values;
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.Blend_Status;
 using static Kerf.Engine.Geometry.NormalStatus;
-using static Occt.Extrema_ExtFlag;
+using static Kerf.Engine.Extrema.ExtFlag;
 using static Occt.IntSurf_TypeTrans;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -34,12 +38,12 @@ public class BRepBlend_Walking
     private BRepBlend_Line? line;
     private readonly math_Vector sol;
     private readonly NCollection_Sequence<Blend_Point> jalons = new();
-    private readonly Adaptor3d_Surface surf1;
-    private readonly Adaptor3d_Surface surf2;
-    private Adaptor3d_TopolTool domain1;
-    private Adaptor3d_TopolTool domain2;
-    private Adaptor3d_TopolTool recdomain1;
-    private Adaptor3d_TopolTool recdomain2;
+    private readonly SurfaceAdaptorBase surf1;
+    private readonly SurfaceAdaptorBase surf2;
+    private TopolTool domain1;
+    private TopolTool domain2;
+    private TopolTool recdomain1;
+    private TopolTool recdomain2;
     private ChFiDS_ElSpine hguide;
     private bool ToCorrectOnRst1;
     private bool ToCorrectOnRst2;
@@ -63,8 +67,8 @@ public class BRepBlend_Walking
     private bool twistflag1;
     private bool twistflag2;
 
-    public BRepBlend_Walking(Adaptor3d_Surface Surf1, Adaptor3d_Surface Surf2, Adaptor3d_TopolTool Domain1,
-                             Adaptor3d_TopolTool Domain2, ChFiDS_ElSpine HGuide)
+    public BRepBlend_Walking(SurfaceAdaptorBase Surf1, SurfaceAdaptorBase Surf2, TopolTool Domain1,
+                             TopolTool Domain2, ChFiDS_ElSpine HGuide)
     {
         sol = new math_Vector(1, 4);
         surf1 = Surf1;
@@ -87,7 +91,7 @@ public class BRepBlend_Walking
     }
 
     /// <summary>The domains on which the walking stops (the restrictions), when they differ from the classification's.</summary>
-    public void SetDomainsToRecadre(Adaptor3d_TopolTool Domain1, Adaptor3d_TopolTool Domain2)
+    public void SetDomainsToRecadre(TopolTool Domain1, TopolTool Domain2)
     {
         recdomain1 = Domain1;
         recdomain2 = Domain2;
@@ -161,7 +165,7 @@ public class BRepBlend_Walking
 
         if (Appro)
         {
-            TopAbs_State situ1, situ2;
+            Containment situ1, situ2;
             math_Vector tolerance = new(1, 4), infbound = new(1, 4), supbound = new(1, 4);
             Func.GetTolerance(tolerance, tolpoint3d);
             Func.GetBounds(infbound, supbound);
@@ -181,7 +185,7 @@ public class BRepBlend_Walking
             }
             else
             {
-                situ1 = TopAbs_IN;
+                situ1 = In;
             }
             if (clasonS2)
             {
@@ -189,10 +193,10 @@ public class BRepBlend_Walking
             }
             else
             {
-                situ2 = TopAbs_IN;
+                situ2 = In;
             }
 
-            if (situ1 != TopAbs_IN || situ2 != TopAbs_IN)
+            if (situ1 != In || situ2 != In)
             {
                 return;
             }
@@ -247,7 +251,7 @@ public class BRepBlend_Walking
     /// solution) and classifies its points: true if both are inside their faces.
     /// </summary>
     public bool PerformFirstSection(Blend_Function Func, double Pdep, math_Vector ParDep, double Tol3d,
-                                    double TolGuide, out TopAbs_State Pos1, out TopAbs_State Pos2)
+                                    double TolGuide, out Containment Pos1, out Containment Pos2)
     {
         iscomplete = false;
         comptra = false;
@@ -255,7 +259,7 @@ public class BRepBlend_Walking
         tolpoint3d = Tol3d;
         tolgui = Math.Abs(TolGuide);
 
-        Pos1 = Pos2 = TopAbs_UNKNOWN;
+        Pos1 = Pos2 = Unknown;
 
         param = Pdep;
         Func.Set(param);
@@ -275,7 +279,7 @@ public class BRepBlend_Walking
         ParDep.Initialized(sol);
         Pos1 = domain1.Classify(new Point2D(sol[1], sol[2]), Min(tolerance[1], tolerance[2]), false);
         Pos2 = domain2.Classify(new Point2D(sol[3], sol[4]), Min(tolerance[3], tolerance[4]), false);
-        if (Pos1 != TopAbs_IN || Pos2 != TopAbs_IN)
+        if (Pos1 != In || Pos2 != In)
         {
             return false;
         }
@@ -323,7 +327,7 @@ public class BRepBlend_Walking
         BRepBlend_Extremity Ext1 = new(), Ext2 = new();
         int Index1 = 0, Index2 = 0, nbarc;
         bool Isvtx1 = false, Isvtx2 = false;
-        Adaptor3d_HVertex? Vtx1 = null, Vtx2 = null;
+        HVertex? Vtx1 = null, Vtx2 = null;
         Point2D p2d;
         double CorrectedU = 0.0, CorrectedV = 0.0;
         Point3D CorrectedPnt = new();
@@ -427,7 +431,7 @@ public class BRepBlend_Walking
             ParSol[2] = p2d.Y();
             ParSol[3] = solrst1[3];
             ParSol[4] = solrst1[4];
-            Point3D thePntOnRst = Adaptor3d_HSurfaceTool.Value(surf1, ParSol[1], ParSol[2]);
+            Point3D thePntOnRst = HSurfaceTool.Value(surf1, ParSol[1], ParSol[2]);
             if (CorrectExtremityOnOneRst(1, ParSol[3], ParSol[4], param, thePntOnRst, ref CorrectedU, ref CorrectedV,
                                          ref CorrectedPnt, ref CorrectedParam))
             {
@@ -452,7 +456,7 @@ public class BRepBlend_Walking
             ParSol[2] = solrst2[4];
             ParSol[3] = p2d.X();
             ParSol[4] = p2d.Y();
-            Point3D thePntOnRst = Adaptor3d_HSurfaceTool.Value(surf2, ParSol[3], ParSol[4]);
+            Point3D thePntOnRst = HSurfaceTool.Value(surf2, ParSol[3], ParSol[4]);
             if (CorrectExtremityOnOneRst(2, ParSol[1], ParSol[2], param, thePntOnRst, ref CorrectedU, ref CorrectedV,
                                          ref CorrectedPnt, ref CorrectedParam))
             {
@@ -907,8 +911,8 @@ public class BRepBlend_Walking
             {
                 prevTg = previousP.TangentOnS1();
             }
-            tolu = Adaptor3d_HSurfaceTool.UResolution(surf1, tolpoint3d);
-            tolv = Adaptor3d_HSurfaceTool.VResolution(surf1, tolpoint3d);
+            tolu = HSurfaceTool.UResolution(surf1, tolpoint3d);
+            tolv = HSurfaceTool.VResolution(surf1, tolpoint3d);
         }
         else
         {
@@ -922,8 +926,8 @@ public class BRepBlend_Walking
             {
                 prevTg = previousP.TangentOnS2();
             }
-            tolu = Adaptor3d_HSurfaceTool.UResolution(surf2, tolpoint3d);
-            tolv = Adaptor3d_HSurfaceTool.VResolution(surf2, tolpoint3d);
+            tolu = HSurfaceTool.UResolution(surf2, tolpoint3d);
+            tolv = HSurfaceTool.VResolution(surf2, tolpoint3d);
         }
 
         Vector3D Corde = new(prevP, Psurf);
@@ -1053,7 +1057,7 @@ public class BRepBlend_Walking
         bool byinter = (line!.NbPoints() != 0), okinter = false;
         double distmin = RealLast();
         double uprev = 0.0, vprev = 0.0, prm = 0.0, dist = 0.0;
-        Adaptor3d_TopolTool Iter;
+        TopolTool Iter;
 
         if (OnFirst)
         {
@@ -1120,7 +1124,7 @@ public class BRepBlend_Walking
     }
 
     private bool Recadre(Blend_FuncInv FuncInv, bool OnFirst, math_Vector theSol, math_Vector solrst,
-                         out int Indexsol, out bool IsVtx, ref Adaptor3d_HVertex? Vtx, double Extrap = 0.0)
+                         out int Indexsol, out bool IsVtx, ref HVertex? Vtx, double Extrap = 0.0)
     {
         bool jalons_Trouve = false;
         bool recadre = true, ok;
@@ -1133,8 +1137,8 @@ public class BRepBlend_Walking
 
         math_Vector toler = new(1, 4), infb = new(1, 4), supb = new(1, 4);
 
-        Adaptor2d_Curve2d thecur;
-        Adaptor3d_TopolTool Iter;
+        Curve2DAdaptorBase thecur;
+        TopolTool Iter;
 
         if (OnFirst)
         {
@@ -1160,7 +1164,7 @@ public class BRepBlend_Walking
             Iter.Next();
         }
 
-        Adaptor2d_Curve2d thearc = Iter.Value();
+        Curve2DAdaptorBase thearc = Iter.Value();
 
         if (OnFirst)
         {
@@ -1290,18 +1294,18 @@ public class BRepBlend_Walking
             if (OnFirst)
             {
                 MonJalon.ParametersOnS2(out solrst[3], out solrst[4]);
-                periodic = (surf2.IsUPeriodic() || surf2.IsVPeriodic());
+                periodic = (surf2.IsUPeriodic || surf2.IsVPeriodic);
             }
             else
             {
                 MonJalon.ParametersOnS1(out solrst[3], out solrst[4]);
-                periodic = (surf1.IsUPeriodic() || surf1.IsVPeriodic());
+                periodic = (surf1.IsUPeriodic || surf1.IsVPeriodic);
             }
 
             // Possible recadrage for the periodic case
             if (periodic)
             {
-                Adaptor3d_Surface surf;
+                SurfaceAdaptorBase surf;
                 if (OnFirst)
                 {
                     surf = surf2;
@@ -1313,7 +1317,7 @@ public class BRepBlend_Walking
 
                 lastpt2d = thecur.Value(pmin);
 
-                if (surf.IsUPeriodic())
+                if (surf.IsUPeriodic)
                 {
                     uperiod = surf.UPeriod();
                     if (solrst[3] - lastpt2d.X() > uperiod * 0.6)
@@ -1325,7 +1329,7 @@ public class BRepBlend_Walking
                         solrst[3] += uperiod;
                     }
                 }
-                if (surf.IsVPeriodic())
+                if (surf.IsVPeriodic)
                 {
                     vperiod = surf.VPeriod();
                     if (solrst[4] - lastpt2d.Y() > vperiod * 0.6)
@@ -1482,7 +1486,7 @@ public class BRepBlend_Walking
         return false;
     }
 
-    private void Transition(bool OnFirst, Adaptor2d_Curve2d A, double Param, ref IntSurf_Transition TLine,
+    private void Transition(bool OnFirst, Curve2DAdaptorBase A, double Param, ref IntSurf_Transition TLine,
                             ref IntSurf_Transition TArc)
     {
         bool computetranstionaveclacorde = false;
@@ -1516,7 +1520,7 @@ public class BRepBlend_Walking
         BRepBlend_HCurve2dTool.D1(A, Param, out p2d, out dp2d);
         if (OnFirst)
         {
-            Adaptor3d_HSurfaceTool.D1(surf1, p2d.X(), p2d.Y(), out pbid, out d1u, out d1v);
+            HSurfaceTool.D1(surf1, p2d.X(), p2d.Y(), out pbid, out d1u, out d1v);
             if (!computetranstionaveclacorde)
             {
                 tgline = previousP.TangentOnS1();
@@ -1528,7 +1532,7 @@ public class BRepBlend_Walking
         }
         else
         {
-            Adaptor3d_HSurfaceTool.D1(surf2, p2d.X(), p2d.Y(), out pbid, out d1u, out d1v);
+            HSurfaceTool.D1(surf2, p2d.X(), p2d.Y(), out pbid, out d1u, out d1v);
             if (!computetranstionaveclacorde)
             {
                 tgline = previousP.TangentOnS2();
@@ -1548,7 +1552,7 @@ public class BRepBlend_Walking
         }
         else
         {
-            Adaptor3d_Surface surf;
+            SurfaceAdaptorBase surf;
             if (OnFirst)
             {
                 surf = surf1;
@@ -1559,14 +1563,14 @@ public class BRepBlend_Walking
             }
             int iu, iv;
             NCollection_Array2<Vector3D> Der = new(0, 2, 0, 2);
-            Adaptor3d_HSurfaceTool.D2(surf, p2d.X(), p2d.Y(), out pbid, out Der[1, 0], out Der[0, 1], out Der[2, 0],
+            HSurfaceTool.D2(surf, p2d.X(), p2d.Y(), out pbid, out Der[1, 0], out Der[0, 1], out Der[2, 0],
                                       out Der[0, 2], out Der[1, 1]);
-            Der[2, 1] = Adaptor3d_HSurfaceTool.DN(surf, p2d.X(), p2d.Y(), 2, 1);
-            Der[1, 2] = Adaptor3d_HSurfaceTool.DN(surf, p2d.X(), p2d.Y(), 1, 2);
-            Der[2, 2] = Adaptor3d_HSurfaceTool.DN(surf, p2d.X(), p2d.Y(), 2, 2);
-            global::Kerf.Engine.Geometry.CSLib.Normal(2, Der, 1.0e-9, p2d.X(), p2d.Y(), Adaptor3d_HSurfaceTool.FirstUParameter(surf),
-                         Adaptor3d_HSurfaceTool.LastUParameter(surf), Adaptor3d_HSurfaceTool.FirstVParameter(surf),
-                         Adaptor3d_HSurfaceTool.LastVParameter(surf), out stat, ref thenormal, out iu, out iv);
+            Der[2, 1] = HSurfaceTool.DN(surf, p2d.X(), p2d.Y(), 2, 1);
+            Der[1, 2] = HSurfaceTool.DN(surf, p2d.X(), p2d.Y(), 1, 2);
+            Der[2, 2] = HSurfaceTool.DN(surf, p2d.X(), p2d.Y(), 2, 2);
+            global::Kerf.Engine.Geometry.CSLib.Normal(2, Der, 1.0e-9, p2d.X(), p2d.Y(), HSurfaceTool.FirstUParameter(surf),
+                         HSurfaceTool.LastUParameter(surf), HSurfaceTool.FirstVParameter(surf),
+                         HSurfaceTool.LastVParameter(surf), out stat, ref thenormal, out iu, out iv);
             normale.SetXYZ(thenormal.XYZ());
             // OCCT_DEBUG trace left out.
         }
@@ -1575,11 +1579,11 @@ public class BRepBlend_Walking
     }
 
     private void MakeExtremity(ref BRepBlend_Extremity Extrem, bool OnFirst, int Index, double Param, bool IsVtx,
-                               Adaptor3d_HVertex? Vtx)
+                               HVertex? Vtx)
     {
         IntSurf_Transition Tline = new(), Tarc = new();
         int nbarc;
-        Adaptor3d_TopolTool Iter;
+        TopolTool Iter;
 
         if (OnFirst)
         {
@@ -1617,10 +1621,10 @@ public class BRepBlend_Walking
         }
     }
 
-    private void MakeSingularExtremity(ref BRepBlend_Extremity Extrem, bool OnFirst, Adaptor3d_HVertex Vtx)
+    private void MakeSingularExtremity(ref BRepBlend_Extremity Extrem, bool OnFirst, HVertex Vtx)
     {
         IntSurf_Transition Tline = new(), Tarc = new();
-        Adaptor3d_TopolTool Iter;
+        TopolTool Iter;
         double prm;
 
         if (OnFirst)
@@ -1644,7 +1648,7 @@ public class BRepBlend_Walking
         Extrem.SetVertex(Vtx);
         while (Iter.More())
         {
-            Adaptor2d_Curve2d arc = Iter.Value();
+            Curve2DAdaptorBase arc = Iter.Value();
             Iter.Initialize(arc);
             Iter.InitVertexIterator();
             while (Iter.MoreVertex())
@@ -1771,7 +1775,7 @@ public class BRepBlend_Walking
             return;
         }
         Blend_Status State = Blend_OnRst12;
-        TopAbs_State situ1 = TopAbs_IN, situ2 = TopAbs_IN;
+        Containment situ1 = In, situ2 = In;
         double w1, w2;
         int Index1 = 0, Index2 = 0, nbarc;
         bool Arrive, recad1, recad2, control;
@@ -1779,7 +1783,7 @@ public class BRepBlend_Walking
         Point2D p2d;
         math_Vector tolerance = new(1, 4), infbound = new(1, 4), supbound = new(1, 4), parinit = new(1, 4);
         math_Vector solrst1 = new(1, 4), solrst2 = new(1, 4);
-        Adaptor3d_HVertex? Vtx1 = null, Vtx2 = null;
+        HVertex? Vtx1 = null, Vtx2 = null;
         BRepBlend_Extremity Ext1 = new(), Ext2 = new();
 
         Func.GetTolerance(tolerance, tolpoint3d);
@@ -1851,7 +1855,7 @@ public class BRepBlend_Walking
                 }
                 else
                 {
-                    situ1 = TopAbs_IN;
+                    situ1 = In;
                 }
                 if (clasonS2)
                 {
@@ -1859,10 +1863,10 @@ public class BRepBlend_Walking
                 }
                 else
                 {
-                    situ2 = TopAbs_IN;
+                    situ2 = In;
                 }
             }
-            if (bonpoint && line.NbPoints() == 1 && (situ1 != TopAbs_IN || situ2 != TopAbs_IN))
+            if (bonpoint && line.NbPoints() == 1 && (situ1 != In || situ2 != In))
             {
                 State = Blend_StepTooLarge;
                 bonpoint = false;
@@ -1875,7 +1879,7 @@ public class BRepBlend_Walking
                 echecrecad = false;
                 control = false;
 
-                if (situ1 == TopAbs_OUT || situ1 == TopAbs_ON)
+                if (situ1 == Out || situ1 == On)
                 {
                     // inverse problem on surf1
                     // If the recadrage goes in the direction of the progression within a tolerance, the wrong
@@ -1905,7 +1909,7 @@ public class BRepBlend_Walking
                         echecrecad = true;
                     }
                 }
-                if (situ2 == TopAbs_OUT || situ2 == TopAbs_ON)
+                if (situ2 == Out || situ2 == On)
                 {
                     // inverse problem on surf2
                     recad2 = Recadre(FuncInv, false, sol, solrst2, out Index2, out Isvtx2, ref Vtx2);
@@ -1958,12 +1962,12 @@ public class BRepBlend_Walking
                 // Effective check of the recadrages
                 if (control)
                 {
-                    TopAbs_State situ;
+                    Containment situ;
                     if (recad1 && clasonS2)
                     {
                         situ = recdomain2.Classify(new Point2D(solrst1[3], solrst1[4]),
                                                    Min(tolerance[3], tolerance[4]));
-                        if (situ == TopAbs_OUT)
+                        if (situ == Out)
                         {
                             recad1 = false;
                             echecrecad = true;
@@ -1973,7 +1977,7 @@ public class BRepBlend_Walking
                     {
                         situ = recdomain1.Classify(new Point2D(solrst2[3], solrst2[4]),
                                                    Min(tolerance[1], tolerance[1]));
-                        if (situ == TopAbs_OUT)
+                        if (situ == Out)
                         {
                             recad2 = false;
                             echecrecad = true;
@@ -1998,11 +2002,11 @@ public class BRepBlend_Walking
                         p2d = BRepBlend_HCurve2dTool.Value(recdomain1.Value(), solrst1[1]);
                         sol[1] = p2d.X();
                         sol[2] = p2d.Y();
-                        Pnt1 = Adaptor3d_HSurfaceTool.Value(surf1, sol[1], sol[2]);
+                        Pnt1 = HSurfaceTool.Value(surf1, sol[1], sol[2]);
                         p2d = BRepBlend_HCurve2dTool.Value(recdomain2.Value(), solrst2[1]);
                         sol[3] = p2d.X();
                         sol[4] = p2d.Y();
-                        Pnt2 = Adaptor3d_HSurfaceTool.Value(surf2, sol[3], sol[4]);
+                        Pnt2 = HSurfaceTool.Value(surf2, sol[3], sol[4]);
                         const double TolProd = 1.0e-5;
                         double[] SavedParams = new double[2];
                         bool[] SameDirs = { false, false };
@@ -2026,8 +2030,8 @@ public class BRepBlend_Walking
                                     continue;
                                 }
                                 Dir0 /= Length;
-                                gce_MakePln PlaneBuilder = new(Pnt0, Pnt1, Pnt2);
-                                if (!PlaneBuilder.IsDone())
+                                MakePln PlaneBuilder = new(Pnt0, Pnt1, Pnt2);
+                                if (!PlaneBuilder.IsDone)
                                 {
                                     continue;
                                 }
@@ -2092,7 +2096,7 @@ public class BRepBlend_Walking
                         sol[2] = p2d.Y();
                         sol[3] = solrst1[3];
                         sol[4] = solrst1[4];
-                        Point3D thePntOnRst = Adaptor3d_HSurfaceTool.Value(surf1, sol[1], sol[2]);
+                        Point3D thePntOnRst = HSurfaceTool.Value(surf1, sol[1], sol[2]);
                         double NewU = 0.0, NewV = 0.0, NewParam = 0.0;
                         Point3D NewPnt = new();
                         bool Corrected = CorrectExtremityOnOneRst(1, sol[3], sol[4], param, thePntOnRst, ref NewU,
@@ -2122,7 +2126,7 @@ public class BRepBlend_Walking
                         sol[2] = solrst2[4];
                         sol[3] = p2d.X();
                         sol[4] = p2d.Y();
-                        Point3D thePntOnRst = Adaptor3d_HSurfaceTool.Value(surf2, sol[3], sol[4]);
+                        Point3D thePntOnRst = HSurfaceTool.Value(surf2, sol[3], sol[4]);
                         double NewU = 0.0, NewV = 0.0, NewParam = 0.0;
                         Point3D NewPnt = new();
                         bool Corrected = CorrectExtremityOnOneRst(2, sol[1], sol[2], param, thePntOnRst, ref NewU,
@@ -2404,9 +2408,9 @@ public class BRepBlend_Walking
             return false;
         }
 
-        Adaptor3d_TopolTool DomainOfRst = (IndexOfRst == 1) ? recdomain1 : recdomain2;
-        Adaptor3d_Surface SurfOfRst = (IndexOfRst == 1) ? surf1 : surf2;
-        Adaptor3d_Surface AnotherSurf = (IndexOfRst == 1) ? surf2 : surf1;
+        TopolTool DomainOfRst = (IndexOfRst == 1) ? recdomain1 : recdomain2;
+        SurfaceAdaptorBase SurfOfRst = (IndexOfRst == 1) ? surf1 : surf2;
+        SurfaceAdaptorBase AnotherSurf = (IndexOfRst == 1) ? surf2 : surf1;
 
         // Correct point on surface 2
         // First we find right <param>
@@ -2419,15 +2423,15 @@ public class BRepBlend_Walking
         for (int k = 0; k < 2; k++)
         {
             Point2D P2dOnEnd = BRepBlend_HCurve2dTool.Value(DomainOfRst.Value(), Ends[k]);
-            Point3D PntOnEnd = Adaptor3d_HSurfaceTool.Value(SurfOfRst, P2dOnEnd.X(), P2dOnEnd.Y());
-            Extrema_ExtPC projoncurv = new(PntOnEnd, theElSpine);
-            if (!projoncurv.IsDone())
+            Point3D PntOnEnd = HSurfaceTool.Value(SurfOfRst, P2dOnEnd.X(), P2dOnEnd.Y());
+            CurvePointExtrema projoncurv = new(PntOnEnd, theElSpine);
+            if (!projoncurv.IsDone)
             {
                 continue;
             }
             double MinSqDist = global::Kerf.Engine.Foundation.Precision.Infinite();
             int imin = 0;
-            for (int ind = 1; ind <= projoncurv.NbExt(); ind++)
+            for (int ind = 1; ind <= projoncurv.ExtCount; ind++)
             {
                 double aSqDist = projoncurv.SquareDistance(ind);
                 if (aSqDist < MinSqDist)
@@ -2444,7 +2448,7 @@ public class BRepBlend_Walking
             }
         }
         NewParam = ParamOnGuide;
-        if (hguide.IsPeriodic())
+        if (hguide.IsPeriodic)
         {
             double Period = hguide.Period();
             double sign = (NewParam < theParam) ? 1 : -1;
@@ -2472,9 +2476,9 @@ public class BRepBlend_Walking
         Direction3D Dir0 = theAx1.Direction();
         // Check new point: is it real solution?
         Point3D OldPonGuide = hguide.Value(theParam);
-        Point3D PntOnSurf2 = Adaptor3d_HSurfaceTool.Value(AnotherSurf, theU, theV); // old point
-        gce_MakePln PlaneBuilder = new(thePntOnRst, OldPonGuide, PntOnSurf2);
-        if (!PlaneBuilder.IsDone())
+        Point3D PntOnSurf2 = HSurfaceTool.Value(AnotherSurf, theU, theV); // old point
+        MakePln PlaneBuilder = new(thePntOnRst, OldPonGuide, PntOnSurf2);
+        if (!PlaneBuilder.IsDone)
         {
             return false;
         }
@@ -2496,8 +2500,8 @@ public class BRepBlend_Walking
         Point3D PntOnPlane = PntOnSurf2.Translated(-aTranslation);
 
         // Check new point again: does point on restriction belong to the plane?
-        PlaneBuilder = new gce_MakePln(thePntOnRst, Pnt0, PntOnPlane);
-        if (!PlaneBuilder.IsDone())
+        PlaneBuilder = new MakePln(thePntOnRst, Pnt0, PntOnPlane);
+        if (!PlaneBuilder.IsDone)
         {
             return false;
         }
@@ -2515,13 +2519,13 @@ public class BRepBlend_Walking
         ////////////////////////////////////////////////////////////////////////
 
         // Project the point <PntOnPlane> on the surface 2
-        Extrema_ExtPS projonsurf = new(PntOnPlane, AnotherSurf, global::Kerf.Engine.Foundation.Precision.PConfusion(), global::Kerf.Engine.Foundation.Precision.PConfusion(),
-                                       Extrema_ExtFlag_MIN);
-        if (projonsurf.IsDone())
+        ExtPS projonsurf = new(PntOnPlane, AnotherSurf, global::Kerf.Engine.Foundation.Precision.PConfusion(), global::Kerf.Engine.Foundation.Precision.PConfusion(),
+                                       ExtFlag_MIN);
+        if (projonsurf.IsDone)
         {
             double MinSqDist = global::Kerf.Engine.Foundation.Precision.Infinite();
             int imin = 0;
-            for (int ind = 1; ind <= projonsurf.NbExt(); ind++)
+            for (int ind = 1; ind <= projonsurf.ExtCount; ind++)
             {
                 double aSqDist = projonsurf.SquareDistance(ind);
                 if (aSqDist < MinSqDist)
@@ -2532,11 +2536,11 @@ public class BRepBlend_Walking
             }
             if (imin != 0)
             {
-                Extrema_POnSurf NewPOnSurf2 = projonsurf.Point(imin);
+                POnSurf NewPOnSurf2 = projonsurf.Point(imin);
                 NewPoint = NewPOnSurf2.Value();
                 NewPOnSurf2.Parameter(out NewU, out NewV);
-                double uperiod = (AnotherSurf.IsUPeriodic()) ? AnotherSurf.UPeriod() : 0.0;
-                double vperiod = (AnotherSurf.IsVPeriodic()) ? AnotherSurf.VPeriod() : 0.0;
+                double uperiod = (AnotherSurf.IsUPeriodic) ? AnotherSurf.UPeriod() : 0.0;
+                double vperiod = (AnotherSurf.IsVPeriodic) ? AnotherSurf.VPeriod() : 0.0;
                 RecadreIfPeriodic(ref NewU, ref NewV, theU, theV, uperiod, vperiod);
                 return true;
             }

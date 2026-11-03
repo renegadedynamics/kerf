@@ -3,10 +3,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -20,25 +24,25 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The face of <paramref name="map"/> other than <paramref name="F1"/>.</summary>
     /// <exception cref="ConstructionErrorException">None is found and <paramref name="F"/> is null.</exception>
-    internal static void ChFi3d_cherche_face1(NCollection_List<TopoDS_Shape> map, in TopoDS_Face F1,
-                                              ref TopoDS_Face F)
+    internal static void ChFi3d_cherche_face1(NCollection_List<Shape> map, in Face F1,
+                                              ref Face F)
     {
-        TopoDS_Face Fcur;
+        Face Fcur;
         bool trouve = false;
-        foreach (TopoDS_Shape It in map)
+        foreach (Shape It in map)
         {
             if (trouve)
             {
                 break;
             }
-            Fcur = TopoDS.Face(It);
+            Fcur = ShapeCasts.Face(It);
             if (!Fcur.IsSame(F1))
             {
                 F = Fcur;
                 trouve = true;
             }
         }
-        if (F.IsNull())
+        if (F.IsNull)
         {
             throw new ConstructionErrorException("Failed to find face");
         }
@@ -53,26 +57,26 @@ internal static partial class ChFi3d_Builder_0
     /// <summary>The edge <paramref name="E"/> of <paramref name="F1"/>, other than <paramref name="E1"/>, on
     /// <paramref name="V"/>; <paramref name="Vtx"/> its other vertex.</summary>
     /// <exception cref="ConstructionErrorException">None is found and <paramref name="E"/> is null.</exception>
-    internal static void ChFi3d_cherche_element(in TopoDS_Vertex V, in TopoDS_Edge E1, in TopoDS_Face F1,
-                                                ref TopoDS_Edge E, ref TopoDS_Vertex Vtx)
+    internal static void ChFi3d_cherche_element(in Vertex V, in Edge E1, in Face F1,
+                                                ref Edge E, ref Vertex Vtx)
     {
         int ie;
-        TopoDS_Vertex V1, V2;
+        Vertex V1, V2;
         bool trouve = false;
-        TopoDS_Edge Ecur;
-        NCollection_IndexedMap<TopoDS_Shape> MapE = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(F1, TopAbs_EDGE, MapE);
+        Edge Ecur;
+        NCollection_IndexedMap<Shape> MapE = new(ShapeHasher.Instance);
+        Exploration.MapShapes(F1, ShapeType.Edge, MapE);
         for (ie = 1; ie <= MapE.Extent() && !trouve; ie++)
         {
-            Ecur = TopoDS.Edge(MapE.FindKey(ie));
+            Ecur = ShapeCasts.Edge(MapE.FindKey(ie));
             if (!Ecur.IsSame(E1))
             {
-                NCollection_IndexedMap<TopoDS_Shape> MapV = new(TopTools_ShapeMapHasher.Instance);
-                TopExp.MapShapes(Ecur, TopAbs_VERTEX, MapV);
+                NCollection_IndexedMap<Shape> MapV = new(ShapeHasher.Instance);
+                Exploration.MapShapes(Ecur, ShapeType.Vertex, MapV);
                 if (MapV.Extent() == 2)
                 {
-                    V1 = TopoDS.Vertex(MapV.FindKey(1));
-                    V2 = TopoDS.Vertex(MapV.FindKey(2));
+                    V1 = ShapeCasts.Vertex(MapV.FindKey(1));
+                    V2 = ShapeCasts.Vertex(MapV.FindKey(2));
                     if (V1.IsSame(V))
                     {
                         Vtx = V2;
@@ -88,7 +92,7 @@ internal static partial class ChFi3d_Builder_0
                 }
             }
         }
-        if (E.IsNull())
+        if (E.IsNull)
         {
             throw new ConstructionErrorException("Failed to find element");
         }
@@ -103,19 +107,19 @@ internal static partial class ChFi3d_Builder_0
     /// <summary>The edge <paramref name="E"/> of <paramref name="F1"/>, none of <paramref name="E1"/>, on
     /// <paramref name="V"/>; <paramref name="Vtx"/> its other vertex.</summary>
     /// <exception cref="ConstructionErrorException">None is found and <paramref name="E"/> is null.</exception>
-    internal static void ChFi3d_cherche_edge(in TopoDS_Vertex V, NCollection_Array1<TopoDS_Shape> E1,
-                                             in TopoDS_Face F1, ref TopoDS_Edge E, ref TopoDS_Vertex Vtx)
+    internal static void ChFi3d_cherche_edge(in Vertex V, NCollection_Array1<Shape> E1,
+                                             in Face F1, ref Edge E, ref Vertex Vtx)
     {
         int ie, i;
-        TopoDS_Vertex V1, V2;
+        Vertex V1, V2;
         bool trouve = false;
-        TopoDS_Edge Ecur;
+        Edge Ecur;
         bool same;
-        NCollection_IndexedMap<TopoDS_Shape> MapE = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(F1, TopAbs_EDGE, MapE);
+        NCollection_IndexedMap<Shape> MapE = new(ShapeHasher.Instance);
+        Exploration.MapShapes(F1, ShapeType.Edge, MapE);
         for (ie = 1; ie <= MapE.Extent() && !trouve; ie++)
         {
-            Ecur = TopoDS.Edge(MapE.FindKey(ie));
+            Ecur = ShapeCasts.Edge(MapE.FindKey(ie));
             same = false;
             for (i = E1.Lower(); i <= E1.Upper(); i++)
             {
@@ -126,12 +130,12 @@ internal static partial class ChFi3d_Builder_0
             }
             if (!same)
             {
-                NCollection_IndexedMap<TopoDS_Shape> MapV = new(TopTools_ShapeMapHasher.Instance);
-                TopExp.MapShapes(Ecur, TopAbs_VERTEX, MapV);
+                NCollection_IndexedMap<Shape> MapV = new(ShapeHasher.Instance);
+                Exploration.MapShapes(Ecur, ShapeType.Vertex, MapV);
                 if (MapV.Extent() == 2)
                 {
-                    V1 = TopoDS.Vertex(MapV.FindKey(1));
-                    V2 = TopoDS.Vertex(MapV.FindKey(2));
+                    V1 = ShapeCasts.Vertex(MapV.FindKey(1));
+                    V2 = ShapeCasts.Vertex(MapV.FindKey(2));
                     if (V1.IsSame(V))
                     {
                         Vtx = V2;
@@ -147,7 +151,7 @@ internal static partial class ChFi3d_Builder_0
                 }
             }
         }
-        if (E.IsNull())
+        if (E.IsNull)
         {
             throw new ConstructionErrorException("Failed to find edge");
         }
@@ -160,15 +164,15 @@ internal static partial class ChFi3d_Builder_0
     //=======================================================================
 
     /// <summary>The number of distinct faces of <paramref name="mapVF"/>.</summary>
-    internal static int ChFi3d_nbface(NCollection_List<TopoDS_Shape> mapVF)
+    internal static int ChFi3d_nbface(NCollection_List<Shape> mapVF)
     {
         int nface = 0;
         int fj = 0;
-        foreach (TopoDS_Shape cur in mapVF)
+        foreach (Shape cur in mapVF)
         {
             fj++;
             int kf = 1;
-            foreach (TopoDS_Shape JtF in mapVF)
+            foreach (Shape JtF in mapVF)
             {
                 if (!(kf < fj))
                 {
@@ -195,21 +199,21 @@ internal static partial class ChFi3d_Builder_0
     //=======================================================================
 
     /// <summary>The two faces of an edge (the same one twice for a seam).</summary>
-    internal static void ChFi3d_edge_common_faces(NCollection_List<TopoDS_Shape> mapEF, out TopoDS_Face F1,
-                                                  out TopoDS_Face F2)
+    internal static void ChFi3d_edge_common_faces(NCollection_List<Shape> mapEF, out Face F1,
+                                                  out Face F2)
     {
-        TopoDS_Face F;
+        Face F;
         bool trouve;
-        F1 = TopoDS.Face(mapEF.First());
-        F2 = new TopoDS_Face();
+        F1 = ShapeCasts.Face(mapEF.First());
+        F2 = new Face();
         trouve = false;
-        foreach (TopoDS_Shape It in mapEF)
+        foreach (Shape It in mapEF)
         {
             if (trouve)
             {
                 break;
             }
-            F = TopoDS.Face(It);
+            F = ShapeCasts.Face(It);
             if (!F.IsSame(F1))
             {
                 F2 = F;
@@ -229,21 +233,21 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The angle between the edges <paramref name="E1"/> and <paramref name="E2"/> leaving their common
     /// vertex <paramref name="Vtx"/>.</summary>
-    internal static double ChFi3d_AngleEdge(in TopoDS_Vertex Vtx, in TopoDS_Edge E1, in TopoDS_Edge E2)
+    internal static double ChFi3d_AngleEdge(in Vertex Vtx, in Edge E1, in Edge E2)
     {
         double angle;
-        BRepAdaptor_Curve BCurv1 = new(E1);
-        BRepAdaptor_Curve BCurv2 = new(E2);
+        EdgeCurveAdaptor BCurv1 = new(E1);
+        EdgeCurveAdaptor BCurv2 = new(E2);
         double parE1, parE2;
-        parE1 = BRep_Tool.Parameter(Vtx, E1);
-        parE2 = BRep_Tool.Parameter(Vtx, E2);
+        parE1 = Tool.Parameter(Vtx, E1);
+        parE2 = Tool.Parameter(Vtx, E2);
         BCurv1.D1(parE1, out Point3D P1, out Vector3D dir1);
         BCurv2.D1(parE2, out Point3D P2, out Vector3D dir2);
-        if (!Vtx.IsSame(TopExp.FirstVertex(E1)))
+        if (!Vtx.IsSame(Exploration.FirstVertex(E1)))
         {
             dir1.Reverse();
         }
-        if (!Vtx.IsSame(TopExp.FirstVertex(E2)))
+        if (!Vtx.IsSame(Exploration.FirstVertex(E2)))
         {
             dir2.Reverse();
         }
@@ -259,24 +263,24 @@ internal static partial class ChFi3d_Builder_0
     //===================================================================
 
     /// <summary>Whether <paramref name="V1"/> has two edges on free borders, and these edges.</summary>
-    internal static void ChFi3d_ChercheBordsLibres(ChFiDS_Map myVEMap, in TopoDS_Vertex V1, out bool bordlibre,
-                                                   ref TopoDS_Edge edgelibre1, ref TopoDS_Edge edgelibre2)
+    internal static void ChFi3d_ChercheBordsLibres(ChFiDS_Map myVEMap, in Vertex V1, out bool bordlibre,
+                                                   ref Edge edgelibre1, ref Edge edgelibre2)
     {
         bordlibre = false;
         int nboccur;
-        foreach (TopoDS_Shape ItE in myVEMap[V1])
+        foreach (Shape ItE in myVEMap[V1])
         {
             if (bordlibre)
             {
                 break;
             }
             nboccur = 0;
-            TopoDS_Edge cur = TopoDS.Edge(ItE);
-            if (!BRep_Tool.Degenerated(cur))
+            Edge cur = ShapeCasts.Edge(ItE);
+            if (!Tool.Degenerated(cur))
             {
-                foreach (TopoDS_Shape ItE1 in myVEMap[V1])
+                foreach (Shape ItE1 in myVEMap[V1])
                 {
-                    TopoDS_Edge cur1 = TopoDS.Edge(ItE1);
+                    Edge cur1 = ShapeCasts.Edge(ItE1);
                     if (cur1.IsSame(cur))
                     {
                         nboccur++;
@@ -292,19 +296,19 @@ internal static partial class ChFi3d_Builder_0
         if (bordlibre)
         {
             bordlibre = false;
-            foreach (TopoDS_Shape ItE in myVEMap[V1])
+            foreach (Shape ItE in myVEMap[V1])
             {
                 if (bordlibre)
                 {
                     break;
                 }
                 nboccur = 0;
-                TopoDS_Edge cur = TopoDS.Edge(ItE);
-                if (!BRep_Tool.Degenerated(cur) && !cur.IsSame(edgelibre1))
+                Edge cur = ShapeCasts.Edge(ItE);
+                if (!Tool.Degenerated(cur) && !cur.IsSame(edgelibre1))
                 {
-                    foreach (TopoDS_Shape ItE1 in myVEMap[V1])
+                    foreach (Shape ItE1 in myVEMap[V1])
                     {
-                        TopoDS_Edge cur1 = TopoDS.Edge(ItE1);
+                        Edge cur1 = ShapeCasts.Edge(ItE1);
                         if (cur1.IsSame(cur))
                         {
                             nboccur++;
@@ -328,13 +332,13 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The number of non-degenerated edges of <paramref name="Vtx"/> in the map (the edges of junctions
     /// twice).</summary>
-    internal static int ChFi3d_NbNotDegeneratedEdges(in TopoDS_Vertex Vtx, ChFiDS_Map VEMap)
+    internal static int ChFi3d_NbNotDegeneratedEdges(in Vertex Vtx, ChFiDS_Map VEMap)
     {
         int nba = VEMap[Vtx].Extent();
-        foreach (TopoDS_Shape ItE in VEMap[Vtx])
+        foreach (Shape ItE in VEMap[Vtx])
         {
-            TopoDS_Edge cur = TopoDS.Edge(ItE);
-            if (BRep_Tool.Degenerated(cur))
+            Edge cur = ShapeCasts.Edge(ItE);
+            if (Tool.Degenerated(cur))
             {
                 nba--;
             }
@@ -350,20 +354,20 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The number of sharp edges of <paramref name="Vtx"/> in the map (neither degenerated nor between
     /// G2-tangent faces; the edges of junctions twice).</summary>
-    internal static int ChFi3d_NbSharpEdges(in TopoDS_Vertex Vtx, ChFiDS_Map VEMap, ChFiDS_Map EFMap)
+    internal static int ChFi3d_NbSharpEdges(in Vertex Vtx, ChFiDS_Map VEMap, ChFiDS_Map EFMap)
     {
         int nba = VEMap[Vtx].Extent();
-        foreach (TopoDS_Shape ItE in VEMap[Vtx])
+        foreach (Shape ItE in VEMap[Vtx])
         {
-            TopoDS_Edge cur = TopoDS.Edge(ItE);
-            if (BRep_Tool.Degenerated(cur))
+            Edge cur = ShapeCasts.Edge(ItE);
+            if (Tool.Degenerated(cur))
             {
                 nba--;
             }
             else
             {
-                ChFi3d_conexfaces(cur, out TopoDS_Face F1, out TopoDS_Face F2, EFMap);
-                if (!F2.IsNull() && ChFi3d.IsTangentFaces(cur, F1, F2, G2))
+                ChFi3d_conexfaces(cur, out Face F1, out Face F2, EFMap);
+                if (!F2.IsNull && ChFi3d.IsTangentFaces(cur, F1, F2, G2))
                 {
                     nba--;
                 }
@@ -379,10 +383,10 @@ internal static partial class ChFi3d_Builder_0
     //=======================================================================
 
     /// <summary>The number of edges at the vertex, degenerated edges excluded.</summary>
-    internal static int ChFi3d_NumberOfEdges(in TopoDS_Vertex Vtx, ChFiDS_Map VEMap)
+    internal static int ChFi3d_NumberOfEdges(in Vertex Vtx, ChFiDS_Map VEMap)
     {
         int nba;
-        TopoDS_Edge edgelibre1 = new(), edgelibre2 = new();
+        Edge edgelibre1 = new(), edgelibre2 = new();
         nba = ChFi3d_NbNotDegeneratedEdges(Vtx, VEMap);
         ChFi3d_ChercheBordsLibres(VEMap, Vtx, out bool bordlibre, ref edgelibre1, ref edgelibre2);
         if (bordlibre)
@@ -403,10 +407,10 @@ internal static partial class ChFi3d_Builder_0
     //=======================================================================
 
     /// <summary>The number of sharp edges at the vertex.</summary>
-    internal static int ChFi3d_NumberOfSharpEdges(in TopoDS_Vertex Vtx, ChFiDS_Map VEMap, ChFiDS_Map EFmap)
+    internal static int ChFi3d_NumberOfSharpEdges(in Vertex Vtx, ChFiDS_Map VEMap, ChFiDS_Map EFmap)
     {
         int nba;
-        TopoDS_Edge edgelibre1 = new(), edgelibre2 = new();
+        Edge edgelibre1 = new(), edgelibre2 = new();
         nba = ChFi3d_NbSharpEdges(Vtx, VEMap, EFmap);
         ChFi3d_ChercheBordsLibres(VEMap, Vtx, out bool bordlibre, ref edgelibre1, ref edgelibre2);
         if (bordlibre)
@@ -426,25 +430,25 @@ internal static partial class ChFi3d_Builder_0
     //=====================================================
 
     /// <summary>The vertex common to <paramref name="E1"/> and <paramref name="E2"/>, if any.</summary>
-    internal static void ChFi3d_cherche_vertex(in TopoDS_Edge E1, in TopoDS_Edge E2, ref TopoDS_Vertex vertex,
+    internal static void ChFi3d_cherche_vertex(in Edge E1, in Edge E2, ref Vertex vertex,
                                                out bool trouve)
     {
         int i, j;
-        TopoDS_Vertex Vcur1, Vcur2;
+        Vertex Vcur1, Vcur2;
         trouve = false;
-        NCollection_IndexedMap<TopoDS_Shape> MapV1 = new(TopTools_ShapeMapHasher.Instance),
-                                             MapV2 = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(E1, TopAbs_VERTEX, MapV1);
-        TopExp.MapShapes(E2, TopAbs_VERTEX, MapV2);
+        NCollection_IndexedMap<Shape> MapV1 = new(ShapeHasher.Instance),
+                                             MapV2 = new(ShapeHasher.Instance);
+        Exploration.MapShapes(E1, ShapeType.Vertex, MapV1);
+        Exploration.MapShapes(E2, ShapeType.Vertex, MapV2);
         for (i = 1; i <= MapV1.Extent() && !trouve; i++)
         {
-            TopoDS_Shape alocalshape = MapV1.FindKey(i);
-            Vcur1 = TopoDS.Vertex(alocalshape);
+            Shape alocalshape = MapV1.FindKey(i);
+            Vcur1 = ShapeCasts.Vertex(alocalshape);
             //    Vcur1=TopoDS::Vertex(TopoDS_Shape (MapV1(i)));
             for (j = 1; j <= MapV2.Extent() && !trouve; j++)
             {
-                TopoDS_Shape aLocalShape = MapV2.FindKey(j);
-                Vcur2 = TopoDS.Vertex(aLocalShape);
+                Shape aLocalShape = MapV2.FindKey(j);
+                Vcur2 = ShapeCasts.Vertex(aLocalShape);
                 //      Vcur2=TopoDS::Vertex(TopoDS_Shape (MapV2(j)));
                 if (Vcur2.IsSame(Vcur1))
                 {
@@ -461,19 +465,19 @@ internal static partial class ChFi3d_Builder_0
     //=======================================================================
 
     /// <summary>Whether <paramref name="F"/> has a seam edge, and the edge.</summary>
-    internal static void ChFi3d_Couture(in TopoDS_Face F, out bool couture, ref TopoDS_Edge edgecouture)
+    internal static void ChFi3d_Couture(in Face F, out bool couture, ref Edge edgecouture)
     {
-        TopoDS_Edge Ecur;
+        Edge Ecur;
         couture = false;
-        NCollection_IndexedMap<TopoDS_Shape> MapE1 = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(F, TopAbs_EDGE, MapE1);
-        Geom_Surface? Surf = BRep_Tool.Surface(F, out Placement Loc);
+        NCollection_IndexedMap<Shape> MapE1 = new(ShapeHasher.Instance);
+        Exploration.MapShapes(F, ShapeType.Edge, MapE1);
+        Surface? Surf = Tool.Surface(F, out Placement Loc);
         for (int i = 1; i <= MapE1.Extent() && !couture; i++)
         {
-            TopoDS_Shape aLocalShape = MapE1.FindKey(i);
-            Ecur = TopoDS.Edge(aLocalShape);
+            Shape aLocalShape = MapE1.FindKey(i);
+            Ecur = ShapeCasts.Edge(aLocalShape);
             //      Ecur=TopoDS::Edge(TopoDS_Shape (MapE1(i)));
-            if (BRep_Tool.IsClosed(Ecur, Surf, Loc))
+            if (Tool.IsClosed(Ecur, Surf, Loc))
             {
                 couture = true;
                 edgecouture = Ecur;
@@ -484,22 +488,22 @@ internal static partial class ChFi3d_Builder_0
     //=================================================================================================
 
     /// <summary>Whether <paramref name="F"/> has a seam edge on <paramref name="V"/>, and the edge.</summary>
-    internal static void ChFi3d_CoutureOnVertex(in TopoDS_Face F, in TopoDS_Vertex V, out bool couture,
-                                                ref TopoDS_Edge edgecouture)
+    internal static void ChFi3d_CoutureOnVertex(in Face F, in Vertex V, out bool couture,
+                                                ref Edge edgecouture)
     {
-        TopoDS_Edge Ecur;
+        Edge Ecur;
         couture = false;
-        NCollection_IndexedMap<TopoDS_Shape> MapE1 = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(F, TopAbs_EDGE, MapE1);
-        Geom_Surface? Surf = BRep_Tool.Surface(F, out Placement Loc);
+        NCollection_IndexedMap<Shape> MapE1 = new(ShapeHasher.Instance);
+        Exploration.MapShapes(F, ShapeType.Edge, MapE1);
+        Surface? Surf = Tool.Surface(F, out Placement Loc);
         for (int i = 1; i <= MapE1.Extent(); i++)
         {
-            TopoDS_Shape aLocalShape = MapE1.FindKey(i);
-            Ecur = TopoDS.Edge(aLocalShape);
+            Shape aLocalShape = MapE1.FindKey(i);
+            Ecur = ShapeCasts.Edge(aLocalShape);
             //      Ecur=TopoDS::Edge(TopoDS_Shape (MapE1(i)));
-            if (BRep_Tool.IsClosed(Ecur, Surf, Loc))
+            if (Tool.IsClosed(Ecur, Surf, Loc))
             {
-                TopExp.Vertices(Ecur, out TopoDS_Vertex Vf, out TopoDS_Vertex Vl);
+                Exploration.Vertices(Ecur, out Vertex Vf, out Vertex Vl);
                 if (Vf.IsSame(V) || Vl.IsSame(V))
                 {
                     couture = true;
@@ -514,24 +518,24 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>Whether the closed edge <paramref name="E"/> of <paramref name="F"/> has a neighbouring seam, really
     /// closed, through one of its vertices.</summary>
-    internal static bool ChFi3d_IsPseudoSeam(in TopoDS_Edge E, in TopoDS_Face F)
+    internal static bool ChFi3d_IsPseudoSeam(in Edge E, in Face F)
     {
-        if (!BRep_Tool.IsClosed(E, F))
+        if (!Tool.IsClosed(E, F))
         {
             return false;
         }
 
         bool NeighborSeamFound = false;
-        TopExp.Vertices(E, out TopoDS_Vertex Vf, out TopoDS_Vertex Vl);
-        TopExp_Explorer Explo = new(F, TopAbs_EDGE);
+        Exploration.Vertices(E, out Vertex Vf, out Vertex Vl);
+        Explorer Explo = new(F, ShapeType.Edge);
         for (; Explo.More(); Explo.Next())
         {
-            TopoDS_Edge Ecur = TopoDS.Edge(Explo.Current());
+            Edge Ecur = ShapeCasts.Edge(Explo.Current());
             if (!Ecur.IsSame(E))
             {
-                TopExp.Vertices(Ecur, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+                Exploration.Vertices(Ecur, out Vertex V1, out Vertex V2);
                 if ((V1.IsSame(Vf) || V1.IsSame(Vl) || V2.IsSame(Vf) || V2.IsSame(Vl))
-                    && BRepTools.IsReallyClosed(Ecur, F))
+                    && BrepTools.IsReallyClosed(Ecur, F))
                 {
                     NeighborSeamFound = true;
                     break;

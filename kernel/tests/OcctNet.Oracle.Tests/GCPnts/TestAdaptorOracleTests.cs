@@ -71,7 +71,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
         return aWeights;
     }
 
-    internal static (N.Geom_Curve Native, Geom_Curve Port, string Kind) RandomCurve(Oracle theO)
+    internal static (N.Geom_Curve Native, Curve3D Port, string Kind) RandomCurve(Oracle theO)
     {
         switch (theO.Int(0, 6))
         {
@@ -80,7 +80,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                 (N.gp_Ax1 aNA, Axis3D aA) = GeomOracleInputs.Ax1s(theO);
                 using (aNA)
                 {
-                    return (new N.Geom_Line(aNA), new Geom_Line(aA), "line");
+                    return (new N.Geom_Line(aNA), new LineCurve3D(aA), "line");
                 }
             }
             case 1:
@@ -89,7 +89,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                 double aR = theO.Real(0.1, 50);
                 using (aNA)
                 {
-                    return (new N.Geom_Circle(aNA, aR), new Geom_Circle(aA, aR), "circle");
+                    return (new N.Geom_Circle(aNA, aR), new CircleCurve3D(aA, aR), "circle");
                 }
             }
             case 2:
@@ -98,7 +98,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                 double aMaj = theO.Real(0.1, 50), aMin = theO.Real(0.05, aMaj);
                 using (aNA)
                 {
-                    return (new N.Geom_Ellipse(aNA, aMaj, aMin), new Geom_Ellipse(aA, aMaj, aMin), "ellipse");
+                    return (new N.Geom_Ellipse(aNA, aMaj, aMin), new EllipseCurve3D(aA, aMaj, aMin), "ellipse");
                 }
             }
             case 3:
@@ -108,8 +108,8 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                 using (aNA)
                 {
                     return theO.Bool()
-                        ? (new N.Geom_Hyperbola(aNA, aMaj, aMin), new Geom_Hyperbola(aA, aMaj, aMin), "hyperbola")
-                        : (new N.Geom_Parabola(aNA, aMaj), new Geom_Parabola(aA, aMaj), "parabola");
+                        ? (new N.Geom_Hyperbola(aNA, aMaj, aMin), new HyperbolaCurve3D(aA, aMaj, aMin), "hyperbola")
+                        : (new N.Geom_Parabola(aNA, aMaj), new ParabolaCurve3D(aA, aMaj), "parabola");
                 }
             }
             case 4:
@@ -124,10 +124,10 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                 using var aNPoles = Oracle.ToNative(aPoles);
                 if (aWeights is null)
                 {
-                    return (new N.Geom_BezierCurve(aNPoles), new Geom_BezierCurve(aPoles), "bezier");
+                    return (new N.Geom_BezierCurve(aNPoles), new BezierCurve3D(aPoles), "bezier");
                 }
                 using var aNWeights = Oracle.ToNative(aWeights);
-                return (new N.Geom_BezierCurve(aNPoles, aNWeights), new Geom_BezierCurve(aPoles, aWeights), "rational bezier");
+                return (new N.Geom_BezierCurve(aNPoles, aNWeights), new BezierCurve3D(aPoles, aWeights), "rational bezier");
             }
             default:
             {
@@ -140,9 +140,9 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                     aPoles[i] = theO.Pnt();
                 }
                 NCollection_Array1<double>? aWeights = RandomWeights(theO, aNbPoles);
-                Geom_BSplineCurve aPort = aWeights is null
-                    ? new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg, aPer)
-                    : new Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, aDeg, aPer);
+                BSplineCurve3D aPort = aWeights is null
+                    ? new BSplineCurve3D(aPoles, aKnots, aMults, aDeg, aPer)
+                    : new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, aDeg, aPer);
                 return (Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, aDeg, aPer), aPort,
                         $"bspline deg {aDeg}{(aPer ? " periodic" : "")}{(aWeights is null ? "" : " rational")}");
             }
@@ -163,7 +163,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
         return (new N.gp_Ax2d(aNP, aND), new Axis2D(aP, new Direction2D(aX, aY)));
     }
 
-    internal static (N.Geom2d_Curve Native, Geom2d_Curve Port, string Kind) RandomCurve2d(Oracle theO)
+    internal static (N.Geom2d_Curve Native, Curve2D Port, string Kind) RandomCurve2d(Oracle theO)
     {
         switch (theO.Int(0, 4))
         {
@@ -172,7 +172,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                 (N.gp_Ax2d aNA, Axis2D aA) = Ax2ds(theO);
                 using (aNA)
                 {
-                    return (new N.Geom2d_Line(aNA), new Geom2d_Line(aA), "line2d");
+                    return (new N.Geom2d_Line(aNA), new LineCurve2D(aA), "line2d");
                 }
             }
             case 1:
@@ -182,7 +182,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                 bool aSense = theO.Bool();
                 using (aNA)
                 {
-                    return (new N.Geom2d_Circle(aNA, aR, aSense), new Geom2d_Circle(aA, aR, aSense), "circle2d");
+                    return (new N.Geom2d_Circle(aNA, aR, aSense), new CircleCurve2D(aA, aR, aSense), "circle2d");
                 }
             }
             case 2:
@@ -191,7 +191,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                 double aMaj = theO.Real(0.1, 50), aMin = theO.Real(0.05, aMaj);
                 using (aNA)
                 {
-                    return (new N.Geom2d_Ellipse(aNA, aMaj, aMin), new Geom2d_Ellipse(aA, aMaj, aMin), "ellipse2d");
+                    return (new N.Geom2d_Ellipse(aNA, aMaj, aMin), new EllipseCurve2D(aA, aMaj, aMin), "ellipse2d");
                 }
             }
             default:
@@ -205,9 +205,9 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                     aPoles[i] = theO.Pnt2d();
                 }
                 NCollection_Array1<double>? aWeights = RandomWeights(theO, aNbPoles);
-                Geom2d_BSplineCurve aPort = aWeights is null
-                    ? new Geom2d_BSplineCurve(aPoles, aKnots, aMults, aDeg, aPer)
-                    : new Geom2d_BSplineCurve(aPoles, aWeights, aKnots, aMults, aDeg, aPer);
+                BSplineCurve2D aPort = aWeights is null
+                    ? new BSplineCurve2D(aPoles, aKnots, aMults, aDeg, aPer)
+                    : new BSplineCurve2D(aPoles, aWeights, aKnots, aMults, aDeg, aPer);
                 return (Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, aDeg, aPer), aPort,
                         $"bspline2d deg {aDeg}{(aPer ? " periodic" : "")}{(aWeights is null ? "" : " rational")}");
             }
@@ -376,10 +376,10 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int c = 0; c < Cases; c++)
         {
-            (N.Geom_Curve aNC, Geom_Curve aPC, string aKind) = RandomCurve(anOracle);
+            (N.Geom_Curve aNC, Curve3D aPC, string aKind) = RandomCurve(anOracle);
             using (aNC)
             {
-                (double aFirst, double aLast) = Bounds(anOracle, aPC.FirstParameter(), aPC.LastParameter(), aPC.IsPeriodic());
+                (double aFirst, double aLast) = Bounds(anOracle, aPC.FirstParameter(), aPC.LastParameter(), aPC.IsPeriodic);
                 N.GeomAdaptor_Curve aN;
                 TestGeomAdaptor_Curve aP;
                 N.Geom_TrimmedCurve? aNTrim = null;
@@ -387,7 +387,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                 {
                     // Through a trimmed curve, which the adaptors unwrap.
                     aNTrim = new N.Geom_TrimmedCurve(aNC, aFirst, aLast);
-                    var aPTrim = new Geom_TrimmedCurve(aPC, aFirst, aLast);
+                    var aPTrim = new TrimmedCurve3D(aPC, aFirst, aLast);
                     aN = new N.GeomAdaptor_Curve(aNTrim);
                     aP = new TestGeomAdaptor_Curve(aPTrim);
                 }
@@ -404,13 +404,13 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                     anOracle.Same(aN.FirstParameter(), aP.FirstParameter(), $"{aW} First");
                     anOracle.Same(aN.LastParameter(), aP.LastParameter(), $"{aW} Last");
                     anOracle.Same((int)aN.Continuity(), (int)aP.Continuity(), $"{aW} Continuity");
-                    anOracle.Same(aN.IsPeriodic(), aP.IsPeriodic(), $"{aW} IsPeriodic");
-                    anOracle.Same(aN.IsClosed(), aP.IsClosed(), $"{aW} IsClosed");
-                    if (aP.IsPeriodic())
+                    anOracle.Same(aN.IsPeriodic(), aP.IsPeriodic, $"{aW} IsPeriodic");
+                    anOracle.Same(aN.IsClosed(), aP.IsClosed, $"{aW} IsClosed");
+                    if (aP.IsPeriodic)
                     {
                         anOracle.Same(aN.Period(), aP.Period(), $"{aW} Period");
                     }
-                    anOracle.Same(aN.IsRational(), aP.IsRational(), $"{aW} IsRational");
+                    anOracle.Same(aN.IsRational(), aP.IsRational, $"{aW} IsRational");
                     foreach (double aTol in new[] { global::Kerf.Engine.Foundation.Precision.Confusion(), 1e-3, 0.1 })
                     {
                         anOracle.SameRelative(aN.Resolution(aTol), aP.Resolution(aTol), $"{aW} Resolution({aTol})");
@@ -432,17 +432,17 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int c = 0; c < Cases; c++)
         {
-            (N.Geom2d_Curve aNC, Geom2d_Curve aPC, string aKind) = RandomCurve2d(anOracle);
+            (N.Geom2d_Curve aNC, Curve2D aPC, string aKind) = RandomCurve2d(anOracle);
             using (aNC)
             {
-                (double aFirst, double aLast) = Bounds(anOracle, aPC.FirstParameter(), aPC.LastParameter(), aPC.IsPeriodic());
+                (double aFirst, double aLast) = Bounds(anOracle, aPC.FirstParameter(), aPC.LastParameter(), aPC.IsPeriodic);
                 N.Geom2dAdaptor_Curve aN;
                 TestGeom2dAdaptor_Curve aP;
                 N.Geom2d_TrimmedCurve? aNTrim = null;
                 if (anOracle.Int(0, 3) == 0)
                 {
                     aNTrim = new N.Geom2d_TrimmedCurve(aNC, aFirst, aLast);
-                    var aPTrim = new Geom2d_TrimmedCurve(aPC, aFirst, aLast);
+                    var aPTrim = new TrimmedCurve2D(aPC, aFirst, aLast);
                     aN = new N.Geom2dAdaptor_Curve(aNTrim);
                     aP = new TestGeom2dAdaptor_Curve(aPTrim);
                 }
@@ -459,14 +459,14 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                     anOracle.Same(aN.FirstParameter(), aP.FirstParameter(), $"{aW} First");
                     anOracle.Same(aN.LastParameter(), aP.LastParameter(), $"{aW} Last");
                     anOracle.Same((int)aN.Continuity(), (int)aP.Continuity(), $"{aW} Continuity");
-                    anOracle.Same(aN.IsPeriodic(), aP.IsPeriodic(), $"{aW} IsPeriodic");
-                    anOracle.Same(aN.IsClosed(), aP.IsClosed(), $"{aW} IsClosed");
-                    anOracle.Same(aN.NbSamples(), aP.NbSamples(), $"{aW} NbSamples");
-                    if (aP.IsPeriodic())
+                    anOracle.Same(aN.IsPeriodic(), aP.IsPeriodic, $"{aW} IsPeriodic");
+                    anOracle.Same(aN.IsClosed(), aP.IsClosed, $"{aW} IsClosed");
+                    anOracle.Same(aN.NbSamples(), aP.SampleCount, $"{aW} NbSamples");
+                    if (aP.IsPeriodic)
                     {
                         anOracle.Same(aN.Period(), aP.Period(), $"{aW} Period");
                     }
-                    anOracle.Same(aN.IsRational(), aP.IsRational(), $"{aW} IsRational");
+                    anOracle.Same(aN.IsRational(), aP.IsRational, $"{aW} IsRational");
                     foreach (double aTol in new[] { global::Kerf.Engine.Foundation.Precision.Confusion(), 1e-3, 0.1 })
                     {
                         anOracle.SameRelative(aN.Resolution(aTol), aP.Resolution(aTol), $"{aW} Resolution({aTol})");

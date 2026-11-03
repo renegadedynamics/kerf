@@ -5,10 +5,12 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -37,7 +39,7 @@ public class StlAPI_Writer
     public void SetASCIIMode(bool theASCIIMode) => myASCIIMode = theASCIIMode;
 
     /// <summary>Converts the shape to STL and writes it to the file. False on an error or with no triangulation.</summary>
-    public bool Write(in TopoDS_Shape theShape, string theFileName, ProgressRange theProgress = default)
+    public bool Write(in Shape theShape, string theFileName, ProgressRange theProgress = default)
     {
         FileStream? aStream = RWStl.CreateFile(theFileName);
         if (aStream is null)
@@ -52,15 +54,15 @@ public class StlAPI_Writer
     }
 
     /// <summary>Converts the shape to STL and writes it to the stream. False on an error or with no triangulation.</summary>
-    public bool Write(in TopoDS_Shape theShape, Stream theStream, ProgressRange theProgress = default)
+    public bool Write(in Shape theShape, Stream theStream, ProgressRange theProgress = default)
     {
         int aNbNodes = 0;
         int aNbTriangles = 0;
 
         // calculate total number of the nodes and triangles
-        for (var anExpSF = new TopExp_Explorer(theShape, TopAbs_FACE); anExpSF.More(); anExpSF.Next())
+        for (var anExpSF = new Explorer(theShape, ShapeType.Face); anExpSF.More(); anExpSF.Next())
         {
-            Triangulation? aTriangulation = BRep_Tool.Triangulation(TopoDS.Face(anExpSF.Current()), out _);
+            Triangulation? aTriangulation = Tool.Triangulation(ShapeCasts.Face(anExpSF.Current()), out _);
             if (aTriangulation is not null)
             {
                 aNbNodes += aTriangulation.NodeCount;
@@ -81,10 +83,10 @@ public class StlAPI_Writer
         // fill temporary triangulation
         int aNodeOffset = 0;
         int aTriangleOffet = 0;
-        for (var anExpSF = new TopExp_Explorer(theShape, TopAbs_FACE); anExpSF.More(); anExpSF.Next())
+        for (var anExpSF = new Explorer(theShape, ShapeType.Face); anExpSF.More(); anExpSF.Next())
         {
-            TopoDS_Shape aFace = anExpSF.Current();
-            Triangulation? aTriangulation = BRep_Tool.Triangulation(TopoDS.Face(aFace), out Placement aLoc);
+            Shape aFace = anExpSF.Current();
+            Triangulation? aTriangulation = Tool.Triangulation(ShapeCasts.Face(aFace), out Placement aLoc);
             if (aTriangulation is null)
             {
                 ++aNbFacesNoTri;
@@ -101,13 +103,13 @@ public class StlAPI_Writer
             }
 
             // copy triangles
-            TopAbs_Orientation anOrientation = anExpSF.Current().Orientation();
+            Orientation anOrientation = anExpSF.Current().Orientation();
             for (int aTriIter = 1; aTriIter <= aTriangulation.TriangleCount; ++aTriIter)
             {
                 Triangle1 aTri = aTriangulation.Triangle(aTriIter);
 
                 aTri.Get(out int anId0, out int anId1, out int anId2);
-                if (anOrientation == TopAbs_REVERSED)
+                if (anOrientation == Reversed)
                 {
                     // Swap 1, 2.
                     (anId1, anId2) = (anId2, anId1);

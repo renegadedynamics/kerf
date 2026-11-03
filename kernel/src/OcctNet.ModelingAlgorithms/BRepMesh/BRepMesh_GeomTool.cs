@@ -4,18 +4,23 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Engine.Geometry.DerivativeStatus;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Engine.Geometry.IsoType;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
 /// <summary>
 /// The mesher's geometric tools: the discretization points of a curve or of an iso curve of a surface for given
-/// deflections (through <see cref="GCPnts_TangentialDeflection"/>), and the statics the mesher shares (normals,
+/// deflections (through <see cref="TangentialDeflection"/>), and the statics the mesher shares (normals,
 /// segment intersections, the deflection of a segment, the cell counts of the circles' grid).
 /// </summary>
 /// <remarks>A working object, as OCCT's: <see cref="AddPoint"/> changes the discretization in place.</remarks>
@@ -32,15 +37,15 @@ public sealed class BRepMesh_GeomTool
         Same,
     }
 
-    private readonly TopoDS_Edge? myEdge;
-    private readonly GCPnts_TangentialDeflection myDiscretTool = new();
+    private readonly Edge? myEdge;
+    private readonly TangentialDeflection myDiscretTool = new();
     private readonly IsoType myIsoType;
 
     /// <summary>
     /// Discretizes the curve between the parameters with the linear and angular deflections, in at least
     /// <paramref name="theMinPointsNb"/> points, segments not shorter than <paramref name="theMinSize"/>.
     /// </summary>
-    public BRepMesh_GeomTool(BRepAdaptor_Curve theCurve,
+    public BRepMesh_GeomTool(EdgeCurveAdaptor theCurve,
                              double theFirstParam,
                              double theLastParam,
                              double theLinDeflection,
@@ -64,7 +69,7 @@ public sealed class BRepMesh_GeomTool
     /// Discretizes the iso curve of the surface (U or V iso at <paramref name="theParamIso"/>) between the parameters
     /// with the linear and angular deflections.
     /// </summary>
-    public BRepMesh_GeomTool(BRepAdaptor_Surface theSurface,
+    public BRepMesh_GeomTool(FaceSurfaceAdaptor theSurface,
                              IsoType theIsoType,
                              double theParamIso,
                              double theFirstParam,
@@ -76,7 +81,7 @@ public sealed class BRepMesh_GeomTool
     {
         myEdge = null;
         myIsoType = theIsoType;
-        Adaptor3d_IsoCurve aIso = new(theSurface, theIsoType, theParamIso, theFirstParam, theLastParam);
+        IsoCurve aIso = new(theSurface, theIsoType, theParamIso, theFirstParam, theLastParam);
 
         myDiscretTool.Initialize(aIso,
                                  theFirstParam,
@@ -98,7 +103,7 @@ public sealed class BRepMesh_GeomTool
     }
 
     /// <summary>The number of discretization points.</summary>
-    public int NbPoints() => myDiscretTool.NbPoints();
+    public int NbPoints() => myDiscretTool.PointCount;
 
     /// <summary>
     /// The discretization point with the given index (from 1) on the iso curve: its parameter, the 3D point and the
@@ -133,7 +138,7 @@ public sealed class BRepMesh_GeomTool
     /// The discretization point with the given index (from 1) on the edge: its parameter, the 3D point and the point
     /// of the edge's pcurve on the surface's face. False for an iso curve.
     /// </summary>
-    public bool Value(int theIndex, BRepAdaptor_Surface theSurface, out double theParam, out Point3D thePoint,
+    public bool Value(int theIndex, FaceSurfaceAdaptor theSurface, out double theParam, out Point3D thePoint,
                       out Point2D theUV)
     {
         theParam = 0.0;
@@ -152,9 +157,9 @@ public sealed class BRepMesh_GeomTool
         thePoint = myDiscretTool.Value(theIndex);
         theParam = myDiscretTool.Parameter(theIndex);
 
-        TopoDS_Face aFace = theSurface.Face();
+        Face aFace = theSurface.Face();
 
-        Geom2d_Curve? aCurve = BRep_Tool.CurveOnSurface(myEdge.Value, aFace, out _, out _);
+        Curve2D? aCurve = Tool.CurveOnSurface(myEdge.Value, aFace, out _, out _);
 
         aCurve!.D0(theParam, out theUV);
         return true;
@@ -166,7 +171,7 @@ public sealed class BRepMesh_GeomTool
     /// The point and the normal of the surface at (U, V), reversed on a reversed face; false if the normal can't be
     /// computed.
     /// </summary>
-    public static bool Normal(BRepAdaptor_Surface theSurface,
+    public static bool Normal(FaceSurfaceAdaptor theSurface,
                               double theParamU,
                               double theParamV,
                               out Point3D thePoint,
@@ -197,9 +202,9 @@ public sealed class BRepMesh_GeomTool
             return false;
         }
 
-        TopoDS_Face aFace = theSurface.Face();
-        TopAbs_Orientation aOri = aFace.Orientation();
-        if (aOri == TopAbs_REVERSED)
+        Face aFace = theSurface.Face();
+        Orientation aOri = aFace.Orientation();
+        if (aOri == Reversed)
         {
             theNormal.Reverse();
         }
@@ -389,7 +394,7 @@ public sealed class BRepMesh_GeomTool
     /// <c>2 ^ log10(estimated points count)</c> along each parametric direction, and
     /// <c>2 ^ log10(initial vertex count)</c> along a linear one. (-1, -1) without a range splitter.
     /// </summary>
-    public static (int, int) CellsCount(Adaptor3d_Surface theSurface,
+    public static (int, int) CellsCount(SurfaceAdaptorBase theSurface,
                                         int theVerticesNb,
                                         double theDeflection,
                                         BRepMesh_DefaultRangeSplitter? theRangeSplitter)
@@ -475,7 +480,7 @@ public sealed class BRepMesh_GeomTool
     }
 
     private static void ComputeErrFactors(double theDeflection,
-                                          Adaptor3d_Surface theFace,
+                                          SurfaceAdaptorBase theFace,
                                           out double theErrFactorU,
                                           out double theErrFactorV)
     {
@@ -493,14 +498,14 @@ public sealed class BRepMesh_GeomTool
             case SurfaceOfExtrusion:
             case SurfaceOfRevolution:
             {
-                Adaptor3d_Curve aCurve = theFace.BasisCurve();
+                CurveAdaptorBase aCurve = theFace.BasisCurve();
                 if (aCurve.GetType() == BSplineCurve && aCurve.Degree() > 2)
                 {
-                    theErrFactorV /= (aCurve.Degree() * aCurve.NbKnots());
+                    theErrFactorV /= (aCurve.Degree() * aCurve.KnotCount);
                 }
                 break;
             }
-            case BezierSurface:
+            case SurfaceKind.BezierSurface:
             {
                 if (theFace.UDegree() > 2)
                 {
@@ -512,15 +517,15 @@ public sealed class BRepMesh_GeomTool
                 }
                 break;
             }
-            case BSplineSurface:
+            case SurfaceKind.BSplineSurface:
             {
                 if (theFace.UDegree() > 2)
                 {
-                    theErrFactorU /= (theFace.UDegree() * theFace.NbUKnots());
+                    theErrFactorU /= (theFace.UDegree() * theFace.UKnotCount);
                 }
                 if (theFace.VDegree() > 2)
                 {
-                    theErrFactorV /= (theFace.VDegree() * theFace.NbVKnots());
+                    theErrFactorV /= (theFace.VDegree() * theFace.VKnotCount);
                 }
                 break;
             }
@@ -532,7 +537,7 @@ public sealed class BRepMesh_GeomTool
         }
     }
 
-    private static void AdjustCellsCounts(Adaptor3d_Surface theFace,
+    private static void AdjustCellsCounts(SurfaceAdaptorBase theFace,
                                           int theNbVertices,
                                           ref int theCellsCountU,
                                           ref int theCellsCountV)
@@ -556,7 +561,7 @@ public sealed class BRepMesh_GeomTool
         }
         else if (aType == SurfaceOfExtrusion || aType == SurfaceOfRevolution)
         {
-            Adaptor3d_Curve aCurve = theFace.BasisCurve();
+            CurveAdaptorBase aCurve = theFace.BasisCurve();
             if (aCurve.GetType() == Line
                 || (aCurve.GetType() == BSplineCurve && aCurve.Degree() < 2))
             {
@@ -576,7 +581,7 @@ public sealed class BRepMesh_GeomTool
                 theCellsCountV = (int)Math.Ceiling(Math.Pow(2, Math.Log10(aSqNbVert)));
             }
         }
-        else if (aType == BezierSurface || aType == BSplineSurface)
+        else if (aType == SurfaceKind.BezierSurface || aType == SurfaceKind.BSplineSurface)
         {
             if (theFace.UDegree() < 2)
             {

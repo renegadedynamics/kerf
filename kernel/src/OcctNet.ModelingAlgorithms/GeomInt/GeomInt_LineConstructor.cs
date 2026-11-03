@@ -6,12 +6,14 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Foundation.Std;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_TypeTrans;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -59,10 +61,10 @@ public class GeomInt_LineConstructor
 
     private bool done;
     private readonly NCollection_Sequence<double> seqp = new();
-    private Adaptor3d_TopolTool? myDom1;
-    private Adaptor3d_TopolTool? myDom2;
-    private GeomAdaptor_Surface? myHS1;
-    private GeomAdaptor_Surface? myHS2;
+    private TopolTool? myDom1;
+    private TopolTool? myDom2;
+    private SurfaceAdaptor? myHS1;
+    private SurfaceAdaptor? myHS2;
 
     public GeomInt_LineConstructor()
     {
@@ -70,7 +72,7 @@ public class GeomInt_LineConstructor
     }
 
     /// <summary>Gives the domains and the surfaces of the intersection.</summary>
-    public void Load(Adaptor3d_TopolTool D1, Adaptor3d_TopolTool D2, GeomAdaptor_Surface? S1, GeomAdaptor_Surface? S2)
+    public void Load(TopolTool D1, TopolTool D2, SurfaceAdaptor? S1, SurfaceAdaptor? S2)
     {
         myDom1 = D1;
         myDom2 = D2;
@@ -126,11 +128,11 @@ public class GeomInt_LineConstructor
                     Point3D Pmid = ALine.Value(pmid);
                     Parameters(myHS1!, myHS2!, Pmid, out u1, out v1, out u2, out v2);
                     AdjustPeriodic(myHS1!, myHS2!, ref u1, ref v1, ref u2, ref v2);
-                    TopAbs_State in1 = myDom1!.Classify(new Point2D(u1, v1), Tol);
-                    if (in1 != TopAbs_OUT)
+                    Containment in1 = myDom1!.Classify(new Point2D(u1, v1), Tol);
+                    if (in1 != Out)
                     {
-                        TopAbs_State in2 = myDom2!.Classify(new Point2D(u2, v2), Tol);
-                        if (in2 != TopAbs_OUT)
+                        Containment in2 = myDom2!.Classify(new Point2D(u2, v2), Tol);
+                        if (in2 != Out)
                         {
                             seqp.Append(firstp);
                             seqp.Append(lastp);
@@ -159,11 +161,11 @@ public class GeomInt_LineConstructor
                         IntSurf_PntOn2S Pmid = WLine.Point(pmid);
                         Pmid.Parameters(out u1, out v1, out u2, out v2);
                         AdjustPeriodic(myHS1!, myHS2!, ref u1, ref v1, ref u2, ref v2);
-                        TopAbs_State in1 = myDom1!.Classify(new Point2D(u1, v1), Tol);
-                        if (in1 != TopAbs_OUT)
+                        Containment in1 = myDom1!.Classify(new Point2D(u1, v1), Tol);
+                        if (in1 != Out)
                         {
-                            TopAbs_State in2 = myDom2!.Classify(new Point2D(u2, v2), Tol);
-                            if (in2 != TopAbs_OUT)
+                            Containment in2 = myDom2!.Classify(new Point2D(u2, v2), Tol);
+                            if (in2 != Out)
                             {
                                 seqp.Append(firstp);
                                 seqp.Append(lastp);
@@ -204,11 +206,11 @@ public class GeomInt_LineConstructor
                             u2 = 0.5 * (u2 + aU22);
                             v2 = 0.5 * (v2 + aV22);
 
-                            TopAbs_State in1 = myDom1!.Classify(new Point2D(u1, v1), Tol);
-                            if (in1 != TopAbs_OUT)
+                            Containment in1 = myDom1!.Classify(new Point2D(u1, v1), Tol);
+                            if (in1 != Out)
                             {
-                                TopAbs_State in2 = myDom2!.Classify(new Point2D(u2, v2), Tol);
-                                if (in2 != TopAbs_OUT)
+                                Containment in2 = myDom2!.Classify(new Point2D(u2, v2), Tol);
+                                if (in2 != Out)
                                 {
                                     seqp.Append(firstp);
                                     seqp.Append(lastp);
@@ -220,20 +222,20 @@ public class GeomInt_LineConstructor
                             IntSurf_PntOn2S Pfirst = WLine.Point((int)(firstp));
                             Pfirst.Parameters(out u1, out v1, out u2, out v2);
                             AdjustPeriodic(myHS1!, myHS2!, ref u1, ref v1, ref u2, ref v2);
-                            TopAbs_State in1 = myDom1!.Classify(new Point2D(u1, v1), Tol);
-                            if (in1 != TopAbs_OUT)
+                            Containment in1 = myDom1!.Classify(new Point2D(u1, v1), Tol);
+                            if (in1 != Out)
                             {
-                                TopAbs_State in2 = myDom2!.Classify(new Point2D(u2, v2), Tol);
-                                if (in2 != TopAbs_OUT)
+                                Containment in2 = myDom2!.Classify(new Point2D(u2, v2), Tol);
+                                if (in2 != Out)
                                 {
                                     IntSurf_PntOn2S Plast = WLine.Point((int)(lastp));
                                     Plast.Parameters(out u1, out v1, out u2, out v2);
                                     AdjustPeriodic(myHS1!, myHS2!, ref u1, ref v1, ref u2, ref v2);
                                     in1 = myDom1.Classify(new Point2D(u1, v1), Tol);
-                                    if (in1 != TopAbs_OUT)
+                                    if (in1 != Out)
                                     {
                                         in2 = myDom2.Classify(new Point2D(u2, v2), Tol);
-                                        if (in2 != TopAbs_OUT)
+                                        if (in2 != Out)
                                         {
                                             seqp.Append(firstp);
                                             seqp.Append(lastp);
@@ -351,11 +353,11 @@ public class GeomInt_LineConstructor
                     //
                     Parameters(myHS1!, myHS2!, Pmid, out u1, out v1, out u2, out v2);
                     AdjustPeriodic(myHS1!, myHS2!, ref u1, ref v1, ref u2, ref v2);
-                    TopAbs_State in1 = myDom1!.Classify(new Point2D(u1, v1), Tol);
-                    if (in1 != TopAbs_OUT)
+                    Containment in1 = myDom1!.Classify(new Point2D(u1, v1), Tol);
+                    if (in1 != Out)
                     {
-                        TopAbs_State in2 = myDom2!.Classify(new Point2D(u2, v2), Tol);
-                        if (in2 != TopAbs_OUT)
+                        Containment in2 = myDom2!.Classify(new Point2D(u2, v2), Tol);
+                        if (in2 != Out)
                         {
                             seqp.Append(firstp);
                             seqp.Append(lastp);
@@ -389,7 +391,7 @@ public class GeomInt_LineConstructor
         }
 
         NCollection_Sequence<GeomInt_ParameterAndOrientation> seqpss = new();
-        TopAbs_Orientation or1 = TopAbs_FORWARD, or2 = TopAbs_FORWARD;
+        Orientation or1 = Forward, or2 = Forward;
 
         for (i = 1; i <= nbvtx; i++)
         {
@@ -400,22 +402,22 @@ public class GeomInt_LineConstructor
                 switch (thevtx.TransitionLineArc1().TransitionType())
                 {
                     case IntSurf_In:
-                        or1 = TopAbs_FORWARD;
+                        or1 = Forward;
                         break;
                     case IntSurf_Out:
-                        or1 = TopAbs_REVERSED;
+                        or1 = Reversed;
                         break;
                     case IntSurf_Touch:
-                        or1 = TopAbs_INTERNAL;
+                        or1 = Internal;
                         break;
                     case IntSurf_Undecided:
-                        or1 = TopAbs_INTERNAL;
+                        or1 = Internal;
                         break;
                 }
             }
             else
             {
-                or1 = TopAbs_INTERNAL;
+                or1 = Internal;
             }
 
             if (thevtx.IsOnDomS2())
@@ -423,22 +425,22 @@ public class GeomInt_LineConstructor
                 switch (thevtx.TransitionLineArc2().TransitionType())
                 {
                     case IntSurf_In:
-                        or2 = TopAbs_FORWARD;
+                        or2 = Forward;
                         break;
                     case IntSurf_Out:
-                        or2 = TopAbs_REVERSED;
+                        or2 = Reversed;
                         break;
                     case IntSurf_Touch:
-                        or2 = TopAbs_INTERNAL;
+                        or2 = Internal;
                         break;
                     case IntSurf_Undecided:
-                        or2 = TopAbs_INTERNAL;
+                        or2 = Internal;
                         break;
                 }
             }
             else
             {
-                or2 = TopAbs_INTERNAL;
+                or2 = Internal;
             }
             //
             int nbinserted = seqpss.Length();
@@ -449,13 +451,13 @@ public class GeomInt_LineConstructor
                 {
                     // accumulate
                     ref GeomInt_ParameterAndOrientation valj = ref seqpss.ChangeValue(j);
-                    if (or1 != TopAbs_INTERNAL)
+                    if (or1 != Internal)
                     {
-                        if (valj.Orientation1() != TopAbs_INTERNAL)
+                        if (valj.Orientation1() != Internal)
                         {
                             if (or1 != valj.Orientation1())
                             {
-                                valj.SetOrientation1(TopAbs_INTERNAL);
+                                valj.SetOrientation1(Internal);
                             }
                         }
                         else
@@ -464,13 +466,13 @@ public class GeomInt_LineConstructor
                         }
                     }
 
-                    if (or2 != TopAbs_INTERNAL)
+                    if (or2 != Internal)
                     {
-                        if (valj.Orientation2() != TopAbs_INTERNAL)
+                        if (valj.Orientation2() != Internal)
                         {
                             if (or2 != valj.Orientation2())
                             {
-                                valj.SetOrientation2(TopAbs_INTERNAL);
+                                valj.SetOrientation2(Internal);
                             }
                         }
                         else
@@ -505,10 +507,10 @@ public class GeomInt_LineConstructor
         for (i = 1; i <= nbvtx; i++)
         {
             or1 = seqpss[i].Orientation1();
-            if (or1 != TopAbs_INTERNAL)
+            if (or1 != Internal)
             {
                 trim = true;
-                dansS1 = (or1 != TopAbs_FORWARD);
+                dansS1 = (or1 != Forward);
                 break;
             }
         }
@@ -522,7 +524,7 @@ public class GeomInt_LineConstructor
                 {
                     GeomInt_LineTool.Vertex(L, i).ParametersOnS1(out U, out V);
                     Point2D PPCC = new(U, V);
-                    if (myDom1!.Classify(PPCC, Tol) == TopAbs_OUT)
+                    if (myDom1!.Classify(PPCC, Tol) == Out)
                     {
                         done = true;
                         return;
@@ -536,10 +538,10 @@ public class GeomInt_LineConstructor
         for (i = 1; i <= nbvtx; i++)
         {
             or2 = seqpss[i].Orientation2();
-            if (or2 != TopAbs_INTERNAL)
+            if (or2 != Internal)
             {
                 trim = true;
-                dansS2 = (or2 != TopAbs_FORWARD);
+                dansS2 = (or2 != Forward);
                 break;
             }
         }
@@ -552,7 +554,7 @@ public class GeomInt_LineConstructor
                 if (!GeomInt_LineTool.Vertex(L, i).IsOnDomS2())
                 {
                     GeomInt_LineTool.Vertex(L, i).ParametersOnS2(out U, out V);
-                    if (myDom2!.Classify(new Point2D(U, V), Tol) == TopAbs_OUT)
+                    if (myDom2!.Classify(new Point2D(U, V), Tol) == Out)
                     {
                         done = true;
                         return;
@@ -583,12 +585,12 @@ public class GeomInt_LineConstructor
             or2 = seqpss[i].Orientation2();
             if (dansS1 && dansS2)
             {
-                if (or1 == TopAbs_REVERSED)
+                if (or1 == Reversed)
                 {
                     dansS1 = false;
                 }
 
-                if (or2 == TopAbs_REVERSED)
+                if (or2 == Reversed)
                 {
                     dansS2 = false;
                 }
@@ -613,28 +615,28 @@ public class GeomInt_LineConstructor
             {
                 if (dansS1)
                 {
-                    if (or1 == TopAbs_REVERSED)
+                    if (or1 == Reversed)
                     {
                         dansS1 = false;
                     }
                 }
                 else
                 {
-                    if (or1 == TopAbs_FORWARD)
+                    if (or1 == Forward)
                     {
                         dansS1 = true;
                     }
                 }
                 if (dansS2)
                 {
-                    if (or2 == TopAbs_REVERSED)
+                    if (or2 == Reversed)
                     {
                         dansS2 = false;
                     }
                 }
                 else
                 {
-                    if (or2 == TopAbs_FORWARD)
+                    if (or2 == Forward)
                     {
                         dansS2 = true;
                     }
@@ -707,12 +709,12 @@ public class GeomInt_LineConstructor
             AdjustPeriodic(myHS1!, myHS2!, ref aU1, ref aV1, ref aU2, ref aV2);
             //
             aP2D.SetCoord(aU1, aV1);
-            TopAbs_State aState = myDom1!.Classify(aP2D, theTol);
-            if (aState != TopAbs_OUT)
+            Containment aState = myDom1!.Classify(aP2D, theTol);
+            if (aState != Out)
             {
                 aP2D.SetCoord(aU2, aV2);
                 aState = myDom2!.Classify(aP2D, theTol);
-                if (aState != TopAbs_OUT)
+                if (aState != Out)
                 {
                     seqp.Append(aT1);
                     seqp.Append(aT2);
@@ -721,7 +723,7 @@ public class GeomInt_LineConstructor
         }
     }
 
-    private static void AdjustPeriodic(GeomAdaptor_Surface myHS1, GeomAdaptor_Surface myHS2, ref double u1,
+    private static void AdjustPeriodic(SurfaceAdaptor myHS1, SurfaceAdaptor myHS2, ref double u1,
                                        ref double v1, ref double u2, ref double v2)
     {
         bool myHS1IsUPeriodic, myHS1IsVPeriodic;
@@ -803,14 +805,14 @@ public class GeomInt_LineConstructor
         }
     }
 
-    private static void Parameters(GeomAdaptor_Surface myHS1, GeomAdaptor_Surface myHS2, in Point3D Ptref,
+    private static void Parameters(SurfaceAdaptor myHS1, SurfaceAdaptor myHS2, in Point3D Ptref,
                                    out double U1, out double V1, out double U2, out double V2)
     {
         Parameters(myHS1, Ptref, out U1, out V1);
         Parameters(myHS2, Ptref, out U2, out V2);
     }
 
-    private static void Parameters(GeomAdaptor_Surface myHS1, in Point3D Ptref, out double U1, out double V1)
+    private static void Parameters(SurfaceAdaptor myHS1, in Point3D Ptref, out double U1, out double V1)
     {
         IntSurf_Quadric quad1 = new();
         //

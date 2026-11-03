@@ -4,14 +4,19 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.BRepCheck_Status;
 using static Kerf.Geometry.CurveKind;
 using static Occt.IntRes2d_Position;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -25,13 +30,13 @@ public class BRepCheck_Wire : BRepCheck_Result
     private bool myCdone;
     private BRepCheck_Status myCstat;
 
-    private readonly NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myMapVE =
-        new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> myMapVE =
+        new(ShapeHasher.Instance);
 
     private bool myGctrl;
 
     /// <summary>Checks the wire on its own (<see cref="Minimum"/>).</summary>
-    public BRepCheck_Wire(in TopoDS_Wire W)
+    public BRepCheck_Wire(in Wire W)
     {
         myCdone = false;
         myCstat = BRepCheck_NoError;
@@ -39,8 +44,8 @@ public class BRepCheck_Wire : BRepCheck_Result
         Init(W);
     }
 
-    private static bool IsOriented(in TopoDS_Shape S)
-        => S.Orientation() == TopAbs_FORWARD || S.Orientation() == TopAbs_REVERSED;
+    private static bool IsOriented(in Shape S)
+        => S.Orientation() == Forward || S.Orientation() == Reversed;
 
     /// <summary>The status list of the wire itself, read under the lock in parallel mode.</summary>
     private NCollection_List<BRepCheck_Status> lockedStatusList()
@@ -75,21 +80,21 @@ public class BRepCheck_Wire : BRepCheck_Result
             NCollection_List<BRepCheck_Status> lst = myMap.Bound(myShape, aNewList);
 
             // check that the wire is "connex"
-            var exp = new TopExp_Explorer(myShape, TopAbs_EDGE);
+            var exp = new Explorer(myShape, ShapeType.Edge);
             int nbedge = 0;
             myMapVE.Clear();
             // fill myMapVE
             for (; exp.More(); exp.Next())
             {
                 nbedge++;
-                var expv = new TopExp_Explorer();
-                for (expv.Init(exp.Current(), TopAbs_VERTEX); expv.More(); expv.Next())
+                var expv = new Explorer();
+                for (expv.Init(exp.Current(), ShapeType.Vertex); expv.More(); expv.Next())
                 {
-                    TopoDS_Shape vtx = expv.Current();
+                    Shape vtx = expv.Current();
                     int index = myMapVE.FindIndex(vtx);
                     if (index == 0)
                     {
-                        var theListOfShape = new NCollection_List<TopoDS_Shape>();
+                        var theListOfShape = new NCollection_List<Shape>();
                         index = myMapVE.Add(vtx, theListOfShape);
                     }
 
@@ -105,7 +110,7 @@ public class BRepCheck_Wire : BRepCheck_Result
             // check if all edges are connected through vertices
             else if (nbedge >= 2)
             {
-                var mapE = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+                var mapE = new NCollection_Map<Shape>(ShapeHasher.Instance);
                 exp.ReInit();
                 Propagate(myMapVE, exp.Current(), mapE);
                 for (exp.ReInit(); exp.More(); exp.Next())
@@ -132,7 +137,7 @@ public class BRepCheck_Wire : BRepCheck_Result
     /// Checks the wire in a shape that contains it: in a face, <see cref="SelfIntersect"/> (with the geometric
     /// controls), <see cref="Closed"/>, <see cref="Orientation"/> and <see cref="Closed2d"/>, until one fails.
     /// </summary>
-    public override void InContext(in TopoDS_Shape S)
+    public override void InContext(in Shape S)
     {
         NCollection_List<BRepCheck_Status> aHList;
         {
@@ -164,7 +169,7 @@ public class BRepCheck_Wire : BRepCheck_Result
         NCollection_List<BRepCheck_Status> lst = aHList;
 
         // check if my wire is in <S>
-        var exp = new TopExp_Explorer(S, TopAbs_WIRE);
+        var exp = new Explorer(S, ShapeType.Wire);
         for (; exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(myShape))
@@ -180,15 +185,15 @@ public class BRepCheck_Wire : BRepCheck_Result
         }
 
         BRepCheck_Status st = BRepCheck_NoError;
-        TopAbs_ShapeEnum styp = S.ShapeType();
+        ShapeType styp = S.ShapeType();
         switch (styp)
         {
-            case TopAbs_FACE:
+            case ShapeType.Face:
             {
-                TopoDS_Edge ed1 = new(), ed2 = new();
+                Edge ed1 = new(), ed2 = new();
                 if (myGctrl)
                 {
-                    st = SelfIntersect(TopoDS.Face(S), ref ed1, ref ed2, true);
+                    st = SelfIntersect(ShapeCasts.Face(S), ref ed1, ref ed2, true);
                 }
 
                 if (st != BRepCheck_NoError)
@@ -202,13 +207,13 @@ public class BRepCheck_Wire : BRepCheck_Result
                     break;
                 }
 
-                st = Orientation(TopoDS.Face(S));
+                st = Orientation(ShapeCasts.Face(S));
                 if (st != BRepCheck_NoError)
                 {
                     break;
                 }
 
-                st = Closed2d(TopoDS.Face(S));
+                st = Closed2d(ShapeCasts.Face(S));
                 break;
             }
             default:
@@ -267,34 +272,34 @@ public class BRepCheck_Wire : BRepCheck_Result
 
         myCstat = BRepCheck_NoError;
 
-        var exp = new TopExp_Explorer();
-        var expv = new TopExp_Explorer();
-        var mapS = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var Cradoc = new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+        var exp = new Explorer();
+        var expv = new Explorer();
+        var mapS = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var Cradoc = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         myMapVE.Clear();
         // Checks if the oriented edges of the wire give a "closed" wire,
         // i-e if each oriented vertex on oriented edges is found 2 times...
-        for (exp.Init(myShape, TopAbs_EDGE); exp.More(); exp.Next())
+        for (exp.Init(myShape, ShapeType.Edge); exp.More(); exp.Next())
         {
             if (IsOriented(exp.Current()))
             {
                 if (!Cradoc.IsBound(exp.Current()))
                 {
-                    var theListOfShape = new NCollection_List<TopoDS_Shape>();
+                    var theListOfShape = new NCollection_List<Shape>();
                     Cradoc.Bind(exp.Current(), theListOfShape);
                 }
 
                 Cradoc.Find(exp.Current()).Append(exp.Current());
 
                 mapS.Add(exp.Current());
-                for (expv.Init(exp.Current(), TopAbs_VERTEX); expv.More(); expv.Next())
+                for (expv.Init(exp.Current(), ShapeType.Vertex); expv.More(); expv.Next())
                 {
                     if (IsOriented(expv.Current()))
                     {
                         int index = myMapVE.FindIndex(expv.Current());
                         if (index == 0)
                         {
-                            var theListOfShape1 = new NCollection_List<TopoDS_Shape>();
+                            var theListOfShape1 = new NCollection_List<Shape>();
                             index = myMapVE.Add(expv.Current(), theListOfShape1);
                         }
 
@@ -335,7 +340,7 @@ public class BRepCheck_Wire : BRepCheck_Result
 
         // OCCT.NET: the map iterates in another order than OCCT's; the result doesn't depend on it
         bool yabug = false;
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> itdm in Cradoc)
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> itdm in Cradoc)
         {
             if (itdm.Value.Extent() >= 3)
             {
@@ -392,7 +397,7 @@ public class BRepCheck_Wire : BRepCheck_Result
     }
 
     // OCCT's PrintWarnings argument only prints in debug builds; it is left out.
-    private static bool IsDistanceIn2DTolerance(BRepAdaptor_Surface aFaceSurface,
+    private static bool IsDistanceIn2DTolerance(FaceSurfaceAdaptor aFaceSurface,
                                                 in Point2D thePnt,
                                                 in Point2D thePntRef,
                                                 double aTol3d)
@@ -436,7 +441,7 @@ public class BRepCheck_Wire : BRepCheck_Result
     /// (and closed in 3D, <see cref="Closed"/>): <see cref="BRepCheck_NoError"/> or <see cref="BRepCheck_NotClosed"/>.
     /// With <paramref name="Update"/>, the status is added to <see cref="BRepCheck_Result.Status"/>.
     /// </summary>
-    public BRepCheck_Status Closed2d(in TopoDS_Face theFace, bool Update = false)
+    public BRepCheck_Status Closed2d(in Face theFace, bool Update = false)
     {
         NCollection_List<BRepCheck_Status> aStatusList = lockedStatusList();
 
@@ -454,11 +459,11 @@ public class BRepCheck_Wire : BRepCheck_Result
 
         // 20/03/02 akm vvv : (OCC234) Hence this method will be used to check
         //                    both periodic and non-periodic faces
-        var aFaceSurface = new BRepAdaptor_Surface(theFace, false);
+        var aFaceSurface = new FaceSurfaceAdaptor(theFace, false);
 
         // count edges having FORWARD or REVERSED orientation
         int aNbOrirntedEdges = 0;
-        var anEdgeExp = new TopExp_Explorer(myShape, TopAbs_EDGE);
+        var anEdgeExp = new Explorer(myShape, ShapeType.Edge);
         for (; anEdgeExp.More(); anEdgeExp.Next())
         {
             if (IsOriented(anEdgeExp.Current()))
@@ -480,10 +485,10 @@ public class BRepCheck_Wire : BRepCheck_Result
         // all those edges must form a closed 2d contour and be found by WireExplorer
 
         int aNbFoundEdges = 0;
-        var aWireExp = new BRepTools_WireExplorer(TopoDS.Wire(myShape), theFace);
-        TopoDS_Edge aFirstEdge = aWireExp.Current();
-        TopoDS_Vertex aFirstVertex = aWireExp.CurrentVertex();
-        TopoDS_Edge aLastEdge = new();
+        var aWireExp = new WireExplorer(ShapeCasts.Wire(myShape), theFace);
+        Edge aFirstEdge = aWireExp.Current();
+        Vertex aFirstVertex = aWireExp.CurrentVertex();
+        Edge aLastEdge = new();
 
         for (; aWireExp.More(); aWireExp.Next())
         {
@@ -506,21 +511,21 @@ public class BRepCheck_Wire : BRepCheck_Result
         //   First check if first and last edges are infinite:
         bool isFirstInfinite = false;
         bool isLastInfinite = false;
-        TopAbs_Orientation anOri;
+        Orientation anOri;
 
         anOri = aFirstEdge.Orientation();
-        BRep_Tool.Range(aFirstEdge, out double aF, out double aL);
-        if ((anOri == TopAbs_FORWARD && global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(aF))
-            || (anOri == TopAbs_REVERSED && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(aL)))
+        Tool.Range(aFirstEdge, out double aF, out double aL);
+        if ((anOri == Forward && global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(aF))
+            || (anOri == Reversed && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(aL)))
         {
             isFirstInfinite = true;
         }
 
         anOri = aLastEdge.Orientation();
-        BRep_Tool.Range(aLastEdge, out aF, out aL);
+        Tool.Range(aLastEdge, out aF, out aL);
 
-        if ((anOri == TopAbs_FORWARD && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(aL))
-            || (anOri == TopAbs_REVERSED && global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(aF)))
+        if ((anOri == Forward && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(aL))
+            || (anOri == Reversed && global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(aF)))
         {
             isLastInfinite = true;
         }
@@ -534,7 +539,7 @@ public class BRepCheck_Wire : BRepCheck_Result
 
             return aClosedStat;
         }
-        else if (aFirstVertex.IsNull())
+        else if (aFirstVertex.IsNull)
         {
             aClosedStat = BRepCheck_NotClosed;
 
@@ -549,20 +554,20 @@ public class BRepCheck_Wire : BRepCheck_Result
         Point2D aP_first, aP_last, aP_temp; // ends of prev edge, next edge, bidon
 
         // get last point
-        BRep_Tool.UVPoints(aLastEdge, theFace, out aP_temp, out aP_last);
-        if (aLastEdge.Orientation() == TopAbs_REVERSED)
+        Tool.UVPoints(aLastEdge, theFace, out aP_temp, out aP_last);
+        if (aLastEdge.Orientation() == Reversed)
         {
             aP_last = aP_temp;
         }
 
         // get first point
-        if (aFirstEdge.Orientation() == TopAbs_REVERSED)
+        if (aFirstEdge.Orientation() == Reversed)
         {
-            BRep_Tool.UVPoints(aFirstEdge, theFace, out aP_temp, out aP_first);
+            Tool.UVPoints(aFirstEdge, theFace, out aP_temp, out aP_first);
         }
         else
         {
-            BRep_Tool.UVPoints(aFirstEdge, theFace, out aP_first, out aP_temp);
+            Tool.UVPoints(aFirstEdge, theFace, out aP_first, out aP_temp);
         }
 
         // Check 2d distance for periodic faces with seam edge
@@ -578,10 +583,10 @@ public class BRepCheck_Wire : BRepCheck_Result
         }
 
         // check distance
-        double aTol3d = Max(BRep_Tool.Tolerance(aFirstVertex), BRep_Tool.Tolerance(aWireExp.CurrentVertex()));
+        double aTol3d = Max(Tool.Tolerance(aFirstVertex), Tool.Tolerance(aWireExp.CurrentVertex()));
 
-        Point3D aPntRef = BRep_Tool.Pnt(aFirstVertex);
-        Point3D aPnt = BRep_Tool.Pnt(aWireExp.CurrentVertex());
+        Point3D aPntRef = Tool.Pnt(aFirstVertex);
+        Point3D aPnt = Tool.Pnt(aWireExp.CurrentVertex());
 
         if (!IsDistanceIn2DTolerance(aFaceSurface, aP_first, aP_last, aTol3d))
         {
@@ -608,7 +613,7 @@ public class BRepCheck_Wire : BRepCheck_Result
     /// <see cref="BRepCheck_NotClosed"/> or <see cref="BRepCheck_NoError"/>. With <paramref name="Update"/>, the status
     /// is added to <see cref="BRepCheck_Result.Status"/>.
     /// </summary>
-    public BRepCheck_Status Orientation(in TopoDS_Face F, bool Update = false)
+    public BRepCheck_Status Orientation(in Face F, bool Update = false)
     {
         BRepCheck_Status theOstat = Closed();
         NCollection_List<BRepCheck_Status> aStatusList = lockedStatusList();
@@ -625,44 +630,44 @@ public class BRepCheck_Wire : BRepCheck_Result
 
         theOstat = BRepCheck_NoError;
 
-        TopoDS_Vertex VF = new(), VL = new();
-        TopAbs_Orientation orient, ortmp = TopAbs_FORWARD;
-        var ledge = new NCollection_List<TopoDS_Shape>();
-        var ListOfPassedEdge = new NCollection_List<TopoDS_Shape>();
-        var exp = new TopExp_Explorer();
-        var vte = new TopExp_Explorer();
-        var mapS = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopoDS_Edge theEdge = new(), theRef = new();
+        Vertex VF = new(), VL = new();
+        Orientation orient, ortmp = Forward;
+        var ledge = new NCollection_List<Shape>();
+        var ListOfPassedEdge = new NCollection_List<Shape>();
+        var exp = new Explorer();
+        var vte = new Explorer();
+        var mapS = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        Edge theEdge = new(), theRef = new();
 
         // Checks the orientation of the edges
-        for (exp.Init(myShape, TopAbs_EDGE); exp.More(); exp.Next())
+        for (exp.Init(myShape, ShapeType.Edge); exp.More(); exp.Next())
         {
-            TopoDS_Edge edg = TopoDS.Edge(exp.Current());
+            Edge edg = ShapeCasts.Edge(exp.Current());
             orient = edg.Orientation();
             if (IsOriented(edg))
             {
                 mapS.Add(edg);
                 theEdge = edg;
                 theRef = edg;
-                for (vte.Init(edg, TopAbs_VERTEX); vte.More(); vte.Next())
+                for (vte.Init(edg, ShapeType.Vertex); vte.More(); vte.Next())
                 {
-                    TopAbs_Orientation vto = vte.Current().Orientation();
-                    if (vto == TopAbs_FORWARD)
+                    Orientation vto = vte.Current().Orientation();
+                    if (vto == Forward)
                     {
-                        VF = TopoDS.Vertex(vte.Current());
+                        VF = ShapeCasts.Vertex(vte.Current());
                     }
-                    else if (vto == TopAbs_REVERSED)
+                    else if (vto == Reversed)
                     {
-                        VL = TopoDS.Vertex(vte.Current());
+                        VL = ShapeCasts.Vertex(vte.Current());
                     }
 
-                    if (!VF.IsNull() && !VL.IsNull())
+                    if (!VF.IsNull && !VL.IsNull)
                     {
                         break;
                     }
                 }
 
-                if (VF.IsNull() && VL.IsNull())
+                if (VF.IsNull && VL.IsNull)
                 {
                     theOstat = BRepCheck_InvalidDegeneratedFlag;
                 }
@@ -677,7 +682,7 @@ public class BRepCheck_Wire : BRepCheck_Result
             int nbOriNoDegen = myMapVE.Extent();
             bool isGoFwd = true;
 
-            if (VL.IsNull())
+            if (VL.IsNull)
             {
                 isGoFwd = false;
             }
@@ -690,11 +695,11 @@ public class BRepCheck_Wire : BRepCheck_Result
                 // otherwise on VF.
 
                 int ind;
-                if (!VL.IsNull())
+                if (!VL.IsNull)
                 {
                     ind = myMapVE.FindIndex(VL);
                 }
-                else if (!VF.IsNull())
+                else if (!VF.IsNull)
                 {
                     ind = myMapVE.FindIndex(VF);
                 }
@@ -704,9 +709,9 @@ public class BRepCheck_Wire : BRepCheck_Result
                     break;
                 }
 
-                for (var itls = new NCollection_List<TopoDS_Shape>.Iterator(myMapVE[ind]); itls.More(); itls.Next())
+                for (var itls = new NCollection_List<Shape>.Iterator(myMapVE[ind]); itls.More(); itls.Next())
                 {
-                    TopoDS_Edge edg = TopoDS.Edge(itls.Value());
+                    Edge edg = ShapeCasts.Edge(itls.Value());
 
                     orient = edg.Orientation();
                     if (mapS.Contains(edg))
@@ -717,12 +722,12 @@ public class BRepCheck_Wire : BRepCheck_Result
                     // Add to list already passed outcoming edges
                     if (mapS.Contains(edg) && ortmp == orient && !edg.IsSame(theEdge))
                     {
-                        for (vte.Init(edg, TopAbs_VERTEX); vte.More(); vte.Next())
+                        for (vte.Init(edg, ShapeType.Vertex); vte.More(); vte.Next())
                         {
-                            TopAbs_Orientation vto = vte.Current().Orientation();
-                            if (!VL.IsNull())
+                            Orientation vto = vte.Current().Orientation();
+                            if (!VL.IsNull)
                             {
-                                if (vto == TopAbs_FORWARD && VL.IsSame(vte.Current()))
+                                if (vto == Forward && VL.IsSame(vte.Current()))
                                 {
                                     ListOfPassedEdge.Append(edg);
                                     break;
@@ -730,7 +735,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                             }
                             else // VF is not null
                             {
-                                if (vto == TopAbs_REVERSED && VF.IsSame(vte.Current()))
+                                if (vto == Reversed && VF.IsSame(vte.Current()))
                                 {
                                     ListOfPassedEdge.Append(edg);
                                     break;
@@ -741,16 +746,16 @@ public class BRepCheck_Wire : BRepCheck_Result
 
                     if (!mapS.Contains(edg) || ortmp != orient)
                     {
-                        for (vte.Init(edg, TopAbs_VERTEX); vte.More(); vte.Next())
+                        for (vte.Init(edg, ShapeType.Vertex); vte.More(); vte.Next())
                         {
-                            TopAbs_Orientation vto = vte.Current().Orientation();
-                            if (!VL.IsNull())
+                            Orientation vto = vte.Current().Orientation();
+                            if (!VL.IsNull)
                             {
-                                if (vto == TopAbs_FORWARD && VL.IsSame(vte.Current()))
+                                if (vto == Forward && VL.IsSame(vte.Current()))
                                 {
                                     // If the processing is in 2d (face not null) or
                                     // if the edge is not degenerated it is added
-                                    if (!F.IsNull() || !BRep_Tool.Degenerated(edg))
+                                    if (!F.IsNull || !Tool.Degenerated(edg))
                                     {
                                         ledge.Append(edg);
                                     }
@@ -760,11 +765,11 @@ public class BRepCheck_Wire : BRepCheck_Result
                             }
                             else
                             { // VF is not null
-                                if (vto == TopAbs_REVERSED && VF.IsSame(vte.Current()))
+                                if (vto == Reversed && VF.IsSame(vte.Current()))
                                 {
                                     // If the processing is in 2d (face not null) or
                                     // if the edge is not degenerated it is added
-                                    if (!F.IsNull() || !BRep_Tool.Degenerated(edg))
+                                    if (!F.IsNull || !Tool.Degenerated(edg))
                                     {
                                         ledge.Append(edg);
                                     }
@@ -782,7 +787,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                 {
                     if (myCstat == BRepCheck_NotClosed)
                     {
-                        if (VL.IsNull())
+                        if (VL.IsNull)
                         {
                             if (Update)
                             {
@@ -812,10 +817,10 @@ public class BRepCheck_Wire : BRepCheck_Result
                 }
 
                 // JAG 03/07   else if (nbconnex >= 2 && !F.IsNull())  // Try to see in 2d
-                else if (!F.IsNull())
+                else if (!F.IsNull)
                 { // Try to see in 2d
-                    TopoDS_Vertex pivot;
-                    if (!VL.IsNull())
+                    Vertex pivot;
+                    if (!VL.IsNull)
                     {
                         pivot = VL;
                     }
@@ -843,32 +848,32 @@ public class BRepCheck_Wire : BRepCheck_Result
                 else if (nbconnex == 1)
                 {
                     // offset the vertex
-                    for (vte.Init(ledge.First(), TopAbs_VERTEX); vte.More(); vte.Next())
+                    for (vte.Init(ledge.First(), ShapeType.Vertex); vte.More(); vte.Next())
                     {
-                        TopAbs_Orientation vto = vte.Current().Orientation();
-                        if (!VL.IsNull())
+                        Orientation vto = vte.Current().Orientation();
+                        if (!VL.IsNull)
                         {
-                            if (vto == TopAbs_REVERSED)
+                            if (vto == Reversed)
                             {
-                                VL = TopoDS.Vertex(vte.Current());
+                                VL = ShapeCasts.Vertex(vte.Current());
                                 break;
                             }
                         }
                         else
                         { // VF is not null
-                            if (vto == TopAbs_FORWARD)
+                            if (vto == Forward)
                             {
-                                VF = TopoDS.Vertex(vte.Current());
+                                VF = ShapeCasts.Vertex(vte.Current());
                                 break;
                             }
                         }
                     }
 
                     mapS.Add(ledge.First());
-                    theEdge = TopoDS.Edge(ledge.First());
+                    theEdge = ShapeCasts.Edge(ledge.First());
                     if (!vte.More())
                     {
-                        if (!VL.IsNull())
+                        if (!VL.IsNull)
                         {
                             VL.Nullify();
                         }
@@ -891,35 +896,35 @@ public class BRepCheck_Wire : BRepCheck_Result
 
                 // Check the closure of the wire in 2d (not done in Closed())
 
-                TopoDS_Vertex aVRef = new();
+                Vertex aVRef = new();
                 bool isCheckClose = false;
 
-                if (isGoFwd && !VF.IsNull())
+                if (isGoFwd && !VF.IsNull)
                 {
                     aVRef = VF;
                     isCheckClose = true;
                 }
-                else if (!isGoFwd && !VL.IsNull())
+                else if (!isGoFwd && !VL.IsNull)
                 {
                     aVRef = VL;
                     isCheckClose = true;
                 }
 
-                if (Index == 1 && myCstat != BRepCheck_NotClosed && isCheckClose && !F.IsNull())
+                if (Index == 1 && myCstat != BRepCheck_NotClosed && isCheckClose && !F.IsNull)
                 {
                     ledge.Clear();
                     ind = myMapVE.FindIndex(aVRef);
-                    for (var itlsh = new NCollection_List<TopoDS_Shape>.Iterator(myMapVE[ind]); itlsh.More();
+                    for (var itlsh = new NCollection_List<Shape>.Iterator(myMapVE[ind]); itlsh.More();
                          itlsh.Next())
                     {
-                        TopoDS_Edge edg = TopoDS.Edge(itlsh.Value());
+                        Edge edg = ShapeCasts.Edge(itlsh.Value());
                         orient = edg.Orientation();
                         if (!theRef.IsSame(edg))
                         {
-                            for (vte.Init(edg, TopAbs_VERTEX); vte.More(); vte.Next())
+                            for (vte.Init(edg, ShapeType.Vertex); vte.More(); vte.Next())
                             {
-                                TopAbs_Orientation vto = vte.Current().Orientation();
-                                if (vto == TopAbs_REVERSED && aVRef.IsSame(vte.Current()))
+                                Orientation vto = vte.Current().Orientation();
+                                if (vto == Reversed && aVRef.IsSame(vte.Current()))
                                 {
                                     ledge.Append(edg);
                                     break;
@@ -963,7 +968,7 @@ public class BRepCheck_Wire : BRepCheck_Result
     /// they are left unchanged otherwise. With <paramref name="Update"/>, the status is added to
     /// <see cref="BRepCheck_Result.Status"/> (not for NoCurveOnSurface and InvalidRange, as in OCCT).
     /// </summary>
-    public BRepCheck_Status SelfIntersect(in TopoDS_Face F, ref TopoDS_Edge retE1, ref TopoDS_Edge retE2, bool Update = false)
+    public BRepCheck_Status SelfIntersect(in Face F, ref Edge retE1, ref Edge retE2, bool Update = false)
     {
         NCollection_List<BRepCheck_Status> aStatusList = lockedStatusList();
 
@@ -971,24 +976,24 @@ public class BRepCheck_Wire : BRepCheck_Result
         double first1, last1, first2, last2, tolint;
         Point2D pfirst1, plast1, pfirst2, plast2;
         Point3D P3d, P3d2;
-        BRepAdaptor_Surface HS;
-        var C1 = new Geom2dAdaptor_Curve();
-        var C2 = new Geom2dAdaptor_Curve();
+        FaceSurfaceAdaptor HS;
+        var C1 = new CurveAdaptor2D();
+        var C2 = new CurveAdaptor2D();
         var Inter = new Geom2dInt_GInter();
         var myDomain1 = new IntRes2d_Domain();
         // OCCT's NCollection_IndexedMap<TopoDS_Shape> hashes with std::hash and compares with operator==
         // (IsEqual: the orientation counts)
-        var EMap = new NCollection_IndexedMap<TopoDS_Shape>(EqualityComparer<TopoDS_Shape>.Default);
+        var EMap = new NCollection_IndexedMap<Shape>(EqualityComparer<Shape>.Default);
         //
         //-- check with proper tolerances if there is no
         //-- point in the tolerance of a vertex.
         tolint = 1.0e-10;
-        HS = new BRepAdaptor_Surface();
+        HS = new FaceSurfaceAdaptor();
         HS.Initialize(F, false);
         //
-        for (var Iter1 = new TopoDS_Iterator(myShape); Iter1.More(); Iter1.Next())
+        for (var Iter1 = new Iterator(myShape); Iter1.More(); Iter1.Next())
         {
-            if (Iter1.Value().ShapeType() == TopAbs_EDGE)
+            if (Iter1.Value().ShapeType() == ShapeType.Edge)
             {
                 EMap.Add(Iter1.Value());
             }
@@ -1013,15 +1018,15 @@ public class BRepCheck_Wire : BRepCheck_Result
             tabDom[k0] = new IntRes2d_Domain();
         }
 
-        var tabCur = new NCollection_Array1<Geom2d_Curve?>(1, Nbedges);
+        var tabCur = new NCollection_Array1<Curve2D?>(1, Nbedges);
         var boxes = new NCollection_Array1<Box2d>(1, Nbedges);
         //
         for (i = 1; i <= Nbedges; i++)
         {
-            TopoDS_Edge E1 = TopoDS.Edge(EMap.FindKey(i));
+            Edge E1 = ShapeCasts.Edge(EMap.FindKey(i));
             if (i == 1)
             {
-                Geom2d_Curve? pcu = BRep_Tool.CurveOnSurface(E1, F, out first1, out last1);
+                Curve2D? pcu = Tool.CurveOnSurface(E1, F, out first1, out last1);
                 if (pcu is null)
                 {
                     retE1 = E1;
@@ -1036,7 +1041,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                 //
                 C1.Load(pcu);
                 // To avoid exception in Segment if C1 is BSpline - IFV
-                if (!C1.IsPeriodic())
+                if (!C1.IsPeriodic)
                 {
                     if (C1.FirstParameter() > first1)
                     {
@@ -1050,10 +1055,10 @@ public class BRepCheck_Wire : BRepCheck_Result
                 }
 
                 //
-                BRep_Tool.UVPoints(E1, F, out pfirst1, out plast1);
+                Tool.UVPoints(E1, F, out pfirst1, out plast1);
                 myDomain1.SetValues(pfirst1, first1, tolint, plast1, last1, tolint);
                 //
-                BndLib_Add2dCurve.Add(C1, first1, last1, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref boxes[i]);
+                Add2dCurve.Add(C1, first1, last1, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref boxes[i]);
             } // if (i == 1) {
             else
             {
@@ -1080,7 +1085,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                         //-- If the point of intersection is within the tolerance of a vertex
                         //-- this intersection is considered correct (no error)
                         bool localok = false;
-                        Geom_Curve? ConS = BRep_Tool.Curve(E1, out Placement L, out double _, out double _);
+                        Curve3D? ConS = Tool.Curve(E1, out Placement L, out double _, out double _);
                         if (ConS is not null)
                         {
                             //-- try to test in 3d. (ParamOnSecond gives the same result)
@@ -1093,15 +1098,15 @@ public class BRepCheck_Wire : BRepCheck_Result
                             P3d = HS.Value(aP2d.X(), aP2d.Y());
                         }
 
-                        var ExplVtx = new TopExp_Explorer();
-                        for (ExplVtx.Init(E1, TopAbs_VERTEX); !localok && ExplVtx.More(); ExplVtx.Next())
+                        var ExplVtx = new Explorer();
+                        for (ExplVtx.Init(E1, ShapeType.Vertex); !localok && ExplVtx.More(); ExplVtx.Next())
                         {
                             Point3D p3dvtt;
                             double tolvtt, p3dvttDistanceP3d;
                             //
-                            TopoDS_Vertex vtt = TopoDS.Vertex(ExplVtx.Current());
-                            p3dvtt = BRep_Tool.Pnt(vtt);
-                            tolvtt = BRep_Tool.Tolerance(vtt);
+                            Vertex vtt = ShapeCasts.Vertex(ExplVtx.Current());
+                            p3dvtt = Tool.Pnt(vtt);
+                            tolvtt = Tool.Tolerance(vtt);
                             tolvtt = tolvtt * tolvtt;
                             p3dvttDistanceP3d = p3dvtt.SquareDistance(P3d);
                             if (p3dvttDistanceP3d <= tolvtt)
@@ -1127,15 +1132,15 @@ public class BRepCheck_Wire : BRepCheck_Result
             //
             for (j = i + 1; j <= Nbedges; j++)
             {
-                TopoDS_Edge E2 = TopoDS.Edge(EMap.FindKey(j));
+                Edge E2 = ShapeCasts.Edge(EMap.FindKey(j));
                 if (i == 1)
                 {
-                    tabCur[j] = BRep_Tool.CurveOnSurface(E2, F, out first2, out last2);
+                    tabCur[j] = Tool.CurveOnSurface(E2, F, out first2, out last2);
                     if (tabCur[j] is not null && last2 > first2)
                     {
                         C2.Load(tabCur[j]!);
                         // To avoid exception in Segment if C2 is BSpline - IFV
-                        if (!C2.IsPeriodic())
+                        if (!C2.IsPeriodic)
                         {
                             if (C2.FirstParameter() > first2)
                             {
@@ -1149,10 +1154,10 @@ public class BRepCheck_Wire : BRepCheck_Result
                         }
 
                         //
-                        BRep_Tool.UVPoints(E2, F, out pfirst2, out plast2);
+                        Tool.UVPoints(E2, F, out pfirst2, out plast2);
                         tabDom[j - 1].SetValues(pfirst2, first2, tolint, plast2, last2, tolint);
 
-                        BndLib_Add2dCurve.Add(C2, first2, last2, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref boxes[j]);
+                        Add2dCurve.Add(C2, first2, last2, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref boxes[j]);
                     }
                     else
                     {
@@ -1192,11 +1197,11 @@ public class BRepCheck_Wire : BRepCheck_Result
                     int nbp, nbs;
                     double IP_ParamOnFirst, IP_ParamOnSecond;
                     IntRes2d_Transition Tr1, Tr2;
-                    var CommonVertices = new NCollection_List<TopoDS_Shape>();
-                    var itl = new NCollection_List<TopoDS_Shape>.Iterator();
-                    var Vmap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+                    var CommonVertices = new NCollection_List<Shape>();
+                    var itl = new NCollection_List<Shape>.Iterator();
+                    var Vmap = new NCollection_Map<Shape>(ShapeHasher.Instance);
                     //
-                    var it = new TopoDS_Iterator(E1);
+                    var it = new Iterator(E1);
                     for (; it.More(); it.Next())
                     {
                         Vmap.Add(it.Value());
@@ -1206,7 +1211,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                     it.Initialize(E2);
                     for (; it.More(); it.Next())
                     {
-                        TopoDS_Shape V = it.Value();
+                        Shape V = it.Value();
                         if (Vmap.Contains(V))
                         {
                             CommonVertices.Append(V);
@@ -1234,8 +1239,8 @@ public class BRepCheck_Wire : BRepCheck_Result
                             //-- this intersection is considered correct (no error)
                             bool localok = false;
                             //
-                            Geom_Curve? ConS = BRep_Tool.Curve(E1, out Placement L, out double f1, out double l1);
-                            Geom_Curve? ConS2 = BRep_Tool.Curve(E2, out Placement L2, out double f2, out double l2);
+                            Curve3D? ConS = Tool.Curve(E1, out Placement L, out double f1, out double l1);
+                            Curve3D? ConS2 = Tool.Curve(E2, out Placement L2, out double f2, out double l2);
                             // gka protect against working out of edge range
                             if (f1 - IP_ParamOnFirst > global::Kerf.Engine.Foundation.Precision.PConfusion()
                                 || IP_ParamOnFirst - l1 > global::Kerf.Engine.Foundation.Precision.PConfusion()
@@ -1275,9 +1280,9 @@ public class BRepCheck_Wire : BRepCheck_Result
                                 double p3dvttDistanceP3d, p3dvttDistanceP3d2;
                                 Point3D p3dvtt;
                                 //
-                                TopoDS_Vertex vtt = TopoDS.Vertex(itl.Value());
-                                p3dvtt = BRep_Tool.Pnt(vtt);
-                                tolvtt = BRep_Tool.Tolerance(vtt);
+                                Vertex vtt = ShapeCasts.Vertex(itl.Value());
+                                p3dvtt = Tool.Pnt(vtt);
+                                tolvtt = Tool.Tolerance(vtt);
                                 tolvtt = 1.1 * tolvtt;
                                 tolvtt = tolvtt * tolvtt;
                                 p3dvttDistanceP3d = p3dvtt.SquareDistance(P3d);
@@ -1310,21 +1315,21 @@ public class BRepCheck_Wire : BRepCheck_Result
                                     double disptvtx;
                                     Point3D p3dvtt;
                                     //
-                                    TopoDS_Vertex vtt = TopoDS.Vertex(itl.Value());
-                                    p3dvtt = BRep_Tool.Pnt(vtt);
+                                    Vertex vtt = ShapeCasts.Vertex(itl.Value());
+                                    p3dvtt = Tool.Pnt(vtt);
                                     disptvtx = P3d.Distance(p3dvtt);
                                     if (disptvtx < distauvtxleplusproche)
                                     {
                                         VertexLePlusProche = p3dvtt;
                                         distauvtxleplusproche = disptvtx;
-                                        VParaOnEdge1 = BRep_Tool.Parameter(vtt, E1);
-                                        VParaOnEdge2 = BRep_Tool.Parameter(vtt, E2);
+                                        VParaOnEdge1 = Tool.Parameter(vtt, E1);
+                                        VParaOnEdge2 = Tool.Parameter(vtt, E2);
                                     }
                                     // eap: case of closed edge
                                     else if (IsEqual(distauvtxleplusproche, disptvtx))
                                     {
-                                        double newVParaOnEdge1 = BRep_Tool.Parameter(vtt, E1);
-                                        double newVParaOnEdge2 = BRep_Tool.Parameter(vtt, E2);
+                                        double newVParaOnEdge1 = Tool.Parameter(vtt, E1);
+                                        double newVParaOnEdge2 = Tool.Parameter(vtt, E2);
                                         if (Math.Abs(IP_ParamOnFirst - VParaOnEdge1)
                                             + Math.Abs(IP_ParamOnSecond - VParaOnEdge2)
                                             > Math.Abs(IP_ParamOnFirst - newVParaOnEdge1)
@@ -1353,7 +1358,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                                     int k;
 
                                     localok = true;
-                                    double tole1 = BRep_Tool.Tolerance(E1);
+                                    double tole1 = Tool.Tolerance(E1);
                                     for (k = 2; localok && k < 9; k++)
                                     {
                                         double u = VParaOnEdge1 + k * du1; // check if it works
@@ -1386,7 +1391,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                                     var aTmpDir = new Direction3D(P3d2.XYZ().Subtracted(VertexLePlusProche.XYZ()));
 
                                     Lig.SetDirection(aTmpDir);
-                                    double tole2 = BRep_Tool.Tolerance(E2);
+                                    double tole2 = Tool.Tolerance(E2);
                                     for (k = 2; localok && k < 9; k++)
                                     {
                                         double u = VParaOnEdge2 + k * du2; // check if it works
@@ -1473,8 +1478,8 @@ public class BRepCheck_Wire : BRepCheck_Result
                                         //
                                         aPAR_T = 0.43213918;
                                         //
-                                        aTolE1 = BRep_Tool.Tolerance(E1);
-                                        aTolE2 = BRep_Tool.Tolerance(E2);
+                                        aTolE1 = Tool.Tolerance(E1);
+                                        aTolE2 = Tool.Tolerance(E2);
                                         aTol2 = aTolE1 + aTolE2;
                                         aTol2 = aTol2 * aTol2;
                                         //
@@ -1513,8 +1518,8 @@ public class BRepCheck_Wire : BRepCheck_Result
 
                                 //
                                 double tolvtt;
-                                Geom_Curve? ConS = BRep_Tool.Curve(E1, out Placement L, out double _, out double _);
-                                Geom_Curve? ConS2 = BRep_Tool.Curve(E2, out Placement L2, out double _, out double _);
+                                Curve3D? ConS = Tool.Curve(E1, out Placement L, out double _, out double _);
+                                Curve3D? ConS2 = Tool.Curve(E2, out Placement L2, out double _, out double _);
                                 if (ConS is not null)
                                 {
                                     P3d = ConS.Value(IP_ParamOnFirst);
@@ -1543,9 +1548,9 @@ public class BRepCheck_Wire : BRepCheck_Result
                                     double p3dvttDistanceP3d, p3dvttDistanceP3d2;
                                     Point3D p3dvtt;
                                     //
-                                    TopoDS_Vertex vtt = TopoDS.Vertex(itl.Value());
-                                    p3dvtt = BRep_Tool.Pnt(vtt);
-                                    tolvtt = BRep_Tool.Tolerance(vtt);
+                                    Vertex vtt = ShapeCasts.Vertex(itl.Value());
+                                    p3dvtt = Tool.Pnt(vtt);
+                                    tolvtt = Tool.Tolerance(vtt);
                                     tolvtt = 1.1 * tolvtt;
                                     tolvtt = tolvtt * tolvtt;
                                     p3dvttDistanceP3d = p3dvtt.SquareDistance(P3d);
@@ -1616,38 +1621,38 @@ public class BRepCheck_Wire : BRepCheck_Result
     public bool GeometricControls() => myGctrl;
 
     // fill <mapE> with edges connected to <edg> through vertices contained in <mapVE>
-    private static void Propagate(NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> mapVE,
-                                  in TopoDS_Shape edg,
-                                  NCollection_Map<TopoDS_Shape> mapE)
+    private static void Propagate(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapVE,
+                                  in Shape edg,
+                                  NCollection_Map<Shape> mapE)
     {
-        var currentEdges = new NCollection_List<TopoDS_Shape>();
+        var currentEdges = new NCollection_List<Shape>();
         currentEdges.Append(edg);
 
         do
         {
-            var nextEdges = new NCollection_List<TopoDS_Shape>();
-            var itrc = new NCollection_List<TopoDS_Shape>.Iterator(currentEdges);
+            var nextEdges = new NCollection_List<Shape>();
+            var itrc = new NCollection_List<Shape>.Iterator(currentEdges);
             for (; itrc.More(); itrc.Next())
             {
-                TopoDS_Shape Edge = itrc.Value();
+                Shape Edge = itrc.Value();
                 if (!mapE.Contains(Edge))
                 {
                     mapE.Add(Edge);
                 }
 
-                var ex = new TopExp_Explorer(Edge, TopAbs_VERTEX);
+                var ex = new Explorer(Edge, ShapeType.Vertex);
                 for (; ex.More(); ex.Next())
                 {
-                    TopoDS_Vertex vtx = TopoDS.Vertex(ex.Current());
+                    Vertex vtx = ShapeCasts.Vertex(ex.Current());
                     int indv = mapVE.FindIndex(vtx);
                     if (indv != 0)
                     {
-                        NCollection_List<TopoDS_Shape> edges = mapVE[indv];
+                        NCollection_List<Shape> edges = mapVE[indv];
 
-                        var itl = new NCollection_List<TopoDS_Shape>.Iterator(edges);
+                        var itl = new NCollection_List<Shape>.Iterator(edges);
                         for (; itl.More(); itl.Next())
                         {
-                            TopoDS_Shape E = itl.Value();
+                            Shape E = itl.Value();
                             if (!Edge.IsSame(E) && !mapE.Contains(E))
                             {
                                 mapE.Add(E);
@@ -1664,10 +1669,10 @@ public class BRepCheck_Wire : BRepCheck_Result
 
     // The orientation of the key of <mapE> that is the same edge as <edg>. The map compares with IsSame, so it
     // holds one such key and OCCT's map order doesn't matter.
-    private static TopAbs_Orientation GetOrientation(NCollection_Map<TopoDS_Shape> mapE, in TopoDS_Edge edg)
+    private static Orientation GetOrientation(NCollection_Map<Shape> mapE, in Edge edg)
     {
-        TopoDS_Shape aKey = new();
-        foreach (TopoDS_Shape itm in mapE)
+        Shape aKey = new();
+        foreach (Shape itm in mapE)
         {
             aKey = itm;
             if (itm.IsSame(edg))
@@ -1680,12 +1685,12 @@ public class BRepCheck_Wire : BRepCheck_Result
     }
 
     // For vertex theVertex given function find an edge along that we should go further.
-    private static void ChoixUV(in TopoDS_Vertex theVertex,
-                                in TopoDS_Edge theEdge,
-                                in TopoDS_Face theFace,
-                                NCollection_List<TopoDS_Shape> theLOfShape)
+    private static void ChoixUV(in Vertex theVertex,
+                                in Edge theEdge,
+                                in Face theFace,
+                                NCollection_List<Shape> theLOfShape)
     {
-        var It = new NCollection_List<TopoDS_Shape>.Iterator(theLOfShape);
+        var It = new NCollection_List<Shape>.Iterator(theLOfShape);
         while (It.More())
         {
             if (theEdge.IsSame(It.Value()))
@@ -1698,19 +1703,19 @@ public class BRepCheck_Wire : BRepCheck_Result
             }
         }
 
-        double aTol3d = BRep_Tool.Tolerance(theVertex);
+        double aTol3d = Tool.Tolerance(theVertex);
 
         int anIndex = 0, anIndMin = 0;
-        TopoDS_Edge anEFound;
+        Edge anEFound;
         Point2D aPntRef, aPnt = new();
         Vector2D aDerRef, aDer;
         double aMinAngle, aMaxAngle, anAngle;
         double a_gpResolution = Constants.Resolution();
-        TopAbs_Orientation aVOrientation, anEdgOrientation;
+        Orientation aVOrientation, anEdgOrientation;
         double aParam = 0.0, aFirstParam, aLastParam, aParPiv;
-        var aFaceSurface = new BRepAdaptor_Surface(theFace, false); // no restriction
+        var aFaceSurface = new FaceSurfaceAdaptor(theFace, false); // no restriction
 
-        Geom2d_Curve? C2d = BRep_Tool.CurveOnSurface(theEdge, theFace, out aFirstParam, out aLastParam);
+        Curve2D? C2d = Tool.CurveOnSurface(theEdge, theFace, out aFirstParam, out aLastParam);
         if (C2d is null)
         { // JAG 10.12.96
             return;
@@ -1724,7 +1729,7 @@ public class BRepCheck_Wire : BRepCheck_Result
         aMaxAngle = RealFirst();
 
         // OCCT passes the curve handle, converted to an adaptor by Geom2dAdaptor_Curve's constructor
-        CurveDirForParameter(new Geom2dAdaptor_Curve(C2d), aParPiv, out aPntRef, out aDerRef);
+        CurveDirForParameter(new CurveAdaptor2D(C2d), aParPiv, out aPntRef, out aDerRef);
 
         if (aVOrientation != anEdgOrientation)
         {
@@ -1736,14 +1741,14 @@ public class BRepCheck_Wire : BRepCheck_Result
         for (; It.More(); It.Next())
         {
             anIndex++;
-            TopoDS_Edge anE = TopoDS.Edge(It.Value());
-            C2d = BRep_Tool.CurveOnSurface(anE, theFace, out aFirstParam, out aLastParam);
+            Edge anE = ShapeCasts.Edge(It.Value());
+            C2d = Tool.CurveOnSurface(anE, theFace, out aFirstParam, out aLastParam);
             if (C2d is null)
             {
                 continue;
             }
 
-            var aCA = new Geom2dAdaptor_Curve(C2d);
+            var aCA = new CurveAdaptor2D(C2d);
 
             aParam = (aVOrientation != anE.Orientation()) ? aFirstParam : aLastParam;
             aPnt = aCA.Value(aParam);
@@ -1773,7 +1778,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                 anAngle += 2.0 * M_PI;
             }
 
-            if (theFace.Orientation() == TopAbs_FORWARD)
+            if (theFace.Orientation() == Forward)
             {
                 if (anAngle < aMinAngle)
                 {
@@ -1797,9 +1802,9 @@ public class BRepCheck_Wire : BRepCheck_Result
             if (theLOfShape.Extent() == 1)
             {
                 bool IsFound = true; // all right
-                anEFound = TopoDS.Edge(theLOfShape.First());
+                anEFound = ShapeCasts.Edge(theLOfShape.First());
 
-                if (anEFound.IsNull() || BRep_Tool.Degenerated(theEdge) || BRep_Tool.Degenerated(anEFound))
+                if (anEFound.IsNull || Tool.Degenerated(theEdge) || Tool.Degenerated(anEFound))
                 {
                     IsFound = false; // bad
                 }
@@ -1811,8 +1816,8 @@ public class BRepCheck_Wire : BRepCheck_Result
                 // clousureness in 3D
                 {
                     // IsDistanceIn3DTolerance
-                    var bcEdg = new BRepAdaptor_Curve(theEdge, theFace);
-                    var bcEvois = new BRepAdaptor_Curve(anEFound, theFace);
+                    var bcEdg = new EdgeCurveAdaptor(theEdge, theFace);
+                    var bcEvois = new EdgeCurveAdaptor(anEFound, theFace);
                     Point3D pEdg = bcEdg.Value(aParPiv);
                     Point3D pEFound = bcEvois.Value(aParam);
 
@@ -1849,7 +1854,7 @@ public class BRepCheck_Wire : BRepCheck_Result
         }
     } // End of function
 
-    private static void CurveDirForParameter(Geom2dAdaptor_Curve aC2d, double aPrm, out Point2D Pnt, out Vector2D aVec2d)
+    private static void CurveDirForParameter(CurveAdaptor2D aC2d, double aPrm, out Point2D Pnt, out Vector2D aVec2d)
     {
         double aTol = Constants.Resolution();
         int i;
@@ -1871,26 +1876,26 @@ public class BRepCheck_Wire : BRepCheck_Result
 
     // Returns the parametric point of theVertex on theFace through theEdge; false if theVertex isn't a vertex of
     // theEdge or theEdge has no pcurve on theFace.
-    private static bool GetPnt2d(in TopoDS_Vertex theVertex, in TopoDS_Edge theEdge, in TopoDS_Face theFace, ref Point2D aPnt)
+    private static bool GetPnt2d(in Vertex theVertex, in Edge theEdge, in Face theFace, ref Point2D aPnt)
     {
-        Geom2d_Curve? aPCurve;
+        Curve2D? aPCurve;
         double aParOnEdge;
 
-        TopExp.Vertices(theEdge, out TopoDS_Vertex aFirstVtx, out TopoDS_Vertex aLastVtx);
+        Exploration.Vertices(theEdge, out Vertex aFirstVtx, out Vertex aLastVtx);
 
         if (!theVertex.IsSame(aFirstVtx) && !theVertex.IsSame(aLastVtx))
         {
             return false;
         }
 
-        aPCurve = BRep_Tool.CurveOnSurface(theEdge, theFace, out double _, out double _);
+        aPCurve = Tool.CurveOnSurface(theEdge, theFace, out double _, out double _);
 
         if (aPCurve is null)
         {
             return false;
         }
 
-        aParOnEdge = BRep_Tool.Parameter(theVertex, theEdge);
+        aParOnEdge = Tool.Parameter(theVertex, theEdge);
         aPnt = aPCurve.Value(aParOnEdge);
 
         return true;
@@ -1898,28 +1903,28 @@ public class BRepCheck_Wire : BRepCheck_Result
 
     // Checks the distance between first point of the first edge and last point of the last edge in 2d for
     // periodic face.
-    private static bool IsClosed2dForPeriodicFace(in TopoDS_Face theFace,
+    private static bool IsClosed2dForPeriodicFace(in Face theFace,
                                                   in Point2D theP1,
                                                   in Point2D theP2,
-                                                  in TopoDS_Vertex theVertex)
+                                                  in Vertex theVertex)
     {
         // Check 2d distance for periodic faces with seam edge.
         // Searching for seam edges
-        var aSeamEdges = new NCollection_List<TopoDS_Shape>();
-        var NotSeams = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var ClosedEdges = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var anExp = new TopExp_Explorer(theFace, TopAbs_EDGE);
+        var aSeamEdges = new NCollection_List<Shape>();
+        var NotSeams = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var ClosedEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var anExp = new Explorer(theFace, ShapeType.Edge);
 
         for (; anExp.More(); anExp.Next())
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
+            Edge anEdge = ShapeCasts.Edge(anExp.Current());
 
             if (NotSeams.Contains(anEdge))
             {
                 continue;
             }
 
-            if (!IsOriented(anEdge) || !BRep_Tool.IsClosed(anEdge, theFace))
+            if (!IsOriented(anEdge) || !Tool.IsClosed(anEdge, theFace))
             {
                 NotSeams.Add(anEdge);
                 continue;
@@ -1937,23 +1942,23 @@ public class BRepCheck_Wire : BRepCheck_Result
         }
 
         // check if theVertex lies on one of the seam edges
-        var aFaceSurface = new BRepAdaptor_Surface(theFace, false);
-        double aTol = BRep_Tool.Tolerance(theVertex);
+        var aFaceSurface = new FaceSurfaceAdaptor(theFace, false);
+        double aTol = Tool.Tolerance(theVertex);
         double aUResol = aFaceSurface.UResolution(aTol);
         double aVResol = aFaceSurface.VResolution(aTol);
         double aVicinity = Math.Sqrt(aUResol * aUResol + aVResol * aVResol);
         double aDistP1P2 = theP1.Distance(theP2);
 
-        var anIter = new NCollection_List<TopoDS_Shape>.Iterator(aSeamEdges);
+        var anIter = new NCollection_List<Shape>.Iterator(aSeamEdges);
 
         for (; anIter.More(); anIter.Next())
         {
-            TopoDS_Edge aSeamEdge = TopoDS.Edge(anIter.Value());
+            Edge aSeamEdge = ShapeCasts.Edge(anIter.Value());
 
-            anExp.Init(aSeamEdge, TopAbs_VERTEX);
+            anExp.Init(aSeamEdge, ShapeType.Vertex);
             for (; anExp.More(); anExp.Next())
             {
-                TopoDS_Shape aVtx = anExp.Current();
+                Shape aVtx = anExp.Current();
 
                 // We found an edge. Check the distance between two given points
                 //  to be lower than the computed tolerance.
@@ -1968,7 +1973,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                         continue;
                     }
 
-                    aSeamEdge = TopoDS.Edge(aSeamEdge.Reversed());
+                    aSeamEdge = ShapeCasts.Edge(aSeamEdge.Reversed());
 
                     if (!GetPnt2d(theVertex, aSeamEdge, theFace, ref aPnt2))
                     {

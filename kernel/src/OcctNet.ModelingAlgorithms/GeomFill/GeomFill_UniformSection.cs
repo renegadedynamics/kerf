@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 
@@ -16,22 +18,22 @@ namespace Occt;
 /// </remarks>
 public class GeomFill_UniformSection : GeomFill_SectionLaw
 {
-    private readonly Geom_Curve mySection;
-    private readonly Geom_BSplineCurve myCurve;
+    private readonly Curve3D mySection;
+    private readonly BSplineCurve3D myCurve;
     private readonly double First;
     private readonly double Last;
 
     /// <summary>A constant section law of the section C, between the law's parameters FirstParameter and LastParameter.</summary>
-    public GeomFill_UniformSection(Geom_Curve C, double FirstParameter = 0.0, double LastParameter = 1.0)
+    public GeomFill_UniformSection(Curve3D C, double FirstParameter = 0.0, double LastParameter = 1.0)
     {
         First = FirstParameter;
         Last = LastParameter;
-        mySection = (Geom_Curve)C.Copy();
-        Geom_BSplineCurve? aCurve = C as Geom_BSplineCurve;
+        mySection = (Curve3D)C.Copy();
+        BSplineCurve3D? aCurve = C as BSplineCurve3D;
         if (aCurve is null)
         {
-            aCurve = GeomConvert.CurveToBSplineCurve(C, QuasiAngular);
-            if (aCurve.IsPeriodic())
+            aCurve = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(C, QuasiAngular);
+            if (aCurve.IsPeriodic)
             {
                 int M = aCurve.Degree() / 2 + 1;
                 aCurve.RemoveKnot(1, M, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -73,9 +75,9 @@ public class GeomFill_UniformSection : GeomFill_SectionLaw
     }
 
     /// <summary>The surface swept by the section: a new, unfrozen surface of degree 1 in v.</summary>
-    public override Geom_BSplineSurface? BSplineSurface()
+    public override BSplineSurface? BSplineSurface()
     {
-        int ii, NbPoles = myCurve.NbPoles();
+        int ii, NbPoles = myCurve.PoleCount;
         NCollection_Array2<Point3D> Poles = new(1, NbPoles, 1, 2);
         NCollection_Array1<double> CurKnots = myCurve.InternalKnots();
         NCollection_Array1<double> UKnots = new(CurKnots);
@@ -94,16 +96,16 @@ public class GeomFill_UniformSection : GeomFill_SectionLaw
 
         VMults.Init(2);
 
-        Geom_BSplineSurface BS = new Geom_BSplineSurface(Poles, UKnots, VKnots, UMults, VMults, myCurve.Degree(), 1,
-                                                         myCurve.IsPeriodic());
+        BSplineSurface BS = new BSplineSurface(Poles, UKnots, VKnots, UMults, VMults, myCurve.Degree(), 1,
+                                                         myCurve.IsPeriodic);
 
         return BS;
     }
 
     public override void SectionShape(out int NbPoles, out int NbKnots, out int Degree)
     {
-        NbPoles = myCurve.NbPoles();
-        NbKnots = myCurve.NbKnots();
+        NbPoles = myCurve.PoleCount;
+        NbKnots = myCurve.KnotCount;
         Degree = myCurve.Degree();
     }
 
@@ -117,9 +119,9 @@ public class GeomFill_UniformSection : GeomFill_SectionLaw
         TMults.Assign(myCurve.InternalMultiplicities());
     }
 
-    public override bool IsRational() => myCurve.IsRational();
+    public override bool IsRational() => myCurve.IsRational;
 
-    public override bool IsUPeriodic() => myCurve.IsPeriodic();
+    public override bool IsUPeriodic() => myCurve.IsPeriodic;
 
     public override bool IsVPeriodic() => true;
 
@@ -179,8 +181,8 @@ public class GeomFill_UniformSection : GeomFill_SectionLaw
 
     public override double MaximalSection()
     {
-        GeomAdaptor_Curve AC = new GeomAdaptor_Curve(mySection);
-        return GCPnts_AbscissaPoint.Length(AC);
+        CurveAdaptor AC = new CurveAdaptor(mySection);
+        return AbscissaPoint.Length(AC);
     }
 
     public override void GetMinimalWeight(NCollection_Array1<double> Weights)
@@ -195,10 +197,10 @@ public class GeomFill_UniformSection : GeomFill_SectionLaw
     }
 
     /// <summary>A new copy of the section.</summary>
-    public override Geom_Curve ConstantSection()
+    public override Curve3D ConstantSection()
     {
-        Geom_Curve C;
-        C = (Geom_Curve)mySection.Copy();
+        Curve3D C;
+        C = (Curve3D)mySection.Copy();
         return C;
     }
 }

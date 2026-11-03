@@ -1,4 +1,9 @@
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Occt;
 
@@ -35,7 +40,7 @@ public readonly record struct CurvePosition
 /// </summary>
 public abstract partial class Shape1D : Shape
 {
-    private protected Shape1D(TopoDS_Shape? obj, string label = "", Color? color = null) : base(obj, label, color) { }
+    private protected Shape1D(global::Kerf.Topology.Shape? obj, string label = "", Color? color = null) : base(obj, label, color) { }
 
     internal override int? Dim => 1;
 
@@ -49,7 +54,7 @@ public abstract partial class Shape1D : Shape
         {
             if (IsEmpty)
                 throw new InvalidOperationException("Can't determine if empty Edge or Wire is closed");
-            return BRep_Tool.IsClosed(TopoShape);
+            return Tool.IsClosed(TopoShape);
         }
     }
 
@@ -60,7 +65,7 @@ public abstract partial class Shape1D : Shape
         {
             if (IsEmpty)
                 throw new InvalidOperationException("Can't determine direction of empty Edge or Wire");
-            return TopoShape.Orientation() == TopAbs_Orientation.TopAbs_FORWARD;
+            return TopoShape.Orientation() == global::Kerf.Topology.Orientation.Forward;
         }
     }
 
@@ -69,7 +74,7 @@ public abstract partial class Shape1D : Shape
     {
         get
         {
-            var props = new GProp_GProps();
+            var props = new Properties();
             BRepGProp.LinearProperties(TopoShape, props);
             return props.Mass();
         }
@@ -82,7 +87,7 @@ public abstract partial class Shape1D : Shape
         get
         {
             var geom = GeomAdaptor();
-            if (geom is BRepAdaptor_CompCurve)
+            if (geom is WireCurveAdaptor)
                 // A wire: its comp curve reports OtherCurve, so ask its first edge
                 return Edges().First.Radius;
             if (geom.GetType() != CurveKind.Circle)
@@ -107,14 +112,14 @@ public abstract partial class Shape1D : Shape
             var faces = OneD.ConnectedFaces(this);
             if (faces.Count == 1)
             {
-                if (OneD.IsSeamOf(TopoDS.Edge(TopoShape), faces[0]))
+                if (OneD.IsSeamOf(ShapeCasts.Edge(TopoShape), faces[0]))
                     return Convexity.Smooth;
                 throw new InvalidOperationException(
                     "this edge lies on one face only, so there is no crease to classify - convexity needs an edge shared by two faces");
             }
             if (faces.Count != 2)
                 throw new InvalidOperationException($"{faces.Count} faces meet at this edge - convexity needs exactly two");
-            return OneD.DihedralConvexity(TopoDS.Edge(TopoShape), faces[0], faces[1]);
+            return OneD.DihedralConvexity(ShapeCasts.Edge(TopoShape), faces[0], faces[1]);
         }
     }
 
@@ -124,12 +129,12 @@ public abstract partial class Shape1D : Shape
     // ---- Curve evaluation ----
 
     /// <summary>The OCCT adaptor for the curve: a <c>BRepAdaptor_Curve</c> for an edge, a <c>BRepAdaptor_CompCurve</c> for a wire.</summary>
-    public abstract Adaptor3d_Curve GeomAdaptor();
+    public abstract CurveAdaptorBase GeomAdaptor();
 
     /// <summary>
     /// The edge (as an adaptor) and the OCCT curve parameter at a position, and whether that edge runs forward.
     /// </summary>
-    internal abstract (BRepAdaptor_Curve Curve, double Param, bool Forward) OcctParamAt(double position, PositionMode mode = PositionMode.Parameter);
+    internal abstract (EdgeCurveAdaptor Curve, double Param, bool Forward) OcctParamAt(double position, PositionMode mode = PositionMode.Parameter);
 
     /// <summary>The OCCT curve parameter at a normalised arc-length position (0 at the start, 1 at the end).</summary>
     public abstract double ParamAt(double position);
@@ -164,27 +169,27 @@ public abstract partial class Shape1D : Shape
     }
 
     /// <summary>The curve and the parameters along it that keep a polygon through them within <paramref name="deflection"/>.</summary>
-    private (Adaptor3d_Curve, List<double>) DeflectionParameters(double deflection)
+    private (CurveAdaptorBase, List<double>) DeflectionParameters(double deflection)
     {
         var curve = GeomAdaptor();
         var parameters = new List<double>();
         // GCPnts_UniformDeflection gives the best results but needs C2 continuity
         if (curve.Continuity() is Continuity.C2 or Continuity.C3 or Continuity.CN)
         {
-            var discretizer = new GCPnts_UniformDeflection();
+            var discretizer = new UniformDeflection();
             discretizer.Initialize(curve, deflection, curve.FirstParameter(), curve.LastParameter());
-            if (!discretizer.IsDone() || discretizer.NbPoints() == 0)
+            if (!discretizer.IsDone || discretizer.PointCount == 0)
                 throw new InvalidOperationException("Deflection calculation failed");
-            for (int i = 1; i <= discretizer.NbPoints(); i++)
+            for (int i = 1; i <= discretizer.PointCount; i++)
                 parameters.Add(discretizer.Parameter(i));
         }
         else
         {
-            var discretizer = new GCPnts_QuasiUniformDeflection();
+            var discretizer = new QuasiUniformDeflection();
             discretizer.Initialize(curve, deflection, curve.FirstParameter(), curve.LastParameter());
-            if (!discretizer.IsDone() || discretizer.NbPoints() == 0)
+            if (!discretizer.IsDone || discretizer.PointCount == 0)
                 throw new InvalidOperationException("Deflection calculation failed");
-            for (int i = 1; i <= discretizer.NbPoints(); i++)
+            for (int i = 1; i <= discretizer.PointCount; i++)
                 parameters.Add(discretizer.Parameter(i));
         }
         return (curve, parameters);
@@ -193,7 +198,7 @@ public abstract partial class Shape1D : Shape
     /// <summary>The derivative of the curve of the given <paramref name="order"/> at a position or point.</summary>
     public Vector DerivativeAt(CurvePosition position, int order = 2, PositionMode mode = PositionMode.Parameter)
     {
-        BRepAdaptor_Curve curve;
+        EdgeCurveAdaptor curve;
         double param;
         bool closestForward;
         Shape1D closest = this;
@@ -268,7 +273,7 @@ public abstract partial class Shape1D : Shape
                 return PositionAt(0.5);
             case CenterOf.Mass:
             {
-                var props = new GProp_GProps();
+                var props = new Properties();
                 BRepGProp.LinearProperties(TopoShape, props);
                 var c = props.CentreOfMass();
                 return new Vector(c);
@@ -291,7 +296,7 @@ public abstract partial class Shape1D : Shape
     public Location LocationAt(double distance, PositionMode mode = PositionMode.Parameter,
                                FrameMethod frameMethod = FrameMethod.Frenet, Vector? xDir = null)
     {
-        Adaptor3d_Curve curve;
+        CurveAdaptorBase curve;
         double param;
         // ParamAt and OcctParamAt measure a reversed shape from its other end
         if (this is Wire)
@@ -344,7 +349,7 @@ public abstract partial class Shape1D : Shape
         method == FrameMethod.Frenet ? new GeomFill_Frenet() : new GeomFill_CorrectedFrenet();
 
     /// <summary>The Location at a curve parameter, framed by a trihedron law on that curve.</summary>
-    private Location FrameLocation(Adaptor3d_Curve curve, double param, GeomFill_TrihedronLaw law, Vector? xDir)
+    private Location FrameLocation(CurveAdaptorBase curve, double param, GeomFill_TrihedronLaw law, Vector? xDir)
     {
         var tangent = new Vector3D();
         var normal = new Vector3D();
@@ -495,7 +500,7 @@ public abstract partial class Shape1D : Shape
             {
                 var finder = new BRepLib_FindSurface(TopoShape, -1, true);
                 var surface = finder.Surface();
-                var plane = (surface as Geom_Plane) ?? throw new InvalidOperationException("Normal not defined");
+                var plane = (surface as PlaneSurface) ?? throw new InvalidOperationException("Normal not defined");
                 var pln = plane.Pln();
                 var axis = pln.Axis();
                 var dir = axis.Direction();

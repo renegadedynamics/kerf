@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static OcctNet.Oracle.Tests.GeomOracleInputs;
 
@@ -41,7 +42,7 @@ internal static class AdaptorOracleInputs
     /// A random B-spline curve: degree in [theMinDegree, theMaxDegree], 2 to 6 knots, inner multiplicities up to
     /// Degree - theSmoothness, periodic about one time in three (unless forced), rational half the time.
     /// </summary>
-    internal static (N.Geom_BSplineCurve Native, Geom_BSplineCurve Port) RandomBSplineCurve(
+    internal static (N.Geom_BSplineCurve Native, BSplineCurve3D Port) RandomBSplineCurve(
         Oracle theO, bool? thePeriodic = null, int theMinDegree = 1, int theMaxDegree = 6, int theSmoothness = 0)
     {
         while (true)
@@ -81,12 +82,12 @@ internal static class AdaptorOracleInputs
             }
             NCollection_Array1<double>? aWeights = theO.Int(0, 1) == 0 ? null : theO.Weights(aNbPoles, true);
             return (Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, aDeg, aPer),
-                    aWeights is null ? new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg, aPer)
-                                     : new Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, aDeg, aPer));
+                    aWeights is null ? new BSplineCurve3D(aPoles, aKnots, aMults, aDeg, aPer)
+                                     : new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, aDeg, aPer));
         }
     }
 
-    internal static (N.Geom_BezierCurve Native, Geom_BezierCurve Port) RandomBezierCurve(Oracle theO, int theMaxDegree = 9)
+    internal static (N.Geom_BezierCurve Native, BezierCurve3D Port) RandomBezierCurve(Oracle theO, int theMaxDegree = 9)
     {
         int aNbPoles = theO.Int(2, theMaxDegree + 1);
         var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
@@ -97,11 +98,11 @@ internal static class AdaptorOracleInputs
         using var aNPoles = Oracle.ToNative(aPoles);
         if (theO.Int(0, 1) == 0)
         {
-            return (new N.Geom_BezierCurve(aNPoles), new Geom_BezierCurve(aPoles));
+            return (new N.Geom_BezierCurve(aNPoles), new BezierCurve3D(aPoles));
         }
         NCollection_Array1<double> aWeights = theO.Weights(aNbPoles, true);
         using var aNWeights = Oracle.ToNative(aWeights);
-        return (new N.Geom_BezierCurve(aNPoles, aNWeights), new Geom_BezierCurve(aPoles, aWeights));
+        return (new N.Geom_BezierCurve(aNPoles, aNWeights), new BezierCurve3D(aPoles, aWeights));
     }
 
     /// <summary>The names of <see cref="RandomCurve"/>'s kinds.</summary>
@@ -112,7 +113,7 @@ internal static class AdaptorOracleInputs
     /// A random curve of the given kind (<see cref="CurveKinds"/>); Range is a sensible half-range of parameters
     /// for an unbounded curve.
     /// </summary>
-    internal static (N.Geom_Curve Native, Geom_Curve Port, double Range) RandomCurve(Oracle theO, int theKind)
+    internal static (N.Geom_Curve Native, Curve3D Port, double Range) RandomCurve(Oracle theO, int theKind)
     {
         switch (theKind)
         {
@@ -120,7 +121,7 @@ internal static class AdaptorOracleInputs
             {
                 (N.gp_Ax1 aNAx1, Axis3D anAx1) = Ax1s(theO);
                 using var aNAx1Owner = aNAx1;
-                return (new N.Geom_Line(aNAx1), new Geom_Line(anAx1), 50);
+                return (new N.Geom_Line(aNAx1), new LineCurve3D(anAx1), 50);
             }
             case 1:
             case 2:
@@ -132,37 +133,37 @@ internal static class AdaptorOracleInputs
                 if (theKind == 1)
                 {
                     double aR = theO.Real(0.1, 20);
-                    return (new N.Geom_Circle(aNAx2, aR), new Geom_Circle(anAx2, aR), 10);
+                    return (new N.Geom_Circle(aNAx2, aR), new CircleCurve3D(anAx2, aR), 10);
                 }
                 if (theKind == 2)
                 {
                     double aMaj = theO.Real(0.1, 20), aMin = theO.Real(0.05, aMaj);
-                    return (new N.Geom_Ellipse(aNAx2, aMaj, aMin), new Geom_Ellipse(anAx2, aMaj, aMin), 10);
+                    return (new N.Geom_Ellipse(aNAx2, aMaj, aMin), new EllipseCurve3D(anAx2, aMaj, aMin), 10);
                 }
                 if (theKind == 3)
                 {
                     double aMaj = theO.Real(0.1, 20), aMin = theO.Real(0.1, 20);
-                    return (new N.Geom_Hyperbola(aNAx2, aMaj, aMin), new Geom_Hyperbola(anAx2, aMaj, aMin), 3);
+                    return (new N.Geom_Hyperbola(aNAx2, aMaj, aMin), new HyperbolaCurve3D(anAx2, aMaj, aMin), 3);
                 }
                 double aF = theO.Real(0.01, 10);
-                return (new N.Geom_Parabola(aNAx2, aF), new Geom_Parabola(anAx2, aF), 20);
+                return (new N.Geom_Parabola(aNAx2, aF), new ParabolaCurve3D(anAx2, aF), 20);
             }
             case 5:
             {
-                (N.Geom_BezierCurve aN, Geom_BezierCurve aP) = RandomBezierCurve(theO);
+                (N.Geom_BezierCurve aN, BezierCurve3D aP) = RandomBezierCurve(theO);
                 return (aN, aP, 1);
             }
             case 6:
             case 7:
             {
-                (N.Geom_BSplineCurve aN, Geom_BSplineCurve aP) = RandomBSplineCurve(theO, theKind == 7);
+                (N.Geom_BSplineCurve aN, BSplineCurve3D aP) = RandomBSplineCurve(theO, theKind == 7);
                 return (aN, aP, 5);
             }
             case 8:
             {
                 // an offset of a smooth B-spline curve, a Bezier curve or a circle
                 N.Geom_Curve aNB;
-                Geom_Curve aPB;
+                Curve3D aPB;
                 switch (theO.Int(0, 2))
                 {
                     case 0:
@@ -180,7 +181,7 @@ internal static class AdaptorOracleInputs
                     (N.gp_Dir aNDir, Direction3D aDir) = Dirs(theO);
                     using var aNDirOwner = aNDir;
                     double anOffset = theO.Real(0.1, 5) * (theO.Bool() ? 1 : -1);
-                    return (new N.Geom_OffsetCurve(aNB, anOffset, aNDir, true), new Geom_OffsetCurve(aPB, anOffset, aDir, true),
+                    return (new N.Geom_OffsetCurve(aNB, anOffset, aNDir, true), new OffsetCurve3D(aPB, anOffset, aDir, true),
                             5);
                 }
             }
@@ -188,22 +189,22 @@ internal static class AdaptorOracleInputs
             {
                 // a trimmed curve of one of the others (not a trimmed curve)
                 int aKind;
-                (N.Geom_Curve aNB, Geom_Curve aPB, double aRange) = RandomCurve(theO, aKind = theO.Int(0, 8));
+                (N.Geom_Curve aNB, Curve3D aPB, double aRange) = RandomCurve(theO, aKind = theO.Int(0, 8));
                 using (aNB)
                 {
                     double aF = aPB.FirstParameter(), aL = aPB.LastParameter();
-                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL) || aPB.IsPeriodic())
+                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL) || aPB.IsPeriodic)
                     {
                         aF = -aRange;
                         aL = aRange;
-                        if (aPB.IsPeriodic() && aKind != 7)
+                        if (aPB.IsPeriodic && aKind != 7)
                         {
                             aF = theO.Real(-7, 7);
                             aL = aF + theO.Real(0.5, 6);
                         }
                     }
                     double aU1 = theO.Real(aF, aF + 0.45 * (aL - aF)), aU2 = theO.Real(aF + 0.55 * (aL - aF), aL);
-                    return (new N.Geom_TrimmedCurve(aNB, aU1, aU2), new Geom_TrimmedCurve(aPB, aU1, aU2), aRange);
+                    return (new N.Geom_TrimmedCurve(aNB, aU1, aU2), new TrimmedCurve3D(aPB, aU1, aU2), aRange);
                 }
             }
         }
@@ -212,7 +213,7 @@ internal static class AdaptorOracleInputs
     // ---------------------------------------------------------------------------------------------------------
     // Surfaces
 
-    internal static (N.Geom_BSplineSurface Native, Geom_BSplineSurface Port) RandomBSplineSurface(
+    internal static (N.Geom_BSplineSurface Native, BSplineSurface Port) RandomBSplineSurface(
         Oracle theO, int theSmoothness = 0, bool theAllowPeriodic = true, int theMinDegree = 1)
     {
         int aUDeg = theO.Int(theMinDegree, 5), aVDeg = theO.Int(theMinDegree, 5);
@@ -255,7 +256,7 @@ internal static class AdaptorOracleInputs
         }
     }
 
-    internal static (N.Geom_BSplineSurface Native, Geom_BSplineSurface Port) MakeBSplineSurface(
+    internal static (N.Geom_BSplineSurface Native, BSplineSurface Port) MakeBSplineSurface(
         NCollection_Array2<Point3D> thePoles, NCollection_Array2<double>? theWeights, NCollection_Array1<double> theUKnots,
         NCollection_Array1<double> theVKnots, NCollection_Array1<int> theUMults, NCollection_Array1<int> theVMults, int theUDeg,
         int theVDeg, bool theUPer, bool theVPer)
@@ -268,14 +269,14 @@ internal static class AdaptorOracleInputs
         if (theWeights is null)
         {
             return (new N.Geom_BSplineSurface(aNPoles, aNUKnots, aNVKnots, aNUMults, aNVMults, theUDeg, theVDeg, theUPer, theVPer),
-                    new Geom_BSplineSurface(thePoles, theUKnots, theVKnots, theUMults, theVMults, theUDeg, theVDeg, theUPer, theVPer));
+                    new BSplineSurface(thePoles, theUKnots, theVKnots, theUMults, theVMults, theUDeg, theVDeg, theUPer, theVPer));
         }
         using N.TColStd_Array2OfReal aNWeights = Oracle.ToNative(theWeights);
         return (new N.Geom_BSplineSurface(aNPoles, aNWeights, aNUKnots, aNVKnots, aNUMults, aNVMults, theUDeg, theVDeg, theUPer, theVPer),
-                new Geom_BSplineSurface(thePoles, theWeights, theUKnots, theVKnots, theUMults, theVMults, theUDeg, theVDeg, theUPer, theVPer));
+                new BSplineSurface(thePoles, theWeights, theUKnots, theVKnots, theUMults, theVMults, theUDeg, theVDeg, theUPer, theVPer));
     }
 
-    internal static (N.Geom_BezierSurface Native, Geom_BezierSurface Port) RandomBezierSurface(Oracle theO)
+    internal static (N.Geom_BezierSurface Native, BezierSurface Port) RandomBezierSurface(Oracle theO)
     {
         int aNbU = theO.Int(2, 7), aNbV = theO.Int(2, 7);
         bool aRational = theO.Bool();
@@ -292,16 +293,16 @@ internal static class AdaptorOracleInputs
         return MakeBezierSurface(aPoles, aRational ? aWeights : null);
     }
 
-    internal static (N.Geom_BezierSurface Native, Geom_BezierSurface Port) MakeBezierSurface(NCollection_Array2<Point3D> thePoles,
+    internal static (N.Geom_BezierSurface Native, BezierSurface Port) MakeBezierSurface(NCollection_Array2<Point3D> thePoles,
                                                                                           NCollection_Array2<double>? theWeights)
     {
         using N.TColgp_Array2OfPnt aNPoles = Oracle.ToNative(thePoles);
         if (theWeights is null)
         {
-            return (new N.Geom_BezierSurface(aNPoles), new Geom_BezierSurface(thePoles));
+            return (new N.Geom_BezierSurface(aNPoles), new BezierSurface(thePoles));
         }
         using N.TColStd_Array2OfReal aNWeights = Oracle.ToNative(theWeights);
-        return (new N.Geom_BezierSurface(aNPoles, aNWeights), new Geom_BezierSurface(thePoles, theWeights));
+        return (new N.Geom_BezierSurface(aNPoles, aNWeights), new BezierSurface(thePoles, theWeights));
     }
 
     /// <summary>The names of <see cref="RandomSurface"/>'s kinds.</summary>
@@ -312,7 +313,7 @@ internal static class AdaptorOracleInputs
     ];
 
     /// <summary>A random surface of the given kind (<see cref="SurfaceKinds"/>).</summary>
-    internal static (N.Geom_Surface Native, Geom_Surface Port) RandomSurface(Oracle theO, int theKind)
+    internal static (N.Geom_Surface Native, Surface Port) RandomSurface(Oracle theO, int theKind)
     {
         switch (theKind)
         {
@@ -327,28 +328,28 @@ internal static class AdaptorOracleInputs
                 switch (theKind)
                 {
                     case 0:
-                        return (new N.Geom_Plane(aNAx3), new Geom_Plane(anAx3));
+                        return (new N.Geom_Plane(aNAx3), new PlaneSurface(anAx3));
                     case 1:
                     {
                         double R = theO.Real(0.5, 20);
-                        return (new N.Geom_CylindricalSurface(aNAx3, R), new Geom_CylindricalSurface(anAx3, R));
+                        return (new N.Geom_CylindricalSurface(aNAx3, R), new CylindricalSurface(anAx3, R));
                     }
                     case 2:
                     {
                         double anAng = theO.Real(0.05, 1.4) * (theO.Bool() ? 1 : -1);
                         double R = theO.Int(0, 4) == 0 ? 0.0 : theO.Real(0.5, 20);
-                        return (new N.Geom_ConicalSurface(aNAx3, anAng, R), new Geom_ConicalSurface(anAx3, anAng, R));
+                        return (new N.Geom_ConicalSurface(aNAx3, anAng, R), new ConicalSurface(anAx3, anAng, R));
                     }
                     case 3:
                     {
                         double R = theO.Real(0.5, 20);
-                        return (new N.Geom_SphericalSurface(aNAx3, R), new Geom_SphericalSurface(anAx3, R));
+                        return (new N.Geom_SphericalSurface(aNAx3, R), new SphericalSurface(anAx3, R));
                     }
                     default:
                     {
                         double r = theO.Real(0.5, 5);
                         double R = theO.Real(r * 1.1, 20);
-                        return (new N.Geom_ToroidalSurface(aNAx3, R, r), new Geom_ToroidalSurface(anAx3, R, r));
+                        return (new N.Geom_ToroidalSurface(aNAx3, R, r), new ToroidalSurface(anAx3, R, r));
                     }
                 }
             }
@@ -357,7 +358,7 @@ internal static class AdaptorOracleInputs
             {
                 // a circle, a line, or a B-spline curve (smooth enough for an offset half the time)
                 N.Geom_Curve aNC;
-                Geom_Curve aPC;
+                Curve3D aPC;
                 switch (theO.Int(0, 3))
                 {
                     case 0:
@@ -376,11 +377,11 @@ internal static class AdaptorOracleInputs
                     {
                         (N.gp_Ax1 aNAxis, Axis3D anAxis) = Ax1s(theO);
                         using var aNAxisOwner = aNAxis;
-                        return (new N.Geom_SurfaceOfRevolution(aNC, aNAxis), new Geom_SurfaceOfRevolution(aPC, anAxis));
+                        return (new N.Geom_SurfaceOfRevolution(aNC, aNAxis), new RevolutionSurface(aPC, anAxis));
                     }
                     (N.gp_Dir aNDir, Direction3D aDir) = Dirs(theO);
                     using var aNDirOwner = aNDir;
-                    return (new N.Geom_SurfaceOfLinearExtrusion(aNC, aNDir), new Geom_SurfaceOfLinearExtrusion(aPC, aDir));
+                    return (new N.Geom_SurfaceOfLinearExtrusion(aNC, aNDir), new ExtrusionSurface(aPC, aDir));
                 }
             }
             case 7:
@@ -393,10 +394,10 @@ internal static class AdaptorOracleInputs
             {
                 while (true)
                 {
-                    (N.Geom_Surface aNB, Geom_Surface aPB) = RandomSurface(theO, theO.Int(0, 9));
+                    (N.Geom_Surface aNB, Surface aPB) = RandomSurface(theO, theO.Int(0, 9));
                     using (aNB)
                     {
-                        (N.Geom_Surface? aNT, Geom_Surface? aPT) = RandomTrim(theO, aNB, aPB);
+                        (N.Geom_Surface? aNT, Surface? aPT) = RandomTrim(theO, aNB, aPB);
                         if (aNT is not null)
                         {
                             return (aNT, aPT!);
@@ -412,14 +413,14 @@ internal static class AdaptorOracleInputs
     /// A rectangular trimmed surface of the given one, trimmed in both directions or in one; null on both sides
     /// when both constructions throw (the outcomes must agree).
     /// </summary>
-    internal static (N.Geom_Surface? Native, Geom_Surface? Port) RandomTrim(Oracle theO, N.Geom_Surface theN, Geom_Surface theP)
+    internal static (N.Geom_Surface? Native, Surface? Port) RandomTrim(Oracle theO, N.Geom_Surface theN, Surface theP)
     {
         theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
-        (double aUF, double aUL) = TrimRange(theO, aU1, aU2, theP.IsUPeriodic());
-        (double aVF, double aVL) = TrimRange(theO, aV1, aV2, theP.IsVPeriodic());
+        (double aUF, double aUL) = TrimRange(theO, aU1, aU2, theP.IsUPeriodic);
+        (double aVF, double aVL) = TrimRange(theO, aV1, aV2, theP.IsVPeriodic);
         int aMode = theO.Int(0, 2);
         N.Geom_Surface? aN = null;
-        Geom_Surface? aP = null;
+        Surface? aP = null;
         Exception? aNErr = Catch(() => aN = aMode switch
         {
             0 => new N.Geom_RectangularTrimmedSurface(theN, aUF, aUL, true),
@@ -428,9 +429,9 @@ internal static class AdaptorOracleInputs
         });
         Exception? aPErr = Catch(() => aP = aMode switch
         {
-            0 => new Geom_RectangularTrimmedSurface(theP, aUF, aUL, true),
-            1 => new Geom_RectangularTrimmedSurface(theP, aVF, aVL, false),
-            _ => new Geom_RectangularTrimmedSurface(theP, aUF, aUL, aVF, aVL),
+            0 => new TrimmedSurface(theP, aUF, aUL, true),
+            1 => new TrimmedSurface(theP, aVF, aVL, false),
+            _ => new TrimmedSurface(theP, aUF, aUL, aVF, aVL),
         });
         SameOutcome(aNErr, aPErr, "Geom_RectangularTrimmedSurface construction");
         return (aN, aP);
@@ -457,19 +458,19 @@ internal static class AdaptorOracleInputs
     /// negative offsets, degenerate radii), of a swept, Bezier or B-spline surface, of a trimmed one, of an offset;
     /// built with isNotCheckC0 now and then. Construction is retried while it throws on both sides (a C0 basis).
     /// </summary>
-    internal static (N.Geom_Surface Native, Geom_Surface Port) RandomOffsetSurface(Oracle theO)
+    internal static (N.Geom_Surface Native, Surface Port) RandomOffsetSurface(Oracle theO)
     {
         while (true)
         {
             int aKind = theO.Int(0, 10);
             N.Geom_Surface aNB;
-            Geom_Surface aPB;
+            Surface aPB;
             if (aKind == 9)
             {
-                (N.Geom_Surface aN0, Geom_Surface aP0) = RandomSurface(theO, theO.Int(0, 8));
+                (N.Geom_Surface aN0, Surface aP0) = RandomSurface(theO, theO.Int(0, 8));
                 using (aN0)
                 {
-                    (N.Geom_Surface? aNT, Geom_Surface? aPT) = RandomTrim(theO, aN0, aP0);
+                    (N.Geom_Surface? aNT, Surface? aPT) = RandomTrim(theO, aN0, aP0);
                     if (aNT is null)
                     {
                         continue;
@@ -488,16 +489,16 @@ internal static class AdaptorOracleInputs
             using (aNB)
             {
                 double anOffset = theO.Int(0, 9) == 0 ? 0.0 : theO.Real(0.05, 4) * (theO.Bool() ? 1 : -1);
-                if (aPB is Geom_CylindricalSurface aCyl && theO.Int(0, 4) == 0)
+                if (aPB is CylindricalSurface aCyl && theO.Int(0, 4) == 0)
                 {
                     // the equivalent cylinder flips or degenerates
                     anOffset = -aCyl.Radius() * (theO.Bool() ? 1 : 2) * (aCyl.Position().Direct() ? 1 : -1);
                 }
                 bool aNotCheck = theO.Int(0, 4) == 0;
                 N.Geom_Surface? aN = null;
-                Geom_Surface? aP = null;
+                Surface? aP = null;
                 Exception? aNErr = Catch(() => aN = new N.Geom_OffsetSurface(aNB, anOffset, aNotCheck));
-                Exception? aPErr = Catch(() => aP = new Geom_OffsetSurface(aPB, anOffset, aNotCheck));
+                Exception? aPErr = Catch(() => aP = new OffsetSurface(aPB, anOffset, aNotCheck));
                 if (SameOutcome(aNErr, aPErr, "Geom_OffsetSurface construction"))
                 {
                     return (aN!, aP!);
@@ -506,18 +507,18 @@ internal static class AdaptorOracleInputs
         }
     }
 
-    private static (N.Geom_Surface Native, Geom_Surface Port) RandomBasisForNestedOffset(Oracle theO)
+    private static (N.Geom_Surface Native, Surface Port) RandomBasisForNestedOffset(Oracle theO)
     {
         while (true)
         {
-            (N.Geom_Surface aNB, Geom_Surface aPB) = RandomSurface(theO, theO.Int(0, 8));
+            (N.Geom_Surface aNB, Surface aPB) = RandomSurface(theO, theO.Int(0, 8));
             using (aNB)
             {
                 double anOffset = theO.Real(-2, 2);
                 N.Geom_Surface? aN = null;
-                Geom_Surface? aP = null;
+                Surface? aP = null;
                 Exception? aNErr = Catch(() => aN = new N.Geom_OffsetSurface(aNB, anOffset, true));
-                Exception? aPErr = Catch(() => aP = new Geom_OffsetSurface(aPB, anOffset, true));
+                Exception? aPErr = Catch(() => aP = new OffsetSurface(aPB, anOffset, true));
                 if (SameOutcome(aNErr, aPErr, "inner Geom_OffsetSurface construction"))
                 {
                     return (aN!, aP!);
@@ -530,7 +531,7 @@ internal static class AdaptorOracleInputs
     // Evaluation through Adaptor3d
 
     /// <summary>D0 to D3 and DN (orders 1 to theMaxN) of two curve adaptors at theU; each throws on both sides or on neither.</summary>
-    internal static void SameCurveEval(Oracle theO, N.Adaptor3d_Curve theN, Adaptor3d_Curve theP, double theU, int theMaxN,
+    internal static void SameCurveEval(Oracle theO, N.Adaptor3d_Curve theN, CurveAdaptorBase theP, double theU, int theMaxN,
                                        string theWhat, double theTol = Oracle.Tolerance)
     {
         using var aNP = new N.gp_Pnt(0, 0, 0);
@@ -580,10 +581,10 @@ internal static class AdaptorOracleInputs
 
     /// <summary>
     /// D0 to D3 and DN (Nu + Nv from 1 to theMaxN) of two surface adaptors (or surfaces, through
-    /// <see cref="SameSurfaceEval(Oracle, N.Geom_Surface, Geom_Surface, double, double, int, string, double)"/>)
+    /// <see cref="SameSurfaceEval(Oracle, N.Geom_Surface, Surface, double, double, int, string, double)"/>)
     /// at (U, V); each throws on both sides or on neither.
     /// </summary>
-    internal static void SameSurfaceEval(Oracle theO, N.Adaptor3d_Surface theN, Adaptor3d_Surface theP, double U, double V,
+    internal static void SameSurfaceEval(Oracle theO, N.Adaptor3d_Surface theN, SurfaceAdaptorBase theP, double U, double V,
                                          int theMaxN, string theWhat, double theTol = Oracle.Tolerance)
     {
         SameSurfaceEval(theO,
@@ -597,7 +598,7 @@ internal static class AdaptorOracleInputs
     }
 
     /// <summary>As the adaptor form, for two surfaces.</summary>
-    internal static void SameSurfaceEval(Oracle theO, N.Geom_Surface theN, Geom_Surface theP, double U, double V,
+    internal static void SameSurfaceEval(Oracle theO, N.Geom_Surface theN, Surface theP, double U, double V,
                                          int theMaxN, string theWhat, double theTol = Oracle.Tolerance)
     {
         SameSurfaceEval(theO,
@@ -616,8 +617,8 @@ internal static class AdaptorOracleInputs
                                         Action<N.gp_Pnt, N.gp_Vec, N.gp_Vec, N.gp_Vec, N.gp_Vec, N.gp_Vec, N.gp_Vec, N.gp_Vec, N.gp_Vec, N.gp_Vec> theND3,
                                         Func<int, int, N.gp_Vec> theNDN,
                                         Action<N.gp_Pnt> theND0,
-                                        Func<Point3D> thePD0, Func<Geom_Surface.ResD1> thePD1, Func<Geom_Surface.ResD2> thePD2,
-                                        Func<Geom_Surface.ResD3> thePD3, Func<int, int, Vector3D> thePDN, int theMaxN, string theWhat,
+                                        Func<Point3D> thePD0, Func<Surface.ResD1> thePD1, Func<Surface.ResD2> thePD2,
+                                        Func<Surface.ResD3> thePD3, Func<int, int, Vector3D> thePDN, int theMaxN, string theWhat,
                                         double theTol)
     {
         using var P = new N.gp_Pnt(0, 0, 0);
@@ -637,7 +638,7 @@ internal static class AdaptorOracleInputs
             theO.Same(P, aP0, theWhat + " D0", theTol);
         }
 
-        Geom_Surface.ResD1 aR1 = default;
+        Surface.ResD1 aR1 = default;
         if (SameOutcome(Catch(() => theND1(P, DU, DV)), Catch(() => aR1 = thePD1()), theWhat + " D1"))
         {
             theO.Same(P, aR1.Point, theWhat + " D1 P", theTol);
@@ -645,7 +646,7 @@ internal static class AdaptorOracleInputs
             theO.Same(DV, aR1.D1V, theWhat + " D1V", theTol);
         }
 
-        Geom_Surface.ResD2 aR2 = default;
+        Surface.ResD2 aR2 = default;
         if (SameOutcome(Catch(() => theND2(P, DU, DV, DUU, DVV, DUV)), Catch(() => aR2 = thePD2()), theWhat + " D2"))
         {
             theO.Same(P, aR2.Point, theWhat + " D2 P", theTol);
@@ -656,7 +657,7 @@ internal static class AdaptorOracleInputs
             theO.Same(DUV, aR2.D2UV, theWhat + " D2UV", theTol);
         }
 
-        Geom_Surface.ResD3 aR3 = default;
+        Surface.ResD3 aR3 = default;
         if (SameOutcome(Catch(() => theND3(P, DU, DV, DUU, DVV, DUV, DUUU, DVVV, DUUV, DUVV)), Catch(() => aR3 = thePD3()),
                         theWhat + " D3"))
         {
@@ -695,17 +696,17 @@ internal static class AdaptorOracleInputs
     {
         (Func<N.Geom_Surface, IDisposable?> Cast, string Name)[] aCasts =
         [
-            (s => N.Geom_Plane.DownCast(s), nameof(Geom_Plane)),
-            (s => N.Geom_CylindricalSurface.DownCast(s), nameof(Geom_CylindricalSurface)),
-            (s => N.Geom_ConicalSurface.DownCast(s), nameof(Geom_ConicalSurface)),
-            (s => N.Geom_SphericalSurface.DownCast(s), nameof(Geom_SphericalSurface)),
-            (s => N.Geom_ToroidalSurface.DownCast(s), nameof(Geom_ToroidalSurface)),
-            (s => N.Geom_RectangularTrimmedSurface.DownCast(s), nameof(Geom_RectangularTrimmedSurface)),
-            (s => N.Geom_OffsetSurface.DownCast(s), nameof(Geom_OffsetSurface)),
-            (s => N.Geom_SurfaceOfRevolution.DownCast(s), nameof(Geom_SurfaceOfRevolution)),
-            (s => N.Geom_SurfaceOfLinearExtrusion.DownCast(s), nameof(Geom_SurfaceOfLinearExtrusion)),
-            (s => N.Geom_BezierSurface.DownCast(s), nameof(Geom_BezierSurface)),
-            (s => N.Geom_BSplineSurface.DownCast(s), nameof(Geom_BSplineSurface)),
+            (s => N.Geom_Plane.DownCast(s), global::Kerf.Engine.Foundation.OcctTypeNames.Of(typeof(PlaneSurface))),
+            (s => N.Geom_CylindricalSurface.DownCast(s), global::Kerf.Engine.Foundation.OcctTypeNames.Of(typeof(CylindricalSurface))),
+            (s => N.Geom_ConicalSurface.DownCast(s), global::Kerf.Engine.Foundation.OcctTypeNames.Of(typeof(ConicalSurface))),
+            (s => N.Geom_SphericalSurface.DownCast(s), global::Kerf.Engine.Foundation.OcctTypeNames.Of(typeof(SphericalSurface))),
+            (s => N.Geom_ToroidalSurface.DownCast(s), global::Kerf.Engine.Foundation.OcctTypeNames.Of(typeof(ToroidalSurface))),
+            (s => N.Geom_RectangularTrimmedSurface.DownCast(s), global::Kerf.Engine.Foundation.OcctTypeNames.Of(typeof(TrimmedSurface))),
+            (s => N.Geom_OffsetSurface.DownCast(s), global::Kerf.Engine.Foundation.OcctTypeNames.Of(typeof(OffsetSurface))),
+            (s => N.Geom_SurfaceOfRevolution.DownCast(s), global::Kerf.Engine.Foundation.OcctTypeNames.Of(typeof(RevolutionSurface))),
+            (s => N.Geom_SurfaceOfLinearExtrusion.DownCast(s), global::Kerf.Engine.Foundation.OcctTypeNames.Of(typeof(ExtrusionSurface))),
+            (s => N.Geom_BezierSurface.DownCast(s), global::Kerf.Engine.Foundation.OcctTypeNames.Of(typeof(BezierSurface))),
+            (s => N.Geom_BSplineSurface.DownCast(s), global::Kerf.Engine.Foundation.OcctTypeNames.Of(typeof(BSplineSurface))),
         ];
         foreach ((Func<N.Geom_Surface, IDisposable?> aCast, string aName) in aCasts)
         {

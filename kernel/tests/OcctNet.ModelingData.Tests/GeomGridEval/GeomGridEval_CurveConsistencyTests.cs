@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 
@@ -152,7 +154,7 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
     }
 
     // theSmooth: degree 2 at least and interior multiplicities below the degree (C1, for offsets)
-    private static Geom_BSplineCurve RandomBSpline(Random theRnd, bool theRational, bool thePeriodic,
+    private static BSplineCurve3D RandomBSpline(Random theRnd, bool theRational, bool thePeriodic,
                                                    bool theSmooth = false)
     {
         int aDeg = theRnd.Next(theSmooth ? 2 : 1, 6);
@@ -170,43 +172,43 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
             aNbPoles += aMult;
         }
         NCollection_Array1<Point3D> aPoles = RandomPoles(theRnd, aNbPoles);
-        Geom_BSplineCurve aCurve = theRational
-            ? new Geom_BSplineCurve(aPoles, RandomWeights(theRnd, aNbPoles), aKnots, aMults, aDeg)
-            : new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg);
+        BSplineCurve3D aCurve = theRational
+            ? new BSplineCurve3D(aPoles, RandomWeights(theRnd, aNbPoles), aKnots, aMults, aDeg)
+            : new BSplineCurve3D(aPoles, aKnots, aMults, aDeg);
         return thePeriodic ? aCurve.WithPeriodic() : aCurve;
     }
 
-    private static Geom_BezierCurve RandomBezier(Random theRnd, bool theRational)
+    private static BezierCurve3D RandomBezier(Random theRnd, bool theRational)
     {
         int aNbPoles = theRnd.Next(2, 10);
         NCollection_Array1<Point3D> aPoles = RandomPoles(theRnd, aNbPoles);
-        return theRational ? new Geom_BezierCurve(aPoles, RandomWeights(theRnd, aNbPoles))
-                           : new Geom_BezierCurve(aPoles);
+        return theRational ? new BezierCurve3D(aPoles, RandomWeights(theRnd, aNbPoles))
+                           : new BezierCurve3D(aPoles);
     }
 
-    private static Geom_Ellipse RandomEllipse(Random theRnd)
+    private static EllipseCurve3D RandomEllipse(Random theRnd)
     {
         double aMin = 0.1 + 5 * theRnd.NextDouble();
-        return new Geom_Ellipse(RandomAx2(theRnd), aMin + 5 * theRnd.NextDouble(), aMin);
+        return new EllipseCurve3D(RandomAx2(theRnd), aMin + 5 * theRnd.NextDouble(), aMin);
     }
 
     // An offset direction away from the basis curve's plane (or anywhere for a space curve)
-    private static Geom_OffsetCurve RandomOffset(Random theRnd, Geom_Curve theBasis, double theScale)
+    private static OffsetCurve3D RandomOffset(Random theRnd, Curve3D theBasis, double theScale)
     {
-        Direction3D aDir = theBasis is Geom_Conic aConic ? aConic.Axis().Direction() : RandomDir(theRnd);
-        return new Geom_OffsetCurve(theBasis, (theRnd.NextDouble() * 2 - 1) * theScale, aDir);
+        Direction3D aDir = theBasis is ConicCurve3D aConic ? aConic.Axis().Direction() : RandomDir(theRnd);
+        return new OffsetCurve3D(theBasis, (theRnd.NextDouble() * 2 - 1) * theScale, aDir);
     }
 
-    private static Geom_Curve RandomCurve(Random theRnd, string theKind)
+    private static Curve3D RandomCurve(Random theRnd, string theKind)
     {
         return theKind switch
         {
-            "Line" => new Geom_Line(RandomPnt(theRnd, 10.0), RandomDir(theRnd)),
-            "Circle" => new Geom_Circle(RandomAx2(theRnd), 0.1 + 10 * theRnd.NextDouble()),
+            "Line" => new LineCurve3D(RandomPnt(theRnd, 10.0), RandomDir(theRnd)),
+            "Circle" => new CircleCurve3D(RandomAx2(theRnd), 0.1 + 10 * theRnd.NextDouble()),
             "Ellipse" => RandomEllipse(theRnd),
-            "Hyperbola" => new Geom_Hyperbola(RandomAx2(theRnd), 3 + 5 * theRnd.NextDouble(),
+            "Hyperbola" => new HyperbolaCurve3D(RandomAx2(theRnd), 3 + 5 * theRnd.NextDouble(),
                                               0.1 + 3 * theRnd.NextDouble()),
-            "Parabola" => new Geom_Parabola(RandomAx2(theRnd), 0.1 + 5 * theRnd.NextDouble()),
+            "Parabola" => new ParabolaCurve3D(RandomAx2(theRnd), 0.1 + 5 * theRnd.NextDouble()),
             "Bezier" => RandomBezier(theRnd, false),
             "RationalBezier" => RandomBezier(theRnd, true),
             "BSpline" => RandomBSpline(theRnd, false, false),
@@ -220,27 +222,27 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         };
     }
 
-    private static (double First, double Last) Range(Geom_Curve theCurve)
+    private static (double First, double Last) Range(Curve3D theCurve)
     {
         double aFirst = theCurve.FirstParameter();
         double aLast = theCurve.LastParameter();
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
         {
-            return Basis(theCurve) is Geom_Hyperbola ? (-3.0, 3.0) : (-10.0, 10.0);
+            return Basis(theCurve) is HyperbolaCurve3D ? (-3.0, 3.0) : (-10.0, 10.0);
         }
         return (aFirst, aLast);
     }
 
-    private static Geom_Curve Basis(Geom_Curve theCurve)
+    private static Curve3D Basis(Curve3D theCurve)
     {
-        Geom_Curve aBasis = theCurve;
+        Curve3D aBasis = theCurve;
         while (true)
         {
-            if (aBasis is Geom_TrimmedCurve aTrimmed)
+            if (aBasis is TrimmedCurve3D aTrimmed)
             {
                 aBasis = aTrimmed.BasisCurve();
             }
-            else if (aBasis is Geom_OffsetCurve anOffset)
+            else if (aBasis is OffsetCurve3D anOffset)
             {
                 aBasis = anOffset.BasisCurve();
             }
@@ -251,32 +253,32 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         }
     }
 
-    private static DnInfo DnInfoOf(Geom_Curve theCurve)
+    private static DnInfo DnInfoOf(Curve3D theCurve)
     {
-        Geom_Curve aCurve = theCurve;
-        while (aCurve is Geom_TrimmedCurve aTrimmed)
+        Curve3D aCurve = theCurve;
+        while (aCurve is TrimmedCurve3D aTrimmed)
         {
             aCurve = aTrimmed.BasisCurve();
         }
         // An offset curve's DN above 3 is its basis's DN, in the grid as in Geom_OffsetCurve
-        int aFirstDelegatedN = aCurve is Geom_OffsetCurve ? 4 : 1;
-        Geom_Curve aBasis = Basis(theCurve);
+        int aFirstDelegatedN = aCurve is OffsetCurve3D ? 4 : 1;
+        Curve3D aBasis = Basis(theCurve);
         return aBasis switch
         {
-            Geom_BSplineCurve aBS => new DnInfo(true, aBS.IsRational(), aBS.Degree(), aFirstDelegatedN),
-            Geom_BezierCurve aBz => new DnInfo(false, aBz.IsRational(), aBz.Degree(), aFirstDelegatedN),
+            BSplineCurve3D aBS => new DnInfo(true, aBS.IsRational, aBS.Degree(), aFirstDelegatedN),
+            BezierCurve3D aBz => new DnInfo(false, aBz.IsRational, aBz.Degree(), aFirstDelegatedN),
             _ => new DnInfo(false, false, int.MaxValue, aFirstDelegatedN),
         };
     }
 
-    private void CheckCase(string theKind, GeomGridEval.ICurveEvaluator theEval, Adaptor3d_Curve theAdaptor,
-                           Geom_Curve? theCurve, NCollection_Array1<double> theParams, DnInfo theDn)
+    private void CheckCase(string theKind, GeomGridEvalGrid.ICurveEvaluator theEval, CurveAdaptorBase theAdaptor,
+                           Curve3D? theCurve, NCollection_Array1<double> theParams, DnInfo theDn)
     {
         int aNb = theParams.Length();
         NCollection_Array1<Point3D> aD0 = theEval.EvaluateGrid(theParams);
-        NCollection_Array1<Geom_Curve.ResD1> aD1 = theEval.EvaluateGridD1(theParams);
-        NCollection_Array1<Geom_Curve.ResD2> aD2 = theEval.EvaluateGridD2(theParams);
-        NCollection_Array1<Geom_Curve.ResD3> aD3 = theEval.EvaluateGridD3(theParams);
+        NCollection_Array1<Curve3D.ResD1> aD1 = theEval.EvaluateGridD1(theParams);
+        NCollection_Array1<Curve3D.ResD2> aD2 = theEval.EvaluateGridD2(theParams);
+        NCollection_Array1<Curve3D.ResD3> aD3 = theEval.EvaluateGridD3(theParams);
         Assert.Equal(aNb, aD0.Length());
         Assert.Equal(aNb, aD1.Length());
         Assert.Equal(aNb, aD2.Length());
@@ -286,13 +288,13 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         {
             double aU = theParams.Value(i);
             Point3D aA0 = theAdaptor.EvalD0(aU);
-            Geom_Curve.ResD1 aA1 = theAdaptor.EvalD1(aU);
-            Geom_Curve.ResD2 aA2 = theAdaptor.EvalD2(aU);
-            Geom_Curve.ResD3 aA3 = theAdaptor.EvalD3(aU);
+            Curve3D.ResD1 aA1 = theAdaptor.EvalD1(aU);
+            Curve3D.ResD2 aA2 = theAdaptor.EvalD2(aU);
+            Curve3D.ResD3 aA3 = theAdaptor.EvalD3(aU);
             Point3D? aC0 = theCurve?.EvalD0(aU);
-            Geom_Curve.ResD1? aC1 = theCurve?.EvalD1(aU);
-            Geom_Curve.ResD2? aC2 = theCurve?.EvalD2(aU);
-            Geom_Curve.ResD3? aC3 = theCurve?.EvalD3(aU);
+            Curve3D.ResD1? aC1 = theCurve?.EvalD1(aU);
+            Curve3D.ResD2? aC2 = theCurve?.EvalD2(aU);
+            Curve3D.ResD3? aC3 = theCurve?.EvalD3(aU);
 
             Compare(theKind + " D0", aD0.Value(i).XYZ(), aC0?.XYZ(), aA0.XYZ());
             Compare(theKind + " D1.P", aD1.Value(i).Point.XYZ(), aC1?.Point.XYZ(), aA1.Point.XYZ());
@@ -375,22 +377,22 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         {
             for (int aTry = 0; aTry < 20; ++aTry)
             {
-                Geom_Curve aCurve = RandomCurve(aRnd, aKind);
+                Curve3D aCurve = RandomCurve(aRnd, aKind);
                 DnInfo aDn = DnInfoOf(aCurve);
                 (double aFirst, double aLast) = Range(aCurve);
-                NCollection_Array1<double>? aKnots = (Basis(aCurve) as Geom_BSplineCurve)?.InternalKnots();
+                NCollection_Array1<double>? aKnots = (Basis(aCurve) as BSplineCurve3D)?.InternalKnots();
                 NCollection_Array1<double> aParams = SortedParams(aRnd, aFirst, aLast, 30, aKnots);
 
-                CheckCase(aKind, new GeomGridEval_Curve(aCurve), new GeomAdaptor_Curve(aCurve), aCurve, aParams, aDn);
+                CheckCase(aKind, new CurveGrid(aCurve), new CurveAdaptor(aCurve), aCurve, aParams, aDn);
 
                 // Through the adaptor, and through a trimmed curve inside the range
-                CheckCase(aKind, new GeomGridEval_Curve(new GeomAdaptor_Curve(aCurve)), new GeomAdaptor_Curve(aCurve),
+                CheckCase(aKind, new CurveGrid(new CurveAdaptor(aCurve)), new CurveAdaptor(aCurve),
                           aCurve, aParams, aDn);
                 double aT1 = aFirst + 0.25 * (aLast - aFirst);
                 double aT2 = aFirst + 0.75 * (aLast - aFirst);
-                Geom_TrimmedCurve aTrimmed = new(aCurve, aT1, aT2);
+                TrimmedCurve3D aTrimmed = new(aCurve, aT1, aT2);
                 NCollection_Array1<double> aTrimParams = SortedParams(aRnd, aT1, aT2, 20, aKnots);
-                CheckCase("Trimmed" + aKind, new GeomGridEval_Curve(aTrimmed), new GeomAdaptor_Curve(aTrimmed),
+                CheckCase("Trimmed" + aKind, new CurveGrid(aTrimmed), new CurveAdaptor(aTrimmed),
                           aTrimmed, aTrimParams, aDn);
 
                 // Any adaptor other than GeomAdaptor_Curve: GeomGridEval_OtherCurve, point by point
@@ -398,8 +400,8 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
                 {
                     Transform3D aTrsf = new();
                     aTrsf.SetRotation(new Axis3D(RandomPnt(aRnd, 5.0), RandomDir(aRnd)), aRnd.NextDouble() * 6);
-                    GeomAdaptor_TransformedCurve anOther = new(aCurve, aTrsf);
-                    GeomGridEval_Curve anOtherEval = new(anOther);
+                    TransformedCurve anOther = new(aCurve, aTrsf);
+                    CurveGrid anOtherEval = new(anOther);
                     Assert.Equal(anOther.GetType(), anOtherEval.GetType());
                     CheckCase("Other" + aKind, anOtherEval, anOther, null, aParams,
                               new DnInfo(false, false, int.MaxValue, 1));
@@ -410,11 +412,11 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         // An iso-curve of a sphere: another adaptor for the fallback
         for (int aTry = 0; aTry < 20; ++aTry)
         {
-            Geom_SphericalSurface aSphere = new(new CoordinateSystem(RandomAx2(aRnd)), 0.5 + 5 * aRnd.NextDouble());
-            Adaptor3d_IsoCurve anIso = new(new GeomAdaptor_Surface(aSphere), IsoType.IsoV,
+            SphericalSurface aSphere = new(new CoordinateSystem(RandomAx2(aRnd)), 0.5 + 5 * aRnd.NextDouble());
+            IsoCurve anIso = new(new SurfaceAdaptor(aSphere), IsoType.IsoV,
                                            aRnd.NextDouble() * 2 - 1);
             NCollection_Array1<double> aParams = SortedParams(aRnd, 0.0, 2 * M_PI, 20, null);
-            CheckCase("OtherIso", new GeomGridEval_Curve(anIso), anIso, null, aParams,
+            CheckCase("OtherIso", new CurveGrid(anIso), anIso, null, aParams,
                       new DnInfo(false, false, int.MaxValue, 1));
         }
 
@@ -504,7 +506,7 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         Random aRnd = new(7);
         for (int aTry = 0; aTry < 50; ++aTry)
         {
-            Geom_BSplineCurve aCurve = RandomBSpline(aRnd, aRnd.Next(2) == 0, false);
+            BSplineCurve3D aCurve = RandomBSpline(aRnd, aRnd.Next(2) == 0, false);
             NCollection_Array1<double> aKnots = aCurve.InternalKnots();
             List<double> aList = [];
             for (int k = aKnots.Lower(); k < aKnots.Upper(); ++k)
@@ -517,12 +519,12 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
                 }
             }
             NCollection_Array1<double> aParams = NCollection_Array1<double>.From(aList.ToArray());
-            NCollection_Array1<Geom_Curve.ResD3> aGrid = new GeomGridEval_BSplineCurve(aCurve).EvaluateGridD3(aParams);
-            NCollection_Array1<Point3D> aGrid0 = new GeomGridEval_BSplineCurve(aCurve).EvaluateGrid(aParams);
-            GeomAdaptor_Curve anAdaptor = new(aCurve);
+            NCollection_Array1<Curve3D.ResD3> aGrid = new BSplineCurveGrid(aCurve).EvaluateGridD3(aParams);
+            NCollection_Array1<Point3D> aGrid0 = new BSplineCurveGrid(aCurve).EvaluateGrid(aParams);
+            CurveAdaptor anAdaptor = new(aCurve);
             for (int i = 1; i <= aParams.Length(); ++i)
             {
-                Geom_Curve.ResD3 aRef = anAdaptor.EvalD3(aParams.Value(i));
+                Curve3D.ResD3 aRef = anAdaptor.EvalD3(aParams.Value(i));
                 Assert.Equal(anAdaptor.EvalD0(aParams.Value(i)), aGrid0.Value(i));
                 Assert.Equal(aRef.Point, aGrid.Value(i).Point);
                 Assert.Equal(aRef.D1, aGrid.Value(i).D1);
@@ -547,11 +549,11 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
             aKnots.SetValue(i, i - 1);
             aMults.SetValue(i, (i == 1 || i == 6) ? 4 : 1);
         }
-        Geom_BSplineCurve aCurve = new(aPoles, aKnots, aMults, 3);
+        BSplineCurve3D aCurve = new(aPoles, aKnots, aMults, 3);
 
         NCollection_Array1<double> aParams = new(1, 1);
         aParams.SetValue(1, 0.5);
-        Vector3D aGrid = new GeomGridEval_BSplineCurve(aCurve).EvaluateGridDN(aParams, 1).Value(1);
+        Vector3D aGrid = new BSplineCurveGrid(aCurve).EvaluateGridDN(aParams, 1).Value(1);
         Vector3D aPoint = aCurve.EvalDN(0.5, 1);
         Assert.True((aGrid - aPoint).Magnitude() > 1e-3); // the span [3, 4] extrapolated to 0.5
 
@@ -560,12 +562,12 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         Assert.Equal(aSpan4, aGrid);
 
         // Through the dispatcher too
-        Assert.Equal(aGrid, new GeomGridEval_Curve(aCurve).EvaluateGridDN(aParams, 1).Value(1));
+        Assert.Equal(aGrid, new CurveGrid(aCurve).EvaluateGridDN(aParams, 1).Value(1));
 
         // In the third span the flat index (6) is the last knot's: building the span's knots reads past the array
         // (OCCT reads outside it, the port throws).
         aParams.SetValue(1, 2.5);
-        Assert.Throws<IndexOutOfRangeException>(() => new GeomGridEval_BSplineCurve(aCurve).EvaluateGridDN(aParams, 1));
+        Assert.Throws<IndexOutOfRangeException>(() => new BSplineCurveGrid(aCurve).EvaluateGridDN(aParams, 1));
     }
 
     // OCCT's GeomGridEval_BezierCurve and GeomGridEval_BSplineCurve::EvaluateGridDN return zero above the degree,
@@ -581,11 +583,11 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         aWeights.SetValue(1, 1.0);
         aWeights.SetValue(2, 1.0 / Math.Sqrt(2.0));
         aWeights.SetValue(3, 1.0);
-        Geom_BezierCurve aBezier = new(aPoles, aWeights);
+        BezierCurve3D aBezier = new(aPoles, aWeights);
 
         NCollection_Array1<double> aParams = new(1, 1);
         aParams.SetValue(1, 0.5);
-        Vector3D aGrid = new GeomGridEval_BezierCurve(aBezier).EvaluateGridDN(aParams, 3).Value(1);
+        Vector3D aGrid = new BezierCurveGrid(aBezier).EvaluateGridDN(aParams, 3).Value(1);
         Assert.Equal(0.0, aGrid.Magnitude());
         Assert.True(aBezier.EvalDN(0.5, 3).Magnitude() > 0.1);
 
@@ -596,8 +598,8 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         aKnots.SetValue(2, 1.0);
         aMults.SetValue(1, 3);
         aMults.SetValue(2, 3);
-        Geom_BSplineCurve aBSpline = new(aPoles, aWeights, aKnots, aMults, 2);
-        Vector3D aGridBS = new GeomGridEval_BSplineCurve(aBSpline).EvaluateGridDN(aParams, 3).Value(1);
+        BSplineCurve3D aBSpline = new(aPoles, aWeights, aKnots, aMults, 2);
+        Vector3D aGridBS = new BSplineCurveGrid(aBSpline).EvaluateGridDN(aParams, 3).Value(1);
         Assert.Equal(0.0, aGridBS.Magnitude());
         Assert.True(aBSpline.EvalDN(0.5, 3).Magnitude() > 0.1);
     }
@@ -608,9 +610,9 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
     [Fact]
     public void OffsetDN_ReadsEmptyGridAfterFailedOffset()
     {
-        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
-        Geom_OffsetCurve anOffset = new(aLine, 1.0, Constants.DZ());
-        GeomGridEval_OffsetCurve anEval = new(anOffset);
+        LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
+        OffsetCurve3D anOffset = new(aLine, 1.0, Constants.DZ());
+        OffsetCurveGrid anEval = new(anOffset);
 
         NCollection_Array1<double> aParams = new(1, 2);
         aParams.SetValue(1, 0.0);
@@ -629,12 +631,12 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         Random aRnd = new(11);
         for (int aTry = 0; aTry < 20; ++aTry)
         {
-            Geom_Parabola aParab = new(RandomAx2(aRnd), 0.1 + 5 * aRnd.NextDouble());
+            ParabolaCurve3D aParab = new(RandomAx2(aRnd), 0.1 + 5 * aRnd.NextDouble());
             NCollection_Array1<double> aParams = SortedParams(aRnd, -10, 10, 20, null);
-            NCollection_Array1<Geom_Curve.ResD3> aGrid = new GeomGridEval_Parabola(aParab).EvaluateGridD3(aParams);
+            NCollection_Array1<Curve3D.ResD3> aGrid = new ParabolaGrid(aParab).EvaluateGridD3(aParams);
             for (int i = 1; i <= aParams.Length(); ++i)
             {
-                Geom_Curve.ResD3 aRef = aParab.EvalD3(aParams.Value(i));
+                Curve3D.ResD3 aRef = aParab.EvalD3(aParams.Value(i));
                 Assert.True(aGrid.Value(i).Point.Distance(aRef.Point) <= 1e-12 * Math.Max(1.0, aRef.Point.XYZ().Modulus()));
                 Assert.True((aGrid.Value(i).D1 - aRef.D1).Magnitude() <= 1e-12 * Math.Max(1.0, aRef.D1.Magnitude()));
                 Assert.Equal(aRef.D2, aGrid.Value(i).D2);
@@ -648,16 +650,16 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
     [Fact]
     public void ZeroFocalParabola_GridIsNotFinite()
     {
-        Geom_Parabola aParab = new(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 0.0);
+        ParabolaCurve3D aParab = new(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 0.0);
         NCollection_Array1<double> aParams = new(1, 2);
         aParams.SetValue(1, 0.0);
         aParams.SetValue(2, 1.5);
 
         Assert.Equal(new Point3D(2.5, 2, 3), aParab.EvalD0(1.5));
-        NCollection_Array1<Point3D> aGrid = new GeomGridEval_Parabola(aParab).EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = new ParabolaGrid(aParab).EvaluateGrid(aParams);
         Assert.True(double.IsNaN(aGrid.Value(1).X())); // 0 * inf
         Assert.True(double.IsInfinity(aGrid.Value(2).X()));
-        Assert.True(double.IsInfinity(new GeomGridEval_Parabola(aParab).EvaluateGridDN(aParams, 2).Value(1).X()));
+        Assert.True(double.IsInfinity(new ParabolaGrid(aParab).EvaluateGridDN(aParams, 2).Value(1).X()));
     }
 
     [Fact]
@@ -666,14 +668,14 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         NCollection_Array1<double> aParams = new(1, 2);
         aParams.SetValue(1, 0.0);
         aParams.SetValue(2, 1.0);
-        GeomGridEval.ICurveEvaluator[] aNullEvals =
+        GeomGridEvalGrid.ICurveEvaluator[] aNullEvals =
         [
-            new GeomGridEval_Line(null), new GeomGridEval_Circle(null), new GeomGridEval_Ellipse(null),
-            new GeomGridEval_Hyperbola(null), new GeomGridEval_Parabola(null), new GeomGridEval_BezierCurve(null),
-            new GeomGridEval_BSplineCurve(null), new GeomGridEval_OffsetCurve(null),
-            new GeomGridEval_Curve((Geom_Curve?)null),
+            new LineGrid(null), new CircleGrid(null), new EllipseGrid(null),
+            new HyperbolaGrid(null), new ParabolaGrid(null), new BezierCurveGrid(null),
+            new BSplineCurveGrid(null), new OffsetCurveGrid(null),
+            new CurveGrid((Curve3D?)null),
         ];
-        foreach (GeomGridEval.ICurveEvaluator anEval in aNullEvals)
+        foreach (GeomGridEvalGrid.ICurveEvaluator anEval in aNullEvals)
         {
             Assert.True(anEval.EvaluateGrid(aParams).IsEmpty());
             Assert.True(anEval.EvaluateGridD1(aParams).IsEmpty());
@@ -681,10 +683,10 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
             Assert.True(anEval.EvaluateGridD3(aParams).IsEmpty());
             Assert.True(anEval.EvaluateGridDN(aParams, 1).IsEmpty());
         }
-        Assert.Equal(CurveKind.OtherCurve, new GeomGridEval_Curve((Geom_Curve?)null).GetType());
+        Assert.Equal(CurveKind.OtherCurve, new CurveGrid((Curve3D?)null).GetType());
 
         // DN of order below 1 is empty
-        GeomGridEval_Curve aCircle = new(new Geom_Circle(new Frame3D(), 1.0));
+        CurveGrid aCircle = new(new CircleCurve3D(new Frame3D(), 1.0));
         Assert.True(aCircle.EvaluateGridDN(aParams, 0).IsEmpty());
 
         // Results are 1-based whatever the parameters' bounds

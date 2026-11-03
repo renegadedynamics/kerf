@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -72,10 +75,10 @@ public class BRepOffsetAPI_MakePipeNativeTests(ITestOutputHelper output)
         return aText.ToString();
     }
 
-    private static string Text(in TopoDS_Shape theShape)
+    private static string Text(in Shape theShape)
     {
         using StringWriter aW = new(CultureInfo.InvariantCulture) { NewLine = "\n" };
-        BRepTools.Write(theShape, aW);
+        BrepTools.Write(theShape, aW);
         return aW.ToString();
     }
 
@@ -95,17 +98,17 @@ public class BRepOffsetAPI_MakePipeNativeTests(ITestOutputHelper output)
     // The Free flag is the first of the seven flag digits on their own line.
     private static string MaskFree(string theText) => Regex.Replace(theText, "(?m)^[01]([01]{6})$", "x$1");
 
-    private static string Indices(IEnumerable<TopoDS_Shape> theList, NCollection_IndexedMap<TopoDS_Shape> theMap)
+    private static string Indices(IEnumerable<Shape> theList, NCollection_IndexedMap<Shape> theMap)
         => string.Join(",", theList.Select(s => theMap.FindIndex(s)));
 
     /// <summary>Runs one recorded case on the port and writes what piperec writes after the input block.</summary>
     private static string Run(Case theCase, out string theInputBefore, out string theInputAfter)
     {
-        BRepTools.Read(out TopoDS_Shape anIn, new StringReader(theCase.Input));
+        BrepTools.Read(out Shape anIn, new StringReader(theCase.Input));
         anIn.TShape()!.FreezeGraph();
         theInputBefore = Text(anIn);
-        List<TopoDS_Shape> aParts = [];
-        for (TopoDS_Iterator anIt = new(anIn); anIt.More(); anIt.Next())
+        List<Shape> aParts = [];
+        for (Iterator anIt = new(anIn); anIt.More(); anIt.Next())
         {
             aParts.Add(anIt.Value());
         }
@@ -126,8 +129,8 @@ public class BRepOffsetAPI_MakePipeNativeTests(ITestOutputHelper output)
             }
             else
             {
-                TopoDS_Wire aSpine = TopoDS.Wire(aParts[0]);
-                TopoDS_Shape aProfile = aParts[1];
+                Wire aSpine = ShapeCasts.Wire(aParts[0]);
+                Shape aProfile = aParts[1];
                 GeomFill_Trihedron aTrihedron = theCase.Mode switch
                 {
                     0 => GeomFill_Trihedron.GeomFill_IsCorrectedFrenet,
@@ -138,18 +141,18 @@ public class BRepOffsetAPI_MakePipeNativeTests(ITestOutputHelper output)
                 aOut.Append($"STATUS {(aPipe.IsDone() ? 1 : 0)} {Hex(aPipe.ErrorOnSurface())}\n");
                 if (aPipe.IsDone())
                 {
-                    TopoDS_Shape aRes = aPipe.Shape();
+                    Shape aRes = aPipe.Shape();
                     aOut.Append(Block("OUT", Text(aRes)));
                     aOut.Append(Block("FIRST", Text(aPipe.FirstShape())));
                     aOut.Append(Block("LAST", Text(aPipe.LastShape())));
-                    NCollection_IndexedMap<TopoDS_Shape> aResMap = new(TopTools_ShapeMapHasher.Instance);
-                    TopExp.MapShapes(aRes, aResMap);
+                    NCollection_IndexedMap<Shape> aResMap = new(ShapeHasher.Instance);
+                    Exploration.MapShapes(aRes, aResMap);
                     // (piperec builds each GEN line before writing it: an exception leaves no partial line)
                     var aGen = new StringBuilder("GEN ");
-                    foreach (TopoDS_Shape anIn2 in new[] { aProfile, aSpine })
+                    foreach (Shape anIn2 in new[] { aProfile, aSpine })
                     {
-                        NCollection_IndexedMap<TopoDS_Shape> aMap = new(TopTools_ShapeMapHasher.Instance);
-                        TopExp.MapShapes(anIn2, aMap);
+                        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+                        Exploration.MapShapes(anIn2, aMap);
                         for (int i = 1; i <= aMap.Extent(); i++)
                         {
                             aGen.Append(Indices(aPipe.Generated(aMap.FindKey(i)), aResMap)).Append(';');
@@ -157,17 +160,17 @@ public class BRepOffsetAPI_MakePipeNativeTests(ITestOutputHelper output)
                     }
                     aOut.Append(aGen).Append('\n');
                     var aGen2 = new StringBuilder("GEN2 ");
-                    NCollection_IndexedMap<TopoDS_Shape> aSpineEdges = new(TopTools_ShapeMapHasher.Instance);
-                    NCollection_IndexedMap<TopoDS_Shape> aProfShapes = new(TopTools_ShapeMapHasher.Instance);
-                    TopExp.MapShapes(aSpine, TopAbs_ShapeEnum.TopAbs_EDGE, aSpineEdges);
-                    TopExp.MapShapes(aProfile, TopAbs_ShapeEnum.TopAbs_EDGE, aProfShapes);
-                    TopExp.MapShapes(aProfile, TopAbs_ShapeEnum.TopAbs_VERTEX, aProfShapes);
+                    NCollection_IndexedMap<Shape> aSpineEdges = new(ShapeHasher.Instance);
+                    NCollection_IndexedMap<Shape> aProfShapes = new(ShapeHasher.Instance);
+                    Exploration.MapShapes(aSpine, ShapeType.Edge, aSpineEdges);
+                    Exploration.MapShapes(aProfile, ShapeType.Edge, aProfShapes);
+                    Exploration.MapShapes(aProfile, ShapeType.Vertex, aProfShapes);
                     for (int i = 1; i <= aSpineEdges.Extent(); i++)
                     {
                         for (int j = 1; j <= aProfShapes.Extent(); j++)
                         {
-                            TopoDS_Shape aG = aPipe.Generated(aSpineEdges.FindKey(i), aProfShapes.FindKey(j));
-                            aGen2.Append(aG.IsNull() ? -1 : aResMap.FindIndex(aG)).Append(';');
+                            Shape aG = aPipe.Generated(aSpineEdges.FindKey(i), aProfShapes.FindKey(j));
+                            aGen2.Append(aG.IsNull ? -1 : aResMap.FindIndex(aG)).Append(';');
                         }
                     }
                     aOut.Append(aGen2).Append('\n');

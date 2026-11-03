@@ -3,9 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -19,17 +22,17 @@ public static class BRepClass3d
     /// <remarks>
     /// The solids it classifies are built here, unfrozen, and never published; the shell returned is the solid's own.
     /// </remarks>
-    public static TopoDS_Shell OuterShell(in TopoDS_Solid aSolid)
+    public static Shell OuterShell(in Solid aSolid)
     {
         bool bFound;
         double aTol;
-        TopoDS_Solid aSDx;
-        TopoDS_Shell aShell = new(), aDummy = new();
-        var aIt = new TopoDS_Iterator();
-        var aBB = new BRep_Builder();
+        Solid aSDx;
+        Shell aShell = new(), aDummy = new();
+        var aIt = new Iterator();
+        var aBB = new BrepBuilder();
         var aSC = new BRepClass3d_SolidClassifier();
         //
-        if (aSolid.IsNull())
+        if (aSolid.IsNull)
         {
             return aDummy;
         }
@@ -42,10 +45,10 @@ public static class BRepClass3d
         int aShellCounter = 0;
         for (aIt.Initialize(aSolid); aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aSx = aIt.Value();
-            if (aSx.ShapeType() == TopAbs_SHELL)
+            Shape aSx = aIt.Value();
+            if (aSx.ShapeType() == ShapeType.Shell)
             {
-                aShell = TopoDS.Shell(aSx);
+                aShell = ShapeCasts.Shell(aSx);
                 aShellCounter++;
                 if (aShellCounter >= 2)
                 {
@@ -66,10 +69,10 @@ public static class BRepClass3d
         //
         for (aIt.Initialize(aSolid); aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aSx = aIt.Value();
-            if (aSx.ShapeType() == TopAbs_SHELL)
+            Shape aSx = aIt.Value();
+            if (aSx.ShapeType() == ShapeType.Shell)
             {
-                aShell = TopoDS.Shell(aSx);
+                aShell = ShapeCasts.Shell(aSx);
                 if (!IsInternal(aShell))
                 {
                     aSDx = aSolid;
@@ -78,7 +81,7 @@ public static class BRepClass3d
                     //
                     aSC.Load(aSDx);
                     aSC.PerformInfinitePoint(aTol);
-                    if (aSC.State() == TopAbs_OUT)
+                    if (aSC.State() == Out)
                     {
                         bFound = true;
                         break;
@@ -97,20 +100,20 @@ public static class BRepClass3d
         return aShell;
     }
 
-    private static bool IsInternal(in TopoDS_Shell aSx)
+    private static bool IsInternal(in Shell aSx)
     {
         bool bInternal;
-        TopAbs_Orientation aOr;
-        var aIt = new TopoDS_Iterator();
+        Orientation aOr;
+        var aIt = new Iterator();
         //
         bInternal = false;
         //
         aIt.Initialize(aSx);
         if (aIt.More())
         {
-            TopoDS_Shape aSy = aIt.Value();
+            Shape aSy = aIt.Value();
             aOr = aSy.Orientation();
-            bInternal = (aOr == TopAbs_INTERNAL);
+            bInternal = (aOr == Internal);
         }
 
         //

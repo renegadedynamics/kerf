@@ -25,19 +25,19 @@ internal static class GeometryTestBisecCommands
         switch (Bis.ArcType())
         {
             case GccInt_Lin:
-                DrawTrSurf.Set(theDI, solname, new Geom2d_Line(Bis.Line()));
+                DrawTrSurf.Set(theDI, solname, new LineCurve2D(Bis.Line()));
                 break;
             case GccInt_Cir:
-                DrawTrSurf.Set(theDI, solname, new Geom2d_Circle(Bis.Circle()));
+                DrawTrSurf.Set(theDI, solname, new CircleCurve2D(Bis.Circle()));
                 break;
             case GccInt_Ell:
-                DrawTrSurf.Set(theDI, solname, new Geom2d_Ellipse(Bis.Ellipse()));
+                DrawTrSurf.Set(theDI, solname, new EllipseCurve2D(Bis.Ellipse()));
                 break;
             case GccInt_Par:
-                DrawTrSurf.Set(theDI, solname, new Geom2d_Parabola(Bis.Parabola()));
+                DrawTrSurf.Set(theDI, solname, new ParabolaCurve2D(Bis.Parabola()));
                 break;
             case GccInt_Hpr:
-                DrawTrSurf.Set(theDI, solname, new Geom2d_Hyperbola(Bis.Hyperbola()));
+                DrawTrSurf.Set(theDI, solname, new HyperbolaCurve2D(Bis.Hyperbola()));
                 break;
             case GccInt_Pnt:
                 DrawTrSurf.Set(theDI, solname, Bis.Point());
@@ -58,8 +58,8 @@ internal static class GeometryTestBisecCommands
             return 1;
         }
 
-        Geom2d_Curve? C1 = DrawTrSurf.GetCurve2d(theDI, a[2]);
-        Geom2d_Curve? C2 = DrawTrSurf.GetCurve2d(theDI, a[3]);
+        Curve2D? C1 = DrawTrSurf.GetCurve2d(theDI, a[2]);
+        Curve2D? C2 = DrawTrSurf.GetCurve2d(theDI, a[3]);
         Point2D P1 = new(), P2 = new();
         bool ip1 = DrawTrSurf.GetPoint2d(theDI, a[2], ref P1);
         bool ip2 = DrawTrSurf.GetPoint2d(theDI, a[3], ref P2);
@@ -72,15 +72,15 @@ internal static class GeometryTestBisecCommands
             if (C2 is not null)
             {
                 Type Type2 = C2.GetType();
-                if (Type1 == typeof(Geom2d_Line) && Type2 == typeof(Geom2d_Line))
+                if (Type1 == typeof(LineCurve2D) && Type2 == typeof(LineCurve2D))
                 {
-                    GccAna_Lin2dBisec Bis = new(((Geom2d_Line)C1).Lin2d(), ((Geom2d_Line)C2).Lin2d());
+                    GccAna_Lin2dBisec Bis = new(((LineCurve2D)C1).Lin2d(), ((LineCurve2D)C2).Lin2d());
                     if (Bis.IsDone())
                     {
                         NbSol = Bis.NbSolutions();
                         for (i = 1; i <= NbSol; i++)
                         {
-                            DrawTrSurf.Set(theDI, $"{a[1]}_{i}", new Geom2d_Line(Bis.ThisSolution(i)));
+                            DrawTrSurf.Set(theDI, $"{a[1]}_{i}", new LineCurve2D(Bis.ThisSolution(i)));
                         }
                     }
                     else
@@ -89,31 +89,9 @@ internal static class GeometryTestBisecCommands
                         return 1;
                     }
                 }
-                else if (Type1 == typeof(Geom2d_Line) && Type2 == typeof(Geom2d_Circle))
+                else if (Type1 == typeof(LineCurve2D) && Type2 == typeof(CircleCurve2D))
                 {
-                    GccAna_CircLin2dBisec Bis = new(((Geom2d_Circle)C2).Circ2d(), ((Geom2d_Line)C1).Lin2d());
-                    if (Bis.IsDone())
-                    {
-                        NbSol = Bis.NbSolutions();
-                        if (NbSol >= 2)
-                        {
-                            Compt = 1;
-                        }
-                        for (i = 1; i <= NbSol; i++)
-                        {
-                            Solution(theDI, Bis.ThisSolution(i), a[1], Compt);
-                            Compt++;
-                        }
-                    }
-                    else
-                    {
-                        di.Append(" Bisec has failed !!\n");
-                        return 1;
-                    }
-                }
-                else if (Type2 == typeof(Geom2d_Line) && Type1 == typeof(Geom2d_Circle))
-                {
-                    GccAna_CircLin2dBisec Bis = new(((Geom2d_Circle)C1).Circ2d(), ((Geom2d_Line)C2).Lin2d());
+                    GccAna_CircLin2dBisec Bis = new(((CircleCurve2D)C2).Circ2d(), ((LineCurve2D)C1).Lin2d());
                     if (Bis.IsDone())
                     {
                         NbSol = Bis.NbSolutions();
@@ -133,9 +111,31 @@ internal static class GeometryTestBisecCommands
                         return 1;
                     }
                 }
-                else if (Type2 == typeof(Geom2d_Circle) && Type1 == typeof(Geom2d_Circle))
+                else if (Type2 == typeof(LineCurve2D) && Type1 == typeof(CircleCurve2D))
                 {
-                    GccAna_Circ2dBisec Bis = new(((Geom2d_Circle)C1).Circ2d(), ((Geom2d_Circle)C2).Circ2d());
+                    GccAna_CircLin2dBisec Bis = new(((CircleCurve2D)C1).Circ2d(), ((LineCurve2D)C2).Lin2d());
+                    if (Bis.IsDone())
+                    {
+                        NbSol = Bis.NbSolutions();
+                        if (NbSol >= 2)
+                        {
+                            Compt = 1;
+                        }
+                        for (i = 1; i <= NbSol; i++)
+                        {
+                            Solution(theDI, Bis.ThisSolution(i), a[1], Compt);
+                            Compt++;
+                        }
+                    }
+                    else
+                    {
+                        di.Append(" Bisec has failed !!\n");
+                        return 1;
+                    }
+                }
+                else if (Type2 == typeof(CircleCurve2D) && Type1 == typeof(CircleCurve2D))
+                {
+                    GccAna_Circ2dBisec Bis = new(((CircleCurve2D)C1).Circ2d(), ((CircleCurve2D)C2).Circ2d());
                     if (Bis.IsDone())
                     {
                         NbSol = Bis.NbSolutions();
@@ -163,9 +163,9 @@ internal static class GeometryTestBisecCommands
             }
             else if (ip2)
             {
-                if (Type1 == typeof(Geom2d_Circle))
+                if (Type1 == typeof(CircleCurve2D))
                 {
-                    GccAna_CircPnt2dBisec Bis = new(((Geom2d_Circle)C1).Circ2d(), P2);
+                    GccAna_CircPnt2dBisec Bis = new(((CircleCurve2D)C1).Circ2d(), P2);
                     if (Bis.IsDone())
                     {
                         NbSol = Bis.NbSolutions();
@@ -185,9 +185,9 @@ internal static class GeometryTestBisecCommands
                         return 1;
                     }
                 }
-                else if (Type1 == typeof(Geom2d_Line))
+                else if (Type1 == typeof(LineCurve2D))
                 {
-                    GccAna_LinPnt2dBisec Bis = new(((Geom2d_Line)C1).Lin2d(), P2);
+                    GccAna_LinPnt2dBisec Bis = new(((LineCurve2D)C1).Lin2d(), P2);
                     if (Bis.IsDone())
                     {
                         NbSol = 1;
@@ -211,9 +211,9 @@ internal static class GeometryTestBisecCommands
             if (C2 is not null)
             {
                 Type Type2 = C2.GetType();
-                if (Type2 == typeof(Geom2d_Circle))
+                if (Type2 == typeof(CircleCurve2D))
                 {
-                    GccAna_CircPnt2dBisec Bis = new(((Geom2d_Circle)C2).Circ2d(), P1);
+                    GccAna_CircPnt2dBisec Bis = new(((CircleCurve2D)C2).Circ2d(), P1);
                     if (Bis.IsDone())
                     {
                         NbSol = Bis.NbSolutions();
@@ -233,9 +233,9 @@ internal static class GeometryTestBisecCommands
                         return 1;
                     }
                 }
-                else if (Type2 == typeof(Geom2d_Line))
+                else if (Type2 == typeof(LineCurve2D))
                 {
-                    GccAna_LinPnt2dBisec Bis = new(((Geom2d_Line)C2).Lin2d(), P1);
+                    GccAna_LinPnt2dBisec Bis = new(((LineCurve2D)C2).Lin2d(), P1);
                     if (Bis.IsDone())
                     {
                         NbSol = 1;
@@ -254,7 +254,7 @@ internal static class GeometryTestBisecCommands
                 if (Bis.HasSolution())
                 {
                     NbSol = 1;
-                    DrawTrSurf.Set(theDI, a[1], new Geom2d_Line(Bis.ThisSolution()));
+                    DrawTrSurf.Set(theDI, a[1], new LineCurve2D(Bis.ThisSolution()));
                 }
                 else
                 {

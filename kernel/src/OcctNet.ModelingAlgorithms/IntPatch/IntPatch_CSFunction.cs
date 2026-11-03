@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -16,16 +17,16 @@ namespace Occt;
 /// <remarks>
 /// OCCT keeps pointers to the caller's handles; the port keeps the adaptors (by reference, as the handles).
 /// </remarks>
-public class IntPatch_CSFunction : FunctionSetWithDerivatives, IIntImp_CSFunction<Adaptor3d_Surface, Adaptor2d_Curve2d>
+public class IntPatch_CSFunction : FunctionSetWithDerivatives, IIntImp_CSFunction<SurfaceAdaptorBase, Curve2DAdaptorBase>
 {
-    private readonly Adaptor2d_Curve2d curve;
-    private readonly Adaptor3d_Surface surface1;
-    private readonly Adaptor3d_Surface surface2;
+    private readonly Curve2DAdaptorBase curve;
+    private readonly SurfaceAdaptorBase surface1;
+    private readonly SurfaceAdaptorBase surface2;
     private Point3D p;
     private double f;
 
     /// <summary><paramref name="S1"/> is the surface searched; <paramref name="C"/> a curve on <paramref name="S2"/>.</summary>
-    public IntPatch_CSFunction(Adaptor3d_Surface S1, Adaptor2d_Curve2d C, Adaptor3d_Surface S2)
+    public IntPatch_CSFunction(SurfaceAdaptorBase S1, Curve2DAdaptorBase C, SurfaceAdaptorBase S2)
     {
         surface1 = S1;
         surface2 = S2;
@@ -40,9 +41,9 @@ public class IntPatch_CSFunction : FunctionSetWithDerivatives, IIntImp_CSFunctio
 
     public override bool Value(math_Vector X, math_Vector F)
     {
-        Point3D Psurf = Adaptor3d_HSurfaceTool.Value(surface1, X[1], X[2]);
+        Point3D Psurf = HSurfaceTool.Value(surface1, X[1], X[2]);
         Point2D p2d = IntPatch_HCurve2dTool.Value(curve, X[3]);
-        Point3D Pcurv = Adaptor3d_HSurfaceTool.Value(surface2, p2d.X(), p2d.Y());
+        Point3D Pcurv = HSurfaceTool.Value(surface2, p2d.X(), p2d.Y());
 
         F[1] = Psurf.X() - Pcurv.X();
         F[2] = Psurf.Y() - Pcurv.Y();
@@ -56,9 +57,9 @@ public class IntPatch_CSFunction : FunctionSetWithDerivatives, IIntImp_CSFunctio
     {
         Vector3D D1w = new();
 
-        Adaptor3d_HSurfaceTool.D1(surface1, X[1], X[2], out _, out Vector3D D1u, out Vector3D D1v);
+        HSurfaceTool.D1(surface1, X[1], X[2], out _, out Vector3D D1u, out Vector3D D1v);
         IntPatch_HCurve2dTool.D1(curve, X[3], out Point2D p2d, out Vector2D d2d);
-        Adaptor3d_HSurfaceTool.D1(surface2, p2d.X(), p2d.Y(), out _, out Vector3D d1u, out Vector3D d1v);
+        HSurfaceTool.D1(surface2, p2d.X(), p2d.Y(), out _, out Vector3D d1u, out Vector3D d1v);
         D1w.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
         D[1, 1] = D1u.X();
@@ -77,9 +78,9 @@ public class IntPatch_CSFunction : FunctionSetWithDerivatives, IIntImp_CSFunctio
     {
         Vector3D D1w = new();
 
-        Adaptor3d_HSurfaceTool.D1(surface1, X[1], X[2], out Point3D Psurf, out Vector3D D1u, out Vector3D D1v);
+        HSurfaceTool.D1(surface1, X[1], X[2], out Point3D Psurf, out Vector3D D1u, out Vector3D D1v);
         IntPatch_HCurve2dTool.D1(curve, X[3], out Point2D p2d, out Vector2D d2d);
-        Adaptor3d_HSurfaceTool.D1(surface2, p2d.X(), p2d.Y(), out Point3D Pcurv, out Vector3D d1u, out Vector3D d1v);
+        HSurfaceTool.D1(surface2, p2d.X(), p2d.Y(), out Point3D Pcurv, out Vector3D d1u, out Vector3D d1v);
         D1w.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
         D[1, 1] = D1u.X();
@@ -105,7 +106,7 @@ public class IntPatch_CSFunction : FunctionSetWithDerivatives, IIntImp_CSFunctio
     /// <summary>The square distance of the last evaluation.</summary>
     public double Root() => f;
 
-    public Adaptor3d_Surface AuxillarSurface() => surface1;
+    public SurfaceAdaptorBase AuxillarSurface() => surface1;
 
-    public Adaptor2d_Curve2d AuxillarCurve() => curve;
+    public Curve2DAdaptorBase AuxillarCurve() => curve;
 }

@@ -1,6 +1,8 @@
 // New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 1229). Not a port.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -12,9 +14,9 @@ public sealed class XdeDoc_SubShape
 {
     /// <summary>The sub-shape (frozen here, if it isn't yet) with its attributes.</summary>
     /// <exception cref="ArgumentException">The shape is null.</exception>
-    public XdeDoc_SubShape(in TopoDS_Shape theShape, XdeDoc_Attributes theAttributes)
+    public XdeDoc_SubShape(in Shape theShape, XdeDoc_Attributes theAttributes)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             throw new ArgumentException("A sub-shape needs a shape", nameof(theShape));
         }
@@ -24,7 +26,7 @@ public sealed class XdeDoc_SubShape
     }
 
     /// <summary>The sub-shape, in the part's coordinates.</summary>
-    public TopoDS_Shape Shape { get; }
+    public Shape Shape { get; }
 
     /// <summary>Its attributes.</summary>
     public XdeDoc_Attributes Attributes { get; }

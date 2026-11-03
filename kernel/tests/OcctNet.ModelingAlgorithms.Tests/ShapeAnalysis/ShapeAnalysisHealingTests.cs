@@ -1,11 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -15,9 +17,9 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ShapeAnalysisHealingTests
 {
-    private static TopoDS_Shape Box() => new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
+    private static Shape Box() => new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
 
-    private static TopoDS_Face PolygonFace(params Point3D[] thePoints)
+    private static Face PolygonFace(params Point3D[] thePoints)
     {
         var aPoly = new BRepBuilderAPI_MakePolygon();
         foreach (Point3D aP in thePoints)
@@ -36,7 +38,7 @@ public class ShapeAnalysisHealingTests
     [Fact]
     public void ShapeContents_Box()
     {
-        TopoDS_Shape aBox = Box();
+        Shape aBox = Box();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         var aSC = new ShapeAnalysis_ShapeContents();
         aSC.Perform(aBox);
@@ -64,7 +66,7 @@ public class ShapeAnalysisHealingTests
     [Fact]
     public void ShapeContents_Cylinder_SeamAndModes()
     {
-        TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(2.0, 5.0).Shape();
+        Shape aCyl = new BRepPrimAPI_MakeCylinder(2.0, 5.0).Shape();
         var aSC = new ShapeAnalysis_ShapeContents();
         aSC.ModifyTrimmed3dMode() = true;
         aSC.Perform(aCyl);
@@ -87,11 +89,11 @@ public class ShapeAnalysisHealingTests
     [Fact]
     public void ShapeContents_CompoundWithFreeEdgeAndFace()
     {
-        var aBB = new BRep_Builder();
-        var aComp = new TopoDS_Compound();
+        var aBB = new BrepBuilder();
+        var aComp = new Compound();
         aBB.MakeCompound(ref aComp);
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
-        TopoDS_Face aFace = PolygonFace(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0));
+        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        Face aFace = PolygonFace(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0));
         aBB.Add(aComp, anEdge);
         aBB.Add(aComp, aFace);
         aBB.Add(aComp, Box());
@@ -112,13 +114,13 @@ public class ShapeAnalysisHealingTests
         // a face on an indirect plane (left-handed axes), and one on a B-spline surface
         var anAx = new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
         anAx.YReverse();
-        var aPlane = new Geom_Plane(anAx);
-        TopoDS_Face anIndirect = new BRepBuilderAPI_MakeFace(aPlane, 0, 1, 0, 1, 1e-7).Face();
-        Geom_BSplineSurface aBs = GeomConvert.SurfaceToBSplineSurface(new Geom_RectangularTrimmedSurface(new Geom_Plane(new Plane3D()), 0, 1, 0, 1));
-        TopoDS_Face aBsFace = new BRepBuilderAPI_MakeFace(aBs, 1e-7).Face();
+        var aPlane = new PlaneSurface(anAx);
+        Face anIndirect = new BRepBuilderAPI_MakeFace(aPlane, 0, 1, 0, 1, 1e-7).Face();
+        BSplineSurface aBs = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(new TrimmedSurface(new PlaneSurface(new Plane3D()), 0, 1, 0, 1));
+        Face aBsFace = new BRepBuilderAPI_MakeFace(aBs, 1e-7).Face();
 
-        var aBB = new BRep_Builder();
-        var aComp = new TopoDS_Compound();
+        var aBB = new BrepBuilder();
+        var aComp = new Compound();
         aBB.MakeCompound(ref aComp);
         aBB.Add(aComp, anIndirect);
         aBB.Add(aComp, aBsFace);
@@ -138,31 +140,31 @@ public class ShapeAnalysisHealingTests
     [Fact]
     public void ShapeTolerance_Box()
     {
-        TopoDS_Shape aBox = Box();
+        Shape aBox = Box();
         var aST = new ShapeAnalysis_ShapeTolerance();
-        double aTol = BRep_Tool.Tolerance(TopoDS.Vertex(new TopExp_Explorer(aBox, TopAbs_VERTEX).Current()));
+        double aTol = Tool.Tolerance(ShapeCasts.Vertex(new Explorer(aBox, ShapeType.Vertex).Current()));
         Assert.Equal(aTol, aST.Tolerance(aBox, 1));
         Assert.Equal(aTol, aST.Tolerance(aBox, 0));
         Assert.Equal(aTol, aST.Tolerance(aBox, -1));
-        Assert.Equal(aTol, aST.Tolerance(aBox, 1, TopAbs_EDGE));
+        Assert.Equal(aTol, aST.Tolerance(aBox, 1, ShapeType.Edge));
 
         // all 6 faces, 24 edges, 48 vertices (explored with repetition) over 1e-9
         Assert.Equal(6 + 24 + 48, aST.OverTolerance(aBox, 1e-9).Length());
         // over 0 is the range [0, 0]: faces and edges fail "tol <= 0", vertices pass OCCT's "tol >= 0"
         Assert.Equal(48, aST.OverTolerance(aBox, 0.0).Length());
-        Assert.Equal(6, aST.OverTolerance(aBox, 1e-9, TopAbs_FACE).Length());
+        Assert.Equal(6, aST.OverTolerance(aBox, 1e-9, ShapeType.Face).Length());
         Assert.Equal(0, aST.OverTolerance(aBox, 1e-3).Length());
     }
 
     [Fact]
     public void ShapeTolerance_CumulatedAndVertexRangeBug()
     {
-        var aBB = new BRep_Builder();
-        var aV1 = new TopoDS_Vertex();
-        var aV2 = new TopoDS_Vertex();
+        var aBB = new BrepBuilder();
+        var aV1 = new Vertex();
+        var aV2 = new Vertex();
         aBB.MakeVertex(ref aV1, new Point3D(0, 0, 0), 1e-3);
         aBB.MakeVertex(ref aV2, new Point3D(1, 0, 0), 1e-5);
-        var aComp = new TopoDS_Compound();
+        var aComp = new Compound();
         aBB.MakeCompound(ref aComp);
         aBB.Add(aComp, aV1);
         aBB.Add(aComp, aV2);
@@ -178,7 +180,7 @@ public class ShapeAnalysisHealingTests
 
         // OCCT's vertex test is "tol >= valmax" (occt-issues.md): a vertex within [1e-6, 1e-4] isn't found, one over
         // the upper bound is
-        NCollection_HSequence<TopoDS_Shape> aRes = aST.InTolerance(aComp, 1e-6, 1e-4, TopAbs_VERTEX);
+        NCollection_HSequence<Shape> aRes = aST.InTolerance(aComp, 1e-6, 1e-4, ShapeType.Vertex);
         Assert.Equal(1, aRes.Length());
         Assert.True(aRes.Value(1).IsSame(aV1));
     }
@@ -262,7 +264,7 @@ public class ShapeAnalysisHealingTests
     public void WireVertex_ClosedPolygon_SameVertices()
     {
         var aPoly = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), true);
-        TopoDS_Wire aWire = aPoly.Wire();
+        Wire aWire = aPoly.Wire();
         var aWV = new ShapeAnalysis_WireVertex();
         aWV.Init(aWire, 1e-7);
         Assert.False(aWV.IsDone());
@@ -286,9 +288,9 @@ public class ShapeAnalysisHealingTests
     {
         // three edges with their own vertices: (0,0)-(1,0); (1,0)-(1,1) starting at the same point; (1,1+1e-5)-(0,0):
         // its start is 1e-5 from the previous end
-        TopoDS_Edge aE1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
-        TopoDS_Edge aE2 = new BRepBuilderAPI_MakeEdge(new Point3D(1, 0, 0), new Point3D(1, 1, 0)).Edge();
-        TopoDS_Edge aE3 = new BRepBuilderAPI_MakeEdge(new Point3D(1, 1 + 1e-5, 0), new Point3D(0, 0, 0)).Edge();
+        Edge aE1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        Edge aE2 = new BRepBuilderAPI_MakeEdge(new Point3D(1, 0, 0), new Point3D(1, 1, 0)).Edge();
+        Edge aE3 = new BRepBuilderAPI_MakeEdge(new Point3D(1, 1 + 1e-5, 0), new Point3D(0, 0, 0)).Edge();
         var aWD = new ShapeExtend_WireData();
         aWD.Add(aE1);
         aWD.Add(aE2);
@@ -339,7 +341,7 @@ public class ShapeAnalysisHealingTests
         var aCSF = new ShapeAnalysis_CheckSmallFace();
         Assert.Equal(-1.0, aCSF.Tolerance());
 
-        TopoDS_Face aBig = PolygonFace(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0));
+        Face aBig = PolygonFace(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0));
         Point3D aSpot = new(7, 7, 7);
         double aSpotTol = 42.0;
         Assert.Equal(0, aCSF.IsSpotFace(aBig, ref aSpot, ref aSpotTol));
@@ -347,7 +349,7 @@ public class ShapeAnalysisHealingTests
         Assert.False(aCSF.CheckSpotFace(aBig));
 
         // a triangle 1e-4 wide is a spot at tolerance 1e-3
-        TopoDS_Face aSmall = PolygonFace(new Point3D(0, 0, 0), new Point3D(1e-4, 0, 0), new Point3D(1e-4, 1e-4, 0));
+        Face aSmall = PolygonFace(new Point3D(0, 0, 0), new Point3D(1e-4, 0, 0), new Point3D(1e-4, 1e-4, 0));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aSmall);
         Assert.Equal(1, aCSF.IsSpotFace(aSmall, ref aSpot, ref aSpotTol, 1e-3));
         Assert.Equal(0.5e-4, aSpot.X(), 1e-15);
@@ -357,9 +359,9 @@ public class ShapeAnalysisHealingTests
         aSnap.AssertUnchanged(aSmall);
 
         // a face without wires: OCCT answers 1 and leaves the spot alone
-        var aBB = new BRep_Builder();
-        var anEmpty = new TopoDS_Face();
-        aBB.MakeFace(ref anEmpty, new Geom_Plane(new Plane3D()), 1e-7);
+        var aBB = new BrepBuilder();
+        var anEmpty = new Face();
+        aBB.MakeFace(ref anEmpty, new PlaneSurface(new Plane3D()), 1e-7);
         aSpot = new Point3D(7, 7, 7);
         Assert.Equal(1, aCSF.IsSpotFace(anEmpty, ref aSpot, ref aSpotTol));
         Assert.Equal(7.0, aSpot.X());
@@ -369,22 +371,22 @@ public class ShapeAnalysisHealingTests
     public void CheckSmallFace_Strip()
     {
         // a rectangle 10 long and 1e-5 wide: its short sides are null-length at 1e-4, its long sides confused
-        TopoDS_Face aStrip = PolygonFace(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 1e-5, 0), new Point3D(0, 1e-5, 0));
+        Face aStrip = PolygonFace(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 1e-5, 0), new Point3D(0, 1e-5, 0));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aStrip);
         var aCSF = new ShapeAnalysis_CheckSmallFace();
-        var aE1 = new TopoDS_Edge();
-        var aE2 = new TopoDS_Edge();
+        var aE1 = new Edge();
+        var aE2 = new Edge();
         Assert.False(aCSF.CheckSingleStrip(aStrip, ref aE1, ref aE2, 1e-4)); // four vertices
         Assert.True(aCSF.CheckStripFace(aStrip, ref aE1, ref aE2, 1e-4));
         Assert.True(aCSF.StatusStrip(ShapeExtend_DONE3));
-        Assert.False(aE1.IsNull());
-        Assert.False(aE2.IsNull());
+        Assert.False(aE1.IsNull);
+        Assert.False(aE2.IsNull);
         Assert.True(aCSF.CheckStripEdges(aE1, aE2, 1e-4, out double aDMax));
         Assert.Equal(1e-5, aDMax, 1e-12);
         Assert.False(aCSF.CheckStripEdges(aE1, aE2, 1e-6, out _));
         aSnap.AssertUnchanged(aStrip);
 
-        TopoDS_Face aSquare = PolygonFace(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
+        Face aSquare = PolygonFace(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
         var aCSF2 = new ShapeAnalysis_CheckSmallFace();
         Assert.False(aCSF2.CheckStripFace(aSquare, ref aE1, ref aE2, 1e-4));
         Assert.False(aCSF2.IsStripSupport(aSquare)); // a plane
@@ -399,8 +401,8 @@ public class ShapeAnalysisHealingTests
         aPoles[2, 1] = new Point3D(10, 0, 0);
         aPoles[1, 2] = new Point3D(0, 1e-9, 0);
         aPoles[2, 2] = new Point3D(10, 1e-9, 0);
-        var aBz = new Geom_BezierSurface(aPoles);
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aBz, 1e-7).Face();
+        var aBz = new BezierSurface(aPoles);
+        Face aFace = new BRepBuilderAPI_MakeFace(aBz, 1e-7).Face();
         var aCSF = new ShapeAnalysis_CheckSmallFace();
         Assert.True(aCSF.IsStripSupport(aFace));
         Assert.True(aCSF.StatusStrip(ShapeExtend_DONE2));
@@ -410,40 +412,40 @@ public class ShapeAnalysisHealingTests
     public void CheckSmallFace_SplittingVertices()
     {
         // a pentagon whose fourth vertex touches the first edge (1e-8 above it)
-        TopoDS_Face aFace = PolygonFace(new Point3D(0, 0, 0), new Point3D(2, 0, 0), new Point3D(2, 1, 0), new Point3D(1, 1e-8, 0),
+        Face aFace = PolygonFace(new Point3D(0, 0, 0), new Point3D(2, 0, 0), new Point3D(2, 1, 0), new Point3D(1, 1e-8, 0),
                                         new Point3D(0, 1, 0));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFace);
         var aCSF = new ShapeAnalysis_CheckSmallFace();
-        var aMapEdges = new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        var aMapParam = new NCollection_DataMap<TopoDS_Shape, NCollection_List<double>>(TopTools_ShapeMapHasher.Instance);
+        var aMapEdges = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var aMapParam = new NCollection_DataMap<Shape, NCollection_List<double>>(ShapeHasher.Instance);
 
         // the public form: a null compound gives a new frozen compound
         // (the vertices are explored with repetition: the splitting vertex is met, counted and added twice, as in OCCT)
-        var aComp = new TopoDS_Compound();
+        var aComp = new Compound();
         Assert.Equal(2, aCSF.CheckSplittingVertices(aFace, aMapEdges, aMapParam, ref aComp));
         Assert.True(aCSF.StatusSplitVert(ShapeExtend_DONE));
         Assert.True(aComp.TShape()!.IsFrozen);
-        Assert.Equal(2, aComp.NbChildren());
+        Assert.Equal(2, aComp.ChildCount);
         Assert.Equal(1, aMapEdges.Extent());
         Assert.Equal(1, aMapParam.Extent());
 
         // a frozen compound passed in is kept: the result holds its items and the new ones
-        TopoDS_Compound aFirst = aComp;
+        Compound aFirst = aComp;
         Assert.Equal(2, aCSF.CheckSplittingVertices(aFace, aMapEdges, aMapParam, ref aComp));
-        Assert.Equal(2, aFirst.NbChildren());
-        Assert.Equal(4, aComp.NbChildren());
+        Assert.Equal(2, aFirst.ChildCount);
+        Assert.Equal(4, aComp.ChildCount);
         aSnap.AssertUnchanged(aFace);
 
         // the internal form adds to the caller's compound in place, and refuses a frozen one
-        var aBB = new BRep_Builder();
-        var anOwn = new TopoDS_Compound();
+        var aBB = new BrepBuilder();
+        var anOwn = new Compound();
         aBB.MakeCompound(ref anOwn);
         Assert.Equal(2, aCSF.InternalCheckSplittingVertices(aFace, aMapEdges, aMapParam, anOwn));
-        Assert.Equal(2, anOwn.NbChildren());
+        Assert.Equal(2, anOwn.ChildCount);
         Assert.ThrowsAny<Exception>(() => aCSF.InternalCheckSplittingVertices(aFace, aMapEdges, aMapParam, aFirst));
 
-        TopoDS_Face aSquare = PolygonFace(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
-        var aNone = new TopoDS_Compound();
+        Face aSquare = PolygonFace(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
+        var aNone = new Compound();
         Assert.Equal(0, new ShapeAnalysis_CheckSmallFace().CheckSplittingVertices(aSquare, aMapEdges, aMapParam, ref aNone));
     }
 
@@ -451,7 +453,7 @@ public class ShapeAnalysisHealingTests
     public void CheckSmallFace_PinAndTwisted()
     {
         var aCSF = new ShapeAnalysis_CheckSmallFace();
-        TopoDS_Face aPlanar = PolygonFace(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0));
+        Face aPlanar = PolygonFace(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0));
         int aRow = -5, aSense = -5;
         Assert.False(aCSF.CheckPin(aPlanar, ref aRow, ref aSense)); // elementary surface: nothing written
         Assert.Equal(-5, aRow);
@@ -464,7 +466,7 @@ public class ShapeAnalysisHealingTests
         aPoles[2, 1] = new Point3D(0, 0, 0);
         aPoles[1, 2] = new Point3D(0, 1, 0);
         aPoles[2, 2] = new Point3D(1, 1, 0);
-        TopoDS_Face aPinned = new BRepBuilderAPI_MakeFace(new Geom_BezierSurface(aPoles), 1e-7).Face();
+        Face aPinned = new BRepBuilderAPI_MakeFace(new BezierSurface(aPoles), 1e-7).Face();
         Assert.True(aCSF.CheckPin(aPinned, ref aRow, ref aSense));
         Assert.Equal(2, aSense); // the last bound checked with a non-zero status: V row nbv
         Assert.Equal(2, aRow);
@@ -476,7 +478,7 @@ public class ShapeAnalysisHealingTests
         aTw[2, 1] = new Point3D(1, 0, 0);
         aTw[1, 2] = new Point3D(1, 1, 0);
         aTw[2, 2] = new Point3D(0, 1, 0);
-        TopoDS_Face aTwisted = new BRepBuilderAPI_MakeFace(new Geom_BezierSurface(aTw), 1e-7).Face();
+        Face aTwisted = new BRepBuilderAPI_MakeFace(new BezierSurface(aTw), 1e-7).Face();
         Assert.True(aCSF.CheckTwisted(aTwisted, ref aU, ref aV));
         Assert.True(aCSF.StatusTwisted(ShapeExtend_DONE));
     }
@@ -485,8 +487,8 @@ public class ShapeAnalysisHealingTests
     public void CheckSmallFace_PinFace()
     {
         var aCSF = new ShapeAnalysis_CheckSmallFace();
-        var aMap = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopoDS_Face aSquare = PolygonFace(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
+        var aMap = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        Face aSquare = PolygonFace(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aSquare);
         Assert.False(aCSF.CheckPinFace(aSquare, aMap));
         Assert.Equal(0, aMap.Extent());
@@ -502,11 +504,11 @@ public class ShapeAnalysisHealingTests
     {
         // an edge on a Geom_Line, moved: the converter hands back the edge's own (frozen) line, which OCCT transforms
         // in place; the port transforms a copy, so repeated calls agree and the edge is unchanged
-        var aLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(aLine, 0.0, 2.0).Edge();
+        var aLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Edge anEdge = new BRepBuilderAPI_MakeEdge(aLine, 0.0, 2.0).Edge();
         var aT = new Transform3D();
         aT.SetTranslation(new Vector3D(0, 5, 0));
-        TopoDS_Edge aMoved = TopoDS.Edge(anEdge.Moved(new Placement(aT)));
+        Edge aMoved = ShapeCasts.Edge(anEdge.Moved(new Placement(aT)));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aMoved);
 
         var aCR = new ShapeAnalysis_CanonicalRecognition(aMoved);

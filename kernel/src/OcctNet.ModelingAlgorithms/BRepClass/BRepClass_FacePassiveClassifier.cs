@@ -4,7 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -24,7 +25,7 @@ public class BRepClass_FacePassiveClassifier : ITopClass_FClass2d<BRepClass_Edge
     private readonly TopTrans_CurveTransition myTrans = new();
     private readonly BRepClass_Intersector myIntersector = new();
     private int myClosest;
-    private TopAbs_State myState;
+    private Containment myState;
     private bool myIsHeadOrEnd;
 
     /// <summary>An undefined classifier.</summary>
@@ -36,7 +37,7 @@ public class BRepClass_FacePassiveClassifier : ITopClass_FClass2d<BRepClass_Edge
         myParam = 0.0;
         myTolerance = 0.0;
         myClosest = 0;
-        myState = TopAbs_UNKNOWN;
+        myState = Unknown;
         myIsHeadOrEnd = false;
     }
 
@@ -61,7 +62,7 @@ public class BRepClass_FacePassiveClassifier : ITopClass_FClass2d<BRepClass_Edge
     }
 
     /// <summary>Updates the classification with the edge <paramref name="E"/> of the boundary.</summary>
-    public void Compare(in BRepClass_Edge E, TopAbs_Orientation Or)
+    public void Compare(in BRepClass_Edge E, Orientation Or)
     {
         TopClass_Classifier2d.Compare(ref myClosest,
                                       myIntersector,
@@ -92,7 +93,7 @@ public class BRepClass_FacePassiveClassifier : ITopClass_FClass2d<BRepClass_Edge
     public int ClosestIntersection() => myClosest;
 
     /// <summary>The current state of the point.</summary>
-    public TopAbs_State State() => myState;
+    public Containment State() => myState;
 
     /// <summary>True if the closest intersection is the head or the end of its edge.</summary>
     public bool IsHeadOrEnd() => myIsHeadOrEnd;

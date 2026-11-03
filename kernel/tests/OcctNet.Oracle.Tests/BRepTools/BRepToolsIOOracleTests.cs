@@ -1,9 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Reflection;
 using System.Text;
 using Xunit.Abstractions;
-using static Occt.TopTools_FormatVersion;
+using static Kerf.Engine.Exchange.Brep.FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -33,16 +37,16 @@ public class BRepToolsIOOracleTests(ITestOutputHelper output) : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private static readonly (TopTools_FormatVersion Version, bool Triangles, bool Normals)[] theFormats =
+    private static readonly (FormatVersion Version, bool Triangles, bool Normals)[] theFormats =
     [
-        (TopTools_FormatVersion_VERSION_1, true, false),
-        (TopTools_FormatVersion_VERSION_1, false, false),
-        (TopTools_FormatVersion_VERSION_2, true, false),
-        (TopTools_FormatVersion_VERSION_2, false, false),
-        (TopTools_FormatVersion_VERSION_3, true, false),
-        (TopTools_FormatVersion_VERSION_3, true, true),
-        (TopTools_FormatVersion_VERSION_3, false, false),
-        (TopTools_FormatVersion_VERSION_3, false, true),
+        (FormatVersion_VERSION_1, true, false),
+        (FormatVersion_VERSION_1, false, false),
+        (FormatVersion_VERSION_2, true, false),
+        (FormatVersion_VERSION_2, false, false),
+        (FormatVersion_VERSION_3, true, false),
+        (FormatVersion_VERSION_3, true, true),
+        (FormatVersion_VERSION_3, false, false),
+        (FormatVersion_VERSION_3, false, true),
     ];
 
     private string NewFile() => Path.Combine(myDirectory, $"s{myFileNumber++}.brep");
@@ -50,7 +54,7 @@ public class BRepToolsIOOracleTests(ITestOutputHelper output) : IDisposable
     private static string Text(string theFile) => File.ReadAllText(theFile, Encoding.Latin1);
 
     /// <summary>Native BRepTools::Write of the shape to a file; the file's path.</summary>
-    private string NativeWrite(N.TopoDS_Shape theShape, (TopTools_FormatVersion Version, bool Triangles, bool Normals) theFormat)
+    private string NativeWrite(N.TopoDS_Shape theShape, (FormatVersion Version, bool Triangles, bool Normals) theFormat)
     {
         string aFile = NewFile();
         Assert.True(N.BRepTools.Write(theShape, aFile, theFormat.Triangles, theFormat.Normals,
@@ -66,16 +70,16 @@ public class BRepToolsIOOracleTests(ITestOutputHelper output) : IDisposable
         return aShape;
     }
 
-    private string PortWrite(in TopoDS_Shape theShape, (TopTools_FormatVersion Version, bool Triangles, bool Normals) theFormat)
+    private string PortWrite(in Shape theShape, (FormatVersion Version, bool Triangles, bool Normals) theFormat)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile, theFormat.Triangles, theFormat.Normals, theFormat.Version));
+        Assert.True(BrepTools.Write(theShape, aFile, theFormat.Triangles, theFormat.Normals, theFormat.Version));
         return aFile;
     }
 
-    private static TopoDS_Shape PortRead(string theFile)
+    private static Shape PortRead(string theFile)
     {
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, theFile), theFile);
+        Assert.True(BrepTools.Read(out Shape aShape, theFile), theFile);
         Assert.True(aShape.TShape()!.IsFrozen);
         return aShape;
     }
@@ -93,11 +97,11 @@ public class BRepToolsIOOracleTests(ITestOutputHelper output) : IDisposable
     /// F1: native writes the shape; F2: native reads F1 and writes it; the port reads F1 and writes F2. Returns the
     /// port's shape.
     /// </summary>
-    private TopoDS_Shape CheckF1F2(N.TopoDS_Shape theNative, (TopTools_FormatVersion, bool, bool) theFormat, Counts theCounts, string theWhat)
+    private Shape CheckF1F2(N.TopoDS_Shape theNative, (FormatVersion, bool, bool) theFormat, Counts theCounts, string theWhat)
     {
         string aF1 = NativeWrite(theNative, theFormat);
         string aF2 = NativeWrite(NativeRead(aF1), theFormat);
-        TopoDS_Shape aShape = PortRead(aF1);
+        Shape aShape = PortRead(aF1);
         string aP = PortWrite(aShape, theFormat);
         string aF2Text = Text(aF2);
         Assert.True(aF2Text == Text(aP), $"{theWhat} {theFormat}: the port's file differs from native OCCT's ({aP}, {aF2})");
@@ -310,7 +314,7 @@ public class BRepToolsIOOracleTests(ITestOutputHelper output) : IDisposable
             }
 
             aKinds[aWhat] = aKinds.GetValueOrDefault(aWhat) + 1;
-            foreach ((TopTools_FormatVersion, bool, bool) aFormat in theFormats)
+            foreach ((FormatVersion, bool, bool) aFormat in theFormats)
             {
                 CheckF1F2(aNative, aFormat, aCounts, aWhat);
             }
@@ -329,20 +333,20 @@ public class BRepToolsIOOracleTests(ITestOutputHelper output) : IDisposable
         long aBytes = 0;
         for (int aScene = 0; aScene < 60; aScene++)
         {
-            Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = TopologyOracleTests.RandomScene(anOracle, aScene);
+            Twin<N.TopoDS_Shape, Shape> aShape = TopologyOracleTests.RandomScene(anOracle, aScene);
             if (aScene % 3 == 0)
             {
                 // a triangulation on every face
                 var aTwins = new TwinShapes();
                 var aNExp = new N.TopExp_Explorer(aShape.N, N.TopAbs_ShapeEnum.TopAbs_FACE);
-                var anExp = new TopExp_Explorer(aShape.P, TopAbs_ShapeEnum.TopAbs_FACE);
+                var anExp = new Explorer(aShape.P, ShapeType.Face);
                 for (; anExp.More(); anExp.Next(), aNExp.Next())
                 {
-                    aTwins.AttachTriangulation(new(N.TopoDS.Face(aNExp.Current()), TopoDS.Face(anExp.Current())), anOracle.Real(0.01, 1));
+                    aTwins.AttachTriangulation(new(N.TopoDS.Face(aNExp.Current()), ShapeCasts.Face(anExp.Current())), anOracle.Real(0.01, 1));
                 }
             }
 
-            foreach ((TopTools_FormatVersion, bool, bool) aFormat in theFormats)
+            foreach ((FormatVersion, bool, bool) aFormat in theFormats)
             {
                 string aNative = Text(NativeWrite(aShape.N, aFormat));
                 string aPort = Text(PortWrite(aShape.P, aFormat));
@@ -363,13 +367,13 @@ public class BRepToolsIOOracleTests(ITestOutputHelper output) : IDisposable
         var anOracle = new Oracle(output, 33003);
         int aFiles = 0, aSameAsWritten = 0;
         long aBytes = 0;
-        var aShapes = new List<TopoDS_Shape>();
+        var aShapes = new List<Shape>();
         for (int i = 0; i < 48; i++)
         {
             try
             {
                 N.TopoDS_Shape aNative = NativeShape(anOracle, i, out _);
-                aShapes.Add(PortRead(NativeWrite(aNative, (TopTools_FormatVersion_CURRENT, true, true))));
+                aShapes.Add(PortRead(NativeWrite(aNative, (FormatVersion_CURRENT, true, true))));
             }
             catch (Exception anException) when (anException is not Xunit.Sdk.XunitException)
             {
@@ -382,9 +386,9 @@ public class BRepToolsIOOracleTests(ITestOutputHelper output) : IDisposable
             aShapes.Add(TopologyOracleTests.RandomScene(anOracle, aScene).P);
         }
 
-        foreach (TopoDS_Shape aShape in aShapes)
+        foreach (Shape aShape in aShapes)
         {
-            foreach ((TopTools_FormatVersion, bool, bool) aFormat in theFormats)
+            foreach ((FormatVersion, bool, bool) aFormat in theFormats)
             {
                 string aP1 = PortWrite(aShape, aFormat);
                 string aN2 = Text(NativeWrite(NativeRead(aP1), aFormat));
@@ -419,7 +423,7 @@ public class BRepToolsIOOracleTests(ITestOutputHelper output) : IDisposable
     {
         int aFiles = 0, anUnreadable = 0, aSameAsF1 = 0;
         long aBytes = 0;
-        var aFormat = (TopTools_FormatVersion_CURRENT, true, false);
+        var aFormat = (FormatVersion_CURRENT, true, false);
         foreach (string aFile in Tape.Budget(theFiles, isSpread: true))
         {
             var aShape = new N.TopoDS_Shape();
@@ -428,7 +432,7 @@ public class BRepToolsIOOracleTests(ITestOutputHelper output) : IDisposable
                 if (!N.BRepTools.Read(aShape, aFile, aBuilder) || aShape.IsNull())
                 {
                     // Draw's geometry files (DrawTrSurf_...) and the like: the port doesn't read a shape either
-                    Assert.False(BRepTools.Read(out TopoDS_Shape aNone, aFile) && !aNone.IsNull(), aFile);
+                    Assert.False(BrepTools.Read(out Shape aNone, aFile) && !aNone.IsNull, aFile);
                     anUnreadable++;
                     continue;
                 }

@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -20,9 +21,9 @@ namespace Occt;
 public abstract class GeomFill_LocationLaw : Transient
 {
     /// <summary>Initializes the curve of the location law.</summary>
-    public abstract bool SetCurve(Adaptor3d_Curve C);
+    public abstract bool SetCurve(CurveAdaptorBase C);
 
-    public abstract Adaptor3d_Curve? GetCurve();
+    public abstract CurveAdaptorBase? GetCurve();
 
     /// <summary>Sets a transformation matrix, so that the law M(t) becomes Mat * M(t).</summary>
     public abstract void SetTrsf(in Matrix3x3 Transfo);

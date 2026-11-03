@@ -1,12 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ChFiDS_ChamfMethod;
 using static Occt.ChFiDS_ChamfMode;
 using static Occt.ChFiDS_ErrorStatus;
 using static Occt.ChFiDS_State;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -31,11 +33,11 @@ public class ChFiDSTests
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.TransitionOnArc());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.Vector());
 
-        TopoDS_Edge E = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
-        TopoDS_Vertex V = TopExp.FirstVertex(E);
+        Edge E = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        Vertex V = Exploration.FirstVertex(E);
         P.SetVertex(V);
-        P.SetArc(1.0e-3, E, 0.25, TopAbs_REVERSED);
-        P.SetArc(1.0e-5, E, 0.5, TopAbs_FORWARD); // the tolerance only grows
+        P.SetArc(1.0e-3, E, 0.25, Reversed);
+        P.SetArc(1.0e-5, E, 0.5, Forward); // the tolerance only grows
         P.SetParameter(2.5);
         P.SetPoint(new Point3D(1, 2, 3));
         P.SetVector(new Vector3D(0, 0, 1));
@@ -44,7 +46,7 @@ public class ChFiDSTests
         Assert.True(P.Vertex().IsSame(V));
         Assert.True(P.Arc().IsSame(E));
         Assert.Equal(0.5, P.ParameterOnArc());
-        Assert.Equal(TopAbs_FORWARD, P.TransitionOnArc());
+        Assert.Equal(Forward, P.TransitionOnArc());
         Assert.Equal(1.0e-3, P.Tolerance());
         Assert.Equal(2.5, P.Parameter());
         Assert.Equal(new Point3D(1, 2, 3), P.Point());
@@ -66,15 +68,15 @@ public class ChFiDSTests
     {
         ChFiDS_FaceInterference I = new();
         Assert.Equal(0, I.LineIndex());
-        Assert.Equal(TopAbs_FORWARD, I.Transition());
+        Assert.Equal(Forward, I.Transition());
         Assert.Null(I.PCurveOnFace());
-        Geom2d_Line L1 = new(new Point2D(0, 0), new Direction2D(1, 0));
-        Geom2d_Line L2 = new(new Point2D(0, 1), new Direction2D(0, 1));
-        I.SetInterference(3, TopAbs_REVERSED, L1, L2);
+        LineCurve2D L1 = new(new Point2D(0, 0), new Direction2D(1, 0));
+        LineCurve2D L2 = new(new Point2D(0, 1), new Direction2D(0, 1));
+        I.SetInterference(3, Reversed, L1, L2);
         I.SetParameter(0.5, true);
         I.SetParameter(2.5, false);
         Assert.Equal(3, I.LineIndex());
-        Assert.Equal(TopAbs_REVERSED, I.Transition());
+        Assert.Equal(Reversed, I.Transition());
         Assert.Same(L1, I.PCurveOnFace());
         Assert.Same(L2, I.PCurveOnSurf());
         Assert.Equal(0.5, I.Parameter(true));
@@ -105,7 +107,7 @@ public class ChFiDSTests
     public void SurfData_ChangeAccessorsWriteInPlace()
     {
         ChFiDS_SurfData D = new();
-        Assert.Equal(TopAbs_FORWARD, D.Orientation());
+        Assert.Equal(Forward, D.Orientation());
         Assert.False(D.IsOnCurve1());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => D.IndexOfC1());
         D.ChangeIndexOfS1(1);
@@ -113,7 +115,7 @@ public class ChFiDSTests
         D.ChangeSurf(7);
         D.SetIndexOfC1(4);
         D.SetIndexOfC2(0);
-        D.ChangeOrientation() = TopAbs_REVERSED;
+        D.ChangeOrientation() = Reversed;
         D.ChangeVertexFirstOnS1().SetParameter(1.5);
         D.ChangeVertex(false, 2).SetPoint(new Point3D(1, 1, 1));
         D.ChangeInterference(2).SetLineIndex(9);
@@ -129,7 +131,7 @@ public class ChFiDSTests
         Assert.True(D.IsOnCurve(1));
         Assert.Equal(4, D.IndexOfC(1));
         Assert.False(D.IsOnCurve2());
-        Assert.Equal(TopAbs_REVERSED, D.Orientation());
+        Assert.Equal(Reversed, D.Orientation());
         Assert.Equal(1.5, D.VertexFirstOnS1().Parameter());
         Assert.Equal(new Point3D(1, 1, 1), D.VertexLastOnS2().Point());
         Assert.Equal(9, D.InterferenceOnS2().LineIndex());
@@ -141,7 +143,7 @@ public class ChFiDSTests
         ChFiDS_SurfData E = new();
         E.Copy(D);
         Assert.Equal(7, E.Surf());
-        Assert.Equal(TopAbs_REVERSED, E.Orientation());
+        Assert.Equal(Reversed, E.Orientation());
         Assert.Equal(9, E.InterferenceOnS2().LineIndex());
         Assert.Equal(0.75, E.LastSpineParam());
         Assert.False(E.IsOnCurve1());
@@ -154,10 +156,10 @@ public class ChFiDSTests
     {
         ChFiDS_Stripe S = new();
         ChFiDS_FilSpine Sp = new();
-        TopoDS_Face aFace = BlendRecorder.BoxFace();
-        for (TopExp_Explorer anExp = new(aFace, TopAbs_EDGE); anExp.More(); anExp.Next())
+        Face aFace = BlendRecorder.BoxFace();
+        for (Explorer anExp = new(aFace, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            Sp.SetEdges(TopoDS.Edge(anExp.Current()));
+            Sp.SetEdges(ShapeCasts.Edge(anExp.Current()));
         }
 
         Sp.Load();
@@ -170,10 +172,10 @@ public class ChFiDSTests
         S.ChangeLastCurve(6);
         S.SetIndexPoint(7, true, 1);
         S.SetIndexPoint(8, false, 2);
-        S.SetOrientation(TopAbs_REVERSED, 2);
-        S.SetOrientation(TopAbs_REVERSED, true);
-        S.ChangeFirstPCurve() = new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0));
-        S.ChangeLastPCurve() = new Geom2d_Line(new Point2D(0, 0), new Direction2D(0, 1));
+        S.SetOrientation(Reversed, 2);
+        S.SetOrientation(Reversed, true);
+        S.ChangeFirstPCurve() = new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0));
+        S.ChangeLastPCurve() = new LineCurve2D(new Point2D(0, 0), new Direction2D(0, 1));
         S.Choix(3);
         S.InDS(false, 2);
         S.SetSolidIndex(11);
@@ -186,9 +188,9 @@ public class ChFiDSTests
         Assert.Equal(6, S.LastCurve());
         Assert.Equal(7, S.IndexFirstPointOnS1());
         Assert.Equal(8, S.IndexPoint(false, 2));
-        Assert.Equal(TopAbs_FORWARD, S.OrientationOnFace1());
-        Assert.Equal(TopAbs_REVERSED, S.Orientation(2));
-        Assert.Equal(TopAbs_REVERSED, S.FirstPCurveOrientation());
+        Assert.Equal(Forward, S.OrientationOnFace1());
+        Assert.Equal(Reversed, S.Orientation(2));
+        Assert.Equal(Reversed, S.FirstPCurveOrientation());
         Assert.Equal(3, S.Choix());
         Assert.Equal(0, S.IsInDS(true));
         Assert.Equal(2, S.IsInDS(false));
@@ -197,7 +199,7 @@ public class ChFiDSTests
         Sp.SetRadius(1.0);
         S.Reset();
         Assert.Null(S.SetOfSurfData());
-        Assert.Equal(TopAbs_FORWARD, S.FirstPCurveOrientation());
+        Assert.Equal(Forward, S.FirstPCurveOrientation());
         Assert.Null(S.FirstPCurve());
         Assert.NotNull(S.LastPCurve()); // OCCT: Reset forgets pcrv1 twice and keeps pcrv2 (decision 1040)
         Assert.Same(Sp, S.Spine());
@@ -206,21 +208,21 @@ public class ChFiDSTests
     [Fact]
     public void Maps_IndexShapesAndStripesByIsSame()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
         ChFiDS_Map M = new();
-        M.Fill(aBox, TopAbs_EDGE, TopAbs_FACE);
-        TopExp_Explorer anExp = new(aBox, TopAbs_EDGE);
-        TopoDS_Edge E = TopoDS.Edge(anExp.Current());
+        M.Fill(aBox, ShapeType.Edge, ShapeType.Face);
+        Explorer anExp = new(aBox, ShapeType.Edge);
+        Edge E = ShapeCasts.Edge(anExp.Current());
         Assert.True(M.Contains(E));
         Assert.True(M.Contains(E.Reversed()));
         Assert.Equal(2, M[E].Extent());
         Assert.Equal(2, M[1].Extent());
 
         ChFiDS_StripeMap SM = new();
-        TopoDS_Vertex V = TopExp.FirstVertex(E);
+        Vertex V = Exploration.FirstVertex(E);
         ChFiDS_Stripe S1 = new(), S2 = new();
         SM.Add(V, S1);
-        SM.Add(TopoDS.Vertex(V.Reversed()), S2);
+        SM.Add(ShapeCasts.Vertex(V.Reversed()), S2);
         Assert.Equal(1, SM.Extent());
         Assert.Equal(2, SM[V].Extent());
         Assert.Same(S1, SM[1].First());
@@ -275,9 +277,9 @@ public class ChFiDSTests
         Assert.False(Sp.IsPeriodic());
 
         // The cylinder's circle: closed, one edge, a full turn of length 10 pi.
-        for (TopExp_Explorer anExp = new(BlendRecorder.CylinderTopFace(), TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(BlendRecorder.CylinderTopFace(), ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            Sp.SetEdges(TopoDS.Edge(anExp.Current()));
+            Sp.SetEdges(ShapeCasts.Edge(anExp.Current()));
         }
 
         Sp.Load();
@@ -303,9 +305,9 @@ public class ChFiDSTests
     public void FilSpine_RadiusOnEdgesAndVertices()
     {
         ChFiDS_FilSpine Sp = new();
-        for (TopExp_Explorer anExp = new(BlendRecorder.BoxFace(), TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(BlendRecorder.BoxFace(), ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            Sp.SetEdges(TopoDS.Edge(anExp.Current()));
+            Sp.SetEdges(ShapeCasts.Edge(anExp.Current()));
         }
 
         Sp.Load();
@@ -327,7 +329,7 @@ public class ChFiDSTests
         Sp.UnSetRadius(Sp.Edges(3));
         Assert.True(Sp.IsConstant());
 
-        TopoDS_Vertex V = Sp.LastVertex();
+        Vertex V = Sp.LastVertex();
         Sp.SetRadius(5.0, V);
         Assert.Equal(5.0, Sp.MaxRadFromSeqAndLaws());
         Sp.UnSetRadius(V);

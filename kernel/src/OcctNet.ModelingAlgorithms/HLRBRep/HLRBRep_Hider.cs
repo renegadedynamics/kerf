@@ -4,8 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -33,7 +34,7 @@ public sealed class HLRBRep_Hider
                or DivideByZeroException;
 
     /// <summary>Hides the selected edges of the data structure by the face FI; MST caches the faces' adaptors.</summary>
-    public void Hide(int FI, NCollection_DataMap<TopoDS_Shape, BRepTopAdaptor_Tool> MST)
+    public void Hide(int FI, NCollection_DataMap<Shape, BRepTopAdaptor_Tool> MST)
     {
         // *****************************************************************
         //
@@ -117,14 +118,14 @@ public sealed class HLRBRep_Hider
                         ref HLRAlgo_Interference Int = ref myDS.Interference();
                         switch (Int.Intersection().State())
                         {
-                            case TopAbs_IN:
+                            case In:
                                 HLRBRep_EdgeIList.AddInterference(ILHidden, Int, EIT);
                                 break;
-                            case TopAbs_ON:
+                            case On:
                                 HLRBRep_EdgeIList.AddInterference(ILOn, Int, EIT);
                                 break;
-                            case TopAbs_OUT:
-                            case TopAbs_UNKNOWN:
+                            case Out:
+                            case Unknown:
                                 break;
                         }
                     }
@@ -151,15 +152,15 @@ public sealed class HLRBRep_Hider
                                 {
                                     //--printf("\nHidden Traitement du segment %d  %d\n",numseg1,numseg2);
                                     // fflush(stdout);
-                                    TopAbs_State stbef1, staft1, stbef2, staft2;
+                                    Containment stbef1, staft1, stbef2, staft2;
                                     Int1.Boundary().State3D(out stbef1, out staft1);
                                     Int2.Boundary().State3D(out stbef2, out staft2);
                                     if (Int1.Orientation() == Int2.Orientation())
                                     {
                                         if (Int1.Transition() == Int2.Transition())
                                         {
-                                            if (stbef1 == stbef2 && staft1 == staft2 && stbef1 != TopAbs_ON
-                                                && staft1 != TopAbs_ON)
+                                            if (stbef1 == stbef2 && staft1 == staft2 && stbef1 != On
+                                                && staft1 != On)
                                             {
                                                 int nind = -1;
                                                 if (Int1.Intersection().Index() != 0)
@@ -193,7 +194,7 @@ public sealed class HLRBRep_Hider
                                                     double p1 = Int1.Intersection().Parameter();
                                                     double p2 = Int2.Intersection().Parameter();
                                                     inter.Parameter((p1 + p2) * 0.5);
-                                                    Int1.BoundaryTransition(TopAbs_EXTERNAL);
+                                                    Int1.BoundaryTransition(External);
 
                                                     // Int1 and Int2 refer into the list's storage: not used after this
                                                     ILHidden.Remove(ItSegHidden2);
@@ -232,124 +233,124 @@ public sealed class HLRBRep_Hider
                       // *********************************
 
                         ref HLRAlgo_Interference Int = ref It.ChangeValue();
-                        TopAbs_State stbef, staft; // read the 3d states
+                        Containment stbef, staft; // read the 3d states
                         Int.Boundary().State3D(out stbef, out staft); // ******************
 
                         switch (Int.Transition())
                         {
-                            case TopAbs_FORWARD:
+                            case Forward:
                                 switch (staft)
                                 {
-                                    case TopAbs_OUT:
+                                    case Out:
                                         ILOn.Remove(It);
                                         break;
-                                    case TopAbs_IN:
+                                    case In:
                                         HLRBRep_EdgeIList.AddInterference(ILHidden, Int, EIT);
                                         ILOn.Remove(It);
                                         break;
-                                    case TopAbs_UNKNOWN:
+                                    case Unknown:
                                     // OCCT_DEBUG trace left out
-                                    case TopAbs_ON:
+                                    case On:
                                         It.Next();
                                         break;
                                 }
                                 break;
-                            case TopAbs_REVERSED:
+                            case Reversed:
                                 switch (stbef)
                                 {
-                                    case TopAbs_OUT:
+                                    case Out:
                                         ILOn.Remove(It);
                                         break;
-                                    case TopAbs_IN:
+                                    case In:
                                         HLRBRep_EdgeIList.AddInterference(ILHidden, Int, EIT);
                                         ILOn.Remove(It);
                                         break;
-                                    case TopAbs_UNKNOWN:
+                                    case Unknown:
                                     // OCCT_DEBUG trace left out
-                                    case TopAbs_ON:
+                                    case On:
                                         It.Next();
                                         break;
                                 }
                                 break;
-                            case TopAbs_EXTERNAL:
+                            case External:
                                 ILOn.Remove(It);
                                 break;
-                            case TopAbs_INTERNAL:
+                            case Internal:
                                 switch (stbef)
                                 {
-                                    case TopAbs_IN:
+                                    case In:
                                         switch (staft)
                                         {
-                                            case TopAbs_IN:
+                                            case In:
                                                 HLRBRep_EdgeIList.AddInterference(ILHidden, Int, EIT);
                                                 ILOn.Remove(It);
                                                 break;
-                                            case TopAbs_ON:
-                                                Int.Transition(TopAbs_FORWARD); // FORWARD  in ILOn,
+                                            case On:
+                                                Int.Transition(Forward); // FORWARD  in ILOn,
                                                 HLRBRep_EdgeIList.AddInterference // REVERSED in ILHidden
                                                     (ILHidden,
                                                      new HLRAlgo_Interference(Int.Intersection(), Int.Boundary(),
-                                                                              Int.Orientation(), TopAbs_REVERSED,
+                                                                              Int.Orientation(), Reversed,
                                                                               Int.BoundaryTransition()),
                                                      EIT);
                                                 It.Next();
                                                 break;
-                                            case TopAbs_OUT:
-                                                Int.Transition(TopAbs_REVERSED); // set REVERSED
+                                            case Out:
+                                                Int.Transition(Reversed); // set REVERSED
                                                 HLRBRep_EdgeIList.AddInterference(ILHidden, Int, EIT);
                                                 ILOn.Remove(It);
                                                 break;
-                                            case TopAbs_UNKNOWN:
+                                            case Unknown:
                                                 // OCCT_DEBUG trace left out
                                                 It.Next();
                                                 break;
                                         }
                                         break;
-                                    case TopAbs_ON:
+                                    case On:
                                         switch (staft)
                                         {
-                                            case TopAbs_IN:
-                                                Int.Transition(TopAbs_REVERSED); // REVERSED in ILOn,
+                                            case In:
+                                                Int.Transition(Reversed); // REVERSED in ILOn,
                                                 HLRBRep_EdgeIList.AddInterference // REVERSED in ILHidden
                                                     (ILHidden,
                                                      new HLRAlgo_Interference(Int.Intersection(), Int.Boundary(),
-                                                                              Int.Orientation(), TopAbs_FORWARD,
+                                                                              Int.Orientation(), Forward,
                                                                               Int.BoundaryTransition()),
                                                      EIT);
                                                 break;
-                                            case TopAbs_ON:
+                                            case On:
                                                 break;
-                                            case TopAbs_OUT:
-                                                Int.Transition(TopAbs_REVERSED);
+                                            case Out:
+                                                Int.Transition(Reversed);
                                                 break;
-                                            case TopAbs_UNKNOWN:
+                                            case Unknown:
                                                 // OCCT_DEBUG trace left out
                                                 break;
                                         }
                                         It.Next();
                                         break;
-                                    case TopAbs_OUT:
+                                    case Out:
                                         switch (staft)
                                         {
-                                            case TopAbs_IN:
-                                                Int.Transition(TopAbs_FORWARD); // set FORWARD
+                                            case In:
+                                                Int.Transition(Forward); // set FORWARD
                                                 HLRBRep_EdgeIList.AddInterference(ILHidden, Int, EIT);
                                                 ILOn.Remove(It);
                                                 break;
-                                            case TopAbs_ON:
-                                                Int.Transition(TopAbs_FORWARD); // FORWARD  in ILOn
+                                            case On:
+                                                Int.Transition(Forward); // FORWARD  in ILOn
                                                 It.Next();
                                                 break;
-                                            case TopAbs_OUT:
+                                            case Out:
                                                 ILOn.Remove(It);
                                                 break;
-                                            case TopAbs_UNKNOWN:
+                                            case Unknown:
                                                 // OCCT_DEBUG trace left out
                                                 It.Next();
                                                 break;
                                         }
                                         break;
-                                    case TopAbs_UNKNOWN:
+                                    case Unknown:
                                         // OCCT_DEBUG trace left out
                                         // OCCT doesn't move the iterator here, and loops forever on the same
                                         // interference; the port moves on (occt-issues.md, unit 7Q2)
@@ -364,8 +365,8 @@ public sealed class HLRBRep_Hider
                 if (ILHidden.IsEmpty() && ILOn.IsEmpty() && !hasOut)
                 {
                     HLRBRep_EdgeData ed = myEData[E];
-                    TopAbs_State st = myDS.Compare(E, ed); // Classification
-                    if (st == TopAbs_IN || st == TopAbs_ON)
+                    Containment st = myDS.Compare(E, ed); // Classification
+                    if (st == In || st == On)
                     { // **************
                         ed.Status().HideAll();
                     }
@@ -394,20 +395,20 @@ public sealed class HLRBRep_Hider
                         if (myDS.SimpleHidingFace()) // remove excess interferences
                         {
                             NCollection_Sequence<double> ToRemove = new();
-                            TopAbs_Orientation PrevTrans = TopAbs_EXTERNAL;
+                            Orientation PrevTrans = External;
                             double PrevParam = 0.0;
                             for (; It.More(); It.Next())
                             {
                                 HLRAlgo_Interference Int = It.Value();
-                                TopAbs_Orientation aTrans = Int.Transition();
+                                Orientation aTrans = Int.Transition();
                                 if (aTrans == PrevTrans)
                                 {
-                                    if (aTrans == TopAbs_FORWARD)
+                                    if (aTrans == Forward)
                                     {
                                         ToRemove.Append(Int.Intersection().Parameter());
                                         // OCCT_DEBUG trace left out
                                     }
-                                    else if (aTrans == TopAbs_REVERSED)
+                                    else if (aTrans == Reversed)
                                     {
                                         ToRemove.Append(PrevParam);
                                         // OCCT_DEBUG trace left out
@@ -446,7 +447,7 @@ public sealed class HLRBRep_Hider
                             HLRAlgo_Interference Int = It.Value();
                             switch (Int.Transition())
                             {
-                                case TopAbs_FORWARD:
+                                case Forward:
                                 {
                                     int decal = Int.Intersection().Level();
                                     if (level > 0)
@@ -460,7 +461,7 @@ public sealed class HLRBRep_Hider
                                     level = level + decal;
                                 }
                                     break;
-                                case TopAbs_REVERSED:
+                                case Reversed:
                                 {
                                     level = level - Int.Intersection().Level();
                                     if (level > 0)
@@ -473,10 +474,10 @@ public sealed class HLRBRep_Hider
                                     }
                                 }
                                     break;
-                                case TopAbs_EXTERNAL:
+                                case External:
                                     It.Next();
                                     break;
-                                case TopAbs_INTERNAL:
+                                case Internal:
                                     It.Next();
                                     break;
                                 default:
@@ -498,7 +499,7 @@ public sealed class HLRBRep_Hider
                     {
                         // IFV
 
-                        TopAbs_State aBuildIN = TopAbs_IN;
+                        Containment aBuildIN = In;
                         bool IsSuspicion = true;
 
                         double pmax, pmin;
@@ -517,9 +518,9 @@ public sealed class HLRBRep_Hider
                             for (; It.More(); It.Next())
                             {
                                 double p = It.Value().Intersection().Parameter();
-                                allFor = allFor && (It.Value().Transition() == TopAbs_FORWARD);
-                                allRev = allRev && (It.Value().Transition() == TopAbs_REVERSED);
-                                allInt = allInt && (It.Value().Transition() == TopAbs_INTERNAL);
+                                allFor = allFor && (It.Value().Transition() == Forward);
+                                allRev = allRev && (It.Value().Transition() == Reversed);
+                                allInt = allInt && (It.Value().Transition() == Internal);
                                 if (p < pmin)
                                 {
                                     pmin = p;
@@ -547,18 +548,18 @@ public sealed class HLRBRep_Hider
                             {
                                 switch (EB.Orientation())
                                 {
-                                    case TopAbs_FORWARD:
+                                    case Forward:
                                         p1 = EB.Current().Parameter();
                                         tol1 = EB.Current().Tolerance();
                                         aMaskP1P2 |= 1;
                                         break;
-                                    case TopAbs_REVERSED:
+                                    case Reversed:
                                         p2 = EB.Current().Parameter();
                                         tol2 = EB.Current().Tolerance();
                                         aMaskP1P2 |= 2;
                                         break;
-                                    case TopAbs_INTERNAL:
-                                    case TopAbs_EXTERNAL:
+                                    case Internal:
+                                    case External:
                                         break;
                                 }
                                 EB.NextVertex();
@@ -584,7 +585,7 @@ public sealed class HLRBRep_Hider
                                 // TopAbs_State st = myDS->Compare(E,ed);              // Classification
                             }
 
-                            TopAbs_State aTestState = TopAbs_IN;
+                            Containment aTestState = In;
                             if (IsSuspicion)
                             {
                                 // int aNbp = 1;
@@ -593,7 +594,7 @@ public sealed class HLRBRep_Hider
                                 aTestState = myDS.Classify(E, ed, true, ref tmplevel, (p1 + p2) / 2.0);
                             }
 
-                            if (aTestState != TopAbs_OUT)
+                            if (aTestState != Out)
                             {
                                 ES.Hide(p1, tol1, p2, tol2,
                                         false, // under  the Face
@@ -603,7 +604,7 @@ public sealed class HLRBRep_Hider
                             EB.NextEdge();
                         }
 
-                        EB.Builds(TopAbs_ON); // build parts under the boundary
+                        EB.Builds(On); // build parts under the boundary
                                               // ******************************
                         while (EB.MoreEdges())
                         {
@@ -614,18 +615,18 @@ public sealed class HLRBRep_Hider
                             {
                                 switch (EB.Orientation())
                                 {
-                                    case TopAbs_FORWARD:
+                                    case Forward:
                                         p1 = EB.Current().Parameter();
                                         tol1 = EB.Current().Tolerance();
                                         aMaskP1P2 |= 1;
                                         break;
-                                    case TopAbs_REVERSED:
+                                    case Reversed:
                                         p2 = EB.Current().Parameter();
                                         tol2 = EB.Current().Tolerance();
                                         aMaskP1P2 |= 2;
                                         break;
-                                    case TopAbs_INTERNAL:
-                                    case TopAbs_EXTERNAL:
+                                    case Internal:
+                                    case External:
                                         break;
                                 }
                                 EB.NextVertex();
@@ -637,7 +638,7 @@ public sealed class HLRBRep_Hider
                                 continue;
                             }
 
-                            TopAbs_State aTestState = TopAbs_IN;
+                            Containment aTestState = In;
                             if (IsSuspicion)
                             {
                                 // int aNbp = 1;
@@ -646,7 +647,7 @@ public sealed class HLRBRep_Hider
                                 aTestState = myDS.Classify(E, ed, true, ref tmplevel, (p1 + p2) / 2.0);
                             }
 
-                            if (aTestState != TopAbs_OUT)
+                            if (aTestState != Out)
                             {
                                 ES.Hide(p1, tol1, p2, tol2,
                                         false, // under the Face
@@ -675,7 +676,7 @@ public sealed class HLRBRep_Hider
                                 HLRAlgo_Interference Int = It.Value();
                                 switch (Int.Transition())
                                 {
-                                    case TopAbs_FORWARD:
+                                    case Forward:
                                     {
                                         int decal = Int.Intersection().Level();
                                         if (level > 0)
@@ -689,7 +690,7 @@ public sealed class HLRBRep_Hider
                                         level = level + decal;
                                     }
                                         break;
-                                    case TopAbs_REVERSED:
+                                    case Reversed:
                                         level = level - Int.Intersection().Level();
                                         if (level > 0)
                                         {
@@ -700,8 +701,8 @@ public sealed class HLRBRep_Hider
                                             It.Next();
                                         }
                                         break;
-                                    case TopAbs_EXTERNAL:
-                                    case TopAbs_INTERNAL:
+                                    case External:
+                                    case Internal:
                                     default:
                                         It.Next();
                                         break;
@@ -719,7 +720,7 @@ public sealed class HLRBRep_Hider
                         HLRBRep_VertexList IL = new(EIT, new NCollection_List<HLRAlgo_Interference>.Iterator(ILOn));
                         HLRBRep_EdgeBuilder EB = new(IL);
 
-                        EB.Builds(TopAbs_IN); // build parts on the Face
+                        EB.Builds(In); // build parts on the Face
                                               // ***********************
                         while (EB.MoreEdges())
                         {
@@ -730,18 +731,18 @@ public sealed class HLRBRep_Hider
                             {
                                 switch (EB.Orientation())
                                 {
-                                    case TopAbs_FORWARD:
+                                    case Forward:
                                         p1 = EB.Current().Parameter();
                                         tol1 = EB.Current().Tolerance();
                                         aMaskP1P2 |= 1;
                                         break;
-                                    case TopAbs_REVERSED:
+                                    case Reversed:
                                         p2 = EB.Current().Parameter();
                                         tol2 = EB.Current().Tolerance();
                                         aMaskP1P2 |= 2;
                                         break;
-                                    case TopAbs_INTERNAL:
-                                    case TopAbs_EXTERNAL:
+                                    case Internal:
+                                    case External:
                                         break;
                                 }
                                 EB.NextVertex();
@@ -759,7 +760,7 @@ public sealed class HLRBRep_Hider
                             EB.NextEdge();
                         }
 
-                        EB.Builds(TopAbs_ON); // build hidden parts under the boundary
+                        EB.Builds(On); // build hidden parts under the boundary
                                               // *************************************
                         while (EB.MoreEdges())
                         {
@@ -770,18 +771,18 @@ public sealed class HLRBRep_Hider
                             {
                                 switch (EB.Orientation())
                                 {
-                                    case TopAbs_FORWARD:
+                                    case Forward:
                                         p1 = EB.Current().Parameter();
                                         tol1 = EB.Current().Tolerance();
                                         aMaskP1P2 |= 1;
                                         break;
-                                    case TopAbs_REVERSED:
+                                    case Reversed:
                                         p2 = EB.Current().Parameter();
                                         tol2 = EB.Current().Tolerance();
                                         aMaskP1P2 |= 2;
                                         break;
-                                    case TopAbs_INTERNAL:
-                                    case TopAbs_EXTERNAL:
+                                    case Internal:
+                                    case External:
                                         break;
                                 }
                                 EB.NextVertex();

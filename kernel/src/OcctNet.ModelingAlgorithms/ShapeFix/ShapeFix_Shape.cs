@@ -5,9 +5,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -20,7 +22,7 @@ namespace Occt;
 /// <para>
 /// A working object (decision 21). <see cref="Init"/> records the shape (and makes a context considering locations if
 /// none was set). <see cref="Perform"/> edits the shape it works on in place, as OCCT's: a shape holding frozen shapes
-/// (any shape a caller holds) is copied first (<see cref="BRepTools_CopyAtEntry"/>, decision 583), so the caller's
+/// (any shape a caller holds) is copied first (<see cref="CopyAtEntry"/>, decision 583), so the caller's
 /// shape never changes. At the end of <see cref="Perform"/> the copies the fixes left unchanged are the caller's own
 /// again, in the result and in the context, and the context records the sub-shapes changed in place, so it answers for
 /// the caller's shapes. A shape needing nothing gives back the input itself.
@@ -34,11 +36,11 @@ namespace Occt;
 public class ShapeFix_Shape : ShapeFix_Root
 {
     /// <summary>The result.</summary>
-    protected TopoDS_Shape                  myResult;
+    protected Shape                  myResult;
     /// <summary>The solid fixing tool (holding the shell, face, wire and edge tools).</summary>
     protected ShapeFix_Solid                myFixSolid;
     /// <summary>The shapes (without location) already fixed by this tool.</summary>
-    protected NCollection_Map<TopoDS_Shape> myMapFixingShape;
+    protected NCollection_Map<Shape> myMapFixingShape;
     /// <summary>The mode of the solid fixes.</summary>
     protected int                           myFixSolidMode;
     /// <summary>The mode of the fixes of free shells.</summary>
@@ -57,13 +59,13 @@ public class ShapeFix_Shape : ShapeFix_Root
     protected int                           myStatus;
 
     // The shapes added to myMapFixingShape during the current Perform (keys over the working copy).
-    private List<TopoDS_Shape>? myAddedKeys;
+    private List<Shape>? myAddedKeys;
 
     /// <summary>Empty constructor.</summary>
     public ShapeFix_Shape()
     {
-        myResult                = new TopoDS_Shape();
-        myMapFixingShape        = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        myResult                = new Shape();
+        myMapFixingShape        = new NCollection_Map<Shape>(ShapeHasher.Instance);
         myStatus                = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         myFixSolidMode          = -1;
         myFixShellMode          = -1;
@@ -76,10 +78,10 @@ public class ShapeFix_Shape : ShapeFix_Root
     }
 
     /// <summary>Initializes by a shape.</summary>
-    public ShapeFix_Shape(in TopoDS_Shape shape)
+    public ShapeFix_Shape(in Shape shape)
     {
-        myResult                = new TopoDS_Shape();
-        myMapFixingShape        = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        myResult                = new Shape();
+        myMapFixingShape        = new NCollection_Map<Shape>(ShapeHasher.Instance);
         myStatus                = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         myFixSolidMode          = -1;
         myFixShellMode          = -1;
@@ -93,7 +95,7 @@ public class ShapeFix_Shape : ShapeFix_Root
     }
 
     /// <summary>Initializes by a shape; makes a context considering locations if none was set.</summary>
-    public void Init(in TopoDS_Shape shape)
+    public void Init(in Shape shape)
     {
         myShape = shape;
         if (Context() is null)
@@ -111,14 +113,14 @@ public class ShapeFix_Shape : ShapeFix_Root
     public bool Perform(ProgressRange theProgress = default)
     {
         // OCCT's early return (a shape this tool already fixed, or one the context made) runs on the caller's shape
-        TopoDS_Shape aShapeNullLoc = myShape.Located(new Placement());
+        Shape aShapeNullLoc = myShape.Located(new Placement());
         if (Context()!.IsNewShape(myShape) || myMapFixingShape.Contains(aShapeNullLoc))
         {
             return perform(theProgress);
         }
 
-        var          anEntry = new BRepTools_CopyAtEntry(myShape, Context());
-        TopoDS_Shape anInput = myShape;
+        var          anEntry = new CopyAtEntry(myShape, Context());
+        Shape anInput = myShape;
         myShape     = anEntry.Shape();
         myAddedKeys = [];
         bool status = perform(theProgress);
@@ -126,9 +128,9 @@ public class ShapeFix_Shape : ShapeFix_Root
         myResult = anEntry.Finish(myResult);
 
         // the shapes fixed, as the caller's (a further Perform on them takes OCCT's early return)
-        if (anEntry.IsCopied())
+        if (anEntry.IsCopied)
         {
-            foreach (TopoDS_Shape aKey in myAddedKeys)
+            foreach (Shape aKey in myAddedKeys)
             {
                 myMapFixingShape.Remove(aKey);
                 myMapFixingShape.Add(anEntry.Original(aKey));
@@ -146,19 +148,19 @@ public class ShapeFix_Shape : ShapeFix_Root
         int                savFixVertexTolMode     = myFixVertexTolMode;
         ShapeFix_Face      fft                     = FixFaceTool();
         savFixSmallAreaWireMode = fft.FixSmallAreaWireMode();
-        if (savFixSmallAreaWireMode == -1 && myShape.ShapeType() == TopAbs_FACE)
+        if (savFixSmallAreaWireMode == -1 && myShape.ShapeType() == ShapeType.Face)
         {
             fft.FixSmallAreaWireMode() = 1;
         }
 
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         bool             status = false;
-        TopAbs_ShapeEnum st;
+        ShapeType st;
 
         // gka fix for sharing assembly
         Placement nullLoc = new(), L;
         L = myShape.Location();
-        TopoDS_Shape aShapeNullLoc = myShape;
+        Shape aShapeNullLoc = myShape;
         bool         aIsRecorded   = aContext.IsNewShape(myShape);
         aShapeNullLoc.Location(nullLoc);
         if (aIsRecorded || myMapFixingShape.Contains(aShapeNullLoc))
@@ -172,7 +174,7 @@ public class ShapeFix_Shape : ShapeFix_Root
         myAddedKeys?.Add(aShapeNullLoc);
         //---------------------------------------
         myShape.Location(L, false);
-        TopoDS_Shape S = aContext.InternalApply(myShape);
+        Shape S = aContext.InternalApply(myShape);
         if (NeedFix(myFixVertexPositionMode))
         {
             ShapeFix.FixVertexPosition(ref S, Precision(), aContext);
@@ -187,18 +189,18 @@ public class ShapeFix_Shape : ShapeFix_Root
 
         switch (st)
         {
-            case TopAbs_COMPOUND:
-            case TopAbs_COMPSOLID:
+            case ShapeType.Compound:
+            case ShapeType.CompSolid:
             {
-                TopoDS_Shape shape                   = myShape;
+                Shape shape                   = myShape;
                 int          savFixSameParameterMode = myFixSameParameterMode;
                 myFixSameParameterMode = 0;
                 myFixVertexTolMode     = 0;
-                int aShapesNb          = S.NbChildren();
+                int aShapesNb          = S.ChildCount;
 
                 // Open progress indication scope for sub-shape fixing
                 using var aPSSubShape = new ProgressScope(aPS.Next(), "Fixing sub-shape", aShapesNb);
-                for (var anIter = new TopoDS_Iterator(S); anIter.More() && aPSSubShape.More(); anIter.Next())
+                for (var anIter = new Iterator(S); anIter.More() && aPSSubShape.More(); anIter.Next())
                 {
                     myShape = anIter.Value();
                     if (perform(aPSSubShape.Next()))
@@ -215,13 +217,13 @@ public class ShapeFix_Shape : ShapeFix_Root
                 myShape                = shape;
                 break;
             }
-            case TopAbs_SOLID:
+            case ShapeType.Solid:
             {
                 if (!NeedFix(myFixSolidMode))
                 {
                     break;
                 }
-                myFixSolid.Init(TopoDS.Solid(S));
+                myFixSolid.Init(ShapeCasts.Solid(S));
                 myFixSolid.SetContext(aContext);
 
                 if (myFixSolid.Perform(aPS.Next()))
@@ -232,14 +234,14 @@ public class ShapeFix_Shape : ShapeFix_Root
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE4);
                 break;
             }
-            case TopAbs_SHELL:
+            case ShapeType.Shell:
             {
                 if (!NeedFix(myFixShellMode))
                 {
                     break;
                 }
                 ShapeFix_Shell sfsh = FixShellTool();
-                sfsh.Init(TopoDS.Shell(S));
+                sfsh.Init(ShapeCasts.Shell(S));
                 sfsh.SetContext(aContext);
 
                 if (sfsh.Perform(aPS.Next()))
@@ -250,7 +252,7 @@ public class ShapeFix_Shape : ShapeFix_Root
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE4);
                 break;
             }
-            case TopAbs_FACE:
+            case ShapeType.Face:
             {
                 if (!NeedFix(myFixFaceMode))
                 {
@@ -259,7 +261,7 @@ public class ShapeFix_Shape : ShapeFix_Root
                 ShapeFix_Face sff         = FixFaceTool();
                 bool          savTopoMode = sff.FixWireTool().ModifyTopologyMode();
                 sff.FixWireTool().ModifyTopologyMode() = true;
-                sff.Init(TopoDS.Face(S));
+                sff.Init(ShapeCasts.Face(S));
                 sff.SetContext(aContext);
 
                 if (sff.Perform())
@@ -271,7 +273,7 @@ public class ShapeFix_Shape : ShapeFix_Root
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE3);
                 break;
             }
-            case TopAbs_WIRE:
+            case ShapeType.Wire:
             {
                 if (!NeedFix(myFixWireMode))
                 {
@@ -285,8 +287,8 @@ public class ShapeFix_Shape : ShapeFix_Root
                 {
                     sfw.ClosedWireMode() = false;
                 }
-                sfw.SetFace(new TopoDS_Face());
-                sfw.Load(TopoDS.Wire(S));
+                sfw.SetFace(new Face());
+                sfw.Load(ShapeCasts.Wire(S));
                 sfw.SetContext(aContext);
                 if (sfw.Perform())
                 {
@@ -298,18 +300,18 @@ public class ShapeFix_Shape : ShapeFix_Root
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE2);
                 break;
             }
-            case TopAbs_EDGE:
+            case ShapeType.Edge:
             {
                 ShapeFix_Edge sfe = FixEdgeTool();
                 sfe.SetContext(aContext);
-                if (sfe.FixVertexTolerance(TopoDS.Edge(S)))
+                if (sfe.FixVertexTolerance(ShapeCasts.Edge(S)))
                 {
                     myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
                 }
                 break;
             }
-            case TopAbs_VERTEX:
-            case TopAbs_SHAPE:
+            case ShapeType.Vertex:
+            case global::Kerf.Topology.ShapeType.Shape:
             default:
                 break;
         }
@@ -332,7 +334,7 @@ public class ShapeFix_Shape : ShapeFix_Root
         if (NeedFix(myFixVertexTolMode))
         {
             int nbF    = 0;
-            var anExpF = new TopExp_Explorer(myResult, TopAbs_FACE);
+            var anExpF = new Explorer(myResult, ShapeType.Face);
             for (; anExpF.More() && nbF <= 1; anExpF.Next())
             {
                 nbF++;
@@ -347,11 +349,11 @@ public class ShapeFix_Shape : ShapeFix_Root
                 ShapeFix_Edge sfe = FixEdgeTool();
                 for (anExpF.ReInit(); anExpF.More(); anExpF.Next())
                 {
-                    TopoDS_Face aF     = TopoDS.Face(anExpF.Current());
-                    var         anExpE = new TopExp_Explorer(aF, TopAbs_EDGE);
+                    Face aF     = ShapeCasts.Face(anExpF.Current());
+                    var         anExpE = new Explorer(aF, ShapeType.Edge);
                     for (; anExpE.More(); anExpE.Next())
                     {
-                        sfe.FixVertexTolerance(TopoDS.Edge(anExpE.Current()), aF);
+                        sfe.FixVertexTolerance(ShapeCasts.Edge(anExpE.Current()), aF);
                     }
                 }
             }
@@ -365,20 +367,20 @@ public class ShapeFix_Shape : ShapeFix_Root
     }
 
     /// <summary>Fixes SameParameter of the edges of the shape (ShapeFix::SameParameter). Writes into the shape.</summary>
-    protected virtual void SameParameter(in TopoDS_Shape sh, bool enforce, ProgressRange theProgress = default)
+    protected virtual void SameParameter(in Shape sh, bool enforce, ProgressRange theProgress = default)
     {
         ShapeFix.SameParameter(sh, enforce, 0.0, theProgress);
     }
 
     /// <summary>Returns the resulting shape, frozen.</summary>
-    public TopoDS_Shape Shape()
+    public Shape Shape()
     {
         myResult.TShape()?.FreezeGraph();
         return myResult;
     }
 
     /// <summary>Returns the resulting shape, unfrozen, for ported callers fixing a shape they own.</summary>
-    internal TopoDS_Shape InternalShape() => myResult;
+    internal Shape InternalShape() => myResult;
 
     /// <summary>Returns the solid fixing tool.</summary>
     public ShapeFix_Solid FixSolidTool() => myFixSolid;

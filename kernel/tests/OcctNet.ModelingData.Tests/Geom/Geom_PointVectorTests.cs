@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -23,18 +24,18 @@ public class Geom_PointVectorTests
     public void CartesianPoint_transforms_as_gp_Pnt()
     {
         Point3D P = new(3, -1, 2);
-        Geom_CartesianPoint G = new(P);
+        CartesianPoint G = new(P);
         Transform3D T = Transform3D.Rotation(Axis, 0.9).Multiplied(Transform3D.Scale(new Point3D(0, 1, 0), 1.5));
 
-        AssertPnt(P.Transformed(T), ((Geom_CartesianPoint)G.Transformed(T)).Pnt());
-        AssertPnt(P.Mirrored(new Point3D(1, 1, 1)), ((Geom_Point)G.Mirrored(new Point3D(1, 1, 1))).Pnt());
-        AssertPnt(P.Mirrored(Axis), ((Geom_Point)G.Mirrored(Axis)).Pnt());
-        AssertPnt(P.Mirrored(new Frame3D()), ((Geom_Point)G.Mirrored(new Frame3D())).Pnt());
-        AssertPnt(P.Rotated(Axis, 0.4), ((Geom_Point)G.Rotated(Axis, 0.4)).Pnt());
-        AssertPnt(P.Scaled(new Point3D(1, 1, 1), -3), ((Geom_Point)G.Scaled(new Point3D(1, 1, 1), -3)).Pnt());
-        AssertPnt(P.Translated(new Vector3D(1, 2, 3)), ((Geom_Point)G.Translated(new Vector3D(1, 2, 3))).Pnt());
+        AssertPnt(P.Transformed(T), ((CartesianPoint)G.Transformed(T)).Pnt());
+        AssertPnt(P.Mirrored(new Point3D(1, 1, 1)), ((Point)G.Mirrored(new Point3D(1, 1, 1))).Pnt());
+        AssertPnt(P.Mirrored(Axis), ((Point)G.Mirrored(Axis)).Pnt());
+        AssertPnt(P.Mirrored(new Frame3D()), ((Point)G.Mirrored(new Frame3D())).Pnt());
+        AssertPnt(P.Rotated(Axis, 0.4), ((Point)G.Rotated(Axis, 0.4)).Pnt());
+        AssertPnt(P.Scaled(new Point3D(1, 1, 1), -3), ((Point)G.Scaled(new Point3D(1, 1, 1), -3)).Pnt());
+        AssertPnt(P.Translated(new Vector3D(1, 2, 3)), ((Point)G.Translated(new Vector3D(1, 2, 3))).Pnt());
         AssertPnt(P.Translated(new Point3D(1, 1, 1), new Point3D(2, 0, 5)),
-                  ((Geom_Point)G.Translated(new Point3D(1, 1, 1), new Point3D(2, 0, 5))).Pnt());
+                  ((Point)G.Translated(new Point3D(1, 1, 1), new Point3D(2, 0, 5))).Pnt());
 
         // The original is unchanged
         AssertPnt(P, G.Pnt());
@@ -47,13 +48,13 @@ public class Geom_PointVectorTests
     [Fact]
     public void CartesianPoint_queries_and_twins()
     {
-        Geom_CartesianPoint G = new(1, 2, 3);
+        CartesianPoint G = new(1, 2, 3);
         G.Coord(out double x, out double y, out double z);
         Assert.Equal((1.0, 2.0, 3.0), (x, y, z));
-        Assert.Equal(5.0, G.Distance(new Geom_CartesianPoint(1, 5, 7)));
-        Assert.Equal(25.0, G.SquareDistance(new Geom_CartesianPoint(1, 5, 7)));
+        Assert.Equal(5.0, G.Distance(new CartesianPoint(1, 5, 7)));
+        Assert.Equal(25.0, G.SquareDistance(new CartesianPoint(1, 5, 7)));
 
-        Geom_CartesianPoint G2 = G.WithX(10).WithY(20).WithZ(30);
+        CartesianPoint G2 = G.WithX(10).WithY(20).WithZ(30);
         AssertPnt(new Point3D(10, 20, 30), G2.Pnt());
         AssertPnt(new Point3D(1, 2, 3), G.Pnt());
         AssertPnt(new Point3D(4, 5, 6), G.WithCoord(4, 5, 6).Pnt());
@@ -63,7 +64,7 @@ public class Geom_PointVectorTests
     [Fact]
     public void Frozen_point_rejects_every_mutator()
     {
-        Geom_CartesianPoint G = new(1, 2, 3);
+        CartesianPoint G = new(1, 2, 3);
         G.Freeze();
         Assert.Throws<ImmutableObjectException>(() => G.SetX(0));
         Assert.Throws<ImmutableObjectException>(() => G.SetCoord(0, 0, 0));
@@ -77,42 +78,42 @@ public class Geom_PointVectorTests
         AssertPnt(new Point3D(1, 2, 3), G.Pnt());
 
         // Copy is unfrozen; the public non-mutating forms work on a frozen object
-        Geom_CartesianPoint aCopy = (Geom_CartesianPoint)G.Copy();
+        CartesianPoint aCopy = (CartesianPoint)G.Copy();
         Assert.False(aCopy.IsFrozen);
         aCopy.SetX(5);
         Assert.Equal(5.0, aCopy.X());
-        Geom_Geometry aMoved = G.Translated(new Vector3D(1, 0, 0));
+        Geometry3D aMoved = G.Translated(new Vector3D(1, 0, 0));
         Assert.False(aMoved.IsFrozen);
-        AssertPnt(new Point3D(2, 2, 3), ((Geom_Point)aMoved).Pnt());
+        AssertPnt(new Point3D(2, 2, 3), ((Point)aMoved).Pnt());
         Assert.Equal(9.0, G.WithX(9).X());
     }
 
     [Fact]
     public void Direction_normalizes_and_rejects_null()
     {
-        Geom_Direction D = new(3, 0, 4);
+        Direction D = new(3, 0, 4);
         Assert.Equal(0.6, D.X(), Tol);
         Assert.Equal(0.8, D.Z(), Tol);
         Assert.Equal(1.0, D.Magnitude());
-        Assert.Throws<ConstructionErrorException>(() => new Geom_Direction(0, 0, 0));
-        Assert.Throws<ConstructionErrorException>(() => new Geom_Direction(1, 0, 0).WithX(0));
+        Assert.Throws<ConstructionErrorException>(() => new Direction(0, 0, 0));
+        Assert.Throws<ConstructionErrorException>(() => new Direction(1, 0, 0).WithX(0));
 
         // A scale doesn't change a direction's length
-        Geom_Direction S = (Geom_Direction)D.Scaled(new Point3D(1, 1, 1), -2);
+        Direction S = (Direction)D.Scaled(new Point3D(1, 1, 1), -2);
         Assert.Equal(-0.6, S.X(), Tol);
         Assert.Equal(-0.8, S.Z(), Tol);
 
-        Geom_Direction DX = new(new Direction3D(1, 0, 0));
-        Geom_Direction DY = new(new Direction3D(0, 1, 0));
-        Geom_Vector C = DX.Crossed(DY);
-        Assert.IsType<Geom_Direction>(C);
+        Direction DX = new(new Direction3D(1, 0, 0));
+        Direction DY = new(new Direction3D(0, 1, 0));
+        GeometryVector3D C = DX.Crossed(DY);
+        Assert.IsType<Direction>(C);
         Assert.Equal(1.0, C.Z(), Tol);
-        Assert.Throws<ConstructionErrorException>(() => DX.Crossed(new Geom_Direction(-1, 0, 0)));
+        Assert.Throws<ConstructionErrorException>(() => DX.Crossed(new Direction(-1, 0, 0)));
         Assert.Equal(M_PI / 2, DX.Angle(DY), Tol);
-        Assert.Equal(-M_PI / 2, DY.AngleWithRef(DX, new Geom_Direction(0, 0, 1)), Tol);
+        Assert.Equal(-M_PI / 2, DY.AngleWithRef(DX, new Direction(0, 0, 1)), Tol);
 
         // Cross in place, as ported code would
-        Geom_Direction M = (Geom_Direction)DX.Copy();
+        Direction M = (Direction)DX.Copy();
         M.Cross(DY);
         Assert.Equal(1.0, M.Z(), Tol);
         Assert.Equal(1.0, DX.X());
@@ -125,8 +126,8 @@ public class Geom_PointVectorTests
     [Fact]
     public void VectorWithMagnitude_arithmetic()
     {
-        Geom_VectorWithMagnitude V = new(1, 2, 2);
-        Geom_VectorWithMagnitude W = new(new Point3D(1, 1, 1), new Point3D(1, 1, 3));
+        VectorWithMagnitude V = new(1, 2, 2);
+        VectorWithMagnitude W = new(new Point3D(1, 1, 1), new Point3D(1, 1, 3));
         Assert.Equal(3.0, V.Magnitude());
         Assert.Equal(9.0, V.SquareMagnitude());
         Assert.Equal(new Vector3D(1, 2, 4), V.Added(W).Vec());
@@ -136,14 +137,14 @@ public class Geom_PointVectorTests
         Assert.Equal(1.0, V.Normalized().Magnitude(), Tol);
         Assert.Equal(new Vector3D(4, -2, 0), V.Crossed(W).Vec());
         Assert.Equal(4.0, V.Dot(W));
-        Assert.Equal(V.Vec().CrossCrossed(W.Vec(), new Vector3D(1, 0, 0)), V.CrossCrossed(W, new Geom_VectorWithMagnitude(1, 0, 0)).Vec());
+        Assert.Equal(V.Vec().CrossCrossed(W.Vec(), new Vector3D(1, 0, 0)), V.CrossCrossed(W, new VectorWithMagnitude(1, 0, 0)).Vec());
         Assert.Equal(new Vector3D(1, 2, 2), V.Vec());
 
         // A vector with magnitude is scaled by a transformation, unlike a direction
-        Geom_VectorWithMagnitude S = (Geom_VectorWithMagnitude)V.Scaled(new Point3D(5, 5, 5), 2);
+        VectorWithMagnitude S = (VectorWithMagnitude)V.Scaled(new Point3D(5, 5, 5), 2);
         Assert.Equal(6.0, S.Magnitude(), Tol);
 
-        Geom_VectorWithMagnitude M = (Geom_VectorWithMagnitude)V.Copy();
+        VectorWithMagnitude M = (VectorWithMagnitude)V.Copy();
         M.Add(W);
         M.Multiply(2);
         Assert.Equal(new Vector3D(2, 4, 8), M.Vec());

@@ -3,8 +3,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -94,9 +98,9 @@ internal static partial class ChFi3d_Builder_0
                     continue;
                 }
                 // Examine for intersections
-                Geom2dAdaptor_Curve aPCurve1 = new(aFI1.PCurveOnFace()!, aFI1.FirstParameter(),
+                CurveAdaptor2D aPCurve1 = new(aFI1.PCurveOnFace()!, aFI1.FirstParameter(),
                                                    aFI1.LastParameter());
-                Geom2dAdaptor_Curve aPCurve2 = new(aFI2.PCurveOnFace()!, aFI2.FirstParameter(),
+                CurveAdaptor2D aPCurve2 = new(aFI2.PCurveOnFace()!, aFI2.FirstParameter(),
                                                    aFI2.LastParameter());
                 anIntersector.Perform(aPCurve1, aPCurve2, tol2d, global::Kerf.Engine.Foundation.Precision.PConfusion());
                 if (anIntersector.NbSegments() > 0 || anIntersector.NbPoints() > 0)
@@ -112,20 +116,20 @@ internal static partial class ChFi3d_Builder_0
     /// <summary>The index of the stripe's surface data at its end on <paramref name="V1"/> (1 or the last), and the
     /// sense (1 at the start, -1 at the end); 0 when the stripe has no surface data.</summary>
     /// <exception cref="ConstructionErrorException"><paramref name="V1"/> is not an end of the spine.</exception>
-    internal static int ChFi3d_IndexOfSurfData(in TopoDS_Vertex V1, ChFiDS_Stripe CD, out int sens)
+    internal static int ChFi3d_IndexOfSurfData(in Vertex V1, ChFiDS_Stripe CD, out int sens)
     {
         ChFiDS_Spine spine = CD.Spine()!;
         int Index = 0;
         sens = 1;
-        TopoDS_Vertex Vref;
-        TopoDS_Edge E = spine.Edges(1);
-        if (E.Orientation() == TopAbs_REVERSED)
+        Vertex Vref;
+        Edge E = spine.Edges(1);
+        if (E.Orientation() == Reversed)
         {
-            Vref = TopExp.LastVertex(E);
+            Vref = Exploration.LastVertex(E);
         }
         else
         {
-            Vref = TopExp.FirstVertex(E);
+            Vref = Exploration.FirstVertex(E);
         }
         if (Vref.IsSame(V1))
         {
@@ -133,14 +137,14 @@ internal static partial class ChFi3d_Builder_0
         }
         else
         {
-            TopoDS_Edge E1 = spine.Edges(spine.NbEdges());
-            if (E1.Orientation() == TopAbs_REVERSED)
+            Edge E1 = spine.Edges(spine.NbEdges());
+            if (E1.Orientation() == Reversed)
             {
-                Vref = TopExp.FirstVertex(E1);
+                Vref = Exploration.FirstVertex(E1);
             }
             else
             {
-                Vref = TopExp.LastVertex(E1);
+                Vref = Exploration.LastVertex(E1);
             }
             sens = -1;
             if (CD.SetOfSurfData() is null)
@@ -164,19 +168,19 @@ internal static partial class ChFi3d_Builder_0
     /// <summary>The spine's edge at its end on <paramref name="V1"/>, and the sense (1 at the start, -1 at the
     /// end).</summary>
     /// <exception cref="ConstructionErrorException"><paramref name="V1"/> is not an end of the spine.</exception>
-    internal static TopoDS_Edge ChFi3d_EdgeFromV1(in TopoDS_Vertex V1, ChFiDS_Stripe CD, out int sens)
+    internal static Edge ChFi3d_EdgeFromV1(in Vertex V1, ChFiDS_Stripe CD, out int sens)
     {
         ChFiDS_Spine spine = CD.Spine()!;
         sens = 1;
-        TopoDS_Vertex Vref;
-        TopoDS_Edge E = spine.Edges(1);
-        if (E.Orientation() == TopAbs_REVERSED)
+        Vertex Vref;
+        Edge E = spine.Edges(1);
+        if (E.Orientation() == Reversed)
         {
-            Vref = TopExp.LastVertex(E);
+            Vref = Exploration.LastVertex(E);
         }
         else
         {
-            Vref = TopExp.FirstVertex(E);
+            Vref = Exploration.FirstVertex(E);
         }
         if (Vref.IsSame(V1))
         {
@@ -184,14 +188,14 @@ internal static partial class ChFi3d_Builder_0
         }
         else
         {
-            TopoDS_Edge E1 = spine.Edges(spine.NbEdges());
-            if (E1.Orientation() == TopAbs_REVERSED)
+            Edge E1 = spine.Edges(spine.NbEdges());
+            if (E1.Orientation() == Reversed)
             {
-                Vref = TopExp.FirstVertex(E1);
+                Vref = Exploration.FirstVertex(E1);
             }
             else
             {
-                Vref = TopExp.LastVertex(E1);
+                Vref = Exploration.LastVertex(E1);
             }
             sens = -1;
             if (Vref.IsSame(V1))
@@ -209,7 +213,7 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>A 3D tolerance for the 2D tolerance <paramref name="tol2d"/> on <paramref name="S"/>, by its
     /// resolutions.</summary>
-    internal static double ChFi3d_ConvTol2dToTol3d(Adaptor3d_Surface S, double tol2d)
+    internal static double ChFi3d_ConvTol2dToTol3d(SurfaceAdaptorBase S, double tol2d)
     {
         double ures = S.UResolution(1.0e-7);
         double vres = S.VResolution(1.0e-7);
@@ -226,8 +230,8 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>1.5 times the largest distance between <paramref name="C"/> and its pcurves on the surfaces, at 45
     /// points (at least the confusion).</summary>
-    internal static double ChFi3d_EvalTolReached(Adaptor3d_Surface S1, Geom2d_Curve pc1, Adaptor3d_Surface S2,
-                                                 Geom2d_Curve pc2, Geom_Curve C)
+    internal static double ChFi3d_EvalTolReached(SurfaceAdaptorBase S1, Curve2D pc1, SurfaceAdaptorBase S2,
+                                                 Curve2D pc2, Curve3D C)
     {
         double distmax = 0.0;
 
@@ -269,19 +273,19 @@ internal static partial class ChFi3d_Builder_0
     //=================================================================================================
 
     /// <summary>The surface under the adaptor, trimmed to the adaptor's bounds (within the surface's own).</summary>
-    internal static Geom_Surface? trsfsurf(Adaptor3d_Surface HS, ref Adaptor3d_TopolTool? dom)
+    internal static Surface? trsfsurf(SurfaceAdaptorBase HS, ref TopolTool? dom)
     {
         // Pour l utilisation des domaines voir avec BUBUCH!!
-        Geom_Surface? res = null;
-        if (HS is BRepAdaptor_Surface hbs)
+        Surface? res = null;
+        if (HS is FaceSurfaceAdaptor hbs)
         {
             res = hbs.GeomSurfaceTransformed();
         }
-        else if (HS is GeomAdaptor_Surface hgs)
+        else if (HS is SurfaceAdaptor hgs)
         {
             res = hgs.Surface();
         }
-        if (res is Geom_RectangularTrimmedSurface tr)
+        if (res is TrimmedSurface tr)
         {
             res = tr.BasisSurface();
         }
@@ -293,7 +297,7 @@ internal static partial class ChFi3d_Builder_0
             // Protection against Construction Errors
             double u1, u2, v1, v2;
             res.Bounds(out u1, out u2, out v1, out v2);
-            if (!res.IsUPeriodic())
+            if (!res.IsUPeriodic)
             {
                 if (U1 < u1)
                 {
@@ -304,7 +308,7 @@ internal static partial class ChFi3d_Builder_0
                     U2 = u2;
                 }
             }
-            if (!res.IsVPeriodic())
+            if (!res.IsVPeriodic)
             {
                 if (V1 < v1)
                 {
@@ -315,7 +319,7 @@ internal static partial class ChFi3d_Builder_0
                     V2 = v2;
                 }
             }
-            res = new Geom_RectangularTrimmedSurface(res, U1, U2, V1, V2);
+            res = new TrimmedSurface(res, U1, U2, V1, V2);
         }
         //  occ::handle<GeomAdaptor_Surface> temp = new GeomAdaptor_Surface(res,U1,U2,V1,V2);
         //  dom = new Adaptor3d_TopolTool(temp);
@@ -328,11 +332,11 @@ internal static partial class ChFi3d_Builder_0
     //           at a given tolerance
     //=======================================================================
 
-    private static void CurveCleaner(Geom_BSplineCurve BS, double Tol, int MultMin)
+    private static void CurveCleaner(BSplineCurve3D BS, double Tol, int MultMin)
     {
         double tol = Tol;
         int Mult, ii;
-        int NbK = BS.NbKnots();
+        int NbK = BS.KnotCount;
 
         for (Mult = BS.Degree(); Mult > MultMin; Mult--)
         {

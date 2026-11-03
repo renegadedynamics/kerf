@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests.BOPDS;
 
@@ -10,13 +11,13 @@ namespace OcctNet.ModelingAlgorithms.Tests.BOPDS;
 /// </summary>
 public class BOPDS_IteratorTests
 {
-    private static readonly (TopAbs_ShapeEnum, TopAbs_ShapeEnum)[] theTypes =
+    private static readonly (ShapeType, ShapeType)[] theTypes =
     [
-        (TopAbs_VERTEX, TopAbs_VERTEX), (TopAbs_VERTEX, TopAbs_EDGE), (TopAbs_EDGE, TopAbs_EDGE),
-        (TopAbs_VERTEX, TopAbs_FACE), (TopAbs_EDGE, TopAbs_FACE), (TopAbs_FACE, TopAbs_FACE),
+        (ShapeType.Vertex, ShapeType.Vertex), (ShapeType.Vertex, ShapeType.Edge), (ShapeType.Edge, ShapeType.Edge),
+        (ShapeType.Vertex, ShapeType.Face), (ShapeType.Edge, ShapeType.Face), (ShapeType.Face, ShapeType.Face),
     ];
 
-    private static List<(int, int)> Pairs(BOPDS_Iterator theIt, TopAbs_ShapeEnum theT1, TopAbs_ShapeEnum theT2)
+    private static List<(int, int)> Pairs(BOPDS_Iterator theIt, ShapeType theT1, ShapeType theT2)
     {
         List<(int, int)> aPairs = [];
         for (theIt.Initialize(theT1, theT2); theIt.More(); theIt.Next())
@@ -28,7 +29,7 @@ public class BOPDS_IteratorTests
         return aPairs;
     }
 
-    private static Dictionary<(TopAbs_ShapeEnum, TopAbs_ShapeEnum), List<(int, int)>> AllPairs(BOPDS_Iterator theIt) =>
+    private static Dictionary<(ShapeType, ShapeType), List<(int, int)>> AllPairs(BOPDS_Iterator theIt) =>
         theTypes.ToDictionary(t => t, t => Pairs(theIt, t.Item1, t.Item2));
 
     [Fact]
@@ -41,12 +42,12 @@ public class BOPDS_IteratorTests
         anIt.Prepare();
 
         var anAll = AllPairs(anIt);
-        foreach (((TopAbs_ShapeEnum aT1, TopAbs_ShapeEnum aT2), List<(int, int)> aPairs) in anAll)
+        foreach (((ShapeType aT1, ShapeType aT2), List<(int, int)> aPairs) in anAll)
         {
             foreach ((int n1, int n2) in aPairs)
             {
                 // Value gives the shape of the higher type index (vertex 7 > edge 6 > face 4) first
-                TopAbs_ShapeEnum aType1 = aDS.ShapeInfo(n1).ShapeType(), aType2 = aDS.ShapeInfo(n2).ShapeType();
+                ShapeType aType1 = aDS.ShapeInfo(n1).ShapeType(), aType2 = aDS.ShapeInfo(n2).ShapeType();
                 Assert.True((int)aType1 >= (int)aType2);
                 Assert.Equal(BOPDS_Tools.TypeToInteger(aT1, aT2), BOPDS_Tools.TypeToInteger(aType1, aType2));
                 Assert.NotEqual(aDS.Rank(n1), aDS.Rank(n2));
@@ -54,7 +55,7 @@ public class BOPDS_IteratorTests
             }
         }
         // the face/face pairs: each face of one box against the faces of the other it reaches
-        List<(int, int)> aFF = anAll[(TopAbs_FACE, TopAbs_FACE)];
+        List<(int, int)> aFF = anAll[(ShapeType.Face, ShapeType.Face)];
         Assert.NotEmpty(aFF);
         // sorted: by the smaller index, then the larger
         List<(int, int)> anOrdered = [.. aFF.Select(p => (Math.Min(p.Item1, p.Item2), Math.Max(p.Item1, p.Item2)))];
@@ -62,7 +63,7 @@ public class BOPDS_IteratorTests
         Assert.Equal(Math.Max(1, aFF.Count / 2), Math.Max(1, anIt.BlockLength()));
 
         // Initializing a type with no index (wire/face) gives nothing
-        anIt.Initialize(TopAbs_WIRE, TopAbs_FACE);
+        anIt.Initialize(ShapeType.Wire, ShapeType.Face);
         Assert.False(anIt.More());
         Assert.Equal(0, anIt.ExpectedLength());
     }
@@ -79,7 +80,7 @@ public class BOPDS_IteratorTests
         // without a data structure Prepare does nothing
         BOPDS_Iterator anEmpty = new();
         anEmpty.Prepare();
-        anEmpty.Initialize(TopAbs_FACE, TopAbs_FACE);
+        anEmpty.Initialize(ShapeType.Face, ShapeType.Face);
         Assert.False(anEmpty.More());
     }
 
@@ -92,7 +93,7 @@ public class BOPDS_IteratorTests
         anIt.SetDS(aDS);
         anIt.Prepare();
         var aWithout = AllPairs(anIt);
-        Assert.NotEmpty(aWithout[(TopAbs_FACE, TopAbs_FACE)]);
+        Assert.NotEmpty(aWithout[(ShapeType.Face, ShapeType.Face)]);
 
         // the boxes are axis-aligned: the oriented boxes filter nothing more out
         IntTools_Context aContext = new();
@@ -113,13 +114,13 @@ public class BOPDS_IteratorTests
         NCollection_IntMap anIndices = new();
         for (int i = 0; i < aDS.NbSourceShapes(); ++i)
         {
-            if (aDS.ShapeInfo(i).ShapeType() == TopAbs_VERTEX)
+            if (aDS.ShapeInfo(i).ShapeType() == ShapeType.Vertex)
             {
                 anIndices.Add(i);
             }
         }
 
-        Dictionary<(TopAbs_ShapeEnum, TopAbs_ShapeEnum), List<(int, int)>> Run(bool theParallel)
+        Dictionary<(ShapeType, ShapeType), List<(int, int)>> Run(bool theParallel)
         {
             BOPDS_Iterator anIt = new();
             anIt.SetDS(aDS);
@@ -130,14 +131,14 @@ public class BOPDS_IteratorTests
             return AllPairs(anIt);
         }
 
-        Dictionary<(TopAbs_ShapeEnum, TopAbs_ShapeEnum), List<(int, int)>> aSerial;
+        Dictionary<(ShapeType, ShapeType), List<(int, int)>> aSerial;
         using (global::Kerf.Engine.Foundation.OsdParallel.ForceSerialScope())
         {
             aSerial = Run(false);
         }
-        Assert.NotEmpty(aSerial[(TopAbs_VERTEX, TopAbs_FACE)]);
+        Assert.NotEmpty(aSerial[(ShapeType.Vertex, ShapeType.Face)]);
         // the extra lists hold V/V, V/E, V/F only; E/E is kept but never filled
-        Assert.Empty(aSerial[(TopAbs_EDGE, TopAbs_EDGE)]);
+        Assert.Empty(aSerial[(ShapeType.Edge, ShapeType.Edge)]);
 
         foreach (int aDegree in new[] { 1, 2, 4, 8 })
         {
@@ -165,21 +166,21 @@ public class BOPDS_IteratorTests
         anIt.Prepare();
         var anAll = AllPairs(anIt);
         // adjacent faces touch along their common edge
-        Assert.Equal(12, anAll[(TopAbs_FACE, TopAbs_FACE)].Count);
-        foreach ((int n1, int n2) in anAll[(TopAbs_EDGE, TopAbs_FACE)])
+        Assert.Equal(12, anAll[(ShapeType.Face, ShapeType.Face)].Count);
+        foreach ((int n1, int n2) in anAll[(ShapeType.Edge, ShapeType.Face)])
         {
             Assert.False(aDS.ShapeInfo(n2).HasSubShape(n1));
         }
         // adjacent edges touch at their common vertex; the vertices are apart
-        Assert.NotEmpty(anAll[(TopAbs_EDGE, TopAbs_EDGE)]);
-        Assert.Empty(anAll[(TopAbs_VERTEX, TopAbs_VERTEX)]);
+        Assert.NotEmpty(anAll[(ShapeType.Edge, ShapeType.Edge)]);
+        Assert.Empty(anAll[(ShapeType.Vertex, ShapeType.Vertex)]);
 
         anIt.UpdateByLevelOfCheck(2);
         var aLevel2 = AllPairs(anIt);
-        Assert.Equal(anAll[(TopAbs_EDGE, TopAbs_EDGE)], aLevel2[(TopAbs_EDGE, TopAbs_EDGE)]);
-        Assert.Empty(aLevel2[(TopAbs_FACE, TopAbs_FACE)]);
+        Assert.Equal(anAll[(ShapeType.Edge, ShapeType.Edge)], aLevel2[(ShapeType.Edge, ShapeType.Edge)]);
+        Assert.Empty(aLevel2[(ShapeType.Face, ShapeType.Face)]);
         anIt.UpdateByLevelOfCheck(1);
-        Assert.Empty(Pairs(anIt, TopAbs_EDGE, TopAbs_EDGE));
+        Assert.Empty(Pairs(anIt, ShapeType.Edge, ShapeType.Edge));
     }
 
     [Fact]
@@ -189,7 +190,7 @@ public class BOPDS_IteratorTests
         NCollection_List<int> aFaces1 = new(), aFaces2 = new();
         for (int i = 0; i < aDS.NbSourceShapes(); ++i)
         {
-            if (aDS.ShapeInfo(i).ShapeType() == TopAbs_FACE)
+            if (aDS.ShapeInfo(i).ShapeType() == ShapeType.Face)
             {
                 (aDS.Rank(i) == 0 ? aFaces1 : aFaces2).Append(i);
             }
@@ -214,7 +215,7 @@ public class BOPDS_IteratorTests
         BOPDS_Iterator anIt = new();
         anIt.SetDS(aDS);
         anIt.Prepare();
-        List<(int, int)> aFF = Pairs(anIt, TopAbs_FACE, TopAbs_FACE);
+        List<(int, int)> aFF = Pairs(anIt, ShapeType.Face, ShapeType.Face);
         Assert.Equal(aFF.Select(p => (Math.Min(p.Item1, p.Item2), Math.Max(p.Item1, p.Item2))),
                      aPairs.Select(p => (Math.Min(p.Item1, p.Item2), Math.Max(p.Item1, p.Item2))));
 

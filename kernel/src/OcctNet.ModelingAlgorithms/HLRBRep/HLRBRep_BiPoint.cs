@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -12,7 +13,7 @@ public partial struct HLRBRep_BiPoint : IEquatable<HLRBRep_BiPoint>
 {
     private Point3D myP1;
     private Point3D myP2;
-    private TopoDS_Shape myShape;
+    private Shape myShape;
     private bool myRg1Line;
     private bool myRgNLine;
     private bool myOutLine;
@@ -22,14 +23,14 @@ public partial struct HLRBRep_BiPoint : IEquatable<HLRBRep_BiPoint>
     {
         myP1 = new Point3D();
         myP2 = new Point3D();
-        myShape = new TopoDS_Shape();
+        myShape = new Shape();
         myRg1Line = false;
         myRgNLine = false;
         myOutLine = false;
         myIntLine = false;
     }
 
-    public HLRBRep_BiPoint(double x1, double y1, double z1, double x2, double y2, double z2, in TopoDS_Shape S, bool reg1, bool regn, bool outl, bool intl)
+    public HLRBRep_BiPoint(double x1, double y1, double z1, double x2, double y2, double z2, in Shape S, bool reg1, bool regn, bool outl, bool intl)
     {
         myP1 = new Point3D(x1, y1, z1);
         myP2 = new Point3D(x2, y2, z2);
@@ -44,9 +45,9 @@ public partial struct HLRBRep_BiPoint : IEquatable<HLRBRep_BiPoint>
 
     public readonly Point3D P2() => myP2;
 
-    public readonly TopoDS_Shape Shape() => myShape;
+    public readonly Shape Shape() => myShape;
 
-    internal void Shape(in TopoDS_Shape S) => myShape = S;
+    internal void Shape(in Shape S) => myShape = S;
 
     public readonly bool Rg1Line() => myRg1Line;
 
@@ -64,7 +65,7 @@ public partial struct HLRBRep_BiPoint : IEquatable<HLRBRep_BiPoint>
 
     internal void IntLine(bool B) => myIntLine = B;
 
-    public readonly HLRBRep_BiPoint WithShape(in TopoDS_Shape S)
+    public readonly HLRBRep_BiPoint WithShape(in Shape S)
     {
         HLRBRep_BiPoint aCopy = this;
         aCopy.Shape(S);

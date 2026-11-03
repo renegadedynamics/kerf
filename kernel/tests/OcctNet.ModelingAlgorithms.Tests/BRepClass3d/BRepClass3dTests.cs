@@ -1,8 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -13,22 +16,22 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepClass3dTests
 {
-    private static TopoDS_Shape Box10() => TestShapes.Frozen(TestShapes.Box(10, 10, 10));
+    private static Shape Box10() => TestShapes.Frozen(TestShapes.Box(10, 10, 10));
 
-    private static TopAbs_State Classify(in TopoDS_Shape theShape, double x, double y, double z, double theTol = 1e-7)
+    private static Containment Classify(in Shape theShape, double x, double y, double z, double theTol = 1e-7)
         => new BRepClass3d_SolidClassifier(theShape, new Point3D(x, y, z), theTol).State();
 
     [Theory]
-    [InlineData(5, 5, 5, TopAbs_IN)]
-    [InlineData(0.001, 9.999, 5, TopAbs_IN)]
-    [InlineData(15, 5, 5, TopAbs_OUT)]
-    [InlineData(-0.001, 5, 5, TopAbs_OUT)]
-    [InlineData(5, 5, 0, TopAbs_ON)] // on a face
-    [InlineData(10, 5, 5, TopAbs_ON)]
-    [InlineData(10, 10, 5, TopAbs_ON)] // on an edge
-    [InlineData(0, 0, 0, TopAbs_ON)] // at a vertex
-    [InlineData(10, 10, 10, TopAbs_ON)]
-    public void Box_states(double x, double y, double z, TopAbs_State theExpected)
+    [InlineData(5, 5, 5, In)]
+    [InlineData(0.001, 9.999, 5, In)]
+    [InlineData(15, 5, 5, Out)]
+    [InlineData(-0.001, 5, 5, Out)]
+    [InlineData(5, 5, 0, On)] // on a face
+    [InlineData(10, 5, 5, On)]
+    [InlineData(10, 10, 5, On)] // on an edge
+    [InlineData(0, 0, 0, On)] // at a vertex
+    [InlineData(10, 10, 10, On)]
+    public void Box_states(double x, double y, double z, Containment theExpected)
     {
         Assert.Equal(theExpected, Classify(Box10(), x, y, z));
     }
@@ -36,50 +39,50 @@ public class BRepClass3dTests
     [Fact]
     public void Box_tolerance_widens_the_boundary()
     {
-        TopoDS_Shape aBox = Box10();
-        Assert.Equal(TopAbs_IN, Classify(aBox, 5, 5, 1e-4));
-        Assert.Equal(TopAbs_ON, Classify(aBox, 5, 5, 1e-4, 1e-3));
-        Assert.Equal(TopAbs_OUT, Classify(aBox, 5, 5, -1e-4));
-        Assert.Equal(TopAbs_ON, Classify(aBox, 5, 5, -1e-4, 1e-3));
+        Shape aBox = Box10();
+        Assert.Equal(In, Classify(aBox, 5, 5, 1e-4));
+        Assert.Equal(On, Classify(aBox, 5, 5, 1e-4, 1e-3));
+        Assert.Equal(Out, Classify(aBox, 5, 5, -1e-4));
+        Assert.Equal(On, Classify(aBox, 5, 5, -1e-4, 1e-3));
     }
 
     [Fact]
     public void Box_on_a_face_gives_the_face()
     {
-        TopoDS_Shape aBox = Box10();
+        Shape aBox = Box10();
         var aClassifier = new BRepClass3d_SolidClassifier(aBox);
         aClassifier.Perform(new Point3D(5, 5, 10), 1e-7);
-        Assert.Equal(TopAbs_ON, aClassifier.State());
+        Assert.Equal(On, aClassifier.State());
         Assert.True(aClassifier.IsOnAFace());
         Assert.False(aClassifier.Rejected());
         Assert.True(aClassifier.Face().IsSame(BRepGPropTestShapes.Faces(aBox)[1])); // the top face
 
         // one classifier, many points
         aClassifier.Perform(new Point3D(5, 5, 5), 1e-7);
-        Assert.Equal(TopAbs_IN, aClassifier.State());
+        Assert.Equal(In, aClassifier.State());
         Assert.False(aClassifier.IsOnAFace());
         aClassifier.Perform(new Point3D(50, 5, 5), 1e-7);
-        Assert.Equal(TopAbs_OUT, aClassifier.State());
+        Assert.Equal(Out, aClassifier.State());
     }
 
     [Fact]
     public void Reversed_and_located_boxes()
     {
-        TopoDS_Shape aBox = Box10();
+        Shape aBox = Box10();
         // a reversed solid is the space outside the box
-        TopoDS_Shape aReversed = aBox.Reversed();
-        Assert.Equal(TopAbs_OUT, Classify(aReversed, 5, 5, 5));
-        Assert.Equal(TopAbs_IN, Classify(aReversed, 15, 5, 5));
-        Assert.Equal(TopAbs_ON, Classify(aReversed, 5, 5, 0));
+        Shape aReversed = aBox.Reversed();
+        Assert.Equal(Out, Classify(aReversed, 5, 5, 5));
+        Assert.Equal(In, Classify(aReversed, 15, 5, 5));
+        Assert.Equal(On, Classify(aReversed, 5, 5, 0));
 
-        TopoDS_Shape aMoved = ClassificationTestShapes.Translated(aBox, new Vector3D(100, 0, 0));
-        Assert.Equal(TopAbs_IN, Classify(aMoved, 105, 5, 5));
-        Assert.Equal(TopAbs_OUT, Classify(aMoved, 5, 5, 5));
-        Assert.Equal(TopAbs_ON, Classify(aMoved, 100, 5, 5));
+        Shape aMoved = ClassificationTestShapes.Translated(aBox, new Vector3D(100, 0, 0));
+        Assert.Equal(In, Classify(aMoved, 105, 5, 5));
+        Assert.Equal(Out, Classify(aMoved, 5, 5, 5));
+        Assert.Equal(On, Classify(aMoved, 100, 5, 5));
 
-        TopoDS_Shape aRotated = ClassificationTestShapes.RotatedZ(aBox, Math.PI / 4);
-        Assert.Equal(TopAbs_IN, Classify(aRotated, 0, 7, 5));
-        Assert.Equal(TopAbs_OUT, Classify(aRotated, 7, 0, 5));
+        Shape aRotated = ClassificationTestShapes.RotatedZ(aBox, Math.PI / 4);
+        Assert.Equal(In, Classify(aRotated, 0, 7, 5));
+        Assert.Equal(Out, Classify(aRotated, 7, 0, 5));
     }
 
     [Fact]
@@ -87,96 +90,96 @@ public class BRepClass3dTests
     {
         var aClassifier = new BRepClass3d_SolidClassifier(Box10());
         aClassifier.PerformInfinitePoint(1e-7);
-        Assert.Equal(TopAbs_OUT, aClassifier.State());
+        Assert.Equal(Out, aClassifier.State());
 
         var aHole = new BRepClass3d_SolidClassifier(Box10().Reversed());
         aHole.PerformInfinitePoint(1e-7);
-        Assert.Equal(TopAbs_IN, aHole.State());
+        Assert.Equal(In, aHole.State());
     }
 
     [Theory]
-    [InlineData(0, 0, 1, TopAbs_IN)]
-    [InlineData(1.9, 0.3, 2.9, TopAbs_IN)]
-    [InlineData(3, 0, 1, TopAbs_OUT)]
-    [InlineData(1.5, 1.5, 1, TopAbs_OUT)] // in the cylinder's box, outside the cylinder
-    [InlineData(0, 0, 3.5, TopAbs_OUT)]
-    [InlineData(2, 0, 1, TopAbs_ON)] // on the seam
-    [InlineData(0, -2, 1, TopAbs_ON)] // on the lateral face
-    [InlineData(0.5, 0.5, 3, TopAbs_ON)] // on the top disc
-    [InlineData(0, 2, 0, TopAbs_ON)] // on the bottom circle
-    public void Cylinder_states(double x, double y, double z, TopAbs_State theExpected)
+    [InlineData(0, 0, 1, In)]
+    [InlineData(1.9, 0.3, 2.9, In)]
+    [InlineData(3, 0, 1, Out)]
+    [InlineData(1.5, 1.5, 1, Out)] // in the cylinder's box, outside the cylinder
+    [InlineData(0, 0, 3.5, Out)]
+    [InlineData(2, 0, 1, On)] // on the seam
+    [InlineData(0, -2, 1, On)] // on the lateral face
+    [InlineData(0.5, 0.5, 3, On)] // on the top disc
+    [InlineData(0, 2, 0, On)] // on the bottom circle
+    public void Cylinder_states(double x, double y, double z, Containment theExpected)
     {
-        TopoDS_Shape aCylinder = TestShapes.Frozen(BRepGPropTestShapes.CylinderSolid(2.0, 3.0));
+        Shape aCylinder = TestShapes.Frozen(BRepGPropTestShapes.CylinderSolid(2.0, 3.0));
         Assert.Equal(theExpected, Classify(aCylinder, x, y, z));
     }
 
     [Fact]
     public void Sphere_states()
     {
-        TopoDS_Shape aSphere = TestShapes.Frozen(BRepGPropTestShapes.SphereSolid(10.0));
-        Assert.Equal(TopAbs_IN, Classify(aSphere, 1, 2, 3));
-        Assert.Equal(TopAbs_OUT, Classify(aSphere, 8, 8, 8));
-        Assert.Equal(TopAbs_ON, Classify(aSphere, 0, 10, 0));
+        Shape aSphere = TestShapes.Frozen(BRepGPropTestShapes.SphereSolid(10.0));
+        Assert.Equal(In, Classify(aSphere, 1, 2, 3));
+        Assert.Equal(Out, Classify(aSphere, 8, 8, 8));
+        Assert.Equal(On, Classify(aSphere, 0, 10, 0));
     }
 
     [Fact]
     public void Solid_with_a_void()
     {
-        TopoDS_Shape aSolid = TestShapes.Frozen(ClassificationTestShapes.BoxWithVoid(out TopoDS_Shell anOuter, out _));
-        Assert.Equal(TopAbs_IN, Classify(aSolid, 1, 1, 1));
-        Assert.Equal(TopAbs_OUT, Classify(aSolid, 4, 4, 4)); // in the void
-        Assert.Equal(TopAbs_ON, Classify(aSolid, 3, 4, 4)); // on the void's boundary
-        Assert.Equal(TopAbs_OUT, Classify(aSolid, 11, 4, 4));
+        Shape aSolid = TestShapes.Frozen(ClassificationTestShapes.BoxWithVoid(out Shell anOuter, out _));
+        Assert.Equal(In, Classify(aSolid, 1, 1, 1));
+        Assert.Equal(Out, Classify(aSolid, 4, 4, 4)); // in the void
+        Assert.Equal(On, Classify(aSolid, 3, 4, 4)); // on the void's boundary
+        Assert.Equal(Out, Classify(aSolid, 11, 4, 4));
 
         // the outer shell is the one a point at infinity is outside of
-        TopoDS_Shell aFound = BRepClass3d.OuterShell(TopoDS.Solid(aSolid));
+        Shell aFound = BRepClass3d.OuterShell(ShapeCasts.Solid(aSolid));
         Assert.True(aFound.IsSame(anOuter));
     }
 
     [Fact]
     public void OuterShell_of_simple_and_null_solids()
     {
-        TopoDS_Solid aBox = TopoDS.Solid(Box10());
-        TopoDS_Shell aShell = BRepClass3d.OuterShell(aBox);
-        Assert.False(aShell.IsNull());
-        Assert.True(aShell.IsSame(new TopoDS_Iterator(aBox).Value()));
-        Assert.True(BRepClass3d.OuterShell(new TopoDS_Solid()).IsNull());
+        Solid aBox = ShapeCasts.Solid(Box10());
+        Shell aShell = BRepClass3d.OuterShell(aBox);
+        Assert.False(aShell.IsNull);
+        Assert.True(aShell.IsSame(new Iterator(aBox).Value()));
+        Assert.True(BRepClass3d.OuterShell(new Solid()).IsNull);
     }
 
     [Fact]
     public void Compound_of_boxes()
     {
-        TopoDS_Shape aBox = Box10();
-        TopoDS_Shape aCompound = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, ClassificationTestShapes.Translated(aBox, new Vector3D(20, 0, 0))));
-        Assert.Equal(TopAbs_IN, Classify(aCompound, 5, 5, 5));
-        Assert.Equal(TopAbs_IN, Classify(aCompound, 25, 5, 5));
-        Assert.Equal(TopAbs_OUT, Classify(aCompound, 15, 5, 5));
+        Shape aBox = Box10();
+        Shape aCompound = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, ClassificationTestShapes.Translated(aBox, new Vector3D(20, 0, 0))));
+        Assert.Equal(In, Classify(aCompound, 5, 5, 5));
+        Assert.Equal(In, Classify(aCompound, 25, 5, 5));
+        Assert.Equal(Out, Classify(aCompound, 15, 5, 5));
     }
 
     [Fact]
     public void Solid_without_faces_is_the_whole_space()
     {
-        var aB = new BRep_Builder();
-        TopoDS_Solid anEmpty = new();
+        var aB = new BrepBuilder();
+        Solid anEmpty = new();
         aB.MakeSolid(ref anEmpty);
-        TopoDS_Shape aSolid = TestShapes.Frozen(anEmpty);
+        Shape aSolid = TestShapes.Frozen(anEmpty);
         var aClassifier = new BRepClass3d_SolidClassifier(aSolid, new Point3D(1, 2, 3), 1e-7);
-        Assert.Equal(TopAbs_IN, aClassifier.State());
+        Assert.Equal(In, aClassifier.State());
         aClassifier.PerformInfinitePoint(1e-7);
-        Assert.Equal(TopAbs_IN, aClassifier.State());
+        Assert.Equal(In, aClassifier.State());
     }
 
     [Fact]
     public void Explorer_finds_a_point_in_a_face()
     {
-        TopoDS_Face aFace = TestShapes.Frozen(ClassificationTestShapes.HoledSquare());
+        Face aFace = TestShapes.Frozen(ClassificationTestShapes.HoledSquare());
         Point3D aP = new();
         double u = 0, v = 0;
         Assert.True(BRepClass3d_SolidExplorer.FindAPointInTheFace(aFace, ref aP, ref u, ref v));
         Assert.Equal(0.0, aP.Z(), 1e-12);
         Assert.Equal(u, aP.X(), 1e-12);
         Assert.Equal(v, aP.Y(), 1e-12);
-        Assert.Equal(TopAbs_IN, new BRepClass_FaceClassifier(aFace, new Point2D(u, v), 1e-7).State());
+        Assert.Equal(In, new BRepClass_FaceClassifier(aFace, new Point2D(u, v), 1e-7).State());
 
         var anExplorer = new BRepClass3d_SolidExplorer(Box10());
         Assert.False(anExplorer.Reject(new Point3D()));
@@ -206,15 +209,15 @@ public class BRepClass3dTests
     [Fact]
     public void Passive_classifier_compares_faces_given_one_by_one()
     {
-        TopoDS_Shape aBox = Box10();
+        Shape aBox = Box10();
         var aClassifier = new BRepClass3d_SolidPassiveClassifier();
         aClassifier.Reset(new Line3D(new Point3D(5, 5, 5), new Direction3D(0, 0, 1)), RealLast(), 1e-7);
-        foreach (TopoDS_Face aF in BRepGPropTestShapes.Faces(aBox))
+        foreach (Face aF in BRepGPropTestShapes.Faces(aBox))
         {
             aClassifier.Compare(aF, aF.Orientation());
         }
 
-        Assert.Equal(TopAbs_IN, aClassifier.State());
+        Assert.Equal(In, aClassifier.State());
         Assert.Equal(5.0, aClassifier.Parameter(), 1e-9);
 
         var anInter = new BRepClass3d_Intersector3d();
@@ -222,7 +225,7 @@ public class BRepClass3dTests
         Assert.True(anInter.IsDone());
         Assert.True(anInter.HasAPoint());
         Assert.Equal(5.0, anInter.WParameter(), 1e-9);
-        Assert.Equal(TopAbs_IN, anInter.State());
+        Assert.Equal(In, anInter.State());
         Assert.Equal(IntCurveSurface_TransitionOnCurve.IntCurveSurface_In, anInter.Transition());
     }
 }

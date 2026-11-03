@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -14,11 +16,11 @@ namespace Occt;
 public abstract class BOPAlgo_BuilderArea : BOPAlgo_Algo
 {
     protected IntTools_Context? myContext;
-    protected NCollection_List<TopoDS_Shape> myShapes = new();
-    protected NCollection_List<TopoDS_Shape> myLoops = new();
-    protected NCollection_List<TopoDS_Shape> myLoopsInternal = new();
-    protected NCollection_List<TopoDS_Shape> myAreas = new();
-    protected NCollection_IndexedMap<TopoDS_Shape> myShapesToAvoid = new(TopTools_ShapeMapHasher.Instance);
+    protected NCollection_List<Shape> myShapes = new();
+    protected NCollection_List<Shape> myLoops = new();
+    protected NCollection_List<Shape> myLoopsInternal = new();
+    protected NCollection_List<Shape> myAreas = new();
+    protected NCollection_IndexedMap<Shape> myShapesToAvoid = new(ShapeHasher.Instance);
     protected bool myAvoidInternalShapes;
 
     protected BOPAlgo_BuilderArea()
@@ -30,16 +32,16 @@ public abstract class BOPAlgo_BuilderArea : BOPAlgo_Algo
     public void SetContext(IntTools_Context? theContext) => myContext = theContext;
 
     /// <summary>The input shapes.</summary>
-    public NCollection_List<TopoDS_Shape> Shapes() => myShapes;
+    public NCollection_List<Shape> Shapes() => myShapes;
 
     /// <summary>Sets the shapes for building areas (copies the list).</summary>
-    public void SetShapes(NCollection_List<TopoDS_Shape> theLS) => myShapes = new NCollection_List<TopoDS_Shape>(theLS);
+    public void SetShapes(NCollection_List<Shape> theLS) => myShapes = new NCollection_List<Shape>(theLS);
 
     /// <summary>The found loops.</summary>
-    public NCollection_List<TopoDS_Shape> Loops() => myLoops;
+    public NCollection_List<Shape> Loops() => myLoops;
 
     /// <summary>The found areas.</summary>
-    public NCollection_List<TopoDS_Shape> Areas() => myAreas;
+    public NCollection_List<Shape> Areas() => myAreas;
 
     /// <summary>Defines the preventing of addition of internal parts into the result.</summary>
     public void SetAvoidInternalShapes(bool theAvoidInternal) => myAvoidInternalShapes = theAvoidInternal;

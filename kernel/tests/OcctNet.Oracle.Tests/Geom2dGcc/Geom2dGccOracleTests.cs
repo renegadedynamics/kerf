@@ -1,7 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using Xunit.Abstractions;
 
@@ -140,7 +146,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
             {
                 int aB = theO.Int(0, 3);
                 anA.Basis = BaseArg(theO, aB switch { 0 => Kind.Circle, 1 => Kind.Ellipse, 2 => Kind.Line, _ => Kind.BSpline });
-                Geom2d_Curve aC = BuildPort(anA.Basis);
+                Curve2D aC = BuildPort(anA.Basis);
                 double aFirst = global::Kerf.Engine.Foundation.Precision.IsInfinite(aC.FirstParameter()) ? -15 : aC.FirstParameter();
                 double aLast = global::Kerf.Engine.Foundation.Precision.IsInfinite(aC.LastParameter()) ? 15 : aC.LastParameter();
                 double a = theO.Real(aFirst, aLast), b = theO.Real(aFirst, aLast);
@@ -148,8 +154,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 {
                     b = a + 0.5 * (aLast - aFirst);
                 }
-                (anA.U1, anA.U2) = a < b || aC.IsPeriodic() ? (a, b) : (b, a);
-                if (!aC.IsPeriodic())
+                (anA.U1, anA.U2) = a < b || aC.IsPeriodic ? (a, b) : (b, a);
+                if (!aC.IsPeriodic)
                 {
                     anA.U2 = Math.Min(anA.U2, aLast);
                 }
@@ -185,23 +191,23 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         }
     }
 
-    private static Geom2d_Curve BuildPort(Arg theA)
+    private static Curve2D BuildPort(Arg theA)
     {
         switch (theA.Kind)
         {
             case Kind.Line:
-                return new Geom2d_Line(new Point2D(theA.Px, theA.Py), new Direction2D(theA.Dx, theA.Dy));
+                return new LineCurve2D(new Point2D(theA.Px, theA.Py), new Direction2D(theA.Dx, theA.Dy));
             case Kind.Circle:
-                return new Geom2d_Circle(new Axis2D(new Point2D(theA.Px, theA.Py), new Direction2D(theA.Dx, theA.Dy)), theA.R1, theA.Sense);
+                return new CircleCurve2D(new Axis2D(new Point2D(theA.Px, theA.Py), new Direction2D(theA.Dx, theA.Dy)), theA.R1, theA.Sense);
             case Kind.Ellipse:
-                return new Geom2d_Ellipse(new Axis2D(new Point2D(theA.Px, theA.Py), new Direction2D(theA.Dx, theA.Dy)), theA.R1, theA.R2,
+                return new EllipseCurve2D(new Axis2D(new Point2D(theA.Px, theA.Py), new Direction2D(theA.Dx, theA.Dy)), theA.R1, theA.R2,
                                           theA.Sense);
             case Kind.BSpline:
                 return Geom2dOracle.ToPort(theA.BSpline!);
             case Kind.Offset:
-                return new Geom2d_OffsetCurve(BuildPort(theA.Basis!), theA.Offset);
+                return new OffsetCurve2D(BuildPort(theA.Basis!), theA.Offset);
             default:
-                return new Geom2d_TrimmedCurve(BuildPort(theA.Basis!), theA.U1, theA.U2);
+                return new TrimmedCurve2D(BuildPort(theA.Basis!), theA.U1, theA.U2);
         }
     }
 
@@ -238,26 +244,26 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
     /// The curve of an argument on both sides. Offset curves (not bound natively) are the pcurve of an edge on a plane
     /// face, written by the port and read by both sides; directions are checked to be the same bits on both sides.
     /// </summary>
-    private (N.Geom2d_Curve Native, Geom2d_Curve Port)? Build(Arg theA)
+    private (N.Geom2d_Curve Native, Curve2D Port)? Build(Arg theA)
     {
         if (theA.Kind == Kind.Offset)
         {
-            Geom2d_Curve anOffset = BuildPort(theA);
-            var aPlane = new Geom_Plane(new CoordinateSystem());
-            TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aPlane, -50, 50, -50, 50, 1e-7).Face();
-            TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(anOffset, BRep_Tool.Surface(aFace)!).Edge();
+            Curve2D anOffset = BuildPort(theA);
+            var aPlane = new PlaneSurface(new CoordinateSystem());
+            Face aFace = new BRepBuilderAPI_MakeFace(aPlane, -50, 50, -50, 50, 1e-7).Face();
+            Edge anEdge = new BRepBuilderAPI_MakeEdge(anOffset, Tool.Surface(aFace)!).Edge();
             string aFile = Path.Combine(myDirectory, $"c{myFileNumber++}.brep");
-            Assert.True(BRepTools.Write(TopoDS_Builder.MakeCompound(aFace, anEdge), aFile));
-            Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile));
-            TopoDS_Face aPF = TopoDS.Face(new TopExp_Explorer(aPShape, TopAbs_ShapeEnum.TopAbs_FACE).Current());
+            Assert.True(BrepTools.Write(Builder.MakeCompound(aFace, anEdge), aFile));
+            Assert.True(BrepTools.Read(out Shape aPShape, aFile));
+            Face aPF = ShapeCasts.Face(new Explorer(aPShape, ShapeType.Face).Current());
             // The free edge is the last one met (after the face's four).
-            TopoDS_Shape aPLast = new();
-            for (var anEx = new TopExp_Explorer(aPShape, TopAbs_ShapeEnum.TopAbs_EDGE); anEx.More(); anEx.Next())
+            Shape aPLast = new();
+            for (var anEx = new Explorer(aPShape, ShapeType.Edge); anEx.More(); anEx.Next())
             {
                 aPLast = anEx.Current();
             }
-            TopoDS_Edge aPE = TopoDS.Edge(aPLast);
-            Geom2d_Curve aP = BRep_Tool.CurveOnSurface(aPE, aPF, out _, out _)!;
+            Edge aPE = ShapeCasts.Edge(aPLast);
+            Curve2D aP = Tool.CurveOnSurface(aPE, aPF, out _, out _)!;
             var aNShape = new N.TopoDS_Shape();
             using (var aBuilder = new N.BRep_Builder())
             {
@@ -272,17 +278,17 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
             }
             double f = 0, l = 0;
             N.Geom2d_Curve aN = N.BRep_Tool.CurveOnSurface(N.TopoDS.Edge(aNLast), N.TopoDS.Face(aFX.Current()), ref f, ref l)!;
-            Assert.True(aP is Geom2d_OffsetCurve, theA.Name + " read as " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aP.GetType()));
+            Assert.True(aP is OffsetCurve2D, theA.Name + " read as " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aP.GetType()));
             return (aN, aP);
         }
         N.Geom2d_Curve aNative = BuildNative(theA);
-        Geom2d_Curve aPort = BuildPort(theA);
+        Curve2D aPort = BuildPort(theA);
         // The same directions on both sides (native's normalisation can differ in the last bit): else redraw.
         if (theA.Kind is Kind.Line or Kind.Circle or Kind.Ellipse
             || (theA.Kind == Kind.Trimmed && theA.Basis!.Kind != Kind.BSpline))
         {
             using var aNA = new N.Geom2dAdaptor_Curve(aNative);
-            var aPA = new Geom2dAdaptor_Curve(aPort);
+            var aPA = new CurveAdaptor2D(aPort);
             double u = theA.Kind == Kind.Trimmed ? theA.U1 : 0.7;
             using N.gp_Pnt2d aNP = aNA.Value(u);
             Point2D aPP = aPA.Value(u);
@@ -294,7 +300,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         return (aNative, aPort);
     }
 
-    private static double StartParam(Oracle theO, Geom2d_Curve theC)
+    private static double StartParam(Oracle theO, Curve2D theC)
     {
         double aFirst = theC.FirstParameter(), aLast = theC.LastParameter();
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
@@ -551,12 +557,12 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         return new N.Geom2dGcc_QualifiedCurve(anAd, (N.GccEnt_Position)(int)theQ);
     }
 
-    private static Geom2dGcc_QualifiedCurve PQ(Geom2d_Curve theC, GccEnt_Position theQ) => new(new Geom2dAdaptor_Curve(theC), theQ);
+    private static Geom2dGcc_QualifiedCurve PQ(Curve2D theC, GccEnt_Position theQ) => new(new CurveAdaptor2D(theC), theQ);
 
     private static string Describe(params Arg[] theArgs)
         => string.Join(", ", theArgs.Select(a => a.Name + " " + GccEnt.PositionToString(a.Q).Replace("GccEnt_", "", StringComparison.Ordinal)));
 
-    private (Arg A, N.Geom2d_Curve N, Geom2d_Curve P) Draw(Oracle theO, bool theAllowFreeForm = true)
+    private (Arg A, N.Geom2d_Curve N, Curve2D P) Draw(Oracle theO, bool theAllowFreeForm = true)
     {
         while (true)
         {
@@ -662,7 +668,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Ctor = "Circ2d2TanRad(curve, point)",
                 Description = Describe(a1) + $", point ({x}, {y}), r {r}",
                 Native = () => RunNative(() => NCirc2d2TanRad(new N.Geom2dGcc_Circ2d2TanRad(NQ(n1, a1.Q), new N.Geom2d_CartesianPoint(x, y), r, tol))),
-                Port = () => RunPort(() => PCirc2d2TanRad(new Geom2dGcc_Circ2d2TanRad(PQ(p1, a1.Q), new Geom2d_CartesianPoint(x, y), r, tol))),
+                Port = () => RunPort(() => PCirc2d2TanRad(new Geom2dGcc_Circ2d2TanRad(PQ(p1, a1.Q), new CartesianPoint2(x, y), r, tol))),
             };
         });
         yield return ("Circ2d2TanRad(point, point)", o =>
@@ -675,7 +681,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Ctor = "Circ2d2TanRad(point, point)",
                 Description = $"({x1}, {y1}), ({x2}, {y2}), r {r}",
                 Native = () => RunNative(() => NCirc2d2TanRad(new N.Geom2dGcc_Circ2d2TanRad(new N.Geom2d_CartesianPoint(x1, y1), new N.Geom2d_CartesianPoint(x2, y2), r, tol))),
-                Port = () => RunPort(() => PCirc2d2TanRad(new Geom2dGcc_Circ2d2TanRad(new Geom2d_CartesianPoint(x1, y1), new Geom2d_CartesianPoint(x2, y2), r, tol))),
+                Port = () => RunPort(() => PCirc2d2TanRad(new Geom2dGcc_Circ2d2TanRad(new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), r, tol))),
             };
         });
 
@@ -696,7 +702,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     using var anOn = new N.Geom2dAdaptor_Curve(n3);
                     return NCirc2d2TanOn(new N.Geom2dGcc_Circ2d2TanOn(NQ(n1, a1.Q), NQ(n2, a2.Q), anOn, tol, u1, u2, u3));
                 }),
-                Port = () => RunPort(() => PCirc2d2TanOn(new Geom2dGcc_Circ2d2TanOn(PQ(p1, a1.Q), PQ(p2, a2.Q), new Geom2dAdaptor_Curve(p3), tol, u1, u2, u3))),
+                Port = () => RunPort(() => PCirc2d2TanOn(new Geom2dGcc_Circ2d2TanOn(PQ(p1, a1.Q), PQ(p2, a2.Q), new CurveAdaptor2D(p3), tol, u1, u2, u3))),
             };
             if (!(a1.IsAnalytic && a2.IsAnalytic && a3.IsAnalytic))
             {
@@ -725,7 +731,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     using var anOn = new N.Geom2dAdaptor_Curve(n3);
                     return NCirc2d2TanOn(new N.Geom2dGcc_Circ2d2TanOn(NQ(n1, a1.Q), new N.Geom2d_CartesianPoint(x, y), anOn, tol, u1, u3));
                 }),
-                Port = () => RunPort(() => PCirc2d2TanOn(new Geom2dGcc_Circ2d2TanOn(PQ(p1, a1.Q), new Geom2d_CartesianPoint(x, y), new Geom2dAdaptor_Curve(p3), tol, u1, u3))),
+                Port = () => RunPort(() => PCirc2d2TanOn(new Geom2dGcc_Circ2d2TanOn(PQ(p1, a1.Q), new CartesianPoint2(x, y), new CurveAdaptor2D(p3), tol, u1, u3))),
             };
             if (a1.IsCircle && a3.IsLine)
             {
@@ -759,7 +765,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     using var anOn = new N.Geom2dAdaptor_Curve(n3);
                     return NCirc2d2TanOn(new N.Geom2dGcc_Circ2d2TanOn(new N.Geom2d_CartesianPoint(x1, y1), new N.Geom2d_CartesianPoint(x2, y2), anOn, tol));
                 }),
-                Port = () => RunPort(() => PCirc2d2TanOn(new Geom2dGcc_Circ2d2TanOn(new Geom2d_CartesianPoint(x1, y1), new Geom2d_CartesianPoint(x2, y2), new Geom2dAdaptor_Curve(p3), tol))),
+                Port = () => RunPort(() => PCirc2d2TanOn(new Geom2dGcc_Circ2d2TanOn(new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), new CurveAdaptor2D(p3), tol))),
             };
         });
 
@@ -800,7 +806,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Ctor = "Circ2d3Tan(curve, curve, point)",
                 Description = Describe(a1, a2) + $", point ({x}, {y})",
                 Native = () => RunNative(() => NCirc2d3Tan(new N.Geom2dGcc_Circ2d3Tan(NQ(n1, a1.Q), NQ(n2, a2.Q), new N.Geom2d_CartesianPoint(x, y), tol, u1, u2))),
-                Port = () => RunPort(() => PCirc2d3Tan(new Geom2dGcc_Circ2d3Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), new Geom2d_CartesianPoint(x, y), tol, u1, u2))),
+                Port = () => RunPort(() => PCirc2d3Tan(new Geom2dGcc_Circ2d3Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), new CartesianPoint2(x, y), tol, u1, u2))),
             };
             if (!(a1.IsAnalytic && a2.IsAnalytic))
             {
@@ -820,7 +826,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Ctor = "Circ2d3Tan(curve, point, point)",
                 Description = Describe(a1) + $", ({x1}, {y1}), ({x2}, {y2})",
                 Native = () => RunNative(() => NCirc2d3Tan(new N.Geom2dGcc_Circ2d3Tan(NQ(n1, a1.Q), new N.Geom2d_CartesianPoint(x1, y1), new N.Geom2d_CartesianPoint(x2, y2), tol, u1))),
-                Port = () => RunPort(() => PCirc2d3Tan(new Geom2dGcc_Circ2d3Tan(PQ(p1, a1.Q), new Geom2d_CartesianPoint(x1, y1), new Geom2d_CartesianPoint(x2, y2), tol, u1))),
+                Port = () => RunPort(() => PCirc2d3Tan(new Geom2dGcc_Circ2d3Tan(PQ(p1, a1.Q), new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), tol, u1))),
             };
             if (!a1.IsAnalytic)
             {
@@ -839,7 +845,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Ctor = "Circ2d3Tan(point, point, point)",
                 Description = $"({x1}, {y1}), ({x2}, {y2}), ({x3}, {y3})",
                 Native = () => RunNative(() => NCirc2d3Tan(new N.Geom2dGcc_Circ2d3Tan(new N.Geom2d_CartesianPoint(x1, y1), new N.Geom2d_CartesianPoint(x2, y2), new N.Geom2d_CartesianPoint(x3, y3), tol))),
-                Port = () => RunPort(() => PCirc2d3Tan(new Geom2dGcc_Circ2d3Tan(new Geom2d_CartesianPoint(x1, y1), new Geom2d_CartesianPoint(x2, y2), new Geom2d_CartesianPoint(x3, y3), tol))),
+                Port = () => RunPort(() => PCirc2d3Tan(new Geom2dGcc_Circ2d3Tan(new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), new CartesianPoint2(x3, y3), tol))),
             };
         });
 
@@ -854,7 +860,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Ctor = "Circ2dTanCen(curve, centre)",
                 Description = Describe(a1) + $", centre ({x}, {y})",
                 Native = () => RunNative(() => NCirc2dTanCen(new N.Geom2dGcc_Circ2dTanCen(NQ(n1, a1.Q), new N.Geom2d_CartesianPoint(x, y), tol))),
-                Port = () => RunPort(() => PCirc2dTanCen(new Geom2dGcc_Circ2dTanCen(PQ(p1, a1.Q), new Geom2d_CartesianPoint(x, y), tol))),
+                Port = () => RunPort(() => PCirc2dTanCen(new Geom2dGcc_Circ2dTanCen(PQ(p1, a1.Q), new CartesianPoint2(x, y), tol))),
             };
             if (!a1.IsAnalytic)
             {
@@ -882,7 +888,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     using var anOn = new N.Geom2dAdaptor_Curve(n2);
                     return NCirc2dTanOnRad(new N.Geom2dGcc_Circ2dTanOnRad(NQ(n1, a1.Q), anOn, r, tol));
                 }),
-                Port = () => RunPort(() => PCirc2dTanOnRad(new Geom2dGcc_Circ2dTanOnRad(PQ(p1, a1.Q), new Geom2dAdaptor_Curve(p2), r, tol))),
+                Port = () => RunPort(() => PCirc2dTanOnRad(new Geom2dGcc_Circ2dTanOnRad(PQ(p1, a1.Q), new CurveAdaptor2D(p2), r, tol))),
             };
         });
         yield return ("Circ2dTanOnRad(point, on)", o =>
@@ -899,7 +905,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     using var anOn = new N.Geom2dAdaptor_Curve(n2);
                     return NCirc2dTanOnRad(new N.Geom2dGcc_Circ2dTanOnRad(new N.Geom2d_CartesianPoint(x, y), anOn, r, tol));
                 }),
-                Port = () => RunPort(() => PCirc2dTanOnRad(new Geom2dGcc_Circ2dTanOnRad(new Geom2d_CartesianPoint(x, y), new Geom2dAdaptor_Curve(p2), r, tol))),
+                Port = () => RunPort(() => PCirc2dTanOnRad(new Geom2dGcc_Circ2dTanOnRad(new CartesianPoint2(x, y), new CurveAdaptor2D(p2), r, tol))),
             };
             if (a2.IsCircle)
             {

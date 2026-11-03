@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -78,7 +79,7 @@ internal sealed class TestFixedGuideTrihedron : GeomFill_TrihedronWithGuide
     private readonly Vector3D myT;
     private readonly Vector3D myN;
 
-    public TestFixedGuideTrihedron(Adaptor3d_Curve theGuide, Vector3D theT, Vector3D theN)
+    public TestFixedGuideTrihedron(CurveAdaptorBase theGuide, Vector3D theT, Vector3D theN)
     {
         myGuide = theGuide;
         myTrimG = theGuide;
@@ -88,7 +89,7 @@ internal sealed class TestFixedGuideTrihedron : GeomFill_TrihedronWithGuide
 
     public int NbOrigine { get; private set; }
 
-    public override Adaptor3d_Curve Guide() => myGuide!;
+    public override CurveAdaptorBase Guide() => myGuide!;
 
     public override void Origine(double Param1, double Param2) => NbOrigine++;
 
@@ -145,7 +146,7 @@ internal sealed class TestFixedGuideTrihedron : GeomFill_TrihedronWithGuide
 internal static class LocationLawTestSupport
 {
     /// <summary>A B-spline curve through a few points, C2 inside (degree 3, one interior knot of multiplicity 1).</summary>
-    internal static Geom_BSplineCurve WavyCurve()
+    internal static BSplineCurve3D WavyCurve()
     {
         var aPoles = new NCollection_Array1<Point3D>(1, 5);
         aPoles[1] = new Point3D(0, 0, 0);
@@ -161,7 +162,7 @@ internal static class LocationLawTestSupport
         aMults[1] = 4;
         aMults[2] = 1;
         aMults[3] = 4;
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 3);
     }
 
     internal static void AssertNear(in Vector3D theExpected, in Vector3D theActual, double theTol, string theWhat)

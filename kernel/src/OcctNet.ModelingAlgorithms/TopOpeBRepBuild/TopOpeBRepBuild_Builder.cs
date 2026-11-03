@@ -4,8 +4,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using static Occt.BRepCheck_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -44,14 +47,14 @@ public class TopOpeBRepBuild_Builder
     // Perform, Clear, the split, merge, section and KPart members, DataStructure: not ported (plan 2.11).
 
     // Merge.cxx: puts the wire's edges in connection order, reversing those that run backwards
-    private static void CorrectEdgeOrientation(ref TopoDS_Shape aWire)
+    private static void CorrectEdgeOrientation(ref Shape aWire)
     {
-        NCollection_List<TopoDS_Shape> anEdgeList = new(), anAuxList = new(), aTrueEdgeList = new();
-        BRep_Builder BB = new();
-        TopoDS_Vertex vf, vl, v1f, v1l;
+        NCollection_List<Shape> anEdgeList = new(), anAuxList = new(), aTrueEdgeList = new();
+        BrepBuilder BB = new();
+        Vertex vf, vl, v1f, v1l;
         bool append = true;
 
-        TopoDS_Iterator tdi = new(aWire, false, false);
+        Iterator tdi = new(aWire, false, false);
         for (; tdi.More(); tdi.Next())
         {
             anEdgeList.Append(tdi.Value());
@@ -63,10 +66,10 @@ public class TopOpeBRepBuild_Builder
             return;
         }
 
-        NCollection_List<TopoDS_Shape>.Iterator anIt = new(anEdgeList);
+        NCollection_List<Shape>.Iterator anIt = new(anEdgeList);
 
-        TopoDS_Shape anCurEdge = anIt.Value();
-        TopExp.Vertices(TopoDS.Edge(anCurEdge), out vf, out vl, true);
+        Shape anCurEdge = anIt.Value();
+        Exploration.Vertices(ShapeCasts.Edge(anCurEdge), out vf, out vl, true);
         aTrueEdgeList.Append(anCurEdge);
         anIt.Next();
 
@@ -76,7 +79,7 @@ public class TopOpeBRepBuild_Builder
             {
                 append = false;
                 anCurEdge = anIt.Value();
-                TopExp.Vertices(TopoDS.Edge(anCurEdge), out v1f, out v1l, true);
+                Exploration.Vertices(ShapeCasts.Edge(anCurEdge), out v1f, out v1l, true);
                 if (v1f.IsSame(vl))
                 {
                     aTrueEdgeList.Append(anCurEdge);
@@ -94,7 +97,7 @@ public class TopOpeBRepBuild_Builder
 
                 if (v1l.IsSame(vl))
                 {
-                    TopoDS_Shape anRevEdge = anCurEdge.Reversed();
+                    Shape anRevEdge = anCurEdge.Reversed();
                     aTrueEdgeList.Append(anRevEdge);
                     vl = v1f;
                     append = true;
@@ -102,7 +105,7 @@ public class TopOpeBRepBuild_Builder
                 }
                 if (v1f.IsSame(vf))
                 {
-                    TopoDS_Shape anRevEdge = anCurEdge.Reversed();
+                    Shape anRevEdge = anCurEdge.Reversed();
                     aTrueEdgeList.Append(anRevEdge);
                     vf = v1l;
                     append = true;
@@ -124,7 +127,7 @@ public class TopOpeBRepBuild_Builder
         }
 
         aWire.Nullify();
-        TopoDS_Wire aNewWire = new();
+        Wire aNewWire = new();
         BB.MakeWire(ref aNewWire);
         aWire = aNewWire;
         anIt.Initialize(aTrueEdgeList);
@@ -135,38 +138,38 @@ public class TopOpeBRepBuild_Builder
     }
 
     // Merge.cxx: removes the wire's edges with fewer than two vertices, then the edges at a vertex of one edge only
-    private static void CorrectUnclosedWire(in TopoDS_Shape aWire)
+    private static void CorrectUnclosedWire(in Shape aWire)
     {
-        BRep_Builder BB = new();
+        BrepBuilder BB = new();
         // OCCT removes children while its TopoDS_Iterator is on them (the iterator's node is freed: undefined
         // behaviour, which in practice goes on to the next child). The port iterates a snapshot of the children.
-        NCollection_List<TopoDS_Shape> aChildren = new();
-        TopoDS_Iterator tdi = new(aWire, false, false);
+        NCollection_List<Shape> aChildren = new();
+        Iterator tdi = new(aWire, false, false);
         for (; tdi.More(); tdi.Next())
         {
             aChildren.Append(tdi.Value());
         }
-        for (NCollection_List<TopoDS_Shape>.Iterator it = new(aChildren); it.More(); it.Next())
+        for (NCollection_List<Shape>.Iterator it = new(aChildren); it.More(); it.Next())
         {
-            TopoDS_Shape ed = it.Value();
-            int nbv = ed.NbChildren();
+            Shape ed = it.Value();
+            int nbv = ed.ChildCount;
             if (nbv <= 1)
             {
                 BB.Remove(aWire, ed);
             }
         }
 
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> VElists = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> VElists = new(ShapeHasher.Instance);
         VElists.Clear();
-        TopExp.MapShapesAndAncestors(aWire, TopAbs_VERTEX, TopAbs_EDGE, VElists);
+        Exploration.MapShapesAndAncestors(aWire, ShapeType.Vertex, ShapeType.Edge, VElists);
         int nbVer = VElists.Extent(), i;
 
         for (i = 1; i <= nbVer; i++)
         {
-            NCollection_List<TopoDS_Shape> Elist = VElists.FindFromIndex(i);
+            NCollection_List<Shape> Elist = VElists.FindFromIndex(i);
             if (Elist.Extent() == 1)
             {
-                TopoDS_Shape anEdge = Elist.First();
+                Shape anEdge = Elist.First();
                 BB.Remove(aWire, anEdge);
             }
         }
@@ -181,10 +184,10 @@ public class TopOpeBRepBuild_Builder
     /// Writes the Closed flag of old wires, as in OCCT: they must then be unfrozen (see
     /// <see cref="TopOpeBRepBuild_WireToFace.MakeFaces"/>, which copies frozen ones).
     /// </remarks>
-    public void MakeFaces(in TopoDS_Shape aFace, TopOpeBRepBuild_FaceBuilder FABU, NCollection_List<TopoDS_Shape> L)
+    public void MakeFaces(in Shape aFace, TopOpeBRepBuild_FaceBuilder FABU, NCollection_List<Shape> L)
     {
-        TopoDS_Shape newFace;
-        TopoDS_Shape newWire = new();
+        Shape newFace;
+        Shape newWire = new();
 
         for (FABU.InitFace(); FABU.MoreFace(); FABU.NextFace())
         {
@@ -204,7 +207,7 @@ public class TopOpeBRepBuild_Builder
                     myBuildTool.MakeWire(ref newWire);
                     for (FABU.InitEdge(); FABU.MoreEdge(); FABU.NextEdge())
                     {
-                        TopoDS_Shape E = FABU.Edge();
+                        Shape E = FABU.Edge();
                         myBuildTool.AddWireEdge(newWire, E);
                     }
                 }

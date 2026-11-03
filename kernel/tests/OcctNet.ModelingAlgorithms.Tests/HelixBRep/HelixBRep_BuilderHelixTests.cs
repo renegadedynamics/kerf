@@ -1,9 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Port of OCCT's GTest src/ModelingAlgorithms/TKHelix/GTests/HelixBRep_BuilderHelix_Test.cxx (TKHelixTest).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -22,10 +25,10 @@ public class HelixBRep_BuilderHelixTests
     }
 
     // Helper method to count shapes in a TopoDS_Shape
-    internal static int CountShapes(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    internal static int CountShapes(in Shape theShape, ShapeType theType)
     {
         int aCount = 0;
-        for (var anExp = new TopExp_Explorer(theShape, theType); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(theShape, theType); anExp.More(); anExp.Next())
         {
             aCount++;
         }
@@ -33,9 +36,9 @@ public class HelixBRep_BuilderHelixTests
     }
 
     // Helper method to compute wire length
-    internal static double ComputeWireLength(in TopoDS_Shape theWire)
+    internal static double ComputeWireLength(in Shape theWire)
     {
-        var aLProps = new GProp_GProps();
+        var aLProps = new Properties();
         BRepGProp.LinearProperties(theWire, aLProps);
         return aLProps.Mass();
     }
@@ -104,7 +107,7 @@ public class HelixBRep_BuilderHelixTests
         Assert.Equal(0, aBuilder.ErrorStatus());
         var aCurves = aBuilder.Curves();
         Assert.Single(aCurves);
-        Geom_Curve aCurve = aCurves[0];
+        Curve3D aCurve = aCurves[0];
         Assert.NotNull(aCurve);
         // Test curve endpoints
         aCurve.D0(aCurve.FirstParameter(), out Point3D aP1);
@@ -161,11 +164,11 @@ public class HelixBRep_BuilderHelixTests
         aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
-        TopoDS_Shape aResult = aBuilder.Shape();
-        Assert.False(aResult.IsNull());
-        Assert.Equal(TopAbs_WIRE, aResult.ShapeType());
+        Shape aResult = aBuilder.Shape();
+        Assert.False(aResult.IsNull);
+        Assert.Equal(ShapeType.Wire, aResult.ShapeType());
         // Check number of edges
-        int aNbEdges = CountShapes(aResult, TopAbs_EDGE);
+        int aNbEdges = CountShapes(aResult, ShapeType.Edge);
         Assert.True(aNbEdges > 0);
         // Compute wire length - should be approximately sqrt(circumference^2 + height^2) * turns
         double aWireLength = ComputeWireLength(aResult);
@@ -191,10 +194,10 @@ public class HelixBRep_BuilderHelixTests
         aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
-        TopoDS_Shape aResult = aBuilder.Shape();
-        Assert.False(aResult.IsNull());
-        Assert.Equal(TopAbs_WIRE, aResult.ShapeType());
-        int aNbEdges = CountShapes(aResult, TopAbs_EDGE);
+        Shape aResult = aBuilder.Shape();
+        Assert.False(aResult.IsNull);
+        Assert.Equal(ShapeType.Wire, aResult.ShapeType());
+        int aNbEdges = CountShapes(aResult, ShapeType.Edge);
         Assert.True(aNbEdges > 0);
     }
 
@@ -225,10 +228,10 @@ public class HelixBRep_BuilderHelixTests
         aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
-        TopoDS_Shape aResult = aBuilder.Shape();
-        Assert.False(aResult.IsNull());
-        Assert.Equal(TopAbs_WIRE, aResult.ShapeType());
-        int aNbEdges = CountShapes(aResult, TopAbs_EDGE);
+        Shape aResult = aBuilder.Shape();
+        Assert.False(aResult.IsNull);
+        Assert.Equal(ShapeType.Wire, aResult.ShapeType());
+        int aNbEdges = CountShapes(aResult, ShapeType.Edge);
         Assert.True(aNbEdges > 2); // Should have multiple edges for multiple parts
     }
 
@@ -246,8 +249,8 @@ public class HelixBRep_BuilderHelixTests
         aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
-        TopoDS_Shape aResult = aBuilder.Shape();
-        Assert.False(aResult.IsNull());
+        Shape aResult = aBuilder.Shape();
+        Assert.False(aResult.IsNull);
         // Wire length should correspond to 5 turns
         double aWireLength = ComputeWireLength(aResult);
         double aCircumference = M_PI * 100.0;
@@ -259,7 +262,7 @@ public class HelixBRep_BuilderHelixTests
     [Fact]
     public void HelixGeomTools_ApprHelix()
     {
-        Geom_BSplineCurve? aBSpline = null;
+        BSplineCurve3D? aBSpline = null;
         double aMaxError = 0;
         int aResult = HelixGeom_Tools.ApprHelix(0.0, 2.0 * M_PI, 10.0, 5.0, 0.0, true, myTolerance, ref aBSpline, ref aMaxError);
         Assert.Equal(0, aResult); // Success
@@ -267,7 +270,7 @@ public class HelixBRep_BuilderHelixTests
         Assert.True(aMaxError <= myTolerance);
         // Test curve properties
         Assert.True(aBSpline.Degree() > 0);
-        Assert.True(aBSpline.NbPoles() > 0);
+        Assert.True(aBSpline.PoleCount > 0);
     }
 
     // Test Error Conditions

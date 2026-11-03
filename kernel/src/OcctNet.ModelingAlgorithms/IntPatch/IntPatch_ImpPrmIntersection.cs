@@ -5,12 +5,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_TypeTrans;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -47,8 +48,8 @@ public partial class IntPatch_ImpPrmIntersection
         myVStart = 0.0;
     }
 
-    public IntPatch_ImpPrmIntersection(Adaptor3d_Surface Surf1, Adaptor3d_TopolTool D1, Adaptor3d_Surface Surf2,
-                                       Adaptor3d_TopolTool D2, double TolArc, double TolTang, double Fleche, double Pas)
+    public IntPatch_ImpPrmIntersection(SurfaceAdaptorBase Surf1, TopolTool D1, SurfaceAdaptorBase Surf2,
+                                       TopolTool D2, double TolArc, double TolTang, double Fleche, double Pas)
         : this()
     {
         Perform(Surf1, D1, Surf2, D2, TolArc, TolTang, Fleche, Pas);
@@ -120,8 +121,8 @@ public partial class IntPatch_ImpPrmIntersection
     /// Standard_ConstructionError); D1 and D2 are their domains; TolArc the tolerance on the restrictions, TolTang
     /// the tangency tolerance, Fleche the deflection and Pas the step of the walking.
     /// </summary>
-    public void Perform(Adaptor3d_Surface Surf1, Adaptor3d_TopolTool D1, Adaptor3d_Surface Surf2,
-                        Adaptor3d_TopolTool D2, double TolArc, double TolTang, double Fleche, double Pas)
+    public void Perform(SurfaceAdaptorBase Surf1, TopolTool D1, SurfaceAdaptorBase Surf2,
+                        TopolTool D2, double TolArc, double TolTang, double Fleche, double Pas)
     {
         bool reversed, procf, procl, dofirst, dolast;
         int indfirst = 0, indlast = 0, ind2, NbSegm;
@@ -147,7 +148,7 @@ public partial class IntPatch_ImpPrmIntersection
         Point2D p2d;
         Vector2D d2d;
 
-        Adaptor2d_Curve2d currentarc;
+        Curve2DAdaptorBase currentarc;
         SurfaceKind typeS1, typeS2;
         IntSurf_Quadric Quad = new();
         IntPatch_TheSurfFunction Func = new();
@@ -275,7 +276,7 @@ public partial class IntPatch_ImpPrmIntersection
             // plane only touches surface and does not cross it,
             // so no inner points exist.
             SearchIns = false;
-            Adaptor3d_TopolTool T;
+            TopolTool T;
             if (reversed)
             {
                 T = D1;
@@ -945,7 +946,7 @@ public partial class IntPatch_ImpPrmIntersection
                     paramf = PStartf.Parameter();
 
                     Point2D _p2d = thesegm.Curve().Value(paramf);
-                    Adaptor3d_HVertex? _vtx = null;
+                    HVertex? _vtx = null;
                     if (!PStartf.IsNew())
                     {
                         _vtx = PStartf.Vertex();
@@ -1013,7 +1014,7 @@ public partial class IntPatch_ImpPrmIntersection
                     paraml = PStartl.Parameter();
 
                     Point2D _p2d = thesegm.Curve().Value(paraml);
-                    Adaptor3d_HVertex? _vtx = null;
+                    HVertex? _vtx = null;
                     if (!PStartl.IsNew())
                     {
                         _vtx = PStartl.Vertex();
@@ -1121,7 +1122,7 @@ public partial class IntPatch_ImpPrmIntersection
                     Point3D ptpoly;
                     IntSurf_PntOn2S p2s = new();
                     IntSurf_LineOn2S Thelin = new();
-                    Adaptor2d_Curve2d arcsegm = thesegm.Curve();
+                    Curve2DAdaptorBase arcsegm = thesegm.Curve();
                     int nbsample = 100;
 
                     if (!reversed)
@@ -1286,8 +1287,8 @@ public partial class IntPatch_ImpPrmIntersection
         // after (higher indices) - only Walking-line.
 
         double aTol3d = Math.Max(Func.Tolerance(), TolTang);
-        Adaptor3d_Surface aQSurf = (reversed) ? Surf2 : Surf1;
-        Adaptor3d_Surface anOtherSurf = (reversed) ? Surf1 : Surf2;
+        SurfaceAdaptorBase aQSurf = (reversed) ? Surf2 : Surf1;
+        SurfaceAdaptorBase anOtherSurf = (reversed) ? Surf1 : Surf2;
 
         for (int i = 1; i <= slin.Length(); i++)
         {
@@ -1300,7 +1301,7 @@ public partial class IntPatch_ImpPrmIntersection
                 break;
             }
 
-            Adaptor2d_Curve2d anArc = (aRL1.IsArcOnS1() ? aRL1.ArcOnS1() : aRL1.ArcOnS2())!;
+            Curve2DAdaptorBase anArc = (aRL1.IsArcOnS1() ? aRL1.ArcOnS1() : aRL1.ArcOnS2())!;
             if (anArc.GetType() != CurveKind.Line)
             {
                 // Restriction line must be isoline.
@@ -1322,7 +1323,7 @@ public partial class IntPatch_ImpPrmIntersection
 
                 if (aRL2 is not null)
                 {
-                    Adaptor2d_Curve2d anArc2 = (aRL2.IsArcOnS1() ? aRL2.ArcOnS1() : aRL2.ArcOnS2())!;
+                    Curve2DAdaptorBase anArc2 = (aRL2.IsArcOnS1() ? aRL2.ArcOnS1() : aRL2.ArcOnS2())!;
                     if (anArc2.GetType() != CurveKind.Line)
                     {
                         // Restriction line must be isoline.
@@ -1339,12 +1340,12 @@ public partial class IntPatch_ImpPrmIntersection
                 Direction2D aDir = anArc.Line().Direction();
 
                 double aTol2d = anOtherSurf.UResolution(aTol3d),
-                       aPeriod = anOtherSurf.IsVPeriodic() ? anOtherSurf.VPeriod() : 0.0;
+                       aPeriod = anOtherSurf.IsVPeriodic ? anOtherSurf.VPeriod() : 0.0;
 
                 if (Math.Abs(aDir.X()) < 0.5)
                 { // Restriction directs along V-direction
                     aTol2d = anOtherSurf.VResolution(aTol3d);
-                    aPeriod = anOtherSurf.IsUPeriodic() ? anOtherSurf.UPeriod() : 0.0;
+                    aPeriod = anOtherSurf.IsUPeriodic ? anOtherSurf.UPeriod() : 0.0;
                 }
 
                 bool isCoincide = IsCoincide(Func, aL2, anArc, aRL1.IsArcOnS1(), aTol3d, aTol2d, aPeriod);
@@ -1358,7 +1359,7 @@ public partial class IntPatch_ImpPrmIntersection
                     }
                     else
                     { // Restriction-Restriction
-                        Adaptor2d_Curve2d anArc2 = (aRL2.IsArcOnS1() ? aRL2.ArcOnS1() : aRL2.ArcOnS2())!;
+                        Curve2DAdaptorBase anArc2 = (aRL2.IsArcOnS1() ? aRL2.ArcOnS1() : aRL2.ArcOnS2())!;
 
                         double aRange2 = anArc2.LastParameter() - anArc2.FirstParameter();
                         double aRange1 = anArc.LastParameter() - anArc.FirstParameter();
@@ -1403,7 +1404,7 @@ public partial class IntPatch_ImpPrmIntersection
 
         // post processing for cones and spheres
 
-        Adaptor3d_TopolTool PDomain = (reversed) ? D1 : D2;
+        TopolTool PDomain = (reversed) ? D1 : D2;
 
         NCollection_Sequence<IntPatch_Line> dslin = new();
         bool isDecompose = false;

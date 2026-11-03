@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -22,35 +23,35 @@ public sealed class GeomToStep_MakeCurve : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D curve.</summary>
-    public GeomToStep_MakeCurve(Geom_Curve C, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeCurve(Curve3D C, in StepData_Factors theLocalFactors)
     {
         done = true;
-        if (C is Geom_Line)
+        if (C is LineCurve3D)
         {
-            Geom_Line L = C as Geom_Line;
+            LineCurve3D L = C as LineCurve3D;
             GeomToStep_MakeLine MkLine = new GeomToStep_MakeLine(L, theLocalFactors);
             theCurve = MkLine.Value();
         }
-        else if (C is Geom_Conic)
+        else if (C is ConicCurve3D)
         {
-            Geom_Conic L = C as Geom_Conic;
+            ConicCurve3D L = C as ConicCurve3D;
             GeomToStep_MakeConic MkConic = new GeomToStep_MakeConic(L, theLocalFactors);
             theCurve = MkConic.Value();
         }
-        else if (C is Geom_TrimmedCurve)
+        else if (C is TrimmedCurve3D)
         {
-            Geom_TrimmedCurve T = C as Geom_TrimmedCurve;
-            Geom_Curve B = T.BasisCurve();
+            TrimmedCurve3D T = C as TrimmedCurve3D;
+            Curve3D B = T.BasisCurve();
             //    TANT PIS, on passe la courbe de base ...
-            if (B is Geom_BSplineCurve)
+            if (B is BSplineCurve3D)
             {
-                Geom_BSplineCurve BS = B.Copy() as Geom_BSplineCurve;
+                BSplineCurve3D BS = B.Copy() as BSplineCurve3D;
                 BS.Segment(T.FirstParameter(), T.LastParameter());
                 B = BS;
             }
-            else if (B is Geom_BezierCurve)
+            else if (B is BezierCurve3D)
             {
-                Geom_BezierCurve BZ = B.Copy() as Geom_BezierCurve;
+                BezierCurve3D BZ = B.Copy() as BezierCurve3D;
                 BZ.Segment(T.FirstParameter(), T.LastParameter());
                 B = BZ;
             }
@@ -61,9 +62,9 @@ public sealed class GeomToStep_MakeCurve : GeomToStep_Root
             GeomToStep_MakeCurve MkBasisC = new GeomToStep_MakeCurve(B, theLocalFactors);
             theCurve = MkBasisC.Value();
         }
-        else if (C is Geom_BoundedCurve)
+        else if (C is BoundedCurve3D)
         {
-            Geom_BoundedCurve L = C as Geom_BoundedCurve;
+            BoundedCurve3D L = C as BoundedCurve3D;
             GeomToStep_MakeBoundedCurve MkBoundedC = new GeomToStep_MakeBoundedCurve(L, theLocalFactors);
             theCurve = MkBoundedC.Value();
         }
@@ -74,7 +75,7 @@ public sealed class GeomToStep_MakeCurve : GeomToStep_Root
     }
 
     /// <summary>A 3D curve (default factors).</summary>
-    public GeomToStep_MakeCurve(Geom_Curve C) : this(C, new StepData_Factors())
+    public GeomToStep_MakeCurve(Curve3D C) : this(C, new StepData_Factors())
     {
     }
 
@@ -83,16 +84,16 @@ public sealed class GeomToStep_MakeCurve : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D curve (an indirect circle or ellipse, which STEP can't place, converted to a B-spline).</summary>
-    public GeomToStep_MakeCurve(Geom2d_Curve C, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeCurve(Curve2D C, in StepData_Factors theLocalFactors)
     {
         done = true;
-        if (C is Geom2d_Line)
+        if (C is LineCurve2D)
         {
-            Geom2d_Line L = C as Geom2d_Line;
+            LineCurve2D L = C as LineCurve2D;
             GeomToStep_MakeLine MkLine = new GeomToStep_MakeLine(L, theLocalFactors);
             theCurve = MkLine.Value();
         }
-        else if (C is Geom2d_Conic)
+        else if (C is ConicCurve2D)
         {
             // ----------------------------------------------------------------------
             // A Circle of an Ellipse can be indirect. An indirect Axis in not
@@ -100,62 +101,62 @@ public sealed class GeomToStep_MakeCurve : GeomToStep_Root
             // or the Ellipse are converted into BSpline Curves
             // ----------------------------------------------------------------------
 
-            if (C is Geom2d_Circle)
+            if (C is CircleCurve2D)
             {
-                Geom2d_Circle theC2d = C as Geom2d_Circle;
+                CircleCurve2D theC2d = C as CircleCurve2D;
                 Circle2D C2d = theC2d.Circ2d();
                 if (!C2d.IsDirect)
                 {
                     // OCCT_DEBUG output left out
-                    Geom2d_BSplineCurve aBSplineCurve2d = Geom2dConvert.CurveToBSplineCurve(theC2d);
-                    Geom2d_BoundedCurve aBC2d = aBSplineCurve2d; // to avoid ambiguity
+                    BSplineCurve2D aBSplineCurve2d = Geom2dConvert2D.CurveToBSplineCurve(theC2d);
+                    BoundedCurve2D aBC2d = aBSplineCurve2d; // to avoid ambiguity
                     GeomToStep_MakeBoundedCurve MkBoundedC = new GeomToStep_MakeBoundedCurve(aBC2d, theLocalFactors);
                     theCurve = MkBoundedC.Value();
                 }
                 else
                 {
-                    Geom2d_Conic L = C as Geom2d_Conic;
+                    ConicCurve2D L = C as ConicCurve2D;
                     GeomToStep_MakeConic MkConic = new GeomToStep_MakeConic(L, theLocalFactors);
                     theCurve = MkConic.Value();
                 }
             }
-            else if (C is Geom2d_Ellipse)
+            else if (C is EllipseCurve2D)
             {
-                Geom2d_Ellipse theE2d = C as Geom2d_Ellipse;
+                EllipseCurve2D theE2d = C as EllipseCurve2D;
                 Ellipse2D E2d = theE2d.Elips2d();
                 if (!E2d.IsDirect)
                 {
                     // OCCT_DEBUG output left out
-                    Geom2d_BSplineCurve aBSplineCurve2d = Geom2dConvert.CurveToBSplineCurve(theE2d);
-                    Geom2d_BoundedCurve aBC2d = aBSplineCurve2d; // to avoid ambiguity
+                    BSplineCurve2D aBSplineCurve2d = Geom2dConvert2D.CurveToBSplineCurve(theE2d);
+                    BoundedCurve2D aBC2d = aBSplineCurve2d; // to avoid ambiguity
                     GeomToStep_MakeBoundedCurve MkBoundedC = new GeomToStep_MakeBoundedCurve(aBC2d, theLocalFactors);
                     theCurve = MkBoundedC.Value();
                 }
                 else
                 {
-                    Geom2d_Conic L = C as Geom2d_Conic;
+                    ConicCurve2D L = C as ConicCurve2D;
                     GeomToStep_MakeConic MkConic = new GeomToStep_MakeConic(L, theLocalFactors);
                     theCurve = MkConic.Value();
                 }
             }
             else
             {
-                Geom2d_Conic L = C as Geom2d_Conic;
+                ConicCurve2D L = C as ConicCurve2D;
                 GeomToStep_MakeConic MkConic = new GeomToStep_MakeConic(L, theLocalFactors);
                 theCurve = MkConic.Value();
             }
         }
-        else if (C is Geom2d_BoundedCurve)
+        else if (C is BoundedCurve2D)
         {
             // OCCT: Geom2d_TrimmedCurve is a bounded curve, so the branch below is never reached and a trimmed
             // curve goes to MakeBoundedCurve, which doesn't map it (occt-issues.md, 8D)
-            Geom2d_BoundedCurve L = C as Geom2d_BoundedCurve;
+            BoundedCurve2D L = C as BoundedCurve2D;
             GeomToStep_MakeBoundedCurve MkBoundedC = new GeomToStep_MakeBoundedCurve(L, theLocalFactors);
             theCurve = MkBoundedC.Value();
         }
-        else if (C is Geom2d_TrimmedCurve)
+        else if (C is TrimmedCurve2D)
         {
-            GeomToStep_MakeCurve aMaker = new GeomToStep_MakeCurve((C as Geom2d_TrimmedCurve).BasisCurve(), theLocalFactors);
+            GeomToStep_MakeCurve aMaker = new GeomToStep_MakeCurve((C as TrimmedCurve2D).BasisCurve(), theLocalFactors);
             theCurve = aMaker.Value();
         }
         else
@@ -165,7 +166,7 @@ public sealed class GeomToStep_MakeCurve : GeomToStep_Root
     }
 
     /// <summary>A 2D curve.</summary>
-    public GeomToStep_MakeCurve(Geom2d_Curve C) : this(C, new StepData_Factors())
+    public GeomToStep_MakeCurve(Curve2D C) : this(C, new StepData_Factors())
     {
     }
 

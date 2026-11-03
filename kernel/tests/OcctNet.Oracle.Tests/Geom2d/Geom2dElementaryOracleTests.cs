@@ -12,7 +12,7 @@ public class Geom2dElementaryOracleTests(ITestOutputHelper output)
     private const int Cases = 300;
 
     /// <summary>Evaluation, reversal and transformation, common to the three curves.</summary>
-    private static void CheckCurve(Oracle theOracle, N.Geom2d_Curve theNative, Geom2d_Curve thePort, string theWhat,
+    private static void CheckCurve(Oracle theOracle, N.Geom2d_Curve theNative, Curve2D thePort, string theWhat,
                                    bool theInfinite)
     {
         Geom2dOracle.SameBounds(theOracle, theNative, thePort, theWhat);
@@ -26,7 +26,7 @@ public class Geom2dElementaryOracleTests(ITestOutputHelper output)
         // Reversed copy, then evaluation
         using (var aNRev = theNative.Reversed())
         {
-            Geom2d_Curve aRev = thePort.Reversed();
+            Curve2D aRev = thePort.Reversed();
             double U = theOracle.Real(-10, 10);
             Geom2dOracle.SameEval(theOracle, aNRev!, aRev, U, $"{theWhat} reversed");
         }
@@ -37,7 +37,7 @@ public class Geom2dElementaryOracleTests(ITestOutputHelper output)
         {
             using var aNGeom = theNative.Transformed(aNT);
             using var aNTr = N.Geom2d_Curve.DownCast(aNGeom);
-            var aTr = (Geom2d_Curve)thePort.Transformed(aT);
+            var aTr = (Curve2D)thePort.Transformed(aT);
             double U = theOracle.Real(-10, 10);
             theOracle.Same(theNative.TransformedParameter(U, aNT), thePort.TransformedParameter(U, aT),
                            $"{theWhat} TransformedParameter");
@@ -57,7 +57,7 @@ public class Geom2dElementaryOracleTests(ITestOutputHelper output)
             (N.gp_Ax2d aNAx, Axis2D anAx) = Ax2ds(anOracle);
             using var aNAxOwner = aNAx;
             using var aNative = new N.Geom2d_Line(aNAx);
-            var aPort = new Geom2d_Line(anAx);
+            var aPort = new LineCurve2D(anAx);
             CheckCurve(anOracle, aNative, aPort, "Line", true);
 
             Point2D aP = anOracle.Pnt2d();
@@ -79,7 +79,7 @@ public class Geom2dElementaryOracleTests(ITestOutputHelper output)
             double aR = anOracle.Real(0.1, 50);
             bool aSense = anOracle.Bool();
             using var aNative = new N.Geom2d_Circle(aNAx, aR, aSense);
-            var aPort = new Geom2d_Circle(anAx, aR, aSense);
+            var aPort = new CircleCurve2D(anAx, aR, aSense);
             CheckCurve(anOracle, aNative, aPort, "Circle", false);
             anOracle.Same(aNative.Radius(), aPort.Radius(), "Circle Radius");
             anOracle.Same(aNative.Eccentricity(), aPort.Eccentricity(), "Circle Eccentricity");
@@ -101,7 +101,7 @@ public class Geom2dElementaryOracleTests(ITestOutputHelper output)
             double aMin = anOracle.Real(0.05, 0.95) * aMaj;
             bool aSense = anOracle.Bool();
             using var aNative = new N.Geom2d_Ellipse(aNAx, aMaj, aMin, aSense);
-            var aPort = new Geom2d_Ellipse(anAx, aMaj, aMin, aSense);
+            var aPort = new EllipseCurve2D(anAx, aMaj, aMin, aSense);
             CheckCurve(anOracle, aNative, aPort, "Ellipse", false);
 
             anOracle.Same(aNative.Eccentricity(), aPort.Eccentricity(), "Ellipse Eccentricity");

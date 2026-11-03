@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Values;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 
@@ -17,67 +19,67 @@ namespace Occt;
 /// interfaces of the generic algorithms (<see cref="IIntCurveSurface_CurveTool{TheCurve}"/>; decision 202's
 /// approach). The deprecated <c>SamplePars</c> overload with an output handle is left out.
 /// </remarks>
-public readonly struct IntCurveSurface_TheHCurveTool : IIntCurveSurface_CurveTool<Adaptor3d_Curve>
+public readonly struct IntCurveSurface_TheHCurveTool : IIntCurveSurface_CurveTool<CurveAdaptorBase>
 {
     private const int myMinPnts = 5;
 
-    public static double FirstParameter(in Adaptor3d_Curve C) => C.FirstParameter();
+    public static double FirstParameter(in CurveAdaptorBase C) => C.FirstParameter();
 
-    public static double LastParameter(in Adaptor3d_Curve C) => C.LastParameter();
+    public static double LastParameter(in CurveAdaptorBase C) => C.LastParameter();
 
-    public static Continuity Continuity(in Adaptor3d_Curve C) => C.Continuity();
+    public static Continuity Continuity(in CurveAdaptorBase C) => C.Continuity();
 
     /// <summary>The number of intervals for continuity <paramref name="S"/>; may be one when the curve is <paramref name="S"/>.</summary>
-    public static int NbIntervals(in Adaptor3d_Curve C, Continuity S) => C.NbIntervals(S);
+    public static int NbIntervals(in CurveAdaptorBase C, Continuity S) => C.NbIntervals(S);
 
     /// <summary>
     /// Stores in <paramref name="T"/> the parameters bounding the intervals of continuity <paramref name="S"/>; its
     /// length must be at least <see cref="NbIntervals"/> + 1.
     /// </summary>
-    public static void Intervals(in Adaptor3d_Curve C, NCollection_Array1<double> T, Continuity S) =>
+    public static void Intervals(in CurveAdaptorBase C, NCollection_Array1<double> T, Continuity S) =>
         C.Intervals(T, S);
 
-    public static bool IsClosed(in Adaptor3d_Curve C) => C.IsClosed();
+    public static bool IsClosed(in CurveAdaptorBase C) => C.IsClosed;
 
-    public static bool IsPeriodic(in Adaptor3d_Curve C) => C.IsPeriodic();
+    public static bool IsPeriodic(in CurveAdaptorBase C) => C.IsPeriodic;
 
-    public static double Period(in Adaptor3d_Curve C) => C.Period();
+    public static double Period(in CurveAdaptorBase C) => C.Period();
 
-    public static Point3D Value(in Adaptor3d_Curve C, double U) => C.Value(U);
+    public static Point3D Value(in CurveAdaptorBase C, double U) => C.Value(U);
 
-    public static void D0(in Adaptor3d_Curve C, double U, out Point3D P) => C.D0(U, out P);
+    public static void D0(in CurveAdaptorBase C, double U, out Point3D P) => C.D0(U, out P);
 
-    public static void D1(in Adaptor3d_Curve C, double U, out Point3D P, out Vector3D V) => C.D1(U, out P, out V);
+    public static void D1(in CurveAdaptorBase C, double U, out Point3D P, out Vector3D V) => C.D1(U, out P, out V);
 
-    public static void D2(in Adaptor3d_Curve C, double U, out Point3D P, out Vector3D V1, out Vector3D V2) =>
+    public static void D2(in CurveAdaptorBase C, double U, out Point3D P, out Vector3D V1, out Vector3D V2) =>
         C.D2(U, out P, out V1, out V2);
 
-    public static void D3(in Adaptor3d_Curve C, double U, out Point3D P, out Vector3D V1, out Vector3D V2, out Vector3D V3) =>
+    public static void D3(in CurveAdaptorBase C, double U, out Point3D P, out Vector3D V1, out Vector3D V2, out Vector3D V3) =>
         C.D3(U, out P, out V1, out V2, out V3);
 
-    public static Vector3D DN(in Adaptor3d_Curve C, double U, int N) => C.DN(U, N);
+    public static Vector3D DN(in CurveAdaptorBase C, double U, int N) => C.DN(U, N);
 
     /// <summary>The parametric resolution corresponding to the real space resolution <paramref name="R3d"/>.</summary>
-    public static double Resolution(in Adaptor3d_Curve C, double R3d) => C.Resolution(R3d);
+    public static double Resolution(in CurveAdaptorBase C, double R3d) => C.Resolution(R3d);
 
-    public static CurveKind GetType(in Adaptor3d_Curve C) => C.GetType();
+    public static CurveKind GetType(in CurveAdaptorBase C) => C.GetType();
 
-    public static Line3D Line(in Adaptor3d_Curve C) => C.Line();
+    public static Line3D Line(in CurveAdaptorBase C) => C.Line();
 
-    public static Circle3D Circle(in Adaptor3d_Curve C) => C.Circle();
+    public static Circle3D Circle(in CurveAdaptorBase C) => C.Circle();
 
-    public static Ellipse3D Ellipse(in Adaptor3d_Curve C) => C.Ellipse();
+    public static Ellipse3D Ellipse(in CurveAdaptorBase C) => C.Ellipse();
 
-    public static Hyperbola3D Hyperbola(in Adaptor3d_Curve C) => C.Hyperbola();
+    public static Hyperbola3D Hyperbola(in CurveAdaptorBase C) => C.Hyperbola();
 
-    public static Parabola3D Parabola(in Adaptor3d_Curve C) => C.Parabola();
+    public static Parabola3D Parabola(in CurveAdaptorBase C) => C.Parabola();
 
-    public static Geom_BezierCurve Bezier(in Adaptor3d_Curve C) => C.Bezier();
+    public static BezierCurve3D Bezier(in CurveAdaptorBase C) => C.Bezier();
 
-    public static Geom_BSplineCurve BSpline(in Adaptor3d_Curve C) => C.BSpline();
+    public static BSplineCurve3D BSpline(in CurveAdaptorBase C) => C.BSpline();
 
     /// <summary>The number of samples of the polygon of the curve between <paramref name="U0"/> and <paramref name="U1"/>.</summary>
-    public static int NbSamples(in Adaptor3d_Curve C, double U0, double U1)
+    public static int NbSamples(in CurveAdaptorBase C, double U0, double U1)
     {
         CurveKind typC = C.GetType();
         const double nbsOther = 10.0;
@@ -89,11 +91,11 @@ public readonly struct IntCurveSurface_TheHCurveTool : IIntCurveSurface_CurveToo
         }
         else if (typC == BezierCurve)
         {
-            nbs = 3 + C.NbPoles();
+            nbs = 3 + C.PoleCount;
         }
         else if (typC == BSplineCurve)
         {
-            nbs = C.NbKnots();
+            nbs = C.KnotCount;
             nbs *= C.Degree();
             nbs *= C.LastParameter() - C.FirstParameter();
             double aRange = U1 - U0;
@@ -118,7 +120,7 @@ public readonly struct IntCurveSurface_TheHCurveTool : IIntCurveSurface_CurveToo
     /// curves other than B-splines; for B-splines, the knots subdivided by the degree, then thinned to the points
     /// where the polygon deviates from the curve by more than <paramref name="Defl"/>.
     /// </summary>
-    public static NCollection_HArray1<double> SamplePars(in Adaptor3d_Curve C, double U0, double U1, double Defl,
+    public static NCollection_HArray1<double> SamplePars(in CurveAdaptorBase C, double U0, double U1, double Defl,
                                                          int NbMin)
     {
         NCollection_HArray1<double> Pars;
@@ -132,7 +134,7 @@ public readonly struct IntCurveSurface_TheHCurveTool : IIntCurveSurface_CurveToo
         }
         else if (typC == BezierCurve)
         {
-            nbs = 3 + C.NbPoles();
+            nbs = 3 + C.PoleCount;
         }
 
         if (typC != BSplineCurve)
@@ -157,7 +159,7 @@ public readonly struct IntCurveSurface_TheHCurveTool : IIntCurveSurface_CurveToo
             return Pars;
         }
 
-        Geom_BSplineCurve aBC = C.BSpline();
+        BSplineCurve3D aBC = C.BSpline();
 
         int j, k, nbi;
         double t1, t2, dt;
@@ -271,7 +273,7 @@ public readonly struct IntCurveSurface_TheHCurveTool : IIntCurveSurface_CurveToo
                     continue;
                 }
 
-                gce_MakeLin MkLin = new(p1, p2);
+                MakeLin MkLin = new(p1, p2);
                 Line3D lin = MkLin.Value();
                 bool ok = true;
                 for (l = j + 1; l < k; ++l)

@@ -5,6 +5,8 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -49,7 +51,7 @@ public sealed class Geom2dGcc_Lin2dTanOblIter
             throw new GccEnt_BadQualifier();
         }
         Paral2                  = false;
-        Geom2dAdaptor_Curve Cu1 = Qualified1.Qualified();
+        CurveAdaptor2D Cu1 = Qualified1.Qualified();
         double              U1  = Geom2dGcc_CurveTool.FirstParameter(Cu1);
         double              U2  = Geom2dGcc_CurveTool.LastParameter(Cu1);
         Direction2D            Dir = TheLin.Direction();
@@ -106,10 +108,10 @@ public sealed class Geom2dGcc_Lin2dTanOblIter
                 par1sol    = 0.0;
                 if (!Paral2)
                 {
-                    IntAna2d_AnaIntersection Intp = new(linsol, TheLin);
-                    if (Intp.IsDone() && !Intp.IsEmpty())
+                    AnalyticIntersection Intp = new(linsol, TheLin);
+                    if (Intp.IsDone && !Intp.IsEmpty)
                     {
-                        if (Intp.NbPoints() == 1)
+                        if (Intp.PointCount == 1)
                         {
                             pntint2sol = Intp.Point(1).Value();
                             par2sol    = new Vector2D(linsol.Direction()).Dot(new Vector2D(linsol.Location(), pntint2sol));

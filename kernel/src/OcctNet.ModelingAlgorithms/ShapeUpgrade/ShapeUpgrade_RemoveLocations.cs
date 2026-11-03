@@ -5,10 +5,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -25,50 +27,50 @@ namespace Occt;
 /// </remarks>
 public sealed class ShapeUpgrade_RemoveLocations : Transient
 {
-    private TopAbs_ShapeEnum myLevelRemoving;
-    private TopoDS_Shape myShape = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myMapNewShapes = new(TopTools_ShapeMapHasher.Instance);
+    private ShapeType myLevelRemoving;
+    private Shape myShape = new();
+    private readonly NCollection_DataMap<Shape, Shape> myMapNewShapes = new(ShapeHasher.Instance);
 
     /// <summary>Empty constructor; the level is TopAbs_SHAPE.</summary>
     public ShapeUpgrade_RemoveLocations()
     {
-        myLevelRemoving = TopAbs_SHAPE;
+        myLevelRemoving = ShapeType.Shape;
     }
 
     /// <summary>Removes all locations correspondingly to <see cref="RemoveLevel"/>; true if something changed.</summary>
-    public bool Remove(in TopoDS_Shape theShape)
+    public bool Remove(in Shape theShape)
     {
-        TopoDS_Shape aShape = theShape;
+        Shape aShape = theShape;
         myShape = aShape;
-        TopAbs_ShapeEnum shtype = theShape.ShapeType();
-        bool isRemoveLoc = ((shtype != TopAbs_COMPOUND && myLevelRemoving == TopAbs_SHAPE)
+        ShapeType shtype = theShape.ShapeType();
+        bool isRemoveLoc = ((shtype != ShapeType.Compound && myLevelRemoving == ShapeType.Shape)
                             || ((int)myLevelRemoving <= ((int)shtype)));
-        TopoDS_Shape S = new();
+        Shape S = new();
         bool isDone = MakeNewShape(theShape, S, ref myShape, isRemoveLoc);
 
         return isDone;
     }
 
     /// <summary>The shape with its locations removed, frozen.</summary>
-    public TopoDS_Shape GetResult()
+    public Shape GetResult()
     {
         myShape.TShape()?.FreezeGraph();
         return myShape;
     }
 
     /// <summary><see cref="GetResult"/> without freezing it, for ported callers that build on it.</summary>
-    internal TopoDS_Shape InternalGetResult() => myShape;
+    internal Shape InternalGetResult() => myShape;
 
     /// <summary>
     /// Sets the level from which locations are removed (TopAbs_SHAPE by default: the locations are kept for the given
     /// shape, and for the sub-shapes of the first level of a compound). Levels below TopAbs_FACE are TopAbs_FACE.
     /// </summary>
-    public void SetRemoveLevel(TopAbs_ShapeEnum theLevel)
+    public void SetRemoveLevel(ShapeType theLevel)
     {
 
-        if ((int)theLevel > (int)TopAbs_FACE)
+        if ((int)theLevel > (int)ShapeType.Face)
         {
-            myLevelRemoving = TopAbs_FACE;
+            myLevelRemoving = ShapeType.Face;
         }
         else
         {
@@ -77,20 +79,20 @@ public sealed class ShapeUpgrade_RemoveLocations : Transient
     }
 
     /// <summary>The level from which locations are removed.</summary>
-    public TopAbs_ShapeEnum RemoveLevel() => myLevelRemoving;
+    public ShapeType RemoveLevel() => myLevelRemoving;
 
     /// <summary>The shape made from <paramref name="theInitShape"/> (itself if unchanged), frozen.</summary>
-    public TopoDS_Shape ModifiedShape(in TopoDS_Shape theInitShape)
+    public Shape ModifiedShape(in Shape theInitShape)
     {
-        TopoDS_Shape aShape = InternalModifiedShape(theInitShape);
+        Shape aShape = InternalModifiedShape(theInitShape);
         aShape.TShape()?.FreezeGraph();
         return aShape;
     }
 
     /// <summary><see cref="ModifiedShape"/> without freezing it, for ported callers.</summary>
-    internal TopoDS_Shape InternalModifiedShape(in TopoDS_Shape theInitShape)
+    internal Shape InternalModifiedShape(in Shape theInitShape)
     {
-        TopoDS_Shape aShape = theInitShape;
+        Shape aShape = theInitShape;
         if (myMapNewShapes.IsBound(theInitShape))
         {
             aShape = myMapNewShapes.Find(theInitShape);
@@ -102,10 +104,10 @@ public sealed class ShapeUpgrade_RemoveLocations : Transient
     /// The map from the initial shapes to the shapes made from them: a new map of frozen shapes (OCCT returns its own
     /// map; ported code reads it through <see cref="InternalModifiedShapesMap"/>).
     /// </summary>
-    public NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> GetModifiedShapesMap()
+    public NCollection_DataMap<Shape, Shape> GetModifiedShapesMap()
     {
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aMap = new(TopTools_ShapeMapHasher.Instance);
-        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> anItem in myMapNewShapes)
+        NCollection_DataMap<Shape, Shape> aMap = new(ShapeHasher.Instance);
+        foreach (KeyValuePair<Shape, Shape> anItem in myMapNewShapes)
         {
             anItem.Key.TShape()?.FreezeGraph();
             anItem.Value.TShape()?.FreezeGraph();
@@ -115,19 +117,19 @@ public sealed class ShapeUpgrade_RemoveLocations : Transient
     }
 
     /// <summary>The algorithm's own map of modified shapes, not frozen, for ported callers.</summary>
-    internal NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> InternalModifiedShapesMap() => myMapNewShapes;
+    internal NCollection_DataMap<Shape, Shape> InternalModifiedShapesMap() => myMapNewShapes;
 
     //=================================================================================================
 
-    private static bool RebuildShape(in TopoDS_Face theFace, ref TopoDS_Face theNewFace)
+    private static bool RebuildShape(in Face theFace, ref Face theNewFace)
     {
-        BRep_Builder aB = new();
-        Geom_Surface aSurf = BRep_Tool.Surface(theFace, out Placement aLoc)!;
+        BrepBuilder aB = new();
+        Surface aSurf = Tool.Surface(theFace, out Placement aLoc)!;
         bool isRebuild = false;
         if (!aLoc.IsIdentity)
         {
-            Geom_Surface anewSurf = (Geom_Surface)aSurf.Transformed(aLoc.Transformation());
-            aB.MakeFace(ref theNewFace, anewSurf, BRep_Tool.Tolerance(theFace));
+            Surface anewSurf = (Surface)aSurf.Transformed(aLoc.Transformation());
+            aB.MakeFace(ref theNewFace, anewSurf, Tool.Tolerance(theFace));
             isRebuild = true;
         }
         return isRebuild;
@@ -135,60 +137,60 @@ public sealed class ShapeUpgrade_RemoveLocations : Transient
 
     //=================================================================================================
 
-    private static bool RebuildShape(in TopoDS_Edge theEdge,
-                                     ref TopoDS_Edge theNewEdge,
-                                     in TopoDS_Face theFace,
-                                     in TopoDS_Face theNewFace,
+    private static bool RebuildShape(in Edge theEdge,
+                                     ref Edge theNewEdge,
+                                     in Face theFace,
+                                     in Face theNewFace,
                                      bool isBound)
     {
         bool isRebuild = false;
-        BRep_Builder aB = new();
+        BrepBuilder aB = new();
         if (!isBound)
         {
-            Geom_Curve? C3d;
-            C3d = BRep_Tool.Curve(theEdge, out Placement aLoc, out double First3d, out double Last3d);
+            Curve3D? C3d;
+            C3d = Tool.Curve(theEdge, out Placement aLoc, out double First3d, out double Last3d);
             aB.MakeEdge(ref theNewEdge);
             if (C3d is not null)
             {
                 if (!aLoc.IsIdentity)
                 {
-                    Geom_Curve anewC3d = (Geom_Curve)C3d.Transformed(aLoc.Transformation());
+                    Curve3D anewC3d = (Curve3D)C3d.Transformed(aLoc.Transformation());
                     C3d = anewC3d;
                 }
 
-                aB.UpdateEdge(theNewEdge, C3d, BRep_Tool.Tolerance(theEdge));
+                aB.UpdateEdge(theNewEdge, C3d, Tool.Tolerance(theEdge));
                 aB.Range(theNewEdge, First3d, Last3d);
             }
             theNewEdge.Orientation(theEdge.Orientation());
-            if (BRep_Tool.Degenerated(theEdge))
+            if (Tool.Degenerated(theEdge))
             {
                 aB.Degenerated(theNewEdge, true);
             }
             isRebuild = true;
         }
-        if (!theFace.IsNull())
+        if (!theFace.IsNull)
         {
-            Geom_Surface aSurf = BRep_Tool.Surface(theFace)!;
-            if (!(aSurf is Geom_Plane))
+            Surface aSurf = Tool.Surface(theFace)!;
+            if (!(aSurf is PlaneSurface))
             {
-                Geom2d_Curve? c2d, c2d1 = null;
+                Curve2D? c2d, c2d1 = null;
                 double First2d, Last2d;
 
-                c2d = BRep_Tool.CurveOnSurface(theEdge, theFace, out First2d, out Last2d);
-                if (BRep_Tool.IsClosed(theEdge, theFace))
+                c2d = Tool.CurveOnSurface(theEdge, theFace, out First2d, out Last2d);
+                if (Tool.IsClosed(theEdge, theFace))
                 {
-                    if (!BRep_Tool.IsClosed(theNewEdge, theNewFace))
+                    if (!Tool.IsClosed(theNewEdge, theNewFace))
                     {
-                        TopoDS_Edge tmpE = TopoDS.Edge(theEdge.Reversed());
-                        c2d1 = BRep_Tool.CurveOnSurface(tmpE, theFace, out First2d, out Last2d);
-                        TopAbs_Orientation OrEdge = theNewEdge.Orientation();
+                        Edge tmpE = ShapeCasts.Edge(theEdge.Reversed());
+                        c2d1 = Tool.CurveOnSurface(tmpE, theFace, out First2d, out Last2d);
+                        Orientation OrEdge = theNewEdge.Orientation();
 
-                        if (theFace.Orientation() == TopAbs_REVERSED)
+                        if (theFace.Orientation() == Reversed)
                         {
-                            OrEdge = (OrEdge == TopAbs_FORWARD ? TopAbs_REVERSED : TopAbs_FORWARD);
+                            OrEdge = (OrEdge == Forward ? Reversed : Forward);
                         }
 
-                        if (OrEdge == TopAbs_FORWARD)
+                        if (OrEdge == Forward)
                         {
                             aB.UpdateEdge(theNewEdge, c2d, c2d1, theNewFace, 0);
                         }
@@ -214,28 +216,28 @@ public sealed class ShapeUpgrade_RemoveLocations : Transient
 
     //=================================================================================================
 
-    private static bool RebuildShape(in TopoDS_Vertex theVertex, ref TopoDS_Vertex theNewVertex)
+    private static bool RebuildShape(in Vertex theVertex, ref Vertex theNewVertex)
     {
-        BRep_Builder aB = new();
+        BrepBuilder aB = new();
         aB.MakeVertex(ref theNewVertex);
         theNewVertex.Orientation(theVertex.Orientation());
-        Point3D p1 = BRep_Tool.Pnt(theVertex);
-        aB.UpdateVertex(theNewVertex, p1, BRep_Tool.Tolerance(theVertex));
+        Point3D p1 = Tool.Pnt(theVertex);
+        aB.UpdateVertex(theNewVertex, p1, Tool.Tolerance(theVertex));
         return true;
     }
 
     //=================================================================================================
 
-    private bool MakeNewShape(in TopoDS_Shape theShape,
-                              in TopoDS_Shape theAncShape,
-                              ref TopoDS_Shape theNewShape,
+    private bool MakeNewShape(in Shape theShape,
+                              in Shape theAncShape,
+                              ref Shape theNewShape,
                               bool theRemoveLoc)
     {
         bool isDone = false;
-        TopoDS_Shape aNewShape = new();
-        TopAbs_ShapeEnum shtype = theShape.ShapeType();
-        BRep_Builder aB = new();
-        TopoDS_Shape aShape = theShape;
+        Shape aNewShape = new();
+        ShapeType shtype = theShape.ShapeType();
+        BrepBuilder aB = new();
+        Shape aShape = theShape;
         if (!theRemoveLoc && !theShape.Location().IsIdentity)
         {
             Placement nulLoc = new();
@@ -251,7 +253,7 @@ public sealed class ShapeUpgrade_RemoveLocations : Transient
                 Placement aL = theShape.Location();
                 aNewShape.Location(aL);
             }
-            if (shtype != TopAbs_EDGE)
+            if (shtype != ShapeType.Edge)
             {
                 theNewShape = aNewShape;
                 return true;
@@ -261,25 +263,25 @@ public sealed class ShapeUpgrade_RemoveLocations : Transient
         bool isRemoveLoc = theRemoveLoc;
         if (!theRemoveLoc)
         {
-            isRemoveLoc = ((shtype != TopAbs_COMPOUND && myLevelRemoving == TopAbs_SHAPE)
+            isRemoveLoc = ((shtype != ShapeType.Compound && myLevelRemoving == ShapeType.Shape)
                            || ((int)myLevelRemoving <= ((int)shtype)));
         }
 
         bool aRebuild = false;
-        TopoDS_Shape anAncShape = theAncShape;
-        if (shtype == TopAbs_FACE)
+        Shape anAncShape = theAncShape;
+        if (shtype == ShapeType.Face)
         {
             anAncShape = aShape;
         }
         if (isRemoveLoc
-            && (!aShape.Location().IsIdentity || shtype == TopAbs_EDGE || shtype == TopAbs_FACE))
+            && (!aShape.Location().IsIdentity || shtype == ShapeType.Edge || shtype == ShapeType.Face))
         {
 
             // Rebuild geometry for shape with location.
-            if (shtype == TopAbs_FACE)
+            if (shtype == ShapeType.Face)
             {
-                TopoDS_Face anewFace = new();
-                TopoDS_Face oldFace = TopoDS.Face(aShape);
+                Face anewFace = new();
+                Face oldFace = ShapeCasts.Face(aShape);
                 aRebuild = RebuildShape(oldFace, ref anewFace);
                 if (aRebuild)
                 {
@@ -287,32 +289,32 @@ public sealed class ShapeUpgrade_RemoveLocations : Transient
                     myMapNewShapes.Bind(oldFace, aNewShape);
                 }
             }
-            else if (shtype == TopAbs_EDGE)
+            else if (shtype == ShapeType.Edge)
             {
-                TopoDS_Edge oldEdge = TopoDS.Edge(aShape);
-                TopoDS_Edge anewEdge = new();
-                TopoDS_Face F = new(), newFace = new();
+                Edge oldEdge = ShapeCasts.Edge(aShape);
+                Edge anewEdge = new();
+                Face F = new(), newFace = new();
 
-                if (!anAncShape.IsNull())
+                if (!anAncShape.IsNull)
                 {
-                    F = TopoDS.Face(anAncShape);
+                    F = ShapeCasts.Face(anAncShape);
                     newFace = F;
                     if (myMapNewShapes.IsBound(F))
                     {
-                        newFace = TopoDS.Face(myMapNewShapes.Find(F));
+                        newFace = ShapeCasts.Face(myMapNewShapes.Find(F));
                     }
                 }
                 if (isBound)
                 {
-                    anewEdge = TopoDS.Edge(aNewShape);
+                    anewEdge = ShapeCasts.Edge(aNewShape);
                 }
                 aRebuild = RebuildShape(oldEdge, ref anewEdge, F, newFace, isBound);
                 aNewShape = anewEdge;
             }
-            else if (shtype == TopAbs_VERTEX)
+            else if (shtype == ShapeType.Vertex)
             {
-                TopoDS_Vertex aVnew = new();
-                TopoDS_Vertex aV = TopoDS.Vertex(aShape);
+                Vertex aVnew = new();
+                Vertex aV = ShapeCasts.Vertex(aShape);
                 aRebuild = RebuildShape(aV, ref aVnew);
                 if (aRebuild)
                 {
@@ -338,13 +340,13 @@ public sealed class ShapeUpgrade_RemoveLocations : Transient
             {
                 aNewShape.Location(nullloc);
             }
-            TopAbs_Orientation orient = theShape.Orientation();
-            aNewShape.Orientation(TopAbs_FORWARD);
-            TopoDS_Iterator aIt = new(aShape, false, isRemoveLoc);
+            Orientation orient = theShape.Orientation();
+            aNewShape.Orientation(Forward);
+            Iterator aIt = new(aShape, false, isRemoveLoc);
             for (; aIt.More(); aIt.Next())
             {
-                TopoDS_Shape subshape = aIt.Value();
-                TopoDS_Shape anewsubshape = new();
+                Shape subshape = aIt.Value();
+                Shape anewsubshape = new();
                 bool isDoneSubShape = MakeNewShape(subshape, anAncShape, ref anewsubshape, isRemoveLoc);
                 isDone = (isDone || isDoneSubShape);
                 aB.Add(aNewShape, anewsubshape);

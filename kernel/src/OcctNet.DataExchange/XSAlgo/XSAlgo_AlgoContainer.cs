@@ -7,8 +7,9 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Foundation.Resources;
+using Kerf.Engine.Topology;
 using Kerf.Topology;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -36,12 +37,12 @@ public class XSAlgo_AlgoContainer : Transient
     /// with non-manifold topology; <paramref name="theDetailingLevel"/>: the lowest shape type to be processed, lower
     /// shapes are ignored. Returns the processed shape.
     /// </summary>
-    public virtual TopoDS_Shape ProcessShape(in TopoDS_Shape theShape, double thePrec, double theMaxTol, string thePrscfile,
+    public virtual Shape ProcessShape(in Shape theShape, double thePrec, double theMaxTol, string thePrscfile,
                                              string thePseq, ref Transient? theInfo, Interface_StaticSet theStatics,
                                              ProgressRange theProgress = default, bool theNonManifold = false,
-                                             TopAbs_ShapeEnum theDetailingLevel = TopAbs_VERTEX)
+                                             ShapeType theDetailingLevel = ShapeType.Vertex)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return theShape;
         }
@@ -85,8 +86,8 @@ public class XSAlgo_AlgoContainer : Transient
                     aSfs.FixSolidTool().CreateOpenSolidMode() = false;
                     aSfs.Perform(theProgress);
 
-                    TopoDS_Shape aShape = aSfs.Shape();
-                    if (!aShape.IsNull() && aShape != theShape)
+                    Shape aShape = aSfs.Shape();
+                    if (!aShape.IsNull && aShape != theShape)
                     {
                         aContext.RecordModification(aSfs.Context(), aMsg);
                         aContext.SetResult(aShape);
@@ -118,7 +119,7 @@ public class XSAlgo_AlgoContainer : Transient
     }
 
     /// <summary>Checks quality of pcurve of the edge on the given face, and corrects it if necessary.</summary>
-    public virtual bool CheckPCurve(in TopoDS_Edge theEdge, in TopoDS_Face theFace, double thePrecision, bool theIsSeam,
+    public virtual bool CheckPCurve(in Edge theEdge, in Face theFace, double thePrecision, bool theIsSeam,
                                     Interface_StaticSet theStatics)
     {
         return XSAlgo_ShapeProcessor.CheckPCurve(theEdge, theFace, thePrecision, theIsSeam, theStatics);
@@ -137,7 +138,7 @@ public class XSAlgo_AlgoContainer : Transient
             return;
         }
 
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> map = context.Map();
+        NCollection_DataMap<Shape, Shape> map = context.Map();
         ShapeExtend_MsgRegistrator? msg = context.Messages();
         if (map.Extent() <= 0 && (msg is null || msg.MapShape().Extent() <= 0))
         {
@@ -149,12 +150,12 @@ public class XSAlgo_AlgoContainer : Transient
         {
             Transfer_Binder? bnd = TP.MapItem(i);
             TransferBRep_ShapeBinder? sb = bnd as TransferBRep_ShapeBinder;
-            if (sb is null || sb.Result().IsNull())
+            if (sb is null || sb.Result().IsNull)
             {
                 continue;
             }
 
-            TopoDS_Shape orig = sb.Result();
+            Shape orig = sb.Result();
             if (map.IsBound(orig))
             {
                 sb.SetResult(map.Find(orig));
@@ -162,7 +163,7 @@ public class XSAlgo_AlgoContainer : Transient
             else if (!orig.Location().IsIdentity)
             {
                 var aNullLoc = new Placement();
-                TopoDS_Shape atmpSh = orig.Located(aNullLoc);
+                Shape atmpSh = orig.Located(aNullLoc);
                 if (map.IsBound(atmpSh))
                 {
                     sb.SetResult(map.Find(atmpSh));
@@ -171,9 +172,9 @@ public class XSAlgo_AlgoContainer : Transient
             else
             {
                 // Some of edges may be modified.
-                var aReShape = new BRepTools_ReShape();
+                var aReShape = new ReShape();
                 bool hasModifiedEdges = false;
-                var anExpSE = new TopExp_Explorer(orig, TopAbs_EDGE);
+                var anExpSE = new Explorer(orig, ShapeType.Edge);
 
                 // Remember modifications.
                 for (; anExpSE.More(); anExpSE.Next())
@@ -181,7 +182,7 @@ public class XSAlgo_AlgoContainer : Transient
                     if (map.IsBound(anExpSE.Current()))
                     {
                         hasModifiedEdges = true;
-                        TopoDS_Shape aModifiedShape = map.Find(anExpSE.Current());
+                        Shape aModifiedShape = map.Find(anExpSE.Current());
                         aReShape.Replace(anExpSE.Current(), aModifiedShape);
                     }
                 }
@@ -189,7 +190,7 @@ public class XSAlgo_AlgoContainer : Transient
                 // Apply modifications and store result in binder.
                 if (hasModifiedEdges)
                 {
-                    TopoDS_Shape aRes = aReShape.Apply(orig);
+                    Shape aRes = aReShape.Apply(orig);
                     sb.SetResult(aRes);
                 }
             }
@@ -197,7 +198,7 @@ public class XSAlgo_AlgoContainer : Transient
             // update messages
             if (msg is not null)
             {
-                NCollection_DataMap<TopoDS_Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
+                NCollection_DataMap<Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
                 if (msgmap.IsBound(orig))
                 {
                     NCollection_List<Msg> msglist = msgmap.Find(orig);
@@ -223,11 +224,11 @@ public class XSAlgo_AlgoContainer : Transient
             return;
         }
 
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> map = context.Map();
+        NCollection_DataMap<Shape, Shape> map = context.Map();
         ShapeExtend_MsgRegistrator? msg = context.Messages();
-        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> ShapeShapeIterator in map)
+        foreach (KeyValuePair<Shape, Shape> ShapeShapeIterator in map)
         {
-            TopoDS_Shape orig = ShapeShapeIterator.Key, res = ShapeShapeIterator.Value;
+            Shape orig = ShapeShapeIterator.Key, res = ShapeShapeIterator.Value;
             TransferBRep_ShapeMapper resMapper = TransferBRep.ShapeMapper(FP, res);
             Transfer_Binder? resBinder = FP.Find(resMapper);
 
@@ -238,9 +239,9 @@ public class XSAlgo_AlgoContainer : Transient
                 //  into Transfer_TransientListBinder.
                 if (orig.ShapeType() > res.ShapeType())
                 {
-                    TopoDS_Shape sub = new TopoDS_Shape();
+                    Shape sub = new Shape();
                     var TransientListBinder = new Transfer_TransientListBinder();
-                    for (var it = new TopoDS_Iterator(res); it.More(); it.Next())
+                    for (var it = new Iterator(res); it.More(); it.Next())
                     {
                         Transfer_Finder? subMapper = TransferBRep.ShapeMapper(FP, it.Value());
                         if (subMapper is null)
@@ -281,7 +282,7 @@ public class XSAlgo_AlgoContainer : Transient
             // update messages
             if (msg is not null)
             {
-                NCollection_DataMap<TopoDS_Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
+                NCollection_DataMap<Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
                 if (msgmap.IsBound(orig))
                 {
                     NCollection_List<Msg> msglist = msgmap.Find(orig);

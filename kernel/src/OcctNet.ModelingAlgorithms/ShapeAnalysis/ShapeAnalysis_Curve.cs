@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
@@ -24,7 +26,7 @@ public sealed class ShapeAnalysis_Curve
     // the closest point on the curve to thePoint and updates the projection distance, point and parameter. It also
     // narrows the start and end parameters to the segment around the closest point, even if no distance below
     // aProjDistance was found.
-    private static void ProjectOnSegments(Adaptor3d_Curve theCurve,
+    private static void ProjectOnSegments(CurveAdaptorBase theCurve,
                                           in Point3D       thePoint,
                                           int             theSegmentCount,
                                           ref double      aStartParam,
@@ -73,7 +75,7 @@ public sealed class ShapeAnalysis_Curve
     /// <paramref name="proj"/> with its parameter in <paramref name="param"/>. If the distance to an end of a bounded
     /// curve is within <paramref name="preci"/> (when <paramref name="AdjustToEnds"/>), that end is taken.
     /// </summary>
-    public double Project(Geom_Curve C3D, in Point3D P3D, double preci, out Point3D proj, out double param,
+    public double Project(Curve3D C3D, in Point3D P3D, double preci, out Point3D proj, out double param,
                           bool AdjustToEnds = true)
     {
         double uMin = C3D.FirstParameter();
@@ -89,15 +91,15 @@ public sealed class ShapeAnalysis_Curve
     }
 
     /// <summary>Projects a point on a curve restricted to [cf, cl] (see the overload without bounds).</summary>
-    public double Project(Geom_Curve C3D, in Point3D P3D, double preci, out Point3D proj, out double param, double cf,
+    public double Project(Curve3D C3D, in Point3D P3D, double preci, out Point3D proj, out double param, double cf,
                           double cl, bool AdjustToEnds = true)
     {
         double distmin;
         double uMin = (cf < cl ? cf : cl);
         double uMax = (cf < cl ? cl : cf);
 
-        var GAC = new GeomAdaptor_Curve(C3D, uMin, uMax);
-        if (C3D is Geom_BoundedCurve)
+        var GAC = new CurveAdaptor(C3D, uMin, uMax);
+        if (C3D is BoundedCurve3D)
         {
             //:j8 abv 10 Dec 98: tr10_r0501_db.stp #9423: protection against densing of points near one end
             double prec     = (AdjustToEnds ? preci : global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -120,7 +122,7 @@ public sealed class ShapeAnalysis_Curve
             }
         }
 
-        if (!C3D.IsClosed())
+        if (!C3D.IsClosed)
         {
             // modified by rln on 16/12/97 after CSR# PRO11641 entity 20767
             // the VIso was not closed (according to C3D->IsClosed()) while it "almost"
@@ -138,7 +140,7 @@ public sealed class ShapeAnalysis_Curve
     }
 
     /// <summary>Projects a point on a curve given by an adaptor (see the Geom_Curve overload).</summary>
-    public double Project(Adaptor3d_Curve C3D, in Point3D P3D, double preci, out Point3D proj, out double param,
+    public double Project(CurveAdaptorBase C3D, in Point3D P3D, double preci, out Point3D proj, out double param,
                           bool AdjustToEnds = true)
     {
         double uMin = C3D.FirstParameter();
@@ -198,7 +200,7 @@ public sealed class ShapeAnalysis_Curve
     /// OCCT reads the caller's <paramref name="theProjPoint"/> before writing it when Extrema finds nothing, but that
     /// value can't reach the result; the port starts it at the origin.
     /// </remarks>
-    public double ProjectAct(Adaptor3d_Curve theCurve, in Point3D thePoint, double theTolerance,
+    public double ProjectAct(CurveAdaptorBase theCurve, in Point3D thePoint, double theTolerance,
                              out Point3D theProjPoint, out double theProjParam)
     {
         theProjPoint = new Point3D();
@@ -206,12 +208,12 @@ public sealed class ShapeAnalysis_Curve
         theProjParam = 0.0;
         try
         {
-            var    aCurveExtrema       = new Extrema_ExtPC(thePoint, theCurve);
+            var    aCurveExtrema       = new CurvePointExtrema(thePoint, theCurve);
             double aMinExtremaDistance = RealLast();
             int    aMinExtremaIndex    = 0;
-            if (aCurveExtrema.IsDone() && (aCurveExtrema.NbExt() > 0))
+            if (aCurveExtrema.IsDone && (aCurveExtrema.ExtCount > 0))
             {
-                for (int i = 1; i <= aCurveExtrema.NbExt(); i++)
+                for (int i = 1; i <= aCurveExtrema.ExtCount; i++)
                 {
                     if (!aCurveExtrema.IsMin(i))
                     {
@@ -269,7 +271,7 @@ public sealed class ShapeAnalysis_Curve
                 OK = false;
             }
 
-            if (theCurve.IsClosed())
+            if (theCurve.IsClosed)
             {
                 anIsClosedCurve = true;
                 aCurvePeriod    = uMax - uMin; // szv#4:S4163:12Mar99 optimized
@@ -350,9 +352,9 @@ public sealed class ShapeAnalysis_Curve
                         return aProjDistance;
                     }
 
-                    var aProjector = new Extrema_LocateExtPC(thePoint, theCurve, theProjParam /*U0*/, uMin, uMax,
+                    var aProjector = new LocateExtPC(thePoint, theCurve, theProjParam /*U0*/, uMin, uMax,
                                                              theTolerance /*TolU*/);
-                    if (aProjector.IsDone())
+                    if (aProjector.IsDone)
                     {
                         theProjParam = aProjector.Point().Parameter();
                         theProjPoint = aProjector.Point().Value();
@@ -422,14 +424,14 @@ public sealed class ShapeAnalysis_Curve
     /// Projects a point on a curve restricted to [cf, cl] by a Newton search from the previous parameter
     /// <paramref name="paramPrev"/>; where it fails, as <c>Project</c> on the adaptor with AdjustToEnds false.
     /// </summary>
-    public double NextProject(double paramPrev, Geom_Curve C3D, in Point3D P3D, double preci, out Point3D proj,
+    public double NextProject(double paramPrev, Curve3D C3D, in Point3D P3D, double preci, out Point3D proj,
                               out double param, double cf, double cl, bool AdjustToEnds = true)
     {
         double uMin    = (cf < cl ? cf : cl);
         double uMax    = (cf < cl ? cl : cf);
         double distmin = global::Kerf.Engine.Foundation.Precision.Infinite();
-        var    GAC     = new GeomAdaptor_Curve(C3D, uMin, uMax);
-        if (C3D is Geom_BoundedCurve)
+        var    GAC     = new CurveAdaptor(C3D, uMin, uMax);
+        if (C3D is BoundedCurve3D)
         {
             //:j8 abv 10 Dec 98: tr10_r0501_db.stp #9423: protection against densing of points near one end
             double prec     = (AdjustToEnds ? preci : global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -452,7 +454,7 @@ public sealed class ShapeAnalysis_Curve
             }
         }
 
-        if (!C3D.IsClosed())
+        if (!C3D.IsClosed)
         {
             //  modified by pdn on 01.07.98 after BUC60195 entity 1952 (std::min() added)
             double delta = Min(GAC.Resolution(preci), (uMax - uMin) * 0.1);
@@ -465,14 +467,14 @@ public sealed class ShapeAnalysis_Curve
     }
 
     /// <summary>Projects a point on a curve given by an adaptor, by Newton from <paramref name="paramPrev"/>.</summary>
-    public double NextProject(double paramPrev, Adaptor3d_Curve C3D, in Point3D P3D, double preci, out Point3D proj,
+    public double NextProject(double paramPrev, CurveAdaptorBase C3D, in Point3D P3D, double preci, out Point3D proj,
                               out double param)
     {
         double uMin = C3D.FirstParameter();
         double uMax = C3D.LastParameter();
 
-        var aProjector = new Extrema_LocateExtPC(P3D, C3D, paramPrev /*U0*/, uMin, uMax, preci /*TolU*/);
-        if (aProjector.IsDone())
+        var aProjector = new LocateExtPC(P3D, C3D, paramPrev /*U0*/, uMin, uMax, preci /*TolU*/);
+        if (aProjector.IsDone)
         {
             param = aProjector.Point().Parameter();
             proj  = aProjector.Point().Value();
@@ -491,7 +493,7 @@ public sealed class ShapeAnalysis_Curve
     /// (<c>Geom_Curve::Reverse</c>). The port does too, so on a frozen curve that case throws
     /// <see cref="ImmutableObjectException"/>: pass a copy.
     /// </remarks>
-    public bool ValidateRange(Geom_Curve theCurve, ref double First, ref double Last, double preci)
+    public bool ValidateRange(Curve3D theCurve, ref double First, ref double Last, double preci)
     {
         // First and/or Last may be outside the natural bounds of the curve.
         // They are then given the end values.
@@ -499,7 +501,7 @@ public sealed class ShapeAnalysis_Curve
         double cf = theCurve.FirstParameter();
         double cl = theCurve.LastParameter();
 
-        if (theCurve is Geom_BoundedCurve && !theCurve.IsClosed())
+        if (theCurve is BoundedCurve3D && !theCurve.IsClosed)
         {
             if (First < cf)
             {
@@ -530,7 +532,7 @@ public sealed class ShapeAnalysis_Curve
         {
             // nothing to fix
         }
-        else if (theCurve.IsClosed())
+        else if (theCurve.IsClosed)
         {
             // one of the projected points is at the origin of the 3D curve's parametrisation:
             // the algorithm gave cl +- preci instead of cf or vice versa
@@ -571,7 +573,7 @@ public sealed class ShapeAnalysis_Curve
             }
         }
         // The curve is closed within the 3D tolerance
-        else if (theCurve is Geom_BSplineCurve aBSpline)
+        else if (theCurve is BSplineCurve3D aBSpline)
         {
             if (aBSpline.StartPoint().Distance(aBSpline.EndPoint()) <= preci)
             {
@@ -632,7 +634,7 @@ public sealed class ShapeAnalysis_Curve
     }
 
     // search for extremum using Newton (OCCT returns int, with the values true and false)
-    private static bool SearchForExtremum(Geom2d_Curve C2d, double First, double Last, in Vector2D dir, ref double par,
+    private static bool SearchForExtremum(Curve2D C2d, double First, double Last, in Vector2D dir, ref double par,
                                           ref Point2D res)
     {
         double prevpar;
@@ -683,7 +685,7 @@ public sealed class ShapeAnalysis_Curve
     /// when <paramref name="Exact"/>, the ends of each interval of C2 continuity and the extrema in X and Y found on
     /// it by Newton (a work-around for BndLib's inexact bounds).
     /// </summary>
-    public void FillBndBox(Geom2d_Curve C2d, double First, double Last, int NPoints, bool Exact, ref Box2d Box)
+    public void FillBndBox(Curve2D C2d, double First, double Last, int NPoints, bool Exact, ref Box2d Box)
     {
         if (!Exact)
         {
@@ -700,7 +702,7 @@ public sealed class ShapeAnalysis_Curve
         }
 
         // We should solve the task on intervals of C2 continuity.
-        var anAC  = new Geom2dAdaptor_Curve(C2d, First, Last);
+        var anAC  = new CurveAdaptor2D(C2d, First, Last);
         int nbInt = anAC.NbIntervals(C2);
         // If we have only 1 interval then use input NPoints parameter to get samples.
         int nbSamples = (nbInt < 2 ? NPoints - 1 : nbInt);
@@ -747,15 +749,15 @@ public sealed class ShapeAnalysis_Curve
     /// Of two pcurves of a seam (lines, or bounded curves taken as the lines through their ends), returns the index
     /// (1 or 2) of the forward one, or 0 if it can't be told.
     /// </summary>
-    public int SelectForwardSeam(Geom2d_Curve C1, Geom2d_Curve C2)
+    public int SelectForwardSeam(Curve2D C1, Curve2D C2)
     {
         int theCurveIndice = 0;
 
-        Geom2d_Line? L1 = C1 as Geom2d_Line;
+        LineCurve2D? L1 = C1 as LineCurve2D;
         if (L1 is null)
         {
             // if we have BoundedCurve, create a line from C1
-            if (C1 is not Geom2d_BoundedCurve BC1)
+            if (C1 is not BoundedCurve2D BC1)
             {
                 return theCurveIndice;
             }
@@ -768,14 +770,14 @@ public sealed class ShapeAnalysis_Curve
                 return theCurveIndice;
             }
 
-            L1 = new Geom2d_Line(StartBC1, new Direction2D(VecBC1));
+            L1 = new LineCurve2D(StartBC1, new Direction2D(VecBC1));
         }
 
-        Geom2d_Line? L2 = C2 as Geom2d_Line;
+        LineCurve2D? L2 = C2 as LineCurve2D;
         if (L2 is null)
         {
             // if we have BoundedCurve, creates a line from C2
-            if (C2 is not Geom2d_BoundedCurve BC2)
+            if (C2 is not BoundedCurve2D BC2)
             {
                 return theCurveIndice;
             }
@@ -788,7 +790,7 @@ public sealed class ShapeAnalysis_Curve
                 return theCurveIndice;
             }
 
-            L2 = new Geom2d_Line(StartBC2, new Direction2D(VecBC2));
+            L2 = new LineCurve2D(StartBC2, new Direction2D(VecBC2));
         }
 
         bool UdirPos, UdirNeg, VdirPos, VdirNeg;
@@ -892,28 +894,28 @@ public sealed class ShapeAnalysis_Curve
         return Norm;
     }
 
-    private static void AppendControlPoles(NCollection_Sequence<Point3D> seq, Geom_Curve curve)
+    private static void AppendControlPoles(NCollection_Sequence<Point3D> seq, Curve3D curve)
     {
-        if (curve is Geom_Line)
+        if (curve is LineCurve3D)
         {
             seq.Append(curve.Value(0));
             seq.Append(curve.Value(1));
         }
-        else if (curve is Geom_Conic)
+        else if (curve is ConicCurve3D)
         {
             seq.Append(curve.Value(0));
             seq.Append(curve.Value(M_PI / 2));
             seq.Append(curve.Value(M_PI));
         }
-        else if (curve is Geom_TrimmedCurve Trimmed)
+        else if (curve is TrimmedCurve3D Trimmed)
         {
-            Geom_Curve aBaseCrv = Trimmed.BasisCurve();
+            Curve3D aBaseCrv = Trimmed.BasisCurve();
             bool       done     = false;
-            if (aBaseCrv is Geom_BSplineCurve)
+            if (aBaseCrv is BSplineCurve3D)
             {
                 try
                 {
-                    var bslp = (Geom_BSplineCurve)aBaseCrv.Copy();
+                    var bslp = (BSplineCurve3D)aBaseCrv.Copy();
                     bslp.Segment(curve.FirstParameter(), curve.LastParameter());
                     AppendControlPoles(seq, bslp);
                     done = true;
@@ -922,11 +924,11 @@ public sealed class ShapeAnalysis_Curve
                 {
                 }
             }
-            else if (aBaseCrv is Geom_BezierCurve)
+            else if (aBaseCrv is BezierCurve3D)
             {
                 try
                 {
-                    var bz = (Geom_BezierCurve)aBaseCrv.Copy();
+                    var bz = (BezierCurve3D)aBaseCrv.Copy();
                     bz.Segment(curve.FirstParameter(), curve.LastParameter());
                     AppendControlPoles(seq, bz);
                     done = true;
@@ -943,13 +945,13 @@ public sealed class ShapeAnalysis_Curve
                 seq.Append(curve.Value(curve.LastParameter()));
             }
         }
-        else if (curve is Geom_OffsetCurve)
+        else if (curve is OffsetCurve3D)
         {
             seq.Append(curve.Value(curve.FirstParameter()));
             seq.Append(curve.Value((curve.FirstParameter() + curve.LastParameter()) / 2.0));
             seq.Append(curve.Value(curve.LastParameter()));
         }
-        else if (curve is Geom_BSplineCurve BSpline)
+        else if (curve is BSplineCurve3D BSpline)
         {
             NCollection_Array1<Point3D> Poles = BSpline.InternalPoles();
             for (int i = 1; i <= Poles.Length(); i++)
@@ -957,7 +959,7 @@ public sealed class ShapeAnalysis_Curve
                 seq.Append(Poles[i]);
             }
         }
-        else if (curve is Geom_BezierCurve Bezier)
+        else if (curve is BezierCurve3D Bezier)
         {
             NCollection_Array1<Point3D> Poles = Bezier.InternalPoles();
             for (int i = 1; i <= Poles.Length(); i++)
@@ -1056,12 +1058,12 @@ public sealed class ShapeAnalysis_Curve
     /// B-spline and Bezier curves by their poles, complex curves by their segments' control points; false for any
     /// other curve. See the overload on points for <paramref name="Normal"/>.
     /// </summary>
-    public static bool IsPlanar(Geom_Curve curve, ref Xyz Normal, double preci = 0)
+    public static bool IsPlanar(Curve3D curve, ref Xyz Normal, double preci = 0)
     {
         double precision = (preci > 0.0) ? preci : global::Kerf.Engine.Foundation.Precision.Confusion();
         bool   noNorm    = (Normal.SquareModulus() == 0);
 
-        if (curve is Geom_Line Line)
+        if (curve is LineCurve3D Line)
         {
             Xyz N1 = Line.Position().Direction().XYZ();
             if (noNorm)
@@ -1073,7 +1075,7 @@ public sealed class ShapeAnalysis_Curve
             return Math.Abs(N1 * Normal) < global::Kerf.Engine.Foundation.Precision.Confusion();
         }
 
-        if (curve is Geom_Conic Conic)
+        if (curve is ConicCurve3D Conic)
         {
             Xyz N1 = Conic.Axis().Direction().XYZ();
             if (noNorm)
@@ -1086,22 +1088,22 @@ public sealed class ShapeAnalysis_Curve
             return aVecMul.SquareModulus() < global::Kerf.Engine.Foundation.Precision.SquareConfusion();
         }
 
-        if (curve is Geom_TrimmedCurve Trimmed)
+        if (curve is TrimmedCurve3D Trimmed)
         {
             return IsPlanar(Trimmed.BasisCurve(), ref Normal, precision);
         }
 
-        if (curve is Geom_OffsetCurve OffsetC)
+        if (curve is OffsetCurve3D OffsetC)
         {
             return IsPlanar(OffsetC.BasisCurve(), ref Normal, precision);
         }
 
-        if (curve is Geom_BSplineCurve BSpline)
+        if (curve is BSplineCurve3D BSpline)
         {
             return IsPlanar(BSpline.InternalPoles(), ref Normal, precision);
         }
 
-        if (curve is Geom_BezierCurve Bezier)
+        if (curve is BezierCurve3D Bezier)
         {
             return IsPlanar(Bezier.InternalPoles(), ref Normal, precision);
         }
@@ -1132,7 +1134,7 @@ public sealed class ShapeAnalysis_Curve
     /// circles, knots × degree on B-splines, poles + 3 on Bezier curves, else 100 per parameter range). Returns false
     /// if the curve's parameter range is empty.
     /// </summary>
-    public static bool GetSamplePoints(Geom_Curve curve, double first, double last, NCollection_Sequence<Point3D> seq)
+    public static bool GetSamplePoints(Curve3D curve, double first, double last, NCollection_Sequence<Point3D> seq)
     {
         double adelta = curve.LastParameter() - curve.FirstParameter();
         if (adelta == 0)
@@ -1142,36 +1144,36 @@ public sealed class ShapeAnalysis_Curve
 
         int aK  = (int)Math.Ceiling((last - first) / adelta);
         int nbp = 100 * aK;
-        if (curve is Geom_Line)
+        if (curve is LineCurve3D)
         {
             nbp = 2;
         }
-        else if (curve is Geom_Circle)
+        else if (curve is CircleCurve3D)
         {
             nbp = 360 * aK;
         }
-        else if (curve is Geom_BSplineCurve aBspl)
+        else if (curve is BSplineCurve3D aBspl)
         {
-            nbp = aBspl.NbKnots() * aBspl.Degree() * aK;
+            nbp = aBspl.KnotCount * aBspl.Degree() * aK;
             if (nbp < 2.0)
             {
                 nbp = 2;
             }
         }
-        else if (curve is Geom_BezierCurve aB)
+        else if (curve is BezierCurve3D aB)
         {
-            nbp = 3 + aB.NbPoles();
+            nbp = 3 + aB.PoleCount;
         }
-        else if (curve is Geom_OffsetCurve aOC)
+        else if (curve is OffsetCurve3D aOC)
         {
             return GetSamplePoints(aOC.BasisCurve(), first, last, seq);
         }
-        else if (curve is Geom_TrimmedCurve aTC)
+        else if (curve is TrimmedCurve3D aTC)
         {
             return GetSamplePoints(aTC.BasisCurve(), first, last, seq);
         }
 
-        var    GAC  = new GeomAdaptor_Curve(curve);
+        var    GAC  = new CurveAdaptor(curve);
         double step = (last - first) / (double)(nbp - 1);
         for (int i = 0; i < nbp - 1; ++i)
         {
@@ -1186,11 +1188,11 @@ public sealed class ShapeAnalysis_Curve
     /// Appends to <paramref name="seq"/> sample points of a pcurve on [first, last], distributed as
     /// BRepTopAdaptor_FClass2d does. Returns true.
     /// </summary>
-    public static bool GetSamplePoints(Geom2d_Curve curve, double first, double last, NCollection_Sequence<Point2D> seq)
+    public static bool GetSamplePoints(Curve2D curve, double first, double last, NCollection_Sequence<Point2D> seq)
     {
         //: abv 05.06.02: TUBE.stp
         // Use the same distribution of points as BRepTopAdaptor_FClass2d for consistency
-        var C   = new Geom2dAdaptor_Curve(curve, first, last);
+        var C   = new CurveAdaptor2D(curve, first, last);
         int nbs = Geom2dInt_Geom2dCurveTool.NbSamples(C);
         //-- Beware of rational B-splines of degree 3 (pieces of circles among others)
         if (nbs > 2)
@@ -1212,9 +1214,9 @@ public sealed class ShapeAnalysis_Curve
     /// Tells if a curve is closed: by <c>Geom_Curve::IsClosed</c>, else if its ends are within
     /// <paramref name="preci"/> (at least Precision::Confusion()).
     /// </summary>
-    public static bool IsClosed(Geom_Curve theCurve, double preci = -1)
+    public static bool IsClosed(Curve3D theCurve, double preci = -1)
     {
-        if (theCurve.IsClosed())
+        if (theCurve.IsClosed)
         {
             return true;
         }
@@ -1237,47 +1239,47 @@ public sealed class ShapeAnalysis_Curve
     }
 
     /// <summary>Tells if a curve is periodic, asking the basis curve of offset and trimmed curves.</summary>
-    public static bool IsPeriodic(Geom_Curve theCurve)
+    public static bool IsPeriodic(Curve3D theCurve)
     {
         // 15.11.2002 PTV OCC966
         // remove regressions in DE tests (diva, divb, divc, toe3) in KAS:dev
         // ask IsPeriodic on BasisCurve
-        Geom_Curve aTmpCurve = theCurve;
-        while (aTmpCurve is Geom_OffsetCurve || aTmpCurve is Geom_TrimmedCurve)
+        Curve3D aTmpCurve = theCurve;
+        while (aTmpCurve is OffsetCurve3D || aTmpCurve is TrimmedCurve3D)
         {
-            if (aTmpCurve is Geom_OffsetCurve anOffset)
+            if (aTmpCurve is OffsetCurve3D anOffset)
             {
                 aTmpCurve = anOffset.BasisCurve();
             }
 
-            if (aTmpCurve is Geom_TrimmedCurve aTrimmed)
+            if (aTmpCurve is TrimmedCurve3D aTrimmed)
             {
                 aTmpCurve = aTrimmed.BasisCurve();
             }
         }
 
-        return aTmpCurve.IsPeriodic();
+        return aTmpCurve.IsPeriodic;
     }
 
     /// <summary>Tells if a pcurve is periodic, asking the basis curve of offset and trimmed curves.</summary>
-    public static bool IsPeriodic(Geom2d_Curve theCurve)
+    public static bool IsPeriodic(Curve2D theCurve)
     {
         // 15.11.2002 PTV OCC966
         // ask IsPeriodic on BasisCurve
-        Geom2d_Curve aTmpCurve = theCurve;
-        while (aTmpCurve is Geom2d_OffsetCurve || aTmpCurve is Geom2d_TrimmedCurve)
+        Curve2D aTmpCurve = theCurve;
+        while (aTmpCurve is OffsetCurve2D || aTmpCurve is TrimmedCurve2D)
         {
-            if (aTmpCurve is Geom2d_OffsetCurve anOffset)
+            if (aTmpCurve is OffsetCurve2D anOffset)
             {
                 aTmpCurve = anOffset.BasisCurve();
             }
 
-            if (aTmpCurve is Geom2d_TrimmedCurve aTrimmed)
+            if (aTmpCurve is TrimmedCurve2D aTrimmed)
             {
                 aTmpCurve = aTrimmed.BasisCurve();
             }
         }
 
-        return aTmpCurve.IsPeriodic();
+        return aTmpCurve.IsPeriodic;
     }
 }

@@ -2,13 +2,21 @@
 // results. Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+
+using Kerf.Engine.Topology.Brep;
+
+using Kerf.Engine.Topology.Tools;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 public partial class ShapeFix_Wire
 {
     // The copy of the loaded edges, from the first fix to the public result; null when the loaded edges hold no frozen
     // shape (they are the caller's working shapes, fixed in place as in OCCT).
-    private BRepTools_CopyAtEntry? myEntry;
+    private CopyAtEntry? myEntry;
 
     // True when the loaded edges must be checked (and copied if frozen) before the next fix: after Load, Init and a
     // public result.
@@ -19,7 +27,7 @@ public partial class ShapeFix_Wire
     /// wire was frozen, the edges and vertices the fixes left unchanged are the caller's own, and the context records
     /// the ones they changed in place.
     /// </summary>
-    public TopoDS_Wire Wire()
+    public Wire Wire()
     {
         endWork();
         return myAnalyzer.WireData()!.Wire();
@@ -29,7 +37,7 @@ public partial class ShapeFix_Wire
     /// Returns the resulting wire made with BRepBuilderAPI_MakeWire (which can merge vertices), frozen; see
     /// <see cref="Wire"/>.
     /// </summary>
-    public TopoDS_Wire WireAPIMake()
+    public Wire WireAPIMake()
     {
         endWork();
         return myAnalyzer.WireData()!.WireAPIMake();
@@ -39,10 +47,10 @@ public partial class ShapeFix_Wire
     /// The resulting wire, unfrozen, for ported code fixing a wire it owns (ShapeFix_Face, UnifySameDomain): its edges
     /// are the working ones.
     /// </summary>
-    internal TopoDS_Wire InternalWire() => myAnalyzer.WireData()!.InternalWire();
+    internal Wire InternalWire() => myAnalyzer.WireData()!.InternalWire();
 
     /// <summary>The resulting wire made with BRepBuilderAPI_MakeWire, unfrozen; see <see cref="InternalWire"/>.</summary>
-    internal TopoDS_Wire InternalWireAPIMake() => myAnalyzer.WireData()!.InternalWireAPIMake();
+    internal Wire InternalWireAPIMake() => myAnalyzer.WireData()!.InternalWireAPIMake();
 
     /// <summary>
     /// Called at the start of <see cref="Perform"/> and of every public fix: after a load or a public result, copies
@@ -62,20 +70,20 @@ public partial class ShapeFix_Wire
         {
             return;
         }
-        TopoDS_Compound anEdges = edgesCompound(sbwd);
-        if (!BRepTools.HoldsFrozen(anEdges))
+        Compound anEdges = edgesCompound(sbwd);
+        if (!BrepTools.HoldsFrozen(anEdges))
         {
             return;
         }
 
-        myEntry = new BRepTools_CopyAtEntry(anEdges, Context());
-        TopoDS_Shape aCopy = myEntry.Shape();
+        myEntry = new CopyAtEntry(anEdges, Context());
+        Shape aCopy = myEntry.Shape();
         setEdges(sbwd, aCopy);
 
         // The copy clears the Free flag of the edges it puts in the compound; give each copy its original's (a cache
         // bit, which KeepUnchanged ignores), so the fixes that test E.Free() (FixConnected, ...) take OCCT's branch.
-        var anOriginal = new TopoDS_Iterator(anEdges, false, false);
-        for (var aCopied = new TopoDS_Iterator(aCopy, false, false); aCopied.More(); aCopied.Next(), anOriginal.Next())
+        var anOriginal = new Iterator(anEdges, false, false);
+        for (var aCopied = new Iterator(aCopy, false, false); aCopied.More(); aCopied.Next(), anOriginal.Next())
         {
             aCopied.Value().TShape()!.Free(anOriginal.Value().TShape()!.Free());
         }
@@ -89,7 +97,7 @@ public partial class ShapeFix_Wire
     private void endWork()
     {
         myToEnter = true;
-        BRepTools_CopyAtEntry? anEntry = myEntry;
+        CopyAtEntry? anEntry = myEntry;
         myEntry = null;
         ShapeExtend_WireData? sbwd = myAnalyzer.WireData();
         if (anEntry is null || sbwd is null)
@@ -97,42 +105,42 @@ public partial class ShapeFix_Wire
             return;
         }
 
-        TopoDS_Compound aWorked = edgesCompound(sbwd);
-        TopoDS_Shape aFinal = anEntry.Finish(aWorked);
+        Compound aWorked = edgesCompound(sbwd);
+        Shape aFinal = anEntry.Finish(aWorked);
         setEdges(sbwd, aFinal);
     }
 
     // The edges, then the non-manifold edges, of the wire data, appended to a new compound as they are (no Free flag
     // changed).
-    private static TopoDS_Compound edgesCompound(ShapeExtend_WireData sbwd)
+    private static Compound edgesCompound(ShapeExtend_WireData sbwd)
     {
-        var aCompound = new TopoDS_Compound();
-        new BRep_Builder().MakeCompound(ref aCompound);
-        TopoDS_TShape aTShape = aCompound.TShape()!;
+        var aCompound = new Compound();
+        new BrepBuilder().MakeCompound(ref aCompound);
+        TShape aTShape = aCompound.TShape()!;
         for (int i = 1; i <= sbwd.NbEdges(); i++)
         {
-            aTShape.myShapes.Append(sbwd.Edge(i));
+            aTShape._shapes.Append(sbwd.Edge(i));
         }
-        NCollection_HSequence<TopoDS_Shape> aNM = sbwd.InternalNonmanifoldEdges();
+        NCollection_HSequence<Shape> aNM = sbwd.InternalNonmanifoldEdges();
         for (int i = 1; i <= aNM.Length(); i++)
         {
-            aTShape.myShapes.Append(aNM[i]);
+            aTShape._shapes.Append(aNM[i]);
         }
         return aCompound;
     }
 
     // Puts back into the wire data, in order, the children of a compound made by edgesCompound.
-    private static void setEdges(ShapeExtend_WireData sbwd, in TopoDS_Shape theCompound)
+    private static void setEdges(ShapeExtend_WireData sbwd, in Shape theCompound)
     {
         int aNbEdges = sbwd.NbEdges();
-        NCollection_HSequence<TopoDS_Shape> aNM = sbwd.InternalNonmanifoldEdges();
+        NCollection_HSequence<Shape> aNM = sbwd.InternalNonmanifoldEdges();
         int i = 1;
-        for (var anIt = new TopoDS_Iterator(theCompound, false, false); anIt.More(); anIt.Next(), i++)
+        for (var anIt = new Iterator(theCompound, false, false); anIt.More(); anIt.Next(), i++)
         {
-            TopoDS_Shape anEdge = anIt.Value();
+            Shape anEdge = anIt.Value();
             if (i <= aNbEdges)
             {
-                sbwd.InternalSetEdge(TopoDS.Edge(anEdge), i);
+                sbwd.InternalSetEdge(ShapeCasts.Edge(anEdge), i);
             }
             else
             {

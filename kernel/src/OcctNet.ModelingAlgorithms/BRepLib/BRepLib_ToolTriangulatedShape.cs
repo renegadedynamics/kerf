@@ -9,6 +9,8 @@ using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Meshing;
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 
 using Kerf.Topology;
@@ -17,7 +19,7 @@ namespace Occt;
 
 /// <summary>Computes the nodal normals of a face's triangulation.</summary>
 /// <remarks>
-/// A triangulation attached to a face is frozen (design 4.1): <see cref="ComputeNormals(in TopoDS_Face, Triangulation?)"/>
+/// A triangulation attached to a face is frozen (design 4.1): <see cref="ComputeNormals(in Face, Triangulation?)"/>
 /// writes into the triangulation it is given, as OCCT does, and throws <see cref="ImmutableObjectException"/> on a
 /// frozen one without normals; <see cref="NormalsComputed"/> returns a copy with normals instead.
 /// </remarks>
@@ -27,17 +29,17 @@ public static class BRepLib_ToolTriangulatedShape
     /// Computes the nodal normals of <paramref name="theTris"/> from the face's surface at the UV nodes (or, without
     /// UV nodes or surface, by averaging the triangles' normals). Does nothing if it already has normals.
     /// </summary>
-    public static void ComputeNormals(in TopoDS_Face theFace, Triangulation? theTris)
+    public static void ComputeNormals(in Face theFace, Triangulation? theTris)
     {
         var aPolyConnect = new Connect();
         ComputeNormals(theFace, theTris, aPolyConnect);
     }
 
     /// <summary>
-    /// <see cref="ComputeNormals(in TopoDS_Face, Triangulation?)"/> with a tool for exploring the triangulation
+    /// <see cref="ComputeNormals(in Face, Triangulation?)"/> with a tool for exploring the triangulation
     /// (initialised on it, or loaded with it when needed).
     /// </summary>
-    public static void ComputeNormals(in TopoDS_Face theFace, Triangulation? theTris, Connect thePolyConnect)
+    public static void ComputeNormals(in Face theFace, Triangulation? theTris, Connect thePolyConnect)
     {
         if (theTris is null || theTris.HasNormals)
         {
@@ -45,8 +47,8 @@ public static class BRepLib_ToolTriangulatedShape
         }
 
         // take in face the surface location
-        TopoDS_Face aZeroFace = TopoDS.Face(theFace.Located(new Placement()));
-        Geom_Surface? aSurf = BRep_Tool.Surface(aZeroFace);
+        Face aZeroFace = ShapeCasts.Face(theFace.Located(new Placement()));
+        Surface? aSurf = Tool.Surface(aZeroFace);
         if (!theTris.HasUVNodes || aSurf is null)
         {
             // compute normals by averaging triangulation normals sharing the same vertex
@@ -61,7 +63,7 @@ public static class BRepLib_ToolTriangulatedShape
         for (int aNodeIter = 1; aNodeIter <= theTris.NodeCount; ++aNodeIter)
         {
             // try to retrieve normal from real surface first, when UV coordinates are available
-            if (GeomLib.NormEstim(aSurf, theTris.UVNode(aNodeIter), aTol, ref aNorm) > 1)
+            if (global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(aSurf, theTris.UVNode(aNodeIter), aTol, ref aNorm) > 1)
             {
                 if (!ReferenceEquals(thePolyConnect.Triangulation(), theTris))
                 {
@@ -91,10 +93,10 @@ public static class BRepLib_ToolTriangulatedShape
     }
 
     /// <summary>
-    /// The functional form of <see cref="ComputeNormals(in TopoDS_Face, Triangulation?)"/>: the triangulation itself
+    /// The functional form of <see cref="ComputeNormals(in Face, Triangulation?)"/>: the triangulation itself
     /// if it has normals, otherwise a new (unfrozen) copy of it with the normals computed. Null for null.
     /// </summary>
-    public static Triangulation? NormalsComputed(in TopoDS_Face theFace, Triangulation? theTris)
+    public static Triangulation? NormalsComputed(in Face theFace, Triangulation? theTris)
     {
         if (theTris is null || theTris.HasNormals)
         {

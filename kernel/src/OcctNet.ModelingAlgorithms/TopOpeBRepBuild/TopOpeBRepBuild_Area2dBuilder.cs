@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Containment;
 using static Occt.TopOpeBRepBuild_LoopEnum;
 
 namespace Occt;
@@ -35,7 +36,7 @@ public class TopOpeBRepBuild_Area2dBuilder : TopOpeBRepBuild_AreaBuilder
 
     private void initArea2dBuilder(TopOpeBRepBuild_LoopSet LS, TopOpeBRepBuild_LoopClassifier LC, bool ForceClass)
     {
-        TopAbs_State state;
+        Containment state;
         bool Loopinside;
         bool loopoutside;
 
@@ -72,11 +73,11 @@ public class TopOpeBRepBuild_Area2dBuilder : TopOpeBRepBuild_AreaBuilder
                         continue;
                     }
                     state = CompareLoopWithListOfLoop(LC, L, aArea, TopOpeBRepBuild_BLOCK);
-                    if (state == TopAbs_UNKNOWN)
+                    if (state == Unknown)
                     {
-                        Atomize(ref state, TopAbs_IN);
+                        Atomize(ref state, In);
                     }
-                    Loopinside = state == TopAbs_IN;
+                    Loopinside = state == In;
                     if (Loopinside)
                     {
                         break;
@@ -116,11 +117,11 @@ public class TopOpeBRepBuild_Area2dBuilder : TopOpeBRepBuild_AreaBuilder
                         continue;
                     }
                     state = CompareLoopWithListOfLoop(LC, L, aArea, TopOpeBRepBuild_ANYLOOP);
-                    if (state == TopAbs_UNKNOWN)
+                    if (state == Unknown)
                     {
-                        Atomize(ref state, TopAbs_IN);
+                        Atomize(ref state, In);
                     }
-                    Loopinside = state == TopAbs_IN;
+                    Loopinside = state == In;
                     if (Loopinside)
                     {
                         break;
@@ -136,11 +137,11 @@ public class TopOpeBRepBuild_Area2dBuilder : TopOpeBRepBuild_AreaBuilder
                     while (LoopIter.More())
                     {
                         state = LC.Compare(LoopIter.Value(), L);
-                        if (state == TopAbs_UNKNOWN)
+                        if (state == Unknown)
                         {
-                            Atomize(ref state, TopAbs_IN); // not OUT
+                            Atomize(ref state, In); // not OUT
                         }
-                        loopoutside = state == TopAbs_OUT;
+                        loopoutside = state == Out;
                         if (loopoutside)
                         {
                             TopOpeBRepBuild_Loop curL = LoopIter.Value();
@@ -187,19 +188,19 @@ public class TopOpeBRepBuild_Area2dBuilder : TopOpeBRepBuild_AreaBuilder
                         ashapeinside = ablockinside = false;
                         TopOpeBRepBuild_Loop lb = LoopIter.Value();
                         state = LC.Compare(lb, L);
-                        if (state == TopAbs_UNKNOWN)
+                        if (state == Unknown)
                         {
-                            Atomize(ref state, TopAbs_IN);
+                            Atomize(ref state, In);
                         }
-                        ashapeinside = state == TopAbs_IN;
+                        ashapeinside = state == In;
                         if (ashapeinside)
                         {
                             state = LC.Compare(L, lb);
-                            if (state == TopAbs_UNKNOWN)
+                            if (state == Unknown)
                             {
-                                Atomize(ref state, TopAbs_IN);
+                                Atomize(ref state, In);
                             }
-                            ablockinside = state == TopAbs_IN;
+                            ablockinside = state == In;
                         }
                         if (ashapeinside && ablockinside)
                         {

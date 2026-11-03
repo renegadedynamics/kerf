@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -11,35 +13,35 @@ namespace Occt;
 public static class TransferBRep_ShapeInfo
 {
     /// <summary>Returns the Type attached to an object. Here, TShape (Shape has no Dynamic Type).</summary>
-    public static Type Type(in TopoDS_Shape ent)
+    public static Type Type(in Shape ent)
     {
-        return typeof(TopoDS_TShape);
+        return typeof(TShape);
     }
 
     /// <summary>Returns Type Name (string). Here, the true name of the Type of a Shape.</summary>
-    public static string TypeName(in TopoDS_Shape ent)
+    public static string TypeName(in Shape ent)
     {
-        if (ent.IsNull())
+        if (ent.IsNull)
         {
             return "TopoDS_Shape";
         }
         switch (ent.ShapeType())
         {
-            case TopAbs_VERTEX:
+            case ShapeType.Vertex:
                 return "TopoDS_Vertex";
-            case TopAbs_EDGE:
+            case ShapeType.Edge:
                 return "TopoDS_Edge";
-            case TopAbs_WIRE:
+            case ShapeType.Wire:
                 return "TopoDS_Wire";
-            case TopAbs_FACE:
+            case ShapeType.Face:
                 return "TopoDS_Face";
-            case TopAbs_SHELL:
+            case ShapeType.Shell:
                 return "TopoDS_Shell";
-            case TopAbs_SOLID:
+            case ShapeType.Solid:
                 return "TopoDS_Solid";
-            case TopAbs_COMPSOLID:
+            case ShapeType.CompSolid:
                 return "TopoDS_CompSolid";
-            case TopAbs_COMPOUND:
+            case ShapeType.Compound:
                 return "TopoDS_Compound";
             default:
                 break;

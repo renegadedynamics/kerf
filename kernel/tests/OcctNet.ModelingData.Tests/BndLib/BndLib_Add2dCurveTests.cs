@@ -1,6 +1,7 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/BndLib_Test.cxx (V8_0_1), suite BndLib_Add2dCurveTest.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 
 using Kerf.Geometry;
@@ -13,11 +14,11 @@ public class BndLib_Add2dCurveTest
     public void Circle_Full()
     {
         // Create a 2D circle using Geom2d_Circle
-        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 5.0);
+        CircleCurve2D aCircle = new(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 5.0);
         Box2d aBox = new();
         double aTol = 0.0;
 
-        BndLib_Add2dCurve.Add(aCircle, aTol, ref aBox);
+        Add2dCurve.Add(aCircle, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aXmax, out double aYmax);
 
@@ -31,11 +32,11 @@ public class BndLib_Add2dCurveTest
     public void Circle_Arc()
     {
         // Circle arc from 0 to PI/2
-        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 5.0);
+        CircleCurve2D aCircle = new(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 5.0);
         Box2d aBox = new();
         double aTol = 0.0;
 
-        BndLib_Add2dCurve.Add(aCircle, 0.0, M_PI / 2.0, aTol, ref aBox);
+        Add2dCurve.Add(aCircle, 0.0, M_PI / 2.0, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aXmax, out double aYmax);
 
@@ -49,11 +50,11 @@ public class BndLib_Add2dCurveTest
     public void Ellipse_Full()
     {
         // Ellipse with major radius 8, minor radius 4
-        Geom2d_Ellipse anEllipse = new(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 8.0, 4.0);
+        EllipseCurve2D anEllipse = new(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 8.0, 4.0);
         Box2d aBox = new();
         double aTol = 0.0;
 
-        BndLib_Add2dCurve.Add(anEllipse, aTol, ref aBox);
+        Add2dCurve.Add(anEllipse, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aXmax, out double aYmax);
 
@@ -67,13 +68,13 @@ public class BndLib_Add2dCurveTest
     public void Line_Segment()
     {
         // Line segment from (0,0) to (10,5)
-        Geom2d_Line aLine = new(new Point2D(0.0, 0.0), new Direction2D(2.0, 1.0));
-        Geom2d_TrimmedCurve aTrimmed = new(aLine, 0.0, Math.Sqrt(125.0)); // length = sqrt(100+25)
-        Geom2dAdaptor_Curve aCurve = new(aTrimmed);
+        LineCurve2D aLine = new(new Point2D(0.0, 0.0), new Direction2D(2.0, 1.0));
+        TrimmedCurve2D aTrimmed = new(aLine, 0.0, Math.Sqrt(125.0)); // length = sqrt(100+25)
+        CurveAdaptor2D aCurve = new(aTrimmed);
         Box2d aBox = new();
         double aTol = 0.0;
 
-        BndLib_Add2dCurve.Add(aCurve, aTol, ref aBox);
+        Add2dCurve.Add(aCurve, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aXmax, out double aYmax);
 
@@ -93,12 +94,12 @@ public class BndLib_Add2dCurveTest
         aPoles[3] = new Point2D(3.0, 3.0);
         aPoles[4] = new Point2D(4.0, 0.0);
 
-        Geom2d_BezierCurve aBezier = new(aPoles);
-        Geom2dAdaptor_Curve aCurve = new(aBezier);
+        BezierCurve2D aBezier = new(aPoles);
+        CurveAdaptor2D aCurve = new(aBezier);
         Box2d aBox = new();
         double aTol = 0.0;
 
-        BndLib_Add2dCurve.Add(aCurve, aTol, ref aBox);
+        Add2dCurve.Add(aCurve, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aXmax, out double aYmax);
 
@@ -114,11 +115,11 @@ public class BndLib_Add2dCurveTest
     public void AddOptimal_Ellipse()
     {
         // Test AddOptimal method with an ellipse
-        Geom2d_Ellipse anEllipse = new(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 6.0, 3.0);
+        EllipseCurve2D anEllipse = new(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 6.0, 3.0);
         Box2d aBox = new();
         double aTol = 0.0;
 
-        BndLib_Add2dCurve.AddOptimal(anEllipse, 0.0, 2.0 * M_PI, aTol, ref aBox);
+        Add2dCurve.AddOptimal(anEllipse, 0.0, 2.0 * M_PI, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aXmax, out double aYmax);
 
@@ -132,12 +133,12 @@ public class BndLib_Add2dCurveTest
     public void Adaptor_Circle()
     {
         // Test using Adaptor interface
-        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(5.0, 5.0), new Direction2D(1.0, 0.0)), 3.0);
-        Geom2dAdaptor_Curve aCurve = new(aCircle);
+        CircleCurve2D aCircle = new(new Axis2D(new Point2D(5.0, 5.0), new Direction2D(1.0, 0.0)), 3.0);
+        CurveAdaptor2D aCurve = new(aCircle);
         Box2d aBox = new();
         double aTol = 0.0;
 
-        BndLib_Add2dCurve.Add(aCurve, aTol, ref aBox);
+        Add2dCurve.Add(aCurve, aTol, ref aBox);
 
         aBox.Get(out double aXmin, out double aYmin, out double aXmax, out double aYmax);
 

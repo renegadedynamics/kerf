@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepBuilderAPI_FaceError;
 using static Occt.BRepLib_FaceError;
 
@@ -37,7 +39,7 @@ public class BRepBuilderAPI_MakeFace : BRepBuilderAPI_MakeShape
         myMakeFace = new BRepLib_MakeFace();
     }
 
-    public BRepBuilderAPI_MakeFace(in TopoDS_Face F)
+    public BRepBuilderAPI_MakeFace(in Face F)
     {
         myMakeFace = new BRepLib_MakeFace(F);
         TakeResult();
@@ -73,7 +75,7 @@ public class BRepBuilderAPI_MakeFace : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(Geom_Surface S, double TolDegen)
+    public BRepBuilderAPI_MakeFace(Surface S, double TolDegen)
     {
         myMakeFace = new BRepLib_MakeFace(S, TolDegen);
         TakeResult();
@@ -109,79 +111,79 @@ public class BRepBuilderAPI_MakeFace : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(Geom_Surface S, double UMin, double UMax, double VMin, double VMax, double TolDegen)
+    public BRepBuilderAPI_MakeFace(Surface S, double UMin, double UMax, double VMin, double VMax, double TolDegen)
     {
         myMakeFace = new BRepLib_MakeFace(S, UMin, UMax, VMin, VMax, TolDegen);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in TopoDS_Wire W, bool OnlyPlane = false)
+    public BRepBuilderAPI_MakeFace(in Wire W, bool OnlyPlane = false)
     {
         myMakeFace = new BRepLib_MakeFace(W, OnlyPlane);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in Plane3D P, in TopoDS_Wire W, bool Inside = true)
+    public BRepBuilderAPI_MakeFace(in Plane3D P, in Wire W, bool Inside = true)
     {
         myMakeFace = new BRepLib_MakeFace(P, W, Inside);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in Cylinder C, in TopoDS_Wire W, bool Inside = true)
+    public BRepBuilderAPI_MakeFace(in Cylinder C, in Wire W, bool Inside = true)
     {
         myMakeFace = new BRepLib_MakeFace(C, W, Inside);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in Cone C, in TopoDS_Wire W, bool Inside = true)
+    public BRepBuilderAPI_MakeFace(in Cone C, in Wire W, bool Inside = true)
     {
         myMakeFace = new BRepLib_MakeFace(C, W, Inside);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in Sphere S, in TopoDS_Wire W, bool Inside = true)
+    public BRepBuilderAPI_MakeFace(in Sphere S, in Wire W, bool Inside = true)
     {
         myMakeFace = new BRepLib_MakeFace(S, W, Inside);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in Torus T, in TopoDS_Wire W, bool Inside = true)
+    public BRepBuilderAPI_MakeFace(in Torus T, in Wire W, bool Inside = true)
     {
         myMakeFace = new BRepLib_MakeFace(T, W, Inside);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(Geom_Surface S, in TopoDS_Wire W, bool Inside = true)
+    public BRepBuilderAPI_MakeFace(Surface S, in Wire W, bool Inside = true)
     {
         myMakeFace = new BRepLib_MakeFace(S, W, Inside);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in TopoDS_Face F, in TopoDS_Wire W)
+    public BRepBuilderAPI_MakeFace(in Face F, in Wire W)
     {
         myMakeFace = new BRepLib_MakeFace(F, W);
         TakeResult();
     }
 
-    public void Init(in TopoDS_Face F)
+    public void Init(in Face F)
     {
         myMakeFace.Init(F);
         TakeResult();
     }
 
-    public void Init(Geom_Surface S, bool Bound, double TolDegen)
+    public void Init(Surface S, bool Bound, double TolDegen)
     {
         myMakeFace.Init(S, Bound, TolDegen);
         TakeResult();
     }
 
-    public void Init(Geom_Surface SS, double Um, double UM, double Vm, double VM, double TolDegen)
+    public void Init(Surface SS, double Um, double UM, double Vm, double VM, double TolDegen)
     {
         myMakeFace.Init(SS, Um, UM, Vm, VM, TolDegen);
         TakeResult();
     }
 
-    public void Add(in TopoDS_Wire W)
+    public void Add(in Wire W)
     {
         myMakeFace.Add(W);
         TakeResult();
@@ -189,19 +191,19 @@ public class BRepBuilderAPI_MakeFace : BRepBuilderAPI_MakeShape
 
 
     /// <summary>The face (frozen). As in OCCT, it doesn't check <see cref="IsDone"/>.</summary>
-    public TopoDS_Face Face()
+    public Face Face()
     {
         return myMakeFace.Face();
     }
 
     /// <summary><see cref="Face"/> without freezing, for ported code.</summary>
-    internal TopoDS_Face InternalFace()
+    internal Face InternalFace()
     {
         return myMakeFace.InternalFace();
     }
 
     /// <summary>The face (OCCT's conversion operator; frozen).</summary>
-    public static explicit operator TopoDS_Face(BRepBuilderAPI_MakeFace theMaker) => theMaker.Face();
+    public static explicit operator Face(BRepBuilderAPI_MakeFace theMaker) => theMaker.Face();
 
     public override bool IsDone()
     {
@@ -230,13 +232,13 @@ public class BRepBuilderAPI_MakeFace : BRepBuilderAPI_MakeShape
     }
 
     // OCCT.NET: the replacements of frozen input sub-shapes by the copies the maker updated (decision 417).
-    internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape S)
+    internal override NCollection_List<Shape> InternalModified(in Shape S)
     {
         myGenerated.Clear();
-        BRepTools_History? aHistory = myMakeFace.InternalHistory();
+        History? aHistory = myMakeFace.InternalHistory();
         if (aHistory is not null)
         {
-            foreach (TopoDS_Shape aModified in aHistory.Modified(S))
+            foreach (Shape aModified in aHistory.Modified(S))
             {
                 myGenerated.Append(aModified);
             }

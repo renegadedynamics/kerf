@@ -3,7 +3,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.LProp_CIType;
+using Kerf.Engine.Geometry.Properties;
+using static Kerf.Engine.Geometry.Properties.CIType;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -12,59 +13,59 @@ public class LProp_CurAndInfTest
     [Fact]
     public void DefaultConstructor_IsEmpty()
     {
-        var aResult = new LProp_CurAndInf();
-        Assert.True(aResult.IsEmpty());
-        Assert.Equal(0, aResult.NbPoints());
+        var aResult = new CurAndInf();
+        Assert.True(aResult.IsEmpty);
+        Assert.Equal(0, aResult.PointCount);
     }
 
     [Fact]
     public void AddInflection()
     {
-        var aResult = new LProp_CurAndInf();
+        var aResult = new CurAndInf();
         aResult.AddInflection(1.5);
 
-        Assert.False(aResult.IsEmpty());
-        Assert.Equal(1, aResult.NbPoints());
+        Assert.False(aResult.IsEmpty);
+        Assert.Equal(1, aResult.PointCount);
         Assert.Equal(1.5, aResult.Parameter(1));
-        Assert.Equal(LProp_Inflection, aResult.Type(1));
+        Assert.Equal(Inflection, aResult.Type(1));
     }
 
     [Fact]
     public void AddExtCur_Minimum()
     {
-        var aResult = new LProp_CurAndInf();
+        var aResult = new CurAndInf();
         aResult.AddExtCur(2.0, true);
 
-        Assert.Equal(1, aResult.NbPoints());
+        Assert.Equal(1, aResult.PointCount);
         Assert.Equal(2.0, aResult.Parameter(1));
-        Assert.Equal(LProp_MinCur, aResult.Type(1));
+        Assert.Equal(MinCur, aResult.Type(1));
     }
 
     [Fact]
     public void AddExtCur_Maximum()
     {
-        var aResult = new LProp_CurAndInf();
+        var aResult = new CurAndInf();
         aResult.AddExtCur(3.0, false);
 
-        Assert.Equal(1, aResult.NbPoints());
+        Assert.Equal(1, aResult.PointCount);
         Assert.Equal(3.0, aResult.Parameter(1));
-        Assert.Equal(LProp_MaxCur, aResult.Type(1));
+        Assert.Equal(MaxCur, aResult.Type(1));
     }
 
     [Fact]
     public void MultiplePoints_SortedByParameter()
     {
-        var aResult = new LProp_CurAndInf();
+        var aResult = new CurAndInf();
         // Add in non-sorted order
         aResult.AddInflection(5.0);
         aResult.AddExtCur(1.0, true);
         aResult.AddExtCur(3.0, false);
         aResult.AddInflection(7.0);
 
-        Assert.Equal(4, aResult.NbPoints());
+        Assert.Equal(4, aResult.PointCount);
 
         // Verify sorted order
-        for (int i = 1; i < aResult.NbPoints(); ++i)
+        for (int i = 1; i < aResult.PointCount; ++i)
         {
             Assert.True(aResult.Parameter(i) <= aResult.Parameter(i + 1));
         }
@@ -73,48 +74,48 @@ public class LProp_CurAndInfTest
     [Fact]
     public void MultiplePoints_CorrectTypes()
     {
-        var aResult = new LProp_CurAndInf();
+        var aResult = new CurAndInf();
         aResult.AddExtCur(1.0, true);  // MinCur
         aResult.AddInflection(3.0);    // Inflection
         aResult.AddExtCur(5.0, false); // MaxCur
 
-        Assert.Equal(3, aResult.NbPoints());
-        Assert.Equal(LProp_MinCur, aResult.Type(1));
-        Assert.Equal(LProp_Inflection, aResult.Type(2));
-        Assert.Equal(LProp_MaxCur, aResult.Type(3));
+        Assert.Equal(3, aResult.PointCount);
+        Assert.Equal(MinCur, aResult.Type(1));
+        Assert.Equal(Inflection, aResult.Type(2));
+        Assert.Equal(MaxCur, aResult.Type(3));
     }
 
     [Fact]
     public void Clear()
     {
-        var aResult = new LProp_CurAndInf();
+        var aResult = new CurAndInf();
         aResult.AddInflection(1.0);
         aResult.AddExtCur(2.0, true);
 
-        Assert.Equal(2, aResult.NbPoints());
+        Assert.Equal(2, aResult.PointCount);
 
         aResult.Clear();
-        Assert.True(aResult.IsEmpty());
-        Assert.Equal(0, aResult.NbPoints());
+        Assert.True(aResult.IsEmpty);
+        Assert.Equal(0, aResult.PointCount);
     }
 
     [Fact]
     public void Clear_ThenRefill()
     {
-        var aResult = new LProp_CurAndInf();
+        var aResult = new CurAndInf();
         aResult.AddInflection(1.0);
         aResult.Clear();
 
         aResult.AddExtCur(5.0, false);
-        Assert.Equal(1, aResult.NbPoints());
+        Assert.Equal(1, aResult.PointCount);
         Assert.Equal(5.0, aResult.Parameter(1));
-        Assert.Equal(LProp_MaxCur, aResult.Type(1));
+        Assert.Equal(MaxCur, aResult.Type(1));
     }
 
     [Fact]
     public void Parameter_OutOfRange_Throws()
     {
-        var aResult = new LProp_CurAndInf();
+        var aResult = new CurAndInf();
         aResult.AddInflection(1.0);
 
         Assert.ThrowsAny<OutOfRangeException>(() => aResult.Parameter(0));
@@ -124,7 +125,7 @@ public class LProp_CurAndInfTest
     [Fact]
     public void Type_OutOfRange_Throws()
     {
-        var aResult = new LProp_CurAndInf();
+        var aResult = new CurAndInf();
         aResult.AddInflection(1.0);
 
         Assert.ThrowsAny<OutOfRangeException>(() => aResult.Type(0));

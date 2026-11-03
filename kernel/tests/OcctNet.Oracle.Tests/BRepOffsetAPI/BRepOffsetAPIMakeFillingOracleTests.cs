@@ -1,8 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Reflection;
 using OcctNet.TestHarness;
@@ -58,10 +63,10 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         return aText;
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile, false, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
+        Assert.True(BrepTools.Write(theShape, aFile, false, false, FormatVersion.FormatVersion_VERSION_3));
         string aText = File.ReadAllText(aFile);
         File.Delete(aFile);
         return aText;
@@ -119,10 +124,10 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         }
     }
 
-    private static List<TopoDS_Shape> PortChildren(in TopoDS_Shape theShape)
+    private static List<Shape> PortChildren(in Shape theShape)
     {
-        var aList = new List<TopoDS_Shape>();
-        for (var anIt = new TopoDS_Iterator(theShape); anIt.More(); anIt.Next())
+        var aList = new List<Shape>();
+        for (var anIt = new Iterator(theShape); anIt.More(); anIt.Next())
         {
             aList.Add(anIt.Value());
         }
@@ -140,12 +145,12 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         {
             Assert.True(N.BRepTools.Read(aNShape, aFile, aBuilder));
         }
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile), aFile);
+        Assert.True(BrepTools.Read(out Shape aPShape, aFile), aFile);
         File.Delete(aFile);
         aPShape.TShape()!.FreezeGraph(); // a caller's shapes
         string anInputText = PortText(aPShape);
         List<N.TopoDS_Shape> aNIn = NativeChildren(aNShape).ToList();
-        List<TopoDS_Shape> aPIn = PortChildren(aPShape);
+        List<Shape> aPIn = PortChildren(aPShape);
 
         using var aN = theCase.Build123dParams
             ? new N.BRepOffsetAPI_MakeFilling(3, 15, 2, false, 0.00001, 0.0001, 0.01, 0.1, 8, 9)
@@ -162,28 +167,28 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             {
                 case Op.Edge:
                     Same(w + ": Add index", aN.Add(N.TopoDS.Edge(aNIn[aStep.A]), (N.GeomAbs_Shape)(int)aStep.Order, aStep.Bound),
-                         aP.Add(TopoDS.Edge(aPIn[aStep.A]), aStep.Order, aStep.Bound));
+                         aP.Add(ShapeCasts.Edge(aPIn[aStep.A]), aStep.Order, aStep.Bound));
                     aNbConstraints++;
                     break;
                 case Op.EdgeFace:
                     Same(w + ": Add index", aN.Add(N.TopoDS.Edge(aNIn[aStep.A]), N.TopoDS.Face(aNIn[aStep.B]), (N.GeomAbs_Shape)(int)aStep.Order, aStep.Bound),
-                         aP.Add(TopoDS.Edge(aPIn[aStep.A]), TopoDS.Face(aPIn[aStep.B]), aStep.Order, aStep.Bound));
+                         aP.Add(ShapeCasts.Edge(aPIn[aStep.A]), ShapeCasts.Face(aPIn[aStep.B]), aStep.Order, aStep.Bound));
                     aNbConstraints++;
                     break;
                 case Op.Face:
                     Same(w + ": Add index", aN.Add(N.TopoDS.Face(aNIn[aStep.A]), (N.GeomAbs_Shape)(int)aStep.Order),
-                         aP.Add(TopoDS.Face(aPIn[aStep.A]), aStep.Order));
+                         aP.Add(ShapeCasts.Face(aPIn[aStep.A]), aStep.Order));
                     break;
                 case Op.Point:
                     Same(w + ": Add index", aN.Add(Oracle.ToNative(aStep.Point)), aP.Add(aStep.Point));
                     break;
                 case Op.PointOnFace:
                     Same(w + ": Add index", aN.Add(aStep.U, aStep.V, N.TopoDS.Face(aNIn[aStep.A]), (N.GeomAbs_Shape)(int)aStep.Order),
-                         aP.Add(aStep.U, aStep.V, TopoDS.Face(aPIn[aStep.A]), aStep.Order));
+                         aP.Add(aStep.U, aStep.V, ShapeCasts.Face(aPIn[aStep.A]), aStep.Order));
                     break;
                 case Op.Init:
                     aN.LoadInitSurface(N.TopoDS.Face(aNIn[aStep.A]));
-                    aP.LoadInitSurface(TopoDS.Face(aPIn[aStep.A]));
+                    aP.LoadInitSurface(ShapeCasts.Face(aPIn[aStep.A]));
                     break;
                 case Op.Build:
                     aNbBuild++;
@@ -276,12 +281,12 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
     }
 
     private void CompareBuild(string w, N.BRepOffsetAPI_MakeFilling aN, BRepOffsetAPI_MakeFilling aP, List<N.TopoDS_Shape> aNIn,
-                              List<TopoDS_Shape> aPIn, int theNbConstraints)
+                              List<Shape> aPIn, int theNbConstraints)
     {
         myBuilds++;
         string? aNErr = null, aPErr = null, aNMessage = null;
         N.TopoDS_Shape? aNRes = null;
-        TopoDS_Shape aPRes = new();
+        Shape aPRes = new();
         try
         {
             aN.Build();
@@ -295,7 +300,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         try
         {
             aP.Build();
-            aPRes = aP.IsDone() ? aP.Shape() : new TopoDS_Shape();
+            aPRes = aP.IsDone() ? aP.Shape() : new Shape();
         }
         catch (Exception e)
         {
@@ -315,16 +320,16 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             }
             return;
         }
-        if (aNRes is null || aPRes.IsNull())
+        if (aNRes is null || aPRes.IsNull)
         {
-            if ((aNRes is null) == aPRes.IsNull())
+            if ((aNRes is null) == aPRes.IsNull)
             {
                 myIdentical++;
                 myNotDone++;
             }
             else
             {
-                myDifferences.Add($"{w}: done {aNRes is not null} natively, {!aPRes.IsNull()} in the port");
+                myDifferences.Add($"{w}: done {aNRes is not null} natively, {!aPRes.IsNull} in the port");
             }
             return;
         }
@@ -345,7 +350,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         {
             string aFile = NewFile();
             File.WriteAllText(aFile, aNT);
-            Assert.True(BRepTools.Read(out TopoDS_Shape aNP, aFile));
+            Assert.True(BrepTools.Read(out Shape aNP, aFile));
             File.Delete(aFile);
             CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aNP, aPRes, new CanonicalOptions { CheckValidity = false });
             if (Environment.GetEnvironmentVariable("OCCTNET_FILL_DUMP") is string aDump)
@@ -381,7 +386,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         for (int k = 0; k < aNIn.Count; k++)
         {
             var aNSubs = new List<N.TopoDS_Shape>();
-            var aPSubs = new List<TopoDS_Shape>();
+            var aPSubs = new List<Shape>();
             for (var anExp = new N.TopExp_Explorer(aNIn[k], N.TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
             {
                 aNSubs.Add(anExp.Current());
@@ -390,11 +395,11 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             {
                 aNSubs.Add(anExp.Current());
             }
-            for (var anExp = new TopExp_Explorer(aPIn[k], TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+            for (var anExp = new Explorer(aPIn[k], ShapeType.Edge); anExp.More(); anExp.Next())
             {
                 aPSubs.Add(anExp.Current());
             }
-            for (var anExp = new TopExp_Explorer(aPIn[k], TopAbs_ShapeEnum.TopAbs_VERTEX); anExp.More(); anExp.Next())
+            for (var anExp = new Explorer(aPIn[k], ShapeType.Vertex); anExp.More(); anExp.Next())
             {
                 aPSubs.Add(anExp.Current());
             }
@@ -417,14 +422,14 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
     }
 
     // The largest distance between the two faces' surfaces on a grid of the native face's UV bounds.
-    private static string SurfaceDeviation(in TopoDS_Shape theNative, in TopoDS_Shape thePort)
+    private static string SurfaceDeviation(in Shape theNative, in Shape thePort)
     {
-        if (theNative.ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE || thePort.ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE)
+        if (theNative.ShapeType() != ShapeType.Face || thePort.ShapeType() != ShapeType.Face)
         {
             return "(not faces)";
         }
-        Geom_Surface aNS = BRep_Tool.Surface(TopoDS.Face(theNative))!, aPS = BRep_Tool.Surface(TopoDS.Face(thePort))!;
-        BRepTools.UVBounds(TopoDS.Face(theNative), out double u1, out double u2, out double v1, out double v2);
+        Surface aNS = Tool.Surface(ShapeCasts.Face(theNative))!, aPS = Tool.Surface(ShapeCasts.Face(thePort))!;
+        BrepTools.UVBounds(ShapeCasts.Face(theNative), out double u1, out double u2, out double v1, out double v2);
         double aMax = 0.0;
         for (int i = 0; i <= 20; i++)
         {
@@ -856,9 +861,9 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         {
             myCases++;
             var aNEdges = new List<N.TopoDS_Shape>();
-            var aPEdges = new List<TopoDS_Shape>();
+            var aPEdges = new List<Shape>();
             var aNFaces = new List<N.TopoDS_Face>();
-            var aPFaces = new List<TopoDS_Face>();
+            var aPFaces = new List<Face>();
             for (int k = 0; k < 3; k++)
             {
                 using var aNPnts = new N.TColgp_HArray1OfPnt(1, 3);
@@ -874,16 +879,16 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
                 var aPI = new GeomAPI_Interpolate(aPPnts, false, 1.0e-6);
                 aPI.Perform();
                 N.TopoDS_Edge aNE = new N.BRepBuilderAPI_MakeEdge(aNI.Curve()).Edge();
-                TopoDS_Edge aPE = new BRepBuilderAPI_MakeEdge(aPI.Curve()).Edge();
+                Edge aPE = new BRepBuilderAPI_MakeEdge(aPI.Curve()).Edge();
                 using N.gp_Vec aNV = new(aDirs[k].X(), aDirs[k].Y(), aDirs[k].Z());
                 aNFaces.Add(N.TopoDS.Face(new N.BRepPrimAPI_MakePrism(aNE, aNV, false, true).Shape()));
-                aPFaces.Add(TopoDS.Face(new BRepPrimAPI_MakePrism(aPE, aDirs[k]).Shape()));
+                aPFaces.Add(ShapeCasts.Face(new BRepPrimAPI_MakePrism(aPE, aDirs[k]).Shape()));
                 aNEdges.Add(aNE);
                 aPEdges.Add(aPE);
             }
             Assert.True(aPEdges[0].TShape()!.IsFrozen);
-            Assert.Null(BRep_Tool.CurveOnSurface(TopoDS.Edge(aPEdges[0]), aPFaces[0], out _, out _)); // the port's edge has none
-            List<TopoDS_Shape> aPIn = [.. aPEdges, .. aPFaces.Select(f => (TopoDS_Shape)f)];
+            Assert.Null(Tool.CurveOnSurface(ShapeCasts.Edge(aPEdges[0]), aPFaces[0], out _, out _)); // the port's edge has none
+            List<Shape> aPIn = [.. aPEdges, .. aPFaces.Select(f => (Shape)f)];
             List<string> anInputTexts = aPIn.Select(x => PortText(x)).ToList();
             void CheckInputs(string theWhat)
             {
@@ -905,12 +910,12 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
                 if (anOnFace)
                 {
                     Same(w + ": Add index", aN.Add(N.TopoDS.Edge(aNEdges[anEdge]), aNFaces[anEdge], (N.GeomAbs_Shape)(int)anOrder, true),
-                         aP.Add(TopoDS.Edge(aPEdges[anEdge]), aPFaces[anEdge], anOrder, true));
+                         aP.Add(ShapeCasts.Edge(aPEdges[anEdge]), aPFaces[anEdge], anOrder, true));
                 }
                 else
                 {
                     Same(w + ": Add index", aN.Add(N.TopoDS.Edge(aNEdges[anEdge]), (N.GeomAbs_Shape)(int)anOrder, true),
-                         aP.Add(TopoDS.Edge(aPEdges[anEdge]), anOrder, true));
+                         aP.Add(ShapeCasts.Edge(aPEdges[anEdge]), anOrder, true));
                 }
                 aNb++;
             }
@@ -918,7 +923,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             myBuilds++;
             string? aNErr = null, aPErr = null;
             N.TopoDS_Shape? aNRes = null;
-            TopoDS_Shape aPRes = new();
+            Shape aPRes = new();
             try
             {
                 aN.Build();
@@ -931,15 +936,15 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             try
             {
                 aP.Build();
-                aPRes = aP.IsDone() ? aP.Shape() : new TopoDS_Shape();
+                aPRes = aP.IsDone() ? aP.Shape() : new Shape();
             }
             catch (Exception e)
             {
                 aPErr = ErrorOf(e) ?? global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
             }
-            if (aNErr is not null || aPErr is not null || aNRes is null || aPRes.IsNull())
+            if (aNErr is not null || aPErr is not null || aNRes is null || aPRes.IsNull)
             {
-                if (aNErr == aPErr && (aNRes is null) == aPRes.IsNull())
+                if (aNErr == aPErr && (aNRes is null) == aPRes.IsNull)
                 {
                     myIdentical++;
                     myExceptions += aNErr is null ? 0 : 1;
@@ -947,7 +952,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
                 }
                 else
                 {
-                    myDifferences.Add($"{w2}: {aNErr ?? (aNRes is null ? "not done" : "done")} natively, {aPErr ?? (aPRes.IsNull() ? "not done" : "done")} in the port");
+                    myDifferences.Add($"{w2}: {aNErr ?? (aNRes is null ? "not done" : "done")} natively, {aPErr ?? (aPRes.IsNull ? "not done" : "done")} in the port");
                 }
                 CheckInputs(w2);
                 continue;
@@ -984,32 +989,32 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
     // tolerance, 3D curve, pcurve on the face with its range, and vertices.
     private static string FaceRecord(string theText)
     {
-        BRepTools.Read(out TopoDS_Shape aShape, new StringReader(theText));
-        TopoDS_Face aFace = TopoDS.Face(aShape);
+        BrepTools.Read(out Shape aShape, new StringReader(theText));
+        Face aFace = ShapeCasts.Face(aShape);
         var aW = new StringWriter(System.Globalization.CultureInfo.InvariantCulture) { NewLine = "\n" };
-        GeomTools_SurfaceSet.PrintSurface(BRep_Tool.Surface(aFace)!, aW, true);
-        aW.WriteLine($"face {aFace.Orientation()} {BRep_Tool.Tolerance(aFace):R}");
-        for (var anExp = new TopExp_Explorer(aFace, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+        SurfaceSet.PrintSurface(Tool.Surface(aFace)!, aW, true);
+        aW.WriteLine($"face {aFace.Orientation()} {Tool.Tolerance(aFace):R}");
+        for (var anExp = new Explorer(aFace, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            TopoDS_Edge anE = TopoDS.Edge(anExp.Current());
-            aW.WriteLine($"edge {anE.Orientation()} {BRep_Tool.Tolerance(anE):R}");
-            Geom_Curve? aC = BRep_Tool.Curve(anE, out double f, out double l);
+            Edge anE = ShapeCasts.Edge(anExp.Current());
+            aW.WriteLine($"edge {anE.Orientation()} {Tool.Tolerance(anE):R}");
+            Curve3D? aC = Tool.Curve(anE, out double f, out double l);
             if (aC is not null)
             {
                 aW.WriteLine($"3d [{f:R}, {l:R}]");
-                GeomTools_CurveSet.PrintCurve(aC, aW, true);
+                CurveSet.PrintCurve(aC, aW, true);
             }
-            Geom2d_Curve? aPC = BRep_Tool.CurveOnSurface(anE, aFace, out double pf, out double pl);
+            Curve2D? aPC = Tool.CurveOnSurface(anE, aFace, out double pf, out double pl);
             if (aPC is not null)
             {
                 aW.WriteLine($"2d [{pf:R}, {pl:R}]");
-                GeomTools_Curve2dSet.PrintCurve2d(aPC, aW, true);
+                Curve2dSet.PrintCurve2d(aPC, aW, true);
             }
-            TopExp.Vertices(anE, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
-            foreach (TopoDS_Vertex aV in new[] { aV1, aV2 })
+            Exploration.Vertices(anE, out Vertex aV1, out Vertex aV2);
+            foreach (Vertex aV in new[] { aV1, aV2 })
             {
-                Point3D aP = BRep_Tool.Pnt(aV);
-                aW.WriteLine($"vertex {aP.X():R} {aP.Y():R} {aP.Z():R} {BRep_Tool.Tolerance(aV):R}");
+                Point3D aP = Tool.Pnt(aV);
+                aW.WriteLine($"vertex {aP.X():R} {aP.Y():R} {aP.Z():R} {Tool.Tolerance(aV):R}");
             }
         }
         return aW.ToString();

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_Situation;
@@ -11,10 +12,10 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// <summary>The restriction line: its arcs and parameters, its optional polygon, and ComputeVertexParameters.</summary>
 public class IntPatch_RLineTests
 {
-    private static Adaptor2d_Curve2d Arc(double y) =>
-        new Geom2dAdaptor_Curve(new Geom2d_Line(new Point2D(0, y), new Direction2D(1, 0)), -100, 100);
+    private static Curve2DAdaptorBase Arc(double y) =>
+        new CurveAdaptor2D(new LineCurve2D(new Point2D(0, y), new Direction2D(1, 0)), -100, 100);
 
-    private static IntPatch_Point OnArc(Adaptor2d_Curve2d theArc, bool theOnFirst, double theParamOnLine,
+    private static IntPatch_Point OnArc(Curve2DAdaptorBase theArc, bool theOnFirst, double theParamOnLine,
                                         double theParamOnArc)
     {
         IntPatch_Point aV = IntPatch_WLineTests.Vtx(theParamOnLine, theParamOnLine);
@@ -45,7 +46,7 @@ public class IntPatch_RLineTests
         aR.SetCurve(aOther);
         Assert.Equal(2, aR.NbPnts());
 
-        Adaptor2d_Curve2d anArc = Arc(0);
+        Curve2DAdaptorBase anArc = Arc(0);
         aR.SetArcOnS1(anArc);
         Assert.True(aR.IsArcOnS1());
         Assert.Same(anArc, aR.ArcOnS1());
@@ -71,7 +72,7 @@ public class IntPatch_RLineTests
     [Fact]
     public void ComputeVertexParameters_removes_duplicates_sorts_and_sets_the_ends()
     {
-        Adaptor2d_Curve2d anArc = Arc(0), anOther = Arc(1);
+        Curve2DAdaptorBase anArc = Arc(0), anOther = Arc(1);
         IntPatch_RLine aR = new(false);
         aR.AddVertex(OnArc(anArc, true, 3, 0.7));
         aR.AddVertex(OnArc(anArc, true, 3, 0.7)); // same arc, parameters: removed

@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -54,10 +57,10 @@ public class BRepMesh_DefaultRangeSplitter
     /// <summary>Updates the discrete range of the surface from its geometric range.</summary>
     public virtual void AdjustRange()
     {
-        BRepAdaptor_Surface aSurface = GetSurface();
+        FaceSurfaceAdaptor aSurface = GetSurface();
         updateRange(aSurface.FirstUParameter(),
                     aSurface.LastUParameter(),
-                    aSurface.IsUPeriodic(),
+                    aSurface.IsUPeriodic,
                     ref myRangeU.first,
                     ref myRangeU.second);
 
@@ -69,7 +72,7 @@ public class BRepMesh_DefaultRangeSplitter
 
         updateRange(aSurface.FirstVParameter(),
                     aSurface.LastVParameter(),
-                    aSurface.IsVPeriodic(),
+                    aSurface.IsVPeriodic,
                     ref myRangeV.first,
                     ref myRangeV.second);
 
@@ -122,8 +125,8 @@ public class BRepMesh_DefaultRangeSplitter
 
         // Slightly increase exact resolution so to cover links with approximate
         // length equal to resolution itself on sub-resolution differences.
-        double aTolerance = BRep_Tool.Tolerance(myDFace!.GetFace());
-        Adaptor3d_Surface aSurface = GetSurface();
+        double aTolerance = Tool.Tolerance(myDFace!.GetFace());
+        SurfaceAdaptorBase aSurface = GetSurface();
         double aResU = aSurface.UResolution(aTolerance) * 1.1;
         double aResV = aSurface.VResolution(aTolerance) * 1.1;
 
@@ -146,7 +149,7 @@ public class BRepMesh_DefaultRangeSplitter
     public IMeshData_Face GetDFace() => myDFace!;
 
     /// <summary>The surface.</summary>
-    public BRepAdaptor_Surface GetSurface() => myDFace!.GetSurface();
+    public FaceSurfaceAdaptor GetSurface() => myDFace!.GetSurface();
 
     /// <summary>The U range.</summary>
     public (double first, double second) GetRangeU() => myRangeU;
@@ -171,7 +174,7 @@ public class BRepMesh_DefaultRangeSplitter
         double dfucur;
         int i1;
 
-        BRepAdaptor_Surface gFace = GetSurface();
+        FaceSurfaceAdaptor gFace = GetSurface();
         gFace.D0(myRangeU.first, myRangeV.first, out P11);
         gFace.D0(myRangeU.first, dfvave, out P21);
         gFace.D0(myRangeU.first, myRangeV.second, out P31);
@@ -200,7 +203,7 @@ public class BRepMesh_DefaultRangeSplitter
         double dfvcur;
         int i1;
 
-        BRepAdaptor_Surface gFace = GetSurface();
+        FaceSurfaceAdaptor gFace = GetSurface();
         gFace.D0(myRangeU.first, myRangeV.first, out P11);
         gFace.D0(dfuave, myRangeV.first, out P21);
         gFace.D0(myRangeU.second, myRangeV.first, out P31);

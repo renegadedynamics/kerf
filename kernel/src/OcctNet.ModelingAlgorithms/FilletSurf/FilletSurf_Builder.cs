@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.FilletSurf_ErrorTypeStatus;
 using static Occt.FilletSurf_StatusDone;
 
@@ -32,7 +34,7 @@ public class FilletSurf_Builder
     /// along the edges <paramref name="E"/>. <paramref name="Ta"/> is the angular tolerance, <paramref name="Tapp3d"/>
     /// and <paramref name="Tapp2d"/> the 3D and 2D approximation tolerances.
     /// </summary>
-    public FilletSurf_Builder(in TopoDS_Shape S, NCollection_List<TopoDS_Shape> E, double R, double Ta = 1.0e-2,
+    public FilletSurf_Builder(in Shape S, NCollection_List<Shape> E, double R, double Ta = 1.0e-2,
                               double Tapp3d = 1.0e-4, double Tapp2d = 1.0e-5)
     {
         myIntBuild = new FilletSurf_InternalBuilder(S, ChFi3d_FilletShape.ChFi3d_Polynomial, Ta, Tapp3d, Tapp2d);
@@ -139,7 +141,7 @@ public class FilletSurf_Builder
     //=================================================================================================
 
     /// <summary>The NURBS surface <paramref name="Index"/> (frozen).</summary>
-    public Geom_Surface SurfaceFillet(int Index)
+    public Surface SurfaceFillet(int Index)
     {
         checkIndex(Index, "SurfaceFillet");
         return Published(myIntBuild.SurfaceFillet(Index))!;
@@ -157,7 +159,7 @@ public class FilletSurf_Builder
     //=================================================================================================
 
     /// <summary>The first support face of the surface <paramref name="Index"/>.</summary>
-    public TopoDS_Face SupportFace1(int Index)
+    public Face SupportFace1(int Index)
     {
         checkIndex(Index, "SupportFace1");
         return myIntBuild.SupportFace1(Index);
@@ -166,7 +168,7 @@ public class FilletSurf_Builder
     //=================================================================================================
 
     /// <summary>The second support face of the surface <paramref name="Index"/>.</summary>
-    public TopoDS_Face SupportFace2(int Index)
+    public Face SupportFace2(int Index)
     {
         checkIndex(Index, "SupportFace2");
         return myIntBuild.SupportFace2(Index);
@@ -175,7 +177,7 @@ public class FilletSurf_Builder
     //=================================================================================================
 
     /// <summary>The 3D curve of the surface <paramref name="Index"/> on its first support face (frozen).</summary>
-    public Geom_Curve CurveOnFace1(int Index)
+    public Curve3D CurveOnFace1(int Index)
     {
         checkIndex(Index, "CurveOnFace1");
         return Published(myIntBuild.CurveOnFace1(Index))!;
@@ -184,7 +186,7 @@ public class FilletSurf_Builder
     //=================================================================================================
 
     /// <summary>The 3D curve of the surface <paramref name="Index"/> on its second support face (frozen).</summary>
-    public Geom_Curve CurveOnFace2(int Index)
+    public Curve3D CurveOnFace2(int Index)
     {
         checkIndex(Index, "CurveOnFace2");
         return Published(myIntBuild.CurveOnFace2(Index))!;
@@ -193,7 +195,7 @@ public class FilletSurf_Builder
     //=================================================================================================
 
     /// <summary>The pcurve of <see cref="CurveOnFace1"/> on the first support face (frozen).</summary>
-    public Geom2d_Curve PCurveOnFace1(int Index)
+    public Curve2D PCurveOnFace1(int Index)
     {
         checkIndex(Index, "PCurveOnFace1");
         return Published(myIntBuild.PCurveOnFace1(Index))!;
@@ -202,7 +204,7 @@ public class FilletSurf_Builder
     //=================================================================================================
 
     /// <summary>The pcurve of <see cref="CurveOnFace1"/> on the fillet (frozen).</summary>
-    public Geom2d_Curve PCurve1OnFillet(int Index)
+    public Curve2D PCurve1OnFillet(int Index)
     {
         checkIndex(Index, "PCurve1OnFillet");
         return Published(myIntBuild.PCurve1OnFillet(Index))!;
@@ -211,7 +213,7 @@ public class FilletSurf_Builder
     //=================================================================================================
 
     /// <summary>The pcurve of <see cref="CurveOnFace2"/> on the second support face (frozen).</summary>
-    public Geom2d_Curve PCurveOnFace2(int Index)
+    public Curve2D PCurveOnFace2(int Index)
     {
         checkIndex(Index, "PCurveOnFace2");
         return Published(myIntBuild.PCurveOnFace2(Index))!;
@@ -220,7 +222,7 @@ public class FilletSurf_Builder
     //=================================================================================================
 
     /// <summary>The pcurve of <see cref="CurveOnFace2"/> on the fillet (frozen).</summary>
-    public Geom2d_Curve PCurve2OnFillet(int Index)
+    public Curve2D PCurve2OnFillet(int Index)
     {
         checkIndex(Index, "PCurve2OnFillet");
         return Published(myIntBuild.PCurve2OnFillet(Index))!;
@@ -319,7 +321,7 @@ public class FilletSurf_Builder
     /// The arc of the section <paramref name="IndexSec"/> of the surface <paramref name="IndexSurf"/>: a trimmed
     /// Geom_Circle (frozen).
     /// </summary>
-    public Geom_TrimmedCurve Section(int IndexSurf, int IndexSec)
+    public TrimmedCurve3D Section(int IndexSurf, int IndexSec)
     {
         if ((IndexSurf < 1) || (IndexSurf > NbSurface()))
         {

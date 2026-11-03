@@ -6,6 +6,8 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using static Occt.Interface_CheckStatus;
 
 namespace Occt;
@@ -255,7 +257,7 @@ public class XSControl_Reader
             return false;
         }
 
-        TopoDS_Shape aShape = aTransferReader.ShapeResult(theStart);
+        Shape aShape = aTransferReader.ShapeResult(theStart);
         // Null shapes are allowed intentionally.
         aShape.TShape()?.FreezeGraph(); // OCCT.NET: the reader publishes frozen shapes (plan 2.7)
         // SMH May 00: allow empty shapes (STEP CAX-IF, external references)
@@ -289,7 +291,7 @@ public class XSControl_Reader
                 continue;
             }
 
-            TopoDS_Shape aShape = aTransferReader.ShapeResult(aStart);
+            Shape aShape = aTransferReader.ShapeResult(aStart);
             // Null shapes are allowed intentionally.
             aShape.TShape()?.FreezeGraph(); // OCCT.NET: the reader publishes frozen shapes (plan 2.7)
             // SMH May 00: allow empty shapes (STEP CAX-IF, external references)
@@ -321,7 +323,7 @@ public class XSControl_Reader
                 continue;
             }
 
-            TopoDS_Shape aShape = aTransferReader.ShapeResult(aStart);
+            Shape aShape = aTransferReader.ShapeResult(aStart);
             // Null shapes are allowed intentionally.
             aShape.TShape()?.FreezeGraph(); // OCCT.NET: the reader publishes frozen shapes (plan 2.7)
             // SMH May 00: allow empty shapes (STEP CAX-IF, external references)
@@ -351,7 +353,7 @@ public class XSControl_Reader
     /// Returns the shape resulting from a translation and identified by the rank num. num equals 1 by default.
     /// In other words, the first shape resulting from the translation is returned.
     /// </summary>
-    public TopoDS_Shape Shape(int num = 1)
+    public Shape Shape(int num = 1)
     {
         return theshapes.Value(num);
     }
@@ -360,7 +362,7 @@ public class XSControl_Reader
     /// Returns all of the results in a single shape which is: - a null shape if there are no results, - a shape
     /// if there is one result, - a compound containing the resulting shapes if there are more than one.
     /// </summary>
-    public TopoDS_Shape OneShape()
+    public Shape OneShape()
     {
         if (theshapes.IsEmpty())
         {
@@ -371,13 +373,13 @@ public class XSControl_Reader
             return theshapes.First();
         }
 
-        BRep_Builder aBuilder = new BRep_Builder();
-        TopoDS_Compound aResult = new TopoDS_Compound();
+        BrepBuilder aBuilder = new BrepBuilder();
+        Compound aResult = new Compound();
         aBuilder.MakeCompound(ref aResult);
         bool aNonNullShapeAdded = false;
-        foreach (TopoDS_Shape aCurrShape in theshapes)
+        foreach (Shape aCurrShape in theshapes)
         {
-            if (!aCurrShape.IsNull())
+            if (!aCurrShape.IsNull)
             {
                 aBuilder.Add(aResult, aCurrShape);
                 aNonNullShapeAdded = true;
@@ -569,7 +571,7 @@ public class XSControl_Reader
         return anActor is null ? default : anActor.GetProcessingFlags();
     }
 
-    protected NCollection_Sequence<TopoDS_Shape> Shapes()
+    protected NCollection_Sequence<Shape> Shapes()
     {
         return theshapes;
     }
@@ -632,5 +634,5 @@ public class XSControl_Reader
     protected bool therootsta;
     protected NCollection_Sequence<Transient> theroots = new NCollection_Sequence<Transient>();
     private XSControl_WorkSession? thesession;
-    private NCollection_Sequence<TopoDS_Shape> theshapes = new NCollection_Sequence<TopoDS_Shape>();
+    private NCollection_Sequence<Shape> theshapes = new NCollection_Sequence<Shape>();
 }

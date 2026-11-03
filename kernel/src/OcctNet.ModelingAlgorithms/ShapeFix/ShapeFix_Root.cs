@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using static Kerf.Engine.Foundation.Gravity;
 
 namespace Occt;
@@ -17,7 +18,7 @@ namespace Occt;
 public class ShapeFix_Root : Transient
 {
     /// <summary>The shape the messages are attached to by default.</summary>
-    protected TopoDS_Shape myShape;
+    protected Shape myShape;
 
     private ShapeBuild_ReShape?              myContext;
     private ShapeExtend_BasicMsgRegistrator? myMsgReg;
@@ -28,7 +29,7 @@ public class ShapeFix_Root : Transient
     /// <summary>Empty constructor (no context is created).</summary>
     public ShapeFix_Root()
     {
-        myShape     = new TopoDS_Shape();
+        myShape     = new Shape();
         myPrecision = myMinTol = myMaxTol = Kerf.Engine.Foundation.Precision.Confusion();
         myMsgReg    = new ShapeExtend_BasicMsgRegistrator();
     }
@@ -101,7 +102,7 @@ public class ShapeFix_Root : Transient
     public double LimitTolerance(double toler) => Min(myMaxTol, toler);
 
     /// <summary>Sends a message to be attached to the shape, through the message registrator.</summary>
-    public void SendMsg(in TopoDS_Shape shape, Msg message, Gravity gravity = Info)
+    public void SendMsg(in Shape shape, Msg message, Gravity gravity = Info)
     {
         myMsgReg?.Send(shape, message, gravity);
     }
@@ -113,7 +114,7 @@ public class ShapeFix_Root : Transient
     }
 
     /// <summary>Sends a warning to be attached to the shape.</summary>
-    public void SendWarning(in TopoDS_Shape shape, Msg message)
+    public void SendWarning(in Shape shape, Msg message)
     {
         SendMsg(shape, message, Warning);
     }
@@ -125,7 +126,7 @@ public class ShapeFix_Root : Transient
     }
 
     /// <summary>Sends a fail to be attached to the shape.</summary>
-    public void SendFail(in TopoDS_Shape shape, Msg message)
+    public void SendFail(in Shape shape, Msg message)
     {
         SendMsg(shape, message, Fail);
     }

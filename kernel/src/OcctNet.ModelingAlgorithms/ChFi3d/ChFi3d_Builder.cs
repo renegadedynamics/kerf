@@ -8,12 +8,18 @@
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFiDS_ErrorStatus;
 using static Occt.ChFiDS_State;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 using static Occt.TopOpeBRepDS_Kind;
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 
 namespace Occt;
@@ -33,7 +39,7 @@ namespace Occt;
 /// </para>
 /// <para>
 /// <b>The working copy</b> (decisions 1005, 1087): the constructor copies a shape holding frozen TShapes
-/// (<see cref="BRepTools_CopyAtEntry"/>) and builds its maps from the copy, so that the vertices whose tolerance OCCT
+/// (<see cref="CopyAtEntry"/>) and builds its maps from the copy, so that the vertices whose tolerance OCCT
 /// raises (<c>ChFi3d_IndexPointInDS</c>, <c>Compute</c>'s <c>UpdateVertex</c>) and the edges the elementary spines
 /// give a 3D curve are the copy's. Edges and vertices given by the caller are mapped onto the copy at the entry of
 /// each public member, and those handed back are mapped to the caller's.
@@ -69,29 +75,29 @@ public abstract partial class ChFi3d_Builder
     internal ChFiDS_StripeMap myVDataMap = new();
     internal NCollection_List<ChFiDS_Regul> myRegul = new();
     internal NCollection_List<ChFiDS_Stripe> badstripes = new();
-    internal NCollection_List<TopoDS_Shape> badvertices = new();
-    internal NCollection_DataMap<TopoDS_Shape, NCollection_List<int>> myEVIMap = new(TopTools_ShapeMapHasher.Instance);
-    internal NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myEdgeFirstFace = new(TopTools_ShapeMapHasher.Instance);
+    internal NCollection_List<Shape> badvertices = new();
+    internal NCollection_DataMap<Shape, NCollection_List<int>> myEVIMap = new(ShapeHasher.Instance);
+    internal NCollection_DataMap<Shape, Shape> myEdgeFirstFace = new(ShapeHasher.Instance);
     internal bool done;
     internal bool hasresult;
 
-    private TopoDS_Shape myShape;
+    private Shape myShape;
     private double angular;
-    private NCollection_List<TopoDS_Shape> myGenerated = new();
-    private TopoDS_Shape myShapeResult = new();
-    private TopoDS_Shape badShape = new();
+    private NCollection_List<Shape> myGenerated = new();
+    private Shape myShapeResult = new();
+    private Shape badShape = new();
 
-    /// <summary>The copy at the entry (OCCT.NET): <c>myShape</c> is its <see cref="BRepTools_CopyAtEntry.Shape"/>.</summary>
-    private BRepTools_CopyAtEntry myCopyAtEntry;
+    /// <summary>The copy at the entry (OCCT.NET): <c>myShape</c> is its <see cref="CopyAtEntry.Shape"/>.</summary>
+    private CopyAtEntry myCopyAtEntry;
 
     /// <summary>The working shape: the copy of the shape given (OCCT.NET, for tests and unit 7R).</summary>
-    internal TopoDS_Shape WorkingShape() => myShape;
+    internal Shape WorkingShape() => myShape;
 
     /// <summary>The caller's sub-shape mapped onto the working copy (OCCT.NET).</summary>
-    internal TopoDS_Shape ToWork(in TopoDS_Shape S) => myCopyAtEntry.Copied(S);
+    internal Shape ToWork(in Shape S) => myCopyAtEntry.Copied(S);
 
     /// <summary>A sub-shape of the working copy mapped back to the caller's (OCCT.NET).</summary>
-    internal TopoDS_Shape FromWork(in TopoDS_Shape S) => myCopyAtEntry.Original(S);
+    internal Shape FromWork(in Shape S) => myCopyAtEntry.Original(S);
 
     //=================================================================================================
     // The pure virtual members (ChFi3d_FilBuilder and ChFi3d_ChBuilder implement them)
@@ -99,16 +105,16 @@ public abstract partial class ChFi3d_Builder
     internal abstract void SimulKPart(ChFiDS_SurfData SD);
 
     internal abstract bool SimulSurf(ChFiDS_SurfData Data, ChFiDS_ElSpine Guide, ChFiDS_Spine Spine, int Choix,
-                                     BRepAdaptor_Surface S1, Adaptor3d_TopolTool I1, BRepAdaptor_Surface S2,
-                                     Adaptor3d_TopolTool I2, double TolGuide, ref double First, ref double Last,
+                                     FaceSurfaceAdaptor S1, TopolTool I1, FaceSurfaceAdaptor S2,
+                                     TopolTool I2, double TolGuide, ref double First, ref double Last,
                                      bool Inside, bool Appro, bool Forward, bool RecOnS1, bool RecOnS2,
                                      math_Vector Soldep, ref int Intf, ref int Intl);
 
     internal abstract void SetRegul();
 
     internal abstract bool PerformSurf(NCollection_Sequence<ChFiDS_SurfData> Data, ChFiDS_ElSpine Guide,
-                                       ChFiDS_Spine Spine, int Choix, BRepAdaptor_Surface S1, Adaptor3d_TopolTool I1,
-                                       BRepAdaptor_Surface S2, Adaptor3d_TopolTool I2, double MaxStep, double Fleche,
+                                       ChFiDS_Spine Spine, int Choix, FaceSurfaceAdaptor S1, TopolTool I1,
+                                       FaceSurfaceAdaptor S2, TopolTool I2, double MaxStep, double Fleche,
                                        double TolGuide, ref double First, ref double Last, bool Inside, bool Appro,
                                        bool Forward, bool RecOnS1, bool RecOnS2, math_Vector Soldep, ref int Intf,
                                        ref int Intl);
@@ -117,56 +123,56 @@ public abstract partial class ChFi3d_Builder
 
     internal abstract void PerformThreeCorner(int Index);
 
-    internal abstract void ExtentOneCorner(in TopoDS_Vertex V, ChFiDS_Stripe S);
+    internal abstract void ExtentOneCorner(in Vertex V, ChFiDS_Stripe S);
 
-    internal abstract void ExtentTwoCorner(in TopoDS_Vertex V, NCollection_List<ChFiDS_Stripe> LS);
+    internal abstract void ExtentTwoCorner(in Vertex V, NCollection_List<ChFiDS_Stripe> LS);
 
-    internal abstract void ExtentThreeCorner(in TopoDS_Vertex V, NCollection_List<ChFiDS_Stripe> LS);
+    internal abstract void ExtentThreeCorner(in Vertex V, NCollection_List<ChFiDS_Stripe> LS);
 
     internal abstract bool PerformFirstSection(ChFiDS_Spine S, ChFiDS_ElSpine HGuide, int Choix,
-                                               BRepAdaptor_Surface S1, BRepAdaptor_Surface S2,
-                                               Adaptor3d_TopolTool I1, Adaptor3d_TopolTool I2, double Par,
-                                               math_Vector SolDep, ref TopAbs_State Pos1, ref TopAbs_State Pos2);
+                                               FaceSurfaceAdaptor S1, FaceSurfaceAdaptor S2,
+                                               TopolTool I1, TopolTool I2, double Par,
+                                               math_Vector SolDep, ref Containment Pos1, ref Containment Pos2);
 
     //=================================================================================================
     // ChFi3d_Builder.cxx
 
-    private static void CompleteDS(TopOpeBRepDS_DataStructure DStr, in TopoDS_Shape S)
+    private static void CompleteDS(TopOpeBRepDS_DataStructure DStr, in Shape S)
     {
         ChFiDS_Map MapEW = new(), MapFS = new();
-        MapEW.Fill(S, TopAbs_EDGE, TopAbs_WIRE);
-        MapFS.Fill(S, TopAbs_FACE, TopAbs_SHELL);
+        MapEW.Fill(S, ShapeType.Edge, ShapeType.Wire);
+        MapFS.Fill(S, ShapeType.Face, ShapeType.Shell);
 
-        TopExp_Explorer ExpE = new();
-        for (ExpE.Init(S, TopAbs_EDGE); ExpE.More(); ExpE.Next())
+        Explorer ExpE = new();
+        for (ExpE.Init(S, ShapeType.Edge); ExpE.More(); ExpE.Next())
         {
-            TopoDS_Edge E = TopoDS.Edge(ExpE.Current());
+            Edge E = ShapeCasts.Edge(ExpE.Current());
             bool hasgeom = DStr.HasGeometry(E);
             if (hasgeom)
             {
-                NCollection_List<TopoDS_Shape> WireListAnc = MapEW[E];
-                NCollection_List<TopoDS_Shape>.Iterator itaW = new(WireListAnc);
+                NCollection_List<Shape> WireListAnc = MapEW[E];
+                NCollection_List<Shape>.Iterator itaW = new(WireListAnc);
                 while (itaW.More())
                 {
-                    TopoDS_Shape WireAnc = itaW.Value();
+                    Shape WireAnc = itaW.Value();
                     DStr.AddShape(WireAnc);
                     itaW.Next();
                 }
             }
         }
 
-        TopExp_Explorer ExpF = new();
-        for (ExpF.Init(S, TopAbs_FACE); ExpF.More(); ExpF.Next())
+        Explorer ExpF = new();
+        for (ExpF.Init(S, ShapeType.Face); ExpF.More(); ExpF.Next())
         {
-            TopoDS_Face F = TopoDS.Face(ExpF.Current());
+            Face F = ShapeCasts.Face(ExpF.Current());
             bool hasgeom = DStr.HasGeometry(F);
             if (hasgeom)
             {
-                NCollection_List<TopoDS_Shape> ShellListAnc = MapFS[F];
-                NCollection_List<TopoDS_Shape>.Iterator itaS = new(ShellListAnc);
+                NCollection_List<Shape> ShellListAnc = MapFS[F];
+                NCollection_List<Shape>.Iterator itaS = new(ShellListAnc);
                 while (itaS.More())
                 {
-                    TopoDS_Shape ShellAnc = itaS.Value();
+                    Shape ShellAnc = itaS.Value();
                     DStr.AddShape(ShellAnc);
                     itaS.Next();
                 }
@@ -204,7 +210,7 @@ public abstract partial class ChFi3d_Builder
         for (int iv = 1; iv <= myVDataMap.Extent(); iv++)
         {
             nbs = myVDataMap[iv].Extent();
-            TopoDS_Vertex Vtx = myVDataMap.FindKey(iv);
+            Vertex Vtx = myVDataMap.FindKey(iv);
             // nbedges = ChFi3d_NumberOfEdges(Vtx, myVEMap);
             nbedges = ChFi3d_NumberOfSharpEdges(Vtx, myVEMap, myEFMap);
             switch (nbs)
@@ -330,17 +336,17 @@ public abstract partial class ChFi3d_Builder
 
 
         NCollection_IntMap MapIndSo = new(); // NCollection_Map<int>: iterated in OCCT's order
-        TopExp_Explorer expso = new(myShape, TopAbs_SOLID);
+        Explorer expso = new(myShape, ShapeType.Solid);
         for (; expso.More(); expso.Next())
         {
-            TopoDS_Shape cursol = expso.Current();
+            Shape cursol = expso.Current();
             int indcursol = DStr.AddShape(cursol);
             MapIndSo.Add(indcursol);
         }
-        TopExp_Explorer expsh = new(myShape, TopAbs_SHELL, TopAbs_SOLID);
+        Explorer expsh = new(myShape, ShapeType.Shell, ShapeType.Solid);
         for (; expsh.More(); expsh.Next())
         {
-            TopoDS_Shape cursh = expsh.Current();
+            Shape cursh = expsh.Current();
             int indcursh = DStr.AddShape(cursh);
             MapIndSo.Add(indcursh);
         }
@@ -386,7 +392,7 @@ public abstract partial class ChFi3d_Builder
 
             if (done)
             {
-                BRep_Builder B1 = new();
+                BrepBuilder B1 = new();
                 CompleteDS(DStr, myShape);
                 // Update tolerances on vertex to max adjacent edges or
                 // Update tolerances on degenerated edge to max of adjacent vertexes.
@@ -415,8 +421,8 @@ public abstract partial class ChFi3d_Builder
                         int gi = II.Geometry();
                         if (gk == TopOpeBRepDS_VERTEX)
                         {
-                            TopoDS_Vertex v = TopoDS.Vertex(myDS.Shape(gi));
-                            double tolv = BRep_Tool.Tolerance(v);
+                            Vertex v = ShapeCasts.Vertex(myDS.Shape(gi));
+                            double tolv = Tool.Tolerance(v);
                             if (tolv > 0.0001)
                             {
                                 tolv += 0.0003;
@@ -460,33 +466,33 @@ public abstract partial class ChFi3d_Builder
                 for (; It.More(); It.Next())
                 {
                     int indsol = It.Key();
-                    TopoDS_Shape curshape = DStr.Shape(indsol);
-                    myCoup.MergeSolid(curshape, TopAbs_IN);
+                    Shape curshape = DStr.Shape(indsol);
+                    myCoup.MergeSolid(curshape, In);
                 }
 
                 int i = 1, n = DStr.NbShapes();
                 for (; i <= n; i++)
                 {
-                    TopoDS_Shape S = DStr.Shape(i);
-                    if (S.ShapeType() != TopAbs_EDGE)
+                    Shape S = DStr.Shape(i);
+                    if (S.ShapeType() != ShapeType.Edge)
                     {
                         continue;
                     }
-                    bool issplitIN = myCoup.IsSplit(S, TopAbs_IN);
+                    bool issplitIN = myCoup.IsSplit(S, In);
                     if (!issplitIN)
                     {
                         continue;
                     }
-                    NCollection_List<TopoDS_Shape>.Iterator it = new(myCoup.Splits(S, TopAbs_IN));
+                    NCollection_List<Shape>.Iterator it = new(myCoup.Splits(S, In));
                     for (; it.More(); it.Next())
                     {
-                        TopoDS_Edge newE = TopoDS.Edge(it.Value());
-                        double tole = BRep_Tool.Tolerance(newE);
-                        TopExp_Explorer exv = new(newE, TopAbs_VERTEX);
+                        Edge newE = ShapeCasts.Edge(it.Value());
+                        double tole = Tool.Tolerance(newE);
+                        Explorer exv = new(newE, ShapeType.Vertex);
                         for (; exv.More(); exv.Next())
                         {
-                            TopoDS_Vertex v = TopoDS.Vertex(exv.Current());
-                            double tolv = BRep_Tool.Tolerance(v);
+                            Vertex v = ShapeCasts.Vertex(exv.Current());
+                            double tolv = Tool.Tolerance(v);
                             if (tole > tolv)
                             {
                                 B1.UpdateVertex(v, tole);
@@ -496,14 +502,14 @@ public abstract partial class ChFi3d_Builder
                 }
                 if (!hasresult)
                 {
-                    TopoDS_Compound aResult = new();
+                    Compound aResult = new();
                     B1.MakeCompound(ref aResult);
                     myShapeResult = aResult;
                     for (It = new NCollection_IntMap.Iterator(MapIndSo); It.More(); It.Next())
                     {
                         int indsol = It.Key();
-                        TopoDS_Shape curshape = DStr.Shape(indsol);
-                        NCollection_List<TopoDS_Shape>.Iterator its = new(myCoup.Merged(curshape, TopAbs_IN));
+                        Shape curshape = DStr.Shape(indsol);
+                        NCollection_List<Shape>.Iterator its = new(myCoup.Merged(curshape, In));
                         if (!its.More())
                         {
                             B1.Add(myShapeResult, curshape);
@@ -514,11 +520,11 @@ public abstract partial class ChFi3d_Builder
                             // However there is a problem for compound of open Shell.
                             while (its.More())
                             {
-                                TopAbs_ShapeEnum letype = curshape.ShapeType();
-                                if (letype == TopAbs_SHELL)
+                                ShapeType letype = curshape.ShapeType();
+                                if (letype == ShapeType.Shell)
                                 {
-                                    TopExp_Explorer expsh2 = new(its.Value(), TopAbs_SHELL);
-                                    TopoDS_Shape cursh = expsh2.Current();
+                                    Explorer expsh2 = new(its.Value(), ShapeType.Shell);
+                                    Shape cursh = expsh2.Current();
                                     B1.Add(myShapeResult, cursh);
                                     its.Next();
                                 }
@@ -534,14 +540,14 @@ public abstract partial class ChFi3d_Builder
                 else
                 {
                     done = false;
-                    TopoDS_Compound aBad = new();
+                    Compound aBad = new();
                     B1.MakeCompound(ref aBad);
                     badShape = aBad;
                     for (It = new NCollection_IntMap.Iterator(MapIndSo); It.More(); It.Next())
                     {
                         int indsol = It.Key();
-                        TopoDS_Shape curshape = DStr.Shape(indsol);
-                        NCollection_List<TopoDS_Shape>.Iterator its = new(myCoup.Merged(curshape, TopAbs_IN));
+                        Shape curshape = DStr.Shape(indsol);
+                        NCollection_List<Shape>.Iterator its = new(myCoup.Merged(curshape, In));
                         if (!its.More())
                         {
                             B1.Add(badShape, curshape);
@@ -572,17 +578,17 @@ public abstract partial class ChFi3d_Builder
         {
             double SameParTol = global::Kerf.Engine.Foundation.Precision.Confusion();
             int aNbSurfaces = 0, iF = 0;
-            NCollection_List<TopoDS_Shape>.Iterator aIt = new();
+            NCollection_List<Shape>.Iterator aIt = new();
             //
             aNbSurfaces = myDS.NbSurfaces();
 
             for (iF = 1; iF <= aNbSurfaces; ++iF)
             {
-                NCollection_List<TopoDS_Shape> aLF = myCoup.NewFaces(iF);
+                NCollection_List<Shape> aLF = myCoup.NewFaces(iF);
                 aIt.Initialize(aLF);
                 for (; aIt.More(); aIt.Next())
                 {
-                    TopoDS_Shape aF = aIt.Value();
+                    Shape aF = aIt.Value();
                     BRepLib.SameParameter(aF, SameParTol, true);
                     ShapeFix.SameParameter(aF, false, SameParTol);
                 }
@@ -591,13 +597,13 @@ public abstract partial class ChFi3d_Builder
 
         // OCCT.NET (decisions 1119, 1136): the working copy's sub-shapes the computation left unchanged become the
         // caller's in the result (or the partial result); a second Compute after a Reset keeps the copy's.
-        if (!myCopyAtEntry.IsFinished())
+        if (!myCopyAtEntry.IsFinished)
         {
-            if (done && !myShapeResult.IsNull())
+            if (done && !myShapeResult.IsNull)
             {
                 myShapeResult = myCopyAtEntry.Finish(myShapeResult);
             }
-            else if (hasresult && !badShape.IsNull())
+            else if (hasresult && !badShape.IsNull)
             {
                 badShape = myCopyAtEntry.Finish(badShape);
             }
@@ -614,7 +620,7 @@ public abstract partial class ChFi3d_Builder
         NCollection_List<ChFiDS_Stripe>.Iterator It = new();
         ChFiDS_Stripe? stripe = null;
         TopOpeBRepDS_DataStructure DStr = myDS.ChangeDS();
-        TopoDS_Vertex Vtx = myVDataMap.FindKey(Index);
+        Vertex Vtx = myVDataMap.FindKey(Index);
 
         ChFiDS_SurfData? Fd = null;
         int i = 0, Icurv = 0;
@@ -641,8 +647,8 @@ public abstract partial class ChFi3d_Builder
                 double tolreached = 0.0;
                 double Pardeb = 0.0, Parfin = 0.0;
                 Point2D VOnS1 = new(), VOnS2 = new();
-                Geom_Curve? C3d = null;
-                Geom2d_Curve? PCurv = null;
+                Curve3D? C3d = null;
+                Curve2D? PCurv = null;
                 TopOpeBRepDS_Curve Crv = new();
                 if (isfirst)
                 {
@@ -681,7 +687,7 @@ public abstract partial class ChFi3d_Builder
         NCollection_List<ChFiDS_Stripe>.Iterator It = new();
         ChFiDS_Stripe? stripe = null;
         ChFiDS_Spine? sp = null;
-        TopoDS_Vertex Vtx = myVDataMap.FindKey(Index);
+        Vertex Vtx = myVDataMap.FindKey(Index);
 
         ChFiDS_SurfData? Fd = null;
         int i = 0;
@@ -828,20 +834,20 @@ public abstract partial class ChFi3d_Builder
     /// <summary>
     /// The faces generated by the edge or vertex <paramref name="EouV"/> of the shape (frozen, with the result).
     /// </summary>
-    public ISchematiqList<TopoDS_Shape> Generated(in TopoDS_Shape EouV)
+    public ISchematiqList<Shape> Generated(in Shape EouV)
     {
         if (done)
         {
             myShapeResult.TShape()?.FreezeGraph();
         }
-        NCollection_List<TopoDS_Shape> aList = InternalGenerated(EouV);
+        NCollection_List<Shape> aList = InternalGenerated(EouV);
         if (aList.IsEmpty())
         {
-            return PackedList<TopoDS_Shape>.Empty;
+            return PackedList<Shape>.Empty;
         }
-        TopoDS_Shape[] aShapes = new TopoDS_Shape[aList.Extent()];
+        Shape[] aShapes = new Shape[aList.Extent()];
         int i = 0;
-        foreach (TopoDS_Shape aS in aList)
+        foreach (Shape aS in aList)
         {
             aS.TShape()?.FreezeGraph();
             aShapes[i++] = aS;
@@ -850,18 +856,18 @@ public abstract partial class ChFi3d_Builder
     }
 
     /// <summary>OCCT's <c>Generated</c>: the list itself, unfrozen, for ported callers (OCCT.NET).</summary>
-    internal NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape EouV)
+    internal NCollection_List<Shape> InternalGenerated(in Shape EouV)
     {
         myGenerated.Clear();
-        if (EouV.IsNull())
+        if (EouV.IsNull)
         {
             return myGenerated;
         }
-        if (EouV.ShapeType() != TopAbs_EDGE && EouV.ShapeType() != TopAbs_VERTEX)
+        if (EouV.ShapeType() != ShapeType.Edge && EouV.ShapeType() != ShapeType.Vertex)
         {
             return myGenerated;
         }
-        TopoDS_Shape aWork = ToWork(EouV); // the working copy's shape (OCCT.NET)
+        Shape aWork = ToWork(EouV); // the working copy's shape (OCCT.NET)
         if (myEVIMap.IsBound(aWork))
         {
             NCollection_List<int> L = myEVIMap.Find(aWork);
@@ -869,8 +875,8 @@ public abstract partial class ChFi3d_Builder
             for (IL.Initialize(L); IL.More(); IL.Next())
             {
                 int I = IL.Value();
-                NCollection_List<TopoDS_Shape> LS = myCoup.NewFaces(I);
-                NCollection_List<TopoDS_Shape>.Iterator ILS = new();
+                NCollection_List<Shape> LS = myCoup.NewFaces(I);
+                NCollection_List<Shape>.Iterator ILS = new();
                 for (ILS.Initialize(LS); ILS.More(); ILS.Next())
                 {
                     myGenerated.Append(ILS.Value());

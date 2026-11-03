@@ -1,7 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -71,36 +76,36 @@ internal static class BRepTestFillingCommands
             return 1;
         }
         int NbCurFront = theDI.Atoi(a[3]);
-        var Fronts = new NCollection_HArray1<Adaptor3d_Curve>(1, NbCurFront);
+        var Fronts = new NCollection_HArray1<CurveAdaptorBase>(1, NbCurFront);
         var Tang = new NCollection_HArray1<int>(1, NbCurFront);
         var NbPtsCur = new NCollection_HArray1<int>(1, NbCurFront);
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
 
         var Henri = new GeomPlate_BuildPlateSurface(3, 15, 2);
 
         int i;
         for (i = 1; i <= NbCurFront; i++)
         {
-            TopoDS_Shape aLocalEdge = theDI.GetShape(At(a, 3 * i + 1), TopAbs_ShapeEnum.TopAbs_EDGE);
-            TopoDS_Edge E = TopoDS.Edge(aLocalEdge);
-            if (E.IsNull())
+            Shape aLocalEdge = theDI.GetShape(At(a, 3 * i + 1), ShapeType.Edge);
+            Edge E = ShapeCasts.Edge(aLocalEdge);
+            if (E.IsNull)
             {
                 return 1;
             }
-            TopoDS_Shape aLocalFace = theDI.GetShape(At(a, 3 * i + 2), TopAbs_ShapeEnum.TopAbs_FACE);
-            TopoDS_Face F = TopoDS.Face(aLocalFace);
-            if (F.IsNull())
+            Shape aLocalFace = theDI.GetShape(At(a, 3 * i + 2), ShapeType.Face);
+            Face F = ShapeCasts.Face(aLocalFace);
+            if (F.IsNull)
             {
                 return 1;
             }
             int T = theDI.Atoi(At(a, 3 * i + 3));
             Tang.SetValue(i, T);
             NbPtsCur.SetValue(i, theDI.Atoi(a[2]));
-            var S = new BRepAdaptor_Surface();
+            var S = new FaceSurfaceAdaptor();
             S.Initialize(F);
-            var C = new BRepAdaptor_Curve2d();
+            var C = new EdgeCurve2DAdaptor();
             C.Initialize(E, F);
-            var HConS = new Adaptor3d_CurveOnSurface(C, S);
+            var HConS = new CurveOnSurface(C, S);
             Fronts.SetValue(i, HConS);
             GeomPlate_CurveConstraint Cont = new BRepFill_CurveConstraint(HConS, Tang.Value(i), NbPtsCur.Value(i));
             Henri.Add(Cont);
@@ -114,7 +119,7 @@ internal static class BRepTestFillingCommands
         for (i = 1; i <= NbCurFront; i++)
         {
             int iInOrder = Henri.Order().Value(i);
-            TopoDS_Edge E;
+            Edge E;
             if (Henri.Sense().Value(iInOrder) == 1)
             {
                 var ME = new BRepBuilderAPI_MakeEdge(Henri.Curves2d().Value(iInOrder)!, Henri.Surface()!,
@@ -127,8 +132,8 @@ internal static class BRepTestFillingCommands
                                                      Fronts.Value(iInOrder).FirstParameter(), Fronts.Value(iInOrder).LastParameter());
                 E = ME.InternalEdge();
             }
-            B.UpdateVertex(TopExp.FirstVertex(E), ErrG0);
-            B.UpdateVertex(TopExp.LastVertex(E), ErrG0);
+            B.UpdateVertex(Exploration.FirstVertex(E), ErrG0);
+            B.UpdateVertex(Exploration.LastVertex(E), ErrG0);
             BRepLib.BuildCurve3d(E);
             string name = $"Edge_{i}";
             theDI.SetShape(name, E);
@@ -138,7 +143,7 @@ internal static class BRepTestFillingCommands
                 throw new global::Kerf.Engine.Foundation.FailureException("mkWire is over ");
             }
         }
-        TopoDS_Wire W;
+        Wire W;
         W = MW.Wire();
         if (!(W.Closed()))
         {
@@ -165,48 +170,48 @@ internal static class BRepTestFillingCommands
         int Conti;
         int Indice = 4;
         // Surface d'init
-        TopoDS_Shape aLocalFace = theDI.GetShape(At(a, Indice++), TopAbs_ShapeEnum.TopAbs_FACE);
-        TopoDS_Face SI = TopoDS.Face(aLocalFace);
-        if (SI.IsNull())
+        Shape aLocalFace = theDI.GetShape(At(a, Indice++), ShapeType.Face);
+        Face SI = ShapeCasts.Face(aLocalFace);
+        if (SI.IsNull)
         {
             Indice--;
         }
         else
         {
-            var HSI = new BRepAdaptor_Surface();
+            var HSI = new FaceSurfaceAdaptor();
             HSI.Initialize(SI);
-            Henri.LoadInitSurface(BRep_Tool.Surface(HSI.Face())!);
+            Henri.LoadInitSurface(Tool.Surface(HSI.Face())!);
         }
         for (i = 1; i <= NbCurFront; i++)
         {
-            TopoDS_Shape aLocalShape = theDI.GetShape(At(a, Indice++), TopAbs_ShapeEnum.TopAbs_EDGE);
-            TopoDS_Edge E = TopoDS.Edge(aLocalShape);
-            if (E.IsNull())
+            Shape aLocalShape = theDI.GetShape(At(a, Indice++), ShapeType.Edge);
+            Edge E = ShapeCasts.Edge(aLocalShape);
+            if (E.IsNull)
             {
                 return 1;
             }
             Conti = theDI.Atoi(At(a, Indice++));
             if ((Conti == 0) || (Conti == -1))
             {
-                var C = new BRepAdaptor_Curve();
+                var C = new EdgeCurveAdaptor();
                 C.Initialize(E);
-                Adaptor3d_Curve aC = C; // to avoid ambiguity
+                CurveAdaptorBase aC = C; // to avoid ambiguity
                 GeomPlate_CurveConstraint Cont = new BRepFill_CurveConstraint(aC, Conti);
                 Henri.Add(Cont);
             }
             else
             {
-                aLocalFace = theDI.GetShape(At(a, Indice++), TopAbs_ShapeEnum.TopAbs_FACE);
-                TopoDS_Face F = TopoDS.Face(aLocalFace);
-                if (F.IsNull())
+                aLocalFace = theDI.GetShape(At(a, Indice++), ShapeType.Face);
+                Face F = ShapeCasts.Face(aLocalFace);
+                if (F.IsNull)
                 {
                     return 1;
                 }
-                var S = new BRepAdaptor_Surface();
+                var S = new FaceSurfaceAdaptor();
                 S.Initialize(F);
-                var C = new BRepAdaptor_Curve2d();
+                var C = new EdgeCurve2DAdaptor();
                 C.Initialize(E, F);
-                var HConS = new Adaptor3d_CurveOnSurface(C, S);
+                var HConS = new CurveOnSurface(C, S);
                 GeomPlate_CurveConstraint Cont = new BRepFill_CurveConstraint(HConS, Conti);
                 Henri.Add(Cont);
             }
@@ -228,15 +233,15 @@ internal static class BRepTestFillingCommands
                 double u = theDI.Atof(At(a, Indice++)), v = theDI.Atof(At(a, Indice++));
 
                 Conti = theDI.Atoi(At(a, Indice++));
-                aLocalFace = theDI.GetShape(At(a, Indice++), TopAbs_ShapeEnum.TopAbs_FACE);
-                TopoDS_Face F = TopoDS.Face(aLocalFace);
-                if (F.IsNull())
+                aLocalFace = theDI.GetShape(At(a, Indice++), ShapeType.Face);
+                Face F = ShapeCasts.Face(aLocalFace);
+                if (F.IsNull)
                 {
                     return 1;
                 }
-                var HF = new BRepAdaptor_Surface();
+                var HF = new FaceSurfaceAdaptor();
                 HF.Initialize(F);
-                var PCont = new GeomPlate_PointConstraint(u, v, BRep_Tool.Surface(HF.Face())!, Conti, 0.001, 0.001, 0.001);
+                var PCont = new GeomPlate_PointConstraint(u, v, Tool.Surface(HF.Face())!, Conti, 0.001, 0.001, 0.001);
                 Henri.Add(PCont);
             }
         }
@@ -255,7 +260,7 @@ internal static class BRepTestFillingCommands
         seuil = Math.Max(0.0001, 10 * Henri.G0Error());
         var critere = new GeomPlate_PlateG0Criterion(S2d, S3d, seuil);
         var Mapp = new GeomPlate_MakeApprox(gpPlate, critere, 0.0001, nbcarreau, degmax);
-        Geom_Surface Surf = Mapp.Surface()!;
+        Surface Surf = Mapp.Surface()!;
 
         Henri.Surface()!.Bounds(out double Umin, out double Umax, out double Vmin, out double Vmax);
 
@@ -275,7 +280,7 @@ internal static class BRepTestFillingCommands
         }
         int NbMedium = theDI.Atoi(a[2]);
         int NbCurFront = theDI.Atoi(a[3]);
-        var Fronts = new NCollection_HArray1<Adaptor3d_Curve>(1, NbCurFront);
+        var Fronts = new NCollection_HArray1<CurveAdaptorBase>(1, NbCurFront);
         var Tang = new NCollection_HArray1<int>(1, NbCurFront);
         var NbPtsCur = new NCollection_HArray1<int>(1, NbCurFront);
 
@@ -284,26 +289,26 @@ internal static class BRepTestFillingCommands
         int i;
         for (i = 1; i <= NbCurFront; i++)
         {
-            TopoDS_Shape aLocalShape = theDI.GetShape(At(a, 3 * i + 1), TopAbs_ShapeEnum.TopAbs_EDGE);
-            TopoDS_Edge E = TopoDS.Edge(aLocalShape);
-            if (E.IsNull())
+            Shape aLocalShape = theDI.GetShape(At(a, 3 * i + 1), ShapeType.Edge);
+            Edge E = ShapeCasts.Edge(aLocalShape);
+            if (E.IsNull)
             {
                 return 1;
             }
-            TopoDS_Shape aLocalFace = theDI.GetShape(At(a, 3 * i + 2), TopAbs_ShapeEnum.TopAbs_FACE);
-            TopoDS_Face F = TopoDS.Face(aLocalFace);
-            if (F.IsNull())
+            Shape aLocalFace = theDI.GetShape(At(a, 3 * i + 2), ShapeType.Face);
+            Face F = ShapeCasts.Face(aLocalFace);
+            if (F.IsNull)
             {
                 return 1;
             }
             int T = theDI.Atoi(At(a, 3 * i + 3));
             Tang.SetValue(i, T);
             NbPtsCur.SetValue(i, NbMedium);
-            var S = new BRepAdaptor_Surface();
+            var S = new FaceSurfaceAdaptor();
             S.Initialize(F);
-            var C = new BRepAdaptor_Curve2d();
+            var C = new EdgeCurve2DAdaptor();
             C.Initialize(E, F);
-            var HConS = new Adaptor3d_CurveOnSurface(C, S);
+            var HConS = new CurveOnSurface(C, S);
             Fronts.SetValue(i, HConS);
             GeomPlate_CurveConstraint Cont = new BRepFill_CurveConstraint(HConS, Tang.Value(i), NbPtsCur.Value(i));
             Henri.Add(Cont);
@@ -319,7 +324,7 @@ internal static class BRepTestFillingCommands
         int degmax = theDI.Atoi(At(a, 3 * NbCurFront + 6));
         int CritOrder = theDI.Atoi(At(a, 3 * NbCurFront + 7));
         GeomPlate_Surface surf = Henri.Surface()!;
-        Geom_BSplineSurface? support = null;
+        BSplineSurface? support = null;
 
         if (CritOrder == -1)
         {
@@ -354,11 +359,11 @@ internal static class BRepTestFillingCommands
         }
 
         var MW = new BRepBuilderAPI_MakeWire();
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         for (i = 1; i <= NbCurFront; i++)
         {
             int iInOrder = Henri.Order().Value(i);
-            TopoDS_Edge E;
+            Edge E;
             if (Henri.Sense().Value(iInOrder) == 1)
             {
                 var ME = new BRepBuilderAPI_MakeEdge(Henri.Curves2d().Value(iInOrder)!, support!,
@@ -371,8 +376,8 @@ internal static class BRepTestFillingCommands
                                                      Fronts.Value(iInOrder).FirstParameter(), Fronts.Value(iInOrder).LastParameter());
                 E = ME.InternalEdge();
             }
-            B.UpdateVertex(TopExp.FirstVertex(E), dmax);
-            B.UpdateVertex(TopExp.LastVertex(E), dmax);
+            B.UpdateVertex(Exploration.FirstVertex(E), dmax);
+            B.UpdateVertex(Exploration.LastVertex(E), dmax);
             BRepLib.BuildCurve3d(E);
             MW.Add(E);
             if (!MW.IsDone())
@@ -380,7 +385,7 @@ internal static class BRepTestFillingCommands
                 throw new global::Kerf.Engine.Foundation.FailureException("mkWire is over ");
             }
         }
-        TopoDS_Wire W;
+        Wire W;
         W = MW.Wire();
         if (!(W.Closed()))
         {
@@ -408,39 +413,39 @@ internal static class BRepTestFillingCommands
 
         var MakeFilling = new BRepOffsetAPI_MakeFilling(p.Degree, p.NbPtsOnCur, p.NbIter, p.Anisotropie, p.Tol2d, p.Tol3d,
                                                         p.TolAng, p.TolCurv, p.MaxDeg, p.MaxSegments);
-        TopoDS_Face InitFace = TopoDS.Face(theDI.GetShape(a[5], TopAbs_ShapeEnum.TopAbs_FACE));
-        if (!InitFace.IsNull())
+        Face InitFace = ShapeCasts.Face(theDI.GetShape(a[5], ShapeType.Face));
+        if (!InitFace.IsNull)
         {
             MakeFilling.LoadInitSurface(InitFace);
         }
 
-        int i = (InitFace.IsNull()) ? 5 : 6, k;
-        TopoDS_Edge E;
-        TopoDS_Face F;
+        int i = (InitFace.IsNull) ? 5 : 6, k;
+        Edge E;
+        Face F;
         var Point = new Point3D();
         int Order;
         for (k = 1; k <= NbBounds; k++)
         {
-            E = TopoDS.Edge(theDI.GetShape(At(a, i), TopAbs_ShapeEnum.TopAbs_EDGE));
-            if (!E.IsNull())
+            E = ShapeCasts.Edge(theDI.GetShape(At(a, i), ShapeType.Edge));
+            if (!E.IsNull)
             {
                 i++;
             }
-            F = TopoDS.Face(theDI.GetShape(At(a, i), TopAbs_ShapeEnum.TopAbs_FACE));
-            if (!F.IsNull())
+            F = ShapeCasts.Face(theDI.GetShape(At(a, i), ShapeType.Face));
+            if (!F.IsNull)
             {
                 i++;
             }
 
             Order = theDI.Atoi(At(a, i++));
 
-            if (!E.IsNull() && !F.IsNull())
+            if (!E.IsNull && !F.IsNull)
             {
                 MakeFilling.Add(E, F, (Continuity)Order);
             }
-            else if (E.IsNull())
+            else if (E.IsNull)
             {
-                if (F.IsNull())
+                if (F.IsNull)
                 {
                     di.Append("\nWrong parameters\n\n");
                     return 1;
@@ -457,21 +462,21 @@ internal static class BRepTestFillingCommands
         }
         for (k = 1; k <= NbConstraints; k++)
         {
-            E = TopoDS.Edge(theDI.GetShape(At(a, i++), TopAbs_ShapeEnum.TopAbs_EDGE));
-            if (E.IsNull())
+            E = ShapeCasts.Edge(theDI.GetShape(At(a, i++), ShapeType.Edge));
+            if (E.IsNull)
             {
                 di.Append("Wrong parameters\n");
                 return 1;
             }
-            F = TopoDS.Face(theDI.GetShape(At(a, i), TopAbs_ShapeEnum.TopAbs_FACE));
-            if (!F.IsNull())
+            F = ShapeCasts.Face(theDI.GetShape(At(a, i), ShapeType.Face));
+            if (!F.IsNull)
             {
                 i++;
             }
 
             Order = theDI.Atoi(At(a, i++));
 
-            if (F.IsNull())
+            if (F.IsNull)
             {
                 MakeFilling.Add(E, (Continuity)Order, false);
             }
@@ -490,8 +495,8 @@ internal static class BRepTestFillingCommands
             else
             {
                 double U = theDI.Atof(At(a, i++)), V = theDI.Atof(At(a, i++));
-                F = TopoDS.Face(theDI.GetShape(At(a, i++), TopAbs_ShapeEnum.TopAbs_FACE));
-                if (F.IsNull())
+                F = ShapeCasts.Face(theDI.GetShape(At(a, i++), ShapeType.Face));
+                if (F.IsNull)
                 {
                     di.Append("Wrong parameters\n");
                     return 1;
@@ -513,7 +518,7 @@ internal static class BRepTestFillingCommands
         di.Append(" dist. max = ").Append(dmax).Append(" ; angle max = ").Append(angmax).Append(" ; diffcurv max = ")
           .Append(curvmax).Append("\n");
 
-        TopoDS_Face ResFace = TopoDS.Face(MakeFilling.Shape());
+        Face ResFace = ShapeCasts.Face(MakeFilling.Shape());
         theDI.SetShape(a[1], ResFace);
 
         return 0;

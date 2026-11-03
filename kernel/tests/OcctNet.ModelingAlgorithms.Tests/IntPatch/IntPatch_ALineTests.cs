@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection;
 using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_TypeTrans;
@@ -15,15 +17,15 @@ public class IntPatch_ALineTests
 
     private static IntPatch_ALine MakeLine()
     {
-        IntAna_IntQuadQuad anInter = new(theCyl, new IntAna_Quadric(theSph), 1.0e-7);
-        Assert.True(anInter.IsDone());
-        Assert.True(anInter.NbCurve() >= 1);
+        IntQuadQuad anInter = new(theCyl, new Quadric(theSph), 1.0e-7);
+        Assert.True(anInter.IsDone);
+        Assert.True(anInter.CurveCount >= 1);
         return new IntPatch_ALine(anInter.Curve(1), false, IntSurf_In, IntSurf_Out);
     }
 
-    private static Adaptor2d_Curve2d Arc() => new Geom2dAdaptor_Curve(new Geom2d_Line(new Line2D(new Point2D(0, 0), new Direction2D(1, 0))));
+    private static Curve2DAdaptorBase Arc() => new CurveAdaptor2D(new LineCurve2D(new Line2D(new Point2D(0, 0), new Direction2D(1, 0))));
 
-    private static IntPatch_Point Vertex(IntPatch_ALine theLine, double theParam, Adaptor2d_Curve2d? theArcOnS1 = null)
+    private static IntPatch_Point Vertex(IntPatch_ALine theLine, double theParam, Curve2DAdaptorBase? theArcOnS1 = null)
     {
         IntPatch_Point aPnt = new();
         aPnt.SetValue(theLine.Value(theParam), 1.0e-7, false);
@@ -68,7 +70,7 @@ public class IntPatch_ALineTests
             Assert.True(aFound);
         }
 
-        IntAna_Curve aCopy = aLine.Curve();
+        Curve aCopy = aLine.Curve();
         Assert.Equal(aLine.Value(1.0), aCopy.Value(1.0));
     }
 
@@ -79,7 +81,7 @@ public class IntPatch_ALineTests
         double aFirst = aLine.FirstParameter(out _);
         double aLast = aLine.LastParameter(out _);
         double aMid = 0.5 * (aFirst + aLast);
-        Adaptor2d_Curve2d anArc1 = Arc(), anArc2 = Arc();
+        Curve2DAdaptorBase anArc1 = Arc(), anArc2 = Arc();
 
         aLine.AddVertex(Vertex(aLine, aLast - 0.1)); // last, on no restriction: dropped
         aLine.AddVertex(Vertex(aLine, aMid)); // same parameter as the next, on no restriction: killed
@@ -104,7 +106,7 @@ public class IntPatch_ALineTests
         double aFirst = aLine.FirstParameter(out _);
         double aLast = aLine.LastParameter(out _);
         double aMid = 0.5 * (aFirst + aLast);
-        Adaptor2d_Curve2d anArc1 = Arc(), anArc2 = Arc();
+        Curve2DAdaptorBase anArc1 = Arc(), anArc2 = Arc();
 
         IntPatch_Point aOnS2 = Vertex(aLine, aMid);
         aOnS2.SetArc(false, anArc2, 0.75, new IntSurf_Transition(), new IntSurf_Transition());

@@ -3,10 +3,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -27,8 +32,8 @@ public partial class IntTools_FaceFace
     protected bool myIsDone;
     protected IntPatch_Intersection myIntersector;
     protected GeomInt_LineConstructor myLConstruct;
-    protected GeomAdaptor_Surface myHS1;
-    protected GeomAdaptor_Surface myHS2;
+    protected SurfaceAdaptor myHS1;
+    protected SurfaceAdaptor myHS2;
     protected int myNbrestr;
     protected bool myApprox;
     protected bool myApprox1;
@@ -40,8 +45,8 @@ public partial class IntTools_FaceFace
     protected double myFuzzyValue;
     protected NCollection_Sequence<IntTools_Curve> mySeqOfCurve;
     protected bool myTangentFaces;
-    protected TopoDS_Face myFace1;
-    protected TopoDS_Face myFace2;
+    protected Face myFace1;
+    protected Face myFace2;
     protected NCollection_Sequence<IntTools_PntOn2Faces> myPnts;
     protected NCollection_List<IntSurf_PntOn2S> myListOfPnts;
     protected IntTools_Context? myContext;
@@ -54,13 +59,13 @@ public partial class IntTools_FaceFace
         mySeqOfCurve = new NCollection_Sequence<IntTools_Curve>();
         myPnts = new NCollection_Sequence<IntTools_PntOn2Faces>();
         myListOfPnts = new NCollection_List<IntSurf_PntOn2S>();
-        myFace1 = new TopoDS_Face();
-        myFace2 = new TopoDS_Face();
+        myFace1 = new Face();
+        myFace2 = new Face();
         myIsDone = false;
         myTangentFaces = false;
         //
-        myHS1 = new GeomAdaptor_Surface();
-        myHS2 = new GeomAdaptor_Surface();
+        myHS1 = new SurfaceAdaptor();
+        myHS2 = new SurfaceAdaptor();
         myTolF1 = 0.0;
         myTolF2 = 0.0;
         myTol = 0.0;
@@ -75,10 +80,10 @@ public partial class IntTools_FaceFace
     public IntTools_Context? Context() => myContext;
 
     /// <summary>The first of the processed faces.</summary>
-    public TopoDS_Face Face1() => myFace1;
+    public Face Face1() => myFace1;
 
     /// <summary>The second of the processed faces.</summary>
-    public TopoDS_Face Face2() => myFace2;
+    public Face Face2() => myFace2;
 
     /// <summary>True if the faces are tangent (same domain).</summary>
     public bool TangentFaces() => myTangentFaces;
@@ -145,7 +150,7 @@ public partial class IntTools_FaceFace
     /// </summary>
     public void SetList(NCollection_List<IntSurf_PntOn2S> aListOfPnts) => myListOfPnts = new(aListOfPnts);
 
-    private static bool isTreatAnalityc(BRepAdaptor_Surface theBAS1, BRepAdaptor_Surface theBAS2, double theTol)
+    private static bool isTreatAnalityc(FaceSurfaceAdaptor theBAS1, FaceSurfaceAdaptor theBAS2, double theTol)
     {
         const double Tolang = 1.0e-8;
         double aHigh = 0.0;
@@ -204,9 +209,9 @@ public partial class IntTools_FaceFace
             return true;
         }
 
-        IntAna_QuadQuadGeo inter = new();
+        QuadQuadGeo inter = new();
         inter.Perform(aS1, aS2, Tolang, theTol, aHigh);
-        if (inter.TypeInter() == IntAna_ResultType.IntAna_Ellipse)
+        if (inter.TypeInter() == ResultType.Ellipse)
         {
             Ellipse3D anEl = inter.Ellipse(1);
             double aMajorR = anEl.MajorRadius();
@@ -216,7 +221,7 @@ public partial class IntTools_FaceFace
         }
         else
         {
-            return inter.IsDone();
+            return inter.IsDone;
         }
     }
 
@@ -224,7 +229,7 @@ public partial class IntTools_FaceFace
     /// Intersects the surfaces of aF1 and aF2, with the sum of the faces' tolerances (and the fuzzy value) as the
     /// intersection criterion. theToRunParallel runs the tolerance computations in parallel.
     /// </summary>
-    public void Perform(in TopoDS_Face aF1, in TopoDS_Face aF2, bool theToRunParallel = false)
+    public void Perform(in Face aF1, in Face aF2, bool theToRunParallel = false)
     {
         if (myContext is null)
         {
@@ -238,8 +243,8 @@ public partial class IntTools_FaceFace
         myFace1 = aF1;
         myFace2 = aF2;
 
-        BRepAdaptor_Surface aBAS1 = myContext.SurfaceAdaptor(myFace1);
-        BRepAdaptor_Surface aBAS2 = myContext.SurfaceAdaptor(myFace2);
+        FaceSurfaceAdaptor aBAS1 = myContext.SurfaceAdaptor(myFace1);
+        FaceSurfaceAdaptor aBAS2 = myContext.SurfaceAdaptor(myFace2);
         SurfaceKind aType1 = aBAS1.GetType();
         SurfaceKind aType2 = aBAS2.GetType();
 
@@ -270,12 +275,12 @@ public partial class IntTools_FaceFace
             myApprox2 = anAproxTmp;
         }
 
-        Geom_Surface S1 = BRep_Tool.Surface(myFace1)!;
-        Geom_Surface S2 = BRep_Tool.Surface(myFace2)!;
+        Surface S1 = Tool.Surface(myFace1)!;
+        Surface S2 = Tool.Surface(myFace2)!;
 
         double aFuzz = myFuzzyValue / 2.0;
-        myTolF1 = BRep_Tool.Tolerance(myFace1) + aFuzz;
-        myTolF2 = BRep_Tool.Tolerance(myFace2) + aFuzz;
+        myTolF1 = Tool.Tolerance(myFace1) + aFuzz;
+        myTolF2 = Tool.Tolerance(myFace2) + aFuzz;
         myTol = myTolF1 + myTolF2;
 
         double TolArc = myTol;
@@ -307,7 +312,7 @@ public partial class IntTools_FaceFace
                 int NbLinPP = mySeqOfCurve.Length();
                 if (NbLinPP != 0 && bReverse)
                 {
-                    Geom2d_Curve? aC2D1, aC2D2;
+                    Curve2D? aC2D1, aC2D2;
                     int aNbLin = mySeqOfCurve.Length();
                     for (int i = 1; i <= aNbLin; ++i)
                     {
@@ -367,16 +372,16 @@ public partial class IntTools_FaceFace
         {
             double UVMaxStep = IntPatch_Intersection.DefineUVMaxStep(myHS1, dom1, myHS2, dom2);
             double Deflection = 0.1;
-            if (aType1 == BSplineSurface && aType2 == BSplineSurface)
+            if (aType1 == SurfaceKind.BSplineSurface && aType2 == SurfaceKind.BSplineSurface)
             {
                 Deflection /= 10.0;
             }
             myIntersector.SetTolerances(TolArc, TolTang, UVMaxStep, Deflection);
         }
 
-        if ((aType1 != BSplineSurface) && (aType1 != BezierSurface)
-            && (aType1 != OtherSurface) && (aType2 != BSplineSurface)
-            && (aType2 != BezierSurface) && (aType2 != OtherSurface))
+        if ((aType1 != SurfaceKind.BSplineSurface) && (aType1 != SurfaceKind.BezierSurface)
+            && (aType1 != OtherSurface) && (aType2 != SurfaceKind.BSplineSurface)
+            && (aType2 != SurfaceKind.BezierSurface) && (aType2 != OtherSurface))
         {
             if ((aType1 == SurfaceKind.Torus) || (aType2 == SurfaceKind.Torus))
             {
@@ -416,7 +421,7 @@ public partial class IntTools_FaceFace
             //
             if (bReverse)
             {
-                Geom2d_Curve? aC2D1, aC2D2;
+                Curve2D? aC2D1, aC2D2;
                 //
                 int aNbLinSeqOfCurve = mySeqOfCurve.Length();
                 for (int i = 1; i <= aNbLinSeqOfCurve; ++i)
@@ -490,13 +495,13 @@ public partial class IntTools_FaceFace
         // Minimal tangential tolerance for the curve
         double aTolFMax = Max(myTolF1, myTolF2);
         //
-        Geom_Surface aS1 = myHS1.Surface()!;
-        Geom_Surface aS2 = myHS2.Surface()!;
+        Surface aS1 = myHS1.Surface()!;
+        Surface aS2 = myHS2.Surface()!;
         //
         for (i = 1; i <= aNbLin; ++i)
         {
             ref IntTools_Curve aIC = ref mySeqOfCurve[i];
-            Geom_Curve? aC3D = aIC.Curve();
+            Curve3D? aC3D = aIC.Curve();
             if (aC3D is null)
             {
                 continue;
@@ -507,16 +512,16 @@ public partial class IntTools_FaceFace
             double aLast = aC3D.LastParameter();
             //
             // Compute the tolerance for the curve
-            Geom2d_Curve? aC2D1 = aIC.FirstCurve2d();
-            Geom2d_Curve? aC2D2 = aIC.SecondCurve2d();
+            Curve2D? aC2D1 = aIC.FirstCurve2d();
+            Curve2D? aC2D2 = aIC.SecondCurve2d();
             //
             for (j = 0; j < 2; ++j)
             {
-                Geom2d_Curve? aC2D = j == 0 ? aC2D1 : aC2D2;
+                Curve2D? aC2D = j == 0 ? aC2D1 : aC2D2;
                 if (aC2D is not null)
                 {
                     // Look for the maximal deviation between 3D and 2D curves
-                    Geom_Surface aS = j == 0 ? aS1 : aS2;
+                    Surface aS = j == 0 ? aS1 : aS2;
                     if (IntTools_Tools.ComputeTolerance(aC3D, aC2D, aS, aFirst, aLast, out double aD, out _,
                                                         global::Kerf.Engine.Foundation.Precision.PConfusion(), theToRunParallel))
                     {
@@ -529,7 +534,7 @@ public partial class IntTools_FaceFace
                 else
                 {
                     // Look for the maximal deviation between 3D curve and surface
-                    TopoDS_Face aF = j == 0 ? myFace1 : myFace2;
+                    Face aF = j == 0 ? myFace1 : myFace2;
                     double aD = FindMaxDistance(aC3D, aFirst, aLast, aF, myContext!);
                     if (aD > aTolC)
                     {

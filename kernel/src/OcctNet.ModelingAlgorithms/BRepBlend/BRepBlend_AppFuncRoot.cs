@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -10,7 +11,7 @@ using Kerf.Geometry;
 namespace Occt;
 
 /// <summary>
-/// A blend function as an <see cref="Approx_SweepFunction"/> for Approx_SweepApproximation: the section at a
+/// A blend function as an <see cref="SweepFunction"/> for Approx_SweepApproximation: the section at a
 /// parameter is solved again from the walking line's points, interpolated.
 /// </summary>
 /// <remarks>
@@ -18,7 +19,7 @@ namespace Occt;
 /// iterations (<c>SearchPoint</c>), so the line it is given changes. OCCT keeps the function as a raw pointer; here
 /// it is a reference.
 /// </remarks>
-public abstract class BRepBlend_AppFuncRoot : Approx_SweepFunction
+public abstract class BRepBlend_AppFuncRoot : SweepFunction
 {
     private readonly BRepBlend_Line myLine;
     private readonly Blend_AppFunction myFunc;
@@ -163,9 +164,12 @@ public abstract class BRepBlend_AppFuncRoot : Approx_SweepFunction
         myFunc.Mults(TMults);
     }
 
-    public override bool IsRational()
+    public override bool IsRational
     {
-        return myFunc.IsRational();
+        get
+        {
+            return myFunc.IsRational();
+        }
     }
 
     public override int NbIntervals(Continuity S)

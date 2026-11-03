@@ -56,7 +56,7 @@ public sealed class GeomToStep_MakeLine : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D line, its location divided by the length factor.</summary>
-    public GeomToStep_MakeLine(Geom_Line Gline, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeLine(LineCurve3D Gline, in StepData_Factors theLocalFactors)
     {
         Line3D L;
         L = Gline.Lin();
@@ -65,7 +65,7 @@ public sealed class GeomToStep_MakeLine : GeomToStep_Root
     }
 
     /// <summary>A 3D line (default factors).</summary>
-    public GeomToStep_MakeLine(Geom_Line Gline) : this(Gline, new StepData_Factors())
+    public GeomToStep_MakeLine(LineCurve3D Gline) : this(Gline, new StepData_Factors())
     {
     }
 
@@ -74,7 +74,7 @@ public sealed class GeomToStep_MakeLine : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D line.</summary>
-    public GeomToStep_MakeLine(Geom2d_Line Gline, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeLine(LineCurve2D Gline, in StepData_Factors theLocalFactors)
     {
         Line2D L;
         L = Gline.Lin2d();
@@ -83,7 +83,7 @@ public sealed class GeomToStep_MakeLine : GeomToStep_Root
     }
 
     /// <summary>A 2D line.</summary>
-    public GeomToStep_MakeLine(Geom2d_Line Gline) : this(Gline, new StepData_Factors())
+    public GeomToStep_MakeLine(LineCurve2D Gline) : this(Gline, new StepData_Factors())
     {
     }
 

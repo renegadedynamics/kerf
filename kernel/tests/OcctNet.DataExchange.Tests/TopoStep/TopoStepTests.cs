@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.StepToTopoDS_BuilderError;
 using static Occt.StepToTopoDS_GeometricToolError;
 using static Occt.TopoDSToStep_MakeFaceError;
@@ -10,10 +14,10 @@ namespace OcctNet.DataExchange.Tests.TopoStep;
 /// <summary>Unit tests of StepToTopoDS and TopoDSToStep (unit 8E): their contracts beyond the native comparisons.</summary>
 public sealed class TopoStepTests
 {
-    private static string BRepText(in TopoDS_Shape theShape)
+    private static string BRepText(in Shape theShape)
     {
         var aS = new StringWriter { NewLine = "\n" };
-        BRepTools.Write(theShape, aS);
+        BrepTools.Write(theShape, aS);
         return aS.ToString();
     }
 
@@ -49,9 +53,9 @@ public sealed class TopoStepTests
     public void Writers_never_change_a_frozen_input()
     {
         ShapeAlgo.Init();
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape(); // frozen
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape(); // frozen
         string aBefore = BRepText(aBox);
-        TopoDS_Solid aSolid = TopoDS.Solid(aBox);
+        Solid aSolid = ShapeCasts.Solid(aBox);
         var aMSB = new TopoDSToStep_MakeManifoldSolidBrep(aSolid, NewFP());
         Assert.True(aMSB.IsDone());
         var aSBSM = new TopoDSToStep_MakeShellBasedSurfaceModel(aSolid, NewFP());
@@ -71,8 +75,8 @@ public sealed class TopoStepTests
     public void A_written_box_reads_back_as_a_frozen_solid()
     {
         ShapeAlgo.Init();
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
-        var aMSB = new TopoDSToStep_MakeManifoldSolidBrep(TopoDS.Solid(aBox), NewFP());
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+        var aMSB = new TopoDSToStep_MakeManifoldSolidBrep(ShapeCasts.Solid(aBox), NewFP());
 
         // the entities into a model of their own, then translated back
         var aModel = new StepData_StepModel();
@@ -84,10 +88,10 @@ public sealed class TopoStepTests
         aBuilder.Init(aMSB.Value(), aTP);
         Assert.True(aBuilder.IsDone());
         Assert.False(aBuilder.InternalValue().TShape()!.IsFrozen);
-        TopoDS_Shape aSolid = aBuilder.Value();
+        Shape aSolid = aBuilder.Value();
         Assert.True(aSolid.TShape()!.IsFrozen);
-        Assert.Equal(TopAbs_ShapeEnum.TopAbs_SOLID, aSolid.ShapeType());
-        var aProps = new GProp_GProps();
+        Assert.Equal(ShapeType.Solid, aSolid.ShapeType());
+        var aProps = new Properties();
         BRepGProp.VolumeProperties(aSolid, aProps);
         Assert.Equal(6000.0, aProps.Mass(), 1e-6);
     }
@@ -104,14 +108,14 @@ public sealed class TopoStepTests
         var aMults = new NCollection_Array1<int>(1, 2);
         aMults.SetValue(1, 2);
         aMults.SetValue(2, 2);
-        var aCurve = new Geom_BSplineCurve(aPoles, aKnots, aMults, 1);
+        var aCurve = new BSplineCurve3D(aPoles, aKnots, aMults, 1);
         aCurve.Freeze();
-        Geom_Curve aRef = aCurve;
+        Curve3D aRef = aCurve;
         double w1 = 0.8, w2 = 0.2;
         StepToTopoDS_GeometricTool.UpdateParam3d(ref aRef, ref w1, ref w2, 1e-7, true);
         Assert.NotSame(aCurve, aRef);
         Assert.Equal(new Point3D(0, 0, 0), aCurve.StartPoint()); // the shared curve unchanged
-        Assert.Equal(new Point3D(10, 0, 0), ((Geom_BSplineCurve)aRef).StartPoint());
+        Assert.Equal(new Point3D(10, 0, 0), ((BSplineCurve3D)aRef).StartPoint());
         Assert.True(w1 < w2);
     }
 

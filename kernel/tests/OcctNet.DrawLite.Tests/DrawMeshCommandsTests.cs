@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using Occt;
 using OcctNet.DrawLite;
 
@@ -131,9 +134,9 @@ public class DrawMeshCommandsTests
     {
         (DrawInterpreter i, _) = Load("solid.brep");
         i.Eval("explode s f; tcopy s t");
-        TopoDS_Shape aBefore = i.GetShape("s");
+        Shape aBefore = i.GetShape("s");
         Assert.Equal("", i.Eval("tclean s t"));
-        TopoDS_Shape anAfter = i.GetShape("s");
+        Shape anAfter = i.GetShape("s");
 
         // the name is bound to a cleaned copy (decision 480); the faces exploded before are rebound to the copy's, as
         // in DRAWEXE where tclean writes into them (decision 495)
@@ -146,7 +149,7 @@ public class DrawMeshCommandsTests
 
         // -geom drops the surfaces and curves as well
         i.Eval($"restore {DataOcc}/solid.brep g; tclean -geom g");
-        Assert.Null(BRep_Tool.Surface(TopoDS.Face(FirstFace(i.GetShape("g")))));
+        Assert.Null(Tool.Surface(ShapeCasts.Face(FirstFace(i.GetShape("g")))));
 
         Assert.Equal("Syntax error : NULL shape 'x'", Error(i, "tclean x"));
         Assert.Equal("Syntax error: wrong usage of arguments: do not use 'force' and 'geom' flags together", Error(i, "tclean -force -geom s"));
@@ -154,7 +157,7 @@ public class DrawMeshCommandsTests
         Assert.Equal("", Error(i, "tclean"));
     }
 
-    private static TopoDS_Shape FirstFace(in TopoDS_Shape theShape) => new TopExp_Explorer(theShape, TopAbs_ShapeEnum.TopAbs_FACE).Current();
+    private static Shape FirstFace(in Shape theShape) => new Explorer(theShape, ShapeType.Face).Current();
 
     [Fact]
     public void Triepoints_binds_a_vertex_at_each_node_of_the_edges_polygons()
@@ -179,14 +182,14 @@ public class DrawMeshCommandsTests
     public void Trmergenodes_merges_the_nodes_of_each_face()
     {
         (DrawInterpreter i, _) = Load("solid.brep");
-        TopoDS_Shape aBefore = i.GetShape("s");
+        Shape aBefore = i.GetShape("s");
         Assert.Equal("Old, Triangles: 248, Nodes: 256\nNew, Triangles: 248, Nodes: 252\n", i.Eval("trmergenodes s"));
         Assert.False(i.GetShape("s").IsSame(aBefore));
         Assert.Contains("252 nodes.", i.Eval("trinfo s"), StringComparison.Ordinal);
 
         // nothing to merge: the shape stays bound
         i.Eval($"restore {DataOcc}/Room.brep r");
-        TopoDS_Shape aRoom = i.GetShape("r");
+        Shape aRoom = i.GetShape("r");
         Assert.Equal("Old, Triangles: 10, Nodes: 20\nNew, Triangles: 10, Nodes: 20\n", i.Eval("trmergenodes r -angle 10 -tolerance 0.1"));
         Assert.True(i.GetShape("r").IsSame(aRoom));
         Assert.Equal("Old, Triangles: 10, Nodes: 20\nNew, Triangles: 10, Nodes: 20\n", i.Eval("trmergenodes r -force"));
@@ -203,13 +206,13 @@ public class DrawMeshCommandsTests
     public void Correctnormals_computes_and_aligns_the_normals()
     {
         (DrawInterpreter i, _) = Load("Room.brep");
-        TopoDS_Shape aBefore = i.GetShape("s");
+        Shape aBefore = i.GetShape("s");
         Assert.Equal("Some corrections in source shape have been made!\n", i.Eval("correctnormals s"));
         Assert.False(i.GetShape("s").IsSame(aBefore));
-        Assert.True(BRep_Tool.Triangulation(TopoDS.Face(FirstFace(i.GetShape("s"))), out _)!.HasNormals);
+        Assert.True(Tool.Triangulation(ShapeCasts.Face(FirstFace(i.GetShape("s"))), out _)!.HasNormals);
 
         // the normals are there now and agree: nothing to do, the shape stays bound
-        TopoDS_Shape aCorrected = i.GetShape("s");
+        Shape aCorrected = i.GetShape("s");
         Assert.Equal("Normals have not been changed!\n", i.Eval("correctnormals s"));
         Assert.True(i.GetShape("s").IsSame(aCorrected));
 

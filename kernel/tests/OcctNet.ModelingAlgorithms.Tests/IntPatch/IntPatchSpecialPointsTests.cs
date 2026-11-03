@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.IntPatch_SpecPntType;
 
@@ -17,8 +18,8 @@ public class IntPatchSpecialPointsTests
 {
     private static readonly CoordinateSystem Origin = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
 
-    private static GeomAdaptor_Surface Plane(double x, double y, double z, double nx, double ny, double nz) =>
-        new(new Geom_Plane(new Point3D(x, y, z), new Direction3D(nx, ny, nz)), -10, 10, -10, 10);
+    private static SurfaceAdaptor Plane(double x, double y, double z, double nx, double ny, double nz) =>
+        new(new PlaneSurface(new Point3D(x, y, z), new Direction3D(nx, ny, nz)), -10, 10, -10, 10);
 
     private static IntSurf_PntOn2S Pnt(Point3D P, double u1, double v1, double u2, double v2) =>
         new IntSurf_PntOn2S().WithValue(P, u1, v1, u2, v2);
@@ -47,8 +48,8 @@ public class IntPatchSpecialPointsTests
     {
         // Sphere of radius 2; a plane through the north pole (0, 0, 2), normal (1, 0, 1): it cuts the sphere in a
         // circle whose tangent at the pole is the Y axis, so the sphere's U there is pi/2 (V = pi/2).
-        GeomAdaptor_Surface aQ = new(new Geom_SphericalSurface(Origin, 2.0));
-        GeomAdaptor_Surface aP = Plane(0, 0, 2, 1, 0, 1);
+        SurfaceAdaptor aQ = new(new SphericalSurface(Origin, 2.0));
+        SurfaceAdaptor aP = Plane(0, 0, 2, 1, 0, 1);
 
         IntPatch_Point aVertex = new();
         aVertex.SetValue(Pnt(new Point3D(0, 1e-4, 2), M_PI / 2 + 0.1, M_PI / 2 - 1e-4, 0.0, 0.0));
@@ -79,8 +80,8 @@ public class IntPatchSpecialPointsTests
     {
         // Cone of semi-angle pi/4 and reference radius 1: the apex is at V = -sqrt(2), point (0, 0, -1). The plane
         // x = 0 through the apex contains the generatrices at U = pi/2 and 3*pi/2; the vertex's U chooses pi/2.
-        GeomAdaptor_Surface aQ = new(new Geom_ConicalSurface(Origin, M_PI / 4, 1.0));
-        GeomAdaptor_Surface aP = Plane(0, 0, -1, 1, 0, 0);
+        SurfaceAdaptor aQ = new(new ConicalSurface(Origin, M_PI / 4, 1.0));
+        SurfaceAdaptor aP = Plane(0, 0, -1, 1, 0, 0);
 
         IntPatch_Point aVertex = new();
         aVertex.SetValue(Pnt(new Point3D(0, 1e-4, -1 + 1e-4), M_PI / 2 + 0.05, -Math.Sqrt(2.0) + 1e-4, 0.0, 0.0));
@@ -103,8 +104,8 @@ public class IntPatchSpecialPointsTests
     [Fact]
     public void AddSingularPole_OtherQuadric_Throws()
     {
-        GeomAdaptor_Surface aQ = new(new Geom_CylindricalSurface(Origin, 1.0));
-        GeomAdaptor_Surface aP = Plane(0, 0, 0, 0, 0, 1);
+        SurfaceAdaptor aQ = new(new CylindricalSurface(Origin, 1.0));
+        SurfaceAdaptor aP = Plane(0, 0, 0, 0, 0, 1);
         IntPatch_Point aVertex = new();
         aVertex.SetTolerance(1e-3);
         IntSurf_PntOn2S anAdded = new();
@@ -117,8 +118,8 @@ public class IntPatchSpecialPointsTests
     {
         // The cylinder's seam U = 0 is the line x = 1, y = 0; the plane z = 0.5 cuts it at (1, 0, 0.5): on the
         // plane at (U, V) = (1, 0), on the cylinder at (0, 0.5), adjusted to the reference point's U = 6.2 (2*pi).
-        GeomAdaptor_Surface aQ = new(new Geom_CylindricalSurface(Origin, 1.0), 0, 2 * M_PI, -10, 10);
-        GeomAdaptor_Surface aP = Plane(0, 0, 0.5, 0, 0, 1);
+        SurfaceAdaptor aQ = new(new CylindricalSurface(Origin, 1.0), 0, 2 * M_PI, -10, 10);
+        SurfaceAdaptor aP = Plane(0, 0, 0.5, 0, 0, 1);
         IntSurf_PntOn2S aRef = Pnt(new Point3D(1, 0, 0.5), 6.2, 0.5, 1.0, -0.08);
 
         math_Vector aTol = new(1, 3), aStart = new(1, 3), anInf = new(1, 3), aSup = new(1, 3);
@@ -149,8 +150,8 @@ public class IntPatchSpecialPointsTests
     public void AddCrossUVIsoPoint_CylinderOrigin()
     {
         // The cylinder's point (U, V) = (0, 0) is (1, 0, 0), on the plane z = 0 at (1, 0).
-        GeomAdaptor_Surface aQ = new(new Geom_CylindricalSurface(Origin, 1.0), 0, 2 * M_PI, -10, 10);
-        GeomAdaptor_Surface aP = Plane(0, 0, 0, 0, 0, 1);
+        SurfaceAdaptor aQ = new(new CylindricalSurface(Origin, 1.0), 0, 2 * M_PI, -10, 10);
+        SurfaceAdaptor aP = Plane(0, 0, 0, 0, 0, 1);
         IntSurf_PntOn2S aRef = Pnt(new Point3D(1, 0, 0), 6.2, 0.01, 0.9, 0.1);
         IntSurf_PntOn2S anAdded = new();
         Assert.True(IntPatch_SpecialPoints.AddCrossUVIsoPoint(aQ, aP, aRef, 1e-7, ref anAdded));
@@ -161,7 +162,7 @@ public class IntPatchSpecialPointsTests
         Assert.Equal(0.0, aVp, 9);
 
         // Too far from the plane: no point.
-        GeomAdaptor_Surface aFar = Plane(0, 0, 1, 0, 0, 1);
+        SurfaceAdaptor aFar = Plane(0, 0, 1, 0, 0, 1);
         Assert.False(IntPatch_SpecialPoints.AddCrossUVIsoPoint(aQ, aFar, aRef, 1e-7, ref anAdded));
     }
 
@@ -192,8 +193,8 @@ public class IntPatchSpecialPointsTests
     [Fact]
     public void ContinueAfterSpecialPoint_NoneOrSame_ReturnsFalse()
     {
-        GeomAdaptor_Surface aQ = new(new Geom_SphericalSurface(Origin, 2.0));
-        GeomAdaptor_Surface aP = Plane(0, 0, 2, 1, 0, 1);
+        SurfaceAdaptor aQ = new(new SphericalSurface(Origin, 2.0));
+        SurfaceAdaptor aP = Plane(0, 0, 2, 1, 0, 1);
         IntSurf_PntOn2S aRef = Pnt(new Point3D(0, 0, 2), 1.0, M_PI_2, 0.0, 0.0);
         IntSurf_PntOn2S aNew = aRef;
         Assert.False(IntPatch_SpecialPoints.ContinueAfterSpecialPoint(aQ, aP, aRef, IntPatch_SPntNone, 1e-9, ref aNew));

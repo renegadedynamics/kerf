@@ -3,8 +3,10 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 
+using Kerf.Engine.Geometry.Bounds.Computation;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -16,11 +18,11 @@ public class GeomBndLib_ExtrusionTest
     private static void ExpectNoLarger(in Box theNew, in Box theOld, double theTol)
         => GeomBndLibSurfaceTestUtils.ExpectNoLarger(theNew, theOld, theTol);
 
-    private static void ExpectContainsSurface(in Box theBox, Geom_SurfaceOfLinearExtrusion theSurf, double theUMin,
+    private static void ExpectContainsSurface(in Box theBox, ExtrusionSurface theSurf, double theUMin,
                                               double theUMax, double theVMin, double theVMax, int theNbU, int theNbV)
         => GeomBndLibSurfaceTestUtils.ExpectContainsSurface(theBox, theSurf, theUMin, theUMax, theVMin, theVMax, theNbU, theNbV);
 
-    private static Geom_BSplineCurve TestBSpline()
+    private static BSplineCurve3D TestBSpline()
     {
         NCollection_Array1<Point3D> aPoles = new(1, 4);
         aPoles.SetValue(1, new Point3D(0.0, 0.0, 0.0));
@@ -29,7 +31,7 @@ public class GeomBndLib_ExtrusionTest
         aPoles.SetValue(4, new Point3D(10.0, 3.0, 0.0));
         NCollection_Array1<double> aKnots = NCollection_Array1<double>.From([0.0, 0.5, 1.0]);
         NCollection_Array1<int> aMults = NCollection_Array1<int>.From([3, 1, 3]);
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 2);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 2);
     }
 
     // =========================================================================
@@ -39,15 +41,15 @@ public class GeomBndLib_ExtrusionTest
     [Fact]
     public void CircleAlongZ_Full_CompareWithBndLib()
     {
-        Geom_Circle aCircle = new(Constants.XOY(), 5.0);
-        Geom_SurfaceOfLinearExtrusion anExtr = new(aCircle, Constants.DZ());
-        GeomAdaptor_Surface anAdaptor = new(anExtr);
+        CircleCurve3D aCircle = new(Constants.XOY(), 5.0);
+        ExtrusionSurface anExtr = new(aCircle, Constants.DZ());
+        SurfaceAdaptor anAdaptor = new(anExtr);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(anExtr).Add(0.0, 2.0 * M_PI, 0.0, 10.0, Conf, ref aNewBox);
+        new SurfaceBounds(anExtr).Add(0.0, 2.0 * M_PI, 0.0, 10.0, Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, 0.0, 2.0 * M_PI, 0.0, 10.0, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, 0.0, 2.0 * M_PI, 0.0, 10.0, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
         ExpectContainsSurface(aNewBox, anExtr, 0.0, 2.0 * M_PI, 0.0, 10.0, 36, 10);
@@ -56,15 +58,15 @@ public class GeomBndLib_ExtrusionTest
     [Fact]
     public void CircleAlongZ_Arc_CompareWithBndLib()
     {
-        Geom_Circle aCircle = new(Constants.XOY(), 5.0);
-        Geom_SurfaceOfLinearExtrusion anExtr = new(aCircle, Constants.DZ());
-        GeomAdaptor_Surface anAdaptor = new(anExtr);
+        CircleCurve3D aCircle = new(Constants.XOY(), 5.0);
+        ExtrusionSurface anExtr = new(aCircle, Constants.DZ());
+        SurfaceAdaptor anAdaptor = new(anExtr);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(anExtr).Add(0.0, M_PI, 0.0, 5.0, Conf, ref aNewBox);
+        new SurfaceBounds(anExtr).Add(0.0, M_PI, 0.0, 5.0, Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, 0.0, M_PI, 0.0, 5.0, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, 0.0, M_PI, 0.0, 5.0, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
         ExpectContainsSurface(aNewBox, anExtr, 0.0, M_PI, 0.0, 5.0, 18, 5);
@@ -76,11 +78,11 @@ public class GeomBndLib_ExtrusionTest
         // Line along Z through (5, 0, 0) extruded along X.
         // P(U, V) = (5 + V, 0, U); U in (-inf, +inf), V in [0, 10].
         // Expected: X in [5, 15], Y finite (= 0), Z open both ways.
-        Geom_Line aLine = new(new Point3D(5.0, 0.0, 0.0), Constants.DZ());
-        Geom_SurfaceOfLinearExtrusion anExtr = new(aLine, Constants.DX());
+        LineCurve3D aLine = new(new Point3D(5.0, 0.0, 0.0), Constants.DZ());
+        ExtrusionSurface anExtr = new(aLine, Constants.DX());
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(anExtr).Add(-global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite(), 0.0, 10.0, Conf, ref aNewBox);
+        new SurfaceBounds(anExtr).Add(-global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite(), 0.0, 10.0, Conf, ref aNewBox);
 
         Assert.False(aNewBox.IsVoid);
         Assert.False(aNewBox.IsWhole);
@@ -106,15 +108,15 @@ public class GeomBndLib_ExtrusionTest
     [Fact]
     public void CircleAlongDiagonal_CompareWithBndLib()
     {
-        Geom_Circle aCircle = new(Constants.XOY(), 5.0);
-        Geom_SurfaceOfLinearExtrusion anExtr = new(aCircle, new Direction3D(1.0, 0.0, 1.0));
-        GeomAdaptor_Surface anAdaptor = new(anExtr);
+        CircleCurve3D aCircle = new(Constants.XOY(), 5.0);
+        ExtrusionSurface anExtr = new(aCircle, new Direction3D(1.0, 0.0, 1.0));
+        SurfaceAdaptor anAdaptor = new(anExtr);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(anExtr).Add(0.0, 2.0 * M_PI, 0.0, 10.0, Conf, ref aNewBox);
+        new SurfaceBounds(anExtr).Add(0.0, 2.0 * M_PI, 0.0, 10.0, Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, 0.0, 2.0 * M_PI, 0.0, 10.0, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, 0.0, 2.0 * M_PI, 0.0, 10.0, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
         ExpectContainsSurface(aNewBox, anExtr, 0.0, 2.0 * M_PI, 0.0, 10.0, 36, 10);
@@ -127,15 +129,15 @@ public class GeomBndLib_ExtrusionTest
     [Fact]
     public void EllipseAlongZ_CompareWithBndLib()
     {
-        Geom_Ellipse anEllipse = new(Constants.XOY(), 8.0, 3.0);
-        Geom_SurfaceOfLinearExtrusion anExtr = new(anEllipse, Constants.DZ());
-        GeomAdaptor_Surface anAdaptor = new(anExtr);
+        EllipseCurve3D anEllipse = new(Constants.XOY(), 8.0, 3.0);
+        ExtrusionSurface anExtr = new(anEllipse, Constants.DZ());
+        SurfaceAdaptor anAdaptor = new(anExtr);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(anExtr).Add(0.0, 2.0 * M_PI, 0.0, 5.0, Conf, ref aNewBox);
+        new SurfaceBounds(anExtr).Add(0.0, 2.0 * M_PI, 0.0, 5.0, Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, 0.0, 2.0 * M_PI, 0.0, 5.0, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, 0.0, 2.0 * M_PI, 0.0, 5.0, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
         ExpectContainsSurface(aNewBox, anExtr, 0.0, 2.0 * M_PI, 0.0, 5.0, 36, 5);
@@ -144,15 +146,15 @@ public class GeomBndLib_ExtrusionTest
     [Fact]
     public void EllipseAlongZ_Arc_CompareWithBndLib()
     {
-        Geom_Ellipse anEllipse = new(Constants.XOY(), 8.0, 3.0);
-        Geom_SurfaceOfLinearExtrusion anExtr = new(anEllipse, Constants.DZ());
-        GeomAdaptor_Surface anAdaptor = new(anExtr);
+        EllipseCurve3D anEllipse = new(Constants.XOY(), 8.0, 3.0);
+        ExtrusionSurface anExtr = new(anEllipse, Constants.DZ());
+        SurfaceAdaptor anAdaptor = new(anExtr);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(anExtr).Add(0.0, M_PI, -2.0, 5.0, Conf, ref aNewBox);
+        new SurfaceBounds(anExtr).Add(0.0, M_PI, -2.0, 5.0, Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, 0.0, M_PI, -2.0, 5.0, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, 0.0, M_PI, -2.0, 5.0, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
         ExpectContainsSurface(aNewBox, anExtr, 0.0, M_PI, -2.0, 5.0, 18, 7);
@@ -165,15 +167,15 @@ public class GeomBndLib_ExtrusionTest
     [Fact]
     public void LineAlongZ_CompareWithBndLib()
     {
-        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
-        Geom_SurfaceOfLinearExtrusion anExtr = new(aLine, Constants.DZ());
-        GeomAdaptor_Surface anAdaptor = new(anExtr);
+        LineCurve3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        ExtrusionSurface anExtr = new(aLine, Constants.DZ());
+        SurfaceAdaptor anAdaptor = new(anExtr);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(anExtr).Add(0.0, 10.0, 0.0, 5.0, Conf, ref aNewBox);
+        new SurfaceBounds(anExtr).Add(0.0, 10.0, 0.0, 5.0, Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, 0.0, 10.0, 0.0, 5.0, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, 0.0, 10.0, 0.0, 5.0, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
         ExpectContainsSurface(aNewBox, anExtr, 0.0, 10.0, 0.0, 5.0, 10, 5);
@@ -186,15 +188,15 @@ public class GeomBndLib_ExtrusionTest
     [Fact]
     public void LineAlongDiagonal_CompareWithBndLib()
     {
-        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 1.0, 0.0));
-        Geom_SurfaceOfLinearExtrusion anExtr = new(aLine, new Direction3D(1.0, 0.0, 1.0));
-        GeomAdaptor_Surface anAdaptor = new(anExtr);
+        LineCurve3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 1.0, 0.0));
+        ExtrusionSurface anExtr = new(aLine, new Direction3D(1.0, 0.0, 1.0));
+        SurfaceAdaptor anAdaptor = new(anExtr);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(anExtr).Add(0.0, 5.0, 0.0, 10.0, Conf, ref aNewBox);
+        new SurfaceBounds(anExtr).Add(0.0, 5.0, 0.0, 10.0, Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, 0.0, 5.0, 0.0, 10.0, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, 0.0, 5.0, 0.0, 10.0, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
         ExpectContainsSurface(aNewBox, anExtr, 0.0, 5.0, 0.0, 10.0, 5, 10);
@@ -207,15 +209,15 @@ public class GeomBndLib_ExtrusionTest
     [Fact]
     public void BSplineAlongZ_CompareWithBndLib()
     {
-        Geom_BSplineCurve aBSpl = TestBSpline();
-        Geom_SurfaceOfLinearExtrusion anExtr = new(aBSpl, Constants.DZ());
-        GeomAdaptor_Surface anAdaptor = new(anExtr);
+        BSplineCurve3D aBSpl = TestBSpline();
+        ExtrusionSurface anExtr = new(aBSpl, Constants.DZ());
+        SurfaceAdaptor anAdaptor = new(anExtr);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(anExtr).AddOptimal(0.0, 1.0, 0.0, 5.0, Conf, ref aNewBox);
+        new SurfaceBounds(anExtr).AddOptimal(0.0, 1.0, 0.0, 5.0, Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.AddOptimal(anAdaptor, 0.0, 1.0, 0.0, 5.0, Conf, ref anOldBox);
+        AddSurface.AddOptimal(anAdaptor, 0.0, 1.0, 0.0, 5.0, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
         ExpectContainsSurface(aNewBox, anExtr, 0.0, 1.0, 0.0, 5.0, 10, 5);
@@ -224,11 +226,11 @@ public class GeomBndLib_ExtrusionTest
     [Fact]
     public void BSplineAlongDiagonal_CompareWithBndLib()
     {
-        Geom_BSplineCurve aBSpl = TestBSpline();
-        Geom_SurfaceOfLinearExtrusion anExtr = new(aBSpl, new Direction3D(1.0, 1.0, 1.0));
+        BSplineCurve3D aBSpl = TestBSpline();
+        ExtrusionSurface anExtr = new(aBSpl, new Direction3D(1.0, 1.0, 1.0));
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(anExtr).AddOptimal(0.0, 1.0, -3.0, 7.0, Conf, ref aNewBox);
+        new SurfaceBounds(anExtr).AddOptimal(0.0, 1.0, -3.0, 7.0, Conf, ref aNewBox);
 
         // P(u,v) = C(u) + v*(1,1,1)/sqrt(3), u in [0,1], v in [-3, 7].
         // BSpline C(0)=(0,0,0), C(1)=(10,3,0). Extrusion shifts: v_min/sqrt(3) = -sqrt(3),
@@ -255,15 +257,15 @@ public class GeomBndLib_ExtrusionTest
     [Fact]
     public void CircleNegativeV_CompareWithBndLib()
     {
-        Geom_Circle aCircle = new(Constants.XOY(), 5.0);
-        Geom_SurfaceOfLinearExtrusion anExtr = new(aCircle, Constants.DZ());
-        GeomAdaptor_Surface anAdaptor = new(anExtr);
+        CircleCurve3D aCircle = new(Constants.XOY(), 5.0);
+        ExtrusionSurface anExtr = new(aCircle, Constants.DZ());
+        SurfaceAdaptor anAdaptor = new(anExtr);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(anExtr).Add(0.0, 2.0 * M_PI, -5.0, 5.0, Conf, ref aNewBox);
+        new SurfaceBounds(anExtr).Add(0.0, 2.0 * M_PI, -5.0, 5.0, Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, 0.0, 2.0 * M_PI, -5.0, 5.0, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, 0.0, 2.0 * M_PI, -5.0, 5.0, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
         ExpectContainsSurface(aNewBox, anExtr, 0.0, 2.0 * M_PI, -5.0, 5.0, 36, 10);

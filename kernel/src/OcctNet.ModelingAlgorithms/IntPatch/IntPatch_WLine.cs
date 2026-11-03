@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using System.Globalization;
 using static Occt.IntPatch_IType;
@@ -43,9 +44,9 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
     private double u2period;
     private double v2period;
     private bool hasArcOnS1;
-    private Adaptor2d_Curve2d? theArcOnS1;
+    private Curve2DAdaptorBase? theArcOnS1;
     private bool hasArcOnS2;
-    private Adaptor2d_Curve2d? theArcOnS2;
+    private Curve2DAdaptorBase? theArcOnS2;
     private bool myIsPurgerAllowed;
     // identifies the way of <*this> creation
     private IntPatch_WLType myCreationWay;
@@ -210,7 +211,7 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
 
     public double V2Period() => (v2period);
 
-    public void SetArcOnS1(Adaptor2d_Curve2d A)
+    public void SetArcOnS1(Curve2DAdaptorBase A)
     {
         hasArcOnS1 = true;
         theArcOnS1 = A;
@@ -218,9 +219,9 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
 
     public bool HasArcOnS1() => (hasArcOnS1);
 
-    public Adaptor2d_Curve2d? GetArcOnS1() => (theArcOnS1);
+    public Curve2DAdaptorBase? GetArcOnS1() => (theArcOnS1);
 
-    public void SetArcOnS2(Adaptor2d_Curve2d A)
+    public void SetArcOnS2(Curve2DAdaptorBase A)
     {
         hasArcOnS2 = true;
         theArcOnS2 = A;
@@ -228,7 +229,7 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
 
     public bool HasArcOnS2() => (hasArcOnS2);
 
-    public Adaptor2d_Curve2d? GetArcOnS2() => (theArcOnS2);
+    public Curve2DAdaptorBase? GetArcOnS2() => (theArcOnS2);
 
     public override void ClearVertexes() => svtx.Clear();
 

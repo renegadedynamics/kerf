@@ -1,10 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Text;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -54,10 +58,10 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile));
+        Assert.True(BrepTools.Write(theShape, aFile));
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 
@@ -65,29 +69,29 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
     private sealed class Maps
     {
         public readonly N.TopTools_IndexedMapOfShape[] NM = new N.TopTools_IndexedMapOfShape[3];
-        public readonly NCollection_IndexedMap<TopoDS_Shape>[] PM = new NCollection_IndexedMap<TopoDS_Shape>[3];
+        public readonly NCollection_IndexedMap<Shape>[] PM = new NCollection_IndexedMap<Shape>[3];
 
-        public Maps(N.TopoDS_Shape theN, in TopoDS_Shape theP)
+        public Maps(N.TopoDS_Shape theN, in Shape theP)
         {
-            TopAbs_ShapeEnum[] aTypes = [TopAbs_VERTEX, TopAbs_EDGE, TopAbs_FACE];
+            ShapeType[] aTypes = [ShapeType.Vertex, ShapeType.Edge, ShapeType.Face];
             for (int i = 0; i < 3; i++)
             {
                 NM[i] = new N.TopTools_IndexedMapOfShape();
                 N.TopExp.MapShapes(theN, TwinShapes.ToNative(aTypes[i]), NM[i]);
-                PM[i] = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                TopExp.MapShapes(theP, aTypes[i], PM[i]);
+                PM[i] = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                Exploration.MapShapes(theP, aTypes[i], PM[i]);
                 Assert.Equal(NM[i].Extent(), PM[i].Extent());
             }
         }
     }
 
-    private void CompareSupport(Oracle theOracle, N.TopoDS_Shape theN, in TopoDS_Shape theP, Maps theMaps1, Maps theMaps2, string theWhat)
+    private void CompareSupport(Oracle theOracle, N.TopoDS_Shape theN, in Shape theP, Maps theMaps1, Maps theMaps2, string theWhat)
     {
         theOracle.Same((int)theN.ShapeType(), (int)theP.ShapeType(), theWhat + " type");
         int aKind = theP.ShapeType() switch
         {
-            TopAbs_VERTEX => 0,
-            TopAbs_EDGE => 1,
+            ShapeType.Vertex => 0,
+            ShapeType.Edge => 1,
             _ => 2,
         };
 
@@ -109,7 +113,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
     }
 
     /// <summary>Runs both sides on the pair with the same settings and compares everything.</summary>
-    private void Compare(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theS1, Twin<N.TopoDS_Shape, TopoDS_Shape> theS2, string theWhat)
+    private void Compare(Oracle theOracle, Twin<N.TopoDS_Shape, Shape> theS1, Twin<N.TopoDS_Shape, Shape> theS2, string theWhat)
     {
         double aDeflection = theOracle.Int(0, 3) switch
         {
@@ -135,8 +139,8 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         var aP = new BRepExtrema_DistShapeShape();
         aP.SetDeflection(aDeflection);
         aP.SetMultiThread(aMulti);
-        aP.SetFlag((Extrema_ExtFlag)aFlag);
-        aP.SetAlgo((Extrema_ExtAlgo)anAlgo);
+        aP.SetFlag((ExtFlag)aFlag);
+        aP.SetAlgo((ExtAlgo)anAlgo);
         aP.LoadS1(theS1.P);
         aP.LoadS2(theS2.P);
         bool aPDone = aP.Perform();
@@ -156,10 +160,10 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
             var aMapsB = new Maps(theS2.N, theS2.P);
             for (int i = 1; i <= aP.NbSolution(); i++)
             {
-                TopoDS_Shape aV = aP.SupportOnShape1(i);
+                Shape aV = aP.SupportOnShape1(i);
                 Assert.True(aP.SupportOnShape2(i).IsSame(aV), aWhat);
                 Assert.True(aMapsA.PM[0].Contains(aV) || aMapsB.PM[0].Contains(aV), aWhat);
-                Assert.Equal(BRep_Tool.Pnt(TopoDS.Vertex(aV)), aP.PointOnShape1(i));
+                Assert.Equal(Tool.Pnt(ShapeCasts.Vertex(aV)), aP.PointOnShape1(i));
             }
             return;
         }
@@ -259,13 +263,13 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         theOracle.Report(theWhat);
     }
 
-    private static Twin<N.TopoDS_Shape, TopoDS_Shape> Pick(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, TopAbs_ShapeEnum theType)
+    private static Twin<N.TopoDS_Shape, Shape> Pick(Oracle theOracle, Twin<N.TopoDS_Shape, Shape> theShape, ShapeType theType)
     {
-        List<Twin<N.TopoDS_Shape, TopoDS_Shape>> aList = ClassificationScenes.Explore(theShape, theType);
+        List<Twin<N.TopoDS_Shape, Shape>> aList = ClassificationScenes.Explore(theShape, theType);
         return aList.Count == 0 ? theShape : aList[theOracle.Int(0, aList.Count - 1)];
     }
 
-    private static Twin<N.TopoDS_Shape, TopoDS_Shape> PointVertex(in Point3D theP)
+    private static Twin<N.TopoDS_Shape, Shape> PointVertex(in Point3D theP)
     {
         using var aNP = Oracle.ToNative(theP);
         using var aNMaker = new N.BRepBuilderAPI_MakeVertex(aNP);
@@ -287,7 +291,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
     }
 
     /// <summary>An infinite line through a point of the shape's box, as an edge.</summary>
-    private static Twin<N.TopoDS_Shape, TopoDS_Shape> InfiniteLine(Oracle theOracle, in Point3D theP)
+    private static Twin<N.TopoDS_Shape, Shape> InfiniteLine(Oracle theOracle, in Point3D theP)
     {
         Direction3D aD = Dir(theOracle);
         using var aNP = Oracle.ToNative(theP);
@@ -298,7 +302,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
     }
 
     /// <summary>An infinite horizontal plane at the point's height, as a face.</summary>
-    private static Twin<N.TopoDS_Shape, TopoDS_Shape> InfinitePlane(in Point3D theP)
+    private static Twin<N.TopoDS_Shape, Shape> InfinitePlane(in Point3D theP)
     {
         using var aNP = Oracle.ToNative(theP);
         using var aND = new N.gp_Dir(0, 0, 1);
@@ -321,8 +325,8 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
                 continue;
             }
 
-            Twin<N.TopoDS_Shape, TopoDS_Shape> aShape1 = ClassificationScenes.Scene(anOracle, aScene1);
-            Twin<N.TopoDS_Shape, TopoDS_Shape> aShape2 = ClassificationScenes.Scene(anOracle, aScene2);
+            Twin<N.TopoDS_Shape, Shape> aShape1 = ClassificationScenes.Scene(anOracle, aScene1);
+            Twin<N.TopoDS_Shape, Shape> aShape2 = ClassificationScenes.Scene(anOracle, aScene2);
             string aWhat = $"pair {k}: {ClassificationScenes.Name(aScene1)} / {ClassificationScenes.Name(aScene2)}";
             List<Point3D> aPoints = ClassificationScenes.SamplePoints(anOracle, aShape1.P, 3, 1);
             int aCase = k % 8;
@@ -332,26 +336,26 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
                     Compare(anOracle, aShape1, aShape2, aWhat + " (shapes)");
                     break;
                 case 1:
-                    Compare(anOracle, Pick(anOracle, aShape1, TopAbs_VERTEX), aShape2, aWhat + " (vertex, shape)");
+                    Compare(anOracle, Pick(anOracle, aShape1, ShapeType.Vertex), aShape2, aWhat + " (vertex, shape)");
                     break;
                 case 2:
-                    Compare(anOracle, Pick(anOracle, aShape1, TopAbs_EDGE), Pick(anOracle, aShape2, TopAbs_EDGE), aWhat + " (edges)");
+                    Compare(anOracle, Pick(anOracle, aShape1, ShapeType.Edge), Pick(anOracle, aShape2, ShapeType.Edge), aWhat + " (edges)");
                     break;
                 case 3:
-                    Compare(anOracle, Pick(anOracle, aShape1, TopAbs_EDGE), Pick(anOracle, aShape2, TopAbs_FACE), aWhat + " (edge, face)");
+                    Compare(anOracle, Pick(anOracle, aShape1, ShapeType.Edge), Pick(anOracle, aShape2, ShapeType.Face), aWhat + " (edge, face)");
                     break;
                 case 4:
-                    Compare(anOracle, Pick(anOracle, aShape1, TopAbs_FACE), Pick(anOracle, aShape2, TopAbs_FACE), aWhat + " (faces)");
+                    Compare(anOracle, Pick(anOracle, aShape1, ShapeType.Face), Pick(anOracle, aShape2, ShapeType.Face), aWhat + " (faces)");
                     break;
                 case 5:
                     // points in and around the first shape: inner solutions for the solids
                     Compare(anOracle, aShape1, PointVertex(aPoints[anOracle.Int(0, aPoints.Count - 1)]), aWhat + " (shape, point)");
                     break;
                 case 6:
-                    Compare(anOracle, InfiniteLine(anOracle, aPoints[0]), Pick(anOracle, aShape2, TopAbs_EDGE), aWhat + " (infinite line, edge)");
+                    Compare(anOracle, InfiniteLine(anOracle, aPoints[0]), Pick(anOracle, aShape2, ShapeType.Edge), aWhat + " (infinite line, edge)");
                     break;
                 default:
-                    Compare(anOracle, Pick(anOracle, aShape2, TopAbs_EDGE), InfinitePlane(aPoints[0]), aWhat + " (edge, infinite plane)");
+                    Compare(anOracle, Pick(anOracle, aShape2, ShapeType.Edge), InfinitePlane(aPoints[0]), aWhat + " (edge, infinite plane)");
                     break;
             }
         }
@@ -360,7 +364,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
     }
 
     /// <summary>The native shape written to a file and read back by both sides.</summary>
-    private Twin<N.TopoDS_Shape, TopoDS_Shape> ReadBoth(N.TopoDS_Shape theShape)
+    private Twin<N.TopoDS_Shape, Shape> ReadBoth(N.TopoDS_Shape theShape)
     {
         string aFile = NewFile();
         Assert.True(N.BRepTools.Write(theShape, aFile));
@@ -370,7 +374,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
             Assert.True(N.BRepTools.Read(aNShape, aFile, aBuilder));
         }
 
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile));
+        Assert.True(BrepTools.Read(out Shape aPShape, aFile));
         return new(aNShape, aPShape);
     }
 
@@ -381,8 +385,8 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         const int Pairs = 160;
         foreach (int k in Tape.Budget(Pairs))
         {
-            Twin<N.TopoDS_Shape, TopoDS_Shape> aShape1 = ReadBoth(BRepToolsIOOracleTests.NativeShape(anOracle, k, out string aWhat1));
-            Twin<N.TopoDS_Shape, TopoDS_Shape> aShape2 = ReadBoth(BRepToolsIOOracleTests.NativeShape(anOracle, k + 5, out string aWhat2));
+            Twin<N.TopoDS_Shape, Shape> aShape1 = ReadBoth(BRepToolsIOOracleTests.NativeShape(anOracle, k, out string aWhat1));
+            Twin<N.TopoDS_Shape, Shape> aShape2 = ReadBoth(BRepToolsIOOracleTests.NativeShape(anOracle, k + 5, out string aWhat2));
             (N.TopLoc_Location aNL, Placement aL) = ClassificationScenes.RandomLocation(anOracle, false);
             if (k % 4 != 1)
             {
@@ -398,10 +402,10 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
                     Compare(anOracle, aShape1, aShape2, aWhat + " (shapes, overlapping)");
                     break;
                 case 2:
-                    Compare(anOracle, Pick(anOracle, aShape1, TopAbs_EDGE), Pick(anOracle, aShape2, TopAbs_FACE), aWhat + " (edge, face)");
+                    Compare(anOracle, Pick(anOracle, aShape1, ShapeType.Edge), Pick(anOracle, aShape2, ShapeType.Face), aWhat + " (edge, face)");
                     break;
                 default:
-                    Compare(anOracle, Pick(anOracle, aShape1, TopAbs_FACE), Pick(anOracle, aShape2, TopAbs_FACE), aWhat + " (faces)");
+                    Compare(anOracle, Pick(anOracle, aShape1, ShapeType.Face), Pick(anOracle, aShape2, ShapeType.Face), aWhat + " (faces)");
                     break;
             }
         }

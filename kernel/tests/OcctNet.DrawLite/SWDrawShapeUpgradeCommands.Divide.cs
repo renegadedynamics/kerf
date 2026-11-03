@@ -2,6 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -36,9 +39,9 @@ internal static partial class SWDrawShapeUpgradeCommands
     /// <c>ShapeFix::SameParameter(res, false)</c> as DRAWEXE runs it after the divide and convert tools: in place on
     /// the result, which shares the input's sub-shapes (see the class). Returns the result to bind.
     /// </summary>
-    internal static TopoDS_Shape SameParameterInPlace(DrawInterpreter theDI, in TopoDS_Shape theResult)
+    internal static Shape SameParameterInPlace(DrawInterpreter theDI, in Shape theResult)
     {
-        if (theResult.IsNull())
+        if (theResult.IsNull)
         {
             return theResult;
         }
@@ -60,15 +63,15 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
 
         // try to read a shape:
-        TopoDS_Shape inputShape = theDI.GetShape(a[2]);
-        if (inputShape.IsNull())
+        Shape inputShape = theDI.GetShape(a[2]);
+        if (inputShape.IsNull)
         {
             di.Append("Unknown shape\n");
             return 1;
         }
 
         // OCCT works on the input itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
-        TopoDS_Shape res = SWDRAWShapeFixCommands.InPlace(theDI, inputShape, aWork =>
+        Shape res = SWDRAWShapeFixCommands.InPlace(theDI, inputShape, aWork =>
         {
             var tool = new ShapeUpgrade_ShapeDivideContinuity(aWork);
 
@@ -92,7 +95,7 @@ internal static partial class SWDrawShapeUpgradeCommands
     }
 
     // DT_ShapeConvert and DT_ShapeConvertRev: ShapeConvertToBezier on the shape, with the conversions to set
-    private static TopoDS_Shape ConvertToBezier(DrawInterpreter theDI, DrawResult di, in TopoDS_Shape theShape,
+    private static Shape ConvertToBezier(DrawInterpreter theDI, DrawResult di, in Shape theShape,
                                                 Action<ShapeUpgrade_ShapeConvertToBezier> theSetUp)
     {
         return SWDRAWShapeFixCommands.InPlace(theDI, theShape, aWork =>
@@ -115,8 +118,8 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
 
         // try to read a shape:
-        TopoDS_Shape inputShape = theDI.GetShape(a[2]);
-        if (inputShape.IsNull())
+        Shape inputShape = theDI.GetShape(a[2]);
+        if (inputShape.IsNull)
         {
             di.Append("Unknown shape\n");
             return 1;
@@ -124,8 +127,8 @@ internal static partial class SWDrawShapeUpgradeCommands
 
         int c2d = theDI.Atoi(a[3]);
         int c3d = theDI.Atoi(a[4]);
-        TopoDS_Shape revsh = ShapeCustom.ConvertToRevolution(inputShape);
-        if (revsh.IsNull())
+        Shape revsh = ShapeCustom.ConvertToRevolution(inputShape);
+        if (revsh.IsNull)
         {
             di.Append("NO RESULT\n");
             return 1;
@@ -139,7 +142,7 @@ internal static partial class SWDrawShapeUpgradeCommands
             di.Append("ConvertToRevolution -> Result : \n");
         }
 
-        TopoDS_Shape res = ConvertToBezier(theDI, di, revsh, tool =>
+        Shape res = ConvertToBezier(theDI, di, revsh, tool =>
         {
             tool.SetSurfaceConversion(true);
             if (c2d != 0)
@@ -181,8 +184,8 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
 
         // try to read a shape:
-        TopoDS_Shape inputShape = theDI.GetShape(a[2]);
-        if (inputShape.IsNull())
+        Shape inputShape = theDI.GetShape(a[2]);
+        if (inputShape.IsNull)
         {
             di.Append("Unknown shape\n");
             return 1;
@@ -191,7 +194,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         int c2d = theDI.Atoi(a[3]);
         int c3d = theDI.Atoi(a[4]);
 
-        TopoDS_Shape res = ConvertToBezier(theDI, di, inputShape, tool =>
+        Shape res = ConvertToBezier(theDI, di, inputShape, tool =>
         {
             tool.SetSurfaceConversion(true);
             if (c2d != 0)
@@ -220,8 +223,8 @@ internal static partial class SWDrawShapeUpgradeCommands
             return 1;
         }
 
-        TopoDS_Shape inputShape = theDI.GetShape(a[2]);
-        if (inputShape.IsNull())
+        Shape inputShape = theDI.GetShape(a[2]);
+        if (inputShape.IsNull)
         {
             di.Append("Unknown shape\n");
             return 1;
@@ -237,7 +240,7 @@ internal static partial class SWDrawShapeUpgradeCommands
             }
         }
 
-        TopoDS_Shape res = SWDRAWShapeFixCommands.InPlace(theDI, inputShape, aWork =>
+        Shape res = SWDRAWShapeFixCommands.InPlace(theDI, inputShape, aWork =>
         {
             var tool = new ShapeUpgrade_ShapeDivideAngle(maxangle * Math.PI / 180, aWork);
             tool.Perform();
@@ -265,7 +268,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
 
         double Tol = theDI.Atof(a[2]);
-        Geom_Curve? GC = DrawTrSurf.GetCurve(theDI, a[1]);
+        Curve3D? GC = DrawTrSurf.GetCurve(theDI, a[1]);
         if (GC is null)
         {
             return 1;
@@ -286,7 +289,7 @@ internal static partial class SWDrawShapeUpgradeCommands
             theTool.SetSplitValues(spval);
         }
         theTool.Perform(true);
-        NCollection_HArray1<Geom_Curve> theCurves = theTool.GetCurves()!;
+        NCollection_HArray1<Curve3D> theCurves = theTool.GetCurves()!;
         int NbC = theCurves.Length();
         for (int icurv = 1; icurv <= NbC; icurv++)
         {
@@ -308,7 +311,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
 
         double Tol = theDI.Atof(a[2]);
-        Geom2d_Curve? GC = DrawTrSurf.GetCurve2d(theDI, a[1]);
+        Curve2D? GC = DrawTrSurf.GetCurve2d(theDI, a[1]);
         if (GC is null)
         {
             return 1;
@@ -329,7 +332,7 @@ internal static partial class SWDrawShapeUpgradeCommands
             theTool.SetSplitValues(spval);
         }
         theTool.Perform(true);
-        NCollection_HArray1<Geom2d_Curve> theCurves = theTool.GetCurves()!;
+        NCollection_HArray1<Curve2D> theCurves = theTool.GetCurves()!;
         int NbC = theCurves.Length();
         for (int icurv = 1; icurv <= NbC; icurv++)
         {
@@ -357,7 +360,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         int Split = n > 4 ? theDI.Atoi(a[4]) : 0;
         theTool.SetTolerance(Tol);
         theTool.SetCriterion(Continuity.C1);
-        Geom_Surface? GS = DrawTrSurf.GetSurface(theDI, a[2]);
+        Surface? GS = DrawTrSurf.GetSurface(theDI, a[2]);
         // Case of single surface
         di.Append("single surf\n");
 
@@ -395,7 +398,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         di.Append("\n");
 
         di.Append("appel a Surfaces\n");
-        NCollection_HArray2<Geom_Surface> theSurfaces = Grid.Patches()!;
+        NCollection_HArray2<Surface> theSurfaces = Grid.Patches()!;
 
         di.Append("transfert resultat\n");
         int NbRow = theSurfaces.ColLength();
@@ -421,12 +424,12 @@ internal static partial class SWDrawShapeUpgradeCommands
             return 1 /* Error */;
         }
         double Offset = theDI.Atof(argv[3]);
-        Geom2d_Curve? GC = DrawTrSurf.GetCurve2d(theDI, argv[2]);
+        Curve2D? GC = DrawTrSurf.GetCurve2d(theDI, argv[2]);
         if (GC is null)
         {
             return 1;
         }
-        var offcrv = new Geom2d_OffsetCurve(GC, Offset);
+        var offcrv = new OffsetCurve2D(GC, Offset);
         DrawTrSurf.Set(theDI, argv[1], offcrv);
         return 0;
     }
@@ -440,7 +443,7 @@ internal static partial class SWDrawShapeUpgradeCommands
             return 1 /* Error */;
         }
         double Offset = theDI.Atof(argv[3]);
-        Geom_Curve? GC = DrawTrSurf.GetCurve(theDI, argv[2]);
+        Curve3D? GC = DrawTrSurf.GetCurve(theDI, argv[2]);
         if (GC is null)
         {
             return 1;
@@ -448,7 +451,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         var point = new Point3D();
         DrawTrSurf.GetPoint(theDI, argv[4], ref point);
         var dir = new Direction3D(point.XYZ());
-        var offcrv = new Geom_OffsetCurve(GC, Offset, dir);
+        var offcrv = new OffsetCurve3D(GC, Offset, dir);
         DrawTrSurf.Set(theDI, argv[1], offcrv);
         return 0;
     }
@@ -462,18 +465,18 @@ internal static partial class SWDrawShapeUpgradeCommands
             return 1;
         }
 
-        TopoDS_Shape aLocalShape = theDI.GetShape(argv[2]);
-        TopoDS_Face face = TopoDS.Face(aLocalShape);
-        if (face.IsNull())
+        Shape aLocalShape = theDI.GetShape(argv[2]);
+        Face face = ShapeCasts.Face(aLocalShape);
+        if (face.IsNull)
         {
             di.Append(argv[2]).Append(" is not Face\n");
             return 1;
         }
 
-        Geom_Surface S = BRep_Tool.Surface(face)!;
-        BRepTools.UVBounds(face, out double Uf, out double Ul, out double Vf, out double Vl);
+        Surface S = Tool.Surface(face)!;
+        BrepTools.UVBounds(face, out double Uf, out double Ul, out double Vf, out double Vl);
         S.Bounds(out double Umin, out double Umax, out double Vmin, out double Vmax);
-        if (Uf < Umin && !S.IsUPeriodic())
+        if (Uf < Umin && !S.IsUPeriodic)
         {
             Uf = Umin;
         }
@@ -488,7 +491,7 @@ internal static partial class SWDrawShapeUpgradeCommands
                 Uf = Umin;
             }
         }
-        if (Vf < Vmin && !S.IsVPeriodic())
+        if (Vf < Vmin && !S.IsVPeriodic)
         {
             Vf = Vmin;
         }
@@ -503,7 +506,7 @@ internal static partial class SWDrawShapeUpgradeCommands
                 Vf = Vmin;
             }
         }
-        if (Ul > Umax && !S.IsUPeriodic())
+        if (Ul > Umax && !S.IsUPeriodic)
         {
             Ul = Umax;
         }
@@ -518,7 +521,7 @@ internal static partial class SWDrawShapeUpgradeCommands
                 Ul = Umax;
             }
         }
-        if (Vl > Vmax && !S.IsVPeriodic())
+        if (Vl > Vmax && !S.IsVPeriodic)
         {
             Vl = Vmax;
         }
@@ -608,7 +611,7 @@ internal static partial class SWDrawShapeUpgradeCommands
             di.Append("\n");
         }
 
-        var AS = new NCollection_HArray2<Geom_Surface>(1, uval.Length() + 1, 1, vval.Length() + 1);
+        var AS = new NCollection_HArray2<Surface>(1, uval.Length() + 1, 1, vval.Length() + 1);
         for (i = 0; i <= uval.Length(); i++)
         {
             double umin = (i != 0 ? uval[i] : Uf);
@@ -617,7 +620,7 @@ internal static partial class SWDrawShapeUpgradeCommands
             {
                 double vmin = (j != 0 ? vval[j] : Vf);
                 double vmax = (j < vval.Length() ? vval[j + 1] : Vl);
-                var rect = new Geom_RectangularTrimmedSurface(S, umin, umax, vmin, vmax);
+                var rect = new TrimmedSurface(S, umin, umax, vmin, vmax);
                 AS.SetValue(i + 1, j + 1, rect);
             }
         }
@@ -629,11 +632,11 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
 
         // OCCT splits the face's edges in place: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
-        TopoDS_Shape sh = SWDRAWShapeFixCommands.InPlace(theDI, face, aWork =>
+        Shape sh = SWDRAWShapeFixCommands.InPlace(theDI, face, aWork =>
         {
             var SUCS = new ShapeFix_ComposeShell();
             var l = new Placement();
-            SUCS.Init(Grid, l, TopoDS.Face(aWork), global::Kerf.Engine.Foundation.Precision.Confusion());
+            SUCS.Init(Grid, l, ShapeCasts.Face(aWork), global::Kerf.Engine.Foundation.Precision.Confusion());
             var RS = new ShapeBuild_ReShape();
             SUCS.SetContext(RS);
             SUCS.Perform();
@@ -663,14 +666,14 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
         string options = (argc > 3 ? argv[3] : "ero");
 
-        TopoDS_Shape inputShape = theDI.GetShape(argv[2]);
-        if (inputShape.IsNull())
+        Shape inputShape = theDI.GetShape(argv[2]);
+        if (inputShape.IsNull)
         {
             di.Append("Unknown shape\n");
             return 1;
         }
-        TopoDS_Shape revsh = ShapeCustom.ConvertToRevolution(inputShape);
-        TopoDS_Shape res = ShapeCustom.ConvertToBSpline(revsh, options.Contains('e'), options.Contains('r'),
+        Shape revsh = ShapeCustom.ConvertToRevolution(inputShape);
+        Shape res = ShapeCustom.ConvertToBSpline(revsh, options.Contains('e'), options.Contains('r'),
                                                         options.Contains('o'), options.Contains('p'));
         res = SameParameterInPlace(theDI, res);
         theDI.SetShape(argv[1], res);
@@ -685,14 +688,14 @@ internal static partial class SWDrawShapeUpgradeCommands
             return 1;
         }
 
-        TopoDS_Shape inputShape = theDI.GetShape(argv[2]);
-        if (inputShape.IsNull())
+        Shape inputShape = theDI.GetShape(argv[2]);
+        if (inputShape.IsNull)
         {
             di.Append("Unknown shape\n");
             return 1;
         }
 
-        TopoDS_Shape res = SWDRAWShapeFixCommands.InPlace(theDI, inputShape, aWork =>
+        Shape res = SWDRAWShapeFixCommands.InPlace(theDI, inputShape, aWork =>
         {
             var tool = new ShapeUpgrade_ShapeDivideClosed(aWork);
             tool.Perform();
@@ -713,15 +716,15 @@ internal static partial class SWDrawShapeUpgradeCommands
             return 1;
         }
 
-        TopoDS_Shape inputShape = theDI.GetShape(argv[2]);
-        if (inputShape.IsNull())
+        Shape inputShape = theDI.GetShape(argv[2]);
+        if (inputShape.IsNull)
         {
             di.Append("Unknown shape\n");
             return 1;
         }
         double aMaxArea = theDI.Atof(argv[3]);
 
-        TopoDS_Shape res = SWDRAWShapeFixCommands.InPlace(theDI, inputShape, aWork =>
+        Shape res = SWDRAWShapeFixCommands.InPlace(theDI, inputShape, aWork =>
         {
             var tool = new ShapeUpgrade_ShapeDivideArea(aWork);
             if (argc > 4)
@@ -748,8 +751,8 @@ internal static partial class SWDrawShapeUpgradeCommands
             return 1;
         }
 
-        TopoDS_Shape inputShape = theDI.GetShape(argv[2], TopAbs_ShapeEnum.TopAbs_FACE);
-        if (inputShape.IsNull())
+        Shape inputShape = theDI.GetShape(argv[2], ShapeType.Face);
+        if (inputShape.IsNull)
         {
             di.Append("Unknown face\n");
             return 1;
@@ -773,7 +776,7 @@ internal static partial class SWDrawShapeUpgradeCommands
             return 1;
         }
 
-        TopoDS_Shape res = SWDRAWShapeFixCommands.InPlace(theDI, inputShape, aWork =>
+        Shape res = SWDRAWShapeFixCommands.InPlace(theDI, inputShape, aWork =>
         {
             var tool = new ShapeUpgrade_ShapeDivideArea(aWork);
             tool.SetSplittingByNumber(true);
@@ -803,13 +806,13 @@ internal static partial class SWDrawShapeUpgradeCommands
             return 1;
         }
         double aMinArea = theDI.Atof(argv[2]);
-        TopoDS_Shape inputShape = theDI.GetShape(argv[3]);
-        if (inputShape.IsNull())
+        Shape inputShape = theDI.GetShape(argv[3]);
+        if (inputShape.IsNull)
         {
             di.Append("Unknown shape\n");
             return 1;
         }
-        if (inputShape.ShapeType() >= TopAbs_ShapeEnum.TopAbs_WIRE)
+        if (inputShape.ShapeType() >= ShapeType.Wire)
         {
             di.Append("Invalid type of first shape: should be FACE,SHELL,SOLID or COMPOUND\n");
             return 1;
@@ -817,7 +820,7 @@ internal static partial class SWDrawShapeUpgradeCommands
 
         // RemoveInternalWires only reads the shape (decision 999): it runs on the input
         var aTool = new ShapeUpgrade_RemoveInternalWires(inputShape);
-        var aSeqShapes = new NCollection_Sequence<TopoDS_Shape>();
+        var aSeqShapes = new NCollection_Sequence<Shape>();
 
         int k = 4;
         bool isShape = true;
@@ -827,11 +830,11 @@ internal static partial class SWDrawShapeUpgradeCommands
         {
             if (isShape)
             {
-                TopoDS_Shape aShape = theDI.GetShape(argv[k]);
-                isShape = !aShape.IsNull();
+                Shape aShape = theDI.GetShape(argv[k]);
+                isShape = !aShape.IsNull;
                 if (isShape)
                 {
-                    if (aShape.ShapeType() == TopAbs_ShapeEnum.TopAbs_FACE || aShape.ShapeType() == TopAbs_ShapeEnum.TopAbs_WIRE)
+                    if (aShape.ShapeType() == ShapeType.Face || aShape.ShapeType() == ShapeType.Wire)
                     {
                         aSeqShapes.Append(aShape);
                     }
@@ -863,15 +866,15 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
         if (aTool.Status(ShapeExtend_DONE1))
         {
-            NCollection_Sequence<TopoDS_Shape> aRemovedWires = aTool.RemovedWires();
+            NCollection_Sequence<Shape> aRemovedWires = aTool.RemovedWires();
             di.Append(aRemovedWires.Length()).Append(" internal wires were removed\n");
         }
         if (aTool.Status(ShapeExtend_DONE2))
         {
-            NCollection_Sequence<TopoDS_Shape> aRemovedFaces = aTool.RemovedFaces();
+            NCollection_Sequence<Shape> aRemovedFaces = aTool.RemovedFaces();
             di.Append(aRemovedFaces.Length()).Append(" small faces were removed\n");
         }
-        TopoDS_Shape res = aTool.GetResult();
+        Shape res = aTool.GetResult();
 
         theDI.SetShape(argv[1], res);
         return 0;

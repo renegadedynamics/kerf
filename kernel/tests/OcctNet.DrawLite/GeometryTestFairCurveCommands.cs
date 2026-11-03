@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Geometry;
 using Occt;
 using static Kerf.Engine.Foundation.Standard;
@@ -25,7 +26,7 @@ public sealed class DrawFairCurve : DrawDrawable
     public FairCurve_Batten Batten { get; }
 
     /// <summary>The curve of the latest computation (frozen).</summary>
-    public Geom2d_BSplineCurve Curve { get; private set; }
+    public BSplineCurve2D Curve { get; private set; }
 
     public override string TypeName => Batten is FairCurve_MinimalVariation ? "DrawFairCurve_MinimalVariation" : "DrawFairCurve_Batten";
 
@@ -35,12 +36,12 @@ public sealed class DrawFairCurve : DrawDrawable
     /// <summary>DrawFairCurve_Batten::Dump: the curve, then the batten's state.</summary>
     public override void Dump(TextWriter theStream)
     {
-        GeomTools_Curve2dSet.PrintCurve2d(Curve, theStream);
+        Curve2dSet.PrintCurve2d(Curve, theStream);
         Batten.Dump(theStream);
     }
 
     /// <summary>DrawTrSurf_Curve2d::Save: the curve.</summary>
-    public override void Save(TextWriter theStream) => GeomTools_Curve2dSet.PrintCurve2d(Curve, theStream, true);
+    public override void Save(TextWriter theStream) => Curve2dSet.PrintCurve2d(Curve, theStream, true);
 
     /// <summary>DrawTrSurf_BSplineCurve2d::Copy: a plain B-spline drawable (the batten is not copied).</summary>
     public override DrawDrawable Copy() => DrawGeometry.Of(Curve);

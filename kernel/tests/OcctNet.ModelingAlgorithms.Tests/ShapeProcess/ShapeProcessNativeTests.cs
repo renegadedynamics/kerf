@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using System.Collections.Concurrent;
 using System.Globalization;
@@ -9,7 +11,7 @@ using System.Reflection;
 using System.Text;
 using OcctNet.ModelingData.Tests;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -60,34 +62,34 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         return aHash;
     }
 
-    private static string Text(in TopoDS_Shape theShape)
+    private static string Text(in Shape theShape)
     {
         var aS = new StringWriter(CultureInfo.InvariantCulture) { NewLine = "\n" };
-        BRepTools.Write(theShape, aS, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3);
+        BrepTools.Write(theShape, aS, true, false, FormatVersion.FormatVersion_VERSION_3);
         return aS.ToString();
     }
 
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return 0;
         }
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        global::Kerf.Engine.Topology.Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
-    private static char TypeChar(in TopoDS_Shape theShape) => theShape.IsNull() ? 'n' : theShape.ShapeType() switch
+    private static char TypeChar(in Shape theShape) => theShape.IsNull ? 'n' : theShape.ShapeType() switch
     {
-        TopAbs_COMPOUND => 'C',
-        TopAbs_COMPSOLID => 'c',
-        TopAbs_SOLID => 'S',
-        TopAbs_SHELL => 's',
-        TopAbs_FACE => 'F',
-        TopAbs_WIRE => 'W',
-        TopAbs_EDGE => 'E',
-        TopAbs_VERTEX => 'V',
+        ShapeType.Compound => 'C',
+        ShapeType.CompSolid => 'c',
+        ShapeType.Solid => 'S',
+        ShapeType.Shell => 's',
+        ShapeType.Face => 'F',
+        ShapeType.Wire => 'W',
+        ShapeType.Edge => 'E',
+        ShapeType.Vertex => 'V',
         _ => '?',
     };
 
@@ -104,11 +106,11 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         }
     }
 
-    private static string Record(string theRun, in TopoDS_Shape theInput, ShapeProcess_ShapeContext theContext, bool theDone,
+    private static string Record(string theRun, in Shape theInput, ShapeProcess_ShapeContext theContext, bool theDone,
                                  StringPrinter thePrinter)
     {
-        TopoDS_Shape aRes = theContext.Result();
-        if (!aRes.IsNull() && !aRes.TShape()!.IsFrozen)
+        Shape aRes = theContext.Result();
+        if (!aRes.IsNull && !aRes.TShape()!.IsFrozen)
         {
             throw new InvalidOperationException($"{theRun}: the result isn't frozen");
         }
@@ -119,18 +121,18 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
             File.WriteAllText(Path.Combine(s_dump, $"{s_name}.{(theRun.StartsWith("OP:", StringComparison.Ordinal) ? theRun[3..] : theRun)}.brep"), aBRep);
         }
 
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aMap = theContext.Map();
+        NCollection_DataMap<Shape, Shape> aMap = theContext.Map();
         var aSig = new StringBuilder();
-        void Sign(in TopoDS_Shape theKey)
+        void Sign(in Shape theKey)
         {
-            TopoDS_Shape aKey = theKey.Located(new Placement());
-            aSig.Append(aMap.Find(aKey, out TopoDS_Shape aValue) ? TypeChar(aValue) : '-');
+            Shape aKey = theKey.Located(new Placement());
+            aSig.Append(aMap.Find(aKey, out Shape aValue) ? TypeChar(aValue) : '-');
         }
         Sign(theInput);
-        foreach (TopAbs_ShapeEnum aType in new[] { TopAbs_SOLID, TopAbs_SHELL, TopAbs_FACE })
+        foreach (ShapeType aType in new[] { ShapeType.Solid, ShapeType.Shell, ShapeType.Face })
         {
-            var aKeys = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(theInput, aType, aKeys);
+            var aKeys = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            global::Kerf.Engine.Topology.Exploration.MapShapes(theInput, aType, aKeys);
             for (int i = 1; i <= aKeys.Extent(); i++)
             {
                 Sign(aKeys[i]);
@@ -140,7 +142,7 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         var aTexts = new List<string>();
         if (theContext.Messages() is ShapeExtend_MsgRegistrator aMessages)
         {
-            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<Msg>> anItem in aMessages.MapShape())
+            foreach (KeyValuePair<Shape, NCollection_List<Msg>> anItem in aMessages.MapShape())
             {
                 for (var aMsg = new NCollection_List<Msg>.Iterator(anItem.Value); aMsg.More(); aMsg.Next())
                 {
@@ -157,7 +159,7 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         }
 
         return string.Create(CultureInfo.InvariantCulture,
-                             $"{theRun} {(theDone ? 1 : 0)} {aHash:x16} {Count(aRes, TopAbs_FACE)} {Count(aRes, TopAbs_EDGE)} {Count(aRes, TopAbs_VERTEX)} "
+                             $"{theRun} {(theDone ? 1 : 0)} {aHash:x16} {Count(aRes, ShapeType.Face)} {Count(aRes, ShapeType.Edge)} {Count(aRes, ShapeType.Vertex)} "
                              + $"{aMap.Extent()} {Fnv(aSig.ToString()):x16} {aTexts.Count} {Fnv(aJoined.ToString()):x16} {Fnv(thePrinter.Text.ToString()):x16}");
     }
 
@@ -173,7 +175,7 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         {
             return theBody();
         }
-        catch (Exception e) when (e is FailureException or NullReferenceException && e is not (ImmutableObjectException or TopoDS_LockedShape))
+        catch (Exception e) when (e is FailureException or NullReferenceException && e is not (ImmutableObjectException or global::Kerf.Engine.Topology.LockedShapeException))
         {
             // an access violation natively (decision 977)
             return $"{theRun} THROW {(e is NullReferenceException ? "OSD_Exception_ACCESS_VIOLATION" : global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()))}";
@@ -182,9 +184,9 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
 
     private static string HealData => Path.Combine(Metadata("OcctSourceDir"), "tests", "heal", "data");
 
-    private static string Sequence(in TopoDS_Shape theShape, string theRsc, string theSeq)
+    private static string Sequence(in Shape theShape, string theRsc, string theSeq)
     {
-        TopoDS_Shape aShape = theShape;
+        Shape aShape = theShape;
         // DRAWEXE's CSF_<name>Defaults: the heal group's files in its data directory, res in the dataset's brep directory;
         // IGES and STEP: OCCT's defaults, compiled into the port
         string? aDir = theRsc switch
@@ -203,9 +205,9 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         });
     }
 
-    private static string Operation(in TopoDS_Shape theShape, ShapeProcess.Operation theOperation)
+    private static string Operation(in Shape theShape, ShapeProcess.Operation theOperation)
     {
-        TopoDS_Shape aShape = theShape;
+        Shape aShape = theShape;
         string aRun = "OP:" + s_operations[(int)theOperation];
         return Run(aRun, () =>
         {
@@ -225,7 +227,7 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
     ];
 
     /// <summary>The recorder's runs on a frozen shape.</summary>
-    internal static List<string> Runs(in TopoDS_Shape theShape)
+    internal static List<string> Runs(in Shape theShape)
     {
         var aRecords = new List<string>
         {
@@ -257,11 +259,11 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
     // (sub-shape, location) by iterating a map keyed by shape in hash order (TShape addresses): a TShape the input holds
     // at two locations (an instance), whose tolerances differ at each, ends with the last one OCCT iterates; the port
     // iterates in insertion order (occt-issues.md, unit 7C). Attributed only for inputs holding such a TShape.
-    private static bool HoldsInstances(in TopoDS_Shape theShape)
+    private static bool HoldsInstances(in Shape theShape)
     {
-        var aSubShapes = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, aSubShapes);
-        var aTShapes = new HashSet<TopoDS_TShape>(ReferenceEqualityComparer.Instance);
+        var aSubShapes = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        global::Kerf.Engine.Topology.Exploration.MapShapes(theShape, aSubShapes);
+        var aTShapes = new HashSet<global::Kerf.Engine.Topology.TShape>(ReferenceEqualityComparer.Instance);
         for (int i = 1; i <= aSubShapes.Extent(); i++)
         {
             if (!aTShapes.Add(aSubShapes[i].TShape()!))
@@ -311,7 +313,7 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
                 Interlocked.Increment(ref aMissing);
                 return;
             }
-            Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aPath), aPath);
+            Assert.True(BrepTools.Read(out Shape aShape, aPath), aPath);
             aShape.TShape()!.FreezeGraph(); // a caller's shape
             ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
             if (HoldsInstances(aShape))

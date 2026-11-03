@@ -26,20 +26,20 @@ public sealed class GeomToStep_MakeBSplineCurveWithKnots : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D B-spline curve (its weights ignored), its poles divided by the length factor.</summary>
-    public GeomToStep_MakeBSplineCurveWithKnots(Geom_BSplineCurve BS, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeBSplineCurveWithKnots(BSplineCurve3D BS, in StepData_Factors theLocalFactors)
     {
         NCollection_Array1<Point3D> P = BS.InternalPoles();
-        NCollection_HArray1<StepGeom_CartesianPoint> Listpoints = new NCollection_HArray1<StepGeom_CartesianPoint>(1, BS.NbPoles());
+        NCollection_HArray1<StepGeom_CartesianPoint> Listpoints = new NCollection_HArray1<StepGeom_CartesianPoint>(1, BS.PoleCount);
         for (int i = P.Lower(); i <= P.Upper(); i++)
         {
             GeomToStep_MakeCartesianPoint MkPoint = new GeomToStep_MakeCartesianPoint(P.Value(i), theLocalFactors.LengthFactor());
             Listpoints.SetValue(i, MkPoint.Value());
         }
-        Make(BS.Degree(), Listpoints, BS.IsClosed(), BS.NbKnots(), BS.InternalMultiplicities(), BS.InternalKnots(), BS.KnotDistribution());
+        Make(BS.Degree(), Listpoints, BS.IsClosed, BS.KnotCount, BS.InternalMultiplicities(), BS.InternalKnots(), BS.KnotDistribution());
     }
 
     /// <summary>A 3D B-spline curve (default factors).</summary>
-    public GeomToStep_MakeBSplineCurveWithKnots(Geom_BSplineCurve BS) : this(BS, new StepData_Factors())
+    public GeomToStep_MakeBSplineCurveWithKnots(BSplineCurve3D BS) : this(BS, new StepData_Factors())
     {
     }
 
@@ -49,20 +49,20 @@ public sealed class GeomToStep_MakeBSplineCurveWithKnots : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D B-spline curve (its weights ignored).</summary>
-    public GeomToStep_MakeBSplineCurveWithKnots(Geom2d_BSplineCurve BS, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeBSplineCurveWithKnots(BSplineCurve2D BS, in StepData_Factors theLocalFactors)
     {
         NCollection_Array1<Point2D> P = BS.InternalPoles();
-        NCollection_HArray1<StepGeom_CartesianPoint> Listpoints = new NCollection_HArray1<StepGeom_CartesianPoint>(1, BS.NbPoles());
+        NCollection_HArray1<StepGeom_CartesianPoint> Listpoints = new NCollection_HArray1<StepGeom_CartesianPoint>(1, BS.PoleCount);
         for (int i = P.Lower(); i <= P.Upper(); i++)
         {
             GeomToStep_MakeCartesianPoint MkPoint = new GeomToStep_MakeCartesianPoint(P.Value(i), theLocalFactors.LengthFactor());
             Listpoints.SetValue(i, MkPoint.Value());
         }
-        Make(BS.Degree(), Listpoints, BS.IsClosed(), BS.NbKnots(), BS.InternalMultiplicities(), BS.InternalKnots(), BS.KnotDistribution());
+        Make(BS.Degree(), Listpoints, BS.IsClosed, BS.KnotCount, BS.InternalMultiplicities(), BS.InternalKnots(), BS.KnotDistribution());
     }
 
     /// <summary>A 2D B-spline curve.</summary>
-    public GeomToStep_MakeBSplineCurveWithKnots(Geom2d_BSplineCurve BS) : this(BS, new StepData_Factors())
+    public GeomToStep_MakeBSplineCurveWithKnots(BSplineCurve2D BS) : this(BS, new StepData_Factors())
     {
     }
 

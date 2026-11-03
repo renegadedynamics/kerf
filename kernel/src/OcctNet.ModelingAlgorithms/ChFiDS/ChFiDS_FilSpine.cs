@@ -8,6 +8,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -68,7 +69,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
     }
 
     /// <summary>Sets the constant radius on the edge <paramref name="E"/>.</summary>
-    internal void SetRadius(double Radius, in TopoDS_Edge E)
+    internal void SetRadius(double Radius, in Edge E)
     {
         splitdone = false;
         int IE = Index(E);
@@ -78,7 +79,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
     }
 
     /// <summary>Removes the constant radius on the edge <paramref name="E"/>.</summary>
-    internal void UnSetRadius(in TopoDS_Edge E)
+    internal void UnSetRadius(in Edge E)
     {
         splitdone = false;
         int IE = Index(E);
@@ -106,7 +107,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
     }
 
     /// <summary>Sets the radius at the vertex <paramref name="V"/>.</summary>
-    internal void SetRadius(double Radius, in TopoDS_Vertex V)
+    internal void SetRadius(double Radius, in Vertex V)
     {
         double npar = Absc(V);
         Xy UandR = new Xy(npar, Radius);
@@ -183,7 +184,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
             NCollection_List<ChFiDS_ElSpine>.Iterator It = new(elspines);
             NCollection_List<Law_Function>.Iterator Itl = new(laws);
             ChFiDS_ElSpine Els = It.Value();
-            if (Els.IsPeriodic())
+            if (Els.IsPeriodic)
             {
                 Itl.ChangeValue() = ComputeLaw(Els);
             }
@@ -204,7 +205,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
     }
 
     /// <summary>Removes the radius at the vertex <paramref name="V"/>.</summary>
-    internal void UnSetRadius(in TopoDS_Vertex V)
+    internal void UnSetRadius(in Vertex V)
     {
         double npar = Absc(V);
         for (int i = 1; i <= parandrad.Length(); i++)
@@ -297,7 +298,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
     }
 
     /// <summary>The radius on the edge <paramref name="E"/>, if constant there.</summary>
-    public double Radius(in TopoDS_Edge E)
+    public double Radius(in Edge E)
     {
         int IE = Index(E);
         return Radius(IE);
@@ -562,7 +563,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
             ind[j++] = ((i - 1) % len) + 1;
         }
 
-        if (Els.IsPeriodic())
+        if (Els.IsPeriodic)
         {
             // A pereodic composite is created at range, which is eventually
             // offset relatively to the elspine, to avoid a single point at
@@ -879,7 +880,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
     }
 
     /// <summary>The elementary law on the (non-constant) edge <paramref name="E"/>, for reading and writing.</summary>
-    internal ref Law_Function? ChangeLaw(in TopoDS_Edge E)
+    internal ref Law_Function? ChangeLaw(in Edge E)
     {
         if (!SplitDone())
         {

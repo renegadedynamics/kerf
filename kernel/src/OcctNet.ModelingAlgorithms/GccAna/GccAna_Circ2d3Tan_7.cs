@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 using static Occt.GccInt_IType;
@@ -71,7 +72,7 @@ public sealed partial class GccAna_Circ2d3Tan
                 GccInt_Bisec Sol2 = Bis2.ThisSolution(i);
                 GccInt_IType typ2 = Sol2.ArcType();
                 Line2D Sol1 = Bis1.ThisSolution();
-                IntAna2d_AnaIntersection Intp = new();
+                AnalyticIntersection Intp = new();
                 if (typ2 == GccInt_Cir)
                 {
                     Intp.Perform(Sol1, Sol2.Circle());
@@ -82,18 +83,18 @@ public sealed partial class GccAna_Circ2d3Tan
                 }
                 else if (typ2 == GccInt_Hpr)
                 {
-                    Intp.Perform(Sol1, new IntAna2d_Conic(Sol2.Hyperbola()));
+                    Intp.Perform(Sol1, new Conic(Sol2.Hyperbola()));
                 }
                 else if (typ2 == GccInt_Ell)
                 {
-                    Intp.Perform(Sol1, new IntAna2d_Conic(Sol2.Ellipse()));
+                    Intp.Perform(Sol1, new Conic(Sol2.Ellipse()));
                 }
 
-                if (Intp.IsDone())
+                if (Intp.IsDone)
                 {
-                    if (!Intp.IsEmpty())
+                    if (!Intp.IsEmpty)
                     {
-                        for (int j = 1; j <= Intp.NbPoints(); j++)
+                        for (int j = 1; j <= Intp.PointCount; j++)
                         {
                             Point2D Center = Intp.Point(j).Value();
                             double dist1 = Center.Distance(center1);

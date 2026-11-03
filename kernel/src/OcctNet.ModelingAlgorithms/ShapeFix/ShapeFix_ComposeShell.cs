@@ -7,16 +7,21 @@
 //    abv  22.07.99 implementing patch indices
 //    svv  10.01.00 porting on DEC
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.TransformForm;
 using static Occt.IntRes2d_Position;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -36,7 +41,7 @@ namespace Occt;
 /// <para>
 /// A working object (decision 21). It edits the edges of the face it is given (it splits them, records the splits in
 /// the context and replaces their vertices), as OCCT's. A face holding frozen shapes is copied at
-/// <see cref="Perform"/> (<see cref="BRepTools_CopyAtEntry"/>, decision 583); <see cref="Result"/> gives back the
+/// <see cref="Perform"/> (<see cref="CopyAtEntry"/>, decision 583); <see cref="Result"/> gives back the
 /// caller's own sub-shapes wherever they were left unchanged, re-keys the context to the caller's shapes and freezes
 /// the result. ShapeFix_Face runs it on its own unfrozen faces.
 /// </para>
@@ -44,15 +49,15 @@ namespace Occt;
 public class ShapeFix_ComposeShell : ShapeFix_Root
 {
     /// <summary>The orientation of the face given.</summary>
-    protected TopAbs_Orientation myOrient;
+    protected Orientation myOrient;
     /// <summary>The resulting shell or face.</summary>
-    protected TopoDS_Shape myResult;
+    protected Shape myResult;
     /// <summary>The status of the last <see cref="Perform"/>.</summary>
     protected int myStatus;
 
     private ShapeExtend_CompositeSurface?     myGrid;
     private Placement                   myLoc;
-    private TopoDS_Face                       myFace;
+    private Face                       myFace;
     private double                            myUResolution;
     private double                            myVResolution;
     private ShapeAnalysis_TransferParameters  myTransferParamTool;
@@ -64,17 +69,17 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
     private double                            myVPeriod;
 
     // OCCT.NET: the copy at the entry (decision 583); null when the face holds no frozen shape.
-    private BRepTools_CopyAtEntry? myEntry;
+    private CopyAtEntry? myEntry;
     private bool myToEnter;
 
     /// <summary>Creates an empty tool.</summary>
     public ShapeFix_ComposeShell()
     {
-        myOrient            = TopAbs_FORWARD;
+        myOrient            = Forward;
         myStatus            = 0;
-        myResult            = new TopoDS_Shape();
+        myResult            = new Shape();
         myLoc               = new Placement();
-        myFace              = new TopoDS_Face();
+        myFace              = new Face();
         myUResolution       = RealLast();
         myVResolution       = RealLast();
         myInvertEdgeStatus  = true;
@@ -91,22 +96,22 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
     /// of getting pcurves. The precision is used (with the edges' tolerances) for subtle cases, such as tangential
     /// intersections.
     /// </summary>
-    public void Init(ShapeExtend_CompositeSurface Grid, in Placement L, in TopoDS_Face Face, double Prec)
+    public void Init(ShapeExtend_CompositeSurface Grid, in Placement L, in Face Face, double Prec)
     {
         myGrid    = Grid;
-        myUClosed = myGrid.IsUClosed();
-        myVClosed = myGrid.IsVClosed();
+        myUClosed = myGrid.IsUClosed;
+        myVClosed = myGrid.IsVClosed;
         myUPeriod = myGrid.UJointValue(myGrid.NbUPatches() + 1) - myGrid.UJointValue(1);
         myVPeriod = myGrid.VJointValue(myGrid.NbVPatches() + 1) - myGrid.VJointValue(1);
 
         //  DTK-CKY 100531 : protection against very thin face
         //  Test "isclosed" should be filtered on the overall (non trimmed) surface, must be closed
-        Geom_Surface theSurface = BRep_Tool.Surface(Face, out myLoc)!;
+        Surface theSurface = Tool.Surface(Face, out myLoc)!;
         // avoid false detection of 'Closed' on very thin faces
-        if (theSurface is Geom_ElementarySurface)
+        if (theSurface is ElementarySurface)
         {
-            myUClosed = myUClosed && theSurface.IsUClosed();
-            myVClosed = myVClosed && theSurface.IsVClosed();
+            myUClosed = myUClosed && theSurface.IsUClosed;
+            myVClosed = myVClosed && theSurface.IsVClosed;
         }
         else
         {
@@ -115,7 +120,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             if (Kerf.Engine.Foundation.Precision.IsInfinite(U0) || Kerf.Engine.Foundation.Precision.IsInfinite(U1) || Kerf.Engine.Foundation.Precision.IsInfinite(V0)
                 || Kerf.Engine.Foundation.Precision.IsInfinite(V1))
             {
-                BRepTools.UVBounds(Face, out GU0, out GU1, out GV0, out GV1);
+                BrepTools.UVBounds(Face, out GU0, out GU1, out GV0, out GV1);
             }
             if (myUClosed)
             {
@@ -156,8 +161,8 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
         myLoc = L;
         // smh#8
-        TopoDS_Shape tmpF = Face.Oriented(TopAbs_FORWARD);
-        myFace   = TopoDS.Face(tmpF); // for correct dealing with seams
+        Shape tmpF = Face.Oriented(Forward);
+        myFace   = ShapeCasts.Face(tmpF); // for correct dealing with seams
         myOrient = Face.Orientation();
         SetPrecision(Prec);
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
@@ -172,7 +177,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             {
                 double vRange = myGrid.VJointValue(j + 1) - myGrid.VJointValue(j);
                 myGrid.Patch(i, j).Bounds(out double u1, out double u2, out double v1, out double v2);
-                var GAS = new GeomAdaptor_Surface(myGrid.Patch(i, j));
+                var GAS = new SurfaceAdaptor(myGrid.Patch(i, j));
                 double ures = GAS.UResolution(1.0) * uRange / (u2 - u1);
                 double vres = GAS.VResolution(1.0) * vRange / (v2 - v1);
                 if (ures > 0.0 && myUResolution > ures)
@@ -229,14 +234,14 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
         CollectWires(wires, seqw);
 
         // And construct resulting faces
-        var faces = new NCollection_Sequence<TopoDS_Shape>();
+        var faces = new NCollection_Sequence<Shape>();
         DispatchWires(faces, wires);
 
         // Finally, construct resulting shell
         if (faces.Length() != 1)
         {
-            var S = new TopoDS_Shell();
-            var B = new BRep_Builder();
+            var S = new Shell();
+            var B = new BrepBuilder();
             B.MakeShell(ref S);
             for (int i = 1; i <= faces.Length(); i++)
             {
@@ -276,30 +281,30 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
     /// Returns the resulting shell or face (null if not done), frozen. Where the face given was frozen, its sub-shapes
     /// left unchanged are the caller's own, and the context answers for the caller's shapes.
     /// </summary>
-    public TopoDS_Shape Result()
+    public Shape Result()
     {
-        TopoDS_Shape aResult = InternalFinishedResult();
+        Shape aResult = InternalFinishedResult();
         aResult.TShape()?.FreezeGraph();
         return aResult;
     }
 
     /// <summary>The resulting shell or face, unfrozen, for ported callers (ShapeFix_Face).</summary>
-    internal TopoDS_Shape InternalResult() => myResult;
+    internal Shape InternalResult() => myResult;
 
     /// <summary>
     /// <see cref="Result"/> without freezing it, for ported callers that may give a frozen face (ShapeUpgrade's face
     /// dividers): where the face given was copied at the entry, the copy's unchanged sub-shapes are given back and the
     /// context re-keyed, as <see cref="Result"/> does; else the result is the one built in place.
     /// </summary>
-    internal TopoDS_Shape InternalFinishedResult()
+    internal Shape InternalFinishedResult()
     {
         myToEnter = true;
-        BRepTools_CopyAtEntry? anEntry = myEntry;
+        CopyAtEntry? anEntry = myEntry;
         myEntry = null;
         if (anEntry is not null)
         {
             myResult = anEntry.Finish(myResult, [myFace]);
-            myFace = TopoDS.Face(anEntry.Final(myFace));
+            myFace = ShapeCasts.Face(anEntry.Final(myFace));
         }
         return myResult;
     }
@@ -316,12 +321,12 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
         }
         myToEnter = false;
         myEntry   = null;
-        if (myFace.IsNull() || !BRepTools.HoldsFrozen(myFace))
+        if (myFace.IsNull || !BrepTools.HoldsFrozen(myFace))
         {
             return;
         }
-        myEntry = new BRepTools_CopyAtEntry(myFace, Context());
-        myFace  = TopoDS.Face(myEntry.Shape());
+        myEntry = new CopyAtEntry(myFace, Context());
+        myFace  = ShapeCasts.Face(myEntry.Shape());
     }
 
     //=======================================================================
@@ -406,17 +411,17 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
     // Apply context to one edge in the wire and put result into this wire
     private static int ApplyContext(in ShapeFix_WireSegment wire, int iedge, ShapeBuild_ReShape context)
     {
-        TopoDS_Edge edge = wire.Edge(iedge);
-        TopoDS_Shape res = context.InternalApply(edge);
+        Edge edge = wire.Edge(iedge);
+        Shape res = context.InternalApply(edge);
 
         if (res.IsSame(edge))
         {
             return 1;
         }
 
-        if (res.ShapeType() == TopAbs_EDGE)
+        if (res.ShapeType() == ShapeType.Edge)
         {
-            wire.SetEdge(iedge, TopoDS.Edge(res));
+            wire.SetEdge(iedge, ShapeCasts.Edge(res));
             return 1;
         }
 
@@ -424,10 +429,10 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
         var segw = new ShapeExtend_WireData();
         segw.ManifoldMode() = false;
-        for (var it = new TopoDS_Iterator(res); it.More(); it.Next())
+        for (var it = new Iterator(res); it.More(); it.Next())
         {
-            TopoDS_Edge E = TopoDS.Edge(it.Value());
-            if (!E.IsNull())
+            Edge E = ShapeCasts.Edge(it.Value());
+            if (!E.IsNull)
             {
                 segw.Add(E);
             }
@@ -441,10 +446,10 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             int nbEdges = segw.NbEdges();
             for (int i = 1; i <= nbEdges; i++, index++)
             {
-                ind = (edge.Orientation() == TopAbs_FORWARD || edge.Orientation() == TopAbs_INTERNAL
+                ind = (edge.Orientation() == Forward || edge.Orientation() == Internal
                          ? i
                          : segw.NbEdges() - i + 1);
-                TopoDS_Edge aE = segw.Edge(ind);
+                Edge aE = segw.Edge(ind);
                 if (i == 1)
                 {
                     wire.SetEdge(index, aE);
@@ -505,15 +510,15 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
         seqw.Clear();
 
         // Init seqw by initial set of wires (with corresponding orientation)
-        for (var iw = new TopoDS_Iterator(myFace, false); iw.More(); iw.Next())
+        for (var iw = new Iterator(myFace, false); iw.More(); iw.Next())
         {
-            TopoDS_Shape tmpW = Context()!.InternalApply(iw.Value());
-            if (tmpW.ShapeType() != TopAbs_WIRE)
+            Shape tmpW = Context()!.InternalApply(iw.Value());
+            if (tmpW.ShapeType() != ShapeType.Wire)
             {
-                if (tmpW.ShapeType() == TopAbs_VERTEX)
+                if (tmpW.ShapeType() == ShapeType.Vertex)
                 {
                     var seg = new ShapeFix_WireSegment(); //(( isOuter ? TopAbs_REVERSED : TopAbs_FORWARD ) );
-                    seg.SetVertex(TopoDS.Vertex(tmpW));
+                    seg.SetVertex(ShapeCasts.Vertex(tmpW));
                     seg.Orientation(tmpW.Orientation());
                     seqw.Append(seg);
                 }
@@ -521,9 +526,9 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 continue;
             }
 
-            TopoDS_Wire wire = TopoDS.Wire(tmpW);
+            Wire wire = ShapeCasts.Wire(tmpW);
 
-            bool isNonManifold = (wire.Orientation() != TopAbs_REVERSED && wire.Orientation() != TopAbs_FORWARD);
+            bool isNonManifold = (wire.Orientation() != Reversed && wire.Orientation() != Forward);
 
             // protect against INTERNAL/EXTERNAL wires
             //    if ( wire.Orientation() != TopAbs_REVERSED &&
@@ -542,7 +547,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 if (nbEdges != 0)
                 {
                     // wire segments for non-manifold topology should have INTERNAL orientation
-                    var seg = new ShapeFix_WireSegment(sbwd, TopAbs_INTERNAL);
+                    var seg = new ShapeFix_WireSegment(sbwd, Internal);
                     seqw.Append(seg);
                 }
             }
@@ -553,11 +558,11 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 var sbwdM = new ShapeExtend_WireData();
                 var sbwdNM = new ShapeExtend_WireData();
                 sbwdNM.ManifoldMode() = false;
-                var aIt = new TopoDS_Iterator(wire);
+                var aIt = new Iterator(wire);
                 for (; aIt.More(); aIt.Next())
                 {
-                    TopoDS_Edge E = TopoDS.Edge(aIt.Value());
-                    if (E.Orientation() == TopAbs_FORWARD || E.Orientation() == TopAbs_REVERSED)
+                    Edge E = ShapeCasts.Edge(aIt.Value());
+                    if (E.Orientation() == Forward || E.Orientation() == Reversed)
                     {
                         sbwdM.Add(E);
                     }
@@ -572,7 +577,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
                 if (nbNMEdges != 0)
                 {
-                    var seg = new ShapeFix_WireSegment(sbwdNM, TopAbs_INTERNAL); //(( isOuter ? TopAbs_REVERSED : TopAbs_FORWARD ) );
+                    var seg = new ShapeFix_WireSegment(sbwdNM, Internal); //(( isOuter ? TopAbs_REVERSED : TopAbs_FORWARD ) );
                     seqw.Append(seg);
                 }
 
@@ -583,8 +588,8 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                     var sfw = new ShapeFix_Wire();
                     sfw.Load(sbwdM);
                     int stat = 0;
-                    Geom_Surface gs = BRep_Tool.Surface(myFace)!;
-                    if (gs.IsUPeriodic() && gs.IsVPeriodic())
+                    Surface gs = Tool.Surface(myFace)!;
+                    if (gs.IsUPeriodic && gs.IsVPeriodic)
                     {
                         // For torus-like shapes, first reorder in 2d since reorder is indifferent in 3d
                         var sawo = new ShapeAnalysis_WireOrder(false, 0);
@@ -592,8 +597,8 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                         for (int i = 1; i <= nbMEdges; i++)
                         {
                             // smh#8
-                            TopoDS_Shape tmpF = myFace.Oriented(TopAbs_FORWARD);
-                            if (!sae.PCurve(sbwdM.Edge(i), TopoDS.Face(tmpF), out Geom2d_Curve? c2d, out double f, out double l))
+                            Shape tmpF = myFace.Oriented(Forward);
+                            if (!sae.PCurve(sbwdM.Edge(i), ShapeCasts.Face(tmpF), out Curve2D? c2d, out double f, out double l))
                             {
                                 continue;
                             }
@@ -613,14 +618,14 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
                     if (stat < 0)
                     {
-                        var B = new BRep_Builder();
-                        TopoDS_Shape dummy = myFace.EmptyCopied();
-                        TopoDS_Face face = TopoDS.Face(dummy);
+                        var B = new BrepBuilder();
+                        Shape dummy = myFace.EmptyCopied();
+                        Face face = ShapeCasts.Face(dummy);
                         B.Add(face, wire);
                         bool isOuter = ShapeAnalysis.IsOuterBound(face);
-                        TopoDS_Wire w = sbwdM.InternalWire();
+                        Wire w = sbwdM.InternalWire();
                         dummy = myFace.EmptyCopied();
-                        face = TopoDS.Face(dummy);
+                        face = ShapeCasts.Face(dummy);
                         B.Add(face, w);
                         bool isOuterAfter = ShapeAnalysis.IsOuterBound(face);
                         if (isOuter != isOuterAfter)
@@ -629,7 +634,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                         }
                     }
 
-                    var seg = new ShapeFix_WireSegment(sbwdM, TopAbs_REVERSED); //(( isOuter ? TopAbs_REVERSED : TopAbs_FORWARD ) );
+                    var seg = new ShapeFix_WireSegment(sbwdM, Reversed); //(( isOuter ? TopAbs_REVERSED : TopAbs_FORWARD ) );
                     seqw.Append(seg);
                 }
             }
@@ -650,8 +655,8 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
         // track special closed case: segment starts at end of edge and ends at its beginning
         int special = (begInd == endInd
-                           && (wire.Edge(begInd).Orientation() == TopAbs_FORWARD
-                               || wire.Edge(begInd).Orientation() == TopAbs_INTERNAL)
+                           && (wire.Edge(begInd).Orientation() == Forward
+                               || wire.Edge(begInd).Orientation() == Internal)
                                 == (begPar > endPar)
                          ? 1
                          : 0);
@@ -679,15 +684,15 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             {
                 i = 1;
             }
-            TopoDS_Edge edge = wire.Edge(i);
+            Edge edge = wire.Edge(i);
 
-            if (!sae.PCurve(edge, myFace, out Geom2d_Curve? c2d, out double f, out double l, false))
+            if (!sae.PCurve(edge, myFace, out Curve2D? c2d, out double f, out double l, false))
             {
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL3);
                 continue;
             }
-            double tol = LimitTolerance(BRep_Tool.Tolerance(edge));
-            bool isreversed = (edge.Orientation() == TopAbs_REVERSED);
+            double tol = LimitTolerance(Tool.Tolerance(edge));
+            bool isreversed = (edge.Orientation() == Reversed);
 
             double par1 = (i == begInd && special >= 0 ? begPar : (isreversed ? l : f));
             double par2 = (i == endInd && special <= 0 ? endPar : (isreversed ? f : l));
@@ -818,16 +823,16 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
     // After applying context to (seam) edge, distribute its indices on new edges,
     // according to their parameters on that edge
-    private static void DistributeSplitPoints(ShapeExtend_WireData sbwd, in TopoDS_Face myFace, int index, int nsplit,
+    private static void DistributeSplitPoints(ShapeExtend_WireData sbwd, in Face myFace, int index, int nsplit,
                                               NCollection_Sequence<int> indexes, NCollection_Sequence<double> values)
     {
-        bool isreversed = (nsplit > 0 && sbwd.Edge(index).Orientation() == TopAbs_REVERSED);
+        bool isreversed = (nsplit > 0 && sbwd.Edge(index).Orientation() == Reversed);
 
         var params_ = new NCollection_Array1<double>(0, nsplit);
         int i; // svv #1
         for (i = 0; i < nsplit; i++)
         {
-            BRep_Tool.Range(sbwd.Edge(index + i), myFace, out double f, out double l);
+            Tool.Range(sbwd.Edge(index + i), myFace, out double f, out double l);
             params_.SetValue(i, (isreversed ? l : f));
         }
 
@@ -850,7 +855,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
     }
 
     // OCCT returns int (a bool converted): 1 when there is no 3d curve.
-    private static int CheckByCurve3d(in Point3D pos, Geom_Curve? c3d, double param, in Transform3D T, double tol)
+    private static int CheckByCurve3d(in Point3D pos, Curve3D? c3d, double param, in Transform3D T, double tol)
     {
         if (c3d is null)
         {
@@ -907,16 +912,16 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
     /// split too near an end of the edge isn't made (the end vertex is returned instead).
     /// </summary>
     protected ShapeFix_WireSegment SplitWire(ref ShapeFix_WireSegment wire, NCollection_Sequence<int> indexes,
-                                             NCollection_Sequence<double> values, NCollection_Sequence<TopoDS_Shape> vertices,
+                                             NCollection_Sequence<double> values, NCollection_Sequence<Shape> vertices,
                                              NCollection_Sequence<int> SegmentCodes, bool isCutByU, int cutIndex)
     {
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         var result = new ShapeFix_WireSegment();
-        var aSurfTool = new ShapeAnalysis_Surface(BRep_Tool.Surface(myFace));
+        var aSurfTool = new ShapeAnalysis_Surface(Tool.Surface(myFace));
         int nbSplits = indexes.Length();
         var sae = new ShapeAnalysis_Edge();
         int start = 1;
-        TopAbs_Orientation anWireOrient = wire.Orientation();
+        Orientation anWireOrient = wire.Orientation();
         var T = new Transform3D();
         if (!myLoc.IsIdentity)
         {
@@ -937,7 +942,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                     continue;
                 }
             }
-            TopoDS_Edge edge = wire.Edge(i);
+            Edge edge = wire.Edge(i);
 
             wire.GetPatchIndex(i, out int iumin, out int iumax, out int ivmin, out int ivmax);
 
@@ -953,44 +958,44 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             if (stop == start)
             {
                 result.AddEdge(0, edge, iumin, iumax, ivmin, ivmax);
-                if (code != 0 || wire.Orientation() != TopAbs_EXTERNAL)
+                if (code != 0 || wire.Orientation() != External)
                 { // pdn 0 code handling for extertnal wires
                     DefinePatch(result, code, isCutByU, cutIndex);
                 }
                 continue;
             }
             // find non-manifold vertices on edge
-            var aNMVertices = new NCollection_Sequence<TopoDS_Shape>();
-            var aIt = new TopoDS_Iterator(edge, false);
+            var aNMVertices = new NCollection_Sequence<Shape>();
+            var aIt = new Iterator(edge, false);
             for (; aIt.More(); aIt.Next())
             {
-                if (aIt.Value().Orientation() != TopAbs_FORWARD && aIt.Value().Orientation() != TopAbs_REVERSED)
+                if (aIt.Value().Orientation() != Forward && aIt.Value().Orientation() != Reversed)
                 {
                     aNMVertices.Append(aIt.Value());
                 }
             }
 
             // Collect data on edge
-            double tolEdge = BRep_Tool.Tolerance(edge);
-            TopoDS_Vertex prevV = sae.FirstVertex(edge);
-            TopoDS_Vertex lastV = sae.LastVertex(edge);
-            double prevVTol = LimitTolerance(BRep_Tool.Tolerance(prevV));
-            double lastVTol = LimitTolerance(BRep_Tool.Tolerance(lastV));
-            Point3D prevVPnt = BRep_Tool.Pnt(prevV);
-            Point3D lastVPnt = BRep_Tool.Pnt(lastV);
+            double tolEdge = Tool.Tolerance(edge);
+            Vertex prevV = sae.FirstVertex(edge);
+            Vertex lastV = sae.LastVertex(edge);
+            double prevVTol = LimitTolerance(Tool.Tolerance(prevV));
+            double lastVTol = LimitTolerance(Tool.Tolerance(lastV));
+            Point3D prevVPnt = Tool.Pnt(prevV);
+            Point3D lastVPnt = Tool.Pnt(lastV);
             if (T.Form() != Identity)
             {
                 prevVPnt.Transform(T);
                 lastVPnt.Transform(T);
             }
 
-            if (!sae.Curve3d(edge, out Geom_Curve? c3d, out double f3d, out double l3d))
+            if (!sae.Curve3d(edge, out Curve3D? c3d, out double f3d, out double l3d))
             { // not a crime
                 c3d = null;
                 f3d = l3d = 0;
             }
 
-            if (!sae.PCurve(edge, myFace, out Geom2d_Curve? C2d, out double firstPar, out double lastPar))
+            if (!sae.PCurve(edge, myFace, out Curve2D? C2d, out double firstPar, out double lastPar))
             {
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
             }
@@ -999,11 +1004,11 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             var aNMVertParams = new NCollection_Sequence<double>();
             if (nbNMVert != 0)
             {
-                var adc = new Geom2dAdaptor_Curve(C2d!);
+                var adc = new CurveAdaptor2D(C2d!);
                 int n = 1;
                 for (; n <= nbNMVert; n++)
                 {
-                    Point3D apV = BRep_Tool.Pnt(TopoDS.Vertex(aNMVertices.Value(n)));
+                    Point3D apV = Tool.Pnt(ShapeCasts.Vertex(aNMVertices.Value(n)));
                     double apar = firstPar;
                     double adist2 = RealLast();
                     if (c3d is not null)
@@ -1015,13 +1020,13 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                     else
                     {
                         Point2D aP2d = aSurfTool.ValueOfUV(apV, Kerf.Engine.Foundation.Precision.Confusion());
-                        var aExtr = new Extrema_ExtPC2d(aP2d, adc);
-                        if (aExtr.IsDone() && aExtr.NbExt() != 0)
+                        var aExtr = new ExtPC2d(aP2d, adc);
+                        if (aExtr.IsDone && aExtr.ExtCount != 0)
                         {
                             adist2 = aExtr.SquareDistance(1);
                             int index = 1;
                             int k = 2;
-                            for (; k <= aExtr.NbExt(); k++)
+                            for (; k <= aExtr.ExtCount; k++)
                             {
                                 double ad2 = aExtr.SquareDistance(k);
                                 if (ad2 < adist2)
@@ -1049,7 +1054,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             Point2D lastPnt2d = C2d.Value(lastPar);
             Point3D prevPnt = myGrid!.Value(prevPnt2d);
             Point3D lastPnt = myGrid.Value(lastPnt2d);
-            bool isPeriodic = C2d.IsPeriodic();
+            bool isPeriodic = C2d.IsPeriodic;
             double aPeriod = (isPeriodic ? C2d.Period() : 0.0);
 
             // Splitting edge
@@ -1082,7 +1087,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
                 // Try to adjust current splitting point to previous or end of edge
                 bool doCut = true;
-                var V = new TopoDS_Vertex();
+                var V = new Vertex();
                 if (Math.Abs(currPar - lastPar) < Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     V = lastV;
@@ -1157,7 +1162,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                     }
                     //: abv 28.05.02: OCC320 Sample_2: if maxtol = 1e-7, the vertex tolerance
                     // is actually ignored - protect against new vertex on degenerated edge
-                    else if (BRep_Tool.Degenerated(edge) && prevV.IsSame(lastV))
+                    else if (Tool.Degenerated(edge) && prevV.IsSame(lastV))
                     {
                         V = prevV;
                     }
@@ -1169,7 +1174,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 }
 
                 // if not adjusted, make new vertex
-                if (V.IsNull())
+                if (V.IsNull)
                 {
                     B.MakeVertex(ref V, currPnt.Transformed(myLoc.Transformation()), tolEdge);
                     vertices.Append(V);
@@ -1197,21 +1202,21 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 if (!splitted)
                 {
                     // smh#8
-                    TopoDS_Shape emptyCopiedfV = prevV.EmptyCopied();
-                    TopoDS_Vertex fV = TopoDS.Vertex(emptyCopiedfV);
+                    Shape emptyCopiedfV = prevV.EmptyCopied();
+                    Vertex fV = ShapeCasts.Vertex(emptyCopiedfV);
                     Context()!.Replace(prevV, fV);
-                    TopoDS_Vertex lV;
+                    Vertex lV;
                     if (prevV.IsSame(lastV))
                     {
                         // smh#8
-                        TopoDS_Shape tmpV = fV.Oriented(lastV.Orientation());
-                        lV = TopoDS.Vertex(tmpV);
+                        Shape tmpV = fV.Oriented(lastV.Orientation());
+                        lV = ShapeCasts.Vertex(tmpV);
                     }
                     else
                     {
                         // smh#8
-                        TopoDS_Shape emptyCopied = lastV.EmptyCopied();
-                        lV = TopoDS.Vertex(emptyCopied);
+                        Shape emptyCopied = lastV.EmptyCopied();
+                        lV = ShapeCasts.Vertex(emptyCopied);
                         Context()!.Replace(lastV, lV);
                     }
                     if (V.IsSame(lastV))
@@ -1228,24 +1233,24 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
                 // Splitting of the edge
                 splitted = true;
-                prevV.Orientation(TopAbs_FORWARD);
-                V.Orientation(TopAbs_REVERSED);
+                prevV.Orientation(Forward);
+                V.Orientation(Reversed);
                 var sbe = new ShapeBuild_Edge();
-                TopoDS_Edge anInitEdge = edge;
-                bool ismanifold = (edge.Orientation() == TopAbs_FORWARD || edge.Orientation() == TopAbs_REVERSED);
+                Edge anInitEdge = edge;
+                bool ismanifold = (edge.Orientation() == Forward || edge.Orientation() == Reversed);
                 if (!ismanifold)
                 {
-                    anInitEdge.Orientation(TopAbs_FORWARD);
+                    anInitEdge.Orientation(Forward);
                 }
-                TopoDS_Edge newEdge = sbe.InternalCopyReplaceVertices(anInitEdge, prevV, V);
+                Edge newEdge = sbe.InternalCopyReplaceVertices(anInitEdge, prevV, V);
 
                 // addition internal vertices if they exists on edge
                 int n = 1;
                 for (; n <= aNMVertParams.Length(); n++)
                 {
                     double apar = aNMVertParams.Value(n);
-                    TopoDS_Vertex aNMVert = TopoDS.Vertex(aNMVertices.Value(n));
-                    TopoDS_Vertex atmpV = TopoDS.Vertex(Context()!.InternalApply(aNMVert));
+                    Vertex aNMVert = ShapeCasts.Vertex(aNMVertices.Value(n));
+                    Vertex atmpV = ShapeCasts.Vertex(Context()!.InternalApply(aNMVert));
                     if (Math.Abs(apar - prevPar) <= Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         Context()!.Replace(atmpV, prevV);
@@ -1280,7 +1285,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 {
                     if (code == IOR_UNDEF)
                     { // tangential segment
-                        newEdge.Orientation(TopAbs_EXTERNAL);
+                        newEdge.Orientation(External);
                     }
                     else
                     {
@@ -1288,12 +1293,12 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                     }
                 }
 
-                if (!sp && !BRep_Tool.Degenerated(newEdge))
+                if (!sp && !Tool.Degenerated(newEdge))
                 {
                     B.SameRange(newEdge, false);
                 }
                 // pdn take into account 0 codes (if ext)
-                if (code == 0 && wire.Orientation() == TopAbs_EXTERNAL)
+                if (code == 0 && wire.Orientation() == External)
                 {
                     code = ((isCutByU == (j == 1)) ? 1 : 2);
                 }
@@ -1303,8 +1308,8 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
                 // Changing prev parameters
                 prevV = V;
-                prevVTol = LimitTolerance(BRep_Tool.Tolerance(V));
-                prevVPnt = BRep_Tool.Pnt(V);
+                prevVTol = LimitTolerance(Tool.Tolerance(V));
+                prevVPnt = Tool.Pnt(V);
                 prevPnt = currPnt;
                 prevPnt2d = currPnt2d;
             }
@@ -1314,11 +1319,11 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             {
                 // record replacement in context
                 // NOTE: order of edges in the replacing wire corresponds to FORWARD orientation of the edge
-                var resWire = new TopoDS_Wire();
+                var resWire = new Wire();
                 B.MakeWire(ref resWire);
                 for (int k = NbEdgesStart; k < result.NbEdges(); k++)
                 {
-                    if (edge.Orientation() == TopAbs_FORWARD || edge.Orientation() == TopAbs_INTERNAL)
+                    if (edge.Orientation() == Forward || edge.Orientation() == Internal)
                     {
                         B.Add(resWire, result.Edge(k + 1));
                     }
@@ -1331,17 +1336,17 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             }
             else
             {
-                if (anWireOrient == TopAbs_INTERNAL && code == 0)
+                if (anWireOrient == Internal && code == 0)
                 {
                     var sbe = new ShapeBuild_Edge();
-                    if (edge.Orientation() == TopAbs_INTERNAL)
+                    if (edge.Orientation() == Internal)
                     {
-                        edge.Orientation(TopAbs_FORWARD);
+                        edge.Orientation(Forward);
                     }
-                    TopoDS_Edge e1 = sbe.InternalCopy(edge, false);
-                    var C2d2 = (Geom2d_Curve)C2d.Copy();
+                    Edge e1 = sbe.InternalCopy(edge, false);
+                    var C2d2 = (Curve2D)C2d.Copy();
                     B.UpdateEdge(e1, C2d, C2d2, myFace, 0.0);
-                    e1.Orientation(TopAbs_EXTERNAL);
+                    e1.Orientation(External);
                     Context()!.Replace(edge, e1);
                     result.AddEdge(0, e1, iumin, iumax, ivmin, ivmax);
                 }
@@ -1349,7 +1354,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 {
                     result.AddEdge(0, edge, iumin, iumax, ivmin, ivmax);
                 }
-                if (code == 0 && wire.Orientation() == TopAbs_EXTERNAL)
+                if (code == 0 && wire.Orientation() == External)
                 {
                     // pdn defining code for intersection of two isos
                     code = ((isCutByU == (Math.Abs(firstPar - currPar) < Math.Abs(lastPar - currPar))) ? 2 : 1);
@@ -1368,24 +1373,24 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
     /// </summary>
     protected bool SplitByLine(ref ShapeFix_WireSegment wire, in Line2D line, bool isCutByU, int cutIndex,
                                NCollection_Sequence<double> SplitLinePar, NCollection_Sequence<int> SplitLineCode,
-                               NCollection_Sequence<TopoDS_Shape> SplitLineVertex)
+                               NCollection_Sequence<Shape> SplitLineVertex)
     {
         var sae = new ShapeAnalysis_Edge();
         // prepare data on cutting line
-        var jC2d = new Geom2d_Line(line);
-        var jGAC = new Geom2dAdaptor_Curve(jC2d);
+        var jC2d = new LineCurve2D(line);
+        var jGAC = new CurveAdaptor2D(jC2d);
 
         var IntEdgeInd = new NCollection_Sequence<int>();    // index of intersecting edge
         var IntEdgePar = new NCollection_Sequence<double>(); // parameter of intersection point on edge
         var IntLinePar = new NCollection_Sequence<double>(); // parameter of intersection point on line
 
-        bool isnonmanifold = (wire.Orientation() == TopAbs_INTERNAL);
+        bool isnonmanifold = (wire.Orientation() == Internal);
         // gka correction for non-manifold vertices SAMTECH
         if (wire.IsVertex())
         {
-            var aSurfTool = new ShapeAnalysis_Surface(BRep_Tool.Surface(myFace));
-            TopoDS_Vertex aVert = wire.GetVertex();
-            Point3D aP3d = BRep_Tool.Pnt(aVert);
+            var aSurfTool = new ShapeAnalysis_Surface(Tool.Surface(myFace));
+            Vertex aVert = wire.GetVertex();
+            Point3D aP3d = Tool.Pnt(aVert);
             Point2D aP2d = aSurfTool.ValueOfUV(aP3d, Kerf.Engine.Foundation.Precision.Confusion());
             int code0 = PointLinePosition(aP2d, line, out _);
             if (code0 != IOR_UNDEF)
@@ -1396,10 +1401,10 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             SplitLinePar.Append(par);
             // splitting codes for non-manifold topology should be tangential
             SplitLineCode.Append(ITP_TANG); // ITP_INTER);
-            var aVertNew = new TopoDS_Vertex();
-            var aB = new BRep_Builder();
-            aB.MakeVertex(ref aVertNew, aP3d, BRep_Tool.Tolerance(aVert));
-            aVertNew.Orientation(TopAbs_FORWARD);
+            var aVertNew = new Vertex();
+            var aB = new BrepBuilder();
+            aB.MakeVertex(ref aVertNew, aP3d, Tool.Tolerance(aVert));
+            aVertNew.Orientation(Forward);
             Context()!.Replace(aVert, aVertNew);
             SplitLineVertex.Append(aVertNew);
             wire.SetVertex(aVertNew);
@@ -1431,10 +1436,10 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
         double firstDev = 0.0, prevDev = 0.0;
         for (int iedge = 1; iedge <= nbe; iedge++)
         {
-            TopoDS_Edge E = sewd.Edge(iedge);
-            bool isreversed = (E.Orientation() == TopAbs_REVERSED);
+            Edge E = sewd.Edge(iedge);
+            bool isreversed = (E.Orientation() == Reversed);
 
-            if (!sae.PCurve(E, myFace, out Geom2d_Curve? c2d, out double f, out double l, false))
+            if (!sae.PCurve(E, myFace, out Curve2D? c2d, out double f, out double l, false))
             {
                 continue;
             }
@@ -1464,7 +1469,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                     double shift = ShapeAnalysis.AdjustToPeriod(umin, x - myUPeriod, x);
                     if (shift != 0.0)
                     {
-                        c2d = (Geom2d_Curve)c2d.Copy();
+                        c2d = (Curve2D)c2d.Copy();
                         var V = new Vector2D(shift, 0.0);
                         c2d.Translate(V);
                         pppf.SetX(pppf.X() + shift);
@@ -1484,7 +1489,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                     double shift = ShapeAnalysis.AdjustToPeriod(vmin, y - myVPeriod, y);
                     if (shift != 0.0)
                     {
-                        c2d = (Geom2d_Curve)c2d.Copy();
+                        c2d = (Curve2D)c2d.Copy();
                         var V = new Vector2D(0.0, shift);
                         c2d.Translate(V);
                         pppf.SetY(pppf.Y() + shift);
@@ -1529,7 +1534,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             {
                 // data for intersection
                 var iDom = new IntRes2d_Domain(new Point2D(pppf), f, TOLINT, new Point2D(pppl), l, TOLINT);
-                var iGAC = new Geom2dAdaptor_Curve(c2d);
+                var iGAC = new CurveAdaptor2D(c2d);
 
                 // intersection
                 var Inter = new Geom2dInt_GInter();
@@ -1570,7 +1575,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 {
                     if (iter == 1)
                     {
-                        c2d = (Geom2d_Curve)c2d.Copy();
+                        c2d = (Curve2D)c2d.Copy();
                     }
                     pppf += shiftNext.XY();
                     pppl += shiftNext.XY();
@@ -1616,7 +1621,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
             // Detect intersection at closing point
             // Only wires which are not EXTERNAL are considered (as closed)
-            if (iedge == nbe && wire.Orientation() != TopAbs_EXTERNAL && wire.Orientation() != TopAbs_INTERNAL
+            if (iedge == nbe && wire.Orientation() != External && wire.Orientation() != Internal
                 && (prevCode == IOR_UNDEF || prevCode != firstCode))
             {
                 if (closedDir == 0 || Math.Abs(firstDev - prevDev) < halfPeriod)
@@ -1663,12 +1668,12 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 }
                 else if (nbe == 1 || IntEdgeInd[ii] == (IntEdgeInd[jj] % nbe) + 1)
                 {
-                    TopoDS_Edge E1 = sewd.Edge(IntEdgeInd[jj]);
-                    TopoDS_Edge E2 = sewd.Edge(IntEdgeInd[ii]);
-                    BRep_Tool.Range(E1, myFace, out double a1, out double b1);
-                    BRep_Tool.Range(E2, myFace, out double a2, out double b2);
-                    if (Math.Abs(IntEdgePar[jj] - (E1.Orientation() == TopAbs_FORWARD ? b1 : a1)) < Kerf.Engine.Foundation.Precision.PConfusion()
-                        && Math.Abs(IntEdgePar[ii] - (E2.Orientation() == TopAbs_FORWARD ? a2 : b2)) < Kerf.Engine.Foundation.Precision.PConfusion())
+                    Edge E1 = sewd.Edge(IntEdgeInd[jj]);
+                    Edge E2 = sewd.Edge(IntEdgeInd[ii]);
+                    Tool.Range(E1, myFace, out double a1, out double b1);
+                    Tool.Range(E2, myFace, out double a2, out double b2);
+                    if (Math.Abs(IntEdgePar[jj] - (E1.Orientation() == Forward ? b1 : a1)) < Kerf.Engine.Foundation.Precision.PConfusion()
+                        && Math.Abs(IntEdgePar[ii] - (E2.Orientation() == Forward ? a2 : b2)) < Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         IntLinePar.Remove(ii);
                         IntEdgePar.Remove(ii);
@@ -1694,7 +1699,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
         }
 
         // for EXTERNAL wire, i.e. another joint line, every point is double intersection
-        if (wire.Orientation() == TopAbs_EXTERNAL)
+        if (wire.Orientation() == External)
         {
             for (ii = 1; ii <= IntEdgePar.Length(); ii++)
             {
@@ -1705,7 +1710,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
         // For real (closed) wire, analyze tangencies
         else
         {
-            if (wire.Orientation() != TopAbs_INTERNAL)
+            if (wire.Orientation() != Internal)
             {
                 // Two consecutive tangential segments are considered as one, merge them.
                 for (ii = 1; ii <= IntEdgePar.Length(); ii++)
@@ -1809,7 +1814,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
         //=======================================
         // Split edges in the wire by intersection points and fill vertices array
-        var IntVertices = new NCollection_Sequence<TopoDS_Shape>();
+        var IntVertices = new NCollection_Sequence<Shape>();
         wire = SplitWire(ref wire, IntEdgeInd, IntEdgePar, IntVertices, aNewSegCodes, isCutByU, cutIndex);
 
         // add all data to input arrays
@@ -1833,7 +1838,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
     {
         var SplitLinePar = new NCollection_Sequence<double>();
         var SplitLineCode = new NCollection_Sequence<int>();
-        var SplitLineVertex = new NCollection_Sequence<TopoDS_Shape>();
+        var SplitLineVertex = new NCollection_Sequence<Shape>();
 
         // split wires one by one, collecting data on intersection points
         int i; // svv #1
@@ -1877,7 +1882,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
         // go along line, split it by intersection points and create edges
         // (only for internal parts, in particular not for tangential segments)
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         int parity = 0;     // 0 - out, 1 - in
         int halfparity = 0; // left/right for tangential segments
         int tanglevel = 0;  // tangency nesting level
@@ -1920,10 +1925,10 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
             // apply context to vertices (to perform replacing/merging vertices)
             // smh#8
-            TopoDS_Shape tmpV1 = Context()!.InternalApply(SplitLineVertex[i - 1]);
-            TopoDS_Shape tmpV2 = Context()!.InternalApply(SplitLineVertex[i]);
-            TopoDS_Vertex V1 = TopoDS.Vertex(tmpV1);
-            TopoDS_Vertex V2 = TopoDS.Vertex(tmpV2);
+            Shape tmpV1 = Context()!.InternalApply(SplitLineVertex[i - 1]);
+            Shape tmpV2 = Context()!.InternalApply(SplitLineVertex[i]);
+            Vertex V1 = ShapeCasts.Vertex(tmpV1);
+            Vertex V2 = ShapeCasts.Vertex(tmpV2);
             // protection against creating null-length edges or edges lying inside tolerance of vertices
             // first and last vertices for split line can not be merged to each other
             bool canbeMerged = (/*myClosedMode &&*/ (i - 1 > 1 || i < SplitLinePar.Length()));
@@ -1933,10 +1938,10 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             {
                 aMaxTol = Kerf.Engine.Foundation.Precision.Infinite();
             }
-            double aTol1 = Min(BRep_Tool.Tolerance(V1), aMaxTol);
-            double aTol2 = Min(BRep_Tool.Tolerance(V2), aMaxTol);
-            Point3D aP1 = BRep_Tool.Pnt(V1);
-            Point3D aP2 = BRep_Tool.Pnt(V2);
+            double aTol1 = Min(Tool.Tolerance(V1), aMaxTol);
+            double aTol2 = Min(Tool.Tolerance(V2), aMaxTol);
+            Point3D aP1 = Tool.Pnt(V1);
+            Point3D aP2 = Tool.Pnt(V2);
             double aD = aP1.SquareDistance(aP2);
             if (SplitLinePar[i] - SplitLinePar[i - 1] < Kerf.Engine.Foundation.Precision.PConfusion()
                 || (canbeMerged && (aD <= (aTol1 * aTol1) || aD <= (aTol2 * aTol2))))
@@ -1944,7 +1949,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 if (!V1.IsSame(V2))
                 { // merge coincident vertices
                     var sbv = new ShapeBuild_Vertex();
-                    TopoDS_Vertex V = sbv.InternalCombineVertex(V1, V2);
+                    Vertex V = sbv.InternalCombineVertex(V1, V2);
                     Context()!.Replace(V1, V.Oriented(V1.Orientation()));
                     Context()!.Replace(V2, V.Oriented(V2.Orientation()));
                     V1 = V2 = V;
@@ -1954,20 +1959,20 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
             // create an edge (without 3d curve), put it in wire segment and add to sequence
             // NOTE: i here is always >1
-            var edge = new TopoDS_Edge();
+            var edge = new Edge();
             B.MakeEdge(ref edge);
-            V1.Orientation(TopAbs_FORWARD);
-            V2.Orientation(TopAbs_REVERSED);
+            V1.Orientation(Forward);
+            V2.Orientation(Reversed);
             B.Add(edge, V1);
             B.Add(edge, V2);
-            var Lin1 = new Geom2d_Line(line);
-            var Lin2 = new Geom2d_Line(line);
+            var Lin1 = new LineCurve2D(line);
+            var Lin2 = new LineCurve2D(line);
             B.UpdateEdge(edge, Lin1, Lin2, myFace, Kerf.Engine.Foundation.Precision.Confusion());
             B.Range(edge, myFace, SplitLinePar[i - 1], SplitLinePar[i]);
 
             var sbwd = new ShapeExtend_WireData();
             sbwd.Add(edge);
-            var seg = new ShapeFix_WireSegment(sbwd, TopAbs_EXTERNAL);
+            var seg = new ShapeFix_WireSegment(sbwd, External);
 
             // set patch indices
             DefinePatch(seg, IOR_UNDEF, isCutByU, cutIndex);
@@ -2017,7 +2022,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
     {
         // process splitting by U- anv V-seams (i.e. U=const and V=const curves)
         // closed composite surface is processed as periodic
-        BRepTools.UVBounds(myFace, out double Uf, out double Ul, out double Vf, out double Vl);
+        BrepTools.UVBounds(myFace, out double Uf, out double Ul, out double Vf, out double Vl);
         myGrid!.Bounds(out double Umin, out double Umax, out double Vmin, out double Vmax);
 
         // value of precision to define number of patch should be the same as used in the definitin
@@ -2036,11 +2041,11 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             {
                 ref ShapeFix_WireSegment wire = ref seqw.ChangeValue(i);
 
-                TopoDS_Shape atmpF = myFace.EmptyCopied();
-                var aB = new BRep_Builder();
-                atmpF.Orientation(TopAbs_FORWARD);
+                Shape atmpF = myFace.EmptyCopied();
+                var aB = new BrepBuilder();
+                atmpF.Orientation(Forward);
                 aB.Add(atmpF, wire.WireData().InternalWire());
-                ShapeAnalysis.GetFaceUVBounds(TopoDS.Face(atmpF), out double Uf1, out double Ul1, out double Vf1, out double Vl1);
+                ShapeAnalysis.GetFaceUVBounds(ShapeCasts.Face(atmpF), out double Uf1, out double Ul1, out double Vf1, out double Vl1);
 
                 // for closed mode it is necessary to move wire segment in the interval defined by first and
                 // last grid UV values
@@ -2157,15 +2162,15 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
     protected void BreakWires(NCollection_Sequence<ShapeFix_WireSegment> seqw)
     {
         // split all the wires by vertices
-        var splitVertices = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var splitVertices = new NCollection_Map<Shape>(ShapeHasher.Instance);
         var sae = new ShapeAnalysis_Edge();
 
         // first collect splitting vertices
         int i; // svv #1
         for (i = 1; i <= seqw.Length(); i++)
         {
-            TopAbs_Orientation ori_wire = seqw[i].Orientation();
-            if (ori_wire != TopAbs_EXTERNAL && ori_wire != TopAbs_INTERNAL)
+            Orientation ori_wire = seqw[i].Orientation();
+            if (ori_wire != External && ori_wire != Internal)
             {
                 continue;
             }
@@ -2173,9 +2178,9 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             ShapeExtend_WireData sbwd = seqw[i].WireData();
             for (int j = 1; j <= sbwd.NbEdges(); j++)
             {
-                TopoDS_Edge edge = sbwd.Edge(j);
-                TopAbs_Orientation ori_edge = (ori_wire == TopAbs_EXTERNAL ? ori_wire : edge.Orientation());
-                if (ori_edge == TopAbs_EXTERNAL)
+                Edge edge = sbwd.Edge(j);
+                Orientation ori_edge = (ori_wire == External ? ori_wire : edge.Orientation());
+                if (ori_edge == External)
                 {
                     splitVertices.Add(sae.FirstVertex(edge));
                     splitVertices.Add(sae.LastVertex(edge));
@@ -2187,7 +2192,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
         // Here each wire is supposed to be connected (while probably not closed)
         for (i = 1; i <= seqw.Length(); i++)
         {
-            TopAbs_Orientation ori = seqw[i].Orientation();
+            Orientation ori = seqw[i].Orientation();
             ShapeFix_WireSegment wire = seqw[i];
             if (wire.IsVertex())
             {
@@ -2199,7 +2204,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             int j; // svv #1
             for (j = 1; j <= sbwd.NbEdges(); j++)
             {
-                TopoDS_Vertex V = sae.FirstVertex(sbwd.Edge(j));
+                Vertex V = sae.FirstVertex(sbwd.Edge(j));
                 if (splitVertices.Contains(V))
                 {
                     break;
@@ -2214,7 +2219,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             int shift = 0;
             if (j > 1 && !myClosedMode && wire.IsClosed())
             {
-                TopoDS_Vertex V = sae.FirstVertex(sbwd.Edge(1));
+                Vertex V = sae.FirstVertex(sbwd.Edge(1));
                 if (!splitVertices.Contains(V))
                 {
                     shift = j - 1;
@@ -2225,12 +2230,12 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             // perform splitting
             int nbnew = 0;
             var newwire = new ShapeFix_WireSegment();
-            TopAbs_Orientation curOri = ori;
+            Orientation curOri = ori;
             for (int ind = 1; ind <= sbwd.NbEdges(); ind++)
             {
                 j = 1 + (ind - 1 + shift) % sbwd.NbEdges();
-                TopoDS_Edge edge = sbwd.Edge(j);
-                TopoDS_Vertex V = sae.FirstVertex(edge);
+                Edge edge = sbwd.Edge(j);
+                Vertex V = sae.FirstVertex(edge);
                 if (ind == 1 || splitVertices.Contains(V))
                 {
                     if (newwire.NbEdges() != 0)
@@ -2244,10 +2249,10 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                     curOri = ori;
                 }
                 wire.GetPatchIndex(j, out int iumin, out int iumax, out int ivmin, out int ivmax);
-                if (ori == TopAbs_INTERNAL && edge.Orientation() == TopAbs_EXTERNAL)
+                if (ori == Internal && edge.Orientation() == External)
                 {
-                    curOri = TopAbs_EXTERNAL;
-                    edge.Orientation(TopAbs_FORWARD);
+                    curOri = External;
+                    edge.Orientation(Forward);
                     nbnew++;
                 }
                 newwire.AddEdge(0, edge, iumin, iumax, ivmin, ivmax);
@@ -2266,17 +2271,17 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
     // 1  - short even in 2d (to be taken always)
     // -1 - short in 3d but not in 2d (to be checked after algo and atteching to
     //      another wire if alone)
-    private static int IsShortSegment(in ShapeFix_WireSegment seg, in TopoDS_Face myFace, Geom_Surface myGrid,
+    private static int IsShortSegment(in ShapeFix_WireSegment seg, in Face myFace, Surface myGrid,
                                       in Placement myLoc, double UResolution, double VResolution)
     {
-        TopoDS_Vertex Vf = seg.FirstVertex();
+        Vertex Vf = seg.FirstVertex();
         if (!Vf.IsSame(seg.LastVertex()))
         {
             return 0;
         }
 
-        Point3D pnt = BRep_Tool.Pnt(Vf);
-        double tol = BRep_Tool.Tolerance(Vf);
+        Point3D pnt = Tool.Pnt(Vf);
+        double tol = Tool.Tolerance(Vf);
         double tol2 = tol * tol;
 
         int code = 1;
@@ -2284,12 +2289,12 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
         ShapeExtend_WireData sbwd = seg.WireData();
         for (int i = 1; i <= sbwd.NbEdges(); i++)
         {
-            TopoDS_Edge edge = sbwd.Edge(i);
+            Edge edge = sbwd.Edge(i);
             if (!Vf.IsSame(sae.LastVertex(edge)))
             {
                 return 0;
             }
-            if (!sae.PCurve(edge, myFace, out Geom2d_Curve? c2d, out double f, out double l))
+            if (!sae.PCurve(edge, myFace, out Curve2D? c2d, out double f, out double l))
             {
                 continue;
             }
@@ -2380,7 +2385,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
         var shorts = new NCollection_Array1<int>(1, seqw.Length());
         for (i = 1; i <= seqw.Length(); i++)
         {
-            if (seqw[i].IsVertex() || seqw[i].Orientation() == TopAbs_INTERNAL)
+            if (seqw[i].IsVertex() || seqw[i].Orientation() == Internal)
             {
                 wires.Append(seqw[i]);
                 seqw.Remove(i);
@@ -2390,19 +2395,19 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             int isshort = IsShortSegment(seqw[i], myFace, myGrid!, myLoc, myUResolution, myVResolution);
             shorts.SetValue(i, isshort);
             if (isshort > 0
-                && (seqw[i].Orientation() == TopAbs_EXTERNAL
+                && (seqw[i].Orientation() == External
                     || (seqw[i].NbEdges() == 1 && //: abv 13.05.02: OCC320 - remove if degenerated
-                        BRep_Tool.Degenerated(seqw[i].Edge(1)))))
+                        Tool.Degenerated(seqw[i].Edge(1)))))
             {
-                seqw[i].Orientation(TopAbs_INTERNAL);
+                seqw[i].Orientation(Internal);
             }
         }
 
         ShapeExtend_WireData? sbwd = null;
         Point2D endPnt = new Point2D(), firstPnt = new Point2D();
         Vector2D endTan = new Vector2D(), firstTan = new Vector2D();
-        TopoDS_Vertex firstV = new TopoDS_Vertex(), endV = new TopoDS_Vertex();
-        TopoDS_Edge firstEdge = new TopoDS_Edge(), lastEdge = new TopoDS_Edge();
+        Vertex firstV = new Vertex(), endV = new Vertex();
+        Edge firstEdge = new Edge(), lastEdge = new Edge();
         double tol = 0;
         int iumin = 0, iumax = 0, ivmin = 0, ivmax = 0;
         double dsu = 0.0, dsv = 0.0;
@@ -2424,8 +2429,8 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 {
                     continue;
                 }
-                TopAbs_Orientation anOr = seg.Orientation();
-                if (anOr == TopAbs_INTERNAL)
+                Orientation anOr = seg.Orientation();
+                if (anOr == Internal)
                 {
                     continue;
                 }
@@ -2437,11 +2442,11 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                     {
                         continue;
                     }
-                    if (anOr == TopAbs_EXTERNAL)
+                    if (anOr == External)
                     {
                         continue;
                     }
-                    if (anOr == TopAbs_FORWARD)
+                    if (anOr == Forward)
                     {
                         reverse = true;
                     }
@@ -2481,7 +2486,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                     }
 
                     // check for misorientation only if nothing better is found
-                    bool misor = (anOr == (j != 0 ? TopAbs_REVERSED : TopAbs_FORWARD));
+                    bool misor = (anOr == (j != 0 ? Reversed : Forward));
                     // if ( misor ) continue; // temporarily, to be improved
 
                     // returning back by the same edge is lowest priority
@@ -2507,9 +2512,9 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                     double edgeTol = 0;
                     for (k = 1; k <= wire.NbEdges(); k++)
                     {
-                        TopoDS_Shape tmpE = wire.Edge(wire.NbEdges() - k + 1).Reversed();
-                        TopoDS_Edge edge = (j != 0 ? TopoDS.Edge(tmpE) : wire.Edge(k));
-                        edgeTol = BRep_Tool.Tolerance(edge);
+                        Shape tmpE = wire.Edge(wire.NbEdges() - k + 1).Reversed();
+                        Edge edge = (j != 0 ? ShapeCasts.Edge(tmpE) : wire.Edge(k));
+                        edgeTol = Tool.Tolerance(edge);
                         // if ( sae.GetEndTangent2d ( edge, myFace, false, lPnt, lVec ) ) break;
                         if (sae.GetEndTangent2d(edge, myFace, false, out lPnt, out lVec, 1.0e-3))
                         {
@@ -2546,7 +2551,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                     // for coincidence (instead of vertex tolerance) in order
                     // this check to be in agreement with check for position of wire segments
                     // thus avoiding bad effects on overlapping edges
-                    double ctol = Max(edgeTol, BRep_Tool.Tolerance(endV /*lastEdge*/));
+                    double ctol = Max(edgeTol, Tool.Tolerance(endV /*lastEdge*/));
                     bool conn = IsCoincided(endPnt, lPnt, myUResolution, myVResolution, ctol);
                     double dist = endPnt.SquareDistance(lPnt);
 
@@ -2609,13 +2614,13 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                     wire.Reverse(myFace);
                     sbwd.Add(wire);
                 }
-                if (seg.Orientation() == TopAbs_EXTERNAL)
+                if (seg.Orientation() == External)
                 {
-                    seg.Orientation(reverse ? TopAbs_REVERSED : TopAbs_FORWARD);
+                    seg.Orientation(reverse ? Reversed : Forward);
                 }
                 else
                 {
-                    seg.Orientation(TopAbs_INTERNAL);
+                    seg.Orientation(Internal);
                 }
                 seqw.SetValue(index, seg);
             }
@@ -2624,7 +2629,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 break; // stop when no free segments available
             }
             // for first segment, remember start point
-            if (endV.IsNull())
+            if (endV.IsNull)
             {
                 firstEdge = sbwd.Edge(1);
                 firstV = sae.FirstVertex(firstEdge);
@@ -2633,12 +2638,12 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             }
 
             // update last edge and vertex (only for not short segments)
-            bool doupdate = (index != 0 && (shorts[index] <= 0 || endV.IsNull()));
+            bool doupdate = (index != 0 && (shorts[index] <= 0 || endV.IsNull));
             if (doupdate)
             {
                 lastEdge = sbwd.Edge(sbwd.NbEdges());
                 endV = sae.LastVertex(lastEdge);
-                tol = BRep_Tool.Tolerance(endV);
+                tol = Tool.Tolerance(endV);
                 // BUC60035 2053: iteration on edges is required
                 int k; // svv #1
                 for (k = sbwd.NbEdges(); k >= 1; k--)
@@ -2673,7 +2678,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 {
                     myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL5);
                 }
-                var s = new ShapeFix_WireSegment(sbwd, TopAbs_FORWARD);
+                var s = new ShapeFix_WireSegment(sbwd, Forward);
                 s.DefineIUMin(1, iumin);
                 s.DefineIUMax(1, iumax);
                 s.DefineIVMin(1, ivmin);
@@ -2691,15 +2696,15 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
         for (i = 1; i <= seqw.Length(); i++)
         {
-            if (shorts[i] != 1 || seqw[i].IsVertex() || seqw[i].Orientation() == TopAbs_INTERNAL
-                || seqw[i].Orientation() == TopAbs_EXTERNAL)
+            if (shorts[i] != 1 || seqw[i].IsVertex() || seqw[i].Orientation() == Internal
+                || seqw[i].Orientation() == External)
             {
                 continue;
             }
 
             // find any other wire containing the same vertex
             ShapeExtend_WireData wd = seqw[i].WireData();
-            TopoDS_Vertex V = seqw[i].FirstVertex();
+            Vertex V = seqw[i].FirstVertex();
             int minj = 0, mink = 0;
             double mindist = 0;
             bool samepatch = false;
@@ -2744,7 +2749,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             if (minj == 0)
             {
                 // pdn add into resulting sequence!
-                var s = new ShapeFix_WireSegment(wd, TopAbs_FORWARD);
+                var s = new ShapeFix_WireSegment(wd, Forward);
                 wires.Append(s);
                 continue;
             }
@@ -2762,13 +2767,13 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
         }
     }
 
-    private static Point2D GetMiddlePoint(in ShapeFix_WireSegment wire, in TopoDS_Face face)
+    private static Point2D GetMiddlePoint(in ShapeFix_WireSegment wire, in Face face)
     {
         if (wire.IsVertex())
         {
-            TopoDS_Vertex aV = wire.GetVertex();
-            Point3D aP3D = BRep_Tool.Pnt(aV);
-            Geom_Surface? surf = BRep_Tool.Surface(face);
+            Vertex aV = wire.GetVertex();
+            Point3D aP3D = Tool.Pnt(aV);
+            Surface? surf = Tool.Surface(face);
             var aSurfTool = new ShapeAnalysis_Surface(surf);
             return aSurfTool.ValueOfUV(aP3D, Kerf.Engine.Foundation.Precision.Confusion());
         }
@@ -2778,8 +2783,8 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
         ShapeExtend_WireData wd = wire.WireData();
         for (int i = 1; i <= wd.NbEdges(); i++)
         {
-            TopoDS_Edge E = wd.Edge(i);
-            if (sae.PCurve(E, face, out Geom2d_Curve? c2d, out double cf, out double cl, false))
+            Edge E = wd.Edge(i);
+            if (sae.PCurve(E, face, out Curve2D? c2d, out double cf, out double cl, false))
             {
                 sac.FillBndBox(c2d!, cf, cl, 3, false, ref box);
                 // box.Add(c2d->Value(cf));
@@ -2799,29 +2804,29 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
     /// Creates the faces on one patch of the grid, dispatching the given loops (wires) into one or several faces by
     /// their mutual position.
     /// </summary>
-    protected void MakeFacesOnPatch(NCollection_Sequence<TopoDS_Shape> faces, Geom_Surface surf,
-                                    NCollection_Sequence<TopoDS_Shape> loops)
+    protected void MakeFacesOnPatch(NCollection_Sequence<Shape> faces, Surface surf,
+                                    NCollection_Sequence<Shape> loops)
     {
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
 
         // Case of single loop: just add it to face
         if (loops.Length() == 1)
         {
-            var newFace = new TopoDS_Face();
+            var newFace = new Face();
             B.MakeFace(ref newFace, surf, myLoc, Kerf.Engine.Foundation.Precision.Confusion());
-            TopoDS_Shape aSH = loops.Value(1);
-            if (aSH.ShapeType() != TopAbs_WIRE)
+            Shape aSH = loops.Value(1);
+            if (aSH.ShapeType() != ShapeType.Wire)
             {
                 return;
             }
-            TopoDS_Wire wire = TopoDS.Wire(loops.Value(1));
+            Wire wire = ShapeCasts.Wire(loops.Value(1));
 
             B.Add(newFace, wire);
             if (myInvertEdgeStatus)
             {
                 var sff = new ShapeFix_Face(newFace);
                 sff.FixAddNaturalBoundMode() = 0;
-                var MapWires = new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+                var MapWires = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
                 MapWires.Clear();
                 sff.FixOrientation(MapWires);
                 newFace = sff.InternalFace();
@@ -2833,38 +2838,38 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
         // For several loops, first find roots
         // make pseudo-face,
-        var pf = new TopoDS_Face();
+        var pf = new Face();
         B.MakeFace(ref pf, surf, myLoc, Kerf.Engine.Foundation.Precision.Confusion());
-        Geom_Surface? atSurf = BRep_Tool.Surface(pf);
+        Surface? atSurf = Tool.Surface(pf);
 
         var aSurfTool = new ShapeAnalysis_Surface(atSurf);
-        var roots = new NCollection_Sequence<TopoDS_Shape>();
+        var roots = new NCollection_Sequence<Shape>();
         int i; // svv #1
         for (i = 1; i <= loops.Length(); i++)
         {
             Point2D unp;
-            TopoDS_Wire wr;
-            TopoDS_Shape aShape = loops[i];
-            if (aShape.ShapeType() != TopAbs_WIRE
-                || (aShape.Orientation() != TopAbs_FORWARD && aShape.Orientation() != TopAbs_REVERSED))
+            Wire wr;
+            Shape aShape = loops[i];
+            if (aShape.ShapeType() != ShapeType.Wire
+                || (aShape.Orientation() != Forward && aShape.Orientation() != Reversed))
             {
                 continue;
             }
 
-            wr = TopoDS.Wire(loops[i]);
-            var ew = new TopoDS_Iterator(wr);
+            wr = ShapeCasts.Wire(loops[i]);
+            var ew = new Iterator(wr);
             if (!ew.More())
             {
                 continue;
             }
 
-            TopoDS_Edge ed = TopoDS.Edge(ew.Value());
-            while (ed.Orientation() != TopAbs_FORWARD && ed.Orientation() != TopAbs_REVERSED)
+            Edge ed = ShapeCasts.Edge(ew.Value());
+            while (ed.Orientation() != Forward && ed.Orientation() != Reversed)
             {
                 ew.Next();
                 if (ew.More())
                 {
-                    ed = TopoDS.Edge(ew.Value());
+                    ed = ShapeCasts.Edge(ew.Value());
                 }
                 else
                 {
@@ -2875,7 +2880,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             {
                 continue;
             }
-            Geom2d_Curve? cw = BRep_Tool.CurveOnSurface(ed, pf, out double cf, out double cl);
+            Curve2D? cw = Tool.CurveOnSurface(ed, pf, out double cf, out double cl);
             if (cw is null)
             {
                 continue;
@@ -2889,21 +2894,21 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 {
                     continue;
                 }
-                TopoDS_Shape aShape2 = loops[j];
-                if (aShape2.ShapeType() != TopAbs_WIRE
-                    || (aShape2.Orientation() != TopAbs_FORWARD && aShape2.Orientation() != TopAbs_REVERSED))
+                Shape aShape2 = loops[j];
+                if (aShape2.ShapeType() != ShapeType.Wire
+                    || (aShape2.Orientation() != Forward && aShape2.Orientation() != Reversed))
                 {
                     continue;
                 }
-                TopoDS_Wire w1 = TopoDS.Wire(aShape2);
-                var awtmp = new TopoDS_Wire();
+                Wire w1 = ShapeCasts.Wire(aShape2);
+                var awtmp = new Wire();
                 B.MakeWire(ref awtmp);
-                awtmp.Orientation(TopAbs_FORWARD);
-                var aIt = new TopoDS_Iterator(w1);
+                awtmp.Orientation(Forward);
+                var aIt = new Iterator(w1);
                 int nbe = 0;
                 for (; aIt.More(); aIt.Next())
                 {
-                    if (aIt.Value().Orientation() == TopAbs_FORWARD || aIt.Value().Orientation() == TopAbs_REVERSED)
+                    if (aIt.Value().Orientation() == Forward || aIt.Value().Orientation() == Reversed)
                     {
                         B.Add(awtmp, aIt.Value());
                         nbe++;
@@ -2913,17 +2918,17 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 {
                     continue;
                 }
-                var fc = new TopoDS_Face();
+                var fc = new Face();
                 B.MakeFace(ref fc, surf, myLoc, Kerf.Engine.Foundation.Precision.Confusion());
                 B.Add(fc, awtmp);
                 var clas = new BRepTopAdaptor_FClass2d(fc, Kerf.Engine.Foundation.Precision.PConfusion());
-                TopAbs_State stPoint = clas.Perform(unp, false);
-                if (stPoint == TopAbs_ON || stPoint == TopAbs_UNKNOWN)
+                Containment stPoint = clas.Perform(unp, false);
+                if (stPoint == On || stPoint == Unknown)
                 {
-                    TopoDS_Edge anEdge = TopoDS.Edge(ew.Value());
-                    Geom2d_Curve? aCW = BRep_Tool.CurveOnSurface(anEdge, pf, out double aCF, out double aCL);
+                    Edge anEdge = ShapeCasts.Edge(ew.Value());
+                    Curve2D? aCW = Tool.CurveOnSurface(anEdge, pf, out double aCF, out double aCL);
                     // handle tangential case (ON)
-                    while (stPoint == TopAbs_ON || stPoint == TopAbs_UNKNOWN)
+                    while (stPoint == On || stPoint == Unknown)
                     {
                         stPoint = clas.Perform(aCW!.Value(aCL), false);
                         if (!ew.More())
@@ -2935,19 +2940,19 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                         {
                             break;
                         }
-                        TopoDS_Edge edge = TopoDS.Edge(ew.Value());
-                        if (edge.Orientation() != TopAbs_FORWARD && edge.Orientation() != TopAbs_REVERSED)
+                        Edge edge = ShapeCasts.Edge(ew.Value());
+                        if (edge.Orientation() != Forward && edge.Orientation() != Reversed)
                         {
                             continue;
                         }
-                        Geom2d_Curve? c2d = BRep_Tool.CurveOnSurface(edge, pf, out aCF, out aCL);
+                        Curve2D? c2d = Tool.CurveOnSurface(edge, pf, out aCF, out aCL);
                         if (c2d is not null)
                         {
                             aCW = c2d;
                         }
                     }
                 }
-                TopAbs_State stInfin = clas.PerformInfinitePoint();
+                Containment stInfin = clas.PerformInfinitePoint();
                 if (stPoint != stInfin)
                 {
                     break;
@@ -2987,50 +2992,50 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
         for (i = 1; i <= roots.Length(); i++)
         {
             bool reverse = false;
-            TopoDS_Wire wire = TopoDS.Wire(roots[i]);
-            var fc = new TopoDS_Face();
+            Wire wire = ShapeCasts.Wire(roots[i]);
+            var fc = new Face();
             B.MakeFace(ref fc, surf, myLoc, Kerf.Engine.Foundation.Precision.Confusion());
             B.Add(fc, wire);
             var clas = new BRepTopAdaptor_FClass2d(fc, Kerf.Engine.Foundation.Precision.PConfusion());
-            if (clas.PerformInfinitePoint() == TopAbs_IN)
+            if (clas.PerformInfinitePoint() == In)
             {
                 reverse = true;
             }
 
             // find all holes for that loop
-            var holes = new NCollection_Sequence<TopoDS_Shape>(); // holes in holes not supported
+            var holes = new NCollection_Sequence<Shape>(); // holes in holes not supported
             int j; // svv #1
             for (j = 1; j <= loops.Length(); j++)
             {
                 Point2D unp;
-                if (loops[j].ShapeType() == TopAbs_WIRE)
+                if (loops[j].ShapeType() == ShapeType.Wire)
                 {
-                    TopoDS_Wire bw = TopoDS.Wire(loops[j]);
-                    var ew = new TopoDS_Iterator(bw);
+                    Wire bw = ShapeCasts.Wire(loops[j]);
+                    var ew = new Iterator(bw);
                     if (!ew.More())
                     {
                         continue;
                     }
-                    TopoDS_Edge ed = TopoDS.Edge(ew.Value());
-                    Geom2d_Curve? cw = BRep_Tool.CurveOnSurface(ed, pf, out double cf, out double cl);
+                    Edge ed = ShapeCasts.Edge(ew.Value());
+                    Curve2D? cw = Tool.CurveOnSurface(ed, pf, out double cf, out double cl);
                     if (cw is null)
                     {
                         continue;
                     }
                     unp = cw.Value(0.5 * (cf + cl));
                 }
-                else if (loops[j].ShapeType() == TopAbs_VERTEX)
+                else if (loops[j].ShapeType() == ShapeType.Vertex)
                 {
-                    TopoDS_Vertex aV = TopoDS.Vertex(loops[j]);
-                    Point3D aP = BRep_Tool.Pnt(aV);
+                    Vertex aV = ShapeCasts.Vertex(loops[j]);
+                    Point3D aP = Tool.Pnt(aV);
                     unp = aSurfTool.ValueOfUV(aP, Kerf.Engine.Foundation.Precision.Confusion());
                 }
                 else
                 {
                     continue;
                 }
-                TopAbs_State state = clas.Perform(unp, false);
-                if ((state == TopAbs_OUT) == reverse)
+                Containment state = clas.Perform(unp, false);
+                if ((state == Out) == reverse)
                 {
                     holes.Append(loops[j]);
                     loops.Remove(j--);
@@ -3038,15 +3043,15 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             }
 
             // and add them to new face (no orienting is done)
-            var newFace = new TopoDS_Face();
+            var newFace = new Face();
             B.MakeFace(ref newFace, surf, myLoc, Kerf.Engine.Foundation.Precision.Confusion());
             B.Add(newFace, wire);
             for (j = 1; j <= holes.Length(); j++)
             {
-                TopoDS_Shape aSh = holes[j];
-                if (aSh.ShapeType() == TopAbs_VERTEX)
+                Shape aSh = holes[j];
+                if (aSh.ShapeType() == ShapeType.Vertex)
                 {
-                    TopoDS_Vertex aNewV = ShapeAnalysis_TransferParametersProj.InternalCopyNMVertex(TopoDS.Vertex(aSh), newFace, myFace);
+                    Vertex aNewV = ShapeAnalysis_TransferParametersProj.InternalCopyNMVertex(ShapeCasts.Vertex(aSh), newFace, myFace);
                     Context()!.Replace(aSh, aNewV);
                     B.Add(newFace, aNewV);
                 }
@@ -3062,9 +3067,9 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             {
                 for (j = 1; j <= loops.Length(); j++)
                 {
-                    TopoDS_Shape aSh = loops[j];
-                    if (aSh.ShapeType() == TopAbs_WIRE
-                        && (aSh.Orientation() == TopAbs_FORWARD || aSh.Orientation() == TopAbs_REVERSED))
+                    Shape aSh = loops[j];
+                    if (aSh.ShapeType() == ShapeType.Wire
+                        && (aSh.Orientation() == Forward || aSh.Orientation() == Reversed))
                     {
                         roots.Append(loops[j]);
                     }
@@ -3078,9 +3083,9 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
     /// Creates the faces from the set of (closed) wires: each wire is put on its patch of the composite surface, its
     /// pcurves on the initial (pseudo-)face reassigned to that surface; wires one inside another make one face.
     /// </summary>
-    public void DispatchWires(NCollection_Sequence<TopoDS_Shape> faces, NCollection_Sequence<ShapeFix_WireSegment> wires)
+    public void DispatchWires(NCollection_Sequence<Shape> faces, NCollection_Sequence<ShapeFix_WireSegment> wires)
     {
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
 
         // in closed mode, apply FixShifted to all wires before dispatching them
         if (myClosedMode)
@@ -3101,12 +3106,12 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
                 for (int jL = 1; jL <= sbwd.NbEdges(); jL++)
                 {
-                    TopoDS_Edge E = sbwd.Edge(jL);
-                    if (E.Orientation() == TopAbs_REVERSED && BRep_Tool.IsClosed(E, myFace))
+                    Edge E = sbwd.Edge(jL);
+                    if (E.Orientation() == Reversed && Tool.IsClosed(E, myFace))
                     {
-                        Geom2d_Curve c21 = BRep_Tool.CurveOnSurface(E, myFace, out double f1, out double l1)!;
-                        TopoDS_Shape dummy = E.Reversed();
-                        Geom2d_Curve c22 = BRep_Tool.CurveOnSurface(TopoDS.Edge(dummy), myFace, out double f2, out double l2)!;
+                        Curve2D c21 = Tool.CurveOnSurface(E, myFace, out double f1, out double l1)!;
+                        Shape dummy = E.Reversed();
+                        Curve2D c22 = Tool.CurveOnSurface(ShapeCasts.Edge(dummy), myFace, out double f2, out double l2)!;
                         double dPreci = Kerf.Engine.Foundation.Precision.PConfusion() * Kerf.Engine.Foundation.Precision.PConfusion();
                         Point2D pf1 = c21.Value(f1);
                         Point2D pl1 = c21.Value(l1);
@@ -3140,7 +3145,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
 
                 //: abv 30.08.01: torHalf2.sat: if wire contains single degenerated
                 // edge, skip that wire
-                if (sbwd.NbEdges() <= 0 || (sbwd.NbEdges() == 1 && BRep_Tool.Degenerated(sbwd.Edge(1))))
+                if (sbwd.NbEdges() <= 0 || (sbwd.NbEdges() == 1 && Tool.Degenerated(sbwd.Edge(1))))
                 {
                     wires.Remove(i1--);
                     continue;
@@ -3153,7 +3158,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 var sbe1 = new ShapeBuild_Edge();
                 for (int jL = 1; jL <= sbwd.NbEdges(); jL++)
                 {
-                    if (BRep_Tool.Degenerated(sbwd.Edge(jL)))
+                    if (Tool.Degenerated(sbwd.Edge(jL)))
                     {
                         sbe1.RemovePCurve(sbwd.Edge(jL), myFace);
                     }
@@ -3218,8 +3223,8 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
             {
                 continue;
             }
-            Geom_Surface surf = myGrid.Patch(indU, indV);
-            var face = new TopoDS_Face();
+            Surface surf = myGrid.Patch(indU, indV);
+            var face = new Face();
             B.MakeFace(ref face, surf, myLoc, Kerf.Engine.Foundation.Precision.Confusion());
             ShapeExtend_WireData sewd = wires[i].WireData();
             for (int j = 1; j <= sewd.NbEdges(); j++)
@@ -3227,25 +3232,25 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 // int nsplit = ApplyContext ( sewd, j, context );
                 // if ( nsplit <1 ) { j--; continue; }
 
-                TopoDS_Edge edge = sewd.Edge(j);
+                Edge edge = sewd.Edge(j);
 
                 // !! Accurately copy pcurves for SEAMS and SEAM-like edges !!
 
                 // if edge is already copied, don`t copy any more
-                TopoDS_Edge newEdge;
-                TopoDS_Edge anInitEdge = edge;
-                bool ismanifold = (edge.Orientation() == TopAbs_FORWARD || edge.Orientation() == TopAbs_REVERSED);
+                Edge newEdge;
+                Edge anInitEdge = edge;
+                bool ismanifold = (edge.Orientation() == Forward || edge.Orientation() == Reversed);
                 if (rs.IsRecorded(edge))
                 {
                     // smh#8
-                    TopoDS_Shape tmpNE = rs.InternalValue(edge);
-                    newEdge = TopoDS.Edge(tmpNE);
+                    Shape tmpNE = rs.InternalValue(edge);
+                    newEdge = ShapeCasts.Edge(tmpNE);
                 }
                 else
                 {
                     if (!ismanifold)
                     {
-                        anInitEdge.Orientation(TopAbs_FORWARD);
+                        anInitEdge.Orientation(Forward);
                     }
 
                     newEdge = sbe.InternalCopy(anInitEdge, false);
@@ -3262,18 +3267,18 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 // transform pcurve to parametric space of patch
                 if (needT)
                 {
-                    if (sae.PCurve(newEdge, face, out Geom2d_Curve? c2d, out double f, out double l, false))
+                    if (sae.PCurve(newEdge, face, out Curve2D? c2d, out double f, out double l, false))
                     {
                         double newf = f, newl = l;
-                        Geom2d_Curve c2dnew = sbe.TransformPCurve(c2d!, T, uFact, ref newf, ref newl);
-                        if (BRep_Tool.IsClosed(newEdge, face))
+                        Curve2D c2dnew = sbe.TransformPCurve(c2d!, T, uFact, ref newf, ref newl);
+                        if (Tool.IsClosed(newEdge, face))
                         {
                             // smh#8
-                            TopoDS_Shape tmpE = newEdge.Reversed();
-                            TopoDS_Edge e2 = TopoDS.Edge(tmpE);
-                            if (sae.PCurve(e2, face, out Geom2d_Curve? c2d2, out _, out _, false))
+                            Shape tmpE = newEdge.Reversed();
+                            Edge e2 = ShapeCasts.Edge(tmpE);
+                            if (sae.PCurve(e2, face, out Curve2D? c2d2, out _, out _, false))
                             {
-                                if (newEdge.Orientation() == TopAbs_FORWARD)
+                                if (newEdge.Orientation() == Forward)
                                 {
                                     B.UpdateEdge(newEdge, c2dnew, c2d2!, face, 0.0);
                                 }
@@ -3292,19 +3297,19 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                             B.UpdateEdge(newEdge, c2dnew, face, 0.0);
                         }
                         B.Range(newEdge, face, newf, newl);
-                        if ((newf != f || newl != l) && !BRep_Tool.Degenerated(newEdge))
+                        if ((newf != f || newl != l) && !Tool.Degenerated(newEdge))
                         {
                             B.SameRange(newEdge, false);
                         }
                     }
                 }
 
-                if (!BRep_Tool.SameRange(newEdge))
+                if (!Tool.SameRange(newEdge))
                 {
-                    TopoDS_Edge etmp;
+                    Edge etmp;
                     if (!ismanifold)
                     {
-                        TopoDS_Edge afe = TopoDS.Edge(newEdge.Oriented(TopAbs_FORWARD));
+                        Edge afe = ShapeCasts.Edge(newEdge.Oriented(Forward));
                         etmp = sbe.InternalCopy(afe, false);
                     }
                     else
@@ -3312,7 +3317,7 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                         etmp = sbe.InternalCopy(newEdge, false);
                     }
                     sfe.FixAddCurve3d(etmp);
-                    if (sae.Curve3d(etmp, out Geom_Curve? c3d, out double cf, out double cl, false))
+                    if (sae.Curve3d(etmp, out Curve3D? c3d, out double cf, out double cl, false))
                     {
                         B.UpdateEdge(newEdge, c3d, 0.0);
                         sbe.SetRange3d(newEdge, cf, cl);
@@ -3331,16 +3336,16 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
         used.Init(false);
         for (;;)
         {
-            var loops = new NCollection_Sequence<TopoDS_Shape>();
+            var loops = new NCollection_Sequence<Shape>();
 
-            Geom_Surface? Surf = null;
+            Surface? Surf = null;
             for (i = 1; i <= nb; i++)
             {
                 if (used[i])
                 {
                     continue;
                 }
-                Geom_Surface S = myGrid.Patch(mPnts[i]);
+                Surface S = myGrid.Patch(mPnts[i]);
                 if (Surf is null)
                 {
                     Surf = S;
@@ -3353,8 +3358,8 @@ public class ShapeFix_ComposeShell : ShapeFix_Root
                 ShapeFix_WireSegment aSeg = wires[i];
                 if (aSeg.IsVertex())
                 {
-                    TopoDS_Vertex aVert = aSeg.GetVertex();
-                    if (aVert.Orientation() == TopAbs_INTERNAL)
+                    Vertex aVert = aSeg.GetVertex();
+                    if (aVert.Orientation() == Internal)
                     {
                         loops.Append(wires[i].GetVertex());
                     }

@@ -2,6 +2,10 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -51,16 +55,16 @@ internal static class BRepTestCurveCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(c[2], TopAbs_ShapeEnum.TopAbs_WIRE);
+        Shape S = theDI.GetShape(c[2], ShapeType.Wire);
 
-        if (S.IsNull())
+        if (S.IsNull)
         {
             return 1; // test if the shape is empty
         }
 
-        TopoDS_Wire W = TopoDS.Wire(S);
+        Wire W = ShapeCasts.Wire(S);
 
-        TopoDS_Shape res = BRepAlgo.ConcatenateWireC0(W); // treatment
+        Shape res = BRepAlgo.ConcatenateWireC0(W); // treatment
         theDI.SetShape(c[1], res);
         return 0;
     }
@@ -79,18 +83,18 @@ internal static class BRepTestCurveCommands
         }
         else if (n == 4)
         {
-            TopoDS_Shape S = theDI.GetShape(a[3]);
-            if (S.IsNull())
+            Shape S = theDI.GetShape(a[3]);
+            if (S.IsNull)
             {
                 return 0;
             }
 
-            if (S.ShapeType() != TopAbs_ShapeEnum.TopAbs_EDGE)
+            if (S.ShapeType() != ShapeType.Edge)
             {
                 return 0;
             }
 
-            var C = new BRepAdaptor_Curve(TopoDS.Edge(S));
+            var C = new EdgeCurveAdaptor(ShapeCasts.Edge(S));
             C.D0(theDI.Atof(a[2]), out Point3D P);
             theDI.SetShape(a[1], new BRepBuilderAPI_MakeVertex(P).Shape());
         }
@@ -146,18 +150,18 @@ internal static class BRepTestCurveCommands
         var W = new BRepBuilderAPI_MakePolygon();
         for (int i = 2; i < n; i++)
         {
-            TopoDS_Shape S = theDI.GetShape(a[i]);
-            if (S.IsNull())
+            Shape S = theDI.GetShape(a[i]);
+            if (S.IsNull)
             {
                 return 1;
             }
 
-            if (S.ShapeType() != TopAbs_ShapeEnum.TopAbs_VERTEX)
+            if (S.ShapeType() != ShapeType.Vertex)
             {
                 return 1;
             }
 
-            W.Add(TopoDS.Vertex(S));
+            W.Add(ShapeCasts.Vertex(S));
         }
 
         theDI.SetShape(a[1], W.Wire());
@@ -178,32 +182,32 @@ internal static class BRepTestCurveCommands
         {
             for (int i = 2; i < n; i++)
             {
-                TopoDS_Shape S = theDI.GetShape(a[i]);
-                if (S.IsNull())
+                Shape S = theDI.GetShape(a[i]);
+                if (S.IsNull)
                 {
                     continue;
                 }
 
-                if (S.ShapeType() == TopAbs_ShapeEnum.TopAbs_EDGE)
+                if (S.ShapeType() == ShapeType.Edge)
                 {
-                    MW.Add(TopoDS.Edge(S));
+                    MW.Add(ShapeCasts.Edge(S));
                 }
-                else if (S.ShapeType() == TopAbs_ShapeEnum.TopAbs_WIRE)
+                else if (S.ShapeType() == ShapeType.Wire)
                 {
-                    MW.Add(TopoDS.Wire(S));
+                    MW.Add(ShapeCasts.Wire(S));
                 }
             }
         }
         else
         {
-            var aLE = new NCollection_List<TopoDS_Shape>();
+            var aLE = new NCollection_List<Shape>();
             for (int i = 3; i < n; i++)
             {
-                TopoDS_Shape S = theDI.GetShape(a[i]);
-                for (var Exp = new TopExp_Explorer(S, TopAbs_ShapeEnum.TopAbs_EDGE); Exp.More(); Exp.Next())
+                Shape S = theDI.GetShape(a[i]);
+                for (var Exp = new Explorer(S, ShapeType.Edge); Exp.More(); Exp.Next())
                 {
-                    TopoDS_Edge anE = TopoDS.Edge(Exp.Current());
-                    if (!anE.IsNull())
+                    Edge anE = ShapeCasts.Edge(Exp.Current());
+                    if (!anE.IsNull)
                     {
                         aLE.Append(anE);
                     }
@@ -245,8 +249,8 @@ internal static class BRepTestCurveCommands
             return 1;
         }
 
-        Geom_Curve? C = DrawTrSurf.GetCurve(theDI, a[2]);
-        Geom2d_Curve? C2d = DrawTrSurf.GetCurve2d(theDI, a[2]);
+        Curve3D? C = DrawTrSurf.GetCurve(theDI, a[2]);
+        Curve2D? C2d = DrawTrSurf.GetCurve2d(theDI, a[2]);
         var P3d = (theDI.GetDrawable(a[2]) as DrawGeometry)?.Geometry as Polygon3D;
         if (C is null && C2d is null && P3d is null)
         {
@@ -254,7 +258,7 @@ internal static class BRepTestCurveCommands
             return 1;
         }
 
-        TopoDS_Edge edge = new();
+        Edge edge = new();
         if (n == 3)
         {
             if (C is not null)
@@ -267,12 +271,12 @@ internal static class BRepTestCurveCommands
             }
             else
             {
-                new BRep_Builder().MakeEdge(ref edge, P3d);
+                new BrepBuilder().MakeEdge(ref edge, P3d);
             }
         }
         else
         {
-            Geom_Surface? S = null;
+            Surface? S = null;
             int i = 0;
             if (C2d is not null)
             {
@@ -283,10 +287,10 @@ internal static class BRepTestCurveCommands
                 }
             }
 
-            TopoDS_Vertex V1 = TopoDS.Vertex(theDI.GetShape(At(a, 3 + i), TopAbs_ShapeEnum.TopAbs_VERTEX));
+            Vertex V1 = ShapeCasts.Vertex(theDI.GetShape(At(a, 3 + i), ShapeType.Vertex));
             if (n == 5 + i)
             {
-                if (V1.IsNull())
+                if (V1.IsNull)
                 {
                     if (C is not null)
                     {
@@ -303,7 +307,7 @@ internal static class BRepTestCurveCommands
                 }
                 else
                 {
-                    TopoDS_Vertex V2 = TopoDS.Vertex(theDI.GetShape(a[4 + i], TopAbs_ShapeEnum.TopAbs_VERTEX));
+                    Vertex V2 = ShapeCasts.Vertex(theDI.GetShape(a[4 + i], ShapeType.Vertex));
                     if (C is not null)
                     {
                         edge = new BRepBuilderAPI_MakeEdge(C, V1, V2).Edge();
@@ -320,7 +324,7 @@ internal static class BRepTestCurveCommands
             }
             else if (n == 7 + i)
             {
-                TopoDS_Vertex V2 = TopoDS.Vertex(theDI.GetShape(a[5 + i], TopAbs_ShapeEnum.TopAbs_VERTEX));
+                Vertex V2 = ShapeCasts.Vertex(theDI.GetShape(a[5 + i], ShapeType.Vertex));
                 if (C is not null)
                 {
                     edge = new BRepBuilderAPI_MakeEdge(C, V1, V2, theDI.Atof(a[4]), theDI.Atof(a[6])).Edge();
@@ -355,20 +359,20 @@ internal static class BRepTestCurveCommands
         }
 
         // mkoricurve only changes the colour of the drawn curve
-        TopoDS_Shape S = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_EDGE);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[2], ShapeType.Edge);
+        if (S.IsNull)
         {
             return 1;
         }
 
-        Geom_Curve? C = BRep_Tool.Curve(TopoDS.Edge(S), out Placement L, out double f, out double l);
+        Curve3D? C = Tool.Curve(ShapeCasts.Edge(S), out Placement L, out double f, out double l);
         if (C is null)
         {
             di.Append(a[2]).Append(" has no 3d curve\n");
             return 1;
         }
 
-        C = new Geom_TrimmedCurve(C, f, l);
+        C = new TrimmedCurve3D(C, f, l);
         DrawTrSurf.Set(theDI, a[1], C.Transformed(L.Transformation()));
         return 0;
     }
@@ -380,13 +384,13 @@ internal static class BRepTestCurveCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_VERTEX);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[2], ShapeType.Vertex);
+        if (S.IsNull)
         {
             return 1;
         }
 
-        DrawTrSurf.Set(theDI, a[1], BRep_Tool.Pnt(TopoDS.Vertex(S)));
+        DrawTrSurf.Set(theDI, a[1], Tool.Pnt(ShapeCasts.Vertex(S)));
         return 0;
     }
 
@@ -398,35 +402,35 @@ internal static class BRepTestCurveCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_EDGE);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[2], ShapeType.Edge);
+        if (S.IsNull)
         {
             return 1;
         }
 
-        TopoDS_Edge E = TopoDS.Edge(S);
+        Edge E = ShapeCasts.Edge(S);
         Placement L = new();
         double f = 0.0, l = 0.0;
-        Geom2d_Curve? C = null;
-        Geom_Surface? Surf = null;
+        Curve2D? C = null;
+        Surface? Surf = null;
         bool hasFace = false;
         if (na == 3)
         {
             // get the first PCurve connected to edge E
-            BRep_Tool.CurveOnSurface(E, out C, out Surf, out L, out f, out l);
+            Tool.CurveOnSurface(E, out C, out Surf, out L, out f, out l);
         }
         else if (na == 4)
         {
-            S = theDI.GetShape(a[3], TopAbs_ShapeEnum.TopAbs_FACE);
-            if (S.IsNull())
+            S = theDI.GetShape(a[3], ShapeType.Face);
+            if (S.IsNull)
             {
                 int ind = theDI.Atoi(a[3]);
-                BRep_Tool.CurveOnSurface(E, ref C, ref Surf, ref L, ref f, ref l, ind);
+                Tool.CurveOnSurface(E, ref C, ref Surf, ref L, ref f, ref l, ind);
             }
             else
             {
                 hasFace = true;
-                C = BRep_Tool.CurveOnSurface(E, TopoDS.Face(S), out f, out l);
+                C = Tool.CurveOnSurface(E, ShapeCasts.Face(S), out f, out l);
             }
         }
 
@@ -442,7 +446,7 @@ internal static class BRepTestCurveCommands
             return 1;
         }
 
-        DrawTrSurf.Set(theDI, a[1], new Geom2d_TrimmedCurve(C, f, l));
+        DrawTrSurf.Set(theDI, a[1], new TrimmedCurve2D(C, f, l));
         return 0;
     }
 
@@ -453,14 +457,14 @@ internal static class BRepTestCurveCommands
             return 1;
         }
 
-        TopoDS_Shape V1 = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_VERTEX);
-        TopoDS_Shape V2 = theDI.GetShape(a[3], TopAbs_ShapeEnum.TopAbs_VERTEX);
-        if (V1.IsNull() || V2.IsNull())
+        Shape V1 = theDI.GetShape(a[2], ShapeType.Vertex);
+        Shape V2 = theDI.GetShape(a[3], ShapeType.Vertex);
+        if (V1.IsNull || V2.IsNull)
         {
             return 1;
         }
 
-        theDI.SetShape(a[1], new BRepBuilderAPI_MakeEdge(TopoDS.Vertex(V1), TopoDS.Vertex(V2)).Edge());
+        theDI.SetShape(a[1], new BRepBuilderAPI_MakeEdge(ShapeCasts.Vertex(V1), ShapeCasts.Vertex(V2)).Edge());
         return 0;
     }
 
@@ -475,14 +479,14 @@ internal static class BRepTestCurveCommands
         double p = theDI.Atof(a[3]);
         double p1 = theDI.Atof(a[4]);
         double p2 = theDI.Atof(a[5]);
-        TopoDS_Shape Sh = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_FACE);
-        if (Sh.IsNull())
+        Shape Sh = theDI.GetShape(a[2], ShapeType.Face);
+        if (Sh.IsNull)
         {
             return 1;
         }
 
-        Geom_Surface S = BRep_Tool.Surface(TopoDS.Face(Sh), out Placement Loc)!;
-        BRepTools.UVBounds(TopoDS.Face(Sh), out double UMin, out double UMax, out double VMin, out double VMax);
+        Surface S = Tool.Surface(ShapeCasts.Face(Sh), out Placement Loc)!;
+        BrepTools.UVBounds(ShapeCasts.Face(Sh), out double UMin, out double UMax, out double VMin, out double VMax);
         if (uiso)
         {
             VMin = Math.Min(VMin, Math.Min(p1, p2));
@@ -495,24 +499,24 @@ internal static class BRepTestCurveCommands
             UMax = Math.Max(VMax, Math.Max(p1, p2));
         }
 
-        var TS = new Geom_RectangularTrimmedSurface(S, UMin, UMax, VMin, VMax);
-        Geom_Curve C;
-        Geom2d_Line L;
+        var TS = new TrimmedSurface(S, UMin, UMax, VMin, VMax);
+        Curve3D C;
+        LineCurve2D L;
         if (uiso)
         {
             C = TS.UIso(p);
-            L = new Geom2d_Line(new Point2D(p, 0), new Direction2D(0, 1));
+            L = new LineCurve2D(new Point2D(p, 0), new Direction2D(0, 1));
         }
         else
         {
             C = TS.VIso(p);
-            L = new Geom2d_Line(new Point2D(0, p), new Direction2D(1, 0));
+            L = new LineCurve2D(new Point2D(0, p), new Direction2D(1, 0));
         }
 
         // OCCT writes the location and the pcurve into the new edge before binding it
-        TopoDS_Edge E = new BRepBuilderAPI_MakeEdge(C, p1, p2).InternalEdge();
+        Edge E = new BRepBuilderAPI_MakeEdge(C, p1, p2).InternalEdge();
         E.Location(Loc);
-        new BRep_Builder().UpdateEdge(E, L, TopoDS.Face(Sh), 0.0);
+        new BrepBuilder().UpdateEdge(E, L, ShapeCasts.Face(Sh), 0.0);
         theDI.SetShape(a[1], E);
         return 0;
     }
@@ -580,9 +584,9 @@ internal static class BRepTestCurveCommands
         bool first = true;
         bool stayfirst = false;
         bool isplanar = true;
-        TopoDS_Shape S;
+        Shape S;
         Placement TheLocation = new();
-        Geom_Surface? Surface = null;
+        Surface? Surface = null;
         while (i < n)
         {
             double length = 0, radius = 0, angle = 0;
@@ -659,15 +663,15 @@ internal static class BRepTestCurveCommands
                     }
 
                     {
-                        TopoDS_Face Face = TopoDS.Face(theDI.GetShape(a[i], TopAbs_ShapeEnum.TopAbs_FACE));
-                        if (Face.IsNull())
+                        Face Face = ShapeCasts.Face(theDI.GetShape(a[i], ShapeType.Face));
+                        if (Face.IsNull)
                         {
                             di.Append("profile : no face found");
                             return 1;
                         }
 
-                        Surface = BRep_Tool.Surface(Face, out TheLocation);
-                        if (Surface is Geom_Plane Plane)
+                        Surface = Tool.Surface(Face, out TheLocation);
+                        if (Surface is PlaneSurface Plane)
                         {
                             P = Plane.Pln();
                         }
@@ -883,7 +887,7 @@ internal static class BRepTestCurveCommands
                         dy = -dy;
                     }
 
-                    var l = new Geom2d_Line(new Point2D(x, y), new Direction2D(dx, dy));
+                    var l = new LineCurve2D(new Point2D(x, y), new Direction2D(dx, dy));
                     MW.Add(isplanar
                                ? new BRepBuilderAPI_MakeEdge(GeomAPI.To3d(l, P), 0, length).InternalEdge()
                                : new BRepBuilderAPI_MakeEdge(l, Surface!, 0, length).InternalEdge());
@@ -910,7 +914,7 @@ internal static class BRepTestCurveCommands
                         sense = !sense;
                     }
 
-                    var c = new Geom2d_Circle(ax, radius, sense);
+                    var c = new CircleCurve2D(ax, radius, sense);
                     MW.Add(isplanar
                                ? new BRepBuilderAPI_MakeEdge(GeomAPI.To3d(c, P), 0, angle).InternalEdge()
                                : new BRepBuilderAPI_MakeEdge(c, Surface!, 0, angle).InternalEdge());
@@ -1015,27 +1019,27 @@ internal static class BRepTestCurveCommands
             }
         }
 
-        TopoDS_Shape Base = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_FACE);
+        Shape Base = theDI.GetShape(a[2], ShapeType.Face);
 
-        if (Base.IsNull())
+        if (Base.IsNull)
         {
             Base = theDI.GetShape(a[2]);
-            if (Base.IsNull())
+            if (Base.IsNull)
             {
                 return 1;
             }
             Paral.Init(theJoinType);
-            TopExp_Explorer exp = new();
-            for (exp.Init(Base, TopAbs_ShapeEnum.TopAbs_WIRE); exp.More(); exp.Next())
+            Explorer exp = new();
+            for (exp.Init(Base, ShapeType.Wire); exp.More(); exp.Next())
             {
-                TopoDS_Wire aLocalShape = TopoDS.Wire(exp.Current());
+                Wire aLocalShape = ShapeCasts.Wire(exp.Current());
                 Paral.AddWire(aLocalShape);
             }
         }
         else
         {
-            Base = Base.Oriented(TopAbs_Orientation.TopAbs_FORWARD);
-            Paral.Init(TopoDS.Face(Base), theJoinType);
+            Base = Base.Oriented(Orientation.Forward);
+            Paral.Init(ShapeCasts.Face(Base), theJoinType);
         }
 
         Paral.SetApprox(ToApprox);
@@ -1100,22 +1104,22 @@ internal static class BRepTestCurveCommands
             }
         }
 
-        TopoDS_Shape Base = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_FACE);
+        Shape Base = theDI.GetShape(a[2], ShapeType.Face);
 
-        if (Base.IsNull())
+        if (Base.IsNull)
         {
-            Base = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_WIRE);
-            if (Base.IsNull())
+            Base = theDI.GetShape(a[2], ShapeType.Wire);
+            if (Base.IsNull)
             {
                 return 1;
             }
             Paral.Init(theJoinType, true);
-            Paral.AddWire(TopoDS.Wire(Base));
+            Paral.AddWire(ShapeCasts.Wire(Base));
         }
         else
         {
-            Base = Base.Oriented(TopAbs_Orientation.TopAbs_FORWARD);
-            Paral.Init(TopoDS.Face(Base), theJoinType, true);
+            Base = Base.Oriented(Orientation.Forward);
+            Paral.Init(ShapeCasts.Face(Base), theJoinType, true);
         }
 
         Paral.SetApprox(ToApprox);

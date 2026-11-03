@@ -4,15 +4,21 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Projection;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.AppParCurves_Constraint;
+using static Kerf.Engine.Approximation.Constraint;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -33,10 +39,10 @@ public static class BOPTools_AlgoTools2D
     /// Computes the edge's pcurve on the face and stores it in the edge (with the larger of the edge's tolerance and the
     /// tolerance reached), unless the edge already has one on the face. Writes into <paramref name="aE"/>.
     /// </summary>
-    public static void BuildPCurveForEdgeOnFace(in TopoDS_Edge aE, in TopoDS_Face aF, IntTools_Context? theContext = null)
+    public static void BuildPCurveForEdgeOnFace(in Edge aE, in Face aF, IntTools_Context? theContext = null)
     {
-        BRep_Builder aBB = new();
-        Geom2d_Curve? aC2D = null;
+        BrepBuilder aBB = new();
+        Curve2D? aC2D = null;
         double aTolPC, aTolFact, aTolEdge;
 
         bool aHasOld;
@@ -48,7 +54,7 @@ public static class BOPTools_AlgoTools2D
 
         CurveOnSurface(aE, aF, out aC2D, out aTolPC, theContext);
 
-        aTolEdge = BRep_Tool.Tolerance(aE);
+        aTolEdge = Tool.Tolerance(aE);
 
         aTolFact = Max(aTolEdge, aTolPC);
 
@@ -59,17 +65,17 @@ public static class BOPTools_AlgoTools2D
     /// The unit tangent of the edge's 3D curve at the parameter, reversed for a REVERSED edge. False (and
     /// <paramref name="aTau"/> unchanged or unnormalised) for a degenerated edge or a null derivative.
     /// </summary>
-    public static bool EdgeTangent(in TopoDS_Edge anEdge, double aT, ref Vector3D aTau)
+    public static bool EdgeTangent(in Edge anEdge, double aT, ref Vector3D aTau)
     {
         bool isdgE;
 
-        isdgE = BRep_Tool.Degenerated(anEdge);
+        isdgE = Tool.Degenerated(anEdge);
         if (isdgE)
         {
             return false;
         }
 
-        Geom_Curve aC = BRep_Tool.Curve(anEdge, out _, out _)!;
+        Curve3D aC = Tool.Curve(anEdge, out _, out _)!;
         aC.D1(aT, out _, out aTau);
         double mod = aTau.Magnitude();
         if (mod > Constants.Resolution())
@@ -81,7 +87,7 @@ public static class BOPTools_AlgoTools2D
             return false;
         }
         // aTau.Normalize();
-        if (anEdge.Orientation() == TopAbs_REVERSED)
+        if (anEdge.Orientation() == Reversed)
         {
             aTau.Reverse();
         }
@@ -89,19 +95,19 @@ public static class BOPTools_AlgoTools2D
     }
 
     /// <summary>The UV point of the edge's pcurve on the face (made if missing) at the parameter.</summary>
-    public static void PointOnSurface(in TopoDS_Edge aE, in TopoDS_Face aF, double aParameter, out double U, out double V,
+    public static void PointOnSurface(in Edge aE, in Face aF, double aParameter, out double U, out double V,
                                       IntTools_Context? theContext = null)
     {
         Point2D aP2D;
 
-        CurveOnSurface(aE, aF, out Geom2d_Curve? aC2D, out _, out _, out _, theContext);
+        CurveOnSurface(aE, aF, out Curve2D? aC2D, out _, out _, out _, theContext);
         aC2D!.D0(aParameter, out aP2D);
         U = aP2D.X();
         V = aP2D.Y();
     }
 
     /// <summary>The edge's pcurve on the face, made by projection if the edge has none (not stored in the edge).</summary>
-    public static void CurveOnSurface(in TopoDS_Edge aE, in TopoDS_Face aF, out Geom2d_Curve? aC2D, out double aToler,
+    public static void CurveOnSurface(in Edge aE, in Face aF, out Curve2D? aC2D, out double aToler,
                                       IntTools_Context? theContext = null)
     {
         //
@@ -109,12 +115,12 @@ public static class BOPTools_AlgoTools2D
         //
     }
 
-    /// <inheritdoc cref="CurveOnSurface(in TopoDS_Edge, in TopoDS_Face, out Geom2d_Curve?, out double, IntTools_Context?)"/>
-    public static void CurveOnSurface(in TopoDS_Edge aE, in TopoDS_Face aF, out Geom2d_Curve? aC2D, out double aFirst,
+    /// <inheritdoc cref="CurveOnSurface(in Edge, in Face, out Curve2D?, out double, IntTools_Context?)"/>
+    public static void CurveOnSurface(in Edge aE, in Face aF, out Curve2D? aC2D, out double aFirst,
                                       out double aLast, out double aToler, IntTools_Context? theContext = null)
     {
         bool aHasOld;
-        Geom2d_Curve? C2D = null;
+        Curve2D? C2D = null;
 
         aHasOld = HasCurveOnSurface(aE, aF, ref C2D, out aFirst, out aLast, out aToler);
         if (aHasOld)
@@ -131,38 +137,38 @@ public static class BOPTools_AlgoTools2D
     /// True if the edge has a pcurve on the face, returned with its range and the edge's tolerance. A range shorter
     /// than PConfusion gives false with <paramref name="aC2D"/> unchanged.
     /// </summary>
-    public static bool HasCurveOnSurface(in TopoDS_Edge aE, in TopoDS_Face aF, ref Geom2d_Curve? aC2D, out double aFirst,
+    public static bool HasCurveOnSurface(in Edge aE, in Face aF, ref Curve2D? aC2D, out double aFirst,
                                          out double aLast, out double aToler)
     {
         bool aHasOld;
 
-        aToler = BRep_Tool.Tolerance(aE);
-        BRep_Tool.Range(aE, out aFirst, out aLast);
+        aToler = Tool.Tolerance(aE);
+        Tool.Range(aE, out aFirst, out aLast);
 
         if ((aLast - aFirst) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
 
-        aC2D = BRep_Tool.CurveOnSurface(aE, aF, out aFirst, out aLast);
+        aC2D = Tool.CurveOnSurface(aE, aF, out aFirst, out aLast);
         aHasOld = aC2D is not null;
         return aHasOld;
     }
 
     /// <summary>True if the edge (with a range longer than PConfusion) has a pcurve on the face.</summary>
-    public static bool HasCurveOnSurface(in TopoDS_Edge aE, in TopoDS_Face aF)
+    public static bool HasCurveOnSurface(in Edge aE, in Face aF)
     {
         bool bHasOld;
-        Geom2d_Curve? aC2D;
+        Curve2D? aC2D;
         //
-        BRep_Tool.Range(aE, out double aFirst, out double aLast);
+        Tool.Range(aE, out double aFirst, out double aLast);
         //
         if ((aLast - aFirst) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
         //
-        aC2D = BRep_Tool.CurveOnSurface(aE, aF, out _, out _);
+        aC2D = Tool.CurveOnSurface(aE, aF, out _, out _);
         bHasOld = aC2D is not null;
         //
         return bHasOld;
@@ -171,7 +177,7 @@ public static class BOPTools_AlgoTools2D
     /// <summary>
     /// Translates the pcurve by whole periods so that it lies in the face's UV bounds (over the 3D curve's range).
     /// </summary>
-    public static void AdjustPCurveOnFace(in TopoDS_Face theF, Geom_Curve theC3D, Geom2d_Curve theC2D, out Geom2d_Curve? theC2DA,
+    public static void AdjustPCurveOnFace(in Face theF, Curve3D theC3D, Curve2D theC2D, out Curve2D? theC2DA,
                                           IntTools_Context? theContext = null)
     {
         double aT1 = theC3D.FirstParameter();
@@ -183,17 +189,17 @@ public static class BOPTools_AlgoTools2D
     /// <summary>
     /// Translates the pcurve by whole periods so that it lies in the face's UV bounds (over the given range).
     /// </summary>
-    public static void AdjustPCurveOnFace(in TopoDS_Face theF, double theFirst, double theLast, Geom2d_Curve theC2D,
-                                          out Geom2d_Curve? theC2DA, IntTools_Context? theContext = null)
+    public static void AdjustPCurveOnFace(in Face theF, double theFirst, double theLast, Curve2D theC2D,
+                                          out Curve2D? theC2DA, IntTools_Context? theContext = null)
     {
-        BRepAdaptor_Surface pBAS;
+        FaceSurfaceAdaptor pBAS;
         if (theContext is not null)
         {
             pBAS = theContext.SurfaceAdaptor(theF);
         }
         else
         {
-            pBAS = new BRepAdaptor_Surface();
+            pBAS = new FaceSurfaceAdaptor();
             pBAS.Initialize(theF, true);
         }
         //
@@ -204,14 +210,14 @@ public static class BOPTools_AlgoTools2D
     /// Translates the pcurve by whole periods so that its point at mid-range lies in the adaptor's UV bounds (checked
     /// with a face classifier where the bounds exceed a period). Returns the pcurve itself or a translated copy.
     /// </summary>
-    public static void AdjustPCurveOnSurf(BRepAdaptor_Surface aBAS, double aFirst, double aLast, Geom2d_Curve aC2D,
-                                          out Geom2d_Curve? aC2DA)
+    public static void AdjustPCurveOnSurf(FaceSurfaceAdaptor aBAS, double aFirst, double aLast, Curve2D aC2D,
+                                          out Curve2D? aC2DA)
     {
         bool mincond, maxcond;
         double UMin, UMax, VMin, VMax, aT, u2, v2, du, dv, aDelta;
         double aUPeriod;
         //
-        TopoDS_Face aF = aBAS.Face();
+        Face aF = aBAS.Face();
         UMin = aBAS.FirstUParameter();
         UMax = aBAS.LastUParameter();
         VMin = aBAS.FirstVParameter();
@@ -228,7 +234,7 @@ public static class BOPTools_AlgoTools2D
         //
         // du
         du = 0.0;
-        if (aBAS.IsUPeriodic())
+        if (aBAS.IsUPeriodic)
         {
             aUPeriod = aBAS.UPeriod();
 
@@ -272,7 +278,7 @@ public static class BOPTools_AlgoTools2D
 
         // dv
         dv = 0.0;
-        if (aBAS.IsVPeriodic())
+        if (aBAS.IsVPeriodic)
         {
             double aVPeriod, aVm, aVr, aVmid, dVm, dVr;
             //
@@ -304,7 +310,7 @@ public static class BOPTools_AlgoTools2D
             double u, v;
             u = u2 + du;
             v = v2 + dv;
-            if (aBAS.IsUPeriodic())
+            if (aBAS.IsUPeriodic)
             {
                 aUPeriod = aBAS.UPeriod();
                 if ((UMax - UMin - 2 * aDelta) > aUPeriod)
@@ -313,8 +319,8 @@ public static class BOPTools_AlgoTools2D
                     {
                         BRepClass_FaceClassifier aClassifier = new();
                         aClassifier.Perform(aF, new Point2D(u, v), aDelta);
-                        TopAbs_State Status = aClassifier.State();
-                        if (Status == TopAbs_OUT)
+                        Containment Status = aClassifier.State();
+                        if (Status == Out)
                         {
                             du += (u > (UMin + aDelta + aUPeriod)) ? -aUPeriod : aUPeriod;
                         }
@@ -323,7 +329,7 @@ public static class BOPTools_AlgoTools2D
             }
             //
             u = u2 + du;
-            if (aBAS.IsVPeriodic())
+            if (aBAS.IsVPeriodic)
             {
                 double aVPeriod = aBAS.VPeriod();
                 if ((VMax - VMin - 2 * aDelta) > aVPeriod)
@@ -332,8 +338,8 @@ public static class BOPTools_AlgoTools2D
                     {
                         BRepClass_FaceClassifier aClassifier = new();
                         aClassifier.Perform(aF, new Point2D(u, v), aDelta);
-                        TopAbs_State Status = aClassifier.State();
-                        if (Status == TopAbs_OUT)
+                        Containment Status = aClassifier.State();
+                        if (Status == Out)
                         {
                             dv += (v > (VMin + aDelta + aVPeriod)) ? -aVPeriod : aVPeriod;
                         }
@@ -342,11 +348,11 @@ public static class BOPTools_AlgoTools2D
             }
         }
         // Translation if necessary
-        Geom2d_Curve aC2Dx = aC2D;
+        Curve2D aC2Dx = aC2D;
 
         if (du != 0.0 || dv != 0.0)
         {
-            Geom2d_Curve PCT = (Geom2d_Curve)aC2Dx.Copy();
+            Curve2D PCT = (Curve2D)aC2Dx.Copy();
             Vector2D aV2D = new(du, dv);
             PCT.Translate(aV2D);
             aC2Dx = PCT;
@@ -366,14 +372,14 @@ public static class BOPTools_AlgoTools2D
     }
 
     /// <summary>The intermediate parameter of the edge's 3D curve range (of its range if it has no 3D curve).</summary>
-    public static double IntermediatePoint(in TopoDS_Edge aE)
+    public static double IntermediatePoint(in Edge aE)
     {
         double aT, aT1, aT2;
 
-        Geom_Curve? aC1 = BRep_Tool.Curve(aE, out aT1, out aT2);
+        Curve3D? aC1 = Tool.Curve(aE, out aT1, out aT2);
         if (aC1 is null)
         {
-            BRep_Tool.Range(aE, out aT1, out aT2);
+            Tool.Range(aE, out aT1, out aT2);
         }
 
         aT = IntermediatePoint(aT1, aT2);
@@ -384,16 +390,16 @@ public static class BOPTools_AlgoTools2D
     /// The edge's pcurve on the face, made by projecting its 3D curve if it has none. <paramref name="aToler"/> is set
     /// to the tolerance reached only when the pcurve is made; otherwise it is left unchanged, as in OCCT.
     /// </summary>
-    public static void Make2D(in TopoDS_Edge aE, in TopoDS_Face aF, out Geom2d_Curve? aC2D, out double aFirst, out double aLast,
+    public static void Make2D(in Edge aE, in Face aF, out Curve2D? aC2D, out double aFirst, out double aLast,
                               ref double aToler, IntTools_Context? theContext = null)
     {
         bool aLocIdentity;
         double f3d, l3d;
         Placement aLoc;
 
-        Geom2d_Curve? C2D;
+        Curve2D? C2D;
 
-        C2D = BRep_Tool.CurveOnSurface(aE, aF, out aFirst, out aLast);
+        C2D = Tool.CurveOnSurface(aE, aF, out aFirst, out aLast);
 
         if (C2D is not null)
         {
@@ -401,8 +407,8 @@ public static class BOPTools_AlgoTools2D
             return;
         }
 
-        Geom_Curve? C3D2, C3D;
-        C3D = BRep_Tool.Curve(aE, out aLoc, out f3d, out l3d);
+        Curve3D? C3D2, C3D;
+        C3D = Tool.Curve(aE, out aLoc, out f3d, out l3d);
         //
         if (C3D is null)
         {
@@ -417,11 +423,11 @@ public static class BOPTools_AlgoTools2D
         }
         else
         {
-            C3D2 = (Geom_Curve)C3D!.Transformed(aLoc.Transformation());
+            C3D2 = (Curve3D)C3D!.Transformed(aLoc.Transformation());
         }
 
         //
-        aToler = BRep_Tool.Tolerance(aE);
+        aToler = Tool.Tolerance(aE);
         MakePCurveOnFace(aF, C3D2!, f3d, l3d, out aC2D, ref aToler, theContext);
         //
         aFirst = f3d;
@@ -429,7 +435,7 @@ public static class BOPTools_AlgoTools2D
     }
 
     /// <summary>The pcurve of the 3D curve (over its whole range) on the face, by projection, and the tolerance reached.</summary>
-    public static void MakePCurveOnFace(in TopoDS_Face aF, Geom_Curve aC3D, out Geom2d_Curve? aC2D, out double TolReached2d,
+    public static void MakePCurveOnFace(in Face aF, Curve3D aC3D, out Curve2D? aC2D, out double TolReached2d,
                                         IntTools_Context? theContext = null)
     {
         double aFirst, aLast;
@@ -447,28 +453,28 @@ public static class BOPTools_AlgoTools2D
     /// reparametrised to the range. <paramref name="TolReached2d"/> is read first (a tolerance the projection may use)
     /// and then set to the tolerance reached. Throws Standard_ConstructionError if no pcurve can be made.
     /// </summary>
-    public static void MakePCurveOnFace(in TopoDS_Face aF, Geom_Curve aC3D, double aT1, double aT2, out Geom2d_Curve? aC2D,
+    public static void MakePCurveOnFace(in Face aF, Curve3D aC3D, double aT1, double aT2, out Curve2D? aC2D,
                                         ref double TolReached2d, IntTools_Context? theContext = null)
     {
-        BRepAdaptor_Surface pBAS;
+        FaceSurfaceAdaptor pBAS;
         if (theContext is not null)
         {
             pBAS = theContext.SurfaceAdaptor(aF);
         }
         else
         {
-            pBAS = new BRepAdaptor_Surface();
+            pBAS = new FaceSurfaceAdaptor();
             pBAS.Initialize(aF, true);
         }
         //
         // OCCT copies the adaptor (new BRepAdaptor_Surface(*pBAS)); the port's copy is ShallowCopy.
-        BRepAdaptor_Surface aBAHS = (BRepAdaptor_Surface)pBAS.ShallowCopy();
-        GeomAdaptor_Curve aBAHC = new(aC3D, aT1, aT2);
+        FaceSurfaceAdaptor aBAHS = (FaceSurfaceAdaptor)pBAS.ShallowCopy();
+        CurveAdaptor aBAHC = new(aC3D, aT1, aT2);
         //
         double aTolR;
         double aTR = global::Kerf.Engine.Foundation.Precision.Confusion(); // 1.e-7;
         double aMaxTol = 1.0e3 * aTR;       // 0.0001
-        bool isAnaSurf = ProjLib.IsAnaSurf(aBAHS);
+        bool isAnaSurf = global::Kerf.Engine.Geometry.Projection.ProjLib.IsAnaSurf(aBAHS);
 
         // when the type of surface is GeomAbs_SurfaceOfRevolution
         if (pBAS.GetType() == SurfaceOfRevolution)
@@ -478,16 +484,16 @@ public static class BOPTools_AlgoTools2D
                 aTR = TolReached2d;
             }
             //
-            ProjLib_ProjectedCurve aProj1 = new(aBAHS, aBAHC, aTR);
-            ProjLib.MakePCurveOfType(aProj1, out aC2D);
+            ProjectedCurve aProj1 = new(aBAHS, aBAHC, aTR);
+            global::Kerf.Engine.Geometry.Projection.ProjLib.MakePCurveOfType(aProj1, out aC2D);
             aTolR = aProj1.GetTolerance();
         }
         else
         {
-            ProjLib_ProjectedCurve aProjCurv = new(aBAHS);
+            ProjectedCurve aProjCurv = new(aBAHS);
             int aDegMin = -1, aDegMax = -1, aMaxSegments = -1;
             double aMaxDist = -1;
-            AppParCurves_Constraint aBndPnt = AppParCurves_TangencyPoint;
+            Constraint aBndPnt = TangencyPoint;
             bool isExtendSurf = false;
             if ((TolReached2d >= 10.0 * aTR) && (TolReached2d <= aMaxTol || isAnaSurf))
             {
@@ -496,7 +502,7 @@ public static class BOPTools_AlgoTools2D
                 aMaxDist = 1.0e3 * TolReached2d;
                 if (!isAnaSurf || TolReached2d > 1.0)
                 {
-                    aBndPnt = AppParCurves_PassPoint;
+                    aBndPnt = PassPoint;
                 }
                 isExtendSurf = true;
             }
@@ -509,15 +515,15 @@ public static class BOPTools_AlgoTools2D
             }
             if (isExtendSurf)
             {
-                Adaptor3d_Surface? anA3dSurf = null;
+                SurfaceAdaptorBase? anA3dSurf = null;
                 double dt = (aBAHS.LastUParameter() - aBAHS.FirstUParameter());
-                if (!aBAHS.IsUPeriodic() || Math.Abs(dt - aBAHS.UPeriod()) > 0.01 * dt)
+                if (!aBAHS.IsUPeriodic || Math.Abs(dt - aBAHS.UPeriod()) > 0.01 * dt)
                 {
                     dt *= 0.01;
                     anA3dSurf = aBAHS.UTrim(aBAHS.FirstUParameter() - dt, aBAHS.LastUParameter() + dt, 0.0);
                 }
                 dt = (aBAHS.LastVParameter() - aBAHS.FirstVParameter());
-                if (!aBAHS.IsVPeriodic() || Math.Abs(dt - aBAHS.VPeriod()) > 0.01 * dt)
+                if (!aBAHS.IsVPeriodic || Math.Abs(dt - aBAHS.VPeriod()) > 0.01 * dt)
                 {
                     dt *= 0.01;
                     anA3dSurf = aBAHS.VTrim(aBAHS.FirstVParameter() - dt, aBAHS.LastVParameter() + dt, 0.0);
@@ -533,15 +539,15 @@ public static class BOPTools_AlgoTools2D
             aProjCurv.SetBndPnt(aBndPnt);
             aProjCurv.SetMaxDist(aMaxDist);
             aProjCurv.Perform(aBAHC);
-            ProjLib.MakePCurveOfType(aProjCurv, out aC2D);
+            global::Kerf.Engine.Geometry.Projection.ProjLib.MakePCurveOfType(aProjCurv, out aC2D);
             aTolR = aProjCurv.GetTolerance();
         }
         //
         if (aC2D is null && (aTR < aMaxTol || aTR < TolReached2d))
         {
             aTR = Max(TolReached2d, aMaxTol);
-            ProjLib_ProjectedCurve aProjCurvAgain = new(aBAHS, aBAHC, aTR); // 2
-            ProjLib.MakePCurveOfType(aProjCurvAgain, out aC2D);
+            ProjectedCurve aProjCurvAgain = new(aBAHS, aBAHC, aTR); // 2
+            global::Kerf.Engine.Geometry.Projection.ProjLib.MakePCurveOfType(aProjCurvAgain, out aC2D);
             aTolR = aProjCurvAgain.GetTolerance();
         }
         //
@@ -553,7 +559,7 @@ public static class BOPTools_AlgoTools2D
         TolReached2d = aTolR;
 
         // Adjust curve for periodic surface
-        AdjustPCurveOnSurf(pBAS, aT1, aT2, aC2D, out Geom2d_Curve? aC2DA);
+        AdjustPCurveOnSurf(pBAS, aT1, aT2, aC2D, out Curve2D? aC2DA);
         aC2D = aC2DA!;
 
         // Make sure that the range of the 2D curve is sufficient for representation of the 3D curve.
@@ -570,11 +576,11 @@ public static class BOPTools_AlgoTools2D
                 aTCLast = aT2;
             }
 
-            GeomLib.SameRange(global::Kerf.Engine.Foundation.Precision.PConfusion(), aC2D, aTCFirst, aTCLast, aT1, aT2, ref aC2D);
+            global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(global::Kerf.Engine.Foundation.Precision.PConfusion(), aC2D, aTCFirst, aTCLast, aT1, aT2, ref aC2D);
         }
 
         // compute the appropriate tolerance for the edge
-        Geom_Surface aS = pBAS.GeomSurfaceTransformed()!;
+        Surface aS = pBAS.GeomSurfaceTransformed()!;
         //
         if (IntTools_Tools.ComputeTolerance(aC3D, aC2D!, aS, aT1, aT2, out aTolR, out _))
         {
@@ -586,17 +592,17 @@ public static class BOPTools_AlgoTools2D
     }
 
     // The largest tolerance of the face's edges.
-    private static double MaxToleranceEdge(in TopoDS_Face aF)
+    private static double MaxToleranceEdge(in Face aF)
     {
         double aTol, aTolMax;
-        TopExp_Explorer aExp = new();
+        Explorer aExp = new();
         //
         aTolMax = 0.0;
-        aExp.Init(aF, TopAbs_EDGE);
+        aExp.Init(aF, ShapeType.Edge);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Edge aE = TopoDS.Edge(aExp.Current());
-            aTol = BRep_Tool.Tolerance(aE);
+            Edge aE = ShapeCasts.Edge(aExp.Current());
+            aTol = Tool.Tolerance(aE);
             if (aTol > aTolMax)
             {
                 aTolMax = aTol;
@@ -609,11 +615,11 @@ public static class BOPTools_AlgoTools2D
     /// Whether the edge's pcurve on the face is a U-isoline (tangent along V) or a V-isoline (tangent along U), within
     /// the angular precision, at its mid parameter.
     /// </summary>
-    public static void IsEdgeIsoline(in TopoDS_Edge theE, in TopoDS_Face theF, out bool isTheUIso, out bool isTheVIso)
+    public static void IsEdgeIsoline(in Edge theE, in Face theF, out bool isTheUIso, out bool isTheVIso)
     {
         isTheUIso = isTheVIso = false;
 
-        Geom2d_Curve aPC = BRep_Tool.CurveOnSurface(theE, theF, out double aFirst, out double aLast)!;
+        Curve2D aPC = Tool.CurveOnSurface(theE, theF, out double aFirst, out double aLast)!;
 
         aPC.D1(0.5 * (aFirst + aLast), out _, out Vector2D aT);
 
@@ -646,37 +652,37 @@ public static class BOPTools_AlgoTools2D
     /// second pcurve can't be made, 6 if same-parameter fails. Writes into <paramref name="theE1"/> (its pcurves and
     /// tolerance, by BRep_Builder.Transfert) and its vertices (their tolerances).
     /// </summary>
-    public static int AttachExistingPCurve(in TopoDS_Edge theE2, // old
-                                           in TopoDS_Edge theE1, // new
-                                           in TopoDS_Face theF,
+    public static int AttachExistingPCurve(in Edge theE2, // old
+                                           in Edge theE1, // new
+                                           in Face theF,
                                            IntTools_Context? aCtx)
     {
         bool bIsToReverse, bIsClosed, bComp;
         int iRet;
         double aTol, aT11, aT12, aT21, aT22, aTolPPC;
         double aTolSP;
-        Geom2d_Curve? aC2Dold;
-        Geom2d_Curve aC2DoldC;
-        Geom2d_Curve? aC2DT;
-        BRep_Builder aBB = new();
+        Curve2D? aC2Dold;
+        Curve2D aC2DoldC;
+        Curve2D? aC2DT;
+        BrepBuilder aBB = new();
         //
         iRet = 0;
         //
-        TopoDS_Face aF = theF;
-        aF.Orientation(TopAbs_FORWARD);
-        TopoDS_Edge aE1 = theE1;
-        aE1.Orientation(TopAbs_FORWARD);
-        TopoDS_Edge aE2 = theE2;
-        aE2.Orientation(TopAbs_FORWARD);
+        Face aF = theF;
+        aF.Orientation(Forward);
+        Edge aE1 = theE1;
+        aE1.Orientation(Forward);
+        Edge aE2 = theE2;
+        aE2.Orientation(Forward);
         //
-        aC2Dold = BRep_Tool.CurveOnSurface(aE2, aF, out aT21, out aT22);
+        aC2Dold = Tool.CurveOnSurface(aE2, aF, out aT21, out aT22);
         if (aC2Dold is null)
         {
             iRet = 1;
             return iRet;
         }
         //
-        aC2DoldC = (Geom2d_Curve)aC2Dold.Copy();
+        aC2DoldC = (Curve2D)aC2Dold.Copy();
         //
         bIsToReverse = BOPTools_AlgoTools.IsSplitToReverse(aE1, aE2, aCtx);
         if (bIsToReverse)
@@ -691,13 +697,13 @@ public static class BOPTools_AlgoTools2D
             aT22 = aT21r;
         }
         //
-        aC2DT = new Geom2d_TrimmedCurve(aC2DoldC, aT21, aT22);
+        aC2DT = new TrimmedCurve2D(aC2DoldC, aT21, aT22);
         //
         aTolPPC = global::Kerf.Engine.Foundation.Precision.PConfusion();
         //
-        Geom_Curve aCE1 = BRep_Tool.Curve(aE1, out aT11, out aT12)!;
+        Curve3D aCE1 = Tool.Curve(aE1, out aT11, out aT12)!;
         //
-        GeomLib.SameRange(aTolPPC, aC2DT, aT21, aT22, aT11, aT12, ref aC2DT);
+        global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(aTolPPC, aC2DT, aT21, aT22, aT11, aT12, ref aC2DT);
         //
         if (aC2DT is null)
         {
@@ -707,7 +713,7 @@ public static class BOPTools_AlgoTools2D
         //
         // check the curves on same parameter to prevent
         // big tolerance increasing
-        Geom_Surface aSF = BRep_Tool.Surface(aF)!;
+        Surface aSF = Tool.Surface(aF)!;
         //
         bComp = IntTools_Tools.ComputeTolerance(aCE1, aC2DT, aSF, aT11, aT12, out aTolSP, out _, aTolPPC);
         if (!bComp)
@@ -716,7 +722,7 @@ public static class BOPTools_AlgoTools2D
             return iRet;
         }
         //
-        aTol = BRep_Tool.Tolerance(aE1);
+        aTol = Tool.Tolerance(aE1);
         //
         if ((aTolSP > 10.0 * aTol) && aTolSP > 0.1)
         {
@@ -725,7 +731,7 @@ public static class BOPTools_AlgoTools2D
         }
         //
         // create a temporary edge to make same parameter pcurve
-        TopoDS_Edge aE1T = new();
+        Edge aE1T = new();
         aBB.MakeEdge(ref aE1T, aCE1, aTol);
         aBB.Range(aE1T, aT11, aT12);
         aBB.SameRange(aE1T, false);
@@ -756,18 +762,18 @@ public static class BOPTools_AlgoTools2D
         // transfer pcurve(s) from the temporary edge to the new edge
         aBB.Transfert(aE1T, aE1);
         // update tolerance of vertices
-        double aNewTol = BRep_Tool.Tolerance(aE1T);
-        TopoDS_Iterator it = new(aE1);
+        double aNewTol = Tool.Tolerance(aE1T);
+        Iterator it = new(aE1);
         for (; it.More(); it.Next())
         {
-            aBB.UpdateVertex(TopoDS.Vertex(it.Value()), aNewTol);
+            aBB.UpdateVertex(ShapeCasts.Vertex(it.Value()), aNewTol);
         }
         return iRet;
     }
 
     // Builds the second pcurve of the new edge on a face where the old one is a seam. Writes into aEnew (the temporary
     // edge of AttachExistingPCurve). OCCT dereferences the context unchecked.
-    private static int UpdateClosedPCurve(in TopoDS_Edge aEold, in TopoDS_Edge aEnew, in TopoDS_Face aF, IntTools_Context? aCtx)
+    private static int UpdateClosedPCurve(in Edge aEold, in Edge aEnew, in Face aF, IntTools_Context? aCtx)
     {
         bool bUClosed, bRevOrder;
         int aNbPoints, iRet;
@@ -776,32 +782,32 @@ public static class BOPTools_AlgoTools2D
         Point2D aP2DS1, aP2DS2, aP2D;
         Vector2D aV2DT, aV2D, aV2DS1, aV2DS2;
         Point3D aP;
-        Geom2d_Curve aC2D, aC2DS1, aC2DS2, aC2Dnew, aC2DoldCT;
-        Geom2d_TrimmedCurve aC2DTnew;
-        Geom_Surface aS;
-        TopoDS_Edge aES;
-        BRep_Builder aBB = new();
+        Curve2D aC2D, aC2DS1, aC2DS2, aC2Dnew, aC2DoldCT;
+        TrimmedCurve2D aC2DTnew;
+        Surface aS;
+        Edge aES;
+        BrepBuilder aBB = new();
         //
         iRet = 0;
-        aTol = BRep_Tool.Tolerance(aEnew);
+        aTol = Tool.Tolerance(aEnew);
         //
         // aC2DoldCT is alone p-curve of aEnew that we've built
         // The task is to build closed p-curves for aEnew
-        aC2DoldCT = BRep_Tool.CurveOnSurface(aEnew, aF, out aT1, out aT2)!;
+        aC2DoldCT = Tool.CurveOnSurface(aEnew, aF, out aT1, out aT2)!;
         //
         // aC2Dold is p-curve of aEold
-        _ = BRep_Tool.CurveOnSurface(aEold, aF, out aT1, out aT2);
+        _ = Tool.CurveOnSurface(aEold, aF, out aT1, out aT2);
         //
         // As aEold is closed on aF, it is possible to retrieve
         // the two p-curves:
         //  aC2DS1 -first p-curve
         //  aC2DS2 -second p-curve
         aES = aEold;
-        aES.Orientation(TopAbs_FORWARD);
-        aC2DS1 = BRep_Tool.CurveOnSurface(aES, aF, out aTS1, out aTS2)!;
+        aES.Orientation(Forward);
+        aC2DS1 = Tool.CurveOnSurface(aES, aF, out aTS1, out aTS2)!;
         //
-        aES.Orientation(TopAbs_REVERSED);
-        aC2DS2 = BRep_Tool.CurveOnSurface(aES, aF, out aTS1, out aTS2)!;
+        aES.Orientation(Reversed);
+        aC2DS2 = Tool.CurveOnSurface(aES, aF, out aTS1, out aTS2)!;
         //
         aTS = IntermediatePoint(aTS1, aTS2);
         //
@@ -825,7 +831,7 @@ public static class BOPTools_AlgoTools2D
         aP2DS2.Coord(out aUS2, out aVS2);
         //
         // aP - some 3D-point on seam edge of the surface aS
-        aS = BRep_Tool.Surface(aF)!;
+        aS = Tool.Surface(aF)!;
         aS.D0(aUS1, aVS1, out aP);
         //
         GeomAPI_ProjectPointOnCurve aProjPC = aCtx!.ProjPC(aEnew);
@@ -845,8 +851,8 @@ public static class BOPTools_AlgoTools2D
         aC2D.D1(aT, out aP2D, out aV2D);
         aP2D.Coord(out aU, out aV);
         //
-        aC2Dnew = (Geom2d_Curve)aC2D.Copy();
-        aC2DTnew = new Geom2d_TrimmedCurve(aC2Dnew, aT1, aT2);
+        aC2Dnew = (Curve2D)aC2D.Copy();
+        aC2DTnew = new TrimmedCurve2D(aC2Dnew, aT1, aT2);
         //
         aV2DT = aV2DS12;
         if (!bUClosed)
@@ -890,20 +896,20 @@ public static class BOPTools_AlgoTools2D
     // doesn't stop once both occurrences are counted at the end of the exploration: Next() on an exhausted explorer
     // restarts it (TopExp_Explorer::Next with an empty stack pushes the shape's iterator again), so the count reaches 4
     // and a true seam gives false (occt-issues.md). Kept; internal for the test that reproduces it.
-    internal static bool IsClosed(in TopoDS_Edge aE, in TopoDS_Face aF)
+    internal static bool IsClosed(in Edge aE, in Face aF)
     {
         bool bRet;
         //
-        bRet = BRep_Tool.IsClosed(aE, aF);
+        bRet = Tool.IsClosed(aE, aF);
         if (bRet)
         {
             int iCnt;
             //
             iCnt = 0;
-            TopExp_Explorer aExp = new(aF, TopAbs_EDGE);
+            Explorer aExp = new(aF, ShapeType.Edge);
             for (; (aExp.More() || iCnt == 2); aExp.Next()) // OCCT
             {
-                TopoDS_Shape aEx = aExp.Current();
+                Shape aEx = aExp.Current();
                 if (aEx.IsSame(aE))
                 {
                     ++iCnt;

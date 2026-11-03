@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
@@ -21,16 +23,16 @@ public class Geom2dGcc_Circ2d2TanRadTests
     [Fact]
     public void BUC60897_TangentToLineAndBezier()
     {
-        Geom2d_Line aLine = new(new Point2D(100, 0), new Direction2D(Direction2D.D.NX));
+        LineCurve2D aLine = new(new Point2D(100, 0), new Direction2D(Direction2D.D.NX));
 
         NCollection_Array1<Point2D> aPoints = new(1, 3);
         aPoints.SetValue(1, new Point2D(0, 0));
         aPoints.SetValue(2, new Point2D(50, 50));
         aPoints.SetValue(3, new Point2D(0, 100));
-        Geom2d_BezierCurve aCurve = new(aPoints);
+        BezierCurve2D aCurve = new(aPoints);
 
-        Geom2dAdaptor_Curve      aCLine        = new(aLine);
-        Geom2dAdaptor_Curve      aCCurve       = new(aCurve);
+        CurveAdaptor2D      aCLine        = new(aLine);
+        CurveAdaptor2D      aCCurve       = new(aCurve);
         Geom2dGcc_QualifiedCurve aQualifCurve1 = new(aCLine, GccEnt_outside);
         Geom2dGcc_QualifiedCurve aQualifCurve2 = new(aCCurve, GccEnt_outside);
 
@@ -83,8 +85,8 @@ public class Geom2dGcc_Circ2d2TanRadTests
     {
         Circle2D c1 = new(new Axis2D(new Point2D(1, 2), DX), 3);
         Line2D  l2 = new(new Point2D(0, -2), new Direction2D(1, 0.25));
-        Geom2dGcc_Circ2d2TanRad aCirc = new(Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(new Geom2d_Circle(c1))),
-                                            Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(new Geom2d_Line(l2))), 1.5, 1e-9);
+        Geom2dGcc_Circ2d2TanRad aCirc = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c1))),
+                                            Geom2dGcc.Unqualified(new CurveAdaptor2D(new LineCurve2D(l2))), 1.5, 1e-9);
         GccAna_Circ2d2TanRad anAna = new(GccEnt.Unqualified(c1), GccEnt.Unqualified(l2), 1.5, 1e-9);
         Assert.True(aCirc.NbSolutions() > 0);
         AssertSameAsAna(aCirc, anAna);
@@ -96,8 +98,8 @@ public class Geom2dGcc_Circ2d2TanRadTests
         // The line comes first: GccAna is called with (circle, line), and the accessors swap the arguments back.
         Circle2D c2 = new(new Axis2D(new Point2D(1, 2), DX), 3);
         Line2D  l1 = new(new Point2D(0, -2), new Direction2D(1, 0.25));
-        Geom2dGcc_Circ2d2TanRad aCirc = new(Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(new Geom2d_Line(l1))),
-                                            Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(new Geom2d_Circle(c2))), 1.5, 1e-9);
+        Geom2dGcc_Circ2d2TanRad aCirc = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(new LineCurve2D(l1))),
+                                            Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c2))), 1.5, 1e-9);
         GccAna_Circ2d2TanRad anAna = new(GccEnt.Unqualified(c2), GccEnt.Unqualified(l1), 1.5, 1e-9);
         Assert.True(aCirc.IsDone());
         Assert.Equal(anAna.NbSolutions(), aCirc.NbSolutions());
@@ -121,12 +123,12 @@ public class Geom2dGcc_Circ2d2TanRadTests
     public void TwoPoints_GiveGccAnasSolutions()
     {
         Point2D p1 = new(0, 0), p2 = new(2, 1);
-        Geom2dGcc_Circ2d2TanRad aCirc = new(new Geom2d_CartesianPoint(p1), new Geom2d_CartesianPoint(p2), 2, 1e-9);
+        Geom2dGcc_Circ2d2TanRad aCirc = new(new CartesianPoint2(p1), new CartesianPoint2(p2), 2, 1e-9);
         AssertSameAsAna(aCirc, new GccAna_Circ2d2TanRad(p1, p2, 2, 1e-9));
         Assert.Equal(2, aCirc.NbSolutions());
     }
 
-    private static void AssertTangent(Adaptor2d_Curve2d theCurve, in Circle2D theCirc, double theParArg, in Point2D thePnt)
+    private static void AssertTangent(Curve2DAdaptorBase theCurve, in Circle2D theCirc, double theParArg, in Point2D thePnt)
     {
         theCurve.D1(theParArg, out Point2D aP, out Vector2D aV);
         Assert.True(aP.Distance(thePnt) < 1e-6);
@@ -139,9 +141,9 @@ public class Geom2dGcc_Circ2d2TanRadTests
     [Fact]
     public void EllipseAndCircle_GiveTangentCircles()
     {
-        Geom2dAdaptor_Curve anEll = new(new Geom2d_Ellipse(new Axis2D(new Point2D(0, 0), DX), 4, 2));
+        CurveAdaptor2D anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 4, 2));
         Circle2D c1 = new(new Axis2D(new Point2D(7, 0), DX), 1);
-        Geom2dGcc_Circ2d2TanRad aCirc = new(Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(new Geom2d_Circle(c1))),
+        Geom2dGcc_Circ2d2TanRad aCirc = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c1))),
                                             Geom2dGcc.Outside(anEll), 1, 1e-7);
         Assert.True(aCirc.IsDone());
         Assert.True(aCirc.NbSolutions() > 0);
@@ -172,10 +174,10 @@ public class Geom2dGcc_Circ2d2TanRadTests
         NCollection_Array1<int> aMults = new(1, 2);
         aMults[1] = 4;
         aMults[2] = 4;
-        Geom2dAdaptor_Curve aBS = new(new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 3));
+        CurveAdaptor2D aBS = new(new BSplineCurve2D(aPoles, aKnots, aMults, 3));
         Line2D l2 = new(new Point2D(0, 0), DX);
         Geom2dGcc_Circ2d2TanRad aCirc = new(Geom2dGcc.Unqualified(aBS),
-                                            Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(new Geom2d_Line(l2))), 2, 1e-7);
+                                            Geom2dGcc.Unqualified(new CurveAdaptor2D(new LineCurve2D(l2))), 2, 1e-7);
         Assert.True(aCirc.IsDone());
         Assert.True(aCirc.NbSolutions() > 0);
         for (int i = 1; i <= aCirc.NbSolutions(); i++)
@@ -192,14 +194,14 @@ public class Geom2dGcc_Circ2d2TanRadTests
     [Fact]
     public void Accessors_ThrowAsOcct()
     {
-        Assert.Throws<NegativeValueException>(() => new Geom2dGcc_Circ2d2TanRad(new Geom2d_CartesianPoint(0, 0),
-                                                                               new Geom2d_CartesianPoint(1, 0), -1, 1e-9));
-        Geom2dAdaptor_Curve aLine = new(new Geom2d_Line(new Point2D(0, 0), DX));
-        Geom2dAdaptor_Curve anEll = new(new Geom2d_Ellipse(new Axis2D(new Point2D(0, 3), DX), 4, 2));
+        Assert.Throws<NegativeValueException>(() => new Geom2dGcc_Circ2d2TanRad(new CartesianPoint2(0, 0),
+                                                                               new CartesianPoint2(1, 0), -1, 1e-9));
+        CurveAdaptor2D aLine = new(new LineCurve2D(new Point2D(0, 0), DX));
+        CurveAdaptor2D anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 3), DX), 4, 2));
         Assert.Throws<GccEnt_BadQualifier>(() => new Geom2dGcc_Circ2d2TanRad(Geom2dGcc.Enclosing(aLine), Geom2dGcc.Unqualified(anEll), 1, 1e-7));
 
         // Points too far apart for the radius: done, no solution.
-        Geom2dGcc_Circ2d2TanRad aFar = new(new Geom2d_CartesianPoint(0, 0), new Geom2d_CartesianPoint(10, 0), 1, 1e-9);
+        Geom2dGcc_Circ2d2TanRad aFar = new(new CartesianPoint2(0, 0), new CartesianPoint2(10, 0), 1, 1e-9);
         Assert.True(aFar.IsDone());
         Assert.Equal(0, aFar.NbSolutions());
         Assert.Throws<OutOfRangeException>(() => aFar.ThisSolution(1));

@@ -3,8 +3,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -15,12 +16,12 @@ public class TopTrans_SurfaceTransition_Test
     {
         var aReferenceTransition = new TopTrans_SurfaceTransition();
         aReferenceTransition.Reset(new Direction3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        aReferenceTransition.Compare(global::Kerf.Engine.Foundation.Precision.Angular(), new Direction3D(0.0, 0.0, 1.0), TopAbs_FORWARD, TopAbs_FORWARD);
+        aReferenceTransition.Compare(global::Kerf.Engine.Foundation.Precision.Angular(), new Direction3D(0.0, 0.0, 1.0), Forward, Forward);
 
-        TopAbs_State aBefore = aReferenceTransition.StateBefore();
-        TopAbs_State anAfter = aReferenceTransition.StateAfter();
-        Assert.NotEqual(TopAbs_UNKNOWN, aBefore);
-        Assert.NotEqual(TopAbs_UNKNOWN, anAfter);
+        Containment aBefore = aReferenceTransition.StateBefore();
+        Containment anAfter = aReferenceTransition.StateAfter();
+        Assert.NotEqual(Unknown, aBefore);
+        Assert.NotEqual(Unknown, anAfter);
 
         var anInvalidTransition = new TopTrans_SurfaceTransition();
         anInvalidTransition.Reset(new Direction3D(1.0, 0.0, 0.0),
@@ -30,8 +31,8 @@ public class TopTrans_SurfaceTransition_Test
                                   1.0,
                                   1.0);
 
-        Assert.Equal(TopAbs_UNKNOWN, anInvalidTransition.StateBefore());
-        Assert.Equal(TopAbs_UNKNOWN, anInvalidTransition.StateAfter());
+        Assert.Equal(Unknown, anInvalidTransition.StateBefore());
+        Assert.Equal(Unknown, anInvalidTransition.StateAfter());
         Assert.Equal(aBefore, aReferenceTransition.StateBefore());
         Assert.Equal(anAfter, aReferenceTransition.StateAfter());
     }
@@ -47,11 +48,11 @@ public class TopTrans_SurfaceTransition_Test
                             new Direction3D(0.6, -0.8, 0.0),
                             1.0,
                             0.5,
-                            TopAbs_FORWARD,
-                            TopAbs_FORWARD);
+                            Forward,
+                            Forward);
 
-        Assert.NotEqual(TopAbs_UNKNOWN, aTransition.StateBefore());
-        Assert.NotEqual(TopAbs_UNKNOWN, aTransition.StateAfter());
+        Assert.NotEqual(Unknown, aTransition.StateBefore());
+        Assert.NotEqual(Unknown, aTransition.StateAfter());
     }
 }
 
@@ -62,12 +63,12 @@ public class TopTrans_SurfaceTransition_PortTests
     public void Empty_transition_is_unknown()
     {
         var aTransition = new TopTrans_SurfaceTransition();
-        Assert.Equal(TopAbs_UNKNOWN, aTransition.StateBefore());
-        Assert.Equal(TopAbs_UNKNOWN, aTransition.StateAfter());
+        Assert.Equal(Unknown, aTransition.StateBefore());
+        Assert.Equal(Unknown, aTransition.StateAfter());
 
         // Compare before Reset is ignored
-        aTransition.Compare(0.0, new Direction3D(0.0, 0.0, 1.0), TopAbs_FORWARD, TopAbs_FORWARD);
-        Assert.Equal(TopAbs_UNKNOWN, aTransition.StateBefore());
+        aTransition.Compare(0.0, new Direction3D(0.0, 0.0, 1.0), Forward, Forward);
+        Assert.Equal(Unknown, aTransition.StateBefore());
     }
 
     [Fact]
@@ -77,20 +78,20 @@ public class TopTrans_SurfaceTransition_PortTests
         // only the "after" row is filled, and the "before" state is read from it.
         var aForward = new TopTrans_SurfaceTransition();
         aForward.Reset(new Direction3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        aForward.Compare(0.0, new Direction3D(0.0, 0.0, 1.0), TopAbs_FORWARD, TopAbs_FORWARD);
-        Assert.Equal(TopAbs_OUT, aForward.StateBefore());
-        Assert.Equal(TopAbs_IN, aForward.StateAfter());
+        aForward.Compare(0.0, new Direction3D(0.0, 0.0, 1.0), Forward, Forward);
+        Assert.Equal(Out, aForward.StateBefore());
+        Assert.Equal(In, aForward.StateAfter());
 
         var aReversed = new TopTrans_SurfaceTransition();
         aReversed.Reset(new Direction3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        aReversed.Compare(0.0, new Direction3D(0.0, 0.0, 1.0), TopAbs_REVERSED, TopAbs_FORWARD);
-        Assert.Equal(TopAbs_IN, aReversed.StateBefore());
-        Assert.Equal(TopAbs_OUT, aReversed.StateAfter());
+        aReversed.Compare(0.0, new Direction3D(0.0, 0.0, 1.0), Reversed, Forward);
+        Assert.Equal(In, aReversed.StateBefore());
+        Assert.Equal(Out, aReversed.StateAfter());
 
         // Reset forgets the previous faces
         aReversed.Reset(new Direction3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Assert.Equal(TopAbs_UNKNOWN, aReversed.StateBefore());
-        Assert.Equal(TopAbs_UNKNOWN, aReversed.StateAfter());
+        Assert.Equal(Unknown, aReversed.StateBefore());
+        Assert.Equal(Unknown, aReversed.StateAfter());
     }
 
     [Fact]
@@ -99,22 +100,22 @@ public class TopTrans_SurfaceTransition_PortTests
         // Two coincident faces with the same orientation: FUN_refnearest can't choose (OCCT's "nyi FUN_RAISE").
         var aTransition = new TopTrans_SurfaceTransition();
         aTransition.Reset(new Direction3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        aTransition.Compare(0.0, new Direction3D(0.0, 0.0, 1.0), TopAbs_FORWARD, TopAbs_FORWARD);
-        aTransition.Compare(0.0, new Direction3D(0.0, 0.0, 1.0), TopAbs_FORWARD, TopAbs_FORWARD);
-        Assert.Equal(TopAbs_UNKNOWN, aTransition.StateBefore());
-        Assert.Equal(TopAbs_UNKNOWN, aTransition.StateAfter());
+        aTransition.Compare(0.0, new Direction3D(0.0, 0.0, 1.0), Forward, Forward);
+        aTransition.Compare(0.0, new Direction3D(0.0, 0.0, 1.0), Forward, Forward);
+        Assert.Equal(Unknown, aTransition.StateBefore());
+        Assert.Equal(Unknown, aTransition.StateAfter());
     }
 
     [Fact]
     public void GetBefore_GetAfter()
     {
-        Assert.Equal(TopAbs_OUT, TopTrans_SurfaceTransition.GetBefore(TopAbs_FORWARD));
-        Assert.Equal(TopAbs_IN, TopTrans_SurfaceTransition.GetBefore(TopAbs_REVERSED));
-        Assert.Equal(TopAbs_IN, TopTrans_SurfaceTransition.GetBefore(TopAbs_INTERNAL));
-        Assert.Equal(TopAbs_OUT, TopTrans_SurfaceTransition.GetBefore(TopAbs_EXTERNAL));
-        Assert.Equal(TopAbs_IN, TopTrans_SurfaceTransition.GetAfter(TopAbs_FORWARD));
-        Assert.Equal(TopAbs_OUT, TopTrans_SurfaceTransition.GetAfter(TopAbs_REVERSED));
-        Assert.Equal(TopAbs_IN, TopTrans_SurfaceTransition.GetAfter(TopAbs_INTERNAL));
-        Assert.Equal(TopAbs_OUT, TopTrans_SurfaceTransition.GetAfter(TopAbs_EXTERNAL));
+        Assert.Equal(Out, TopTrans_SurfaceTransition.GetBefore(Forward));
+        Assert.Equal(In, TopTrans_SurfaceTransition.GetBefore(Reversed));
+        Assert.Equal(In, TopTrans_SurfaceTransition.GetBefore(Internal));
+        Assert.Equal(Out, TopTrans_SurfaceTransition.GetBefore(External));
+        Assert.Equal(In, TopTrans_SurfaceTransition.GetAfter(Forward));
+        Assert.Equal(Out, TopTrans_SurfaceTransition.GetAfter(Reversed));
+        Assert.Equal(In, TopTrans_SurfaceTransition.GetAfter(Internal));
+        Assert.Equal(Out, TopTrans_SurfaceTransition.GetAfter(External));
     }
 }

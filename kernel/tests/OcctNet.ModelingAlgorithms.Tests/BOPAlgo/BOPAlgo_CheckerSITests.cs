@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.TestHarness;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -8,25 +11,25 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// <summary>BOPAlgo_CheckerSI (unit 6G): self-interference of a single shape, by level of check.</summary>
 public class BOPAlgo_CheckerSITests
 {
-    internal static TopoDS_Shape Box(double x, double y, double z, double dx, double dy, double dz) =>
+    internal static Shape Box(double x, double y, double z, double dx, double dy, double dz) =>
         new BRepPrimAPI_MakeBox(new Point3D(x, y, z), dx, dy, dz).Shape();
 
-    internal static TopoDS_Compound Compound(params TopoDS_Shape[] theShapes)
+    internal static Compound Compound(params Shape[] theShapes)
     {
-        BRep_Builder aB = new();
-        TopoDS_Compound aC = new();
+        BrepBuilder aB = new();
+        Compound aC = new();
         aB.MakeCompound(ref aC);
-        foreach (TopoDS_Shape aS in theShapes)
+        foreach (Shape aS in theShapes)
         {
             aB.Add(aC, aS);
         }
         return aC;
     }
 
-    private static BOPAlgo_CheckerSI Check(in TopoDS_Shape theS, int theLevel = 9, bool theParallel = false)
+    private static BOPAlgo_CheckerSI Check(in Shape theS, int theLevel = 9, bool theParallel = false)
     {
         BOPAlgo_CheckerSI aChecker = new();
-        NCollection_List<TopoDS_Shape> aLS = new();
+        NCollection_List<Shape> aLS = new();
         aLS.Append(theS);
         aChecker.SetArguments(aLS);
         aChecker.SetLevelOfCheck(theLevel);
@@ -47,7 +50,7 @@ public class BOPAlgo_CheckerSITests
             {
                 continue;
             }
-            string aKey = $"{aDS.ShapeInfo(n1).ShapeType()}/{aDS.ShapeInfo(n2).ShapeType()}";
+            string aKey = $"{Kerf.Engine.Foundation.OcctTypeNames.Of(aDS.ShapeInfo(n1).ShapeType())}/{Kerf.Engine.Foundation.OcctTypeNames.Of(aDS.ShapeInfo(n2).ShapeType())}";
             aKinds[aKey] = aKinds.GetValueOrDefault(aKey) + 1;
         }
         return aKinds;
@@ -85,14 +88,14 @@ public class BOPAlgo_CheckerSITests
     [Fact]
     public void The_level_of_check_limits_the_interference_types()
     {
-        TopoDS_Shape aC = Compound(Box(0, 0, 0, 10, 10, 10), Box(5, 5, 5, 10, 10, 10));
+        Shape aC = Compound(Box(0, 0, 0, 10, 10, 10), Box(5, 5, 5, 10, 10, 10));
         Assert.Empty(Kinds(Check(aC, 0)));
         Assert.DoesNotContain(Kinds(Check(aC, 3)).Keys, k => k.Contains("TopAbs_FACE/TopAbs_FACE", StringComparison.Ordinal));
         // an invalid level is ignored (the default, 9, stays)
         BOPAlgo_CheckerSI aChecker = new();
         aChecker.SetLevelOfCheck(12);
         aChecker.SetLevelOfCheck(-1);
-        NCollection_List<TopoDS_Shape> aLS = new();
+        NCollection_List<Shape> aLS = new();
         aLS.Append(aC);
         aChecker.SetArguments(aLS);
         aChecker.Perform();
@@ -103,7 +106,7 @@ public class BOPAlgo_CheckerSITests
     public void Several_arguments_are_an_error()
     {
         BOPAlgo_CheckerSI aChecker = new();
-        NCollection_List<TopoDS_Shape> aLS = new();
+        NCollection_List<Shape> aLS = new();
         aLS.Append(Box(0, 0, 0, 1, 1, 1));
         aLS.Append(Box(2, 0, 0, 1, 1, 1));
         aChecker.SetArguments(aLS);
@@ -114,14 +117,14 @@ public class BOPAlgo_CheckerSITests
     [Fact]
     public void A_frozen_argument_is_never_written()
     {
-        TopoDS_Shape aC = Compound(Box(0, 0, 0, 10, 10, 10), Box(5, 5, 5, 10, 10, 10), Box(10, 0, 0, 3, 3, 3));
+        Shape aC = Compound(Box(0, 0, 0, 10, 10, 10), Box(5, 5, 5, 10, 10, 10), Box(10, 0, 0, 3, 3, 3));
         aC.TShape()!.FreezeGraph();
         string aBefore = BRepTextComparison.Write(aC);
         BOPAlgo_CheckerSI aChecker = Check(aC);
         Assert.False(aChecker.HasErrors());
         Assert.Equal(aBefore, BRepTextComparison.Write(aC));
         // the same on an unfrozen copy: the checker is non-destructive
-        TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(aC, out _);
+        Shape aCopy = BrepTools.ExactCopyForWrite(aC, out _);
         string aCopyBefore = BRepTextComparison.Write(aCopy);
         Assert.Equal(Kinds(aChecker), Kinds(Check(aCopy)));
         Assert.Equal(aCopyBefore, BRepTextComparison.Write(aCopy));
@@ -130,7 +133,7 @@ public class BOPAlgo_CheckerSITests
     [Fact]
     public void Serial_equals_parallel()
     {
-        TopoDS_Shape aC = Compound(Box(0, 0, 0, 10, 10, 10), Box(5, 5, 5, 10, 10, 10),
+        Shape aC = Compound(Box(0, 0, 0, 10, 10, 10), Box(5, 5, 5, 10, 10, 10),
                                    new BRepPrimAPI_MakeSphere(new Point3D(10, 10, 10), 4).Shape(),
                                    new BRepPrimAPI_MakeTorus(new Frame3D(new Point3D(3, 3, 3), new Direction3D(0, 0, 1)), 4, 1).Shape());
         string aSerial = DeterminismHarness.AssertSerialEqualsParallel(() => PaveFillerDump.Write(Check(aC, 9, true).PDS()!), 2);

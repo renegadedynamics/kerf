@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Geometry;
 using System.Globalization;
 
@@ -125,15 +126,15 @@ public class ApproxInt_MultiLine<TheLine> where TheLine : class, IApproxInt_WLin
     public int LastPoint() => indicemax;
 
     /// <summary>Approx_PointsAdded when points can be added (there are SvSurfaces), else Approx_NoPointsAdded.</summary>
-    public Approx_Status WhatStatus()
+    public Status WhatStatus()
     {
         if (PtrOnmySvSurfaces is not null)
         {
-            return Approx_Status.Approx_PointsAdded;
+            return Status.PointsAdded;
         }
         else
         {
-            return Approx_Status.Approx_NoPointsAdded;
+            return Status.NoPointsAdded;
         }
     }
 

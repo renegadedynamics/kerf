@@ -6,6 +6,9 @@ using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Meshing;
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 
 using Kerf.Topology;
@@ -22,28 +25,28 @@ public class BRepMesh_BaseMeshAlgoTest
 {
     // Helper function to add an internal vertex to a face.
     // Projects the vertex onto the face surface and adds it with proper UV parameters.
-    private static TopoDS_Vertex addInternalVertexToFace(ref TopoDS_Face theFace, in Point3D thePoint)
+    private static Vertex addInternalVertexToFace(ref Face theFace, in Point3D thePoint)
     {
         // OCCT.NET: the maker's face is frozen; the vertices are added to an exact copy for write
         if (theFace.TShape()!.IsFrozen)
         {
-            theFace = TopoDS.Face(BRepTools.ExactCopyForWrite(theFace, out _));
+            theFace = ShapeCasts.Face(BrepTools.ExactCopyForWrite(theFace, out _));
         }
 
-        Geom_Surface aSurf = BRep_Tool.Surface(theFace)!;
+        Surface aSurf = Tool.Surface(theFace)!;
         GeomAPI_ProjectPointOnSurf aProjection = new(thePoint, aSurf);
         if (!aProjection.IsDone() || aProjection.NbPoints() == 0)
         {
-            return new TopoDS_Vertex();
+            return new Vertex();
         }
 
         aProjection.Parameters(1, out double aU, out double aV);
 
         // OCCT.NET: BRepBuilderAPI_MakeVertex's vertex is frozen, so the vertex is made unfrozen by BRep_Builder
-        BRep_Builder aBuilder = new();
-        TopoDS_Vertex aVertex = new();
+        BrepBuilder aBuilder = new();
+        Vertex aVertex = new();
         aBuilder.MakeVertex(ref aVertex, aProjection.Point(1), global::Kerf.Engine.Foundation.Precision.Confusion());
-        aVertex.Orientation(TopAbs_Orientation.TopAbs_INTERNAL);
+        aVertex.Orientation(Orientation.Internal);
 
         aBuilder.UpdateVertex(aVertex, aU, aV, theFace, global::Kerf.Engine.Foundation.Precision.Confusion());
         aBuilder.Add(theFace, aVertex);
@@ -109,15 +112,15 @@ public class BRepMesh_BaseMeshAlgoTest
         Plane3D aPlane = new(new Point3D(0.0, 0.0, 0.0), Constants.DZ());
         double aUMin = 0.0, aUMax = 100.0;
         double aVMin = 0.0, aVMax = 50.0;
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aPlane, aUMin, aUMax, aVMin, aVMax).Face();
+        Face aFace = new BRepBuilderAPI_MakeFace(aPlane, aUMin, aUMax, aVMin, aVMax).Face();
 
         // Add internal vertices on the face
         Point3D[] aInternalPts = [new(40.0, 20.0, 0.0), new(60.0, 30.0, 0.0), new(77.0, 33.0, 0.0)];
 
         for (int i = 0; i < 3; ++i)
         {
-            TopoDS_Vertex aVertex = addInternalVertexToFace(ref aFace, aInternalPts[i]);
-            Assert.False(aVertex.IsNull(), $"Failed to add internal vertex {i}");
+            Vertex aVertex = addInternalVertexToFace(ref aFace, aInternalPts[i]);
+            Assert.False(aVertex.IsNull, $"Failed to add internal vertex {i}");
         }
 
         // Mesh with internal vertices mode enabled
@@ -125,10 +128,10 @@ public class BRepMesh_BaseMeshAlgoTest
 
         BRepMesh_IncrementalMesh aMesher = new(aFace, aParams);
         Assert.True(aMesher.IsDone(), "Meshing should succeed");
-        aFace = TopoDS.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
+        aFace = ShapeCasts.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
 
         // Get triangulation
-        Triangulation? aTri = BRep_Tool.Triangulation(aFace, out Placement aLoc);
+        Triangulation? aTri = Tool.Triangulation(aFace, out Placement aLoc);
         Assert.NotNull(aTri);
 
         // Verify all nodes are valid (not uninitialized)
@@ -153,7 +156,7 @@ public class BRepMesh_BaseMeshAlgoTest
         // Test with more internal vertices to ensure the fix handles multiple vertices correctly
         Plane3D aPlane = new(new Point3D(0.0, 0.0, 0.0), Constants.DZ());
         const double aSize = 100.0;
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aPlane, 0.0, aSize, 0.0, aSize).Face();
+        Face aFace = new BRepBuilderAPI_MakeFace(aPlane, 0.0, aSize, 0.0, aSize).Face();
 
         // Add a grid of internal vertices (5x5 = 25 vertices)
         const int aGridSize = 5;
@@ -166,8 +169,8 @@ public class BRepMesh_BaseMeshAlgoTest
                 double aY = (aSize * j) / aGridSize;
                 Point3D aPt = new(aX, aY, 0.0);
                 anInternalPts.Append(aPt);
-                TopoDS_Vertex aVertex = addInternalVertexToFace(ref aFace, aPt);
-                Assert.False(aVertex.IsNull(), $"Failed to add internal vertex at ({aX}, {aY})");
+                Vertex aVertex = addInternalVertexToFace(ref aFace, aPt);
+                Assert.False(aVertex.IsNull, $"Failed to add internal vertex at ({aX}, {aY})");
             }
         }
 
@@ -175,9 +178,9 @@ public class BRepMesh_BaseMeshAlgoTest
 
         BRepMesh_IncrementalMesh aMesher = new(aFace, aParams);
         Assert.True(aMesher.IsDone(), "Meshing should succeed");
-        aFace = TopoDS.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
+        aFace = ShapeCasts.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
 
-        Triangulation? aTri = BRep_Tool.Triangulation(aFace, out Placement aLoc);
+        Triangulation? aTri = Tool.Triangulation(aFace, out Placement aLoc);
         Assert.NotNull(aTri);
 
         Assert.True(hasOnlyValidNodes(aTri, aLoc), "All triangulation nodes should have valid coordinates");
@@ -202,20 +205,20 @@ public class BRepMesh_BaseMeshAlgoTest
     {
         // Verify that when InternalVerticesMode is disabled, internal vertices are not included
         Plane3D aPlane = new(new Point3D(0.0, 0.0, 0.0), Constants.DZ());
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aPlane, 0.0, 100.0, 0.0, 50.0).Face();
+        Face aFace = new BRepBuilderAPI_MakeFace(aPlane, 0.0, 100.0, 0.0, 50.0).Face();
 
         Point3D aInternalPt = new(50.0, 25.0, 0.0);
-        TopoDS_Vertex aVertex = addInternalVertexToFace(ref aFace, aInternalPt);
-        Assert.False(aVertex.IsNull(), "Failed to add internal vertex");
+        Vertex aVertex = addInternalVertexToFace(ref aFace, aInternalPt);
+        Assert.False(aVertex.IsNull, "Failed to add internal vertex");
 
         // Mesh with internal vertices mode DISABLED
         IMeshTools_Parameters aParams = new() { Deflection = 1.0, Angle = 0.5, InternalVerticesMode = false };
 
         BRepMesh_IncrementalMesh aMesher = new(aFace, aParams);
         Assert.True(aMesher.IsDone(), "Meshing should succeed");
-        aFace = TopoDS.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
+        aFace = ShapeCasts.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
 
-        Triangulation? aTri = BRep_Tool.Triangulation(aFace, out Placement aLoc);
+        Triangulation? aTri = Tool.Triangulation(aFace, out Placement aLoc);
         Assert.NotNull(aTri);
 
         // Triangulation should still be valid

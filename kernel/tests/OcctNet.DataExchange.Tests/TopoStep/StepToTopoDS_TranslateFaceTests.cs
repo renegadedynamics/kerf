@@ -9,7 +9,10 @@ using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Meshing;
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace OcctNet.DataExchange.Tests.TopoStep;
 
@@ -22,7 +25,7 @@ public sealed class StepToTopoDS_TranslateFaceTests
     public StepToTopoDS_TranslateFaceTests()
     {
         var aTP = new Transfer_TransientProcess();
-        myTool.Init(new NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape>(), aTP);
+        myTool.Init(new NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape>(), aTP);
         myNMTool.SetActive(false);
     }
 
@@ -79,8 +82,8 @@ public sealed class StepToTopoDS_TranslateFaceTests
     private static Triangulation getMesh(StepToTopoDS_TranslateFace theTranslator)
     {
         Assert.True(theTranslator.IsDone());
-        TopoDS_Face aFace = TopoDS.Face(theTranslator.Value());
-        Triangulation? aMesh = BRep_Tool.Triangulation(aFace, out _);
+        Face aFace = ShapeCasts.Face(theTranslator.Value());
+        Triangulation? aMesh = Tool.Triangulation(aFace, out _);
         Assert.NotNull(aMesh);
         return aMesh;
     }

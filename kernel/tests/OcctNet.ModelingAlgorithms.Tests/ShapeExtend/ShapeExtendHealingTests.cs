@@ -1,10 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.ShapeExtend_Parametrisation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -13,52 +15,52 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ShapeExtendHealingTests
 {
-    private static TopoDS_Shape Box() => new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+    private static Shape Box() => new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
 
     // a 2 x 1 grid of planar patches: [0,10]x[0,5] and [10,30]x[0,5] on z = 0
-    private static NCollection_HArray2<Geom_Surface> Grid()
+    private static NCollection_HArray2<Surface> Grid()
     {
-        var aPlane = new Geom_Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
-        var aGrid = new NCollection_HArray2<Geom_Surface>(1, 2, 1, 1);
-        aGrid.SetValue(1, 1, new Geom_RectangularTrimmedSurface(aPlane, 0, 10, 0, 5));
-        aGrid.SetValue(2, 1, new Geom_RectangularTrimmedSurface(aPlane, 10, 30, 0, 5));
+        var aPlane = new PlaneSurface(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
+        var aGrid = new NCollection_HArray2<Surface>(1, 2, 1, 1);
+        aGrid.SetValue(1, 1, new TrimmedSurface(aPlane, 0, 10, 0, 5));
+        aGrid.SetValue(2, 1, new TrimmedSurface(aPlane, 10, 30, 0, 5));
         return aGrid;
     }
 
     [Fact]
     public void Explorer_SortedCompound_ShapeType_Sequences()
     {
-        TopoDS_Shape aBox = Box();
+        Shape aBox = Box();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         var see = new ShapeExtend_Explorer();
 
-        TopoDS_Shape aFaces = see.SortedCompound(aBox, TopAbs_FACE, true, false);
-        Assert.Equal(TopAbs_COMPOUND, aFaces.ShapeType());
+        Shape aFaces = see.SortedCompound(aBox, ShapeType.Face, true, false);
+        Assert.Equal(ShapeType.Compound, aFaces.ShapeType());
         Assert.True(aFaces.TShape()!.IsFrozen);
-        Assert.Equal(TopAbs_FACE, see.ShapeType(aFaces, true));
+        Assert.Equal(ShapeType.Face, see.ShapeType(aFaces, true));
         Assert.Equal(6, see.SeqFromCompound(aFaces, false).Length());
 
         // a single shell is returned itself; an edge asked as a wire becomes a wire
-        TopoDS_Shape aShell = see.SortedCompound(aBox, TopAbs_SHELL, true, false);
-        Assert.Equal(TopAbs_SHELL, aShell.ShapeType());
-        TopoDS_Shape anEdge = new TopExp_Explorer(aBox, TopAbs_EDGE).Current();
-        Assert.Equal(TopAbs_WIRE, see.SortedCompound(anEdge, TopAbs_WIRE, false, false).ShapeType());
-        Assert.True(see.SortedCompound(aBox, TopAbs_FACE, false, false).IsNull()); // no exploration of a solid
+        Shape aShell = see.SortedCompound(aBox, ShapeType.Shell, true, false);
+        Assert.Equal(ShapeType.Shell, aShell.ShapeType());
+        Shape anEdge = new Explorer(aBox, ShapeType.Edge).Current();
+        Assert.Equal(ShapeType.Wire, see.SortedCompound(anEdge, ShapeType.Wire, false, false).ShapeType());
+        Assert.True(see.SortedCompound(aBox, ShapeType.Face, false, false).IsNull); // no exploration of a solid
 
         // nested compounds, mixed types
-        NCollection_HSequence<TopoDS_Shape> aSeq = see.SeqFromCompound(aFaces, false);
+        NCollection_HSequence<Shape> aSeq = see.SeqFromCompound(aFaces, false);
         aSeq.Append(anEdge);
-        TopoDS_Shape aMixed = see.CompoundFromSeq(aSeq);
-        Assert.Equal(TopAbs_COMPOUND, see.ShapeType(aMixed, true));
-        Assert.Equal(TopAbs_COMPOUND, see.ShapeType(aMixed, false));
-        Assert.Equal(TopAbs_SHAPE, see.ShapeType(new TopoDS_Shape(), true));
+        Shape aMixed = see.CompoundFromSeq(aSeq);
+        Assert.Equal(ShapeType.Compound, see.ShapeType(aMixed, true));
+        Assert.Equal(ShapeType.Compound, see.ShapeType(aMixed, false));
+        Assert.Equal(ShapeType.Shape, see.ShapeType(new Shape(), true));
 
-        var aList = new NCollection_List<TopoDS_Shape>();
+        var aList = new NCollection_List<Shape>();
         see.ListFromSeq(aSeq, aList);
         Assert.Equal(7, aList.Extent());
         Assert.Equal(7, see.SeqFromList(aList).Length());
 
-        NCollection_HSequence<TopoDS_Shape>? v = null, e = null, w = null, f = null, sh = null, so = null, cs = null, c = null;
+        NCollection_HSequence<Shape>? v = null, e = null, w = null, f = null, sh = null, so = null, cs = null, c = null;
         see.DispatchList(aSeq, ref v, ref e, ref w, ref f, ref sh, ref so, ref cs, ref c);
         Assert.Equal(6, f!.Length());
         Assert.Equal(1, e!.Length());
@@ -70,7 +72,7 @@ public class ShapeExtendHealingTests
     public void Explorer_InternalForms_DontFreeze()
     {
         var see = new ShapeExtend_Explorer();
-        TopoDS_Shape aFaces = see.InternalSortedCompound(Box(), TopAbs_FACE, true, false);
+        Shape aFaces = see.InternalSortedCompound(Box(), ShapeType.Face, true, false);
         Assert.False(aFaces.TShape()!.IsFrozen);
         Assert.False(see.InternalCompoundFromSeq(see.SeqFromCompound(aFaces, false)).TShape()!.IsFrozen);
     }
@@ -86,8 +88,8 @@ public class ShapeExtendHealingTests
         Assert.Equal(1, aSurf.LocateUParameter(5));
         Assert.Equal(2, aSurf.LocateUParameter(15));
         Assert.Equal(2, aSurf.LocateUParameter(100)); // the last outside the range
-        Assert.False(aSurf.IsUClosed());
-        Assert.False(aSurf.IsUPeriodic());
+        Assert.False(aSurf.IsUClosed);
+        Assert.False(aSurf.IsUPeriodic);
         Assert.Equal(Continuity.C0, aSurf.Continuity());
 
         Point3D aP = aSurf.Value(new Point2D(15, 2));
@@ -150,14 +152,14 @@ public class ShapeExtendHealingTests
     [Fact]
     public void CompositeSurface_FrozenPatches_AndTransform()
     {
-        NCollection_HArray2<Geom_Surface> aGrid = Grid();
+        NCollection_HArray2<Surface> aGrid = Grid();
         var aSurf = new ShapeExtend_CompositeSurface(aGrid);
-        Geom_Surface aPatch = aSurf.Patch(1, 1);
+        Surface aPatch = aSurf.Patch(1, 1);
         Assert.True(aPatch.IsFrozen);
         Assert.Same(aPatch, aGrid.Value(1, 1)); // shared, not copied
 
         // the caller's array is not the surface's
-        aGrid.SetValue(1, 1, new Geom_Plane(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)));
+        aGrid.SetValue(1, 1, new PlaneSurface(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)));
         Assert.Same(aPatch, aSurf.Patch(1, 1));
 
         var aT = new Transform3D();
@@ -175,29 +177,29 @@ public class ShapeExtendHealingTests
     public void CompositeSurface_ClosedInU()
     {
         // two half-cylinders: the grid closes in U
-        var aCyl = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2);
-        var aGrid = new NCollection_HArray2<Geom_Surface>(1, 2, 1, 1);
-        aGrid.SetValue(1, 1, new Geom_RectangularTrimmedSurface(aCyl, 0, M_PI, 0, 1));
-        aGrid.SetValue(2, 1, new Geom_RectangularTrimmedSurface(aCyl, M_PI, 2 * M_PI, 0, 1));
+        var aCyl = new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2);
+        var aGrid = new NCollection_HArray2<Surface>(1, 2, 1, 1);
+        aGrid.SetValue(1, 1, new TrimmedSurface(aCyl, 0, M_PI, 0, 1));
+        aGrid.SetValue(2, 1, new TrimmedSurface(aCyl, M_PI, 2 * M_PI, 0, 1));
         var aSurf = new ShapeExtend_CompositeSurface();
         Assert.True(aSurf.Init(aGrid));
-        Assert.True(aSurf.IsUClosed());
-        Assert.False(aSurf.IsVClosed());
+        Assert.True(aSurf.IsUClosed);
+        Assert.False(aSurf.IsVClosed);
     }
 
     [Fact]
     public void MsgRegistrator_CollectsMessagesPerObject()
     {
-        TopoDS_Shape aBox = Box();
-        TopoDS_Shape aFace = new TopExp_Explorer(aBox, TopAbs_FACE).Current();
+        Shape aBox = Box();
+        Shape aFace = new Explorer(aBox, ShapeType.Face).Current();
         var aReg = new ShapeExtend_MsgRegistrator();
         aReg.Send(aFace, new Msg("first"), Gravity.Warning);
         aReg.Send(aFace, new Msg("second"), Gravity.Info);
-        aReg.Send(new TopoDS_Shape(), new Msg("ignored"), Gravity.Info);
+        aReg.Send(new Shape(), new Msg("ignored"), Gravity.Info);
         Assert.Equal(1, aReg.MapShape().Extent());
         Assert.Equal(2, aReg.MapShape().Find(aFace).Extent());
 
-        var aSurf = new Geom_Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
+        var aSurf = new PlaneSurface(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         aReg.Send(aSurf, new Msg("geom"), Gravity.Fail);
         aReg.Send(new Msg("no object"), Gravity.Fail); // a null transient: ignored
         Assert.Equal(1, aReg.MapTransient().Extent());

@@ -21,7 +21,7 @@ public class HelixGeom_BuilderHelixCoilTests
         Assert.Equal(0, aBuilder.ErrorStatus());
         var aCurves = aBuilder.Curves();
         Assert.Single(aCurves);
-        Geom_Curve aCurve = aCurves[0];
+        Curve3D aCurve = aCurves[0];
         Assert.NotNull(aCurve);
         // Test curve endpoints
         aCurve.D0(aCurve.FirstParameter(), out Point3D aP1);
@@ -80,14 +80,14 @@ public class HelixGeom_BuilderHelixCoilTests
         Assert.True(aBuilder.ToleranceReached() <= myTolerance * 10); // Allow some tolerance margin
         var aCurves = aBuilder.Curves();
         Assert.Single(aCurves);
-        Geom_Curve aCurve = aCurves[0];
+        Curve3D aCurve = aCurves[0];
         Assert.NotNull(aCurve);
         // Verify that the curve is a B-spline
-        Geom_BSplineCurve? aBSpline = aCurve as Geom_BSplineCurve;
+        BSplineCurve3D? aBSpline = aCurve as BSplineCurve3D;
         Assert.NotNull(aBSpline);
         // Check B-spline properties
         Assert.True(aBSpline.Degree() <= 8);
-        Assert.True(aBSpline.NbPoles() > 0);
+        Assert.True(aBSpline.PoleCount > 0);
     }
 }
 

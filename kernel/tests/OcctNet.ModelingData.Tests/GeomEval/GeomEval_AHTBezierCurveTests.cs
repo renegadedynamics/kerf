@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -14,7 +15,7 @@ public class GeomEval_AHTBezierCurveTest
 
     // Helper to create a curve with basis {1, t, sinh(alpha*t), cosh(alpha*t), sin(beta*t),
     // cos(beta*t)} algDegree=1, alpha=1.0, beta=1.0 => basisDim = 2 + 2 + 2 = 6 poles needed
-    private static GeomEval_AHTBezierCurve createFullBasisCurve()
+    private static AhtBezierCurve createFullBasisCurve()
     {
         NCollection_Array1<Point3D> aPoles = new(1, 6);
         aPoles.SetValue(1, new Point3D(0.0, 0.0, 0.0));
@@ -23,57 +24,57 @@ public class GeomEval_AHTBezierCurveTest
         aPoles.SetValue(4, new Point3D(0.0, 1.0, 0.0));
         aPoles.SetValue(5, new Point3D(0.0, 1.0, 1.0));
         aPoles.SetValue(6, new Point3D(1.0, 0.0, 1.0));
-        return new GeomEval_AHTBezierCurve(aPoles, 1, 1.0, 1.0);
+        return new AhtBezierCurve(aPoles, 1, 1.0, 1.0);
     }
 
     // Helper to create a pure trigonometric AHT curve: basis {1, sin(t), cos(t)} => 3 poles
     // C(t) = P_0 + P_1*sin(t) + P_2*cos(t) = (cos(t), sin(t), 0), t in [0, 1].
-    private static GeomEval_AHTBezierCurve createTrigCircleArc()
+    private static AhtBezierCurve createTrigCircleArc()
     {
         NCollection_Array1<Point3D> aPoles = new(1, 3);
         aPoles.SetValue(1, new Point3D(0.0, 0.0, 0.0));
         aPoles.SetValue(2, new Point3D(0.0, 1.0, 0.0));
         aPoles.SetValue(3, new Point3D(1.0, 0.0, 0.0));
-        return new GeomEval_AHTBezierCurve(aPoles, 0, 0.0, 1.0);
+        return new AhtBezierCurve(aPoles, 0, 0.0, 1.0);
     }
 
     // Helper to create a pure trigonometric AHT ellipse arc: basis {1, sin(t), cos(t)} => 3 poles
     // C(t) = (3*cos(t), 2*sin(t), 0), t in [0, 1].
-    private static GeomEval_AHTBezierCurve createTrigEllipseArc()
+    private static AhtBezierCurve createTrigEllipseArc()
     {
         NCollection_Array1<Point3D> aPoles = new(1, 3);
         aPoles.SetValue(1, new Point3D(0.0, 0.0, 0.0));
         aPoles.SetValue(2, new Point3D(0.0, 2.0, 0.0));
         aPoles.SetValue(3, new Point3D(3.0, 0.0, 0.0));
-        return new GeomEval_AHTBezierCurve(aPoles, 0, 0.0, 1.0);
+        return new AhtBezierCurve(aPoles, 0, 0.0, 1.0);
     }
 
     // Helper to create a pure polynomial curve: basis {1, t, t^2} => 3 poles
-    private static GeomEval_AHTBezierCurve createPolynomialCurve()
+    private static AhtBezierCurve createPolynomialCurve()
     {
         NCollection_Array1<Point3D> aPoles = new(1, 3);
         aPoles.SetValue(1, new Point3D(0.0, 0.0, 0.0));
         aPoles.SetValue(2, new Point3D(1.0, 1.0, 0.0));
         aPoles.SetValue(3, new Point3D(2.0, 0.0, 0.0));
-        return new GeomEval_AHTBezierCurve(aPoles, 2, 0.0, 0.0);
+        return new AhtBezierCurve(aPoles, 2, 0.0, 0.0);
     }
 
     [Fact]
     public void Construction_FullBasis()
     {
-        GeomEval_AHTBezierCurve aCurve = createFullBasisCurve();
-        Assert.Equal(6, aCurve.NbPoles());
+        AhtBezierCurve aCurve = createFullBasisCurve();
+        Assert.Equal(6, aCurve.PoleCount);
         Assert.Equal(1, aCurve.AlgDegree());
         Assert.Equal(1.0, aCurve.Alpha(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(1.0, aCurve.Beta(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.False(aCurve.IsRational());
+        Assert.False(aCurve.IsRational);
     }
 
     [Fact]
     public void Construction_Polynomial()
     {
-        GeomEval_AHTBezierCurve aCurve = createPolynomialCurve();
-        Assert.Equal(3, aCurve.NbPoles());
+        AhtBezierCurve aCurve = createPolynomialCurve();
+        Assert.Equal(3, aCurve.PoleCount);
         Assert.Equal(2, aCurve.AlgDegree());
         Assert.Equal(0.0, aCurve.Alpha(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aCurve.Beta(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -82,7 +83,7 @@ public class GeomEval_AHTBezierCurveTest
     [Fact]
     public void ParameterRange()
     {
-        GeomEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve aCurve = createFullBasisCurve();
         Assert.Equal(0.0, aCurve.FirstParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(1.0, aCurve.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -90,7 +91,7 @@ public class GeomEval_AHTBezierCurveTest
     [Fact]
     public void EvalD0_Endpoints()
     {
-        GeomEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve aCurve = createFullBasisCurve();
 
         Point3D aStart = aCurve.EvalD0(aCurve.FirstParameter());
         Point3D aEnd = aCurve.EvalD0(aCurve.LastParameter());
@@ -102,10 +103,10 @@ public class GeomEval_AHTBezierCurveTest
     [Fact]
     public void EvalD1_ConsistentWithD0()
     {
-        GeomEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve aCurve = createFullBasisCurve();
         double aU = 0.4;
 
-        Geom_Curve.ResD1 aD1 = aCurve.EvalD1(aU);
+        Curve3D.ResD1 aD1 = aCurve.EvalD1(aU);
         Point3D aP1 = aCurve.EvalD0(aU + global::Kerf.Engine.Foundation.Precision.Confusion());
         Point3D aP2 = aCurve.EvalD0(aU - global::Kerf.Engine.Foundation.Precision.Confusion());
 
@@ -119,14 +120,14 @@ public class GeomEval_AHTBezierCurveTest
     [Fact]
     public void Periodicity()
     {
-        GeomEval_AHTBezierCurve aCurve = createFullBasisCurve();
-        Assert.False(aCurve.IsPeriodic());
+        AhtBezierCurve aCurve = createFullBasisCurve();
+        Assert.False(aCurve.IsPeriodic);
     }
 
     [Fact]
     public void Reverse_NotImplemented()
     {
-        GeomEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve aCurve = createFullBasisCurve();
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Reverse());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.ReversedParameter(0.5));
     }
@@ -142,14 +143,14 @@ public class GeomEval_AHTBezierCurveTest
         aWeights.SetValue(1, 1.0);
         aWeights.SetValue(2, 2.0);
         aWeights.SetValue(3, 1.0);
-        GeomEval_AHTBezierCurve aCurve = new(aPoles, aWeights, 2, 0.0, 0.0);
-        Assert.True(aCurve.IsRational());
+        AhtBezierCurve aCurve = new(aPoles, aWeights, 2, 0.0, 0.0);
+        Assert.True(aCurve.IsRational);
     }
 
     [Fact]
     public void Transform_NotImplemented()
     {
-        GeomEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve aCurve = createFullBasisCurve();
         Transform3D aTrsf = new();
         aTrsf.SetTranslation(new Vector3D(1.0, 2.0, 3.0));
 
@@ -160,24 +161,24 @@ public class GeomEval_AHTBezierCurveTest
     [Fact]
     public void Copy_Independent()
     {
-        GeomEval_AHTBezierCurve aCurve = createFullBasisCurve();
-        Geom_Geometry aCopy = aCurve.Copy();
+        AhtBezierCurve aCurve = createFullBasisCurve();
+        Geometry3D aCopy = aCurve.Copy();
         Assert.NotNull(aCopy);
-        GeomEval_AHTBezierCurve? aCopyCurve = aCopy as GeomEval_AHTBezierCurve;
+        AhtBezierCurve? aCopyCurve = aCopy as AhtBezierCurve;
         Assert.NotNull(aCopyCurve);
-        Assert.Equal(6, aCopyCurve.NbPoles());
+        Assert.Equal(6, aCopyCurve.PoleCount);
         Assert.Equal(1, aCopyCurve.AlgDegree());
     }
 
     [Fact]
     public void EvalD2_ConsistentWithD1()
     {
-        GeomEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve aCurve = createFullBasisCurve();
         double aU = 0.3;
 
-        Geom_Curve.ResD2 aD2 = aCurve.EvalD2(aU);
-        Geom_Curve.ResD1 aD1Plus = aCurve.EvalD1(aU + global::Kerf.Engine.Foundation.Precision.Confusion());
-        Geom_Curve.ResD1 aD1Minus = aCurve.EvalD1(aU - global::Kerf.Engine.Foundation.Precision.Confusion());
+        Curve3D.ResD2 aD2 = aCurve.EvalD2(aU);
+        Curve3D.ResD1 aD1Plus = aCurve.EvalD1(aU + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Curve3D.ResD1 aD1Minus = aCurve.EvalD1(aU - global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Vector3D aFD = new((aD1Plus.D1.XYZ() - aD1Minus.D1.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
@@ -189,12 +190,12 @@ public class GeomEval_AHTBezierCurveTest
     [Fact]
     public void EvalD3_ConsistentWithD2()
     {
-        GeomEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve aCurve = createFullBasisCurve();
         double aU = 0.4;
 
-        Geom_Curve.ResD3 aD3 = aCurve.EvalD3(aU);
-        Geom_Curve.ResD2 aD2Plus = aCurve.EvalD2(aU + global::Kerf.Engine.Foundation.Precision.Confusion());
-        Geom_Curve.ResD2 aD2Minus = aCurve.EvalD2(aU - global::Kerf.Engine.Foundation.Precision.Confusion());
+        Curve3D.ResD3 aD3 = aCurve.EvalD3(aU);
+        Curve3D.ResD2 aD2Plus = aCurve.EvalD2(aU + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Curve3D.ResD2 aD2Minus = aCurve.EvalD2(aU - global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Vector3D aFD = new((aD2Plus.D2.XYZ() - aD2Minus.D2.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
@@ -206,10 +207,10 @@ public class GeomEval_AHTBezierCurveTest
     [Fact]
     public void EvalDN_ConsistentWithD1()
     {
-        GeomEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve aCurve = createFullBasisCurve();
         double aU = 0.5;
 
-        Geom_Curve.ResD1 aD1 = aCurve.EvalD1(aU);
+        Curve3D.ResD1 aD1 = aCurve.EvalD1(aU);
         Vector3D aDN = aCurve.EvalDN(aU, 1);
 
         Assert.Equal(aDN.X(), aD1.D1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -228,7 +229,7 @@ public class GeomEval_AHTBezierCurveTest
         aPoles.SetValue(1, aP0);
         aPoles.SetValue(2, aP1);
         aPoles.SetValue(3, aP2);
-        GeomEval_AHTBezierCurve aCurve = new(aPoles, 2, 0.0, 0.0);
+        AhtBezierCurve aCurve = new(aPoles, 2, 0.0, 0.0);
 
         // P(0) = P0
         Point3D aVal0 = aCurve.EvalD0(0.0);
@@ -252,7 +253,7 @@ public class GeomEval_AHTBezierCurveTest
     [Fact]
     public void EvalD0_MatchesCircle()
     {
-        GeomEval_AHTBezierCurve aAHT = createTrigCircleArc();
+        AhtBezierCurve aAHT = createTrigCircleArc();
         // Geom_Circle (unit 1A) evaluates through ElCLib; the circle is used directly.
         Circle3D aCircle = new(new Frame3D(), 1.0);
 
@@ -268,15 +269,15 @@ public class GeomEval_AHTBezierCurveTest
     [Fact]
     public void EvalD3_MatchesCircle()
     {
-        GeomEval_AHTBezierCurve aAHT = createTrigCircleArc();
+        AhtBezierCurve aAHT = createTrigCircleArc();
         // Geom_Circle (unit 1A) evaluates through ElCLib; the circle is used directly.
         Circle3D aCircle = new(new Frame3D(), 1.0);
 
         double[] aParams = [0.1, 0.25, 0.5, 0.75, 0.9];
         foreach (double aU in aParams)
         {
-            Geom_Curve.ResD3 aDT = aAHT.EvalD3(aU);
-            Geom_Curve.ResD3 aDC;
+            Curve3D.ResD3 aDT = aAHT.EvalD3(aU);
+            Curve3D.ResD3 aDC;
             global::Kerf.Engine.Geometry.ElCLib.D3(aU, aCircle, out aDC.Point, out aDC.D1, out aDC.D2, out aDC.D3);
 
             Assert.Equal(0.0, aDT.Point.Distance(aDC.Point), global::Kerf.Engine.Foundation.Precision.Angular());
@@ -295,15 +296,15 @@ public class GeomEval_AHTBezierCurveTest
     [Fact]
     public void EvalD2_MatchesEllipse()
     {
-        GeomEval_AHTBezierCurve aAHT = createTrigEllipseArc();
+        AhtBezierCurve aAHT = createTrigEllipseArc();
         // Geom_Ellipse (unit 1A) evaluates through ElCLib; the ellipse is used directly.
         Ellipse3D anEllipse = new(new Frame3D(), 3.0, 2.0);
 
         double[] aParams = [0.1, 0.25, 0.5, 0.75, 0.9];
         foreach (double aU in aParams)
         {
-            Geom_Curve.ResD2 aDT = aAHT.EvalD2(aU);
-            Geom_Curve.ResD2 aDC;
+            Curve3D.ResD2 aDT = aAHT.EvalD2(aU);
+            Curve3D.ResD2 aDC;
             global::Kerf.Engine.Geometry.ElCLib.D2(aU, anEllipse, out aDC.Point, out aDC.D1, out aDC.D2);
 
             Assert.Equal(0.0, aDT.Point.Distance(aDC.Point), global::Kerf.Engine.Foundation.Precision.Angular());
@@ -337,8 +338,8 @@ public class GeomEval_AHTBezierCurveTest
             aPoles.SetValue(i, new Point3D(Math.Cos(i * 1.3), 0.5 * i, Math.Sin(0.7 * i) - 0.2 * i));
             aWeights.SetValue(i, i == 1 ? 4.0 : 0.5 + 0.1 * i);
         }
-        GeomEval_AHTBezierCurve aCurve = new(aPoles, theAlgDegree, theAlpha, theBeta);
-        GeomEval_AHTBezierCurve aRational = new(aPoles, aWeights, theAlgDegree, theAlpha, theBeta);
+        AhtBezierCurve aCurve = new(aPoles, theAlgDegree, theAlpha, theBeta);
+        AhtBezierCurve aRational = new(aPoles, aWeights, theAlgDegree, theAlpha, theBeta);
         for (double aU = 0.05; aU < 1.0; aU += 0.15)
         {
             EvalTestUtils.CheckCurveDerivatives(aCurve, aU, 7);

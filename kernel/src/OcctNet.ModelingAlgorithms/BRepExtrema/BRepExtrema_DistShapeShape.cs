@@ -3,14 +3,18 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepExtrema_SupportType;
-using static Occt.Extrema_ExtAlgo;
-using static Occt.Extrema_ExtFlag;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Engine.Extrema.ExtAlgo;
+using static Kerf.Engine.Extrema.ExtFlag;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -40,19 +44,19 @@ public sealed class BRepExtrema_DistShapeShape
     private readonly NCollection_Sequence<BRepExtrema_SolutionElem> mySolutionsShape2 = new();
     private bool myInnerSol;
     private double myEps;
-    private TopoDS_Shape myShape1;
-    private TopoDS_Shape myShape2;
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myMapV1 = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myMapV2 = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myMapE1 = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myMapE2 = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myMapF1 = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myMapF2 = new(TopTools_ShapeMapHasher.Instance);
+    private Shape myShape1;
+    private Shape myShape2;
+    private readonly NCollection_IndexedMap<Shape> myMapV1 = new(ShapeHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myMapV2 = new(ShapeHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myMapE1 = new(ShapeHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myMapE2 = new(ShapeHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myMapF1 = new(ShapeHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myMapF2 = new(ShapeHasher.Instance);
     private bool myIsInitS1;
     private bool myIsInitS2;
 #pragma warning disable CS0414 // OCCT keeps the obsolete flag and algorithm without reading them
-    private Extrema_ExtFlag myFlag;
-    private Extrema_ExtAlgo myAlgo;
+    private ExtFlag myFlag;
+    private ExtAlgo myAlgo;
 #pragma warning restore CS0414
     private readonly NCollection_Array1<Box> myBV1 = new();
     private readonly NCollection_Array1<Box> myBV2 = new();
@@ -67,20 +71,20 @@ public sealed class BRepExtrema_DistShapeShape
 
     //=================================================================================================
 
-    private static void Decomposition(in TopoDS_Shape S,
-                                      NCollection_IndexedMap<TopoDS_Shape> MapV,
-                                      NCollection_IndexedMap<TopoDS_Shape> MapE,
-                                      NCollection_IndexedMap<TopoDS_Shape> MapF)
+    private static void Decomposition(in Shape S,
+                                      NCollection_IndexedMap<Shape> MapV,
+                                      NCollection_IndexedMap<Shape> MapE,
+                                      NCollection_IndexedMap<Shape> MapF)
     {
         MapV.Clear();
         MapE.Clear();
         MapF.Clear();
-        TopExp.MapShapes(S, TopAbs_VERTEX, MapV);
-        TopExp.MapShapes(S, TopAbs_EDGE, MapE);
-        TopExp.MapShapes(S, TopAbs_FACE, MapF);
+        Exploration.MapShapes(S, ShapeType.Vertex, MapV);
+        Exploration.MapShapes(S, ShapeType.Edge, MapE);
+        Exploration.MapShapes(S, ShapeType.Face, MapF);
     }
 
-    private static void BoxCalculation(NCollection_IndexedMap<TopoDS_Shape> Map, NCollection_Array1<Box> SBox)
+    private static void BoxCalculation(NCollection_IndexedMap<Shape> Map, NCollection_Array1<Box> SBox)
     {
         for (int i = 1; i <= Map.Extent(); i++)
         {
@@ -90,8 +94,8 @@ public sealed class BRepExtrema_DistShapeShape
         }
     }
 
-    private static double DistanceInitiale(in TopoDS_Vertex V1, in TopoDS_Vertex V2)
-        => BRep_Tool.Pnt(V1).Distance(BRep_Tool.Pnt(V2));
+    private static double DistanceInitiale(in Vertex V1, in Vertex V2)
+        => Tool.Pnt(V1).Distance(Tool.Pnt(V2));
 
     /// <summary>A pair of sub-shapes to check, with the distance between their boxes.</summary>
     private readonly record struct BRepExtrema_CheckPair(int Index1, int Index2, double Distance);
@@ -122,8 +126,8 @@ public sealed class BRepExtrema_DistShapeShape
     {
         public readonly NCollection_Array1<IndexBand> BandArray;
         public readonly ThreadSolution Solution;
-        public NCollection_IndexedMap<TopoDS_Shape>? Map1;
-        public NCollection_IndexedMap<TopoDS_Shape>? Map2;
+        public NCollection_IndexedMap<Shape>? Map1;
+        public NCollection_IndexedMap<Shape>? Map2;
         public readonly ProgressScope Scope;
         public readonly NCollection_Array1<ProgressRange> Ranges;
         public double Eps;
@@ -160,12 +164,12 @@ public sealed class BRepExtrema_DistShapeShape
                 }
                 aScope.Next();
 
-                TopoDS_Vertex aVertex1 = TopoDS.Vertex(Map1!.FindKey(anIdx1));
-                Point3D aPoint1 = BRep_Tool.Pnt(aVertex1);
+                Vertex aVertex1 = ShapeCasts.Vertex(Map1!.FindKey(anIdx1));
+                Point3D aPoint1 = Tool.Pnt(aVertex1);
                 for (int anIdx2 = 1; anIdx2 <= aCount2; ++anIdx2)
                 {
-                    TopoDS_Vertex aVertex2 = TopoDS.Vertex(Map2.FindKey(anIdx2));
-                    Point3D aPoint2 = BRep_Tool.Pnt(aVertex2);
+                    Vertex aVertex2 = ShapeCasts.Vertex(Map2.FindKey(anIdx2));
+                    Point3D aPoint2 = Tool.Pnt(aVertex2);
                     double aDist = aPoint1.Distance(aPoint2);
                     {
                         if (aDist < Solution.Dist[theIndex] - Eps)
@@ -200,8 +204,8 @@ public sealed class BRepExtrema_DistShapeShape
 
     //=================================================================================================
 
-    private bool DistanceVertVert(NCollection_IndexedMap<TopoDS_Shape> theMap1,
-                                  NCollection_IndexedMap<TopoDS_Shape> theMap2,
+    private bool DistanceVertVert(NCollection_IndexedMap<Shape> theMap1,
+                                  NCollection_IndexedMap<Shape> theMap2,
                                   ProgressRange theRange)
     {
         int aCount1 = theMap1.Extent();
@@ -268,8 +272,8 @@ public sealed class BRepExtrema_DistShapeShape
     {
         public readonly NCollection_Array1<NCollection_Array1<BRepExtrema_CheckPair>> ArrayOfArrays;
         public readonly ThreadSolution Solution;
-        public NCollection_IndexedMap<TopoDS_Shape>? Map1;
-        public NCollection_IndexedMap<TopoDS_Shape>? Map2;
+        public NCollection_IndexedMap<Shape>? Map1;
+        public NCollection_IndexedMap<Shape>? Map2;
         public NCollection_Array1<Box>? LBox1;
         public NCollection_Array1<Box>? LBox2;
         public readonly ProgressScope Scope;
@@ -310,8 +314,8 @@ public sealed class BRepExtrema_DistShapeShape
                 }
                 Box aBox1 = LBox1!.Value(aPair.Index1);
                 Box aBox2 = LBox2!.Value(aPair.Index2);
-                TopoDS_Shape aShape1 = Map1!.FindKey(aPair.Index1);
-                TopoDS_Shape aShape2 = Map2!.FindKey(aPair.Index2);
+                Shape aShape1 = Map1!.FindKey(aPair.Index1);
+                Shape aShape2 = Map2!.FindKey(aPair.Index2);
                 var aDistTool = new BRepExtrema_DistanceSS(aShape1, aShape2, aBox1, aBox2, Solution.Dist[theIndex], Eps);
                 double aDist = aDistTool.DistValue();
                 if (aDistTool.IsDone())
@@ -423,8 +427,8 @@ public sealed class BRepExtrema_DistShapeShape
 
     //=================================================================================================
 
-    private bool DistanceMapMap(NCollection_IndexedMap<TopoDS_Shape> theMap1,
-                                NCollection_IndexedMap<TopoDS_Shape> theMap2,
+    private bool DistanceMapMap(NCollection_IndexedMap<Shape> theMap1,
+                                NCollection_IndexedMap<Shape> theMap2,
                                 NCollection_Array1<Box> theLBox1,
                                 NCollection_Array1<Box> theLBox2,
                                 ProgressRange theRange)
@@ -584,8 +588,8 @@ public sealed class BRepExtrema_DistShapeShape
         myEps = global::Kerf.Engine.Foundation.Precision.Confusion();
         myIsInitS1 = false;
         myIsInitS2 = false;
-        myFlag = Extrema_ExtFlag_MINMAX;
-        myAlgo = Extrema_ExtAlgo_Grad;
+        myFlag = ExtFlag_MINMAX;
+        myAlgo = ExtAlgo_Grad;
         myIsMultiThread = false;
     }
 
@@ -594,10 +598,10 @@ public sealed class BRepExtrema_DistShapeShape
     /// (Precision::Confusion()) in single-threaded mode. <paramref name="F"/> and <paramref name="A"/> are obsolete
     /// and unused.
     /// </summary>
-    public BRepExtrema_DistShapeShape(in TopoDS_Shape Shape1,
-                                      in TopoDS_Shape Shape2,
-                                      Extrema_ExtFlag F = Extrema_ExtFlag_MINMAX,
-                                      Extrema_ExtAlgo A = Extrema_ExtAlgo_Grad,
+    public BRepExtrema_DistShapeShape(in Shape Shape1,
+                                      in Shape Shape2,
+                                      ExtFlag F = ExtFlag_MINMAX,
+                                      ExtAlgo A = ExtAlgo_Grad,
                                       ProgressRange theRange = default)
     {
         myDistRef = 0.0;
@@ -619,11 +623,11 @@ public sealed class BRepExtrema_DistShapeShape
     /// <paramref name="theDeflection"/> of the minimum are kept. <paramref name="F"/> and <paramref name="A"/> are
     /// obsolete and unused.
     /// </summary>
-    public BRepExtrema_DistShapeShape(in TopoDS_Shape Shape1,
-                                      in TopoDS_Shape Shape2,
+    public BRepExtrema_DistShapeShape(in Shape Shape1,
+                                      in Shape Shape2,
                                       double theDeflection,
-                                      Extrema_ExtFlag F = Extrema_ExtFlag_MINMAX,
-                                      Extrema_ExtAlgo A = Extrema_ExtAlgo_Grad,
+                                      ExtFlag F = ExtFlag_MINMAX,
+                                      ExtAlgo A = ExtAlgo_Grad,
                                       ProgressRange theRange = default)
     {
         myDistRef = 0.0;
@@ -644,7 +648,7 @@ public sealed class BRepExtrema_DistShapeShape
     public void SetDeflection(double theDeflection) => myEps = theDeflection;
 
     /// <summary>Loads the first shape.</summary>
-    public void LoadS1(in TopoDS_Shape Shape1)
+    public void LoadS1(in Shape Shape1)
     {
         myShape1 = Shape1;
         myIsInitS1 = false;
@@ -652,7 +656,7 @@ public sealed class BRepExtrema_DistShapeShape
     }
 
     /// <summary>Loads the second shape.</summary>
-    public void LoadS2(in TopoDS_Shape Shape2)
+    public void LoadS2(in Shape Shape2)
     {
         myShape2 = Shape2;
         myIsInitS2 = false;
@@ -663,10 +667,10 @@ public sealed class BRepExtrema_DistShapeShape
 
     private sealed class TreatmentFunctor
     {
-        public readonly NCollection_Array1<NCollection_Array1<TopoDS_Shape>> ArrayOfArrays;
+        public readonly NCollection_Array1<NCollection_Array1<Shape>> ArrayOfArrays;
         public NCollection_Sequence<BRepExtrema_SolutionElem>? SolutionsShape1;
         public NCollection_Sequence<BRepExtrema_SolutionElem>? SolutionsShape2;
-        public TopoDS_Shape Shape;
+        public Shape Shape;
         public readonly ProgressScope Scope;
         public readonly NCollection_Array1<ProgressRange> Ranges;
         public double DistRef;
@@ -674,7 +678,7 @@ public sealed class BRepExtrema_DistShapeShape
         public volatile bool IsDone;
         public Lock? Mutex;
 
-        public TreatmentFunctor(NCollection_Array1<NCollection_Array1<TopoDS_Shape>> theArrayOfArrays,
+        public TreatmentFunctor(NCollection_Array1<NCollection_Array1<Shape>> theArrayOfArrays,
                                 ProgressRange theRange)
         {
             ArrayOfArrays = theArrayOfArrays;
@@ -686,7 +690,7 @@ public sealed class BRepExtrema_DistShapeShape
             }
         }
 
-        private void Record(in Point3D aPnt, in TopoDS_Vertex aVertex)
+        private void Record(in Point3D aPnt, in Vertex aVertex)
         {
             InnerSol = true;
             DistRef = 0.0;
@@ -714,10 +718,10 @@ public sealed class BRepExtrema_DistShapeShape
                     break;
                 }
 
-                TopoDS_Vertex aVertex = TopoDS.Vertex(ArrayOfArrays.Value(theIndex).Value(i));
-                Point3D aPnt = BRep_Tool.Pnt(aVertex);
+                Vertex aVertex = ShapeCasts.Vertex(ArrayOfArrays.Value(theIndex).Value(i));
+                Point3D aPnt = Tool.Pnt(aVertex);
                 aClassifier.Perform(aPnt, aTolerance);
-                if (aClassifier.State() == TopAbs_IN)
+                if (aClassifier.State() == In)
                 {
                     if (Mutex is not null)
                     {
@@ -738,8 +742,8 @@ public sealed class BRepExtrema_DistShapeShape
 
     //=================================================================================================
 
-    private bool SolidTreatment(in TopoDS_Shape theShape,
-                                NCollection_IndexedMap<TopoDS_Shape> theVertexMap,
+    private bool SolidTreatment(in Shape theShape,
+                                NCollection_IndexedMap<Shape> theVertexMap,
                                 ProgressRange theRange)
     {
         int aMapSize = theVertexMap.Extent();
@@ -753,10 +757,10 @@ public sealed class BRepExtrema_DistShapeShape
             aNbTasks = (int)Math.Ceiling((double)aMapSize / aTaskSize);
         }
 
-        var anArrayOfArray = new NCollection_Array1<NCollection_Array1<TopoDS_Shape>>(0, aNbTasks - 1);
+        var anArrayOfArray = new NCollection_Array1<NCollection_Array1<Shape>>(0, aNbTasks - 1);
         for (int anI = 0; anI < aNbTasks; ++anI)
         {
-            anArrayOfArray[anI] = new NCollection_Array1<TopoDS_Shape>();
+            anArrayOfArray[anI] = new NCollection_Array1<Shape>();
         }
         for (int anI = 1; anI <= aMapSize; ++anI)
         {
@@ -813,14 +817,14 @@ public sealed class BRepExtrema_DistShapeShape
         mySolutionsShape1.Clear();
         mySolutionsShape2.Clear();
 
-        if (myShape1.IsNull() || myShape2.IsNull())
+        if (myShape1.IsNull || myShape2.IsNull)
         {
             return false;
         }
 
         // Treatment of solids
-        bool anIsSolid1 = (myShape1.ShapeType() == TopAbs_SOLID) || (myShape1.ShapeType() == TopAbs_COMPSOLID);
-        bool anIsSolid2 = (myShape2.ShapeType() == TopAbs_SOLID) || (myShape2.ShapeType() == TopAbs_COMPSOLID);
+        bool anIsSolid1 = (myShape1.ShapeType() == ShapeType.Solid) || (myShape1.ShapeType() == ShapeType.CompSolid);
+        bool anIsSolid2 = (myShape2.ShapeType() == ShapeType.Solid) || (myShape2.ShapeType() == ShapeType.CompSolid);
         int aRootStepsNum = 9; // By num of DistanceMapMap calls
         aRootStepsNum = anIsSolid1 ? aRootStepsNum + 1 : aRootStepsNum;
         aRootStepsNum = anIsSolid2 ? aRootStepsNum + 1 : aRootStepsNum;
@@ -890,8 +894,8 @@ public sealed class BRepExtrema_DistShapeShape
 
             if (myMapV1.Extent() != 0 && myMapV2.Extent() != 0)
             {
-                TopoDS_Vertex V1 = TopoDS.Vertex(myMapV1[1]);
-                TopoDS_Vertex V2 = TopoDS.Vertex(myMapV2[1]);
+                Vertex V1 = ShapeCasts.Vertex(myMapV1[1]);
+                Vertex V2 = ShapeCasts.Vertex(myMapV2[1]);
                 myDistRef = DistanceInitiale(V1, V2);
             }
             else
@@ -992,7 +996,7 @@ public sealed class BRepExtrema_DistShapeShape
     public BRepExtrema_SupportType SupportTypeShape2(int N) => mySolutionsShape2.Value(N).SupportKind();
 
     /// <summary>The support (a vertex, an edge or a face) of the <paramref name="N"/>th solution on the first shape.</summary>
-    public TopoDS_Shape SupportOnShape1(int N)
+    public Shape SupportOnShape1(int N)
     {
         if (!myIsDone)
         {
@@ -1009,11 +1013,11 @@ public sealed class BRepExtrema_DistShapeShape
             case BRepExtrema_IsInFace:
                 return sol.Face();
         }
-        return new TopoDS_Shape();
+        return new Shape();
     }
 
     /// <summary>The support (a vertex, an edge or a face) of the <paramref name="N"/>th solution on the second shape.</summary>
-    public TopoDS_Shape SupportOnShape2(int N)
+    public Shape SupportOnShape2(int N)
     {
         if (!myIsDone)
         {
@@ -1030,7 +1034,7 @@ public sealed class BRepExtrema_DistShapeShape
             case BRepExtrema_IsInFace:
                 return sol.Face();
         }
-        return new TopoDS_Shape();
+        return new Shape();
     }
 
     /// <summary>The parameter of the <paramref name="N"/>th solution on an edge of the first shape.</summary>
@@ -1157,10 +1161,10 @@ public sealed class BRepExtrema_DistShapeShape
     }
 
     /// <summary>Sets an unused parameter (obsolete).</summary>
-    public void SetFlag(Extrema_ExtFlag F) => myFlag = F;
+    public void SetFlag(ExtFlag F) => myFlag = F;
 
     /// <summary>Sets an unused parameter (obsolete).</summary>
-    public void SetAlgo(Extrema_ExtAlgo A) => myAlgo = A;
+    public void SetAlgo(ExtAlgo A) => myAlgo = A;
 
     /// <summary>Computes in parallel when true (the default is false).</summary>
     public void SetMultiThread(bool theIsMultiThread) => myIsMultiThread = theIsMultiThread;

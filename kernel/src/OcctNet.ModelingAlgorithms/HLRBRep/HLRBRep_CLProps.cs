@@ -5,8 +5,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Properties;
 using Kerf.Geometry;
-using static Occt.LProp_Status;
+using static Kerf.Engine.Geometry.Properties.Status;
 
 namespace Occt;
 
@@ -17,7 +18,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// OCCT's alias <c>GeomLProp_CLPropsBase&lt;gp_Pnt2d, gp_Vec2d, gp_Dir2d, const HLRBRep_Curve*,
-/// LProp_CurveUtils::ToolAccess&lt;HLRBRep_CLPropsATool&gt;&gt;</c>, generated from <see cref="GeomLProp_CLProps2d"/>
+/// LProp_CurveUtils::ToolAccess&lt;HLRBRep_CLPropsATool&gt;&gt;</c>, generated from <see cref="CLProps2d"/>
 /// by substituting the curve (decision 1091). The tool HLRBRep_CLPropsATool only forwards to the curve's own
 /// evaluators and bounds (its <c>Continuity</c> is never read), so the port calls the curve directly. The curve's
 /// <see cref="HLRBRep_Curve.D3"/> writes nothing, as OCCT's: the third derivative keeps its previous value. A working
@@ -33,7 +34,7 @@ public class HLRBRep_CLProps
     private Point2D myPnt;
     private readonly Vector2D[] myDerivArr = new Vector2D[3];
     private double myCurvature = 0.0;
-    private LProp_Status myTangentStatus;
+    private Status myTangentStatus;
     private int mySignificantFirstDerivativeOrder = 0;
 
     /// <summary>
@@ -47,7 +48,7 @@ public class HLRBRep_CLProps
         myDerOrder = N;
         myCN = 4;
         myLinTol = Resolution;
-        myTangentStatus = LProp_Undecided;
+        myTangentStatus = Undecided;
         Standard_OutOfRange_Raise_if(N < 0 || N > 3, "GeomLProp_CLProps::GeomLProp_CLProps()");
     }
 
@@ -58,7 +59,7 @@ public class HLRBRep_CLProps
         myDerOrder = N;
         myCN = 4;
         myLinTol = Resolution;
-        myTangentStatus = LProp_Undecided;
+        myTangentStatus = Undecided;
         Standard_OutOfRange_Raise_if(N < 0 || N > 3, "GeomLProp_CLProps::GeomLProp_CLProps()");
         SetParameter(U);
     }
@@ -71,7 +72,7 @@ public class HLRBRep_CLProps
         myDerOrder = N;
         myCN = 0;
         myLinTol = Resolution;
-        myTangentStatus = LProp_Undecided;
+        myTangentStatus = Undecided;
         Standard_OutOfRange_Raise_if(N < 0 || N > 3, "GeomLProp_CLProps() - invalid input");
     }
 
@@ -81,7 +82,7 @@ public class HLRBRep_CLProps
         // LProp_CurveUtils::SetParameter
         myU = U;
         EvalDerivatives(myU, myDerOrder);
-        myTangentStatus = LProp_Undecided;
+        myTangentStatus = Undecided;
     }
 
     /// <summary>Sets the curve; the parameter must then be set again.</summary>
@@ -110,12 +111,12 @@ public class HLRBRep_CLProps
     public bool IsTangentDefined()
     {
         // LProp_CurveUtils::IsTangentDefined
-        if (myTangentStatus == LProp_Undefined)
+        if (myTangentStatus == Undefined)
         {
             return false;
         }
 
-        if (myTangentStatus >= LProp_Defined)
+        if (myTangentStatus >= Defined)
         {
             return true;
         }
@@ -139,20 +140,20 @@ public class HLRBRep_CLProps
                         aV = D3();
                         break;
                     default:
-                        myTangentStatus = LProp_Undefined;
+                        myTangentStatus = Undefined;
                         return false;
                 }
 
                 if (aV.SquareMagnitude() > aTolSq)
                 {
                     mySignificantFirstDerivativeOrder = anOrder;
-                    myTangentStatus = LProp_Defined;
+                    myTangentStatus = Defined;
                     return true;
                 }
             }
             else
             {
-                myTangentStatus = LProp_Undefined;
+                myTangentStatus = Undefined;
                 return false;
             }
         }
@@ -166,7 +167,7 @@ public class HLRBRep_CLProps
         // LProp_CurveUtils::Tangent
         if (!IsTangentDefined())
         {
-            throw new LProp_NotDefined();
+            throw new NotDefinedException();
         }
 
         ComputeTangent(out D);
@@ -183,7 +184,7 @@ public class HLRBRep_CLProps
         bool anIsDefined = IsTangentDefined();
         if (!anIsDefined)
         {
-            throw new LProp_NotDefined("CLProps::Curvature()");
+            throw new NotDefinedException("CLProps::Curvature()");
         }
 
         if (mySignificantFirstDerivativeOrder > 1)
@@ -191,7 +192,7 @@ public class HLRBRep_CLProps
             return RealLast();
         }
 
-        myCurvature = LProp_CurveUtils.ComputeCurvature(myDerivArr[0], myDerivArr[1], myLinTol * myLinTol);
+        myCurvature = CurveUtils.ComputeCurvature(myDerivArr[0], myDerivArr[1], myLinTol * myLinTol);
         return myCurvature;
     }
 
@@ -202,10 +203,10 @@ public class HLRBRep_CLProps
         double aCurvature = Curvature();
         if (aCurvature == RealLast() || Math.Abs(aCurvature) <= myLinTol)
         {
-            throw new LProp_NotDefined("CLProps::Normal(): Curvature is null or infinity");
+            throw new NotDefinedException("CLProps::Normal(): Curvature is null or infinity");
         }
 
-        LProp_CurveUtils.ComputeNormal(myDerivArr[0], myDerivArr[1], out N);
+        CurveUtils.ComputeNormal(myDerivArr[0], myDerivArr[1], out N);
     }
 
     /// <summary>The centre of curvature; throws LProp_NotDefined if the curvature is null.</summary>
@@ -214,12 +215,12 @@ public class HLRBRep_CLProps
         // LProp_CurveUtils::CentreOfCurvature
         if (Math.Abs(Curvature()) <= myLinTol)
         {
-            throw new LProp_NotDefined();
+            throw new NotDefinedException();
         }
 
         // OCCT: when Curvature() returns RealLast() (a null first derivative) it doesn't update myCurvature, so the
         // centre is computed with the curvature of an earlier call (0 if none)
-        LProp_CurveUtils.ComputeCentreOfCurvature(myPnt, myDerivArr[0], myDerivArr[1], myCurvature, out P);
+        CurveUtils.ComputeCentreOfCurvature(myPnt, myDerivArr[0], myDerivArr[1], myCurvature, out P);
     }
 
     // LProp_CurveUtils::EvalDerivatives, with OCCT's DirectAccess

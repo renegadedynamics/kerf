@@ -1,4 +1,6 @@
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Text;
@@ -14,7 +16,7 @@ namespace Build123d;
 internal static partial class Extras
 {
     /// <summary>Writes a meshed shape as STL (OCCT's <c>StlAPI_Writer</c>): binary, or ASCII with LF line ends.</summary>
-    public static bool WriteStl(TopoDS_Shape meshed, Stream stream, bool ascii, CancellationToken cancellationToken = default)
+    public static bool WriteStl(global::Kerf.Topology.Shape meshed, Stream stream, bool ascii, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(stream);
         var progress = new ProgressIndicator(cancellationToken);
@@ -29,7 +31,7 @@ internal static partial class Extras
     /// A face holding the triangulation read from STL data (OCCT's <c>RWStl::ReadFile</c>, binary or ASCII, nodes
     /// merged), its nodes scaled by <paramref name="scale"/>, within the limits (bytes, triangles).
     /// </summary>
-    public static TopoDS_Face ReadStl(Stream stream, double scale, ExchangeReadLimits limits, CancellationToken cancellationToken = default)
+    public static global::Kerf.Topology.Face ReadStl(Stream stream, double scale, ExchangeReadLimits limits, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(limits);
@@ -53,8 +55,8 @@ internal static partial class Extras
                 mesh.SetNode(i, new Point3D(p.X() * scale, p.Y() * scale, p.Z() * scale));
             }
         }
-        var face = new TopoDS_Face();
-        new BRep_Builder().MakeFace(ref face, mesh);
+        var face = new global::Kerf.Topology.Face();
+        new BrepBuilder().MakeFace(ref face, mesh);
         face.TShape()!.FreezeGraph();
         return face;
     }
@@ -226,7 +228,7 @@ internal static partial class Extras
     // would be written as one, with the last name.
     private static XdeDoc_Tree ToTree(ExchangeNode root) => new(ToInstance(root, new Products()));
 
-    private readonly record struct ProductKey(object TShape, TopAbs_Orientation Orientation, string? Name, (double, double, double, double)? Color);
+    private readonly record struct ProductKey(object TShape, Orientation Orientation, string? Name, (double, double, double, double)? Color);
 
     private sealed class Products
     {
@@ -255,7 +257,7 @@ internal static partial class Extras
             if (node.Color is { } c)
             {
                 // A colour of faces, or of curves for a shape without faces
-                bool faces = new TopExp_Explorer(origin, TopAbs_ShapeEnum.TopAbs_FACE).More();
+                bool faces = new Explorer(origin, global::Kerf.Topology.ShapeType.Face).More();
                 product = product.WithColor(faces ? XdeDoc_ColorType.XdeDoc_ColorSurf : XdeDoc_ColorType.XdeDoc_ColorCurv, Rgba(c));
             }
             products.ByKey[key] = product;

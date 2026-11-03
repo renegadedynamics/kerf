@@ -2,13 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Hashing;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
 
 public class Geom2dHash_CurveHasherTest
 {
-    private readonly Geom2dHash_CurveHasher myHasher = new();
+    private readonly CurveHasher2D myHasher = new();
 
     // ============================================================================
     // Line Tests
@@ -19,8 +20,8 @@ public class Geom2dHash_CurveHasherTest
     {
         Point2D aLoc = new(1.0, 2.0);
         Direction2D aDir = new(1.0, 0.0);
-        Geom2d_Line aLine1 = new Geom2d_Line(aLoc, aDir);
-        Geom2d_Line aLine2 = (Geom2d_Line)aLine1.Copy();
+        LineCurve2D aLine1 = new LineCurve2D(aLoc, aDir);
+        LineCurve2D aLine2 = (LineCurve2D)aLine1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aLine1), myHasher.GetHashCode(aLine2));
         Assert.True(myHasher.Equals(aLine1, aLine2));
@@ -29,8 +30,8 @@ public class Geom2dHash_CurveHasherTest
     [Fact]
     public void Line_DifferentLines_DifferentHash()
     {
-        Geom2d_Line aLine1 = new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
-        Geom2d_Line aLine2 = new Geom2d_Line(new Point2D(1.0, 0.0), new Direction2D(1.0, 0.0));
+        LineCurve2D aLine1 = new LineCurve2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
+        LineCurve2D aLine2 = new LineCurve2D(new Point2D(1.0, 0.0), new Direction2D(1.0, 0.0));
 
         Assert.NotEqual(myHasher.GetHashCode(aLine1), myHasher.GetHashCode(aLine2));
         Assert.False(myHasher.Equals(aLine1, aLine2));
@@ -44,8 +45,8 @@ public class Geom2dHash_CurveHasherTest
     public void Circle_CopiedCircles_SameHash()
     {
         Frame2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
-        Geom2d_Circle aCircle1 = new Geom2d_Circle(anAxis, 5.0);
-        Geom2d_Circle aCircle2 = (Geom2d_Circle)aCircle1.Copy();
+        CircleCurve2D aCircle1 = new CircleCurve2D(anAxis, 5.0);
+        CircleCurve2D aCircle2 = (CircleCurve2D)aCircle1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aCircle1), myHasher.GetHashCode(aCircle2));
         Assert.True(myHasher.Equals(aCircle1, aCircle2));
@@ -55,8 +56,8 @@ public class Geom2dHash_CurveHasherTest
     public void Circle_DifferentRadius_DifferentHash()
     {
         Frame2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
-        Geom2d_Circle aCircle1 = new Geom2d_Circle(anAxis, 5.0);
-        Geom2d_Circle aCircle2 = new Geom2d_Circle(anAxis, 10.0);
+        CircleCurve2D aCircle1 = new CircleCurve2D(anAxis, 5.0);
+        CircleCurve2D aCircle2 = new CircleCurve2D(anAxis, 10.0);
 
         Assert.NotEqual(myHasher.GetHashCode(aCircle1), myHasher.GetHashCode(aCircle2));
         Assert.False(myHasher.Equals(aCircle1, aCircle2));
@@ -70,8 +71,8 @@ public class Geom2dHash_CurveHasherTest
     public void Ellipse_CopiedEllipses_SameHash()
     {
         Frame2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
-        Geom2d_Ellipse anEllipse1 = new Geom2d_Ellipse(anAxis, 10.0, 5.0);
-        Geom2d_Ellipse anEllipse2 = (Geom2d_Ellipse)anEllipse1.Copy();
+        EllipseCurve2D anEllipse1 = new EllipseCurve2D(anAxis, 10.0, 5.0);
+        EllipseCurve2D anEllipse2 = (EllipseCurve2D)anEllipse1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(anEllipse1), myHasher.GetHashCode(anEllipse2));
         Assert.True(myHasher.Equals(anEllipse1, anEllipse2));
@@ -81,8 +82,8 @@ public class Geom2dHash_CurveHasherTest
     public void Ellipse_DifferentRadii_DifferentHash()
     {
         Frame2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
-        Geom2d_Ellipse anEllipse1 = new Geom2d_Ellipse(anAxis, 10.0, 5.0);
-        Geom2d_Ellipse anEllipse2 = new Geom2d_Ellipse(anAxis, 10.0, 7.0);
+        EllipseCurve2D anEllipse1 = new EllipseCurve2D(anAxis, 10.0, 5.0);
+        EllipseCurve2D anEllipse2 = new EllipseCurve2D(anAxis, 10.0, 7.0);
 
         Assert.NotEqual(myHasher.GetHashCode(anEllipse1), myHasher.GetHashCode(anEllipse2));
         Assert.False(myHasher.Equals(anEllipse1, anEllipse2));
@@ -96,8 +97,8 @@ public class Geom2dHash_CurveHasherTest
     public void Hyperbola_CopiedHyperbolas_SameHash()
     {
         Frame2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
-        Geom2d_Hyperbola aHyp1 = new Geom2d_Hyperbola(anAxis, 5.0, 3.0);
-        Geom2d_Hyperbola aHyp2 = (Geom2d_Hyperbola)aHyp1.Copy();
+        HyperbolaCurve2D aHyp1 = new HyperbolaCurve2D(anAxis, 5.0, 3.0);
+        HyperbolaCurve2D aHyp2 = (HyperbolaCurve2D)aHyp1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aHyp1), myHasher.GetHashCode(aHyp2));
         Assert.True(myHasher.Equals(aHyp1, aHyp2));
@@ -107,8 +108,8 @@ public class Geom2dHash_CurveHasherTest
     public void Hyperbola_DifferentRadii_DifferentHash()
     {
         Frame2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
-        Geom2d_Hyperbola aHyp1 = new Geom2d_Hyperbola(anAxis, 5.0, 3.0);
-        Geom2d_Hyperbola aHyp2 = new Geom2d_Hyperbola(anAxis, 5.0, 4.0);
+        HyperbolaCurve2D aHyp1 = new HyperbolaCurve2D(anAxis, 5.0, 3.0);
+        HyperbolaCurve2D aHyp2 = new HyperbolaCurve2D(anAxis, 5.0, 4.0);
 
         Assert.NotEqual(myHasher.GetHashCode(aHyp1), myHasher.GetHashCode(aHyp2));
         Assert.False(myHasher.Equals(aHyp1, aHyp2));
@@ -122,8 +123,8 @@ public class Geom2dHash_CurveHasherTest
     public void Parabola_CopiedParabolas_SameHash()
     {
         Frame2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
-        Geom2d_Parabola aPar1 = new Geom2d_Parabola(anAxis, 2.0);
-        Geom2d_Parabola aPar2 = (Geom2d_Parabola)aPar1.Copy();
+        ParabolaCurve2D aPar1 = new ParabolaCurve2D(anAxis, 2.0);
+        ParabolaCurve2D aPar2 = (ParabolaCurve2D)aPar1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aPar1), myHasher.GetHashCode(aPar2));
         Assert.True(myHasher.Equals(aPar1, aPar2));
@@ -133,8 +134,8 @@ public class Geom2dHash_CurveHasherTest
     public void Parabola_DifferentFocal_DifferentHash()
     {
         Frame2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
-        Geom2d_Parabola aPar1 = new Geom2d_Parabola(anAxis, 2.0);
-        Geom2d_Parabola aPar2 = new Geom2d_Parabola(anAxis, 3.0);
+        ParabolaCurve2D aPar1 = new ParabolaCurve2D(anAxis, 2.0);
+        ParabolaCurve2D aPar2 = new ParabolaCurve2D(anAxis, 3.0);
 
         Assert.NotEqual(myHasher.GetHashCode(aPar1), myHasher.GetHashCode(aPar2));
         Assert.False(myHasher.Equals(aPar1, aPar2));
@@ -153,8 +154,8 @@ public class Geom2dHash_CurveHasherTest
         aPoles[3] = new Point2D(3.0, 2.0);
         aPoles[4] = new Point2D(4.0, 0.0);
 
-        Geom2d_BezierCurve aCurve1 = new Geom2d_BezierCurve(aPoles);
-        Geom2d_BezierCurve aCurve2 = (Geom2d_BezierCurve)aCurve1.Copy();
+        BezierCurve2D aCurve1 = new BezierCurve2D(aPoles);
+        BezierCurve2D aCurve2 = (BezierCurve2D)aCurve1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aCurve1), myHasher.GetHashCode(aCurve2));
         Assert.True(myHasher.Equals(aCurve1, aCurve2));
@@ -173,8 +174,8 @@ public class Geom2dHash_CurveHasherTest
         aPoles2[2] = new Point2D(1.0, 3.0); // Different
         aPoles2[3] = new Point2D(2.0, 0.0);
 
-        Geom2d_BezierCurve aCurve1 = new Geom2d_BezierCurve(aPoles1);
-        Geom2d_BezierCurve aCurve2 = new Geom2d_BezierCurve(aPoles2);
+        BezierCurve2D aCurve1 = new BezierCurve2D(aPoles1);
+        BezierCurve2D aCurve2 = new BezierCurve2D(aPoles2);
 
         // Hash may be same (metadata only), but comparison should differ
         Assert.False(myHasher.Equals(aCurve1, aCurve2));
@@ -201,8 +202,8 @@ public class Geom2dHash_CurveHasherTest
         aMults[1] = 4;
         aMults[2] = 4;
 
-        Geom2d_BSplineCurve aCurve1 = new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 3);
-        Geom2d_BSplineCurve aCurve2 = (Geom2d_BSplineCurve)aCurve1.Copy();
+        BSplineCurve2D aCurve1 = new BSplineCurve2D(aPoles, aKnots, aMults, 3);
+        BSplineCurve2D aCurve2 = (BSplineCurve2D)aCurve1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aCurve1), myHasher.GetHashCode(aCurve2));
         Assert.True(myHasher.Equals(aCurve1, aCurve2));
@@ -215,10 +216,10 @@ public class Geom2dHash_CurveHasherTest
     [Fact]
     public void TrimmedCurve_CopiedCurves_SameHash()
     {
-        Geom2d_Line         aLine = new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
-        Geom2d_TrimmedCurve aTrimmed1 = new Geom2d_TrimmedCurve(aLine, 0.0, 10.0);
-        Geom2d_TrimmedCurve aTrimmed2 =
-            (Geom2d_TrimmedCurve)aTrimmed1.Copy();
+        LineCurve2D         aLine = new LineCurve2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
+        TrimmedCurve2D aTrimmed1 = new TrimmedCurve2D(aLine, 0.0, 10.0);
+        TrimmedCurve2D aTrimmed2 =
+            (TrimmedCurve2D)aTrimmed1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aTrimmed1), myHasher.GetHashCode(aTrimmed2));
         Assert.True(myHasher.Equals(aTrimmed1, aTrimmed2));
@@ -227,9 +228,9 @@ public class Geom2dHash_CurveHasherTest
     [Fact]
     public void TrimmedCurve_DifferentBounds_DifferentHash()
     {
-        Geom2d_Line         aLine = new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
-        Geom2d_TrimmedCurve aTrimmed1 = new Geom2d_TrimmedCurve(aLine, 0.0, 10.0);
-        Geom2d_TrimmedCurve aTrimmed2 = new Geom2d_TrimmedCurve(aLine, 0.0, 20.0);
+        LineCurve2D         aLine = new LineCurve2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
+        TrimmedCurve2D aTrimmed1 = new TrimmedCurve2D(aLine, 0.0, 10.0);
+        TrimmedCurve2D aTrimmed2 = new TrimmedCurve2D(aLine, 0.0, 20.0);
 
         Assert.NotEqual(myHasher.GetHashCode(aTrimmed1), myHasher.GetHashCode(aTrimmed2));
         Assert.False(myHasher.Equals(aTrimmed1, aTrimmed2));
@@ -242,9 +243,9 @@ public class Geom2dHash_CurveHasherTest
     [Fact]
     public void OffsetCurve_CopiedCurves_SameHash()
     {
-        Geom2d_Line        aLine = new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
-        Geom2d_OffsetCurve anOffset1 = new Geom2d_OffsetCurve(aLine, 5.0);
-        Geom2d_OffsetCurve anOffset2 = (Geom2d_OffsetCurve)anOffset1.Copy();
+        LineCurve2D        aLine = new LineCurve2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
+        OffsetCurve2D anOffset1 = new OffsetCurve2D(aLine, 5.0);
+        OffsetCurve2D anOffset2 = (OffsetCurve2D)anOffset1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(anOffset1), myHasher.GetHashCode(anOffset2));
         Assert.True(myHasher.Equals(anOffset1, anOffset2));
@@ -253,9 +254,9 @@ public class Geom2dHash_CurveHasherTest
     [Fact]
     public void OffsetCurve_DifferentOffset_DifferentHash()
     {
-        Geom2d_Line        aLine = new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
-        Geom2d_OffsetCurve anOffset1 = new Geom2d_OffsetCurve(aLine, 5.0);
-        Geom2d_OffsetCurve anOffset2 = new Geom2d_OffsetCurve(aLine, 10.0);
+        LineCurve2D        aLine = new LineCurve2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
+        OffsetCurve2D anOffset1 = new OffsetCurve2D(aLine, 5.0);
+        OffsetCurve2D anOffset2 = new OffsetCurve2D(aLine, 10.0);
 
         Assert.NotEqual(myHasher.GetHashCode(anOffset1), myHasher.GetHashCode(anOffset2));
         Assert.False(myHasher.Equals(anOffset1, anOffset2));
@@ -268,9 +269,9 @@ public class Geom2dHash_CurveHasherTest
     [Fact]
     public void DifferentTypes_DifferentComparison()
     {
-        Geom2d_Line   aLine = new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
+        LineCurve2D   aLine = new LineCurve2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
         Frame2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
-        Geom2d_Circle aCircle = new Geom2d_Circle(anAxis, 5.0);
+        CircleCurve2D aCircle = new CircleCurve2D(anAxis, 5.0);
 
         Assert.False(myHasher.Equals(aLine, aCircle));
     }
@@ -278,8 +279,8 @@ public class Geom2dHash_CurveHasherTest
     [Fact]
     public void NullCurves_HandledCorrectly()
     {
-        Geom2d_Curve? aNullCurve = null;
-        Geom2d_Line  aLine = new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
+        Curve2D? aNullCurve = null;
+        LineCurve2D  aLine = new LineCurve2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
 
         Assert.Equal(0, myHasher.GetHashCode(aNullCurve));
         Assert.True(myHasher.Equals(aNullCurve, aNullCurve));
@@ -289,7 +290,7 @@ public class Geom2dHash_CurveHasherTest
     [Fact]
     public void SameObject_Equal()
     {
-        Geom2d_Line aLine = new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
+        LineCurve2D aLine = new LineCurve2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
         Assert.True(myHasher.Equals(aLine, aLine));
     }
 
@@ -320,9 +321,9 @@ public class Geom2dHash_CurveHasherTest
         aMults[1] = 4;
         aMults[2] = 4;
 
-        Geom2d_BSplineCurve aCurve1 =
-            new Geom2d_BSplineCurve(aPoles, aWeights, aKnots, aMults, 3);
-        Geom2d_BSplineCurve aCurve2 = (Geom2d_BSplineCurve)aCurve1.Copy();
+        BSplineCurve2D aCurve1 =
+            new BSplineCurve2D(aPoles, aWeights, aKnots, aMults, 3);
+        BSplineCurve2D aCurve2 = (BSplineCurve2D)aCurve1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aCurve1), myHasher.GetHashCode(aCurve2));
         Assert.True(myHasher.Equals(aCurve1, aCurve2));
@@ -357,10 +358,10 @@ public class Geom2dHash_CurveHasherTest
         aMults[1] = 4;
         aMults[2] = 4;
 
-        Geom2d_BSplineCurve aCurve1 =
-            new Geom2d_BSplineCurve(aPoles, aWeights1, aKnots, aMults, 3);
-        Geom2d_BSplineCurve aCurve2 =
-            new Geom2d_BSplineCurve(aPoles, aWeights2, aKnots, aMults, 3);
+        BSplineCurve2D aCurve1 =
+            new BSplineCurve2D(aPoles, aWeights1, aKnots, aMults, 3);
+        BSplineCurve2D aCurve2 =
+            new BSplineCurve2D(aPoles, aWeights2, aKnots, aMults, 3);
 
         Assert.False(myHasher.Equals(aCurve1, aCurve2));
     }
@@ -382,8 +383,8 @@ public class Geom2dHash_CurveHasherTest
         aWeights[2] = 2.0;
         aWeights[3] = 1.0;
 
-        Geom2d_BezierCurve aCurve1 = new Geom2d_BezierCurve(aPoles, aWeights);
-        Geom2d_BezierCurve aCurve2 = (Geom2d_BezierCurve)aCurve1.Copy();
+        BezierCurve2D aCurve1 = new BezierCurve2D(aPoles, aWeights);
+        BezierCurve2D aCurve2 = (BezierCurve2D)aCurve1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aCurve1), myHasher.GetHashCode(aCurve2));
         Assert.True(myHasher.Equals(aCurve1, aCurve2));
@@ -398,8 +399,8 @@ public class Geom2dHash_CurveHasherTest
     {
         Frame2D anAxis1 = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
         Frame2D anAxis2 = new(new Point2D(0.0, 0.0), new Direction2D(0.0, 1.0), new Direction2D(-1.0, 0.0));
-        Geom2d_Circle aCircle1 = new Geom2d_Circle(anAxis1, 5.0);
-        Geom2d_Circle aCircle2 = new Geom2d_Circle(anAxis2, 5.0);
+        CircleCurve2D aCircle1 = new CircleCurve2D(anAxis1, 5.0);
+        CircleCurve2D aCircle2 = new CircleCurve2D(anAxis2, 5.0);
 
         Assert.NotEqual(myHasher.GetHashCode(aCircle1), myHasher.GetHashCode(aCircle2));
         Assert.False(myHasher.Equals(aCircle1, aCircle2));
@@ -408,8 +409,8 @@ public class Geom2dHash_CurveHasherTest
     [Fact]
     public void Line_DifferentDirection_DifferentHash()
     {
-        Geom2d_Line aLine1 = new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
-        Geom2d_Line aLine2 = new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(0.0, 1.0));
+        LineCurve2D aLine1 = new LineCurve2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
+        LineCurve2D aLine2 = new LineCurve2D(new Point2D(0.0, 0.0), new Direction2D(0.0, 1.0));
 
         Assert.NotEqual(myHasher.GetHashCode(aLine1), myHasher.GetHashCode(aLine2));
         Assert.False(myHasher.Equals(aLine1, aLine2));
@@ -440,8 +441,8 @@ public class Geom2dHash_CurveHasherTest
         aMults[1] = 4;
         aMults[2] = 4;
 
-        Geom2d_BSplineCurve aCurve1 = new Geom2d_BSplineCurve(aPoles, aKnots1, aMults, 3);
-        Geom2d_BSplineCurve aCurve2 = new Geom2d_BSplineCurve(aPoles, aKnots2, aMults, 3);
+        BSplineCurve2D aCurve1 = new BSplineCurve2D(aPoles, aKnots1, aMults, 3);
+        BSplineCurve2D aCurve2 = new BSplineCurve2D(aPoles, aKnots2, aMults, 3);
 
         Assert.False(myHasher.Equals(aCurve1, aCurve2));
     }
@@ -467,8 +468,8 @@ public class Geom2dHash_CurveHasherTest
         aMults[1] = 3;
         aMults[2] = 3;
 
-        Geom2d_BSplineCurve aCurve1 = new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 2);
-        Geom2d_BSplineCurve aCurve2 = (Geom2d_BSplineCurve)aCurve1.Copy();
+        BSplineCurve2D aCurve1 = new BSplineCurve2D(aPoles, aKnots, aMults, 2);
+        BSplineCurve2D aCurve2 = (BSplineCurve2D)aCurve1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aCurve1), myHasher.GetHashCode(aCurve2));
         Assert.True(myHasher.Equals(aCurve1, aCurve2));
@@ -481,8 +482,8 @@ public class Geom2dHash_CurveHasherTest
     [Fact]
     public void Line_Reversed_DifferentComparison()
     {
-        Geom2d_Line aLine1 = new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
-        Geom2d_Line aLine2 = (Geom2d_Line)aLine1.Reversed();
+        LineCurve2D aLine1 = new LineCurve2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
+        LineCurve2D aLine2 = (LineCurve2D)aLine1.Reversed();
 
         Assert.False(myHasher.Equals(aLine1, aLine2));
     }
@@ -495,8 +496,8 @@ public class Geom2dHash_CurveHasherTest
         aPoles[2] = new Point2D(1.0, 2.0);
         aPoles[3] = new Point2D(2.0, 0.0);
 
-        Geom2d_BezierCurve aCurve1 = new Geom2d_BezierCurve(aPoles);
-        Geom2d_BezierCurve aCurve2 = (Geom2d_BezierCurve)aCurve1.Reversed();
+        BezierCurve2D aCurve1 = new BezierCurve2D(aPoles);
+        BezierCurve2D aCurve2 = (BezierCurve2D)aCurve1.Reversed();
 
         Assert.False(myHasher.Equals(aCurve1, aCurve2));
     }
@@ -509,8 +510,8 @@ public class Geom2dHash_CurveHasherTest
     public void Circle_Translated_DifferentHash()
     {
         Frame2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
-        Geom2d_Circle aCircle1 = new Geom2d_Circle(anAxis, 5.0);
-        Geom2d_Circle aCircle2 = (Geom2d_Circle)aCircle1.Copy();
+        CircleCurve2D aCircle1 = new CircleCurve2D(anAxis, 5.0);
+        CircleCurve2D aCircle2 = (CircleCurve2D)aCircle1.Copy();
         aCircle2.Translate(new Vector2D(1.0, 0.0));
 
         Assert.NotEqual(myHasher.GetHashCode(aCircle1), myHasher.GetHashCode(aCircle2));
@@ -521,8 +522,8 @@ public class Geom2dHash_CurveHasherTest
     public void Circle_Scaled_DifferentHash()
     {
         Frame2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
-        Geom2d_Circle aCircle1 = new Geom2d_Circle(anAxis, 5.0);
-        Geom2d_Circle aCircle2 = (Geom2d_Circle)aCircle1.Copy();
+        CircleCurve2D aCircle1 = new CircleCurve2D(anAxis, 5.0);
+        CircleCurve2D aCircle2 = (CircleCurve2D)aCircle1.Copy();
         aCircle2.Scale(new Point2D(0.0, 0.0), 2.0);
 
         Assert.NotEqual(myHasher.GetHashCode(aCircle1), myHasher.GetHashCode(aCircle2));
@@ -552,8 +553,8 @@ public class Geom2dHash_CurveHasherTest
         aMults[1] = 6;
         aMults[2] = 6;
 
-        Geom2d_BSplineCurve aCurve1 = new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 5);
-        Geom2d_BSplineCurve aCurve2 = (Geom2d_BSplineCurve)aCurve1.Copy();
+        BSplineCurve2D aCurve1 = new BSplineCurve2D(aPoles, aKnots, aMults, 5);
+        BSplineCurve2D aCurve2 = (BSplineCurve2D)aCurve1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aCurve1), myHasher.GetHashCode(aCurve2));
         Assert.True(myHasher.Equals(aCurve1, aCurve2));
@@ -585,8 +586,8 @@ public class Geom2dHash_CurveHasherTest
         aMults[3] = 1;
         aMults[4] = 2;
 
-        Geom2d_BSplineCurve aCurve1 = new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 1);
-        Geom2d_BSplineCurve aCurve2 = (Geom2d_BSplineCurve)aCurve1.Copy();
+        BSplineCurve2D aCurve1 = new BSplineCurve2D(aPoles, aKnots, aMults, 1);
+        BSplineCurve2D aCurve2 = (BSplineCurve2D)aCurve1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aCurve1), myHasher.GetHashCode(aCurve2));
         Assert.True(myHasher.Equals(aCurve1, aCurve2));
@@ -600,8 +601,8 @@ public class Geom2dHash_CurveHasherTest
     public void Ellipse_vs_Hyperbola_DifferentComparison()
     {
         Frame2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
-        Geom2d_Ellipse   anEllipse  = new Geom2d_Ellipse(anAxis, 5.0, 3.0);
-        Geom2d_Hyperbola aHyperbola = new Geom2d_Hyperbola(anAxis, 5.0, 3.0);
+        EllipseCurve2D   anEllipse  = new EllipseCurve2D(anAxis, 5.0, 3.0);
+        HyperbolaCurve2D aHyperbola = new HyperbolaCurve2D(anAxis, 5.0, 3.0);
 
         Assert.False(myHasher.Equals(anEllipse, aHyperbola));
     }
@@ -610,8 +611,8 @@ public class Geom2dHash_CurveHasherTest
     public void Circle_vs_Ellipse_DifferentComparison()
     {
         Frame2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
-        Geom2d_Circle  aCircle   = new Geom2d_Circle(anAxis, 5.0);
-        Geom2d_Ellipse anEllipse = new Geom2d_Ellipse(anAxis, 5.0, 5.0);
+        CircleCurve2D  aCircle   = new CircleCurve2D(anAxis, 5.0);
+        EllipseCurve2D anEllipse = new EllipseCurve2D(anAxis, 5.0, 5.0);
 
         Assert.False(myHasher.Equals(aCircle, anEllipse));
     }
@@ -623,8 +624,8 @@ public class Geom2dHash_CurveHasherTest
     [Fact]
     public void TrimmedCurve_vs_BaseCurve_DifferentComparison()
     {
-        Geom2d_Line         aLine = new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
-        Geom2d_TrimmedCurve aTrimmed = new Geom2d_TrimmedCurve(aLine, 0.0, 10.0);
+        LineCurve2D         aLine = new LineCurve2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
+        TrimmedCurve2D aTrimmed = new TrimmedCurve2D(aLine, 0.0, 10.0);
 
         Assert.False(myHasher.Equals(aLine, aTrimmed));
     }
@@ -637,8 +638,8 @@ public class Geom2dHash_CurveHasherTest
     public void Circle_VerySmallRadius_CopiedCircles_SameHash()
     {
         Frame2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
-        Geom2d_Circle aCircle1 = new Geom2d_Circle(anAxis, 1e-10);
-        Geom2d_Circle aCircle2 = (Geom2d_Circle)aCircle1.Copy();
+        CircleCurve2D aCircle1 = new CircleCurve2D(anAxis, 1e-10);
+        CircleCurve2D aCircle2 = (CircleCurve2D)aCircle1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aCircle1), myHasher.GetHashCode(aCircle2));
         Assert.True(myHasher.Equals(aCircle1, aCircle2));
@@ -648,8 +649,8 @@ public class Geom2dHash_CurveHasherTest
     public void Circle_VeryLargeRadius_CopiedCircles_SameHash()
     {
         Frame2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
-        Geom2d_Circle aCircle1 = new Geom2d_Circle(anAxis, 1e10);
-        Geom2d_Circle aCircle2 = (Geom2d_Circle)aCircle1.Copy();
+        CircleCurve2D aCircle1 = new CircleCurve2D(anAxis, 1e10);
+        CircleCurve2D aCircle2 = (CircleCurve2D)aCircle1.Copy();
 
         Assert.Equal(myHasher.GetHashCode(aCircle1), myHasher.GetHashCode(aCircle2));
         Assert.True(myHasher.Equals(aCircle1, aCircle2));
@@ -658,8 +659,8 @@ public class Geom2dHash_CurveHasherTest
     [Fact]
     public void Line_AtOrigin_vs_FarFromOrigin_DifferentHash()
     {
-        Geom2d_Line aLine1 = new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
-        Geom2d_Line aLine2 = new Geom2d_Line(new Point2D(1e10, 1e10), new Direction2D(1.0, 0.0));
+        LineCurve2D aLine1 = new LineCurve2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
+        LineCurve2D aLine2 = new LineCurve2D(new Point2D(1e10, 1e10), new Direction2D(1.0, 0.0));
 
         Assert.NotEqual(myHasher.GetHashCode(aLine1), myHasher.GetHashCode(aLine2));
         Assert.False(myHasher.Equals(aLine1, aLine2));

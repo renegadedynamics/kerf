@@ -3,8 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Projection;
+using Kerf.Engine.Geometry.Properties;
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
 
@@ -27,8 +33,8 @@ public class GeomPlate_BuildPlateSurface
     private NCollection_HArray1<NCollection_Sequence<double>>? myParCont;
     private NCollection_HArray1<NCollection_Sequence<double>>? myPlateCont;
     private NCollection_HSequence<GeomPlate_PointConstraint> myPntCont;
-    private Geom_Surface? mySurfInit;
-    private Geom_Surface? myPlanarSurfInit;
+    private Surface? mySurfInit;
+    private Surface? myPlanarSurfInit;
     private GeomPlate_Surface? myGeomPlateSurface;
     private readonly Plate_Plate myPlate = new Plate_Plate();
     private readonly Plate_Plate myPrevPlate = new Plate_Plate();
@@ -42,7 +48,7 @@ public class GeomPlate_BuildPlateSurface
     private int myNbPtsOnCur;
     private bool mySurfInitIsGive;
     private readonly int myNbIter;
-    private readonly Extrema_ExtPS myProj = new Extrema_ExtPS();
+    private readonly ExtPS myProj = new ExtPS();
     private readonly double myTol2d;
     private readonly double myTol3d;
     private readonly double myTolAng;
@@ -66,7 +72,7 @@ public class GeomPlate_BuildPlateSurface
     /// <summary>The constructor compatible with the old version: one curve constraint per curve.</summary>
     /// <exception cref="ConstructionErrorException">Fewer than one iteration, no curve, no order, no point, or a
     /// degree below 2.</exception>
-    public GeomPlate_BuildPlateSurface(NCollection_HArray1<int> NPoints, NCollection_HArray1<Adaptor3d_Curve> TabCurve,
+    public GeomPlate_BuildPlateSurface(NCollection_HArray1<int> NPoints, NCollection_HArray1<CurveAdaptorBase> TabCurve,
                                        NCollection_HArray1<int> Tang, int Degree, int NbIter = 3, double Tol2d = 0.00001,
                                        double Tol3d = 0.0001, double TolAng = 0.01, double TolCurv = 0.1,
                                        bool Anisotropie = false)
@@ -124,7 +130,7 @@ public class GeomPlate_BuildPlateSurface
 
     /// <summary>A builder deforming the initial surface <paramref name="Surf"/>.</summary>
     /// <exception cref="ConstructionErrorException">Fewer than one iteration, or a degree below 2.</exception>
-    public GeomPlate_BuildPlateSurface(Geom_Surface Surf, int Degree = 3, int NbPtsOnCur = 10, int NbIter = 3,
+    public GeomPlate_BuildPlateSurface(Surface Surf, int Degree = 3, int NbPtsOnCur = 10, int NbIter = 3,
                                        double Tol2d = 0.00001, double Tol3d = 0.0001, double TolAng = 0.01,
                                        double TolCurv = 0.1, bool Anisotropie = false)
     {
@@ -204,21 +210,21 @@ public class GeomPlate_BuildPlateSurface
         Tab.ChangeArray1().Assign(TabTri);
     }
 
-    private Geom2d_Curve? ProjectCurve(Adaptor3d_Curve Curv)
+    private Curve2D? ProjectCurve(CurveAdaptorBase Curv)
     {
         // Project a curve on a plane
-        Geom2d_Curve? Curve2d;
-        GeomAdaptor_Surface hsur = new GeomAdaptor_Surface(mySurfInit!);
+        Curve2D? Curve2d;
+        SurfaceAdaptor hsur = new SurfaceAdaptor(mySurfInit!);
         Point2D P2d;
 
-        ProjLib_CompProjectedCurve HProjector = new ProjLib_CompProjectedCurve(hsur, Curv, myTol3d / 10, myTol3d / 10);
+        CompProjectedCurve HProjector = new CompProjectedCurve(hsur, Curv, myTol3d / 10, myTol3d / 10);
 
         double UdebCheck, UfinCheck, ProjUdeb, ProjUfin;
         UdebCheck = Curv.FirstParameter();
         UfinCheck = Curv.LastParameter();
         HProjector.Bounds(1, out ProjUdeb, out ProjUfin);
 
-        if (HProjector.NbCurves() != 1 || Math.Abs(UdebCheck - ProjUdeb) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+        if (HProjector.CurveCount != 1 || Math.Abs(UdebCheck - ProjUdeb) > global::Kerf.Engine.Foundation.Precision.PConfusion()
             || Math.Abs(UfinCheck - ProjUfin) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             if (HProjector.IsSinglePnt(1, out P2d))
@@ -226,7 +232,7 @@ public class GeomPlate_BuildPlateSurface
                 // solution in a point
                 NCollection_Array1<Point2D> poles = new NCollection_Array1<Point2D>(1, 2);
                 poles.Init(P2d);
-                Curve2d = new Geom2d_BezierCurve(poles);
+                Curve2d = new BezierCurve2D(poles);
             }
             else
             {
@@ -241,7 +247,7 @@ public class GeomPlate_BuildPlateSurface
             HProjector.Bounds(1, out Udeb, out Ufin);
 
             MaxSeg = 20 + HProjector.NbIntervals(C3);
-            Approx_CurveOnSurface appr = new Approx_CurveOnSurface(HProjector, hsur, Udeb, Ufin, myTol3d);
+            CurveOnSurfaceApproximation appr = new CurveOnSurfaceApproximation(HProjector, hsur, Udeb, Ufin, myTol3d);
             appr.Perform(MaxSeg, MaxDegree, Continuity, false, true);
 
             Curve2d = appr.Curve2d();
@@ -250,12 +256,12 @@ public class GeomPlate_BuildPlateSurface
     }
 
     // Projection of a curve on the initial surface (unused in OCCT, as the declaration in the header says)
-    private Adaptor2d_Curve2d? ProjectedCurve(Adaptor3d_Curve Curv)
+    private Curve2DAdaptorBase? ProjectedCurve(CurveAdaptorBase Curv)
     {
-        GeomAdaptor_Surface hsur = new GeomAdaptor_Surface(mySurfInit!);
+        SurfaceAdaptor hsur = new SurfaceAdaptor(mySurfInit!);
 
-        ProjLib_CompProjectedCurve? HProjector = new ProjLib_CompProjectedCurve(hsur, Curv, myTolU / 10, myTolV / 10);
-        if (HProjector.NbCurves() != 1)
+        CompProjectedCurve? HProjector = new CompProjectedCurve(hsur, Curv, myTolU / 10, myTolV / 10);
+        if (HProjector.CurveCount != 1)
         {
             HProjector = null; // No continuous solution
         }
@@ -268,7 +274,7 @@ public class GeomPlate_BuildPlateSurface
 
             if (Math.Abs(First1 - First2) <= Max(myTolU, myTolV) && Math.Abs(Last1 - Last2) <= Max(myTolU, myTolV))
             {
-                HProjector = HProjector.Trim(First2, Last2, global::Kerf.Engine.Foundation.Precision.PConfusion()) as ProjLib_CompProjectedCurve;
+                HProjector = HProjector.Trim(First2, Last2, global::Kerf.Engine.Foundation.Precision.PConfusion()) as CompProjectedCurve;
             }
             else
             {
@@ -281,13 +287,13 @@ public class GeomPlate_BuildPlateSurface
     // Projects a point on the initial surface
     private Point2D ProjectPoint(in Point3D p3d)
     {
-        Extrema_POnSurf P;
+        POnSurf P;
         myProj.Perform(p3d);
         int nearest = 1;
-        if (myProj.NbExt() > 1)
+        if (myProj.ExtCount > 1)
         {
             double dist2mini = myProj.SquareDistance(1);
-            for (int i = 2; i <= myProj.NbExt(); i++)
+            for (int i = 2; i <= myProj.ExtCount; i++)
             {
                 if (myProj.SquareDistance(i) < dist2mini)
                 {
@@ -315,7 +321,7 @@ public class GeomPlate_BuildPlateSurface
     }
 
     /// <summary>Loads the initial surface.</summary>
-    public void LoadInitSurface(Geom_Surface Surf)
+    public void LoadInitSurface(Surface Surf)
     {
         mySurfInit = Surf;
         mySurfInitIsGive = true;
@@ -400,7 +406,7 @@ public class GeomPlate_BuildPlateSurface
 
         double u1, v1, u2, v2;
         mySurfInit.Bounds(out u1, out v1, out u2, out v2);
-        GeomAdaptor_Surface aSurfInit = new GeomAdaptor_Surface(mySurfInit);
+        SurfaceAdaptor aSurfInit = new SurfaceAdaptor(mySurfInit);
         myTolU = aSurfInit.UResolution(myTol3d);
         myTolV = aSurfInit.VResolution(myTol3d);
         myProj.Initialize(aSurfInit, u1, v1, u2, v2, myTolU, myTolV);
@@ -413,7 +419,7 @@ public class GeomPlate_BuildPlateSurface
         {
             if (myLinCont.Value(i).Curve2dOnSurf() is null)
             {
-                Geom2d_Curve? Curve2d = ProjectCurve(myLinCont.Value(i).Curve3d());
+                Curve2D? Curve2d = ProjectCurve(myLinCont.Value(i).Curve3d());
                 if (Curve2d is null)
                 {
                     Ok = false;
@@ -435,7 +441,7 @@ public class GeomPlate_BuildPlateSurface
             mySurfInit = App.Surface()!;
 
             mySurfInit.Bounds(out u1, out v1, out u2, out v2);
-            GeomAdaptor_Surface Surf = new GeomAdaptor_Surface(mySurfInit);
+            SurfaceAdaptor Surf = new SurfaceAdaptor(mySurfInit);
             myTolU = Surf.UResolution(myTol3d);
             myTolV = Surf.VResolution(myTol3d);
             myProj.Initialize(Surf, u1, v1, u2, v2, myTolU, myTolV);
@@ -443,7 +449,7 @@ public class GeomPlate_BuildPlateSurface
             Ok = true;
             for (int i = 1; i <= NTLinCont; i++)
             {
-                Geom2d_Curve? Curve2d = ProjectCurve(myLinCont.Value(i).Curve3d());
+                Curve2D? Curve2d = ProjectCurve(myLinCont.Value(i).Curve3d());
                 if (Curve2d is null)
                 {
                     Ok = false;
@@ -456,7 +462,7 @@ public class GeomPlate_BuildPlateSurface
                 mySurfInit = myPlanarSurfInit!;
 
                 mySurfInit.Bounds(out u1, out v1, out u2, out v2);
-                GeomAdaptor_Surface SurfNew = new GeomAdaptor_Surface(mySurfInit);
+                SurfaceAdaptor SurfNew = new SurfaceAdaptor(mySurfInit);
                 myTolU = SurfNew.UResolution(myTol3d);
                 myTolV = SurfNew.VResolution(myTol3d);
                 myProj.Initialize(SurfNew, u1, v1, u2, v2, myTolU, myTolV);
@@ -688,7 +694,7 @@ public class GeomPlate_BuildPlateSurface
                 }
                 break;
             case 2:
-                Geom_Surface Splate = myGeomPlateSurface!;
+                Surface Splate = myGeomPlateSurface!;
                 LocalAnalysis_SurfaceContinuity CG2 = new LocalAnalysis_SurfaceContinuity();
                 for (i = 1; i < NbPt; i++)
                 {
@@ -709,7 +715,7 @@ public class GeomPlate_BuildPlateSurface
                             P2d = ProjectPoint(Pi);
                         }
                     }
-                    GeomLProp_SLProps Prop = new GeomLProp_SLProps(Splate, P2d.Coord(1), P2d.Coord(2), 2, 0.001);
+                    SLProps Prop = new SLProps(Splate, P2d.Coord(1), P2d.Coord(2), 2, 0.001);
                     CG2.ComputeAnalysis(Prop, myLinCont.Value(c).LPropSurf(U), G2);
                     d.ChangeValue(i) = CG2.C0Value();
                     an.ChangeValue(i) = CG2.G1Angle();
@@ -738,7 +744,7 @@ public class GeomPlate_BuildPlateSurface
         int i;
 
         mySurfInit!.Bounds(out u1, out v1, out u2, out v2);
-        GeomAdaptor_Surface Surf = new GeomAdaptor_Surface(mySurfInit);
+        SurfaceAdaptor Surf = new SurfaceAdaptor(mySurfInit);
         myProj.Initialize(Surf, u1, v1, u2, v2, myTolU, myTolV);
 
         for (i = 1; i <= NTPntCont; i++)
@@ -879,7 +885,7 @@ public class GeomPlate_BuildPlateSurface
         //  sampling in "cosine" + 3 points on each interval
         double u1, v1, u2, v2;
         mySurfInit!.Bounds(out u1, out v1, out u2, out v2);
-        GeomAdaptor_Surface Surf = new GeomAdaptor_Surface(mySurfInit);
+        SurfaceAdaptor Surf = new SurfaceAdaptor(mySurfInit);
         myProj.Initialize(Surf, u1, v1, u2, v2, Surf.UResolution(myTol3d), Surf.VResolution(myTol3d));
         int NTCurve = myLinCont.Length();
         int NTPntCont = myPntCont.Length();
@@ -1013,7 +1019,7 @@ public class GeomPlate_BuildPlateSurface
     }
 
     /// <summary>The initial surface (frozen), or null.</summary>
-    public Geom_Surface? SurfInit()
+    public Surface? SurfInit()
     {
         mySurfInit?.Freeze();
         return mySurfInit;
@@ -1032,14 +1038,14 @@ public class GeomPlate_BuildPlateSurface
     }
 
     /// <summary>The 2D curves of the curve constraints on the initial surface, in the order of loading (frozen).</summary>
-    public NCollection_HArray1<Geom2d_Curve?> Curves2d()
+    public NCollection_HArray1<Curve2D?> Curves2d()
     {
         int NTCurve = myLinCont.Length();
-        NCollection_HArray1<Geom2d_Curve?> C2dfin = new NCollection_HArray1<Geom2d_Curve?>(1, NTCurve);
+        NCollection_HArray1<Curve2D?> C2dfin = new NCollection_HArray1<Curve2D?>(1, NTCurve);
 
         for (int i = 1; i <= NTCurve; i++)
         {
-            Geom2d_Curve? aCurve = myLinCont.Value(myInitOrder!.Value(i)).Curve2dOnSurf();
+            Curve2D? aCurve = myLinCont.Value(myInitOrder!.Value(i)).Curve2dOnSurf();
             aCurve?.Freeze();
             C2dfin.SetValue(i, aCurve);
         }
@@ -1431,7 +1437,7 @@ public class GeomPlate_BuildPlateSurface
                     u2 += du;
                     v1 -= dv;
                     v2 += dv;
-                    mySurfInit = new Geom_RectangularTrimmedSurface(BAP.Plane()!, u1, u2, v1, v2);
+                    mySurfInit = new TrimmedSurface(BAP.Plane()!, u1, u2, v1, v2);
                 }
             } // if (isHalfSpace)
             if (!isHalfSpace)
@@ -1523,16 +1529,16 @@ public class GeomPlate_BuildPlateSurface
             u2 += du;
             v1 -= dv;
             v2 += dv;
-            mySurfInit = new Geom_RectangularTrimmedSurface(BAP.Plane()!, u1, u2, v1, v2);
+            mySurfInit = new TrimmedSurface(BAP.Plane()!, u1, u2, v1, v2);
         } // if (nopt != 3)
 
         // Comparing metrics of curves and projected curves
         if (NTLinCont != 0 && myIsLinear)
         {
-            Geom_Surface InitPlane = ((Geom_RectangularTrimmedSurface)mySurfInit!).BasisSurface();
+            Surface InitPlane = ((TrimmedSurface)mySurfInit!).BasisSurface();
 
             double Ratio = 0.0, R1 = 2.0, R2 = 0.6; //R1 = 3, R2 = 0.5;//R1 = 1.4, R2 = 0.8; //R1 = 5., R2 = 0.2;
-            GeomAdaptor_Surface hsur = new GeomAdaptor_Surface(InitPlane);
+            SurfaceAdaptor hsur = new SurfaceAdaptor(InitPlane);
             int NbPoint = 20;
 
             for (int i = 1; i <= NTLinCont && myIsLinear; i++)
@@ -1541,9 +1547,9 @@ public class GeomPlate_BuildPlateSurface
                 double LastPar = myLinCont.Value(i).LastParameter();
                 double Uif = (LastPar - FirstPar) / (NbPoint);
 
-                Adaptor3d_Curve Curve = myLinCont.Value(i).Curve3d();
-                ProjLib_CompProjectedCurve ProjCurve = new ProjLib_CompProjectedCurve(hsur, Curve, myTol3d, myTol3d);
-                Adaptor3d_CurveOnSurface AProj = new Adaptor3d_CurveOnSurface(ProjCurve, hsur);
+                CurveAdaptorBase Curve = myLinCont.Value(i).Curve3d();
+                CompProjectedCurve ProjCurve = new CompProjectedCurve(hsur, Curve, myTol3d, myTol3d);
+                CurveOnSurface AProj = new CurveOnSurface(ProjCurve, hsur);
 
                 Point3D P;
                 Vector3D DerC, DerCproj;
@@ -1577,7 +1583,7 @@ public class GeomPlate_BuildPlateSurface
             myPlanarSurfInit = mySurfInit;
             double u1, v1, u2, v2;
             mySurfInit!.Bounds(out u1, out v1, out u2, out v2);
-            GeomAdaptor_Surface Surf = new GeomAdaptor_Surface(mySurfInit);
+            SurfaceAdaptor Surf = new SurfaceAdaptor(mySurfInit);
             myTolU = Surf.UResolution(myTol3d);
             myTolV = Surf.VResolution(myTol3d);
             myProj.Initialize(Surf, u1, v1, u2, v2, myTolU, myTolV);
@@ -1664,7 +1670,7 @@ public class GeomPlate_BuildPlateSurface
 
             for (i = 1; i <= NTLinCont; i++)
             {
-                Geom2d_Curve? NullCurve = null;
+                Curve2D? NullCurve = null;
                 myLinCont.ChangeValue(i).SetCurve2dOnSurf(NullCurve);
             }
         }
@@ -1678,7 +1684,7 @@ public class GeomPlate_BuildPlateSurface
     {
         int NTLinCont = myLinCont.Length();
         Geom2dInt_GInter Intersection = new Geom2dInt_GInter();
-        Geom2dAdaptor_Curve Ci = new Geom2dAdaptor_Curve(), Cj = new Geom2dAdaptor_Curve();
+        CurveAdaptor2D Ci = new CurveAdaptor2D(), Cj = new CurveAdaptor2D();
         IntRes2d_IntersectionPoint int2d;
         Point3D P1, P2;
         Point2D P2d;
@@ -1793,13 +1799,13 @@ public class GeomPlate_BuildPlateSurface
                                 Vector3D vec, vecU, vecV, N;
                                 if (myLinCont.Value(i).Order() == 0)
                                 {
-                                    Adaptor3d_Curve theCurve = myLinCont.Value(i).Curve3d();
+                                    CurveAdaptorBase theCurve = myLinCont.Value(i).Curve3d();
                                     theCurve.D1(int2d.ParamOnFirst(), out P1, out vec);
                                     myLinCont.Value(j).D1(int2d.ParamOnSecond(), out P2, out vecU, out vecV);
                                 }
                                 else
                                 {
-                                    Adaptor3d_Curve theCurve = myLinCont.Value(j).Curve3d();
+                                    CurveAdaptorBase theCurve = myLinCont.Value(j).Curve3d();
                                     theCurve.D1(int2d.ParamOnSecond(), out P2, out vec);
                                     myLinCont.Value(i).D1(int2d.ParamOnFirst(), out P1, out vecU, out vecV);
                                 }
@@ -1888,8 +1894,8 @@ public class GeomPlate_BuildPlateSurface
     {
         int NTLinCont = myLinCont.Length();
         bool ACR;
-        Geom2d_Curve? C2d;
-        Geom2dAdaptor_Curve AC2d = new Geom2dAdaptor_Curve();
+        Curve2D? C2d;
+        CurveAdaptor2D AC2d = new CurveAdaptor2D();
         Law_Interpol acrlaw = new Law_Interpol();
         myPlateCont = NewSequences(NTLinCont);
         myParCont = NewSequences(NTLinCont);
@@ -1922,14 +1928,14 @@ public class GeomPlate_BuildPlateSurface
                 tabP2d[1].SetY(Uinit);
                 tabP2d[1].SetX(0.0);
                 tabP2d[Nbint + 1].SetY(Ufinal);
-                Length2d = GCPnts_AbscissaPoint.Length(AC2d, Uinit, Ufinal);
+                Length2d = AbscissaPoint.Length(AC2d, Uinit, Ufinal);
 
                 tabP2d[Nbint + 1].SetX(Length2d);
                 for (ii = 2; ii <= Nbint; ii++)
                 {
                     U = Uinit + (Ufinal - Uinit) * ((1 - Math.Cos((ii - 1) * M_PI / (Nbint))) / 2);
                     tabP2d[ii].SetY(U);
-                    tabP2d[ii].SetX(GCPnts_AbscissaPoint.Length(AC2d, Uinit, U));
+                    tabP2d[ii].SetX(AbscissaPoint.Length(AC2d, Uinit, U));
                 }
                 acrlaw.Set(tabP2d);
             }
@@ -2049,7 +2055,7 @@ public class GeomPlate_BuildPlateSurface
                     else
                     {
                         if (((!mySurfInitIsGive)
-                             && (new Geom2dAdaptor_Curve(LinCont.Curve2dOnSurf()!).GetType() != CurveKind.Circle))
+                             && (new CurveAdaptor2D(LinCont.Curve2dOnSurf()!).GetType() != CurveKind.Circle))
                             || ((j > 1) && (j < NbPnt_i)))
                         { // exclude extremities
                             myPlateCont[i].Append(Inter); // add the point
@@ -2430,10 +2436,10 @@ public class GeomPlate_BuildPlateSurface
                     }
                     break;
                 case 2:
-                    Geom_Surface Splate = myGeomPlateSurface!;
+                    Surface Splate = myGeomPlateSurface!;
                     LocalAnalysis_SurfaceContinuity CG2 = new LocalAnalysis_SurfaceContinuity();
                     P2d = PntCont.Pnt2dOnSurf();
-                    GeomLProp_SLProps Prop = new GeomLProp_SLProps(Splate, P2d.Coord(1), P2d.Coord(2), 2, 0.001);
+                    SLProps Prop = new SLProps(Splate, P2d.Coord(1), P2d.Coord(2), 2, 0.001);
                     CG2.ComputeAnalysis(Prop, PntCont.LPropSurf(), G2);
                     Dist = CG2.C0Value();
                     Ang = CG2.G1Angle();

@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -52,7 +55,7 @@ public sealed class ShapeAnalysis_ShapeTolerance
     /// A tolerance of the shape: <paramref name="mode"/> = 0 the average, &gt; 0 the maximum, &lt; 0 the minimum.
     /// <paramref name="type"/>: SHAPE (vertices, edges and faces), VERTEX, EDGE or FACE. Starts a new cumulation.
     /// </summary>
-    public double Tolerance(in TopoDS_Shape shape, int mode, TopAbs_ShapeEnum type = TopAbs_SHAPE)
+    public double Tolerance(in Shape shape, int mode, ShapeType type = ShapeType.Shape)
     {
         InitTolerance();
         AddTolerance(shape, type);
@@ -63,7 +66,7 @@ public sealed class ShapeAnalysis_ShapeTolerance
     /// The sub-shapes whose tolerance is over <paramref name="value"/> (<paramref name="type"/> as in
     /// <see cref="Tolerance"/>, and SHELL: shells and faces whose faces, edges or vertices are over it). A new sequence.
     /// </summary>
-    public NCollection_HSequence<TopoDS_Shape> OverTolerance(in TopoDS_Shape shape, double value, TopAbs_ShapeEnum type = TopAbs_SHAPE)
+    public NCollection_HSequence<Shape> OverTolerance(in Shape shape, double value, ShapeType type = ShapeType.Shape)
     {
         if (value >= 0)
         {
@@ -79,23 +82,23 @@ public sealed class ShapeAnalysis_ShapeTolerance
     /// The sub-shapes whose tolerance is within [<paramref name="valmin"/>, <paramref name="valmax"/>] (no upper bound
     /// if <paramref name="valmax"/> &lt; <paramref name="valmin"/>). A new sequence.
     /// </summary>
-    public NCollection_HSequence<TopoDS_Shape> InTolerance(in TopoDS_Shape shape, double valmin, double valmax,
-                                                           TopAbs_ShapeEnum type = TopAbs_SHAPE)
+    public NCollection_HSequence<Shape> InTolerance(in Shape shape, double valmin, double valmax,
+                                                           ShapeType type = ShapeType.Shape)
     {
         double tol;
         bool over = (valmax < valmin); // pas de liminite max
-        var sl = new NCollection_HSequence<TopoDS_Shape>();
+        var sl = new NCollection_HSequence<Shape>();
 
-        TopExp_Explorer myExp = new();
+        Explorer myExp = new();
 
         // Iteration sur les Faces
 
-        if (type == TopAbs_FACE || type == TopAbs_SHAPE)
+        if (type == ShapeType.Face || type == ShapeType.Shape)
         {
-            myExp.Init(shape, TopAbs_FACE);
+            myExp.Init(shape, ShapeType.Face);
             while (myExp.More())
             {
-                tol = BRep_Tool.Tolerance(TopoDS.Face(myExp.Current()));
+                tol = Tool.Tolerance(ShapeCasts.Face(myExp.Current()));
                 if (tol >= valmin && (over || (tol <= valmax)))
                 {
                     sl.Append(myExp.Current());
@@ -106,12 +109,12 @@ public sealed class ShapeAnalysis_ShapeTolerance
 
         // Iteration sur les Edges
 
-        if (type == TopAbs_EDGE || type == TopAbs_SHAPE)
+        if (type == ShapeType.Edge || type == ShapeType.Shape)
         {
-            myExp.Init(shape, TopAbs_EDGE);
+            myExp.Init(shape, ShapeType.Edge);
             while (myExp.More())
             {
-                tol = BRep_Tool.Tolerance(TopoDS.Edge(myExp.Current()));
+                tol = Tool.Tolerance(ShapeCasts.Edge(myExp.Current()));
                 if (tol >= valmin && (over || (tol <= valmax)))
                 {
                     sl.Append(myExp.Current());
@@ -122,12 +125,12 @@ public sealed class ShapeAnalysis_ShapeTolerance
 
         // Iteration sur les Vertex
 
-        if (type == TopAbs_VERTEX || type == TopAbs_SHAPE)
+        if (type == ShapeType.Vertex || type == ShapeType.Shape)
         {
-            myExp.Init(shape, TopAbs_VERTEX);
+            myExp.Init(shape, ShapeType.Vertex);
             while (myExp.More())
             {
-                tol = BRep_Tool.Tolerance(TopoDS.Vertex(myExp.Current()));
+                tol = Tool.Tolerance(ShapeCasts.Vertex(myExp.Current()));
                 // OCCT bug: "tol >= valmax" for vertices, where faces and edges test "tol <= valmax" (occt-issues.md)
                 if (tol >= valmin && (over || (tol >= valmax)))
                 {
@@ -139,19 +142,19 @@ public sealed class ShapeAnalysis_ShapeTolerance
 
         // Iteration combinee (cumul) SHELL+FACE+EDGE+VERTEX, on retourne SHELL+FACE
 
-        if (type == TopAbs_SHELL)
+        if (type == ShapeType.Shell)
         {
             //  Exploration des shells
-            var mapface = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            myExp.Init(shape, TopAbs_SHELL);
+            var mapface = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            myExp.Init(shape, ShapeType.Shell);
             while (myExp.More())
             {
                 bool iashell = false;
-                TopoDS_Shape ash = myExp.Current();
-                for (var face = new TopExp_Explorer(ash, TopAbs_FACE); face.More(); face.Next())
+                Shape ash = myExp.Current();
+                for (var face = new Explorer(ash, ShapeType.Face); face.More(); face.Next())
                 {
                     mapface.Add(face.Current());
-                    NCollection_HSequence<TopoDS_Shape> fc = InTolerance(face.Current(), valmin, valmax, type);
+                    NCollection_HSequence<Shape> fc = InTolerance(face.Current(), valmin, valmax, type);
                     if (fc.Length() > 0)
                     {
                         sl.Append(fc);
@@ -166,7 +169,7 @@ public sealed class ShapeAnalysis_ShapeTolerance
             }
 
             //  Les faces (libres ou sous shell)
-            myExp.Init(shape, TopAbs_FACE);
+            myExp.Init(shape, ShapeType.Face);
             for (; myExp.More(); myExp.Next())
             {
                 bool iaface = false;
@@ -174,7 +177,7 @@ public sealed class ShapeAnalysis_ShapeTolerance
                 {
                     continue;
                 }
-                tol = BRep_Tool.Tolerance(TopoDS.Face(myExp.Current()));
+                tol = Tool.Tolerance(ShapeCasts.Face(myExp.Current()));
                 if (tol >= valmin && (over || (tol <= valmax)))
                 {
                     iaface = true;
@@ -182,14 +185,14 @@ public sealed class ShapeAnalysis_ShapeTolerance
                 else
                 {
                     // les edges contenues ?
-                    NCollection_HSequence<TopoDS_Shape> fl = InTolerance(myExp.Current(), valmin, valmax, TopAbs_EDGE);
+                    NCollection_HSequence<Shape> fl = InTolerance(myExp.Current(), valmin, valmax, ShapeType.Edge);
                     if (fl.Length() > 0)
                     {
                         iaface = true;
                     }
                     else
                     {
-                        fl = InTolerance(myExp.Current(), valmin, valmax, TopAbs_VERTEX);
+                        fl = InTolerance(myExp.Current(), valmin, valmax, ShapeType.Vertex);
                         if (fl.Length() > 0)
                         {
                             iaface = true;
@@ -214,21 +217,21 @@ public sealed class ShapeAnalysis_ShapeTolerance
     }
 
     /// <summary>Adds the tolerances of a shape to the cumulation (maximum, average and minimum).</summary>
-    public void AddTolerance(in TopoDS_Shape shape, TopAbs_ShapeEnum type = TopAbs_SHAPE)
+    public void AddTolerance(in Shape shape, ShapeType type = ShapeType.Shape)
     {
         int nbt = 0;
         double tol, cmin = 0.0, cmoy = 0.0, cmax = 0.0;
 
-        TopExp_Explorer myExp = new();
+        Explorer myExp = new();
 
         // Iteration sur les Faces
 
-        if (type == TopAbs_FACE || type == TopAbs_SHAPE)
+        if (type == ShapeType.Face || type == ShapeType.Shape)
         {
-            myExp.Init(shape, TopAbs_FACE);
+            myExp.Init(shape, ShapeType.Face);
             while (myExp.More())
             {
-                tol = BRep_Tool.Tolerance(TopoDS.Face(myExp.Current()));
+                tol = Tool.Tolerance(ShapeCasts.Face(myExp.Current()));
                 AddTol(tol, ref nbt, ref cmin, ref cmoy, ref cmax);
                 myExp.Next();
             }
@@ -236,12 +239,12 @@ public sealed class ShapeAnalysis_ShapeTolerance
 
         // Iteration sur les Edges
 
-        if (type == TopAbs_EDGE || type == TopAbs_SHAPE)
+        if (type == ShapeType.Edge || type == ShapeType.Shape)
         {
-            myExp.Init(shape, TopAbs_EDGE);
+            myExp.Init(shape, ShapeType.Edge);
             while (myExp.More())
             {
-                tol = BRep_Tool.Tolerance(TopoDS.Edge(myExp.Current()));
+                tol = Tool.Tolerance(ShapeCasts.Edge(myExp.Current()));
                 AddTol(tol, ref nbt, ref cmin, ref cmoy, ref cmax);
                 myExp.Next();
             }
@@ -249,12 +252,12 @@ public sealed class ShapeAnalysis_ShapeTolerance
 
         // Iteration sur les Vertices
 
-        if (type == TopAbs_VERTEX || type == TopAbs_SHAPE)
+        if (type == ShapeType.Vertex || type == ShapeType.Shape)
         {
-            myExp.Init(shape, TopAbs_VERTEX);
+            myExp.Init(shape, ShapeType.Vertex);
             while (myExp.More())
             {
-                tol = BRep_Tool.Tolerance(TopoDS.Vertex(myExp.Current()));
+                tol = Tool.Tolerance(ShapeCasts.Vertex(myExp.Current()));
                 AddTol(tol, ref nbt, ref cmin, ref cmoy, ref cmax);
                 myExp.Next();
             }

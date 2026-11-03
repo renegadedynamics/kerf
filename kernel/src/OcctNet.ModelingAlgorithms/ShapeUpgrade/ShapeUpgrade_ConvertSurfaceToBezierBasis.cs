@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
 using static Occt.ShapeExtend_Status;
 
@@ -62,9 +63,9 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
         double VLast = myVSplitValues.Value(myVSplitValues.Length());
         double precision = Kerf.Engine.Foundation.Precision.PConfusion();
 
-        if (mySurface is Geom_RectangularTrimmedSurface Surface)
+        if (mySurface is TrimmedSurface Surface)
         {
-            Geom_Surface BasSurf = Surface.BasisSurface();
+            Surface BasSurf = Surface.BasisSurface();
             var converter = new ShapeUpgrade_ConvertSurfaceToBezierBasis();
             converter.Init(BasSurf, UFirst, ULast, VFirst, VLast);
             converter.SetUSplitValues(myUSplitValues);
@@ -76,9 +77,9 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             mySegments = converter.Segments();
             return;
         }
-        else if (mySurface is Geom_OffsetSurface Offset)
+        else if (mySurface is OffsetSurface Offset)
         {
-            Geom_Surface BasSurf = Offset.BasisSurface();
+            Surface BasSurf = Offset.BasisSurface();
             var converter = new ShapeUpgrade_ConvertSurfaceToBezierBasis();
             converter.Init(BasSurf, UFirst, ULast, VFirst, VLast);
             converter.SetUSplitValues(myUSplitValues);
@@ -90,7 +91,7 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             mySegments = converter.Segments();
             return;
         }
-        else if (mySurface is Geom_Plane pln && myPlaneMode)
+        else if (mySurface is PlaneSurface pln && myPlaneMode)
         {
             var poles = new NCollection_Array2<Point3D>(1, 2, 1, 2);
             Point3D dp;
@@ -98,22 +99,22 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             poles[1, 2] = dp = pln.Value(UFirst, VLast);
             poles[2, 1] = dp = pln.Value(ULast, VFirst);
             poles[2, 2] = dp = pln.Value(ULast, VLast);
-            var bezierPlane = new Geom_BezierSurface(poles);
+            var bezierPlane = new BezierSurface(poles);
             var UJoints = new NCollection_Array1<double>(1, 2);
             UJoints[1] = UFirst;
             UJoints[2] = ULast;
             var VJoints = new NCollection_Array1<double>(1, 2);
             VJoints[1] = VFirst;
             VJoints[2] = VLast;
-            var surf = new NCollection_HArray2<Geom_Surface>(1, 1, 1, 1);
+            var surf = new NCollection_HArray2<Surface>(1, 1, 1, 1);
             surf.SetValue(1, 1, bezierPlane);
             mySegments = new ShapeExtend_CompositeSurface(surf, UJoints, VJoints);
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
             return;
         }
-        else if (mySurface is Geom_BezierSurface bezierSurf)
+        else if (mySurface is BezierSurface bezierSurf)
         {
-            var surf = new NCollection_HArray2<Geom_Surface>(1, 1, 1, 1);
+            var surf = new NCollection_HArray2<Surface>(1, 1, 1, 1);
             var UJoints = new NCollection_Array1<double>(1, 2);
             UJoints[1] = UFirst;
             UJoints[2] = ULast;
@@ -127,7 +128,7 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             }
             else
             {
-                var besNew = (Geom_BezierSurface)bezierSurf.Copy();
+                var besNew = (BezierSurface)bezierSurf.Copy();
                 // pdn K4L+ (work around)
                 // rln C30 (direct use)
                 double u1 = UFirst;
@@ -141,13 +142,13 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             mySegments = new ShapeExtend_CompositeSurface(surf, UJoints, VJoints);
             return;
         }
-        else if (mySurface is Geom_BSplineSurface bspline && myBSplineMode)
+        else if (mySurface is BSplineSurface bspline && myBSplineMode)
         {
             // pdn
             bspline.Bounds(out _, out _, out _, out _);
-            var converter = new GeomConvert_BSplineSurfaceToBezierSurface(bspline); //,UFirst,ULast,VFirst,VLast,precision;
-            int nbUPatches = converter.NbUPatches();
-            int nbVPatches = converter.NbVPatches();
+            var converter = new BSplineSurfaceToBezierSurface(bspline); //,UFirst,ULast,VFirst,VLast,precision;
+            int nbUPatches = converter.UPatchCount;
+            int nbVPatches = converter.VPatchCount;
             var UJoints = new NCollection_Array1<double>(1, nbUPatches + 1);
             var UReject = new NCollection_Array1<bool>(1, nbUPatches + 1);
             UReject.Init(false);
@@ -192,9 +193,9 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
 
             // OCCT_DEBUG output left out: thin patches dropped
 
-            var Surfaces = new NCollection_Array2<Geom_BezierSurface>(1, nbUPatches, 1, nbVPatches);
+            var Surfaces = new NCollection_Array2<BezierSurface>(1, nbUPatches, 1, nbVPatches);
             converter.Patches(Surfaces);
-            var srf = new NCollection_HArray2<Geom_Surface>(1, nbUPatches - NbUFiltered, 1, nbVPatches - NbVFiltered);
+            var srf = new NCollection_HArray2<Surface>(1, nbUPatches - NbUFiltered, 1, nbVPatches - NbVFiltered);
             int indApp1 = 0;
             for (int ind1 = 1; ind1 <= nbUPatches; ind1++)
             {
@@ -270,22 +271,22 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
             return;
         }
-        else if (mySurface is Geom_SurfaceOfRevolution revol && myRevolutionMode)
+        else if (mySurface is RevolutionSurface revol && myRevolutionMode)
         {
-            Geom_Curve basis = revol.BasisCurve();
-            if (basis is Geom_TrimmedCurve tc)
+            Curve3D basis = revol.BasisCurve();
+            if (basis is TrimmedCurve3D tc)
             {
                 basis = tc.BasisCurve();
             }
-            NCollection_HArray1<Geom_Curve> curves;
+            NCollection_HArray1<Curve3D> curves;
             int nbCurves;
             var vPar = new NCollection_HSequence<double>();
             var vSVal = new NCollection_HSequence<double>();
-            if (basis is Geom_OffsetCurve offset)
+            if (basis is OffsetCurve3D offset)
             {
                 double value = offset.Offset();
                 Direction3D direction = offset.Direction();
-                Geom_Curve bas = offset.BasisCurve();
+                Curve3D bas = offset.BasisCurve();
                 var converter = new ShapeUpgrade_ConvertCurve3dToBezier();
                 converter.Init(bas, VFirst, VLast);
                 converter.Perform(true);
@@ -304,7 +305,7 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
                 nbCurves = curves.Length();
                 for (int i = 1; i <= nbCurves; i++)
                 {
-                    var offCur = new Geom_OffsetCurve(curves.Value(i), value, direction);
+                    var offCur = new OffsetCurve3D(curves.Value(i), value, direction);
                     curves.SetValue(i, offCur);
                 }
             }
@@ -329,19 +330,19 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             }
 
             Axis3D axis = revol.Axis();
-            var surf = new NCollection_HArray2<Geom_Surface>(1, 1, 1, nbCurves);
+            var surf = new NCollection_HArray2<Surface>(1, 1, 1, nbCurves);
             mySurface.Bounds(out double Umin, out double Umax, out _, out _);
             int k;
             for (k = 1; k <= nbCurves; k++)
             {
-                var rev = new Geom_SurfaceOfRevolution(curves.Value(k), axis);
+                var rev = new RevolutionSurface(curves.Value(k), axis);
                 if (UFirst - Umin < Kerf.Engine.Foundation.Precision.PConfusion() && Umax - ULast < Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     surf.SetValue(1, k, rev);
                 }
                 else
                 {
-                    var rect = new Geom_RectangularTrimmedSurface(rev, UFirst, ULast, true);
+                    var rect = new TrimmedSurface(rev, UFirst, ULast, true);
                     surf.SetValue(1, k, rect);
                 }
             }
@@ -376,11 +377,11 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             }
             return;
         }
-        else if (mySurface is Geom_SurfaceOfLinearExtrusion extr && myExtrusionMode)
+        else if (mySurface is ExtrusionSurface extr && myExtrusionMode)
         {
-            Geom_Curve basis = extr.BasisCurve();
+            Curve3D basis = extr.BasisCurve();
             // gp_Dir direction = extr->Direction(); // direction not used (skl)
-            NCollection_HArray1<Geom_Curve> curves;
+            NCollection_HArray1<Curve3D> curves;
             int nbCurves;
             var uPar = new NCollection_HSequence<double>();
             var uSVal = new NCollection_HSequence<double>();
@@ -395,14 +396,14 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             Transform3D shiftF = new(), shiftL = new();
             shiftF.SetTranslation(extr.Value(UFirst, 0), extr.Value(UFirst, VFirst));
             shiftL.SetTranslation(extr.Value(UFirst, 0), extr.Value(UFirst, VLast));
-            var surf = new NCollection_HArray2<Geom_Surface>(1, nbCurves, 1, 1);
+            var surf = new NCollection_HArray2<Surface>(1, nbCurves, 1, 1);
 
             int k;
             for (k = 1; k <= nbCurves; k++)
             {
                 // OCCT down-casts the curve to a Bezier and dereferences it
-                var bez = (Geom_BezierCurve)curves.Value(k);
-                int nbPoles = bez.NbPoles();
+                var bez = (BezierCurve3D)curves.Value(k);
+                int nbPoles = bez.PoleCount;
                 NCollection_Array1<Point3D> poles = bez.InternalPoles();
                 var resPoles = new NCollection_Array2<Point3D>(1, nbPoles, 1, 2);
                 for (int j = 1; j <= nbPoles; j++)
@@ -410,7 +411,7 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
                     resPoles[j, 1] = poles[j].Transformed(shiftF);
                     resPoles[j, 2] = poles[j].Transformed(shiftL);
                 }
-                var bezier = new Geom_BezierSurface(resPoles);
+                var bezier = new BezierSurface(resPoles);
                 surf.SetValue(k, 1, bezier);
             }
 
@@ -454,9 +455,9 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             var VJoints = new NCollection_Array1<double>(1, 2);
             VJoints[1] = VFirst;
             VJoints[2] = VLast;
-            var surf = new NCollection_HArray2<Geom_Surface>(1, 1, 1, 1);
+            var surf = new NCollection_HArray2<Surface>(1, 1, 1, 1);
             mySurface!.Bounds(out double U1, out double U2, out _, out double V2);
-            Geom_Surface S;
+            Surface S;
             if (U1 - UFirst < precision && ULast - U2 < precision && V2 - VFirst < precision
                 && VLast - V2 < precision)
             {
@@ -464,7 +465,7 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             }
             else
             {
-                var rts = new Geom_RectangularTrimmedSurface(mySurface, UFirst, ULast, VFirst, VLast);
+                var rts = new TrimmedSurface(mySurface, UFirst, ULast, VFirst, VLast);
                 S = rts;
             }
             surf.SetValue(1, 1, S);
@@ -475,11 +476,11 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
     }
 
     // OCCT's file-static GetSegment: the part of a patch between the parameters.
-    private static Geom_Surface GetSegment(Geom_Surface surf, double U1, double U2, double V1, double V2)
+    private static Surface GetSegment(Surface surf, double U1, double U2, double V1, double V2)
     {
-        if (surf is Geom_BezierSurface)
+        if (surf is BezierSurface)
         {
-            var bezier = (Geom_BezierSurface)surf.Copy();
+            var bezier = (BezierSurface)surf.Copy();
             double prec = Kerf.Engine.Foundation.Precision.PConfusion();
             if (U1 < prec && U2 > 1 - prec && V1 < prec && V2 > 1 - prec)
             {
@@ -495,8 +496,8 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             return bezier;
         }
 
-        Geom_Surface S;
-        if (surf is Geom_RectangularTrimmedSurface rect)
+        Surface S;
+        if (surf is TrimmedSurface rect)
         {
             S = rect.BasisSurface();
         }
@@ -505,25 +506,25 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             S = surf;
         }
 
-        if (S is Geom_SurfaceOfRevolution)
+        if (S is RevolutionSurface)
         {
-            var revol = (Geom_SurfaceOfRevolution)S.Copy();
+            var revol = (RevolutionSurface)S.Copy();
             revol.Bounds(out double Umin, out double Umax, out _, out _);
-            Geom_Curve basis = revol.BasisCurve();
-            Geom_OffsetCurve? offset = null;
-            if (basis is Geom_OffsetCurve anOffset)
+            Curve3D basis = revol.BasisCurve();
+            OffsetCurve3D? offset = null;
+            if (basis is OffsetCurve3D anOffset)
             {
                 offset = anOffset;
                 basis = anOffset.BasisCurve();
             }
-            if (basis is Geom_BezierCurve bezierBasis)
+            if (basis is BezierCurve3D bezierBasis)
             {
                 // OCCT.NET: OCCT segments the copy's basis curve in place; the port's basis curves are shared and
                 // frozen once handed out (decision 159), so the segment is made on a copy, rebuilt into the offset
                 // curve if there is one and set as the copy's basis (decision 998)
-                var aSegment = (Geom_BezierCurve)bezierBasis.Copy();
+                var aSegment = (BezierCurve3D)bezierBasis.Copy();
                 aSegment.Segment(V1, V2);
-                Geom_Curve aNewBasis = offset is null ? aSegment : new Geom_OffsetCurve(aSegment, offset.Offset(), offset.Direction());
+                Curve3D aNewBasis = offset is null ? aSegment : new OffsetCurve3D(aSegment, offset.Offset(), offset.Direction());
                 revol.SetBasisCurve(aNewBasis);
             }
             else
@@ -535,7 +536,7 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
                 return revol;
             }
 
-            var res = new Geom_RectangularTrimmedSurface(revol, U1, U2, true);
+            var res = new TrimmedSurface(revol, U1, U2, true);
             return res;
         }
         else
@@ -547,7 +548,7 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
                 return surf;
             }
 
-            var res = new Geom_RectangularTrimmedSurface(surf, U1, U2, V1, V2);
+            var res = new TrimmedSurface(surf, U1, U2, V1, V2);
             return res;
         }
     }
@@ -557,8 +558,8 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
     {
         bool isOffset = false;
         double offsetValue = 0;
-        Geom_Surface S;
-        if (mySurface is Geom_RectangularTrimmedSurface Surface)
+        Surface S;
+        if (mySurface is TrimmedSurface Surface)
         {
             S = Surface.BasisSurface();
         }
@@ -566,7 +567,7 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
         {
             S = mySurface!;
         }
-        if (S is Geom_OffsetSurface offSur)
+        if (S is OffsetSurface offSur)
         {
             isOffset = true;
             offsetValue = offSur.Offset();
@@ -578,7 +579,7 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
         int nbU = myUSplitValues!.Length();
         int nbV = myVSplitValues!.Length();
 
-        var resSurfaces = new NCollection_HArray2<Geom_Surface>(1, nbU - 1, 1, nbV - 1);
+        var resSurfaces = new NCollection_HArray2<Surface>(1, nbU - 1, 1, nbV - 1);
         int j1 = 2;
         for (int i1 = 2; i1 <= nbU; i1++)
         {
@@ -604,7 +605,7 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
                     }
                 }
 
-                Geom_Surface patch = mySegments.Patch(j1 - 1, j2 - 1);
+                Surface patch = mySegments.Patch(j1 - 1, j2 - 1);
                 patch.Bounds(out double U1, out double U2, out double V1, out double V2);
                 // linear recomputation of part:
                 double uFirst = myUSplitParams.Value(j1 - 1);
@@ -620,10 +621,10 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
                 double uL2 = U1 + (parU - uFirst) * uFact;
                 double vL1 = V1 + (ppV - vFirst) * vFact;
                 double vL2 = V1 + (parV - vFirst) * vFact;
-                Geom_Surface res = GetSegment(patch, uL1, uL2, vL1, vL2);
+                Surface res = GetSegment(patch, uL1, uL2, vL1, vL2);
                 if (isOffset)
                 {
-                    var resOff = new Geom_OffsetSurface(res, offsetValue);
+                    var resOff = new OffsetSurface(res, offsetValue);
                     res = resOff;
                 }
                 resSurfaces.SetValue(i1 - 1, i2 - 1, res);

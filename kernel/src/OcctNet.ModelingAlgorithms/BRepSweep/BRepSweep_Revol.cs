@@ -5,8 +5,8 @@
 
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -16,41 +16,41 @@ internal sealed class BRepSweep_Revol
     private readonly BRepSweep_Rotation myRotation;
 
     /// <summary>The revolution of <paramref name="S"/> around <paramref name="Ax"/> by the angle <paramref name="D"/>.</summary>
-    public BRepSweep_Revol(in TopoDS_Shape S, in Axis3D Ax, double D, bool C = false)
+    public BRepSweep_Revol(in Shape S, in Axis3D Ax, double D, bool C = false)
     {
-        myRotation = new BRepSweep_Rotation(S.Oriented(TopAbs_FORWARD), NumShape(D), Location(Ax, D), Axe(Ax, D), Angle(D), C);
+        myRotation = new BRepSweep_Rotation(S.Oriented(Forward), NumShape(D), Location(Ax, D), Axe(Ax, D), Angle(D), C);
         Standard_ConstructionError_Raise_if(Angle(D) <= global::Kerf.Engine.Foundation.Precision.Angular(), "BRepSweep_Revol::Constructor");
     }
 
     /// <summary>The whole revolution of <paramref name="S"/> around <paramref name="Ax"/>.</summary>
-    public BRepSweep_Revol(in TopoDS_Shape S, in Axis3D Ax, bool C = false)
+    public BRepSweep_Revol(in Shape S, in Axis3D Ax, bool C = false)
     {
-        myRotation = new BRepSweep_Rotation(S.Oriented(TopAbs_FORWARD), NumShape(2 * Math.PI), Location(Ax, 2 * Math.PI),
+        myRotation = new BRepSweep_Rotation(S.Oriented(Forward), NumShape(2 * Math.PI), Location(Ax, 2 * Math.PI),
                                             Axe(Ax, 2 * Math.PI), Angle(2 * Math.PI), C);
     }
 
-    public TopoDS_Shape Shape() => myRotation.Shape();
+    public Shape Shape() => myRotation.Shape();
 
-    public TopoDS_Shape Shape(in TopoDS_Shape aGenS) => myRotation.Shape(aGenS);
+    public Shape Shape(in Shape aGenS) => myRotation.Shape(aGenS);
 
-    public TopoDS_Shape FirstShape() => myRotation.FirstShape();
+    public Shape FirstShape() => myRotation.FirstShape();
 
-    public TopoDS_Shape FirstShape(in TopoDS_Shape aGenS) => myRotation.FirstShape(aGenS);
+    public Shape FirstShape(in Shape aGenS) => myRotation.FirstShape(aGenS);
 
-    public TopoDS_Shape LastShape() => myRotation.LastShape();
+    public Shape LastShape() => myRotation.LastShape();
 
-    public TopoDS_Shape LastShape(in TopoDS_Shape aGenS) => myRotation.LastShape(aGenS);
+    public Shape LastShape(in Shape aGenS) => myRotation.LastShape(aGenS);
 
     private static Sweep_NumShape NumShape(double D)
     {
         var N = new Sweep_NumShape();
         if (Math.Abs(Angle(D) - 2 * Math.PI) <= global::Kerf.Engine.Foundation.Precision.Angular())
         {
-            N.Init(2, TopAbs_EDGE, true, false, false);
+            N.Init(2, ShapeType.Edge, true, false, false);
         }
         else
         {
-            N.Init(2, TopAbs_EDGE);
+            N.Init(2, ShapeType.Edge);
         }
         return N;
     }
@@ -90,5 +90,5 @@ internal sealed class BRepSweep_Revol
     public Axis3D Axe() => myRotation.Axe();
 
     /// <summary>True if the initial shape aGenS is used in the result shape.</summary>
-    public bool IsUsed(in TopoDS_Shape aGenS) => myRotation.IsUsed(aGenS);
+    public bool IsUsed(in Shape aGenS) => myRotation.IsUsed(aGenS);
 }

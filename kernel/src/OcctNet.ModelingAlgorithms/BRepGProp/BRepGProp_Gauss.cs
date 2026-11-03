@@ -10,6 +10,7 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -567,8 +568,8 @@ public sealed class BRepGProp_Gauss
 
         //
         int NumSubs = SUBS_POWER;
-        TopoDS_Face aF = theSurface.GetFace();
-        bool isNaturalRestriction = (aF.NbChildren() == 0); //theSurface.NaturalRestriction();
+        Face aF = theSurface.GetFace();
+        bool isNaturalRestriction = (aF.ChildCount == 0); //theSurface.NaturalRestriction();
 
         double CIx, CIy, CIz, CIxy, CIxz, CIyz;
         Span<double> CDim = stackalloc double[2];

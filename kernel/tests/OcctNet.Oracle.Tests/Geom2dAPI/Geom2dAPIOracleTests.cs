@@ -33,10 +33,10 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
         public double U1, U2;
         public string Name = "";
 
-        public (N.Geom2d_Curve Native, Geom2d_Curve Port) Build()
+        public (N.Geom2d_Curve Native, Curve2D Port) Build()
         {
             N.Geom2d_Curve aN;
-            Geom2d_Curve aP;
+            Curve2D aP;
             switch (Kind)
             {
                 case 0:
@@ -44,7 +44,7 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
                     using var aNP = new N.gp_Pnt2d(Px, Py);
                     using var aND = new N.gp_Dir2d(Dx, Dy);
                     aN = new N.Geom2d_Line(aNP, aND);
-                    aP = new Geom2d_Line(new Point2D(Px, Py), new Direction2D(Dx, Dy));
+                    aP = new LineCurve2D(new Point2D(Px, Py), new Direction2D(Dx, Dy));
                     break;
                 }
                 case 1:
@@ -57,12 +57,12 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
                     if (Kind == 1)
                     {
                         aN = new N.Geom2d_Circle(aNA, R1, Sense);
-                        aP = new Geom2d_Circle(anA, R1, Sense);
+                        aP = new CircleCurve2D(anA, R1, Sense);
                     }
                     else
                     {
                         aN = new N.Geom2d_Ellipse(aNA, R1, R2, Sense);
-                        aP = new Geom2d_Ellipse(anA, R1, R2, Sense);
+                        aP = new EllipseCurve2D(anA, R1, R2, Sense);
                     }
                     break;
                 }
@@ -75,7 +75,7 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
             {
                 N.Geom2d_Curve aNT = new N.Geom2d_TrimmedCurve(aN, U1, U2);
                 aN.Dispose();
-                return (aNT, new Geom2d_TrimmedCurve(aP, U1, U2));
+                return (aNT, new TrimmedCurve2D(aP, U1, U2));
             }
             return (aN, aP);
         }
@@ -163,7 +163,7 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
                 break;
             default:
             {
-                Geom2d_BSplineCurve aC = Geom2dOracle.ToPort(theS.BSpline!);
+                BSplineCurve2D aC = Geom2dOracle.ToPort(theS.BSpline!);
                 aFirst = aC.FirstParameter();
                 aLast = aC.LastParameter();
                 break;
@@ -194,7 +194,7 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
     /// A second curve: independent, or through a point of the first one, tangent to it there, or the first one
     /// itself (whole, or trimmed differently) so that it overlaps.
     /// </summary>
-    private static CurveSpec SecondCurve(Oracle theO, CurveSpec theFirst, Geom2d_Curve thePort)
+    private static CurveSpec SecondCurve(Oracle theO, CurveSpec theFirst, Curve2D thePort)
     {
         int aMode = theO.Int(0, 9);
         if (aMode <= 3)
@@ -288,9 +288,9 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
         for (int c = 0; c < Pairs; c++)
         {
             CurveSpec aS1 = RandomCurve(anOracle, 10);
-            (N.Geom2d_Curve aN1, Geom2d_Curve aP1) = aS1.Build();
+            (N.Geom2d_Curve aN1, Curve2D aP1) = aS1.Build();
             CurveSpec aS2 = SecondCurve(anOracle, aS1, aP1);
-            (N.Geom2d_Curve aN2, Geom2d_Curve aP2) = aS2.Build();
+            (N.Geom2d_Curve aN2, Curve2D aP2) = aS2.Build();
             double aTol = Tolerances[anOracle.Int(0, Tolerances.Length - 1)];
             bool aSwap = anOracle.Bool();
             if (aSwap)
@@ -340,7 +340,7 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
                     Trim(anOracle, aS);
                 }
             }
-            (N.Geom2d_Curve aNC, Geom2d_Curve aPC) = aS.Build();
+            (N.Geom2d_Curve aNC, Curve2D aPC) = aS.Build();
             double aTol = Tolerances[anOracle.Int(0, Tolerances.Length - 1)];
             string aW = $"#{c} {aS.Name} tol {aTol}";
             using (aNC)
@@ -373,7 +373,7 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
         for (int c = 0; c < 600; c++)
         {
             CurveSpec aS = RandomCurve(anOracle, 10);
-            (N.Geom2d_Curve aNC, Geom2d_Curve aPC) = aS.Build();
+            (N.Geom2d_Curve aNC, Curve2D aPC) = aS.Build();
             using (aNC)
             {
                 double aF = aPC.FirstParameter(), aL = aPC.LastParameter();

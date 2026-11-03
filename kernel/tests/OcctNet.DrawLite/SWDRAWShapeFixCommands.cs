@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -47,11 +51,11 @@ internal static class SWDRAWShapeFixCommands
     /// sharing a changed sub-shape is rebound, and the result (unfrozen, made of the input's shapes where unchanged) is
     /// returned.
     /// </summary>
-    internal static TopoDS_Shape InPlace(DrawInterpreter theDI, in TopoDS_Shape theShape, Func<TopoDS_Shape, TopoDS_Shape> theTool)
+    internal static Shape InPlace(DrawInterpreter theDI, in Shape theShape, Func<Shape, Shape> theTool)
     {
-        var anEntry = new BRepTools_CopyAtEntry(theShape, null, true);
-        TopoDS_Shape aWork = anEntry.Shape();
-        TopoDS_Shape aResult = theTool(aWork);
+        var anEntry = new CopyAtEntry(theShape, null, true);
+        Shape aWork = anEntry.Shape();
+        Shape aResult = theTool(aWork);
         aResult = anEntry.Finish(aResult, [aWork]);
         DrawShapeRebind.Rebind(theDI, theShape, anEntry.Final(aWork));
         return aResult;
@@ -65,28 +69,28 @@ internal static class SWDRAWShapeFixCommands
             di.Append("Invalid number of arguments\n");
             return 1;
         }
-        TopoDS_Shape Sh1 = theDI.GetShape(a[1]);
-        TopoDS_Shape Sh2 = theDI.GetShape(a[2]);
-        if (Sh1.IsNull() || Sh2.IsNull())
+        Shape Sh1 = theDI.GetShape(a[1]);
+        Shape Sh2 = theDI.GetShape(a[2]);
+        if (Sh1.IsNull || Sh2.IsNull)
         {
             di.Append("Invalid arguments\n");
             return 1;
         }
-        TopoDS_Edge e1 = TopoDS.Edge(Sh1);
-        TopoDS_Edge e2 = TopoDS.Edge(Sh2);
-        if (e1.IsNull() || e2.IsNull())
+        Edge e1 = ShapeCasts.Edge(Sh1);
+        Edge e2 = ShapeCasts.Edge(Sh2);
+        if (e1.IsNull || e2.IsNull)
         {
             di.Append("Invalid type of arguments\n");
             return 1;
         }
 
-        if (BRep_Tool.Degenerated(e1))
+        if (Tool.Degenerated(e1))
         {
             di.Append(a[1]).Append(" is degenerated\n");
             return 1;
         }
 
-        if (BRep_Tool.Degenerated(e2))
+        if (Tool.Degenerated(e2))
         {
             di.Append(a[2]).Append(" is degenerated\n");
             return 1;
@@ -135,7 +139,7 @@ internal static class SWDRAWShapeFixCommands
             di.Append("shapename ,  option f to force, else only Edges not-SameParameter are computed\n");
             return 1 /* Error */;
         }
-        TopoDS_Shape Shape = theDI.GetShape(argv[1]);
+        Shape Shape = theDI.GetShape(argv[1]);
 
         bool isDone = true;
         // OCCT works on the shape itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
@@ -166,38 +170,38 @@ internal static class SWDRAWShapeFixCommands
         }
         string arg1 = argv[1];
         string arg2 = argv[2];
-        TopoDS_Shape Shape = theDI.GetShape(arg1);
-        if (Shape.IsNull())
+        Shape Shape = theDI.GetShape(arg1);
+        if (Shape.IsNull)
         {
             di.Append("Shape unknown : ").Append(arg1).Append("\n");
             return 1 /* Error */;
         }
         char mod2 = arg2.Length > 0 ? arg2[0] : '\0';
         int premarg = 2;
-        TopAbs_ShapeEnum styp = TopAbs_ShapeEnum.TopAbs_SHAPE;
+        ShapeType styp = ShapeType.Shape;
         if (mod2 == 'v')
         {
-            styp = TopAbs_ShapeEnum.TopAbs_VERTEX;
+            styp = ShapeType.Vertex;
             premarg = 3;
         }
         if (mod2 == 'e')
         {
-            styp = TopAbs_ShapeEnum.TopAbs_EDGE;
+            styp = ShapeType.Edge;
             premarg = 3;
         }
         if (mod2 == 'w')
         {
-            styp = TopAbs_ShapeEnum.TopAbs_WIRE;
+            styp = ShapeType.Wire;
             premarg = 3;
         }
         if (mod2 == 'f')
         {
-            styp = TopAbs_ShapeEnum.TopAbs_FACE;
+            styp = ShapeType.Face;
             premarg = 3;
         }
         if (mod2 == 'a')
         {
-            styp = TopAbs_ShapeEnum.TopAbs_SHAPE;
+            styp = ShapeType.Shape;
             premarg = 3;
         }
 
@@ -261,8 +265,8 @@ internal static class SWDRAWShapeFixCommands
         }
         string arg1 = argv[1];
         string arg2 = argv[2];
-        TopoDS_Shape Shape = theDI.GetShape(arg1);
-        if (Shape.IsNull())
+        Shape Shape = theDI.GetShape(arg1);
+        if (Shape.IsNull)
         {
             di.Append("Shape unknown : ").Append(arg1).Append("\n");
             return 1 /* Error */;
@@ -314,13 +318,13 @@ internal static class SWDRAWShapeFixCommands
         var resh = new ShapeBuild_ReShape();
 
         int nbfc = 0;
-        for (var EF = new TopExp_Explorer(Shape, TopAbs_ShapeEnum.TopAbs_FACE); EF.More(); EF.Next())
+        for (var EF = new Explorer(Shape, ShapeType.Face); EF.More(); EF.Next())
         {
-            TopoDS_Face F = TopoDS.Face(EF.Current());
+            Face F = ShapeCasts.Face(EF.Current());
             // ShapeFix_Face copies a frozen face at the entry (decision 583): the variable's face is unchanged
             STF.Init(F); // qui fait tout
             STF.Perform();
-            TopoDS_Face face = STF.Face();
+            Face face = STF.Face();
             bool newface = STF.Status(ShapeExtend_Status.ShapeExtend_DONE) || rebuild;
             if (newface)
             {
@@ -331,7 +335,7 @@ internal static class SWDRAWShapeFixCommands
         if (nbfc > 0)
         {
             di.Append("Faces reprises par ShapeFix_Face : ").Append(nbfc).Append("\n");
-            theDI.SetShape(arg2, resh.Apply(Shape, TopAbs_ShapeEnum.TopAbs_FACE, 2));
+            theDI.SetShape(arg2, resh.Apply(Shape, ShapeType.Face, 2));
             return 0; // Done
         }
         else
@@ -349,7 +353,7 @@ internal static class SWDRAWShapeFixCommands
         sfs.SetMsgRegistrator(msg);
 
         string? res = null;
-        TopoDS_Shape initShape = new();
+        Shape initShape = new();
         double? aPrecision = null, aMaxTolerance = null;
         int par = 0, mess = 0;
         for (int i = 1; i < argc; i++)
@@ -417,8 +421,8 @@ internal static class SWDRAWShapeFixCommands
                         break;
                     case 1:
                     {
-                        TopoDS_Shape aShape = theDI.GetShape(argv[i]);
-                        if (aShape.IsNull())
+                        Shape aShape = theDI.GetShape(argv[i]);
+                        if (aShape.IsNull)
                         {
                             continue;
                         }
@@ -467,8 +471,8 @@ internal static class SWDRAWShapeFixCommands
             sfs.SetMaxTolerance(aMaxTol);
         }
 
-        TopoDS_Shape aResult;
-        if (initShape.IsNull())
+        Shape aResult;
+        if (initShape.IsNull)
         {
             // OCCT performs on the empty tool and sets a null shape
             sfs.Perform();
@@ -492,8 +496,8 @@ internal static class SWDRAWShapeFixCommands
             // Draw-lite lists the messages in the order they first come
             var aMapOfNumberOfFixes = new Dictionary<string, int>(StringComparer.Ordinal);
             var aOrder = new List<string>();
-            var aBuilder = new BRep_Builder();
-            var aCompound = new TopoDS_Compound();
+            var aBuilder = new BrepBuilder();
+            var aCompound = new Compound();
             aBuilder.MakeCompound(ref aCompound);
             // Counting the number of each type of fixes. If the switch '*?' store all modified shapes in compound.
             foreach (var it in msg.MapShape())
@@ -546,8 +550,8 @@ internal static class SWDRAWShapeFixCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[2]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[2]);
+        if (S.IsNull)
         {
             di.Append(" Shape is null\n");
             return 1;
@@ -556,7 +560,7 @@ internal static class SWDRAWShapeFixCommands
         double prec = n > 3 ? theDI.Atof(a[3]) : 0.0;
         bool isFixed = false;
         // OCCT works on the shape itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
-        TopoDS_Shape aResult = InPlace(theDI, S, aWork =>
+        Shape aResult = InPlace(theDI, S, aWork =>
         {
             var SFWF = new ShapeFix_Wireframe(aWork);
             SFWF.SetPrecision(prec);
@@ -580,8 +584,8 @@ internal static class SWDRAWShapeFixCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[2]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[2]);
+        if (S.IsNull)
         {
             di.Append(" Shape is null\n");
             return 1;
@@ -590,7 +594,7 @@ internal static class SWDRAWShapeFixCommands
         double prec = (n == 4) ? theDI.Atof(a[3]) : 1.0;
         bool isFixed = false;
         // OCCT works on the shape itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
-        TopoDS_Shape aResult = InPlace(theDI, S, aWork =>
+        Shape aResult = InPlace(theDI, S, aWork =>
         {
             var SFWF = new ShapeFix_Wireframe(aWork);
             SFWF.SetPrecision(prec);
@@ -615,7 +619,7 @@ internal static class SWDRAWShapeFixCommands
             di.Append("Invalid number of arguments\n");
             return 1;
         }
-        TopoDS_Shape Sh = theDI.GetShape(a[2]);
+        Shape Sh = theDI.GetShape(a[2]);
 
         int k = 3;
         double tol = 100000;
@@ -639,7 +643,7 @@ internal static class SWDRAWShapeFixCommands
         bool aModeDrop = mode != 2;
 
         // OCCT works on the shape itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
-        TopoDS_Shape resShape = InPlace(theDI, Sh, aWork =>
+        Shape resShape = InPlace(theDI, Sh, aWork =>
         {
             var aSfwr = new ShapeFix_Wireframe();
             var aReShape = new ShapeBuild_ReShape();
@@ -647,10 +651,10 @@ internal static class SWDRAWShapeFixCommands
             aSfwr.Load(aWork);
             aSfwr.SetPrecision(tol);
 
-            var theSmallEdges = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            var theMultyEdges = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            var theEdgeToFaces = new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-            var theFaceWithSmall = new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+            var theSmallEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var theMultyEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var theEdgeToFaces = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var theFaceWithSmall = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             aSfwr.CheckSmallEdges(theSmallEdges, theEdgeToFaces, theFaceWithSmall, theMultyEdges);
             aSfwr.MergeSmallEdges(theSmallEdges, theEdgeToFaces, theFaceWithSmall, theMultyEdges, aModeDrop, tolang);
             return aSfwr.InternalShape();
@@ -668,8 +672,8 @@ internal static class SWDRAWShapeFixCommands
             return 1;
         }
 
-        TopoDS_Shape aShape = theDI.GetShape(theArgv[2]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(theArgv[2]);
+        if (aShape.IsNull)
         {
             theDi.Append("Error: Shape ").Append(theArgv[2]).Append(" is null\n");
             return 1;
@@ -679,7 +683,7 @@ internal static class SWDRAWShapeFixCommands
 
         bool isRemoved = false;
         // OCCT works on the shape itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
-        TopoDS_Shape aResult = InPlace(theDI, aShape, aWork =>
+        Shape aResult = InPlace(theDI, aShape, aWork =>
         {
             var aFixSmallFaces = new ShapeFix_FixSmallFace();
             aFixSmallFaces.Init(aWork);
@@ -706,10 +710,10 @@ internal static class SWDRAWShapeFixCommands
             di.Append("Invalid number of arguments\n");
             return 1;
         }
-        TopoDS_Shape Sh1 = theDI.GetShape(a[1]);
+        Shape Sh1 = theDI.GetShape(a[1]);
         double ucoord = theDI.Atof(a[2]);
         double vcoord = theDI.Atof(a[3]);
-        if (Sh1.IsNull() || Sh1.ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE)
+        if (Sh1.IsNull || Sh1.ShapeType() != ShapeType.Face)
         {
             di.Append("Invalid arguments\n");
             return 1;
@@ -722,19 +726,19 @@ internal static class SWDRAWShapeFixCommands
                                   out double aTol) ? aTol : 0.0;
         }
 
-        TopoDS_Face aFace = TopoDS.Face(Sh1);
+        Face aFace = ShapeCasts.Face(Sh1);
         var p2d = new Point2D(ucoord, vcoord);
         var f2d = new BRepTopAdaptor_FClass2d(aFace, tol);
-        TopAbs_State stat = f2d.Perform(p2d);
-        if (stat == TopAbs_State.TopAbs_OUT)
+        Containment stat = f2d.Perform(p2d);
+        if (stat == Containment.Out)
         {
             di.Append("Point is OUT\n");
         }
-        else if (stat == TopAbs_State.TopAbs_IN)
+        else if (stat == Containment.In)
         {
             di.Append("Point is IN\n");
         }
-        else if (stat == TopAbs_State.TopAbs_ON)
+        else if (stat == Containment.On)
         {
             di.Append("Point is ON\n");
         }
@@ -753,8 +757,8 @@ internal static class SWDRAWShapeFixCommands
             di.Append("Invalid number of arguments. Should be : result shape [toler shared]\n");
             return 1;
         }
-        TopoDS_Shape aSh1 = theDI.GetShape(a[2]);
-        if (aSh1.IsNull())
+        Shape aSh1 = theDI.GetShape(a[2]);
+        if (aSh1.IsNull)
         {
             di.Append("Shape is null\n");
             return 1;
@@ -770,26 +774,26 @@ internal static class SWDRAWShapeFixCommands
         {
             shared = theDI.Atoi(a[4]) == 1;
         }
-        var aExpE = new TopExp_Explorer(aSh1, TopAbs_ShapeEnum.TopAbs_EDGE);
-        var aSeqEdges = new NCollection_HSequence<TopoDS_Shape>();
-        var aMapEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aExpE = new Explorer(aSh1, ShapeType.Edge);
+        var aSeqEdges = new NCollection_HSequence<Shape>();
+        var aMapEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         for (; aExpE.More(); aExpE.Next())
         {
             aSeqEdges.Append(aExpE.Current());
             aMapEdges.Add(aExpE.Current());
         }
 
-        NCollection_HSequence<TopoDS_Shape> aSeqWires = ShapeAnalysis_FreeBounds.ConnectEdgesToWires(aSeqEdges, aTol, shared);
-        var aB = new BRep_Builder();
-        var aComp = new TopoDS_Compound();
+        NCollection_HSequence<Shape> aSeqWires = ShapeAnalysis_FreeBounds.ConnectEdgesToWires(aSeqEdges, aTol, shared);
+        var aB = new BrepBuilder();
+        var aComp = new Compound();
         aB.MakeCompound(ref aComp);
         int i = 1;
         for (; i <= aSeqWires.Length(); i++)
         {
-            TopoDS_Shape aW = aSeqWires.Value(i);
+            Shape aW = aSeqWires.Value(i);
             di.Append("Wire - ").Append(i).Append(" : \n");
 
-            var aExp1 = new TopExp_Explorer(aW, TopAbs_ShapeEnum.TopAbs_EDGE);
+            var aExp1 = new Explorer(aW, ShapeType.Edge);
             for (; aExp1.More(); aExp1.Next())
             {
                 if (shared)
@@ -799,8 +803,8 @@ internal static class SWDRAWShapeFixCommands
                 }
                 else
                 {
-                    TopExp.Vertices(TopoDS.Edge(aExp1.Current()), out TopoDS_Vertex aV1, out TopoDS_Vertex _);
-                    Point3D aP = BRep_Tool.Pnt(aV1);
+                    Exploration.Vertices(ShapeCasts.Edge(aExp1.Current()), out Vertex aV1, out Vertex _);
+                    Point3D aP = Tool.Pnt(aV1);
                     di.Append(aP.X()).Append(" ").Append(aP.Y()).Append(" ").Append(aP.Z()).Append("\n");
                 }
             }

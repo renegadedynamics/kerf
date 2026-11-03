@@ -4,6 +4,7 @@ using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Geometry.Bounds;
 
+using Kerf.Engine.Geometry.Bounds.Computation;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -18,8 +19,8 @@ public class GeomBndLib_SurfaceIssueTest
     public void Cone_InfiniteV_RadialDirectionsStayClosed()
     {
         // Cone about Z, V in [0, +inf): OCCT opens only Zmax, but the radius grows with V.
-        Geom_ConicalSurface aCone = new(new CoordinateSystem(Constants.XOY()), M_PI / 4.0, 2.0);
-        Box aBox = new GeomBndLib_Surface(aCone).Box(0.0, 2.0 * M_PI, 0.0, global::Kerf.Engine.Foundation.Precision.Infinite(), 0.0);
+        ConicalSurface aCone = new(new CoordinateSystem(Constants.XOY()), M_PI / 4.0, 2.0);
+        Box aBox = new SurfaceBounds(aCone).Box(0.0, 2.0 * M_PI, 0.0, global::Kerf.Engine.Foundation.Precision.Infinite(), 0.0);
 
         Assert.True(aBox.IsOpenZmax);
         Assert.False(aBox.IsOpenXmax);
@@ -36,9 +37,9 @@ public class GeomBndLib_SurfaceIssueTest
         aPoles[1, 2] = new Point3D(10.0, 0.0, 0.0);
         aPoles[2, 1] = new Point3D(0.0, 10.0, 0.0);
         aPoles[2, 2] = new Point3D(10.0, 10.0, 5.0);
-        Geom_OffsetSurface anOff = new(new Geom_BezierSurface(aPoles), 1.0);
+        OffsetSurface anOff = new(new BezierSurface(aPoles), 1.0);
         Assert.Null(anOff.Surface());
-        Box aBox = new GeomBndLib_Surface(anOff).Box(0.0, 1.0, 0.0, 1.0, 0.5);
+        Box aBox = new SurfaceBounds(anOff).Box(0.0, 1.0, 0.0, 1.0, 0.5);
 
         Assert.Equal(1.0, aBox.GetGap());
     }
@@ -55,9 +56,9 @@ public class GeomBndLib_SurfaceIssueTest
         aPoles[1, 2] = new Point3D(0.0, 10.0, 0.0);
         aPoles[2, 2] = new Point3D(5.0, 10.0, 10.0);
         aPoles[3, 2] = new Point3D(10.0, 10.0, 0.0);
-        Geom_BezierSurface aBezier = new(aPoles);
+        BezierSurface aBezier = new(aPoles);
 
-        Box aBox = new GeomBndLib_Surface(aBezier).Box(0.1, 0.65, 0.0, 1.0, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Box aBox = new SurfaceBounds(aBezier).Box(0.1, 0.65, 0.0, 1.0, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Assert.Equal(5.0, aBezier.Value(0.5, 0.5).Z(), 1e-12);
         Assert.True(aBox.GetZMax() < 4.98, $"Zmax {aBox.GetZMax()}");

@@ -41,7 +41,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>D0 to D3, and DN for every order with Nu + Nv from 1 to theMaxN, at (U, V).</summary>
-    private static void CompareAt(Oracle theOracle, N.Geom_Surface theN, Geom_Surface theP, double U, double V,
+    private static void CompareAt(Oracle theOracle, N.Geom_Surface theN, Surface theP, double U, double V,
                                   string theWhat, int theMaxN = 4, double theTol = Oracle.Tolerance)
     {
         using (N.gp_Pnt aNP = theN.EvalD0(U, V))
@@ -114,7 +114,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>Bounds, closure, periodicity (with periods), continuity and IsCN.</summary>
-    private static void CompareProperties(Oracle theOracle, N.Geom_Surface theN, Geom_Surface theP, string theWhat,
+    private static void CompareProperties(Oracle theOracle, N.Geom_Surface theN, Surface theP, string theWhat,
                                           bool theContinuity = true)
     {
         double aNU1 = 0, aNU2 = 0, aNV1 = 0, aNV2 = 0;
@@ -124,15 +124,15 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
         theOracle.Same(aNU2, aU2, theWhat + " U2");
         theOracle.Same(aNV1, aV1, theWhat + " V1");
         theOracle.Same(aNV2, aV2, theWhat + " V2");
-        theOracle.Same(theN.IsUClosed(), theP.IsUClosed(), theWhat + " IsUClosed");
-        theOracle.Same(theN.IsVClosed(), theP.IsVClosed(), theWhat + " IsVClosed");
-        theOracle.Same(theN.IsUPeriodic(), theP.IsUPeriodic(), theWhat + " IsUPeriodic");
-        theOracle.Same(theN.IsVPeriodic(), theP.IsVPeriodic(), theWhat + " IsVPeriodic");
-        if (theP.IsUPeriodic())
+        theOracle.Same(theN.IsUClosed(), theP.IsUClosed, theWhat + " IsUClosed");
+        theOracle.Same(theN.IsVClosed(), theP.IsVClosed, theWhat + " IsVClosed");
+        theOracle.Same(theN.IsUPeriodic(), theP.IsUPeriodic, theWhat + " IsUPeriodic");
+        theOracle.Same(theN.IsVPeriodic(), theP.IsVPeriodic, theWhat + " IsVPeriodic");
+        if (theP.IsUPeriodic)
         {
             theOracle.Same(theN.UPeriod(), theP.UPeriod(), theWhat + " UPeriod");
         }
-        if (theP.IsVPeriodic())
+        if (theP.IsVPeriodic)
         {
             theOracle.Same(theN.VPeriod(), theP.VPeriod(), theWhat + " VPeriod");
         }
@@ -157,7 +157,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
         return theOracle.Real(theFirst, theLast);
     }
 
-    private static void CompareEvaluation(Oracle theOracle, N.Geom_Surface theN, Geom_Surface theP, string theWhat,
+    private static void CompareEvaluation(Oracle theOracle, N.Geom_Surface theN, Surface theP, string theWhat,
                                           int theMaxN = 4, double theTol = Oracle.Tolerance, int theCount = 4)
     {
         theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
@@ -166,11 +166,11 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
             double U = Param(theOracle, aU1, aU2);
             double V = Param(theOracle, aV1, aV2);
             // Outside the first period too
-            if (k == 0 && theP.IsUPeriodic())
+            if (k == 0 && theP.IsUPeriodic)
             {
                 U += 3 * theP.UPeriod();
             }
-            if (k == 1 && theP.IsVPeriodic())
+            if (k == 1 && theP.IsVPeriodic)
             {
                 V -= 2 * theP.VPeriod();
             }
@@ -179,7 +179,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>TransformParameters and ParametricTransformation for T.</summary>
-    private static void CompareParametricTransformation(Oracle theOracle, N.Geom_Surface theN, Geom_Surface theP,
+    private static void CompareParametricTransformation(Oracle theOracle, N.Geom_Surface theN, Surface theP,
                                                         N.gp_Trsf theNT, in Transform3D theT, string theWhat)
     {
         theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
@@ -204,40 +204,40 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
     // ---------------------------------------------------------------------------------------------------------
     // Elementary surfaces
 
-    private static (N.Geom_ElementarySurface Native, Geom_ElementarySurface Port) RandomElementary(Oracle theOracle, int theKind)
+    private static (N.Geom_ElementarySurface Native, ElementarySurface Port) RandomElementary(Oracle theOracle, int theKind)
     {
         (N.gp_Ax3 aNAx3, CoordinateSystem anAx3) = Ax3s(theOracle);
         using var aNAx3Owner = aNAx3;
         switch (theKind)
         {
             case 0:
-                return (new N.Geom_Plane(aNAx3), new Geom_Plane(anAx3));
+                return (new N.Geom_Plane(aNAx3), new PlaneSurface(anAx3));
             case 1:
             {
                 double R = theOracle.Real(0.1, 20);
-                return (new N.Geom_CylindricalSurface(aNAx3, R), new Geom_CylindricalSurface(anAx3, R));
+                return (new N.Geom_CylindricalSurface(aNAx3, R), new CylindricalSurface(anAx3, R));
             }
             case 2:
             {
                 double anAng = theOracle.Real(0.05, 1.5) * (theOracle.Int(0, 1) == 0 ? 1 : -1);
                 double R = theOracle.Int(0, 4) == 0 ? 0.0 : theOracle.Real(0.1, 20);
-                return (new N.Geom_ConicalSurface(aNAx3, anAng, R), new Geom_ConicalSurface(anAx3, anAng, R));
+                return (new N.Geom_ConicalSurface(aNAx3, anAng, R), new ConicalSurface(anAx3, anAng, R));
             }
             case 3:
             {
                 double R = theOracle.Real(0.1, 20);
-                return (new N.Geom_SphericalSurface(aNAx3, R), new Geom_SphericalSurface(anAx3, R));
+                return (new N.Geom_SphericalSurface(aNAx3, R), new SphericalSurface(anAx3, R));
             }
             default:
             {
                 double r = theOracle.Real(0.1, 5);
                 double R = theOracle.Int(0, 4) == 0 ? theOracle.Real(0.0, r) : theOracle.Real(r, 20);
-                return (new N.Geom_ToroidalSurface(aNAx3, R, r), new Geom_ToroidalSurface(anAx3, R, r));
+                return (new N.Geom_ToroidalSurface(aNAx3, R, r), new ToroidalSurface(anAx3, R, r));
             }
         }
     }
 
-    private static void CompareElementaryQueries(Oracle theOracle, N.Geom_ElementarySurface theN, Geom_ElementarySurface theP,
+    private static void CompareElementaryQueries(Oracle theOracle, N.Geom_ElementarySurface theN, ElementarySurface theP,
                                                  string theWhat)
     {
         using (N.gp_Ax3 aNPos = theN.Position())
@@ -249,7 +249,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
         double a1, a2, a3, b1, b2, b3, c1, c2, c3, d;
         switch (theP)
         {
-            case Geom_Plane aPlane:
+            case PlaneSurface aPlane:
                 using (var aNPlane = N.Geom_Plane.DownCast(theN)!)
                 {
                     aNPlane.Coefficients(ref A1, ref A2, ref A3, ref D);
@@ -260,7 +260,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
                 theOracle.Same(A3, a3, theWhat + " C");
                 theOracle.Same(D, d, theWhat + " D");
                 return;
-            case Geom_CylindricalSurface aCyl:
+            case CylindricalSurface aCyl:
             {
                 using var aNCyl = N.Geom_CylindricalSurface.DownCast(theN)!;
                 aNCyl.Coefficients(ref A1, ref A2, ref A3, ref B1, ref B2, ref B3, ref C1, ref C2, ref C3, ref D);
@@ -268,7 +268,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
                 theOracle.Same(aNCyl.Radius(), aCyl.Radius(), theWhat + " Radius");
                 break;
             }
-            case Geom_ConicalSurface aCone:
+            case ConicalSurface aCone:
             {
                 using var aNCone = N.Geom_ConicalSurface.DownCast(theN)!;
                 aNCone.Coefficients(ref A1, ref A2, ref A3, ref B1, ref B2, ref B3, ref C1, ref C2, ref C3, ref D);
@@ -282,7 +282,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
                 }
                 break;
             }
-            case Geom_SphericalSurface aSph:
+            case SphericalSurface aSph:
             {
                 using var aNSph = N.Geom_SphericalSurface.DownCast(theN)!;
                 aNSph.Coefficients(ref A1, ref A2, ref A3, ref B1, ref B2, ref B3, ref C1, ref C2, ref C3, ref D);
@@ -294,7 +294,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
             default:
             {
                 using var aNTor = N.Geom_ToroidalSurface.DownCast(theN)!;
-                var aTor = (Geom_ToroidalSurface)theP;
+                var aTor = (ToroidalSurface)theP;
                 theOracle.Same(aNTor.Area(), aTor.Area(), theWhat + " Area");
                 theOracle.Same(aNTor.Volume(), aTor.Volume(), theWhat + " Volume");
                 theOracle.Same(aNTor.MajorRadius(), aTor.MajorRadius(), theWhat + " MajorRadius");
@@ -333,7 +333,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 20261029 + aKind);
         for (int i = 0; i < Cases / 5; i++)
         {
-            (N.Geom_ElementarySurface aN, Geom_ElementarySurface aP) = RandomElementary(anOracle, aKind);
+            (N.Geom_ElementarySurface aN, ElementarySurface aP) = RandomElementary(anOracle, aKind);
             string aWhat = global::Kerf.Engine.Foundation.OcctTypeNames.Of(aP.GetType());
             using (aN)
             {
@@ -345,14 +345,14 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
                 anOracle.Same(aN.VReversedParameter(V), aP.VReversedParameter(V), aWhat + " VReversedParameter");
 
                 // Reversal
-                Geom_ElementarySurface aPU = (Geom_ElementarySurface)aP.UReversed();
+                ElementarySurface aPU = (ElementarySurface)aP.UReversed();
                 using (var aNU = (N.Geom_ElementarySurface)N.Geom_ElementarySurface.DownCast(aN.Copy())!)
                 {
                     aNU.UReverse();
                     CompareElementaryQueries(anOracle, aNU, aPU, aWhat + " UReversed");
                     CompareEvaluation(anOracle, aNU, aPU, aWhat + " UReversed", 3, Oracle.Tolerance, 2);
                 }
-                Geom_ElementarySurface aPV = (Geom_ElementarySurface)aP.VReversed();
+                ElementarySurface aPV = (ElementarySurface)aP.VReversed();
                 using (var aNV = (N.Geom_ElementarySurface)N.Geom_ElementarySurface.DownCast(aN.Copy())!)
                 {
                     aNV.VReverse();
@@ -365,7 +365,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
                 using (aNT)
                 {
                     CompareParametricTransformation(anOracle, aN, aP, aNT, aT, aWhat);
-                    Geom_ElementarySurface aPT = (Geom_ElementarySurface)aP.Transformed(aT);
+                    ElementarySurface aPT = (ElementarySurface)aP.Transformed(aT);
                     using var aNTr = (N.Geom_ElementarySurface)N.Geom_ElementarySurface.DownCast(aN.Copy())!;
                     aNTr.Transform(aNT);
                     CompareElementaryQueries(anOracle, aNTr, aPT, aWhat + " transformed");
@@ -381,14 +381,14 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
     // Swept surfaces
 
     /// <summary>A circle (theKind 0) or a non-periodic B-spline curve, native and port.</summary>
-    private static (N.Geom_Curve Native, Geom_Curve Port) RandomCurve(Oracle theOracle, int theKind)
+    private static (N.Geom_Curve Native, Curve3D Port) RandomCurve(Oracle theOracle, int theKind)
     {
         if (theKind == 0)
         {
             (N.gp_Ax2 aNAx2, Frame3D anAx2) = Ax2s(theOracle);
             using var aNAx2Owner = aNAx2;
             double R = theOracle.Real(0.1, 10);
-            return (new N.Geom_Circle(aNAx2, R), new Geom_Circle(anAx2, R));
+            return (new N.Geom_Circle(aNAx2, R), new CircleCurve3D(anAx2, R));
         }
 
         int aDeg = theOracle.Int(1, 5);
@@ -401,48 +401,48 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
         }
         NCollection_Array1<double>? aWeights = theOracle.Int(0, 1) == 0 ? null : theOracle.Weights(aNbPoles, true);
         return (Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, aDeg, false),
-                aWeights is null ? new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg)
-                                 : new Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, aDeg));
+                aWeights is null ? new BSplineCurve3D(aPoles, aKnots, aMults, aDeg)
+                                 : new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, aDeg));
     }
 
-    private static void CompareCurveAt(Oracle theOracle, N.Geom_Curve theN, Geom_Curve theP, double U, string theWhat)
+    private static void CompareCurveAt(Oracle theOracle, N.Geom_Curve theN, Curve3D theP, double U, string theWhat)
     {
         using N.gp_Pnt aNP = theN.EvalD0(U);
         theOracle.Same(aNP, theP.EvalD0(U), theWhat);
     }
 
-    private static (N.Geom_SweptSurface Native, Geom_SweptSurface Port) RandomSwept(Oracle theOracle, bool theRevolution,
+    private static (N.Geom_SweptSurface Native, SweptSurface Port) RandomSwept(Oracle theOracle, bool theRevolution,
                                                                                    int theCurveKind)
     {
-        (N.Geom_Curve aNC, Geom_Curve aPC) = RandomCurve(theOracle, theCurveKind);
+        (N.Geom_Curve aNC, Curve3D aPC) = RandomCurve(theOracle, theCurveKind);
         using (aNC)
         {
             if (theRevolution)
             {
                 (N.gp_Ax1 aNAxis, Axis3D anAxis) = Ax1s(theOracle);
                 using var aNAxisOwner = aNAxis;
-                return (new N.Geom_SurfaceOfRevolution(aNC, aNAxis), new Geom_SurfaceOfRevolution(aPC, anAxis));
+                return (new N.Geom_SurfaceOfRevolution(aNC, aNAxis), new RevolutionSurface(aPC, anAxis));
             }
             (N.gp_Dir aNDir, Direction3D aDir) = Dirs(theOracle);
             using var aNDirOwner = aNDir;
-            return (new N.Geom_SurfaceOfLinearExtrusion(aNC, aNDir), new Geom_SurfaceOfLinearExtrusion(aPC, aDir));
+            return (new N.Geom_SurfaceOfLinearExtrusion(aNC, aNDir), new ExtrusionSurface(aPC, aDir));
         }
     }
 
-    private static void CompareSweptQueries(Oracle theOracle, N.Geom_SweptSurface theN, Geom_SweptSurface theP, string theWhat)
+    private static void CompareSweptQueries(Oracle theOracle, N.Geom_SweptSurface theN, SweptSurface theP, string theWhat)
     {
         using (N.gp_Dir aNDir = theN.Direction())
         {
             SameDir(theOracle, aNDir, theP.Direction(), theWhat + " Direction");
         }
-        if (theP is Geom_SurfaceOfRevolution aRev)
+        if (theP is RevolutionSurface aRev)
         {
             using var aNRev = N.Geom_SurfaceOfRevolution.DownCast(theN)!;
             using N.gp_Pnt aNLoc = aNRev.Location();
             theOracle.Same(aNLoc, aRev.Location(), theWhat + " Location");
         }
         using N.Geom_Curve aNBasis = theN.BasisCurve()!;
-        Geom_Curve aBasis = theP.BasisCurve();
+        Curve3D aBasis = theP.BasisCurve();
         theOracle.Same(aNBasis.FirstParameter(), aBasis.FirstParameter(), theWhat + " basis first");
         theOracle.Same(aNBasis.LastParameter(), aBasis.LastParameter(), theWhat + " basis last");
         double U = theOracle.Real(aBasis.FirstParameter(), aBasis.LastParameter());
@@ -453,7 +453,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
     /// The iso-curves of a swept surface: revolution UIso (the rotated basis curve) and VIso (a circle),
     /// extrusion UIso (a line) and VIso (the translated basis curve).
     /// </summary>
-    private static void CompareIso(Oracle theOracle, N.Geom_SweptSurface theN, Geom_SweptSurface theP, string theWhat)
+    private static void CompareIso(Oracle theOracle, N.Geom_SweptSurface theN, SweptSurface theP, string theWhat)
     {
         GeomIsoCurveCompare.SameIsos(theOracle, theN, theP, theWhat);
     }
@@ -468,7 +468,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 20261039 + aCase);
         for (int i = 0; i < Cases / 4; i++)
         {
-            (N.Geom_SweptSurface aN, Geom_SweptSurface aP) = RandomSwept(anOracle, aRevolution, aCurveKind);
+            (N.Geom_SweptSurface aN, SweptSurface aP) = RandomSwept(anOracle, aRevolution, aCurveKind);
             string aWhat = global::Kerf.Engine.Foundation.OcctTypeNames.Of(aP.GetType()) + (aCurveKind == 0 ? " of a circle" : " of a B-spline");
             const bool aContinuity = true;
             using (aN)
@@ -482,7 +482,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
                 anOracle.Same(aN.UReversedParameter(U), aP.UReversedParameter(U), aWhat + " UReversedParameter");
                 anOracle.Same(aN.VReversedParameter(V), aP.VReversedParameter(V), aWhat + " VReversedParameter");
 
-                Geom_SweptSurface aPU = (Geom_SweptSurface)aP.UReversed();
+                SweptSurface aPU = (SweptSurface)aP.UReversed();
                 using (var aNU = (N.Geom_SweptSurface)N.Geom_SweptSurface.DownCast(aN.Copy())!)
                 {
                     aNU.UReverse();
@@ -490,7 +490,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
                     CompareProperties(anOracle, aNU, aPU, aWhat + " UReversed", aContinuity);
                     CompareEvaluation(anOracle, aNU, aPU, aWhat + " UReversed", 3, Oracle.Tolerance, 2);
                 }
-                Geom_SweptSurface aPV = (Geom_SweptSurface)aP.VReversed();
+                SweptSurface aPV = (SweptSurface)aP.VReversed();
                 using (var aNV = (N.Geom_SweptSurface)N.Geom_SweptSurface.DownCast(aN.Copy())!)
                 {
                     aNV.VReverse();
@@ -503,7 +503,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
                 using (aNT)
                 {
                     CompareParametricTransformation(anOracle, aN, aP, aNT, aT, aWhat);
-                    Geom_SweptSurface aPT = (Geom_SweptSurface)aP.Transformed(aT);
+                    SweptSurface aPT = (SweptSurface)aP.Transformed(aT);
                     using var aNTr = (N.Geom_SweptSurface)N.Geom_SweptSurface.DownCast(aN.Copy())!;
                     aNTr.Transform(aNT);
                     CompareSweptQueries(anOracle, aNTr, aPT, aWhat + " transformed");
@@ -521,7 +521,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
     // ---------------------------------------------------------------------------------------------------------
     // Rectangular trimmed surfaces
 
-    private static (N.Geom_Surface Native, Geom_Surface Port) RandomBSplineSurface(Oracle theOracle)
+    private static (N.Geom_Surface Native, Surface Port) RandomBSplineSurface(Oracle theOracle)
     {
         int aUDeg = theOracle.Int(1, 4), aVDeg = theOracle.Int(1, 4);
         bool aUPer = theOracle.Int(0, 1) == 1, aVPer = theOracle.Int(0, 1) == 1;
@@ -543,19 +543,19 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
         using N.TColStd_Array1OfReal aNUKnots = Oracle.ToNative(aUKnots), aNVKnots = Oracle.ToNative(aVKnots);
         using N.TColStd_Array1OfInteger aNUMults = Oracle.ToNative(aUMults), aNVMults = Oracle.ToNative(aVMults);
         return (new N.Geom_BSplineSurface(aNPoles, aNWeights, aNUKnots, aNVKnots, aNUMults, aNVMults, aUDeg, aVDeg, aUPer, aVPer),
-                new Geom_BSplineSurface(aPoles, aWeights, aUKnots, aVKnots, aUMults, aVMults, aUDeg, aVDeg, aUPer, aVPer));
+                new BSplineSurface(aPoles, aWeights, aUKnots, aVKnots, aUMults, aVMults, aUDeg, aVDeg, aUPer, aVPer));
     }
 
-    private static (N.Geom_Surface Native, Geom_Surface Port) RandomBasis(Oracle theOracle, int theKind)
+    private static (N.Geom_Surface Native, Surface Port) RandomBasis(Oracle theOracle, int theKind)
     {
         if (theKind < 5)
         {
-            (N.Geom_ElementarySurface aN, Geom_ElementarySurface aP) = RandomElementary(theOracle, theKind);
+            (N.Geom_ElementarySurface aN, ElementarySurface aP) = RandomElementary(theOracle, theKind);
             return (aN, aP);
         }
         if (theKind < 7)
         {
-            (N.Geom_SweptSurface aN, Geom_SweptSurface aP) = RandomSwept(theOracle, theKind == 5, 0);
+            (N.Geom_SweptSurface aN, SweptSurface aP) = RandomSwept(theOracle, theKind == 5, 0);
             return (aN, aP);
         }
         return RandomBSplineSurface(theOracle);
@@ -582,30 +582,30 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
         return (aT1, aT2);
     }
 
-    private static (N.Geom_RectangularTrimmedSurface Native, Geom_RectangularTrimmedSurface Port) RandomTrimmed(
-        Oracle theOracle, N.Geom_Surface theN, Geom_Surface theP)
+    private static (N.Geom_RectangularTrimmedSurface Native, TrimmedSurface Port) RandomTrimmed(
+        Oracle theOracle, N.Geom_Surface theN, Surface theP)
     {
         theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         int aMode = theOracle.Int(0, 2); // 0: both directions, 1: U only, 2: V only
         bool aUSense = theOracle.Int(0, 1) == 1, aVSense = theOracle.Int(0, 1) == 1;
-        (double aTU1, double aTU2) = RandomTrim(theOracle, aU1, aU2, theP.IsUPeriodic());
-        (double aTV1, double aTV2) = RandomTrim(theOracle, aV1, aV2, theP.IsVPeriodic());
+        (double aTU1, double aTU2) = RandomTrim(theOracle, aU1, aU2, theP.IsUPeriodic);
+        (double aTV1, double aTV2) = RandomTrim(theOracle, aV1, aV2, theP.IsVPeriodic);
         if (aMode == 0)
         {
             return (new N.Geom_RectangularTrimmedSurface(theN, aTU1, aTU2, aTV1, aTV2, aUSense, aVSense),
-                    new Geom_RectangularTrimmedSurface(theP, aTU1, aTU2, aTV1, aTV2, aUSense, aVSense));
+                    new TrimmedSurface(theP, aTU1, aTU2, aTV1, aTV2, aUSense, aVSense));
         }
         if (aMode == 1)
         {
             return (new N.Geom_RectangularTrimmedSurface(theN, aTU1, aTU2, true, aUSense),
-                    new Geom_RectangularTrimmedSurface(theP, aTU1, aTU2, true, aUSense));
+                    new TrimmedSurface(theP, aTU1, aTU2, true, aUSense));
         }
         return (new N.Geom_RectangularTrimmedSurface(theN, aTV1, aTV2, false, aVSense),
-                new Geom_RectangularTrimmedSurface(theP, aTV1, aTV2, false, aVSense));
+                new TrimmedSurface(theP, aTV1, aTV2, false, aVSense));
     }
 
     private static void CompareTrimmed(Oracle theOracle, N.Geom_RectangularTrimmedSurface theN,
-                                       Geom_RectangularTrimmedSurface theP, string theWhat)
+                                       TrimmedSurface theP, string theWhat)
     {
         CompareProperties(theOracle, theN, theP, theWhat);
         CompareEvaluation(theOracle, theN, theP, theWhat, 3, Oracle.Tolerance, 2);
@@ -623,17 +623,17 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 20261049 + aKind);
         for (int i = 0; i < Cases / 4; i++)
         {
-            (N.Geom_Surface aNB, Geom_Surface aPB) = RandomBasis(anOracle, aKind);
+            (N.Geom_Surface aNB, Surface aPB) = RandomBasis(anOracle, aKind);
             using (aNB)
             {
-                (N.Geom_RectangularTrimmedSurface aN, Geom_RectangularTrimmedSurface aP) = RandomTrimmed(anOracle, aNB, aPB);
+                (N.Geom_RectangularTrimmedSurface aN, TrimmedSurface aP) = RandomTrimmed(anOracle, aNB, aPB);
                 string aWhat = "trimmed " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aPB.GetType());
                 using (aN)
                 {
                     CompareTrimmed(anOracle, aN, aP, aWhat);
 
                     // Trimmed again: the basis is unwrapped and the other direction's trim kept
-                    (N.Geom_RectangularTrimmedSurface aN2, Geom_RectangularTrimmedSurface aP2) = RandomTrimmed(anOracle, aN, aP);
+                    (N.Geom_RectangularTrimmedSurface aN2, TrimmedSurface aP2) = RandomTrimmed(anOracle, aN, aP);
                     using (aN2)
                     {
                         CompareTrimmed(anOracle, aN2, aP2, aWhat + " retrimmed");
@@ -642,19 +642,19 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
                     // Copy
                     using (var aNC = (N.Geom_RectangularTrimmedSurface)N.Geom_RectangularTrimmedSurface.DownCast(aN.Copy())!)
                     {
-                        CompareTrimmed(anOracle, aNC, (Geom_RectangularTrimmedSurface)aP.Copy(), aWhat + " copy");
+                        CompareTrimmed(anOracle, aNC, (TrimmedSurface)aP.Copy(), aWhat + " copy");
                     }
 
                     // Reversal
                     using (var aNU = (N.Geom_RectangularTrimmedSurface)N.Geom_RectangularTrimmedSurface.DownCast(aN.Copy())!)
                     {
                         aNU.UReverse();
-                        CompareTrimmed(anOracle, aNU, (Geom_RectangularTrimmedSurface)aP.UReversed(), aWhat + " UReversed");
+                        CompareTrimmed(anOracle, aNU, (TrimmedSurface)aP.UReversed(), aWhat + " UReversed");
                     }
                     using (var aNV = (N.Geom_RectangularTrimmedSurface)N.Geom_RectangularTrimmedSurface.DownCast(aN.Copy())!)
                     {
                         aNV.VReverse();
-                        CompareTrimmed(anOracle, aNV, (Geom_RectangularTrimmedSurface)aP.VReversed(), aWhat + " VReversed");
+                        CompareTrimmed(anOracle, aNV, (TrimmedSurface)aP.VReversed(), aWhat + " VReversed");
                     }
 
                     // Transformation
@@ -664,7 +664,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
                         CompareParametricTransformation(anOracle, aN, aP, aNT, aT, aWhat);
                         using var aNTr = (N.Geom_RectangularTrimmedSurface)N.Geom_RectangularTrimmedSurface.DownCast(aN.Copy())!;
                         aNTr.Transform(aNT);
-                        CompareTrimmed(anOracle, aNTr, (Geom_RectangularTrimmedSurface)aP.Transformed(aT), aWhat + " transformed");
+                        CompareTrimmed(anOracle, aNTr, (TrimmedSurface)aP.Transformed(aT), aWhat + " transformed");
                     }
                 }
             }
@@ -677,7 +677,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
     // Iso-curves
 
     /// <summary>The iso-curves of a surface, of its U and V reversed copies, and of a transformed copy.</summary>
-    private static void CompareIsos(Oracle theOracle, N.Geom_Surface theN, Geom_Surface theP, string theWhat)
+    private static void CompareIsos(Oracle theOracle, N.Geom_Surface theN, Surface theP, string theWhat)
     {
         GeomIsoCurveCompare.SameIsos(theOracle, theN, theP, theWhat);
         using (var aNU = N.Geom_Surface.DownCast(theN.Copy())!)
@@ -695,7 +695,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
         using (var aNTr = N.Geom_Surface.DownCast(theN.Copy())!)
         {
             aNTr.Transform(aNT);
-            GeomIsoCurveCompare.SameIsos(theOracle, aNTr, (Geom_Surface)theP.Transformed(aT), theWhat + " transformed");
+            GeomIsoCurveCompare.SameIsos(theOracle, aNTr, (Surface)theP.Transformed(aT), theWhat + " transformed");
         }
     }
 
@@ -710,7 +710,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 20261029 + 100 + aKind);
         for (int i = 0; i < Cases / 10; i++)
         {
-            (N.Geom_Surface aNB, Geom_Surface aPB) = aKind < 8 ? RandomBasis(anOracle, aKind)
+            (N.Geom_Surface aNB, Surface aPB) = aKind < 8 ? RandomBasis(anOracle, aKind)
                                                                : RandomSwept(anOracle, aKind == 8, 1);
             using (aNB)
             {
@@ -718,7 +718,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
                 CompareIsos(anOracle, aNB, aPB, aWhat);
 
                 // Trimmed: the iso-curves of a trimmed direction are trimmed curves
-                (N.Geom_RectangularTrimmedSurface aN, Geom_RectangularTrimmedSurface aP) = RandomTrimmed(anOracle, aNB, aPB);
+                (N.Geom_RectangularTrimmedSurface aN, TrimmedSurface aP) = RandomTrimmed(anOracle, aNB, aPB);
                 using (aN)
                 {
                     CompareIsos(anOracle, aN, aP, "trimmed " + aWhat);

@@ -4,11 +4,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Engine.Foundation.Gravity;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -36,15 +39,15 @@ namespace Occt;
 /// </remarks>
 public class ShapeProcess_ShapeContext : ShapeProcess_Context
 {
-    private TopoDS_Shape myShape;
-    private TopoDS_Shape myResult;
-    private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myMap = new(TopTools_ShapeMapHasher.Instance);
+    private Shape myShape;
+    private Shape myResult;
+    private readonly NCollection_DataMap<Shape, Shape> myMap = new(ShapeHasher.Instance);
     private ShapeExtend_MsgRegistrator? myMsg;
-    private TopAbs_ShapeEnum myUntil;
+    private ShapeType myUntil;
     private bool myNonManifold;
 
     // OCCT.NET: the working copy of the result while operators run (decision 1022)
-    private BRepTools_CopyAtEntry? myEntry;
+    private CopyAtEntry? myEntry;
     private int myWriteDepth;
 
     /// <summary>Creates a context with the resource file <paramref name="file"/> and the scope <paramref name="seq"/>.</summary>
@@ -52,7 +55,7 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
                                      string? theUserDefaultsDirectory = null)
         : base(file, seq, theDefaultsDirectory, theUserDefaultsDirectory)
     {
-        myUntil = TopAbs_FACE;
+        myUntil = ShapeType.Face;
         myNonManifold = false;
     }
 
@@ -60,17 +63,17 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
     /// Creates a context with the shape <paramref name="S"/>, the resource file <paramref name="file"/> and the scope
     /// <paramref name="seq"/>.
     /// </summary>
-    public ShapeProcess_ShapeContext(in TopoDS_Shape S, string file, string seq = "", string? theDefaultsDirectory = null,
+    public ShapeProcess_ShapeContext(in Shape S, string file, string seq = "", string? theDefaultsDirectory = null,
                                      string? theUserDefaultsDirectory = null)
         : base(file, seq, theDefaultsDirectory, theUserDefaultsDirectory)
     {
-        myUntil = TopAbs_FACE;
+        myUntil = ShapeType.Face;
         myNonManifold = false;
         Init(S);
     }
 
     /// <summary>Initialises the context with the shape: the result is the shape, the map and the messages are cleared.</summary>
-    public void Init(in TopoDS_Shape S)
+    public void Init(in Shape S)
     {
         if (myWriteDepth > 0)
         {
@@ -83,25 +86,25 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
     }
 
     /// <summary>The shape being processed.</summary>
-    public TopoDS_Shape Shape() => myShape;
+    public Shape Shape() => myShape;
 
     /// <summary>The current result, frozen.</summary>
-    public TopoDS_Shape Result()
+    public Shape Result()
     {
         myResult.TShape()?.FreezeGraph();
         return myResult;
     }
 
     /// <summary><see cref="Result"/> without freezing it, for the operators.</summary>
-    internal TopoDS_Shape InternalResult() => myResult;
+    internal Shape InternalResult() => myResult;
 
     /// <summary>
     /// The history: each sub-shape of <see cref="Shape"/> (down to the detalisation level) that was modified, with
     /// what it became (null if removed). Its values are frozen.
     /// </summary>
-    public NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> Map()
+    public NCollection_DataMap<Shape, Shape> Map()
     {
-        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> anItem in myMap)
+        foreach (KeyValuePair<Shape, Shape> anItem in myMap)
         {
             anItem.Value.TShape()?.FreezeGraph();
         }
@@ -109,7 +112,7 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
     }
 
     /// <summary><see cref="Map"/> without freezing its values, for ported code.</summary>
-    internal NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> InternalMap() => myMap;
+    internal NCollection_DataMap<Shape, Shape> InternalMap() => myMap;
 
     /// <summary>The messages attached to the shape's sub-shapes (null if messages are off).</summary>
     public ShapeExtend_MsgRegistrator? Messages() => myMsg;
@@ -122,16 +125,16 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
     }
 
     /// <summary>Sets the level down to which the history is recorded (TopAbs_SHAPE: all sub-shapes).</summary>
-    public void SetDetalisation(TopAbs_ShapeEnum level)
+    public void SetDetalisation(ShapeType level)
     {
         myUntil = level;
     }
 
     /// <summary>The level down to which the history is recorded.</summary>
-    public TopAbs_ShapeEnum GetDetalisation() => myUntil;
+    public ShapeType GetDetalisation() => myUntil;
 
     /// <summary>Sets the result, and records it as what the shape became.</summary>
-    public void SetResult(in TopoDS_Shape S)
+    public void SetResult(in Shape S)
     {
         myResult = S;
         myMap.Bind(myShape, myResult);
@@ -182,7 +185,7 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
     /// </summary>
     internal void InternalEnsureWritable()
     {
-        if (myWriteDepth > 0 && !myResult.IsNull() && BRepTools.HoldsFrozen(myResult))
+        if (myWriteDepth > 0 && !myResult.IsNull && BrepTools.HoldsFrozen(myResult))
         {
             endCopy();
             beginCopy();
@@ -192,15 +195,15 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
     private void beginCopy()
     {
         myEntry = null;
-        if (myResult.IsNull() || !BRepTools.HoldsFrozen(myResult))
+        if (myResult.IsNull || !BrepTools.HoldsFrozen(myResult))
         {
             return;
         }
 
-        myEntry = new BRepTools_CopyAtEntry(myResult, null, true);
+        myEntry = new CopyAtEntry(myResult, null, true);
         myResult = myEntry.Shape();
-        var aKeys = new List<TopoDS_Shape>(myMap.Keys);
-        foreach (TopoDS_Shape aKey in aKeys)
+        var aKeys = new List<Shape>(myMap.Keys);
+        foreach (Shape aKey in aKeys)
         {
             myMap.Bind(aKey, copied(myMap.Find(aKey)));
         }
@@ -208,21 +211,21 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
 
     private void endCopy()
     {
-        BRepTools_CopyAtEntry? anEntry = myEntry;
+        CopyAtEntry? anEntry = myEntry;
         myEntry = null;
         if (anEntry is null)
         {
             return;
         }
 
-        var aValues = new List<TopoDS_Shape>();
-        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> anItem in myMap)
+        var aValues = new List<Shape>();
+        foreach (KeyValuePair<Shape, Shape> anItem in myMap)
         {
             aValues.Add(anItem.Value);
         }
         myResult = anEntry.Finish(myResult, aValues);
-        var aKeys = new List<TopoDS_Shape>(myMap.Keys);
-        foreach (TopoDS_Shape aKey in aKeys)
+        var aKeys = new List<Shape>(myMap.Keys);
+        foreach (Shape aKey in aKeys)
         {
             myMap.Bind(aKey, anEntry.Final(myMap.Find(aKey)));
         }
@@ -230,23 +233,23 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
 
     // The copy of a shape of the result (a compound made of them, as RecModif makes for a split shape, rebuilt on
     // their copies; any other shape is itself).
-    private TopoDS_Shape copied(in TopoDS_Shape theShape)
+    private Shape copied(in Shape theShape)
     {
-        if (theShape.IsNull() || myEntry is null)
+        if (theShape.IsNull || myEntry is null)
         {
             return theShape;
         }
-        TopoDS_Shape aCopy = myEntry.Copied(theShape);
-        if (!ReferenceEquals(aCopy.TShape(), theShape.TShape()) || theShape.ShapeType() != TopAbs_COMPOUND)
+        Shape aCopy = myEntry.Copied(theShape);
+        if (!ReferenceEquals(aCopy.TShape(), theShape.TShape()) || theShape.ShapeType() != ShapeType.Compound)
         {
             return aCopy;
         }
 
         bool isChanged = false;
-        var aChildren = new List<TopoDS_Shape>();
-        for (var it = new TopoDS_Iterator(theShape, false, false); it.More(); it.Next())
+        var aChildren = new List<Shape>();
+        for (var it = new Iterator(theShape, false, false); it.More(); it.Next())
         {
-            TopoDS_Shape aChild = copied(it.Value());
+            Shape aChild = copied(it.Value());
             isChanged |= !ReferenceEquals(aChild.TShape(), it.Value().TShape());
             aChildren.Add(aChild);
         }
@@ -255,10 +258,10 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
             return theShape;
         }
 
-        TopoDS_Shape aResult = theShape.EmptyCopied();
-        aResult.Orientation(TopAbs_FORWARD);
-        var B = new BRep_Builder();
-        foreach (TopoDS_Shape aChild in aChildren)
+        Shape aResult = theShape.EmptyCopied();
+        aResult.Orientation(Forward);
+        var B = new BrepBuilder();
+        foreach (Shape aChild in aChildren)
         {
             B.Add(aResult, aChild);
         }
@@ -268,19 +271,19 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
     }
 
     // What a sub-shape of the shape not yet in the map stands for: its working copy (itself when there is none)
-    private TopoDS_Shape working(in TopoDS_Shape theShape) => myEntry is null ? theShape : myEntry.Copied(theShape);
+    private Shape working(in Shape theShape) => myEntry is null ? theShape : myEntry.Copied(theShape);
 
     // ---------------------------------------------------------------------------------------------------------------
 
-    private static void RecModif(in TopoDS_Shape S,
-                                 NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> repl,
+    private static void RecModif(in Shape S,
+                                 NCollection_DataMap<Shape, Shape> repl,
                                  ShapeExtend_MsgRegistrator? msg,
-                                 NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> map,
+                                 NCollection_DataMap<Shape, Shape> map,
                                  ShapeExtend_MsgRegistrator? myMsg,
-                                 TopAbs_ShapeEnum until,
+                                 ShapeType until,
                                  ShapeProcess_ShapeContext theContext)
     {
-        TopoDS_Shape r = S;
+        Shape r = S;
         // gka  -modification to keep history for shape with location (OCC21617)
         Placement aShLoc = S.Location();
         var aNullLoc = new Placement();
@@ -294,9 +297,9 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
         {
             r = theContext.working(r); // OCCT.NET: the working copy (decision 1022)
         }
-        if (!r.IsNull())
+        if (!r.IsNull)
         {
-            TopoDS_Shape res = r;
+            Shape res = r;
 
             if (repl.IsBound(r.Located(aShLoc, false)))
             {
@@ -304,7 +307,7 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
                 // it is supposed that map is created for r having FORWARD orientation
                 // hence, if it is reversed, result should be reversed too
                 // INTERNAL or EXTERNAL orientations are not allowed
-                if (r.Orientation() != TopAbs_FORWARD)
+                if (r.Orientation() != Forward)
                 {
                     res.Reverse();
                 }
@@ -314,17 +317,17 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
             // It is supposed that repl does not contain such splitting
             else if (r.ShapeType() < S.ShapeType())
             {
-                TopoDS_Shape result = r.EmptyCopied();
-                result.Orientation(TopAbs_FORWARD); // protect against INTERNAL or EXTERNAL shapes
+                Shape result = r.EmptyCopied();
+                result.Orientation(Forward); // protect against INTERNAL or EXTERNAL shapes
                 bool modif = false;
-                var B = new BRep_Builder();
-                for (var it = new TopoDS_Iterator(r, false); it.More(); it.Next())
+                var B = new BrepBuilder();
+                for (var it = new Iterator(r, false); it.More(); it.Next())
                 {
-                    TopoDS_Shape sh = it.Value();
+                    Shape sh = it.Value();
                     if (repl.IsBound(sh))
                     {
-                        TopoDS_Shape newsh = repl.Find(sh);
-                        if (!newsh.IsNull())
+                        Shape newsh = repl.Find(sh);
+                        if (!newsh.IsNull)
                         {
                             B.Add(result, newsh);
                         }
@@ -337,9 +340,9 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
                 }
                 if (modif)
                 {
-                    if (result.ShapeType() == TopAbs_WIRE || result.ShapeType() == TopAbs_SHELL)
+                    if (result.ShapeType() == ShapeType.Wire || result.ShapeType() == ShapeType.Shell)
                     {
-                        result.Closed(BRep_Tool.IsClosed(result));
+                        result.Closed(Tool.IsClosed(result));
                     }
                     res = result;
                 }
@@ -352,9 +355,9 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
         }
 
         // update messages (messages must be taken from each level in the substitution map)
-        if (!r.IsNull() && myMsg is not null && msg is not null && msg.MapShape().Extent() > 0)
+        if (!r.IsNull && myMsg is not null && msg is not null && msg.MapShape().Extent() > 0)
         {
-            NCollection_DataMap<TopoDS_Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
+            NCollection_DataMap<Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
             if (msgmap.IsBound(r))
             {
                 NCollection_List<Msg> msglist = msgmap.Find(r);
@@ -373,12 +376,12 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
             }
         }
 
-        if (until == TopAbs_SHAPE || S.ShapeType() >= until)
+        if (until == global::Kerf.Topology.ShapeType.Shape || S.ShapeType() >= until)
         {
             return;
         }
 
-        for (var it = new TopoDS_Iterator(S); it.More(); it.Next())
+        for (var it = new Iterator(S); it.More(); it.Next())
         {
             RecModif(it.Value(), repl, msg, map, myMsg, until, theContext);
         }
@@ -388,7 +391,7 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
     /// Records the modifications <paramref name="repl"/> (from the shapes the operator worked on to what they became)
     /// in the history, for every sub-shape of the shape down to the detalisation level, with their messages.
     /// </summary>
-    public void RecordModification(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> repl, ShapeExtend_MsgRegistrator? msg = null)
+    public void RecordModification(NCollection_DataMap<Shape, Shape> repl, ShapeExtend_MsgRegistrator? msg = null)
     {
         if (repl.Extent() <= 0)
         {
@@ -402,22 +405,22 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
         // OCCT_DEBUG: the map dumped, left out
     }
 
-    private static void RecModif(in TopoDS_Shape S,
+    private static void RecModif(in Shape S,
                                  ShapeBuild_ReShape repl,
                                  ShapeExtend_MsgRegistrator? msg,
-                                 NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> map,
+                                 NCollection_DataMap<Shape, Shape> map,
                                  ShapeExtend_MsgRegistrator? myMsg,
-                                 TopAbs_ShapeEnum until,
+                                 ShapeType until,
                                  ShapeProcess_ShapeContext theContext)
     {
-        if (S.IsNull())
+        if (S.IsNull)
         {
             return;
         }
         // gka  -modification to keep history for shape with location (OCC21617)
         var aNullLoc = new Placement();
-        TopoDS_Shape aS = S.Located(aNullLoc);
-        TopoDS_Shape r = aS;
+        Shape aS = S.Located(aNullLoc);
+        Shape r = aS;
 
         if (map.IsBound(r))
         {
@@ -427,9 +430,9 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
         {
             r = theContext.working(r); // OCCT.NET: the working copy (decision 1022)
         }
-        if (!r.IsNull())
+        if (!r.IsNull)
         {
-            if (repl.InternalStatus(r, out TopoDS_Shape res, true) != 0 && res != r)
+            if (repl.InternalStatus(r, out Shape res, true) != 0 && res != r)
             {
                 map.Bind(aS, res);
 
@@ -438,7 +441,7 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
             }
             else if (r.ShapeType() < S.ShapeType())
             {
-                res = repl.InternalApply(r, (TopAbs_ShapeEnum)((int)S.ShapeType() + 1));
+                res = repl.InternalApply(r, (ShapeType)((int)S.ShapeType() + 1));
                 if (res != r)
                 {
                     map.Bind(aS, res);
@@ -447,11 +450,11 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
         }
 
         // update messages (messages must be taken from each level in the substitution map)
-        if (!r.IsNull() && myMsg is not null && msg is not null && msg.MapShape().Extent() > 0)
+        if (!r.IsNull && myMsg is not null && msg is not null && msg.MapShape().Extent() > 0)
         {
-            TopoDS_Shape cur, next = r;
-            NCollection_DataMap<TopoDS_Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
-            TopoDS_Shape aWorkS = theContext.working(S); // OCCT.NET: S as the operator saw it (decision 1022)
+            Shape cur, next = r;
+            NCollection_DataMap<Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
+            Shape aWorkS = theContext.working(S); // OCCT.NET: S as the operator saw it (decision 1022)
             if (msgmap.IsBound(aWorkS))
             {
                 next = aWorkS;
@@ -468,15 +471,15 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
                     }
                 }
                 next = repl.InternalValue(cur);
-            } while (!next.IsNull() && cur != next);
+            } while (!next.IsNull && cur != next);
         }
 
-        if (until == TopAbs_SHAPE || S.ShapeType() >= until)
+        if (until == global::Kerf.Topology.ShapeType.Shape || S.ShapeType() >= until)
         {
             return;
         }
 
-        for (var it = new TopoDS_Iterator(S, false /*,false*/); it.More(); it.Next())
+        for (var it = new Iterator(S, false /*,false*/); it.More(); it.Next())
         {
             RecModif(it.Value(), repl, msg, map, myMsg, until, theContext);
         }
@@ -504,27 +507,27 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
     }
 
     /// <summary>Adds a message for the sub-shape <paramref name="S"/> (if messages are on).</summary>
-    public void AddMessage(in TopoDS_Shape S, Msg msg, Gravity grv = Warning)
+    public void AddMessage(in Shape S, Msg msg, Gravity grv = Warning)
     {
         myMsg?.Send(S, msg, grv);
     }
 
-    private static void ExplodeModifier(in TopoDS_Shape S,
-                                        BRepTools_Modifier repl,
-                                        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> map,
-                                        TopAbs_ShapeEnum until)
+    private static void ExplodeModifier(in Shape S,
+                                        Modifier repl,
+                                        NCollection_DataMap<Shape, Shape> map,
+                                        ShapeType until)
     {
-        TopoDS_Shape res = repl.InternalModifiedShape(S);
+        Shape res = repl.InternalModifiedShape(S);
 
         if (res != S)
         {
             map.Bind(S, res);
         }
-        if (until == TopAbs_SHAPE || S.ShapeType() >= until)
+        if (until == global::Kerf.Topology.ShapeType.Shape || S.ShapeType() >= until)
         {
             return;
         }
-        for (var it = new TopoDS_Iterator(S); it.More(); it.Next())
+        for (var it = new Iterator(S); it.More(); it.Next())
         {
             ExplodeModifier(it.Value(), repl, map, until);
         }
@@ -534,9 +537,9 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
     /// Records the modifications a BRepTools_Modifier made on <paramref name="S"/> in the history, down to the
     /// detalisation level, with their messages.
     /// </summary>
-    public void RecordModification(in TopoDS_Shape S, BRepTools_Modifier repl, ShapeExtend_MsgRegistrator? msg)
+    public void RecordModification(in Shape S, Modifier repl, ShapeExtend_MsgRegistrator? msg)
     {
-        var map = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var map = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
         ExplodeModifier(S, repl, map, myUntil);
         RecordModification(map, msg);
     }
@@ -596,15 +599,15 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
 
     // The statistics ShapeProcess_ShapeContext::PrintStatistics and ShapeProcessAPI_ApplySequence::PrintPreparationResult
     // print (the same code twice in OCCT)
-    internal static void PrintPreparation(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theMap, Messenger aMessenger)
+    internal static void PrintPreparation(NCollection_DataMap<Shape, Shape> theMap, Messenger aMessenger)
     {
         int SS = 0, SN = 0, FF = 0, FS = 0, FN = 0;
-        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> It in theMap)
+        foreach (KeyValuePair<Shape, Shape> It in theMap)
         {
-            TopoDS_Shape keyshape = It.Key, valueshape = It.Value;
-            if (keyshape.ShapeType() == TopAbs_SHELL)
+            Shape keyshape = It.Key, valueshape = It.Value;
+            if (keyshape.ShapeType() == ShapeType.Shell)
             {
-                if (valueshape.IsNull())
+                if (valueshape.IsNull)
                 {
                     SN++;
                 }
@@ -613,13 +616,13 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
                     SS++;
                 }
             }
-            else if (keyshape.ShapeType() == TopAbs_FACE)
+            else if (keyshape.ShapeType() == ShapeType.Face)
             {
-                if (valueshape.IsNull())
+                if (valueshape.IsNull)
                 {
                     FN++;
                 }
-                else if (valueshape.ShapeType() == TopAbs_SHELL)
+                else if (valueshape.ShapeType() == ShapeType.Shell)
                 {
                     FS++;
                 }

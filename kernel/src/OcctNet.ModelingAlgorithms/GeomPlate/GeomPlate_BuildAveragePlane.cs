@@ -27,9 +27,9 @@ public class GeomPlate_BuildAveragePlane
     private double myVmax;
     private double myVmin;
     private double myUmin;
-    private readonly Geom_Plane? myPlane;
+    private readonly PlaneSurface? myPlane;
     private readonly double myTol;
-    private readonly Geom_Line? myLine;
+    private readonly LineCurve3D? myLine;
     private Vector3D myOX;
     private Vector3D myOY;
     private Point3D myG;
@@ -58,7 +58,7 @@ public class GeomPlate_BuildAveragePlane
         {
             if (POption == 1)
             {
-                myPlane = new Geom_Plane(myG, new Direction3D(OZ));
+                myPlane = new PlaneSurface(myG, new Direction3D(OZ));
                 myOX = new Vector3D(myPlane.Pln().XAxis().Direction());
                 myOY = new Vector3D(myPlane.Pln().YAxis().Direction());
             }
@@ -68,7 +68,7 @@ public class GeomPlate_BuildAveragePlane
                 Direction3D NDir = new Direction3D(myOX ^ myOY);
                 Direction3D UDir = new Direction3D(myOX);
                 CoordinateSystem triedre = new CoordinateSystem(myG, NDir, UDir);
-                myPlane = new Geom_Plane(triedre);
+                myPlane = new PlaneSurface(triedre);
             }
             int i, nb = myPts.Length();
             Plane3D P = myPlane.Pln();
@@ -100,7 +100,7 @@ public class GeomPlate_BuildAveragePlane
 
         if (IsLine())
         {
-            myLine = new Geom_Line(myG, new Direction3D(myOX));
+            myLine = new LineCurve3D(myG, new Direction3D(myOX));
         }
     }
 
@@ -233,13 +233,13 @@ public class GeomPlate_BuildAveragePlane
         {
             PtsArray[i] = myPts.Value(i);
         }
-        GeomLib.AxeOfInertia(PtsArray, out Axe2, out IsSingular);
+        global::Kerf.Engine.Geometry.Library.GeomLib.AxeOfInertia(PtsArray, out Axe2, out IsSingular);
         Direction3D BestDir = new Direction3D(BestVec);
         Direction3D XDir = BestDir ^ Axe2.XDirection();
         XDir ^= BestDir;
 
         CoordinateSystem Axe3 = new CoordinateSystem(Axe2.Location(), BestDir, XDir);
-        myPlane = new Geom_Plane(Axe3);
+        myPlane = new PlaneSurface(Axe3);
 
         // Initializing myUmin, myVmin, myUmax, myVmax
         Plane3D Pln = myPlane.Pln();
@@ -278,7 +278,7 @@ public class GeomPlate_BuildAveragePlane
 
     /// <summary>The average plane (frozen).</summary>
     /// <exception cref="NoSuchObjectException">The points are aligned (<see cref="IsLine"/>).</exception>
-    public Geom_Plane? Plane()
+    public PlaneSurface? Plane()
     {
         Standard_NoSuchObject_Raise_if(
             IsLine(),
@@ -317,7 +317,7 @@ public class GeomPlate_BuildAveragePlane
         {
             Frame3D Axe;
             bool IsSingular;
-            GeomLib.AxeOfInertia(myPts.Array1(), out Axe, out IsSingular, myTol);
+            global::Kerf.Engine.Geometry.Library.GeomLib.AxeOfInertia(myPts.Array1(), out Axe, out IsSingular, myTol);
 
             myOX = new Vector3D(Axe.XDirection());
             myOY = new Vector3D(Axe.YDirection());
@@ -479,7 +479,7 @@ public class GeomPlate_BuildAveragePlane
 
     /// <summary>The line of the points (frozen).</summary>
     /// <exception cref="NoSuchObjectException">The points aren't aligned (<see cref="IsPlane"/>).</exception>
-    public Geom_Line? Line()
+    public LineCurve3D? Line()
     {
         Standard_NoSuchObject_Raise_if(
             IsPlane(),

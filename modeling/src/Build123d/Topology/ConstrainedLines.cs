@@ -1,4 +1,11 @@
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Intersection.TwoD;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Occt;
 
@@ -107,10 +114,10 @@ internal static class ConstrainedSolvers
 {
     // The XY plane for 3D to 2D projection and for building edges from 2D curves
     private static readonly Plane3D PlnXY = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
-    private static readonly Geom_Plane SurfXY = new(PlnXY);
+    private static readonly PlaneSurface SurfXY = new(PlnXY);
 
     /// <summary>A target as a GCC argument: a qualified curve (with its 2D curve and range), or a point.</summary>
-    private sealed record GccArg(Geom2dGcc_QualifiedCurve? Curve, Geom2d_CartesianPoint? Point, Geom2d_Curve? H2d, double First, double Last)
+    private sealed record GccArg(Geom2dGcc_QualifiedCurve? Curve, CartesianPoint2? Point, Curve2D? H2d, double First, double Last)
     {
         public bool IsEdge => Curve is not null;
     }
@@ -124,15 +131,15 @@ internal static class ConstrainedSolvers
         return delta < 0.0 ? delta + period : delta;
     }
 
-    internal static (Geom2dGcc_QualifiedCurve Q, Geom2d_Curve H2d, double First, double Last, Geom2dAdaptor_Curve Adaptor) EdgeToQualified2D(
-        TopoDS_Edge edge, Tangency tangency)
+    internal static (Geom2dGcc_QualifiedCurve Q, Curve2D H2d, double First, double Last, CurveAdaptor2D Adaptor) EdgeToQualified2D(
+        global::Kerf.Topology.Edge edge, Tangency tangency)
     {
         double f = 0, l = 0;
-        var curve3d = BRep_Tool.Curve(edge, out f, out l);
+        var curve3d = Tool.Curve(edge, out f, out l);
         double first = 0, last = 0;
-        BRep_Tool.Range(edge, out first, out last);
+        Tool.Range(edge, out first, out last);
         var h2d = GeomAPI.To2d(curve3d!, PlnXY)!;
-        var adaptor = new Geom2dAdaptor_Curve(h2d, first, last);
+        var adaptor = new CurveAdaptor2D(h2d, first, last);
         var q = new Geom2dGcc_QualifiedCurve(adaptor, (GccEnt_Position)(int)tangency);
         return (q, h2d, first, last, adaptor);
     }
@@ -148,27 +155,27 @@ internal static class ConstrainedSolvers
         }
         var p = t.Point!.Value;
         var pnt = new Point2D(p.X, p.Y);
-        return new GccArg(null, new Geom2d_CartesianPoint(pnt), null, 0, 0);
+        return new GccArg(null, new CartesianPoint2(pnt), null, 0, 0);
     }
 
-    private static TopoDS_Edge EdgeFromCircle(Geom2d_Circle circle, double u1, double u2)
+    private static global::Kerf.Topology.Edge EdgeFromCircle(CircleCurve2D circle, double u1, double u2)
     {
-        var arc = new Geom2d_TrimmedCurve(circle, u1, u2, true);
+        var arc = new TrimmedCurve2D(circle, u1, u2, true);
         var maker = new BRepBuilderAPI_MakeEdge(arc, SurfXY);
-        return TopoDS.Edge(BRepLib.Curves3dBuilt(maker.Edge(), out _));
+        return ShapeCasts.Edge(BRepLib.Curves3dBuilt(maker.Edge(), out _));
     }
 
-    private static bool ParamInTrim(double u, double first, double last, Geom2d_Curve h2d)
+    private static bool ParamInTrim(double u, double first, double last, Curve2D h2d)
     {
-        if (h2d.IsPeriodic())
+        if (h2d.IsPeriodic)
             u = NormOnPeriod(u, first, h2d.Period());
         return first - Constants.Tolerance <= u && u <= last + Constants.Tolerance;
     }
 
     /// <summary>The forward (minor) and complementary (major) arcs of a circle between two parameters.</summary>
-    internal static List<TopoDS_Edge> TwoArcEdgesFromParams(Circle2D circ, double u1, double u2)
+    internal static List<global::Kerf.Topology.Edge> TwoArcEdgesFromParams(Circle2D circ, double u1, double u2)
     {
-        var circle = new Geom2d_Circle(circ);
+        var circle = new CircleCurve2D(circ);
         var period = circle.Period();
         var d = ForwardDelta(u1, u2, 0.0, period);
         var u1n = NormOnPeriod(u1, 0.0, period);
@@ -178,14 +185,14 @@ internal static class ConstrainedSolvers
         return [EdgeFromCircle(circle, u1n, u1n + d), EdgeFromCircle(circle, u2n, u2n + (period - d))];
     }
 
-    private static double ArcLength(TopoDS_Edge e)
+    private static double ArcLength(global::Kerf.Topology.Edge e)
     {
-        var adaptor = new BRepAdaptor_Curve(e);
-        return GCPnts_AbscissaPoint.Length(adaptor);
+        var adaptor = new EdgeCurveAdaptor(e);
+        return AbscissaPoint.Length(adaptor);
     }
 
     /// <summary>The arcs to keep by sagitta: the short, the long, or both.</summary>
-    private static IEnumerable<TopoDS_Edge> BySagitta(List<TopoDS_Edge> arcs, Sagitta sagitta)
+    private static IEnumerable<global::Kerf.Topology.Edge> BySagitta(List<global::Kerf.Topology.Edge> arcs, Sagitta sagitta)
     {
         if (sagitta == Sagitta.Both)
             return arcs;
@@ -193,7 +200,7 @@ internal static class ConstrainedSolvers
         return [sagitta == Sagitta.Short ? sorted[0] : sorted[^1]];
     }
 
-    internal static TopoDS_Edge EdgeFromLine(Point2D p1, Point2D p2)
+    internal static global::Kerf.Topology.Edge EdgeFromLine(Point2D p1, Point2D p2)
     {
         var a = new Point3D(p1.X(), p1.Y(), 0);
         var b = new Point3D(p2.X(), p2.Y(), 0);
@@ -237,7 +244,7 @@ internal static class ConstrainedSolvers
         if (!gcc.IsDone() || gcc.NbSolutions() == 0)
             throw new InvalidOperationException("Unable to find a tangent arc");
 
-        var solutions = new List<TopoDS_Edge>();
+        var solutions = new List<global::Kerf.Topology.Edge>();
         for (int i = 1; i <= gcc.NbSolutions(); i++)
         {
             var circ = gcc.ThisSolution(i);
@@ -299,7 +306,7 @@ internal static class ConstrainedSolvers
     {
         List<Tangent> all = [.. tangents, centerOn];
         var args = all.Select(AsGccArg).ToList();
-        var adaptOn = new Geom2dAdaptor_Curve(args[2].H2d!, args[2].First, args[2].Last);
+        var adaptOn = new CurveAdaptor2D(args[2].H2d!, args[2].First, args[2].Last);
         // Initial guesses in the middle of each edge
         var guesses = args.Where(a => a.IsEdge).Select(a => (a.Last - a.First) / 2 + a.First).ToList();
         Geom2dGcc_Circ2d2TanOn gcc = guesses.Count switch
@@ -312,7 +319,7 @@ internal static class ConstrainedSolvers
             throw new InvalidOperationException("Unable to find a tangent arc with center_on constraint");
         bool Ok(int i, double u) => !args[i].IsEdge || ParamInTrim(u, args[i].First, args[i].Last, args[i].H2d!);
 
-        var solutions = new List<TopoDS_Edge>();
+        var solutions = new List<global::Kerf.Topology.Edge>();
         for (int i = 1; i <= gcc.NbSolutions(); i++)
         {
             var circ = gcc.ThisSolution(i);
@@ -350,7 +357,7 @@ internal static class ConstrainedSolvers
             if (!gcc.IsDone() || gcc.NbSolutions() == 0)
                 throw new InvalidOperationException(message);
             bool Ok(int i, double u) => ParamInTrim(u, args[i].First, args[i].Last, args[i].H2d!);
-            var solutions = new List<TopoDS_Edge>();
+            var solutions = new List<global::Kerf.Topology.Edge>();
             for (int i = 1; i <= gcc.NbSolutions(); i++)
             {
                 var circ = gcc.ThisSolution(i);
@@ -377,7 +384,7 @@ internal static class ConstrainedSolvers
     {
         var c2d = new Point2D(center.X, center.Y);
         var arg = AsGccArg(tangent);
-        var solutions = new List<TopoDS_Edge>();
+        var solutions = new List<global::Kerf.Topology.Edge>();
         if (!arg.IsEdge)
         {
             // Through a point: the circle about the centre through it
@@ -389,12 +396,12 @@ internal static class ConstrainedSolvers
             var dir = new Direction2D(1.0, 0.0);
             var ax = new Axis2D(c2d, dir);
             var circ = new Circle2D(ax, r);
-            var h2d = new Geom2d_Circle(circ);
+            var h2d = new CircleCurve2D(circ);
             solutions.Add(EdgeFromCircle(h2d, 0.0, h2d.Period()));
         }
         else
         {
-            var centerPoint = new Geom2d_CartesianPoint(c2d);
+            var centerPoint = new CartesianPoint2(c2d);
             var gcc = new Geom2dGcc_Circ2dTanCen(arg.Curve!.Value, centerPoint, Constants.Tolerance);
             if (!gcc.IsDone() || gcc.NbSolutions() == 0)
                 throw new InvalidOperationException("Unexpected: GCC failed to return a tangent circle");
@@ -406,7 +413,7 @@ internal static class ConstrainedSolvers
                 gcc.Tangency1(i, out uc, out ua, out p);
                 if (!ParamInTrim(ua, arg.First, arg.Last, arg.H2d!))
                     continue;
-                var h2d = new Geom2d_Circle(circ);
+                var h2d = new CircleCurve2D(circ);
                 solutions.Add(EdgeFromCircle(h2d, 0.0, h2d.Period()));
             }
         }
@@ -424,7 +431,7 @@ internal static class ConstrainedSolvers
             : new(arg.Point!, adaptOn, radius, Constants.Tolerance);
         if (!gcc.IsDone() || gcc.NbSolutions() == 0)
             throw new InvalidOperationException("Unable to find circle(s) for TanOnRad constraints");
-        var solutions = new List<TopoDS_Edge>();
+        var solutions = new List<global::Kerf.Topology.Edge>();
         for (int i = 1; i <= gcc.NbSolutions(); i++)
         {
             var circ = gcc.ThisSolution(i);
@@ -438,7 +445,7 @@ internal static class ConstrainedSolvers
             var proj = new Geom2dAPI_ProjectPointOnCurve(center2d, hOn2d);
             if (proj.NbPoints() == 0 || !ParamInTrim(proj.Parameter(1), onFirst, onLast, hOn2d))
                 continue;
-            var h2d = new Geom2d_Circle(circ);
+            var h2d = new CircleCurve2D(circ);
             solutions.Add(EdgeFromCircle(h2d, 0.0, h2d.Period()));
         }
         return new ShapeList<Edge>(solutions.Select(e => new Edge(e)));
@@ -464,11 +471,11 @@ internal static class ConstrainedSolvers
         {
             if (!gcc.IsDone() || gcc.NbSolutions() == 0)
                 throw new InvalidOperationException("Unable to find common tangent line(s)");
-            var edges = new List<TopoDS_Edge>();
+            var edges = new List<global::Kerf.Topology.Edge>();
             for (int i = 1; i <= gcc.NbSolutions(); i++)
             {
                 var solution = gcc.ThisSolution(i);
-                var lin2d = new Geom2d_Line(solution);
+                var lin2d = new LineCurve2D(solution);
                 // The two tangency points: Tangency1/2 can index the same line differently, so intersect instead
                 var inter1 = new Geom2dAPI_InterCurveCurve(lin2d, a1.H2d!);
                 var pt1 = inter1.Point(1);   // there is always one tangent intersection
@@ -503,7 +510,7 @@ internal static class ConstrainedSolvers
         var refAx = new Axis2D(refPnt, refDir);
         var refLin = new Line2D(refAx);
         var gcc = new Geom2dGcc_Lin2dTanObl(arg.Curve!.Value, refLin, Constants.Tolerance, angle);
-        var edges = new List<TopoDS_Edge>();
+        var edges = new List<global::Kerf.Topology.Edge>();
         for (int i = 1; i <= gcc.NbSolutions(); i++)
         {
             var pTan = new Point2D();
@@ -511,8 +518,8 @@ internal static class ConstrainedSolvers
             gcc.Tangency1(i, out us, out ua, out pTan);
             var tanLine = new Line2D(pTan, dir2d);
             // Intersection2 isn't reliable: intersect with the reference line instead
-            var inter = new IntAna2d_AnaIntersection(tanLine, refLin);
-            if (!inter.IsDone() || inter.NbPoints() == 0)
+            var inter = new AnalyticIntersection(tanLine, refLin);
+            if (!inter.IsDone || inter.PointCount == 0)
                 continue;
             var ip = inter.Point(1);
             var pIsect = ip.Value();

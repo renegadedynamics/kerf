@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -12,19 +13,19 @@ namespace Occt;
 /// <summary>The function of an asymmetric chamfer with one end on a surface's boundary.</summary>
 public class BlendFunc_ChAsymInv : Blend_FuncInv
 {
-    private readonly Adaptor3d_Surface surf1;
-    private readonly Adaptor3d_Surface surf2;
+    private readonly SurfaceAdaptorBase surf1;
+    private readonly SurfaceAdaptorBase surf2;
     private double dist1;
     private double angle;
     private double tgang;
-    private readonly Adaptor3d_Curve curv;
-    private Adaptor2d_Curve2d? csurf;
+    private readonly CurveAdaptorBase curv;
+    private Curve2DAdaptorBase? csurf;
     private int choix;
     private bool first;
     private readonly math_Vector FX;
     private readonly Matrix DX;
 
-    public BlendFunc_ChAsymInv(Adaptor3d_Surface S1, Adaptor3d_Surface S2, Adaptor3d_Curve C)
+    public BlendFunc_ChAsymInv(SurfaceAdaptorBase S1, SurfaceAdaptorBase S2, CurveAdaptorBase C)
     {
         surf1 = S1;
         surf2 = S2;
@@ -54,7 +55,7 @@ public class BlendFunc_ChAsymInv : Blend_FuncInv
         return 4;
     }
 
-    public override void Set(bool OnFirst, Adaptor2d_Curve2d C)
+    public override void Set(bool OnFirst, Curve2DAdaptorBase C)
     {
         first = OnFirst;
         csurf = C;

@@ -2,6 +2,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Kerf.Geometry.SurfaceKind;
@@ -19,18 +20,18 @@ public partial class IntWalk_PWalking
     internal bool ExtendLineInCommonZone(IntImp_ConstIsoparametric theChoixIso, bool theDirectionFlag)
     {
         // Caro1 and Caro2
-        Adaptor3d_Surface Caro1 = myIntersectionOn2S.Function().AuxillarSurface1();
-        Adaptor3d_Surface Caro2 = myIntersectionOn2S.Function().AuxillarSurface2();
+        SurfaceAdaptorBase Caro1 = myIntersectionOn2S.Function().AuxillarSurface1();
+        SurfaceAdaptorBase Caro2 = myIntersectionOn2S.Function().AuxillarSurface2();
         //
-        double UFirst1 = Adaptor3d_HSurfaceTool.FirstUParameter(Caro1);
-        double VFirst1 = Adaptor3d_HSurfaceTool.FirstVParameter(Caro1);
-        double ULast1 = Adaptor3d_HSurfaceTool.LastUParameter(Caro1);
-        double VLast1 = Adaptor3d_HSurfaceTool.LastVParameter(Caro1);
+        double UFirst1 = HSurfaceTool.FirstUParameter(Caro1);
+        double VFirst1 = HSurfaceTool.FirstVParameter(Caro1);
+        double ULast1 = HSurfaceTool.LastUParameter(Caro1);
+        double VLast1 = HSurfaceTool.LastVParameter(Caro1);
 
-        double UFirst2 = Adaptor3d_HSurfaceTool.FirstUParameter(Caro2);
-        double VFirst2 = Adaptor3d_HSurfaceTool.FirstVParameter(Caro2);
-        double ULast2 = Adaptor3d_HSurfaceTool.LastUParameter(Caro2);
-        double VLast2 = Adaptor3d_HSurfaceTool.LastVParameter(Caro2);
+        double UFirst2 = HSurfaceTool.FirstUParameter(Caro2);
+        double VFirst2 = HSurfaceTool.FirstVParameter(Caro2);
+        double ULast2 = HSurfaceTool.LastUParameter(Caro2);
+        double VLast2 = HSurfaceTool.LastVParameter(Caro2);
 
         bool bOutOfTangentZone = false;
         bool bStop = !myIntersectionOn2S.IsTangent();
@@ -559,7 +560,7 @@ public partial class IntWalk_PWalking
     /// the surfaces' points (B-spline and Bézier surfaces only; true at once for others). True if the distance falls
     /// below 1e-7.
     /// </summary>
-    internal bool DistanceMinimizeByGradient(Adaptor3d_Surface theASurf1, Adaptor3d_Surface theASurf2,
+    internal bool DistanceMinimizeByGradient(SurfaceAdaptorBase theASurf1, SurfaceAdaptorBase theASurf2,
                                              NCollection_Array1<double> theInit, double[]? theStep0 = null)
     {
         const int aNbIterMAX = 60;
@@ -574,11 +575,11 @@ public partial class IntWalk_PWalking
         double aMinAddValU2 = Math.Max(Epsilon(theInit[3]), aTolNul);
         double aMinAddValV2 = Math.Max(Epsilon(theInit[4]), aTolNul);
 
-        if (theASurf1.GetType() != BezierSurface && theASurf1.GetType() != BSplineSurface)
+        if (theASurf1.GetType() != SurfaceKind.BezierSurface && theASurf1.GetType() != SurfaceKind.BSplineSurface)
         {
             return true;
         }
-        if (theASurf2.GetType() != BezierSurface && theASurf2.GetType() != BSplineSurface)
+        if (theASurf2.GetType() != SurfaceKind.BezierSurface && theASurf2.GetType() != SurfaceKind.BSplineSurface)
         {
             return true;
         }
@@ -682,7 +683,7 @@ public partial class IntWalk_PWalking
     /// Newton's iterations for the projection of theP0 on theASurf from (theU0, theV0) (initialised by the caller).
     /// True if the square distance falls below 1e-14.
     /// </summary>
-    internal bool DistanceMinimizeByExtrema(Adaptor3d_Surface theASurf, in Point3D theP0, ref double theU0,
+    internal bool DistanceMinimizeByExtrema(SurfaceAdaptorBase theASurf, in Point3D theP0, ref double theU0,
                                             ref double theV0, double[]? theStep0 = null)
     {
         const double aTol = 1.0e-14;
@@ -735,7 +736,7 @@ public partial class IntWalk_PWalking
     /// Snaps thePnt (u1, v1, u2, v2) on a boundary: an intersection point with a parameter locked on the boundary it
     /// is near, then its other parameters onto boundaries within the3DTol. True if the point found is in the domain.
     /// </summary>
-    internal bool HandleSingleSingularPoint(Adaptor3d_Surface theASurf1, Adaptor3d_Surface theASurf2,
+    internal bool HandleSingleSingularPoint(SurfaceAdaptorBase theASurf1, SurfaceAdaptorBase theASurf2,
                                             double the3DTol, NCollection_Array1<double> thePnt)
     {
         // u1, v1, u2, v2 order is used.
@@ -771,7 +772,7 @@ public partial class IntWalk_PWalking
                 }
 
                 anInt.Point().Parameters(out aPars[0], out aPars[1], out aPars[2], out aPars[3]);
-                Adaptor3d_Surface[] aSurfs = [theASurf1, theASurf2];
+                SurfaceAdaptorBase[] aSurfs = [theASurf1, theASurf2];
                 // Local resolutions
                 double aTol2 = the3DTol * the3DTol;
                 Point3D aP;
@@ -857,7 +858,7 @@ public partial class IntWalk_PWalking
     /// Searches the intersection point on the boundary near (theU1, theV1, theU2, theV2) and puts it at the start
     /// (isTheFirst) or the end of the line, removing the points that would make a hairpin bend. True if added.
     /// </summary>
-    internal bool SeekPointOnBoundary(Adaptor3d_Surface theASurf1, Adaptor3d_Surface theASurf2, double theU1,
+    internal bool SeekPointOnBoundary(SurfaceAdaptorBase theASurf1, SurfaceAdaptorBase theASurf2, double theU1,
                                       double theV1, double theU2, double theV2, bool isTheFirst)
     {
         bool isOK = false;
@@ -1069,7 +1070,7 @@ public partial class IntWalk_PWalking
     /// Puts the ends of the line on the surfaces' boundaries when they are near them (closer than 1e-3 of the
     /// smallest range). True if a point was added.
     /// </summary>
-    public bool PutToBoundary(Adaptor3d_Surface theASurf1, Adaptor3d_Surface theASurf2)
+    public bool PutToBoundary(SurfaceAdaptorBase theASurf1, SurfaceAdaptorBase theASurf2)
     {
         double aTolMin = global::Kerf.Engine.Foundation.Precision.Confusion();
 
@@ -1275,7 +1276,7 @@ public partial class IntWalk_PWalking
     /// Inserts exact intersection points in the middle of the segments of the line until it has theMinNbPoints
     /// points (or no more can be found). True if a point was inserted.
     /// </summary>
-    public bool SeekAdditionalPoints(Adaptor3d_Surface theASurf1, Adaptor3d_Surface theASurf2, int theMinNbPoints)
+    public bool SeekAdditionalPoints(SurfaceAdaptorBase theASurf1, SurfaceAdaptorBase theASurf2, int theMinNbPoints)
     {
         const double aTol = 1.0e-14;
         int aNbPoints = line.NbPoints();

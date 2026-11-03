@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
@@ -167,12 +168,12 @@ public sealed partial class GccAna_Circ2d2TanRad
                         Line2D linint2 = new(new Point2D(lx2loc - cote2[jcote2] * y2dir * Radius,
                                                                             ly2loc + cote2[jcote2] * x2dir * Radius),
                                                           L2.Direction());
-                        IntAna2d_AnaIntersection Intp = new(linint1, linint2);
-                        if (Intp.IsDone())
+                        AnalyticIntersection Intp = new(linint1, linint2);
+                        if (Intp.IsDone)
                         {
-                            if (!Intp.IsEmpty())
+                            if (!Intp.IsEmpty)
                             {
-                                for (int i = 1; i <= Intp.NbPoints(); i++)
+                                for (int i = 1; i <= Intp.PointCount; i++)
                                 {
                                     NbrSol++;
                                     Point2D Center = Intp.Point(i).Value();

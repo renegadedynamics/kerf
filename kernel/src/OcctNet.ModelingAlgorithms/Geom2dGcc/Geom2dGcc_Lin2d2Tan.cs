@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 
@@ -47,10 +48,10 @@ public sealed class Geom2dGcc_Lin2d2Tan
     public Geom2dGcc_Lin2d2Tan(in Geom2dGcc_QualifiedCurve Qualified1, in Geom2dGcc_QualifiedCurve Qualified2, double Tolang)
         : this(4)
     {
-        Geom2dAdaptor_Curve C1    = Qualified1.Qualified();
-        Geom2dAdaptor_Curve C2    = Qualified2.Qualified();
-        Geom2d_Curve?       CC1   = C1.Curve();
-        Geom2d_Curve?       CC2   = C2.Curve();
+        CurveAdaptor2D C1    = Qualified1.Qualified();
+        CurveAdaptor2D C2    = Qualified2.Qualified();
+        Curve2D?       CC1   = C1.Curve();
+        Curve2D?       CC2   = C2.Curve();
         CurveKind   Type1 = C1.GetType();
         CurveKind   Type2 = C2.GetType();
 
@@ -61,9 +62,9 @@ public sealed class Geom2dGcc_Lin2d2Tan
         NbrSol = 0;
         if (Type1 == Circle && Type2 == Circle)
         {
-            Geom2d_Circle        CCC1 = (CC1 as Geom2d_Circle)!;
+            CircleCurve2D        CCC1 = (CC1 as CircleCurve2D)!;
             Circle2D            c1   = CCC1.Circ2d();
-            Geom2d_Circle        CCC2 = (CC2 as Geom2d_Circle)!;
+            CircleCurve2D        CCC2 = (CC2 as CircleCurve2D)!;
             Circle2D            c2   = CCC2.Circ2d();
             GccEnt_QualifiedCirc Qc1  = new(c1, Qualified1.Qualifier());
             GccEnt_QualifiedCirc Qc2  = new(c2, Qualified2.Qualifier());
@@ -126,8 +127,8 @@ public sealed class Geom2dGcc_Lin2d2Tan
     public Geom2dGcc_Lin2d2Tan(in Geom2dGcc_QualifiedCurve Qualified1, in Point2D ThePoint, double Tolang)
         : this(2)
     {
-        Geom2dAdaptor_Curve C1    = Qualified1.Qualified();
-        Geom2d_Curve?       CC1   = C1.Curve();
+        CurveAdaptor2D C1    = Qualified1.Qualified();
+        Curve2D?       CC1   = C1.Curve();
         CurveKind   Type1 = C1.GetType();
 
         //=============================================================================
@@ -137,7 +138,7 @@ public sealed class Geom2dGcc_Lin2d2Tan
         NbrSol = 0;
         if (Type1 == Circle)
         {
-            Geom2d_Circle        CCC1 = (CC1 as Geom2d_Circle)!;
+            CircleCurve2D        CCC1 = (CC1 as CircleCurve2D)!;
             Circle2D            c1   = CCC1.Circ2d();
             GccEnt_QualifiedCirc Qc1  = new(c1, Qualified1.Qualifier());
             GccAna_Lin2d2Tan     Lin  = new(Qc1, ThePoint, Tolang);
@@ -171,7 +172,7 @@ public sealed class Geom2dGcc_Lin2d2Tan
 
                 if (Lin.IsDone())
                 {
-                    if (Add(NbrSol + 1, Lin, Tolang, C1, new Geom2dAdaptor_Curve()))
+                    if (Add(NbrSol + 1, Lin, Tolang, C1, new CurveAdaptor2D()))
                     {
                         NbrSol++;
                     }
@@ -192,10 +193,10 @@ public sealed class Geom2dGcc_Lin2d2Tan
                                double Param1, double Param2)
         : this(4)
     {
-        Geom2dAdaptor_Curve C1    = Qualified1.Qualified();
-        Geom2dAdaptor_Curve C2    = Qualified2.Qualified();
-        Geom2d_Curve?       CC1   = C1.Curve();
-        Geom2d_Curve?       CC2   = C2.Curve();
+        CurveAdaptor2D C1    = Qualified1.Qualified();
+        CurveAdaptor2D C2    = Qualified2.Qualified();
+        Curve2D?       CC1   = C1.Curve();
+        Curve2D?       CC2   = C2.Curve();
         CurveKind   Type1 = C1.GetType();
         CurveKind   Type2 = C2.GetType();
 
@@ -206,9 +207,9 @@ public sealed class Geom2dGcc_Lin2d2Tan
         NbrSol = 0;
         if (Type1 == Circle && Type2 == Circle)
         {
-            Geom2d_Circle        CCC1 = (CC1 as Geom2d_Circle)!;
+            CircleCurve2D        CCC1 = (CC1 as CircleCurve2D)!;
             Circle2D            c1   = CCC1.Circ2d();
-            Geom2d_Circle        CCC2 = (CC2 as Geom2d_Circle)!;
+            CircleCurve2D        CCC2 = (CC2 as CircleCurve2D)!;
             Circle2D            c2   = CCC2.Circ2d();
             GccEnt_QualifiedCirc Qc1  = new(c1, Qualified1.Qualifier());
             GccEnt_QualifiedCirc Qc2  = new(c2, Qualified2.Qualifier());
@@ -250,8 +251,8 @@ public sealed class Geom2dGcc_Lin2d2Tan
     public Geom2dGcc_Lin2d2Tan(in Geom2dGcc_QualifiedCurve Qualified1, in Point2D ThePoint, double Tolang, double Param1)
         : this(2)
     {
-        Geom2dAdaptor_Curve C1    = Qualified1.Qualified();
-        Geom2d_Curve?       CC1   = C1.Curve();
+        CurveAdaptor2D C1    = Qualified1.Qualified();
+        Curve2D?       CC1   = C1.Curve();
         CurveKind   Type1 = C1.GetType();
 
         //=============================================================================
@@ -261,7 +262,7 @@ public sealed class Geom2dGcc_Lin2d2Tan
         NbrSol = 0;
         if (Type1 == Circle)
         {
-            Geom2d_Circle        CCC1 = (CC1 as Geom2d_Circle)!;
+            CircleCurve2D        CCC1 = (CC1 as CircleCurve2D)!;
             Circle2D            c1   = CCC1.Circ2d();
             GccEnt_QualifiedCirc Qc1  = new(c1, Qualified1.Qualifier());
             GccAna_Lin2d2Tan     Lin  = new(Qc1, ThePoint, Tolang);
@@ -373,8 +374,8 @@ public sealed class Geom2dGcc_Lin2d2Tan
         }
     }
 
-    private bool Add(int theIndex, Geom2dGcc_Lin2d2TanIter theLin, double theTol, Geom2dAdaptor_Curve theC1,
-                     Geom2dAdaptor_Curve theC2)
+    private bool Add(int theIndex, Geom2dGcc_Lin2d2TanIter theLin, double theTol, CurveAdaptor2D theC1,
+                     CurveAdaptor2D theC2)
     {
         int      i;
         Line2D aLin = theLin.ThisSolution();

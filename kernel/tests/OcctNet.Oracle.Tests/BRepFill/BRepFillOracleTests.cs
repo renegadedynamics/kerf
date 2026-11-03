@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Text;
@@ -66,10 +70,10 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
     // The input compound written as BRep text and read back by both sides (the port's reading frozen, as callers hold
     // shapes), with its children as TopoDS_Iterator gives them. Reading the same text gives both sides bit-identical
     // inputs: BRep text writes locations with 15 significant digits, so a shape built in memory and its reading differ.
-    private (List<N.TopoDS_Shape> N, List<TopoDS_Shape> P, TopoDS_Shape PInput) ReadBoth(in TopoDS_Shape theCompound)
+    private (List<N.TopoDS_Shape> N, List<Shape> P, Shape PInput) ReadBoth(in Shape theCompound)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theCompound, aFile));
+        Assert.True(BrepTools.Write(theCompound, aFile));
         var aNShape = new N.TopoDS_Shape();
         using (var aBuilder = new N.BRep_Builder())
         {
@@ -81,37 +85,37 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             aList.Add(anIt.Value());
         }
         GC.KeepAlive(aNShape); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile));
+        Assert.True(BrepTools.Read(out Shape aPShape, aFile));
         aPShape.TShape()!.FreezeGraph();
-        var aPList = new List<TopoDS_Shape>();
-        for (var anIt = new TopoDS_Iterator(aPShape); anIt.More(); anIt.Next())
+        var aPList = new List<Shape>();
+        for (var anIt = new Iterator(aPShape); anIt.More(); anIt.Next())
         {
             aPList.Add(anIt.Value());
         }
         return (aList, aPList, aPShape);
     }
 
-    private static TopoDS_Compound Holder(params TopoDS_Shape[] theShapes)
+    private static Compound Holder(params Shape[] theShapes)
     {
-        BRep_Builder B = new();
-        TopoDS_Compound aC = new();
+        BrepBuilder B = new();
+        Compound aC = new();
         B.MakeCompound(ref aC);
-        foreach (TopoDS_Shape aS in theShapes)
+        foreach (Shape aS in theShapes)
         {
             B.Add(aC, aS);
         }
         return aC;
     }
 
-    private void CompareShapes(Tally theTally, string theWhat, N.TopoDS_Shape theNative, in TopoDS_Shape thePort)
+    private void CompareShapes(Tally theTally, string theWhat, N.TopoDS_Shape theNative, in Shape thePort)
     {
-        if (!thePort.IsNull() && !thePort.TShape()!.IsFrozen)
+        if (!thePort.IsNull && !thePort.TShape()!.IsFrozen)
         {
             theTally.Differences.Add($"{theWhat}: the port's result isn't frozen");
         }
-        if (theNative.IsNull() || thePort.IsNull())
+        if (theNative.IsNull() || thePort.IsNull)
         {
-            if (theNative.IsNull() != thePort.IsNull())
+            if (theNative.IsNull() != thePort.IsNull)
             {
                 theTally.Different++;
                 theTally.Differences.Add($"{theWhat}: null on one side only (native {theNative.IsNull()})");
@@ -125,7 +129,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
 
         string aNFile = NewFile(), aPFile = NewFile();
         Assert.True(N.BRepTools.Write(theNative, aNFile));
-        Assert.True(BRepTools.Write(thePort, aPFile));
+        Assert.True(BrepTools.Write(thePort, aPFile));
         string aN = File.ReadAllText(aNFile, Encoding.Latin1), aP = File.ReadAllText(aPFile, Encoding.Latin1);
         BRepTextDiff aDiff = BRepTextComparison.Compare(aN, aP);
         if (aDiff.IsIdentical)
@@ -139,8 +143,8 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             return;
         }
 
-        Assert.True(BRepTools.Read(out TopoDS_Shape aNP, aNFile));
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPP, aPFile));
+        Assert.True(BrepTools.Read(out Shape aNP, aNFile));
+        Assert.True(BrepTools.Read(out Shape aPP, aPFile));
         CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aNP, aPP, new CanonicalOptions { CheckValidity = false });
         if (aCanon.IsIdentical)
         {
@@ -177,7 +181,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         theTally.Differences.Add($"{theWhat}: native {theN:R} port {theP:R}");
     }
 
-    private static void Unchanged(Tally theTally, string theWhat, string theBefore, in TopoDS_Shape theInput)
+    private static void Unchanged(Tally theTally, string theWhat, string theBefore, in Shape theInput)
     {
         if (theBefore != BRepTextComparison.Write(theInput))
         {
@@ -208,7 +212,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
     }
 
     // A random bounded curve and the range of an edge on it; theClosed asks for a closed one where the kind has it.
-    private static Geom_Curve Curve(Oracle theO, int theKind, out double theU1, out double theU2, out bool theClosed)
+    private static Curve3D Curve(Oracle theO, int theKind, out double theU1, out double theU2, out bool theClosed)
     {
         theClosed = false;
         switch (theKind)
@@ -216,11 +220,11 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             case 0:
                 theU1 = theO.Real(-20, 20);
                 theU2 = theU1 + theO.Real(1, 40);
-                return new Geom_Line(theO.Pnt(), theO.Dir());
+                return new LineCurve3D(theO.Pnt(), theO.Dir());
             case 1:
             case 2:
                 {
-                    var aC = new Geom_Circle(theO.Ax2(), theO.Real(1, 30));
+                    var aC = new CircleCurve3D(theO.Ax2(), theO.Real(1, 30));
                     if (theKind == 2 || theO.Int(0, 3) == 0)
                     {
                         theClosed = true;
@@ -237,7 +241,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             case 3:
                 {
                     double aMaj = theO.Real(2, 30);
-                    var aE = new Geom_Ellipse(theO.Ax2(), aMaj, aMaj * theO.Real(0.2, 1));
+                    var aE = new EllipseCurve3D(theO.Ax2(), aMaj, aMaj * theO.Real(0.2, 1));
                     if (theO.Int(0, 3) == 0)
                     {
                         theClosed = true;
@@ -262,8 +266,8 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                     }
                     NCollection_Array1<Point3D> aPoles = Poles(theO, theO.Pnt(), aNbPoles, 10);
                     var aC = theO.Bool()
-                                 ? new Geom_BSplineCurve(aPoles, theO.Weights(aNbPoles, true), aKnots, aMults, aDeg)
-                                 : new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg);
+                                 ? new BSplineCurve3D(aPoles, theO.Weights(aNbPoles, true), aKnots, aMults, aDeg)
+                                 : new BSplineCurve3D(aPoles, aKnots, aMults, aDeg);
                     theU1 = aC.FirstParameter();
                     theU2 = aC.LastParameter();
                     if (theO.Bool())
@@ -278,7 +282,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                 {
                     int aNb = theO.Int(2, 6);
                     NCollection_Array1<Point3D> aPoles = Poles(theO, theO.Pnt(), aNb, 10);
-                    var aC = theO.Bool() ? new Geom_BezierCurve(aPoles, theO.Weights(aNb, true)) : new Geom_BezierCurve(aPoles);
+                    var aC = theO.Bool() ? new BezierCurve3D(aPoles, theO.Weights(aNb, true)) : new BezierCurve3D(aPoles);
                     theU1 = 0;
                     theU2 = 1;
                     return aC;
@@ -286,8 +290,8 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             default:
                 {
                     // a trimmed curve of another kind
-                    Geom_Curve aBasis = Curve(theO, theO.Int(0, 4), out double a1, out double a2, out _);
-                    var aT = new Geom_TrimmedCurve(aBasis, a1, a2);
+                    Curve3D aBasis = Curve(theO, theO.Int(0, 4), out double a1, out double a2, out _);
+                    var aT = new TrimmedCurve3D(aBasis, a1, a2);
                     theU1 = aT.FirstParameter();
                     theU2 = aT.LastParameter();
                     return aT;
@@ -295,15 +299,15 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         }
     }
 
-    private static TopoDS_Edge Edge(Oracle theO, int theKind, out bool theClosed)
+    private static Edge Edge(Oracle theO, int theKind, out bool theClosed)
     {
-        Geom_Curve aC = Curve(theO, theKind, out double aU1, out double aU2, out theClosed);
+        Curve3D aC = Curve(theO, theKind, out double aU1, out double aU2, out theClosed);
         return new BRepBuilderAPI_MakeEdge(aC, aU1, aU2).Edge();
     }
 
-    private static TopoDS_Shape Dressed(Oracle theO, in TopoDS_Shape theShape, Placement? theLoc)
+    private static Shape Dressed(Oracle theO, in Shape theShape, Placement? theLoc)
     {
-        TopoDS_Shape aS = theShape;
+        Shape aS = theShape;
         if (theLoc is not null)
         {
             aS = aS.Moved(theLoc.Value);
@@ -325,7 +329,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         var aKinds = new Dictionary<string, int>();
         foreach (int aCase in Tape.Budget(700))
         {
-            TopoDS_Edge aE1, aE2;
+            Edge aE1, aE2;
             string aKind;
             int aMode = anO.Int(0, 9);
             if (aMode == 0)
@@ -344,9 +348,9 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                 var aA = new BRepBuilderAPI_MakeVertex(anO.Pnt()).Vertex();
                 var aB = new BRepBuilderAPI_MakeVertex(anO.Pnt()).Vertex();
                 aE1 = new BRepBuilderAPI_MakeEdge(aA, aB).Edge();
-                Point3D aPA = BRep_Tool.Pnt(aA), aPB = BRep_Tool.Pnt(aB);
+                Point3D aPA = Tool.Pnt(aA), aPB = Tool.Pnt(aB);
                 Point3D aMid = new((aPA.X() + aPB.X()) / 2 + anO.Real(1, 5), (aPA.Y() + aPB.Y()) / 2, (aPA.Z() + aPB.Z()) / 2 + 3);
-                var aArc = new GC_MakeArcOfCircle(aPA, aMid, aPB).Value();
+                var aArc = new MakeArcOfCircle(aPA, aMid, aPB).Value();
                 aE2 = new BRepBuilderAPI_MakeEdge(aArc, aA, aB).Edge();
                 aKind = "shared ends";
             }
@@ -374,19 +378,19 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                 aL1 = Location(anO);
                 aL2 = anO.Bool() ? Location(anO) : null;
             }
-            aE1 = TopoDS.Edge(Dressed(anO, aE1, aL1));
-            aE2 = TopoDS.Edge(Dressed(anO, aE2, aL2));
+            aE1 = ShapeCasts.Edge(Dressed(anO, aE1, aL1));
+            aE2 = ShapeCasts.Edge(Dressed(anO, aE2, aL2));
             aKinds[aKind.Split(' ')[0]] = aKinds.GetValueOrDefault(aKind.Split(' ')[0]) + 1;
 
-            (List<N.TopoDS_Shape> aN, List<TopoDS_Shape> aP, TopoDS_Shape anInput) = ReadBoth(Holder(aE1, aE2));
-            aE1 = TopoDS.Edge(aP[0]);
-            aE2 = TopoDS.Edge(aP[1]);
+            (List<N.TopoDS_Shape> aN, List<Shape> aP, Shape anInput) = ReadBoth(Holder(aE1, aE2));
+            aE1 = ShapeCasts.Edge(aP[0]);
+            aE2 = ShapeCasts.Edge(aP[1]);
             string aBefore = BRepTextComparison.Write(anInput);
             string aWhat = $"Face case {aCase} ({aKind})";
             aTally.Cases++;
 
             N.TopoDS_Shape? aNR = null;
-            TopoDS_Shape? aPR = null;
+            Shape? aPR = null;
             N.OcctException? aNEx = null;
             Exception? aPEx = null;
             try
@@ -434,7 +438,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         return aPnts;
     }
 
-    private static TopoDS_Wire Wire(Oracle theO, int theKind, int theNb, bool theClosed)
+    private static Wire Wire(Oracle theO, int theKind, int theNb, bool theClosed)
     {
         Point3D[] aPnts = PolygonPoints(theO, theNb + (theClosed ? 0 : 1));
         switch (theKind)
@@ -458,13 +462,13 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                     var aMW = new BRepBuilderAPI_MakeWire();
                     if (theClosed)
                     {
-                        var aC = new Geom_Circle(theO.Ax2(), theO.Real(3, 30));
+                        var aC = new CircleCurve3D(theO.Ax2(), theO.Real(3, 30));
                         double a0 = theO.Real(-1, 1);
-                        TopoDS_Vertex aFirst = new BRepBuilderAPI_MakeVertex(aC.Value(a0)).Vertex(), aPrev = aFirst;
+                        Vertex aFirst = new BRepBuilderAPI_MakeVertex(aC.Value(a0)).Vertex(), aPrev = aFirst;
                         for (int i = 1; i <= theNb; i++)
                         {
                             double a1 = a0 + 2 * Math.PI * (i - 1) / theNb, a2 = a0 + 2 * Math.PI * i / theNb;
-                            TopoDS_Vertex aNext = i == theNb ? aFirst : new BRepBuilderAPI_MakeVertex(aC.Value(a2)).Vertex();
+                            Vertex aNext = i == theNb ? aFirst : new BRepBuilderAPI_MakeVertex(aC.Value(a2)).Vertex();
                             aMW.Add(new BRepBuilderAPI_MakeEdge(aC, aPrev, aNext, a1, a2).Edge());
                             aPrev = aNext;
                         }
@@ -476,7 +480,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                             Point3D aM = new((aPnts[i].X() + aPnts[i + 1].X()) / 2 + theO.Real(-2, 2),
                                             (aPnts[i].Y() + aPnts[i + 1].Y()) / 2 + theO.Real(-2, 2),
                                             (aPnts[i].Z() + aPnts[i + 1].Z()) / 2 + theO.Real(-2, 2));
-                            aMW.Add(new BRepBuilderAPI_MakeEdge(new GC_MakeArcOfCircle(aPnts[i], aM, aPnts[i + 1]).Value()).Edge());
+                            aMW.Add(new BRepBuilderAPI_MakeEdge(new MakeArcOfCircle(aPnts[i], aM, aPnts[i + 1]).Value()).Edge());
                         }
                     }
                     return aMW.Wire();
@@ -494,7 +498,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                         aPoles[2] = new Point3D(a1.X() + theO.Real(-3, 3), a1.Y() + theO.Real(-3, 3), a1.Z() + theO.Real(-3, 3));
                         aPoles[3] = new Point3D(a2.X() + theO.Real(-3, 3), a2.Y() + theO.Real(-3, 3), a2.Z() + theO.Real(-3, 3));
                         aPoles[4] = a2;
-                        aMW.Add(new BRepBuilderAPI_MakeEdge(new Geom_BezierCurve(aPoles)).Edge());
+                        aMW.Add(new BRepBuilderAPI_MakeEdge(new BezierCurve3D(aPoles)).Edge());
                     }
                     return aMW.Wire();
                 }
@@ -515,8 +519,8 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                 aNb = 3;
             }
             int aK1 = anO.Int(0, 2), aK2 = anO.Bool() ? aK1 : anO.Int(0, 2);
-            TopoDS_Wire aW1 = Wire(anO, aK1, aNb, aClosed1);
-            TopoDS_Wire aW2 = Wire(anO, aK2, aNb, aClosed2);
+            Wire aW1 = Wire(anO, aK1, aNb, aClosed1);
+            Wire aW2 = Wire(anO, aK2, aNb, aClosed2);
             Placement? aL1 = null, aL2 = null;
             int aLoc = anO.Int(0, 3);
             if (aLoc == 1)
@@ -527,18 +531,18 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             {
                 aL1 = Location(anO);
             }
-            aW1 = TopoDS.Wire(Dressed(anO, aW1, aL1));
-            aW2 = TopoDS.Wire(Dressed(anO, aW2, aL2));
+            aW1 = ShapeCasts.Wire(Dressed(anO, aW1, aL1));
+            aW2 = ShapeCasts.Wire(Dressed(anO, aW2, aL2));
 
-            (List<N.TopoDS_Shape> aN, List<TopoDS_Shape> aP, TopoDS_Shape anInput) = ReadBoth(Holder(aW1, aW2));
-            aW1 = TopoDS.Wire(aP[0]);
-            aW2 = TopoDS.Wire(aP[1]);
+            (List<N.TopoDS_Shape> aN, List<Shape> aP, Shape anInput) = ReadBoth(Holder(aW1, aW2));
+            aW1 = ShapeCasts.Wire(aP[0]);
+            aW2 = ShapeCasts.Wire(aP[1]);
             string aBefore = BRepTextComparison.Write(anInput);
             string aWhat = $"Shell case {aCase} (kinds {aK1} {aK2}, {aNb} edges, closed {aClosed1} {aClosed2})";
             aTally.Cases++;
 
             N.TopoDS_Shape? aNR = null;
-            TopoDS_Shape? aPR = null;
+            Shape? aPR = null;
             N.OcctException? aNEx = null;
             Exception? aPEx = null;
             try
@@ -591,11 +595,11 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                 aMP.Add(aSpinePnts[i]);
             }
             aMP.Close();
-            TopoDS_Shape aSpine = aMP.Wire();
+            Shape aSpine = aMP.Wire();
             if (anO.Int(0, 9) == 0)
             {
                 // a face that isn't planar: OCCT throws Standard_NoSuchObject
-                aSpine = new BRepBuilderAPI_MakeFace(new Geom_CylindricalSurface(anAx, aR), 0, anO.Real(1, 6), 0, anO.Real(1, 20), 1e-7).Face();
+                aSpine = new BRepBuilderAPI_MakeFace(new CylindricalSurface(anAx, aR), 0, anO.Real(1, 6), 0, anO.Real(1, 20), 1e-7).Face();
             }
             else if (anO.Bool())
             {
@@ -628,14 +632,14 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             {
                 aPP.Add(new Point3D(aStart.X() + anO.Real(-5, 5), aStart.Y() + anO.Real(-5, 5), aStart.Z() + anO.Real(-5, 5)));
             }
-            TopoDS_Wire aProfile = aPP.Wire();
+            Wire aProfile = aPP.Wire();
             double aTol = anO.Int(0, 2) switch { 0 => 1e-7, 1 => 1e-3, _ => 1.0 };
 
-            (List<N.TopoDS_Shape> aN, List<TopoDS_Shape> aP, TopoDS_Shape anInput) = ReadBoth(Holder(aSpine, aProfile));
+            (List<N.TopoDS_Shape> aN, List<Shape> aP, Shape anInput) = ReadBoth(Holder(aSpine, aProfile));
             aSpine = aP[0];
-            aProfile = TopoDS.Wire(aP[1]);
+            aProfile = ShapeCasts.Wire(aP[1]);
             string aBefore = BRepTextComparison.Write(anInput);
-            string aWhat = $"Axe case {aCase} (mode {aMode}, {aSpine.ShapeType()})";
+            string aWhat = $"Axe case {aCase} (mode {aMode}, {Kerf.Engine.Foundation.OcctTypeNames.Of(aSpine.ShapeType())})";
             aTally.Cases++;
 
             using var aNAx = new N.gp_Ax3();
@@ -694,18 +698,18 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
 
     // ------------------------------------------------------------------------------------- ComputeACR, InsertACR
 
-    private static TopoDS_Wire AcrWire(Oracle theO, out int theNbEdges)
+    private static Wire AcrWire(Oracle theO, out int theNbEdges)
     {
         int aNb = theO.Int(1, 6);
         bool aClosed = aNb >= 3 && theO.Bool();
-        TopoDS_Wire aW = Wire(theO, theO.Int(0, 2), aNb, aClosed);
+        Wire aW = Wire(theO, theO.Int(0, 2), aNb, aClosed);
         theNbEdges = 0;
-        for (var anExp = new BRepTools_WireExplorer(aW); anExp.More(); anExp.Next())
+        for (var anExp = new WireExplorer(aW); anExp.More(); anExp.Next())
         {
             theNbEdges++;
         }
         Placement? aL = theO.Int(0, 3) == 0 ? Location(theO) : null;
-        return TopoDS.Wire(Dressed(theO, aW, aL));
+        return ShapeCasts.Wire(Dressed(theO, aW, aL));
     }
 
     [Fact]
@@ -715,9 +719,9 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         var aTally = new Tally("BRepFill::ComputeACR");
         foreach (int aCase in Tape.Budget(300))
         {
-            TopoDS_Wire aW = AcrWire(anO, out int aNbEdges);
-            (List<N.TopoDS_Shape> aN, List<TopoDS_Shape> aP, TopoDS_Shape anInput) = ReadBoth(Holder(aW));
-            aW = TopoDS.Wire(aP[0]);
+            Wire aW = AcrWire(anO, out int aNbEdges);
+            (List<N.TopoDS_Shape> aN, List<Shape> aP, Shape anInput) = ReadBoth(Holder(aW));
+            aW = ShapeCasts.Wire(aP[0]);
             string aBefore = BRepTextComparison.Write(anInput);
             string aWhat = $"ComputeACR case {aCase} ({aNbEdges} edges)";
             aTally.Cases++;
@@ -743,7 +747,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         int aCut = 0;
         foreach (int aCase in Tape.Budget(300))
         {
-            TopoDS_Wire aW = AcrWire(anO, out int aNbEdges);
+            Wire aW = AcrWire(anO, out int aNbEdges);
             int aNbCuts = anO.Int(1, 6);
             var aCuts = new double[aNbCuts];
             var aACR = new NCollection_Array1<double>(0, aNbEdges);
@@ -761,14 +765,14 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             }
             double aPrec = anO.Int(0, 2) switch { 0 => 1e-9, 1 => 1e-4, _ => 0.05 };
 
-            (List<N.TopoDS_Shape> aN, List<TopoDS_Shape> aP, TopoDS_Shape anInput) = ReadBoth(Holder(aW));
-            aW = TopoDS.Wire(aP[0]);
+            (List<N.TopoDS_Shape> aN, List<Shape> aP, Shape anInput) = ReadBoth(Holder(aW));
+            aW = ShapeCasts.Wire(aP[0]);
             string aBefore = BRepTextComparison.Write(anInput);
             string aWhat = $"InsertACR case {aCase} ({aNbEdges} edges, {aNbCuts} cuts, prec {aPrec})";
             aTally.Cases++;
 
             N.TopoDS_Shape? aNR = null;
-            TopoDS_Shape? aPR = null;
+            Shape? aPR = null;
             N.OcctException? aNEx = null;
             Exception? aPEx = null;
             using N.TColStd_Array1OfReal aNCuts = Oracle.ToNative(aPCuts);
@@ -795,7 +799,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                 continue;
             }
             int aNbResult = 0;
-            for (var anExp = new TopExp_Explorer(aPR!.Value, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+            for (var anExp = new Explorer(aPR!.Value, ShapeType.Edge); anExp.More(); anExp.Next())
             {
                 aNbResult++;
             }

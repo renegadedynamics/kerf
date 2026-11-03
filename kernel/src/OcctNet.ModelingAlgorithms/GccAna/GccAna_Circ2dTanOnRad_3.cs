@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
@@ -221,12 +222,12 @@ public sealed partial class GccAna_Circ2dTanOnRad
             }
             for (int jj = 0; jj < nparal; jj++)
             {
-                IntAna2d_AnaIntersection Intp = new(OnCirc, new Circle2D(new Axis2D(center1, dirx), disparal[jj]));
-                if (Intp.IsDone())
+                AnalyticIntersection Intp = new(OnCirc, new Circle2D(new Axis2D(center1, dirx), disparal[jj]));
+                if (Intp.IsDone)
                 {
-                    if (!Intp.IsEmpty())
+                    if (!Intp.IsEmpty)
                     {
-                        for (int i = 1; i <= Intp.NbPoints(); i++)
+                        for (int i = 1; i <= Intp.PointCount; i++)
                         {
                             NbrSol++;
                             Center[NbrSol] = Intp.Point(i).Value();

@@ -4,7 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepPrim_Direction;
 
 namespace Occt;
@@ -130,15 +132,15 @@ internal class BRepPrim_GWedge
     private readonly double Z2Max;
     private readonly double X2Min;
     private readonly double X2Max;
-    private TopoDS_Shell myShell = new();
+    private Shell myShell = new();
     private bool ShellBuilt;
-    private readonly TopoDS_Vertex[] myVertices = NewArray<TopoDS_Vertex>(NBVERTICES);
+    private readonly Vertex[] myVertices = NewArray<Vertex>(NBVERTICES);
     private readonly bool[] VerticesBuilt = new bool[NBVERTICES];
-    private readonly TopoDS_Edge[] myEdges = NewArray<TopoDS_Edge>(NBEDGES);
+    private readonly Edge[] myEdges = NewArray<Edge>(NBEDGES);
     private readonly bool[] EdgesBuilt = new bool[NBEDGES];
-    private readonly TopoDS_Wire[] myWires = NewArray<TopoDS_Wire>(NBWIRES);
+    private readonly Wire[] myWires = NewArray<Wire>(NBWIRES);
     private readonly bool[] WiresBuilt = new bool[NBWIRES];
-    private readonly TopoDS_Face[] myFaces = NewArray<TopoDS_Face>(NBFACES);
+    private readonly Face[] myFaces = NewArray<Face>(NBFACES);
     private readonly bool[] FacesBuilt = new bool[NBFACES];
     private readonly bool[] myInfinite = new bool[NBFACES];
 
@@ -331,7 +333,7 @@ internal class BRepPrim_GWedge
     }
 
     /// <summary>The shell of the wedge (unfrozen).</summary>
-    public TopoDS_Shell Shell()
+    public Shell Shell()
     {
         if (IsDegeneratedShape())
         {
@@ -367,7 +369,7 @@ internal class BRepPrim_GWedge
                 myBuilder.AddShellFace(myShell, Face(BRepPrim_ZMax));
             }
 
-            myShell.Closed(BRep_Tool.IsClosed(myShell));
+            myShell.Closed(Tool.IsClosed(myShell));
             myBuilder.CompleteShell(myShell);
             ShellBuilt = true;
         }
@@ -481,7 +483,7 @@ internal class BRepPrim_GWedge
     }
 
     /// <summary>The face in the direction (unfrozen), built with its wire and pcurves.</summary>
-    public TopoDS_Face Face(BRepPrim_Direction d1)
+    public Face Face(BRepPrim_Direction d1)
     {
         int i = BRepPrim_Wedge_NumDir1(d1);
 
@@ -627,7 +629,7 @@ internal class BRepPrim_GWedge
     }
 
     /// <summary>The wire of the face in the direction (unfrozen).</summary>
-    public TopoDS_Wire Wire(BRepPrim_Direction d1)
+    public Wire Wire(BRepPrim_Direction d1)
     {
         int i = BRepPrim_Wedge_NumDir1(d1);
 
@@ -849,7 +851,7 @@ internal class BRepPrim_GWedge
     }
 
     /// <summary>The edge between the two directions (unfrozen).</summary>
-    public TopoDS_Edge Edge(BRepPrim_Direction d1, BRepPrim_Direction d2)
+    public Edge Edge(BRepPrim_Direction d1, BRepPrim_Direction d2)
     {
         if (!HasEdge(d1, d2))
         {
@@ -1013,7 +1015,7 @@ internal class BRepPrim_GWedge
     }
 
     /// <summary>The vertex at the three directions (unfrozen).</summary>
-    public TopoDS_Vertex Vertex(BRepPrim_Direction d1, BRepPrim_Direction d2, BRepPrim_Direction d3)
+    public Vertex Vertex(BRepPrim_Direction d1, BRepPrim_Direction d2, BRepPrim_Direction d3)
     {
         if (!HasVertex(d1, d2, d3))
         {

@@ -4,7 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
@@ -14,12 +17,12 @@ namespace Occt;
 /// original edge. Only the parameters, D0 (<see cref="EvalD0"/>), the type and a zero-radius circle are defined; the
 /// other members throw <see cref="MethodNotImplementedException"/>, as in OCCT (the base class's).
 /// </summary>
-public sealed class BiTgte_CurveOnEdge : Adaptor3d_Curve
+public sealed class BiTgte_CurveOnEdge : CurveAdaptorBase
 {
-    private TopoDS_Edge myEdge = new();
-    private TopoDS_Edge myEonF = new();
-    private Geom_Curve? myCurv;
-    private Geom_Curve? myConF;
+    private Edge myEdge = new();
+    private Edge myEonF = new();
+    private Curve3D? myCurv;
+    private Curve3D? myConF;
     private CurveKind myType;
     private Circle3D myCirc = new();
 
@@ -28,7 +31,7 @@ public sealed class BiTgte_CurveOnEdge : Adaptor3d_Curve
         myType = OtherCurve;
     }
 
-    public BiTgte_CurveOnEdge(in TopoDS_Edge theEonF, in TopoDS_Edge theEdge)
+    public BiTgte_CurveOnEdge(in Edge theEonF, in Edge theEdge)
     {
         myEdge = theEdge;
         myEonF = theEonF;
@@ -36,7 +39,7 @@ public sealed class BiTgte_CurveOnEdge : Adaptor3d_Curve
         Init(theEonF, theEdge);
     }
 
-    public override Adaptor3d_Curve ShallowCopy()
+    public override CurveAdaptorBase ShallowCopy()
     {
         BiTgte_CurveOnEdge aCopy = new()
         {
@@ -51,21 +54,21 @@ public sealed class BiTgte_CurveOnEdge : Adaptor3d_Curve
         return aCopy;
     }
 
-    public void Init(in TopoDS_Edge EonF, in TopoDS_Edge Edge)
+    public void Init(in Edge EonF, in Edge Edge)
     {
         double f, l;
 
         myEdge = Edge;
-        myCurv = BRep_Tool.Curve(myEdge, out f, out l);
-        myCurv = new Geom_TrimmedCurve(myCurv!, f, l);
+        myCurv = Tool.Curve(myEdge, out f, out l);
+        myCurv = new TrimmedCurve3D(myCurv!, f, l);
 
         myEonF = EonF;
-        myConF = BRep_Tool.Curve(myEonF, out f, out l);
-        myConF = new Geom_TrimmedCurve(myConF!, f, l);
+        myConF = Tool.Curve(myEonF, out f, out l);
+        myConF = new TrimmedCurve3D(myConF!, f, l);
 
         // peut on generer un cercle de rayon nul
-        GeomAdaptor_Curve Curv = new(myCurv);
-        GeomAdaptor_Curve ConF = new(myConF);
+        CurveAdaptor Curv = new(myCurv);
+        CurveAdaptor ConF = new(myConF);
 
         myType = OtherCurve;
         if (Curv.GetType() == global::Kerf.Geometry.CurveKind.Line && ConF.GetType() == global::Kerf.Geometry.CurveKind.Circle)

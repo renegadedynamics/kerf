@@ -3,11 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using static Occt.AppParCurves_Constraint;
-using static Occt.Approx_ParametrizationType;
+using static Kerf.Engine.Approximation.Constraint;
+using static Kerf.Engine.Approximation.ParametrizationType;
 using static Kerf.Geometry.Continuity;
 
 namespace Occt;
@@ -27,7 +28,7 @@ namespace Occt;
 public class GeomAPI_PointsToBSplineSurface
 {
     private bool myIsDone;
-    private Geom_BSplineSurface? mySurface;
+    private BSplineSurface? mySurface;
 
     private static bool hasMeaningfulSpan(double theSpan)
     {
@@ -35,13 +36,13 @@ public class GeomAPI_PointsToBSplineSurface
         return theSpan * theSpan > aResolution * aResolution;
     }
 
-    private static void BuildParameters(AppDef_MultiLine theLine,
-                                        Approx_ParametrizationType theParT,
+    private static void BuildParameters(MultiLine theLine,
+                                        ParametrizationType theParT,
                                         NCollection_Array1<double> thePars)
     {
-        int i, j, nbP3d = theLine.NbPoints();
+        int i, j, nbP3d = theLine.PointCount;
         double dist;
-        int firstP = 1, lastP = theLine.NbMultiPoints();
+        int firstP = 1, lastP = theLine.MultiPointCount;
         int aNbp = lastP - firstP + 1;
 
         if (aNbp == 2)
@@ -49,15 +50,15 @@ public class GeomAPI_PointsToBSplineSurface
             thePars[firstP] = 0.0;
             thePars[lastP] = 1.0;
         }
-        else if (theParT == Approx_ChordLength || theParT == Approx_Centripetal)
+        else if (theParT == ChordLength || theParT == Centripetal)
         {
             thePars[firstP] = 0.0;
             dist = 0.0;
 
             for (i = firstP + 1; i <= lastP; i++)
             {
-                AppDef_MultiPointConstraint aMPC = theLine.Value(i - 1);
-                AppDef_MultiPointConstraint aMPC1 = theLine.Value(i);
+                MultiPointConstraint aMPC = theLine.Value(i - 1);
+                MultiPointConstraint aMPC1 = theLine.Value(i);
 
                 dist = 0.0;
                 for (j = 1; j <= nbP3d; j++)
@@ -67,7 +68,7 @@ public class GeomAPI_PointsToBSplineSurface
                 }
 
                 dist = Math.Sqrt(dist);
-                if (theParT == Approx_ChordLength)
+                if (theParT == ChordLength)
                 {
                     thePars[i] = thePars[i - 1] + dist;
                 }
@@ -100,11 +101,11 @@ public class GeomAPI_PointsToBSplineSurface
         }
     }
 
-    private static void BuildPeriodicTangent(AppDef_MultiLine theLine,
+    private static void BuildPeriodicTangent(MultiLine theLine,
                                              NCollection_Array1<double> thePars,
                                              math_Vector theTang)
     {
-        int firstpt = 1, lastpt = theLine.NbMultiPoints();
+        int firstpt = 1, lastpt = theLine.MultiPointCount;
         int nbpoints = lastpt - firstpt + 1;
         //
         if (nbpoints <= 2)
@@ -116,12 +117,12 @@ public class GeomAPI_PointsToBSplineSurface
         nnpol = nnp;
         int lastp = Math.Min(lastpt, firstpt + nnp - 1);
         double U;
-        AppParCurves_Constraint Cons = AppParCurves_TangencyPoint;
+        Constraint Cons = TangencyPoint;
         if (nnp <= 4)
         {
-            Cons = AppParCurves_PassPoint;
+            Cons = PassPoint;
         }
-        int nbP = 3 * theLine.NbPoints();
+        int nbP = 3 * theLine.PointCount;
         math_Vector V1 = new(1, nbP), V2 = new(1, nbP);
         math_Vector P1 = new(firstpt, lastp);
         //
@@ -130,16 +131,16 @@ public class GeomAPI_PointsToBSplineSurface
             P1[i] = thePars[i];
         }
 
-        AppDef_BSpParLeastSquareOfMyBSplGradientOfBSplineCompute SQ1 = new(theLine,
+        BSpParLeastSquareOfMyBSplGradientOfBSplineCompute SQ1 = new(theLine,
                                                                           firstpt,
                                                                           lastp,
                                                                           Cons,
                                                                           Cons,
                                                                           nnpol);
         SQ1.Perform(P1);
-        AppParCurves_MultiCurve C1 = SQ1.BezierValue();
+        MultiCurve C1 = SQ1.BezierValue();
         U = 0.0;
-        int j, nbP3d = theLine.NbPoints();
+        int j, nbP3d = theLine.PointCount;
 
         Point3D aP;
         Vector3D aV;
@@ -170,7 +171,7 @@ public class GeomAPI_PointsToBSplineSurface
         }
         else
         {
-            AppDef_BSpParLeastSquareOfMyBSplGradientOfBSplineCompute SQ2 = new(theLine,
+            BSpParLeastSquareOfMyBSplGradientOfBSplineCompute SQ2 = new(theLine,
                                                                               firstp,
                                                                               lastpt,
                                                                               Cons,
@@ -184,7 +185,7 @@ public class GeomAPI_PointsToBSplineSurface
             }
             SQ2.Perform(P2);
 
-            AppParCurves_MultiCurve C2 = SQ2.BezierValue();
+            MultiCurve C2 = SQ2.BezierValue();
             U = 1.0;
             j = 1;
             for (i = 1; i <= nbP3d; i++)
@@ -215,7 +216,7 @@ public class GeomAPI_PointsToBSplineSurface
     }
 
     /// <summary>Approximates <paramref name="Points"/> with the parametrisation <paramref name="ParType"/>.</summary>
-    public GeomAPI_PointsToBSplineSurface(NCollection_Array2<Point3D> Points, Approx_ParametrizationType ParType,
+    public GeomAPI_PointsToBSplineSurface(NCollection_Array2<Point3D> Points, ParametrizationType ParType,
                                           int DegMin = 3, int DegMax = 8, Continuity Continuity = C2,
                                           double Tol3D = 1.0e-3)
     {
@@ -249,11 +250,11 @@ public class GeomAPI_PointsToBSplineSurface
     /// <summary>Interpolates <paramref name="Points"/> with chord-length parameters, periodic in U if asked.</summary>
     public void Interpolate(NCollection_Array2<Point3D> Points, bool thePeriodic = false)
     {
-        Interpolate(Points, Approx_ChordLength, thePeriodic);
+        Interpolate(Points, ChordLength, thePeriodic);
     }
 
     /// <summary>Interpolates <paramref name="Points"/> with the parametrisation <paramref name="ParType"/>, periodic in U if asked.</summary>
-    public void Interpolate(NCollection_Array2<Point3D> Points, Approx_ParametrizationType ParType,
+    public void Interpolate(NCollection_Array2<Point3D> Points, ParametrizationType ParType,
                             bool thePeriodic = false)
     {
         int DegMin, DegMax;
@@ -267,14 +268,14 @@ public class GeomAPI_PointsToBSplineSurface
     public void Init(NCollection_Array2<Point3D> Points, int DegMin = 3, int DegMax = 8,
                      Continuity Continuity = C2, double Tol3D = 1.0e-3)
     {
-        Init(Points, Approx_ChordLength, DegMin, DegMax, Continuity, Tol3D);
+        Init(Points, ChordLength, DegMin, DegMax, Continuity, Tol3D);
     }
 
     /// <summary>
     /// Approximates <paramref name="Points"/> with the parametrisation <paramref name="ParType"/>, or interpolates
     /// them if <paramref name="Tol3D"/> ≤ 0; periodic in U if asked.
     /// </summary>
-    public void Init(NCollection_Array2<Point3D> Points, Approx_ParametrizationType ParType, int DegMin = 3,
+    public void Init(NCollection_Array2<Point3D> Points, ParametrizationType ParType, int DegMin = 3,
                      int DegMax = 8, Continuity Continuity = C2, double Tol3D = 1.0e-3,
                      bool thePeriodic = false)
     {
@@ -292,12 +293,12 @@ public class GeomAPI_PointsToBSplineSurface
         {
             add = 2;
         }
-        AppDef_MultiLine Line = new(Jmax - Jmin + 1);
+        MultiLine Line = new(Jmax - Jmin + 1);
         int i, j;
 
         for (j = Jmin; j <= Jmax; j++)
         {
-            AppDef_MultiPointConstraint MP = new(Imax - Imin + add, 0);
+            MultiPointConstraint MP = new(Imax - Imin + add, 0);
             for (i = Imin; i <= Imax; i++)
             {
                 MP.SetPoint(i, Points[i, j]); // OCCT: the grid's own indices (occt-issues.md)
@@ -316,7 +317,7 @@ public class GeomAPI_PointsToBSplineSurface
             UseSquares = true;
         }
 
-        AppDef_BSplineCompute TheComputer = new(DegMin, DegMax, Tol3D, Tol2D, nbit, true, ParType, UseSquares);
+        BSplineCompute TheComputer = new(DegMin, DegMax, Tol3D, Tol2D, nbit, true, ParType, UseSquares);
 
         SetContinuity(TheComputer, Continuity);
 
@@ -329,7 +330,7 @@ public class GeomAPI_PointsToBSplineSurface
             TheComputer.Perform(Line);
         }
 
-        AppParCurves_MultiBSpCurve TheCurve = TheComputer.Value();
+        MultiBSpCurve TheCurve = TheComputer.Value();
 
         int VDegree = TheCurve.Degree();
         NCollection_Array1<Point3D> Poles = new(1, TheCurve.NbPoles());
@@ -337,12 +338,12 @@ public class GeomAPI_PointsToBSplineSurface
         NCollection_Array1<int> VMults = TheCurve.Multiplicities();
 
         int nbisosu = Imax - Imin + add;
-        AppDef_MultiLine Line2 = new(nbisosu);
+        MultiLine Line2 = new(nbisosu);
 
         for (i = 1; i <= nbisosu; i++)
         {
             TheCurve.Curve(i, Poles);
-            AppDef_MultiPointConstraint MP = new(Poles.Upper(), 0);
+            MultiPointConstraint MP = new(Poles.Upper(), 0);
             for (j = 1; j <= Poles.Upper(); j++)
             {
                 MP.SetPoint(j, Poles[j]);
@@ -352,7 +353,7 @@ public class GeomAPI_PointsToBSplineSurface
 
         // approximate the resulting poles:
 
-        AppDef_BSplineCompute TheComputer2 = new(DegMin, DegMax, Tol3D, Tol2D, nbit, true, ParType, UseSquares);
+        BSplineCompute TheComputer2 = new(DegMin, DegMax, Tol3D, Tol2D, nbit, true, ParType, UseSquares);
         if (Tol3D <= 0.0)
         {
             if (thePeriodic)
@@ -363,17 +364,17 @@ public class GeomAPI_PointsToBSplineSurface
         }
         else
         {
-            if (thePeriodic && Line2.NbMultiPoints() > 2)
+            if (thePeriodic && Line2.MultiPointCount > 2)
             {
                 TheComputer2.SetPeriodic(thePeriodic);
                 //
-                NCollection_Array1<double> aPars = new(1, Line2.NbMultiPoints());
+                NCollection_Array1<double> aPars = new(1, Line2.MultiPointCount);
                 BuildParameters(Line2, ParType, aPars);
                 math_Vector aTang = new(1, 3 * Poles.Upper());
                 BuildPeriodicTangent(Line2, aPars, aTang);
                 int ind = 1;
                 TheCurve.Curve(ind, Poles);
-                AppDef_MultiPointConstraint MP1 = new(Poles.Upper(), 0);
+                MultiPointConstraint MP1 = new(Poles.Upper(), 0);
                 for (j = 1; j <= Poles.Upper(); j++)
                 {
                     MP1.SetPoint(j, Poles[j]);
@@ -383,9 +384,9 @@ public class GeomAPI_PointsToBSplineSurface
                 }
                 Line2.SetValue(ind, MP1);
                 //
-                ind = Line2.NbMultiPoints();
+                ind = Line2.MultiPointCount;
                 TheCurve.Curve(ind, Poles);
-                AppDef_MultiPointConstraint MP2 = new(Poles.Upper(), 0);
+                MultiPointConstraint MP2 = new(Poles.Upper(), 0);
                 for (j = 1; j <= Poles.Upper(); j++)
                 {
                     MP2.SetPoint(j, Poles[j]);
@@ -398,7 +399,7 @@ public class GeomAPI_PointsToBSplineSurface
             TheComputer2.Perform(Line2);
         }
 
-        AppParCurves_MultiBSpCurve TheCurve2 = TheComputer2.Value();
+        MultiBSpCurve TheCurve2 = TheComputer2.Value();
 
         int UDegree = TheCurve2.Degree();
         NCollection_Array1<Point3D> Poles2 = new(1, TheCurve2.NbPoles());
@@ -416,8 +417,8 @@ public class GeomAPI_PointsToBSplineSurface
             }
         }
 
-        mySurface = new Geom_BSplineSurface(ThePoles, UKnots, VKnots, UMults, VMults, UDegree, VDegree);
-        if (thePeriodic && Line2.NbMultiPoints() > 2)
+        mySurface = new BSplineSurface(ThePoles, UKnots, VKnots, UMults, VMults, UDegree, VDegree);
+        if (thePeriodic && Line2.MultiPointCount > 2)
         {
             mySurface.SetUPeriodic();
         }
@@ -449,11 +450,11 @@ public class GeomAPI_PointsToBSplineSurface
         int NbPointI = Imax - Imin + 1;
         int i, j;
 
-        AppDef_MultiLine Line = new(NbPointJ);
+        MultiLine Line = new(NbPointJ);
 
         for (j = Jmin; j <= Jmax; j++)
         {
-            AppDef_MultiPointConstraint MP = new(NbPointI, 0);
+            MultiPointConstraint MP = new(NbPointI, 0);
             for (i = Imin; i <= Imax; i++)
             {
                 MP.SetPoint(i, Points[i, j]); // OCCT: the grid's own indices (occt-issues.md)
@@ -461,16 +462,16 @@ public class GeomAPI_PointsToBSplineSurface
             Line.SetValue(j, MP);
         }
 
-        NCollection_HArray1<AppParCurves_ConstraintCouple> TABofCC = new(1, NbPointJ);
-        AppParCurves_Constraint Constraint = AppParCurves_NoConstraint;
+        NCollection_HArray1<ConstraintCouple> TABofCC = new(1, NbPointJ);
+        Constraint Constraint = NoConstraint;
 
         for (i = 1; i <= NbPointJ; ++i)
         {
-            AppParCurves_ConstraintCouple ACC = new(i, Constraint);
+            ConstraintCouple ACC = new(i, Constraint);
             TABofCC.SetValue(i, ACC);
         }
 
-        AppDef_Variational Variation = new(Line, 1, NbPointJ, TABofCC);
+        Variational Variation = new(Line, 1, NbPointJ, TABofCC);
 
         //===================================
         int theMaxSegments = 1000;
@@ -487,12 +488,12 @@ public class GeomAPI_PointsToBSplineSurface
 
         Variation.SetCriteriumWeight(Weight1, Weight2, Weight3);
 
-        if (!Variation.IsCreated())
+        if (!Variation.IsCreated)
         {
             return;
         }
 
-        if (Variation.IsOverConstrained())
+        if (Variation.IsOverConstrained)
         {
             return;
         }
@@ -506,24 +507,24 @@ public class GeomAPI_PointsToBSplineSurface
             return;
         }
 
-        if (!Variation.IsDone())
+        if (!Variation.IsDone)
         {
             return;
         }
 
-        AppParCurves_MultiBSpCurve TheCurve = Variation.Value();
+        MultiBSpCurve TheCurve = Variation.Value();
 
         int VDegree = TheCurve.Degree();
         NCollection_Array1<Point3D> Poles = new(1, TheCurve.NbPoles());
         NCollection_Array1<double> VKnots = TheCurve.Knots();
         NCollection_Array1<int> VMults = TheCurve.Multiplicities();
 
-        AppDef_MultiLine Line2 = new(NbPointI);
+        MultiLine Line2 = new(NbPointI);
 
         for (i = 1; i <= NbPointI; i++)
         {
             TheCurve.Curve(i, Poles);
-            AppDef_MultiPointConstraint MP = new(Poles.Upper(), 0);
+            MultiPointConstraint MP = new(Poles.Upper(), 0);
             for (j = 1; j <= Poles.Upper(); j++)
             {
                 MP.SetPoint(j, Poles[j]);
@@ -531,15 +532,15 @@ public class GeomAPI_PointsToBSplineSurface
             Line2.SetValue(i, MP);
         }
 
-        NCollection_HArray1<AppParCurves_ConstraintCouple> TABofCC2 = new(1, NbPointI);
+        NCollection_HArray1<ConstraintCouple> TABofCC2 = new(1, NbPointI);
 
         for (i = 1; i <= NbPointI; ++i)
         {
-            AppParCurves_ConstraintCouple ACC = new(i, Constraint);
+            ConstraintCouple ACC = new(i, Constraint);
             TABofCC2.SetValue(i, ACC);
         }
 
-        AppDef_Variational Variation2 = new(Line2, 1, NbPointI, TABofCC2);
+        Variational Variation2 = new(Line2, 1, NbPointI, TABofCC2);
 
         Variation2.SetMaxDegree(DegMax);
         Variation2.SetContinuity(Continuity);
@@ -551,12 +552,12 @@ public class GeomAPI_PointsToBSplineSurface
 
         Variation2.SetCriteriumWeight(Weight1, Weight2, Weight3);
 
-        if (!Variation2.IsCreated())
+        if (!Variation2.IsCreated)
         {
             return;
         }
 
-        if (Variation2.IsOverConstrained())
+        if (Variation2.IsOverConstrained)
         {
             return;
         }
@@ -570,12 +571,12 @@ public class GeomAPI_PointsToBSplineSurface
             return;
         }
 
-        if (!Variation2.IsDone())
+        if (!Variation2.IsDone)
         {
             return;
         }
 
-        AppParCurves_MultiBSpCurve TheCurve2 = Variation2.Value();
+        MultiBSpCurve TheCurve2 = Variation2.Value();
 
         int UDegree = TheCurve2.Degree();
         NCollection_Array1<Point3D> Poles2 = new(1, TheCurve2.NbPoles());
@@ -593,7 +594,7 @@ public class GeomAPI_PointsToBSplineSurface
             }
         }
 
-        mySurface = new Geom_BSplineSurface(ThePoles, UKnots, VKnots, UMults, VMults, UDegree, VDegree);
+        mySurface = new BSplineSurface(ThePoles, UKnots, VKnots, UMults, VMults, UDegree, VDegree);
 
         myIsDone = true;
     }
@@ -627,7 +628,7 @@ public class GeomAPI_PointsToBSplineSurface
         double Tol2D = Tol3D;
 
         // first approximate the U isos:
-        AppDef_MultiLine Line = new(Jmax - Jmin + 1);
+        MultiLine Line = new(Jmax - Jmin + 1);
         math_Vector Param = new(Jmin, Jmax);
         int i, j;
         int aVSpan = Jmax - Jmin;
@@ -636,7 +637,7 @@ public class GeomAPI_PointsToBSplineSurface
 
         for (j = Jmin; j <= Jmax; j++)
         {
-            AppDef_MultiPointConstraint MP = new(0, Imax - Imin + 1);
+            MultiPointConstraint MP = new(0, Imax - Imin + 1);
             for (i = Imin; i <= Imax; i++)
             {
                 MP.SetPoint2d(i, new Point2D(0.0, ZPoints[i, j])); // OCCT: the grid's own indices (occt-issues.md)
@@ -645,7 +646,7 @@ public class GeomAPI_PointsToBSplineSurface
             Line.SetValue(j, MP);
         }
 
-        AppDef_BSplineCompute TheComputer = new(Param, DegMin, DegMax, Tol3D, Tol2D, 0, true, true);
+        BSplineCompute TheComputer = new(Param, DegMin, DegMax, Tol3D, Tol2D, 0, true, true);
 
         SetContinuity(TheComputer, Continuity);
 
@@ -658,7 +659,7 @@ public class GeomAPI_PointsToBSplineSurface
             TheComputer.Perform(Line);
         }
 
-        AppParCurves_MultiBSpCurve TheCurve = TheComputer.Value();
+        MultiBSpCurve TheCurve = TheComputer.Value();
 
         int VDegree = TheCurve.Degree();
         NCollection_Array1<Point2D> Poles = new(1, TheCurve.NbPoles());
@@ -715,7 +716,7 @@ public class GeomAPI_PointsToBSplineSurface
         }
 
         int nbisosu = Imax - Imin + 1;
-        AppDef_MultiLine Line2 = new(nbisosu);
+        MultiLine Line2 = new(nbisosu);
         math_Vector Param2 = new(1, nbisosu);
         int aUSpan = nbisosu - 1;
         length = dX * (Imax - Imin);
@@ -723,7 +724,7 @@ public class GeomAPI_PointsToBSplineSurface
         for (i = 1; i <= nbisosu; i++)
         {
             TheCurve.Curve(i, Poles);
-            AppDef_MultiPointConstraint MP = new(0, Poles.Upper());
+            MultiPointConstraint MP = new(0, Poles.Upper());
             for (j = 1; j <= Poles.Upper(); j++)
             {
                 MP.SetPoint2d(j, new Point2D(0.0, Poles[j].Y()));
@@ -734,7 +735,7 @@ public class GeomAPI_PointsToBSplineSurface
 
         // approximate the resulting poles:
 
-        AppDef_BSplineCompute TheComputer2 = new(Param2, DegMin, DegMax, Tol3D, Tol2D, 0, true, true);
+        BSplineCompute TheComputer2 = new(Param2, DegMin, DegMax, Tol3D, Tol2D, 0, true, true);
         if (Tol3D <= 0.0)
         {
             TheComputer2.Interpol(Line2);
@@ -744,7 +745,7 @@ public class GeomAPI_PointsToBSplineSurface
             TheComputer2.Perform(Line2);
         }
 
-        AppParCurves_MultiBSpCurve TheCurve2 = TheComputer2.Value();
+        MultiBSpCurve TheCurve2 = TheComputer2.Value();
 
         int UDegree = TheCurve2.Degree();
         NCollection_Array1<Point2D> Poles2 = new(1, TheCurve2.NbPoles());
@@ -807,13 +808,13 @@ public class GeomAPI_PointsToBSplineSurface
             }
         }
 
-        mySurface = new Geom_BSplineSurface(ThePoles, UKnots, VKnots, UMults, VMults, UDegree, VDegree);
+        mySurface = new BSplineSurface(ThePoles, UKnots, VKnots, UMults, VMults, UDegree, VDegree);
 
         myIsDone = true;
     }
 
     // The switch on the continuity that OCCT writes out in both least-squares Init.
-    private static void SetContinuity(AppDef_BSplineCompute TheComputer, Continuity Continuity)
+    private static void SetContinuity(BSplineCompute TheComputer, Continuity Continuity)
     {
         switch (Continuity)
         {
@@ -839,7 +840,7 @@ public class GeomAPI_PointsToBSplineSurface
 
     /// <summary>The approximating surface (frozen).</summary>
     /// <exception cref="NotDoneException">The approximation failed.</exception>
-    public Geom_BSplineSurface Surface()
+    public BSplineSurface Surface()
     {
         StdFail_NotDone_Raise_if(!myIsDone, "GeomAPI_PointsToBSplineSurface: Surface not done");
         mySurface!.Freeze();
@@ -847,7 +848,7 @@ public class GeomAPI_PointsToBSplineSurface
     }
 
     /// <summary>OCCT's <c>operator occ::handle&lt;Geom_BSplineSurface&gt;</c>: <see cref="Surface"/>.</summary>
-    public static explicit operator Geom_BSplineSurface(GeomAPI_PointsToBSplineSurface theApprox) =>
+    public static explicit operator BSplineSurface(GeomAPI_PointsToBSplineSurface theApprox) =>
         theApprox.Surface();
 
     /// <summary>True if the approximation succeeded.</summary>

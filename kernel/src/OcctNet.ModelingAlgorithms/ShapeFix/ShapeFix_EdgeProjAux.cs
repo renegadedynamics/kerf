@@ -6,8 +6,13 @@
 //: r5 abv 06.04.99: ec_turbine-A.stp, #4313: protect against null curve
 //    abv 09.04.99  S4136: add parameter preci (to eliminate BRepAPI::Precision)
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
@@ -25,8 +30,8 @@ namespace Occt;
 /// </remarks>
 public class ShapeFix_EdgeProjAux : Transient
 {
-    protected TopoDS_Face myFace;
-    protected TopoDS_Edge myEdge;
+    protected Face myFace;
+    protected Edge myEdge;
     protected double      myFirstParam;
     protected double      myLastParam;
     protected bool        myFirstDone;
@@ -35,8 +40,8 @@ public class ShapeFix_EdgeProjAux : Transient
     /// <summary>Empty constructor.</summary>
     public ShapeFix_EdgeProjAux()
     {
-        myFace       = new TopoDS_Face();
-        myEdge       = new TopoDS_Edge();
+        myFace       = new Face();
+        myEdge       = new Edge();
         myFirstParam = 0.0;
         myLastParam  = 0.0;
         myFirstDone  = false;
@@ -44,13 +49,13 @@ public class ShapeFix_EdgeProjAux : Transient
     }
 
     /// <summary>Creates the tool for an edge on a face.</summary>
-    public ShapeFix_EdgeProjAux(in TopoDS_Face F, in TopoDS_Edge E)
+    public ShapeFix_EdgeProjAux(in Face F, in Edge E)
     {
         Init(F, E);
     }
 
     /// <summary>Sets the edge and the face.</summary>
-    public void Init(in TopoDS_Face F, in TopoDS_Edge E)
+    public void Init(in Face F, in Edge E)
     {
         myFace       = F;
         myEdge       = E;
@@ -94,7 +99,7 @@ public class ShapeFix_EdgeProjAux : Transient
     public double LastParam() => myLastParam;
 
     /// <summary>Whether the pcurve is an iso (always false: not recognised until Adaptor3d_Curve does).</summary>
-    public bool IsIso(Geom2d_Curve? theCurve2d)
+    public bool IsIso(Curve2D? theCurve2d)
     {
         // Until an ISO is recognized by Adaptor3d_Curve
         return false;
@@ -105,16 +110,16 @@ public class ShapeFix_EdgeProjAux : Transient
     // Purpose : Computes the trimming parameter of Pt1 on COnS
     // ----------------------------------------------------------------------------
 
-    private static bool FindParameterWithExt(in Point3D Pt1, Adaptor3d_CurveOnSurface COnS, double Uinf, double Usup,
+    private static bool FindParameterWithExt(in Point3D Pt1, CurveOnSurface COnS, double Uinf, double Usup,
                                              double preci, ref double w1)
     {
         try
         { // et allez donc !
-            var myExtPC = new Extrema_ExtPC(Pt1, COnS, Uinf, Usup, preci);
+            var myExtPC = new CurvePointExtrema(Pt1, COnS, Uinf, Usup, preci);
 
-            if (myExtPC.IsDone())
+            if (myExtPC.IsDone)
             {
-                int NbExt1 = myExtPC.NbExt();
+                int NbExt1 = myExtPC.ExtCount;
                 for (int i = 1; i <= NbExt1; i++)
                 {
                     if (myExtPC.IsMin(i))
@@ -140,27 +145,27 @@ public class ShapeFix_EdgeProjAux : Transient
         double cl = 0.0, cf = 0.0;
         // Extract Geometries
         myFirstDone = myLastDone = false;
-        Geom_Surface  theSurface = BRep_Tool.Surface(myFace)!;
-        Geom2d_Curve? theCurve2d = BRep_Tool.CurveOnSurface(myEdge, myFace, out cf, out cl);
+        Surface  theSurface = Tool.Surface(myFace)!;
+        Curve2D? theCurve2d = Tool.CurveOnSurface(myEdge, myFace, out cf, out cl);
         if (theCurve2d is null)
         {
             return; //: r5 abv 6 Apr 99:  ec_turbine-A.stp, #4313
         }
         myFirstParam = 0.0;
         myLastParam  = 0.0;
-        TopExp.Vertices(myEdge, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+        Exploration.Vertices(myEdge, out Vertex V1, out Vertex V2);
         Point3D Pt1, Pt2;
         // pdn 28.12.98: r_39-db.stp #605: use ends of 3d curve instead of vertices
         var sae = new ShapeAnalysis_Edge();
-        if (sae.Curve3d(myEdge, out Geom_Curve? C3d, out double a, out double b, false))
+        if (sae.Curve3d(myEdge, out Curve3D? C3d, out double a, out double b, false))
         {
             Pt1 = C3d!.Value(a);
             Pt2 = C3d.Value(b);
         }
         else
         {
-            Pt1 = BRep_Tool.Pnt(V1);
-            Pt2 = BRep_Tool.Pnt(V2);
+            Pt1 = Tool.Pnt(V1);
+            Pt2 = Tool.Pnt(V2);
         }
         //: S4136  double preci = BRepAPI::Precision();
         // pdn to manage degenerated case
@@ -172,7 +177,7 @@ public class ShapeFix_EdgeProjAux : Transient
             double   firstpar = 0.0, lastpar = 0.0;
             if (stsu.DegeneratedValues(Pt1, preci, ref aPt1, ref aPt2, ref firstpar, ref lastpar))
             {
-                if (theCurve2d is Geom2d_Line)
+                if (theCurve2d is LineCurve2D)
                 {
                     if (aPt1.IsEqual(theCurve2d.Value(firstpar), preci) && aPt2.IsEqual(theCurve2d.Value(lastpar), preci))
                     {
@@ -186,15 +191,15 @@ public class ShapeFix_EdgeProjAux : Transient
         }
 
         bool parU = false, parV = false;
-        var  SA     = new GeomAdaptor_Surface(theSurface);
-        var  myHSur = new GeomAdaptor_Surface(theSurface);
+        var  SA     = new SurfaceAdaptor(theSurface);
+        var  myHSur = new SurfaceAdaptor(theSurface);
 
         cf = theCurve2d.FirstParameter();
         cl = theCurve2d.LastParameter();
         // pdn cutting pcurve by surface bounds
         if (Kerf.Engine.Foundation.Precision.IsInfinite(cf) || Kerf.Engine.Foundation.Precision.IsInfinite(cl))
         {
-            if (theCurve2d is Geom2d_Line)
+            if (theCurve2d is LineCurve2D)
             {
                 theSurface.Bounds(out double uf, out double ul, out double vf, out double vl);
                 // Correct surface limits for extrusion/revolution surfaces based on hyperbola
@@ -219,7 +224,7 @@ public class ShapeFix_EdgeProjAux : Transient
                     && !Kerf.Engine.Foundation.Precision.IsInfinite(vl))
                 {
                     double   cfi, cli;
-                    var      lin = (Geom2d_Line)theCurve2d;
+                    var      lin = (LineCurve2D)theCurve2d;
                     Point2D pnt = lin.Location();
                     Direction2D dir = lin.Direction();
                     if (dir.Y() == 0)
@@ -265,7 +270,7 @@ public class ShapeFix_EdgeProjAux : Transient
                 }
                 else if (!Kerf.Engine.Foundation.Precision.IsInfinite(uf) && !Kerf.Engine.Foundation.Precision.IsInfinite(ul))
                 {
-                    var      lin = (Geom2d_Line)theCurve2d;
+                    var      lin = (LineCurve2D)theCurve2d;
                     Direction2D dir = lin.Direction();
                     if (dir.X() != 0)
                     {
@@ -305,10 +310,10 @@ public class ShapeFix_EdgeProjAux : Transient
                 // pdn not linear case not managed
                 cf = -10000;
                 cl = 10000;
-                if (theCurve2d is Geom2d_BSplineCurve)
+                if (theCurve2d is BSplineCurve2D)
                 {
                     // Try to reparametrize (CASE dxf read bug25899)
-                    var aBspl     = (Geom2d_BSplineCurve)theCurve2d.Copy();
+                    var aBspl     = (BSplineCurve2D)theCurve2d.Copy();
                     var aNewKnots = new NCollection_Array1<double>(aBspl.InternalKnots());
                     global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(cf, cl, aNewKnots);
                     aBspl.SetKnots(aNewKnots);
@@ -317,9 +322,9 @@ public class ShapeFix_EdgeProjAux : Transient
             }
         }
 
-        var myHCur = new Geom2dAdaptor_Curve(theCurve2d, cf, cl);
+        var myHCur = new CurveAdaptor2D(theCurve2d, cf, cl);
 
-        var COnS = new Adaptor3d_CurveOnSurface(myHCur, myHSur);
+        var COnS = new CurveOnSurface(myHCur, myHSur);
 
         // ----------------------------------------------
         // --- topological limit == geometric limit ? ---
@@ -351,7 +356,7 @@ public class ShapeFix_EdgeProjAux : Transient
 
         if (Math.Abs(w1 - w2) < Kerf.Engine.Foundation.Precision.PConfusion())
         {
-            if (!theSurface.IsUPeriodic() && !theSurface.IsVPeriodic())
+            if (!theSurface.IsUPeriodic && !theSurface.IsVPeriodic)
             {
                 return;
             }
@@ -394,7 +399,7 @@ public class ShapeFix_EdgeProjAux : Transient
             myFirstParam = w1;
             w2 += ShapeAnalysis.AdjustToPeriod(w2, 0, period);
             myLastParam = w2;
-            if (!sae.Curve3d(myEdge, out Geom_Curve? C3d1, out cf, out cl, false))
+            if (!sae.Curve3d(myEdge, out Curve3D? C3d1, out cf, out cl, false))
             {
                 UpdateParam2d(ref theCurve2d);
                 return;
@@ -437,23 +442,23 @@ public class ShapeFix_EdgeProjAux : Transient
     protected void Init3d(double preci)
     {
         // Extract Geometries
-        Geom_Surface  theSurface = BRep_Tool.Surface(myFace)!;
-        Geom2d_Curve? theCurve2d = BRep_Tool.CurveOnSurface(myEdge, myFace, out _, out _);
+        Surface  theSurface = Tool.Surface(myFace)!;
+        Curve2D? theCurve2d = Tool.CurveOnSurface(myEdge, myFace, out _, out _);
         if (theCurve2d is null)
         {
             return; //: r5 abv 6 Apr 99:  ec_turbine-A.stp, #4313
         }
 
-        TopoDS_Vertex V1  = TopExp.FirstVertex(myEdge);
-        TopoDS_Vertex V2  = TopExp.LastVertex(myEdge);
-        Point3D        Pt1 = BRep_Tool.Pnt(V1);
-        Point3D        Pt2 = BRep_Tool.Pnt(V2);
+        Vertex V1  = Exploration.FirstVertex(myEdge);
+        Vertex V2  = Exploration.LastVertex(myEdge);
+        Point3D        Pt1 = Tool.Pnt(V1);
+        Point3D        Pt2 = Tool.Pnt(V2);
 
-        var myHSur = new GeomAdaptor_Surface(theSurface);
+        var myHSur = new SurfaceAdaptor(theSurface);
 
-        var myHCur = new Geom2dAdaptor_Curve(theCurve2d);
+        var myHCur = new CurveAdaptor2D(theCurve2d);
 
-        var COnS = new Adaptor3d_CurveOnSurface(myHCur, myHSur);
+        var COnS = new CurveOnSurface(myHCur, myHSur);
 
         //: S4136  double preci = BRepAPI::Precision();
         double Uinf = theCurve2d.FirstParameter();
@@ -463,7 +468,7 @@ public class ShapeFix_EdgeProjAux : Transient
         // --- topological limit == geometric limit ? ---
         // ----------------------------------------------
 
-        if (theCurve2d is Geom2d_BoundedCurve)
+        if (theCurve2d is BoundedCurve2D)
         {
             Point3D Pdeb = COnS.Value(Uinf);
             Point3D Pfin = COnS.Value(Usup);
@@ -503,7 +508,7 @@ public class ShapeFix_EdgeProjAux : Transient
         myFirstDone = myLastDone = true;
     }
 
-    protected void UpdateParam2d(ref Geom2d_Curve theCurve2d)
+    protected void UpdateParam2d(ref Curve2D theCurve2d)
     {
         if (myFirstParam < myLastParam)
         {
@@ -520,7 +525,7 @@ public class ShapeFix_EdgeProjAux : Transient
         {
             global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(cf, cl, preci2d, ref myFirstParam, ref myLastParam);
         }
-        else if (theCurve2d.IsClosed())
+        else if (theCurve2d.IsClosed)
         {
             // szv#4:S4163:12Mar99 optimized
             if (Math.Abs(myFirstParam - cl) <= preci2d)
@@ -538,7 +543,7 @@ public class ShapeFix_EdgeProjAux : Transient
             }
         }
         // the curve is closed within the 'file' 2D tolerance
-        else if (theCurve2d is Geom2d_BSplineCurve aBSpline2d)
+        else if (theCurve2d is BSplineCurve2D aBSpline2d)
         {
             if (aBSpline2d.StartPoint().Distance(aBSpline2d.EndPoint()) <= preci2d)
             {
@@ -566,9 +571,9 @@ public class ShapeFix_EdgeProjAux : Transient
     // reversed parameters) and by every other shape sharing the curve. The port reverses a copy and puts it in place
     // of the curve in the edge's representations (both pcurves of a seam), unless the edge is frozen; other edges
     // sharing the curve keep it, as in ShapeFix_Edge.FixReversed2d.
-    private void reverse(ref Geom2d_Curve theCurve2d)
+    private void reverse(ref Curve2D theCurve2d)
     {
-        var aReversed = (Geom2d_Curve)theCurve2d.Copy();
+        var aReversed = (Curve2D)theCurve2d.Copy();
         aReversed.Reverse();
         if (!myEdge.TShape()!.IsFrozen)
         {

@@ -1,4 +1,6 @@
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using System.Diagnostics;
 using Occt;
@@ -102,23 +104,23 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         if (face.IsPlanar is null)
             throw new ArgumentException("Planes can only be created from planar faces");
         var topoFace = face.TopoFace;
-        var surface = BRep_Tool.Surface(topoFace)!;
+        var surface = Tool.Surface(topoFace)!;
         Vector origin;
         {
-            var props = new GProp_GProps();
+            var props = new Properties();
             BRepGProp.SurfaceProperties(topoFace, props);
             var c = props.CentreOfMass();
             origin = new Vector(c);
         }
         Vector faceXDir;
-        if (surface is Geom_BoundedSurface bounded)
+        if (surface is BoundedSurface bounded)
         {
             bounded.D1(0.5, 0.5, out _, out var du, out _);
             faceXDir = new Vector(du);
         }
         else
         {
-            var elementary = (surface as Geom_ElementarySurface)!;
+            var elementary = (surface as ElementarySurface)!;
             var position = elementary.Position();
             var x = position.XDirection();
             faceXDir = new Vector(x);
@@ -129,7 +131,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     }
 
     /// <summary>The normal of a face where it is nearest the global origin (build123d's <c>get_topods_face_normal</c>).</summary>
-    static Vector FaceNormal(TopoDS_Face face, Geom_Surface surface)
+    static Vector FaceNormal(global::Kerf.Topology.Face face, Surface surface)
     {
         var pnt = new Point3D();
         var normal = new Vector3D();
@@ -474,9 +476,9 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         if (Contains(axis))
             return axis;
         var ax1 = axis.ToGpAx1();
-        var line = new Geom_Line(ax1);
+        var line = new LineCurve3D(ax1);
         var ax3 = Pln.Position();
-        var plane = new Geom_Plane(ax3);
+        var plane = new PlaneSurface(ax3);
         var intersection = new GeomAPI_IntCS(line, plane);
         if (intersection.IsDone() && intersection.NbPoints() == 1)
         {
@@ -491,13 +493,13 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     {
         if (Contains(plane.Origin) && ZDir == plane.ZDir)
             return this;
-        var s1 = new Geom_Plane(Pln);
-        var s2 = new Geom_Plane(plane.Pln);
+        var s1 = new PlaneSurface(Pln);
+        var s2 = new PlaneSurface(plane.Pln);
         var intersector = new GeomAPI_IntSS(s1, s2, Constants.Tolerance);
         if (intersector.IsDone() && intersector.NbLines() > 0)
         {
             var curve = intersector.Line(1);
-            var line = (curve as Geom_Line) ?? throw new InvalidOperationException("plane intersection isn't a line");
+            var line = (curve as LineCurve3D) ?? throw new InvalidOperationException("plane intersection isn't a line");
             var position = line.Position();
             return new Axis(position);
         }

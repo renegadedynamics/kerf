@@ -4,11 +4,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.JoinKind;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -26,28 +31,28 @@ public sealed class BRepFill_TrimEdgeTool
     private readonly bool isPoint2;
     private readonly Point2D myP1;
     private readonly Point2D myP2;
-    private readonly Geom2d_Curve? myC1;
-    private readonly Geom2d_Curve? myC2;
+    private readonly Curve2D? myC1;
+    private readonly Curve2D? myC2;
     private readonly double myOffset;
     private readonly Bisector_Bisec? myBisec;
-    private readonly Geom2dAdaptor_Curve myBis = new();
+    private readonly CurveAdaptor2D myBis = new();
 
     // the simple expression of the bisector: a BisecAna is replaced by its conic, trimmed as the bisector
-    private static void SimpleExpression(Bisector_Bisec B, out Geom2d_Curve Bis)
+    private static void SimpleExpression(Bisector_Bisec B, out Curve2D Bis)
     {
         Bis = B.Value();
 
         Type BT = Bis.GetType();
-        if (BT == typeof(Geom2d_TrimmedCurve))
+        if (BT == typeof(TrimmedCurve2D))
         {
-            Geom2d_TrimmedCurve TrBis = (Geom2d_TrimmedCurve)Bis;
+            TrimmedCurve2D TrBis = (TrimmedCurve2D)Bis;
             // OCCT.NET: ChangeBasisCurve, so the live bisector of the locus isn't frozen (decision 816)
-            Geom2d_Curve BasBis = TrBis.ChangeBasisCurve();
+            Curve2D BasBis = TrBis.ChangeBasisCurve();
             BT = BasBis.GetType();
             if (BT == typeof(Bisector_BisecAna))
             {
                 Bis = ((Bisector_BisecAna)BasBis).Geom2dCurve();
-                Bis = new Geom2d_TrimmedCurve(Bis, TrBis.FirstParameter(), TrBis.LastParameter());
+                Bis = new TrimmedCurve2D(Bis, TrBis.FirstParameter(), TrBis.LastParameter());
             }
         }
     }
@@ -61,33 +66,33 @@ public sealed class BRepFill_TrimEdgeTool
     /// The tool of the bisector <paramref name="Bisec"/> of the elements <paramref name="S1"/> and <paramref name="S2"/>
     /// (2D points or curves) for the offset <paramref name="Offset"/>.
     /// </summary>
-    public BRepFill_TrimEdgeTool(Bisector_Bisec Bisec, Geom2d_Geometry S1, Geom2d_Geometry S2, double Offset)
+    public BRepFill_TrimEdgeTool(Bisector_Bisec Bisec, Geometry2D S1, Geometry2D S2, double Offset)
     {
         myOffset = Offset;
         myBisec = Bisec;
-        isPoint1 = S1.GetType() == typeof(Geom2d_CartesianPoint);
-        isPoint2 = S2.GetType() == typeof(Geom2d_CartesianPoint);
+        isPoint1 = S1.GetType() == typeof(CartesianPoint2);
+        isPoint2 = S2.GetType() == typeof(CartesianPoint2);
 
         // return geometries of shapes.
         if (isPoint1)
         {
-            myP1 = ((Geom2d_Point)S1).Pnt2d();
+            myP1 = ((Point2)S1).Pnt2d();
         }
         else
         {
-            myC1 = S1 as Geom2d_Curve;
+            myC1 = S1 as Curve2D;
         }
         if (isPoint2)
         {
-            myP2 = ((Geom2d_Point)S2).Pnt2d();
+            myP2 = ((Point2)S2).Pnt2d();
         }
         else
         {
-            myC2 = S2 as Geom2d_Curve;
+            myC2 = S2 as Curve2D;
         }
         // return the simple expression of the bissectrice
-        SimpleExpression(myBisec, out Geom2d_Curve Bis);
-        myBis = new Geom2dAdaptor_Curve(Bis);
+        SimpleExpression(myBisec, out Curve2D Bis);
+        myBis = new CurveAdaptor2D(Bis);
     }
 
     // Order the sequence of points by increasing x.
@@ -111,13 +116,13 @@ public sealed class BRepFill_TrimEdgeTool
         }
     }
 
-    private static void EvalParameters(Geom2dAdaptor_Curve Bis, Geom2dAdaptor_Curve AC, NCollection_Sequence<Point3D> Params)
+    private static void EvalParameters(CurveAdaptor2D Bis, CurveAdaptor2D AC, NCollection_Sequence<Point3D> Params)
     {
         Geom2dInt_GInter Intersector;
         double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-        Geom2dAdaptor_Curve CBis = Bis;
-        Geom2dAdaptor_Curve CAC = AC;
+        CurveAdaptor2D CBis = Bis;
+        CurveAdaptor2D CAC = AC;
 
         Intersector = new Geom2dInt_GInter(CAC, CBis, Tol, Tol);
 
@@ -178,14 +183,14 @@ public sealed class BRepFill_TrimEdgeTool
         Bubble(Params);
     }
 
-    private static void EvalParametersBis(Geom2dAdaptor_Curve Bis, Geom2dAdaptor_Curve AC, NCollection_Sequence<Point3D> Params,
+    private static void EvalParametersBis(CurveAdaptor2D Bis, CurveAdaptor2D AC, NCollection_Sequence<Point3D> Params,
                                           double Tol)
     {
         Geom2dInt_GInter Intersector;
         double TolC = Tol;
 
-        Geom2dAdaptor_Curve CBis = Bis;
-        Geom2dAdaptor_Curve CAC = AC;
+        CurveAdaptor2D CBis = Bis;
+        CurveAdaptor2D CAC = AC;
 
         Intersector = new Geom2dInt_GInter(CAC, CBis, TolC, Tol);
 
@@ -251,12 +256,12 @@ public sealed class BRepFill_TrimEdgeTool
     /// (generated by <paramref name="InitShape1"/> and <paramref name="InitShape2"/>): for each point, X is the
     /// parameter on the bisector, Y on the first parallel and Z on the second.
     /// </summary>
-    public void IntersectWith(in TopoDS_Edge Edge1,
-                              in TopoDS_Edge Edge2,
-                              in TopoDS_Shape InitShape1,
-                              in TopoDS_Shape InitShape2,
-                              in TopoDS_Vertex End1,
-                              in TopoDS_Vertex End2,
+    public void IntersectWith(in Edge Edge1,
+                              in Edge Edge2,
+                              in Shape InitShape1,
+                              in Shape InitShape2,
+                              in Vertex End1,
+                              in Vertex End2,
                               JoinKind theJoinType,
                               bool IsOpenResult,
                               NCollection_Sequence<Point3D> Params)
@@ -266,11 +271,11 @@ public sealed class BRepFill_TrimEdgeTool
         // return curves associated to edges.
         double f, l;
 
-        BRep_Tool.CurveOnSurface(Edge1, out Geom2d_Curve? C1, out Geom_Surface? _, out Placement _, out f, out l);
-        Geom2dAdaptor_Curve AC1 = new(C1!, f, l);
+        Tool.CurveOnSurface(Edge1, out Curve2D? C1, out Surface? _, out Placement _, out f, out l);
+        CurveAdaptor2D AC1 = new(C1!, f, l);
 
-        BRep_Tool.CurveOnSurface(Edge2, out Geom2d_Curve? C2, out Geom_Surface? _, out Placement _, out f, out l);
-        Geom2dAdaptor_Curve AC2 = new(C2!, f, l);
+        Tool.CurveOnSurface(Edge2, out Curve2D? C2, out Surface? _, out Placement _, out f, out l);
+        CurveAdaptor2D AC2 = new(C2!, f, l);
 
         // Calculate intersection
         NCollection_Sequence<Point3D> Points2 = new();
@@ -489,18 +494,18 @@ public sealed class BRepFill_TrimEdgeTool
         // Now we define: if there are more than one point of intersection
         // is it Ok ?
         double init_fpar = RealFirst(), init_lpar = RealLast();
-        if (NbPoints > 1 && theJoinType == Intersection && InitShape1.ShapeType() != TopAbs_VERTEX
-            && InitShape2.ShapeType() != TopAbs_VERTEX)
+        if (NbPoints > 1 && theJoinType == Intersection && InitShape1.ShapeType() != ShapeType.Vertex
+            && InitShape2.ShapeType() != ShapeType.Vertex)
         {
             // definition of initial first and last parameters:
             // this is inverse procedure to extension of parameters
             //(see BRepFill_OffsetWire, function MakeOffset, case of Circle)
-            TopoDS_Edge InitEdge1 = TopoDS.Edge(InitShape1);
+            Edge InitEdge1 = ShapeCasts.Edge(InitShape1);
             bool ToExtendFirstPar = true;
             bool ToExtendLastPar = true;
             if (IsOpenResult)
             {
-                TopExp.Vertices(InitEdge1, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+                Exploration.Vertices(InitEdge1, out Vertex V1, out Vertex V2);
                 if (V1.IsSame(End1) || V1.IsSame(End2))
                 {
                     ToExtendFirstPar = false;
@@ -510,7 +515,7 @@ public sealed class BRepFill_TrimEdgeTool
                     ToExtendLastPar = false;
                 }
             }
-            BRepAdaptor_Curve IC1 = new(InitEdge1);
+            EdgeCurveAdaptor IC1 = new(InitEdge1);
             if (IC1.GetType() == Circle)
             {
                 double Delta = 2 * Math.PI - IC1.LastParameter() + IC1.FirstParameter();
@@ -570,15 +575,15 @@ public sealed class BRepFill_TrimEdgeTool
     /// The first (<paramref name="Start"/>) or last point of the bisector is on the parallels: if it wasn't found among
     /// the intersections, it is projected on both parallels and added to <paramref name="Params"/>.
     /// </summary>
-    public void AddOrConfuse(bool Start, in TopoDS_Edge Edge1, in TopoDS_Edge Edge2, NCollection_Sequence<Point3D> Params)
+    public void AddOrConfuse(bool Start, in Edge Edge1, in Edge Edge2, NCollection_Sequence<Point3D> Params)
     {
         bool ToProj = true;
         Point2D PBis;
         double Tol = 10 * global::Kerf.Engine.Foundation.Precision.Confusion();
 
         // return curves associated to edges.
-        BRep_Tool.CurveOnSurface(Edge1, out Geom2d_Curve? C1, out Geom_Surface? _, out Placement _, out double f, out double l);
-        Geom2dAdaptor_Curve AC1 = new(C1!, f, l);
+        Tool.CurveOnSurface(Edge1, out Curve2D? C1, out Surface? _, out Placement _, out double f, out double l);
+        CurveAdaptor2D AC1 = new(C1!, f, l);
 
         if (Start)
         {
@@ -607,7 +612,7 @@ public sealed class BRepFill_TrimEdgeTool
         if (ToProj)
         {
             // Project point on parallels and add in Params
-            BRep_Tool.CurveOnSurface(Edge2, out Geom2d_Curve? C2, out Geom_Surface? _, out Placement _, out double f2, out double l2);
+            Tool.CurveOnSurface(Edge2, out Curve2D? C2, out Surface? _, out Placement _, out double f2, out double l2);
 
             Geom2dAPI_ProjectPointOnCurve Projector1 = new(PBis, C1!, f, l);
             Geom2dAPI_ProjectPointOnCurve Projector2 = new(PBis, C2!, f2, l2);

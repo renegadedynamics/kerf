@@ -5,10 +5,13 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -61,7 +64,7 @@ internal sealed class BOPAlgo_EdgeEdge : IntTools_EdgeEdge, BOPTools_Parallel.IS
         {
             return;
         }
-        TopoDS_Edge anE1 = myEdge1, anE2 = myEdge2;
+        Edge anE1 = myEdge1, anE2 = myEdge2;
         bool hasTrsf = false;
         try
         {
@@ -102,9 +105,9 @@ public partial class BOPAlgo_PaveFiller
     /// <summary>The edge/edge interferences: new vertices and common blocks.</summary>
     protected virtual void PerformEE(ProgressRange theRange)
     {
-        FillShrunkData(TopAbs_EDGE, TopAbs_EDGE);
+        FillShrunkData(ShapeType.Edge, ShapeType.Edge);
         //
-        myIterator!.Initialize(TopAbs_EDGE, TopAbs_EDGE);
+        myIterator!.Initialize(ShapeType.Edge, ShapeType.Edge);
         int iSize = myIterator.ExpectedLength();
         using var aPSOuter = new ProgressScope(theRange, null, 10);
         if (iSize == 0)
@@ -117,7 +120,7 @@ public partial class BOPAlgo_PaveFiller
         int nV11, nV12, nV21, nV22;
         // OCCT: uninitialised, written by GetPBBox before they are read
         double aTS11 = 0, aTS12 = 0, aTS21 = 0, aTS22 = 0, aT11 = 0, aT12 = 0, aT21 = 0, aT22 = 0;
-        TopAbs_ShapeEnum aType;
+        ShapeType aType;
         // The fixed arrays of the TopAbs_VERTEX case (bIsOnPave[4], nV[4], nVS[2])
         Span<bool> bIsOnPave = stackalloc bool[4];
         Span<int> nV = stackalloc int[4];
@@ -129,7 +132,7 @@ public partial class BOPAlgo_PaveFiller
         //
         //-----------------------------------------------------scope f
         NCollection_IndexedDataMap<BOPDS_PaveBlock, NCollection_List<BOPDS_PaveBlock>> aMPBLPB = new();
-        NCollection_IndexedDataMap<TopoDS_Shape, BOPDS_CoupleOfPaveBlocks> aMVCPB = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, BOPDS_CoupleOfPaveBlocks> aMVCPB = new(ShapeHasher.Instance);
         NCollection_DataMap<BOPDS_PaveBlock, Box> aDMPBBox = new();
         //
         NCollection_DynamicArray<BOPDS_InterfEE> aEEs = myDS!.InterfEE();
@@ -165,8 +168,8 @@ public partial class BOPAlgo_PaveFiller
                 continue;
             }
             //
-            TopoDS_Edge aE1 = TopoDS.Edge(aSIE1.Shape());
-            TopoDS_Edge aE2 = TopoDS.Edge(aSIE2.Shape());
+            Edge aE1 = ShapeCasts.Edge(aSIE1.Shape());
+            Edge aE2 = ShapeCasts.Edge(aSIE2.Shape());
             //
             aIt1.Initialize(aLPB1);
             for (; aIt1.More(); aIt1.Next())
@@ -252,8 +255,8 @@ public partial class BOPAlgo_PaveFiller
             if (!anEdgeEdge.IsDone() || anEdgeEdge.HasErrors())
             {
                 // Warn about failed intersection of sub-shapes
-                TopoDS_Shape aE1f = myDS.Shape(anEdgeEdge.PaveBlock1().OriginalEdge());
-                TopoDS_Shape aE2f = myDS.Shape(anEdgeEdge.PaveBlock2().OriginalEdge());
+                Shape aE1f = myDS.Shape(anEdgeEdge.PaveBlock1().OriginalEdge());
+                Shape aE2f = myDS.Shape(anEdgeEdge.PaveBlock2().OriginalEdge());
                 AddIntersectionFailedWarning(aE1f, aE2f);
                 continue;
             }
@@ -298,10 +301,10 @@ public partial class BOPAlgo_PaveFiller
             //
             bool bAnalytical = false;
             {
-                TopoDS_Edge aOE1 = TopoDS.Edge(myDS.Shape(nE1));
-                TopoDS_Edge aOE2 = TopoDS.Edge(myDS.Shape(nE2));
+                Edge aOE1 = ShapeCasts.Edge(myDS.Shape(nE1));
+                Edge aOE2 = ShapeCasts.Edge(myDS.Shape(nE2));
                 //
-                BRepAdaptor_Curve aBAC1 = new(aOE1), aBAC2 = new(aOE2);
+                EdgeCurveAdaptor aBAC1 = new(aOE1), aBAC2 = new(aOE2);
                 //
                 CurveKind aType1 = aBAC1.GetType();
                 CurveKind aType2 = aBAC2.GetType();
@@ -318,13 +321,13 @@ public partial class BOPAlgo_PaveFiller
                 }
                 IntTools_CommonPrt aCPart = aCPrts[i];
                 //
-                TopoDS_Edge aE1 = aCPart.Edge1();
-                TopoDS_Edge aE2 = aCPart.Edge2();
+                Edge aE1 = aCPart.Edge1();
+                Edge aE2 = aCPart.Edge2();
                 //
                 aType = aCPart.Type();
                 switch (aType)
                 {
-                    case TopAbs_VERTEX:
+                    case ShapeType.Vertex:
                     {
                         if (!bIsPBSplittable1 || !bIsPBSplittable2)
                         {
@@ -333,7 +336,7 @@ public partial class BOPAlgo_PaveFiller
                         //
                         int j;
                         double aT1, aT2, aTol;
-                        TopoDS_Vertex aVnew;
+                        Vertex aVnew;
                         IntTools_Range aCR1, aCR2;
                         //
                         IntTools_Tools.VertexParameters(aCPart, out aT1, out aT2);
@@ -375,7 +378,7 @@ public partial class BOPAlgo_PaveFiller
                         }
 
                         BOPTools_AlgoTools.MakeNewVertex(aE1, aT1, aE2, aT2, out aVnew);
-                        Point3D aPnew = BRep_Tool.Pnt(aVnew);
+                        Point3D aPnew = Tool.Pnt(aVnew);
 
                         if (isVExists)
                         {
@@ -385,8 +388,8 @@ public partial class BOPAlgo_PaveFiller
                             // If it is a touching point, do nothing.
                             // If it is an intersection point, update the existing vertex to cover the
                             // intersection point.
-                            Point3D aPOnE1 = new BRepAdaptor_Curve(aE1).Value(aT1);
-                            Point3D aPOnE2 = new BRepAdaptor_Curve(aE2).Value(aT2);
+                            Point3D aPOnE1 = new EdgeCurveAdaptor(aE1).Value(aT1);
+                            Point3D aPOnE2 = new EdgeCurveAdaptor(aE2).Value(aT2);
                             if (aPOnE1.Distance(aPOnE2) > global::Kerf.Engine.Foundation.Precision.Intersection())
                             {
                                 // No intersection point
@@ -399,8 +402,8 @@ public partial class BOPAlgo_PaveFiller
                             {
                                 if (bIsOnPave[j])
                                 {
-                                    TopoDS_Vertex aV = TopoDS.Vertex(myDS.Shape(nV[j]));
-                                    Point3D aP = BRep_Tool.Pnt(aV);
+                                    Vertex aV = ShapeCasts.Vertex(myDS.Shape(nV[j]));
+                                    Point3D aP = Tool.Pnt(aV);
                                     double aDistPP = aP.Distance(aPnew);
                                     // Just update the vertex
                                     UpdateVertex(nV[j], aDistPP);
@@ -409,12 +412,12 @@ public partial class BOPAlgo_PaveFiller
                             }
                         }
 
-                        double aTolVnew = BRep_Tool.Tolerance(aVnew);
+                        double aTolVnew = Tool.Tolerance(aVnew);
                         if (bAnalytical)
                         {
                             // increase tolerance for Line/Circle intersection, but do not update
                             // the vertex till its intersection with some other shape
-                            double aTolMin = (new BRepAdaptor_Curve(aE1).GetType() == Line)
+                            double aTolMin = (new EdgeCurveAdaptor(aE1).GetType() == Line)
                                 ? (aCR1.Last() - aCR1.First()) / 2.0
                                 : (aCR2.Last() - aCR2.First()) / 2.0;
                             if (aTolMin > aTolVnew)
@@ -447,9 +450,9 @@ public partial class BOPAlgo_PaveFiller
                             //
                             for (int k1 = 0; k1 <= j; ++k1)
                             {
-                                TopoDS_Vertex aVx = TopoDS.Vertex(myDS.Shape(nVS[k1]));
-                                aTolVx = BRep_Tool.Tolerance(aVx);
-                                aPx = BRep_Tool.Pnt(aVx);
+                                Vertex aVx = ShapeCasts.Vertex(myDS.Shape(nVS[k1]));
+                                aTolVx = Tool.Tolerance(aVx);
+                                aPx = Tool.Pnt(aVx);
                                 aD2 = aPnew.SquareDistance(aPx);
                                 //
                                 aDT2 = 100.0 * (aTolVnew + aTolVx) * (aTolVnew + aTolVx);
@@ -484,7 +487,7 @@ public partial class BOPAlgo_PaveFiller
                     } // case TopAbs_VERTEX:
                         break;
                     //
-                    case TopAbs_EDGE:
+                    case ShapeType.Edge:
                     {
                         if (aNbCPrts > 1)
                         {
@@ -552,7 +555,7 @@ public partial class BOPAlgo_PaveFiller
     /// Fuses the new vertices of the edge/edge (or edge/face) interferences, adds them to the DS and splits the pave
     /// blocks by them.
     /// </summary>
-    protected void PerformNewVertices(NCollection_IndexedDataMap<TopoDS_Shape, BOPDS_CoupleOfPaveBlocks> theMVCPB,
+    protected void PerformNewVertices(NCollection_IndexedDataMap<Shape, BOPDS_CoupleOfPaveBlocks> theMVCPB,
                                       ProgressRange theRange, bool theIsEEIntersection = true)
     {
         int aNbV = theMVCPB.Extent();
@@ -564,7 +567,7 @@ public partial class BOPAlgo_PaveFiller
         double aTolAdd = myFuzzyValue / 2.0;
         //
         // 1. Fuse the new vertices
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aImages = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aImages = new(ShapeHasher.Instance);
         TreatNewVertices(theMVCPB, aImages);
         //
         // 2. Add new vertices to myDS and connect indices to CPB structure
@@ -582,23 +585,23 @@ public partial class BOPAlgo_PaveFiller
                 {
                     return;
                 }
-                TopoDS_Vertex aV = TopoDS.Vertex(aImages.FindKey(i));
-                NCollection_List<TopoDS_Shape> aLVSD = aImages.FindFromIndex(i);
+                Vertex aV = ShapeCasts.Vertex(aImages.FindKey(i));
+                NCollection_List<Shape> aLVSD = aImages.FindFromIndex(i);
                 //
                 BOPDS_ShapeInfo aSI = new();
-                aSI.SetShapeType(TopAbs_VERTEX);
+                aSI.SetShapeType(ShapeType.Vertex);
                 aSI.SetShape(aV);
                 int iV = myDS.Append(aSI);
                 //
                 BOPDS_ShapeInfo aSIDS = myDS.ChangeShapeInfo(iV);
                 ref Box aBox = ref aSIDS.ChangeBox();
-                aBox.Add(BRep_Tool.Pnt(aV));
-                aBox.SetGap(BRep_Tool.Tolerance(aV) + aTolAdd);
+                aBox.Add(Tool.Pnt(aV));
+                aBox.SetGap(Tool.Tolerance(aV) + aTolAdd);
                 //
-                NCollection_List<TopoDS_Shape>.Iterator aItLS = new(aLVSD);
+                NCollection_List<Shape>.Iterator aItLS = new(aLVSD);
                 for (; aItLS.More(); aItLS.Next())
                 {
-                    TopoDS_Shape aVx = aItLS.Value();
+                    Shape aVx = aItLS.Value();
                     ref BOPDS_CoupleOfPaveBlocks aCPB = ref theMVCPB.ChangeFromKey(aVx);
                     aCPB.SetIndex(iV);
                     // update interference
@@ -640,31 +643,31 @@ public partial class BOPAlgo_PaveFiller
     }
 
     /// <summary>Fuses the coinciding new vertices: each chain of intersecting vertices becomes one vertex.</summary>
-    protected void TreatNewVertices(NCollection_IndexedDataMap<TopoDS_Shape, BOPDS_CoupleOfPaveBlocks> theMVCPB,
-                                    NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theImages)
+    protected void TreatNewVertices(NCollection_IndexedDataMap<Shape, BOPDS_CoupleOfPaveBlocks> theMVCPB,
+                                    NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theImages)
     {
         //
         // Prepare for intersection
-        NCollection_IndexedDataMap<TopoDS_Shape, double> aVerts = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, double> aVerts = new(ShapeHasher.Instance);
         int i, aNbV = theMVCPB.Extent();
         for (i = 1; i <= aNbV; ++i)
         {
-            TopoDS_Shape aV = theMVCPB.FindKey(i);
+            Shape aV = theMVCPB.FindKey(i);
             double aTol = theMVCPB.FindFromIndex(i).Tolerance();
             aVerts.Add(aV, aTol);
         }
         //
         // Perform intersection
-        NCollection_List<NCollection_List<TopoDS_Shape>> aChains = new();
+        NCollection_List<NCollection_List<Shape>> aChains = new();
         BOPAlgo_Tools.IntersectVertices(aVerts, myFuzzyValue, aChains);
         //
         // Treat the results - make new vertices for each chain
-        NCollection_List<NCollection_List<TopoDS_Shape>>.Iterator aItC = new(aChains);
+        NCollection_List<NCollection_List<Shape>>.Iterator aItC = new(aChains);
         for (; aItC.More(); aItC.Next())
         {
-            NCollection_List<TopoDS_Shape> aLVSD = aItC.Value();
+            NCollection_List<Shape> aLVSD = aItC.Value();
             //
-            TopoDS_Vertex aVNew = new();
+            Vertex aVNew = new();
             BOPTools_AlgoTools.MakeVertex(aLVSD, ref aVNew);
             theImages.Add(aVNew, aLVSD);
         }
@@ -681,8 +684,8 @@ public partial class BOPAlgo_PaveFiller
             return;
         }
 
-        TopoDS_Vertex aV1 = TopoDS.Vertex(myDS!.Shape(nV1));
-        TopoDS_Vertex aV2 = TopoDS.Vertex(myDS.Shape(nV2));
+        Vertex aV1 = ShapeCasts.Vertex(myDS!.Shape(nV1));
+        Vertex aV2 = ShapeCasts.Vertex(myDS.Shape(nV2));
         // Get the edge
         if (!thePB.HasEdge(out int nE))
         {
@@ -693,7 +696,7 @@ public partial class BOPAlgo_PaveFiller
             }
         }
 
-        TopoDS_Edge aE = TopoDS.Edge(myDS.Shape(nE));
+        Edge aE = ShapeCasts.Edge(myDS.Shape(nE));
         // Range
         thePB.Range(out double aT1, out double aT2);
         //
@@ -710,11 +713,11 @@ public partial class BOPAlgo_PaveFiller
     {
         // in case of error treat the warning status
         bool bWholeEdge = false;
-        TopoDS_Shape aWarnShape = new();
+        Shape aWarnShape = new();
         //
         if (!theSR.IsDone() || !theSR.IsSplittable())
         {
-            BRep_Tool.Range(theSR.Edge(), out double aEFirst, out double aELast);
+            Tool.Range(theSR.Edge(), out double aEFirst, out double aELast);
             thePB.Range(out double aPBFirst, out double aPBLast);
             bWholeEdge = aPBFirst <= aEFirst && aPBLast >= aELast;
             if (bWholeEdge && thePB.OriginalEdge() >= 0)
@@ -723,14 +726,14 @@ public partial class BOPAlgo_PaveFiller
             }
             else
             {
-                TopoDS_Shape aV1 = myDS!.Shape(thePB.Pave1().Index());
-                TopoDS_Shape aV2 = myDS.Shape(thePB.Pave2().Index());
-                TopoDS_Compound aWC = new();
-                new BRep_Builder().MakeCompound(ref aWC);
+                Shape aV1 = myDS!.Shape(thePB.Pave1().Index());
+                Shape aV2 = myDS.Shape(thePB.Pave2().Index());
+                Compound aWC = new();
+                new BrepBuilder().MakeCompound(ref aWC);
                 aWarnShape = aWC;
-                new BRep_Builder().Add(aWarnShape, theSR.Edge());
-                new BRep_Builder().Add(aWarnShape, aV1);
-                new BRep_Builder().Add(aWarnShape, aV2);
+                new BrepBuilder().Add(aWarnShape, theSR.Edge());
+                new BrepBuilder().Add(aWarnShape, aV1);
+                new BrepBuilder().Add(aWarnShape, aV2);
             }
             //
             if (!theSR.IsDone())
@@ -802,8 +805,8 @@ public partial class BOPAlgo_PaveFiller
             nVx = nVSD;
         }
         //
-        TopoDS_Vertex aV = TopoDS.Vertex(myDS.Shape(nVx));
-        TopoDS_Edge aE = TopoDS.Edge(myDS.Shape(nE));
+        Vertex aV = ShapeCasts.Vertex(myDS.Shape(nVx));
+        Edge aE = ShapeCasts.Edge(myDS.Shape(nE));
         //
         iFlag = myContext!.ComputeVE(aV, aE, ref aT, ref aTolVNew, myFuzzyValue);
         if (iFlag == 0 || iFlag == -4)
@@ -838,10 +841,10 @@ public partial class BOPAlgo_PaveFiller
             if (iRV >= 0 && iRV == myDS.Rank(nE))
             {
                 // add warning status
-                TopoDS_Compound aWC = new();
-                new BRep_Builder().MakeCompound(ref aWC);
-                new BRep_Builder().Add(aWC, aV);
-                new BRep_Builder().Add(aWC, aE);
+                Compound aWC = new();
+                new BrepBuilder().MakeCompound(ref aWC);
+                new BrepBuilder().Add(aWC, aV);
+                new BrepBuilder().Add(aWC, aE);
                 AddWarning(new BOPAlgo_AlertSelfInterferingShape(aWC));
             }
             return true;
@@ -853,7 +856,7 @@ public partial class BOPAlgo_PaveFiller
     /// The range, shrunk range and box of the pave block (its shrunk box, or a box of its range kept in
     /// <paramref name="thePBBox"/>). False if the range is too small.
     /// </summary>
-    protected bool GetPBBox(in TopoDS_Edge theE, BOPDS_PaveBlock thePB, NCollection_DataMap<BOPDS_PaveBlock, Box> thePBBox,
+    protected bool GetPBBox(in Edge theE, BOPDS_PaveBlock thePB, NCollection_DataMap<BOPDS_PaveBlock, Box> thePBBox,
                             ref double theFirst, ref double theLast, ref double theSFirst, ref double theSLast, ref Box theBox)
     {
         thePB.Range(out theFirst, out theLast);
@@ -881,9 +884,9 @@ public partial class BOPAlgo_PaveFiller
         else
         {
             // build bounding box
-            BRepAdaptor_Curve aBAC = new(theE);
-            double aTol = BRep_Tool.Tolerance(theE) + global::Kerf.Engine.Foundation.Precision.Confusion();
-            BndLib_Add3dCurve.Add(aBAC, theSFirst, theSLast, aTol, ref theBox);
+            EdgeCurveAdaptor aBAC = new(theE);
+            double aTol = Tool.Tolerance(theE) + global::Kerf.Engine.Foundation.Precision.Confusion();
+            Add3dCurve.Add(aBAC, theSFirst, theSLast, aTol, ref theBox);
             thePBBox.Bind(thePB, theBox);
         }
         return bValid;
@@ -943,7 +946,7 @@ public partial class BOPAlgo_PaveFiller
         for (int i = 0; i < aNbS; ++i)
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() == TopAbs_VERTEX)
+            if (aSI.ShapeType() == ShapeType.Vertex)
             {
                 if (myDS.HasInterf(i))
                 {
@@ -964,7 +967,7 @@ public partial class BOPAlgo_PaveFiller
         for (int i = 0; i < aNbS; ++i)
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() != TopAbs_EDGE)
+            if (aSI.ShapeType() != ShapeType.Edge)
             {
                 // Not an edge
                 continue;
@@ -1035,15 +1038,15 @@ public partial class BOPAlgo_PaveFiller
             BOPDS_Pair aPair = aPBMap.FindKey(i);
             aPair.Indices(out int nV1, out int nV2);
 
-            TopoDS_Vertex aV1 = TopoDS.Vertex(myDS.Shape(nV1));
-            TopoDS_Vertex aV2 = TopoDS.Vertex(myDS.Shape(nV2));
+            Vertex aV1 = ShapeCasts.Vertex(myDS.Shape(nV1));
+            Vertex aV2 = ShapeCasts.Vertex(myDS.Shape(nV2));
 
             // Use the max tolerance of vertices as Fuzzy value for intersection of edges.
             // In the Self-Interference check mode we are interested in real
             // intersections only, so use only the real tolerance of edges,
             // no need to use the extended tolerance.
             double aTolAdd = (bSICheckMode ? myFuzzyValue
-                                           : 2 * Max(BRep_Tool.Tolerance(aV1), BRep_Tool.Tolerance(aV2)));
+                                           : 2 * Max(Tool.Tolerance(aV1), Tool.Tolerance(aV2)));
 
             // All possible pairs combined from the list <aLPB> should be checked
             NCollection_List<BOPDS_PaveBlock>.Iterator aItLPB1 = new(aLPB);
@@ -1053,9 +1056,9 @@ public partial class BOPAlgo_PaveFiller
                 BOPDS_CommonBlock? aCB1 = myDS.CommonBlock(aPB1);
                 int nE1 = aPB1.OriginalEdge();
                 int iR1 = myDS.Rank(nE1);
-                TopoDS_Edge aE1 = TopoDS.Edge(myDS.Shape(nE1));
+                Edge aE1 = ShapeCasts.Edge(myDS.Shape(nE1));
                 aPB1.Range(out double aT11, out double aT12);
-                BRepAdaptor_Curve aBAC1 = new(aE1);
+                EdgeCurveAdaptor aBAC1 = new(aE1);
                 aBAC1.D1((aT11 + aT12) * 0.5, out Point3D aPm, out Vector3D aVTgt1);
                 if (aVTgt1.SquareMagnitude() < Constants.Resolution())
                 {
@@ -1094,7 +1097,7 @@ public partial class BOPAlgo_PaveFiller
                         }
                     }
 
-                    TopoDS_Edge aE2 = TopoDS.Edge(myDS.Shape(nE2));
+                    Edge aE2 = ShapeCasts.Edge(myDS.Shape(nE2));
                     aPB2.Range(out double aT21, out double aT22);
 
                     // Check the angle between edges in the middle point.
@@ -1102,7 +1105,7 @@ public partial class BOPAlgo_PaveFiller
                     // tolerance, as it may lead to undesired unification of edges
                     bool bUseAddTol = true;
                     {
-                        BRepAdaptor_Curve aBAC2 = new(aE2);
+                        EdgeCurveAdaptor aBAC2 = new(aE2);
                         if (aBAC1.GetType() != Line || aBAC2.GetType() != Line)
                         {
                             GeomAPI_ProjectPointOnCurve aProjPC = myContext!.ProjPC(aE2);
@@ -1190,8 +1193,8 @@ public partial class BOPAlgo_PaveFiller
             if (!anEdgeEdge.IsDone() || anEdgeEdge.HasErrors())
             {
                 // Warn about failed intersection of sub-shapes
-                TopoDS_Shape aE1 = myDS.Shape(anEdgeEdge.PaveBlock1().OriginalEdge());
-                TopoDS_Shape aE2 = myDS.Shape(anEdgeEdge.PaveBlock2().OriginalEdge());
+                Shape aE1 = myDS.Shape(anEdgeEdge.PaveBlock1().OriginalEdge());
+                Shape aE2 = myDS.Shape(anEdgeEdge.PaveBlock2().OriginalEdge());
                 AddIntersectionFailedWarning(aE1, aE2);
                 continue;
             }
@@ -1203,7 +1206,7 @@ public partial class BOPAlgo_PaveFiller
             }
 
             IntTools_CommonPrt aCP = aCParts[1];
-            if (aCP.Type() != TopAbs_EDGE)
+            if (aCP.Type() != ShapeType.Edge)
             {
                 continue;
             }
@@ -1215,10 +1218,10 @@ public partial class BOPAlgo_PaveFiller
             if (myDS.Rank(nE1) == myDS.Rank(nE2))
             {
                 // Add acquired self-interference warning
-                TopoDS_Compound aWC = new();
-                new BRep_Builder().MakeCompound(ref aWC);
-                new BRep_Builder().Add(aWC, myDS.Shape(nE1));
-                new BRep_Builder().Add(aWC, myDS.Shape(nE2));
+                Compound aWC = new();
+                new BrepBuilder().MakeCompound(ref aWC);
+                new BrepBuilder().Add(aWC, myDS.Shape(nE1));
+                new BrepBuilder().Add(aWC, myDS.Shape(nE2));
                 AddWarning(new BOPAlgo_AlertAcquiredSelfIntersection(aWC));
             }
 

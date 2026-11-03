@@ -4,9 +4,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepOffset_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -19,26 +22,26 @@ public static class BRepOffset
     /// The surface offset from <paramref name="Surface"/> by <paramref name="Offset"/>: of its own type where possible
     /// (the offset of a plane is a plane), otherwise a Geom_OffsetSurface, made with <paramref name="allowC0"/>.
     /// </summary>
-    public static Geom_Surface Surface(Geom_Surface Surface, double Offset, out BRepOffset_Status theStatus,
+    public static Surface Surface(Surface Surface, double Offset, out BRepOffset_Status theStatus,
                                        bool allowC0 = false)
     {
         double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         theStatus = BRepOffset_Good;
-        Geom_Surface? Result = null;
+        Surface? Result = null;
 
         Type TheType = Surface.GetType();
 
-        if (TheType == typeof(Geom_Plane))
+        if (TheType == typeof(PlaneSurface))
         {
-            Geom_Plane P = (Geom_Plane)Surface;
+            PlaneSurface P = (PlaneSurface)Surface;
             Vector3D T = new(P.Position().XDirection() ^ P.Position().YDirection());
             T *= Offset;
-            Result = P.Translated(T) as Geom_Plane;
+            Result = P.Translated(T) as PlaneSurface;
         }
-        else if (TheType == typeof(Geom_CylindricalSurface))
+        else if (TheType == typeof(CylindricalSurface))
         {
-            Geom_CylindricalSurface C = (Geom_CylindricalSurface)Surface;
+            CylindricalSurface C = (CylindricalSurface)Surface;
             double Radius = C.Radius();
             CoordinateSystem Axis = C.Position();
             if (Axis.Direct())
@@ -51,12 +54,12 @@ public static class BRepOffset
             }
             if (Radius >= Tol)
             {
-                Result = new Geom_CylindricalSurface(Axis, Radius);
+                Result = new CylindricalSurface(Axis, Radius);
             }
             else if (Radius <= -Tol)
             {
                 Axis.Rotate(new Axis3D(Axis.Location(), Axis.Direction()), M_PI);
-                Result = new Geom_CylindricalSurface(Axis, Math.Abs(Radius));
+                Result = new CylindricalSurface(Axis, Math.Abs(Radius));
                 theStatus = BRepOffset_Reversed;
             }
             else
@@ -64,9 +67,9 @@ public static class BRepOffset
                 theStatus = BRepOffset_Degenerated;
             }
         }
-        else if (TheType == typeof(Geom_ConicalSurface))
+        else if (TheType == typeof(ConicalSurface))
         {
-            Geom_ConicalSurface C = (Geom_ConicalSurface)Surface;
+            ConicalSurface C = (ConicalSurface)Surface;
             double Alpha = C.SemiAngle();
             double Radius = C.RefRadius() + Offset * Math.Cos(Alpha);
             CoordinateSystem Axis = C.Position();
@@ -85,11 +88,11 @@ public static class BRepOffset
                 Axis.Rotate(new Axis3D(Axis.Location(), Axis.Direction()), M_PI);
                 Alpha = -Alpha;
             }
-            Result = new Geom_ConicalSurface(Axis, Alpha, Radius);
+            Result = new ConicalSurface(Axis, Alpha, Radius);
         }
-        else if (TheType == typeof(Geom_SphericalSurface))
+        else if (TheType == typeof(SphericalSurface))
         {
-            Geom_SphericalSurface S = (Geom_SphericalSurface)Surface;
+            SphericalSurface S = (SphericalSurface)Surface;
             double Radius = S.Radius();
             CoordinateSystem Axis = S.Position();
             if (Axis.Direct())
@@ -102,13 +105,13 @@ public static class BRepOffset
             }
             if (Radius >= Tol)
             {
-                Result = new Geom_SphericalSurface(Axis, Radius);
+                Result = new SphericalSurface(Axis, Radius);
             }
             else if (Radius <= -Tol)
             {
                 Axis.Rotate(new Axis3D(Axis.Location(), Axis.Direction()), M_PI);
                 Axis.ZReverse();
-                Result = new Geom_SphericalSurface(Axis, -Radius);
+                Result = new SphericalSurface(Axis, -Radius);
                 theStatus = BRepOffset_Reversed;
             }
             else
@@ -116,9 +119,9 @@ public static class BRepOffset
                 theStatus = BRepOffset_Degenerated;
             }
         }
-        else if (TheType == typeof(Geom_ToroidalSurface))
+        else if (TheType == typeof(ToroidalSurface))
         {
-            Geom_ToroidalSurface S = (Geom_ToroidalSurface)Surface;
+            ToroidalSurface S = (ToroidalSurface)Surface;
             double MajorRadius = S.MajorRadius();
             double MinorRadius = S.MinorRadius();
             CoordinateSystem Axis = S.Position();
@@ -134,7 +137,7 @@ public static class BRepOffset
                 }
                 if (MinorRadius >= Tol)
                 {
-                    Result = new Geom_ToroidalSurface(Axis, MajorRadius, MinorRadius);
+                    Result = new ToroidalSurface(Axis, MajorRadius, MinorRadius);
                 }
                 else if (MinorRadius <= -Tol)
                 {
@@ -146,29 +149,29 @@ public static class BRepOffset
                 }
             }
         }
-        else if (TheType == typeof(Geom_SurfaceOfRevolution))
+        else if (TheType == typeof(RevolutionSurface))
         {
         }
-        else if (TheType == typeof(Geom_SurfaceOfLinearExtrusion))
+        else if (TheType == typeof(ExtrusionSurface))
         {
         }
-        else if (TheType == typeof(Geom_BSplineSurface))
+        else if (TheType == typeof(BSplineSurface))
         {
         }
-        else if (TheType == typeof(Geom_RectangularTrimmedSurface))
+        else if (TheType == typeof(TrimmedSurface))
         {
-            Geom_RectangularTrimmedSurface S = (Geom_RectangularTrimmedSurface)Surface;
+            TrimmedSurface S = (TrimmedSurface)Surface;
             S.Bounds(out double U1, out double U2, out double V1, out double V2);
-            Geom_Surface Off = BRepOffset.Surface(S.BasisSurface(), Offset, out theStatus, allowC0);
-            Result = new Geom_RectangularTrimmedSurface(Off, U1, U2, V1, V2);
+            Surface Off = BRepOffset.Surface(S.BasisSurface(), Offset, out theStatus, allowC0);
+            Result = new TrimmedSurface(Off, U1, U2, V1, V2);
         }
-        else if (TheType == typeof(Geom_OffsetSurface))
+        else if (TheType == typeof(OffsetSurface))
         {
         }
 
         if (Result is null)
         {
-            Result = new Geom_OffsetSurface(Surface, Offset, allowC0);
+            Result = new OffsetSurface(Surface, Offset, allowC0);
         }
 
         return Result;
@@ -182,12 +185,12 @@ public static class BRepOffset
     /// face has a degenerated edge whose vertex holds (by its tolerance) every pole of that side, or if all its poles
     /// fit in a sphere of radius <paramref name="thePrecision"/>. Returns the surface itself or a modified copy.
     /// </summary>
-    public static Geom_Surface CollapseSingularities(Geom_Surface theSurface, in TopoDS_Face theFace,
+    public static Surface CollapseSingularities(Surface theSurface, in Face theFace,
                                                      double thePrecision)
     {
         // check surface type to see if it can be processed
         Type aType = theSurface.GetType();
-        if (aType != typeof(Geom_BSplineSurface))
+        if (aType != typeof(BSplineSurface))
         {
             // for the moment, only bspline surfaces are treated;
             // in the future, bezier surfaces and surfaces of revolution can be also handled
@@ -197,30 +200,30 @@ public static class BRepOffset
         // find singularities (vertices of degenerated edges)
         NCollection_List<Point3D> aDegenPnt = new();
         NCollection_List<double> aDegenTol = new();
-        for (TopExp_Explorer anExp = new(theFace, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(theFace, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
-            if (!BRep_Tool.Degenerated(anEdge))
+            Edge anEdge = ShapeCasts.Edge(anExp.Current());
+            if (!Tool.Degenerated(anEdge))
             {
                 continue;
             }
-            TopExp.Vertices(anEdge, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
+            Exploration.Vertices(anEdge, out Vertex aV1, out Vertex aV2);
             if (!aV1.IsSame(aV2))
             {
                 continue;
             }
 
-            aDegenPnt.Append(BRep_Tool.Pnt(aV1));
-            aDegenTol.Append(BRep_Tool.Tolerance(aV1));
+            aDegenPnt.Append(Tool.Pnt(aV1));
+            aDegenTol.Append(Tool.Tolerance(aV1));
         }
 
         // iterate by sides of the surface
-        if (aType == typeof(Geom_BSplineSurface))
+        if (aType == typeof(BSplineSurface))
         {
-            Geom_BSplineSurface aBSpline = (Geom_BSplineSurface)theSurface;
+            BSplineSurface aBSpline = (BSplineSurface)theSurface;
             NCollection_Array2<Point3D> aPoles = aBSpline.InternalPoles();
 
-            Geom_BSplineSurface? aCopy = null;
+            BSplineSurface? aCopy = null;
 
             // iterate by sides: {U=0; V=0; U=1; V=1}
             int[] RowStart = [aPoles.LowerRow(), aPoles.LowerRow(), aPoles.UpperRow(), aPoles.LowerRow()];
@@ -314,7 +317,7 @@ public static class BRepOffset
                 {
                     if (aCopy is null)
                     {
-                        aCopy = (Geom_BSplineSurface)theSurface.Copy();
+                        aCopy = (BSplineSurface)theSurface.Copy();
                     }
                     for (int iPole = 0; iPole < NbSteps[iSide]; iPole++)
                     {

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Occt.GeomFill_FillingStyle;
@@ -29,20 +30,20 @@ internal static class GeometryTestSurfaceCommands
             return 1;
         }
 
-        Geom_Curve? C1 = DrawTrSurf.GetCurve(theDI, a[2]);
+        Curve3D? C1 = DrawTrSurf.GetCurve(theDI, a[2]);
         if (C1 is null)
         {
             di.Append(" C1 is not a Curve ==> Command failed\n");
             return 1;
         }
-        Geom_Curve? C2 = DrawTrSurf.GetCurve(theDI, a[3]);
+        Curve3D? C2 = DrawTrSurf.GetCurve(theDI, a[3]);
         if (C2 is null)
         {
             di.Append(" C2 is not a Curve ==> Command failed\n");
             return 1;
         }
 
-        Geom_Surface? S = GeomFill.Surface(C1, C2);
+        Surface? S = GeomFill.Surface(C1, C2);
         if (S is null)
         {
             return 1;
@@ -62,7 +63,7 @@ internal static class GeometryTestSurfaceCommands
 
         GeomFill_SectionGenerator Section = new();
         int i;
-        Geom_Curve? C;
+        Curve3D? C;
         for (i = 2; i < n; i++)
         {
             C = DrawTrSurf.GetCurve(theDI, a[i]);
@@ -88,7 +89,7 @@ internal static class GeometryTestSurfaceCommands
 
         App.SurfShape(out _, out _, out _, out _, out _, out _);
 
-        Geom_BSplineSurface GBS = new(App.SurfPoles(), App.SurfWeights(), App.SurfUKnots(), App.SurfVKnots(),
+        BSplineSurface GBS = new(App.SurfPoles(), App.SurfWeights(), App.SurfUKnots(), App.SurfVKnots(),
                                       App.SurfUMults(), App.SurfVMults(), App.UDegree(), App.VDegree());
 
         DrawTrSurf.Set(theDI, a[1], GBS);
@@ -104,8 +105,8 @@ internal static class GeometryTestSurfaceCommands
         }
 
         int i;
-        Geom_Curve? aC;
-        Geom_BSplineCurve[] C = new Geom_BSplineCurve[4];
+        Curve3D? aC;
+        BSplineCurve3D[] C = new BSplineCurve3D[4];
         for (i = 2; i < 6; i++)
         {
             aC = DrawTrSurf.GetCurve(theDI, a[i]);
@@ -113,7 +114,7 @@ internal static class GeometryTestSurfaceCommands
             {
                 return 1;
             }
-            C[i - 2] = GeomConvert.CurveToBSplineCurve(aC, RationalC1);
+            C[i - 2] = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aC, RationalC1);
         }
 
         int ist = 2;
@@ -138,7 +139,7 @@ internal static class GeometryTestSurfaceCommands
 
         GeomFill_BSplineCurves aFilling = new(C[0], C[1], C[2], C[3], Style);
 
-        Geom_BSplineSurface? GBS = aFilling.Surface();
+        BSplineSurface? GBS = aFilling.Surface();
         DrawTrSurf.Set(theDI, a[1], GBS);
         return 0;
     }

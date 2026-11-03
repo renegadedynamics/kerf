@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -114,11 +116,11 @@ internal static class XDEDRAWColorsLayersCommands
             return 1;
         }
         XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
-        TopoDS_Shape aShape = new();
+        Shape aShape = new();
         if (aLabel.IsNull())
         {
             aShape = theDI.GetShape(argv[2]);
-            if (aShape.IsNull())
+            if (aShape.IsNull)
             {
                 return fail(theDI, "Syntax error: " + argv[2] + " is not a label nor shape");
             }
@@ -315,8 +317,8 @@ internal static class XDEDRAWColorsLayersCommands
             aDoc.UnSetColor(aLabel, aColType);
             return 0;
         }
-        TopoDS_Shape aShape = theDI.GetShape(argv[2]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(argv[2]);
+        if (aShape.IsNull)
         {
             return fail(theDI, "Syntax error: " + argv[2] + " is not a label nor shape");
         }
@@ -334,8 +336,8 @@ internal static class XDEDRAWColorsLayersCommands
         XdeDoc_Label aLabel = DDocStdCommands.Label(theDoc, theArg);
         if (aLabel.IsNull())
         {
-            TopoDS_Shape aShape = theDI.GetShape(theArg);
-            if (!aShape.IsNull())
+            Shape aShape = theDI.GetShape(theArg);
+            if (!aShape.IsNull)
             {
                 aLabel = theDoc.FindShape(aShape, true);
             }
@@ -410,8 +412,8 @@ internal static class XDEDRAWColorsLayersCommands
         {
             return aLabel;
         }
-        TopoDS_Shape aShape = theDI.GetShape(theArg);
-        return !aShape.IsNull() && theDoc.Search(aShape, out XdeDoc_Label aFound) ? aFound : default;
+        Shape aShape = theDI.GetShape(theArg);
+        return !aShape.IsNull && theDoc.Search(aShape, out XdeDoc_Label aFound) ? aFound : default;
     }
 
     private static int addLayer(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
@@ -489,7 +491,7 @@ internal static class XDEDRAWColorsLayersCommands
         {
             aDoc.SetLayer(aLabel, argv[3], shapeInOneLayer);
         }
-        else if (!isLabel && !theDI.GetShape(argv[2]).IsNull())
+        else if (!isLabel && !theDI.GetShape(argv[2]).IsNull)
         {
             // XCAFDoc_LayerTool::SetLayer (shape, name) adds the layer before searching the shape
             aDoc.AddLayer(argv[3]);
@@ -728,8 +730,8 @@ internal static class XDEDRAWColorsLayersCommands
         XdeDoc_Label aLabel = DDocStdCommands.Label(theDoc, theArg);
         if (aLabel.IsNull())
         {
-            TopoDS_Shape aShape = theDI.GetShape(theArg);
-            if (!aShape.IsNull())
+            Shape aShape = theDI.GetShape(theArg);
+            if (!aShape.IsNull)
             {
                 aLabel = theDoc.FindShape(aShape);
             }
@@ -750,11 +752,11 @@ internal static class XDEDRAWColorsLayersCommands
             return 1;
         }
         XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
-        TopoDS_Shape aShape;
+        Shape aShape;
         if (aLabel.IsNull())
         {
             aShape = theDI.GetShape(argv[2]);
-            if (!aShape.IsNull())
+            if (!aShape.IsNull)
             {
                 aLabel = aDoc.FindShape(aShape);
             }
@@ -766,7 +768,7 @@ internal static class XDEDRAWColorsLayersCommands
         if (!aLabel.IsNull())
         {
             double anEps = argv.Count > 3 ? theDI.Atof(argv[3]) : 0.001;
-            var G = new GProp_GProps();
+            var G = new Properties();
             BRepGProp.VolumeProperties(aShape, G, anEps, true);
             double Vres = G.Mass();
             Point3D aPoint = G.CentreOfMass();

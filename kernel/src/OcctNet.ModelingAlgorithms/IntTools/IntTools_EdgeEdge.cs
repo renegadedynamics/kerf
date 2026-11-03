@@ -6,11 +6,16 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.Extrema_ExtFlag;
+using Kerf.Topology;
+using static Kerf.Engine.Extrema.ExtFlag;
 using static Kerf.Geometry.CurveKind;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -26,12 +31,12 @@ namespace Occt;
 /// </remarks>
 public class IntTools_EdgeEdge
 {
-    protected TopoDS_Edge myEdge1 = new();
-    protected TopoDS_Edge myEdge2 = new();
-    protected Geom_Curve? myGeom1;
-    protected Geom_Curve? myGeom2;
-    protected BRepAdaptor_Curve myCurve1 = new();
-    protected BRepAdaptor_Curve myCurve2 = new();
+    protected Edge myEdge1 = new();
+    protected Edge myEdge2 = new();
+    protected Curve3D? myGeom1;
+    protected Curve3D? myGeom2;
+    protected EdgeCurveAdaptor myCurve1 = new();
+    protected EdgeCurveAdaptor myCurve2 = new();
     protected double myTol1;
     protected double myTol2;
     protected double myTol;
@@ -75,7 +80,7 @@ public class IntTools_EdgeEdge
     }
 
     /// <summary>The intersection of the edges on their whole ranges.</summary>
-    public IntTools_EdgeEdge(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2)
+    public IntTools_EdgeEdge(in Edge theEdge1, in Edge theEdge2)
         : this()
     {
         myEdge1 = theEdge1;
@@ -83,7 +88,7 @@ public class IntTools_EdgeEdge
     }
 
     /// <summary>The intersection of the edges on the given ranges.</summary>
-    public IntTools_EdgeEdge(in TopoDS_Edge theEdge1, double aT11, double aT12, in TopoDS_Edge theEdge2, double aT21,
+    public IntTools_EdgeEdge(in Edge theEdge1, double aT11, double aT12, in Edge theEdge2, double aT21,
                              double aT22)
         : this()
     {
@@ -94,10 +99,10 @@ public class IntTools_EdgeEdge
     }
 
     /// <summary>Sets the first edge.</summary>
-    public void SetEdge1(in TopoDS_Edge theEdge) => myEdge1 = theEdge;
+    public void SetEdge1(in Edge theEdge) => myEdge1 = theEdge;
 
     /// <summary>Sets the first edge and its range.</summary>
-    public void SetEdge1(in TopoDS_Edge theEdge, double aT1, double aT2)
+    public void SetEdge1(in Edge theEdge, double aT1, double aT2)
     {
         SetEdge1(theEdge);
         SetRange1(aT1, aT2);
@@ -114,10 +119,10 @@ public class IntTools_EdgeEdge
     }
 
     /// <summary>Sets the second edge.</summary>
-    public void SetEdge2(in TopoDS_Edge theEdge) => myEdge2 = theEdge;
+    public void SetEdge2(in Edge theEdge) => myEdge2 = theEdge;
 
     /// <summary>Sets the second edge and its range.</summary>
-    public void SetEdge2(in TopoDS_Edge theEdge, double aT1, double aT2)
+    public void SetEdge2(in Edge theEdge, double aT1, double aT2)
     {
         SetEdge2(theEdge);
         SetRange2(aT1, aT2);
@@ -154,19 +159,19 @@ public class IntTools_EdgeEdge
     /// <summary>Checks the data.</summary>
     protected void CheckData()
     {
-        if (myEdge1.IsNull() || myEdge2.IsNull())
+        if (myEdge1.IsNull || myEdge2.IsNull)
         {
             myErrorStatus = 1;
             return;
         }
         //
-        if (BRep_Tool.Degenerated(myEdge1) || BRep_Tool.Degenerated(myEdge2))
+        if (Tool.Degenerated(myEdge1) || Tool.Degenerated(myEdge2))
         {
             myErrorStatus = 2;
             return;
         }
         //
-        if (!BRep_Tool.IsGeometric(myEdge1) || !BRep_Tool.IsGeometric(myEdge2))
+        if (!Tool.IsGeometric(myEdge1) || !Tool.IsGeometric(myEdge2))
         {
             myErrorStatus = 3;
             return;
@@ -219,11 +224,11 @@ public class IntTools_EdgeEdge
         //
         if (iCT1 < iCT2)
         {
-            TopoDS_Edge tmpE = myEdge1;
+            Edge tmpE = myEdge1;
             myEdge1 = myEdge2;
             myEdge2 = tmpE;
             //
-            BRepAdaptor_Curve tmpC = myCurve1;
+            EdgeCurveAdaptor tmpC = myCurve1;
             myCurve1 = myCurve2;
             myCurve2 = tmpC;
             //
@@ -243,8 +248,8 @@ public class IntTools_EdgeEdge
         {
             double aTM;
             //
-            myGeom1 = BRep_Tool.Curve(myEdge1, out _, out _);
-            myGeom2 = BRep_Tool.Curve(myEdge2, out _, out _);
+            myGeom1 = Tool.Curve(myEdge1, out _, out _);
+            myGeom2 = Tool.Curve(myEdge2, out _, out _);
             //
             myResCoeff1 = ResolutionCoeff(myCurve1, myRange1);
             myResCoeff2 = ResolutionCoeff(myCurve2, myRange2);
@@ -296,7 +301,7 @@ public class IntTools_EdgeEdge
                 //
                 myRange1.Range(out aT11, out aT12);
                 myRange2.Range(out aT21, out aT22);
-                AddSolution(aT11, aT12, aT21, aT22, TopAbs_EDGE);
+                AddSolution(aT11, aT12, aT21, aT22, ShapeType.Edge);
                 return;
             }
         }
@@ -308,7 +313,7 @@ public class IntTools_EdgeEdge
             // and analytical curve. This code allows to define that edges have no
             // common parts more fast, then regular algorithm (FindSolution(...))
             // Check minimal distance between edges
-            BRepExtrema_DistShapeShape aMinDist = new(myEdge1, myEdge2, Extrema_ExtFlag_MIN);
+            BRepExtrema_DistShapeShape aMinDist = new(myEdge1, myEdge2, ExtFlag_MIN);
             if (aMinDist.IsDone())
             {
                 double d = aMinDist.Value();
@@ -612,7 +617,7 @@ public class IntTools_EdgeEdge
     }
 
     /// <summary>Looks for the range of the edge which is in the box.</summary>
-    protected static bool FindParameters(BRepAdaptor_Curve theBAC,
+    protected static bool FindParameters(EdgeCurveAdaptor theBAC,
                                          double aT1,
                                          double aT2,
                                          double theTol,
@@ -635,7 +640,7 @@ public class IntTools_EdgeEdge
         aCBx = theCBox;
         aCBx.SetGap(aCBx.GetGap() + theTol);
         //
-        Geom_Curve aCurve = theBAC.Curve().Curve()!;
+        Curve3D aCurve = theBAC.Curve().Curve()!;
         CurveKind aCurveType = theBAC.GetType();
         double aMaxDt = (aT2 - aT1) * 0.01;
         //
@@ -746,7 +751,7 @@ public class IntTools_EdgeEdge
         IntTools_Range aRi1, aRi2, aRj1, aRj2;
         bool bCond;
         int i, j;
-        TopAbs_ShapeEnum aType;
+        ShapeType aType;
         double aT11, aT12, aT21, aT22;
         double aTi11, aTi12, aTi21, aTi22;
         double aTj11, aTj12, aTj21, aTj22;
@@ -760,7 +765,7 @@ public class IntTools_EdgeEdge
         myRange2.Range(out aT21, out aT22);
         dTR1 = 20 * aRes1;
         dTR2 = 20 * aRes2;
-        aType = TopAbs_VERTEX;
+        aType = ShapeType.Vertex;
         //
         for (i = 1; i <= aNbCP;)
         {
@@ -818,12 +823,12 @@ public class IntTools_EdgeEdge
             if (((Math.Abs(aT11 - aTi11) < myRes1) && (Math.Abs(aT12 - aTi12) < myRes1))
                 || ((Math.Abs(aT21 - aTi21) < myRes2) && (Math.Abs(aT22 - aTi22) < myRes2)))
             {
-                aType = TopAbs_EDGE;
+                aType = ShapeType.Edge;
                 myCommonParts.Clear();
             }
             //
             AddSolution(aTi11, aTi12, aTi21, aTi22, aType);
-            if (aType == TopAbs_EDGE)
+            if (aType == ShapeType.Edge)
             {
                 break;
             }
@@ -836,7 +841,7 @@ public class IntTools_EdgeEdge
     }
 
     /// <summary>Adds a common part of the given type.</summary>
-    protected void AddSolution(double aT11, double aT12, double aT21, double aT22, TopAbs_ShapeEnum theType)
+    protected void AddSolution(double aT11, double aT12, double aT21, double aT22, ShapeType theType)
     {
         IntTools_CommonPrt aCPart = new();
         //
@@ -856,7 +861,7 @@ public class IntTools_EdgeEdge
             aCPart.AppendRange2(aT11, aT12);
         }
         //
-        if (theType == TopAbs_VERTEX)
+        if (theType == ShapeType.Vertex)
         {
             double aT1, aT2;
             //
@@ -1038,7 +1043,7 @@ public class IntTools_EdgeEdge
                 aCommonPrt.SetRange1(aT11 + (aT21 - t21), aT12);
                 aCommonPrt.AppendRange2(aT21, t22);
             }
-            aCommonPrt.SetType(TopAbs_EDGE);
+            aCommonPrt.SetType(ShapeType.Edge);
             myCommonParts.Append(aCommonPrt);
             return;
         }
@@ -1053,9 +1058,9 @@ public class IntTools_EdgeEdge
 
         {
             // Fast check that no intersection needs to be added
-            for (TopoDS_Iterator it1 = new(myEdge1); it1.More(); it1.Next())
+            for (Iterator it1 = new(myEdge1); it1.More(); it1.Next())
             {
-                for (TopoDS_Iterator it2 = new(myEdge2); it2.More(); it2.Next())
+                for (Iterator it2 = new(myEdge2); it2.More(); it2.Next())
                 {
                     if (it1.Value().IsSame(it2.Value()))
                     {
@@ -1099,7 +1104,7 @@ public class IntTools_EdgeEdge
 
         aCommonPrt.SetRange1(aT1 - aDt1, aT1 + aDt1);
         aCommonPrt.AppendRange2(aT2 - aDt2, aT2 + aDt2);
-        aCommonPrt.SetType(TopAbs_VERTEX);
+        aCommonPrt.SetType(ShapeType.Vertex);
         aCommonPrt.SetVertexParameter1(aT1);
         aCommonPrt.SetVertexParameter2(aT2);
         myCommonParts.Append(aCommonPrt);
@@ -1252,7 +1257,7 @@ public class IntTools_EdgeEdge
 
     private static int FindDistPC(double aT1A,
                                   double aT1B,
-                                  Geom_Curve theC1,
+                                  Curve3D theC1,
                                   double theCriteria,
                                   double theEps,
                                   GeomAPI_ProjectPointOnCurve theProjPC,
@@ -1340,7 +1345,7 @@ public class IntTools_EdgeEdge
     }
 
     private static int DistPC(double aT1,
-                              Geom_Curve theC1,
+                              Curve3D theC1,
                               double theCriteria,
                               GeomAPI_ProjectPointOnCurve theProjPC,
                               ref double aD,
@@ -1369,7 +1374,7 @@ public class IntTools_EdgeEdge
     }
 
     private static int DistPC(double aT1,
-                              Geom_Curve theC1,
+                              Curve3D theC1,
                               double theCriteria,
                               GeomAPI_ProjectPointOnCurve theProjPC,
                               ref double aD,
@@ -1439,10 +1444,10 @@ public class IntTools_EdgeEdge
         return aNbSegments;
     }
 
-    private static void BndBuildBox(BRepAdaptor_Curve theBAC, double aT1, double aT2, double theTol, out Box theBox)
+    private static void BndBuildBox(EdgeCurveAdaptor theBAC, double aT1, double aT2, double theTol, out Box theBox)
     {
         Box aB = new();
-        BndLib_Add3dCurve.Add(theBAC, aT1, aT2, theTol, ref aB);
+        Add3dCurve.Add(theBAC, aT1, aT2, theTol, ref aB);
         theBox = aB;
     }
 
@@ -1507,11 +1512,11 @@ public class IntTools_EdgeEdge
         return iRet;
     }
 
-    private static double ResolutionCoeff(BRepAdaptor_Curve theBAC, in IntTools_Range theRange)
+    private static double ResolutionCoeff(EdgeCurveAdaptor theBAC, in IntTools_Range theRange)
     {
         double aResCoeff = 0.0;
         //
-        Geom_Curve aCurve = theBAC.Curve().Curve()!;
+        Curve3D aCurve = theBAC.Curve().Curve()!;
         CurveKind aCurveType = theBAC.GetType();
         //
         // OCCT's switch with the offset case falling through to the sampled one
@@ -1519,16 +1524,16 @@ public class IntTools_EdgeEdge
         switch (aCurveType)
         {
             case Circle:
-                aResCoeff = 1.0 / (2 * ((Geom_Circle)aCurve).Circ().Radius());
+                aResCoeff = 1.0 / (2 * ((CircleCurve3D)aCurve).Circ().Radius());
                 break;
             case Ellipse:
-                aResCoeff = 1.0 / ((Geom_Ellipse)aCurve).MajorRadius();
+                aResCoeff = 1.0 / ((EllipseCurve3D)aCurve).MajorRadius();
                 break;
             case OffsetCurve:
                 {
-                    Geom_OffsetCurve anOffsetCurve = (Geom_OffsetCurve)aCurve;
-                    Geom_Curve aBasisCurve = anOffsetCurve.BasisCurve();
-                    GeomAdaptor_Curve aGBasisCurve = new(aBasisCurve);
+                    OffsetCurve3D anOffsetCurve = (OffsetCurve3D)aCurve;
+                    Curve3D aBasisCurve = anOffsetCurve.BasisCurve();
+                    CurveAdaptor aGBasisCurve = new(aBasisCurve);
                     CurveKind aBCType = aGBasisCurve.GetType();
                     if (aBCType == Line)
                     {
@@ -1587,7 +1592,7 @@ public class IntTools_EdgeEdge
         return aResCoeff;
     }
 
-    private static double Resolution(Geom_Curve theCurve, CurveKind theCurveType, double theResCoeff, double theR3D)
+    private static double Resolution(Curve3D theCurve, CurveKind theCurveType, double theResCoeff, double theR3D)
     {
         double aRes;
         //
@@ -1603,15 +1608,15 @@ public class IntTools_EdgeEdge
                     break;
                 }
             case BezierCurve:
-                ((Geom_BezierCurve)theCurve).Resolution(theR3D, out aRes);
+                ((BezierCurve3D)theCurve).Resolution(theR3D, out aRes);
                 break;
             case BSplineCurve:
-                ((Geom_BSplineCurve)theCurve).Resolution(theR3D, out aRes);
+                ((BSplineCurve3D)theCurve).Resolution(theR3D, out aRes);
                 break;
             case OffsetCurve:
                 {
-                    Geom_Curve aBasisCurve = ((Geom_OffsetCurve)theCurve).BasisCurve();
-                    CurveKind aBCType = new GeomAdaptor_Curve(aBasisCurve).GetType();
+                    Curve3D aBasisCurve = ((OffsetCurve3D)theCurve).BasisCurve();
+                    CurveKind aBCType = new CurveAdaptor(aBasisCurve).GetType();
                     if (aBCType == Line)
                     {
                         aRes = theR3D;
@@ -1635,7 +1640,7 @@ public class IntTools_EdgeEdge
         return aRes;
     }
 
-    private static double CurveDeflection(BRepAdaptor_Curve theBAC, in IntTools_Range theRange)
+    private static double CurveDeflection(EdgeCurveAdaptor theBAC, in IntTools_Range theRange)
     {
         double aDt, aT, aT1, aT2, aDefl;
         int i, aNbP;
@@ -1663,7 +1668,7 @@ public class IntTools_EdgeEdge
         return aDefl;
     }
 
-    private static bool IsClosed(Geom_Curve theCurve, double aT1, double aT2, double theTol, double theRes)
+    private static bool IsClosed(Curve3D theCurve, double aT1, double aT2, double theTol, double theRes)
     {
         if (Math.Abs(aT1 - aT2) < theRes)
         {

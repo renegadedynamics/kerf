@@ -2,7 +2,7 @@
 
 using Kerf.Engine.Foundation.Std;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests.BOPDS;
 
@@ -101,25 +101,25 @@ public class BOPDS_ValueTests
     [Fact]
     public void Tools_TypeToInteger()
     {
-        Assert.Equal(0, BOPDS_Tools.TypeToInteger(TopAbs_VERTEX, TopAbs_VERTEX));
-        Assert.Equal(1, BOPDS_Tools.TypeToInteger(TopAbs_EDGE, TopAbs_VERTEX));
-        Assert.Equal(1, BOPDS_Tools.TypeToInteger(TopAbs_VERTEX, TopAbs_EDGE));
-        Assert.Equal(2, BOPDS_Tools.TypeToInteger(TopAbs_EDGE, TopAbs_EDGE));
-        Assert.Equal(3, BOPDS_Tools.TypeToInteger(TopAbs_FACE, TopAbs_VERTEX));
-        Assert.Equal(4, BOPDS_Tools.TypeToInteger(TopAbs_EDGE, TopAbs_FACE));
-        Assert.Equal(5, BOPDS_Tools.TypeToInteger(TopAbs_FACE, TopAbs_FACE));
-        Assert.Equal(6, BOPDS_Tools.TypeToInteger(TopAbs_SOLID, TopAbs_VERTEX));
-        Assert.Equal(7, BOPDS_Tools.TypeToInteger(TopAbs_EDGE, TopAbs_SOLID));
-        Assert.Equal(8, BOPDS_Tools.TypeToInteger(TopAbs_SOLID, TopAbs_FACE));
-        Assert.Equal(9, BOPDS_Tools.TypeToInteger(TopAbs_SOLID, TopAbs_SOLID));
-        Assert.Equal(-1, BOPDS_Tools.TypeToInteger(TopAbs_WIRE, TopAbs_FACE));
-        Assert.Equal(-1, BOPDS_Tools.TypeToInteger(TopAbs_COMPOUND, TopAbs_SOLID));
-        Assert.Equal(8, BOPDS_Tools.TypeToInteger(TopAbs_SHAPE));
+        Assert.Equal(0, BOPDS_Tools.TypeToInteger(Vertex, Vertex));
+        Assert.Equal(1, BOPDS_Tools.TypeToInteger(Edge, Vertex));
+        Assert.Equal(1, BOPDS_Tools.TypeToInteger(Vertex, Edge));
+        Assert.Equal(2, BOPDS_Tools.TypeToInteger(Edge, Edge));
+        Assert.Equal(3, BOPDS_Tools.TypeToInteger(Face, Vertex));
+        Assert.Equal(4, BOPDS_Tools.TypeToInteger(Edge, Face));
+        Assert.Equal(5, BOPDS_Tools.TypeToInteger(Face, Face));
+        Assert.Equal(6, BOPDS_Tools.TypeToInteger(Solid, Vertex));
+        Assert.Equal(7, BOPDS_Tools.TypeToInteger(Edge, Solid));
+        Assert.Equal(8, BOPDS_Tools.TypeToInteger(Solid, Face));
+        Assert.Equal(9, BOPDS_Tools.TypeToInteger(Solid, Solid));
+        Assert.Equal(-1, BOPDS_Tools.TypeToInteger(Wire, Face));
+        Assert.Equal(-1, BOPDS_Tools.TypeToInteger(Compound, Solid));
+        Assert.Equal(8, BOPDS_Tools.TypeToInteger(Shape));
 
-        Assert.True(BOPDS_Tools.HasBRep(TopAbs_FACE));
-        Assert.False(BOPDS_Tools.HasBRep(TopAbs_SOLID));
-        Assert.True(BOPDS_Tools.IsInterfering(TopAbs_SOLID));
-        Assert.False(BOPDS_Tools.IsInterfering(TopAbs_SHELL));
+        Assert.True(BOPDS_Tools.HasBRep(Face));
+        Assert.False(BOPDS_Tools.HasBRep(Solid));
+        Assert.True(BOPDS_Tools.IsInterfering(Solid));
+        Assert.False(BOPDS_Tools.IsInterfering(Shell));
     }
 
     [Fact]

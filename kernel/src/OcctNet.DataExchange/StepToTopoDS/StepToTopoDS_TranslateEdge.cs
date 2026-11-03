@@ -6,10 +6,16 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepLib_EdgeError;
 using static Occt.StepToTopoDS_TranslateEdgeError;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -23,13 +29,13 @@ namespace Occt;
 public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
 {
     private StepToTopoDS_TranslateEdgeError myError;
-    private TopoDS_Shape myResult = new TopoDS_Shape();
+    private Shape myResult = new Shape();
 
     //: d8
     // Used in I-DEAS-like STP processing (ssv; 15.11.2010)
 
-    private static void DecodeMakeEdgeError(BRepLib_MakeEdge ME, Transient orig, ref Geom_Curve myCurve, in TopoDS_Vertex V1,
-                                            in TopoDS_Vertex V2, double U1, double U2, StepToTopoDS_Tool aTool,
+    private static void DecodeMakeEdgeError(BRepLib_MakeEdge ME, Transient orig, ref Curve3D myCurve, in Vertex V1,
+                                            in Vertex V2, double U1, double U2, StepToTopoDS_Tool aTool,
                                             StepShape_TopologicalRepresentationItem tobind)
     {
         _ = U1;
@@ -58,10 +64,10 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
                 // OCCT.NET: the curve an earlier edge took is frozen; adjusted in a copy (decision 1248)
                 if (myCurve.IsFrozen)
                 {
-                    myCurve = (Geom_Curve)myCurve.Copy();
+                    myCurve = (Curve3D)myCurve.Copy();
                 }
 
-                if (!new ShapeConstruct_Curve().AdjustCurve(myCurve, BRep_Tool.Pnt(V1), BRep_Tool.Pnt(V2), true, true))
+                if (!new ShapeConstruct_Curve().AdjustCurve(myCurve, Tool.Pnt(V1), Tool.Pnt(V2), true, true))
                 {
                     TP.AddFail(orig, " Different Points and Parameters");
                 }
@@ -77,9 +83,9 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
         }
     }
 
-    private static Geom_Curve MakeCurve(StepGeom_Curve C1, Transfer_TransientProcess TP, in StepData_Factors theLocalFactors)
+    private static Curve3D MakeCurve(StepGeom_Curve C1, Transfer_TransientProcess TP, in StepData_Factors theLocalFactors)
     {
-        Geom_Curve C2 = TP.FindTransient(C1) as Geom_Curve;
+        Curve3D C2 = TP.FindTransient(C1) as Curve3D;
         if (C2 is not null)
         {
             return C2;
@@ -94,10 +100,10 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
         return C2;
     }
 
-    private static TopoDS_Edge MakeEdge(Geom_Curve C3D, in TopoDS_Vertex V1, in TopoDS_Vertex V2, double U1, double U2)
+    private static Edge MakeEdge(Curve3D C3D, in Vertex V1, in Vertex V2, double U1, double U2)
     {
-        var B = new BRep_Builder();
-        TopoDS_Edge E = new TopoDS_Edge();
+        var B = new BrepBuilder();
+        Edge E = new Edge();
         B.MakeEdge(ref E, C3D, Kerf.Engine.Foundation.Precision.Confusion());
         B.Add(E, V1);
         B.Add(E, V2);
@@ -141,7 +147,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
         if (aTool.IsBound(EC))
         {
             myResult = aTool.Find(EC);
-            if (BRep_Tool.Degenerated(TopoDS.Edge(myResult)))
+            if (Tool.Degenerated(ShapeCasts.Edge(myResult)))
             {
                 TP.AddWarning(EC, "Degenerated Edge in several faces : transferred for each face");
             }
@@ -158,7 +164,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
         // [BEGIN] Proceed with non-manifold cases (ssv; 12.11.2010)
         if (NMTool.IsActive() && NMTool.IsBound(EC))
         {
-            TopoDS_Shape existingShape = NMTool.Find(EC);
+            Shape existingShape = NMTool.Find(EC);
             // Reverse shape's orientation if needed
             if (!OE.Orientation())
             {
@@ -177,7 +183,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
         if (NMTool.IsIDEASCase() && anECName is not null && !anECName.IsEmpty()
             && NMTool.IsBound(anECName.String()))
         {
-            TopoDS_Shape existingShape = NMTool.Find(anECName.String());
+            Shape existingShape = NMTool.Find(anECName.String());
             // Reverse shape's orientation if needed
             if (!OE.Orientation())
             {
@@ -193,7 +199,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
         }
         // [END] Proceed with I-DEAS-like STP (ssv; 15.11.2010)
 
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
 
         StepGeom_Curve C = EC.EdgeGeometry();
         if (C is null)
@@ -204,7 +210,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
             return;
         }
 
-        TopoDS_Edge E = new TopoDS_Edge();
+        Edge E = new Edge();
         StepShape_Vertex Vstart, Vend;
 
         // -----------------------------------------------------------
@@ -225,26 +231,26 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
             Vstart = EC.EdgeEnd();
         }
 
-        TopoDS_Vertex V1 = new TopoDS_Vertex(), V2 = new TopoDS_Vertex();
+        Vertex V1 = new Vertex(), V2 = new Vertex();
 
         var myTranVertex1 = new StepToTopoDS_TranslateVertex(Vstart, aTool, NMTool, theLocalFactors);
         var myTranVertex2 = new StepToTopoDS_TranslateVertex(Vend, aTool, NMTool, theLocalFactors);
 
         if (myTranVertex1.IsDone())
         {
-            V1 = TopoDS.Vertex(myTranVertex1.InternalValue());
-            V1.Orientation(TopAbs_FORWARD);
+            V1 = ShapeCasts.Vertex(myTranVertex1.InternalValue());
+            V1.Orientation(Forward);
         }
 
         if (Vend == Vstart)
         {
             V2 = V1;
-            V2.Orientation(TopAbs_REVERSED);
+            V2.Orientation(Reversed);
         }
         else if (myTranVertex2.IsDone())
         {
-            V2 = TopoDS.Vertex(myTranVertex2.InternalValue());
-            V2.Orientation(TopAbs_REVERSED);
+            V2 = ShapeCasts.Vertex(myTranVertex2.InternalValue());
+            V2.Orientation(Reversed);
         }
 
         done = true;
@@ -317,7 +323,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
             }
 
             StepGeom_CartesianPoint P = VP.VertexGeometry() as StepGeom_CartesianPoint;
-            Geom_CartesianPoint CP = StepToGeom.MakeCartesianPoint(P, theLocalFactors);
+            CartesianPoint CP = StepToGeom.MakeCartesianPoint(P, theLocalFactors);
             if (i == 1)
             {
                 P1 = CP.Pnt();
@@ -330,11 +336,11 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
     }
 
     /// <summary>The case of a 3D curve (alone or in a surface curve). The curve is assumed to be a 3D curve.</summary>
-    public void MakeFromCurve3D(StepGeom_Curve C3D, StepShape_EdgeCurve EC, StepShape_Vertex Vend, double preci, ref TopoDS_Edge E,
-                                ref TopoDS_Vertex V1, ref TopoDS_Vertex V2, StepToTopoDS_Tool aTool, in StepData_Factors theLocalFactors)
+    public void MakeFromCurve3D(StepGeom_Curve C3D, StepShape_EdgeCurve EC, StepShape_Vertex Vend, double preci, ref Edge E,
+                                ref Vertex V1, ref Vertex V2, StepToTopoDS_Tool aTool, in StepData_Factors theLocalFactors)
     {
         Transfer_TransientProcess TP = aTool.TransientProcess();
-        Geom_Curve C1 = MakeCurve(C3D, TP, theLocalFactors);
+        Curve3D C1 = MakeCurve(C3D, TP, theLocalFactors);
         if (C1 is null)
         {
             TP.AddFail(C3D, " Make Geom_Curve (3D) failed");
@@ -345,11 +351,11 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
 
         // -- Statistics -- -> No Warning message
         aTool.AddContinuity(C1);
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         double temp1, temp2, U1, U2;
         Point3D pproj;
-        Point3D pv1 = BRep_Tool.Pnt(V1);
-        Point3D pv2 = BRep_Tool.Pnt(V2);
+        Point3D pv1 = Tool.Pnt(V1);
+        Point3D pv2 = Tool.Pnt(V2);
 
         //: e6 abv
         Point3D pnt1 = pv1, pnt2 = pv2;
@@ -369,7 +375,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
         }
 
         //: d5: instead of AdjustCurve above which is incorrect if U1 and U2 are not ends
-        var aCA = new GeomAdaptor_Curve(C1);
+        var aCA = new CurveAdaptor(C1);
         Point3D pU1 = aCA.Value(U1), pU2 = aCA.Value(U2);
         temp1 = pU1.Distance(pv1);
         temp2 = pU2.Distance(pv2);
@@ -380,13 +386,13 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
             // direction; we can shift the line in this case so that it passes through vertices correctly
             if (Math.Abs(temp1 - temp2) < preci
                 && Math.Abs(U2 - U1 - pnt1.Distance(pnt2)) < Kerf.Engine.Foundation.Precision.Confusion()
-                && C1 is Geom_Line)
+                && C1 is LineCurve3D)
             {
-                Geom_Line aLine = C1 as Geom_Line;
+                LineCurve3D aLine = C1 as LineCurve3D;
                 Line3D aLin = aLine.Lin();
                 Point3D anOrigin = new Point3D(pnt1.XYZ() - aLin.Position().Direction().XYZ() * U1);
                 aLin.SetLocation(anOrigin);
-                C1 = new Geom_Line(aLin);
+                C1 = new LineCurve3D(aLin);
                 TP.AddWarning(C3D, "Poor result from projection vertex / line 3d, line shifted");
             }
             else
@@ -409,12 +415,12 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
             if (ME.Error() == BRepLib_DifferentPointsOnClosedCurve)
             {
                 // The Edge could be closed and trimmed by 2 Different vertices
-                if (C1.IsClosed())
+                if (C1.IsClosed)
                 {
                     // Attention : topology updating
                     aTool.Bind(Vend, V1);
-                    TopoDS_Shape aLocalShape = V1.Reversed();
-                    V2 = TopoDS.Vertex(aLocalShape);
+                    Shape aLocalShape = V1.Reversed();
+                    V2 = ShapeCasts.Vertex(aLocalShape);
                     ME.Init(C1, V1, V2, U1, U2);
                     if (ME.IsDone())
                     {
@@ -442,12 +448,12 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
                     if (!V1.IsSame(V2))
                     {
                         TP.AddFail(EC, "This edge has null arc length");
-                        Point3D P1 = BRep_Tool.Pnt(V1);
-                        Point3D P2 = BRep_Tool.Pnt(V2);
+                        Point3D P1 = Tool.Pnt(V1);
+                        Point3D P2 = Tool.Pnt(V2);
                         Vector3D avec = new Vector3D(P1, P2);
                         Direction3D adir = new Direction3D(avec);
                         Line3D alin = new Line3D(P1, adir);
-                        C1 = new Geom_Line(alin);
+                        C1 = new LineCurve3D(alin);
                         U1 = 0.0;
                         U2 = P1.Distance(P2);
                         E = MakeEdge(C1, V1, V2, U1, U2); //,preci
@@ -471,9 +477,9 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
     }
 
     /// <summary>Computes an individual pcurve (a 2D curve) of the pcurve entity on the surface; null if it fails.</summary>
-    public Geom2d_Curve MakePCurve(StepGeom_Pcurve PCU, Geom_Surface ConvSurf, in StepData_Factors theLocalFactors)
+    public Curve2D MakePCurve(StepGeom_Pcurve PCU, Surface ConvSurf, in StepData_Factors theLocalFactors)
     {
-        Geom2d_Curve C2d = null;
+        Curve2D C2d = null;
         StepRepr_DefinitionalRepresentation DRI = PCU.ReferenceToCurve();
         if (DRI is null)
         {
@@ -488,7 +494,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
             {
                 // -- if the surface is a RectangularTrimmedSurface,
                 // -- send the BasisSurface.
-                C2d = GeomConvert_Units.DegreeToRadian(C2d, ConvSurf, theLocalFactors.LengthFactor(), theLocalFactors.FactorDegreeRadian());
+                C2d = Units.DegreeToRadian(C2d, ConvSurf, theLocalFactors.LengthFactor(), theLocalFactors.FactorDegreeRadian());
             }
         }
         catch (FailureException)
@@ -499,19 +505,19 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
         return C2d;
     }
 
-    public Geom2d_Curve MakePCurve(StepGeom_Pcurve PCU, Geom_Surface ConvSurf) => MakePCurve(PCU, ConvSurf, new StepData_Factors());
+    public Curve2D MakePCurve(StepGeom_Pcurve PCU, Surface ConvSurf) => MakePCurve(PCU, ConvSurf, new StepData_Factors());
 
     /// <summary>The edge, frozen.</summary>
     /// <exception cref="NotDoneException">The translation wasn't done.</exception>
-    public TopoDS_Shape Value()
+    public Shape Value()
     {
-        TopoDS_Shape aShape = InternalValue();
+        Shape aShape = InternalValue();
         aShape.TShape()?.FreezeGraph();
         return aShape;
     }
 
     /// <summary>As <see cref="Value"/>, without freezing: the reader's working shape.</summary>
-    internal TopoDS_Shape InternalValue()
+    internal Shape InternalValue()
     {
         StdFail_NotDone_Raise_if(!done, "StepToTopoDS_TranslateEdge::Value() - no result");
         return myResult;

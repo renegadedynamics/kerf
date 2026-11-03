@@ -6,13 +6,16 @@
 // Created on: 1993-12-24
 // Created by: Remi LEQUETTE
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
+using Occt;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
 
-namespace Occt;
+namespace Kerf.Engine.Geometry.Projection;
 
 /// <summary>
 /// Projection of a curve on a surface: the 2D curve of a 3D curve lying on a surface, the 3D curve of the normal
@@ -26,98 +29,98 @@ public static class GeomProjLib
 {
     /// <summary>
     /// The 2D curve of a 3D curve lying on a surface (ProjLib_ProjectedCurve), the 3D curve taken between
-    /// <paramref name="First"/> and <paramref name="Last"/> and the surface between the given bounds.
-    /// <paramref name="Tolerance"/> is used as input if the projection needs an approximation; the reached tolerance
+    /// <paramref name="first"/> and <paramref name="last"/> and the surface between the given bounds.
+    /// <paramref name="tolerance"/> is used as input if the projection needs an approximation; the reached tolerance
     /// is set in it as output. Returns null if the projection has failed.
     /// </summary>
-    public static Geom2d_Curve? Curve2d(Geom_Curve C,
-                                        double First,
-                                        double Last,
-                                        Geom_Surface S,
-                                        double UDeb,
-                                        double UFin,
-                                        double VDeb,
-                                        double VFin,
-                                        ref double Tolerance)
+    public static Curve2D? Curve2d(Curve3D c,
+                                        double first,
+                                        double last,
+                                        Surface s,
+                                        double uDeb,
+                                        double uFin,
+                                        double vDeb,
+                                        double vFin,
+                                        ref double tolerance)
     {
-        Tolerance = Max(global::Kerf.Engine.Foundation.Precision.PConfusion(), Tolerance);
+        tolerance = Max(global::Kerf.Engine.Foundation.Precision.PConfusion(), tolerance);
 
         // OCCT builds local adaptors and copies them into handles: one construction each.
-        GeomAdaptor_Surface HS = new(S, UDeb, UFin, VDeb, VFin);
-        GeomAdaptor_Curve HC = new(C, First, Last);
+        SurfaceAdaptor hs = new(s, uDeb, uFin, vDeb, vFin);
+        CurveAdaptor hc = new(c, first, last);
 
-        ProjLib_ProjectedCurve Proj = new(HS, HC, Tolerance);
+        ProjectedCurve proj = new(hs, hc, tolerance);
 
-        Geom2d_Curve? G2dC = null;
+        Curve2D? g2dC = null;
 
-        switch (Proj.GetType())
+        switch (proj.GetType())
         {
             case Line:
-                G2dC = new Geom2d_Line(Proj.Line());
+                g2dC = new LineCurve2D(proj.Line());
                 break;
 
             case Circle:
-                G2dC = new Geom2d_Circle(Proj.Circle());
+                g2dC = new CircleCurve2D(proj.Circle());
                 break;
 
             case Ellipse:
-                G2dC = new Geom2d_Ellipse(Proj.Ellipse());
+                g2dC = new EllipseCurve2D(proj.Ellipse());
                 break;
 
             case Parabola:
-                G2dC = new Geom2d_Parabola(Proj.Parabola());
+                g2dC = new ParabolaCurve2D(proj.Parabola());
                 break;
 
             case Hyperbola:
-                G2dC = new Geom2d_Hyperbola(Proj.Hyperbola());
+                g2dC = new HyperbolaCurve2D(proj.Hyperbola());
                 break;
 
             case BezierCurve:
                 // The projection is discarded: its curve is returned unfrozen (decision 244).
-                G2dC = Proj.InternalBezier();
+                g2dC = proj.InternalBezier();
                 break;
 
             case BSplineCurve:
-                G2dC = Proj.InternalBSpline();
+                g2dC = proj.InternalBSpline();
                 break;
 
             default:
-                return G2dC;
+                return g2dC;
         }
 
-        if (G2dC is null)
+        if (g2dC is null)
         {
-            Tolerance = Proj.GetTolerance();
-            return G2dC;
+            tolerance = proj.GetTolerance();
+            return g2dC;
         }
 
-        if (C is Geom_TrimmedCurve CTrim)
+        if (c is TrimmedCurve3D cTrim)
         {
-            double U1 = CTrim.FirstParameter();
-            double U2 = CTrim.LastParameter();
-            if (!G2dC.IsPeriodic())
+            double u1 = cTrim.FirstParameter();
+            double u2 = cTrim.LastParameter();
+            if (!g2dC.IsPeriodic)
             {
-                U1 = Max(U1, G2dC.FirstParameter());
-                U2 = Min(U2, G2dC.LastParameter());
+                u1 = Max(u1, g2dC.FirstParameter());
+                u2 = Min(u2, g2dC.LastParameter());
             }
-            G2dC = new Geom2d_TrimmedCurve(G2dC, U1, U2);
+            g2dC = new TrimmedCurve2D(g2dC, u1, u2);
         }
 
-        Tolerance = Proj.GetTolerance();
-        return G2dC;
+        tolerance = proj.GetTolerance();
+        return g2dC;
     }
 
     /// <summary>
-    /// The 2D curve of a 3D curve lying on a surface, the 3D curve taken between <paramref name="First"/> and
-    /// <paramref name="Last"/>. <paramref name="Tolerance"/> is used as input if the projection needs an
+    /// The 2D curve of a 3D curve lying on a surface, the 3D curve taken between <paramref name="first"/> and
+    /// <paramref name="last"/>. <paramref name="tolerance"/> is used as input if the projection needs an
     /// approximation; the reached tolerance is set in it as output. Returns null if the projection has failed.
     /// </summary>
-    public static Geom2d_Curve? Curve2d(Geom_Curve C, double First, double Last, Geom_Surface S, ref double Tolerance)
+    public static Curve2D? Curve2d(Curve3D c, double first, double last, Surface s, ref double tolerance)
     {
-        double UFirst, ULast, VFirst, VLast;
+        double uFirst, uLast, vFirst, vLast;
 
-        S.Bounds(out UFirst, out ULast, out VFirst, out VLast);
-        return Curve2d(C, First, Last, S, UFirst, ULast, VFirst, VLast, ref Tolerance);
+        s.Bounds(out uFirst, out uLast, out vFirst, out vLast);
+        return Curve2d(c, first, last, s, uFirst, uLast, vFirst, vLast, ref tolerance);
     }
 
     //  Modified by skv - Wed Aug 11 17:26:03 2004 OCC6272 Begin
@@ -128,209 +131,209 @@ public static class GeomProjLib
     /// surface's a little). If the projection needs an approximation, Precision::PApproximation() is used. Returns
     /// null if the projection has failed.
     /// </summary>
-    public static Geom2d_Curve? Curve2d(Geom_Curve C,
-                                        Geom_Surface S,
-                                        double UDeb,
-                                        double UFin,
-                                        double VDeb,
-                                        double VFin)
+    public static Curve2D? Curve2d(Curve3D c,
+                                        Surface s,
+                                        double uDeb,
+                                        double uFin,
+                                        double vDeb,
+                                        double vFin)
     {
-        double First = C.FirstParameter();
-        double Last = C.LastParameter();
-        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
-        return GeomProjLib.Curve2d(C, First, Last, S, UDeb, UFin, VDeb, VFin, ref Tol);
+        double first = c.FirstParameter();
+        double last = c.LastParameter();
+        double tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        return global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(c, first, last, s, uDeb, uFin, vDeb, vFin, ref tol);
     }
 
     //  Modified by skv - Wed Aug 11 17:26:03 2004 OCC6272 End
 
     /// <summary>
     /// The 2D curve of a 3D curve lying on a surface, the surface between the given bounds.
-    /// <paramref name="Tolerance"/> is used as input if the projection needs an approximation; the reached tolerance
+    /// <paramref name="tolerance"/> is used as input if the projection needs an approximation; the reached tolerance
     /// is set in it as output. Returns null if the projection has failed.
     /// </summary>
-    public static Geom2d_Curve? Curve2d(Geom_Curve C,
-                                        Geom_Surface S,
-                                        double UDeb,
-                                        double UFin,
-                                        double VDeb,
-                                        double VFin,
-                                        ref double Tolerance)
+    public static Curve2D? Curve2d(Curve3D c,
+                                        Surface s,
+                                        double uDeb,
+                                        double uFin,
+                                        double vDeb,
+                                        double vFin,
+                                        ref double tolerance)
     {
-        double First = C.FirstParameter();
-        double Last = C.LastParameter();
-        return GeomProjLib.Curve2d(C, First, Last, S, UDeb, UFin, VDeb, VFin, ref Tolerance);
+        double first = c.FirstParameter();
+        double last = c.LastParameter();
+        return global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(c, first, last, s, uDeb, uFin, vDeb, vFin, ref tolerance);
     }
 
     /// <summary>
     /// The 2D curve of a 3D curve lying on a surface. If the projection needs an approximation,
     /// Precision::PApproximation() is used. Returns null if the projection has failed.
     /// </summary>
-    public static Geom2d_Curve? Curve2d(Geom_Curve C, Geom_Surface S)
+    public static Curve2D? Curve2d(Curve3D c, Surface s)
     {
-        double First = C.FirstParameter();
-        double Last = C.LastParameter();
-        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
-        return GeomProjLib.Curve2d(C, First, Last, S, ref Tol);
+        double first = c.FirstParameter();
+        double last = c.LastParameter();
+        double tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        return global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(c, first, last, s, ref tol);
     }
 
     /// <summary>
-    /// The 2D curve of a 3D curve lying on a surface, the 3D curve taken between <paramref name="First"/> and
-    /// <paramref name="Last"/>. If the projection needs an approximation, Precision::PApproximation() is used.
+    /// The 2D curve of a 3D curve lying on a surface, the 3D curve taken between <paramref name="first"/> and
+    /// <paramref name="last"/>. If the projection needs an approximation, Precision::PApproximation() is used.
     /// Returns null if the projection has failed.
     /// </summary>
-    public static Geom2d_Curve? Curve2d(Geom_Curve C, double First, double Last, Geom_Surface S)
+    public static Curve2D? Curve2d(Curve3D c, double first, double last, Surface s)
     {
-        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
-        return GeomProjLib.Curve2d(C, First, Last, S, ref Tol);
+        double tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        return global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(c, first, last, s, ref tol);
     }
 
     /// <summary>
-    /// The 3D curve of the normal projection of <paramref name="C"/> on <paramref name="S"/>. Returns null if the
+    /// The 3D curve of the normal projection of <paramref name="c"/> on <paramref name="s"/>. Returns null if the
     /// projection has failed.
     /// </summary>
     /// <exception cref="NoSuchObjectException">On a surface other than a plane, the curve doesn't project on the
     /// surface at all (ProjLib_CompProjectedCurve has no part), as in OCCT.</exception>
-    public static Geom_Curve? Project(Geom_Curve C, Geom_Surface S)
+    public static Curve3D? Project(Curve3D c, Surface s)
     {
-        GeomAdaptor_Curve AC = new(C);
-        GeomAdaptor_Surface AS = new(S);
+        CurveAdaptor ac = new(c);
+        SurfaceAdaptor AS = new(s);
 
-        Geom_Curve? GC = null;
+        Curve3D? gc = null;
 
         if (AS.GetType() == Plane)
         {
-            ProjLib_ProjectOnPlane Proj = new(AS.Plane().Position());
+            ProjectOnPlane proj = new(AS.Plane().Position());
             // OCCT copies AC into a handle: AC itself is used.
-            GeomAdaptor_Curve HC = AC;
-            Proj.Load(HC, global::Kerf.Engine.Foundation.Precision.PApproximation());
+            CurveAdaptor hc = ac;
+            proj.Load(hc, global::Kerf.Engine.Foundation.Precision.PApproximation());
 
-            switch (Proj.GetType())
+            switch (proj.GetType())
             {
                 case Line:
-                    GC = new Geom_Line(Proj.Line());
+                    gc = new LineCurve3D(proj.Line());
                     break;
 
                 case Circle:
-                    GC = new Geom_Circle(Proj.Circle());
+                    gc = new CircleCurve3D(proj.Circle());
                     break;
 
                 case Ellipse:
-                    GC = new Geom_Ellipse(Proj.Ellipse());
+                    gc = new EllipseCurve3D(proj.Ellipse());
                     break;
 
                 case Parabola:
-                    GC = new Geom_Parabola(Proj.Parabola());
+                    gc = new ParabolaCurve3D(proj.Parabola());
                     break;
 
                 case Hyperbola:
-                    GC = new Geom_Hyperbola(Proj.Hyperbola());
+                    gc = new HyperbolaCurve3D(proj.Hyperbola());
                     break;
 
                 case BezierCurve:
                     // The projector is discarded: its curve is returned unfrozen (decision 244).
-                    GC = Proj.InternalBezier();
+                    gc = proj.InternalBezier();
                     break;
 
                 case BSplineCurve:
-                    GC = Proj.InternalBSpline();
+                    gc = proj.InternalBSpline();
                     break;
 
                 default:
-                    return GC;
+                    return gc;
             }
 
-            if (C is Geom_TrimmedCurve CTrim)
+            if (c is TrimmedCurve3D cTrim)
             {
-                double U1 = CTrim.FirstParameter();
-                double U2 = CTrim.LastParameter();
-                GC = new Geom_TrimmedCurve(GC, U1, U2);
+                double u1 = cTrim.FirstParameter();
+                double u2 = cTrim.LastParameter();
+                gc = new TrimmedCurve3D(gc, u1, u2);
             }
         }
         else
         {
             // OCCT copies AS and AC into handles: they are used themselves.
-            GeomAdaptor_Surface HS = AS;
-            GeomAdaptor_Curve HC = AC;
+            SurfaceAdaptor hs = AS;
+            CurveAdaptor hc = ac;
             //    double Tol  = Precision::Approximation();
             //    double TolU = Precision::PApproximation();
             //    double TolV = Precision::PApproximation();
-            double Tol = 0.0001;
-            double TolU = Math.Pow(Tol, 2.0 / 3);
-            double TolV = Math.Pow(Tol, 2.0 / 3);
-            ProjLib_CompProjectedCurve Proj = new(HS, HC, TolU, TolV, -1.0);
+            double tol = 0.0001;
+            double tolU = Math.Pow(tol, 2.0 / 3);
+            double tolV = Math.Pow(tol, 2.0 / 3);
+            CompProjectedCurve proj = new(hs, hc, tolU, tolV, -1.0);
 
             double f, l;
-            Proj.Bounds(1, out f, out l);
-            Adaptor2d_Curve2d HC2d = Proj.Trim(f, l, TolU);
-            Approx_CurveOnSurface Approx = new(HC2d, HS, f, l, Tol);
-            Approx.Perform(16, 14, C2, true);
+            proj.Bounds(1, out f, out l);
+            Curve2DAdaptorBase hc2d = proj.Trim(f, l, tolU);
+            CurveOnSurfaceApproximation approx = new(hc2d, hs, f, l, tol);
+            approx.Perform(16, 14, C2, true);
 
             // ici, on a toujours un type BSpline.
-            if (Approx.IsDone() && Approx.HasResult())
+            if (approx.IsDone && approx.HasResult)
             {
                 // The approximation is discarded: its curve is returned unfrozen (decision 244).
-                GC = Approx.InternalCurve3d();
+                gc = approx.InternalCurve3d();
             }
         }
 
-        return GC;
+        return gc;
     }
 
     /// <summary>
-    /// The 3D curve of the projection of <paramref name="Curve"/> on <paramref name="Plane"/> along
-    /// <paramref name="Dir"/>. If <paramref name="KeepParametrization"/> is true, the projected curve keeps the
+    /// The 3D curve of the projection of <paramref name="curve"/> on <paramref name="plane"/> along
+    /// <paramref name="dir"/>. If <paramref name="keepParametrization"/> is true, the projected curve keeps the
     /// curve's parametrization: proj(C(u)) = PC(u) for each u; otherwise it may change. Returns null if the
     /// projection has failed.
     /// </summary>
-    public static Geom_Curve? ProjectOnPlane(Geom_Curve Curve, Geom_Plane Plane, in Direction3D Dir, bool KeepParametrization)
+    public static Curve3D? ProjectOnPlane(Curve3D curve, PlaneSurface plane, in Direction3D dir, bool keepParametrization)
     {
         // OCCT copies AC into a handle: AC itself is used.
-        GeomAdaptor_Curve HC = new(Curve);
+        CurveAdaptor hc = new(curve);
 
-        ProjLib_ProjectOnPlane Proj = new(Plane.Position(), Dir);
-        Proj.Load(HC, global::Kerf.Engine.Foundation.Precision.Approximation(), KeepParametrization);
+        ProjectOnPlane proj = new(plane.Position(), dir);
+        proj.Load(hc, global::Kerf.Engine.Foundation.Precision.Approximation(), keepParametrization);
 
-        Geom_Curve? GC = null;
+        Curve3D? gc = null;
 
-        switch (Proj.GetType())
+        switch (proj.GetType())
         {
             case Line:
-                GC = new Geom_Line(Proj.Line());
+                gc = new LineCurve3D(proj.Line());
                 break;
 
             case Circle:
-                GC = new Geom_Circle(Proj.Circle());
+                gc = new CircleCurve3D(proj.Circle());
                 break;
 
             case Ellipse:
-                GC = new Geom_Ellipse(Proj.Ellipse());
+                gc = new EllipseCurve3D(proj.Ellipse());
                 break;
 
             case Parabola:
-                GC = new Geom_Parabola(Proj.Parabola());
+                gc = new ParabolaCurve3D(proj.Parabola());
                 break;
 
             case Hyperbola:
-                GC = new Geom_Hyperbola(Proj.Hyperbola());
+                gc = new HyperbolaCurve3D(proj.Hyperbola());
                 break;
 
             case BezierCurve:
                 // The projector is discarded: its curve is returned unfrozen (decision 244).
-                GC = Proj.InternalBezier();
+                gc = proj.InternalBezier();
                 break;
 
             case BSplineCurve:
-                GC = Proj.InternalBSpline();
+                gc = proj.InternalBSpline();
                 break;
             default:
-                return GC;
+                return gc;
         }
 
-        if (Curve is Geom_TrimmedCurve)
+        if (curve is TrimmedCurve3D)
         {
-            GC = new Geom_TrimmedCurve(GC, Proj.FirstParameter(), Proj.LastParameter());
+            gc = new TrimmedCurve3D(gc, proj.FirstParameter(), proj.LastParameter());
         }
 
-        return GC;
+        return gc;
     }
 }

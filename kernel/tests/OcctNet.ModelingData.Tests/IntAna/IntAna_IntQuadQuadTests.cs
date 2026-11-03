@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Intersection;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -42,19 +43,19 @@ public partial class IntAna_IntQuadQuad_Test
     [Fact]
     public void CylinderVsSphereIntersection()
     {
-        IntAna_Quadric aSphereQuad = new(mySphere1);
+        Quadric aSphereQuad = new(mySphere1);
 
-        IntAna_IntQuadQuad anIntersector = new(myCylinder1, aSphereQuad, 1e-7);
+        IntQuadQuad anIntersector = new(myCylinder1, aSphereQuad, 1e-7);
 
         // Should have intersection curves
-        Assert.True(anIntersector.IsDone());
+        Assert.True(anIntersector.IsDone);
         Assert.False(anIntersector.IdenticalElements());
 
         // Should have intersection curves for cylinder-sphere case
-        Assert.True(anIntersector.NbCurve() > 0);
+        Assert.True(anIntersector.CurveCount > 0);
 
         // Test that we can access all curves without exceptions
-        for (int i = 1; i <= anIntersector.NbCurve(); i++)
+        for (int i = 1; i <= anIntersector.CurveCount; i++)
         {
             // This should not throw any exceptions - just verify we can access the curve
             _ = anIntersector.Curve(i);
@@ -65,14 +66,14 @@ public partial class IntAna_IntQuadQuad_Test
     [Fact]
     public void NextCurveMethodCorrectness()
     {
-        IntAna_Quadric aSphereQuad = new(mySphere1);
+        Quadric aSphereQuad = new(mySphere1);
 
-        IntAna_IntQuadQuad anIntersector = new(myCylinder1, aSphereQuad, 1e-7);
+        IntQuadQuad anIntersector = new(myCylinder1, aSphereQuad, 1e-7);
 
-        Assert.True(anIntersector.IsDone());
+        Assert.True(anIntersector.IsDone);
 
         // Test HasNextCurve and NextCurve for valid indices
-        for (int i = 1; i <= anIntersector.NbCurve(); i++)
+        for (int i = 1; i <= anIntersector.CurveCount; i++)
         {
             // These methods should not crash and should return consistent results
             bool aHasNext = anIntersector.HasNextCurve(i);
@@ -83,7 +84,7 @@ public partial class IntAna_IntQuadQuad_Test
 
                 // Next curve index should be valid
                 Assert.True(aNextIdx > 0);
-                Assert.True(aNextIdx <= anIntersector.NbCurve());
+                Assert.True(aNextIdx <= anIntersector.CurveCount);
                 Assert.NotEqual(i, aNextIdx); // Should not point to itself
             }
         }
@@ -93,18 +94,18 @@ public partial class IntAna_IntQuadQuad_Test
     [Fact]
     public void NextCurveBoundaryConditions()
     {
-        IntAna_Quadric aSphereQuad = new(mySphere1);
+        Quadric aSphereQuad = new(mySphere1);
 
-        IntAna_IntQuadQuad anIntersector = new(myCylinder1, aSphereQuad, 1e-7);
+        IntQuadQuad anIntersector = new(myCylinder1, aSphereQuad, 1e-7);
 
-        Assert.True(anIntersector.IsDone());
+        Assert.True(anIntersector.IsDone);
 
         // Test with invalid indices (should throw exceptions)
         Assert.ThrowsAny<OutOfRangeException>(() => anIntersector.HasNextCurve(0));
-        Assert.ThrowsAny<OutOfRangeException>(() => anIntersector.HasNextCurve(anIntersector.NbCurve() + 1));
+        Assert.ThrowsAny<OutOfRangeException>(() => anIntersector.HasNextCurve(anIntersector.CurveCount + 1));
 
         // Test NextCurve on curves that don't have next curves
-        for (int i = 1; i <= anIntersector.NbCurve(); i++)
+        for (int i = 1; i <= anIntersector.CurveCount; i++)
         {
             if (!anIntersector.HasNextCurve(i)) // Only test exception when HasNextCurve is false
             {
@@ -129,17 +130,17 @@ public partial class IntAna_IntQuadQuad_Test
         Sphere aSphere2 = new(anAxis2, 2.0);
         _ = aSphere1;
 
-        IntAna_Quadric aSphere2Quad = new(aSphere2);
+        Quadric aSphere2Quad = new(aSphere2);
 
-        IntAna_IntQuadQuad anIntersector = new();
+        IntQuadQuad anIntersector = new();
         anIntersector.Perform(new Cylinder(anAxis1, 2.0), aSphere2Quad, 1e-7);
 
-        Assert.True(anIntersector.IsDone());
+        Assert.True(anIntersector.IsDone);
 
         Assert.False(anIntersector.IdenticalElements());
 
         // Verify that NextCurve method works correctly for each curve
-        for (int i = 1; i <= anIntersector.NbCurve(); i++)
+        for (int i = 1; i <= anIntersector.CurveCount; i++)
         {
             if (anIntersector.HasNextCurve(i)) // Only test NextCurve when HasNextCurve is true
             {
@@ -147,7 +148,7 @@ public partial class IntAna_IntQuadQuad_Test
 
                 // Validate the result
                 Assert.True(aNextIdx > 0);
-                Assert.True(aNextIdx <= anIntersector.NbCurve());
+                Assert.True(aNextIdx <= anIntersector.CurveCount);
 
                 // Test consistency: if curve i connects to j, then j should connect back
                 // (though possibly with different opposite flag)
@@ -156,7 +157,7 @@ public partial class IntAna_IntQuadQuad_Test
                     int aReverseNext = anIntersector.NextCurve(aNextIdx, out _);
                     // This creates a circular reference which is geometrically possible
                     Assert.True(aReverseNext > 0);
-                    Assert.True(aReverseNext <= anIntersector.NbCurve());
+                    Assert.True(aReverseNext <= anIntersector.CurveCount);
                 }
             }
         }
@@ -169,14 +170,14 @@ public partial class IntAna_IntQuadQuad_Test
         // This test specifically validates that HasNextCurve and NextCurve
         // use consistent indexing (both should use I-1 for 0-based arrays)
 
-        IntAna_Quadric aSphereQuad = new(mySphere1); // Cylinder vs sphere intersection
+        Quadric aSphereQuad = new(mySphere1); // Cylinder vs sphere intersection
 
-        IntAna_IntQuadQuad anIntersector = new(myCylinder1, aSphereQuad, 1e-7);
+        IntQuadQuad anIntersector = new(myCylinder1, aSphereQuad, 1e-7);
 
-        Assert.True(anIntersector.IsDone());
+        Assert.True(anIntersector.IsDone);
 
         // Test all valid curve indices
-        for (int i = 1; i <= anIntersector.NbCurve(); i++)
+        for (int i = 1; i <= anIntersector.CurveCount; i++)
         {
             // These calls should be consistent and not crash
             bool aHasNext = anIntersector.HasNextCurve(i);
@@ -187,7 +188,7 @@ public partial class IntAna_IntQuadQuad_Test
                 int aNextIdx = anIntersector.NextCurve(i, out _);
 
                 Assert.True(aNextIdx > 0);
-                Assert.True(aNextIdx <= anIntersector.NbCurve());
+                Assert.True(aNextIdx <= anIntersector.CurveCount);
             }
         }
     }

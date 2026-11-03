@@ -5,10 +5,12 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Kerf.Geometry.JoinKind;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -49,8 +51,8 @@ public class BRepOffsetAPI_MakeEvolved : BRepBuilderAPI_MakeShape
     /// </summary>
     /// <exception cref="TypeMismatchException">The spine is neither a wire nor a face.</exception>
     /// <exception cref="MethodNotImplementedException">A join other than GeomAbs_Arc (not in the volume mode).</exception>
-    public BRepOffsetAPI_MakeEvolved(in TopoDS_Shape theSpine,
-                                     in TopoDS_Wire theProfile,
+    public BRepOffsetAPI_MakeEvolved(in Shape theSpine,
+                                     in Wire theProfile,
                                      global::Kerf.Geometry.JoinKind theJoinType = Arc,
                                      bool theIsAxeProf = true,
                                      bool theIsSolid = false,
@@ -60,21 +62,21 @@ public class BRepOffsetAPI_MakeEvolved : BRepBuilderAPI_MakeShape
                                      bool theRunInParallel = false)
     {
         myIsVolume = theIsVolume;
-        if (theSpine.ShapeType() != TopAbs_WIRE && theSpine.ShapeType() != TopAbs_FACE)
+        if (theSpine.ShapeType() != ShapeType.Wire && theSpine.ShapeType() != ShapeType.Face)
         {
             throw new TypeMismatchException("BRepOffsetAPI_MakeEvolved: face or wire is expected as a spine");
         }
         if (theIsVolume)
         {
             myVolume.SetParallelMode(theRunInParallel);
-            TopoDS_Wire aSpine;
-            if (theSpine.ShapeType() == TopAbs_WIRE)
+            Wire aSpine;
+            if (theSpine.ShapeType() == ShapeType.Wire)
             {
-                aSpine = TopoDS.Wire(theSpine);
+                aSpine = ShapeCasts.Wire(theSpine);
             }
             else
             {
-                aSpine = TopoDS.Wire(new TopoDS_Iterator(theSpine).Value());
+                aSpine = ShapeCasts.Wire(new Iterator(theSpine).Value());
             }
             myVolume.Perform(aSpine, theProfile, theTol, theIsSolid);
             if (!myVolume.IsDone())
@@ -94,13 +96,13 @@ public class BRepOffsetAPI_MakeEvolved : BRepBuilderAPI_MakeShape
                     return;
                 }
             }
-            if (theSpine.ShapeType() == TopAbs_WIRE)
+            if (theSpine.ShapeType() == ShapeType.Wire)
             {
-                myEvolved.Perform(TopoDS.Wire(theSpine), theProfile, Axis, theJoinType, theIsSolid);
+                myEvolved.Perform(ShapeCasts.Wire(theSpine), theProfile, Axis, theJoinType, theIsSolid);
             }
             else
             {
-                myEvolved.Perform(TopoDS.Face(theSpine), theProfile, Axis, theJoinType, theIsSolid);
+                myEvolved.Perform(ShapeCasts.Face(theSpine), theProfile, Axis, theJoinType, theIsSolid);
             }
         }
 
@@ -137,19 +139,19 @@ public class BRepOffsetAPI_MakeEvolved : BRepBuilderAPI_MakeShape
     /// The shapes generated from a sub-shape <paramref name="SpineShape"/> of the spine and a sub-shape
     /// <paramref name="ProfShape"/> of the profile (frozen, with the result).
     /// </summary>
-    public ISchematiqList<TopoDS_Shape> GeneratedShapes(in TopoDS_Shape SpineShape, in TopoDS_Shape ProfShape)
+    public ISchematiqList<Shape> GeneratedShapes(in Shape SpineShape, in Shape ProfShape)
     {
         if (!myEvolved.IsDone())
         {
-            return PackedList<TopoDS_Shape>.Empty;
+            return PackedList<Shape>.Empty;
         }
 
         return myEvolved.GeneratedShapes(SpineShape, ProfShape);
     }
 
     /// <summary>The top face if the result was built solid (frozen, with the result).</summary>
-    public TopoDS_Shape Top() => myEvolved.Top();
+    public Shape Top() => myEvolved.Top();
 
     /// <summary>The bottom face if the result was built solid (frozen, with the result).</summary>
-    public TopoDS_Shape Bottom() => myEvolved.Bottom();
+    public Shape Bottom() => myEvolved.Bottom();
 }

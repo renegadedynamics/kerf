@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation.FiniteElements;
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Numerics;
@@ -15,11 +16,11 @@ public class FEmTool_MatrixTests
     private static readonly int[] theFirstIndexes = [1, 1, 1, 2, 3, 3, 6];
 
     /// <summary>A random symmetric positive definite matrix with the profile, as a profile matrix and dense.</summary>
-    private static (FEmTool_ProfileMatrix, Matrix) MakeSpd(int theSeed)
+    private static (FemProfileMatrix, Matrix) MakeSpd(int theSeed)
     {
         Random aRandom = new(theSeed);
         int n = theFirstIndexes.Length;
-        FEmTool_ProfileMatrix aProfile = new(NCollection_Array1<int>.From(theFirstIndexes));
+        FemProfileMatrix aProfile = new(NCollection_Array1<int>.From(theFirstIndexes));
         aProfile.Init(0.0);
         Matrix aDense = new(1, n, 1, n, 0.0);
         for (int i = 1; i <= n; i++)
@@ -56,7 +57,7 @@ public class FEmTool_MatrixTests
     {
         for (int aSeed = 1; aSeed <= 20; aSeed++)
         {
-            (FEmTool_ProfileMatrix aProfile, Matrix aDense) = MakeSpd(aSeed);
+            (FemProfileMatrix aProfile, Matrix aDense) = MakeSpd(aSeed);
             int n = aProfile.RowNumber();
             Assert.Equal(n, aProfile.ColNumber());
 
@@ -85,7 +86,7 @@ public class FEmTool_MatrixTests
     [Fact]
     public void ProfileMatrix_profile_and_symmetry()
     {
-        (FEmTool_ProfileMatrix aProfile, Matrix aDense) = MakeSpd(7);
+        (FemProfileMatrix aProfile, Matrix aDense) = MakeSpd(7);
         for (int i = 1; i <= 7; i++)
         {
             for (int j = 1; j <= 7; j++)
@@ -109,7 +110,7 @@ public class FEmTool_MatrixTests
     [Fact]
     public void ProfileMatrix_failures()
     {
-        FEmTool_ProfileMatrix aProfile = new(NCollection_Array1<int>.From([1, 1, 2]));
+        FemProfileMatrix aProfile = new(NCollection_Array1<int>.From([1, 1, 2]));
         aProfile.Init(0.0);
         aProfile.ChangeValue(1, 1) = 1;
         aProfile.ChangeValue(2, 1) = 2;
@@ -164,8 +165,8 @@ public class FEmTool_MatrixTests
         NCollection_Array2<int> aDep = new(1, 1, 1, 1);
         aDep[1, 1] = 1;
         NCollection_HArray2<NCollection_HArray1<int>> aTable = Table();
-        FEmTool_Assembly anAssembly = new(aDep, aTable);
-        Assert.Equal(5, anAssembly.NbGlobVar());
+        Assembly anAssembly = new(aDep, aTable);
+        Assert.Equal(5, anAssembly.GlobVarCount);
         Assert.Same(aTable, anAssembly.AssemblyTable());
         anAssembly.GetAssemblyTable(out NCollection_HArray2<NCollection_HArray1<int>> aTable2);
         Assert.Same(aTable, aTable2);
@@ -262,8 +263,8 @@ public class FEmTool_MatrixTests
         aTable[1, 1][2] = 2;
         aTable[2, 1][1] = 3;
         aTable[2, 1][2] = 4;
-        FEmTool_Assembly anAssembly = new(aDep, aTable);
-        Assert.Equal(4, anAssembly.NbGlobVar());
+        Assembly anAssembly = new(aDep, aTable);
+        Assert.Equal(4, anAssembly.GlobVarCount);
         Assert.ThrowsAny<DomainErrorException>(() => anAssembly.AddMatrix(1, 1, 2, new Matrix(1, 2, 1, 2, 0.0)));
     }
 
@@ -283,7 +284,7 @@ public class FEmTool_MatrixTests
         {
             aTable[1, 2][i] = i;
         }
-        FEmTool_Assembly anAssembly = new(aDep, aTable);
+        Assembly anAssembly = new(aDep, aTable);
         anAssembly.AddConstraint(1, 1, 1, Vec(1, 1), 0);
         Assert.Throws<NullReferenceException>(() => anAssembly.AddConstraint(1, 2, 1, Vec(1, 1, 1, 1), 0));
     }

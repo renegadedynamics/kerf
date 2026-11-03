@@ -13,11 +13,11 @@ namespace Build123d;
 /// <param name="Shape">A part's shape, at its place; null for an assembly.</param>
 /// <param name="Location">An assembly's place relative to its parent; null for a part or no move.</param>
 /// <param name="Children">An assembly's children.</param>
-internal sealed record ExchangeNode(string? Name, (double R, double G, double B, double A)? Color, TopoDS_Shape? Shape,
+internal sealed record ExchangeNode(string? Name, (double R, double G, double B, double A)? Color, global::Kerf.Topology.Shape? Shape,
                                   Placement? Location, IReadOnlyList<ExchangeNode> Children)
 {
     /// <summary>A part: a shape at its place.</summary>
-    public static ExchangeNode Part(TopoDS_Shape shape, string? name = null, (double R, double G, double B, double A)? color = null)
+    public static ExchangeNode Part(global::Kerf.Topology.Shape shape, string? name = null, (double R, double G, double B, double A)? color = null)
         => new(name, color, shape, null, []);
 
     /// <summary>An assembly of children at a place.</summary>

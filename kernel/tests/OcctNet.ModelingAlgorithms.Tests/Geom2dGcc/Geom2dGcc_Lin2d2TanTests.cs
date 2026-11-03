@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
@@ -24,13 +25,13 @@ public class Geom2dGcc_Lin2d2TanTests
     {
         // Construct 3D ellipse and projection plane
         Frame3D       anAx2  = TestAx2();
-        Geom_Ellipse anEll  = new(anAx2, 150, 100);
-        Geom_Plane   aPlane = new(new CoordinateSystem(anAx2));
+        EllipseCurve3D anEll  = new(anAx2, 150, 100);
+        PlaneSurface   aPlane = new(new CoordinateSystem(anAx2));
         Plane3D       aPln   = aPlane.Pln();
 
         // Project ellipse onto the plane and build 2D qualified curve
-        Geom2d_Curve             aCurve2d = GeomAPI.To2d(anEll, aPln)!;
-        Geom2dAdaptor_Curve      anAdapt  = new(aCurve2d);
+        Curve2D             aCurve2d = GeomAPI.To2d(anEll, aPln)!;
+        CurveAdaptor2D      anAdapt  = new(aCurve2d);
         Geom2dGcc_QualifiedCurve aQCurve  = new(anAdapt, GccEnt_outside);
 
         // Query tangent line from 2D point to the projected ellipse
@@ -45,19 +46,19 @@ public class Geom2dGcc_Lin2d2TanTests
     public void OCC814_CircleAndEllipse()
     {
         Frame3D        anAx2 = TestAx2();
-        Geom_Circle   aCir  = new(new Frame3D(new Point3D(823.687192, 502.366825, 478.960440),
+        CircleCurve3D   aCir  = new(new Frame3D(new Point3D(823.687192, 502.366825, 478.960440),
                                              new Direction3D(0.173648, 0.984808, 0.000000),
                                              new Direction3D(-0.932169, 0.164367, -0.322560)),
                                   50);
-        Geom_Ellipse  anEll  = new(anAx2, 150, 100);
-        Geom_Plane    aPlane = new(new CoordinateSystem(anAx2));
+        EllipseCurve3D  anEll  = new(anAx2, 150, 100);
+        PlaneSurface    aPlane = new(new CoordinateSystem(anAx2));
         Plane3D        aPln   = aPlane.Pln();
 
         // Project both curves onto the plane and build qualified curves
-        Geom2d_Curve             aCurve2d     = GeomAPI.To2d(anEll, aPln)!;
-        Geom2d_Curve             aFromCurve2d = GeomAPI.To2d(aCir, aPln)!;
-        Geom2dAdaptor_Curve      anAdaptEll   = new(aCurve2d);
-        Geom2dAdaptor_Curve      anAdaptCir   = new(aFromCurve2d);
+        Curve2D             aCurve2d     = GeomAPI.To2d(anEll, aPln)!;
+        Curve2D             aFromCurve2d = GeomAPI.To2d(aCir, aPln)!;
+        CurveAdaptor2D      anAdaptEll   = new(aCurve2d);
+        CurveAdaptor2D      anAdaptCir   = new(aFromCurve2d);
         Geom2dGcc_QualifiedCurve aQEll        = new(anAdaptEll, GccEnt_outside);
         Geom2dGcc_QualifiedCurve aQCir        = new(anAdaptCir, GccEnt_outside);
 
@@ -71,8 +72,8 @@ public class Geom2dGcc_Lin2d2TanTests
     {
         Circle2D c1 = new(new Axis2D(new Point2D(0, 0), DX), 1);
         Circle2D c2 = new(new Axis2D(new Point2D(5, 1), DX), 2);
-        Geom2dGcc_Lin2d2Tan aLin = new(Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(new Geom2d_Circle(c1))),
-                                       Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(new Geom2d_Circle(c2))), 1e-9);
+        Geom2dGcc_Lin2d2Tan aLin = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c1))),
+                                       Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c2))), 1e-9);
         GccAna_Lin2d2Tan anAna = new(GccEnt.Unqualified(c1), GccEnt.Unqualified(c2), 1e-9);
         Assert.True(aLin.IsDone());
         Assert.Equal(anAna.NbSolutions(), aLin.NbSolutions());
@@ -93,7 +94,7 @@ public class Geom2dGcc_Lin2d2TanTests
     }
 
     // A line tangent to a curve at a parameter: the point is on the curve and the line, and parallel to the tangent.
-    internal static void CheckTangent(in Line2D theLin, Geom2dAdaptor_Curve theC, double theParArg, in Point2D thePnt,
+    internal static void CheckTangent(in Line2D theLin, CurveAdaptor2D theC, double theParArg, in Point2D thePnt,
                                       double theTol)
     {
         theC.D1(theParArg, out Point2D aP, out Vector2D aV);
@@ -105,7 +106,7 @@ public class Geom2dGcc_Lin2d2TanTests
     [Fact]
     public void EllipseAndBSpline_GiveTangentLines()
     {
-        Geom2dAdaptor_Curve anEll = new(new Geom2d_Ellipse(new Axis2D(new Point2D(0, 0), DX), 3, 1));
+        CurveAdaptor2D anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
         NCollection_Array1<Point2D> aPoles = new(1, 4);
         aPoles[1] = new Point2D(6, -2);
         aPoles[2] = new Point2D(8, 3);
@@ -117,7 +118,7 @@ public class Geom2dGcc_Lin2d2TanTests
         NCollection_Array1<int> aMults = new(1, 2);
         aMults[1] = 4;
         aMults[2] = 4;
-        Geom2dAdaptor_Curve aBS = new(new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 3));
+        CurveAdaptor2D aBS = new(new BSplineCurve2D(aPoles, aKnots, aMults, 3));
 
         Geom2dGcc_Lin2d2Tan aLin = new(Geom2dGcc.Unqualified(anEll), Geom2dGcc.Unqualified(aBS), 1e-6);
         Assert.True(aLin.IsDone());
@@ -148,7 +149,7 @@ public class Geom2dGcc_Lin2d2TanTests
     [Fact]
     public void Accessors_ThrowAsOCCT()
     {
-        Geom2dAdaptor_Curve anEll = new(new Geom2d_Ellipse(new Axis2D(new Point2D(0, 0), DX), 3, 1));
+        CurveAdaptor2D anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
         // A point inside the ellipse: no tangent line
         Geom2dGcc_Lin2d2Tan aNone = new(Geom2dGcc.Unqualified(anEll), new Point2D(0.5, 0), 1e-6);
         Assert.False(aNone.IsDone());

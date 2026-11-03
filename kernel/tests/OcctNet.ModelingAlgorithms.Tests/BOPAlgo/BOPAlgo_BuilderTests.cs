@@ -1,8 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.TestHarness;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -13,28 +16,28 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class BOPAlgo_BuilderTests
 {
     // A = [0, 10]^3 and B = [5, 15]^3: the General Fuse splits them into A \ B, A & B and B \ A.
-    private static TopoDS_Shape BoxA() => new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
+    private static Shape BoxA() => new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
 
-    private static TopoDS_Shape BoxB() => new BRepPrimAPI_MakeBox(new Point3D(5, 5, 5), 10.0, 10.0, 10.0).Shape();
+    private static Shape BoxB() => new BRepPrimAPI_MakeBox(new Point3D(5, 5, 5), 10.0, 10.0, 10.0).Shape();
 
-    private static double Volume(in TopoDS_Shape theShape)
+    private static double Volume(in Shape theShape)
     {
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
-    private static List<TopoDS_Shape> Solids(in TopoDS_Shape theShape)
+    private static List<Shape> Solids(in Shape theShape)
     {
-        List<TopoDS_Shape> aSolids = [];
-        for (TopExp_Explorer anExp = new(theShape, TopAbs_SOLID); anExp.More(); anExp.Next())
+        List<Shape> aSolids = [];
+        for (Explorer anExp = new(theShape, ShapeType.Solid); anExp.More(); anExp.Next())
         {
             aSolids.Add(anExp.Current());
         }
         return aSolids;
     }
 
-    private static BOPAlgo_Builder GeneralFuse(TopoDS_Shape theA, TopoDS_Shape theB, bool theParallel = false)
+    private static BOPAlgo_Builder GeneralFuse(Shape theA, Shape theB, bool theParallel = false)
     {
         BOPAlgo_Builder aBuilder = new();
         aBuilder.AddArgument(theA);
@@ -50,9 +53,9 @@ public class BOPAlgo_BuilderTests
         BOPAlgo_Builder aBuilder = GeneralFuse(BoxA(), BoxB());
         Assert.False(aBuilder.HasErrors());
 
-        TopoDS_Shape aResult = aBuilder.Shape();
-        Assert.Equal(TopAbs_COMPOUND, aResult.ShapeType());
-        List<TopoDS_Shape> aSolids = Solids(aResult);
+        Shape aResult = aBuilder.Shape();
+        Assert.Equal(ShapeType.Compound, aResult.ShapeType());
+        List<Shape> aSolids = Solids(aResult);
         Assert.Equal(3, aSolids.Count);
 
         double[] aVolumes = [.. aSolids.Select(s => Volume(s)).Order()];
@@ -66,7 +69,7 @@ public class BOPAlgo_BuilderTests
     [Fact]
     public void TwoOverlappingBoxes_History()
     {
-        TopoDS_Shape aA = BoxA(), aB = BoxB();
+        Shape aA = BoxA(), aB = BoxB();
         BOPAlgo_Builder aBuilder = GeneralFuse(aA, aB);
         Assert.False(aBuilder.HasErrors());
 
@@ -78,10 +81,10 @@ public class BOPAlgo_BuilderTests
         Assert.True(aBuilder.HasGenerated());
 
         // A's face at x = 0 is untouched: neither modified nor deleted; its face at x = 10 is split by B
-        TopoDS_Shape aFaceX0 = new(), aFaceX10 = new();
-        for (TopExp_Explorer anExp = new(aA, TopAbs_FACE); anExp.More(); anExp.Next())
+        Shape aFaceX0 = new(), aFaceX10 = new();
+        for (Explorer anExp = new(aA, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            var aProps = new GProp_GProps();
+            var aProps = new Properties();
             BRepGProp.SurfaceProperties(anExp.Current(), aProps);
             double aX = aProps.CentreOfMass().X();
             if (Math.Abs(aX) < 1.0e-9)
@@ -97,13 +100,13 @@ public class BOPAlgo_BuilderTests
         Assert.False(aBuilder.IsDeleted(aFaceX0));
         Assert.Equal(2, aBuilder.Modified(aFaceX10).Count);
         // the section edges with B's faces at y = 5 and z = 5 are generated from it
-        Assert.Equal(2, aBuilder.Generated(aFaceX10).Count(s => s.ShapeType() == TopAbs_EDGE));
+        Assert.Equal(2, aBuilder.Generated(aFaceX10).Count(s => s.ShapeType() == ShapeType.Edge));
 
         // every modified shape is in the result
-        TopoDS_Shape aResult = aBuilder.Shape();
-        var aResultMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aResult, aResultMap);
-        foreach (TopoDS_Shape aSp in aBuilder.Modified(aA))
+        Shape aResult = aBuilder.Shape();
+        var aResultMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(aResult, aResultMap);
+        foreach (Shape aSp in aBuilder.Modified(aA))
         {
             Assert.True(aResultMap.Contains(aSp));
         }
@@ -112,7 +115,7 @@ public class BOPAlgo_BuilderTests
     [Fact]
     public void FrozenArguments_AreNotWritten()
     {
-        TopoDS_Shape aA = BoxA(), aB = BoxB();
+        Shape aA = BoxA(), aB = BoxB();
         string aTextA = BRepTextComparison.Write(aA), aTextB = BRepTextComparison.Write(aB);
         BOPAlgo_Builder aBuilder = GeneralFuse(aA, aB);
         Assert.False(aBuilder.HasErrors());
@@ -125,7 +128,7 @@ public class BOPAlgo_BuilderTests
     [Fact]
     public void Parallel_GivesTheSerialResult()
     {
-        TopoDS_Shape aA = BoxA(), aB = BoxB();
+        Shape aA = BoxA(), aB = BoxB();
         DeterminismHarness.AssertSerialEqualsParallel([aA, aB], () =>
         {
             BOPAlgo_Builder aBuilder = GeneralFuse(aA, aB, true);

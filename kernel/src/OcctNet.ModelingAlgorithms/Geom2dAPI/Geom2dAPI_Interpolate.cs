@@ -25,7 +25,7 @@ public class Geom2dAPI_Interpolate
     private readonly double myTolerance;
     private readonly NCollection_HArray1<Point2D> myPoints;
     private bool myIsDone;
-    private Geom2d_BSplineCurve? myCurve;
+    private BSplineCurve2D? myCurve;
     private NCollection_HArray1<Vector2D> myTangents;
     private NCollection_HArray1<bool> myTangentFlags;
     private NCollection_HArray1<double> myParameters;
@@ -424,7 +424,7 @@ public class Geom2dAPI_Interpolate
                 deg1_mults.SetValue(ii, 1);
             }
 
-            myCurve = new Geom2d_BSplineCurve(myPoints.Array1(), myParameters.Array1(), deg1_mults, degree, myPeriodic);
+            myCurve = new BSplineCurve2D(myPoints.Array1(), myParameters.Array1(), deg1_mults, degree, myPeriodic);
 
             myIsDone = true;
         }
@@ -560,7 +560,7 @@ public class Geom2dAPI_Interpolate
             if (inversion_problem == 0)
             {
                 NCollection_Array1<Point2D> newpoles = new(poles, 1, 1, num_poles - 2);
-                myCurve = new Geom2d_BSplineCurve(newpoles, myParameters.Array1(), mults, degree, myPeriodic);
+                myCurve = new BSplineCurve2D(newpoles, myParameters.Array1(), mults, degree, myPeriodic);
                 myIsDone = true;
             }
         }
@@ -629,7 +629,7 @@ public class Geom2dAPI_Interpolate
                 {
                     poles.SetValue(ii, myPoints.Value(ii));
                 }
-                myCurve = new Geom2d_BSplineCurve(poles, myParameters.Array1(), mults, degree);
+                myCurve = new BSplineCurve2D(poles, myParameters.Array1(), mults, degree);
                 myIsDone = true;
                 break;
             case 2:
@@ -643,7 +643,7 @@ public class Geom2dAPI_Interpolate
                                      out inversion_problem);
                 if (inversion_problem == 0)
                 {
-                    myCurve = new Geom2d_BSplineCurve(poles, knots, mults, degree);
+                    myCurve = new BSplineCurve2D(poles, knots, mults, degree);
                     myIsDone = true;
                 }
                 break;
@@ -743,7 +743,7 @@ public class Geom2dAPI_Interpolate
                 global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(degree, flatknots, parameters, contact_order_array, poles, out inversion_problem);
                 if (inversion_problem == 0)
                 {
-                    myCurve = new Geom2d_BSplineCurve(poles, myParameters.Array1(), mults, degree);
+                    myCurve = new BSplineCurve2D(poles, myParameters.Array1(), mults, degree);
                     myIsDone = true;
                 }
                 break;
@@ -751,7 +751,7 @@ public class Geom2dAPI_Interpolate
     }
 
     /// <summary>The interpolating curve (frozen). Throws StdFail_NotDone if the interpolation failed.</summary>
-    public Geom2d_BSplineCurve Curve()
+    public BSplineCurve2D Curve()
     {
         if (!myIsDone)
         {
@@ -765,10 +765,10 @@ public class Geom2dAPI_Interpolate
     /// The interpolating curve without freezing it, null if not computed (ported code that goes on editing it:
     /// ShapeConstruct_ProjectCurveOnSurface).
     /// </summary>
-    internal Geom2d_BSplineCurve? InternalCurve() => myCurve;
+    internal BSplineCurve2D? InternalCurve() => myCurve;
 
     /// <summary>OCCT's <c>operator occ::handle&lt;Geom2d_BSplineCurve&gt;</c>: the curve, null if not computed.</summary>
-    public static explicit operator Geom2d_BSplineCurve?(Geom2dAPI_Interpolate theInterp)
+    public static explicit operator BSplineCurve2D?(Geom2dAPI_Interpolate theInterp)
     {
         theInterp.myCurve?.Freeze();
         return theInterp.myCurve;

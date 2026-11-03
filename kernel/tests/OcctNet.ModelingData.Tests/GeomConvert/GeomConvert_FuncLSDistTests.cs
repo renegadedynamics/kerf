@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -69,11 +70,11 @@ public class GeomConvert_FuncLSDistTests
     [Fact]
     public void Sphere_ValueGradientValues()
     {
-        var aF = new GeomConvert_FuncSphereLSDist(s_SpherePoints);
+        var aF = new FuncSphereLSDist(s_SpherePoints);
         Assert.Equal(4, aF.VariableCount);
 
         // Near zero at the sphere
-        var anExact = new GeomConvert_FuncSphereLSDist(Points(10, i => new global::Kerf.Engine.Geometry.Xyz(2.0 * Math.Cos(i), 2.0 * Math.Sin(i), 0.0)));
+        var anExact = new FuncSphereLSDist(Points(10, i => new global::Kerf.Engine.Geometry.Xyz(2.0 * Math.Cos(i), 2.0 * Math.Sin(i), 0.0)));
         Assert.True(anExact.Value(Vector(0, 0, 0, 2), out double aZero));
         Assert.Equal(0.0, aZero, 15);
 
@@ -99,7 +100,7 @@ public class GeomConvert_FuncLSDistTests
             double u = 0.5 * i, v = -3.0 + 0.25 * i, r = 1.5 + 0.01 * Math.Cos(2.0 * i);
             return global::Kerf.Engine.Geometry.ElSLib.CylinderValue(u, v, anAx, r).XYZ();
         });
-        var aF = new GeomConvert_FuncCylinderLSDist(aPoints, aDir);
+        var aF = new FuncCylinderLSDist(aPoints, aDir);
         Assert.Equal(4, aF.VariableCount);
 
         math_Vector X = Vector(1.05, 2.1, 2.9, 1.4);
@@ -113,7 +114,7 @@ public class GeomConvert_FuncLSDistTests
         Assert.ThrowsAny<Exception>(() => aF.Gradient(X, new math_Vector(1, 4)));
 
         // Exact cylinder: zero
-        var anExact = new GeomConvert_FuncCylinderLSDist();
+        var anExact = new FuncCylinderLSDist();
         anExact.SetPoints(Points(8, i => global::Kerf.Engine.Geometry.ElSLib.CylinderValue(i, i - 4.0, anAx, 1.5).XYZ()));
         anExact.SetDir(aDir);
         anExact.Value(Vector(1, 2, 3, 1.5), out double aZero);
@@ -127,7 +128,7 @@ public class GeomConvert_FuncLSDistTests
         CoordinateSystem anAx = new(new Point3D(-1, 0, 2), aDir);
         double anAngle = 0.4, aR = 1.2;
         NCollection_HArray1<global::Kerf.Engine.Geometry.Xyz> aPoints = Points(12, i => global::Kerf.Engine.Geometry.ElSLib.ConeValue(0.5 * i, -1.0 + 0.3 * i, anAx, aR, anAngle).XYZ());
-        var aF = new GeomConvert_FuncConeLSDist(aPoints, aDir);
+        var aF = new FuncConeLSDist(aPoints, aDir);
         Assert.Equal(5, aF.VariableCount);
         Assert.True(aF.Value(Vector(-1, 0, 2, anAngle, aR), out double aZero));
         Assert.Equal(0.0, aZero, 15);
@@ -136,7 +137,7 @@ public class GeomConvert_FuncLSDistTests
         aF.Value(Vector(-1, 0, 2, anAngle, aR + 0.1), out double aFar);
         Assert.True(aFar > 1e-3);
 
-        var aLater = new GeomConvert_FuncConeLSDist();
+        var aLater = new FuncConeLSDist();
         aLater.SetPoints(aPoints);
         aLater.SetDir(aDir);
         aLater.Value(Vector(-1, 0, 2, anAngle, aR + 0.1), out double aSame);

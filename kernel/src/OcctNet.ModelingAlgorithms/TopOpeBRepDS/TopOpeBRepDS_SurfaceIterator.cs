@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
 using static Occt.TopOpeBRepDS_Kind;
 
 namespace Occt;
@@ -33,11 +34,11 @@ public sealed class TopOpeBRepDS_SurfaceIterator : TopOpeBRepDS_InterferenceIter
     }
 
     /// <summary>The orientation of the current interference's transition for the state <paramref name="S"/>.</summary>
-    public TopAbs_Orientation Orientation(TopAbs_State S)
+    public Orientation Orientation(Containment S)
     {
         TopOpeBRepDS_Interference i = Value();
         TopOpeBRepDS_Transition t = i.Transition();
-        TopAbs_Orientation o = t.Orientation(S);
+        Orientation o = t.Orientation(S);
         return o;
     }
 }

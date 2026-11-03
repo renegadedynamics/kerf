@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 using static Occt.TopOpeBRepDS_Kind;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -53,7 +54,7 @@ public class TopOpeBRepDSNativeTests
         // Reading geometry from text normalises directions and brings a periodic curve's trim into its period, as
         // OCCT's GeomTools does: native's text and the port's differ there by an ulp or a period, nowhere else
         DsCase aCase = DsRecordings.Cases[theName];
-        TopoDS_Shape anInput = aCase.Input;
+        Shape anInput = aCase.Input;
         TopOpeBRepDS_HDataStructure aHDS = TopOpeBRepDS_TextDump.Read(aCase.DsText, anInput);
         string aText = TopOpeBRepDS_TextDump.Write(aHDS.DS(), anInput);
         Assert.Empty(DsRecordings.Differences(aCase.DsText, aText, 1.0e-14));
@@ -69,17 +70,17 @@ public class TopOpeBRepDSNativeTests
     {
         // what ChFi3d leaves for Perform: the solid's surfaces, the faces' curves, the curves' points, all in range
         DsCase aCase = DsRecordings.Cases[theName];
-        TopoDS_Shape anInput = aCase.Input;
+        Shape anInput = aCase.Input;
         TopOpeBRepDS_HDataStructure aHDS = TopOpeBRepDS_TextDump.Read(aCase.DsText, anInput);
         TopOpeBRepDS_DataStructure aDS = aHDS.DS();
 
         int aNbSolidSurfaces = 0;
         for (int i = 1; i <= aDS.NbShapes(); i++)
         {
-            TopoDS_Shape S = aDS.Shape(i);
-            Assert.False(S.IsNull());
+            Shape S = aDS.Shape(i);
+            Assert.False(S.IsNull);
             Assert.Equal(i, aDS.Shape(S));
-            if (S.ShapeType() == TopAbs_SOLID || S.ShapeType() == TopAbs_SHELL) // a fillet on a shell: its SSIs (unit 7N2)
+            if (S.ShapeType() == ShapeType.Solid || S.ShapeType() == ShapeType.Shell) // a fillet on a shell: its SSIs (unit 7N2)
             {
                 for (TopOpeBRepDS_InterferenceIterator it = new(aDS.ShapeInterferences(S)); it.More(); it.Next())
                 {
@@ -89,7 +90,7 @@ public class TopOpeBRepDSNativeTests
                     aNbSolidSurfaces++;
                 }
             }
-            if (S.ShapeType() == TopAbs_FACE)
+            if (S.ShapeType() == ShapeType.Face)
             {
                 for (TopOpeBRepDS_CurveIterator it = aHDS.FaceCurves(S); it.More(); it.Next())
                 {

@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -17,10 +18,10 @@ namespace Occt;
 /// </summary>
 public class BlendFunc_ChAsym : Blend_Function
 {
-    private readonly Adaptor3d_Surface surf1;
-    private readonly Adaptor3d_Surface surf2;
-    private readonly Adaptor3d_Curve curv;
-    private Adaptor3d_Curve tcurv;
+    private readonly SurfaceAdaptorBase surf1;
+    private readonly SurfaceAdaptorBase surf2;
+    private readonly CurveAdaptorBase curv;
+    private CurveAdaptorBase tcurv;
     private double param;
     private double dist1;
     private double angle;
@@ -39,7 +40,7 @@ public class BlendFunc_ChAsym : Blend_Function
     private int choix;
     private double distmin;
 
-    public BlendFunc_ChAsym(Adaptor3d_Surface S1, Adaptor3d_Surface S2, Adaptor3d_Curve C)
+    public BlendFunc_ChAsym(SurfaceAdaptorBase S1, SurfaceAdaptorBase S2, CurveAdaptorBase C)
     {
         surf1 = S1;
         surf2 = S2;

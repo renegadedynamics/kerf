@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Text;
 using Occt;
@@ -132,7 +133,7 @@ internal static class XDEDRAWCommands
     // L.Father().Father().Father().IsRoot(): a top-level label 0:1:1:n
     private static bool isTopLevelEntry(in XdeDoc_Label theLabel) => theLabel.Entry().Count(c => c == ':') == 3;
 
-    private static void dumpKind(XdeDoc_Document theDoc, StringBuilder theLog, in XdeDoc_Label theLabel, in TopoDS_Shape theShape)
+    private static void dumpKind(XdeDoc_Document theDoc, StringBuilder theLog, in XdeDoc_Label theLabel, in Shape theShape)
     {
         if (theDoc.IsAssembly(theLabel))
         {
@@ -149,10 +150,10 @@ internal static class XDEDRAWCommands
         {
             theLog.Append("INSTANCE ");
         }
-        theLog.Append(TopAbs.ShapeTypeToString(theShape.ShapeType()));
+        theLog.Append(global::Kerf.Engine.Topology.TopAbs.ShapeTypeToString(theShape.ShapeType()));
     }
 
-    private static void dumpRefNameDeep(XdeDoc_Document theDoc, StringBuilder theLog, in XdeDoc_Label theLabel, in TopoDS_Shape theShape, bool deep)
+    private static void dumpRefNameDeep(XdeDoc_Document theDoc, StringBuilder theLog, in XdeDoc_Label theLabel, in Shape theShape, bool deep)
     {
         if (theDoc.GetReferredShape(theLabel, out XdeDoc_Label aReferred))
         {
@@ -176,8 +177,8 @@ internal static class XDEDRAWCommands
 
     private static void dumpAssembly(XdeDoc_Document theDoc, StringBuilder theLog, in XdeDoc_Label theLabel, int level, bool deep)
     {
-        TopoDS_Shape aShape = theDoc.GetShape(theLabel);
-        if (aShape.IsNull())
+        Shape aShape = theDoc.GetShape(theLabel);
+        if (aShape.IsNull)
         {
             return;
         }
@@ -198,7 +199,7 @@ internal static class XDEDRAWCommands
 
     private static void dumpShape(XdeDoc_Document theDoc, StringBuilder theLog, in XdeDoc_Label theLabel, int level, bool deep)
     {
-        if (!theDoc.GetShape(theLabel, out TopoDS_Shape aShape))
+        if (!theDoc.GetShape(theLabel, out Shape aShape))
         {
             return;
         }
@@ -510,8 +511,8 @@ internal static class XDEDRAWCommands
         {
             return 1;
         }
-        TopoDS_Shape aShape = theDI.GetShape(argv[2]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(argv[2]);
+        if (aShape.IsNull)
         {
             di.Append("Syntax error: shape '").Append(argv[2]).Append("' is undefined\n");
             return 1;
@@ -556,7 +557,7 @@ internal static class XDEDRAWCommands
             return 1;
         }
         XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
-        TopoDS_Shape aShape = theDI.GetShape(argv[3]);
+        Shape aShape = theDI.GetShape(argv[3]);
         if (aLabel.IsNull())
         {
             // TNaming_Builder on a null label: OCAF raises
@@ -623,7 +624,7 @@ internal static class XDEDRAWCommands
         {
             return 1;
         }
-        TopoDS_Shape aShape = theDI.GetShape(argv[2]);
+        Shape aShape = theDI.GetShape(argv[2]);
         bool findInstance = argv.Count == 4 && argv[3].StartsWith('1');
         di.Append(aDoc.FindShape(aShape, findInstance).Entry());
         return 0;
@@ -641,7 +642,7 @@ internal static class XDEDRAWCommands
         {
             return 1;
         }
-        TopoDS_Shape aShape = theDI.GetShape(argv[2]);
+        Shape aShape = theDI.GetShape(argv[2]);
         XdeDoc_Label aParent = DDocStdCommands.Label(aDoc, argv[3]);
         XdeDoc_Label aLabel = default;
         if (!aParent.IsNull())
@@ -680,7 +681,7 @@ internal static class XDEDRAWCommands
         {
             return 1;
         }
-        TopoDS_Shape aShape = theDI.GetShape(argv[2]);
+        Shape aShape = theDI.GetShape(argv[2]);
         XdeDoc_Label aParent = DDocStdCommands.Label(aDoc, argv[3]);
         XdeDoc_Label aLabel = aParent.IsNull() ? default : aDoc.AddSubShape(aParent, aShape);
         di.Append(aLabel.Entry());
@@ -769,7 +770,7 @@ internal static class XDEDRAWCommands
             return 1;
         }
         XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
-        TopoDS_Shape aShape = theDI.GetShape(argv[3]);
+        Shape aShape = theDI.GetShape(argv[3]);
         if (!aLabel.IsNull())
         {
             aDoc.AddComponent(aLabel, aShape);
@@ -893,8 +894,8 @@ internal static class XDEDRAWCommands
             theDI2.Append("Error: ").Append(theArgVec[2]).Append(" is not a document\n");
             return 1;
         }
-        TopoDS_Shape aShape = GetOneShape(aDoc);
-        if (aShape.IsNull())
+        Shape aShape = GetOneShape(aDoc);
+        if (aShape.IsNull)
         {
             theDI2.Append("Error: Document ").Append(theArgVec[2]).Append(" contain no shapes\n");
             return 1;
@@ -908,11 +909,11 @@ internal static class XDEDRAWCommands
     /// XCAFDoc_ShapeTool::GetOneShape: the only free shape, or the compound of the free shapes, or a null shape when
     /// there is none.
     /// </summary>
-    internal static TopoDS_Shape GetOneShape(XdeDoc_Document theDoc)
+    internal static Shape GetOneShape(XdeDoc_Document theDoc)
     {
         var aFree = new NCollection_Sequence<XdeDoc_Label>();
         theDoc.GetFreeShapes(aFree);
-        return aFree.Length() == 0 ? new TopoDS_Shape() : theDoc.GetOneShape();
+        return aFree.Length() == 0 ? new Shape() : theDoc.GetOneShape();
     }
 
     private static int XDumpLocation(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)

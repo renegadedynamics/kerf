@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
@@ -21,8 +22,8 @@ namespace Occt;
 /// </remarks>
 public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
 {
-    private new Adaptor3d_Curve? myTrimmed;
-    private new Adaptor3d_Curve? myCurve;
+    private new CurveAdaptorBase? myTrimmed;
+    private new CurveAdaptorBase? myCurve;
     private readonly NCollection_HArray2<Point2D> Pole;
     private readonly math_Vector X;
     private readonly math_Vector XTol;
@@ -48,7 +49,7 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
         }
     }
 
-    public GeomFill_GuideTrihedronPlan(Adaptor3d_Curve theGuide)
+    public GeomFill_GuideTrihedronPlan(CurveAdaptorBase theGuide)
     {
         X = new math_Vector(1, 1);
         XTol = new math_Vector(1, 1);
@@ -75,8 +76,8 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
         double f = myCurve!.FirstParameter();
         double l = myCurve.LastParameter();
 
-        Geom_Plane Plan;
-        GeomAdaptor_Surface Pl;
+        PlaneSurface Plan;
+        SurfaceAdaptor Pl;
         IntCurveSurface_IntersectionPoint PInt;
         IntCurveSurface_HInter Int = new IntCurveSurface_HInter();
         frenet.SetCurve(myCurve);
@@ -85,7 +86,7 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
         Inf[1] = myGuide.FirstParameter() - DeltaG;
         Sup[1] = myGuide.LastParameter() + DeltaG;
 
-        if (!myGuide.IsPeriodic())
+        if (!myGuide.IsPeriodic)
         {
             myTrimG = myGuide.Trim(myGuide.FirstParameter() - DeltaG / 100, myGuide.LastParameter() + DeltaG / 100,
                                    DeltaG * 1.0e-7);
@@ -102,8 +103,8 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
             t /= (myNbPts - 1);
             myCurve.D0(t, out Point3D P);
             frenet.D0(t, ref Tangent, ref Normal, ref BiNormal);
-            Plan = new Geom_Plane(P, new Direction3D(Tangent));
-            Pl = new GeomAdaptor_Surface(Plan);
+            Plan = new PlaneSurface(P, new Direction3D(Tangent));
+            Pl = new SurfaceAdaptor(Plan);
 
             Int.Perform(myTrimG, Pl); // intersection plan / guide
             if (Int.NbPoints() == 0)
@@ -137,7 +138,7 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
                 double Diff = w - Pole.Value(1, ii - 1).Y();
                 if (Math.Abs(Diff) > DeltaG)
                 {
-                    if (myGuide.IsPeriodic())
+                    if (myGuide.IsPeriodic)
                     {
                         InGoodPeriod(Pole.Value(1, ii - 1).Y(), myGuide.Period(), ref w);
                     }
@@ -149,7 +150,7 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
         } // for_ii
     }
 
-    public override bool SetCurve(Adaptor3d_Curve C)
+    public override bool SetCurve(CurveAdaptorBase C)
     {
         myCurve = C;
         if (myCurve is not null)
@@ -159,7 +160,7 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
         return true;
     }
 
-    public override Adaptor3d_Curve Guide() => myGuide!;
+    public override CurveAdaptorBase Guide() => myGuide!;
 
     public override bool D0(double Param, ref Vector3D Tangent, ref Vector3D Normal, ref Vector3D BiNormal)
     {
@@ -398,7 +399,7 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
             X[1] = (Pole.Value(1, Ideb).Coord(2) + Pole.Value(1, Ifin).Coord(2)) / 2;
         }
 
-        if (myGuide!.IsPeriodic())
+        if (myGuide!.IsPeriodic)
         {
             X[1] = global::Kerf.Engine.Geometry.ElCLib.InPeriod(X[1], myGuide.FirstParameter(), myGuide.LastParameter());
         }

@@ -4,6 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Brep;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
 
 namespace Occt;
@@ -15,7 +18,7 @@ namespace Occt;
 public class ShapeUpgrade_EdgeDivide : ShapeUpgrade_Tool
 {
     /// <summary>The face the pcurve is taken on (none for free edges).</summary>
-    protected TopoDS_Face myFace;
+    protected Face myFace;
     /// <summary>True if the edge has a pcurve on the face.</summary>
     protected bool myHasCurve2d;
     /// <summary>True if the edge has a 3D curve.</summary>
@@ -31,7 +34,7 @@ public class ShapeUpgrade_EdgeDivide : ShapeUpgrade_Tool
     /// <summary>Empty constructor.</summary>
     public ShapeUpgrade_EdgeDivide()
     {
-        myFace = new TopoDS_Face();
+        myFace = new Face();
         mySplitCurve3dTool = new ShapeUpgrade_SplitCurve3d();
         mySplitCurve2dTool = new ShapeUpgrade_SplitCurve2d();
     }
@@ -46,17 +49,17 @@ public class ShapeUpgrade_EdgeDivide : ShapeUpgrade_Tool
     }
 
     /// <summary>Sets the supporting face.</summary>
-    public void SetFace(in TopoDS_Face F)
+    public void SetFace(in Face F)
     {
         myFace = F;
     }
 
     /// <summary>Computes the splitting values of the edge; true if it has to be split.</summary>
-    public virtual bool Compute(in TopoDS_Edge anEdge)
+    public virtual bool Compute(in Edge anEdge)
     {
         Clear();
 
-        Geom_Curve? curve3d = BRep_Tool.Curve(anEdge, out double f, out double l);
+        Curve3D? curve3d = Tool.Curve(anEdge, out double f, out double l);
         myHasCurve3d = curve3d is not null;
 
         ShapeUpgrade_SplitCurve3d theSplit3dTool = GetSplitCurve3dTool()!;
@@ -70,8 +73,8 @@ public class ShapeUpgrade_EdgeDivide : ShapeUpgrade_Tool
         // on pcurve(s): all knots
         // assume that if seam-edge, its pcurve1 and pcurve2 has the same split knots !!!
         double f2d = 0.0, l2d = 0.0;
-        Geom2d_Curve? pcurve1 = null;
-        if (!myFace.IsNull())
+        Curve2D? pcurve1 = null;
+        if (!myFace.IsNull)
         { // process free edges
             var sae = new ShapeAnalysis_Edge();
             sae.PCurve(anEdge, myFace, out pcurve1, out f2d, out l2d, false);

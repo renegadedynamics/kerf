@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.JoinKind;
@@ -82,8 +85,8 @@ public sealed class MAT2d_Tool2d
     /// distance to anitem. Returns its index.</summary>
     public int FirstPoint(int anitem, out double dist)
     {
-        Geom2d_Curve curve;
-        Geom2d_Point point;
+        Curve2D curve;
+        Point2 point;
         theNumberOfPnts++;
 
         if (theCircuit!.ConnexionOn(anitem))
@@ -98,14 +101,14 @@ public sealed class MAT2d_Tool2d
         Type type = theCircuit.Value(anitem).GetType();
         dist = 0.0;
 
-        if (type != typeof(Geom2d_CartesianPoint))
+        if (type != typeof(CartesianPoint2))
         {
-            curve = (Geom2d_Curve)theCircuit.Value(anitem);
+            curve = (Curve2D)theCircuit.Value(anitem);
             theGeomPnts.Bind(theNumberOfPnts, curve.Value(curve.FirstParameter()));
         }
         else
         {
-            point = (Geom2d_Point)theCircuit.Value(anitem);
+            point = (Point2)theCircuit.Value(anitem);
             theGeomPnts.Bind(theNumberOfPnts, point.Pnt2d());
         }
         return theNumberOfPnts;
@@ -115,7 +118,7 @@ public sealed class MAT2d_Tool2d
     public int TangentBefore(int anitem, bool IsOpenResult)
     {
         int item;
-        Geom2d_Curve curve;
+        Curve2D curve;
         theNumberOfVecs++;
 
         if (!IsOpenResult)
@@ -135,14 +138,14 @@ public sealed class MAT2d_Tool2d
         }
 
         Type type = theCircuit.Value(anitem).GetType();
-        if (type != typeof(Geom2d_CartesianPoint))
+        if (type != typeof(CartesianPoint2))
         {
-            curve = (Geom2d_Curve)theCircuit.Value(anitem);
+            curve = (Curve2D)theCircuit.Value(anitem);
             theGeomVecs.Bind(theNumberOfVecs, curve.DN(curve.LastParameter(), 1));
         }
         else
         {
-            curve = (Geom2d_Curve)theCircuit.Value(item);
+            curve = (Curve2D)theCircuit.Value(item);
             double param = (IsOpenResult && anitem == theCircuit.NumberOfItems())
                 ? curve.LastParameter()
                 : curve.FirstParameter();
@@ -156,7 +159,7 @@ public sealed class MAT2d_Tool2d
     public int TangentAfter(int anitem, bool IsOpenResult)
     {
         int item;
-        Geom2d_Curve curve;
+        Curve2D curve;
         Vector2D thevector;
         theNumberOfVecs++;
 
@@ -169,9 +172,9 @@ public sealed class MAT2d_Tool2d
         }
 
         Type type = theCircuit.Value(anitem).GetType();
-        if (type != typeof(Geom2d_CartesianPoint))
+        if (type != typeof(CartesianPoint2))
         {
-            curve = (Geom2d_Curve)theCircuit.Value(anitem);
+            curve = (Curve2D)theCircuit.Value(anitem);
             thevector = curve.DN(curve.FirstParameter(), 1);
         }
         else
@@ -184,7 +187,7 @@ public sealed class MAT2d_Tool2d
             {
                 item = (anitem == 1) ? 2 : (anitem - 1);
             }
-            curve = (Geom2d_Curve)theCircuit.Value(item);
+            curve = (Curve2D)theCircuit.Value(item);
             double param = (IsOpenResult && anitem == 1) ? curve.FirstParameter() : curve.LastParameter();
             thevector = curve.DN(param, 1);
         }
@@ -203,8 +206,8 @@ public sealed class MAT2d_Tool2d
     /// <summary>Creates the geometric bisector of abisector.</summary>
     public void CreateBisector(MAT_Bisector abisector)
     {
-        Geom2d_Point point1, point2;
-        Geom2d_Geometry elt1, elt2;
+        Point2 point1, point2;
+        Geometry2D elt1, elt2;
         Bisector_Bisec bisector = new();
         double tolerance = MAT2d_TOLCONF;
 
@@ -223,40 +226,40 @@ public sealed class MAT2d_Tool2d
 
         Type type1 = theCircuit.Value(edge1number).GetType();
         Type type2 = theCircuit.Value(edge2number).GetType();
-        Geom2d_Curve? item1 = null;
-        Geom2d_Curve? item2 = null;
+        Curve2D? item1 = null;
+        Curve2D? item2 = null;
 
-        if (type1 != typeof(Geom2d_CartesianPoint))
+        if (type1 != typeof(CartesianPoint2))
         {
-            item1 = (Geom2d_Curve)elt1;
+            item1 = (Curve2D)elt1;
         }
 
-        if (type2 != typeof(Geom2d_CartesianPoint))
+        if (type2 != typeof(CartesianPoint2))
         {
-            item2 = (Geom2d_Curve)elt2;
+            item2 = (Curve2D)elt2;
         }
 
-        if (type1 != typeof(Geom2d_CartesianPoint) && type2 != typeof(Geom2d_CartesianPoint))
+        if (type1 != typeof(CartesianPoint2) && type2 != typeof(CartesianPoint2))
         {
             bisector.Perform(item1!, item2!, GeomPnt(abisector.IssuePoint()), GeomVec(abisector.FirstVector()),
                 GeomVec(abisector.SecondVector()), theDirection, theJoinType, tolerance, ontheline);
         }
-        else if (type1 == typeof(Geom2d_CartesianPoint) && type2 == typeof(Geom2d_CartesianPoint))
+        else if (type1 == typeof(CartesianPoint2) && type2 == typeof(CartesianPoint2))
         {
-            point1 = (Geom2d_Point)elt1;
-            point2 = (Geom2d_Point)elt2;
+            point1 = (Point2)elt1;
+            point2 = (Point2)elt2;
             bisector.Perform(point1, point2, GeomPnt(abisector.IssuePoint()), GeomVec(abisector.FirstVector()),
                 GeomVec(abisector.SecondVector()), theDirection, tolerance, ontheline);
         }
-        else if (type1 == typeof(Geom2d_CartesianPoint))
+        else if (type1 == typeof(CartesianPoint2))
         {
-            point1 = (Geom2d_Point)elt1;
+            point1 = (Point2)elt1;
             bisector.Perform(point1, item2!, GeomPnt(abisector.IssuePoint()), GeomVec(abisector.FirstVector()),
                 GeomVec(abisector.SecondVector()), theDirection, tolerance, ontheline);
         }
         else
         {
-            point2 = (Geom2d_Point)elt2;
+            point2 = (Point2)elt2;
             bisector.Perform(item1!, point2, GeomPnt(abisector.IssuePoint()), GeomVec(abisector.FirstVector()),
                 GeomVec(abisector.SecondVector()), theDirection, tolerance, ontheline);
         }
@@ -276,40 +279,40 @@ public sealed class MAT2d_Tool2d
     // circle; needed by the logic of the algorithm.
     private void TrimBisec(Bisector_Bisec B1, int IndexEdge, bool InitialNeighbour, int StartOrEnd)
     {
-        Geom2d_Curve Curve;
-        Geom2d_TrimmedCurve Line;
-        Geom2d_Line? Line1 = null, Line2 = null;
+        Curve2D Curve;
+        TrimmedCurve2D Line;
+        LineCurve2D? Line1 = null, Line2 = null;
         Point2D Ori;
         int INext;
         INext = (IndexEdge == theCircuit!.NumberOfItems()) ? 1 : (IndexEdge + 1);
 
         Type EdgeType = theCircuit.Value(IndexEdge).GetType();
 
-        if (EdgeType != typeof(Geom2d_CartesianPoint))
+        if (EdgeType != typeof(CartesianPoint2))
         {
             if (!InitialNeighbour)
             {
-                Curve = ((Geom2d_TrimmedCurve)theCircuit.Value(IndexEdge)).BasisCurve();
+                Curve = ((TrimmedCurve2D)theCircuit.Value(IndexEdge)).BasisCurve();
                 EdgeType = Curve.GetType();
                 // The edge is linked to its previous neighbour by a connexion.
                 if (theCircuit.ConnexionOn(IndexEdge) && StartOrEnd == 1)
                 {
-                    if (EdgeType == typeof(Geom2d_Circle))
+                    if (EdgeType == typeof(CircleCurve2D))
                     {
-                        Ori = ((Geom2d_Circle)Curve).Location();
+                        Ori = ((CircleCurve2D)Curve).Location();
                         Point2D P2 = theCircuit.Connexion(IndexEdge).PointOnFirst();
-                        Line1 = new Geom2d_Line(Ori, new Direction2D(P2.X() - Ori.X(), P2.Y() - Ori.Y()));
+                        Line1 = new LineCurve2D(Ori, new Direction2D(P2.X() - Ori.X(), P2.Y() - Ori.Y()));
                     }
                 }
 
                 // The edge is linked to its next neighbour by a connexion.
                 if (theCircuit.ConnexionOn(INext) && StartOrEnd == 2)
                 {
-                    if (EdgeType == typeof(Geom2d_Circle))
+                    if (EdgeType == typeof(CircleCurve2D))
                     {
-                        Ori = ((Geom2d_Circle)Curve).Location();
+                        Ori = ((CircleCurve2D)Curve).Location();
                         Point2D P2 = theCircuit.Connexion(INext).PointOnSecond();
-                        Line2 = new Geom2d_Line(Ori, new Direction2D(P2.X() - Ori.X(), P2.Y() - Ori.Y()));
+                        Line2 = new LineCurve2D(Ori, new Direction2D(P2.X() - Ori.X(), P2.Y() - Ori.Y()));
                     }
                 }
                 if (Line1 is null && Line2 is null)
@@ -320,12 +323,12 @@ public sealed class MAT2d_Tool2d
                 // Restriction of the bisector by the half-lines of the connexions.
                 if (Line1 is not null)
                 {
-                    Line = new Geom2d_TrimmedCurve(Line1, 0.0, global::Kerf.Engine.Foundation.Precision.Infinite());
+                    Line = new TrimmedCurve2D(Line1, 0.0, global::Kerf.Engine.Foundation.Precision.Infinite());
                     SetTrim(B1, Line);
                 }
                 if (Line2 is not null)
                 {
-                    Line = new Geom2d_TrimmedCurve(Line2, 0.0, global::Kerf.Engine.Foundation.Precision.Infinite());
+                    Line = new TrimmedCurve2D(Line2, 0.0, global::Kerf.Engine.Foundation.Precision.Infinite());
                     SetTrim(B1, Line);
                 }
             }
@@ -338,9 +341,9 @@ public sealed class MAT2d_Tool2d
     {
         double param = abisector.FirstParameter();
 
-        Geom2d_TrimmedCurve bisector = ChangeGeomBis(abisector.BisectorNumber()).ChangeValue();
+        TrimmedCurve2D bisector = ChangeGeomBis(abisector.BisectorNumber()).ChangeValue();
 
-        if (bisector.ChangeBasisCurve().IsPeriodic() && param == global::Kerf.Engine.Foundation.Precision.Infinite())
+        if (bisector.ChangeBasisCurve().IsPeriodic && param == global::Kerf.Engine.Foundation.Precision.Infinite())
         {
             param = bisector.FirstParameter() + 2 * M_PI;
         }
@@ -362,13 +365,13 @@ public sealed class MAT2d_Tool2d
     public bool TrimBisector(MAT_Bisector abisector, int apoint)
     {
         double Param;
-        Geom2d_TrimmedCurve Bisector = ChangeGeomBis(abisector.BisectorNumber()).ChangeValue();
+        TrimmedCurve2D Bisector = ChangeGeomBis(abisector.BisectorNumber()).ChangeValue();
 
         Bisector_Curve Bis = (Bisector_Curve)Bisector.ChangeBasisCurve();
 
         Param = Bis.Parameter(GeomPnt(apoint));
 
-        if (Bisector.ChangeBasisCurve().IsPeriodic())
+        if (Bisector.ChangeBasisCurve().IsPeriodic)
         {
             if (Bisector.FirstParameter() > Param)
             {
@@ -393,21 +396,21 @@ public sealed class MAT2d_Tool2d
     private bool Projection(int IEdge, in Point2D PCom, out double Distance)
     {
         Point2D PEdge;
-        Geom2d_Geometry Elt = theCircuit!.Value(IEdge);
+        Geometry2D Elt = theCircuit!.Value(IEdge);
         Type Type = Elt.GetType();
-        Geom2d_TrimmedCurve Curve;
+        TrimmedCurve2D Curve;
         int INext;
         double Eps = MAT2d_TOLCONF;
 
-        if (Type == typeof(Geom2d_CartesianPoint))
+        if (Type == typeof(CartesianPoint2))
         {
-            PEdge = ((Geom2d_Point)Elt).Pnt2d();
+            PEdge = ((Point2)Elt).Pnt2d();
             Distance = PCom.Distance(PEdge);
         }
         else
         {
             Distance = global::Kerf.Engine.Foundation.Precision.Infinite();
-            Curve = (Geom2d_TrimmedCurve)Elt;
+            Curve = (TrimmedCurve2D)Elt;
             // The parameters on the edge: if it is linked to its neighbours by connexions, the curve is limited by
             // them.
             double ParamMin = Curve.FirstParameter();
@@ -420,13 +423,13 @@ public sealed class MAT2d_Tool2d
             if (theCircuit.ConnexionOn(INext))
             {
                 ParamMax = theCircuit.Connexion(INext).ParameterOnFirst();
-                if (Curve.BasisCurve().IsPeriodic())
+                if (Curve.BasisCurve().IsPeriodic)
                 {
                     global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(0.0, 2 * M_PI, Eps, ref ParamMin, ref ParamMax);
                 }
             }
             // The curve for the extrema, and its bounds.
-            Geom2dAdaptor_Curve C1 = new(Curve);
+            CurveAdaptor2D C1 = new(Curve);
             CurveKind TypeC1 = C1.GetType();
             if (TypeC1 == Circle)
             {
@@ -448,15 +451,15 @@ public sealed class MAT2d_Tool2d
                 ParamMin = ParamMin - Eps;
             }
             // The extrema, keeping the minimum of distance.
-            Extrema_ExtPC2d Extremas = new(PCom, C1, ParamMin, ParamMax);
-            if (Extremas.IsDone())
+            ExtPC2d Extremas = new(PCom, C1, ParamMin, ParamMax);
+            if (Extremas.IsDone)
             {
                 Distance = global::Kerf.Engine.Foundation.Precision.Infinite();
-                if (Extremas.NbExt() < 1)
+                if (Extremas.ExtCount < 1)
                 {
                     return false;
                 }
-                for (int i = 1; i <= Extremas.NbExt(); i++)
+                for (int i = 1; i <= Extremas.ExtCount; i++)
                 {
                     if (Extremas.SquareDistance(i) < Distance)
                     {
@@ -497,7 +500,7 @@ public sealed class MAT2d_Tool2d
         {
             if (!isDone2)
             {
-                Geom2d_Geometry Elt = theCircuit!.Value(IEdge2);
+                Geometry2D Elt = theCircuit!.Value(IEdge2);
                 double Tol = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), eps * Dist[1]);
                 if (CheckEnds(Elt, PCom, Dist[1], Tol))
                 {
@@ -509,7 +512,7 @@ public sealed class MAT2d_Tool2d
         {
             if (isDone2)
             {
-                Geom2d_Geometry Elt = theCircuit!.Value(IEdge1);
+                Geometry2D Elt = theCircuit!.Value(IEdge1);
                 double Tol = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), eps * Dist[2]);
                 if (CheckEnds(Elt, PCom, Dist[2], Tol))
                 {
@@ -549,7 +552,7 @@ public sealed class MAT2d_Tool2d
         {
             if (!isDone4)
             {
-                Geom2d_Geometry Elt = theCircuit!.Value(IEdge4);
+                Geometry2D Elt = theCircuit!.Value(IEdge4);
                 double Tol = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), eps * Dist[3]);
                 if (CheckEnds(Elt, PCom, Dist[3], Tol))
                 {
@@ -561,7 +564,7 @@ public sealed class MAT2d_Tool2d
         {
             if (isDone4)
             {
-                Geom2d_Geometry Elt = theCircuit!.Value(IEdge3);
+                Geometry2D Elt = theCircuit!.Value(IEdge3);
                 double Tol = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), eps * Dist[4]);
                 if (CheckEnds(Elt, PCom, Dist[4], Tol))
                 {
@@ -612,9 +615,9 @@ public sealed class MAT2d_Tool2d
         bool SolutionValide;
         Point2D PointSolution = new();
 
-        Geom2d_TrimmedCurve? Bisector1 = ChangeGeomBis(BisectorOne.BisectorNumber()).ChangeValue();
+        TrimmedCurve2D? Bisector1 = ChangeGeomBis(BisectorOne.BisectorNumber()).ChangeValue();
 
-        Geom2d_TrimmedCurve? Bisector2 = ChangeGeomBis(BisectorTwo.BisectorNumber()).ChangeValue();
+        TrimmedCurve2D? Bisector2 = ChangeGeomBis(BisectorTwo.BisectorNumber()).ChangeValue();
 
         if (Bisector1 is null || Bisector2 is null)
         {
@@ -863,7 +866,7 @@ public sealed class MAT2d_Tool2d
     public Bisector_Bisec ChangeGeomBis(int Index) => theGeomBisectors.ChangeFind(Index);
 
     /// <summary>The item of index Index of the circuit.</summary>
-    public Geom2d_Geometry GeomElt(int Index) => theCircuit!.Value(Index);
+    public Geometry2D GeomElt(int Index) => theCircuit!.Value(Index);
 
     /// <summary>The point of index Index.</summary>
     public Point2D GeomPnt(int Index) => theGeomPnts.Find(Index);
@@ -877,8 +880,8 @@ public sealed class MAT2d_Tool2d
     public void BisecFusion(int I1, int I2)
     {
         double DU, UL1, UF1;
-        Geom2d_TrimmedCurve Bisector1;
-        Geom2d_TrimmedCurve Bisector2;
+        TrimmedCurve2D Bisector1;
+        TrimmedCurve2D Bisector2;
 
         Bisector1 = GeomBis(I1).Value();
         Bisector2 = GeomBis(I2).Value();
@@ -938,12 +941,12 @@ public sealed class MAT2d_Tool2d
         }
     }
 
-    private static void SetTrim(Bisector_Bisec Bis, Geom2d_Curve Line1)
+    private static void SetTrim(Bisector_Bisec Bis, Curve2D Line1)
     {
         Geom2dInt_GInter Intersect = new();
         double Distance;
         double Tolerance = MAT2d_TOLCONF;
-        Geom2d_TrimmedCurve Bisector = Bis.ChangeValue();
+        TrimmedCurve2D Bisector = Bis.ChangeValue();
 
         IntRes2d_Domain Domain1 = Domain(Bisector, Tolerance);
         double UB1 = Bisector.FirstParameter();
@@ -952,8 +955,8 @@ public sealed class MAT2d_Tool2d
         Point2D FirstPointBisector = Bisector.Value(UB1);
         double UTrim = global::Kerf.Engine.Foundation.Precision.Infinite();
 
-        Geom2dAdaptor_Curve AdapBisector = new(Bisector);
-        Geom2dAdaptor_Curve AdapLine1 = new(Line1);
+        CurveAdaptor2D AdapBisector = new(Bisector);
+        CurveAdaptor2D AdapLine1 = new(Line1);
         Intersect.Perform(AdapBisector, Domain1, AdapLine1, Tolerance, Tolerance);
 
         if (Intersect.IsDone() && !Intersect.IsEmpty())
@@ -976,20 +979,20 @@ public sealed class MAT2d_Tool2d
     }
 
     // OCCT's static Type(): the type of a geometry, or of the basis of a trimmed curve.
-    private static Type TypeOf(Geom2d_Geometry aGeom)
+    private static Type TypeOf(Geometry2D aGeom)
     {
         Type type = aGeom.GetType();
-        Geom2d_Curve curve;
+        Curve2D curve;
 
-        if (type == typeof(Geom2d_TrimmedCurve))
+        if (type == typeof(TrimmedCurve2D))
         {
-            curve = ((Geom2d_TrimmedCurve)aGeom).ChangeBasisCurve();
+            curve = ((TrimmedCurve2D)aGeom).ChangeBasisCurve();
             type = curve.GetType();
         }
         return type;
     }
 
-    private static IntRes2d_Domain Domain(Geom2d_TrimmedCurve Bisector1, double Tolerance)
+    private static IntRes2d_Domain Domain(TrimmedCurve2D Bisector1, double Tolerance)
     {
         double Param1 = Bisector1.FirstParameter();
         double Param2 = Bisector1.LastParameter();
@@ -997,7 +1000,7 @@ public sealed class MAT2d_Tool2d
         {
             Param2 = 10000.0;
             Type Type1 = TypeOf(Bisector1.ChangeBasisCurve());
-            Geom2d_Curve? BasisCurve = null;
+            Curve2D? BasisCurve = null;
             if (Type1 == typeof(Bisector_BisecAna))
             {
                 BasisCurve = ((Bisector_BisecAna)Bisector1.ChangeBasisCurve()).Geom2dCurve();
@@ -1007,17 +1010,17 @@ public sealed class MAT2d_Tool2d
             Hyperbola2D gpHyperbola;
             double Focus;
             double Limit = 50000.0;
-            if (Type1 == typeof(Geom2d_Parabola))
+            if (Type1 == typeof(ParabolaCurve2D))
             {
-                gpParabola = ((Geom2d_Parabola)BasisCurve!).Parab2d();
+                gpParabola = ((ParabolaCurve2D)BasisCurve!).Parab2d();
                 Focus = gpParabola.Focal();
                 double Val1 = Math.Sqrt(Limit * Focus);
                 double Val2 = Math.Sqrt(Limit * Limit);
                 Param2 = (Val1 <= Val2 ? Val1 : Val2);
             }
-            else if (Type1 == typeof(Geom2d_Hyperbola))
+            else if (Type1 == typeof(HyperbolaCurve2D))
             {
-                gpHyperbola = ((Geom2d_Hyperbola)BasisCurve!).Hypr2d();
+                gpHyperbola = ((HyperbolaCurve2D)BasisCurve!).Hypr2d();
                 double Majr = gpHyperbola.MajorRadius();
                 double Minr = gpHyperbola.MinorRadius();
                 double Valu1 = Limit / Majr;
@@ -1030,25 +1033,25 @@ public sealed class MAT2d_Tool2d
 
         IntRes2d_Domain Domain1 = new(Bisector1.Value(Param1), Param1, Tolerance, Bisector1.Value(Param2), Param2,
             Tolerance);
-        if (Bisector1.ChangeBasisCurve().IsPeriodic())
+        if (Bisector1.ChangeBasisCurve().IsPeriodic)
         {
             Domain1.SetEquivalentParameters(0.0, 2.0 * M_PI);
         }
         return Domain1;
     }
 
-    private static bool CheckEnds(Geom2d_Geometry Elt, in Point2D PCom, double Distance, double Tol)
+    private static bool CheckEnds(Geometry2D Elt, in Point2D PCom, double Distance, double Tol)
     {
         Type Type = Elt.GetType();
-        Geom2d_TrimmedCurve Curve;
+        TrimmedCurve2D Curve;
 
-        if (Type == typeof(Geom2d_CartesianPoint))
+        if (Type == typeof(CartesianPoint2))
         {
             return false;
         }
         else
         {
-            Curve = (Geom2d_TrimmedCurve)Elt;
+            Curve = (TrimmedCurve2D)Elt;
             Point2D aPf = Curve.StartPoint();
             Point2D aPl = Curve.EndPoint();
             double df = PCom.Distance(aPf);

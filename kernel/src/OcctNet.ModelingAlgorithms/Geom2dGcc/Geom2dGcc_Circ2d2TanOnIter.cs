@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
@@ -71,7 +72,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
         Direction2D            dirx = new(Direction2D.D.X);
         Line2D            L1  = Qualified1.Qualified();
-        Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
+        CurveAdaptor2D Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
         math_Vector         Umax = new(1, 4);
         math_Vector         Ufirst = new(1, 4);
@@ -171,8 +172,8 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
         double              Tol = Math.Abs(Tolerance);
         Direction2D            dirx = new(Direction2D.D.X);
-        Geom2dAdaptor_Curve Cu1 = Qualified1.Qualified();
-        Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
+        CurveAdaptor2D Cu1 = Qualified1.Qualified();
+        CurveAdaptor2D Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
         math_Vector         Umax = new(1, 4);
         math_Vector         Ufirst = new(1, 4);
@@ -282,7 +283,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
         double              Tol = Math.Abs(Tolerance);
         Direction2D            dirx = new(Direction2D.D.X);
-        Geom2dAdaptor_Curve Cu1 = Qualified1.Qualified();
+        CurveAdaptor2D Cu1 = Qualified1.Qualified();
         math_Vector         Umin = new(1, 3);
         math_Vector         Umax = new(1, 3);
         math_Vector         Ufirst = new(1, 3);
@@ -371,7 +372,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         Direction2D            dirx = new(Direction2D.D.X);
         Circle2D           C1  = Qualified1.Qualified();
         double              R1  = C1.Radius();
-        Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
+        CurveAdaptor2D Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
         math_Vector         Umax = new(1, 4);
         math_Vector         Ufirst = new(1, 4);
@@ -475,7 +476,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         Direction2D            dirx = new(Direction2D.D.X);
         Circle2D           C1  = Qualified1.Qualified();
         double              R1  = C1.Radius();
-        Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
+        CurveAdaptor2D Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
         math_Vector         Umax = new(1, 4);
         math_Vector         Ufirst = new(1, 4);
@@ -576,7 +577,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         double              Tol = Math.Abs(Tolerance);
         Direction2D            dirx = new(Direction2D.D.X);
         Line2D            L1  = Qualified1.Qualified();
-        Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
+        CurveAdaptor2D Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
         math_Vector         Umax = new(1, 4);
         math_Vector         Ufirst = new(1, 4);
@@ -675,8 +676,8 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
         double              Tol = Math.Abs(Tolerance);
         Direction2D            dirx = new(Direction2D.D.X);
-        Geom2dAdaptor_Curve Cu1 = Qualified1.Qualified();
-        Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
+        CurveAdaptor2D Cu1 = Qualified1.Qualified();
+        CurveAdaptor2D Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
         math_Vector         Umax = new(1, 4);
         math_Vector         Ufirst = new(1, 4);
@@ -784,7 +785,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
         double              Tol = Math.Abs(Tolerance);
         Direction2D            dirx = new(Direction2D.D.X);
-        Geom2dAdaptor_Curve Cu1 = Qualified1.Qualified();
+        CurveAdaptor2D Cu1 = Qualified1.Qualified();
         math_Vector         Umin = new(1, 3);
         math_Vector         Umax = new(1, 3);
         math_Vector         Ufirst = new(1, 3);
@@ -850,7 +851,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
     }
 
-    public Geom2dGcc_Circ2d2TanOnIter(in Geom2dGcc_QCurve Qualified1, in Geom2dGcc_QCurve Qualified2, Geom2dAdaptor_Curve OnCurv, double Param1, double Param2, double Param3, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnIter(in Geom2dGcc_QCurve Qualified1, in Geom2dGcc_QCurve Qualified2, CurveAdaptor2D OnCurv, double Param1, double Param2, double Param3, double Tolerance)
     {
         TheSame1 = false;
         par1sol  = 0.0;
@@ -871,8 +872,8 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
             throw new GccEnt_BadQualifier();
         }
         Direction2D            dirx = new(Direction2D.D.X);
-        Geom2dAdaptor_Curve Cu1 = Qualified1.Qualified();
-        Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
+        CurveAdaptor2D Cu1 = Qualified1.Qualified();
+        CurveAdaptor2D Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
         math_Vector         Umax = new(1, 4);
         math_Vector         Ufirst = new(1, 4);
@@ -958,7 +959,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
     }
 
-    public Geom2dGcc_Circ2d2TanOnIter(in GccEnt_QualifiedCirc Qualified1, in Geom2dGcc_QCurve Qualified2, Geom2dAdaptor_Curve OnCurv, double Param1, double Param2, double ParamOn, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnIter(in GccEnt_QualifiedCirc Qualified1, in Geom2dGcc_QCurve Qualified2, CurveAdaptor2D OnCurv, double Param1, double Param2, double ParamOn, double Tolerance)
     {
 
         TheSame1 = false;
@@ -981,7 +982,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         double              Tol = Math.Abs(Tolerance);
         Circle2D           C1  = Qualified1.Qualified();
         double              R1  = C1.Radius();
-        Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
+        CurveAdaptor2D Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
         math_Vector         Umax = new(1, 4);
         math_Vector         Ufirst = new(1, 4);
@@ -1061,7 +1062,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
     }
 
-    public Geom2dGcc_Circ2d2TanOnIter(in GccEnt_QualifiedLin Qualified1, in Geom2dGcc_QCurve Qualified2, Geom2dAdaptor_Curve OnCurv, double Param1, double Param2, double ParamOn, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnIter(in GccEnt_QualifiedLin Qualified1, in Geom2dGcc_QCurve Qualified2, CurveAdaptor2D OnCurv, double Param1, double Param2, double ParamOn, double Tolerance)
     {
         TheSame1 = false;
         par1sol  = 0.0;
@@ -1082,7 +1083,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         double              Tol = Math.Abs(Tolerance);
         Direction2D            dirx = new(Direction2D.D.X);
         Line2D            L1  = Qualified1.Qualified();
-        Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
+        CurveAdaptor2D Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
         math_Vector         Umax = new(1, 4);
         math_Vector         Ufirst = new(1, 4);
@@ -1159,7 +1160,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
     }
 
-    public Geom2dGcc_Circ2d2TanOnIter(in Geom2dGcc_QCurve Qualified1, in Point2D Point2, Geom2dAdaptor_Curve OnCurv, double Param1, double ParamOn, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnIter(in Geom2dGcc_QCurve Qualified1, in Point2D Point2, CurveAdaptor2D OnCurv, double Param1, double ParamOn, double Tolerance)
     {
         TheSame1 = false;
         par1sol  = 0.0;
@@ -1178,7 +1179,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
         double              Tol = Math.Abs(Tolerance);
         Direction2D            dirx = new(Direction2D.D.X);
-        Geom2dAdaptor_Curve Cu1 = Qualified1.Qualified();
+        CurveAdaptor2D Cu1 = Qualified1.Qualified();
         math_Vector         Umin = new(1, 3);
         math_Vector         Umax = new(1, 3);
         math_Vector         Ufirst = new(1, 3);

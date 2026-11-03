@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
 using Xunit.Abstractions;
@@ -23,7 +25,7 @@ namespace OcctNet.Oracle.Tests;
 /// <para>
 /// Not compared: AddOptimal on faces that are neither natural restrictions nor "CanUseEdges" surfaces (it needs the
 /// pcurves' 2D boxes, BRepTopAdaptor_FClass2d and Extrema_ExtSS), and the few cases where native OCCT reads
-/// uninitialised memory (<see cref="SegmentsWithZeroTolerance(Geom_Curve, double, double)"/>).
+/// uninitialised memory (<see cref="SegmentsWithZeroTolerance(Curve3D, double, double)"/>).
 /// </para>
 /// <para>
 /// BRepAdaptor_Curve and BRepAdaptor_Surface derive from GeomAdaptor_TransformedCurve/Surface (not from
@@ -64,45 +66,45 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     }
 
     /// <summary>The 3D curve of a native edge, null if it has none.</summary>
-    private Geom_Curve? EdgeCurve(N.TopoDS_Edge theEdge)
+    private Curve3D? EdgeCurve(N.TopoDS_Edge theEdge)
     {
-        var aSet = new GeomTools_CurveSet();
+        var aSet = new CurveSet();
         aSet.Read(new StringReader(Section(NativeWrite(theEdge), "Curves", "Polygon3D")));
         Assert.Null(aSet.Curve(2));
         return aSet.Curve(1);
     }
 
     /// <summary>Checks that the native face stores a surface of the port surface's type.</summary>
-    private void CheckFaceSurface(N.TopoDS_Face theFace, Geom_Surface thePort, string theWhat)
+    private void CheckFaceSurface(N.TopoDS_Face theFace, Surface thePort, string theWhat)
         => Assert.True(FaceSurface(theFace).GetType() == thePort.GetType(), theWhat);
 
     /// <summary>The surface of a native face.</summary>
-    private Geom_Surface FaceSurface(N.TopoDS_Face theFace)
+    private Surface FaceSurface(N.TopoDS_Face theFace)
     {
-        var aSet = new GeomTools_SurfaceSet();
+        var aSet = new SurfaceSet();
         aSet.Read(new StringReader(Section(NativeWrite(theFace), "Surfaces", "Triangulations")));
         Assert.Null(aSet.Surface(2));
         return aSet.Surface(1)!;
     }
 
     /// <summary>An edge as BRepAdaptor_Curve sees it: its curve, its range and its tolerance.</summary>
-    private sealed record EdgeData(Geom_Curve? Curve, double First, double Last, double Tolerance, bool Degenerated, bool Geometric);
+    private sealed record EdgeData(Curve3D? Curve, double First, double Last, double Tolerance, bool Degenerated, bool Geometric);
 
     /// <summary>
     /// An edge with the port's copy of its 3D curve: of theCandidates, the one the stored curve (read back) matches,
     /// same type and same point at mid-range. The read-back curve itself is only a check: GeomTools' gp_Dir
     /// constructors renormalise the stored directions, which moves some of them by an ulp.
     /// </summary>
-    private EdgeData Edge(N.TopoDS_Edge theEdge, IReadOnlyList<Geom_Curve> theCandidates, string theWhat)
+    private EdgeData Edge(N.TopoDS_Edge theEdge, IReadOnlyList<Curve3D> theCandidates, string theWhat)
     {
         double aF = 0, aL = 0;
         N.BRep_Tool.Range(theEdge, ref aF, ref aL);
-        Geom_Curve? aStored = EdgeCurve(theEdge);
-        Geom_Curve? aCurve = null;
+        Curve3D? aStored = EdgeCurve(theEdge);
+        Curve3D? aCurve = null;
         if (aStored is not null)
         {
             Point3D aP = aStored.Value(0.5 * (aF + aL));
-            foreach (Geom_Curve aC in theCandidates)
+            foreach (Curve3D aC in theCandidates)
             {
                 if (aC.GetType() == aStored.GetType()
                     && aC.Value(0.5 * (aF + aL)).Distance(aP) <= 1e-9 * Math.Max(1.0, aP.XYZ().Modulus()))
@@ -117,7 +119,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                             N.BRep_Tool.IsGeometric(theEdge));
     }
 
-    private List<EdgeData> FaceEdges(N.TopoDS_Face theFace, IReadOnlyList<Geom_Curve> theIsos, string theWhat)
+    private List<EdgeData> FaceEdges(N.TopoDS_Face theFace, IReadOnlyList<Curve3D> theIsos, string theWhat)
     {
         var aList = new List<EdgeData>();
         using var anExp = new N.TopExp_Explorer(theFace, N.TopAbs_ShapeEnum.TopAbs_EDGE);
@@ -154,7 +156,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     // ---------------------------------------------------------------------------------------------------------
     // Random shapes
 
-    private static (double First, double Last) CurveRange(Oracle theO, Geom_Curve theC)
+    private static (double First, double Last) CurveRange(Oracle theO, Curve3D theC)
     {
         double aFirst = theC.FirstParameter(), aLast = theC.LastParameter();
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
@@ -194,12 +196,12 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     }
 
     /// <summary>A native edge on a random curve of the given kind and range; null if MakeEdge fails.</summary>
-    private static N.TopoDS_Edge? RandomEdge(Oracle theO, int theKind, out string theWhat, out Geom_Curve thePort)
+    private static N.TopoDS_Edge? RandomEdge(Oracle theO, int theKind, out string theWhat, out Curve3D thePort)
     {
-        (N.Geom_Curve aNC, Geom_Curve aPC, _) = RandomCurve(theO, theKind);
+        (N.Geom_Curve aNC, Curve3D aPC, _) = RandomCurve(theO, theKind);
         // BRepLib_MakeEdge kills trimmed curves
         thePort = aPC;
-        while (thePort is Geom_TrimmedCurve aT)
+        while (thePort is TrimmedCurve3D aT)
         {
             thePort = aT.BasisCurve();
         }
@@ -218,9 +220,9 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     /// or the whole surface is unbounded.
     /// </summary>
     private static N.TopoDS_Face? RandomFace(Oracle theO, int theKind, bool theWhole, out string theWhat,
-                                             out Geom_Surface thePort, out List<Geom_Curve> theIsos)
+                                             out Surface thePort, out List<Curve3D> theIsos)
     {
-        (N.Geom_Surface aNS, Geom_Surface aPS) = RandomSurface(theO, theKind);
+        (N.Geom_Surface aNS, Surface aPS) = RandomSurface(theO, theKind);
         thePort = aPS;
         theIsos = [];
         using (aNS)
@@ -272,43 +274,43 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     /// The surface BRepLib_MakeFace::Init(S, UMin, UMax, VMin, VMax) stores, and the iso curves it makes the edges'
     /// 3D curves of, built in the port as OCCT builds them.
     /// </summary>
-    private static (Geom_Surface Surface, List<Geom_Curve> Isos) MakeFaceGeometry(Geom_Surface SS, double UMin, double UMax,
+    private static (Surface Surface, List<Curve3D> Isos) MakeFaceGeometry(Surface SS, double UMin, double UMax,
                                                                                    double VMin, double VMax)
     {
-        Geom_Surface S = SS, BS = SS;
-        if (S is Geom_RectangularTrimmedSurface RS)
+        Surface S = SS, BS = SS;
+        if (S is TrimmedSurface RS)
         {
             BS = RS.BasisSurface();
         }
         BS.Bounds(out double umin, out double umax, out double vmin, out double vmax);
-        if (BS.GetType() == typeof(Geom_OffsetSurface))
+        if (BS.GetType() == typeof(OffsetSurface))
         {
-            var OS = (Geom_OffsetSurface)BS;
-            Geom_Surface Base = OS.BasisSurface();
-            if (Base.GetType() == typeof(Geom_SurfaceOfLinearExtrusion))
+            var OS = (OffsetSurface)BS;
+            Surface Base = OS.BasisSurface();
+            if (Base.GetType() == typeof(ExtrusionSurface))
             {
                 S = global::Kerf.Engine.Foundation.Precision.IsInfinite(umin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(umax)
-                      ? new Geom_RectangularTrimmedSurface(OS, UMin, UMax, VMin, VMax)
-                      : new Geom_RectangularTrimmedSurface(OS, VMin, VMax, false);
+                      ? new TrimmedSurface(OS, UMin, UMax, VMin, VMax)
+                      : new TrimmedSurface(OS, VMin, VMax, false);
             }
-            else if (Base.GetType() == typeof(Geom_SurfaceOfRevolution))
+            else if (Base.GetType() == typeof(RevolutionSurface))
             {
                 if (global::Kerf.Engine.Foundation.Precision.IsInfinite(vmin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vmax))
                 {
-                    S = new Geom_RectangularTrimmedSurface(OS, VMin, VMax, false);
+                    S = new TrimmedSurface(OS, VMin, VMax, false);
                 }
             }
         }
         double epsilon = global::Kerf.Engine.Foundation.Precision.PConfusion();
-        if (S.IsUPeriodic())
+        if (S.IsUPeriodic)
         {
             global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(umin, umax, epsilon, ref UMin, ref UMax);
         }
-        if (S.IsVPeriodic())
+        if (S.IsVPeriodic)
         {
             global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(vmin, vmax, epsilon, ref VMin, ref VMax);
         }
-        var anIsos = new List<Geom_Curve>();
+        var anIsos = new List<Curve3D>();
         if (!global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(UMin))
         {
             anIsos.Add(S.UIso(UMin));
@@ -387,21 +389,21 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     // The port's side of BRepBndLib
 
     /// <summary>BRepAdaptor_Curve(E): the edge's curve on its range, transformed by its location.</summary>
-    private static GeomAdaptor_TransformedCurve EdgeAdaptor(EdgeData theE, in Transform3D theLoc)
+    private static TransformedCurve EdgeAdaptor(EdgeData theE, in Transform3D theLoc)
         => new(theE.Curve!, theE.First, theE.Last, theLoc);
 
     /// <summary>BRepBndLib::Add of a face or an edge (no triangulation), moved by theLoc.</summary>
-    private static void PortAdd(Geom_Surface? theSurf, (double U1, double U2, double V1, double V2) theUV, double theFaceTol,
+    private static void PortAdd(Surface? theSurf, (double U1, double U2, double V1, double V2) theUV, double theFaceTol,
                                 List<EdgeData> theEdges, in Transform3D theLoc, ref Box theB)
     {
         if (theSurf is not null)
         {
             // BS.Initialize(F, false) to read the type, then BS.Initialize(F) (UV bounds)
-            var aBSAll = new GeomAdaptor_TransformedSurface(theSurf, theLoc);
+            var aBSAll = new TransformedSurface(theSurf, theLoc);
             if (aBSAll.GetType() != SurfaceKind.Plane)
             {
-                var aBS = new GeomAdaptor_TransformedSurface(theSurf, theUV.U1, theUV.U2, theUV.V1, theUV.V2, theLoc);
-                BndLib_AddSurface.Add(aBS, theFaceTol, ref theB);
+                var aBS = new TransformedSurface(theSurf, theUV.U1, theUV.U2, theUV.V1, theUV.V2, theLoc);
+                AddSurface.Add(aBS, theFaceTol, ref theB);
             }
             else
             {
@@ -410,7 +412,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                 {
                     if (anE.Geometric)
                     {
-                        BndLib_Add3dCurve.Add(EdgeAdaptor(anE, theLoc), anE.Tolerance, ref theB);
+                        Add3dCurve.Add(EdgeAdaptor(anE, theLoc), anE.Tolerance, ref theB);
                     }
                 }
                 theB.Enlarge(theFaceTol);
@@ -419,12 +421,12 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         }
         foreach (EdgeData anE in theEdges)
         {
-            BndLib_Add3dCurve.Add(EdgeAdaptor(anE, theLoc), anE.Tolerance, ref theB);
+            Add3dCurve.Add(EdgeAdaptor(anE, theLoc), anE.Tolerance, ref theB);
         }
     }
 
     /// <summary>BRepBndLib.cxx's CanUseEdges.</summary>
-    private static bool CanUseEdges(Adaptor3d_Surface BS)
+    private static bool CanUseEdges(SurfaceAdaptorBase BS)
     {
         SurfaceKind aST = BS.GetType();
         if (aST == SurfaceKind.Plane || aST == SurfaceKind.Cylinder
@@ -442,24 +444,24 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         }
         else if (aST == SurfaceKind.BSplineSurface)
         {
-            Geom_BSplineSurface aBSpl = BS.BSpline();
-            return (aBSpl.UDegree() == 1 && aBSpl.NbUKnots() == 2) || (aBSpl.VDegree() == 1 && aBSpl.NbVKnots() == 2);
+            BSplineSurface aBSpl = BS.BSpline();
+            return (aBSpl.UDegree() == 1 && aBSpl.UKnotCount == 2) || (aBSpl.VDegree() == 1 && aBSpl.VKnotCount == 2);
         }
         else if (aST == SurfaceKind.BezierSurface)
         {
-            Geom_BezierSurface aBz = BS.Bezier();
+            BezierSurface aBz = BS.Bezier();
             return aBz.UDegree() == 1 || aBz.VDegree() == 1;
         }
         return false;
     }
 
     /// <summary>BRepBndLib_1.cxx's IsLinear.</summary>
-    private static bool IsLinear(Adaptor3d_Curve theC)
+    private static bool IsLinear(CurveAdaptorBase theC)
     {
         CurveKind aCT = theC.GetType();
         if (aCT == CurveKind.OffsetCurve)
         {
-            return IsLinear(new GeomAdaptor_Curve(theC.OffsetCurve().BasisCurve()));
+            return IsLinear(new CurveAdaptor(theC.OffsetCurve().BasisCurve()));
         }
         if (aCT == CurveKind.BSplineCurve || aCT == CurveKind.BezierCurve)
         {
@@ -469,7 +471,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     }
 
     /// <summary>BRepBndLib_1.cxx's IsPlanar.</summary>
-    private static bool IsPlanar(Adaptor3d_Surface theS)
+    private static bool IsPlanar(SurfaceAdaptorBase theS)
     {
         SurfaceKind aST = theS.GetType();
         if (aST == SurfaceKind.OffsetSurface)
@@ -518,14 +520,14 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     /// The port's side of BRepBndLib::AddOBB (no triangulation, not optimal, shape tolerances): the vertices when
     /// the shape is linear or planar with linear edges (CheckPoints), else ComputePCA with native mass properties.
     /// </summary>
-    private OrientedBox PortOBB(N.TopoDS_Shape theShape, Geom_Surface? theSurf, (double U1, double U2, double V1, double V2) theUV,
+    private OrientedBox PortOBB(N.TopoDS_Shape theShape, Surface? theSurf, (double U1, double U2, double V1, double V2) theUV,
                                    double theFaceTol, List<EdgeData> theEdges, bool theIsFace)
     {
         // PointsForOBB with triangulation allowed but absent
         bool aPointsOnly;
         if (theIsFace)
         {
-            aPointsOnly = IsPlanar(new GeomAdaptor_TransformedSurface(theSurf!, new Transform3D()))
+            aPointsOnly = IsPlanar(new TransformedSurface(theSurf!, new Transform3D()))
                           && theEdges.TrueForAll(e => !e.Geometric || IsLinear(EdgeAdaptor(e, new Transform3D())));
         }
         else
@@ -624,15 +626,15 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     /// native OCCT reads uninitialised memory there (the box changes from run to run), the port reads 0
     /// (occt-issues.md). Such cases can't be compared.
     /// </summary>
-    private static bool SegmentsWithZeroTolerance(Geom_Curve theC, double theU1, double theU2)
+    private static bool SegmentsWithZeroTolerance(Curve3D theC, double theU1, double theU2)
     {
         while (true)
         {
-            if (theC is Geom_TrimmedCurve aT)
+            if (theC is TrimmedCurve3D aT)
             {
                 theC = aT.BasisCurve();
             }
-            else if (theC is Geom_OffsetCurve anO)
+            else if (theC is OffsetCurve3D anO)
             {
                 theC = anO.BasisCurve();
             }
@@ -641,7 +643,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                 break;
             }
         }
-        if (theC is not Geom_BSplineCurve aBS || !aBS.IsPeriodic())
+        if (theC is not BSplineCurve3D aBS || !aBS.IsPeriodic)
         {
             return false;
         }
@@ -657,7 +659,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     }
 
     /// <summary><see cref="SegmentsWithZeroTolerance"/> for a face: its edges and the basis curve of a swept surface.</summary>
-    private static bool SegmentsWithZeroTolerance(Geom_Surface theS, (double U1, double U2, double V1, double V2) theUV,
+    private static bool SegmentsWithZeroTolerance(Surface theS, (double U1, double U2, double V1, double V2) theUV,
                                                   List<EdgeData> theEdges)
     {
         foreach (EdgeData anE in theEdges)
@@ -669,11 +671,11 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         }
         while (true)
         {
-            if (theS is Geom_RectangularTrimmedSurface aT)
+            if (theS is TrimmedSurface aT)
             {
                 theS = aT.BasisSurface();
             }
-            else if (theS is Geom_OffsetSurface anO)
+            else if (theS is OffsetSurface anO)
             {
                 theS = anO.BasisSurface();
             }
@@ -684,8 +686,8 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         }
         return theS switch
         {
-            Geom_SurfaceOfLinearExtrusion anExt => SegmentsWithZeroTolerance(anExt.BasisCurve(), theUV.U1, theUV.U2),
-            Geom_SurfaceOfRevolution aRev => SegmentsWithZeroTolerance(aRev.BasisCurve(), theUV.V1, theUV.V2),
+            ExtrusionSurface anExt => SegmentsWithZeroTolerance(anExt.BasisCurve(), theUV.U1, theUV.U2),
+            RevolutionSurface aRev => SegmentsWithZeroTolerance(aRev.BasisCurve(), theUV.V1, theUV.V2),
             _ => false,
         };
     }
@@ -702,7 +704,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         {
             for (int c = 0; c < CasesPerKind; c++)
             {
-                using N.TopoDS_Edge? aNE = RandomEdge(anOracle, aKind, out string aW, out Geom_Curve aPC);
+                using N.TopoDS_Edge? aNE = RandomEdge(anOracle, aKind, out string aW, out Curve3D aPC);
                 if (aNE is null)
                 {
                     continue;
@@ -742,7 +744,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         {
             for (int c = 0; c < CasesPerKind; c++)
             {
-                using N.TopoDS_Edge? aNE = RandomEdge(anOracle, aKind, out string aW, out Geom_Curve aPC);
+                using N.TopoDS_Edge? aNE = RandomEdge(anOracle, aKind, out string aW, out Curve3D aPC);
                 if (aNE is null)
                 {
                     continue;
@@ -755,7 +757,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
 
                     // aLocBox from BndLib_Add3dCurve::AddOptimal, then B.Update(aLocBox.Get())
                     Box aLocBox = new();
-                    BndLib_Add3dCurve.AddOptimal(EdgeAdaptor(anE, new Transform3D()), aUseTol ? anE.Tolerance : 0.0, ref aLocBox);
+                    Add3dCurve.AddOptimal(EdgeAdaptor(anE, new Transform3D()), aUseTol ? anE.Tolerance : 0.0, ref aLocBox);
                     Box aPB = new();
                     if (!aLocBox.IsVoid)
                     {
@@ -782,7 +784,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
             for (int c = 0; c < CasesPerKind; c++)
             {
                 using N.TopoDS_Face? aNF = RandomFace(anOracle, aKind, anOracle.Int(0, 4) == 0, out string aW,
-                                                          out Geom_Surface aSurf, out List<Geom_Curve> anIsos);
+                                                          out Surface aSurf, out List<Curve3D> anIsos);
                 if (aNF is null)
                 {
                     continue;
@@ -796,7 +798,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                 }
                 var anUV = UVBounds(aNF);
                 double aTolF = N.BRep_Tool.Tolerance(aNF);
-                if (new GeomAdaptor_TransformedSurface(aSurf, new Transform3D()).GetType() == SurfaceKind.Plane)
+                if (new TransformedSurface(aSurf, new Transform3D()).GetType() == SurfaceKind.Plane)
                 {
                     aPlanes++;
                 }
@@ -827,13 +829,13 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
             for (int c = 0; c < CasesPerKind; c++)
             {
                 bool aWhole = anOracle.Int(0, 2) == 0;
-                using N.TopoDS_Face? aNF = RandomFace(anOracle, aKind, aWhole, out string aW, out Geom_Surface aSurf, out List<Geom_Curve> anIsos);
+                using N.TopoDS_Face? aNF = RandomFace(anOracle, aKind, aWhole, out string aW, out Surface aSurf, out List<Curve3D> anIsos);
                 if (aNF is null)
                 {
                     continue;
                 }
                 CheckFaceSurface(aNF, aSurf, aW);
-                var aBS = new GeomAdaptor_TransformedSurface(aSurf, new Transform3D()); // BS.Initialize(F, false)
+                var aBS = new TransformedSurface(aSurf, new Transform3D()); // BS.Initialize(F, false)
                 bool aCanUseEdges = CanUseEdges(aBS);
                 if (!aCanUseEdges && !N.BRep_Tool.NaturalRestriction(aNF))
                 {
@@ -860,7 +862,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                                 continue;
                             }
                             Box anEBox = new();
-                            BndLib_Add3dCurve.AddOptimal(EdgeAdaptor(anE, new Transform3D()), aUseTol ? anE.Tolerance : 0.0, ref anEBox);
+                            Add3dCurve.AddOptimal(EdgeAdaptor(anE, new Transform3D()), aUseTol ? anE.Tolerance : 0.0, ref anEBox);
                             aLocBox.Add(anEBox);
                         }
                     }
@@ -868,7 +870,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                     {
                         // natural restriction: the unrestricted adaptor's bounds
                         double aTol = aUseTol ? aTolF : 0.0;
-                        BndLib_AddSurface.AddOptimal(aBS, aBS.FirstUParameter(), aBS.LastUParameter(),
+                        AddSurface.AddOptimal(aBS, aBS.FirstUParameter(), aBS.LastUParameter(),
                                                      aBS.FirstVParameter(), aBS.LastVParameter(), aTol, ref aLocBox);
                     }
                     Box aPB = new();
@@ -901,7 +903,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         {
             for (int c = 0; c < CasesPerKind / 2; c++)
             {
-                using N.TopoDS_Edge? aNE = RandomEdge(anOracle, aKind, out string aW, out Geom_Curve aPC);
+                using N.TopoDS_Edge? aNE = RandomEdge(anOracle, aKind, out string aW, out Curve3D aPC);
                 if (aNE is null)
                 {
                     continue;
@@ -923,7 +925,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         {
             for (int c = 0; c < CasesPerKind / 2; c++)
             {
-                using N.TopoDS_Face? aNF = RandomFace(anOracle, aKind, false, out string aW, out Geom_Surface aSurf, out List<Geom_Curve> anIsos);
+                using N.TopoDS_Face? aNF = RandomFace(anOracle, aKind, false, out string aW, out Surface aSurf, out List<Curve3D> anIsos);
                 if (aNF is null)
                 {
                     continue;

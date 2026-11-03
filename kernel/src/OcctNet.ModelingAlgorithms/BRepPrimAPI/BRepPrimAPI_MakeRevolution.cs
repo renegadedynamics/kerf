@@ -18,27 +18,27 @@ public class BRepPrimAPI_MakeRevolution : BRepPrimAPI_MakeOneAxis
 {
     private readonly BRepPrim_Revolution myRevolution;
 
-    private static Geom2d_Curve Project(Geom_Curve M, in CoordinateSystem Axis)
+    private static Curve2D Project(Curve3D M, in CoordinateSystem Axis)
     {
-        Geom2d_Curve? C;
-        C = GeomProjLib.Curve2d(M, new Geom_Plane(Axis));
+        Curve2D? C;
+        C = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(M, new PlaneSurface(Axis));
         // OCCT passes a null projection on to BRepPrim_Revolution, which dereferences it when it is used
         return C!;
     }
 
-    private static Geom2d_Curve Project(Geom_Curve M)
+    private static Curve2D Project(Curve3D M)
     {
         return Project(M, new CoordinateSystem(new Frame3D(Constants.Origin(), Constants.DY().Reversed(), Constants.DX())));
     }
 
     /// <summary>A revolution body by rotating a curve around Z.</summary>
-    public BRepPrimAPI_MakeRevolution(Geom_Curve Meridian)
+    public BRepPrimAPI_MakeRevolution(Curve3D Meridian)
     {
         myRevolution = new BRepPrim_Revolution(Constants.XOY(), Meridian.FirstParameter(), Meridian.LastParameter(), Meridian, Project(Meridian));
     }
 
     /// <summary>A revolution body by rotating a curve around Z, by angle.</summary>
-    public BRepPrimAPI_MakeRevolution(Geom_Curve Meridian, double angle)
+    public BRepPrimAPI_MakeRevolution(Curve3D Meridian, double angle)
     {
         myRevolution = new BRepPrim_Revolution(new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X)),
                                                Meridian.FirstParameter(),
@@ -49,7 +49,7 @@ public class BRepPrimAPI_MakeRevolution : BRepPrimAPI_MakeOneAxis
     }
 
     /// <summary>A revolution body by rotating a curve between VMin and VMax around Z.</summary>
-    public BRepPrimAPI_MakeRevolution(Geom_Curve Meridian, double VMin, double VMax)
+    public BRepPrimAPI_MakeRevolution(Curve3D Meridian, double VMin, double VMax)
     {
         myRevolution = new BRepPrim_Revolution(new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X)),
                                                VMin,
@@ -59,7 +59,7 @@ public class BRepPrimAPI_MakeRevolution : BRepPrimAPI_MakeOneAxis
     }
 
     /// <summary>A revolution body by rotating a curve between VMin and VMax around Z, by angle.</summary>
-    public BRepPrimAPI_MakeRevolution(Geom_Curve Meridian, double VMin, double VMax, double angle)
+    public BRepPrimAPI_MakeRevolution(Curve3D Meridian, double VMin, double VMax, double angle)
     {
         myRevolution = new BRepPrim_Revolution(new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X)),
                                                VMin,
@@ -70,26 +70,26 @@ public class BRepPrimAPI_MakeRevolution : BRepPrimAPI_MakeOneAxis
     }
 
     /// <summary>A revolution body by rotating a curve around the Z axis of the axes.</summary>
-    public BRepPrimAPI_MakeRevolution(in Frame3D Axes, Geom_Curve Meridian)
+    public BRepPrimAPI_MakeRevolution(in Frame3D Axes, Curve3D Meridian)
     {
         myRevolution = new BRepPrim_Revolution(Axes, Meridian.FirstParameter(), Meridian.LastParameter(), Meridian, Project(Meridian));
     }
 
     /// <summary>A revolution body by rotating a curve around the Z axis of the axes, by angle.</summary>
-    public BRepPrimAPI_MakeRevolution(in Frame3D Axes, Geom_Curve Meridian, double angle)
+    public BRepPrimAPI_MakeRevolution(in Frame3D Axes, Curve3D Meridian, double angle)
     {
         myRevolution = new BRepPrim_Revolution(Axes, Meridian.FirstParameter(), Meridian.LastParameter(), Meridian, Project(Meridian));
         myRevolution.Angle(angle);
     }
 
     /// <summary>A revolution body by rotating a curve between VMin and VMax around the Z axis of the axes.</summary>
-    public BRepPrimAPI_MakeRevolution(in Frame3D Axes, Geom_Curve Meridian, double VMin, double VMax)
+    public BRepPrimAPI_MakeRevolution(in Frame3D Axes, Curve3D Meridian, double VMin, double VMax)
     {
         myRevolution = new BRepPrim_Revolution(Axes, VMin, VMax, Meridian, Project(Meridian));
     }
 
     /// <summary>A revolution body by rotating a curve between VMin and VMax around the Z axis of the axes, by angle.</summary>
-    public BRepPrimAPI_MakeRevolution(in Frame3D Axes, Geom_Curve Meridian, double VMin, double VMax, double angle)
+    public BRepPrimAPI_MakeRevolution(in Frame3D Axes, Curve3D Meridian, double VMin, double VMax, double angle)
     {
         myRevolution = new BRepPrim_Revolution(Axes, VMin, VMax, Meridian, Project(Meridian));
         myRevolution.Angle(angle);

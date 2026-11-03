@@ -3,13 +3,19 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Geometry.Projection;
+using Kerf.Engine.Intersection;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -17,7 +23,7 @@ namespace Occt;
 // GeomInt_IntSS::MakeBSpline); it isn't ported.
 public partial class IntTools_FaceFace
 {
-    private static void Parameters(GeomAdaptor_Surface HS1, GeomAdaptor_Surface HS2, in Point3D Ptref,
+    private static void Parameters(SurfaceAdaptor HS1, SurfaceAdaptor HS2, in Point3D Ptref,
                                    out double U1, out double V1, out double U2, out double V2)
     {
 
@@ -72,46 +78,46 @@ public partial class IntTools_FaceFace
         quad2.Parameters(Ptref, ref U2, ref V2);
     }
 
-    private static void CorrectSurfaceBoundaries(in TopoDS_Face theFace, double theTolerance, ref double theumin,
+    private static void CorrectSurfaceBoundaries(in Face theFace, double theTolerance, ref double theumin,
                                                  ref double theumax, ref double thevmin, ref double thevmax)
     {
         bool enlarge, isuperiodic, isvperiodic;
         double uinf, usup, vinf, vsup, delta;
         SurfaceKind aType;
-        Geom_Surface aSurface;
+        Surface aSurface;
         //
-        aSurface = BRep_Tool.Surface(theFace)!;
+        aSurface = Tool.Surface(theFace)!;
         aSurface.Bounds(out uinf, out usup, out vinf, out vsup);
         delta = theTolerance;
         enlarge = false;
         //
-        GeomAdaptor_Surface anAdaptorSurface = new(aSurface);
+        SurfaceAdaptor anAdaptorSurface = new(aSurface);
         //
-        if (aSurface is Geom_RectangularTrimmedSurface aTrimmed)
+        if (aSurface is TrimmedSurface aTrimmed)
         {
-            Geom_Surface aBasisSurface = aTrimmed.BasisSurface();
+            Surface aBasisSurface = aTrimmed.BasisSurface();
 
-            if (aBasisSurface is Geom_RectangularTrimmedSurface || aBasisSurface is Geom_OffsetSurface)
+            if (aBasisSurface is TrimmedSurface || aBasisSurface is global::Kerf.Geometry.OffsetSurface)
             {
                 return;
             }
         }
         //
-        if (aSurface is Geom_OffsetSurface anOffset)
+        if (aSurface is global::Kerf.Geometry.OffsetSurface anOffset)
         {
-            Geom_Surface aBasisSurface = anOffset.BasisSurface();
+            Surface aBasisSurface = anOffset.BasisSurface();
 
-            if (aBasisSurface is Geom_RectangularTrimmedSurface || aBasisSurface is Geom_OffsetSurface)
+            if (aBasisSurface is TrimmedSurface || aBasisSurface is global::Kerf.Geometry.OffsetSurface)
             {
                 return;
             }
         }
         //
-        isuperiodic = anAdaptorSurface.IsUPeriodic();
-        isvperiodic = anAdaptorSurface.IsVPeriodic();
+        isuperiodic = anAdaptorSurface.IsUPeriodic;
+        isvperiodic = anAdaptorSurface.IsVPeriodic;
         //
         aType = anAdaptorSurface.GetType();
-        if ((aType == BezierSurface) || (aType == BSplineSurface)
+        if ((aType == SurfaceKind.BezierSurface) || (aType == SurfaceKind.BSplineSurface)
             || (aType == SurfaceOfExtrusion) || (aType == SurfaceOfRevolution)
             || (aType == SurfaceKind.Cylinder))
         {
@@ -169,34 +175,34 @@ public partial class IntTools_FaceFace
             bool correctU = false;
             bool correctV = false;
             Box2d aBox = new();
-            TopExp_Explorer anExp = new();
+            Explorer anExp = new();
 
-            for (anExp.Init(theFace, TopAbs_EDGE); anExp.More(); anExp.Next())
+            for (anExp.Init(theFace, ShapeType.Edge); anExp.More(); anExp.Next())
             {
-                if (BRep_Tool.IsClosed(TopoDS.Edge(anExp.Current()), theFace))
+                if (Tool.IsClosed(ShapeCasts.Edge(anExp.Current()), theFace))
                 {
                     correct = true;
                     double f, l;
-                    TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
+                    Edge anEdge = ShapeCasts.Edge(anExp.Current());
 
                     for (int i = 0; i < 2; i++)
                     {
                         if (i == 0)
                         {
-                            anEdge.Orientation(TopAbs_FORWARD);
+                            anEdge.Orientation(Forward);
                         }
                         else
                         {
-                            anEdge.Orientation(TopAbs_REVERSED);
+                            anEdge.Orientation(Reversed);
                         }
-                        Geom2d_Curve? aCurve = BRep_Tool.CurveOnSurface(anEdge, theFace, out f, out l);
+                        Curve2D? aCurve = Tool.CurveOnSurface(anEdge, theFace, out f, out l);
 
                         if (aCurve is null)
                         {
                             correct = false;
                             break;
                         }
-                        Geom2d_Line? aLine = aCurve as Geom2d_Line;
+                        LineCurve2D? aLine = aCurve as LineCurve2D;
 
                         if (aLine is null)
                         {
@@ -254,21 +260,21 @@ public partial class IntTools_FaceFace
 
     // Computes a new parameter for given curve. The corresponding 2d points
     // does not lay on any boundary of given faces
-    private static bool ParameterOutOfBoundary(double theParameter, Geom_Curve theCurve, in TopoDS_Face theFace1,
-                                               in TopoDS_Face theFace2, double theOtherParameter, bool bIncreasePar,
+    private static bool ParameterOutOfBoundary(double theParameter, Curve3D theCurve, in Face theFace1,
+                                               in Face theFace2, double theOtherParameter, bool bIncreasePar,
                                                double theTol, out double theNewParameter, IntTools_Context aContext)
     {
         bool bIsComputed = false;
         theNewParameter = theParameter;
 
         double acurpar = theParameter;
-        TopAbs_State aState = TopAbs_ON;
+        Containment aState = On;
         int iter = 0;
         double asumtol = theTol;
         double adelta = asumtol * 0.1;
         adelta = (adelta < global::Kerf.Engine.Foundation.Precision.Confusion()) ? global::Kerf.Engine.Foundation.Precision.Confusion() : adelta;
-        Geom_Surface aSurf1 = BRep_Tool.Surface(theFace1)!;
-        Geom_Surface aSurf2 = BRep_Tool.Surface(theFace2)!;
+        Surface aSurf1 = Tool.Surface(theFace1)!;
+        Surface aSurf2 = Tool.Surface(theFace2)!;
 
         double u1, u2, v1, v2;
 
@@ -280,7 +286,7 @@ public partial class IntTools_FaceFace
         aSurf2.Bounds(out u1, out u2, out v1, out v2);
         aPrj2.Init(aSurf2, u1, u2, v1, v2);
 
-        while (aState == TopAbs_ON)
+        while (aState == On)
         {
             if (bIncreasePar)
             {
@@ -300,7 +306,7 @@ public partial class IntTools_FaceFace
                 aState = aContext.StatePointFace(theFace1, new Point2D(U, V));
             }
 
-            if (aState != TopAbs_ON)
+            if (aState != On)
             {
                 aPrj2.Perform(aPCurrent);
 
@@ -341,7 +347,7 @@ public partial class IntTools_FaceFace
         return bIsComputed;
     }
 
-    private static bool IsCurveValid(Geom2d_Curve? thePCurve)
+    private static bool IsCurveValid(Curve2D? thePCurve)
     {
         if (thePCurve is null)
         {
@@ -349,21 +355,21 @@ public partial class IntTools_FaceFace
         }
 
         double tolint = 1.0e-10;
-        Geom2dAdaptor_Curve PCA = new();
+        CurveAdaptor2D PCA = new();
         IntRes2d_Domain PCD = new();
         Geom2dInt_GInter PCI = new();
 
         double pf = 0.0, pl = 0.0;
         Point2D pntf, pntl;
 
-        if (!thePCurve.IsClosed() && !thePCurve.IsPeriodic())
+        if (!thePCurve.IsClosed && !thePCurve.IsPeriodic)
         {
             pf = thePCurve.FirstParameter();
             pl = thePCurve.LastParameter();
             pntf = thePCurve.Value(pf);
             pntl = thePCurve.Value(pl);
             PCA.Load(thePCurve);
-            if (!PCA.IsPeriodic())
+            if (!PCA.IsPeriodic)
             {
                 if (PCA.FirstParameter() > pf)
                 {
@@ -455,7 +461,7 @@ public partial class IntTools_FaceFace
         return bRes;
     }
 
-    private static void PerformPlanes(GeomAdaptor_Surface theS1, GeomAdaptor_Surface theS2, double TolF1,
+    private static void PerformPlanes(SurfaceAdaptor theS1, SurfaceAdaptor theS2, double TolF1,
                                       double TolF2, double TolAng, double TolTang, bool theApprox1, bool theApprox2,
                                       NCollection_Sequence<IntTools_Curve> theSeqOfCurve, out bool theTangentFaces)
     {
@@ -463,17 +469,17 @@ public partial class IntTools_FaceFace
         Plane3D aPln1 = theS1.Plane();
         Plane3D aPln2 = theS2.Plane();
 
-        IntAna_QuadQuadGeo aPlnInter = new(aPln1, aPln2, TolAng, TolTang);
+        QuadQuadGeo aPlnInter = new(aPln1, aPln2, TolAng, TolTang);
 
-        if (!aPlnInter.IsDone())
+        if (!aPlnInter.IsDone)
         {
             theTangentFaces = false;
             return;
         }
 
-        IntAna_ResultType aResType = aPlnInter.TypeInter();
+        ResultType aResType = aPlnInter.TypeInter();
 
-        if (aResType == IntAna_ResultType.IntAna_Same)
+        if (aResType == ResultType.Same)
         {
             theTangentFaces = true;
             return;
@@ -481,14 +487,14 @@ public partial class IntTools_FaceFace
 
         theTangentFaces = false;
 
-        if (aResType == IntAna_ResultType.IntAna_Empty)
+        if (aResType == ResultType.Empty)
         {
             return;
         }
 
         Line3D aLin = aPlnInter.Line(1);
 
-        ProjLib_Plane aProj = new();
+        PlaneProjector aProj = new();
 
         aProj.Init(aPln1);
         aProj.Project(aLin);
@@ -533,34 +539,34 @@ public partial class IntTools_FaceFace
             return;
         }
 
-        Geom_Line aGLin = new(aLin);
+        LineCurve3D aGLin = new(aLin);
 
         IntTools_Curve aCurve = new();
         // OCCT: on unbounded planar faces (no wires) pmin and pmax come from the infinite bounds and the trimming
         // throws Standard_ConstructionError
-        Geom_TrimmedCurve aGTLin = new(aGLin, pmin, pmax);
+        TrimmedCurve3D aGTLin = new(aGLin, pmin, pmax);
 
         aCurve.SetCurve(aGTLin);
 
         if (theApprox1)
         {
-            Geom2d_Line C2d = new(aLin2d1);
-            aCurve.SetFirstCurve2d(new Geom2d_TrimmedCurve(C2d, pmin, pmax));
+            LineCurve2D C2d = new(aLin2d1);
+            aCurve.SetFirstCurve2d(new TrimmedCurve2D(C2d, pmin, pmax));
         }
         else
         {
-            Geom2d_Curve? H1 = null;
+            Curve2D? H1 = null;
             aCurve.SetFirstCurve2d(H1);
         }
         if (theApprox2)
         {
-            Geom2d_Line C2d = new(aLin2d2);
-            aCurve.SetSecondCurve2d(new Geom2d_TrimmedCurve(C2d, pmin, pmax));
+            LineCurve2D C2d = new(aLin2d2);
+            aCurve.SetSecondCurve2d(new TrimmedCurve2D(C2d, pmin, pmax));
         }
         else
         {
             // OCCT clears the first 2D curve here, not the second: without a second 2D curve the first is lost
-            Geom2d_Curve? H1 = null;
+            Curve2D? H1 = null;
             aCurve.SetFirstCurve2d(H1);
         }
         //
@@ -593,7 +599,7 @@ public partial class IntTools_FaceFace
     private static bool COINC(double d1, double d2, double tol)
         => (d1 <= tol && d1 >= -tol) && (d2 <= tol && d2 >= -tol);
 
-    private static bool ClassifyLin2d(GeomAdaptor_Surface theS, in Line2D theLin2d, double theTol,
+    private static bool ClassifyLin2d(SurfaceAdaptor theS, in Line2D theLin2d, double theTol,
                                       out double theP1, out double theP2)
     {
         double xmin, xmax, ymin, ymax, d1, d2, A, B, C;
@@ -752,7 +758,7 @@ public partial class IntTools_FaceFace
     }
 
     //
-    private static void ApproxParameters(GeomAdaptor_Surface aHS1, GeomAdaptor_Surface aHS2, out int iDegMin,
+    private static void ApproxParameters(SurfaceAdaptor aHS1, SurfaceAdaptor aHS2, out int iDegMin,
                                          out int iDegMax, out int iNbIter)
 
     {
@@ -797,7 +803,7 @@ public partial class IntTools_FaceFace
         }
     }
 
-    private static void Tolerances(GeomAdaptor_Surface aHS1, GeomAdaptor_Surface aHS2, ref double aTolTang)
+    private static void Tolerances(SurfaceAdaptor aHS1, SurfaceAdaptor aHS2, ref double aTolTang)
     {
         SurfaceKind aTS1, aTS2;
         //
@@ -873,11 +879,11 @@ public partial class IntTools_FaceFace
         {
             aIndex = 4;
         }
-        else if (aType == BezierSurface)
+        else if (aType == SurfaceKind.BezierSurface)
         {
             aIndex = 5;
         }
-        else if (aType == BSplineSurface)
+        else if (aType == SurfaceKind.BSplineSurface)
         {
             aIndex = 6;
         }
@@ -889,7 +895,7 @@ public partial class IntTools_FaceFace
         {
             aIndex = 8;
         }
-        else if (aType == OffsetSurface)
+        else if (aType == SurfaceKind.OffsetSurface)
         {
             aIndex = 9;
         }
@@ -900,7 +906,7 @@ public partial class IntTools_FaceFace
         return aIndex;
     }
 
-    private static double FindMaxDistance(Geom_Curve theCurve, double theFirst, double theLast, in TopoDS_Face theFace,
+    private static double FindMaxDistance(Curve3D theCurve, double theFirst, double theLast, in Face theFace,
                                           IntTools_Context theContext)
     {
         int aNbS;
@@ -933,7 +939,7 @@ public partial class IntTools_FaceFace
         return aDMax;
     }
 
-    private static double FindMaxDistance(Geom_Curve theC, double theFirst, double theLast,
+    private static double FindMaxDistance(Curve3D theC, double theFirst, double theLast,
                                           GeomAPI_ProjectPointOnSurf theProjPS, double theEps)
     {
         double aA, aB, aCf, aX, aX1, aX2, aF1, aF2, aF;
@@ -983,7 +989,7 @@ public partial class IntTools_FaceFace
         return aF;
     }
 
-    private static double MaxDistance(Geom_Curve theC, double aT, GeomAPI_ProjectPointOnSurf theProjPS)
+    private static double MaxDistance(Curve3D theC, double aT, GeomAPI_ProjectPointOnSurf theProjPS)
     {
         double aD;
         Point3D aP;
@@ -996,7 +1002,7 @@ public partial class IntTools_FaceFace
     }
 
     // Checks if points of the pcurve are out of the face bounds.
-    private static bool CheckPCurve(Geom2d_Curve aPC, in TopoDS_Face aFace, IntTools_Context theCtx)
+    private static bool CheckPCurve(Curve2D aPC, in Face aFace, IntTools_Context theCtx)
     {
         const int NPoints = 23;
         int i;
@@ -1009,8 +1015,8 @@ public partial class IntTools_FaceFace
         double lp = aPC.LastParameter();
 
         // adjust domain for periodic surfaces
-        Geom_Surface aSurf = BRep_Tool.Surface(aFace, out _)!;
-        if (aSurf is Geom_RectangularTrimmedSurface aTrimmed)
+        Surface aSurf = Tool.Surface(aFace, out _)!;
+        if (aSurf is TrimmedSurface aTrimmed)
         {
             aSurf = aTrimmed.BasisSurface();
         }
@@ -1018,7 +1024,7 @@ public partial class IntTools_FaceFace
         double u, v;
         pnt.Coord(out u, out v);
         //
-        if (aSurf.IsUPeriodic())
+        if (aSurf.IsUPeriodic)
         {
             double aPer = aSurf.UPeriod();
             int nshift = (int)((u - umin) / aPer);
@@ -1029,7 +1035,7 @@ public partial class IntTools_FaceFace
             umin += aPer * nshift;
             umax += aPer * nshift;
         }
-        if (aSurf.IsVPeriodic())
+        if (aSurf.IsVPeriodic)
         {
             double aPer = aSurf.VPeriod();
             int nshift = (int)((v - vmin) / aPer);
@@ -1047,7 +1053,7 @@ public partial class IntTools_FaceFace
         double aT, dT;
         Point2D aP2D;
         //
-        Geom2dAdaptor_Curve aGAC = new(aPC);
+        CurveAdaptor2D aGAC = new(aPC);
         aNbIntervals = aGAC.NbIntervals(CN);
         //
         NCollection_Array1<double> aTI = new(1, aNbIntervals + 1);

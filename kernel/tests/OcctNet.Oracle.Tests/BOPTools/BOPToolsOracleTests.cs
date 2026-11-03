@@ -1,10 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Reflection;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -44,7 +48,7 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
     private static IEnumerable<string> Files() =>
         Directory.GetFiles(Path.Combine(Metadata("OcctSourceDir"), "data", "occ"), "*.brep").Order(StringComparer.Ordinal);
 
-    private static (N.TopoDS_Shape N, TopoDS_Shape P)? Read(string theFile)
+    private static (N.TopoDS_Shape N, Shape P)? Read(string theFile)
     {
         var aNShape = new N.TopoDS_Shape();
         using (var aBuilder = new N.BRep_Builder())
@@ -54,7 +58,7 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                 return null;
             }
         }
-        if (!BRepTools.Read(out TopoDS_Shape aPShape, theFile))
+        if (!BrepTools.Read(out Shape aPShape, theFile))
         {
             return null;
         }
@@ -74,12 +78,12 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                 continue;
             }
             var aNExp = new N.TopExp_Explorer(aShapes.N, N.TopAbs_ShapeEnum.TopAbs_SOLID);
-            var aPExp = new TopExp_Explorer(aShapes.P, TopAbs_SOLID);
+            var aPExp = new Explorer(aShapes.P, ShapeType.Solid);
             int iS = 0;
             for (; aNExp.More() && iS < 4; aNExp.Next(), aPExp.Next(), iS++)
             {
                 Assert.True(aPExp.More());
-                TopoDS_Solid aPS = TopoDS.Solid(aPExp.Current());
+                Solid aPS = ShapeCasts.Solid(aPExp.Current());
                 using var aNC = new N.BRepClass3d_SolidClassifier(aNExp.Current());
                 var aCtx = new IntTools_Context();
                 Box aBox = new();
@@ -99,16 +103,16 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                                          z0 + (z1 - z0) * (1.2 * aRnd.NextDouble() - 0.1)));
                 }
                 int iV = 0;
-                for (var aVExp = new TopExp_Explorer(aPS, TopAbs_VERTEX); aVExp.More() && iV < 20; aVExp.Next(), iV++)
+                for (var aVExp = new Explorer(aPS, ShapeType.Vertex); aVExp.More() && iV < 20; aVExp.Next(), iV++)
                 {
-                    Point3D aV = BRep_Tool.Pnt(TopoDS.Vertex(aVExp.Current()));
+                    Point3D aV = Tool.Pnt(ShapeCasts.Vertex(aVExp.Current()));
                     double d = 1e-3 * (x1 - x0) * aRnd.NextDouble();
                     aPnts.Add(new Point3D(aV.X() + d, aV.Y() - d, aV.Z() + d));
                 }
                 foreach (Point3D aP in aPnts)
                 {
                     double aTol = aRnd.Next(2) == 0 ? 1e-7 : 1e-4;
-                    TopAbs_State aState = BOPTools_AlgoTools.ComputeState(aP, aPS, aTol, aCtx);
+                    Containment aState = BOPTools_AlgoTools.ComputeState(aP, aPS, aTol, aCtx);
                     using N.gp_Pnt aNP = Oracle.ToNative(aP);
                     aNC.Perform(aNP, aTol);
                     aStates[(int)aState]++;
@@ -141,11 +145,11 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
             var aCtx = new IntTools_Context();
             // faces: ProjPS
             var aNExp = new N.TopExp_Explorer(aShapes.N, N.TopAbs_ShapeEnum.TopAbs_FACE);
-            var aPExp = new TopExp_Explorer(aShapes.P, TopAbs_FACE);
+            var aPExp = new Explorer(aShapes.P, ShapeType.Face);
             for (int iF = 0; aNExp.More() && iF < MaxFacesPerFile; aNExp.Next(), aPExp.Next(), iF++)
             {
-                TopoDS_Face aPF = TopoDS.Face(aPExp.Current());
-                if (BRep_Tool.Surface(aPF) is null)
+                Face aPF = ShapeCasts.Face(aPExp.Current());
+                if (Tool.Surface(aPF) is null)
                 {
                     continue;
                 }
@@ -157,8 +161,8 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                 aNProj.SetExtremaFlag(N.Extrema_ExtFlag.Extrema_ExtFlag_MIN);
                 GeomAPI_ProjectPointOnSurf aPProj = aCtx.ProjPS(aPF);
                 aFaces++;
-                BRepTools.UVBounds(aPF, out double u1, out double u2, out double v1, out double v2);
-                Geom_Surface aS = BRep_Tool.Surface(aPF)!;
+                BrepTools.UVBounds(aPF, out double u1, out double u2, out double v1, out double v2);
+                Surface aS = Tool.Surface(aPF)!;
                 for (int i = 0; i < PointsPerFace; i++)
                 {
                     Point3D aOn = aS.Value(u1 + (u2 - u1) * aRnd.NextDouble(), v1 + (v2 - v1) * aRnd.NextDouble());
@@ -185,12 +189,12 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
             }
             // edges: ProjPC
             var aNEExp = new N.TopExp_Explorer(aShapes.N, N.TopAbs_ShapeEnum.TopAbs_EDGE);
-            var aPEExp = new TopExp_Explorer(aShapes.P, TopAbs_EDGE);
+            var aPEExp = new Explorer(aShapes.P, ShapeType.Edge);
             for (int iE = 0; aNEExp.More() && iE < MaxFacesPerFile; aNEExp.Next(), aPEExp.Next(), iE++)
             {
-                TopoDS_Edge aPE = TopoDS.Edge(aPEExp.Current());
-                Geom_Curve? aC = BRep_Tool.Curve(aPE, out double f, out double l);
-                if (aC is null || BRep_Tool.Degenerated(aPE))
+                Edge aPE = ShapeCasts.Edge(aPEExp.Current());
+                Curve3D? aC = Tool.Curve(aPE, out double f, out double l);
+                if (aC is null || Tool.Degenerated(aPE))
                 {
                     continue;
                 }

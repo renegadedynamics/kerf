@@ -6,6 +6,7 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -16,5 +17,5 @@ namespace Occt;
 public abstract class IntStart_SITopolTool : Transient
 {
     /// <summary>The state of the parametric point <paramref name="P"/> in the domain, with tolerance <paramref name="Tol"/>.</summary>
-    public abstract TopAbs_State Classify(in Point2D P, double Tol);
+    public abstract Containment Classify(in Point2D P, double Tol);
 }

@@ -3,10 +3,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepMesh_DegreeOfFreedom;
 using static Occt.IMeshData_Status;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -168,11 +171,11 @@ public class BRepMesh_NodeInsertionMeshAlgoOfDelabella<RangeSplitter> : BRepMesh
     // Iterates over internal vertices of a face and creates corresponding nodes in data structure.
     private void insertInternalVertices()
     {
-        TopExp_Explorer aExplorer = new(getDFace().GetFace(), TopAbs_ShapeEnum.TopAbs_VERTEX, TopAbs_ShapeEnum.TopAbs_EDGE);
+        Explorer aExplorer = new(getDFace().GetFace(), ShapeType.Vertex, ShapeType.Edge);
         for (; aExplorer.More(); aExplorer.Next())
         {
-            TopoDS_Vertex aVertex = TopoDS.Vertex(aExplorer.Current());
-            if (aVertex.Orientation() != TopAbs_Orientation.TopAbs_INTERNAL)
+            Vertex aVertex = ShapeCasts.Vertex(aExplorer.Current());
+            if (aVertex.Orientation() != Orientation.Internal)
             {
                 continue;
             }
@@ -182,18 +185,18 @@ public class BRepMesh_NodeInsertionMeshAlgoOfDelabella<RangeSplitter> : BRepMesh
     }
 
     // Inserts the given vertex into mesh.
-    private void insertInternalVertex(in TopoDS_Vertex theVertex)
+    private void insertInternalVertex(in Vertex theVertex)
     {
         try
         {
-            Point2D aPnt2d = BRep_Tool.Parameters(theVertex, getDFace().GetFace());
+            Point2D aPnt2d = Tool.Parameters(theVertex, getDFace().GetFace());
             // check UV values for internal vertices
-            if (myClassifier!.Perform(aPnt2d) != TopAbs_IN)
+            if (myClassifier!.Perform(aPnt2d) != In)
             {
                 return;
             }
 
-            registerNode(BRep_Tool.Pnt(theVertex), aPnt2d, BRepMesh_Fixed, false);
+            registerNode(Tool.Pnt(theVertex), aPnt2d, BRepMesh_Fixed, false);
         }
         catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
         {

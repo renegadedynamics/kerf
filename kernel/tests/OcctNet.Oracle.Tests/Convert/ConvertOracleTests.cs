@@ -108,16 +108,16 @@ public class ConvertOracleTests(ITestOutputHelper output)
                 _ => new N.Geom_Parabola(aNAx2, aR1),
             };
 
-            Geom_Curve aConic = aKind switch
+            Curve3D aConic = aKind switch
             {
-                ConicKind.Circle => new Geom_Circle(anAx2, aR1),
-                ConicKind.Ellipse => new Geom_Ellipse(anAx2, aR1, aR2),
-                ConicKind.Hyperbola => new Geom_Hyperbola(anAx2, aR1, aR2),
-                _ => new Geom_Parabola(anAx2, aR1),
+                ConicKind.Circle => new CircleCurve3D(anAx2, aR1),
+                ConicKind.Ellipse => new EllipseCurve3D(anAx2, aR1, aR2),
+                ConicKind.Hyperbola => new HyperbolaCurve3D(anAx2, aR1, aR2),
+                _ => new ParabolaCurve3D(anAx2, aR1),
             };
 
             N.Geom_Curve aNCurve = aNConic;
-            Geom_Curve aCurve = aConic;
+            Curve3D aCurve = aConic;
             N.Geom_TrimmedCurve? aNTrimmed = null;
             if (!isWhole)
             {
@@ -125,7 +125,7 @@ public class ConvertOracleTests(ITestOutputHelper output)
                 double aLength = aKind <= ConicKind.Ellipse ? anOracle.Real(0.05, 2 * Math.PI) : anOracle.Real(0.05, aKind == ConicKind.Hyperbola ? 3 : 10);
                 aNTrimmed = new N.Geom_TrimmedCurve(aNConic, aFirst, aFirst + aLength);
                 aNCurve = aNTrimmed;
-                aCurve = new Geom_TrimmedCurve(aConic, aFirst, aFirst + aLength);
+                aCurve = new TrimmedCurve3D(aConic, aFirst, aFirst + aLength);
                 if (aParam == ParameterisationType.RationalC1 && aKind <= ConicKind.Ellipse
                     && aNTrimmed.LastParameter() - aNTrimmed.FirstParameter() >= 6.0)
                 {
@@ -134,10 +134,10 @@ public class ConvertOracleTests(ITestOutputHelper output)
             }
 
             N.Geom_BSplineCurve? aNative = null;
-            Geom_BSplineCurve? aPort = null;
+            BSplineCurve3D? aPort = null;
             Exception? aNErr = AdaptorOracleInputs.Catch(
                 () => aNative = N.GeomConvert.CurveToBSplineCurve(aNCurve, (N.Convert_ParameterisationType)(int)aParam));
-            Exception? aPErr = AdaptorOracleInputs.Catch(() => aPort = GeomConvert.CurveToBSplineCurve(aCurve, aParam));
+            Exception? aPErr = AdaptorOracleInputs.Catch(() => aPort = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aCurve, aParam));
             aNTrimmed?.Dispose();
             if (!AdaptorOracleInputs.SameOutcome(aNErr, aPErr, $"{aKind} {aParam}"))
             {
@@ -168,9 +168,9 @@ public class ConvertOracleTests(ITestOutputHelper output)
             double aR1 = anOracle.Real(0.5, 20), aR2 = anOracle.Real(0.1, aR1);
             using N.Geom2d_Curve aNConic = aKind == ConicKind.Circle ? new N.Geom2d_Circle(aNAx, aR1)
                                                                      : new N.Geom2d_Ellipse(aNAx, aR1, aR2);
-            Geom2d_Curve aConic = aKind == ConicKind.Circle ? new Geom2d_Circle(anAx, aR1) : new Geom2d_Ellipse(anAx, aR1, aR2);
+            Curve2D aConic = aKind == ConicKind.Circle ? new CircleCurve2D(anAx, aR1) : new EllipseCurve2D(anAx, aR1, aR2);
             N.Geom2d_Curve aNCurve = aNConic;
-            Geom2d_Curve aCurve = aConic;
+            Curve2D aCurve = aConic;
             N.Geom2d_TrimmedCurve? aNTrimmed = null;
             if (!isWhole)
             {
@@ -178,7 +178,7 @@ public class ConvertOracleTests(ITestOutputHelper output)
                 double aLast = aFirst + anOracle.Real(0.05, 2 * Math.PI);
                 aNTrimmed = new N.Geom2d_TrimmedCurve(aNConic, aFirst, aLast);
                 aNCurve = aNTrimmed;
-                aCurve = new Geom2d_TrimmedCurve(aConic, aFirst, aLast);
+                aCurve = new TrimmedCurve2D(aConic, aFirst, aLast);
                 if (aParam == ParameterisationType.RationalC1
                     && aNTrimmed.LastParameter() - aNTrimmed.FirstParameter() >= 6.0)
                 {
@@ -187,10 +187,10 @@ public class ConvertOracleTests(ITestOutputHelper output)
             }
 
             N.Geom2d_BSplineCurve? aNative = null;
-            Geom2d_BSplineCurve? aPort = null;
+            BSplineCurve2D? aPort = null;
             Exception? aNErr = AdaptorOracleInputs.Catch(
                 () => aNative = N.Geom2dConvert.CurveToBSplineCurve(aNCurve, (N.Convert_ParameterisationType)(int)aParam));
-            Exception? aPErr = AdaptorOracleInputs.Catch(() => aPort = Geom2dConvert.CurveToBSplineCurve(aCurve, aParam));
+            Exception? aPErr = AdaptorOracleInputs.Catch(() => aPort = global::Kerf.Engine.Geometry.Conversion.Geom2dConvert2D.CurveToBSplineCurve(aCurve, aParam));
             aNTrimmed?.Dispose();
             if (!AdaptorOracleInputs.SameOutcome(aNErr, aPErr, $"2d {aKind} {aParam}"))
             {
@@ -269,20 +269,20 @@ public class ConvertOracleTests(ITestOutputHelper output)
                 aV2 = 2 * Math.PI;
             }
 
-            Geom_Surface aSurface = aKind switch
+            Surface aSurface = aKind switch
             {
-                QuadricKind.Cylinder => new Geom_CylindricalSurface(anAx3, aR1),
-                QuadricKind.Cone => new Geom_ConicalSurface(anAx3, anAngle, aR1),
-                QuadricKind.Sphere => new Geom_SphericalSurface(anAx3, aR1),
-                _ => new Geom_ToroidalSurface(anAx3, aR1, aR2),
+                QuadricKind.Cylinder => new CylindricalSurface(anAx3, aR1),
+                QuadricKind.Cone => new ConicalSurface(anAx3, anAngle, aR1),
+                QuadricKind.Sphere => new SphericalSurface(anAx3, aR1),
+                _ => new ToroidalSurface(anAx3, aR1, aR2),
             };
             N.Geom_RectangularTrimmedSurface? aNTrimmed = aMode == 3 ? null : new N.Geom_RectangularTrimmedSurface(aNSurface, aU1, aU2, aV1, aV2);
-            Geom_Surface aPortInput = aMode == 3 ? aSurface : new Geom_RectangularTrimmedSurface(aSurface, aU1, aU2, aV1, aV2);
+            Surface aPortInput = aMode == 3 ? aSurface : new TrimmedSurface(aSurface, aU1, aU2, aV1, aV2);
 
             N.Geom_BSplineSurface? aNative = null;
-            Geom_BSplineSurface? aPort = null;
+            BSplineSurface? aPort = null;
             Exception? aNErr = AdaptorOracleInputs.Catch(() => aNative = N.GeomConvert.SurfaceToBSplineSurface(aNTrimmed ?? aNSurface));
-            Exception? aPErr = AdaptorOracleInputs.Catch(() => aPort = GeomConvert.SurfaceToBSplineSurface(aPortInput));
+            Exception? aPErr = AdaptorOracleInputs.Catch(() => aPort = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(aPortInput));
             aNTrimmed?.Dispose();
             string aWhat = $"{aKind} mode {aMode}";
             if (!AdaptorOracleInputs.SameOutcome(aNErr, aPErr, aWhat))

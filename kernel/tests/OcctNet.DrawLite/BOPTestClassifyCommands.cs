@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -76,13 +79,13 @@ internal static class BOPTestClassifyCommands
             return 1;
         }
 
-        TopoDS_Shape aS = theDI.GetShape(theArgVec[1]);
-        if (aS.IsNull())
+        Shape aS = theDI.GetShape(theArgVec[1]);
+        if (aS.IsNull)
         {
             theResult.Append(" Null Shape is not allowed here\n");
             return 1;
         }
-        else if (aS.ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE)
+        else if (aS.ShapeType() != ShapeType.Face)
         {
             theResult.Append(" Shape type must be FACE\n");
             return 1;
@@ -90,8 +93,8 @@ internal static class BOPTestClassifyCommands
 
         var aP = new Point2D(8.0, 9.0);
         GetPoint2d(theDI, theArgVec[2], ref aP);
-        TopoDS_Face aF = TopoDS.Face(aS);
-        double aTol = theArgNb >= 4 ? theDI.Atof(theArgVec[3]) : BRep_Tool.Tolerance(aF);
+        Face aF = ShapeCasts.Face(aS);
+        double aTol = theArgNb >= 4 ? theDI.Atof(theArgVec[3]) : Tool.Tolerance(aF);
         bool anUseBox = theArgNb >= 5 && theDI.Atof(theArgVec[4]) == 1;
         double aGapCheckTol = theArgNb == 6 ? theDI.Atof(theArgVec[5]) : 0.1;
         var aClassifier = new BRepClass_FaceClassifier();
@@ -109,13 +112,13 @@ internal static class BOPTestClassifyCommands
             return 1;
         }
 
-        TopoDS_Shape aS = theDI.GetShape(theArgVec[1]);
-        if (aS.IsNull())
+        Shape aS = theDI.GetShape(theArgVec[1]);
+        if (aS.IsNull)
         {
             theResult.Append(" Null Shape is not allowed\n");
             return 1;
         }
-        else if (aS.ShapeType() != TopAbs_ShapeEnum.TopAbs_SOLID)
+        else if (aS.ShapeType() != ShapeType.Solid)
         {
             theResult.Append(" Shape type must be SOLID\n");
             return 1;
@@ -132,17 +135,17 @@ internal static class BOPTestClassifyCommands
         return 0;
     }
 
-    private static void PrintState(DrawResult theDI, TopAbs_State theState)
+    private static void PrintState(DrawResult theDI, Containment theState)
     {
         switch (theState)
         {
-            case TopAbs_State.TopAbs_IN:
+            case Containment.In:
                 theDI.Append("The point is IN shape\n");
                 break;
-            case TopAbs_State.TopAbs_OUT:
+            case Containment.Out:
                 theDI.Append("The point is OUT of shape\n");
                 break;
-            case TopAbs_State.TopAbs_ON:
+            case Containment.On:
                 theDI.Append("The point is ON shape\n");
                 break;
             default:

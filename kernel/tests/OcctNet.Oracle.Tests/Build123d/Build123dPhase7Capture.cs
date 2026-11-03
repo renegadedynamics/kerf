@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -45,8 +48,8 @@ internal sealed record P7Native(string? Error, string Status, N.TopoDS_Shape? Re
                                 N.TopoDS_Shape[]? Left = null, N.TopoDS_Shape[]? Right = null, string? Details = null);
 
 /// <summary>A port's run, as <see cref="P7Native"/>.</summary>
-internal sealed record P7Port(string? Error, string Status, TopoDS_Shape? Result, string History,
-                              TopoDS_Shape[]? Left = null, TopoDS_Shape[]? Right = null);
+internal sealed record P7Port(string? Error, string Status, Shape? Result, string History,
+                              Shape[]? Left = null, Shape[]? Right = null);
 
 /// <summary>
 /// The phase 7 calls build123d.NET's own tests make (unit 7X, plan 1.5 and milestone 2), rebuilt with its public API as
@@ -158,11 +161,11 @@ internal static partial class Build123dPhase7Capture
     }
 
     /// <summary>The operands read by the port (frozen, as a caller's shapes).</summary>
-    internal static List<TopoDS_Shape> PortOperands(string theText)
+    internal static List<Shape> PortOperands(string theText)
     {
-        BRepTools.Read(out TopoDS_Shape aC, new StringReader(theText));
-        var aList = new List<TopoDS_Shape>();
-        for (var anIt = new TopoDS_Iterator(aC); anIt.More(); anIt.Next())
+        BrepTools.Read(out Shape aC, new StringReader(theText));
+        var aList = new List<Shape>();
+        for (var anIt = new Iterator(aC); anIt.More(); anIt.Next())
         {
             aList.Add(anIt.Value());
         }
@@ -187,10 +190,10 @@ internal static partial class Build123dPhase7Capture
         return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation() == N.TopAbs_Orientation.TopAbs_REVERSED ? "r" : "");
     }
 
-    private static string Index(NCollection_IndexedMap<TopoDS_Shape> theMap, in TopoDS_Shape theS)
+    private static string Index(NCollection_IndexedMap<Shape> theMap, in Shape theS)
     {
         int anI = theMap.FindIndex(theS);
-        return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation() == TopAbs_Orientation.TopAbs_REVERSED ? "r" : "");
+        return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation() == Orientation.Reversed ? "r" : "");
     }
 
     private static string Sorted(IEnumerable<string> theItems) => string.Join(' ', theItems.Order(StringComparer.Ordinal));
@@ -223,21 +226,21 @@ internal static partial class Build123dPhase7Capture
         return aSb.ToString();
     }
 
-    private static string PortHistory(List<TopoDS_Shape> theOps, in TopoDS_Shape theResult, Func<TopoDS_Shape, IEnumerable<TopoDS_Shape>> theGen,
-                                      Func<TopoDS_Shape, IEnumerable<TopoDS_Shape>> theMod, Func<TopoDS_Shape, bool> theDel)
+    private static string PortHistory(List<Shape> theOps, in Shape theResult, Func<Shape, IEnumerable<Shape>> theGen,
+                                      Func<Shape, IEnumerable<Shape>> theMod, Func<Shape, bool> theDel)
     {
-        var anIn = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        foreach (TopoDS_Shape anOp in theOps)
+        var anIn = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        foreach (Shape anOp in theOps)
         {
-            TopExp.MapShapes(anOp, anIn);
+            Exploration.MapShapes(anOp, anIn);
         }
-        var aRes = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theResult, aRes);
+        var aRes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theResult, aRes);
         var aSb = new StringBuilder();
         for (int i = 1; i <= anIn.Extent(); i++)
         {
-            TopoDS_Shape aS = anIn[i];
-            if (aS.ShapeType() is not (TopAbs_ShapeEnum.TopAbs_VERTEX or TopAbs_ShapeEnum.TopAbs_EDGE or TopAbs_ShapeEnum.TopAbs_FACE))
+            Shape aS = anIn[i];
+            if (aS.ShapeType() is not (ShapeType.Vertex or ShapeType.Edge or ShapeType.Face))
             {
                 continue;
             }
@@ -396,15 +399,15 @@ internal static partial class Build123dPhase7Capture
     }
 
     /// <summary>One call in the port, on its (frozen) operands, as <see cref="RunNative"/>.</summary>
-    internal static P7Port RunPort(P7Call theCall, List<TopoDS_Shape> theOps, bool theHistory = true)
+    internal static P7Port RunPort(P7Call theCall, List<Shape> theOps, bool theHistory = true)
     {
         if (theCall.Op is P7Op.Fillet or P7Op.Chamfer or P7Op.MaxFillet)
         {
             return RunBlendPort(theCall, theOps, theHistory);
         }
         P7Args a = theCall.Args;
-        var aFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theOps[0], TopAbs_ShapeEnum.TopAbs_FACE, aFaces);
+        var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theOps[0], ShapeType.Face, aFaces);
         try
         {
             switch (theCall.Op)
@@ -412,7 +415,7 @@ internal static partial class Build123dPhase7Capture
                 case P7Op.ThickSolid:
                 {
                     var aMT = new BRepOffsetAPI_MakeThickSolid();
-                    var aClosing = new NCollection_List<TopoDS_Shape>();
+                    var aClosing = new NCollection_List<Shape>();
                     foreach (int i in a.Faces ?? [])
                     {
                         aClosing.Append(aFaces[i]);
@@ -421,9 +424,9 @@ internal static partial class Build123dPhase7Capture
                                              (JoinKind)a.Join, a.RemoveIntEdges);
                     aMT.Build();
                     string aStatus = $"done={aMT.IsDone()} error={(int)aMT.MakeOffset().Error()}";
-                    TopoDS_Shape aRes = aMT.Shape();
+                    Shape aRes = aMT.Shape();
                     return new P7Port(null, aStatus, aRes,
-                                      theHistory && !aRes.IsNull() ? PortHistory(theOps, aRes, s => aMT.Generated(s), s => aMT.Modified(s), s => aMT.IsDeleted(s)) : "");
+                                      theHistory && !aRes.IsNull ? PortHistory(theOps, aRes, s => aMT.Generated(s), s => aMT.Modified(s), s => aMT.IsDeleted(s)) : "");
                 }
                 case P7Op.MakeOffset:
                 {
@@ -439,20 +442,20 @@ internal static partial class Build123dPhase7Capture
                     }
                     aMO.MakeOffsetShape();
                     string aStatus = $"done={aMO.IsDone()} error={(int)aMO.Error()}";
-                    TopoDS_Shape aRes = aMO.Shape();
+                    Shape aRes = aMO.Shape();
                     return new P7Port(null, aStatus, aRes,
-                                      theHistory && !aRes.IsNull() ? PortHistory(theOps, aRes, s => aMO.Generated(s), s => aMO.Modified(s), s => aMO.IsDeleted(s)) : "");
+                                      theHistory && !aRes.IsNull ? PortHistory(theOps, aRes, s => aMO.Generated(s), s => aMO.Modified(s), s => aMO.IsDeleted(s)) : "");
                 }
                 case P7Op.Draft:
                 {
-                    var anIn = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                    TopExp.MapShapes(theOps[0], anIn);
+                    var anIn = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                    Exploration.MapShapes(theOps[0], anIn);
                     var aDraft = new BRepOffsetAPI_DraftAngle(theOps[0]);
                     var aDir = new Direction3D(a.Dir![0], a.Dir[1], a.Dir[2]);
                     var aPln = new Plane3D(new Point3D(a.PlnLoc![0], a.PlnLoc[1], a.PlnLoc[2]), aDir);
                     for (int k = 0; k < a.Faces!.Length; k++)
                     {
-                        aDraft.Add(TopoDS.Face(aFaces[a.Faces[k]]), aDir, a.Angles![k], aPln, true);
+                        aDraft.Add(ShapeCasts.Face(aFaces[a.Faces[k]]), aDir, a.Angles![k], aPln, true);
                         if (!aDraft.AddDone())
                         {
                             return new P7Port(null, $"add=False status={(int)aDraft.Status()} bad={Index(anIn, aDraft.ProblematicShape())}", null, "");
@@ -464,19 +467,19 @@ internal static partial class Build123dPhase7Capture
                     {
                         return new P7Port(null, aStatus + $" bad={Index(anIn, aDraft.ProblematicShape())}", null, "");
                     }
-                    TopoDS_Shape aRes = aDraft.Shape();
+                    Shape aRes = aDraft.Shape();
                     return new P7Port(null, aStatus, aRes,
                                       theHistory ? PortHistory(theOps, aRes, s => aDraft.Generated(s), s => aDraft.Modified(s), s => aDraft.IsDeleted(s)) : "");
                 }
                 case P7Op.DPrism:
                 {
-                    TopoDS_Shape aShape = theOps[0];
-                    TopoDS_Face aBasis = a.HasBasis ? TopoDS.Face(theOps[1 + a.NbProfiles]) : new TopoDS_Face();
+                    Shape aShape = theOps[0];
+                    Face aBasis = a.HasBasis ? ShapeCasts.Face(theOps[1 + a.NbProfiles]) : new Face();
                     string aStatus = "";
                     string aHistory = "";
                     for (int k = 1; k <= a.NbProfiles; k++)
                     {
-                        var aFeature = new BRepFeat_MakeDPrism(aShape, TopoDS.Face(theOps[k]), aBasis, a.Taper, a.Fuse, false);
+                        var aFeature = new BRepFeat_MakeDPrism(aShape, ShapeCasts.Face(theOps[k]), aBasis, a.Taper, a.Fuse, false);
                         switch (a.Mode)
                         {
                             case 2:
@@ -490,7 +493,7 @@ internal static partial class Build123dPhase7Capture
                                 break;
                         }
                         aStatus += $"done={aFeature.IsDone()} status={(int)aFeature.CurrentStatusError()} ";
-                        TopoDS_Shape aRes = aFeature.Shape();
+                        Shape aRes = aFeature.Shape();
                         if (theHistory && a.NbProfiles == 1)
                         {
                             aHistory = PortHistory(theOps, aRes, s => aFeature.Generated(s), s => aFeature.Modified(s), s => aFeature.IsDeleted(s));
@@ -502,21 +505,21 @@ internal static partial class Build123dPhase7Capture
                 case P7Op.Split:
                 {
                     var aSplit = new BRepFeat_SplitShape(theOps[0]);
-                    var anEdges = new NCollection_Sequence<TopoDS_Shape>();
-                    foreach (TopoDS_Shape anEdge in theOps.Skip(1))
+                    var anEdges = new NCollection_Sequence<Shape>();
+                    foreach (Shape anEdge in theOps.Skip(1))
                     {
                         anEdges.Append(anEdge);
                     }
                     aSplit.Add(anEdges);
                     aSplit.Build();
-                    TopoDS_Shape aRes = aSplit.Shape();
-                    TopoDS_Shape[] aLeft = [.. aSplit.Left().Where(s => !s.IsNull())];
-                    TopoDS_Shape[] aRight = [.. aSplit.Right().Where(s => !s.IsNull())];
+                    Shape aRes = aSplit.Shape();
+                    Shape[] aLeft = [.. aSplit.Left().Where(s => !s.IsNull)];
+                    Shape[] aRight = [.. aSplit.Right().Where(s => !s.IsNull)];
                     string aHistory = "";
                     if (theHistory)
                     {
-                        var aResMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                        TopExp.MapShapes(aRes, aResMap);
+                        var aResMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                        Exploration.MapShapes(aRes, aResMap);
                         aHistory = $"left [{Sorted(aLeft.Select(s => Index(aResMap, s)))}] right [{Sorted(aRight.Select(s => Index(aResMap, s)))}]\n"
                                    + PortHistory(theOps, aRes, s => aSplit.Generated(s), s => aSplit.Modified(s), s => aSplit.IsDeleted(s));
                     }
@@ -524,7 +527,7 @@ internal static partial class Build123dPhase7Capture
                 }
                 default:
                 {
-                    TopoDS_Shape aRes = ShapeCustom.BSplineRestriction(theOps[0], a.Tol, a.Tol, a.Degree, 1, Continuity.C0,
+                    Shape aRes = ShapeCustom.BSplineRestriction(theOps[0], a.Tol, a.Tol, a.Degree, 1, Continuity.C0,
                                                                        Continuity.C0, true, !a.Nurbs, new ShapeCustom_RestrictionParameters());
                     return new P7Port(null, "", aRes, "");
                 }

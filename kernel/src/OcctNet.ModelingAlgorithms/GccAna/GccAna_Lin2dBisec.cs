@@ -7,6 +7,7 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -51,8 +52,8 @@ public sealed class GccAna_Lin2dBisec
         WellDone = false;
         NbrSol = 0;
 
-        IntAna2d_AnaIntersection Intp = new(Lin1, Lin2);
-        if (Intp.IsDone())
+        AnalyticIntersection Intp = new(Lin1, Lin2);
+        if (Intp.IsDone)
         {
             if (Intp.ParallelElements())
             {
@@ -84,9 +85,9 @@ public sealed class GccAna_Lin2dBisec
             }
             else
             {
-                if (!Intp.IsEmpty())
+                if (!Intp.IsEmpty)
                 {
-                    for (int i = 1; i <= Intp.NbPoints(); i++)
+                    for (int i = 1; i <= Intp.PointCount; i++)
                     {
                         NbrSol++;
                         linsol[NbrSol] = new Line2D(Intp.Point(i).Value(),

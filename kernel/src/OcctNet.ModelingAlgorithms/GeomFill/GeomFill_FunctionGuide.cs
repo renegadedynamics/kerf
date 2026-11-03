@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -22,12 +23,12 @@ namespace Occt;
 /// </remarks>
 public sealed class GeomFill_FunctionGuide : FunctionSetWithDerivatives
 {
-    private readonly Adaptor3d_Curve TheGuide;
+    private readonly CurveAdaptorBase TheGuide;
     private readonly GeomFill_SectionLaw TheLaw;
     private readonly bool isconst;
-    private Geom_Curve? TheCurve;
-    private readonly Geom_Curve? TheConst;
-    private Geom_Surface? TheSurface;
+    private Curve3D? TheCurve;
+    private readonly Curve3D? TheConst;
+    private Surface? TheSurface;
     private readonly double First;
     private readonly double Last;
     private readonly double TheUonS;
@@ -35,7 +36,7 @@ public sealed class GeomFill_FunctionGuide : FunctionSetWithDerivatives
     private Xyz Dir;
 
     /// <summary>Initialises the section and the guide.</summary>
-    public GeomFill_FunctionGuide(GeomFill_SectionLaw S, Adaptor3d_Curve Guide, double ParamOnLaw = 0.0)
+    public GeomFill_FunctionGuide(GeomFill_SectionLaw S, CurveAdaptorBase Guide, double ParamOnLaw = 0.0)
     {
         TheGuide = Guide;
         TheLaw = S;
@@ -77,7 +78,7 @@ public sealed class GeomFill_FunctionGuide : FunctionSetWithDerivatives
 
         if (isconst)
         {
-            TheCurve = new Geom_TrimmedCurve((Geom_Curve)TheConst!.Copy(), First, Last);
+            TheCurve = new TrimmedCurve3D((Curve3D)TheConst!.Copy(), First, Last);
         }
         else
         {
@@ -91,17 +92,17 @@ public sealed class GeomFill_FunctionGuide : FunctionSetWithDerivatives
             TheLaw.D0(TheUonS, Poles, Weights);
             if (TheLaw.IsRational())
             {
-                TheCurve = new Geom_BSplineCurve(Poles, Weights, Knots, Mult, Deg, TheLaw.IsUPeriodic());
+                TheCurve = new BSplineCurve3D(Poles, Weights, Knots, Mult, Deg, TheLaw.IsUPeriodic());
             }
             else
             {
-                TheCurve = new Geom_BSplineCurve(Poles, Knots, Mult, Deg, TheLaw.IsUPeriodic());
+                TheCurve = new BSplineCurve3D(Poles, Knots, Mult, Deg, TheLaw.IsUPeriodic());
             }
         }
 
         Axis3D Axe = new Axis3D(C, new Direction3D(Dir));
         TheCurve.Transform(Transfo);
-        TheSurface = new Geom_SurfaceOfRevolution(TheCurve, Axe);
+        TheSurface = new RevolutionSurface(TheCurve, Axe);
     }
 
     /// <summary>3: (w, u, v).</summary>

@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -15,11 +16,11 @@ namespace Occt;
 public class TopOpeBRepBuild_Loop : Transient
 {
     protected bool myIsShape;
-    protected TopoDS_Shape myShape = new();
+    protected Shape myShape = new();
     protected TopOpeBRepBuild_BlockIterator myBlockIterator;
 
     /// <summary>The loop of the existing shape <paramref name="S"/>.</summary>
-    public TopOpeBRepBuild_Loop(in TopoDS_Shape S)
+    public TopOpeBRepBuild_Loop(in Shape S)
     {
         myIsShape = true;
         myShape = S;
@@ -37,7 +38,7 @@ public class TopOpeBRepBuild_Loop : Transient
     public virtual bool IsShape() => myIsShape;
 
     /// <summary>The shape (null for a block).</summary>
-    public virtual TopoDS_Shape Shape() => myShape;
+    public virtual Shape Shape() => myShape;
 
     /// <summary>The block's iterator.</summary>
     public TopOpeBRepBuild_BlockIterator BlockIterator() => myBlockIterator;

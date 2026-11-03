@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Text;
@@ -11,7 +12,7 @@ namespace OcctNet.DataExchange.Tests.STEPCAFControl;
 /// <summary>STEPCAFControl's reader and writer over XdeDoc_Document, and STEPConstruct's tools they use (unit 8G2).</summary>
 public sealed class STEPCAFControlTests
 {
-    private static TopoDS_Shape Box(double theSize)
+    private static Shape Box(double theSize)
     {
         var aMaker = new BRepPrimAPI_MakeBox(theSize, theSize, theSize);
         return aMaker.Shape();
@@ -93,9 +94,9 @@ public sealed class STEPCAFControlTests
     public void ReadsSubShapeNamesWhenAsked()
     {
         var aDoc = new XdeDoc_Document();
-        TopoDS_Shape aBox = Box(10.0);
+        Shape aBox = Box(10.0);
         XdeDoc_Label aPart = aDoc.AddShape(aBox, false);
-        XdeDoc_Label aFace = aDoc.AddSubShape(aPart, new TopExp_Explorer(aBox, TopAbs_ShapeEnum.TopAbs_FACE).Current());
+        XdeDoc_Label aFace = aDoc.AddSubShape(aPart, new Explorer(aBox, ShapeType.Face).Current());
         aDoc.SetName(aFace, "top face");
         byte[] aText = Write(aDoc, w => w.Writer().WS()!.Statics().SetIVal("write.stepcaf.subshapes.name", 1));
         Assert.Contains("'top face'", Encoding.Latin1.GetString(aText), StringComparison.Ordinal);
@@ -111,7 +112,7 @@ public sealed class STEPCAFControlTests
     public void FindsComponentsAndSetsInstanceColours()
     {
         var aDoc = new XdeDoc_Document();
-        TopoDS_Shape aBox = Box(1.0);
+        Shape aBox = Box(1.0);
         XdeDoc_Label aPart = aDoc.AddShape(aBox, false);
         XdeDoc_Label anAssembly = aDoc.NewShape();
         var aTrsf = new Transform3D();

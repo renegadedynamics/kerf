@@ -6,6 +6,8 @@ using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Meshing;
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 
 using Kerf.Topology;
@@ -34,7 +36,7 @@ public class BRepMesh_IncrementalMeshTest
             new(204.325817923051886282337, 424.249999999999943156581, 88.5),
         ];
 
-        List<TopoDS_Vertex> aVertices = new(aPnts.Length);
+        List<Vertex> aVertices = new(aPnts.Length);
         foreach (Point3D aPnt in aPnts)
         {
             aVertices.Add(new BRepBuilderAPI_MakeVertex(aPnt).Vertex());
@@ -43,8 +45,8 @@ public class BRepMesh_IncrementalMeshTest
         BRepBuilderAPI_MakeWire aWireBuilder = new();
         for (int i = 0; i < aVertices.Count; ++i)
         {
-            TopoDS_Vertex aV = aVertices[i];
-            TopoDS_Vertex aW = aVertices[(i + 1) % aVertices.Count];
+            Vertex aV = aVertices[i];
+            Vertex aW = aVertices[(i + 1) % aVertices.Count];
             aWireBuilder.Add(new BRepBuilderAPI_MakeEdge(aV, aW).Edge());
         }
         Assert.True(aWireBuilder.IsDone(), "Wire construction failed");
@@ -54,7 +56,7 @@ public class BRepMesh_IncrementalMeshTest
         Point3D aV2 = aPnts[^1];
         Vector3D aFaceNormal = new Vector3D(aV0, aV1).Crossed(new Vector3D(aV0, aV2));
 
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(aV0, new Direction3D(aFaceNormal)), aWireBuilder.Wire()).Face();
+        Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(aV0, new Direction3D(aFaceNormal)), aWireBuilder.Wire()).Face();
 
         BRepMesh_IncrementalMesh aMesher = new(aFace, 1.0e-7);
         Assert.Equal(0, aMesher.GetStatusFlags());
@@ -70,7 +72,7 @@ public class BRepMesh_IncrementalMeshTest
         const double THE_LAST_V = 7.0;
         const double THE_DEFLECTION = 0.05;
 
-        Geom_CylindricalSurface aCylinder = new(new CoordinateSystem(Constants.Origin(), Constants.DZ()), THE_RADIUS);
+        CylindricalSurface aCylinder = new(new CoordinateSystem(Constants.Origin(), Constants.DZ()), THE_RADIUS);
         BRepBuilderAPI_MakeFace aFaceBuilder = new(aCylinder,
                                                    THE_FIRST_U,
                                                    THE_LAST_U,
@@ -78,13 +80,13 @@ public class BRepMesh_IncrementalMeshTest
                                                    THE_LAST_V,
                                                    global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aFaceBuilder.IsDone());
-        TopoDS_Face aFace = aFaceBuilder.Face();
+        Face aFace = aFaceBuilder.Face();
 
         BRepMesh_IncrementalMesh aMesher = new(aFace, THE_DEFLECTION);
         Assert.True(aMesher.IsDone());
-        aFace = TopoDS.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
+        aFace = ShapeCasts.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
 
-        Triangulation? aTriangulation = BRep_Tool.Triangulation(aFace, out Placement aLocation);
+        Triangulation? aTriangulation = Tool.Triangulation(aFace, out Placement aLocation);
         Assert.NotNull(aTriangulation);
         Assert.True(aTriangulation.HasUVNodes);
         Assert.True(aTriangulation.TriangleCount > 0);
@@ -129,7 +131,7 @@ public class BRepMesh_IncrementalMeshTest
     public void ClosedCylinder_SeamPolygonsReferenceValidMeshNodes()
     {
         BRepPrimAPI_MakeCylinder aCylinderBuilder = new(5.0, 10.0);
-        TopoDS_Shape aCylinder = aCylinderBuilder.Shape();
+        Shape aCylinder = aCylinderBuilder.Shape();
         Assert.True(aCylinderBuilder.IsDone());
 
         BRepMesh_IncrementalMesh aMesher = new(aCylinder, 0.1);
@@ -138,25 +140,25 @@ public class BRepMesh_IncrementalMeshTest
         aCylinder = aMesher.Shape();
 
         int aSeamEdges = 0;
-        for (TopExp_Explorer aFaceExplorer = new(aCylinder, TopAbs_ShapeEnum.TopAbs_FACE); aFaceExplorer.More(); aFaceExplorer.Next())
+        for (Explorer aFaceExplorer = new(aCylinder, ShapeType.Face); aFaceExplorer.More(); aFaceExplorer.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(aFaceExplorer.Current());
-            Triangulation? aTriangulation = BRep_Tool.Triangulation(aFace, out Placement aLocation);
+            Face aFace = ShapeCasts.Face(aFaceExplorer.Current());
+            Triangulation? aTriangulation = Tool.Triangulation(aFace, out Placement aLocation);
             Assert.NotNull(aTriangulation);
 
-            for (TopExp_Explorer anEdgeExplorer = new(aFace, TopAbs_ShapeEnum.TopAbs_EDGE); anEdgeExplorer.More(); anEdgeExplorer.Next())
+            for (Explorer anEdgeExplorer = new(aFace, ShapeType.Edge); anEdgeExplorer.More(); anEdgeExplorer.Next())
             {
-                TopoDS_Edge anEdge = TopoDS.Edge(anEdgeExplorer.Current());
-                if (!BRep_Tool.IsClosed(anEdge, aFace))
+                Edge anEdge = ShapeCasts.Edge(anEdgeExplorer.Current());
+                if (!Tool.IsClosed(anEdge, aFace))
                 {
                     continue;
                 }
 
                 PolygonOnTriangulation? aForwardPolygon =
-                    BRep_Tool.PolygonOnTriangulation(anEdge, aTriangulation, aLocation);
-                TopoDS_Edge aReversedEdge = TopoDS.Edge(anEdge.Reversed());
+                    Tool.PolygonOnTriangulation(anEdge, aTriangulation, aLocation);
+                Edge aReversedEdge = ShapeCasts.Edge(anEdge.Reversed());
                 PolygonOnTriangulation? aReversedPolygon =
-                    BRep_Tool.PolygonOnTriangulation(aReversedEdge, aTriangulation, aLocation);
+                    Tool.PolygonOnTriangulation(aReversedEdge, aTriangulation, aLocation);
                 Assert.NotNull(aForwardPolygon);
                 Assert.NotNull(aReversedPolygon);
 

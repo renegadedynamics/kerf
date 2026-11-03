@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
@@ -40,8 +42,8 @@ public class ExtremaCurveSurfaceOracleTests(ITestOutputHelper output)
         for (int c = 0; c < Cases; c++)
         {
             (int aCurveKind, int aSurfKind) = Pairs[c % Pairs.Length];
-            (N.Geom_Curve aNC, Geom_Curve aPC, _) = RandomCurve(anOracle, aCurveKind);
-            (N.Geom_Surface aNS, Geom_Surface aPS) = RandomSurface(anOracle, aSurfKind);
+            (N.Geom_Curve aNC, Curve3D aPC, _) = RandomCurve(anOracle, aCurveKind);
+            (N.Geom_Surface aNS, Surface aPS) = RandomSurface(anOracle, aSurfKind);
             using (aNC)
             using (aNS)
             {
@@ -78,8 +80,8 @@ public class ExtremaCurveSurfaceOracleTests(ITestOutputHelper output)
                 N.BRep_Tool.Range(aNE, ref aEF, ref aEL);
                 double aFU1 = 0.0, aFU2 = 0.0, aFV1 = 0.0, aFV2 = 0.0;
                 N.BRepTools.UVBounds(aNF, ref aFU1, ref aFU2, ref aFV1, ref aFV2);
-                var aSurf = new GeomAdaptor_Surface(aPS, aFU1, aFU2, aFV1, aFV2);
-                var aCurv = new GeomAdaptor_Curve(aPC, aEF, aEL);
+                var aSurf = new SurfaceAdaptor(aPS, aFU1, aFU2, aFV1, aFV2);
+                var aCurv = new CurveAdaptor(aPC, aEF, aEL);
                 double aTolS = Math.Min(N.BRep_Tool.Tolerance(aNF), global::Kerf.Engine.Foundation.Precision.Confusion());
                 aTolS = Math.Min(aSurf.UResolution(aTolS), aSurf.VResolution(aTolS));
                 aTolS = Math.Max(aTolS, global::Kerf.Engine.Foundation.Precision.PConfusion());
@@ -87,17 +89,17 @@ public class ExtremaCurveSurfaceOracleTests(ITestOutputHelper output)
                 aTolC = aCurv.Resolution(aTolC);
                 aTolC = Math.Max(aTolC, global::Kerf.Engine.Foundation.Precision.PConfusion());
 
-                var aPort = new Extrema_ExtCS();
+                var aPort = new ExtCS();
                 aPort.Initialize(aSurf, aFU1, aFU2, aFV1, aFV2, aTolC, aTolS);
                 aPort.Perform(aCurv, aEF, aEL);
                 aCases++;
 
                 using var aN = new N.BRepExtrema_DistShapeShape(aNE, aNF);
-                if (!aN.IsDone() || !aPort.IsDone())
+                if (!aN.IsDone() || !aPort.IsDone)
                 {
                     continue;
                 }
-                if (aPort.IsParallel())
+                if (aPort.IsParallel)
                 {
                     aParallel++;
                     continue;
@@ -115,9 +117,9 @@ public class ExtremaCurveSurfaceOracleTests(ITestOutputHelper output)
 
                     int aMatch = 0;
                     double aBest = double.MaxValue;
-                    for (int j = 1; j <= aPort.NbExt(); j++)
+                    for (int j = 1; j <= aPort.ExtCount; j++)
                     {
-                        aPort.Points(j, out Extrema_POnCurv aP1, out Extrema_POnSurf aP2);
+                        aPort.Points(j, out POnCurv aP1, out POnSurf aP2);
                         aP2.Parameter(out double aPU, out double aPV);
                         double aD = Math.Abs(aP1.Parameter() - aT) + Math.Abs(aPU - aU) + Math.Abs(aPV - aVv);
                         if (aD < aBest)
@@ -135,7 +137,7 @@ public class ExtremaCurveSurfaceOracleTests(ITestOutputHelper output)
                         aSkipped++;
                         continue;
                     }
-                    aPort.Points(aMatch, out Extrema_POnCurv aQ1, out Extrema_POnSurf aQ2);
+                    aPort.Points(aMatch, out POnCurv aQ1, out POnSurf aQ2);
                     aQ2.Parameter(out double aQU, out double aQV);
                     using N.gp_Pnt aNP1 = aN.PointOnShape1(i);
                     using N.gp_Pnt aNP2 = aN.PointOnShape2(i);

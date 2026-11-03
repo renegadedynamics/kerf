@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Values;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using static Occt.gce_ErrorType;
+using static Kerf.Engine.Construction.Values.ErrorType;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -21,9 +22,9 @@ public class gce_MakeCirc2dTest
         Point2D aP2 = new(aDelta, 0.0);
         Point2D aP3 = new(0.0, aDelta);
 
-        gce_MakeCirc2d aMaker = new(aP1, aP2, aP3);
-        Assert.True(aMaker.IsDone());
-        Assert.Equal(gce_Done, aMaker.Status());
+        MakeCirc2d aMaker = new(aP1, aP2, aP3);
+        Assert.True(aMaker.IsDone);
+        Assert.Equal(Done, aMaker.Status());
         Assert.Equal(0.0, aMaker.Value().Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
@@ -34,9 +35,9 @@ public class gce_MakeCirc2dTest
         Point2D aP2 = new(1.0e-150, 0.0);
         Point2D aP3 = new(0.0, 1.0);
 
-        gce_MakeCirc2d aMaker = new(aP1, aP2, aP3);
-        Assert.True(aMaker.IsDone());
-        Assert.Equal(gce_Done, aMaker.Status());
+        MakeCirc2d aMaker = new(aP1, aP2, aP3);
+        Assert.True(aMaker.IsDone);
+        Assert.Equal(Done, aMaker.Status());
         Assert.True(aMaker.Value().Radius() > 0.0);
     }
 
@@ -47,9 +48,9 @@ public class gce_MakeCirc2dTest
         Point2D aP2 = new(2.0e-150, 0.0);
         Point2D aP3 = new(0.0, 1.0);
 
-        gce_MakeCirc2d aMaker = new(aP1, aP2, aP3);
-        Assert.True(aMaker.IsDone());
-        Assert.Equal(gce_Done, aMaker.Status());
+        MakeCirc2d aMaker = new(aP1, aP2, aP3);
+        Assert.True(aMaker.IsDone);
+        Assert.Equal(Done, aMaker.Status());
         Assert.True(aMaker.Value().Radius() > 0.0);
     }
 }

@@ -6,10 +6,12 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.IFSelect_ReturnStatus;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 using static Occt.XdeDoc_ColorType;
 
 namespace Occt;
@@ -512,21 +514,21 @@ public class STEPCAFControl_Reader
     }
 
     /// <summary>The map of the shapes read to their labels</summary>
-    public NCollection_DataMap<TopoDS_Shape, XdeDoc_Label> GetShapeLabelMap() => myMap;
+    public NCollection_DataMap<Shape, XdeDoc_Label> GetShapeLabelMap() => myMap;
 
     //=======================================================================
     // function : FillShapesMap
     // purpose  : auxiliary: fill a map by all compounds and their components
     //=======================================================================
-    private static void FillShapesMap(TopoDS_Shape S, NCollection_Map<TopoDS_Shape> map)
+    private static void FillShapesMap(Shape S, NCollection_Map<Shape> map)
     {
-        TopoDS_Shape S0 = S.Located(new Placement());
+        Shape S0 = S.Located(new Placement());
         map.Add(S0);
-        if (S.ShapeType() != TopAbs_COMPOUND)
+        if (S.ShapeType() != ShapeType.Compound)
         {
             return;
         }
-        for (TopoDS_Iterator it = new TopoDS_Iterator(S); it.More(); it.Next())
+        for (Iterator it = new Iterator(S); it.More(); it.Next())
         {
             FillShapesMap(it.Value(), map);
         }
@@ -607,8 +609,8 @@ public class STEPCAFControl_Reader
 
         // Fill a map of (top-level) shapes resulting from that transfer
         // Only these shapes will be considered further
-        NCollection_Map<TopoDS_Shape> ShapesMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        NCollection_Map<TopoDS_Shape> NewShapesMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> ShapesMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        NCollection_Map<Shape> NewShapesMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
         for (i = 1; i <= num; i++)
         {
             FillShapesMap(reader.Shape(i), ShapesMap);
@@ -618,8 +620,8 @@ public class STEPCAFControl_Reader
         // this will be used to distinguish compounds representing assemblies
         // from the ones representing hybrid models and shape sets
         // OCCT.NET: the map iterates in insertion order (ExpandSubShapes iterates it; decision 1280)
-        NCollection_DataMap<TopoDS_Shape, StepBasic_ProductDefinition> ShapePDMap =
-            new NCollection_DataMap<TopoDS_Shape, StepBasic_ProductDefinition>(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, StepBasic_ProductDefinition> ShapePDMap =
+            new NCollection_DataMap<Shape, StepBasic_ProductDefinition>(ShapeHasher.Instance);
         NCollection_DataMap<StepBasic_ProductDefinition, STEPCAFControl_ExternFile> PDFileMap =
             new NCollection_DataMap<StepBasic_ProductDefinition, STEPCAFControl_ExternFile>(ReferenceEqualityComparer.Instance);
         Transfer_TransientProcess TP = reader.WS().TransferReader().TransientProcess();
@@ -642,8 +644,8 @@ public class STEPCAFControl_Reader
                 if (index > 0)
                 {
                     Transfer_Binder binder = TP.MapItem(index);
-                    TopoDS_Shape S = TransferBRep.ShapeResult(binder);
-                    if (!S.IsNull() && ShapesMap.Contains(S))
+                    Shape S = TransferBRep.ShapeResult(binder);
+                    if (!S.IsNull && ShapesMap.Contains(S))
                     {
                         NewShapesMap.Add(S);
                         ShapePDMap.Bind(S, PD);
@@ -657,8 +659,8 @@ public class STEPCAFControl_Reader
                 if (index > 0)
                 {
                     Transfer_Binder binder = TP.MapItem(index);
-                    TopoDS_Shape S = TransferBRep.ShapeResult(binder);
-                    if (!S.IsNull() && ShapesMap.Contains(S))
+                    Shape S = TransferBRep.ShapeResult(binder);
+                    if (!S.IsNull && ShapesMap.Contains(S))
                     {
                         NewShapesMap.Add(S);
                     }
@@ -862,8 +864,8 @@ public class STEPCAFControl_Reader
     /// Add a shape to a document Depending on a case, this shape can be added as one, or as assembly, or (in case if
     /// it is associated with external reference) taken as that referred shape
     /// </summary>
-    protected XdeDoc_Label AddShape(TopoDS_Shape S, XdeDoc_Document STool, NCollection_Map<TopoDS_Shape> NewShapesMap,
-                                    NCollection_DataMap<TopoDS_Shape, StepBasic_ProductDefinition> ShapePDMap,
+    protected XdeDoc_Label AddShape(Shape S, XdeDoc_Document STool, NCollection_Map<Shape> NewShapesMap,
+                                    NCollection_DataMap<Shape, StepBasic_ProductDefinition> ShapePDMap,
                                     NCollection_DataMap<StepBasic_ProductDefinition, STEPCAFControl_ExternFile> PDFileMap)
     {
         // if shape has already been mapped, just return corresponding label
@@ -875,7 +877,7 @@ public class STEPCAFControl_Reader
         // if shape is located, create instance
         if (!S.Location().IsIdentity)
         {
-            TopoDS_Shape S0 = S.Located(new Placement());
+            Shape S0 = S.Located(new Placement());
             AddShape(S0, STool, NewShapesMap, ShapePDMap, PDFileMap);
             XdeDoc_Label L = STool.AddShape(S, false); // should create reference
             myMap.Bind(S, L);
@@ -883,7 +885,7 @@ public class STEPCAFControl_Reader
         }
 
         // if shape is not compound, simple add it
-        if (S.ShapeType() != TopAbs_COMPOUND)
+        if (S.ShapeType() != ShapeType.Compound)
         {
             XdeDoc_Label L = STool.AddShape(S, false);
             myMap.Bind(S, L);
@@ -893,10 +895,10 @@ public class STEPCAFControl_Reader
         // for compounds, compute number of subshapes and check whether this is assembly
         bool isAssembly = false;
         int nbComponents = 0;
-        TopoDS_Iterator it = new TopoDS_Iterator();
+        Iterator it = new Iterator();
         for (it.Initialize(S); it.More() && !isAssembly; it.Next(), nbComponents++)
         {
-            TopoDS_Shape Sub0 = it.Value().Located(new Placement());
+            Shape Sub0 = it.Value().Located(new Placement());
             if (NewShapesMap.Contains(Sub0))
             {
                 isAssembly = true;
@@ -946,7 +948,7 @@ public class STEPCAFControl_Reader
         nbComponents = 0;
         for (it.Initialize(S); it.More(); it.Next(), nbComponents++)
         {
-            TopoDS_Shape Sub0 = it.Value().Located(new Placement());
+            Shape Sub0 = it.Value().Located(new Placement());
             XdeDoc_Label subL = AddShape(Sub0, STool, NewShapesMap, ShapePDMap, PDFileMap);
             if (!subL.IsNull())
             {
@@ -1188,7 +1190,7 @@ public class STEPCAFControl_Reader
         Interface_Graph aGraph = theTP.Graph();
         Placement aLoc = new Placement(); // init;
         // find shape
-        TopoDS_Shape aShape = new TopoDS_Shape();
+        Shape aShape = new Shape();
         Transfer_Binder aBinder;
         StepShape_ShapeRepresentation aRepr = theStyle.ItemAP242()?.Value() as StepShape_ShapeRepresentation;
         if (aRepr is null)
@@ -1211,7 +1213,7 @@ public class STEPCAFControl_Reader
         {
             aShape = TransferBRep.ShapeResult(aBinder);
         }
-        if (aShape.IsNull())
+        if (aShape.IsNull)
         {
             return;
         }
@@ -1237,8 +1239,8 @@ public class STEPCAFControl_Reader
 
                 if (anAxp1 is not null && anAxp2 is not null)
                 {
-                    Geom_Axis2Placement anOrig = StepToGeom.MakeAxis2Placement(anAxp1, theLocalFactors);
-                    Geom_Axis2Placement aTarg = StepToGeom.MakeAxis2Placement(anAxp2, theLocalFactors);
+                    Axis2Placement anOrig = StepToGeom.MakeAxis2Placement(anAxp1, theLocalFactors);
+                    Axis2Placement aTarg = StepToGeom.MakeAxis2Placement(anAxp2, theLocalFactors);
                     CoordinateSystem anAx3Orig = new CoordinateSystem(anOrig.Ax2());
                     CoordinateSystem anAx3Targ = new CoordinateSystem(aTarg.Ax2());
 
@@ -1276,7 +1278,7 @@ public class STEPCAFControl_Reader
     // function : SetStyle
     // purpose  : auxiliary: set style for parts and instances
     //=======================================================================
-    private static void SetStyle(XSControl_WorkSession theWS, NCollection_DataMap<TopoDS_Shape, XdeDoc_Label> theMap,
+    private static void SetStyle(XSControl_WorkSession theWS, NCollection_DataMap<Shape, XdeDoc_Label> theMap,
                                  XdeDoc_Document theSTool, STEPConstruct_Styles theStyles,
                                  NCollection_HSequence<Transient> theHSeqOfInvisStyle,
                                  StepVisual_StyledItem theStyle, in StepData_Factors theLocalFactors)
@@ -1331,7 +1333,7 @@ public class STEPCAFControl_Reader
         for (int itemIt = 0; itemIt < anItems.Count; itemIt++)
         {
             int anIndex = aTP.MapIndex(anItems[itemIt].Value());
-            TopoDS_Shape aS = new TopoDS_Shape();
+            Shape aS = new Shape();
             if (anIndex > 0)
             {
                 Transfer_Binder aBinder = aTP.MapItem(anIndex);
@@ -1386,8 +1388,8 @@ public class STEPCAFControl_Reader
                     // PTV 10.02.2003 to find component of assembly CORRECTLY
                     STEPConstruct_Tool aTool = new STEPConstruct_Tool(theWS);
                     XdeDoc_Label aShLab = FindInstance(NAUO, theSTool, aTool, theMap);
-                    TopoDS_Shape aSh = aShLab.IsNull() ? new TopoDS_Shape() : theSTool.GetShape(aShLab);
-                    if (!aSh.IsNull())
+                    Shape aSh = aShLab.IsNull() ? new Shape() : theSTool.GetShape(aShLab);
+                    if (!aSh.IsNull)
                     {
                         aS = aSh;
                         break;
@@ -1400,7 +1402,7 @@ public class STEPCAFControl_Reader
                 continue; // skip styled item which refer to SHUO
             }
 
-            if (aS.IsNull())
+            if (aS.IsNull)
             {
                 continue;
             }
@@ -1430,7 +1432,7 @@ public class STEPCAFControl_Reader
                     }
                     else
                     {
-                        for (TopoDS_Iterator it = new TopoDS_Iterator(aS); it.More(); it.Next())
+                        for (Iterator it = new Iterator(aS); it.More(); it.Next())
                         {
                             if (theSTool.SearchUsingMap(it.Value(), out XdeDoc_Label aL1, false, true))
                             {
@@ -1546,7 +1548,7 @@ public class STEPCAFControl_Reader
     private static XdeDoc_Label GetLabelFromPD(StepBasic_ProductDefinition PD, XdeDoc_Document STool,
                                                Transfer_TransientProcess TP,
                                                NCollection_DataMap<StepBasic_ProductDefinition, STEPCAFControl_ExternFile> PDFileMap,
-                                               NCollection_DataMap<TopoDS_Shape, XdeDoc_Label> ShapeLabelMap)
+                                               NCollection_DataMap<Shape, XdeDoc_Label> ShapeLabelMap)
     {
         XdeDoc_Label L = default;
         if (PDFileMap.IsBound(PD))
@@ -1562,14 +1564,14 @@ public class STEPCAFControl_Reader
             }
         }
 
-        TopoDS_Shape S;
+        Shape S;
         Transfer_Binder binder = TP.Find(PD);
         if (binder is null || !binder.HasResult())
         {
             return L;
         }
         S = TransferBRep.ShapeResult(TP, binder);
-        if (S.IsNull())
+        if (S.IsNull)
         {
             return L;
         }
@@ -1589,7 +1591,7 @@ public class STEPCAFControl_Reader
     /// Find a label of the instance of a component (NAUO) in the document, through the shape it was read into.
     /// </summary>
     public static XdeDoc_Label FindInstance(StepRepr_NextAssemblyUsageOccurrence NAUO, XdeDoc_Document STool,
-                                            STEPConstruct_Tool Tool, NCollection_DataMap<TopoDS_Shape, XdeDoc_Label> ShapeLabelMap)
+                                            STEPConstruct_Tool Tool, NCollection_DataMap<Shape, XdeDoc_Label> ShapeLabelMap)
     {
         XdeDoc_Label L = default;
 
@@ -1602,8 +1604,8 @@ public class STEPCAFControl_Reader
             return L;
         }
 
-        TopoDS_Shape S = TransferBRep.ShapeResult(TP, binder);
-        if (S.IsNull())
+        Shape S = TransferBRep.ShapeResult(TP, binder);
+        if (S.IsNull)
         {
             // OCCT_DEBUG output left out
             return L;
@@ -1743,7 +1745,7 @@ public class STEPCAFControl_Reader
     private static XdeDoc_Label GetLabelFromPD(StepBasic_ProductDefinition PD, XdeDoc_Document STool,
                                                STEPConstruct_ValidationProps Props,
                                                NCollection_DataMap<StepBasic_ProductDefinition, STEPCAFControl_ExternFile> PDFileMap,
-                                               NCollection_DataMap<TopoDS_Shape, XdeDoc_Label> ShapeLabelMap)
+                                               NCollection_DataMap<Shape, XdeDoc_Label> ShapeLabelMap)
     {
         XdeDoc_Label L = default;
         if (PDFileMap.IsBound(PD))
@@ -1758,8 +1760,8 @@ public class STEPCAFControl_Reader
                 }
             }
         }
-        TopoDS_Shape S = Props.GetPropShape(PD);
-        if (S.IsNull())
+        Shape S = Props.GetPropShape(PD);
+        if (S.IsNull)
         {
             return L;
         }
@@ -1907,8 +1909,8 @@ public class STEPCAFControl_Reader
                     {
                         continue;
                     }
-                    TopoDS_Shape S = TransferBRep.ShapeResult(TP, binder);
-                    if (S.IsNull())
+                    Shape S = TransferBRep.ShapeResult(TP, binder);
+                    if (S.IsNull)
                     {
                         continue;
                     }
@@ -2007,8 +2009,8 @@ public class STEPCAFControl_Reader
                     continue;
                 }
 
-                TopoDS_Shape S = TransferBRep.ShapeResult(TP, binder);
-                if (S.IsNull())
+                Shape S = TransferBRep.ShapeResult(TP, binder);
+                if (S.IsNull)
                 {
                     continue;
                 }
@@ -2115,8 +2117,8 @@ public class STEPCAFControl_Reader
             return aResult;
         }
 
-        TopoDS_Shape aShape = TransferBRep.ShapeResult(aBinder);
-        if (aShape.IsNull())
+        Shape aShape = TransferBRep.ShapeResult(aBinder);
+        if (aShape.IsNull)
         {
             return aResult;
         }
@@ -2181,7 +2183,7 @@ public class STEPCAFControl_Reader
     /// Expands the topological structure of Manifold Solid BRep STEP entity to OCAF sub-tree. Entities having no
     /// names associated via their StepRepr_RepresentationItem base class are skipped.
     /// </summary>
-    protected void ExpandSubShapes(XdeDoc_Document ShapeTool, NCollection_DataMap<TopoDS_Shape, StepBasic_ProductDefinition> ShapePDMap)
+    protected void ExpandSubShapes(XdeDoc_Document ShapeTool, NCollection_DataMap<Shape, StepBasic_ProductDefinition> ShapePDMap)
     {
         Transfer_TransientProcess TP = Reader().WS().TransferReader().TransientProcess();
         StepData_StepModel aStepModel = TP.Model() as StepData_StepModel;
@@ -2192,9 +2194,9 @@ public class STEPCAFControl_Reader
 
         Interface_Graph Graph = Reader().WS().Graph();
 
-        foreach (KeyValuePair<TopoDS_Shape, StepBasic_ProductDefinition> it in ShapePDMap)
+        foreach (KeyValuePair<Shape, StepBasic_ProductDefinition> it in ShapePDMap)
         {
-            TopoDS_Shape aRootShape = it.Key;
+            Shape aRootShape = it.Key;
             StepBasic_ProductDefinition aPDef = it.Value;
             if (aPDef is null)
             {
@@ -2494,8 +2496,8 @@ public class STEPCAFControl_Reader
 
     private readonly STEPControl_Reader myReader;
     private readonly NCollection_DataMap<string, STEPCAFControl_ExternFile> myFiles = new NCollection_DataMap<string, STEPCAFControl_ExternFile>();
-    private readonly NCollection_DataMap<TopoDS_Shape, XdeDoc_Label> myMap =
-        new NCollection_DataMap<TopoDS_Shape, XdeDoc_Label>(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, XdeDoc_Label> myMap =
+        new NCollection_DataMap<Shape, XdeDoc_Label>(ShapeHasher.Instance);
     private bool myColorMode;
     private bool myNameMode;
     private bool myLayerMode;

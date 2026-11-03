@@ -3,9 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -18,12 +21,12 @@ namespace Occt;
 public sealed class TopOpeBRepTool_SolidClassifier
 {
     private BRepClass3d_SolidClassifier? myPClassifier;
-    private readonly NCollection_IndexedDataMap<TopoDS_Shape, BRepClass3d_SolidClassifier> myShapeClassifierMap =
-        new(TopTools_ShapeMapHasher.Instance);
-    private TopAbs_State myState;
-    private TopoDS_Shell myShell = new();
-    private TopoDS_Solid mySolid = new();
-    private readonly BRep_Builder myBuilder = new();
+    private readonly NCollection_IndexedDataMap<Shape, BRepClass3d_SolidClassifier> myShapeClassifierMap =
+        new(ShapeHasher.Instance);
+    private Containment myState;
+    private Shell myShell = new();
+    private Solid mySolid = new();
+    private readonly BrepBuilder myBuilder = new();
 
     /// <summary>An empty classifier.</summary>
     public TopOpeBRepTool_SolidClassifier()
@@ -38,13 +41,13 @@ public sealed class TopOpeBRepTool_SolidClassifier
         // modified by NIZNHY-PKV Mon Dec 16 10:46:04 2002 f
         myShapeClassifierMap.Clear();
         // modified by NIZNHY-PKV Mon Dec 16 10:46:06 2002 t
-        myState = TopAbs_UNKNOWN;
+        myState = Unknown;
         myShell.Nullify();
         mySolid.Nullify();
     }
 
     /// <summary>Makes <paramref name="SOL"/>'s classifier current, creating it on first use.</summary>
-    public void LoadSolid(in TopoDS_Solid SOL)
+    public void LoadSolid(in Solid SOL)
     {
         bool found = myShapeClassifierMap.Contains(SOL);
         if (!found)
@@ -62,10 +65,10 @@ public sealed class TopOpeBRepTool_SolidClassifier
     /// The state of <paramref name="P"/> against the solid <paramref name="SOL"/>, with the state of an EXTERNAL or
     /// INTERNAL face found by the classifier taken into account.
     /// </summary>
-    public TopAbs_State Classify(in TopoDS_Solid SOL, in Point3D P, double Tol)
+    public Containment Classify(in Solid SOL, in Point3D P, double Tol)
     {
         myPClassifier = null;
-        myState = TopAbs_UNKNOWN;
+        myState = Unknown;
         LoadSolid(SOL);
         if (myPClassifier is null)
         {
@@ -73,51 +76,51 @@ public sealed class TopOpeBRepTool_SolidClassifier
         }
         myPClassifier.Perform(P, Tol);
         myState = myPClassifier.State();
-        TopoDS_Shape fres = myPClassifier.Face();
-        if (fres.IsNull())
+        Shape fres = myPClassifier.Face();
+        if (fres.IsNull)
         {
             // NYI: in case of elimination of EXTERNAL and INTERNAL faces by the
             // BRepClass3d_SolidClassifier classifier, still handle these faces
             // to generate ON/Solid state when the point is IN/face INTERNAL or EXTERNAL
             return myState;
         }
-        TopAbs_Orientation ofres = fres.Orientation();
-        if (ofres == TopAbs_EXTERNAL)
+        Orientation ofres = fres.Orientation();
+        if (ofres == External)
         {
-            if (myState == TopAbs_IN)
+            if (myState == In)
             {
-                myState = TopAbs_OUT;
+                myState = Out;
             }
-            else if (myState == TopAbs_OUT)
+            else if (myState == Out)
             {
-                myState = TopAbs_OUT;
+                myState = Out;
             }
-            else if (myState == TopAbs_ON)
+            else if (myState == On)
             {
-                myState = TopAbs_ON;
+                myState = On;
             }
-            else if (myState == TopAbs_UNKNOWN)
+            else if (myState == Unknown)
             {
-                myState = TopAbs_OUT;
+                myState = Out;
             }
         }
-        else if (ofres == TopAbs_INTERNAL)
+        else if (ofres == Internal)
         {
-            if (myState == TopAbs_IN)
+            if (myState == In)
             {
-                myState = TopAbs_IN;
+                myState = In;
             }
-            else if (myState == TopAbs_OUT)
+            else if (myState == Out)
             {
-                myState = TopAbs_IN;
+                myState = In;
             }
-            else if (myState == TopAbs_ON)
+            else if (myState == On)
             {
-                myState = TopAbs_ON;
+                myState = On;
             }
-            else if (myState == TopAbs_UNKNOWN)
+            else if (myState == Unknown)
             {
-                myState = TopAbs_IN;
+                myState = In;
             }
         }
         return myState;
@@ -126,7 +129,7 @@ public sealed class TopOpeBRepTool_SolidClassifier
     /// <summary>
     /// Makes <paramref name="SHE"/>'s classifier current, creating it on first use on a solid made of the shell.
     /// </summary>
-    public void LoadShell(in TopoDS_Shell SHE)
+    public void LoadShell(in Shell SHE)
     {
         bool found = myShapeClassifierMap.Contains(SHE);
         if (!found)
@@ -143,10 +146,10 @@ public sealed class TopOpeBRepTool_SolidClassifier
     }
 
     /// <summary>The state of <paramref name="P"/> against the solid bounded by the shell <paramref name="SHE"/>.</summary>
-    public TopAbs_State Classify(in TopoDS_Shell SHE, in Point3D P, double Tol)
+    public Containment Classify(in Shell SHE, in Point3D P, double Tol)
     {
         myPClassifier = null;
-        myState = TopAbs_UNKNOWN;
+        myState = Unknown;
         LoadShell(SHE);
         if (myPClassifier is null)
         {
@@ -158,5 +161,5 @@ public sealed class TopOpeBRepTool_SolidClassifier
     }
 
     /// <summary>The state found by the last classification.</summary>
-    public TopAbs_State State() => myState;
+    public Containment State() => myState;
 }

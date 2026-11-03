@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -58,8 +59,8 @@ internal static class BOPTestAPICommands
             _ => new BRepAlgoAPI_Cut(),
         };
         BOPTestObjects aSession = BOPTestObjects.Of(theDI);
-        NCollection_List<TopoDS_Shape> aLS = aSession.Shapes;
-        NCollection_List<TopoDS_Shape> aLT = aSession.Tools;
+        NCollection_List<Shape> aLS = aSession.Shapes;
+        NCollection_List<Shape> aLT = aSession.Tools;
         if (anOp != BOPAlgo_Operation.BOPAlgo_CUT21)
         {
             pBuilder.SetArguments(aLS);
@@ -89,8 +90,8 @@ internal static class BOPTestAPICommands
         {
             return 0;
         }
-        TopoDS_Shape aR = pBuilder.Shape();
-        if (aR.IsNull())
+        Shape aR = pBuilder.Shape();
+        if (aR.IsNull)
         {
             di.Append("Result is a null shape\n");
             return 0;
@@ -107,8 +108,8 @@ internal static class BOPTestAPICommands
         }
         BOPTestObjects aSession = BOPTestObjects.Of(theDI);
         BRepAlgoAPI_BuilderAlgo aBuilder = new();
-        NCollection_List<TopoDS_Shape> aLS = new(aSession.Shapes);
-        foreach (TopoDS_Shape aS in aSession.Tools)
+        NCollection_List<Shape> aLS = new(aSession.Shapes);
+        foreach (Shape aS in aSession.Tools)
         {
             aLS.Append(aS);
         }
@@ -132,8 +133,8 @@ internal static class BOPTestAPICommands
         {
             return 0;
         }
-        TopoDS_Shape aR = aBuilder.Shape();
-        if (aR.IsNull())
+        Shape aR = aBuilder.Shape();
+        if (aR.IsNull)
         {
             di.Append("Result is a null shape\n");
             return 0;
@@ -171,8 +172,8 @@ internal static class BOPTestAPICommands
         {
             return 0;
         }
-        TopoDS_Shape aR = aSplitter.Shape();
-        if (aR.IsNull())
+        Shape aR = aSplitter.Shape();
+        if (aR.IsNull)
         {
             di.Append("Result is a null shape\n");
             return 0;

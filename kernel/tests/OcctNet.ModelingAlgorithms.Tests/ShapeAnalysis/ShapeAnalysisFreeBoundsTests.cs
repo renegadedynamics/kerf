@@ -1,9 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -13,12 +16,12 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ShapeAnalysisFreeBoundsTests
 {
-    private static TopoDS_Shape Box() => new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+    private static Shape Box() => new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
 
-    private static List<TopoDS_Shape> Faces(in TopoDS_Shape theShape)
+    private static List<Shape> Faces(in Shape theShape)
     {
-        var aList = new List<TopoDS_Shape>();
-        for (var anExp = new TopExp_Explorer(theShape, TopAbs_FACE); anExp.More(); anExp.Next())
+        var aList = new List<Shape>();
+        for (var anExp = new Explorer(theShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
             aList.Add(anExp.Current());
         }
@@ -26,12 +29,12 @@ public class ShapeAnalysisFreeBoundsTests
     }
 
     // a shell of the box's faces but those listed; the face of rank theReversed (if any) reversed
-    private static TopoDS_Shell ShellWithout(in TopoDS_Shape theBox, int[] theRemoved, int theReversed = -1)
+    private static Shell ShellWithout(in Shape theBox, int[] theRemoved, int theReversed = -1)
     {
-        var aB = new BRep_Builder();
-        TopoDS_Shell aShell = new();
+        var aB = new BrepBuilder();
+        Shell aShell = new();
         aB.MakeShell(ref aShell);
-        List<TopoDS_Shape> aFaces = Faces(theBox);
+        List<Shape> aFaces = Faces(theBox);
         for (int i = 0; i < aFaces.Count; i++)
         {
             if (Array.IndexOf(theRemoved, i) >= 0)
@@ -43,10 +46,10 @@ public class ShapeAnalysisFreeBoundsTests
         return aShell;
     }
 
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
         int n = 0;
-        for (var anExp = new TopExp_Explorer(theShape, theType); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(theShape, theType); anExp.More(); anExp.Next())
         {
             n++;
         }
@@ -56,7 +59,7 @@ public class ShapeAnalysisFreeBoundsTests
     [Fact]
     public void Shell_ClosedBox_HasNoFreeOrBadEdges()
     {
-        TopoDS_Shape aBox = Box();
+        Shape aBox = Box();
         var sas = new ShapeAnalysis_Shell();
         Assert.False(sas.CheckOrientedShells(aBox, true));
         Assert.False(sas.HasBadEdges());
@@ -74,21 +77,21 @@ public class ShapeAnalysisFreeBoundsTests
     [Fact]
     public void Shell_OpenAndMisoriented()
     {
-        TopoDS_Shape aBox = Box();
+        Shape aBox = Box();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
         var sas = new ShapeAnalysis_Shell();
         Assert.False(sas.CheckOrientedShells(ShellWithout(aBox, [0]), true));
         Assert.True(sas.HasFreeEdges());
-        Assert.Equal(4, Count(sas.FreeEdges(), TopAbs_EDGE));
+        Assert.Equal(4, Count(sas.FreeEdges(), ShapeType.Edge));
         Assert.True(sas.FreeEdges().TShape()!.IsFrozen);
         Assert.False(sas.InternalFreeEdges().TShape()!.IsFrozen);
 
         var sas2 = new ShapeAnalysis_Shell();
-        TopoDS_Shell aBad = ShellWithout(aBox, [], 2);
+        Shell aBad = ShellWithout(aBox, [], 2);
         Assert.True(sas2.CheckOrientedShells(aBad, true));
         Assert.True(sas2.HasBadEdges());
-        Assert.Equal(4, Count(sas2.BadEdges(), TopAbs_EDGE)); // the reversed face's edges, met twice the same way
+        Assert.Equal(4, Count(sas2.BadEdges(), ShapeType.Edge)); // the reversed face's edges, met twice the same way
         Assert.Equal(1, sas2.NbLoaded());
         aSnap.AssertUnchanged(aBox);
     }
@@ -96,96 +99,96 @@ public class ShapeAnalysisFreeBoundsTests
     [Fact]
     public void FreeBounds_ShellForm_OneFaceRemoved()
     {
-        TopoDS_Shape aBox = Box();
+        Shape aBox = Box();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         var aFB = new ShapeAnalysis_FreeBounds(ShellWithout(aBox, [0]));
-        TopoDS_Compound aClosed = aFB.GetClosedWires();
-        TopoDS_Compound anOpen = aFB.GetOpenWires();
+        Compound aClosed = aFB.GetClosedWires();
+        Compound anOpen = aFB.GetOpenWires();
         Assert.True(aClosed.TShape()!.IsFrozen);
-        Assert.Equal(1, Count(aClosed, TopAbs_WIRE));
-        Assert.Equal(4, Count(aClosed, TopAbs_EDGE));
-        Assert.Equal(0, Count(anOpen, TopAbs_WIRE));
+        Assert.Equal(1, Count(aClosed, ShapeType.Wire));
+        Assert.Equal(4, Count(aClosed, ShapeType.Edge));
+        Assert.Equal(0, Count(anOpen, ShapeType.Wire));
         aSnap.AssertUnchanged(aBox);
     }
 
     [Fact]
     public void FreeBounds_ShellForm_TwoAdjacentFacesRemoved()
     {
-        TopoDS_Shape aBox = Box();
-        List<TopoDS_Shape> aFaces = Faces(aBox);
+        Shape aBox = Box();
+        List<Shape> aFaces = Faces(aBox);
         // faces 0 and 2 of BRepPrim's box are adjacent (x = 0 and y = 0)
         var aFB = new ShapeAnalysis_FreeBounds(ShellWithout(aBox, [0, 2]), false, false);
-        Assert.Equal(1, Count(aFB.GetClosedWires(), TopAbs_WIRE));
-        Assert.Equal(6, Count(aFB.GetClosedWires(), TopAbs_EDGE));
+        Assert.Equal(1, Count(aFB.GetClosedWires(), ShapeType.Wire));
+        Assert.Equal(6, Count(aFB.GetClosedWires(), ShapeType.Edge));
         Assert.Equal(6, aFaces.Count);
 
         // the closed box: nothing free (null compounds)
         var aNone = new ShapeAnalysis_FreeBounds(aBox);
-        Assert.True(aNone.GetClosedWires().IsNull());
-        Assert.True(aNone.GetOpenWires().IsNull());
+        Assert.True(aNone.GetClosedWires().IsNull);
+        Assert.True(aNone.GetOpenWires().IsNull);
     }
 
     [Fact]
     public void FreeBounds_Statics_OpenChainAndSplit()
     {
         // a polyline of 3 edges and a separate triangle, given unsorted and partly reversed
-        var aB = new BRep_Builder();
+        var aB = new BrepBuilder();
         Point3D[] aPts = [new(0, 0, 0), new(1, 0, 0), new(2, 0, 0), new(3, 0, 0)];
-        var aEdges = new NCollection_HSequence<TopoDS_Shape>();
-        TopoDS_Edge e01 = new BRepBuilderAPI_MakeEdge(aPts[0], aPts[1]).Edge();
-        TopoDS_Edge e12 = new BRepBuilderAPI_MakeEdge(aPts[1], aPts[2]).Edge();
-        TopoDS_Edge e23 = new BRepBuilderAPI_MakeEdge(aPts[2], aPts[3]).Edge();
+        var aEdges = new NCollection_HSequence<Shape>();
+        Edge e01 = new BRepBuilderAPI_MakeEdge(aPts[0], aPts[1]).Edge();
+        Edge e12 = new BRepBuilderAPI_MakeEdge(aPts[1], aPts[2]).Edge();
+        Edge e23 = new BRepBuilderAPI_MakeEdge(aPts[2], aPts[3]).Edge();
         aEdges.Append(e23);
         aEdges.Append(e01.Reversed());
         aEdges.Append(e12);
 
-        NCollection_HSequence<TopoDS_Shape> aWires = ShapeAnalysis_FreeBounds.ConnectEdgesToWires(aEdges, 1e-7, false);
+        NCollection_HSequence<Shape> aWires = ShapeAnalysis_FreeBounds.ConnectEdgesToWires(aEdges, 1e-7, false);
         Assert.Equal(1, aWires.Length());
-        Assert.Equal(3, Count(aWires.Value(1), TopAbs_EDGE));
+        Assert.Equal(3, Count(aWires.Value(1), ShapeType.Edge));
         Assert.False(aWires.Value(1).Closed());
         Assert.True(aWires.Value(1).TShape()!.IsFrozen);
 
         // dispatch into the caller's frozen compounds: new compounds
-        TopoDS_Compound aClosed = new(), anOpen = new();
+        Compound aClosed = new(), anOpen = new();
         ShapeAnalysis_FreeBounds.DispatchWires(aWires, ref aClosed, ref anOpen);
-        Assert.Equal(1, Count(anOpen, TopAbs_WIRE));
-        Assert.Equal(0, Count(aClosed, TopAbs_WIRE));
-        TopoDS_Compound anOpenBefore = anOpen;
+        Assert.Equal(1, Count(anOpen, ShapeType.Wire));
+        Assert.Equal(0, Count(aClosed, ShapeType.Wire));
+        Compound anOpenBefore = anOpen;
         ShapeAnalysis_FreeBounds.DispatchWires(aWires, ref aClosed, ref anOpen);
-        Assert.Equal(2, Count(anOpen, TopAbs_WIRE));
-        Assert.Equal(1, Count(anOpenBefore, TopAbs_WIRE));
+        Assert.Equal(2, Count(anOpen, ShapeType.Wire));
+        Assert.Equal(1, Count(anOpenBefore, ShapeType.Wire));
 
         // a closed loop with a tail: the loop is split off
-        TopoDS_Edge e30 = new BRepBuilderAPI_MakeEdge(aPts[3], new Point3D(1, 1, 0)).Edge();
+        Edge e30 = new BRepBuilderAPI_MakeEdge(aPts[3], new Point3D(1, 1, 0)).Edge();
         var aMaker = new BRepBuilderAPI_MakeWire();
         aMaker.Add(e01);
         aMaker.Add(e12);
         aMaker.Add(e23);
-        TopoDS_Wire aW = aMaker.Wire();
-        var aSeq = new NCollection_HSequence<TopoDS_Shape>();
+        Wire aW = aMaker.Wire();
+        var aSeq = new NCollection_HSequence<Shape>();
         aSeq.Append(aW);
-        ShapeAnalysis_FreeBounds.SplitWires(aSeq, 1e-7, true, out NCollection_HSequence<TopoDS_Shape> aC,
-                                            out NCollection_HSequence<TopoDS_Shape> anO);
+        ShapeAnalysis_FreeBounds.SplitWires(aSeq, 1e-7, true, out NCollection_HSequence<Shape> aC,
+                                            out NCollection_HSequence<Shape> anO);
         Assert.Equal(0, aC.Length());
         Assert.Equal(1, anO.Length());
-        Assert.False(e30.IsNull());
+        Assert.False(e30.IsNull);
     }
 
     [Fact]
     public void FreeBounds_ConnectWiresToWires_FillsTheVertexMap()
     {
         // two wires whose ends are close but not shared: connected by distance, the ends merged into new vertices
-        TopoDS_Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
-        TopoDS_Edge e2 = new BRepBuilderAPI_MakeEdge(new Point3D(1, 0, 1e-5), new Point3D(2, 0, 0)).Edge();
-        var aSeq = new NCollection_HSequence<TopoDS_Shape>();
+        Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        Edge e2 = new BRepBuilderAPI_MakeEdge(new Point3D(1, 0, 1e-5), new Point3D(2, 0, 0)).Edge();
+        var aSeq = new NCollection_HSequence<Shape>();
         aSeq.Append(new BRepBuilderAPI_MakeWire(e1).Wire());
         aSeq.Append(new BRepBuilderAPI_MakeWire(e2).Wire());
-        var aVertices = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        NCollection_HSequence<TopoDS_Shape> aWires = ShapeAnalysis_FreeBounds.ConnectWiresToWires(aSeq, 1e-3, false, aVertices);
+        var aVertices = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        NCollection_HSequence<Shape> aWires = ShapeAnalysis_FreeBounds.ConnectWiresToWires(aSeq, 1e-3, false, aVertices);
         Assert.Equal(1, aWires.Length());
-        Assert.Equal(2, Count(aWires.Value(1), TopAbs_EDGE));
+        Assert.Equal(2, Count(aWires.Value(1), ShapeType.Edge));
         Assert.Equal(2, aVertices.Extent());
-        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> aPair in aVertices)
+        foreach (KeyValuePair<Shape, Shape> aPair in aVertices)
         {
             Assert.True(aPair.Value.TShape()!.IsFrozen);
         }
@@ -194,7 +197,7 @@ public class ShapeAnalysisFreeBoundsTests
     [Fact]
     public void FreeBoundsProperties_OpenBox()
     {
-        TopoDS_Shape aBox = Box();
+        Shape aBox = Box();
         var aProps = new ShapeAnalysis_FreeBoundsProperties(ShellWithout(aBox, [0]));
         Assert.True(aProps.IsLoaded());
         Assert.True(aProps.Perform());
@@ -213,15 +216,15 @@ public class ShapeAnalysisFreeBoundsTests
     public void FreeBoundsProperties_Notch()
     {
         // a wire turning back on itself: (0,0)-(10,0)-(0,0.1)
-        TopoDS_Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
-        TopoDS_Edge e2 = new BRepBuilderAPI_MakeEdge(new Point3D(10, 0, 0), new Point3D(0, 0.1, 0)).Edge();
+        Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
+        Edge e2 = new BRepBuilderAPI_MakeEdge(new Point3D(10, 0, 0), new Point3D(0, 0.1, 0)).Edge();
         var aMaker = new BRepBuilderAPI_MakeWire();
         aMaker.Add(e1);
         aMaker.Add(e2);
-        TopoDS_Wire aW = aMaker.Wire();
+        Wire aW = aMaker.Wire();
         var aProps = new ShapeAnalysis_FreeBoundsProperties();
-        Assert.True(aProps.CheckNotches(aW, 1, out TopoDS_Wire aNotch, out double aDist));
-        Assert.Equal(2, Count(aNotch, TopAbs_EDGE));
+        Assert.True(aProps.CheckNotches(aW, 1, out Wire aNotch, out double aDist));
+        Assert.Equal(2, Count(aNotch, ShapeType.Edge));
         Assert.True(aNotch.TShape()!.IsFrozen);
         Assert.Equal(1.0 / Math.Sqrt(100.01), aDist, 1e-12); // from (0,0,0) to the second edge's line
         double aDist0 = aDist;
@@ -236,6 +239,6 @@ public class ShapeAnalysisFreeBoundsTests
         aData.Clear();
         Assert.Equal(-1.0, aData.Area());
         Assert.Equal(0, aData.NbNotches());
-        Assert.Equal(TopAbs_FORWARD, aW.Orientation());
+        Assert.Equal(Forward, aW.Orientation());
     }
 }

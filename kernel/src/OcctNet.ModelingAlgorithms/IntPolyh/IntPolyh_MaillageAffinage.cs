@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Geometry.Bvh;
 using Kerf.Geometry;
@@ -27,8 +28,8 @@ public sealed partial class IntPolyh_MaillageAffinage
     private const double MyConfusionPrecision = 10.0e-12;
     private const double SquareMyConfusionPrecision = 10.0e-24;
 
-    private readonly Adaptor3d_Surface MaSurface1;
-    private readonly Adaptor3d_Surface MaSurface2;
+    private readonly SurfaceAdaptorBase MaSurface1;
+    private readonly SurfaceAdaptorBase MaSurface2;
     private Box MyBox1 = new();
     private Box MyBox2 = new();
     private readonly int NbSamplesU1;
@@ -55,7 +56,7 @@ public sealed partial class IntPolyh_MaillageAffinage
 
     /// <summary>The algorithm on two surfaces with 10 x 10 samples each (the last argument, OCCT's print level, is
     /// ignored).</summary>
-    public IntPolyh_MaillageAffinage(Adaptor3d_Surface Surface1, Adaptor3d_Surface Surface2, int PRINT)
+    public IntPolyh_MaillageAffinage(SurfaceAdaptorBase Surface1, SurfaceAdaptorBase Surface2, int PRINT)
     {
         _ = PRINT;
         MaSurface1 = Surface1;
@@ -73,7 +74,7 @@ public sealed partial class IntPolyh_MaillageAffinage
 
     /// <summary>The algorithm on two surfaces with the given numbers of samples (the last argument, OCCT's print level,
     /// is ignored).</summary>
-    public IntPolyh_MaillageAffinage(Adaptor3d_Surface Surface1, int NbSU1, int NbSV1, Adaptor3d_Surface Surface2,
+    public IntPolyh_MaillageAffinage(SurfaceAdaptorBase Surface1, int NbSU1, int NbSV1, SurfaceAdaptorBase Surface2,
                                      int NbSU2, int NbSV2, int PRINT)
     {
         _ = PRINT;
@@ -255,7 +256,7 @@ public sealed partial class IntPolyh_MaillageAffinage
         aNbU = (SurfID == 1) ? NbSamplesU1 : NbSamplesU2;
         aNbV = (SurfID == 1) ? NbSamplesV1 : NbSamplesV2;
         ref Box aBox = ref (SurfID == 1) ? ref MyBox1 : ref MyBox2;
-        Adaptor3d_Surface aS = (SurfID == 1) ? MaSurface1 : MaSurface2;
+        SurfaceAdaptorBase aS = (SurfID == 1) ? MaSurface1 : MaSurface2;
         IntPolyh_Array<IntPolyh_Point> TPoints = (SurfID == 1) ? TPoints1 : TPoints2;
         //
         DegeneratedIndex(Vpars, aNbV, aS, 1, out aJD1, out aJD2);
@@ -309,7 +310,7 @@ public sealed partial class IntPolyh_MaillageAffinage
                                NCollection_Array1<double> theUPars, NCollection_Array1<double> theVPars,
                                double theDeflTol)
     {
-        Adaptor3d_Surface aS = (SurfID == 1) ? MaSurface1 : MaSurface2;
+        SurfaceAdaptorBase aS = (SurfID == 1) ? MaSurface1 : MaSurface2;
         IntPolyh_Array<IntPolyh_Point> TPoints = (SurfID == 1) ? TPoints1 : TPoints2;
         int aNbU = (SurfID == 1) ? NbSamplesU1 : NbSamplesU2;
         int aNbV = (SurfID == 1) ? NbSamplesV1 : NbSamplesV2;
@@ -375,7 +376,7 @@ public sealed partial class IntPolyh_MaillageAffinage
     public void FillArrayOfPnt(int SurfID, bool isShiftFwd, NCollection_Array1<double> Upars,
                                NCollection_Array1<double> Vpars, double? theDeflTol = null)
     {
-        Adaptor3d_Surface aS = (SurfID == 1) ? MaSurface1 : MaSurface2;
+        SurfaceAdaptorBase aS = (SurfID == 1) ? MaSurface1 : MaSurface2;
         // Compute the tolerance
         double aTol = theDeflTol is not null ? theDeflTol.Value : IntPolyh_Tools.ComputeDeflection(aS, Upars, Vpars);
         // Fill array of point normal
@@ -927,7 +928,7 @@ public sealed partial class IntPolyh_MaillageAffinage
     /// <summary>Computes the deflection of every triangle of one surface, and their minimum and maximum.</summary>
     public void ComputeDeflections(int SurfID)
     {
-        Adaptor3d_Surface aSurface = (SurfID == 1) ? MaSurface1 : MaSurface2;
+        SurfaceAdaptorBase aSurface = (SurfID == 1) ? MaSurface1 : MaSurface2;
         IntPolyh_Array<IntPolyh_Point> TPoints = (SurfID == 1) ? TPoints1 : TPoints2;
         IntPolyh_Array<IntPolyh_Triangle> TTriangles = (SurfID == 1) ? TTriangles1 : TTriangles2;
         ref double FlecheMin = ref (SurfID == 1) ? ref FlecheMin1 : ref FlecheMin2;
@@ -954,12 +955,12 @@ public sealed partial class IntPolyh_MaillageAffinage
     }
 
     // Refinement of the triangles depending on the deflection
-    private static void TrianglesDeflectionsRefinement(Adaptor3d_Surface theS1,
+    private static void TrianglesDeflectionsRefinement(SurfaceAdaptorBase theS1,
                                                        IntPolyh_Array<IntPolyh_Triangle> theTriangles1,
                                                        IntPolyh_Array<IntPolyh_Edge> theEdges1,
                                                        IntPolyh_Array<IntPolyh_Point> thePoints1,
                                                        double theFlecheCritique1,
-                                                       Adaptor3d_Surface theS2,
+                                                       SurfaceAdaptorBase theS2,
                                                        IntPolyh_Array<IntPolyh_Triangle> theTriangles2,
                                                        IntPolyh_Array<IntPolyh_Edge> theEdges2,
                                                        IntPolyh_Array<IntPolyh_Point> thePoints2,
@@ -1026,7 +1027,7 @@ public sealed partial class IntPolyh_MaillageAffinage
     }
 
     // Refinement of the large triangles in case one surface is much smaller then the other
-    private static void LargeTrianglesDeflectionsRefinement(Adaptor3d_Surface theS,
+    private static void LargeTrianglesDeflectionsRefinement(SurfaceAdaptorBase theS,
                                                             IntPolyh_Array<IntPolyh_Triangle> theTriangles,
                                                             IntPolyh_Array<IntPolyh_Edge> theEdges,
                                                             IntPolyh_Array<IntPolyh_Point> thePoints,
@@ -3461,7 +3462,7 @@ public sealed partial class IntPolyh_MaillageAffinage
     // Degenerated isolines
 
     // The indices of the parameters (1 to aNbX) of the degenerated isolines at the bounds of the surface, 0 if none
-    private static void DegeneratedIndex(NCollection_Array1<double> aXpars, int aNbX, Adaptor3d_Surface aS,
+    private static void DegeneratedIndex(NCollection_Array1<double> aXpars, int aNbX, SurfaceAdaptorBase aS,
                                          int aIsoDirection, out int aI1, out int aI2)
     {
         int i;
@@ -3517,7 +3518,7 @@ public sealed partial class IntPolyh_MaillageAffinage
 
     // Whether the bound isoline (1, 2: V first and last; 3, 4: U first and last) is degenerated: three points on it
     // within the tolerance. OCCT samples at i * dU and i * dV, not from the first parameter (occt-issues.md, unit 5E).
-    private static bool IsDegenerated(Adaptor3d_Surface aS, int aIndex, double aTol2, out double aDegX)
+    private static bool IsDegenerated(SurfaceAdaptorBase aS, int aIndex, double aTol2, out double aDegX)
     {
         bool bRet;
         int i, aNbP;

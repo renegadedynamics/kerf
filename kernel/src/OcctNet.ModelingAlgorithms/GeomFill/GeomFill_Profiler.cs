@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
 
@@ -21,19 +22,19 @@ namespace Occt;
 /// </remarks>
 public class GeomFill_Profiler
 {
-    protected NCollection_Sequence<Geom_Curve> mySequence = new();
+    protected NCollection_Sequence<Curve3D> mySequence = new();
     protected bool myIsDone;
     protected bool myIsPeriodic;
 
-    private static void UnifyByInsertingAllKnots(NCollection_Sequence<Geom_Curve> theCurves, double PTol)
+    private static void UnifyByInsertingAllKnots(NCollection_Sequence<Curve3D> theCurves, double PTol)
     {
         // inserting in the first curve the knot-vector of all the others.
-        Geom_BSplineCurve C = (Geom_BSplineCurve)theCurves[1];
+        BSplineCurve3D C = (BSplineCurve3D)theCurves[1];
 
         int i;
         for (i = 2; i <= theCurves.Length(); i++)
         {
-            Geom_BSplineCurve Ci = (Geom_BSplineCurve)theCurves[i];
+            BSplineCurve3D Ci = (BSplineCurve3D)theCurves[i];
             NCollection_Array1<double> Ki = Ci.InternalKnots();
             NCollection_Array1<int> Mi = Ci.InternalMultiplicities();
 
@@ -44,17 +45,17 @@ public class GeomFill_Profiler
         NCollection_Array1<int> NewMults = C.InternalMultiplicities();
         for (i = 2; i <= theCurves.Length(); i++)
         {
-            Geom_BSplineCurve Ci = (Geom_BSplineCurve)theCurves[i];
+            BSplineCurve3D Ci = (BSplineCurve3D)theCurves[i];
             Ci.InsertKnots(NewKnots, NewMults, PTol, false);
         }
 
         // essai : tentative mise des poids sur chaque section a une moyenne 1
         for (i = 1; i <= theCurves.Length(); i++)
         {
-            Geom_BSplineCurve Ci = (Geom_BSplineCurve)theCurves[i];
-            if (Ci.IsRational())
+            BSplineCurve3D Ci = (BSplineCurve3D)theCurves[i];
+            if (Ci.IsRational)
             {
-                int np = Ci.NbPoles();
+                int np = Ci.PoleCount;
                 double sigma = 0.0;
                 int j;
                 for (j = 1; j <= np; j++)
@@ -71,13 +72,13 @@ public class GeomFill_Profiler
         // fin de l essai
     }
 
-    private static void UnifyBySettingMiddleKnots(NCollection_Sequence<Geom_Curve> theCurves)
+    private static void UnifyBySettingMiddleKnots(NCollection_Sequence<Curve3D> theCurves)
     {
         int i, j;
 
-        Geom_BSplineCurve C = (Geom_BSplineCurve)theCurves[1];
+        BSplineCurve3D C = (BSplineCurve3D)theCurves[1];
 
-        int NbKnots = C.NbKnots();
+        int NbKnots = C.KnotCount;
         double ULast = C.Knot(C.LastUKnotIndex());
         double UFirst = C.Knot(C.FirstUKnotIndex());
 
@@ -90,7 +91,7 @@ public class GeomFill_Profiler
             double aMidKnot = 0.0;
             for (i = 1; i <= theCurves.Length(); i++)
             {
-                Geom_BSplineCurve Ctemp = (Geom_BSplineCurve)theCurves[i];
+                BSplineCurve3D Ctemp = (BSplineCurve3D)theCurves[i];
                 aMidKnot += Ctemp.Knot(j);
             }
             aMidKnot /= theCurves.Length();
@@ -99,7 +100,7 @@ public class GeomFill_Profiler
 
         for (i = 1; i <= theCurves.Length(); i++)
         {
-            Geom_BSplineCurve Cres = (Geom_BSplineCurve)theCurves[i];
+            BSplineCurve3D Cres = (BSplineCurve3D)theCurves[i];
             Cres.SetKnots(NewKnots);
         }
     }
@@ -111,32 +112,32 @@ public class GeomFill_Profiler
     }
 
     /// <summary>Adds a curve: conics are approximated (C1, tolerance Precision::Confusion), others converted.</summary>
-    public void AddCurve(Geom_Curve Curve)
+    public void AddCurve(Curve3D Curve)
     {
-        Geom_Curve? C = null;
+        Curve3D? C = null;
         //// modified by jgv, 19.01.05 for OCC7354 ////
-        Geom_Curve theCurve = Curve;
-        if (theCurve.GetType() == typeof(Geom_TrimmedCurve))
+        Curve3D theCurve = Curve;
+        if (theCurve.GetType() == typeof(TrimmedCurve3D))
         {
-            theCurve = ((Geom_TrimmedCurve)theCurve).BasisCurve();
+            theCurve = ((TrimmedCurve3D)theCurve).BasisCurve();
         }
-        if (theCurve is Geom_Conic)
+        if (theCurve is ConicCurve3D)
         {
-            GeomConvert_ApproxCurve appr = new(Curve, global::Kerf.Engine.Foundation.Precision.Confusion(), C1, 16, 14);
-            if (appr.HasResult())
+            ApproxCurve appr = new(Curve, global::Kerf.Engine.Foundation.Precision.Confusion(), C1, 16, 14);
+            if (appr.HasResult)
             {
                 C = appr.InternalCurve();
             }
         }
         if (C is null)
         {
-            C = GeomConvert.CurveToBSplineCurve(Curve);
+            C = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(Curve);
         }
         ///////////////////////////////////////////////
 
         mySequence.Append(C);
 
-        if (myIsPeriodic && !C.IsPeriodic())
+        if (myIsPeriodic && !C.IsPeriodic)
         {
             myIsPeriodic = false;
         }
@@ -150,7 +151,7 @@ public class GeomFill_Profiler
     {
         int i;
         int myDegree = 0;
-        Geom_BSplineCurve C;
+        BSplineCurve3D C;
         double U1, U2, UFirst = 0, ULast = 0;
         double EcartMax = 0.0;
 
@@ -159,13 +160,13 @@ public class GeomFill_Profiler
         {
             if (mySequence[i].IsFrozen)
             {
-                mySequence[i] = (Geom_Curve)mySequence[i].Copy();
+                mySequence[i] = (Curve3D)mySequence[i].Copy();
             }
         }
 
         for (i = 1; i <= mySequence.Length(); i++)
         {
-            C = (Geom_BSplineCurve)mySequence[i];
+            C = (BSplineCurve3D)mySequence[i];
 
             // si non periodique, il faut deperiodiser toutes les courbes
             // on les segmente ensuite pour assurer K(1) et K(n) de multiplicite
@@ -174,7 +175,7 @@ public class GeomFill_Profiler
             U2 = C.Knot(C.LastUKnotIndex());
             U1 = C.Knot(C.FirstUKnotIndex());
 
-            if (!myIsPeriodic && C.IsPeriodic())
+            if (!myIsPeriodic && C.IsPeriodic)
             {
                 C.SetNotPeriodic();
                 C.Segment(U1, U2);
@@ -196,7 +197,7 @@ public class GeomFill_Profiler
         // reparametrize them in the range U1, U2.
         for (i = 1; i <= mySequence.Length(); i++)
         {
-            C = (Geom_BSplineCurve)mySequence[i];
+            C = (BSplineCurve3D)mySequence[i];
 
             C.IncreaseDegree(myDegree);
 
@@ -205,19 +206,19 @@ public class GeomFill_Profiler
             C.SetKnots(Knots);
         }
 
-        NCollection_Sequence<Geom_Curve> theCurves = new();
+        NCollection_Sequence<Curve3D> theCurves = new();
         for (i = 1; i <= mySequence.Length(); i++)
         {
-            theCurves.Append((Geom_Curve)mySequence[i].Copy());
+            theCurves.Append((Curve3D)mySequence[i].Copy());
         }
 
         UnifyByInsertingAllKnots(theCurves, PTol);
 
         bool Unified = true;
-        int theNbKnots = ((Geom_BSplineCurve)theCurves[1]).NbKnots();
+        int theNbKnots = ((BSplineCurve3D)theCurves[1]).KnotCount;
         for (i = 2; i <= theCurves.Length(); i++)
         {
-            if (((Geom_BSplineCurve)theCurves[i]).NbKnots() != theNbKnots)
+            if (((BSplineCurve3D)theCurves[i]).KnotCount != theNbKnots)
             {
                 Unified = false;
                 break;
@@ -244,7 +245,7 @@ public class GeomFill_Profiler
             throw new NotDoneException("GeomFill_Profiler::Degree");
         }
 
-        Geom_BSplineCurve C = (Geom_BSplineCurve)mySequence[1];
+        BSplineCurve3D C = (BSplineCurve3D)mySequence[1];
         return C.Degree();
     }
 
@@ -258,8 +259,8 @@ public class GeomFill_Profiler
             throw new NotDoneException("GeomFill_Profiler::Degree");
         }
 
-        Geom_BSplineCurve C = (Geom_BSplineCurve)mySequence[1];
-        return C.NbPoles();
+        BSplineCurve3D C = (BSplineCurve3D)mySequence[1];
+        return C.PoleCount;
     }
 
     /// <summary>
@@ -276,7 +277,7 @@ public class GeomFill_Profiler
         Standard_DomainError_Raise_if(Poles.Length() != NbPoles(), "GeomFill_Profiler::Poles");
         Standard_DomainError_Raise_if(Index < 1 || Index > mySequence.Length(), "GeomFill_Profiler::Poles");
 
-        Geom_BSplineCurve C = (Geom_BSplineCurve)mySequence[Index];
+        BSplineCurve3D C = (BSplineCurve3D)mySequence[Index];
 
         Poles.Assign(C.InternalPoles());
     }
@@ -295,7 +296,7 @@ public class GeomFill_Profiler
         Standard_DomainError_Raise_if(Weights.Length() != NbPoles(), "GeomFill_Profiler::Weights");
         Standard_DomainError_Raise_if(Index < 1 || Index > mySequence.Length(), "GeomFill_Profiler::Weights");
 
-        Geom_BSplineCurve C = (Geom_BSplineCurve)mySequence[Index];
+        BSplineCurve3D C = (BSplineCurve3D)mySequence[Index];
 
         Weights.Assign(C.InternalWeightsArray());
     }
@@ -308,9 +309,9 @@ public class GeomFill_Profiler
             throw new NotDoneException("GeomFill_Profiler::Degree");
         }
 
-        Geom_BSplineCurve C = (Geom_BSplineCurve)mySequence[1];
+        BSplineCurve3D C = (BSplineCurve3D)mySequence[1];
 
-        return C.NbKnots();
+        return C.KnotCount;
     }
 
     /// <summary>Copies the common knots and multiplicities; both arrays must have <see cref="NbKnots"/> elements.</summary>
@@ -324,7 +325,7 @@ public class GeomFill_Profiler
         int n = NbKnots();
         Standard_DomainError_Raise_if(Knots.Length() != n || Mults.Length() != n, "GeomFill_Profiler::KnotsAndMults");
 
-        Geom_BSplineCurve C = (Geom_BSplineCurve)mySequence[1];
+        BSplineCurve3D C = (BSplineCurve3D)mySequence[1];
 
         Knots.Assign(C.InternalKnots());
         Mults.Assign(C.InternalMultiplicities());
@@ -334,13 +335,13 @@ public class GeomFill_Profiler
     /// The curve <paramref name="Index"/> (from 1): the profiler's own B-spline, set to the common profile after
     /// <see cref="Perform"/>; frozen (decision 844).
     /// </summary>
-    public Geom_Curve Curve(int Index)
+    public Curve3D Curve(int Index)
     {
-        Geom_Curve C = mySequence[Index];
+        Curve3D C = mySequence[Index];
         C.Freeze();
         return C;
     }
 
     /// <summary>The curve <paramref name="Index"/>, not frozen, for ported callers.</summary>
-    internal Geom_Curve InternalCurve(int Index) => mySequence[Index];
+    internal Curve3D InternalCurve(int Index) => mySequence[Index];
 }

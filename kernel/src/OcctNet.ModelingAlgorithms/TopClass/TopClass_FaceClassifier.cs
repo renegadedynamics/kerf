@@ -4,8 +4,9 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -51,7 +52,7 @@ internal interface ITopClass_FaceExplorer<TheEdge>
     /// unwritten carries over from the previous edge (BRepClass_FaceExplorer's next edge does). If TheEdge is a
     /// class, each call must give a new object, since the classifier keeps the closest one.
     /// </summary>
-    void CurrentEdge(ref TheEdge E, out TopAbs_Orientation Or);
+    void CurrentEdge(ref TheEdge E, out Orientation Or);
 }
 
 /// <summary>
@@ -62,7 +63,7 @@ internal interface ITopClass_FClass2d<TheEdge>
 {
     void Reset(in Line2D L, double P, double Tol);
 
-    void Compare(in TheEdge E, TopAbs_Orientation Or);
+    void Compare(in TheEdge E, Orientation Or);
 
     double Parameter();
 
@@ -71,7 +72,7 @@ internal interface ITopClass_FClass2d<TheEdge>
     /// <summary>The classifier's intersector (OCCT returns it by reference: the classifier's own object).</summary>
     IntRes2d_Intersection Intersector();
 
-    TopAbs_State State();
+    Containment State();
 
     bool IsHeadOrEnd();
 }
@@ -124,10 +125,10 @@ internal static class TopClass_FaceClassifier
         bool aIsValidSegment = theFexp.Segment(aPoint, out aLine, out aParam);
         // C++ default-constructs one edge for the whole classification (see ITopClass_FaceExplorer.CurrentEdge)
         TheEdge anEdge = new();
-        TopAbs_Orientation anEdgeOri;
+        Orientation anEdgeOri;
         int aClosestInd;
         IntRes2d_IntersectionPoint aPInter;
-        TopAbs_State aState = TopAbs_UNKNOWN;
+        Containment aState = Unknown;
         bool aIsWReject;
         bool aIsEReject;
 
@@ -154,7 +155,7 @@ internal static class TopClass_FaceClassifier
                             // Test this edge.
                             theFexp.CurrentEdge(ref anEdge, out anEdgeOri);
 
-                            if (anEdgeOri == TopAbs_FORWARD || anEdgeOri == TopAbs_REVERSED)
+                            if (anEdgeOri == Forward || anEdgeOri == Reversed)
                             {
                                 theClassifier.Compare(anEdge, anEdgeOri);
                                 aClosestInd = theClassifier.ClosestIntersection();
@@ -189,7 +190,7 @@ internal static class TopClass_FaceClassifier
 
                                 // If we are ON, we stop.
                                 aState = theClassifier.State();
-                                if (aState == TopAbs_ON)
+                                if (aState == On)
                                 {
                                     return;
                                 }
@@ -199,14 +200,14 @@ internal static class TopClass_FaceClassifier
 
                     // If we are out of the wire we stop.
                     aState = theClassifier.State();
-                    if (aState == TopAbs_OUT)
+                    if (aState == Out)
                     {
                         return;
                     }
                 }
             }
 
-            if (!theClassifier.IsHeadOrEnd() && aState != TopAbs_UNKNOWN)
+            if (!theClassifier.IsHeadOrEnd() && aState != Unknown)
             {
                 break;
             }
@@ -217,16 +218,16 @@ internal static class TopClass_FaceClassifier
     }
 
     /// <summary>The state of the point: OUT if rejected, IN if the face has no wires, the classifier's otherwise.</summary>
-    internal static TopAbs_State State<TheEdge>(bool theRejected, bool theNoWires,
+    internal static Containment State<TheEdge>(bool theRejected, bool theNoWires,
                                                 ITopClass_FClass2d<TheEdge> theClassifier)
     {
         if (theRejected)
         {
-            return TopAbs_OUT;
+            return Out;
         }
         else if (theNoWires)
         {
-            return TopAbs_IN;
+            return In;
         }
         else
         {

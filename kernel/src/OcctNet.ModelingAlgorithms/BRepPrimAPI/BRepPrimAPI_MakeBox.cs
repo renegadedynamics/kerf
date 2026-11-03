@@ -4,7 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepPrim_Direction;
 
 namespace Occt;
@@ -126,19 +129,19 @@ public class BRepPrimAPI_MakeBox : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The box as a shell (frozen). Stores it as the result.</summary>
-    public TopoDS_Shell Shell()
+    public Shell Shell()
     {
-        TopoDS_Shell aShell = InternalShell();
+        Shell aShell = InternalShell();
         aShell.TShape()?.FreezeGraph();
         return aShell;
     }
 
     /// <summary><see cref="Shell"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shell InternalShell()
+    internal Shell InternalShell()
     {
         myShape = myWedge.Shell();
         Done();
-        return TopoDS.Shell(myShape);
+        return ShapeCasts.Shell(myShape);
     }
 
     /// <summary>Stores the solid in the result.</summary>
@@ -148,19 +151,19 @@ public class BRepPrimAPI_MakeBox : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The box as a solid (frozen). Makes a new solid holding the shell each time, as OCCT.</summary>
-    public TopoDS_Solid Solid()
+    public Solid Solid()
     {
-        TopoDS_Solid aSolid = InternalSolid();
+        Solid aSolid = InternalSolid();
         aSolid.TShape()?.FreezeGraph();
         return aSolid;
     }
 
     /// <summary><see cref="Solid"/> without freezing, for ported code.</summary>
-    internal TopoDS_Solid InternalSolid()
+    internal Solid InternalSolid()
     {
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         // OCCT.NET: a new solid in a new variable (OCCT remakes the one in myShape, decision 414).
-        TopoDS_Solid aSolid = new();
+        Solid aSolid = new();
         B.MakeSolid(ref aSolid);
         B.Add(aSolid, myWedge.Shell());
         myShape = aSolid;
@@ -169,34 +172,34 @@ public class BRepPrimAPI_MakeBox : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The shell (OCCT's conversion operator; frozen).</summary>
-    public static explicit operator TopoDS_Shell(BRepPrimAPI_MakeBox theMaker) => theMaker.Shell();
+    public static explicit operator Shell(BRepPrimAPI_MakeBox theMaker) => theMaker.Shell();
 
     /// <summary>The solid (OCCT's conversion operator; frozen).</summary>
-    public static explicit operator TopoDS_Solid(BRepPrimAPI_MakeBox theMaker) => theMaker.Solid();
+    public static explicit operator Solid(BRepPrimAPI_MakeBox theMaker) => theMaker.Solid();
 
     /// <summary>The ZMin face (frozen).</summary>
-    public TopoDS_Face BottomFace() => PublishedFace(BRepPrim_ZMin);
+    public Face BottomFace() => PublishedFace(BRepPrim_ZMin);
 
     /// <summary>The XMin face (frozen).</summary>
-    public TopoDS_Face BackFace() => PublishedFace(BRepPrim_XMin);
+    public Face BackFace() => PublishedFace(BRepPrim_XMin);
 
     /// <summary>The XMax face (frozen).</summary>
-    public TopoDS_Face FrontFace() => PublishedFace(BRepPrim_XMax);
+    public Face FrontFace() => PublishedFace(BRepPrim_XMax);
 
     /// <summary>The YMin face (frozen).</summary>
-    public TopoDS_Face LeftFace() => PublishedFace(BRepPrim_YMin);
+    public Face LeftFace() => PublishedFace(BRepPrim_YMin);
 
     /// <summary>The YMax face (frozen).</summary>
-    public TopoDS_Face RightFace() => PublishedFace(BRepPrim_YMax);
+    public Face RightFace() => PublishedFace(BRepPrim_YMax);
 
     /// <summary>The ZMax face (frozen).</summary>
-    public TopoDS_Face TopFace() => PublishedFace(BRepPrim_ZMax);
+    public Face TopFace() => PublishedFace(BRepPrim_ZMax);
 
     // OCCT.NET: the face is published once every face of the box is built (decision 467): the other faces add pcurves
     // to its edges, which OCCT does in place after handing the face out. A degenerated box has no shell (Shell()
     // throws), so all six of its faces are built first, the six the accessors give (a face that fails to build is
     // left for its own accessor to throw).
-    private TopoDS_Face PublishedFace(BRepPrim_Direction theDirection)
+    private Face PublishedFace(BRepPrim_Direction theDirection)
     {
         if (!myWedge.IsDegeneratedShape())
         {
@@ -216,7 +219,7 @@ public class BRepPrimAPI_MakeBox : BRepBuilderAPI_MakeShape
                 }
             }
         }
-        TopoDS_Face aFace = myWedge.Face(theDirection);
+        Face aFace = myWedge.Face(theDirection);
         aFace.TShape()?.FreezeGraph();
         return aFace;
     }

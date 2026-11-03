@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation.Advanced;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
@@ -10,7 +11,7 @@ namespace OcctNet.ModelingData.Tests;
 public class AdvApprox_SimpleApproxTests
 {
     // p(u) = 1 + 2u - 3u^2 + 0.5u^3 on [0, 2]; with u = t + 1, p = 0.5 - 2.5t - 1.5t^2 + 0.5t^3 on [-1, 1]
-    private sealed class CubicEvaluator : AdvApprox_EvaluatorFunction
+    private sealed class CubicEvaluator : EvaluatorFunction
     {
         public override void Evaluate(int Dimension, ReadOnlySpan<double> StartEnd, double Parameter,
                                       int DerivativeRequest, Span<double> Result, out int ErrorCode)
@@ -42,13 +43,13 @@ public class AdvApprox_SimpleApproxTests
     {
         global::Kerf.Engine.Numerics.Polynomials.PLib.JacobiParameters(theContinuity, theMaxDegree, 1, out int aNbGaussPoints, out int aWorkDegree);
         global::Kerf.Engine.Numerics.Polynomials.JacobiPolynomial aBase = new(aWorkDegree, theContinuity);
-        AdvApprox_SimpleApprox anApprox =
+        SimpleApprox anApprox =
             new(2, 2, theContinuity, aWorkDegree, aNbGaussPoints, aBase, new CubicEvaluator());
         NCollection_Array1<int> aDims = NCollection_Array1<int>.From([1, 1]);
         NCollection_Array1<double> aTols = NCollection_Array1<double>.From([1e-9, 1e-9]);
         anApprox.Perform(aDims, aTols, 0.0, 2.0, theMaxDegree);
 
-        Assert.True(anApprox.IsDone());
+        Assert.True(anApprox.IsDone);
         // Exact in degree 3, whatever the degree of the Hermite part
         Assert.Equal(3, anApprox.Degree());
         Assert.True(anApprox.MaxError(1) <= 1e-9);
@@ -78,7 +79,7 @@ public class AdvApprox_SimpleApproxTests
         Assert.StartsWith("Dump of SimpleApprox \nError   ", aWriter.ToString());
     }
 
-    private sealed class SineEvaluator : AdvApprox_EvaluatorFunction
+    private sealed class SineEvaluator : EvaluatorFunction
     {
         public override void Evaluate(int Dimension, ReadOnlySpan<double> StartEnd, double Parameter,
                                       int DerivativeRequest, Span<double> Result, out int ErrorCode)
@@ -108,7 +109,7 @@ public class AdvApprox_SimpleApproxTests
         global::Kerf.Engine.Numerics.Polynomials.PLib.JacobiParameters(C0, theMaxDegree, 1, out int aCodeNbPoints, out int aWorkDegree);
         Assert.True(aCodeNbPoints >= 30);
         global::Kerf.Engine.Numerics.Polynomials.JacobiPolynomial aBase = new(aWorkDegree, C0);
-        AdvApprox_SimpleApprox anApprox =
+        SimpleApprox anApprox =
             new(1, 1, C0, aWorkDegree, theNbGaussPoints, aBase, new SineEvaluator());
         anApprox.Perform(NCollection_Array1<int>.From([1]), NCollection_Array1<double>.From([1e-12]), 0, 1,
                          theMaxDegree);
@@ -141,13 +142,13 @@ public class AdvApprox_SimpleApproxTests
     {
         global::Kerf.Engine.Numerics.Polynomials.JacobiPolynomial aBase = new(14, C1);
         Assert.ThrowsAny<ConstructionErrorException>(
-            () => new AdvApprox_SimpleApprox(1, 1, C3, 14, 15, aBase, new CubicEvaluator()));
+            () => new SimpleApprox(1, 1, C3, 14, 15, aBase, new CubicEvaluator()));
     }
 
     [Fact]
     public void DichoCutting_cuts_in_the_middle()
     {
-        AdvApprox_DichoCutting aCut = new();
+        DichoCutting aCut = new();
         Assert.True(aCut.Value(1.0, 3.0, out double aV));
         Assert.Equal(2.0, aV);
         Assert.False(aCut.Value(1.0, 1.0 + 1e-9, out aV));
@@ -157,7 +158,7 @@ public class AdvApprox_SimpleApproxTests
     [Fact]
     public void PrefCutting_picks_the_point_nearest_to_the_middle()
     {
-        AdvApprox_PrefCutting aCut = new(NCollection_Array1<double>.From([0.1, 0.45, 0.8, 5.0], 0));
+        PrefCutting aCut = new(NCollection_Array1<double>.From([0.1, 0.45, 0.8, 5.0], 0));
         Assert.True(aCut.Value(0.0, 1.0, out double aV));
         Assert.Equal(0.45, aV);
         // No point inside: the middle
@@ -173,7 +174,7 @@ public class AdvApprox_SimpleApproxTests
     {
         NCollection_Array1<double> aRec = NCollection_Array1<double>.From([0.3]);
         NCollection_Array1<double> aPref = NCollection_Array1<double>.From([0.05, 0.6]);
-        AdvApprox_PrefAndRec aCut = new(aRec, aPref, 5);
+        PrefAndRec aCut = new(aRec, aPref, 5);
 
         // [0, 1]: the preferred points must lie in ](5a + b) / 6, (a + 5b) / 6[ = ]1/6, 5/6[: 0.6 is
         Assert.True(aCut.Value(0.0, 1.0, out double aV));
@@ -185,6 +186,6 @@ public class AdvApprox_SimpleApproxTests
         Assert.True(aCut.Value(2.0, 4.0, out aV));
         Assert.Equal(3.0, aV);
 
-        Assert.ThrowsAny<DomainErrorException>(() => new AdvApprox_PrefAndRec(aRec, aPref, 1));
+        Assert.ThrowsAny<DomainErrorException>(() => new PrefAndRec(aRec, aPref, 1));
     }
 }

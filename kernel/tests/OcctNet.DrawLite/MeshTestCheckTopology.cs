@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -17,9 +18,9 @@ namespace OcctNet.DrawLite;
 /// tolerance), asynchronous edges (polygons of different lengths on two faces), free nodes (used by no triangle)
 /// and triangles of null area.
 /// </summary>
-internal sealed class MeshTestCheckTopology(TopoDS_Shape theShape)
+internal sealed class MeshTestCheckTopology(Shape theShape)
 {
-    private readonly TopoDS_Shape myShape = theShape;
+    private readonly Shape myShape = theShape;
 
     // NCollection_IndexedDataMap<int, HSequence<int>>: the faces with free links, in the order they were met
     private readonly List<(int Face, List<int> Links)> myMapFaceLinks = [];
@@ -42,25 +43,25 @@ internal sealed class MeshTestCheckTopology(TopoDS_Shape theShape)
     /// <summary>Performs the checks; "face N has no triangulation" lines go to <paramref name="di"/>.</summary>
     public void Perform(DrawResult di)
     {
-        var aMapF = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var aMapEF = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(myShape, TopAbs_ShapeEnum.TopAbs_FACE, aMapF);
-        TopExp.MapShapesAndAncestors(myShape, TopAbs_ShapeEnum.TopAbs_EDGE, TopAbs_ShapeEnum.TopAbs_FACE, aMapEF);
+        var aMapF = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        var aMapEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        global::Kerf.Engine.Topology.Exploration.MapShapes(myShape, ShapeType.Face, aMapF);
+        global::Kerf.Engine.Topology.Exploration.MapShapesAndAncestors(myShape, ShapeType.Edge, ShapeType.Face, aMapEF);
 
         // check polygons
         for (int ie = 1; ie <= aMapEF.Extent(); ie++)
         {
-            TopoDS_Edge aEdge = TopoDS.Edge(aMapEF.FindKey(ie));
-            NCollection_List<TopoDS_Shape> aFaces = aMapEF.FindFromIndex(ie);
+            Edge aEdge = global::Kerf.Engine.Topology.ShapeCasts.Edge(aMapEF.FindKey(ie));
+            NCollection_List<Shape> aFaces = aMapEF.FindFromIndex(ie);
             if (aFaces.Extent() < 2)
             {
                 continue;
             }
 
             // get polygon on first face
-            TopoDS_Face aFace1 = TopoDS.Face(aFaces.First());
-            Triangulation? aT1 = BRep_Tool.Triangulation(aFace1, out Placement aLoc1);
-            PolygonOnTriangulation? aPoly1 = BRep_Tool.PolygonOnTriangulation(aEdge, aT1, aLoc1);
+            Face aFace1 = global::Kerf.Engine.Topology.ShapeCasts.Face(aFaces.First());
+            Triangulation? aT1 = Tool.Triangulation(aFace1, out Placement aLoc1);
+            PolygonOnTriangulation? aPoly1 = Tool.PolygonOnTriangulation(aEdge, aT1, aLoc1);
             if (aPoly1 is null || aT1 is null)
             {
                 continue;
@@ -69,13 +70,13 @@ internal sealed class MeshTestCheckTopology(TopoDS_Shape theShape)
             NCollection_Array1<int> aNodes1 = aPoly1.Nodes();
 
             // cycle on other polygons
-            var it = new NCollection_List<TopoDS_Shape>.Iterator(aFaces);
+            var it = new NCollection_List<Shape>.Iterator(aFaces);
             it.Next();
             for (; it.More(); it.Next())
             {
-                TopoDS_Face aFace2 = TopoDS.Face(it.Value());
-                Triangulation? aT2 = BRep_Tool.Triangulation(aFace2, out Placement aLoc2);
-                PolygonOnTriangulation? aPoly2 = BRep_Tool.PolygonOnTriangulation(aEdge, aT2, aLoc2);
+                Face aFace2 = global::Kerf.Engine.Topology.ShapeCasts.Face(it.Value());
+                Triangulation? aT2 = Tool.Triangulation(aFace2, out Placement aLoc2);
+                PolygonOnTriangulation? aPoly2 = Tool.PolygonOnTriangulation(aEdge, aT2, aLoc2);
                 if (aPoly2 is null || aT2 is null)
                 {
                     continue;
@@ -91,7 +92,7 @@ internal sealed class MeshTestCheckTopology(TopoDS_Shape theShape)
                 }
 
                 // check distances between corresponding points
-                double aSqDefle = BRep_Tool.Tolerance(aEdge);
+                double aSqDefle = Tool.Tolerance(aEdge);
                 aSqDefle *= aSqDefle;
                 int iF1 = aMapF.FindIndex(aFace1);
                 int iF2 = aMapF.FindIndex(aFace2);
@@ -120,8 +121,8 @@ internal sealed class MeshTestCheckTopology(TopoDS_Shape theShape)
         // check triangulations
         for (int iF = 1; iF <= aMapF.Extent(); iF++)
         {
-            TopoDS_Face aFace = TopoDS.Face(aMapF.FindKey(iF));
-            Triangulation? aT = BRep_Tool.Triangulation(aFace, out Placement aLoc);
+            Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(aMapF.FindKey(iF));
+            Triangulation? aT = Tool.Triangulation(aFace, out Placement aLoc);
             if (aT is null)
             {
                 di.Append("face ").Append(iF).Append(" has no triangulation\n");
@@ -132,9 +133,9 @@ internal sealed class MeshTestCheckTopology(TopoDS_Shape theShape)
 
             // remember boundary nodes
             var aMapBndNodes = new HashSet<int>();
-            for (var ex = new TopExp_Explorer(aFace, TopAbs_ShapeEnum.TopAbs_EDGE); ex.More(); ex.Next())
+            for (var ex = new global::Kerf.Engine.Topology.Explorer(aFace, ShapeType.Edge); ex.More(); ex.Next())
             {
-                PolygonOnTriangulation? aPoly = BRep_Tool.PolygonOnTriangulation(TopoDS.Edge(ex.Current()), aT, aLoc);
+                PolygonOnTriangulation? aPoly = Tool.PolygonOnTriangulation(global::Kerf.Engine.Topology.ShapeCasts.Edge(ex.Current()), aT, aLoc);
                 if (aPoly is null)
                 {
                     continue;

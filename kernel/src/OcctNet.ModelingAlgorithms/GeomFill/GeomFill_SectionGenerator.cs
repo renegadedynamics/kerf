@@ -46,21 +46,21 @@ public class GeomFill_SectionGenerator : GeomFill_Profiler, IAppBlend_SectionGen
 
     public void GetShape(out int NbPoles, out int NbKnots, out int Degree, out int NbPoles2d)
     {
-        Geom_BSplineCurve C = (Geom_BSplineCurve)mySequence[1];
-        NbPoles = C.NbPoles();
-        NbKnots = C.NbKnots();
+        BSplineCurve3D C = (BSplineCurve3D)mySequence[1];
+        NbPoles = C.PoleCount;
+        NbKnots = C.KnotCount;
         Degree = C.Degree();
         NbPoles2d = 0;
     }
 
     public void Knots(NCollection_Array1<double> TKnots)
     {
-        TKnots.Assign(((Geom_BSplineCurve)mySequence[1]).InternalKnots());
+        TKnots.Assign(((BSplineCurve3D)mySequence[1]).InternalKnots());
     }
 
     public void Mults(NCollection_Array1<int> TMults)
     {
-        TMults.Assign(((Geom_BSplineCurve)mySequence[1]).InternalMultiplicities());
+        TMults.Assign(((BSplineCurve3D)mySequence[1]).InternalMultiplicities());
     }
 
     /// <summary>Used for the first and last sections; returns false: the derivatives are not computed.</summary>
@@ -75,7 +75,7 @@ public class GeomFill_SectionGenerator : GeomFill_Profiler, IAppBlend_SectionGen
     public void Section(int P, NCollection_Array1<Point3D> Poles, NCollection_Array1<Point2D> Poles2d,
                         NCollection_Array1<double> Weigths)
     {
-        Geom_BSplineCurve C = (Geom_BSplineCurve)mySequence[P];
+        BSplineCurve3D C = (BSplineCurve3D)mySequence[P];
 
         Poles.Assign(C.InternalPoles());
         Weigths.Assign(C.InternalWeightsArray());

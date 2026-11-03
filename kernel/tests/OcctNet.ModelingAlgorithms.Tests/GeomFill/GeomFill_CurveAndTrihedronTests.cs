@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static OcctNet.ModelingAlgorithms.Tests.LocationLawTestSupport;
 
@@ -8,10 +9,10 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 
 public class GeomFill_CurveAndTrihedronTests
 {
-    private static GeomFill_CurveAndTrihedron Law(Geom_Curve theCurve, GeomFill_TrihedronLaw? theTrihedron = null)
+    private static GeomFill_CurveAndTrihedron Law(Curve3D theCurve, GeomFill_TrihedronLaw? theTrihedron = null)
     {
         var aLaw = new GeomFill_CurveAndTrihedron(theTrihedron ?? new GeomFill_DraftTrihedron(new Vector3D(0, 0, 1), 0.2));
-        Assert.True(aLaw.SetCurve(new GeomAdaptor_Curve(theCurve)));
+        Assert.True(aLaw.SetCurve(new CurveAdaptor(theCurve)));
         return aLaw;
     }
 
@@ -26,7 +27,7 @@ public class GeomFill_CurveAndTrihedronTests
     [Fact]
     public void D0_ColumnsAreNormalBinormalTangent()
     {
-        Geom_BSplineCurve aCurve = WavyCurve();
+        BSplineCurve3D aCurve = WavyCurve();
         var aTri = new GeomFill_DraftTrihedron(new Vector3D(0, 0, 1), 0.2);
         GeomFill_CurveAndTrihedron aLaw = Law(aCurve, aTri);
         Assert.Same(aLaw.GetCurve(), aLaw.GetCurve());
@@ -113,13 +114,13 @@ public class GeomFill_CurveAndTrihedronTests
     public void IsTranslation_IsRotation()
     {
         double anError = -1;
-        GeomFill_CurveAndTrihedron aLine = Law(new Geom_TrimmedCurve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 5));
+        GeomFill_CurveAndTrihedron aLine = Law(new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 5));
         // a trimmed line is adapted as a line
         Assert.True(aLine.IsTranslation(ref anError));
         Assert.Equal(0.0, anError);
         Assert.False(aLine.IsRotation(ref anError));
 
-        GeomFill_CurveAndTrihedron aCircle = Law(new Geom_Circle(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 2));
+        GeomFill_CurveAndTrihedron aCircle = Law(new CircleCurve3D(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 2));
         Assert.False(aCircle.IsTranslation(ref anError));
         Assert.True(aCircle.IsRotation(ref anError));
         Point3D aCentre = new();
@@ -131,7 +132,7 @@ public class GeomFill_CurveAndTrihedronTests
     public void GetAverageLaw_KeepsOcctColumnOrder()
     {
         var aTri = new TestFixedTrihedron(new Vector3D(1, 0, 0), new Vector3D(0, 1, 0));
-        GeomFill_CurveAndTrihedron aLaw = Law(new Geom_TrimmedCurve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 10), aTri);
+        GeomFill_CurveAndTrihedron aLaw = Law(new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 10), aTri);
         Matrix3x3 AM = new();
         Vector3D AV = new();
         aLaw.GetAverageLaw(ref AM, ref AV);

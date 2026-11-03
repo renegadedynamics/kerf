@@ -3,8 +3,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using static Occt.BOPAlgo_GlueEnum;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -17,8 +19,8 @@ internal sealed class BOPAlgo_VertexFace : BOPAlgo_ParallelAlgo, BOPTools_Parall
     private double myT1;
     private double myT2;
     private double myTolVNew;
-    private TopoDS_Vertex myV = new();
-    private TopoDS_Face myF = new();
+    private Vertex myV = new();
+    private Face myF = new();
     private IntTools_Context? myContext;
 
     public BOPAlgo_VertexFace()
@@ -46,16 +48,16 @@ internal sealed class BOPAlgo_VertexFace : BOPAlgo_ParallelAlgo, BOPTools_Parall
     }
 
     //
-    public void SetVertex(in TopoDS_Vertex aV) => myV = aV;
+    public void SetVertex(in Vertex aV) => myV = aV;
 
     //
-    public TopoDS_Vertex Vertex() => myV;
+    public Vertex Vertex() => myV;
 
     //
-    public void SetFace(in TopoDS_Face aF) => myF = aF;
+    public void SetFace(in Face aF) => myF = aF;
 
     //
-    public TopoDS_Face Face() => myF;
+    public Face Face() => myF;
 
     //
     public int Flag() => myFlag;
@@ -100,7 +102,7 @@ public partial class BOPAlgo_PaveFiller
     /// <summary>The vertex/face interferences.</summary>
     protected virtual void PerformVF(ProgressRange theRange)
     {
-        myIterator!.Initialize(TopAbs_VERTEX, TopAbs_FACE);
+        myIterator!.Initialize(ShapeType.Vertex, ShapeType.Face);
         int iSize = myIterator.ExpectedLength();
         //
         int nV, nF;
@@ -175,8 +177,8 @@ public partial class BOPAlgo_PaveFiller
             NCollection_IntMap pMV = aMVFPairs.Bound(aVFPair, new NCollection_IntMap());
             pMV.Add(nV);
 
-            TopoDS_Vertex aV = TopoDS.Vertex(myDS.Shape(nVx));
-            TopoDS_Face aF = TopoDS.Face(myDS.Shape(nF));
+            Vertex aV = ShapeCasts.Vertex(myDS.Shape(nVx));
+            Face aF = ShapeCasts.Face(myDS.Shape(nF));
             //
             BOPAlgo_VertexFace aVertexFace = aVVF.Append(new BOPAlgo_VertexFace());
             //
@@ -293,7 +295,7 @@ public partial class BOPAlgo_PaveFiller
         for (nF = 0; nF < aNbS; ++nF)
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(nF);
-            if (aSI.ShapeType() == TopAbs_FACE)
+            if (aSI.ShapeType() == ShapeType.Face)
             {
                 aLIF.Append(nF);
             }
@@ -321,8 +323,8 @@ public partial class BOPAlgo_PaveFiller
             //
             if (!aMVOn.Contains(nV))
             {
-                TopoDS_Vertex aV = TopoDS.Vertex(myDS.Shape(nV));
-                TopoDS_Face aF = TopoDS.Face(myDS.Shape(nF));
+                Vertex aV = ShapeCasts.Vertex(myDS.Shape(nV));
+                Face aF = ShapeCasts.Face(myDS.Shape(nF));
                 iFlag = myContext!.ComputeVF(aV, aF, ref aT1, ref aT2, ref dummy, myFuzzyValue);
                 if (iFlag == 0)
                 {

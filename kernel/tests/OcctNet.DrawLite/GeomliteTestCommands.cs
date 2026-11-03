@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Geometry.Library;
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using Occt;
 
@@ -104,18 +107,18 @@ internal static class GeomliteTestCommands
         Frame2D Ax22dX() => new(P2(2), new Direction2D(Direction2D.D.X));
         Frame3D Ax2Z() => new(P3(2), new Direction3D(Direction3D.D.Z));
 
-        Geom_Geometry? result = null;
-        Geom2d_Curve? result2d = null;
+        Geometry3D? result = null;
+        Curve2D? result2d = null;
         switch (a[0])
         {
             case "line":
                 if (n == 6)
                 {
-                    result2d = new Geom2d_Line(P2(2), D2(4));
+                    result2d = new LineCurve2D(P2(2), D2(4));
                 }
                 else if (n == 8)
                 {
-                    result = new Geom_Line(P3(2), D3(5));
+                    result = new LineCurve3D(P3(2), D3(5));
                 }
                 else
                 {
@@ -127,19 +130,19 @@ internal static class GeomliteTestCommands
                 switch (n)
                 {
                     case 5:
-                        result2d = new Geom2d_Circle(Ax22dX(), F(4));
+                        result2d = new CircleCurve2D(Ax22dX(), F(4));
                         break;
                     case 6:
-                        result = new Geom_Circle(Ax2Z(), F(5));
+                        result = new CircleCurve3D(Ax2Z(), F(5));
                         break;
                     case 7:
-                        result2d = new Geom2d_Circle(new Frame2D(P2(2), D2(4)), F(6));
+                        result2d = new CircleCurve2D(new Frame2D(P2(2), D2(4)), F(6));
                         break;
                     case 9:
-                        result = new Geom_Circle(new Frame3D(P3(2), D3(5)), F(8));
+                        result = new CircleCurve3D(new Frame3D(P3(2), D3(5)), F(8));
                         break;
                     case 12:
-                        result = new Geom_Circle(new Frame3D(P3(2), D3(5), D3(8)), F(11));
+                        result = new CircleCurve3D(new Frame3D(P3(2), D3(5), D3(8)), F(11));
                         break;
                     default:
                         return 1;
@@ -150,19 +153,19 @@ internal static class GeomliteTestCommands
                 switch (n)
                 {
                     case 5:
-                        result2d = new Geom2d_Parabola(Ax22dX(), F(4));
+                        result2d = new ParabolaCurve2D(Ax22dX(), F(4));
                         break;
                     case 6:
-                        result = new Geom_Parabola(Ax2Z(), F(5));
+                        result = new ParabolaCurve3D(Ax2Z(), F(5));
                         break;
                     case 7:
-                        result2d = new Geom2d_Parabola(new Frame2D(P2(2), D2(4)), F(6));
+                        result2d = new ParabolaCurve2D(new Frame2D(P2(2), D2(4)), F(6));
                         break;
                     case 9:
-                        result = new Geom_Parabola(new Frame3D(P3(2), D3(5)), F(8));
+                        result = new ParabolaCurve3D(new Frame3D(P3(2), D3(5)), F(8));
                         break;
                     case 12:
-                        result = new Geom_Parabola(new Frame3D(P3(2), D3(5), D3(8)), F(11));
+                        result = new ParabolaCurve3D(new Frame3D(P3(2), D3(5), D3(8)), F(11));
                         break;
                     default:
                         return 1;
@@ -173,19 +176,19 @@ internal static class GeomliteTestCommands
                 switch (n)
                 {
                     case 6:
-                        result2d = new Geom2d_Ellipse(Ax22dX(), F(4), F(5));
+                        result2d = new EllipseCurve2D(Ax22dX(), F(4), F(5));
                         break;
                     case 7:
-                        result = new Geom_Ellipse(Ax2Z(), F(5), F(6));
+                        result = new EllipseCurve3D(Ax2Z(), F(5), F(6));
                         break;
                     case 8:
-                        result2d = new Geom2d_Ellipse(new Frame2D(P2(2), D2(4)), F(6), F(7));
+                        result2d = new EllipseCurve2D(new Frame2D(P2(2), D2(4)), F(6), F(7));
                         break;
                     case 10:
-                        result = new Geom_Ellipse(new Frame3D(P3(2), D3(5)), F(8), F(9));
+                        result = new EllipseCurve3D(new Frame3D(P3(2), D3(5)), F(8), F(9));
                         break;
                     case 13:
-                        result = new Geom_Ellipse(new Frame3D(P3(2), D3(5), D3(8)), F(11), F(12));
+                        result = new EllipseCurve3D(new Frame3D(P3(2), D3(5), D3(8)), F(11), F(12));
                         break;
                     default:
                         return 1;
@@ -196,19 +199,19 @@ internal static class GeomliteTestCommands
                 switch (n)
                 {
                     case 6:
-                        result2d = new Geom2d_Hyperbola(Ax22dX(), F(4), F(5));
+                        result2d = new HyperbolaCurve2D(Ax22dX(), F(4), F(5));
                         break;
                     case 7:
-                        result = new Geom_Hyperbola(Ax2Z(), F(5), F(6));
+                        result = new HyperbolaCurve3D(Ax2Z(), F(5), F(6));
                         break;
                     case 8:
-                        result2d = new Geom2d_Hyperbola(new Frame2D(P2(2), D2(4)), F(6), F(7));
+                        result2d = new HyperbolaCurve2D(new Frame2D(P2(2), D2(4)), F(6), F(7));
                         break;
                     case 10:
-                        result = new Geom_Hyperbola(new Frame3D(P3(2), D3(5)), F(8), F(9));
+                        result = new HyperbolaCurve3D(new Frame3D(P3(2), D3(5)), F(8), F(9));
                         break;
                     case 13:
-                        result = new Geom_Hyperbola(new Frame3D(P3(2), D3(5), D3(8)), F(11), F(12));
+                        result = new HyperbolaCurve3D(new Frame3D(P3(2), D3(5), D3(8)), F(11), F(12));
                         break;
                     default:
                         return 1;
@@ -271,7 +274,7 @@ internal static class GeomliteTestCommands
                 }
             }
 
-            Geom_BezierCurve result = hasw ? new Geom_BezierCurve(poles, weights) : new Geom_BezierCurve(poles);
+            BezierCurve3D result = hasw ? new BezierCurve3D(poles, weights) : new BezierCurve3D(poles);
             DrawTrSurf.Set(theDI, a[1], result);
         }
         else if ((a[0].StartsWith('p') ? a[0][1..] : a[0]) == "bsplinecurve")
@@ -303,7 +306,7 @@ internal static class GeomliteTestCommands
                 k++;
             }
 
-            var result = new Geom_BSplineCurve(poles, weights, knots, mults, deg, periodic);
+            var result = new BSplineCurve3D(poles, weights, knots, mults, deg, periodic);
             DrawTrSurf.Set(theDI, a[1], result);
         }
 
@@ -349,7 +352,7 @@ internal static class GeomliteTestCommands
                 }
             }
 
-            Geom2d_BezierCurve result = hasw ? new Geom2d_BezierCurve(poles, weights) : new Geom2d_BezierCurve(poles);
+            BezierCurve2D result = hasw ? new BezierCurve2D(poles, weights) : new BezierCurve2D(poles);
             DrawTrSurf.Set(theDI, a[1], result);
         }
         else if ((a[0].Length > 2 && a[0][2] == 'p' ? a[0][3..] : a[0][2..]) == "bsplinecurve")
@@ -381,7 +384,7 @@ internal static class GeomliteTestCommands
                 k++;
             }
 
-            var result = new Geom2d_BSplineCurve(poles, weights, knots, mults, deg, periodic);
+            var result = new BSplineCurve2D(poles, weights, knots, mults, deg, periodic);
             DrawTrSurf.Set(theDI, a[1], result);
         }
 
@@ -443,13 +446,13 @@ internal static class GeomliteTestCommands
             index2 = theDI.Atoi(a[7]);
         }
 
-        Geom_BSplineCurve? G2 = DrawTrSurf.GetBSplineCurve(theDI, a[1]);
+        BSplineCurve3D? G2 = DrawTrSurf.GetBSplineCurve(theDI, a[1]);
         if (G2 is not null)
         {
             if (index1 == 0)
             {
                 index1 = 2;
-                index2 = G2.NbPoles() - 1;
+                index2 = G2.PoleCount - 1;
             }
             G2.D0(u, out Point3D p);
             p.SetCoord(p.X() + dx, p.Y() + dy, p.Z() + dz);
@@ -457,13 +460,13 @@ internal static class GeomliteTestCommands
             return 0;
         }
 
-        Geom2d_BSplineCurve? G4 = DrawTrSurf.GetBSplineCurve2d(theDI, a[1]);
+        BSplineCurve2D? G4 = DrawTrSurf.GetBSplineCurve2d(theDI, a[1]);
         if (G4 is not null)
         {
             if (index1 == 0)
             {
                 index1 = 2;
-                index2 = G4.NbPoles() - 1;
+                index2 = G4.PoleCount - 1;
             }
             G4.D0(u, out Point2D p);
             p.SetCoord(p.X() + dx, p.Y() + dy);
@@ -484,10 +487,10 @@ internal static class GeomliteTestCommands
 
         int Deg = theDI.Atoi(a[2]);
 
-        Geom_BezierCurve? GBz = DrawTrSurf.GetBezierCurve(theDI, a[1]);
-        Geom_BSplineCurve? GBs = DrawTrSurf.GetBSplineCurve(theDI, a[1]);
-        Geom2d_BezierCurve? GBz2d = DrawTrSurf.GetBezierCurve2d(theDI, a[1]);
-        Geom2d_BSplineCurve? GBs2d = DrawTrSurf.GetBSplineCurve2d(theDI, a[1]);
+        BezierCurve3D? GBz = DrawTrSurf.GetBezierCurve(theDI, a[1]);
+        BSplineCurve3D? GBs = DrawTrSurf.GetBSplineCurve(theDI, a[1]);
+        BezierCurve2D? GBz2d = DrawTrSurf.GetBezierCurve2d(theDI, a[1]);
+        BSplineCurve2D? GBs2d = DrawTrSurf.GetBSplineCurve2d(theDI, a[1]);
 
         if (GBz is not null)
         {
@@ -524,8 +527,8 @@ internal static class GeomliteTestCommands
 
         int Index = theDI.Atoi(a[2]);
 
-        Geom_BezierCurve? GBZ = DrawTrSurf.GetBezierCurve(theDI, a[1]);
-        Geom2d_BezierCurve? GBZ2d = DrawTrSurf.GetBezierCurve2d(theDI, a[1]);
+        BezierCurve3D? GBZ = DrawTrSurf.GetBezierCurve(theDI, a[1]);
+        BezierCurve2D? GBZ2d = DrawTrSurf.GetBezierCurve2d(theDI, a[1]);
         if (GBZ is not null)
         {
             var P = new Point3D(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
@@ -581,32 +584,32 @@ internal static class GeomliteTestCommands
             _ => ParameterisationType.TgtThetaOver2,
         };
 
-        Geom_Curve? GC = DrawTrSurf.GetCurve(theDI, a[2]);
+        Curve3D? GC = DrawTrSurf.GetCurve(theDI, a[2]);
         if (GC is null)
         {
-            Geom_Surface? GS = DrawTrSurf.GetSurface(theDI, a[2]);
+            Surface? GS = DrawTrSurf.GetSurface(theDI, a[2]);
             if (GS is null)
             {
-                Geom2d_Curve? G2d = DrawTrSurf.GetCurve2d(theDI, a[2]);
+                Curve2D? G2d = DrawTrSurf.GetCurve2d(theDI, a[2]);
                 if (G2d is null)
                 {
                     return 1;
                 }
                 else
                 {
-                    G2d = Geom2dConvert.CurveToBSplineCurve(G2d, Parameterisation);
+                    G2d = global::Kerf.Engine.Geometry.Conversion.Geom2dConvert2D.CurveToBSplineCurve(G2d, Parameterisation);
                     DrawTrSurf.Set(theDI, a[1], G2d);
                 }
             }
             else
             {
-                GS = GeomConvert.SurfaceToBSplineSurface(GS);
+                GS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(GS);
                 DrawTrSurf.Set(theDI, a[1], GS);
             }
         }
         else
         {
-            GC = GeomConvert.CurveToBSplineCurve(GC, Parameterisation);
+            GC = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(GC, Parameterisation);
             DrawTrSurf.Set(theDI, a[1], GC);
         }
 
@@ -622,8 +625,8 @@ internal static class GeomliteTestCommands
             return 1;
         }
 
-        Geom_BezierSurface? GBz = DrawTrSurf.GetBezierSurface(theDI, a[1]);
-        Geom_BSplineSurface? GBs;
+        BezierSurface? GBz = DrawTrSurf.GetBezierSurface(theDI, a[1]);
+        BSplineSurface? GBs;
         if (GBz is null)
         {
             GBs = DrawTrSurf.GetBSplineSurface(theDI, a[1]);
@@ -693,8 +696,8 @@ internal static class GeomliteTestCommands
             return 0;
         }
 
-        Geom_BSplineSurface? aBSplSurf = DrawTrSurf.GetBSplineSurface(theDI, a[1]);
-        Geom_BezierSurface? aBezSurf = DrawTrSurf.GetBezierSurface(theDI, a[1]);
+        BSplineSurface? aBSplSurf = DrawTrSurf.GetBSplineSurface(theDI, a[1]);
+        BezierSurface? aBezSurf = DrawTrSurf.GetBezierSurface(theDI, a[1]);
         if (n != 5 && (aBSplSurf is not null || aBezSurf is not null))
         {
             theDI.Output.WriteLine("Syntax error: Incorrect parameters");
@@ -725,10 +728,10 @@ internal static class GeomliteTestCommands
             return 1;
         }
 
-        Geom_BezierCurve? GBz = DrawTrSurf.GetBezierCurve(theDI, a[1]);
-        Geom_BSplineCurve? GBs = DrawTrSurf.GetBSplineCurve(theDI, a[1]);
-        Geom2d_BezierCurve? GBz2d = DrawTrSurf.GetBezierCurve2d(theDI, a[1]);
-        Geom2d_BSplineCurve? GBs2d = DrawTrSurf.GetBSplineCurve2d(theDI, a[1]);
+        BezierCurve3D? GBz = DrawTrSurf.GetBezierCurve(theDI, a[1]);
+        BSplineCurve3D? GBs = DrawTrSurf.GetBSplineCurve(theDI, a[1]);
+        BezierCurve2D? GBz2d = DrawTrSurf.GetBezierCurve2d(theDI, a[1]);
+        BSplineCurve2D? GBs2d = DrawTrSurf.GetBSplineCurve2d(theDI, a[1]);
         double f = theDI.Atof(a[2]), l = theDI.Atof(a[3]);
         double aTolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
         if (n == 5)
@@ -767,8 +770,8 @@ internal static class GeomliteTestCommands
             return 1;
         }
 
-        Geom_BSplineCurve? GBs = DrawTrSurf.GetBSplineCurve(theDI, a[1]);
-        Geom2d_BSplineCurve? GBs2d = DrawTrSurf.GetBSplineCurve2d(theDI, a[1]);
+        BSplineCurve3D? GBs = DrawTrSurf.GetBSplineCurve(theDI, a[1]);
+        BSplineCurve2D? GBs2d = DrawTrSurf.GetBSplineCurve2d(theDI, a[1]);
         if (GBs is not null)
         {
             DrawTrSurf.Set(theDI, a[1], GBs.WithOrigin(theDI.Atoi(a[2])));
@@ -795,7 +798,7 @@ internal static class GeomliteTestCommands
             return 1;
         }
 
-        Geom_Curve? GC = DrawTrSurf.GetCurve(theDI, a[1]);
+        Curve3D? GC = DrawTrSurf.GetCurve(theDI, a[1]);
         if (GC is null)
         {
             return 1;
@@ -866,7 +869,7 @@ internal static class GeomliteTestCommands
             return 1;
         }
 
-        Geom2d_Curve? GC = DrawTrSurf.GetCurve2d(theDI, a[1]);
+        Curve2D? GC = DrawTrSurf.GetCurve2d(theDI, a[1]);
         if (GC is null)
         {
             return 1;
@@ -999,11 +1002,11 @@ internal static class GeomliteTestCommands
             return 1;
         }
 
-        Geom_Geometry? result = null;
+        Geometry3D? result = null;
         string aName = a[0].ToLowerInvariant();
         if (aName == "plane")
         {
-            result = new Geom_Plane(loc);
+            result = new PlaneSurface(loc);
         }
         else
         {
@@ -1015,11 +1018,11 @@ internal static class GeomliteTestCommands
             double par1 = F(i);
             if (aName == "cylinder")
             {
-                result = new Geom_CylindricalSurface(loc, par1);
+                result = new CylindricalSurface(loc, par1);
             }
             else if (aName == "sphere")
             {
-                result = new Geom_SphericalSurface(loc, par1);
+                result = new SphericalSurface(loc, par1);
             }
             else
             {
@@ -1032,11 +1035,11 @@ internal static class GeomliteTestCommands
                 if (aName == "cone")
                 {
                     par1 *= Math.PI / 180.0;
-                    result = new Geom_ConicalSurface(loc, par1, par2);
+                    result = new ConicalSurface(loc, par1, par2);
                 }
                 else if (aName == "torus")
                 {
-                    result = new Geom_ToroidalSurface(loc, par1, par2);
+                    result = new ToroidalSurface(loc, par1, par2);
                 }
             }
         }
@@ -1087,7 +1090,7 @@ internal static class GeomliteTestCommands
                 }
             }
 
-            Geom_BezierSurface result = hasw ? new Geom_BezierSurface(poles, weights) : new Geom_BezierSurface(poles);
+            BezierSurface result = hasw ? new BezierSurface(poles, weights) : new BezierSurface(poles);
             DrawTrSurf.Set(theDI, a[1], result);
         }
         else
@@ -1140,7 +1143,7 @@ internal static class GeomliteTestCommands
                 }
             }
 
-            var result = new Geom_BSplineSurface(poles, weights, uk, vk, umult, vmult, udeg, vdeg, uper, vper);
+            var result = new BSplineSurface(poles, weights, uk, vk, umult, vmult, udeg, vdeg, uper, vper);
             DrawTrSurf.Set(theDI, a[1], result);
         }
 
@@ -1155,7 +1158,7 @@ internal static class GeomliteTestCommands
             return 1;
         }
 
-        Geom_Curve? GC = DrawTrSurf.GetCurve(theDI, a[2]);
+        Curve3D? GC = DrawTrSurf.GetCurve(theDI, a[2]);
         if (GC is null)
         {
             return 1;
@@ -1164,7 +1167,7 @@ internal static class GeomliteTestCommands
         if (a[0].Equals("extsurf", StringComparison.OrdinalIgnoreCase))
         {
             var D = new Direction3D(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(Arg(a, 5)));
-            DrawTrSurf.Set(theDI, a[1], new Geom_SurfaceOfLinearExtrusion(GC, D));
+            DrawTrSurf.Set(theDI, a[1], new ExtrusionSurface(GC, D));
         }
         else if (a[0].Equals("revsurf", StringComparison.OrdinalIgnoreCase))
         {
@@ -1175,7 +1178,7 @@ internal static class GeomliteTestCommands
 
             var P = new Point3D(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
             var D = new Direction3D(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(Arg(a, 8)));
-            DrawTrSurf.Set(theDI, a[1], new Geom_SurfaceOfRevolution(GC, new Axis3D(P, D)));
+            DrawTrSurf.Set(theDI, a[1], new RevolutionSurface(GC, new Axis3D(P, D)));
         }
 
         return 0;
@@ -1189,14 +1192,14 @@ internal static class GeomliteTestCommands
             return 1;
         }
 
-        Geom_Curve? GC = DrawTrSurf.GetCurve(theDI, a[2]);
-        Geom2d_Curve? GC2d = DrawTrSurf.GetCurve2d(theDI, a[2]);
-        Geom_Surface? GS = DrawTrSurf.GetSurface(theDI, a[2]);
+        Curve3D? GC = DrawTrSurf.GetCurve(theDI, a[2]);
+        Curve2D? GC2d = DrawTrSurf.GetCurve2d(theDI, a[2]);
+        Surface? GS = DrawTrSurf.GetSurface(theDI, a[2]);
         if (n == 3)
         {
             if (GC is not null)
             {
-                if (GC is Geom_TrimmedCurve T)
+                if (GC is TrimmedCurve3D T)
                 {
                     GC = T.BasisCurve();
                 }
@@ -1205,7 +1208,7 @@ internal static class GeomliteTestCommands
             }
             else if (GC2d is not null)
             {
-                if (GC2d is Geom2d_TrimmedCurve T)
+                if (GC2d is TrimmedCurve2D T)
                 {
                     GC2d = T.BasisCurve();
                 }
@@ -1214,7 +1217,7 @@ internal static class GeomliteTestCommands
             }
             else if (GS is not null)
             {
-                if (GS is Geom_RectangularTrimmedSurface T)
+                if (GS is TrimmedSurface T)
                 {
                     GS = T.BasisSurface();
                 }
@@ -1233,8 +1236,8 @@ internal static class GeomliteTestCommands
         double u1 = theDI.Atof(a[3]);
         double u2 = theDI.Atof(a[4]);
         bool USense = true, VSense = true;
-        Geom_Geometry? result = null;
-        Geom2d_Curve? result2d = null;
+        Geometry3D? result = null;
+        Curve2D? result2d = null;
         static bool Sense(string theWord) => theWord.Length == 0 || theWord[0] != '0';
 
         if (a[0].Equals("trim", StringComparison.OrdinalIgnoreCase))
@@ -1255,7 +1258,7 @@ internal static class GeomliteTestCommands
                     VSense = Sense(Arg(a, 8));
                 }
 
-                result = new Geom_RectangularTrimmedSurface(GS, u1, u2, v1, v2, USense, VSense);
+                result = new TrimmedSurface(GS, u1, u2, v1, v2, USense, VSense);
             }
             else if (GC is not null)
             {
@@ -1264,7 +1267,7 @@ internal static class GeomliteTestCommands
                     USense = Sense(a[5]);
                 }
 
-                result = new Geom_TrimmedCurve(GC, u1, u2, USense);
+                result = new TrimmedCurve3D(GC, u1, u2, USense);
             }
             else if (GC2d is not null)
             {
@@ -1273,7 +1276,7 @@ internal static class GeomliteTestCommands
                     USense = Sense(a[5]);
                 }
 
-                result2d = new Geom2d_TrimmedCurve(GC2d, u1, u2, USense);
+                result2d = new TrimmedCurve2D(GC2d, u1, u2, USense);
             }
             else
             {
@@ -1293,7 +1296,7 @@ internal static class GeomliteTestCommands
                 USense = Sense(a[5]);
             }
 
-            result = new Geom_RectangularTrimmedSurface(GS, u1, u2, Utrim, USense);
+            result = new TrimmedSurface(GS, u1, u2, Utrim, USense);
         }
 
         if (result is not null)
@@ -1319,12 +1322,12 @@ internal static class GeomliteTestCommands
         // test the Geom2d curve
         if (DrawTrSurf.GetCurve2d(theDI, a[2]) is { } C2d)
         {
-            DrawTrSurf.Set(theDI, a[1], new Geom2d_OffsetCurve(C2d, theDI.Atof(a[3])));
+            DrawTrSurf.Set(theDI, a[1], new OffsetCurve2D(C2d, theDI.Atof(a[3])));
             return 0;
         }
 
-        Geom_Curve? GC = DrawTrSurf.GetCurve(theDI, a[2]);
-        Geom_Surface? GS = null;
+        Curve3D? GC = DrawTrSurf.GetCurve(theDI, a[2]);
+        Surface? GS = null;
         if (GC is null)
         {
             GS = DrawTrSurf.GetSurface(theDI, a[2]);
@@ -1335,10 +1338,10 @@ internal static class GeomliteTestCommands
         }
 
         double dist = theDI.Atof(a[3]);
-        Geom_Geometry result;
+        Geometry3D result;
         if (GS is not null)
         {
-            result = new Geom_OffsetSurface(GS, dist);
+            result = new OffsetSurface(GS, dist);
         }
         else
         {
@@ -1348,7 +1351,7 @@ internal static class GeomliteTestCommands
             }
 
             var D = new Direction3D(theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]));
-            result = new Geom_OffsetCurve(GC!, dist, D);
+            result = new OffsetCurve3D(GC!, dist, D);
         }
 
         DrawTrSurf.Set(theDI, a[1], result);
@@ -1399,7 +1402,7 @@ internal static class GeomliteTestCommands
             return 1;
         }
 
-        Geom_Surface? GS = DrawTrSurf.GetSurface(theDI, a[1]);
+        Surface? GS = DrawTrSurf.GetSurface(theDI, a[1]);
         if (GS is null)
         {
             return 1;
@@ -1469,7 +1472,7 @@ internal static class GeomliteTestCommands
             return 1;
         }
 
-        Geom_Surface? aSurf = DrawTrSurf.GetSurface(theDI, theArgv[1]);
+        Surface? aSurf = DrawTrSurf.GetSurface(theDI, theArgv[1]);
         if (aSurf is null)
         {
             return 1;
@@ -1491,7 +1494,7 @@ internal static class GeomliteTestCommands
         int n = a.Count;
         if (n == 8)
         {
-            Geom_Surface? S = DrawTrSurf.GetSurface(theDI, a[1]);
+            Surface? S = DrawTrSurf.GetSurface(theDI, a[1]);
             if (S is null)
             {
                 di.Append("Unknown surface\n");
@@ -1500,7 +1503,7 @@ internal static class GeomliteTestCommands
 
             var P = new Point3D(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
             double Tol = theDI.Atof(a[5]);
-            bool res = GeomLib_Tool.Parameters(S, P, Tol, out double U, out double V);
+            bool res = GeometryLibraryTool.Parameters(S, P, Tol, out double U, out double V);
             theDI.SetNumber(a[6], U);
             theDI.SetNumber(a[7], V);
             if (!res)
@@ -1511,7 +1514,7 @@ internal static class GeomliteTestCommands
         }
         else if (n == 7)
         {
-            Geom_Curve? C = DrawTrSurf.GetCurve(theDI, a[1]);
+            Curve3D? C = DrawTrSurf.GetCurve(theDI, a[1]);
             if (C is null)
             {
                 di.Append("Unknown curve\n");
@@ -1520,7 +1523,7 @@ internal static class GeomliteTestCommands
 
             var P = new Point3D(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
             double Tol = theDI.Atof(a[5]);
-            bool res = GeomLib_Tool.Parameter(C, P, Tol, out double U);
+            bool res = GeometryLibraryTool.Parameter(C, P, Tol, out double U);
             theDI.SetNumber(a[6], U);
             if (!res)
             {
@@ -1530,7 +1533,7 @@ internal static class GeomliteTestCommands
         }
         else if (n == 6)
         {
-            Geom2d_Curve? C = DrawTrSurf.GetCurve2d(theDI, a[1]);
+            Curve2D? C = DrawTrSurf.GetCurve2d(theDI, a[1]);
             if (C is null)
             {
                 di.Append("Unknown curve 2d\n");
@@ -1539,7 +1542,7 @@ internal static class GeomliteTestCommands
 
             var P = new Point2D(theDI.Atof(a[2]), theDI.Atof(a[3]));
             double Tol = theDI.Atof(a[4]);
-            bool res = GeomLib_Tool.Parameter(C, P, Tol, out double U);
+            bool res = GeometryLibraryTool.Parameter(C, P, Tol, out double U);
             theDI.SetNumber(a[5], U);
             if (!res)
             {
@@ -1566,10 +1569,10 @@ internal static class GeomliteTestCommands
         if (n == 4)
         {
             double U1, U2;
-            Geom_Curve? C3d = DrawTrSurf.GetCurve(theDI, a[1]);
+            Curve3D? C3d = DrawTrSurf.GetCurve(theDI, a[1]);
             if (C3d is null)
             {
-                Geom2d_Curve? C2d = DrawTrSurf.GetCurve2d(theDI, a[1]);
+                Curve2D? C2d = DrawTrSurf.GetCurve2d(theDI, a[1]);
                 if (C2d is null)
                 {
                     return 1;
@@ -1589,7 +1592,7 @@ internal static class GeomliteTestCommands
         }
         else if (n == 6)
         {
-            Geom_Surface? S = DrawTrSurf.GetSurface(theDI, a[1]);
+            Surface? S = DrawTrSurf.GetSurface(theDI, a[1]);
             if (S is null)
             {
                 return 1;
@@ -1613,8 +1616,8 @@ internal static class GeomliteTestCommands
             return 1;
         }
 
-        Geom_Curve? GC = DrawTrSurf.GetCurve(theDI, a[1]);
-        Geom2d_Curve? GC2d = DrawTrSurf.GetCurve2d(theDI, a[1]);
+        Curve3D? GC = DrawTrSurf.GetCurve(theDI, a[1]);
+        Curve2D? GC2d = DrawTrSurf.GetCurve2d(theDI, a[1]);
         double Tol = global::Kerf.Engine.Foundation.Precision.Confusion(), L;
         if (n == 3)
         {
@@ -1623,11 +1626,11 @@ internal static class GeomliteTestCommands
 
         if (GC is not null)
         {
-            L = GCPnts_AbscissaPoint.Length(new GeomAdaptor_Curve(GC), Tol);
+            L = AbscissaPoint.Length(new CurveAdaptor(GC), Tol);
         }
         else if (GC2d is not null)
         {
-            L = GCPnts_AbscissaPoint.Length(new Geom2dAdaptor_Curve(GC2d), Tol);
+            L = AbscissaPoint.Length(new CurveAdaptor2D(GC2d), Tol);
         }
         else
         {

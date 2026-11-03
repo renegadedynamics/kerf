@@ -1,9 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -14,19 +19,19 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepOffset_MakeLoopsInter3dTests
 {
-    private static TopoDS_Face Square(double theZ)
+    private static Face Square(double theZ)
     {
         BRepBuilderAPI_MakePolygon aPoly = new(new Point3D(0, 0, theZ), new Point3D(10, 0, theZ),
                                                new Point3D(10, 10, theZ), new Point3D(0, 10, theZ), true);
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aPoly.Wire(), true).Face();
-        return TopoDS.Face(BRepTools.ExactCopyForWrite(aFace, out _));
+        Face aFace = new BRepBuilderAPI_MakeFace(aPoly.Wire(), true).Face();
+        return ShapeCasts.Face(BrepTools.ExactCopyForWrite(aFace, out _));
     }
 
-    private static List<TopoDS_Shape> SubShapes(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static List<Shape> SubShapes(in Shape theShape, ShapeType theType)
     {
-        NCollection_IndexedMap<TopoDS_Shape> aMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
-        List<TopoDS_Shape> aList = [];
+        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
+        List<Shape> aList = [];
         for (int i = 1; i <= aMap.Extent(); i++)
         {
             aList.Add(aMap[i]);
@@ -37,34 +42,34 @@ public class BRepOffset_MakeLoopsInter3dTests
     [Fact]
     public void MakeLoops_Build_RebuildsTheFaceFromItsEdges()
     {
-        TopoDS_Face aF = Square(0);
+        Face aF = Square(0);
         BRepAlgo_AsDes anAsDes = new();
-        for (TopExp_Explorer anExp = new(aF.Oriented(TopAbs_FORWARD), TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(aF.Oriented(Forward), ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            TopoDS_Edge anE = TopoDS.Edge(anExp.Current());
+            Edge anE = ShapeCasts.Edge(anExp.Current());
             anAsDes.Add(aF, anE);
-            TopExp.Vertices(anE, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
-            anAsDes.Add(anE, aV1.Oriented(TopAbs_FORWARD));
-            anAsDes.Add(anE, aV2.Oriented(TopAbs_REVERSED));
+            Exploration.Vertices(anE, out Vertex aV1, out Vertex aV2);
+            anAsDes.Add(anE, aV1.Oriented(Forward));
+            anAsDes.Add(anE, aV2.Oriented(Reversed));
         }
 
-        NCollection_List<TopoDS_Shape> aLF = new();
+        NCollection_List<Shape> aLF = new();
         aLF.Append(aF);
         BRepAlgo_Image anImage = new();
         BRepOffset_MakeLoops aMakeLoops = new();
         aMakeLoops.Build(aLF, anAsDes, anImage, new BRepAlgo_Image(), new ProgressRange());
 
         Assert.True(anImage.HasImage(aF));
-        NCollection_List<TopoDS_Shape> aNF = anImage.Image(aF);
+        NCollection_List<Shape> aNF = anImage.Image(aF);
         Assert.Equal(1, aNF.Extent());
-        Assert.Equal(4, SubShapes(aNF.First(), TopAbs_EDGE).Count);
-        foreach (TopoDS_Shape anE in SubShapes(aF, TopAbs_EDGE))
+        Assert.Equal(4, SubShapes(aNF.First(), ShapeType.Edge).Count);
+        foreach (Shape anE in SubShapes(aF, ShapeType.Edge))
         {
             Assert.True(anImage.HasImage(anE));
             Assert.Equal(1, anImage.Image(anE).Extent());
         }
 
-        GProp_GProps aProps = new();
+        Properties aProps = new();
         BRepGProp.SurfaceProperties(aNF.First(), aProps);
         Assert.Equal(100.0, aProps.Mass(), 1.0e-9);
     }
@@ -72,8 +77,8 @@ public class BRepOffset_MakeLoopsInter3dTests
     [Fact]
     public void Inter3d_SetDoneIsDone()
     {
-        TopoDS_Face aF1 = Square(0), aF2 = Square(1), aF3 = Square(2);
-        BRepOffset_Inter3d anInter = new(new BRepAlgo_AsDes(), TopAbs_State.TopAbs_IN, 1.0e-7);
+        Face aF1 = Square(0), aF2 = Square(1), aF3 = Square(2);
+        BRepOffset_Inter3d anInter = new(new BRepAlgo_AsDes(), Containment.In, 1.0e-7);
         Assert.False(anInter.IsDone(aF1, aF2));
         anInter.SetDone(aF1, aF2);
         Assert.True(anInter.IsDone(aF1, aF2));
@@ -88,20 +93,20 @@ public class BRepOffset_MakeLoopsInter3dTests
     {
         // The analysed shape doesn't hold the context face: none of its edges has ancestors.
         BRepOffset_Analyse anAnalyse = new(new BRepPrimAPI_MakeBox(1, 1, 1).Shape(), 0.01);
-        TopoDS_Face aCF = Square(5);
-        NCollection_IndexedMap<TopoDS_Shape> aContext = new(TopTools_ShapeMapHasher.Instance);
+        Face aCF = Square(5);
+        NCollection_IndexedMap<Shape> aContext = new(ShapeHasher.Instance);
         aContext.Add(aCF);
 
         BRepAlgo_AsDes anAsDes = new();
         BRepAlgo_Image anInitOffsetEdge = new();
-        BRepOffset_Inter3d anInter = new(anAsDes, TopAbs_State.TopAbs_IN, 1.0e-7);
+        BRepOffset_Inter3d anInter = new(anAsDes, Containment.In, 1.0e-7);
         anInter.ContextIntByArc(aContext, theInSide, anAnalyse, new BRepAlgo_Image(), anInitOffsetEdge,
                                 new ProgressRange());
 
         Assert.True(anInter.TouchedFaces().Contains(aCF));
-        NCollection_List<TopoDS_Shape> aLE = anAsDes.Descendant(aCF);
+        NCollection_List<Shape> aLE = anAsDes.Descendant(aCF);
         Assert.Equal(4, aLE.Extent());
-        foreach (TopoDS_Shape anE in SubShapes(aCF, TopAbs_EDGE))
+        foreach (Shape anE in SubShapes(aCF, ShapeType.Edge))
         {
             Assert.Equal(!theInSide, anInitOffsetEdge.HasImage(anE));
             if (theInSide)
@@ -110,14 +115,14 @@ public class BRepOffset_MakeLoopsInter3dTests
                 continue;
             }
             // The extended edge: the range grown by 100 lengths at each end, with the old vertices stored on it.
-            TopoDS_Edge aNE = TopoDS.Edge(anInitOffsetEdge.Image(anE).First());
-            BRep_Tool.Range(TopoDS.Edge(anE), out double f, out double l);
-            BRep_Tool.Range(aNE, out double nf, out double nl);
+            Edge aNE = ShapeCasts.Edge(anInitOffsetEdge.Image(anE).First());
+            Tool.Range(ShapeCasts.Edge(anE), out double f, out double l);
+            Tool.Range(aNE, out double nf, out double nl);
             Assert.Equal(f - 100 * (l - f), nf, 1.0e-9);
             Assert.Equal(l + 100 * (l - f), nl, 1.0e-9);
-            Assert.Equal(2, anAsDes.Descendant(aNE.Oriented(TopAbs_FORWARD)).Extent());
-            TopExp.Vertices(TopoDS.Edge(anE), out TopoDS_Vertex aV1, out _);
-            Assert.Equal(f, BRep_Tool.Parameter(aV1, aNE), 1.0e-9);
+            Assert.Equal(2, anAsDes.Descendant(aNE.Oriented(Forward)).Extent());
+            Exploration.Vertices(ShapeCasts.Edge(anE), out Vertex aV1, out _);
+            Assert.Equal(f, Tool.Parameter(aV1, aNE), 1.0e-9);
         }
     }
 }

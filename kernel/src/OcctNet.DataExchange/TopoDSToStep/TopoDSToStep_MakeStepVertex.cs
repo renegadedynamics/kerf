@@ -6,7 +6,9 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopoDSToStep_MakeVertexError;
 
 namespace Occt;
@@ -23,18 +25,18 @@ public sealed class TopoDSToStep_MakeStepVertex : TopoDSToStep_Root
         done = false;
     }
 
-    public TopoDSToStep_MakeStepVertex(in TopoDS_Vertex V, TopoDSToStep_Tool T, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
+    public TopoDSToStep_MakeStepVertex(in Vertex V, TopoDSToStep_Tool T, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
     {
         done = false;
         Init(V, T, FP, theLocalFactors);
     }
 
-    public TopoDSToStep_MakeStepVertex(in TopoDS_Vertex V, TopoDSToStep_Tool T, Transfer_FinderProcess FP)
+    public TopoDSToStep_MakeStepVertex(in Vertex V, TopoDSToStep_Tool T, Transfer_FinderProcess FP)
         : this(V, T, FP, new StepData_Factors())
     {
     }
 
-    public void Init(in TopoDS_Vertex aVertex, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
+    public void Init(in Vertex aVertex, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
     {
         aTool.SetCurrentVertex(aVertex);
 
@@ -65,7 +67,7 @@ public sealed class TopoDSToStep_MakeStepVertex : TopoDSToStep_Root
 
         Point3D P;
 
-        P = BRep_Tool.Pnt(aVertex);
+        P = Tool.Pnt(aVertex);
         var MkPoint = new GeomToStep_MakeCartesianPoint(P, theLocalFactors.LengthFactor());
         StepGeom_CartesianPoint Gpms = MkPoint.Value();
         var Vpms = new StepShape_VertexPoint();
@@ -79,7 +81,7 @@ public sealed class TopoDSToStep_MakeStepVertex : TopoDSToStep_Root
         myResult = Vpms;
     }
 
-    public void Init(in TopoDS_Vertex aVertex, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP)
+    public void Init(in Vertex aVertex, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP)
         => Init(aVertex, aTool, FP, new StepData_Factors());
 
     /// <exception cref="NotDoneException">The mapping wasn't done.</exception>

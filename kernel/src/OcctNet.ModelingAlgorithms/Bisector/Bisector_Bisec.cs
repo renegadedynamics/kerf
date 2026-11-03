@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -23,7 +25,7 @@ namespace Occt;
 /// </remarks>
 public sealed class Bisector_Bisec
 {
-    private Geom2d_TrimmedCurve thebisector = null!;
+    private TrimmedCurve2D thebisector = null!;
 
     /// <summary>An empty bisector.</summary>
     public Bisector_Bisec()
@@ -45,7 +47,7 @@ public sealed class Bisector_Bisec
     /// Computes the bisecting line of the curves afirstcurve and asecondcurve from apoint. oncurve is true if apoint
     /// is common to the two curves.
     /// </summary>
-    public void Perform(Geom2d_Curve afirstcurve, Geom2d_Curve asecondcurve, in Point2D apoint,
+    public void Perform(Curve2D afirstcurve, Curve2D asecondcurve, in Point2D apoint,
                         in Vector2D afirstvector, in Vector2D asecondvector, double adirection,
                         JoinKind ajointype, double tolerance, bool oncurve = true)
     {
@@ -54,62 +56,62 @@ public sealed class Bisector_Bisec
         Bisector_Curve Bis;
         double UFirst, ULast;
 
-        if (Type1 == typeof(Geom2d_TrimmedCurve))
+        if (Type1 == typeof(TrimmedCurve2D))
         {
-            Type1 = ((Geom2d_TrimmedCurve)afirstcurve).ChangeBasisCurve().GetType();
+            Type1 = ((TrimmedCurve2D)afirstcurve).ChangeBasisCurve().GetType();
         }
-        if (Type2 == typeof(Geom2d_TrimmedCurve))
+        if (Type2 == typeof(TrimmedCurve2D))
         {
-            Type2 = ((Geom2d_TrimmedCurve)asecondcurve).ChangeBasisCurve().GetType();
+            Type2 = ((TrimmedCurve2D)asecondcurve).ChangeBasisCurve().GetType();
         }
 
-        Geom2d_Curve afirstcurve1 = afirstcurve;
-        Geom2d_Curve asecondcurve1 = asecondcurve;
+        Curve2D afirstcurve1 = afirstcurve;
+        Curve2D asecondcurve1 = asecondcurve;
 
-        if (Type1 == typeof(Geom2d_BSplineCurve))
+        if (Type1 == typeof(BSplineCurve2D))
         {
-            Geom2d_BSplineCurve aBS;
-            if (afirstcurve.GetType() == typeof(Geom2d_TrimmedCurve))
+            BSplineCurve2D aBS;
+            if (afirstcurve.GetType() == typeof(TrimmedCurve2D))
             {
-                aBS = (Geom2d_BSplineCurve)((Geom2d_TrimmedCurve)afirstcurve).ChangeBasisCurve();
+                aBS = (BSplineCurve2D)((TrimmedCurve2D)afirstcurve).ChangeBasisCurve();
             }
             else
             {
-                aBS = (Geom2d_BSplineCurve)afirstcurve;
+                aBS = (BSplineCurve2D)afirstcurve;
             }
-            if (aBS.Degree() == 1 && aBS.NbPoles() == 2)
+            if (aBS.Degree() == 1 && aBS.PoleCount == 2)
             {
                 if (aBS.Pole(1).Distance(aBS.Pole(2)) < 1.0e-4)
                 {
-                    afirstcurve1 = new GC_MakeSegment2d(aBS.Pole(1), aBS.Pole(2)).Value();
-                    Type1 = typeof(Geom2d_Line);
+                    afirstcurve1 = new MakeSegment2d(aBS.Pole(1), aBS.Pole(2)).Value();
+                    Type1 = typeof(LineCurve2D);
                 }
             }
         }
 
-        if (Type2 == typeof(Geom2d_BSplineCurve))
+        if (Type2 == typeof(BSplineCurve2D))
         {
-            Geom2d_BSplineCurve aBS;
-            if (asecondcurve.GetType() == typeof(Geom2d_TrimmedCurve))
+            BSplineCurve2D aBS;
+            if (asecondcurve.GetType() == typeof(TrimmedCurve2D))
             {
-                aBS = (Geom2d_BSplineCurve)((Geom2d_TrimmedCurve)asecondcurve).ChangeBasisCurve();
+                aBS = (BSplineCurve2D)((TrimmedCurve2D)asecondcurve).ChangeBasisCurve();
             }
             else
             {
-                aBS = (Geom2d_BSplineCurve)asecondcurve;
+                aBS = (BSplineCurve2D)asecondcurve;
             }
-            if (aBS.Degree() == 1 && aBS.NbPoles() == 2)
+            if (aBS.Degree() == 1 && aBS.PoleCount == 2)
             {
                 if (aBS.Pole(1).Distance(aBS.Pole(2)) < 1.0e-4)
                 {
-                    asecondcurve1 = new GC_MakeSegment2d(aBS.Pole(1), aBS.Pole(2)).Value();
-                    Type2 = typeof(Geom2d_Line);
+                    asecondcurve1 = new MakeSegment2d(aBS.Pole(1), aBS.Pole(2)).Value();
+                    Type2 = typeof(LineCurve2D);
                 }
             }
         }
 
-        if ((Type1 == typeof(Geom2d_Circle) || Type1 == typeof(Geom2d_Line))
-            && (Type2 == typeof(Geom2d_Circle) || Type2 == typeof(Geom2d_Line)))
+        if ((Type1 == typeof(CircleCurve2D) || Type1 == typeof(LineCurve2D))
+            && (Type2 == typeof(CircleCurve2D) || Type2 == typeof(LineCurve2D)))
         {
             //------------------------------------------------------------------
             // Analytic Bissectrice.
@@ -142,8 +144,8 @@ public sealed class Bisector_Bisec
                 // Half-Staight.
                 //------------------------------------------------------------------
                 Direction2D N = new(-adirection * afirstvector.Y(), adirection * afirstvector.X());
-                Geom2d_Line L = new(apoint, N);
-                Geom2d_TrimmedCurve BisL = new(L, 0, global::Kerf.Engine.Foundation.Precision.Infinite());
+                LineCurve2D L = new(apoint, N);
+                TrimmedCurve2D BisL = new(L, 0, global::Kerf.Engine.Foundation.Precision.Infinite());
                 Bisector_BisecAna BisAna = new();
                 BisAna.Init(BisL);
                 UFirst = BisAna.ParameterOfStartPoint();
@@ -191,8 +193,8 @@ public sealed class Bisector_Bisec
                     Direction2D N = new(adirection * Nx, adirection * Ny);
                     //  modified by NIZHNY-EAP Mon Feb 21 12:00:19 2000 ___END___
 
-                    Geom2d_Line L = new(apoint, N);
-                    Geom2d_TrimmedCurve BisL = new(L, 0, global::Kerf.Engine.Foundation.Precision.Infinite());
+                    LineCurve2D L = new(apoint, N);
+                    TrimmedCurve2D BisL = new(L, 0, global::Kerf.Engine.Foundation.Precision.Infinite());
                     Bisector_BisecAna BisAna = new();
                     BisAna.Init(BisL);
                     UFirst = BisAna.ParameterOfStartPoint();
@@ -210,7 +212,7 @@ public sealed class Bisector_Bisec
         }
         UFirst = Max(UFirst, Bis.FirstParameter());
         ULast = Min(ULast, Bis.LastParameter());
-        thebisector = new Geom2d_TrimmedCurve(Bis, UFirst, ULast);
+        thebisector = new TrimmedCurve2D(Bis, UFirst, ULast);
     }
 
     //===========================================================================
@@ -228,7 +230,7 @@ public sealed class Bisector_Bisec
     /// Computes the bisecting line of the curve afirstcurve and the point asecondpoint from apoint. oncurve is true if
     /// apoint is the point asecondpoint.
     /// </summary>
-    public void Perform(Geom2d_Curve afirstcurve, Geom2d_Point asecondpoint, in Point2D apoint,
+    public void Perform(Curve2D afirstcurve, Point2 asecondpoint, in Point2D apoint,
                         in Vector2D afirstvector, in Vector2D asecondvector, double adirection, double tolerance,
                         bool oncurve = true)
     {
@@ -236,12 +238,12 @@ public sealed class Bisector_Bisec
         Type Type1 = afirstcurve.GetType();
         double UFirst, ULast;
 
-        if (Type1 == typeof(Geom2d_TrimmedCurve))
+        if (Type1 == typeof(TrimmedCurve2D))
         {
-            Type1 = ((Geom2d_TrimmedCurve)afirstcurve).ChangeBasisCurve().GetType();
+            Type1 = ((TrimmedCurve2D)afirstcurve).ChangeBasisCurve().GetType();
         }
 
-        if (Type1 == typeof(Geom2d_Circle) || Type1 == typeof(Geom2d_Line))
+        if (Type1 == typeof(CircleCurve2D) || Type1 == typeof(LineCurve2D))
         {
             //------------------------------------------------------------------
             // Analytic Bissectrice.
@@ -271,8 +273,8 @@ public sealed class Bisector_Bisec
                 // Half-Right.
                 //------------------------------------------------------------------
                 Direction2D N = new(-adirection * afirstvector.Y(), adirection * afirstvector.X());
-                Geom2d_Line L = new(apoint, N);
-                Geom2d_TrimmedCurve BisL = new(L, 0, RC);
+                LineCurve2D L = new(apoint, N);
+                TrimmedCurve2D BisL = new(L, 0, RC);
                 Bisector_BisecAna BisAna = new();
                 BisAna.Init(BisL);
                 UFirst = BisAna.ParameterOfStartPoint();
@@ -285,7 +287,7 @@ public sealed class Bisector_Bisec
                 // Bissectrice algo
                 //-------------------------------------------------------------------
                 Bisector_BisecPC BisPC = new();
-                Geom2d_Curve afirstcurvereverse = afirstcurve.Reversed();
+                Curve2D afirstcurvereverse = afirstcurve.Reversed();
 
                 BisPC.Perform(afirstcurvereverse, asecondpoint.Pnt2d(), -adirection);
                 //  Modified by Sergey KHROMOV - Thu Feb 21 16:49:54 2002 Begin
@@ -299,8 +301,8 @@ public sealed class Bisector_Bisec
                         Ny = afirstvector.X();
                     }
                     Direction2D N = new(adirection * Nx, adirection * Ny);
-                    Geom2d_Line L = new(apoint, N);
-                    Geom2d_TrimmedCurve BisL = new(L, 0, RC);
+                    LineCurve2D L = new(apoint, N);
+                    TrimmedCurve2D BisL = new(L, 0, RC);
                     Bisector_BisecAna BisAna = new();
                     BisAna.Init(BisL);
                     UFirst = BisAna.ParameterOfStartPoint();
@@ -317,8 +319,8 @@ public sealed class Bisector_Bisec
                         // Extrapolate by line
                         Vector2D V = new(BisPC.Value(BisPC.FirstParameter()), BisPC.Value(ULast));
                         Direction2D N = new(V);
-                        Geom2d_Line L = new(apoint, N);
-                        Geom2d_TrimmedCurve BisL = new(L, 0, RC);
+                        LineCurve2D L = new(apoint, N);
+                        TrimmedCurve2D BisL = new(L, 0, RC);
                         Bisector_BisecAna BisAna = new();
                         BisAna.Init(BisL);
                         UFirst = BisAna.ParameterOfStartPoint();
@@ -340,7 +342,7 @@ public sealed class Bisector_Bisec
         {
             ULast = Bis.LastParameter();
         }
-        thebisector = new Geom2d_TrimmedCurve(Bis, UFirst, ULast);
+        thebisector = new TrimmedCurve2D(Bis, UFirst, ULast);
     }
 
     //===========================================================================
@@ -358,7 +360,7 @@ public sealed class Bisector_Bisec
     /// Computes the bisecting line of the point afirstpoint and the curve asecondcurve from apoint. oncurve is true
     /// if apoint is the point afirstpoint.
     /// </summary>
-    public void Perform(Geom2d_Point afirstpoint, Geom2d_Curve asecondcurve, in Point2D apoint,
+    public void Perform(Point2 afirstpoint, Curve2D asecondcurve, in Point2D apoint,
                         in Vector2D afirstvector, in Vector2D asecondvector, double adirection, double tolerance,
                         bool oncurve = true)
     {
@@ -366,12 +368,12 @@ public sealed class Bisector_Bisec
         Type Type1 = asecondcurve.GetType();
         double UFirst, ULast;
 
-        if (Type1 == typeof(Geom2d_TrimmedCurve))
+        if (Type1 == typeof(TrimmedCurve2D))
         {
-            Type1 = ((Geom2d_TrimmedCurve)asecondcurve).ChangeBasisCurve().GetType();
+            Type1 = ((TrimmedCurve2D)asecondcurve).ChangeBasisCurve().GetType();
         }
 
-        if (Type1 == typeof(Geom2d_Circle) || Type1 == typeof(Geom2d_Line))
+        if (Type1 == typeof(CircleCurve2D) || Type1 == typeof(LineCurve2D))
         {
             //------------------------------------------------------------------
             // Analytic Bissectrice.
@@ -402,8 +404,8 @@ public sealed class Bisector_Bisec
                 // Half-Staight.
                 //------------------------------------------------------------------
                 Direction2D N = new(-adirection * afirstvector.Y(), adirection * afirstvector.X());
-                Geom2d_Line L = new(apoint, N);
-                Geom2d_TrimmedCurve BisL = new(L, 0, RC);
+                LineCurve2D L = new(apoint, N);
+                TrimmedCurve2D BisL = new(L, 0, RC);
                 Bisector_BisecAna BisAna = new();
                 BisAna.Init(BisL);
                 UFirst = BisAna.ParameterOfStartPoint();
@@ -428,8 +430,8 @@ public sealed class Bisector_Bisec
                         Ny = afirstvector.X();
                     }
                     Direction2D N = new(adirection * Nx, adirection * Ny);
-                    Geom2d_Line L = new(apoint, N);
-                    Geom2d_TrimmedCurve BisL = new(L, 0, RC);
+                    LineCurve2D L = new(apoint, N);
+                    TrimmedCurve2D BisL = new(L, 0, RC);
                     Bisector_BisecAna BisAna = new();
                     BisAna.Init(BisL);
                     UFirst = BisAna.ParameterOfStartPoint();
@@ -446,8 +448,8 @@ public sealed class Bisector_Bisec
                         // Extrapolate by line
                         Vector2D V = new(BisPC.Value(BisPC.FirstParameter()), BisPC.Value(ULast));
                         Direction2D N = new(V);
-                        Geom2d_Line L = new(apoint, N);
-                        Geom2d_TrimmedCurve BisL = new(L, 0, RC);
+                        LineCurve2D L = new(apoint, N);
+                        TrimmedCurve2D BisL = new(L, 0, RC);
                         Bisector_BisecAna BisAna = new();
                         BisAna.Init(BisL);
                         UFirst = BisAna.ParameterOfStartPoint();
@@ -464,7 +466,7 @@ public sealed class Bisector_Bisec
 
         UFirst = Max(UFirst, Bis.FirstParameter());
         ULast = Min(ULast, Bis.LastParameter());
-        thebisector = new Geom2d_TrimmedCurve(Bis, UFirst, ULast);
+        thebisector = new TrimmedCurve2D(Bis, UFirst, ULast);
     }
 
     //===========================================================================
@@ -479,20 +481,20 @@ public sealed class Bisector_Bisec
     //===========================================================================
     /// <summary>Computes the bisecting line of the points afirstpoint and asecondpoint from apoint.</summary>
     /// <exception cref="GccAna_NoSolution">The points coincide.</exception>
-    public void Perform(Geom2d_Point afirstpoint, Geom2d_Point asecondpoint, in Point2D apoint,
+    public void Perform(Point2 afirstpoint, Point2 asecondpoint, in Point2D apoint,
                         in Vector2D afirstvector, in Vector2D asecondvector, double adirection, double tolerance = 0.0,
                         bool oncurve = true)
     {
         Bisector_BisecAna Bis = new();
         Bis.Perform(afirstpoint, asecondpoint, apoint, afirstvector, asecondvector, adirection, tolerance, oncurve);
-        thebisector = new Geom2d_TrimmedCurve(Bis, Bis.ParameterOfStartPoint(), Bis.ParameterOfEndPoint());
+        thebisector = new TrimmedCurve2D(Bis, Bis.ParameterOfStartPoint(), Bis.ParameterOfEndPoint());
     }
 
     /// <summary>The bisector: a Geom2d_TrimmedCurve whose basis is a Bisector_Curve.</summary>
-    public Geom2d_TrimmedCurve Value() => thebisector;
+    public TrimmedCurve2D Value() => thebisector;
 
     /// <summary>The bisector, for ported code that re-trims it in place (MAT2d_Tool2d).</summary>
-    public Geom2d_TrimmedCurve ChangeValue() => thebisector;
+    public TrimmedCurve2D ChangeValue() => thebisector;
 
     //=============================================================================
     //           replaced by a half-straight.
@@ -514,8 +516,8 @@ public sealed class Bisector_Bisec
 
         Vector2D T1 = Bis.DN(UFirst, 1);
 
-        Geom2d_Line L = new(PF, new Direction2D(T1));
-        Geom2d_TrimmedCurve BisL = new(L, 0, global::Kerf.Engine.Foundation.Precision.Infinite());
+        LineCurve2D L = new(PF, new Direction2D(T1));
+        TrimmedCurve2D BisL = new(L, 0, global::Kerf.Engine.Foundation.Precision.Infinite());
         Bisector_BisecAna BisAna = new();
         BisAna.Init(BisL);
         UFirst = BisAna.ParameterOfStartPoint();
@@ -523,7 +525,7 @@ public sealed class Bisector_Bisec
         Bis = BisAna;
     }
 
-    private static bool IsMaxRC(Geom2d_Curve C, double U, ref double R)
+    private static bool IsMaxRC(Curve2D C, double U, ref double R)
     {
         double KF, KL;
         double US = C.FirstParameter();

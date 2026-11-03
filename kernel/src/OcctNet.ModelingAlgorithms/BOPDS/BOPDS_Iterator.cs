@@ -6,7 +6,8 @@
 
 using Kerf.Engine.Foundation.Std;
 using Kerf.Engine.Geometry.Bounds;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -95,7 +96,7 @@ public class BOPDS_Iterator
     }
 
     /// <summary>Starts iterating the pairs of shapes of the two types, sorted.</summary>
-    public void Initialize(TopAbs_ShapeEnum aType1, TopAbs_ShapeEnum aType2)
+    public void Initialize(ShapeType aType1, ShapeType aType2)
     {
         int iX;
         //
@@ -182,7 +183,7 @@ public class BOPDS_Iterator
         for (int i = 0; i < aNb; ++i)
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (!aSI.IsInterfering() || (aSI.ShapeType() == TopAbs_SOLID))
+            if (!aSI.IsInterfering() || (aSI.ShapeType() == ShapeType.Solid))
             {
                 continue;
             }
@@ -229,7 +230,7 @@ public class BOPDS_Iterator
             int i = aTSRi.Index();
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
             int iRankI = myDS.Rank(i);
-            TopAbs_ShapeEnum aTI = aSI.ShapeType();
+            ShapeType aTI = aSI.ShapeType();
             int iTI = BOPDS_Tools.TypeToInteger(aTI);
 
             for (NCollection_List<int>.Iterator itLI = new(aLI); itLI.More(); itLI.Next())
@@ -242,7 +243,7 @@ public class BOPDS_Iterator
                 }
 
                 BOPDS_ShapeInfo aSJ = myDS.ShapeInfo(j);
-                TopAbs_ShapeEnum aTJ = aSJ.ShapeType();
+                ShapeType aTJ = aSJ.ShapeType();
                 int iTJ = BOPDS_Tools.TypeToInteger(aTJ);
 
                 // avoid interfering of the shape with its sub-shapes
@@ -332,8 +333,8 @@ public class BOPDS_Iterator
                 BOPDS_ShapeInfo aSI1 = myDS.ShapeInfo(aPair.ID1);
                 BOPDS_ShapeInfo aSI2 = myDS.ShapeInfo(aPair.ID2);
 
-                TopAbs_ShapeEnum aType1 = aSI1.ShapeType();
-                TopAbs_ShapeEnum aType2 = aSI2.ShapeType();
+                ShapeType aType1 = aSI1.ShapeType();
+                ShapeType aType2 = aSI2.ShapeType();
 
                 int iType1 = BOPDS_Tools.TypeToInteger(aType1);
                 int iType2 = BOPDS_Tools.TypeToInteger(aType2);

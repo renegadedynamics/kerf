@@ -3,6 +3,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -14,9 +17,9 @@ public abstract partial class ChFi3d_Builder
     //=================================================================================================
 
     internal virtual void SimulSurf(ChFiDS_SurfData Data, ChFiDS_ElSpine HGuide, ChFiDS_Spine Spine, int Choix,
-                                    BRepAdaptor_Surface HS1, Adaptor3d_TopolTool I1, BRepAdaptor_Curve2d PC1,
-                                    BRepAdaptor_Surface HSref1, BRepAdaptor_Curve2d PCref1, ref bool Decroch1,
-                                    BRepAdaptor_Surface HS2, Adaptor3d_TopolTool I2, TopAbs_Orientation Or2,
+                                    FaceSurfaceAdaptor HS1, TopolTool I1, EdgeCurve2DAdaptor PC1,
+                                    FaceSurfaceAdaptor HSref1, EdgeCurve2DAdaptor PCref1, ref bool Decroch1,
+                                    FaceSurfaceAdaptor HS2, TopolTool I2, Orientation Or2,
                                     double Fleche, double TolGuide, ref double First, ref double Last, bool Inside,
                                     bool Appro, bool Forward, bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
     {
@@ -26,9 +29,9 @@ public abstract partial class ChFi3d_Builder
     //=================================================================================================
 
     internal virtual void SimulSurf(ChFiDS_SurfData Data, ChFiDS_ElSpine HGuide, ChFiDS_Spine Spine, int Choix,
-                                    BRepAdaptor_Surface HS1, Adaptor3d_TopolTool I1, TopAbs_Orientation Or1,
-                                    BRepAdaptor_Surface HS2, Adaptor3d_TopolTool I2, BRepAdaptor_Curve2d PC2,
-                                    BRepAdaptor_Surface HSref2, BRepAdaptor_Curve2d PCref2, ref bool Decroch2,
+                                    FaceSurfaceAdaptor HS1, TopolTool I1, Orientation Or1,
+                                    FaceSurfaceAdaptor HS2, TopolTool I2, EdgeCurve2DAdaptor PC2,
+                                    FaceSurfaceAdaptor HSref2, EdgeCurve2DAdaptor PCref2, ref bool Decroch2,
                                     double Fleche, double TolGuide, ref double First, ref double Last, bool Inside,
                                     bool Appro, bool Forward, bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
     {
@@ -38,11 +41,11 @@ public abstract partial class ChFi3d_Builder
     //=================================================================================================
 
     internal virtual void SimulSurf(ChFiDS_SurfData Data, ChFiDS_ElSpine HGuide, ChFiDS_Spine Spine, int Choix,
-                                    BRepAdaptor_Surface HS1, Adaptor3d_TopolTool I1, BRepAdaptor_Curve2d PC1,
-                                    BRepAdaptor_Surface HSref1, BRepAdaptor_Curve2d PCref1, ref bool Decroch1,
-                                    TopAbs_Orientation Or1, BRepAdaptor_Surface HS2, Adaptor3d_TopolTool I2,
-                                    BRepAdaptor_Curve2d PC2, BRepAdaptor_Surface HSref2, BRepAdaptor_Curve2d PCref2,
-                                    ref bool Decroch2, TopAbs_Orientation Or2, double Fleche, double TolGuide,
+                                    FaceSurfaceAdaptor HS1, TopolTool I1, EdgeCurve2DAdaptor PC1,
+                                    FaceSurfaceAdaptor HSref1, EdgeCurve2DAdaptor PCref1, ref bool Decroch1,
+                                    Orientation Or1, FaceSurfaceAdaptor HS2, TopolTool I2,
+                                    EdgeCurve2DAdaptor PC2, FaceSurfaceAdaptor HSref2, EdgeCurve2DAdaptor PCref2,
+                                    ref bool Decroch2, Orientation Or2, double Fleche, double TolGuide,
                                     ref double First, ref double Last, bool Inside, bool Appro, bool Forward,
                                     bool RecP1, bool RecRst1, bool RecP2, bool RecRst2, math_Vector Soldep)
     {
@@ -52,10 +55,10 @@ public abstract partial class ChFi3d_Builder
     //=================================================================================================
 
     internal virtual void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine HGuide,
-                                      ChFiDS_Spine Spine, int Choix, BRepAdaptor_Surface HS1, Adaptor3d_TopolTool I1,
-                                      BRepAdaptor_Curve2d PC1, BRepAdaptor_Surface HSref1, BRepAdaptor_Curve2d PCref1,
-                                      ref bool Decroch1, BRepAdaptor_Surface HS2, Adaptor3d_TopolTool I2,
-                                      TopAbs_Orientation Or2, double MaxStep, double Fleche, double TolGuide,
+                                      ChFiDS_Spine Spine, int Choix, FaceSurfaceAdaptor HS1, TopolTool I1,
+                                      EdgeCurve2DAdaptor PC1, FaceSurfaceAdaptor HSref1, EdgeCurve2DAdaptor PCref1,
+                                      ref bool Decroch1, FaceSurfaceAdaptor HS2, TopolTool I2,
+                                      Orientation Or2, double MaxStep, double Fleche, double TolGuide,
                                       ref double First, ref double Last, bool Inside, bool Appro, bool Forward,
                                       bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
     {
@@ -65,9 +68,9 @@ public abstract partial class ChFi3d_Builder
     //=================================================================================================
 
     internal virtual void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine HGuide,
-                                      ChFiDS_Spine Spine, int Choix, BRepAdaptor_Surface HS1, Adaptor3d_TopolTool I1,
-                                      TopAbs_Orientation Or1, BRepAdaptor_Surface HS2, Adaptor3d_TopolTool I2,
-                                      BRepAdaptor_Curve2d PC2, BRepAdaptor_Surface HSref2, BRepAdaptor_Curve2d PCref2,
+                                      ChFiDS_Spine Spine, int Choix, FaceSurfaceAdaptor HS1, TopolTool I1,
+                                      Orientation Or1, FaceSurfaceAdaptor HS2, TopolTool I2,
+                                      EdgeCurve2DAdaptor PC2, FaceSurfaceAdaptor HSref2, EdgeCurve2DAdaptor PCref2,
                                       ref bool Decroch2, double MaxStep, double Fleche, double TolGuide,
                                       ref double First, ref double Last, bool Inside, bool Appro, bool Forward,
                                       bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
@@ -78,11 +81,11 @@ public abstract partial class ChFi3d_Builder
     //=================================================================================================
 
     internal virtual void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine HGuide,
-                                      ChFiDS_Spine Spine, int Choix, BRepAdaptor_Surface HS1, Adaptor3d_TopolTool I1,
-                                      BRepAdaptor_Curve2d PC1, BRepAdaptor_Surface HSref1, BRepAdaptor_Curve2d PCref1,
-                                      ref bool Decroch1, TopAbs_Orientation Or1, BRepAdaptor_Surface HS2,
-                                      Adaptor3d_TopolTool I2, BRepAdaptor_Curve2d PC2, BRepAdaptor_Surface HSref2,
-                                      BRepAdaptor_Curve2d PCref2, ref bool Decroch2, TopAbs_Orientation Or2,
+                                      ChFiDS_Spine Spine, int Choix, FaceSurfaceAdaptor HS1, TopolTool I1,
+                                      EdgeCurve2DAdaptor PC1, FaceSurfaceAdaptor HSref1, EdgeCurve2DAdaptor PCref1,
+                                      ref bool Decroch1, Orientation Or1, FaceSurfaceAdaptor HS2,
+                                      TopolTool I2, EdgeCurve2DAdaptor PC2, FaceSurfaceAdaptor HSref2,
+                                      EdgeCurve2DAdaptor PCref2, ref bool Decroch2, Orientation Or2,
                                       double MaxStep, double Fleche, double TolGuide, ref double First,
                                       ref double Last, bool Inside, bool Appro, bool Forward, bool RecP1,
                                       bool RecRst1, bool RecP2, bool RecRst2, math_Vector Soldep)

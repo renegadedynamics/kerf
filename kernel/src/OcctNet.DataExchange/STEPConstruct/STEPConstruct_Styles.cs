@@ -7,6 +7,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Engine.Foundation.NameOfColor;
 using static Kerf.Engine.Foundation.ColorSpace;
 using static Occt.StepVisual_SurfaceSide;
@@ -261,7 +262,7 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
     /// Null, then the resulting style will be of the subtype OverridingStyledItem. The Sape is used to find
     /// corresponding STEP entity by call to STEPConstruct::FindEntity(), then previous method is called.
     /// </summary>
-    public StepVisual_StyledItem AddStyle(TopoDS_Shape Shape, StepVisual_PresentationStyleAssignment PSA,
+    public StepVisual_StyledItem AddStyle(Shape Shape, StepVisual_PresentationStyleAssignment PSA,
                                           StepVisual_StyledItem Override)
     {
         StepRepr_RepresentationItem item = STEPConstruct.FindEntity(FinderProcess(), Shape);
@@ -375,7 +376,7 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
     /// Searches the STEP model for the RepresentationContext in which given shape is defined. This context (if found)
     /// can be used then in call to CreateMDGPR()
     /// </summary>
-    public StepRepr_RepresentationContext FindContext(TopoDS_Shape Shape)
+    public StepRepr_RepresentationContext FindContext(Shape Shape)
     {
         // find context of items
         StepRepr_RepresentationContext Context = null;

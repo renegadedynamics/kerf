@@ -5,6 +5,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
@@ -145,8 +146,8 @@ public readonly struct HLRBRep_CurveTool : IIntCurve_CurveTool<HLRBRep_Curve>
         }
         else if (typC == BSplineCurve)
         {
-            Geom_Curve? aCurve = C.Curve().Curve().Curve();
-            GeomAdaptor_Curve GAcurve = new(aCurve!, u1, u2);
+            Curve3D? aCurve = C.Curve().Curve().Curve();
+            CurveAdaptor GAcurve = new(aCurve!, u1, u2);
             nbs = GAcurve.NbIntervals(CN) + 1;
             nbs *= C.Degree();
             if (nbs < 2.0)

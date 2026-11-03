@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -86,7 +87,7 @@ public class GeomFill_TrihedronTests
         AssertNear((aDP.B - aDM.B) / (2 * theH), aDD.B, theTol * aScale2, "D2BiNormal");
     }
 
-    internal static Geom_BSplineCurve BSpline(params Point3D[] thePoles)
+    internal static BSplineCurve3D BSpline(params Point3D[] thePoles)
     {
         int aDeg = Math.Min(3, thePoles.Length - 1);
         int aNbKnots = thePoles.Length - aDeg + 1;
@@ -102,11 +103,11 @@ public class GeomFill_TrihedronTests
             aKnots[i] = i - 1;
             aMults[i] = (i == 1 || i == aNbKnots) ? aDeg + 1 : 1;
         }
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, aDeg);
     }
 
     /// <summary>A twisted (non-planar) cubic B-spline on [0, 2].</summary>
-    internal static Geom_BSplineCurve Twisted() =>
+    internal static BSplineCurve3D Twisted() =>
         BSpline(new Point3D(0, 0, 0), new Point3D(1, 2, 0.5), new Point3D(3, 2, 2), new Point3D(4, -1, 3), new Point3D(6, 0, 2));
 
     // ------------------------------------------------------------------------------------------------------------
@@ -117,7 +118,7 @@ public class GeomFill_TrihedronTests
     {
         Frame3D anAx = new(new Point3D(1, 2, 3), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
         GeomFill_Frenet aLaw = new();
-        Assert.True(aLaw.SetCurve(new GeomAdaptor_Curve(new Geom_Circle(anAx, 2.0))));
+        Assert.True(aLaw.SetCurve(new CurveAdaptor(new CircleCurve3D(anAx, 2.0))));
         foreach (double u in new[] { 0.0, 0.7, 2.0, 5.5 })
         {
             Frame aF = D0(aLaw, u);
@@ -136,7 +137,7 @@ public class GeomFill_TrihedronTests
     public void Frenet_Line_IsConstant()
     {
         GeomFill_Frenet aLaw = new();
-        aLaw.SetCurve(new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 1, 0))));
+        aLaw.SetCurve(new CurveAdaptor(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 1, 0))));
         Assert.True(aLaw.IsConstant());
         Frame aF = D0(aLaw, 3.0);
         AssertOrthonormal(aF);
@@ -149,7 +150,7 @@ public class GeomFill_TrihedronTests
     public void Frenet_TwistedBSpline_Derivatives()
     {
         GeomFill_Frenet aLaw = new();
-        aLaw.SetCurve(new GeomAdaptor_Curve(Twisted()));
+        aLaw.SetCurve(new CurveAdaptor(Twisted()));
         foreach (double u in new[] { 0.1, 0.5, 0.9, 1.3, 1.8 })
         {
             AssertOrthonormal(D0(aLaw, u));
@@ -167,9 +168,9 @@ public class GeomFill_TrihedronTests
     public void Frenet_Inflexion_IsSingularPoint()
     {
         // A planar S curve: C' ^ C'' vanishes at its inflexion, t = 0.5 by symmetry.
-        Geom_BSplineCurve aC = BSpline(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, -1, 0), new Point3D(3, 0, 0));
+        BSplineCurve3D aC = BSpline(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, -1, 0), new Point3D(3, 0, 0));
         GeomFill_Frenet aLaw = new();
-        aLaw.SetCurve(new GeomAdaptor_Curve(aC));
+        aLaw.SetCurve(new CurveAdaptor(aC));
         Assert.Equal(2, aLaw.NbIntervals(Continuity.C0));
         NCollection_Array1<double> aT = new(1, 3);
         aLaw.Intervals(aT, Continuity.C0);
@@ -197,9 +198,9 @@ public class GeomFill_TrihedronTests
     public void Frenet_StraightPart_UsesADefaultNormal()
     {
         // A degree-1 polyline segment is straight: C'' = 0, so D0 takes any normal to the tangent.
-        Geom_BSplineCurve aC = BSpline(new Point3D(0, 0, 0), new Point3D(2, 1, 0));
+        BSplineCurve3D aC = BSpline(new Point3D(0, 0, 0), new Point3D(2, 1, 0));
         GeomFill_Frenet aLaw = new();
-        aLaw.SetCurve(new GeomAdaptor_Curve(aC));
+        aLaw.SetCurve(new CurveAdaptor(aC));
         Frame aF = D0(aLaw, 0.3);
         AssertOrthonormal(aF);
         AssertNear(new Vector3D(new Direction3D(2, 1, 0)), aF.T, Tol, "tangent");
@@ -211,7 +212,7 @@ public class GeomFill_TrihedronTests
     public void Frenet_SetInterval_GetInterval()
     {
         GeomFill_Frenet aLaw = new();
-        aLaw.SetCurve(new GeomAdaptor_Curve(Twisted()));
+        aLaw.SetCurve(new CurveAdaptor(Twisted()));
         aLaw.SetInterval(0.25, 1.5);
         aLaw.GetInterval(out double aF, out double aL);
         Assert.Equal(0.25, aF);
@@ -223,11 +224,11 @@ public class GeomFill_TrihedronTests
     public void Frenet_Copy_IsIndependent()
     {
         GeomFill_Frenet aLaw = new();
-        aLaw.SetCurve(new GeomAdaptor_Curve(Twisted()));
+        aLaw.SetCurve(new CurveAdaptor(Twisted()));
         Frame aBefore = D0(aLaw, 0.7);
         GeomFill_TrihedronLaw aCopy = aLaw.Copy();
         Assert.IsType<GeomFill_Frenet>(aCopy);
-        aLaw.SetCurve(new GeomAdaptor_Curve(new Geom_Circle(new Frame3D(), 1.0)));
+        aLaw.SetCurve(new CurveAdaptor(new CircleCurve3D(new Frame3D(), 1.0)));
         Frame aAfter = D0(aCopy, 0.7);
         Assert.Equal(aBefore, aAfter);
     }
@@ -236,7 +237,7 @@ public class GeomFill_TrihedronTests
     public void Frenet_AverageLaw_IsOrthonormal()
     {
         GeomFill_Frenet aLaw = new();
-        aLaw.SetCurve(new GeomAdaptor_Curve(Twisted()));
+        aLaw.SetCurve(new CurveAdaptor(Twisted()));
         Vector3D aT = new(), aN = new(), aB = new();
         aLaw.GetAverageLaw(ref aT, ref aN, ref aB);
         AssertOrthonormal(new Frame(aT, aN, aB));
@@ -249,7 +250,7 @@ public class GeomFill_TrihedronTests
     public void Fixed_ClosedForm()
     {
         GeomFill_Fixed aLaw = new(new Vector3D(2, 0, 0), new Vector3D(0, 3, 0));
-        aLaw.SetCurve(new GeomAdaptor_Curve(Twisted()));
+        aLaw.SetCurve(new CurveAdaptor(Twisted()));
         var (aF, aD, aDD) = D2(aLaw, 0.4);
         Assert.Equal(new Frame(new Vector3D(1, 0, 0), new Vector3D(0, 1, 0), new Vector3D(0, 0, 1)), aF);
         Assert.Equal(new Frame(new Vector3D(), new Vector3D(), new Vector3D()), aD);
@@ -275,8 +276,8 @@ public class GeomFill_TrihedronTests
     {
         Direction3D aBN = new(0, 0, 1);
         GeomFill_ConstantBiNormal aLaw = new(aBN);
-        Assert.True(aLaw.SetCurve(new GeomAdaptor_Curve(Twisted())));
-        Geom_BSplineCurve aC = Twisted();
+        Assert.True(aLaw.SetCurve(new CurveAdaptor(Twisted())));
+        BSplineCurve3D aC = Twisted();
         foreach (double u in new[] { 0.2, 0.9, 1.6 })
         {
             Frame aF = D0(aLaw, u);
@@ -295,31 +296,31 @@ public class GeomFill_TrihedronTests
     [Fact]
     public void ConstantBiNormal_IsOnlyBy3dCurve()
     {
-        Geom_Circle aCircle = new(new Frame3D(new Point3D(), new Direction3D(0, 0, 1)), 2.0);
+        CircleCurve3D aCircle = new(new Frame3D(new Point3D(), new Direction3D(0, 0, 1)), 2.0);
         GeomFill_ConstantBiNormal aParallel = new(new Direction3D(0, 0, 1));
-        aParallel.SetCurve(new GeomAdaptor_Curve(aCircle));
+        aParallel.SetCurve(new CurveAdaptor(aCircle));
         Assert.True(aParallel.IsOnlyBy3dCurve());
         GeomFill_ConstantBiNormal aOblique = new(new Direction3D(0, 1, 1));
-        aOblique.SetCurve(new GeomAdaptor_Curve(aCircle));
+        aOblique.SetCurve(new CurveAdaptor(aCircle));
         Assert.False(aOblique.IsOnlyBy3dCurve());
         GeomFill_ConstantBiNormal aLine = new(new Direction3D(0, 0, 1));
-        aLine.SetCurve(new GeomAdaptor_Curve(new Geom_Line(new Point3D(), new Direction3D(1, 0, 0))));
+        aLine.SetCurve(new CurveAdaptor(new LineCurve3D(new Point3D(), new Direction3D(1, 0, 0))));
         Assert.True(aLine.IsOnlyBy3dCurve());
-        aLine.SetCurve(new GeomAdaptor_Curve(Twisted()));
+        aLine.SetCurve(new CurveAdaptor(Twisted()));
         Assert.False(aLine.IsOnlyBy3dCurve());
     }
 
     // ------------------------------------------------------------------------------------------------------------
     // Darboux
 
-    private static Adaptor3d_CurveOnSurface CurveOnSurface(Geom_Surface theS, Geom2d_Curve theC2d) =>
-        new(new Geom2dAdaptor_Curve(theC2d), new GeomAdaptor_Surface(theS));
+    private static CurveOnSurface CurveOnSurface(Surface theS, Curve2D theC2d) =>
+        new(new CurveAdaptor2D(theC2d), new SurfaceAdaptor(theS));
 
     [Fact]
     public void Darboux_OnAPlane_BiNormalIsTheNormal()
     {
-        Geom_Plane aPlane = new(new CoordinateSystem(new Point3D(0, 0, 1), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
-        Geom2d_Circle aC2d = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.5);
+        PlaneSurface aPlane = new(new CoordinateSystem(new Point3D(0, 0, 1), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
+        CircleCurve2D aC2d = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.5);
         GeomFill_Darboux aLaw = new();
         aLaw.SetCurve(CurveOnSurface(aPlane, aC2d));
         foreach (double u in new[] { 0.3, 2.0, 4.5 })
@@ -337,9 +338,9 @@ public class GeomFill_TrihedronTests
     [Fact]
     public void Darboux_OnACylinder_Derivatives()
     {
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(), 2.0);
+        CylindricalSurface aCyl = new(new CoordinateSystem(), 2.0);
         // a helix-like line in the (u, v) plane
-        Geom2d_Line aL2d = new(new Point2D(0.2, 0), new Direction2D(1, 0.7));
+        LineCurve2D aL2d = new(new Point2D(0.2, 0), new Direction2D(1, 0.7));
         GeomFill_Darboux aLaw = new();
         aLaw.SetCurve(CurveOnSurface(aCyl, aL2d));
         foreach (double t in new[] { 0.0, 1.0, 2.5 })
@@ -359,9 +360,9 @@ public class GeomFill_TrihedronTests
     [Fact]
     public void DiscreteTrihedron_FreeForm_FollowsTheTangent()
     {
-        Geom_BSplineCurve aC = Twisted();
+        BSplineCurve3D aC = Twisted();
         GeomFill_DiscreteTrihedron aLaw = new();
-        Assert.False(aLaw.SetCurve(new GeomAdaptor_Curve(aC)));
+        Assert.False(aLaw.SetCurve(new CurveAdaptor(aC)));
         foreach (double u in new[] { 0.0, 0.2, 0.33, 1.0, 1.77, 2.0 })
         {
             Frame aF = D0(aLaw, u);
@@ -380,11 +381,11 @@ public class GeomFill_TrihedronTests
     [Fact]
     public void DiscreteTrihedron_Conic_UsesFrenet()
     {
-        Geom_Circle aCircle = new(new Frame3D(), 2.0);
+        CircleCurve3D aCircle = new(new Frame3D(), 2.0);
         GeomFill_DiscreteTrihedron aLaw = new();
-        Assert.True(aLaw.SetCurve(new GeomAdaptor_Curve(aCircle)));
+        Assert.True(aLaw.SetCurve(new CurveAdaptor(aCircle)));
         GeomFill_Frenet aFrenet = new();
-        aFrenet.SetCurve(new GeomAdaptor_Curve(aCircle));
+        aFrenet.SetCurve(new CurveAdaptor(aCircle));
         Assert.Equal(D0(aFrenet, 1.1), D0(aLaw, 1.1));
     }
 
@@ -394,8 +395,8 @@ public class GeomFill_TrihedronTests
     [Fact]
     public void GuideTrihedronAC_ParallelLines_NormalToTheGuide()
     {
-        GeomAdaptor_Curve aPath = new(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 10);
-        GeomAdaptor_Curve aGuide = new(new Geom_Line(new Point3D(3, 0, 0), new Direction3D(0, 0, 1)), 0, 10);
+        CurveAdaptor aPath = new(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 10);
+        CurveAdaptor aGuide = new(new LineCurve3D(new Point3D(3, 0, 0), new Direction3D(0, 0, 1)), 0, 10);
         GeomFill_GuideTrihedronAC aLaw = new(aGuide);
         aLaw.SetCurve(aPath);
         Frame aF = D0(aLaw, 4.0);
@@ -411,10 +412,10 @@ public class GeomFill_TrihedronTests
     [Fact]
     public void GuideTrihedronAC_Derivatives()
     {
-        GeomAdaptor_Curve aPath = new(Twisted());
-        Geom_BSplineCurve aG = BSpline(new Point3D(0, 3, 0), new Point3D(1, 5, 0.5), new Point3D(3, 5, 2), new Point3D(4, 2, 3),
+        CurveAdaptor aPath = new(Twisted());
+        BSplineCurve3D aG = BSpline(new Point3D(0, 3, 0), new Point3D(1, 5, 0.5), new Point3D(3, 5, 2), new Point3D(4, 2, 3),
                                        new Point3D(6, 3, 2));
-        GeomFill_GuideTrihedronAC aLaw = new(new GeomAdaptor_Curve(aG));
+        GeomFill_GuideTrihedronAC aLaw = new(new CurveAdaptor(aG));
         aLaw.SetCurve(aPath);
         foreach (double u in new[] { 0.3, 1.2 })
         {
@@ -431,10 +432,10 @@ public class GeomFill_TrihedronTests
     {
         // OCCT's D2BiNormal misses (1 - |DTN|^2) * BiNormal (occt-issues.md): the difference from the derivative of
         // DBiNormal is along the binormal.
-        GeomAdaptor_Curve aPath = new(Twisted());
-        Geom_BSplineCurve aG = BSpline(new Point3D(0, 3, 0), new Point3D(1, 5, 0.5), new Point3D(3, 5, 2), new Point3D(4, 2, 3),
+        CurveAdaptor aPath = new(Twisted());
+        BSplineCurve3D aG = BSpline(new Point3D(0, 3, 0), new Point3D(1, 5, 0.5), new Point3D(3, 5, 2), new Point3D(4, 2, 3),
                                        new Point3D(6, 3, 2));
-        GeomFill_GuideTrihedronAC aLaw = new(new GeomAdaptor_Curve(aG));
+        GeomFill_GuideTrihedronAC aLaw = new(new CurveAdaptor(aG));
         aLaw.SetCurve(aPath);
         double u = 0.3, h = 1.0e-4;
         var (aF, _, aDD) = D2(aLaw, u);
@@ -448,8 +449,8 @@ public class GeomFill_TrihedronTests
     [Fact]
     public void GuideTrihedronPlan_ParallelLines()
     {
-        GeomAdaptor_Curve aPath = new(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 10);
-        GeomAdaptor_Curve aGuide = new(new Geom_Line(new Point3D(0, 2, 0), new Direction3D(0, 0, 1)), -1, 11);
+        CurveAdaptor aPath = new(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 10);
+        CurveAdaptor aGuide = new(new LineCurve3D(new Point3D(0, 2, 0), new Direction3D(0, 0, 1)), -1, 11);
         GeomFill_GuideTrihedronPlan aLaw = new(aGuide);
         aLaw.SetCurve(aPath);
         Assert.Equal(GeomFill_PipeError.GeomFill_PipeOk, aLaw.ErrorStatus());
@@ -467,9 +468,9 @@ public class GeomFill_TrihedronTests
     public void GuideTrihedronPlan_Curved_D1MatchesD0()
     {
         // the middle of the path, and the whole path moved up as the guide: every normal plane crosses the guide
-        GeomAdaptor_Curve aPath = new(Twisted(), 0.5, 1.5);
-        Geom_Curve aG = (Geom_Curve)Twisted().Translated(new Vector3D(0, 0, 3));
-        GeomFill_GuideTrihedronPlan aLaw = new(new GeomAdaptor_Curve(aG));
+        CurveAdaptor aPath = new(Twisted(), 0.5, 1.5);
+        Curve3D aG = (Curve3D)Twisted().Translated(new Vector3D(0, 0, 3));
+        GeomFill_GuideTrihedronPlan aLaw = new(new CurveAdaptor(aG));
         aLaw.SetCurve(aPath);
         Assert.Equal(GeomFill_PipeError.GeomFill_PipeOk, aLaw.ErrorStatus());
         double u = 0.9;
@@ -491,8 +492,8 @@ public class GeomFill_TrihedronTests
     [Fact]
     public void SnglrFunc_IsCPrimeCrossCSecond()
     {
-        Geom_BSplineCurve aC = Twisted();
-        GeomAdaptor_Curve anAd = new(aC);
+        BSplineCurve3D aC = Twisted();
+        CurveAdaptor anAd = new(aC);
         GeomFill_SnglrFunc aF = new(anAd);
         aF.SetRatio(0.5);
         aC.D3(0.7, out _, out Vector3D aD1, out Vector3D aD2, out Vector3D aD3);
@@ -509,7 +510,7 @@ public class GeomFill_TrihedronTests
     [Fact]
     public void PlanFunc_RootIsThePlaneCrossing()
     {
-        GeomAdaptor_Curve aC = new(new Geom_Line(new Point3D(0, 0, -5), new Direction3D(0, 0, 1)));
+        CurveAdaptor aC = new(new LineCurve3D(new Point3D(0, 0, -5), new Direction3D(0, 0, 1)));
         GeomFill_PlanFunc aF = new(new Point3D(0, 0, 2), new Vector3D(0, 0, 2), aC);
         Assert.True(aF.Value(7.0, out double aV));
         Assert.Equal(0.0, aV, 1.0e-15);

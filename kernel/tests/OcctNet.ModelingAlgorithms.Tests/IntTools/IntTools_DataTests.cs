@@ -1,8 +1,10 @@
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Kerf.Geometry.CurveKind;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -37,8 +39,8 @@ public class IntTools_DataTests
         IntTools_Root aDefault = new();
         Assert.Equal(0.0, aDefault.Root());
         Assert.Equal(-1, aDefault.Type());
-        Assert.Equal(TopAbs_UNKNOWN, aDefault.StateBefore());
-        Assert.Equal(TopAbs_UNKNOWN, aDefault.StateAfter());
+        Assert.Equal(Unknown, aDefault.StateBefore());
+        Assert.Equal(Unknown, aDefault.StateAfter());
         Assert.Equal(0.0, aDefault.LayerHeight());
         Assert.False(aDefault.IsValid());
 
@@ -64,13 +66,13 @@ public class IntTools_DataTests
         Assert.Equal(1.0, aRoot.Root());
         Assert.Equal(9.0, aCopy.Root());
 
-        (TopAbs_State, TopAbs_State, bool)[] aCases =
+        (Containment, Containment, bool)[] aCases =
         [
-            (TopAbs_OUT, TopAbs_IN, true), (TopAbs_OUT, TopAbs_ON, true), (TopAbs_ON, TopAbs_OUT, true),
-            (TopAbs_IN, TopAbs_OUT, true), (TopAbs_IN, TopAbs_IN, false), (TopAbs_ON, TopAbs_ON, false),
-            (TopAbs_IN, TopAbs_ON, false), (TopAbs_ON, TopAbs_IN, false), (TopAbs_OUT, TopAbs_OUT, false),
+            (Out, In, true), (Out, On, true), (On, Out, true),
+            (In, Out, true), (In, In, false), (On, On, false),
+            (In, On, false), (On, In, false), (Out, Out, false),
         ];
-        foreach ((TopAbs_State aBefore, TopAbs_State anAfter, bool isValid) in aCases)
+        foreach ((Containment aBefore, Containment anAfter, bool isValid) in aCases)
         {
             Assert.Equal(isValid, aRoot.WithStateBefore(aBefore).WithStateAfter(anAfter).IsValid());
         }
@@ -83,8 +85,8 @@ public class IntTools_DataTests
     [Fact]
     public void Curve_CurvesTolerancesAndCopies()
     {
-        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        Geom2d_Line aL2d = new(new Point2D(0, 0), new Direction2D(1, 0));
+        LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        LineCurve2D aL2d = new(new Point2D(0, 0), new Direction2D(1, 0));
         IntTools_Curve aCurve = new(aLine, aL2d, null, 1.0e-5, 2.0e-5);
         Assert.Same(aLine, aCurve.Curve());
         Assert.Same(aL2d, aCurve.FirstCurve2d());
@@ -109,7 +111,7 @@ public class IntTools_DataTests
     [Fact]
     public void Curve_Bounds()
     {
-        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         IntTools_Curve anUnbounded = new(aLine, null, null);
         double aFirst = -5, aLast = -5;
         Point3D aP1 = new(7, 7, 7), aP2 = new(7, 7, 7);
@@ -118,7 +120,7 @@ public class IntTools_DataTests
         Assert.Equal(-5, aFirst); // left untouched
         Assert.Equal(new Point3D(7, 7, 7), aP1);
 
-        IntTools_Curve aBounded = new(new Geom_TrimmedCurve(aLine, 1.0, 3.0), null, null);
+        IntTools_Curve aBounded = new(new TrimmedCurve3D(aLine, 1.0, 3.0), null, null);
         Assert.True(aBounded.HasBounds());
         Assert.True(aBounded.Bounds(ref aFirst, ref aLast, ref aP1, ref aP2));
         Assert.Equal((1.0, 3.0), (aFirst, aLast));
@@ -130,8 +132,8 @@ public class IntTools_DataTests
     public void Curve_D0_OcctBug_EvaluatesOutsideTheBounds()
     {
         // OCCT tests "t >= First || t <= Last", so every parameter is inside and evaluated
-        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        IntTools_Curve aCurve = new(new Geom_TrimmedCurve(aLine, 1.0, 3.0), null, null);
+        LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        IntTools_Curve aCurve = new(new TrimmedCurve3D(aLine, 1.0, 3.0), null, null);
         Point3D aP = new();
         Assert.True(aCurve.D0(2.0, ref aP));
         Assert.True(aP.IsEqual(new Point3D(2, 0, 0), 0.0));
@@ -145,16 +147,16 @@ public class IntTools_DataTests
     public void CommonPrt_AccessorsAndCopy()
     {
         IntTools_CommonPrt aCP = new();
-        Assert.Equal(TopAbs_SHAPE, aCP.Type());
+        Assert.Equal(ShapeType.Shape, aCP.Type());
         Assert.False(aCP.AllNullFlag());
         Assert.Equal(0.0, aCP.VertexParameter1());
         Assert.Equal(0, aCP.Ranges2().Length());
 
-        TopoDS_Edge anE1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
-        TopoDS_Edge anE2 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 1, 0), new Point3D(1, 1, 0)).Edge();
+        Edge anE1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        Edge anE2 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 1, 0), new Point3D(1, 1, 0)).Edge();
         aCP.SetEdge1(anE1);
         aCP.SetEdge2(anE2);
-        aCP.SetType(TopAbs_EDGE);
+        aCP.SetType(ShapeType.Edge);
         aCP.SetRange1(0.1, 0.9);
         aCP.AppendRange2(0.2, 0.8);
         aCP.AppendRange2(new IntTools_Range(0.3, 0.4));
@@ -175,7 +177,7 @@ public class IntTools_DataTests
         // Copy: no flag, no bounding points (as OCCT)
         IntTools_CommonPrt aCopied = new();
         aCP.Copy(aCopied);
-        Assert.Equal(TopAbs_EDGE, aCopied.Type());
+        Assert.Equal(ShapeType.Edge, aCopied.Type());
         Assert.Equal(2, aCopied.Ranges2().Length());
         Assert.False(aCopied.AllNullFlag());
         aCopied.BoundingPoints(out aP1, out _);
@@ -226,9 +228,9 @@ public class IntTools_DataTests
         Assert.False(aDefault.Valid());
         aDefault.Parameters(out double u, out double v);
         Assert.Equal((99.0, 99.0), (u, v));
-        Assert.True(aDefault.Face().IsNull());
+        Assert.True(aDefault.Face().IsNull);
 
-        TopoDS_Face aFace = ((TopoDS_Shape)TestShapes.Box(1, 1, 1)).Faces().First();
+        Face aFace = ((Shape)TestShapes.Box(1, 1, 1)).Faces().First();
         IntTools_PntOnFace aPnt = new();
         aPnt.Init(aFace, new Point3D(1, 2, 3), 0.25, 0.75);
         Assert.False(aPnt.Valid()); // Init doesn't set the flag
@@ -267,11 +269,11 @@ public class IntTools_DataTests
 internal static class IntToolsTestExtensions
 {
     // The faces of a shape in exploration order.
-    internal static IEnumerable<TopoDS_Face> Faces(this TopoDS_Shape theShape)
+    internal static IEnumerable<Face> Faces(this Shape theShape)
     {
-        for (TopExp_Explorer anExp = new(theShape, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(theShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            yield return TopoDS.Face(anExp.Current());
+            yield return ShapeCasts.Face(anExp.Current());
         }
     }
 }

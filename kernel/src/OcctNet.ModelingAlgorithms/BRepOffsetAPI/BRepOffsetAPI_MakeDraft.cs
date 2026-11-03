@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepBuilderAPI_TransitionMode;
 using static Occt.BRepFill_TransitionStyle;
 
@@ -21,7 +22,7 @@ public sealed class BRepOffsetAPI_MakeDraft : BRepBuilderAPI_MakeShape
 
     /// <summary>The draft of <paramref name="Shape"/> (a wire, face or shell) along <paramref name="Dir"/> at <paramref name="Angle"/>.</summary>
     /// <exception cref="ConstructionErrorException">Another shape type, or a shell without a free boundary wire.</exception>
-    public BRepOffsetAPI_MakeDraft(in TopoDS_Shape Shape, in Direction3D Dir, double Angle)
+    public BRepOffsetAPI_MakeDraft(in Shape Shape, in Direction3D Dir, double Angle)
     {
         myDraft = new BRepFill_Draft(Shape, Dir, Angle);
         NotDone();
@@ -54,7 +55,7 @@ public sealed class BRepOffsetAPI_MakeDraft : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Builds the draft up to the surface <paramref name="Surface"/>.</summary>
-    public void Perform(Geom_Surface Surface, bool KeepInsideSurface = true)
+    public void Perform(Surface Surface, bool KeepInsideSurface = true)
     {
         myDraft.Perform(Surface, KeepInsideSurface);
         if (myDraft.IsDone())
@@ -65,7 +66,7 @@ public sealed class BRepOffsetAPI_MakeDraft : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Builds the draft up to the shape <paramref name="StopShape"/>.</summary>
-    public void Perform(in TopoDS_Shape StopShape, bool KeepOutSide = true)
+    public void Perform(in Shape StopShape, bool KeepOutSide = true)
     {
         myDraft.Perform(StopShape, KeepOutSide);
         if (myDraft.IsDone())
@@ -76,7 +77,7 @@ public sealed class BRepOffsetAPI_MakeDraft : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The draft skin alone (frozen).</summary>
-    public TopoDS_Shell Shell() => myDraft.Shell();
+    public Shell Shell() => myDraft.Shell();
 
-    internal override NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape S) => myDraft.InternalGenerated(S);
+    internal override NCollection_List<Shape> InternalGenerated(in Shape S) => myDraft.InternalGenerated(S);
 }

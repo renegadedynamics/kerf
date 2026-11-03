@@ -5,7 +5,9 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -17,7 +19,7 @@ namespace Occt;
 public class Geom2dHatch_Classifier
 {
     protected readonly Geom2dHatch_FClass2dOfClassifier myClassifier = new();
-    protected Geom2dAdaptor_Curve myEdge = new();
+    protected CurveAdaptor2D myEdge = new();
     protected double myEdgeParameter;
     protected IntRes2d_Position myPosition;
     protected bool rejected;
@@ -55,7 +57,7 @@ public class Geom2dHatch_Classifier
     }
 
     /// <summary>The result of the classification.</summary>
-    public TopAbs_State State() => TopClass_FaceClassifier.State(rejected, nowires, myClassifier);
+    public Containment State() => TopClass_FaceClassifier.State(rejected, nowires, myClassifier);
 
     /// <summary>True when the state was found by a rejection: it is OUT.</summary>
     public bool Rejected() => rejected;
@@ -65,7 +67,7 @@ public class Geom2dHatch_Classifier
 
     /// <summary>The element curve that decided the classification; when the state is ON, the one holding the point.</summary>
     /// <exception cref="DomainErrorException">The point was rejected.</exception>
-    public Geom2dAdaptor_Curve Edge() => TopClass_FaceClassifier.Edge(rejected, myEdge);
+    public CurveAdaptor2D Edge() => TopClass_FaceClassifier.Edge(rejected, myEdge);
 
     /// <summary>The parameter on <see cref="Edge"/> that decided the classification.</summary>
     /// <exception cref="DomainErrorException">The point was rejected.</exception>

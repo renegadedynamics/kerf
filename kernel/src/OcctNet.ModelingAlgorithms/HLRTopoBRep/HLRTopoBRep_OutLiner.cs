@@ -4,11 +4,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -32,60 +38,60 @@ namespace Occt;
 /// </remarks>
 public class HLRTopoBRep_OutLiner : Transient
 {
-    private TopoDS_Shape myOriginalShape = new();
-    private TopoDS_Shape myOutLinedShape = new();
-    private TopoDS_Shape myWorkingShape = new();
-    private Dictionary<TopoDS_TShape, TopoDS_TShape>? myCopies; // the original's TShapes to the working shape's (7Q2)
+    private Shape myOriginalShape = new();
+    private Shape myOutLinedShape = new();
+    private Shape myWorkingShape = new();
+    private Dictionary<TShape, TShape>? myCopies; // the original's TShapes to the working shape's (7Q2)
     private readonly HLRTopoBRep_Data myDS = new();
 
     public HLRTopoBRep_OutLiner()
     {
     }
 
-    public HLRTopoBRep_OutLiner(in TopoDS_Shape OriSh)
+    public HLRTopoBRep_OutLiner(in Shape OriSh)
     {
         myOriginalShape = OriSh;
     }
 
-    public HLRTopoBRep_OutLiner(in TopoDS_Shape OriS, in TopoDS_Shape OutS)
+    public HLRTopoBRep_OutLiner(in Shape OriS, in Shape OutS)
     {
         myOriginalShape = OriS;
         myOutLinedShape = OutS;
     }
 
-    public void OriginalShape(in TopoDS_Shape OriS) => myOriginalShape = OriS;
+    public void OriginalShape(in Shape OriS) => myOriginalShape = OriS;
 
     /// <summary>The caller's original shape.</summary>
-    public TopoDS_Shape OriginalShape() => myOriginalShape;
+    public Shape OriginalShape() => myOriginalShape;
 
-    public void OutLinedShape(in TopoDS_Shape OutS) => myOutLinedShape = OutS;
+    public void OutLinedShape(in Shape OutS) => myOutLinedShape = OutS;
 
     /// <summary>The outlined shape (frozen).</summary>
-    public TopoDS_Shape OutLinedShape()
+    public Shape OutLinedShape()
     {
         myOutLinedShape.TShape()?.FreezeGraph();
         return myOutLinedShape;
     }
 
     /// <summary><see cref="OutLinedShape()"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shape InternalOutLinedShape() => myOutLinedShape;
+    internal Shape InternalOutLinedShape() => myOutLinedShape;
 
     /// <summary>
     /// The shape the outlining works on: the original shape, or its copy when it held frozen TShapes (decision 1095).
     /// The original shape before <see cref="Fill"/>.
     /// </summary>
-    internal TopoDS_Shape InternalWorkingShape() => myWorkingShape.IsNull() ? myOriginalShape : myWorkingShape;
+    internal Shape InternalWorkingShape() => myWorkingShape.IsNull ? myOriginalShape : myWorkingShape;
 
     /// <summary>
     /// The image of a sub-shape of the original shape in the working shape (the same place and orientation, the
     /// copy's TShape); the shape itself when the original wasn't copied or the shape isn't one of its sub-shapes
     /// (unit 7Q2: HLRBRep_HLRToShape finds a caller's sub-shapes in the data structure through it).
     /// </summary>
-    internal TopoDS_Shape InternalWorkingImage(in TopoDS_Shape S)
+    internal Shape InternalWorkingImage(in Shape S)
     {
-        if (myCopies is not null && !S.IsNull() && myCopies.TryGetValue(S.TShape()!, out TopoDS_TShape? anImage))
+        if (myCopies is not null && !S.IsNull && myCopies.TryGetValue(S.TShape()!, out TShape? anImage))
         {
-            TopoDS_Shape aShape = S;
+            Shape aShape = S;
             aShape.TShape(anImage);
             return aShape;
         }
@@ -98,16 +104,16 @@ public class HLRTopoBRep_OutLiner : Transient
     /// Builds the outlined shape for the projector P (when the original shape is set and the outlined shape is not),
     /// with nbIso isolines per face direction; MST caches the faces' adaptors.
     /// </summary>
-    public void Fill(in HLRAlgo_Projector P, NCollection_DataMap<TopoDS_Shape, BRepTopAdaptor_Tool> MST, int nbIso)
+    public void Fill(in HLRAlgo_Projector P, NCollection_DataMap<Shape, BRepTopAdaptor_Tool> MST, int nbIso)
     {
-        if (!myOriginalShape.IsNull())
+        if (!myOriginalShape.IsNull)
         {
-            if (myOutLinedShape.IsNull())
+            if (myOutLinedShape.IsNull)
             {
                 // copy at the entry (decision 1095)
                 myCopies = null;
-                myWorkingShape = BRepTools.HoldsFrozen(myOriginalShape)
-                                     ? BRepTools.ExactCopyForWrite(myOriginalShape, out _, out myCopies)
+                myWorkingShape = BrepTools.HoldsFrozen(myOriginalShape)
+                                     ? BrepTools.ExactCopyForWrite(myOriginalShape, out _, out myCopies)
                                      : myOriginalShape;
 
                 Vector3D Vecz = new(0.0, 0.0, 1.0);
@@ -133,33 +139,33 @@ public class HLRTopoBRep_OutLiner : Transient
     }
 
     /// <summary>Builds the outlined face of F in S.</summary>
-    private void ProcessFace(in TopoDS_Face F, ref TopoDS_Shape S,
-                             NCollection_DataMap<TopoDS_Shape, BRepTopAdaptor_Tool> MST)
+    private void ProcessFace(in Face F, ref Shape S,
+                             NCollection_DataMap<Shape, BRepTopAdaptor_Tool> MST)
     {
-        BRep_Builder B = new();
-        TopExp_Explorer exE = new(), exW = new();
+        BrepBuilder B = new();
+        Explorer exE = new(), exW = new();
 
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aVEMap =
-            new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(F, TopAbs_VERTEX, TopAbs_EDGE, aVEMap);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aVEMap =
+            new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(F, ShapeType.Vertex, ShapeType.Edge, aVEMap);
 
-        TopoDS_Shape NF; // = F;
+        Shape NF; // = F;
         NF = F.EmptyCopied();
 
-        for (exW.Init(F, TopAbs_WIRE); exW.More(); exW.Next())
+        for (exW.Init(F, ShapeType.Wire); exW.More(); exW.Next())
         {
-            TopoDS_Wire W = new();
+            Wire W = new();
             B.MakeWire(ref W);
 
-            for (exE.Init(exW.Current(), TopAbs_EDGE); exE.More(); exE.Next())
+            for (exE.Init(exW.Current(), ShapeType.Edge); exE.More(); exE.Next())
             {
-                TopoDS_Edge E = TopoDS.Edge(exE.Current());
+                Edge E = ShapeCasts.Edge(exE.Current());
                 if (myDS.EdgeHasSplE(E))
                 {
-                    NCollection_List<TopoDS_Shape>.Iterator itS = new();
+                    NCollection_List<Shape>.Iterator itS = new();
                     for (itS.Initialize(myDS.EdgeSplE(E)); itS.More(); itS.Next())
                     {
-                        TopoDS_Edge newE = TopoDS.Edge(itS.Value());
+                        Edge newE = ShapeCasts.Edge(itS.Value());
                         newE.Orientation(E.Orientation());
                         myDS.AddOldS(newE, E);
                         B.Add(W, newE);
@@ -173,36 +179,36 @@ public class HLRTopoBRep_OutLiner : Transient
             B.Add(NF, W); // add the new wire in the new face.
         }
         myDS.AddIntL(F);
-        NCollection_List<TopoDS_Shape> OutL = myDS.AddOutL(F);
+        NCollection_List<Shape> OutL = myDS.AddOutL(F);
 
         if (myDS.FaceHasIntL(F))
         { // get the InternalOutLines on face F
-            TopoDS_Wire W = new();
-            NCollection_List<TopoDS_Shape>.Iterator itE = new();
+            Wire W = new();
+            NCollection_List<Shape>.Iterator itE = new();
             for (itE.Initialize(myDS.FaceIntL(F)); itE.More(); itE.Next())
             {
-                TopoDS_Edge E = TopoDS.Edge(itE.Value());
-                E.Orientation(TopAbs_INTERNAL);
+                Edge E = ShapeCasts.Edge(itE.Value());
+                E.Orientation(Internal);
 
                 // Check, if outline edge coincides with face boundary
-                BRepAdaptor_Curve C = new(E);
+                EdgeCurveAdaptor C = new(E);
                 double par = 0.34 * C.FirstParameter() + 0.66 * C.LastParameter();
                 Point3D P = C.Value(par);
-                TopoDS_Vertex V1, V2, aV1, aV2;
-                TopExp.Vertices(E, out V1, out V2);
+                Vertex V1, V2, aV1, aV2;
+                Exploration.Vertices(E, out V1, out V2);
                 bool SameEdge = false;
-                if (!V1.IsNull() && aVEMap.Contains(V1))
+                if (!V1.IsNull && aVEMap.Contains(V1))
                 {
-                    NCollection_List<TopoDS_Shape> aEList = aVEMap.FindFromKey(V1);
-                    NCollection_List<TopoDS_Shape>.Iterator it = new(aEList);
+                    NCollection_List<Shape> aEList = aVEMap.FindFromKey(V1);
+                    NCollection_List<Shape>.Iterator it = new(aEList);
                     for (; it.More(); it.Next())
                     {
-                        TopoDS_Edge aE = TopoDS.Edge(it.Value());
-                        TopExp.Vertices(aE, out aV1, out aV2);
+                        Edge aE = ShapeCasts.Edge(it.Value());
+                        Exploration.Vertices(aE, out aV1, out aV2);
 
                         if ((V1.IsSame(aV1) && V2.IsSame(aV2)) || (V1.IsSame(aV2) && V2.IsSame(aV1)))
                         {
-                            BRepAdaptor_Curve aC = new(aE);
+                            EdgeCurveAdaptor aC = new(aE);
                             if ((C.GetType() == Line) && (aC.GetType() == Line))
                             {
                                 SameEdge = true;
@@ -210,10 +216,10 @@ public class HLRTopoBRep_OutLiner : Transient
                             }
                             else
                             {
-                                Extrema_ExtPC anExt = new(P, aC);
-                                if (anExt.IsDone())
+                                CurvePointExtrema anExt = new(P, aC);
+                                if (anExt.IsDone)
                                 {
-                                    int aNe = anExt.NbExt();
+                                    int aNe = anExt.ExtCount;
                                     if (aNe > 0)
                                     {
                                         double dist = RealLast();
@@ -243,12 +249,12 @@ public class HLRTopoBRep_OutLiner : Transient
 
                 if (myDS.EdgeHasSplE(E))
                 {
-                    NCollection_List<TopoDS_Shape>.Iterator itS = new();
+                    NCollection_List<Shape>.Iterator itS = new();
                     for (itS.Initialize(myDS.EdgeSplE(E)); itS.More(); itS.Next())
                     {
-                        TopoDS_Shape newE = itS.Value();
-                        newE.Orientation(TopAbs_INTERNAL);
-                        if (W.IsNull())
+                        Shape newE = itS.Value();
+                        newE.Orientation(Internal);
+                        if (W.IsNull)
                         {
                             B.MakeWire(ref W);
                         }
@@ -258,7 +264,7 @@ public class HLRTopoBRep_OutLiner : Transient
                 }
                 else
                 {
-                    if (W.IsNull())
+                    if (W.IsNull)
                     {
                         B.MakeWire(ref W);
                     }
@@ -266,7 +272,7 @@ public class HLRTopoBRep_OutLiner : Transient
                     B.Add(W, E);
                 }
             }
-            if (!W.IsNull())
+            if (!W.IsNull)
             {
                 B.Add(NF, W); // add the new wire in the new face.
             }
@@ -274,20 +280,20 @@ public class HLRTopoBRep_OutLiner : Transient
 
         if (myDS.FaceHasIsoL(F))
         { // get the IsoLines on face F
-            TopoDS_Wire W = new();
-            NCollection_List<TopoDS_Shape>.Iterator itE = new();
+            Wire W = new();
+            NCollection_List<Shape>.Iterator itE = new();
             for (itE.Initialize(myDS.FaceIsoL(F)); itE.More(); itE.Next())
             {
-                TopoDS_Edge E = TopoDS.Edge(itE.Value());
-                E.Orientation(TopAbs_INTERNAL);
+                Edge E = ShapeCasts.Edge(itE.Value());
+                E.Orientation(Internal);
                 if (myDS.EdgeHasSplE(E))
                 { // normally IsoLines are never split.
-                    NCollection_List<TopoDS_Shape>.Iterator itS = new();
+                    NCollection_List<Shape>.Iterator itS = new();
                     for (itS.Initialize(myDS.EdgeSplE(E)); itS.More(); itS.Next())
                     {
-                        TopoDS_Shape newE = itS.Value();
-                        newE.Orientation(TopAbs_INTERNAL);
-                        if (W.IsNull())
+                        Shape newE = itS.Value();
+                        newE.Orientation(Internal);
+                        if (W.IsNull)
                         {
                             B.MakeWire(ref W);
                         }
@@ -297,7 +303,7 @@ public class HLRTopoBRep_OutLiner : Transient
                 }
                 else
                 {
-                    if (W.IsNull())
+                    if (W.IsNull)
                     {
                         B.MakeWire(ref W);
                     }
@@ -305,7 +311,7 @@ public class HLRTopoBRep_OutLiner : Transient
                     B.Add(W, E);
                 }
             }
-            if (!W.IsNull())
+            if (!W.IsNull)
             {
                 B.Add(NF, W); // add the new wire in the new face.
             }
@@ -317,42 +323,42 @@ public class HLRTopoBRep_OutLiner : Transient
     }
 
     /// <summary>Builds the outlined shape: the shells and the free faces outlined, the free edges as they are.</summary>
-    private void BuildShape(NCollection_DataMap<TopoDS_Shape, BRepTopAdaptor_Tool> MST)
+    private void BuildShape(NCollection_DataMap<Shape, BRepTopAdaptor_Tool> MST)
     {
-        TopExp_Explorer exshell = new(), exface = new(), exedge = new();
-        BRep_Builder B = new();
-        TopoDS_Compound aCompound = new();
+        Explorer exshell = new(), exface = new(), exedge = new();
+        BrepBuilder B = new();
+        Compound aCompound = new();
         B.MakeCompound(ref aCompound);
         myOutLinedShape = aCompound;
-        NCollection_Map<TopoDS_Shape> ShapeMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> ShapeMap = new(ShapeHasher.Instance);
 
-        for (exshell.Init(myWorkingShape, TopAbs_SHELL); exshell.More(); exshell.Next())
+        for (exshell.Init(myWorkingShape, ShapeType.Shell); exshell.More(); exshell.Next())
         { // faces in a shell (open or close)
 
-            TopoDS_Shell theShell = new();
+            Shell theShell = new();
             B.MakeShell(ref theShell);
             theShell.Closed(exshell.Current().Closed());
 
-            for (exface.Init(exshell.Current(), TopAbs_FACE); exface.More(); exface.Next())
+            for (exface.Init(exshell.Current(), ShapeType.Face); exface.More(); exface.Next())
             {
                 if (ShapeMap.Add(exface.Current()))
                 {
-                    TopoDS_Shape aShell = theShell;
-                    ProcessFace(TopoDS.Face(exface.Current()), ref aShell, MST);
+                    Shape aShell = theShell;
+                    ProcessFace(ShapeCasts.Face(exface.Current()), ref aShell, MST);
                 }
             }
             B.Add(myOutLinedShape, theShell);
         }
 
-        for (exface.Init(myWorkingShape, TopAbs_FACE, TopAbs_SHELL); exface.More(); exface.Next())
+        for (exface.Init(myWorkingShape, ShapeType.Face, ShapeType.Shell); exface.More(); exface.Next())
         { // faces not in a shell
             if (ShapeMap.Add(exface.Current()))
             {
-                ProcessFace(TopoDS.Face(exface.Current()), ref myOutLinedShape, MST);
+                ProcessFace(ShapeCasts.Face(exface.Current()), ref myOutLinedShape, MST);
             }
         }
 
-        for (exedge.Init(myWorkingShape, TopAbs_EDGE, TopAbs_FACE); exedge.More(); exedge.Next())
+        for (exedge.Init(myWorkingShape, ShapeType.Edge, ShapeType.Face); exedge.More(); exedge.Next())
         { // edges not in a face
             B.Add(myOutLinedShape, exedge.Current());
         }

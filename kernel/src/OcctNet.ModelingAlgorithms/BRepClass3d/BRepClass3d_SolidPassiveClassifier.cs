@@ -4,8 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.IntCurveSurface_TransitionOnCurve;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -17,11 +18,11 @@ namespace Occt;
 public class BRepClass3d_SolidPassiveClassifier
 {
     private bool isSet;
-    private TopoDS_Face myFace = new();
+    private Face myFace = new();
     private Line3D myLin = new();
     private double myParam;
     private double myTolerance;
-    private TopAbs_State myState;
+    private Containment myState;
     private bool hasIntersect;
     private readonly BRepClass3d_Intersector3d myIntersector = new();
 
@@ -31,7 +32,7 @@ public class BRepClass3d_SolidPassiveClassifier
         isSet = false;
         myParam = 0.0;
         myTolerance = 0.0;
-        myState = TopAbs_UNKNOWN;
+        myState = Unknown;
         hasIntersect = false;
     }
 
@@ -44,12 +45,12 @@ public class BRepClass3d_SolidPassiveClassifier
         myLin = L;
         myParam = RealLast();
         myTolerance = Tol;
-        myState = TopAbs_UNKNOWN;
+        myState = Unknown;
         isSet = true;
     }
 
     /// <summary>Updates the classification with the face <paramref name="Face"/> of the boundary (the orientation is unused).</summary>
-    public void Compare(in TopoDS_Face Face, TopAbs_Orientation Or)
+    public void Compare(in Face Face, Orientation Or)
     {
         if (!isSet)
         {
@@ -69,7 +70,7 @@ public class BRepClass3d_SolidPassiveClassifier
                     myFace = myIntersector.Face();
                     if (Math.Abs(myParam) <= myTolerance)
                     {
-                        myState = TopAbs_ON;
+                        myState = On;
                     }
                     else
                     {
@@ -78,11 +79,11 @@ public class BRepClass3d_SolidPassiveClassifier
                         if (myIntersector.Transition() == IntCurveSurface_Out)
                         {
                             //-- The line is going from inside the solid to outside the solid.
-                            myState = TopAbs_IN;
+                            myState = In;
                         }
                         else if (myIntersector.Transition() == IntCurveSurface_In)
                         {
-                            myState = TopAbs_OUT;
+                            myState = Out;
                         }
                     }
                 }
@@ -109,8 +110,8 @@ public class BRepClass3d_SolidPassiveClassifier
     public BRepClass3d_Intersector3d Intersector() => myIntersector;
 
     /// <summary>The current state of the point.</summary>
-    public TopAbs_State State() => myState;
+    public Containment State() => myState;
 
     /// <summary>The face of the nearest intersection (OCCT stores it but has no accessor).</summary>
-    internal TopoDS_Face NearestFace() => myFace;
+    internal Face NearestFace() => myFace;
 }

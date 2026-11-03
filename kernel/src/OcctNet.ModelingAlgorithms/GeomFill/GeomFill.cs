@@ -16,18 +16,18 @@ public static class GeomFill
     /// The ruled surface between Curve1 and Curve2: a plane, cylinder or cone where the curves allow, else a B-spline
     /// surface (GeomFill_Generator). The result is frozen.
     /// </summary>
-    public static Geom_Surface? Surface(Geom_Curve Curve1, Geom_Curve Curve2)
+    public static Surface? Surface(Curve3D Curve1, Curve3D Curve2)
     {
-        Geom_Surface? Surf = InternalSurface(Curve1, Curve2);
+        Surface? Surf = InternalSurface(Curve1, Curve2);
         Surf?.Freeze();
         return Surf;
     }
 
     /// <summary>The ruled surface, not frozen, for ported callers.</summary>
-    internal static Geom_Surface? InternalSurface(Geom_Curve Curve1, Geom_Curve Curve2)
+    internal static Surface? InternalSurface(Curve3D Curve1, Curve3D Curve2)
     {
-        Geom_Curve TheCurve1, TheCurve2;
-        Geom_Surface? Surf = null;
+        Curve3D TheCurve1, TheCurve2;
+        Surface? Surf = null;
 
         // recherche du type de la surface resultat:
         // les surfaces reglees particulieres sont :
@@ -40,7 +40,7 @@ public static class GeomFill
 
         double a1 = 0, a2 = 0, b1 = 0, b2 = 0;
         bool Trim1 = false, Trim2 = false;
-        if (Curve1 is Geom_TrimmedCurve Ctrim1)
+        if (Curve1 is TrimmedCurve3D Ctrim1)
         {
             TheCurve1 = Ctrim1.BasisCurve();
             a1 = Ctrim1.FirstParameter();
@@ -49,9 +49,9 @@ public static class GeomFill
         }
         else
         {
-            TheCurve1 = (Geom_Curve)Curve1.Copy();
+            TheCurve1 = (Curve3D)Curve1.Copy();
         }
-        if (Curve2 is Geom_TrimmedCurve Ctrim2)
+        if (Curve2 is TrimmedCurve3D Ctrim2)
         {
             TheCurve2 = Ctrim2.BasisCurve();
             a2 = Ctrim2.FirstParameter();
@@ -60,12 +60,12 @@ public static class GeomFill
         }
         else
         {
-            TheCurve2 = (Geom_Curve)Curve2.Copy();
+            TheCurve2 = (Curve3D)Curve2.Copy();
         }
 
         bool IsDone = false;
         // Les deux courbes sont des droites.
-        if (TheCurve1 is Geom_Line aLine1 && TheCurve2 is Geom_Line aLine2 && Trim1 && Trim2)
+        if (TheCurve1 is LineCurve3D aLine1 && TheCurve2 is LineCurve3D aLine2 && Trim1 && Trim2)
         {
             Line3D L1 = aLine1.Lin();
             Line3D L2 = aLine2.Lin();
@@ -83,9 +83,9 @@ public static class GeomFill
                         && Math.Abs(b1 - proj - b2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         CoordinateSystem Ax = new CoordinateSystem(L1.Location(), D1.Crossed(new Direction3D(P1P2)), D1);
-                        Geom_Plane P = new Geom_Plane(Ax);
+                        PlaneSurface P = new PlaneSurface(Ax);
                         double V = P1P2.Dot(new Vector3D(Ax.YDirection()));
-                        Surf = new Geom_RectangularTrimmedSurface(P, a1, b1, Min(0.0, V), Max(0.0, V));
+                        Surf = new TrimmedSurface(P, a1, b1, Min(0.0, V), Max(0.0, V));
                         IsDone = true;
                     }
                 }
@@ -95,9 +95,9 @@ public static class GeomFill
                         && Math.Abs(b1 - proj + a2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         CoordinateSystem Ax = new CoordinateSystem(L1.Location(), D1.Crossed(new Direction3D(P1P2)), D1);
-                        Geom_Plane P = new Geom_Plane(Ax);
+                        PlaneSurface P = new PlaneSurface(Ax);
                         double V = P1P2.Dot(new Vector3D(Ax.YDirection()));
-                        Surf = new Geom_RectangularTrimmedSurface(P, a1, b1, Min(0.0, V), Max(0.0, V));
+                        Surf = new TrimmedSurface(P, a1, b1, Min(0.0, V), Max(0.0, V));
                         IsDone = true;
                     }
                 }
@@ -105,7 +105,7 @@ public static class GeomFill
         }
 
         // Les deux courbes sont des cercles.
-        else if (TheCurve1 is Geom_Circle aCircle1 && TheCurve2 is Geom_Circle aCircle2)
+        else if (TheCurve1 is CircleCurve3D aCircle1 && TheCurve2 is CircleCurve3D aCircle2)
         {
             Circle3D C1 = aCircle1.Circ();
             Circle3D C2 = aCircle2.Circ();
@@ -121,8 +121,8 @@ public static class GeomFill
                 {
                     if (Math.Abs(C1.Radius() - C2.Radius()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        Geom_CylindricalSurface C = new Geom_CylindricalSurface(A1, C1.Radius());
-                        Surf = new Geom_RectangularTrimmedSurface(C, Min(0.0, V), Max(0.0, V), false);
+                        CylindricalSurface C = new CylindricalSurface(A1, C1.Radius());
+                        Surf = new TrimmedSurface(C, Min(0.0, V), Max(0.0, V), false);
                     }
                     else
                     {
@@ -134,9 +134,9 @@ public static class GeomFill
                             V = -V;
                             Ang = -Ang;
                         }
-                        Geom_ConicalSurface C = new Geom_ConicalSurface(A1, Ang, C1.Radius());
+                        ConicalSurface C = new ConicalSurface(A1, Ang, C1.Radius());
                         V /= Math.Cos(Ang);
-                        Surf = new Geom_RectangularTrimmedSurface(C, Min(0.0, V), Max(0.0, V), false);
+                        Surf = new TrimmedSurface(C, Min(0.0, V), Max(0.0, V), false);
                     }
                     IsDone = true;
                 }
@@ -222,13 +222,13 @@ public static class GeomFill
         {
             Frame3D popAx2 = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
             Circle3D C = new Circle3D(popAx2, 1);
-            Geom_TrimmedCurve Sect1 = new Geom_TrimmedCurve(new Geom_Circle(C), 0.0, MaxAng);
-            Geom_BSplineCurve CtoBspl = GeomConvert.CurveToBSplineCurve(Sect1, TConv);
+            TrimmedCurve3D Sect1 = new TrimmedCurve3D(new CircleCurve3D(C), 0.0, MaxAng);
+            BSplineCurve3D CtoBspl = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(Sect1, TConv);
             Weights.Assign(CtoBspl.InternalWeightsArray());
 
             double angle_min = Max(global::Kerf.Engine.Foundation.Precision.PConfusion(), MinAng);
-            Geom_TrimmedCurve Sect2 = new Geom_TrimmedCurve(new Geom_Circle(C), 0.0, angle_min);
-            CtoBspl = GeomConvert.CurveToBSplineCurve(Sect2, TConv);
+            TrimmedCurve3D Sect2 = new TrimmedCurve3D(new CircleCurve3D(C), 0.0, angle_min);
+            CtoBspl = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(Sect2, TConv);
             NCollection_Array1<double> poids = CtoBspl.InternalWeightsArray();
 
             for (int ii = Weights.Lower(); ii <= Weights.Upper(); ii++)
@@ -306,11 +306,11 @@ public static class GeomFill
     {
         Frame3D popAx2 = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
         Circle3D C = new Circle3D(popAx2, Radius);
-        Geom_Circle popCircle = new Geom_Circle(C);
-        Geom_TrimmedCurve Sect = new Geom_TrimmedCurve(popCircle, 0.0, Max(AngleMin, 0.02));
+        CircleCurve3D popCircle = new CircleCurve3D(C);
+        TrimmedCurve3D Sect = new TrimmedCurve3D(popCircle, 0.0, Max(AngleMin, 0.02));
         // 0.02 est proche d'1 degree, en desous on ne se preocupe pas de la tngence
         // afin d'eviter des tolerances d'approximation tendant vers 0 !
-        Geom_BSplineCurve CtoBspl = GeomConvert.CurveToBSplineCurve(Sect, TConv);
+        BSplineCurve3D CtoBspl = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(Sect, TConv);
         double Dist;
         Dist = CtoBspl.Pole(1).Distance(CtoBspl.Pole(2)) + SpatialTol;
         return Dist * AngularTol / 2;

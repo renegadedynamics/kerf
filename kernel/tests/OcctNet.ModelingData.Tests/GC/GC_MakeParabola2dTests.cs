@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Curves;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -19,7 +20,7 @@ public class GC_MakeParabola2d_Test
                                         double[] theExpectedCoeffs)
     {
         const double aCompareTol = 1.0e-12;
-        GC_MakeParabola2d aPrb = new(theAxes, theFocus, theSense);
+        MakeParabola2d aPrb = new(theAxes, theFocus, theSense);
         Assert.NotNull(aPrb.Value());
         Parabola2D aParab = aPrb.Value().Parab2d();
         Point2D aVert = aParab.Location();

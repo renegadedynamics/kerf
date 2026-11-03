@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
@@ -66,9 +67,9 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         {
             throw new GccEnt_BadQualifier();
         }
-        Geom2dAdaptor_Curve         Cu1 = Qualified1.Qualified();
-        Geom2dAdaptor_Curve         Cu2 = Qualified2.Qualified();
-        Geom2dAdaptor_Curve         Cu3 = Qualified3.Qualified();
+        CurveAdaptor2D         Cu1 = Qualified1.Qualified();
+        CurveAdaptor2D         Cu2 = Qualified2.Qualified();
+        CurveAdaptor2D         Cu3 = Qualified3.Qualified();
         Geom2dGcc_FunctionTanCuCuCu Func = new(Cu1, Cu2, Cu3);
         math_Vector                 Umin = new(1, 3);
         math_Vector                 Umax = new(1, 3);
@@ -201,8 +202,8 @@ public sealed class Geom2dGcc_Circ2d3TanIter
             throw new GccEnt_BadQualifier();
         }
         Circle2D                   C1  = Qualified1.Qualified();
-        Geom2dAdaptor_Curve         Cu2 = Qualified2.Qualified();
-        Geom2dAdaptor_Curve         Cu3 = Qualified3.Qualified();
+        CurveAdaptor2D         Cu2 = Qualified2.Qualified();
+        CurveAdaptor2D         Cu3 = Qualified3.Qualified();
         Geom2dGcc_FunctionTanCuCuCu Func = new(C1, Cu2, Cu3);
         math_Vector                 Umin = new(1, 3);
         math_Vector                 Umax = new(1, 3);
@@ -341,7 +342,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         }
         Circle2D                   C1  = Qualified1.Qualified();
         Circle2D                   C2  = Qualified2.Qualified();
-        Geom2dAdaptor_Curve         Cu3 = Qualified3.Qualified();
+        CurveAdaptor2D         Cu3 = Qualified3.Qualified();
         Geom2dGcc_FunctionTanCuCuCu Func = new(C1, C2, Cu3);
         math_Vector                 Umin = new(1, 3);
         math_Vector                 Umax = new(1, 3);
@@ -481,8 +482,8 @@ public sealed class Geom2dGcc_Circ2d3TanIter
             throw new GccEnt_BadQualifier();
         }
         Line2D                    L1  = Qualified1.Qualified();
-        Geom2dAdaptor_Curve         Cu2 = Qualified2.Qualified();
-        Geom2dAdaptor_Curve         Cu3 = Qualified3.Qualified();
+        CurveAdaptor2D         Cu2 = Qualified2.Qualified();
+        CurveAdaptor2D         Cu3 = Qualified3.Qualified();
         Geom2dGcc_FunctionTanCuCuCu Func = new(L1, Cu2, Cu3);
         math_Vector                 Umin = new(1, 3);
         math_Vector                 Umax = new(1, 3);
@@ -622,7 +623,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         }
         Line2D                    L1  = Qualified1.Qualified();
         Line2D                    L2  = Qualified2.Qualified();
-        Geom2dAdaptor_Curve         Cu3 = Qualified3.Qualified();
+        CurveAdaptor2D         Cu3 = Qualified3.Qualified();
         Geom2dGcc_FunctionTanCuCuCu Func = new(L1, L2, Cu3);
         math_Vector                 Umin = new(1, 3);
         math_Vector                 Umax = new(1, 3);
@@ -754,8 +755,8 @@ public sealed class Geom2dGcc_Circ2d3TanIter
             throw new GccEnt_BadQualifier();
         }
         Circle2D                   C1 = new(new Axis2D(Point3, new Direction2D(Direction2D.D.X)), 0.0);
-        Geom2dAdaptor_Curve         Cu1 = Qualified1.Qualified();
-        Geom2dAdaptor_Curve         Cu2 = Qualified2.Qualified();
+        CurveAdaptor2D         Cu1 = Qualified1.Qualified();
+        CurveAdaptor2D         Cu2 = Qualified2.Qualified();
         Geom2dGcc_FunctionTanCuCuCu Func = new(C1, Cu1, Cu2);
         math_Vector                 Umin = new(1, 3);
         math_Vector                 Umax = new(1, 3);
@@ -879,7 +880,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         }
         Circle2D                   C1 = new(new Axis2D(Point2, new Direction2D(Direction2D.D.X)), 0.0);
         Circle2D                   C2 = new(new Axis2D(Point3, new Direction2D(Direction2D.D.X)), 0.0);
-        Geom2dAdaptor_Curve         Cu1 = Qualified1.Qualified();
+        CurveAdaptor2D         Cu1 = Qualified1.Qualified();
         Geom2dGcc_FunctionTanCuCuCu Func = new(C1, C2, Cu1);
         math_Vector                 Umin = new(1, 3);
         math_Vector                 Umax = new(1, 3);
@@ -997,7 +998,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
             throw new GccEnt_BadQualifier();
         }
         Line2D                    L1  = Qualified1.Qualified();
-        Geom2dAdaptor_Curve         Cu2 = Qualified2.Qualified();
+        CurveAdaptor2D         Cu2 = Qualified2.Qualified();
         Circle2D                   C3 = new(new Axis2D(Point3, new Direction2D(Direction2D.D.X)), 0.0);
         Geom2dGcc_FunctionTanCuCuCu Func = new(C3, L1, Cu2);
         math_Vector                 Umin = new(1, 3);
@@ -1126,7 +1127,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         }
         Circle2D                   C1  = Qualified1.Qualified();
         Line2D                    L2  = Qualified2.Qualified();
-        Geom2dAdaptor_Curve         Cu3 = Qualified3.Qualified();
+        CurveAdaptor2D         Cu3 = Qualified3.Qualified();
         Geom2dGcc_FunctionTanCuCuCu Func = new(C1, L2, Cu3);
         math_Vector                 Umin = new(1, 3);
         math_Vector                 Umax = new(1, 3);
@@ -1262,7 +1263,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
             throw new GccEnt_BadQualifier();
         }
         Circle2D                   C1  = Qualified1.Qualified();
-        Geom2dAdaptor_Curve         Cu2 = Qualified2.Qualified();
+        CurveAdaptor2D         Cu2 = Qualified2.Qualified();
         Circle2D                   C3 = new(new Axis2D(Point3, new Direction2D(Direction2D.D.X)), 0.0);
         Geom2dGcc_FunctionTanCuCuCu Func = new(C1, C3, Cu2);
         math_Vector                 Umin = new(1, 3);

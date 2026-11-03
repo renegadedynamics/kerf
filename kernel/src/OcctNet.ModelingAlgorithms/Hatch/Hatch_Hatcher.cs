@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using static Occt.Hatch_LineForm;
 
@@ -89,13 +90,13 @@ public sealed class Hatch_Hatcher
     /// <summary>Trims the lines at their intersections with <paramref name="L"/> in its parameter range [Start, End].</summary>
     public void Trim(in Line2D L, double Start, double End, int Index = 0)
     {
-        IntAna2d_IntPoint Pinter;
-        IntAna2d_AnaIntersection Inters = new();
+        IntPoint Pinter;
+        AnalyticIntersection Inters = new();
         int iLine;
         for (iLine = 1; iLine <= myLines.Length(); iLine++)
         {
             Inters.Perform(myLines[iLine].myLin, L);
-            if (Inters.IsDone())
+            if (Inters.IsDone)
             {
                 if (!Inters.IdenticalElements() && !Inters.ParallelElements())
                 {

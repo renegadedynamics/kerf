@@ -4,6 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Measurement;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
 
 namespace Occt;
@@ -27,7 +30,7 @@ public class ShapeUpgrade_SplitSurface : Transient
     /// <summary>The number of columns of the resulting grid.</summary>
     protected int myNbResultingCol;
     /// <summary>The surface.</summary>
-    protected Geom_Surface? mySurface;
+    protected Surface? mySurface;
     /// <summary>The status.</summary>
     protected int myStatus;
     /// <summary>The resulting grid.</summary>
@@ -48,7 +51,7 @@ public class ShapeUpgrade_SplitSurface : Transient
     }
 
     /// <summary>Initializes with a single supporting surface (its bounds).</summary>
-    public void Init(Geom_Surface S)
+    public void Init(Surface S)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
 
@@ -71,7 +74,7 @@ public class ShapeUpgrade_SplitSurface : Transient
     /// Initializes with a single supporting surface and bounding parameters (and, when <paramref name="theArea"/> isn't
     /// 0, the face's area, measuring the middle isos for splitting by area).
     /// </summary>
-    public void Init(Geom_Surface S, double UFirst, double ULast, double VFirst, double VLast, double theArea = 0.0)
+    public void Init(Surface S, double UFirst, double ULast, double VFirst, double VLast, double theArea = 0.0)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
 
@@ -87,12 +90,12 @@ public class ShapeUpgrade_SplitSurface : Transient
 
         mySurface.Bounds(out double U1, out double U2, out double V1, out double V2);
         double precision = Kerf.Engine.Foundation.Precision.PConfusion();
-        if (mySurface.IsUPeriodic() && ULast - UFirst <= U2 - U1 + precision)
+        if (mySurface.IsUPeriodic && ULast - UFirst <= U2 - U1 + precision)
         {
             U1 = UFirst;
             U2 = U1 + mySurface.UPeriod();
         }
-        if (mySurface.IsVPeriodic() && VLast - VFirst <= V2 - V1 + precision)
+        if (mySurface.IsVPeriodic && VLast - VFirst <= V2 - V1 + precision)
         {
             V1 = VFirst;
             V2 = V1 + mySurface.VPeriod();
@@ -124,12 +127,12 @@ public class ShapeUpgrade_SplitSurface : Transient
             //<myArea> is set and will be used with <myUsize> and <myVsize>
             // in further computations
             double Umid = (UF + UL) / 2, Vmid = (VF + VL) / 2;
-            var aTrSurf = new Geom_RectangularTrimmedSurface(mySurface, UF, UL, VF, VL);
-            Geom_Curve anUiso = aTrSurf.UIso(Umid);
-            Geom_Curve aViso = aTrSurf.VIso(Vmid);
-            TopoDS_Edge anEdgeUiso = new BRepLib_MakeEdge(anUiso).InternalEdge();
-            TopoDS_Edge anEdgeViso = new BRepLib_MakeEdge(aViso).InternalEdge();
-            GProp_GProps aGprop1 = new(), aGprop2 = new();
+            var aTrSurf = new TrimmedSurface(mySurface, UF, UL, VF, VL);
+            Curve3D anUiso = aTrSurf.UIso(Umid);
+            Curve3D aViso = aTrSurf.VIso(Vmid);
+            Edge anEdgeUiso = new BRepLib_MakeEdge(anUiso).InternalEdge();
+            Edge anEdgeViso = new BRepLib_MakeEdge(aViso).InternalEdge();
+            Properties aGprop1 = new(), aGprop2 = new();
             BRepGProp.LinearProperties(anEdgeViso, aGprop1);
             myUsize = aGprop1.Mass();
             BRepGProp.LinearProperties(anEdgeUiso, aGprop2);
@@ -234,26 +237,26 @@ public class ShapeUpgrade_SplitSurface : Transient
         }
 
         mySurface!.Bounds(out double U1, out double U2, out double V1, out double V2);
-        if (mySurface is Geom_SurfaceOfRevolution SurfaceRev)
+        if (mySurface is RevolutionSurface SurfaceRev)
         {
-            Geom_Curve BasCurve = SurfaceRev.BasisCurve();
+            Curve3D BasCurve = SurfaceRev.BasisCurve();
             var spc = new ShapeUpgrade_SplitCurve3d();
             spc.Init(BasCurve, VFirst, VLast);
             spc.SetSplitValues(myVSplitValues);
             spc.Build(Segment);
-            NCollection_HArray2<Geom_Surface> Surfaces;
+            NCollection_HArray2<Surface> Surfaces;
             myNbResultingCol = spc.GetCurves()!.Length();
             if (myUSplitValues.Length() > 2)
             {
                 myNbResultingRow = myUSplitValues.Length() - 1;
-                Surfaces = new NCollection_HArray2<Geom_Surface>(1, myNbResultingRow, 1, myNbResultingCol);
+                Surfaces = new NCollection_HArray2<Surface>(1, myNbResultingRow, 1, myNbResultingCol);
                 for (int nc = 1; nc <= myNbResultingCol; nc++)
                 {
-                    var NewSurfaceRev = new Geom_SurfaceOfRevolution(spc.GetCurves()!.Value(nc), SurfaceRev.Axis());
+                    var NewSurfaceRev = new RevolutionSurface(spc.GetCurves()!.Value(nc), SurfaceRev.Axis());
                     NewSurfaceRev.Bounds(out double U1p, out double U2p, out double V1p, out double V2p);
                     for (int nc1 = 1; nc1 <= myNbResultingRow; nc1++)
                     {
-                        var NewSurf = new Geom_RectangularTrimmedSurface(NewSurfaceRev,
+                        var NewSurf = new TrimmedSurface(NewSurfaceRev,
                                                                          myUSplitValues.Value(nc1),
                                                                          myUSplitValues.Value(nc1 + 1),
                                                                          V1p,
@@ -264,11 +267,11 @@ public class ShapeUpgrade_SplitSurface : Transient
             }
             else
             {
-                Surfaces = new NCollection_HArray2<Geom_Surface>(1, 1, 1, myNbResultingCol);
+                Surfaces = new NCollection_HArray2<Surface>(1, 1, 1, myNbResultingCol);
 
                 for (int nc = 1; nc <= spc.GetCurves()!.Length(); nc++)
                 {
-                    var NewSurfaceRev = new Geom_SurfaceOfRevolution(spc.GetCurves()!.Value(nc), SurfaceRev.Axis());
+                    var NewSurfaceRev = new RevolutionSurface(spc.GetCurves()!.Value(nc), SurfaceRev.Axis());
                     NewSurfaceRev.Bounds(out U1, out U2, out V1, out V2);
                     if (UFirst == U1 && ULast == U2)
                     {
@@ -276,7 +279,7 @@ public class ShapeUpgrade_SplitSurface : Transient
                     }
                     else
                     {
-                        var NewSurf = new Geom_RectangularTrimmedSurface(NewSurfaceRev, UFirst, ULast, V1, V2); // pdn correction for main seq
+                        var NewSurf = new TrimmedSurface(NewSurfaceRev, UFirst, ULast, V1, V2); // pdn correction for main seq
                         Surfaces.SetValue(1, nc, NewSurf);
                     }
                 }
@@ -299,26 +302,26 @@ public class ShapeUpgrade_SplitSurface : Transient
             return;
         }
 
-        if (mySurface is Geom_SurfaceOfLinearExtrusion SurfaceExt)
+        if (mySurface is ExtrusionSurface SurfaceExt)
         {
-            Geom_Curve BasCurve = SurfaceExt.BasisCurve();
+            Curve3D BasCurve = SurfaceExt.BasisCurve();
             var spc = new ShapeUpgrade_SplitCurve3d();
             spc.Init(BasCurve, UFirst, ULast);
             spc.SetSplitValues(myUSplitValues);
             spc.Build(Segment);
             myNbResultingRow = spc.GetCurves()!.Length();
-            NCollection_HArray2<Geom_Surface> Surfaces;
+            NCollection_HArray2<Surface> Surfaces;
             if (myVSplitValues.Length() > 2)
             {
                 myNbResultingCol = myVSplitValues.Length() - 1;
-                Surfaces = new NCollection_HArray2<Geom_Surface>(1, myNbResultingRow, 1, myNbResultingCol);
+                Surfaces = new NCollection_HArray2<Surface>(1, myNbResultingRow, 1, myNbResultingCol);
                 for (int nc1 = 1; nc1 <= myNbResultingRow; nc1++)
                 {
-                    var NewSurfaceEx = new Geom_SurfaceOfLinearExtrusion(spc.GetCurves()!.Value(nc1), SurfaceExt.Direction());
+                    var NewSurfaceEx = new ExtrusionSurface(spc.GetCurves()!.Value(nc1), SurfaceExt.Direction());
                     NewSurfaceEx.Bounds(out double U1p, out double U2p, out double V1p, out double V2p);
                     for (int nc2 = 1; nc2 <= myNbResultingCol; nc2++)
                     {
-                        var NewSurf = new Geom_RectangularTrimmedSurface(NewSurfaceEx,
+                        var NewSurf = new TrimmedSurface(NewSurfaceEx,
                                                                          U1p,
                                                                          U2p,
                                                                          myVSplitValues.Value(nc2),
@@ -329,11 +332,11 @@ public class ShapeUpgrade_SplitSurface : Transient
             }
             else
             {
-                Surfaces = new NCollection_HArray2<Geom_Surface>(1, myNbResultingRow, 1, 1);
+                Surfaces = new NCollection_HArray2<Surface>(1, myNbResultingRow, 1, 1);
 
                 for (int nc1 = 1; nc1 <= myNbResultingRow; nc1++)
                 {
-                    var NewSurfaceEx = new Geom_SurfaceOfLinearExtrusion(spc.GetCurves()!.Value(nc1), SurfaceExt.Direction());
+                    var NewSurfaceEx = new ExtrusionSurface(spc.GetCurves()!.Value(nc1), SurfaceExt.Direction());
                     NewSurfaceEx.Bounds(out U1, out U2, out V1, out V2);
                     if (VFirst == V1 && VLast == V2)
                     {
@@ -341,7 +344,7 @@ public class ShapeUpgrade_SplitSurface : Transient
                     }
                     else
                     {
-                        var NewSurf = new Geom_RectangularTrimmedSurface(NewSurfaceEx,
+                        var NewSurf = new TrimmedSurface(NewSurfaceEx,
                                                                          Math.Max(U1, UFirst),
                                                                          Math.Min(ULast, U2),
                                                                          Math.Max(VFirst, V1),
@@ -368,9 +371,9 @@ public class ShapeUpgrade_SplitSurface : Transient
             return;
         }
 
-        if (mySurface is Geom_RectangularTrimmedSurface tmpRect)
+        if (mySurface is TrimmedSurface tmpRect)
         {
-            Geom_Surface theSurf = tmpRect.BasisSurface();
+            Surface theSurf = tmpRect.BasisSurface();
             var sps = new ShapeUpgrade_SplitSurface();
             sps.Init(theSurf, UFirst, ULast, VFirst, VLast);
             sps.SetUSplitValues(myUSplitValues);
@@ -381,16 +384,16 @@ public class ShapeUpgrade_SplitSurface : Transient
             myResSurfaces = sps.myResSurfaces;
             return;
         }
-        else if (mySurface is Geom_OffsetSurface tmpOffset)
+        else if (mySurface is OffsetSurface tmpOffset)
         {
-            Geom_Surface theSurf = tmpOffset.BasisSurface();
+            Surface theSurf = tmpOffset.BasisSurface();
             var sps = new ShapeUpgrade_SplitSurface();
             sps.Init(theSurf, UFirst, ULast, VFirst, VLast);
             sps.SetUSplitValues(myUSplitValues);
             sps.SetVSplitValues(myVSplitValues);
             sps.myStatus = myStatus;
             sps.Build(Segment);
-            var Patches = new NCollection_HArray2<Geom_Surface>(1,
+            var Patches = new NCollection_HArray2<Surface>(1,
                                                                  sps.ResSurfaces()!.NbUPatches(),
                                                                  1,
                                                                  sps.ResSurfaces()!.NbVPatches());
@@ -398,7 +401,7 @@ public class ShapeUpgrade_SplitSurface : Transient
             {
                 for (int j1 = 1; j1 <= sps.ResSurfaces()!.NbVPatches(); j1++)
                 {
-                    var NewOffSur = new Geom_OffsetSurface(sps.ResSurfaces()!.Patch(i1, j1), tmpOffset.Offset());
+                    var NewOffSur = new OffsetSurface(sps.ResSurfaces()!.Patch(i1, j1), tmpOffset.Offset());
                     Patches.SetValue(i1, j1, NewOffSur);
                 }
             }
@@ -412,9 +415,9 @@ public class ShapeUpgrade_SplitSurface : Transient
         // splitting the surfaces:
         myNbResultingRow = myUSplitValues.Length() - 1;
         myNbResultingCol = myVSplitValues.Length() - 1;
-        var SurfacesGrid = new NCollection_HArray2<Geom_Surface>(1, myNbResultingRow, 1, myNbResultingCol);
-        bool isBSpline = mySurface is Geom_BSplineSurface;
-        bool isBezier = mySurface is Geom_BezierSurface;
+        var SurfacesGrid = new NCollection_HArray2<Surface>(1, myNbResultingRow, 1, myNbResultingCol);
+        bool isBSpline = mySurface is BSplineSurface;
+        bool isBezier = mySurface is BezierSurface;
 
         if (myNbResultingRow == 1 && myNbResultingCol == 1)
         {
@@ -427,11 +430,11 @@ public class ShapeUpgrade_SplitSurface : Transient
             {
                 SurfacesGrid.SetValue(1, 1, mySurface);
             }
-            else if (!Segment || mySurface is not Geom_BSplineSurface || !Status(ShapeExtend_DONE2))
+            else if (!Segment || mySurface is not BSplineSurface || !Status(ShapeExtend_DONE2))
             {
                 // pdn copying of surface
-                var tmp = (Geom_Surface)mySurface.Copy();
-                var Surf = new Geom_RectangularTrimmedSurface(tmp, UFirst, ULast, VFirst, VLast);
+                var tmp = (Surface)mySurface.Copy();
+                var Surf = new TrimmedSurface(tmp, UFirst, ULast, VFirst, VLast);
                 SurfacesGrid.SetValue(1, 1, Surf);
             }
             else
@@ -447,9 +450,9 @@ public class ShapeUpgrade_SplitSurface : Transient
             }
         }
 
-        if (mySurface is Geom_BSplineSurface)
+        if (mySurface is BSplineSurface)
         {
-            var BsSurface = (Geom_BSplineSurface)mySurface.Copy();
+            var BsSurface = (BSplineSurface)mySurface.Copy();
             int FirstInd = BsSurface.FirstUKnotIndex(), LastInd = BsSurface.LastUKnotIndex();
             int j = FirstInd;
             for (int ii = 1; ii <= myUSplitValues.Length(); ii++)
@@ -506,14 +509,14 @@ public class ShapeUpgrade_SplitSurface : Transient
             {
                 V2 = myVSplitValues.Value(icol);
                 // creates a copy of theSurf before to segment:
-                var theNew = (Geom_Surface)mySurface.Copy();
+                var theNew = (Surface)mySurface.Copy();
                 if (isBSpline || isBezier)
                 {
                     try
                     {
                         if (isBSpline)
                         {
-                            ((Geom_BSplineSurface)theNew).Segment(U1, U2, V1, V2);
+                            ((BSplineSurface)theNew).Segment(U1, U2, V1, V2);
                         }
                         else if (isBezier)
                         {
@@ -523,22 +526,22 @@ public class ShapeUpgrade_SplitSurface : Transient
                             double u2 = U2;
                             double v1 = V1;
                             double v2 = V2;
-                            ((Geom_BezierSurface)theNew).Segment(u1, u2, v1, v2);
+                            ((BezierSurface)theNew).Segment(u1, u2, v1, v2);
                         }
                         myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE3);
                     }
                     catch (Exception anException) when (ShapeUpgrade.IsCaughtFailure(anException))
                     {
                         // OCCT_DEBUG output left out
-                        Geom_Surface theNewSurf = theNew;
-                        theNew = new Geom_RectangularTrimmedSurface(theNewSurf, U1, U2, V1, V2);
+                        Surface theNewSurf = theNew;
+                        theNew = new TrimmedSurface(theNewSurf, U1, U2, V1, V2);
                     }
                     SurfacesGrid.SetValue((irow - 1), (icol - 1), theNew);
                 }
                 else
                 {
                     // not a BSpline: trimming instead of segmentation
-                    var SplittedSurf = new Geom_RectangularTrimmedSurface(theNew, U1, U2, V1, V2);
+                    var SplittedSurf = new TrimmedSurface(theNew, U1, U2, V1, V2);
                     SurfacesGrid.SetValue((irow - 1), (icol - 1), SplittedSurf);
                 }
 

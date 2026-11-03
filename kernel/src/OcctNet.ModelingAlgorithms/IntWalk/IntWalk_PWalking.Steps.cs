@@ -2,6 +2,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.IntImp_ComputeTangence;
 using static Occt.IntImp_ConstIsoparametric;
@@ -143,8 +144,8 @@ public partial class IntWalk_PWalking
         double FlecheCourante, Ratio = 1.0;
 
         // Caro1 and Caro2
-        Adaptor3d_Surface Caro1 = myIntersectionOn2S.Function().AuxillarSurface1();
-        Adaptor3d_Surface Caro2 = myIntersectionOn2S.Function().AuxillarSurface2();
+        SurfaceAdaptorBase Caro1 = myIntersectionOn2S.Function().AuxillarSurface1();
+        SurfaceAdaptorBase Caro2 = myIntersectionOn2S.Function().AuxillarSurface2();
 
         IntSurf_PntOn2S CurrentPoint = myIntersectionOn2S.Point();
         //==================================================================================
@@ -225,22 +226,22 @@ public partial class IntWalk_PWalking
                     previousPoint.ParametersOnS2(out CurU, out CurV);
                 }
                 Point3D CurPnt = (choixIso == IntImp_UIsoparametricOnCaro1 || choixIso == IntImp_VIsoparametricOnCaro1)
-                                    ? Adaptor3d_HSurfaceTool.Value(Caro1, CurU, CurV)
-                                    : Adaptor3d_HSurfaceTool.Value(Caro2, CurU, CurV);
+                                    ? HSurfaceTool.Value(Caro1, CurU, CurV)
+                                    : HSurfaceTool.Value(Caro2, CurU, CurV);
                 Point3D OffsetPnt = new();
                 switch (choixIso)
                 {
                     case IntImp_UIsoparametricOnCaro1:
-                        OffsetPnt = Adaptor3d_HSurfaceTool.Value(Caro1, CurU + sensCheminement * pasuv[0], CurV);
+                        OffsetPnt = HSurfaceTool.Value(Caro1, CurU + sensCheminement * pasuv[0], CurV);
                         break;
                     case IntImp_VIsoparametricOnCaro1:
-                        OffsetPnt = Adaptor3d_HSurfaceTool.Value(Caro1, CurU, CurV + sensCheminement * pasuv[1]);
+                        OffsetPnt = HSurfaceTool.Value(Caro1, CurU, CurV + sensCheminement * pasuv[1]);
                         break;
                     case IntImp_UIsoparametricOnCaro2:
-                        OffsetPnt = Adaptor3d_HSurfaceTool.Value(Caro2, CurU + sensCheminement * pasuv[2], CurV);
+                        OffsetPnt = HSurfaceTool.Value(Caro2, CurU + sensCheminement * pasuv[2], CurV);
                         break;
                     case IntImp_VIsoparametricOnCaro2:
-                        OffsetPnt = Adaptor3d_HSurfaceTool.Value(Caro2, CurU, CurV + sensCheminement * pasuv[3]);
+                        OffsetPnt = HSurfaceTool.Value(Caro2, CurU, CurV + sensCheminement * pasuv[3]);
                         break;
                     default:
                         break;

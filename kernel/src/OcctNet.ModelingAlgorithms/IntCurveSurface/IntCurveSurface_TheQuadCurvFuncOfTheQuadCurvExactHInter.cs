@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -15,20 +16,20 @@ namespace Occt;
 /// </summary>
 public sealed class IntCurveSurface_TheQuadCurvFuncOfTheQuadCurvExactHInter
     : FunctionWithDerivative,
-      IIntCurveSurface_TheQuadCurvFunc<IntCurveSurface_TheQuadCurvFuncOfTheQuadCurvExactHInter, Adaptor3d_Curve>
+      IIntCurveSurface_TheQuadCurvFunc<IntCurveSurface_TheQuadCurvFuncOfTheQuadCurvExactHInter, CurveAdaptorBase>
 {
     private readonly IntSurf_Quadric myQuadric;
-    private readonly Adaptor3d_Curve myCurve;
+    private readonly CurveAdaptorBase myCurve;
 
     /// <summary>The function of the quadric <paramref name="Q"/> along the curve <paramref name="C"/> (kept by reference).</summary>
-    public IntCurveSurface_TheQuadCurvFuncOfTheQuadCurvExactHInter(in IntSurf_Quadric Q, Adaptor3d_Curve C)
+    public IntCurveSurface_TheQuadCurvFuncOfTheQuadCurvExactHInter(in IntSurf_Quadric Q, CurveAdaptorBase C)
     {
         myQuadric = Q;
         myCurve = C;
     }
 
-    static IntCurveSurface_TheQuadCurvFuncOfTheQuadCurvExactHInter IIntCurveSurface_TheQuadCurvFunc<IntCurveSurface_TheQuadCurvFuncOfTheQuadCurvExactHInter, Adaptor3d_Curve>.Create(
-        in IntSurf_Quadric Q, in Adaptor3d_Curve C) => new(Q, C);
+    static IntCurveSurface_TheQuadCurvFuncOfTheQuadCurvExactHInter IIntCurveSurface_TheQuadCurvFunc<IntCurveSurface_TheQuadCurvFuncOfTheQuadCurvExactHInter, CurveAdaptorBase>.Create(
+        in IntSurf_Quadric Q, in CurveAdaptorBase C) => new(Q, C);
 
     public override bool Value(double Param, out double F)
     {

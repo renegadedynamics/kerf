@@ -1,21 +1,25 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>Known answers of ShapeExtend_WireData: loading wires, editing the list, seams, and making wires.</summary>
 public class ShapeExtendWireDataTests
 {
-    private static TopoDS_Face FirstFace(in TopoDS_Shape theShape, Func<TopoDS_Face, bool>? thePredicate = null)
+    private static Face FirstFace(in Shape theShape, Func<Face, bool>? thePredicate = null)
     {
-        for (var anExp = new TopExp_Explorer(theShape, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(theShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            TopoDS_Face aF = TopoDS.Face(anExp.Current());
+            Face aF = ShapeCasts.Face(anExp.Current());
             if (thePredicate is null || thePredicate(aF))
             {
                 return aF;
@@ -24,12 +28,12 @@ public class ShapeExtendWireDataTests
         throw new InvalidOperationException("no face");
     }
 
-    private static bool IsPlanar(TopoDS_Face theF) => BRep_Tool.Surface(theF) is Geom_Plane;
+    private static bool IsPlanar(Face theF) => Tool.Surface(theF) is PlaneSurface;
 
     // the four sides of the unit square, sharing their vertices: s[i] runs from vertex i to vertex i + 1
-    private static TopoDS_Edge[] SquareEdges()
+    private static Edge[] SquareEdges()
     {
-        TopoDS_Vertex[] aV =
+        Vertex[] aV =
         [
             TestShapes.Vertex(new Point3D(0, 0, 0)), TestShapes.Vertex(new Point3D(1, 0, 0)),
             TestShapes.Vertex(new Point3D(1, 1, 0)), TestShapes.Vertex(new Point3D(0, 1, 0)),
@@ -37,12 +41,12 @@ public class ShapeExtendWireDataTests
         return [TestShapes.Edge(aV[0], aV[1]), TestShapes.Edge(aV[1], aV[2]), TestShapes.Edge(aV[2], aV[3]), TestShapes.Edge(aV[3], aV[0])];
     }
 
-    private static TopoDS_Wire WireOf(params TopoDS_Shape[] theEdges)
+    private static Wire WireOf(params Shape[] theEdges)
     {
-        var aB = new BRep_Builder();
-        TopoDS_Wire aW = new();
+        var aB = new BrepBuilder();
+        Wire aW = new();
         aB.MakeWire(ref aW);
-        foreach (TopoDS_Shape anE in theEdges)
+        foreach (Shape anE in theEdges)
         {
             aB.Add(aW, anE);
         }
@@ -52,19 +56,19 @@ public class ShapeExtendWireDataTests
     [Fact]
     public void Box_face_wire_is_loaded_in_order()
     {
-        TopoDS_Face aF = FirstFace(new BRepPrimAPI_MakeBox(1, 2, 3).Shape());
-        TopoDS_Wire aW = BRepTools.OuterWire(aF);
+        Face aF = FirstFace(new BRepPrimAPI_MakeBox(1, 2, 3).Shape());
+        Wire aW = BrepTools.OuterWire(aF);
         var aWD = new ShapeExtend_WireData(aW);
         Assert.Equal(4, aWD.NbEdges());
         Assert.Equal(0, aWD.NbNonManifoldEdges());
         Assert.True(aWD.ManifoldMode());
         // the iterator's edges (with the wire's orientation), backwards for a reversed wire
-        var anEdges = new List<TopoDS_Shape>();
-        for (var it = new TopoDS_Iterator(aW); it.More(); it.Next())
+        var anEdges = new List<Shape>();
+        for (var it = new Iterator(aW); it.More(); it.Next())
         {
             anEdges.Add(it.Value());
         }
-        if (aW.Orientation() == TopAbs_REVERSED)
+        if (aW.Orientation() == Reversed)
         {
             anEdges.Reverse();
         }
@@ -76,37 +80,37 @@ public class ShapeExtendWireDataTests
             Assert.False(aWD.IsSeam(i));
         }
 
-        TopoDS_Wire aNew = aWD.Wire();
+        Wire aNew = aWD.Wire();
         Assert.True(aNew.TShape()!.IsFrozen);
         Assert.True(aNew.Closed());
-        Assert.Equal(4, aNew.NbChildren());
+        Assert.Equal(4, aNew.ChildCount);
 
-        TopoDS_Wire anAPI = aWD.WireAPIMake();
-        Assert.False(anAPI.IsNull());
+        Wire anAPI = aWD.WireAPIMake();
+        Assert.False(anAPI.IsNull);
         Assert.True(anAPI.TShape()!.IsFrozen);
         Assert.True(anAPI.Closed());
 
-        TopoDS_Wire anInternal = aWD.InternalWire();
+        Wire anInternal = aWD.InternalWire();
         Assert.False(anInternal.TShape()!.IsFrozen);
     }
 
     [Fact]
     public void Reversed_wire_is_loaded_backwards()
     {
-        TopoDS_Edge[] s = SquareEdges();
-        TopoDS_Wire aW = WireOf(s[0], s[1], s[2], s[3]);
-        var aWD = new ShapeExtend_WireData(TopoDS.Wire(aW.Reversed()));
+        Edge[] s = SquareEdges();
+        Wire aW = WireOf(s[0], s[1], s[2], s[3]);
+        var aWD = new ShapeExtend_WireData(ShapeCasts.Wire(aW.Reversed()));
         // the edges are prepended, keeping their own orientation (the iterator gives them reversed with the wire)
         Assert.True(aWD.Edge(1).IsSame(s[3]));
         Assert.True(aWD.Edge(4).IsSame(s[0]));
-        Assert.Equal(TopAbs_REVERSED, aWD.Edge(1).Orientation());
+        Assert.Equal(Reversed, aWD.Edge(1).Orientation());
     }
 
     [Fact]
     public void Unchained_wire_is_kept_or_reordered()
     {
-        TopoDS_Edge[] s = SquareEdges();
-        TopoDS_Wire aW = WireOf(s[0], s[2], s[1], s[3]);
+        Edge[] s = SquareEdges();
+        Wire aW = WireOf(s[0], s[2], s[1], s[3]);
 
         var aWD = new ShapeExtend_WireData();
         Assert.False(aWD.Init(aW, true));
@@ -123,17 +127,17 @@ public class ShapeExtendWireDataTests
     [Fact]
     public void Internal_edges_are_kept_apart_in_manifold_mode()
     {
-        TopoDS_Edge[] s = SquareEdges();
-        TopoDS_Edge anInternal = TestShapes.Edge(new Point3D(0.2, 0.2, 0), new Point3D(0.8, 0.8, 0));
-        TopoDS_Wire aW = WireOf(s[0], s[1], anInternal.Oriented(TopAbs_INTERNAL), s[2], s[3]);
+        Edge[] s = SquareEdges();
+        Edge anInternal = TestShapes.Edge(new Point3D(0.2, 0.2, 0), new Point3D(0.8, 0.8, 0));
+        Wire aW = WireOf(s[0], s[1], anInternal.Oriented(Internal), s[2], s[3]);
 
         var aWD = new ShapeExtend_WireData(aW);
         Assert.Equal(4, aWD.NbEdges());
         Assert.Equal(1, aWD.NbNonManifoldEdges());
         Assert.True(aWD.NonmanifoldEdge(1).IsSame(anInternal));
-        Assert.True(aWD.NonmanifoldEdge(-1).IsNull());
+        Assert.True(aWD.NonmanifoldEdge(-1).IsNull);
         Assert.Single(aWD.NonmanifoldEdges());
-        Assert.Equal(5, aWD.Wire().NbChildren());
+        Assert.Equal(5, aWD.Wire().ChildCount);
 
         var aNM = new ShapeExtend_WireData(aW, true, false);
         Assert.False(aNM.ManifoldMode());
@@ -154,9 +158,9 @@ public class ShapeExtendWireDataTests
     {
         // OCCT's Add(ShapeExtend_WireData) in non-manifold mode adds the other wire's i-th ordinary edge where it means
         // its i-th non-manifold edge
-        TopoDS_Edge[] s = SquareEdges();
-        TopoDS_Edge anInternal = TestShapes.Edge(new Point3D(0.2, 0.2, 0), new Point3D(0.8, 0.8, 0));
-        var aSource = new ShapeExtend_WireData(WireOf(s[0], s[1], anInternal.Oriented(TopAbs_INTERNAL)));
+        Edge[] s = SquareEdges();
+        Edge anInternal = TestShapes.Edge(new Point3D(0.2, 0.2, 0), new Point3D(0.8, 0.8, 0));
+        var aSource = new ShapeExtend_WireData(WireOf(s[0], s[1], anInternal.Oriented(Internal)));
         Assert.Equal(1, aSource.NbNonManifoldEdges());
 
         var aTarget = new ShapeExtend_WireData();
@@ -176,12 +180,12 @@ public class ShapeExtendWireDataTests
     [Fact]
     public void Editing_the_list()
     {
-        TopoDS_Edge[] s = SquareEdges();
+        Edge[] s = SquareEdges();
         var aWD = new ShapeExtend_WireData();
         aWD.Add(s[1]);
         aWD.Add(s[3]);
         aWD.Add(s[0], 1);                    // before the first
-        aWD.Add((TopoDS_Shape)s[2], 3);       // before the third
+        aWD.Add((Shape)s[2], 3);       // before the third
         Assert.Equal(4, aWD.NbEdges());
         for (int i = 1; i <= 4; i++)
         {
@@ -212,7 +216,7 @@ public class ShapeExtendWireDataTests
 
         // a wire added reversed
         var aW = new ShapeExtend_WireData();
-        aW.AddOriented((TopoDS_Shape)WireOf(s[0], s[1]), 1);
+        aW.AddOriented((Shape)WireOf(s[0], s[1]), 1);
         Assert.Equal(2, aW.NbEdges());
         Assert.True(aW.Edge(1).IsEqual(s[0].Reversed()));
         aW.Add(WireOf(s[2], s[3]), 1);
@@ -224,7 +228,7 @@ public class ShapeExtendWireDataTests
     [Fact]
     public void Reverse_and_SetLast()
     {
-        TopoDS_Edge[] s = SquareEdges();
+        Edge[] s = SquareEdges();
         var aWD = new ShapeExtend_WireData(WireOf(s[0], s[1], s[2], s[3]));
         aWD.Reverse();
         for (int i = 1; i <= 4; i++)
@@ -247,8 +251,8 @@ public class ShapeExtendWireDataTests
     [Fact]
     public void Seams_of_a_cylinder_and_degenerated_edges_of_a_sphere()
     {
-        TopoDS_Face aCylF = FirstFace(new BRepPrimAPI_MakeCylinder(1, 2).Shape(), f => BRep_Tool.Surface(f) is Geom_CylindricalSurface);
-        var aWD = new ShapeExtend_WireData(BRepTools.OuterWire(aCylF));
+        Face aCylF = FirstFace(new BRepPrimAPI_MakeCylinder(1, 2).Shape(), f => Tool.Surface(f) is CylindricalSurface);
+        var aWD = new ShapeExtend_WireData(BrepTools.OuterWire(aCylF));
         Assert.Equal(4, aWD.NbEdges());
         int aSeams = 0;
         for (int i = 1; i <= 4; i++)
@@ -262,18 +266,18 @@ public class ShapeExtendWireDataTests
         }
         Assert.Equal(2, aSeams);
 
-        TopoDS_Face aSphF = FirstFace(new BRepPrimAPI_MakeSphere(1).Shape());
-        var aSph = new ShapeExtend_WireData(BRepTools.OuterWire(aSphF));
+        Face aSphF = FirstFace(new BRepPrimAPI_MakeSphere(1).Shape());
+        var aSph = new ShapeExtend_WireData(BrepTools.OuterWire(aSphF));
         int aFirstDeg = 0;
         for (int i = 1; i <= aSph.NbEdges() && aFirstDeg == 0; i++)
         {
-            if (BRep_Tool.Degenerated(aSph.Edge(i)))
+            if (Tool.Degenerated(aSph.Edge(i)))
             {
                 aFirstDeg = i;
             }
         }
         Assert.True(aFirstDeg > 0);
-        TopoDS_Edge aDeg = aSph.Edge(aFirstDeg);
+        Edge aDeg = aSph.Edge(aFirstDeg);
         aSph.SetDegeneratedLast();
         Assert.True(aSph.Edge(aSph.NbEdges()).IsEqual(aDeg));
     }
@@ -281,24 +285,24 @@ public class ShapeExtendWireDataTests
     [Fact]
     public void Reverse_on_a_face_swaps_the_seam_pcurves()
     {
-        TopoDS_Face aFrozen = FirstFace(new BRepPrimAPI_MakeCylinder(1, 2).Shape(), f => BRep_Tool.Surface(f) is Geom_CylindricalSurface);
-        TopoDS_Face aF = TopoDS.Face(BRepTools.ExactCopyForWrite(aFrozen, out _));
-        var aWD = new ShapeExtend_WireData(BRepTools.OuterWire(aF));
-        int aSeam = Enumerable.Range(1, 4).First(i => aWD.IsSeam(i) && aWD.Edge(i).Orientation() == TopAbs_FORWARD);
-        TopoDS_Edge aSeamE = aWD.Edge(aSeam);
-        Geom2d_Curve aFwd = BRep_Tool.CurveOnSurface(aSeamE, aF, out _, out _)!;
-        Geom2d_Curve aRev = BRep_Tool.CurveOnSurface(TopoDS.Edge(aSeamE.Reversed()), aF, out _, out _)!;
+        Face aFrozen = FirstFace(new BRepPrimAPI_MakeCylinder(1, 2).Shape(), f => Tool.Surface(f) is CylindricalSurface);
+        Face aF = ShapeCasts.Face(BrepTools.ExactCopyForWrite(aFrozen, out _));
+        var aWD = new ShapeExtend_WireData(BrepTools.OuterWire(aF));
+        int aSeam = Enumerable.Range(1, 4).First(i => aWD.IsSeam(i) && aWD.Edge(i).Orientation() == Forward);
+        Edge aSeamE = aWD.Edge(aSeam);
+        Curve2D aFwd = Tool.CurveOnSurface(aSeamE, aF, out _, out _)!;
+        Curve2D aRev = Tool.CurveOnSurface(ShapeCasts.Edge(aSeamE.Reversed()), aF, out _, out _)!;
 
         aWD.Reverse(aF);
-        Assert.Same(aRev, BRep_Tool.CurveOnSurface(aSeamE, aF, out _, out _));
-        Assert.Same(aFwd, BRep_Tool.CurveOnSurface(TopoDS.Edge(aSeamE.Reversed()), aF, out _, out _));
+        Assert.Same(aRev, Tool.CurveOnSurface(aSeamE, aF, out _, out _));
+        Assert.Same(aFwd, Tool.CurveOnSurface(ShapeCasts.Edge(aSeamE.Reversed()), aF, out _, out _));
 
         // on the frozen face's wire, the seam edge is frozen: the write throws
-        var aFrozenWD = new ShapeExtend_WireData(BRepTools.OuterWire(aFrozen));
+        var aFrozenWD = new ShapeExtend_WireData(BrepTools.OuterWire(aFrozen));
         Assert.ThrowsAny<FailureException>(() => aFrozenWD.Reverse(aFrozen));
         // without seams nothing is written
-        TopoDS_Face aBoxF = FirstFace(new BRepPrimAPI_MakeBox(1, 1, 1).Shape());
-        var aBoxWD = new ShapeExtend_WireData(BRepTools.OuterWire(aBoxF));
+        Face aBoxF = FirstFace(new BRepPrimAPI_MakeBox(1, 1, 1).Shape());
+        var aBoxWD = new ShapeExtend_WireData(BrepTools.OuterWire(aBoxF));
         aBoxWD.Reverse(aBoxF);
         Assert.Equal(4, aBoxWD.NbEdges());
     }
@@ -309,7 +313,7 @@ public class ShapeExtendWireDataTests
         var aWD = new ShapeExtend_WireData();
         aWD.Add(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)));
         aWD.Add(TestShapes.Edge(new Point3D(5, 0, 0), new Point3D(6, 0, 0)));
-        Assert.True(aWD.WireAPIMake().IsNull());
+        Assert.True(aWD.WireAPIMake().IsNull);
         Assert.False(aWD.Wire().Closed());
         Assert.True(IsPlanar(FirstFace(new BRepPrimAPI_MakeBox(1, 1, 1).Shape())));
     }

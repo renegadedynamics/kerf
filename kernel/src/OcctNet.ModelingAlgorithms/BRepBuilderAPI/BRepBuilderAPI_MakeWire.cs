@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using static Occt.BRepBuilderAPI_WireError;
 using static Occt.BRepLib_WireError;
 
@@ -36,55 +38,55 @@ public class BRepBuilderAPI_MakeWire : BRepBuilderAPI_MakeShape
         myMakeWire = new BRepLib_MakeWire();
     }
 
-    public BRepBuilderAPI_MakeWire(in TopoDS_Edge E)
+    public BRepBuilderAPI_MakeWire(in Edge E)
     {
         myMakeWire = new BRepLib_MakeWire(E);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeWire(in TopoDS_Edge E1, in TopoDS_Edge E2)
+    public BRepBuilderAPI_MakeWire(in Edge E1, in Edge E2)
     {
         myMakeWire = new BRepLib_MakeWire(E1, E2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeWire(in TopoDS_Edge E1, in TopoDS_Edge E2, in TopoDS_Edge E3)
+    public BRepBuilderAPI_MakeWire(in Edge E1, in Edge E2, in Edge E3)
     {
         myMakeWire = new BRepLib_MakeWire(E1, E2, E3);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeWire(in TopoDS_Edge E1, in TopoDS_Edge E2, in TopoDS_Edge E3, in TopoDS_Edge E4)
+    public BRepBuilderAPI_MakeWire(in Edge E1, in Edge E2, in Edge E3, in Edge E4)
     {
         myMakeWire = new BRepLib_MakeWire(E1, E2, E3, E4);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeWire(in TopoDS_Wire W)
+    public BRepBuilderAPI_MakeWire(in Wire W)
     {
         myMakeWire = new BRepLib_MakeWire(W);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeWire(in TopoDS_Wire W, in TopoDS_Edge E)
+    public BRepBuilderAPI_MakeWire(in Wire W, in Edge E)
     {
         myMakeWire = new BRepLib_MakeWire(W, E);
         TakeResult();
     }
 
-    public void Add(in TopoDS_Wire W)
+    public void Add(in Wire W)
     {
         myMakeWire.Add(W);
         TakeResult();
     }
 
-    public void Add(in TopoDS_Edge E)
+    public void Add(in Edge E)
     {
         myMakeWire.Add(E);
         TakeResult();
     }
 
-    public void Add(NCollection_List<TopoDS_Shape> L)
+    public void Add(NCollection_List<Shape> L)
     {
         myMakeWire.Add(L);
         TakeResult();
@@ -92,43 +94,43 @@ public class BRepBuilderAPI_MakeWire : BRepBuilderAPI_MakeShape
 
 
     /// <summary>The wire (frozen).</summary>
-    public TopoDS_Wire Wire()
+    public Wire Wire()
     {
         return myMakeWire.Wire();
     }
 
     /// <summary><see cref="Wire"/> without freezing, for ported code.</summary>
-    internal TopoDS_Wire InternalWire()
+    internal Wire InternalWire()
     {
         return myMakeWire.InternalWire();
     }
 
     /// <summary>The last edge added (frozen with the wire).</summary>
-    public TopoDS_Edge Edge()
+    public Edge Edge()
     {
         return myMakeWire.Edge();
     }
 
     /// <summary><see cref="Edge"/> without freezing, for ported code.</summary>
-    internal TopoDS_Edge InternalEdge()
+    internal Edge InternalEdge()
     {
         return myMakeWire.InternalEdge();
     }
 
     /// <summary>The last vertex connected (frozen with the wire).</summary>
-    public TopoDS_Vertex Vertex()
+    public Vertex Vertex()
     {
         return myMakeWire.Vertex();
     }
 
     /// <summary><see cref="Vertex"/> without freezing, for ported code.</summary>
-    internal TopoDS_Vertex InternalVertex()
+    internal Vertex InternalVertex()
     {
         return myMakeWire.InternalVertex();
     }
 
     /// <summary>The wire (OCCT's conversion operator; frozen).</summary>
-    public static explicit operator TopoDS_Wire(BRepBuilderAPI_MakeWire theMaker) => theMaker.Wire();
+    public static explicit operator Wire(BRepBuilderAPI_MakeWire theMaker) => theMaker.Wire();
 
     public override bool IsDone()
     {
@@ -155,13 +157,13 @@ public class BRepBuilderAPI_MakeWire : BRepBuilderAPI_MakeShape
     }
 
     // OCCT.NET: the replacements of frozen input sub-shapes by the copies the maker updated (decision 417).
-    internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape S)
+    internal override NCollection_List<Shape> InternalModified(in Shape S)
     {
         myGenerated.Clear();
-        BRepTools_History? aHistory = myMakeWire.InternalHistory();
+        History? aHistory = myMakeWire.InternalHistory();
         if (aHistory is not null)
         {
-            foreach (TopoDS_Shape aModified in aHistory.Modified(S))
+            foreach (Shape aModified in aHistory.Modified(S))
             {
                 myGenerated.Append(aModified);
             }

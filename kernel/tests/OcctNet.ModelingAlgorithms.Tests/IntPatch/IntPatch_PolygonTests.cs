@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 
 using Kerf.Geometry;
@@ -19,7 +20,7 @@ public class IntPatch_PolygonTests
     [Fact]
     public void PolyArc_on_a_half_circle()
     {
-        Geom2dAdaptor_Curve aCircle = new(new Geom2d_Circle(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0));
+        CurveAdaptor2D aCircle = new(new CircleCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0));
         IntPatch_PolyArc aPoly = new(aCircle, 10, 0.0, Math.PI, Box(-1, 0, 1, 1));
 
         Assert.Equal(10, aPoly.NbPoints());
@@ -51,7 +52,7 @@ public class IntPatch_PolygonTests
     public void PolyArc_resamples_the_part_near_the_other_polygon()
     {
         // A long segment whose middle only is near the box: the polygon is resampled between the indices around it.
-        Geom2dAdaptor_Curve aLine = new(new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)));
+        CurveAdaptor2D aLine = new(new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0)));
         IntPatch_PolyArc aPoly = new(aLine, 11, 0.0, 1000.0, Box(499, -0.5, 501, 0.5));
         Assert.Equal(11, aPoly.NbPoints());
         Assert.True(aPoly.Parameter(1) > 0.0 && aPoly.Parameter(11) < 1000.0);

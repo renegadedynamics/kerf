@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -97,8 +98,8 @@ internal static class SWDRAWShapeProcessCommands
         {
             arg4 = argv[4];
         }
-        TopoDS_Shape Shape = theDI.GetShape(arg2);
-        if (Shape.IsNull())
+        Shape Shape = theDI.GetShape(arg2);
+        if (Shape.IsNull)
         {
             di.Append("Shape unknown : ").Append(arg2).Append("\n");
             return 1 /* Error */;
@@ -107,7 +108,7 @@ internal static class SWDRAWShapeProcessCommands
         (string? aDefaults, string? aUser) = ResourceDirectories(theDI, arg3);
         ShapeProcess_ShapeContext? context = null;
         // OCCT works on the input itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
-        TopoDS_Shape result = SWDRAWShapeFixCommands.InPlace(theDI, Shape, aWork =>
+        Shape result = SWDRAWShapeFixCommands.InPlace(theDI, Shape, aWork =>
         {
             context = new ShapeProcess_ShapeContext(aWork, arg3, "", aDefaults, aUser);
             context.SetMessenger(Messenger(theDI));
@@ -117,7 +118,7 @@ internal static class SWDRAWShapeProcessCommands
         context!.PrintStatistics();
 
         //  seq.PrintPreparationResult ();
-        if (result.IsNull())
+        if (result.IsNull)
         {
             di.Append("No result\n");
         }
@@ -146,8 +147,8 @@ internal static class SWDRAWShapeProcessCommands
         {
             arg4 = argv[4];
         }
-        TopoDS_Shape Shape = theDI.GetShape(arg2);
-        if (Shape.IsNull())
+        Shape Shape = theDI.GetShape(arg2);
+        if (Shape.IsNull)
         {
             di.Append("Shape unknown : ").Append(arg2).Append("\n");
             return 1 /* Error */;
@@ -158,7 +159,7 @@ internal static class SWDRAWShapeProcessCommands
         seq.Context().SetMessenger(Messenger(theDI));
         // OCCT works on the input itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
         //   seq.PrepareShape(Shape, true, TopAbs_FACE); //fill history map for faces and above
-        TopoDS_Shape result = SWDRAWShapeFixCommands.InPlace(theDI, Shape, aWork => seq.InternalPrepareShape(aWork));
+        Shape result = SWDRAWShapeFixCommands.InPlace(theDI, Shape, aWork => seq.InternalPrepareShape(aWork));
         seq.PrintPreparationResult();
         theDI.SetShape(arg1, result);
         return 0;

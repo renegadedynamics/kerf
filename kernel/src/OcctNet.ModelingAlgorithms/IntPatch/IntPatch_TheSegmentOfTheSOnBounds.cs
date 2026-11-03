@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 
 namespace Occt;
 
@@ -18,7 +19,7 @@ namespace Occt;
 public partial struct IntPatch_TheSegmentOfTheSOnBounds
     : IIntStart_Segment<IntPatch_ThePathPointOfTheSOnBounds>, IEquatable<IntPatch_TheSegmentOfTheSOnBounds>
 {
-    private Adaptor2d_Curve2d? arc;
+    private Curve2DAdaptorBase? arc;
     private bool hasfp;
     private IntPatch_ThePathPointOfTheSOnBounds thefp;
     private bool haslp;
@@ -37,7 +38,7 @@ public partial struct IntPatch_TheSegmentOfTheSOnBounds
     // Mutators (internal: see docs/translation-rules.md)
 
     /// <summary>Sets the arc (and forgets the limit points).</summary>
-    internal void SetValue(Adaptor2d_Curve2d A)
+    internal void SetValue(Curve2DAdaptorBase A)
     {
         hasfp = false;
         haslp = false;
@@ -62,7 +63,7 @@ public partial struct IntPatch_TheSegmentOfTheSOnBounds
     // Queries
 
     /// <summary>The arc of the domain that is a solution.</summary>
-    public readonly Adaptor2d_Curve2d Curve() => arc!;
+    public readonly Curve2DAdaptorBase Curve() => arc!;
 
     /// <summary>True if a point bounds the segment at its lowest parameter on the arc.</summary>
     public readonly bool HasFirstPoint() => hasfp;
@@ -90,7 +91,7 @@ public partial struct IntPatch_TheSegmentOfTheSOnBounds
         return thelp;
     }
 
-    void IIntStart_Segment<IntPatch_ThePathPointOfTheSOnBounds>.SetValue(Adaptor2d_Curve2d A) => SetValue(A);
+    void IIntStart_Segment<IntPatch_ThePathPointOfTheSOnBounds>.SetValue(Curve2DAdaptorBase A) => SetValue(A);
 
     void IIntStart_Segment<IntPatch_ThePathPointOfTheSOnBounds>.SetLimitPoint(in IntPatch_ThePathPointOfTheSOnBounds V,
                                                                               bool First) => SetLimitPoint(V, First);

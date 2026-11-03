@@ -1,6 +1,7 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomGridEval_Cone_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -20,7 +21,7 @@ public partial class GeomGridEval_ConeTest
         return aParams;
     }
 
-    private static Geom_ConicalSurface MakeSurface() =>
+    private static ConicalSurface MakeSurface() =>
         new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), M_PI / 4, 1.0);
 
     //=================================================================================================
@@ -31,9 +32,9 @@ public partial class GeomGridEval_ConeTest
     public void GridBasicEvaluation()
     {
         // Cone: SemiAngle=PI/4, Radius=1.0 at origin, Center(0,0,0), Z-axis
-        Geom_ConicalSurface aSurf = MakeSurface();
+        ConicalSurface aSurf = MakeSurface();
 
-        GeomGridEval_Cone anEval = new(aSurf);
+        ConeGrid anEval = new(aSurf);
         Assert.NotNull(anEval.Geometry());
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 9); // Angle
@@ -57,13 +58,13 @@ public partial class GeomGridEval_ConeTest
     [Fact]
     public void GridDerivativeD1()
     {
-        Geom_ConicalSurface aSurf = MakeSurface();
-        GeomGridEval_Cone anEval = new(aSurf);
+        ConicalSurface aSurf = MakeSurface();
+        ConeGrid anEval = new(aSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 9);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 6);
 
-        NCollection_Array2<Geom_Surface.ResD1> aGrid = anEval.EvaluateGridD1(aUParams, aVParams);
+        NCollection_Array2<Surface.ResD1> aGrid = anEval.EvaluateGridD1(aUParams, aVParams);
 
         for (int iU = 1; iU <= 9; ++iU)
         {
@@ -80,13 +81,13 @@ public partial class GeomGridEval_ConeTest
     [Fact]
     public void GridDerivativeD2()
     {
-        Geom_ConicalSurface aSurf = MakeSurface();
-        GeomGridEval_Cone anEval = new(aSurf);
+        ConicalSurface aSurf = MakeSurface();
+        ConeGrid anEval = new(aSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 9);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 6);
 
-        NCollection_Array2<Geom_Surface.ResD2> aGrid = anEval.EvaluateGridD2(aUParams, aVParams);
+        NCollection_Array2<Surface.ResD2> aGrid = anEval.EvaluateGridD2(aUParams, aVParams);
 
         for (int iU = 1; iU <= 9; ++iU)
         {
@@ -107,13 +108,13 @@ public partial class GeomGridEval_ConeTest
     [Fact]
     public void GridDerivativeD3()
     {
-        Geom_ConicalSurface aSurf = MakeSurface();
-        GeomGridEval_Cone anEval = new(aSurf);
+        ConicalSurface aSurf = MakeSurface();
+        ConeGrid anEval = new(aSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 9);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 6);
 
-        NCollection_Array2<Geom_Surface.ResD3> aGrid = anEval.EvaluateGridD3(aUParams, aVParams);
+        NCollection_Array2<Surface.ResD3> aGrid = anEval.EvaluateGridD3(aUParams, aVParams);
 
         for (int iU = 1; iU <= 9; ++iU)
         {
@@ -148,8 +149,8 @@ public partial class GeomGridEval_ConeTest
     [Fact]
     public void GridDerivativeDN()
     {
-        Geom_ConicalSurface aSurf = MakeSurface();
-        GeomGridEval_Cone anEval = new(aSurf);
+        ConicalSurface aSurf = MakeSurface();
+        ConeGrid anEval = new(aSurf);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 4);

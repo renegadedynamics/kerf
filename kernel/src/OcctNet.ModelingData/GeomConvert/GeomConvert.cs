@@ -6,13 +6,15 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Geometry.Splines;
 using Kerf.Geometry;
+using Occt;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.Continuity;
 
-namespace Occt;
+namespace Kerf.Engine.Geometry.Conversion;
 
 /// <summary>
 /// Conversions of 3D curves and surfaces to B-splines: of any bounded curve or surface (conics and elementary
@@ -28,26 +30,26 @@ namespace Occt;
 /// </remarks>
 public static class GeomConvert
 {
-    private static Geom_BSplineCurve BSplineCurveBuilder(Geom_Conic TheConic, ConicToBSplineCurve Convert)
+    private static BSplineCurve3D BSplineCurveBuilder(ConicCurve3D theConic, ConicToBSplineCurve convert)
     {
-        Geom_BSplineCurve TheCurve;
-        NCollection_Array1<Point2D> aPoles2d = Convert.Poles();
-        NCollection_Array1<double> aWeights = Convert.Weights();
-        NCollection_Array1<double> aKnots = Convert.Knots();
-        NCollection_Array1<int> aMults = Convert.Multiplicities();
-        NCollection_Array1<Point3D> Poles = new(1, aPoles2d.Length());
-        for (int i = aPoles2d.Lower(); i <= aPoles2d.Upper(); i++)
+        BSplineCurve3D theCurve;
+        NCollection_Array1<Point2D> poles2d = convert.Poles();
+        NCollection_Array1<double> weights = convert.Weights();
+        NCollection_Array1<double> knots = convert.Knots();
+        NCollection_Array1<int> mults = convert.Multiplicities();
+        NCollection_Array1<Point3D> poles = new(1, poles2d.Length());
+        for (int i = poles2d.Lower(); i <= poles2d.Upper(); i++)
         {
-            Point2D aP2d = aPoles2d[i];
-            Poles[i].SetCoord(aP2d.X(), aP2d.Y(), 0.0);
+            Point2D p2d = poles2d[i];
+            poles[i].SetCoord(p2d.X(), p2d.Y(), 0.0);
         }
 
-        TheCurve = new Geom_BSplineCurve(Poles, aWeights, aKnots, aMults, Convert.Degree(), Convert.IsPeriodic);
-        Transform3D T = new();
-        T.SetTransformation(new CoordinateSystem(TheConic.Position()), new CoordinateSystem(Constants.XOY()));
-        Geom_BSplineCurve Cres;
-        Cres = (Geom_BSplineCurve)TheCurve.Transformed(T);
-        return Cres;
+        theCurve = new BSplineCurve3D(poles, weights, knots, mults, convert.Degree(), convert.IsPeriodic);
+        Transform3D t = new();
+        t.SetTransformation(new CoordinateSystem(theConic.Position()), new CoordinateSystem(Constants.XOY()));
+        BSplineCurve3D cres;
+        cres = (BSplineCurve3D)theCurve.Transformed(t);
+        return cres;
     }
 
     /// <summary>
@@ -56,75 +58,75 @@ public static class GeomConvert
     /// </summary>
     /// <exception cref="DomainErrorException">FromK1 = ToK2.</exception>
     /// <exception cref="DomainErrorException">A knot index is outside [FirstUKnotIndex, LastUKnotIndex].</exception>
-    public static Geom_BSplineCurve SplitBSplineCurve(Geom_BSplineCurve C, int FromK1, int ToK2,
-                                                        bool SameOrientation = true)
+    public static BSplineCurve3D SplitBSplineCurve(BSplineCurve3D c, int fromK1, int toK2,
+                                                        bool sameOrientation = true)
     {
-        int TheFirst = C.FirstUKnotIndex();
-        int TheLast = C.LastUKnotIndex();
-        if (FromK1 == ToK2)
+        int theFirst = c.FirstUKnotIndex();
+        int theLast = c.LastUKnotIndex();
+        if (fromK1 == toK2)
         {
             throw new DomainErrorException();
         }
 
-        int FirstK = Min(FromK1, ToK2);
-        int LastK = Max(FromK1, ToK2);
-        if (FirstK < TheFirst || LastK > TheLast)
+        int firstK = Min(fromK1, toK2);
+        int lastK = Max(fromK1, toK2);
+        if (firstK < theFirst || lastK > theLast)
         {
             throw new DomainErrorException();
         }
 
-        Geom_BSplineCurve C1 = (Geom_BSplineCurve)C.Copy();
+        BSplineCurve3D c1 = (BSplineCurve3D)c.Copy();
 
-        C1.Segment(C.Knot(FirstK), C.Knot(LastK));
+        c1.Segment(c.Knot(firstK), c.Knot(lastK));
 
-        if (C.IsPeriodic())
+        if (c.IsPeriodic)
         {
-            if (!SameOrientation)
+            if (!sameOrientation)
             {
-                C1.Reverse();
+                c1.Reverse();
             }
         }
         else
         {
-            if (FromK1 > ToK2)
+            if (fromK1 > toK2)
             {
-                C1.Reverse();
+                c1.Reverse();
             }
         }
 
-        return C1;
+        return c1;
     }
 
     /// <summary>
     /// The part of C between the parameters FromU1 and ToU2. For a non-periodic curve, it is reversed if
     /// FromU1 &gt; ToU2; for a periodic one, if SameOrientation is false. ParametricTolerance is not used.
     /// </summary>
-    public static Geom_BSplineCurve SplitBSplineCurve(Geom_BSplineCurve C, double FromU1, double ToU2,
-                                                        double ParametricTolerance, bool SameOrientation = true)
+    public static BSplineCurve3D SplitBSplineCurve(BSplineCurve3D c, double fromU1, double toU2,
+                                                        double parametricTolerance, bool sameOrientation = true)
     {
-        double FirstU = Min(FromU1, ToU2);
-        double LastU = Max(FromU1, ToU2);
+        double firstU = Min(fromU1, toU2);
+        double lastU = Max(fromU1, toU2);
 
-        Geom_BSplineCurve C1 = (Geom_BSplineCurve)C.Copy();
+        BSplineCurve3D c1 = (BSplineCurve3D)c.Copy();
 
-        C1.Segment(FirstU, LastU);
+        c1.Segment(firstU, lastU);
 
-        if (C.IsPeriodic())
+        if (c.IsPeriodic)
         {
-            if (!SameOrientation)
+            if (!sameOrientation)
             {
-                C1.Reverse();
+                c1.Reverse();
             }
         }
         else
         {
-            if (FromU1 > ToU2)
+            if (fromU1 > toU2)
             {
-                C1.Reverse();
+                c1.Reverse();
             }
         }
 
-        return C1;
+        return c1;
     }
 
     /// <summary>
@@ -134,188 +136,188 @@ public static class GeomConvert
     /// </summary>
     /// <exception cref="DomainErrorException">C is of another kind (an untrimmed line, hyperbola or parabola).</exception>
     /// <exception cref="ConstructionErrorException">The approximation of an offset curve fails.</exception>
-    public static Geom_BSplineCurve CurveToBSplineCurve(Geom_Curve C,
-                                                          ParameterisationType Parameterisation = TgtThetaOver2)
+    public static BSplineCurve3D CurveToBSplineCurve(Curve3D c,
+                                                          ParameterisationType parameterisation = TgtThetaOver2)
     {
-        Geom_BSplineCurve TheCurve;
+        BSplineCurve3D theCurve;
 
-        if (C is Geom_TrimmedCurve Ctrim)
+        if (c is TrimmedCurve3D ctrim)
         {
-            Geom_Curve Curv;
-            Curv = Ctrim.BasisCurve();
-            double U1 = Ctrim.FirstParameter();
-            double U2 = Ctrim.LastParameter();
+            Curve3D curv;
+            curv = ctrim.BasisCurve();
+            double u1 = ctrim.FirstParameter();
+            double u2 = ctrim.LastParameter();
 
             // If the curve is not truly restricted, there is no risk of
             // a Raise in BS->Segment.
-            if (!Curv.IsPeriodic())
+            if (!curv.IsPeriodic)
             {
-                if (U1 < Curv.FirstParameter())
+                if (u1 < curv.FirstParameter())
                 {
-                    U1 = Curv.FirstParameter();
+                    u1 = curv.FirstParameter();
                 }
 
-                if (U2 > Curv.LastParameter())
+                if (u2 > curv.LastParameter())
                 {
-                    U2 = Curv.LastParameter();
+                    u2 = curv.LastParameter();
                 }
             }
 
-            if (Curv is Geom_Line)
+            if (curv is LineCurve3D)
             {
-                Point3D Pdeb = Ctrim.StartPoint();
-                Point3D Pfin = Ctrim.EndPoint();
-                NCollection_Array1<Point3D> Poles = new(1, 2);
-                Poles[1] = Pdeb;
-                Poles[2] = Pfin;
-                NCollection_Array1<double> Knots = new(1, 2);
-                Knots[1] = Ctrim.FirstParameter();
-                Knots[2] = Ctrim.LastParameter();
-                NCollection_Array1<int> Mults = new(1, 2);
-                Mults[1] = 2;
-                Mults[2] = 2;
-                int Degree = 1;
-                TheCurve = new Geom_BSplineCurve(Poles, Knots, Mults, Degree);
+                Point3D pdeb = ctrim.StartPoint();
+                Point3D pfin = ctrim.EndPoint();
+                NCollection_Array1<Point3D> poles = new(1, 2);
+                poles[1] = pdeb;
+                poles[2] = pfin;
+                NCollection_Array1<double> knots = new(1, 2);
+                knots[1] = ctrim.FirstParameter();
+                knots[2] = ctrim.LastParameter();
+                NCollection_Array1<int> mults = new(1, 2);
+                mults[1] = 2;
+                mults[2] = 2;
+                int degree = 1;
+                theCurve = new BSplineCurve3D(poles, knots, mults, degree);
             }
 
-            else if (Curv is Geom_Circle TheCircle)
+            else if (curv is CircleCurve3D theCircle)
             {
-                Circle2D C2d = new(Constants.OX2d(), TheCircle.Radius());
-                if (Parameterisation != RationalC1)
+                Circle2D c2d = new(Constants.OX2d(), theCircle.Radius());
+                if (parameterisation != RationalC1)
                 {
-                    CircleToBSplineCurve Convert = new(C2d, U1, U2, Parameterisation);
-                    TheCurve = BSplineCurveBuilder(TheCircle, Convert);
+                    CircleToBSplineCurve convert = new(c2d, u1, u2, parameterisation);
+                    theCurve = BSplineCurveBuilder(theCircle, convert);
                 }
                 else
                 {
-                    if (U2 - U1 < 6.0)
+                    if (u2 - u1 < 6.0)
                     {
-                        CircleToBSplineCurve Convert = new(C2d, U1, U2, Parameterisation);
-                        TheCurve = BSplineCurveBuilder(TheCircle, Convert);
+                        CircleToBSplineCurve convert = new(c2d, u1, u2, parameterisation);
+                        theCurve = BSplineCurveBuilder(theCircle, convert);
                     }
                     else
                     { // split circle to avoide numerical
                       // overflow when U2 - U1 =~ 2*PI
 
-                        double Umed = (U1 + U2) * .5;
-                        CircleToBSplineCurve Convert1 = new(C2d, U1, Umed, Parameterisation);
+                        double umed = (u1 + u2) * .5;
+                        CircleToBSplineCurve convert1 = new(c2d, u1, umed, parameterisation);
 
-                        Geom_BSplineCurve TheCurve1 = BSplineCurveBuilder(TheCircle, Convert1);
+                        BSplineCurve3D theCurve1 = BSplineCurveBuilder(theCircle, convert1);
 
-                        CircleToBSplineCurve Convert2 = new(C2d, Umed, U2, Parameterisation);
+                        CircleToBSplineCurve convert2 = new(c2d, umed, u2, parameterisation);
 
-                        Geom_BSplineCurve TheCurve2 = BSplineCurveBuilder(TheCircle, Convert2);
+                        BSplineCurve3D theCurve2 = BSplineCurveBuilder(theCircle, convert2);
 
-                        GeomConvert_CompCurveToBSplineCurve CCTBSpl = new(TheCurve1, Parameterisation);
+                        CompCurveToBSplineCurve cctbSpl = new(theCurve1, parameterisation);
 
-                        CCTBSpl.Add(TheCurve2, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
+                        cctbSpl.Add(theCurve2, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
 
-                        TheCurve = CCTBSpl.InternalBSplineCurve()!;
+                        theCurve = cctbSpl.InternalBSplineCurve()!;
                     }
                 }
             }
 
-            else if (Curv is Geom_Ellipse TheEllipse)
+            else if (curv is EllipseCurve3D theEllipse)
             {
-                Ellipse2D E2d = new(Constants.OX2d(), TheEllipse.MajorRadius(), TheEllipse.MinorRadius());
-                if (Parameterisation != RationalC1)
+                Ellipse2D e2d = new(Constants.OX2d(), theEllipse.MajorRadius(), theEllipse.MinorRadius());
+                if (parameterisation != RationalC1)
                 {
-                    EllipseToBSplineCurve Convert = new(E2d, U1, U2, Parameterisation);
-                    TheCurve = BSplineCurveBuilder(TheEllipse, Convert);
+                    EllipseToBSplineCurve convert = new(e2d, u1, u2, parameterisation);
+                    theCurve = BSplineCurveBuilder(theEllipse, convert);
                 }
                 else
                 {
-                    if (U2 - U1 < 6.0)
+                    if (u2 - u1 < 6.0)
                     {
-                        EllipseToBSplineCurve Convert = new(E2d, U1, U2, Parameterisation);
-                        TheCurve = BSplineCurveBuilder(TheEllipse, Convert);
+                        EllipseToBSplineCurve convert = new(e2d, u1, u2, parameterisation);
+                        theCurve = BSplineCurveBuilder(theEllipse, convert);
                     }
                     else
                     { // split ellipse to avoide numerical
                       // overflow when U2 - U1 =~ 2*PI
 
-                        double Umed = (U1 + U2) * .5;
-                        EllipseToBSplineCurve Convert1 = new(E2d, U1, Umed, Parameterisation);
+                        double umed = (u1 + u2) * .5;
+                        EllipseToBSplineCurve convert1 = new(e2d, u1, umed, parameterisation);
 
-                        Geom_BSplineCurve TheCurve1 = BSplineCurveBuilder(TheEllipse, Convert1);
+                        BSplineCurve3D theCurve1 = BSplineCurveBuilder(theEllipse, convert1);
 
-                        EllipseToBSplineCurve Convert2 = new(E2d, Umed, U2, Parameterisation);
+                        EllipseToBSplineCurve convert2 = new(e2d, umed, u2, parameterisation);
 
-                        Geom_BSplineCurve TheCurve2 = BSplineCurveBuilder(TheEllipse, Convert2);
+                        BSplineCurve3D theCurve2 = BSplineCurveBuilder(theEllipse, convert2);
 
-                        GeomConvert_CompCurveToBSplineCurve CCTBSpl = new(TheCurve1, Parameterisation);
+                        CompCurveToBSplineCurve cctbSpl = new(theCurve1, parameterisation);
 
-                        CCTBSpl.Add(TheCurve2, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
+                        cctbSpl.Add(theCurve2, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
 
-                        TheCurve = CCTBSpl.InternalBSplineCurve()!;
+                        theCurve = cctbSpl.InternalBSplineCurve()!;
                     }
                 }
             }
 
-            else if (Curv is Geom_Hyperbola TheHyperbola)
+            else if (curv is HyperbolaCurve3D theHyperbola)
             {
-                Hyperbola2D H2d = new(Constants.OX2d(), TheHyperbola.MajorRadius(), TheHyperbola.MinorRadius());
-                HyperbolaToBSplineCurve Convert = new(H2d, U1, U2);
-                TheCurve = BSplineCurveBuilder(TheHyperbola, Convert);
+                Hyperbola2D h2d = new(Constants.OX2d(), theHyperbola.MajorRadius(), theHyperbola.MinorRadius());
+                HyperbolaToBSplineCurve convert = new(h2d, u1, u2);
+                theCurve = BSplineCurveBuilder(theHyperbola, convert);
             }
 
-            else if (Curv is Geom_Parabola TheParabola)
+            else if (curv is ParabolaCurve3D theParabola)
             {
-                Parabola2D Prb2d = new(Constants.OX2d(), TheParabola.Focal());
-                ParabolaToBSplineCurve Convert = new(Prb2d, U1, U2);
-                TheCurve = BSplineCurveBuilder(TheParabola, Convert);
+                Parabola2D prb2d = new(Constants.OX2d(), theParabola.Focal());
+                ParabolaToBSplineCurve convert = new(prb2d, u1, u2);
+                theCurve = BSplineCurveBuilder(theParabola, convert);
             }
 
-            else if (Curv is Geom_BezierCurve)
+            else if (curv is BezierCurve3D)
             {
-                Geom_BezierCurve CBez = (Geom_BezierCurve)Curv.Copy();
+                BezierCurve3D cBez = (BezierCurve3D)curv.Copy();
 
-                CBez.Segment(U1, U2);
-                int Degree = CBez.Degree();
-                NCollection_Array1<double> Knots = new(1, 2);
-                NCollection_Array1<int> Mults = new(1, 2);
-                Knots[1] = 0.0;
-                Knots[2] = 1.0;
-                Mults[1] = Degree + 1;
-                Mults[2] = Degree + 1;
-                NCollection_Array1<Point3D> Poles = CBez.InternalPoles();
-                if (CBez.IsRational())
+                cBez.Segment(u1, u2);
+                int degree = cBez.Degree();
+                NCollection_Array1<double> knots = new(1, 2);
+                NCollection_Array1<int> mults = new(1, 2);
+                knots[1] = 0.0;
+                knots[2] = 1.0;
+                mults[1] = degree + 1;
+                mults[2] = degree + 1;
+                NCollection_Array1<Point3D> poles = cBez.InternalPoles();
+                if (cBez.IsRational)
                 {
-                    TheCurve = new Geom_BSplineCurve(Poles, CBez.InternalWeightsArray(), Knots, Mults, Degree);
+                    theCurve = new BSplineCurve3D(poles, cBez.InternalWeightsArray(), knots, mults, degree);
                 }
                 else
                 {
-                    TheCurve = new Geom_BSplineCurve(Poles, Knots, Mults, Degree);
+                    theCurve = new BSplineCurve3D(poles, knots, mults, degree);
                 }
             }
 
-            else if (Curv is Geom_BSplineCurve)
+            else if (curv is BSplineCurve3D)
             {
-                TheCurve = (Geom_BSplineCurve)Curv.Copy();
+                theCurve = (BSplineCurve3D)curv.Copy();
                 //// modified by jgv, 14.01.05 for OCC7355 ////
-                if (TheCurve.IsPeriodic())
+                if (theCurve.IsPeriodic)
                 {
-                    double Uf = TheCurve.FirstParameter();
-                    double Ul = TheCurve.LastParameter();
-                    global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(Uf, Ul, global::Kerf.Engine.Foundation.Precision.Confusion(), ref U1, ref U2);
-                    if (Math.Abs(U1 - Uf) <= global::Kerf.Engine.Foundation.Precision.Confusion() && Math.Abs(U2 - Ul) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                    double uf = theCurve.FirstParameter();
+                    double ul = theCurve.LastParameter();
+                    global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(uf, ul, global::Kerf.Engine.Foundation.Precision.Confusion(), ref u1, ref u2);
+                    if (Math.Abs(u1 - uf) <= global::Kerf.Engine.Foundation.Precision.Confusion() && Math.Abs(u2 - ul) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        TheCurve.SetNotPeriodic();
+                        theCurve.SetNotPeriodic();
                     }
                 }
                 ///////////////////////////////////////////////
-                TheCurve.Segment(U1, U2);
+                theCurve.Segment(u1, u2);
             }
 
-            else if (Curv is Geom_OffsetCurve)
+            else if (curv is OffsetCurve3D)
             {
-                double Tol3d = 1.0e-4;
-                Continuity Order = C2;
-                int MaxSegments = 16, MaxDegree = 14;
-                GeomConvert_ApproxCurve ApprCOffs = new(C, Tol3d, Order, MaxSegments, MaxDegree);
-                if (ApprCOffs.HasResult())
+                double tol3d = 1.0e-4;
+                Continuity order = C2;
+                int maxSegments = 16, maxDegree = 14;
+                ApproxCurve apprCOffs = new(c, tol3d, order, maxSegments, maxDegree);
+                if (apprCOffs.HasResult)
                 {
-                    TheCurve = ApprCOffs.InternalCurve()!;
+                    theCurve = apprCOffs.InternalCurve()!;
                 }
                 else
                 {
@@ -331,55 +333,55 @@ public static class GeomConvert
 
         else
         {
-            if (C is Geom_Ellipse TheEllipse)
+            if (c is EllipseCurve3D theEllipse)
             {
-                Ellipse2D E2d = new(Constants.OX2d(), TheEllipse.MajorRadius(), TheEllipse.MinorRadius());
-                EllipseToBSplineCurve Convert = new(E2d, Parameterisation);
-                TheCurve = BSplineCurveBuilder(TheEllipse, Convert);
-                TheCurve.SetPeriodic();
+                Ellipse2D e2d = new(Constants.OX2d(), theEllipse.MajorRadius(), theEllipse.MinorRadius());
+                EllipseToBSplineCurve convert = new(e2d, parameterisation);
+                theCurve = BSplineCurveBuilder(theEllipse, convert);
+                theCurve.SetPeriodic();
             }
 
-            else if (C is Geom_Circle TheCircle)
+            else if (c is CircleCurve3D theCircle)
             {
-                Circle2D C2d = new(Constants.OX2d(), TheCircle.Radius());
-                CircleToBSplineCurve Convert = new(C2d, Parameterisation);
-                TheCurve = BSplineCurveBuilder(TheCircle, Convert);
-                TheCurve.SetPeriodic();
+                Circle2D c2d = new(Constants.OX2d(), theCircle.Radius());
+                CircleToBSplineCurve convert = new(c2d, parameterisation);
+                theCurve = BSplineCurveBuilder(theCircle, convert);
+                theCurve.SetPeriodic();
             }
 
-            else if (C is Geom_BezierCurve CBez)
+            else if (c is BezierCurve3D cBez)
             {
-                int Degree = CBez.Degree();
-                NCollection_Array1<double> Knots = new(1, 2);
-                NCollection_Array1<int> Mults = new(1, 2);
-                Knots[1] = 0.0;
-                Knots[2] = 1.0;
-                Mults[1] = Degree + 1;
-                Mults[2] = Degree + 1;
-                NCollection_Array1<Point3D> Poles = CBez.InternalPoles();
-                if (CBez.IsRational())
+                int degree = cBez.Degree();
+                NCollection_Array1<double> knots = new(1, 2);
+                NCollection_Array1<int> mults = new(1, 2);
+                knots[1] = 0.0;
+                knots[2] = 1.0;
+                mults[1] = degree + 1;
+                mults[2] = degree + 1;
+                NCollection_Array1<Point3D> poles = cBez.InternalPoles();
+                if (cBez.IsRational)
                 {
-                    TheCurve = new Geom_BSplineCurve(Poles, CBez.InternalWeightsArray(), Knots, Mults, Degree);
+                    theCurve = new BSplineCurve3D(poles, cBez.InternalWeightsArray(), knots, mults, degree);
                 }
                 else
                 {
-                    TheCurve = new Geom_BSplineCurve(Poles, Knots, Mults, Degree);
+                    theCurve = new BSplineCurve3D(poles, knots, mults, degree);
                 }
             }
-            else if (C is Geom_BSplineCurve)
+            else if (c is BSplineCurve3D)
             {
-                TheCurve = (Geom_BSplineCurve)C.Copy();
+                theCurve = (BSplineCurve3D)c.Copy();
             }
 
-            else if (C is Geom_OffsetCurve)
+            else if (c is OffsetCurve3D)
             {
-                double Tol3d = 1.0e-4;
-                Continuity Order = C2;
-                int MaxSegments = 16, MaxDegree = 14;
-                GeomConvert_ApproxCurve ApprCOffs = new(C, Tol3d, Order, MaxSegments, MaxDegree);
-                if (ApprCOffs.HasResult())
+                double tol3d = 1.0e-4;
+                Continuity order = C2;
+                int maxSegments = 16, maxDegree = 14;
+                ApproxCurve apprCOffs = new(c, tol3d, order, maxSegments, maxDegree);
+                if (apprCOffs.HasResult)
                 {
-                    TheCurve = ApprCOffs.InternalCurve()!;
+                    theCurve = apprCOffs.InternalCurve()!;
                 }
                 else
                 {
@@ -393,91 +395,91 @@ public static class GeomConvert
             }
         }
 
-        return TheCurve;
+        return theCurve;
     }
 
     private sealed class GeomConvert_law_evaluator : EvaluatorFunction
     {
-        private readonly Geom2d_BSplineCurve? myAncore;
+        private readonly BSplineCurve2D? _ancore;
 
-        public GeomConvert_law_evaluator(Geom2d_BSplineCurve? theAncore) => myAncore = theAncore;
+        public GeomConvert_law_evaluator(BSplineCurve2D? ancore) => _ancore = ancore;
 
-        public override void Evaluate(int theDerivativeRequest, ReadOnlySpan<double> theStartEnd, double theParameter,
-                                      out double theResult, out int theErrorCode)
+        public override void Evaluate(int derivativeRequest, ReadOnlySpan<double> startEnd, double parameter,
+                                      out double result, out int errorCode)
         {
-            theErrorCode = 0;
-            if (myAncore is not null && theParameter >= theStartEnd[0] && theParameter <= theStartEnd[1]
-                && theDerivativeRequest == 0)
+            errorCode = 0;
+            if (_ancore is not null && parameter >= startEnd[0] && parameter <= startEnd[1]
+                && derivativeRequest == 0)
             {
-                myAncore.D0(theParameter, out Point2D aPoint);
-                theResult = aPoint.Coord(2);
+                _ancore.D0(parameter, out Point2D point);
+                result = point.Coord(2);
             }
             else
             {
                 // OCCT leaves the result unset; the port sets 0 (decision 32)
-                theResult = 0.0;
-                theErrorCode = 1;
+                result = 0.0;
+                errorCode = 1;
             }
         }
     }
 
-    private static Geom_BSplineCurve MultNumandDenom(Geom2d_BSplineCurve a, Geom_BSplineCurve BS)
+    private static BSplineCurve3D MultNumandDenom(BSplineCurve2D a, BSplineCurve3D bs)
     {
-        NCollection_Array1<double> BSKnots = BS.InternalKnots();
-        NCollection_Array1<int> BSMults = BS.InternalMultiplicities();
-        NCollection_Array1<Point3D> BSPoles = new(BS.InternalPoles());
-        NCollection_Array1<double> BSWeights = BS.InternalWeightsArray();
-        NCollection_Array1<double> BSFlatKnots = BS.InternalKnotSequence();
-        Geom_BSplineCurve res;
+        NCollection_Array1<double> bsKnots = bs.InternalKnots();
+        NCollection_Array1<int> bsMults = bs.InternalMultiplicities();
+        NCollection_Array1<Point3D> bsPoles = new(bs.InternalPoles());
+        NCollection_Array1<double> bsWeights = bs.InternalWeightsArray();
+        NCollection_Array1<double> bsFlatKnots = bs.InternalKnotSequence();
+        BSplineCurve3D res;
         double start_value, end_value;
         double tolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
-        int resNbPoles, degree, ii, jj, aStatus;
+        int resNbPoles, degree, ii, jj, status;
 
-        start_value = BSKnots[1];
-        end_value = BSKnots[BS.NbKnots()];
+        start_value = bsKnots[1];
+        end_value = bsKnots[bs.KnotCount];
         if ((end_value - start_value) / 5 < tolerance)
         {
             tolerance = (end_value - start_value) / 5;
         }
 
-        NCollection_Array1<double> aKnots = new(a.InternalKnots());
-        NCollection_Array1<Point2D> aPoles = a.InternalPoles();
-        NCollection_Array1<int> aMults = a.InternalMultiplicities();
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(BS.FirstParameter(), BS.LastParameter(), aKnots);
-        Geom2d_BSplineCurve anAncore = new(aPoles, aKnots, aMults, a.Degree());
+        NCollection_Array1<double> knots = new(a.InternalKnots());
+        NCollection_Array1<Point2D> poles = a.InternalPoles();
+        NCollection_Array1<int> mults = a.InternalMultiplicities();
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(bs.FirstParameter(), bs.LastParameter(), knots);
+        BSplineCurve2D ancore = new(poles, knots, mults, a.Degree());
 
         global::Kerf.Engine.Geometry.Splines.BSplCLib.MergeBSplineKnots(tolerance,
                                    start_value,
                                    end_value, // merge of the knots
                                    a.Degree(),
-                                   aKnots,
-                                   aMults,
-                                   BS.Degree(),
-                                   BSKnots,
-                                   BSMults,
+                                   knots,
+                                   mults,
+                                   bs.Degree(),
+                                   bsKnots,
+                                   bsMults,
                                    out resNbPoles,
                                    out NCollection_HArray1<double> resKnots,
                                    out NCollection_HArray1<int> resMults);
-        degree = BS.Degree() + a.Degree();
+        degree = bs.Degree() + a.Degree();
         NCollection_Array1<Point3D> resNumPoles = new(1, resNbPoles);
         NCollection_Array1<double> resDenPoles = new(1, resNbPoles);
         NCollection_Array1<Point3D> resPoles = new(1, resNbPoles);
         NCollection_Array1<double> resFlatKnots = new(1, resNbPoles + degree + 1);
         global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(resKnots, resMults, resFlatKnots);
-        for (ii = 1; ii <= BS.NbPoles(); ii++)
+        for (ii = 1; ii <= bs.PoleCount; ii++)
         {
             for (jj = 1; jj <= 3; jj++)
             {
-                BSPoles[ii].SetCoord(jj, BSPoles[ii].Coord(jj) * BSWeights[ii]);
+                bsPoles[ii].SetCoord(jj, bsPoles[ii].Coord(jj) * bsWeights[ii]);
             }
         }
 
         // POP for WNT
-        GeomConvert_law_evaluator ev = new(anAncore);
+        GeomConvert_law_evaluator ev = new(ancore);
 
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionMultiply(ev, BS.Degree(), BSFlatKnots, BSPoles, resFlatKnots, degree, resNumPoles, out aStatus);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionMultiply(ev, bs.Degree(), bsFlatKnots, bsPoles, resFlatKnots, degree, resNumPoles, out status);
 
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionMultiply(ev, BS.Degree(), BSFlatKnots, BSWeights, resFlatKnots, degree, resDenPoles, out aStatus);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionMultiply(ev, bs.Degree(), bsFlatKnots, bsWeights, resFlatKnots, degree, resDenPoles, out status);
         for (ii = 1; ii <= resNbPoles; ii++)
         {
             for (jj = 1; jj <= 3; jj++)
@@ -486,50 +488,50 @@ public static class GeomConvert
             }
         }
 
-        res = new Geom_BSplineCurve(resPoles, resDenPoles, resKnots, resMults, degree);
+        res = new BSplineCurve3D(resPoles, resDenPoles, resKnots, resMults, degree);
         return res;
     }
 
-    private static void Pretreatment(NCollection_Array1<Geom_BSplineCurve> tab)
+    private static void Pretreatment(NCollection_Array1<BSplineCurve3D> tab)
     {
         int i, j;
         double a;
 
         for (i = 0; i <= (tab.Length() - 1); i++)
         {
-            if (tab[i].IsRational())
+            if (tab[i].IsRational)
             {
                 a = tab[i].Weight(1);
-                if ((tab[i].Weight(2) == a) && (tab[i].Weight(tab[i].NbPoles() - 1) == a)
-                    && (tab[i].Weight(tab[i].NbPoles()) == a))
+                if ((tab[i].Weight(2) == a) && (tab[i].Weight(tab[i].PoleCount - 1) == a)
+                    && (tab[i].Weight(tab[i].PoleCount) == a))
                 {
                     // OCCT changes the caller's curve in place; the port puts a changed copy in the array
-                    Geom_BSplineCurve aCurve = (Geom_BSplineCurve)tab[i].Copy();
-                    for (j = 1; j <= aCurve.NbPoles(); j++)
+                    BSplineCurve3D curve = (BSplineCurve3D)tab[i].Copy();
+                    for (j = 1; j <= curve.PoleCount; j++)
                     {
-                        aCurve.SetWeight(j, aCurve.Weight(j) / a);
+                        curve.SetWeight(j, curve.Weight(j) / a);
                     }
 
-                    tab[i] = aCurve;
+                    tab[i] = curve;
                 }
             }
         }
     }
 
-    private static bool NeedToBeTreated(Geom_BSplineCurve BS)
+    private static bool NeedToBeTreated(BSplineCurve3D bs)
     {
-        if (BS.IsRational())
+        if (bs.IsRational)
         {
-            NCollection_Array1<double> tabWeights = BS.InternalWeightsArray();
-            return (global::Kerf.Engine.Geometry.Splines.BSplCLib.IsRational(tabWeights, 1, BS.NbPoles()))
-                   && ((BS.Weight(1) < (1 - global::Kerf.Engine.Foundation.Precision.Confusion()))
-                       || (BS.Weight(1) > (1 + global::Kerf.Engine.Foundation.Precision.Confusion()))
-                       || (BS.Weight(2) < (1 - global::Kerf.Engine.Foundation.Precision.Confusion()))
-                       || (BS.Weight(2) > (1 + global::Kerf.Engine.Foundation.Precision.Confusion()))
-                       || (BS.Weight(BS.NbPoles() - 1) < (1 - global::Kerf.Engine.Foundation.Precision.Confusion()))
-                       || (BS.Weight(BS.NbPoles() - 1) > (1 + global::Kerf.Engine.Foundation.Precision.Confusion()))
-                       || (BS.Weight(BS.NbPoles()) < (1 - global::Kerf.Engine.Foundation.Precision.Confusion()))
-                       || (BS.Weight(BS.NbPoles()) > (1 + global::Kerf.Engine.Foundation.Precision.Confusion())));
+            NCollection_Array1<double> tabWeights = bs.InternalWeightsArray();
+            return (global::Kerf.Engine.Geometry.Splines.BSplCLib.IsRational(tabWeights, 1, bs.PoleCount))
+                   && ((bs.Weight(1) < (1 - global::Kerf.Engine.Foundation.Precision.Confusion()))
+                       || (bs.Weight(1) > (1 + global::Kerf.Engine.Foundation.Precision.Confusion()))
+                       || (bs.Weight(2) < (1 - global::Kerf.Engine.Foundation.Precision.Confusion()))
+                       || (bs.Weight(2) > (1 + global::Kerf.Engine.Foundation.Precision.Confusion()))
+                       || (bs.Weight(bs.PoleCount - 1) < (1 - global::Kerf.Engine.Foundation.Precision.Confusion()))
+                       || (bs.Weight(bs.PoleCount - 1) > (1 + global::Kerf.Engine.Foundation.Precision.Confusion()))
+                       || (bs.Weight(bs.PoleCount) < (1 - global::Kerf.Engine.Foundation.Precision.Confusion()))
+                       || (bs.Weight(bs.PoleCount) > (1 + global::Kerf.Engine.Foundation.Precision.Confusion())));
         }
         else
         {
@@ -537,23 +539,23 @@ public static class GeomConvert
         }
     }
 
-    private static bool Need2DegRepara(NCollection_Array1<Geom_BSplineCurve> tab)
+    private static bool Need2DegRepara(NCollection_Array1<BSplineCurve3D> tab)
     {
         int i;
-        Vector3D Vec1, Vec2;
-        double Rapport = 1.0e0;
+        Vector3D vec1, vec2;
+        double rapport = 1.0e0;
 
         for (i = 0; i <= tab.Length() - 2; i++)
         {
-            tab[i + 1].D1(tab[i + 1].FirstParameter(), out _, out Vec1);
-            tab[i].D1(tab[i].LastParameter(), out _, out Vec2);
-            Rapport = Rapport * Vec2.Magnitude() / Vec1.Magnitude();
+            tab[i + 1].D1(tab[i + 1].FirstParameter(), out _, out vec1);
+            tab[i].D1(tab[i].LastParameter(), out _, out vec2);
+            rapport = rapport * vec2.Magnitude() / vec1.Magnitude();
         }
 
-        return (Rapport > (1.0e0 + global::Kerf.Engine.Foundation.Precision.Confusion())) || (Rapport < (1.0e0 - global::Kerf.Engine.Foundation.Precision.Confusion()));
+        return (rapport > (1.0e0 + global::Kerf.Engine.Foundation.Precision.Confusion())) || (rapport < (1.0e0 - global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
 
-    private static int Indexmin(NCollection_Array1<Geom_BSplineCurve> tab)
+    private static int Indexmin(NCollection_Array1<BSplineCurve3D> tab)
     {
         int i, index = 0, degree;
 
@@ -570,77 +572,77 @@ public static class GeomConvert
         return index;
     }
 
-    private static void ReorderArrayOfG1Curves(NCollection_Array1<Geom_BSplineCurve> ArrayOfCurves,
-                                         NCollection_Array1<double> ArrayOfToler,
+    private static void ReorderArrayOfG1Curves(NCollection_Array1<BSplineCurve3D> arrayOfCurves,
+                                         NCollection_Array1<double> arrayOfToler,
                                          NCollection_Array1<bool> tabG1,
-                                         int StartIndex,
-                                         double ClosedTolerance)
+                                         int startIndex,
+                                         double closedTolerance)
     {
         int i;
-        NCollection_Array1<Geom_BSplineCurve> ArraybisOfCurves = new(0, ArrayOfCurves.Length() - 1);
-        NCollection_Array1<double> ArraybisOfToler = new(0, ArrayOfToler.Length() - 1);
+        NCollection_Array1<BSplineCurve3D> arraybisOfCurves = new(0, arrayOfCurves.Length() - 1);
+        NCollection_Array1<double> arraybisOfToler = new(0, arrayOfToler.Length() - 1);
         NCollection_Array1<bool> tabbisG1 = new(0, tabG1.Length() - 1);
 
-        for (i = 0; i <= ArrayOfCurves.Length() - 1; i++)
+        for (i = 0; i <= arrayOfCurves.Length() - 1; i++)
         {
-            if (i != ArrayOfCurves.Length() - 1)
+            if (i != arrayOfCurves.Length() - 1)
             {
-                ArraybisOfCurves[i] = ArrayOfCurves[i];
-                ArraybisOfToler[i] = ArrayOfToler[i];
+                arraybisOfCurves[i] = arrayOfCurves[i];
+                arraybisOfToler[i] = arrayOfToler[i];
                 tabbisG1[i] = tabG1[i];
             }
             else
             {
-                ArraybisOfCurves[i] = ArrayOfCurves[i];
+                arraybisOfCurves[i] = arrayOfCurves[i];
             }
         }
 
-        for (i = 0; i <= (ArrayOfCurves.Length() - (StartIndex + 2)); i++)
+        for (i = 0; i <= (arrayOfCurves.Length() - (startIndex + 2)); i++)
         {
-            ArrayOfCurves[i] = ArraybisOfCurves[i + StartIndex + 1];
-            if (i != (ArrayOfCurves.Length() - (StartIndex + 2)))
+            arrayOfCurves[i] = arraybisOfCurves[i + startIndex + 1];
+            if (i != (arrayOfCurves.Length() - (startIndex + 2)))
             {
-                ArrayOfToler[i] = ArraybisOfToler[i + StartIndex + 1];
-                tabG1[i] = tabbisG1[i + StartIndex + 1];
+                arrayOfToler[i] = arraybisOfToler[i + startIndex + 1];
+                tabG1[i] = tabbisG1[i + startIndex + 1];
             }
         }
 
-        ArrayOfToler[ArrayOfCurves.Length() - (StartIndex + 2)] = ClosedTolerance;
-        tabG1[ArrayOfCurves.Length() - (StartIndex + 2)] = true;
+        arrayOfToler[arrayOfCurves.Length() - (startIndex + 2)] = closedTolerance;
+        tabG1[arrayOfCurves.Length() - (startIndex + 2)] = true;
 
-        for (i = (ArrayOfCurves.Length() - (StartIndex + 1)); i <= (ArrayOfCurves.Length() - 1); i++)
+        for (i = (arrayOfCurves.Length() - (startIndex + 1)); i <= (arrayOfCurves.Length() - 1); i++)
         {
-            if (i != ArrayOfCurves.Length() - 1)
+            if (i != arrayOfCurves.Length() - 1)
             {
-                ArrayOfCurves[i] = ArraybisOfCurves[i - (ArrayOfCurves.Length() - (StartIndex + 1))];
-                ArrayOfToler[i] = ArraybisOfToler[i - (ArrayOfCurves.Length() - (StartIndex + 1))];
-                tabG1[i] = tabbisG1[i - (ArrayOfCurves.Length() - (StartIndex + 1))];
+                arrayOfCurves[i] = arraybisOfCurves[i - (arrayOfCurves.Length() - (startIndex + 1))];
+                arrayOfToler[i] = arraybisOfToler[i - (arrayOfCurves.Length() - (startIndex + 1))];
+                tabG1[i] = tabbisG1[i - (arrayOfCurves.Length() - (startIndex + 1))];
             }
             else
             {
-                ArrayOfCurves[i] = ArraybisOfCurves[i - (ArrayOfCurves.Length() - (StartIndex + 1))];
+                arrayOfCurves[i] = arraybisOfCurves[i - (arrayOfCurves.Length() - (startIndex + 1))];
             }
         }
     }
 
     private sealed class GeomConvert_reparameterise_evaluator : EvaluatorFunction
     {
-        private readonly double[] myPolynomialCoefficient = new double[3];
+        private readonly double[] _polynomialCoefficient = new double[3];
 
-        public GeomConvert_reparameterise_evaluator(ReadOnlySpan<double> thePolynomialCoefficient) =>
-            thePolynomialCoefficient[..3].CopyTo(myPolynomialCoefficient);
+        public GeomConvert_reparameterise_evaluator(ReadOnlySpan<double> polynomialCoefficient) =>
+            polynomialCoefficient[..3].CopyTo(_polynomialCoefficient);
 
-        public override void Evaluate(int theDerivativeRequest, ReadOnlySpan<double> theStartEnd, double theParameter,
-                                      out double theResult, out int theErrorCode)
+        public override void Evaluate(int derivativeRequest, ReadOnlySpan<double> startEnd, double parameter,
+                                      out double result, out int errorCode)
         {
-            theErrorCode = 0;
+            errorCode = 0;
             // OCCT passes a single double as the result, which PLib::EvalPolynomial fills with the value and
             // theDerivativeRequest derivatives: it writes past it when a derivative is requested (BSplCLib's
             // FunctionReparameterise only asks for the value). The port evaluates into a buffer of that size and
             // returns its first value, as OCCT's double holds.
-            Span<double> aResults = stackalloc double[theDerivativeRequest + 1];
-            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPolynomial(theParameter, theDerivativeRequest, 2, 1, myPolynomialCoefficient, aResults);
-            theResult = aResults[0];
+            Span<double> results = stackalloc double[derivativeRequest + 1];
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPolynomial(parameter, derivativeRequest, 2, 1, _polynomialCoefficient, results);
+            result = results[0];
         }
     }
 
@@ -654,40 +656,40 @@ public static class GeomConvert
     /// </summary>
     /// <exception cref="FailureException">Two consecutive curves don't join.</exception>
     /// <exception cref="ConstructionErrorException">A concatenation fails.</exception>
-    public static void ConcatG1(NCollection_Array1<Geom_BSplineCurve> ArrayOfCurves,
-                                NCollection_Array1<double> ArrayOfToler,
-                                out NCollection_HArray1<Geom_BSplineCurve> ArrayOfConcatenated,
-                                ref bool ClosedG1Flag,
-                                double ClosedTolerance)
+    public static void ConcatG1(NCollection_Array1<BSplineCurve3D> arrayOfCurves,
+                                NCollection_Array1<double> arrayOfToler,
+                                out NCollection_HArray1<BSplineCurve3D> arrayOfConcatenated,
+                                ref bool closedG1Flag,
+                                double closedTolerance)
     {
-        int nb_curve = ArrayOfCurves.Length(), nb_vertexG1, nb_group = 0, index = 0, i, ii, j, jj, indexmin,
+        int nb_curve = arrayOfCurves.Length(), nb_vertexG1, nb_group = 0, index = 0, i, ii, j, jj, indexmin,
             nb_vertex_group0 = 0;
         double lambda, // G1 junction coefficient
-            First, PreLast = 0;
-        Continuity Cont;
-        Vector3D Vec1, Vec2; // consecutive tangential vectors
-        Geom_BSplineCurve Curve1, Curve2;
+            first, preLast = 0;
+        Continuity cont;
+        Vector3D vec1, vec2; // consecutive tangential vectors
+        BSplineCurve3D curve1, curve2;
         NCollection_Array1<bool> tabG1 = new(0, nb_curve - 2); // G1 continuity table at junctions
-        NCollection_Array1<double> local_tolerance = new(0, ArrayOfToler.Length() - 1);
+        NCollection_Array1<double> local_tolerance = new(0, arrayOfToler.Length() - 1);
 
-        for (i = 0; i < ArrayOfToler.Length(); i++)
+        for (i = 0; i < arrayOfToler.Length(); i++)
         {
-            local_tolerance[i] = ArrayOfToler[i];
+            local_tolerance[i] = arrayOfToler[i];
         }
 
         for (i = 0; i < nb_curve; i++)
         {
             if (i >= 1)
             {
-                First = ArrayOfCurves[i].FirstParameter();
-                Cont = GeomLProp.Continuity(ArrayOfCurves[i - 1], ArrayOfCurves[i], PreLast, First, true, true);
-                if (Cont < C0)
+                first = arrayOfCurves[i].FirstParameter();
+                cont = global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(arrayOfCurves[i - 1], arrayOfCurves[i], preLast, first, true, true);
+                if (cont < C0)
                 {
                     throw new ConstructionErrorException("GeomConvert curves not C0");
                 }
                 else
                 {
-                    if (Cont >= G1)
+                    if (cont >= G1)
                     {
                         tabG1[i - 1] = true; // True=G1 continuity
                     }
@@ -698,7 +700,7 @@ public static class GeomConvert
                 }
             }
 
-            PreLast = ArrayOfCurves[i].LastParameter();
+            preLast = arrayOfCurves[i].LastParameter();
         }
 
         while (index <= nb_curve - 1)
@@ -718,128 +720,128 @@ public static class GeomConvert
             index = index + 1 + nb_vertexG1;
         }
 
-        if ((ClosedG1Flag) && (nb_group != 1))
+        if ((closedG1Flag) && (nb_group != 1))
         { // rearrangement du tableau
             nb_group--;
-            ReorderArrayOfG1Curves(ArrayOfCurves, local_tolerance, tabG1, nb_vertex_group0, ClosedTolerance);
+            ReorderArrayOfG1Curves(arrayOfCurves, local_tolerance, tabG1, nb_vertex_group0, closedTolerance);
         }
 
-        ArrayOfConcatenated = new NCollection_HArray1<Geom_BSplineCurve>(0, nb_group - 1);
+        arrayOfConcatenated = new NCollection_HArray1<BSplineCurve3D>(0, nb_group - 1);
 
         bool fusion;
         index = 0;
-        Pretreatment(ArrayOfCurves);
+        Pretreatment(arrayOfCurves);
 
-        Span<double> aPolynomialCoefficient = stackalloc double[3];
+        Span<double> polynomialCoefficient = stackalloc double[3];
 
-        bool NeedDoubleDegRepara = Need2DegRepara(ArrayOfCurves);
-        if (nb_group == 1 && ClosedG1Flag && NeedDoubleDegRepara)
+        bool needDoubleDegRepara = Need2DegRepara(arrayOfCurves);
+        if (nb_group == 1 && closedG1Flag && needDoubleDegRepara)
         {
-            Curve1 = ArrayOfCurves[nb_curve - 1];
+            curve1 = arrayOfCurves[nb_curve - 1];
             // OCCT reads Geom2d_BSplineCurve's maximum degree, which is Geom_BSplineCurve's (25)
-            if (Curve1.Degree() > Geom2d_BSplineCurve.MaxDegree() / 2)
+            if (curve1.Degree() > BSplineCurve2D.MaxDegree() / 2)
             {
-                ClosedG1Flag = false;
+                closedG1Flag = false;
             }
         }
 
-        if ((nb_group == 1) && (ClosedG1Flag))
+        if ((nb_group == 1) && (closedG1Flag))
         { // treatment of a particular case
-            indexmin = Indexmin(ArrayOfCurves);
-            if (indexmin != (ArrayOfCurves.Length() - 1))
+            indexmin = Indexmin(arrayOfCurves);
+            if (indexmin != (arrayOfCurves.Length() - 1))
             {
-                ReorderArrayOfG1Curves(ArrayOfCurves, local_tolerance, tabG1, indexmin, ClosedTolerance);
+                ReorderArrayOfG1Curves(arrayOfCurves, local_tolerance, tabG1, indexmin, closedTolerance);
             }
 
-            Curve2 = ArrayOfCurves[0];
+            curve2 = arrayOfCurves[0];
             for (j = 1; j <= nb_curve - 1; j++)
             { // secondary loop inside each group
-                Curve1 = ArrayOfCurves[j];
-                if ((j == (nb_curve - 1)) && (NeedDoubleDegRepara))
+                curve1 = arrayOfCurves[j];
+                if ((j == (nb_curve - 1)) && (needDoubleDegRepara))
                 {
-                    Curve2.D1(Curve2.LastParameter(), out _, out Vec1);
-                    Curve1.D1(Curve1.FirstParameter(), out _, out Vec2);
-                    lambda = Vec2.Magnitude() / Vec1.Magnitude();
-                    NCollection_Array1<double> KnotC1 = new(Curve1.InternalKnots());
-                    Curve1.D1(Curve1.LastParameter(), out _, out Vec2);
-                    ArrayOfCurves[0].D1(ArrayOfCurves[0].FirstParameter(), out _, out Vec1);
-                    double lambda2 = Vec1.Magnitude() / Vec2.Magnitude();
-                    double tmax, a, b, c, umin = Curve1.FirstParameter(), umax = Curve1.LastParameter();
+                    curve2.D1(curve2.LastParameter(), out _, out vec1);
+                    curve1.D1(curve1.FirstParameter(), out _, out vec2);
+                    lambda = vec2.Magnitude() / vec1.Magnitude();
+                    NCollection_Array1<double> knotC1 = new(curve1.InternalKnots());
+                    curve1.D1(curve1.LastParameter(), out _, out vec2);
+                    arrayOfCurves[0].D1(arrayOfCurves[0].FirstParameter(), out _, out vec1);
+                    double lambda2 = vec1.Magnitude() / vec2.Magnitude();
+                    double tmax, a, b, c, umin = curve1.FirstParameter(), umax = curve1.LastParameter();
                     tmax = 2 * lambda * (umax - umin) / (1 + lambda * lambda2);
                     a = (lambda * lambda2 - 1) / (2 * lambda * tmax);
-                    aPolynomialCoefficient[2] = a;
+                    polynomialCoefficient[2] = a;
                     b = (1 / lambda);
-                    aPolynomialCoefficient[1] = b;
+                    polynomialCoefficient[1] = b;
                     c = umin;
-                    aPolynomialCoefficient[0] = c;
-                    NCollection_Array1<double> Curve1FlatKnots = new(1, Curve1.NbPoles() + Curve1.Degree() + 1);
-                    NCollection_Array1<int> KnotC1Mults = new(Curve1.InternalMultiplicities());
-                    global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(KnotC1, KnotC1Mults, Curve1FlatKnots);
-                    KnotC1[1] = 0.0;
-                    for (ii = 2; ii <= KnotC1.Length(); ii++)
+                    polynomialCoefficient[0] = c;
+                    NCollection_Array1<double> curve1FlatKnots = new(1, curve1.PoleCount + curve1.Degree() + 1);
+                    NCollection_Array1<int> knotC1Mults = new(curve1.InternalMultiplicities());
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(knotC1, knotC1Mults, curve1FlatKnots);
+                    knotC1[1] = 0.0;
+                    for (ii = 2; ii <= knotC1.Length(); ii++)
                     {
-                        KnotC1[ii] = (-b + Math.Sqrt(b * b - 4 * a * (c - KnotC1[ii]))) / (2 * a); // ifv 17.05.00 buc60667
+                        knotC1[ii] = (-b + Math.Sqrt(b * b - 4 * a * (c - knotC1[ii]))) / (2 * a); // ifv 17.05.00 buc60667
                     }
 
-                    NCollection_Array1<Point3D> Curve1Poles = new(Curve1.InternalPoles());
+                    NCollection_Array1<Point3D> curve1Poles = new(curve1.InternalPoles());
 
-                    for (ii = 1; ii <= Curve1.NbKnots(); ii++)
+                    for (ii = 1; ii <= curve1.KnotCount; ii++)
                     {
-                        KnotC1Mults[ii] = (Curve1.Degree() + KnotC1Mults[ii]);
+                        knotC1Mults[ii] = (curve1.Degree() + knotC1Mults[ii]);
                     }
 
-                    NCollection_Array1<double> FlatKnots = new(1, Curve1FlatKnots.Length() + (Curve1.Degree() * Curve1.NbKnots()));
+                    NCollection_Array1<double> flatKnots = new(1, curve1FlatKnots.Length() + (curve1.Degree() * curve1.KnotCount));
 
-                    global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(KnotC1, KnotC1Mults, FlatKnots);
-                    NCollection_Array1<Point3D> NewPoles = new(1, FlatKnots.Length() - (2 * Curve1.Degree() + 1));
-                    int aStatus;
-                    NCollection_Array1<double> Curve1Weights = Curve1.InternalWeightsArray();
-                    for (ii = 1; ii <= Curve1.NbPoles(); ii++)
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(knotC1, knotC1Mults, flatKnots);
+                    NCollection_Array1<Point3D> newPoles = new(1, flatKnots.Length() - (2 * curve1.Degree() + 1));
+                    int status;
+                    NCollection_Array1<double> curve1Weights = curve1.InternalWeightsArray();
+                    for (ii = 1; ii <= curve1.PoleCount; ii++)
                     {
                         for (jj = 1; jj <= 3; jj++)
                         {
-                            Curve1Poles[ii].SetCoord(jj, Curve1Poles[ii].Coord(jj) * Curve1Weights[ii]);
+                            curve1Poles[ii].SetCoord(jj, curve1Poles[ii].Coord(jj) * curve1Weights[ii]);
                         }
                     }
 
                     // POP for WNT
-                    GeomConvert_reparameterise_evaluator ev = new(aPolynomialCoefficient);
-                    global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(ev, Curve1.Degree(), Curve1FlatKnots, Curve1Poles, FlatKnots,
-                                                    2 * Curve1.Degree(), NewPoles, out aStatus);
-                    NCollection_Array1<double> NewWeights = new(1, FlatKnots.Length() - (2 * Curve1.Degree() + 1));
-                    global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(ev, Curve1.Degree(), Curve1FlatKnots, Curve1Weights, FlatKnots,
-                                                    2 * Curve1.Degree(), NewWeights, out aStatus);
-                    for (ii = 1; ii <= NewPoles.Length(); ii++)
+                    GeomConvert_reparameterise_evaluator ev = new(polynomialCoefficient);
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(ev, curve1.Degree(), curve1FlatKnots, curve1Poles, flatKnots,
+                                                    2 * curve1.Degree(), newPoles, out status);
+                    NCollection_Array1<double> newWeights = new(1, flatKnots.Length() - (2 * curve1.Degree() + 1));
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(ev, curve1.Degree(), curve1FlatKnots, curve1Weights, flatKnots,
+                                                    2 * curve1.Degree(), newWeights, out status);
+                    for (ii = 1; ii <= newPoles.Length(); ii++)
                     {
                         for (jj = 1; jj <= 3; jj++)
                         {
-                            NewPoles[ii].SetCoord(jj, NewPoles[ii].Coord(jj) / NewWeights[ii]);
+                            newPoles[ii].SetCoord(jj, newPoles[ii].Coord(jj) / newWeights[ii]);
                         }
                     }
 
-                    Curve1 = new Geom_BSplineCurve(NewPoles, NewWeights, KnotC1, KnotC1Mults, 2 * Curve1.Degree());
+                    curve1 = new BSplineCurve3D(newPoles, newWeights, knotC1, knotC1Mults, 2 * curve1.Degree());
                 }
 
-                GeomConvert_CompCurveToBSplineCurve C = new(Curve2);
-                fusion = C.Add(Curve1, local_tolerance[j - 1]); // merge two adjacent curves
+                CompCurveToBSplineCurve C = new(curve2);
+                fusion = C.Add(curve1, local_tolerance[j - 1]); // merge two adjacent curves
                 if (!fusion)
                 {
                     throw new ConstructionErrorException("GeomConvert Concatenation Error");
                 }
 
-                Curve2 = C.InternalBSplineCurve()!;
+                curve2 = C.InternalBSplineCurve()!;
             }
 
             // OCCT changes the caller's curve when there is only one; the port changes a copy
             if (nb_curve == 1)
             {
-                Curve2 = (Geom_BSplineCurve)Curve2.Copy();
+                curve2 = (BSplineCurve3D)curve2.Copy();
             }
 
-            Curve2.SetPeriodic(); // single C1 curve
-            Curve2.RemoveKnot(Curve2.LastUKnotIndex(), Curve2.Multiplicity(Curve2.LastUKnotIndex()) - 1,
+            curve2.SetPeriodic(); // single C1 curve
+            curve2.RemoveKnot(curve2.LastUKnotIndex(), curve2.Multiplicity(curve2.LastUKnotIndex()) - 1,
                               global::Kerf.Engine.Foundation.Precision.Confusion());
-            ArrayOfConcatenated.SetValue(0, Curve2);
+            arrayOfConcatenated.SetValue(0, curve2);
         }
 
         else
@@ -855,24 +857,24 @@ public static class GeomConvert
 
                 for (j = index; j <= index + nb_vertexG1; j++)
                 { // boucle secondaire a l'interieur de chaque groupe
-                    Curve1 = ArrayOfCurves[j];
+                    curve1 = arrayOfCurves[j];
 
                     if (index == j)
                     { // initialisation en debut de groupe
-                        ArrayOfConcatenated.SetValue(i, Curve1);
+                        arrayOfConcatenated.SetValue(i, curve1);
                     }
                     else
                     {
-                        GeomConvert_CompCurveToBSplineCurve C = new(ArrayOfConcatenated.Value(i));
+                        CompCurveToBSplineCurve C = new(arrayOfConcatenated.Value(i));
                         // OCCT reads the caller's tolerances, not the ones reordered for a closed wire (occt-issues.md)
-                        fusion = C.Add(Curve1, ArrayOfToler[j - 1]); // fusion de deux courbes adjacentes
+                        fusion = C.Add(curve1, arrayOfToler[j - 1]); // fusion de deux courbes adjacentes
 
                         if (!fusion)
                         {
                             throw new ConstructionErrorException("GeomConvert Concatenation Error");
                         }
 
-                        ArrayOfConcatenated.SetValue(i, C.InternalBSplineCurve()!);
+                        arrayOfConcatenated.SetValue(i, C.InternalBSplineCurve()!);
                     }
                 }
 
@@ -882,18 +884,18 @@ public static class GeomConvert
     }
 
     /// <summary>
-    /// <see cref="ConcatC1(NCollection_Array1{Geom_BSplineCurve}, NCollection_Array1{double}, out NCollection_HArray1{int}, out NCollection_HArray1{Geom_BSplineCurve}, ref bool, double, double)"/>
+    /// <see cref="ConcatC1(NCollection_Array1{BSplineCurve3D}, NCollection_Array1{double}, out NCollection_HArray1{int}, out NCollection_HArray1{BSplineCurve3D}, ref bool, double, double)"/>
     /// with the angular tolerance Precision::Angular().
     /// </summary>
-    public static void ConcatC1(NCollection_Array1<Geom_BSplineCurve> ArrayOfCurves,
-                                NCollection_Array1<double> ArrayOfToler,
-                                out NCollection_HArray1<int> ArrayOfIndices,
-                                out NCollection_HArray1<Geom_BSplineCurve> ArrayOfConcatenated,
-                                ref bool ClosedG1Flag,
-                                double ClosedTolerance)
+    public static void ConcatC1(NCollection_Array1<BSplineCurve3D> arrayOfCurves,
+                                NCollection_Array1<double> arrayOfToler,
+                                out NCollection_HArray1<int> arrayOfIndices,
+                                out NCollection_HArray1<BSplineCurve3D> arrayOfConcatenated,
+                                ref bool closedG1Flag,
+                                double closedTolerance)
     {
-        ConcatC1(ArrayOfCurves, ArrayOfToler, out ArrayOfIndices, out ArrayOfConcatenated, ref ClosedG1Flag,
-                 ClosedTolerance, global::Kerf.Engine.Foundation.Precision.Angular());
+        ConcatC1(arrayOfCurves, arrayOfToler, out arrayOfIndices, out arrayOfConcatenated, ref closedG1Flag,
+                 closedTolerance, global::Kerf.Engine.Foundation.Precision.Angular());
     }
 
     /// <summary>
@@ -903,43 +905,43 @@ public static class GeomConvert
     /// </summary>
     /// <exception cref="FailureException">Two consecutive curves don't join.</exception>
     /// <exception cref="ConstructionErrorException">A concatenation fails.</exception>
-    public static void ConcatC1(NCollection_Array1<Geom_BSplineCurve> ArrayOfCurves,
-                                NCollection_Array1<double> ArrayOfToler,
-                                out NCollection_HArray1<int> ArrayOfIndices,
-                                out NCollection_HArray1<Geom_BSplineCurve> ArrayOfConcatenated,
-                                ref bool ClosedG1Flag,
-                                double ClosedTolerance,
-                                double AngularTolerance)
+    public static void ConcatC1(NCollection_Array1<BSplineCurve3D> arrayOfCurves,
+                                NCollection_Array1<double> arrayOfToler,
+                                out NCollection_HArray1<int> arrayOfIndices,
+                                out NCollection_HArray1<BSplineCurve3D> arrayOfConcatenated,
+                                ref bool closedG1Flag,
+                                double closedTolerance,
+                                double angularTolerance)
     {
-        int nb_curve = ArrayOfCurves.Length(), nb_vertexG1, nb_group = 0, index = 0, i, ii, j, jj, indexmin,
+        int nb_curve = arrayOfCurves.Length(), nb_vertexG1, nb_group = 0, index = 0, i, ii, j, jj, indexmin,
             nb_vertex_group0 = 0;
         double lambda, // G1 junction coefficient
-            First, PreLast = 0;
-        Continuity Cont;
-        Vector3D Vec1, Vec2; // consecutive tangential vectors
-        Geom_BSplineCurve Curve1, Curve2 = null!;
+            first, preLast = 0;
+        Continuity cont;
+        Vector3D vec1, vec2; // consecutive tangential vectors
+        BSplineCurve3D curve1, curve2 = null!;
         NCollection_Array1<bool> tabG1 = new(0, nb_curve - 2); // G1 continuity table at junctions
-        NCollection_Array1<double> local_tolerance = new(0, ArrayOfToler.Length() - 1);
+        NCollection_Array1<double> local_tolerance = new(0, arrayOfToler.Length() - 1);
 
-        for (i = 0; i < ArrayOfToler.Length(); i++)
+        for (i = 0; i < arrayOfToler.Length(); i++)
         {
-            local_tolerance[i] = ArrayOfToler[i];
+            local_tolerance[i] = arrayOfToler[i];
         }
 
         for (i = 0; i < nb_curve; i++)
         {
             if (i >= 1)
             {
-                First = ArrayOfCurves[i].FirstParameter();
-                Cont = GeomLProp.Continuity(ArrayOfCurves[i - 1], ArrayOfCurves[i], PreLast, First, true, true,
-                                            local_tolerance[i - 1], AngularTolerance);
-                if (Cont < C0)
+                first = arrayOfCurves[i].FirstParameter();
+                cont = global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(arrayOfCurves[i - 1], arrayOfCurves[i], preLast, first, true, true,
+                                            local_tolerance[i - 1], angularTolerance);
+                if (cont < C0)
                 {
                     throw new ConstructionErrorException("GeomConvert curves not C0");
                 }
                 else
                 {
-                    if (Cont >= G1)
+                    if (cont >= G1)
                     {
                         tabG1[i - 1] = true; // True=G1 continuity
                     }
@@ -950,7 +952,7 @@ public static class GeomConvert
                 }
             }
 
-            PreLast = ArrayOfCurves[i].LastParameter();
+            preLast = arrayOfCurves[i].LastParameter();
         }
 
         while (index <= nb_curve - 1)
@@ -970,145 +972,145 @@ public static class GeomConvert
             index = index + 1 + nb_vertexG1;
         }
 
-        if ((ClosedG1Flag) && (nb_group != 1))
+        if ((closedG1Flag) && (nb_group != 1))
         { // rearrangement du tableau
             nb_group--;
-            ReorderArrayOfG1Curves(ArrayOfCurves, local_tolerance, tabG1, nb_vertex_group0, ClosedTolerance);
+            ReorderArrayOfG1Curves(arrayOfCurves, local_tolerance, tabG1, nb_vertex_group0, closedTolerance);
         }
 
-        ArrayOfIndices = new NCollection_HArray1<int>(0, nb_group);
-        ArrayOfConcatenated = new NCollection_HArray1<Geom_BSplineCurve>(0, nb_group - 1);
+        arrayOfIndices = new NCollection_HArray1<int>(0, nb_group);
+        arrayOfConcatenated = new NCollection_HArray1<BSplineCurve3D>(0, nb_group - 1);
 
         bool fusion;
         int k = 0;
         index = 0;
-        Pretreatment(ArrayOfCurves);
-        Span<double> aPolynomialCoefficient = stackalloc double[3];
+        Pretreatment(arrayOfCurves);
+        Span<double> polynomialCoefficient = stackalloc double[3];
 
-        bool NeedDoubleDegRepara = Need2DegRepara(ArrayOfCurves);
-        if (nb_group == 1 && ClosedG1Flag && NeedDoubleDegRepara)
+        bool needDoubleDegRepara = Need2DegRepara(arrayOfCurves);
+        if (nb_group == 1 && closedG1Flag && needDoubleDegRepara)
         {
-            Curve1 = ArrayOfCurves[nb_curve - 1];
+            curve1 = arrayOfCurves[nb_curve - 1];
             // OCCT reads Geom2d_BSplineCurve's maximum degree, which is Geom_BSplineCurve's (25)
-            if (Curve1.Degree() > Geom2d_BSplineCurve.MaxDegree() / 2)
+            if (curve1.Degree() > BSplineCurve2D.MaxDegree() / 2)
             {
-                ClosedG1Flag = false;
+                closedG1Flag = false;
             }
         }
 
-        if ((nb_group == 1) && (ClosedG1Flag))
+        if ((nb_group == 1) && (closedG1Flag))
         { // treatment of a particular case
-            ArrayOfIndices.SetValue(0, 0);
-            ArrayOfIndices.SetValue(1, 0);
-            indexmin = Indexmin(ArrayOfCurves);
-            if (indexmin != (ArrayOfCurves.Length() - 1))
+            arrayOfIndices.SetValue(0, 0);
+            arrayOfIndices.SetValue(1, 0);
+            indexmin = Indexmin(arrayOfCurves);
+            if (indexmin != (arrayOfCurves.Length() - 1))
             {
-                ReorderArrayOfG1Curves(ArrayOfCurves, local_tolerance, tabG1, indexmin, ClosedTolerance);
+                ReorderArrayOfG1Curves(arrayOfCurves, local_tolerance, tabG1, indexmin, closedTolerance);
             }
 
             for (j = 0; j <= nb_curve - 1; j++)
             { // secondary loop inside each group
-                if (NeedToBeTreated(ArrayOfCurves[j]))
+                if (NeedToBeTreated(arrayOfCurves[j]))
                 {
-                    Curve1 = MultNumandDenom(Hermit.Solution(ArrayOfCurves[j]), ArrayOfCurves[j]);
+                    curve1 = MultNumandDenom(global::Kerf.Engine.Approximation.Hermit.Solution(arrayOfCurves[j]), arrayOfCurves[j]);
                 }
                 else
                 {
-                    Curve1 = ArrayOfCurves[j];
+                    curve1 = arrayOfCurves[j];
                 }
 
                 if (j == 0)
                 { // initialisation en debut de groupe
-                    Curve2 = Curve1;
+                    curve2 = curve1;
                 }
                 else
                 {
-                    if ((j == (nb_curve - 1)) && (NeedDoubleDegRepara))
+                    if ((j == (nb_curve - 1)) && (needDoubleDegRepara))
                     {
-                        Curve2.D1(Curve2.LastParameter(), out _, out Vec1);
-                        Curve1.D1(Curve1.FirstParameter(), out _, out Vec2);
-                        lambda = Vec2.Magnitude() / Vec1.Magnitude();
-                        NCollection_Array1<double> KnotC1 = new(Curve1.InternalKnots());
-                        Curve1.D1(Curve1.LastParameter(), out _, out Vec2);
-                        ArrayOfCurves[0].D1(ArrayOfCurves[0].FirstParameter(), out _, out Vec1);
-                        double lambda2 = Vec1.Magnitude() / Vec2.Magnitude();
-                        double tmax, a, b, c, umin = Curve1.FirstParameter(), umax = Curve1.LastParameter();
+                        curve2.D1(curve2.LastParameter(), out _, out vec1);
+                        curve1.D1(curve1.FirstParameter(), out _, out vec2);
+                        lambda = vec2.Magnitude() / vec1.Magnitude();
+                        NCollection_Array1<double> knotC1 = new(curve1.InternalKnots());
+                        curve1.D1(curve1.LastParameter(), out _, out vec2);
+                        arrayOfCurves[0].D1(arrayOfCurves[0].FirstParameter(), out _, out vec1);
+                        double lambda2 = vec1.Magnitude() / vec2.Magnitude();
+                        double tmax, a, b, c, umin = curve1.FirstParameter(), umax = curve1.LastParameter();
                         tmax = 2 * lambda * (umax - umin) / (1 + lambda * lambda2);
                         a = (lambda * lambda2 - 1) / (2 * lambda * tmax);
-                        aPolynomialCoefficient[2] = a;
+                        polynomialCoefficient[2] = a;
                         b = (1 / lambda);
-                        aPolynomialCoefficient[1] = b;
+                        polynomialCoefficient[1] = b;
                         c = umin;
-                        aPolynomialCoefficient[0] = c;
-                        NCollection_Array1<double> Curve1FlatKnots = new(1, Curve1.NbPoles() + Curve1.Degree() + 1);
-                        NCollection_Array1<int> KnotC1Mults = new(Curve1.InternalMultiplicities());
-                        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(KnotC1, KnotC1Mults, Curve1FlatKnots);
-                        KnotC1[1] = 0.0;
-                        for (ii = 2; ii <= KnotC1.Length(); ii++)
+                        polynomialCoefficient[0] = c;
+                        NCollection_Array1<double> curve1FlatKnots = new(1, curve1.PoleCount + curve1.Degree() + 1);
+                        NCollection_Array1<int> knotC1Mults = new(curve1.InternalMultiplicities());
+                        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(knotC1, knotC1Mults, curve1FlatKnots);
+                        knotC1[1] = 0.0;
+                        for (ii = 2; ii <= knotC1.Length(); ii++)
                         {
-                            KnotC1[ii] = (-b + Math.Sqrt(b * b - 4 * a * (c - KnotC1[ii]))) / (2 * a); // ifv 17.05.00 buc60667
+                            knotC1[ii] = (-b + Math.Sqrt(b * b - 4 * a * (c - knotC1[ii]))) / (2 * a); // ifv 17.05.00 buc60667
                         }
 
-                        NCollection_Array1<Point3D> Curve1Poles = new(Curve1.InternalPoles());
+                        NCollection_Array1<Point3D> curve1Poles = new(curve1.InternalPoles());
 
-                        for (ii = 1; ii <= Curve1.NbKnots(); ii++)
+                        for (ii = 1; ii <= curve1.KnotCount; ii++)
                         {
-                            KnotC1Mults[ii] = (Curve1.Degree() + KnotC1Mults[ii]);
+                            knotC1Mults[ii] = (curve1.Degree() + knotC1Mults[ii]);
                         }
 
-                        NCollection_Array1<double> FlatKnots = new(1, Curve1FlatKnots.Length() + (Curve1.Degree() * Curve1.NbKnots()));
+                        NCollection_Array1<double> flatKnots = new(1, curve1FlatKnots.Length() + (curve1.Degree() * curve1.KnotCount));
 
-                        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(KnotC1, KnotC1Mults, FlatKnots);
-                        NCollection_Array1<Point3D> NewPoles = new(1, FlatKnots.Length() - (2 * Curve1.Degree() + 1));
-                        int aStatus;
-                        NCollection_Array1<double> Curve1Weights = Curve1.InternalWeightsArray();
-                        for (ii = 1; ii <= Curve1.NbPoles(); ii++)
+                        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(knotC1, knotC1Mults, flatKnots);
+                        NCollection_Array1<Point3D> newPoles = new(1, flatKnots.Length() - (2 * curve1.Degree() + 1));
+                        int status;
+                        NCollection_Array1<double> curve1Weights = curve1.InternalWeightsArray();
+                        for (ii = 1; ii <= curve1.PoleCount; ii++)
                         {
                             for (jj = 1; jj <= 3; jj++)
                             {
-                                Curve1Poles[ii].SetCoord(jj, Curve1Poles[ii].Coord(jj) * Curve1Weights[ii]);
+                                curve1Poles[ii].SetCoord(jj, curve1Poles[ii].Coord(jj) * curve1Weights[ii]);
                             }
                         }
 
                         // POP for WNT
-                        GeomConvert_reparameterise_evaluator ev = new(aPolynomialCoefficient);
-                        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(ev, Curve1.Degree(), Curve1FlatKnots, Curve1Poles, FlatKnots,
-                                                        2 * Curve1.Degree(), NewPoles, out aStatus);
-                        NCollection_Array1<double> NewWeights = new(1, FlatKnots.Length() - (2 * Curve1.Degree() + 1));
-                        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(ev, Curve1.Degree(), Curve1FlatKnots, Curve1Weights, FlatKnots,
-                                                        2 * Curve1.Degree(), NewWeights, out aStatus);
-                        for (ii = 1; ii <= NewPoles.Length(); ii++)
+                        GeomConvert_reparameterise_evaluator ev = new(polynomialCoefficient);
+                        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(ev, curve1.Degree(), curve1FlatKnots, curve1Poles, flatKnots,
+                                                        2 * curve1.Degree(), newPoles, out status);
+                        NCollection_Array1<double> newWeights = new(1, flatKnots.Length() - (2 * curve1.Degree() + 1));
+                        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(ev, curve1.Degree(), curve1FlatKnots, curve1Weights, flatKnots,
+                                                        2 * curve1.Degree(), newWeights, out status);
+                        for (ii = 1; ii <= newPoles.Length(); ii++)
                         {
                             for (jj = 1; jj <= 3; jj++)
                             {
-                                NewPoles[ii].SetCoord(jj, NewPoles[ii].Coord(jj) / NewWeights[ii]);
+                                newPoles[ii].SetCoord(jj, newPoles[ii].Coord(jj) / newWeights[ii]);
                             }
                         }
 
-                        Curve1 = new Geom_BSplineCurve(NewPoles, NewWeights, KnotC1, KnotC1Mults, 2 * Curve1.Degree());
+                        curve1 = new BSplineCurve3D(newPoles, newWeights, knotC1, knotC1Mults, 2 * curve1.Degree());
                     }
 
-                    GeomConvert_CompCurveToBSplineCurve C = new(Curve2);
-                    fusion = C.Add(Curve1, local_tolerance[j - 1]); // merge two adjacent curves
+                    CompCurveToBSplineCurve C = new(curve2);
+                    fusion = C.Add(curve1, local_tolerance[j - 1]); // merge two adjacent curves
                     if (!fusion)
                     {
                         throw new ConstructionErrorException("GeomConvert Concatenation Error");
                     }
 
-                    Curve2 = C.InternalBSplineCurve()!;
+                    curve2 = C.InternalBSplineCurve()!;
                 }
             }
 
             // OCCT changes the caller's curve when there is only one; the port changes a copy
             if (nb_curve == 1)
             {
-                Curve2 = (Geom_BSplineCurve)Curve2.Copy();
+                curve2 = (BSplineCurve3D)curve2.Copy();
             }
 
-            Curve2.SetPeriodic(); // single C1 curve
-            Curve2.RemoveKnot(Curve2.LastUKnotIndex(), Curve2.Multiplicity(Curve2.LastUKnotIndex()) - 1,
+            curve2.SetPeriodic(); // single C1 curve
+            curve2.RemoveKnot(curve2.LastUKnotIndex(), curve2.Multiplicity(curve2.LastUKnotIndex()) - 1,
                               global::Kerf.Engine.Foundation.Precision.Confusion());
-            ArrayOfConcatenated.SetValue(0, Curve2);
+            arrayOfConcatenated.SetValue(0, curve2);
         }
 
         else
@@ -1122,51 +1124,51 @@ public static class GeomConvert
                     nb_vertexG1++;
                 }
 
-                if ((!ClosedG1Flag) || (nb_group == 1))
+                if ((!closedG1Flag) || (nb_group == 1))
                 { // Filling the array of preserved indices
                     k++;
-                    ArrayOfIndices.SetValue(k - 1, index);
+                    arrayOfIndices.SetValue(k - 1, index);
                     if (k == nb_group)
                     {
-                        ArrayOfIndices.SetValue(k, 0);
+                        arrayOfIndices.SetValue(k, 0);
                     }
                 }
                 else
                 {
                     k++;
-                    ArrayOfIndices.SetValue(k - 1, index + nb_vertex_group0 + 1);
+                    arrayOfIndices.SetValue(k - 1, index + nb_vertex_group0 + 1);
                     if (k == nb_group)
                     {
-                        ArrayOfIndices.SetValue(k, nb_vertex_group0 + 1);
+                        arrayOfIndices.SetValue(k, nb_vertex_group0 + 1);
                     }
                 }
 
                 for (j = index; j <= index + nb_vertexG1; j++)
                 { // boucle secondaire a l'interieur de chaque groupe
-                    if (NeedToBeTreated(ArrayOfCurves[j]))
+                    if (NeedToBeTreated(arrayOfCurves[j]))
                     {
-                        Curve1 = MultNumandDenom(Hermit.Solution(ArrayOfCurves[j]), ArrayOfCurves[j]);
+                        curve1 = MultNumandDenom(global::Kerf.Engine.Approximation.Hermit.Solution(arrayOfCurves[j]), arrayOfCurves[j]);
                     }
                     else
                     {
-                        Curve1 = ArrayOfCurves[j];
+                        curve1 = arrayOfCurves[j];
                     }
 
                     if (index == j)
                     { // initialisation en debut de groupe
-                        ArrayOfConcatenated.SetValue(i, Curve1);
+                        arrayOfConcatenated.SetValue(i, curve1);
                     }
                     else
                     {
                         // Merge of two consecutive curves.
-                        GeomConvert_CompCurveToBSplineCurve C = new(ArrayOfConcatenated.Value(i));
-                        fusion = C.Add(Curve1, local_tolerance[j - 1], true);
+                        CompCurveToBSplineCurve C = new(arrayOfConcatenated.Value(i));
+                        fusion = C.Add(curve1, local_tolerance[j - 1], true);
                         if (!fusion)
                         {
                             throw new ConstructionErrorException("GeomConvert Concatenation Error");
                         }
 
-                        ArrayOfConcatenated.SetValue(i, C.InternalBSplineCurve()!);
+                        arrayOfConcatenated.SetValue(i, C.InternalBSplineCurve()!);
                     }
                 }
 
@@ -1177,25 +1179,25 @@ public static class GeomConvert
 
     /// <summary>
     /// Makes BS C1 where it is only C0 but G1 within the tolerances: BS is cut at its C0 knots, the pieces are
-    /// concatenated by <see cref="C0BSplineToArrayOfC1BSplineCurve(Geom_BSplineCurve, out NCollection_HArray1{Geom_BSplineCurve}, double, double)"/>
+    /// concatenated by <see cref="C0BSplineToArrayOfC1BSplineCurve(BSplineCurve3D, out NCollection_HArray1{BSplineCurve3D}, double, double)"/>
     /// and joined again. BS is replaced by a new curve; the curve given is not changed.
     /// </summary>
     /// <exception cref="ConstructionErrorException">A concatenation fails.</exception>
-    public static void C0BSplineToC1BSplineCurve(ref Geom_BSplineCurve BS, double tolerance, double AngularTol = 1.0e-7)
+    public static void C0BSplineToC1BSplineCurve(ref BSplineCurve3D bs, double tolerance, double angularTol = 1.0e-7)
     {
         bool fusion;
         // the array with the resulting curves
 
-        C0BSplineToArrayOfC1BSplineCurve(BS, out NCollection_HArray1<Geom_BSplineCurve> ArrayOfConcatenated, AngularTol,
+        C0BSplineToArrayOfC1BSplineCurve(bs, out NCollection_HArray1<BSplineCurve3D> arrayOfConcatenated, angularTol,
                                          tolerance);
 
-        GeomConvert_CompCurveToBSplineCurve C = new(ArrayOfConcatenated.Value(0));
-        if (ArrayOfConcatenated.Length() >= 2)
+        CompCurveToBSplineCurve c = new(arrayOfConcatenated.Value(0));
+        if (arrayOfConcatenated.Length() >= 2)
         {
             int i;
-            for (i = 1; i < ArrayOfConcatenated.Length(); i++)
+            for (i = 1; i < arrayOfConcatenated.Length(); i++)
             {
-                fusion = C.Add(ArrayOfConcatenated.Value(i), tolerance);
+                fusion = c.Add(arrayOfConcatenated.Value(i), tolerance);
                 if (!fusion)
                 {
                     throw new ConstructionErrorException("GeomConvert Concatenation Error");
@@ -1203,18 +1205,18 @@ public static class GeomConvert
             }
         }
 
-        BS = C.InternalBSplineCurve()!;
+        bs = c.InternalBSplineCurve()!;
     }
 
     /// <summary>
-    /// <see cref="C0BSplineToArrayOfC1BSplineCurve(Geom_BSplineCurve, out NCollection_HArray1{Geom_BSplineCurve}, double, double)"/>
+    /// <see cref="C0BSplineToArrayOfC1BSplineCurve(BSplineCurve3D, out NCollection_HArray1{BSplineCurve3D}, double, double)"/>
     /// with the angular tolerance Precision::Angular().
     /// </summary>
-    public static void C0BSplineToArrayOfC1BSplineCurve(Geom_BSplineCurve BS,
-                                                        out NCollection_HArray1<Geom_BSplineCurve> tabBS,
+    public static void C0BSplineToArrayOfC1BSplineCurve(BSplineCurve3D bs,
+                                                        out NCollection_HArray1<BSplineCurve3D> tabBS,
                                                         double tolerance)
     {
-        C0BSplineToArrayOfC1BSplineCurve(BS, out tabBS, global::Kerf.Engine.Foundation.Precision.Angular(), tolerance);
+        C0BSplineToArrayOfC1BSplineCurve(bs, out tabBS, global::Kerf.Engine.Foundation.Precision.Angular(), tolerance);
     }
 
     /// <summary>
@@ -1222,20 +1224,20 @@ public static class GeomConvert
     /// C1 curves, returned in tabBS (from 0). A curve without C0 knots is returned as the single element.
     /// </summary>
     /// <exception cref="ConstructionErrorException">A concatenation fails.</exception>
-    public static void C0BSplineToArrayOfC1BSplineCurve(Geom_BSplineCurve BS,
-                                                        out NCollection_HArray1<Geom_BSplineCurve> tabBS,
-                                                        double AngularTolerance,
+    public static void C0BSplineToArrayOfC1BSplineCurve(BSplineCurve3D bs,
+                                                        out NCollection_HArray1<BSplineCurve3D> tabBS,
+                                                        double angularTolerance,
                                                         double tolerance)
     {
-        NCollection_Array1<int> BSMults = BS.InternalMultiplicities();
-        NCollection_Array1<double> BSKnots = BS.InternalKnots();
+        NCollection_Array1<int> bsMults = bs.InternalMultiplicities();
+        NCollection_Array1<double> bsKnots = bs.InternalKnots();
         int i, j, nbcurveC1 = 1;
-        double U1, U2;
+        double u1, u2;
         bool closed_flag = false;
-        Vector3D V1, V2;
-        for (i = BS.FirstUKnotIndex(); i <= (BS.LastUKnotIndex() - 1); i++)
+        Vector3D v1, v2;
+        for (i = bs.FirstUKnotIndex(); i <= (bs.LastUKnotIndex() - 1); i++)
         { // give the number of C1 curves
-            if (BSMults[i] == BS.Degree())
+            if (bsMults[i] == bs.Degree())
             {
                 nbcurveC1++;
             }
@@ -1243,69 +1245,69 @@ public static class GeomConvert
 
         if (nbcurveC1 > 1)
         {
-            NCollection_Array1<Geom_BSplineCurve> ArrayOfCurves = new(0, nbcurveC1 - 1);
-            NCollection_Array1<double> ArrayOfToler = new(0, nbcurveC1 - 2);
+            NCollection_Array1<BSplineCurve3D> arrayOfCurves = new(0, nbcurveC1 - 1);
+            NCollection_Array1<double> arrayOfToler = new(0, nbcurveC1 - 2);
 
             for (i = 0; i <= nbcurveC1 - 2; i++)
             {
                 // filling of the array of tolerances
-                ArrayOfToler[i] = tolerance;
+                arrayOfToler[i] = tolerance;
             }
 
             // with the variable tolerance
-            U2 = BS.FirstParameter();
-            j = BS.FirstUKnotIndex() + 1;
+            u2 = bs.FirstParameter();
+            j = bs.FirstUKnotIndex() + 1;
             for (i = 0; i < nbcurveC1; i++)
             {
                 // filling of the array of curves
-                U1 = U2;
+                u1 = u2;
                 // with the curves C1 segmented
-                while (BSMults[j] < BS.Degree() && j < BS.LastUKnotIndex())
+                while (bsMults[j] < bs.Degree() && j < bs.LastUKnotIndex())
                 {
                     j++;
                 }
 
-                U2 = BSKnots[j];
+                u2 = bsKnots[j];
                 j++;
-                Geom_BSplineCurve BSbis = (Geom_BSplineCurve)BS.Copy();
-                BSbis.Segment(U1, U2);
-                ArrayOfCurves[i] = BSbis;
+                BSplineCurve3D bSbis = (BSplineCurve3D)bs.Copy();
+                bSbis.Segment(u1, u2);
+                arrayOfCurves[i] = bSbis;
             }
 
-            BS.D1(BS.FirstParameter(), out _, out V1);
-            BS.D1(BS.LastParameter(), out _, out V2);
+            bs.D1(bs.FirstParameter(), out _, out v1);
+            bs.D1(bs.LastParameter(), out _, out v2);
 
-            if ((BS.IsClosed()) && (V1.IsParallel(V2, AngularTolerance)))
+            if ((bs.IsClosed) && (v1.IsParallel(v2, angularTolerance)))
             {
                 // check if the BSpline is closed G1
                 closed_flag = true;
             }
 
-            ConcatC1(ArrayOfCurves, ArrayOfToler, out _, out tabBS, ref closed_flag, tolerance, AngularTolerance);
+            ConcatC1(arrayOfCurves, arrayOfToler, out _, out tabBS, ref closed_flag, tolerance, angularTolerance);
         }
         else
         {
-            tabBS = new NCollection_HArray1<Geom_BSplineCurve>(0, 0);
-            tabBS.SetValue(0, BS);
+            tabBS = new NCollection_HArray1<BSplineCurve3D>(0, 0);
+            tabBS.SetValue(0, bs);
         }
     }
 
     // GeomConvert_1.cxx: the surfaces
 
-    private static Geom_BSplineSurface BSplineSurfaceBuilder(ElementarySurfaceToBSplineSurface Convert)
+    private static BSplineSurface BSplineSurfaceBuilder(ElementarySurfaceToBSplineSurface convert)
     {
-        Geom_BSplineSurface TheSurface;
-        TheSurface = new Geom_BSplineSurface(Convert.Poles(),
-                                             Convert.Weights(),
-                                             Convert.UKnots(),
-                                             Convert.VKnots(),
-                                             Convert.UMultiplicities(),
-                                             Convert.VMultiplicities(),
-                                             Convert.UDegree(),
-                                             Convert.VDegree(),
-                                             Convert.IsUPeriodic,
-                                             Convert.IsVPeriodic);
-        return TheSurface;
+        BSplineSurface theSurface;
+        theSurface = new BSplineSurface(convert.Poles(),
+                                             convert.Weights(),
+                                             convert.UKnots(),
+                                             convert.VKnots(),
+                                             convert.UMultiplicities(),
+                                             convert.VMultiplicities(),
+                                             convert.UDegree(),
+                                             convert.VDegree(),
+                                             convert.IsUPeriodic,
+                                             convert.IsVPeriodic);
+        return theSurface;
     }
 
     /// <summary>
@@ -1316,67 +1318,67 @@ public static class GeomConvert
     /// <exception cref="DomainErrorException">
     /// FromUK1 = ToUK2 or FromVK1 = ToVK2, or a knot index is outside the first and last knot indices.
     /// </exception>
-    public static Geom_BSplineSurface SplitBSplineSurface(Geom_BSplineSurface S,
-                                                          int FromUK1,
-                                                          int ToUK2,
-                                                          int FromVK1,
-                                                          int ToVK2,
-                                                          bool SameUOrientation = true,
-                                                          bool SameVOrientation = true)
+    public static BSplineSurface SplitBSplineSurface(BSplineSurface s,
+                                                          int fromUK1,
+                                                          int toUK2,
+                                                          int fromVK1,
+                                                          int toVK2,
+                                                          bool sameUOrientation = true,
+                                                          bool sameVOrientation = true)
     {
-        int FirstU = S.FirstUKnotIndex();
-        int FirstV = S.FirstVKnotIndex();
-        int LastU = S.LastUKnotIndex();
-        int LastV = S.LastVKnotIndex();
-        if (FromUK1 == ToUK2 || FromVK1 == ToVK2)
+        int firstU = s.FirstUKnotIndex();
+        int firstV = s.FirstVKnotIndex();
+        int lastU = s.LastUKnotIndex();
+        int lastV = s.LastVKnotIndex();
+        if (fromUK1 == toUK2 || fromVK1 == toVK2)
         {
             throw new DomainErrorException();
         }
 
-        int FirstUK = Min(FromUK1, ToUK2);
-        int LastUK = Max(FromUK1, ToUK2);
-        int FirstVK = Min(FromVK1, ToVK2);
-        int LastVK = Max(FromVK1, ToVK2);
-        if (FirstUK < FirstU || LastUK > LastU || FirstVK < FirstV || LastVK > LastV)
+        int firstUK = Min(fromUK1, toUK2);
+        int lastUK = Max(fromUK1, toUK2);
+        int firstVK = Min(fromVK1, toVK2);
+        int lastVK = Max(fromVK1, toVK2);
+        if (firstUK < firstU || lastUK > lastU || firstVK < firstV || lastVK > lastV)
         {
             throw new DomainErrorException();
         }
 
-        Geom_BSplineSurface S1 = (Geom_BSplineSurface)S.Copy();
+        BSplineSurface s1 = (BSplineSurface)s.Copy();
 
-        S1.Segment(S1.UKnot(FirstUK), S1.UKnot(LastUK), S1.VKnot(FirstVK), S1.VKnot(LastVK));
+        s1.Segment(s1.UKnot(firstUK), s1.UKnot(lastUK), s1.VKnot(firstVK), s1.VKnot(lastVK));
 
-        if (S.IsUPeriodic())
+        if (s.IsUPeriodic)
         {
-            if (!SameUOrientation)
+            if (!sameUOrientation)
             {
-                S1.UReverse();
+                s1.UReverse();
             }
         }
         else
         {
-            if (FromUK1 > ToUK2)
+            if (fromUK1 > toUK2)
             {
-                S1.UReverse();
+                s1.UReverse();
             }
         }
 
-        if (S.IsVPeriodic())
+        if (s.IsVPeriodic)
         {
-            if (!SameVOrientation)
+            if (!sameVOrientation)
             {
-                S1.VReverse();
+                s1.VReverse();
             }
         }
         else
         {
-            if (FromVK1 > ToVK2)
+            if (fromVK1 > toVK2)
             {
-                S1.VReverse();
+                s1.VReverse();
             }
         }
 
-        return S1;
+        return s1;
     }
 
     /// <summary>
@@ -1384,83 +1386,83 @@ public static class GeomConvert
     /// non-periodic direction, it is reversed if FromK1 &gt; ToK2; in a periodic one, if SameOrientation is false.
     /// </summary>
     /// <exception cref="DomainErrorException">FromK1 = ToK2, or a knot index is outside the first and last.</exception>
-    public static Geom_BSplineSurface SplitBSplineSurface(Geom_BSplineSurface S,
-                                                          int FromK1,
-                                                          int ToK2,
-                                                          bool USplit,
-                                                          bool SameOrientation = true)
+    public static BSplineSurface SplitBSplineSurface(BSplineSurface s,
+                                                          int fromK1,
+                                                          int toK2,
+                                                          bool uSplit,
+                                                          bool sameOrientation = true)
     {
-        if (FromK1 == ToK2)
+        if (fromK1 == toK2)
         {
             throw new DomainErrorException();
         }
 
-        Geom_BSplineSurface S1 = (Geom_BSplineSurface)S.Copy();
+        BSplineSurface s1 = (BSplineSurface)s.Copy();
 
-        if (USplit)
+        if (uSplit)
         {
-            int FirstU = S.FirstUKnotIndex();
-            int LastU = S.LastUKnotIndex();
-            int FirstUK = Min(FromK1, ToK2);
-            int LastUK = Max(FromK1, ToK2);
-            if (FirstUK < FirstU || LastUK > LastU)
+            int firstU = s.FirstUKnotIndex();
+            int lastU = s.LastUKnotIndex();
+            int firstUK = Min(fromK1, toK2);
+            int lastUK = Max(fromK1, toK2);
+            if (firstUK < firstU || lastUK > lastU)
             {
                 throw new DomainErrorException();
             }
 
-            S1.Segment(S1.UKnot(FirstUK),
-                       S1.UKnot(LastUK),
-                       S1.VKnot(S1.FirstVKnotIndex()),
-                       S1.VKnot(S1.LastVKnotIndex()));
+            s1.Segment(s1.UKnot(firstUK),
+                       s1.UKnot(lastUK),
+                       s1.VKnot(s1.FirstVKnotIndex()),
+                       s1.VKnot(s1.LastVKnotIndex()));
 
-            if (S.IsUPeriodic())
+            if (s.IsUPeriodic)
             {
-                if (!SameOrientation)
+                if (!sameOrientation)
                 {
-                    S1.UReverse();
+                    s1.UReverse();
                 }
             }
             else
             {
-                if (FromK1 > ToK2)
+                if (fromK1 > toK2)
                 {
-                    S1.UReverse();
+                    s1.UReverse();
                 }
             }
         }
         else
         {
-            int FirstV = S.FirstVKnotIndex();
-            int LastV = S.LastVKnotIndex();
-            int FirstVK = Min(FromK1, ToK2);
-            int LastVK = Max(FromK1, ToK2);
-            if (FirstVK < FirstV || LastVK > LastV)
+            int firstV = s.FirstVKnotIndex();
+            int lastV = s.LastVKnotIndex();
+            int firstVK = Min(fromK1, toK2);
+            int lastVK = Max(fromK1, toK2);
+            if (firstVK < firstV || lastVK > lastV)
             {
                 throw new DomainErrorException();
             }
 
-            S1.Segment(S1.UKnot(S1.FirstUKnotIndex()),
-                       S1.UKnot(S1.LastUKnotIndex()),
-                       S1.VKnot(FirstVK),
-                       S1.VKnot(LastVK));
+            s1.Segment(s1.UKnot(s1.FirstUKnotIndex()),
+                       s1.UKnot(s1.LastUKnotIndex()),
+                       s1.VKnot(firstVK),
+                       s1.VKnot(lastVK));
 
-            if (S.IsVPeriodic())
+            if (s.IsVPeriodic)
             {
-                if (!SameOrientation)
+                if (!sameOrientation)
                 {
-                    S1.VReverse();
+                    s1.VReverse();
                 }
             }
             else
             {
-                if (FromK1 > ToK2)
+                if (fromK1 > toK2)
                 {
-                    S1.VReverse();
+                    s1.VReverse();
                 }
             }
         }
 
-        return S1;
+        return s1;
     }
 
     /// <summary>
@@ -1468,55 +1470,55 @@ public static class GeomConvert
     /// direction, it is reversed if the first parameter is the greater; in a periodic one, if SameUOrientation
     /// (SameVOrientation) is false. ParametricTolerance is not used.
     /// </summary>
-    public static Geom_BSplineSurface SplitBSplineSurface(Geom_BSplineSurface S,
-                                                          double FromU1,
-                                                          double ToU2,
-                                                          double FromV1,
-                                                          double ToV2,
-                                                          double ParametricTolerance,
-                                                          bool SameUOrientation = true,
-                                                          bool SameVOrientation = true)
+    public static BSplineSurface SplitBSplineSurface(BSplineSurface s,
+                                                          double fromU1,
+                                                          double toU2,
+                                                          double fromV1,
+                                                          double toV2,
+                                                          double parametricTolerance,
+                                                          bool sameUOrientation = true,
+                                                          bool sameVOrientation = true)
     {
-        double FirstU = Min(FromU1, ToU2);
-        double LastU = Max(FromU1, ToU2);
-        double FirstV = Min(FromV1, ToV2);
-        double LastV = Max(FromV1, ToV2);
+        double firstU = Min(fromU1, toU2);
+        double lastU = Max(fromU1, toU2);
+        double firstV = Min(fromV1, toV2);
+        double lastV = Max(fromV1, toV2);
 
-        Geom_BSplineSurface NewSurface = (Geom_BSplineSurface)S.Copy();
+        BSplineSurface newSurface = (BSplineSurface)s.Copy();
 
-        NewSurface.Segment(FirstU, LastU, FirstV, LastV);
+        newSurface.Segment(firstU, lastU, firstV, lastV);
 
-        if (S.IsUPeriodic())
+        if (s.IsUPeriodic)
         {
-            if (!SameUOrientation)
+            if (!sameUOrientation)
             {
-                NewSurface.UReverse();
+                newSurface.UReverse();
             }
         }
         else
         {
-            if (FromU1 > ToU2)
+            if (fromU1 > toU2)
             {
-                NewSurface.UReverse();
+                newSurface.UReverse();
             }
         }
 
-        if (S.IsVPeriodic())
+        if (s.IsVPeriodic)
         {
-            if (!SameVOrientation)
+            if (!sameVOrientation)
             {
-                NewSurface.VReverse();
+                newSurface.VReverse();
             }
         }
         else
         {
-            if (FromV1 > ToV2)
+            if (fromV1 > toV2)
             {
-                NewSurface.VReverse();
+                newSurface.VReverse();
             }
         }
 
-        return NewSurface;
+        return newSurface;
     }
 
     /// <summary>
@@ -1525,71 +1527,71 @@ public static class GeomConvert
     /// (periodic). In V, OCCT tests and reverses U instead (occt-issues.md).
     /// </summary>
     /// <exception cref="DomainErrorException">The parameters are within ParametricTolerance.</exception>
-    public static Geom_BSplineSurface SplitBSplineSurface(Geom_BSplineSurface S,
-                                                          double FromParam1,
-                                                          double ToParam2,
-                                                          bool USplit,
-                                                          double ParametricTolerance,
-                                                          bool SameOrientation = true)
+    public static BSplineSurface SplitBSplineSurface(BSplineSurface s,
+                                                          double fromParam1,
+                                                          double toParam2,
+                                                          bool uSplit,
+                                                          double parametricTolerance,
+                                                          bool sameOrientation = true)
     {
-        if (Math.Abs(FromParam1 - ToParam2) <= Math.Abs(ParametricTolerance))
+        if (Math.Abs(fromParam1 - toParam2) <= Math.Abs(parametricTolerance))
         {
             throw new DomainErrorException();
         }
 
-        Geom_BSplineSurface NewSurface = (Geom_BSplineSurface)S.Copy();
+        BSplineSurface newSurface = (BSplineSurface)s.Copy();
 
-        if (USplit)
+        if (uSplit)
         {
-            double FirstU = Min(FromParam1, ToParam2);
-            double LastU = Max(FromParam1, ToParam2);
-            double FirstV = S.VKnot(S.FirstVKnotIndex());
-            double LastV = S.VKnot(S.LastVKnotIndex());
+            double firstU = Min(fromParam1, toParam2);
+            double lastU = Max(fromParam1, toParam2);
+            double firstV = s.VKnot(s.FirstVKnotIndex());
+            double lastV = s.VKnot(s.LastVKnotIndex());
 
-            NewSurface.Segment(FirstU, LastU, FirstV, LastV);
+            newSurface.Segment(firstU, lastU, firstV, lastV);
 
-            if (S.IsUPeriodic())
+            if (s.IsUPeriodic)
             {
-                if (!SameOrientation)
+                if (!sameOrientation)
                 {
-                    NewSurface.UReverse();
+                    newSurface.UReverse();
                 }
             }
             else
             {
-                if (FromParam1 > ToParam2)
+                if (fromParam1 > toParam2)
                 {
-                    NewSurface.UReverse();
+                    newSurface.UReverse();
                 }
             }
         }
         else
         {
-            double FirstU = S.UKnot(S.FirstUKnotIndex());
-            double LastU = S.UKnot(S.LastUKnotIndex());
-            double FirstV = Min(FromParam1, ToParam2);
-            double LastV = Max(FromParam1, ToParam2);
+            double firstU = s.UKnot(s.FirstUKnotIndex());
+            double lastU = s.UKnot(s.LastUKnotIndex());
+            double firstV = Min(fromParam1, toParam2);
+            double lastV = Max(fromParam1, toParam2);
 
-            NewSurface.Segment(FirstU, LastU, FirstV, LastV);
+            newSurface.Segment(firstU, lastU, firstV, lastV);
 
             // OCCT: a split in V tests the U periodicity and reverses U, where V is meant
-            if (S.IsUPeriodic())
+            if (s.IsUPeriodic)
             {
-                if (!SameOrientation)
+                if (!sameOrientation)
                 {
-                    NewSurface.UReverse();
+                    newSurface.UReverse();
                 }
             }
             else
             {
-                if (FromParam1 > ToParam2)
+                if (fromParam1 > toParam2)
                 {
-                    NewSurface.UReverse();
+                    newSurface.UReverse();
                 }
             }
         }
 
-        return NewSurface;
+        return newSurface;
     }
 
     /// <summary>
@@ -1598,422 +1600,422 @@ public static class GeomConvert
     /// surfaces by approximation (GeomConvert_ApproxSurface, tolerance 1e-4, degree 14).
     /// </summary>
     /// <exception cref="DomainErrorException">Sr is infinite.</exception>
-    public static Geom_BSplineSurface SurfaceToBSplineSurface(Geom_Surface Sr)
+    public static BSplineSurface SurfaceToBSplineSurface(Surface sr)
     {
-        Sr.Bounds(out double U1, out double U2, out double V1, out double V2);
-        double UFirst = Min(U1, U2);
-        double ULast = Max(U1, U2);
-        double VFirst = Min(V1, V2);
-        double VLast = Max(V1, V2);
+        sr.Bounds(out double u1, out double u2, out double v1, out double v2);
+        double uFirst = Min(u1, u2);
+        double uLast = Max(u1, u2);
+        double vFirst = Min(v1, v2);
+        double vLast = Max(v1, v2);
 
         // If the surface Sr is infinite stop the computation
-        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(UFirst) || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(ULast)
-            || global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(VFirst) || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(VLast))
+        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(uFirst) || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(uLast)
+            || global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(vFirst) || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(vLast))
         {
             throw new DomainErrorException("GeomConvert::SurfaceToBSplineSurface() - infinite surface");
         }
 
-        Geom_BSplineSurface TheSurface;
-        Geom_Surface? S;
-        if (Sr is Geom_OffsetSurface OffsetSur)
+        BSplineSurface theSurface;
+        Surface? s;
+        if (sr is OffsetSurface offsetSur)
         {
-            S = OffsetSur.Surface();
-            if (S is not null)
+            s = offsetSur.Surface();
+            if (s is not null)
             { // Convert the equivalent surface.
-                return SurfaceToBSplineSurface(S);
+                return SurfaceToBSplineSurface(s);
             }
         }
 
-        S = Sr;
+        s = sr;
 
-        if (S is Geom_RectangularTrimmedSurface Strim)
+        if (s is TrimmedSurface Strim)
         {
-            Geom_Surface Surf = Strim.BasisSurface();
-            UFirst = U1;
-            ULast = U2;
-            VFirst = V1;
-            VLast = V2;
-            if (Surf is Geom_OffsetSurface OffsetSurBasis)
+            Surface surf = Strim.BasisSurface();
+            uFirst = u1;
+            uLast = u2;
+            vFirst = v1;
+            vLast = v2;
+            if (surf is OffsetSurface offsetSurBasis)
             {
-                S = OffsetSurBasis.Surface();
-                if (S is not null)
+                s = offsetSurBasis.Surface();
+                if (s is not null)
                 {
-                    Surf = S;
+                    surf = s;
                 }
                 else
                 {
-                    S = Surf;
+                    s = surf;
                 }
             }
 
-            if (Surf is Geom_RectangularTrimmedSurface)
+            if (surf is TrimmedSurface)
             {
-                Geom_RectangularTrimmedSurface aStrim = new(Surf, UFirst, ULast, VFirst, VLast);
-                return SurfaceToBSplineSurface(aStrim);
+                TrimmedSurface strim = new(surf, uFirst, uLast, vFirst, vLast);
+                return SurfaceToBSplineSurface(strim);
             }
 
             //
             // For cylinders, cones, spheres, toruses
-            bool isUClosed = Math.Abs((ULast - UFirst) - 2.0 * M_PI) <= global::Kerf.Engine.Foundation.Precision.PConfusion();
+            bool isUClosed = Math.Abs((uLast - uFirst) - 2.0 * M_PI) <= global::Kerf.Engine.Foundation.Precision.PConfusion();
             double eps = 100.0 * Epsilon(2.0 * M_PI);
             //
-            if (Surf is Geom_Plane)
+            if (surf is PlaneSurface)
             {
                 NCollection_Array2<Point3D> Poles = new(1, 2, 1, 2);
-                Poles[1, 1] = Strim.Value(U1, V1);
-                Poles[1, 2] = Strim.Value(U1, V2);
-                Poles[2, 1] = Strim.Value(U2, V1);
-                Poles[2, 2] = Strim.Value(U2, V2);
-                NCollection_Array1<double> UKnots = new(1, 2);
-                NCollection_Array1<double> VKnots = new(1, 2);
-                NCollection_Array1<int> UMults = new(1, 2);
-                NCollection_Array1<int> VMults = new(1, 2);
-                UKnots[1] = U1;
-                UKnots[2] = U2;
-                VKnots[1] = V1;
-                VKnots[2] = V2;
-                UMults[1] = 2;
-                UMults[2] = 2;
-                VMults[1] = 2;
-                VMults[2] = 2;
-                int UDegree = 1;
-                int VDegree = 1;
-                TheSurface = new Geom_BSplineSurface(Poles, UKnots, VKnots, UMults, VMults, UDegree, VDegree);
+                Poles[1, 1] = Strim.Value(u1, v1);
+                Poles[1, 2] = Strim.Value(u1, v2);
+                Poles[2, 1] = Strim.Value(u2, v1);
+                Poles[2, 2] = Strim.Value(u2, v2);
+                NCollection_Array1<double> uKnots = new(1, 2);
+                NCollection_Array1<double> vKnots = new(1, 2);
+                NCollection_Array1<int> uMults = new(1, 2);
+                NCollection_Array1<int> vMults = new(1, 2);
+                uKnots[1] = u1;
+                uKnots[2] = u2;
+                vKnots[1] = v1;
+                vKnots[2] = v2;
+                uMults[1] = 2;
+                uMults[2] = 2;
+                vMults[1] = 2;
+                vMults[2] = 2;
+                int uDegree = 1;
+                int vDegree = 1;
+                theSurface = new BSplineSurface(Poles, uKnots, vKnots, uMults, vMults, uDegree, vDegree);
             }
-            else if (Surf is Geom_CylindricalSurface TheCylSurf)
+            else if (surf is CylindricalSurface theCylSurf)
             {
-                Cylinder Cyl = TheCylSurf.Cylinder();
+                Cylinder cyl = theCylSurf.Cylinder();
                 if (isUClosed)
                 {
-                    CylinderToBSplineSurface Convert = new(Cyl, VFirst, VLast);
-                    TheSurface = BSplineSurfaceBuilder(Convert);
-                    int aNbK = TheSurface.NbUKnots();
-                    if (Math.Abs(TheSurface.UKnot(1) - UFirst) > eps || Math.Abs(TheSurface.UKnot(aNbK) - ULast) > eps)
+                    CylinderToBSplineSurface convert = new(cyl, vFirst, vLast);
+                    theSurface = BSplineSurfaceBuilder(convert);
+                    int nbK = theSurface.UKnotCount;
+                    if (Math.Abs(theSurface.UKnot(1) - uFirst) > eps || Math.Abs(theSurface.UKnot(nbK) - uLast) > eps)
                     {
-                        TheSurface.CheckAndSegment(UFirst, ULast, VFirst, VLast);
+                        theSurface.CheckAndSegment(uFirst, uLast, vFirst, vLast);
                     }
                 }
                 else
                 {
-                    CylinderToBSplineSurface Conv = new(Cyl, UFirst, ULast, VFirst, VLast);
-                    TheSurface = BSplineSurfaceBuilder(Conv);
+                    CylinderToBSplineSurface conv = new(cyl, uFirst, uLast, vFirst, vLast);
+                    theSurface = BSplineSurfaceBuilder(conv);
                 }
             }
 
-            else if (Surf is Geom_ConicalSurface TheConeSurf)
+            else if (surf is ConicalSurface theConeSurf)
             {
-                Cone Co = TheConeSurf.Cone();
+                Cone co = theConeSurf.Cone();
                 if (isUClosed)
                 {
-                    ConeToBSplineSurface Convert = new(Co, VFirst, VLast);
-                    TheSurface = BSplineSurfaceBuilder(Convert);
-                    int aNbK = TheSurface.NbUKnots();
-                    if (Math.Abs(TheSurface.UKnot(1) - UFirst) > eps || Math.Abs(TheSurface.UKnot(aNbK) - ULast) > eps)
+                    ConeToBSplineSurface convert = new(co, vFirst, vLast);
+                    theSurface = BSplineSurfaceBuilder(convert);
+                    int nbK = theSurface.UKnotCount;
+                    if (Math.Abs(theSurface.UKnot(1) - uFirst) > eps || Math.Abs(theSurface.UKnot(nbK) - uLast) > eps)
                     {
-                        TheSurface.CheckAndSegment(UFirst, ULast, VFirst, VLast);
+                        theSurface.CheckAndSegment(uFirst, uLast, vFirst, vLast);
                     }
                 }
                 else
                 {
-                    ConeToBSplineSurface Convert = new(Co, UFirst, ULast, VFirst, VLast);
-                    TheSurface = BSplineSurfaceBuilder(Convert);
+                    ConeToBSplineSurface convert = new(co, uFirst, uLast, vFirst, vLast);
+                    theSurface = BSplineSurfaceBuilder(convert);
                 }
             }
 
-            else if (Surf is Geom_SphericalSurface TheSphSurf)
+            else if (surf is SphericalSurface theSphSurf)
             {
-                Sphere Sph = TheSphSurf.Sphere();
+                Sphere sph = theSphSurf.Sphere();
                 // OCC217
                 if (isUClosed)
                 {
-                    SphereToBSplineSurface Convert = new(Sph, VFirst, VLast, false);
-                    TheSurface = BSplineSurfaceBuilder(Convert);
-                    int aNbK = TheSurface.NbUKnots();
-                    if (Math.Abs(TheSurface.UKnot(1) - UFirst) > eps || Math.Abs(TheSurface.UKnot(aNbK) - ULast) > eps)
+                    SphereToBSplineSurface convert = new(sph, vFirst, vLast, false);
+                    theSurface = BSplineSurfaceBuilder(convert);
+                    int nbK = theSurface.UKnotCount;
+                    if (Math.Abs(theSurface.UKnot(1) - uFirst) > eps || Math.Abs(theSurface.UKnot(nbK) - uLast) > eps)
                     {
-                        TheSurface.CheckAndSegment(UFirst, ULast, VFirst, VLast);
+                        theSurface.CheckAndSegment(uFirst, uLast, vFirst, vLast);
                     }
                 }
                 else
                 {
-                    SphereToBSplineSurface Convert = new(Sph, UFirst, ULast, VFirst, VLast);
-                    TheSurface = BSplineSurfaceBuilder(Convert);
+                    SphereToBSplineSurface convert = new(sph, uFirst, uLast, vFirst, vLast);
+                    theSurface = BSplineSurfaceBuilder(convert);
                 }
             }
 
-            else if (Surf is Geom_ToroidalSurface TheTorSurf)
+            else if (surf is ToroidalSurface theTorSurf)
             {
-                Torus Tr = TheTorSurf.Torus();
+                Torus tr = theTorSurf.Torus();
                 //
                 // if isUClosed = true and U trim does not coincide with first period of torus,
                 // method CheckAndSegment shifts position of U seam boundary of surface.
                 // probably bug? So, for this case we must build not periodic surface.
-                bool isUFirstPeriod = UFirst >= 0.0 && ULast <= 2.0 * M_PI;
-                bool isVFirstPeriod = VFirst >= 0.0 && VLast <= 2.0 * M_PI;
+                bool isUFirstPeriod = uFirst >= 0.0 && uLast <= 2.0 * M_PI;
+                bool isVFirstPeriod = vFirst >= 0.0 && vLast <= 2.0 * M_PI;
                 if (isUClosed && isUFirstPeriod)
                 {
-                    TorusToBSplineSurface Convert = new(Tr, VFirst, VLast, false);
-                    TheSurface = BSplineSurfaceBuilder(Convert);
-                    int aNbK = TheSurface.NbUKnots();
-                    if (Math.Abs(TheSurface.UKnot(1) - UFirst) > eps || Math.Abs(TheSurface.UKnot(aNbK) - ULast) > eps)
+                    TorusToBSplineSurface convert = new(tr, vFirst, vLast, false);
+                    theSurface = BSplineSurfaceBuilder(convert);
+                    int nbK = theSurface.UKnotCount;
+                    if (Math.Abs(theSurface.UKnot(1) - uFirst) > eps || Math.Abs(theSurface.UKnot(nbK) - uLast) > eps)
                     {
-                        TheSurface.CheckAndSegment(UFirst, ULast, VFirst, VLast);
+                        theSurface.CheckAndSegment(uFirst, uLast, vFirst, vLast);
                     }
                 }
-                else if (Strim.IsVClosed() && isVFirstPeriod)
+                else if (Strim.IsVClosed && isVFirstPeriod)
                 {
-                    TorusToBSplineSurface Convert = new(Tr, UFirst, ULast);
-                    TheSurface = BSplineSurfaceBuilder(Convert);
-                    int aNbK = TheSurface.NbVKnots();
-                    if (Math.Abs(TheSurface.VKnot(1) - VFirst) > eps || Math.Abs(TheSurface.VKnot(aNbK) - VLast) > eps)
+                    TorusToBSplineSurface convert = new(tr, uFirst, uLast);
+                    theSurface = BSplineSurfaceBuilder(convert);
+                    int nbK = theSurface.VKnotCount;
+                    if (Math.Abs(theSurface.VKnot(1) - vFirst) > eps || Math.Abs(theSurface.VKnot(nbK) - vLast) > eps)
                     {
-                        TheSurface.CheckAndSegment(UFirst, ULast, VFirst, VLast);
+                        theSurface.CheckAndSegment(uFirst, uLast, vFirst, vLast);
                     }
                 }
                 else
                 {
-                    TorusToBSplineSurface Convert = new(Tr, UFirst, ULast, VFirst, VLast);
-                    TheSurface = BSplineSurfaceBuilder(Convert);
+                    TorusToBSplineSurface convert = new(tr, uFirst, uLast, vFirst, vLast);
+                    theSurface = BSplineSurfaceBuilder(convert);
                 }
             }
 
-            else if (Surf is Geom_SurfaceOfRevolution Revol)
+            else if (surf is RevolutionSurface revol)
             {
-                Geom_Curve Meridian = Revol.BasisCurve();
-                Geom_BSplineCurve C;
-                if (Strim.IsVClosed())
+                Curve3D meridian = revol.BasisCurve();
+                BSplineCurve3D c;
+                if (Strim.IsVClosed)
                 {
-                    C = CurveToBSplineCurve(Meridian);
+                    c = CurveToBSplineCurve(meridian);
                 }
                 else
                 {
-                    Geom_TrimmedCurve CT = new(Meridian, VFirst, VLast);
-                    C = CurveToBSplineCurve(CT);
+                    TrimmedCurve3D ct = new(meridian, vFirst, vLast);
+                    c = CurveToBSplineCurve(ct);
                 }
 
-                int NbUPoles, NbUKnots;
-                int NbVPoles;
+                int nbUPoles, nbUKnots;
+                int nbVPoles;
                 bool periodic = false;
 
                 // Poles of meridian = Vpoles
-                NbVPoles = C.NbPoles();
-                NCollection_Array1<Point3D> Poles = new(C.InternalPoles());
-                NCollection_Array1<double> Weights = C.InternalWeightsArray();
+                nbVPoles = c.PoleCount;
+                NCollection_Array1<Point3D> Poles = new(c.InternalPoles());
+                NCollection_Array1<double> weights = c.InternalWeightsArray();
 
-                double AlfaU;
-                if (Strim.IsUPeriodic())
+                double alfaU;
+                if (Strim.IsUPeriodic)
                 {
-                    NbUKnots = 4;
-                    AlfaU = M_PI / 3.0;
-                    NbUPoles = 6;
+                    nbUKnots = 4;
+                    alfaU = M_PI / 3.0;
+                    nbUPoles = 6;
                     periodic = true;
                 }
                 else
                 {
                     // Number of spans: maximum opening = 150 degrees ( = PI / 1.2 rad)
-                    int nbUSpans = (int)Math.Truncate(1.2 * (ULast - UFirst) / M_PI) + 1;
-                    AlfaU = (ULast - UFirst) / (nbUSpans * 2);
-                    NbUPoles = 2 * nbUSpans + 1;
-                    NbUKnots = nbUSpans + 1;
+                    int nbUSpans = (int)Math.Truncate(1.2 * (uLast - uFirst) / M_PI) + 1;
+                    alfaU = (uLast - uFirst) / (nbUSpans * 2);
+                    nbUPoles = 2 * nbUSpans + 1;
+                    nbUKnots = nbUSpans + 1;
                 }
 
                 // Compute Knots and Mults
-                NCollection_Array1<double> UKnots = new(1, NbUKnots);
-                NCollection_Array1<int> UMults = new(1, NbUKnots);
+                NCollection_Array1<double> uKnots = new(1, nbUKnots);
+                NCollection_Array1<int> uMults = new(1, nbUKnots);
                 int i, j;
-                for (i = 1; i <= NbUKnots; i++)
+                for (i = 1; i <= nbUKnots; i++)
                 {
-                    UKnots[i] = UFirst + (i - 1) * 2 * AlfaU;
-                    UMults[i] = 2;
+                    uKnots[i] = uFirst + (i - 1) * 2 * alfaU;
+                    uMults[i] = 2;
                 }
 
                 if (!periodic)
                 {
-                    UMults[1]++;
-                    UMults[NbUKnots]++;
+                    uMults[1]++;
+                    uMults[nbUKnots]++;
                 }
 
-                NCollection_Array1<double> VKnots = C.InternalKnots();
-                NCollection_Array1<int> VMults = C.InternalMultiplicities();
+                NCollection_Array1<double> vKnots = c.InternalKnots();
+                NCollection_Array1<int> vMults = c.InternalMultiplicities();
 
                 // Compute the poles.
-                NCollection_Array2<Point3D> NewPoles = new(1, NbUPoles, 1, NbVPoles);
-                NCollection_Array2<double> NewWeights = new(1, NbUPoles, 1, NbVPoles);
-                Transform3D Trsf = new();
+                NCollection_Array2<Point3D> newPoles = new(1, nbUPoles, 1, nbVPoles);
+                NCollection_Array2<double> newWeights = new(1, nbUPoles, 1, nbVPoles);
+                Transform3D trsf = new();
 
-                for (i = 1; i <= NbUPoles; i += 2)
+                for (i = 1; i <= nbUPoles; i += 2)
                 {
-                    Trsf.SetRotation(Revol.Axis(), UFirst + (i - 1) * AlfaU);
-                    for (j = 1; j <= NbVPoles; j++)
+                    trsf.SetRotation(revol.Axis(), uFirst + (i - 1) * alfaU);
+                    for (j = 1; j <= nbVPoles; j++)
                     {
-                        NewPoles[i, j] = Poles[j].Transformed(Trsf);
-                        NewWeights[i, j] = Weights[j];
+                        newPoles[i, j] = Poles[j].Transformed(trsf);
+                        newWeights[i, j] = weights[j];
                     }
                 }
 
-                GeneralTransform3D Aff = new();
-                Aff.SetAffinity(Revol.Axis(), 1 / Math.Cos(AlfaU));
+                GeneralTransform3D aff = new();
+                aff.SetAffinity(revol.Axis(), 1 / Math.Cos(alfaU));
                 Xyz coord;
-                for (j = 1; j <= NbVPoles; j++)
+                for (j = 1; j <= nbVPoles; j++)
                 {
                     coord = Poles[j].XYZ();
-                    Aff.Transforms(ref coord);
+                    aff.Transforms(ref coord);
                     Poles[j].SetXYZ(coord);
                 }
 
-                for (i = 2; i <= NbUPoles; i += 2)
+                for (i = 2; i <= nbUPoles; i += 2)
                 {
-                    Trsf.SetRotation(Revol.Axis(), UFirst + (i - 1) * AlfaU);
-                    for (j = 1; j <= NbVPoles; j++)
+                    trsf.SetRotation(revol.Axis(), uFirst + (i - 1) * alfaU);
+                    for (j = 1; j <= nbVPoles; j++)
                     {
-                        NewPoles[i, j] = Poles[j].Transformed(Trsf);
-                        NewWeights[i, j] = Weights[j] * Math.Cos(AlfaU);
+                        newPoles[i, j] = Poles[j].Transformed(trsf);
+                        newWeights[i, j] = weights[j] * Math.Cos(alfaU);
                     }
                 }
 
-                TheSurface = new Geom_BSplineSurface(NewPoles,
-                                                     NewWeights,
-                                                     UKnots,
-                                                     VKnots,
-                                                     UMults,
-                                                     VMults,
+                theSurface = new BSplineSurface(newPoles,
+                                                     newWeights,
+                                                     uKnots,
+                                                     vKnots,
+                                                     uMults,
+                                                     vMults,
                                                      2,
-                                                     C.Degree(),
+                                                     c.Degree(),
                                                      periodic,
-                                                     C.IsPeriodic());
+                                                     c.IsPeriodic);
             }
 
-            else if (Surf is Geom_SurfaceOfLinearExtrusion Extru)
+            else if (surf is ExtrusionSurface extru)
             {
-                Geom_Curve Meridian = Extru.BasisCurve();
-                Geom_BSplineCurve C;
-                if (Strim.IsUClosed())
+                Curve3D meridian = extru.BasisCurve();
+                BSplineCurve3D c;
+                if (Strim.IsUClosed)
                 {
-                    C = CurveToBSplineCurve(Meridian);
+                    c = CurveToBSplineCurve(meridian);
                 }
                 else
                 {
-                    Geom_TrimmedCurve CT = new(Meridian, UFirst, ULast);
-                    C = CurveToBSplineCurve(CT);
+                    TrimmedCurve3D ct = new(meridian, uFirst, uLast);
+                    c = CurveToBSplineCurve(ct);
                 }
 
-                NCollection_Array2<Point3D> Poles = new(1, C.NbPoles(), 1, 2);
-                NCollection_Array2<double> Weights = new(1, C.NbPoles(), 1, 2);
-                NCollection_Array1<double> UKnots = C.InternalKnots();
-                NCollection_Array1<int> UMults = C.InternalMultiplicities();
-                NCollection_Array1<double> VKnots = new(1, 2);
-                VKnots[1] = VFirst;
-                VKnots[2] = VLast;
-                NCollection_Array1<int> VMults = new(1, 2);
-                VMults.Init(2);
+                NCollection_Array2<Point3D> Poles = new(1, c.PoleCount, 1, 2);
+                NCollection_Array2<double> weights = new(1, c.PoleCount, 1, 2);
+                NCollection_Array1<double> uKnots = c.InternalKnots();
+                NCollection_Array1<int> uMults = c.InternalMultiplicities();
+                NCollection_Array1<double> vKnots = new(1, 2);
+                vKnots[1] = vFirst;
+                vKnots[2] = vLast;
+                NCollection_Array1<int> vMults = new(1, 2);
+                vMults.Init(2);
 
-                Vector3D D = new(Extru.Direction());
-                Vector3D DV1 = VFirst * D;
-                Vector3D DV2 = VLast * D;
-                for (int i = 1; i <= C.NbPoles(); i++)
+                Vector3D d = new(extru.Direction());
+                Vector3D dv1 = vFirst * d;
+                Vector3D dv2 = vLast * d;
+                for (int i = 1; i <= c.PoleCount; i++)
                 {
-                    Poles[i, 1] = C.Pole(i).Translated(DV1);
-                    Poles[i, 2] = C.Pole(i).Translated(DV2);
-                    Weights[i, 1] = Weights[i, 2] = C.Weight(i);
+                    Poles[i, 1] = c.Pole(i).Translated(dv1);
+                    Poles[i, 2] = c.Pole(i).Translated(dv2);
+                    weights[i, 1] = weights[i, 2] = c.Weight(i);
                 }
 
-                TheSurface = new Geom_BSplineSurface(Poles,
-                                                     Weights,
-                                                     UKnots,
-                                                     VKnots,
-                                                     UMults,
-                                                     VMults,
-                                                     C.Degree(),
+                theSurface = new BSplineSurface(Poles,
+                                                     weights,
+                                                     uKnots,
+                                                     vKnots,
+                                                     uMults,
+                                                     vMults,
+                                                     c.Degree(),
                                                      1,
-                                                     C.IsPeriodic(),
+                                                     c.IsPeriodic,
                                                      false);
             }
 
-            else if (Surf is Geom_BezierSurface)
+            else if (surf is BezierSurface)
             {
-                Geom_BezierSurface SBez = (Geom_BezierSurface)Surf.Copy();
+                BezierSurface sBez = (BezierSurface)surf.Copy();
 
-                SBez.Segment(U1, U2, V1, V2);
-                int UDegree = SBez.UDegree();
-                int VDegree = SBez.VDegree();
-                NCollection_Array1<double> UKnots = new(1, 2);
-                NCollection_Array1<int> UMults = new(1, 2);
-                NCollection_Array1<double> VKnots = new(1, 2);
-                NCollection_Array1<int> VMults = new(1, 2);
-                UKnots[1] = 0.0;
-                UKnots[2] = 1.0;
-                UMults[1] = UDegree + 1;
-                UMults[2] = UDegree + 1;
-                VKnots[1] = 0.0;
-                VKnots[2] = 1.0;
-                VMults[1] = VDegree + 1;
-                VMults[2] = VDegree + 1;
-                NCollection_Array2<Point3D> aPoles = SBez.InternalPoles();
-                if (SBez.IsURational() || SBez.IsVRational())
+                sBez.Segment(u1, u2, v1, v2);
+                int uDegree = sBez.UDegree();
+                int vDegree = sBez.VDegree();
+                NCollection_Array1<double> uKnots = new(1, 2);
+                NCollection_Array1<int> uMults = new(1, 2);
+                NCollection_Array1<double> vKnots = new(1, 2);
+                NCollection_Array1<int> vMults = new(1, 2);
+                uKnots[1] = 0.0;
+                uKnots[2] = 1.0;
+                uMults[1] = uDegree + 1;
+                uMults[2] = uDegree + 1;
+                vKnots[1] = 0.0;
+                vKnots[2] = 1.0;
+                vMults[1] = vDegree + 1;
+                vMults[2] = vDegree + 1;
+                NCollection_Array2<Point3D> aPoles = sBez.InternalPoles();
+                if (sBez.IsURational || sBez.IsVRational)
                 {
-                    TheSurface = new Geom_BSplineSurface(aPoles,
-                                                         SBez.InternalWeightsArray(),
-                                                         UKnots,
-                                                         VKnots,
-                                                         UMults,
-                                                         VMults,
-                                                         UDegree,
-                                                         VDegree);
+                    theSurface = new BSplineSurface(aPoles,
+                                                         sBez.InternalWeightsArray(),
+                                                         uKnots,
+                                                         vKnots,
+                                                         uMults,
+                                                         vMults,
+                                                         uDegree,
+                                                         vDegree);
                 }
                 else
                 {
-                    TheSurface = new Geom_BSplineSurface(aPoles, UKnots, VKnots, UMults, VMults, UDegree, VDegree);
+                    theSurface = new BSplineSurface(aPoles, uKnots, vKnots, uMults, vMults, uDegree, vDegree);
                 }
             }
 
-            else if (Surf is Geom_BSplineSurface)
+            else if (surf is BSplineSurface)
             {
-                Geom_BSplineSurface BS = (Geom_BSplineSurface)Surf.Copy();
-                BS.Bounds(out double umin, out double umax, out double vmin, out double vmax);
-                if (!BS.IsUPeriodic())
+                BSplineSurface bs = (BSplineSurface)surf.Copy();
+                bs.Bounds(out double umin, out double umax, out double vmin, out double vmax);
+                if (!bs.IsUPeriodic)
                 {
-                    if (U1 < umin)
+                    if (u1 < umin)
                     {
-                        U1 = umin;
+                        u1 = umin;
                     }
 
-                    if (U2 > umax)
+                    if (u2 > umax)
                     {
-                        U2 = umax;
+                        u2 = umax;
                     }
                 }
 
-                if (!BS.IsVPeriodic())
+                if (!bs.IsVPeriodic)
                 {
-                    if (V1 < vmin)
+                    if (v1 < vmin)
                     {
-                        V1 = vmin;
+                        v1 = vmin;
                     }
 
-                    if (V2 > vmax)
+                    if (v2 > vmax)
                     {
-                        V2 = vmax;
+                        v2 = vmax;
                     }
                 }
 
-                if (BS.IsUPeriodic() || BS.IsVPeriodic())
+                if (bs.IsUPeriodic || bs.IsVPeriodic)
                 {
-                    BS.CheckAndSegment(U1, U2, V1, V2);
+                    bs.CheckAndSegment(u1, u2, v1, v2);
                 }
                 else
                 {
-                    BS.Segment(U1, U2, V1, V2);
+                    bs.Segment(u1, u2, v1, v2);
                 }
 
-                TheSurface = BS;
+                theSurface = bs;
             }
 
             else
             {
-                double Tol3d = 1.0e-4;
-                int MaxDegree = 14, MaxSeg;
+                double tol3d = 1.0e-4;
+                int maxDegree = 14, maxSeg;
                 Continuity cont;
-                GeomAdaptor_Surface AS = new(Sr);
+                SurfaceAdaptor AS = new(sr);
                 if (AS.NbUIntervals(C2) > 1 || AS.NbVIntervals(C2) > 1)
                 {
                     cont = C1;
@@ -2023,181 +2025,181 @@ public static class GeomConvert
                     cont = C2;
                 }
 
-                MaxSeg = 4 * (AS.NbUIntervals(CN) + 1) * (AS.NbVIntervals(CN) + 1);
-                GeomConvert_ApproxSurface BSpS = new(Sr, Tol3d, cont, cont, MaxDegree, MaxDegree, MaxSeg, 1);
+                maxSeg = 4 * (AS.NbUIntervals(CN) + 1) * (AS.NbVIntervals(CN) + 1);
+                ApproxSurface bSpS = new(sr, tol3d, cont, cont, maxDegree, maxDegree, maxSeg, 1);
                 // The approximation's surface is frozen (decision 197): the caller gets a copy it owns
-                TheSurface = (Geom_BSplineSurface)BSpS.Surface()!.Copy();
+                theSurface = (BSplineSurface)bSpS.Surface()!.Copy();
             }
         } // End of Rectangular::TrimmedSurface case
 
         else
         {
-            if (S is Geom_SphericalSurface TheSphSurf)
+            if (s is SphericalSurface theSphSurf)
             {
-                Sphere Sph = TheSphSurf.Sphere();
-                SphereToBSplineSurface Convert = new(Sph);
-                TheSurface = BSplineSurfaceBuilder(Convert);
+                Sphere sph = theSphSurf.Sphere();
+                SphereToBSplineSurface convert = new(sph);
+                theSurface = BSplineSurfaceBuilder(convert);
             }
 
-            else if (S is Geom_ToroidalSurface TheTorSurf)
+            else if (s is ToroidalSurface theTorSurf)
             {
-                Torus Tr = TheTorSurf.Torus();
-                TorusToBSplineSurface Convert = new(Tr);
-                TheSurface = BSplineSurfaceBuilder(Convert);
+                Torus tr = theTorSurf.Torus();
+                TorusToBSplineSurface convert = new(tr);
+                theSurface = BSplineSurfaceBuilder(convert);
             }
 
-            else if (S is Geom_SurfaceOfRevolution Revol)
+            else if (s is RevolutionSurface revol)
             {
-                Geom_Curve Meridian = Revol.BasisCurve();
-                Geom_BSplineCurve C = CurveToBSplineCurve(Meridian);
+                Curve3D meridian = revol.BasisCurve();
+                BSplineCurve3D c = CurveToBSplineCurve(meridian);
 
-                int NbUPoles, NbUKnots;
-                int NbVPoles;
+                int nbUPoles, nbUKnots;
+                int nbVPoles;
                 bool periodic = true;
 
                 // Poles of meridian = Vpoles
-                NbVPoles = C.NbPoles();
-                NCollection_Array1<Point3D> Poles = new(C.InternalPoles());
-                NCollection_Array1<double> Weights = C.InternalWeightsArray();
+                nbVPoles = c.PoleCount;
+                NCollection_Array1<Point3D> Poles = new(c.InternalPoles());
+                NCollection_Array1<double> weights = c.InternalWeightsArray();
 
-                double AlfaU;
-                NbUKnots = 4;
-                AlfaU = M_PI / 3.0;
-                NbUPoles = 6;
+                double alfaU;
+                nbUKnots = 4;
+                alfaU = M_PI / 3.0;
+                nbUPoles = 6;
 
                 // Compute Knots and Mults
-                NCollection_Array1<double> UKnots = new(1, NbUKnots);
-                NCollection_Array1<int> UMults = new(1, NbUKnots);
+                NCollection_Array1<double> uKnots = new(1, nbUKnots);
+                NCollection_Array1<int> uMults = new(1, nbUKnots);
                 int i, j;
-                for (i = 1; i <= NbUKnots; i++)
+                for (i = 1; i <= nbUKnots; i++)
                 {
-                    UKnots[i] = UFirst + (i - 1) * 2 * AlfaU;
-                    UMults[i] = 2;
+                    uKnots[i] = uFirst + (i - 1) * 2 * alfaU;
+                    uMults[i] = 2;
                 }
 
-                NCollection_Array1<double> VKnots = C.InternalKnots();
-                NCollection_Array1<int> VMults = C.InternalMultiplicities();
+                NCollection_Array1<double> vKnots = c.InternalKnots();
+                NCollection_Array1<int> vMults = c.InternalMultiplicities();
 
                 // Compute the poles.
-                NCollection_Array2<Point3D> NewPoles = new(1, NbUPoles, 1, NbVPoles);
-                NCollection_Array2<double> NewWeights = new(1, NbUPoles, 1, NbVPoles);
-                Transform3D Trsf = new();
+                NCollection_Array2<Point3D> newPoles = new(1, nbUPoles, 1, nbVPoles);
+                NCollection_Array2<double> newWeights = new(1, nbUPoles, 1, nbVPoles);
+                Transform3D trsf = new();
 
-                for (i = 1; i <= NbUPoles; i += 2)
+                for (i = 1; i <= nbUPoles; i += 2)
                 {
-                    Trsf.SetRotation(Revol.Axis(), UFirst + (i - 1) * AlfaU);
-                    for (j = 1; j <= NbVPoles; j++)
+                    trsf.SetRotation(revol.Axis(), uFirst + (i - 1) * alfaU);
+                    for (j = 1; j <= nbVPoles; j++)
                     {
-                        NewPoles[i, j] = Poles[j].Transformed(Trsf);
-                        NewWeights[i, j] = Weights[j];
+                        newPoles[i, j] = Poles[j].Transformed(trsf);
+                        newWeights[i, j] = weights[j];
                     }
                 }
 
-                GeneralTransform3D Aff = new();
-                Aff.SetAffinity(Revol.Axis(), 1 / Math.Cos(AlfaU));
+                GeneralTransform3D aff = new();
+                aff.SetAffinity(revol.Axis(), 1 / Math.Cos(alfaU));
                 Xyz coord;
-                for (j = 1; j <= NbVPoles; j++)
+                for (j = 1; j <= nbVPoles; j++)
                 {
                     coord = Poles[j].XYZ();
-                    Aff.Transforms(ref coord);
+                    aff.Transforms(ref coord);
                     Poles[j].SetXYZ(coord);
                 }
 
-                for (i = 2; i <= NbUPoles; i += 2)
+                for (i = 2; i <= nbUPoles; i += 2)
                 {
-                    Trsf.SetRotation(Revol.Axis(), UFirst + (i - 1) * AlfaU);
-                    for (j = 1; j <= NbVPoles; j++)
+                    trsf.SetRotation(revol.Axis(), uFirst + (i - 1) * alfaU);
+                    for (j = 1; j <= nbVPoles; j++)
                     {
-                        NewPoles[i, j] = Poles[j].Transformed(Trsf);
-                        NewWeights[i, j] = Weights[j] * Math.Cos(AlfaU);
+                        newPoles[i, j] = Poles[j].Transformed(trsf);
+                        newWeights[i, j] = weights[j] * Math.Cos(alfaU);
                     }
                 }
 
-                TheSurface = new Geom_BSplineSurface(NewPoles,
-                                                     NewWeights,
-                                                     UKnots,
-                                                     VKnots,
-                                                     UMults,
-                                                     VMults,
+                theSurface = new BSplineSurface(newPoles,
+                                                     newWeights,
+                                                     uKnots,
+                                                     vKnots,
+                                                     uMults,
+                                                     vMults,
                                                      2,
-                                                     C.Degree(),
+                                                     c.Degree(),
                                                      periodic,
-                                                     C.IsPeriodic());
+                                                     c.IsPeriodic);
             }
 
-            else if (S is Geom_BezierSurface SBez)
+            else if (s is BezierSurface sBez)
             {
-                int UDegree = SBez.UDegree();
-                int VDegree = SBez.VDegree();
-                NCollection_Array1<double> UKnots = new(1, 2);
-                NCollection_Array1<int> UMults = new(1, 2);
-                NCollection_Array1<double> VKnots = new(1, 2);
-                NCollection_Array1<int> VMults = new(1, 2);
-                UKnots[1] = 0.0;
-                UKnots[2] = 1.0;
-                UMults[1] = UDegree + 1;
-                UMults[2] = UDegree + 1;
-                VKnots[1] = 0.0;
-                VKnots[2] = 1.0;
-                VMults[1] = VDegree + 1;
-                VMults[2] = VDegree + 1;
-                NCollection_Array2<Point3D> aPoles = SBez.InternalPoles();
-                if (SBez.IsURational() || SBez.IsVRational())
+                int uDegree = sBez.UDegree();
+                int vDegree = sBez.VDegree();
+                NCollection_Array1<double> uKnots = new(1, 2);
+                NCollection_Array1<int> uMults = new(1, 2);
+                NCollection_Array1<double> vKnots = new(1, 2);
+                NCollection_Array1<int> vMults = new(1, 2);
+                uKnots[1] = 0.0;
+                uKnots[2] = 1.0;
+                uMults[1] = uDegree + 1;
+                uMults[2] = uDegree + 1;
+                vKnots[1] = 0.0;
+                vKnots[2] = 1.0;
+                vMults[1] = vDegree + 1;
+                vMults[2] = vDegree + 1;
+                NCollection_Array2<Point3D> poles = sBez.InternalPoles();
+                if (sBez.IsURational || sBez.IsVRational)
                 {
-                    TheSurface = new Geom_BSplineSurface(aPoles,
-                                                         SBez.InternalWeightsArray(),
-                                                         UKnots,
-                                                         VKnots,
-                                                         UMults,
-                                                         VMults,
-                                                         UDegree,
-                                                         VDegree);
+                    theSurface = new BSplineSurface(poles,
+                                                         sBez.InternalWeightsArray(),
+                                                         uKnots,
+                                                         vKnots,
+                                                         uMults,
+                                                         vMults,
+                                                         uDegree,
+                                                         vDegree);
                 }
                 else
                 {
-                    TheSurface = new Geom_BSplineSurface(aPoles, UKnots, VKnots, UMults, VMults, UDegree, VDegree);
+                    theSurface = new BSplineSurface(poles, uKnots, vKnots, uMults, vMults, uDegree, vDegree);
                 }
             }
 
-            else if (S is Geom_BSplineSurface)
+            else if (s is BSplineSurface)
             {
-                TheSurface = (Geom_BSplineSurface)S.Copy(); // Just a copy
+                theSurface = (BSplineSurface)s.Copy(); // Just a copy
             }
 
             else
             { // In other cases => Approx
-                double Tol3d = 1.0e-4;
-                int MaxDegree = 14, MaxSeg;
+                double tol3d = 1.0e-4;
+                int maxDegree = 14, maxSeg;
                 Continuity ucont = C0, vcont = C0;
-                GeomAdaptor_Surface AS = new(Sr);
+                SurfaceAdaptor AS = new(sr);
                 //
-                if (Sr.IsCNu(2))
+                if (sr.IsCNu(2))
                 {
                     ucont = C2;
                 }
-                else if (Sr.IsCNu(1))
+                else if (sr.IsCNu(1))
                 {
                     ucont = C1;
                 }
 
                 //
-                if (Sr.IsCNv(2))
+                if (sr.IsCNv(2))
                 {
                     vcont = C2;
                 }
-                else if (Sr.IsCNv(1))
+                else if (sr.IsCNv(1))
                 {
                     vcont = C1;
                 }
 
                 //
-                MaxSeg = 4 * (AS.NbUIntervals(CN) + 1) * (AS.NbVIntervals(CN) + 1);
-                GeomConvert_ApproxSurface BSpS = new(Sr, Tol3d, ucont, vcont, MaxDegree, MaxDegree, MaxSeg, 1);
+                maxSeg = 4 * (AS.NbUIntervals(CN) + 1) * (AS.NbVIntervals(CN) + 1);
+                ApproxSurface bSpS = new(sr, tol3d, ucont, vcont, maxDegree, maxDegree, maxSeg, 1);
                 // The approximation's surface is frozen (decision 197): the caller gets a copy it owns
-                TheSurface = (Geom_BSplineSurface)BSpS.Surface()!.Copy();
+                theSurface = (BSplineSurface)bSpS.Surface()!.Copy();
             }
         } // End of direct case
 
-        return TheSurface;
+        return theSurface;
     }
 }

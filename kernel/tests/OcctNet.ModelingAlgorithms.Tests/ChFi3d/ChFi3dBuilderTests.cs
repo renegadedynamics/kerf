@@ -1,7 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -11,14 +15,14 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ChFi3dBuilderTests
 {
-    private static TopoDS_Shape Box() => new BRepPrimAPI_MakeBox(100, 100, 100).Shape();
+    private static Shape Box() => new BRepPrimAPI_MakeBox(100, 100, 100).Shape();
 
-    private static double[] VertexTolerances(in TopoDS_Shape S)
+    private static double[] VertexTolerances(in Shape S)
     {
         List<double> r = [];
-        for (TopExp_Explorer ex = new(S, TopAbs_VERTEX); ex.More(); ex.Next())
+        for (Explorer ex = new(S, ShapeType.Vertex); ex.More(); ex.Next())
         {
-            r.Add(BRep_Tool.Tolerance(TopoDS.Vertex(ex.Current())));
+            r.Add(Tool.Tolerance(ShapeCasts.Vertex(ex.Current())));
         }
         return r.ToArray();
     }
@@ -28,14 +32,14 @@ public class ChFi3dBuilderTests
     {
         // ChFi3d_Builder::Compute hands the data structure to myCoup->Perform: unit 7R's reconstruction on the
         // Boolean engine (decision 992's seam)
-        TopoDS_Shape aBox = Box();
+        Shape aBox = Box();
         ChFi3d_FilBuilder aB = new(aBox);
         Assert.IsType<ChFi3d_BOPReconstruction>(aB.Builder());
         aB.Add(10, ChFi3dBuilderNativeTests.EdgeOf(aBox, 5));
         aB.Compute();
         Assert.True(aB.IsDone());
         Assert.True(new BRepCheck_Analyzer(aB.Shape()).IsValid());
-        Assert.Equal(1, ReconComparison.Count(aB.Shape(), TopAbs_SOLID));
+        Assert.Equal(1, ReconComparison.Count(aB.Shape(), ShapeType.Solid));
     }
 
     [Fact]
@@ -44,8 +48,8 @@ public class ChFi3dBuilderTests
         // OCCT raises the tolerances of the vertices the fillets end at (ChFi3d_IndexPointInDS, Compute's
         // UpdateVertex) and gives the elementary spines' edges 3D curves: on the builder's working copy, never on the
         // caller's frozen shape (decisions 1005, 1087)
-        TopoDS_Shape aBox = Box();
-        Assert.True(BRepTools.HoldsFrozen(aBox));
+        Shape aBox = Box();
+        Assert.True(BrepTools.HoldsFrozen(aBox));
         double[] aBefore = VertexTolerances(aBox);
         (ChFi3d_FilBuilder aB, ChFi3dBuilderNativeTests.RecordingReconstruction aRec) =
             ChFi3dBuilderNativeTests.RunFillet(aBox, Enumerable.Range(1, 12).Select(k => new ChFi3dBuilderNativeTests.CaseEdge(k, 10)));
@@ -54,10 +58,10 @@ public class ChFi3dBuilderTests
         Assert.Equal(aBefore, VertexTolerances(aBox));
         // every shape of the data structure is the working copy's
         TopOpeBRepDS_DataStructure DS = aRec.HDS!.DS();
-        NCollection_IndexedMap<TopoDS_Shape> aWork = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aB.WorkingShape(), aWork);
-        NCollection_IndexedMap<TopoDS_Shape> anInput = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aBox, anInput);
+        NCollection_IndexedMap<Shape> aWork = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aB.WorkingShape(), aWork);
+        NCollection_IndexedMap<Shape> anInput = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aBox, anInput);
         for (int i = 1; i <= DS.NbShapes(); i++)
         {
             Assert.True(aWork.Contains(DS.Shape(i)));
@@ -68,8 +72,8 @@ public class ChFi3dBuilderTests
     [Fact]
     public void TheCallersEdgesAndVerticesAreMappedOntoTheWorkingCopy()
     {
-        TopoDS_Shape aBox = Box();
-        TopoDS_Edge E = ChFi3dBuilderNativeTests.EdgeOf(aBox, 5);
+        Shape aBox = Box();
+        Edge E = ChFi3dBuilderNativeTests.EdgeOf(aBox, 5);
         ChFi3d_FilBuilder aB = new(aBox);
         aB.Add(10, E);
         Assert.Equal(1, aB.NbElements());
@@ -78,8 +82,8 @@ public class ChFi3dBuilderTests
         Assert.Equal(1, IinC);
         Assert.Equal(10.0, aB.Radius(1, E));
         // the contour's ends are handed back as the caller's vertices
-        TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-        TopoDS_Vertex F = aB.FirstVertex(1), L = aB.LastVertex(1);
+        Exploration.Vertices(E, out Vertex V1, out Vertex V2);
+        Vertex F = aB.FirstVertex(1), L = aB.LastVertex(1);
         Assert.True((F.IsSame(V1) && L.IsSame(V2)) || (F.IsSame(V2) && L.IsSame(V1)));
         Assert.Equal(0.0, aB.Abscissa(1, F), 9);
         Assert.Equal(100.0, aB.Length(1), 9);
@@ -100,7 +104,7 @@ public class ChFi3dBuilderTests
     {
         // build123d.NET's "fillet too large" (MalformedInputTests): every contour faulty, ChFiDS_StartsolFailure (no start solution),
         // Perform never reached (native: tools/dsrec's b3d_fail_box_fillet_too_large)
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(1, 1, 1).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(1, 1, 1).Shape();
         (ChFi3d_FilBuilder aB, ChFi3dBuilderNativeTests.RecordingReconstruction aRec) =
             ChFi3dBuilderNativeTests.RunFillet(aBox, Enumerable.Range(1, 12).Select(k => new ChFi3dBuilderNativeTests.CaseEdge(k, 5)));
         Assert.Equal(0, aRec.NbPerform);

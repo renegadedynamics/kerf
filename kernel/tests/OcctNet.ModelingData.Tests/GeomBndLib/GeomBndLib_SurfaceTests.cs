@@ -2,7 +2,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Geometry.Bounds.Computation;
 using Kerf.Geometry;
 using static Kerf.Geometry.SurfaceKind;
 
@@ -47,7 +49,7 @@ internal static class GeomBndLibSurfaceTestUtils
 
     /// <summary>Helper: verify box contains all sampled points of the surface.</summary>
     internal static void ExpectContainsSurface(in Box theBox,
-                                               Geom_Surface theSurf,
+                                               Surface theSurf,
                                                double theUMin,
                                                double theUMax,
                                                double theVMin,
@@ -98,8 +100,8 @@ public class GeomBndLib_SurfaceTest
     [Fact]
     public void Plane_FinitePatch()
     {
-        Geom_Plane aPlane = new(XOY3());
-        GeomBndLib_Surface aSurf = new(aPlane);
+        PlaneSurface aPlane = new(XOY3());
+        SurfaceBounds aSurf = new(aPlane);
         Assert.Equal(Plane, aSurf.GetType());
 
         Box aBox = new();
@@ -118,14 +120,14 @@ public class GeomBndLib_SurfaceTest
     [Fact]
     public void Plane_CompareWithBndLib()
     {
-        Geom_Plane aPlane = new(XOY3());
-        GeomAdaptor_Surface anAdaptor = new(aPlane);
+        PlaneSurface aPlane = new(XOY3());
+        SurfaceAdaptor anAdaptor = new(aPlane);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(aPlane).Add(-5.0, 5.0, -3.0, 3.0, Conf, ref aNewBox);
+        new SurfaceBounds(aPlane).Add(-5.0, 5.0, -3.0, 3.0, Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, -5.0, 5.0, -3.0, 3.0, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, -5.0, 5.0, -3.0, 3.0, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
     }
@@ -138,8 +140,8 @@ public class GeomBndLib_SurfaceTest
     public void Cylinder_Patch()
     {
         double aRadius = 3.0;
-        Geom_CylindricalSurface aCyl = new(XOY3(), aRadius);
-        GeomBndLib_Surface aSurf = new(aCyl);
+        CylindricalSurface aCyl = new(XOY3(), aRadius);
+        SurfaceBounds aSurf = new(aCyl);
         Assert.Equal(SurfaceKind.Cylinder, aSurf.GetType());
 
         Box aBox = new();
@@ -158,14 +160,14 @@ public class GeomBndLib_SurfaceTest
     [Fact]
     public void Cylinder_CompareWithBndLib()
     {
-        Geom_CylindricalSurface aCyl = new(XOY3(), 4.0);
-        GeomAdaptor_Surface anAdaptor = new(aCyl);
+        CylindricalSurface aCyl = new(XOY3(), 4.0);
+        SurfaceAdaptor anAdaptor = new(aCyl);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(aCyl).Add(0.0, 2.0 * M_PI, -5.0, 5.0, Conf, ref aNewBox);
+        new SurfaceBounds(aCyl).Add(0.0, 2.0 * M_PI, -5.0, 5.0, Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, 0.0, 2.0 * M_PI, -5.0, 5.0, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, 0.0, 2.0 * M_PI, -5.0, 5.0, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
     }
@@ -180,8 +182,8 @@ public class GeomBndLib_SurfaceTest
         double aRefRadius = 2.0;
         double aSemiAngle = M_PI / 4.0;
         Cone aCone = new(XOY3(), aSemiAngle, aRefRadius);
-        Geom_ConicalSurface aConeSurf = new(aCone);
-        GeomBndLib_Surface aSurf = new(aConeSurf);
+        ConicalSurface aConeSurf = new(aCone);
+        SurfaceBounds aSurf = new(aConeSurf);
         Assert.Equal(SurfaceKind.Cone, aSurf.GetType());
 
         Box aBox = new();
@@ -202,14 +204,14 @@ public class GeomBndLib_SurfaceTest
     public void Cone_CompareWithBndLib()
     {
         Cone aCone = new(XOY3(), M_PI / 6.0, 3.0);
-        Geom_ConicalSurface aConeSurf = new(aCone);
-        GeomAdaptor_Surface anAdaptor = new(aConeSurf);
+        ConicalSurface aConeSurf = new(aCone);
+        SurfaceAdaptor anAdaptor = new(aConeSurf);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(aConeSurf).Add(0.0, 2.0 * M_PI, 0.0, 5.0, Conf, ref aNewBox);
+        new SurfaceBounds(aConeSurf).Add(0.0, 2.0 * M_PI, 0.0, 5.0, Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, 0.0, 2.0 * M_PI, 0.0, 5.0, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, 0.0, 2.0 * M_PI, 0.0, 5.0, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
     }
@@ -222,8 +224,8 @@ public class GeomBndLib_SurfaceTest
     public void Sphere_Full()
     {
         double aRadius = 5.0;
-        Geom_SphericalSurface aSphere = new(XOY3(), aRadius);
-        GeomBndLib_Surface aSurf = new(aSphere);
+        SphericalSurface aSphere = new(XOY3(), aRadius);
+        SurfaceBounds aSurf = new(aSphere);
         Assert.Equal(SurfaceKind.Sphere, aSurf.GetType());
 
         Box aBox = new();
@@ -243,8 +245,8 @@ public class GeomBndLib_SurfaceTest
     public void Sphere_Patch()
     {
         double aRadius = 5.0;
-        Geom_SphericalSurface aSphere = new(XOY3(), aRadius);
-        GeomBndLib_Surface aSurf = new(aSphere);
+        SphericalSurface aSphere = new(XOY3(), aRadius);
+        SurfaceBounds aSurf = new(aSphere);
 
         Box aBox = new();
         // U in [0, PI/2], V in [0, PI/2] (first octant patch)
@@ -264,14 +266,14 @@ public class GeomBndLib_SurfaceTest
     [Fact]
     public void Sphere_CompareWithBndLib()
     {
-        Geom_SphericalSurface aSphere = new(XOY3(), 7.0);
-        GeomAdaptor_Surface anAdaptor = new(aSphere);
+        SphericalSurface aSphere = new(XOY3(), 7.0);
+        SurfaceAdaptor anAdaptor = new(aSphere);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(aSphere).Add(Conf, ref aNewBox);
+        new SurfaceBounds(aSphere).Add(Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
     }
@@ -279,14 +281,14 @@ public class GeomBndLib_SurfaceTest
     [Fact]
     public void Sphere_Patch_CompareWithBndLib()
     {
-        Geom_SphericalSurface aSphere = new(XOY3(), 7.0);
-        GeomAdaptor_Surface anAdaptor = new(aSphere);
+        SphericalSurface aSphere = new(XOY3(), 7.0);
+        SurfaceAdaptor anAdaptor = new(aSphere);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(aSphere).Add(0.0, M_PI, -M_PI / 4.0, M_PI / 4.0, Conf, ref aNewBox);
+        new SurfaceBounds(aSphere).Add(0.0, M_PI, -M_PI / 4.0, M_PI / 4.0, Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, 0.0, M_PI, -M_PI / 4.0, M_PI / 4.0, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, 0.0, M_PI, -M_PI / 4.0, M_PI / 4.0, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
     }
@@ -300,8 +302,8 @@ public class GeomBndLib_SurfaceTest
     {
         double aMajR = 10.0;
         double aMinR = 3.0;
-        Geom_ToroidalSurface aTorus = new(XOY3(), aMajR, aMinR);
-        GeomBndLib_Surface aSurf = new(aTorus);
+        ToroidalSurface aTorus = new(XOY3(), aMajR, aMinR);
+        SurfaceBounds aSurf = new(aTorus);
         Assert.Equal(SurfaceKind.Torus, aSurf.GetType());
 
         Box aBox = new();
@@ -333,14 +335,14 @@ public class GeomBndLib_SurfaceTest
     [Fact]
     public void Torus_CompareWithBndLib()
     {
-        Geom_ToroidalSurface aTorus = new(XOY3(), 10.0, 3.0);
-        GeomAdaptor_Surface anAdaptor = new(aTorus);
+        ToroidalSurface aTorus = new(XOY3(), 10.0, 3.0);
+        SurfaceAdaptor anAdaptor = new(aTorus);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(aTorus).Add(Conf, ref aNewBox);
+        new SurfaceBounds(aTorus).Add(Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, Conf, ref anOldBox);
 
         // New implementation produces a tighter (better) box than old BndLib for full torus.
         // Verify new box is no larger than old box.
@@ -350,14 +352,14 @@ public class GeomBndLib_SurfaceTest
     [Fact]
     public void Torus_Patch_CompareWithBndLib()
     {
-        Geom_ToroidalSurface aTorus = new(XOY3(), 10.0, 3.0);
-        GeomAdaptor_Surface anAdaptor = new(aTorus);
+        ToroidalSurface aTorus = new(XOY3(), 10.0, 3.0);
+        SurfaceAdaptor anAdaptor = new(aTorus);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(aTorus).Add(0.0, M_PI, 0.0, M_PI, Conf, ref aNewBox);
+        new SurfaceBounds(aTorus).Add(0.0, M_PI, 0.0, M_PI, Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, 0.0, M_PI, 0.0, M_PI, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, 0.0, M_PI, 0.0, M_PI, Conf, ref anOldBox);
 
         // New implementation produces a tighter (better) box than old BndLib for torus patches.
         // Verify new box is no larger than old box.
@@ -368,22 +370,22 @@ public class GeomBndLib_SurfaceTest
     // BezierSurface
     // =========================================================================
 
-    private static Geom_BezierSurface SimpleBezier()
+    private static global::Kerf.Geometry.BezierSurface SimpleBezier()
     {
         NCollection_Array2<Point3D> aPoles = new(1, 2, 1, 2);
         aPoles.SetValue(1, 1, new Point3D(0.0, 0.0, 0.0));
         aPoles.SetValue(1, 2, new Point3D(10.0, 0.0, 0.0));
         aPoles.SetValue(2, 1, new Point3D(0.0, 10.0, 0.0));
         aPoles.SetValue(2, 2, new Point3D(10.0, 10.0, 5.0));
-        return new Geom_BezierSurface(aPoles);
+        return new global::Kerf.Geometry.BezierSurface(aPoles);
     }
 
     [Fact]
     public void BezierSurface_Simple()
     {
-        Geom_BezierSurface aBezSurf = SimpleBezier();
-        GeomBndLib_Surface aSurf = new(aBezSurf);
-        Assert.Equal(BezierSurface, aSurf.GetType());
+        global::Kerf.Geometry.BezierSurface aBezSurf = SimpleBezier();
+        SurfaceBounds aSurf = new(aBezSurf);
+        Assert.Equal(SurfaceKind.BezierSurface, aSurf.GetType());
 
         Box aBox = new();
         aSurf.Add(Conf, ref aBox);
@@ -401,14 +403,14 @@ public class GeomBndLib_SurfaceTest
     [Fact]
     public void BezierSurface_CompareWithBndLib()
     {
-        Geom_BezierSurface aBezSurf = SimpleBezier();
-        GeomAdaptor_Surface anAdaptor = new(aBezSurf);
+        global::Kerf.Geometry.BezierSurface aBezSurf = SimpleBezier();
+        SurfaceAdaptor anAdaptor = new(aBezSurf);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(aBezSurf).Add(Conf, ref aNewBox);
+        new SurfaceBounds(aBezSurf).Add(Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
     }
@@ -436,14 +438,14 @@ public class GeomBndLib_SurfaceTest
         NCollection_Array1<int> aUMults = NCollection_Array1<int>.From([3, 3]);
         NCollection_Array1<int> aVMults = NCollection_Array1<int>.From([3, 3]);
 
-        Geom_BSplineSurface aBSplSurf = new(aPoles, aUKnots, aVKnots, aUMults, aVMults, 2, 2);
-        GeomAdaptor_Surface anAdaptor = new(aBSplSurf);
+        global::Kerf.Geometry.BSplineSurface aBSplSurf = new(aPoles, aUKnots, aVKnots, aUMults, aVMults, 2, 2);
+        SurfaceAdaptor anAdaptor = new(aBSplSurf);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(aBSplSurf).Add(Conf, ref aNewBox);
+        new SurfaceBounds(aBSplSurf).Add(Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
     }
@@ -456,16 +458,16 @@ public class GeomBndLib_SurfaceTest
     public void AdaptorConstructor_Sphere()
     {
         double aRadius = 5.0;
-        Geom_SphericalSurface aSphere = new(XOY3(), aRadius);
+        SphericalSurface aSphere = new(XOY3(), aRadius);
 
         // Construct from handle
-        GeomBndLib_Surface aSurfH = new(aSphere);
+        SurfaceBounds aSurfH = new(aSphere);
         Box aBoxH = new();
         aSurfH.Add(Conf, ref aBoxH);
 
         // Construct from adaptor
-        GeomAdaptor_Surface anAdaptor = new(aSphere);
-        GeomBndLib_Surface aSurfA = new(anAdaptor);
+        SurfaceAdaptor anAdaptor = new(aSphere);
+        SurfaceBounds aSurfA = new(anAdaptor);
         Assert.Equal(SurfaceKind.Sphere, aSurfA.GetType());
 
         Box aBoxA = new();
@@ -482,8 +484,8 @@ public class GeomBndLib_SurfaceTest
     public void AddOptimal_Sphere()
     {
         double aRadius = 5.0;
-        Geom_SphericalSurface aSphere = new(XOY3(), aRadius);
-        GeomBndLib_Surface aSurf = new(aSphere);
+        SphericalSurface aSphere = new(XOY3(), aRadius);
+        SurfaceBounds aSurf = new(aSphere);
 
         Box aBox = new();
         aSurf.Add(Conf, ref aBox);
@@ -498,14 +500,14 @@ public class GeomBndLib_SurfaceTest
     [Fact]
     public void AddOptimal_CompareWithBndLib()
     {
-        Geom_SphericalSurface aSphere = new(XOY3(), 7.0);
-        GeomAdaptor_Surface anAdaptor = new(aSphere);
+        SphericalSurface aSphere = new(XOY3(), 7.0);
+        SurfaceAdaptor anAdaptor = new(aSphere);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(aSphere).AddOptimal(Conf, ref aNewBox);
+        new SurfaceBounds(aSphere).AddOptimal(Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.AddOptimal(anAdaptor, Conf, ref anOldBox);
+        AddSurface.AddOptimal(anAdaptor, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
     }
@@ -520,13 +522,13 @@ public class GeomBndLib_SurfaceTest
         //   Xmax = Zmax = Ra/sqrt(2) + Rmi = 4*sqrt(2)+3 ~= 8.657
         //   Ymax = Ra + Rmi = 11  (ny=0, so full equatorial radius applies)
         CoordinateSystem aTiltedAx = new(Constants.Origin(), new Direction3D(1.0, 0.0, 1.0));
-        Geom_ToroidalSurface aTorus = new(aTiltedAx, 8.0, 3.0);
+        ToroidalSurface aTorus = new(aTiltedAx, 8.0, 3.0);
 
         Box aFastBox = new();
-        new GeomBndLib_Surface(aTorus).Add(Conf, ref aFastBox);
+        new SurfaceBounds(aTorus).Add(Conf, ref aFastBox);
 
         Box aOptBox = new();
-        new GeomBndLib_Surface(aTorus).AddOptimal(Conf, ref aOptBox);
+        new SurfaceBounds(aTorus).AddOptimal(Conf, ref aOptBox);
 
         // Optimal must be no larger than the fast (conservative) box.
         ExpectNoLarger(aOptBox, aFastBox);
@@ -548,14 +550,14 @@ public class GeomBndLib_SurfaceTest
     [Fact]
     public void AdaptorConstructor_TrimmedRangeUsedForFullAdd()
     {
-        Geom_SphericalSurface aSphere = new(XOY3(), 7.0);
-        GeomAdaptor_Surface anAdaptor = new(aSphere, 0.0, M_PI, -M_PI / 4.0, M_PI / 4.0);
+        SphericalSurface aSphere = new(XOY3(), 7.0);
+        SurfaceAdaptor anAdaptor = new(aSphere, 0.0, M_PI, -M_PI / 4.0, M_PI / 4.0);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(anAdaptor).Add(Conf, ref aNewBox);
+        new SurfaceBounds(anAdaptor).Add(Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
     }
@@ -563,15 +565,15 @@ public class GeomBndLib_SurfaceTest
     [Fact]
     public void TrimmedSurfaceHandle_Fallback_CompareWithBndLib()
     {
-        Geom_SphericalSurface aSphere = new(XOY3(), 7.0);
-        Geom_RectangularTrimmedSurface aTrim = new(aSphere, 0.0, M_PI, -M_PI / 4.0, M_PI / 4.0);
-        GeomAdaptor_Surface anAdaptor = new(aTrim);
+        SphericalSurface aSphere = new(XOY3(), 7.0);
+        TrimmedSurface aTrim = new(aSphere, 0.0, M_PI, -M_PI / 4.0, M_PI / 4.0);
+        SurfaceAdaptor anAdaptor = new(aTrim);
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(aTrim).Add(Conf, ref aNewBox);
+        new SurfaceBounds(aTrim).Add(Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, Conf, ref anOldBox);
 
         Assert.False(aNewBox.IsVoid);
         CompareBoxes(aNewBox, anOldBox, Conf);
@@ -580,31 +582,31 @@ public class GeomBndLib_SurfaceTest
     [Fact]
     public void RectangularTrimmedSurface_UsesBasisSpecialization()
     {
-        Geom_SphericalSurface aSphere = new(XOY3(), 7.0);
-        Geom_RectangularTrimmedSurface aTrim = new(aSphere, 0.0, M_PI, -M_PI / 4.0, M_PI / 4.0);
+        SphericalSurface aSphere = new(XOY3(), 7.0);
+        TrimmedSurface aTrim = new(aSphere, 0.0, M_PI, -M_PI / 4.0, M_PI / 4.0);
 
-        GeomBndLib_Surface aSurf = new(aTrim);
+        SurfaceBounds aSurf = new(aTrim);
         Assert.Equal(SurfaceKind.Sphere, aSurf.GetType());
 
-        GeomAdaptor_Surface anAdaptor = new(aTrim);
+        SurfaceAdaptor anAdaptor = new(aTrim);
         Box aNewBox = new();
         aSurf.Add(Conf, ref aNewBox);
         Box anOldBox = new();
-        BndLib_AddSurface.Add(anAdaptor, Conf, ref anOldBox);
+        AddSurface.Add(anAdaptor, Conf, ref anOldBox);
         CompareBoxes(aNewBox, anOldBox, Conf);
     }
 
     [Fact]
     public void Torus_NegativeVMin_NoUnderBounding()
     {
-        Geom_ToroidalSurface aTorus = new(XOY3(), 10.0, 3.0);
+        ToroidalSurface aTorus = new(XOY3(), 10.0, 3.0);
         double aU1 = 0.0;
         double aU2 = 2.0 * M_PI;
         double aV1 = -M_PI / 8.0;
         double aV2 = M_PI / 8.0;
 
         Box aNewBox = new();
-        new GeomBndLib_Surface(aTorus).Add(aU1, aU2, aV1, aV2, Conf, ref aNewBox);
+        new SurfaceBounds(aTorus).Add(aU1, aU2, aV1, aV2, Conf, ref aNewBox);
 
         var (aXmin, aXmax, aYmin, aYmax, aZmin, aZmax) = aNewBox.Get();
         for (int i = 0; i <= 72; ++i)

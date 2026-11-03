@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -15,7 +16,7 @@ public class Geom2dEval_AHTBezierCurveTest
 
     // Helper to create a curve with basis {1, t, sinh(alpha*t), cosh(alpha*t), sin(beta*t),
     // cos(beta*t)} algDegree=1, alpha=1.0, beta=1.0 => basisDim = 2 + 2 + 2 = 6 poles needed
-    private static Geom2dEval_AHTBezierCurve createFullBasisCurve()
+    private static AhtBezierCurve2D createFullBasisCurve()
     {
         NCollection_Array1<Point2D> aPoles = new(1, 6);
         aPoles.SetValue(1, new Point2D(0.0, 0.0));
@@ -24,21 +25,21 @@ public class Geom2dEval_AHTBezierCurveTest
         aPoles.SetValue(4, new Point2D(0.0, 1.0));
         aPoles.SetValue(5, new Point2D(0.0, 1.0));
         aPoles.SetValue(6, new Point2D(1.0, 0.0));
-        return new Geom2dEval_AHTBezierCurve(aPoles, 1, 1.0, 1.0);
+        return new AhtBezierCurve2D(aPoles, 1, 1.0, 1.0);
     }
 
     // Helper to create a pure polynomial curve: basis {1, t, t^2} => 3 poles
-    private static Geom2dEval_AHTBezierCurve createPolynomialCurve()
+    private static AhtBezierCurve2D createPolynomialCurve()
     {
         NCollection_Array1<Point2D> aPoles = new(1, 3);
         aPoles.SetValue(1, new Point2D(0.0, 0.0));
         aPoles.SetValue(2, new Point2D(1.0, 1.0));
         aPoles.SetValue(3, new Point2D(2.0, 0.0));
-        return new Geom2dEval_AHTBezierCurve(aPoles, 2, 0.0, 0.0);
+        return new AhtBezierCurve2D(aPoles, 2, 0.0, 0.0);
     }
 
     // Helper to create a rational polynomial curve with weights
-    private static Geom2dEval_AHTBezierCurve createRationalCurve()
+    private static AhtBezierCurve2D createRationalCurve()
     {
         NCollection_Array1<Point2D> aPoles = new(1, 3);
         aPoles.SetValue(1, new Point2D(0.0, 0.0));
@@ -48,29 +49,29 @@ public class Geom2dEval_AHTBezierCurveTest
         aWeights.SetValue(1, 1.0);
         aWeights.SetValue(2, 2.0);
         aWeights.SetValue(3, 1.0);
-        return new Geom2dEval_AHTBezierCurve(aPoles, aWeights, 2, 0.0, 0.0);
+        return new AhtBezierCurve2D(aPoles, aWeights, 2, 0.0, 0.0);
     }
 
     [Fact]
     public void Construction_FullBasis()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createFullBasisCurve();
-        Assert.Equal(6, aCurve.NbPoles());
+        AhtBezierCurve2D aCurve = createFullBasisCurve();
+        Assert.Equal(6, aCurve.PoleCount);
         Assert.Equal(1, aCurve.AlgDegree());
         Assert.Equal(1.0, aCurve.Alpha(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(1.0, aCurve.Beta(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.False(aCurve.IsRational());
+        Assert.False(aCurve.IsRational);
     }
 
     [Fact]
     public void Construction_Polynomial()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createPolynomialCurve();
-        Assert.Equal(3, aCurve.NbPoles());
+        AhtBezierCurve2D aCurve = createPolynomialCurve();
+        Assert.Equal(3, aCurve.PoleCount);
         Assert.Equal(2, aCurve.AlgDegree());
         Assert.Equal(0.0, aCurve.Alpha(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aCurve.Beta(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.False(aCurve.IsRational());
+        Assert.False(aCurve.IsRational);
     }
 
     [Fact]
@@ -80,8 +81,8 @@ public class Geom2dEval_AHTBezierCurveTest
         aPoles.SetValue(1, new Point2D(0.0, 0.0));
         aPoles.SetValue(2, new Point2D(1.0, 1.0));
         aPoles.SetValue(3, new Point2D(2.0, 0.0));
-        Geom2dEval_AHTBezierCurve aCurve = new(aPoles, 0, 2.0, 0.0);
-        Assert.Equal(3, aCurve.NbPoles());
+        AhtBezierCurve2D aCurve = new(aPoles, 0, 2.0, 0.0);
+        Assert.Equal(3, aCurve.PoleCount);
         Assert.Equal(0, aCurve.AlgDegree());
         Assert.Equal(2.0, aCurve.Alpha(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aCurve.Beta(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -90,23 +91,23 @@ public class Geom2dEval_AHTBezierCurveTest
     [Fact]
     public void Construction_Rational()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createRationalCurve();
-        Assert.True(aCurve.IsRational());
-        Assert.Equal(3, aCurve.NbPoles());
+        AhtBezierCurve2D aCurve = createRationalCurve();
+        Assert.True(aCurve.IsRational);
+        Assert.Equal(3, aCurve.PoleCount);
         Assert.Equal(2, aCurve.AlgDegree());
     }
 
     [Fact]
     public void IsRational_NonRational()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createPolynomialCurve();
-        Assert.False(aCurve.IsRational());
+        AhtBezierCurve2D aCurve = createPolynomialCurve();
+        Assert.False(aCurve.IsRational);
     }
 
     [Fact]
     public void Bounds()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve2D aCurve = createFullBasisCurve();
         Assert.Equal(0.0, aCurve.FirstParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(1.0, aCurve.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -114,7 +115,7 @@ public class Geom2dEval_AHTBezierCurveTest
     [Fact]
     public void EvalD0_Endpoints()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve2D aCurve = createFullBasisCurve();
 
         Point2D aStart = aCurve.EvalD0(aCurve.FirstParameter());
         Point2D aEnd = aCurve.EvalD0(aCurve.LastParameter());
@@ -126,7 +127,7 @@ public class Geom2dEval_AHTBezierCurveTest
     [Fact]
     public void EvalD0_KnownPoint()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createPolynomialCurve();
+        AhtBezierCurve2D aCurve = createPolynomialCurve();
         Point2D aPnt = aCurve.EvalD0(0.5);
         Assert.Equal(1.0, aPnt.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.5, aPnt.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -135,10 +136,10 @@ public class Geom2dEval_AHTBezierCurveTest
     [Fact]
     public void EvalD1_ConsistentWithD0()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve2D aCurve = createFullBasisCurve();
         double aU = 0.4;
 
-        Geom2d_Curve.ResD1 aD1 = aCurve.EvalD1(aU);
+        Curve2D.ResD1 aD1 = aCurve.EvalD1(aU);
         Point2D aP1 = aCurve.EvalD0(aU + global::Kerf.Engine.Foundation.Precision.Confusion());
         Point2D aP2 = aCurve.EvalD0(aU - global::Kerf.Engine.Foundation.Precision.Confusion());
 
@@ -151,10 +152,10 @@ public class Geom2dEval_AHTBezierCurveTest
     [Fact]
     public void EvalD1_Polynomial_ConsistentWithD0()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createPolynomialCurve();
+        AhtBezierCurve2D aCurve = createPolynomialCurve();
         double aU = 0.3;
 
-        Geom2d_Curve.ResD1 aD1 = aCurve.EvalD1(aU);
+        Curve2D.ResD1 aD1 = aCurve.EvalD1(aU);
         Point2D aP1 = aCurve.EvalD0(aU + global::Kerf.Engine.Foundation.Precision.Confusion());
         Point2D aP2 = aCurve.EvalD0(aU - global::Kerf.Engine.Foundation.Precision.Confusion());
 
@@ -167,10 +168,10 @@ public class Geom2dEval_AHTBezierCurveTest
     [Fact]
     public void EvalD1_Rational_ConsistentWithD0()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createRationalCurve();
+        AhtBezierCurve2D aCurve = createRationalCurve();
         double aU = 0.5;
 
-        Geom2d_Curve.ResD1 aD1 = aCurve.EvalD1(aU);
+        Curve2D.ResD1 aD1 = aCurve.EvalD1(aU);
         Point2D aP1 = aCurve.EvalD0(aU + global::Kerf.Engine.Foundation.Precision.Confusion());
         Point2D aP2 = aCurve.EvalD0(aU - global::Kerf.Engine.Foundation.Precision.Confusion());
 
@@ -190,8 +191,8 @@ public class Geom2dEval_AHTBezierCurveTest
         aPoles.SetValue(4, new Point2D(3.0, 1.0));
         aPoles.SetValue(5, new Point2D(4.0, 0.0));
         // algDegree=2 => 3 polynomial basis + 2 trig basis = 5 => beta>0
-        Geom2dEval_AHTBezierCurve aCurve = new(aPoles, 2, 0.0, 3.5);
-        Assert.Equal(5, aCurve.NbPoles());
+        AhtBezierCurve2D aCurve = new(aPoles, 2, 0.0, 3.5);
+        Assert.Equal(5, aCurve.PoleCount);
         Assert.Equal(2, aCurve.AlgDegree());
         Assert.Equal(0.0, aCurve.Alpha(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(3.5, aCurve.Beta(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -200,14 +201,14 @@ public class Geom2dEval_AHTBezierCurveTest
     [Fact]
     public void Periodicity()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createFullBasisCurve();
-        Assert.False(aCurve.IsPeriodic());
+        AhtBezierCurve2D aCurve = createFullBasisCurve();
+        Assert.False(aCurve.IsPeriodic);
     }
 
     [Fact]
     public void Continuity()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve2D aCurve = createFullBasisCurve();
         Assert.Equal(global::Kerf.Geometry.Continuity.CN, aCurve.Continuity());
         Assert.True(aCurve.IsCN(0));
         Assert.True(aCurve.IsCN(5));
@@ -217,7 +218,7 @@ public class Geom2dEval_AHTBezierCurveTest
     [Fact]
     public void Transform_NotImplemented()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve2D aCurve = createFullBasisCurve();
         Transform2D aTrsf = new();
         aTrsf.SetTranslation(new Vector2D(1.0, 2.0));
 
@@ -228,12 +229,12 @@ public class Geom2dEval_AHTBezierCurveTest
     [Fact]
     public void Copy_Independent()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createFullBasisCurve();
-        Geom2d_Geometry aCopy = aCurve.Copy();
+        AhtBezierCurve2D aCurve = createFullBasisCurve();
+        Geometry2D aCopy = aCurve.Copy();
         Assert.NotNull(aCopy);
-        Geom2dEval_AHTBezierCurve? aCopyCurve = aCopy as Geom2dEval_AHTBezierCurve;
+        AhtBezierCurve2D? aCopyCurve = aCopy as AhtBezierCurve2D;
         Assert.NotNull(aCopyCurve);
-        Assert.Equal(6, aCopyCurve.NbPoles());
+        Assert.Equal(6, aCopyCurve.PoleCount);
         Assert.Equal(1, aCopyCurve.AlgDegree());
 
         // Verify the copy evaluates identically at several parameters
@@ -247,7 +248,7 @@ public class Geom2dEval_AHTBezierCurveTest
         // Verify behavior: transformation is not supported on the copy either.
         Transform2D aTrsf = new();
         aTrsf.SetTranslation(new Vector2D(10.0, 10.0));
-        Geom2dEval_AHTBezierCurve aCopyHandle = (Geom2dEval_AHTBezierCurve)aCopy;
+        AhtBezierCurve2D aCopyHandle = (AhtBezierCurve2D)aCopy;
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCopyHandle.Transform(aTrsf));
 
         Point2D aOrigMid = aCurve.EvalD0(0.5);
@@ -258,11 +259,11 @@ public class Geom2dEval_AHTBezierCurveTest
     [Fact]
     public void Copy_Rational()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createRationalCurve();
-        Geom2d_Geometry aCopy = aCurve.Copy();
-        Geom2dEval_AHTBezierCurve? aCopyCurve = aCopy as Geom2dEval_AHTBezierCurve;
+        AhtBezierCurve2D aCurve = createRationalCurve();
+        Geometry2D aCopy = aCurve.Copy();
+        AhtBezierCurve2D? aCopyCurve = aCopy as AhtBezierCurve2D;
         Assert.NotNull(aCopyCurve);
-        Assert.True(aCopyCurve.IsRational());
+        Assert.True(aCopyCurve.IsRational);
     }
 
     [Fact]
@@ -274,7 +275,7 @@ public class Geom2dEval_AHTBezierCurveTest
         aPoles.SetValue(3, new Point2D(1.0, 1.0));
         aPoles.SetValue(4, new Point2D(0.0, 1.0));
         // algDegree=1, alpha=1.0, beta=1.0 => basisDim = 2+2+2 = 6, but only 4 poles
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Geom2dEval_AHTBezierCurve(aPoles, 1, 1.0, 1.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new AhtBezierCurve2D(aPoles, 1, 1.0, 1.0));
     }
 
     [Fact]
@@ -284,7 +285,7 @@ public class Geom2dEval_AHTBezierCurveTest
         aPoles.SetValue(1, new Point2D(0.0, 0.0));
         aPoles.SetValue(2, new Point2D(1.0, 0.0));
         aPoles.SetValue(3, new Point2D(2.0, 0.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Geom2dEval_AHTBezierCurve(aPoles, 2, -1.0, 0.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new AhtBezierCurve2D(aPoles, 2, -1.0, 0.0));
     }
 
     [Fact]
@@ -294,7 +295,7 @@ public class Geom2dEval_AHTBezierCurveTest
         aPoles.SetValue(1, new Point2D(0.0, 0.0));
         aPoles.SetValue(2, new Point2D(1.0, 0.0));
         aPoles.SetValue(3, new Point2D(2.0, 0.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Geom2dEval_AHTBezierCurve(aPoles, 2, 0.0, -1.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new AhtBezierCurve2D(aPoles, 2, 0.0, -1.0));
     }
 
     [Fact]
@@ -307,7 +308,7 @@ public class Geom2dEval_AHTBezierCurveTest
         NCollection_Array1<double> aWeights = new(1, 2);
         aWeights.SetValue(1, 1.0);
         aWeights.SetValue(2, 1.0);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Geom2dEval_AHTBezierCurve(aPoles, aWeights, 2, 0.0, 0.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new AhtBezierCurve2D(aPoles, aWeights, 2, 0.0, 0.0));
     }
 
     [Fact]
@@ -321,13 +322,13 @@ public class Geom2dEval_AHTBezierCurveTest
         aWeights.SetValue(1, 1.0);
         aWeights.SetValue(2, -1.0);
         aWeights.SetValue(3, 1.0);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new Geom2dEval_AHTBezierCurve(aPoles, aWeights, 2, 0.0, 0.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new AhtBezierCurve2D(aPoles, aWeights, 2, 0.0, 0.0));
     }
 
     [Fact]
     public void Reverse_NotImplemented()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve2D aCurve = createFullBasisCurve();
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Reverse());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.ReversedParameter(0.5));
     }
@@ -335,12 +336,12 @@ public class Geom2dEval_AHTBezierCurveTest
     [Fact]
     public void EvalD2_ConsistentWithD1()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve2D aCurve = createFullBasisCurve();
         double aU = 0.3;
 
-        Geom2d_Curve.ResD2 aD2 = aCurve.EvalD2(aU);
-        Geom2d_Curve.ResD1 aD1Plus = aCurve.EvalD1(aU + global::Kerf.Engine.Foundation.Precision.Confusion());
-        Geom2d_Curve.ResD1 aD1Minus = aCurve.EvalD1(aU - global::Kerf.Engine.Foundation.Precision.Confusion());
+        Curve2D.ResD2 aD2 = aCurve.EvalD2(aU);
+        Curve2D.ResD1 aD1Plus = aCurve.EvalD1(aU + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Curve2D.ResD1 aD1Minus = aCurve.EvalD1(aU - global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Vector2D aFD = new((aD1Plus.D1.XY() - aD1Minus.D1.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
@@ -351,12 +352,12 @@ public class Geom2dEval_AHTBezierCurveTest
     [Fact]
     public void EvalD3_ConsistentWithD2()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve2D aCurve = createFullBasisCurve();
         double aU = 0.4;
 
-        Geom2d_Curve.ResD3 aD3 = aCurve.EvalD3(aU);
-        Geom2d_Curve.ResD2 aD2Plus = aCurve.EvalD2(aU + global::Kerf.Engine.Foundation.Precision.Confusion());
-        Geom2d_Curve.ResD2 aD2Minus = aCurve.EvalD2(aU - global::Kerf.Engine.Foundation.Precision.Confusion());
+        Curve2D.ResD3 aD3 = aCurve.EvalD3(aU);
+        Curve2D.ResD2 aD2Plus = aCurve.EvalD2(aU + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Curve2D.ResD2 aD2Minus = aCurve.EvalD2(aU - global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Vector2D aFD = new((aD2Plus.D2.XY() - aD2Minus.D2.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
@@ -367,10 +368,10 @@ public class Geom2dEval_AHTBezierCurveTest
     [Fact]
     public void EvalDN_ConsistentWithD1()
     {
-        Geom2dEval_AHTBezierCurve aCurve = createFullBasisCurve();
+        AhtBezierCurve2D aCurve = createFullBasisCurve();
         double aU = 0.5;
 
-        Geom2d_Curve.ResD1 aD1 = aCurve.EvalD1(aU);
+        Curve2D.ResD1 aD1 = aCurve.EvalD1(aU);
         Vector2D aDN = aCurve.EvalDN(aU, 1);
 
         Assert.Equal(aDN.X(), aD1.D1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -383,7 +384,7 @@ public class Geom2dEval_AHTBezierCurveTest
         NCollection_Array1<Point2D> aPoles = new(1, 2);
         aPoles.SetValue(1, new Point2D(0.0, 0.0));
         aPoles.SetValue(2, new Point2D(1.0, 1.0));
-        Geom2dEval_AHTBezierCurve aCurve = new(aPoles, 1, 0.0, 0.0);
+        AhtBezierCurve2D aCurve = new(aPoles, 1, 0.0, 0.0);
 
         Point2D aPtHalf = aCurve.EvalD0(0.5);
         Assert.Equal(0.5, aPtHalf.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -411,8 +412,8 @@ public class Geom2dEval_AHTBezierCurveTest
                 aPoles.SetValue(i, new Point2D(Math.Cos(1.7 * i) * i, Math.Sin(0.9 * i) + 0.3 * i));
                 aWeights.SetValue(i, 1.0 + 0.4 * Math.Sin(2.3 * i));
             }
-            Geom2dEval_AHTBezierCurve aCurve = new(aPoles, aDeg, anAlpha, aBeta);
-            Geom2dEval_AHTBezierCurve aRational = new(aPoles, aWeights, aDeg, anAlpha, aBeta);
+            AhtBezierCurve2D aCurve = new(aPoles, aDeg, anAlpha, aBeta);
+            AhtBezierCurve2D aRational = new(aPoles, aWeights, aDeg, anAlpha, aBeta);
             for (double aU = 0.03; aU < 1.0; aU += 0.17)
             {
                 EvalTestUtils.CheckCurveDerivatives(aCurve, aU, 7);

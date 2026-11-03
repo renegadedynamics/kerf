@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>The default discrete model of a shape.</summary>
@@ -18,7 +20,7 @@ public class BRepMeshData_Model : IMeshData_Model
     private readonly NCollection_DynamicArray<IMeshData_Edge> myDEdges;
 
     /// <summary>An empty model of the shape.</summary>
-    public BRepMeshData_Model(in TopoDS_Shape theShape) : base(theShape)
+    public BRepMeshData_Model(in Shape theShape) : base(theShape)
     {
         myMaxSize = 0.0;
         myDFaces = new NCollection_DynamicArray<IMeshData_Face>(256);
@@ -35,7 +37,7 @@ public class BRepMeshData_Model : IMeshData_Model
     public override int FacesNb() => myDFaces.Length();
 
     /// <inheritdoc/>
-    public override IMeshData_Face AddFace(in TopoDS_Face theFace)
+    public override IMeshData_Face AddFace(in Face theFace)
     {
         IMeshData_Face aFace = new BRepMeshData_Face(theFace);
         return myDFaces.Append(aFace);
@@ -48,7 +50,7 @@ public class BRepMeshData_Model : IMeshData_Model
     public override int EdgesNb() => myDEdges.Length();
 
     /// <inheritdoc/>
-    public override IMeshData_Edge AddEdge(in TopoDS_Edge theEdge)
+    public override IMeshData_Edge AddEdge(in Edge theEdge)
     {
         IMeshData_Edge aEdge = new BRepMeshData_Edge(theEdge);
         return myDEdges.Append(aEdge);

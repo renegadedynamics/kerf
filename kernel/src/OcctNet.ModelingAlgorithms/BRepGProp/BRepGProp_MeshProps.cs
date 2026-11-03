@@ -4,10 +4,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -15,7 +16,7 @@ namespace Occt;
 /// The global properties of a surface mesh, as a surface (<see cref="BRepGProp_MeshObjType.Sinert"/>) or as the piece
 /// of volume between the mesh and the reference point (<see cref="BRepGProp_MeshObjType.Vinert"/>).
 /// </summary>
-public class BRepGProp_MeshProps : GProp_GProps
+public class BRepGProp_MeshProps : Properties
 {
     /// <summary>The types of geometric objects.</summary>
     public enum BRepGProp_MeshObjType
@@ -33,13 +34,13 @@ public class BRepGProp_MeshProps : GProp_GProps
     public BRepGProp_MeshProps(BRepGProp_MeshObjType theType) => myType = theType;
 
     /// <summary>Sets the point relative to which the calculation is done.</summary>
-    public void SetLocation(in Point3D theLocation) => loc = theLocation;
+    public void SetLocation(in Point3D theLocation) => _loc = theLocation;
 
     /// <summary>
     /// Computes the global properties of the mesh placed by <paramref name="theLoc"/> (Gauss cubature over the
     /// triangles), its triangles reversed if <paramref name="theOri"/> is REVERSED.
     /// </summary>
-    public void Perform(Triangulation? theMesh, in Placement theLoc, TopAbs_Orientation theOri)
+    public void Perform(Triangulation? theMesh, in Placement theLoc, Orientation theOri)
     {
         if (theMesh is null || theMesh.NodeCount == 0 || theMesh.TriangleCount == 0)
         {
@@ -75,21 +76,21 @@ public class BRepGProp_MeshProps : GProp_GProps
 
             //
             Transform3D aTrInv = aTr.Inverted();
-            Point3D loc_save = loc;
-            loc.Transform(aTrInv);
+            Point3D loc_save = _loc;
+            _loc.Transform(aTrInv);
             Perform(theMesh, theOri);
             // Computes the inertia tensor at mesh gravity center
             Matrix3x3 HMat, inertia0;
-            Point3D g0 = g;
-            g.SetXYZ(g.XYZ() + loc.XYZ());
+            Point3D g0 = _g;
+            _g.SetXYZ(_g.XYZ() + _loc.XYZ());
             if (g0.XYZ().Modulus() > Constants.Resolution())
             {
-                GProp.HOperator(g, loc, dim, out HMat);
-                inertia0 = inertia - HMat;
+                global::Kerf.Engine.Measurement.GProp.HOperator(_g, _loc, _dim, out HMat);
+                inertia0 = _inertia - HMat;
             }
             else
             {
-                inertia0 = inertia;
+                inertia0 = _inertia;
             }
 
             // Transform inertia tensor for rotation
@@ -98,14 +99,14 @@ public class BRepGProp_MeshProps : GProp_GProps
             HVecT.Multiply(inertia0);
             inertia0 = HVecT.Multiplied(HVec);
             // Put gravity center in true position of mesh
-            g.Transform(aTr);
-            g0 = g;
-            g.SetXYZ(g.XYZ() - loc_save.XYZ());
-            loc = loc_save;
+            _g.Transform(aTr);
+            g0 = _g;
+            _g.SetXYZ(_g.XYZ() - loc_save.XYZ());
+            _loc = loc_save;
             //
             // Computes the inertia tensor for loc
-            GProp.HOperator(g0, loc, dim, out HMat);
-            inertia = inertia0 + HMat;
+            global::Kerf.Engine.Measurement.GProp.HOperator(g0, _loc, _dim, out HMat);
+            _inertia = inertia0 + HMat;
         }
     }
 
@@ -113,7 +114,7 @@ public class BRepGProp_MeshProps : GProp_GProps
     /// Computes the global properties of the mesh (Gauss cubature over the triangles), its triangles reversed if
     /// <paramref name="theOri"/> is REVERSED.
     /// </summary>
-    public void Perform(Triangulation? theMesh, TopAbs_Orientation theOri)
+    public void Perform(Triangulation? theMesh, Orientation theOri)
     {
         if (theMesh is null || theMesh.NodeCount == 0 || theMesh.TriangleCount == 0)
         {
@@ -146,7 +147,7 @@ public class BRepGProp_MeshProps : GProp_GProps
         {
             Triangle1 aTri = theMesh.Triangle(i);
             aTri.Get(out n1, out n2, out n3);
-            if (theOri == TopAbs_REVERSED)
+            if (theOri == Reversed)
             {
                 (n2, n3) = (n3, n2);
             }
@@ -155,32 +156,32 @@ public class BRepGProp_MeshProps : GProp_GProps
             Point3D p1 = theMesh.Node(n1);
             Point3D p2 = theMesh.Node(n2);
             Point3D p3 = theMesh.Node(n3);
-            CalculateProps(p1, p2, p3, loc, isVolume, aGProps, aNbGaussPoints, GPtsWg);
+            CalculateProps(p1, p2, p3, _loc, isVolume, aGProps, aNbGaussPoints, GPtsWg);
         }
 
-        dim = aGProps[0];
-        if (Math.Abs(dim) >= 1.0e-20) // To be consistent with GProp_GProps
+        _dim = aGProps[0];
+        if (Math.Abs(_dim) >= 1.0e-20) // To be consistent with GProp_GProps
         {
-            g.SetX(aGProps[1] / dim);
-            g.SetY(aGProps[2] / dim);
-            g.SetZ(aGProps[3] / dim);
+            _g.SetX(aGProps[1] / _dim);
+            _g.SetY(aGProps[2] / _dim);
+            _g.SetZ(aGProps[3] / _dim);
         }
         else
         {
-            g.SetX(aGProps[1]);
-            g.SetY(aGProps[2]);
-            g.SetZ(aGProps[3]);
+            _g.SetX(aGProps[1]);
+            _g.SetY(aGProps[2]);
+            _g.SetZ(aGProps[3]);
         }
 
-        inertia.SetValue(1, 1, aGProps[4]);
-        inertia.SetValue(1, 2, -aGProps[7]);
-        inertia.SetValue(1, 3, -aGProps[8]);
-        inertia.SetValue(2, 1, -aGProps[7]);
-        inertia.SetValue(2, 2, aGProps[5]);
-        inertia.SetValue(2, 3, -aGProps[9]);
-        inertia.SetValue(3, 1, -aGProps[8]);
-        inertia.SetValue(3, 2, -aGProps[9]);
-        inertia.SetValue(3, 3, aGProps[6]);
+        _inertia.SetValue(1, 1, aGProps[4]);
+        _inertia.SetValue(1, 2, -aGProps[7]);
+        _inertia.SetValue(1, 3, -aGProps[8]);
+        _inertia.SetValue(2, 1, -aGProps[7]);
+        _inertia.SetValue(2, 2, aGProps[5]);
+        _inertia.SetValue(2, 3, -aGProps[9]);
+        _inertia.SetValue(3, 1, -aGProps[8]);
+        _inertia.SetValue(3, 2, -aGProps[9]);
+        _inertia.SetValue(3, 3, aGProps[6]);
     }
 
     /// <summary>

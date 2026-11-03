@@ -2,6 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -27,21 +30,21 @@ public class Geom2dConvert_BSplineCurveToBezierCurveTest
         NCollection_Array1<double> aKnots = NCollection_Array1<double>.From([0.0, 100.0, 200.0, 300.0, 370.71067811865476, 441.4213562373095]);
         NCollection_Array1<int> aMults = NCollection_Array1<int>.From([2, 1, 1, 1, 1, 2]);
 
-        Geom2d_BSplineCurve aBSpline = new(aPoles, aKnots, aMults, 3, true);
+        BSplineCurve2D aBSpline = new(aPoles, aKnots, aMults, 3, true);
         Assert.NotNull(aBSpline);
-        Assert.True(aBSpline.IsPeriodic());
+        Assert.True(aBSpline.IsPeriodic);
 
         aBSpline = aBSpline.DegreeIncreased(8);
 
-        Geom2dConvert_BSplineCurveToBezierCurve aConverter = new(aBSpline);
-        int aNbArcs = aConverter.NbArcs();
+        BSplineCurveToBezierCurve2D aConverter = new(aBSpline);
+        int aNbArcs = aConverter.ArcCount;
         Assert.Equal(5, aNbArcs);
 
-        Geom2d_BezierCurve anArc5 = aConverter.Arc(5);
+        BezierCurve2D anArc5 = aConverter.Arc(5);
         Assert.NotNull(anArc5);
 
-        Geom2dAdaptor_Curve anAdaptor = new(anArc5);
-        double aLen = GCPnts_AbscissaPoint.Length(anAdaptor);
+        CurveAdaptor2D anAdaptor = new(anArc5);
+        double aLen = AbscissaPoint.Length(anAdaptor);
         Assert.Equal(73.3203, aLen, 0.01);
     }
 }

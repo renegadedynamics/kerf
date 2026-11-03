@@ -3,8 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
+using Kerf.Engine.Approximation.Advanced;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
@@ -15,11 +19,11 @@ namespace Occt;
 /// <summary>
 /// Builds the surface swept by a section law along a location law: an elementary surface where it can (plane,
 /// cylinder, cone, sphere, torus, extrusion, revolution; <see cref="ExchangeUV"/> then tells whether the sections are
-/// u-isos), else a B-spline surface approximated by <see cref="Approx_SweepApproximation"/>.
+/// u-isos), else a B-spline surface approximated by <see cref="SweepApproximation"/>.
 /// </summary>
 /// <remarks>
 /// A working object (decision 21). It keeps the caller's laws, as OCCT does, and changes their interval while it
-/// approximates (<see cref="Approx_SweepFunction.SetInterval"/>). <see cref="Surface"/>, <see cref="Restriction"/> and
+/// approximates (<see cref="SweepFunction.SetInterval"/>). <see cref="Surface"/>, <see cref="Restriction"/> and
 /// <see cref="Trace"/> hand out frozen geometry; ported code reads the unfrozen results through the
 /// <c>Internal*</c> accessors.
 /// </remarks>
@@ -29,7 +33,7 @@ public sealed class GeomFill_Sweep
     // class : GeomFill_Sweep_Eval
     // purpose: The evaluator for curve approximation
     //=======================================================================
-    private sealed class GeomFill_Sweep_Eval : AdvApprox_EvaluatorFunction
+    private sealed class GeomFill_Sweep_Eval : EvaluatorFunction
     {
         private readonly GeomFill_LocFunction theAncore;
 
@@ -58,8 +62,8 @@ public sealed class GeomFill_Sweep
     private bool myForceApproxC1;
     private readonly GeomFill_LocationLaw myLoc;
     private GeomFill_SectionLaw? mySec;
-    private Geom_Surface? mySurface;
-    private NCollection_HArray1<Geom2d_Curve?>? myCurve2d;
+    private Surface? mySurface;
+    private NCollection_HArray1<Curve2D?>? myCurve2d;
     private NCollection_HArray2<double>? CError;
     private bool done;
     private bool myExchUV;
@@ -161,7 +165,7 @@ public sealed class GeomFill_Sweep
         // Traitement des produits Formelles
         if ((!isKPart) && (Methode == GeomFill_Location))
         {
-            Geom_BSplineSurface? BS;
+            BSplineSurface? BS;
             BS = mySec.BSplineSurface();
             if (BS is not null)
             {
@@ -199,11 +203,11 @@ public sealed class GeomFill_Sweep
 
         GeomFill_SweepFunction Func = new GeomFill_SweepFunction(mySec!, myLoc, First, SFirst,
                                                                  (SLast - SFirst) / (Last - First));
-        Approx_SweepApproximation Approx = new Approx_SweepApproximation(Func);
+        SweepApproximation Approx = new SweepApproximation(Func);
 
         Approx.Perform(First, Last, Tol3d, BoundTol, Tol2d, TolAngular, Continuity, Degmax, Segmax);
 
-        if (Approx.IsDone())
+        if (Approx.IsDone)
         {
             Ok = true;
 
@@ -217,7 +221,7 @@ public sealed class GeomFill_Sweep
 
             Approx.Surface(Poles, Weights, UKnots, VKnots, UMults, VMults);
 
-            mySurface = new Geom_BSplineSurface(Poles,
+            mySurface = new BSplineSurface(Poles,
                                                 Weights,
                                                 UKnots,
                                                 VKnots,
@@ -236,29 +240,29 @@ public sealed class GeomFill_Sweep
                 int nmax = 16;
                 int thePrec = 1;
 
-                GeomConvert_ApproxSurface ConvertApprox = new GeomConvert_ApproxSurface(mySurface, theTol, theUCont,
+                ApproxSurface ConvertApprox = new ApproxSurface(mySurface, theTol, theUCont,
                                                                                         theVCont, degU, degV, nmax,
                                                                                         thePrec);
-                if (ConvertApprox.HasResult())
+                if (ConvertApprox.HasResult)
                 {
                     mySurface = ConvertApprox.Surface();
-                    myCurve2d = new NCollection_HArray1<Geom2d_Curve?>(1, 2);
+                    myCurve2d = new NCollection_HArray1<Curve2D?>(1, 2);
                     CError = new NCollection_HArray2<double>(1, 2, 1, 2);
 
-                    Geom_BSplineSurface BSplSurf = (Geom_BSplineSurface)mySurface!;
+                    BSplineSurface BSplSurf = (BSplineSurface)mySurface!;
 
                     Direction2D D = new Direction2D(Direction2D.D.Y);
                     Point2D P = new Point2D(BSplSurf.UKnot(1), 0);
-                    Geom2d_Line LC1 = new Geom2d_Line(P, D);
-                    Geom2d_TrimmedCurve TC1 = new Geom2d_TrimmedCurve(LC1, 0, BSplSurf.VKnot(BSplSurf.NbVKnots()));
+                    LineCurve2D LC1 = new LineCurve2D(P, D);
+                    TrimmedCurve2D TC1 = new TrimmedCurve2D(LC1, 0, BSplSurf.VKnot(BSplSurf.VKnotCount));
 
                     myCurve2d.SetValue(1, TC1);
                     CError.SetValue(1, 1, 0.0);
                     CError.SetValue(2, 1, 0.0);
 
-                    P.SetCoord(BSplSurf.UKnot(BSplSurf.NbUKnots()), 0);
-                    Geom2d_Line LC2 = new Geom2d_Line(P, D);
-                    Geom2d_TrimmedCurve TC2 = new Geom2d_TrimmedCurve(LC2, 0, BSplSurf.VKnot(BSplSurf.NbVKnots()));
+                    P.SetCoord(BSplSurf.UKnot(BSplSurf.UKnotCount), 0);
+                    LineCurve2D LC2 = new LineCurve2D(P, D);
+                    TrimmedCurve2D TC2 = new TrimmedCurve2D(LC2, 0, BSplSurf.VKnot(BSplSurf.VKnotCount));
 
                     myCurve2d.SetValue(myCurve2d.Length(), TC2);
                     CError.SetValue(1, myCurve2d.Length(), 0.0);
@@ -271,7 +275,7 @@ public sealed class GeomFill_Sweep
             // Les Courbes 2d
             if (myCurve2d is null)
             {
-                myCurve2d = new NCollection_HArray1<Geom2d_Curve?>(1, 2 + myLoc.TraceNumber());
+                myCurve2d = new NCollection_HArray1<Curve2D?>(1, 2 + myLoc.TraceNumber());
                 CError = new NCollection_HArray2<double>(1, 2, 1, 2 + myLoc.TraceNumber());
                 int kk, ii, ifin = 1, ideb;
 
@@ -291,7 +295,7 @@ public sealed class GeomFill_Sweep
 
                 for (ii = ideb, kk = 1; ii <= ifin; ii++, kk++)
                 {
-                    Geom2d_BSplineCurve C = new Geom2d_BSplineCurve(Approx.Curve2dPoles(kk),
+                    BSplineCurve2D C = new BSplineCurve2D(Approx.Curve2dPoles(kk),
                                                                     Approx.Curves2dKnots(),
                                                                     Approx.Curves2dMults(),
                                                                     Approx.Curves2dDegree());
@@ -306,8 +310,8 @@ public sealed class GeomFill_Sweep
                 {
                     Direction2D D = new Direction2D(Direction2D.D.Y);
                     Point2D P = new Point2D(UKnots[UKnots.Lower()], 0);
-                    Geom2d_Line LC = new Geom2d_Line(P, D);
-                    Geom2d_TrimmedCurve TC = new Geom2d_TrimmedCurve(LC, First, Last);
+                    LineCurve2D LC = new LineCurve2D(P, D);
+                    TrimmedCurve2D TC = new TrimmedCurve2D(LC, First, Last);
 
                     myCurve2d.SetValue(1, TC);
                     CError.SetValue(1, 1, 0.0);
@@ -318,8 +322,8 @@ public sealed class GeomFill_Sweep
                 {
                     Direction2D D = new Direction2D(Direction2D.D.Y);
                     Point2D P = new Point2D(UKnots[UKnots.Upper()], 0);
-                    Geom2d_Line LC = new Geom2d_Line(P, D);
-                    Geom2d_TrimmedCurve TC = new Geom2d_TrimmedCurve(LC, First, Last);
+                    LineCurve2D LC = new LineCurve2D(P, D);
+                    TrimmedCurve2D TC = new TrimmedCurve2D(LC, First, Last);
                     myCurve2d.SetValue(myCurve2d.Length(), TC);
                     CError.SetValue(1, myCurve2d.Length(), 0.0);
                     CError.SetValue(2, myCurve2d.Length(), 0.0);
@@ -334,7 +338,7 @@ public sealed class GeomFill_Sweep
     {
         bool Ok = false;
 
-        Geom_BSplineSurface? BSurf = mySec!.BSplineSurface()?.Copy() as Geom_BSplineSurface;
+        BSplineSurface? BSurf = mySec!.BSplineSurface()?.Copy() as BSplineSurface;
         if (BSurf is null)
         {
             return Ok; // Ce mode de construction est impossible
@@ -350,13 +354,13 @@ public sealed class GeomFill_Sweep
         NCollection_Array1<double> Param_de_decoupeC3 = new(1, NbIntervalC3 + 1);
         myLoc.Intervals(Param_de_decoupeC3, C3);
 
-        AdvApprox_PrefAndRec Preferentiel = new AdvApprox_PrefAndRec(Param_de_decoupeC2, Param_de_decoupeC3);
+        PrefAndRec Preferentiel = new PrefAndRec(Param_de_decoupeC2, Param_de_decoupeC3);
 
         NCollection_HArray1<double> ThreeDTol = new NCollection_HArray1<double>(1, 4);
         ThreeDTol.Init(Tol3d); // A Affiner...
 
         GeomFill_Sweep_Eval eval = new GeomFill_Sweep_Eval(Func);
-        AdvApprox_ApproxAFunction Approx = new AdvApprox_ApproxAFunction(0,
+        ApproxAFunction Approx = new ApproxAFunction(0,
                                                                          0,
                                                                          4,
                                                                          ThreeDTol,
@@ -370,7 +374,7 @@ public sealed class GeomFill_Sweep
                                                                          eval,
                                                                          Preferentiel);
 
-        Ok = Approx.HasResult();
+        Ok = Approx.HasResult;
         if (Ok)
         {
             // OCCT: the tensorial product is commented out; the section's surface is kept as it is.
@@ -437,7 +441,7 @@ public sealed class GeomFill_Sweep
                         GTfEnd[3, 3],
                         GTfEnd[3, 4]);
 
-        Geom_Surface aSurf = theSec.BSplineSurface()!;
+        Surface aSurf = theSec.BSplineSurface()!;
         double Umin;
         double Umax;
         double Vmin;
@@ -446,8 +450,8 @@ public sealed class GeomFill_Sweep
         aSurf.Bounds(out Umin, out Umax, out Vmin, out Vmax);
 
         // Get and transform the first section
-        Geom_Curve FirstSection = theSec.ConstantSection();
-        GeomAdaptor_Curve ACFirst = new GeomAdaptor_Curve(FirstSection);
+        Curve3D FirstSection = theSec.ConstantSection();
+        CurveAdaptor ACFirst = new CurveAdaptor(FirstSection);
 
         double UFirst = ACFirst.FirstParameter();
         Line3D L = ACFirst.Line();
@@ -455,7 +459,7 @@ public sealed class GeomFill_Sweep
         L.Transform(TfBegin);
 
         // Get and transform the last section
-        Geom_Curve aLastSection = aSurf.VIso(Vmax);
+        Curve3D aLastSection = aSurf.VIso(Vmax);
         double aFirstParameter = aLastSection.FirstParameter();
         Point3D aPntLastSec = aLastSection.Value(aFirstParameter);
 
@@ -480,7 +484,7 @@ public sealed class GeomFill_Sweep
         bool IsTrsf = true;
 
         isUPeriodic = mySec!.IsUPeriodic();
-        Geom_Surface? S = null;
+        Surface? S = null;
         CurveKind SectionType;
         Vector3D V = new Vector3D();
         Matrix3x3 M = new Matrix3x3();
@@ -528,9 +532,9 @@ public sealed class GeomFill_Sweep
             // (1.1) Cas Extrusion
             if (mySec.IsConstant(ref error))
             {
-                Geom_Curve Section;
+                Curve3D Section;
                 Section = mySec.ConstantSection();
-                GeomAdaptor_Curve AC = new GeomAdaptor_Curve(Section);
+                CurveAdaptor AC = new CurveAdaptor(Section);
                 SectionType = AC.GetType();
                 UFirst = AC.FirstParameter();
                 ULast = AC.LastParameter();
@@ -553,7 +557,7 @@ public sealed class GeomFill_Sweep
                     {
                         Ok = true;
                         Frame3D AxisOfPlane = new Frame3D(L.Location(), new Direction3D(DS ^ DP), new Direction3D(DS));
-                        S = new Geom_Plane(new CoordinateSystem(AxisOfPlane));
+                        S = new PlaneSurface(new CoordinateSystem(AxisOfPlane));
                     }
                     else
                     {
@@ -577,7 +581,7 @@ public sealed class GeomFill_Sweep
                     {
                         Ok = true;
                         CoordinateSystem axe = new CoordinateSystem(C.Location(), new Direction3D(DP), C.Position().XDirection());
-                        S = new Geom_CylindricalSurface(axe, C.Radius());
+                        S = new CylindricalSurface(axe, C.Radius());
                         if (C.Position().Direction().IsOpposite(axe.Direction(), 0.1))
                         {
                             double f, l;
@@ -601,7 +605,7 @@ public sealed class GeomFill_Sweep
                     if (IsTrsf)
                     {
                         Section.Transform(Tf2);
-                        S = new Geom_SurfaceOfLinearExtrusion(Section, new Direction3D(DP));
+                        S = new ExtrusionSurface(Section, new Direction3D(DP));
                         SError = 0.0;
                         Ok = true;
                     }
@@ -616,8 +620,8 @@ public sealed class GeomFill_Sweep
             {
                 Point3D P1, P2, Centre0, Centre1, Centre2;
                 Vector3D dsection;
-                Geom_Curve Section;
-                GeomAdaptor_Curve AC = new GeomAdaptor_Curve();
+                Curve3D Section;
+                CurveAdaptor AC = new CurveAdaptor();
                 Circle3D C;
                 double R1, R2;
 
@@ -663,7 +667,7 @@ public sealed class GeomFill_Sweep
                     }
                     SError = error;
                     CoordinateSystem Axis = new CoordinateSystem(Centre0, new Direction3D(Dir), new Direction3D(N));
-                    S = new Geom_ConicalSurface(Axis, Angle, C.Radius());
+                    S = new ConicalSurface(Axis, Angle, C.Radius());
                     // Calcul du glissement parametrique
                     VFirst = First / Math.Cos(Angle);
                     VLast = Last / Math.Cos(Angle);
@@ -742,9 +746,9 @@ public sealed class GeomFill_Sweep
                               Tf[3, 3],
                               Tf[3, 4]);
                 // La section
-                Geom_Curve Section;
+                Curve3D Section;
                 Section = mySec.ConstantSection();
-                GeomAdaptor_Curve AC = new GeomAdaptor_Curve(Section);
+                CurveAdaptor AC = new CurveAdaptor(Section);
                 SectionType = AC.GetType();
                 UFirst = AC.FirstParameter();
                 ULast = AC.LastParameter();
@@ -794,13 +798,13 @@ public sealed class GeomFill_Sweep
                             CoordinateSystem AxisOfSphere = new CoordinateSystem(Centre, new Direction3D(DN), new Direction3D(DS));
                             aRadius = C.Radius();
                             Sphere theSphere = new Sphere(AxisOfSphere, aRadius);
-                            S = new Geom_SphericalSurface(theSphere);
+                            S = new SphericalSurface(theSphere);
                             // Pour les spheres on ne peut pas controler le parametre
                             // V (donc U car  myExchUV = true)
                             // Il faut donc modifier UFirst, ULast...
                             double fpar = AC.FirstParameter();
                             double lpar = AC.LastParameter();
-                            Geom_Curve theSection = new Geom_TrimmedCurve(Section, fpar, lpar);
+                            Curve3D theSection = new TrimmedCurve3D(Section, fpar, lpar);
                             theSection.Transform(Tf2);
                             Point3D FirstPoint = theSection.Value(theSection.FirstParameter());
                             Point3D LastPoint = theSection.Value(theSection.LastParameter());
@@ -846,13 +850,13 @@ public sealed class GeomFill_Sweep
                         {
                             // (2.1.b) Tore
                             CoordinateSystem AxisOfTore = new CoordinateSystem(Centre, new Direction3D(DN), new Direction3D(DC));
-                            S = new Geom_ToroidalSurface(AxisOfTore, Radius, C.Radius());
+                            S = new ToroidalSurface(AxisOfTore, Radius, C.Radius());
 
                             // Pour les tores on ne peut pas controler le parametre
                             // V (donc U car  myExchUV = true)
                             // Il faut donc modifier UFirst, ULast...
-                            Geom_Circle? Iso;
-                            Iso = S.UIso(0.0) as Geom_Circle;
+                            CircleCurve3D? Iso;
+                            Iso = S.UIso(0.0) as CircleCurve3D;
                             Frame3D axeiso;
                             axeiso = Iso!.Circ().Position();
 
@@ -926,7 +930,7 @@ public sealed class GeomFill_Sweep
                             {
                                 Axis.SetXDirection(new Direction3D(DS));
                             }
-                            S = new Geom_CylindricalSurface(Axis, L.Distance(CentreOfSurf));
+                            S = new CylindricalSurface(Axis, L.Distance(CentreOfSurf));
                             Ok = true;
                             myExchUV = true;
                         }
@@ -953,7 +957,7 @@ public sealed class GeomFill_Sweep
                                 // si les 2 droites ne sont pas orthogonales
                                 double Radius = CentreOfSurf.Distance(L.Location());
                                 CoordinateSystem Axis = new CoordinateSystem(CentreOfSurf, Dir.Direction(), new Direction3D(DS));
-                                S = new Geom_ConicalSurface(Axis, Angle, Radius);
+                                S = new ConicalSurface(Axis, Angle, Radius);
                                 myExchUV = true;
                                 Ok = true;
                             }
@@ -967,7 +971,7 @@ public sealed class GeomFill_Sweep
                         {
                             // On reverse le parametre
                             double uf, ul;
-                            Geom_Line CL = new Geom_Line(L);
+                            LineCurve3D CL = new LineCurve3D(L);
                             uf = CL.ReversedParameter(ULast);
                             ul = CL.ReversedParameter(UFirst);
 
@@ -991,7 +995,7 @@ public sealed class GeomFill_Sweep
                     {
                         Section.Transform(Tf2);
                         Axis3D Axis = new Axis3D(Centre, new Direction3D(DN));
-                        S = new Geom_SurfaceOfRevolution(Section, Axis);
+                        S = new RevolutionSurface(Section, Axis);
                         myExchUV = true;
                         SError = 0.0;
                         Ok = true;
@@ -1019,7 +1023,7 @@ public sealed class GeomFill_Sweep
 
             if (!isUPeriodic && !isVPeriodic)
             {
-                mySurface = new Geom_RectangularTrimmedSurface(S!, UFirst, ULast, VFirst, VLast);
+                mySurface = new TrimmedSurface(S!, UFirst, ULast, VFirst, VLast);
             }
             else if (isUPeriodic)
             {
@@ -1029,12 +1033,12 @@ public sealed class GeomFill_Sweep
                 }
                 else
                 {
-                    mySurface = new Geom_RectangularTrimmedSurface(S!, VFirst, VLast, false);
+                    mySurface = new TrimmedSurface(S!, VFirst, VLast, false);
                 }
             }
             else
             {
-                mySurface = new Geom_RectangularTrimmedSurface(S!, UFirst, ULast, true);
+                mySurface = new TrimmedSurface(S!, UFirst, ULast, true);
             }
         }
 
@@ -1078,25 +1082,25 @@ public sealed class GeomFill_Sweep
     }
 
     /// <summary>The swept surface (frozen), or null before a successful <see cref="Build"/>.</summary>
-    public Geom_Surface? Surface()
+    public Surface? Surface()
     {
         mySurface?.Freeze();
         return mySurface;
     }
 
     /// <summary>The swept surface, not frozen, for ported callers.</summary>
-    internal Geom_Surface? InternalSurface() => mySurface;
+    internal Surface? InternalSurface() => mySurface;
 
     /// <summary>The first or last restriction, a 2D curve on the surface (frozen).</summary>
-    public Geom2d_Curve? Restriction(bool IsFirst)
+    public Curve2D? Restriction(bool IsFirst)
     {
-        Geom2d_Curve? C = InternalRestriction(IsFirst);
+        Curve2D? C = InternalRestriction(IsFirst);
         C?.Freeze();
         return C;
     }
 
     /// <summary>The first or last restriction, not frozen, for ported callers.</summary>
-    internal Geom2d_Curve? InternalRestriction(bool IsFirst)
+    internal Curve2D? InternalRestriction(bool IsFirst)
     {
         if (IsFirst)
         {
@@ -1109,15 +1113,15 @@ public sealed class GeomFill_Sweep
     public int NumberOfTrace() => myLoc.TraceNumber();
 
     /// <summary>The trace IndexOfTrace, a 2D curve on the surface (frozen).</summary>
-    public Geom2d_Curve? Trace(int IndexOfTrace)
+    public Curve2D? Trace(int IndexOfTrace)
     {
-        Geom2d_Curve? C = InternalTrace(IndexOfTrace);
+        Curve2D? C = InternalTrace(IndexOfTrace);
         C?.Freeze();
         return C;
     }
 
     /// <summary>The trace IndexOfTrace, not frozen, for ported callers.</summary>
-    internal Geom2d_Curve? InternalTrace(int IndexOfTrace)
+    internal Curve2D? InternalTrace(int IndexOfTrace)
     {
         int ind = IndexOfTrace + 1;
         if (IndexOfTrace > myLoc.TraceNumber())

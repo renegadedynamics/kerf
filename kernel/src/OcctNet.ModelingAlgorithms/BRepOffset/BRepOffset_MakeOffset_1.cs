@@ -7,12 +7,17 @@
 // Currently only the Planar cases are supported.
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -41,42 +46,42 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // purpose  : Set of methods to add a shape into container
     //=======================================================================
     // OCCT.NET: the overloads of OCCT's templates (TakeModified) dispatch on the container's type at run time.
-    private static bool AddToContainer(in TopoDS_Shape theS, object theContainer)
+    private static bool AddToContainer(in Shape theS, object theContainer)
     {
         switch (theContainer)
         {
-            case NCollection_List<TopoDS_Shape> aList:
+            case NCollection_List<Shape> aList:
                 aList.Append(theS);
                 return true;
-            case NCollection_Map<TopoDS_Shape> aMap:
+            case NCollection_Map<Shape> aMap:
                 return aMap.Add(theS);
-            case NCollection_IndexedMap<TopoDS_Shape> anIMap:
+            case NCollection_IndexedMap<Shape> anIMap:
             {
                 int aNb = anIMap.Extent();
                 int anInd = anIMap.Add(theS);
                 return anInd > aNb;
             }
-            case TopoDS_Shape aSOut:
-                new BRep_Builder().Add(aSOut, theS);
+            case Shape aSOut:
+                new BrepBuilder().Add(aSOut, theS);
                 return true;
-            case TopoDS_Compound aCOut:
-                new BRep_Builder().Add(aCOut, theS);
+            case Compound aCOut:
+                new BrepBuilder().Add(aCOut, theS);
                 return true;
             default:
                 throw new ProgramErrorException("BRepOffset_BuildOffsetFaces::AddToContainer");
         }
     }
 
-    private static void AddToContainer(in TopoDS_Shape theKey, in TopoDS_Shape theValue,
-                                       NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMap)
+    private static void AddToContainer(in Shape theKey, in Shape theValue,
+                                       NCollection_DataMap<Shape, NCollection_List<Shape>> theMap)
     {
-        if (theMap.Find(theKey, out NCollection_List<TopoDS_Shape> pList))
+        if (theMap.Find(theKey, out NCollection_List<Shape> pList))
         {
             pList.Append(theValue);
         }
         else
         {
-            NCollection_List<TopoDS_Shape> aList = new();
+            NCollection_List<Shape> aList = new();
             aList.Append(theValue);
             theMap.Bind(theKey, aList);
         }
@@ -87,16 +92,16 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // purpose  : Check if the shape has images in the given images map.
     //           Puts in the output map either the images or the shape itself.
     //=======================================================================
-    private static bool TakeModified(in TopoDS_Shape theS,
-                                     NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theImages,
+    private static bool TakeModified(in Shape theS,
+                                     NCollection_DataMap<Shape, NCollection_List<Shape>> theImages,
                                      object theContainer, object? theMFence)
     {
-        if (theImages.Find(theS, out NCollection_List<TopoDS_Shape> pLSIm))
+        if (theImages.Find(theS, out NCollection_List<Shape> pLSIm))
         {
-            NCollection_List<TopoDS_Shape>.Iterator itLSIm = new(pLSIm);
+            NCollection_List<Shape>.Iterator itLSIm = new(pLSIm);
             for (; itLSIm.More(); itLSIm.Next())
             {
-                TopoDS_Shape aSIm = itLSIm.Value();
+                Shape aSIm = itLSIm.Value();
                 if (theMFence is null || AddToContainer(aSIm, theMFence))
                 {
                     AddToContainer(aSIm, theContainer);
@@ -114,8 +119,8 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
     }
 
-    private static bool TakeModified(in TopoDS_Shape theS,
-                                     NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theImages,
+    private static bool TakeModified(in Shape theS,
+                                     NCollection_DataMap<Shape, NCollection_List<Shape>> theImages,
                                      object theMapOut)
     {
         return TakeModified(theS, theImages, theMapOut, null);
@@ -128,17 +133,17 @@ internal sealed class BRepOffset_BuildOffsetFaces
     private static bool hasData<TK, TV>(NCollection_DataMap<TK, TV>? theData) where TK : notnull =>
         theData is not null && !theData.IsEmpty();
 
-    private static bool hasData(NCollection_List<TopoDS_Shape>? theData) => theData is not null && !theData.IsEmpty();
+    private static bool hasData(NCollection_List<Shape>? theData) => theData is not null && !theData.IsEmpty();
 
     //=======================================================================
     // function : AppendToList
     // purpose  : Add to a list only unique elements
     //=======================================================================
-    private static void AppendToList(NCollection_List<TopoDS_Shape> theList, in TopoDS_Shape theShape)
+    private static void AppendToList(NCollection_List<Shape> theList, in Shape theShape)
     {
-        for (NCollection_List<TopoDS_Shape>.Iterator it = new(theList); it.More(); it.Next())
+        for (NCollection_List<Shape>.Iterator it = new(theList); it.More(); it.Next())
         {
-            TopoDS_Shape aS = it.Value();
+            Shape aS = it.Value();
             if (aS.IsSame(theShape))
             {
                 return;
@@ -151,66 +156,66 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : ProcessMicroEdge
     // purpose  : Checking if the edge is micro edge
     //=======================================================================
-    private static bool ProcessMicroEdge(in TopoDS_Edge theEdge, IntTools_Context theCtx)
+    private static bool ProcessMicroEdge(in Edge theEdge, IntTools_Context theCtx)
     {
-        TopExp.Vertices(theEdge, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
-        if (aV1.IsNull() || aV2.IsNull())
+        Exploration.Vertices(theEdge, out Vertex aV1, out Vertex aV2);
+        if (aV1.IsNull || aV2.IsNull)
         {
             return false;
         }
 
         bool bMicro = BOPTools_AlgoTools.IsMicroEdge(theEdge, theCtx);
-        if (bMicro && new BRepAdaptor_Curve(theEdge).GetType() == Line)
+        if (bMicro && new EdgeCurveAdaptor(theEdge).GetType() == Line)
         {
-            double aLen = BRep_Tool.Pnt(aV1).Distance(BRep_Tool.Pnt(aV2));
-            new BRep_Builder().UpdateVertex(aV1, aLen / 2.0);
-            new BRep_Builder().UpdateVertex(aV2, aLen / 2.0);
+            double aLen = Tool.Pnt(aV1).Distance(Tool.Pnt(aV2));
+            new BrepBuilder().UpdateVertex(aV1, aLen / 2.0);
+            new BrepBuilder().UpdateVertex(aV2, aLen / 2.0);
         }
 
         return bMicro;
     }
 
     // OCCT's BOPAlgo_Builder::Modified (a const reference to the history's list), as a list of its own.
-    private static NCollection_List<TopoDS_Shape> ModifiedOf(BOPAlgo_BuilderShape theGF, in TopoDS_Shape theS) =>
+    private static NCollection_List<Shape> ModifiedOf(BOPAlgo_BuilderShape theGF, in Shape theS) =>
         new(theGF.Modified(theS));
 
     //=================================================================================================
 
-    private static void UpdateOrigins(NCollection_List<TopoDS_Shape> theLA,
-                                      NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theOrigins,
+    private static void UpdateOrigins(NCollection_List<Shape> theLA,
+                                      NCollection_DataMap<Shape, NCollection_List<Shape>> theOrigins,
                                       BOPAlgo_Builder theGF)
     {
-        for (NCollection_List<TopoDS_Shape>.Iterator aItA = new(theLA); aItA.More(); aItA.Next())
+        for (NCollection_List<Shape>.Iterator aItA = new(theLA); aItA.More(); aItA.Next())
         {
-            TopoDS_Shape aS = aItA.Value();
+            Shape aS = aItA.Value();
 
-            NCollection_List<TopoDS_Shape> aLSIm = ModifiedOf(theGF, aS);
+            NCollection_List<Shape> aLSIm = ModifiedOf(theGF, aS);
             if (aLSIm.IsEmpty())
             {
                 continue;
             }
 
-            NCollection_List<TopoDS_Shape> aLSEmpt = new();
-            if (!theOrigins.Find(aS, out NCollection_List<TopoDS_Shape> pLS))
+            NCollection_List<Shape> aLSEmpt = new();
+            if (!theOrigins.Find(aS, out NCollection_List<Shape> pLS))
             {
                 pLS = aLSEmpt;
                 pLS.Append(aS);
             }
 
-            for (NCollection_List<TopoDS_Shape>.Iterator aIt = new(aLSIm); aIt.More(); aIt.Next())
+            for (NCollection_List<Shape>.Iterator aIt = new(aLSIm); aIt.More(); aIt.Next())
             {
-                TopoDS_Shape aSIm = aIt.Value();
-                if (theOrigins.Find(aSIm, out NCollection_List<TopoDS_Shape> pLSOr))
+                Shape aSIm = aIt.Value();
+                if (theOrigins.Find(aSIm, out NCollection_List<Shape> pLSOr))
                 {
                     // merge two lists
-                    for (NCollection_List<TopoDS_Shape>.Iterator aIt1 = new(pLS); aIt1.More(); aIt1.Next())
+                    for (NCollection_List<Shape>.Iterator aIt1 = new(pLS); aIt1.More(); aIt1.Next())
                     {
                         AppendToList(pLSOr, aIt1.Value());
                     }
                 }
                 else
                 {
-                    theOrigins.Bind(aSIm, new NCollection_List<TopoDS_Shape>(pLS));
+                    theOrigins.Bind(aSIm, new NCollection_List<Shape>(pLS));
                 }
             }
         }
@@ -218,17 +223,17 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
     //=================================================================================================
 
-    private static void UpdateImages(NCollection_List<TopoDS_Shape> theLA,
-                                     NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theImages,
-                                     BOPAlgo_Builder theGF, NCollection_Map<TopoDS_Shape> theModified)
+    private static void UpdateImages(NCollection_List<Shape> theLA,
+                                     NCollection_DataMap<Shape, NCollection_List<Shape>> theImages,
+                                     BOPAlgo_Builder theGF, NCollection_Map<Shape> theModified)
     {
-        for (NCollection_List<TopoDS_Shape>.Iterator aIt = new(theLA); aIt.More(); aIt.Next())
+        for (NCollection_List<Shape>.Iterator aIt = new(theLA); aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aS = aIt.Value();
+            Shape aS = aIt.Value();
 
-            if (!theImages.Find(aS, out NCollection_List<TopoDS_Shape> pLSIm))
+            if (!theImages.Find(aS, out NCollection_List<Shape> pLSIm))
             {
-                NCollection_List<TopoDS_Shape> aLSIm = ModifiedOf(theGF, aS);
+                NCollection_List<Shape> aLSIm = ModifiedOf(theGF, aS);
                 if (aLSIm.Extent() != 0)
                 {
                     theImages.Bind(aS, aLSIm);
@@ -237,15 +242,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 continue;
             }
 
-            NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
-            NCollection_List<TopoDS_Shape> aLSImNew = new();
+            NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
+            NCollection_List<Shape> aLSImNew = new();
 
             bool bModified = false;
 
             // check modifications of the images
-            for (NCollection_List<TopoDS_Shape>.Iterator aIt1 = new(pLSIm); aIt1.More(); aIt1.Next())
+            for (NCollection_List<Shape>.Iterator aIt1 = new(pLSIm); aIt1.More(); aIt1.Next())
             {
-                TopoDS_Shape aSIm = aIt1.Value();
+                Shape aSIm = aIt1.Value();
                 bModified |= TakeModified(aSIm, theGF.Images(), aLSImNew, aMFence);
             }
 
@@ -261,15 +266,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : FindCommonParts
     // purpose  : Looking for the parts of type <theType> contained in both lists
     //=======================================================================
-    private static void FindCommonParts(NCollection_List<TopoDS_Shape> theLS1, NCollection_List<TopoDS_Shape> theLS2,
-                                        NCollection_List<TopoDS_Shape> theLSC, TopAbs_ShapeEnum theType = TopAbs_EDGE)
+    private static void FindCommonParts(NCollection_List<Shape> theLS1, NCollection_List<Shape> theLS2,
+                                        NCollection_List<Shape> theLSC, ShapeType theType = ShapeType.Edge)
     {
         // map shapes in the first list
-        NCollection_IndexedMap<TopoDS_Shape> aMS1 = new(TopTools_ShapeMapHasher.Instance);
-        for (NCollection_List<TopoDS_Shape>.Iterator aIt = new(theLS1); aIt.More(); aIt.Next())
+        NCollection_IndexedMap<Shape> aMS1 = new(ShapeHasher.Instance);
+        for (NCollection_List<Shape>.Iterator aIt = new(theLS1); aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aS = aIt.Value();
-            TopExp.MapShapes(aS, theType, aMS1);
+            Shape aS = aIt.Value();
+            Exploration.MapShapes(aS, theType, aMS1);
         }
         if (aMS1.IsEmpty())
         {
@@ -277,15 +282,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
 
         // check for such shapes in the other list
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
-        for (NCollection_List<TopoDS_Shape>.Iterator aIt = new(theLS2); aIt.More(); aIt.Next())
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
+        for (NCollection_List<Shape>.Iterator aIt = new(theLS2); aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aS = aIt.Value();
+            Shape aS = aIt.Value();
 
-            TopExp_Explorer aExp = new(aS, theType);
+            Explorer aExp = new(aS, theType);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Shape aST = aExp.Current();
+                Shape aST = aExp.Current();
                 if (aMS1.Contains(aST) && aMFence.Add(aST))
                 {
                     theLSC.Append(aST);
@@ -298,9 +303,9 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : NbPoints
     // purpose  : Defines number of sample points to get average direction of the edge
     //=======================================================================
-    private static int NbPoints(in TopoDS_Edge theEdge)
+    private static int NbPoints(in Edge theEdge)
     {
-        BRepAdaptor_Curve aBAC = new(theEdge);
+        EdgeCurveAdaptor aBAC = new(theEdge);
         switch (aBAC.GetType())
         {
             case Line:
@@ -314,15 +319,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : FindShape
     // purpose  : Looking for the same sub-shape in the shape
     //=======================================================================
-    private static bool FindShape(in TopoDS_Shape theSWhat, in TopoDS_Shape theSWhere, BRepOffset_Analyse? theAnalyse,
-                                  ref TopoDS_Shape theRes)
+    private static bool FindShape(in Shape theSWhat, in Shape theSWhere, BRepOffset_Analyse? theAnalyse,
+                                  ref Shape theRes)
     {
         bool bFound = false;
-        TopAbs_ShapeEnum aType = theSWhat.ShapeType();
-        TopExp_Explorer aExp = new(theSWhere, aType);
+        ShapeType aType = theSWhat.ShapeType();
+        Explorer aExp = new(theSWhere, aType);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Shape aS = aExp.Current();
+            Shape aS = aExp.Current();
             if (aS.IsSame(theSWhat))
             {
                 theRes = aS;
@@ -333,12 +338,12 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
         if (!bFound && theAnalyse is not null)
         {
-            NCollection_List<TopoDS_Shape>? pLD = theAnalyse.Descendants(theSWhere);
+            NCollection_List<Shape>? pLD = theAnalyse.Descendants(theSWhere);
             if (pLD is not null)
             {
-                for (NCollection_List<TopoDS_Shape>.Iterator it = new(pLD); it.More(); it.Next())
+                for (NCollection_List<Shape>.Iterator it = new(pLD); it.More(); it.Next())
                 {
-                    TopoDS_Shape aS = it.Value();
+                    Shape aS = it.Value();
                     if (aS.IsSame(theSWhat))
                     {
                         theRes = aS;
@@ -356,8 +361,8 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : BuildSplitsOfTrimmedFace
     // purpose  : Building the splits of offset face
     //=======================================================================
-    private static void BuildSplitsOfTrimmedFace(in TopoDS_Face theFace, in TopoDS_Shape theEdges,
-                                                 NCollection_List<TopoDS_Shape> theLFImages,
+    private static void BuildSplitsOfTrimmedFace(in Face theFace, in Shape theEdges,
+                                                 NCollection_List<Shape> theLFImages,
                                                  ProgressRange theRange)
     {
         BOPAlgo_Splitter aSplitter = new();
@@ -372,7 +377,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         //
         // splits of the offset shape
-        for (TopExp_Explorer anExp = new(aSplitter.InternalShape(), TopAbs_FACE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(aSplitter.InternalShape(), ShapeType.Face); anExp.More(); anExp.Next())
         {
             theLFImages.Append(anExp.Current());
         }
@@ -382,27 +387,27 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : BuildSplitsOfFace
     // purpose  : Building the splits of offset face
     //=======================================================================
-    private static void BuildSplitsOfFace(in TopoDS_Face theFace, in TopoDS_Shape theEdges,
-                                          NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theFacesOrigins,
-                                          NCollection_List<TopoDS_Shape> theLFImages)
+    private static void BuildSplitsOfFace(in Face theFace, in Shape theEdges,
+                                          NCollection_DataMap<Shape, Shape> theFacesOrigins,
+                                          NCollection_List<Shape> theLFImages)
     {
         theLFImages.Clear();
         //
         // take edges to split the face
-        NCollection_List<TopoDS_Shape> aLE = new();
-        TopExp_Explorer aExp = new(theEdges, TopAbs_EDGE);
+        NCollection_List<Shape> aLE = new();
+        Explorer aExp = new(theEdges, ShapeType.Edge);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Edge aE = TopoDS.Edge(aExp.Current());
-            aE.Orientation(TopAbs_FORWARD);
+            Edge aE = ShapeCasts.Edge(aExp.Current());
+            aE.Orientation(Forward);
             aLE.Append(aE);
-            aE.Orientation(TopAbs_REVERSED);
+            aE.Orientation(Reversed);
             aLE.Append(aE);
         }
         //
-        TopoDS_Face aFF = theFace;
-        TopAbs_Orientation anOr = theFace.Orientation();
-        aFF.Orientation(TopAbs_FORWARD);
+        Face aFF = theFace;
+        Orientation anOr = theFace.Orientation();
+        aFF.Orientation(Forward);
         //
         // build pcurves for edges on the face
         BRepLib.BuildPCurveForEdgesOnPlane(aLE, aFF);
@@ -417,11 +422,11 @@ internal sealed class BRepOffset_BuildOffsetFaces
             return;
         }
         //
-        NCollection_List<TopoDS_Shape> aLFSp = aBF.Areas();
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new(aLFSp);
+        NCollection_List<Shape> aLFSp = aBF.Areas();
+        NCollection_List<Shape>.Iterator aItLF = new(aLFSp);
         for (; aItLF.More(); aItLF.Next())
         {
-            ref TopoDS_Shape aFSp = ref aItLF.ChangeValue();
+            ref Shape aFSp = ref aItLF.ChangeValue();
             aFSp.Orientation(anOr);
             theLFImages.Append(aFSp);
             //
@@ -433,15 +438,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : GetAverageTangent
     // purpose  : Computes average tangent vector along the curve
     //=======================================================================
-    private static Vector3D GetAverageTangent(in TopoDS_Shape theS, int theNbP)
+    private static Vector3D GetAverageTangent(in Shape theS, int theNbP)
     {
         Vector3D aVA = new();
-        TopExp_Explorer aExp = new(theS, TopAbs_EDGE);
+        Explorer aExp = new(theS, ShapeType.Edge);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Edge aE = TopoDS.Edge(aExp.Current());
+            Edge aE = ShapeCasts.Edge(aExp.Current());
             //
-            Geom_Curve aC = BRep_Tool.Curve(aE, out double aT1, out double aT2)!;
+            Curve3D aC = Tool.Curve(aE, out double aT1, out double aT2)!;
             //
             Vector3D aVSum = new();
             double aT = aT1;
@@ -453,7 +458,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 aT += aDt;
             }
             //
-            if (aE.Orientation() == TopAbs_REVERSED)
+            if (aE.Orientation() == Reversed)
             {
                 aVSum.Reverse();
             }
@@ -464,63 +469,63 @@ internal sealed class BRepOffset_BuildOffsetFaces
     }
 
     // Input data
-    private NCollection_List<TopoDS_Shape>? myFaces; //!< Input faces which have to be split
+    private NCollection_List<Shape>? myFaces; //!< Input faces which have to be split
     private BRepAlgo_AsDes? myAsDes; //!< Ascendants/descendants of the edges faces
     private BRepOffset_Analyse? myAnalyzer; //!< Analyzer of the input parameters
 
     //!< Origins of the offset edges (binding between offset edge and original edge)
-    private NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>? myEdgesOrigins;
+    private NCollection_DataMap<Shape, NCollection_List<Shape>>? myEdgesOrigins;
     //!< Origins of the offset faces (binding between offset face and original face)
-    private NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>? myFacesOrigins;
+    private NCollection_DataMap<Shape, Shape>? myFacesOrigins;
     //!< Binding between trimmed and infinite edge
-    private NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>? myETrimEInf;
+    private NCollection_DataMap<Shape, Shape>? myETrimEInf;
 
     // Intermediate data
     //!< Images of the offset edges
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myOEImages = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> myOEImages = new(ShapeHasher.Instance);
     //!< Origins of the splits of offset edges
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myOEOrigins = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> myOEOrigins = new(ShapeHasher.Instance);
     //!< Images of the offset edges
-    private readonly NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myOFImages = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> myOFImages = new(ShapeHasher.Instance);
 
     //!< Edges considered invalid (orientation is changed) in some split of face
-    private NCollection_IndexedMap<TopoDS_Shape> myInvalidEdges = new(TopTools_ShapeMapHasher.Instance);
+    private NCollection_IndexedMap<Shape> myInvalidEdges = new(ShapeHasher.Instance);
     //!< Edges considered valid (orientation is kept) in some split of face
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myValidEdges = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myValidEdges = new(ShapeHasher.Instance);
     //!< Edges considered inverted (vertices swapped) in some split of face
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myInvertedEdges = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myInvertedEdges = new(ShapeHasher.Instance);
     //!< Splits of edges to be avoided when building splits of faces
-    private NCollection_IndexedMap<TopoDS_Shape> myEdgesToAvoid = new(TopTools_ShapeMapHasher.Instance);
+    private NCollection_IndexedMap<Shape> myEdgesToAvoid = new(ShapeHasher.Instance);
     //!< Edges marked invalid on the current step and to be avoided on the next step
-    private readonly NCollection_Map<TopoDS_Shape> myLastInvEdges = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_Map<Shape> myLastInvEdges = new(ShapeHasher.Instance);
     //!< Edges to be used for building splits
-    private readonly NCollection_Map<TopoDS_Shape> myModifiedEdges = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_Map<Shape> myModifiedEdges = new(ShapeHasher.Instance);
     //!< Edges located fully inside solids built from the splits of offset faces
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myInsideEdges = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myInsideEdges = new(ShapeHasher.Instance);
 
     //!< Invalid faces - splits of offset faces consisting of invalid edges
-    private NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myInvalidFaces = new(TopTools_ShapeMapHasher.Instance);
+    private NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> myInvalidFaces = new(ShapeHasher.Instance);
     //!< Artificially invalid faces - valid faces intentionally marked invalid to be rebuilt on the future steps in the
     //!  situations when invalid edges are present, but invalid faces not
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_IndexedMap<TopoDS_Shape>> myArtInvalidFaces = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, NCollection_IndexedMap<Shape>> myArtInvalidFaces = new(ShapeHasher.Instance);
     //!< Count number of the same face being marked invalid to avoid infinite rebuilding of the same face
-    private readonly NCollection_DataMap<TopoDS_Shape, int> myAlreadyInvFaces = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, int> myAlreadyInvFaces = new(ShapeHasher.Instance);
     //!< Images of the hole faces of the original face
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myFNewHoles = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> myFNewHoles = new(ShapeHasher.Instance);
 
     //!< Intersection information, used to collect intersection pairs during rebuild
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> mySSInterfs = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> mySSInterfs = new(ShapeHasher.Instance);
     //!< Intersection information, used to collect intersection pairs during rebuild
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> mySSInterfsArt = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> mySSInterfsArt = new(ShapeHasher.Instance);
     //!< All possible intersection pairs, used to avoid some of the intersections
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>>> myIntersectionPairs = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, NCollection_DataMap<Shape, NCollection_Map<Shape>>> myIntersectionPairs = new(ShapeHasher.Instance);
 
     //!< Faces that have to be rebuilt (invalid and close to invalid faces)
-    private readonly NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myFacesToRebuild = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> myFacesToRebuild = new(ShapeHasher.Instance);
     //!< Faces that have to be avoided when rebuilding splits of the same offset face
-    private readonly NCollection_Map<TopoDS_Shape> myFSelfRebAvoid = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_Map<Shape> myFSelfRebAvoid = new(ShapeHasher.Instance);
 
-    private TopoDS_Shape mySolids = new(); //!< Solids built from the splits of faces
+    private Shape mySolids = new(); //!< Solids built from the splits of faces
 
     // Auxiliary tools
     private readonly IntTools_Context myContext;
@@ -536,7 +541,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
     }
 
     //! Sets faces to build splits
-    public void SetFaces(NCollection_List<TopoDS_Shape> theFaces) => myFaces = theFaces;
+    public void SetFaces(NCollection_List<Shape> theFaces) => myFaces = theFaces;
 
     //! Sets ascendants/descendants information
     public void SetAsDesInfo(BRepAlgo_AsDes theAsDes) => myAsDes = theAsDes;
@@ -545,15 +550,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
     public void SetAnalysis(BRepOffset_Analyse theAnalyse) => myAnalyzer = theAnalyse;
 
     //! Sets origins of the offset edges (from original shape)
-    public void SetEdgesOrigins(NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEdgesOrigins) =>
+    public void SetEdgesOrigins(NCollection_DataMap<Shape, NCollection_List<Shape>> theEdgesOrigins) =>
         myEdgesOrigins = theEdgesOrigins;
 
     //! Sets origins of the offset faces (from original shape)
-    public void SetFacesOrigins(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theFacesOrigins) =>
+    public void SetFacesOrigins(NCollection_DataMap<Shape, Shape> theFacesOrigins) =>
         myFacesOrigins = theFacesOrigins;
 
     //! Sets infinite (extended) edges for the trimmed ones
-    public void SetInfEdges(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theETrimEInf) => myETrimEInf = theETrimEInf;
+    public void SetInfEdges(NCollection_DataMap<Shape, Shape> theETrimEInf) => myETrimEInf = theETrimEInf;
 
     //=================================================================================================
 
@@ -565,7 +570,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             return;
         }
 
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anEdgesOrigins = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> anEdgesOrigins = new(ShapeHasher.Instance);
         if (myEdgesOrigins is null)
         {
             myEdgesOrigins = anEdgesOrigins;
@@ -577,15 +582,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
         IntersectTrimmedEdges(aPS.Next(1));
 
         using ProgressScope aPSLoop = new(aPS.Next(4), null, myFaces!.Extent());
-        for (NCollection_List<TopoDS_Shape>.Iterator aItLF = new(myFaces); aItLF.More(); aItLF.Next())
+        for (NCollection_List<Shape>.Iterator aItLF = new(myFaces); aItLF.More(); aItLF.Next())
         {
             if (!aPSLoop.More())
             {
                 return;
             }
-            TopoDS_Face aF = TopoDS.Face(aItLF.Value());
+            Face aF = ShapeCasts.Face(aItLF.Value());
 
-            TopoDS_Shape aCE = new();
+            Shape aCE = new();
             bool bFound = GetEdges(aF, ref aCE);
 
             // split the face by the edges
@@ -593,12 +598,12 @@ internal sealed class BRepOffset_BuildOffsetFaces
             {
                 if (!myImage.HasImage(aF))
                 {
-                    myOFImages[myOFImages.Add(aF, new NCollection_List<TopoDS_Shape>())].Append(aF);
+                    myOFImages[myOFImages.Add(aF, new NCollection_List<Shape>())].Append(aF);
                 }
                 continue;
             }
 
-            NCollection_List<TopoDS_Shape> aLFImages = new();
+            NCollection_List<Shape> aLFImages = new();
             BuildSplitsOfTrimmedFace(aF, aCE, aLFImages, aPSLoop.Next());
 
             myOFImages.Add(aF, aLFImages);
@@ -633,7 +638,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             return;
         }
         // vertices to avoid
-        NCollection_Map<TopoDS_Shape> aVertsToAvoid = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aVertsToAvoid = new(ShapeHasher.Instance);
 
         // Limit total number of attempts by 10. This should be extra, as each invalid face can be
         // rebuilt only three times. So, in general, there are about 2-5 loops done.
@@ -697,25 +702,25 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : UpdateIntersectedEdges
     // purpose  : Saving connection from trimmed edges to not trimmed ones
     //=======================================================================
-    private void UpdateIntersectedEdges(NCollection_List<TopoDS_Shape> theLA, BOPAlgo_Builder theGF)
+    private void UpdateIntersectedEdges(NCollection_List<Shape> theLA, BOPAlgo_Builder theGF)
     {
-        for (NCollection_List<TopoDS_Shape>.Iterator aItA = new(theLA); aItA.More(); aItA.Next())
+        for (NCollection_List<Shape>.Iterator aItA = new(theLA); aItA.More(); aItA.Next())
         {
-            TopoDS_Shape aS = aItA.Value();
-            if (!myETrimEInf!.Find(aS, out TopoDS_Shape pEInf))
+            Shape aS = aItA.Value();
+            if (!myETrimEInf!.Find(aS, out Shape pEInf))
             {
                 continue;
             }
 
-            NCollection_List<TopoDS_Shape> aLSIm = ModifiedOf(theGF, aS);
+            NCollection_List<Shape> aLSIm = ModifiedOf(theGF, aS);
             if (aLSIm.IsEmpty())
             {
                 continue;
             }
 
-            for (NCollection_List<TopoDS_Shape>.Iterator aIt = new(aLSIm); aIt.More(); aIt.Next())
+            for (NCollection_List<Shape>.Iterator aIt = new(aLSIm); aIt.More(); aIt.Next())
             {
-                TopoDS_Shape aEIm = aIt.Value();
+                Shape aEIm = aIt.Value();
                 if (!myETrimEInf.IsBound(aEIm))
                 {
                     myETrimEInf.Bind(aEIm, pEInf);
@@ -730,23 +735,23 @@ internal sealed class BRepOffset_BuildOffsetFaces
     private void IntersectTrimmedEdges(ProgressRange theRange)
     {
         // get edges to intersect from descendants of the offset faces
-        NCollection_List<TopoDS_Shape> aLS = new();
+        NCollection_List<Shape> aLS = new();
         //
         using ProgressScope aPS = new(theRange, null, 2);
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new(myFaces!);
+        NCollection_List<Shape>.Iterator aItLF = new(myFaces!);
         for (; aItLF.More(); aItLF.Next())
         {
             if (!aPS.More())
             {
                 return;
             }
-            TopoDS_Face aF = TopoDS.Face(aItLF.Value());
+            Face aF = ShapeCasts.Face(aItLF.Value());
             //
-            NCollection_List<TopoDS_Shape> aLE = myAsDes!.Descendant(aF);
-            NCollection_List<TopoDS_Shape>.Iterator aItLE = new(aLE);
+            NCollection_List<Shape> aLE = myAsDes!.Descendant(aF);
+            NCollection_List<Shape>.Iterator aItLE = new(aLE);
             for (; aItLE.More(); aItLE.Next())
             {
-                TopoDS_Edge aE = TopoDS.Edge(aItLE.Value());
+                Edge aE = ShapeCasts.Edge(aItLE.Value());
                 //
                 if (ProcessMicroEdge(aE, myContext))
                 {
@@ -775,17 +780,17 @@ internal sealed class BRepOffset_BuildOffsetFaces
             return;
         }
         //
-        NCollection_List<TopoDS_Shape> aLA = new();
+        NCollection_List<Shape> aLA = new();
         // fill map with edges images
         using ProgressScope aPSLoop = new(aPS.Next(), null, aLS.Extent());
-        for (NCollection_List<TopoDS_Shape>.Iterator aIt = new(aLS); aIt.More(); aIt.Next(), aPSLoop.Next())
+        for (NCollection_List<Shape>.Iterator aIt = new(aLS); aIt.More(); aIt.Next(), aPSLoop.Next())
         {
             if (!aPSLoop.More())
             {
                 return;
             }
-            TopoDS_Shape aE = aIt.Value();
-            NCollection_List<TopoDS_Shape> aLEIm = ModifiedOf(aGFE, aE);
+            Shape aE = aIt.Value();
+            NCollection_List<Shape> aLEIm = ModifiedOf(aGFE, aE);
             if (aLEIm.IsEmpty())
             {
                 continue;
@@ -793,19 +798,19 @@ internal sealed class BRepOffset_BuildOffsetFaces
             //
             aLA.Append(aE);
             // save images
-            myOEImages.Bind(aE, new NCollection_List<TopoDS_Shape>(aLEIm));
+            myOEImages.Bind(aE, new NCollection_List<Shape>(aLEIm));
             // save origins
-            NCollection_List<TopoDS_Shape>.Iterator aItLE = new(aLEIm);
+            NCollection_List<Shape>.Iterator aItLE = new(aLEIm);
             for (; aItLE.More(); aItLE.Next())
             {
-                TopoDS_Shape aEIm = aItLE.Value();
-                if (myOEOrigins.Find(aEIm, out NCollection_List<TopoDS_Shape> pLEOr))
+                Shape aEIm = aItLE.Value();
+                if (myOEOrigins.Find(aEIm, out NCollection_List<Shape> pLEOr))
                 {
                     AppendToList(pLEOr, aE);
                 }
                 else
                 {
-                    NCollection_List<TopoDS_Shape> aL = new();
+                    NCollection_List<Shape> aL = new();
                     aL.Append(aE);
                     myOEOrigins.Bind(aEIm, aL);
                 }
@@ -821,24 +826,24 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // purpose  : Checks number of connections for theFace with theLF
     //           Returns true if number of connections more than 1
     //=======================================================================
-    private static bool checkConnectionsOfFace(in TopoDS_Shape theFace, NCollection_List<TopoDS_Shape> theLF)
+    private static bool checkConnectionsOfFace(in Shape theFace, NCollection_List<Shape> theLF)
     {
-        NCollection_IndexedMap<TopoDS_Shape> aShapeVert = new(TopTools_ShapeMapHasher.Instance);
-        for (NCollection_List<TopoDS_Shape>.Iterator aFImIterator = new(theLF); aFImIterator.More(); aFImIterator.Next())
+        NCollection_IndexedMap<Shape> aShapeVert = new(ShapeHasher.Instance);
+        for (NCollection_List<Shape>.Iterator aFImIterator = new(theLF); aFImIterator.More(); aFImIterator.Next())
         {
-            TopoDS_Shape aShape = aFImIterator.Value();
+            Shape aShape = aFImIterator.Value();
             if (aShape.IsSame(theFace))
             {
                 continue;
             }
-            TopExp.MapShapes(aShape, TopAbs_VERTEX, aShapeVert);
+            Exploration.MapShapes(aShape, ShapeType.Vertex, aShapeVert);
         }
         int aNbConnections = 0;
-        NCollection_IndexedMap<TopoDS_Shape> aFaceVertices = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theFace, TopAbs_VERTEX, aFaceVertices);
+        NCollection_IndexedMap<Shape> aFaceVertices = new(ShapeHasher.Instance);
+        Exploration.MapShapes(theFace, ShapeType.Vertex, aFaceVertices);
         for (int iV = 1; iV <= aFaceVertices.Extent(); ++iV)
         {
-            TopoDS_Shape aVert = aFaceVertices[iV];
+            Shape aVert = aFaceVertices[iV];
             if (aShapeVert.Contains(aVert))
             {
                 ++aNbConnections;
@@ -858,49 +863,49 @@ internal sealed class BRepOffset_BuildOffsetFaces
     //=======================================================================
     private void BuildSplitsOfFaces(ProgressRange theRange)
     {
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
         int i, aNb;
         //
         // processed faces
-        NCollection_List<TopoDS_Shape> aLFDone = new();
+        NCollection_List<Shape> aLFDone = new();
         // extended face - map of neutral edges, i.e. in one split - valid and in other - invalid
-        NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> aDMFMNE = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_Map<Shape>> aDMFMNE = new(ShapeHasher.Instance);
         // map of valid edges for each face
-        NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> aDMFMVE = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_Map<Shape>> aDMFMVE = new(ShapeHasher.Instance);
         // map of invalid edges for each face
-        NCollection_DataMap<TopoDS_Shape, NCollection_IndexedMap<TopoDS_Shape>> aDMFMIE = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_IndexedMap<Shape>> aDMFMIE = new(ShapeHasher.Instance);
         // map of valid inverted edges for the face
-        NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> aDMFMVIE = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_Map<Shape>> aDMFMVIE = new(ShapeHasher.Instance);
         // map of splits to check for internals
-        NCollection_IndexedMap<TopoDS_Shape> aMFToCheckInt = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> aMFToCheckInt = new(ShapeHasher.Instance);
         // map of edges created from vertex and marked as invalid
-        NCollection_Map<TopoDS_Shape> aMEdgeInvalidByVertex = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMEdgeInvalidByVertex = new(ShapeHasher.Instance);
         // map of edges created from vertex and marked as valid
-        NCollection_Map<TopoDS_Shape> aMEdgeValidByVertex = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMEdgeValidByVertex = new(ShapeHasher.Instance);
         // connection map from old edges to new ones
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMEOrLEIm = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aDMEOrLEIm = new(ShapeHasher.Instance);
         //
         // Outer range
         using ProgressScope aPSOuter = new(theRange, null, 10.0);
         // build splits of faces
         using ProgressScope aPSBF = new(aPSOuter.Next(3.0), "Building faces", 2 * myFaces!.Extent());
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new(myFaces);
+        NCollection_List<Shape>.Iterator aItLF = new(myFaces);
         for (; aItLF.More(); aItLF.Next(), aPSBF.Next())
         {
             if (!aPSBF.More())
             {
                 return;
             }
-            TopoDS_Face aF = TopoDS.Face(aItLF.Value());
+            Face aF = ShapeCasts.Face(aItLF.Value());
             //
-            NCollection_List<TopoDS_Shape>? pLFIm = myOFImages.FindFromKey(aF, out NCollection_List<TopoDS_Shape> aFound) ? aFound : null;
+            NCollection_List<Shape>? pLFIm = myOFImages.FindFromKey(aF, out NCollection_List<Shape> aFound) ? aFound : null;
             if (pLFIm is not null && pLFIm.IsEmpty())
             {
                 continue;
             }
             // get edges by which the face should be split
-            TopoDS_Shape aCE = new();
-            NCollection_IndexedMap<TopoDS_Shape> aMapEInv = new(TopTools_ShapeMapHasher.Instance);
+            Shape aCE = new();
+            NCollection_IndexedMap<Shape> aMapEInv = new(ShapeHasher.Instance);
             bool bFound = GetEdges(aF, ref aCE, aMapEInv);
             if (!bFound)
             {
@@ -909,17 +914,17 @@ internal sealed class BRepOffset_BuildOffsetFaces
             //
             // OFFSET_DEBUG: the self-intersection check of the edges is left out.
             // build splits
-            NCollection_List<TopoDS_Shape> aLFImages = new();
+            NCollection_List<Shape> aLFImages = new();
             BuildSplitsOfFace(aF, aCE, myFacesOrigins!, aLFImages);
             //
             if (aMapEInv.Extent() != 0)
             {
                 // check if all possible faces are built
-                NCollection_Map<TopoDS_Shape> aMENInv = new(TopTools_ShapeMapHasher.Instance);
+                NCollection_Map<Shape> aMENInv = new(ShapeHasher.Instance);
                 bool bArtificialCase = aLFImages.IsEmpty() || CheckIfArtificial(aF, aLFImages, aCE, aMapEInv, aMENInv);
                 //
                 // try to build splits using invalid edges
-                TopoDS_Compound aCE1 = new();
+                Compound aCE1 = new();
                 aBB.MakeCompound(ref aCE1);
                 aBB.Add(aCE1, aCE);
                 for (i = 1; i <= aMapEInv.Extent(); ++i)
@@ -927,22 +932,22 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     aBB.Add(aCE1, aMapEInv[i]);
                 }
                 //
-                NCollection_List<TopoDS_Shape> aLFImages1 = new();
+                NCollection_List<Shape> aLFImages1 = new();
                 BuildSplitsOfFace(aF, aCE1, myFacesOrigins!, aLFImages1);
                 //
                 // check if the rebuilding has added some new faces to the splits
-                for (NCollection_List<TopoDS_Shape>.Iterator aItLFIm = new(aLFImages1); aItLFIm.More();)
+                for (NCollection_List<Shape>.Iterator aItLFIm = new(aLFImages1); aItLFIm.More();)
                 {
                     bool bAllInv = true;
                     // Additional check for artificial case
                     // if current image face consist only of edges from aMapEInv and aMENInv
                     // then recheck current face for the further processing
                     bool aToReCheckFace = bArtificialCase;
-                    TopoDS_Shape aFIm = aItLFIm.Value();
-                    TopExp_Explorer aExpE = new(aFIm, TopAbs_EDGE);
+                    Shape aFIm = aItLFIm.Value();
+                    Explorer aExpE = new(aFIm, ShapeType.Edge);
                     for (; aExpE.More(); aExpE.Next())
                     {
-                        TopoDS_Shape aE = aExpE.Current();
+                        Shape aE = aExpE.Current();
                         if (!aMapEInv.Contains(aE))
                         {
                             bAllInv = false;
@@ -989,19 +994,19 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 if (bArtificialCase)
                 {
                     // make the face invalid
-                    NCollection_IndexedMap<TopoDS_Shape> aMEInv = new(TopTools_ShapeMapHasher.Instance);
+                    NCollection_IndexedMap<Shape> aMEInv = new(ShapeHasher.Instance);
                     //
                     // OCCT: "*pLFIm = aLFImages" dereferences a null pointer when the face has no splits yet
                     // (an access violation natively, a NullReferenceException here; occt-issues.md).
                     pLFIm!.Assign(aLFImages);
-                    NCollection_List<TopoDS_Shape>.Iterator aItLFIm = new(aLFImages);
+                    NCollection_List<Shape>.Iterator aItLFIm = new(aLFImages);
                     for (; aItLFIm.More(); aItLFIm.Next())
                     {
-                        TopoDS_Shape aFIm = aItLFIm.Value();
-                        TopExp_Explorer aExpE = new(aFIm, TopAbs_EDGE);
+                        Shape aFIm = aItLFIm.Value();
+                        Explorer aExpE = new(aFIm, ShapeType.Edge);
                         for (; aExpE.More(); aExpE.Next())
                         {
-                            TopoDS_Shape aE = aExpE.Current();
+                            Shape aE = aExpE.Current();
                             if (aMapEInv.Contains(aE))
                             {
                                 myInvalidEdges.Add(aE);
@@ -1014,8 +1019,8 @@ internal sealed class BRepOffset_BuildOffsetFaces
                         }
                     }
                     //
-                    myArtInvalidFaces.Bind(aF, new NCollection_IndexedMap<TopoDS_Shape>(aMEInv));
-                    aDMFMIE.Bind(aF, new NCollection_IndexedMap<TopoDS_Shape>(aMEInv));
+                    myArtInvalidFaces.Bind(aF, new NCollection_IndexedMap<Shape>(aMEInv));
+                    aDMFMIE.Bind(aF, new NCollection_IndexedMap<Shape>(aMEInv));
                     aLFDone.Append(aF);
                     //
                     continue;
@@ -1029,7 +1034,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             // save the new splits
             if (pLFIm is null)
             {
-                pLFIm = myOFImages[myOFImages.Add(aF, new NCollection_List<TopoDS_Shape>())];
+                pLFIm = myOFImages[myOFImages.Add(aF, new NCollection_List<Shape>())];
             }
             else
             {
@@ -1058,25 +1063,25 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // Build Edge-Face connectivity map to find faces which removal
         // may potentially lead to creation of the holes in the faces
         // preventing from obtaining closed volume in the result
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anEFMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anEFMap = new(ShapeHasher.Instance);
         int aNbF = myOFImages.Extent();
         for (i = 1; i <= aNbF; ++i)
         {
-            NCollection_List<TopoDS_Shape>.Iterator itLFIm = new(myOFImages[i]);
+            NCollection_List<Shape>.Iterator itLFIm = new(myOFImages[i]);
             for (; itLFIm.More(); itLFIm.Next())
             {
-                TopExp.MapShapesAndAncestors(itLFIm.Value(), TopAbs_EDGE, TopAbs_FACE, anEFMap);
+                Exploration.MapShapesAndAncestors(itLFIm.Value(), ShapeType.Edge, ShapeType.Face, anEFMap);
             }
         }
 
-        NCollection_Map<TopoDS_Shape> anEmptyMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> anEmptyMap = new(ShapeHasher.Instance);
         // invalid faces inside the holes
-        NCollection_IndexedMap<TopoDS_Shape> aMFInvInHole = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> aMFInvInHole = new(ShapeHasher.Instance);
         // all hole faces
-        TopoDS_Compound aFHoles = new();
+        Compound aFHoles = new();
         aBB.MakeCompound(ref aFHoles);
         // Find the faces containing only the inverted edges and the invalid ones
-        NCollection_List<TopoDS_Shape> anInvertedFaces = new();
+        NCollection_List<Shape> anInvertedFaces = new();
 
         using ProgressScope aPSIF = new(aPSOuter.Next(2.0), "Checking validity of faces", aLFDone.Extent());
         // find invalid faces
@@ -1088,10 +1093,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
             {
                 return;
             }
-            TopoDS_Face aF = TopoDS.Face(aItLF.Value());
-            NCollection_List<TopoDS_Shape> aLFImages = myOFImages.ChangeFromKey(aF);
+            Face aF = ShapeCasts.Face(aItLF.Value());
+            NCollection_List<Shape> aLFImages = myOFImages.ChangeFromKey(aF);
             //
-            NCollection_List<TopoDS_Shape> aLFInv = new();
+            NCollection_List<Shape> aLFInv = new();
             bool bArtificialCase = myArtInvalidFaces.IsBound(aF);
             if (bArtificialCase)
             {
@@ -1100,16 +1105,16 @@ internal sealed class BRepOffset_BuildOffsetFaces
             else
             {
                 // neutral edges
-                if (!aDMFMNE.Find(aF, out NCollection_Map<TopoDS_Shape> pMNE))
+                if (!aDMFMNE.Find(aF, out NCollection_Map<Shape> pMNE))
                 {
                     pMNE = anEmptyMap;
                 }
                 // find faces inside holes wires
-                NCollection_Map<TopoDS_Shape> aMFHoles = new(TopTools_ShapeMapHasher.Instance);
-                TopoDS_Face aFOr = TopoDS.Face(myFacesOrigins!.Find(aF));
+                NCollection_Map<Shape> aMFHoles = new(ShapeHasher.Instance);
+                Face aFOr = ShapeCasts.Face(myFacesOrigins!.Find(aF));
                 FindFacesInsideHoleWires(aFOr, aF, aLFImages, aDMEOrLEIm, anEFMap, aMFHoles);
                 //
-                foreach (TopoDS_Shape aItMH in aMFHoles)
+                foreach (Shape aItMH in aMFHoles)
                 {
                     aBB.Add(aFHoles, aItMH);
                 }
@@ -1145,7 +1150,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         //
         // OFFSET_DEBUG: the compound of invalid faces is left out.
         //
-        NCollection_IndexedMap<TopoDS_Shape> aMERemoved = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> aMERemoved = new(ShapeHasher.Instance);
         // remove invalid splits of faces using inverted edges
         RemoveInvalidSplitsByInvertedEdges(aMERemoved);
         if (myInvalidFaces.IsEmpty())
@@ -1162,23 +1167,23 @@ internal sealed class BRepOffset_BuildOffsetFaces
                           aPSOuter.Next(5.0));
         //
         // make compound of valid splits
-        TopoDS_Compound aCFIm = new();
+        Compound aCFIm = new();
         aBB.MakeCompound(ref aCFIm);
         //
         aNb = myOFImages.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            NCollection_List<TopoDS_Shape> aLFIm = myOFImages[i];
+            NCollection_List<Shape> aLFIm = myOFImages[i];
             aItLF.Initialize(aLFIm);
             for (; aItLF.More(); aItLF.Next())
             {
-                TopoDS_Shape aFIm = aItLF.Value();
+                Shape aFIm = aItLF.Value();
                 aBB.Add(aCFIm, aFIm);
             }
         }
         //
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMEF = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(aCFIm, TopAbs_EDGE, TopAbs_FACE, aDMEF);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMEF = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aCFIm, ShapeType.Edge, ShapeType.Face, aDMEF);
         //
         // filter maps of images and origins
         FilterEdgesImages(aCFIm);
@@ -1195,7 +1200,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // OFFSET_DEBUG: the compound of invalid faces is left out.
         //
         // filter invalid edges
-        NCollection_Map<TopoDS_Shape> aMEUseInRebuild = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMEUseInRebuild = new(ShapeHasher.Instance);
         FilterInvalidEdges(aDMFMIE, aMERemoved, aMERemoved.Extent() != 0 ? myInsideEdges : aMERemoved, aMEUseInRebuild);
         //
         // Check additionally validity of edges originated from vertices.
@@ -1207,7 +1212,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aNb = myInvalidEdges.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aE = myInvalidEdges[i];
+            Shape aE = myInvalidEdges[i];
             myLastInvEdges.Add(aE);
             if (!aMEUseInRebuild.Contains(aE))
             {
@@ -1218,7 +1223,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aNb = myInvalidFaces.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aF = myInvalidFaces.FindKey(i);
+            Shape aF = myInvalidFaces.FindKey(i);
             if (myAlreadyInvFaces.IsBound(aF))
             {
                 myAlreadyInvFaces.ChangeFind(aF)++;
@@ -1234,18 +1239,18 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : GetEdges
     // purpose  : Getting edges from AsDes map to build the splits of faces
     //=======================================================================
-    private bool GetEdges(in TopoDS_Face theFace, ref TopoDS_Shape theEdges,
-                          NCollection_IndexedMap<TopoDS_Shape>? theInvMap = null)
+    private bool GetEdges(in Face theFace, ref Shape theEdges,
+                          NCollection_IndexedMap<Shape>? theInvMap = null)
     {
         // get boundary edges
-        NCollection_Map<TopoDS_Shape> aMFBounds = new(TopTools_ShapeMapHasher.Instance);
-        TopExp_Explorer aExp = new(theFace, TopAbs_EDGE);
+        NCollection_Map<Shape> aMFBounds = new(ShapeHasher.Instance);
+        Explorer aExp = new(theFace, ShapeType.Edge);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Shape aE = aExp.Current();
-            if (myOEImages.Find(aE, out NCollection_List<TopoDS_Shape> pLEIm))
+            Shape aE = aExp.Current();
+            if (myOEImages.Find(aE, out NCollection_List<Shape> pLEIm))
             {
-                for (NCollection_List<TopoDS_Shape>.Iterator aItLE0 = new(pLEIm); aItLE0.More(); aItLE0.Next())
+                for (NCollection_List<Shape>.Iterator aItLE0 = new(pLEIm); aItLE0.More(); aItLE0.Next())
                 {
                     aMFBounds.Add(aItLE0.Value());
                 }
@@ -1256,31 +1261,31 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
         }
 
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
         bool bFound = false, bUpdate = false;
         // the resulting edges
-        TopoDS_Compound anEdges = new();
+        Compound anEdges = new();
         aBB.MakeCompound(ref anEdges);
         // Fence map
-        NCollection_Map<TopoDS_Shape> aMEFence = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMEFence = new(ShapeHasher.Instance);
         // the edges by which the offset face should be split
-        NCollection_List<TopoDS_Shape> aLE = myAsDes!.Descendant(theFace);
-        NCollection_List<TopoDS_Shape>.Iterator aItLE = new(aLE);
+        NCollection_List<Shape> aLE = myAsDes!.Descendant(theFace);
+        NCollection_List<Shape>.Iterator aItLE = new(aLE);
         for (; aItLE.More(); aItLE.Next())
         {
-            TopoDS_Edge aE = TopoDS.Edge(aItLE.Value());
+            Edge aE = ShapeCasts.Edge(aItLE.Value());
             //
             if (!bUpdate)
             {
                 bUpdate = myModifiedEdges.Contains(aE);
             }
             //
-            if (myOEImages.Find(aE, out NCollection_List<TopoDS_Shape> pLEIm))
+            if (myOEImages.Find(aE, out NCollection_List<Shape> pLEIm))
             {
-                NCollection_List<TopoDS_Shape>.Iterator aItLEIm = new(pLEIm);
+                NCollection_List<Shape>.Iterator aItLEIm = new(pLEIm);
                 for (; aItLEIm.More(); aItLEIm.Next())
                 {
-                    TopoDS_Edge aEIm = TopoDS.Edge(aItLEIm.Value());
+                    Edge aEIm = ShapeCasts.Edge(aItLEIm.Value());
                     //
                     if (!aMEFence.Add(aEIm))
                     {
@@ -1346,36 +1351,36 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : CheckIfArtificial
     // purpose  : Checks if the face is artificially invalid
     //=======================================================================
-    private bool CheckIfArtificial(in TopoDS_Shape theF, NCollection_List<TopoDS_Shape> theLFImages, in TopoDS_Shape theCE,
-                                   NCollection_IndexedMap<TopoDS_Shape> theMapEInv, NCollection_Map<TopoDS_Shape> theMENInv)
+    private bool CheckIfArtificial(in Shape theF, NCollection_List<Shape> theLFImages, in Shape theCE,
+                                   NCollection_IndexedMap<Shape> theMapEInv, NCollection_Map<Shape> theMENInv)
     {
         // all boundary edges should be used
-        NCollection_IndexedMap<TopoDS_Shape> aMEUsed = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape>.Iterator aItLFIm = new(theLFImages);
+        NCollection_IndexedMap<Shape> aMEUsed = new(ShapeHasher.Instance);
+        NCollection_List<Shape>.Iterator aItLFIm = new(theLFImages);
         for (; aItLFIm.More(); aItLFIm.Next())
         {
-            TopoDS_Shape aFIm = aItLFIm.Value();
-            TopExp.MapShapes(aFIm, TopAbs_EDGE, aMEUsed);
-            TopExp.MapShapes(aFIm, TopAbs_VERTEX, aMEUsed);
+            Shape aFIm = aItLFIm.Value();
+            Exploration.MapShapes(aFIm, ShapeType.Edge, aMEUsed);
+            Exploration.MapShapes(aFIm, ShapeType.Vertex, aMEUsed);
         }
         //
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMVE = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(theCE, TopAbs_VERTEX, TopAbs_EDGE, aMVE);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMVE = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(theCE, ShapeType.Vertex, ShapeType.Edge, aMVE);
         //
         int i, aNb = theMapEInv.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aEInv = theMapEInv[i];
-            TopExp_Explorer aExpV = new(aEInv, TopAbs_VERTEX);
+            Shape aEInv = theMapEInv[i];
+            Explorer aExpV = new(aEInv, ShapeType.Vertex);
             for (; aExpV.More(); aExpV.Next())
             {
-                TopoDS_Shape aVEInv = aExpV.Current();
-                if (aMVE.FindFromKey(aVEInv, out NCollection_List<TopoDS_Shape> pLENInv))
+                Shape aVEInv = aExpV.Current();
+                if (aMVE.FindFromKey(aVEInv, out NCollection_List<Shape> pLENInv))
                 {
-                    NCollection_List<TopoDS_Shape>.Iterator aItLEInv = new(pLENInv);
+                    NCollection_List<Shape>.Iterator aItLEInv = new(pLENInv);
                     for (; aItLEInv.More(); aItLEInv.Next())
                     {
-                        TopoDS_Shape aENInv = aItLEInv.Value();
+                        Shape aENInv = aItLEInv.Value();
                         if (!aMEUsed.Contains(aENInv))
                         {
                             theMENInv.Add(aENInv);
@@ -1390,22 +1395,22 @@ internal sealed class BRepOffset_BuildOffsetFaces
             return false;
         }
         //
-        NCollection_IndexedMap<TopoDS_Shape> aMEFound = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theCE, TopAbs_EDGE, aMEFound);
+        NCollection_IndexedMap<Shape> aMEFound = new(ShapeHasher.Instance);
+        Exploration.MapShapes(theCE, ShapeType.Edge, aMEFound);
         //
-        NCollection_List<TopoDS_Shape> aLE = myAsDes!.Descendant(theF);
-        NCollection_List<TopoDS_Shape>.Iterator aItLE = new(aLE);
+        NCollection_List<Shape> aLE = myAsDes!.Descendant(theF);
+        NCollection_List<Shape>.Iterator aItLE = new(aLE);
         for (; aItLE.More(); aItLE.Next())
         {
-            TopoDS_Edge aE = TopoDS.Edge(aItLE.Value());
+            Edge aE = ShapeCasts.Edge(aItLE.Value());
             //
-            if (myOEImages.Find(aE, out NCollection_List<TopoDS_Shape> pLEIm))
+            if (myOEImages.Find(aE, out NCollection_List<Shape> pLEIm))
             {
                 bool bChecked = false;
-                NCollection_List<TopoDS_Shape>.Iterator aItLEIm = new(pLEIm);
+                NCollection_List<Shape>.Iterator aItLEIm = new(pLEIm);
                 for (; aItLEIm.More(); aItLEIm.Next())
                 {
-                    TopoDS_Edge aEIm = TopoDS.Edge(aItLEIm.Value());
+                    Edge aEIm = ShapeCasts.Edge(aItLEIm.Value());
                     if (!aMEFound.Contains(aEIm) || theMENInv.Contains(aEIm))
                     {
                         continue;
@@ -1439,14 +1444,14 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
     //! Looks for the invalid edges (edges with changed orientation)
     //! in the splits of offset faces
-    private void FindInvalidEdges(in TopoDS_Face theF, NCollection_List<TopoDS_Shape> theLFImages,
-                                  NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> theDMFMVE,
-                                  NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> theDMFMNE,
-                                  NCollection_DataMap<TopoDS_Shape, NCollection_IndexedMap<TopoDS_Shape>> theDMFMIE,
-                                  NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> theDMFMVIE,
-                                  NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMEOrLEIm,
-                                  NCollection_Map<TopoDS_Shape> theEdgesInvalidByVertex,
-                                  NCollection_Map<TopoDS_Shape> theEdgesValidByVertex, ProgressRange theRange)
+    private void FindInvalidEdges(in Face theF, NCollection_List<Shape> theLFImages,
+                                  NCollection_DataMap<Shape, NCollection_Map<Shape>> theDMFMVE,
+                                  NCollection_DataMap<Shape, NCollection_Map<Shape>> theDMFMNE,
+                                  NCollection_DataMap<Shape, NCollection_IndexedMap<Shape>> theDMFMIE,
+                                  NCollection_DataMap<Shape, NCollection_Map<Shape>> theDMFMVIE,
+                                  NCollection_DataMap<Shape, NCollection_List<Shape>> theDMEOrLEIm,
+                                  NCollection_Map<Shape> theEdgesInvalidByVertex,
+                                  NCollection_Map<Shape> theEdgesValidByVertex, ProgressRange theRange)
     {
         // Edge is considered as invalid in the following cases:
         // 1. Its orientation on the face has changed comparing to the originals edge and face;
@@ -1457,74 +1462,74 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // be defined by the edges on the original face adjacent to the connection vertex
 
         // original face
-        TopoDS_Face aFOr = TopoDS.Face(myFacesOrigins!.Find(theF));
+        Face aFOr = ShapeCasts.Face(myFacesOrigins!.Find(theF));
         // invalid edges
-        NCollection_IndexedMap<TopoDS_Shape> aMEInv = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> aMEInv = new(ShapeHasher.Instance);
         // valid edges
-        NCollection_Map<TopoDS_Shape> aMEVal = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMEVal = new(ShapeHasher.Instance);
         // internal edges
-        NCollection_Map<TopoDS_Shape> aMEInt = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMEInt = new(ShapeHasher.Instance);
         //
         // maps for checking the inverted edges
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMVE = new(TopTools_ShapeMapHasher.Instance),
-                                                                                 aDMEF = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_IndexedMap<TopoDS_Shape> aMEdges = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMVE = new(ShapeHasher.Instance),
+                                                                                 aDMEF = new(ShapeHasher.Instance);
+        NCollection_IndexedMap<Shape> aMEdges = new(ShapeHasher.Instance);
         // back map from the original shapes to their offset images
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anImages = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> anImages = new(ShapeHasher.Instance);
         //
         using ProgressScope aPS = new(theRange, "Checking validity of edges", 2 * theLFImages.Extent());
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new(theLFImages);
+        NCollection_List<Shape>.Iterator aItLF = new(theLFImages);
         for (; aItLF.More(); aItLF.Next(), aPS.Next())
         {
             if (!aPS.More())
             {
                 return;
             }
-            TopoDS_Face aFIm = TopoDS.Face(aItLF.Value());
+            Face aFIm = ShapeCasts.Face(aItLF.Value());
             //
-            TopExp_Explorer aExp = new(aFIm, TopAbs_EDGE);
+            Explorer aExp = new(aFIm, ShapeType.Edge);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Shape aE = aExp.Current();
+                Shape aE = aExp.Current();
                 // keep all edges
                 aMEdges.Add(aE);
                 //
                 // keep connection from edges to faces
-                if (!aDMEF.FindFromKey(aE, out NCollection_List<TopoDS_Shape> pLF))
+                if (!aDMEF.FindFromKey(aE, out NCollection_List<Shape> pLF))
                 {
-                    pLF = aDMEF[aDMEF.Add(aE, new NCollection_List<TopoDS_Shape>())];
+                    pLF = aDMEF[aDMEF.Add(aE, new NCollection_List<Shape>())];
                 }
                 AppendToList(pLF, aFIm);
                 //
                 // keep connection from vertices to edges
-                TopoDS_Iterator aItV = new(aE);
+                Iterator aItV = new(aE);
                 for (; aItV.More(); aItV.Next())
                 {
-                    TopoDS_Shape aV = aItV.Value();
+                    Shape aV = aItV.Value();
                     //
-                    if (!aDMVE.FindFromKey(aV, out NCollection_List<TopoDS_Shape> pLE))
+                    if (!aDMVE.FindFromKey(aV, out NCollection_List<Shape> pLE))
                     {
-                        pLE = aDMVE[aDMVE.Add(aV, new NCollection_List<TopoDS_Shape>())];
+                        pLE = aDMVE[aDMVE.Add(aV, new NCollection_List<Shape>())];
                     }
                     AppendToList(pLE, aE);
                 }
 
                 // back map from original edges to their offset images
-                if (!myEdgesOrigins!.Find(aE, out NCollection_List<TopoDS_Shape> pLOr))
+                if (!myEdgesOrigins!.Find(aE, out NCollection_List<Shape> pLOr))
                 {
                     continue;
                 }
-                for (NCollection_List<TopoDS_Shape>.Iterator itOr = new(pLOr); itOr.More(); itOr.Next())
+                for (NCollection_List<Shape>.Iterator itOr = new(pLOr); itOr.More(); itOr.Next())
                 {
-                    TopoDS_Shape aSOr = itOr.Value();
-                    TopoDS_Shape aSInF = new();
+                    Shape aSOr = itOr.Value();
+                    Shape aSInF = new();
                     if (!FindShape(aSOr, aFOr, myAnalyzer, ref aSInF))
                     {
                         continue;
                     }
-                    if (!anImages.Find(aSInF, out NCollection_List<TopoDS_Shape> pImages))
+                    if (!anImages.Find(aSInF, out NCollection_List<Shape> pImages))
                     {
-                        pImages = new NCollection_List<TopoDS_Shape>();
+                        pImages = new NCollection_List<Shape>();
                         anImages.Bind(aSInF, pImages);
                     }
                     AppendToList(pImages, aE);
@@ -1534,7 +1539,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         //
         // the map will be used to find the edges on the original face
         // adjacent to the same vertex. It will be filled at first necessity;
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMVEFOr = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMVEFOr = new(ShapeHasher.Instance);
         //
         aItLF.Initialize(theLFImages);
         for (; aItLF.More(); aItLF.Next(), aPS.Next())
@@ -1543,34 +1548,34 @@ internal sealed class BRepOffset_BuildOffsetFaces
             {
                 return;
             }
-            TopoDS_Face aFIm = TopoDS.Face(aItLF.Value());
+            Face aFIm = ShapeCasts.Face(aItLF.Value());
             //
             // valid edges for this split
-            NCollection_Map<TopoDS_Shape> aMVE = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_Map<Shape> aMVE = new(ShapeHasher.Instance);
             // invalid edges for this split
-            NCollection_IndexedMap<TopoDS_Shape> aMIE = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_IndexedMap<Shape> aMIE = new(ShapeHasher.Instance);
             //
-            TopExp_Explorer aExp = new(aFIm, TopAbs_EDGE);
+            Explorer aExp = new(aFIm, ShapeType.Edge);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Edge aEIm = TopoDS.Edge(aExp.Current());
+                Edge aEIm = ShapeCasts.Edge(aExp.Current());
                 //
-                if (aEIm.Orientation() == TopAbs_INTERNAL)
+                if (aEIm.Orientation() == Internal)
                 {
                     aMEInt.Add(aEIm);
                     continue;
                 }
                 //
-                if (!myEdgesOrigins!.Find(aEIm, out NCollection_List<TopoDS_Shape> pLEOr) || pLEOr.IsEmpty())
+                if (!myEdgesOrigins!.Find(aEIm, out NCollection_List<Shape> pLEOr) || pLEOr.IsEmpty())
                 {
                     continue;
                 }
                 //
                 int aNbVOr = 0;
-                NCollection_List<TopoDS_Shape>.Iterator aItLEO = new(pLEOr);
+                NCollection_List<Shape>.Iterator aItLEO = new(pLEOr);
                 for (; aItLEO.More(); aItLEO.Next())
                 {
-                    if (aItLEO.Value().ShapeType() == TopAbs_VERTEX)
+                    if (aItLEO.Value().ShapeType() == ShapeType.Vertex)
                     {
                         ++aNbVOr;
                     }
@@ -1580,8 +1585,8 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     continue;
                 }
                 //
-                NCollection_Map<TopoDS_Shape> aME = new(TopTools_ShapeMapHasher.Instance), aMV = new(TopTools_ShapeMapHasher.Instance),
-                                              aMF = new(TopTools_ShapeMapHasher.Instance);
+                NCollection_Map<Shape> aME = new(ShapeHasher.Instance), aMV = new(ShapeHasher.Instance),
+                                              aMF = new(ShapeHasher.Instance);
                 bool bInvalid = false, bChecked = false;
                 int aNbP = NbPoints(aEIm), aNbInv = 0;
                 bool bUseVertex = aNbVOr == 0 ? false
@@ -1591,10 +1596,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 aItLEO.Initialize(pLEOr);
                 for (; aItLEO.More(); aItLEO.Next())
                 {
-                    TopoDS_Shape aSOr = aItLEO.Value();
-                    bool bVertex = (aSOr.ShapeType() == TopAbs_VERTEX);
+                    Shape aSOr = aItLEO.Value();
+                    bool bVertex = (aSOr.ShapeType() == ShapeType.Vertex);
                     //
-                    TopoDS_Shape aEOrF = new();
+                    Shape aEOrF = new();
                     if (bVertex)
                     {
                         // for some cases it is impossible to check the validity of the edge
@@ -1606,22 +1611,22 @@ internal sealed class BRepOffset_BuildOffsetFaces
                         if (aDMVEFOr.IsEmpty())
                         {
                             // fill the map
-                            TopExp.MapShapesAndAncestors(aFOr, TopAbs_VERTEX, TopAbs_EDGE, aDMVEFOr);
+                            Exploration.MapShapesAndAncestors(aFOr, ShapeType.Vertex, ShapeType.Edge, aDMVEFOr);
                         }
                         //
-                        if (aDMVEFOr.FindFromKey(aSOr, out NCollection_List<TopoDS_Shape> pLEFOr))
+                        if (aDMVEFOr.FindFromKey(aSOr, out NCollection_List<Shape> pLEFOr))
                         {
-                            TopoDS_Compound aCEOr = new();
-                            new BRep_Builder().MakeCompound(ref aCEOr);
+                            Compound aCEOr = new();
+                            new BrepBuilder().MakeCompound(ref aCEOr);
                             // Avoid classification of edges originated from vertices
                             // located between tangent edges
                             bool bAllTgt = true;
-                            NCollection_List<TopoDS_Shape>.Iterator aItLEFOr = new(pLEFOr);
+                            NCollection_List<Shape>.Iterator aItLEFOr = new(pLEFOr);
                             Vector3D aVRef = GetAverageTangent(aItLEFOr.Value(), aNbP);
                             for (; aItLEFOr.More(); aItLEFOr.Next())
                             {
-                                TopoDS_Shape aEOr = aItLEFOr.Value();
-                                new BRep_Builder().Add(aCEOr, aEOr);
+                                Shape aEOr = aItLEFOr.Value();
+                                new BrepBuilder().Add(aCEOr, aEOr);
 
                                 Vector3D aVCur = GetAverageTangent(aEOr, aNbP);
                                 if (!aVRef.IsParallel(aVCur, global::Kerf.Engine.Foundation.Precision.Angular()))
@@ -1639,15 +1644,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     {
                         FindShape(aSOr, aFOr, myAnalyzer, ref aEOrF);
                         //
-                        if (!theDMEOrLEIm.Find(aSOr, out NCollection_List<TopoDS_Shape> pLEIm))
+                        if (!theDMEOrLEIm.Find(aSOr, out NCollection_List<Shape> pLEIm))
                         {
-                            pLEIm = new NCollection_List<TopoDS_Shape>();
+                            pLEIm = new NCollection_List<Shape>();
                             theDMEOrLEIm.Bind(aSOr, pLEIm);
                         }
                         AppendToList(pLEIm, aEIm);
                     }
                     //
-                    if (aEOrF.IsNull())
+                    if (aEOrF.IsNull)
                     {
                         // the edge has not been found
                         continue;
@@ -1655,21 +1660,21 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
                     if (bVertex)
                     {
-                        NCollection_Map<TopoDS_Shape> aMVTotal = new(TopTools_ShapeMapHasher.Instance);
+                        NCollection_Map<Shape> aMVTotal = new(ShapeHasher.Instance);
                         int aNbChecked = 0;
                         // Just check if the original edges sharing the vertex do not share it any more.
-                        for (TopoDS_Iterator it = new(aEOrF); it.More(); it.Next())
+                        for (Iterator it = new(aEOrF); it.More(); it.Next())
                         {
-                            TopoDS_Shape aEOr = it.Value();
-                            if (!anImages.Find(aEOr, out NCollection_List<TopoDS_Shape> aLIm))
+                            Shape aEOr = it.Value();
+                            if (!anImages.Find(aEOr, out NCollection_List<Shape> aLIm))
                             {
                                 continue;
                             }
                             ++aNbChecked;
-                            NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMVLoc = new(TopTools_ShapeMapHasher.Instance);
-                            for (NCollection_List<TopoDS_Shape>.Iterator itLIM = new(aLIm); itLIM.More(); itLIM.Next())
+                            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMVLoc = new(ShapeHasher.Instance);
+                            for (NCollection_List<Shape>.Iterator itLIM = new(aLIm); itLIM.More(); itLIM.Next())
                             {
-                                TopExp.MapShapesAndAncestors(itLIM.Value(), TopAbs_VERTEX, TopAbs_EDGE, aMVLoc);
+                                Exploration.MapShapesAndAncestors(itLIM.Value(), ShapeType.Vertex, ShapeType.Edge, aMVLoc);
                             }
                             for (int i0 = 1; i0 <= aMVLoc.Extent(); ++i0)
                             {
@@ -1717,15 +1722,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
                         }
                         //
                         aME.Add(aEOrF);
-                        TopExp_Explorer aExpE = new(aEOrF, TopAbs_VERTEX);
+                        Explorer aExpE = new(aEOrF, ShapeType.Vertex);
                         for (; aExpE.More(); aExpE.Next())
                         {
-                            TopoDS_Shape aV = aExpE.Current();
+                            Shape aV = aExpE.Current();
                             aMV.Add(aV);
                         }
                         if (myAnalyzer is not null)
                         {
-                            for (NCollection_List<TopoDS_Shape>.Iterator itFA = new(myAnalyzer.Ancestors(aEOrF)); itFA.More(); itFA.Next())
+                            for (NCollection_List<Shape>.Iterator itFA = new(myAnalyzer.Ancestors(aEOrF)); itFA.More(); itFA.Next())
                             {
                                 aMF.Add(itFA.Value());
                             }
@@ -1761,10 +1766,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     {
                         if (theLFImages.Extent() > 2)
                         {
-                            TopoDS_Iterator itV = new(aEIm);
+                            Iterator itV = new(aEIm);
                             for (; itV.More(); itV.Next())
                             {
-                                NCollection_List<TopoDS_Shape>.Iterator itE = new(aDMVE.FindFromKey(itV.Value()));
+                                NCollection_List<Shape>.Iterator itE = new(aDMVE.FindFromKey(itV.Value()));
                                 for (; itE.More(); itE.Next())
                                 {
                                     if (aDMEF.FindFromKey(itE.Value()).Extent() < 2)
@@ -1830,14 +1835,14 @@ internal sealed class BRepOffset_BuildOffsetFaces
         //
         // process invalid edges:
         // check for the inverted edges
-        NCollection_Map<TopoDS_Shape> aMVIE = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMVIE = new(ShapeHasher.Instance);
         // fill neutral edges
-        NCollection_Map<TopoDS_Shape> aMNE = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMNE = new(ShapeHasher.Instance);
         //
         int i, aNbEInv = aMEInv.Extent();
         for (i = 1; i <= aNbEInv; ++i)
         {
-            TopoDS_Shape aEIm = aMEInv[i];
+            Shape aEIm = aMEInv[i];
             //
             // neutral edges - on the splits of the same offset face
             // it is valid for one split and invalid for other
@@ -1853,21 +1858,21 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 continue;
             }
             //
-            if (!myOEOrigins.Find(aEIm, out NCollection_List<TopoDS_Shape> pLOEOr))
+            if (!myOEOrigins.Find(aEIm, out NCollection_List<Shape> pLOEOr))
             {
                 continue;
             }
             //
-            NCollection_List<TopoDS_Shape>.Iterator aItLOEOr = new(pLOEOr);
+            NCollection_List<Shape>.Iterator aItLOEOr = new(pLOEOr);
             for (; aItLOEOr.More(); aItLOEOr.Next())
             {
-                TopoDS_Shape aOEOr = aItLOEOr.Value();
-                NCollection_List<TopoDS_Shape> aLEIm1 = myOEImages.Find(aOEOr);
+                Shape aOEOr = aItLOEOr.Value();
+                NCollection_List<Shape> aLEIm1 = myOEImages.Find(aOEOr);
                 //
-                NCollection_List<TopoDS_Shape>.Iterator aItLEIm1 = new(aLEIm1);
+                NCollection_List<Shape>.Iterator aItLEIm1 = new(aLEIm1);
                 for (; aItLEIm1.More(); aItLEIm1.Next())
                 {
-                    TopoDS_Shape aEIm1 = aItLEIm1.Value();
+                    Shape aEIm1 = aItLEIm1.Value();
                     if (aMEdges.Contains(aEIm1) && !aMEInv.Contains(aEIm1) && !aMEInt.Contains(aEIm1)
                         && myInvertedEdges.Contains(aEIm1))
                     {
@@ -1893,20 +1898,20 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : addAsNeutral
     // purpose  : Adds as the edge into corresponding maps making it neutral
     //=======================================================================
-    private static void addAsNeutral(in TopoDS_Shape theE, in TopoDS_Shape theFInv, in TopoDS_Shape theFVal,
-                                     NCollection_DataMap<TopoDS_Shape, NCollection_IndexedMap<TopoDS_Shape>> theLocInvEdges,
-                                     NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> theLocValidEdges)
+    private static void addAsNeutral(in Shape theE, in Shape theFInv, in Shape theFVal,
+                                     NCollection_DataMap<Shape, NCollection_IndexedMap<Shape>> theLocInvEdges,
+                                     NCollection_DataMap<Shape, NCollection_Map<Shape>> theLocValidEdges)
     {
-        if (!theLocInvEdges.Find(theFInv, out NCollection_IndexedMap<TopoDS_Shape> pMEInv))
+        if (!theLocInvEdges.Find(theFInv, out NCollection_IndexedMap<Shape> pMEInv))
         {
-            pMEInv = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            pMEInv = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
             theLocInvEdges.Bind(theFInv, pMEInv);
         }
         pMEInv.Add(theE);
 
-        if (!theLocValidEdges.Find(theFVal, out NCollection_Map<TopoDS_Shape> pMEVal))
+        if (!theLocValidEdges.Find(theFVal, out NCollection_Map<Shape> pMEVal))
         {
-            pMEVal = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            pMEVal = new NCollection_Map<Shape>(ShapeHasher.Instance);
             theLocValidEdges.Bind(theFVal, pMEVal);
         }
         pMEVal.Add(theE);
@@ -1916,32 +1921,32 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : FindInvalidEdges
     // purpose  : Additional method to look for invalid edges
     //=======================================================================
-    private void FindInvalidEdges(NCollection_List<TopoDS_Shape> theLFOffset,
-                                  NCollection_DataMap<TopoDS_Shape, NCollection_IndexedMap<TopoDS_Shape>> theLocInvEdges,
-                                  NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> theLocValidEdges,
-                                  NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> theNeutralEdges)
+    private void FindInvalidEdges(NCollection_List<Shape> theLFOffset,
+                                  NCollection_DataMap<Shape, NCollection_IndexedMap<Shape>> theLocInvEdges,
+                                  NCollection_DataMap<Shape, NCollection_Map<Shape>> theLocValidEdges,
+                                  NCollection_DataMap<Shape, NCollection_Map<Shape>> theNeutralEdges)
     {
         // 1. Find edges unclassified in faces
         // 2. Find SD faces in which the same edge is classified
         // 3. Check if the edge is neutral in face in which it wasn't classified
 
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> aMEUnclassified = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aFSplitFOffset = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_Map<Shape>> aMEUnclassified = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, Shape> aFSplitFOffset = new(ShapeHasher.Instance);
 
         // Avoid artificial faces
-        NCollection_Map<TopoDS_Shape> aNewFaces = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aNewFaces = new(ShapeHasher.Instance);
         if (myAnalyzer is not null)
         {
-            NCollection_Map<TopoDS_Shape> aMapNewTmp = new(TopTools_ShapeMapHasher.Instance);
-            for (NCollection_List<TopoDS_Shape>.Iterator it = new(myAnalyzer.NewFaces()); it.More(); it.Next())
+            NCollection_Map<Shape> aMapNewTmp = new(ShapeHasher.Instance);
+            for (NCollection_List<Shape>.Iterator it = new(myAnalyzer.NewFaces()); it.More(); it.Next())
             {
                 aMapNewTmp.Add(it.Value());
             }
 
-            for (NCollection_List<TopoDS_Shape>.Iterator it = new(theLFOffset); it.More(); it.Next())
+            for (NCollection_List<Shape>.Iterator it = new(theLFOffset); it.More(); it.Next())
             {
-                TopoDS_Shape aFOffset = it.Value();
-                TopoDS_Shape aFOrigin = myFacesOrigins!.Find(aFOffset);
+                Shape aFOffset = it.Value();
+                Shape aFOrigin = myFacesOrigins!.Find(aFOffset);
                 if (aMapNewTmp.Contains(aFOrigin))
                 {
                     aNewFaces.Add(aFOffset);
@@ -1949,28 +1954,28 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
         }
 
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anEFMap = new(TopTools_ShapeMapHasher.Instance);
-        for (NCollection_List<TopoDS_Shape>.Iterator itLFO = new(theLFOffset); itLFO.More(); itLFO.Next())
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anEFMap = new(ShapeHasher.Instance);
+        for (NCollection_List<Shape>.Iterator itLFO = new(theLFOffset); itLFO.More(); itLFO.Next())
         {
-            TopoDS_Shape aF = itLFO.Value();
+            Shape aF = itLFO.Value();
             if (aNewFaces.Contains(aF))
             {
                 continue;
             }
 
-            NCollection_List<TopoDS_Shape> aLFImages = myOFImages.FindFromKey(aF);
-            for (NCollection_List<TopoDS_Shape>.Iterator itLF = new(aLFImages); itLF.More(); itLF.Next())
+            NCollection_List<Shape> aLFImages = myOFImages.FindFromKey(aF);
+            for (NCollection_List<Shape>.Iterator itLF = new(aLFImages); itLF.More(); itLF.Next())
             {
-                TopoDS_Shape aFIm = itLF.Value();
+                Shape aFIm = itLF.Value();
 
-                TopExp.MapShapesAndAncestors(aFIm, TopAbs_EDGE, TopAbs_FACE, anEFMap);
+                Exploration.MapShapesAndAncestors(aFIm, ShapeType.Edge, ShapeType.Face, anEFMap);
 
-                theLocInvEdges.Find(aFIm, out NCollection_IndexedMap<TopoDS_Shape>? pMEInvalid);
-                theLocValidEdges.Find(aFIm, out NCollection_Map<TopoDS_Shape>? pMEValid);
+                theLocInvEdges.Find(aFIm, out NCollection_IndexedMap<Shape>? pMEInvalid);
+                theLocValidEdges.Find(aFIm, out NCollection_Map<Shape>? pMEValid);
 
-                for (TopExp_Explorer expE = new(aFIm, TopAbs_EDGE); expE.More(); expE.Next())
+                for (Explorer expE = new(aFIm, ShapeType.Edge); expE.More(); expE.Next())
                 {
-                    TopoDS_Shape aE = expE.Current();
+                    Shape aE = expE.Current();
                     if (myInvalidEdges.Contains(aE) != myValidEdges.Contains(aE))
                     {
                         // edge is classified in some face
@@ -1978,9 +1983,9 @@ internal sealed class BRepOffset_BuildOffsetFaces
                         if ((pMEInvalid is null || !pMEInvalid.Contains(aE)) && (pMEValid is null || !pMEValid.Contains(aE)))
                         {
                             // but not in the current one
-                            if (!aMEUnclassified.FindFromKey(aE, out NCollection_Map<TopoDS_Shape> pMap))
+                            if (!aMEUnclassified.FindFromKey(aE, out NCollection_Map<Shape> pMap))
                             {
-                                pMap = aMEUnclassified[aMEUnclassified.Add(aE, new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance))];
+                                pMap = aMEUnclassified[aMEUnclassified.Add(aE, new NCollection_Map<Shape>(ShapeHasher.Instance))];
                             }
                             pMap.Add(aFIm);
 
@@ -2000,71 +2005,71 @@ internal sealed class BRepOffset_BuildOffsetFaces
         int aNbE = aMEUnclassified.Extent();
         for (int iE = 1; iE <= aNbE; ++iE)
         {
-            TopoDS_Shape aE = aMEUnclassified.FindKey(iE);
-            NCollection_Map<TopoDS_Shape> aMFUnclassified = aMEUnclassified[iE];
+            Shape aE = aMEUnclassified.FindKey(iE);
+            NCollection_Map<Shape> aMFUnclassified = aMEUnclassified[iE];
 
-            NCollection_List<TopoDS_Shape> aLF = anEFMap.FindFromKey(aE);
+            NCollection_List<Shape> aLF = anEFMap.FindFromKey(aE);
 
-            for (NCollection_List<TopoDS_Shape>.Iterator itLF = new(aLF); itLF.More(); itLF.Next())
+            for (NCollection_List<Shape>.Iterator itLF = new(aLF); itLF.More(); itLF.Next())
             {
-                TopoDS_Shape aFClassified = itLF.Value();
+                Shape aFClassified = itLF.Value();
                 if (aMFUnclassified.Contains(aFClassified))
                 {
                     continue;
                 }
 
                 BOPTools_Set anEdgeSetClass = new();
-                anEdgeSetClass.Add(aFClassified, TopAbs_EDGE);
+                anEdgeSetClass.Add(aFClassified, ShapeType.Edge);
 
-                TopoDS_Shape aEClassified = new();
+                Shape aEClassified = new();
                 FindShape(aE, aFClassified, null, ref aEClassified);
-                TopAbs_Orientation anOriClass = aEClassified.Orientation();
+                Orientation anOriClass = aEClassified.Orientation();
 
-                BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(TopoDS.Edge(aEClassified), TopoDS.Face(aFClassified),
+                BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(ShapeCasts.Edge(aEClassified), ShapeCasts.Face(aFClassified),
                                                            out Direction3D aDNClass);
 
-                theLocInvEdges.Find(aFClassified, out NCollection_IndexedMap<TopoDS_Shape>? pMEInvalid);
+                theLocInvEdges.Find(aFClassified, out NCollection_IndexedMap<Shape>? pMEInvalid);
                 bool isInvalid = pMEInvalid is not null && pMEInvalid.Contains(aE);
 
                 // OCCT.NET: OCCT iterates the map by its faces' addresses; the port in insertion order (decision 1032).
-                foreach (TopoDS_Shape aFUnclassified in aMFUnclassified)
+                foreach (Shape aFUnclassified in aMFUnclassified)
                 {
                     BOPTools_Set anEdgeSetUnclass = new();
-                    anEdgeSetUnclass.Add(aFUnclassified, TopAbs_EDGE);
+                    anEdgeSetUnclass.Add(aFUnclassified, ShapeType.Edge);
 
                     if (anEdgeSetClass.IsEqual(anEdgeSetUnclass))
                     {
-                        BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(TopoDS.Edge(aE), TopoDS.Face(aFUnclassified),
+                        BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(ShapeCasts.Edge(aE), ShapeCasts.Face(aFUnclassified),
                                                                    out Direction3D aDNUnclass);
 
                         bool isSameOri = aDNClass.IsEqual(aDNUnclass, global::Kerf.Engine.Foundation.Precision.Angular());
 
                         // Among other splits of the same face find those where the edge is contained with
                         // different orientation
-                        TopoDS_Shape aFOffset = aFSplitFOffset.Find(aFUnclassified);
-                        NCollection_List<TopoDS_Shape> aLFSplits = myOFImages.FindFromKey(aFOffset);
-                        NCollection_List<TopoDS_Shape>.Iterator itLFSp = new(aLFSplits);
+                        Shape aFOffset = aFSplitFOffset.Find(aFUnclassified);
+                        NCollection_List<Shape> aLFSplits = myOFImages.FindFromKey(aFOffset);
+                        NCollection_List<Shape>.Iterator itLFSp = new(aLFSplits);
                         for (; itLFSp.More(); itLFSp.Next())
                         {
-                            TopoDS_Shape aFSp = itLFSp.Value();
+                            Shape aFSp = itLFSp.Value();
 
                             if (!aFSp.IsSame(aFUnclassified) && aMFUnclassified.Contains(aFSp))
                             {
-                                TopoDS_Shape aEUnclassified = new();
+                                Shape aEUnclassified = new();
                                 FindShape(aE, aFSp, null, ref aEUnclassified);
 
-                                TopAbs_Orientation anOriUnclass = aEUnclassified.Orientation();
+                                Orientation anOriUnclass = aEUnclassified.Orientation();
                                 if (!isSameOri)
                                 {
-                                    anOriUnclass = TopAbs.Reverse(anOriUnclass);
+                                    anOriUnclass = global::Kerf.Engine.Topology.TopAbs.Reverse(anOriUnclass);
                                 }
 
                                 if (anOriClass != anOriUnclass)
                                 {
                                     // make the edge neutral for the face
-                                    if (!theNeutralEdges.Find(aFOffset, out NCollection_Map<TopoDS_Shape> pMENeutral))
+                                    if (!theNeutralEdges.Find(aFOffset, out NCollection_Map<Shape> pMENeutral))
                                     {
-                                        pMENeutral = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+                                        pMENeutral = new NCollection_Map<Shape>(ShapeHasher.Instance);
                                         theNeutralEdges.Bind(aFOffset, pMENeutral);
                                     }
                                     pMENeutral.Add(aE);
@@ -2096,7 +2101,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : MakeInvertedEdgesInvalid
     // purpose  : Makes inverted edges located inside loop of invalid edges, invalid as well
     //=======================================================================
-    private void MakeInvertedEdgesInvalid(NCollection_List<TopoDS_Shape> theLFOffset)
+    private void MakeInvertedEdgesInvalid(NCollection_List<Shape> theLFOffset)
     {
         if (myInvalidEdges.IsEmpty() || myInvertedEdges.IsEmpty())
         {
@@ -2104,26 +2109,26 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
 
         // Map all invalid edges
-        TopoDS_Compound aCBEInv = new();
-        new BRep_Builder().MakeCompound(ref aCBEInv);
+        Compound aCBEInv = new();
+        new BrepBuilder().MakeCompound(ref aCBEInv);
         for (int i = 1; i <= myInvalidEdges.Extent(); ++i)
         {
-            new BRep_Builder().Add(aCBEInv, myInvalidEdges[i]);
+            new BrepBuilder().Add(aCBEInv, myInvalidEdges[i]);
         }
 
         // Make loops of invalid edges
-        NCollection_List<TopoDS_Shape> aLCB = new();
-        BOPTools_AlgoTools.MakeConnexityBlocks(aCBEInv, TopAbs_VERTEX, TopAbs_EDGE, aLCB);
+        NCollection_List<Shape> aLCB = new();
+        BOPTools_AlgoTools.MakeConnexityBlocks(aCBEInv, ShapeType.Vertex, ShapeType.Edge, aLCB);
 
         // Analyze each loop on closeness and use only closed ones
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aDMVCB = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, Shape> aDMVCB = new(ShapeHasher.Instance);
 
-        for (NCollection_List<TopoDS_Shape>.Iterator itLCB = new(aLCB); itLCB.More(); itLCB.Next())
+        for (NCollection_List<Shape>.Iterator itLCB = new(aLCB); itLCB.More(); itLCB.Next())
         {
-            TopoDS_Shape aCB = itLCB.Value();
+            Shape aCB = itLCB.Value();
 
-            NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMVE = new(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapesAndAncestors(aCB, TopAbs_VERTEX, TopAbs_EDGE, aDMVE);
+            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMVE = new(ShapeHasher.Instance);
+            Exploration.MapShapesAndAncestors(aCB, ShapeType.Vertex, ShapeType.Edge, aDMVE);
             bool isClosed = true;
             for (int iV = 1; iV <= aDMVE.Extent(); ++iV)
             {
@@ -2147,18 +2152,18 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
         // Check if any inverted edges of offset faces are locked inside the loops of invalid edges.
         // Make such edges invalid as well.
-        for (NCollection_List<TopoDS_Shape>.Iterator itLF = new(theLFOffset); itLF.More(); itLF.Next())
+        for (NCollection_List<Shape>.Iterator itLF = new(theLFOffset); itLF.More(); itLF.Next())
         {
-            NCollection_List<TopoDS_Shape> aLFIm = myOFImages.FindFromKey(itLF.Value());
-            for (NCollection_List<TopoDS_Shape>.Iterator itLFIm = new(aLFIm); itLFIm.More(); itLFIm.Next())
+            NCollection_List<Shape> aLFIm = myOFImages.FindFromKey(itLF.Value());
+            for (NCollection_List<Shape>.Iterator itLFIm = new(aLFIm); itLFIm.More(); itLFIm.Next())
             {
-                for (TopExp_Explorer expE = new(itLFIm.Value(), TopAbs_EDGE); expE.More(); expE.Next())
+                for (Explorer expE = new(itLFIm.Value(), ShapeType.Edge); expE.More(); expE.Next())
                 {
-                    TopoDS_Edge aE = TopoDS.Edge(expE.Current());
+                    Edge aE = ShapeCasts.Edge(expE.Current());
                     if (!myInvalidEdges.Contains(aE) && myInvertedEdges.Contains(aE))
                     {
-                        bool bCB1 = aDMVCB.Find(TopExp.FirstVertex(aE), out TopoDS_Shape pCB1);
-                        bool bCB2 = aDMVCB.Find(TopExp.LastVertex(aE), out TopoDS_Shape pCB2);
+                        bool bCB1 = aDMVCB.Find(Exploration.FirstVertex(aE), out Shape pCB1);
+                        bool bCB2 = aDMVCB.Find(Exploration.LastVertex(aE), out Shape pCB2);
                         if (bCB1 && bCB2 && pCB1.IsSame(pCB2))
                         {
                             myInvalidEdges.Add(aE);
@@ -2173,16 +2178,16 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : FindInvalidFaces
     // purpose  : Looking for the invalid faces by analyzing their invalid edges
     //=======================================================================
-    private void FindInvalidFaces(NCollection_List<TopoDS_Shape> theLFImages,
-                                  NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> theDMFMVE,
-                                  NCollection_DataMap<TopoDS_Shape, NCollection_IndexedMap<TopoDS_Shape>> theDMFMIE,
-                                  NCollection_Map<TopoDS_Shape> theMENeutral,
-                                  NCollection_Map<TopoDS_Shape> theEdgesInvalidByVertex,
-                                  NCollection_Map<TopoDS_Shape> theEdgesValidByVertex,
-                                  NCollection_Map<TopoDS_Shape> theMFHoles,
-                                  NCollection_IndexedMap<TopoDS_Shape> theMFInvInHole,
-                                  NCollection_List<TopoDS_Shape> theInvFaces,
-                                  NCollection_List<TopoDS_Shape> theInvertedFaces)
+    private void FindInvalidFaces(NCollection_List<Shape> theLFImages,
+                                  NCollection_DataMap<Shape, NCollection_Map<Shape>> theDMFMVE,
+                                  NCollection_DataMap<Shape, NCollection_IndexedMap<Shape>> theDMFMIE,
+                                  NCollection_Map<Shape> theMENeutral,
+                                  NCollection_Map<Shape> theEdgesInvalidByVertex,
+                                  NCollection_Map<Shape> theEdgesValidByVertex,
+                                  NCollection_Map<Shape> theMFHoles,
+                                  NCollection_IndexedMap<Shape> theMFInvInHole,
+                                  NCollection_List<Shape> theInvFaces,
+                                  NCollection_List<Shape> theInvertedFaces)
     {
         // The face should be considered as invalid in the following cases:
         // 1. It has been reverted, i.e. at least two not connected edges
@@ -2202,28 +2207,28 @@ internal sealed class BRepOffset_BuildOffsetFaces
         bool bTreatInvertedAsInvalid = (theLFImages.Extent() == 1);
         //
         // neutral edges to remove
-        NCollection_IndexedMap<TopoDS_Shape> aMENRem = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> aMENRem = new(ShapeHasher.Instance);
         //
         // faces for post treat
-        NCollection_List<TopoDS_Shape> aLFPT = new();
+        NCollection_List<Shape> aLFPT = new();
         //
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMEF = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new(theLFImages);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMEF = new(ShapeHasher.Instance);
+        NCollection_List<Shape>.Iterator aItLF = new(theLFImages);
         for (; aItLF.More(); aItLF.Next())
         {
-            TopoDS_Face aFIm = TopoDS.Face(aItLF.Value());
-            TopExp.MapShapesAndAncestors(aFIm, TopAbs_EDGE, TopAbs_FACE, aDMEF);
+            Face aFIm = ShapeCasts.Face(aItLF.Value());
+            Exploration.MapShapesAndAncestors(aFIm, ShapeType.Edge, ShapeType.Face, aDMEF);
         }
 
         aItLF.Initialize(theLFImages);
         for (; aItLF.More();)
         {
-            TopoDS_Face aFIm = TopoDS.Face(aItLF.Value());
+            Face aFIm = ShapeCasts.Face(aItLF.Value());
             //
             // valid edges for this split
-            theDMFMVE.Find(aFIm, out NCollection_Map<TopoDS_Shape>? pMVE);
+            theDMFMVE.Find(aFIm, out NCollection_Map<Shape>? pMVE);
             // invalid edges for this split
-            theDMFMIE.Find(aFIm, out NCollection_IndexedMap<TopoDS_Shape>? pMIE);
+            theDMFMIE.Find(aFIm, out NCollection_IndexedMap<Shape>? pMIE);
             //
             bHasValid = false;
             bAllValid = true;
@@ -2234,11 +2239,11 @@ internal sealed class BRepOffset_BuildOffsetFaces
             bHasInverted = false;
             aNbChecked = 0;
             //
-            TopoDS_Wire aWIm = BRepTools.OuterWire(aFIm);
-            TopExp_Explorer aExp = new(aWIm, TopAbs_EDGE);
+            Wire aWIm = BrepTools.OuterWire(aFIm);
+            Explorer aExp = new(aWIm, ShapeType.Edge);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Shape aEIm = aExp.Current();
+                Shape aEIm = aExp.Current();
                 //
                 bValid = myValidEdges.Contains(aEIm);
                 bInvalid = myInvalidEdges.Contains(aEIm);
@@ -2301,7 +2306,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     continue;
                 }
                 // remove edges from neutral
-                TopExp.MapShapes(aFIm, TopAbs_EDGE, aMENRem);
+                Exploration.MapShapes(aFIm, ShapeType.Edge, aMENRem);
                 // remove face
                 theLFImages.Remove(aItLF);
                 continue;
@@ -2321,7 +2326,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             if (theMFHoles.Contains(aFIm))
             {
                 // remove edges from neutral
-                TopExp.MapShapes(aFIm, TopAbs_EDGE, aMENRem);
+                Exploration.MapShapes(aFIm, ShapeType.Edge, aMENRem);
                 // remove face
                 theLFImages.Remove(aItLF);
                 continue;
@@ -2340,7 +2345,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             else
             {
                 // remove edges from neutral
-                TopExp.MapShapes(aFIm, TopAbs_EDGE, aMENRem);
+                Exploration.MapShapes(aFIm, ShapeType.Edge, aMENRem);
             }
             aItLF.Next();
         }
@@ -2354,20 +2359,20 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aItLF.Initialize(aLFPT);
         for (; aItLF.More(); aItLF.Next())
         {
-            TopoDS_Face aFIm = TopoDS.Face(aItLF.Value());
+            Face aFIm = ShapeCasts.Face(aItLF.Value());
             //
             // valid edges for this split
-            theDMFMVE.Find(aFIm, out NCollection_Map<TopoDS_Shape>? pMVE);
+            theDMFMVE.Find(aFIm, out NCollection_Map<Shape>? pMVE);
             //
             bHasValid = false;
             bAllValid = true;
             bAllInvalid = true;
             //
-            TopoDS_Wire aWIm = BRepTools.OuterWire(aFIm);
-            TopExp_Explorer aExp = new(aWIm, TopAbs_EDGE);
+            Wire aWIm = BrepTools.OuterWire(aFIm);
+            Explorer aExp = new(aWIm, ShapeType.Edge);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Shape aEIm = aExp.Current();
+                Shape aEIm = aExp.Current();
                 //
                 bValid = myValidEdges.Contains(aEIm);
                 bInvalid = myInvalidEdges.Contains(aEIm);
@@ -2399,11 +2404,11 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : FindFacesInsideHoleWires
     // purpose  : Find faces inside holes wires from the original face
     //=======================================================================
-    private void FindFacesInsideHoleWires(in TopoDS_Face theFOrigin, in TopoDS_Face theFOffset,
-                                          NCollection_List<TopoDS_Shape> theLFImages,
-                                          NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMEOrLEIm,
-                                          NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEFMap,
-                                          NCollection_Map<TopoDS_Shape> theMFHoles)
+    private void FindFacesInsideHoleWires(in Face theFOrigin, in Face theFOffset,
+                                          NCollection_List<Shape> theLFImages,
+                                          NCollection_DataMap<Shape, NCollection_List<Shape>> theDMEOrLEIm,
+                                          NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theEFMap,
+                                          NCollection_Map<Shape> theMFHoles)
     {
         if (theLFImages.IsEmpty())
         {
@@ -2411,13 +2416,13 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         //
         // find all hole wires in the original face
-        NCollection_List<TopoDS_Shape> aLHoleWires = new();
-        TopoDS_Wire anOuterWire = BRepTools.OuterWire(theFOrigin);
-        TopExp_Explorer aExpW = new(theFOrigin, TopAbs_WIRE);
+        NCollection_List<Shape> aLHoleWires = new();
+        Wire anOuterWire = BrepTools.OuterWire(theFOrigin);
+        Explorer aExpW = new(theFOrigin, ShapeType.Wire);
         for (; aExpW.More(); aExpW.Next())
         {
-            TopoDS_Wire aHoleWire = TopoDS.Wire(aExpW.Current());
-            if (!aHoleWire.IsSame(anOuterWire) && aHoleWire.Orientation() != TopAbs_INTERNAL)
+            Wire aHoleWire = ShapeCasts.Wire(aExpW.Current());
+            if (!aHoleWire.IsSame(anOuterWire) && aHoleWire.Orientation() != Internal)
             {
                 aLHoleWires.Append(aHoleWire);
             }
@@ -2429,9 +2434,9 @@ internal sealed class BRepOffset_BuildOffsetFaces
             return;
         }
         //
-        if (!myFNewHoles.Find(theFOrigin, out NCollection_List<TopoDS_Shape> pLFNewHoles))
+        if (!myFNewHoles.Find(theFOrigin, out NCollection_List<Shape> pLFNewHoles))
         {
-            pLFNewHoles = new NCollection_List<TopoDS_Shape>();
+            pLFNewHoles = new NCollection_List<Shape>();
             myFNewHoles.Bind(theFOrigin, pLFNewHoles);
         }
         if (pLFNewHoles.IsEmpty())
@@ -2442,31 +2447,31 @@ internal sealed class BRepOffset_BuildOffsetFaces
             // 2. build the new planar face from the images
             //
             // map vertices and edges of the splits
-            NCollection_IndexedMap<TopoDS_Shape> aMESplits = new(TopTools_ShapeMapHasher.Instance);
-            NCollection_List<TopoDS_Shape>.Iterator aItLF0 = new(theLFImages);
+            NCollection_IndexedMap<Shape> aMESplits = new(ShapeHasher.Instance);
+            NCollection_List<Shape>.Iterator aItLF0 = new(theLFImages);
             for (; aItLF0.More(); aItLF0.Next())
             {
-                TopExp.MapShapes(aItLF0.Value(), TopAbs_EDGE, aMESplits);
+                Exploration.MapShapes(aItLF0.Value(), ShapeType.Edge, aMESplits);
             }
             //
-            NCollection_List<TopoDS_Shape>.Iterator aItLW = new(aLHoleWires);
+            NCollection_List<Shape>.Iterator aItLW = new(aLHoleWires);
             for (; aItLW.More(); aItLW.Next())
             {
-                TopoDS_Wire aHoleWire = TopoDS.Wire(aItLW.Value());
+                Wire aHoleWire = ShapeCasts.Wire(aItLW.Value());
                 // find images of all edges of the original wire
-                NCollection_IndexedMap<TopoDS_Shape> aMEImWire = new(TopTools_ShapeMapHasher.Instance);
-                TopoDS_Iterator aItE = new(aHoleWire);
+                NCollection_IndexedMap<Shape> aMEImWire = new(ShapeHasher.Instance);
+                Iterator aItE = new(aHoleWire);
                 for (; aItE.More(); aItE.Next())
                 {
-                    TopoDS_Shape aEOr = aItE.Value();
-                    if (!theDMEOrLEIm.Find(aEOr, out NCollection_List<TopoDS_Shape> pLEIm) || pLEIm.IsEmpty())
+                    Shape aEOr = aItE.Value();
+                    if (!theDMEOrLEIm.Find(aEOr, out NCollection_List<Shape> pLEIm) || pLEIm.IsEmpty())
                     {
                         continue;
                     }
-                    NCollection_List<TopoDS_Shape>.Iterator aItLEIm = new(pLEIm);
+                    NCollection_List<Shape>.Iterator aItLEIm = new(pLEIm);
                     for (; aItLEIm.More(); aItLEIm.Next())
                     {
-                        TopoDS_Shape aEIm = aItLEIm.Value();
+                        Shape aEIm = aItLEIm.Value();
                         if (aMESplits.Contains(aEIm))
                         {
                             aMEImWire.Add(aEIm);
@@ -2480,20 +2485,20 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 }
                 //
                 // build new planar face using these edges
-                NCollection_List<TopoDS_Shape> aLE = new();
+                NCollection_List<Shape> aLE = new();
                 int i, aNbE0 = aMEImWire.Extent();
                 for (i = 1; i <= aNbE0; ++i)
                 {
-                    aLE.Append(aMEImWire[i].Oriented(TopAbs_FORWARD));
-                    aLE.Append(aMEImWire[i].Oriented(TopAbs_REVERSED));
+                    aLE.Append(aMEImWire[i].Oriented(Forward));
+                    aLE.Append(aMEImWire[i].Oriented(Reversed));
                 }
                 //
                 BOPAlgo_BuilderFace aBF = new();
-                aBF.SetFace(TopoDS.Face(theFOffset.Oriented(TopAbs_FORWARD)));
+                aBF.SetFace(ShapeCasts.Face(theFOffset.Oriented(Forward)));
                 aBF.SetShapes(aLE);
                 aBF.Perform();
                 //
-                NCollection_List<TopoDS_Shape> aLFNew = aBF.Areas();
+                NCollection_List<Shape> aLFNew = aBF.Areas();
                 if (aLFNew.IsEmpty())
                 {
                     continue;
@@ -2502,11 +2507,11 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 // check if outer edges in the new faces are not inverted
                 // because the inverted edges mean that the hole has been
                 // filled during offset and there will be no faces to remove
-                NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMEFNew = new(TopTools_ShapeMapHasher.Instance);
-                NCollection_List<TopoDS_Shape>.Iterator aItLFNew = new(aLFNew);
+                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMEFNew = new(ShapeHasher.Instance);
+                NCollection_List<Shape>.Iterator aItLFNew = new(aLFNew);
                 for (; aItLFNew.More(); aItLFNew.Next())
                 {
-                    TopExp.MapShapesAndAncestors(aItLFNew.Value(), TopAbs_EDGE, TopAbs_FACE, aDMEFNew);
+                    Exploration.MapShapesAndAncestors(aItLFNew.Value(), ShapeType.Edge, ShapeType.Face, aDMEFNew);
                 }
                 //
                 aNbE0 = aDMEFNew.Extent();
@@ -2514,7 +2519,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 {
                     if (aDMEFNew[i].Extent() == 1)
                     {
-                        TopoDS_Shape aE = aDMEFNew.FindKey(i);
+                        Shape aE = aDMEFNew.FindKey(i);
                         if (myInvertedEdges.Contains(aE))
                         {
                             break;
@@ -2536,17 +2541,17 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
 
         // Build Edge-Face map for splits of current offset face
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anEFSplitsMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anEFSplitsMap = new(ShapeHasher.Instance);
         // Build Edge-Face map for holes
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anEFHolesMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anEFHolesMap = new(ShapeHasher.Instance);
 
         // among the splits of the offset face find those that are
         // located inside the hole faces
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new(theLFImages);
+        NCollection_List<Shape>.Iterator aItLF = new(theLFImages);
         for (; aItLF.More(); aItLF.Next())
         {
-            TopoDS_Face aFIm = TopoDS.Face(aItLF.Value());
-            TopExp.MapShapesAndAncestors(aFIm, TopAbs_EDGE, TopAbs_FACE, anEFSplitsMap);
+            Face aFIm = ShapeCasts.Face(aItLF.Value());
+            Exploration.MapShapesAndAncestors(aFIm, ShapeType.Edge, ShapeType.Face, anEFSplitsMap);
             // get the point inside the face and classify it relatively hole faces
             Point3D aP3D = new();
             Point2D aP2D = new();
@@ -2556,17 +2561,17 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 continue;
             }
             //
-            double aTol = BRep_Tool.Tolerance(aFIm);
+            double aTol = Tool.Tolerance(aFIm);
             //
-            NCollection_List<TopoDS_Shape>.Iterator aItLFNew = new(pLFNewHoles);
+            NCollection_List<Shape>.Iterator aItLFNew = new(pLFNewHoles);
             for (; aItLFNew.More(); aItLFNew.Next())
             {
-                TopoDS_Face aFNew = TopoDS.Face(aItLFNew.Value());
+                Face aFNew = ShapeCasts.Face(aItLFNew.Value());
                 if (myContext.IsValidPointForFace(aP3D, aFNew, aTol))
                 {
                     // the face is classified as IN
                     theMFHoles.Add(aFIm);
-                    TopExp.MapShapesAndAncestors(aFIm, TopAbs_EDGE, TopAbs_FACE, anEFHolesMap);
+                    Exploration.MapShapesAndAncestors(aFIm, ShapeType.Edge, ShapeType.Face, anEFHolesMap);
                     break;
                 }
             }
@@ -2578,15 +2583,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
         int aNbE = anEFHolesMap.Extent();
         for (int i = 1; i <= aNbE; ++i)
         {
-            TopoDS_Shape anEdge = anEFHolesMap.FindKey(i);
-            NCollection_List<TopoDS_Shape> aLFHoles = anEFHolesMap[i];
+            Shape anEdge = anEFHolesMap.FindKey(i);
+            NCollection_List<Shape> aLFHoles = anEFHolesMap[i];
             // Check if the edge is outer for holes
             if (aLFHoles.Extent() != 1)
             {
                 continue;
             }
 
-            TopoDS_Shape aFHole = aLFHoles.First();
+            Shape aFHole = aLFHoles.First();
             if (!theMFHoles.Contains(aFHole))
             {
                 // Already removed
@@ -2594,14 +2599,14 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
 
             // Check if the edge is not outer for splits
-            NCollection_List<TopoDS_Shape> aLSplits = anEFSplitsMap.FindFromKey(anEdge);
+            NCollection_List<Shape> aLSplits = anEFSplitsMap.FindFromKey(anEdge);
             if (aLSplits.Extent() == 1)
             {
                 continue;
             }
 
             // Check if edge is only connected to splits of the current offset face
-            NCollection_List<TopoDS_Shape> aLFAll = theEFMap.FindFromKey(anEdge);
+            NCollection_List<Shape> aLFAll = theEFMap.FindFromKey(anEdge);
             if (aLFAll.Extent() == 2)
             {
                 // Avoid removal of the hole from the splits
@@ -2614,58 +2619,58 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : CheckInverted
     // purpose  : Checks if the edge has been inverted
     //=======================================================================
-    private bool CheckInverted(in TopoDS_Edge theEIm, in TopoDS_Face theFOr,
-                               NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMVE,
-                               NCollection_IndexedMap<TopoDS_Shape> theMEdges)
+    private bool CheckInverted(in Edge theEIm, in Face theFOr,
+                               NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theDMVE,
+                               NCollection_IndexedMap<Shape> theMEdges)
     {
         // It is necessary to compare the direction from first vertex
         // to the last vertex on the original edge with the
         // same direction on the new edge. If the directions
         // will be different - the edge has been inverted.
         //
-        TopoDS_Vertex aVO1 = new(), aVO2 = new(); // vertices on the original edge
+        Vertex aVO1 = new(), aVO2 = new(); // vertices on the original edge
         //
         int i;
         // find vertices of the offset shape
-        TopExp.Vertices(theEIm, out TopoDS_Vertex aVI1, out TopoDS_Vertex aVI2); // vertices on the offset edge
+        Exploration.Vertices(theEIm, out Vertex aVI1, out Vertex aVI2); // vertices on the offset edge
         //
         // find images
-        NCollection_List<TopoDS_Shape> aLEImages = new();
+        NCollection_List<Shape> aLEImages = new();
         if (myOEOrigins.IsBound(theEIm))
         {
-            TopoDS_Wire anImages = new();
-            new BRep_Builder().MakeWire(ref anImages);
+            Wire anImages = new();
+            new BrepBuilder().MakeWire(ref anImages);
             //
-            NCollection_Map<TopoDS_Shape> aMImFence = new(TopTools_ShapeMapHasher.Instance);
-            NCollection_List<TopoDS_Shape> aLOffsetOr = myOEOrigins.Find(theEIm);
-            NCollection_List<TopoDS_Shape>.Iterator aItOffset = new(aLOffsetOr);
+            NCollection_Map<Shape> aMImFence = new(ShapeHasher.Instance);
+            NCollection_List<Shape> aLOffsetOr = myOEOrigins.Find(theEIm);
+            NCollection_List<Shape>.Iterator aItOffset = new(aLOffsetOr);
             for (; aItOffset.More(); aItOffset.Next())
             {
-                TopoDS_Shape aEOffsetOr = aItOffset.Value();
-                NCollection_List<TopoDS_Shape> aLImages = myOEImages.Find(aEOffsetOr);
+                Shape aEOffsetOr = aItOffset.Value();
+                NCollection_List<Shape> aLImages = myOEImages.Find(aEOffsetOr);
                 //
-                NCollection_List<TopoDS_Shape>.Iterator aItImages = new(aLImages);
+                NCollection_List<Shape>.Iterator aItImages = new(aLImages);
                 for (; aItImages.More(); aItImages.Next())
                 {
-                    TopoDS_Edge anIm = TopoDS.Edge(aItImages.Value());
+                    Edge anIm = ShapeCasts.Edge(aItImages.Value());
                     if (theMEdges.Contains(anIm) && aMImFence.Add(anIm))
                     {
-                        new BRep_Builder().Add(anImages, anIm);
+                        new BrepBuilder().Add(anImages, anIm);
                         aLEImages.Append(anIm);
                     }
                 }
             }
             //
             // find alone vertices
-            TopoDS_Vertex aVW1, aVW2;
-            NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMImVE = new(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapesAndAncestors(anImages, TopAbs_VERTEX, TopAbs_EDGE, aDMImVE);
+            Vertex aVW1, aVW2;
+            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMImVE = new(ShapeHasher.Instance);
+            Exploration.MapShapesAndAncestors(anImages, ShapeType.Vertex, ShapeType.Edge, aDMImVE);
             //
-            NCollection_List<TopoDS_Shape> aLVAlone = new();
+            NCollection_List<Shape> aLVAlone = new();
             int aNb = aDMImVE.Extent();
             for (i = 1; i <= aNb; ++i)
             {
-                NCollection_List<TopoDS_Shape> aLImE = aDMImVE[i];
+                NCollection_List<Shape> aLImE = aDMImVE[i];
                 if (aLImE.Extent() == 1)
                 {
                     aLVAlone.Append(aDMImVE.FindKey(i));
@@ -2674,13 +2679,13 @@ internal sealed class BRepOffset_BuildOffsetFaces
             //
             if (aLVAlone.Extent() > 1)
             {
-                aVW1 = TopoDS.Vertex(aLVAlone.First());
-                aVW2 = TopoDS.Vertex(aLVAlone.Last());
+                aVW1 = ShapeCasts.Vertex(aLVAlone.First());
+                aVW2 = ShapeCasts.Vertex(aLVAlone.Last());
                 //
                 // check distances
-                Point3D aPI1_ = BRep_Tool.Pnt(aVI1);
-                Point3D aPW1 = BRep_Tool.Pnt(aVW1);
-                Point3D aPW2 = BRep_Tool.Pnt(aVW2);
+                Point3D aPI1_ = Tool.Pnt(aVI1);
+                Point3D aPW1 = Tool.Pnt(aVW1);
+                Point3D aPW2 = Tool.Pnt(aVW2);
                 //
                 double aDist1 = aPI1_.SquareDistance(aPW1);
                 double aDist2 = aPI1_.SquareDistance(aPW2);
@@ -2703,35 +2708,35 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         //
         // Find edges connected to these vertices
-        NCollection_List<TopoDS_Shape> aLIE1 = theDMVE.FindFromKey(aVI1);
-        NCollection_List<TopoDS_Shape> aLIE2 = theDMVE.FindFromKey(aVI2);
+        NCollection_List<Shape> aLIE1 = theDMVE.FindFromKey(aVI1);
+        NCollection_List<Shape> aLIE2 = theDMVE.FindFromKey(aVI2);
         //
         // Find vertices on the original face corresponding to vertices on the offset edge
         //
         // find original edges for both lists
-        NCollection_List<TopoDS_Shape> aLOE1 = new(), aLOE2 = new();
+        NCollection_List<Shape> aLOE1 = new(), aLOE2 = new();
         for (i = 0; i < 2; ++i)
         {
-            NCollection_List<TopoDS_Shape> aLIE = i == 0 ? aLIE1 : aLIE2;
-            NCollection_List<TopoDS_Shape> aLOE = i == 0 ? aLOE1 : aLOE2;
+            NCollection_List<Shape> aLIE = i == 0 ? aLIE1 : aLIE2;
+            NCollection_List<Shape> aLOE = i == 0 ? aLOE1 : aLOE2;
             //
-            NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
             //
-            NCollection_List<TopoDS_Shape>.Iterator aItLIE = new(aLIE);
+            NCollection_List<Shape>.Iterator aItLIE = new(aLIE);
             for (; aItLIE.More(); aItLIE.Next())
             {
-                TopoDS_Shape aEI = aItLIE.Value();
+                Shape aEI = aItLIE.Value();
                 if (myEdgesOrigins!.IsBound(aEI))
                 {
-                    NCollection_List<TopoDS_Shape> aLEOrigins = myEdgesOrigins.Find(aEI);
+                    NCollection_List<Shape> aLEOrigins = myEdgesOrigins.Find(aEI);
                     //
-                    NCollection_List<TopoDS_Shape>.Iterator aItLOE = new(aLEOrigins);
+                    NCollection_List<Shape>.Iterator aItLOE = new(aLEOrigins);
                     for (; aItLOE.More(); aItLOE.Next())
                     {
-                        TopoDS_Shape aEO = aItLOE.Value();
-                        if (aEO.ShapeType() == TopAbs_EDGE && aMFence.Add(aEO))
+                        Shape aEO = aItLOE.Value();
+                        if (aEO.ShapeType() == ShapeType.Edge && aMFence.Add(aEO))
                         {
-                            TopoDS_Shape aEOin = new();
+                            Shape aEOin = new();
                             if (FindShape(aEO, theFOr, null, ref aEOin))
                             {
                                 AppendToList(aLOE, aEO);
@@ -2750,13 +2755,13 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // find vertices common for the max number of edges in the lists
         for (i = 0; i < 2; ++i)
         {
-            NCollection_List<TopoDS_Shape> aLOE = i == 0 ? aLOE1 : aLOE2;
-            ref TopoDS_Vertex aVO = ref (i == 0 ? ref aVO1 : ref aVO2);
+            NCollection_List<Shape> aLOE = i == 0 ? aLOE1 : aLOE2;
+            ref Vertex aVO = ref (i == 0 ? ref aVO1 : ref aVO2);
 
-            NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMVELoc = new(TopTools_ShapeMapHasher.Instance);
-            for (NCollection_List<TopoDS_Shape>.Iterator itLOE = new(aLOE); itLOE.More(); itLOE.Next())
+            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMVELoc = new(ShapeHasher.Instance);
+            for (NCollection_List<Shape>.Iterator itLOE = new(aLOE); itLOE.More(); itLOE.Next())
             {
-                TopExp.MapShapesAndAncestors(itLOE.Value(), TopAbs_VERTEX, TopAbs_EDGE, aDMVELoc);
+                Exploration.MapShapesAndAncestors(itLOE.Value(), ShapeType.Vertex, ShapeType.Edge, aDMVELoc);
             }
 
             int aNbEMax = 0;
@@ -2765,11 +2770,11 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 int aNbE = aDMVELoc[j].Extent();
                 if (aNbE > 1 && aNbE > aNbEMax)
                 {
-                    aVO = TopoDS.Vertex(aDMVELoc.FindKey(j));
+                    aVO = ShapeCasts.Vertex(aDMVELoc.FindKey(j));
                     aNbEMax = aNbE;
                 }
             }
-            if (aVO.IsNull())
+            if (aVO.IsNull)
             {
                 return false;
             }
@@ -2781,10 +2786,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         //
         // check positions of the offset and original vertices
-        Point3D aPI1 = BRep_Tool.Pnt(aVI1);
-        Point3D aPI2 = BRep_Tool.Pnt(aVI2);
-        Point3D aPO1 = BRep_Tool.Pnt(aVO1);
-        Point3D aPO2 = BRep_Tool.Pnt(aVO2);
+        Point3D aPI1 = Tool.Pnt(aVI1);
+        Point3D aPI2 = Tool.Pnt(aVI2);
+        Point3D aPO1 = Tool.Pnt(aVO1);
+        Point3D aPO2 = Tool.Pnt(aVO2);
         //
         Vector3D aVI = new(aPI1, aPI2);
         Vector3D aVOv = new(aPO1, aPO2);
@@ -2793,10 +2798,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
         bool bInverted = Math.Abs(anAngle - M_PI) < 1.0e-4;
         if (bInverted)
         {
-            NCollection_List<TopoDS_Shape>.Iterator aItLEIm = new(aLEImages);
+            NCollection_List<Shape>.Iterator aItLEIm = new(aLEImages);
             for (; aItLEIm.More(); aItLEIm.Next())
             {
-                TopoDS_Shape aEInvr = aItLEIm.Value();
+                Shape aEInvr = aItLEIm.Value();
                 myInvertedEdges.Add(aEInvr);
             }
         }
@@ -2807,16 +2812,16 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : GetVerticesOnEdges
     // purpose  : Get vertices from the given shape belonging to the given edges
     //=======================================================================
-    private static void GetVerticesOnEdges(in TopoDS_Shape theCB, NCollection_IndexedMap<TopoDS_Shape> theEdges,
-                                           NCollection_Map<TopoDS_Shape> theVerticesOnEdges,
-                                           NCollection_Map<TopoDS_Shape> theAllVertices)
+    private static void GetVerticesOnEdges(in Shape theCB, NCollection_IndexedMap<Shape> theEdges,
+                                           NCollection_Map<Shape> theVerticesOnEdges,
+                                           NCollection_Map<Shape> theAllVertices)
     {
-        TopExp_Explorer aExp = new(theCB, TopAbs_EDGE);
+        Explorer aExp = new(theCB, ShapeType.Edge);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Shape aE = aExp.Current();
+            Shape aE = aExp.Current();
             bool isOnGivenEdges = theEdges.Contains(aE);
-            for (TopoDS_Iterator aItV = new(aE); aItV.More(); aItV.Next())
+            for (Iterator aItV = new(aE); aItV.More(); aItV.Next())
             {
                 theAllVertices.Add(aItV.Value());
                 if (isOnGivenEdges)
@@ -2831,32 +2836,32 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : CheckInvertedBlock
     // purpose  : Checks if it is possible to remove the block containing inverted edges
     //=======================================================================
-    private bool CheckInvertedBlock(in TopoDS_Shape theCB, NCollection_List<TopoDS_Shape> theLCBF,
-                                    NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> theDMCBVInverted,
-                                    NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> theDMCBVAll)
+    private bool CheckInvertedBlock(in Shape theCB, NCollection_List<Shape> theLCBF,
+                                    NCollection_DataMap<Shape, NCollection_Map<Shape>> theDMCBVInverted,
+                                    NCollection_DataMap<Shape, NCollection_Map<Shape>> theDMCBVAll)
     {
         // For possible removal of the block:
         // 1. There should be more than just one face in the block
-        if (theCB.NbChildren() < 2)
+        if (theCB.ChildCount < 2)
         {
             return false;
         }
         //
         // 2. The block should at least contain two connected inverted edges with
         //    different origins (not just two images/splits of the same edge)
-        NCollection_Map<TopoDS_Shape> aMECBInv = new(TopTools_ShapeMapHasher.Instance);
-        TopoDS_Compound aCECBInv = new();
-        new BRep_Builder().MakeCompound(ref aCECBInv);
+        NCollection_Map<Shape> aMECBInv = new(ShapeHasher.Instance);
+        Compound aCECBInv = new();
+        new BrepBuilder().MakeCompound(ref aCECBInv);
         //
-        TopExp_Explorer aExp = new(theCB, TopAbs_EDGE);
+        Explorer aExp = new(theCB, ShapeType.Edge);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Shape aE = aExp.Current();
+            Shape aE = aExp.Current();
             if (myInvertedEdges.Contains(aE))
             {
                 if (aMECBInv.Add(aE))
                 {
-                    new BRep_Builder().Add(aCECBInv, aE);
+                    new BrepBuilder().Add(aCECBInv, aE);
                 }
             }
         }
@@ -2867,30 +2872,30 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         //
         // check that the edges are connected and different
-        NCollection_List<TopoDS_Shape> aLCBE = new();
-        BOPTools_AlgoTools.MakeConnexityBlocks(aCECBInv, TopAbs_VERTEX, TopAbs_EDGE, aLCBE);
+        NCollection_List<Shape> aLCBE = new();
+        BOPTools_AlgoTools.MakeConnexityBlocks(aCECBInv, ShapeType.Vertex, ShapeType.Edge, aLCBE);
         //
-        NCollection_List<TopoDS_Shape>.Iterator aItLCBE = new(aLCBE);
+        NCollection_List<Shape>.Iterator aItLCBE = new(aLCBE);
         for (; aItLCBE.More(); aItLCBE.Next())
         {
-            TopoDS_Shape aCBE = aItLCBE.Value();
+            Shape aCBE = aItLCBE.Value();
             // count the unique edges in the block
             int aNbUnique = 0;
-            NCollection_Map<TopoDS_Shape> aMEOrigins = new(TopTools_ShapeMapHasher.Instance);
-            TopoDS_Iterator aItE = new(aCBE);
+            NCollection_Map<Shape> aMEOrigins = new(ShapeHasher.Instance);
+            Iterator aItE = new(aCBE);
             for (; aItE.More(); aItE.Next())
             {
-                TopoDS_Shape aE = aItE.Value();
-                if (!myOEOrigins.Find(aE, out NCollection_List<TopoDS_Shape> pLEOr))
+                Shape aE = aItE.Value();
+                if (!myOEOrigins.Find(aE, out NCollection_List<Shape> pLEOr))
                 {
                     aMEOrigins.Add(aE);
                     ++aNbUnique;
                     continue;
                 }
-                NCollection_List<TopoDS_Shape>.Iterator aItLEOr = new(pLEOr);
+                NCollection_List<Shape>.Iterator aItLEOr = new(pLEOr);
                 for (; aItLEOr.More(); aItLEOr.Next())
                 {
-                    TopoDS_Shape aEOr = aItLEOr.Value();
+                    Shape aEOr = aItLEOr.Value();
                     if (aMEOrigins.Add(aEOr))
                     {
                         ++aNbUnique;
@@ -2914,35 +2919,35 @@ internal sealed class BRepOffset_BuildOffsetFaces
         //
         // collect vertices from inverted edges and compare them with
         // vertices from other blocks
-        theDMCBVInverted.Find(theCB, out NCollection_Map<TopoDS_Shape>? pMVInverted);
-        theDMCBVAll.Find(theCB, out NCollection_Map<TopoDS_Shape>? pMVAll);
+        theDMCBVInverted.Find(theCB, out NCollection_Map<Shape>? pMVInverted);
+        theDMCBVAll.Find(theCB, out NCollection_Map<Shape>? pMVAll);
         if (pMVInverted is null)
         {
-            pMVInverted = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            pMVInverted = new NCollection_Map<Shape>(ShapeHasher.Instance);
             theDMCBVInverted.Bind(theCB, pMVInverted);
-            pMVAll = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            pMVAll = new NCollection_Map<Shape>(ShapeHasher.Instance);
             theDMCBVAll.Bind(theCB, pMVAll);
             //
             GetVerticesOnEdges(theCB, myInvertedEdges, pMVInverted, pMVAll);
         }
         //
-        NCollection_List<TopoDS_Shape>.Iterator aItLCB1 = new(theLCBF);
+        NCollection_List<Shape>.Iterator aItLCB1 = new(theLCBF);
         for (; aItLCB1.More(); aItLCB1.Next())
         {
-            TopoDS_Shape aCB1 = aItLCB1.Value();
+            Shape aCB1 = aItLCB1.Value();
             if (aCB1.IsSame(theCB))
             {
                 continue;
             }
             //
             // collect vertices from inverted edges
-            theDMCBVInverted.Find(aCB1, out NCollection_Map<TopoDS_Shape>? pMVInverted1);
-            theDMCBVAll.Find(aCB1, out NCollection_Map<TopoDS_Shape>? pMVAll1);
+            theDMCBVInverted.Find(aCB1, out NCollection_Map<Shape>? pMVInverted1);
+            theDMCBVAll.Find(aCB1, out NCollection_Map<Shape>? pMVAll1);
             if (pMVInverted1 is null)
             {
-                pMVInverted1 = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+                pMVInverted1 = new NCollection_Map<Shape>(ShapeHasher.Instance);
                 theDMCBVInverted.Bind(aCB1, pMVInverted1);
-                pMVAll1 = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+                pMVAll1 = new NCollection_Map<Shape>(ShapeHasher.Instance);
                 theDMCBVAll.Bind(aCB1, pMVAll1);
                 //
                 GetVerticesOnEdges(aCB1, myInvertedEdges, pMVInverted1, pMVAll1);
@@ -2962,7 +2967,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // purpose  : Looking for the invalid faces containing inverted edges
     //           that can be safely removed
     //=======================================================================
-    private void RemoveInvalidSplitsByInvertedEdges(NCollection_IndexedMap<TopoDS_Shape> theMERemoved)
+    private void RemoveInvalidSplitsByInvertedEdges(NCollection_IndexedMap<Shape> theMERemoved)
     {
         if (myInvertedEdges.IsEmpty())
         {
@@ -2973,33 +2978,33 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // should not be connected only by vertex. Such irregular splits
         // will have to be rebuilt and cannot be removed.
         //
-        BRep_Builder aBB = new();
-        NCollection_IndexedMap<TopoDS_Shape> aMEAvoid = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMVF = new(TopTools_ShapeMapHasher.Instance);
+        BrepBuilder aBB = new();
+        NCollection_IndexedMap<Shape> aMEAvoid = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aDMVF = new(ShapeHasher.Instance);
         int aNb = myOFImages.Extent(), i;
         for (i = 1; i <= aNb; ++i)
         {
-            NCollection_List<TopoDS_Shape> aLFIm = myOFImages[i];
+            NCollection_List<Shape> aLFIm = myOFImages[i];
             //
-            TopoDS_Compound aCFIm = new();
+            Compound aCFIm = new();
             aBB.MakeCompound(ref aCFIm);
             //
-            NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMEF = new(TopTools_ShapeMapHasher.Instance);
-            NCollection_List<TopoDS_Shape>.Iterator aIt = new(aLFIm);
+            NCollection_DataMap<Shape, NCollection_List<Shape>> aDMEF = new(ShapeHasher.Instance);
+            NCollection_List<Shape>.Iterator aIt = new(aLFIm);
             for (; aIt.More(); aIt.Next())
             {
-                TopoDS_Shape aF = aIt.Value();
+                Shape aF = aIt.Value();
                 aBB.Add(aCFIm, aF);
                 //
                 // make a map to use only outer edges
-                TopExp_Explorer aExp = new(aF, TopAbs_EDGE);
+                Explorer aExp = new(aF, ShapeType.Edge);
                 for (; aExp.More(); aExp.Next())
                 {
-                    TopoDS_Shape aE = aExp.Current();
+                    Shape aE = aExp.Current();
                     //
-                    if (!aDMEF.Find(aE, out NCollection_List<TopoDS_Shape> pLF))
+                    if (!aDMEF.Find(aE, out NCollection_List<Shape> pLF))
                     {
-                        pLF = new NCollection_List<TopoDS_Shape>();
+                        pLF = new NCollection_List<Shape>();
                         aDMEF.Bind(aE, pLF);
                     }
                     else
@@ -3011,14 +3016,14 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 }
                 //
                 // fill connection map of the vertices of inverted edges to faces
-                aExp.Init(aF, TopAbs_VERTEX);
+                aExp.Init(aF, ShapeType.Vertex);
                 for (; aExp.More(); aExp.Next())
                 {
-                    TopoDS_Shape aV = aExp.Current();
+                    Shape aV = aExp.Current();
                     //
-                    if (!aDMVF.Find(aV, out NCollection_List<TopoDS_Shape> pLF))
+                    if (!aDMVF.Find(aV, out NCollection_List<Shape> pLF))
                     {
-                        pLF = new NCollection_List<TopoDS_Shape>();
+                        pLF = new NCollection_List<Shape>();
                         aDMVF.Bind(aV, pLF);
                     }
                     AppendToList(pLF, aF);
@@ -3026,44 +3031,44 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
             //
             // for the splits to be regular they should form only one block
-            NCollection_List<TopoDS_Shape> aLCBF = new();
-            BOPTools_AlgoTools.MakeConnexityBlocks(aCFIm, TopAbs_EDGE, TopAbs_FACE, aLCBF);
+            NCollection_List<Shape> aLCBF = new();
+            BOPTools_AlgoTools.MakeConnexityBlocks(aCFIm, ShapeType.Edge, ShapeType.Face, aLCBF);
             if (aLCBF.Extent() == 1)
             {
                 continue;
             }
             //
             // check if the inverted edges create the irregularity
-            NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> aDMCBVInverted = new(TopTools_ShapeMapHasher.Instance),
-                                                                             aDMCBVAll = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_DataMap<Shape, NCollection_Map<Shape>> aDMCBVInverted = new(ShapeHasher.Instance),
+                                                                             aDMCBVAll = new(ShapeHasher.Instance);
             //
-            NCollection_List<TopoDS_Shape>.Iterator aItLCB = new(aLCBF);
+            NCollection_List<Shape>.Iterator aItLCB = new(aLCBF);
             for (; aItLCB.More(); aItLCB.Next())
             {
-                TopoDS_Shape aCB = aItLCB.Value();
+                Shape aCB = aItLCB.Value();
                 //
                 // check if it is possible to remove the block
                 if (!CheckInvertedBlock(aCB, aLCBF, aDMCBVInverted, aDMCBVAll))
                 {
                     // non of the edges in this block should be removed
-                    TopExp.MapShapes(aCB, TopAbs_EDGE, aMEAvoid);
+                    Exploration.MapShapes(aCB, ShapeType.Edge, aMEAvoid);
                     continue;
                 }
             }
         }
         //
         // all edges not included in aMEAvoid can be removed
-        NCollection_Map<TopoDS_Shape> aMERem = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMERem = new(ShapeHasher.Instance);
         for (int iInverted = 1; iInverted <= myInvertedEdges.Extent(); ++iInverted)
         {
-            TopoDS_Shape aE = myInvertedEdges[iInverted];
+            Shape aE = myInvertedEdges[iInverted];
             if (!aMEAvoid.Contains(aE))
             {
-                TopoDS_Iterator aIt = new(aE);
+                Iterator aIt = new(aE);
                 for (; aIt.More(); aIt.Next())
                 {
-                    TopoDS_Shape aV = aIt.Value();
-                    if (aDMVF.Find(aV, out NCollection_List<TopoDS_Shape> pLF) && (pLF.Extent() > 3))
+                    Shape aV = aIt.Value();
+                    if (aDMVF.Find(aV, out NCollection_List<Shape> pLF) && (pLF.Extent() > 3))
                     {
                         aMERem.Add(aE);
                         break;
@@ -3078,28 +3083,28 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         //
         // all invalid faces containing these edges can be removed
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aInvFaces = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_Map<TopoDS_Shape> aMFRem = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_IndexedMap<TopoDS_Shape> aMFToUpdate = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aInvFaces = new(ShapeHasher.Instance);
+        NCollection_Map<Shape> aMFRem = new(ShapeHasher.Instance);
+        NCollection_IndexedMap<Shape> aMFToUpdate = new(ShapeHasher.Instance);
         aNb = myInvalidFaces.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aF = myInvalidFaces.FindKey(i);
-            NCollection_List<TopoDS_Shape> aLFIm = myInvalidFaces[i];
+            Shape aF = myInvalidFaces.FindKey(i);
+            NCollection_List<Shape> aLFIm = myInvalidFaces[i];
             //
-            NCollection_List<TopoDS_Shape>.Iterator aIt = new(aLFIm);
+            NCollection_List<Shape>.Iterator aIt = new(aLFIm);
             for (; aIt.More();)
             {
-                TopoDS_Shape aFIm = aIt.Value();
+                Shape aFIm = aIt.Value();
                 //
                 // to be removed the face should have at least two not connected
                 // inverted edges
-                TopoDS_Compound aCEInv = new();
+                Compound aCEInv = new();
                 aBB.MakeCompound(ref aCEInv);
-                TopExp_Explorer aExp = new(aFIm, TopAbs_EDGE);
+                Explorer aExp = new(aFIm, ShapeType.Edge);
                 for (; aExp.More(); aExp.Next())
                 {
-                    TopoDS_Shape aE = aExp.Current();
+                    Shape aE = aExp.Current();
                     if (aMERem.Contains(aE))
                     {
                         aBB.Add(aCEInv, aE);
@@ -3107,8 +3112,8 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 }
                 //
                 // check connectivity
-                NCollection_List<TopoDS_Shape> aLCBE = new();
-                BOPTools_AlgoTools.MakeConnexityBlocks(aCEInv, TopAbs_VERTEX, TopAbs_EDGE, aLCBE);
+                NCollection_List<Shape> aLCBE = new();
+                BOPTools_AlgoTools.MakeConnexityBlocks(aCEInv, ShapeType.Vertex, ShapeType.Edge, aLCBE);
                 //
                 if (aLCBE.Extent() >= 2)
                 {
@@ -3124,7 +3129,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             //
             if (aLFIm.Extent() != 0)
             {
-                aInvFaces.Add(aF, new NCollection_List<TopoDS_Shape>(aLFIm));
+                aInvFaces.Add(aF, new NCollection_List<Shape>(aLFIm));
             }
         }
         //
@@ -3138,16 +3143,16 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aNb = aMFToUpdate.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aF = aMFToUpdate[i];
-            NCollection_List<TopoDS_Shape> aLFIm = myOFImages.ChangeFromKey(aF);
+            Shape aF = aMFToUpdate[i];
+            NCollection_List<Shape> aLFIm = myOFImages.ChangeFromKey(aF);
             //
-            NCollection_List<TopoDS_Shape>.Iterator aIt = new(aLFIm);
+            NCollection_List<Shape>.Iterator aIt = new(aLFIm);
             for (; aIt.More();)
             {
-                TopoDS_Shape aFIm = aIt.Value();
+                Shape aFIm = aIt.Value();
                 if (aMFRem.Contains(aFIm))
                 {
-                    TopExp.MapShapes(aFIm, TopAbs_EDGE, theMERemoved);
+                    Exploration.MapShapes(aFIm, ShapeType.Edge, theMERemoved);
                     aLFIm.Remove(aIt);
                 }
                 else
@@ -3162,7 +3167,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : RemoveInvalidSplitsFromValid
     // purpose  : Removing invalid splits of faces from valid
     //=======================================================================
-    private void RemoveInvalidSplitsFromValid(NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> theDMFMVIE)
+    private void RemoveInvalidSplitsFromValid(NCollection_DataMap<Shape, NCollection_Map<Shape>> theDMFMVIE)
     {
         // Decide whether to remove the found invalid faces or not.
         // The procedure is the following:
@@ -3170,28 +3175,28 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // 2. Find free edges in this blocks;
         // 3. If all free edges are valid for the faces - remove block.
         //
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance), aMFToRem = new(TopTools_ShapeMapHasher.Instance);
-        TopoDS_Compound aCFInv = new();
-        BRep_Builder aBB = new();
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance), aMFToRem = new(ShapeHasher.Instance);
+        Compound aCFInv = new();
+        BrepBuilder aBB = new();
         aBB.MakeCompound(ref aCFInv);
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new();
+        NCollection_List<Shape>.Iterator aItLF = new();
         //
         // make compound of invalid faces
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aDMIFOF = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, Shape> aDMIFOF = new(ShapeHasher.Instance);
         int i, aNb = myInvalidFaces.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aF = myInvalidFaces.FindKey(i);
+            Shape aF = myInvalidFaces.FindKey(i);
             // artificially invalid faces should not be removed
             if (myArtInvalidFaces.IsBound(aF))
             {
                 continue;
             }
-            NCollection_List<TopoDS_Shape> aLFInv = myInvalidFaces[i];
+            NCollection_List<Shape> aLFInv = myInvalidFaces[i];
             aItLF.Initialize(aLFInv);
             for (; aItLF.More(); aItLF.Next())
             {
-                TopoDS_Shape aFIm = aItLF.Value();
+                Shape aFIm = aItLF.Value();
                 if (aMFence.Add(aFIm))
                 {
                     aBB.Add(aCFInv, aFIm);
@@ -3201,29 +3206,29 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         //
         // make connexity blocks
-        NCollection_List<TopoDS_Shape> aLCBInv = new();
-        BOPTools_AlgoTools.MakeConnexityBlocks(aCFInv, TopAbs_EDGE, TopAbs_FACE, aLCBInv);
+        NCollection_List<Shape> aLCBInv = new();
+        BOPTools_AlgoTools.MakeConnexityBlocks(aCFInv, ShapeType.Edge, ShapeType.Face, aLCBInv);
         //
         // analyze each block
         aItLF.Initialize(aLCBInv);
         for (; aItLF.More(); aItLF.Next())
         {
-            TopoDS_Shape aCB = aItLF.Value();
+            Shape aCB = aItLF.Value();
             //
             // if connexity block contains only one face - it should be removed;
-            TopExp_Explorer aExp = new(aCB, TopAbs_FACE);
+            Explorer aExp = new(aCB, ShapeType.Face);
             aExp.Next();
             if (aExp.More())
             {
                 // check if there are valid images left
-                aExp.Init(aCB, TopAbs_FACE);
+                aExp.Init(aCB, ShapeType.Face);
                 for (; aExp.More(); aExp.Next())
                 {
-                    TopoDS_Shape aFIm = aExp.Current();
-                    TopoDS_Shape aF = aDMIFOF.Find(aFIm);
+                    Shape aFIm = aExp.Current();
+                    Shape aF = aDMIFOF.Find(aFIm);
                     //
-                    NCollection_List<TopoDS_Shape> aLFIm = myOFImages.FindFromKey(aF);
-                    NCollection_List<TopoDS_Shape> aLFInv = myInvalidFaces.FindFromKey(aF);
+                    NCollection_List<Shape> aLFIm = myOFImages.FindFromKey(aF);
+                    NCollection_List<Shape> aLFInv = myInvalidFaces.FindFromKey(aF);
                     //
                     if (aLFIm.Extent() == aLFInv.Extent())
                     {
@@ -3234,49 +3239,49 @@ internal sealed class BRepOffset_BuildOffsetFaces
             //
             if (!aExp.More())
             {
-                aExp.Init(aCB, TopAbs_FACE);
+                aExp.Init(aCB, ShapeType.Face);
                 for (; aExp.More(); aExp.Next())
                 {
-                    TopoDS_Shape aF = aExp.Current();
+                    Shape aF = aExp.Current();
                     aMFToRem.Add(aF);
                 }
                 continue;
             }
             //
             // remove faces connected by inverted edges
-            NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMEF = new(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapesAndAncestors(aCB, TopAbs_EDGE, TopAbs_FACE, aDMEF);
+            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMEF = new(ShapeHasher.Instance);
+            Exploration.MapShapesAndAncestors(aCB, ShapeType.Edge, ShapeType.Face, aDMEF);
             //
-            NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMFF = new(TopTools_ShapeMapHasher.Instance);
-            aExp.Init(aCB, TopAbs_FACE);
+            NCollection_DataMap<Shape, NCollection_List<Shape>> aDMFF = new(ShapeHasher.Instance);
+            aExp.Init(aCB, ShapeType.Face);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Shape aFCB = aExp.Current();
-                TopoDS_Shape aF = aDMIFOF.Find(aFCB);
-                if (!aDMFF.Find(aF, out NCollection_List<TopoDS_Shape> pList))
+                Shape aFCB = aExp.Current();
+                Shape aF = aDMIFOF.Find(aFCB);
+                if (!aDMFF.Find(aF, out NCollection_List<Shape> pList))
                 {
-                    pList = new NCollection_List<TopoDS_Shape>();
+                    pList = new NCollection_List<Shape>();
                     aDMFF.Bind(aF, pList);
                 }
                 pList.Append(aFCB);
             }
 
             // OCCT.NET: OCCT iterates the map by its faces' addresses; the port in insertion order (decision 1032).
-            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> itM in aDMFF)
+            foreach (KeyValuePair<Shape, NCollection_List<Shape>> itM in aDMFF)
             {
-                TopoDS_Shape aF = itM.Key;
-                theDMFMVIE.Find(aF, out NCollection_Map<TopoDS_Shape>? pValidInverted);
+                Shape aF = itM.Key;
+                theDMFMVIE.Find(aF, out NCollection_Map<Shape>? pValidInverted);
 
                 // either remove all of these faces or none.
-                NCollection_List<TopoDS_Shape> aLFCB = itM.Value;
-                NCollection_List<TopoDS_Shape>.Iterator itL = new(aLFCB);
+                NCollection_List<Shape> aLFCB = itM.Value;
+                NCollection_List<Shape>.Iterator itL = new(aLFCB);
                 for (; itL.More(); itL.Next())
                 {
-                    TopoDS_Shape aFCB = itL.Value();
-                    TopExp_Explorer aExpE = new(aFCB, TopAbs_EDGE);
+                    Shape aFCB = itL.Value();
+                    Explorer aExpE = new(aFCB, ShapeType.Edge);
                     for (; aExpE.More(); aExpE.Next())
                     {
-                        TopoDS_Shape aECB = aExpE.Current();
+                        Shape aECB = aExpE.Current();
                         if (pValidInverted is not null && pValidInverted.Contains(aECB))
                         {
                             break;
@@ -3311,12 +3316,12 @@ internal sealed class BRepOffset_BuildOffsetFaces
             aNb = myInvalidFaces.Extent();
             for (i = 1; i <= aNb; ++i)
             {
-                TopoDS_Shape aF = myInvalidFaces.FindKey(i);
-                NCollection_List<TopoDS_Shape> aLFImages = myOFImages.ChangeFromKey(aF);
+                Shape aF = myInvalidFaces.FindKey(i);
+                NCollection_List<Shape> aLFImages = myOFImages.ChangeFromKey(aF);
                 aItLF.Initialize(aLFImages);
                 for (; aItLF.More();)
                 {
-                    TopoDS_Shape aFIm = aItLF.Value();
+                    Shape aFIm = aItLF.Value();
                     if (aMFToRem.Contains(aFIm))
                     {
                         aLFImages.Remove(aItLF);
@@ -3332,8 +3337,8 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
     //=================================================================================================
 
-    private static void buildPairs(NCollection_IndexedMap<TopoDS_Shape> theSMap,
-                                   NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> theIntPairs)
+    private static void buildPairs(NCollection_IndexedMap<Shape> theSMap,
+                                   NCollection_DataMap<Shape, NCollection_Map<Shape>> theIntPairs)
     {
         int aNbS = theSMap.Extent();
         if (aNbS < 2)
@@ -3342,20 +3347,20 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         for (int it1 = 1; it1 <= aNbS; ++it1)
         {
-            TopoDS_Shape aS = theSMap[it1];
+            Shape aS = theSMap[it1];
             if (!theIntPairs.IsBound(aS))
             {
-                theIntPairs.Bind(aS, new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance));
+                theIntPairs.Bind(aS, new NCollection_Map<Shape>(ShapeHasher.Instance));
             }
         }
 
         for (int it1 = 1; it1 <= aNbS; ++it1)
         {
-            TopoDS_Shape aS1 = theSMap[it1];
-            NCollection_Map<TopoDS_Shape> aMap1 = theIntPairs[aS1];
+            Shape aS1 = theSMap[it1];
+            NCollection_Map<Shape> aMap1 = theIntPairs[aS1];
             for (int it2 = it1 + 1; it2 <= aNbS; ++it2)
             {
-                TopoDS_Shape aS2 = theSMap[it2];
+                Shape aS2 = theSMap[it2];
                 aMap1.Add(aS2);
                 theIntPairs[aS2].Add(aS1);
             }
@@ -3365,89 +3370,89 @@ internal sealed class BRepOffset_BuildOffsetFaces
     //=================================================================================================
 
     private static void buildIntersectionPairs(
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myOFImages,
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myInvalidFaces, BOPAlgo_Builder theBuilder,
-        NCollection_Map<TopoDS_Shape> theMFRemoved, NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theFOrigins,
-        NCollection_DataMap<TopoDS_Shape, NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>>> theIntPairs)
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> myOFImages,
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> myInvalidFaces, BOPAlgo_Builder theBuilder,
+        NCollection_Map<Shape> theMFRemoved, NCollection_DataMap<Shape, Shape> theFOrigins,
+        NCollection_DataMap<Shape, NCollection_DataMap<Shape, NCollection_Map<Shape>>> theIntPairs)
     {
-        TopAbs_ShapeEnum aCType = TopAbs_VERTEX;
+        ShapeType aCType = ShapeType.Vertex;
         // Build connection map from vertices to faces
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMVF = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(theBuilder.InternalShape(), aCType, TopAbs_FACE, aDMVF);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMVF = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(theBuilder.InternalShape(), aCType, ShapeType.Face, aDMVF);
 
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anImages = theBuilder.Images();
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anOrigins = theBuilder.Origins();
+        NCollection_DataMap<Shape, NCollection_List<Shape>> anImages = theBuilder.Images();
+        NCollection_DataMap<Shape, NCollection_List<Shape>> anOrigins = theBuilder.Origins();
 
         // Find all faces connected to the not removed faces and build intersection pairs among them.
         // For removed faces intersect only those connected to each other.
 
         for (int iF = 1; iF <= myInvalidFaces.Extent(); ++iF)
         {
-            TopoDS_Shape aFInv = myInvalidFaces.FindKey(iF);
+            Shape aFInv = myInvalidFaces.FindKey(iF);
 
-            TopoDS_Compound aCF = new(), aCFRem = new();
-            new BRep_Builder().MakeCompound(ref aCF);
-            new BRep_Builder().MakeCompound(ref aCFRem);
+            Compound aCF = new(), aCFRem = new();
+            new BrepBuilder().MakeCompound(ref aCF);
+            new BrepBuilder().MakeCompound(ref aCFRem);
 
             for (int iC = 0; iC < 2; ++iC)
             {
-                NCollection_List<TopoDS_Shape> aLF = iC == 0 ? myInvalidFaces[iF] : myOFImages.FindFromKey(aFInv);
+                NCollection_List<Shape> aLF = iC == 0 ? myInvalidFaces[iF] : myOFImages.FindFromKey(aFInv);
 
-                for (NCollection_List<TopoDS_Shape>.Iterator it = new(aLF); it.More(); it.Next())
+                for (NCollection_List<Shape>.Iterator it = new(aLF); it.More(); it.Next())
                 {
-                    NCollection_List<TopoDS_Shape> aLFIm = new();
+                    NCollection_List<Shape> aLFIm = new();
                     TakeModified(it.Value(), anImages, aLFIm);
 
-                    for (NCollection_List<TopoDS_Shape>.Iterator itIm = new(aLFIm); itIm.More(); itIm.Next())
+                    for (NCollection_List<Shape>.Iterator itIm = new(aLFIm); itIm.More(); itIm.Next())
                     {
-                        TopoDS_Shape aFIm = itIm.Value();
+                        Shape aFIm = itIm.Value();
 
                         if (theMFRemoved.Contains(aFIm))
                         {
-                            new BRep_Builder().Add(aCFRem, aFIm);
+                            new BrepBuilder().Add(aCFRem, aFIm);
                         }
                         else
                         {
-                            new BRep_Builder().Add(aCF, aFIm);
+                            new BrepBuilder().Add(aCF, aFIm);
                         }
                     }
                 }
             }
 
-            NCollection_List<TopoDS_Shape> aLCB = new();
-            BOPTools_AlgoTools.MakeConnexityBlocks(aCF, TopAbs_EDGE, TopAbs_FACE, aLCB);
+            NCollection_List<Shape> aLCB = new();
+            BOPTools_AlgoTools.MakeConnexityBlocks(aCF, ShapeType.Edge, ShapeType.Face, aLCB);
 
             if (aLCB.IsEmpty())
             {
                 continue;
             }
 
-            NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> pFInterMap = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_DataMap<Shape, NCollection_Map<Shape>> pFInterMap = new(ShapeHasher.Instance);
             theIntPairs.Bind(aFInv, pFInterMap);
 
             // build pairs for not removed faces
-            for (NCollection_List<TopoDS_Shape>.Iterator itCB = new(aLCB); itCB.More(); itCB.Next())
+            for (NCollection_List<Shape>.Iterator itCB = new(aLCB); itCB.More(); itCB.Next())
             {
-                TopoDS_Shape aCB = itCB.Value();
+                Shape aCB = itCB.Value();
 
-                NCollection_IndexedMap<TopoDS_Shape> aMFInter = new(TopTools_ShapeMapHasher.Instance);
-                for (TopExp_Explorer exp = new(aCB, aCType); exp.More(); exp.Next())
+                NCollection_IndexedMap<Shape> aMFInter = new(ShapeHasher.Instance);
+                for (Explorer exp = new(aCB, aCType); exp.More(); exp.Next())
                 {
-                    TopoDS_Shape aCS = exp.Current();
-                    if (!aDMVF.FindFromKey(aCS, out NCollection_List<TopoDS_Shape> pLFV))
+                    Shape aCS = exp.Current();
+                    if (!aDMVF.FindFromKey(aCS, out NCollection_List<Shape> pLFV))
                     {
                         continue;
                     }
 
-                    for (NCollection_List<TopoDS_Shape>.Iterator itFV = new(pLFV); itFV.More(); itFV.Next())
+                    for (NCollection_List<Shape>.Iterator itFV = new(pLFV); itFV.More(); itFV.Next())
                     {
-                        TopoDS_Shape aFConnected = itFV.Value();
+                        Shape aFConnected = itFV.Value();
 
-                        NCollection_List<TopoDS_Shape> aLFOr = new();
+                        NCollection_List<Shape> aLFOr = new();
                         TakeModified(aFConnected, anOrigins, aLFOr);
-                        for (NCollection_List<TopoDS_Shape>.Iterator itOr = new(aLFOr); itOr.More(); itOr.Next())
+                        for (NCollection_List<Shape>.Iterator itOr = new(aLFOr); itOr.More(); itOr.Next())
                         {
-                            if (theFOrigins.Find(itOr.Value(), out TopoDS_Shape pFOr))
+                            if (theFOrigins.Find(itOr.Value(), out Shape pFOr))
                             {
                                 aMFInter.Add(pFOr);
                             }
@@ -3460,51 +3465,51 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
 
             aLCB.Clear();
-            BOPTools_AlgoTools.MakeConnexityBlocks(aCFRem, TopAbs_EDGE, TopAbs_FACE, aLCB);
+            BOPTools_AlgoTools.MakeConnexityBlocks(aCFRem, ShapeType.Edge, ShapeType.Face, aLCB);
 
             if (aLCB.IsEmpty())
             {
                 continue;
             }
 
-            for (NCollection_List<TopoDS_Shape>.Iterator itCB = new(aLCB); itCB.More(); itCB.Next())
+            for (NCollection_List<Shape>.Iterator itCB = new(aLCB); itCB.More(); itCB.Next())
             {
-                TopoDS_Shape aCB = itCB.Value();
+                Shape aCB = itCB.Value();
 
-                NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMEF = new(TopTools_ShapeMapHasher.Instance);
-                for (TopExp_Explorer exp = new(aCB, aCType); exp.More(); exp.Next())
+                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMEF = new(ShapeHasher.Instance);
+                for (Explorer exp = new(aCB, aCType); exp.More(); exp.Next())
                 {
-                    TopoDS_Shape aCS = exp.Current();
-                    if (!aDMVF.FindFromKey(aCS, out NCollection_List<TopoDS_Shape> pLFV))
+                    Shape aCS = exp.Current();
+                    if (!aDMVF.FindFromKey(aCS, out NCollection_List<Shape> pLFV))
                     {
                         continue;
                     }
 
-                    for (NCollection_List<TopoDS_Shape>.Iterator itFV = new(pLFV); itFV.More(); itFV.Next())
+                    for (NCollection_List<Shape>.Iterator itFV = new(pLFV); itFV.More(); itFV.Next())
                     {
-                        TopoDS_Shape aFConnected = itFV.Value();
-                        TopExp.MapShapesAndAncestors(aFConnected, TopAbs_EDGE, TopAbs_FACE, aDMEF);
+                        Shape aFConnected = itFV.Value();
+                        Exploration.MapShapesAndAncestors(aFConnected, ShapeType.Edge, ShapeType.Face, aDMEF);
                     }
                 }
 
                 for (int iE = 1; iE <= aDMEF.Extent(); ++iE)
                 {
-                    NCollection_List<TopoDS_Shape> aLFConnected = aDMEF[iE];
+                    NCollection_List<Shape> aLFConnected = aDMEF[iE];
                     if (aLFConnected.Extent() < 2)
                     {
                         continue;
                     }
 
-                    NCollection_IndexedMap<TopoDS_Shape> aMFInter = new(TopTools_ShapeMapHasher.Instance);
-                    for (NCollection_List<TopoDS_Shape>.Iterator itLF = new(aLFConnected); itLF.More(); itLF.Next())
+                    NCollection_IndexedMap<Shape> aMFInter = new(ShapeHasher.Instance);
+                    for (NCollection_List<Shape>.Iterator itLF = new(aLFConnected); itLF.More(); itLF.Next())
                     {
-                        TopoDS_Shape aFConnected = itLF.Value();
+                        Shape aFConnected = itLF.Value();
 
-                        NCollection_List<TopoDS_Shape> aLFOr = new();
+                        NCollection_List<Shape> aLFOr = new();
                         TakeModified(aFConnected, anOrigins, aLFOr);
-                        for (NCollection_List<TopoDS_Shape>.Iterator itOr = new(aLFOr); itOr.More(); itOr.Next())
+                        for (NCollection_List<Shape>.Iterator itOr = new(aLFOr); itOr.More(); itOr.Next())
                         {
-                            if (theFOrigins.Find(itOr.Value(), out TopoDS_Shape pFOr))
+                            if (theFOrigins.Find(itOr.Value(), out Shape pFOr))
                             {
                                 aMFInter.Add(pFOr);
                             }
@@ -3521,17 +3526,17 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : RemoveInsideFaces
     // purpose  : Looking for the inside faces that can be safely removed
     //=======================================================================
-    private void RemoveInsideFaces(NCollection_List<TopoDS_Shape> theInvertedFaces,
-                                   NCollection_IndexedMap<TopoDS_Shape> theMFToCheckInt,
-                                   NCollection_IndexedMap<TopoDS_Shape> theMFInvInHole, in TopoDS_Shape theFHoles,
-                                   NCollection_IndexedMap<TopoDS_Shape> theMERemoved,
-                                   NCollection_IndexedMap<TopoDS_Shape> theMEInside, ProgressRange theRange)
+    private void RemoveInsideFaces(NCollection_List<Shape> theInvertedFaces,
+                                   NCollection_IndexedMap<Shape> theMFToCheckInt,
+                                   NCollection_IndexedMap<Shape> theMFInvInHole, in Shape theFHoles,
+                                   NCollection_IndexedMap<Shape> theMERemoved,
+                                   NCollection_IndexedMap<Shape> theMEInside, ProgressRange theRange)
     {
-        NCollection_List<TopoDS_Shape> aLS = new();
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_IndexedMap<TopoDS_Shape> aMFInv = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new();
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aDMFImF = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_List<Shape> aLS = new();
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
+        NCollection_IndexedMap<Shape> aMFInv = new(ShapeHasher.Instance);
+        NCollection_List<Shape>.Iterator aItLF = new();
+        NCollection_DataMap<Shape, Shape> aDMFImF = new(ShapeHasher.Instance);
         //
         using ProgressScope aPS = new(theRange, "Looking for inside faces", 10);
         int i, aNb = myOFImages.Extent();
@@ -3541,17 +3546,17 @@ internal sealed class BRepOffset_BuildOffsetFaces
             {
                 return;
             }
-            TopoDS_Shape aF = myOFImages.FindKey(i);
+            Shape aF = myOFImages.FindKey(i);
             // to avoid intersection of the splits of the same
             // offset faces among themselves make compound of the
             // splits and use it as one argument
-            TopoDS_Compound aCFImi = new();
-            new BRep_Builder().MakeCompound(ref aCFImi);
+            Compound aCFImi = new();
+            new BrepBuilder().MakeCompound(ref aCFImi);
             //
             for (int j = 0; j < 2; ++j)
             {
-                NCollection_List<TopoDS_Shape>? pLFSp = j == 0
-                    ? (myInvalidFaces.FindFromKey(aF, out NCollection_List<TopoDS_Shape> aLInv) ? aLInv : null)
+                NCollection_List<Shape>? pLFSp = j == 0
+                    ? (myInvalidFaces.FindFromKey(aF, out NCollection_List<Shape> aLInv) ? aLInv : null)
                     : myOFImages[i];
                 if (pLFSp is null)
                 {
@@ -3561,10 +3566,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 aItLF.Initialize(pLFSp);
                 for (; aItLF.More(); aItLF.Next())
                 {
-                    TopoDS_Shape aFIm = aItLF.Value();
+                    Shape aFIm = aItLF.Value();
                     if (aMFence.Add(aFIm))
                     {
-                        new BRep_Builder().Add(aCFImi, aFIm);
+                        new BrepBuilder().Add(aCFImi, aFIm);
                         aDMFImF.Bind(aFIm, aF);
                         if (j == 0)
                         {
@@ -3582,7 +3587,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aNb = theMFToCheckInt.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aFSp = theMFToCheckInt[i];
+            Shape aFSp = theMFToCheckInt[i];
             if (aMFence.Add(aFSp))
             {
                 aLS.Append(aFSp);
@@ -3604,10 +3609,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
         ShapesConnections(aDMFImF, aMV);
         //
         // find faces to remove
-        TopoDS_Shape aSols = aMV.InternalShape();
+        Shape aSols = aMV.InternalShape();
         //
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMFS = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(aSols, TopAbs_FACE, TopAbs_SOLID, aDMFS);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMFS = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aSols, ShapeType.Face, ShapeType.Solid, aDMFS);
         //
         aNb = aDMFS.Extent();
         if (aNb == 0)
@@ -3619,17 +3624,17 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // to check them on validity - the created solids should be complete,
         // i.e. all faces should be included.
         //
-        NCollection_Map<TopoDS_Shape> aMFToRem = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMFToRem = new(ShapeHasher.Instance);
         // Check completeness
         if (aMV.HasDeleted())
         {
-            NCollection_IndexedMap<TopoDS_Shape> aMEHoles = new(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(theFHoles, TopAbs_EDGE, aMEHoles);
+            NCollection_IndexedMap<Shape> aMEHoles = new(ShapeHasher.Instance);
+            Exploration.MapShapes(theFHoles, ShapeType.Edge, aMEHoles);
 
             // Map edges of the solids to check the connectivity
             // of the removed invalid splits
-            NCollection_IndexedMap<TopoDS_Shape> aMESols = new(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(aSols, TopAbs_EDGE, aMESols);
+            NCollection_IndexedMap<Shape> aMESols = new(ShapeHasher.Instance);
+            Exploration.MapShapes(aSols, ShapeType.Edge, aMESols);
 
             // perform additional check on faces
             aNb = myOFImages.Extent();
@@ -3639,13 +3644,13 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 {
                     return;
                 }
-                NCollection_List<TopoDS_Shape> aLFIm = myOFImages[i];
+                NCollection_List<Shape> aLFIm = myOFImages[i];
                 if (aLFIm.IsEmpty())
                 {
                     continue;
                 }
 
-                TopoDS_Shape aF = myOFImages.FindKey(i);
+                Shape aF = myOFImages.FindKey(i);
                 bool bInvalid = myInvalidFaces.Contains(aF);
                 // For invalid faces it is allowed to be at least connected
                 // to the solids, otherwise the solids are considered as broken
@@ -3655,14 +3660,14 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 aItLF.Initialize(aLFIm);
                 for (; aItLF.More(); aItLF.Next())
                 {
-                    TopoDS_Shape aFIm = aItLF.Value();
+                    Shape aFIm = aItLF.Value();
                     if (!aMV.IsDeleted(aFIm))
                     {
                         bFaceKept = true;
                         continue;
                     }
                     //
-                    TopExp_Explorer aExpE = new(aFIm, TopAbs_EDGE);
+                    Explorer aExpE = new(aFIm, ShapeType.Edge);
                     for (; aExpE.More(); aExpE.Next())
                     {
                         if (aMEHoles.Contains(aExpE.Current()))
@@ -3685,35 +3690,35 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
         }
         //
-        NCollection_IndexedMap<TopoDS_Shape> aMEBoundary = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> aMEBoundary = new(ShapeHasher.Instance);
         aNb = aDMFS.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aFIm = aDMFS.FindKey(i);
-            NCollection_List<TopoDS_Shape> aLSol = aDMFS[i];
+            Shape aFIm = aDMFS.FindKey(i);
+            NCollection_List<Shape> aLSol = aDMFS[i];
             if (aLSol.Extent() > 1)
             {
                 aMFToRem.Add(aFIm);
             }
-            else if (aFIm.Orientation() != TopAbs_INTERNAL)
+            else if (aFIm.Orientation() != Internal)
             {
-                TopExp.MapShapes(aFIm, TopAbs_EDGE, aMEBoundary);
+                Exploration.MapShapes(aFIm, ShapeType.Edge, aMEBoundary);
             }
         }
 
         // Tool for getting the splits of faces
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMVIms = aMV.Images();
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aMVIms = aMV.Images();
 
         // update invalid faces with images
         aNb = aMFInv.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aFInv = aMFInv[i];
+            Shape aFInv = aMFInv[i];
             TakeModified(aFInv, aMVIms, aMFInv);
         }
 
         // Take into account the faces invalid by inverted edges
-        for (NCollection_List<TopoDS_Shape>.Iterator itLF = new(theInvertedFaces); itLF.More(); itLF.Next())
+        for (NCollection_List<Shape>.Iterator itLF = new(theInvertedFaces); itLF.More(); itLF.Next())
         {
             TakeModified(itLF.Value(), aMVIms, aMFInv);
         }
@@ -3728,35 +3733,35 @@ internal sealed class BRepOffset_BuildOffsetFaces
             {
                 return;
             }
-            TopoDS_Shape aFInv = theMFInvInHole[i];
-            NCollection_List<TopoDS_Shape> aLFInvIm = ModifiedOf(aMV, aFInv);
+            Shape aFInv = theMFInvInHole[i];
+            NCollection_List<Shape> aLFInvIm = ModifiedOf(aMV, aFInv);
             if (aLFInvIm.IsEmpty())
             {
                 aLFInvIm.Append(aFInv);
             }
             //
-            if (!aDMFImF.Find(aFInv, out TopoDS_Shape pFOffset))
+            if (!aDMFImF.Find(aFInv, out Shape pFOffset))
             {
                 continue;
             }
-            NCollection_List<TopoDS_Shape>.Iterator aItLFInv = new(aLFInvIm);
+            NCollection_List<Shape>.Iterator aItLFInv = new(aLFInvIm);
             for (; aItLFInv.More(); aItLFInv.Next())
             {
-                TopoDS_Shape aFInvIm = aItLFInv.Value();
-                if (!aDMFS.FindFromKey(aFInvIm, out NCollection_List<TopoDS_Shape> pLSols) || pLSols.Extent() != 1)
+                Shape aFInvIm = aItLFInv.Value();
+                if (!aDMFS.FindFromKey(aFInvIm, out NCollection_List<Shape> pLSols) || pLSols.Extent() != 1)
                 {
                     continue;
                 }
                 //
-                TopoDS_Shape aFSol = pLSols.First();
+                Shape aFSol = pLSols.First();
                 //
-                TopoDS_Shape aFx = new();
+                Shape aFx = new();
                 if (!FindShape(aFInvIm, aFSol, null, ref aFx))
                 {
                     continue;
                 }
                 //
-                if (BRepOffset_Tool.CheckPlanesNormals(TopoDS.Face(aFx), TopoDS.Face(pFOffset)))
+                if (BRepOffset_Tool.CheckPlanesNormals(ShapeCasts.Face(aFx), ShapeCasts.Face(pFOffset)))
                 {
                     // the normal direction has not changed, thus the face can be removed
                     aMFToRem.Add(aFInvIm);
@@ -3764,26 +3769,26 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
         }
         //
-        TopoDS_Compound aSolids = new();
-        new BRep_Builder().MakeCompound(ref aSolids);
-        NCollection_Map<TopoDS_Shape> aMFKeep = new(TopTools_ShapeMapHasher.Instance);
+        Compound aSolids = new();
+        new BrepBuilder().MakeCompound(ref aSolids);
+        NCollection_Map<Shape> aMFKeep = new(ShapeHasher.Instance);
         //
-        TopExp_Explorer aExpS = new(aSols, TopAbs_SOLID);
+        Explorer aExpS = new(aSols, ShapeType.Solid);
         for (; aExpS.More(); aExpS.Next())
         {
             if (!aPS.More())
             {
                 return;
             }
-            TopoDS_Shape aSol = aExpS.Current();
+            Shape aSol = aExpS.Current();
             //
             bool bAllInv = true, bAllRemoved = true;
 
-            for (TopExp_Explorer aExpF = new(aSol, TopAbs_FACE); aExpF.More(); aExpF.Next())
+            for (Explorer aExpF = new(aSol, ShapeType.Face); aExpF.More(); aExpF.Next())
             {
-                TopoDS_Shape aFS = aExpF.Current();
+                Shape aFS = aExpF.Current();
                 //
-                if (aFS.Orientation() == TopAbs_INTERNAL)
+                if (aFS.Orientation() == Internal)
                 {
                     aMFToRem.Add(aFS);
                     continue;
@@ -3801,10 +3806,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
             if (bAllInv && !bAllRemoved)
             {
                 // remove invalid faces but keep those that have already been marked for removal
-                TopExp_Explorer aExpF = new(aSol, TopAbs_FACE);
+                Explorer aExpF = new(aSol, ShapeType.Face);
                 for (; aExpF.More(); aExpF.Next())
                 {
-                    TopoDS_Shape aFS = aExpF.Current();
+                    Shape aFS = aExpF.Current();
                     //
                     if (aMFToRem.Contains(aFS))
                     {
@@ -3821,12 +3826,12 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
             else
             {
-                new BRep_Builder().Add(aSolids, aSol);
+                new BrepBuilder().Add(aSolids, aSol);
                 mySolids = aSolids;
             }
         }
         //
-        foreach (TopoDS_Shape aItM in aMFKeep)
+        foreach (Shape aItM in aMFKeep)
         {
             aMFToRem.Remove(aItM);
         }
@@ -3843,7 +3848,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aNb = theMERemoved.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aE = theMERemoved[i];
+            Shape aE = theMERemoved[i];
             if (!aMEBoundary.Contains(aE))
             {
                 theMEInside.Add(aE);
@@ -3863,49 +3868,49 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // purpose  : Looking for the connections between faces not to miss
     //           some necessary intersection
     //=======================================================================
-    private void ShapesConnections(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theDMFOr, BOPAlgo_Builder theBuilder)
+    private void ShapesConnections(NCollection_DataMap<Shape, Shape> theDMFOr, BOPAlgo_Builder theBuilder)
     {
         // Make connexity blocks from invalid edges to use the whole block
         // to which the edge is connected instead of the single edge.
-        TopoDS_Compound aCEInv = new();
-        new BRep_Builder().MakeCompound(ref aCEInv);
+        Compound aCEInv = new();
+        new BrepBuilder().MakeCompound(ref aCEInv);
         for (int i = 1; i <= myInvalidEdges.Extent(); ++i)
         {
             AddToContainer(myInvalidEdges[i], aCEInv);
         }
 
-        NCollection_List<TopoDS_Shape> aLCB = new();
-        BOPTools_AlgoTools.MakeConnexityBlocks(aCEInv, TopAbs_VERTEX, TopAbs_EDGE, aLCB);
+        NCollection_List<Shape> aLCB = new();
+        BOPTools_AlgoTools.MakeConnexityBlocks(aCEInv, ShapeType.Vertex, ShapeType.Edge, aLCB);
 
         // Binding from the edge to the block
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aECBMap = new(TopTools_ShapeMapHasher.Instance);
-        for (NCollection_List<TopoDS_Shape>.Iterator itCB = new(aLCB); itCB.More(); itCB.Next())
+        NCollection_DataMap<Shape, Shape> aECBMap = new(ShapeHasher.Instance);
+        for (NCollection_List<Shape>.Iterator itCB = new(aLCB); itCB.More(); itCB.Next())
         {
-            for (TopoDS_Iterator itE = new(itCB.Value()); itE.More(); itE.Next())
+            for (Iterator itE = new(itCB.Value()); itE.More(); itE.Next())
             {
                 aECBMap.Bind(itE.Value(), itCB.Value());
             }
         }
 
         // update invalid edges with images and keep connection to original edge
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMEOr = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aDMEOr = new(ShapeHasher.Instance);
         int aNb = myInvalidEdges.Extent();
         for (int i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aEInv = myInvalidEdges[i];
-            NCollection_List<TopoDS_Shape> aLEIm = ModifiedOf(theBuilder, aEInv);
+            Shape aEInv = myInvalidEdges[i];
+            NCollection_List<Shape> aLEIm = ModifiedOf(theBuilder, aEInv);
             if (aLEIm.IsEmpty())
             {
-                NCollection_List<TopoDS_Shape> aL = new();
+                NCollection_List<Shape> aL = new();
                 aL.Append(aEInv);
                 aDMEOr.Bind(aEInv, aL);
                 continue;
             }
             //
-            NCollection_List<TopoDS_Shape>.Iterator aItLEIm = new(aLEIm);
+            NCollection_List<Shape>.Iterator aItLEIm = new(aLEIm);
             for (; aItLEIm.More(); aItLEIm.Next())
             {
-                TopoDS_Shape aEIm = aItLEIm.Value();
+                Shape aEIm = aItLEIm.Value();
                 AddToContainer(aEIm, aEInv, aDMEOr);
             }
         }
@@ -3925,10 +3930,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 continue;
             }
             //
-            TopoDS_Shape aFIm1 = pDS.Shape(aFF.Index1());
-            TopoDS_Shape aFIm2 = pDS.Shape(aFF.Index2());
+            Shape aFIm1 = pDS.Shape(aFF.Index1());
+            Shape aFIm2 = pDS.Shape(aFF.Index2());
             //
-            if (!theDMFOr.Find(aFIm1, out TopoDS_Shape pF1) || !theDMFOr.Find(aFIm2, out TopoDS_Shape pF2))
+            if (!theDMFOr.Find(aFIm1, out Shape pF1) || !theDMFOr.Find(aFIm2, out Shape pF2))
             {
                 continue;
             }
@@ -3947,7 +3952,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
             //
             // check if it is real Face/Face intersection
-            NCollection_Map<TopoDS_Shape> aMEInt = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_Map<Shape> aMEInt = new(ShapeHasher.Instance);
             for (int iC = 0; iC < aNbC; ++iC)
             {
                 BOPDS_Curve aNC = aVNC[iC];
@@ -3958,7 +3963,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     BOPDS_PaveBlock aPB = aItLPB.Value();
                     if (aPB.HasEdge(out int nEInt))
                     {
-                        TopoDS_Shape aEInt = pDS.Shape(nEInt);
+                        Shape aEInt = pDS.Shape(nEInt);
                         aMEInt.Add(aEInt);
                     }
                 }
@@ -3977,28 +3982,28 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     continue;
                 }
                 //
-                TopoDS_Shape aF = i == 0 ? pF1 : pF2;
-                TopoDS_Shape aFOp = i == 0 ? pF2 : pF1;
-                TopoDS_Shape aFIm = i == 0 ? aFIm1 : aFIm2;
+                Shape aF = i == 0 ? pF1 : pF2;
+                Shape aFOp = i == 0 ? pF2 : pF1;
+                Shape aFIm = i == 0 ? aFIm1 : aFIm2;
                 //
                 bool bFound = false;
                 //
-                NCollection_List<TopoDS_Shape> aLFIm = ModifiedOf(theBuilder, aFIm);
+                NCollection_List<Shape> aLFIm = ModifiedOf(theBuilder, aFIm);
                 if (aLFIm.IsEmpty())
                 {
                     aLFIm.Append(aFIm);
                 }
                 //
-                NCollection_List<TopoDS_Shape>.Iterator aItLFIm = new(aLFIm);
+                NCollection_List<Shape>.Iterator aItLFIm = new(aLFIm);
                 for (; aItLFIm.More(); aItLFIm.Next())
                 {
-                    TopoDS_Shape aFImIm = aItLFIm.Value();
+                    Shape aFImIm = aItLFIm.Value();
                     //
                     bool bInv = false, bInt = false;
-                    TopExp_Explorer aExpE = new(aFImIm, TopAbs_EDGE);
+                    Explorer aExpE = new(aFImIm, ShapeType.Edge);
                     for (; aExpE.More(); aExpE.Next())
                     {
-                        TopoDS_Shape aE = aExpE.Current();
+                        Shape aE = aExpE.Current();
                         if (!bInv)
                         {
                             bInv = aDMEOr.IsBound(aE);
@@ -4021,22 +4026,22 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     bFound = true;
                     //
                     // append opposite face to all invalid edges in the split
-                    aExpE.Init(aFImIm, TopAbs_EDGE);
+                    aExpE.Init(aFImIm, ShapeType.Edge);
                     for (; aExpE.More(); aExpE.Next())
                     {
-                        TopoDS_Shape aE = aExpE.Current();
-                        if (!aDMEOr.Find(aE, out NCollection_List<TopoDS_Shape> pLEOr))
+                        Shape aE = aExpE.Current();
+                        if (!aDMEOr.Find(aE, out NCollection_List<Shape> pLEOr))
                         {
                             continue;
                         }
                         //
-                        NCollection_List<TopoDS_Shape>.Iterator aItLE = new(pLEOr);
+                        NCollection_List<Shape>.Iterator aItLE = new(pLEOr);
                         for (; aItLE.More(); aItLE.Next())
                         {
-                            TopoDS_Shape aEOr = aItLE.Value();
-                            if (!mySSInterfs.Find(aEOr, out NCollection_List<TopoDS_Shape> pLFE))
+                            Shape aEOr = aItLE.Value();
+                            if (!mySSInterfs.Find(aEOr, out NCollection_List<Shape> pLFE))
                             {
-                                pLFE = new NCollection_List<TopoDS_Shape>();
+                                pLFE = new NCollection_List<Shape>();
                                 mySSInterfs.Bind(aEOr, pLFE);
                             }
                             AppendToList(pLFE, aFOp);
@@ -4046,9 +4051,9 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 if (bFound)
                 {
                     // save connection between offset faces
-                    if (!mySSInterfs.Find(aF, out NCollection_List<TopoDS_Shape> pLF))
+                    if (!mySSInterfs.Find(aF, out NCollection_List<Shape> pLF))
                     {
-                        pLF = new NCollection_List<TopoDS_Shape>();
+                        pLF = new NCollection_List<Shape>();
                         mySSInterfs.Bind(aF, pLF);
                     }
                     AppendToList(pLF, aFOp);
@@ -4058,8 +4063,8 @@ internal sealed class BRepOffset_BuildOffsetFaces
             // Treatment for the artificial case - check if one of the faces is artificially invalid
             for (int iF = 0; iF < 2; ++iF)
             {
-                TopoDS_Shape aFArt = iF == 0 ? pF1 : pF2;
-                TopoDS_Shape aFOpposite = iF == 0 ? pF2 : pF1;
+                Shape aFArt = iF == 0 ? pF1 : pF2;
+                Shape aFOpposite = iF == 0 ? pF2 : pF1;
 
                 if (!myArtInvalidFaces.IsBound(aFArt))
                 {
@@ -4073,41 +4078,41 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
                 // Collect own invalid edges of the face and the invalid edges connected to those
                 // own invalid edges to be avoided in the check for intersection.
-                NCollection_IndexedMap<TopoDS_Shape> aMEAvoid = new(TopTools_ShapeMapHasher.Instance);
-                if (myArtInvalidFaces.Find(aFOpposite, out NCollection_IndexedMap<TopoDS_Shape> pFEInv))
+                NCollection_IndexedMap<Shape> aMEAvoid = new(ShapeHasher.Instance);
+                if (myArtInvalidFaces.Find(aFOpposite, out NCollection_IndexedMap<Shape> pFEInv))
                 {
                     for (int iE = 1; iE <= pFEInv.Extent(); ++iE)
                     {
-                        if (aECBMap.Find(pFEInv.FindKey(iE), out TopoDS_Shape pCB))
+                        if (aECBMap.Find(pFEInv.FindKey(iE), out Shape pCB))
                         {
-                            TopExp.MapShapes(pCB, TopAbs_EDGE, aMEAvoid);
+                            Exploration.MapShapes(pCB, ShapeType.Edge, aMEAvoid);
                         }
                     }
                 }
-                else if (myOFImages.FindFromKey(aFOpposite, out NCollection_List<TopoDS_Shape> pLFIm))
+                else if (myOFImages.FindFromKey(aFOpposite, out NCollection_List<Shape> pLFIm))
                 {
-                    for (NCollection_List<TopoDS_Shape>.Iterator itLFIm = new(pLFIm); itLFIm.More(); itLFIm.Next())
+                    for (NCollection_List<Shape>.Iterator itLFIm = new(pLFIm); itLFIm.More(); itLFIm.Next())
                     {
-                        for (TopExp_Explorer expE = new(itLFIm.Value(), TopAbs_EDGE); expE.More(); expE.Next())
+                        for (Explorer expE = new(itLFIm.Value(), ShapeType.Edge); expE.More(); expE.Next())
                         {
-                            if (aECBMap.Find(expE.Current(), out TopoDS_Shape pCB))
+                            if (aECBMap.Find(expE.Current(), out Shape pCB))
                             {
-                                TopExp.MapShapes(pCB, TopAbs_EDGE, aMEAvoid);
+                                Exploration.MapShapes(pCB, ShapeType.Edge, aMEAvoid);
                             }
                         }
                     }
                 }
 
-                TopoDS_Shape aFArtIm = iF == 0 ? aFIm1 : aFIm2;
-                TopoDS_Shape aFOppositeIm = iF == 0 ? aFIm2 : aFIm1;
+                Shape aFArtIm = iF == 0 ? aFIm1 : aFIm2;
+                Shape aFOppositeIm = iF == 0 ? aFIm2 : aFIm1;
 
                 // Check if there are any intersections between edges of artificially
                 // invalid face and opposite face
                 int nFOp = pDS.Index(aFOppositeIm);
 
-                for (TopExp_Explorer expE = new(aFArtIm, TopAbs_EDGE); expE.More(); expE.Next())
+                for (Explorer expE = new(aFArtIm, ShapeType.Edge); expE.More(); expE.Next())
                 {
-                    TopoDS_Shape aE = expE.Current();
+                    Shape aE = expE.Current();
                     if (!myInvalidEdges.Contains(aE) || myInvertedEdges.Contains(aE) || aMEAvoid.Contains(aE))
                     {
                         continue;
@@ -4123,14 +4128,14 @@ internal sealed class BRepOffset_BuildOffsetFaces
                         continue;
                     }
 
-                    NCollection_List<TopoDS_Shape> aLV = new();
+                    NCollection_List<Shape> aLV = new();
                     NCollection_DynamicArray<BOPDS_InterfEF> aEFs = pDS.InterfEF();
                     for (int iEF = 0; iEF < aEFs.Length(); ++iEF)
                     {
                         BOPDS_InterfEF aEF = aEFs[iEF];
                         if (aEF.Contains(nE) && aEF.Contains(nFOp))
                         {
-                            if (aEF.CommonPart().Type() == TopAbs_VERTEX)
+                            if (aEF.CommonPart().Type() == ShapeType.Vertex)
                             {
                                 aLV.Append(pDS.Shape(aEF.IndexNew()));
                             }
@@ -4145,10 +4150,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     // Make sure that there is an opposite intersection exists, i.e. some of the edges
                     // of the opposite face intersect the artificially invalid face.
                     int nFArt = pDS.Index(aFArtIm);
-                    TopExp_Explorer expEOp = new(aFOppositeIm, TopAbs_EDGE);
+                    Explorer expEOp = new(aFOppositeIm, ShapeType.Edge);
                     for (; expEOp.More(); expEOp.Next())
                     {
-                        TopoDS_Shape aEOp = expEOp.Current();
+                        Shape aEOp = expEOp.Current();
                         int nEOp = pDS.Index(aEOp);
                         if (pDS.HasInterf(nEOp, nFArt))
                         {
@@ -4168,7 +4173,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
                     // Along with the opposite face, save the intersection vertices to
                     // be used for trimming the intersection edge in the rebuilding process
-                    for (NCollection_List<TopoDS_Shape>.Iterator itLV = new(aLV); itLV.More(); itLV.Next())
+                    for (NCollection_List<Shape>.Iterator itLV = new(aLV); itLV.More(); itLV.Next())
                     {
                         // Add connection to intersection vertex
                         AddToContainer(aE, itLV.Value(), mySSInterfsArt);
@@ -4182,35 +4187,35 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : RemoveHangingParts
     // purpose  : Remove isolated invalid hanging parts
     //=======================================================================
-    private void RemoveHangingParts(BOPAlgo_MakerVolume theMV, NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theDMFImF,
-                                    NCollection_IndexedMap<TopoDS_Shape> theMFInv, NCollection_Map<TopoDS_Shape> theMFToRem)
+    private void RemoveHangingParts(BOPAlgo_MakerVolume theMV, NCollection_DataMap<Shape, Shape> theDMFImF,
+                                    NCollection_IndexedMap<Shape> theMFInv, NCollection_Map<Shape> theMFToRem)
     {
         // Map the faces of the result solids to filter them from avoided faces
-        NCollection_IndexedMap<TopoDS_Shape> aMFS = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theMV.InternalShape(), TopAbs_FACE, aMFS);
+        NCollection_IndexedMap<Shape> aMFS = new(ShapeHasher.Instance);
+        Exploration.MapShapes(theMV.InternalShape(), ShapeType.Face, aMFS);
 
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
         // Build compound of all faces not included into solids
-        TopoDS_Compound aCFHangs = new();
+        Compound aCFHangs = new();
         aBB.MakeCompound(ref aCFHangs);
 
         // Tool for getting the splits of faces
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMVIms = theMV.Images();
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aMVIms = theMV.Images();
 
-        NCollection_List<TopoDS_Shape>.Iterator aItLArgs = new(theMV.Arguments());
+        NCollection_List<Shape>.Iterator aItLArgs = new(theMV.Arguments());
         for (; aItLArgs.More(); aItLArgs.Next())
         {
-            TopExp_Explorer anExpF0 = new(aItLArgs.Value(), TopAbs_FACE);
+            Explorer anExpF0 = new(aItLArgs.Value(), ShapeType.Face);
             for (; anExpF0.More(); anExpF0.Next())
             {
-                TopoDS_Shape aF = anExpF0.Current();
+                Shape aF = anExpF0.Current();
                 TakeModified(aF, aMVIms, aCFHangs, aMFS);
             }
         }
 
         // Make connexity blocks of all hanging parts and check that they are isolated
-        NCollection_List<TopoDS_Shape> aLCBHangs = new();
-        BOPTools_AlgoTools.MakeConnexityBlocks(aCFHangs, TopAbs_EDGE, TopAbs_FACE, aLCBHangs);
+        NCollection_List<Shape> aLCBHangs = new();
+        BOPTools_AlgoTools.MakeConnexityBlocks(aCFHangs, ShapeType.Edge, ShapeType.Face, aLCBHangs);
         if (aLCBHangs.IsEmpty())
         {
             return;
@@ -4225,13 +4230,13 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
         // Map the edges and vertices of the result solids to check connectivity
         // of the hanging blocks to invalid parts contained in solids
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMEF = new(TopTools_ShapeMapHasher.Instance),
-                                                                                 aDMVE = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(theMV.InternalShape(), TopAbs_EDGE, TopAbs_FACE, aDMEF);
-        TopExp.MapShapesAndAncestors(theMV.InternalShape(), TopAbs_VERTEX, TopAbs_EDGE, aDMVE);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMEF = new(ShapeHasher.Instance),
+                                                                                 aDMVE = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(theMV.InternalShape(), ShapeType.Edge, ShapeType.Face, aDMEF);
+        Exploration.MapShapesAndAncestors(theMV.InternalShape(), ShapeType.Vertex, ShapeType.Edge, aDMVE);
 
         // Update invalid edges with intersection results
-        NCollection_Map<TopoDS_Shape> aMEInv = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMEInv = new(ShapeHasher.Instance);
         int i, aNbE = myInvalidEdges.Extent();
         for (i = 1; i <= aNbE; ++i)
         {
@@ -4239,29 +4244,29 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
 
         // Update inverted edges with intersection results
-        NCollection_Map<TopoDS_Shape> aMEInverted = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMEInverted = new(ShapeHasher.Instance);
         for (int iInv = 1; iInv <= myInvertedEdges.Extent(); ++iInv)
         {
             TakeModified(myInvertedEdges[iInv], aMVIms, aMEInverted);
         }
 
         // Tool for getting the origins of the splits
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMVOrs = theMV.Origins();
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aMVOrs = theMV.Origins();
 
         // Find hanging blocks to remove
-        NCollection_List<TopoDS_Shape> aBlocksToRemove = new();
+        NCollection_List<Shape> aBlocksToRemove = new();
 
-        NCollection_List<TopoDS_Shape>.Iterator aItLCBH = new(aLCBHangs);
+        NCollection_List<Shape>.Iterator aItLCBH = new(aLCBHangs);
         for (; aItLCBH.More(); aItLCBH.Next())
         {
-            TopoDS_Shape aCBH = aItLCBH.Value();
+            Shape aCBH = aItLCBH.Value();
 
             // Remove the block containing the inverted edges
             bool bHasInverted = false;
-            TopExp_Explorer anExpE = new(aCBH, TopAbs_EDGE);
+            Explorer anExpE = new(aCBH, ShapeType.Edge);
             for (; anExpE.More() && !bHasInverted; anExpE.Next())
             {
-                TopoDS_Shape aE = anExpE.Current();
+                Shape aE = anExpE.Current();
                 bHasInverted = !aDMEF.Contains(aE) && aMEInverted.Contains(aE);
             }
 
@@ -4275,15 +4280,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
             bool bHasInvalidFace = false;
             // Check connectivity to invalid parts
             bool bIsConnected = false;
-            NCollection_IndexedMap<TopoDS_Shape> aBlockME = new(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(aCBH, TopAbs_EDGE, aBlockME);
+            NCollection_IndexedMap<Shape> aBlockME = new(ShapeHasher.Instance);
+            Exploration.MapShapes(aCBH, ShapeType.Edge, aBlockME);
             // Map to collect all original faces
-            NCollection_Map<TopoDS_Shape> aMOffsetF = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_Map<Shape> aMOffsetF = new(ShapeHasher.Instance);
 
-            TopExp_Explorer anExpF = new(aCBH, TopAbs_FACE);
+            Explorer anExpF = new(aCBH, ShapeType.Face);
             for (; anExpF.More(); anExpF.Next())
             {
-                TopoDS_Shape aF = anExpF.Current();
+                Shape aF = anExpF.Current();
                 // Check block to contain invalid face
                 if (!bHasInvalidFace)
                 {
@@ -4294,13 +4299,13 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 if (!bIsConnected)
                 {
                     // check edges
-                    anExpE.Init(aF, TopAbs_EDGE);
+                    anExpE.Init(aF, ShapeType.Edge);
                     for (; anExpE.More() && !bIsConnected; anExpE.Next())
                     {
-                        TopoDS_Shape aE = anExpE.Current();
-                        if (aDMEF.FindFromKey(aE, out NCollection_List<TopoDS_Shape> pLF))
+                        Shape aE = anExpE.Current();
+                        if (aDMEF.FindFromKey(aE, out NCollection_List<Shape> pLF))
                         {
-                            NCollection_List<TopoDS_Shape>.Iterator aItLF = new(pLF);
+                            NCollection_List<Shape>.Iterator aItLF = new(pLF);
                             for (; aItLF.More() && !bIsConnected; aItLF.Next())
                             {
                                 bIsConnected = theMFInv.Contains(aItLF.Value());
@@ -4310,13 +4315,13 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     // check vertices
                     if (!bIsConnected)
                     {
-                        TopExp_Explorer anExpV = new(aF, TopAbs_VERTEX);
+                        Explorer anExpV = new(aF, ShapeType.Vertex);
                         for (; anExpV.More() && !bIsConnected; anExpV.Next())
                         {
-                            TopoDS_Shape aV = anExpV.Current();
-                            if (aDMVE.FindFromKey(aV, out NCollection_List<TopoDS_Shape> pLE))
+                            Shape aV = anExpV.Current();
+                            if (aDMVE.FindFromKey(aV, out NCollection_List<Shape> pLE))
                             {
-                                NCollection_List<TopoDS_Shape>.Iterator aItLE = new(pLE);
+                                NCollection_List<Shape>.Iterator aItLE = new(pLE);
                                 for (; aItLE.More() && !bIsConnected; aItLE.Next())
                                 {
                                     bIsConnected = !aBlockME.Contains(aItLE.Value()) && aMEInv.Contains(aItLE.Value());
@@ -4327,12 +4332,12 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 }
 
                 // Check block to be isolated
-                if (aMVOrs.Find(aF, out NCollection_List<TopoDS_Shape> pLFOr))
+                if (aMVOrs.Find(aF, out NCollection_List<Shape> pLFOr))
                 {
-                    NCollection_List<TopoDS_Shape>.Iterator aItLFOr = new(pLFOr);
+                    NCollection_List<Shape>.Iterator aItLFOr = new(pLFOr);
                     for (; aItLFOr.More(); aItLFOr.Next())
                     {
-                        if (theDMFImF.Find(aItLFOr.Value(), out TopoDS_Shape pFOffset))
+                        if (theDMFImF.Find(aItLFOr.Value(), out Shape pFOffset))
                         {
                             aMOffsetF.Add(pFOffset);
                         }
@@ -4340,7 +4345,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 }
                 else
                 {
-                    if (theDMFImF.Find(aF, out TopoDS_Shape pFOffset))
+                    if (theDMFImF.Find(aF, out Shape pFOffset))
                     {
                         aMOffsetF.Add(pFOffset);
                     }
@@ -4359,8 +4364,8 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aItLCBH.Initialize(aBlocksToRemove);
         for (; aItLCBH.More(); aItLCBH.Next())
         {
-            TopoDS_Shape aCBH = aItLCBH.Value();
-            TopExp_Explorer anExpF = new(aCBH, TopAbs_FACE);
+            Shape aCBH = aItLCBH.Value();
+            Explorer anExpF = new(aCBH, ShapeType.Face);
             for (; anExpF.More(); anExpF.Next())
             {
                 theMFToRem.Add(anExpF.Current());
@@ -4372,8 +4377,8 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : RemoveValidSplits
     // purpose  : Removing valid splits according to results of intersection
     //=======================================================================
-    private void RemoveValidSplits(NCollection_Map<TopoDS_Shape> theSpRem, BOPAlgo_Builder theGF,
-                                   NCollection_IndexedMap<TopoDS_Shape> theMERemoved)
+    private void RemoveValidSplits(NCollection_Map<Shape> theSpRem, BOPAlgo_Builder theGF,
+                                   NCollection_IndexedMap<Shape> theMERemoved)
     {
         int i, aNb = myOFImages.Extent();
         if (aNb == 0)
@@ -4383,30 +4388,30 @@ internal sealed class BRepOffset_BuildOffsetFaces
         //
         for (i = 1; i <= aNb; ++i)
         {
-            NCollection_List<TopoDS_Shape> aLSIm = myOFImages[i];
-            NCollection_List<TopoDS_Shape>.Iterator aIt = new(aLSIm);
+            NCollection_List<Shape> aLSIm = myOFImages[i];
+            NCollection_List<Shape>.Iterator aIt = new(aLSIm);
             for (; aIt.More();)
             {
-                TopoDS_Shape aSIm = aIt.Value();
+                Shape aSIm = aIt.Value();
                 if (theSpRem.Contains(aSIm))
                 {
-                    TopExp.MapShapes(aSIm, TopAbs_EDGE, theMERemoved);
+                    Exploration.MapShapes(aSIm, ShapeType.Edge, theMERemoved);
                     aLSIm.Remove(aIt);
                     continue;
                 }
                 //
                 // check if all its images are have to be removed
-                NCollection_List<TopoDS_Shape> aLSImIm = ModifiedOf(theGF, aSIm);
+                NCollection_List<Shape> aLSImIm = ModifiedOf(theGF, aSIm);
                 if (aLSImIm.Extent() != 0)
                 {
                     bool bAllRem = true;
-                    NCollection_List<TopoDS_Shape>.Iterator aIt1 = new(aLSImIm);
+                    NCollection_List<Shape>.Iterator aIt1 = new(aLSImIm);
                     for (; aIt1.More(); aIt1.Next())
                     {
-                        TopoDS_Shape aSImIm = aIt1.Value();
+                        Shape aSImIm = aIt1.Value();
                         if (theSpRem.Contains(aSImIm))
                         {
-                            TopExp.MapShapes(aSImIm, TopAbs_EDGE, theMERemoved);
+                            Exploration.MapShapes(aSImIm, ShapeType.Edge, theMERemoved);
                         }
                         else
                         {
@@ -4416,7 +4421,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     //
                     if (bAllRem)
                     {
-                        TopExp.MapShapes(aSIm, TopAbs_EDGE, theMERemoved);
+                        Exploration.MapShapes(aSIm, ShapeType.Edge, theMERemoved);
                         aLSIm.Remove(aIt);
                         continue;
                     }
@@ -4430,8 +4435,8 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : RemoveInvalidSplits
     // purpose  : Removing invalid splits according to the results of intersection
     //=======================================================================
-    private void RemoveInvalidSplits(NCollection_Map<TopoDS_Shape> theSpRem, BOPAlgo_Builder theGF,
-                                     NCollection_IndexedMap<TopoDS_Shape> theMERemoved)
+    private void RemoveInvalidSplits(NCollection_Map<Shape> theSpRem, BOPAlgo_Builder theGF,
+                                     NCollection_IndexedMap<Shape> theMERemoved)
     {
         int i, aNb = myInvalidFaces.Extent();
         if (aNb == 0)
@@ -4441,23 +4446,23 @@ internal sealed class BRepOffset_BuildOffsetFaces
         //
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aS = myInvalidFaces.FindKey(i);
+            Shape aS = myInvalidFaces.FindKey(i);
             bool bArt = myArtInvalidFaces.IsBound(aS);
             //
-            NCollection_List<TopoDS_Shape> aLSIm = myInvalidFaces[i];
-            NCollection_List<TopoDS_Shape>.Iterator aIt = new(aLSIm);
+            NCollection_List<Shape> aLSIm = myInvalidFaces[i];
+            NCollection_List<Shape>.Iterator aIt = new(aLSIm);
             for (; aIt.More();)
             {
-                TopoDS_Shape aSIm = aIt.Value();
+                Shape aSIm = aIt.Value();
                 if (theSpRem.Contains(aSIm))
                 {
-                    TopExp.MapShapes(aSIm, TopAbs_EDGE, theMERemoved);
+                    Exploration.MapShapes(aSIm, ShapeType.Edge, theMERemoved);
                     aLSIm.Remove(aIt);
                     continue;
                 }
                 //
                 // check if all its images are have to be removed
-                NCollection_List<TopoDS_Shape> aLSImIm = ModifiedOf(theGF, aSIm);
+                NCollection_List<Shape> aLSImIm = ModifiedOf(theGF, aSIm);
                 if (aLSImIm.IsEmpty())
                 {
                     aIt.Next();
@@ -4465,14 +4470,14 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 }
                 //
                 bool bAllRem = true;
-                NCollection_IndexedMap<TopoDS_Shape> aMERemoved = new(TopTools_ShapeMapHasher.Instance);
-                NCollection_List<TopoDS_Shape>.Iterator aIt1 = new(aLSImIm);
+                NCollection_IndexedMap<Shape> aMERemoved = new(ShapeHasher.Instance);
+                NCollection_List<Shape>.Iterator aIt1 = new(aLSImIm);
                 for (; aIt1.More(); aIt1.Next())
                 {
-                    TopoDS_Shape aSImIm = aIt1.Value();
+                    Shape aSImIm = aIt1.Value();
                     if (theSpRem.Contains(aSImIm))
                     {
-                        TopExp.MapShapes(aSImIm, TopAbs_EDGE, aMERemoved);
+                        Exploration.MapShapes(aSImIm, ShapeType.Edge, aMERemoved);
                     }
                     else
                     {
@@ -4494,10 +4499,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 //
                 // remove the face from invalid if all invalid edges of this face
                 // have been marked for removal
-                TopExp_Explorer aExpE = new(aSIm, TopAbs_EDGE);
+                Explorer aExpE = new(aSIm, ShapeType.Edge);
                 for (; aExpE.More(); aExpE.Next())
                 {
-                    TopoDS_Shape aEInv = aExpE.Current();
+                    Shape aEInv = aExpE.Current();
                     if (myInvalidEdges.Contains(aEInv) && !aMERemoved.Contains(aEInv))
                     {
                         break;
@@ -4505,7 +4510,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 }
                 if (!aExpE.More())
                 {
-                    TopExp.MapShapes(aSIm, TopAbs_EDGE, theMERemoved);
+                    Exploration.MapShapes(aSIm, ShapeType.Edge, theMERemoved);
                     aLSIm.Remove(aIt);
                 }
                 else
@@ -4520,23 +4525,23 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : FilterEdgesImages
     // purpose  : Updating the maps of images and origins of the offset edges
     //=======================================================================
-    private void FilterEdgesImages(in TopoDS_Shape theS)
+    private void FilterEdgesImages(in Shape theS)
     {
         // map edges
-        NCollection_IndexedMap<TopoDS_Shape> aME = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theS, TopAbs_EDGE, aME);
+        NCollection_IndexedMap<Shape> aME = new(ShapeHasher.Instance);
+        Exploration.MapShapes(theS, ShapeType.Edge, aME);
         //
         myOEOrigins.Clear();
         // OCCT.NET: OCCT iterates the map by its edges' addresses; the port in insertion order (decision 1032).
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aItDM in myOEImages)
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> aItDM in myOEImages)
         {
-            TopoDS_Shape aE = aItDM.Key;
-            NCollection_List<TopoDS_Shape> aLEIm = aItDM.Value;
+            Shape aE = aItDM.Key;
+            NCollection_List<Shape> aLEIm = aItDM.Value;
             //
-            NCollection_List<TopoDS_Shape>.Iterator aIt = new(aLEIm);
+            NCollection_List<Shape>.Iterator aIt = new(aLEIm);
             for (; aIt.More();)
             {
-                TopoDS_Shape aEIm = aIt.Value();
+                Shape aEIm = aIt.Value();
                 // filter images
                 if (!aME.Contains(aEIm))
                 {
@@ -4554,7 +4559,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 }
                 else
                 {
-                    NCollection_List<TopoDS_Shape> aLOr = new();
+                    NCollection_List<Shape> aLOr = new();
                     aLOr.Append(aE);
                     myOEOrigins.Bind(aEIm, aLOr);
                 }
@@ -4565,13 +4570,13 @@ internal sealed class BRepOffset_BuildOffsetFaces
     }
 
     // OCCT's copy of an IndexedDataMap of lists (a value copy: the lists are copied too).
-    private static NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> CopyOf(
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMap)
+    private static NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> CopyOf(
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMap)
     {
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aCopy = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aCopy = new(ShapeHasher.Instance);
         for (int i = 1; i <= theMap.Extent(); ++i)
         {
-            aCopy.Add(theMap.FindKey(i), new NCollection_List<TopoDS_Shape>(theMap[i]));
+            aCopy.Add(theMap.FindKey(i), new NCollection_List<Shape>(theMap[i]));
         }
         return aCopy;
     }
@@ -4580,24 +4585,24 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : FilterInvalidFaces
     // purpose  : Filtering of the invalid faces
     //=======================================================================
-    private void FilterInvalidFaces(NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMEF,
-                                    NCollection_IndexedMap<TopoDS_Shape> theMERemoved)
+    private void FilterInvalidFaces(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theDMEF,
+                                    NCollection_IndexedMap<Shape> theMERemoved)
     {
         //
         // filter invalid faces, considering faces having only valid
         // images left with non-free edges as valid
         // do not remove invalid faces if it creates free edges
         //
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aReallyInvFaces = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aReallyInvFaces = new(ShapeHasher.Instance);
         // Edge-Face connexity map of all splits, both invalid and valid
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMEFAll = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new();
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMEFAll = new(ShapeHasher.Instance);
+        NCollection_List<Shape>.Iterator aItLF = new();
         //
         int aNb = myInvalidFaces.Extent();
         for (int i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aF = myInvalidFaces.FindKey(i);
-            NCollection_List<TopoDS_Shape> aLFInv = myInvalidFaces[i];
+            Shape aF = myInvalidFaces.FindKey(i);
+            NCollection_List<Shape> aLFInv = myInvalidFaces[i];
             //
             if (myArtInvalidFaces.IsBound(aF))
             {
@@ -4607,7 +4612,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 }
                 else
                 {
-                    aReallyInvFaces.Add(aF, new NCollection_List<TopoDS_Shape>(aLFInv));
+                    aReallyInvFaces.Add(aF, new NCollection_List<Shape>(aLFInv));
                 }
                 continue;
             }
@@ -4617,7 +4622,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 continue;
             }
             //
-            NCollection_List<TopoDS_Shape> aLFIm = myOFImages.ChangeFromKey(aF);
+            NCollection_List<Shape> aLFIm = myOFImages.ChangeFromKey(aF);
             bool bInvalid = aLFIm.IsEmpty();
             //
             if (!bInvalid)
@@ -4626,12 +4631,12 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 aItLF.Initialize(aLFInv);
                 for (; aItLF.More(); aItLF.Next())
                 {
-                    TopoDS_Shape aFInv = aItLF.Value();
+                    Shape aFInv = aItLF.Value();
                     //
-                    NCollection_List<TopoDS_Shape>.Iterator aItLFIm = new(aLFIm);
+                    NCollection_List<Shape>.Iterator aItLFIm = new(aLFIm);
                     for (; aItLFIm.More(); aItLFIm.Next())
                     {
-                        TopoDS_Shape aFIm = aItLFIm.Value();
+                        Shape aFIm = aItLFIm.Value();
                         //
                         if (aFInv.IsSame(aFIm))
                         {
@@ -4653,19 +4658,19 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 // check for free edges
                 for (int j = 0; !bInvalid && j < 2; ++j)
                 {
-                    NCollection_List<TopoDS_Shape> aLI = j == 0 ? aLFIm : aLFInv;
+                    NCollection_List<Shape> aLI = j == 0 ? aLFIm : aLFInv;
                     aItLF.Initialize(aLI);
                     for (; aItLF.More(); aItLF.Next())
                     {
-                        TopoDS_Shape aFIm = aItLF.Value();
+                        Shape aFIm = aItLF.Value();
                         //
-                        TopExp_Explorer aExp = new(aFIm, TopAbs_EDGE);
+                        Explorer aExp = new(aFIm, ShapeType.Edge);
                         for (; aExp.More(); aExp.Next())
                         {
-                            TopoDS_Shape aE = aExp.Current();
+                            Shape aE = aExp.Current();
                             if (!theMERemoved.Contains(aE))
                             {
-                                if (theDMEF.FindFromKey(aE, out NCollection_List<TopoDS_Shape> pLEF) && pLEF.Extent() == 1)
+                                if (theDMEF.FindFromKey(aE, out NCollection_List<Shape> pLEF) && pLEF.Extent() == 1)
                                 {
                                     break;
                                 }
@@ -4687,14 +4692,14 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     aDMEFAll = CopyOf(theDMEF);
                     for (int iF = 1; iF <= aNb; ++iF)
                     {
-                        for (NCollection_List<TopoDS_Shape>.Iterator itLFInv = new(myInvalidFaces[iF]); itLFInv.More(); itLFInv.Next())
+                        for (NCollection_List<Shape>.Iterator itLFInv = new(myInvalidFaces[iF]); itLFInv.More(); itLFInv.Next())
                         {
-                            TopExp.MapShapesAndAncestors(itLFInv.Value(), TopAbs_EDGE, TopAbs_FACE, aDMEFAll);
+                            Exploration.MapShapesAndAncestors(itLFInv.Value(), ShapeType.Edge, ShapeType.Face, aDMEFAll);
                         }
                     }
                 }
 
-                NCollection_Map<TopoDS_Shape> aLocalSplits = new(TopTools_ShapeMapHasher.Instance);
+                NCollection_Map<Shape> aLocalSplits = new(ShapeHasher.Instance);
                 for (int j = 0; j < 2; ++j)
                 {
                     for (aItLF.Initialize((j == 0 ? aLFIm : aLFInv)); aItLF.More(); aItLF.Next())
@@ -4708,15 +4713,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 aItLF.Initialize(aLFInv);
                 for (; aItLF.More(); aItLF.Next())
                 {
-                    TopoDS_Shape aFIm = aItLF.Value();
-                    TopExp_Explorer aExp = new(aFIm, TopAbs_EDGE);
+                    Shape aFIm = aItLF.Value();
+                    Explorer aExp = new(aFIm, ShapeType.Edge);
                     for (; aExp.More(); aExp.Next())
                     {
-                        TopoDS_Shape aE = aExp.Current();
+                        Shape aE = aExp.Current();
                         if (myInvalidEdges.Contains(aE) && !theMERemoved.Contains(aE))
                         {
-                            NCollection_List<TopoDS_Shape> aLF = aDMEFAll.FindFromKey(aE);
-                            NCollection_List<TopoDS_Shape>.Iterator itLF = new(aLF);
+                            NCollection_List<Shape> aLF = aDMEFAll.FindFromKey(aE);
+                            NCollection_List<Shape>.Iterator itLF = new(aLF);
                             for (; itLF.More(); itLF.Next())
                             {
                                 if (!aLocalSplits.Contains(itLF.Value()))
@@ -4748,7 +4753,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             //
             if (bInvalid)
             {
-                aReallyInvFaces.Add(aF, new NCollection_List<TopoDS_Shape>(aLFInv));
+                aReallyInvFaces.Add(aF, new NCollection_List<Shape>(aLFInv));
             }
         }
         //
@@ -4765,33 +4770,33 @@ internal sealed class BRepOffset_BuildOffsetFaces
         int aNbF = myInvalidFaces.Extent();
         for (int i = 1; i <= aNbF; ++i)
         {
-            TopoDS_Shape aF = myInvalidFaces.FindKey(i);
+            Shape aF = myInvalidFaces.FindKey(i);
             if (myArtInvalidFaces.IsBound(aF))
             {
                 continue;
             }
 
-            NCollection_List<TopoDS_Shape> aLFIm = myInvalidFaces[i];
-            for (NCollection_List<TopoDS_Shape>.Iterator it = new(aLFIm); it.More(); it.Next())
+            NCollection_List<Shape> aLFIm = myInvalidFaces[i];
+            for (NCollection_List<Shape>.Iterator it = new(aLFIm); it.More(); it.Next())
             {
-                TopoDS_Shape aFIm = it.Value();
-                for (TopExp_Explorer expE = new(aFIm, TopAbs_EDGE); expE.More(); expE.Next())
+                Shape aFIm = it.Value();
+                for (Explorer expE = new(aFIm, ShapeType.Edge); expE.More(); expE.Next())
                 {
-                    TopoDS_Shape aE = expE.Current();
+                    Shape aE = expE.Current();
                     if (myInvalidEdges.Contains(aE) || myValidEdges.Contains(aE))
                     {
                         continue;
                     }
 
                     // check if this edges is not created from vertex and mark it as invalid
-                    if (!myEdgesOrigins!.Find(aE, out NCollection_List<TopoDS_Shape> pLEOr))
+                    if (!myEdgesOrigins!.Find(aE, out NCollection_List<Shape> pLEOr))
                     {
                         continue;
                     }
-                    NCollection_List<TopoDS_Shape>.Iterator itLEO = new(pLEOr);
+                    NCollection_List<Shape>.Iterator itLEO = new(pLEOr);
                     for (; itLEO.More(); itLEO.Next())
                     {
-                        if (itLEO.Value().ShapeType() != TopAbs_VERTEX)
+                        if (itLEO.Value().ShapeType() != ShapeType.Vertex)
                         {
                             break;
                         }
@@ -4809,31 +4814,31 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : FilterInvalidEdges
     // purpose  : Filtering the invalid edges according to currently invalid faces
     //=======================================================================
-    private void FilterInvalidEdges(NCollection_DataMap<TopoDS_Shape, NCollection_IndexedMap<TopoDS_Shape>> theDMFMIE,
-                                    NCollection_IndexedMap<TopoDS_Shape> theMERemoved,
-                                    NCollection_IndexedMap<TopoDS_Shape> theMEInside,
-                                    NCollection_Map<TopoDS_Shape> theMEUseInRebuild)
+    private void FilterInvalidEdges(NCollection_DataMap<Shape, NCollection_IndexedMap<Shape>> theDMFMIE,
+                                    NCollection_IndexedMap<Shape> theMERemoved,
+                                    NCollection_IndexedMap<Shape> theMEInside,
+                                    NCollection_Map<Shape> theMEUseInRebuild)
     {
-        TopoDS_Compound aCEInv = new();
-        NCollection_IndexedMap<TopoDS_Shape> aMEInv = new(TopTools_ShapeMapHasher.Instance);
-        BRep_Builder aBB = new();
+        Compound aCEInv = new();
+        NCollection_IndexedMap<Shape> aMEInv = new(ShapeHasher.Instance);
+        BrepBuilder aBB = new();
         aBB.MakeCompound(ref aCEInv);
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new();
+        NCollection_List<Shape>.Iterator aItLF = new();
         //
         int i, aNb = myInvalidFaces.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            NCollection_List<TopoDS_Shape> aLFInv = myInvalidFaces[i];
+            NCollection_List<Shape> aLFInv = myInvalidFaces[i];
             aItLF.Initialize(aLFInv);
             for (; aItLF.More(); aItLF.Next())
             {
-                TopoDS_Shape aFIm = aItLF.Value();
-                TopExp.MapShapes(aFIm, TopAbs_EDGE, aMEInv);
+                Shape aFIm = aItLF.Value();
+                Exploration.MapShapes(aFIm, ShapeType.Edge, aMEInv);
                 //
-                TopExp_Explorer aExpE = new(aFIm, TopAbs_EDGE);
+                Explorer aExpE = new(aFIm, ShapeType.Edge);
                 for (; aExpE.More(); aExpE.Next())
                 {
-                    TopoDS_Shape aE = aExpE.Current();
+                    Shape aE = aExpE.Current();
                     if (myInvalidEdges.Contains(aE))
                     {
                         aBB.Add(aCEInv, aE);
@@ -4843,18 +4848,18 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         //
         // remove edges which have been marked for removal
-        NCollection_IndexedMap<TopoDS_Shape> aMEInvToAvoid = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape> aLCBE = new();
-        BOPTools_AlgoTools.MakeConnexityBlocks(aCEInv, TopAbs_VERTEX, TopAbs_EDGE, aLCBE);
+        NCollection_IndexedMap<Shape> aMEInvToAvoid = new(ShapeHasher.Instance);
+        NCollection_List<Shape> aLCBE = new();
+        BOPTools_AlgoTools.MakeConnexityBlocks(aCEInv, ShapeType.Vertex, ShapeType.Edge, aLCBE);
         //
-        NCollection_List<TopoDS_Shape>.Iterator aItLCBE = new(aLCBE);
+        NCollection_List<Shape>.Iterator aItLCBE = new(aLCBE);
         for (; aItLCBE.More(); aItLCBE.Next())
         {
-            TopoDS_Shape aCBE = aItLCBE.Value();
-            TopExp_Explorer aExpCB = new(aCBE, TopAbs_EDGE);
+            Shape aCBE = aItLCBE.Value();
+            Explorer aExpCB = new(aCBE, ShapeType.Edge);
             for (; aExpCB.More(); aExpCB.Next())
             {
-                TopoDS_Shape aE = aExpCB.Current();
+                Shape aE = aExpCB.Current();
                 if (!theMERemoved.Contains(aE))
                 {
                     break;
@@ -4863,24 +4868,24 @@ internal sealed class BRepOffset_BuildOffsetFaces
             //
             if (!aExpCB.More())
             {
-                TopExp.MapShapes(aCBE, TopAbs_EDGE, aMEInvToAvoid);
+                Exploration.MapShapes(aCBE, ShapeType.Edge, aMEInvToAvoid);
             }
         }
         //
-        NCollection_IndexedMap<TopoDS_Shape> aReallyInvEdges = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> aReallyInvEdges = new(ShapeHasher.Instance);
         //
         aNb = myInvalidFaces.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aF = myInvalidFaces.FindKey(i);
+            Shape aF = myInvalidFaces.FindKey(i);
             if (myArtInvalidFaces.IsBound(aF))
             {
-                if (theDMFMIE.Find(aF, out NCollection_IndexedMap<TopoDS_Shape> aMIE))
+                if (theDMFMIE.Find(aF, out NCollection_IndexedMap<Shape> aMIE))
                 {
                     int aNbIE = aMIE.Extent();
                     for (int iE = 1; iE <= aNbIE; ++iE)
                     {
-                        TopoDS_Shape aE = aMIE.FindKey(iE);
+                        Shape aE = aMIE.FindKey(iE);
                         if (aMEInv.Contains(aE) && !aMEInvToAvoid.Contains(aE))
                         {
                             aReallyInvEdges.Add(aE);
@@ -4890,15 +4895,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
             else
             {
-                NCollection_List<TopoDS_Shape> aLFInv = myInvalidFaces[i];
+                NCollection_List<Shape> aLFInv = myInvalidFaces[i];
                 aItLF.Initialize(aLFInv);
                 for (; aItLF.More(); aItLF.Next())
                 {
-                    TopoDS_Shape aFIm = aItLF.Value();
-                    TopExp_Explorer aExpE = new(aFIm, TopAbs_EDGE);
+                    Shape aFIm = aItLF.Value();
+                    Explorer aExpE = new(aFIm, ShapeType.Edge);
                     for (; aExpE.More(); aExpE.Next())
                     {
-                        TopoDS_Shape aE = aExpE.Current();
+                        Shape aE = aExpE.Current();
                         if (myInvalidEdges.Contains(aE) && !aMEInvToAvoid.Contains(aE))
                         {
                             aReallyInvEdges.Add(aE);
@@ -4918,23 +4923,23 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aNb = myInvalidEdges.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aE = myInvalidEdges[i];
+            Shape aE = myInvalidEdges[i];
             if (!theMEInside.Contains(aE) || !myValidEdges.Contains(aE))
             {
                 continue;
             }
 
-            if (!myOEOrigins.Find(aE, out NCollection_List<TopoDS_Shape> pEOrigins))
+            if (!myOEOrigins.Find(aE, out NCollection_List<Shape> pEOrigins))
             {
                 continue;
             }
 
             bool bHasInvOutside = false;
-            for (NCollection_List<TopoDS_Shape>.Iterator itEOr = new(pEOrigins); !bHasInvOutside && itEOr.More(); itEOr.Next())
+            for (NCollection_List<Shape>.Iterator itEOr = new(pEOrigins); !bHasInvOutside && itEOr.More(); itEOr.Next())
             {
-                if (myOEImages.Find(itEOr.Value(), out NCollection_List<TopoDS_Shape> pEIms))
+                if (myOEImages.Find(itEOr.Value(), out NCollection_List<Shape> pEIms))
                 {
-                    for (NCollection_List<TopoDS_Shape>.Iterator itEIms = new(pEIms); !bHasInvOutside && itEIms.More(); itEIms.Next())
+                    for (NCollection_List<Shape>.Iterator itEIms = new(pEIms); !bHasInvOutside && itEIms.More(); itEIms.Next())
                     {
                         bHasInvOutside = myInvalidEdges.Contains(itEIms.Value()) && !theMEInside.Contains(itEIms.Value());
                     }
@@ -4962,36 +4967,36 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         //
         bool bRebuild;
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new();
-        NCollection_List<TopoDS_Shape> aLEValid = new();
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance), aMEReb = new(TopTools_ShapeMapHasher.Instance),
-                                      aMFReb = new(TopTools_ShapeMapHasher.Instance);
-        TopExp_Explorer aExp = new();
+        NCollection_List<Shape>.Iterator aItLF = new();
+        NCollection_List<Shape> aLEValid = new();
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance), aMEReb = new(ShapeHasher.Instance),
+                                      aMFReb = new(ShapeHasher.Instance);
+        Explorer aExp = new();
         //
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMFLV = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aDMFLV = new(ShapeHasher.Instance);
         // get edges from invalid faces
         aNb = myInvalidFaces.Extent();
         for (i = 1; i <= aNb; i++)
         {
-            TopoDS_Shape aF = myInvalidFaces.FindKey(i);
+            Shape aF = myInvalidFaces.FindKey(i);
             aMFence.Clear();
-            NCollection_List<TopoDS_Shape> aLVAvoid = new();
-            NCollection_List<TopoDS_Shape> aLFIm = myInvalidFaces[i];
+            NCollection_List<Shape> aLVAvoid = new();
+            NCollection_List<Shape> aLFIm = myInvalidFaces[i];
             aItLF.Initialize(aLFIm);
             for (; aItLF.More(); aItLF.Next())
             {
-                TopoDS_Shape aFIm = aItLF.Value();
-                aExp.Init(aFIm, TopAbs_EDGE);
+                Shape aFIm = aItLF.Value();
+                aExp.Init(aFIm, ShapeType.Edge);
                 for (; aExp.More(); aExp.Next())
                 {
-                    TopoDS_Shape aE = aExp.Current();
+                    Shape aE = aExp.Current();
                     aMEReb.Add(aE);
                     if (myInvalidEdges.Contains(aE))
                     {
-                        TopExp_Explorer aExpV = new(aE, TopAbs_VERTEX);
+                        Explorer aExpV = new(aE, ShapeType.Vertex);
                         for (; aExpV.More(); aExpV.Next())
                         {
-                            TopoDS_Shape aV = aExpV.Current();
+                            Shape aV = aExpV.Current();
                             if (aMFence.Add(aV))
                             {
                                 aLVAvoid.Append(aV);
@@ -5007,7 +5012,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 aDMFLV.Bind(aF, aLVAvoid);
             }
             //
-            NCollection_List<TopoDS_Shape>? pLF = null;
+            NCollection_List<Shape>? pLF = null;
             if (!myArtInvalidFaces.IsBound(aF))
             {
                 mySSInterfs.Find(aF, out pLF);
@@ -5018,10 +5023,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
             if (pLF is not null)
             {
-                NCollection_List<TopoDS_Shape>.Iterator aItLFE = new(pLF);
+                NCollection_List<Shape>.Iterator aItLFE = new(pLF);
                 for (; aItLFE.More(); aItLFE.Next())
                 {
-                    TopoDS_Shape aFE = aItLFE.Value();
+                    Shape aFE = aItLFE.Value();
                     aMFReb.Add(aFE);
                 }
             }
@@ -5031,16 +5036,16 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aNb = myOFImages.Extent();
         for (i = 1; i <= aNb; i++)
         {
-            TopoDS_Shape aF = myOFImages.FindKey(i);
-            NCollection_List<TopoDS_Shape> aLFIm = myOFImages[i];
-            NCollection_Map<TopoDS_Shape> aMVAvoid = new(TopTools_ShapeMapHasher.Instance);
+            Shape aF = myOFImages.FindKey(i);
+            NCollection_List<Shape> aLFIm = myOFImages[i];
+            NCollection_Map<Shape> aMVAvoid = new(ShapeHasher.Instance);
             if (aDMFLV.IsBound(aF))
             {
-                NCollection_List<TopoDS_Shape> aLVAvoid = aDMFLV.Find(aF);
-                NCollection_List<TopoDS_Shape>.Iterator aItLV = new(aLVAvoid);
+                NCollection_List<Shape> aLVAvoid = aDMFLV.Find(aF);
+                NCollection_List<Shape>.Iterator aItLV = new(aLVAvoid);
                 for (; aItLV.More(); aItLV.Next())
                 {
-                    TopoDS_Shape aV = aItLV.Value();
+                    Shape aV = aItLV.Value();
                     aMVAvoid.Add(aV);
                 }
             }
@@ -5052,11 +5057,11 @@ internal sealed class BRepOffset_BuildOffsetFaces
             aItLF.Initialize(aLFIm);
             for (; aItLF.More(); aItLF.Next())
             {
-                TopoDS_Shape aFIm = aItLF.Value();
-                aExp.Init(aFIm, TopAbs_EDGE);
+                Shape aFIm = aItLF.Value();
+                aExp.Init(aFIm, ShapeType.Edge);
                 for (; aExp.More(); aExp.Next())
                 {
-                    TopoDS_Edge anEIm = TopoDS.Edge(aExp.Current());
+                    Edge anEIm = ShapeCasts.Edge(aExp.Current());
                     if (!myInvalidEdges.Contains(anEIm))
                     {
                         if (aMFence.Add(anEIm))
@@ -5073,10 +5078,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     if (!bRebuild)
                     {
                         // check vertices
-                        TopExp_Explorer aExpV = new(anEIm, TopAbs_VERTEX);
+                        Explorer aExpV = new(anEIm, ShapeType.Vertex);
                         for (; aExpV.More() && !bRebuild; aExpV.Next())
                         {
-                            TopoDS_Shape aV = aExpV.Current();
+                            Shape aV = aExpV.Current();
                             if (!aMVAvoid.Contains(aV))
                             {
                                 bRebuild = aMEReb.Contains(aV);
@@ -5097,7 +5102,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             //
             if (bRebuild)
             {
-                myFacesToRebuild.Add(aF, new NCollection_List<TopoDS_Shape>(aLEValid));
+                myFacesToRebuild.Add(aF, new NCollection_List<Shape>(aLEValid));
             }
         }
     }
@@ -5106,12 +5111,12 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : mapShapes
     // purpose  : Collect theVecShapes into theMap with theType set
     //=======================================================================
-    private static void mapShapes(NCollection_List<TopoDS_Shape> theVecShapes, TopAbs_ShapeEnum theType,
-                                  NCollection_Map<TopoDS_Shape> theMap)
+    private static void mapShapes(NCollection_List<Shape> theVecShapes, ShapeType theType,
+                                  NCollection_Map<Shape> theMap)
     {
-        foreach (TopoDS_Shape aShape in theVecShapes)
+        foreach (Shape aShape in theVecShapes)
         {
-            for (TopExp_Explorer anExp = new(aShape, theType); anExp.More(); anExp.Next())
+            for (Explorer anExp = new(aShape, theType); anExp.More(); anExp.Next())
             {
                 theMap.Add(anExp.Current());
             }
@@ -5122,7 +5127,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : IntersectFaces
     // purpose  : Intersection of the faces that should be rebuild to resolve all invalidities
     //=======================================================================
-    private void IntersectFaces(NCollection_Map<TopoDS_Shape> theVertsToAvoid, ProgressRange theRange)
+    private void IntersectFaces(NCollection_Map<Shape> theVertsToAvoid, ProgressRange theRange)
     {
         int aNbFR = myFacesToRebuild.Extent();
         if (aNbFR == 0)
@@ -5133,18 +5138,18 @@ internal sealed class BRepOffset_BuildOffsetFaces
         using ProgressScope aPSOuter = new(theRange, "Rebuilding invalid faces", 10);
         //
         int i, j, k, aNbInv;
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new(), aItLE = new();
+        NCollection_List<Shape>.Iterator aItLF = new(), aItLE = new();
         //
         // get vertices from invalid edges
-        NCollection_Map<TopoDS_Shape> aMVInv = new(TopTools_ShapeMapHasher.Instance), aMVInvAll = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMVInv = new(ShapeHasher.Instance), aMVInvAll = new(ShapeHasher.Instance);
         aNbInv = myInvalidEdges.Extent();
         for (i = 1; i <= aNbInv; ++i)
         {
-            TopoDS_Shape aEInv = myInvalidEdges[i];
+            Shape aEInv = myInvalidEdges[i];
             bool bValid = myValidEdges.Contains(aEInv);
-            for (TopExp_Explorer aExp = new(aEInv, TopAbs_VERTEX); aExp.More(); aExp.Next())
+            for (Explorer aExp = new(aEInv, ShapeType.Vertex); aExp.More(); aExp.Next())
             {
-                TopoDS_Shape aV = aExp.Current();
+                Shape aV = aExp.Current();
                 aMVInvAll.Add(aV);
                 if (!bValid)
                 {
@@ -5155,12 +5160,12 @@ internal sealed class BRepOffset_BuildOffsetFaces
         //
         bool bLookVertToAvoid = (aMVInv.Extent() > 0);
         //
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMSF = new(TopTools_ShapeMapHasher.Instance),
-                                                                          aMDone = new(TopTools_ShapeMapHasher.Instance),
-                                                                          aMEInfETrim = new(TopTools_ShapeMapHasher.Instance),
-                                                                          aDMVEFull = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aFLE = new(TopTools_ShapeMapHasher.Instance),
-                                                                                 aDMEFInv = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aDMSF = new(ShapeHasher.Instance),
+                                                                          aMDone = new(ShapeHasher.Instance),
+                                                                          aMEInfETrim = new(ShapeHasher.Instance),
+                                                                          aDMVEFull = new(ShapeHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aFLE = new(ShapeHasher.Instance),
+                                                                                 aDMEFInv = new(ShapeHasher.Instance);
         //
         // Add all faces to rebuild to outgoing map <aFLE>,
         // plus link edges and vertices to the faces to
@@ -5173,7 +5178,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // Additional condition for these vertices is that all
         // edges adjacent to this vertex must be either invalid
         // or contained in invalid faces
-        NCollection_Map<TopoDS_Shape> aMVRInv = new(theVertsToAvoid);
+        NCollection_Map<Shape> aMVRInv = new(theVertsToAvoid);
         FindVerticesToAvoid(aDMEFInv, aDMVEFull, aMVRInv);
         //
         aPSOuter.Next();
@@ -5190,42 +5195,42 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // edges connected to invalid ones
 
         // find blocks of artificially invalid faces
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aDMFImF = new(TopTools_ShapeMapHasher.Instance);
-        TopoDS_Compound aCFArt = new();
-        new BRep_Builder().MakeCompound(ref aCFArt);
+        NCollection_DataMap<Shape, Shape> aDMFImF = new(ShapeHasher.Instance);
+        Compound aCFArt = new();
+        new BrepBuilder().MakeCompound(ref aCFArt);
         // OCCT.NET: OCCT iterates the map by its faces' addresses; the port in insertion order (decision 1032).
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_IndexedMap<TopoDS_Shape>> aItM in myArtInvalidFaces)
+        foreach (KeyValuePair<Shape, NCollection_IndexedMap<Shape>> aItM in myArtInvalidFaces)
         {
-            TopoDS_Shape aF = aItM.Key;
-            NCollection_List<TopoDS_Shape> aLFInv0 = myInvalidFaces.FindFromKey(aF);
+            Shape aF = aItM.Key;
+            NCollection_List<Shape> aLFInv0 = myInvalidFaces.FindFromKey(aF);
             aItLF.Initialize(aLFInv0);
             for (; aItLF.More(); aItLF.Next())
             {
-                new BRep_Builder().Add(aCFArt, aItLF.Value());
+                new BrepBuilder().Add(aCFArt, aItLF.Value());
                 aDMFImF.Bind(aItLF.Value(), aF);
             }
         }
         //
         // make connexity blocks
-        NCollection_List<TopoDS_Shape> aLCBArt = new();
-        BOPTools_AlgoTools.MakeConnexityBlocks(aCFArt, TopAbs_VERTEX, TopAbs_FACE, aLCBArt);
+        NCollection_List<Shape> aLCBArt = new();
+        BOPTools_AlgoTools.MakeConnexityBlocks(aCFArt, ShapeType.Vertex, ShapeType.Face, aLCBArt);
         //
         // alone edges
-        NCollection_Map<TopoDS_Shape> aMEAlone = new(TopTools_ShapeMapHasher.Instance), aMEInvOnArt = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMEAlone = new(ShapeHasher.Instance), aMEInvOnArt = new(ShapeHasher.Instance);
         //
         using ProgressScope aPSArt = new(aPSOuter.Next(), null, aLCBArt.Extent());
-        NCollection_List<TopoDS_Shape>.Iterator aItLCBArt = new(aLCBArt);
+        NCollection_List<Shape>.Iterator aItLCBArt = new(aLCBArt);
         for (; aItLCBArt.More(); aItLCBArt.Next(), aPSArt.Next())
         {
             if (!aPSArt.More())
             {
                 return;
             }
-            TopoDS_Shape aCB = aItLCBArt.Value();
+            Shape aCB = aItLCBArt.Value();
             //
             // check if aCB contains splits of only one offset face
-            NCollection_Map<TopoDS_Shape> aMFArt = new(TopTools_ShapeMapHasher.Instance);
-            TopExp_Explorer aExpF = new(aCB, TopAbs_FACE);
+            NCollection_Map<Shape> aMFArt = new(ShapeHasher.Instance);
+            Explorer aExpF = new(aCB, ShapeType.Face);
             for (; aExpF.More(); aExpF.Next())
             {
                 aMFArt.Add(aDMFImF.Find(aExpF.Current()));
@@ -5234,33 +5239,33 @@ internal sealed class BRepOffset_BuildOffsetFaces
             bool bAlone = (aMFArt.Extent() == 1);
             //
             // vertices on invalid edges
-            NCollection_Map<TopoDS_Shape> aMVEInv = new(TopTools_ShapeMapHasher.Instance);
-            NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_Map<Shape> aMVEInv = new(ShapeHasher.Instance);
+            NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
             // edges that should not be marked as alone - edges having same origins as invalid ones
-            NCollection_Map<TopoDS_Shape> aMEAvoid = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_Map<Shape> aMEAvoid = new(ShapeHasher.Instance);
             // map to find alone edges by looking for free vertices
-            NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMVEVal = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMVEVal = new(ShapeHasher.Instance);
             //
-            TopExp_Explorer aExpE = new(aCB, TopAbs_EDGE);
+            Explorer aExpE = new(aCB, ShapeType.Edge);
             for (; aExpE.More(); aExpE.Next())
             {
-                TopoDS_Shape aE = aExpE.Current();
+                Shape aE = aExpE.Current();
                 if (myInvalidEdges.Contains(aE))
                 {
                     aMEInvOnArt.Add(aE);
-                    for (TopoDS_Iterator aItV = new(aE); aItV.More(); aItV.Next())
+                    for (Iterator aItV = new(aE); aItV.More(); aItV.Next())
                     {
                         aMVEInv.Add(aItV.Value());
                     }
                     //
                     if (bAlone)
                     {
-                        if (myOEOrigins.Find(aE, out NCollection_List<TopoDS_Shape> pLEOr0))
+                        if (myOEOrigins.Find(aE, out NCollection_List<Shape> pLEOr0))
                         {
-                            NCollection_List<TopoDS_Shape>.Iterator aItLEOr0 = new(pLEOr0);
+                            NCollection_List<Shape>.Iterator aItLEOr0 = new(pLEOr0);
                             for (; aItLEOr0.More(); aItLEOr0.Next())
                             {
-                                NCollection_List<TopoDS_Shape>.Iterator aItLEIm = new(myOEImages.Find(aItLEOr0.Value()));
+                                NCollection_List<Shape>.Iterator aItLEIm = new(myOEImages.Find(aItLEOr0.Value()));
                                 for (; aItLEIm.More(); aItLEIm.Next())
                                 {
                                     aMEAvoid.Add(aItLEIm.Value());
@@ -5273,7 +5278,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 //
                 if (aMFence.Add(aE))
                 {
-                    TopExp.MapShapesAndAncestors(aE, TopAbs_VERTEX, TopAbs_EDGE, aDMVEVal);
+                    Exploration.MapShapesAndAncestors(aE, ShapeType.Vertex, ShapeType.Edge, aDMVEVal);
                 }
             }
             //
@@ -5281,19 +5286,19 @@ internal sealed class BRepOffset_BuildOffsetFaces
             int aNbV = aDMVEVal.Extent();
             for (i = 1; i <= aNbV; ++i)
             {
-                TopoDS_Shape aV = aDMVEVal.FindKey(i);
+                Shape aV = aDMVEVal.FindKey(i);
                 if (!aMVEInv.Contains(aV))
                 {
                     continue;
                 }
                 //
-                NCollection_List<TopoDS_Shape> aLEV = aDMVEVal[i];
+                NCollection_List<Shape> aLEV = aDMVEVal[i];
                 if (aLEV.Extent() > 1)
                 {
                     continue;
                 }
                 //
-                TopoDS_Shape aE = aLEV.First();
+                Shape aE = aLEV.First();
                 if (aMEAvoid.Contains(aE))
                 {
                     continue;
@@ -5310,10 +5315,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 }
                 //
                 // check also its vertices
-                TopoDS_Iterator aItE = new(aE);
+                Iterator aItE = new(aE);
                 for (; aItE.More(); aItE.Next())
                 {
-                    TopoDS_Shape aVE = aItE.Value();
+                    Shape aVE = aItE.Value();
                     if (aDMSF.Find(aVE).Extent() > 2)
                     {
                         break;
@@ -5326,21 +5331,21 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 }
                 //
                 // the edge is useless - look for other images
-                if (!myOEOrigins.Find(aE, out NCollection_List<TopoDS_Shape> pLEOr))
+                if (!myOEOrigins.Find(aE, out NCollection_List<Shape> pLEOr))
                 {
                     continue;
                 }
                 //
-                NCollection_List<TopoDS_Shape>.Iterator aItLEOr = new(pLEOr);
+                NCollection_List<Shape>.Iterator aItLEOr = new(pLEOr);
                 for (; aItLEOr.More(); aItLEOr.Next())
                 {
-                    TopoDS_Shape aEOr = aItLEOr.Value();
+                    Shape aEOr = aItLEOr.Value();
                     //
-                    NCollection_List<TopoDS_Shape> aLEIm = myOEImages.Find(aEOr);
-                    NCollection_List<TopoDS_Shape>.Iterator aItLEIm = new(aLEIm);
+                    NCollection_List<Shape> aLEIm = myOEImages.Find(aEOr);
+                    NCollection_List<Shape>.Iterator aItLEIm = new(aLEIm);
                     for (; aItLEIm.More(); aItLEIm.Next())
                     {
-                        TopoDS_Shape aEIm = aItLEIm.Value();
+                        Shape aEIm = aItLEIm.Value();
                         //
                         if (aMFence.Contains(aEIm))
                         {
@@ -5353,21 +5358,21 @@ internal sealed class BRepOffset_BuildOffsetFaces
         //
         // Get all invalidities from all faces to be used for avoiding
         // repeated usage of the common edges
-        NCollection_Map<TopoDS_Shape> aMAllInvs = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMAllInvs = new(ShapeHasher.Instance);
         aNbInv = myInvalidFaces.Extent();
         for (k = 1; k <= aNbInv; ++k)
         {
-            NCollection_List<TopoDS_Shape>.Iterator aIt = new(myInvalidFaces[k]);
+            NCollection_List<Shape>.Iterator aIt = new(myInvalidFaces[k]);
             for (; aIt.More(); aIt.Next())
             {
-                TopExp_Explorer aExp = new(aIt.Value(), TopAbs_EDGE);
+                Explorer aExp = new(aIt.Value(), ShapeType.Edge);
                 for (; aExp.More(); aExp.Next())
                 {
-                    TopoDS_Shape aE = aExp.Current();
+                    Shape aE = aExp.Current();
                     if (myInvalidEdges.Contains(aE) || aMEAlone.Contains(aE))
                     {
                         aMAllInvs.Add(aE);
-                        TopoDS_Iterator aItV = new(aE);
+                        Iterator aItV = new(aE);
                         for (; aItV.More(); aItV.Next())
                         {
                             aMAllInvs.Add(aItV.Value());
@@ -5378,18 +5383,18 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         //
         // Bounding vertices of not trimmed edges
-        NCollection_Map<TopoDS_Shape> aMVBounds = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMVBounds = new(ShapeHasher.Instance);
         //
-        NCollection_Map<TopoDS_Shape> aMECheckExt = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMECheckExt = new(ShapeHasher.Instance);
         // Save connections between not trimmed edge and its trimmed parts
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMEETrim = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aDMEETrim = new(ShapeHasher.Instance);
         // Splits of the new edges
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aEImages = new(TopTools_ShapeMapHasher.Instance);
-        BRep_Builder aBB = new();
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aEImages = new(ShapeHasher.Instance);
+        BrepBuilder aBB = new();
 
         // Keep connection between blocks of invalid edges to the lists of
         // found edges to be intersected for its treatment
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMOENEdges = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMOENEdges = new(ShapeHasher.Instance);
 
         aNbInv = myInvalidFaces.Extent();
         using ProgressScope aPSInter = new(aPSOuter.Next(5), null, aNbInv);
@@ -5399,26 +5404,26 @@ internal sealed class BRepOffset_BuildOffsetFaces
             {
                 return;
             }
-            TopoDS_Shape aFInv = myInvalidFaces.FindKey(k);
+            Shape aFInv = myInvalidFaces.FindKey(k);
             bool bSelfRebAvoid = myFSelfRebAvoid.Contains(aFInv);
-            NCollection_List<TopoDS_Shape> aLFInv = myInvalidFaces[k];
+            NCollection_List<Shape> aLFInv = myInvalidFaces[k];
             //
-            NCollection_List<TopoDS_Shape> aLCB = new();
+            NCollection_List<Shape> aLCB = new();
             if (aLFInv.Extent() > 1)
             {
                 // make compound of invalid faces
-                TopoDS_Compound aCFInv = new();
+                Compound aCFInv = new();
                 aBB.MakeCompound(ref aCFInv);
                 //
-                NCollection_List<TopoDS_Shape>.Iterator aIt = new(aLFInv);
+                NCollection_List<Shape>.Iterator aIt = new(aLFInv);
                 for (; aIt.More(); aIt.Next())
                 {
-                    TopoDS_Shape aFIm = aIt.Value();
+                    Shape aFIm = aIt.Value();
                     aBB.Add(aCFInv, aFIm);
                 }
                 //
                 // make connexity blocks
-                BOPTools_AlgoTools.MakeConnexityBlocks(aCFInv, TopAbs_EDGE, TopAbs_FACE, aLCB);
+                BOPTools_AlgoTools.MakeConnexityBlocks(aCFInv, ShapeType.Edge, ShapeType.Face, aLCB);
             }
             else
             {
@@ -5427,27 +5432,27 @@ internal sealed class BRepOffset_BuildOffsetFaces
             //
             using ProgressScope aPSCB = new(aPSInter.Next(), null, aLCB.Extent());
             bool bArtificial = myArtInvalidFaces.IsBound(aFInv);
-            NCollection_List<TopoDS_Shape>.Iterator aItLCB = new(aLCB);
+            NCollection_List<Shape>.Iterator aItLCB = new(aLCB);
             for (; aItLCB.More(); aItLCB.Next())
             {
                 if (!aPSCB.More())
                 {
                     return;
                 }
-                TopoDS_Shape aCBInv = aItLCB.Value();
+                Shape aCBInv = aItLCB.Value();
                 //
-                NCollection_Map<TopoDS_Shape> aMEFence = new(TopTools_ShapeMapHasher.Instance);
+                NCollection_Map<Shape> aMEFence = new(ShapeHasher.Instance);
                 //
-                TopoDS_Compound aCBE = new();
+                Compound aCBE = new();
                 aBB.MakeCompound(ref aCBE);
                 //
                 // remember inside edges and vertices to further check
-                NCollection_Map<TopoDS_Shape> anInsideEdges = new(TopTools_ShapeMapHasher.Instance);
-                NCollection_Map<TopoDS_Shape> anInsideVertices = new(TopTools_ShapeMapHasher.Instance);
-                TopExp_Explorer aExp = new(aCBInv, TopAbs_EDGE);
+                NCollection_Map<Shape> anInsideEdges = new(ShapeHasher.Instance);
+                NCollection_Map<Shape> anInsideVertices = new(ShapeHasher.Instance);
+                Explorer aExp = new(aCBInv, ShapeType.Edge);
                 for (; aExp.More(); aExp.Next())
                 {
-                    TopoDS_Shape aE = aExp.Current();
+                    Shape aE = aExp.Current();
                     if (myInvalidEdges.Contains(aE) || (bArtificial && aMEAlone.Contains(aE)))
                     {
                         if (aMEFence.Add(aE))
@@ -5456,7 +5461,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                             if (!myEdgesToAvoid.Contains(aE) && myInvalidEdges.Contains(aE))
                             {
                                 anInsideEdges.Add(aE);
-                                TopoDS_Iterator anIt = new(aE);
+                                Iterator anIt = new(aE);
                                 for (; anIt.More(); anIt.Next())
                                 {
                                     anInsideVertices.Add(anIt.Value());
@@ -5467,32 +5472,32 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 }
                 //
                 // make connexity blocks of edges
-                NCollection_List<TopoDS_Shape> aLCBE = new();
-                BOPTools_AlgoTools.MakeConnexityBlocks(aCBE, TopAbs_VERTEX, TopAbs_EDGE, aLCBE);
+                NCollection_List<Shape> aLCBE = new();
+                BOPTools_AlgoTools.MakeConnexityBlocks(aCBE, ShapeType.Vertex, ShapeType.Edge, aLCBE);
                 //
                 using ProgressScope aPSCBE = new(aPSCB.Next(), null, aLCBE.Extent());
-                NCollection_List<TopoDS_Shape>.Iterator aItLCBE = new(aLCBE);
+                NCollection_List<Shape>.Iterator aItLCBE = new(aLCBE);
                 for (; aItLCBE.More(); aItLCBE.Next())
                 {
                     if (!aPSCBE.More())
                     {
                         return;
                     }
-                    TopoDS_Shape aCBELoc = aItLCBE.Value();
+                    Shape aCBELoc = aItLCBE.Value();
                     //
                     // map of edges and vertices of processing invalidity
-                    NCollection_IndexedMap<TopoDS_Shape> aME = new(TopTools_ShapeMapHasher.Instance);
+                    NCollection_IndexedMap<Shape> aME = new(ShapeHasher.Instance);
                     // map of vertices to trim the new edges
-                    TopExp.MapShapes(aCBELoc, TopAbs_EDGE, aME);
-                    NCollection_IndexedMap<TopoDS_Shape> aMECV = new(aME);
-                    TopExp.MapShapes(aCBELoc, TopAbs_VERTEX, aME);
-                    NCollection_IndexedMap<TopoDS_Shape> aMFInt = new(TopTools_ShapeMapHasher.Instance);
+                    Exploration.MapShapes(aCBELoc, ShapeType.Edge, aME);
+                    NCollection_IndexedMap<Shape> aMECV = new(aME);
+                    Exploration.MapShapes(aCBELoc, ShapeType.Vertex, aME);
+                    NCollection_IndexedMap<Shape> aMFInt = new(ShapeHasher.Instance);
                     // additional faces for intersection
-                    NCollection_IndexedMap<TopoDS_Shape> aMFIntExt = new(TopTools_ShapeMapHasher.Instance);
+                    NCollection_IndexedMap<Shape> aMFIntExt = new(ShapeHasher.Instance);
                     // splits of faces for intersection
-                    NCollection_List<TopoDS_Shape> aLFInt = new();
+                    NCollection_List<Shape> aLFInt = new();
                     // faces to avoid intersection
-                    NCollection_IndexedMap<TopoDS_Shape> aMFAvoid = new(TopTools_ShapeMapHasher.Instance);
+                    NCollection_IndexedMap<Shape> aMFAvoid = new(ShapeHasher.Instance);
                     //
                     FindFacesForIntersection(aFInv, aME, aDMSF, aMVInvAll, bArtificial, aMFAvoid, aMFInt, aMFIntExt, aLFInt);
                     if (aMFInt.Extent() < 3)
@@ -5502,10 +5507,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
                         continue;
                     }
                     //
-                    myIntersectionPairs.Find(aFInv, out NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>>? pMFInter);
+                    myIntersectionPairs.Find(aFInv, out NCollection_DataMap<Shape, NCollection_Map<Shape>>? pMFInter);
                     // intersect the faces, but do not intersect the invalid ones
                     // among each other (except for the artificially invalid faces)
-                    NCollection_IndexedMap<TopoDS_Shape> aMEToInt = new(TopTools_ShapeMapHasher.Instance);
+                    NCollection_IndexedMap<Shape> aMEToInt = new(ShapeHasher.Instance);
                     int aNb = aMFInt.Extent();
                     using ProgressScope aPSIntPair = new(aPSCBE.Next(), null, aNb);
                     for (i = 1; i <= aNb; ++i, aPSIntPair.Next())
@@ -5514,25 +5519,25 @@ internal sealed class BRepOffset_BuildOffsetFaces
                         {
                             return;
                         }
-                        TopoDS_Face aFi = TopoDS.Face(aMFInt[i]);
+                        Face aFi = ShapeCasts.Face(aMFInt[i]);
                         if (bSelfRebAvoid && aFi.IsSame(aFInv))
                         {
                             continue;
                         }
                         //
-                        if (!myOFImages.FindFromKey(aFi, out NCollection_List<TopoDS_Shape> aLFImi))
+                        if (!myOFImages.FindFromKey(aFi, out NCollection_List<Shape> aLFImi))
                         {
                             continue;
                         }
                         //
-                        if (!aFLE.FindFromKey(aFi, out NCollection_List<TopoDS_Shape> aLFEi))
+                        if (!aFLE.FindFromKey(aFi, out NCollection_List<Shape> aLFEi))
                         {
                             continue;
                         }
                         //
-                        NCollection_List<TopoDS_Shape> aLFDone = aMDone.ChangeFind(aFi);
+                        NCollection_List<Shape> aLFDone = aMDone.ChangeFind(aFi);
                         //
-                        NCollection_Map<TopoDS_Shape>? pInterFi = null;
+                        NCollection_Map<Shape>? pInterFi = null;
                         if (pMFInter is not null)
                         {
                             pMFInter.Find(aFi, out pInterFi);
@@ -5543,16 +5548,16 @@ internal sealed class BRepOffset_BuildOffsetFaces
                         }
 
                         // create map of edges and vertices for aLFImi
-                        NCollection_Map<TopoDS_Shape> aMEVIm = new(TopTools_ShapeMapHasher.Instance);
-                        mapShapes(aLFImi, TopAbs_EDGE, aMEVIm);
-                        mapShapes(aLFImi, TopAbs_VERTEX, aMEVIm);
+                        NCollection_Map<Shape> aMEVIm = new(ShapeHasher.Instance);
+                        mapShapes(aLFImi, ShapeType.Edge, aMEVIm);
+                        mapShapes(aLFImi, ShapeType.Vertex, aMEVIm);
 
                         bool isIContainsE = NCollection_MapAlgo.HasIntersection(aMEVIm, anInsideEdges);
                         bool isIContainsV = NCollection_MapAlgo.HasIntersection(aMEVIm, anInsideVertices);
 
                         for (j = i + 1; j <= aNb; ++j)
                         {
-                            TopoDS_Face aFj = TopoDS.Face(aMFInt[j]);
+                            Face aFj = ShapeCasts.Face(aMFInt[j]);
                             if (bSelfRebAvoid && aFj.IsSame(aFInv))
                             {
                                 continue;
@@ -5563,20 +5568,20 @@ internal sealed class BRepOffset_BuildOffsetFaces
                                 continue;
                             }
 
-                            if (!myOFImages.FindFromKey(aFj, out NCollection_List<TopoDS_Shape> aLFImj))
+                            if (!myOFImages.FindFromKey(aFj, out NCollection_List<Shape> aLFImj))
                             {
                                 continue;
                             }
                             //
-                            if (!aFLE.FindFromKey(aFj, out NCollection_List<TopoDS_Shape> aLFEj))
+                            if (!aFLE.FindFromKey(aFj, out NCollection_List<Shape> aLFEj))
                             {
                                 continue;
                             }
 
                             // create map of edges and vertices for aLFImi
                             aMEVIm.Clear();
-                            mapShapes(aLFImj, TopAbs_EDGE, aMEVIm);
-                            mapShapes(aLFImj, TopAbs_VERTEX, aMEVIm);
+                            mapShapes(aLFImj, ShapeType.Edge, aMEVIm);
+                            mapShapes(aLFImj, ShapeType.Vertex, aMEVIm);
                             // check images of both faces contain anInsideEdges and anInsideVertices
                             // not process if false and true
                             bool isJContainsE = NCollection_MapAlgo.HasIntersection(aMEVIm, anInsideEdges);
@@ -5586,10 +5591,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
                             // the other must be also connected
                             if ((isIContainsE && !isJContainsV) || (isJContainsE && !isIContainsV))
                             {
-                                NCollection_List<TopoDS_Shape> aLVC = new();
+                                NCollection_List<Shape> aLVC = new();
                                 // it is necessary to process the images if they already have
                                 // common vertices
-                                FindCommonParts(aLFImi, aLFImj, aLVC, TopAbs_VERTEX);
+                                FindCommonParts(aLFImi, aLFImj, aLVC, ShapeType.Vertex);
 
                                 if (aLVC.IsEmpty())
                                 {
@@ -5599,7 +5604,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                             //
                             // if there are some common edges between faces
                             // we should use these edges and do not intersect again.
-                            NCollection_List<TopoDS_Shape> aLEC = new();
+                            NCollection_List<Shape> aLEC = new();
                             FindCommonParts(aLFImi, aLFImj, aLEC);
                             //
                             if (aLEC.Extent() != 0)
@@ -5611,15 +5616,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
                                 // Add common vertices not belonging to the common edges for trimming the intersection
                                 // edges
-                                NCollection_IndexedMap<TopoDS_Shape> aMVOnCE = new(TopTools_ShapeMapHasher.Instance);
-                                for (NCollection_List<TopoDS_Shape>.Iterator itE = new(aLEC); itE.More(); itE.Next())
+                                NCollection_IndexedMap<Shape> aMVOnCE = new(ShapeHasher.Instance);
+                                for (NCollection_List<Shape>.Iterator itE = new(aLEC); itE.More(); itE.Next())
                                 {
-                                    TopExp.MapShapes(itE.Value(), TopAbs_VERTEX, aMVOnCE);
+                                    Exploration.MapShapes(itE.Value(), ShapeType.Vertex, aMVOnCE);
                                 }
 
-                                NCollection_List<TopoDS_Shape> aLEV = new();
-                                FindCommonParts(aLFImi, aLFImj, aLEV, TopAbs_VERTEX);
-                                for (NCollection_List<TopoDS_Shape>.Iterator itV = new(aLEV); itV.More(); itV.Next())
+                                NCollection_List<Shape> aLEV = new();
+                                FindCommonParts(aLFImi, aLFImj, aLEV, ShapeType.Vertex);
+                                for (NCollection_List<Shape>.Iterator itV = new(aLEV); itV.More(); itV.Next())
                                 {
                                     if (!aMVOnCE.Contains(itV.Value()))
                                     {
@@ -5640,7 +5645,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                             aItLE.Initialize(aLFDone);
                             for (; aItLE.More(); aItLE.Next())
                             {
-                                TopoDS_Shape aF = aItLE.Value();
+                                Shape aF = aItLE.Value();
                                 if (aF.IsSame(aFj))
                                 {
                                     break;
@@ -5674,14 +5679,14 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     int iE, aNbEToInt = aMEToInt.Extent();
                     for (iE = 1; iE <= aNbEToInt; ++iE)
                     {
-                        TopoDS_Shape aEInt = aMEToInt[iE];
-                        TopExp_Explorer anExpE = new(aCBELoc, TopAbs_EDGE);
+                        Shape aEInt = aMEToInt[iE];
+                        Explorer anExpE = new(aCBELoc, ShapeType.Edge);
                         for (; anExpE.More(); anExpE.Next())
                         {
-                            TopoDS_Shape aE = anExpE.Current();
-                            if (!aDMOENEdges.FindFromKey(aE, out NCollection_List<TopoDS_Shape> pLEToInt))
+                            Shape aE = anExpE.Current();
+                            if (!aDMOENEdges.FindFromKey(aE, out NCollection_List<Shape> pLEToInt))
                             {
-                                pLEToInt = aDMOENEdges[aDMOENEdges.Add(aE, new NCollection_List<TopoDS_Shape>())];
+                                pLEToInt = aDMOENEdges[aDMOENEdges.Add(aE, new NCollection_List<Shape>())];
                             }
                             AppendToList(pLEToInt, aEInt);
                         }
@@ -5700,56 +5705,56 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // purpose  : Preparation of the maps for analyzing intersections of the faces
     //=======================================================================
     private void PrepareFacesForIntersection(bool theLookVertToAvoid,
-                                             NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theFLE,
-                                             NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMDone,
-                                             NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMSF,
-                                             NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMEInfETrim,
-                                             NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMVEFull,
-                                             NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMEFInv)
+                                             NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theFLE,
+                                             NCollection_DataMap<Shape, NCollection_List<Shape>> theMDone,
+                                             NCollection_DataMap<Shape, NCollection_List<Shape>> theDMSF,
+                                             NCollection_DataMap<Shape, NCollection_List<Shape>> theMEInfETrim,
+                                             NCollection_DataMap<Shape, NCollection_List<Shape>> theDMVEFull,
+                                             NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theDMEFInv)
     {
         int i, aNb = myFacesToRebuild.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aF = myFacesToRebuild.FindKey(i);
+            Shape aF = myFacesToRebuild.FindKey(i);
             //
             // OCCT binds copies of the same empty list.
-            theFLE.Add(aF, new NCollection_List<TopoDS_Shape>());
-            theMDone.Bind(aF, new NCollection_List<TopoDS_Shape>());
+            theFLE.Add(aF, new NCollection_List<Shape>());
+            theMDone.Bind(aF, new NCollection_List<Shape>());
             //
-            NCollection_List<TopoDS_Shape> aLFIm = myOFImages.FindFromKey(aF);
-            NCollection_List<TopoDS_Shape>.Iterator aItLF = new(aLFIm);
+            NCollection_List<Shape> aLFIm = myOFImages.FindFromKey(aF);
+            NCollection_List<Shape>.Iterator aItLF = new(aLFIm);
             for (; aItLF.More(); aItLF.Next())
             {
-                TopoDS_Shape aFIm = aItLF.Value();
-                TopExp_Explorer aExp = new(aFIm, TopAbs_EDGE);
+                Shape aFIm = aItLF.Value();
+                Explorer aExp = new(aFIm, ShapeType.Edge);
                 for (; aExp.More(); aExp.Next())
                 {
-                    TopoDS_Shape aE = aExp.Current();
+                    Shape aE = aExp.Current();
                     // save connection to untrimmed face
-                    if (!theDMSF.Find(aE, out NCollection_List<TopoDS_Shape> pLF))
+                    if (!theDMSF.Find(aE, out NCollection_List<Shape> pLF))
                     {
-                        pLF = new NCollection_List<TopoDS_Shape>();
+                        pLF = new NCollection_List<Shape>();
                         theDMSF.Bind(aE, pLF);
                     }
                     AppendToList(pLF, aF);
                     //
                     // save connection to untrimmed edge
-                    TopoDS_Shape aEInf = myETrimEInf!.Find(aE);
-                    if (!theMEInfETrim.Find(aEInf, out NCollection_List<TopoDS_Shape> pLETrim))
+                    Shape aEInf = myETrimEInf!.Find(aE);
+                    if (!theMEInfETrim.Find(aEInf, out NCollection_List<Shape> pLETrim))
                     {
-                        pLETrim = new NCollection_List<TopoDS_Shape>();
+                        pLETrim = new NCollection_List<Shape>();
                         theMEInfETrim.Bind(aEInf, pLETrim);
                     }
                     AppendToList(pLETrim, aE);
                     //
-                    TopExp_Explorer aExpV = new(aE, TopAbs_VERTEX);
+                    Explorer aExpV = new(aE, ShapeType.Vertex);
                     for (; aExpV.More(); aExpV.Next())
                     {
-                        TopoDS_Shape aV = aExpV.Current();
+                        Shape aV = aExpV.Current();
                         // save connection to face
-                        if (!theDMSF.Find(aV, out NCollection_List<TopoDS_Shape> pLFV))
+                        if (!theDMSF.Find(aV, out NCollection_List<Shape> pLFV))
                         {
-                            pLFV = new NCollection_List<TopoDS_Shape>();
+                            pLFV = new NCollection_List<Shape>();
                             theDMSF.Bind(aV, pLFV);
                         }
                         AppendToList(pLFV, aF);
@@ -5757,9 +5762,9 @@ internal sealed class BRepOffset_BuildOffsetFaces
                         if (theLookVertToAvoid)
                         {
                             // save connection to edges
-                            if (!theDMVEFull.Find(aV, out NCollection_List<TopoDS_Shape> pLEV))
+                            if (!theDMVEFull.Find(aV, out NCollection_List<Shape> pLEV))
                             {
-                                pLEV = new NCollection_List<TopoDS_Shape>();
+                                pLEV = new NCollection_List<Shape>();
                                 theDMVEFull.Bind(aV, pLEV);
                             }
                             AppendToList(pLEV, aE);
@@ -5771,7 +5776,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             if (theLookVertToAvoid)
             {
                 // get edges of invalid faces (from invalid splits only)
-                if (!myInvalidFaces.FindFromKey(aF, out NCollection_List<TopoDS_Shape> pLFInv) || myArtInvalidFaces.IsBound(aF))
+                if (!myInvalidFaces.FindFromKey(aF, out NCollection_List<Shape> pLFInv) || myArtInvalidFaces.IsBound(aF))
                 {
                     continue;
                 }
@@ -5779,14 +5784,14 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 aItLF.Initialize(pLFInv);
                 for (; aItLF.More(); aItLF.Next())
                 {
-                    TopoDS_Shape aFInv = aItLF.Value();
-                    TopExp_Explorer aExp = new(aFInv, TopAbs_EDGE);
+                    Shape aFInv = aItLF.Value();
+                    Explorer aExp = new(aFInv, ShapeType.Edge);
                     for (; aExp.More(); aExp.Next())
                     {
-                        TopoDS_Shape aE = aExp.Current();
-                        if (!theDMEFInv.FindFromKey(aE, out NCollection_List<TopoDS_Shape> pLF))
+                        Shape aE = aExp.Current();
+                        if (!theDMEFInv.FindFromKey(aE, out NCollection_List<Shape> pLF))
                         {
-                            pLF = theDMEFInv[theDMEFInv.Add(aE, new NCollection_List<TopoDS_Shape>())];
+                            pLF = theDMEFInv[theDMEFInv.Add(aE, new NCollection_List<Shape>())];
                         }
                         AppendToList(pLF, aF);
                     }
@@ -5799,21 +5804,21 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : FindVerticesToAvoid
     // purpose  : Looking for the invalid vertices
     //=======================================================================
-    private void FindVerticesToAvoid(NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMEFInv,
-                                     NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMVEFull,
-                                     NCollection_Map<TopoDS_Shape> theMVRInv)
+    private void FindVerticesToAvoid(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theDMEFInv,
+                                     NCollection_DataMap<Shape, NCollection_List<Shape>> theDMVEFull,
+                                     NCollection_Map<Shape> theMVRInv)
     {
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
         int i, aNb = theDMEFInv.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            NCollection_List<TopoDS_Shape> aLFInv = theDMEFInv[i];
+            NCollection_List<Shape> aLFInv = theDMEFInv[i];
             if (aLFInv.Extent() == 1)
             {
                 continue;
             }
             //
-            TopoDS_Shape aE = theDMEFInv.FindKey(i);
+            Shape aE = theDMEFInv.FindKey(i);
             if (!myInvalidEdges.Contains(aE) || myValidEdges.Contains(aE))
             {
                 continue;
@@ -5824,25 +5829,25 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 continue;
             }
 
-            NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMVEEdges = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMVEEdges = new(ShapeHasher.Instance);
             // Do not check the splitting vertices, but check only the ending ones
-            if (myOEOrigins.Find(aE, out NCollection_List<TopoDS_Shape> pLEOr))
+            if (myOEOrigins.Find(aE, out NCollection_List<Shape> pLEOr))
             {
-                NCollection_List<TopoDS_Shape>.Iterator aItLEOr = new(pLEOr);
+                NCollection_List<Shape>.Iterator aItLEOr = new(pLEOr);
                 for (; aItLEOr.More(); aItLEOr.Next())
                 {
-                    NCollection_List<TopoDS_Shape> aLEIm = myOEImages.Find(aItLEOr.Value());
-                    NCollection_List<TopoDS_Shape>.Iterator aItLEIm = new(aLEIm);
+                    NCollection_List<Shape> aLEIm = myOEImages.Find(aItLEOr.Value());
+                    NCollection_List<Shape>.Iterator aItLEIm = new(aLEIm);
                     for (; aItLEIm.More(); aItLEIm.Next())
                     {
                         aMFence.Add(aItLEIm.Value());
-                        TopExp.MapShapesAndAncestors(aItLEIm.Value(), TopAbs_VERTEX, TopAbs_EDGE, aMVEEdges);
+                        Exploration.MapShapesAndAncestors(aItLEIm.Value(), ShapeType.Vertex, ShapeType.Edge, aMVEEdges);
                     }
                 }
             }
             else
             {
-                TopExp.MapShapesAndAncestors(aE, TopAbs_VERTEX, TopAbs_EDGE, aMVEEdges);
+                Exploration.MapShapesAndAncestors(aE, ShapeType.Vertex, ShapeType.Edge, aMVEEdges);
             }
 
             int j, aNbV = aMVEEdges.Extent();
@@ -5853,12 +5858,12 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     continue;
                 }
 
-                TopoDS_Shape aV = aMVEEdges.FindKey(j);
+                Shape aV = aMVEEdges.FindKey(j);
                 if (!aMFence.Add(aV))
                 {
                     continue;
                 }
-                if (!theDMVEFull.Find(aV, out NCollection_List<TopoDS_Shape> pLE))
+                if (!theDMVEFull.Find(aV, out NCollection_List<Shape> pLE))
                 {
                     // isolated vertex
                     theMVRInv.Add(aV);
@@ -5870,10 +5875,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 // mark the vertex to be avoided in the new splits
                 int iNbEInverted = 0;
                 bool bAllEdgesInv = true;
-                NCollection_List<TopoDS_Shape>.Iterator aItLE = new(pLE);
+                NCollection_List<Shape>.Iterator aItLE = new(pLE);
                 for (; aItLE.More(); aItLE.Next())
                 {
-                    TopoDS_Shape aEV = aItLE.Value();
+                    Shape aEV = aItLE.Value();
 
                     if (myInvertedEdges.Contains(aEV))
                     {
@@ -5898,34 +5903,34 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : FindFacesForIntersection
     // purpose  : Looking for the faces around each invalidity for intersection
     //=======================================================================
-    private void FindFacesForIntersection(in TopoDS_Shape theFInv, NCollection_IndexedMap<TopoDS_Shape> theME,
-                                          NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMSF,
-                                          NCollection_Map<TopoDS_Shape> theMVInvAll, bool theArtCase,
-                                          NCollection_IndexedMap<TopoDS_Shape> theMFAvoid,
-                                          NCollection_IndexedMap<TopoDS_Shape> theMFInt,
-                                          NCollection_IndexedMap<TopoDS_Shape> theMFIntExt,
-                                          NCollection_List<TopoDS_Shape> theLFImInt)
+    private void FindFacesForIntersection(in Shape theFInv, NCollection_IndexedMap<Shape> theME,
+                                          NCollection_DataMap<Shape, NCollection_List<Shape>> theDMSF,
+                                          NCollection_Map<Shape> theMVInvAll, bool theArtCase,
+                                          NCollection_IndexedMap<Shape> theMFAvoid,
+                                          NCollection_IndexedMap<Shape> theMFInt,
+                                          NCollection_IndexedMap<Shape> theMFIntExt,
+                                          NCollection_List<Shape> theLFImInt)
     {
         int i, aNbE = theME.Extent();
         //
-        NCollection_IndexedMap<TopoDS_Shape> aMShapes = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> aMShapes = new(ShapeHasher.Instance);
         //
         for (i = 1; i <= aNbE; ++i)
         {
-            TopoDS_Shape aS = theME[i];
+            Shape aS = theME[i];
             if (!theDMSF.IsBound(aS))
             {
                 continue;
             }
             //
             // in artificial case we intersect the faces which are close to invalidity
-            bool bAvoid = theArtCase ? ((aS.ShapeType() == TopAbs_VERTEX) && !theMVInvAll.Contains(aS)) : false;
+            bool bAvoid = theArtCase ? ((aS.ShapeType() == ShapeType.Vertex) && !theMVInvAll.Contains(aS)) : false;
             //
-            NCollection_List<TopoDS_Shape> aLF0 = theDMSF.Find(aS);
-            NCollection_List<TopoDS_Shape>.Iterator aItLF0 = new(aLF0);
+            NCollection_List<Shape> aLF0 = theDMSF.Find(aS);
+            NCollection_List<Shape>.Iterator aItLF0 = new(aLF0);
             for (; aItLF0.More(); aItLF0.Next())
             {
-                TopoDS_Shape aF = aItLF0.Value();
+                Shape aF = aItLF0.Value();
                 if (theMFInt.Contains(aF))
                 {
                     continue;
@@ -5940,45 +5945,45 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 //
                 bool bUse = !aF.IsSame(theFInv);
                 //
-                NCollection_List<TopoDS_Shape> aLFIm = myOFImages.FindFromKey(aF);
-                NCollection_List<TopoDS_Shape>.Iterator aItLFIm = new(aLFIm);
+                NCollection_List<Shape> aLFIm = myOFImages.FindFromKey(aF);
+                NCollection_List<Shape>.Iterator aItLFIm = new(aLFIm);
                 for (; aItLFIm.More(); aItLFIm.Next())
                 {
-                    TopoDS_Shape aFIm = aItLFIm.Value();
+                    Shape aFIm = aItLFIm.Value();
                     theLFImInt.Append(aFIm);
                     if (bUse)
                     {
-                        TopExp.MapShapes(aFIm, TopAbs_EDGE, aMShapes);
+                        Exploration.MapShapes(aFIm, ShapeType.Edge, aMShapes);
                     }
                 }
             }
         }
         //
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aSSInterfsMap = theArtCase ? mySSInterfsArt : mySSInterfs;
-        if (!aSSInterfsMap.Find(theFInv, out NCollection_List<TopoDS_Shape> pLFInv))
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aSSInterfsMap = theArtCase ? mySSInterfsArt : mySSInterfs;
+        if (!aSSInterfsMap.Find(theFInv, out NCollection_List<Shape> pLFInv))
         {
             return;
         }
         //
-        NCollection_Map<TopoDS_Shape> aMF = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new(pLFInv);
+        NCollection_Map<Shape> aMF = new(ShapeHasher.Instance);
+        NCollection_List<Shape>.Iterator aItLF = new(pLFInv);
         for (; aItLF.More(); aItLF.Next())
         {
-            TopoDS_Shape aF = aItLF.Value();
+            Shape aF = aItLF.Value();
             aMF.Add(aF);
         }
         //
         // the faces should be unique in each place
-        TopoDS_Compound aCF = new();
-        new BRep_Builder().MakeCompound(ref aCF);
+        Compound aCF = new();
+        new BrepBuilder().MakeCompound(ref aCF);
         //
-        NCollection_IndexedMap<TopoDS_Shape> aMFToAdd = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aDMFOr = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> aMFToAdd = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, Shape> aDMFOr = new(ShapeHasher.Instance);
         //
         for (i = 1; i <= aNbE; ++i)
         {
-            TopoDS_Shape aS = theME[i];
-            if (!aSSInterfsMap.Find(aS, out NCollection_List<TopoDS_Shape> pLF))
+            Shape aS = theME[i];
+            if (!aSSInterfsMap.Find(aS, out NCollection_List<Shape> pLF))
             {
                 continue;
             }
@@ -5986,21 +5991,21 @@ internal sealed class BRepOffset_BuildOffsetFaces
             aItLF.Initialize(pLF);
             for (; aItLF.More(); aItLF.Next())
             {
-                TopoDS_Shape aF = aItLF.Value();
+                Shape aF = aItLF.Value();
                 if (theMFInt.Contains(aF) || aMFToAdd.Contains(aF) || !aMF.Contains(aF))
                 {
                     continue;
                 }
                 //
                 // check if the face has some connection to already added for intersection faces
-                NCollection_List<TopoDS_Shape> aLFIm = myOFImages.FindFromKey(aF);
+                NCollection_List<Shape> aLFIm = myOFImages.FindFromKey(aF);
                 if (!theArtCase)
                 {
-                    NCollection_List<TopoDS_Shape>.Iterator aItLFIm0 = new(aLFIm);
+                    NCollection_List<Shape>.Iterator aItLFIm0 = new(aLFIm);
                     for (; aItLFIm0.More(); aItLFIm0.Next())
                     {
-                        TopoDS_Shape aFIm = aItLFIm0.Value();
-                        TopExp_Explorer aExp = new(aFIm, TopAbs_EDGE);
+                        Shape aFIm = aItLFIm0.Value();
+                        Explorer aExp = new(aFIm, ShapeType.Edge);
                         for (; aExp.More(); aExp.Next())
                         {
                             if (aMShapes.Contains(aExp.Current()))
@@ -6020,12 +6025,12 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 }
                 //
                 aMFToAdd.Add(aF);
-                NCollection_List<TopoDS_Shape>.Iterator aItLFIm = new(aLFIm);
+                NCollection_List<Shape>.Iterator aItLFIm = new(aLFIm);
                 for (; aItLFIm.More(); aItLFIm.Next())
                 {
-                    TopoDS_Shape aFIm = aItLFIm.Value();
+                    Shape aFIm = aItLFIm.Value();
                     aDMFOr.Bind(aFIm, aF);
-                    new BRep_Builder().Add(aCF, aFIm);
+                    new BrepBuilder().Add(aCF, aFIm);
                 }
             }
         }
@@ -6035,38 +6040,38 @@ internal sealed class BRepOffset_BuildOffsetFaces
             return;
         }
         //
-        NCollection_List<TopoDS_Shape> aLCB = new();
-        BOPTools_AlgoTools.MakeConnexityBlocks(aCF, TopAbs_EDGE, TopAbs_FACE, aLCB);
+        NCollection_List<Shape> aLCB = new();
+        BOPTools_AlgoTools.MakeConnexityBlocks(aCF, ShapeType.Edge, ShapeType.Face, aLCB);
         //
         if ((aLCB.Extent() == 1) && (aMFToAdd.Extent() > 1))
         {
             return;
         }
         //
-        NCollection_List<TopoDS_Shape>.Iterator aItLCB = new(aLCB);
+        NCollection_List<Shape>.Iterator aItLCB = new(aLCB);
         for (; aItLCB.More(); aItLCB.Next())
         {
-            TopoDS_Shape aCB = aItLCB.Value();
+            Shape aCB = aItLCB.Value();
             aMFToAdd.Clear();
-            TopExp_Explorer aExpF = new(aCB, TopAbs_FACE);
+            Explorer aExpF = new(aCB, ShapeType.Face);
             for (; aExpF.More(); aExpF.Next())
             {
-                TopoDS_Shape aFIm = aExpF.Current();
+                Shape aFIm = aExpF.Current();
                 aMFToAdd.Add(aDMFOr.Find(aFIm));
             }
             //
             if (aMFToAdd.Extent() == 1)
             {
-                TopoDS_Shape aF = aMFToAdd[1];
+                Shape aF = aMFToAdd[1];
                 //
                 theMFInt.Add(aF);
                 theMFIntExt.Add(aF);
                 //
-                NCollection_List<TopoDS_Shape> aLFIm = myOFImages.FindFromKey(aF);
-                NCollection_List<TopoDS_Shape>.Iterator aItLFIm = new(aLFIm);
+                NCollection_List<Shape> aLFIm = myOFImages.FindFromKey(aF);
+                NCollection_List<Shape>.Iterator aItLFIm = new(aLFIm);
                 for (; aItLFIm.More(); aItLFIm.Next())
                 {
-                    TopoDS_Shape aFIm = aItLFIm.Value();
+                    Shape aFIm = aItLFIm.Value();
                     theLFImInt.Append(aFIm);
                 }
             }
@@ -6077,20 +6082,20 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : ProcessCommonEdges
     // purpose  : Analyzing the common edges between splits of offset faces
     //=======================================================================
-    private void ProcessCommonEdges(NCollection_List<TopoDS_Shape> theLEC, NCollection_IndexedMap<TopoDS_Shape> theME,
-                                    NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMEInfETrim,
-                                    NCollection_Map<TopoDS_Shape> theAllInvs, bool theForceUse,
-                                    NCollection_IndexedMap<TopoDS_Shape> theMECV, NCollection_Map<TopoDS_Shape> theMECheckExt,
-                                    NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMEETrim,
-                                    NCollection_List<TopoDS_Shape> theLFEi, NCollection_List<TopoDS_Shape> theLFEj,
-                                    NCollection_IndexedMap<TopoDS_Shape> theMEToInt)
+    private void ProcessCommonEdges(NCollection_List<Shape> theLEC, NCollection_IndexedMap<Shape> theME,
+                                    NCollection_DataMap<Shape, NCollection_List<Shape>> theMEInfETrim,
+                                    NCollection_Map<Shape> theAllInvs, bool theForceUse,
+                                    NCollection_IndexedMap<Shape> theMECV, NCollection_Map<Shape> theMECheckExt,
+                                    NCollection_DataMap<Shape, NCollection_List<Shape>> theDMEETrim,
+                                    NCollection_List<Shape> theLFEi, NCollection_List<Shape> theLFEj,
+                                    NCollection_IndexedMap<Shape> theMEToInt)
     {
-        NCollection_List<TopoDS_Shape> aLEC = new();
+        NCollection_List<Shape> aLEC = new();
         // process common edges
-        NCollection_List<TopoDS_Shape>.Iterator aItLE = new(theLEC);
+        NCollection_List<Shape>.Iterator aItLE = new(theLEC);
         for (; aItLE.More(); aItLE.Next())
         {
-            TopoDS_Shape aEC = aItLE.Value();
+            Shape aEC = aItLE.Value();
             //
             // check first if common edges are valid
             if (myInvalidEdges.Contains(aEC) && !myValidEdges.Contains(aEC))
@@ -6105,10 +6110,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 continue;
             }
             //
-            TopoDS_Iterator aItV = new(aEC);
+            Iterator aItV = new(aEC);
             for (; aItV.More(); aItV.Next())
             {
-                TopoDS_Shape aVE = aItV.Value();
+                Shape aVE = aItV.Value();
                 if (theME.Contains(aVE))
                 {
                     aLEC.Append(aEC);
@@ -6129,21 +6134,21 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 aItLE.Initialize(theLEC);
                 for (; aItLE.More(); aItLE.Next())
                 {
-                    TopoDS_Shape aEC = aItLE.Value();
+                    Shape aEC = aItLE.Value();
                     // check if all images of the origin of this edge
                     // are not connected to any invalidity
-                    TopoDS_Shape aEInt0 = myETrimEInf!.Find(aEC);
-                    NCollection_List<TopoDS_Shape> aLVE = theMEInfETrim.Find(aEInt0);
-                    NCollection_List<TopoDS_Shape>.Iterator aItLVE = new(aLVE);
+                    Shape aEInt0 = myETrimEInf!.Find(aEC);
+                    NCollection_List<Shape> aLVE = theMEInfETrim.Find(aEInt0);
+                    NCollection_List<Shape>.Iterator aItLVE = new(aLVE);
                     for (; aItLVE.More(); aItLVE.Next())
                     {
-                        TopoDS_Shape aECx = aItLVE.Value();
+                        Shape aECx = aItLVE.Value();
                         if (theAllInvs.Contains(aECx) || myInvalidEdges.Contains(aECx))
                         {
                             return;
                         }
                         //
-                        TopoDS_Iterator aItV = new(aECx);
+                        Iterator aItV = new(aECx);
                         for (; aItV.More(); aItV.Next())
                         {
                             if (theAllInvs.Contains(aItV.Value()))
@@ -6164,30 +6169,30 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aItLE.Initialize(aLEC);
         for (; aItLE.More(); aItLE.Next())
         {
-            TopoDS_Shape aEC = aItLE.Value();
+            Shape aEC = aItLE.Value();
             //
-            TopoDS_Shape aEInt = myETrimEInf!.Find(aEC);
+            Shape aEInt = myETrimEInf!.Find(aEC);
             if (!bUseOnlyInf)
             {
                 // find the edges of the same original edge
                 // and take their vertices as well
-                NCollection_List<TopoDS_Shape> aLVE = theMEInfETrim.Find(aEInt);
-                NCollection_List<TopoDS_Shape>.Iterator aItLVE = new(aLVE);
+                NCollection_List<Shape> aLVE = theMEInfETrim.Find(aEInt);
+                NCollection_List<Shape>.Iterator aItLVE = new(aLVE);
                 for (; aItLVE.More(); aItLVE.Next())
                 {
-                    TopoDS_Shape aECx = aItLVE.Value();
+                    Shape aECx = aItLVE.Value();
                     //
-                    if (!myOEOrigins.Find(aECx, out NCollection_List<TopoDS_Shape> pLEOr) || (pLEOr.Extent() == 1))
+                    if (!myOEOrigins.Find(aECx, out NCollection_List<Shape> pLEOr) || (pLEOr.Extent() == 1))
                     {
-                        TopExp.MapShapes(aECx, TopAbs_VERTEX, theMECV);
+                        Exploration.MapShapes(aECx, ShapeType.Vertex, theMECV);
                     }
                 }
                 //
                 // bind unlimited edge to its trimmed part in face to update maps of
                 // images and origins in the future
-                if (!theDMEETrim.Find(aEInt, out NCollection_List<TopoDS_Shape> pLTAdded))
+                if (!theDMEETrim.Find(aEInt, out NCollection_List<Shape> pLTAdded))
                 {
-                    pLTAdded = new NCollection_List<TopoDS_Shape>();
+                    pLTAdded = new NCollection_List<Shape>();
                     theDMEETrim.Bind(aEInt, pLTAdded);
                 }
                 AppendToList(pLTAdded, aEC);
@@ -6205,34 +6210,34 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
     //=================================================================================================
 
-    private static void FindOrigins(NCollection_List<TopoDS_Shape> theLFIm1, NCollection_List<TopoDS_Shape> theLFIm2,
-                                    NCollection_IndexedMap<TopoDS_Shape> theME,
-                                    NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theOrigins,
-                                    NCollection_List<TopoDS_Shape> theLEOr)
+    private static void FindOrigins(NCollection_List<Shape> theLFIm1, NCollection_List<Shape> theLFIm2,
+                                    NCollection_IndexedMap<Shape> theME,
+                                    NCollection_DataMap<Shape, NCollection_List<Shape>> theOrigins,
+                                    NCollection_List<Shape> theLEOr)
     {
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
         for (int i = 0; i < 2; ++i)
         {
-            NCollection_List<TopoDS_Shape> aLF = i == 0 ? theLFIm1 : theLFIm2;
-            NCollection_List<TopoDS_Shape>.Iterator aIt = new(aLF);
+            NCollection_List<Shape> aLF = i == 0 ? theLFIm1 : theLFIm2;
+            NCollection_List<Shape>.Iterator aIt = new(aLF);
             for (; aIt.More(); aIt.Next())
             {
-                TopoDS_Shape aF = aIt.Value();
+                Shape aF = aIt.Value();
                 //
-                TopExp_Explorer aExp = new(aF, TopAbs_EDGE);
+                Explorer aExp = new(aF, ShapeType.Edge);
                 for (; aExp.More(); aExp.Next())
                 {
-                    TopoDS_Shape aE = aExp.Current();
+                    Shape aE = aExp.Current();
                     //
                     if (theME.Contains(aE) && theOrigins.IsBound(aE))
                     {
-                        NCollection_List<TopoDS_Shape> aLEOr = theOrigins.Find(aE);
-                        NCollection_List<TopoDS_Shape>.Iterator aItLE = new(aLEOr);
+                        NCollection_List<Shape> aLEOr = theOrigins.Find(aE);
+                        NCollection_List<Shape>.Iterator aItLE = new(aLEOr);
                         for (; aItLE.More(); aItLE.Next())
                         {
-                            TopoDS_Shape aEOr = aItLE.Value();
+                            Shape aEOr = aItLE.Value();
                             //
-                            if (aMFence.Add(aEOr) && (aEOr.ShapeType() == TopAbs_EDGE))
+                            if (aMFence.Add(aEOr) && (aEOr.ShapeType() == ShapeType.Edge))
                             {
                                 theLEOr.Append(aEOr);
                             }
@@ -6247,23 +6252,23 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : UpdateIntersectedFaces
     // purpose  : Updating the already interfered faces
     //=======================================================================
-    private void UpdateIntersectedFaces(in TopoDS_Shape theFInv, in TopoDS_Shape theFi, in TopoDS_Shape theFj,
-                                        NCollection_List<TopoDS_Shape> theLFInv, NCollection_List<TopoDS_Shape> theLFImi,
-                                        NCollection_List<TopoDS_Shape> theLFImj, NCollection_List<TopoDS_Shape> theLFEi,
-                                        NCollection_List<TopoDS_Shape> theLFEj, NCollection_IndexedMap<TopoDS_Shape> theMEToInt)
+    private void UpdateIntersectedFaces(in Shape theFInv, in Shape theFi, in Shape theFj,
+                                        NCollection_List<Shape> theLFInv, NCollection_List<Shape> theLFImi,
+                                        NCollection_List<Shape> theLFImj, NCollection_List<Shape> theLFEi,
+                                        NCollection_List<Shape> theLFEj, NCollection_IndexedMap<Shape> theMEToInt)
     {
         // Find common edges in these two lists
-        NCollection_Map<TopoDS_Shape> aMEi = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape>.Iterator aItLE = new(theLFEi);
+        NCollection_Map<Shape> aMEi = new(ShapeHasher.Instance);
+        NCollection_List<Shape>.Iterator aItLE = new(theLFEi);
         for (; aItLE.More(); aItLE.Next())
         {
-            TopoDS_Shape aE = aItLE.Value();
+            Shape aE = aItLE.Value();
             aMEi.Add(aE);
         }
         //
         // find origins
-        NCollection_IndexedMap<TopoDS_Shape> aMEToFindOrigins = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape> aLEToFindOrigins = new();
+        NCollection_IndexedMap<Shape> aMEToFindOrigins = new(ShapeHasher.Instance);
+        NCollection_List<Shape> aLEToFindOrigins = new();
         if (!theFi.IsSame(theFInv))
         {
             FindCommonParts(theLFImi, theLFInv, aLEToFindOrigins);
@@ -6273,11 +6278,11 @@ internal sealed class BRepOffset_BuildOffsetFaces
             FindCommonParts(theLFImj, theLFInv, aLEToFindOrigins);
         }
         //
-        NCollection_List<TopoDS_Shape> aLEOrInit = new();
+        NCollection_List<Shape> aLEOrInit = new();
         aItLE.Initialize(aLEToFindOrigins);
         for (; aItLE.More(); aItLE.Next())
         {
-            TopoDS_Shape aEC = aItLE.Value();
+            Shape aEC = aItLE.Value();
             aMEToFindOrigins.Add(aEC);
         }
         //
@@ -6286,7 +6291,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aItLE.Initialize(theLFEj);
         for (; aItLE.More(); aItLE.Next())
         {
-            TopoDS_Shape aE = aItLE.Value();
+            Shape aE = aItLE.Value();
             if (aMEi.Contains(aE))
             {
                 theMEToInt.Add(aE);
@@ -6294,17 +6299,17 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 {
                     if (myEdgesOrigins!.IsBound(aE))
                     {
-                        NCollection_List<TopoDS_Shape> aLEOr = myEdgesOrigins.ChangeFind(aE);
-                        NCollection_List<TopoDS_Shape>.Iterator aItLEOr = new(aLEOrInit);
+                        NCollection_List<Shape> aLEOr = myEdgesOrigins.ChangeFind(aE);
+                        NCollection_List<Shape>.Iterator aItLEOr = new(aLEOrInit);
                         for (; aItLEOr.More(); aItLEOr.Next())
                         {
-                            TopoDS_Shape aEOr = aItLEOr.Value();
+                            Shape aEOr = aItLEOr.Value();
                             AppendToList(aLEOr, aEOr);
                         }
                     }
                     else
                     {
-                        myEdgesOrigins.Bind(aE, new NCollection_List<TopoDS_Shape>(aLEOrInit));
+                        myEdgesOrigins.Bind(aE, new NCollection_List<Shape>(aLEOrInit));
                     }
                 }
             }
@@ -6315,18 +6320,18 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : IntersectFaces
     // purpose  : Intersection of the pair of faces
     //=======================================================================
-    private void IntersectFaces(in TopoDS_Shape theFInv, in TopoDS_Shape theFi, in TopoDS_Shape theFj,
-                                NCollection_List<TopoDS_Shape> theLFInv, NCollection_List<TopoDS_Shape> theLFImi,
-                                NCollection_List<TopoDS_Shape> theLFImj, NCollection_List<TopoDS_Shape> theLFEi,
-                                NCollection_List<TopoDS_Shape> theLFEj, NCollection_IndexedMap<TopoDS_Shape> theMECV,
-                                NCollection_IndexedMap<TopoDS_Shape> theMEToInt)
+    private void IntersectFaces(in Shape theFInv, in Shape theFi, in Shape theFj,
+                                NCollection_List<Shape> theLFInv, NCollection_List<Shape> theLFImi,
+                                NCollection_List<Shape> theLFImj, NCollection_List<Shape> theLFEi,
+                                NCollection_List<Shape> theLFEj, NCollection_IndexedMap<Shape> theMECV,
+                                NCollection_IndexedMap<Shape> theMEToInt)
     {
         // intersect faces
-        TopAbs_State aSide = TopAbs_OUT;
-        NCollection_List<TopoDS_Shape> aLInt1 = new(), aLInt2 = new();
-        TopoDS_Edge aNullEdge = new();
-        TopoDS_Face aNullFace = new();
-        BRepOffset_Tool.Inter3D(TopoDS.Face(theFi), TopoDS.Face(theFj), aLInt1, aLInt2, aSide, aNullEdge, aNullFace,
+        Containment aSide = Out;
+        NCollection_List<Shape> aLInt1 = new(), aLInt2 = new();
+        Edge aNullEdge = new();
+        Face aNullFace = new();
+        BRepOffset_Tool.Inter3D(ShapeCasts.Face(theFi), ShapeCasts.Face(theFj), aLInt1, aLInt2, aSide, aNullEdge, aNullFace,
                                 aNullFace);
         //
         if (aLInt1.IsEmpty())
@@ -6335,22 +6340,22 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         //
         // find common vertices for trimming edges
-        NCollection_List<TopoDS_Shape> aLCV = new();
-        NCollection_List<TopoDS_Shape>.Iterator aItLE = new();
-        FindCommonParts(theLFImi, theLFImj, aLCV, TopAbs_VERTEX);
+        NCollection_List<Shape> aLCV = new();
+        NCollection_List<Shape>.Iterator aItLE = new();
+        FindCommonParts(theLFImi, theLFImj, aLCV, ShapeType.Vertex);
         if (aLCV.Extent() > 1)
         {
             aItLE.Initialize(aLCV);
             for (; aItLE.More(); aItLE.Next())
             {
-                TopoDS_Shape aCV = aItLE.Value();
+                Shape aCV = aItLE.Value();
                 theMECV.Add(aCV);
             }
         }
         //
         // find origins
-        NCollection_IndexedMap<TopoDS_Shape> aMEToFindOrigins = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape> aLEToFindOrigins = new();
+        NCollection_IndexedMap<Shape> aMEToFindOrigins = new(ShapeHasher.Instance);
+        NCollection_List<Shape> aLEToFindOrigins = new();
         if (!theFi.IsSame(theFInv))
         {
             FindCommonParts(theLFImi, theLFInv, aLEToFindOrigins);
@@ -6359,11 +6364,11 @@ internal sealed class BRepOffset_BuildOffsetFaces
         {
             FindCommonParts(theLFImj, theLFInv, aLEToFindOrigins);
         }
-        NCollection_List<TopoDS_Shape> aLEOrInit = new();
+        NCollection_List<Shape> aLEOrInit = new();
         aItLE.Initialize(aLEToFindOrigins);
         for (; aItLE.More(); aItLE.Next())
         {
-            TopoDS_Shape aEC = aItLE.Value();
+            Shape aEC = aItLE.Value();
             aMEToFindOrigins.Add(aEC);
         }
         //
@@ -6372,13 +6377,13 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aItLE.Initialize(aLInt1);
         for (; aItLE.More(); aItLE.Next())
         {
-            TopoDS_Shape aEInt = aItLE.Value();
+            Shape aEInt = aItLE.Value();
             theLFEi.Append(aEInt);
             theLFEj.Append(aEInt);
             //
             if (aLEOrInit.Extent() != 0)
             {
-                myEdgesOrigins!.Bind(aEInt, new NCollection_List<TopoDS_Shape>(aLEOrInit));
+                myEdgesOrigins!.Bind(aEInt, new NCollection_List<Shape>(aLEOrInit));
             }
             //
             theMEToInt.Add(aEInt);
@@ -6389,15 +6394,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : IntersectAndTrimEdges
     // purpose  : Intersection of the new intersection edges among themselves
     //=======================================================================
-    private void IntersectAndTrimEdges(NCollection_IndexedMap<TopoDS_Shape> theMFInt, NCollection_IndexedMap<TopoDS_Shape> theMEInt,
-                                       NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMEETrim,
-                                       NCollection_IndexedMap<TopoDS_Shape> theMSInv, NCollection_IndexedMap<TopoDS_Shape> theMVE,
-                                       NCollection_Map<TopoDS_Shape> theVertsToAvoid,
-                                       NCollection_Map<TopoDS_Shape> theNewVertsToAvoid,
-                                       NCollection_Map<TopoDS_Shape> theMECheckExt,
-                                       NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>? theSSInterfs,
-                                       NCollection_Map<TopoDS_Shape> theMVBounds,
-                                       NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEImages)
+    private void IntersectAndTrimEdges(NCollection_IndexedMap<Shape> theMFInt, NCollection_IndexedMap<Shape> theMEInt,
+                                       NCollection_DataMap<Shape, NCollection_List<Shape>> theDMEETrim,
+                                       NCollection_IndexedMap<Shape> theMSInv, NCollection_IndexedMap<Shape> theMVE,
+                                       NCollection_Map<Shape> theVertsToAvoid,
+                                       NCollection_Map<Shape> theNewVertsToAvoid,
+                                       NCollection_Map<Shape> theMECheckExt,
+                                       NCollection_DataMap<Shape, NCollection_List<Shape>>? theSSInterfs,
+                                       NCollection_Map<Shape> theMVBounds,
+                                       NCollection_DataMap<Shape, NCollection_List<Shape>> theEImages)
     {
         int i, aNb = theMEInt.Extent();
         if (aNb == 0)
@@ -6405,31 +6410,31 @@ internal sealed class BRepOffset_BuildOffsetFaces
             return;
         }
         //
-        NCollection_List<TopoDS_Shape> aLArgs = new();
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new(), aIt1 = new();
-        TopExp_Explorer aExp = new();
+        NCollection_List<Shape> aLArgs = new();
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
+        NCollection_List<Shape>.Iterator aIt = new(), aIt1 = new();
+        Explorer aExp = new();
         //
         // get vertices from the splits of intersected faces.
         // vertices are taken from the edges close to invalidity
         //
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMVE = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMVE = new(ShapeHasher.Instance);
         aNb = theMFInt.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aF = theMFInt[i];
-            NCollection_List<TopoDS_Shape> aLE = myFacesToRebuild.FindFromKey(aF);
+            Shape aF = theMFInt[i];
+            NCollection_List<Shape> aLE = myFacesToRebuild.FindFromKey(aF);
             //
             aIt.Initialize(aLE);
             for (; aIt.More(); aIt.Next())
             {
-                TopoDS_Shape aE = aIt.Value();
-                TopExp.MapShapesAndAncestors(aE, TopAbs_VERTEX, TopAbs_EDGE, aDMVE);
+                Shape aE = aIt.Value();
+                Exploration.MapShapesAndAncestors(aE, ShapeType.Vertex, ShapeType.Edge, aDMVE);
                 //
-                aExp.Init(aE, TopAbs_VERTEX);
+                aExp.Init(aE, ShapeType.Vertex);
                 for (; aExp.More(); aExp.Next())
                 {
-                    TopoDS_Shape aV1 = aExp.Current();
+                    Shape aV1 = aExp.Current();
                     if (!theVertsToAvoid.Contains(aV1) && theMVE.Contains(aV1) && aMFence.Add(aV1))
                     {
                         aLArgs.Append(aV1);
@@ -6441,16 +6446,16 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aNb = theMSInv.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aS = theMSInv[i];
+            Shape aS = theMSInv[i];
             // edge case
             if (theSSInterfs is not null)
             {
-                if (theSSInterfs.Find(aS, out NCollection_List<TopoDS_Shape> pLV))
+                if (theSSInterfs.Find(aS, out NCollection_List<Shape> pLV))
                 {
                     // Add vertices from intersection info to trim section edges of artificial faces
-                    for (NCollection_List<TopoDS_Shape>.Iterator itLV = new(pLV); itLV.More(); itLV.Next())
+                    for (NCollection_List<Shape>.Iterator itLV = new(pLV); itLV.More(); itLV.Next())
                     {
-                        if (itLV.Value().ShapeType() == TopAbs_VERTEX)
+                        if (itLV.Value().ShapeType() == ShapeType.Vertex)
                         {
                             aLArgs.Append(itLV.Value());
                         }
@@ -6459,17 +6464,17 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
 
             // vertex case
-            if (aDMVE.FindFromKey(aS, out NCollection_List<TopoDS_Shape> pLVE))
+            if (aDMVE.FindFromKey(aS, out NCollection_List<Shape> pLVE))
             {
                 aIt.Initialize(pLVE);
                 for (; aIt.More(); aIt.Next())
                 {
-                    TopoDS_Shape aE = aIt.Value();
+                    Shape aE = aIt.Value();
                     //
-                    aExp.Init(aE, TopAbs_VERTEX);
+                    aExp.Init(aE, ShapeType.Vertex);
                     for (; aExp.More(); aExp.Next())
                     {
-                        TopoDS_Shape aV1 = aExp.Current();
+                        Shape aV1 = aExp.Current();
                         if (!theVertsToAvoid.Contains(aV1) && aMFence.Add(aV1))
                         {
                             aLArgs.Append(aV1);
@@ -6480,18 +6485,18 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         //
         // bounding vertices of untrimmed edges
-        NCollection_List<TopoDS_Shape> aLVBounds = new();
+        NCollection_List<Shape> aLVBounds = new();
         // new intersection edges
-        NCollection_List<TopoDS_Shape> aLENew = new();
+        NCollection_List<Shape> aLENew = new();
         // get edges to intersect
-        NCollection_List<TopoDS_Shape> aLEInt = new();
+        NCollection_List<Shape> aLEInt = new();
         // Common intersection edges. Should be intersected separately
-        NCollection_List<TopoDS_Shape> aLCE = new();
+        NCollection_List<Shape> aLCE = new();
         //
         aNb = theMEInt.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aE = theMEInt[i];
+            Shape aE = theMEInt[i];
             if (theMECheckExt.Contains(aE))
             {
                 // avoid trimming of the intersection edges by additional common edges
@@ -6507,10 +6512,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
             aLEInt.Append(aE);
             aLArgs.Append(aE);
             //
-            aExp.Init(aE, TopAbs_VERTEX);
+            aExp.Init(aE, ShapeType.Vertex);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Shape aV = aExp.Current();
+                Shape aV = aExp.Current();
                 aLVBounds.Append(aV);
             }
         }
@@ -6528,35 +6533,35 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aIt.Initialize(aLVBounds);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aV = aIt.Value();
-            NCollection_List<TopoDS_Shape> aLVIm = ModifiedOf(aGF, aV);
+            Shape aV = aIt.Value();
+            NCollection_List<Shape> aLVIm = ModifiedOf(aGF, aV);
             if (aLVIm.IsEmpty())
             {
                 theMVBounds.Add(aV);
             }
             else
             {
-                TopoDS_Shape aVIm = aLVIm.First();
+                Shape aVIm = aLVIm.First();
                 theMVBounds.Add(aVIm);
             }
         }
         //
         // find invalid splits of edges
-        NCollection_Map<TopoDS_Shape> aMEInv = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMEInv = new(ShapeHasher.Instance);
         GetInvalidEdges(theNewVertsToAvoid, theMVBounds, aGF, aMEInv);
         //
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
         // get valid splits to intersect with the commons
-        TopoDS_Compound aCEIm = new();
+        Compound aCEIm = new();
         aBB.MakeCompound(ref aCEIm);
         //
         // remove the splits containing vertices from invalid edges
         aIt.Initialize(aLEInt);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aE = aIt.Value();
+            Shape aE = aIt.Value();
             //
-            NCollection_List<TopoDS_Shape> aLEIm = ModifiedOf(aGF, aE);
+            NCollection_List<Shape> aLEIm = ModifiedOf(aGF, aE);
             if (aLEIm.IsEmpty())
             {
                 continue;
@@ -6565,7 +6570,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             aIt1.Initialize(aLEIm);
             for (; aIt1.More();)
             {
-                TopoDS_Shape aEIm = aIt1.Value();
+                Shape aEIm = aIt1.Value();
                 //
                 if (aMEInv.Contains(aEIm))
                 {
@@ -6580,9 +6585,9 @@ internal sealed class BRepOffset_BuildOffsetFaces
             //
             if (aLEIm.Extent() != 0)
             {
-                if (!theEImages.Find(aE, out NCollection_List<TopoDS_Shape> pLEIm))
+                if (!theEImages.Find(aE, out NCollection_List<Shape> pLEIm))
                 {
-                    pLEIm = new NCollection_List<TopoDS_Shape>();
+                    pLEIm = new NCollection_List<Shape>();
                     theEImages.Bind(aE, pLEIm);
                 }
                 pLEIm.Append(aLEIm);
@@ -6606,11 +6611,11 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         //
         BOPDS_DS pDS = aGFCE.PDS()!;
-        NCollection_List<TopoDS_Shape>.Iterator aItLCE = new(aLCE);
+        NCollection_List<Shape>.Iterator aItLCE = new(aLCE);
         for (; aItLCE.More(); aItLCE.Next())
         {
-            TopoDS_Shape aE = aItLCE.Value();
-            NCollection_List<TopoDS_Shape> aLEIm = ModifiedOf(aGFCE, aE);
+            Shape aE = aItLCE.Value();
+            NCollection_List<Shape> aLEIm = ModifiedOf(aGFCE, aE);
             if (aLEIm.IsEmpty())
             {
                 continue;
@@ -6627,7 +6632,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     NCollection_List<BOPDS_PaveBlock>.Iterator aItLPBC = new(aLPBC);
                     for (; aItLPBC.More(); aItLPBC.Next())
                     {
-                        TopoDS_Shape aEC = pDS.Shape(aItLPBC.Value().OriginalEdge());
+                        Shape aEC = pDS.Shape(aItLPBC.Value().OriginalEdge());
                         if (!theMECheckExt.Contains(aEC))
                         {
                             break;
@@ -6647,18 +6652,18 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
             //
             // save the images
-            if (!theEImages.Find(aE, out NCollection_List<TopoDS_Shape> pLEIm))
+            if (!theEImages.Find(aE, out NCollection_List<Shape> pLEIm))
             {
-                pLEIm = new NCollection_List<TopoDS_Shape>();
+                pLEIm = new NCollection_List<Shape>();
                 theEImages.Bind(aE, pLEIm);
             }
             pLEIm.Append(aLEIm);
             //
             // save bounding vertices
-            for (TopoDS_Iterator aItV = new(aE); aItV.More(); aItV.Next())
+            for (Iterator aItV = new(aE); aItV.More(); aItV.Next())
             {
-                TopoDS_Shape aV = aItV.Value();
-                NCollection_List<TopoDS_Shape> aLVIm = ModifiedOf(aGFCE, aV);
+                Shape aV = aItV.Value();
+                NCollection_List<Shape> aLVIm = ModifiedOf(aGFCE, aV);
                 theMVBounds.Add(aLVIm.IsEmpty() ? aV : aLVIm.First());
             }
         }
@@ -6668,19 +6673,19 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : GetInvalidEdges
     // purpose  : Looking for the invalid edges by intersecting with invalid vertices
     //=======================================================================
-    private void GetInvalidEdges(NCollection_Map<TopoDS_Shape> theVertsToAvoid, NCollection_Map<TopoDS_Shape> theMVBounds,
-                                 BOPAlgo_Builder theGF, NCollection_Map<TopoDS_Shape> theMEInv)
+    private void GetInvalidEdges(NCollection_Map<Shape> theVertsToAvoid, NCollection_Map<Shape> theMVBounds,
+                                 BOPAlgo_Builder theGF, NCollection_Map<Shape> theMEInv)
     {
         if (theVertsToAvoid.IsEmpty())
         {
             return;
         }
         //
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new();
+        NCollection_List<Shape>.Iterator aIt = new();
         // get vertices created with intersection edges
-        TopoDS_Shape aRes = theGF.InternalShape();
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMVE = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(aRes, TopAbs_VERTEX, TopAbs_EDGE, aDMVE);
+        Shape aRes = theGF.InternalShape();
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMVE = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aRes, ShapeType.Vertex, ShapeType.Edge, aDMVE);
         //
         BOPDS_DS pDS = theGF.PDS()!;
         //
@@ -6691,11 +6696,11 @@ internal sealed class BRepOffset_BuildOffsetFaces
         //    of only existing edges, i.e. no new intersection edges goes
         //    through this vertex
         //
-        NCollection_Map<TopoDS_Shape> aMVInv = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMVInv = new(ShapeHasher.Instance);
         int i, aNb = aDMVE.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Vertex aV = TopoDS.Vertex(aDMVE.FindKey(i));
+            Vertex aV = ShapeCasts.Vertex(aDMVE.FindKey(i));
             if (theMVBounds.Contains(aV))
             {
                 continue;
@@ -6709,9 +6714,9 @@ internal sealed class BRepOffset_BuildOffsetFaces
             //
             // OCCT.NET: OCCT iterates the map by its vertices' addresses; the port in insertion order (decision 1032).
             bool bFound = false;
-            foreach (TopoDS_Shape aItM in theVertsToAvoid)
+            foreach (Shape aItM in theVertsToAvoid)
             {
-                TopoDS_Vertex aVInv = TopoDS.Vertex(aItM);
+                Vertex aVInv = ShapeCasts.Vertex(aItM);
                 int iFlag = BOPTools_AlgoTools.ComputeVV(aV, aVInv);
                 if (iFlag == 0)
                 {
@@ -6723,11 +6728,11 @@ internal sealed class BRepOffset_BuildOffsetFaces
             //
             if (bFound)
             {
-                NCollection_List<TopoDS_Shape> aLVE = aDMVE.FindFromKey(aV);
+                NCollection_List<Shape> aLVE = aDMVE.FindFromKey(aV);
                 aIt.Initialize(aLVE);
                 for (; aIt.More(); aIt.Next())
                 {
-                    TopoDS_Shape aE = aIt.Value();
+                    Shape aE = aIt.Value();
                     theMEInv.Add(aE);
                 }
             }
@@ -6738,42 +6743,42 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : UpdateValidEdges
     // purpose  : Making the new splits and updating the maps
     //=======================================================================
-    private void UpdateValidEdges(NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theFLE,
-                                  NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theOENEdges,
-                                  NCollection_Map<TopoDS_Shape> theMVBounds, NCollection_Map<TopoDS_Shape> theMEInvOnArt,
-                                  NCollection_Map<TopoDS_Shape> theMECheckExt, NCollection_Map<TopoDS_Shape> theVertsToAvoid,
-                                  NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEImages,
-                                  NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEETrim,
+    private void UpdateValidEdges(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theFLE,
+                                  NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theOENEdges,
+                                  NCollection_Map<Shape> theMVBounds, NCollection_Map<Shape> theMEInvOnArt,
+                                  NCollection_Map<Shape> theMECheckExt, NCollection_Map<Shape> theVertsToAvoid,
+                                  NCollection_DataMap<Shape, NCollection_List<Shape>> theEImages,
+                                  NCollection_DataMap<Shape, NCollection_List<Shape>> theEETrim,
                                   ProgressRange theRange)
     {
         using ProgressScope aPSOuter = new(theRange, "Updating edges", 10);
         // update images and origins of edges, plus update AsDes
         //
         // new edges
-        NCollection_List<TopoDS_Shape> aLE = new();
+        NCollection_List<Shape> aLE = new();
         // back connection from edges to faces
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMELF = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aMELF = new(ShapeHasher.Instance);
         //
-        NCollection_Map<TopoDS_Shape> aMETmp = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMETmp = new(ShapeHasher.Instance);
         int i, aNb = theFLE.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Face aF = TopoDS.Face(theFLE.FindKey(i));
+            Face aF = ShapeCasts.Face(theFLE.FindKey(i));
             //
-            NCollection_List<TopoDS_Shape> aLEInt = theFLE[i];
-            NCollection_List<TopoDS_Shape>.Iterator aItLE0 = new(aLEInt);
+            NCollection_List<Shape> aLEInt = theFLE[i];
+            NCollection_List<Shape>.Iterator aItLE0 = new(aLEInt);
             for (; aItLE0.More(); aItLE0.Next())
             {
-                TopoDS_Shape aE = aItLE0.Value();
+                Shape aE = aItLE0.Value();
                 if ((theMECheckExt.Contains(aE) || aMETmp.Contains(aE)) && !theEImages.IsBound(aE))
                 {
                     theMECheckExt.Remove(aE);
                     aMETmp.Add(aE);
                     continue;
                 }
-                if (!aMELF.Find(aE, out NCollection_List<TopoDS_Shape> pLF))
+                if (!aMELF.Find(aE, out NCollection_List<Shape> pLF))
                 {
-                    pLF = new NCollection_List<TopoDS_Shape>();
+                    pLF = new NCollection_List<Shape>();
                     aMELF.Bind(aE, pLF);
                     aLE.Append(aE);
                 }
@@ -6787,14 +6792,14 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         //
         // bounding edges, that are going to be replaced
-        NCollection_Map<TopoDS_Shape> aMEB = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMEB = new(ShapeHasher.Instance);
         //
         // new intersection edges
-        NCollection_Map<TopoDS_Shape> aMENew = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMENew = new(ShapeHasher.Instance);
         // map of old vertices
-        NCollection_Map<TopoDS_Shape> aMVOld = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMVOld = new(ShapeHasher.Instance);
         // back connection to untrimmed edges
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMEOr = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aDMEOr = new(ShapeHasher.Instance);
         //
         // trim the new intersection edges
         TrimNewIntersectionEdges(aLE, theEETrim, theMVBounds, theMECheckExt, theEImages, aMEB, aMVOld, aMENew, aDMEOr, aMELF);
@@ -6813,13 +6818,13 @@ internal sealed class BRepOffset_BuildOffsetFaces
             return;
         }
 
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
 
         // Make connexity blocks of the invalid edges
         // and treat each block separately
 
         // Compound of all invalid edges to make the blocks
-        TopoDS_Compound aCEAll = new();
+        Compound aCEAll = new();
         aBB.MakeCompound(ref aCEAll);
 
         int aNbE = theOENEdges.Extent();
@@ -6829,35 +6834,35 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
 
         // Separate the edges into blocks
-        NCollection_List<TopoDS_Shape> aLBlocks = new();
-        BOPTools_AlgoTools.MakeConnexityBlocks(aCEAll, TopAbs_VERTEX, TopAbs_EDGE, aLBlocks);
+        NCollection_List<Shape> aLBlocks = new();
+        BOPTools_AlgoTools.MakeConnexityBlocks(aCEAll, ShapeType.Vertex, ShapeType.Edge, aLBlocks);
 
         // Perform intersection of the new splits for each block
 
         // Intersected splits
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMBlocksSp = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMBlocksSp = new(ShapeHasher.Instance);
 
         using ProgressScope aPSB = new(aPSOuter.Next(), null, aLBlocks.Extent());
-        NCollection_List<TopoDS_Shape>.Iterator aItLB = new(aLBlocks);
+        NCollection_List<Shape>.Iterator aItLB = new(aLBlocks);
         for (; aItLB.More(); aItLB.Next(), aPSB.Next())
         {
             if (!aPSB.More())
             {
                 return;
             }
-            TopoDS_Shape aBlock = aItLB.Value();
+            Shape aBlock = aItLB.Value();
 
             // Get the list of new edges for the block
-            NCollection_List<TopoDS_Shape> aBlockLENew = new();
+            NCollection_List<Shape> aBlockLENew = new();
             {
                 // Fence map
-                NCollection_Map<TopoDS_Shape> aMEFence = new(TopTools_ShapeMapHasher.Instance);
-                TopExp_Explorer anExpE = new(aBlock, TopAbs_EDGE);
+                NCollection_Map<Shape> aMEFence = new(ShapeHasher.Instance);
+                Explorer anExpE = new(aBlock, ShapeType.Edge);
                 for (; anExpE.More(); anExpE.Next())
                 {
-                    TopoDS_Shape aE = anExpE.Current();
-                    NCollection_List<TopoDS_Shape> aLEInt = theOENEdges.FindFromKey(aE);
-                    NCollection_List<TopoDS_Shape>.Iterator aItLEInt = new(aLEInt);
+                    Shape aE = anExpE.Current();
+                    NCollection_List<Shape> aLEInt = theOENEdges.FindFromKey(aE);
+                    NCollection_List<Shape>.Iterator aItLEInt = new(aLEInt);
                     for (; aItLEInt.More(); aItLEInt.Next())
                     {
                         if (aMEFence.Add(aItLEInt.Value()))
@@ -6874,18 +6879,18 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
 
             // Get the splits of new edges to intersect
-            NCollection_List<TopoDS_Shape> aLSplits = new();
+            NCollection_List<Shape> aLSplits = new();
 
-            NCollection_List<TopoDS_Shape>.Iterator aItLE = new(aBlockLENew);
+            NCollection_List<Shape>.Iterator aItLE = new(aBlockLENew);
             for (; aItLE.More(); aItLE.Next())
             {
-                TopoDS_Shape aE = aItLE.Value();
-                if (!theEImages.Find(aE, out NCollection_List<TopoDS_Shape> pLEIm) || pLEIm.IsEmpty())
+                Shape aE = aItLE.Value();
+                if (!theEImages.Find(aE, out NCollection_List<Shape> pLEIm) || pLEIm.IsEmpty())
                 {
                     continue;
                 }
 
-                NCollection_List<TopoDS_Shape>.Iterator aItLEIm = new(pLEIm);
+                NCollection_List<Shape>.Iterator aItLEIm = new(pLEIm);
                 for (; aItLEIm.More(); aItLEIm.Next())
                 {
                     aLSplits.Append(aItLEIm.Value());
@@ -6897,7 +6902,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 continue;
             }
 
-            TopoDS_Shape aCE = new();
+            Shape aCE = new();
             if (aLSplits.Extent() > 1)
             {
                 // Intersect the new splits among themselves to avoid self-intersections
@@ -6920,10 +6925,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // FIRST STAGE - separate treatment of the blocks
 
         // Valid splits to be preserved on the first stage
-        NCollection_Map<TopoDS_Shape> aMEVal = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMEVal = new(ShapeHasher.Instance);
 
         // Blocks of valid edges on the first stage
-        NCollection_List<TopoDS_Shape> aLValBlocks = new();
+        NCollection_List<Shape> aLValBlocks = new();
 
         int aNbB = aMBlocksSp.Extent();
         using ProgressScope aPSBSp = new(aPSOuter.Next(), null, aNbB);
@@ -6933,19 +6938,19 @@ internal sealed class BRepOffset_BuildOffsetFaces
             {
                 return;
             }
-            TopoDS_Shape aCE = aMBlocksSp.FindKey(i);
-            NCollection_List<TopoDS_Shape> aBlockLENew = aMBlocksSp[i];
+            Shape aCE = aMBlocksSp.FindKey(i);
+            NCollection_List<Shape> aBlockLENew = aMBlocksSp[i];
 
             // Get all participating faces to get the bounds
-            NCollection_List<TopoDS_Shape> aLFaces0 = new();
-            NCollection_List<TopoDS_Shape>.Iterator aItLE = new(aBlockLENew);
+            NCollection_List<Shape> aLFaces0 = new();
+            NCollection_List<Shape>.Iterator aItLE = new(aBlockLENew);
             for (; aItLE.More(); aItLE.Next())
             {
-                if (!aMELF.Find(aItLE.Value(), out NCollection_List<TopoDS_Shape> pLF))
+                if (!aMELF.Find(aItLE.Value(), out NCollection_List<Shape> pLF))
                 {
                     continue;
                 }
-                NCollection_List<TopoDS_Shape>.Iterator aItLF = new(pLF);
+                NCollection_List<Shape>.Iterator aItLF = new(pLF);
                 for (; aItLF.More(); aItLF.Next())
                 {
                     AppendToList(aLFaces0, aItLF.Value());
@@ -6954,24 +6959,24 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
             // Localized bounds of the splits of the offset faces
             // to filter the new splits of the current block
-            TopoDS_Shape aFilterBounds0 = new();
+            Shape aFilterBounds0 = new();
             GetBounds(aLFaces0, aMEB, ref aFilterBounds0);
 
             // Filter the splits by bounds
-            NCollection_Map<TopoDS_Shape> aMEInvLoc = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_Map<Shape> aMEInvLoc = new(ShapeHasher.Instance);
             GetInvalidEdgesByBounds(aCE, aFilterBounds0, aMVOld, aMENew, aDMEOr, aMELF, theEImages, theMECheckExt, theMEInvOnArt,
                                     theVertsToAvoid, aMEInvLoc);
 
             // Keep only valid edges of the block
-            TopoDS_Compound aCEVal = new();
+            Compound aCEVal = new();
             aBB.MakeCompound(ref aCEVal);
 
             bool bKept = false;
 
-            TopExp_Explorer anExpE = new(aCE, TopAbs_EDGE);
+            Explorer anExpE = new(aCE, ShapeType.Edge);
             for (; anExpE.More(); anExpE.Next())
             {
-                TopoDS_Shape aESp = anExpE.Current();
+                Shape aESp = anExpE.Current();
                 if (!aMEInvLoc.Contains(aESp) && aMEVal.Add(aESp))
                 {
                     aBB.Add(aCEVal, aESp);
@@ -6986,7 +6991,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
 
         // Filter the images of edges after the first filtering stage
-        TopoDS_Shape aSplits1 = new();
+        Shape aSplits1 = new();
         FilterSplits(aLE, aMEVal, false, theEImages, ref aSplits1);
 
         if (aLValBlocks.IsEmpty())
@@ -7009,10 +7014,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aNbB = aMBlocksSp.Extent();
         for (i = 1; i <= aNbB; ++i)
         {
-            TopoDS_Shape aCE = aMBlocksSp.FindKey(i);
-            for (TopExp_Explorer anExp = new(aCE, TopAbs_EDGE); anExp.More(); anExp.Next())
+            Shape aCE = aMBlocksSp.FindKey(i);
+            for (Explorer anExp = new(aCE, ShapeType.Edge); anExp.More(); anExp.Next())
             {
-                TopoDS_Shape aEIm = anExp.Current();
+                Shape aEIm = anExp.Current();
                 if (aMENew.Contains(aEIm) && !aMEVal.Contains(aEIm))
                 {
                     aLValBlocks.Append(aEIm);
@@ -7038,24 +7043,24 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
 
         // Get all faces to get the bounds from their splits
-        NCollection_List<TopoDS_Shape> aLFaces = new();
+        NCollection_List<Shape> aLFaces = new();
         for (i = 1; i <= myOFImages.Extent(); ++i)
         {
             aLFaces.Append(myOFImages.FindKey(i));
         }
 
         // Bounds of the splits of the offset faces to filter the new splits
-        TopoDS_Shape aFilterBounds = new();
+        Shape aFilterBounds = new();
         GetBounds(aLFaces, aMEB, ref aFilterBounds);
 
         // Filter the splits by intersection with bounds
-        NCollection_Map<TopoDS_Shape> aMEInv = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMEInv = new(ShapeHasher.Instance);
         GetInvalidEdgesByBounds(aSplits1, aFilterBounds, aMVOld, aMENew, aDMEOr, aMELF, theEImages, theMECheckExt, theMEInvOnArt,
                                 theVertsToAvoid, aMEInv);
 
         // Filter the images of edges after the second filtering stage
         // and combine all valid edges into a single compound
-        TopoDS_Shape aSplits = new();
+        Shape aSplits = new();
         FilterSplits(aLE, aMEInv, true, theEImages, ref aSplits);
 
         aPSOuter.Next();
@@ -7066,15 +7071,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
         // get bounds to update
         // we need to update the edges of all the affected faces
-        NCollection_List<TopoDS_Shape> aLF = new();
+        NCollection_List<Shape> aLF = new();
         // prepare the vertices from new splits of edges
-        NCollection_IndexedMap<TopoDS_Shape> aMVSp = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aSplits, TopAbs_VERTEX, aMVSp);
+        NCollection_IndexedMap<Shape> aMVSp = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aSplits, ShapeType.Vertex, aMVSp);
         //
         int aNbF = myOFImages.Extent();
         for (i = 1; i <= aNbF; ++i)
         {
-            TopoDS_Shape aF = myOFImages.FindKey(i);
+            Shape aF = myOFImages.FindKey(i);
             if (theFLE.Contains(aF))
             {
                 aLF.Append(aF);
@@ -7082,16 +7087,16 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
             //
             // check the splits of faces to have vertices from splits
-            NCollection_List<TopoDS_Shape> aLFIm = myOFImages[i];
-            NCollection_List<TopoDS_Shape>.Iterator aItLFIm = new(aLFIm);
+            NCollection_List<Shape> aLFIm = myOFImages[i];
+            NCollection_List<Shape>.Iterator aItLFIm = new(aLFIm);
             for (; aItLFIm.More(); aItLFIm.Next())
             {
-                TopoDS_Shape aFIm = aItLFIm.Value();
+                Shape aFIm = aItLFIm.Value();
                 //
-                TopExp_Explorer aExpV = new(aFIm, TopAbs_VERTEX);
+                Explorer aExpV = new(aFIm, ShapeType.Vertex);
                 for (; aExpV.More(); aExpV.Next())
                 {
-                    TopoDS_Shape aV = aExpV.Current();
+                    Shape aV = aExpV.Current();
                     if (aMVSp.Contains(aV))
                     {
                         break;
@@ -7111,8 +7116,8 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         //
         // get bounds from splits of faces of aLF
-        TopoDS_Shape aBounds = new();
-        NCollection_List<TopoDS_Shape> aLAValid = new(), aLABounds = new();
+        Shape aBounds = new();
+        NCollection_List<Shape> aLAValid = new(), aLABounds = new();
         GetBoundsToUpdate(aLF, aMEB, aLABounds, aLAValid, ref aBounds);
         //
         // Intersect valid splits with bounds and update both
@@ -7134,36 +7139,36 @@ internal sealed class BRepOffset_BuildOffsetFaces
         UpdateIntersectedEdges(aLABounds, aGF);
         //
         // update the EdgesToAvoid with the splits
-        NCollection_IndexedMap<TopoDS_Shape> aNewEdges = new(TopTools_ShapeMapHasher.Instance);
-        if (aGF.Images().Find(aSplits, out NCollection_List<TopoDS_Shape> pSplitsIm))
+        NCollection_IndexedMap<Shape> aNewEdges = new(ShapeHasher.Instance);
+        if (aGF.Images().Find(aSplits, out NCollection_List<Shape> pSplitsIm))
         {
-            NCollection_List<TopoDS_Shape>.Iterator aItSpIm = new(pSplitsIm);
+            NCollection_List<Shape>.Iterator aItSpIm = new(pSplitsIm);
             for (; aItSpIm.More(); aItSpIm.Next())
             {
-                TopExp.MapShapes(aItSpIm.Value(), TopAbs_EDGE, aNewEdges);
+                Exploration.MapShapes(aItSpIm.Value(), ShapeType.Edge, aNewEdges);
             }
         }
 
-        TopoDS_Compound anInsideEdges = new();
-        new BRep_Builder().MakeCompound(ref anInsideEdges);
+        Compound anInsideEdges = new();
+        new BrepBuilder().MakeCompound(ref anInsideEdges);
         for (int iE = 1; iE <= myInsideEdges.Extent(); ++iE)
         {
-            new BRep_Builder().Add(anInsideEdges, myInsideEdges[iE]);
+            new BrepBuilder().Add(anInsideEdges, myInsideEdges[iE]);
         }
 
         //
         // Rebuild the map of edges to avoid, using the intersection results
-        NCollection_IndexedMap<TopoDS_Shape> aMEAvoid = new(TopTools_ShapeMapHasher.Instance);
-        TopoDS_Compound aCEAvoid = new();
-        new BRep_Builder().MakeCompound(ref aCEAvoid);
+        NCollection_IndexedMap<Shape> aMEAvoid = new(ShapeHasher.Instance);
+        Compound aCEAvoid = new();
+        new BrepBuilder().MakeCompound(ref aCEAvoid);
         // GF's data structure
         BOPDS_DS pDS = aGF.PDS()!;
 
         aNbE = myEdgesToAvoid.Extent();
         for (i = 1; i <= aNbE; ++i)
         {
-            TopoDS_Shape aE = myEdgesToAvoid[i];
-            NCollection_List<TopoDS_Shape> aLEIm = ModifiedOf(aGF, aE);
+            Shape aE = myEdgesToAvoid[i];
+            NCollection_List<Shape> aLEIm = ModifiedOf(aGF, aE);
 
             // Only untouched and fully coinciding edges should be kept in the avoid map
             bool bKeep = aLEIm.IsEmpty();
@@ -7197,10 +7202,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 continue;
             }
 
-            NCollection_List<TopoDS_Shape>.Iterator aItLEIm = new(aLEIm);
+            NCollection_List<Shape>.Iterator aItLEIm = new(aLEIm);
             for (; aItLEIm.More(); aItLEIm.Next())
             {
-                TopoDS_Shape aEIm = aItLEIm.Value();
+                Shape aEIm = aItLEIm.Value();
                 if (!aNewEdges.Contains(aEIm))
                 {
                     AddToContainer(aEIm, aCEAvoid);
@@ -7209,7 +7214,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
 
         bool isCut = false;
-        if (aCEAvoid.NbChildren() > 0)
+        if (aCEAvoid.ChildCount > 0)
         {
             // Perform intersection with the small subset of the edges to make
             // it possible to use the inside edges for building new splits.
@@ -7222,7 +7227,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
             if (isCut)
             {
-                for (TopoDS_Iterator itCE = new(aCEAvoid); itCE.More(); itCE.Next())
+                for (Iterator itCE = new(aCEAvoid); itCE.More(); itCE.Next())
                 {
                     if (!aBOP.IsDeleted(itCE.Value()))
                     {
@@ -7234,7 +7239,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
         if (!isCut)
         {
-            TopExp.MapShapes(aCEAvoid, TopAbs_EDGE, aMEAvoid);
+            Exploration.MapShapes(aCEAvoid, ShapeType.Edge, aMEAvoid);
         }
 
         myEdgesToAvoid = aMEAvoid;
@@ -7243,36 +7248,36 @@ internal sealed class BRepOffset_BuildOffsetFaces
     //=================================================================================================
 
     //! Trims intersection edges
-    private void TrimNewIntersectionEdges(NCollection_List<TopoDS_Shape> theLE,
-                                          NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEETrim,
-                                          NCollection_Map<TopoDS_Shape> theMVBounds, NCollection_Map<TopoDS_Shape> theMECheckExt,
-                                          NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEImages,
-                                          NCollection_Map<TopoDS_Shape> theMEB, NCollection_Map<TopoDS_Shape> theMVOld,
-                                          NCollection_Map<TopoDS_Shape> theMENew,
-                                          NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMEOr,
-                                          NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMELF)
+    private void TrimNewIntersectionEdges(NCollection_List<Shape> theLE,
+                                          NCollection_DataMap<Shape, NCollection_List<Shape>> theEETrim,
+                                          NCollection_Map<Shape> theMVBounds, NCollection_Map<Shape> theMECheckExt,
+                                          NCollection_DataMap<Shape, NCollection_List<Shape>> theEImages,
+                                          NCollection_Map<Shape> theMEB, NCollection_Map<Shape> theMVOld,
+                                          NCollection_Map<Shape> theMENew,
+                                          NCollection_DataMap<Shape, NCollection_List<Shape>> theDMEOr,
+                                          NCollection_DataMap<Shape, NCollection_List<Shape>> theMELF)
     {
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new(), aIt1 = new();
+        NCollection_List<Shape>.Iterator aIt = new(), aIt1 = new();
         aIt.Initialize(theLE);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aE = aIt.Value();
+            Shape aE = aIt.Value();
             //
             bool bCheckExt = theMECheckExt.Remove(aE);
             //
             bool bOld = theEETrim.IsBound(aE);
             if (bOld)
             {
-                NCollection_List<TopoDS_Shape> aLET = theEETrim.Find(aE);
+                NCollection_List<Shape> aLET = theEETrim.Find(aE);
                 aIt1.Initialize(aLET);
                 for (; aIt1.More(); aIt1.Next())
                 {
-                    TopoDS_Shape aET = aIt1.Value();
+                    Shape aET = aIt1.Value();
                     theMEB.Add(aET);
-                    TopExp_Explorer aExpV = new(aET, TopAbs_VERTEX);
+                    Explorer aExpV = new(aET, ShapeType.Vertex);
                     for (; aExpV.More(); aExpV.Next())
                     {
-                        TopoDS_Shape aV = aExpV.Current();
+                        Shape aV = aExpV.Current();
                         theMVOld.Add(aV);
                     }
                 }
@@ -7283,31 +7288,31 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 continue;
             }
             //
-            NCollection_List<TopoDS_Shape> aLEIm = theEImages.ChangeFind(aE);
+            NCollection_List<Shape> aLEIm = theEImages.ChangeFind(aE);
             if (aLEIm.IsEmpty())
             {
                 theEImages.UnBind(aE);
                 continue;
             }
             //
-            TopoDS_Shape aCEIm = new();
-            NCollection_Map<TopoDS_Shape> aMEVBounds = new(TopTools_ShapeMapHasher.Instance);
+            Shape aCEIm = new();
+            NCollection_Map<Shape> aMEVBounds = new(ShapeHasher.Instance);
             //
             if (aLEIm.Extent() > 1)
             {
-                NCollection_IndexedMap<TopoDS_Shape> aMV = new(TopTools_ShapeMapHasher.Instance);
+                NCollection_IndexedMap<Shape> aMV = new(ShapeHasher.Instance);
                 // fuse these parts
                 BOPAlgo_Builder aGFE = new();
-                NCollection_List<TopoDS_Shape>.Iterator aItLEIm0 = new(aLEIm);
+                NCollection_List<Shape>.Iterator aItLEIm0 = new(aLEIm);
                 for (; aItLEIm0.More(); aItLEIm0.Next())
                 {
-                    TopoDS_Shape aEIm = aItLEIm0.Value();
+                    Shape aEIm = aItLEIm0.Value();
                     aGFE.AddArgument(aEIm);
-                    TopExp.MapShapes(aEIm, TopAbs_VERTEX, aMV);
+                    Exploration.MapShapes(aEIm, ShapeType.Vertex, aMV);
                 }
                 //
                 // add two bounding vertices of this edge to the operation
-                TopExp.Vertices(TopoDS.Edge(aE), out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
+                Exploration.Vertices(ShapeCasts.Edge(aE), out Vertex aV1, out Vertex aV2);
                 //
                 aGFE.AddArgument(aV1);
                 aGFE.AddArgument(aV2);
@@ -7323,10 +7328,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     int iV, aNbV = aMV.Extent();
                     for (iV = 1; iV <= aNbV; ++iV)
                     {
-                        TopoDS_Shape aV = aMV[iV];
+                        Shape aV = aMV[iV];
                         if (theMVBounds.Contains(aV) || aV.IsSame(aV1) || aV.IsSame(aV2))
                         {
-                            NCollection_List<TopoDS_Shape> aLVIm = ModifiedOf(aGFE, aV);
+                            NCollection_List<Shape> aLVIm = ModifiedOf(aGFE, aV);
                             aMEVBounds.Add(aLVIm.IsEmpty() ? aV : aLVIm.First());
                         }
                     }
@@ -7341,16 +7346,16 @@ internal sealed class BRepOffset_BuildOffsetFaces
             //
             aLEIm.Clear();
             //
-            TopExp_Explorer aExp = new(aCEIm, TopAbs_EDGE);
+            Explorer aExp = new(aCEIm, ShapeType.Edge);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Shape aEIm = aExp.Current();
+                Shape aEIm = aExp.Current();
                 //
                 // check the split not to contain bounding vertices
-                TopoDS_Iterator aItV = new(aEIm);
+                Iterator aItV = new(aEIm);
                 for (; aItV.More(); aItV.Next())
                 {
-                    TopoDS_Shape aV = aItV.Value();
+                    Shape aV = aItV.Value();
                     if (aMEVBounds.Contains(aV) || theMVBounds.Contains(aV))
                     {
                         break;
@@ -7362,7 +7367,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     aLEIm.Append(aEIm);
                     //
                     // OCCT's Bound replaces any list already bound.
-                    NCollection_List<TopoDS_Shape> aLOr = new();
+                    NCollection_List<Shape> aLOr = new();
                     aLOr.Append(aE);
                     theDMEOr.Bind(aEIm, aLOr);
                 }
@@ -7374,17 +7379,17 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
             else
             {
-                NCollection_List<TopoDS_Shape> aLFE = theMELF.Find(aE);
-                NCollection_List<TopoDS_Shape>.Iterator aItLEIm = new(aLEIm);
+                NCollection_List<Shape> aLFE = theMELF.Find(aE);
+                NCollection_List<Shape>.Iterator aItLEIm = new(aLEIm);
                 for (; aItLEIm.More(); aItLEIm.Next())
                 {
-                    TopoDS_Shape aEIm = aItLEIm.Value();
-                    if (!theMELF.Find(aEIm, out NCollection_List<TopoDS_Shape> pLFEIm))
+                    Shape aEIm = aItLEIm.Value();
+                    if (!theMELF.Find(aEIm, out NCollection_List<Shape> pLFEIm))
                     {
-                        pLFEIm = new NCollection_List<TopoDS_Shape>();
+                        pLFEIm = new NCollection_List<Shape>();
                         theMELF.Bind(aEIm, pLFEIm);
                     }
-                    NCollection_List<TopoDS_Shape>.Iterator aItLF = new(aLFE);
+                    NCollection_List<Shape>.Iterator aItLF = new(aLFE);
                     for (; aItLF.More(); aItLF.Next())
                     {
                         AppendToList(pLFEIm, aItLF.Value());
@@ -7407,13 +7412,13 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : IntersectEdges
     // purpose  : Intersecting the trimmed edges to avoid self-intersections
     //=======================================================================
-    private void IntersectEdges(NCollection_List<TopoDS_Shape> theLA, NCollection_List<TopoDS_Shape> theLE,
-                                NCollection_Map<TopoDS_Shape> theMVBounds, NCollection_Map<TopoDS_Shape> theVertsToAvoid,
-                                NCollection_Map<TopoDS_Shape> theMENew, NCollection_Map<TopoDS_Shape> theMECheckExt,
-                                NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEImages,
-                                NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMEOr,
-                                NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMELF,
-                                ref TopoDS_Shape theSplits)
+    private void IntersectEdges(NCollection_List<Shape> theLA, NCollection_List<Shape> theLE,
+                                NCollection_Map<Shape> theMVBounds, NCollection_Map<Shape> theVertsToAvoid,
+                                NCollection_Map<Shape> theMENew, NCollection_Map<Shape> theMECheckExt,
+                                NCollection_DataMap<Shape, NCollection_List<Shape>> theEImages,
+                                NCollection_DataMap<Shape, NCollection_List<Shape>> theDMEOr,
+                                NCollection_DataMap<Shape, NCollection_List<Shape>> theMELF,
+                                ref Shape theSplits)
     {
         BOPAlgo_Builder aGFA = new();
         aGFA.SetArguments(theLA);
@@ -7421,13 +7426,13 @@ internal sealed class BRepOffset_BuildOffsetFaces
         if (aGFA.HasErrors())
         {
             // just copy input to the result
-            TopoDS_Compound aSp0 = new();
-            BRep_Builder aBB0 = new();
+            Compound aSp0 = new();
+            BrepBuilder aBB0 = new();
             aBB0.MakeCompound(ref aSp0);
-            NCollection_List<TopoDS_Shape>.Iterator anIt = new(theLA);
+            NCollection_List<Shape>.Iterator anIt = new(theLA);
             for (; anIt.More(); anIt.Next())
             {
-                TopoDS_Shape aE = anIt.Value();
+                Shape aE = anIt.Value();
                 aBB0.Add(aSp0, aE);
             }
             theSplits = aSp0;
@@ -7439,13 +7444,13 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // compound of valid splits
         theSplits = aGFA.InternalShape();
         //
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new(), aIt1 = new();
+        NCollection_List<Shape>.Iterator aIt = new(), aIt1 = new();
 
         // prepare list of edges to update
-        NCollection_List<TopoDS_Shape> aLEInput = new();
+        NCollection_List<Shape> aLEInput = new();
         for (aIt.Initialize(theLA); aIt.More(); aIt.Next())
         {
-            TopExp_Explorer anExpE = new(aIt.Value(), TopAbs_EDGE);
+            Explorer anExpE = new(aIt.Value(), ShapeType.Edge);
             for (; anExpE.More(); anExpE.Next())
             {
                 aLEInput.Append(anExpE.Current());
@@ -7456,13 +7461,13 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aIt.Initialize(aLEInput);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aE = aIt.Value();
+            Shape aE = aIt.Value();
             if (!theMENew.Contains(aE))
             {
                 continue;
             }
 
-            NCollection_List<TopoDS_Shape> aLEIm = ModifiedOf(aGFA, aE);
+            NCollection_List<Shape> aLEIm = ModifiedOf(aGFA, aE);
             if (aLEIm.IsEmpty())
             {
                 continue;
@@ -7480,8 +7485,8 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aIt.Initialize(aLEInput);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aE = aIt.Value();
-            NCollection_List<TopoDS_Shape> aLEIm = ModifiedOf(aGFA, aE);
+            Shape aE = aIt.Value();
+            NCollection_List<Shape> aLEIm = ModifiedOf(aGFA, aE);
             if (aLEIm.IsEmpty())
             {
                 continue;
@@ -7497,17 +7502,17 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 theMECheckExt.Remove(aE);
             }
             //
-            NCollection_List<TopoDS_Shape> aLFE = theMELF.Find(aE);
+            NCollection_List<Shape> aLFE = theMELF.Find(aE);
             aIt1.Initialize(aLEIm);
             for (; aIt1.More(); aIt1.Next())
             {
-                TopoDS_Shape aEIm = aIt1.Value();
-                if (!theMELF.Find(aEIm, out NCollection_List<TopoDS_Shape> pLFEIm))
+                Shape aEIm = aIt1.Value();
+                if (!theMELF.Find(aEIm, out NCollection_List<Shape> pLFEIm))
                 {
-                    pLFEIm = new NCollection_List<TopoDS_Shape>();
+                    pLFEIm = new NCollection_List<Shape>();
                     theMELF.Bind(aEIm, pLFEIm);
                 }
-                NCollection_List<TopoDS_Shape>.Iterator aItLF = new(aLFE);
+                NCollection_List<Shape>.Iterator aItLF = new(aLFE);
                 for (; aItLF.More(); aItLF.Next())
                 {
                     AppendToList(pLFEIm, aItLF.Value());
@@ -7515,18 +7520,18 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
         }
         //
-        NCollection_Map<TopoDS_Shape> aMEInv = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMEInv = new(ShapeHasher.Instance);
         GetInvalidEdges(theVertsToAvoid, theMVBounds, aGFA, aMEInv);
         if (aMEInv.Extent() != 0)
         {
             // update shape
-            TopoDS_Compound aSp = new();
-            BRep_Builder aBB = new();
+            Compound aSp = new();
+            BrepBuilder aBB = new();
             aBB.MakeCompound(ref aSp);
-            TopExp_Explorer aExp = new(theSplits, TopAbs_EDGE);
+            Explorer aExp = new(theSplits, ShapeType.Edge);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Shape aE = aExp.Current();
+                Shape aE = aExp.Current();
                 if (!aMEInv.Contains(aE))
                 {
                     aBB.Add(aSp, aE);
@@ -7543,32 +7548,32 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : GetBounds
     // purpose  : Getting edges from the splits of offset faces
     //=======================================================================
-    private void GetBounds(NCollection_List<TopoDS_Shape> theLFaces, NCollection_Map<TopoDS_Shape> theMEB,
-                           ref TopoDS_Shape theBounds)
+    private void GetBounds(NCollection_List<Shape> theLFaces, NCollection_Map<Shape> theMEB,
+                           ref Shape theBounds)
     {
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
         // Make compound of edges contained in the splits of faces
-        TopoDS_Compound aBounds = new();
+        Compound aBounds = new();
         aBB.MakeCompound(ref aBounds);
         // Fence map
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
 
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new(theLFaces);
+        NCollection_List<Shape>.Iterator aItLF = new(theLFaces);
         for (; aItLF.More(); aItLF.Next())
         {
-            if (!myOFImages.FindFromKey(aItLF.Value(), out NCollection_List<TopoDS_Shape> pLFIm))
+            if (!myOFImages.FindFromKey(aItLF.Value(), out NCollection_List<Shape> pLFIm))
             {
                 continue;
             }
-            NCollection_List<TopoDS_Shape>.Iterator aIt = new(pLFIm);
+            NCollection_List<Shape>.Iterator aIt = new(pLFIm);
             for (; aIt.More(); aIt.Next())
             {
-                TopoDS_Shape aFIm = aIt.Value();
+                Shape aFIm = aIt.Value();
                 //
-                TopExp_Explorer aExpE = new(aFIm, TopAbs_EDGE);
+                Explorer aExpE = new(aFIm, ShapeType.Edge);
                 for (; aExpE.More(); aExpE.Next())
                 {
-                    TopoDS_Shape aEIm = aExpE.Current();
+                    Shape aEIm = aExpE.Current();
                     if (!theMEB.Contains(aEIm) && aMFence.Add(aEIm))
                     {
                         aBB.Add(aBounds, aEIm);
@@ -7583,38 +7588,38 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : GetBoundsToUpdate
     // purpose  : Get bounding edges that should be updated
     //=======================================================================
-    private void GetBoundsToUpdate(NCollection_List<TopoDS_Shape> theLF, NCollection_Map<TopoDS_Shape> theMEB,
-                                   NCollection_List<TopoDS_Shape> theLABounds, NCollection_List<TopoDS_Shape> theLAValid,
-                                   ref TopoDS_Shape theBounds)
+    private void GetBoundsToUpdate(NCollection_List<Shape> theLF, NCollection_Map<Shape> theMEB,
+                                   NCollection_List<Shape> theLABounds, NCollection_List<Shape> theLAValid,
+                                   ref Shape theBounds)
     {
         // get all edges
-        TopoDS_Compound aBounds = new();
-        BRep_Builder aBB = new();
+        Compound aBounds = new();
+        BrepBuilder aBB = new();
         aBB.MakeCompound(ref aBounds);
         //
-        NCollection_Map<TopoDS_Shape> aMAValid = new(TopTools_ShapeMapHasher.Instance), aMFence = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMAValid = new(ShapeHasher.Instance), aMFence = new(ShapeHasher.Instance);
         //
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new(theLF);
+        NCollection_List<Shape>.Iterator aItLF = new(theLF);
         for (; aItLF.More(); aItLF.Next())
         {
-            TopoDS_Shape aF = aItLF.Value();
+            Shape aF = aItLF.Value();
             //
-            NCollection_IndexedMap<TopoDS_Shape> aMDE = new(TopTools_ShapeMapHasher.Instance);
-            NCollection_List<TopoDS_Shape> aLFDes = myAsDes!.Descendant(aF);
-            NCollection_List<TopoDS_Shape>.Iterator aItLFDes = new(aLFDes);
+            NCollection_IndexedMap<Shape> aMDE = new(ShapeHasher.Instance);
+            NCollection_List<Shape> aLFDes = myAsDes!.Descendant(aF);
+            NCollection_List<Shape>.Iterator aItLFDes = new(aLFDes);
             for (; aItLFDes.More(); aItLFDes.Next())
             {
-                TopoDS_Shape aED = aItLFDes.Value();
-                if (!myOEImages.Find(aED, out NCollection_List<TopoDS_Shape> pLEDIm))
+                Shape aED = aItLFDes.Value();
+                if (!myOEImages.Find(aED, out NCollection_List<Shape> pLEDIm))
                 {
                     aMDE.Add(aED);
                     continue;
                 }
                 //
-                NCollection_List<TopoDS_Shape>.Iterator aItLEDIm = new(pLEDIm);
+                NCollection_List<Shape>.Iterator aItLEDIm = new(pLEDIm);
                 for (; aItLEDIm.More(); aItLEDIm.Next())
                 {
-                    TopoDS_Shape aEDIm = aItLEDIm.Value();
+                    Shape aEDIm = aItLEDIm.Value();
                     aMDE.Add(aEDIm);
                 }
             }
@@ -7622,7 +7627,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             int j, aNbE = aMDE.Extent();
             for (j = 1; j <= aNbE; ++j)
             {
-                TopoDS_Edge aEIm = TopoDS.Edge(aMDE[j]);
+                Edge aEIm = ShapeCasts.Edge(aMDE[j]);
                 //
                 if (!theMEB.Contains(aEIm) && aMFence.Add(aEIm))
                 {
@@ -7630,12 +7635,12 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     theLABounds.Append(aEIm);
                 }
                 //
-                if (myOEOrigins.Find(aEIm, out NCollection_List<TopoDS_Shape> pLO))
+                if (myOEOrigins.Find(aEIm, out NCollection_List<Shape> pLO))
                 {
-                    NCollection_List<TopoDS_Shape>.Iterator aItLO = new(pLO);
+                    NCollection_List<Shape>.Iterator aItLO = new(pLO);
                     for (; aItLO.More(); aItLO.Next())
                     {
-                        TopoDS_Shape aEO = aItLO.Value();
+                        Shape aEO = aItLO.Value();
                         //
                         if (aMAValid.Add(aEO))
                         {
@@ -7659,17 +7664,17 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : GetInvalidEdgesByBounds
     // purpose  : Filter new splits by intersection with bounds
     //=======================================================================
-    private void GetInvalidEdgesByBounds(in TopoDS_Shape theSplits, in TopoDS_Shape theBounds,
-                                         NCollection_Map<TopoDS_Shape> theMVOld, NCollection_Map<TopoDS_Shape> theMENew,
-                                         NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMEOr,
-                                         NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMELF,
-                                         NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEImages,
-                                         NCollection_Map<TopoDS_Shape> theMECheckExt, NCollection_Map<TopoDS_Shape> theMEInvOnArt,
-                                         NCollection_Map<TopoDS_Shape> theVertsToAvoid, NCollection_Map<TopoDS_Shape> theMEInv)
+    private void GetInvalidEdgesByBounds(in Shape theSplits, in Shape theBounds,
+                                         NCollection_Map<Shape> theMVOld, NCollection_Map<Shape> theMENew,
+                                         NCollection_DataMap<Shape, NCollection_List<Shape>> theDMEOr,
+                                         NCollection_DataMap<Shape, NCollection_List<Shape>> theMELF,
+                                         NCollection_DataMap<Shape, NCollection_List<Shape>> theEImages,
+                                         NCollection_Map<Shape> theMECheckExt, NCollection_Map<Shape> theMEInvOnArt,
+                                         NCollection_Map<Shape> theVertsToAvoid, NCollection_Map<Shape> theMEInv)
     {
         // map splits to check the vertices of edges
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMVE = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(theSplits, TopAbs_VERTEX, TopAbs_EDGE, aDMVE);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMVE = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(theSplits, ShapeType.Vertex, ShapeType.Edge, aDMVE);
         //
         BOPAlgo_Section aSec = new();
         aSec.AddArgument(theSplits);
@@ -7678,9 +7683,9 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aSec.Perform();
         //
         // invalid vertices
-        NCollection_IndexedMap<TopoDS_Shape> aMVInv = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> aMVInv = new(ShapeHasher.Instance);
         // vertices to check additionally by classification relatively to solid
-        NCollection_Map<TopoDS_Shape> aMVCheckAdd = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMVCheckAdd = new(ShapeHasher.Instance);
         // collect parts for removal
         BOPDS_DS pDS = aSec.PDS()!;
         //
@@ -7691,12 +7696,12 @@ internal sealed class BRepOffset_BuildOffsetFaces
         {
             BOPDS_InterfEE aEE = aEEs[i];
             //
-            TopoDS_Shape aE1 = pDS.Shape(aEE.Index1());
-            TopoDS_Shape aE2 = pDS.Shape(aEE.Index2());
+            Shape aE1 = pDS.Shape(aEE.Index1());
+            Shape aE2 = pDS.Shape(aEE.Index2());
             //
             if (!aEE.HasIndexNew())
             {
-                if (theMECheckExt.Contains(aE1) && (aEE.CommonPart().Type() == TopAbs_EDGE))
+                if (theMECheckExt.Contains(aE1) && (aEE.CommonPart().Type() == ShapeType.Edge))
                 {
                     theMEInv.Add(aE1);
                 }
@@ -7712,7 +7717,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             {
                 // avoid checking of the vertices of the split edge intersected by
                 // the invalid edge from artificial face
-                TopExp.Vertices(TopoDS.Edge(aE2), out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
+                Exploration.Vertices(ShapeCasts.Edge(aE2), out Vertex aV1, out Vertex aV2);
                 if (aDMVE.Contains(aV1) && aDMVE.Contains(aV2))
                 {
                     continue;
@@ -7720,25 +7725,25 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
             //
             // add vertices of all images of the edge from splits for checking
-            NCollection_List<TopoDS_Shape> aLEOr = theDMEOr.Find(aE1);
-            NCollection_List<TopoDS_Shape>.Iterator aItLEOr = new(aLEOr);
+            NCollection_List<Shape> aLEOr = theDMEOr.Find(aE1);
+            NCollection_List<Shape>.Iterator aItLEOr = new(aLEOr);
             for (; aItLEOr.More(); aItLEOr.Next())
             {
-                TopoDS_Shape aEOr = aItLEOr.Value();
+                Shape aEOr = aItLEOr.Value();
                 //
-                if (!theEImages.Find(aEOr, out NCollection_List<TopoDS_Shape> pLEIm))
+                if (!theEImages.Find(aEOr, out NCollection_List<Shape> pLEIm))
                 {
                     continue;
                 }
-                NCollection_List<TopoDS_Shape>.Iterator aItLEIm = new(pLEIm);
+                NCollection_List<Shape>.Iterator aItLEIm = new(pLEIm);
                 for (; aItLEIm.More(); aItLEIm.Next())
                 {
-                    TopoDS_Shape aEIm = aItLEIm.Value();
+                    Shape aEIm = aItLEIm.Value();
                     //
-                    TopoDS_Iterator aItV = new(aEIm);
+                    Iterator aItV = new(aEIm);
                     for (; aItV.More(); aItV.Next())
                     {
-                        TopoDS_Shape aV = aItV.Value();
+                        Shape aV = aItV.Value();
                         if (!theMVOld.Contains(aV))
                         {
                             aMVInv.Add(aV);
@@ -7756,31 +7761,31 @@ internal sealed class BRepOffset_BuildOffsetFaces
         //
         // all common blocks are contained in the result of SECTION operation
         // between sets of edges
-        TopoDS_Shape aSecR = aSec.InternalShape();
+        Shape aSecR = aSec.InternalShape();
         //
-        NCollection_IndexedMap<TopoDS_Shape> aMSSec = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aSecR, aMSSec);
+        NCollection_IndexedMap<Shape> aMSSec = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aSecR, aMSSec);
         //
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anIm = aSec.Images();
-        for (TopExp_Explorer aExp = new(theSplits, TopAbs_EDGE); aExp.More(); aExp.Next())
+        NCollection_DataMap<Shape, NCollection_List<Shape>> anIm = aSec.Images();
+        for (Explorer aExp = new(theSplits, ShapeType.Edge); aExp.More(); aExp.Next())
         {
-            TopoDS_Shape aE = aExp.Current();
+            Shape aE = aExp.Current();
             if (aSec.IsDeleted(aE))
             {
                 // no common blocks for this edge
                 continue;
             }
             //
-            if (!anIm.Find(aE, out NCollection_List<TopoDS_Shape> pLEIm))
+            if (!anIm.Find(aE, out NCollection_List<Shape> pLEIm))
             {
                 // no splits, i.e. completely coincides with some edge from boundary
                 continue;
             }
             //
-            NCollection_List<TopoDS_Shape>.Iterator aItLEIm = new(pLEIm);
+            NCollection_List<Shape>.Iterator aItLEIm = new(pLEIm);
             for (; aItLEIm.More(); aItLEIm.Next())
             {
-                TopoDS_Shape aEIm = aItLEIm.Value();
+                Shape aEIm = aItLEIm.Value();
                 if (!aMSSec.Contains(aEIm))
                 {
                     // the edge included in section only partially.
@@ -7788,15 +7793,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     //
                     // check vertices of this edge - if one of them is new
                     // the edge might be removed
-                    TopExp.Vertices(TopoDS.Edge(aEIm), out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
+                    Exploration.Vertices(ShapeCasts.Edge(aEIm), out Vertex aV1, out Vertex aV2);
                     if (!theMVOld.Contains(aV1) || !theMVOld.Contains(aV2))
                     {
                         // add this edge for checking by making new vertex in the middle of the edge
-                        TopoDS_Vertex aV = new();
-                        Geom_Curve aC = BRep_Tool.Curve(TopoDS.Edge(aEIm), out double f, out double l)!;
-                        new BRep_Builder().MakeVertex(ref aV, aC.Value((f + l) * 0.5), global::Kerf.Engine.Foundation.Precision.Confusion());
+                        Vertex aV = new();
+                        Curve3D aC = Tool.Curve(ShapeCasts.Edge(aEIm), out double f, out double l)!;
+                        new BrepBuilder().MakeVertex(ref aV, aC.Value((f + l) * 0.5), global::Kerf.Engine.Foundation.Precision.Confusion());
                         // and adding this vertex for checking
-                        aDMVE.ChangeFromIndex(aDMVE.Add(aV, new NCollection_List<TopoDS_Shape>())).Append(aE);
+                        aDMVE.ChangeFromIndex(aDMVE.Add(aV, new NCollection_List<Shape>())).Append(aE);
                         aMVInv.Add(aV);
                         break;
                     }
@@ -7808,15 +7813,15 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // of offset faces edges not connected to any invalidity.
         // These edges may also accidentally fill some part.
         // OCCT.NET: OCCT iterates the map by its edges' addresses; the port in insertion order (decision 1032).
-        foreach (TopoDS_Shape aE in theMECheckExt)
+        foreach (Shape aE in theMECheckExt)
         {
             //
             // make new vertex in the middle of the edge
-            TopoDS_Vertex aV = new();
-            Geom_Curve aC = BRep_Tool.Curve(TopoDS.Edge(aE), out double f, out double l)!;
-            new BRep_Builder().MakeVertex(ref aV, aC.Value((f + l) * 0.5), global::Kerf.Engine.Foundation.Precision.Confusion());
+            Vertex aV = new();
+            Curve3D aC = Tool.Curve(ShapeCasts.Edge(aE), out double f, out double l)!;
+            new BrepBuilder().MakeVertex(ref aV, aC.Value((f + l) * 0.5), global::Kerf.Engine.Foundation.Precision.Confusion());
             // add this vertex for checking
-            aDMVE.ChangeFromIndex(aDMVE.Add(aV, new NCollection_List<TopoDS_Shape>())).Append(aE);
+            aDMVE.ChangeFromIndex(aDMVE.Add(aV, new NCollection_List<Shape>())).Append(aE);
             aMVInv.Add(aV);
         }
         //
@@ -7824,18 +7829,18 @@ internal sealed class BRepOffset_BuildOffsetFaces
         aNb = aDMVE.Extent();
         for (i = 1; i <= aNb; ++i)
         {
-            TopoDS_Shape aV = aDMVE.FindKey(i);
+            Shape aV = aDMVE.FindKey(i);
             if (theMVOld.Contains(aV))
             {
                 continue;
             }
             //
             bool bNew = false, bOld = false;
-            NCollection_List<TopoDS_Shape> aLEx = aDMVE[i];
-            NCollection_List<TopoDS_Shape>.Iterator aIt = new(aLEx);
+            NCollection_List<Shape> aLEx = aDMVE[i];
+            NCollection_List<Shape>.Iterator aIt = new(aLEx);
             for (; aIt.More(); aIt.Next())
             {
-                TopoDS_Shape aE = aIt.Value();
+                Shape aE = aIt.Value();
                 if (theMECheckExt.Contains(aE))
                 {
                     continue;
@@ -7867,24 +7872,24 @@ internal sealed class BRepOffset_BuildOffsetFaces
         int iv, aNbIV = aMVInv.Extent();
         for (iv = 1; iv <= aNbIV; ++iv)
         {
-            TopoDS_Vertex aV = TopoDS.Vertex(aMVInv[iv]);
+            Vertex aV = ShapeCasts.Vertex(aMVInv[iv]);
             if (theMVOld.Contains(aV))
             {
                 continue;
             }
             //
-            if (!aDMVE.FindFromKey(aV, out NCollection_List<TopoDS_Shape> pLEInv))
+            if (!aDMVE.FindFromKey(aV, out NCollection_List<Shape> pLEInv))
             {
                 continue;
             }
             // find faces by the edges to check the vertex
-            NCollection_IndexedMap<TopoDS_Shape> aMF = new(TopTools_ShapeMapHasher.Instance);
-            NCollection_List<TopoDS_Shape>.Iterator aItLE = new(pLEInv);
+            NCollection_IndexedMap<Shape> aMF = new(ShapeHasher.Instance);
+            NCollection_List<Shape>.Iterator aItLE = new(pLEInv);
             for (; aItLE.More(); aItLE.Next())
             {
-                TopoDS_Shape aE = aItLE.Value();
-                NCollection_List<TopoDS_Shape> aLF = theMELF.Find(aE);
-                NCollection_List<TopoDS_Shape>.Iterator aItLF0 = new(aLF);
+                Shape aE = aItLE.Value();
+                NCollection_List<Shape> aLF = theMELF.Find(aE);
+                NCollection_List<Shape>.Iterator aItLF0 = new(aLF);
                 for (; aItLF0.More(); aItLF0.Next())
                 {
                     aMF.Add(aItLF0.Value());
@@ -7897,17 +7902,17 @@ internal sealed class BRepOffset_BuildOffsetFaces
             int aNbF = aMF.Extent();
             for (i = 1; i <= aNbF && bInvalid; ++i)
             {
-                TopoDS_Face aF = TopoDS.Face(aMF[i]);
-                NCollection_List<TopoDS_Shape> aLFIm = myOFImages.FindFromKey(aF);
+                Face aF = ShapeCasts.Face(aMF[i]);
+                NCollection_List<Shape> aLFIm = myOFImages.FindFromKey(aF);
                 //
-                NCollection_List<TopoDS_Shape>.Iterator aItLF = new(aLFIm);
+                NCollection_List<Shape>.Iterator aItLF = new(aLFIm);
                 for (; aItLF.More() && bInvalid; aItLF.Next())
                 {
-                    TopoDS_Face aFIm = TopoDS.Face(aItLF.Value());
-                    TopExp_Explorer aExp = new(aFIm, TopAbs_VERTEX);
+                    Face aFIm = ShapeCasts.Face(aItLF.Value());
+                    Explorer aExp = new(aFIm, ShapeType.Vertex);
                     for (; aExp.More() && bInvalid; aExp.Next())
                     {
-                        TopoDS_Shape aVF = aExp.Current();
+                        Shape aVF = aExp.Current();
                         bInvalid = !aVF.IsSame(aV);
                     }
                 }
@@ -7923,7 +7928,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                         aItLF.Initialize(aLFIm);
                         for (; aItLF.More() && bInvalid; aItLF.Next())
                         {
-                            TopoDS_Face aFIm = TopoDS.Face(aItLF.Value());
+                            Face aFIm = ShapeCasts.Face(aItLF.Value());
                             bInvalid = !myContext.IsPointInOnFace(aFIm, aP2d);
                         }
                     }
@@ -7934,16 +7939,16 @@ internal sealed class BRepOffset_BuildOffsetFaces
             {
                 // the vertex is invalid for all faces
                 // check the same vertex for the solids
-                Point3D aP = BRep_Tool.Pnt(aV);
-                double aTolV = BRep_Tool.Tolerance(aV);
+                Point3D aP = Tool.Pnt(aV);
+                double aTolV = Tool.Tolerance(aV);
                 //
-                TopExp_Explorer aExpS = new(mySolids, TopAbs_SOLID);
+                Explorer aExpS = new(mySolids, ShapeType.Solid);
                 for (; aExpS.More() && bInvalid; aExpS.Next())
                 {
-                    TopoDS_Solid aSol = TopoDS.Solid(aExpS.Current());
+                    Solid aSol = ShapeCasts.Solid(aExpS.Current());
                     BRepClass3d_SolidClassifier aSC = myContext.SolidClassifier(aSol);
                     aSC.Perform(aP, aTolV);
-                    bInvalid = (aSC.State() == TopAbs_OUT);
+                    bInvalid = (aSC.State() == Out);
                 }
             }
             //
@@ -7963,27 +7968,27 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : FilterSplits
     // purpose  : Filter the images of edges from the invalid edges
     //=======================================================================
-    private void FilterSplits(NCollection_List<TopoDS_Shape> theLE, NCollection_Map<TopoDS_Shape> theMEFilter, bool theIsInv,
-                              NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEImages,
-                              ref TopoDS_Shape theSplits)
+    private void FilterSplits(NCollection_List<Shape> theLE, NCollection_Map<Shape> theMEFilter, bool theIsInv,
+                              NCollection_DataMap<Shape, NCollection_List<Shape>> theEImages,
+                              ref Shape theSplits)
     {
-        TopoDS_Compound aSplits = new();
-        new BRep_Builder().MakeCompound(ref aSplits);
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
+        Compound aSplits = new();
+        new BrepBuilder().MakeCompound(ref aSplits);
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
 
-        NCollection_List<TopoDS_Shape>.Iterator aItLE = new(theLE);
+        NCollection_List<Shape>.Iterator aItLE = new(theLE);
         for (; aItLE.More(); aItLE.Next())
         {
-            TopoDS_Shape aE = aItLE.Value();
-            if (!theEImages.Find(aE, out NCollection_List<TopoDS_Shape> pLEIm))
+            Shape aE = aItLE.Value();
+            if (!theEImages.Find(aE, out NCollection_List<Shape> pLEIm))
             {
                 continue;
             }
 
-            NCollection_List<TopoDS_Shape>.Iterator aItLEIm = new(pLEIm);
+            NCollection_List<Shape>.Iterator aItLEIm = new(pLEIm);
             for (; aItLEIm.More();)
             {
-                TopoDS_Shape aEIm = aItLEIm.Value();
+                Shape aEIm = aItLEIm.Value();
                 if (theMEFilter.Contains(aEIm) == theIsInv)
                 {
                     pLEIm.Remove(aItLEIm);
@@ -7992,7 +7997,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
                 if (aMFence.Add(aEIm))
                 {
-                    new BRep_Builder().Add(aSplits, aEIm);
+                    new BrepBuilder().Add(aSplits, aEIm);
                 }
                 aItLEIm.Next();
             }
@@ -8009,30 +8014,30 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : UpdateNewIntersectionEdges
     // purpose  : Updating the maps of images and origins of the offset edges
     //=======================================================================
-    private void UpdateNewIntersectionEdges(NCollection_List<TopoDS_Shape> theLE,
-                                            NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMELF,
-                                            NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEImages,
-                                            NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEETrim)
+    private void UpdateNewIntersectionEdges(NCollection_List<Shape> theLE,
+                                            NCollection_DataMap<Shape, NCollection_List<Shape>> theMELF,
+                                            NCollection_DataMap<Shape, NCollection_List<Shape>> theEImages,
+                                            NCollection_DataMap<Shape, NCollection_List<Shape>> theEETrim)
     {
-        NCollection_List<TopoDS_Shape> aLEImEmpty = new();
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new(), aIt1 = new();
+        NCollection_List<Shape> aLEImEmpty = new();
+        NCollection_List<Shape>.Iterator aIt = new(), aIt1 = new();
         // update global maps of images and origins with new splits
         aIt.Initialize(theLE);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aE = aIt.Value();
+            Shape aE = aIt.Value();
             //
             if (!theEImages.IsBound(aE))
             {
-                if (!theEETrim.Find(aE, out NCollection_List<TopoDS_Shape> pLET))
+                if (!theEETrim.Find(aE, out NCollection_List<Shape> pLET))
                 {
                     continue;
                 }
                 //
-                NCollection_List<TopoDS_Shape>.Iterator aItLET = new(pLET);
+                NCollection_List<Shape>.Iterator aItLET = new(pLET);
                 for (; aItLET.More();)
                 {
-                    TopoDS_Shape aET = aItLET.Value();
+                    Shape aET = aItLET.Value();
                     if (!myInvalidEdges.Contains(aET) && !myInvertedEdges.Contains(aET))
                     {
                         pLET.Remove(aItLET);
@@ -8049,13 +8054,13 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 }
             }
             // new images
-            NCollection_List<TopoDS_Shape> aLENew = theEImages.IsBound(aE) ? theEImages.Find(aE) : aLEImEmpty;
+            NCollection_List<Shape> aLENew = theEImages.IsBound(aE) ? theEImages.Find(aE) : aLEImEmpty;
             //
             // save connection to untrimmed edge for the next steps
             aIt1.Initialize(aLENew);
             for (; aIt1.More(); aIt1.Next())
             {
-                TopoDS_Shape aET = aIt1.Value();
+                Shape aET = aIt1.Value();
                 myETrimEInf!.Bind(aET, aE);
                 myModifiedEdges.Add(aET);
             }
@@ -8063,33 +8068,33 @@ internal sealed class BRepOffset_BuildOffsetFaces
             // check if it is existing edge
             if (!theEETrim.IsBound(aE))
             {
-                NCollection_List<TopoDS_Shape> aLF = theMELF.Find(aE);
+                NCollection_List<Shape> aLF = theMELF.Find(aE);
                 // the edge is new
                 // add this edge to AsDes
                 aIt1.Initialize(aLF);
                 for (; aIt1.More(); aIt1.Next())
                 {
-                    TopoDS_Shape aF = aIt1.Value();
+                    Shape aF = aIt1.Value();
                     myAsDes!.Add(aF, aE);
                 }
                 //
                 // add aE to the images
-                myOEImages.Bind(aE, new NCollection_List<TopoDS_Shape>(aLENew));
+                myOEImages.Bind(aE, new NCollection_List<Shape>(aLENew));
                 myModifiedEdges.Add(aE);
                 //
                 // add to origins
-                NCollection_List<TopoDS_Shape>.Iterator aItNew = new(aLENew);
+                NCollection_List<Shape>.Iterator aItNew = new(aLENew);
                 for (; aItNew.More(); aItNew.Next())
                 {
-                    TopoDS_Shape aENew = aItNew.Value();
+                    Shape aENew = aItNew.Value();
                     if (myOEOrigins.IsBound(aENew))
                     {
-                        NCollection_List<TopoDS_Shape> aEOrigins = myOEOrigins.ChangeFind(aENew);
+                        NCollection_List<Shape> aEOrigins = myOEOrigins.ChangeFind(aENew);
                         AppendToList(aEOrigins, aE);
                     }
                     else
                     {
-                        NCollection_List<TopoDS_Shape> aEOrigins = new();
+                        NCollection_List<Shape> aEOrigins = new();
                         aEOrigins.Append(aE);
                         myOEOrigins.Bind(aENew, aEOrigins);
                     }
@@ -8098,24 +8103,24 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 // update connection to initial origins
                 if (myEdgesOrigins!.IsBound(aE))
                 {
-                    NCollection_List<TopoDS_Shape> aLEOrInit = myEdgesOrigins.Find(aE);
+                    NCollection_List<Shape> aLEOrInit = myEdgesOrigins.Find(aE);
                     aIt1.Initialize(aLENew);
                     for (; aIt1.More(); aIt1.Next())
                     {
-                        TopoDS_Shape aENew = aIt1.Value();
+                        Shape aENew = aIt1.Value();
                         if (myEdgesOrigins.IsBound(aENew))
                         {
-                            NCollection_List<TopoDS_Shape> aLENewOr = myEdgesOrigins.ChangeFind(aENew);
-                            NCollection_List<TopoDS_Shape>.Iterator aItOrInit = new(aLEOrInit);
+                            NCollection_List<Shape> aLENewOr = myEdgesOrigins.ChangeFind(aENew);
+                            NCollection_List<Shape>.Iterator aItOrInit = new(aLEOrInit);
                             for (; aItOrInit.More(); aItOrInit.Next())
                             {
-                                TopoDS_Shape aEOr = aItOrInit.Value();
+                                Shape aEOr = aItOrInit.Value();
                                 AppendToList(aLENewOr, aEOr);
                             }
                         }
                         else
                         {
-                            myEdgesOrigins.Bind(aENew, new NCollection_List<TopoDS_Shape>(aLEOrInit));
+                            myEdgesOrigins.Bind(aENew, new NCollection_List<Shape>(aLEOrInit));
                         }
                     }
                 }
@@ -8124,36 +8129,36 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
             //
             // old images
-            NCollection_List<TopoDS_Shape> aLEOld = theEETrim.Find(aE);
+            NCollection_List<Shape> aLEOld = theEETrim.Find(aE);
             //
             // list of initial origins
-            NCollection_List<TopoDS_Shape> anInitOrigins = new();
+            NCollection_List<Shape> anInitOrigins = new();
             //
             // it is necessary to replace the old edges with new ones
             aIt1.Initialize(aLEOld);
             for (; aIt1.More(); aIt1.Next())
             {
-                TopoDS_Shape aEOld = aIt1.Value();
+                Shape aEOld = aIt1.Value();
                 //
                 if (myOEOrigins.IsBound(aEOld))
                 {
                     // get its origins
-                    NCollection_List<TopoDS_Shape> aEOrigins = myOEOrigins.Find(aEOld);
+                    NCollection_List<Shape> aEOrigins = myOEOrigins.Find(aEOld);
                     //
-                    NCollection_List<TopoDS_Shape>.Iterator aItOr = new(aEOrigins);
+                    NCollection_List<Shape>.Iterator aItOr = new(aEOrigins);
                     for (; aItOr.More(); aItOr.Next())
                     {
-                        TopoDS_Shape aEOr = aItOr.Value();
+                        Shape aEOr = aItOr.Value();
                         //
                         myModifiedEdges.Add(aEOr);
                         //
-                        NCollection_List<TopoDS_Shape> aEImages = myOEImages.ChangeFind(aEOr);
+                        NCollection_List<Shape> aEImages = myOEImages.ChangeFind(aEOr);
                         //
                         // remove old edge from images
-                        NCollection_List<TopoDS_Shape>.Iterator aItIm = new(aEImages);
+                        NCollection_List<Shape>.Iterator aItIm = new(aEImages);
                         for (; aItIm.More();)
                         {
-                            TopoDS_Shape aEIm = aItIm.Value();
+                            Shape aEIm = aItIm.Value();
                             if (aEIm.IsSame(aEOld))
                             {
                                 aEImages.Remove(aItIm);
@@ -8165,19 +8170,19 @@ internal sealed class BRepOffset_BuildOffsetFaces
                         }
                         //
                         // add new images
-                        NCollection_List<TopoDS_Shape>.Iterator aItNew = new(aLENew);
+                        NCollection_List<Shape>.Iterator aItNew = new(aLENew);
                         for (; aItNew.More(); aItNew.Next())
                         {
-                            TopoDS_Shape aENew = aItNew.Value();
+                            Shape aENew = aItNew.Value();
                             AppendToList(aEImages, aENew);
                             if (myOEOrigins.IsBound(aENew))
                             {
-                                NCollection_List<TopoDS_Shape> aENewOrigins = myOEOrigins.ChangeFind(aENew);
+                                NCollection_List<Shape> aENewOrigins = myOEOrigins.ChangeFind(aENew);
                                 AppendToList(aENewOrigins, aEOr);
                             }
                             else
                             {
-                                NCollection_List<TopoDS_Shape> aENewOrigins = new();
+                                NCollection_List<Shape> aENewOrigins = new();
                                 aENewOrigins.Append(aEOr);
                                 myOEOrigins.Bind(aENew, aENewOrigins);
                             }
@@ -8187,23 +8192,23 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 else
                 {
                     // add to images
-                    myOEImages.Bind(aEOld, new NCollection_List<TopoDS_Shape>(aLENew));
+                    myOEImages.Bind(aEOld, new NCollection_List<Shape>(aLENew));
                     //
                     myModifiedEdges.Add(aEOld);
                     //
                     // add to origins
-                    NCollection_List<TopoDS_Shape>.Iterator aItNew = new(aLENew);
+                    NCollection_List<Shape>.Iterator aItNew = new(aLENew);
                     for (; aItNew.More(); aItNew.Next())
                     {
-                        TopoDS_Shape aENew = aItNew.Value();
+                        Shape aENew = aItNew.Value();
                         if (myOEOrigins.IsBound(aENew))
                         {
-                            NCollection_List<TopoDS_Shape> aEOrigins = myOEOrigins.ChangeFind(aENew);
+                            NCollection_List<Shape> aEOrigins = myOEOrigins.ChangeFind(aENew);
                             AppendToList(aEOrigins, aEOld);
                         }
                         else
                         {
-                            NCollection_List<TopoDS_Shape> aEOrigins = new();
+                            NCollection_List<Shape> aEOrigins = new();
                             aEOrigins.Append(aEOld);
                             myOEOrigins.Bind(aENew, aEOrigins);
                         }
@@ -8213,11 +8218,11 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 // update connection to initial shape
                 if (myEdgesOrigins!.IsBound(aEOld))
                 {
-                    NCollection_List<TopoDS_Shape> aLEOrInit = myEdgesOrigins.Find(aEOld);
-                    NCollection_List<TopoDS_Shape>.Iterator aItEOrInit = new(aLEOrInit);
+                    NCollection_List<Shape> aLEOrInit = myEdgesOrigins.Find(aEOld);
+                    NCollection_List<Shape>.Iterator aItEOrInit = new(aLEOrInit);
                     for (; aItEOrInit.More(); aItEOrInit.Next())
                     {
-                        TopoDS_Shape aEOrInit = aItEOrInit.Value();
+                        Shape aEOrInit = aItEOrInit.Value();
                         AppendToList(anInitOrigins, aEOrInit);
                     }
                 }
@@ -8225,23 +8230,23 @@ internal sealed class BRepOffset_BuildOffsetFaces
             //
             if (anInitOrigins.Extent() != 0)
             {
-                NCollection_List<TopoDS_Shape>.Iterator aItNew = new(aLENew);
+                NCollection_List<Shape>.Iterator aItNew = new(aLENew);
                 for (; aItNew.More(); aItNew.Next())
                 {
-                    TopoDS_Shape aENew = aItNew.Value();
+                    Shape aENew = aItNew.Value();
                     if (myEdgesOrigins!.IsBound(aENew))
                     {
-                        NCollection_List<TopoDS_Shape> aLENewOr = myEdgesOrigins.ChangeFind(aENew);
-                        NCollection_List<TopoDS_Shape>.Iterator aItOrInit = new(anInitOrigins);
+                        NCollection_List<Shape> aLENewOr = myEdgesOrigins.ChangeFind(aENew);
+                        NCollection_List<Shape>.Iterator aItOrInit = new(anInitOrigins);
                         for (; aItOrInit.More(); aItOrInit.Next())
                         {
-                            TopoDS_Shape aEOr = aItOrInit.Value();
+                            Shape aEOr = aItOrInit.Value();
                             AppendToList(aLENewOr, aEOr);
                         }
                     }
                     else
                     {
-                        myEdgesOrigins.Bind(aENew, new NCollection_List<TopoDS_Shape>(anInitOrigins));
+                        myEdgesOrigins.Bind(aENew, new NCollection_List<Shape>(anInitOrigins));
                     }
                 }
             }
@@ -8266,7 +8271,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // in created splits, otherwise the closed volume will not be possible to create.
 
         // Map the splits of faces to find free edges
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anEFMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anEFMap = new(ShapeHasher.Instance);
         for (int i = 1; i <= aNbF; ++i, aPS.Next())
         {
             if (!aPS.More())
@@ -8274,10 +8279,10 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 return;
             }
 
-            NCollection_List<TopoDS_Shape>.Iterator itLF = new(myOFImages[i]);
+            NCollection_List<Shape>.Iterator itLF = new(myOFImages[i]);
             for (; itLF.More(); itLF.Next())
             {
-                TopExp.MapShapesAndAncestors(itLF.Value(), TopAbs_EDGE, TopAbs_FACE, anEFMap);
+                Exploration.MapShapesAndAncestors(itLF.Value(), ShapeType.Edge, ShapeType.Face, anEFMap);
             }
         }
 
@@ -8290,40 +8295,40 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 return;
             }
 
-            NCollection_List<TopoDS_Shape> aLFImages = myOFImages[i];
+            NCollection_List<Shape> aLFImages = myOFImages[i];
             if (aLFImages.IsEmpty())
             {
                 continue;
             }
 
             // Collect all edges from the splits
-            TopoDS_Compound anEdges = new();
-            new BRep_Builder().MakeCompound(ref anEdges);
+            Compound anEdges = new();
+            new BrepBuilder().MakeCompound(ref anEdges);
 
             // Collect all free edges into a map with reverted orientation
             // (OCCT's default hasher: the orientation counts).
-            NCollection_Map<TopoDS_Shape> aFreeEdgesMap = new(EqualityComparer<TopoDS_Shape>.Default);
-            NCollection_List<TopoDS_Shape>.Iterator itLF = new(aLFImages);
+            NCollection_Map<Shape> aFreeEdgesMap = new(EqualityComparer<Shape>.Default);
+            NCollection_List<Shape>.Iterator itLF = new(aLFImages);
             for (; itLF.More(); itLF.Next())
             {
-                TopoDS_Shape aFIm = itLF.Value();
-                TopExp_Explorer anExpE = new(aFIm, TopAbs_EDGE);
+                Shape aFIm = itLF.Value();
+                Explorer anExpE = new(aFIm, ShapeType.Edge);
                 for (; anExpE.More(); anExpE.Next())
                 {
-                    TopoDS_Shape aE = anExpE.Current();
-                    if (aE.Orientation() != TopAbs_FORWARD && aE.Orientation() != TopAbs_REVERSED)
+                    Shape aE = anExpE.Current();
+                    if (aE.Orientation() != Forward && aE.Orientation() != Reversed)
                     {
                         // Skip internals
                         continue;
                     }
 
-                    NCollection_List<TopoDS_Shape> aLF = anEFMap.FindFromKey(aE);
+                    NCollection_List<Shape> aLF = anEFMap.FindFromKey(aE);
                     if (aLF.Extent() == 1)
                     {
                         aFreeEdgesMap.Add(aE.Reversed());
                     }
 
-                    new BRep_Builder().Add(anEdges, aE);
+                    new BrepBuilder().Add(anEdges, aE);
                 }
             }
 
@@ -8335,24 +8340,24 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
             // Free edges are found - fill the gaps by creating new splits
             // of the face using these free edges
-            TopoDS_Shape aF = myOFImages.FindKey(i);
+            Shape aF = myOFImages.FindKey(i);
 
             // Build new splits using all kept edges and among new splits
             // find those containing free edges
-            NCollection_List<TopoDS_Shape> aLFNew = new();
-            NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aDummy = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_List<Shape> aLFNew = new();
+            NCollection_DataMap<Shape, Shape> aDummy = new(ShapeHasher.Instance);
 
-            BuildSplitsOfFace(TopoDS.Face(aF), anEdges, aDummy, aLFNew);
+            BuildSplitsOfFace(ShapeCasts.Face(aF), anEdges, aDummy, aLFNew);
 
             // Find faces filling holes
             itLF.Initialize(aLFNew);
             for (; itLF.More(); itLF.Next())
             {
-                TopoDS_Shape aFNew = itLF.Value();
-                TopExp_Explorer anExpE = new(aFNew, TopAbs_EDGE);
+                Shape aFNew = itLF.Value();
+                Explorer anExpE = new(aFNew, ShapeType.Edge);
                 for (; anExpE.More(); anExpE.Next())
                 {
-                    TopoDS_Shape aE = anExpE.Current();
+                    Shape aE = anExpE.Current();
                     if (aFreeEdgesMap.Contains(aE))
                     {
                         // Add face to splits
@@ -8379,19 +8384,19 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // OFFSET_DEBUG: the compound of the preliminary result is left out.
 
         // Map of kept edges
-        NCollection_IndexedMap<TopoDS_Shape> anEdgesMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> anEdgesMap = new(ShapeHasher.Instance);
 
         // Fill history for faces
         for (int i = 1; i <= aNbF; ++i)
         {
-            NCollection_List<TopoDS_Shape> aLFImages = myOFImages[i];
+            NCollection_List<Shape> aLFImages = myOFImages[i];
             if (aLFImages.IsEmpty())
             {
                 continue;
             }
 
             // Add the splits to history map
-            TopoDS_Shape aF = myOFImages.FindKey(i);
+            Shape aF = myOFImages.FindKey(i);
             if (myImage.HasImage(aF))
             {
                 myImage.Add(aF, aLFImages);
@@ -8402,26 +8407,26 @@ internal sealed class BRepOffset_BuildOffsetFaces
             }
 
             // Collect edges from splits
-            NCollection_List<TopoDS_Shape>.Iterator itLF = new(aLFImages);
+            NCollection_List<Shape>.Iterator itLF = new(aLFImages);
             for (; itLF.More(); itLF.Next())
             {
-                TopoDS_Shape aFIm = itLF.Value();
-                TopExp.MapShapes(aFIm, TopAbs_EDGE, anEdgesMap);
+                Shape aFIm = itLF.Value();
+                Exploration.MapShapes(aFIm, ShapeType.Edge, anEdgesMap);
             }
         }
 
         // Fill history for edges (iteration by the map is safe because the
         // order is not important here)
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aItEIm in myOEImages)
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> aItEIm in myOEImages)
         {
-            TopoDS_Shape aE = aItEIm.Key;
-            NCollection_List<TopoDS_Shape> aLEIm = aItEIm.Value;
+            Shape aE = aItEIm.Key;
+            NCollection_List<Shape> aLEIm = aItEIm.Value;
 
             bool bHasImage = myImage.HasImage(aE);
-            NCollection_List<TopoDS_Shape>.Iterator aItLE = new(aLEIm);
+            NCollection_List<Shape>.Iterator aItLE = new(aLEIm);
             for (; aItLE.More(); aItLE.Next())
             {
-                TopoDS_Shape aEIm = aItLE.Value();
+                Shape aEIm = aItLE.Value();
                 if (anEdgesMap.Contains(aEIm))
                 {
                     if (bHasImage)
@@ -8449,7 +8454,7 @@ public sealed partial class BRepOffset_MakeOffset
     /// <summary>
     /// Builds the splits of the already trimmed offset faces, for the Complete mode with the Intersection join.
     /// </summary>
-    private void BuildSplitsOfTrimmedFaces(NCollection_List<TopoDS_Shape> theLF, BRepAlgo_AsDes theAsDes,
+    private void BuildSplitsOfTrimmedFaces(NCollection_List<Shape> theLF, BRepAlgo_AsDes theAsDes,
                                            BRepAlgo_Image theImage, ProgressRange theRange)
     {
         BRepOffset_BuildOffsetFaces aBFTool = new(theImage);
@@ -8469,11 +8474,11 @@ public sealed partial class BRepOffset_MakeOffset
     /// Builds the splits of the extended (not trimmed) offset faces, for the Complete mode with the Intersection join
     /// (an alternative to BRepOffset_MakeLoops::Build, limited to planar cases); invalidities found are rebuilt.
     /// </summary>
-    private void BuildSplitsOfExtendedFaces(NCollection_List<TopoDS_Shape> theLF, BRepOffset_Analyse theAnalyse,
+    private void BuildSplitsOfExtendedFaces(NCollection_List<Shape> theLF, BRepOffset_Analyse theAnalyse,
                                             BRepAlgo_AsDes theAsDes,
-                                            NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEdgesOrigins,
-                                            NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theFacesOrigins,
-                                            NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theETrimEInf,
+                                            NCollection_DataMap<Shape, NCollection_List<Shape>> theEdgesOrigins,
+                                            NCollection_DataMap<Shape, Shape> theFacesOrigins,
+                                            NCollection_DataMap<Shape, Shape> theETrimEInf,
                                             BRepAlgo_Image theImage, ProgressRange theRange)
     {
         BRepOffset_BuildOffsetFaces aBFTool = new(theImage);

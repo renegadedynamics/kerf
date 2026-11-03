@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -18,16 +19,16 @@ namespace Occt;
 /// </summary>
 public class BRepBlend_SurfCurvEvolRadInv : Blend_SurfCurvFuncInv
 {
-    private readonly Adaptor3d_Surface surf;
-    private readonly Adaptor3d_Curve curv;
-    private readonly Adaptor3d_Curve guide;
-    private Adaptor2d_Curve2d? rst;
+    private readonly SurfaceAdaptorBase surf;
+    private readonly CurveAdaptorBase curv;
+    private readonly CurveAdaptorBase guide;
+    private Curve2DAdaptorBase? rst;
     private double ray;
     private int choix;
     private readonly Law_Function tevol;
     private double sg1;
 
-    public BRepBlend_SurfCurvEvolRadInv(Adaptor3d_Surface S, Adaptor3d_Curve C, Adaptor3d_Curve Cg, Law_Function Evol)
+    public BRepBlend_SurfCurvEvolRadInv(SurfaceAdaptorBase S, CurveAdaptorBase C, CurveAdaptorBase Cg, Law_Function Evol)
     {
         surf = S;
         curv = C;
@@ -254,7 +255,7 @@ public class BRepBlend_SurfCurvEvolRadInv : Blend_SurfCurvFuncInv
         return true;
     }
 
-    public override void Set(Adaptor2d_Curve2d Rst)
+    public override void Set(Curve2DAdaptorBase Rst)
     {
         rst = Rst;
     }

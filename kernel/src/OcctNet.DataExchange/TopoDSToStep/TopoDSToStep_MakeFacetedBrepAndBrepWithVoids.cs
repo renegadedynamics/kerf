@@ -7,7 +7,9 @@
 #pragma warning disable CS0168 // locals OCCT declares and never uses
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -17,14 +19,14 @@ public sealed class TopoDSToStep_MakeFacetedBrepAndBrepWithVoids : TopoDSToStep_
     private StepShape_FacetedBrepAndBrepWithVoids theFacetedBrepAndBrepWithVoids;
     private StepVisual_TessellatedItem theTessellatedItem;
 
-    public TopoDSToStep_MakeFacetedBrepAndBrepWithVoids(in TopoDS_Solid aSolid, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
+    public TopoDSToStep_MakeFacetedBrepAndBrepWithVoids(in Solid aSolid, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
                                                         ProgressRange theProgress = default)
     {
         done = false;
-        TopoDS_Iterator It = new TopoDS_Iterator();
-        var aMap = new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
+        Iterator It = new Iterator();
+        var aMap = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
         var S = new NCollection_Sequence<Transient>();
-        TopoDS_Shell aOutShell;
+        Shell aOutShell;
 
         StepShape_TopologicalRepresentationItem aItem;
         StepShape_ClosedShell aOuter = null, aCShell;
@@ -37,12 +39,12 @@ public sealed class TopoDSToStep_MakeFacetedBrepAndBrepWithVoids : TopoDSToStep_
         var StepB = new TopoDSToStep_Builder();
         var aTool = new TopoDSToStep_Tool(aStepModel);
 
-        if (!aOutShell.IsNull())
+        if (!aOutShell.IsNull)
         {
             int nbshapes = 0;
             for (It.Initialize(aSolid); It.More(); It.Next())
             {
-                if (It.Value().ShapeType() == TopAbs_SHELL)
+                if (It.Value().ShapeType() == ShapeType.Shell)
                 {
                     nbshapes++;
                 }
@@ -51,10 +53,10 @@ public sealed class TopoDSToStep_MakeFacetedBrepAndBrepWithVoids : TopoDSToStep_
             using var aPS = new ProgressScope(theProgress, null, nbshapes);
             for (It.Initialize(aSolid); It.More() && aPS.More(); It.Next())
             {
-                if (It.Value().ShapeType() == TopAbs_SHELL)
+                if (It.Value().ShapeType() == ShapeType.Shell)
                 {
                     ProgressRange aRange = aPS.Next();
-                    TopoDS_Shell CurrentShell = TopoDS.Shell(It.Value());
+                    Shell CurrentShell = ShapeCasts.Shell(It.Value());
                     if (It.Value().Closed())
                     {
                         aTool.Init(aMap, false, aStepModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0);
@@ -151,7 +153,7 @@ public sealed class TopoDSToStep_MakeFacetedBrepAndBrepWithVoids : TopoDSToStep_
         }
     }
 
-    public TopoDSToStep_MakeFacetedBrepAndBrepWithVoids(in TopoDS_Solid aSolid, Transfer_FinderProcess FP)
+    public TopoDSToStep_MakeFacetedBrepAndBrepWithVoids(in Solid aSolid, Transfer_FinderProcess FP)
         : this(aSolid, FP, new StepData_Factors())
     {
     }

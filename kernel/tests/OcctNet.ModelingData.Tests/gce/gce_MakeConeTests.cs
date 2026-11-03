@@ -2,8 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Values;
 using Kerf.Geometry;
-using static Occt.gce_ErrorType;
+using static Kerf.Engine.Construction.Values.ErrorType;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -17,9 +18,9 @@ public class gce_MakeConeTest
         Cone aBaseCone = BaseCone();
         double aDist = 2.0;
 
-        gce_MakeCone aMaker = new(aBaseCone, aDist);
-        Assert.True(aMaker.IsDone());
-        Assert.Equal(gce_Done, aMaker.Status());
+        MakeCone aMaker = new(aBaseCone, aDist);
+        Assert.True(aMaker.IsDone);
+        Assert.Equal(Done, aMaker.Status());
 
         Cone aCone = aMaker.Value();
         double anExpectedRadius = aBaseCone.RefRadius() + aDist / Math.Cos(aBaseCone.SemiAngle());
@@ -35,9 +36,9 @@ public class gce_MakeConeTest
         Cone aBaseCone = BaseCone();
         double aDist = -(aBaseCone.RefRadius() * Math.Cos(aBaseCone.SemiAngle()) + 1.0);
 
-        gce_MakeCone aMaker = new(aBaseCone, aDist);
-        Assert.False(aMaker.IsDone());
-        Assert.Equal(gce_NegativeRadius, aMaker.Status());
+        MakeCone aMaker = new(aBaseCone, aDist);
+        Assert.False(aMaker.IsDone);
+        Assert.Equal(NegativeRadius, aMaker.Status());
     }
 
     [Fact]
@@ -49,9 +50,9 @@ public class gce_MakeConeTest
         double aPointRadius = aTargetRadius + aVParam * Math.Tan(aBaseCone.SemiAngle());
         Point3D aPoint = new(aPointRadius, 0.0, aVParam);
 
-        gce_MakeCone aMaker = new(aBaseCone, aPoint);
-        Assert.True(aMaker.IsDone());
-        Assert.Equal(gce_Done, aMaker.Status());
+        MakeCone aMaker = new(aBaseCone, aPoint);
+        Assert.True(aMaker.IsDone);
+        Assert.Equal(Done, aMaker.Status());
 
         Cone aCone = aMaker.Value();
         Assert.Equal(aTargetRadius, aCone.RefRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -63,9 +64,9 @@ public class gce_MakeConeTest
         Cone aBaseCone = BaseCone();
         Point3D aPoint = new(1.0, 0.0, 20.0);
 
-        gce_MakeCone aMaker = new(aBaseCone, aPoint);
-        Assert.False(aMaker.IsDone());
-        Assert.Equal(gce_NegativeRadius, aMaker.Status());
+        MakeCone aMaker = new(aBaseCone, aPoint);
+        Assert.False(aMaker.IsDone);
+        Assert.Equal(NegativeRadius, aMaker.Status());
     }
 
     [Fact]
@@ -74,9 +75,9 @@ public class gce_MakeConeTest
         Cone aBaseCone = BaseCone();
         Point3D aPoint = new(5.0, 0.0, -20.0);
 
-        gce_MakeCone aMaker = new(aBaseCone, aPoint);
-        Assert.True(aMaker.IsDone());
-        Assert.Equal(gce_Done, aMaker.Status());
+        MakeCone aMaker = new(aBaseCone, aPoint);
+        Assert.True(aMaker.IsDone);
+        Assert.Equal(Done, aMaker.Status());
 
         double aRadius = new Line3D(aBaseCone.Axis()).Distance(aPoint);
         double aVParam = (aPoint.XYZ() - aBaseCone.Location().XYZ()).Dot(aBaseCone.Axis().Direction().XYZ());
@@ -97,9 +98,9 @@ public class gce_MakeConeTest
         Point3D aP1 = new(0.0, 0.0, 0.0);
         Point3D aP2 = new(0.0, 10.0, 10.0);
 
-        gce_MakeCone aMaker = new(aP1, aP2, 3.0, 2.0);
-        Assert.True(aMaker.IsDone());
-        Assert.Equal(gce_Done, aMaker.Status());
+        MakeCone aMaker = new(aP1, aP2, 3.0, 2.0);
+        Assert.True(aMaker.IsDone);
+        Assert.Equal(Done, aMaker.Status());
 
         Cone aCone = aMaker.Value();
         Direction3D aAxis = new(aP2.XYZ() - aP1.XYZ());
@@ -114,9 +115,9 @@ public class gce_MakeConeTest
         Point3D aP1 = new(0.0, 0.0, 0.0);
         Point3D aP2 = new(0.0, 0.0, 10.0);
 
-        gce_MakeCone aMaker = new(aP1, aP2, 4.0, 2.0);
-        Assert.True(aMaker.IsDone());
-        Assert.Equal(gce_Done, aMaker.Status());
+        MakeCone aMaker = new(aP1, aP2, 4.0, 2.0);
+        Assert.True(aMaker.IsDone);
+        Assert.Equal(Done, aMaker.Status());
 
         Cone aCone = aMaker.Value();
         Assert.True(aCone.Axis().Direction().IsParallel(new Direction3D(aP2.XYZ() - aP1.XYZ()), global::Kerf.Engine.Foundation.Precision.Angular()));
@@ -132,9 +133,9 @@ public class gce_MakeConeTest
         Point3D aP3 = new(3.0, 0.0, 0.0);
         Point3D aP4 = new(5.0, 4.0, 4.0);
 
-        gce_MakeCone aMaker = new(aP1, aP2, aP3, aP4);
-        Assert.True(aMaker.IsDone());
-        Assert.Equal(gce_Done, aMaker.Status());
+        MakeCone aMaker = new(aP1, aP2, aP3, aP4);
+        Assert.True(aMaker.IsDone);
+        Assert.Equal(Done, aMaker.Status());
 
         Cone aCone = aMaker.Value();
         Direction3D aAxis = new(aP2.XYZ() - aP1.XYZ());
@@ -151,9 +152,9 @@ public class gce_MakeConeTest
         Point3D aP3 = new(4.0, 0.0, 0.0);
         Point3D aP4 = new(2.0, 0.0, 5.0);
 
-        gce_MakeCone aMaker = new(aP1, aP2, aP3, aP4);
-        Assert.True(aMaker.IsDone());
-        Assert.Equal(gce_Done, aMaker.Status());
+        MakeCone aMaker = new(aP1, aP2, aP3, aP4);
+        Assert.True(aMaker.IsDone);
+        Assert.Equal(Done, aMaker.Status());
 
         Cone aCone = aMaker.Value();
         Assert.True(aCone.Axis().Direction().IsParallel(new Direction3D(aP2.XYZ() - aP1.XYZ()), global::Kerf.Engine.Foundation.Precision.Angular()));

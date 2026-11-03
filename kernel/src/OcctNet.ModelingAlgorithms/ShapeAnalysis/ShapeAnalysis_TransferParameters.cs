@@ -6,6 +6,8 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -21,7 +23,7 @@ public class ShapeAnalysis_TransferParameters : Transient
 {
     protected double myFirst;
     protected double myLast;
-    protected TopoDS_Edge myEdge = new TopoDS_Edge();
+    protected Edge myEdge = new Edge();
     // OCCT leaves it uninitialised until SetMaxTolerance; 0 here
     protected double myMaxTolerance;
 
@@ -29,7 +31,7 @@ public class ShapeAnalysis_TransferParameters : Transient
     private double myScale;
     private double myFirst2d;
     private double myLast2d;
-    private TopoDS_Face myFace = new TopoDS_Face();
+    private Face myFace = new Face();
 
     /// <summary>An empty tool: the identity map.</summary>
     public ShapeAnalysis_TransferParameters()
@@ -39,7 +41,7 @@ public class ShapeAnalysis_TransferParameters : Transient
     }
 
     /// <summary>A tool for the edge on the face (see <see cref="Init"/>).</summary>
-    public ShapeAnalysis_TransferParameters(in TopoDS_Edge E, in TopoDS_Face F)
+    public ShapeAnalysis_TransferParameters(in Edge E, in Face F)
     {
         Init(E, F);
     }
@@ -48,18 +50,18 @@ public class ShapeAnalysis_TransferParameters : Transient
     /// Loads the edge and the face, and computes the linear map from the 3D curve's range to the pcurve's (the
     /// identity if either is missing; a null face is allowed, for free edges).
     /// </summary>
-    public virtual void Init(in TopoDS_Edge E, in TopoDS_Face F)
+    public virtual void Init(in Edge E, in Face F)
     {
         myScale = 1.0;
         myShift = 0.0;
         double l, f, l2d = 0.0, f2d = 0.0;
         myEdge = E;
         var sae = new ShapeAnalysis_Edge();
-        sae.Curve3d(E, out Geom_Curve? curve3d, out f, out l, false);
+        sae.Curve3d(E, out Curve3D? curve3d, out f, out l, false);
         myFirst = f;
         myLast = l;
-        Geom2d_Curve? curve2d = null;
-        if (!F.IsNull())
+        Curve2D? curve2d = null;
+        if (!F.IsNull)
         { // process free edges
             sae.PCurve(E, F, out curve2d, out f2d, out l2d, false);
         }
@@ -118,7 +120,7 @@ public class ShapeAnalysis_TransferParameters : Transient
     /// <paramref name="Is2d"/>, else of the 3D curve (ShapeBuild_Edge::CopyRanges).
     /// </summary>
     /// <remarks>Internal: it writes into the edge, which throws on a frozen one.</remarks>
-    internal virtual void TransferRange(in TopoDS_Edge newEdge, double prevPar, double currPar, bool Is2d)
+    internal virtual void TransferRange(in Edge newEdge, double prevPar, double currPar, bool Is2d)
     {
         var sbe = new ShapeBuild_Edge();
         if (Is2d)

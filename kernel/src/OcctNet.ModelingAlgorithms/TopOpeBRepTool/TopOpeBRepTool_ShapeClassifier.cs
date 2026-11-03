@@ -5,10 +5,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -26,17 +29,17 @@ namespace Occt;
 /// </remarks>
 public sealed class TopOpeBRepTool_ShapeClassifier
 {
-    private TopoDS_Shape myS = new();
-    private TopoDS_Shape myRef = new();
-    private TopoDS_Shape myAvS = new();
-    private NCollection_List<TopoDS_Shape>? myPAvLS;
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myMapAvS = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_IndexedMap<TopoDS_Shape> mymre = new(TopTools_ShapeMapHasher.Instance);
+    private Shape myS = new();
+    private Shape myRef = new();
+    private Shape myAvS = new();
+    private NCollection_List<Shape>? myPAvLS;
+    private readonly NCollection_IndexedMap<Shape> myMapAvS = new(ShapeHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> mymre = new(ShapeHasher.Instance);
     private int mymren;
     private bool mymredone;
-    private TopAbs_State myState;
-    private TopoDS_Edge myEdge = new();
-    private TopoDS_Face myFace = new();
+    private Containment myState;
+    private Edge myEdge = new();
+    private Face myFace = new();
     private bool myP3Ddef;
     private Point3D myP3D = new();
     private bool myP2Ddef;
@@ -53,7 +56,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
     }
 
     /// <summary>A classifier with the reference shape <paramref name="SRef"/>.</summary>
-    public TopOpeBRepTool_ShapeClassifier(in TopoDS_Shape SRef)
+    public TopOpeBRepTool_ShapeClassifier(in Shape SRef)
     {
         myP3Ddef = false;
         myP2Ddef = false;
@@ -78,7 +81,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
         mymre.Clear();
         mymren = 0;
         mymredone = false;
-        myState = TopAbs_UNKNOWN;
+        myState = Unknown;
         myEdge.Nullify();
         myFace.Nullify();
         myP3Ddef = myP2Ddef = false;
@@ -94,7 +97,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
     }
 
     /// <summary>Sets the reference shape.</summary>
-    public void SetReference(in TopoDS_Shape SRef)
+    public void SetReference(in Shape SRef)
     {
         myRef = SRef;
         MapRef();
@@ -104,15 +107,15 @@ public sealed class TopOpeBRepTool_ShapeClassifier
     {
         mymre.Clear();
         mymren = 0;
-        if (myRef.ShapeType() == TopAbs_FACE && mySameDomain == 1)
+        if (myRef.ShapeType() == ShapeType.Face && mySameDomain == 1)
         {
-            TopExp.MapShapes(myRef, TopAbs_EDGE, mymre);
+            Exploration.MapShapes(myRef, ShapeType.Edge, mymre);
             mymren = mymre.Extent();
             if (mymren == 1)
             {
-                TopExp_Explorer x = new(myRef, TopAbs_EDGE);
-                TopoDS_Edge E = TopoDS.Edge(x.Current());
-                TopExp.Vertices(E, out TopoDS_Vertex v1, out TopoDS_Vertex v2);
+                Explorer x = new(myRef, ShapeType.Edge);
+                Edge E = ShapeCasts.Edge(x.Current());
+                Exploration.Vertices(E, out Vertex v1, out Vertex v2);
                 if (v1.IsSame(v2))
                 {
                     mymren = 0;
@@ -123,7 +126,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
     }
 
     /// <summary>The state of <paramref name="S"/> against <paramref name="SRef"/>.</summary>
-    public TopAbs_State StateShapeShape(in TopoDS_Shape S, in TopoDS_Shape SRef, int samedomain = 0)
+    public Containment StateShapeShape(in Shape S, in Shape SRef, int samedomain = 0)
     {
         ClearCurrent();
         mySameDomain = samedomain;
@@ -136,7 +139,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
     }
 
     /// <summary>The state of <paramref name="S"/> against <paramref name="SRef"/>, avoiding <paramref name="AvS"/>.</summary>
-    public TopAbs_State StateShapeShape(in TopoDS_Shape S, in TopoDS_Shape AvS, in TopoDS_Shape SRef)
+    public Containment StateShapeShape(in Shape S, in Shape AvS, in Shape SRef)
     {
         ClearCurrent();
         myS = S;
@@ -148,7 +151,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
     }
 
     /// <summary>The state of <paramref name="S"/> against <paramref name="SRef"/>, avoiding the shapes of <paramref name="AvLS"/>.</summary>
-    public TopAbs_State StateShapeShape(in TopoDS_Shape S, NCollection_List<TopoDS_Shape> AvLS, in TopoDS_Shape SRef)
+    public Containment StateShapeShape(in Shape S, NCollection_List<Shape> AvLS, in Shape SRef)
     {
         ClearCurrent();
         myS = S;
@@ -160,7 +163,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
     }
 
     /// <summary>The state of <paramref name="S"/> against the reference shape, avoiding <paramref name="AvS"/>.</summary>
-    public TopAbs_State StateShapeReference(in TopoDS_Shape S, in TopoDS_Shape AvS)
+    public Containment StateShapeReference(in Shape S, in Shape AvS)
     {
         myS = S;
         myAvS = AvS;
@@ -170,7 +173,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
     }
 
     /// <summary>The state of <paramref name="S"/> against the reference shape, avoiding the shapes of <paramref name="AvLS"/>.</summary>
-    public TopAbs_State StateShapeReference(in TopoDS_Shape S, NCollection_List<TopoDS_Shape> AvLS)
+    public Containment StateShapeReference(in Shape S, NCollection_List<Shape> AvLS)
     {
         myS = S;
         myAvS.Nullify();
@@ -187,8 +190,8 @@ public sealed class TopOpeBRepTool_ShapeClassifier
         myEdge.Nullify();
         myFace.Nullify();
 
-        TopAbs_ShapeEnum t = myS.ShapeType();
-        if (t < TopAbs_FACE)
+        ShapeType t = myS.ShapeType();
+        if (t < ShapeType.Face)
         { // compsolid .. shell
             FindFace(myS);
             FindEdge(myFace);
@@ -199,42 +202,42 @@ public sealed class TopOpeBRepTool_ShapeClassifier
         }
     }
 
-    private void FindEdge(in TopoDS_Shape S)
+    private void FindEdge(in Shape S)
     {
         myEdge.Nullify();
         bool isavls = HasAvLS();
-        bool isavs = !myAvS.IsNull();
-        if (S.IsNull())
+        bool isavs = !myAvS.IsNull;
+        if (S.IsNull)
         {
             return;
         }
 
-        TopAbs_ShapeEnum tS = S.ShapeType();
-        TopExp_Explorer eex = new();
-        if (!myFace.IsNull())
+        ShapeType tS = S.ShapeType();
+        Explorer eex = new();
+        if (!myFace.IsNull)
         {
-            eex.Init(myFace, TopAbs_EDGE);
+            eex.Init(myFace, ShapeType.Edge);
         }
         else
         {
-            eex.Init(S, TopAbs_EDGE);
+            eex.Init(S, ShapeType.Edge);
         }
 
         for (; eex.More(); eex.Next())
         {
-            TopoDS_Edge E = TopoDS.Edge(eex.Current());
+            Edge E = ShapeCasts.Edge(eex.Current());
             bool toavoid = false;
             if (isavls || isavs)
             {
                 toavoid = toavoid || myMapAvS.Contains(E);
-                if (!myAvS.IsNull())
+                if (!myAvS.IsNull)
                 {
                     toavoid = toavoid || E.IsSame(myAvS);
                 }
             }
-            else if (BRep_Tool.Degenerated(E))
+            else if (Tool.Degenerated(E))
             {
-                toavoid = tS != TopAbs_EDGE;
+                toavoid = tS != ShapeType.Edge;
             }
             if (toavoid)
             {
@@ -245,20 +248,20 @@ public sealed class TopOpeBRepTool_ShapeClassifier
         }
     }
 
-    private void FindFace(in TopoDS_Shape S)
+    private void FindFace(in Shape S)
     {
         myFace.Nullify();
         bool isavls = HasAvLS();
-        bool isavs = !myAvS.IsNull();
-        TopExp_Explorer fex = new(S, TopAbs_FACE);
+        bool isavs = !myAvS.IsNull;
+        Explorer fex = new(S, ShapeType.Face);
         for (; fex.More(); fex.Next())
         {
-            TopoDS_Face F = TopoDS.Face(fex.Current());
+            Face F = ShapeCasts.Face(fex.Current());
             bool toavoid = false;
             if (isavls || isavs)
             {
                 toavoid = toavoid || myMapAvS.Contains(F);
-                if (!myAvS.IsNull())
+                if (!myAvS.IsNull)
                 {
                     toavoid = toavoid || F.IsSame(myAvS);
                 }
@@ -274,12 +277,12 @@ public sealed class TopOpeBRepTool_ShapeClassifier
 
     private void Perform()
     {
-        myState = TopAbs_UNKNOWN;
-        if (myS.IsNull())
+        myState = Unknown;
+        if (myS.IsNull)
         {
             return;
         }
-        if (myRef.IsNull())
+        if (myRef.IsNull)
         {
             return;
         }
@@ -289,86 +292,86 @@ public sealed class TopOpeBRepTool_ShapeClassifier
             MapRef();
         }
 
-        if (!myAvS.IsNull())
+        if (!myAvS.IsNull)
         {
             // tAvS = FACE,EDGE --> map(AvS,EDGE)
             // rejection des aretes de myS comme arete de classification
             // (le point de classification doit etre IN S)
             myMapAvS.Clear();
-            TopAbs_ShapeEnum tAvS = myAvS.ShapeType();
-            if (tAvS == TopAbs_FACE)
+            ShapeType tAvS = myAvS.ShapeType();
+            if (tAvS == ShapeType.Face)
             {
                 myMapAvS.Add(myAvS);
-                TopExp.MapShapes(myAvS, TopAbs_EDGE, myMapAvS);
+                Exploration.MapShapes(myAvS, ShapeType.Edge, myMapAvS);
             }
-            else if (tAvS == TopAbs_EDGE)
+            else if (tAvS == ShapeType.Edge)
             {
-                TopExp.MapShapes(myAvS, TopAbs_EDGE, myMapAvS);
+                Exploration.MapShapes(myAvS, ShapeType.Edge, myMapAvS);
             }
         }
         else if (HasAvLS())
         {
             // tAvS = FACE,EDGE --> map(AvS,EDGE)
             myMapAvS.Clear();
-            TopAbs_ShapeEnum tAvS = myPAvLS!.First().ShapeType();
-            if (tAvS == TopAbs_FACE)
+            ShapeType tAvS = myPAvLS!.First().ShapeType();
+            if (tAvS == ShapeType.Face)
             {
-                NCollection_List<TopoDS_Shape>.Iterator it = new(myPAvLS);
+                NCollection_List<Shape>.Iterator it = new(myPAvLS);
                 for (; it.More(); it.Next())
                 {
-                    TopoDS_Shape S = it.Value();
+                    Shape S = it.Value();
                     myMapAvS.Add(S);
-                    TopExp.MapShapes(S, TopAbs_EDGE, myMapAvS);
+                    Exploration.MapShapes(S, ShapeType.Edge, myMapAvS);
                 }
             }
-            else if (tAvS == TopAbs_EDGE)
+            else if (tAvS == ShapeType.Edge)
             {
-                NCollection_List<TopoDS_Shape>.Iterator it = new(myPAvLS);
+                NCollection_List<Shape>.Iterator it = new(myPAvLS);
                 for (; it.More(); it.Next())
                 {
-                    TopoDS_Shape S = it.Value();
-                    TopExp.MapShapes(S, TopAbs_EDGE, myMapAvS);
+                    Shape S = it.Value();
+                    Exploration.MapShapes(S, ShapeType.Edge, myMapAvS);
                 }
             }
         }
         else
         {
-            if (myS.ShapeType() == TopAbs_FACE)
+            if (myS.ShapeType() == ShapeType.Face)
             {
-                myP3Ddef = BRepClass3d_SolidExplorer.FindAPointInTheFace(TopoDS.Face(myS), ref myP3D);
+                myP3Ddef = BRepClass3d_SolidExplorer.FindAPointInTheFace(ShapeCasts.Face(myS), ref myP3D);
             }
         }
 
-        TopAbs_ShapeEnum tS = myS.ShapeType();
-        TopAbs_ShapeEnum tR = myRef.ShapeType();
+        ShapeType tS = myS.ShapeType();
+        ShapeType tR = myRef.ShapeType();
 
-        if (tS == TopAbs_VERTEX)
+        if (tS == ShapeType.Vertex)
         {
-            if (tR <= TopAbs_SOLID)
+            if (tR <= ShapeType.Solid)
             {
-                Point3D P3D = BRep_Tool.Pnt(TopoDS.Vertex(myS));
+                Point3D P3D = Tool.Pnt(ShapeCasts.Vertex(myS));
                 StateP3DReference(P3D);
             }
         }
-        else if (tS == TopAbs_EDGE)
+        else if (tS == ShapeType.Edge)
         {
-            if (tR == TopAbs_FACE || tR <= TopAbs_SOLID)
+            if (tR == ShapeType.Face || tR <= ShapeType.Solid)
             {
                 FindEdge();
                 StateEdgeReference();
             }
         }
-        else if (tS == TopAbs_WIRE)
+        else if (tS == ShapeType.Wire)
         {
-            if (tR == TopAbs_FACE || tR <= TopAbs_SOLID)
+            if (tR == ShapeType.Face || tR <= ShapeType.Solid)
             {
                 FindEdge();
                 StateEdgeReference();
             }
         }
-        else if (tS == TopAbs_FACE)
+        else if (tS == ShapeType.Face)
         {
-            if (tR == TopAbs_FACE)
+            if (tR == ShapeType.Face)
             {
                 FindEdge();
                 if (mySameDomain == 1)
@@ -379,7 +382,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
                 {
                     if (!myP3Ddef)
                     {
-                        myP3Ddef = BRepClass3d_SolidExplorer.FindAPointInTheFace(TopoDS.Face(myS), ref myP3D);
+                        myP3Ddef = BRepClass3d_SolidExplorer.FindAPointInTheFace(ShapeCasts.Face(myS), ref myP3D);
                     }
                     if (myP3Ddef)
                     {
@@ -387,12 +390,12 @@ public sealed class TopOpeBRepTool_ShapeClassifier
                     }
                     else
                     {
-                        myState = TopAbs_UNKNOWN;
+                        myState = Unknown;
                         throw new ProgramErrorException("TopOpeBRepTool_ShapeClassifier !P3Ddef");
                     }
                 }
             }
-            else if (tR <= TopAbs_SOLID)
+            else if (tR <= ShapeType.Solid)
             {
                 FindEdge();
                 if (myP3Ddef)
@@ -405,17 +408,17 @@ public sealed class TopOpeBRepTool_ShapeClassifier
                 }
             }
         }
-        else if (tS == TopAbs_SHELL)
+        else if (tS == ShapeType.Shell)
         {
-            if (tR <= TopAbs_SOLID)
+            if (tR <= ShapeType.Solid)
             {
                 FindEdge();
                 StateEdgeReference();
             }
         }
-        else if (tS == TopAbs_SOLID)
+        else if (tS == ShapeType.Solid)
         {
-            if (tR <= TopAbs_SOLID)
+            if (tR <= ShapeType.Solid)
             {
                 FindEdge();
                 StateEdgeReference();
@@ -427,39 +430,39 @@ public sealed class TopOpeBRepTool_ShapeClassifier
         }
 
         // take orientation of reference shape in account
-        TopAbs_Orientation oriRef = myRef.Orientation();
-        if (oriRef == TopAbs_EXTERNAL || oriRef == TopAbs_INTERNAL)
+        Orientation oriRef = myRef.Orientation();
+        if (oriRef == External || oriRef == Internal)
         {
-            if (myState == TopAbs_IN)
+            if (myState == In)
             {
-                myState = TopAbs_OUT;
+                myState = Out;
             }
         }
     }
 
     private void StateEdgeReference()
     {
-        myState = TopAbs_UNKNOWN;
+        myState = Unknown;
 
-        if (myEdge.IsNull())
+        if (myEdge.IsNull)
         {
             return;
         }
-        if (myRef.IsNull())
+        if (myRef.IsNull)
         {
             return;
         }
 
-        Geom_Curve? C3D;
+        Curve3D? C3D;
         Point3D P3D;
-        Geom2d_Curve? C2D;
+        Curve2D? C2D;
         Point2D P2D;
 
-        TopAbs_ShapeEnum tR = myRef.ShapeType();
+        ShapeType tR = myRef.ShapeType();
 
-        if (tR == TopAbs_FACE)
+        if (tR == ShapeType.Face)
         {
-            TopoDS_Face F = TopoDS.Face(myRef);
+            Face F = ShapeCasts.Face(myRef);
             if (mySameDomain != 0)
             {
                 bool trimCurve = true;
@@ -479,7 +482,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
             }
             else
             { // myEdge/myRef=face en 3d
-                C3D = BRep_Tool.Curve(myEdge, out double f3d, out double l3d);
+                C3D = Tool.Curve(myEdge, out double f3d, out double l3d);
 
                 if (C3D is null)
                 {
@@ -493,19 +496,19 @@ public sealed class TopOpeBRepTool_ShapeClassifier
                 return;
             }
         }
-        else if (tR <= TopAbs_SOLID)
+        else if (tR <= ShapeType.Solid)
         {
-            bool degen = BRep_Tool.Degenerated(myEdge);
+            bool degen = Tool.Degenerated(myEdge);
             if (degen)
             {
-                TopoDS_Vertex v = TopExp.FirstVertex(myEdge);
-                P3D = BRep_Tool.Pnt(v);
+                Vertex v = Exploration.FirstVertex(myEdge);
+                P3D = Tool.Pnt(v);
                 StateP3DReference(P3D);
                 return;
             }
             else
             {
-                C3D = BRep_Tool.Curve(myEdge, out double f3d, out double l3d);
+                C3D = Tool.Curve(myEdge, out double f3d, out double l3d);
 
                 if (C3D is null)
                 {
@@ -528,28 +531,28 @@ public sealed class TopOpeBRepTool_ShapeClassifier
     /// <summary>Classifies the point <paramref name="P2D"/> in the reference face.</summary>
     public void StateP2DReference(in Point2D P2D)
     {
-        myState = TopAbs_UNKNOWN;
-        if (myRef.IsNull())
+        myState = Unknown;
+        if (myRef.IsNull)
         {
             return;
         }
-        TopAbs_ShapeEnum tR = myRef.ShapeType();
+        ShapeType tR = myRef.ShapeType();
 
-        if (tR == TopAbs_FACE)
+        if (tR == ShapeType.Face)
         {
             if (mymren == 1)
             {
-                TopExp_Explorer x = new();
-                for (x.Init(myRef, TopAbs_EDGE); x.More(); x.Next())
+                Explorer x = new();
+                for (x.Init(myRef, ShapeType.Edge); x.More(); x.Next())
                 {
-                    TopAbs_Orientation o = x.Current().Orientation();
-                    if (o == TopAbs_EXTERNAL)
+                    Orientation o = x.Current().Orientation();
+                    if (o == External)
                     {
-                        myState = TopAbs_OUT;
+                        myState = Out;
                     }
-                    else if (o == TopAbs_INTERNAL)
+                    else if (o == Internal)
                     {
-                        myState = TopAbs_IN;
+                        myState = In;
                     }
                     else
                     {
@@ -561,8 +564,8 @@ public sealed class TopOpeBRepTool_ShapeClassifier
             {
                 myP2D = P2D;
                 myP2Ddef = true;
-                TopoDS_Face F = TopoDS.Face(myRef);
-                F.Orientation(TopAbs_FORWARD);
+                Face F = ShapeCasts.Face(myRef);
+                F.Orientation(Forward);
                 double TolClass = 1e-8;
                 BRepTopAdaptor_FClass2d FClass2d = new(F, TolClass);
                 myState = FClass2d.Perform(P2D);
@@ -577,34 +580,34 @@ public sealed class TopOpeBRepTool_ShapeClassifier
     /// <summary>Classifies the point <paramref name="P3D"/> in the reference solid (or the solids of the reference).</summary>
     public void StateP3DReference(in Point3D P3D)
     {
-        myState = TopAbs_UNKNOWN;
-        if (myRef.IsNull())
+        myState = Unknown;
+        if (myRef.IsNull)
         {
             return;
         }
-        TopAbs_ShapeEnum tR = myRef.ShapeType();
+        ShapeType tR = myRef.ShapeType();
 
-        if (tR == TopAbs_SOLID)
+        if (tR == ShapeType.Solid)
         {
             myP3D = P3D;
             myP3Ddef = true;
-            TopoDS_Solid SO = TopoDS.Solid(myRef);
+            Solid SO = ShapeCasts.Solid(myRef);
             double tol3d = global::Kerf.Engine.Foundation.Precision.Confusion();
             mySolidClassifier.Classify(SO, P3D, tol3d);
             myState = mySolidClassifier.State();
         }
-        else if (tR < TopAbs_SOLID)
+        else if (tR < ShapeType.Solid)
         {
             myP3D = P3D;
             myP3Ddef = true;
-            TopExp_Explorer ex = new();
-            for (ex.Init(myRef, TopAbs_SOLID); ex.More(); ex.Next())
+            Explorer ex = new();
+            for (ex.Init(myRef, ShapeType.Solid); ex.More(); ex.Next())
             {
-                TopoDS_Solid SO = TopoDS.Solid(ex.Current());
+                Solid SO = ShapeCasts.Solid(ex.Current());
                 double tol3d = global::Kerf.Engine.Foundation.Precision.Confusion();
                 mySolidClassifier.Classify(SO, P3D, tol3d);
                 myState = mySolidClassifier.State();
-                if (myState == TopAbs_IN || myState == TopAbs_ON)
+                if (myState == In || myState == On)
                 {
                     break;
                 }
@@ -617,7 +620,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
     }
 
     /// <summary>The state found by the last classification.</summary>
-    public TopAbs_State State() => myState;
+    public Containment State() => myState;
 
     /// <summary>The 3D point used by the last classification.</summary>
     /// <exception cref="ProgramErrorException">There is none.</exception>

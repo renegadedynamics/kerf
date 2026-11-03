@@ -3,7 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -11,49 +15,49 @@ namespace Occt;
 /// <remarks>A working object (decision 21): initialize with an edge, then perform with any number of vertices.</remarks>
 public sealed class BRepExtrema_ExtPC
 {
-    private readonly Extrema_ExtPC myExtPC = new();
-    private BRepAdaptor_Curve? myHC;
+    private readonly CurvePointExtrema myExtPC = new();
+    private EdgeCurveAdaptor? myHC;
 
     public BRepExtrema_ExtPC()
     {
     }
 
     /// <summary>Computes all the extrema between the vertex <paramref name="V"/> and the edge <paramref name="E"/>.</summary>
-    public BRepExtrema_ExtPC(in TopoDS_Vertex V, in TopoDS_Edge E)
+    public BRepExtrema_ExtPC(in Vertex V, in Edge E)
     {
         Initialize(E);
         Perform(V);
     }
 
-    public void Initialize(in TopoDS_Edge E)
+    public void Initialize(in Edge E)
     {
-        if (!BRep_Tool.IsGeometric(E))
+        if (!Tool.IsGeometric(E))
         {
             return; // protect against non-geometric type (e.g. polygon)
         }
         double U1, U2;
-        myHC = new BRepAdaptor_Curve(E);
-        double Tol = Min(BRep_Tool.Tolerance(E), global::Kerf.Engine.Foundation.Precision.Confusion());
+        myHC = new EdgeCurveAdaptor(E);
+        double Tol = Min(Tool.Tolerance(E), global::Kerf.Engine.Foundation.Precision.Confusion());
         Tol = Max(myHC.Resolution(Tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
-        BRep_Tool.Range(E, out U1, out U2);
+        Tool.Range(E, out U1, out U2);
         myExtPC.Initialize(myHC, U1, U2, Tol);
     }
 
     /// <summary>Computes the extrema for the vertex <paramref name="V"/> (nothing if the edge isn't geometric).</summary>
-    public void Perform(in TopoDS_Vertex V)
+    public void Perform(in Vertex V)
     {
         if (myHC is not null)
         {
-            Point3D P = BRep_Tool.Pnt(V);
+            Point3D P = Tool.Pnt(V);
             myExtPC.Perform(P);
         }
     }
 
     /// <summary>True if the distances are found.</summary>
-    public bool IsDone() => myExtPC.IsDone();
+    public bool IsDone() => myExtPC.IsDone;
 
     /// <summary>The number of extremum distances.</summary>
-    public int NbExt() => myExtPC.NbExt();
+    public int NbExt() => myExtPC.ExtCount;
 
     /// <summary>True if the <paramref name="N"/>th extremum distance is a minimum.</summary>
     public bool IsMin(int N) => myExtPC.IsMin(N);

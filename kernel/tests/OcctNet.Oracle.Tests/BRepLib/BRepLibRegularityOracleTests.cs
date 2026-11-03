@@ -1,11 +1,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Text;
 using Schematiq.Collections;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopTools_FormatVersion;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Engine.Exchange.Brep.FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -44,15 +49,15 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
         return Text(aFile);
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile, true, true, TopTools_FormatVersion_VERSION_3));
+        Assert.True(BrepTools.Write(theShape, aFile, true, true, FormatVersion_VERSION_3));
         return Text(aFile);
     }
 
     /// <summary>A scene: the native shape as read back from its file, and the port's shape read from the same file.</summary>
-    private (N.TopoDS_Shape N, TopoDS_Shape P, string What) Scene(Oracle theOracle, int theIndex, bool theMeshed)
+    private (N.TopoDS_Shape N, Shape P, string What) Scene(Oracle theOracle, int theIndex, bool theMeshed)
     {
         N.TopoDS_Shape aShape = BRepToolsIOOracleTests.NativeShape(theOracle, theIndex, out string aWhat);
         if (theMeshed && !aWhat.EndsWith("meshed", StringComparison.Ordinal))
@@ -65,7 +70,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
     }
 
     /// <summary>The native shape written to a file and read back by both sides.</summary>
-    private (N.TopoDS_Shape N, TopoDS_Shape P, string What) SceneOf(N.TopoDS_Shape aShape, string theWhat)
+    private (N.TopoDS_Shape N, Shape P, string What) SceneOf(N.TopoDS_Shape aShape, string theWhat)
     {
         string aFile = NewFile();
         Assert.True(N.BRepTools.Write(aShape, aFile, true, true, N.TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
@@ -75,21 +80,21 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
             Assert.True(N.BRepTools.Read(aNShape, aFile, aBuilder));
         }
 
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile));
+        Assert.True(BrepTools.Read(out Shape aPShape, aFile));
         return (aNShape, aPShape, theWhat);
     }
 
     private static N.TopoDS_Shape NativeCopy(N.TopoDS_Shape theShape) => new N.BRepBuilderAPI_Copy(theShape, false, true).Shape();
 
-    private static TopoDS_Shape PortCopy(in TopoDS_Shape theShape) => BRepTools.CopyForWrite(theShape, out _);
+    private static Shape PortCopy(in Shape theShape) => BrepTools.CopyForWrite(theShape, out _);
 
-    private static (N.TopTools_IndexedMapOfShape N, NCollection_IndexedMap<TopoDS_Shape> P) Map(N.TopoDS_Shape theN, in TopoDS_Shape theP,
-                                                                                             TopAbs_ShapeEnum theType)
+    private static (N.TopTools_IndexedMapOfShape N, NCollection_IndexedMap<Shape> P) Map(N.TopoDS_Shape theN, in Shape theP,
+                                                                                             ShapeType theType)
     {
         var aNMap = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(theN, (N.TopAbs_ShapeEnum)(int)theType, aNMap);
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theP, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theP, theType, aMap);
         Assert.Equal(aNMap.Extent(), aMap.Extent());
         return (aNMap, aMap);
     }
@@ -100,7 +105,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
         public long Bytes;
     }
 
-    private void CompareTexts(N.TopoDS_Shape theN, in TopoDS_Shape theP, string theWhat, Tally theTally)
+    private void CompareTexts(N.TopoDS_Shape theN, in Shape theP, string theWhat, Tally theTally)
     {
         string aNText = NativeText(theN);
         string aPText = PortText(theP);
@@ -116,12 +121,12 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
         var aTally = new Tally();
         foreach (int i in Tape.Budget(Scenes))
         {
-            (N.TopoDS_Shape aN, TopoDS_Shape aP, string aWhat) = Scene(anOracle, i, false);
+            (N.TopoDS_Shape aN, Shape aP, string aWhat) = Scene(anOracle, i, false);
             double aTolAng = anOracle.Bool() ? 1.0e-10 : anOracle.Real(1e-6, 0.1);
 
             // the whole shape
             N.TopoDS_Shape aNC = NativeCopy(aN);
-            TopoDS_Shape aPC = PortCopy(aP);
+            Shape aPC = PortCopy(aP);
             N.BRepLib.EncodeRegularity(aNC, aTolAng);
             BRepLib.EncodeRegularity(aPC, aTolAng);
             CompareTexts(aNC, aPC, aWhat + ", whole", aTally);
@@ -129,9 +134,9 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
             // every other edge, in a list
             aNC = NativeCopy(aN);
             aPC = PortCopy(aP);
-            (N.TopTools_IndexedMapOfShape aNE, NCollection_IndexedMap<TopoDS_Shape> aPE) = Map(aNC, aPC, TopAbs_EDGE);
+            (N.TopTools_IndexedMapOfShape aNE, NCollection_IndexedMap<Shape> aPE) = Map(aNC, aPC, ShapeType.Edge);
             var aNList = new N.TopTools_ListOfShape();
-            var aPList = new NCollection_List<TopoDS_Shape>();
+            var aPList = new NCollection_List<Shape>();
             for (int e = 1 + (i % 2); e <= aNE.Extent(); e += 2)
             {
                 aNList.Append(aNE.FindKey(e));
@@ -146,20 +151,20 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
             aPC = PortCopy(aP);
             var aNEF = new N.TopTools_IndexedDataMapOfShapeListOfShape();
             N.TopExp.MapShapesAndAncestors(aNC, N.TopAbs_ShapeEnum.TopAbs_EDGE, N.TopAbs_ShapeEnum.TopAbs_FACE, aNEF);
-            var aPEF = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapesAndAncestors(aPC, TopAbs_EDGE, TopAbs_FACE, aPEF);
+            var aPEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            Exploration.MapShapesAndAncestors(aPC, ShapeType.Edge, ShapeType.Face, aPEF);
             Assert.Equal(aNEF.Extent(), aPEF.Extent());
             for (int e = 1; e <= aNEF.Extent(); e++)
             {
                 N.TopoDS_Shape[] aNF = aNEF.FindFromIndex(e).ToArray();
-                NCollection_List<TopoDS_Shape> aPF = aPEF.FindFromIndex(e);
+                NCollection_List<Shape> aPF = aPEF.FindFromIndex(e);
                 Assert.Equal(aNF.Length, aPF.Extent());
                 if (aNF.Length == 0)
                 {
                     continue;
                 }
                 N.BRepLib.EncodeRegularity(N.TopoDS.Edge(aNEF.FindKey(e)), N.TopoDS.Face(aNF[0]), N.TopoDS.Face(aNF[^1]), aTolAng);
-                BRepLib.EncodeRegularity(TopoDS.Edge(aPEF.FindKey(e)), TopoDS.Face(aPF.First()), TopoDS.Face(aPF.Last()), aTolAng);
+                BRepLib.EncodeRegularity(ShapeCasts.Edge(aPEF.FindKey(e)), ShapeCasts.Face(aPF.First()), ShapeCasts.Face(aPF.Last()), aTolAng);
             }
             CompareTexts(aNC, aPC, aWhat + ", edge by edge", aTally);
         }
@@ -174,15 +179,15 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
         int aValues = 0;
         foreach (int i in Tape.Budget(Scenes))
         {
-            (N.TopoDS_Shape aN, TopoDS_Shape aP, string aWhat) = Scene(anOracle, i, false);
+            (N.TopoDS_Shape aN, Shape aP, string aWhat) = Scene(anOracle, i, false);
             var aNEF = new N.TopTools_IndexedDataMapOfShapeListOfShape();
             N.TopExp.MapShapesAndAncestors(aN, N.TopAbs_ShapeEnum.TopAbs_EDGE, N.TopAbs_ShapeEnum.TopAbs_FACE, aNEF);
-            var aPEF = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapesAndAncestors(aP, TopAbs_EDGE, TopAbs_FACE, aPEF);
+            var aPEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            Exploration.MapShapesAndAncestors(aP, ShapeType.Edge, ShapeType.Face, aPEF);
             for (int e = 1; e <= aNEF.Extent(); e++)
             {
                 N.TopoDS_Shape[] aNF = aNEF.FindFromIndex(e).ToArray();
-                TopoDS_Shape[] aPF = [.. aPEF.FindFromIndex(e)];
+                Shape[] aPF = [.. aPEF.FindFromIndex(e)];
                 for (int f1 = 0; f1 < aNF.Length; f1++)
                 {
                     for (int f2 = f1; f2 < aNF.Length; f2++)
@@ -191,8 +196,8 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                         {
                             int aNC = (int)N.BRepLib.ContinuityOfFaces(N.TopoDS.Edge(aNEF.FindKey(e)), N.TopoDS.Face(aNF[f1]),
                                                                       N.TopoDS.Face(aNF[f2]), aTolAng);
-                            int aPC = (int)BRepLib.ContinuityOfFaces(TopoDS.Edge(aPEF.FindKey(e)), TopoDS.Face(aPF[f1]),
-                                                                     TopoDS.Face(aPF[f2]), aTolAng);
+                            int aPC = (int)BRepLib.ContinuityOfFaces(ShapeCasts.Edge(aPEF.FindKey(e)), ShapeCasts.Face(aPF[f1]),
+                                                                     ShapeCasts.Face(aPF[f2]), aTolAng);
                             anOracle.Same(aNC, aPC, $"{aWhat}: ContinuityOfFaces of edge {e}, faces {f1}, {f2}, {aTolAng}");
                             aCounts[aPC]++;
                             aValues++;
@@ -212,8 +217,8 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
         int aValues = 0, aValidRanges = 0;
         foreach (int i in Tape.Budget(Scenes))
         {
-            (N.TopoDS_Shape aN, TopoDS_Shape aP, string aWhat) = Scene(anOracle, i, anOracle.Bool());
-            (N.TopTools_IndexedMapOfShape aNFaces, NCollection_IndexedMap<TopoDS_Shape> aPFaces) = Map(aN, aP, TopAbs_FACE);
+            (N.TopoDS_Shape aN, Shape aP, string aWhat) = Scene(anOracle, i, anOracle.Bool());
+            (N.TopTools_IndexedMapOfShape aNFaces, NCollection_IndexedMap<Shape> aPFaces) = Map(aN, aP, ShapeType.Face);
 
             // SortFaces and ReverseSortFaces: the faces' indices
             for (int aReverse = 0; aReverse < 2; aReverse++)
@@ -227,7 +232,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                 {
                     N.BRepLib.ReverseSortFaces(aN, aNList);
                 }
-                ISchematiqList<TopoDS_Shape> aPList = aReverse == 0 ? BRepLib.SortFaces(aP) : BRepLib.ReverseSortFaces(aP);
+                ISchematiqList<Shape> aPList = aReverse == 0 ? BRepLib.SortFaces(aP) : BRepLib.ReverseSortFaces(aP);
                 N.TopoDS_Shape[] aNArray = aNList.ToArray();
                 Assert.Equal(aNArray.Length, aPList.Count);
                 for (int k = 0; k < aNArray.Length; k++)
@@ -239,11 +244,11 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
             }
 
             // FindValidRange of each edge, through the edge and through its adaptor with random vertex tolerances
-            (N.TopTools_IndexedMapOfShape aNEdges, NCollection_IndexedMap<TopoDS_Shape> aPEdges) = Map(aN, aP, TopAbs_EDGE);
+            (N.TopTools_IndexedMapOfShape aNEdges, NCollection_IndexedMap<Shape> aPEdges) = Map(aN, aP, ShapeType.Edge);
             for (int e = 1; e <= aNEdges.Extent(); e++)
             {
                 N.TopoDS_Edge aNE = N.TopoDS.Edge(aNEdges.FindKey(e));
-                TopoDS_Edge aPE = TopoDS.Edge(aPEdges[e]);
+                Edge aPE = ShapeCasts.Edge(aPEdges[e]);
                 double aNF = -7, aNL = -7, aPF = -7, aPL = -7;
                 bool isN = N.BRepLib.FindValidRange(aNE, ref aNF, ref aNL);
                 bool isP = BRepLib.FindValidRange(aPE, ref aPF, ref aPL);
@@ -253,12 +258,12 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                 aValues += 3;
                 aValidRanges += isP ? 1 : 0;
 
-                if (BRep_Tool.Curve(aPE, out _, out _) is null)
+                if (Tool.Curve(aPE, out _, out _) is null)
                 {
                     continue;
                 }
                 using var aNAC = new N.BRepAdaptor_Curve(aNE);
-                var aPAC = new BRepAdaptor_Curve(aPE);
+                var aPAC = new EdgeCurveAdaptor(aPE);
                 double aF = aPAC.FirstParameter(), aL = aPAC.LastParameter();
                 if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL))
                 {
@@ -279,11 +284,11 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
             }
 
             // BoundingVertex of random groups of vertices
-            (N.TopTools_IndexedMapOfShape aNV, NCollection_IndexedMap<TopoDS_Shape> aPV) = Map(aN, aP, TopAbs_VERTEX);
+            (N.TopTools_IndexedMapOfShape aNV, NCollection_IndexedMap<Shape> aPV) = Map(aN, aP, ShapeType.Vertex);
             for (int g = 0; g < 5 && aNV.Extent() > 0; g++)
             {
                 var aNList = new N.TopTools_ListOfShape();
-                var aPList = new NCollection_List<TopoDS_Shape>();
+                var aPList = new NCollection_List<Shape>();
                 int aNb = anOracle.Int(1, Math.Min(6, aNV.Extent()));
                 for (int k = 0; k < aNb; k++)
                 {
@@ -313,37 +318,37 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
         foreach (int i in Tape.Budget(Scenes))
         {
             bool isPolygon = i % 3 == 2;
-            (N.TopoDS_Shape aN, TopoDS_Shape aP, string aWhat) = isPolygon ? PlanarPolygonFace(anOracle, i) : Scene(anOracle, i, false);
+            (N.TopoDS_Shape aN, Shape aP, string aWhat) = isPolygon ? PlanarPolygonFace(anOracle, i) : Scene(anOracle, i, false);
             // the planar pcurves of every edge of every face: on copies (which already carry them: the copy computes
             // them), or on the unfrozen polygon faces (which don't), compared before and after
             N.TopoDS_Shape aNC = isPolygon ? aN : NativeCopy(aN);
-            TopoDS_Shape aPC = isPolygon ? aP : PortCopy(aP);
+            Shape aPC = isPolygon ? aP : PortCopy(aP);
             CompareTexts(aNC, aPC, $"{aWhat}: before the planar pcurves", aTally);
-            (N.TopTools_IndexedMapOfShape aNFaces, NCollection_IndexedMap<TopoDS_Shape> aPFaces) = Map(aNC, aPC, TopAbs_FACE);
+            (N.TopTools_IndexedMapOfShape aNFaces, NCollection_IndexedMap<Shape> aPFaces) = Map(aNC, aPC, ShapeType.Face);
             for (int f = 1; f <= aNFaces.Extent(); f++)
             {
                 N.TopoDS_Face aNF = N.TopoDS.Face(aNFaces.FindKey(f));
-                TopoDS_Face aPF = TopoDS.Face(aPFaces[f]);
-                (N.TopTools_IndexedMapOfShape aNE, NCollection_IndexedMap<TopoDS_Shape> aPE) = Map(aNF, aPF, TopAbs_EDGE);
+                Face aPF = ShapeCasts.Face(aPFaces[f]);
+                (N.TopTools_IndexedMapOfShape aNE, NCollection_IndexedMap<Shape> aPE) = Map(aNF, aPF, ShapeType.Edge);
                 for (int e = 1; e <= aNE.Extent(); e++)
                 {
-                    BRepLib.BuildPCurveForEdgeOnPlane(TopoDS.Edge(aPE[e]), aPF, out _, out bool isToUpdate);
+                    BRepLib.BuildPCurveForEdgeOnPlane(ShapeCasts.Edge(aPE[e]), aPF, out _, out bool isToUpdate);
                     aPCurves += isToUpdate ? 1 : 0;
                     N.BRepLib.BuildPCurveForEdgeOnPlane(N.TopoDS.Edge(aNE.FindKey(e)), aNF);
-                    BRepLib.BuildPCurveForEdgeOnPlane(TopoDS.Edge(aPE[e]), aPF);
+                    BRepLib.BuildPCurveForEdgeOnPlane(ShapeCasts.Edge(aPE[e]), aPF);
                 }
             }
             CompareTexts(aNC, aPC, $"{aWhat}: planar pcurves", aTally);
             // ExtendFace, after the copies: OCCT extends a B-spline face's own surface in place (occt-issues.md)
             string aNBefore = NativeText(aN);
-            (aNFaces, aPFaces) = Map(aN, aP, TopAbs_FACE);
+            (aNFaces, aPFaces) = Map(aN, aP, ShapeType.Face);
             for (int f = 1; f <= aNFaces.Extent(); f++)
             {
                 double anExt = anOracle.Real(0.01, 2);
                 bool u1 = anOracle.Bool(), u2 = anOracle.Bool(), v1 = anOracle.Bool(), v2 = anOracle.Bool();
                 var aNExt = new N.TopoDS_Face();
                 N.BRepLib.ExtendFace(N.TopoDS.Face(aNFaces.FindKey(f)), anExt, u1, u2, v1, v2, aNExt);
-                BRepLib.ExtendFace(TopoDS.Face(aPFaces[f]), anExt, u1, u2, v1, v2, out TopoDS_Face aPExt);
+                BRepLib.ExtendFace(ShapeCasts.Face(aPFaces[f]), anExt, u1, u2, v1, v2, out Face aPExt);
                 CompareTexts(aNExt, aPExt, $"{aWhat}: ExtendFace of face {f}", aTally);
             }
 
@@ -365,15 +370,15 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
         int aChanged = 0, aFaces = 0;
         for (int i = 0; i < 20; i++)
         {
-            (N.TopoDS_Shape aN, TopoDS_Shape aP, string aWhat) = Scene(anOracle, 11 + 12 * i, false); // lofts
+            (N.TopoDS_Shape aN, Shape aP, string aWhat) = Scene(anOracle, 11 + 12 * i, false); // lofts
             string aNBefore = NativeText(aN), aPBefore = PortText(aP);
-            (N.TopTools_IndexedMapOfShape aNFaces, NCollection_IndexedMap<TopoDS_Shape> aPFaces) = Map(aN, aP, TopAbs_FACE);
+            (N.TopTools_IndexedMapOfShape aNFaces, NCollection_IndexedMap<Shape> aPFaces) = Map(aN, aP, ShapeType.Face);
             var aTally = new Tally();
             for (int f = 1; f <= aNFaces.Extent(); f++)
             {
                 var aNExt = new N.TopoDS_Face();
                 N.BRepLib.ExtendFace(N.TopoDS.Face(aNFaces.FindKey(f)), 0.5, true, true, true, true, aNExt);
-                BRepLib.ExtendFace(TopoDS.Face(aPFaces[f]), 0.5, true, true, true, true, out TopoDS_Face aPExt);
+                BRepLib.ExtendFace(ShapeCasts.Face(aPFaces[f]), 0.5, true, true, true, true, out Face aPExt);
                 CompareTexts(aNExt, aPExt, $"{aWhat}: ExtendFace of face {f}", aTally);
                 aFaces++;
             }
@@ -389,7 +394,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
     /// plane and the wires natively and by BRepLib_MakeFace in the port, which store no pcurves. The port's face is read
     /// through the makers' internal accessors: unfrozen, so the pcurves can be stored on it.
     /// </summary>
-    private static (N.TopoDS_Shape N, TopoDS_Shape P, string What) PlanarPolygonFace(Oracle theOracle, int theIndex)
+    private static (N.TopoDS_Shape N, Shape P, string What) PlanarPolygonFace(Oracle theOracle, int theIndex)
     {
         // a placement that native OCCT builds with the same directions (gp_Ax3 recomputes the X direction)
         CoordinateSystem anAx3;
@@ -405,7 +410,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
             }
         }
         var aPln = new Plane3D(anAx3);
-        (N.TopoDS_Wire, TopoDS_Wire) Polygon(double theR, bool theReversed)
+        (N.TopoDS_Wire, Wire) Polygon(double theR, bool theReversed)
         {
             using var aNPolygon = new N.BRepBuilderAPI_MakePolygon();
             var aPolygon = new BRepLib_MakePolygon();
@@ -426,13 +431,13 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
 
         using N.gp_Ax3 aNAx3 = Oracle.ToNative(anAx3);
         using var aNPln = new N.gp_Pln(aNAx3);
-        (N.TopoDS_Wire aNOuter, TopoDS_Wire anOuter) = Polygon(theOracle.Real(2, 5), false);
+        (N.TopoDS_Wire aNOuter, Wire anOuter) = Polygon(theOracle.Real(2, 5), false);
         using var aNMaker = new N.BRepBuilderAPI_MakeFace(aNPln, aNOuter, true);
         var aMaker = new BRepLib_MakeFace(aPln, anOuter, true);
         bool isHoled = theOracle.Bool();
         if (isHoled)
         {
-            (N.TopoDS_Wire aNHole, TopoDS_Wire aHole) = Polygon(theOracle.Real(0.3, 1), true);
+            (N.TopoDS_Wire aNHole, Wire aHole) = Polygon(theOracle.Real(0.3, 1), true);
             aNMaker.Add(aNHole);
             aMaker.Add(aHole);
         }
@@ -447,10 +452,10 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
         int aCorrected = 0;
         foreach (int i in Tape.Budget(Scenes))
         {
-            (N.TopoDS_Shape aN, TopoDS_Shape aP, string aWhat) = Scene(anOracle, i, true);
+            (N.TopoDS_Shape aN, Shape aP, string aWhat) = Scene(anOracle, i, true);
 
             N.TopoDS_Shape aNC = NativeCopy(aN);
-            TopoDS_Shape aPC = PortCopy(aP);
+            Shape aPC = PortCopy(aP);
             N.BRepLib.UpdateDeflection(aNC);
             BRepLib.UpdateDeflection(aPC);
             CompareTexts(aNC, aPC, aWhat + ", UpdateDeflection", aTally);

@@ -1,13 +1,17 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DataExchange.Tests.XSAlgo;
 
@@ -53,10 +57,10 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
     }
 
     // The BRep text with the Free and Checked columns of the flags masked (decision 347)
-    internal static ulong BRepHash(in TopoDS_Shape theShape)
+    internal static ulong BRepHash(in Shape theShape)
     {
         var aS = new StringWriter(CultureInfo.InvariantCulture) { NewLine = "\n" };
-        BRepTools.Write(theShape, aS, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3);
+        BrepTools.Write(theShape, aS, true, false, FormatVersion.FormatVersion_VERSION_3);
         string aText = aS.ToString();
         string[] aLines = aText.Split('\n');
         // std::getline's lines: no empty last line after a final newline; each line ends with one
@@ -74,37 +78,37 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         return Fnv(aRes.ToString());
     }
 
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return 0;
         }
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        global::Kerf.Engine.Topology.Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
-    private static char TypeChar(in TopoDS_Shape theShape) => theShape.IsNull() ? 'n' : theShape.ShapeType() switch
+    private static char TypeChar(in Shape theShape) => theShape.IsNull ? 'n' : theShape.ShapeType() switch
     {
-        TopAbs_COMPOUND => 'C',
-        TopAbs_COMPSOLID => 'c',
-        TopAbs_SOLID => 'S',
-        TopAbs_SHELL => 's',
-        TopAbs_FACE => 'F',
-        TopAbs_WIRE => 'W',
-        TopAbs_EDGE => 'E',
-        TopAbs_VERTEX => 'V',
+        ShapeType.Compound => 'C',
+        ShapeType.CompSolid => 'c',
+        ShapeType.Solid => 'S',
+        ShapeType.Shell => 's',
+        ShapeType.Face => 'F',
+        ShapeType.Wire => 'W',
+        ShapeType.Edge => 'E',
+        ShapeType.Vertex => 'V',
         _ => '?',
     };
 
-    private static List<TopoDS_Shape> Keys(in TopoDS_Shape theShape)
+    private static List<Shape> Keys(in Shape theShape)
     {
-        var aKeys = new List<TopoDS_Shape> { theShape };
-        foreach (TopAbs_ShapeEnum aType in new[] { TopAbs_SOLID, TopAbs_SHELL, TopAbs_FACE, TopAbs_EDGE })
+        var aKeys = new List<Shape> { theShape };
+        foreach (ShapeType aType in new[] { ShapeType.Solid, ShapeType.Shell, ShapeType.Face, ShapeType.Edge })
         {
-            var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(theShape, aType, aMap);
+            var aMap = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            global::Kerf.Engine.Topology.Exploration.MapShapes(theShape, aType, aMap);
             for (int i = 1; i <= aMap.Extent(); i++)
             {
                 aKeys.Add(aMap[i]);
@@ -118,7 +122,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         var aTexts = new List<string>();
         if (theMessages is not null)
         {
-            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<Msg>> anItem in theMessages.MapShape())
+            foreach (KeyValuePair<Shape, NCollection_List<Msg>> anItem in theMessages.MapShape())
             {
                 for (var aMsg = new NCollection_List<Msg>.Iterator(anItem.Value); aMsg.More(); aMsg.Next())
                 {
@@ -131,7 +135,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         return string.Concat(aTexts.Select(t => t + "\n"));
     }
 
-    private static ulong MergeTP(List<TopoDS_Shape> theKeys, Action<Transfer_TransientProcess> theMerge)
+    private static ulong MergeTP(List<Shape> theKeys, Action<Transfer_TransientProcess> theMerge)
     {
         var aTP = new Transfer_TransientProcess();
         for (int i = 0; i < theKeys.Count; i++)
@@ -149,11 +153,11 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         return Fnv(aLines.ToString());
     }
 
-    private static ulong MergeFP(in TopoDS_Shape theInput, Action<Transfer_FinderProcess> theMerge)
+    private static ulong MergeFP(in Shape theInput, Action<Transfer_FinderProcess> theMerge)
     {
         var aFP = new Transfer_FinderProcess();
-        var aFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theInput, TopAbs_FACE, aFaces);
+        var aFaces = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        global::Kerf.Engine.Topology.Exploration.MapShapes(theInput, ShapeType.Face, aFaces);
         for (int i = 1; i <= aFaces.Extent(); i++)
         {
             Occt.TransferBRep.SetTransientFromShape(aFP, aFaces[i], new TCollection_HAsciiString(i));
@@ -176,18 +180,18 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         return Fnv(string.Concat(aLines.Select(l => l + "\n")));
     }
 
-    private static string Record(string theRun, in TopoDS_Shape theInput, in TopoDS_Shape theResult,
+    private static string Record(string theRun, in Shape theInput, in Shape theResult,
                                  ShapeProcess_ShapeContext? theContext, ulong theMerge)
     {
-        if (!theResult.IsNull() && !theResult.IsSame(theInput) && !theResult.TShape()!.IsFrozen)
+        if (!theResult.IsNull && !theResult.IsSame(theInput) && !theResult.TShape()!.IsFrozen)
         {
             throw new InvalidOperationException($"{theRun}: the result isn't frozen");
         }
         int aNbMsg = 0;
         string aMsgs = theContext is null ? "" : Messages(theContext.Messages(), out aNbMsg);
         return string.Create(CultureInfo.InvariantCulture,
-                             $"{theRun} {(theResult.IsSame(theInput) ? 1 : 0)} {BRepHash(theResult):x16} {Count(theResult, TopAbs_FACE)} "
-                             + $"{Count(theResult, TopAbs_EDGE)} {Count(theResult, TopAbs_VERTEX)} {(theContext is null ? 0 : theContext.Map().Extent())} "
+                             $"{theRun} {(theResult.IsSame(theInput) ? 1 : 0)} {BRepHash(theResult):x16} {Count(theResult, ShapeType.Face)} "
+                             + $"{Count(theResult, ShapeType.Edge)} {Count(theResult, ShapeType.Vertex)} {(theContext is null ? 0 : theContext.Map().Extent())} "
                              + $"{aNbMsg} {Fnv(aMsgs):x16} {theMerge:x16}");
     }
 
@@ -257,14 +261,14 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         ];
     }
 
-    private static string Processor(in TopoDS_Shape theInput, string theRun, NCollection_DataMap<string, string> theParams,
+    private static string Processor(in Shape theInput, string theRun, NCollection_DataMap<string, string> theParams,
                                     ShapeProcess.OperationsFlags theFlags, bool theToFinder)
     {
-        TopoDS_Shape anInput = theInput;
+        Shape anInput = theInput;
         return Run(theRun, () =>
         {
             var aProcessor = new XSAlgo_ShapeProcessor(theParams);
-            TopoDS_Shape aResult = aProcessor.ProcessShape(anInput, theFlags);
+            Shape aResult = aProcessor.ProcessShape(anInput, theFlags);
             ulong aMerge = theToFinder
                 ? MergeFP(anInput, aProcessor.MergeTransferInfo)
                 : MergeTP(Keys(anInput), theTP => aProcessor.MergeTransferInfo(theTP, 1));
@@ -272,13 +276,13 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         });
     }
 
-    private static string Container(in TopoDS_Shape theInput, string theRun, string theSeq, Interface_StaticSet theStatics)
+    private static string Container(in Shape theInput, string theRun, string theSeq, Interface_StaticSet theStatics)
     {
-        TopoDS_Shape anInput = theInput;
+        Shape anInput = theInput;
         return Run(theRun, () =>
         {
             Transient? anInfo = null;
-            TopoDS_Shape aResult = Occt.XSAlgo.AlgoContainer().ProcessShape(anInput, 1.0e-3, 1.0, "read.step.resource.name",
+            Shape aResult = Occt.XSAlgo.AlgoContainer().ProcessShape(anInput, 1.0e-3, 1.0, "read.step.resource.name",
                                                                            theSeq, ref anInfo, theStatics);
             ulong aMerge = MergeTP(Keys(anInput), theTP => Occt.XSAlgo.AlgoContainer().MergeTransferInfo(theTP, anInfo, 1));
             return Record(theRun, anInput, aResult, anInfo as ShapeProcess_ShapeContext, aMerge);
@@ -289,22 +293,22 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
     {
         return Run("PCURVE", () =>
         {
-            Assert.True(BRepTools.Read(out TopoDS_Shape aRead, thePath));
-            TopoDS_Shape anInput = BRepTools.ExactCopyForWrite(aRead, out _); // a reader's shape, not frozen
-            var aFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(anInput, TopAbs_FACE, aFaces);
+            Assert.True(BrepTools.Read(out Shape aRead, thePath));
+            Shape anInput = BrepTools.ExactCopyForWrite(aRead, out _); // a reader's shape, not frozen
+            var aFaces = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            global::Kerf.Engine.Topology.Exploration.MapShapes(anInput, ShapeType.Face, aFaces);
             int aNb = 0, aNbTrue = 0;
             var aLines = new StringBuilder();
             for (int i = 1; i <= aFaces.Extent(); i++)
             {
-                TopoDS_Face aFace = TopoDS.Face(aFaces[i]);
-                for (var anExp = new TopExp_Explorer(aFace, TopAbs_EDGE); anExp.More(); anExp.Next())
+                Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(aFaces[i]);
+                for (var anExp = new global::Kerf.Engine.Topology.Explorer(aFace, ShapeType.Edge); anExp.More(); anExp.Next())
                 {
-                    TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
-                    bool isSeam = BRep_Tool.IsClosed(anEdge, aFace);
+                    Edge anEdge = global::Kerf.Engine.Topology.ShapeCasts.Edge(anExp.Current());
+                    bool isSeam = Tool.IsClosed(anEdge, aFace);
                     bool isOk = XSAlgo_ShapeProcessor.CheckPCurve(anEdge, aFace, 1.0e-3, isSeam, theStatics);
                     aLines.Append(isOk ? '1' : '0').Append(' ')
-                          .Append(G17(BRep_Tool.Tolerance(anEdge)))
+                          .Append(G17(Tool.Tolerance(anEdge)))
                           .Append('\n');
                     aNb++;
                     aNbTrue += isOk ? 1 : 0;
@@ -339,8 +343,8 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
     public void Finder_merge_of_an_unfrozen_shape_is_natives()
     {
         string aPath = Path.Combine(Metadata("OcctSourceDir"), "data", "occ", "CrankArm.brep");
-        Assert.True(BRepTools.Read(out TopoDS_Shape aRead, aPath), aPath);
-        TopoDS_Shape aShape = BRepTools.ExactCopyForWrite(aRead, out _);
+        Assert.True(BrepTools.Read(out Shape aRead, aPath), aPath);
+        Shape aShape = BrepTools.ExactCopyForWrite(aRead, out _);
         var aSetup = new Setup();
         var aProcessor = new XSAlgo_ShapeProcessor(aSetup.WriteParams);
         aProcessor.ProcessShape(aShape, aSetup.WriteFlags);
@@ -380,7 +384,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         Parallel.For(0, aSections.Count, i =>
         {
             string aPath = Path.Combine(aDir, aSections[i].Name);
-            Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aPath), aPath);
+            Assert.True(BrepTools.Read(out Shape aShape, aPath), aPath);
             aShape.TShape()!.FreezeGraph(); // a caller's shape
             ulong aBefore = BRepHash(aShape);
             // each worker its own statics (a static set is a working object)

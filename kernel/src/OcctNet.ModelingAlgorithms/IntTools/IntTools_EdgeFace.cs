@@ -3,12 +3,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -24,11 +29,11 @@ namespace Occt;
 /// </remarks>
 public class IntTools_EdgeFace
 {
-    protected TopoDS_Edge myEdge = new();
-    protected TopoDS_Face myFace = new();
+    protected Edge myEdge = new();
+    protected Face myFace = new();
     protected double myFuzzyValue;
-    protected BRepAdaptor_Curve myC = new();
-    protected BRepAdaptor_Surface myS = new();
+    protected EdgeCurveAdaptor myC = new();
+    protected FaceSurfaceAdaptor myS = new();
     protected double myCriteria;
     protected bool myIsDone;
     protected int myErrorStatus;
@@ -51,16 +56,16 @@ public class IntTools_EdgeFace
     }
 
     /// <summary>Sets the edge.</summary>
-    public void SetEdge(in TopoDS_Edge theEdge) => myEdge = theEdge;
+    public void SetEdge(in Edge theEdge) => myEdge = theEdge;
 
     /// <summary>The edge.</summary>
-    public TopoDS_Edge Edge() => myEdge;
+    public Edge Edge() => myEdge;
 
     /// <summary>Sets the face.</summary>
-    public void SetFace(in TopoDS_Face theFace) => myFace = theFace;
+    public void SetFace(in Face theFace) => myFace = theFace;
 
     /// <summary>The face.</summary>
-    public TopoDS_Face Face() => myFace;
+    public Face Face() => myFace;
 
     /// <summary>Sets the range of the edge processed by the algorithm.</summary>
     public void SetRange(in IntTools_Range theRange) => myRange = theRange;
@@ -118,7 +123,7 @@ public class IntTools_EdgeFace
         double dT, aT, aD, aT1, aT2, aU, aV;
 
         Point3D aP;
-        TopAbs_State aState;
+        Containment aState;
         Point2D aP2d = new();
         //
         GeomAPI_ProjectPointOnSurf aProjector = myContext!.ProjPS(myFace);
@@ -199,7 +204,7 @@ public class IntTools_EdgeFace
             IntTools_FClass2d aClass2d = myContext.FClass2d(myFace);
             aState = aClass2d.Perform(aP2d);
 
-            if (aState == TopAbs_OUT)
+            if (aState == Out)
             {
                 return false;
             }
@@ -217,11 +222,11 @@ public class IntTools_EdgeFace
     /// <summary>Checks the data.</summary>
     protected void CheckData()
     {
-        if (BRep_Tool.Degenerated(myEdge))
+        if (Tool.Degenerated(myEdge))
         {
             myErrorStatus = 2;
         }
-        if (!BRep_Tool.IsGeometric(myEdge))
+        if (!Tool.IsGeometric(myEdge))
         {
             myErrorStatus = 3;
         }
@@ -287,7 +292,7 @@ public class IntTools_EdgeFace
     /// True, with the distance in <paramref name="aD"/>, if the point is on the axis of a cylinder or cone or on the
     /// spine of a torus (all points of the surface's circle are then at the same distance).
     /// </summary>
-    protected static bool IsEqDistance(in Point3D aP, BRepAdaptor_Surface aBAS, double aTol, ref double aD)
+    protected static bool IsEqDistance(in Point3D aP, FaceSurfaceAdaptor aBAS, double aTol, ref double aD)
     {
         bool bRetFlag = true;
 
@@ -355,7 +360,7 @@ public class IntTools_EdgeFace
         bAllNullFlag = aCommonPrt.AllNullFlag();
         if (bAllNullFlag)
         {
-            aCommonPrt.SetType(TopAbs_EDGE);
+            aCommonPrt.SetType(global::Kerf.Topology.ShapeType.Edge);
             return 0;
         }
         //
@@ -376,7 +381,7 @@ public class IntTools_EdgeFace
 
             if ((df1 > myCriteria * 2.0) && isWholeRange)
             {
-                aCommonPrt.SetType(TopAbs_EDGE);
+                aCommonPrt.SetType(global::Kerf.Topology.ShapeType.Edge);
             }
             else
             {
@@ -386,7 +391,7 @@ public class IntTools_EdgeFace
 
                     if (aPF.Distance(myC.Value(tm)) > myCriteria * 2.0)
                     {
-                        aCommonPrt.SetType(TopAbs_EDGE);
+                        aCommonPrt.SetType(global::Kerf.Topology.ShapeType.Edge);
                         return 0;
                     }
                 }
@@ -395,7 +400,7 @@ public class IntTools_EdgeFace
                 {
                     tm = (af1 + al1) * 0.5;
                 }
-                aCommonPrt.SetType(TopAbs_VERTEX);
+                aCommonPrt.SetType(ShapeType.Vertex);
                 aCommonPrt.SetVertexParameter1(tm);
                 aCommonPrt.SetRange1(af1, al1);
             }
@@ -423,28 +428,28 @@ public class IntTools_EdgeFace
 
         Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
-        Geom_Curve Curve = BRep_Tool.Curve(myC.Edge(), out _, out _)!;
-        Geom_Surface Surface = BRep_Tool.Surface(myS.Face())!;
+        Curve3D Curve = Tool.Curve(myC.Edge(), out _, out _)!;
+        Surface Surface = Tool.Surface(myS.Face())!;
         //   Surface->Bounds(U1f,U1l,V1f,V1l);
         U1f = myS.FirstUParameter();
         U1l = myS.LastUParameter();
         V1f = myS.FirstVParameter();
         V1l = myS.LastVParameter();
 
-        GeomAdaptor_Curve TheCurve = new(Curve, aTF, aTL);
-        GeomAdaptor_Surface TheSurface = new(Surface, U1f, U1l, V1f, V1l);
+        CurveAdaptor TheCurve = new(Curve, aTF, aTL);
+        SurfaceAdaptor TheSurface = new(Surface, U1f, U1l, V1f, V1l);
 
-        Extrema_ExtCS anExtrema = new(TheCurve, TheSurface, Tol, Tol);
+        ExtCS anExtrema = new(TheCurve, TheSurface, Tol, Tol);
 
         aDist2 = 1.0e100;
 
-        if (anExtrema.IsDone())
+        if (anExtrema.IsDone)
         {
             aMinDist2 = aDist2;
 
-            if (!anExtrema.IsParallel())
+            if (!anExtrema.IsParallel)
             {
-                aNbExt = anExtrema.NbExt();
+                aNbExt = anExtrema.ExtCount;
 
                 if (aNbExt > 0)
                 {
@@ -459,7 +464,7 @@ public class IntTools_EdgeFace
                         }
                     }
                     aDist2 = anExtrema.SquareDistance(iLower);
-                    anExtrema.Points(iLower, out Extrema_POnCurv aPOnC, out _);
+                    anExtrema.Points(iLower, out POnCurv aPOnC, out _);
                     aTx = aPOnC.Parameter();
                 }
                 else
@@ -563,8 +568,8 @@ public class IntTools_EdgeFace
         //
         // Prepare myCriteria
         double aFuzz = myFuzzyValue / 2.0;
-        double aTolF = BRep_Tool.Tolerance(myFace) + aFuzz;
-        double aTolE = BRep_Tool.Tolerance(myEdge) + aFuzz;
+        double aTolF = Tool.Tolerance(myFace) + aFuzz;
+        double aTolE = Tool.Tolerance(myEdge) + aFuzz;
         if (aCurveType == BSplineCurve || aCurveType == BezierCurve)
         {
             //--- 5112
@@ -591,7 +596,7 @@ public class IntTools_EdgeFace
         {
             if (IsCoincident())
             {
-                aCommonPrt.SetType(TopAbs_EDGE);
+                aCommonPrt.SetType(global::Kerf.Topology.ShapeType.Edge);
                 aCommonPrt.SetRange1(myRange.First(), myRange.Last());
                 mySeqOfCommonPrts.Append(new IntTools_CommonPrt(aCommonPrt));
                 myIsDone = true;
@@ -647,7 +652,7 @@ public class IntTools_EdgeFace
             // Line\Cylinder's Common Parts treatment
             CurveKind aCType;
             SurfaceKind aSType;
-            TopAbs_ShapeEnum aType;
+            ShapeType aType;
             bool bIsTouch;
             double aTx = 0.0;
 
@@ -660,17 +665,17 @@ public class IntTools_EdgeFace
                 {
                     IntTools_CommonPrt aCP = mySeqOfCommonPrts.Value(i);
                     aType = aCP.Type();
-                    if (aType == TopAbs_EDGE)
+                    if (aType == global::Kerf.Topology.ShapeType.Edge)
                     {
                         bIsTouch = CheckTouch(aCP, ref aTx);
                         if (bIsTouch)
                         {
-                            aCP.SetType(TopAbs_VERTEX);
+                            aCP.SetType(ShapeType.Vertex);
                             aCP.SetVertexParameter1(aTx);
                             // aCP.SetRange1 (aTx, aTx);
                         }
                     }
-                    else if (aType == TopAbs_VERTEX)
+                    else if (aType == ShapeType.Vertex)
                     {
                         bIsTouch = CheckTouchVertex(aCP, ref aTx);
                         if (bIsTouch)
@@ -695,17 +700,17 @@ public class IntTools_EdgeFace
                     {
                         IntTools_CommonPrt aCP = mySeqOfCommonPrts.Value(i);
                         aType = aCP.Type();
-                        if (aType == TopAbs_EDGE)
+                        if (aType == global::Kerf.Topology.ShapeType.Edge)
                         {
                             bIsTouch = CheckTouch(aCP, ref aTx);
                             if (bIsTouch)
                             {
-                                aCP.SetType(TopAbs_VERTEX);
+                                aCP.SetType(ShapeType.Vertex);
                                 aCP.SetVertexParameter1(aTx);
                                 // aCP.SetRange1 (aTx, aTx);
                             }
                         }
-                        else if (aType == TopAbs_VERTEX)
+                        else if (aType == ShapeType.Vertex)
                         {
                             bIsTouch = CheckTouchVertex(aCP, ref aTx);
                             if (bIsTouch)
@@ -745,26 +750,26 @@ public class IntTools_EdgeFace
 
         Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
-        Geom_Curve Curve = BRep_Tool.Curve(myC.Edge(), out _, out _)!;
-        Geom_Surface Surface = BRep_Tool.Surface(myS.Face())!;
+        Curve3D Curve = Tool.Curve(myC.Edge(), out _, out _)!;
+        Surface Surface = Tool.Surface(myS.Face())!;
 
         Surface.Bounds(out U1f, out U1l, out V1f, out V1l);
 
-        GeomAdaptor_Curve TheCurve = new(Curve, aTF, aTL);
-        GeomAdaptor_Surface TheSurface = new(Surface, U1f, U1l, V1f, V1l);
+        CurveAdaptor TheCurve = new(Curve, aTF, aTL);
+        SurfaceAdaptor TheSurface = new(Surface, U1f, U1l, V1f, V1l);
 
-        Extrema_ExtCS anExtrema = new(TheCurve, TheSurface, Tol, Tol);
+        ExtCS anExtrema = new(TheCurve, TheSurface, Tol, Tol);
 
-        if (!anExtrema.IsDone())
+        if (!anExtrema.IsDone)
         {
             return theflag;
         }
-        if (anExtrema.IsParallel())
+        if (anExtrema.IsParallel)
         {
             return theflag;
         }
 
-        aNbExt = anExtrema.NbExt();
+        aNbExt = anExtrema.ExtCount;
         if (aNbExt == 0)
         {
             return theflag;
@@ -795,7 +800,7 @@ public class IntTools_EdgeFace
             return theflag;
         }
 
-        anExtrema.Points(iLower, out Extrema_POnCurv aPOnC, out _);
+        anExtrema.Points(iLower, out POnCurv aPOnC, out _);
 
         aTx = aPOnC.Parameter();
         //
@@ -819,7 +824,7 @@ public class IntTools_EdgeFace
 
     // ---- file-static functions of IntTools_EdgeFace.cxx
 
-    private static bool IsCoplanar(BRepAdaptor_Curve aCurve, BRepAdaptor_Surface aSurface)
+    private static bool IsCoplanar(EdgeCurveAdaptor aCurve, FaceSurfaceAdaptor aSurface)
     {
         bool bFlag = false;
 
@@ -844,7 +849,7 @@ public class IntTools_EdgeFace
         return bFlag;
     }
 
-    private static bool IsRadius(BRepAdaptor_Curve aCurve, BRepAdaptor_Surface aSurface, double aCriteria)
+    private static bool IsRadius(EdgeCurveAdaptor aCurve, FaceSurfaceAdaptor aSurface, double aCriteria)
     {
         bool bFlag = false;
 
@@ -873,7 +878,7 @@ public class IntTools_EdgeFace
     /// OCCT's file-level <c>AdaptiveDiscret</c>: the number of discretisation points for an edge on a cylinder (at least
     /// <paramref name="iDiscret"/>). Not called in OCCT; ported for completeness.
     /// </summary>
-    internal static int AdaptiveDiscret(int iDiscret, BRepAdaptor_Curve aCurve, BRepAdaptor_Surface aSurface)
+    internal static int AdaptiveDiscret(int iDiscret, EdgeCurveAdaptor aCurve, FaceSurfaceAdaptor aSurface)
     {
         int iDiscretNew;
 

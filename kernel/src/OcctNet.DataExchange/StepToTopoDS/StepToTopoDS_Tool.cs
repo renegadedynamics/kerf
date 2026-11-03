@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
 
 namespace Occt;
@@ -19,9 +21,9 @@ namespace Occt;
 /// </remarks>
 public sealed class StepToTopoDS_Tool
 {
-    private NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape> myDataMap = new();
-    private NCollection_DataMap<StepGeom_CartesianPoint, TopoDS_Vertex> myVertexMap = new();
-    private NCollection_DataMap<StepToTopoDS_PointPair, TopoDS_Edge> myEdgeMap = new();
+    private NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape> myDataMap = new();
+    private NCollection_DataMap<StepGeom_CartesianPoint, Vertex> myVertexMap = new();
+    private NCollection_DataMap<StepToTopoDS_PointPair, Edge> myEdgeMap = new();
     private bool myComputePC;
     private Transfer_TransientProcess? myTransProc;
     private int myNbC0Surf;
@@ -35,7 +37,7 @@ public sealed class StepToTopoDS_Tool
     private int myNbC2Cur3;
     // OCCT's maps accept a null handle as a key (a file's missing reference); .NET's dictionaries don't
     private bool myHasNullItem;
-    private TopoDS_Shape myNullItemShape;
+    private Shape myNullItemShape;
 
     public StepToTopoDS_Tool()
     {
@@ -43,22 +45,22 @@ public sealed class StepToTopoDS_Tool
     }
 
     /// <summary>A tool with a copy of the map and the transient process.</summary>
-    public StepToTopoDS_Tool(NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape> Map,
+    public StepToTopoDS_Tool(NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape> Map,
                              Transfer_TransientProcess? TP)
     {
         Init(Map, TP);
     }
 
-    public void Init(NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape> Map, Transfer_TransientProcess? TP)
+    public void Init(NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape> Map, Transfer_TransientProcess? TP)
     {
         myComputePC = false;
 
-        myDataMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape>(Map);
-        myVertexMap = new NCollection_DataMap<StepGeom_CartesianPoint, TopoDS_Vertex>();
-        myEdgeMap = new NCollection_DataMap<StepToTopoDS_PointPair, TopoDS_Edge>();
+        myDataMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape>(Map);
+        myVertexMap = new NCollection_DataMap<StepGeom_CartesianPoint, Vertex>();
+        myEdgeMap = new NCollection_DataMap<StepToTopoDS_PointPair, Edge>();
         myTransProc = TP;
         myHasNullItem = false;
-        myNullItemShape = new TopoDS_Shape();
+        myNullItemShape = new Shape();
 
         myNbC0Surf = myNbC1Surf = myNbC2Surf = 0;
         myNbC0Cur2 = myNbC1Cur2 = myNbC2Cur2 = 0;
@@ -69,7 +71,7 @@ public sealed class StepToTopoDS_Tool
     public bool IsBound(StepShape_TopologicalRepresentationItem? TRI) => TRI is null ? myHasNullItem : myDataMap.IsBound(TRI);
 
     /// <summary>Binds the item with a shape in the map and, as its shape result, in the transient process.</summary>
-    public void Bind(StepShape_TopologicalRepresentationItem? TRI, in TopoDS_Shape S)
+    public void Bind(StepShape_TopologicalRepresentationItem? TRI, in Shape S)
     {
         if (TRI is null)
         {
@@ -86,7 +88,7 @@ public sealed class StepToTopoDS_Tool
 
     /// <summary>The shape bound to the item.</summary>
     /// <exception cref="NoSuchObjectException">The item is not bound.</exception>
-    public TopoDS_Shape Find(StepShape_TopologicalRepresentationItem? TRI)
+    public Shape Find(StepShape_TopologicalRepresentationItem? TRI)
     {
         if (TRI is null)
         {
@@ -100,21 +102,21 @@ public sealed class StepToTopoDS_Tool
 
     public bool IsEdgeBound(in StepToTopoDS_PointPair PP) => myEdgeMap.IsBound(PP);
 
-    public void BindEdge(in StepToTopoDS_PointPair PP, in TopoDS_Edge E) => myEdgeMap.Bind(PP, E);
+    public void BindEdge(in StepToTopoDS_PointPair PP, in Edge E) => myEdgeMap.Bind(PP, E);
 
-    public TopoDS_Edge FindEdge(in StepToTopoDS_PointPair PP) => myEdgeMap.Find(PP);
+    public Edge FindEdge(in StepToTopoDS_PointPair PP) => myEdgeMap.Find(PP);
 
     public void ClearVertexMap() => myVertexMap.Clear();
 
     public bool IsVertexBound(StepGeom_CartesianPoint? PG) => PG is not null && myVertexMap.IsBound(PG);
 
-    public void BindVertex(StepGeom_CartesianPoint? P, in TopoDS_Vertex V)
+    public void BindVertex(StepGeom_CartesianPoint? P, in Vertex V)
     {
         myVertexMap.Bind(P!, V);
         // OCCT_DEBUG: TransferBRep::SetShapeResult(myTransProc, P, V) left out
     }
 
-    public TopoDS_Vertex FindVertex(StepGeom_CartesianPoint? P) => myVertexMap.Find(P!);
+    public Vertex FindVertex(StepGeom_CartesianPoint? P) => myVertexMap.Find(P!);
 
     public void ComputePCurve(bool B) => myComputePC = B;
 
@@ -124,7 +126,7 @@ public sealed class StepToTopoDS_Tool
 
     // AddStatistics
 
-    public void AddContinuity(Geom_Surface GeomSurf)
+    public void AddContinuity(Surface GeomSurf)
     {
         switch (GeomSurf.Continuity())
         {
@@ -140,7 +142,7 @@ public sealed class StepToTopoDS_Tool
         }
     }
 
-    public void AddContinuity(Geom_Curve GeomCurve)
+    public void AddContinuity(Curve3D GeomCurve)
     {
         switch (GeomCurve.Continuity())
         {
@@ -156,7 +158,7 @@ public sealed class StepToTopoDS_Tool
         }
     }
 
-    public void AddContinuity(Geom2d_Curve GeomCur2d)
+    public void AddContinuity(Curve2D GeomCur2d)
     {
         switch (GeomCur2d.Continuity())
         {

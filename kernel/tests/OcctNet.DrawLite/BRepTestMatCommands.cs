@@ -1,11 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
 using static Kerf.Geometry.JoinKind;
 using static Occt.MAT_Side;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite;
 
@@ -49,14 +51,14 @@ internal static class BRepTestMatCommands
         {
             return 1;
         }
-        TopoDS_Shape C1 = theDI.GetShape(argv[1], TopAbs_FACE);
+        Shape C1 = theDI.GetShape(argv[1], ShapeType.Face);
 
-        if (C1.IsNull())
+        if (C1.IsNull)
         {
             return 1;
         }
 
-        TopoDS_Face aFace = TopoDS.Face(C1);
+        Face aFace = ShapeCasts.Face(C1);
 
         if (argc >= 3 && argv[2] == "-approx")
         {
@@ -113,10 +115,10 @@ internal static class BRepTestMatCommands
         }
         State aState = Get(theDI);
 
-        TopoDS_Shape S = theDI.GetShape(argv[1], TopAbs_EDGE);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(argv[1], ShapeType.Edge);
+        if (S.IsNull)
         {
-            S = theDI.GetShape(argv[1], TopAbs_VERTEX);
+            S = theDI.GetShape(argv[1], ShapeType.Vertex);
         }
 
         if (!aState.LinkComputed)

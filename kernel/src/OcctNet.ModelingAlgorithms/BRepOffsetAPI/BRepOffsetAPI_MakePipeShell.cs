@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepBuilderAPI_PipeError;
 using static Occt.BRepBuilderAPI_TransitionMode;
 using static Occt.BRepFill_TypeOfContact;
@@ -28,7 +29,7 @@ public class BRepOffsetAPI_MakePipeShell : BRepPrimAPI_MakeSweep
     private readonly BRepFill_PipeShell myPipe;
 
     /// <summary>A pipe shell along <paramref name="Spine"/>: add the profiles, choose the modes, then build.</summary>
-    public BRepOffsetAPI_MakePipeShell(in TopoDS_Wire Spine)
+    public BRepOffsetAPI_MakePipeShell(in Wire Spine)
     {
         myPipe = new BRepFill_PipeShell(Spine);
         SetTolerance();
@@ -61,7 +62,7 @@ public class BRepOffsetAPI_MakePipeShell : BRepPrimAPI_MakeSweep
     }
 
     /// <summary>The Darboux trihedron on <paramref name="SpineSupport"/>; false if the spine isn't on it.</summary>
-    public bool SetMode(in TopoDS_Shape SpineSupport)
+    public bool SetMode(in Shape SpineSupport)
     {
         return myPipe.Set(SpineSupport);
     }
@@ -70,7 +71,7 @@ public class BRepOffsetAPI_MakePipeShell : BRepPrimAPI_MakeSweep
     /// A trihedron guided by <paramref name="AuxiliarySpine"/>, by the reduced curvilinear abscissa
     /// (<paramref name="CurvilinearEquivalence"/>) or by the plane normal to the spine, with or without contact.
     /// </summary>
-    public void SetMode(in TopoDS_Wire AuxiliarySpine,
+    public void SetMode(in Wire AuxiliarySpine,
                         bool CurvilinearEquivalence,
                         BRepFill_TypeOfContact KeepContact = BRepFill_NoContact)
     {
@@ -81,19 +82,19 @@ public class BRepOffsetAPI_MakePipeShell : BRepPrimAPI_MakeSweep
     /// Adds the profile <paramref name="Profile"/> (a wire or a vertex), translated onto the spine with
     /// <paramref name="WithContact"/> and made orthogonal to it with <paramref name="WithCorrection"/>.
     /// </summary>
-    public void Add(in TopoDS_Shape Profile, bool WithContact = false, bool WithCorrection = false)
+    public void Add(in Shape Profile, bool WithContact = false, bool WithCorrection = false)
     {
         myPipe.Add(Profile, WithContact, WithCorrection);
     }
 
     /// <summary>Adds the profile <paramref name="Profile"/> placed at the spine's vertex <paramref name="Location"/>.</summary>
-    public void Add(in TopoDS_Shape Profile, in TopoDS_Vertex Location, bool WithContact = false, bool WithCorrection = false)
+    public void Add(in Shape Profile, in Vertex Location, bool WithContact = false, bool WithCorrection = false)
     {
         myPipe.Add(Profile, Location, WithContact, WithCorrection);
     }
 
     /// <summary>The only profile <paramref name="Profile"/>, scaled along the spine by the law <paramref name="L"/>.</summary>
-    public void SetLaw(in TopoDS_Shape Profile, Law_Function L, bool WithContact = false, bool WithCorrection = false)
+    public void SetLaw(in Shape Profile, Law_Function L, bool WithContact = false, bool WithCorrection = false)
     {
         myPipe.SetLaw(Profile, L, WithContact, WithCorrection);
     }
@@ -102,9 +103,9 @@ public class BRepOffsetAPI_MakePipeShell : BRepPrimAPI_MakeSweep
     /// The only profile <paramref name="Profile"/>, placed at <paramref name="Location"/> and scaled by the law
     /// <paramref name="L"/>.
     /// </summary>
-    public void SetLaw(in TopoDS_Shape Profile,
+    public void SetLaw(in Shape Profile,
                        Law_Function L,
-                       in TopoDS_Vertex Location,
+                       in Vertex Location,
                        bool WithContact = false,
                        bool WithCorrection = false)
     {
@@ -112,7 +113,7 @@ public class BRepOffsetAPI_MakePipeShell : BRepPrimAPI_MakeSweep
     }
 
     /// <summary>Removes the profile <paramref name="Profile"/>.</summary>
-    public void Delete(in TopoDS_Shape Profile)
+    public void Delete(in Shape Profile)
     {
         myPipe.DeleteProfile(Profile);
     }
@@ -187,7 +188,7 @@ public class BRepOffsetAPI_MakePipeShell : BRepPrimAPI_MakeSweep
     /// Fills <paramref name="R"/> with <paramref name="N"/> sections placed along the spine, without building the
     /// sweep (frozen).
     /// </summary>
-    public void Simulate(int N, NCollection_List<TopoDS_Shape> R)
+    public void Simulate(int N, NCollection_List<Shape> R)
     {
         myPipe.Simulate(N, R);
     }
@@ -225,12 +226,12 @@ public class BRepOffsetAPI_MakePipeShell : BRepPrimAPI_MakeSweep
         return Ok;
     }
 
-    internal override TopoDS_Shape InternalFirstShape() => myPipe.InternalFirstShape();
+    internal override Shape InternalFirstShape() => myPipe.InternalFirstShape();
 
-    internal override TopoDS_Shape InternalLastShape() => myPipe.InternalLastShape();
+    internal override Shape InternalLastShape() => myPipe.InternalLastShape();
 
     /// <summary>The shapes generated from <paramref name="S"/>: a profile or a sub-shape of it, or of the spine.</summary>
-    internal override NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape S)
+    internal override NCollection_List<Shape> InternalGenerated(in Shape S)
     {
         myPipe.InternalGenerated(S, myGenerated);
         return myGenerated;
@@ -252,11 +253,11 @@ public class BRepOffsetAPI_MakePipeShell : BRepPrimAPI_MakeSweep
     public bool IsBuildHistory() => myPipe.IsBuildHistory();
 
     /// <summary>Appends the profiles, as given, to <paramref name="theProfiles"/>.</summary>
-    public void Profiles(NCollection_List<TopoDS_Shape> theProfiles)
+    public void Profiles(NCollection_List<Shape> theProfiles)
     {
         myPipe.Profiles(theProfiles);
     }
 
     /// <summary>The spine (frozen).</summary>
-    public TopoDS_Wire Spine() => myPipe.Spine();
+    public Wire Spine() => myPipe.Spine();
 }

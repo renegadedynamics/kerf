@@ -4,11 +4,17 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -32,7 +38,7 @@ public sealed class IntTools_FClass2d
     private readonly NCollection_Sequence<Class2d> TabClass = new();
     private readonly NCollection_Sequence<int> TabOrien = new();
     private double Toluv;
-    private TopoDS_Face Face;
+    private Face Face;
     // The period of the surface, set in U1..U2, V1..V2 and never read (as decision 221's fields)
 #pragma warning disable CS0414
     private double U1;
@@ -52,11 +58,11 @@ public sealed class IntTools_FClass2d
     /// <summary>An empty classifier (every point is IN). OCCT leaves its numbers uninitialised; the port's are 0.</summary>
     public IntTools_FClass2d()
     {
-        Face = new TopoDS_Face();
+        Face = new Face();
     }
 
     /// <summary>The classifier of the face <paramref name="aFace"/> with the tolerance <paramref name="TolUV"/> in its parameter space.</summary>
-    public IntTools_FClass2d(in TopoDS_Face aFace, double TolUV)
+    public IntTools_FClass2d(in Face aFace, double TolUV)
     {
         Toluv = TolUV;
         Face = aFace;
@@ -71,7 +77,7 @@ public sealed class IntTools_FClass2d
     /// As in OCCT, a second <c>Init</c> appends the new face's polygons to the old ones and keeps the face explorer made
     /// for the old face (occt-issues.md); IntTools_Context never re-initializes a classifier.
     /// </remarks>
-    public void Init(in TopoDS_Face aFace, double TolUV)
+    public void Init(in Face aFace, double TolUV)
     {
         bool WireIsNotEmpty, Ancienpnt3dinitialise, degenerated;
         int firstpoint, NbEdges;
@@ -81,11 +87,11 @@ public sealed class IntTools_FClass2d
         double uFirst, uLast;
         double aPrCf, aPrCf2;
         //
-        TopoDS_Edge edge;
-        TopAbs_Orientation Or;
-        BRepTools_WireExplorer aWExp = new();
-        TopExp_Explorer aExpF = new(), aExp = new();
-        Geom2d_Curve? aC2D;
+        Edge edge;
+        Orientation Or;
+        WireExplorer aWExp = new();
+        Explorer aExpF = new(), aExp = new();
+        Curve2D? aC2D;
         Point3D Ancienpnt3d = new();
         NCollection_Sequence<Point2D> SeqPnt2d = new();
         NCollection_DataMap<int, int> anIndexMap = new();
@@ -98,8 +104,8 @@ public sealed class IntTools_FClass2d
         //
         Toluv = TolUV;
         Face = aFace;
-        Face.Orientation(TopAbs_FORWARD);
-        BRepAdaptor_Surface surf = new();
+        Face.Orientation(Forward);
+        FaceSurfaceAdaptor surf = new();
         surf.Initialize(aFace, false);
         //
         Tole = 0.0;
@@ -112,10 +118,10 @@ public sealed class IntTools_FClass2d
         // it is necessary to process all of them for correct
         // calculation of Umin, Umax, Vmin, Vmax - ifv, 23.08.06
         //
-        aExpF.Init(Face, TopAbs_WIRE);
+        aExpF.Init(Face, ShapeType.Wire);
         for (; aExpF.More(); aExpF.Next())
         {
-            TopoDS_Wire aW = TopoDS.Wire(aExpF.Current());
+            Wire aW = ShapeCasts.Wire(aExpF.Current());
             //
             firstpoint = 1;
             FlecheU = 0.0;
@@ -133,7 +139,7 @@ public sealed class IntTools_FClass2d
             //
             // NbEdges
             NbEdges = 0;
-            aExp.Init(aW, TopAbs_EDGE);
+            aExp.Init(aW, ShapeType.Edge);
             for (; aExp.More(); aExp.Next())
             {
                 NbEdges++;
@@ -145,12 +151,12 @@ public sealed class IntTools_FClass2d
                 NbEdges--;
                 edge = aWExp.Current();
                 Or = edge.Orientation();
-                if (Or != TopAbs_FORWARD && Or != TopAbs_REVERSED)
+                if (Or != Forward && Or != Reversed)
                 {
                     continue;
                 }
                 //
-                aC2D = BRep_Tool.CurveOnSurface(edge, Face, out pfbid, out plbid);
+                aC2D = Tool.CurveOnSurface(edge, Face, out pfbid, out plbid);
                 if (aC2D is null)
                 {
                     // OCCT returns here, leaving the classifier half built: the wires sampled so far, Umin..Vmax as far
@@ -158,34 +164,34 @@ public sealed class IntTools_FClass2d
                     return;
                 }
                 //
-                BRepAdaptor_Curve2d C = new(edge, Face);
-                BRepAdaptor_Curve C3d = new();
+                EdgeCurve2DAdaptor C = new(edge, Face);
+                EdgeCurveAdaptor C3d = new();
                 //------------------------------------------
                 degenerated = false;
-                if (BRep_Tool.Degenerated(edge) || BRep_Tool.IsClosed(edge, Face))
+                if (Tool.Degenerated(edge) || Tool.IsClosed(edge, Face))
                 {
                     degenerated = true;
                 }
                 //
-                TopExp.Vertices(edge, out TopoDS_Vertex Va, out TopoDS_Vertex Vb);
+                Exploration.Vertices(edge, out Vertex Va, out Vertex Vb);
                 //
                 TolVertex1 = 0.0;
                 TolVertex = 0.0;
-                if (Va.IsNull())
+                if (Va.IsNull)
                 {
                     degenerated = true;
                 }
                 else
                 {
-                    TolVertex1 = BRep_Tool.Tolerance(Va);
+                    TolVertex1 = Tool.Tolerance(Va);
                 }
-                if (Vb.IsNull())
+                if (Vb.IsNull)
                 {
                     degenerated = true;
                 }
                 else
                 {
-                    TolVertex = BRep_Tool.Tolerance(Vb);
+                    TolVertex = Tool.Tolerance(Vb);
                 }
                 //
                 if (TolVertex < TolVertex1)
@@ -217,7 +223,7 @@ public sealed class IntTools_FClass2d
                     }
                 } // if(!degenerated)
                 //-- ----------------------------------------
-                Tole = BRep_Tool.Tolerance(edge);
+                Tole = Tool.Tolerance(edge);
                 if (Tole > Tol)
                 {
                     Tol = Tole;
@@ -231,7 +237,7 @@ public sealed class IntTools_FClass2d
                 }
                 du = (plbid - pfbid) / (double)(nbs - 1);
                 //
-                if (Or == TopAbs_FORWARD)
+                if (Or == Forward)
                 {
                     u = pfbid;
                     uFirst = pfbid;
@@ -378,7 +384,7 @@ public sealed class IntTools_FClass2d
                 double aU = aPrms[1];
                 C.D1(aU, out _, out Vector2D aV);
 
-                if (Or == TopAbs_REVERSED)
+                if (Or == Reversed)
                 {
                     aV.Reverse();
                 }
@@ -389,7 +395,7 @@ public sealed class IntTools_FClass2d
                 aU = aPrms[aNbs1];
                 C.D1(aU, out _, out aV);
 
-                if (Or == TopAbs_REVERSED)
+                if (Or == Reversed)
                 {
                     aV.Reverse();
                 }
@@ -447,26 +453,26 @@ public sealed class IntTools_FClass2d
                         SeqPnt2d.Clear();
                         FlecheU = 0.0;
                         FlecheV = 0.0;
-                        for (aWExp.Init(TopoDS.Wire(aExpF.Current()), Face); aWExp.More(); aWExp.Next())
+                        for (aWExp.Init(ShapeCasts.Wire(aExpF.Current()), Face); aWExp.More(); aWExp.Next())
                         {
                             edge = aWExp.Current();
                             Or = edge.Orientation();
-                            if (Or == TopAbs_FORWARD || Or == TopAbs_REVERSED)
+                            if (Or == Forward || Or == Reversed)
                             {
-                                BRep_Tool.Range(edge, Face, out pfbid, out plbid);
+                                Tool.Range(edge, Face, out pfbid, out plbid);
                                 if (Math.Abs(plbid - pfbid) < 1.0e-9)
                                 {
                                     continue;
                                 }
-                                BRepAdaptor_Curve2d C = new(edge, Face);
-                                GCPnts_QuasiUniformDeflection aDiscr = new(C, aDiscrDefl);
-                                if (!aDiscr.IsDone())
+                                EdgeCurve2DAdaptor C = new(edge, Face);
+                                QuasiUniformDeflection aDiscr = new(C, aDiscrDefl);
+                                if (!aDiscr.IsDone)
                                 {
                                     break;
                                 }
-                                int nbp = aDiscr.NbPoints();
+                                int nbp = aDiscr.PointCount;
                                 int iStep = 1, i = 1, iEnd = nbp + 1;
-                                if (Or == TopAbs_REVERSED)
+                                if (Or == Reversed)
                                 {
                                     iStep = -1;
                                     i = nbp;
@@ -600,11 +606,11 @@ public sealed class IntTools_FClass2d
     }
 
     /// <summary>The state of a point far outside the face's UV box (IN if the face has no box).</summary>
-    public TopAbs_State PerformInfinitePoint()
+    public Containment PerformInfinitePoint()
     {
         if (Umax == -RealLast() || Vmax == -RealLast() || Umin == RealLast() || Vmin == RealLast())
         {
-            return (TopAbs_IN);
+            return (In);
         }
         Point2D P = new(Umin - (Umax - Umin), Vmin - (Vmax - Vmin));
         return (Perform(P, false));
@@ -614,12 +620,12 @@ public sealed class IntTools_FClass2d
     /// The state of the point <paramref name="_Puv"/> in the face. On a periodic surface the point is also tried at
     /// its periods within the face's UV box, if <paramref name="RecadreOnPeriodic"/>.
     /// </summary>
-    public TopAbs_State Perform(in Point2D _Puv, bool RecadreOnPeriodic = true)
+    public Containment Perform(in Point2D _Puv, bool RecadreOnPeriodic = true)
     {
         int nbtabclass = TabClass.Length();
         if (nbtabclass == 0)
         {
-            return TopAbs_IN;
+            return In;
         }
 
         //-- U1 is the First Param and U2 is in this case U1+Period
@@ -627,13 +633,13 @@ public sealed class IntTools_FClass2d
         double v = _Puv.Y();
         double uu = u;
         double vv = v;
-        TopAbs_State aStatus = TopAbs_UNKNOWN;
+        Containment aStatus = Unknown;
 
-        BRepAdaptor_Surface surf = new();
+        FaceSurfaceAdaptor surf = new();
         surf.Initialize(Face, false);
 
-        bool IsUPer = surf.IsUPeriodic();
-        bool IsVPer = surf.IsVPeriodic();
+        bool IsUPer = surf.IsUPeriodic;
+        bool IsVPer = surf.IsVPeriodic;
         double uperiod = IsUPer ? surf.UPeriod() : 0.0;
         double vperiod = IsVPer ? surf.VPeriod() : 0.0;
 
@@ -698,7 +704,7 @@ public sealed class IntTools_FClass2d
                 }
                 else
                 {
-                    aStatus = (dedans == 1) ? TopAbs_IN : TopAbs_OUT;
+                    aStatus = (dedans == 1) ? In : Out;
                 }
             } // if(TabOrien(1)!=-1) {
             // compute state of the point using face classifier
@@ -736,7 +742,7 @@ public sealed class IntTools_FClass2d
                 return aStatus;
             }
 
-            if (aStatus == TopAbs_IN || aStatus == TopAbs_ON)
+            if (aStatus == In || aStatus == On)
             {
                 return aStatus;
             }
@@ -783,12 +789,12 @@ public sealed class IntTools_FClass2d
     /// The state of the point <paramref name="_Puv"/> tested with an offset of <paramref name="Tol"/>: ON where some
     /// offset points are IN and some OUT (internal use).
     /// </summary>
-    public TopAbs_State TestOnRestriction(in Point2D _Puv, double Tol, bool RecadreOnPeriodic = true)
+    public Containment TestOnRestriction(in Point2D _Puv, double Tol, bool RecadreOnPeriodic = true)
     {
         int nbtabclass = TabClass.Length();
         if (nbtabclass == 0)
         {
-            return TopAbs_IN;
+            return In;
         }
 
         //-- U1 is the First Param and U2 in this case is U1+Period
@@ -796,13 +802,13 @@ public sealed class IntTools_FClass2d
         double v = _Puv.Y();
         double uu = u, vv = v;
 
-        BRepAdaptor_Surface surf = new();
+        FaceSurfaceAdaptor surf = new();
         surf.Initialize(Face, false);
-        bool IsUPer = surf.IsUPeriodic();
-        bool IsVPer = surf.IsVPeriodic();
+        bool IsUPer = surf.IsUPeriodic;
+        bool IsVPer = surf.IsVPeriodic;
         double uperiod = IsUPer ? surf.UPeriod() : 0.0;
         double vperiod = IsVPer ? surf.VPeriod() : 0.0;
-        TopAbs_State aStatus = TopAbs_UNKNOWN;
+        Containment aStatus = Unknown;
         bool urecadre = false, vrecadre = false;
         int dedans;
 
@@ -853,15 +859,15 @@ public sealed class IntTools_FClass2d
                 }
                 if (dedans == 0)
                 {
-                    aStatus = TopAbs_ON;
+                    aStatus = On;
                 }
                 if (dedans == 1)
                 {
-                    aStatus = TopAbs_IN;
+                    aStatus = In;
                 }
                 if (dedans == -1)
                 {
-                    aStatus = TopAbs_OUT;
+                    aStatus = Out;
                 }
             }
             else
@@ -878,7 +884,7 @@ public sealed class IntTools_FClass2d
             {
                 return aStatus;
             }
-            if (aStatus == TopAbs_IN || aStatus == TopAbs_ON)
+            if (aStatus == In || aStatus == On)
             {
                 return aStatus;
             }

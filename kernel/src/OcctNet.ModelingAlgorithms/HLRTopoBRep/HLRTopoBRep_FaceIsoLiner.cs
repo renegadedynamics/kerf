@@ -3,9 +3,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -27,24 +33,24 @@ public static class HLRTopoBRep_FaceIsoLiner
     private const double Infinite = 100.0;
 
     /// <summary>Builds nbIsos isolines in each direction on the face F (the face number FI is only for traces).</summary>
-    public static void Perform(int FI, in TopoDS_Face F, HLRTopoBRep_Data DS, int nbIsos)
+    public static void Perform(int FI, in Face F, HLRTopoBRep_Data DS, int nbIsos)
     {
         _ = FI; // avoid compiler warning
 
         double UMin, UMax, VMin, VMax, U1, U2;
         int ne = 0;
 
-        TopExp_Explorer ExpEdges = new();
-        TopoDS_Face TF = F;
-        TF.Orientation(TopAbs_FORWARD);
+        Explorer ExpEdges = new();
+        Face TF = F;
+        TF.Orientation(Forward);
         Point2D P = new();
         Point3D P1, P2;
-        TopoDS_Vertex V1U = new(), V2U = new(), V1V = new(), V2V = new();
+        Vertex V1U = new(), V2U = new(), V1V = new(), V2V = new();
 
         Geom2dHatch_Intersector Intersector = new(IntersectorConfusion, IntersectorTangency);
         Geom2dHatch_Hatcher Hatcher = new(Intersector, HatcherConfusion2d, HatcherConfusion3d, true);
 
-        BRepTools.UVBounds(TF, out UMin, out UMax, out VMin, out VMax);
+        BrepTools.UVBounds(TF, out UMin, out UMax, out VMin, out VMax);
         bool InfiniteUMin = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(UMin);
         bool InfiniteUMax = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(UMax);
         bool InfiniteVMin = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(VMin);
@@ -78,7 +84,7 @@ public static class HLRTopoBRep_FaceIsoLiner
             VMax = VMin + Infinite;
         }
 
-        for (ExpEdges.Init(TF, TopAbs_EDGE); // Edges of the face TF
+        for (ExpEdges.Init(TF, ShapeType.Edge); // Edges of the face TF
              ExpEdges.More();
              ExpEdges.Next())
         {
@@ -87,21 +93,21 @@ public static class HLRTopoBRep_FaceIsoLiner
 
         if (DS.FaceHasIntL(TF))
         { // OutLines built on face TF.
-            NCollection_List<TopoDS_Shape>.Iterator itE = new();
+            NCollection_List<Shape>.Iterator itE = new();
             for (itE.Initialize(DS.FaceIntL(TF)); itE.More(); itE.Next())
             {
                 ne++;
             }
         }
 
-        NCollection_Array1<TopoDS_Shape> SH = new(1, ne);
+        NCollection_Array1<Shape> SH = new(1, ne);
         NCollection_Array1<bool> IL = new(1, ne); // internal OutLine
 
-        for (ExpEdges.Init(TF, TopAbs_EDGE); ExpEdges.More(); ExpEdges.Next())
+        for (ExpEdges.Init(TF, ShapeType.Edge); ExpEdges.More(); ExpEdges.Next())
         {
             int IndE;
-            TopoDS_Edge newE = TopoDS.Edge(ExpEdges.Current());
-            Geom2d_Curve PC = BRep_Tool.CurveOnSurface(newE, TF, out U1, out U2)!;
+            Edge newE = ShapeCasts.Edge(ExpEdges.Current());
+            Curve2D PC = Tool.CurveOnSurface(newE, TF, out U1, out U2)!;
             if (Abs(PC.FirstParameter() - U1) <= global::Kerf.Engine.Foundation.Precision.PConfusion()
                 && Abs(PC.LastParameter() - U2) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
@@ -109,8 +115,8 @@ public static class HLRTopoBRep_FaceIsoLiner
             }
             else
             {
-                Geom2d_TrimmedCurve TPC = new(PC, U1, U2);
-                Geom2dAdaptor_Curve aGAC = new(TPC);
+                TrimmedCurve2D TPC = new(PC, U1, U2);
+                CurveAdaptor2D aGAC = new(TPC);
                 IndE = Hatcher.AddElement(aGAC, newE.Orientation());
             }
             SH[IndE] = newE;
@@ -126,22 +132,22 @@ public static class HLRTopoBRep_FaceIsoLiner
 
         if (DS.FaceHasIntL(TF))
         { // get the internal OutLines built on face F.
-            NCollection_List<TopoDS_Shape>.Iterator itE = new();
+            NCollection_List<Shape>.Iterator itE = new();
             for (itE.Initialize(DS.FaceIntL(TF)); itE.More(); itE.Next())
             {
                 int IndE;
-                TopoDS_Edge newE = TopoDS.Edge(itE.Value());
-                Geom2d_Curve PC = BRep_Tool.CurveOnSurface(newE, TF, out U1, out U2)!;
+                Edge newE = ShapeCasts.Edge(itE.Value());
+                Curve2D PC = Tool.CurveOnSurface(newE, TF, out U1, out U2)!;
                 if (Abs(PC.FirstParameter() - U1) <= global::Kerf.Engine.Foundation.Precision.PConfusion()
                     && Abs(PC.LastParameter() - U2) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
-                    IndE = Hatcher.AddElement(PC, TopAbs_INTERNAL);
+                    IndE = Hatcher.AddElement(PC, Internal);
                 }
                 else
                 {
-                    Geom2d_TrimmedCurve TPC = new(PC, U1, U2);
-                    Geom2dAdaptor_Curve aGAC = new(TPC);
-                    IndE = Hatcher.AddElement(aGAC, TopAbs_INTERNAL);
+                    TrimmedCurve2D TPC = new(PC, U1, U2);
+                    CurveAdaptor2D aGAC = new(TPC);
+                    IndE = Hatcher.AddElement(aGAC, Internal);
                 }
                 SH[IndE] = newE;
                 IL[IndE] = true;
@@ -152,8 +158,8 @@ public static class HLRTopoBRep_FaceIsoLiner
         // Creation des hachures.
         //-----------------------------------------------------------------------
 
-        BRepAdaptor_Surface Surface = new(TF);
-        double Tolerance = BRep_Tool.Tolerance(TF);
+        FaceSurfaceAdaptor Surface = new(TF);
+        double Tolerance = Tool.Tolerance(TF);
 
         int IIso;
         double DeltaU = Abs(UMax - UMin);
@@ -174,9 +180,9 @@ public static class HLRTopoBRep_FaceIsoLiner
             for (IIso = 1; IIso <= nbIsos; IIso++)
             {
                 Point2D Ori = new(UPrm, 0.0);
-                Geom2d_Line IsoLine = new(Ori, Dir);
+                LineCurve2D IsoLine = new(Ori, Dir);
 
-                Geom2dAdaptor_Curve aGAC = new(IsoLine);
+                CurveAdaptor2D aGAC = new(IsoLine);
                 int IndH = Hatcher.AddHatching(aGAC);
                 Hatcher.Trim(IndH);
                 if (Hatcher.TrimDone(IndH) && !Hatcher.TrimFailed(IndH))
@@ -210,7 +216,7 @@ public static class HLRTopoBRep_FaceIsoLiner
                             for (int IPntE = 1; IPntE <= PntH.NbPoints(); IPntE++)
                             {
                                 HatchGen_PointOnElement PntE = PntH.Point(IPntE);
-                                V1U = MakeVertex(TopoDS.Edge(SH[PntE.Index()]), P1, PntE.Parameter(), Tolerance, DS);
+                                V1U = MakeVertex(ShapeCasts.Edge(SH[PntE.Index()]), P1, PntE.Parameter(), Tolerance, DS);
                                 if (IL[PntE.Index()])
                                 {
                                     DS.AddOutV(V1U);
@@ -224,14 +230,14 @@ public static class HLRTopoBRep_FaceIsoLiner
                             for (int IPntE = 1; IPntE <= PntH.NbPoints(); IPntE++)
                             {
                                 HatchGen_PointOnElement PntE = PntH.Point(IPntE);
-                                V2U = MakeVertex(TopoDS.Edge(SH[PntE.Index()]), P2, PntE.Parameter(), Tolerance, DS);
+                                V2U = MakeVertex(ShapeCasts.Edge(SH[PntE.Index()]), P2, PntE.Parameter(), Tolerance, DS);
                                 if (IL[PntE.Index()])
                                 {
                                     DS.AddOutV(V2U);
                                 }
                             }
                         }
-                        if (!V1U.IsNull() && !V2U.IsNull())
+                        if (!V1U.IsNull && !V2U.IsNull)
                         {
                             MakeIsoLine(F, IsoLine, ref V1U, ref V2U, U11, U21, Tolerance, DS);
                         }
@@ -256,9 +262,9 @@ public static class HLRTopoBRep_FaceIsoLiner
             for (IIso = 1; IIso <= nbIsos; IIso++)
             {
                 Point2D Ori = new(0.0, VPrm);
-                Geom2d_Line IsoLine = new(Ori, Dir);
+                LineCurve2D IsoLine = new(Ori, Dir);
 
-                Geom2dAdaptor_Curve aGAC = new(IsoLine);
+                CurveAdaptor2D aGAC = new(IsoLine);
                 int IndH = Hatcher.AddHatching(aGAC);
                 Hatcher.Trim(IndH);
                 if (Hatcher.TrimDone(IndH) && !Hatcher.TrimFailed(IndH))
@@ -292,7 +298,7 @@ public static class HLRTopoBRep_FaceIsoLiner
                             for (int IPntE = 1; IPntE <= PntH.NbPoints(); IPntE++)
                             {
                                 HatchGen_PointOnElement PntE = PntH.Point(IPntE);
-                                V1V = MakeVertex(TopoDS.Edge(SH[PntE.Index()]), P1, PntE.Parameter(), Tolerance, DS);
+                                V1V = MakeVertex(ShapeCasts.Edge(SH[PntE.Index()]), P1, PntE.Parameter(), Tolerance, DS);
                                 if (IL[PntE.Index()])
                                 {
                                     DS.AddOutV(V1V);
@@ -306,14 +312,14 @@ public static class HLRTopoBRep_FaceIsoLiner
                             for (int IPntE = 1; IPntE <= PntH.NbPoints(); IPntE++)
                             {
                                 HatchGen_PointOnElement PntE = PntH.Point(IPntE);
-                                V2V = MakeVertex(TopoDS.Edge(SH[PntE.Index()]), P2, PntE.Parameter(), Tolerance, DS);
+                                V2V = MakeVertex(ShapeCasts.Edge(SH[PntE.Index()]), P2, PntE.Parameter(), Tolerance, DS);
                                 if (IL[PntE.Index()])
                                 {
                                     DS.AddOutV(V2V);
                                 }
                             }
                         }
-                        if (!V1V.IsNull() && !V2V.IsNull())
+                        if (!V1V.IsNull && !V2V.IsNull)
                         {
                             MakeIsoLine(F, IsoLine, ref V1V, ref V2V, U12, U22, Tolerance, DS);
                         }
@@ -330,26 +336,26 @@ public static class HLRTopoBRep_FaceIsoLiner
     /// The vertex at the point P of parameter Par on the edge E: one of E's end vertices or of the vertices already
     /// inserted on it if P is on it, else a new internal vertex inserted in E's list.
     /// </summary>
-    public static TopoDS_Vertex MakeVertex(in TopoDS_Edge E, in Point3D P, double Par, double Tol,
+    public static Vertex MakeVertex(in Edge E, in Point3D P, double Par, double Tol,
                                            HLRTopoBRep_Data DS)
     {
-        TopoDS_Vertex V = new(), VF, VL;
-        BRep_Builder B = new();
-        TopExp.Vertices(E, out VF, out VL);
-        if (P.IsEqual(BRep_Tool.Pnt(VF), BRep_Tool.Tolerance(VF)))
+        Vertex V = new(), VF, VL;
+        BrepBuilder B = new();
+        Exploration.Vertices(E, out VF, out VL);
+        if (P.IsEqual(Tool.Pnt(VF), Tool.Tolerance(VF)))
         {
             return VF;
         }
-        if (P.IsEqual(BRep_Tool.Pnt(VL), BRep_Tool.Tolerance(VL)))
+        if (P.IsEqual(Tool.Pnt(VL), Tool.Tolerance(VL)))
         {
             return VL;
         }
 
         for (DS.InitVertex(E); DS.MoreVertex(); DS.NextVertex())
         {
-            TopoDS_Vertex curV = DS.Vertex();
+            Vertex curV = DS.Vertex();
             double curP = DS.Parameter();
-            if (P.IsEqual(BRep_Tool.Pnt(curV), BRep_Tool.Tolerance(curV)))
+            if (P.IsEqual(Tool.Pnt(curV), Tool.Tolerance(curV)))
             {
                 V = curV;
                 break;
@@ -357,7 +363,7 @@ public static class HLRTopoBRep_FaceIsoLiner
             else if (Par < curP)
             {
                 B.MakeVertex(ref V, P, Tol);
-                V.Orientation(TopAbs_INTERNAL);
+                V.Orientation(Internal);
                 DS.InsertBefore(V, Par);
                 break;
             }
@@ -366,7 +372,7 @@ public static class HLRTopoBRep_FaceIsoLiner
         if (!DS.MoreVertex())
         {
             B.MakeVertex(ref V, P, Tol);
-            V.Orientation(TopAbs_INTERNAL);
+            V.Orientation(Internal);
             DS.Append(V, Par);
         }
 
@@ -374,14 +380,14 @@ public static class HLRTopoBRep_FaceIsoLiner
     }
 
     /// <summary>Builds the isoline edge between V1 and V2 (parameters U1 and U2 on Iso) and records it as F's isoline.</summary>
-    public static void MakeIsoLine(in TopoDS_Face F, Geom2d_Line Iso, ref TopoDS_Vertex V1, ref TopoDS_Vertex V2,
+    public static void MakeIsoLine(in Face F, LineCurve2D Iso, ref Vertex V1, ref Vertex V2,
                                    double U1, double U2, double Tol, HLRTopoBRep_Data DS)
     {
-        BRep_Builder B = new();
-        TopoDS_Edge E = new();
-        E.Orientation(TopAbs_INTERNAL);
-        V1.Orientation(TopAbs_FORWARD);
-        V2.Orientation(TopAbs_REVERSED);
+        BrepBuilder B = new();
+        Edge E = new();
+        E.Orientation(Internal);
+        V1.Orientation(Forward);
+        V2.Orientation(Reversed);
         B.MakeEdge(ref E);
         B.UpdateEdge(E, Iso, F, Tol);
         B.Add(E, V1);

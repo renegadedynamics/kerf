@@ -5,7 +5,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -59,7 +61,7 @@ public partial class BOPAlgo_WireSplitter : BOPAlgo_Algo
             myContext = new IntTools_Context();
         }
         //
-        BOPTools_AlgoTools.MakeConnexityBlocks(myWES!.StartElements(), TopAbs_VERTEX, TopAbs_EDGE, myLCB);
+        BOPTools_AlgoTools.MakeConnexityBlocks(myWES!.StartElements(), ShapeType.Vertex, ShapeType.Edge, myLCB);
         if (UserBreak(aPS))
         {
             return;
@@ -69,31 +71,31 @@ public partial class BOPAlgo_WireSplitter : BOPAlgo_Algo
     }
 
     /// <summary>Makes a wire of the edges (the .lxx's inline function); the wire is closed if its edges are.</summary>
-    public static void MakeWire(NCollection_List<TopoDS_Shape> aLE, out TopoDS_Wire aWire)
+    public static void MakeWire(NCollection_List<Shape> aLE, out Wire aWire)
     {
-        BRep_Builder aBB = new();
-        aWire = new TopoDS_Wire();
+        BrepBuilder aBB = new();
+        aWire = new Wire();
         aBB.MakeWire(ref aWire);
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new(aLE);
+        NCollection_List<Shape>.Iterator aIt = new(aLE);
         for (; aIt.More(); aIt.Next())
         {
             aBB.Add(aWire, aIt.Value());
         }
-        aWire.Closed(BRep_Tool.IsClosed(aWire));
+        aWire.Closed(Tool.IsClosed(aWire));
     }
 
     protected void MakeWires(ProgressRange theRange)
     {
         bool bIsRegular;
         int aNbVCB, k;
-        TopoDS_Wire aW;
+        Wire aW;
         NCollection_List<BOPTools_ConnexityBlock>.Iterator aItCB = new(myLCB);
-        NCollection_List<TopoDS_Shape>.Iterator aIt;
+        NCollection_List<Shape>.Iterator aIt;
         NCollection_DynamicArray<BOPAlgo_WS_ConnexityBlock> aVCB = new();
         //
         using var aPSOuter = new ProgressScope(theRange, null, 1);
         //
-        TopoDS_Face aF = myWES!.Face();
+        Face aF = myWES!.Face();
         //
         aItCB.Initialize(myLCB);
         for (; aItCB.More(); aItCB.Next())
@@ -107,7 +109,7 @@ public partial class BOPAlgo_WireSplitter : BOPAlgo_Algo
             bIsRegular = aCB.IsRegular();
             if (bIsRegular)
             {
-                NCollection_List<TopoDS_Shape> aLE = aCB.ChangeShapes();
+                NCollection_List<Shape> aLE = aCB.ChangeShapes();
                 MakeWire(aLE, out aW);
                 myWES.AddShape(aW);
             }
@@ -131,11 +133,11 @@ public partial class BOPAlgo_WireSplitter : BOPAlgo_Algo
         for (k = 0; k < aNbVCB; ++k)
         {
             BOPAlgo_WS_ConnexityBlock aCB = aVCB.Value(k);
-            NCollection_List<TopoDS_Shape> aLW = aCB.ConnexityBlock().Loops();
-            aIt = new NCollection_List<TopoDS_Shape>.Iterator(aLW);
+            NCollection_List<Shape> aLW = aCB.ConnexityBlock().Loops();
+            aIt = new NCollection_List<Shape>.Iterator(aLW);
             for (; aIt.More(); aIt.Next())
             {
-                TopoDS_Shape aWx = aIt.Value();
+                Shape aWx = aIt.Value();
                 myWES.AddShape(aWx);
             }
         }
@@ -146,7 +148,7 @@ public partial class BOPAlgo_WireSplitter : BOPAlgo_Algo
 /// <remarks>A working object held in the splitter's lists and changed in place (OCCT's code keeps pointers to them).</remarks>
 internal sealed class BOPAlgo_EdgeInfo
 {
-    private TopoDS_Edge myEdge;
+    private Edge myEdge;
     private bool myPassed;
     private bool myInFlag;
     private bool myIsInside;
@@ -154,16 +156,16 @@ internal sealed class BOPAlgo_EdgeInfo
 
     public BOPAlgo_EdgeInfo()
     {
-        myEdge = new TopoDS_Edge();
+        myEdge = new Edge();
         myPassed = false;
         myInFlag = false;
         myIsInside = false;
         myAngle = -1.0;
     }
 
-    public void SetEdge(in TopoDS_Edge theE) => myEdge = theE;
+    public void SetEdge(in Edge theE) => myEdge = theE;
 
-    public TopoDS_Edge Edge() => myEdge;
+    public Edge Edge() => myEdge;
 
     public void SetPassed(bool theFlag) => myPassed = theFlag;
 
@@ -185,14 +187,14 @@ internal sealed class BOPAlgo_EdgeInfo
 /// <summary>The solver splitting one irregular connexity block (OCCT's file-local <c>BOPAlgo_WS_ConnexityBlock</c>).</summary>
 internal sealed class BOPAlgo_WS_ConnexityBlock : BOPTools_Parallel.IContextSolver<IntTools_Context>
 {
-    private TopoDS_Face myFace = new();
+    private Face myFace = new();
     private BOPTools_ConnexityBlock myCB = new();
     private IntTools_Context? myContext;
     private ProgressRange myRange;
 
-    public void SetFace(in TopoDS_Face theF) => myFace = theF;
+    public void SetFace(in Face theF) => myFace = theF;
 
-    public TopoDS_Face Face() => myFace;
+    public Face Face() => myFace;
 
     // OCCT copies the block by value
     public void SetConnexityBlock(BOPTools_ConnexityBlock theCB) => myCB = new BOPTools_ConnexityBlock(theCB);

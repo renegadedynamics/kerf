@@ -5,11 +5,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -33,11 +38,11 @@ namespace Occt;
 public sealed class LocOpe_SplitShape
 {
     private bool myDone;
-    private TopoDS_Shape myShape = new();
+    private Shape myShape = new();
     // OCCT iterates this map keyed by the shapes' addresses (CanSplit, which only tests); the port in insertion order
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myMap = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_Map<TopoDS_Shape> myDblE = new(TopTools_ShapeMapHasher.Instance);
-    private NCollection_List<TopoDS_Shape> myLeft = new();
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> myMap = new(ShapeHasher.Instance);
+    private readonly NCollection_Map<Shape> myDblE = new(ShapeHasher.Instance);
+    private NCollection_List<Shape> myLeft = new();
     private LocOpe_WorkingShapes myWork = new();
     private bool myOwnsWork = true;
 
@@ -48,13 +53,13 @@ public sealed class LocOpe_SplitShape
     }
 
     /// <summary>Creates the process with the shape <paramref name="S"/>.</summary>
-    public LocOpe_SplitShape(in TopoDS_Shape S)
+    public LocOpe_SplitShape(in Shape S)
     {
         Init(S);
     }
 
     /// <summary>For LocOpe_Spliter: the process on its working shape, sharing its working shapes (it ends them).</summary>
-    internal LocOpe_SplitShape(in TopoDS_Shape S, LocOpe_WorkingShapes theWork)
+    internal LocOpe_SplitShape(in Shape S, LocOpe_WorkingShapes theWork)
     {
         myWork = theWork;
         myOwnsWork = false;
@@ -62,7 +67,7 @@ public sealed class LocOpe_SplitShape
     }
 
     /// <summary>Initializes the process on the shape <paramref name="S"/>.</summary>
-    public void Init(in TopoDS_Shape S)
+    public void Init(in Shape S)
     {
         if (myOwnsWork)
         {
@@ -71,7 +76,7 @@ public sealed class LocOpe_SplitShape
         initWorking(myWork.Working(S));
     }
 
-    private void initWorking(in TopoDS_Shape S)
+    private void initWorking(in Shape S)
     {
         myDone = false;
         myShape = S;
@@ -81,9 +86,9 @@ public sealed class LocOpe_SplitShape
     }
 
     /// <summary>Tests if it is possible to split the edge <paramref name="E"/>.</summary>
-    public bool CanSplit(in TopoDS_Edge E) => InternalCanSplit(TopoDS.Edge(myWork.Copied(E)));
+    public bool CanSplit(in Edge E) => InternalCanSplit(ShapeCasts.Edge(myWork.Copied(E)));
 
-    private bool InternalCanSplit(in TopoDS_Edge E)
+    private bool InternalCanSplit(in Edge E)
     {
         if (myDone)
         {
@@ -100,12 +105,12 @@ public sealed class LocOpe_SplitShape
         }
 
         // On verifie que l`edge n`appartient pas a un wire deja reconstruit
-        TopExp_Explorer exp = new();
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> itm in myMap)
+        Explorer exp = new();
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> itm in myMap)
         {
-            if (itm.Key.ShapeType() == TopAbs_WIRE && !itm.Value.IsEmpty())
+            if (itm.Key.ShapeType() == ShapeType.Wire && !itm.Value.IsEmpty())
             {
-                for (exp.Init(itm.Key, TopAbs_EDGE); exp.More(); exp.Next())
+                for (exp.Init(itm.Key, ShapeType.Edge); exp.More(); exp.Next())
                 {
                     if (exp.Current().IsSame(E))
                     {
@@ -118,36 +123,36 @@ public sealed class LocOpe_SplitShape
     }
 
     /// <summary>Adds the vertex <paramref name="V"/> on the edge <paramref name="E"/>, at parameter <paramref name="P"/>.</summary>
-    public void Add(in TopoDS_Vertex V, double P, in TopoDS_Edge E)
+    public void Add(in Vertex V, double P, in Edge E)
     {
         if (myDone)
         {
             return;
         }
-        InternalAdd(TopoDS.Vertex(myWork.Working(V)), P, TopoDS.Edge(myWork.Working(E)));
+        InternalAdd(ShapeCasts.Vertex(myWork.Working(V)), P, ShapeCasts.Edge(myWork.Working(E)));
     }
 
     // Add(V, P, E) on working shapes
-    internal void InternalAdd(in TopoDS_Vertex V, double P, in TopoDS_Edge E)
+    internal void InternalAdd(in Vertex V, double P, in Edge E)
     {
         if (!InternalCanSplit(E))
         {
             return;
         }
 
-        BRep_Builder B = new();
-        NCollection_List<TopoDS_Shape> le = myMap[E];
+        BrepBuilder B = new();
+        NCollection_List<Shape> le = myMap[E];
         if (le.IsEmpty())
         {
             le.Append(E);
         }
-        NCollection_List<TopoDS_Shape>.Iterator itl = new(le);
+        NCollection_List<Shape>.Iterator itl = new(le);
         double f, l;
-        NCollection_List<TopoDS_Shape> aNewList = new();
+        NCollection_List<Shape> aNewList = new();
         for (; itl.More(); itl.Next())
         {
-            TopoDS_Edge edg1 = TopoDS.Edge(itl.Value());
-            BRep_Tool.Range(edg1, out f, out l);
+            Edge edg1 = ShapeCasts.Edge(itl.Value());
+            Tool.Range(edg1, out f, out l);
             if (P > f + global::Kerf.Engine.Foundation.Precision.PConfusion() && P < l - global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 break;
@@ -158,54 +163,54 @@ public sealed class LocOpe_SplitShape
         {
             return;
         }
-        TopoDS_Edge edg = TopoDS.Edge(itl.Value());
+        Edge edg = ShapeCasts.Edge(itl.Value());
         le.Remove(itl);
-        if (V.Orientation() == TopAbs_FORWARD || V.Orientation() == TopAbs_REVERSED)
+        if (V.Orientation() == Forward || V.Orientation() == Reversed)
         {
-            edg.Orientation(TopAbs_FORWARD);
-            TopExp.Vertices(edg, out TopoDS_Vertex aCurV1, out TopoDS_Vertex aCurV2);
-            double aPar1 = BRep_Tool.Parameter(aCurV1, edg);
+            edg.Orientation(Forward);
+            Exploration.Vertices(edg, out Vertex aCurV1, out Vertex aCurV2);
+            double aPar1 = Tool.Parameter(aCurV1, edg);
 
-            double aPar2 = BRep_Tool.Parameter(aCurV2, edg);
+            double aPar2 = Tool.Parameter(aCurV2, edg);
 
-            TopoDS_Shape aLocalShape = edg.EmptyCopied();
-            TopoDS_Edge E1 = TopoDS.Edge(aLocalShape);
+            Shape aLocalShape = edg.EmptyCopied();
+            Edge E1 = ShapeCasts.Edge(aLocalShape);
             aLocalShape = edg.EmptyCopied();
-            TopoDS_Edge E2 = TopoDS.Edge(aLocalShape);
-            E1.Orientation(TopAbs_FORWARD);
-            E2.Orientation(TopAbs_FORWARD);
-            TopoDS_Vertex newVtx = V;
-            double aTolSplitV = BRep_Tool.Tolerance(V);
+            Edge E2 = ShapeCasts.Edge(aLocalShape);
+            E1.Orientation(Forward);
+            E2.Orientation(Forward);
+            Vertex newVtx = V;
+            double aTolSplitV = Tool.Tolerance(V);
 
-            aCurV1.Orientation(TopAbs_FORWARD);
+            aCurV1.Orientation(Forward);
 
             B.Add(E1, aCurV1);
             // for degenerated edges tolerance of vertices should be set to maximal value
             // from tolerance of the vertex of the edge and tolerance of splitting vertex
-            double aTolV1 = (BRep_Tool.Degenerated(edg) ? Max(BRep_Tool.Tolerance(aCurV1), aTolSplitV)
-                                                         : BRep_Tool.Tolerance(aCurV1));
+            double aTolV1 = (Tool.Degenerated(edg) ? Max(Tool.Tolerance(aCurV1), aTolSplitV)
+                                                         : Tool.Tolerance(aCurV1));
 
             B.UpdateVertex(aCurV1, aPar1, E1, aTolV1);
-            newVtx.Orientation(TopAbs_REVERSED);
+            newVtx.Orientation(Reversed);
             B.Add(E1, newVtx);
-            B.UpdateVertex(newVtx, P, E1, BRep_Tool.Tolerance(V));
-            newVtx.Orientation(TopAbs_FORWARD);
+            B.UpdateVertex(newVtx, P, E1, Tool.Tolerance(V));
+            newVtx.Orientation(Forward);
             B.Add(E2, newVtx);
-            B.UpdateVertex(newVtx, P, E2, BRep_Tool.Tolerance(V));
+            B.UpdateVertex(newVtx, P, E2, Tool.Tolerance(V));
 
-            aCurV2.Orientation(TopAbs_REVERSED);
+            aCurV2.Orientation(Reversed);
             B.Add(E2, aCurV2);
 
             // for degenerated edges tolerance of vertices should be set to maximal value
             // from tolerance of the vertex of the edge and tolerance of splitting vertex
-            double aTolV2 = (BRep_Tool.Degenerated(edg) ? aTolV1 : BRep_Tool.Tolerance(aCurV2));
+            double aTolV2 = (Tool.Degenerated(edg) ? aTolV1 : Tool.Tolerance(aCurV2));
             B.UpdateVertex(aCurV2, aPar2, E2, aTolV2);
 
             aNewList.Append(E1);
             aNewList.Append(E2);
             for (; itl.More(); itl.Next())
             {
-                TopoDS_Edge edg1 = TopoDS.Edge(itl.Value());
+                Edge edg1 = ShapeCasts.Edge(itl.Value());
                 aNewList.Append(edg1);
             }
             myMap.UnBind(E);
@@ -213,47 +218,47 @@ public sealed class LocOpe_SplitShape
         }
         else
         {
-            TopoDS_Shape aLocalShape = edg.EmptyCopied();
-            TopoDS_Edge E1 = TopoDS.Edge(aLocalShape);
+            Shape aLocalShape = edg.EmptyCopied();
+            Edge E1 = ShapeCasts.Edge(aLocalShape);
 
-            TopExp_Explorer exp = new();
-            for (exp.Init(edg, TopAbs_VERTEX); exp.More(); exp.Next())
+            Explorer exp = new();
+            for (exp.Init(edg, ShapeType.Vertex); exp.More(); exp.Next())
             {
-                TopoDS_Vertex vtx = TopoDS.Vertex(exp.Current());
-                f = BRep_Tool.Parameter(vtx, edg);
+                Vertex vtx = ShapeCasts.Vertex(exp.Current());
+                f = Tool.Parameter(vtx, edg);
                 B.Add(E1, vtx);
-                B.UpdateVertex(vtx, f, E1, BRep_Tool.Tolerance(vtx));
+                B.UpdateVertex(vtx, f, E1, Tool.Tolerance(vtx));
             }
             B.Add(E1, V);
-            B.UpdateVertex(V, P, E1, BRep_Tool.Tolerance(V));
+            B.UpdateVertex(V, P, E1, Tool.Tolerance(V));
             le.Append(E1);
         }
     }
 
     /// <summary>Adds the list of wires <paramref name="Lwires"/> on the face <paramref name="F"/>.</summary>
-    public bool Add(NCollection_List<TopoDS_Shape> Lwires, in TopoDS_Face F)
+    public bool Add(NCollection_List<Shape> Lwires, in Face F)
     {
         if (myDone)
         {
             return false;
         }
-        NCollection_List<TopoDS_Shape> aWires = new();
-        for (NCollection_List<TopoDS_Shape>.Iterator anIt = new(Lwires); anIt.More(); anIt.Next())
+        NCollection_List<Shape> aWires = new();
+        for (NCollection_List<Shape>.Iterator anIt = new(Lwires); anIt.More(); anIt.Next())
         {
             aWires.Append(myWork.Working(anIt.Value()));
         }
-        return InternalAdd(aWires, TopoDS.Face(myWork.Working(F)));
+        return InternalAdd(aWires, ShapeCasts.Face(myWork.Working(F)));
     }
 
     // Add(Lwires, F) on working shapes
-    internal bool InternalAdd(NCollection_List<TopoDS_Shape> Lwires, in TopoDS_Face F)
+    internal bool InternalAdd(NCollection_List<Shape> Lwires, in Face F)
     {
         if (myDone)
         {
             return false;
         }
 
-        NCollection_List<TopoDS_Shape> lf = myMap[F];
+        NCollection_List<Shape> lf = myMap[F];
         if (lf.IsEmpty())
         {
             Rebuild(F);
@@ -261,18 +266,18 @@ public sealed class LocOpe_SplitShape
 
         // On cherche la face descendante de F qui continent le wire
         lf = myMap[F];
-        NCollection_List<TopoDS_Shape>.Iterator itl = new(lf);
+        NCollection_List<Shape>.Iterator itl = new(lf);
 
-        BRepTools.Update(F);
+        BrepTools.Update(F);
 
-        NCollection_List<TopoDS_Shape> aLInside = new();
+        NCollection_List<Shape> aLInside = new();
         for (; itl.More(); itl.Next())
         {
-            TopoDS_Face fac = TopoDS.Face(itl.Value());
-            NCollection_List<TopoDS_Shape>.Iterator itwires = new(Lwires);
+            Face fac = ShapeCasts.Face(itl.Value());
+            NCollection_List<Shape>.Iterator itwires = new(Lwires);
             for (; itwires.More(); itwires.Next())
             {
-                TopoDS_Wire aWire = TopoDS.Wire(itwires.Value());
+                Wire aWire = ShapeCasts.Wire(itwires.Value());
                 if (IsInside(fac, aWire))
                 {
                     aLInside.Append(aWire);
@@ -288,41 +293,41 @@ public sealed class LocOpe_SplitShape
             return false;
         }
 
-        TopoDS_Face FaceRef = TopoDS.Face(itl.Value());
-        FaceRef.Orientation(TopAbs_FORWARD);
+        Face FaceRef = ShapeCasts.Face(itl.Value());
+        FaceRef.Orientation(Forward);
         lf.Remove(itl);
 
-        NCollection_List<TopoDS_Shape> NewWires = new();
+        NCollection_List<Shape> NewWires = new();
 
-        NCollection_DataMap<TopoDS_Shape, int> SectionsTimes = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, int> SectionsTimes = new(ShapeHasher.Instance);
         for (itl.Initialize(aLInside); itl.More(); itl.Next())
         {
             SectionsTimes.Bind(itl.Value(), 2);
         }
 
-        NCollection_List<TopoDS_Shape> BreakVertices = new();
-        NCollection_List<TopoDS_Shape> BreakOnWires = new();
+        NCollection_List<Shape> BreakVertices = new();
+        NCollection_List<Shape> BreakOnWires = new();
 
         // OCCT iterates this map keyed by the vertices' addresses to count a wire's entries, which isn't order dependent
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> VerWireMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, Shape> VerWireMap = new(ShapeHasher.Instance);
         int i;
-        TopExp_Explorer ExploF = new(), ExploW = new();
+        Explorer ExploF = new(), ExploW = new();
         for (itl.Initialize(aLInside); itl.More(); itl.Next())
         {
-            TopoDS_Wire aSection = TopoDS.Wire(itl.Value());
-            TopoDS_Vertex[] Ver = new TopoDS_Vertex[2];
-            TopExp.Vertices(aSection, out Ver[0], out Ver[1]);
+            Wire aSection = ShapeCasts.Wire(itl.Value());
+            Vertex[] Ver = new Vertex[2];
+            Exploration.Vertices(aSection, out Ver[0], out Ver[1]);
             for (i = 0; i < 2; i++)
             {
                 if (VerWireMap.IsBound(Ver[i]))
                 {
                     continue;
                 }
-                for (ExploF.Init(FaceRef, TopAbs_WIRE); ExploF.More(); ExploF.Next())
+                for (ExploF.Init(FaceRef, ShapeType.Wire); ExploF.More(); ExploF.Next())
                 {
-                    TopoDS_Shape aWire = ExploF.Current();
-                    TopoDS_Shape aVer = new();
-                    for (ExploW.Init(aWire, TopAbs_VERTEX); ExploW.More(); ExploW.Next())
+                    Shape aWire = ExploF.Current();
+                    Shape aVer = new();
+                    for (ExploW.Init(aWire, ShapeType.Vertex); ExploW.More(); ExploW.Next())
                     {
                         aVer = ExploW.Current();
                         if (aVer.IsSame(Ver[i]))
@@ -339,12 +344,12 @@ public sealed class LocOpe_SplitShape
             }
         }
 
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> VerSecMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> VerSecMap = new(ShapeHasher.Instance);
         for (itl.Initialize(aLInside); itl.More(); itl.Next())
         {
-            TopoDS_Wire aWire = TopoDS.Wire(itl.Value());
-            TopExp.Vertices(aWire, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-            NCollection_List<TopoDS_Shape> LW1 = new(), LW2 = new();
+            Wire aWire = ShapeCasts.Wire(itl.Value());
+            Exploration.Vertices(aWire, out Vertex V1, out Vertex V2);
+            NCollection_List<Shape> LW1 = new(), LW2 = new();
             if (!VerSecMap.IsBound(V1))
             {
                 VerSecMap.Bind(V1, LW1);
@@ -357,19 +362,19 @@ public sealed class LocOpe_SplitShape
             VerSecMap[V2].Append(aWire);
         }
 
-        TopoDS_Wire outerW = BRepTools.OuterWire(FaceRef);
-        TopoDS_Wire CurWire = outerW;
+        Wire outerW = BrepTools.OuterWire(FaceRef);
+        Wire CurWire = outerW;
         BRepLib_MakeWire MW;
         MW = new BRepLib_MakeWire();
-        BRepTools_WireExplorer wexp = new(CurWire, FaceRef);
+        WireExplorer wexp = new(CurWire, FaceRef);
         for (;;)
         {
-            TopoDS_Vertex theStartVertex = wexp.CurrentVertex(), CurVertex = new();
-            TopoDS_Edge CurEdge = wexp.Current();
-            TopoDS_Edge LastEdge = CurEdge;
+            Vertex theStartVertex = wexp.CurrentVertex(), CurVertex = new();
+            Edge CurEdge = wexp.Current();
+            Edge LastEdge = CurEdge;
             MW.Add(CurEdge);
-            TopoDS_Wire aSectionWire = new();
-            TopoDS_Vertex aBreakVertex;
+            Wire aSectionWire = new();
+            Vertex aBreakVertex;
             wexp.Next();
             if (!wexp.More())
             {
@@ -384,8 +389,8 @@ public sealed class LocOpe_SplitShape
                 CurVertex = wexp.CurrentVertex();
                 if (VerSecMap.IsBound(CurVertex))
                 {
-                    TopoDS_Shape aLocalWire = ChooseDirection(LastEdge, CurVertex, FaceRef, VerSecMap[CurVertex]);
-                    aSectionWire = TopoDS.Wire(aLocalWire);
+                    Shape aLocalWire = ChooseDirection(LastEdge, CurVertex, FaceRef, VerSecMap[CurVertex]);
+                    aSectionWire = ShapeCasts.Wire(aLocalWire);
                     break;
                 }
                 CurEdge = wexp.Current();
@@ -400,9 +405,9 @@ public sealed class LocOpe_SplitShape
             if (MW.InternalWire().Closed())
             {
                 NewWires.Append(MW.InternalWire());
-                theStartVertex = TopoDS.Vertex(BreakVertices.First());
+                theStartVertex = ShapeCasts.Vertex(BreakVertices.First());
                 BreakVertices.RemoveFirst();
-                CurWire = TopoDS.Wire(BreakOnWires.First());
+                CurWire = ShapeCasts.Wire(BreakOnWires.First());
                 BreakOnWires.RemoveFirst();
                 wexp.Init(CurWire, FaceRef);
                 while (!wexp.CurrentVertex().IsSame(theStartVertex))
@@ -430,9 +435,9 @@ public sealed class LocOpe_SplitShape
                     {
                         break;
                     }
-                    theStartVertex = TopoDS.Vertex(BreakVertices.First());
+                    theStartVertex = ShapeCasts.Vertex(BreakVertices.First());
                     BreakVertices.RemoveFirst();
-                    CurWire = TopoDS.Wire(BreakOnWires.First());
+                    CurWire = ShapeCasts.Wire(BreakOnWires.First());
                     BreakOnWires.RemoveFirst();
                     wexp.Init(CurWire, FaceRef);
                     while (!wexp.CurrentVertex().IsSame(theStartVertex))
@@ -444,9 +449,9 @@ public sealed class LocOpe_SplitShape
                 }
                 else
                 {
-                    TopExp.Vertices(aSectionWire, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-                    TopoDS_Vertex aStartVertex = (V1.IsSame(aBreakVertex)) ? V2 : V1;
-                    CurWire = TopoDS.Wire(VerWireMap[aStartVertex]);
+                    Exploration.Vertices(aSectionWire, out Vertex V1, out Vertex V2);
+                    Vertex aStartVertex = (V1.IsSame(aBreakVertex)) ? V2 : V1;
+                    CurWire = ShapeCasts.Wire(VerWireMap[aStartVertex]);
 
                     wexp.Init(CurWire, FaceRef);
                     while (!wexp.CurrentVertex().IsSame(aStartVertex))
@@ -454,18 +459,18 @@ public sealed class LocOpe_SplitShape
                         wexp.Next();
                     }
 
-                    NCollection_List<TopoDS_Shape> Lsections = VerSecMap[aStartVertex];
+                    NCollection_List<Shape> Lsections = VerSecMap[aStartVertex];
                     if (Lsections.Extent() == 1)
                     {
                         break;
                     }
 
                     // else: choose the way
-                    TopoDS_Wire NextSectionWire =
-                        TopoDS.Wire((aSectionWire.IsSame(Lsections.First())) ? Lsections.Last() : Lsections.First());
+                    Wire NextSectionWire =
+                        ShapeCasts.Wire((aSectionWire.IsSame(Lsections.First())) ? Lsections.Last() : Lsections.First());
 
                     int Times = 0;
-                    foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> itVW in VerWireMap)
+                    foreach (KeyValuePair<Shape, Shape> itVW in VerWireMap)
                     {
                         if (itVW.Value.IsSame(CurWire))
                         {
@@ -479,11 +484,11 @@ public sealed class LocOpe_SplitShape
                     else
                     {
                         // we have to choose the direction
-                        TopoDS_Edge aStartEdge = wexp.Current();
-                        NCollection_List<TopoDS_Shape> Ldirs = new();
+                        Edge aStartEdge = wexp.Current();
+                        NCollection_List<Shape> Ldirs = new();
                         Ldirs.Append(aStartEdge);
                         Ldirs.Append(NextSectionWire);
-                        TopoDS_Shape theDirection = ChooseDirection(aSectionWire, aStartVertex, FaceRef, Ldirs);
+                        Shape theDirection = ChooseDirection(aSectionWire, aStartVertex, FaceRef, Ldirs);
                         if (theDirection.IsSame(aStartEdge))
                         {
                             break;
@@ -499,29 +504,29 @@ public sealed class LocOpe_SplitShape
             }
         } // end of global for (;;)
 
-        NCollection_List<TopoDS_Shape> NewFaces = new();
-        BRep_Builder BB = new();
+        NCollection_List<Shape> NewFaces = new();
+        BrepBuilder BB = new();
         for (itl.Initialize(NewWires); itl.More(); itl.Next())
         {
-            TopoDS_Shape aLocalFace = FaceRef.EmptyCopied();
-            TopoDS_Face aNewFace = TopoDS.Face(aLocalFace);
-            aNewFace.Orientation(TopAbs_FORWARD);
+            Shape aLocalFace = FaceRef.EmptyCopied();
+            Face aNewFace = ShapeCasts.Face(aLocalFace);
+            aNewFace.Orientation(Forward);
             BB.Add(aNewFace, itl.Value());
             NewFaces.Append(aNewFace);
         }
 
         // Inserting holes
-        NCollection_List<TopoDS_Shape> Holes = new();
-        for (ExploF.Init(FaceRef, TopAbs_WIRE); ExploF.More(); ExploF.Next())
+        NCollection_List<Shape> Holes = new();
+        for (ExploF.Init(FaceRef, ShapeType.Wire); ExploF.More(); ExploF.Next())
         {
-            TopoDS_Shape aWire = ExploF.Current();
-            ExploW.Init(aWire, TopAbs_EDGE);
-            TopoDS_Shape anEdge = ExploW.Current();
+            Shape aWire = ExploF.Current();
+            ExploW.Init(aWire, ShapeType.Edge);
+            Shape anEdge = ExploW.Current();
             bool found = false;
             for (itl.Initialize(NewWires); itl.More(); itl.Next())
             {
-                TopoDS_Shape aNewWire = itl.Value();
-                for (ExploW.Init(aNewWire, TopAbs_EDGE); ExploW.More(); ExploW.Next())
+                Shape aNewWire = itl.Value();
+                for (ExploW.Init(aNewWire, ShapeType.Edge); ExploW.More(); ExploW.Next())
                 {
                     if (anEdge.IsSame(ExploW.Current()))
                     {
@@ -539,13 +544,13 @@ public sealed class LocOpe_SplitShape
                 Holes.Append(aWire);
             }
         }
-        NCollection_List<TopoDS_Shape>.Iterator itlNewF = new();
+        NCollection_List<Shape>.Iterator itlNewF = new();
         for (itl.Initialize(Holes); itl.More(); itl.Next())
         {
-            TopoDS_Wire aHole = TopoDS.Wire(itl.Value());
+            Wire aHole = ShapeCasts.Wire(itl.Value());
             for (itlNewF.Initialize(NewFaces); itlNewF.More(); itlNewF.Next())
             {
-                TopoDS_Face aNewFace = TopoDS.Face(itlNewF.Value());
+                Face aNewFace = ShapeCasts.Face(itlNewF.Value());
                 if (IsInside(aNewFace, aHole))
                 {
                     BB.Add(aNewFace, aHole);
@@ -558,9 +563,9 @@ public sealed class LocOpe_SplitShape
         lf.Append(NewFaces);
 
         // Update of descendants of wires
-        for (ExploF.Init(F, TopAbs_WIRE); ExploF.More(); ExploF.Next())
+        for (ExploF.Init(F, ShapeType.Wire); ExploF.More(); ExploF.Next())
         {
-            NCollection_List<TopoDS_Shape> ls = myMap[ExploF.Current()];
+            NCollection_List<Shape> ls = myMap[ExploF.Current()];
             ls.Clear();
         }
         ///////////////////
@@ -568,10 +573,10 @@ public sealed class LocOpe_SplitShape
         // JAG 10.11.95 Codage des regularites
         for (itl.Initialize(aLInside); itl.More(); itl.Next())
         {
-            for (ExploW.Init(itl.Value(), TopAbs_EDGE); ExploW.More(); ExploW.Next())
+            for (ExploW.Init(itl.Value(), ShapeType.Edge); ExploW.More(); ExploW.Next())
             {
-                TopoDS_Edge edg = TopoDS.Edge(ExploW.Current());
-                if (!BRep_Tool.HasContinuity(edg, F, F))
+                Edge edg = ShapeCasts.Edge(ExploW.Current());
+                if (!Tool.HasContinuity(edg, F, F))
                 {
                     BB.Continuity(edg, F, F, CN);
                 }
@@ -581,25 +586,25 @@ public sealed class LocOpe_SplitShape
     }
 
     /// <summary>Adds the wire <paramref name="W"/> on the face <paramref name="F"/>.</summary>
-    public bool Add(in TopoDS_Wire W, in TopoDS_Face F)
+    public bool Add(in Wire W, in Face F)
     {
         if (myDone)
         {
             return false;
         }
-        return InternalAdd(TopoDS.Wire(myWork.Working(W)), TopoDS.Face(myWork.Working(F)));
+        return InternalAdd(ShapeCasts.Wire(myWork.Working(W)), ShapeCasts.Face(myWork.Working(F)));
     }
 
     // Add(W, F) on working shapes
-    internal bool InternalAdd(in TopoDS_Wire W, in TopoDS_Face F)
+    internal bool InternalAdd(in Wire W, in Face F)
     {
         if (myDone)
         {
             return false;
         }
 
-        TopExp_Explorer exp = new();
-        NCollection_List<TopoDS_Shape> lf = myMap[F];
+        Explorer exp = new();
+        NCollection_List<Shape> lf = myMap[F];
         if (lf.IsEmpty())
         {
             Rebuild(F);
@@ -621,17 +626,17 @@ public sealed class LocOpe_SplitShape
                 }
             }
         }
-        catch (Exception e) when (e is FailureException or NullReferenceException && e is not (ImmutableObjectException or TopoDS_LockedShape))
+        catch (Exception e) when (e is FailureException or NullReferenceException && e is not (ImmutableObjectException or LockedShapeException))
         {
             // OCCT_DEBUG trace left out: "SpliShape internal problem detected, some faces may be lost"
             return false;
         }
         // JAG 10.11.95 Codage des regularites
-        BRep_Builder B = new();
-        for (exp.Init(W, TopAbs_EDGE); exp.More(); exp.Next())
+        BrepBuilder B = new();
+        for (exp.Init(W, ShapeType.Edge); exp.More(); exp.Next())
         {
-            TopoDS_Edge edg = TopoDS.Edge(exp.Current());
-            if (!BRep_Tool.HasContinuity(edg, F, F))
+            Edge edg = ShapeCasts.Edge(exp.Current());
+            if (!Tool.HasContinuity(edg, F, F))
             {
                 B.Continuity(edg, F, F, CN);
             }
@@ -639,16 +644,16 @@ public sealed class LocOpe_SplitShape
         return true;
     }
 
-    private bool AddClosedWire(in TopoDS_Wire W, in TopoDS_Face F)
+    private bool AddClosedWire(in Wire W, in Face F)
     {
-        TopExp_Explorer exp = new();
+        Explorer exp = new();
 
         // On cherche la face descendante de F qui continent le wire
-        NCollection_List<TopoDS_Shape> lf = myMap[F];
-        NCollection_List<TopoDS_Shape>.Iterator itl = new(lf);
+        NCollection_List<Shape> lf = myMap[F];
+        NCollection_List<Shape>.Iterator itl = new(lf);
         for (; itl.More(); itl.Next())
         {
-            TopoDS_Face fac = TopoDS.Face(itl.Value());
+            Face fac = ShapeCasts.Face(itl.Value());
 
             if (IsInside(fac, W))
             {
@@ -660,38 +665,38 @@ public sealed class LocOpe_SplitShape
             return false;
         }
 
-        BRep_Builder B = new();
+        BrepBuilder B = new();
 
-        TopAbs_Orientation orWire = W.Orientation();
-        TopoDS_Shape aLocalFace = F.EmptyCopied();
-        TopoDS_Face newFace = TopoDS.Face(aLocalFace);
-        newFace.Orientation(TopAbs_FORWARD);
+        Orientation orWire = W.Orientation();
+        Shape aLocalFace = F.EmptyCopied();
+        Face newFace = ShapeCasts.Face(aLocalFace);
+        newFace.Orientation(Forward);
         B.Add(newFace, W);
         BRepTopAdaptor_FClass2d classif = new(newFace, global::Kerf.Engine.Foundation.Precision.PConfusion());
-        if (classif.PerformInfinitePoint() == TopAbs_IN)
+        if (classif.PerformInfinitePoint() == In)
         {
             // le wire donne defini un trou
             aLocalFace = F.EmptyCopied();
-            newFace = TopoDS.Face(aLocalFace);
-            newFace.Orientation(TopAbs_FORWARD);
-            orWire = TopAbs.Reverse(orWire);
+            newFace = ShapeCasts.Face(aLocalFace);
+            newFace.Orientation(Forward);
+            orWire = global::Kerf.Engine.Topology.TopAbs.Reverse(orWire);
             B.Add(newFace, W.Oriented(orWire));
         }
 
-        TopoDS_Face FaceRef = TopoDS.Face(itl.Value());
-        FaceRef.Orientation(TopAbs_FORWARD);
+        Face FaceRef = ShapeCasts.Face(itl.Value());
+        FaceRef.Orientation(Forward);
         lf.Remove(itl);
 
         aLocalFace = FaceRef.EmptyCopied();
-        TopoDS_Face newRef = TopoDS.Face(aLocalFace);
-        newRef.Orientation(TopAbs_FORWARD);
+        Face newRef = ShapeCasts.Face(aLocalFace);
+        newRef.Orientation(Forward);
 
         // On suppose que les edges du wire ont des courbes 2d.
         // Comme on ne change pas de surface de base, pas besoin d`UpdateEdge.
 
-        for (exp.Init(FaceRef.Oriented(TopAbs_FORWARD), TopAbs_WIRE); exp.More(); exp.Next())
+        for (exp.Init(FaceRef.Oriented(Forward), ShapeType.Wire); exp.More(); exp.Next())
         {
-            TopoDS_Wire wir = TopoDS.Wire(exp.Current());
+            Wire wir = ShapeCasts.Wire(exp.Current());
             if (IsInside(F, wir, W))
             {
                 B.Add(newFace, wir);
@@ -701,24 +706,24 @@ public sealed class LocOpe_SplitShape
                 B.Add(newRef, wir);
             }
         }
-        B.Add(newRef, W.Oriented(TopAbs.Reverse(orWire)));
+        B.Add(newRef, W.Oriented(global::Kerf.Engine.Topology.TopAbs.Reverse(orWire)));
         lf.Append(newRef);
         lf.Append(newFace);
         return true;
     }
 
-    private static bool checkOverlapping(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in TopoDS_Face theFace)
+    private static bool checkOverlapping(in Edge theEdge1, in Edge theEdge2, in Face theFace)
     {
-        BRepAdaptor_Surface anAdS = new(theFace, false);
+        FaceSurfaceAdaptor anAdS = new(theFace, false);
 
-        double MaxTol = (BRep_Tool.Tolerance(theEdge1) + BRep_Tool.Tolerance(theEdge2));
+        double MaxTol = (Tool.Tolerance(theEdge1) + Tool.Tolerance(theEdge2));
 
         double aMaxTol2d = Max(anAdS.UResolution(MaxTol), anAdS.VResolution(MaxTol));
         double aTolAng = Math.PI / 180.0;
         Geom2dAPI_ProjectPointOnCurve proj = new();
 
-        Geom2d_Curve aCrv1 = BRep_Tool.CurveOnSurface(theEdge1, theFace, out double aF1, out double aL1)!;
-        Geom2d_Curve aCrv2 = BRep_Tool.CurveOnSurface(theEdge2, theFace, out double aF2, out double aL2)!;
+        Curve2D aCrv1 = Tool.CurveOnSurface(theEdge1, theFace, out double aF1, out double aL1)!;
+        Curve2D aCrv2 = Tool.CurveOnSurface(theEdge2, theFace, out double aF2, out double aL2)!;
         int j = 1, nbP = 4;
         double aStep = (aL2 - aF2) / nbP;
         for (; j < nbP; j++)
@@ -743,42 +748,42 @@ public sealed class LocOpe_SplitShape
         return true;
     }
 
-    private bool AddOpenWire(in TopoDS_Wire W, in TopoDS_Face F)
+    private bool AddOpenWire(in Wire W, in Face F)
     {
         // On cherche la face descendante de F qui continent le wire
-        NCollection_List<TopoDS_Shape> lf = myMap[F];
-        NCollection_List<TopoDS_Shape>.Iterator itl = new(lf);
-        TopoDS_Vertex Vfirst, Vlast;
+        NCollection_List<Shape> lf = myMap[F];
+        NCollection_List<Shape>.Iterator itl = new(lf);
+        Vertex Vfirst, Vlast;
 
-        BRepTools.Update(F);
+        BrepTools.Update(F);
 
         double tolf, toll, tol1;
 
-        TopoDS_Shape aLocalShape = W.Oriented(TopAbs_FORWARD);
-        TopExp.Vertices(TopoDS.Wire(aLocalShape), out Vfirst, out Vlast);
+        Shape aLocalShape = W.Oriented(Forward);
+        Exploration.Vertices(ShapeCasts.Wire(aLocalShape), out Vfirst, out Vlast);
 
-        tolf = BRep_Tool.Tolerance(Vfirst);
-        toll = BRep_Tool.Tolerance(Vlast);
+        tolf = Tool.Tolerance(Vfirst);
+        toll = Tool.Tolerance(Vlast);
         tol1 = Max(tolf, toll);
 
-        TopExp_Explorer exp = new(), exp2 = new();
+        Explorer exp = new(), exp2 = new();
 
-        TopoDS_Wire wfirst = new(), wlast = new();
+        Wire wfirst = new(), wlast = new();
         for (; itl.More(); itl.Next())
         {
-            TopoDS_Face fac = TopoDS.Face(itl.Value());
+            Face fac = ShapeCasts.Face(itl.Value());
             if (!IsInside(fac, W))
             {
                 continue;
             }
 
-            fac.Orientation(TopAbs_FORWARD);
+            fac.Orientation(Forward);
             bool ffound = false;
             bool lfound = false;
-            for (exp.Init(fac, TopAbs_WIRE); exp.More(); exp.Next())
+            for (exp.Init(fac, ShapeType.Wire); exp.More(); exp.Next())
             {
-                TopoDS_Wire wir = TopoDS.Wire(exp.Current());
-                for (exp2.Init(wir, TopAbs_VERTEX); exp2.More(); exp2.Next())
+                Wire wir = ShapeCasts.Wire(exp.Current());
+                for (exp2.Init(wir, ShapeType.Vertex); exp2.More(); exp2.Next())
                 {
                     if (!ffound && exp2.Current().IsSame(Vfirst))
                     {
@@ -810,14 +815,14 @@ public sealed class LocOpe_SplitShape
             return false;
         }
 
-        TopoDS_Face FaceRef = TopoDS.Face(itl.Value());
-        FaceRef.Orientation(TopAbs_FORWARD);
+        Face FaceRef = ShapeCasts.Face(itl.Value());
+        FaceRef.Orientation(Forward);
         lf.Remove(itl);
-        BRep_Builder B = new();
+        BrepBuilder B = new();
 
-        BRepAdaptor_Surface BAS = new(FaceRef, false);
+        FaceSurfaceAdaptor BAS = new(FaceRef, false);
 
-        bool IsPeriodic = BAS.IsUPeriodic() || BAS.IsVPeriodic();
+        bool IsPeriodic = BAS.IsUPeriodic || BAS.IsVPeriodic;
 
         tol1 = Max(BAS.UResolution(tol1), BAS.VResolution(tol1));
 
@@ -825,51 +830,51 @@ public sealed class LocOpe_SplitShape
         {
             // on cree 2 faces en remplacement de itl.Value()
             // Essai JAG
-            NCollection_List<TopoDS_Shape> WiresFirst = new();
-            for (exp.Init(wfirst, TopAbs_EDGE); exp.More(); exp.Next())
+            NCollection_List<Shape> WiresFirst = new();
+            for (exp.Init(wfirst, ShapeType.Edge); exp.More(); exp.Next())
             {
-                if (BRep_Tool.IsClosed(TopoDS.Edge(exp.Current()), FaceRef))
+                if (Tool.IsClosed(ShapeCasts.Edge(exp.Current()), FaceRef))
                 {
                     myDblE.Add(exp.Current());
                 }
                 WiresFirst.Append(exp.Current());
             }
 
-            TopAbs_Orientation orient;
-            TopoDS_Wire newW1 = new(), newW2 = new();
+            Orientation orient;
+            Wire newW1 = new(), newW2 = new();
             B.MakeWire(ref newW1);
-            newW1.Orientation(TopAbs_FORWARD);
+            newW1.Orientation(Forward);
             B.MakeWire(ref newW2);
-            newW2.Orientation(TopAbs_FORWARD);
+            newW2.Orientation(Forward);
 
             int nbE = 0;
-            for (exp.Init(W.Oriented(TopAbs_FORWARD), TopAbs_EDGE); exp.More(); exp.Next())
+            for (exp.Init(W.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
             {
                 nbE++;
-                TopoDS_Edge edg = TopoDS.Edge(exp.Current());
+                Edge edg = ShapeCasts.Edge(exp.Current());
                 orient = edg.Orientation();
                 WiresFirst.Append(edg);
-                WiresFirst.Append(edg.Oriented(TopAbs.Reverse(orient)));
+                WiresFirst.Append(edg.Oriented(global::Kerf.Engine.Topology.TopAbs.Reverse(orient)));
                 myDblE.Add(edg);
             }
 
-            NCollection_IndexedMap<TopoDS_Shape> PossE = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_IndexedMap<Shape> PossE = new(ShapeHasher.Instance);
             // OCCT's default hasher: the shapes' TShapes, locations and orientations
-            NCollection_Map<TopoDS_Shape> MapE = new(EqualityComparer<TopoDS_Shape>.Default);
-            TopoDS_Vertex vdeb, vfin;
+            NCollection_Map<Shape> MapE = new(EqualityComparer<Shape>.Default);
+            Vertex vdeb, vfin;
             int nbPoss;
 
             // On recherche l`edge contenant Vlast
-            TopoDS_Edge LastEdge = new();
+            Edge LastEdge = new();
             Point2D pfirst, plast;
             Vector2D dlast;
-            Geom2d_Curve C2d;
+            Curve2D C2d;
             double f, l;
 
-            for (exp.Init(W.Oriented(TopAbs_FORWARD), TopAbs_EDGE); exp.More(); exp.Next())
+            for (exp.Init(W.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
             {
-                TopoDS_Edge edg = TopoDS.Edge(exp.Current());
-                for (exp2.Init(edg, TopAbs_VERTEX); exp2.More(); exp2.Next())
+                Edge edg = ShapeCasts.Edge(exp.Current());
+                for (exp2.Init(edg, ShapeType.Vertex); exp2.More(); exp2.Next())
                 {
                     if (exp2.Current().IsSame(Vfirst))
                     {
@@ -884,10 +889,10 @@ public sealed class LocOpe_SplitShape
                 }
             }
 
-            TopoDS_Shape aLocalFace = FaceRef.Oriented(wfirst.Orientation());
-            C2d = BRep_Tool.CurveOnSurface(LastEdge, TopoDS.Face(aLocalFace), out f, out l)!;
+            Shape aLocalFace = FaceRef.Oriented(wfirst.Orientation());
+            C2d = Tool.CurveOnSurface(LastEdge, ShapeCasts.Face(aLocalFace), out f, out l)!;
 
-            if (LastEdge.Orientation() == TopAbs_FORWARD)
+            if (LastEdge.Orientation() == Forward)
             {
                 pfirst = C2d.Value(f);
             }
@@ -896,14 +901,14 @@ public sealed class LocOpe_SplitShape
                 pfirst = C2d.Value(l);
             }
 
-            for (exp.Init(W.Oriented(TopAbs_FORWARD), TopAbs_EDGE); exp.More(); exp.Next())
+            for (exp.Init(W.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
             {
-                TopoDS_Edge edg = TopoDS.Edge(exp.Current());
+                Edge edg = ShapeCasts.Edge(exp.Current());
                 if (nbE > 1 && edg.IsSame(LastEdge))
                 {
                     continue;
                 }
-                for (exp2.Init(edg, TopAbs_VERTEX); exp2.More(); exp2.Next())
+                for (exp2.Init(edg, ShapeType.Vertex); exp2.More(); exp2.Next())
                 {
                     if (exp2.Current().IsSame(Vlast))
                     {
@@ -918,7 +923,7 @@ public sealed class LocOpe_SplitShape
                 }
             }
             aLocalFace = FaceRef.Oriented(wfirst.Orientation());
-            GetDirection(LastEdge, TopoDS.Face(aLocalFace), out plast, out dlast, false);
+            GetDirection(LastEdge, ShapeCasts.Face(aLocalFace), out plast, out dlast, false);
 
             bool cond = true;
 
@@ -936,16 +941,16 @@ public sealed class LocOpe_SplitShape
                 PossE.Clear();
 
                 // On enchaine par la fin
-                NCollection_List<TopoDS_Shape>.Iterator lexp1 = new(WiresFirst);
+                NCollection_List<Shape>.Iterator lexp1 = new(WiresFirst);
                 for (; lexp1.More(); lexp1.Next())
                 {
-                    TopoDS_Edge edg = TopoDS.Edge(lexp1.Value());
+                    Edge edg = ShapeCasts.Edge(lexp1.Value());
 
                     orient = edg.Orientation();
-                    TopExp.Vertices(edg, out vdeb, out vfin);
+                    Exploration.Vertices(edg, out vdeb, out vfin);
 
-                    if ((orient == TopAbs_FORWARD && Vlast.IsSame(vdeb))
-                        || (orient == TopAbs_REVERSED && Vlast.IsSame(vfin)))
+                    if ((orient == Forward && Vlast.IsSame(vdeb))
+                        || (orient == Reversed && Vlast.IsSame(vfin)))
                     {
                         PossE.Add(edg);
                     }
@@ -956,19 +961,19 @@ public sealed class LocOpe_SplitShape
                     break;
                 }
 
-                TopoDS_Edge aNextEdge = new();
+                Edge aNextEdge = new();
                 if (nbPoss == 1)
                 {
-                    aNextEdge = TopoDS.Edge(PossE.FindKey(1));
-                    TopoDS_Shape aLocalFaceTemp = FaceRef.Oriented(wfirst.Orientation());
-                    GetDirection(aNextEdge, TopoDS.Face(aLocalFaceTemp), out plast, out dlast, false);
+                    aNextEdge = ShapeCasts.Edge(PossE.FindKey(1));
+                    Shape aLocalFaceTemp = FaceRef.Oriented(wfirst.Orientation());
+                    GetDirection(aNextEdge, ShapeCasts.Face(aLocalFaceTemp), out plast, out dlast, false);
                 }
                 else if (nbPoss > 1)
                 {
                     // Faire choix en U,V...
-                    TopoDS_Shape aLocalFaceTemp = FaceRef.Oriented(wfirst.Orientation());
+                    Shape aLocalFaceTemp = FaceRef.Oriented(wfirst.Orientation());
 
-                    if (!ChoixUV(LastEdge, TopoDS.Face(aLocalFaceTemp), PossE, ref aNextEdge, ref plast, ref dlast))
+                    if (!ChoixUV(LastEdge, ShapeCasts.Face(aLocalFaceTemp), PossE, ref aNextEdge, ref plast, ref dlast))
                     {
                         return false;
                     }
@@ -976,7 +981,7 @@ public sealed class LocOpe_SplitShape
 
                 if (nbPoss >= 1)
                 {
-                    if (aNextEdge.IsNull())
+                    if (aNextEdge.IsNull)
                     {
                         // loop is not closed. Split is not possible
                         return false;
@@ -990,16 +995,16 @@ public sealed class LocOpe_SplitShape
                     MapE.Add(aNextEdge);
                     LastEdge = aNextEdge;
 
-                    if (LastEdge.Orientation() == TopAbs_FORWARD)
+                    if (LastEdge.Orientation() == Forward)
                     {
-                        Vlast = TopExp.LastVertex(LastEdge);
+                        Vlast = Exploration.LastVertex(LastEdge);
                     }
                     else
                     {
-                        Vlast = TopExp.FirstVertex(LastEdge);
+                        Vlast = Exploration.FirstVertex(LastEdge);
                     }
 
-                    toll = BRep_Tool.Tolerance(Vlast);
+                    toll = Tool.Tolerance(Vlast);
                     tol1 = Max(tolf, toll);
                 }
                 // MODIFICATION PIERRE SMEYERS : si pas de possibilite, on sort avec erreur
@@ -1014,17 +1019,17 @@ public sealed class LocOpe_SplitShape
             }
 
             int nbAddBound = 0;
-            NCollection_List<TopoDS_Shape>.Iterator lexp = new(WiresFirst);
-            TopoDS_Shape anE1 = new(), anE2 = new();
+            NCollection_List<Shape>.Iterator lexp = new(WiresFirst);
+            Shape anE1 = new(), anE2 = new();
             for (; lexp.More(); lexp.Next())
             {
-                TopoDS_Edge edg = TopoDS.Edge(lexp.Value());
+                Edge edg = ShapeCasts.Edge(lexp.Value());
                 if (!MapE.Contains(edg))
                 {
                     B.Add(newW2, edg);
                     MapE.Add(edg);
                     nbAddBound++;
-                    if (anE1.IsNull())
+                    if (anE1.IsNull)
                     {
                         anE1 = edg;
                     }
@@ -1039,9 +1044,9 @@ public sealed class LocOpe_SplitShape
             {
                 return false;
             }
-            if (nbAddBound == 2 && !anE1.IsNull() && !anE2.IsNull())
+            if (nbAddBound == 2 && !anE1.IsNull && !anE2.IsNull)
             {
-                if (checkOverlapping(TopoDS.Edge(anE1), TopoDS.Edge(anE2), FaceRef))
+                if (checkOverlapping(ShapeCasts.Edge(anE1), ShapeCasts.Edge(anE2), FaceRef))
                 {
                     return false;
                 }
@@ -1049,16 +1054,16 @@ public sealed class LocOpe_SplitShape
 
             nbAddBound = 0;
 
-            TopoDS_Shape anE11 = new(), anE12 = new();
-            TopoDS_Iterator anItE = new(newW1, false);
+            Shape anE11 = new(), anE12 = new();
+            Iterator anItE = new(newW1, false);
             for (; anItE.More(); anItE.Next())
             {
-                if (anItE.Value().ShapeType() != TopAbs_EDGE)
+                if (anItE.Value().ShapeType() != ShapeType.Edge)
                 {
                     continue;
                 }
                 nbAddBound++;
-                if (anE11.IsNull())
+                if (anE11.IsNull)
                 {
                     anE11 = anItE.Value();
                 }
@@ -1072,29 +1077,29 @@ public sealed class LocOpe_SplitShape
             {
                 return false;
             }
-            if (nbAddBound == 2 && !anE11.IsNull() && !anE12.IsNull())
+            if (nbAddBound == 2 && !anE11.IsNull && !anE12.IsNull)
             {
-                if (checkOverlapping(TopoDS.Edge(anE11), TopoDS.Edge(anE12), FaceRef))
+                if (checkOverlapping(ShapeCasts.Edge(anE11), ShapeCasts.Edge(anE12), FaceRef))
                 {
                     return false;
                 }
             }
 
-            TopoDS_Face newF1, newF2;
+            Face newF1, newF2;
             aLocalFace = FaceRef.EmptyCopied();
-            newF1 = TopoDS.Face(aLocalFace);
-            newF1.Orientation(TopAbs_FORWARD);
+            newF1 = ShapeCasts.Face(aLocalFace);
+            newF1.Orientation(Forward);
             aLocalFace = FaceRef.EmptyCopied();
-            newF2 = TopoDS.Face(aLocalFace);
-            newF2.Orientation(TopAbs_FORWARD);
+            newF2 = ShapeCasts.Face(aLocalFace);
+            newF2.Orientation(Forward);
 
             // modifs JAG 97.05.28
 
             B.Add(newF1, newW1);
             B.Add(newF2, newW2);
-            for (exp.Init(FaceRef.Oriented(TopAbs_FORWARD), TopAbs_WIRE); exp.More(); exp.Next())
+            for (exp.Init(FaceRef.Oriented(Forward), ShapeType.Wire); exp.More(); exp.Next())
             {
-                TopoDS_Wire wir = TopoDS.Wire(exp.Current());
+                Wire wir = ShapeCasts.Wire(exp.Current());
                 if (!wir.IsSame(wfirst))
                 {
                     if (IsInside(newF1, wir))
@@ -1118,9 +1123,9 @@ public sealed class LocOpe_SplitShape
             lf.Append(newF2);
 
             // Mise a jour des descendants des wires
-            for (exp.Init(F, TopAbs_WIRE); exp.More(); exp.Next())
+            for (exp.Init(F, ShapeType.Wire); exp.More(); exp.Next())
             {
-                NCollection_List<TopoDS_Shape> ls = myMap[exp.Current()];
+                NCollection_List<Shape> ls = myMap[exp.Current()];
                 itl.Initialize(ls);
                 for (; itl.More(); itl.Next())
                 {
@@ -1140,20 +1145,20 @@ public sealed class LocOpe_SplitShape
         else
         {
             // on ne cree qu`une seule face
-            TopoDS_Wire outerW = BRepTools.OuterWire(FaceRef);
-            TopoDS_Wire newWire = new();
-            TopoDS_Face newFace;
+            Wire outerW = BrepTools.OuterWire(FaceRef);
+            Wire newWire = new();
+            Face newFace;
             B.MakeWire(ref newWire);
-            newWire.Orientation(TopAbs_FORWARD);
-            TopAbs_Orientation orient, orRelat;
+            newWire.Orientation(Forward);
+            Orientation orient, orRelat;
 
             if (wfirst.Orientation() == wlast.Orientation())
             {
-                orRelat = TopAbs_FORWARD;
+                orRelat = Forward;
             }
             else
             {
-                orRelat = TopAbs_REVERSED;
+                orRelat = Reversed;
             }
 
             if (wlast.IsSame(outerW))
@@ -1163,37 +1168,37 @@ public sealed class LocOpe_SplitShape
             }
 
             // Edges de wfirst
-            for (exp.Init(wfirst.Oriented(TopAbs_FORWARD), TopAbs_EDGE); exp.More(); exp.Next())
+            for (exp.Init(wfirst.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
             {
-                B.Add(newWire, TopoDS.Edge(exp.Current()));
+                B.Add(newWire, ShapeCasts.Edge(exp.Current()));
             }
 
             // Edges de wlast
-            for (exp.Init(wlast.Oriented(TopAbs_FORWARD), TopAbs_EDGE); exp.More(); exp.Next())
+            for (exp.Init(wlast.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
             {
-                TopoDS_Edge edg = TopoDS.Edge(exp.Current());
-                orient = TopAbs.Compose(edg.Orientation(), orRelat);
+                Edge edg = ShapeCasts.Edge(exp.Current());
+                orient = global::Kerf.Engine.Topology.TopAbs.Compose(edg.Orientation(), orRelat);
                 B.Add(newWire, edg.Oriented(orient));
             }
 
             // Edges du wire ajoute, et dans les 2 sens
-            for (exp.Init(W.Oriented(TopAbs_FORWARD), TopAbs_EDGE); exp.More(); exp.Next())
+            for (exp.Init(W.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
             {
-                TopoDS_Edge edg = TopoDS.Edge(exp.Current());
+                Edge edg = ShapeCasts.Edge(exp.Current());
                 orient = edg.Orientation();
                 B.Add(newWire, edg.Oriented(orient));
-                B.Add(newWire, edg.Oriented(TopAbs.Reverse(orient)));
+                B.Add(newWire, edg.Oriented(global::Kerf.Engine.Topology.TopAbs.Reverse(orient)));
                 myDblE.Add(edg.Oriented(orient));
             }
 
             // on refait une face
 
-            TopoDS_Shape aLocalFace = FaceRef.EmptyCopied();
-            newFace = TopoDS.Face(aLocalFace);
-            FaceRef.Orientation(TopAbs_FORWARD);
-            for (exp.Init(FaceRef.Oriented(TopAbs_FORWARD), TopAbs_WIRE); exp.More(); exp.Next())
+            Shape aLocalFace = FaceRef.EmptyCopied();
+            newFace = ShapeCasts.Face(aLocalFace);
+            FaceRef.Orientation(Forward);
+            for (exp.Init(FaceRef.Oriented(Forward), ShapeType.Wire); exp.More(); exp.Next())
             {
-                TopoDS_Wire wir = TopoDS.Wire(exp.Current());
+                Wire wir = ShapeCasts.Wire(exp.Current());
                 if (wir.IsSame(wfirst))
                 {
                     B.Add(newFace, newWire.Oriented(wir.Orientation()));
@@ -1206,9 +1211,9 @@ public sealed class LocOpe_SplitShape
             lf.Append(newFace);
 
             // Mise a jour des descendants des wires
-            for (exp.Init(F, TopAbs_WIRE); exp.More(); exp.Next())
+            for (exp.Init(F, ShapeType.Wire); exp.More(); exp.Next())
             {
-                NCollection_List<TopoDS_Shape> ls = myMap[exp.Current()];
+                NCollection_List<Shape> ls = myMap[exp.Current()];
                 itl.Initialize(ls);
                 bool touch = false;
                 while (itl.More())
@@ -1238,22 +1243,22 @@ public sealed class LocOpe_SplitShape
     /// faces. <paramref name="F"/> is considered with its topological orientation in the original shape,
     /// <paramref name="W"/> with its orientation. Frozen once the splitting has ended.
     /// </summary>
-    public NCollection_List<TopoDS_Shape> LeftOf(in TopoDS_Wire W, in TopoDS_Face F)
+    public NCollection_List<Shape> LeftOf(in Wire W, in Face F)
     {
-        NCollection_List<TopoDS_Shape> aLeft = InternalLeftOf(TopoDS.Wire(myWork.Copied(W)), TopoDS.Face(myWork.Copied(F)));
+        NCollection_List<Shape> aLeft = InternalLeftOf(ShapeCasts.Wire(myWork.Copied(W)), ShapeCasts.Face(myWork.Copied(F)));
         return myDone && myOwnsWork ? LocOpe_WorkingShapes.Published(aLeft) : aLeft;
     }
 
     // LeftOf on working shapes
-    internal NCollection_List<TopoDS_Shape> InternalLeftOf(in TopoDS_Wire W, in TopoDS_Face F)
+    internal NCollection_List<Shape> InternalLeftOf(in Wire W, in Face F)
     {
-        if (myShape.IsNull())
+        if (myShape.IsNull)
         {
             throw new NoSuchObjectException();
         }
 
-        TopExp_Explorer exp = new(), expw = new(), expf = new();
-        exp.Init(myShape, TopAbs_FACE);
+        Explorer exp = new(), expw = new(), expf = new();
+        exp.Init(myShape, ShapeType.Face);
         for (; exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(F))
@@ -1265,22 +1270,22 @@ public sealed class LocOpe_SplitShape
         {
             throw new NoSuchObjectException();
         }
-        myLeft = new NCollection_List<TopoDS_Shape>(); // OCCT clears the list it returned before
+        myLeft = new NCollection_List<Shape>(); // OCCT clears the list it returned before
 
-        TopoDS_Face theFace = TopoDS.Face(exp.Current());
-        TopAbs_Orientation orFace = theFace.Orientation();
-        NCollection_List<TopoDS_Shape>.Iterator itl = new(), itl2 = new();
+        Face theFace = ShapeCasts.Face(exp.Current());
+        Orientation orFace = theFace.Orientation();
+        NCollection_List<Shape>.Iterator itl = new(), itl2 = new();
 
-        for (expw.Init(W, TopAbs_EDGE); expw.More(); expw.Next())
+        for (expw.Init(W, ShapeType.Edge); expw.More(); expw.Next())
         {
-            TopoDS_Edge edg = TopoDS.Edge(expw.Current());
+            Edge edg = ShapeCasts.Edge(expw.Current());
             for (itl.Initialize(myMap[theFace]); itl.More(); itl.Next())
             {
-                TopoDS_Face fac = TopoDS.Face(itl.Value());
+                Face fac = ShapeCasts.Face(itl.Value());
                 fac.Orientation(orFace);
-                for (expf.Init(fac, TopAbs_EDGE); expf.More(); expf.Next())
+                for (expf.Init(fac, ShapeType.Edge); expf.More(); expf.Next())
                 {
-                    TopoDS_Edge edgbis = TopoDS.Edge(expf.Current());
+                    Edge edgbis = ShapeCasts.Edge(expf.Current());
                     if (edgbis.IsSame(edg) && edgbis.Orientation() == edg.Orientation())
                     {
                         for (itl2.Initialize(myLeft); itl2.More(); itl2.Next())
@@ -1309,15 +1314,15 @@ public sealed class LocOpe_SplitShape
     /// <summary>
     /// Returns the list of descendant shapes of <paramref name="S"/> (frozen). The first call ends the splitting.
     /// </summary>
-    public NCollection_List<TopoDS_Shape> DescendantShapes(in TopoDS_Shape S)
+    public NCollection_List<Shape> DescendantShapes(in Shape S)
     {
-        NCollection_List<TopoDS_Shape> aList = InternalDescendantShapes(myWork.Copied(S));
+        NCollection_List<Shape> aList = InternalDescendantShapes(myWork.Copied(S));
         return myOwnsWork ? LocOpe_WorkingShapes.Published(aList) : aList;
     }
 
     // DescendantShapes on working shapes; ends the splitting, and gives back the caller's unchanged sub-shapes when
     // the working shapes are this process's own
-    internal NCollection_List<TopoDS_Shape> InternalDescendantShapes(in TopoDS_Shape S)
+    internal NCollection_List<Shape> InternalDescendantShapes(in Shape S)
     {
         if (!myDone)
         {
@@ -1325,13 +1330,13 @@ public sealed class LocOpe_SplitShape
             myDone = true;
             if (myOwnsWork && myWork.IsCopied())
             {
-                var aShapes = new List<TopoDS_Shape>();
-                foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anItem in myMap)
+                var aShapes = new List<Shape>();
+                foreach (KeyValuePair<Shape, NCollection_List<Shape>> anItem in myMap)
                 {
                     aShapes.AddRange(anItem.Value);
                 }
                 myWork.Finish(aShapes);
-                foreach (TopoDS_Shape aKey in myMap.Keys.ToList())
+                foreach (Shape aKey in myMap.Keys.ToList())
                 {
                     myMap[aKey] = myWork.Final(myMap[aKey]);
                 }
@@ -1342,17 +1347,17 @@ public sealed class LocOpe_SplitShape
     }
 
     /// <summary>Returns the "original" shape (the caller's).</summary>
-    public TopoDS_Shape Shape() => myWork.Original(myShape);
+    public Shape Shape() => myWork.Original(myShape);
 
-    private void Put(in TopoDS_Shape S)
+    private void Put(in Shape S)
     {
         if (!myMap.IsBound(S))
         {
-            NCollection_List<TopoDS_Shape> thelist = new();
+            NCollection_List<Shape> thelist = new();
             myMap.Bind(S, thelist);
-            if (S.ShapeType() != TopAbs_VERTEX)
+            if (S.ShapeType() != ShapeType.Vertex)
             {
-                for (TopoDS_Iterator theIterator = new(S); theIterator.More(); theIterator.Next())
+                for (Iterator theIterator = new(S); theIterator.More(); theIterator.Next())
                 {
                     Put(theIterator.Value());
                 }
@@ -1364,51 +1369,51 @@ public sealed class LocOpe_SplitShape
         }
     }
 
-    private static void updateToleraces(in TopoDS_Face theFace,
-                                        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMap)
+    private static void updateToleraces(in Face theFace,
+                                        NCollection_DataMap<Shape, NCollection_List<Shape>> theMap)
     {
-        TopExp_Explorer aExpE = new(theFace, TopAbs_EDGE);
+        Explorer aExpE = new(theFace, ShapeType.Edge);
         for (; aExpE.More(); aExpE.Next())
         {
             if (!theMap.IsBound(aExpE.Current()))
             {
                 continue;
             }
-            NCollection_List<TopoDS_Shape> lEdges = theMap[aExpE.Current()];
+            NCollection_List<Shape> lEdges = theMap[aExpE.Current()];
             if (lEdges.Extent() <= 1)
             {
                 continue;
             }
 
-            NCollection_List<TopoDS_Shape>.Iterator itrE = new(lEdges);
+            NCollection_List<Shape>.Iterator itrE = new(lEdges);
             ShapeAnalysis_Edge aSae = new();
 
             for (; itrE.More(); itrE.Next())
             {
-                TopoDS_Edge aCurE = TopoDS.Edge(itrE.Value());
+                Edge aCurE = ShapeCasts.Edge(itrE.Value());
                 double amaxdev = 0.0;
                 if (aSae.CheckSameParameter(aCurE, theFace, ref amaxdev))
                 {
-                    BRep_Builder aB = new();
+                    BrepBuilder aB = new();
                     aB.UpdateEdge(aCurE, amaxdev);
                 }
             }
         }
     }
 
-    private bool Rebuild(in TopoDS_Shape S)
+    private bool Rebuild(in Shape S)
     {
-        if (S.ShapeType() == TopAbs_FACE)
+        if (S.ShapeType() == ShapeType.Face)
         {
-            updateToleraces(TopoDS.Face(S), myMap);
+            updateToleraces(ShapeCasts.Face(S), myMap);
         }
-        NCollection_List<TopoDS_Shape>.Iterator itr = new(myMap[S]);
+        NCollection_List<Shape>.Iterator itr = new(myMap[S]);
         if (itr.More())
         {
             return !itr.Value().IsSame(S);
         }
         bool rebuild = false;
-        TopoDS_Iterator it = new();
+        Iterator it = new();
         for (it.Initialize(S); it.More(); it.Next())
         {
             rebuild = Rebuild(it.Value()) || rebuild;
@@ -1416,9 +1421,9 @@ public sealed class LocOpe_SplitShape
 
         if (rebuild)
         {
-            BRep_Builder B = new();
-            TopoDS_Shape result = S.EmptyCopied();
-            TopAbs_Orientation orient;
+            BrepBuilder B = new();
+            Shape result = S.EmptyCopied();
+            Orientation orient;
             for (it.Initialize(S); it.More(); it.Next())
             {
                 orient = it.Value().Orientation();
@@ -1428,9 +1433,9 @@ public sealed class LocOpe_SplitShape
                 }
             }
             // Assign "Closed" flag for Wires and Shells only
-            if (result.ShapeType() == TopAbs_WIRE || result.ShapeType() == TopAbs_SHELL)
+            if (result.ShapeType() == ShapeType.Wire || result.ShapeType() == ShapeType.Shell)
             {
-                result.Closed(BRep_Tool.IsClosed(result));
+                result.Closed(Tool.IsClosed(result));
             }
             myMap[S].Append(result);
         }
@@ -1441,43 +1446,43 @@ public sealed class LocOpe_SplitShape
         return rebuild;
     }
 
-    private static bool SameUV(in Point2D P1, in Point2D P2, BRepAdaptor_Surface theBAS)
+    private static bool SameUV(in Point2D P1, in Point2D P2, FaceSurfaceAdaptor theBAS)
     {
         bool isSame = true;
-        if (theBAS.IsUPeriodic())
+        if (theBAS.IsUPeriodic)
         {
             isSame = (Math.Abs(P1.X() - P2.X()) < theBAS.UPeriod() * 0.5);
         }
-        if (theBAS.IsVPeriodic())
+        if (theBAS.IsVPeriodic)
         {
             isSame = (isSame && (Math.Abs(P1.Y() - P2.Y()) < theBAS.VPeriod() * 0.5));
         }
         return isSame;
     }
 
-    private static bool IsInside(in TopoDS_Face F, in TopoDS_Wire W1, in TopoDS_Wire W2)
+    private static bool IsInside(in Face F, in Wire W1, in Wire W2)
     {
         // Attention, c`est tres boeuf !!!!
-        BRep_Builder B = new();
-        TopoDS_Shape aLocalShape = F.EmptyCopied();
-        TopoDS_Face newFace = TopoDS.Face(aLocalShape);
+        BrepBuilder B = new();
+        Shape aLocalShape = F.EmptyCopied();
+        Face newFace = ShapeCasts.Face(aLocalShape);
 
-        newFace.Orientation(TopAbs_FORWARD);
+        newFace.Orientation(Forward);
         B.Add(newFace, W2);
         BRepTopAdaptor_FClass2d classif = new(newFace, global::Kerf.Engine.Foundation.Precision.PConfusion());
         bool Reversed = false;
-        if (classif.PerformInfinitePoint() == TopAbs_IN)
+        if (classif.PerformInfinitePoint() == In)
         {
             // le wire donne defini un trou
             Reversed = true;
         }
 
-        TopExp_Explorer exp = new(W1, TopAbs_EDGE);
-        TopoDS_Edge edg = TopoDS.Edge(exp.Current());
-        TopExp_Explorer exp2 = new(edg, TopAbs_VERTEX);
-        TopoDS_Vertex vtx = TopoDS.Vertex(exp2.Current());
-        double prm = BRep_Tool.Parameter(vtx, edg);
-        Geom2d_Curve? C2d = BRep_Tool.CurveOnSurface(edg, F, out _, out _);
+        Explorer exp = new(W1, ShapeType.Edge);
+        Edge edg = ShapeCasts.Edge(exp.Current());
+        Explorer exp2 = new(edg, ShapeType.Vertex);
+        Vertex vtx = ShapeCasts.Vertex(exp2.Current());
+        double prm = Tool.Parameter(vtx, edg);
+        Curve2D? C2d = Tool.CurveOnSurface(edg, F, out _, out _);
         if (C2d is null)
         {
             // OCCT_DEBUG trace left out ("Edge is not on surface")
@@ -1486,23 +1491,23 @@ public sealed class LocOpe_SplitShape
         Point2D pt2d = C2d.Value(prm);
         if (!Reversed)
         {
-            return (classif.Perform(pt2d) == TopAbs_IN);
+            return (classif.Perform(pt2d) == In);
         }
         else
         {
-            return (classif.Perform(pt2d) == TopAbs_OUT);
+            return (classif.Perform(pt2d) == Out);
         }
     }
 
-    private static bool IsInside(in TopoDS_Face F, in TopoDS_Wire W)
+    private static bool IsInside(in Face F, in Wire W)
     {
         // Attention, c`est tres boeuf !!!!
-        TopExp_Explorer exp = new(W, TopAbs_EDGE);
+        Explorer exp = new(W, ShapeType.Edge);
         for (; exp.More(); exp.Next())
         {
-            TopoDS_Edge edg = TopoDS.Edge(exp.Current());
+            Edge edg = ShapeCasts.Edge(exp.Current());
             double prm;
-            Geom2d_Curve C2d = BRep_Tool.CurveOnSurface(edg, F, out double f, out double l)!;
+            Curve2D C2d = Tool.CurveOnSurface(edg, F, out double f, out double l)!;
             if (!global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(f) && !global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(l))
             {
                 prm = (f + l) / 2.0;
@@ -1525,13 +1530,13 @@ public sealed class LocOpe_SplitShape
 
             Point2D pt2d = C2d.Value(prm);
             BRepTopAdaptor_FClass2d classif = new(F, global::Kerf.Engine.Foundation.Precision.PConfusion());
-            TopAbs_State stat = classif.Perform(pt2d);
-            if (stat == TopAbs_OUT)
+            Containment stat = classif.Perform(pt2d);
+            if (stat == Out)
             {
                 return false;
             }
 
-            if (stat == TopAbs_ON)
+            if (stat == On)
             {
                 int nbPnt = 10;
                 int nbOut = 0, nbIn = 0, nbOn = 0;
@@ -1542,11 +1547,11 @@ public sealed class LocOpe_SplitShape
                     prm = f + (l - f) / nbPnt * (j - 1);
                     pt2d = C2d.Value(prm);
                     stat = classif.Perform(pt2d);
-                    if (stat == TopAbs_OUT)
+                    if (stat == Out)
                     {
                         nbOut++;
                     }
-                    else if (stat == TopAbs_IN)
+                    else if (stat == In)
                     {
                         nbIn++;
                     }
@@ -1564,13 +1569,13 @@ public sealed class LocOpe_SplitShape
         return true;
     }
 
-    private static void GetDirection(in TopoDS_Edge theEdge, in TopoDS_Face theFace, out Point2D thePnt, out Vector2D theDir,
+    private static void GetDirection(in Edge theEdge, in Face theFace, out Point2D thePnt, out Vector2D theDir,
                                      bool isFirstEnd)
     {
-        Geom2d_Curve aC2d = BRep_Tool.CurveOnSurface(theEdge, theFace, out double aFirst, out double aLast)!;
+        Curve2D aC2d = Tool.CurveOnSurface(theEdge, theFace, out double aFirst, out double aLast)!;
 
-        TopAbs_Orientation anOr = theEdge.Orientation();
-        bool takeFirst = ((anOr == TopAbs_FORWARD && isFirstEnd) || (anOr == TopAbs_REVERSED && !isFirstEnd));
+        Orientation anOr = theEdge.Orientation();
+        bool takeFirst = ((anOr == Forward && isFirstEnd) || (anOr == Reversed && !isFirstEnd));
 
         double dpar = (aLast - aFirst) * 0.01;
         if (takeFirst)
@@ -1586,20 +1591,20 @@ public sealed class LocOpe_SplitShape
             Point2D aPrevPnt = aC2d.Value(aLast - dpar);
             theDir = new Vector2D(aPrevPnt, thePnt);
         }
-        if (anOr == TopAbs_REVERSED)
+        if (anOr == Reversed)
         {
             theDir.Reverse();
         }
     }
 
-    private static bool ChoixUV(in TopoDS_Edge Last,
-                                in TopoDS_Face F,
-                                NCollection_IndexedMap<TopoDS_Shape> Poss,
-                                ref TopoDS_Edge theResEdge,
+    private static bool ChoixUV(in Edge Last,
+                                in Face F,
+                                NCollection_IndexedMap<Shape> Poss,
+                                ref Edge theResEdge,
                                 ref Point2D plst,
                                 ref Vector2D dlst)
     {
-        BRepAdaptor_Surface surf = new(F, false); // no restriction
+        FaceSurfaceAdaptor surf = new(F, false); // no restriction
         surf.D0(plst.X(), plst.Y(), out Point3D aPlst);
 
         Direction2D ref2d = new(dlst);
@@ -1609,7 +1614,7 @@ public sealed class LocOpe_SplitShape
 
         for (index = 1; index <= Poss.Extent(); index++)
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(Poss.FindKey(index));
+            Edge anEdge = ShapeCasts.Edge(Poss.FindKey(index));
 
             GetDirection(anEdge, F, out Point2D p2d, out Vector2D v2d, true);
             if (!SameUV(plst, p2d, surf))
@@ -1637,7 +1642,7 @@ public sealed class LocOpe_SplitShape
 
         if (imin != 0)
         {
-            theResEdge = TopoDS.Edge(Poss.FindKey(imin));
+            theResEdge = ShapeCasts.Edge(Poss.FindKey(imin));
             GetDirection(theResEdge, F, out plst, out dlst, false);
         }
 
@@ -1645,67 +1650,67 @@ public sealed class LocOpe_SplitShape
         return imin != 0;
     }
 
-    private static TopoDS_Shape ChooseDirection(in TopoDS_Shape RefDir,
-                                                in TopoDS_Vertex RefVertex,
-                                                in TopoDS_Face theFace,
-                                                NCollection_List<TopoDS_Shape> Ldirs)
+    private static Shape ChooseDirection(in Shape RefDir,
+                                                in Vertex RefVertex,
+                                                in Face theFace,
+                                                NCollection_List<Shape> Ldirs)
     {
-        TopExp_Explorer Explo = new(RefDir, TopAbs_EDGE);
-        TopoDS_Edge RefEdge = new();
-        TopoDS_Vertex V1, V2;
-        TopAbs_Orientation anOr = TopAbs_FORWARD;
+        Explorer Explo = new(RefDir, ShapeType.Edge);
+        Edge RefEdge = new();
+        Vertex V1, V2;
+        Orientation anOr = Forward;
         for (; Explo.More(); Explo.Next())
         {
-            RefEdge = TopoDS.Edge(Explo.Current());
-            TopExp.Vertices(RefEdge, out V1, out V2);
+            RefEdge = ShapeCasts.Edge(Explo.Current());
+            Exploration.Vertices(RefEdge, out V1, out V2);
             if (V1.IsSame(RefVertex))
             {
-                anOr = TopAbs_REVERSED;
+                anOr = Reversed;
                 break;
             }
             else if (V2.IsSame(RefVertex))
             {
-                anOr = TopAbs_FORWARD;
+                anOr = Forward;
                 break;
             }
         }
 
-        Geom2d_Curve RefCurve = BRep_Tool.CurveOnSurface(RefEdge, theFace, out double RefFirst, out double RefLast)!;
+        Curve2D RefCurve = Tool.CurveOnSurface(RefEdge, theFace, out double RefFirst, out double RefLast)!;
 
-        double RefPar = (anOr == TopAbs_FORWARD) ? RefLast : RefFirst;
+        double RefPar = (anOr == Forward) ? RefLast : RefFirst;
         RefCurve.D1(RefPar, out Point2D RefPnt, out Vector2D RefVec);
-        if (anOr == TopAbs_FORWARD)
+        if (anOr == Forward)
         {
             RefVec.Reverse();
         }
 
         double aFirst, aLast, aPar;
         double MinAngle = RealLast(), anAngle;
-        TopoDS_Shape TargetDir = new();
-        NCollection_List<TopoDS_Shape>.Iterator itl = new(Ldirs);
+        Shape TargetDir = new();
+        NCollection_List<Shape>.Iterator itl = new(Ldirs);
         for (; itl.More(); itl.Next())
         {
-            TopoDS_Shape aShape = itl.Value();
-            TopoDS_Edge anEdge = new();
-            for (Explo.Init(aShape, TopAbs_EDGE); Explo.More(); Explo.Next())
+            Shape aShape = itl.Value();
+            Edge anEdge = new();
+            for (Explo.Init(aShape, ShapeType.Edge); Explo.More(); Explo.Next())
             {
-                anEdge = TopoDS.Edge(Explo.Current());
-                TopExp.Vertices(anEdge, out V1, out V2);
+                anEdge = ShapeCasts.Edge(Explo.Current());
+                Exploration.Vertices(anEdge, out V1, out V2);
                 if (V1.IsSame(RefVertex))
                 {
-                    anOr = TopAbs_FORWARD;
+                    anOr = Forward;
                     break;
                 }
                 else if (V2.IsSame(RefVertex))
                 {
-                    anOr = TopAbs_REVERSED;
+                    anOr = Reversed;
                     break;
                 }
             }
-            Geom2d_Curve aCurve = BRep_Tool.CurveOnSurface(anEdge, theFace, out aFirst, out aLast)!;
-            aPar = (anOr == TopAbs_FORWARD) ? aFirst : aLast;
+            Curve2D aCurve = Tool.CurveOnSurface(anEdge, theFace, out aFirst, out aLast)!;
+            aPar = (anOr == Forward) ? aFirst : aLast;
             aCurve.D1(aPar, out RefPnt, out Vector2D aVec);
-            if (anOr == TopAbs_REVERSED)
+            if (anOr == Reversed)
             {
                 aVec.Reverse();
             }

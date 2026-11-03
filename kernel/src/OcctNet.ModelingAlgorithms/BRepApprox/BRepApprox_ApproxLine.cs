@@ -19,13 +19,13 @@ namespace Occt;
 /// </remarks>
 public class BRepApprox_ApproxLine : Transient, IApproxInt_WLine<BRepApprox_ApproxLine>
 {
-    private readonly Geom_BSplineCurve? myCurveXYZ;
-    private readonly Geom2d_BSplineCurve? myCurveUV1;
-    private readonly Geom2d_BSplineCurve? myCurveUV2;
+    private readonly BSplineCurve3D? myCurveXYZ;
+    private readonly BSplineCurve2D? myCurveUV1;
+    private readonly BSplineCurve2D? myCurveUV2;
     private readonly IntSurf_LineOn2S? myLineOn2S;
 
-    public BRepApprox_ApproxLine(Geom_BSplineCurve? CurveXYZ, Geom2d_BSplineCurve? CurveUV1,
-                                 Geom2d_BSplineCurve? CurveUV2)
+    public BRepApprox_ApproxLine(BSplineCurve3D? CurveXYZ, BSplineCurve2D? CurveUV1,
+                                 BSplineCurve2D? CurveUV2)
     {
         myCurveXYZ = CurveXYZ;
         myCurveUV1 = CurveUV1;
@@ -46,15 +46,15 @@ public class BRepApprox_ApproxLine : Transient, IApproxInt_WLine<BRepApprox_Appr
     {
         if (myCurveXYZ is not null)
         {
-            return (myCurveXYZ.NbPoles());
+            return (myCurveXYZ.PoleCount);
         }
         if (myCurveUV1 is not null)
         {
-            return (myCurveUV1.NbPoles());
+            return (myCurveUV1.PoleCount);
         }
         if (myCurveUV2 is not null)
         {
-            return (myCurveUV2.NbPoles());
+            return (myCurveUV2.PoleCount);
         }
         return (myLineOn2S!.NbPoints());
     }

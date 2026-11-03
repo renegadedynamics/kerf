@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 
 using Kerf.Geometry;
@@ -27,15 +28,15 @@ public class ShapeAnalysis_CurveTests
     }
 
     /// <summary>The quadratic Bezier arc (2t, 4t(1-t), 0) on [0, 1], as a B-spline.</summary>
-    private static Geom_BSplineCurve Arch()
+    private static BSplineCurve3D Arch()
         => new(Array(new Point3D(0, 0, 0), new Point3D(1, 2, 0), new Point3D(2, 0, 0)), Array(0.0, 1.0), Array(3, 3), 2);
 
-    private static Geom_Circle Circle(double theR) => new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), theR);
+    private static CircleCurve3D Circle(double theR) => new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), theR);
 
     [Fact]
     public void Project_on_an_infinite_line()
     {
-        var aLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        var aLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         double aDist = SAC.Project(aLine, new Point3D(1, 2, 0), 1e-7, out Point3D aProj, out double aParam);
         Assert.Equal(2.0, aDist, Tol);
         Assert.Equal(1.0, aParam, Tol);
@@ -45,7 +46,7 @@ public class ShapeAnalysis_CurveTests
     [Fact]
     public void Project_on_a_circle()
     {
-        Geom_Circle aCircle = Circle(2);
+        CircleCurve3D aCircle = Circle(2);
         double aDist = SAC.Project(aCircle, new Point3D(0, 5, 0), 1e-7, out Point3D aProj, out double aParam);
         Assert.Equal(3.0, aDist, Tol);
         Assert.Equal(M_PI / 2, aParam, Tol);
@@ -59,7 +60,7 @@ public class ShapeAnalysis_CurveTests
     [Fact]
     public void Project_on_a_bspline_and_its_ends()
     {
-        Geom_BSplineCurve anArch = Arch();
+        BSplineCurve3D anArch = Arch();
         double aDist = SAC.Project(anArch, new Point3D(1, 3, 0), 1e-7, out Point3D aProj, out double aParam);
         Assert.Equal(2.0, aDist, 1e-7);
         Assert.Equal(0.5, aParam, 1e-7);
@@ -86,18 +87,18 @@ public class ShapeAnalysis_CurveTests
     [Fact]
     public void Project_on_trimmed_and_offset_curves()
     {
-        var aTrimmed = new Geom_TrimmedCurve(Circle(1), 0, M_PI);
+        var aTrimmed = new TrimmedCurve3D(Circle(1), 0, M_PI);
         double aDist = SAC.Project(aTrimmed, new Point3D(0, 3, 0), 1e-7, out _, out double aParam);
         Assert.Equal(2.0, aDist, Tol);
         Assert.Equal(M_PI / 2, aParam, Tol);
 
-        var anOffset = new Geom_OffsetCurve(Circle(1), 0.5, new Direction3D(0, 0, 1));
+        var anOffset = new OffsetCurve3D(Circle(1), 0.5, new Direction3D(0, 0, 1));
         aDist = SAC.Project(anOffset, new Point3D(-3, 0, 0), 1e-7, out Point3D aProj, out aParam);
         Assert.Equal(1.5, aDist, 1e-7);
         Assert.Equal(-1.5, aProj.X(), 1e-7);
 
         // the adaptor form
-        var anAdaptor = new GeomAdaptor_Curve(aTrimmed);
+        var anAdaptor = new CurveAdaptor(aTrimmed);
         aDist = SAC.Project(anAdaptor, new Point3D(0, 3, 0), 1e-7, out _, out aParam);
         Assert.Equal(M_PI / 2, aParam, Tol);
         aDist = SAC.NextProject(1.5, anAdaptor, new Point3D(0, 3, 0), 1e-7, out _, out aParam);
@@ -111,7 +112,7 @@ public class ShapeAnalysis_CurveTests
     {
         // a point on the axis of a circle: every point is a minimum, Extrema reports no solution;
         // the ElCLib fallback takes the start of the circle
-        var anAdaptor = new GeomAdaptor_Curve(Circle(2));
+        var anAdaptor = new CurveAdaptor(Circle(2));
         double aDist = SAC.ProjectAct(anAdaptor, new Point3D(0, 0, 0), 1e-7, out Point3D aProj, out double aParam);
         Assert.Equal(2.0, aDist, Tol);
         Assert.Equal(0.0, aParam);
@@ -121,7 +122,7 @@ public class ShapeAnalysis_CurveTests
     [Fact]
     public void ValidateRange_clamps_adjusts_and_orders()
     {
-        var aSegment = new Geom_TrimmedCurve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 10);
+        var aSegment = new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 10);
         double aFirst = -5, aLast = 20;
         Assert.True(SAC.ValidateRange(aSegment, ref aFirst, ref aLast, 1e-7));
         Assert.Equal(0.0, aFirst);
@@ -135,7 +136,7 @@ public class ShapeAnalysis_CurveTests
         Assert.Equal(8 - 2 * M_PI, aLast, 1e-14);
 
         // a reversed range on an open B-spline reverses the curve
-        Geom_BSplineCurve anArch = Arch();
+        BSplineCurve3D anArch = Arch();
         aFirst = 0.8;
         aLast  = 0.2;
         Assert.True(SAC.ValidateRange(anArch, ref aFirst, ref aLast, 1e-7));
@@ -150,7 +151,7 @@ public class ShapeAnalysis_CurveTests
         Assert.Equal(1.0, aLast);
 
         // other curves: reversed, then widened when equal; false
-        var aLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        var aLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         aFirst = aLast = 2;
         Assert.False(SAC.ValidateRange(aLine, ref aFirst, ref aLast, 1e-7));
         Assert.Equal(2 - global::Kerf.Engine.Foundation.Precision.PConfusion(), aFirst);
@@ -160,7 +161,7 @@ public class ShapeAnalysis_CurveTests
     [Fact]
     public void ValidateRange_reversing_a_frozen_curve_throws()
     {
-        Geom_BSplineCurve anArch = Arch();
+        BSplineCurve3D anArch = Arch();
         anArch.Freeze();
         double aFirst = 0.8, aLast = 0.2;
         Assert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => SAC.ValidateRange(anArch, ref aFirst, ref aLast, 1e-7));
@@ -175,10 +176,10 @@ public class ShapeAnalysis_CurveTests
     public void ValidateRange_closed_curves()
     {
         // a closed (not periodic) B-spline: a square loop; Last at the origin goes to the end
-        var aLoop = new Geom_BSplineCurve(
+        var aLoop = new BSplineCurve3D(
             Array(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0), new Point3D(0, 0, 0)),
             Array(0.0, 1.0, 2.0, 3.0, 4.0), Array(2, 1, 1, 1, 2), 1);
-        Assert.True(aLoop.IsClosed());
+        Assert.True(aLoop.IsClosed);
         double aFirst = 2, aLast = 0;
         Assert.True(SAC.ValidateRange(aLoop, ref aFirst, ref aLast, 1e-7));
         Assert.Equal(2.0, aFirst);
@@ -196,7 +197,7 @@ public class ShapeAnalysis_CurveTests
         // OCCT: IsPeriodic asks the basis circle, but the period given to ElCLib::AdjustPeriodic is the trimmed range
         // [0, 3]: the reversed range (2, 1) becomes (2, 4), past the end of the arc, where the circle's period would
         // give (2, 1 + 2pi) and a non-periodic curve the reversed (1, 2) of the reversed curve.
-        var anArc = new Geom_TrimmedCurve(Circle(1), 0, 3);
+        var anArc = new TrimmedCurve3D(Circle(1), 0, 3);
         double aFirst = 2, aLast = 1;
         Assert.True(SAC.ValidateRange(anArc, ref aFirst, ref aLast, 1e-7));
         Assert.Equal(2.0, aFirst);
@@ -207,7 +208,7 @@ public class ShapeAnalysis_CurveTests
     [Fact]
     public void FillBndBox_exact_finds_the_extrema()
     {
-        var aCircle = new Geom2d_Circle(new Axis2D(new Point2D(1, 2), new Direction2D(1, 0)), 3);
+        var aCircle = new CircleCurve2D(new Axis2D(new Point2D(1, 2), new Direction2D(1, 0)), 3);
         var aBox = new Box2d();
         SAC.FillBndBox(aCircle, 0.3, 0.3 + 2 * M_PI, 5, true, ref aBox);
         aBox.Get(out double aXmin, out double aYmin, out double aXmax, out double aYmax);
@@ -226,21 +227,21 @@ public class ShapeAnalysis_CurveTests
     [Fact]
     public void SelectForwardSeam_tells_the_forward_pcurve()
     {
-        var aL1 = new Geom2d_Line(new Point2D(0, 0), new Direction2D(0, 1));
-        var aL2 = new Geom2d_Line(new Point2D(2 * M_PI, 0), new Direction2D(0, 1));
+        var aL1 = new LineCurve2D(new Point2D(0, 0), new Direction2D(0, 1));
+        var aL2 = new LineCurve2D(new Point2D(2 * M_PI, 0), new Direction2D(0, 1));
         Assert.Equal(2, SAC.SelectForwardSeam(aL1, aL2));
         Assert.Equal(1, SAC.SelectForwardSeam(aL2, aL1));
-        var aD1 = new Geom2d_Line(new Point2D(0, 0), new Direction2D(0, -1));
+        var aD1 = new LineCurve2D(new Point2D(0, 0), new Direction2D(0, -1));
         Assert.Equal(1, SAC.SelectForwardSeam(aD1, aL2));
-        var aU1 = new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0));
-        var aU2 = new Geom2d_Line(new Point2D(0, 1), new Direction2D(1, 0));
+        var aU1 = new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0));
+        var aU2 = new LineCurve2D(new Point2D(0, 1), new Direction2D(1, 0));
         Assert.Equal(1, SAC.SelectForwardSeam(aU1, aU2));
 
         // bounded curves are taken as the line through their ends
-        var aT1 = new Geom2d_TrimmedCurve(aL1, 0, 1);
+        var aT1 = new TrimmedCurve2D(aL1, 0, 1);
         Assert.Equal(2, SAC.SelectForwardSeam(aT1, aL2));
         // an unbounded non-line: 0
-        var aCircle = new Geom2d_Circle(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1);
+        var aCircle = new CircleCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1);
         Assert.Equal(0, SAC.SelectForwardSeam(aCircle, aL2));
     }
 
@@ -258,22 +259,22 @@ public class ShapeAnalysis_CurveTests
         Assert.True(ShapeAnalysis_Curve.IsPlanar(Arch(), ref aNormal));
         Assert.Equal(1.0, Math.Abs(aNormal.Z()), 1e-15);
 
-        var aTwisted = new Geom_BSplineCurve(
+        var aTwisted = new BSplineCurve3D(
             Array(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(1, 1, 1)),
             Array(0.0, 1.0), Array(4, 4), 3);
         aNormal = new Xyz();
         Assert.False(ShapeAnalysis_Curve.IsPlanar(aTwisted, ref aNormal));
 
         aNormal = new Xyz();
-        Assert.True(ShapeAnalysis_Curve.IsPlanar(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), ref aNormal));
+        Assert.True(ShapeAnalysis_Curve.IsPlanar(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), ref aNormal));
         Assert.Equal(1.0, aNormal.Modulus(), 1e-15);
         Assert.Equal(0.0, aNormal.Z(), 1e-15);
 
         // trimmed and offset curves ask their basis
         aNormal = new Xyz();
-        Assert.True(ShapeAnalysis_Curve.IsPlanar(new Geom_TrimmedCurve(Circle(1), 0, 1), ref aNormal));
+        Assert.True(ShapeAnalysis_Curve.IsPlanar(new TrimmedCurve3D(Circle(1), 0, 1), ref aNormal));
         aNormal = new Xyz();
-        Assert.True(ShapeAnalysis_Curve.IsPlanar(new Geom_OffsetCurve(Circle(1), 1, new Direction3D(0, 0, 1)), ref aNormal));
+        Assert.True(ShapeAnalysis_Curve.IsPlanar(new OffsetCurve3D(Circle(1), 1, new Direction3D(0, 0, 1)), ref aNormal));
 
         // points: collinear ones are planar with any normal
         aNormal = new Xyz();
@@ -293,7 +294,7 @@ public class ShapeAnalysis_CurveTests
     public void GetSamplePoints_counts()
     {
         var aSeq = new NCollection_Sequence<Point3D>();
-        Assert.True(ShapeAnalysis_Curve.GetSamplePoints(new Geom_TrimmedCurve(Circle(1), 0, M_PI), 0, M_PI, aSeq));
+        Assert.True(ShapeAnalysis_Curve.GetSamplePoints(new TrimmedCurve3D(Circle(1), 0, M_PI), 0, M_PI, aSeq));
         Assert.Equal(360, aSeq.Length()); // the basis circle: 360 per period
         Assert.Equal(-1.0, aSeq[360].X(), 1e-15);
 
@@ -302,17 +303,17 @@ public class ShapeAnalysis_CurveTests
         Assert.Equal(4, aSeq.Length()); // 2 knots x degree 2
 
         aSeq = new NCollection_Sequence<Point3D>();
-        Assert.True(ShapeAnalysis_Curve.GetSamplePoints(new Geom_TrimmedCurve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 3), 0, 3, aSeq));
+        Assert.True(ShapeAnalysis_Curve.GetSamplePoints(new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 3), 0, 3, aSeq));
         Assert.Equal(2, aSeq.Length());
         Assert.Equal(3.0, aSeq[2].X());
 
-        var aBezier = new Geom_BezierCurve(Array(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)));
+        var aBezier = new BezierCurve3D(Array(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)));
         aSeq = new NCollection_Sequence<Point3D>();
         Assert.True(ShapeAnalysis_Curve.GetSamplePoints(aBezier, 0, 1, aSeq));
         Assert.Equal(6, aSeq.Length());
 
         var aSeq2 = new NCollection_Sequence<Point2D>();
-        Assert.True(ShapeAnalysis_Curve.GetSamplePoints(new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), 0, 2, aSeq2));
+        Assert.True(ShapeAnalysis_Curve.GetSamplePoints(new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0)), 0, 2, aSeq2));
         Assert.True(aSeq2.Length() >= 2);
         Assert.Equal(2.0, aSeq2[aSeq2.Length()].X());
     }
@@ -322,41 +323,41 @@ public class ShapeAnalysis_CurveTests
     {
         Assert.True(ShapeAnalysis_Curve.IsClosed(Circle(1)));
         Assert.False(ShapeAnalysis_Curve.IsClosed(Arch()));
-        Assert.False(ShapeAnalysis_Curve.IsClosed(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0))));
-        var anAlmost = new Geom_TrimmedCurve(Circle(1), 0, 2 * M_PI - 1e-4);
+        Assert.False(ShapeAnalysis_Curve.IsClosed(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0))));
+        var anAlmost = new TrimmedCurve3D(Circle(1), 0, 2 * M_PI - 1e-4);
         Assert.False(ShapeAnalysis_Curve.IsClosed(anAlmost));
         Assert.True(ShapeAnalysis_Curve.IsClosed(anAlmost, 1e-3));
 
-        Assert.True(ShapeAnalysis_Curve.IsPeriodic(new Geom_TrimmedCurve(Circle(1), 0, 1)));
-        Assert.True(ShapeAnalysis_Curve.IsPeriodic(new Geom_OffsetCurve(new Geom_TrimmedCurve(Circle(1), 0, 1), 1, new Direction3D(0, 0, 1))));
+        Assert.True(ShapeAnalysis_Curve.IsPeriodic(new TrimmedCurve3D(Circle(1), 0, 1)));
+        Assert.True(ShapeAnalysis_Curve.IsPeriodic(new OffsetCurve3D(new TrimmedCurve3D(Circle(1), 0, 1), 1, new Direction3D(0, 0, 1))));
         Assert.False(ShapeAnalysis_Curve.IsPeriodic(Arch()));
-        var aCircle2d = new Geom2d_Circle(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1);
-        Assert.True(ShapeAnalysis_Curve.IsPeriodic(new Geom2d_TrimmedCurve(aCircle2d, 0, 1)));
-        Assert.False(ShapeAnalysis_Curve.IsPeriodic(new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0))));
+        var aCircle2d = new CircleCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1);
+        Assert.True(ShapeAnalysis_Curve.IsPeriodic(new TrimmedCurve2D(aCircle2d, 0, 1)));
+        Assert.False(ShapeAnalysis_Curve.IsPeriodic(new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0))));
     }
 
     /// <summary>A complex curve of two straight segments of lengths 1 and 3, each on half of [0, 1].</summary>
     private sealed class TwoSegments : ShapeExtend_ComplexCurve
     {
-        private readonly Geom_Curve[] myCurves;
+        private readonly Curve3D[] myCurves;
 
         public TwoSegments(Point3D theP0, Point3D theP1, Point3D theP2)
         {
             myCurves =
             [
-                new Geom_TrimmedCurve(new Geom_Line(theP0, new Direction3D(new Vector3D(theP0, theP1))), 0, theP0.Distance(theP1)),
-                new Geom_TrimmedCurve(new Geom_Line(theP1, new Direction3D(new Vector3D(theP1, theP2))), 0, theP1.Distance(theP2)),
+                new TrimmedCurve3D(new LineCurve3D(theP0, new Direction3D(new Vector3D(theP0, theP1))), 0, theP0.Distance(theP1)),
+                new TrimmedCurve3D(new LineCurve3D(theP1, new Direction3D(new Vector3D(theP1, theP2))), 0, theP1.Distance(theP2)),
             ];
         }
 
         public override int NbCurves() => 2;
 
-        public override Geom_Curve Curve(int index) => myCurves[index - 1];
+        public override Curve3D Curve(int index) => myCurves[index - 1];
 
         public override int LocateParameter(double U, out double UOut)
         {
             int anInd = U < 0.5 ? 1 : 2;
-            Geom_Curve aC = myCurves[anInd - 1];
+            Curve3D aC = myCurves[anInd - 1];
             double aLocal = anInd == 1 ? U * 2 : (U - 0.5) * 2;
             UOut = aC.FirstParameter() + aLocal * (aC.LastParameter() - aC.FirstParameter());
             return anInd;
@@ -364,14 +365,14 @@ public class ShapeAnalysis_CurveTests
 
         public override double LocalToGlobal(int index, double Ulocal)
         {
-            Geom_Curve aC = myCurves[index - 1];
+            Curve3D aC = myCurves[index - 1];
             double aLocal = (Ulocal - aC.FirstParameter()) / (aC.LastParameter() - aC.FirstParameter());
             return 0.5 * (index - 1) + 0.5 * aLocal;
         }
 
         public override double GetScaleFactor(int ind)
         {
-            Geom_Curve aC = myCurves[ind - 1];
+            Curve3D aC = myCurves[ind - 1];
             return 2 * (aC.LastParameter() - aC.FirstParameter());
         }
 
@@ -379,7 +380,7 @@ public class ShapeAnalysis_CurveTests
 
         protected internal override void Reverse() => throw new global::Kerf.Engine.Foundation.MethodNotImplementedException();
 
-        public override Geom_Geometry Copy() => new TwoSegments(myCurves[0].Value(myCurves[0].FirstParameter()),
+        public override Geometry3D Copy() => new TwoSegments(myCurves[0].Value(myCurves[0].FirstParameter()),
                                                                  myCurves[1].Value(myCurves[1].FirstParameter()),
                                                                  myCurves[1].Value(myCurves[1].LastParameter()));
     }
@@ -394,7 +395,7 @@ public class ShapeAnalysis_CurveTests
         Assert.Equal(Continuity.C0, aCurve.Continuity());
         Assert.True(aCurve.IsCN(0));
         Assert.False(aCurve.IsCN(1));
-        Assert.False(aCurve.IsPeriodic());
+        Assert.False(aCurve.IsPeriodic);
 
         Point3D aP = aCurve.Value(0.75);
         Assert.Equal(1.0, aP.X(), 1e-15);
@@ -411,7 +412,7 @@ public class ShapeAnalysis_CurveTests
         Assert.Equal(6.0, aV1.Y(), 1e-15);
 
         Assert.True(aCurve.Check(1e-7));
-        Assert.False(aCurve.IsClosed());
+        Assert.False(aCurve.IsClosed);
 
         Xyz aNormal = new Xyz();
         Assert.True(ShapeAnalysis_Curve.IsPlanar(aCurve, ref aNormal));

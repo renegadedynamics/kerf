@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
 
 namespace Occt;
 
@@ -36,11 +37,11 @@ public abstract class IMeshTools_ModelAlgo : Transient
     /// The exceptions OCCT's <c>catch (Standard_Failure const&amp;)</c> handles under <c>OCC_CATCH_SIGNALS</c> in the
     /// mesher (as BRepCheck_Analyzer's): Standard_Failure, and the .NET forms of the access violations and integer
     /// divisions by zero that OCC_CATCH_SIGNALS turns into failures. A write into a frozen object
-    /// (<see cref="ImmutableObjectException"/>, <see cref="TopoDS_LockedShape"/>) is let through, so a write into a
+    /// (<see cref="ImmutableObjectException"/>, <see cref="LockedShapeException"/>) is let through, so a write into a
     /// shared input can't pass silently (decision 423's rule).
     /// </summary>
     internal static bool IsCaughtFailure(Exception theException)
-        => theException is not (ImmutableObjectException or TopoDS_LockedShape)
+        => theException is not (ImmutableObjectException or LockedShapeException)
            && theException is FailureException
                or NullReferenceException
                or InvalidCastException

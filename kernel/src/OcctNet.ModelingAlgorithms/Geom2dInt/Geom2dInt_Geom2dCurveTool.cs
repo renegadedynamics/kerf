@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
@@ -12,83 +13,83 @@ namespace Occt;
 
 /// <summary>The tool over Adaptor2d_Curve2d that the 2D curve intersections use.</summary>
 /// <remarks>A struct without state, so it can be a type argument of IntCurve's generic classes (decision 322).</remarks>
-public readonly struct Geom2dInt_Geom2dCurveTool : IIntCurve_CurveTool<Adaptor2d_Curve2d>
+public readonly struct Geom2dInt_Geom2dCurveTool : IIntCurve_CurveTool<Curve2DAdaptorBase>
 {
     // OCCT's IS_C2_COMPOSITE is 0: the curves are split at their C1 discontinuities.
 
-    public static CurveKind GetType(in Adaptor2d_Curve2d C) => (C.GetType());
+    public static CurveKind GetType(in Curve2DAdaptorBase C) => (C.GetType());
 
-    public static Line2D Line(in Adaptor2d_Curve2d C) => (C.Line());
+    public static Line2D Line(in Curve2DAdaptorBase C) => (C.Line());
 
-    public static Circle2D Circle(in Adaptor2d_Curve2d C) => (C.Circle());
+    public static Circle2D Circle(in Curve2DAdaptorBase C) => (C.Circle());
 
-    public static Ellipse2D Ellipse(in Adaptor2d_Curve2d C) => (C.Ellipse());
+    public static Ellipse2D Ellipse(in Curve2DAdaptorBase C) => (C.Ellipse());
 
-    public static Parabola2D Parabola(in Adaptor2d_Curve2d C) => (C.Parabola());
+    public static Parabola2D Parabola(in Curve2DAdaptorBase C) => (C.Parabola());
 
-    public static Hyperbola2D Hyperbola(in Adaptor2d_Curve2d C) => (C.Hyperbola());
+    public static Hyperbola2D Hyperbola(in Curve2DAdaptorBase C) => (C.Hyperbola());
 
-    public static Point2D Value(in Adaptor2d_Curve2d C, double U) => (C.Value(U));
+    public static Point2D Value(in Curve2DAdaptorBase C, double U) => (C.Value(U));
 
-    public static void D0(in Adaptor2d_Curve2d C, double U, out Point2D P)
+    public static void D0(in Curve2DAdaptorBase C, double U, out Point2D P)
     {
         C.D0(U, out P);
     }
 
-    public static void D1(in Adaptor2d_Curve2d C, double U, out Point2D P, out Vector2D T)
+    public static void D1(in Curve2DAdaptorBase C, double U, out Point2D P, out Vector2D T)
     {
         C.D1(U, out P, out T);
     }
 
-    public static void D2(in Adaptor2d_Curve2d C, double U, out Point2D P, out Vector2D T, out Vector2D N)
+    public static void D2(in Curve2DAdaptorBase C, double U, out Point2D P, out Vector2D T, out Vector2D N)
     {
         C.D2(U, out P, out T, out N);
     }
 
-    public static void D3(in Adaptor2d_Curve2d C, double U, out Point2D P, out Vector2D T, out Vector2D N,
+    public static void D3(in Curve2DAdaptorBase C, double U, out Point2D P, out Vector2D T, out Vector2D N,
                           out Vector2D V)
     {
         C.D3(U, out P, out T, out N, out V);
     }
 
-    public static Vector2D DN(in Adaptor2d_Curve2d C, double U, int N) => C.DN(U, N);
+    public static Vector2D DN(in Curve2DAdaptorBase C, double U, int N) => C.DN(U, N);
 
-    public static double FirstParameter(in Adaptor2d_Curve2d C) => (C.FirstParameter());
+    public static double FirstParameter(in Curve2DAdaptorBase C) => (C.FirstParameter());
 
-    public static double LastParameter(in Adaptor2d_Curve2d C) => (C.LastParameter());
+    public static double LastParameter(in Curve2DAdaptorBase C) => (C.LastParameter());
 
     /// <summary>The tolerance used to determine the intersections (1e-10).</summary>
-    public static double EpsX(in Adaptor2d_Curve2d C) => (1.0e-10);
+    public static double EpsX(in Curve2DAdaptorBase C) => (1.0e-10);
 
     /// <summary>The parametric resolution of the 2D tolerance <paramref name="Eps_XYZ"/>.</summary>
-    public static double EpsX(in Adaptor2d_Curve2d C, double Eps_XYZ) => (C.Resolution(Eps_XYZ));
+    public static double EpsX(in Curve2DAdaptorBase C, double Eps_XYZ) => (C.Resolution(Eps_XYZ));
 
-    public static void Intervals(in Adaptor2d_Curve2d C, NCollection_Array1<double> Tab)
+    public static void Intervals(in Curve2DAdaptorBase C, NCollection_Array1<double> Tab)
     {
         C.Intervals(Tab, C1);
     }
 
-    public static void GetInterval(in Adaptor2d_Curve2d C, int i, NCollection_Array1<double> Tab, out double a,
+    public static void GetInterval(in Curve2DAdaptorBase C, int i, NCollection_Array1<double> Tab, out double a,
                                    out double b)
     {
         a = Tab.Value(i);
         b = Tab.Value(i + 1);
     }
 
-    public static int NbIntervals(in Adaptor2d_Curve2d C)
+    public static int NbIntervals(in Curve2DAdaptorBase C)
     {
         int N = 1;
         N = C.NbIntervals(C1);
         return (N);
     }
 
-    public static int Degree(in Adaptor2d_Curve2d C) => C.Degree();
+    public static int Degree(in Curve2DAdaptorBase C) => C.Degree();
 
     /// <summary>The number of samples of the curve between <paramref name="U0"/> and <paramref name="U1"/>.</summary>
-    public static int NbSamples(in Adaptor2d_Curve2d C, double U0, double U1)
+    public static int NbSamples(in Curve2DAdaptorBase C, double U0, double U1)
     {
         CurveKind typC = C.GetType();
-        int nbs = C.NbSamples();
+        int nbs = C.SampleCount;
 
         if (typC == BSplineCurve)
         {
@@ -100,7 +101,7 @@ public readonly struct Geom2dInt_Geom2dCurveTool : IIntCurve_CurveTool<Adaptor2d
                 {
                     t1 = -t1;
                 }
-                nbs = C.NbKnots();
+                nbs = C.KnotCount;
                 nbs *= C.Degree();
                 double anb = t1 / t * nbs;
                 nbs = (int)anb;
@@ -133,9 +134,9 @@ public readonly struct Geom2dInt_Geom2dCurveTool : IIntCurve_CurveTool<Adaptor2d
     }
 
     /// <summary>The number of samples of the curve on its whole range.</summary>
-    public static int NbSamples(in Adaptor2d_Curve2d C)
+    public static int NbSamples(in Curve2DAdaptorBase C)
     {
-        int nbs = C.NbSamples();
+        int nbs = C.SampleCount;
         CurveKind typC = C.GetType();
         if (typC == global::Kerf.Geometry.CurveKind.Circle)
         {

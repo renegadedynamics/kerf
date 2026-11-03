@@ -2,9 +2,14 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.HLRBRep_TypeOfResultingEdge;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -22,34 +27,34 @@ public class HLRBRepAlgoTests
     private static readonly HLRAlgo_Projector Axo =
         new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, -1, 1), new Direction3D(-1, 1, 2)));
 
-    private static string BRepText(TopoDS_Shape theShape)
+    private static string BRepText(Shape theShape)
     {
         StringWriter aWriter = new();
-        BRepTools.Write(theShape, aWriter);
+        BrepTools.Write(theShape, aWriter);
         return aWriter.ToString();
     }
 
-    private static int NbEdges(in TopoDS_Shape theShape)
+    private static int NbEdges(in Shape theShape)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return 0;
         }
-        NCollection_IndexedMap<TopoDS_Shape> aMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, TopAbs_EDGE, aMap);
+        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, ShapeType.Edge, aMap);
         return aMap.Extent();
     }
 
-    private static TopoDS_Shape Frozen(TopoDS_Shape theShape)
+    private static Shape Frozen(Shape theShape)
     {
         theShape.TShape()!.FreezeGraph();
         return theShape;
     }
 
-    private static HLRBRep_Algo Hide(HLRAlgo_Projector P, int nbIso, params TopoDS_Shape[] theShapes)
+    private static HLRBRep_Algo Hide(HLRAlgo_Projector P, int nbIso, params Shape[] theShapes)
     {
         HLRBRep_Algo anAlgo = new();
-        foreach (TopoDS_Shape aS in theShapes)
+        foreach (Shape aS in theShapes)
         {
             anAlgo.Add(aS, nbIso);
         }
@@ -62,26 +67,26 @@ public class HLRBRepAlgoTests
     [Fact]
     public void Algo_box_from_the_top_shows_its_top_and_hides_its_bottom()
     {
-        TopoDS_Shape aBox = Frozen(new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape());
+        Shape aBox = Frozen(new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape());
         string aBefore = BRepText(aBox);
         HLRBRep_Algo anAlgo = Hide(Top, 0, aBox);
         HLRBRep_HLRToShape aToShape = new(anAlgo);
 
         // the vertical edges project to points; the top face's four edges are visible, the bottom's hidden under them
-        TopoDS_Shape aV = aToShape.VCompound();
-        TopoDS_Shape aH = aToShape.HCompound();
+        Shape aV = aToShape.VCompound();
+        Shape aH = aToShape.HCompound();
         Assert.Equal(4, NbEdges(aV));
         Assert.Equal(4, NbEdges(aH));
         Assert.True(aV.TShape()!.IsFrozen);
         Assert.True(aH.TShape()!.IsFrozen);
-        Assert.True(aToShape.OutLineVCompound().IsNull()); // no outline on planes
-        Assert.True(aToShape.IsoLineVCompound().IsNull());
+        Assert.True(aToShape.OutLineVCompound().IsNull); // no outline on planes
+        Assert.True(aToShape.IsoLineVCompound().IsNull);
         // 2D edges: on the XOY plane; their total length is the top face's perimeter
-        GProp_GProps aProps = new();
+        Properties aProps = new();
         BRepGProp.LinearProperties(aV, aProps);
         Assert.Equal(60.0, aProps.Mass(), 1.0e-9);
         // the 3D edges are on the box's edges, at z = 30
-        TopoDS_Shape aV3d = aToShape.CompoundOfEdges(HLRBRep_Sharp, true, true);
+        Shape aV3d = aToShape.CompoundOfEdges(HLRBRep_Sharp, true, true);
         Box aBnd = new();
         BRepBndLib.Add(aV3d, ref aBnd);
         aBnd.Get(out _, out _, out double aZmin, out _, out _, out double aZmax);
@@ -94,8 +99,8 @@ public class HLRBRepAlgoTests
     [Fact]
     public void Algo_keeps_its_shapes_and_finds_them_by_their_original_shape()
     {
-        TopoDS_Shape aBox = Frozen(new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape());
-        TopoDS_Shape aSph = Frozen(new BRepPrimAPI_MakeSphere(new Point3D(5, 10, 40), 6.0).Shape());
+        Shape aBox = Frozen(new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape());
+        Shape aSph = Frozen(new BRepPrimAPI_MakeSphere(new Point3D(5, 10, 40), 6.0).Shape());
         HLRBRep_Algo anAlgo = Hide(Axo, 0, aBox, aSph);
         Assert.Equal(2, anAlgo.NbShapes());
         Assert.Equal(1, anAlgo.Index(aBox));
@@ -113,11 +118,11 @@ public class HLRBRepAlgoTests
         Assert.Equal(NbEdges(aToShape.OutLineVCompound()), NbEdges(aToShape.OutLineVCompound(aSph)));
         // an edge's results (explored: the edge of a frozen shape is found in the outliner's copy), as for an
         // unfrozen box, which the outlining works on in place
-        TopoDS_Shape anUnfrozen = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
+        Shape anUnfrozen = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
         HLRBRep_HLRToShape anUnfrozenToShape = new(Hide(Axo, 0, anUnfrozen, aSph));
         int anEdgeResults = 0;
-        TopExp_Explorer anExp = new(aBox, TopAbs_EDGE);
-        TopExp_Explorer anUnfrozenExp = new(anUnfrozen, TopAbs_EDGE);
+        Explorer anExp = new(aBox, ShapeType.Edge);
+        Explorer anUnfrozenExp = new(anUnfrozen, ShapeType.Edge);
         for (; anExp.More(); anExp.Next(), anUnfrozenExp.Next())
         {
             int aNb = NbEdges(aToShape.VCompound(anExp.Current())) + NbEdges(aToShape.HCompound(anExp.Current()));
@@ -143,7 +148,7 @@ public class HLRBRepAlgoTests
 
         // the outlined shapes are rebuilt after OutLinedShapeNullify
         anAlgo.OutLinedShapeNullify();
-        Assert.True(anAlgo.ShapeBounds(1).Shape()!.OutLinedShape().IsNull());
+        Assert.True(anAlgo.ShapeBounds(1).Shape()!.OutLinedShape().IsNull);
         anAlgo.Update();
         anAlgo.Hide();
         Assert.True(NbEdges(new HLRBRep_HLRToShape(anAlgo).OutLineVCompound()) > 0);
@@ -152,8 +157,8 @@ public class HLRBRepAlgoTests
     [Fact]
     public void InternalAlgo_shows_and_hides_all_and_hides_partially()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
-        TopoDS_Shape aBox2 = new BRepPrimAPI_MakeBox(new Point3D(-2, -2, 40), 4.0, 4.0, 4.0).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
+        Shape aBox2 = new BRepPrimAPI_MakeBox(new Point3D(-2, -2, 40), 4.0, 4.0, 4.0).Shape();
         HLRBRep_Algo anAlgo = new();
         anAlgo.Add(aBox);
         anAlgo.Add(aBox2);
@@ -163,7 +168,7 @@ public class HLRBRepAlgoTests
         anAlgo.ShowAll();
         Assert.Equal(16, NbEdges(new HLRBRep_HLRToShape(anAlgo).VCompound())); // not hidden: both tops and bottoms
         anAlgo.HideAll();
-        Assert.True(new HLRBRep_HLRToShape(anAlgo).VCompound().IsNull());
+        Assert.True(new HLRBRep_HLRToShape(anAlgo).VCompound().IsNull);
         anAlgo.ShowAll(1);
         anAlgo.Select();
         Assert.Equal(8, NbEdges(new HLRBRep_HLRToShape(anAlgo).VCompound()));
@@ -181,12 +186,12 @@ public class HLRBRepAlgoTests
     [Fact]
     public void Isolines_and_smooth_edges_of_a_cylinder()
     {
-        TopoDS_Shape aCyl = Frozen(new BRepPrimAPI_MakeCylinder(10.0, 30.0).Shape());
+        Shape aCyl = Frozen(new BRepPrimAPI_MakeCylinder(10.0, 30.0).Shape());
         HLRBRep_Algo anAlgo = Hide(Axo, 3, aCyl);
         HLRBRep_HLRToShape aToShape = new(anAlgo);
         Assert.True(NbEdges(aToShape.IsoLineVCompound()) > 0);
         Assert.True(NbEdges(aToShape.OutLineVCompound()) >= 2); // the two silhouettes (split at the isolines)
-        TopoDS_Shape aOut3d = aToShape.OutLineVCompound3d();
+        Shape aOut3d = aToShape.OutLineVCompound3d();
         Assert.True(NbEdges(aOut3d) >= 2);
         Assert.True(aOut3d.TShape()!.IsFrozen);
     }
@@ -194,12 +199,12 @@ public class HLRBRepAlgoTests
     [Fact]
     public void ReflectLines_gives_the_outlines_in_3d_and_2d()
     {
-        TopoDS_Shape aCyl = Frozen(new BRepPrimAPI_MakeCylinder(10.0, 30.0).Shape());
+        Shape aCyl = Frozen(new BRepPrimAPI_MakeCylinder(10.0, 30.0).Shape());
         string aBefore = BRepText(aCyl);
         HLRAppli_ReflectLines aReflector = new(aCyl);
         aReflector.SetAxes(1.0, -1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0);
         aReflector.Perform();
-        TopoDS_Shape aResult = aReflector.GetResult();
+        Shape aResult = aReflector.GetResult();
         Assert.True(NbEdges(aResult) >= 2);
         Assert.True(aResult.TShape()!.IsFrozen);
         Assert.True(NbEdges(aReflector.GetCompoundOf3dEdges(HLRBRep_Sharp, true, false)) > 0);
@@ -216,7 +221,7 @@ public class HLRBRepAlgoTests
         aNoMesh.InitHide();
         Assert.False(aNoMesh.MoreHide());
 
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
         aBox = Frozen(new BRepMesh_IncrementalMesh(aBox, 0.5).Shape());
         string aBefore = BRepText(aBox);
         HLRBRep_PolyAlgo anAlgo = new();
@@ -230,14 +235,14 @@ public class HLRBRepAlgoTests
 
         HLRBRep_PolyHLRToShape aToShape = new();
         aToShape.Update(anAlgo);
-        TopoDS_Shape aV = aToShape.VCompound();
+        Shape aV = aToShape.VCompound();
         Assert.True(aV.TShape()!.IsFrozen);
-        GProp_GProps aProps = new();
+        Properties aProps = new();
         BRepGProp.LinearProperties(aV, aProps);
         Assert.Equal(60.0, aProps.Mass(), 1.0e-6); // the top face's perimeter, in segments
         Assert.True(NbEdges(aToShape.HCompound()) > 0);
         Assert.True(NbEdges(aToShape.VCompound(aBox)) > 0);
-        Assert.True(aToShape.VCompound(new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Shape()).IsNull());
+        Assert.True(aToShape.VCompound(new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Shape()).IsNull);
         // shown without hiding: all the segments, the bottom's too
         aToShape.Show();
         Assert.True(NbEdges(aToShape.VCompound()) > NbEdges(aV));
@@ -248,9 +253,9 @@ public class HLRBRepAlgoTests
         HLRAlgo_EdgeStatus aStatus = new();
         anAlgo.InitHide();
         Assert.True(anAlgo.MoreHide());
-        anAlgo.Hide(aStatus, out TopoDS_Shape anEdge, out _, out _, out _, out _);
-        NCollection_IndexedMap<TopoDS_Shape> anEdges = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aBox, TopAbs_EDGE, anEdges);
+        anAlgo.Hide(aStatus, out Shape anEdge, out _, out _, out _, out _);
+        NCollection_IndexedMap<Shape> anEdges = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aBox, ShapeType.Edge, anEdges);
         Assert.True(anEdges.Contains(anEdge));
 
         Assert.Equal(aBefore, BRepText(aBox));
@@ -268,23 +273,23 @@ public class HLRBRepAlgoTests
     [Fact]
     public void PolyAlgo_outlined_shape_holds_the_shape_and_its_internal_outlines()
     {
-        TopoDS_Shape aSph = new BRepMesh_IncrementalMesh(new BRepPrimAPI_MakeSphere(10.0).Shape(), 0.2).Shape();
+        Shape aSph = new BRepMesh_IncrementalMesh(new BRepPrimAPI_MakeSphere(10.0).Shape(), 0.2).Shape();
         HLRBRep_PolyAlgo anAlgo = new(aSph);
         anAlgo.Projector(Axo);
         Assert.Equal(1, NbChildren(anAlgo.OutLinedShape(aSph))); // before Update: the shape alone
         anAlgo.Update();
-        TopoDS_Shape anOutLined = anAlgo.OutLinedShape(aSph);
+        Shape anOutLined = anAlgo.OutLinedShape(aSph);
         Assert.True(NbChildren(anOutLined) >= 1);
         Assert.True(anOutLined.TShape()!.IsFrozen);
-        Assert.True(anAlgo.OutLinedShape(new TopoDS_Shape()).IsNull());
+        Assert.True(anAlgo.OutLinedShape(new Shape()).IsNull);
     }
 
-    private static int NbChildren(in TopoDS_Shape theShape) => theShape.NbChildren();
+    private static int NbChildren(in Shape theShape) => theShape.ChildCount;
 
     [Fact]
     public void Exact_hiding_on_several_threads_gives_the_serial_results()
     {
-        TopoDS_Shape aTorus = Frozen(new BRepPrimAPI_MakeTorus(30.0, 10.0).Shape());
+        Shape aTorus = Frozen(new BRepPrimAPI_MakeTorus(30.0, 10.0).Shape());
         string Run() => BRepText(new HLRBRep_HLRToShape(Hide(Axo, 2, aTorus)).OutLineVCompound())
                         + BRepText(new HLRBRep_HLRToShape(Hide(Axo, 2, aTorus)).HCompound());
         string aSerial = Run();
@@ -310,7 +315,7 @@ public class HLRBRepAlgoTests
     [Fact]
     public void BiPoints_are_values()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Shape();
         HLRBRep_BiPnt2D a = new(0.0, 0.0, 1.0, 1.0, aBox, true, false, false, false);
         HLRBRep_BiPnt2D b = new(new Xy(0.0, 0.0), new Xy(1.0, 1.0), aBox, true, false, false, false);
         Assert.Equal(a, b);
@@ -321,14 +326,14 @@ public class HLRBRepAlgoTests
         Assert.Equal(new Point3D(1.0, 2.0, 3.0), p.P2());
         Assert.True(p.RgNLine() && p.IntLine());
         Assert.False(p.WithRgNLine(false).RgNLine());
-        Assert.True(new HLRBRep_BiPoint().Shape().IsNull());
+        Assert.True(new HLRBRep_BiPoint().Shape().IsNull);
     }
 
     [Fact]
     public void MakeEdge_builds_the_projected_part_of_an_edge()
     {
         // a circle seen from the top: a 2D circle; its 3D edge shares the curve
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Circle3D(Constants.XOY(), 5.0)).Edge();
+        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Circle3D(Constants.XOY(), 5.0)).Edge();
         HLRBRep_Curve aCurve = new();
         aCurve.Projector(new System.Runtime.CompilerServices.StrongBox<HLRAlgo_Projector>(Top));
         aCurve.Curve(anEdge);
@@ -336,16 +341,16 @@ public class HLRBRepAlgoTests
         Span<double> aMax = stackalloc double[16];
         HLRAlgo.InitMinMax(global::Kerf.Engine.Foundation.Precision.Infinite(), aMin, aMax);
         aCurve.Update(aMin, aMax);
-        TopoDS_Edge a2d = HLRBRep.MakeEdge(aCurve, 0.0, Math.PI);
-        GProp_GProps aProps = new();
+        Edge a2d = HLRBRep.MakeEdge(aCurve, 0.0, Math.PI);
+        Properties aProps = new();
         BRepGProp.LinearProperties(a2d, aProps);
         Assert.Equal(5.0 * Math.PI, aProps.Mass(), 1.0e-9);
-        TopoDS_Edge a3d = HLRBRep.MakeEdge3d(aCurve, 0.0, Math.PI);
-        BRep_Tool.Range(a3d, out double f, out double l);
+        Edge a3d = HLRBRep.MakeEdge3d(aCurve, 0.0, Math.PI);
+        Tool.Range(a3d, out double f, out double l);
         Assert.Equal(0.0, f);
         Assert.Equal(Math.PI, l);
-        TopExp.Vertices(a3d, out TopoDS_Vertex V1, out _);
-        TopExp.Vertices(anEdge, out TopoDS_Vertex E1, out _);
+        Exploration.Vertices(a3d, out Vertex V1, out _);
+        Exploration.Vertices(anEdge, out Vertex E1, out _);
         Assert.True(V1.IsSame(E1)); // shared at the start of the edge
     }
 }

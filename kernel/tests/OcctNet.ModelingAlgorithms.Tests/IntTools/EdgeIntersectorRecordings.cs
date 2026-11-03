@@ -1,11 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.IO.Compression;
 using System.Text;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -28,11 +31,11 @@ internal static class EdgeIntersectorRecordings
     public sealed class Case
     {
         public required string Name { get; init; }
-        public required TopoDS_Shape A { get; init; }
-        public required TopoDS_Shape B { get; init; }
-        public NCollection_IndexedMap<TopoDS_Shape> EA { get; } = new(TopTools_ShapeMapHasher.Instance);
-        public NCollection_IndexedMap<TopoDS_Shape> EB { get; } = new(TopTools_ShapeMapHasher.Instance);
-        public NCollection_IndexedMap<TopoDS_Shape> FB { get; } = new(TopTools_ShapeMapHasher.Instance);
+        public required Shape A { get; init; }
+        public required Shape B { get; init; }
+        public NCollection_IndexedMap<Shape> EA { get; } = new(ShapeHasher.Instance);
+        public NCollection_IndexedMap<Shape> EB { get; } = new(ShapeHasher.Instance);
+        public NCollection_IndexedMap<Shape> FB { get; } = new(ShapeHasher.Instance);
         public List<EERun> EE { get; } = [];
         public List<EFRun> EF { get; } = [];
     }
@@ -62,7 +65,7 @@ internal static class EdgeIntersectorRecordings
                 case "CASE":
                     {
                         string[] f = aLine.Split(' ');
-                        TopoDS_Shape aA, aB;
+                        Shape aA, aB;
                         if (f[2] == "#probes")
                         {
                             string[] aHead = aReader.ReadLine()!.Split(' ');
@@ -72,7 +75,7 @@ internal static class EdgeIntersectorRecordings
                             {
                                 aText.Append(aReader.ReadLine()).Append('\n');
                             }
-                            BRepTools.Read(out aA, new StringReader(aText.ToString()));
+                            BrepTools.Read(out aA, new StringReader(aText.ToString()));
                             aB = BRepMeshModelKit.ReadDataOcc(f[3]);
                         }
                         else
@@ -88,9 +91,9 @@ internal static class EdgeIntersectorRecordings
                             }
                         }
                         aCase = new Case { Name = f[1], A = aA, B = aB };
-                        TopExp.MapShapes(aA, TopAbs_EDGE, aCase.EA);
-                        TopExp.MapShapes(aB, TopAbs_EDGE, aCase.EB);
-                        TopExp.MapShapes(aB, TopAbs_FACE, aCase.FB);
+                        Exploration.MapShapes(aA, global::Kerf.Topology.ShapeType.Edge, aCase.EA);
+                        Exploration.MapShapes(aB, global::Kerf.Topology.ShapeType.Edge, aCase.EB);
+                        Exploration.MapShapes(aB, global::Kerf.Topology.ShapeType.Face, aCase.FB);
                         aCases.Add(aCase.Name, aCase);
                         break;
                     }
@@ -112,7 +115,7 @@ internal static class EdgeIntersectorRecordings
 
     private static string Hex(double theValue) => BitConverter.DoubleToInt64Bits(theValue).ToString("x16");
 
-    private static string CommonPart(IntTools_CommonPrt theCP, in TopoDS_Edge theE1, bool theWithPoints)
+    private static string CommonPart(IntTools_CommonPrt theCP, in Edge theE1, bool theWithPoints)
     {
         StringBuilder aS = new();
         aS.Append(" | ").Append((int)theCP.Type()).Append(theCP.Edge1().IsSame(theE1) ? " 1" : " 2");
@@ -139,15 +142,15 @@ internal static class EdgeIntersectorRecordings
     /// An edge/edge run as edgerec makes it: 0 whole ranges; 1 sub-ranges; 2 the quick coincidence check; 3 a fuzzy
     /// value of 1e-4.
     /// </summary>
-    public static string RunEE(in TopoDS_Edge theE1, in TopoDS_Edge theE2, int theVariant)
+    public static string RunEE(in Edge theE1, in Edge theE2, int theVariant)
     {
         IntTools_EdgeEdge anEE = new();
         anEE.SetEdge1(theE1);
         anEE.SetEdge2(theE2);
         if (theVariant == 1)
         {
-            BRep_Tool.Range(theE1, out double f1, out double l1);
-            BRep_Tool.Range(theE2, out double f2, out double l2);
+            Tool.Range(theE1, out double f1, out double l1);
+            Tool.Range(theE2, out double f2, out double l2);
             anEE.SetRange1(f1 + 0.125 * (l1 - f1), l1 - 0.0625 * (l1 - f1));
             anEE.SetRange2(f2 + 0.0625 * (l2 - f2), l2 - 0.125 * (l2 - f2));
         }
@@ -177,12 +180,12 @@ internal static class EdgeIntersectorRecordings
     }
 
     /// <summary>An edge/face run on the edge's range with the context and the fuzzy value (0: the default).</summary>
-    public static string RunEF(in TopoDS_Edge theE, in TopoDS_Face theF, IntTools_Context theCtx, double theFuzz = 0.0)
+    public static string RunEF(in Edge theE, in Face theF, IntTools_Context theCtx, double theFuzz = 0.0)
     {
         IntTools_EdgeFace anEF = new();
         anEF.SetEdge(theE);
         anEF.SetFace(theF);
-        BRep_Tool.Range(theE, out double f, out double l);
+        Tool.Range(theE, out double f, out double l);
         anEF.SetRange(f, l);
         anEF.SetContext(theCtx);
         if (theFuzz > 0.0)
@@ -207,8 +210,8 @@ internal static class EdgeIntersectorRecordings
         }
     }
 
-    public static TopoDS_Edge Edge(Case theCase, NCollection_IndexedMap<TopoDS_Shape> theMap, int theIndex) =>
-        TopoDS.Edge(theMap.FindKey(theIndex));
+    public static Edge Edge(Case theCase, NCollection_IndexedMap<Shape> theMap, int theIndex) =>
+        ShapeCasts.Edge(theMap.FindKey(theIndex));
 
-    public static TopoDS_Face Face(Case theCase, int theIndex) => TopoDS.Face(theCase.FB.FindKey(theIndex));
+    public static Face Face(Case theCase, int theIndex) => ShapeCasts.Face(theCase.FB.FindKey(theIndex));
 }

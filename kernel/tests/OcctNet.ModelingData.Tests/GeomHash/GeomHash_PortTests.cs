@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Hashing;
 using Kerf.Engine.Meshing;
 
 using Kerf.Geometry;
@@ -26,7 +27,7 @@ public class GeomHash_PortTests
 
     private static Frame2D Ax22d(Random r) => new(Pnt2d(r), new Direction2D(R(r, -1, 1) + 2.0, R(r, -1, 1)), r.Next(2) == 0);
 
-    private static Geom_BSplineCurve BSpline(Random r, bool theRational)
+    private static BSplineCurve3D BSpline(Random r, bool theRational)
     {
         int aDeg = r.Next(1, 4);
         int aNbKnots = r.Next(2, 5);
@@ -49,19 +50,19 @@ public class GeomHash_PortTests
             aWeights[i] = R(r, 0.5, 2);
         }
 
-        return theRational ? new Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, aDeg)
-                           : new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg);
+        return theRational ? new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, aDeg)
+                           : new BSplineCurve3D(aPoles, aKnots, aMults, aDeg);
     }
 
-    internal static Geom_Curve Curve(Random r, int theKind)
+    internal static Curve3D Curve(Random r, int theKind)
     {
         switch (theKind)
         {
-            case 0: return new Geom_Line(Pnt(r), new Direction3D(R(r, 1, 2), R(r, -1, 1), R(r, -1, 1)));
-            case 1: return new Geom_Circle(Ax2(r), R(r, 1, 5));
-            case 2: return new Geom_Ellipse(Ax2(r), R(r, 5, 10), R(r, 1, 4));
-            case 3: return new Geom_Hyperbola(Ax2(r), R(r, 1, 5), R(r, 1, 5));
-            case 4: return new Geom_Parabola(Ax2(r), R(r, 1, 5));
+            case 0: return new LineCurve3D(Pnt(r), new Direction3D(R(r, 1, 2), R(r, -1, 1), R(r, -1, 1)));
+            case 1: return new CircleCurve3D(Ax2(r), R(r, 1, 5));
+            case 2: return new EllipseCurve3D(Ax2(r), R(r, 5, 10), R(r, 1, 4));
+            case 3: return new HyperbolaCurve3D(Ax2(r), R(r, 1, 5), R(r, 1, 5));
+            case 4: return new ParabolaCurve3D(Ax2(r), R(r, 1, 5));
             case 5:
             case 6:
             {
@@ -74,30 +75,30 @@ public class GeomHash_PortTests
                     aWeights[i] = R(r, 0.5, 2);
                 }
 
-                return theKind == 5 ? new Geom_BezierCurve(aPoles) : new Geom_BezierCurve(aPoles, aWeights);
+                return theKind == 5 ? new BezierCurve3D(aPoles) : new BezierCurve3D(aPoles, aWeights);
             }
             case 7: return BSpline(r, false);
             case 8: return BSpline(r, true);
-            case 9: return new Geom_TrimmedCurve(new Geom_Circle(Ax2(r), R(r, 1, 5)), R(r, 0, 1), R(r, 2, 3));
+            case 9: return new TrimmedCurve3D(new CircleCurve3D(Ax2(r), R(r, 1, 5)), R(r, 0, 1), R(r, 2, 3));
             default:
             {
-                var aCircle = new Geom_Circle(Ax2(r), R(r, 1, 5));
-                return new Geom_OffsetCurve(aCircle, R(r, 0.1, 0.5), aCircle.Position().Direction());
+                var aCircle = new CircleCurve3D(Ax2(r), R(r, 1, 5));
+                return new OffsetCurve3D(aCircle, R(r, 0.1, 0.5), aCircle.Position().Direction());
             }
         }
     }
 
-    internal static Geom_Surface Surface(Random r, int theKind)
+    internal static Surface Surface(Random r, int theKind)
     {
         switch (theKind)
         {
-            case 0: return new Geom_Plane(new CoordinateSystem(Ax2(r)));
-            case 1: return new Geom_CylindricalSurface(new CoordinateSystem(Ax2(r)), R(r, 1, 5));
-            case 2: return new Geom_ConicalSurface(new CoordinateSystem(Ax2(r)), R(r, 0.1, 1), R(r, 0, 3));
-            case 3: return new Geom_SphericalSurface(new CoordinateSystem(Ax2(r)), R(r, 1, 5));
-            case 4: return new Geom_ToroidalSurface(new CoordinateSystem(Ax2(r)), R(r, 6, 9), R(r, 1, 5));
-            case 5: return new Geom_SurfaceOfRevolution(BSpline(r, false), new Axis3D(Pnt(r), new Direction3D(0, 0, 1)));
-            case 6: return new Geom_SurfaceOfLinearExtrusion(BSpline(r, true), new Direction3D(R(r, -1, 1), R(r, -1, 1), 2.0));
+            case 0: return new PlaneSurface(new CoordinateSystem(Ax2(r)));
+            case 1: return new CylindricalSurface(new CoordinateSystem(Ax2(r)), R(r, 1, 5));
+            case 2: return new ConicalSurface(new CoordinateSystem(Ax2(r)), R(r, 0.1, 1), R(r, 0, 3));
+            case 3: return new SphericalSurface(new CoordinateSystem(Ax2(r)), R(r, 1, 5));
+            case 4: return new ToroidalSurface(new CoordinateSystem(Ax2(r)), R(r, 6, 9), R(r, 1, 5));
+            case 5: return new RevolutionSurface(BSpline(r, false), new Axis3D(Pnt(r), new Direction3D(0, 0, 1)));
+            case 6: return new ExtrusionSurface(BSpline(r, true), new Direction3D(R(r, -1, 1), R(r, -1, 1), 2.0));
             case 7:
             case 8:
             {
@@ -113,7 +114,7 @@ public class GeomHash_PortTests
                     }
                 }
 
-                return theKind == 7 ? new Geom_BezierSurface(aPoles) : new Geom_BezierSurface(aPoles, aWeights);
+                return theKind == 7 ? new BezierSurface(aPoles) : new BezierSurface(aPoles, aWeights);
             }
             case 9:
             {
@@ -140,22 +141,22 @@ public class GeomHash_PortTests
                 aVMults[1] = 3;
                 aVMults[2] = 1;
                 aVMults[3] = 3;
-                return new Geom_BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, 2, 2);
+                return new BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, 2, 2);
             }
-            case 10: return new Geom_RectangularTrimmedSurface(Surface(r, 3), R(r, 0, 1), R(r, 2, 3), R(r, -1, 0), R(r, 0, 1));
-            default: return new Geom_OffsetSurface(Surface(r, 9), R(r, 0.1, 0.5));
+            case 10: return new TrimmedSurface(Surface(r, 3), R(r, 0, 1), R(r, 2, 3), R(r, -1, 0), R(r, 0, 1));
+            default: return new OffsetSurface(Surface(r, 9), R(r, 0.1, 0.5));
         }
     }
 
-    internal static Geom2d_Curve Curve2d(Random r, int theKind)
+    internal static Curve2D Curve2d(Random r, int theKind)
     {
         switch (theKind)
         {
-            case 0: return new Geom2d_Line(Pnt2d(r), new Direction2D(R(r, 1, 2), R(r, -1, 1)));
-            case 1: return new Geom2d_Circle(Ax22d(r), R(r, 1, 5));
-            case 2: return new Geom2d_Ellipse(Ax22d(r), R(r, 5, 10), R(r, 1, 4));
-            case 3: return new Geom2d_Hyperbola(Ax22d(r), R(r, 1, 5), R(r, 1, 5));
-            case 4: return new Geom2d_Parabola(Ax22d(r), R(r, 1, 5));
+            case 0: return new LineCurve2D(Pnt2d(r), new Direction2D(R(r, 1, 2), R(r, -1, 1)));
+            case 1: return new CircleCurve2D(Ax22d(r), R(r, 1, 5));
+            case 2: return new EllipseCurve2D(Ax22d(r), R(r, 5, 10), R(r, 1, 4));
+            case 3: return new HyperbolaCurve2D(Ax22d(r), R(r, 1, 5), R(r, 1, 5));
+            case 4: return new ParabolaCurve2D(Ax22d(r), R(r, 1, 5));
             case 5:
             case 6:
             {
@@ -168,7 +169,7 @@ public class GeomHash_PortTests
                     aWeights[i] = R(r, 0.5, 2);
                 }
 
-                return theKind == 5 ? new Geom2d_BezierCurve(aPoles) : new Geom2d_BezierCurve(aPoles, aWeights);
+                return theKind == 5 ? new BezierCurve2D(aPoles) : new BezierCurve2D(aPoles, aWeights);
             }
             case 7:
             {
@@ -184,10 +185,10 @@ public class GeomHash_PortTests
                 var aMults = new NCollection_Array1<int>(1, 2);
                 aMults[1] = 4;
                 aMults[2] = 4;
-                return new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 3);
+                return new BSplineCurve2D(aPoles, aKnots, aMults, 3);
             }
-            case 8: return new Geom2d_TrimmedCurve(new Geom2d_Circle(Ax22d(r), R(r, 1, 5)), R(r, 0, 1), R(r, 2, 3));
-            default: return new Geom2d_OffsetCurve(new Geom2d_Circle(Ax22d(r), R(r, 1, 5)), R(r, 0.1, 0.5));
+            case 8: return new TrimmedCurve2D(new CircleCurve2D(Ax22d(r), R(r, 1, 5)), R(r, 0, 1), R(r, 2, 3));
+            default: return new OffsetCurve2D(new CircleCurve2D(Ax22d(r), R(r, 1, 5)), R(r, 0.1, 0.5));
         }
     }
 
@@ -195,16 +196,16 @@ public class GeomHash_PortTests
     public void Copies_OfRandomCurves_AreEqualWithEqualHashes_MovedOnesAreNot()
     {
         var aRand = new Random(20261029);
-        var aHasher = new GeomHash_CurveHasher();
+        var aHasher = new CurveHasher();
         for (int aKind = 0; aKind <= 10; aKind++)
         {
             for (int i = 0; i < 20; i++)
             {
-                Geom_Curve aCurve = Curve(aRand, aKind);
-                var aCopy = (Geom_Curve)aCurve.Copy();
+                Curve3D aCurve = Curve(aRand, aKind);
+                var aCopy = (Curve3D)aCurve.Copy();
                 Assert.True(aHasher.Equals(aCurve, aCopy), global::Kerf.Engine.Foundation.OcctTypeNames.Of(aCurve.GetType()));
                 Assert.Equal(aHasher.GetHashCode(aCurve), aHasher.GetHashCode(aCopy));
-                var aMoved = (Geom_Curve)aCurve.Translated(new Vector3D(0.5, 0.0, 0.0));
+                var aMoved = (Curve3D)aCurve.Translated(new Vector3D(0.5, 0.0, 0.0));
                 Assert.False(aHasher.Equals(aCurve, aMoved), global::Kerf.Engine.Foundation.OcctTypeNames.Of(aCurve.GetType()));
             }
         }
@@ -214,16 +215,16 @@ public class GeomHash_PortTests
     public void Copies_OfRandomSurfaces_AreEqualWithEqualHashes_MovedOnesAreNot()
     {
         var aRand = new Random(20261030);
-        var aHasher = new GeomHash_SurfaceHasher();
+        var aHasher = new SurfaceHasher();
         for (int aKind = 0; aKind <= 11; aKind++)
         {
             for (int i = 0; i < 20; i++)
             {
-                Geom_Surface aSurface = Surface(aRand, aKind);
-                var aCopy = (Geom_Surface)aSurface.Copy();
+                Surface aSurface = Surface(aRand, aKind);
+                var aCopy = (Surface)aSurface.Copy();
                 Assert.True(aHasher.Equals(aSurface, aCopy), global::Kerf.Engine.Foundation.OcctTypeNames.Of(aSurface.GetType()));
                 Assert.Equal(aHasher.GetHashCode(aSurface), aHasher.GetHashCode(aCopy));
-                var aMoved = (Geom_Surface)aSurface.Translated(new Vector3D(0.5, 0.0, 0.0));
+                var aMoved = (Surface)aSurface.Translated(new Vector3D(0.5, 0.0, 0.0));
                 Assert.False(aHasher.Equals(aSurface, aMoved), global::Kerf.Engine.Foundation.OcctTypeNames.Of(aSurface.GetType()));
             }
         }
@@ -233,16 +234,16 @@ public class GeomHash_PortTests
     public void Copies_OfRandom2dCurves_AreEqualWithEqualHashes_MovedOnesAreNot()
     {
         var aRand = new Random(20261031);
-        var aHasher = new Geom2dHash_CurveHasher();
+        var aHasher = new CurveHasher2D();
         for (int aKind = 0; aKind <= 9; aKind++)
         {
             for (int i = 0; i < 20; i++)
             {
-                Geom2d_Curve aCurve = Curve2d(aRand, aKind);
-                var aCopy = (Geom2d_Curve)aCurve.Copy();
+                Curve2D aCurve = Curve2d(aRand, aKind);
+                var aCopy = (Curve2D)aCurve.Copy();
                 Assert.True(aHasher.Equals(aCurve, aCopy), global::Kerf.Engine.Foundation.OcctTypeNames.Of(aCurve.GetType()));
                 Assert.Equal(aHasher.GetHashCode(aCurve), aHasher.GetHashCode(aCopy));
-                var aMoved = (Geom2d_Curve)aCurve.Translated(new Vector2D(0.5, 0.0));
+                var aMoved = (Curve2D)aCurve.Translated(new Vector2D(0.5, 0.0));
                 Assert.False(aHasher.Equals(aCurve, aMoved), global::Kerf.Engine.Foundation.OcctTypeNames.Of(aCurve.GetType()));
             }
         }
@@ -252,10 +253,10 @@ public class GeomHash_PortTests
     public void Hashers_DeduplicateInHashSetsAndDictionaries()
     {
         var aRand = new Random(7);
-        var aCurves = new HashSet<Geom_Curve?>(new GeomHash_CurveHasher());
-        var aSurfaces = new Dictionary<Geom_Surface, int>(new GeomHash_SurfaceHasher());
-        var aCurves2d = new HashSet<Geom2d_Curve?>(new Geom2dHash_CurveHasher());
-        var aDistinct = new List<(Geom_Curve, Geom_Surface, Geom2d_Curve)>();
+        var aCurves = new HashSet<Curve3D?>(new CurveHasher());
+        var aSurfaces = new Dictionary<Surface, int>(new SurfaceHasher());
+        var aCurves2d = new HashSet<Curve2D?>(new CurveHasher2D());
+        var aDistinct = new List<(Curve3D, Surface, Curve2D)>();
         for (int i = 0; i < 40; i++)
         {
             aDistinct.Add((Curve(aRand, i % 11), Surface(aRand, i % 12), Curve2d(aRand, i % 10)));
@@ -265,17 +266,17 @@ public class GeomHash_PortTests
         {
             for (int i = 0; i < aDistinct.Count; i++)
             {
-                (Geom_Curve aC, Geom_Surface aS, Geom2d_Curve aC2d) = aDistinct[i];
-                aCurves.Add(aPass == 0 ? aC : (Geom_Curve)aC.Copy());
-                aSurfaces.TryAdd(aPass == 0 ? aS : (Geom_Surface)aS.Copy(), i);
-                aCurves2d.Add(aPass == 0 ? aC2d : (Geom2d_Curve)aC2d.Copy());
+                (Curve3D aC, Surface aS, Curve2D aC2d) = aDistinct[i];
+                aCurves.Add(aPass == 0 ? aC : (Curve3D)aC.Copy());
+                aSurfaces.TryAdd(aPass == 0 ? aS : (Surface)aS.Copy(), i);
+                aCurves2d.Add(aPass == 0 ? aC2d : (Curve2D)aC2d.Copy());
             }
         }
 
         Assert.Equal(40, aCurves.Count);
         Assert.Equal(40, aSurfaces.Count);
         Assert.Equal(40, aCurves2d.Count);
-        Assert.Equal(17, aSurfaces[(Geom_Surface)aDistinct[17].Item2.Copy()]);
+        Assert.Equal(17, aSurfaces[(Surface)aDistinct[17].Item2.Copy()]);
         Assert.True(aCurves.Add(null));
         Assert.False(aCurves.Add(null));
     }
@@ -283,7 +284,7 @@ public class GeomHash_PortTests
     [Fact]
     public void MeshHashers_DeduplicateInHashSets()
     {
-        var aTris = new HashSet<Triangulation?>(new GeomHash_TriangulationHasher(1.0e-9, 1.0e-6));
+        var aTris = new HashSet<Triangulation?>(new TriangulationHasher(1.0e-9, 1.0e-6));
         for (int aPass = 0; aPass < 2; aPass++)
         {
             for (int i = 0; i < 5; i++)
@@ -304,31 +305,31 @@ public class GeomHash_PortTests
     public void Hashes_AreDeterministic()
     {
         // FNV-1a over the rounded values: the same in every run and on every platform
-        var aLine = new Geom_Line(new Point3D(1.0, 2.0, 3.0), new Direction3D(0.0, 0.0, 1.0));
-        Assert.Equal(new GeomHash_CurveHasher().GetHashCode(aLine), new GeomHash_CurveHasher().GetHashCode((Geom_Line)aLine.Copy()));
-        Assert.Equal(0xCBF29CE484222325UL, GeomHash_HashUtils.HashBytes([]));
-        Assert.Equal(0, GeomHash_HashUtils.ToInt32(0));
+        var aLine = new LineCurve3D(new Point3D(1.0, 2.0, 3.0), new Direction3D(0.0, 0.0, 1.0));
+        Assert.Equal(new CurveHasher().GetHashCode(aLine), new CurveHasher().GetHashCode((LineCurve3D)aLine.Copy()));
+        Assert.Equal(0xCBF29CE484222325UL, HashUtils.HashBytes([]));
+        Assert.Equal(0, HashUtils.ToInt32(0));
     }
 
     [Fact]
     public void DefaultTolerances_AreOcctsPrecisionValues()
     {
-        var aCurveHasher = new GeomHash_CurveHasher();
+        var aCurveHasher = new CurveHasher();
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Angular(), aCurveHasher.CompTolerance);
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aCurveHasher.HashTolerance);
-        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Angular(), new GeomHash_SurfaceHasher().CompTolerance);
-        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), new Geom2dHash_CurveHasher().HashTolerance);
-        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Computational(), new GeomHash_Polygon2DHasher().CompTolerance);
-        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Computational(), new GeomHash_Polygon3DHasher().HashTolerance);
-        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Computational(), new GeomHash_PolygonOnTriHasher().CompTolerance);
-        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Computational(), new GeomHash_TriangulationHasher().HashTolerance);
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Angular(), new SurfaceHasher().CompTolerance);
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), new CurveHasher2D().HashTolerance);
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Computational(), new Polygon2DHasher().CompTolerance);
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Computational(), new Polygon3DHasher().HashTolerance);
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Computational(), new PolygonOnTriHasher().CompTolerance);
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Computational(), new TriangulationHasher().HashTolerance);
     }
 
     [Fact]
     public void UnknownTypes_HashByTypeName_CompareByReference()
     {
         // TestLine derives from Geom_Curve without being one of the types the hasher dispatches on
-        var aHasher = new GeomHash_CurveHasher();
+        var aHasher = new CurveHasher();
         var aLine1 = new TestLine(new Point3D(0, 0, 0), new Vector3D(1, 0, 0));
         var aLine2 = new TestLine(new Point3D(0, 0, 0), new Vector3D(1, 0, 0));
         Assert.Equal(aHasher.GetHashCode(aLine1), aHasher.GetHashCode(aLine2));
@@ -361,9 +362,9 @@ public class GeomHash_PortTests
             }
         }
 
-        var aPeriodic = new Geom_BSplineCurve(aPoles4, aKnots, aMults, 2, true);
-        var aNonPeriodic = new Geom_BSplineCurve(aPoles3, aKnots, aMults, 2, false);
-        var aHasher = new GeomHash_CurveHasher();
+        var aPeriodic = new BSplineCurve3D(aPoles4, aKnots, aMults, 2, true);
+        var aNonPeriodic = new BSplineCurve3D(aPoles3, aKnots, aMults, 2, false);
+        var aHasher = new CurveHasher();
         Assert.True(aHasher.Equals(aNonPeriodic, aPeriodic));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => aHasher.Equals(aPeriodic, aNonPeriodic));
     }

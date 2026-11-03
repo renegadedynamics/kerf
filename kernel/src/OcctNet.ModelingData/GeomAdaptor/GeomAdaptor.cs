@@ -4,10 +4,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Occt;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 
-namespace Occt;
+namespace Kerf.Engine.Geometry.Adaptors;
 
 /// <summary>
 /// Conversions from adaptors back to Geom curves and surfaces.
@@ -19,38 +21,38 @@ public static class GeomAdaptor
     /// trimmed to the adaptor's bounds when they differ from the curve's.
     /// </summary>
     /// <exception cref="DomainErrorException">The adaptor's type is not one of those.</exception>
-    public static Geom_Curve MakeCurve(Adaptor3d_Curve HC)
+    public static Curve3D MakeCurve(CurveAdaptorBase hc)
     {
-        Geom_Curve C;
+        Curve3D c;
 
-        switch (HC.GetType())
+        switch (hc.GetType())
         {
             case Line:
-                C = new Geom_Line(HC.Line());
+                c = new LineCurve3D(hc.Line());
                 break;
 
             case Circle:
-                C = new Geom_Circle(HC.Circle());
+                c = new CircleCurve3D(hc.Circle());
                 break;
 
             case Ellipse:
-                C = new Geom_Ellipse(HC.Ellipse());
+                c = new EllipseCurve3D(hc.Ellipse());
                 break;
 
             case Parabola:
-                C = new Geom_Parabola(HC.Parabola());
+                c = new ParabolaCurve3D(hc.Parabola());
                 break;
 
             case Hyperbola:
-                C = new Geom_Hyperbola(HC.Hyperbola());
+                c = new HyperbolaCurve3D(hc.Hyperbola());
                 break;
 
             case BezierCurve:
-                C = (Geom_BezierCurve)HC.Bezier().Copy();
+                c = (BezierCurve3D)hc.Bezier().Copy();
                 break;
 
             case BSplineCurve:
-                C = (Geom_BSplineCurve)HC.BSpline().Copy();
+                c = (BSplineCurve3D)hc.BSpline().Copy();
                 break;
 
             default:
@@ -58,12 +60,12 @@ public static class GeomAdaptor
         }
 
         // trim the curve if necassary.
-        if ((HC.FirstParameter() != C.FirstParameter()) || (HC.LastParameter() != C.LastParameter()))
+        if ((hc.FirstParameter() != c.FirstParameter()) || (hc.LastParameter() != c.LastParameter()))
         {
-            C = new Geom_TrimmedCurve(C, HC.FirstParameter(), HC.LastParameter());
+            c = new TrimmedCurve3D(c, hc.FirstParameter(), hc.LastParameter());
         }
 
-        return C;
+        return c;
     }
 
     /// <summary>
@@ -72,50 +74,50 @@ public static class GeomAdaptor
     /// theTrimFlag).
     /// </summary>
     /// <exception cref="DomainErrorException">The adaptor's type is GeomAbs_OtherSurface.</exception>
-    public static Geom_Surface MakeSurface(Adaptor3d_Surface HS, bool theTrimFlag = true)
+    public static Surface MakeSurface(SurfaceAdaptorBase hs, bool trimFlag = true)
     {
-        Geom_Surface S;
+        Surface s;
 
-        switch (HS.GetType())
+        switch (hs.GetType())
         {
             case Plane:
-                S = new Geom_Plane(HS.Plane());
+                s = new PlaneSurface(hs.Plane());
                 break;
 
-            case Cylinder:
-                S = new Geom_CylindricalSurface(HS.Cylinder());
+            case SurfaceKind.Cylinder:
+                s = new CylindricalSurface(hs.Cylinder());
                 break;
 
-            case Cone:
-                S = new Geom_ConicalSurface(HS.Cone());
+            case SurfaceKind.Cone:
+                s = new ConicalSurface(hs.Cone());
                 break;
 
-            case Sphere:
-                S = new Geom_SphericalSurface(HS.Sphere());
+            case SurfaceKind.Sphere:
+                s = new SphericalSurface(hs.Sphere());
                 break;
 
-            case Torus:
-                S = new Geom_ToroidalSurface(HS.Torus());
+            case SurfaceKind.Torus:
+                s = new ToroidalSurface(hs.Torus());
                 break;
 
-            case BezierSurface:
-                S = (Geom_BezierSurface)HS.Bezier().Copy();
+            case SurfaceKind.BezierSurface:
+                s = (global::Kerf.Geometry.BezierSurface)hs.Bezier().Copy();
                 break;
 
-            case BSplineSurface:
-                S = (Geom_BSplineSurface)HS.BSpline().Copy();
+            case SurfaceKind.BSplineSurface:
+                s = (global::Kerf.Geometry.BSplineSurface)hs.BSpline().Copy();
                 break;
 
             case SurfaceOfRevolution:
-                S = new Geom_SurfaceOfRevolution(MakeCurve(HS.BasisCurve()), HS.AxeOfRevolution());
+                s = new RevolutionSurface(MakeCurve(hs.BasisCurve()), hs.AxeOfRevolution());
                 break;
 
             case SurfaceOfExtrusion:
-                S = new Geom_SurfaceOfLinearExtrusion(MakeCurve(HS.BasisCurve()), HS.Direction());
+                s = new ExtrusionSurface(MakeCurve(hs.BasisCurve()), hs.Direction());
                 break;
 
-            case OffsetSurface:
-                S = new Geom_OffsetSurface(MakeSurface(HS.BasisSurface()), HS.OffsetValue());
+            case SurfaceKind.OffsetSurface:
+                s = new global::Kerf.Geometry.OffsetSurface(MakeSurface(hs.BasisSurface()), hs.OffsetValue());
                 break;
 
             case OtherSurface:
@@ -123,23 +125,23 @@ public static class GeomAdaptor
                 throw new DomainErrorException("GeomAdaptor::MakeSurface : OtherSurface");
         }
 
-        if (!theTrimFlag)
+        if (!trimFlag)
         {
-            return S;
+            return s;
         }
 
         // trim the surface if necassary.
-        S.Bounds(out double U1, out double U2, out double V1, out double V2);
-        if ((HS.FirstUParameter() != U1) || (HS.LastUParameter() != U2) || (HS.FirstVParameter() != V1)
-            || (HS.LastVParameter() != V2))
+        s.Bounds(out double u1, out double u2, out double v1, out double v2);
+        if ((hs.FirstUParameter() != u1) || (hs.LastUParameter() != u2) || (hs.FirstVParameter() != v1)
+            || (hs.LastVParameter() != v2))
         {
-            S = new Geom_RectangularTrimmedSurface(S,
-                                                   HS.FirstUParameter(),
-                                                   HS.LastUParameter(),
-                                                   HS.FirstVParameter(),
-                                                   HS.LastVParameter());
+            s = new TrimmedSurface(s,
+                                                   hs.FirstUParameter(),
+                                                   hs.LastUParameter(),
+                                                   hs.FirstVParameter(),
+                                                   hs.LastVParameter());
         }
 
-        return S;
+        return s;
     }
 }

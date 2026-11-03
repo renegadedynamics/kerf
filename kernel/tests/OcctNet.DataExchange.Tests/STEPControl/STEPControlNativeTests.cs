@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Security.Cryptography;
@@ -195,17 +197,17 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
         return aMaskedText.ToString();
     }
 
-    private static TopoDS_Shape Assembly(in TopoDS_Shape theShape)
+    private static Shape Assembly(in Shape theShape)
     {
-        var aBuilder = new BRep_Builder();
+        var aBuilder = new BrepBuilder();
         var aTrsf = new Transform3D();
         aTrsf.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0.5);
         aTrsf.SetTranslationPart(new Vector3D(100.0, 50.0, 0.0));
-        var anAssembly = new TopoDS_Compound();
+        var anAssembly = new Compound();
         aBuilder.MakeCompound(ref anAssembly);
         aBuilder.Add(anAssembly, theShape);
         aBuilder.Add(anAssembly, theShape.Moved(new Placement(aTrsf)));
-        var aTop = new TopoDS_Compound();
+        var aTop = new Compound();
         aBuilder.MakeCompound(ref aTop);
         var aTrsf2 = new Transform3D();
         aTrsf2.SetTranslation(new Vector3D(0.0, 0.0, 300.0));
@@ -232,15 +234,15 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
         {
             return;
         }
-        var aShapes = new List<(string, TopoDS_Shape)>();
+        var aShapes = new List<(string, Shape)>();
         foreach (string aFile in Directory.GetFiles(aDir, "*.brep").Order(StringComparer.Ordinal))
         {
-            Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aFile));
+            Assert.True(BrepTools.Read(out Shape aShape, aFile));
             aShapes.Add(("src_data_occ_" + Path.GetFileName(aFile), aShape));
         }
         foreach (string aName in new[] { "Ball.brep", "Pump_Nut.brep", "bottle.brep" })
         {
-            Assert.True(BRepTools.Read(out TopoDS_Shape aShape, Path.Combine(aDir, aName)));
+            Assert.True(BrepTools.Read(out Shape aShape, Path.Combine(aDir, aName)));
             aShapes.Add(("assembly_of_" + aName, Assembly(aShape)));
         }
 
@@ -248,7 +250,7 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
         string? aDump = Environment.GetEnvironmentVariable("OCCTNET_STEPCTL_DUMP");
         int aCase = 0, aSame = 0;
         var aDifferent = new List<string>();
-        foreach ((string aName, TopoDS_Shape aShape) in aShapes)
+        foreach ((string aName, Shape aShape) in aShapes)
         {
             string aBefore = BRepTextOf(aShape);
             foreach (string aSchema in new[] { "AP203", "AP214IS", "AP242DIS" })
@@ -323,10 +325,10 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
         "assembly_of_bottle.brep AP203 ShellBasedSurfaceModel", "assembly_of_bottle.brep AP203 GeometricCurveSet",
     };
 
-    private static string BRepTextOf(in TopoDS_Shape theShape)
+    private static string BRepTextOf(in Shape theShape)
     {
         using var aWriter = new StringWriter();
-        BRepTools.Write(theShape, aWriter);
+        BrepTools.Write(theShape, aWriter);
         return aWriter.ToString();
     }
 }

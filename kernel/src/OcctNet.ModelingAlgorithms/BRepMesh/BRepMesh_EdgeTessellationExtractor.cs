@@ -4,9 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -32,14 +33,14 @@ public class BRepMesh_EdgeTessellationExtractor : IMeshTools_CurveTessellator
     /// </remarks>
     public BRepMesh_EdgeTessellationExtractor(IMeshData_Edge theEdge, IMeshData_Face theFace)
     {
-        Triangulation? aTriangulation = BRep_Tool.Triangulation(theFace.GetFace(), out myLoc);
+        Triangulation? aTriangulation = Tool.Triangulation(theFace.GetFace(), out myLoc);
 
         PolygonOnTriangulation? aPolygon =
-            BRep_Tool.PolygonOnTriangulation(theEdge.GetEdge(), aTriangulation, myLoc);
+            Tool.PolygonOnTriangulation(theEdge.GetEdge(), aTriangulation, myLoc);
 
         myTriangulation = aTriangulation!;
         myIndices = aPolygon!.Nodes();
-        myProvider.Init(theEdge, TopAbs_FORWARD, theFace, aPolygon.Parameters()!);
+        myProvider.Init(theEdge, Forward, theFace, aPolygon.Parameters()!);
     }
 
     /// <inheritdoc/>

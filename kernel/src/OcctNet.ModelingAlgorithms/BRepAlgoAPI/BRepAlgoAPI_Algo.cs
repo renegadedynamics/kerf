@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -30,7 +31,7 @@ public abstract class BRepAlgoAPI_Algo : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The result, not checked for <c>IsDone</c> and not frozen (OCCT's <c>Shape()</c>).</summary>
-    internal override TopoDS_Shape InternalShape() => myShape;
+    internal override Shape InternalShape() => myShape;
 
     // ---- BOPAlgo_Options' members, which OCCT re-exposes with "using"
 

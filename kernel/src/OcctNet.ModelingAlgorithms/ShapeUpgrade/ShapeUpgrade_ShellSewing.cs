@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -18,7 +20,7 @@ namespace Occt;
 /// </remarks>
 public class ShapeUpgrade_ShellSewing
 {
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myShells = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myShells = new(ShapeHasher.Instance);
     private readonly ShapeBuild_ReShape myReShape;
 
     /// <summary>Creates an empty ShellSewing.</summary>
@@ -32,17 +34,17 @@ public class ShapeUpgrade_ShellSewing
     /// finite. With <paramref name="tol"/> 0 (the default) the tolerance is the mean of the shape's. Returns a null
     /// shape if no shell was sewn. Frozen.
     /// </summary>
-    public TopoDS_Shape ApplySewing(in TopoDS_Shape shape, double tol = 0.0)
+    public Shape ApplySewing(in Shape shape, double tol = 0.0)
     {
-        TopoDS_Shape aResult = InternalApplySewing(shape, tol);
+        Shape aResult = InternalApplySewing(shape, tol);
         aResult.TShape()?.FreezeGraph();
         return aResult;
     }
 
     /// <summary><see cref="ApplySewing"/> without freezing the result, for ported callers (ShapeProcess).</summary>
-    internal TopoDS_Shape InternalApplySewing(in TopoDS_Shape shape, double tol = 0.0)
+    internal Shape InternalApplySewing(in Shape shape, double tol = 0.0)
     {
-        if (shape.IsNull())
+        if (shape.IsNull)
         {
             return shape;
         }
@@ -60,22 +62,22 @@ public class ShapeUpgrade_ShellSewing
             return Apply(shape, t);
         }
 
-        return new TopoDS_Shape();
+        return new Shape();
     }
 
-    private void Init(in TopoDS_Shape shape)
+    private void Init(in Shape shape)
     {
-        if (shape.IsNull())
+        if (shape.IsNull)
         {
             return;
         }
-        if (shape.ShapeType() == TopAbs_SHELL)
+        if (shape.ShapeType() == ShapeType.Shell)
         {
             myShells.Add(shape);
         }
         else
         {
-            for (var exs = new TopExp_Explorer(shape, TopAbs_SHELL); exs.More(); exs.Next())
+            for (var exs = new Explorer(shape, ShapeType.Shell); exs.More(); exs.Next())
             {
                 myShells.Add(exs.Current());
             }
@@ -87,16 +89,16 @@ public class ShapeUpgrade_ShellSewing
         int nb = myShells.Extent(), ns = 0;
         for (int i = 1; i <= nb; i++)
         {
-            TopoDS_Shell sl = TopoDS.Shell(myShells.FindKey(i));
+            Shell sl = ShapeCasts.Shell(myShells.FindKey(i));
             var ss = new BRepBuilderAPI_Sewing(tol);
-            var exp = new TopExp_Explorer(sl, TopAbs_FACE);
+            var exp = new Explorer(sl, ShapeType.Face);
             for (; exp.More(); exp.Next())
             {
                 ss.Add(exp.Current());
             }
             ss.Perform();
-            TopoDS_Shape newsh = ss.InternalSewedShape();
-            if (!newsh.IsNull())
+            Shape newsh = ss.InternalSewedShape();
+            if (!newsh.IsNull)
             {
                 myReShape.Replace(sl, newsh);
                 ns++;
@@ -105,24 +107,24 @@ public class ShapeUpgrade_ShellSewing
         return ns;
     }
 
-    private TopoDS_Shape Apply(in TopoDS_Shape shape, double tol)
+    private Shape Apply(in Shape shape, double tol)
     {
-        if (shape.IsNull() || myShells.Extent() == 0)
+        if (shape.IsNull || myShells.Extent() == 0)
         {
             return shape;
         }
 
-        TopoDS_Shape res = myReShape.InternalApply(shape, TopAbs_FACE, 2);
+        Shape res = myReShape.InternalApply(shape, ShapeType.Face, 2);
 
         //  A present orienter les solides correctement
         myReShape.Clear();
         int ns = 0;
-        for (var exd = new TopExp_Explorer(shape, TopAbs_SOLID); exd.More(); exd.Next())
+        for (var exd = new Explorer(shape, ShapeType.Solid); exd.More(); exd.Next())
         {
-            TopoDS_Solid sd = TopoDS.Solid(exd.Current());
+            Solid sd = ShapeCasts.Solid(exd.Current());
             var bsc3d = new BRepClass3d_SolidClassifier(sd);
             bsc3d.PerformInfinitePoint(tol);
-            if (bsc3d.State() == TopAbs_IN)
+            if (bsc3d.State() == In)
             {
                 myReShape.Replace(sd, sd.Reversed());
                 ns++;
@@ -132,7 +134,7 @@ public class ShapeUpgrade_ShellSewing
         // szv#4:S4163:12Mar99 optimized
         if (ns != 0)
         {
-            res = myReShape.InternalApply(res, TopAbs_SHELL, 2);
+            res = myReShape.InternalApply(res, ShapeType.Shell, 2);
         }
 
         return res;

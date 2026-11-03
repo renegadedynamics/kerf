@@ -3,19 +3,22 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Library;
 using Kerf.Geometry;
 
 namespace Occt;
 
 /// <summary>
 /// Computes the max distance between a 3D curve and a curve on a surface, approximately at a finite number of
-/// points (the default) or exactly through <see cref="GeomLib_CheckCurveOnSurface"/> (for SameParameter edges).
+/// points (the default) or exactly through <see cref="CheckCurveOnSurface"/> (for SameParameter edges).
 /// </summary>
 /// <remarks>A working object; it keeps the caller's adaptors.</remarks>
 public class BRepLib_ValidateEdge
 {
-    private readonly Adaptor3d_Curve myReferenceCurve;
-    private readonly Adaptor3d_CurveOnSurface myOtherCurve;
+    private readonly CurveAdaptorBase myReferenceCurve;
+    private readonly CurveOnSurface myOtherCurve;
     private readonly bool mySameParameter;
     private int myControlPointsNumber;
     private double myToleranceForChecking;
@@ -25,8 +28,8 @@ public class BRepLib_ValidateEdge
     private bool myIsExactMethod;
     private bool myIsMultiThread;
 
-    public BRepLib_ValidateEdge(Adaptor3d_Curve theReferenceCurve,
-                                Adaptor3d_CurveOnSurface theOtherCurve,
+    public BRepLib_ValidateEdge(CurveAdaptorBase theReferenceCurve,
+                                CurveOnSurface theOtherCurve,
                                 bool theSameParameter)
     {
         myReferenceCurve = theReferenceCurve;
@@ -106,7 +109,7 @@ public class BRepLib_ValidateEdge
     /// <summary>Adds the precision of the curves' numbers to the tolerance.</summary>
     private double correctTolerance(double theTolerance)
     {
-        Adaptor3d_Surface aSurface = myOtherCurve.GetSurface()!;
+        SurfaceAdaptorBase aSurface = myOtherCurve.GetSurface()!;
         double aCurvePrecision = BRepCheck.PrecCurve(myReferenceCurve);
         double aSurfacePrecision = BRepCheck.PrecSurface(aSurface);
         double aToleranceDelta = (aCurvePrecision > aSurfacePrecision) ? aCurvePrecision : aSurfacePrecision;
@@ -183,8 +186,8 @@ public class BRepLib_ValidateEdge
                 return;
             }
 
-            var aReferenceExtrema = new Extrema_LocateExtPC();
-            var anOtherExtrema = new Extrema_LocateExtPC();
+            var aReferenceExtrema = new LocateExtPC();
+            var anOtherExtrema = new LocateExtPC();
             aReferenceExtrema.Initialize(myReferenceCurve,
                                          aReferenceFirstParam,
                                          aReferenceLastParam,
@@ -203,7 +206,7 @@ public class BRepLib_ValidateEdge
                 Point3D anOtherExtremaPoint = myOtherCurve.Value(anOtherParam);
 
                 aReferenceExtrema.Perform(anOtherExtremaPoint, aReferenceParam);
-                if (aReferenceExtrema.IsDone())
+                if (aReferenceExtrema.IsDone)
                 {
                     if (aReferenceExtrema.SquareDistance() > aMaxSquareDistance)
                     {
@@ -224,7 +227,7 @@ public class BRepLib_ValidateEdge
                 }
 
                 anOtherExtrema.Perform(aReferenceExtremaPoint, anOtherParam);
-                if (anOtherExtrema.IsDone())
+                if (anOtherExtrema.IsDone)
                 {
                     if (anOtherExtrema.SquareDistance() > aMaxSquareDistance)
                     {
@@ -252,10 +255,10 @@ public class BRepLib_ValidateEdge
     /// <summary>The exact distance, by GeomLib_CheckCurveOnSurface.</summary>
     private void processExact()
     {
-        var aCheckCurveOnSurface = new GeomLib_CheckCurveOnSurface(myReferenceCurve);
+        var aCheckCurveOnSurface = new CheckCurveOnSurface(myReferenceCurve);
         aCheckCurveOnSurface.SetParallel(myIsMultiThread);
         aCheckCurveOnSurface.Perform(myOtherCurve);
-        myIsDone = aCheckCurveOnSurface.IsDone();
+        myIsDone = aCheckCurveOnSurface.IsDone;
         if (myIsDone)
         {
             myCalculatedDistance = aCheckCurveOnSurface.MaxDistance();

@@ -5,8 +5,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -23,25 +27,25 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
 {
     private const int NbControl = 23;
 
-    private TopoDS_Shape myShape = new();
+    private Shape myShape = new();
     private double myTolerance;
     private bool mySplitClosed;
     private bool mySplitOpen;
     private readonly NCollection_HSequence<ShapeAnalysis_FreeBoundData> myClosedFreeBounds;
     private readonly NCollection_HSequence<ShapeAnalysis_FreeBoundData> myOpenFreeBounds;
 
-    private static void ContourProperties(in TopoDS_Wire wire, out double countourArea, out double countourLength)
+    private static void ContourProperties(in Wire wire, out double countourArea, out double countourLength)
     {
         int nbe = 0;
         double length = 0.0;
         Xyz area = new(0.0, 0.0, 0.0);
         Xyz prev = new(), cont = new();
-        for (var exp = new BRepTools_WireExplorer(wire); exp.More(); exp.Next())
+        for (var exp = new WireExplorer(wire); exp.More(); exp.Next())
         {
-            TopoDS_Edge Edge = exp.Current();
+            Edge Edge = exp.Current();
             nbe++;
             var sae = new ShapeAnalysis_Edge();
-            if (!sae.Curve3d(Edge, out Geom_Curve? c3d, out double First, out double Last))
+            if (!sae.Curve3d(Edge, out Curve3D? c3d, out double First, out double Last))
             {
                 continue;
             }
@@ -77,16 +81,16 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
         myTolerance = 0.0;
     }
 
-    /// <summary>An analyser of the free bounds of a compound of faces, sewn with the tolerance (see <see cref="Init(in TopoDS_Shape, double, bool, bool)"/>).</summary>
-    public ShapeAnalysis_FreeBoundsProperties(in TopoDS_Shape shape, double tolerance, bool splitclosed = false, bool splitopen = false)
+    /// <summary>An analyser of the free bounds of a compound of faces, sewn with the tolerance (see <see cref="Init(in Shape, double, bool, bool)"/>).</summary>
+    public ShapeAnalysis_FreeBoundsProperties(in Shape shape, double tolerance, bool splitclosed = false, bool splitopen = false)
     {
         myClosedFreeBounds = new NCollection_HSequence<ShapeAnalysis_FreeBoundData>();
         myOpenFreeBounds = new NCollection_HSequence<ShapeAnalysis_FreeBoundData>();
         Init(shape, tolerance, splitclosed, splitopen);
     }
 
-    /// <summary>An analyser of the free bounds of a compound of shells (see <see cref="Init(in TopoDS_Shape, bool, bool)"/>).</summary>
-    public ShapeAnalysis_FreeBoundsProperties(in TopoDS_Shape shape, bool splitclosed = false, bool splitopen = false)
+    /// <summary>An analyser of the free bounds of a compound of shells (see <see cref="Init(in Shape, bool, bool)"/>).</summary>
+    public ShapeAnalysis_FreeBoundsProperties(in Shape shape, bool splitclosed = false, bool splitopen = false)
     {
         myClosedFreeBounds = new NCollection_HSequence<ShapeAnalysis_FreeBoundData>();
         myOpenFreeBounds = new NCollection_HSequence<ShapeAnalysis_FreeBoundData>();
@@ -95,14 +99,14 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
     }
 
     /// <summary>Initializes with a compound of faces, sewn with the tolerance (the options as <see cref="ShapeAnalysis_FreeBounds"/>'s).</summary>
-    public void Init(in TopoDS_Shape shape, double tolerance, bool splitclosed = false, bool splitopen = false)
+    public void Init(in Shape shape, double tolerance, bool splitclosed = false, bool splitopen = false)
     {
         Init(shape, splitclosed, splitopen);
         myTolerance = tolerance;
     }
 
     /// <summary>Initializes with a compound of shells (the options as <see cref="ShapeAnalysis_FreeBounds"/>'s).</summary>
-    public void Init(in TopoDS_Shape shape, bool splitclosed = false, bool splitopen = false)
+    public void Init(in Shape shape, bool splitclosed = false, bool splitopen = false)
     {
         myShape = shape;
         mySplitClosed = splitclosed;
@@ -123,10 +127,10 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
     }
 
     /// <summary>True if a shape is loaded.</summary>
-    public bool IsLoaded() => !(myShape.IsNull());
+    public bool IsLoaded() => !(myShape.IsNull);
 
     /// <summary>The shape.</summary>
-    public TopoDS_Shape Shape() => myShape;
+    public Shape Shape() => myShape;
 
     /// <summary>The tolerance (0 for a compound of shells).</summary>
     public double Tolerance() => myTolerance;
@@ -160,7 +164,7 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
             return false;
         }
 
-        TopoDS_Compound tmpClosedBounds, tmpOpenBounds;
+        Compound tmpClosedBounds, tmpOpenBounds;
         if (myTolerance > 0.0)
         {
             var safb = new ShapeAnalysis_FreeBounds(myShape, myTolerance, mySplitClosed, mySplitOpen);
@@ -175,20 +179,20 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
         }
 
         var shexpl = new ShapeExtend_Explorer();
-        NCollection_HSequence<TopoDS_Shape> tmpSeq = shexpl.SeqFromCompound(tmpClosedBounds, false);
+        NCollection_HSequence<Shape> tmpSeq = shexpl.SeqFromCompound(tmpClosedBounds, false);
         int i; // svv Jan11 2000 : porting on DEC
         for (i = 1; i <= tmpSeq.Length(); i++)
         {
-            TopoDS_Wire wire = TopoDS.Wire(tmpSeq.Value(i));
+            Wire wire = ShapeCasts.Wire(tmpSeq.Value(i));
             var fbData = new ShapeAnalysis_FreeBoundData();
             fbData.SetFreeBound(wire);
             myClosedFreeBounds.Append(fbData);
         }
 
-        NCollection_HSequence<TopoDS_Shape> tmpSeq2 = shexpl.SeqFromCompound(tmpOpenBounds, false);
+        NCollection_HSequence<Shape> tmpSeq2 = shexpl.SeqFromCompound(tmpOpenBounds, false);
         for (i = 1; i <= tmpSeq2.Length(); i++)
         {
-            TopoDS_Wire wire = TopoDS.Wire(tmpSeq2.Value(i));
+            Wire wire = ShapeCasts.Wire(tmpSeq2.Value(i));
             var fbData = new ShapeAnalysis_FreeBoundData();
             fbData.SetFreeBound(wire);
             myOpenFreeBounds.Append(fbData);
@@ -222,7 +226,7 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
         {
             for (int j = 1; j <= swd.NbEdges(); j++)
             {
-                if (CheckNotches(fbData.FreeBound(), j, out TopoDS_Wire notch, out double dMax, prec))
+                if (CheckNotches(fbData.FreeBound(), j, out Wire notch, out double dMax, prec))
                 {
                     fbData.AddNotch(notch, dMax);
                 }
@@ -255,7 +259,7 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
     /// always built), <paramref name="distMax"/> the largest distance from 23 points of the first to the second (0
     /// when false).
     /// </summary>
-    public bool CheckNotches(in TopoDS_Wire wire, int num, out TopoDS_Wire notch, out double distMax, double prec = 0.0)
+    public bool CheckNotches(in Wire wire, int num, out Wire notch, out double distMax, double prec = 0.0)
     {
         distMax = 0.0; // OCCT.NET: OCCT leaves it unset when it returns false
         bool aRes = checkNotches(wire, num, out notch, ref distMax);
@@ -263,12 +267,12 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
         return aRes;
     }
 
-    private bool checkNotches(in TopoDS_Wire wire, int num, out TopoDS_Wire notch, ref double distMax)
+    private bool checkNotches(in Wire wire, int num, out Wire notch, ref double distMax)
     {
         double tol = Max(myTolerance, Kerf.Engine.Foundation.Precision.Confusion());
         var wdt = new ShapeExtend_WireData(wire);
-        BRep_Builder B = new();
-        notch = new TopoDS_Wire();
+        BrepBuilder B = new();
+        notch = new Wire();
         B.MakeWire(ref notch);
 
         if ((num <= 0) || (num > wdt.NbEdges()))
@@ -279,7 +283,7 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
         int n1 = (num > 0 ? num : wdt.NbEdges());
         int n2 = (n1 < wdt.NbEdges() ? n1 + 1 : 1);
 
-        TopoDS_Edge E1 = wdt.Edge(n1);
+        Edge E1 = wdt.Edge(n1);
         B.Add(notch, E1);
 
         var saw = new ShapeAnalysis_Wire();
@@ -291,24 +295,24 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
             n2 = (n2 < wdt.NbEdges() ? n2 + 1 : 1);
         }
 
-        TopoDS_Edge E2 = wdt.Edge(n2);
+        Edge E2 = wdt.Edge(n2);
         B.Add(notch, E2);
 
         var sae = new ShapeAnalysis_Edge();
         // szv#4:S4163:12Mar99 optimized
-        if (!sae.Curve3d(E1, out Geom_Curve? c3d1, out double First1, out double Last1)
-            || !sae.Curve3d(E2, out Geom_Curve? c3d2, out double First2, out double Last2))
+        if (!sae.Curve3d(E1, out Curve3D? c3d1, out double First1, out double Last1)
+            || !sae.Curve3d(E2, out Curve3D? c3d2, out double First2, out double Last2))
         {
             return false;
         }
 
         c3d1!.D1(Last1, out _, out Vector3D vec1);
         c3d2!.D1(First2, out _, out Vector3D vec2);
-        if (E1.Orientation() == TopAbs_REVERSED)
+        if (E1.Orientation() == Reversed)
         {
             vec1.Reverse();
         }
-        if (E2.Orientation() == TopAbs_REVERSED)
+        if (E2.Orientation() == Reversed)
         {
             vec2.Reverse();
         }

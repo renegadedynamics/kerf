@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -21,7 +22,7 @@ public class BRepMesh_SphereRangeSplitter : BRepMesh_DefaultRangeSplitter
         // Calculate parameters for iteration in V direction
         double aStep =
             0.7
-            * GCPnts_TangentialDeflection.ArcAngularStep(GetDFace().GetSurface().Sphere().Radius(),
+            * TangentialDeflection.ArcAngularStep(GetDFace().GetSurface().Sphere().Radius(),
                                                          GetDFace().GetDeflection(),
                                                          theParameters.Angle,
                                                          theParameters.MinSize);

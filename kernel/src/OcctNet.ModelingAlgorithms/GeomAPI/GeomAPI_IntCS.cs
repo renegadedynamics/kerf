@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -21,7 +22,7 @@ namespace Occt;
 /// </remarks>
 public class GeomAPI_IntCS
 {
-    private Geom_Curve? myCurve;
+    private Curve3D? myCurve;
     private readonly IntCurveSurface_HInter myIntCS = new();
 
     /// <summary>An empty intersector; <see cref="Perform"/> computes the intersections.</summary>
@@ -30,17 +31,17 @@ public class GeomAPI_IntCS
     }
 
     /// <summary>Computes the intersections of the curve <paramref name="C"/> and the surface <paramref name="S"/>.</summary>
-    public GeomAPI_IntCS(Geom_Curve C, Geom_Surface S)
+    public GeomAPI_IntCS(Curve3D C, Surface S)
     {
         Perform(C, S);
     }
 
     /// <summary>Computes the intersections of the curve <paramref name="C"/> and the surface <paramref name="S"/>.</summary>
-    public void Perform(Geom_Curve C, Geom_Surface S)
+    public void Perform(Curve3D C, Surface S)
     {
         myCurve = C;
-        GeomAdaptor_Curve HC = new(C);
-        GeomAdaptor_Surface HS = new(S);
+        CurveAdaptor HC = new(C);
+        SurfaceAdaptor HS = new(S);
         myIntCS.Perform(HC, HS);
     }
 
@@ -70,11 +71,11 @@ public class GeomAPI_IntCS
     public int NbSegments() => myIntCS.NbSegments();
 
     /// <summary>The part of the curve that is the intersection segment of range <paramref name="Index"/>.</summary>
-    public Geom_Curve Segment(int Index)
+    public Curve3D Segment(int Index)
     {
         IntCurveSurface_IntersectionPoint FirstPoint = myIntCS.Segment(Index).FirstPoint();
         IntCurveSurface_IntersectionPoint LastPoint = myIntCS.Segment(Index).SecondPoint();
-        Geom_TrimmedCurve TheCurve = new(myCurve!, FirstPoint.W(), LastPoint.W());
+        TrimmedCurve3D TheCurve = new(myCurve!, FirstPoint.W(), LastPoint.W());
         return TheCurve;
     }
 

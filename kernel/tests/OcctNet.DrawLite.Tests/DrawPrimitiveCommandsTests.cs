@@ -1,10 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 using OcctNet.DrawLite;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite.Tests;
 
@@ -25,37 +28,37 @@ public class DrawPrimitiveCommandsTests
 
     private static string Error(DrawInterpreter theDI, string theScript) => Assert.ThrowsAny<DrawException>(() => theDI.Eval(theScript)).Reason;
 
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
     private static (int V, int E, int F) Counts(DrawInterpreter theDI, string theName)
     {
-        TopoDS_Shape aShape = theDI.GetShape(theName);
-        Assert.False(aShape.IsNull());
+        Shape aShape = theDI.GetShape(theName);
+        Assert.False(aShape.IsNull);
         Assert.True(aShape.TShape()!.IsFrozen);
-        return (Count(aShape, TopAbs_VERTEX), Count(aShape, TopAbs_EDGE), Count(aShape, TopAbs_FACE));
+        return (Count(aShape, ShapeType.Vertex), Count(aShape, ShapeType.Edge), Count(aShape, ShapeType.Face));
     }
 
     private static double Volume(DrawInterpreter theDI, string theName)
     {
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.VolumeProperties(theDI.GetShape(theName), aProps);
         return aProps.Mass();
     }
 
     private static double Area(DrawInterpreter theDI, string theName)
     {
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.SurfaceProperties(theDI.GetShape(theName), aProps);
         return aProps.Mass();
     }
 
     private static void BindPlane(DrawInterpreter theDI, string theName, CoordinateSystem theAxes)
-        => theDI.SetDrawable(theName, DrawGeometry.Of(new Geom_Plane(theAxes)));
+        => theDI.SetDrawable(theName, DrawGeometry.Of(new PlaneSurface(theAxes)));
 
     [Fact]
     public void Box_in_each_form()
@@ -261,7 +264,7 @@ public class DrawPrimitiveCommandsTests
 
         // an edge crossing the axis: Draw's message, no result
         i.Eval("box c -1 -1 0 2 2 1");
-        for (TopExp_Explorer anExp = new(i.GetShape("c"), TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(i.GetShape("c"), ShapeType.Edge); anExp.More(); anExp.Next())
         {
             // the edge x = -1, z = 0 along Y, through the X axis
             var aBox = Box.Void();

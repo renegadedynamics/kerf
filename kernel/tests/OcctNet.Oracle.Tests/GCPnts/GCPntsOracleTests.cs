@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using Xunit.Abstractions;
@@ -45,25 +46,25 @@ public class GCPntsOracleTests(ITestOutputHelper output)
         return aNativeError is null;
     }
 
-    private static void SameAbscissaPoint(Oracle theO, N.GCPnts_AbscissaPoint theN, GCPnts_AbscissaPoint theP, string theWhat)
+    private static void SameAbscissaPoint(Oracle theO, N.GCPnts_AbscissaPoint theN, AbscissaPoint theP, string theWhat)
     {
-        theO.Same(theN.IsDone(), theP.IsDone(), $"{theWhat} IsDone");
-        if (theP.IsDone())
+        theO.Same(theN.IsDone(), theP.IsDone, $"{theWhat} IsDone");
+        if (theP.IsDone)
         {
             theO.Same(theN.Parameter(), theP.Parameter(), $"{theWhat} Parameter");
         }
     }
 
-    private static void SameUniformDeflection(Oracle theO, N.GCPnts_UniformDeflection theN, GCPnts_UniformDeflection theP,
+    private static void SameUniformDeflection(Oracle theO, N.GCPnts_UniformDeflection theN, UniformDeflection theP,
         string theWhat)
     {
-        theO.Same(theN.IsDone(), theP.IsDone(), $"{theWhat} IsDone");
-        if (!theP.IsDone())
+        theO.Same(theN.IsDone(), theP.IsDone, $"{theWhat} IsDone");
+        if (!theP.IsDone)
         {
             return;
         }
-        theO.Same(theN.NbPoints(), theP.NbPoints(), $"{theWhat} NbPoints");
-        for (int i = 1; i <= theP.NbPoints(); i++)
+        theO.Same(theN.NbPoints(), theP.PointCount, $"{theWhat} NbPoints");
+        for (int i = 1; i <= theP.PointCount; i++)
         {
             theO.Same(theN.Parameter(i), theP.Parameter(i), $"{theWhat} Parameter({i})");
             using N.gp_Pnt aNP = theN.Value(i);
@@ -72,15 +73,15 @@ public class GCPntsOracleTests(ITestOutputHelper output)
     }
 
     private static void SameQuasiUniformDeflection(Oracle theO, N.GCPnts_QuasiUniformDeflection theN,
-        GCPnts_QuasiUniformDeflection theP, string theWhat)
+        QuasiUniformDeflection theP, string theWhat)
     {
-        theO.Same(theN.IsDone(), theP.IsDone(), $"{theWhat} IsDone");
-        if (!theP.IsDone())
+        theO.Same(theN.IsDone(), theP.IsDone, $"{theWhat} IsDone");
+        if (!theP.IsDone)
         {
             return;
         }
-        theO.Same(theN.NbPoints(), theP.NbPoints(), $"{theWhat} NbPoints");
-        for (int i = 1; i <= theP.NbPoints(); i++)
+        theO.Same(theN.NbPoints(), theP.PointCount, $"{theWhat} NbPoints");
+        for (int i = 1; i <= theP.PointCount; i++)
         {
             theO.Same(theN.Parameter(i), theP.Parameter(i), $"{theWhat} Parameter({i})");
             using N.gp_Pnt aNP = theN.Value(i);
@@ -95,27 +96,27 @@ public class GCPntsOracleTests(ITestOutputHelper output)
         int aCompared = 0;
         for (int c = 0; c < Cases; c++)
         {
-            (N.Geom_Curve aNC, Geom_Curve aPC, string aKind) = TestAdaptorOracleTests.RandomCurve(anOracle);
+            (N.Geom_Curve aNC, Curve3D aPC, string aKind) = TestAdaptorOracleTests.RandomCurve(anOracle);
             using (aNC)
             {
                 (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(),
-                    aPC.LastParameter(), aPC.IsPeriodic());
+                    aPC.LastParameter(), aPC.IsPeriodic);
                 using var aN = new N.GeomAdaptor_Curve(aNC, aFirst, aLast);
                 var aP = new TestGeomAdaptor_Curve(aPC, aFirst, aLast);
                 string aW = $"{aKind} #{c}";
 
                 double aL = 0.0;
-                if (!Both(anOracle, () => aL = N.GCPnts_AbscissaPoint.Length(aN), () => GCPnts_AbscissaPoint.Length(aP), $"{aW} Length"))
+                if (!Both(anOracle, () => aL = N.GCPnts_AbscissaPoint.Length(aN), () => AbscissaPoint.Length(aP), $"{aW} Length"))
                 {
                     continue;
                 }
-                anOracle.Same(aL, GCPnts_AbscissaPoint.Length(aP), $"{aW} Length");
-                anOracle.Same(N.GCPnts_AbscissaPoint.Length(aN, 1e-9), GCPnts_AbscissaPoint.Length(aP, 1e-9), $"{aW} Length(tol)");
+                anOracle.Same(aL, AbscissaPoint.Length(aP), $"{aW} Length");
+                anOracle.Same(N.GCPnts_AbscissaPoint.Length(aN, 1e-9), AbscissaPoint.Length(aP, 1e-9), $"{aW} Length(tol)");
                 double aU1 = anOracle.Real(aFirst, aLast), aU2 = anOracle.Real(aFirst, aLast);
-                anOracle.Same(N.GCPnts_AbscissaPoint.Length(aN, aU1, aU2), GCPnts_AbscissaPoint.Length(aP, aU1, aU2),
+                anOracle.Same(N.GCPnts_AbscissaPoint.Length(aN, aU1, aU2), AbscissaPoint.Length(aP, aU1, aU2),
                     $"{aW} Length(U1, U2)");
                 anOracle.Same(N.GCPnts_AbscissaPoint.Length(aN, aU1, aU2, 1e-7),
-                    GCPnts_AbscissaPoint.Length(aP, aU1, aU2, 1e-7), $"{aW} Length(U1, U2, tol)");
+                    AbscissaPoint.Length(aP, aU1, aU2, 1e-7), $"{aW} Length(U1, U2, tol)");
                 if (aL < 1e-3)
                 {
                     continue;
@@ -129,9 +130,9 @@ public class GCPntsOracleTests(ITestOutputHelper output)
                     double aTol = anOracle.Real(1e-10, 1e-6);
                     string aWA = $"{aW} abscissa {anAbscissa:R} from {aU0:R}";
                     N.GCPnts_AbscissaPoint? aNA = null;
-                    GCPnts_AbscissaPoint? aPA = null;
+                    AbscissaPoint? aPA = null;
                     if (Both(anOracle, () => aNA = new N.GCPnts_AbscissaPoint(aN, anAbscissa, aU0),
-                            () => aPA = new GCPnts_AbscissaPoint(aP, anAbscissa, aU0), $"{aWA} (C, Abs, U0)"))
+                            () => aPA = new AbscissaPoint(aP, anAbscissa, aU0), $"{aWA} (C, Abs, U0)"))
                     {
                         using (aNA)
                         {
@@ -139,7 +140,7 @@ public class GCPntsOracleTests(ITestOutputHelper output)
                         }
                     }
                     if (Both(anOracle, () => aNA = new N.GCPnts_AbscissaPoint(aTol, aN, anAbscissa, aU0),
-                            () => aPA = new GCPnts_AbscissaPoint(aTol, aP, anAbscissa, aU0), $"{aWA} (Tol, C, Abs, U0)"))
+                            () => aPA = new AbscissaPoint(aTol, aP, anAbscissa, aU0), $"{aWA} (Tol, C, Abs, U0)"))
                     {
                         using (aNA)
                         {
@@ -147,7 +148,7 @@ public class GCPntsOracleTests(ITestOutputHelper output)
                         }
                     }
                     if (Both(anOracle, () => aNA = new N.GCPnts_AbscissaPoint(aN, anAbscissa, aU0, aUi),
-                            () => aPA = new GCPnts_AbscissaPoint(aP, anAbscissa, aU0, aUi), $"{aWA} (C, Abs, U0, Ui)"))
+                            () => aPA = new AbscissaPoint(aP, anAbscissa, aU0, aUi), $"{aWA} (C, Abs, U0, Ui)"))
                     {
                         using (aNA)
                         {
@@ -155,7 +156,7 @@ public class GCPntsOracleTests(ITestOutputHelper output)
                         }
                     }
                     if (Both(anOracle, () => aNA = new N.GCPnts_AbscissaPoint(aN, anAbscissa, aU0, aUi, aTol),
-                            () => aPA = new GCPnts_AbscissaPoint(aP, anAbscissa, aU0, aUi, aTol), $"{aWA} (C, Abs, U0, Ui, Tol)"))
+                            () => aPA = new AbscissaPoint(aP, anAbscissa, aU0, aUi, aTol), $"{aWA} (C, Abs, U0, Ui, Tol)"))
                     {
                         using (aNA)
                         {
@@ -176,22 +177,22 @@ public class GCPntsOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int c = 0; c < Cases; c++)
         {
-            (N.Geom2d_Curve aNC, Geom2d_Curve aPC, string aKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
+            (N.Geom2d_Curve aNC, Curve2D aPC, string aKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
             using (aNC)
             {
                 (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(),
-                    aPC.LastParameter(), aPC.IsPeriodic());
+                    aPC.LastParameter(), aPC.IsPeriodic);
                 using var aN = new N.Geom2dAdaptor_Curve(aNC, aFirst, aLast);
                 var aP = new TestGeom2dAdaptor_Curve(aPC, aFirst, aLast);
                 string aW = $"{aKind} #{c}";
 
                 double aL = 0.0;
-                if (!Both(anOracle, () => aL = N.GCPnts_AbscissaPoint.Length(aN), () => GCPnts_AbscissaPoint.Length(aP), $"{aW} Length"))
+                if (!Both(anOracle, () => aL = N.GCPnts_AbscissaPoint.Length(aN), () => AbscissaPoint.Length(aP), $"{aW} Length"))
                 {
                     continue;
                 }
-                anOracle.Same(aL, GCPnts_AbscissaPoint.Length(aP), $"{aW} Length");
-                anOracle.Same(N.GCPnts_AbscissaPoint.Length(aN, 1e-9), GCPnts_AbscissaPoint.Length(aP, 1e-9), $"{aW} Length(tol)");
+                anOracle.Same(aL, AbscissaPoint.Length(aP), $"{aW} Length");
+                anOracle.Same(N.GCPnts_AbscissaPoint.Length(aN, 1e-9), AbscissaPoint.Length(aP, 1e-9), $"{aW} Length(tol)");
                 if (aL < 1e-3)
                 {
                     continue;
@@ -205,9 +206,9 @@ public class GCPntsOracleTests(ITestOutputHelper output)
                     double aTol = anOracle.Real(1e-10, 1e-6);
                     string aWA = $"{aW} abscissa {anAbscissa:R} from {aU0:R}";
                     N.GCPnts_AbscissaPoint? aNA = null;
-                    GCPnts_AbscissaPoint? aPA = null;
+                    AbscissaPoint? aPA = null;
                     if (Both(anOracle, () => aNA = new N.GCPnts_AbscissaPoint(aN, anAbscissa, aU0),
-                            () => aPA = new GCPnts_AbscissaPoint(aP, anAbscissa, aU0), $"{aWA} (C, Abs, U0)"))
+                            () => aPA = new AbscissaPoint(aP, anAbscissa, aU0), $"{aWA} (C, Abs, U0)"))
                     {
                         using (aNA)
                         {
@@ -215,7 +216,7 @@ public class GCPntsOracleTests(ITestOutputHelper output)
                         }
                     }
                     if (Both(anOracle, () => aNA = new N.GCPnts_AbscissaPoint(aTol, aN, anAbscissa, aU0),
-                            () => aPA = new GCPnts_AbscissaPoint(aTol, aP, anAbscissa, aU0), $"{aWA} (Tol, C, Abs, U0)"))
+                            () => aPA = new AbscissaPoint(aTol, aP, anAbscissa, aU0), $"{aWA} (Tol, C, Abs, U0)"))
                     {
                         using (aNA)
                         {
@@ -223,7 +224,7 @@ public class GCPntsOracleTests(ITestOutputHelper output)
                         }
                     }
                     if (Both(anOracle, () => aNA = new N.GCPnts_AbscissaPoint(aN, anAbscissa, aU0, aUi, aTol),
-                            () => aPA = new GCPnts_AbscissaPoint(aP, anAbscissa, aU0, aUi, aTol), $"{aWA} (C, Abs, U0, Ui, Tol)"))
+                            () => aPA = new AbscissaPoint(aP, anAbscissa, aU0, aUi, aTol), $"{aWA} (C, Abs, U0, Ui, Tol)"))
                     {
                         using (aNA)
                         {
@@ -243,11 +244,11 @@ public class GCPntsOracleTests(ITestOutputHelper output)
         int aPoints = 0;
         for (int c = 0; c < Cases; c++)
         {
-            (N.Geom_Curve aNC, Geom_Curve aPC, string aKind) = TestAdaptorOracleTests.RandomCurve(anOracle);
+            (N.Geom_Curve aNC, Curve3D aPC, string aKind) = TestAdaptorOracleTests.RandomCurve(anOracle);
             using (aNC)
             {
                 (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(),
-                    aPC.LastParameter(), aPC.IsPeriodic());
+                    aPC.LastParameter(), aPC.IsPeriodic);
                 using var aN = new N.GeomAdaptor_Curve(aNC, aFirst, aLast);
                 var aP = new TestGeomAdaptor_Curve(aPC, aFirst, aLast);
                 double aSize = aP.Value(aFirst).Distance(aP.Value(aLast)) + aP.Value(aFirst).Distance(aP.Value((aFirst + aLast) / 2));
@@ -257,33 +258,33 @@ public class GCPntsOracleTests(ITestOutputHelper output)
                 string aW = $"{aKind} #{c} deflection {aDefl:R}";
 
                 N.GCPnts_UniformDeflection? aNU = null;
-                GCPnts_UniformDeflection? aPU = null;
+                UniformDeflection? aPU = null;
                 if (Both(anOracle, () => aNU = new N.GCPnts_UniformDeflection(aN, aDefl, aWithControl),
-                        () => aPU = new GCPnts_UniformDeflection(aP, aDefl, aWithControl), $"{aW} UniformDeflection"))
+                        () => aPU = new UniformDeflection(aP, aDefl, aWithControl), $"{aW} UniformDeflection"))
                 {
                     using (aNU)
                     {
                         SameUniformDeflection(anOracle, aNU!, aPU!, $"{aW} UniformDeflection({aWithControl})");
-                        aPoints += aPU!.IsDone() ? aPU.NbPoints() : 0;
+                        aPoints += aPU!.IsDone ? aPU.PointCount : 0;
                     }
                 }
 
                 N.GCPnts_QuasiUniformDeflection? aNQ = null;
-                GCPnts_QuasiUniformDeflection? aPQ = null;
+                QuasiUniformDeflection? aPQ = null;
                 if (Both(anOracle, () => aNQ = new N.GCPnts_QuasiUniformDeflection(aN, aDefl, (N.GeomAbs_Shape)(int)aCont),
-                        () => aPQ = new GCPnts_QuasiUniformDeflection(aP, aDefl, aCont), $"{aW} QuasiUniformDeflection"))
+                        () => aPQ = new QuasiUniformDeflection(aP, aDefl, aCont), $"{aW} QuasiUniformDeflection"))
                 {
                     using (aNQ)
                     {
                         SameQuasiUniformDeflection(anOracle, aNQ!, aPQ!, $"{aW} QuasiUniformDeflection({aCont})");
-                        aPoints += aPQ!.IsDone() ? aPQ.NbPoints() : 0;
+                        aPoints += aPQ!.IsDone ? aPQ.PointCount : 0;
                     }
                 }
 
                 // A part of the curve, bounds reversed.
                 double aU1 = anOracle.Real(aFirst, aLast), aU2 = anOracle.Real(aFirst, aLast);
                 if (Both(anOracle, () => aNU = new N.GCPnts_UniformDeflection(aN, aDefl, aU2, aU1, aWithControl),
-                        () => aPU = new GCPnts_UniformDeflection(aP, aDefl, aU2, aU1, aWithControl), $"{aW} UniformDeflection(U1, U2)"))
+                        () => aPU = new UniformDeflection(aP, aDefl, aU2, aU1, aWithControl), $"{aW} UniformDeflection(U1, U2)"))
                 {
                     using (aNU)
                     {
@@ -291,7 +292,7 @@ public class GCPntsOracleTests(ITestOutputHelper output)
                     }
                 }
                 if (Both(anOracle, () => aNQ = new N.GCPnts_QuasiUniformDeflection(aN, aDefl, aU2, aU1, (N.GeomAbs_Shape)(int)aCont),
-                        () => aPQ = new GCPnts_QuasiUniformDeflection(aP, aDefl, aU2, aU1, aCont), $"{aW} QuasiUniformDeflection(U1, U2)"))
+                        () => aPQ = new QuasiUniformDeflection(aP, aDefl, aU2, aU1, aCont), $"{aW} QuasiUniformDeflection(U1, U2)"))
                 {
                     using (aNQ)
                     {
@@ -310,11 +311,11 @@ public class GCPntsOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int c = 0; c < Cases; c++)
         {
-            (N.Geom2d_Curve aNC, Geom2d_Curve aPC, string aKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
+            (N.Geom2d_Curve aNC, Curve2D aPC, string aKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
             using (aNC)
             {
                 (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(),
-                    aPC.LastParameter(), aPC.IsPeriodic());
+                    aPC.LastParameter(), aPC.IsPeriodic);
                 using var aN = new N.Geom2dAdaptor_Curve(aNC, aFirst, aLast);
                 var aP = new TestGeom2dAdaptor_Curve(aPC, aFirst, aLast);
                 double aSize = aP.Value(aFirst).Distance(aP.Value(aLast)) + aP.Value(aFirst).Distance(aP.Value((aFirst + aLast) / 2));
@@ -324,9 +325,9 @@ public class GCPntsOracleTests(ITestOutputHelper output)
                 string aW = $"{aKind} #{c} deflection {aDefl:R}";
 
                 N.GCPnts_UniformDeflection? aNU = null;
-                GCPnts_UniformDeflection? aPU = null;
+                UniformDeflection? aPU = null;
                 if (Both(anOracle, () => aNU = new N.GCPnts_UniformDeflection(aN, aDefl, aWithControl),
-                        () => aPU = new GCPnts_UniformDeflection(aP, aDefl, aWithControl), $"{aW} UniformDeflection"))
+                        () => aPU = new UniformDeflection(aP, aDefl, aWithControl), $"{aW} UniformDeflection"))
                 {
                     using (aNU)
                     {
@@ -335,9 +336,9 @@ public class GCPntsOracleTests(ITestOutputHelper output)
                 }
 
                 N.GCPnts_QuasiUniformDeflection? aNQ = null;
-                GCPnts_QuasiUniformDeflection? aPQ = null;
+                QuasiUniformDeflection? aPQ = null;
                 if (Both(anOracle, () => aNQ = new N.GCPnts_QuasiUniformDeflection(aN, aDefl, (N.GeomAbs_Shape)(int)aCont),
-                        () => aPQ = new GCPnts_QuasiUniformDeflection(aP, aDefl, aCont), $"{aW} QuasiUniformDeflection"))
+                        () => aPQ = new QuasiUniformDeflection(aP, aDefl, aCont), $"{aW} QuasiUniformDeflection"))
                 {
                     using (aNQ)
                     {

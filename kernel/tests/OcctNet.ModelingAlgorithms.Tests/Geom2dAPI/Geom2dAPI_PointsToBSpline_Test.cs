@@ -22,7 +22,7 @@ public class Geom2dAPI_PointsToBSpline_Test
         anApprox.Init(aYValues, -2.0, 1.0, 3, 5, C2, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(anApprox.IsDone());
 
-        Geom2d_BSplineCurve aCurve = anApprox.Curve();
+        BSplineCurve2D aCurve = anApprox.Curve();
         Assert.NotNull(aCurve);
     }
 

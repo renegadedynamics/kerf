@@ -2,6 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 
 using Kerf.Topology;
@@ -19,9 +22,9 @@ public class BRepGPropTest
     {
         var aP1 = new Point3D(0.0, 0.0, 0.0);
         var aP2 = new Point3D(3.0, 4.0, 0.0);
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(aP1, aP2).Edge();
+        Edge anEdge = new BRepBuilderAPI_MakeEdge(aP1, aP2).Edge();
 
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.LinearProperties(anEdge, aProps);
         Assert.Equal(5.0, aProps.Mass(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -29,10 +32,10 @@ public class BRepGPropTest
     [Fact]
     public void SurfaceProperties_BoxFaceArea()
     {
-        TopoDS_Shape aShape = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
+        Shape aShape = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
 
         // Total surface area = 2*(10*20 + 10*30 + 20*30) = 2*(200+300+600) = 2200
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.SurfaceProperties(aShape, aProps);
         Assert.Equal(2200.0, aProps.Mass(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -40,9 +43,9 @@ public class BRepGPropTest
     [Fact]
     public void VolumeProperties_UnitBox()
     {
-        TopoDS_Shape aShape = new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Shape();
+        Shape aShape = new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Shape();
 
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.VolumeProperties(aShape, aProps);
         Assert.Equal(1.0, aProps.Mass(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -51,9 +54,9 @@ public class BRepGPropTest
     public void VolumeProperties_Sphere()
     {
         const double aRadius = 5.0;
-        TopoDS_Shape aShape = new BRepPrimAPI_MakeSphere(aRadius).Shape();
+        Shape aShape = new BRepPrimAPI_MakeSphere(aRadius).Shape();
 
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.VolumeProperties(aShape, aProps);
 
         double anExpectedVolume = (4.0 / 3.0) * Math.PI * aRadius * aRadius * aRadius;
@@ -64,9 +67,9 @@ public class BRepGPropTest
     public void VolumeProperties_BoxCenterOfMass()
     {
         // Box from (0,0,0) to (10,10,10)
-        TopoDS_Shape aShape = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
+        Shape aShape = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
 
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.VolumeProperties(aShape, aProps);
 
         Point3D aCOM = aProps.CentreOfMass();
@@ -80,14 +83,14 @@ public class BRepGPropTest
     [Fact]
     public void LinearProperties_SkipShared()
     {
-        TopoDS_Shape aShape = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
+        Shape aShape = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
 
         // With SkipShared = false, shared edges are counted multiple times
-        var aPropsNotSkipped = new GProp_GProps();
+        var aPropsNotSkipped = new Properties();
         BRepGProp.LinearProperties(aShape, aPropsNotSkipped, false);
 
         // With SkipShared = true, each edge is counted once
-        var aPropsSkipped = new GProp_GProps();
+        var aPropsSkipped = new Properties();
         BRepGProp.LinearProperties(aShape, aPropsSkipped, true);
 
         // Box has 12 edges, each of length 10 = total 120
@@ -103,12 +106,12 @@ public class BRepGPropTest
     [Fact]
     public void OCC49_CylinderHasSymmetryAxis()
     {
-        TopoDS_Shape aCylinder = new BRepPrimAPI_MakeCylinder(10.0, 20.0).Shape();
+        Shape aCylinder = new BRepPrimAPI_MakeCylinder(10.0, 20.0).Shape();
 
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.VolumeProperties(aCylinder, aProps);
 
-        GProp_PrincipalProps aPrincipal = aProps.PrincipalProperties();
+        PrincipalProperties aPrincipal = aProps.PrincipalProperties();
         Assert.True(aPrincipal.HasSymmetryAxis());
     }
 
@@ -142,18 +145,18 @@ public class BRepGPropTest
         aMults[1] = 3;
         aMults[2] = 4;
 
-        var aSpline = new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
-        Assert.Equal(7, aSpline.NbPoles());
-        Assert.Equal(3, aSpline.NbKnots());
+        var aSpline = new BSplineCurve3D(aPoles, aKnots, aMults, 3);
+        Assert.Equal(7, aSpline.PoleCount);
+        Assert.Equal(3, aSpline.KnotCount);
 
         // Method 1: GCPnts_AbscissaPoint::Length
-        var anAdaptor = new GeomAdaptor_Curve(aSpline);
-        double aLengthAbscissa = GCPnts_AbscissaPoint.Length(anAdaptor);
+        var anAdaptor = new CurveAdaptor(aSpline);
+        double aLengthAbscissa = AbscissaPoint.Length(anAdaptor);
         Assert.True(aLengthAbscissa > 0.0);
 
         // Method 2: BRepGProp::LinearProperties on the equivalent edge
-        TopoDS_Edge aEdge = new BRepBuilderAPI_MakeEdge(aSpline).Edge();
-        var aEdgeProps = new GProp_GProps();
+        Edge aEdge = new BRepBuilderAPI_MakeEdge(aSpline).Edge();
+        var aEdgeProps = new Properties();
         BRepGProp.LinearProperties(aEdge, aEdgeProps);
         double aLengthGProp = aEdgeProps.Mass();
         Assert.True(aLengthGProp > 0.0);
@@ -171,7 +174,7 @@ public class BRepGPropTest
     [Fact]
     public void LinearProperties_DegenerateEdgeWithBSplinePCurveNoCrash()
     {
-        var aPlane = new Geom_Plane(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        var aPlane = new PlaneSurface(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
 
         var aPoles = new NCollection_Array1<Point2D>(1, 4);
         aPoles.SetValue(1, new Point2D(0.0, 0.0));
@@ -184,16 +187,16 @@ public class BRepGPropTest
         var aMults = new NCollection_Array1<int>(1, 2);
         aMults.SetValue(1, 4);
         aMults.SetValue(2, 4);
-        var aPCurve = new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 3);
+        var aPCurve = new BSplineCurve2D(aPoles, aKnots, aMults, 3);
 
-        var aBuilder = new BRep_Builder();
-        TopoDS_Edge anEdge = new();
+        var aBuilder = new BrepBuilder();
+        Edge anEdge = new();
         aBuilder.MakeEdge(ref anEdge);
         aBuilder.UpdateEdge(anEdge, aPCurve, aPlane, new Placement(), global::Kerf.Engine.Foundation.Precision.Confusion());
         aBuilder.Range(anEdge, aPlane, new Placement(), aPCurve.FirstParameter(), aPCurve.LastParameter());
         aBuilder.Degenerated(anEdge, true);
 
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.LinearProperties(anEdge, aProps);
 
         // Reaching this point at all is the regression check: IntegrationOrder used to SIGSEGV

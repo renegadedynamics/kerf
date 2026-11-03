@@ -2,7 +2,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Geometry.Projection;
+using Kerf.Engine.Intersection;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
@@ -33,11 +38,11 @@ internal static class IntCurveSurface_InterUtils
     /// intersects them with the projected basis curve, and widens [<paramref name="theVmin"/>,
     /// <paramref name="theVmax"/>] with the parameters found on it.
     /// </summary>
-    public static void ProjectIntersectAndEstLim(in Line3D theLine, in Plane3D thePln, ProjLib_Plane theBasCurvProj,
+    public static void ProjectIntersectAndEstLim(in Line3D theLine, in Plane3D thePln, PlaneProjector theBasCurvProj,
                                                  ref double theVmin, ref double theVmax, ref bool theNoIntersection)
     {
-        ProjLib_Plane aLineProj = new(thePln, theLine);
-        if (!aLineProj.IsDone())
+        PlaneProjector aLineProj = new(thePln, theLine);
+        if (!aLineProj.IsDone)
         {
             return;
         }
@@ -51,10 +56,10 @@ internal static class IntCurveSurface_InterUtils
         Line2D aLin2dsym = new(aP1sym, new Direction2D(new Vector2D(aP1sym, aP2sym)));
 
         // intersect projections
-        IntAna2d_Conic aCon = new(aLin2d);
-        IntAna2d_Conic aConSym = new(aLin2dsym);
-        IntAna2d_AnaIntersection anIntersect = new();
-        IntAna2d_AnaIntersection anIntersectSym = new();
+        Conic aCon = new(aLin2d);
+        Conic aConSym = new(aLin2dsym);
+        AnalyticIntersection anIntersect = new();
+        AnalyticIntersection anIntersectSym = new();
 
         switch (theBasCurvProj.GetType())
         {
@@ -75,8 +80,8 @@ internal static class IntCurveSurface_InterUtils
         }
 
         // retrieve params of intersections
-        int aNbIntPnt = anIntersect.IsDone() ? anIntersect.NbPoints() : 0;
-        int aNbIntPntSym = anIntersectSym.IsDone() ? anIntersectSym.NbPoints() : 0;
+        int aNbIntPnt = anIntersect.IsDone ? anIntersect.PointCount : 0;
+        int aNbIntPntSym = anIntersectSym.IsDone ? anIntersectSym.PointCount : 0;
         int iPnt, aNbPnt = Max(aNbIntPnt, aNbIntPntSym);
 
         if (aNbPnt == 0)
@@ -89,14 +94,14 @@ internal static class IntCurveSurface_InterUtils
         {
             if (iPnt <= aNbIntPnt)
             {
-                IntAna2d_IntPoint aIntPnt = anIntersect.Point(iPnt);
+                IntPoint aIntPnt = anIntersect.Point(iPnt);
                 aParam = aIntPnt.ParamOnFirst();
                 theVmin = Min(theVmin, aParam);
                 theVmax = Max(theVmax, aParam);
             }
             if (iPnt <= aNbIntPntSym)
             {
-                IntAna2d_IntPoint aIntPnt = anIntersectSym.Point(iPnt);
+                IntPoint aIntPnt = anIntersectSym.Point(iPnt);
                 aParam = aIntPnt.ParamOnFirst();
                 theVmin = Min(theVmin, aParam);
                 theVmax = Max(theVmax, aParam);
@@ -123,7 +128,7 @@ internal static class IntCurveSurface_InterUtils
     {
         NoIntersection = false;
 
-        Adaptor3d_Surface? aBasSurf = null;
+        SurfaceAdaptorBase? aBasSurf = null;
 
         if (IsOffSurf)
         {
@@ -164,20 +169,20 @@ internal static class IntCurveSurface_InterUtils
                 aL.SetLocation(aP);
                 aL.SetDirection(aDirOfExt);
 
-                Extrema_ExtElC aExtr = new(aL, Line, tolang);
+                ExtElC aExtr = new(aL, Line, tolang);
 
-                if (!aExtr.IsDone())
+                if (!aExtr.IsDone)
                 {
                     return;
                 }
 
-                if (aExtr.IsParallel())
+                if (aExtr.IsParallel)
                 {
                     NoIntersection = true;
                     return;
                 }
 
-                aExtr.Points(1, out Extrema_POnCurv aP1, out _);
+                aExtr.Points(1, out POnCurv aP1, out _);
                 v = aP1.Parameter();
                 vmin = Min(vmin, v);
                 vmax = Max(vmax, v);
@@ -199,7 +204,7 @@ internal static class IntCurveSurface_InterUtils
             SurfaceTool.D0(surface, u0, v0, out Point3D aP);
             Plane3D aRefPln = new(aP, aDirOfExt);
 
-            Adaptor3d_Curve aBasCurv;
+            CurveAdaptorBase aBasCurv;
 
             if (IsOffSurf)
             {
@@ -210,11 +215,11 @@ internal static class IntCurveSurface_InterUtils
                 aBasCurv = SurfaceTool.BasisCurve(surface);
             }
 
-            ProjLib_Plane Projector = new(aRefPln);
+            PlaneProjector Projector = new(aRefPln);
 
             Projector.Project(Line);
 
-            if (!Projector.IsDone())
+            if (!Projector.IsDone)
             {
                 return;
             }
@@ -227,38 +232,38 @@ internal static class IntCurveSurface_InterUtils
             {
                 Projector.Project(aBasCurv.Line());
 
-                if (!Projector.IsDone())
+                if (!Projector.IsDone)
                 {
                     return;
                 }
 
                 Line2D aL2d = Projector.Line();
 
-                IntAna2d_AnaIntersection anInter = new(Line2d, aL2d);
+                AnalyticIntersection anInter = new(Line2d, aL2d);
 
-                if (!anInter.IsDone())
+                if (!anInter.IsDone)
                 {
                     return;
                 }
 
-                if (anInter.IsEmpty() || anInter.IdenticalElements() || anInter.ParallelElements())
+                if (anInter.IsEmpty || anInter.IdenticalElements() || anInter.ParallelElements())
                 {
                     NoIntersection = true;
                     return;
                 }
 
-                IntAna2d_IntPoint anIntPnt = anInter.Point(1);
+                IntPoint anIntPnt = anInter.Point(1);
                 umin = umax = anIntPnt.ParamOnSecond();
             }
             else if (aCurvTyp == Parabola || aCurvTyp == Hyperbola)
             {
-                IntAna2d_Conic aCon = new(Line2d);
-                IntAna2d_AnaIntersection anInter = new();
+                Conic aCon = new(Line2d);
+                AnalyticIntersection anInter = new();
 
                 if (aCurvTyp == Parabola)
                 {
                     Projector.Project(aBasCurv.Parabola());
-                    if (!Projector.IsDone())
+                    if (!Projector.IsDone)
                     {
                         return;
                     }
@@ -270,7 +275,7 @@ internal static class IntCurveSurface_InterUtils
                 else
                 {
                     Projector.Project(aBasCurv.Hyperbola());
-                    if (!Projector.IsDone())
+                    if (!Projector.IsDone)
                     {
                         return;
                     }
@@ -279,21 +284,21 @@ internal static class IntCurveSurface_InterUtils
                     anInter.Perform(aH2d, aCon);
                 }
 
-                if (!anInter.IsDone())
+                if (!anInter.IsDone)
                 {
                     return;
                 }
 
-                if (anInter.IsEmpty())
+                if (anInter.IsEmpty)
                 {
                     NoIntersection = true;
                     return;
                 }
 
-                int i, nbint = anInter.NbPoints();
+                int i, nbint = anInter.PointCount;
                 for (i = 1; i <= nbint; i++)
                 {
-                    IntAna2d_IntPoint anIntPnt = anInter.Point(i);
+                    IntPoint anIntPnt = anInter.Point(i);
 
                     umin = Min(anIntPnt.ParamOnFirst(), umin);
                     umax = Max(anIntPnt.ParamOnFirst(), umax);
@@ -345,7 +350,7 @@ internal static class IntCurveSurface_InterUtils
             }
         }
 
-        Adaptor3d_Curve aBasisCurve = SurfaceTool.BasisCurve(surface);
+        CurveAdaptorBase aBasisCurve = SurfaceTool.BasisCurve(surface);
         Axis3D aRevAx = SurfaceTool.AxeOfRevolution(surface);
         Vector3D aXVec = new(aRevAx.Direction());
         double aTolAng = global::Kerf.Engine.Foundation.Precision.Angular();
@@ -368,7 +373,7 @@ internal static class IntCurveSurface_InterUtils
         Plane3D aPln = new(new CoordinateSystem(O, new Direction3D(aNVec), new Direction3D(aXVec)));
 
         // project basic curve
-        ProjLib_Plane aBasCurvProj = new(aPln);
+        PlaneProjector aBasCurvProj = new(aPln);
         switch (aBasisCurve.GetType())
         {
             case global::Kerf.Geometry.CurveKind.Line:
@@ -383,7 +388,7 @@ internal static class IntCurveSurface_InterUtils
             default:
                 return; // not infinite curve
         }
-        if (!aBasCurvProj.IsDone())
+        if (!aBasCurvProj.IsDone)
         {
             return;
         }
@@ -444,7 +449,7 @@ internal static class IntCurveSurface_InterUtils
     {
         NoIntersection = false;
 
-        Adaptor3d_Surface aBasSurf = SurfaceTool.BasisSurface(surface);
+        SurfaceAdaptorBase aBasSurf = SurfaceTool.BasisSurface(surface);
         double anOffVal = SurfaceTool.OffsetValue(surface);
 
         SurfaceKind aTypeOfBasSurf = aBasSurf.GetType();
@@ -457,14 +462,14 @@ internal static class IntCurveSurface_InterUtils
             Vector3D aT = new(aPln.Position().XDirection() ^ aPln.Position().YDirection());
             aT *= anOffVal;
             aPln.Translate(aT);
-            IntAna_IntConicQuad LinPlane = new(Line, aPln, THE_TOLERANCE_ANGULAIRE);
+            IntConicQuad LinPlane = new(Line, aPln, THE_TOLERANCE_ANGULAIRE);
 
-            if (!LinPlane.IsDone())
+            if (!LinPlane.IsDone)
             {
                 return;
             }
 
-            if (LinPlane.IsParallel() || LinPlane.IsInQuadric())
+            if (LinPlane.IsParallel || LinPlane.IsInQuadric)
             {
                 NoIntersection = true;
                 return;
@@ -508,20 +513,20 @@ internal static class IntCurveSurface_InterUtils
                 return;
             }
 
-            IntAna_IntConicQuad LinCylinder = new(Line, new IntAna_Quadric(aCyl));
+            IntConicQuad LinCylinder = new(Line, new Quadric(aCyl));
 
-            if (!LinCylinder.IsDone())
+            if (!LinCylinder.IsDone)
             {
                 return;
             }
 
-            if (LinCylinder.IsParallel() || LinCylinder.IsInQuadric())
+            if (LinCylinder.IsParallel || LinCylinder.IsInQuadric)
             {
                 NoIntersection = true;
                 return;
             }
 
-            int i, nbp = LinCylinder.NbPoints();
+            int i, nbp = LinCylinder.PointCount;
             double vmin = RealLast(), vmax = -vmin;
 
             for (i = 1; i <= nbp; i++)
@@ -554,20 +559,20 @@ internal static class IntCurveSurface_InterUtils
                 return;
             }
 
-            IntAna_IntConicQuad LinCone = new(Line, new IntAna_Quadric(aCon));
+            IntConicQuad LinCone = new(Line, new Quadric(aCon));
 
-            if (!LinCone.IsDone())
+            if (!LinCone.IsDone)
             {
                 return;
             }
 
-            if (LinCone.IsParallel() || LinCone.IsInQuadric())
+            if (LinCone.IsParallel || LinCone.IsInQuadric)
             {
                 NoIntersection = true;
                 return;
             }
 
-            int i, nbp = LinCone.NbPoints();
+            int i, nbp = LinCone.PointCount;
             double vmin = RealLast(), vmax = -vmin;
 
             for (i = 1; i <= nbp; i++)
@@ -1088,7 +1093,7 @@ internal static class IntCurveSurface_InterUtils
     /// and <paramref name="theIsParallel"/> if the conic is parallel to or on the quadric.
     /// </summary>
     public static bool ProcessIntAna<CurveType, CurveTool, SurfaceType, SurfaceTool>(
-        in CurveType theCurve, in SurfaceType theSurface, IntAna_IntConicQuad theIntAna, out bool theIsParallel,
+        in CurveType theCurve, in SurfaceType theSurface, IntConicQuad theIntAna, out bool theIsParallel,
         NCollection_DynamicArray<IntCurveSurface_IntersectionPoint> thePoints)
         where CurveTool : IIntCurveSurface_CurveTool<CurveType>
         where SurfaceTool : IIntCurveSurface_SurfaceTool<SurfaceType>
@@ -1096,18 +1101,18 @@ internal static class IntCurveSurface_InterUtils
         theIsParallel = false;
         thePoints.Clear();
 
-        if (!theIntAna.IsDone())
+        if (!theIntAna.IsDone)
         {
             return false;
         }
 
-        if (theIntAna.IsInQuadric() || theIntAna.IsParallel())
+        if (theIntAna.IsInQuadric || theIntAna.IsParallel)
         {
             theIsParallel = true;
             return true;
         }
 
-        int nbp = theIntAna.NbPoints();
+        int nbp = theIntAna.PointCount;
         double u = 0.0, v = 0.0, w;
         for (int i = 1; i <= nbp; i++)
         {
@@ -1163,13 +1168,13 @@ internal static class IntCurveSurface_InterUtils
     {
         thePoints.Clear();
 
-        IntAna_IntLinTorus intlintorus = new(theLine, SurfaceTool.Torus(theSurface));
-        if (!intlintorus.IsDone())
+        IntLinTorus intlintorus = new(theLine, SurfaceTool.Torus(theSurface));
+        if (!intlintorus.IsDone)
         {
             return false;
         }
 
-        int nbp = intlintorus.NbPoints();
+        int nbp = intlintorus.PointCount;
         double w;
         for (int i = 1; i <= nbp; i++)
         {

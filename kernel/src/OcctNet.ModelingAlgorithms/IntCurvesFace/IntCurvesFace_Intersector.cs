@@ -5,14 +5,19 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntCurveSurface_TransitionOnCurve;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -28,14 +33,14 @@ namespace Occt;
 public class IntCurvesFace_Intersector : Transient
 {
     private readonly BRepTopAdaptor_TopolTool myTopolTool;
-    private readonly BRepAdaptor_Surface Hsurface;
+    private readonly FaceSurfaceAdaptor Hsurface;
     private readonly double Tol;
     private readonly NCollection_Sequence<IntCurveSurface_IntersectionPoint> SeqPnt = new();
     private readonly NCollection_Sequence<int> mySeqState = new();
     private bool done;
     private readonly bool myReady;
     private int nbpnt;
-    private readonly TopoDS_Face face;
+    private readonly Face face;
     private readonly IntCurveSurface_ThePolyhedronOfHInter? myPolyhedron;
     private BoundSortBox? myBndBounding;
     private bool myUseBoundTol;
@@ -43,7 +48,7 @@ public class IntCurvesFace_Intersector : Transient
                                // This case is recognized only for some pairs
                                // of analytical curves and surfaces (plane - line, ...)
 
-    private static void ComputeSamplePars(Adaptor3d_Surface Hsurface,
+    private static void ComputeSamplePars(SurfaceAdaptorBase Hsurface,
                                           int nbsu,
                                           int nbsv,
                                           out NCollection_HArray1<double> UPars,
@@ -116,7 +121,7 @@ public class IntCurvesFace_Intersector : Transient
     }
 
     /// <summary>The type of the face's surface.</summary>
-    public SurfaceKind SurfaceType() => (Adaptor3d_HSurfaceTool.GetType(Hsurface));
+    public SurfaceKind SurfaceType() => (HSurfaceTool.GetType(Hsurface));
 
     /// <summary>
     /// Loads the face <paramref name="Face"/>. <paramref name="aTol"/> decides whether the first point of a segment
@@ -125,7 +130,7 @@ public class IntCurvesFace_Intersector : Transient
     /// intersection points are classified with the larger of aTol and the tolerances of the face's edges, otherwise
     /// with a null tolerance.
     /// </summary>
-    public IntCurvesFace_Intersector(in TopoDS_Face Face, double aTol, bool aRestr = true, bool UseBToler = true)
+    public IntCurvesFace_Intersector(in Face Face, double aTol, bool aRestr = true, bool UseBToler = true)
     {
         Tol = aTol;
         done = false;
@@ -135,13 +140,13 @@ public class IntCurvesFace_Intersector : Transient
         myIsParallel = false;
 
         // C++ initialises a local adaptor and keeps a copy of it; the port keeps the adaptor itself
-        var surface = new BRepAdaptor_Surface();
+        var surface = new FaceSurfaceAdaptor();
         face = Face;
         surface.Initialize(Face, aRestr);
         Hsurface = surface;
         myTopolTool = new BRepTopAdaptor_TopolTool(Hsurface);
 
-        SurfaceKind SurfaceType = Adaptor3d_HSurfaceTool.GetType(Hsurface);
+        SurfaceKind SurfaceType = HSurfaceTool.GetType(Hsurface);
         if ((SurfaceType != Plane) && (SurfaceType != SurfaceKind.Cylinder)
             && (SurfaceType != SurfaceKind.Cone) && (SurfaceType != SurfaceKind.Sphere)
             && (SurfaceType != SurfaceKind.Torus))
@@ -234,13 +239,13 @@ public class IntCurvesFace_Intersector : Transient
         if (HICS.IsDone() && HICS.NbPoints() > 0)
         {
             // Calculate tolerance for 2d classifier
-            double mintol3d = BRep_Tool.Tolerance(face);
+            double mintol3d = Tool.Tolerance(face);
             double maxtol3d = mintol3d;
             double mintol2d = Tol, maxtol2d = Tol;
-            var anExp = new TopExp_Explorer(face, TopAbs_EDGE);
+            var anExp = new Explorer(face, ShapeType.Edge);
             for (; anExp.More(); anExp.Next())
             {
-                double curtol = BRep_Tool.Tolerance(TopoDS.Edge(anExp.Current()));
+                double curtol = Tool.Tolerance(ShapeCasts.Edge(anExp.Current()));
                 mintol3d = Min(mintol3d, curtol);
                 maxtol3d = Max(maxtol3d, curtol);
             }
@@ -257,30 +262,30 @@ public class IntCurvesFace_Intersector : Transient
                 Point2D Puv = new(HICSPointindex.U(), HICSPointindex.V());
 
                 // TopAbs_State currentstate = myTopolTool->Classify(Puv,Tol);
-                TopAbs_State currentstate = myTopolTool.Classify(Puv, !myUseBoundTol ? 0 : mintol2d);
-                if (myUseBoundTol && currentstate == TopAbs_OUT && maxtol2d > mintol2d)
+                Containment currentstate = myTopolTool.Classify(Puv, !myUseBoundTol ? 0 : mintol2d);
+                if (myUseBoundTol && currentstate == Out && maxtol2d > mintol2d)
                 {
                     anAdditionalTool ??= new BRepTopAdaptor_TopolTool(Hsurface);
 
                     currentstate = anAdditionalTool.Classify(Puv, maxtol2d);
-                    if (currentstate == TopAbs_ON)
+                    if (currentstate == On)
                     {
-                        currentstate = TopAbs_OUT;
+                        currentstate = Out;
                         // Find out nearest edge and it's tolerance
-                        anExp.Init(face, TopAbs_EDGE);
+                        anExp.Init(face, ShapeType.Edge);
                         for (; anExp.More(); anExp.Next())
                         {
-                            TopoDS_Edge anE = TopoDS.Edge(anExp.Current());
+                            Edge anE = ShapeCasts.Edge(anExp.Current());
                             // OCCT: an edge without a 3D curve (a degenerated edge) gives a null curve to the projection, which
                             // throws (occt-issues.md)
-                            Geom_Curve aPC = BRep_Tool.Curve(anE, out double f, out double l)!;
+                            Curve3D aPC = Tool.Curve(anE, out double f, out double l)!;
                             var aProj = new GeomAPI_ProjectPointOnCurve(HICSPointindex.Pnt(), aPC, f, l);
                             if (aProj.NbPoints() > 0)
                             {
                                 if (aProj.LowerDistance() <= maxtol3d)
                                 {
                                     // Nearest edge is found, state is really ON
-                                    currentstate = TopAbs_ON;
+                                    currentstate = On;
                                     break;
                                 }
                             }
@@ -288,7 +293,7 @@ public class IntCurvesFace_Intersector : Transient
                     }
                 }
 
-                if (currentstate == TopAbs_IN || currentstate == TopAbs_ON)
+                if (currentstate == In || currentstate == On)
                 {
                     double HICSW = HICSPointindex.W();
                     if (HICSW >= parinf && HICSW <= parsup)
@@ -299,10 +304,10 @@ public class IntCurvesFace_Intersector : Transient
                         IntCurveSurface_TransitionOnCurve transition = HICSPointindex.Transition();
                         Point3D pnt = HICSPointindex.Pnt();
                         //  Modified by skv - Wed Sep  3 16:14:10 2003 OCC578 Begin
-                        int anIntState = (currentstate == TopAbs_IN) ? 0 : 1;
+                        int anIntState = (currentstate == In) ? 0 : 1;
                         //  Modified by skv - Wed Sep  3 16:14:11 2003 OCC578 End
 
-                        if (transition != IntCurveSurface_Tangent && face.Orientation() == TopAbs_REVERSED)
+                        if (transition != IntCurveSurface_Tangent && face.Orientation() == Reversed)
                         {
                             if (transition == IntCurveSurface_In)
                             {
@@ -384,9 +389,9 @@ public class IntCurvesFace_Intersector : Transient
         nbpnt = 0;
 
         var HICS = new IntCurveSurface_HInter();
-        var geomline = new Geom_Line(L);
+        var geomline = new LineCurve3D(L);
         // C++ builds an adaptor and copies it into a handle: one adaptor here
-        var HLL = new GeomAdaptor_Curve(geomline);
+        var HLL = new CurveAdaptor(geomline);
         double parinf = ParMin;
         double parsup = ParMax;
         //
@@ -480,7 +485,7 @@ public class IntCurvesFace_Intersector : Transient
     /// Intersects the part [<paramref name="ParMin"/>, <paramref name="ParMax"/>] of the curve
     /// <paramref name="HCu"/> (they may be ∓infinite) with the face.
     /// </summary>
-    public void Perform(Adaptor3d_Curve HCu, double ParMin, double ParMax)
+    public void Perform(CurveAdaptorBase HCu, double ParMin, double ParMax)
     {
         done = false;
         if (!myReady)
@@ -564,7 +569,7 @@ public class IntCurvesFace_Intersector : Transient
 
     /// <summary>The state of the <paramref name="i"/>-th point in the face: IN, or ON its boundary.</summary>
     //  Modified by skv - Wed Sep  3 15:34:18 2003 OCC578 Begin
-    public TopAbs_State State(int i) => (mySeqState.Value(i) == 0) ? TopAbs_IN : TopAbs_ON;
+    public Containment State(int i) => (mySeqState.Value(i) == 0) ? In : On;
 
     /// <summary>
     /// True if the curve is parallel to the surface or lies on it (only recognised for some analytic pairs, a line and
@@ -573,12 +578,12 @@ public class IntCurvesFace_Intersector : Transient
     public bool IsParallel() => myIsParallel;
 
     /// <summary>The face.</summary>
-    public TopoDS_Face Face() => (face);
+    public Face Face() => (face);
 
     /// <summary>The state of the point <paramref name="Puv"/> of the face's parameter space (tolerance 1e-7).</summary>
-    public TopAbs_State ClassifyUVPoint(in Point2D Puv)
+    public Containment ClassifyUVPoint(in Point2D Puv)
     {
-        TopAbs_State state = myTopolTool.Classify(Puv, 1e-7);
+        Containment state = myTopolTool.Classify(Puv, 1e-7);
         return state;
     }
 

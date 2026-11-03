@@ -1,13 +1,17 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
-using static Occt.TopTools_FormatVersion;
+using static Kerf.Engine.Exchange.Brep.FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -71,10 +75,10 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile));
+        Assert.True(BrepTools.Write(theShape, aFile));
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 
@@ -85,11 +89,11 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
     private static partial Regex VertexTolerance();
 
     // a vertex TShape reached at two locations or more
-    private static bool HasVertexAtSeveralLocations(in TopoDS_Shape theShape)
+    private static bool HasVertexAtSeveralLocations(in Shape theShape)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, TopAbs_ShapeEnum.TopAbs_VERTEX, aMap);
-        var aTShapes = new HashSet<TopoDS_TShape>(ReferenceEqualityComparer.Instance);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, ShapeType.Vertex, aMap);
+        var aTShapes = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
         for (int i = 1; i <= aMap.Extent(); i++)
         {
             aTShapes.Add(aMap[i].TShape()!);
@@ -116,7 +120,7 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
                + $"{Values} values bit-identical, {BothFailed} failed on both sides, {OrderDependent} equal but for the vertex tolerances OCCT sets in address order";
     }
 
-    private void Compare(Tally theTally, string theWhat, N.TopoDS_Shape theNative, in TopoDS_Shape thePort)
+    private void Compare(Tally theTally, string theWhat, N.TopoDS_Shape theNative, in Shape thePort)
     {
         string aN = NativeText(theNative);
         string aP = PortText(thePort);
@@ -173,7 +177,7 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
         var aShape = new N.TopoDS_Shape();
         Assert.True(N.BRepTools.Read(aShape, theFile, aBuilder), theFile);
         string aF1 = NewFile();
-        Assert.True(N.BRepTools.Write(aShape, aF1, true, false, (N.TopTools_FormatVersion)(int)TopTools_FormatVersion_CURRENT));
+        Assert.True(N.BRepTools.Write(aShape, aF1, true, false, (N.TopTools_FormatVersion)(int)FormatVersion_CURRENT));
         var aF1Shape = new N.TopoDS_Shape();
         Assert.True(N.BRepTools.Read(aF1Shape, aF1, aBuilder), aF1);
         return (aF1, aF1Shape);
@@ -236,20 +240,20 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
         for (int i = 1; i <= aDist.NbSolution(); i++)
         {
             N.gp_Pnt aP1 = aDist.PointOnShape1(i), aP2 = aDist.PointOnShape2(i);
-            TopoDS_Shape aPort = theDI.GetShape(aNames[i]);
+            Shape aPort = theDI.GetShape(aNames[i]);
             N.TopoDS_Shape aNative = aDist.Value() <= 1.0e-9
                                    ? new N.BRepBuilderAPI_MakeVertex(aP1).Vertex()
                                    : new N.BRepBuilderAPI_MakeEdge(aP1, aP2).Edge();
             Compare(theTally, $"{theWhat} solution {i}", aNative, aPort);
-            if (aPort.ShapeType() == TopAbs_ShapeEnum.TopAbs_VERTEX)
+            if (aPort.ShapeType() == ShapeType.Vertex)
             {
-                Same(theTally, aP1, BRep_Tool.Pnt(TopoDS.Vertex(aPort)), $"{theWhat} {aNames[i]}");
+                Same(theTally, aP1, Tool.Pnt(ShapeCasts.Vertex(aPort)), $"{theWhat} {aNames[i]}");
             }
             else
             {
-                TopExp.Vertices(TopoDS.Edge(aPort), out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
-                Same(theTally, aP1, BRep_Tool.Pnt(aV1), $"{theWhat} {aNames[i]} P1");
-                Same(theTally, aP2, BRep_Tool.Pnt(aV2), $"{theWhat} {aNames[i]} P2");
+                Exploration.Vertices(ShapeCasts.Edge(aPort), out Vertex aV1, out Vertex aV2);
+                Same(theTally, aP1, Tool.Pnt(aV1), $"{theWhat} {aNames[i]} P1");
+                Same(theTally, aP2, Tool.Pnt(aV2), $"{theWhat} {aNames[i]} P2");
             }
         }
     }
@@ -794,7 +798,7 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
                 }
 
                 aNative(aCopy);
-                TopoDS_Shape aPort = aDI2.GetShape("s");
+                Shape aPort = aDI2.GetShape("s");
 
                 // OCCT's in-place UpdateTolerances sets a vertex shared at several locations once per location, in
                 // the order of a map hashed on addresses (occt-issues.md): the last value written can't be
@@ -821,7 +825,7 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
             using var anExp = new N.TopExp_Explorer(aShape, N.TopAbs_ShapeEnum.TopAbs_SOLID);
             if (anExp.More())
             {
-                Run(aDI, aDI.GetShape("s").ShapeType() == TopAbs_ShapeEnum.TopAbs_SOLID ? "copy s so" : "explode s so; copy s_1 so");
+                Run(aDI, aDI.GetShape("s").ShapeType() == ShapeType.Solid ? "copy s so" : "explode s so; copy s_1 so");
                 N.TopoDS_Solid aSolid = N.TopoDS.Solid(anExp.Current());
                 N.BRepLib.OrientClosedSolid(aSolid);
                 Run(aDI, "solidorientation so");

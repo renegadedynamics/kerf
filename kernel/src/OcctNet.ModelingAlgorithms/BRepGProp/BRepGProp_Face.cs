@@ -5,14 +5,18 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Numerics;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Engine.Geometry.IsoType;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -29,9 +33,9 @@ public sealed class BRepGProp_Face
 {
     private static readonly double Epsilon1 = Epsilon(1.0);
 
-    private readonly BRepAdaptor_Surface mySurface;
-    private readonly Geom2dAdaptor_Curve myCurve;
-    private Geom_Surface? myFaceSurface;
+    private readonly FaceSurfaceAdaptor mySurface;
+    private readonly CurveAdaptor2D myCurve;
+    private Surface? myFaceSurface;
     private Placement myFaceLocation;
     private bool myIsFaceContextReady;
     private bool mySReverse;
@@ -43,8 +47,8 @@ public sealed class BRepGProp_Face
     /// </summary>
     public BRepGProp_Face(bool IsUseSpan = false)
     {
-        mySurface = new BRepAdaptor_Surface();
-        myCurve = new Geom2dAdaptor_Curve();
+        mySurface = new FaceSurfaceAdaptor();
+        myCurve = new CurveAdaptor2D();
         myFaceLocation = new Placement();
         myIsFaceContextReady = false;
         mySReverse = false;
@@ -52,7 +56,7 @@ public sealed class BRepGProp_Face
     }
 
     /// <summary>The face tool of <paramref name="F"/>; see <see cref="BRepGProp_Face(bool)"/> for <paramref name="IsUseSpan"/>.</summary>
-    public BRepGProp_Face(in TopoDS_Face F, bool IsUseSpan = false)
+    public BRepGProp_Face(in Face F, bool IsUseSpan = false)
         : this(IsUseSpan)
     {
         Load(F);
@@ -61,8 +65,8 @@ public sealed class BRepGProp_Face
     /// <summary>C++ copy construction: the adaptors are shallow-copied, so the copy can be reloaded on its own.</summary>
     internal BRepGProp_Face(BRepGProp_Face theOther)
     {
-        mySurface = (BRepAdaptor_Surface)theOther.mySurface.ShallowCopy();
-        myCurve = (Geom2dAdaptor_Curve)theOther.myCurve.ShallowCopy();
+        mySurface = (FaceSurfaceAdaptor)theOther.mySurface.ShallowCopy();
+        myCurve = (CurveAdaptor2D)theOther.myCurve.ShallowCopy();
         myFaceSurface = theOther.myFaceSurface;
         myFaceLocation = theOther.myFaceLocation;
         myIsFaceContextReady = theOther.myIsFaceContextReady;
@@ -71,14 +75,14 @@ public sealed class BRepGProp_Face
     }
 
     /// <summary>Loads the face: its surface, forward, and whether it is reversed.</summary>
-    public void Load(in TopoDS_Face F)
+    public void Load(in Face F)
     {
-        TopoDS_Shape aLocalShape = F.Oriented(TopAbs_FORWARD);
-        mySurface.Initialize(TopoDS.Face(aLocalShape));
-        myFaceSurface = BRep_Tool.Surface(mySurface.Face(), out myFaceLocation);
+        Shape aLocalShape = F.Oriented(Forward);
+        mySurface.Initialize(ShapeCasts.Face(aLocalShape));
+        myFaceSurface = Tool.Surface(mySurface.Face(), out myFaceLocation);
         myIsFaceContextReady = myFaceSurface is not null;
         //  mySurface.Initialize(TopoDS::Face(F.Oriented(TopAbs_FORWARD)));
-        mySReverse = (F.Orientation() == TopAbs_REVERSED);
+        mySReverse = (F.Orientation() == Reversed);
     }
 
     /// <summary>The number of points for an accurate integration in the U direction.</summary>
@@ -91,17 +95,17 @@ public sealed class BRepGProp_Face
                 Nu = 4;
                 break;
 
-            case BezierSurface:
+            case SurfaceKind.BezierSurface:
             {
-                Nu = ((Geom_BezierSurface)mySurface.GeomSurfaceOriginal()!).UDegree() + 1;
+                Nu = ((global::Kerf.Geometry.BezierSurface)mySurface.GeomSurfaceOriginal()!).UDegree() + 1;
                 Nu = Max(4, Nu);
             }
 
                 break;
-            case BSplineSurface:
+            case SurfaceKind.BSplineSurface:
             {
-                int a = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).UDegree() + 1;
-                int b = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).NbUKnots() - 1;
+                int a = ((global::Kerf.Geometry.BSplineSurface)mySurface.GeomSurfaceOriginal()!).UDegree() + 1;
+                int b = ((global::Kerf.Geometry.BSplineSurface)mySurface.GeomSurfaceOriginal()!).UKnotCount - 1;
                 Nu = Max(4, a * b);
             }
 
@@ -124,17 +128,17 @@ public sealed class BRepGProp_Face
                 Nv = 4;
                 break;
 
-            case BezierSurface:
+            case SurfaceKind.BezierSurface:
             {
-                Nv = ((Geom_BezierSurface)mySurface.GeomSurfaceOriginal()!).VDegree() + 1;
+                Nv = ((global::Kerf.Geometry.BezierSurface)mySurface.GeomSurfaceOriginal()!).VDegree() + 1;
                 Nv = Max(4, Nv);
             }
 
                 break;
-            case BSplineSurface:
+            case SurfaceKind.BSplineSurface:
             {
-                int a = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).VDegree() + 1;
-                int b = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).NbVKnots() - 1;
+                int a = ((global::Kerf.Geometry.BSplineSurface)mySurface.GeomSurfaceOriginal()!).VDegree() + 1;
+                int b = ((global::Kerf.Geometry.BSplineSurface)mySurface.GeomSurfaceOriginal()!).VKnotCount - 1;
                 Nv = Max(4, a * b);
             }
 
@@ -148,10 +152,10 @@ public sealed class BRepGProp_Face
     }
 
     /// <summary>True if the face is not trimmed.</summary>
-    public bool NaturalRestriction() => BRep_Tool.NaturalRestriction(mySurface.Face());
+    public bool NaturalRestriction() => Tool.NaturalRestriction(mySurface.Face());
 
     /// <summary>The face, forward.</summary>
-    public TopoDS_Face GetFace() => mySurface.Face();
+    public Face GetFace() => mySurface.Face();
 
     /// <summary>The point of parameter U on the current boundary curve.</summary>
     public Point2D Value2d(double U) => myCurve.Value(U);
@@ -179,14 +183,14 @@ public sealed class BRepGProp_Face
 
             case BezierCurve:
             {
-                N = ((Geom2d_BezierCurve)myCurve.Curve()!).Degree() + 1;
+                N = ((BezierCurve2D)myCurve.Curve()!).Degree() + 1;
             }
 
                 break;
             case BSplineCurve:
             {
-                int a = ((Geom2d_BSplineCurve)myCurve.Curve()!).Degree() + 1;
-                int b = ((Geom2d_BSplineCurve)myCurve.Curve()!).NbKnots() - 1;
+                int a = ((BSplineCurve2D)myCurve.Curve()!).Degree() + 1;
+                int b = ((BSplineCurve2D)myCurve.Curve()!).KnotCount - 1;
                 N = a * b;
             }
 
@@ -209,7 +213,7 @@ public sealed class BRepGProp_Face
     }
 
     /// <summary>Loads the boundary arc of the edge; false if the edge has no pcurve on the face.</summary>
-    public bool Load(in TopoDS_Edge E)
+    public bool Load(in Edge E)
     {
         double a, b;
         if (!myIsFaceContextReady)
@@ -217,13 +221,13 @@ public sealed class BRepGProp_Face
             return false;
         }
 
-        Geom2d_Curve? C = BRep_Tool.CurveOnSurface(E, myFaceSurface, myFaceLocation, out a, out b);
+        Curve2D? C = Tool.CurveOnSurface(E, myFaceSurface, myFaceLocation, out a, out b);
         if (C is null)
         {
             return false;
         }
 
-        if (E.Orientation() == TopAbs_REVERSED)
+        if (E.Orientation() == Reversed)
         {
             double x = a;
             a = C.ReversedParameter(b);
@@ -281,13 +285,13 @@ public sealed class BRepGProp_Face
                 Nu = 2;
                 Nv = 2;
                 break;
-            case BezierSurface:
-                Nv = ((Geom_BezierSurface)mySurface.GeomSurfaceOriginal()!).VDegree();
-                Nu = ((Geom_BezierSurface)mySurface.GeomSurfaceOriginal()!).UDegree();
+            case SurfaceKind.BezierSurface:
+                Nv = ((global::Kerf.Geometry.BezierSurface)mySurface.GeomSurfaceOriginal()!).VDegree();
+                Nu = ((global::Kerf.Geometry.BezierSurface)mySurface.GeomSurfaceOriginal()!).UDegree();
                 break;
-            case BSplineSurface:
-                Nv = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).VDegree();
-                Nu = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).UDegree();
+            case SurfaceKind.BSplineSurface:
+                Nv = ((global::Kerf.Geometry.BSplineSurface)mySurface.GeomSurfaceOriginal()!).VDegree();
+                Nu = ((global::Kerf.Geometry.BSplineSurface)mySurface.GeomSurfaceOriginal()!).UDegree();
                 break;
             default:
                 Nu = 2;
@@ -319,11 +323,11 @@ public sealed class BRepGProp_Face
             case SurfaceKind.Torus:
                 N = 4;
                 break;
-            case BezierSurface:
+            case SurfaceKind.BezierSurface:
                 N = 2;
                 break;
-            case BSplineSurface:
-                N = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).NbUKnots();
+            case SurfaceKind.BSplineSurface:
+                N = ((global::Kerf.Geometry.BSplineSurface)mySurface.GeomSurfaceOriginal()!).UKnotCount;
                 break;
             default:
                 N = 2;
@@ -354,11 +358,11 @@ public sealed class BRepGProp_Face
             case SurfaceKind.Torus:
                 N = 4;
                 break;
-            case BezierSurface:
+            case SurfaceKind.BezierSurface:
                 N = 2;
                 break;
-            case BSplineSurface:
-                N = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).NbVKnots();
+            case SurfaceKind.BSplineSurface:
+                N = ((global::Kerf.Geometry.BSplineSurface)mySurface.GeomSurfaceOriginal()!).VKnotCount;
                 break;
             default:
                 N = 2;
@@ -386,9 +390,9 @@ public sealed class BRepGProp_Face
                 Knots[3] = M_PI * 4.0 / 3.0;
                 Knots[4] = M_PI * 6.0 / 3.0;
                 break;
-            case BSplineSurface:
+            case SurfaceKind.BSplineSurface:
             {
-                NCollection_Array1<double> aSrcKnots = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).InternalUKnots();
+                NCollection_Array1<double> aSrcKnots = ((global::Kerf.Geometry.BSplineSurface)mySurface.GeomSurfaceOriginal()!).InternalUKnots();
                 for (int i = Knots.Lower(); i <= Knots.Upper(); i++)
                 {
                     Knots[i] = aSrcKnots[i];
@@ -426,9 +430,9 @@ public sealed class BRepGProp_Face
                 Knots[3] = M_PI * 4.0 / 3.0;
                 Knots[4] = M_PI * 6.0 / 3.0;
                 break;
-            case BSplineSurface:
+            case SurfaceKind.BSplineSurface:
             {
-                NCollection_Array1<double> aSrcKnots = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).InternalVKnots();
+                NCollection_Array1<double> aSrcKnots = ((global::Kerf.Geometry.BSplineSurface)mySurface.GeomSurfaceOriginal()!).InternalVKnots();
                 for (int i = Knots.Lower(); i <= Knots.Upper(); i++)
                 {
                     Knots[i] = aSrcKnots[i];
@@ -448,7 +452,7 @@ public sealed class BRepGProp_Face
     {
         Box2d aBox = new();
 
-        BndLib_Add2dCurve.Add(myCurve, 1.0e-7, ref aBox);
+        Add2dCurve.Add(myCurve, 1.0e-7, ref aBox);
         double aXmin, aXmax, aYmin, aYmax;
         aBox.Get(out aXmin, out aYmin, out aXmax, out aYmax);
         double aVmin = mySurface.FirstVParameter();
@@ -480,10 +484,10 @@ public sealed class BRepGProp_Face
                 NL = 3 * 3;
                 break;
             case BezierCurve:
-                NL = ((Geom2d_BezierCurve)myCurve.Curve()!).Degree();
+                NL = ((BezierCurve2D)myCurve.Curve()!).Degree();
                 break;
             case BSplineCurve:
-                NL = ((Geom2d_BSplineCurve)myCurve.Curve()!).Degree();
+                NL = ((BSplineCurve2D)myCurve.Curve()!).Degree();
                 break;
             default:
                 NL = 3 * 3;
@@ -515,7 +519,7 @@ public sealed class BRepGProp_Face
                 N = 2;
                 break;
             case BSplineCurve:
-                N = ((Geom2d_BSplineCurve)myCurve.Curve()!).NbKnots();
+                N = ((BSplineCurve2D)myCurve.Curve()!).KnotCount;
                 break;
             default:
                 N = 2;
@@ -548,7 +552,7 @@ public sealed class BRepGProp_Face
                 break;
             case BSplineCurve:
             {
-                NCollection_Array1<double> aSrcKnots = ((Geom2d_BSplineCurve)myCurve.Curve()!).InternalKnots();
+                NCollection_Array1<double> aSrcKnots = ((BSplineCurve2D)myCurve.Curve()!).InternalKnots();
                 for (int i = Knots.Lower(); i <= Knots.Upper(); i++)
                 {
                     Knots[i] = aSrcKnots[i];
@@ -623,7 +627,7 @@ public sealed class BRepGProp_Face
             return;
         }
 
-        Geom2d_Curve aLin = new Geom2d_Line(aLoc, aDir);
+        Curve2D aLin = new LineCurve2D(aLoc, aDir);
 
         myCurve.Load(aLin, 0.0, aLen);
     }
@@ -677,17 +681,17 @@ public sealed class BRepGProp_Face
 
     private static void GetCurveKnots(double theMin,
                                       double theMax,
-                                      Geom2dAdaptor_Curve theCurve,
+                                      CurveAdaptor2D theCurve,
                                       out NCollection_HArray1<double> theKnots)
     {
         bool isSBSpline = theCurve.GetType() == BSplineCurve;
 
         if (isSBSpline)
         {
-            Geom2d_BSplineCurve aCrv;
+            BSplineCurve2D aCrv;
             NCollection_HArray1<double> aCrvKnots;
 
-            aCrv = (Geom2d_BSplineCurve)theCurve.Curve()!;
+            aCrv = (BSplineCurve2D)theCurve.Curve()!;
             aCrvKnots = new NCollection_HArray1<double>(aCrv.InternalKnots());
             GetRealKnots(theMin, theMax, aCrvKnots, out theKnots);
         }
@@ -706,17 +710,17 @@ public sealed class BRepGProp_Face
     public NCollection_HArray1<double> GetUKnots(double theUMin, double theUMax)
     {
         NCollection_HArray1<double> theUKnots;
-        bool isSBSpline = mySurface.GetType() == BSplineSurface;
+        bool isSBSpline = mySurface.GetType() == SurfaceKind.BSplineSurface;
         bool isCBSpline = false;
 
         if (!isSBSpline)
         {
             if (mySurface.GetType() == SurfaceOfExtrusion)
             {
-                var aCurve = new GeomAdaptor_Curve();
-                Geom_Surface aSurf = mySurface.GeomSurfaceOriginal()!;
+                var aCurve = new CurveAdaptor();
+                Surface aSurf = mySurface.GeomSurfaceOriginal()!;
 
-                aCurve.Load(((Geom_SurfaceOfLinearExtrusion)aSurf).BasisCurve());
+                aCurve.Load(((ExtrusionSurface)aSurf).BasisCurve());
                 isCBSpline = aCurve.GetType() == BSplineCurve;
             }
         }
@@ -727,19 +731,19 @@ public sealed class BRepGProp_Face
 
             if (isSBSpline)
             {
-                Geom_Surface aSurf = mySurface.GeomSurfaceOriginal()!;
-                Geom_BSplineSurface aBSplSurf;
+                Surface aSurf = mySurface.GeomSurfaceOriginal()!;
+                global::Kerf.Geometry.BSplineSurface aBSplSurf;
 
-                aBSplSurf = (Geom_BSplineSurface)aSurf;
+                aBSplSurf = (global::Kerf.Geometry.BSplineSurface)aSurf;
                 aKnots = new NCollection_HArray1<double>(aBSplSurf.InternalUKnots());
             }
             else
             {
-                var aCurve = new GeomAdaptor_Curve();
-                Geom_Surface aSurf = mySurface.GeomSurfaceOriginal()!;
-                Geom_BSplineCurve aBSplCurve;
+                var aCurve = new CurveAdaptor();
+                Surface aSurf = mySurface.GeomSurfaceOriginal()!;
+                BSplineCurve3D aBSplCurve;
 
-                aCurve.Load(((Geom_SurfaceOfLinearExtrusion)aSurf).BasisCurve());
+                aCurve.Load(((ExtrusionSurface)aSurf).BasisCurve());
                 aBSplCurve = aCurve.BSpline();
                 aKnots = new NCollection_HArray1<double>(aBSplCurve.InternalKnots());
             }
@@ -763,16 +767,16 @@ public sealed class BRepGProp_Face
     public NCollection_HArray1<double> GetTKnots(double theTMin, double theTMax)
     {
         NCollection_HArray1<double> theTKnots;
-        bool isBSpline = mySurface.GetType() == BSplineSurface;
+        bool isBSpline = mySurface.GetType() == SurfaceKind.BSplineSurface;
 
         if (myIsUseSpan && isBSpline)
         {
             // OCCT copies the V knots of the face here and doesn't use them
             NCollection_HArray1<double> aSurfKnots;
-            Geom_Surface aSurf = mySurface.GeomSurfaceOriginal()!;
-            Geom_BSplineSurface aBSplSurf;
+            Surface aSurf = mySurface.GeomSurfaceOriginal()!;
+            global::Kerf.Geometry.BSplineSurface aBSplSurf;
 
-            aBSplSurf = (Geom_BSplineSurface)aSurf;
+            aBSplSurf = (global::Kerf.Geometry.BSplineSurface)aSurf;
             aSurfKnots = new NCollection_HArray1<double>(aBSplSurf.InternalVKnots());
             _ = aSurfKnots;
             GetCurveKnots(theTMin, theTMax, myCurve, out theTKnots);

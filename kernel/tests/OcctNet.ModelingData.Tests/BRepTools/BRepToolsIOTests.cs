@@ -1,11 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopTools_FormatVersion;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Engine.Exchange.Brep.FormatVersion;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -16,38 +20,38 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class BRepToolsIOTests
 {
-    private static readonly BRep_Builder theBuilder = new();
+    private static readonly BrepBuilder theBuilder = new();
 
-    private static readonly TopTools_FormatVersion[] theVersions =
-        [TopTools_FormatVersion_VERSION_1, TopTools_FormatVersion_VERSION_2, TopTools_FormatVersion_VERSION_3];
+    private static readonly FormatVersion[] theVersions =
+        [FormatVersion_VERSION_1, FormatVersion_VERSION_2, FormatVersion_VERSION_3];
 
-    internal static string Write(in TopoDS_Shape theShape, TopTools_FormatVersion theVersion = TopTools_FormatVersion_CURRENT,
+    internal static string Write(in Shape theShape, FormatVersion theVersion = FormatVersion_CURRENT,
                                  bool theWithTriangles = true, bool theWithNormals = false)
     {
         var aWriter = new StringWriter();
-        BRepTools.Write(theShape, aWriter, theWithTriangles, theWithNormals, theVersion);
+        BrepTools.Write(theShape, aWriter, theWithTriangles, theWithNormals, theVersion);
         return aWriter.ToString();
     }
 
-    internal static TopoDS_Shape Read(string theText)
+    internal static Shape Read(string theText)
     {
         var aReader = new StringReader(theText);
         StreamUtilities.SetInputLength(aReader, theText.Length);
-        BRepTools.Read(out TopoDS_Shape aShape, aReader);
+        BrepTools.Read(out Shape aShape, aReader);
         return aShape;
     }
 
-    private static List<TopoDS_Shape> SubShapes(in TopoDS_Shape theShape)
+    private static List<Shape> SubShapes(in Shape theShape)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, aMap);
         return [.. aMap];
     }
 
     [Fact]
     public void A_vertex_is_written_as_OCCT_writes_it()
     {
-        TopoDS_Vertex aV = new();
+        Vertex aV = new();
         theBuilder.MakeVertex(ref aV, new Point3D(1, 2.5, -3), 1e-7);
         Assert.Equal("\nCASCADE Topology V3, (c) Open Cascade\n"
                      + "Locations 0\n"
@@ -69,14 +73,14 @@ public class BRepToolsIOTests
                      Write(aV));
 
         // version 1 and 2 headers; the file form adds Draw's line
-        Assert.StartsWith("\nCASCADE Topology V1, (c) Matra-Datavision\nLocations 0\n", Write(aV, TopTools_FormatVersion_VERSION_1));
-        Assert.StartsWith("\nCASCADE Topology V2, (c) Matra-Datavision\nLocations 0\n", Write(aV, TopTools_FormatVersion_VERSION_2));
+        Assert.StartsWith("\nCASCADE Topology V1, (c) Matra-Datavision\nLocations 0\n", Write(aV, FormatVersion_VERSION_1));
+        Assert.StartsWith("\nCASCADE Topology V2, (c) Matra-Datavision\nLocations 0\n", Write(aV, FormatVersion_VERSION_2));
     }
 
     [Fact]
     public void An_edge_records_its_flags_curve_and_range()
     {
-        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(3, 4, 0));
+        Edge anEdge = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(3, 4, 0));
         string aText = Write(anEdge);
         // the edge: tolerance, SameParameter, SameRange, Degenerated; its 3D curve: index, location, range
         Assert.Contains("\nEd\n 1e-07 1 1 0\n1  1 0 0 5\n0\n", aText, StringComparison.Ordinal);
@@ -96,7 +100,7 @@ public class BRepToolsIOTests
         var aL2 = new Placement(aT2);
         Placement aComplex = aL1 * aL2.Powered(2);
 
-        var aSet = new TopTools_LocationSet();
+        var aSet = new LocationSet();
         Assert.Equal(0, aSet.Add(new Placement()));
         int anIndex = aSet.Add(aComplex);
         Assert.Equal(3, anIndex);
@@ -123,9 +127,9 @@ public class BRepToolsIOTests
                      aText);
         Assert.Equal(6, StreamUtilities.Precision(aWriter));
 
-        var aRead = new TopTools_LocationSet();
+        var aRead = new LocationSet();
         aRead.Read(new StringReader(aText));
-        Assert.Equal(3, aRead.NbLocations());
+        Assert.Equal(3, aRead.LocationCount);
         Assert.True(aRead.Location(3).Transformation().TranslationPart().IsEqual(aComplex.Transformation().TranslationPart(), 1e-14));
         Assert.Equal(2, aRead.Location(3).FirstPower());
         Assert.Equal(1, aRead.Location(3).NextLocation().FirstPower());
@@ -141,17 +145,17 @@ public class BRepToolsIOTests
     public void Shapes_round_trip_byte_for_byte()
     {
         int aNbTexts = 0;
-        foreach ((string aName, TopoDS_Shape aShape) in BinTestShapes.All())
+        foreach ((string aName, Shape aShape) in BinTestShapes.All())
         {
-            foreach (TopTools_FormatVersion aVersion in theVersions)
+            foreach (FormatVersion aVersion in theVersions)
             {
                 foreach ((bool aTri, bool aNorm) in new[] { (true, false), (true, true), (false, false) })
                 {
                     string aT1 = Write(aShape, aVersion, aTri, aNorm);
-                    TopoDS_Shape aS1 = Read(aT1);
-                    Assert.False(aS1.IsNull(), aName);
+                    Shape aS1 = Read(aT1);
+                    Assert.False(aS1.IsNull, aName);
                     string aT2 = Write(aS1, aVersion, aTri, aNorm);
-                    if (aVersion != TopTools_FormatVersion_VERSION_1)
+                    if (aVersion != FormatVersion_VERSION_1)
                     {
                         // version 1 reading computes the UV points and sets Checked (BRepTools::Update)
                         Assert.True(aT1 == aT2, $"{aName}, version {(int)aVersion}, {aTri} {aNorm}: first round trip");
@@ -170,10 +174,10 @@ public class BRepToolsIOTests
     [Fact]
     public void Read_shapes_have_the_same_structure()
     {
-        foreach ((string aName, TopoDS_Shape aShape) in BinTestShapes.All())
+        foreach ((string aName, Shape aShape) in BinTestShapes.All())
         {
-            TopoDS_Shape aRead = Read(Write(aShape));
-            List<TopoDS_Shape> anOriginal = SubShapes(aShape), aCopy = SubShapes(aRead);
+            Shape aRead = Read(Write(aShape));
+            List<Shape> anOriginal = SubShapes(aShape), aCopy = SubShapes(aRead);
             Assert.True(anOriginal.Count == aCopy.Count, aName);
             for (int i = 0; i < anOriginal.Count; i++)
             {
@@ -182,9 +186,9 @@ public class BRepToolsIOTests
                 Assert.True(anOriginal[i].Location().Transformation().TranslationPart()
                                 .IsEqual(aCopy[i].Location().Transformation().TranslationPart(), 1e-12));
                 Assert.Equal(anOriginal[i].Closed(), aCopy[i].Closed());
-                if (anOriginal[i].ShapeType() == TopAbs_VERTEX)
+                if (anOriginal[i].ShapeType() == ShapeType.Vertex)
                 {
-                    Assert.True(BRep_Tool.Pnt(TopoDS.Vertex(anOriginal[i])).IsEqual(BRep_Tool.Pnt(TopoDS.Vertex(aCopy[i])), 1e-12));
+                    Assert.True(Tool.Pnt(ShapeCasts.Vertex(anOriginal[i])).IsEqual(Tool.Pnt(ShapeCasts.Vertex(aCopy[i])), 1e-12));
                 }
             }
         }
@@ -193,20 +197,20 @@ public class BRepToolsIOTests
     [Fact]
     public void Reading_freezes_shapes_geometry_and_meshes()
     {
-        foreach ((string aName, TopoDS_Shape aShape) in BinTestShapes.All())
+        foreach ((string aName, Shape aShape) in BinTestShapes.All())
         {
-            TopoDS_Shape aRead = Read(Write(aShape, TopTools_FormatVersion_VERSION_3, true, true));
-            foreach (TopoDS_Shape aSub in SubShapes(aRead))
+            Shape aRead = Read(Write(aShape, FormatVersion_VERSION_3, true, true));
+            foreach (Shape aSub in SubShapes(aRead))
             {
                 Assert.True(aSub.TShape()!.IsFrozen, aName);
                 Assert.True(aSub.Locked(), aName);
                 Assert.False(aSub.TShape()!.LockedFlag(), aName);
-                if (aSub.TShape() is BRep_TEdge aTE)
+                if (aSub.TShape() is BrepTEdge aTE)
                 {
-                    foreach (BRep_CurveRepresentation aCR in aTE.CurveRepresentations())
+                    foreach (CurveRepresentation aCR in aTE.CurveRepresentations())
                     {
                         Assert.True(aCR.IsFrozen);
-                        if (aCR.IsCurve3D() && aCR.Curve3D() is { } aC)
+                        if (aCR.IsCurve3D && aCR.Curve3D() is { } aC)
                         {
                             Assert.True(aC.IsFrozen);
                         }
@@ -224,7 +228,7 @@ public class BRepToolsIOTests
                         }
                     }
                 }
-                else if (aSub.TShape() is BRep_TFace aTF)
+                else if (aSub.TShape() is BrepTFace aTF)
                 {
                     Assert.True(aTF.Surface() is null || aTF.Surface()!.IsFrozen);
                     Assert.True(aTF.Triangulation() is null || aTF.Triangulation()!.IsFrozen);
@@ -236,13 +240,13 @@ public class BRepToolsIOTests
     [Fact]
     public void Reading_clears_the_Free_flag_of_sub_shapes_as_OCCT_does()
     {
-        TopoDS_Solid aBox = TestShapes.Box(1, 1, 1);
+        Solid aBox = TestShapes.Box(1, 1, 1);
         // the file says every TShape is free; adding each to its parent clears the flag, as in OCCT
         string aText = Write(aBox).Replace("\n0101000\n", "\n1101000\n", StringComparison.Ordinal)
                                   .Replace("\n0101101\n", "\n1101101\n", StringComparison.Ordinal);
-        TopoDS_Shape aRead = Read(aText);
+        Shape aRead = Read(aText);
         Assert.True(aRead.Free());
-        foreach (TopoDS_Shape aSub in SubShapes(aRead).Where(s => s.ShapeType() != TopAbs_SOLID))
+        foreach (Shape aSub in SubShapes(aRead).Where(s => s.ShapeType() != ShapeType.Solid))
         {
             Assert.False(aSub.Free());
         }
@@ -251,23 +255,23 @@ public class BRepToolsIOTests
     [Fact]
     public void Version_2_stores_UV_points_and_version_1_computes_them()
     {
-        TopoDS_Face aFace = TestShapes.CylinderFace(2, 5);
-        string aV2 = Write(aFace, TopTools_FormatVersion_VERSION_2);
-        string aV1 = Write(aFace, TopTools_FormatVersion_VERSION_1);
+        Face aFace = TestShapes.CylinderFace(2, 5);
+        string aV2 = Write(aFace, FormatVersion_VERSION_2);
+        string aV1 = Write(aFace, FormatVersion_VERSION_1);
         Assert.True(aV2.Length > aV1.Length);
 
-        TopoDS_Face aFromV2 = TopoDS.Face(Read(aV2));
-        TopoDS_Face aFromV1 = TopoDS.Face(Read(aV1));
+        Face aFromV2 = ShapeCasts.Face(Read(aV2));
+        Face aFromV1 = ShapeCasts.Face(Read(aV1));
         Assert.False(aFromV2.Checked());
         // BRepTools::Update(Face) on reading version 1
         Assert.True(aFromV1.Checked());
-        foreach ((TopoDS_Face aF, string aWhich) in new[] { (aFromV2, "2"), (aFromV1, "1") })
+        foreach ((Face aF, string aWhich) in new[] { (aFromV2, "2"), (aFromV1, "1") })
         {
-            for (var anExp = new TopExp_Explorer(aF, TopAbs_EDGE); anExp.More(); anExp.Next())
+            for (var anExp = new Explorer(aF, ShapeType.Edge); anExp.More(); anExp.Next())
             {
-                TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
-                BRep_Tool.UVPoints(anEdge, aF, out Point2D aP1, out Point2D aP2);
-                Geom2d_Curve aPC = BRep_Tool.CurveOnSurface(anEdge, aF, out double aFirst, out double aLast)!;
+                Edge anEdge = ShapeCasts.Edge(anExp.Current());
+                Tool.UVPoints(anEdge, aF, out Point2D aP1, out Point2D aP2);
+                Curve2D aPC = Tool.CurveOnSurface(anEdge, aF, out double aFirst, out double aLast)!;
                 Assert.True(aP1.Distance(aPC.Value(aFirst)) < 1e-12, aWhich);
                 Assert.True(aP2.Distance(aPC.Value(aLast)) < 1e-12, aWhich);
             }
@@ -277,27 +281,27 @@ public class BRepToolsIOTests
     [Fact]
     public void Triangulations_and_normals_follow_the_flags_and_the_version()
     {
-        TopoDS_Shape aMeshed = BinTestShapes.MeshedBox(true, true);
-        Assert.Contains("Triangulations 0\n", Write(aMeshed, TopTools_FormatVersion_VERSION_3, false, false), StringComparison.Ordinal);
-        string aWithout = Write(aMeshed, TopTools_FormatVersion_VERSION_3, true, false);
-        string aWith = Write(aMeshed, TopTools_FormatVersion_VERSION_3, true, true);
-        string aV2 = Write(aMeshed, TopTools_FormatVersion_VERSION_2, true, true);
+        Shape aMeshed = BinTestShapes.MeshedBox(true, true);
+        Assert.Contains("Triangulations 0\n", Write(aMeshed, FormatVersion_VERSION_3, false, false), StringComparison.Ordinal);
+        string aWithout = Write(aMeshed, FormatVersion_VERSION_3, true, false);
+        string aWith = Write(aMeshed, FormatVersion_VERSION_3, true, true);
+        string aV2 = Write(aMeshed, FormatVersion_VERSION_2, true, true);
         Assert.DoesNotContain("Triangulations 0\n", aWithout, StringComparison.Ordinal);
         Assert.True(aWith.Length > aWithout.Length);
         // version 2 has no normals
-        Assert.False(BRep_Tool.Triangulation(TopoDS.Face(SubShapes(Read(aV2)).First(s => s.ShapeType() == TopAbs_FACE)), out _)!.HasNormals);
+        Assert.False(Tool.Triangulation(ShapeCasts.Face(SubShapes(Read(aV2)).First(s => s.ShapeType() == ShapeType.Face)), out _)!.HasNormals);
 
-        Triangulation aTri = BRep_Tool.Triangulation(TopoDS.Face(SubShapes(Read(aWith)).First(s => s.ShapeType() == TopAbs_FACE)), out _)!;
+        Triangulation aTri = Tool.Triangulation(ShapeCasts.Face(SubShapes(Read(aWith)).First(s => s.ShapeType() == ShapeType.Face)), out _)!;
         Assert.True(aTri.HasNormals);
         Assert.True(aTri.HasUVNodes);
-        aTri = BRep_Tool.Triangulation(TopoDS.Face(SubShapes(Read(aWithout)).First(s => s.ShapeType() == TopAbs_FACE)), out _)!;
+        aTri = Tool.Triangulation(ShapeCasts.Face(SubShapes(Read(aWithout)).First(s => s.ShapeType() == ShapeType.Face)), out _)!;
         Assert.False(aTri.HasNormals);
 
         // a face with only a triangulation is always written with its triangulation and normals
-        TopoDS_Shape anOnly = BinTestShapes.TriangulationOnlyFace();
-        TopoDS_Face aFace = TopoDS.Face(Read(Write(anOnly, TopTools_FormatVersion_VERSION_3, false, false)));
-        Assert.NotNull(BRep_Tool.Triangulation(aFace, out _));
-        Assert.Null(BRep_Tool.Surface(aFace));
+        Shape anOnly = BinTestShapes.TriangulationOnlyFace();
+        Face aFace = ShapeCasts.Face(Read(Write(anOnly, FormatVersion_VERSION_3, false, false)));
+        Assert.NotNull(Tool.Triangulation(aFace, out _));
+        Assert.Null(Tool.Surface(aFace));
     }
 
     [Fact]
@@ -306,28 +310,28 @@ public class BRepToolsIOTests
         string aDir = Directory.CreateTempSubdirectory("occtnet-brep-").FullName;
         try
         {
-            TopoDS_Shape aShape = BinTestShapes.CompoundWithLocations();
+            Shape aShape = BinTestShapes.CompoundWithLocations();
             string aFile = Path.Combine(aDir, "a.brep");
-            Assert.True(BRepTools.Write(aShape, aFile));
+            Assert.True(BrepTools.Write(aShape, aFile));
             byte[] aBytes = File.ReadAllBytes(aFile);
             Assert.Equal("DBRep_DrawableShape\n" + Write(aShape), System.Text.Encoding.ASCII.GetString(aBytes));
-            Assert.True(BRepTools.Read(out TopoDS_Shape aRead, aFile));
+            Assert.True(BrepTools.Read(out Shape aRead, aFile));
             Assert.Equal(Write(aShape), Write(aRead));
 
             // CRLF reads the same
             string aCrlf = Path.Combine(aDir, "crlf.brep");
             File.WriteAllText(aCrlf, File.ReadAllText(aFile).Replace("\n", "\r\n", StringComparison.Ordinal));
-            Assert.True(BRepTools.Read(out TopoDS_Shape aFromCrlf, aCrlf));
+            Assert.True(BrepTools.Read(out Shape aFromCrlf, aCrlf));
             Assert.Equal(Write(aShape), Write(aFromCrlf));
 
-            Assert.True(BRepTools.Write(aShape, Path.Combine(aDir, "v1.brep"), false, false, TopTools_FormatVersion_VERSION_1));
+            Assert.True(BrepTools.Write(aShape, Path.Combine(aDir, "v1.brep"), false, false, FormatVersion_VERSION_1));
             Assert.StartsWith("DBRep_DrawableShape\n\nCASCADE Topology V1", File.ReadAllText(Path.Combine(aDir, "v1.brep")), StringComparison.Ordinal);
 
-            Assert.False(BRepTools.Read(out TopoDS_Shape aNone, Path.Combine(aDir, "missing.brep")));
-            Assert.True(aNone.IsNull());
-            Assert.False(BRepTools.Write(aShape, Path.Combine(aDir, "no", "such", "dir", "a.brep")));
+            Assert.False(BrepTools.Read(out Shape aNone, Path.Combine(aDir, "missing.brep")));
+            Assert.True(aNone.IsNull);
+            Assert.False(BrepTools.Write(aShape, Path.Combine(aDir, "no", "such", "dir", "a.brep")));
             File.WriteAllText(Path.Combine(aDir, "empty.brep"), "not a shape\n");
-            Assert.False(BRepTools.Read(out _, Path.Combine(aDir, "empty.brep")));
+            Assert.False(BrepTools.Read(out _, Path.Combine(aDir, "empty.brep")));
         }
         finally
         {
@@ -338,25 +342,25 @@ public class BRepToolsIOTests
     [Fact]
     public void Text_that_isnt_a_shape_set_reads_as_a_null_shape()
     {
-        Assert.True(Read("hello\nworld\n").IsNull());
-        Assert.True(Read("").IsNull());
+        Assert.True(Read("hello\nworld\n").IsNull);
+        Assert.True(Read("").IsNull);
         // a version line longer than getline's 99 characters ends the search, as in C++
-        Assert.True(Read(new string('x', 150) + "\n" + Write(TestShapes.Vertex(new Point3D()))).IsNull());
+        Assert.True(Read(new string('x', 150) + "\n" + Write(TestShapes.Vertex(new Point3D()))).IsNull);
         // lines before the version line are skipped
-        Assert.False(Read("anything\n" + Write(TestShapes.Vertex(new Point3D()))).IsNull());
+        Assert.False(Read("anything\n" + Write(TestShapes.Vertex(new Point3D()))).IsNull);
     }
 
     [Fact]
     public void The_shape_set_API()
     {
-        TopoDS_Solid aBox = TestShapes.Box(1, 2, 3);
-        var aSet = new BRepTools_ShapeSet();
-        Assert.True(aSet.IsWithTriangles());
-        Assert.False(aSet.IsWithNormals());
+        Solid aBox = TestShapes.Box(1, 2, 3);
+        var aSet = new BrepShapeSet();
+        Assert.True(aSet.IsWithTriangles);
+        Assert.False(aSet.IsWithNormals);
         aSet.SetWithNormals(true);
         aSet.SetWithTriangles(false);
-        Assert.True(aSet.IsWithNormals());
-        Assert.False(aSet.IsWithTriangles());
+        Assert.True(aSet.IsWithNormals);
+        Assert.False(aSet.IsWithTriangles);
         Assert.Equal(3, aSet.FormatNb());
         aSet.SetFormatNb(7);
         Assert.Equal(3, aSet.FormatNb());
@@ -364,11 +368,11 @@ public class BRepToolsIOTests
         Assert.Equal(2, aSet.FormatNb());
 
         int anIndex = aSet.Add(aBox);
-        Assert.Equal(8 + 12 + 6 * 2 + 1 + 1, aSet.NbShapes());
-        Assert.Equal(anIndex, aSet.NbShapes());
+        Assert.Equal(8 + 12 + 6 * 2 + 1 + 1, aSet.ShapeCount);
+        Assert.Equal(anIndex, aSet.ShapeCount);
         Assert.Equal(anIndex, aSet.Index(aBox));
         Assert.True(aSet.Shape(anIndex).IsSame(aBox));
-        Assert.Equal(0, aSet.Add(new TopoDS_Shape()));
+        Assert.Equal(0, aSet.Add(new Shape()));
         Assert.Equal(anIndex, aSet.Add(aBox.Moved(new Placement(new Transform3D()))));
 
         var anExtent = new StringWriter();
@@ -382,20 +386,20 @@ public class BRepToolsIOTests
         var aShapeRef = new StringWriter();
         aSet.Write(aBox.Reversed(), aShapeRef);
         Assert.Equal("-1 0 ", aShapeRef.ToString());
-        aSet.Read(out TopoDS_Shape aBack, new StringReader("-1 0"));
+        aSet.Read(out Shape aBack, new StringReader("-1 0"));
         Assert.True(aBack.IsEqual(aBox.Reversed()));
 
         aSet.Clear();
-        Assert.Equal(0, aSet.NbShapes());
-        Assert.Equal(0, aSet.Locations().NbLocations());
+        Assert.Equal(0, aSet.ShapeCount);
+        Assert.Equal(0, aSet.Locations().LocationCount);
     }
 
     [Fact]
     public void Dumps_describe_the_shapes()
     {
-        TopoDS_Shape aShape = BinTestShapes.MeshedCylinder();
+        Shape aShape = BinTestShapes.MeshedCylinder();
         var aDump = new StringWriter();
-        BRepTools.Dump(aShape, aDump);
+        BrepTools.Dump(aShape, aDump);
         string aText = aDump.ToString();
         Assert.Contains("Flags : Free, Modified, Checked, Orientable, Closed, Infinite, Convex, Locked", aText, StringComparison.Ordinal);
         Assert.Contains("TShape # 1 : FACE      ", aText, StringComparison.Ordinal);
@@ -404,9 +408,9 @@ public class BRepToolsIOTests
         Assert.Contains("Dump of ", aText, StringComparison.Ordinal);
 
         // the Locked column is the stored bit: 0 for a frozen shape that wasn't locked
-        TopoDS_Shape aRead = Read(Write(aShape));
+        Shape aRead = Read(Write(aShape));
         aDump = new StringWriter();
-        TopTools.Dump(aRead, aDump);
+        ShapeTools.Dump(aRead, aDump);
         aText = aDump.ToString();
         Assert.StartsWith("Shape : 7, FORWARD\n", aText, StringComparison.Ordinal);
         Assert.Contains("TShape # 1 : FACE      11010000 ", aText, StringComparison.Ordinal);
@@ -414,17 +418,17 @@ public class BRepToolsIOTests
         Assert.DoesNotContain("PCurve", aText, StringComparison.Ordinal);
 
         aDump = new StringWriter();
-        BRepTools.Dump(new TopoDS_Shape(), aDump);
+        BrepTools.Dump(new Shape(), aDump);
         Assert.StartsWith("Null shape\nShape : 0, EXTERNAL\n", aDump.ToString(), StringComparison.Ordinal);
     }
 
     [Fact]
     public void Writing_restores_the_precision_and_leaves_the_shape_unchanged()
     {
-        TopoDS_Shape aShape = TestShapes.Frozen(BinTestShapes.MeshedBox(true, false));
+        Shape aShape = TestShapes.Frozen(BinTestShapes.MeshedBox(true, false));
         var aWriter = new StringWriter();
         StreamUtilities.Precision(aWriter, 9);
-        BRepTools.Write(aShape, aWriter);
+        BrepTools.Write(aShape, aWriter);
         Assert.Equal(9, StreamUtilities.Precision(aWriter));
         Assert.Equal(aWriter.ToString(), Write(aShape));
     }

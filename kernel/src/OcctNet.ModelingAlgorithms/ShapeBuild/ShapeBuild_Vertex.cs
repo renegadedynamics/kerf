@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -15,31 +17,31 @@ public sealed class ShapeBuild_Vertex
     /// A new vertex whose tolerance sphere covers those of <paramref name="V1"/> and <paramref name="V2"/>, its
     /// tolerance multiplied by <paramref name="tolFactor"/>. Frozen.
     /// </summary>
-    public TopoDS_Vertex CombineVertex(in TopoDS_Vertex V1, in TopoDS_Vertex V2, double tolFactor = 1.0001)
+    public Vertex CombineVertex(in Vertex V1, in Vertex V2, double tolFactor = 1.0001)
     {
         return frozen(InternalCombineVertex(V1, V2, tolFactor));
     }
 
     /// <summary>As the vertex form, from the points and tolerances. Frozen.</summary>
-    public TopoDS_Vertex CombineVertex(in Point3D pnt1, in Point3D pnt2, double tol1, double tol2, double tolFactor = 1.0001)
+    public Vertex CombineVertex(in Point3D pnt1, in Point3D pnt2, double tol1, double tol2, double tolFactor = 1.0001)
     {
         return frozen(InternalCombineVertex(pnt1, pnt2, tol1, tol2, tolFactor));
     }
 
-    private static TopoDS_Vertex frozen(TopoDS_Vertex V)
+    private static Vertex frozen(Vertex V)
     {
         V.TShape()!.FreezeGraph();
         return V;
     }
 
     /// <summary>OCCT's CombineVertex: the new vertex, not frozen.</summary>
-    internal TopoDS_Vertex InternalCombineVertex(in TopoDS_Vertex V1, in TopoDS_Vertex V2, double tolFactor = 1.0001)
+    internal Vertex InternalCombineVertex(in Vertex V1, in Vertex V2, double tolFactor = 1.0001)
     {
-        return InternalCombineVertex(BRep_Tool.Pnt(V1), BRep_Tool.Pnt(V2), BRep_Tool.Tolerance(V1), BRep_Tool.Tolerance(V2), tolFactor);
+        return InternalCombineVertex(Tool.Pnt(V1), Tool.Pnt(V2), Tool.Tolerance(V1), Tool.Tolerance(V2), tolFactor);
     }
 
     /// <summary>OCCT's CombineVertex: the new vertex, not frozen.</summary>
-    internal TopoDS_Vertex InternalCombineVertex(in Point3D pnt1, in Point3D pnt2, double tol1, double tol2, double tolFactor = 1.0001)
+    internal Vertex InternalCombineVertex(in Point3D pnt1, in Point3D pnt2, double tol1, double tol2, double tolFactor = 1.0001)
     {
         Point3D pos;
         double tol;
@@ -65,8 +67,8 @@ public sealed class ShapeBuild_Vertex
             pos = new Point3D(0.5 * ((1 - s) * pnt1.XYZ() + (1 + s) * pnt2.XYZ()));
         }
 
-        TopoDS_Vertex V = new TopoDS_Vertex();
-        var B = new BRep_Builder();
+        Vertex V = new Vertex();
+        var B = new BrepBuilder();
         B.MakeVertex(ref V, pos, tolFactor * tol);
         return V;
     }

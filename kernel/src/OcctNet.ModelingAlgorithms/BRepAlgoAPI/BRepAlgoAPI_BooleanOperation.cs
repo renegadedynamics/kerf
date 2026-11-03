@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using static Occt.BOPAlgo_Operation;
 
 namespace Occt;
@@ -25,7 +26,7 @@ namespace Occt;
 /// </remarks>
 public class BRepAlgoAPI_BooleanOperation : BRepAlgoAPI_BuilderAlgo
 {
-    protected NCollection_List<TopoDS_Shape> myTools = new(); //!< Tool arguments of operation
+    protected NCollection_List<Shape> myTools = new(); //!< Tool arguments of operation
     protected BOPAlgo_Operation myOperation;                  //!< Type of Boolean Operation
 
     /// <summary>An empty operation.</summary>
@@ -42,7 +43,7 @@ public class BRepAlgoAPI_BooleanOperation : BRepAlgoAPI_BuilderAlgo
     }
 
     /// <summary>The operation on two arguments (obsolete in OCCT).</summary>
-    protected BRepAlgoAPI_BooleanOperation(in TopoDS_Shape theS1, in TopoDS_Shape theS2, BOPAlgo_Operation theOp)
+    protected BRepAlgoAPI_BooleanOperation(in Shape theS1, in Shape theS2, BOPAlgo_Operation theOp)
     {
         myOperation = theOp;
         myArguments.Append(theS1);
@@ -50,7 +51,7 @@ public class BRepAlgoAPI_BooleanOperation : BRepAlgoAPI_BuilderAlgo
     }
 
     /// <summary>The operation on two arguments with intersections already computed (obsolete in OCCT).</summary>
-    protected BRepAlgoAPI_BooleanOperation(in TopoDS_Shape theS1, in TopoDS_Shape theS2, BOPAlgo_PaveFiller thePF,
+    protected BRepAlgoAPI_BooleanOperation(in Shape theS1, in Shape theS2, BOPAlgo_PaveFiller thePF,
                                            BOPAlgo_Operation theOp)
         : base(thePF)
     {
@@ -60,16 +61,16 @@ public class BRepAlgoAPI_BooleanOperation : BRepAlgoAPI_BuilderAlgo
     }
 
     /// <summary>The first object (obsolete in OCCT).</summary>
-    public TopoDS_Shape Shape1() => myArguments.First();
+    public Shape Shape1() => myArguments.First();
 
     /// <summary>The first tool (obsolete in OCCT).</summary>
-    public TopoDS_Shape Shape2() => myTools.First();
+    public Shape Shape2() => myTools.First();
 
     /// <summary>Sets the tools (copies the list).</summary>
-    public void SetTools(NCollection_List<TopoDS_Shape> theLS) => myTools = new NCollection_List<TopoDS_Shape>(theLS);
+    public void SetTools(NCollection_List<Shape> theLS) => myTools = new NCollection_List<Shape>(theLS);
 
     /// <summary>The tools.</summary>
-    public NCollection_List<TopoDS_Shape> Tools() => myTools;
+    public NCollection_List<Shape> Tools() => myTools;
 
     /// <summary>Sets the type of the operation.</summary>
     public void SetOperation(BOPAlgo_Operation theBOP) => myOperation = theBOP;
@@ -125,8 +126,8 @@ public class BRepAlgoAPI_BooleanOperation : BRepAlgoAPI_BuilderAlgo
         if (myIsIntersectionNeeded)
         {
             // Combine Objects and Tools into a single list for intersection
-            NCollection_List<TopoDS_Shape> aLArgs = new(myArguments);
-            for (NCollection_List<TopoDS_Shape>.Iterator it = new(myTools); it.More(); it.Next())
+            NCollection_List<Shape> aLArgs = new(myArguments);
+            for (NCollection_List<Shape>.Iterator it = new(myTools); it.More(); it.Next())
             {
                 aLArgs.Append(it.Value());
             }

@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -126,7 +127,7 @@ public abstract class BRepMesh_DiscretAlgoFactory : Transient
     }
 
     /// <summary>A new meshing algorithm for the shape with the linear and angular deflections, not yet performed.</summary>
-    public abstract BRepMesh_DiscretRoot CreateAlgorithm(in TopoDS_Shape theShape,
+    public abstract BRepMesh_DiscretRoot CreateAlgorithm(in Shape theShape,
                                                          double theLinDeflection,
                                                          double theAngDeflection);
 

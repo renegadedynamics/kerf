@@ -81,9 +81,9 @@ public readonly struct HLRBRep_LineTool : IIntCurveSurface_CurveTool<Line3D>
 
     public static Parabola3D Parabola(in Line3D C) => new();
 
-    public static Geom_BezierCurve? Bezier(in Line3D C) => null;
+    public static BezierCurve3D? Bezier(in Line3D C) => null;
 
-    public static Geom_BSplineCurve? BSpline(in Line3D C) => null;
+    public static BSplineCurve3D? BSpline(in Line3D C) => null;
 
     public static int Degree(in Line3D C) => 1;
 

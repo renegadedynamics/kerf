@@ -20,11 +20,11 @@ public sealed record XdeDoc_FlatItem(XdeDoc_Product Product,
                                      XdeDoc_Style Style)
 {
     /// <summary>The part's shape placed in the world.</summary>
-    public TopoDS_Shape Shape
+    public Shape Shape
     {
         get
         {
-            TopoDS_Shape aShape = Product.Shape;
+            Shape aShape = Product.Shape;
             return Location.IsIdentity ? aShape : aShape.Moved(Location);
         }
     }

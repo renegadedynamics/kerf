@@ -6,10 +6,12 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.STEPControl_StepModelType;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 using static Occt.TopoDSToStep_FacetedError;
 
 namespace Occt;
@@ -30,21 +32,21 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
     //  PTV    22.08.2002 OCC609 transfer solo vertices into step file.
     //  PTV    16.09.2002 OCC725 transfer compound of vertices into one geometrical curve set.
 
-    private static bool hasGeometry(in TopoDS_Shape theShape)
+    private static bool hasGeometry(in Shape theShape)
     {
-        TopAbs_ShapeEnum aType = theShape.ShapeType();
+        ShapeType aType = theShape.ShapeType();
 
-        if (aType == TopAbs_VERTEX)
+        if (aType == ShapeType.Vertex)
         {
             return true;
         }
-        else if (aType == TopAbs_EDGE)
+        else if (aType == ShapeType.Edge)
         {
-            BRep_TEdge TE = theShape.TShape() as BRep_TEdge;
-            foreach (BRep_CurveRepresentation CR in TE.Curves())
+            BrepTEdge TE = theShape.TShape() as BrepTEdge;
+            foreach (CurveRepresentation CR in TE.Curves())
             {
-                bool aHasGeometry = (CR.IsCurve3D() && CR.Curve3D() is not null) || CR.IsCurveOnSurface()
-                                    || CR.IsRegularity() || (CR.IsPolygon3D() && CR.Polygon3D() is not null)
+                bool aHasGeometry = (CR.IsCurve3D && CR.Curve3D() is not null) || CR.IsCurveOnSurface()
+                                    || CR.IsRegularity() || (CR.IsPolygon3D && CR.Polygon3D() is not null)
                                     || CR.IsPolygonOnTriangulation() || CR.IsPolygonOnSurface();
                 if (!aHasGeometry)
                 {
@@ -53,9 +55,9 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
             }
             return true;
         }
-        else if (aType == TopAbs_FACE)
+        else if (aType == ShapeType.Face)
         {
-            BRep_TFace TF = theShape.TShape() as BRep_TFace;
+            BrepTFace TF = theShape.TShape() as BrepTFace;
             if (TF.Surface() is not null)
             {
                 return true;
@@ -63,10 +65,10 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         }
         else
         {
-            TopoDS_Iterator anIt = new TopoDS_Iterator(theShape, false, false);
+            Iterator anIt = new Iterator(theShape, false, false);
             for (; anIt.More(); anIt.Next())
             {
-                TopoDS_Shape aShape = anIt.Value();
+                Shape aShape = anIt.Value();
                 bool aHasGeometry = hasGeometry(aShape);
                 if (!aHasGeometry)
                 {
@@ -84,36 +86,36 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
     // Purpose  : Used to define whether the passed shape has manifold
     //            topology or not
     //=======================================================================
-    private static bool IsManifoldShape(in TopoDS_Shape theShape)
+    private static bool IsManifoldShape(in Shape theShape)
     {
         bool aResult = true;
 
         // Do not check nested Compounds
-        TopoDS_Compound aDirectShapes = new TopoDS_Compound();
-        BRep_Builder aBrepBuilder = new BRep_Builder();
+        Compound aDirectShapes = new Compound();
+        BrepBuilder aBrepBuilder = new BrepBuilder();
         aBrepBuilder.MakeCompound(ref aDirectShapes);
 
-        TopoDS_Iterator anIt = new TopoDS_Iterator(theShape);
+        Iterator anIt = new Iterator(theShape);
         for (; anIt.More(); anIt.Next())
         {
-            TopoDS_Shape aDirectChild = anIt.Value();
-            if (aDirectChild.ShapeType() != TopAbs_COMPOUND)
+            Shape aDirectChild = anIt.Value();
+            if (aDirectChild.ShapeType() != ShapeType.Compound)
             {
                 aBrepBuilder.Add(aDirectShapes, aDirectChild);
             }
         }
 
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMapEdgeFaces =
-            new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(aDirectShapes, TopAbs_EDGE, TopAbs_FACE, aMapEdgeFaces);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMapEdgeFaces =
+            new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aDirectShapes, ShapeType.Edge, ShapeType.Face, aMapEdgeFaces);
 
         int aNbEdges = aMapEdgeFaces.Extent();
 
         // Check topology
         for (int i = 1; i <= aNbEdges; i++)
         {
-            TopoDS_Edge aCurrentEdge = TopoDS.Edge(aMapEdgeFaces.FindKey(i));
-            if (!BRep_Tool.Degenerated(aCurrentEdge))
+            Edge aCurrentEdge = ShapeCasts.Edge(aMapEdgeFaces.FindKey(i));
+            if (!Tool.Degenerated(aCurrentEdge))
             {
                 int aNbAncestors = aMapEdgeFaces.FindFromIndex(i).Extent();
                 if (aNbAncestors > 2)
@@ -129,19 +131,19 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
 
     // OCCT.NET: OCCT marks a non-manifold solid's shell closed in place (aSubShell.Closed(true)), changing the caller's
     // shape; the port gives a shell that isn't closed as a copy (the same faces) marked closed (decision 1269)
-    private static TopoDS_Shell ClosedShell(TopoDS_Shell theShell)
+    private static Shell ClosedShell(Shell theShell)
     {
         if (theShell.Closed())
         {
             return theShell;
         }
-        TopoDS_Shape aCopy = theShell.EmptyCopied();
-        BRep_Builder aBuilder = new BRep_Builder();
-        for (TopoDS_Iterator anIt = new TopoDS_Iterator(theShell, false, false); anIt.More(); anIt.Next())
+        Shape aCopy = theShell.EmptyCopied();
+        BrepBuilder aBuilder = new BrepBuilder();
+        for (Iterator anIt = new Iterator(theShell, false, false); anIt.More(); anIt.Next())
         {
             aBuilder.Add(aCopy, anIt.Value());
         }
-        TopoDS_Shell aShell = TopoDS.Shell(aCopy);
+        Shell aShell = ShapeCasts.Shell(aCopy);
         aShell.Closed(true);
         return aShell;
     }
@@ -158,7 +160,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
     // purpose: allows to get NMSSR (NON_MANIFOLD_SURFACE_SHAPE_REPRESENTATION)
     //         STEP's entity for the group of shells (!) passed
     //=======================================================================
-    private StepShape_NonManifoldSurfaceShapeRepresentation getNMSSRForGroup(NCollection_HSequence<TopoDS_Shape> shapeGroup,
+    private StepShape_NonManifoldSurfaceShapeRepresentation getNMSSRForGroup(NCollection_HSequence<Shape> shapeGroup,
                                                                              Transfer_FinderProcess FP, out bool isNMSSRCreated)
     {
         StepShape_NonManifoldSurfaceShapeRepresentation aResult = null;
@@ -167,7 +169,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         {
             for (int i = 1; i <= shapeGroup.Length(); i++)
             {
-                TopoDS_Shape aCurrentShape = shapeGroup.Value(i);
+                Shape aCurrentShape = shapeGroup.Value(i);
                 TransferBRep_ShapeMapper mapper = TransferBRep.ShapeMapper(FP, aCurrentShape);
                 if (FP.FindTypedTransient(mapper, typeof(StepShape_NonManifoldSurfaceShapeRepresentation), ref aResult))
                 {
@@ -202,10 +204,10 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         }
 
         // OCCT iterates the map in its hash order; the port in the order of the shape processing (decision 1204)
-        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> aShapeShapeIt in aContext.Map())
+        foreach (KeyValuePair<Shape, Shape> aShapeShapeIt in aContext.Map())
         {
-            TopoDS_Shape anOrig = aShapeShapeIt.Key, aRes = aShapeShapeIt.Value;
-            if (anOrig.ShapeType() != TopAbs_FACE)
+            Shape anOrig = aShapeShapeIt.Key, aRes = aShapeShapeIt.Value;
+            if (anOrig.ShapeType() != ShapeType.Face)
             {
                 continue;
             }
@@ -228,17 +230,17 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
     /// recursively iterate of shape @return TRUE if one or more vertex was found and all shapes were compound or
     /// vertex
     /// </summary>
-    private bool separateShapeToSoloVertex(in TopoDS_Shape theShape, NCollection_Sequence<TopoDS_Shape> theVertices)
+    private bool separateShapeToSoloVertex(in Shape theShape, NCollection_Sequence<Shape> theVertices)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return false;
         }
         switch (theShape.ShapeType())
         {
-            case TopAbs_COMPOUND:
+            case ShapeType.Compound:
                 {
-                    for (TopoDS_Iterator anIter = new TopoDS_Iterator(theShape); anIter.More(); anIter.Next())
+                    for (Iterator anIter = new Iterator(theShape); anIter.More(); anIter.Next())
                     {
                         if (!separateShapeToSoloVertex(anIter.Value(), theVertices))
                         {
@@ -247,7 +249,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                     }
                     break;
                 }
-            case TopAbs_VERTEX:
+            case ShapeType.Vertex:
                 {
                     theVertices.Append(theShape);
                     break;
@@ -362,36 +364,36 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
 
         bool yasolid = false, yashell = false, yaface = false;
 
-        TopoDS_Shape theShape;
+        Shape theShape;
         //  theShape = TopoDSToStep::DirectFaces(mapper->Value());
         theShape = mapper.Value(); // pour une reconnaissance c est bien assez
 
-        if (theShape.ShapeType() == TopAbs_COMPOUND)
+        if (theShape.ShapeType() == ShapeType.Compound)
         {
-            TopExp_Explorer SolidExp = new TopExp_Explorer(), ShellExp = new TopExp_Explorer(), FaceExp = new TopExp_Explorer();
+            Explorer SolidExp = new Explorer(), ShellExp = new Explorer(), FaceExp = new Explorer();
 
-            for (SolidExp.Init(theShape, TopAbs_SOLID); SolidExp.More(); SolidExp.Next())
+            for (SolidExp.Init(theShape, ShapeType.Solid); SolidExp.More(); SolidExp.Next())
             {
                 yasolid = true;
             }
-            for (ShellExp.Init(theShape, TopAbs_SHELL, TopAbs_SOLID); ShellExp.More(); ShellExp.Next())
+            for (ShellExp.Init(theShape, ShapeType.Shell, ShapeType.Solid); ShellExp.More(); ShellExp.Next())
             {
                 yashell = true;
             }
-            for (FaceExp.Init(theShape, TopAbs_FACE, TopAbs_SHELL); FaceExp.More(); FaceExp.Next())
+            for (FaceExp.Init(theShape, ShapeType.Face, ShapeType.Shell); FaceExp.More(); FaceExp.Next())
             {
                 yaface = true;
             }
         }
-        else if (theShape.ShapeType() == TopAbs_SOLID)
+        else if (theShape.ShapeType() == ShapeType.Solid)
         {
             yasolid = true;
         }
-        else if (theShape.ShapeType() == TopAbs_SHELL)
+        else if (theShape.ShapeType() == ShapeType.Shell)
         {
             yashell = true;
         }
-        else if (theShape.ShapeType() == TopAbs_FACE)
+        else if (theShape.ShapeType() == ShapeType.Face)
         {
             yaface = true;
         }
@@ -406,22 +408,22 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
 
         if (mymode == STEPControl_FacetedBrep || mymode == STEPControl_FacetedBrepAndBrepWithVoids)
         {
-            for (TopExp_Explorer ffac = new TopExp_Explorer(theShape, TopAbs_FACE); ffac.More(); ffac.Next())
+            for (Explorer ffac = new Explorer(theShape, ShapeType.Face); ffac.More(); ffac.Next())
             {
-                TopoDS_Face F = TopoDS.Face(ffac.Current());
+                Face F = ShapeCasts.Face(ffac.Current());
                 Placement locbid = new Placement();
-                Geom_Surface surf = BRep_Tool.Surface(F, out locbid);
-                if (surf is null || !surf.IsKind(typeof(Geom_Plane)))
+                Surface surf = Tool.Surface(F, out locbid);
+                if (surf is null || !surf.IsKind(typeof(PlaneSurface)))
                 {
                     return false;
                 }
             }
-            for (TopExp_Explorer fedg = new TopExp_Explorer(theShape, TopAbs_EDGE); fedg.More(); fedg.Next())
+            for (Explorer fedg = new Explorer(theShape, ShapeType.Edge); fedg.More(); fedg.Next())
             {
-                TopoDS_Edge E = TopoDS.Edge(fedg.Current());
+                Edge E = ShapeCasts.Edge(fedg.Current());
                 Placement locbid;
-                Geom_Curve curv = BRep_Tool.Curve(E, out locbid, out double first, out double last);
-                if (curv is null || !curv.IsKind(typeof(Geom_Line)))
+                Curve3D curv = Tool.Curve(E, out locbid, out double first, out double last);
+                if (curv is null || !curv.IsKind(typeof(LineCurve3D)))
                 {
                     return false;
                 }
@@ -456,7 +458,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         {
             return NullResult();
         }
-        TopoDS_Shape shape = mapper.Value();
+        Shape shape = mapper.Value();
 
         // init context
         StepData_StepModel model = FP.Model() as StepData_StepModel;
@@ -502,7 +504,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
 
     //==========================================
 
-    private static double UsedTolerance(StepData_StepModel theStepModel, double mytoler, in TopoDS_Shape theShape)
+    private static double UsedTolerance(StepData_StepModel theStepModel, double mytoler, in Shape theShape)
     {
         //    COMPUTING 3D TOLERANCE
         //    Either from Session, or Computed (Least,Average, or Greatest)
@@ -534,22 +536,22 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
     /// </summary>
     // if GroupMode is >1 downgrades all compounds having single subshape to that
     // subshape
-    public virtual bool IsAssembly(StepData_StepModel theModel, ref TopoDS_Shape S)
+    public virtual bool IsAssembly(StepData_StepModel theModel, ref Shape S)
     {
-        if (GroupMode() == 0 || S.ShapeType() != TopAbs_COMPOUND)
+        if (GroupMode() == 0 || S.ShapeType() != ShapeType.Compound)
         {
             return false;
         }
         // PTV 16.09.2002  OCC725 for storing compound of vertices
         if (theModel.InternalParameters.WriteVertexMode == 0)
         { // bug 23950
-            if (S.ShapeType() == TopAbs_COMPOUND)
+            if (S.ShapeType() == ShapeType.Compound)
             {
                 bool IsOnlyVertices = true;
-                TopoDS_Iterator anItr = new TopoDS_Iterator(S);
+                Iterator anItr = new Iterator(S);
                 for (; anItr.More(); anItr.Next())
                 {
-                    if (anItr.Value().ShapeType() != TopAbs_VERTEX)
+                    if (anItr.Value().ShapeType() != ShapeType.Vertex)
                     {
                         IsOnlyVertices = false;
                         break;
@@ -565,12 +567,12 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         {
             return true;
         }
-        TopoDS_Iterator it = new TopoDS_Iterator(S);
+        Iterator it = new Iterator(S);
         if (!it.More())
         {
             return false;
         }
-        TopoDS_Shape shape = it.Value();
+        Shape shape = it.Value();
         it.Next();
         if (it.More())
         {
@@ -582,14 +584,14 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
 
     // PTV 16.09.2002 added for transferring vertices.
     private static bool transferVertex(Transfer_FinderProcess FP, NCollection_HArray1<StepShape_GeometricSetSelect> aGSS,
-                                       in TopoDS_Shape aShVrtx, int theNum, in StepData_Factors theLocalFactors)
+                                       in Shape aShVrtx, int theNum, in StepData_Factors theLocalFactors)
     {
         bool IsDone = false;
-        NCollection_DataMap<TopoDS_Shape, Transient> aMap =
-            new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, Transient> aMap =
+            new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
         StepData_StepModel aStepModel = FP.Model() as StepData_StepModel;
         TopoDSToStep_Tool aTool = new TopoDSToStep_Tool(aMap, true, aStepModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0);
-        TopoDSToStep_MakeStepVertex aMkVrtx = new TopoDSToStep_MakeStepVertex(TopoDS.Vertex(aShVrtx), aTool, FP, theLocalFactors);
+        TopoDSToStep_MakeStepVertex aMkVrtx = new TopoDSToStep_MakeStepVertex(ShapeCasts.Vertex(aShVrtx), aTool, FP, theLocalFactors);
 
         if (!aMkVrtx.IsDone())
         {
@@ -611,7 +613,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
     }
 
     public Transfer_Binder TransferShape(Transfer_Finder start, StepShape_ShapeDefinitionRepresentation SDR0, Transfer_FinderProcess FP,
-                                         in StepData_Factors theLocalFactors, NCollection_HSequence<TopoDS_Shape> shapeGroup = null,
+                                         in StepData_Factors theLocalFactors, NCollection_HSequence<Shape> shapeGroup = null,
                                          bool isManifold = true, ProgressRange theProgress = default)
     {
         STEPControl_StepModelType mymode = Mode();
@@ -626,9 +628,9 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         {
             return binder;
         }
-        TopoDS_Shape theShape = mapper.Value();
+        Shape theShape = mapper.Value();
 
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return binder;
         }
@@ -661,11 +663,11 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         // [BEGIN] Separate manifold topology from non-manifold in group mode 0 (ssv; 18.11.2010)
         bool isNMMode = aStepModel.InternalParameters.WriteNonmanifold;
         Transfer_Binder aNMBinder = null;
-        if (isNMMode && GroupMode() == 0 && theShape.ShapeType() == TopAbs_COMPOUND)
+        if (isNMMode && GroupMode() == 0 && theShape.ShapeType() == ShapeType.Compound)
         {
-            TopoDS_Compound aNMCompound = new TopoDS_Compound();
-            TopoDS_Compound aManifoldCompound = new TopoDS_Compound();
-            BRep_Builder brepBuilder = new BRep_Builder();
+            Compound aNMCompound = new Compound();
+            Compound aManifoldCompound = new Compound();
+            BrepBuilder brepBuilder = new BrepBuilder();
 
             // Create empty Compounds
             brepBuilder.MakeCompound(ref aManifoldCompound);
@@ -679,28 +681,28 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
             // NOTE: only one such Compound must exist in the entire Compound passed
             if (!IsManifoldShape(theShape))
             {
-                aNMCompound = TopoDS.Compound(theShape);
+                aNMCompound = ShapeCasts.Compound(theShape);
                 isOnlyNonManifold = true;
             }
             else
             {
                 // OCCT appends to the list while iterating it: an index walks the growing list
-                List<TopoDS_Shape> aListOfShapes = new List<TopoDS_Shape>();
-                NCollection_List<TopoDS_Shape> aListOfManifoldShapes = new NCollection_List<TopoDS_Shape>();
+                List<Shape> aListOfShapes = new List<Shape>();
+                NCollection_List<Shape> aListOfManifoldShapes = new NCollection_List<Shape>();
                 aListOfShapes.Add(theShape);
 
                 for (int iL = 0; iL < aListOfShapes.Count; iL++)
                 {
-                    TopoDS_Shape aParentShape = aListOfShapes[iL];
-                    TopoDS_Iterator it = new TopoDS_Iterator(aParentShape);
+                    Shape aParentShape = aListOfShapes[iL];
+                    Iterator it = new Iterator(aParentShape);
                     for (; it.More(); it.Next())
                     {
-                        TopoDS_Shape aSubShape = it.Value();
-                        if (aSubShape.ShapeType() == TopAbs_COMPOUND && !IsManifoldShape(aSubShape))
+                        Shape aSubShape = it.Value();
+                        if (aSubShape.ShapeType() == ShapeType.Compound && !IsManifoldShape(aSubShape))
                         {
-                            aNMCompound = TopoDS.Compound(aSubShape);
+                            aNMCompound = ShapeCasts.Compound(aSubShape);
                         }
-                        else if (aSubShape.ShapeType() == TopAbs_COMPOUND)
+                        else if (aSubShape.ShapeType() == ShapeType.Compound)
                         {
                             aListOfShapes.Add(aSubShape);
                         }
@@ -714,7 +716,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                 // Group manifold topology together.
                 // NOTE: there is no sense that initial Compound structure was lost as
                 //       group mode is set to 0 (no Assemblies are mapped)
-                foreach (TopoDS_Shape aCurrentManiShape in aListOfManifoldShapes)
+                foreach (Shape aCurrentManiShape in aListOfManifoldShapes)
                 {
                     brepBuilder.Add(aManifoldCompound, aCurrentManiShape);
                 }
@@ -725,24 +727,24 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
             theShape = aManifoldCompound;
 
             // List of items to transfer
-            NCollection_HSequence<TopoDS_Shape> RepItemSeq1 = new NCollection_HSequence<TopoDS_Shape>();
+            NCollection_HSequence<Shape> RepItemSeq1 = new NCollection_HSequence<Shape>();
             // Non-manifold group to pass into TransferShape with each shape from RepItemSeq
-            NCollection_HSequence<TopoDS_Shape> NonManifoldGroup = new NCollection_HSequence<TopoDS_Shape>();
+            NCollection_HSequence<Shape> NonManifoldGroup = new NCollection_HSequence<Shape>();
 
             // Transfer Solids to closed Shells. Prepare RepItemSeq & NonManifoldGroup
-            for (TopoDS_Iterator iter = new TopoDS_Iterator(aNMCompound); iter.More(); iter.Next())
+            for (Iterator iter = new Iterator(aNMCompound); iter.More(); iter.Next())
             {
-                TopoDS_Shape aSubShape = iter.Value();
-                if (aSubShape.ShapeType() == TopAbs_SOLID)
+                Shape aSubShape = iter.Value();
+                if (aSubShape.ShapeType() == ShapeType.Solid)
                 {
-                    for (TopoDS_Iterator aSubIter = new TopoDS_Iterator(aSubShape); aSubIter.More(); aSubIter.Next())
+                    for (Iterator aSubIter = new Iterator(aSubShape); aSubIter.More(); aSubIter.Next())
                     {
-                        TopoDS_Shell aSubShell = ClosedShell(TopoDS.Shell(aSubIter.Value())); // OCCT: aSubShell.Closed(true)
+                        Shell aSubShell = ClosedShell(ShapeCasts.Shell(aSubIter.Value())); // OCCT: aSubShell.Closed(true)
                         RepItemSeq1.Append(aSubShell);
                         NonManifoldGroup.Append(aSubShell);
                     }
                 }
-                else if (!isManifold && (aSubShape.ShapeType() == TopAbs_SHELL))
+                else if (!isManifold && (aSubShape.ShapeType() == ShapeType.Shell))
                 {
                     RepItemSeq1.Append(aSubShape);
                     NonManifoldGroup.Append(aSubShape);
@@ -801,25 +803,25 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         }
 
         // create a list of items to translate
-        NCollection_HSequence<TopoDS_Shape> RepItemSeq = new NCollection_HSequence<TopoDS_Shape>();
+        NCollection_HSequence<Shape> RepItemSeq = new NCollection_HSequence<Shape>();
 
         bool isSeparateVertices = aStepModel.InternalParameters.WriteVertexMode == 0; // bug 23950
         // PTV 16.09.2002 OCC725 separate shape from solo vertices.
         bool isOnlyVertices = false;
-        if (theShape.ShapeType() == TopAbs_COMPOUND && isSeparateVertices)
+        if (theShape.ShapeType() == ShapeType.Compound && isSeparateVertices)
         {
-            TopoDS_Compound aNewShape = new TopoDS_Compound(), aCompOfVrtx = new TopoDS_Compound();
-            BRep_Builder aBuilder = new BRep_Builder();
+            Compound aNewShape = new Compound(), aCompOfVrtx = new Compound();
+            BrepBuilder aBuilder = new BrepBuilder();
             aBuilder.MakeCompound(ref aNewShape);
             aBuilder.MakeCompound(ref aCompOfVrtx);
-            NCollection_Sequence<TopoDS_Shape> aVertices = new NCollection_Sequence<TopoDS_Shape>();
+            NCollection_Sequence<Shape> aVertices = new NCollection_Sequence<Shape>();
             isOnlyVertices = separateShapeToSoloVertex(theShape, aVertices);
             if (!isOnlyVertices)
             {
-                for (TopoDS_Iterator anCompIt = new TopoDS_Iterator(theShape); anCompIt.More(); anCompIt.Next())
+                for (Iterator anCompIt = new Iterator(theShape); anCompIt.More(); anCompIt.Next())
                 {
-                    TopoDS_Shape aCurSh = anCompIt.Value();
-                    NCollection_Sequence<TopoDS_Shape> aVerticesOfSubSh = new NCollection_Sequence<TopoDS_Shape>();
+                    Shape aCurSh = anCompIt.Value();
+                    NCollection_Sequence<Shape> aVerticesOfSubSh = new NCollection_Sequence<Shape>();
                     if (separateShapeToSoloVertex(aCurSh, aVerticesOfSubSh))
                     {
                         aVertices.Append(aVerticesOfSubSh);
@@ -831,7 +833,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                 }
                 theShape = aNewShape;
             }
-            foreach (TopoDS_Shape aVertex in aVertices)
+            foreach (Shape aVertex in aVertices)
             {
                 aBuilder.Add(aCompOfVrtx, aVertex);
             }
@@ -841,23 +843,23 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
             }
         }
 
-        if (theShape.ShapeType() == TopAbs_COMPOUND)
+        if (theShape.ShapeType() == ShapeType.Compound)
         {
-            TopExp_Explorer SolidExp = new TopExp_Explorer(), ShellExp = new TopExp_Explorer(), FaceExp = new TopExp_Explorer();
+            Explorer SolidExp = new Explorer(), ShellExp = new Explorer(), FaceExp = new Explorer();
             if (mymode != STEPControl_GeometricCurveSet)
             {
-                for (SolidExp.Init(theShape, TopAbs_SOLID); SolidExp.More(); SolidExp.Next())
+                for (SolidExp.Init(theShape, ShapeType.Solid); SolidExp.More(); SolidExp.Next())
                 {
-                    RepItemSeq.Append(TopoDS.Solid(SolidExp.Current()));
+                    RepItemSeq.Append(ShapeCasts.Solid(SolidExp.Current()));
                 }
-                for (ShellExp.Init(theShape, TopAbs_SHELL, TopAbs_SOLID); ShellExp.More(); ShellExp.Next())
+                for (ShellExp.Init(theShape, ShapeType.Shell, ShapeType.Solid); ShellExp.More(); ShellExp.Next())
                 {
-                    RepItemSeq.Append(TopoDS.Shell(ShellExp.Current()));
+                    RepItemSeq.Append(ShapeCasts.Shell(ShellExp.Current()));
                 }
 
-                for (FaceExp.Init(theShape, TopAbs_FACE, TopAbs_SHELL); FaceExp.More(); FaceExp.Next())
+                for (FaceExp.Init(theShape, ShapeType.Face, ShapeType.Shell); FaceExp.More(); FaceExp.Next())
                 {
-                    RepItemSeq.Append(TopoDS.Face(FaceExp.Current()));
+                    RepItemSeq.Append(ShapeCasts.Face(FaceExp.Current()));
                 }
             }
             else
@@ -869,30 +871,30 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
             }
             if (mymode == STEPControl_AsIs)
             {
-                TopExp_Explorer WireExp = new TopExp_Explorer(), EdgeExp = new TopExp_Explorer();
-                for (WireExp.Init(theShape, TopAbs_WIRE, TopAbs_FACE); WireExp.More(); WireExp.Next())
+                Explorer WireExp = new Explorer(), EdgeExp = new Explorer();
+                for (WireExp.Init(theShape, ShapeType.Wire, ShapeType.Face); WireExp.More(); WireExp.Next())
                 {
-                    RepItemSeq.Append(TopoDS.Wire(WireExp.Current()));
+                    RepItemSeq.Append(ShapeCasts.Wire(WireExp.Current()));
                 }
-                for (EdgeExp.Init(theShape, TopAbs_EDGE, TopAbs_WIRE); EdgeExp.More(); EdgeExp.Next())
+                for (EdgeExp.Init(theShape, ShapeType.Edge, ShapeType.Wire); EdgeExp.More(); EdgeExp.Next())
                 {
-                    RepItemSeq.Append(TopoDS.Edge(EdgeExp.Current()));
+                    RepItemSeq.Append(ShapeCasts.Edge(EdgeExp.Current()));
                 }
             }
         }
-        else if (theShape.ShapeType() == TopAbs_SOLID)
+        else if (theShape.ShapeType() == ShapeType.Solid)
         {
-            RepItemSeq.Append(TopoDS.Solid(theShape));
+            RepItemSeq.Append(ShapeCasts.Solid(theShape));
         }
-        else if (theShape.ShapeType() == TopAbs_SHELL)
+        else if (theShape.ShapeType() == ShapeType.Shell)
         {
-            RepItemSeq.Append(TopoDS.Shell(theShape));
+            RepItemSeq.Append(ShapeCasts.Shell(theShape));
         }
-        else if (theShape.ShapeType() == TopAbs_FACE)
+        else if (theShape.ShapeType() == ShapeType.Face)
         {
-            RepItemSeq.Append(TopoDS.Face(theShape));
+            RepItemSeq.Append(ShapeCasts.Face(theShape));
         }
-        else if (theShape.ShapeType() == TopAbs_COMPSOLID)
+        else if (theShape.ShapeType() == ShapeType.CompSolid)
         {
             FP.AddWarning(start, "NonManifold COMPSOLID was translated like a set of SOLIDs");
             if (GroupMode() > 0)
@@ -901,10 +903,10 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
             }
             else
             {
-                TopExp_Explorer SolidExp = new TopExp_Explorer();
-                for (SolidExp.Init(theShape, TopAbs_SOLID); SolidExp.More(); SolidExp.Next())
+                Explorer SolidExp = new Explorer();
+                for (SolidExp.Init(theShape, ShapeType.Solid); SolidExp.More(); SolidExp.Next())
                 {
-                    RepItemSeq.Append(TopoDS.Solid(SolidExp.Current()));
+                    RepItemSeq.Append(ShapeCasts.Solid(SolidExp.Current()));
                 }
             }
         }
@@ -936,19 +938,19 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         using ProgressScope aPS = new ProgressScope(aPSRoot.Next(), null, nbs);
         for (int i = 1; i <= nbs && aPS.More(); i++)
         {
-            TopoDS_Shape xShape = RepItemSeq.Value(i);
+            Shape xShape = RepItemSeq.Value(i);
 
             if (mymode == STEPControl_AsIs)
             {
                 switch (xShape.ShapeType())
                 {
-                    case TopAbs_SOLID:
+                    case ShapeType.Solid:
                         trmode = STEPControl_ManifoldSolidBrep;
                         break;
-                    case TopAbs_SHELL:
+                    case ShapeType.Shell:
                         trmode = STEPControl_ShellBasedSurfaceModel;
                         break;
-                    case TopAbs_FACE:
+                    case ShapeType.Face:
                         trmode = STEPControl_ShellBasedSurfaceModel;
                         break;
                     default:
@@ -959,7 +961,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
 
             using ProgressScope aPS1 = new ProgressScope(aPS.Next(), null, 2);
 
-            TopoDS_Shape aShape = xShape;
+            Shape aShape = xShape;
 
             NCollection_DataMap<string, string> aParameters = GetShapeFixParameters();
             XSAlgo_ShapeProcessor.SetParameter("FixShape.Tolerance3d", Tol, true, aParameters);
@@ -988,16 +990,16 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
             {
                 case STEPControl_ManifoldSolidBrep:
                     {
-                        if (aShape.ShapeType() == TopAbs_SOLID)
+                        if (aShape.ShapeType() == ShapeType.Solid)
                         {
-                            TopoDS_Solid aSolid = TopoDS.Solid(aShape);
+                            Solid aSolid = ShapeCasts.Solid(aShape);
 
                             //: d6 abv 13 Mar 98: if solid has more than 1 shell,
                             // try to treat it as solid with voids
                             int nbShells = 0;
-                            for (TopoDS_Iterator It = new TopoDS_Iterator(aSolid); It.More(); It.Next())
+                            for (Iterator It = new Iterator(aSolid); It.More(); It.Next())
                             {
-                                if (It.Value().ShapeType() == TopAbs_SHELL)
+                                if (It.Value().ShapeType() == ShapeType.Shell)
                                 {
                                     nbShells++;
                                 }
@@ -1027,9 +1029,9 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                                 }
                             }
                         }
-                        else if (aShape.ShapeType() == TopAbs_SHELL)
+                        else if (aShape.ShapeType() == ShapeType.Shell)
                         {
-                            TopoDS_Shell aShell = TopoDS.Shell(aShape);
+                            Shell aShell = ShapeCasts.Shell(aShape);
                             TopoDSToStep_MakeManifoldSolidBrep MkManifoldSolidBrep = new TopoDSToStep_MakeManifoldSolidBrep(aShell, FP, theLocalFactors, aPS1.Next());
                             MkManifoldSolidBrep.Tolerance() = Tol;
                             if (MkManifoldSolidBrep.IsDone())
@@ -1042,9 +1044,9 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                     }
                 case STEPControl_BrepWithVoids:
                     {
-                        if (aShape.ShapeType() == TopAbs_SOLID)
+                        if (aShape.ShapeType() == ShapeType.Solid)
                         {
-                            TopoDS_Solid aSolid = TopoDS.Solid(aShape);
+                            Solid aSolid = ShapeCasts.Solid(aShape);
                             TopoDSToStep_MakeBrepWithVoids MkBRepWithVoids = new TopoDSToStep_MakeBrepWithVoids(aSolid, FP, theLocalFactors, aPS1.Next());
                             MkBRepWithVoids.Tolerance() = Tol;
                             if (MkBRepWithVoids.IsDone())
@@ -1071,9 +1073,9 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                             }
                             return binder;
                         }
-                        if (aShape.ShapeType() == TopAbs_SOLID)
+                        if (aShape.ShapeType() == ShapeType.Solid)
                         {
-                            TopoDS_Solid aSolid = TopoDS.Solid(aShape);
+                            Solid aSolid = ShapeCasts.Solid(aShape);
                             TopoDSToStep_MakeFacetedBrep MkFacetedBrep = new TopoDSToStep_MakeFacetedBrep(aSolid, FP, theLocalFactors, aPS1.Next());
                             MkFacetedBrep.Tolerance() = Tol;
                             if (MkFacetedBrep.IsDone())
@@ -1100,9 +1102,9 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                             }
                             return binder;
                         }
-                        if (aShape.ShapeType() == TopAbs_SOLID)
+                        if (aShape.ShapeType() == ShapeType.Solid)
                         {
-                            TopoDS_Solid aSolid = TopoDS.Solid(aShape);
+                            Solid aSolid = ShapeCasts.Solid(aShape);
                             TopoDSToStep_MakeFacetedBrepAndBrepWithVoids MkFacetedBrepAndBrepWithVoids =
                                 new TopoDSToStep_MakeFacetedBrepAndBrepWithVoids(aSolid, FP, theLocalFactors, aPS1.Next());
                             MkFacetedBrepAndBrepWithVoids.Tolerance() = Tol;
@@ -1116,9 +1118,9 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                     }
                 case STEPControl_ShellBasedSurfaceModel:
                     {
-                        if (aShape.ShapeType() == TopAbs_SOLID)
+                        if (aShape.ShapeType() == ShapeType.Solid)
                         {
-                            TopoDS_Solid aSolid = TopoDS.Solid(aShape);
+                            Solid aSolid = ShapeCasts.Solid(aShape);
                             TopoDSToStep_MakeShellBasedSurfaceModel MkShellBasedSurfaceModel =
                                 new TopoDSToStep_MakeShellBasedSurfaceModel(aSolid, FP, theLocalFactors, aPS1.Next());
                             MkShellBasedSurfaceModel.Tolerance() = Tol;
@@ -1128,9 +1130,9 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                                 itemTess = MkShellBasedSurfaceModel.TessellatedValue();
                             }
                         }
-                        else if (aShape.ShapeType() == TopAbs_SHELL)
+                        else if (aShape.ShapeType() == ShapeType.Shell)
                         {
-                            TopoDS_Shell aShell = TopoDS.Shell(aShape);
+                            Shell aShell = ShapeCasts.Shell(aShape);
                             // Non-manifold topology is stored via NMSSR containing series of SBSM (ssv; 13.11.2010)
                             TopoDSToStep_MakeShellBasedSurfaceModel MkShellBasedSurfaceModel =
                                 new TopoDSToStep_MakeShellBasedSurfaceModel(aShell, FP, theLocalFactors, aPS1.Next());
@@ -1141,9 +1143,9 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                                 itemTess = MkShellBasedSurfaceModel.TessellatedValue();
                             }
                         }
-                        else if (aShape.ShapeType() == TopAbs_FACE)
+                        else if (aShape.ShapeType() == ShapeType.Face)
                         {
-                            TopoDS_Face aFace = TopoDS.Face(aShape);
+                            Face aFace = ShapeCasts.Face(aShape);
                             TopoDSToStep_MakeShellBasedSurfaceModel MkShellBasedSurfaceModel =
                                 new TopoDSToStep_MakeShellBasedSurfaceModel(aFace, FP, theLocalFactors, aPS1.Next());
                             MkShellBasedSurfaceModel.Tolerance() = Tol;
@@ -1165,15 +1167,15 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                         }
                         // PTV 22.08.2002 OCC609 ------------------------- begin --------------------
                         // modified by PTV 16.09.2002 OCC725
-                        else if (aShape.ShapeType() == TopAbs_COMPOUND || aShape.ShapeType() == TopAbs_VERTEX)
+                        else if (aShape.ShapeType() == ShapeType.Compound || aShape.ShapeType() == ShapeType.Vertex)
                         {
                             // it is compound with solo vertices.
                             int aNbVrtx = 0;
                             int curNb = 0;
-                            TopExp_Explorer anExp = new TopExp_Explorer(aShape, TopAbs_VERTEX);
+                            Explorer anExp = new Explorer(aShape, ShapeType.Vertex);
                             for (; anExp.More(); anExp.Next())
                             {
-                                if (anExp.Current().ShapeType() != TopAbs_VERTEX)
+                                if (anExp.Current().ShapeType() != ShapeType.Vertex)
                                 {
                                     continue;
                                 }
@@ -1190,8 +1192,8 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                                 // iterates on compound with vertices and traces each vertex
                                 for (anExp.ReInit(); anExp.More(); anExp.Next())
                                 {
-                                    TopoDS_Shape aVertex = anExp.Current();
-                                    if (aVertex.ShapeType() != TopAbs_VERTEX)
+                                    Shape aVertex = anExp.Current();
+                                    if (aVertex.ShapeType() != ShapeType.Vertex)
                                     {
                                         continue;
                                     }
@@ -1273,7 +1275,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
             return binder;
         }
         StepShape_ShapeRepresentation shapeRep = null;
-        if (theShape.ShapeType() == TopAbs_SHAPE)
+        if (theShape.ShapeType() == ShapeType.Shape)
         { // for external references
             shapeRep = new StepShape_ShapeRepresentation();
         }
@@ -1526,7 +1528,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         {
             return binder;
         }
-        TopoDS_Shape theShape = mapper.Value();
+        Shape theShape = mapper.Value();
 
         StepData_StepModel aStepModel = FP.Model() as StepData_StepModel;
 
@@ -1543,32 +1545,32 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         }
 
         // get a sequence of components (subshapes)
-        NCollection_HSequence<TopoDS_Shape> RepItemSeq = new NCollection_HSequence<TopoDS_Shape>();
+        NCollection_HSequence<Shape> RepItemSeq = new NCollection_HSequence<Shape>();
         // Prepare a collection for non-manifold group of shapes
-        NCollection_HSequence<TopoDS_Shape> NonManifoldGroup = new NCollection_HSequence<TopoDS_Shape>();
+        NCollection_HSequence<Shape> NonManifoldGroup = new NCollection_HSequence<Shape>();
         bool isSeparateVertices = (aStepModel.InternalParameters.WriteVertexMode == 0); // bug 23950
         // PTV OCC725 17.09.2002 -- begin --
         int nbFreeVrtx = 0;
-        TopoDS_Compound aCompOfVrtx = new TopoDS_Compound();
-        BRep_Builder aB = new BRep_Builder();
+        Compound aCompOfVrtx = new Compound();
+        BrepBuilder aB = new BrepBuilder();
         aB.MakeCompound(ref aCompOfVrtx);
 
-        for (TopoDS_Iterator iter = new TopoDS_Iterator(theShape); iter.More(); iter.Next())
+        for (Iterator iter = new Iterator(theShape); iter.More(); iter.Next())
         {
-            TopoDS_Shape aSubShape = iter.Value();
-            if (aSubShape.ShapeType() != TopAbs_VERTEX || !isSeparateVertices)
+            Shape aSubShape = iter.Value();
+            if (aSubShape.ShapeType() != ShapeType.Vertex || !isSeparateVertices)
             {
                 // Store non-manifold topology as shells (ssv; 10.11.2010)
-                if (!isManifold && aSubShape.ShapeType() == TopAbs_SOLID)
+                if (!isManifold && aSubShape.ShapeType() == ShapeType.Solid)
                 {
-                    for (TopoDS_Iterator aSubIter = new TopoDS_Iterator(aSubShape); aSubIter.More(); aSubIter.Next())
+                    for (Iterator aSubIter = new Iterator(aSubShape); aSubIter.More(); aSubIter.Next())
                     {
-                        TopoDS_Shell aSubShell = ClosedShell(TopoDS.Shell(aSubIter.Value())); // OCCT: aSubShell.Closed(true)
+                        Shell aSubShell = ClosedShell(ShapeCasts.Shell(aSubIter.Value())); // OCCT: aSubShell.Closed(true)
                         RepItemSeq.Append(aSubShell);
                         NonManifoldGroup.Append(aSubShell);
                     }
                 }
-                else if (!isManifold && (aSubShape.ShapeType() == TopAbs_SHELL || aSubShape.ShapeType() == TopAbs_FACE))
+                else if (!isManifold && (aSubShape.ShapeType() == ShapeType.Shell || aSubShape.ShapeType() == ShapeType.Face))
                 {
                     RepItemSeq.Append(aSubShape);
                     NonManifoldGroup.Append(aSubShape);
@@ -1654,7 +1656,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
 
     public Transfer_Binder TransferSubShape(Transfer_Finder start, StepShape_ShapeDefinitionRepresentation SDR0,
                                             ref StepGeom_GeometricRepresentationItem AX1, Transfer_FinderProcess FP,
-                                            in StepData_Factors theLocalFactors, NCollection_HSequence<TopoDS_Shape> shapeGroup = null,
+                                            in StepData_Factors theLocalFactors, NCollection_HSequence<Shape> shapeGroup = null,
                                             bool isManifold = true, ProgressRange theProgress = default)
     {
         TransferBRep_ShapeMapper mapper = start as TransferBRep_ShapeMapper;
@@ -1662,14 +1664,14 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         {
             return NullResult();
         }
-        TopoDS_Shape shape = mapper.Value();
+        Shape shape = mapper.Value();
 
         //   SHAPE EN POSITION VENANT D UN ASSEMBLAGE
         //   Il faut alors distinguer la transformation de la shape meme
         //   laquelle est consideree a l origine, puis transferee
         //   A part, un item decrivant une occurence en position est cree
         //   SINON, la shape est prise et transferee telle quelle
-        TopoDS_Shape sh0 = shape;
+        Shape sh0 = shape;
         Transform3D aLoc = new Transform3D();
         bool isShapeLocated = false;
         if (GroupMode() > 0)

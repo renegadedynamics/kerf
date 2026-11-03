@@ -5,26 +5,27 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 
 namespace Occt;
 
 /// <summary>A shape held by reference (OCCT's handle to a shape), as a working object.</summary>
 public class TopoDS_HShape : Transient
 {
-    private TopoDS_Shape myShape;
+    private Shape _shape;
 
     /// <summary>A holder of a null shape.</summary>
-    public TopoDS_HShape() => myShape = new TopoDS_Shape();
+    public TopoDS_HShape() => _shape = new Shape();
 
     /// <summary>A holder of <paramref name="aShape"/>.</summary>
-    public TopoDS_HShape(in TopoDS_Shape aShape) => myShape = aShape;
+    public TopoDS_HShape(in Shape aShape) => _shape = aShape;
 
     /// <summary>Loads <paramref name="aShape"/>.</summary>
-    public void Shape(in TopoDS_Shape aShape) => myShape = aShape;
+    public void Shape(in Shape aShape) => _shape = aShape;
 
     /// <summary>The shape.</summary>
-    public TopoDS_Shape Shape() => myShape;
+    public Shape Shape() => _shape;
 
     /// <summary>A reference to the stored shape.</summary>
-    internal ref TopoDS_Shape ChangeShape() => ref myShape;
+    internal ref Shape ChangeShape() => ref _shape;
 }

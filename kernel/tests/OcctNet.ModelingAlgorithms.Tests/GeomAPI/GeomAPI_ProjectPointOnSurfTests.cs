@@ -17,8 +17,8 @@ public class GeomAPI_ProjectPointOnSurfTest
     [Fact]
     public void Bug867_InitWithTightBoundsNoException()
     {
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(Constants.XOY()), 10.0);
-        Geom_RectangularTrimmedSurface aTrimSurf = new(aCyl, 0.0, 4.0, 0.0, 2.0);
+        CylindricalSurface aCyl = new(new CoordinateSystem(Constants.XOY()), 10.0);
+        TrimmedSurface aTrimSurf = new(aCyl, 0.0, 4.0, 0.0, 2.0);
 
         Point3D aPoint = new(30.0, 30.0, 30.0);
 

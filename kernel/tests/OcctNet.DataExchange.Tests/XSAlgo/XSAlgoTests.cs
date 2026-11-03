@@ -1,8 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using OcctNet.DataExchange.Tests.Interface;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DataExchange.Tests.XSAlgo;
 
@@ -35,7 +38,7 @@ public class XSAlgoTests
     {
         var aDefaults = new DE_ShapeFixParameters();
         Assert.Equal(1.0e-6, aDefaults.Tolerance3d);
-        Assert.Equal(TopAbs_VERTEX, aDefaults.DetalizationLevel);
+        Assert.Equal(ShapeType.Vertex, aDefaults.DetalizationLevel);
         Assert.Equal(DE_ShapeFixParameters.FixMode.NotFix, aDefaults.CreateOpenSolidMode);
         Assert.Equal(aDefaults, new DE_ShapeFixParameters());
         Assert.NotEqual(aDefaults, aDefaults with { FixWireMode = DE_ShapeFixParameters.FixMode.Fix });
@@ -118,20 +121,20 @@ public class XSAlgoTests
     [Fact]
     public void The_processor_never_changes_its_input()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(1.0, 2.0, 3.0).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(1.0, 2.0, 3.0).Shape();
         ulong aBefore = XSAlgoNativeTests.BRepHash(aBox);
         var aParams = new NCollection_DataMap<string, string>();
-        aParams.Bind("DetalizationLevel", ((int)TopAbs_FACE).ToString(System.Globalization.CultureInfo.InvariantCulture));
+        aParams.Bind("DetalizationLevel", ((int)ShapeType.Face).ToString(System.Globalization.CultureInfo.InvariantCulture));
         aParams.Bind("NonManifold", "1");
         var aProcessor = new XSAlgo_ShapeProcessor(aParams);
         Assert.Null(aProcessor.GetContext());
-        TopoDS_Shape aResult = aProcessor.ProcessShape(aBox, new ShapeProcess.OperationsFlags(ShapeProcess.Operation.SplitCommonVertex,
+        Shape aResult = aProcessor.ProcessShape(aBox, new ShapeProcess.OperationsFlags(ShapeProcess.Operation.SplitCommonVertex,
                                                                                                ShapeProcess.Operation.DirectFaces));
         Assert.Equal(aBefore, XSAlgoNativeTests.BRepHash(aBox));
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.Equal(TopAbs_FACE, aProcessor.GetContext()!.GetDetalisation());
+        Assert.Equal(ShapeType.Face, aProcessor.GetContext()!.GetDetalisation());
         Assert.True(aProcessor.GetContext()!.IsNonManifold());
-        Assert.True(aProcessor.ProcessShape(new TopoDS_Shape(), new ShapeProcess.OperationsFlags()).IsNull());
+        Assert.True(aProcessor.ProcessShape(new Shape(), new ShapeProcess.OperationsFlags()).IsNull);
 
         // merging an empty history changes nothing
         var TP = new Transfer_TransientProcess();
@@ -146,13 +149,13 @@ public class XSAlgoTests
     public void The_container_runs_a_sequence_or_default_fixes()
     {
         Interface_StaticSet aStatics = XSAlgoNativeTests.StepStatics();
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(1.0, 2.0, 3.0).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(1.0, 2.0, 3.0).Shape();
         Transient? anInfo = null;
         XSAlgo_AlgoContainer aContainer = Occt.XSAlgo.AlgoContainer();
-        TopoDS_Shape aResult = aContainer.ProcessShape(aBox, 1e-3, 1.0, "read.step.resource.name", "read.step.sequence", ref anInfo,
+        Shape aResult = aContainer.ProcessShape(aBox, 1e-3, 1.0, "read.step.resource.name", "read.step.sequence", ref anInfo,
                                                        aStatics);
         var aContext = Assert.IsType<ShapeProcess_ShapeContext>(anInfo);
-        Assert.Equal(TopAbs_VERTEX, aContext.GetDetalisation());
+        Assert.Equal(ShapeType.Vertex, aContext.GetDetalisation());
         Assert.Equal("0.001", aContext.ResourceManager()!.Value("Runtime.Tolerance"));
         Assert.True(aResult.IsSame(aBox) || aResult.TShape()!.IsFrozen);
 
@@ -162,16 +165,16 @@ public class XSAlgoTests
         Assert.Same(aSame, anInfo);
         Assert.True(aContext.IsNonManifold());
         Assert.Equal("DirectFaces", aContext.ResourceManager()!.Value(".exec.op"));
-        Assert.True(aContainer.ProcessShape(new TopoDS_Shape(), 0, 0, "", "", ref anInfo, aStatics).IsNull());
+        Assert.True(aContainer.ProcessShape(new Shape(), 0, 0, "", "", ref anInfo, aStatics).IsNull);
 
         // CheckPCurve through the container, on a box's working copy
-        TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(aBox, out _);
-        var aFace = TopoDS.Face(new TopExp_Explorer(aCopy, TopAbs_FACE).Current());
-        var anEdge = TopoDS.Edge(new TopExp_Explorer(aFace, TopAbs_EDGE).Current());
+        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out _);
+        var aFace = ShapeCasts.Face(new Explorer(aCopy, ShapeType.Face).Current());
+        var anEdge = ShapeCasts.Edge(new Explorer(aFace, ShapeType.Edge).Current());
         Assert.True(aContainer.CheckPCurve(anEdge, aFace, 1e-3, false, aStatics));
         // and not on a published shape
-        var aFace2 = TopoDS.Face(new TopExp_Explorer(aBox, TopAbs_FACE).Current());
-        var anEdge2 = TopoDS.Edge(new TopExp_Explorer(aFace2, TopAbs_EDGE).Current());
+        var aFace2 = ShapeCasts.Face(new Explorer(aBox, ShapeType.Face).Current());
+        var anEdge2 = ShapeCasts.Edge(new Explorer(aFace2, ShapeType.Edge).Current());
         Assert.ThrowsAny<FailureException>(() => aContainer.CheckPCurve(anEdge2, aFace2, 1e-3, false, aStatics));
     }
 }

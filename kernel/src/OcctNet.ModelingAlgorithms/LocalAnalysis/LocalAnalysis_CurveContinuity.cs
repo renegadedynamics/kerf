@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Properties;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
 using static Occt.LocalAnalysis_StatusErrorType;
@@ -44,12 +45,12 @@ public class LocalAnalysis_CurveContinuity
     private bool myIsDone;
     private LocalAnalysis_StatusErrorType myErrorStatus;
 
-    private void CurvC0(GeomLProp_CLProps Curv1, GeomLProp_CLProps Curv2)
+    private void CurvC0(CLProps Curv1, CLProps Curv2)
     {
         myContC0 = (Curv1.Value()).Distance(Curv2.Value());
     }
 
-    private void CurvC1(GeomLProp_CLProps Curv1, GeomLProp_CLProps Curv2)
+    private void CurvC1(CLProps Curv1, CLProps Curv2)
     {
         Vector3D V1, V2;
         double ang;
@@ -86,7 +87,7 @@ public class LocalAnalysis_CurveContinuity
         }
     }
 
-    private void CurvC2(GeomLProp_CLProps Curv1, GeomLProp_CLProps Curv2)
+    private void CurvC2(CLProps Curv1, CLProps Curv2)
     {
         Vector3D V1, V2, V12, V22;
         double norm1, norm2, norm12, norm22, ang;
@@ -136,7 +137,7 @@ public class LocalAnalysis_CurveContinuity
         }
     }
 
-    private void CurvG1(GeomLProp_CLProps Curv1, GeomLProp_CLProps Curv2)
+    private void CurvG1(CLProps Curv1, CLProps Curv2)
     {
         double ang;
         if (Curv1.IsTangentDefined() && Curv2.IsTangentDefined())
@@ -160,7 +161,7 @@ public class LocalAnalysis_CurveContinuity
         }
     }
 
-    private void CurvG2(GeomLProp_CLProps Curv1, GeomLProp_CLProps Curv2)
+    private void CurvG2(CLProps Curv1, CLProps Curv2)
     {
         double ang;
         double epscrb = 8 * myepsC0 / (myMaxLon * myMaxLon);
@@ -213,7 +214,7 @@ public class LocalAnalysis_CurveContinuity
     /// for G2; <paramref name="Maxlen"/> is the curves' greatest length, used to detect null curvature. Angles are
     /// between 0 and PI/2.
     /// </remarks>
-    public LocalAnalysis_CurveContinuity(Geom_Curve Curv1, double u1, Geom_Curve Curv2, double u2, Continuity Order,
+    public LocalAnalysis_CurveContinuity(Curve3D Curv1, double u1, Curve3D Curv2, double u2, Continuity Order,
                                          double EpsNul = 0.001, double EpsC0 = 0.001, double EpsC1 = 0.001,
                                          double EpsC2 = 0.001, double EpsG1 = 0.001, double EpsG2 = 0.001,
                                          double Percent = 0.01, double Maxlen = 10000)
@@ -245,23 +246,23 @@ public class LocalAnalysis_CurveContinuity
         {
             case C0:
             {
-                var Curve1 = new GeomLProp_CLProps(Curv1, u1, 0, myepsnul);
-                var Curve2 = new GeomLProp_CLProps(Curv2, u2, 0, myepsnul);
+                var Curve1 = new CLProps(Curv1, u1, 0, myepsnul);
+                var Curve2 = new CLProps(Curv2, u2, 0, myepsnul);
                 CurvC0(Curve1, Curve2);
                 break;
             }
             case C1:
             {
-                var Curve1 = new GeomLProp_CLProps(Curv1, u1, 1, myepsnul);
-                var Curve2 = new GeomLProp_CLProps(Curv2, u2, 1, myepsnul);
+                var Curve1 = new CLProps(Curv1, u1, 1, myepsnul);
+                var Curve2 = new CLProps(Curv2, u2, 1, myepsnul);
                 CurvC0(Curve1, Curve2);
                 CurvC1(Curve1, Curve2);
                 break;
             }
             case C2:
             {
-                var Curve1 = new GeomLProp_CLProps(Curv1, u1, 2, myepsnul);
-                var Curve2 = new GeomLProp_CLProps(Curv2, u2, 2, myepsnul);
+                var Curve1 = new CLProps(Curv1, u1, 2, myepsnul);
+                var Curve2 = new CLProps(Curv2, u2, 2, myepsnul);
                 CurvC0(Curve1, Curve2);
                 CurvC1(Curve1, Curve2);
                 CurvC2(Curve1, Curve2);
@@ -269,16 +270,16 @@ public class LocalAnalysis_CurveContinuity
             }
             case G1:
             {
-                var Curve1 = new GeomLProp_CLProps(Curv1, u1, 1, myepsnul);
-                var Curve2 = new GeomLProp_CLProps(Curv2, u2, 1, myepsnul);
+                var Curve1 = new CLProps(Curv1, u1, 1, myepsnul);
+                var Curve2 = new CLProps(Curv2, u2, 1, myepsnul);
                 CurvC0(Curve1, Curve2);
                 CurvG1(Curve1, Curve2);
                 break;
             }
             case G2:
             {
-                var Curve1 = new GeomLProp_CLProps(Curv1, u1, 2, myepsnul);
-                var Curve2 = new GeomLProp_CLProps(Curv2, u2, 2, myepsnul);
+                var Curve1 = new CLProps(Curv1, u1, 2, myepsnul);
+                var Curve2 = new CLProps(Curv2, u2, 2, myepsnul);
                 CurvC0(Curve1, Curve2);
                 CurvG1(Curve1, Curve2);
                 CurvG2(Curve1, Curve2);

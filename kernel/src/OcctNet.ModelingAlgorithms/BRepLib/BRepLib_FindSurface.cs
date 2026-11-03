@@ -5,13 +5,18 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -28,13 +33,13 @@ namespace Occt;
 /// </remarks>
 public class BRepLib_FindSurface
 {
-    private Geom_Surface? mySurface;
+    private Surface? mySurface;
     private double myTolerance;
     private double myTolReached;
     private bool isExisted;
     private Placement myLocation = new();
 
-    private static double Controle(NCollection_Sequence<Point3D> thePoints, Geom_Plane thePlane)
+    private static double Controle(NCollection_Sequence<Point3D> thePoints, PlaneSurface thePlane)
     {
         double dfMaxDist = 0.0;
         double dist;
@@ -55,25 +60,25 @@ public class BRepLib_FindSurface
 
     // Return true if the last vertex of theEdge1 coincides with
     // the first vertex of theEdge2 in parametric space of theFace
-    private static bool Is2DConnected(in TopoDS_Edge theEdge1,
-                                      in TopoDS_Edge theEdge2,
-                                      Geom_Surface theSurface,
+    private static bool Is2DConnected(in Edge theEdge1,
+                                      in Edge theEdge2,
+                                      Surface theSurface,
                                       in Placement theLocation)
     {
         double f, l;
-        Geom2d_Curve? aCurve;
+        Curve2D? aCurve;
         Point2D p1, p2;
 
         // get 2D points
-        aCurve = BRep_Tool.CurveOnSurface(theEdge1, theSurface, theLocation, out f, out l);
-        p1 = aCurve!.Value(theEdge1.Orientation() == TopAbs_FORWARD ? l : f);
-        aCurve = BRep_Tool.CurveOnSurface(theEdge2, theSurface, theLocation, out f, out l);
-        p2 = aCurve!.Value(theEdge2.Orientation() == TopAbs_FORWARD ? f : l);
+        aCurve = Tool.CurveOnSurface(theEdge1, theSurface, theLocation, out f, out l);
+        p1 = aCurve!.Value(theEdge1.Orientation() == Forward ? l : f);
+        aCurve = Tool.CurveOnSurface(theEdge2, theSurface, theLocation, out f, out l);
+        p2 = aCurve!.Value(theEdge2.Orientation() == Forward ? f : l);
 
         // compare 2D points
-        var aSurface = new GeomAdaptor_Surface(theSurface);
-        TopoDS_Vertex aV = TopExp.FirstVertex(theEdge2, true);
-        double tol3D = BRep_Tool.Tolerance(aV);
+        var aSurface = new SurfaceAdaptor(theSurface);
+        Vertex aV = Exploration.FirstVertex(theEdge2, true);
+        double tol3D = Tool.Tolerance(aV);
         double tol2D = aSurface.UResolution(tol3D) + aSurface.VResolution(tol3D);
         double dist2 = p1.SquareDistance(p2);
         return dist2 < tol2D * tol2D;
@@ -81,32 +86,32 @@ public class BRepLib_FindSurface
 
     // Return true if edges of theShape form a closed wire in
     // parametric space of theSurface
-    private static bool Is2DClosed(in TopoDS_Shape theShape, Geom_Surface theSurface, in Placement theLocation)
+    private static bool Is2DClosed(in Shape theShape, Surface theSurface, in Placement theLocation)
     {
         try
         {
             // get a wire theShape
-            var aWireExp = new TopExp_Explorer(theShape, TopAbs_WIRE);
+            var aWireExp = new Explorer(theShape, ShapeType.Wire);
             if (!aWireExp.More())
             {
                 return false;
             }
-            TopoDS_Wire aWire = TopoDS.Wire(aWireExp.Current());
+            Wire aWire = ShapeCasts.Wire(aWireExp.Current());
             // a tmp face
-            TopoDS_Face aTmpFace = new BRepLib_MakeFace(theSurface, global::Kerf.Engine.Foundation.Precision.PConfusion()).InternalFace();
+            Face aTmpFace = new BRepLib_MakeFace(theSurface, global::Kerf.Engine.Foundation.Precision.PConfusion()).InternalFace();
 
             // check topological closeness using wire explorer, if the wire is not closed
             // the 1st and the last vertices of wire are different
-            var aWireExplorer = new BRepTools_WireExplorer(aWire, aTmpFace);
+            var aWireExplorer = new WireExplorer(aWire, aTmpFace);
             if (!aWireExplorer.More())
             {
                 return false;
             }
             // remember the 1st and the last edges of aWire
-            TopoDS_Edge aFisrtEdge = aWireExplorer.Current(), aLastEdge = aFisrtEdge;
+            Edge aFisrtEdge = aWireExplorer.Current(), aLastEdge = aFisrtEdge;
             // check if edges connected topologically (that is assured by BRepTools_WireExplorer)
             // are connected in 2D
-            TopoDS_Edge aPrevEdge = aFisrtEdge;
+            Edge aPrevEdge = aFisrtEdge;
             for (aWireExplorer.Next(); aWireExplorer.More(); aWireExplorer.Next())
             {
                 aLastEdge = aWireExplorer.Current();
@@ -118,8 +123,8 @@ public class BRepLib_FindSurface
             }
             // wire is closed if ( 1st vertex of aFisrtEdge ) ==
             // ( last vertex of aLastEdge ) in 2D
-            TopoDS_Vertex aV1 = TopExp.FirstVertex(aFisrtEdge, true);
-            TopoDS_Vertex aV2 = TopExp.LastVertex(aLastEdge, true);
+            Vertex aV1 = Exploration.FirstVertex(aFisrtEdge, true);
+            Vertex aV2 = Exploration.LastVertex(aLastEdge, true);
             return (aV1.IsSame(aV2) && Is2DConnected(aLastEdge, aFisrtEdge, theSurface, theLocation));
         }
         catch (FailureException)
@@ -143,7 +148,7 @@ public class BRepLib_FindSurface
     }
 
     /// <summary>Finds a surface through the edges of <paramref name="S"/> (see <see cref="Init"/>).</summary>
-    public BRepLib_FindSurface(in TopoDS_Shape S, double Tol = -1, bool OnlyPlane = false, bool OnlyClosed = false)
+    public BRepLib_FindSurface(in Shape S, double Tol = -1, bool OnlyPlane = false, bool OnlyClosed = false)
     {
         Init(S, Tol, OnlyPlane, OnlyClosed);
     }
@@ -185,7 +190,7 @@ public class BRepLib_FindSurface
         theParams.Append(theParMax);
     }
 
-    private static void fillPoints(BRepAdaptor_Curve theCurve,
+    private static void fillPoints(EdgeCurveAdaptor theCurve,
                                    NCollection_DynamicArray<double> theParams,
                                    NCollection_Sequence<Point3D> thePoints,
                                    NCollection_Sequence<double> theWeights)
@@ -218,7 +223,7 @@ public class BRepLib_FindSurface
     /// every edge has a pcurve on (with <paramref name="OnlyPlane"/>, only a plane; with <paramref name="OnlyClosed"/>,
     /// only one on which the shape's wire is closed in 2D), otherwise a least-squares plane within the tolerance.
     /// </summary>
-    public void Init(in TopoDS_Shape S, double Tol = -1, bool OnlyPlane = false, bool OnlyClosed = false)
+    public void Init(in Shape S, double Tol = -1, bool OnlyPlane = false, bool OnlyClosed = false)
     {
         myTolerance = Tol;
         myTolReached = 0.0;
@@ -227,11 +232,11 @@ public class BRepLib_FindSurface
         mySurface = null;
 
         // compute the tolerance
-        var ex = new TopExp_Explorer();
+        var ex = new Explorer();
 
-        for (ex.Init(S, TopAbs_EDGE); ex.More(); ex.Next())
+        for (ex.Init(S, ShapeType.Edge); ex.More(); ex.Next())
         {
-            double t = BRep_Tool.Tolerance(TopoDS.Edge(ex.Current()));
+            double t = Tool.Tolerance(ShapeCasts.Edge(ex.Current()));
             if (t > myTolerance)
             {
                 myTolerance = t;
@@ -239,16 +244,16 @@ public class BRepLib_FindSurface
         }
 
         // search an existing surface
-        ex.Init(S, TopAbs_EDGE);
+        ex.Init(S, ShapeType.Edge);
         if (!ex.More())
         {
             return; // no edges ....
         }
 
-        TopoDS_Edge E = TopoDS.Edge(ex.Current());
+        Edge E = ShapeCasts.Edge(ex.Current());
         double f = 0, l = 0, ff = 0, ll = 0;
-        Geom2d_Curve? PC = null, aPPC = null;
-        Geom_Surface? SS = null;
+        Curve2D? PC = null, aPPC = null;
+        Surface? SS = null;
         var L = new Placement();
         int i = 0, j;
 
@@ -256,13 +261,13 @@ public class BRepLib_FindSurface
         for (;;)
         {
             i++;
-            BRep_Tool.CurveOnSurface(E, ref PC, ref mySurface, ref myLocation, ref f, ref l, i);
+            Tool.CurveOnSurface(E, ref PC, ref mySurface, ref myLocation, ref f, ref l, i);
             if (mySurface is null)
             {
                 break;
             }
             // check the other edges
-            for (ex.Init(S, TopAbs_EDGE); ex.More(); ex.Next())
+            for (ex.Init(S, ShapeType.Edge); ex.More(); ex.Next())
             {
                 if (!E.IsSame(ex.Current()))
                 {
@@ -270,7 +275,7 @@ public class BRepLib_FindSurface
                     for (;;)
                     {
                         j++;
-                        BRep_Tool.CurveOnSurface(TopoDS.Edge(ex.Current()), ref aPPC, ref SS, ref L, ref ff, ref ll, j);
+                        Tool.CurveOnSurface(ShapeCasts.Edge(ex.Current()), ref aPPC, ref SS, ref L, ref ff, ref ll, j);
                         if (SS is null)
                         {
                             break;
@@ -293,11 +298,11 @@ public class BRepLib_FindSurface
             // if OnlyPlane, eval if mySurface is a plane.
             if (OnlyPlane && mySurface is not null)
             {
-                if (mySurface is Geom_RectangularTrimmedSurface aRTS)
+                if (mySurface is TrimmedSurface aRTS)
                 {
                     mySurface = aRTS.BasisSurface();
                 }
-                mySurface = mySurface as Geom_Plane;
+                mySurface = mySurface as PlaneSurface;
             }
 
             if (mySurface is not null)
@@ -329,9 +334,9 @@ public class BRepLib_FindSurface
         var aWeight = new NCollection_Sequence<double>();
 
         // ======================= Step #1
-        for (ex.Init(S, TopAbs_EDGE); ex.More(); ex.Next())
+        for (ex.Init(S, ShapeType.Edge); ex.More(); ex.Next())
         {
-            var c = new BRepAdaptor_Curve(TopoDS.Edge(ex.Current()));
+            var c = new EdgeCurveAdaptor(ShapeCasts.Edge(ex.Current()));
 
             double dfUf = c.FirstParameter();
             double dfUl = c.LastParameter();
@@ -348,7 +353,7 @@ public class BRepLib_FindSurface
             {
                 case BezierCurve:
                 {
-                    Geom_BezierCurve GC = c.Bezier();
+                    BezierCurve3D GC = c.Bezier();
                     var aKnots = new NCollection_Array1<double>(1, 2);
                     aKnots.SetValue(1, GC.FirstParameter());
                     aKnots.SetValue(2, GC.LastParameter());
@@ -358,7 +363,7 @@ public class BRepLib_FindSurface
                 }
                 case BSplineCurve:
                 {
-                    Geom_BSplineCurve GC = c.BSpline();
+                    BSplineCurve3D GC = c.BSpline();
                     fillParams(GC.InternalKnots(), GC.Degree(), dfUf, dfUl, aParams);
                     break;
                 }
@@ -532,25 +537,25 @@ public class BRepLib_FindSurface
             }
         }
         var aN = new Vector3D(aVec[1], aVec[2], aVec[3]);
-        var aPlane = new Geom_Plane(new Point3D(aBaryCenter), new Direction3D(aN));
+        var aPlane = new PlaneSurface(new Point3D(aBaryCenter), new Direction3D(aN));
         myTolReached = Controle(aPoints, aPlane);
         const double aWeakness = 5.0;
         if (myTolReached <= myTolerance || (Tol < 0 && myTolReached < myTolerance * aWeakness))
         {
             mySurface = aPlane;
             // If S is wire, try to orient surface according to orientation of wire.
-            if (S.ShapeType() == TopAbs_WIRE && S.Closed())
+            if (S.ShapeType() == ShapeType.Wire && S.Closed())
             {
-                TopoDS_Wire aW = TopoDS.Wire(S);
-                TopoDS_Face aTmpFace = new BRepLib_MakeFace(mySurface, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalFace();
-                var BB = new BRep_Builder();
+                Wire aW = ShapeCasts.Wire(S);
+                Face aTmpFace = new BRepLib_MakeFace(mySurface, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalFace();
+                var BB = new BrepBuilder();
                 BB.Add(aTmpFace, aW);
                 var FClass = new BRepTopAdaptor_FClass2d(aTmpFace, 0.0);
-                if (FClass.PerformInfinitePoint() == TopAbs_IN)
+                if (FClass.PerformInfinitePoint() == In)
                 {
                     Direction3D aNorm = aPlane.Position().Direction();
                     aNorm.Reverse();
-                    mySurface = new Geom_Plane(aPlane.Position().Location(), aNorm);
+                    mySurface = new PlaneSurface(aPlane.Position().Location(), aNorm);
                 }
             }
         }
@@ -563,14 +568,14 @@ public class BRepLib_FindSurface
     }
 
     /// <summary>The surface found (frozen), or null.</summary>
-    public Geom_Surface? Surface()
+    public Surface? Surface()
     {
         mySurface?.Freeze();
         return mySurface;
     }
 
     /// <summary><see cref="Surface"/> without freezing, for ported code that edits it (BRepFill_Sweep).</summary>
-    internal Geom_Surface? InternalSurface() => mySurface;
+    internal Surface? InternalSurface() => mySurface;
 
     /// <summary>The tolerance: the larger of the given one and the edges' largest.</summary>
     public double Tolerance()

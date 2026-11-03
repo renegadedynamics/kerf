@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 
@@ -22,23 +23,23 @@ public class IntAna2dOracleTests(ITestOutputHelper output)
         return new N.gp_Circ2d(anAx, theC.Radius());
     }
 
-    private static void Compare(Oracle theOracle, N.IntAna2d_AnaIntersection theNative, IntAna2d_AnaIntersection thePort, string theWhat)
+    private static void Compare(Oracle theOracle, N.IntAna2d_AnaIntersection theNative, AnalyticIntersection thePort, string theWhat)
     {
-        theOracle.Same(theNative.IsDone(), thePort.IsDone(), $"{theWhat} IsDone");
+        theOracle.Same(theNative.IsDone(), thePort.IsDone, $"{theWhat} IsDone");
         if (!theNative.IsDone())
         {
             return;
         }
 
-        theOracle.Same(theNative.IsEmpty(), thePort.IsEmpty(), $"{theWhat} IsEmpty");
+        theOracle.Same(theNative.IsEmpty(), thePort.IsEmpty, $"{theWhat} IsEmpty");
         theOracle.Same(theNative.IdenticalElements(), thePort.IdenticalElements(), $"{theWhat} IdenticalElements");
         theOracle.Same(theNative.ParallelElements(), thePort.ParallelElements(), $"{theWhat} ParallelElements");
-        theOracle.Same(theNative.NbPoints(), thePort.NbPoints(), $"{theWhat} NbPoints");
+        theOracle.Same(theNative.NbPoints(), thePort.PointCount, $"{theWhat} NbPoints");
         for (int i = 1; i <= theNative.NbPoints(); i++)
         {
             using var aNPoint = theNative.Point(i);
             using var aNValue = aNPoint.Value();
-            IntAna2d_IntPoint aPoint = thePort.Point(i);
+            IntPoint aPoint = thePort.Point(i);
             theOracle.Same(Oracle.FromNative(aNValue), aPoint.Value(), $"{theWhat} point {i}");
             theOracle.Same(aNPoint.SecondIsImplicit(), aPoint.SecondIsImplicit(), $"{theWhat} SecondIsImplicit {i}");
             theOracle.Same(aNPoint.ParamOnFirst(), aPoint.ParamOnFirst(), $"{theWhat} ParamOnFirst {i}");
@@ -62,7 +63,7 @@ public class IntAna2dOracleTests(ITestOutputHelper output)
             using var aN1 = ToNative(aL1);
             using var aN2 = ToNative(aL2);
             using var aNative = new N.IntAna2d_AnaIntersection(aN1, aN2);
-            Compare(anOracle, aNative, new IntAna2d_AnaIntersection(aL1, aL2), "lines");
+            Compare(anOracle, aNative, new AnalyticIntersection(aL1, aL2), "lines");
         }
 
         anOracle.Report("IntAna2d_AnaIntersection(gp_Lin2d, gp_Lin2d)");
@@ -86,7 +87,7 @@ public class IntAna2dOracleTests(ITestOutputHelper output)
             using var aN2 = ToNative(aC2);
             using var aNative = new N.IntAna2d_AnaIntersection(aN1, aN2);
             // Tangency and angle parameters go through acos/asin and Angle (atan2), which MSVC and .NET may round differently
-            Compare(anOracle, aNative, new IntAna2d_AnaIntersection(aC1, aC2), "circles");
+            Compare(anOracle, aNative, new AnalyticIntersection(aC1, aC2), "circles");
         }
 
         anOracle.Report("IntAna2d_AnaIntersection(gp_Circ2d, gp_Circ2d)");
@@ -107,7 +108,7 @@ public class IntAna2dOracleTests(ITestOutputHelper output)
             using var aNL = ToNative(aL);
             using var aNC = ToNative(aC);
             using var aNative = new N.IntAna2d_AnaIntersection(aNL, aNC);
-            Compare(anOracle, aNative, new IntAna2d_AnaIntersection(aL, aC), "line and circle");
+            Compare(anOracle, aNative, new AnalyticIntersection(aL, aC), "line and circle");
         }
 
         anOracle.Report("IntAna2d_AnaIntersection(gp_Lin2d, gp_Circ2d)");
@@ -123,10 +124,10 @@ public class IntAna2dOracleTests(ITestOutputHelper output)
             using var aN1 = new N.IntAna2d_IntPoint(aX, aY, aU1, aU2);
             using var aN2 = new N.IntAna2d_IntPoint(aX, aY, aU1);
             using var aN3 = new N.IntAna2d_IntPoint();
-            var aP1 = new IntAna2d_IntPoint(aX, aY, aU1, aU2);
-            var aP2 = new IntAna2d_IntPoint(aX, aY, aU1);
-            var aP3 = new IntAna2d_IntPoint();
-            foreach ((N.IntAna2d_IntPoint aN, IntAna2d_IntPoint aP) in new[] { (aN1, aP1), (aN2, aP2), (aN3, aP3) })
+            var aP1 = new IntPoint(aX, aY, aU1, aU2);
+            var aP2 = new IntPoint(aX, aY, aU1);
+            var aP3 = new IntPoint();
+            foreach ((N.IntAna2d_IntPoint aN, IntPoint aP) in new[] { (aN1, aP1), (aN2, aP2), (aN3, aP3) })
             {
                 using var aNV = aN.Value();
                 anOracle.Same(Oracle.FromNative(aNV), aP.Value(), "Value");

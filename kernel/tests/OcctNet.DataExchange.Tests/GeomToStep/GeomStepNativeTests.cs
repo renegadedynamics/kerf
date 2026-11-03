@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Globalization;
 using OcctNet.DataExchange.Tests.StepGen;
 using Xunit.Abstractions;
@@ -168,7 +170,7 @@ public sealed class GeomStepNativeTests(ITestOutputHelper output)
         var aDiffs = new List<string>();
         foreach (Block aBlock in aBlocks)
         {
-            TopoDS_Shape aShape = new TopoDS_Shape();
+            Shape aShape = new Shape();
             if (aBlock.Name != "(cases)")
             {
                 string? aPath = StepFileDump.CorpusPath(aBlock.Name);
@@ -177,7 +179,7 @@ public sealed class GeomStepNativeTests(ITestOutputHelper output)
                     continue;
                 }
 
-                bool isRead = BRepTools.Read(out aShape, aPath);
+                bool isRead = BrepTools.Read(out aShape, aPath);
                 Assert.Equal(aBlock.ReadFail, !isRead);
                 if (!isRead)
                 {

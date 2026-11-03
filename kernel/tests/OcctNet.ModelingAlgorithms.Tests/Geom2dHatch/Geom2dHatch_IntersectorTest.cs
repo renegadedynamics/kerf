@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -14,8 +15,8 @@ public class Geom2dHatch_IntersectorTest
     public void LocalGeometry_Circle_ValidOutputs()
     {
         Axis2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
-        Geom2d_Circle aCircle = new(anAxis, 1.0);
-        Geom2dAdaptor_Curve aCurveAdaptor = new(aCircle);
+        CircleCurve2D aCircle = new(anAxis, 1.0);
+        CurveAdaptor2D aCurveAdaptor = new(aCircle);
 
         Geom2dHatch_Intersector anIntersector = new(1.0e-7, 1.0e-7);
 
@@ -32,8 +33,8 @@ public class Geom2dHatch_IntersectorTest
     public void LocalGeometry_Line_ZeroCurvature()
     {
         Axis2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
-        Geom2d_Line aLine = new(anAxis);
-        Geom2dAdaptor_Curve aCurveAdaptor = new(aLine);
+        LineCurve2D aLine = new(anAxis);
+        CurveAdaptor2D aCurveAdaptor = new(aLine);
 
         Geom2dHatch_Intersector anIntersector = new(1.0e-7, 1.0e-7);
 
@@ -68,8 +69,8 @@ public class Geom2dHatch_IntersectorTest
         aMults[1] = 4;
         aMults[2] = 4;
 
-        Geom2d_BSplineCurve aDegenerateCurve = new(aPoles, aKnots, aMults, 3);
-        Geom2dAdaptor_Curve aCurveAdaptor = new(aDegenerateCurve);
+        BSplineCurve2D aDegenerateCurve = new(aPoles, aKnots, aMults, 3);
+        CurveAdaptor2D aCurveAdaptor = new(aDegenerateCurve);
 
         Geom2dHatch_Intersector anIntersector = new(1.0e-7, 1.0e-7);
 

@@ -3,9 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 
@@ -19,7 +24,7 @@ namespace Occt;
 public interface IIntStart_ArcFunction
 {
     /// <summary>Loads the arc to search.</summary>
-    void Set(Adaptor2d_Curve2d A);
+    void Set(Curve2DAdaptorBase A);
 
     /// <summary>The number of samples on the arc.</summary>
     int NbSamples();
@@ -31,7 +36,7 @@ public interface IIntStart_ArcFunction
     IntSurf_Quadric Quadric();
 
     /// <summary>The surface the arcs are on.</summary>
-    Adaptor3d_Surface Surface();
+    SurfaceAdaptorBase Surface();
 
     /// <summary>The point of the last evaluation.</summary>
     Point3D LastComputedPoint();
@@ -44,29 +49,29 @@ public interface IIntStart_ArcFunction
 /// </summary>
 public interface IIntStart_SOBTool
 {
-    static abstract bool HasBeenSeen(Adaptor2d_Curve2d C);
+    static abstract bool HasBeenSeen(Curve2DAdaptorBase C);
 
-    static abstract double Tolerance(Adaptor3d_HVertex V, Adaptor2d_Curve2d C);
+    static abstract double Tolerance(HVertex V, Curve2DAdaptorBase C);
 
-    static abstract double Parameter(Adaptor3d_HVertex V, Adaptor2d_Curve2d C);
+    static abstract double Parameter(HVertex V, Curve2DAdaptorBase C);
 
-    static abstract void Bounds(Adaptor2d_Curve2d C, out double Ufirst, out double Ulast);
+    static abstract void Bounds(Curve2DAdaptorBase C, out double Ufirst, out double Ulast);
 
-    static abstract int NbPoints(Adaptor2d_Curve2d C);
+    static abstract int NbPoints(Curve2DAdaptorBase C);
 
-    static abstract void Value(Adaptor2d_Curve2d C, int Index, out Point3D Pt, out double Tol, out double U);
+    static abstract void Value(Curve2DAdaptorBase C, int Index, out Point3D Pt, out double Tol, out double U);
 
-    static abstract bool IsVertex(Adaptor2d_Curve2d C, int Index);
+    static abstract bool IsVertex(Curve2DAdaptorBase C, int Index);
 
-    static abstract void Vertex(Adaptor2d_Curve2d C, int Index, out Adaptor3d_HVertex V);
+    static abstract void Vertex(Curve2DAdaptorBase C, int Index, out HVertex V);
 
-    static abstract int NbSegments(Adaptor2d_Curve2d C);
+    static abstract int NbSegments(Curve2DAdaptorBase C);
 
-    static abstract bool HasFirstPoint(Adaptor2d_Curve2d C, int Index, out int IndFirst);
+    static abstract bool HasFirstPoint(Curve2DAdaptorBase C, int Index, out int IndFirst);
 
-    static abstract bool HasLastPoint(Adaptor2d_Curve2d C, int Index, out int IndLast);
+    static abstract bool HasLastPoint(Curve2DAdaptorBase C, int Index, out int IndLast);
 
-    static abstract bool IsAllSolution(Adaptor2d_Curve2d C);
+    static abstract bool IsAllSolution(Curve2DAdaptorBase C);
 }
 
 /// <summary>
@@ -78,22 +83,22 @@ public interface IIntStart_PathPoint<TSelf>
     where TSelf : struct, IIntStart_PathPoint<TSelf>
 {
     /// <summary>A point on a vertex of an arc.</summary>
-    static abstract TSelf Create(in Point3D P, double Tol, Adaptor3d_HVertex V, Adaptor2d_Curve2d A, double Parameter);
+    static abstract TSelf Create(in Point3D P, double Tol, HVertex V, Curve2DAdaptorBase A, double Parameter);
 
     /// <summary>A new point on an arc.</summary>
-    static abstract TSelf Create(in Point3D P, double Tol, Adaptor2d_Curve2d A, double Parameter);
+    static abstract TSelf Create(in Point3D P, double Tol, Curve2DAdaptorBase A, double Parameter);
 
     /// <summary>Sets a point on a vertex of an arc.</summary>
-    void SetValue(in Point3D P, double Tol, Adaptor3d_HVertex V, Adaptor2d_Curve2d A, double Parameter);
+    void SetValue(in Point3D P, double Tol, HVertex V, Curve2DAdaptorBase A, double Parameter);
 
     /// <summary>Sets a new point on an arc (the vertex is kept, as in OCCT).</summary>
-    void SetValue(in Point3D P, double Tol, Adaptor2d_Curve2d A, double Parameter);
+    void SetValue(in Point3D P, double Tol, Curve2DAdaptorBase A, double Parameter);
 
     bool IsNew();
 
-    Adaptor3d_HVertex Vertex();
+    HVertex Vertex();
 
-    Adaptor2d_Curve2d Arc();
+    Curve2DAdaptorBase Arc();
 
     double Parameter();
 }
@@ -105,7 +110,7 @@ public interface IIntStart_PathPoint<TSelf>
 public interface IIntStart_Segment<ThePathPoint>
 {
     /// <summary>Sets the arc (and forgets the limit points).</summary>
-    void SetValue(Adaptor2d_Curve2d A);
+    void SetValue(Curve2DAdaptorBase A);
 
     /// <summary>Sets the first or the last point.</summary>
     void SetLimitPoint(in ThePathPoint V, bool First);
@@ -211,7 +216,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
     /// <paramref name="TolBoundary"/> defines whether a curve is on the quadric, <paramref name="TolTangency"/> whether a
     /// point is; with <paramref name="RecheckOnRegularity"/>, a whole arc on a regular edge is searched as a segment.
     /// </summary>
-    public void Perform(TheFunction Func, Adaptor3d_TopolTool Domain, double TolBoundary, double TolTangency,
+    public void Perform(TheFunction Func, TopolTool Domain, double TolBoundary, double TolTangency,
                         bool RecheckOnRegularity = false)
     {
         done = false;
@@ -236,7 +241,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
 
         while (Domain.More())
         {
-            Adaptor2d_Curve2d A = Domain.Value();
+            Curve2DAdaptorBase A = Domain.Value();
             if (!TheSOBTool.HasBeenSeen(A))
             {
                 Func.Set(A);
@@ -264,7 +269,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
                     TheSOBTool.Value(A, i, out pt, out tol, out prm);
                     if (TheSOBTool.IsVertex(A, i))
                     {
-                        TheSOBTool.Vertex(A, i, out Adaptor3d_HVertex vtx);
+                        TheSOBTool.Vertex(A, i, out HVertex vtx);
                         spnt.Append(ThePathPoint.Create(pt, tol, vtx, A, prm));
                     }
                     else
@@ -350,10 +355,10 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
 
     // Find the vertex of the arc A restriction solutions. It stores
     // Vertex in the list solutions pnt.
-    private static void FindVertex(Adaptor2d_Curve2d A, Adaptor3d_TopolTool Domain, TheFunction Func,
+    private static void FindVertex(Curve2DAdaptorBase A, TopolTool Domain, TheFunction Func,
                                    NCollection_Sequence<ThePathPoint> pnt, double Toler)
     {
-        Adaptor3d_HVertex vtx;
+        HVertex vtx;
         double param, valf;
         int itemp;
 
@@ -379,7 +384,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
         }
     }
 
-    private static bool IsDegenerated(Adaptor3d_CurveOnSurface theCurve)
+    private static bool IsDegenerated(CurveOnSurface theCurve)
     {
         if (theCurve.GetType() == Circle)
         {
@@ -439,7 +444,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
     // On utilise la fonction math_FunctionAllRoots. Ne convient donc que pour
     // des arcs ayant un point debut et un point de fin (intervalle ferme de
     // parametrage).
-    private static void BoundedArc(Adaptor2d_Curve2d A, Adaptor3d_TopolTool Domain, double Pdeb, double Pfin,
+    private static void BoundedArc(Curve2DAdaptorBase A, TopolTool Domain, double Pdeb, double Pfin,
                                    TheFunction Func, NCollection_Sequence<ThePathPoint> pnt,
                                    NCollection_Sequence<TheSegment> seg, double TolBoundary, double TolTangency,
                                    out bool Arcsol, bool RecheckOnRegularity)
@@ -580,45 +585,45 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
             if (TypeQuad != OtherSurface) // intersection of boundary curve and quadric surface
             {
                 // Exact solution
-                Adaptor3d_Surface aSurf = Func.Surface();
-                Adaptor3d_CurveOnSurface ConS = new(A, aSurf);
+                SurfaceAdaptorBase aSurf = Func.Surface();
+                CurveOnSurface ConS = new(A, aSurf);
                 TypeConS = ConS.GetType();
                 // OCCT_DEBUG: a Geom_Curve of the arc, for debugging only: left out.
                 // C++: occ::handle<Adaptor3d_CurveOnSurface> HConS = new Adaptor3d_CurveOnSurface(ConS), a copy of a
                 // local that is not used afterwards: the port uses the local.
-                Adaptor3d_CurveOnSurface HConS = ConS;
-                Geom_Surface? QuadSurf = null;
+                CurveOnSurface HConS = ConS;
+                Surface? QuadSurf = null;
                 switch (TypeQuad)
                 {
                     case Plane:
                     {
-                        QuadSurf = new Geom_Plane(aQuadric.Plane());
+                        QuadSurf = new PlaneSurface(aQuadric.Plane());
                         break;
                     }
                     case SurfaceKind.Cylinder:
                     {
-                        QuadSurf = new Geom_CylindricalSurface(aQuadric.Cylinder());
+                        QuadSurf = new CylindricalSurface(aQuadric.Cylinder());
                         break;
                     }
                     case SurfaceKind.Cone:
                     {
-                        QuadSurf = new Geom_ConicalSurface(aQuadric.Cone());
+                        QuadSurf = new ConicalSurface(aQuadric.Cone());
                         break;
                     }
                     case SurfaceKind.Sphere:
                     {
-                        QuadSurf = new Geom_SphericalSurface(aQuadric.Sphere());
+                        QuadSurf = new SphericalSurface(aQuadric.Sphere());
                         break;
                     }
                     case SurfaceKind.Torus:
                     {
-                        QuadSurf = new Geom_ToroidalSurface(aQuadric.Torus());
+                        QuadSurf = new ToroidalSurface(aQuadric.Torus());
                         break;
                     }
                     default:
                         break;
                 }
-                GeomAdaptor_Surface GAHsurf = new(QuadSurf!);
+                SurfaceAdaptor GAHsurf = new(QuadSurf!);
 
                 if ((TypeConS == Line || TypeConS == Circle || TypeConS == Ellipse
                      || TypeConS == Parabola || TypeConS == Hyperbola)
@@ -1044,7 +1049,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
     // If confused, you should find this vertex in the list of
     // Start. It then returns the position of this point in the list pnt.
     // Otherwise, add the point in the list.
-    private static void PointProcess(in Point3D Pt, double Para, Adaptor2d_Curve2d A, Adaptor3d_TopolTool Domain,
+    private static void PointProcess(in Point3D Pt, double Para, Curve2DAdaptorBase A, TopolTool Domain,
                                      NCollection_Sequence<ThePathPoint> pnt, double Tol, out int Range)
     {
         int k;
@@ -1053,7 +1058,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
 
         Range = 0; // C++ leaves Range unwritten when no case below applies (never: a point is always found or added)
         int Nbsol = pnt.Length();
-        Adaptor3d_HVertex vtx;
+        HVertex vtx;
         ThePathPoint ptsol = new();
 
         Domain.Initialize(A);
@@ -1152,7 +1157,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
         }
     }
 
-    private static bool IsRegularity(Adaptor2d_Curve2d A, Adaptor3d_TopolTool aDomain)
+    private static bool IsRegularity(Curve2DAdaptorBase A, TopolTool aDomain)
     {
         object? anEAddress = aDomain.Edge();
         if (anEAddress == null)
@@ -1160,12 +1165,12 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
             return false;
         }
 
-        TopoDS_Edge anE = (TopoDS_Edge)anEAddress;
+        Edge anE = (Edge)anEAddress;
 
-        return (BRep_Tool.HasContinuity(anE));
+        return (Tool.HasContinuity(anE));
     }
 
-    private static int TreatLC(Adaptor2d_Curve2d A, Adaptor3d_TopolTool aDomain, in IntSurf_Quadric aQuadric,
+    private static int TreatLC(Curve2DAdaptorBase A, TopolTool aDomain, in IntSurf_Quadric aQuadric,
                                double TolBoundary, NCollection_Sequence<ThePathPoint> pnt)
     {
         int anExitCode = 1, aNbExt;
@@ -1176,15 +1181,15 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
             return anExitCode;
         }
 
-        TopoDS_Edge anE = (TopoDS_Edge)anEAddress;
+        Edge anE = (Edge)anEAddress;
 
-        if (BRep_Tool.Degenerated(anE))
+        if (Tool.Degenerated(anE))
         {
             return anExitCode;
         }
 
         CurveKind aTypeE;
-        BRepAdaptor_Curve aBAC = new(anE);
+        EdgeCurveAdaptor aBAC = new(anE);
         aTypeE = aBAC.GetType();
 
         if (aTypeE != Line)
@@ -1201,12 +1206,12 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
         }
 
         double f, l, U1f, U1l, U2f, U2l, UEgde, TOL, aDist, aR, aRRel, Tol;
-        Geom_Curve aCEdge = BRep_Tool.Curve(anE, out f, out l)!;
+        Curve3D aCEdge = Tool.Curve(anE, out f, out l)!;
 
         Cylinder aCyl = aQuadric.Cylinder();
         Axis3D anAx1 = aCyl.Axis();
         Line3D aLin = new(anAx1);
-        Geom_Line aCAxis = new(aLin);
+        LineCurve3D aCAxis = new(aLin);
         aR = aCyl.Radius();
 
         U1f = aCAxis.FirstParameter();
@@ -1215,16 +1220,16 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
         U2f = aCEdge.FirstParameter();
         U2l = aCEdge.LastParameter();
 
-        GeomAdaptor_Curve C1 = new(), C2 = new();
+        CurveAdaptor C1 = new(), C2 = new();
 
         C1.Load(aCAxis);
         C2.Load(aCEdge);
 
         Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
-        Extrema_ExtCC anExtCC = new(C1, C2, U1f, U1l, U2f, U2l, Tol, Tol);
+        ExtCC anExtCC = new(C1, C2, U1f, U1l, U2f, U2l, Tol, Tol);
 
-        aNbExt = anExtCC.NbExt();
+        aNbExt = anExtCC.ExtCount;
         if (aNbExt != 1)
         {
             return anExitCode;
@@ -1232,7 +1237,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
 
         Point3D P1, PEdge;
 
-        anExtCC.Points(1, out Extrema_POnCurv PC1, out Extrema_POnCurv PC2);
+        anExtCC.Points(1, out POnCurv PC1, out POnCurv PC2);
 
         P1 = PC1.Value();
         PEdge = PC2.Value();

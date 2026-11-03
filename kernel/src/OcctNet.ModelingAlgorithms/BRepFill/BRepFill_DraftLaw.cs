@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -21,7 +22,7 @@ public sealed class BRepFill_DraftLaw : BRepFill_Edge3DLaw
     }
 
     /// <summary>The law along <paramref name="Path"/>, with copies of <paramref name="Law"/>.</summary>
-    public BRepFill_DraftLaw(in TopoDS_Wire Path, GeomFill_LocationDraft Law) : base(Path, Law)
+    public BRepFill_DraftLaw(in Wire Path, GeomFill_LocationDraft Law) : base(Path, Law)
     {
     }
 

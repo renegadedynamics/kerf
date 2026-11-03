@@ -3,9 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Geometry.Properties;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 
@@ -27,17 +31,17 @@ public sealed class GeomFill_SectionPlacement
     private Axis3D TheAxe;
     private readonly double Gabarit;
     private GeomFill_LocationLaw myLaw;
-    private readonly GeomAdaptor_Curve myAdpSection;
-    private readonly Geom_Curve? mySection;
+    private readonly CurveAdaptor myAdpSection;
+    private readonly Curve3D? mySection;
     private double SecParam;
     private double PathParam;
     private double Dist;
     private double AngleMax;
-    private readonly Extrema_ExtPC myExt;
+    private readonly CurvePointExtrema myExt;
     private readonly bool myIsPoint;
     private readonly Point3D myPoint;
 
-    private static void Tangente(Adaptor3d_Curve Path, double Param, out Point3D P, out Vector3D Tang)
+    private static void Tangente(CurveAdaptorBase Path, double Param, out Point3D P, out Vector3D Tang)
     {
         Path.D1(Param, out P, out Tang);
         double Norm = Tang.Magnitude();
@@ -95,7 +99,7 @@ public sealed class GeomFill_SectionPlacement
     }
 
     // Examines an extremum to update Dist and Param.
-    private static void DistMini(Extrema_ExtPC Ext, Adaptor3d_Curve C, ref double Dist, ref double Param)
+    private static void DistMini(CurvePointExtrema Ext, CurveAdaptorBase C, ref double Dist, ref double Param)
     {
         double dist1, dist2;
         int ii;
@@ -116,9 +120,9 @@ public sealed class GeomFill_SectionPlacement
             }
         }
 
-        if (Ext.IsDone())
+        if (Ext.IsDone)
         {
-            for (ii = 1; ii <= Ext.NbExt(); ii++)
+            for (ii = 1; ii <= Ext.ExtCount; ii++)
             {
                 if (Ext.SquareDistance(ii) < Dist2)
                 {
@@ -131,22 +135,22 @@ public sealed class GeomFill_SectionPlacement
     }
 
     /// <summary>Prepares the placement of Section (a Geom_Curve or a Geom_CartesianPoint) along the location law L.</summary>
-    public GeomFill_SectionPlacement(GeomFill_LocationLaw L, Geom_Geometry Section)
+    public GeomFill_SectionPlacement(GeomFill_LocationLaw L, Geometry3D Section)
     {
         myLaw = L;
         SecParam = 0.0;
         PathParam = 0.0;
         Dist = RealLast();
         AngleMax = 0.0;
-        myAdpSection = new GeomAdaptor_Curve();
-        myExt = new Extrema_ExtPC();
+        myAdpSection = new CurveAdaptor();
+        myExt = new CurvePointExtrema();
         TheAxe = new Axis3D();
 
         done = false;
         isplan = false;
         myIsPoint = false;
 
-        if (Section is Geom_CartesianPoint aPoint && Section.GetType() == typeof(Geom_CartesianPoint))
+        if (Section is CartesianPoint aPoint && Section.GetType() == typeof(CartesianPoint))
         {
             myIsPoint = true;
             myPoint = aPoint.Pnt();
@@ -154,7 +158,7 @@ public sealed class GeomFill_SectionPlacement
         }
         else
         {
-            Geom_Curve CurveSection = (Geom_Curve)Section;
+            Curve3D CurveSection = (Curve3D)Section;
             myAdpSection.Load(CurveSection);
             mySection = CurveSection;
         }
@@ -170,7 +174,7 @@ public sealed class GeomFill_SectionPlacement
         }
         else
         {
-            BndLib_Add3dCurve.Add(myAdpSection, 1.0e-4, ref box);
+            Add3dCurve.Add(myAdpSection, 1.0e-4, ref box);
         }
         box.Get(out aXmin, out aYmin, out aZmin, out aXmax, out aYmax, out aZmax);
 
@@ -214,7 +218,7 @@ public sealed class GeomFill_SectionPlacement
                     break;
                 case BezierCurve:
                 case BSplineCurve:
-                    NbPoles = myAdpSection.NbPoles();
+                    NbPoles = myAdpSection.PoleCount;
                     break;
                 default:
                     NbPoles = 21;
@@ -227,13 +231,13 @@ public sealed class GeomFill_SectionPlacement
                 NCollection_HArray1<Point3D> Pnts;
                 double first = myAdpSection.FirstParameter();
                 double last = myAdpSection.LastParameter();
-                if (myAdpSection.IsPeriodic())
+                if (myAdpSection.IsPeriodic)
                 {
                     // Correct boundaries to avoid mistake of LocateU
-                    Geom_Curve aCurve = myAdpSection.Curve()!;
-                    if (aCurve.GetType() == typeof(Geom_TrimmedCurve))
+                    Curve3D aCurve = myAdpSection.Curve()!;
+                    if (aCurve.GetType() == typeof(TrimmedCurve3D))
                     {
-                        aCurve = ((Geom_TrimmedCurve)aCurve).BasisCurve();
+                        aCurve = ((TrimmedCurve3D)aCurve).BasisCurve();
                     }
                     double Ufirst = aCurve.FirstParameter();
                     double aPeriod = aCurve.Period();
@@ -251,7 +255,7 @@ public sealed class GeomFill_SectionPlacement
                 double t, delta;
                 if (myAdpSection.GetType() == BSplineCurve)
                 {
-                    Geom_BSplineCurve BC = (Geom_BSplineCurve)myAdpSection.Curve()!;
+                    BSplineCurve3D BC = (BSplineCurve3D)myAdpSection.Curve()!;
                     int I1, I2, I3, I4;
                     BC.LocateU(first, global::Kerf.Engine.Foundation.Precision.Confusion(), out I1, out I2);
                     BC.LocateU(last, global::Kerf.Engine.Foundation.Precision.Confusion(), out I3, out I4);
@@ -271,7 +275,7 @@ public sealed class GeomFill_SectionPlacement
                     {
                         NbPnts += NbLocalPnts;
                     }
-                    if (!myAdpSection.IsClosed())
+                    if (!myAdpSection.IsClosed)
                     {
                         NbPnts++;
                     }
@@ -307,7 +311,7 @@ public sealed class GeomFill_SectionPlacement
                             t += delta;
                         }
                     }
-                    if (!myAdpSection.IsClosed())
+                    if (!myAdpSection.IsClosed)
                     {
                         Pnts.SetValue(nb, myAdpSection.Value(last));
                     }
@@ -315,7 +319,7 @@ public sealed class GeomFill_SectionPlacement
                 else // other type
                 {
                     int NbPnts = NbPoles - 1;
-                    if (!myAdpSection.IsClosed())
+                    if (!myAdpSection.IsClosed)
                     {
                         NbPnts++;
                     }
@@ -326,13 +330,13 @@ public sealed class GeomFill_SectionPlacement
                         t = first + i * delta;
                         Pnts.SetValue(i + 1, myAdpSection.Value(t));
                     }
-                    if (!myAdpSection.IsClosed())
+                    if (!myAdpSection.IsClosed)
                     {
                         Pnts.SetValue(NbPnts, myAdpSection.Value(last));
                     }
                 }
 
-                GeomLib.AxeOfInertia(Pnts, out Frame3D axe, out bool issing, global::Kerf.Engine.Foundation.Precision.Confusion());
+                global::Kerf.Engine.Geometry.Library.GeomLib.AxeOfInertia(Pnts, out Frame3D axe, out bool issing, global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (!issing)
                 {
                     isplan = true;
@@ -355,20 +359,20 @@ public sealed class GeomFill_SectionPlacement
     /// <summary>Computes the placement on the curve of the location law.</summary>
     public void Perform(double Tol)
     {
-        Adaptor3d_Curve Path;
+        CurveAdaptorBase Path;
         Path = myLaw.GetCurve()!;
         Perform(Path, Tol);
     }
 
     /// <summary>Computes the placement on Path.</summary>
-    public void Perform(Adaptor3d_Curve Path, double Tol)
+    public void Perform(CurveAdaptorBase Path, double Tol)
     {
         double IntTol = 1.0e-5;
         double DistCenter = global::Kerf.Engine.Foundation.Precision.Infinite();
 
         if (myIsPoint)
         {
-            Extrema_ExtPC Projector = new Extrema_ExtPC(myPoint, Path, global::Kerf.Engine.Foundation.Precision.Confusion());
+            CurvePointExtrema Projector = new CurvePointExtrema(myPoint, Path, global::Kerf.Engine.Foundation.Precision.Confusion());
             DistMini(Projector, Path, ref Dist, ref PathParam);
             AngleMax = M_PI / 2;
         }
@@ -388,7 +392,7 @@ public sealed class GeomFill_SectionPlacement
             if (Dist > Tol)
             { // On Cherche un meilleur point sur la section
                 myExt.Perform(PonPath);
-                if (myExt.IsDone())
+                if (myExt.IsDone)
                 {
                     DistMini(myExt, myAdpSection, ref Dist, ref SecParam);
                     PonSec = myAdpSection.Value(SecParam);
@@ -430,8 +434,8 @@ public sealed class GeomFill_SectionPlacement
 
                 // (1.2) Intersection Plan-courbe
                 CoordinateSystem axe = new CoordinateSystem(TheAxe.Location(), TheAxe.Direction());
-                Geom_Plane plan = new Geom_Plane(axe);
-                GeomAdaptor_Surface adplan = new GeomAdaptor_Surface(plan);
+                PlaneSurface plan = new PlaneSurface(axe);
+                SurfaceAdaptor adplan = new SurfaceAdaptor(plan);
                 IntCurveSurface_HInter Intersector = new IntCurveSurface_HInter();
                 Intersector.Perform(Path, adplan);
                 if (Intersector.IsDone())
@@ -476,7 +480,7 @@ public sealed class GeomFill_SectionPlacement
                         if (Dist > Tol)
                         { // On Cherche un meilleur point sur la section
                             myExt.Perform(PonPath);
-                            if (myExt.IsDone())
+                            if (myExt.IsDone)
                             {
                                 DistMini(myExt, myAdpSection, ref Dist, ref SecParam);
                                 PonSec = myAdpSection.Value(SecParam);
@@ -494,7 +498,7 @@ public sealed class GeomFill_SectionPlacement
             {
                 // (2.1) Distance avec les extremites ...
                 myExt.Perform(PonPath);
-                if (myExt.IsDone())
+                if (myExt.IsDone)
                 {
                     DistMini(myExt, myAdpSection, ref distaux, ref taux);
                     if (distaux < Dist)
@@ -509,9 +513,9 @@ public sealed class GeomFill_SectionPlacement
                     Tangente(Path, Path.LastParameter(), out P, out dp1);
                     alpha = EvalAngle(VRef, dp1);
                     myExt.Perform(P);
-                    if (myExt.IsDone())
+                    if (myExt.IsDone)
                     {
-                        if (myExt.IsDone())
+                        if (myExt.IsDone)
                         {
                             DistMini(myExt, myAdpSection, ref distaux, ref taux);
                             if (Choix(distaux, alpha))
@@ -530,15 +534,15 @@ public sealed class GeomFill_SectionPlacement
                 // (2.2) Distance courbe-courbe
                 if (!Trouve)
                 {
-                    Extrema_ExtCC Ext = new Extrema_ExtCC(Path, myAdpSection, Path.FirstParameter(), Path.LastParameter(),
+                    ExtCC Ext = new ExtCC(Path, myAdpSection, Path.FirstParameter(), Path.LastParameter(),
                                                           myAdpSection.FirstParameter(), myAdpSection.LastParameter(),
                                                           Path.Resolution(Tol / 100), myAdpSection.Resolution(Tol / 100));
-                    if (Ext.IsDone() && !Ext.IsParallel())
+                    if (Ext.IsDone && !Ext.IsParallel)
                     {
-                        for (ii = 1; ii <= Ext.NbExt(); ii++)
+                        for (ii = 1; ii <= Ext.ExtCount; ii++)
                         {
                             distaux = Math.Sqrt(Ext.SquareDistance(ii));
-                            Ext.Points(ii, out Extrema_POnCurv P1, out Extrema_POnCurv P2);
+                            Ext.Points(ii, out POnCurv P1, out POnCurv P2);
                             Tangente(Path, P1.Parameter(), out P, out dp1);
                             alpha = EvalAngle(VRef, dp1);
                             if (Choix(distaux, alpha))
@@ -557,10 +561,10 @@ public sealed class GeomFill_SectionPlacement
                     {
                         // Si l'on a toujours rien, on essai une distance point/path
                         // c'est la derniere chance.
-                        Extrema_ExtPC PExt = new Extrema_ExtPC();
+                        CurvePointExtrema PExt = new CurvePointExtrema();
                         PExt.Initialize(Path, Path.FirstParameter(), Path.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
                         PExt.Perform(PonSec);
-                        if (PExt.IsDone())
+                        if (PExt.IsDone)
                         {
                             // modified for OCC13595  Tue Oct 17 15:00:08 2006.BEGIN
                             DistMini(PExt, Path, ref distaux, ref taux);
@@ -587,7 +591,7 @@ public sealed class GeomFill_SectionPlacement
     public void Perform(double Param, double Tol)
     {
         done = true;
-        Adaptor3d_Curve Path;
+        CurveAdaptorBase Path;
         Path = myLaw.GetCurve()!;
 
         PathParam = Param;
@@ -611,7 +615,7 @@ public sealed class GeomFill_SectionPlacement
             if (Dist > Tol)
             { // On Cherche un meilleur point sur la section
                 myExt.Perform(PonPath);
-                if (myExt.IsDone())
+                if (myExt.IsDone)
                 {
                     DistMini(myExt, myAdpSection, ref Dist, ref SecParam);
                     PonSec = myAdpSection.Value(SecParam);
@@ -721,9 +725,9 @@ public sealed class GeomFill_SectionPlacement
     /// The section in the frame of the location law (a new curve); WithTranslation forces the contact of the
     /// section and the path.
     /// </summary>
-    public Geom_Curve Section(bool WithTranslation)
+    public Curve3D Section(bool WithTranslation)
     {
-        Geom_Curve TheSection = (Geom_Curve)mySection!.Copy();
+        Curve3D TheSection = (Curve3D)mySection!.Copy();
         TheSection.Transform(Transformation(WithTranslation, false));
         return TheSection;
     }
@@ -732,9 +736,9 @@ public sealed class GeomFill_SectionPlacement
     /// The section in the frame of the location law, rotated so that its normal is the law's (a new curve);
     /// WithTranslation forces the contact of the section and the path.
     /// </summary>
-    public Geom_Curve ModifiedSection(bool WithTranslation)
+    public Curve3D ModifiedSection(bool WithTranslation)
     {
-        Geom_Curve TheSection = (Geom_Curve)mySection!.Copy();
+        Curve3D TheSection = (Curve3D)mySection!.Copy();
         TheSection.Transform(Transformation(WithTranslation, true));
         return TheSection;
     }
@@ -745,7 +749,7 @@ public sealed class GeomFill_SectionPlacement
         double Eps = 1.0e-10;
         Direction3D D;
         Vector3D PathNormal = new Vector3D();
-        GeomLProp_CLProps CP = new GeomLProp_CLProps(mySection!, SecParam, 2, Eps);
+        CLProps CP = new CLProps(mySection!, SecParam, 2, Eps);
         if (CP.IsTangentDefined())
         {
             CP.Tangent(out D);

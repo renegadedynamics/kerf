@@ -1,14 +1,18 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
 using static Occt.HLRBRep_TypeOfResultingEdge;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -54,17 +58,17 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
         return aRecords;
     }
 
-    private static TopoDS_Shape Read(string theText)
+    private static Shape Read(string theText)
     {
-        BRepTools.Read(out TopoDS_Shape aShape, new StringReader(theText));
+        BrepTools.Read(out Shape aShape, new StringReader(theText));
         aShape.TShape()?.FreezeGraph(); // a caller's shape
         return aShape;
     }
 
-    private static string Text(in TopoDS_Shape theS)
+    private static string Text(in Shape theS)
     {
         var aS = new StringWriter(CultureInfo.InvariantCulture) { NewLine = "\n" };
-        BRepTools.Write(theS, aS, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3);
+        BrepTools.Write(theS, aS, true, false, FormatVersion.FormatVersion_VERSION_3);
         return aS.ToString();
     }
 
@@ -74,15 +78,15 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
         public readonly List<string> Differences = [];
     }
 
-    private static void CompareText(Tally theTally, string theWhat, string theNative, in TopoDS_Shape thePort)
+    private static void CompareText(Tally theTally, string theWhat, string theNative, in Shape thePort)
     {
         theTally.Results++;
-        if (!thePort.IsNull() && !thePort.TShape()!.IsFrozen)
+        if (!thePort.IsNull && !thePort.TShape()!.IsFrozen)
         {
             theTally.NotFrozen++;
             theTally.Differences.Add($"{theWhat}: the port's result isn't frozen");
         }
-        string aPort = thePort.IsNull() ? "" : Text(thePort);
+        string aPort = thePort.IsNull ? "" : Text(thePort);
         if (aPort.Length > 0 && aPort[^1] != '\n')
         {
             aPort += "\n";
@@ -110,7 +114,7 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
             theTally.FreeMasked++;
             return;
         }
-        BRepTools.Read(out TopoDS_Shape aN, new StringReader(theNative));
+        BrepTools.Read(out Shape aN, new StringReader(theNative));
         CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aN, thePort, new CanonicalOptions { CheckValidity = false });
         if (aCanon.IsIdentical)
         {
@@ -125,18 +129,18 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
         theTally.Differences.Add($"{theWhat}: {aDiff}; canonically {aCanon}");
     }
 
-    private static TopoDS_Shape FirstFace(in TopoDS_Shape theS)
+    private static Shape FirstFace(in Shape theS)
     {
-        TopExp_Explorer anExp = new(theS, TopAbs_FACE);
-        return anExp.More() ? anExp.Current() : new TopoDS_Shape();
+        Explorer anExp = new(theS, ShapeType.Face);
+        return anExp.More() ? anExp.Current() : new Shape();
     }
 
     private static int ViewIndex(string theView) => Array.IndexOf(HlrDataRecorder.THE_VIEWS, theView);
 
     // The port's results of a case, in the recorder's order (algo.cpp's RecExact, RecPoly and RecReflect)
-    private static List<(string Kind, TopoDS_Shape Shape)> RunCase(string[] theHead, List<TopoDS_Shape> theInputs)
+    private static List<(string Kind, Shape Shape)> RunCase(string[] theHead, List<Shape> theInputs)
     {
-        List<(string, TopoDS_Shape)> aResults = [];
+        List<(string, Shape)> aResults = [];
         switch (theHead[1])
         {
             case "exact":
@@ -144,7 +148,7 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
                 int aView = ViewIndex(theHead[3]);
                 int nbIso = int.Parse(theHead[4], CultureInfo.InvariantCulture);
                 HLRBRep_Algo anAlgo = new();
-                foreach (TopoDS_Shape aS in theInputs)
+                foreach (Shape aS in theInputs)
                 {
                     anAlgo.Add(aS, nbIso);
                 }
@@ -174,7 +178,7 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
             {
                 int aView = ViewIndex(theHead[3]);
                 HLRBRep_PolyAlgo anAlgo = new();
-                foreach (TopoDS_Shape aS in theInputs)
+                foreach (Shape aS in theInputs)
                 {
                     anAlgo.Load(aS);
                 }
@@ -272,9 +276,9 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
             }
             aTally.Cases++;
             string aCase = string.Join(' ', aWords.Skip(1));
-            List<TopoDS_Shape> aShapes = InputNames(aWords).Select(n => Read(anInputs[n])).ToList();
+            List<Shape> aShapes = InputNames(aWords).Select(n => Read(anInputs[n])).ToList();
             List<string> aBefore = aShapes.Select(s => Text(s)).ToList();
-            List<(string Kind, TopoDS_Shape Shape)> aPort;
+            List<(string Kind, Shape Shape)> aPort;
             try
             {
                 aPort = RunCase(aWords, aShapes);

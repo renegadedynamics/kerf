@@ -3,9 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -16,7 +18,7 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepBuilderAPI_FindPlane
 {
-    private Geom_Plane? myPlane;
+    private PlaneSurface? myPlane;
 
     /// <summary>An empty algorithm; give the shape with <see cref="Init"/>.</summary>
     public BRepBuilderAPI_FindPlane()
@@ -24,22 +26,22 @@ public sealed class BRepBuilderAPI_FindPlane
     }
 
     /// <summary>Finds the plane containing the edges of <paramref name="S"/>.</summary>
-    public BRepBuilderAPI_FindPlane(in TopoDS_Shape S, double Tol = -1)
+    public BRepBuilderAPI_FindPlane(in Shape S, double Tol = -1)
     {
         Init(S, Tol);
     }
 
     /// <summary>Finds the plane containing the edges of <paramref name="S"/>.</summary>
-    public void Init(in TopoDS_Shape S, double Tol = -1)
+    public void Init(in Shape S, double Tol = -1)
     {
         double tolerance = Tol;
         myPlane = null;
 
         // compute the tolerance
-        var ex = new TopExp_Explorer();
-        for (ex.Init(S, TopAbs_EDGE); ex.More(); ex.Next())
+        var ex = new Explorer();
+        for (ex.Init(S, ShapeType.Edge); ex.More(); ex.Next())
         {
-            double t = BRep_Tool.Tolerance(TopoDS.Edge(ex.Current()));
+            double t = Tool.Tolerance(ShapeCasts.Edge(ex.Current()));
             if (t > tolerance)
             {
                 tolerance = t;
@@ -49,45 +51,45 @@ public sealed class BRepBuilderAPI_FindPlane
         double tol2 = tolerance * tolerance;
         // try to find an analytical curve and calculate points
         bool found = false;
-        Geom_Plane? P = null;
+        PlaneSurface? P = null;
         var points = new NCollection_Sequence<Point3D>();
         int nbPnts;
 
-        for (ex.Init(S, TopAbs_EDGE); ex.More(); ex.Next())
+        for (ex.Init(S, ShapeType.Edge); ex.More(); ex.Next())
         {
-            Geom_Curve? c3d = BRep_Tool.Curve(TopoDS.Edge(ex.Current()), out Placement loc, out double first,
+            Curve3D? c3d = Tool.Curve(ShapeCasts.Edge(ex.Current()), out Placement loc, out double first,
                                               out double last);
             if (c3d is not null)
             {
-                var c3dptr = (Geom_Curve)c3d.Transformed(loc.Transformation());
+                var c3dptr = (Curve3D)c3d.Transformed(loc.Transformation());
 
                 Type cType = c3dptr.GetType();
 
-                if (cType == typeof(Geom_Line))
+                if (cType == typeof(LineCurve3D))
                 {
                     nbPnts = 3;
                 }
-                else if ((cType == typeof(Geom_Circle)) || (cType == typeof(Geom_Ellipse))
-                         || (cType == typeof(Geom_Parabola))
-                         || (cType == typeof(Geom_Hyperbola)))
+                else if ((cType == typeof(CircleCurve3D)) || (cType == typeof(EllipseCurve3D))
+                         || (cType == typeof(ParabolaCurve3D))
+                         || (cType == typeof(HyperbolaCurve3D)))
                 {
                     nbPnts = 4;
                     if (!found)
                     {
                         found = true;
-                        var Co = (Geom_Conic)c3dptr;
-                        P = new Geom_Plane(new CoordinateSystem(Co.Position()));
+                        var Co = (ConicCurve3D)c3dptr;
+                        P = new PlaneSurface(new CoordinateSystem(Co.Position()));
                     }
                 }
-                else if (cType == typeof(Geom_BezierCurve))
+                else if (cType == typeof(BezierCurve3D))
                 {
-                    var Co = (Geom_BezierCurve)c3dptr;
-                    nbPnts = Co.NbPoles();
+                    var Co = (BezierCurve3D)c3dptr;
+                    nbPnts = Co.PoleCount;
                 }
-                else if (cType == typeof(Geom_BSplineCurve))
+                else if (cType == typeof(BSplineCurve3D))
                 {
-                    var Co = (Geom_BSplineCurve)c3dptr;
-                    nbPnts = Co.NbPoles();
+                    var Co = (BSplineCurve3D)c3dptr;
+                    nbPnts = Co.PoleCount;
                 }
                 else
                 {
@@ -153,7 +155,7 @@ public sealed class BRepBuilderAPI_FindPlane
                         Direction3D D1 = new(V1), D2 = new(new Vector3D(p0, p2));
                         if (!D1.IsParallel(D2, global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
-                            P = new Geom_Plane(new CoordinateSystem(p0, D1.Crossed(D2), D1));
+                            P = new PlaneSurface(new CoordinateSystem(p0, D1.Crossed(D2), D1));
                             found = true;
                         }
                     }
@@ -189,7 +191,7 @@ public sealed class BRepBuilderAPI_FindPlane
     }
 
     /// <summary>The plane containing the edges of the shape (frozen), or null if none was found.</summary>
-    public Geom_Plane? Plane()
+    public PlaneSurface? Plane()
     {
         return myPlane;
     }

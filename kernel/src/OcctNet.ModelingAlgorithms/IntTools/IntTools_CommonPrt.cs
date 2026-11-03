@@ -4,7 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -15,9 +16,9 @@ namespace Occt;
 /// </remarks>
 public sealed class IntTools_CommonPrt
 {
-    private TopoDS_Edge myEdge1 = new();
-    private TopoDS_Edge myEdge2 = new();
-    private TopAbs_ShapeEnum myType;
+    private Edge myEdge1 = new();
+    private Edge myEdge2 = new();
+    private ShapeType myType;
     private IntTools_Range myRange1 = new();
     private double myVertPar1;
     private double myVertPar2;
@@ -26,10 +27,10 @@ public sealed class IntTools_CommonPrt
     private Point3D myPnt1;
     private Point3D myPnt2;
 
-    /// <summary>An empty common part, of type <see cref="TopAbs_SHAPE"/>.</summary>
+    /// <summary>An empty common part, of type <c>Shape</c>.</summary>
     public IntTools_CommonPrt()
     {
-        myType = TopAbs_SHAPE;
+        myType = ShapeType.Shape;
         myAllNullFlag = false;
         //
         myPnt1.SetCoord(0.0, 0.0, 0.0);
@@ -83,12 +84,12 @@ public sealed class IntTools_CommonPrt
         return this;
     }
 
-    internal void SetEdge1(in TopoDS_Edge anEdge) => myEdge1 = anEdge;
+    internal void SetEdge1(in Edge anEdge) => myEdge1 = anEdge;
 
-    internal void SetEdge2(in TopoDS_Edge anEdge) => myEdge2 = anEdge;
+    internal void SetEdge2(in Edge anEdge) => myEdge2 = anEdge;
 
     /// <summary>Sets the type of the common part: vertex or edge.</summary>
-    internal void SetType(TopAbs_ShapeEnum aType) => myType = aType;
+    internal void SetType(ShapeType aType) => myType = aType;
 
     internal void SetRange1(in IntTools_Range aRange) => myRange1 = aRange;
 
@@ -110,12 +111,12 @@ public sealed class IntTools_CommonPrt
 
     internal void SetVertexParameter2(double tV) => myVertPar2 = tV;
 
-    public TopoDS_Edge Edge1() => myEdge1;
+    public Edge Edge1() => myEdge1;
 
-    public TopoDS_Edge Edge2() => myEdge2;
+    public Edge Edge2() => myEdge2;
 
     /// <summary>The type of the common part: vertex or edge.</summary>
-    public TopAbs_ShapeEnum Type() => myType;
+    public ShapeType Type() => myType;
 
     public IntTools_Range Range1() => myRange1;
 

@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -29,9 +30,9 @@ internal static class BRepTestProjectionCommands
             return 1;
         }
         //
-        TopoDS_Shape anInputWire = theDI.GetShape(a[2]);
-        TopoDS_Shape anInputShape = theDI.GetShape(a[3]);
-        if (anInputWire.IsNull() || anInputShape.IsNull())
+        Shape anInputWire = theDI.GetShape(a[2]);
+        Shape anInputShape = theDI.GetShape(a[3]);
+        if (anInputWire.IsNull || anInputShape.IsNull)
         {
             di.Append("Null input shapes\n");
             return 1;

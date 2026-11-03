@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using Occt;
 using OcctNet.DrawLite;
 
@@ -20,10 +22,10 @@ public class DrawShapeProcessCommandsTests
         return (anInterpreter, anOutput);
     }
 
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
@@ -39,29 +41,29 @@ public class DrawShapeProcessCommandsTests
         File.WriteAllText(Path.Combine(aDir, "mine"), "split.exec.op : SplitAngle\nsplit.SplitAngle.Angle : 1.6\n");
 
         i.Eval("pcylinder c 10 20");
-        TopoDS_Shape aCylinder = i.GetShape("c");
-        int aFaces = Count(aCylinder, TopAbs_ShapeEnum.TopAbs_FACE);
+        Shape aCylinder = i.GetShape("c");
+        int aFaces = Count(aCylinder, ShapeType.Face);
 
         // without the environment variable, no file: nothing done
         i.Eval("DT_ApplySeq r c mine split");
-        Assert.Equal(aFaces, Count(i.GetShape("r"), TopAbs_ShapeEnum.TopAbs_FACE));
+        Assert.Equal(aFaces, Count(i.GetShape("r"), ShapeType.Face));
 
         i.Eval($"set env(CSF_mineDefaults) {{{aDir.Replace('\\', '/')}}}");
         anOutput.GetStringBuilder().Clear();
         Assert.Equal("", i.Eval("DT_ApplySeq r c mine split"));
-        Assert.Equal(aFaces + 3, Count(i.GetShape("r"), TopAbs_ShapeEnum.TopAbs_FACE));
+        Assert.Equal(aFaces + 3, Count(i.GetShape("r"), ShapeType.Face));
         // PrintPreparationResult (the message file's texts, their leading blanks removed as OCCT's loader removes them)
         Assert.StartsWith("Mapping:\nShells:\nResult is Shell                 : 1\nNo Result                       : 0\nFaces:\n",
                           anOutput.ToString(), StringComparison.Ordinal);
         Assert.EndsWith("Preparation ratio:\nShells: 100 per cent\nFaces : 100 per cent\n", anOutput.ToString(), StringComparison.Ordinal);
         // in place, as DRAWEXE: the input keeps its faces
-        Assert.Equal(aFaces, Count(i.GetShape("c"), TopAbs_ShapeEnum.TopAbs_FACE));
-        Assert.Equal(aFaces, Count(aCylinder, TopAbs_ShapeEnum.TopAbs_FACE));
+        Assert.Equal(aFaces, Count(i.GetShape("c"), ShapeType.Face));
+        Assert.Equal(aFaces, Count(aCylinder, ShapeType.Face));
 
         // SPApply: the same sequence through a context; PrintStatistics prints the same statistics
         anOutput.GetStringBuilder().Clear();
         Assert.Equal("", i.Eval("SPApply r c mine split"));
-        Assert.Equal(aFaces + 3, Count(i.GetShape("r"), TopAbs_ShapeEnum.TopAbs_FACE));
+        Assert.Equal(aFaces + 3, Count(i.GetShape("r"), ShapeType.Face));
         Assert.StartsWith("Mapping:\n", anOutput.ToString(), StringComparison.Ordinal);
         Assert.Equal("Shape not modified\n", i.Eval("SPApply r c mine nothing"));
     }

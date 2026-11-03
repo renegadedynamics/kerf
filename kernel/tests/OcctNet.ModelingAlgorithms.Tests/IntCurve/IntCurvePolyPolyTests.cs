@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
@@ -20,7 +21,7 @@ public class IntCurvePolyPolyTests
     private const double Tol = 1.0e-7;
 
     // A degree-1 B-spline through the points, its parameter i - 1 at the point i.
-    private static Geom2dAdaptor_Curve Polyline(params (double X, double Y)[] thePnts)
+    private static CurveAdaptor2D Polyline(params (double X, double Y)[] thePnts)
     {
         int n = thePnts.Length;
         NCollection_Array1<Point2D> aPoles = new(1, n);
@@ -32,21 +33,21 @@ public class IntCurvePolyPolyTests
             aKnots[i] = i - 1;
             aMults[i] = (i == 1 || i == n) ? 2 : 1;
         }
-        return new Geom2dAdaptor_Curve(new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 1));
+        return new CurveAdaptor2D(new BSplineCurve2D(aPoles, aKnots, aMults, 1));
     }
 
-    private static Geom2dAdaptor_Curve Bezier(params (double X, double Y)[] thePnts)
+    private static CurveAdaptor2D Bezier(params (double X, double Y)[] thePnts)
     {
         NCollection_Array1<Point2D> aPoles = new(1, thePnts.Length);
         for (int i = 1; i <= thePnts.Length; i++)
         {
             aPoles[i] = new Point2D(thePnts[i - 1].X, thePnts[i - 1].Y);
         }
-        return new Geom2dAdaptor_Curve(new Geom2d_BezierCurve(aPoles));
+        return new CurveAdaptor2D(new BezierCurve2D(aPoles));
     }
 
     // A cubic B-spline with two spans (interior knot of multiplicity 1).
-    private static Geom2dAdaptor_Curve CubicBSpline(params (double X, double Y)[] thePnts)
+    private static CurveAdaptor2D CubicBSpline(params (double X, double Y)[] thePnts)
     {
         Assert.Equal(5, thePnts.Length);
         NCollection_Array1<Point2D> aPoles = new(1, 5);
@@ -62,16 +63,16 @@ public class IntCurvePolyPolyTests
         aMults[1] = 4;
         aMults[2] = 1;
         aMults[3] = 4;
-        return new Geom2dAdaptor_Curve(new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 3));
+        return new CurveAdaptor2D(new BSplineCurve2D(aPoles, aKnots, aMults, 3));
     }
 
-    private static IntRes2d_Domain Domain(Adaptor2d_Curve2d C, double theTol = TolConf)
+    private static IntRes2d_Domain Domain(Curve2DAdaptorBase C, double theTol = TolConf)
     {
         double u0 = C.FirstParameter(), u1 = C.LastParameter();
         return new IntRes2d_Domain(C.Value(u0), u0, theTol, C.Value(u1), u1, theTol);
     }
 
-    private static Geom2dInt_TheIntPCurvePCurveOfGInter Intersect(Adaptor2d_Curve2d C1, Adaptor2d_Curve2d C2)
+    private static Geom2dInt_TheIntPCurvePCurveOfGInter Intersect(Curve2DAdaptorBase C1, Curve2DAdaptorBase C2)
     {
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = new();
         anInter.Perform(C1, Domain(C1), C2, Domain(C2), TolConf, Tol);
@@ -80,7 +81,7 @@ public class IntCurvePolyPolyTests
     }
 
     // Every point must be on both curves at its parameters.
-    private static void CheckOnCurves(IntRes2d_IntersectionPoint P, Adaptor2d_Curve2d C1, Adaptor2d_Curve2d C2,
+    private static void CheckOnCurves(IntRes2d_IntersectionPoint P, Curve2DAdaptorBase C1, Curve2DAdaptorBase C2,
                                       double theTol = 1.0e-6)
     {
         Assert.True(C1.Value(P.ParamOnFirst()).Distance(P.Value()) < theTol);
@@ -101,8 +102,8 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void Segments_Crossing_GiveOnePointWithOppositeTransitions()
     {
-        Geom2dAdaptor_Curve c1 = Polyline((0, 0), (2, 2));
-        Geom2dAdaptor_Curve c2 = Polyline((0, 2), (2, 0));
+        CurveAdaptor2D c1 = Polyline((0, 0), (2, 2));
+        CurveAdaptor2D c2 = Polyline((0, 2), (2, 0));
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = Intersect(c1, c2);
 
         Assert.Equal(1, anInter.NbPoints());
@@ -122,8 +123,8 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void Zigzag_CrossesLine_ThreeTimes()
     {
-        Geom2dAdaptor_Curve c1 = Polyline((0, 0), (1, 2), (2, 0), (3, 2));
-        Geom2dAdaptor_Curve c2 = Polyline((-1, 1), (4, 1));
+        CurveAdaptor2D c1 = Polyline((0, 0), (1, 2), (2, 0), (3, 2));
+        CurveAdaptor2D c2 = Polyline((-1, 1), (4, 1));
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = Intersect(c1, c2);
 
         Assert.Equal(3, anInter.NbPoints());
@@ -143,8 +144,8 @@ public class IntCurvePolyPolyTests
     public void BezierCubic_CrossesLine_AtItsEndsAndMiddle()
     {
         // y(t) = 6t(1-t)(1-2t), x(t) = 3t: zeros at t = 0, 0.5, 1.
-        Geom2dAdaptor_Curve c1 = Bezier((0, 0), (1, 2), (2, -2), (3, 0));
-        Geom2dAdaptor_Curve c2 = Polyline((-1, 0), (4, 0));
+        CurveAdaptor2D c1 = Bezier((0, 0), (1, 2), (2, -2), (3, 0));
+        CurveAdaptor2D c2 = Polyline((-1, 0), (4, 0));
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = Intersect(c1, c2);
 
         Assert.Equal(3, anInter.NbPoints());
@@ -166,8 +167,8 @@ public class IntCurvePolyPolyTests
     public void TwoBezierParabolas_CrossTwice()
     {
         // x = 2t on both; 4t - 4t^2 = 1.5 - 4t + 4t^2 at t = 0.25 and 0.75.
-        Geom2dAdaptor_Curve c1 = Bezier((0, 0), (1, 2), (2, 0));
-        Geom2dAdaptor_Curve c2 = Bezier((0, 1.5), (1, -0.5), (2, 1.5));
+        CurveAdaptor2D c1 = Bezier((0, 0), (1, 2), (2, 0));
+        CurveAdaptor2D c2 = Bezier((0, 1.5), (1, -0.5), (2, 1.5));
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = Intersect(c1, c2);
 
         Assert.Equal(2, anInter.NbPoints());
@@ -188,8 +189,8 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void CubicBSplines_CrossingsMatchDenseSampling()
     {
-        Geom2dAdaptor_Curve c1 = CubicBSpline((0, 0), (1, 3), (2, -3), (3, 3), (4, 0));
-        Geom2dAdaptor_Curve c2 = CubicBSpline((0, 0.5), (1, -1), (2, 1.5), (3, -1), (4, 0.5));
+        CurveAdaptor2D c1 = CubicBSpline((0, 0), (1, 3), (2, -3), (3, 3), (4, 0));
+        CurveAdaptor2D c2 = CubicBSpline((0, 0.5), (1, -1), (2, 1.5), (3, -1), (4, 0.5));
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = Intersect(c1, c2);
 
         // Both x(t) are the same function of t (equally spaced poles, same knots): count the sign changes of
@@ -219,10 +220,10 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void TrimmedCircles_TreatedAsParametric_CrossAtKnownPoints()
     {
-        Geom2d_Circle aC1 = new(new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0));
-        Geom2d_Circle aC2 = new(new Circle2D(new Axis2D(new Point2D(1, 0), new Direction2D(1, 0)), 1.0));
-        Geom2dAdaptor_Curve c1 = new(new Geom2d_TrimmedCurve(aC1, -2.0, 2.0));
-        Geom2dAdaptor_Curve c2 = new(new Geom2d_TrimmedCurve(aC2, 1.0, 5.0));
+        CircleCurve2D aC1 = new(new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0));
+        CircleCurve2D aC2 = new(new Circle2D(new Axis2D(new Point2D(1, 0), new Direction2D(1, 0)), 1.0));
+        CurveAdaptor2D c1 = new(new TrimmedCurve2D(aC1, -2.0, 2.0));
+        CurveAdaptor2D c2 = new(new TrimmedCurve2D(aC2, 1.0, 5.0));
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = new();
         anInter.Perform(c1, Domain(c1), c2, Domain(c2), TolConf, Tol);
 
@@ -246,8 +247,8 @@ public class IntCurvePolyPolyTests
     public void Parabola_TouchingLine_GivesATangentSolution()
     {
         // y = 4t(1-t) reaches 1 at t = 0.5, x = 1.
-        Geom2dAdaptor_Curve c1 = Bezier((0, 0), (1, 2), (2, 0));
-        Geom2dAdaptor_Curve c2 = Polyline((0, 1), (2, 1));
+        CurveAdaptor2D c1 = Bezier((0, 0), (1, 2), (2, 0));
+        CurveAdaptor2D c2 = Polyline((0, 1), (2, 1));
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = Intersect(c1, c2);
 
         Assert.True(anInter.NbPoints() + anInter.NbSegments() >= 1);
@@ -267,8 +268,8 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void OverlappingSegments_GiveOneSegment()
     {
-        Geom2dAdaptor_Curve c1 = Polyline((0, 0), (2, 0));
-        Geom2dAdaptor_Curve c2 = Polyline((1, 0), (3, 0));
+        CurveAdaptor2D c1 = Polyline((0, 0), (2, 0));
+        CurveAdaptor2D c2 = Polyline((1, 0), (3, 0));
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = Intersect(c1, c2);
 
         Assert.Equal(1, anInter.NbSegments());
@@ -286,8 +287,8 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void OverlappingOppositeSegments_GiveAnOppositeSegment()
     {
-        Geom2dAdaptor_Curve c1 = Polyline((0, 0), (2, 0));
-        Geom2dAdaptor_Curve c2 = Polyline((3, 0), (1, 0));
+        CurveAdaptor2D c1 = Polyline((0, 0), (2, 0));
+        CurveAdaptor2D c2 = Polyline((3, 0), (1, 0));
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = Intersect(c1, c2);
 
         Assert.Equal(1, anInter.NbSegments());
@@ -297,8 +298,8 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void SegmentsMeetingEndToHead_GiveAnEndPoint()
     {
-        Geom2dAdaptor_Curve c1 = Polyline((0, 0), (1, 0));
-        Geom2dAdaptor_Curve c2 = Polyline((1, 0), (1, 1));
+        CurveAdaptor2D c1 = Polyline((0, 0), (1, 0));
+        CurveAdaptor2D c2 = Polyline((1, 0), (1, 1));
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = Intersect(c1, c2);
 
         Assert.Equal(1, anInter.NbPoints());
@@ -314,8 +315,8 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void DisjointCurves_GiveNothing()
     {
-        Geom2dAdaptor_Curve c1 = Bezier((0, 0), (1, 2), (2, 0));
-        Geom2dAdaptor_Curve c2 = Bezier((0, 3), (1, 5), (2, 3));
+        CurveAdaptor2D c1 = Bezier((0, 0), (1, 2), (2, 0));
+        CurveAdaptor2D c2 = Bezier((0, 3), (1, 5), (2, 3));
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = Intersect(c1, c2);
         Assert.True(anInter.IsEmpty());
     }
@@ -323,8 +324,8 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void NearlyTouchingCurves_OutsideTolerance_GiveNothing()
     {
-        Geom2dAdaptor_Curve c1 = Bezier((0, 0), (1, 2), (2, 0));
-        Geom2dAdaptor_Curve c2 = Polyline((0, 1.001), (2, 1.001));
+        CurveAdaptor2D c1 = Bezier((0, 0), (1, 2), (2, 0));
+        CurveAdaptor2D c2 = Polyline((0, 1.001), (2, 1.001));
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = Intersect(c1, c2);
         Assert.True(anInter.IsEmpty());
     }
@@ -333,7 +334,7 @@ public class IntCurvePolyPolyTests
     public void SelfIntersection_OfPolylineFigure_FindsTheCrossing()
     {
         // (0,0)-(2,2) and (2,0)-(0,2) cross at (1,1): parameters 0.5 and 2.5.
-        Geom2dAdaptor_Curve c = Polyline((0, 0), (2, 2), (2, 0), (0, 2));
+        CurveAdaptor2D c = Polyline((0, 0), (2, 2), (2, 0), (0, 2));
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = new();
         anInter.Perform(c, Domain(c), TolConf, Tol);
 
@@ -352,7 +353,7 @@ public class IntCurvePolyPolyTests
     public void SelfIntersection_OfBezierLoop_FindsTheDoublePoint()
     {
         // x(t) - x(1-t) = (1-2t)(-10t^2 + 10t - 1) and y(t) = y(1-t): the loop closes at t = 1/2 -+ sqrt(60)/20.
-        Geom2dAdaptor_Curve c = Bezier((0, 0), (2, 1), (-1, 1), (1, 0));
+        CurveAdaptor2D c = Bezier((0, 0), (2, 1), (-1, 1), (1, 0));
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = new();
         anInter.Perform(c, Domain(c), TolConf, Tol);
 
@@ -370,7 +371,7 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void SelfIntersection_OfSimpleArc_FindsNothing()
     {
-        Geom2dAdaptor_Curve c = Bezier((0, 0), (1, 2), (2, 0));
+        CurveAdaptor2D c = Bezier((0, 0), (1, 2), (2, 0));
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = new();
         anInter.Perform(c, Domain(c), TolConf, Tol);
         Assert.True(anInter.IsDone());
@@ -385,8 +386,8 @@ public class IntCurvePolyPolyTests
         anInter.SetMinNbSamples(50);
         Assert.Equal(50, anInter.GetMinNbSamples());
 
-        Geom2dAdaptor_Curve c1 = Polyline((0, 0), (2, 2));
-        Geom2dAdaptor_Curve c2 = Polyline((0, 2), (2, 0));
+        CurveAdaptor2D c1 = Polyline((0, 0), (2, 2));
+        CurveAdaptor2D c2 = Polyline((0, 2), (2, 0));
         anInter.Perform(c1, Domain(c1), c2, Domain(c2), TolConf, Tol);
         Assert.Equal(1, anInter.NbPoints());
     }
@@ -402,7 +403,7 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void Polygon_SamplesTheDomain()
     {
-        Geom2dAdaptor_Curve c = Bezier((0, 0), (1, 2), (2, 0));
+        CurveAdaptor2D c = Bezier((0, 0), (1, 2), (2, 0));
         IntRes2d_Domain D = new(c.Value(0.2), 0.2, TolConf, c.Value(0.9), 0.9, TolConf);
         Geom2dInt_ThePolygon2dOfTheIntPCurvePCurveOfGInter aPoly = new(c, 15, D, Tol);
 
@@ -441,7 +442,7 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void Polygon_ClosedAndDeflection()
     {
-        Geom2dAdaptor_Curve c = Polyline((0, 0), (4, 0));
+        CurveAdaptor2D c = Polyline((0, 0), (4, 0));
         Geom2dInt_ThePolygon2dOfTheIntPCurvePCurveOfGInter aPoly = new(c, 5, Domain(c), Tol);
         Assert.Equal(4, aPoly.NbSegments());
         Assert.Equal(Math.Min(0.000000001, Tol / 100.0), aPoly.DeflectionOverEstimation());
@@ -459,7 +460,7 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void Polygon_FewPoints_UsesThree()
     {
-        Geom2dAdaptor_Curve c = Polyline((0, 0), (4, 0));
+        CurveAdaptor2D c = Polyline((0, 0), (4, 0));
         Geom2dInt_ThePolygon2dOfTheIntPCurvePCurveOfGInter aPoly = new(c, 1, Domain(c), Tol);
         Assert.Equal(2, aPoly.NbSegments());
     }
@@ -467,10 +468,10 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void Polygon_AutoIntersectionIsPossible()
     {
-        Geom2dAdaptor_Curve aLine = Polyline((0, 0), (4, 1));
+        CurveAdaptor2D aLine = Polyline((0, 0), (4, 1));
         Assert.False(new Geom2dInt_ThePolygon2dOfTheIntPCurvePCurveOfGInter(aLine, 10, Domain(aLine), Tol)
                          .AutoIntersectionIsPossible());
-        Geom2dAdaptor_Curve aLoop = Bezier((0, 0), (2, 1), (-1, 1), (1, 0));
+        CurveAdaptor2D aLoop = Bezier((0, 0), (2, 1), (-1, 1), (1, 0));
         Assert.True(new Geom2dInt_ThePolygon2dOfTheIntPCurvePCurveOfGInter(aLoop, 20, Domain(aLoop), Tol)
                         .AutoIntersectionIsPossible());
     }
@@ -478,7 +479,7 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void Polygon_ComputeWithBox_KeepsThePartNearTheBox()
     {
-        Geom2dAdaptor_Curve c = Bezier((0, 0), (1, 2), (2, 0));
+        CurveAdaptor2D c = Bezier((0, 0), (1, 2), (2, 0));
         Geom2dInt_ThePolygon2dOfTheIntPCurvePCurveOfGInter aPoly = new(c, 40, Domain(c), Tol);
         Box2d anOther = Box2d.FromPoint(new Point2D(0.1, 0.0)).Added(new Point2D(0.3, 0.6));
         aPoly.ComputeWithBox(c, anOther);
@@ -496,7 +497,7 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void Polygon_CalculRegion()
     {
-        Geom2dAdaptor_Curve c = Polyline((0, 0), (4, 0));
+        CurveAdaptor2D c = Polyline((0, 0), (4, 0));
         Geom2dInt_ThePolygon2dOfTheIntPCurvePCurveOfGInter aPoly = new(c, 5, Domain(c), Tol);
         Assert.Equal(0, aPoly.CalculRegion(0.5, 0.5, 0, 1, 0, 1));
         Assert.Equal(1, aPoly.CalculRegion(-1, 0.5, 0, 1, 0, 1));
@@ -507,8 +508,8 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void DistBetweenPCurves_ValuesAndDerivatives()
     {
-        Geom2dAdaptor_Curve c1 = Bezier((0, 0), (1, 2), (2, -2), (3, 0));
-        Geom2dAdaptor_Curve c2 = CubicBSpline((0, 0.5), (1, -1), (2, 1.5), (3, -1), (4, 0.5));
+        CurveAdaptor2D c1 = Bezier((0, 0), (1, 2), (2, -2), (3, 0));
+        CurveAdaptor2D c2 = CubicBSpline((0, 0.5), (1, -1), (2, 1.5), (3, -1), (4, 0.5));
         Geom2dInt_TheDistBetweenPCurvesOfTheIntPCurvePCurveOfGInter F = new(c1, c2);
         Assert.Equal(2, F.NbVariables());
         Assert.Equal(2, F.NbEquations());
@@ -558,8 +559,8 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void ExactIntersectionPoint_ConvergesFromANearbyStart()
     {
-        Geom2dAdaptor_Curve c1 = Bezier((0, 0), (1, 2), (2, 0));
-        Geom2dAdaptor_Curve c2 = Bezier((0, 1.5), (1, -0.5), (2, 1.5));
+        CurveAdaptor2D c1 = Bezier((0, 0), (1, 2), (2, 0));
+        CurveAdaptor2D c2 = Bezier((0, 1.5), (1, -0.5), (2, 1.5));
         Geom2dInt_ExactIntersectionPointOfTheIntPCurvePCurveOfGInter E = new(c1, c2, TolConf);
         E.Perform(0.3, 0.2, 0.0, 0.0, 0.5, 0.5);
         Assert.Equal(1, E.NbRoots());
@@ -578,8 +579,8 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void ExactIntersectionPoint_FindsNoRootBetweenDisjointCurves()
     {
-        Geom2dAdaptor_Curve c1 = Bezier((0, 0), (1, 2), (2, 0));
-        Geom2dAdaptor_Curve c2 = Bezier((0, 3), (1, 5), (2, 3));
+        CurveAdaptor2D c1 = Bezier((0, 0), (1, 2), (2, 0));
+        CurveAdaptor2D c2 = Bezier((0, 3), (1, 5), (2, 3));
         Geom2dInt_ExactIntersectionPointOfTheIntPCurvePCurveOfGInter E = new(c1, c2, TolConf);
         E.Perform(0.5, 0.5, 0.0, 0.0, 1.0, 1.0);
         Assert.Equal(0, E.NbRoots());
@@ -588,8 +589,8 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void ExactIntersectionPoint_FromPolygonSegments()
     {
-        Geom2dAdaptor_Curve c1 = Bezier((0, 0), (1, 2), (2, 0));
-        Geom2dAdaptor_Curve c2 = Bezier((0, 1.5), (1, -0.5), (2, 1.5));
+        CurveAdaptor2D c1 = Bezier((0, 0), (1, 2), (2, 0));
+        CurveAdaptor2D c2 = Bezier((0, 1.5), (1, -0.5), (2, 1.5));
         Geom2dInt_ThePolygon2dOfTheIntPCurvePCurveOfGInter aPoly1 = new(c1, 21, Domain(c1), Tol);
         Geom2dInt_ThePolygon2dOfTheIntPCurvePCurveOfGInter aPoly2 = new(c2, 21, Domain(c2), Tol);
         Geom2dInt_ExactIntersectionPointOfTheIntPCurvePCurveOfGInter E = new(c1, c2, TolConf);

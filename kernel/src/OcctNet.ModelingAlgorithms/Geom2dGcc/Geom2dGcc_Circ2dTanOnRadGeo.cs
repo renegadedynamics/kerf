@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
@@ -70,7 +71,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
         }
         int                        nbrcote1 = 0;
         NCollection_Array1<double> Coef     = new(1, 2);
-        Geom2dAdaptor_Curve        Cu1      = Qualified1.Qualified();
+        CurveAdaptor2D        Cu1      = Qualified1.Qualified();
 
         if (Radius < 0.0)
         {
@@ -101,9 +102,9 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
             Geom2dInt_TheIntConicCurveOfGInter Intp = new();
             for (int jcote1 = 1; jcote1 <= nbrcote1; jcote1++)
             {
-                Geom2dAdaptor_Curve HCu1 = (Geom2dAdaptor_Curve)Cu1.ShallowCopy();
+                CurveAdaptor2D HCu1 = (CurveAdaptor2D)Cu1.ShallowCopy();
                 // Adaptor2d_OffsetCurve C2(HCu1,Coef(jcote1));
-                Adaptor2d_OffsetCurve C2 = new(HCu1, -Coef[jcote1]);
+                OffsetCurveAdaptor2D C2 = new(HCu1, -Coef[jcote1]);
                 firstparam               = Max(C2.FirstParameter(), thefirst);
                 lastparam                = Min(C2.LastParameter(), thelast);
                 IntRes2d_Domain D2 = new(C2.Value(firstparam),
@@ -164,7 +165,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
             throw new GccEnt_BadQualifier();
         }
         NCollection_Array1<double> cote1 = new(1, 2);
-        Geom2dAdaptor_Curve        Cu1   = Qualified1.Qualified();
+        CurveAdaptor2D        Cu1   = Qualified1.Qualified();
 
         if (Radius < 0.0)
         {
@@ -201,9 +202,9 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
             Geom2dInt_TheIntConicCurveOfGInter Intp = new();
             for (int jcote1 = 1; jcote1 <= nbrcote1; jcote1++)
             {
-                Geom2dAdaptor_Curve HCu1 = (Geom2dAdaptor_Curve)Cu1.ShallowCopy();
+                CurveAdaptor2D HCu1 = (CurveAdaptor2D)Cu1.ShallowCopy();
                 // Adaptor2d_OffsetCurve C2(HCu1,cote1(jcote1));
-                Adaptor2d_OffsetCurve C2 = new(HCu1, -cote1[jcote1]);
+                OffsetCurveAdaptor2D C2 = new(HCu1, -cote1[jcote1]);
                 firstparam               = Max(C2.FirstParameter(), thefirst);
                 lastparam                = Min(C2.LastParameter(), thelast);
                 IntRes2d_Domain D2 = new(C2.Value(firstparam),
@@ -242,7 +243,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
     /// <summary>Circles of radius Radius tangent to the qualified circle, centred on the curve OnCurv.</summary>
     /// <exception cref="GccEnt_BadQualifier">The qualifier is GccEnt_noqualifier.</exception>
     /// <exception cref="NegativeValueException">Radius is negative.</exception>
-    public Geom2dGcc_Circ2dTanOnRadGeo(in GccEnt_QualifiedCirc Qualified1, Geom2dAdaptor_Curve OnCurv, double Radius,
+    public Geom2dGcc_Circ2dTanOnRadGeo(in GccEnt_QualifiedCirc Qualified1, CurveAdaptor2D OnCurv, double Radius,
                                        double Tolerance)
     {
         //=========================================================================
@@ -358,7 +359,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
     /// <summary>Circles of radius Radius tangent to the qualified line, centred on the curve OnCurv.</summary>
     /// <exception cref="GccEnt_BadQualifier">The line is qualified enclosing or has no qualifier.</exception>
     /// <exception cref="NegativeValueException">Radius is negative.</exception>
-    public Geom2dGcc_Circ2dTanOnRadGeo(in GccEnt_QualifiedLin Qualified1, Geom2dAdaptor_Curve OnCurv, double Radius,
+    public Geom2dGcc_Circ2dTanOnRadGeo(in GccEnt_QualifiedLin Qualified1, CurveAdaptor2D OnCurv, double Radius,
                                        double Tolerance)
     {
         //=========================================================================
@@ -467,7 +468,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
     /// <summary>Circles of radius Radius tangent to the qualified curve, centred on the curve OnCurv.</summary>
     /// <exception cref="GccEnt_BadQualifier">The qualifier is GccEnt_noqualifier.</exception>
     /// <exception cref="NegativeValueException">Radius is negative.</exception>
-    public Geom2dGcc_Circ2dTanOnRadGeo(in Geom2dGcc_QCurve Qualified1, Geom2dAdaptor_Curve OnCurv, double Radius,
+    public Geom2dGcc_Circ2dTanOnRadGeo(in Geom2dGcc_QCurve Qualified1, CurveAdaptor2D OnCurv, double Radius,
                                        double Tolerance)
     {
         //=========================================================================
@@ -489,7 +490,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
             throw new GccEnt_BadQualifier();
         }
         NCollection_Array1<double> cote1 = new(1, 2);
-        Geom2dAdaptor_Curve        Cu1   = Qualified1.Qualified();
+        CurveAdaptor2D        Cu1   = Qualified1.Qualified();
 
         if (Radius < 0.0)
         {
@@ -519,9 +520,9 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
             Geom2dInt_GInter Intp = new();
             for (int jcote1 = 1; jcote1 <= nbrcote1; jcote1++)
             {
-                Geom2dAdaptor_Curve HCu1 = (Geom2dAdaptor_Curve)Cu1.ShallowCopy();
+                CurveAdaptor2D HCu1 = (CurveAdaptor2D)Cu1.ShallowCopy();
                 // Adaptor2d_OffsetCurve C1(HCu1,cote1(jcote1));
-                Adaptor2d_OffsetCurve C1 = new(HCu1, -cote1[jcote1]);
+                OffsetCurveAdaptor2D C1 = new(HCu1, -cote1[jcote1]);
                 firstparam               = Max(C1.FirstParameter(), thefirst);
                 lastparam                = Min(C1.LastParameter(), thelast);
                 IntRes2d_Domain D1 = new(C1.Value(firstparam),
@@ -530,10 +531,10 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
                                          C1.Value(lastparam),
                                          lastparam,
                                          Tol);
-                Geom2dAdaptor_Curve   HOnCurv = (Geom2dAdaptor_Curve)OnCurv.ShallowCopy();
+                CurveAdaptor2D   HOnCurv = (CurveAdaptor2D)OnCurv.ShallowCopy();
                 // OCCT: the one-argument constructor leaves the range [0, 0], so C2 is the single point at parameter 0
                 // and the intersection finds no centre (IsDone, no solution).
-                Adaptor2d_OffsetCurve C2      = new(HOnCurv);
+                OffsetCurveAdaptor2D C2      = new(HOnCurv);
                 firstparam                    = Max(C2.FirstParameter(), thefirst);
                 lastparam                     = Min(C2.LastParameter(), thelast);
                 IntRes2d_Domain D2 = new(C2.Value(firstparam),
@@ -571,7 +572,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
 
     /// <summary>Circles of radius Radius through Point1, centred on the curve OnCurv.</summary>
     /// <exception cref="NegativeValueException">Radius is negative.</exception>
-    public Geom2dGcc_Circ2dTanOnRadGeo(in Point2D Point1, Geom2dAdaptor_Curve OnCurv, double Radius, double Tolerance)
+    public Geom2dGcc_Circ2dTanOnRadGeo(in Point2D Point1, CurveAdaptor2D OnCurv, double Radius, double Tolerance)
     {
         //=========================================================================
         // Traitement.                                                            +

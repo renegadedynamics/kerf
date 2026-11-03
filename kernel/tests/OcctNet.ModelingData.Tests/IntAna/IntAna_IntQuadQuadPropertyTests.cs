@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Intersection;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -44,7 +45,7 @@ public class IntAna_IntQuadQuadPropertyTests
     }
 
     /// <summary>A random quadric (sphere, cylinder, cone or, for cones only, plane) and the distance to it.</summary>
-    private static (IntAna_Quadric Quad, Func<Point3D, double> Dist, string Name) RandomQuadric(Random theRnd,
+    private static (Quadric Quad, Func<Point3D, double> Dist, string Name) RandomQuadric(Random theRnd,
                                                                                               bool theWithPlane)
     {
         int aKind = theRnd.Next(theWithPlane ? 4 : 3);
@@ -54,23 +55,23 @@ public class IntAna_IntQuadQuadPropertyTests
             case 0:
                 {
                     Sphere aS = new(anAx, 1.0 + 3.0 * theRnd.NextDouble());
-                    return (new IntAna_Quadric(aS), P => Math.Abs(P.Distance(aS.Location()) - aS.Radius()), "sphere");
+                    return (new Quadric(aS), P => Math.Abs(P.Distance(aS.Location()) - aS.Radius()), "sphere");
                 }
             case 1:
                 {
                     Cylinder aC = new(anAx, 0.5 + 2.5 * theRnd.NextDouble());
-                    return (new IntAna_Quadric(aC), P => Math.Abs(new Line3D(aC.Axis()).Distance(P) - aC.Radius()),
+                    return (new Quadric(aC), P => Math.Abs(new Line3D(aC.Axis()).Distance(P) - aC.Radius()),
                             "cylinder");
                 }
             case 2:
                 {
                     Cone aK = new(anAx, 0.2 + 1.0 * theRnd.NextDouble(), 2.0 * theRnd.NextDouble());
-                    return (new IntAna_Quadric(aK), P => ConeDistance(aK, P), "cone");
+                    return (new Quadric(aK), P => ConeDistance(aK, P), "cone");
                 }
             default:
                 {
                     Plane3D aPl = new(anAx);
-                    return (new IntAna_Quadric(aPl), P => aPl.Distance(P), "plane");
+                    return (new Quadric(aPl), P => aPl.Distance(P), "plane");
                 }
         }
     }
@@ -83,13 +84,13 @@ public class IntAna_IntQuadQuadPropertyTests
         return theP.Distance(global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, theCone));
     }
 
-    private static void CheckCurves(IntAna_IntQuadQuad theInt, Func<Point3D, double> theDist1,
+    private static void CheckCurves(IntQuadQuad theInt, Func<Point3D, double> theDist1,
                                     Func<Point3D, double> theDist2, Func<Point3D, Direction3D> theNormal1,
                                     ref int theNbPoints, ref int theNbFound, string theCase)
     {
-        for (int i = 1; i <= theInt.NbCurve(); i++)
+        for (int i = 1; i <= theInt.CurveCount; i++)
         {
-            IntAna_Curve aC = theInt.Curve(i);
+            Curve aC = theInt.Curve(i);
             aC.Domain(out double aFirst, out double aLast);
             Assert.True(aLast > aFirst, theCase);
             const int aNbSamples = 24;
@@ -142,21 +143,21 @@ public class IntAna_IntQuadQuadPropertyTests
         for (int anIter = 0; anIter < 400; anIter++)
         {
             Cylinder aCyl = new(RandomAx3(aRnd, 1.0), 0.5 + 2.5 * aRnd.NextDouble());
-            (IntAna_Quadric aQuad, Func<Point3D, double> aDist, string aName) = RandomQuadric(aRnd, false);
-            IntAna_IntQuadQuad anInt = new(aCyl, aQuad, 1.0e-7);
-            if (!anInt.IsDone())
+            (Quadric aQuad, Func<Point3D, double> aDist, string aName) = RandomQuadric(aRnd, false);
+            IntQuadQuad anInt = new(aCyl, aQuad, 1.0e-7);
+            if (!anInt.IsDone)
             {
                 continue;
             }
             aNbDone++;
             Assert.False(anInt.IdenticalElements());
-            Assert.Equal(0, anInt.NbPnt());
-            aNbCurves += anInt.NbCurve();
+            Assert.Equal(0, anInt.PntCount);
+            aNbCurves += anInt.CurveCount;
             Line3D anAxis = new(aCyl.Axis());
             CheckCurves(anInt, P => Math.Abs(anAxis.Distance(P) - aCyl.Radius()), aDist,
                         P => CylinderNormal(aCyl, P), ref aNbPoints, ref aNbFound, $"cylinder/{aName} #{anIter}");
             // OCCT links curves only after a cone intersection
-            for (int i = 1; i <= anInt.NbCurve(); i++)
+            for (int i = 1; i <= anInt.CurveCount; i++)
             {
                 Assert.False(anInt.HasNextCurve(i));
                 Assert.False(anInt.HasPreviousCurve(i));
@@ -175,19 +176,19 @@ public class IntAna_IntQuadQuadPropertyTests
         for (int anIter = 0; anIter < 400; anIter++)
         {
             Cone aCone = new(RandomAx3(aRnd, 1.0), 0.2 + 1.0 * aRnd.NextDouble(), 2.0 * aRnd.NextDouble());
-            (IntAna_Quadric aQuad, Func<Point3D, double> aDist, string aName) = RandomQuadric(aRnd, true);
-            IntAna_IntQuadQuad anInt = new(aCone, aQuad, 1.0e-7);
-            if (!anInt.IsDone())
+            (Quadric aQuad, Func<Point3D, double> aDist, string aName) = RandomQuadric(aRnd, true);
+            IntQuadQuad anInt = new(aCone, aQuad, 1.0e-7);
+            if (!anInt.IsDone)
             {
                 continue;
             }
             aNbDone++;
-            aNbCurves += anInt.NbCurve();
+            aNbCurves += anInt.CurveCount;
             CheckCurves(anInt, P => ConeDistance(aCone, P), aDist, P => ConeNormal(aCone, P), ref aNbPoints,
                         ref aNbFound, $"cone/{aName} #{anIter}");
 
             // Linked curves are linked back
-            for (int i = 1; i <= anInt.NbCurve(); i++)
+            for (int i = 1; i <= anInt.CurveCount; i++)
             {
                 if (anInt.HasNextCurve(i))
                 {
@@ -227,26 +228,26 @@ public class IntAna_IntQuadQuadPropertyTests
     {
         // The quadric's Z² coefficient in the cylinder's frame is zero: OCCT gives up (QuadQuadGeo handles it)
         Cylinder aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), Direction3D.D.Z, Direction3D.D.X), 2.0);
-        IntAna_IntQuadQuad anInt = new(aCyl, new IntAna_Quadric(new Plane3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 1))),
+        IntQuadQuad anInt = new(aCyl, new Quadric(new Plane3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 1))),
                                        1.0e-7);
-        Assert.False(anInt.IsDone());
-        Assert.ThrowsAny<NotDoneException>(() => anInt.NbCurve());
+        Assert.False(anInt.IsDone);
+        Assert.ThrowsAny<NotDoneException>(() => anInt.CurveCount);
     }
 
     [Fact]
     public void Curve_EmptyAndTwins()
     {
-        IntAna_Curve anEmpty = new();
-        Assert.False(anEmpty.IsOpen());
+        Curve anEmpty = new();
+        Assert.False(anEmpty.IsOpen);
         Assert.ThrowsAny<DomainErrorException>(() => anEmpty.Domain(out _, out _));
         Assert.Equal(new Point3D(0, 0, 0), anEmpty.Value(0.0));
         Assert.NotEqual(default, anEmpty);
 
         Cylinder aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), Direction3D.D.Z, Direction3D.D.X), 3.0);
         // The sphere of radius 5 at the origin: z = ±4 on the cylinder of radius 3
-        IntAna_Curve aC = anEmpty.WithCylinderQuadValues(aCyl, 1, 1, 1, 0, 0, 0, 0, 0, 0, -25, 1e-8, 0.0, 2 * M_PI,
+        Curve aC = anEmpty.WithCylinderQuadValues(aCyl, 1, 1, 1, 0, 0, 0, 0, 0, 0, -25, 1e-8, 0.0, 2 * M_PI,
                                                          false, true);
-        Assert.True(aC.IsOpen());
+        Assert.True(aC.IsOpen);
         aC.Domain(out double aFirst, out double aLast);
         Assert.Equal(0.0, aFirst);
         Assert.Equal(2 * M_PI, aLast);
@@ -255,11 +256,11 @@ public class IntAna_IntQuadQuadPropertyTests
         Assert.Equal(3.0 * Math.Cos(1.0), aP.X(), 1e-12);
         Assert.ThrowsAny<DomainErrorException>(() => aC.Value(7.0));
 
-        IntAna_Curve aTrimmed = aC.WithDomain(1.0, 2.0).WithIsFirstOpen(true).WithIsLastOpen(true);
+        Curve aTrimmed = aC.WithDomain(1.0, 2.0).WithIsFirstOpen(true).WithIsLastOpen(true);
         aTrimmed.Domain(out aFirst, out aLast);
         Assert.Equal((1.0, 2.0), (aFirst, aLast));
-        Assert.True(aTrimmed.IsFirstOpen() && aTrimmed.IsLastOpen());
-        Assert.False(aC.IsFirstOpen()); // the twins copy
+        Assert.True(aTrimmed.IsFirstOpen && aTrimmed.IsLastOpen);
+        Assert.False(aC.IsFirstOpen); // the twins copy
         Assert.NotEqual(aC, aTrimmed);
         Assert.Equal(aC, aC.WithDomain(0.0, 2 * M_PI));
         Assert.ThrowsAny<DomainErrorException>(() => aC.WithDomain(2.0, 1.0));
@@ -277,13 +278,13 @@ public class IntAna_IntQuadQuadPropertyTests
         // intersection points, where the discriminant is zero. AddSpecialPoints keeps them in the curves' domains.
         Cylinder aCyl = new(new CoordinateSystem(new Point3D(1, 0, 0), Direction3D.D.Z, Direction3D.D.X), 1.0);
         Sphere aSph = new(new CoordinateSystem(new Point3D(0, 0, 0), Direction3D.D.Z, Direction3D.D.X), 2.0);
-        IntAna_IntQuadQuad anInt = new(aCyl, new IntAna_Quadric(aSph), 1.0e-7);
-        Assert.True(anInt.IsDone());
-        Assert.True(anInt.NbCurve() > 0);
+        IntQuadQuad anInt = new(aCyl, new Quadric(aSph), 1.0e-7);
+        Assert.True(anInt.IsDone);
+        Assert.True(anInt.CurveCount > 0);
         double aMinNorth = double.MaxValue, aMinSouth = double.MaxValue;
-        for (int i = 1; i <= anInt.NbCurve(); i++)
+        for (int i = 1; i <= anInt.CurveCount; i++)
         {
-            IntAna_Curve aC = anInt.Curve(i);
+            Curve aC = anInt.Curve(i);
             aC.Domain(out double aFirst, out double aLast);
             for (int k = 0; k <= 100; k++)
             {

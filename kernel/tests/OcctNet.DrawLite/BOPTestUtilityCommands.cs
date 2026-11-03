@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -33,45 +36,45 @@ internal static class BOPTestUtilityCommands
             return 1;
         }
 
-        TopoDS_Shape aShEOld = theDI.GetShape(theArgVal[1]);
-        TopoDS_Shape aShENew = theDI.GetShape(theArgVal[2]);
-        TopoDS_Shape aShFace = theDI.GetShape(theArgVal[3]);
+        Shape aShEOld = theDI.GetShape(theArgVal[1]);
+        Shape aShENew = theDI.GetShape(theArgVal[2]);
+        Shape aShFace = theDI.GetShape(theArgVal[3]);
 
-        if (aShEOld.IsNull())
+        if (aShEOld.IsNull)
         {
             theResult.Append(theArgVal[1]).Append(" is null shape\n");
             return 1;
         }
-        else if (aShEOld.ShapeType() != TopAbs_ShapeEnum.TopAbs_EDGE)
+        else if (aShEOld.ShapeType() != ShapeType.Edge)
         {
             theResult.Append(theArgVal[1]).Append(" is not an edge\n");
             return 1;
         }
 
-        if (aShENew.IsNull())
+        if (aShENew.IsNull)
         {
             theResult.Append(theArgVal[2]).Append(" is null shape\n");
             return 1;
         }
-        else if (aShENew.ShapeType() != TopAbs_ShapeEnum.TopAbs_EDGE)
+        else if (aShENew.ShapeType() != ShapeType.Edge)
         {
             theResult.Append(theArgVal[2]).Append(" is not an edge\n");
             return 1;
         }
 
-        if (aShFace.IsNull())
+        if (aShFace.IsNull)
         {
             theResult.Append(theArgVal[3]).Append(" is null shape\n");
             return 1;
         }
-        else if (aShFace.ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE)
+        else if (aShFace.ShapeType() != ShapeType.Face)
         {
             theResult.Append(theArgVal[3]).Append(" is not a face\n");
             return 1;
         }
 
-        TopoDS_Edge aEOld = TopoDS.Edge(aShEOld);
-        TopoDS_Face aFace = TopoDS.Face(aShFace);
+        Edge aEOld = ShapeCasts.Edge(aShEOld);
+        Face aFace = ShapeCasts.Face(aShFace);
 
         // Try to copy PCurve from old edge to the new one.
         IntTools_Context aCtx = new();
@@ -79,7 +82,7 @@ internal static class BOPTestUtilityCommands
         // OCCT writes into the new edge itself: Draw-lite into an unfrozen copy, rebound afterwards (see the class)
         SWDRAWShapeFixCommands.InPlace(theDI, aShENew, aWork =>
         {
-            iRet = BOPTools_AlgoTools2D.AttachExistingPCurve(aEOld, TopoDS.Edge(aWork), aFace, aCtx);
+            iRet = BOPTools_AlgoTools2D.AttachExistingPCurve(aEOld, ShapeCasts.Edge(aWork), aFace, aCtx);
             return aWork;
         });
 
@@ -104,8 +107,8 @@ internal static class BOPTestUtilityCommands
             return 1;
         }
         //
-        TopoDS_Shape anEdges = theDI.GetShape(theArgVal[2]);
-        if (anEdges.IsNull())
+        Shape anEdges = theDI.GetShape(theArgVal[2]);
+        if (anEdges.IsNull)
         {
             theResult.Append("no edges\n");
             return 1;
@@ -129,8 +132,8 @@ internal static class BOPTestUtilityCommands
             return 1;
         }
         //
-        TopoDS_Shape anEdges = theDI.GetShape(theArgVal[2]);
-        if (anEdges.IsNull())
+        Shape anEdges = theDI.GetShape(theArgVal[2]);
+        if (anEdges.IsNull)
         {
             theResult.Append("no edges\n");
             return 1;
@@ -151,7 +154,7 @@ internal static class BOPTestUtilityCommands
             }
         }
         //
-        TopoDS_Shape aWires = new();
+        Shape aWires = new();
         int iErr = BOPAlgo_Tools.EdgesToWires(anEdges, ref aWires, bShared, anAngTol);
         if (iErr != 0)
         {
@@ -159,7 +162,7 @@ internal static class BOPTestUtilityCommands
             return 0;
         }
         //
-        TopoDS_Shape aFaces = new();
+        Shape aFaces = new();
         bool bDone = BOPAlgo_Tools.WiresToFaces(aWires, ref aFaces, anAngTol);
         if (!bDone)
         {
@@ -180,8 +183,8 @@ internal static class BOPTestUtilityCommands
             return 1;
         }
 
-        TopoDS_Shape aShape = theDI.GetShape(theArgVal[1]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(theArgVal[1]);
+        if (aShape.IsNull)
         {
             theResult.Append(theArgVal[1]).Append(" is null shape\n");
             return 1;
@@ -190,15 +193,15 @@ internal static class BOPTestUtilityCommands
         // OCCT writes into the shape itself: Draw-lite into an unfrozen copy, rebound afterwards (see the class)
         SWDRAWShapeFixCommands.InPlace(theDI, aShape, aWork =>
         {
-            TopExp_Explorer exp = new(aWork, TopAbs_ShapeEnum.TopAbs_FACE);
+            Explorer exp = new(aWork, ShapeType.Face);
             for (; exp.More(); exp.Next())
             {
-                TopoDS_Face aF = TopoDS.Face(exp.Current());
-                BRepAdaptor_Surface aS = new(aF, false);
+                Face aF = ShapeCasts.Face(exp.Current());
+                FaceSurfaceAdaptor aS = new(aF, false);
                 if (aS.GetType() == SurfaceKind.Plane)
                 {
-                    NCollection_List<TopoDS_Shape> aLE = new();
-                    TopExp_Explorer exp1 = new(aF, TopAbs_ShapeEnum.TopAbs_EDGE);
+                    NCollection_List<Shape> aLE = new();
+                    Explorer exp1 = new(aF, ShapeType.Edge);
                     for (; exp1.More(); exp1.Next())
                     {
                         aLE.Append(exp1.Current());

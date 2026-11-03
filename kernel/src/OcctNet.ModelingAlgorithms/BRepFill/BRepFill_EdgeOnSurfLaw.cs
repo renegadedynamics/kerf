@@ -3,8 +3,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -17,23 +24,23 @@ public sealed class BRepFill_EdgeOnSurfLaw : BRepFill_LocationLaw
     private readonly bool hasresult;
 
     /// <summary>The law on <paramref name="Path"/> over the faces of <paramref name="Surf"/>.</summary>
-    public BRepFill_EdgeOnSurfLaw(in TopoDS_Wire Path, in TopoDS_Shape Surf)
+    public BRepFill_EdgeOnSurfLaw(in Wire Path, in Shape Surf)
     {
         hasresult = true;
         Init(Path);
 
         bool Trouve;
         int ipath; //  ,NbEdge;
-        TopAbs_Orientation Or;
-        BRepTools_WireExplorer wexp = new();
-        TopExp_Explorer exp = new();
+        Orientation Or;
+        WireExplorer wexp = new();
+        Explorer exp = new();
         // Class BRep_Tool without fields and without Constructor :
         //  BRep_Tool B;
-        TopoDS_Edge E;
-        Geom2d_Curve? C = null;
-        Geom2dAdaptor_Curve AC2d;
-        Adaptor3d_CurveOnSurface AC;
-        BRepAdaptor_Surface? AS = null;
+        Edge E;
+        Curve2D? C = null;
+        CurveAdaptor2D AC2d;
+        CurveOnSurface AC;
+        FaceSurfaceAdaptor? AS = null;
         double First = 0.0, Last = 0.0;
         GeomFill_Darboux TLaw = new();
         GeomFill_CurveAndTrihedron Law = new(TLaw);
@@ -42,18 +49,18 @@ public sealed class BRepFill_EdgeOnSurfLaw : BRepFill_LocationLaw
         {
             E = wexp.Current();
             //    if (!B.Degenerated(E)) {
-            if (!BRep_Tool.Degenerated(E))
+            if (!Tool.Degenerated(E))
             {
                 ipath++;
                 myEdges!.SetValue(ipath, E);
-                for (Trouve = false, exp.Init(Surf, TopAbs_FACE); exp.More() && !Trouve; exp.Next())
+                for (Trouve = false, exp.Init(Surf, ShapeType.Face); exp.More() && !Trouve; exp.Next())
                 {
-                    TopoDS_Face F = TopoDS.Face(exp.Current());
-                    C = BRep_Tool.CurveOnSurface(E, F, out First, out Last);
+                    Face F = ShapeCasts.Face(exp.Current());
+                    C = Tool.CurveOnSurface(E, F, out First, out Last);
                     if (C is not null)
                     {
                         Trouve = true;
-                        AS = new BRepAdaptor_Surface(F);
+                        AS = new FaceSurfaceAdaptor(F);
                     }
                 }
                 if (!Trouve)
@@ -64,17 +71,17 @@ public sealed class BRepFill_EdgeOnSurfLaw : BRepFill_LocationLaw
                 }
 
                 Or = E.Orientation();
-                if (Or == TopAbs_REVERSED)
+                if (Or == Reversed)
                 {
-                    Geom2d_TrimmedCurve CBis = new(C!, First, Last);
+                    TrimmedCurve2D CBis = new(C!, First, Last);
                     CBis.Reverse(); // To avoid spoiling the topology
                     C = CBis;
                     First = C.FirstParameter();
                     Last = C.LastParameter();
                 }
 
-                AC2d = new Geom2dAdaptor_Curve(C!, First, Last);
-                AC = new Adaptor3d_CurveOnSurface(AC2d, AS!);
+                AC2d = new CurveAdaptor2D(C!, First, Last);
+                AC = new CurveOnSurface(AC2d, AS!);
                 myLaws!.SetValue(ipath, Law.Copy());
                 myLaws.ChangeValue(ipath).SetCurve(AC);
             }

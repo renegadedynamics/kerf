@@ -1,12 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
-using static Occt.TopTools_FormatVersion;
+using static Kerf.Engine.Exchange.Brep.FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -89,14 +91,14 @@ public sealed partial class DrawLiteIncMeshOracleTests(ITestOutputHelper output)
     private string NativeWrite(N.TopoDS_Shape theShape, bool theWithTriangles = true)
     {
         string aFile = NewFile();
-        Assert.True(N.BRepTools.Write(theShape, aFile, theWithTriangles, false, (N.TopTools_FormatVersion)(int)TopTools_FormatVersion_CURRENT));
+        Assert.True(N.BRepTools.Write(theShape, aFile, theWithTriangles, false, (N.TopTools_FormatVersion)(int)FormatVersion_CURRENT));
         return aFile;
     }
 
-    private string PortWrite(in TopoDS_Shape theShape)
+    private string PortWrite(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile, true, false, TopTools_FormatVersion_CURRENT));
+        Assert.True(BrepTools.Write(theShape, aFile, true, false, FormatVersion_CURRENT));
         return aFile;
     }
 

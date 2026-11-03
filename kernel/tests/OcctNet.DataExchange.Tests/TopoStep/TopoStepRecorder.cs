@@ -1,10 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Security.Cryptography;
 using System.Text;
 using OcctNet.DataExchange.Tests.StepGen;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 using static Occt.TopoDSToStep_FacetedError;
 
 namespace OcctNet.DataExchange.Tests.TopoStep;
@@ -94,7 +97,7 @@ internal static class TopoStepRecorder
         }
 
         var aS = new StringWriter { NewLine = "\n" };
-        BRepTools.Write(aBuilder.Value(), aS);
+        BrepTools.Write(aBuilder.Value(), aS);
         theText = aS.ToString();
         return Sha256(theText) + " " + theText.Length;
     }
@@ -202,21 +205,21 @@ internal static class TopoStepRecorder
     }
 
     /// <summary>The conversions of a shape ("C ..."), with both factor sets; the written lines in the dump.</summary>
-    public static List<string> ShapeLines(in TopoDS_Shape theShape, List<string>? theDump = null)
+    public static List<string> ShapeLines(in Shape theShape, List<string>? theDump = null)
     {
         var aLines = new List<string>();
-        TopoDS_Shape aShape = theShape;
+        Shape aShape = theShape;
         foreach (var (aTag, F) in new[] { ("mm", Millimetres), ("in", Inches) })
         {
             int i = 0;
-            for (var anExp = new TopExp_Explorer(aShape, TopAbs_SOLID); anExp.More(); anExp.Next())
+            for (var anExp = new Explorer(aShape, ShapeType.Solid); anExp.More(); anExp.Next())
             {
-                TopoDS_Solid aSolid = TopoDS.Solid(anExp.Current());
+                Solid aSolid = ShapeCasts.Solid(anExp.Current());
                 ++i;
                 int aNbShells = 0;
-                for (var anIt = new TopoDS_Iterator(aSolid); anIt.More(); anIt.Next())
+                for (var anIt = new Iterator(aSolid); anIt.More(); anIt.Next())
                 {
-                    aNbShells += anIt.Value().ShapeType() == TopAbs_SHELL ? 1 : 0;
+                    aNbShells += anIt.Value().ShapeType() == ShapeType.Shell ? 1 : 0;
                 }
 
                 Convert(aLines, theDump, "msb-solid", i, aTag, FP =>
@@ -249,9 +252,9 @@ internal static class TopoStepRecorder
             }
 
             i = 0;
-            for (var anExp = new TopExp_Explorer(aShape, TopAbs_SHELL); anExp.More(); anExp.Next())
+            for (var anExp = new Explorer(aShape, ShapeType.Shell); anExp.More(); anExp.Next())
             {
-                TopoDS_Shell aShell = TopoDS.Shell(anExp.Current());
+                Shell aShell = ShapeCasts.Shell(anExp.Current());
                 ++i;
                 Convert(aLines, theDump, "msb-shell", i, aTag, FP =>
                 {
@@ -274,10 +277,10 @@ internal static class TopoStepRecorder
             }
 
             i = 0;
-            for (var anExp = new TopExp_Explorer(aShape, TopAbs_FACE); anExp.More() && i < 20; anExp.Next())
+            for (var anExp = new Explorer(aShape, ShapeType.Face); anExp.More() && i < 20; anExp.Next())
             {
                 ++i;
-                TopoDS_Face aFace = TopoDS.Face(anExp.Current());
+                Face aFace = ShapeCasts.Face(anExp.Current());
                 Convert(aLines, theDump, "sbsm-face", i, aTag, FP =>
                 {
                     var M = new TopoDSToStep_MakeShellBasedSurfaceModel(aFace, FP, F);

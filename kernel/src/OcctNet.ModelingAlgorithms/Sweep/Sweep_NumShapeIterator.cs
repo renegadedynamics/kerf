@@ -4,8 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -16,12 +17,12 @@ internal sealed class Sweep_NumShapeIterator
     private Sweep_NumShape myCurrentNumShape;
     private int myCurrentRange;
     private bool myMore;
-    private TopAbs_Orientation myCurrentOrientation; // OCCT leaves it uninitialised until Init
+    private Orientation myCurrentOrientation; // OCCT leaves it uninitialised until Init
 
     public Sweep_NumShapeIterator()
     {
-        myNumShape = new Sweep_NumShape(0, TopAbs_SHAPE);
-        myCurrentNumShape = new Sweep_NumShape(0, TopAbs_SHAPE);
+        myNumShape = new Sweep_NumShape(0, ShapeType.Shape);
+        myCurrentNumShape = new Sweep_NumShape(0, ShapeType.Shape);
         myCurrentRange = 0;
         myMore = false;
     }
@@ -30,28 +31,28 @@ internal sealed class Sweep_NumShapeIterator
     public void Init(in Sweep_NumShape aShape)
     {
         myNumShape = aShape;
-        if (myNumShape.Type() == TopAbs_EDGE)
+        if (myNumShape.Type() == ShapeType.Edge)
         {
             int nbvert = myNumShape.Index();
             myMore = (nbvert >= 1);
             if (myMore)
             {
                 myCurrentRange = 1;
-                myCurrentNumShape = new Sweep_NumShape(1, TopAbs_VERTEX, myNumShape.Closed(), false, false);
+                myCurrentNumShape = new Sweep_NumShape(1, ShapeType.Vertex, myNumShape.Closed(), false, false);
                 if (nbvert == 1)
                 {
                     if (myNumShape.BegInfinite())
                     {
-                        myCurrentOrientation = TopAbs_REVERSED;
+                        myCurrentOrientation = Reversed;
                     }
                     else
                     {
-                        myCurrentOrientation = TopAbs_FORWARD;
+                        myCurrentOrientation = Forward;
                     }
                 }
                 else
                 {
-                    myCurrentOrientation = TopAbs_FORWARD;
+                    myCurrentOrientation = Forward;
                 }
             }
         }
@@ -65,15 +66,15 @@ internal sealed class Sweep_NumShapeIterator
         myMore = myCurrentRange <= myNumShape.Index();
         if (myMore)
         {
-            if (myNumShape.Type() == TopAbs_EDGE)
+            if (myNumShape.Type() == ShapeType.Edge)
             {
-                myCurrentNumShape = new Sweep_NumShape(myCurrentRange, TopAbs_VERTEX, myNumShape.Closed(), false, false);
-                myCurrentOrientation = TopAbs_REVERSED;
+                myCurrentNumShape = new Sweep_NumShape(myCurrentRange, ShapeType.Vertex, myNumShape.Closed(), false, false);
+                myCurrentOrientation = Reversed;
             }
         }
     }
 
     public Sweep_NumShape Value() => myCurrentNumShape;
 
-    public TopAbs_Orientation Orientation() => myCurrentOrientation;
+    public Orientation Orientation() => myCurrentOrientation;
 }

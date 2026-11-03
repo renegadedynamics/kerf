@@ -40,12 +40,12 @@ public sealed class XdeDoc_Instance
     public string? DisplayName => Attributes.Name ?? Product.Name;
 
     /// <summary>The product's shape moved to the location (XCAF's <c>GetShape</c> of a reference).</summary>
-    public TopoDS_Shape Shape
+    public Shape Shape
     {
         get
         {
-            TopoDS_Shape aShape = Product.Shape;
-            return aShape.IsNull() || Location.IsIdentity ? aShape : aShape.Moved(Location);
+            Shape aShape = Product.Shape;
+            return aShape.IsNull || Location.IsIdentity ? aShape : aShape.Moved(Location);
         }
     }
 

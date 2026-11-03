@@ -76,9 +76,9 @@ public class ShapeUpgrade_SplitCurve3dContinuity : ShapeUpgrade_SplitCurve3d
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
         }
-        if (myCurve is Geom_TrimmedCurve tmp)
+        if (myCurve is TrimmedCurve3D tmp)
         {
-            Geom_Curve BasCurve = tmp.BasisCurve();
+            Curve3D BasCurve = tmp.BasisCurve();
             var spc = new ShapeUpgrade_SplitCurve3dContinuity();
             //    spc.Init(BasCurve,Max(tmp->FirstParameter(),First),Min(tmp->LastParameter(),Last));
             spc.Init(BasCurve, First, Last);
@@ -91,7 +91,7 @@ public class ShapeUpgrade_SplitCurve3dContinuity : ShapeUpgrade_SplitCurve3d
             myStatus |= spc.myStatus;
             return;
         }
-        else if (myCurve is Geom_OffsetCurve tmpOffset)
+        else if (myCurve is OffsetCurve3D tmpOffset)
         {
             Continuity BasCriterion;
             switch (myCriterion)
@@ -108,7 +108,7 @@ public class ShapeUpgrade_SplitCurve3dContinuity : ShapeUpgrade_SplitCurve3d
                     BasCriterion = CN;
                     break;
             }
-            Geom_Curve BasCurve = tmpOffset.BasisCurve();
+            Curve3D BasCurve = tmpOffset.BasisCurve();
             // double Offset = tmp->Offset(); // Offset not used (skl)
             // gp_Dir Direct = tmp->Direction(); // Direct not used (skl)
             var spc = new ShapeUpgrade_SplitCurve3dContinuity();
@@ -124,7 +124,7 @@ public class ShapeUpgrade_SplitCurve3dContinuity : ShapeUpgrade_SplitCurve3d
             return;
         }
 
-        Geom_BSplineCurve? MyBSpline = myCurve as Geom_BSplineCurve;
+        BSplineCurve3D? MyBSpline = myCurve as BSplineCurve3D;
         if (MyBSpline is null)
         {
             return;
@@ -132,7 +132,7 @@ public class ShapeUpgrade_SplitCurve3dContinuity : ShapeUpgrade_SplitCurve3d
         // it is a BSplineCurve
         myNbCurves = 1;
         int Deg = MyBSpline.Degree();
-        int NbKnots = MyBSpline.NbKnots();
+        int NbKnots = MyBSpline.KnotCount;
         if (NbKnots <= 2)
         {
             return;
@@ -210,5 +210,5 @@ public class ShapeUpgrade_SplitCurve3dContinuity : ShapeUpgrade_SplitCurve3d
     }
 
     /// <summary>Returns the tool's curve (corrected where knots were removed).</summary>
-    public Geom_Curve? GetCurve() => myCurve;
+    public Curve3D? GetCurve() => myCurve;
 }

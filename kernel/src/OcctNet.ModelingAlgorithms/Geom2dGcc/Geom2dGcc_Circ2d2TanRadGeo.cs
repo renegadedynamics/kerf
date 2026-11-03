@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
@@ -81,7 +82,7 @@ public sealed class Geom2dGcc_Circ2d2TanRadGeo
         double              lyloc   = (L1.Location()).Y();
         Point2D            origin1 = new(lxloc, lyloc);
         Direction2D            normL1  = new(-y1dir, x1dir);
-        Geom2dAdaptor_Curve Cu2     = Qualified2.Qualified();
+        CurveAdaptor2D Cu2     = Qualified2.Qualified();
         if (Radius < 0.0)
         {
             throw new NegativeValueException();
@@ -174,9 +175,9 @@ public sealed class Geom2dGcc_Circ2d2TanRadGeo
                 IntRes2d_Domain D1    = new();
                 for (int jcote2 = 1; jcote2 <= nbrcote2 && NbrSol < aNbSolMAX; jcote2++)
                 {
-                    Geom2dAdaptor_Curve HCu2 = (Geom2dAdaptor_Curve)Cu2.ShallowCopy(); // new Geom2dAdaptor_Curve(Cu2)
+                    CurveAdaptor2D HCu2 = (CurveAdaptor2D)Cu2.ShallowCopy(); // new Geom2dAdaptor_Curve(Cu2)
                     // Adaptor2d_OffsetCurve C2(HCu2,cote2(jcote2));
-                    Adaptor2d_OffsetCurve C2 = new(HCu2, -cote2[jcote2]);
+                    OffsetCurveAdaptor2D C2 = new(HCu2, -cote2[jcote2]);
                     firstparam = Max(C2.FirstParameter(), thefirst);
                     lastparam  = Min(C2.LastParameter(), thelast);
                     IntRes2d_Domain D2 = new(C2.Value(firstparam), firstparam, Tol, C2.Value(lastparam), lastparam, Tol);
@@ -266,7 +267,7 @@ public sealed class Geom2dGcc_Circ2d2TanRadGeo
         }
         Circle2D           C1      = Qualified1.Qualified();
         Point2D            center1 = C1.Location();
-        Geom2dAdaptor_Curve Cu2     = Qualified2.Qualified();
+        CurveAdaptor2D Cu2     = Qualified2.Qualified();
         if (Radius < 0.0)
         {
             throw new NegativeValueException();
@@ -360,9 +361,9 @@ public sealed class Geom2dGcc_Circ2d2TanRadGeo
                 D1.SetEquivalentParameters(0.0, 2.0 * M_PI);
                 for (int jcote2 = 1; jcote2 <= nbrcote2; jcote2++)
                 {
-                    Geom2dAdaptor_Curve HCu2 = (Geom2dAdaptor_Curve)Cu2.ShallowCopy(); // new Geom2dAdaptor_Curve(Cu2)
+                    CurveAdaptor2D HCu2 = (CurveAdaptor2D)Cu2.ShallowCopy(); // new Geom2dAdaptor_Curve(Cu2)
                     // Adaptor2d_OffsetCurve C2(HCu2,cote2(jcote2));
-                    Adaptor2d_OffsetCurve C2 = new(HCu2, -cote2[jcote2]);
+                    OffsetCurveAdaptor2D C2 = new(HCu2, -cote2[jcote2]);
                     firstparam = Max(C2.FirstParameter(), thefirst);
                     lastparam  = Min(C2.LastParameter(), thelast);
                     IntRes2d_Domain D2 = new(C2.Value(firstparam), firstparam, Tol, C2.Value(lastparam), lastparam, Tol);
@@ -450,7 +451,7 @@ public sealed class Geom2dGcc_Circ2d2TanRadGeo
         {
             throw new GccEnt_BadQualifier();
         }
-        Geom2dAdaptor_Curve Cu1 = Qualified1.Qualified();
+        CurveAdaptor2D Cu1 = Qualified1.Qualified();
         if (Radius < 0.0)
         {
             throw new NegativeValueException();
@@ -482,9 +483,9 @@ public sealed class Geom2dGcc_Circ2d2TanRadGeo
             Geom2dInt_TheIntConicCurveOfGInter Intp = new();
             for (int jcote1 = 1; jcote1 <= nbrcote1 && NbrSol < aNbSolMAX; jcote1++)
             {
-                Geom2dAdaptor_Curve HCu1 = (Geom2dAdaptor_Curve)Cu1.ShallowCopy(); // new Geom2dAdaptor_Curve(Cu1)
+                CurveAdaptor2D HCu1 = (CurveAdaptor2D)Cu1.ShallowCopy(); // new Geom2dAdaptor_Curve(Cu1)
                 // Adaptor2d_OffsetCurve Cu2(HCu1,cote1(jcote1));
-                Adaptor2d_OffsetCurve Cu2 = new(HCu1, -cote1[jcote1]);
+                OffsetCurveAdaptor2D Cu2 = new(HCu1, -cote1[jcote1]);
                 firstparam = Max(Cu2.FirstParameter(), thefirst);
                 lastparam  = Min(Cu2.LastParameter(), thelast);
                 IntRes2d_Domain D2 = new(Cu2.Value(firstparam), firstparam, Tol, Cu2.Value(lastparam), lastparam, Tol);
@@ -525,8 +526,8 @@ public sealed class Geom2dGcc_Circ2d2TanRadGeo
     //            tangent vector and vector between points in two curves must
     //            be equal to zero).
     //=======================================================================
-    private static void PrecRoot(Adaptor2d_OffsetCurve theC1,
-                                 Adaptor2d_OffsetCurve theC2,
+    private static void PrecRoot(OffsetCurveAdaptor2D theC1,
+                                 OffsetCurveAdaptor2D theC2,
                                  double                theU0,
                                  double                theV0,
                                  out double            theUfinal,
@@ -686,8 +687,8 @@ public sealed class Geom2dGcc_Circ2d2TanRadGeo
         {
             throw new GccEnt_BadQualifier();
         }
-        Geom2dAdaptor_Curve Cu1 = Qualified1.Qualified();
-        Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
+        CurveAdaptor2D Cu1 = Qualified1.Qualified();
+        CurveAdaptor2D Cu2 = Qualified2.Qualified();
         if (Radius < 0.0)
         {
             throw new NegativeValueException();
@@ -775,14 +776,14 @@ public sealed class Geom2dGcc_Circ2d2TanRadGeo
             Geom2dInt_GInter Intp = new();
             for (int jcote1 = 1; jcote1 <= nbrcote1; jcote1++)
             {
-                Geom2dAdaptor_Curve HCu1 = (Geom2dAdaptor_Curve)Cu1.ShallowCopy(); // new Geom2dAdaptor_Curve(Cu1)
+                CurveAdaptor2D HCu1 = (CurveAdaptor2D)Cu1.ShallowCopy(); // new Geom2dAdaptor_Curve(Cu1)
                 // Adaptor2d_OffsetCurve C1(HCu1,cote1(jcote1));
-                Adaptor2d_OffsetCurve C1 = new(HCu1, -cote1[jcote1]);
+                OffsetCurveAdaptor2D C1 = new(HCu1, -cote1[jcote1]);
                 for (int jcote2 = 1; jcote2 <= nbrcote2 && NbrSol < aNbSolMAX; jcote2++)
                 {
-                    Geom2dAdaptor_Curve HCu2 = (Geom2dAdaptor_Curve)Cu2.ShallowCopy(); // new Geom2dAdaptor_Curve(Cu2)
+                    CurveAdaptor2D HCu2 = (CurveAdaptor2D)Cu2.ShallowCopy(); // new Geom2dAdaptor_Curve(Cu2)
                     // Adaptor2d_OffsetCurve C2(HCu2,cote2(jcote2));
-                    Adaptor2d_OffsetCurve C2 = new(HCu2, -cote2[jcote2]);
+                    OffsetCurveAdaptor2D C2 = new(HCu2, -cote2[jcote2]);
                     Intp.Perform(C1, C2, Tol, Tol);
                     if (Intp.IsDone())
                     {

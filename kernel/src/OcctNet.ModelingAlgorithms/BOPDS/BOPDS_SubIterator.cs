@@ -6,6 +6,7 @@
 using Kerf.Engine.Foundation.Std;
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -149,8 +150,8 @@ public class BOPDS_SubIterator
             BOPDS_ShapeInfo aSI1 = myDS!.ShapeInfo(aPair.ID1);
             BOPDS_ShapeInfo aSI2 = myDS.ShapeInfo(aPair.ID2);
 
-            TopAbs_ShapeEnum aType1 = aSI1.ShapeType();
-            TopAbs_ShapeEnum aType2 = aSI2.ShapeType();
+            ShapeType aType1 = aSI1.ShapeType();
+            ShapeType aType2 = aSI2.ShapeType();
 
             int iType1 = BOPDS_Tools.TypeToInteger(aType1);
             int iType2 = BOPDS_Tools.TypeToInteger(aType2);

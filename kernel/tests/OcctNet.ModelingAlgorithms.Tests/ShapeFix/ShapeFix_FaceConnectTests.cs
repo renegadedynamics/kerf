@@ -1,28 +1,31 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>Unit tests of ShapeFix_FaceConnect (unit 6H3) on frozen shells.</summary>
 public class ShapeFix_FaceConnectTests
 {
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
     // Two unit squares side by side, each with its own edges (theGap apart along x = 1), in one frozen shell.
-    private static TopoDS_Shell TwoSquares(double theGap, out TopoDS_Face theF1, out TopoDS_Face theF2)
+    private static Shell TwoSquares(double theGap, out Face theF1, out Face theF2)
     {
         theF1 = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).Face();
         theF2 = new BRepBuilderAPI_MakeFace(new Plane3D(), 1 + theGap, 2, 0, 1).Face();
-        var aB = new BRep_Builder();
-        var aShell = new TopoDS_Shell();
+        var aB = new BrepBuilder();
+        var aShell = new Shell();
         aB.MakeShell(ref aShell);
         aB.Add(aShell, theF1);
         aB.Add(aShell, theF2);
@@ -33,13 +36,13 @@ public class ShapeFix_FaceConnectTests
     [Fact]
     public void Add_NullFace_IsFalse_AndBuildWithoutConnections_GivesTheShell()
     {
-        TopoDS_Shell aShell = TwoSquares(0, out TopoDS_Face aF1, out _);
+        Shell aShell = TwoSquares(0, out Face aF1, out _);
         var aFC = new ShapeFix_FaceConnect();
-        Assert.False(aFC.Add(aF1, new TopoDS_Face()));
+        Assert.False(aFC.Add(aF1, new Face()));
         Assert.True(aFC.Add(aF1, aF1));
         aFC.Clear();
 
-        TopoDS_Shell aResult = aFC.Build(aShell, 1e-4, 1e-4);
+        Shell aResult = aFC.Build(aShell, 1e-4, 1e-4);
         Assert.True(aResult.IsSame(aShell));
     }
 
@@ -47,18 +50,18 @@ public class ShapeFix_FaceConnectTests
     [Fact]
     public void Build_SewsTheTwoFaces_InputUnchanged()
     {
-        TopoDS_Shell aShell = TwoSquares(1e-7, out TopoDS_Face aF1, out TopoDS_Face aF2);
+        Shell aShell = TwoSquares(1e-7, out Face aF1, out Face aF2);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShell);
-        Assert.Equal(8, Count(aShell, TopAbs_EDGE));
+        Assert.Equal(8, Count(aShell, ShapeType.Edge));
 
         var aFC = new ShapeFix_FaceConnect();
         Assert.True(aFC.Add(aF1, aF2));
-        TopoDS_Shell aResult = aFC.Build(aShell, 1e-4, 1e-4);
+        Shell aResult = aFC.Build(aShell, 1e-4, 1e-4);
 
         aSnap.AssertUnchanged(aShell);
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.Equal(2, Count(aResult, TopAbs_FACE));
-        Assert.Equal(7, Count(aResult, TopAbs_EDGE)); // the edges at x = 1 sewn into one
-        Assert.Equal(6, Count(aResult, TopAbs_VERTEX));
+        Assert.Equal(2, Count(aResult, ShapeType.Face));
+        Assert.Equal(7, Count(aResult, ShapeType.Edge)); // the edges at x = 1 sewn into one
+        Assert.Equal(6, Count(aResult, ShapeType.Vertex));
     }
 }

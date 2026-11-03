@@ -5,7 +5,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using static Occt.BRepMesh_DegreeOfFreedom;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -101,7 +101,7 @@ public class BRepMesh_DelaunayNodeInsertionMeshAlgo<RangeSplitter> : BRepMesh_No
         for (int aNodeIt = 1; aNodesIt.More(); aNodesIt.Next(), ++aNodeIt)
         {
             Point2D aPnt2d = aNodesIt.Value();
-            if (getClassifier().Perform(aPnt2d) == TopAbs_IN)
+            if (getClassifier().Perform(aPnt2d) == In)
             {
                 aVertexIndexes.Append(
                     registerNode(getRangeSplitter().Point(aPnt2d), aPnt2d, BRepMesh_Free, false));
@@ -129,7 +129,7 @@ public class BRepMesh_DelaunayNodeInsertionMeshAlgo<RangeSplitter> : BRepMesh_No
         for (int aNodeIt = 1; aNodesIt.More(); aNodesIt.Next(), ++aNodeIt)
         {
             Point2D aPnt2d = aNodesIt.Value();
-            if (getClassifier().Perform(aPnt2d) == TopAbs_IN)
+            if (getClassifier().Perform(aPnt2d) == In)
             {
                 isAdded = true;
                 registerNode(getRangeSplitter().Point(aPnt2d), aPnt2d, BRepMesh_Free, false);

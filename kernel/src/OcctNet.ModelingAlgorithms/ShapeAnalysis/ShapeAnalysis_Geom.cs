@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -18,8 +19,8 @@ public static class ShapeAnalysis_Geom
     /// </summary>
     public static bool NearestPlane(NCollection_Array1<Point3D> thePnts, ref Plane3D thePln, out double theMaxDist)
     {
-        GProp_PEquation anEq = new(thePnts, 0.0);
-        if (anEq.GetType() == GProp_PEquation.Type.None)
+        PEquation anEq = new(thePnts, 0.0);
+        if (anEq.GetType() == PEquation.Type.None)
         {
             theMaxDist = 0.0; // OCCT.NET: OCCT leaves the caller's value unchanged here
             return false;

@@ -6,7 +6,10 @@
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
 
 namespace Occt;
@@ -23,11 +26,11 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : SpatialTree<int, Box>.Sel
 {
     private Box myFBox;
     private Box myLBox;
-    private readonly NCollection_HArray1<TopoDS_Shape> mySeq;
+    private readonly NCollection_HArray1<Shape> mySeq;
     private readonly bool myShared;
     private int myNb;
-    private TopoDS_Vertex myFVertex;
-    private TopoDS_Vertex myLVertex;
+    private Vertex myFVertex;
+    private Vertex myLVertex;
     private Point3D myFPnt;
     private Point3D myLPnt;
     private readonly NCollection_Map<int> myList = new();
@@ -37,7 +40,7 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : SpatialTree<int, Box>.Sel
     private int myStatus;
 
     /// <summary>A selector over the wires of <paramref name="theSeq"/>, by shared vertices or by distance.</summary>
-    public ShapeAnalysis_BoxBndTreeSelector(NCollection_HArray1<TopoDS_Shape> theSeq, bool theShared)
+    public ShapeAnalysis_BoxBndTreeSelector(NCollection_HArray1<Shape> theSeq, bool theShared)
     {
         mySeq = theSeq;
         myShared = theShared;
@@ -48,8 +51,8 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : SpatialTree<int, Box>.Sel
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         myFBox = new Box();
         myLBox = new Box();
-        myFVertex = new TopoDS_Vertex();
-        myLVertex = new TopoDS_Vertex();
+        myFVertex = new Vertex();
+        myLVertex = new Vertex();
         myFPnt = new Point3D();
         myLPnt = new Point3D();
         myArrIndices.Init(0);
@@ -64,7 +67,7 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : SpatialTree<int, Box>.Sel
     }
 
     /// <summary>Sets the current wire's first and last vertices.</summary>
-    public void DefineVertexes(TopoDS_Vertex theVf, TopoDS_Vertex theVl)
+    public void DefineVertexes(Vertex theVf, Vertex theVl)
     {
         myFVertex = theVf;
         myLVertex = theVl;
@@ -132,8 +135,8 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : SpatialTree<int, Box>.Sel
             return false;
         }
 
-        TopoDS_Wire W = TopoDS.Wire(mySeq.Value(theObj));
-        ShapeAnalysis.FindBounds(W, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+        Wire W = ShapeCasts.Wire(mySeq.Value(theObj));
+        ShapeAnalysis.FindBounds(W, out Vertex V1, out Vertex V2);
         if (myShared)
         {
             if (myLVertex.IsSame(V1))
@@ -191,8 +194,8 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : SpatialTree<int, Box>.Sel
 
         else
         {
-            Point3D p1 = BRep_Tool.Pnt(V1);
-            Point3D p2 = BRep_Tool.Pnt(V2);
+            Point3D p1 = Tool.Pnt(V1);
+            Point3D p2 = Tool.Pnt(V2);
 
             double tailhead, tailtail, headhead, headtail;
             tailhead = p1.Distance(myLPnt);

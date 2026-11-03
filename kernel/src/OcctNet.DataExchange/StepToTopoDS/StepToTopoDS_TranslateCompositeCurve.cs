@@ -6,6 +6,9 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
 using static Occt.StepGeom_TransitionCode;
@@ -22,7 +25,7 @@ namespace Occt;
 /// </remarks>
 public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
 {
-    private TopoDS_Wire myWire = new TopoDS_Wire();
+    private Wire myWire = new Wire();
     private bool myInfiniteSegment;
 
     public StepToTopoDS_TranslateCompositeCurve()
@@ -42,13 +45,13 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
     }
 
     /// <summary>Translates a composite_curve lying on a surface.</summary>
-    public StepToTopoDS_TranslateCompositeCurve(StepGeom_CompositeCurve CC, Transfer_TransientProcess TP, StepGeom_Surface S, Geom_Surface Surf,
+    public StepToTopoDS_TranslateCompositeCurve(StepGeom_CompositeCurve CC, Transfer_TransientProcess TP, StepGeom_Surface S, Surface Surf,
                                                 in StepData_Factors theLocalFactors)
     {
         Init(CC, TP, S, Surf, theLocalFactors);
     }
 
-    public StepToTopoDS_TranslateCompositeCurve(StepGeom_CompositeCurve CC, Transfer_TransientProcess TP, StepGeom_Surface S, Geom_Surface Surf)
+    public StepToTopoDS_TranslateCompositeCurve(StepGeom_CompositeCurve CC, Transfer_TransientProcess TP, StepGeom_Surface S, Surface Surf)
         : this(CC, TP, S, Surf, new StepData_Factors())
     {
     }
@@ -57,14 +60,14 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
     public bool Init(StepGeom_CompositeCurve CC, Transfer_TransientProcess TP, in StepData_Factors theLocalFactors)
     {
         StepGeom_Surface S = null;
-        Geom_Surface Surf = null;
+        Surface Surf = null;
         return Init(CC, TP, S, Surf, theLocalFactors);
     }
 
     public bool Init(StepGeom_CompositeCurve CC, Transfer_TransientProcess TP) => Init(CC, TP, new StepData_Factors());
 
     /// <summary>Translates a composite_curve lying on a surface.</summary>
-    public bool Init(StepGeom_CompositeCurve CC, Transfer_TransientProcess TP, StepGeom_Surface S, Geom_Surface Surf, in StepData_Factors theLocalFactors)
+    public bool Init(StepGeom_CompositeCurve CC, Transfer_TransientProcess TP, StepGeom_Surface S, Surface Surf, in StepData_Factors theLocalFactors)
     {
         myWire.Nullify();
         myInfiniteSegment = false;
@@ -116,15 +119,15 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
                 }
 
                 StepGeom_CompositeCurve cc = crv as StepGeom_CompositeCurve;
-                if (!Init(cc, TP, S, Surf, theLocalFactors) || myWire.IsNull())
+                if (!Init(cc, TP, S, Surf, theLocalFactors) || myWire.IsNull)
                 {
                     continue;
                 }
 
                 int nb = sbwd.NbEdges() + 1;
-                for (var it = new TopoDS_Iterator(myWire); it.More(); it.Next())
+                for (var it = new Iterator(myWire); it.More(); it.Next())
                 {
-                    TopoDS_Edge edge = TopoDS.Edge(it.Value());
+                    Edge edge = ShapeCasts.Edge(it.Value());
                     if (ccs.SameSense())
                     {
                         sbwd.Add(edge);
@@ -181,14 +184,14 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
             }
 
             // prepare edge
-            TopoDS_Edge edge1 = new TopoDS_Edge();
+            Edge edge1 = new Edge();
 
             // translate 3d curve, if present
             if (crv is not null)
             {
                 try
                 {
-                    Geom_Curve c3d = StepToGeom.MakeCurve(crv, theLocalFactors);
+                    Curve3D c3d = StepToGeom.MakeCurve(crv, theLocalFactors);
                     if (c3d is not null)
                     {
                         var MkEdge = new BRepBuilderAPI_MakeEdge(c3d, c3d.FirstParameter(), c3d.LastParameter());
@@ -217,10 +220,10 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
                 try
                 {
                     var TrE = new StepToTopoDS_TranslateEdge();
-                    Geom2d_Curve c2d = TrE.MakePCurve(pcurve, Surf, theLocalFactors);
+                    Curve2D c2d = TrE.MakePCurve(pcurve, Surf, theLocalFactors);
                     if (c2d is not null)
                     {
-                        if (edge1.IsNull())
+                        if (edge1.IsNull)
                         {
                             var MkEdge = new BRepBuilderAPI_MakeEdge(c2d, Surf, c2d.FirstParameter(), c2d.LastParameter());
                             if (MkEdge.IsDone())
@@ -237,7 +240,7 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
                         }
                         else
                         {
-                            var B = new BRep_Builder();
+                            var B = new BrepBuilder();
                             Placement L = new Placement();
                             B.UpdateEdge(edge1, c2d, Surf, L, 0.0);
                             B.Range(edge1, Surf, L, c2d.FirstParameter(), c2d.LastParameter());
@@ -252,7 +255,7 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
                 }
             }
 
-            if (edge1.IsNull())
+            if (edge1.IsNull)
             {
                 TP.AddFail(crv, "Curve can not be translated");
                 continue;
@@ -295,19 +298,19 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
         return true;
     }
 
-    public bool Init(StepGeom_CompositeCurve CC, Transfer_TransientProcess TP, StepGeom_Surface S, Geom_Surface Surf)
+    public bool Init(StepGeom_CompositeCurve CC, Transfer_TransientProcess TP, StepGeom_Surface S, Surface Surf)
         => Init(CC, TP, S, Surf, new StepData_Factors());
 
     /// <summary>The result of the last translation, frozen; a null wire if it failed.</summary>
-    public TopoDS_Wire Value()
+    public Wire Value()
     {
-        TopoDS_Wire aWire = myWire;
+        Wire aWire = myWire;
         aWire.TShape()?.FreezeGraph();
         return aWire;
     }
 
     /// <summary>As <see cref="Value"/>, without freezing: the reader's working shape.</summary>
-    internal TopoDS_Wire InternalValue() => myWire;
+    internal Wire InternalValue() => myWire;
 
     /// <summary>True if the composite_curve contains a segment with infinite parameters.</summary>
     public bool IsInfiniteSegment() => myInfiniteSegment;

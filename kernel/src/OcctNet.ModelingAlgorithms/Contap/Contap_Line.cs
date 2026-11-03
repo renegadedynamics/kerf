@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.Contap_IType;
 using static Occt.IntSurf_TypeTrans;
@@ -26,7 +27,7 @@ public sealed class Contap_Line
     private IntSurf_TypeTrans Trans;
     private IntSurf_LineOn2S? curv;
     private NCollection_HSequence<Contap_Point> svtx;
-    private Adaptor2d_Curve2d? thearc;
+    private Curve2DAdaptorBase? thearc;
     private Contap_IType typL;
     private Point3D pt = new();
     private Direction3D dir1 = new();
@@ -105,7 +106,7 @@ public sealed class Contap_Line
     }
 
     /// <summary>Makes the line the restriction <paramref name="A"/>.</summary>
-    public void SetValue(Adaptor2d_Curve2d A)
+    public void SetValue(Curve2DAdaptorBase A)
     {
         thearc = A;
         typL = Contap_Restriction;
@@ -190,7 +191,7 @@ public sealed class Contap_Line
     }
 
     /// <summary>The restriction; throws Standard_DomainError on another type.</summary>
-    public Adaptor2d_Curve2d Arc()
+    public Curve2DAdaptorBase Arc()
     {
         if (typL != Contap_Restriction)
         {

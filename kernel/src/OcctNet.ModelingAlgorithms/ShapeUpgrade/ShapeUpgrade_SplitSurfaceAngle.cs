@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.ShapeExtend_Status;
 
 namespace Occt;
@@ -34,16 +35,16 @@ public class ShapeUpgrade_SplitSurfaceAngle : ShapeUpgrade_SplitSurface
     /// <summary>Computes the U splitting values; the inherited Build splits.</summary>
     public override void Compute(bool Segment)
     {
-        Geom_Surface S;
+        Surface S;
         double U1 = 0.0, U2 = 0.0;
         bool isRect = false;
-        if (mySurface is Geom_RectangularTrimmedSurface rts)
+        if (mySurface is TrimmedSurface rts)
         {
             isRect = true;
             rts.Bounds(out U1, out U2, out _, out _);
             S = rts.BasisSurface();
         }
-        else if (mySurface is Geom_OffsetSurface ofs)
+        else if (mySurface is OffsetSurface ofs)
         {
             S = ofs.BasisSurface();
         }
@@ -52,8 +53,8 @@ public class ShapeUpgrade_SplitSurfaceAngle : ShapeUpgrade_SplitSurface
             S = mySurface!;
         }
 
-        if (S is Geom_SurfaceOfRevolution || S is Geom_ConicalSurface || S is Geom_ToroidalSurface
-            || S is Geom_CylindricalSurface || S is Geom_SphericalSurface)
+        if (S is RevolutionSurface || S is ConicalSurface || S is ToroidalSurface
+            || S is CylindricalSurface || S is SphericalSurface)
         {
             double UFirst = myUSplitValues!.Sequence().First();
             double ULast = myUSplitValues.Sequence().Last();

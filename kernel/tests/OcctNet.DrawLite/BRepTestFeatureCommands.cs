@@ -1,11 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
 using static Occt.BRepFeat_Status;
 using static Kerf.Engine.Foundation.Standard;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite;
 
@@ -35,8 +37,8 @@ internal static partial class BRepTestFeatureCommands
         public readonly BRepFeat_MakeLinearForm LinearForm = new();
         public readonly BRepFeat_MakeRevolutionForm RevolutionForm = new();
         // Input shapes for Prism, DPrism, Revol, Pipe
-        public TopoDS_Shape theSbase = new(), thePbase = new();
-        public TopoDS_Face theSkface = new();
+        public Shape theSbase = new(), thePbase = new();
+        public Face theSkface = new();
         public bool dprdef, prdef, rvdef, pidef, lfdef, rfdef;
         // the fillet of fillet and bossage (OCCT's file-scope Rakk)
         public BRepFilletAPI_MakeFillet? Rakk;
@@ -105,8 +107,8 @@ internal static partial class BRepTestFeatureCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[2]);
-        TopoDS_Shape T = theDI.GetShape(a[3]);
+        Shape S = theDI.GetShape(a[2]);
+        Shape T = theDI.GetShape(a[3]);
 
         bool Fuse;
         if (EqualsNoCase("F", a[4]))
@@ -122,14 +124,14 @@ internal static partial class BRepTestFeatureCommands
             return 1;
         }
 
-        NCollection_List<TopoDS_Shape> LF = new();
+        NCollection_List<Shape> LF = new();
         for (int i = 0; i <= narg - 6; i++)
         {
-            TopoDS_Shape aLocalShape = theDI.GetShape(a[i + 5], TopAbs_FACE);
+            Shape aLocalShape = theDI.GetShape(a[i + 5], ShapeType.Face);
             LF.Append(aLocalShape);
         }
 
-        NCollection_List<TopoDS_Shape> parts = new();
+        NCollection_List<Shape> parts = new();
         BRepFeat_Builder BLoc = new();
         BLoc.Init(S, T);
         BLoc.SetOperation(Fuse ? 1 : 0);
@@ -168,7 +170,7 @@ internal static partial class BRepTestFeatureCommands
             return 1;
         }
         FeatureState aState = State(theDI);
-        TopoDS_Shape S = theDI.GetShape(a[2]);
+        Shape S = theDI.GetShape(a[2]);
 
         Point3D Or = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
         Direction3D Di = new(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
@@ -199,7 +201,7 @@ internal static partial class BRepTestFeatureCommands
             return 1;
         }
         FeatureState aState = State(theDI);
-        TopoDS_Shape S = theDI.GetShape(a[2]);
+        Shape S = theDI.GetShape(a[2]);
 
         Point3D Or = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
         Direction3D Di = new(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
@@ -220,7 +222,7 @@ internal static partial class BRepTestFeatureCommands
             return 1;
         }
         FeatureState aState = State(theDI);
-        TopoDS_Shape S = theDI.GetShape(a[2]);
+        Shape S = theDI.GetShape(a[2]);
 
         Point3D Or = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
         Direction3D Di = new(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
@@ -241,7 +243,7 @@ internal static partial class BRepTestFeatureCommands
             return 1;
         }
         FeatureState aState = State(theDI);
-        TopoDS_Shape S = theDI.GetShape(a[2]);
+        Shape S = theDI.GetShape(a[2]);
 
         Point3D Or = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
         Direction3D Di = new(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
@@ -274,21 +276,21 @@ internal static partial class BRepTestFeatureCommands
     }
 
     // The search of the sliding faces of wprism and fprism: the faces of the shape parallel to the prism's direction
-    private static void AddSlidingFacesForPrism(in TopoDS_Shape S, in TopoDS_Shape ToPrism, in Vector3D V,
+    private static void AddSlidingFacesForPrism(in Shape S, in Shape ToPrism, in Vector3D V,
                                                 BRepFeat_MakePrism thePFace)
     {
         LocOpe_FindEdgesInFace FEIF = new();
-        for (TopExp_Explorer exp = new(S, TopAbs_FACE); exp.More(); exp.Next())
+        for (global::Kerf.Engine.Topology.Explorer exp = new(S, ShapeType.Face); exp.More(); exp.Next())
         {
-            TopoDS_Face fac = TopoDS.Face(exp.Current());
-            Geom_Surface Su = BRep_Tool.Surface(fac)!;
-            if (Su.GetType() == typeof(Geom_RectangularTrimmedSurface))
+            Face fac = global::Kerf.Engine.Topology.ShapeCasts.Face(exp.Current());
+            Surface Su = Tool.Surface(fac)!;
+            if (Su.GetType() == typeof(TrimmedSurface))
             {
-                Su = ((Geom_RectangularTrimmedSurface)Su).BasisSurface();
+                Su = ((TrimmedSurface)Su).BasisSurface();
             }
-            if (Su.GetType() == typeof(Geom_Plane))
+            if (Su.GetType() == typeof(PlaneSurface))
             {
-                Plane3D pl = ((Geom_Plane)Su).Pln();
+                Plane3D pl = ((PlaneSurface)Su).Pln();
                 if (pl.Contains(new Line3D(pl.Location(), new Direction3D(V)), global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     FEIF.Set(ToPrism, fac);
@@ -298,9 +300,9 @@ internal static partial class BRepTestFeatureCommands
                     }
                 }
             }
-            else if (Su.GetType() == typeof(Geom_CylindricalSurface))
+            else if (Su.GetType() == typeof(CylindricalSurface))
             {
-                Cylinder cy = ((Geom_CylindricalSurface)Su).Cylinder();
+                Cylinder cy = ((CylindricalSurface)Su).Cylinder();
                 if (V.IsParallel(new Vector3D(cy.Axis().Direction()), global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     FEIF.Set(ToPrism, fac);
@@ -315,8 +317,8 @@ internal static partial class BRepTestFeatureCommands
 
     // The end of wprism and fprism: the prism by its bounds
     private static int PerformPrism(DrawInterpreter theDI, DrawResult theCommands, IReadOnlyList<string> a,
-                                    BRepFeat_MakePrism thePFace, int borne, double Length, in TopoDS_Shape FFrom,
-                                    in TopoDS_Shape FUntil)
+                                    BRepFeat_MakePrism thePFace, int borne, double Length, in Shape FFrom,
+                                    in Shape FUntil)
     {
         if (borne == 7)
         {
@@ -328,13 +330,13 @@ internal static partial class BRepTestFeatureCommands
         }
         else if (borne == 9)
         {
-            if (!(FFrom.IsNull() || FUntil.IsNull()))
+            if (!(FFrom.IsNull || FUntil.IsNull))
             {
                 thePFace.Perform(FFrom, FUntil);
             }
-            else if (FFrom.IsNull())
+            else if (FFrom.IsNull)
             {
-                if (!FUntil.IsNull())
+                if (!FUntil.IsNull)
                 {
                     thePFace.PerformFromEnd(FUntil);
                 }
@@ -366,10 +368,10 @@ internal static partial class BRepTestFeatureCommands
         {
             return 1;
         }
-        TopoDS_Shape S = theDI.GetShape(a[3]);
+        Shape S = theDI.GetShape(a[3]);
         BRepFeat_MakePrism thePFace = new();
         Vector3D V = new();
-        TopoDS_Shape FFrom = new(), FUntil = new();
+        Shape FFrom = new(), FUntil = new();
         int borne;
         bool fuse;
         if (At(a[1], 0) == 'f' || At(a[1], 0) == 'F')
@@ -398,14 +400,14 @@ internal static partial class BRepTestFeatureCommands
                     return 1;
                 }
                 V.SetCoord(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
-                FFrom = theDI.GetShape(a[4], TopAbs_SHAPE);
-                FUntil = theDI.GetShape(a[5], TopAbs_SHAPE);
+                FFrom = theDI.GetShape(a[4], ShapeType.Shape);
+                FUntil = theDI.GetShape(a[5], ShapeType.Shape);
                 borne = 9;
             }
             else
             {
                 V.SetCoord(theDI.Atof(a[5]), theDI.Atof(a[6]), theDI.Atof(a[7]));
-                FUntil = theDI.GetShape(a[4], TopAbs_SHAPE);
+                FUntil = theDI.GetShape(a[4], ShapeType.Shape);
                 borne = 8;
             }
         }
@@ -420,16 +422,16 @@ internal static partial class BRepTestFeatureCommands
             return 1;
         }
 
-        TopoDS_Shape aLocalShape = theDI.GetShape(a[borne], TopAbs_FACE);
-        TopoDS_Face F = TopoDS.Face(aLocalShape);
+        Shape aLocalShape = theDI.GetShape(a[borne], ShapeType.Face);
+        Face F = global::Kerf.Engine.Topology.ShapeCasts.Face(aLocalShape);
         BRepFeat_SplitShape Spls = new(F);
         for (int i = borne + 1; i < narg; i++)
         {
-            TopoDS_Wire wir;
+            Wire wir;
             if (At(a[i], 0) != '-')
             {
-                aLocalShape = theDI.GetShape(a[i], TopAbs_WIRE);
-                wir = TopoDS.Wire(aLocalShape);
+                aLocalShape = theDI.GetShape(a[i], ShapeType.Wire);
+                wir = global::Kerf.Engine.Topology.ShapeCasts.Wire(aLocalShape);
             }
             else
             {
@@ -438,15 +440,15 @@ internal static partial class BRepTestFeatureCommands
                     return 1;
                 }
                 string Temp = a[i][1..];
-                aLocalShape = theDI.GetShape(Temp, TopAbs_WIRE);
-                wir = TopoDS.Wire(aLocalShape);
+                aLocalShape = theDI.GetShape(Temp, ShapeType.Wire);
+                wir = global::Kerf.Engine.Topology.ShapeCasts.Wire(aLocalShape);
                 wir.Reverse();
             }
             Spls.Add(wir, F);
         }
         Spls.Build();
-        TopoDS_Shape ToPrism;
-        IReadOnlyList<TopoDS_Shape> lleft = Spls.DirectLeft();
+        Shape ToPrism;
+        IReadOnlyList<Shape> lleft = Spls.DirectLeft();
         if (lleft.Count == 1)
         {
             thePFace.Init(S, lleft[0], F, new Direction3D(V), fuse ? 1 : 0, true);
@@ -454,21 +456,21 @@ internal static partial class BRepTestFeatureCommands
         }
         else
         {
-            BRep_Builder B = new();
-            TopoDS_Shell Sh = new();
+            BrepBuilder B = new();
+            Shell Sh = new();
             B.MakeShell(ref Sh);
-            foreach (TopoDS_Shape aLeft in lleft)
+            foreach (Shape aLeft in lleft)
             {
-                B.Add(Sh, TopoDS.Face(aLeft));
+                B.Add(Sh, global::Kerf.Engine.Topology.ShapeCasts.Face(aLeft));
             }
-            Sh.Closed(BRep_Tool.IsClosed(Sh));
+            Sh.Closed(Tool.IsClosed(Sh));
             thePFace.Init(S, Sh, F, new Direction3D(V), fuse ? 1 : 0, true);
             ToPrism = Sh;
         }
 
         // Recherche des faces de glissement, si on n`a pas sketche sur une face
         // du shape de depart
-        TopExp_Explorer exp = new(S, TopAbs_FACE);
+        global::Kerf.Engine.Topology.Explorer exp = new(S, ShapeType.Face);
         for (; exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(F))
@@ -492,11 +494,11 @@ internal static partial class BRepTestFeatureCommands
         {
             return 1;
         }
-        TopoDS_Shape S = theDI.GetShape(a[3]);
+        Shape S = theDI.GetShape(a[3]);
         BRepFeat_MakePrism thePFace = new();
         int borne;
         Vector3D V = new();
-        TopoDS_Shape FFrom = new(), FUntil = new();
+        Shape FFrom = new(), FUntil = new();
         bool fuse;
         if (At(a[1], 0) == 'f' || At(a[1], 0) == 'F')
         {
@@ -525,14 +527,14 @@ internal static partial class BRepTestFeatureCommands
                 }
                 borne = 9;
                 V.SetCoord(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
-                FFrom = theDI.GetShape(a[4], TopAbs_SHAPE);
-                FUntil = theDI.GetShape(a[5], TopAbs_SHAPE);
+                FFrom = theDI.GetShape(a[4], ShapeType.Shape);
+                FUntil = theDI.GetShape(a[5], ShapeType.Shape);
             }
             else
             {
                 borne = 8;
                 V.SetCoord(theDI.Atof(a[5]), theDI.Atof(a[6]), theDI.Atof(a[7]));
-                FUntil = theDI.GetShape(a[4], TopAbs_SHAPE);
+                FUntil = theDI.GetShape(a[4], ShapeType.Shape);
             }
         }
         else
@@ -546,39 +548,39 @@ internal static partial class BRepTestFeatureCommands
             return 1;
         }
 
-        TopoDS_Shape ToPrism;
+        Shape ToPrism;
         if (narg == borne + 1)
         {
-            TopoDS_Shape aLocalShape = theDI.GetShape(a[borne], TopAbs_FACE);
-            TopoDS_Face F = TopoDS.Face(aLocalShape);
+            Shape aLocalShape = theDI.GetShape(a[borne], ShapeType.Face);
+            Face F = global::Kerf.Engine.Topology.ShapeCasts.Face(aLocalShape);
             thePFace.Init(S, F, F, new Direction3D(V), fuse ? 1 : 0, true);
             ToPrism = F;
         }
         else
         {
-            TopoDS_Shell She = new();
-            BRep_Builder B = new();
+            Shell She = new();
+            BrepBuilder B = new();
             B.MakeShell(ref She);
             for (int i = borne; i < narg; i++)
             {
-                TopoDS_Shape aLocalShape = theDI.GetShape(a[i], TopAbs_FACE);
-                TopoDS_Face F = TopoDS.Face(aLocalShape);
-                if (!F.IsNull())
+                Shape aLocalShape = theDI.GetShape(a[i], ShapeType.Face);
+                Face F = global::Kerf.Engine.Topology.ShapeCasts.Face(aLocalShape);
+                if (!F.IsNull)
                 {
                     B.Add(She, F);
                 }
             }
-            She.Closed(BRep_Tool.IsClosed(She));
-            thePFace.Init(S, She, new TopoDS_Face(), new Direction3D(V), fuse ? 1 : 0, false);
+            She.Closed(Tool.IsClosed(She));
+            thePFace.Init(S, She, new Face(), new Direction3D(V), fuse ? 1 : 0, false);
             ToPrism = She;
         }
 
         // Recherche des faces de glissement, on ne prisme pas une face
         // du shape de depart
-        TopExp_Explorer exp = new(ToPrism, TopAbs_FACE);
+        global::Kerf.Engine.Topology.Explorer exp = new(ToPrism, ShapeType.Face);
         for (; exp.More(); exp.Next())
         {
-            TopExp_Explorer exp2 = new(S, TopAbs_FACE);
+            global::Kerf.Engine.Topology.Explorer exp2 = new(S, ShapeType.Face);
             for (; exp2.More(); exp2.Next())
             {
                 if (exp2.Current().IsSame(exp.Current()))
@@ -616,14 +618,14 @@ internal static partial class BRepTestFeatureCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[2]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[2]);
+        if (S.IsNull)
         {
             theDI.Output.WriteLine("Invalid input shape " + a[2]);
             return 1;
         }
         BRepFeat_SplitShape Spls = new(S);
-        TopoDS_Shape EF = new();
+        Shape EF = new();
         int i = 3;
 
         for (newnarg = 3; newnarg < narg; newnarg++)
@@ -639,25 +641,25 @@ internal static partial class BRepTestFeatureCommands
             return 1;
         }
         bool isSplittingEdges = false;
-        NCollection_Sequence<TopoDS_Shape> aSplitEdges = new();
+        NCollection_Sequence<Shape> aSplitEdges = new();
         if (i < newnarg)
         {
             // the interactive pick of a name starting with a dot is left out
-            TopoDS_Shape aSh = theDI.GetShape(a[i]);
-            if (aSh.IsNull())
+            Shape aSh = theDI.GetShape(a[i]);
+            if (aSh.IsNull)
             {
                 theDI.Output.WriteLine("Invalid input shape " + a[i]);
                 return 1;
             }
-            if (aSh.ShapeType() == TopAbs_FACE)
+            if (aSh.ShapeType() == ShapeType.Face)
             {
-                EF = TopoDS.Face(aSh);
+                EF = global::Kerf.Engine.Topology.ShapeCasts.Face(aSh);
             }
             else
             {
-                if (aSh.ShapeType() == TopAbs_COMPOUND || aSh.ShapeType() == TopAbs_WIRE || aSh.ShapeType() == TopAbs_EDGE)
+                if (aSh.ShapeType() == ShapeType.Compound || aSh.ShapeType() == ShapeType.Wire || aSh.ShapeType() == ShapeType.Edge)
                 {
-                    TopExp_Explorer aExpE = new(aSh, TopAbs_EDGE, TopAbs_FACE);
+                    global::Kerf.Engine.Topology.Explorer aExpE = new(aSh, ShapeType.Edge, ShapeType.Face);
                     for (; aExpE.More(); aExpE.Next())
                     {
                         aSplitEdges.Append(aExpE.Current());
@@ -670,13 +672,13 @@ internal static partial class BRepTestFeatureCommands
         i++;
         while (i < newnarg)
         {
-            if (!isSplittingEdges && !EF.IsNull() && EF.ShapeType() == TopAbs_FACE)
+            if (!isSplittingEdges && !EF.IsNull && EF.ShapeType() == ShapeType.Face)
             {
                 // face wire/edge ...
 
                 while (i < newnarg)
                 {
-                    TopoDS_Shape W;
+                    Shape W;
                     bool rever = false;
                     if (At(a[i], 0) == '-')
                     {
@@ -685,20 +687,20 @@ internal static partial class BRepTestFeatureCommands
                             return 1;
                         }
                         string Temp = a[i][1..];
-                        W = theDI.GetShape(Temp, TopAbs_SHAPE, false);
+                        W = theDI.GetShape(Temp, ShapeType.Shape, false);
                         rever = true;
                     }
                     else
                     {
-                        W = theDI.GetShape(a[i], TopAbs_SHAPE, false);
+                        W = theDI.GetShape(a[i], ShapeType.Shape, false);
                     }
 
-                    if (W.IsNull())
+                    if (W.IsNull)
                     {
                         return 1; // on n`a rien recupere
                     }
-                    TopAbs_ShapeEnum wtyp = W.ShapeType();
-                    if (wtyp != TopAbs_WIRE && wtyp != TopAbs_EDGE && wtyp != TopAbs_COMPOUND)
+                    ShapeType wtyp = W.ShapeType();
+                    if (wtyp != ShapeType.Wire && wtyp != ShapeType.Edge && wtyp != ShapeType.Compound)
                     {
                         EF = theDI.GetShape(a[i]);
                         break;
@@ -709,17 +711,17 @@ internal static partial class BRepTestFeatureCommands
                         {
                             W.Reverse();
                         }
-                        if (wtyp == TopAbs_WIRE)
+                        if (wtyp == ShapeType.Wire)
                         {
-                            Spls.Add(TopoDS.Wire(W), TopoDS.Face(EF));
+                            Spls.Add(global::Kerf.Engine.Topology.ShapeCasts.Wire(W), global::Kerf.Engine.Topology.ShapeCasts.Face(EF));
                         }
-                        else if (wtyp == TopAbs_EDGE)
+                        else if (wtyp == ShapeType.Edge)
                         {
-                            Spls.Add(TopoDS.Edge(W), TopoDS.Face(EF));
+                            Spls.Add(global::Kerf.Engine.Topology.ShapeCasts.Edge(W), global::Kerf.Engine.Topology.ShapeCasts.Face(EF));
                         }
                         else
                         {
-                            Spls.Add(TopoDS.Compound(W), TopoDS.Face(EF));
+                            Spls.Add(global::Kerf.Engine.Topology.ShapeCasts.Compound(W), global::Kerf.Engine.Topology.ShapeCasts.Face(EF));
                         }
                     }
                     i++;
@@ -729,13 +731,13 @@ internal static partial class BRepTestFeatureCommands
             {
                 if (isSplittingEdges)
                 {
-                    TopoDS_Shape aSh = theDI.GetShape(a[i]);
-                    if (aSh.IsNull())
+                    Shape aSh = theDI.GetShape(a[i]);
+                    if (aSh.IsNull)
                     {
                         theDI.Output.WriteLine("Invalid input shape " + a[i]);
                         return 1;
                     }
-                    TopExp_Explorer aExpE = new(aSh, TopAbs_EDGE, TopAbs_FACE);
+                    global::Kerf.Engine.Topology.Explorer aExpE = new(aSh, ShapeType.Edge, ShapeType.Face);
                     for (; aExpE.More(); aExpE.Next())
                     {
                         aSplitEdges.Append(aExpE.Current());
@@ -758,21 +760,21 @@ internal static partial class BRepTestFeatureCommands
         // ici, i vaut newnarg
         for (; i < narg; i += 2)
         {
-            TopoDS_Shape Ew, Es;
-            TopoDS_Shape aLocalShape = theDI.GetShape(a[i], TopAbs_EDGE);
-            Es = TopoDS.Edge(aLocalShape);
-            if (Es.IsNull())
+            Shape Ew, Es;
+            Shape aLocalShape = theDI.GetShape(a[i], ShapeType.Edge);
+            Es = global::Kerf.Engine.Topology.ShapeCasts.Edge(aLocalShape);
+            if (Es.IsNull)
             {
                 return 1;
             }
-            aLocalShape = theDI.GetShape(a[i + 1], TopAbs_EDGE);
-            Ew = TopoDS.Edge(aLocalShape);
-            if (Ew.IsNull())
+            aLocalShape = theDI.GetShape(a[i + 1], ShapeType.Edge);
+            Ew = global::Kerf.Engine.Topology.ShapeCasts.Edge(aLocalShape);
+            if (Ew.IsNull)
             {
                 theDI.Output.WriteLine("Invalid input shape " + a[i + 1]);
                 return 1;
             }
-            Spls.Add(TopoDS.Edge(Ew), TopoDS.Edge(Es));
+            Spls.Add(global::Kerf.Engine.Topology.ShapeCasts.Edge(Ew), global::Kerf.Engine.Topology.ShapeCasts.Edge(Es));
         }
 
         theDI.SetShape(a[1], Spls.Shape());
@@ -781,11 +783,11 @@ internal static partial class BRepTestFeatureCommands
 
     // The angle or the faces of wrotate and frotate: returns the index of the axis' first word
     private static int RotateBounds(DrawInterpreter theDI, IReadOnlyList<string> a, ref double Angle,
-                                    ref TopoDS_Shape FFrom, ref TopoDS_Shape FUntil, int theMinArgs)
+                                    ref Shape FFrom, ref Shape FUntil, int theMinArgs)
     {
         int i;
-        FFrom = theDI.GetShape(a[4], TopAbs_SHAPE);
-        if (FFrom.IsNull())
+        FFrom = theDI.GetShape(a[4], ShapeType.Shape);
+        if (FFrom.IsNull)
         {
             Angle = theDI.Atof(a[4]);
             Angle *= M_PI / 180.0;
@@ -793,8 +795,8 @@ internal static partial class BRepTestFeatureCommands
         }
         else
         {
-            FUntil = theDI.GetShape(a[5], TopAbs_SHAPE);
-            if (FUntil.IsNull())
+            FUntil = theDI.GetShape(a[5], ShapeType.Shape);
+            if (FUntil.IsNull)
             {
                 i = 5;
                 FUntil = FFrom;
@@ -813,21 +815,21 @@ internal static partial class BRepTestFeatureCommands
     }
 
     // The search of the sliding faces of wrotate and frotate: the faces of the shape around the axis
-    private static void AddSlidingFacesForRevol(in TopoDS_Shape S, in TopoDS_Shape ToRotate, in Axis3D theAxis,
+    private static void AddSlidingFacesForRevol(in Shape S, in Shape ToRotate, in Axis3D theAxis,
                                                 BRepFeat_MakeRevol theRFace)
     {
         LocOpe_FindEdgesInFace FEIF = new();
-        for (TopExp_Explorer exp = new(S, TopAbs_FACE); exp.More(); exp.Next())
+        for (global::Kerf.Engine.Topology.Explorer exp = new(S, ShapeType.Face); exp.More(); exp.Next())
         {
-            TopoDS_Face fac = TopoDS.Face(exp.Current());
-            Geom_Surface Su = BRep_Tool.Surface(fac)!;
-            if (Su.GetType() == typeof(Geom_RectangularTrimmedSurface))
+            Face fac = global::Kerf.Engine.Topology.ShapeCasts.Face(exp.Current());
+            Surface Su = Tool.Surface(fac)!;
+            if (Su.GetType() == typeof(TrimmedSurface))
             {
-                Su = ((Geom_RectangularTrimmedSurface)Su).BasisSurface();
+                Su = ((TrimmedSurface)Su).BasisSurface();
             }
-            if (Su.GetType() == typeof(Geom_Plane))
+            if (Su.GetType() == typeof(PlaneSurface))
             {
-                Plane3D pl = ((Geom_Plane)Su).Pln();
+                Plane3D pl = ((PlaneSurface)Su).Pln();
                 if (pl.Axis().IsParallel(theAxis, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     FEIF.Set(ToRotate, fac);
@@ -837,9 +839,9 @@ internal static partial class BRepTestFeatureCommands
                     }
                 }
             }
-            else if (Su.GetType() == typeof(Geom_CylindricalSurface))
+            else if (Su.GetType() == typeof(CylindricalSurface))
             {
-                Cylinder cy = ((Geom_CylindricalSurface)Su).Cylinder();
+                Cylinder cy = ((CylindricalSurface)Su).Cylinder();
                 if (cy.Axis().IsCoaxial(theAxis, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion()))
                 {
                     FEIF.Set(ToRotate, fac);
@@ -854,12 +856,12 @@ internal static partial class BRepTestFeatureCommands
 
     // The end of wrotate and frotate: the revolution by its bounds
     private static int PerformRevol(DrawInterpreter theDI, DrawResult theCommands, IReadOnlyList<string> a,
-                                    BRepFeat_MakeRevol theRFace, int borne, double Angle, in TopoDS_Shape FFrom,
-                                    in TopoDS_Shape FUntil)
+                                    BRepFeat_MakeRevol theRFace, int borne, double Angle, in Shape FFrom,
+                                    in Shape FUntil)
     {
         if (borne == 11)
         {
-            if (FUntil.IsNull())
+            if (FUntil.IsNull)
             {
                 theRFace.Perform(Angle);
             }
@@ -890,10 +892,10 @@ internal static partial class BRepTestFeatureCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[3]);
+        Shape S = theDI.GetShape(a[3]);
         BRepFeat_MakeRevol theRFace = new();
         double Angle = 0;
-        TopoDS_Shape FFrom = new(), FUntil = new();
+        Shape FFrom = new(), FUntil = new();
         int i, borne;
         bool fuse;
 
@@ -921,16 +923,16 @@ internal static partial class BRepTestFeatureCommands
         Direction3D D = new(theDI.Atof(a[i + 3]), theDI.Atof(a[i + 4]), theDI.Atof(a[i + 5]));
         Axis3D theAxis = new(Or, D);
 
-        TopoDS_Shape aLocalShape = theDI.GetShape(a[borne], TopAbs_FACE);
-        TopoDS_Face F = TopoDS.Face(aLocalShape);
+        Shape aLocalShape = theDI.GetShape(a[borne], ShapeType.Face);
+        Face F = global::Kerf.Engine.Topology.ShapeCasts.Face(aLocalShape);
         BRepFeat_SplitShape Spls = new(F);
         for (i = borne + 1; i < narg; i++)
         {
-            TopoDS_Wire wir;
+            Wire wir;
             if (At(a[i], 0) != '-')
             {
-                aLocalShape = theDI.GetShape(a[i], TopAbs_WIRE);
-                wir = TopoDS.Wire(aLocalShape);
+                aLocalShape = theDI.GetShape(a[i], ShapeType.Wire);
+                wir = global::Kerf.Engine.Topology.ShapeCasts.Wire(aLocalShape);
             }
             else
             {
@@ -939,15 +941,15 @@ internal static partial class BRepTestFeatureCommands
                     return 1;
                 }
                 string Temp = a[i][1..];
-                aLocalShape = theDI.GetShape(Temp, TopAbs_WIRE);
-                wir = TopoDS.Wire(aLocalShape);
+                aLocalShape = theDI.GetShape(Temp, ShapeType.Wire);
+                wir = global::Kerf.Engine.Topology.ShapeCasts.Wire(aLocalShape);
                 wir.Reverse();
             }
             Spls.Add(wir, F);
         }
         Spls.Build();
-        TopoDS_Shape ToRotate;
-        IReadOnlyList<TopoDS_Shape> lleft = Spls.DirectLeft();
+        Shape ToRotate;
+        IReadOnlyList<Shape> lleft = Spls.DirectLeft();
         if (lleft.Count == 1)
         {
             theRFace.Init(S, lleft[0], F, theAxis, fuse ? 1 : 0, true);
@@ -955,20 +957,20 @@ internal static partial class BRepTestFeatureCommands
         }
         else
         {
-            BRep_Builder B = new();
-            TopoDS_Shell Sh = new();
+            BrepBuilder B = new();
+            Shell Sh = new();
             B.MakeShell(ref Sh);
-            foreach (TopoDS_Shape aLeft in lleft)
+            foreach (Shape aLeft in lleft)
             {
-                B.Add(Sh, TopoDS.Face(aLeft));
+                B.Add(Sh, global::Kerf.Engine.Topology.ShapeCasts.Face(aLeft));
             }
-            Sh.Closed(BRep_Tool.IsClosed(Sh));
+            Sh.Closed(Tool.IsClosed(Sh));
             theRFace.Init(S, Sh, F, theAxis, fuse ? 1 : 0, true);
             ToRotate = Sh;
         }
 
         // Recherche des faces de glissement
-        TopExp_Explorer exp = new(S, TopAbs_FACE);
+        global::Kerf.Engine.Topology.Explorer exp = new(S, ShapeType.Face);
         for (; exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(F))
@@ -993,10 +995,10 @@ internal static partial class BRepTestFeatureCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[3]);
+        Shape S = theDI.GetShape(a[3]);
         BRepFeat_MakeRevol theRFace = new();
         double Angle = 0;
-        TopoDS_Shape FFrom = new(), FUntil = new();
+        Shape FFrom = new(), FUntil = new();
         int i, borne;
         bool fuse;
 
@@ -1024,38 +1026,38 @@ internal static partial class BRepTestFeatureCommands
         Direction3D D = new(theDI.Atof(a[i + 3]), theDI.Atof(a[i + 4]), theDI.Atof(a[i + 5]));
         Axis3D theAxis = new(Or, D);
 
-        TopoDS_Shape ToRotate;
+        Shape ToRotate;
         if (narg == borne + 1)
         {
-            TopoDS_Shape aLocalShape = theDI.GetShape(a[borne], TopAbs_FACE);
-            TopoDS_Face F = TopoDS.Face(aLocalShape);
+            Shape aLocalShape = theDI.GetShape(a[borne], ShapeType.Face);
+            Face F = global::Kerf.Engine.Topology.ShapeCasts.Face(aLocalShape);
             theRFace.Init(S, F, F, theAxis, fuse ? 1 : 0, true);
             ToRotate = F;
         }
         else
         {
-            TopoDS_Shell She = new();
-            BRep_Builder B = new();
+            Shell She = new();
+            BrepBuilder B = new();
             B.MakeShell(ref She);
 
             for (i = borne; i < narg; i++)
             {
-                TopoDS_Shape aLocalShape = theDI.GetShape(a[i], TopAbs_FACE);
-                TopoDS_Face F = TopoDS.Face(aLocalShape);
-                if (!F.IsNull())
+                Shape aLocalShape = theDI.GetShape(a[i], ShapeType.Face);
+                Face F = global::Kerf.Engine.Topology.ShapeCasts.Face(aLocalShape);
+                if (!F.IsNull)
                 {
                     B.Add(She, F);
                 }
             }
-            She.Closed(BRep_Tool.IsClosed(She));
-            theRFace.Init(S, She, new TopoDS_Face(), theAxis, fuse ? 1 : 0, false);
+            She.Closed(Tool.IsClosed(She));
+            theRFace.Init(S, She, new Face(), theAxis, fuse ? 1 : 0, false);
             ToRotate = She;
         }
 
-        TopExp_Explorer exp = new(ToRotate, TopAbs_FACE);
+        global::Kerf.Engine.Topology.Explorer exp = new(ToRotate, ShapeType.Face);
         for (; exp.More(); exp.Next())
         {
-            TopExp_Explorer exp2 = new(S, TopAbs_FACE);
+            global::Kerf.Engine.Topology.Explorer exp2 = new(S, ShapeType.Face);
             for (; exp2.More(); exp2.Next())
             {
                 if (exp2.Current().IsSame(exp.Current()))
@@ -1084,11 +1086,11 @@ internal static partial class BRepTestFeatureCommands
         {
             return 1;
         }
-        TopoDS_Shape Sne = theDI.GetShape(a[2]);
-        TopoDS_Shape Sba = theDI.GetShape(a[3]);
+        Shape Sne = theDI.GetShape(a[2]);
+        Shape Sba = theDI.GetShape(a[3]);
 
         BRepFeat_Gluer theGl = new(Sne, Sba);
-        TopoDS_Shape Fne, Fba;
+        Shape Fne, Fba;
 
         LocOpe_FindEdges fined = new();
 
@@ -1098,18 +1100,18 @@ internal static partial class BRepTestFeatureCommands
         {
             // the interactive picks of names starting with a dot are left out
             Fne = theDI.GetShape(a[i]);
-            if (Fne.IsNull())
+            if (Fne.IsNull)
             {
                 return 1;
             }
-            TopAbs_ShapeEnum sht = Fne.ShapeType();
-            if (first && sht != TopAbs_FACE)
+            ShapeType sht = Fne.ShapeType();
+            if (first && sht != ShapeType.Face)
             {
                 return 1;
             }
             first = false;
             Fba = theDI.GetShape(a[i + 1]);
-            if (Fba.IsNull())
+            if (Fba.IsNull)
             {
                 return 1;
             }
@@ -1117,10 +1119,10 @@ internal static partial class BRepTestFeatureCommands
             {
                 return 1;
             }
-            if (sht == TopAbs_FACE)
+            if (sht == ShapeType.Face)
             {
-                TopoDS_Face f1 = TopoDS.Face(Fne);
-                TopoDS_Face f2 = TopoDS.Face(Fba);
+                Face f1 = global::Kerf.Engine.Topology.ShapeCasts.Face(Fne);
+                Face f2 = global::Kerf.Engine.Topology.ShapeCasts.Face(Fba);
                 theGl.Bind(f1, f2);
                 fined.Set(Fne, Fba);
                 for (fined.InitIterator(); fined.More(); fined.Next())
@@ -1130,7 +1132,7 @@ internal static partial class BRepTestFeatureCommands
             }
             else
             {
-                theGl.Bind(TopoDS.Edge(Fne), TopoDS.Edge(Fba));
+                theGl.Bind(global::Kerf.Engine.Topology.ShapeCasts.Edge(Fne), global::Kerf.Engine.Topology.ShapeCasts.Edge(Fba));
             }
             i += 2;
         }
@@ -1158,8 +1160,8 @@ internal static partial class BRepTestFeatureCommands
         }
 
         FeatureState aState = State(theDI);
-        TopoDS_Shape Sbase = theDI.GetShape(a[1]);
-        if (Sbase.IsNull())
+        Shape Sbase = theDI.GetShape(a[1]);
+        if (Sbase.IsNull)
         {
             theCommands.Append("null basis shape");
             return 1;
@@ -1170,25 +1172,25 @@ internal static partial class BRepTestFeatureCommands
         int Fuse = Ifuse;
         bool Modify = Imodif != 0;
 
-        TopoDS_Shape Pbase = new();
-        TopoDS_Face Skface = new();
-        TopoDS_Wire W = new();
+        Shape Pbase = new();
+        Face Skface = new();
+        Wire W = new();
 
-        Geom_Plane? P = null;
+        PlaneSurface? P = null;
 
         BRepFeat_StatusError se;
 
         if (!EqualsNoCase(a0, "FEATLF") && !EqualsNoCase(a0, "FEATRF"))
         {
             Pbase = theDI.GetShape(a[2]);
-            if (Pbase.IsNull())
+            if (Pbase.IsNull)
             {
                 theCommands.Append("null shape to transform");
                 return 1;
             }
-            TopoDS_Shape aLocalShape = theDI.GetShape(a[3], TopAbs_FACE);
-            Skface = TopoDS.Face(aLocalShape);
-            if (Skface.IsNull())
+            Shape aLocalShape = theDI.GetShape(a[3], ShapeType.Face);
+            Skface = global::Kerf.Engine.Topology.ShapeCasts.Face(aLocalShape);
+            if (Skface.IsNull)
             {
                 theCommands.Append("null face of Sketch");
                 return 1;
@@ -1196,15 +1198,15 @@ internal static partial class BRepTestFeatureCommands
         }
         else
         {
-            TopoDS_Shape aLocalShape = theDI.GetShape(a[2], TopAbs_WIRE);
-            W = TopoDS.Wire(aLocalShape);
-            if (W.IsNull())
+            Shape aLocalShape = theDI.GetShape(a[2], ShapeType.Wire);
+            W = global::Kerf.Engine.Topology.ShapeCasts.Wire(aLocalShape);
+            if (W.IsNull)
             {
                 theCommands.Append("null profile for rib or slot");
                 return 1;
             }
-            Geom_Surface? s = DrawTrSurf.GetSurface(theDI, a[3]);
-            P = s as Geom_Plane;
+            Surface? s = DrawTrSurf.GetSurface(theDI, a[3]);
+            P = s as PlaneSurface;
             if (P is null)
             {
                 theCommands.Append("null plane to transform");
@@ -1276,7 +1278,7 @@ internal static partial class BRepTestFeatureCommands
         {
             if (EqualsNoCase(a0, "FEATDPRISM"))
             {
-                if (Pbase.ShapeType() != TopAbs_FACE)
+                if (Pbase.ShapeType() != ShapeType.Face)
                 {
                     theCommands.Append("Invalid DPrism base");
                     return 1;
@@ -1286,21 +1288,21 @@ internal static partial class BRepTestFeatureCommands
                 aState.theSbase = Sbase;
                 aState.thePbase = Pbase;
                 aState.theSkface = Skface;
-                aState.DPrism.Init(Sbase, TopoDS.Face(Pbase), Skface, Angle, Fuse, Modify);
+                aState.DPrism.Init(Sbase, global::Kerf.Engine.Topology.ShapeCasts.Face(Pbase), Skface, Angle, Fuse, Modify);
             }
             else
             { // FEATPIPE
-                TopoDS_Shape aLocalShape = theDI.GetShape(a[4], TopAbs_WIRE);
-                TopoDS_Wire Spine = TopoDS.Wire(aLocalShape);
-                if (Spine.IsNull())
+                Shape aLocalShape = theDI.GetShape(a[4], ShapeType.Wire);
+                Wire Spine = global::Kerf.Engine.Topology.ShapeCasts.Wire(aLocalShape);
+                if (Spine.IsNull)
                 {
-                    TopoDS_Shape Edspine = theDI.GetShape(a[4], TopAbs_EDGE);
-                    if (Edspine.IsNull())
+                    Shape Edspine = theDI.GetShape(a[4], ShapeType.Edge);
+                    if (Edspine.IsNull)
                     {
                         theCommands.Append("null spine");
                         return 1;
                     }
-                    BRep_Builder B = new();
+                    BrepBuilder B = new();
                     B.MakeWire(ref Spine);
                     B.Add(Spine, Edspine);
                 }
@@ -1333,15 +1335,15 @@ internal static partial class BRepTestFeatureCommands
             }
             for (i = 2; i < narg; i += 2)
             {
-                TopoDS_Shape aLocalShape = theDI.GetShape(a[i], TopAbs_EDGE);
-                TopoDS_Edge edg = TopoDS.Edge(aLocalShape);
-                if (edg.IsNull())
+                Shape aLocalShape = theDI.GetShape(a[i], ShapeType.Edge);
+                Edge edg = global::Kerf.Engine.Topology.ShapeCasts.Edge(aLocalShape);
+                if (edg.IsNull)
                 {
                     return 1;
                 }
-                aLocalShape = theDI.GetShape(a[i + 1], TopAbs_FACE);
-                TopoDS_Face fac = TopoDS.Face(aLocalShape);
-                if (fac.IsNull())
+                aLocalShape = theDI.GetShape(a[i + 1], ShapeType.Face);
+                Face fac = global::Kerf.Engine.Topology.ShapeCasts.Face(aLocalShape);
+                if (fac.IsNull)
                 {
                     return 1;
                 }
@@ -1380,7 +1382,7 @@ internal static partial class BRepTestFeatureCommands
         }
 
         FeatureState aState = State(theDI);
-        NCollection_List<TopoDS_Shape> anArgs = new();
+        NCollection_List<Shape> anArgs = new();
 
         int Kas;
         if (EqualsNoCase("PRISM", a[1]))
@@ -1495,7 +1497,7 @@ internal static partial class BRepTestFeatureCommands
             else if (narg == 5)
             {
                 double Val = theDI.Atof(a[3]);
-                TopoDS_Shape FUntil = theDI.GetShape(a[4], TopAbs_SHAPE);
+                Shape FUntil = theDI.GetShape(a[4], ShapeType.Shape);
                 if (Kas == 1)
                 {
                     aState.Prism.PerformUntilHeight(FUntil, Val);
@@ -1546,12 +1548,12 @@ internal static partial class BRepTestFeatureCommands
             }
             else if (narg == 4)
             { // Until
-                TopoDS_Shape Funtil = theDI.GetShape(a[3], TopAbs_SHAPE);
+                Shape Funtil = theDI.GetShape(a[3], ShapeType.Shape);
                 switch (Kas)
                 {
                     case 1:
                     {
-                        if (Funtil.IsNull())
+                        if (Funtil.IsNull)
                         {
                             aState.Prism.PerformUntilEnd();
                         }
@@ -1563,7 +1565,7 @@ internal static partial class BRepTestFeatureCommands
                     break;
                     case 2:
                     {
-                        if (!Funtil.IsNull())
+                        if (!Funtil.IsNull)
                         {
                             aState.Revol.Perform(Funtil);
                         }
@@ -1575,7 +1577,7 @@ internal static partial class BRepTestFeatureCommands
                     break;
                     case 3:
                     {
-                        if (!Funtil.IsNull())
+                        if (!Funtil.IsNull)
                         {
                             aState.Pipe.Perform(Funtil);
                         }
@@ -1588,7 +1590,7 @@ internal static partial class BRepTestFeatureCommands
                     break;
                     case 4:
                     {
-                        if (!Funtil.IsNull())
+                        if (!Funtil.IsNull)
                         {
                             aState.DPrism.Perform(Funtil);
                         }
@@ -1614,9 +1616,9 @@ internal static partial class BRepTestFeatureCommands
             }
             else if (narg == 5)
             {
-                TopoDS_Shape Ffrom = theDI.GetShape(a[3], TopAbs_SHAPE);
-                TopoDS_Shape Funtil = theDI.GetShape(a[4], TopAbs_SHAPE);
-                if (Funtil.IsNull())
+                Shape Ffrom = theDI.GetShape(a[3], ShapeType.Shape);
+                Shape Funtil = theDI.GetShape(a[4], ShapeType.Shape);
+                if (Funtil.IsNull)
                 {
                     return 1;
                 }
@@ -1624,7 +1626,7 @@ internal static partial class BRepTestFeatureCommands
                 {
                     case 1:
                     {
-                        if (Ffrom.IsNull())
+                        if (Ffrom.IsNull)
                         {
                             aState.Prism.PerformFromEnd(Funtil);
                         }
@@ -1636,7 +1638,7 @@ internal static partial class BRepTestFeatureCommands
                     break;
                     case 2:
                     {
-                        if (Ffrom.IsNull())
+                        if (Ffrom.IsNull)
                         {
                             return 1;
                         }
@@ -1645,7 +1647,7 @@ internal static partial class BRepTestFeatureCommands
                     break;
                     case 3:
                     {
-                        if (Ffrom.IsNull())
+                        if (Ffrom.IsNull)
                         {
                             return 1;
                         }
@@ -1654,7 +1656,7 @@ internal static partial class BRepTestFeatureCommands
                     break;
                     case 4:
                     {
-                        if (Ffrom.IsNull())
+                        if (Ffrom.IsNull)
                         {
                             aState.DPrism.PerformFromEnd(Funtil);
                         }
@@ -1803,8 +1805,8 @@ internal static partial class BRepTestFeatureCommands
             dprsig = theDI.Atoi(a[5]);
         }
 
-        TopoDS_Compound theShapeTop = new();
-        TopoDS_Compound theShapeBottom = new();
+        Compound theShapeTop = new();
+        Compound theShapeBottom = new();
 
         if (Kas == 1 || Kas == 3)
         {
@@ -1824,18 +1826,18 @@ internal static partial class BRepTestFeatureCommands
 
             aState.DPrism.BossEdges(dprsig);
 
-            NCollection_List<TopoDS_Shape> theTopEdges = new(aState.DPrism.InternalTopEdges());
-            NCollection_List<TopoDS_Shape> theLatEdges = new(aState.DPrism.InternalLatEdges());
+            NCollection_List<Shape> theTopEdges = new(aState.DPrism.InternalTopEdges());
+            NCollection_List<Shape> theLatEdges = new(aState.DPrism.InternalLatEdges());
 
-            NCollection_List<TopoDS_Shape>.Iterator it = new();
-            BRep_Builder B = new();
+            NCollection_List<Shape>.Iterator it = new();
+            BrepBuilder B = new();
 
             B.MakeCompound(ref theShapeTop);
             it.Initialize(theTopEdges);
             for (; it.More(); it.Next())
             {
-                TopExp_Explorer exp = new();
-                for (exp.Init(it.Value(), TopAbs_EDGE); exp.More(); exp.Next())
+                global::Kerf.Engine.Topology.Explorer exp = new();
+                for (exp.Init(it.Value(), ShapeType.Edge); exp.More(); exp.Next())
                 {
                     B.Add(theShapeTop, exp.Current());
                 }
@@ -1856,17 +1858,17 @@ internal static partial class BRepTestFeatureCommands
         }
 
         // Kas == 2 || Kas == 3
-        TopoDS_Shape V = new();
+        Shape V = new();
         if (Kas == 2)
         {
-            V = theDI.GetShape(a[2], TopAbs_SHAPE);
+            V = theDI.GetShape(a[2], ShapeType.Shape);
         }
         else
         {
             V = aState.DPrism.Shape();
         }
 
-        if (V.IsNull())
+        if (V.IsNull)
         {
             return 1;
         }
@@ -1888,12 +1890,12 @@ internal static partial class BRepTestFeatureCommands
                 {
                     continue;
                 }
-                TopoDS_Shape S = theDI.GetShape(a[2 * ii + 2], TopAbs_SHAPE);
-                TopExp_Explorer exp = new();
-                for (exp.Init(S, TopAbs_EDGE); exp.More(); exp.Next())
+                Shape S = theDI.GetShape(a[2 * ii + 2], ShapeType.Shape);
+                global::Kerf.Engine.Topology.Explorer exp = new();
+                for (exp.Init(S, ShapeType.Edge); exp.More(); exp.Next())
                 {
-                    TopoDS_Edge E = TopoDS.Edge(exp.Current());
-                    if (!E.IsNull())
+                    Edge E = global::Kerf.Engine.Topology.ShapeCasts.Edge(exp.Current());
+                    if (!E.IsNull)
                     {
                         Rakk.Add(Rad, E);
                         nbedge++;
@@ -1906,11 +1908,11 @@ internal static partial class BRepTestFeatureCommands
             double Rad = theDI.Atof(a[3]);
             if (Rad != 0.0)
             {
-                TopExp_Explorer exp = new();
-                for (exp.Init(theShapeTop, TopAbs_EDGE); exp.More(); exp.Next())
+                global::Kerf.Engine.Topology.Explorer exp = new();
+                for (exp.Init(theShapeTop, ShapeType.Edge); exp.More(); exp.Next())
                 {
-                    TopoDS_Edge E = TopoDS.Edge(exp.Current());
-                    if (!E.IsNull())
+                    Edge E = global::Kerf.Engine.Topology.ShapeCasts.Edge(exp.Current());
+                    if (!E.IsNull)
                     {
                         Rakk.Add(Rad, E);
                         nbedge++;
@@ -1920,11 +1922,11 @@ internal static partial class BRepTestFeatureCommands
             Rad = theDI.Atof(a[4]);
             if (Rad != 0.0)
             {
-                TopExp_Explorer exp = new();
-                for (exp.Init(theShapeBottom, TopAbs_EDGE); exp.More(); exp.Next())
+                global::Kerf.Engine.Topology.Explorer exp = new();
+                for (exp.Init(theShapeBottom, ShapeType.Edge); exp.More(); exp.Next())
                 {
-                    TopoDS_Edge E = TopoDS.Edge(exp.Current());
-                    if (!E.IsNull())
+                    Edge E = global::Kerf.Engine.Topology.ShapeCasts.Edge(exp.Current());
+                    if (!E.IsNull)
                     {
                         Rakk.Add(Rad, E);
                         nbedge++;
@@ -1942,14 +1944,14 @@ internal static partial class BRepTestFeatureCommands
         {
             return 1;
         }
-        TopoDS_Shape res = Rakk.Shape();
+        Shape res = Rakk.Shape();
 
         theDI.SetShape(Kas == 2 ? a[1] : a[2], res);
 
         // Save history for fillet
         if (BRepTestHistoryCommands.IsHistoryNeeded(theDI))
         {
-            NCollection_List<TopoDS_Shape> anArg = new();
+            NCollection_List<Shape> anArg = new();
             anArg.Append(V);
             BRepTestHistoryCommands.SetHistory(theDI, anArg, Rakk);
         }

@@ -6,8 +6,9 @@
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.Measurement;
 
 /// <summary>
 /// Global properties (length, area, volume, centre of mass, inertia) of sets of points, curves, surfaces, solids
@@ -16,20 +17,20 @@ namespace Occt;
 public static class GProp
 {
     /// <summary>
-    /// The "Huyghens operator" of a system of mass <paramref name="Mass"/> and centre of mass <paramref name="G"/>
-    /// at the point <paramref name="Q"/>: Inertia/Q = Inertia/G + HOperator(G, Q, Mass).
+    /// The "Huyghens operator" of a system of mass <paramref name="mass"/> and centre of mass <paramref name="g"/>
+    /// at the point <paramref name="q"/>: Inertia/Q = Inertia/G + HOperator(G, Q, Mass).
     /// </summary>
-    public static void HOperator(in Point3D G, in Point3D Q, double Mass, out Matrix3x3 Operator)
+    public static void HOperator(in Point3D g, in Point3D q, double mass, out Matrix3x3 Operator)
     {
-        Xyz QG = G.XYZ() - Q.XYZ();
-        double Ixx = QG.Y() * QG.Y() + QG.Z() * QG.Z();
-        double Iyy = QG.X() * QG.X() + QG.Z() * QG.Z();
-        double Izz = QG.Y() * QG.Y() + QG.X() * QG.X();
-        double Ixy = -QG.X() * QG.Y();
-        double Iyz = -QG.Y() * QG.Z();
-        double Ixz = -QG.X() * QG.Z();
+        Xyz qg = g.XYZ() - q.XYZ();
+        double ixx = qg.Y() * qg.Y() + qg.Z() * qg.Z();
+        double iyy = qg.X() * qg.X() + qg.Z() * qg.Z();
+        double izz = qg.Y() * qg.Y() + qg.X() * qg.X();
+        double ixy = -qg.X() * qg.Y();
+        double iyz = -qg.Y() * qg.Z();
+        double ixz = -qg.X() * qg.Z();
         Operator = new Matrix3x3();
-        Operator.SetCols(new Xyz(Ixx, Ixy, Ixz), new Xyz(Ixy, Iyy, Iyz), new Xyz(Ixz, Iyz, Izz));
-        Operator.Multiply(Mass);
+        Operator.SetCols(new Xyz(ixx, ixy, ixz), new Xyz(ixy, iyy, iyz), new Xyz(ixz, iyz, izz));
+        Operator.Multiply(mass);
     }
 }

@@ -1,6 +1,7 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomGridEval_Ellipse_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -21,15 +22,15 @@ public class GeomGridEval_EllipseTest
     }
 
     // Ellipse in XY plane, Major=3, Minor=2, center at origin
-    private static Geom_Ellipse MakeCurve() => new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 3.0, 2.0);
+    private static EllipseCurve3D MakeCurve() => new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 3.0, 2.0);
 
     [Fact]
     public void BasicEvaluation()
     {
         // Ellipse in XY plane, Major=3, Minor=2, center at origin
-        Geom_Ellipse anEllipse = MakeCurve();
+        EllipseCurve3D anEllipse = MakeCurve();
 
-        GeomGridEval_Ellipse anEval = new(anEllipse);
+        EllipseGrid anEval = new(anEllipse);
         Assert.NotNull(anEval.Geometry());
 
         // Test at 0, PI/2, PI, 3PI/2, 2PI
@@ -66,11 +67,11 @@ public class GeomGridEval_EllipseTest
     [Fact]
     public void DerivativeD1()
     {
-        Geom_Ellipse aCurve = MakeCurve();
-        GeomGridEval_Ellipse anEval = new(aCurve);
+        EllipseCurve3D aCurve = MakeCurve();
+        EllipseGrid anEval = new(aCurve);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 2 * M_PI, 9);
-        NCollection_Array1<Geom_Curve.ResD1> aGrid = anEval.EvaluateGridD1(aParams);
+        NCollection_Array1<Curve3D.ResD1> aGrid = anEval.EvaluateGridD1(aParams);
 
         for (int i = 1; i <= 9; ++i)
         {
@@ -83,11 +84,11 @@ public class GeomGridEval_EllipseTest
     [Fact]
     public void DerivativeD2()
     {
-        Geom_Ellipse aCurve = MakeCurve();
-        GeomGridEval_Ellipse anEval = new(aCurve);
+        EllipseCurve3D aCurve = MakeCurve();
+        EllipseGrid anEval = new(aCurve);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 2 * M_PI, 9);
-        NCollection_Array1<Geom_Curve.ResD2> aGrid = anEval.EvaluateGridD2(aParams);
+        NCollection_Array1<Curve3D.ResD2> aGrid = anEval.EvaluateGridD2(aParams);
 
         for (int i = 1; i <= 9; ++i)
         {
@@ -101,11 +102,11 @@ public class GeomGridEval_EllipseTest
     [Fact]
     public void DerivativeD3()
     {
-        Geom_Ellipse aCurve = MakeCurve();
-        GeomGridEval_Ellipse anEval = new(aCurve);
+        EllipseCurve3D aCurve = MakeCurve();
+        EllipseGrid anEval = new(aCurve);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 2 * M_PI, 9);
-        NCollection_Array1<Geom_Curve.ResD3> aGrid = anEval.EvaluateGridD3(aParams);
+        NCollection_Array1<Curve3D.ResD3> aGrid = anEval.EvaluateGridD3(aParams);
 
         for (int i = 1; i <= 9; ++i)
         {

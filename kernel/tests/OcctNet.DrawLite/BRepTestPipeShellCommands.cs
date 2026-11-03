@@ -2,7 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
 using static Occt.BRepBuilderAPI_PipeError;
@@ -57,8 +60,8 @@ internal static class BRepTestPipeShellCommands
     private static int geompipe(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
         int n = a.Count;
-        TopoDS_Shape Spine = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_EDGE);
-        if (Spine.IsNull())
+        Shape Spine = theDI.GetShape(a[2], ShapeType.Edge);
+        if (Spine.IsNull)
         {
             return 1;
         }
@@ -66,21 +69,21 @@ internal static class BRepTestPipeShellCommands
         {
             return 1;
         }
-        TopoDS_Shape Profile = theDI.GetShape(a[3], TopAbs_ShapeEnum.TopAbs_EDGE);
-        if (Profile.IsNull())
+        Shape Profile = theDI.GetShape(a[3], ShapeType.Edge);
+        if (Profile.IsNull)
         {
             return 1;
         }
-        Geom_Curve? SpineCurve = BRep_Tool.Curve(TopoDS.Edge(Spine), out double aSpFirst, out double aSpLast);
-        Geom_Curve? ProfileCurve = BRep_Tool.Curve(TopoDS.Edge(Profile), out _, out _);
-        var aAdaptCurve = new GeomAdaptor_Curve(SpineCurve!, aSpFirst, aSpLast);
+        Curve3D? SpineCurve = Tool.Curve(global::Kerf.Engine.Topology.ShapeCasts.Edge(Spine), out double aSpFirst, out double aSpLast);
+        Curve3D? ProfileCurve = Tool.Curve(global::Kerf.Engine.Topology.ShapeCasts.Edge(Profile), out _, out _);
+        var aAdaptCurve = new CurveAdaptor(SpineCurve!, aSpFirst, aSpLast);
         bool ByACR = false;
         bool rotate = false;
         double Radius = theDI.Atof(a[4]);
         ProfileCurve!.D1(aSpFirst, out Point3D ctr, out Vector3D norm);
         var xAxisStart = new Vector3D(ctr, SpineCurve!.Value(aSpFirst));
         var aAx2Start = new Frame3D(ctr, new Direction3D(norm), new Direction3D(xAxisStart));
-        var cStart = new Geom_Circle(aAx2Start, Radius);
+        var cStart = new CircleCurve3D(aAx2Start, Radius);
         int k = 5;
         if (n > k)
         {
@@ -101,8 +104,8 @@ internal static class BRepTestPipeShellCommands
         double Accuracy = aPipe.ErrorOnSurf();
         theDI.Output.WriteLine("Accuracy of approximation = " + global::Kerf.Engine.Foundation.StreamUtilities.FormatReal(Accuracy, 6));
 
-        Geom_Surface? Sur = aPipe.Surface();
-        TopoDS_Face F = new();
+        Surface? Sur = aPipe.Surface();
+        Face F = new();
         if (Sur is not null)
         {
             F = new BRepBuilderAPI_MakeFace(Sur, global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
@@ -120,44 +123,44 @@ internal static class BRepTestPipeShellCommands
         }
 
         bool YaWIRE = false;
-        TopoDS_Shape S1 = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_EDGE);
-        if (S1.IsNull())
+        Shape S1 = theDI.GetShape(a[2], ShapeType.Edge);
+        if (S1.IsNull)
         {
-            S1 = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_WIRE);
-            if (S1.IsNull())
+            S1 = theDI.GetShape(a[2], ShapeType.Wire);
+            if (S1.IsNull)
             {
                 return 1;
             }
             YaWIRE = true;
         }
 
-        TopoDS_Shape S2 = theDI.GetShape(a[3], TopAbs_ShapeEnum.TopAbs_EDGE);
-        if (S2.IsNull())
+        Shape S2 = theDI.GetShape(a[3], ShapeType.Edge);
+        if (S2.IsNull)
         {
-            S2 = theDI.GetShape(a[3], TopAbs_ShapeEnum.TopAbs_WIRE);
-            if (S2.IsNull())
+            S2 = theDI.GetShape(a[3], ShapeType.Wire);
+            if (S2.IsNull)
             {
                 return 1;
             }
             if (!YaWIRE)
             {
-                S1 = new BRepLib_MakeWire(TopoDS.Edge(S1)).Wire();
+                S1 = new BRepLib_MakeWire(global::Kerf.Engine.Topology.ShapeCasts.Edge(S1)).Wire();
                 YaWIRE = true;
             }
         }
         else if (YaWIRE)
         {
-            S2 = new BRepLib_MakeWire(TopoDS.Edge(S2)).Wire();
+            S2 = new BRepLib_MakeWire(global::Kerf.Engine.Topology.ShapeCasts.Edge(S2)).Wire();
         }
 
-        TopoDS_Shape Result;
+        Shape Result;
         if (YaWIRE)
         {
-            Result = BRepFill.Shell(TopoDS.Wire(S1), TopoDS.Wire(S2));
+            Result = BRepFill.Shell(global::Kerf.Engine.Topology.ShapeCasts.Wire(S1), global::Kerf.Engine.Topology.ShapeCasts.Wire(S2));
         }
         else
         {
-            Result = BRepFill.Face(TopoDS.Edge(S1), TopoDS.Edge(S2));
+            Result = BRepFill.Face(global::Kerf.Engine.Topology.ShapeCasts.Edge(S1), global::Kerf.Engine.Topology.ShapeCasts.Edge(S2));
         }
 
         theDI.SetShape(a[1], Result);
@@ -173,24 +176,24 @@ internal static class BRepTestPipeShellCommands
             return 1;
         }
 
-        TopoDS_Shape Shape;
+        Shape Shape;
 
         var aGenerator = new BRepFill_Generator();
 
         for (int i = 2; i <= n - 1; i++)
         {
-            Shape = theDI.GetShape(a[i], TopAbs_ShapeEnum.TopAbs_WIRE);
-            if (Shape.IsNull())
+            Shape = theDI.GetShape(a[i], ShapeType.Wire);
+            if (Shape.IsNull)
             {
                 return 1;
             }
 
-            aGenerator.AddWire(TopoDS.Wire(Shape));
+            aGenerator.AddWire(global::Kerf.Engine.Topology.ShapeCasts.Wire(Shape));
         }
 
         aGenerator.Perform();
 
-        TopoDS_Shell Shell = aGenerator.Shell();
+        Shell Shell = aGenerator.Shell();
 
         theDI.SetShape(a[1], Shell);
 
@@ -219,7 +222,7 @@ internal static class BRepTestPipeShellCommands
             index++;
         }
 
-        TopoDS_Shape Shape;
+        Shape Shape;
 
         bool issolid = theDI.Atoi(a[index]) == 1;
         bool isruled = theDI.Atoi(a[index + 1]) == 1;
@@ -238,19 +241,19 @@ internal static class BRepTestPipeShellCommands
                 continue;
             }
             bool IsWire = true;
-            Shape = theDI.GetShape(a[i], TopAbs_ShapeEnum.TopAbs_WIRE);
-            if (!Shape.IsNull())
+            Shape = theDI.GetShape(a[i], ShapeType.Wire);
+            if (!Shape.IsNull)
             {
-                Generator.AddWire(TopoDS.Wire(Shape));
+                Generator.AddWire(global::Kerf.Engine.Topology.ShapeCasts.Wire(Shape));
                 IsFirstWire = !IsFirstWire;
             }
             else
             {
-                Shape = theDI.GetShape(a[i], TopAbs_ShapeEnum.TopAbs_VERTEX);
+                Shape = theDI.GetShape(a[i], ShapeType.Vertex);
                 IsWire = false;
-                if (!Shape.IsNull())
+                if (!Shape.IsNull)
                 {
-                    Generator.AddVertex(TopoDS.Vertex(Shape));
+                    Generator.AddVertex(global::Kerf.Engine.Topology.ShapeCasts.Vertex(Shape));
                 }
                 else
                 {
@@ -259,8 +262,8 @@ internal static class BRepTestPipeShellCommands
             }
 
             int cpt = 0;
-            var PE = new TopExp_Explorer();
-            for (PE.Init(Shape, TopAbs_ShapeEnum.TopAbs_EDGE); PE.More(); PE.Next())
+            var PE = new global::Kerf.Engine.Topology.Explorer();
+            for (PE.Init(Shape, ShapeType.Edge); PE.More(); PE.Next())
             {
                 cpt++;
             }
@@ -283,13 +286,13 @@ internal static class BRepTestPipeShellCommands
 
         if (Generator.IsDone())
         {
-            TopoDS_Shape Shell = Generator.Shape();
+            Shape Shell = Generator.Shape();
             theDI.SetShape(a[index - 1], Shell);
             // Save history of the lofting
             if (BRepTestHistoryCommands.IsHistoryNeeded(theDI))
             {
-                var aList = new NCollection_List<TopoDS_Shape>();
-                foreach (TopoDS_Shape aWire in Generator.Wires())
+                var aList = new NCollection_List<Shape>();
+                foreach (Shape aWire in Generator.Wires())
                 {
                     aList.Append(aWire);
                 }
@@ -334,8 +337,8 @@ internal static class BRepTestPipeShellCommands
         {
             return 1;
         }
-        TopoDS_Shape Spine = theDI.GetShape(a[1], TopAbs_ShapeEnum.TopAbs_WIRE);
-        if (Spine.IsNull())
+        Shape Spine = theDI.GetShape(a[1], ShapeType.Wire);
+        if (Spine.IsNull)
         {
             return 1;
         }
@@ -375,7 +378,7 @@ internal static class BRepTestPipeShellCommands
             }
         }
 
-        aSession.Sweep = new BRepOffsetAPI_MakePipeShell(TopoDS.Wire(Spine));
+        aSession.Sweep = new BRepOffsetAPI_MakePipeShell(global::Kerf.Engine.Topology.ShapeCasts.Wire(Spine));
         return 0;
     }
 
@@ -426,8 +429,8 @@ internal static class BRepTestPipeShellCommands
                 di.Append("bad arguments !\n");
                 return 1;
             }
-            TopoDS_Shape Surf = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_SHAPE);
-            if (Surf.IsNull())
+            Shape Surf = theDI.GetShape(a[2], ShapeType.Shape);
+            if (Surf.IsNull)
             {
                 di.Append(a[2]).Append("is not a shape !\n");
                 return 1;
@@ -473,10 +476,10 @@ internal static class BRepTestPipeShellCommands
             }
             else
             {
-                TopoDS_Shape Guide = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_WIRE);
+                Shape Guide = theDI.GetShape(a[2], ShapeType.Wire);
                 bool CurvilinearEquivalence = theDI.Atoi(a[3]) != 0;
                 int KeepContact = theDI.Atoi(a[4]);
-                Sweep.SetMode(TopoDS.Wire(Guide), CurvilinearEquivalence, (BRepFill_TypeOfContact)KeepContact);
+                Sweep.SetMode(global::Kerf.Engine.Topology.ShapeCasts.Wire(Guide), CurvilinearEquivalence, (BRepFill_TypeOfContact)KeepContact);
             }
         }
         else if (a[1] == "-DM")
@@ -543,13 +546,13 @@ internal static class BRepTestPipeShellCommands
             return 1;
         }
 
-        TopoDS_Shape Section;
-        TopoDS_Vertex Vertex = new();
+        Shape Section;
+        Vertex Vertex = new();
         Law_Interpol? thelaw = null;
 
-        Section = theDI.GetShape(a[1], TopAbs_ShapeEnum.TopAbs_SHAPE);
-        if (Section.IsNull()
-            || (Section.ShapeType() != TopAbs_ShapeEnum.TopAbs_WIRE && Section.ShapeType() != TopAbs_ShapeEnum.TopAbs_VERTEX))
+        Section = theDI.GetShape(a[1], ShapeType.Shape);
+        if (Section.IsNull
+            || (Section.ShapeType() != ShapeType.Wire && Section.ShapeType() != ShapeType.Vertex))
         {
             di.Append(a[1]).Append(" is not a wire and is not a vertex!\n");
             return 1;
@@ -561,9 +564,9 @@ internal static class BRepTestPipeShellCommands
         {
             int cur = 2;
             // Reading of Vertex
-            TopoDS_Shape InputVertex = theDI.GetShape(a[cur], TopAbs_ShapeEnum.TopAbs_VERTEX);
-            Vertex = TopoDS.Vertex(InputVertex);
-            if (!Vertex.IsNull())
+            Shape InputVertex = theDI.GetShape(a[cur], ShapeType.Vertex);
+            Vertex = global::Kerf.Engine.Topology.ShapeCasts.Vertex(InputVertex);
+            if (!Vertex.IsNull)
             {
                 cur++;
                 HasVertex = true;
@@ -639,9 +642,9 @@ internal static class BRepTestPipeShellCommands
         {
             return 1;
         }
-        TopoDS_Shape InputShape = theDI.GetShape(a[1], TopAbs_ShapeEnum.TopAbs_SHAPE);
-        TopoDS_Wire Section = TopoDS.Wire(InputShape);
-        if (Section.IsNull())
+        Shape InputShape = theDI.GetShape(a[1], ShapeType.Shape);
+        Wire Section = global::Kerf.Engine.Topology.ShapeCasts.Wire(InputShape);
+        if (Section.IsNull)
         {
             di.Append(a[1]).Append("is not a wire !\n");
             return 1;
@@ -682,7 +685,7 @@ internal static class BRepTestPipeShellCommands
             return 1;
         }
 
-        TopoDS_Shape result;
+        Shape result;
         int cur = 2;
         if (n > cur)
         {
@@ -738,9 +741,9 @@ internal static class BRepTestPipeShellCommands
             // Save history of sweep
             if (BRepTestHistoryCommands.IsHistoryNeeded(theDI))
             {
-                var aList = new NCollection_List<TopoDS_Shape>();
+                var aList = new NCollection_List<Shape>();
                 Sweep.Profiles(aList);
-                TopoDS_Shape aSpine = Sweep.Spine();
+                Shape aSpine = Sweep.Spine();
                 aList.Append(aSpine);
                 BRepTestHistoryCommands.SetHistory(theDI, aList, Sweep);
             }
@@ -785,7 +788,7 @@ internal static class BRepTestPipeShellCommands
             return 1;
         }
 
-        var List = new NCollection_List<TopoDS_Shape>();
+        var List = new NCollection_List<Shape>();
         int N, ii;
         N = theDI.Atoi(a[2]);
 
@@ -807,7 +810,7 @@ internal static class BRepTestPipeShellCommands
         // Calculate the result
         Sweep.Simulate(N, List);
         ii = 1;
-        for (NCollection_List<TopoDS_Shape>.Iterator it = new(List); it.More(); it.Next(), ii++)
+        for (NCollection_List<Shape>.Iterator it = new(List); it.More(); it.Next(), ii++)
         {
             theDI.SetShape($"{a[1]}_{ii}", it.Value());
         }
@@ -823,20 +826,20 @@ internal static class BRepTestPipeShellCommands
             return 1;
         }
 
-        TopoDS_Shape aShape = theDI.GetShape(a[2]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(a[2]);
+        if (aShape.IsNull)
         {
             return 1;
         }
 
-        TopoDS_Shape StartShape = theDI.GetShape(a[3]);
-        if (StartShape.IsNull())
+        Shape StartShape = theDI.GetShape(a[3]);
+        if (StartShape.IsNull)
         {
             return 1;
         }
 
-        TopoDS_Shape EndShape = theDI.GetShape(a[4]);
-        if (EndShape.IsNull())
+        Shape EndShape = theDI.GetShape(a[4]);
+        if (EndShape.IsNull)
         {
             return 1;
         }
@@ -844,7 +847,7 @@ internal static class BRepTestPipeShellCommands
         var Builder = new BRepOffsetAPI_MiddlePath(aShape, StartShape, EndShape);
         Builder.Build();
 
-        TopoDS_Shape Result = Builder.Shape();
+        Shape Result = Builder.Shape();
         theDI.SetShape(a[1], Result);
 
         return 0;

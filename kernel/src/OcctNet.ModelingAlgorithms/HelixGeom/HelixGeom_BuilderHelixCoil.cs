@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 
 namespace Occt;
 
@@ -33,7 +34,7 @@ public sealed class HelixGeom_BuilderHelixCoil : HelixGeom_BuilderHelixGen
         int iErr;
         HelixGeom_HelixCurve aAdaptor = new();
         HelixGeom_HelixCurve aHAdaptor;
-        Geom_BSplineCurve? aBC = null;
+        BSplineCurve3D? aBC = null;
         // Clear previous results and setup helix adaptor
         myCurves.Clear();
         // Load helix parameters into the adaptor

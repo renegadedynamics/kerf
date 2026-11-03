@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using static Occt.BRepGProp_Gauss.BRepGProp_GaussType;
 
@@ -17,7 +18,7 @@ namespace Occt;
 /// The forms with <c>Eps</c> integrate adaptively to that relative error of the mass (non-adaptively above 0.001) and
 /// return the error reached; the others use numbers of Gauss points chosen by the types of the surface and curves.
 /// </remarks>
-public class BRepGProp_Vinert : GProp_GProps
+public class BRepGProp_Vinert : Properties
 {
     private double myEpsilon;
 
@@ -97,7 +98,7 @@ public class BRepGProp_Vinert : GProp_GProps
     }
 
     /// <summary>Sets the reference point.</summary>
-    public void SetLocation(in Point3D VLocation) => loc = VLocation;
+    public void SetLocation(in Point3D VLocation) => _loc = VLocation;
 
     public double Perform(BRepGProp_Face S, double Eps)
     {
@@ -109,7 +110,7 @@ public class BRepGProp_Vinert : GProp_GProps
     {
         ReadOnlySpan<double> aCoeff = [0.0, 0.0, 0.0];
         var aGauss = new BRepGProp_Gauss(Vinert);
-        return myEpsilon = aGauss.Compute(S, D, loc, Eps, aCoeff, true, ref dim, ref g, ref inertia);
+        return myEpsilon = aGauss.Compute(S, D, _loc, Eps, aCoeff, true, ref _dim, ref _g, ref _inertia);
     }
 
     public void Perform(BRepGProp_Face S)
@@ -118,7 +119,7 @@ public class BRepGProp_Vinert : GProp_GProps
         var aGauss = new BRepGProp_Gauss(Vinert);
 
         myEpsilon = 1.0;
-        aGauss.Compute(S, loc, aCoeff, true, ref dim, ref g, ref inertia);
+        aGauss.Compute(S, _loc, aCoeff, true, ref _dim, ref _g, ref _inertia);
     }
 
     public void Perform(BRepGProp_Face S, BRepGProp_Domain D)
@@ -127,7 +128,7 @@ public class BRepGProp_Vinert : GProp_GProps
         var aGauss = new BRepGProp_Gauss(Vinert);
 
         myEpsilon = 1.0;
-        aGauss.Compute(S, D, loc, aCoeff, true, ref dim, ref g, ref inertia);
+        aGauss.Compute(S, D, _loc, aCoeff, true, ref _dim, ref _g, ref _inertia);
     }
 
     public double Perform(BRepGProp_Face S, in Point3D O, double Eps)
@@ -138,28 +139,28 @@ public class BRepGProp_Vinert : GProp_GProps
 
     public double Perform(BRepGProp_Face S, BRepGProp_Domain D, in Point3D O, double Eps)
     {
-        ReadOnlySpan<double> aCoeff = [O.X() - loc.X(), O.Y() - loc.Y(), O.Z() - loc.Z()];
+        ReadOnlySpan<double> aCoeff = [O.X() - _loc.X(), O.Y() - _loc.Y(), O.Z() - _loc.Z()];
 
         var aGauss = new BRepGProp_Gauss(Vinert);
-        return myEpsilon = aGauss.Compute(S, D, loc, Eps, aCoeff, true, ref dim, ref g, ref inertia);
+        return myEpsilon = aGauss.Compute(S, D, _loc, Eps, aCoeff, true, ref _dim, ref _g, ref _inertia);
     }
 
     public void Perform(BRepGProp_Face S, in Point3D O)
     {
         var aGauss = new BRepGProp_Gauss(Vinert);
-        ReadOnlySpan<double> aCoeff = [O.X() - loc.X(), O.Y() - loc.Y(), O.Z() - loc.Z()];
+        ReadOnlySpan<double> aCoeff = [O.X() - _loc.X(), O.Y() - _loc.Y(), O.Z() - _loc.Z()];
 
         myEpsilon = 1.0;
-        aGauss.Compute(S, loc, aCoeff, true, ref dim, ref g, ref inertia);
+        aGauss.Compute(S, _loc, aCoeff, true, ref _dim, ref _g, ref _inertia);
     }
 
     public void Perform(BRepGProp_Face S, BRepGProp_Domain D, in Point3D O)
     {
         var aGauss = new BRepGProp_Gauss(Vinert);
-        ReadOnlySpan<double> aCoeff = [O.X() - loc.X(), O.Y() - loc.Y(), O.Z() - loc.Z()];
+        ReadOnlySpan<double> aCoeff = [O.X() - _loc.X(), O.Y() - _loc.Y(), O.Z() - _loc.Z()];
 
         myEpsilon = 1.0;
-        aGauss.Compute(S, D, loc, aCoeff, true, ref dim, ref g, ref inertia);
+        aGauss.Compute(S, D, _loc, aCoeff, true, ref _dim, ref _g, ref _inertia);
     }
 
     public double Perform(BRepGProp_Face S, in Plane3D Pl, double Eps)
@@ -172,10 +173,10 @@ public class BRepGProp_Vinert : GProp_GProps
     {
         Span<double> aCoeff = stackalloc double[4];
         Pl.Coefficients(out aCoeff[0], out aCoeff[1], out aCoeff[2], out aCoeff[3]);
-        aCoeff[3] = aCoeff[3] - aCoeff[0] * loc.X() - aCoeff[1] * loc.Y() - aCoeff[2] * loc.Z();
+        aCoeff[3] = aCoeff[3] - aCoeff[0] * _loc.X() - aCoeff[1] * _loc.Y() - aCoeff[2] * _loc.Z();
 
         var aGauss = new BRepGProp_Gauss(Vinert);
-        return myEpsilon = aGauss.Compute(S, D, loc, Eps, aCoeff, false, ref dim, ref g, ref inertia);
+        return myEpsilon = aGauss.Compute(S, D, _loc, Eps, aCoeff, false, ref _dim, ref _g, ref _inertia);
     }
 
     public void Perform(BRepGProp_Face S, in Plane3D Pl)
@@ -183,10 +184,10 @@ public class BRepGProp_Vinert : GProp_GProps
         var aGauss = new BRepGProp_Gauss(Vinert);
         Span<double> aCoeff = stackalloc double[4];
         Pl.Coefficients(out aCoeff[0], out aCoeff[1], out aCoeff[2], out aCoeff[3]);
-        aCoeff[3] = aCoeff[3] - aCoeff[0] * loc.X() - aCoeff[1] * loc.Y() - aCoeff[2] * loc.Z();
+        aCoeff[3] = aCoeff[3] - aCoeff[0] * _loc.X() - aCoeff[1] * _loc.Y() - aCoeff[2] * _loc.Z();
 
         myEpsilon = 1.0;
-        aGauss.Compute(S, loc, aCoeff, false, ref dim, ref g, ref inertia);
+        aGauss.Compute(S, _loc, aCoeff, false, ref _dim, ref _g, ref _inertia);
     }
 
     public void Perform(BRepGProp_Face S, BRepGProp_Domain D, in Plane3D Pl)
@@ -194,10 +195,10 @@ public class BRepGProp_Vinert : GProp_GProps
         var aGauss = new BRepGProp_Gauss(Vinert);
         Span<double> aCoeff = stackalloc double[4];
         Pl.Coefficients(out aCoeff[0], out aCoeff[1], out aCoeff[2], out aCoeff[3]);
-        aCoeff[3] = aCoeff[3] - aCoeff[0] * loc.X() - aCoeff[1] * loc.Y() - aCoeff[2] * loc.Z();
+        aCoeff[3] = aCoeff[3] - aCoeff[0] * _loc.X() - aCoeff[1] * _loc.Y() - aCoeff[2] * _loc.Z();
 
         myEpsilon = 1.0;
-        aGauss.Compute(S, D, loc, aCoeff, false, ref dim, ref g, ref inertia);
+        aGauss.Compute(S, D, _loc, aCoeff, false, ref _dim, ref _g, ref _inertia);
     }
 
     /// <summary>The relative error of the last adaptive computation, else 1.</summary>

@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
 
 namespace Occt;
 
@@ -40,5 +41,5 @@ public class StepToTopoDS_Root
     /// </summary>
     internal static bool CaughtBySignals(Exception theException)
         => theException is not OutOfMemoryException and not OperationCanceledException and not ImmutableObjectException
-                           and not TopoDS_LockedShape;
+                           and not LockedShapeException;
 }

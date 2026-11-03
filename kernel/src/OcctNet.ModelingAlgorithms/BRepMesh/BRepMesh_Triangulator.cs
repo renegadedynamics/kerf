@@ -184,7 +184,7 @@ public sealed class BRepMesh_Triangulator
                 NCollection_Sequence<int> aW = itW.Value();
                 for (int nn = 1; nn <= aW.Length(); ++nn, ++aNumNode)
                 {
-                    Point2D aP2d = ProjLib.Project(myPlane, new Point3D(myXYZs[aW[nn]]));
+                    Point2D aP2d = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(myPlane, new Point3D(myXYZs[aW[nn]]));
                     BRepMesh_Vertex aVertex = new(aP2d.XY(), aNumNode, BRepMesh_Frontier);
                     int nnn = myMeshStructure.AddNode(aVertex);
                     myIndices.SetValue(aNumNode, nnn);

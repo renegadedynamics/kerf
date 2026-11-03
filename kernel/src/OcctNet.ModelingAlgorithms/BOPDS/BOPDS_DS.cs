@@ -7,9 +7,13 @@
 
 using Kerf.Engine.Foundation.Std;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -40,11 +44,11 @@ public class BOPDS_DS
     private static readonly NCollection_List<BOPDS_PaveBlock> theStaticEmptyList = new();
     private static readonly BOPDS_FaceInfo theEmptyFaceInfo = new();
 
-    private readonly NCollection_List<TopoDS_Shape> myArguments = new();
+    private readonly NCollection_List<Shape> myArguments = new();
     private int myNbSourceShapes; // OCCT also keeps myNbShapes, set to 0 and never read: left out
     private readonly NCollection_DynamicArray<BOPDS_IndexRange> myRanges = new(0);
     private readonly NCollection_DynamicArray<BOPDS_ShapeInfo> myLines = new(0);
-    private readonly NCollection_DataMap<TopoDS_Shape, int> myMapShapeIndex = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, int> myMapShapeIndex = new(ShapeHasher.Instance);
     private readonly NCollection_DynamicArray<NCollection_List<BOPDS_PaveBlock>> myPaveBlocksPool = new(0);
     private readonly NCollection_DataMap<BOPDS_PaveBlock, BOPDS_CommonBlock> myMapPBCB = new();
     private readonly NCollection_DynamicArray<BOPDS_FaceInfo> myFaceInfoPool = new(0);
@@ -98,10 +102,10 @@ public class BOPDS_DS
     }
 
     /// <summary>Sets the arguments of the operation (a copy of the list).</summary>
-    public void SetArguments(NCollection_List<TopoDS_Shape> theArguments) => myArguments.Assign(theArguments);
+    public void SetArguments(NCollection_List<Shape> theArguments) => myArguments.Assign(theArguments);
 
     /// <summary>The arguments of the operation (the data structure's own list; read only for callers).</summary>
-    public NCollection_List<TopoDS_Shape> Arguments() => myArguments;
+    public NCollection_List<Shape> Arguments() => myArguments;
 
     /// <summary>Initializes the data structure for the arguments.</summary>
     public void Init() => Init(global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -116,9 +120,9 @@ public class BOPDS_DS
         }
 
         int i1 = 0;
-        for (NCollection_List<TopoDS_Shape>.Iterator anIt = new(myArguments); anIt.More(); anIt.Next())
+        for (NCollection_List<Shape>.Iterator anIt = new(myArguments); anIt.More(); anIt.Next())
         {
-            TopoDS_Shape aShape = anIt.Value();
+            Shape aShape = anIt.Value();
             if (myMapShapeIndex.IsBound(aShape))
             {
                 continue;
@@ -185,7 +189,7 @@ public class BOPDS_DS
     }
 
     /// <summary>Appends the default information of the shape; returns its index.</summary>
-    internal int Append(in TopoDS_Shape theShape)
+    internal int Append(in Shape theShape)
     {
         myLines.Append(new BOPDS_ShapeInfo()).SetShape(theShape);
         int aShapeIndex = myLines.Length() - 1;
@@ -199,10 +203,10 @@ public class BOPDS_DS
     internal BOPDS_ShapeInfo ChangeShapeInfo(int theIndex) => myLines.Value(theIndex);
 
     /// <summary>The shape with the index.</summary>
-    public TopoDS_Shape Shape(int theIndex) => ShapeInfo(theIndex).Shape();
+    public Shape Shape(int theIndex) => ShapeInfo(theIndex).Shape();
 
     /// <summary>The index of the shape, or -1.</summary>
-    public int Index(in TopoDS_Shape theShape)
+    public int Index(in Shape theShape)
     {
         int anIndex = -1;
         if (myMapShapeIndex.Find(theShape, out int aFound))
@@ -212,7 +216,7 @@ public class BOPDS_DS
         return anIndex;
     }
 
-    private void InitShape(int theShapeInfoIndex, in TopoDS_Shape theShape)
+    private void InitShape(int theShapeInfoIndex, in Shape theShape)
     {
         BOPDS_ShapeInfo aShapeInfo = ChangeShapeInfo(theShapeInfoIndex);
         aShapeInfo.SetShapeType(theShape.ShapeType());
@@ -224,9 +228,9 @@ public class BOPDS_DS
             anExistingSubShapeIndices.Add(aSubShapeIndex);
         }
 
-        for (TopoDS_Iterator aShapeIter = new(theShape); aShapeIter.More(); aShapeIter.Next())
+        for (Iterator aShapeIter = new(theShape); aShapeIter.More(); aShapeIter.Next())
         {
-            TopoDS_Shape aSubShape = aShapeIter.Value();
+            Shape aSubShape = aShapeIter.Value();
             int aSubShapeIndex = myMapShapeIndex.Find(aSubShape, out int anExistingIndex) ? anExistingIndex : Append(aSubShape);
 
             InitShape(aSubShapeIndex, aSubShape);
@@ -314,7 +318,7 @@ public class BOPDS_DS
     private void InitPaveBlocks(int theEdgeIndex)
     {
         BOPDS_ShapeInfo anEdgeInfo = ChangeShapeInfo(theEdgeIndex);
-        TopoDS_Edge anEdge = TopoDS.Edge(anEdgeInfo.Shape());
+        Edge anEdge = ShapeCasts.Edge(anEdgeInfo.Shape());
 
         NCollection_List<int> aVertexIndices = anEdgeInfo.SubShapes();
         if (aVertexIndices.IsEmpty())
@@ -325,19 +329,19 @@ public class BOPDS_DS
         BOPDS_PaveBlock aPaveBlock = new();
         aPaveBlock.SetOriginalEdge(theEdgeIndex);
 
-        if (anEdge.Orientation() != TopAbs_INTERNAL)
+        if (anEdge.Orientation() != Internal)
         {
             foreach (int aVertexIndexIt in aVertexIndices)
             {
                 int aVertexIndex = aVertexIndexIt;
                 BOPDS_ShapeInfo aVertexInfo = ShapeInfo(aVertexIndex);
-                TopoDS_Vertex aVertex = TopoDS.Vertex(aVertexInfo.Shape());
+                Vertex aVertex = ShapeCasts.Vertex(aVertexInfo.Shape());
                 // Important: for vertices HasFlag() means that the original edge is located on the infinite
                 // curve and vertex was created during initialization of this class object.
                 // Such vertices are not topologically connected to the edge so we cannot use
                 // BRep_Tool::Parameter.
                 double aVertexParam = aVertexInfo.HasFlag() ? ComputeParameter(aVertex, anEdge)
-                                                            : BRep_Tool.Parameter(aVertex, anEdge);
+                                                            : Tool.Parameter(aVertex, anEdge);
 
                 aVertexIndex = GetSameDomainIndex(aVertexIndex);
                 BOPDS_Pave aPave = new(aVertexIndex, aVertexParam);
@@ -357,19 +361,19 @@ public class BOPDS_DS
                 if (aVertexIndices.Extent() == 1)
                 {
                     aVertex.Reverse();
-                    aPaveBlock.AppendExtPave1(new BOPDS_Pave(aVertexIndex, BRep_Tool.Parameter(aVertex, anEdge)));
+                    aPaveBlock.AppendExtPave1(new BOPDS_Pave(aVertexIndex, Tool.Parameter(aVertex, anEdge)));
                 }
             }
         }
         else
         {
-            for (TopoDS_Iterator anEdgeIter = new(anEdge, false, true); anEdgeIter.More(); anEdgeIter.Next())
+            for (Iterator anEdgeIter = new(anEdge, false, true); anEdgeIter.More(); anEdgeIter.Next())
             {
-                TopoDS_Vertex aVertex = TopoDS.Vertex(anEdgeIter.Value());
+                Vertex aVertex = ShapeCasts.Vertex(anEdgeIter.Value());
                 int aVertexIndex = Index(aVertex);
                 BOPDS_ShapeInfo aVertexInfo = ShapeInfo(aVertexIndex);
                 double aVertexParam = aVertexInfo.HasFlag() ? ComputeParameter(aVertex, anEdge)
-                                                            : BRep_Tool.Parameter(aVertex, anEdge);
+                                                            : Tool.Parameter(aVertex, anEdge);
                 aPaveBlock.AppendExtPave1(new BOPDS_Pave(GetSameDomainIndex(aVertexIndex), aVertexParam));
             }
         }
@@ -598,10 +602,10 @@ public class BOPDS_DS
         }
 
         BOPDS_FaceInfo aFaceInfo = myFaceInfoPool.Value(aShapeInfo.Reference());
-        for (TopoDS_Iterator aShapeIter = new(Shape(theIndex)); aShapeIter.More(); aShapeIter.Next())
+        for (Iterator aShapeIter = new(Shape(theIndex)); aShapeIter.More(); aShapeIter.Next())
         {
-            TopoDS_Shape aVertex = aShapeIter.Value();
-            if (aVertex.ShapeType() == TopAbs_VERTEX)
+            Shape aVertex = aShapeIter.Value();
+            if (aVertex.ShapeType() == ShapeType.Vertex)
             {
                 int aVertexIndex = GetSameDomainIndex(Index(aVertex));
                 aFaceInfo.ChangeVerticesIn().Add(aVertexIndex);
@@ -648,7 +652,7 @@ public class BOPDS_DS
     {
         foreach (int aSubShapeIndex in ShapeInfo(theIndex).SubShapes())
         {
-            if (ShapeInfo(aSubShapeIndex).ShapeType() == TopAbs_EDGE)
+            if (ShapeInfo(aSubShapeIndex).ShapeType() == ShapeType.Edge)
             {
                 foreach (BOPDS_PaveBlock aPaveBlock in PaveBlocks(aSubShapeIndex))
                 {
@@ -673,11 +677,11 @@ public class BOPDS_DS
     {
         // 1. Pure internal vertices on the face
         // Adding to theIndexMap all the indicies of vertices belonging to the face.
-        TopoDS_Shape aFace = Shape(theFaceIndex);
-        for (TopoDS_Iterator aFaceIter = new(aFace); aFaceIter.More(); aFaceIter.Next())
+        Shape aFace = Shape(theFaceIndex);
+        for (Iterator aFaceIter = new(aFace); aFaceIter.More(); aFaceIter.Next())
         {
-            TopoDS_Shape aSubShape = aFaceIter.Value();
-            if (aSubShape.ShapeType() == TopAbs_VERTEX)
+            Shape aSubShape = aFaceIter.Value();
+            if (aSubShape.ShapeType() == ShapeType.Vertex)
             {
                 int aVertexIndex = GetSameDomainIndex(Index(aSubShape));
                 theIndexMap.Add(aVertexIndex);
@@ -822,7 +826,7 @@ public class BOPDS_DS
         for (int i = 0; i < myNbSourceShapes; ++i)
         {
             BOPDS_ShapeInfo aShapeInfo = ShapeInfo(i);
-            if (aShapeInfo.ShapeType() != TopAbs_FACE || !aShapeInfo.HasReference())
+            if (aShapeInfo.ShapeType() != ShapeType.Face || !aShapeInfo.HasReference())
             {
                 continue;
             }
@@ -970,7 +974,7 @@ public class BOPDS_DS
         foreach (int aSubShapeIndex in ShapeInfo(theFaceIndex1).SubShapes())
         {
             BOPDS_ShapeInfo aSubShapeInfo = ChangeShapeInfo(aSubShapeIndex);
-            if (aSubShapeInfo.ShapeType() != TopAbs_EDGE)
+            if (aSubShapeInfo.ShapeType() != ShapeType.Edge)
             {
                 continue;
             }
@@ -993,7 +997,7 @@ public class BOPDS_DS
         foreach (int aSubShapeIndex in ShapeInfo(theFaceIndex2).SubShapes())
         {
             BOPDS_ShapeInfo aSubShapeInfo = ChangeShapeInfo(aSubShapeIndex);
-            if (aSubShapeInfo.ShapeType() != TopAbs_EDGE)
+            if (aSubShapeInfo.ShapeType() != ShapeType.Edge)
             {
                 continue;
             }
@@ -1144,13 +1148,13 @@ public class BOPDS_DS
         // Seems like it doesn't matter where exactly this point is located on the pave block.
         thePaveBlock1.Range(out double aPaveBlock1First, out double aPaveBlock1Last);
         double aPaveBlock1Intermediate = IntTools_Tools.IntermediatePoint(aPaveBlock1First, aPaveBlock1Last);
-        TopoDS_Edge anEdge1 = TopoDS.Edge(Shape(thePaveBlock1.OriginalEdge()));
+        Edge anEdge1 = ShapeCasts.Edge(Shape(thePaveBlock1.OriginalEdge()));
         BOPTools_AlgoTools.PointOnEdge(anEdge1, aPaveBlock1Intermediate, out Point3D aPaveBlock1IntermediatePoint);
 
         // Obtain the curve of the second edge and project the point onto it.
         thePaveBlock2.Range(out double aPaveBlock2First, out double aPaveBlock2Last);
-        TopoDS_Edge anEdge2 = TopoDS.Edge(Shape(thePaveBlock2.OriginalEdge()));
-        Geom_Curve anEdgeCurve2 = BRep_Tool.Curve(anEdge2, out double anEdge2ParamFirst, out double anEdge2ParamLast)!;
+        Edge anEdge2 = ShapeCasts.Edge(Shape(thePaveBlock2.OriginalEdge()));
+        Curve3D anEdgeCurve2 = Tool.Curve(anEdge2, out double anEdge2ParamFirst, out double anEdge2ParamLast)!;
         GeomAPI_ProjectPointOnCurve aProjector = new();
         aProjector.Init(anEdgeCurve2, anEdge2ParamFirst, anEdge2ParamLast);
         aProjector.Perform(aPaveBlock1IntermediatePoint);
@@ -1158,8 +1162,8 @@ public class BOPDS_DS
         if (aProjector.NbPoints() != 0)
         {
             double aDistance = aProjector.LowerDistance();
-            double aTolerance = BRep_Tool.MaxTolerance(anEdge1, TopAbs_VERTEX)
-                                + BRep_Tool.MaxTolerance(anEdge2, TopAbs_VERTEX)
+            double aTolerance = Tool.MaxTolerance(anEdge1, ShapeType.Vertex)
+                                + Tool.MaxTolerance(anEdge2, ShapeType.Vertex)
                                 + Max(theFuzzyValue, global::Kerf.Engine.Foundation.Precision.Confusion());
             // If the distance is less than tolerance, check that the projection
             // point lies within the parameter range of the second pave block.
@@ -1239,7 +1243,7 @@ public class BOPDS_DS
         foreach (int aSubShapeIndex in aShapeInfo.SubShapes())
         {
             BOPDS_ShapeInfo aShellInfo = ShapeInfo(aSubShapeIndex);
-            if (aShellInfo.ShapeType() != TopAbs_SHELL)
+            if (aShellInfo.ShapeType() != ShapeType.Shell)
             {
                 continue;
             }
@@ -1247,7 +1251,7 @@ public class BOPDS_DS
             foreach (int aFaceIndex in aShellInfo.SubShapes())
             {
                 BOPDS_ShapeInfo aFaceInfo = ShapeInfo(aFaceIndex);
-                if (aFaceInfo.ShapeType() != TopAbs_FACE)
+                if (aFaceInfo.ShapeType() != ShapeType.Face)
                 {
                     continue;
                 }
@@ -1264,7 +1268,7 @@ public class BOPDS_DS
 
             if (!anIsOpenBox)
             {
-                TopoDS_Shell aShell = TopoDS.Shell(aShellInfo.Shape());
+                Shell aShell = ShapeCasts.Shell(aShellInfo.Shape());
                 anIsOpenBox = BOPTools_AlgoTools.IsOpenShell(aShell);
             }
 
@@ -1280,7 +1284,7 @@ public class BOPDS_DS
         }
         else if (theCheckInverted)
         {
-            TopoDS_Solid aSolid = TopoDS.Solid(aShapeInfo.Shape());
+            Solid aSolid = ShapeCasts.Solid(aShapeInfo.Shape());
             if (BOPTools_AlgoTools.IsInvertedSolid(aSolid))
             {
                 theBox.SetWhole();
@@ -1399,16 +1403,16 @@ public class BOPDS_DS
         thePaveBlock.ShrunkData(out aParameter[0], out aParameter[1], out _, out _);
         thePaveBlock.Indices(out aVertexIndex[0], out aVertexIndex[1]);
 
-        TopoDS_Edge anEdge = TopoDS.Edge(Shape(thePaveBlock.OriginalEdge()));
-        BRepAdaptor_Curve aCurveAdaptor = new(anEdge);
-        double anEpsilon = BRep_Tool.Tolerance(anEdge) * 0.01;
+        Edge anEdge = ShapeCasts.Edge(Shape(thePaveBlock.OriginalEdge()));
+        EdgeCurveAdaptor aCurveAdaptor = new(anEdge);
+        double anEpsilon = Tool.Tolerance(anEdge) * 0.01;
 
         for (int i = 0; i < 2; ++i)
         {
-            TopoDS_Vertex aVertex = TopoDS.Vertex(Shape(aVertexIndex[i]));
-            double aTol = BRep_Tool.Tolerance(aVertex) + global::Kerf.Engine.Foundation.Precision.Confusion();
+            Vertex aVertex = ShapeCasts.Vertex(Shape(aVertexIndex[i]));
+            double aTol = Tool.Tolerance(aVertex) + global::Kerf.Engine.Foundation.Precision.Confusion();
             // Bounding point
-            Point3D aVertexPoint = BRep_Tool.Pnt(aVertex);
+            Point3D aVertexPoint = Tool.Pnt(aVertex);
 
             // Point on the end of shrunk range
             Point3D aPointOnEdge = aCurveAdaptor.Value(aParameter[i]);
@@ -1426,14 +1430,14 @@ public class BOPDS_DS
     // Unlike BRep_Tool::Parameter, this does not require the vertex to be topologically
     // connected to the edge.
     // Note: this is generally unsafe function that is left to preserve previous behavior.
-    private static double ComputeParameter(in TopoDS_Vertex theVertex, in TopoDS_Edge theEdge)
+    private static double ComputeParameter(in Vertex theVertex, in Edge theEdge)
     {
-        double anEdgeToleranceSqr = global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(BRep_Tool.Tolerance(theEdge));
-        Point3D aVertexPoint = BRep_Tool.Pnt(theVertex);
+        double anEdgeToleranceSqr = global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(Tool.Tolerance(theEdge));
+        Point3D aVertexPoint = Tool.Pnt(theVertex);
 
-        TopoDS_Edge aForwardEdge = theEdge;
-        aForwardEdge.Orientation(TopAbs_FORWARD);
-        Geom_Curve aCurve = BRep_Tool.Curve(aForwardEdge, out double aCurveStart, out double aCurveEnd)!;
+        Edge aForwardEdge = theEdge;
+        aForwardEdge.Orientation(Forward);
+        Curve3D aCurve = Tool.Curve(aForwardEdge, out double aCurveStart, out double aCurveEnd)!;
 
         bool isMatch(double theParameter)
         {
@@ -1454,17 +1458,17 @@ public class BOPDS_DS
         for (int aVertexIndex = 0; aVertexIndex < myNbSourceShapes; ++aVertexIndex)
         {
             BOPDS_ShapeInfo aVertexInfo = ChangeShapeInfo(aVertexIndex);
-            if (aVertexInfo.ShapeType() != TopAbs_VERTEX)
+            if (aVertexInfo.ShapeType() != ShapeType.Vertex)
             {
                 continue;
             }
             ++aVertexCount;
 
-            TopoDS_Vertex aVertex = TopoDS.Vertex(aVertexInfo.Shape());
+            Vertex aVertex = ShapeCasts.Vertex(aVertexInfo.Shape());
 
             ref Box aVertexBoundBox = ref aVertexInfo.ChangeBox();
-            aVertexBoundBox.SetGap(BRep_Tool.Tolerance(aVertex) + theAdditionalTolerance);
-            aVertexBoundBox.Add(BRep_Tool.Pnt(aVertex));
+            aVertexBoundBox.SetGap(Tool.Tolerance(aVertex) + theAdditionalTolerance);
+            aVertexBoundBox.Add(Tool.Pnt(aVertex));
         }
 
         return aVertexCount;
@@ -1477,16 +1481,16 @@ public class BOPDS_DS
         for (int anEdgeIndex = 0; anEdgeIndex < myNbSourceShapes; ++anEdgeIndex)
         {
             BOPDS_ShapeInfo anEdgeInfo = ChangeShapeInfo(anEdgeIndex);
-            if (anEdgeInfo.ShapeType() != TopAbs_EDGE)
+            if (anEdgeInfo.ShapeType() != ShapeType.Edge)
             {
                 continue;
             }
             ++anEdgeCount;
 
-            TopoDS_Edge anEdge = TopoDS.Edge(anEdgeInfo.Shape());
-            double anEdgeTolerance = BRep_Tool.Tolerance(anEdge);
+            Edge anEdge = ShapeCasts.Edge(anEdgeInfo.Shape());
+            double anEdgeTolerance = Tool.Tolerance(anEdge);
 
-            if (!BRep_Tool.Degenerated(anEdge))
+            if (!Tool.Degenerated(anEdge))
             {
                 // This is processing of special case when edge has infinite curve.
                 // In this case vertices are created at the infinite positions
@@ -1494,23 +1498,23 @@ public class BOPDS_DS
 
                 NCollection_List<int> aVertexIndices = anEdgeInfo.ChangeSubShapes();
 
-                TopoDS_Edge aForwardEdge = anEdge;
-                aForwardEdge.Orientation(TopAbs_FORWARD);
-                Geom_Curve? aForwardEdgeCurve = BRep_Tool.Curve(aForwardEdge, out double aCurveStart, out double aCurveEnd);
+                Edge aForwardEdge = anEdge;
+                aForwardEdge.Orientation(Forward);
+                Curve3D? aForwardEdgeCurve = Tool.Curve(aForwardEdge, out double aCurveStart, out double aCurveEnd);
 
                 // Process infinite values of the edge curve parameters.
                 // Creates vertices at the infinite positions and add them to the edge sub-shape list.
                 void processInfinite(double theParam)
                 {
                     aForwardEdgeCurve!.D0(theParam, out Point3D aPoint);
-                    TopoDS_Vertex aVertex = new();
-                    BRep_Builder aBuilder = new();
+                    Vertex aVertex = new();
+                    BrepBuilder aBuilder = new();
                     aBuilder.MakeVertex(ref aVertex, aPoint, anEdgeTolerance);
-                    aVertex.Orientation(TopAbs_FORWARD);
+                    aVertex.Orientation(Forward);
 
                     BOPDS_ShapeInfo aVertexInfo = new();
                     aVertexInfo.SetShape(aVertex);
-                    aVertexInfo.SetShapeType(TopAbs_VERTEX);
+                    aVertexInfo.SetShapeType(ShapeType.Vertex);
                     aVertexInfo.SetFlag(1); // infinite flag
 
                     aVertexIndices.Append(Append(aVertexInfo));
@@ -1555,7 +1559,7 @@ public class BOPDS_DS
         {
             // Iterate over all faces.
             BOPDS_ShapeInfo aFaceInfo = ChangeShapeInfo(aFaceIndex);
-            if (aFaceInfo.ShapeType() != TopAbs_FACE)
+            if (aFaceInfo.ShapeType() != ShapeType.Face)
             {
                 continue;
             }
@@ -1564,7 +1568,7 @@ public class BOPDS_DS
             // Map of sub-shape indices for the face that will replace the current list of wire indices.
             NCollection_IntMap aNewSubShapeIndices = new(100);
 
-            TopoDS_Shape aFace = aFaceInfo.Shape();
+            Shape aFace = aFaceInfo.Shape();
 
             // Update face bounding box with its own bounding box.
             ref Box aFaceBoundBox = ref aFaceInfo.ChangeBox();
@@ -1589,8 +1593,8 @@ public class BOPDS_DS
 
                     // Mark degenerated edges on the face (OCCT sets the flag of a degenerated edge to the face's
                     // index).
-                    TopoDS_Edge anEdge = TopoDS.Edge(anEdgeInfo.Shape());
-                    if (BRep_Tool.Degenerated(anEdge))
+                    Edge anEdge = ShapeCasts.Edge(anEdgeInfo.Shape());
+                    if (Tool.Degenerated(anEdge))
                     {
                         anEdgeInfo.SetFlag(aFaceIndex);
                     }
@@ -1604,10 +1608,10 @@ public class BOPDS_DS
             }
 
             // Add vertices of the face to the map of indices.
-            for (TopoDS_Iterator aFaceIter = new(aFace); aFaceIter.More(); aFaceIter.Next())
+            for (Iterator aFaceIter = new(aFace); aFaceIter.More(); aFaceIter.Next())
             {
-                TopoDS_Shape aSubShape = aFaceIter.Value();
-                if (aSubShape.ShapeType() == TopAbs_VERTEX)
+                Shape aSubShape = aFaceIter.Value();
+                if (aSubShape.ShapeType() == ShapeType.Vertex)
                 {
                     aNewSubShapeIndices.Add(Index(aSubShape));
                 }
@@ -1641,7 +1645,7 @@ public class BOPDS_DS
         for (int aSolidIndex = 0; aSolidIndex < myNbSourceShapes; ++aSolidIndex)
         {
             BOPDS_ShapeInfo aSolidInfo = ChangeShapeInfo(aSolidIndex);
-            if (aSolidInfo.ShapeType() != TopAbs_SOLID)
+            if (aSolidInfo.ShapeType() != ShapeType.Solid)
             {
                 continue;
             }
@@ -1662,7 +1666,7 @@ public class BOPDS_DS
             foreach (int aShellIndex in aSolidSubShapes)
             {
                 BOPDS_ShapeInfo aShellInfo = ChangeShapeInfo(aShellIndex);
-                if (aShellInfo.ShapeType() != TopAbs_SHELL)
+                if (aShellInfo.ShapeType() != ShapeType.Shell)
                 {
                     continue;
                 }
@@ -1670,7 +1674,7 @@ public class BOPDS_DS
                 foreach (int aFaceIndex in aShellInfo.SubShapes())
                 {
                     BOPDS_ShapeInfo aFaceInfo = ChangeShapeInfo(aFaceIndex);
-                    if (aFaceInfo.ShapeType() != TopAbs_FACE)
+                    if (aFaceInfo.ShapeType() != ShapeType.Face)
                     {
                         continue;
                     }
@@ -1701,7 +1705,7 @@ public class BOPDS_DS
         for (int aShapeIndex = 0; aShapeIndex < myNbSourceShapes; ++aShapeIndex)
         {
             BOPDS_ShapeInfo anEdgeInfo = ChangeShapeInfo(aShapeIndex);
-            if (anEdgeInfo.ShapeType() != TopAbs_EDGE)
+            if (anEdgeInfo.ShapeType() != ShapeType.Edge)
             {
                 continue;
             }

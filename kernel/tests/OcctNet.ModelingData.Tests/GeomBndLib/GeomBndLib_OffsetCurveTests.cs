@@ -2,7 +2,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Geometry.Bounds.Computation;
 using Kerf.Geometry;
 using static OcctNet.ModelingData.Tests.GeomBndLibSurfaceTestUtils;
 
@@ -13,7 +15,7 @@ public class GeomBndLib_OffsetCurveTest
     private static readonly double Conf = global::Kerf.Engine.Foundation.Precision.Confusion();
 
     /// <summary>Helper: verify box contains all sampled points of the offset curve.</summary>
-    private static void ExpectContainsCurve(in Box theBox, Geom_OffsetCurve theCurve, double theU1, double theU2, int theNbSamples)
+    private static void ExpectContainsCurve(in Box theBox, OffsetCurve3D theCurve, double theU1, double theU2, int theNbSamples)
     {
         double aStep = (theU2 - theU1) / theNbSamples;
         theBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
@@ -32,45 +34,45 @@ public class GeomBndLib_OffsetCurveTest
     }
 
     /// <summary>GeomBndLib_Curve.Add and BndLib_Add3dCurve.Add (both whole range), then the GTest's checks.</summary>
-    private static void CheckAdd(Geom_OffsetCurve theOff, double theU1, double theU2, int theNbSamples)
+    private static void CheckAdd(OffsetCurve3D theOff, double theU1, double theU2, int theNbSamples)
     {
-        GeomAdaptor_Curve anAdaptor = new(theOff);
+        CurveAdaptor anAdaptor = new(theOff);
 
         Box aNewBox = new();
-        new GeomBndLib_Curve(theOff).Add(Conf, ref aNewBox);
+        new CurveBounds(theOff).Add(Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_Add3dCurve.Add(anAdaptor, Conf, ref anOldBox);
+        Add3dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
         ExpectContainsCurve(aNewBox, theOff, theU1, theU2, theNbSamples);
     }
 
     /// <summary>As <see cref="CheckAdd"/>, on the arc [theU1, theU2].</summary>
-    private static void CheckAddArc(Geom_OffsetCurve theOff, double theU1, double theU2, int theNbSamples)
+    private static void CheckAddArc(OffsetCurve3D theOff, double theU1, double theU2, int theNbSamples)
     {
-        GeomAdaptor_Curve anAdaptor = new(theOff);
+        CurveAdaptor anAdaptor = new(theOff);
 
         Box aNewBox = new();
-        new GeomBndLib_Curve(theOff).Add(theU1, theU2, Conf, ref aNewBox);
+        new CurveBounds(theOff).Add(theU1, theU2, Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_Add3dCurve.Add(anAdaptor, theU1, theU2, Conf, ref anOldBox);
+        Add3dCurve.Add(anAdaptor, theU1, theU2, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
         ExpectContainsCurve(aNewBox, theOff, theU1, theU2, theNbSamples);
     }
 
     /// <summary>As <see cref="CheckAdd"/>, with AddOptimal on both sides.</summary>
-    private static void CheckAddOptimal(Geom_OffsetCurve theOff, double theU1, double theU2, int theNbSamples)
+    private static void CheckAddOptimal(OffsetCurve3D theOff, double theU1, double theU2, int theNbSamples)
     {
-        GeomAdaptor_Curve anAdaptor = new(theOff);
+        CurveAdaptor anAdaptor = new(theOff);
 
         Box aNewBox = new();
-        new GeomBndLib_Curve(theOff).AddOptimal(Conf, ref aNewBox);
+        new CurveBounds(theOff).AddOptimal(Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_Add3dCurve.AddOptimal(anAdaptor, Conf, ref anOldBox);
+        Add3dCurve.AddOptimal(anAdaptor, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
         ExpectContainsCurve(aNewBox, theOff, theU1, theU2, theNbSamples);
@@ -83,15 +85,15 @@ public class GeomBndLib_OffsetCurveTest
     [Fact]
     public void CircleOffsetZ_Full_CompareWithBndLib()
     {
-        Geom_Circle aCircle = new(Constants.XOY(), 5.0);
-        CheckAdd(new Geom_OffsetCurve(aCircle, 2.0, Constants.DZ()), 0.0, 2.0 * M_PI, 100);
+        CircleCurve3D aCircle = new(Constants.XOY(), 5.0);
+        CheckAdd(new OffsetCurve3D(aCircle, 2.0, Constants.DZ()), 0.0, 2.0 * M_PI, 100);
     }
 
     [Fact]
     public void CircleOffsetZ_Arc_CompareWithBndLib()
     {
-        Geom_Circle aCircle = new(Constants.XOY(), 5.0);
-        CheckAddArc(new Geom_OffsetCurve(aCircle, 3.0, Constants.DZ()), 0.0, M_PI / 2.0, 50);
+        CircleCurve3D aCircle = new(Constants.XOY(), 5.0);
+        CheckAddArc(new OffsetCurve3D(aCircle, 3.0, Constants.DZ()), 0.0, M_PI / 2.0, 50);
     }
 
     // =========================================================================
@@ -101,15 +103,15 @@ public class GeomBndLib_OffsetCurveTest
     [Fact]
     public void CircleOffsetX_Full_CompareWithBndLib()
     {
-        Geom_Circle aCircle = new(Constants.XOY(), 7.0);
-        CheckAdd(new Geom_OffsetCurve(aCircle, 2.0, Constants.DX()), 0.0, 2.0 * M_PI, 100);
+        CircleCurve3D aCircle = new(Constants.XOY(), 7.0);
+        CheckAdd(new OffsetCurve3D(aCircle, 2.0, Constants.DX()), 0.0, 2.0 * M_PI, 100);
     }
 
     [Fact]
     public void CircleOffsetX_Arc_CompareWithBndLib()
     {
-        Geom_Circle aCircle = new(Constants.XOY(), 7.0);
-        CheckAddArc(new Geom_OffsetCurve(aCircle, 4.0, Constants.DX()), M_PI / 4.0, 3.0 * M_PI / 4.0, 50);
+        CircleCurve3D aCircle = new(Constants.XOY(), 7.0);
+        CheckAddArc(new OffsetCurve3D(aCircle, 4.0, Constants.DX()), M_PI / 4.0, 3.0 * M_PI / 4.0, 50);
     }
 
     // =========================================================================
@@ -122,11 +124,11 @@ public class GeomBndLib_OffsetCurveTest
     [Fact]
     public void CircleOffsetY_Full_Containment()
     {
-        Geom_Circle aCircle = new(Constants.XOY(), 3.0);
-        Geom_OffsetCurve anOff = new(aCircle, 1.5, Constants.DY());
+        CircleCurve3D aCircle = new(Constants.XOY(), 3.0);
+        OffsetCurve3D anOff = new(aCircle, 1.5, Constants.DY());
 
         Box aNewBox = new();
-        new GeomBndLib_Curve(anOff).Add(Conf, ref aNewBox);
+        new CurveBounds(anOff).Add(Conf, ref aNewBox);
 
         Assert.False(aNewBox.IsVoid);
     }
@@ -138,8 +140,8 @@ public class GeomBndLib_OffsetCurveTest
     [Fact]
     public void CircleOffsetDiagonal_CompareWithBndLib()
     {
-        Geom_Circle aCircle = new(Constants.XOY(), 5.0);
-        CheckAddOptimal(new Geom_OffsetCurve(aCircle, 2.0, new Direction3D(1.0, 1.0, 1.0)), 0.0, 2.0 * M_PI, 100);
+        CircleCurve3D aCircle = new(Constants.XOY(), 5.0);
+        CheckAddOptimal(new OffsetCurve3D(aCircle, 2.0, new Direction3D(1.0, 1.0, 1.0)), 0.0, 2.0 * M_PI, 100);
     }
 
     // =========================================================================
@@ -149,8 +151,8 @@ public class GeomBndLib_OffsetCurveTest
     [Fact]
     public void CircleNegativeOffset_CompareWithBndLib()
     {
-        Geom_Circle aCircle = new(Constants.XOY(), 10.0);
-        CheckAdd(new Geom_OffsetCurve(aCircle, -3.0, Constants.DZ()), 0.0, 2.0 * M_PI, 100);
+        CircleCurve3D aCircle = new(Constants.XOY(), 10.0);
+        CheckAdd(new OffsetCurve3D(aCircle, -3.0, Constants.DZ()), 0.0, 2.0 * M_PI, 100);
     }
 
     // =========================================================================
@@ -160,15 +162,15 @@ public class GeomBndLib_OffsetCurveTest
     [Fact]
     public void EllipseOffsetZ_Full_CompareWithBndLib()
     {
-        Geom_Ellipse anEllipse = new(Constants.XOY(), 8.0, 3.0);
-        CheckAdd(new Geom_OffsetCurve(anEllipse, 2.0, Constants.DZ()), 0.0, 2.0 * M_PI, 100);
+        EllipseCurve3D anEllipse = new(Constants.XOY(), 8.0, 3.0);
+        CheckAdd(new OffsetCurve3D(anEllipse, 2.0, Constants.DZ()), 0.0, 2.0 * M_PI, 100);
     }
 
     [Fact]
     public void EllipseOffsetX_Arc_CompareWithBndLib()
     {
-        Geom_Ellipse anEllipse = new(Constants.XOY(), 8.0, 3.0);
-        CheckAddArc(new Geom_OffsetCurve(anEllipse, 1.5, Constants.DX()), 0.0, M_PI, 50);
+        EllipseCurve3D anEllipse = new(Constants.XOY(), 8.0, 3.0);
+        CheckAddArc(new OffsetCurve3D(anEllipse, 1.5, Constants.DX()), 0.0, M_PI, 50);
     }
 
     // =========================================================================
@@ -178,8 +180,8 @@ public class GeomBndLib_OffsetCurveTest
     [Fact]
     public void LineOffset_CompareWithBndLib()
     {
-        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
-        CheckAddArc(new Geom_OffsetCurve(aLine, 3.0, Constants.DZ()), 0.0, 10.0, 50);
+        LineCurve3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        CheckAddArc(new OffsetCurve3D(aLine, 3.0, Constants.DZ()), 0.0, 10.0, 50);
     }
 
     // =========================================================================
@@ -205,8 +207,8 @@ public class GeomBndLib_OffsetCurveTest
         aMults.SetValue(2, 1);
         aMults.SetValue(3, 3);
 
-        Geom_BSplineCurve aBSpl = new(aPoles, aKnots, aMults, 2);
-        CheckAddOptimal(new Geom_OffsetCurve(aBSpl, 1.0, Constants.DZ()), 0.0, 1.0, 50);
+        BSplineCurve3D aBSpl = new(aPoles, aKnots, aMults, 2);
+        CheckAddOptimal(new OffsetCurve3D(aBSpl, 1.0, Constants.DZ()), 0.0, 1.0, 50);
     }
 
     // =========================================================================
@@ -216,8 +218,8 @@ public class GeomBndLib_OffsetCurveTest
     [Fact]
     public void LargeOffset_CompareWithBndLib()
     {
-        Geom_Circle aCircle = new(Constants.XOY(), 2.0);
-        CheckAdd(new Geom_OffsetCurve(aCircle, 20.0, Constants.DZ()), 0.0, 2.0 * M_PI, 100);
+        CircleCurve3D aCircle = new(Constants.XOY(), 2.0);
+        CheckAdd(new OffsetCurve3D(aCircle, 20.0, Constants.DZ()), 0.0, 2.0 * M_PI, 100);
     }
 
     // =========================================================================
@@ -229,22 +231,22 @@ public class GeomBndLib_OffsetCurveTest
     {
         // Circle in a tilted plane
         Frame3D anAx2 = new(new Point3D(1.0, 2.0, 3.0), new Direction3D(1.0, 1.0, 1.0));
-        Geom_Circle aCircle = new(anAx2, 4.0);
-        CheckAdd(new Geom_OffsetCurve(aCircle, 1.5, new Direction3D(1.0, 1.0, 1.0)), 0.0, 2.0 * M_PI, 100);
+        CircleCurve3D aCircle = new(anAx2, 4.0);
+        CheckAdd(new OffsetCurve3D(aCircle, 1.5, new Direction3D(1.0, 1.0, 1.0)), 0.0, 2.0 * M_PI, 100);
     }
 
     [Fact]
     public void InfiniteRange_OpennessPreserved()
     {
-        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
-        Geom_OffsetCurve anOff = new(aLine, 3.0, Constants.DZ());
-        GeomAdaptor_Curve anAdaptor = new(anOff);
+        LineCurve3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        OffsetCurve3D anOff = new(aLine, 3.0, Constants.DZ());
+        CurveAdaptor anAdaptor = new(anOff);
 
         Box aNewBox = new();
-        new GeomBndLib_Curve(anOff).Add(-global::Kerf.Engine.Foundation.Precision.Infinite(), 10.0, Conf, ref aNewBox);
+        new CurveBounds(anOff).Add(-global::Kerf.Engine.Foundation.Precision.Infinite(), 10.0, Conf, ref aNewBox);
 
         Box anOldBox = new();
-        BndLib_Add3dCurve.Add(anAdaptor, -global::Kerf.Engine.Foundation.Precision.Infinite(), 10.0, Conf, ref anOldBox);
+        Add3dCurve.Add(anAdaptor, -global::Kerf.Engine.Foundation.Precision.Infinite(), 10.0, Conf, ref anOldBox);
 
         Assert.False(aNewBox.IsVoid);
         Assert.True(aNewBox.IsOpenXmin);

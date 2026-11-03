@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
@@ -22,12 +23,12 @@ public class BRepBlend_SurfRstEvolRad : Blend_SurfRstFunction
 {
     private const double Eps = 1.0e-15;
 
-    private readonly Adaptor3d_Surface surf;
-    private readonly Adaptor3d_Surface surfrst;
-    private readonly Adaptor2d_Curve2d rst;
-    private readonly Adaptor3d_CurveOnSurface cons;
-    private readonly Adaptor3d_Curve guide;
-    private Adaptor3d_Curve tguide;
+    private readonly SurfaceAdaptorBase surf;
+    private readonly SurfaceAdaptorBase surfrst;
+    private readonly Curve2DAdaptorBase rst;
+    private readonly CurveOnSurface cons;
+    private readonly CurveAdaptorBase guide;
+    private CurveAdaptorBase tguide;
     private Point3D pts;
     private Point3D ptrst;
     private Point2D pt2ds;
@@ -47,8 +48,8 @@ public class BRepBlend_SurfRstEvolRad : Blend_SurfRstFunction
     private Vector3D nplan;
     private double normtg;
     private double theD;
-    private Adaptor3d_Surface? surfref;
-    private Adaptor2d_Curve2d? rstref;
+    private SurfaceAdaptorBase? surfref;
+    private Curve2DAdaptorBase? rstref;
     private double maxang;
     private double minang;
     private double distmin;
@@ -129,13 +130,13 @@ public class BRepBlend_SurfRstEvolRad : Blend_SurfRstFunction
         b = (AC * BB - AB * BC) / deno;
     }
 
-    public BRepBlend_SurfRstEvolRad(Adaptor3d_Surface Surf, Adaptor3d_Surface SurfRst, Adaptor2d_Curve2d Rst,
-                                     Adaptor3d_Curve CGuide, Law_Function Evol)
+    public BRepBlend_SurfRstEvolRad(SurfaceAdaptorBase Surf, SurfaceAdaptorBase SurfRst, Curve2DAdaptorBase Rst,
+                                     CurveAdaptorBase CGuide, Law_Function Evol)
     {
         surf = Surf;
         surfrst = SurfRst;
         rst = Rst;
-        cons = new Adaptor3d_CurveOnSurface(Rst, SurfRst);
+        cons = new CurveOnSurface(Rst, SurfRst);
         guide = CGuide;
         tguide = CGuide;
         istangent = true;
@@ -280,7 +281,7 @@ public class BRepBlend_SurfRstEvolRad : Blend_SurfRstFunction
     }
 
     /// <summary>The reference surface and restriction <see cref="Decroch"/> tests against.</summary>
-    public void Set(Adaptor3d_Surface SurfRef, Adaptor2d_Curve2d RstRef)
+    public void Set(SurfaceAdaptorBase SurfRef, Curve2DAdaptorBase RstRef)
     {
         surfref = SurfRef;
         rstref = RstRef;
@@ -512,7 +513,7 @@ public class BRepBlend_SurfRstEvolRad : Blend_SurfRstFunction
         return tg2drst;
     }
 
-    /// <summary>True if the section at <paramref name="Sol"/> leaves the reference surface (see <see cref="Set(Adaptor3d_Surface, Adaptor2d_Curve2d)"/>).</summary>
+    /// <summary>True if the section at <paramref name="Sol"/> leaves the reference surface (see <see cref="Set(SurfaceAdaptorBase, Curve2DAdaptorBase)"/>).</summary>
     public override bool Decroch(math_Vector Sol, out Vector3D NS, out Vector3D TgS)
     {
         Vector3D TgRst, NRst, NRstInPlane, NSInPlane;

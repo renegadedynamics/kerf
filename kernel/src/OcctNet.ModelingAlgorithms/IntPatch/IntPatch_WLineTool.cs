@@ -4,11 +4,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -151,7 +153,7 @@ public static partial class IntPatch_WLineTool
 
     // Move point into surface param space. No interpolation used because walking algorithm should care for closeness
     // to the param space.
-    private static void MovePoint(Adaptor3d_Surface theS1, ref double U1, ref double V1)
+    private static void MovePoint(SurfaceAdaptorBase theS1, ref double U1, ref double V1)
     {
         if (U1 < theS1.FirstUParameter())
         {
@@ -175,16 +177,16 @@ public static partial class IntPatch_WLineTool
     }
 
     // Check and delete out of bounds points on walking line.
-    private static IntPatch_WLine DeleteOuterPoints(IntPatch_WLine theWLine, Adaptor3d_Surface theS1,
-                                                    Adaptor3d_Surface theS2, Adaptor3d_TopolTool theDom1,
-                                                    Adaptor3d_TopolTool theDom2)
+    private static IntPatch_WLine DeleteOuterPoints(IntPatch_WLine theWLine, SurfaceAdaptorBase theS1,
+                                                    SurfaceAdaptorBase theS2, TopolTool theDom1,
+                                                    TopolTool theDom2)
     {
         int i;
 
         NCollection_Array1<int> aDelOuterPointsHash = new(1, theWLine.NbPnts());
         FillPointsHash(theWLine, aDelOuterPointsHash);
 
-        if (theS1.IsUPeriodic() || theS1.IsVPeriodic() || theS2.IsUPeriodic() || theS2.IsVPeriodic())
+        if (theS1.IsUPeriodic || theS1.IsVPeriodic || theS2.IsUPeriodic || theS2.IsVPeriodic)
         {
             return theWLine;
         }
@@ -203,10 +205,10 @@ public static partial class IntPatch_WLineTool
             aPntOnF1.SetCoord(aX1, aY1);
             aPntOnF2.SetCoord(aX2, aY2);
 
-            TopAbs_State aState1 = theDom1.Classify(aPntOnF1, global::Kerf.Engine.Foundation.Precision.Confusion());
-            TopAbs_State aState2 = theDom2.Classify(aPntOnF2, global::Kerf.Engine.Foundation.Precision.Confusion());
+            Containment aState1 = theDom1.Classify(aPntOnF1, global::Kerf.Engine.Foundation.Precision.Confusion());
+            Containment aState2 = theDom2.Classify(aPntOnF2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-            if (aState1 == TopAbs_OUT || aState2 == TopAbs_OUT)
+            if (aState1 == Out || aState2 == Out)
             {
                 aDelOuterPointsHash[i] = 1;
                 aChangedFirst = true;
@@ -242,10 +244,10 @@ public static partial class IntPatch_WLineTool
             aPntOnF1.SetCoord(aX1, aY1);
             aPntOnF2.SetCoord(aX2, aY2);
 
-            TopAbs_State aState1 = theDom1.Classify(aPntOnF1, global::Kerf.Engine.Foundation.Precision.Confusion());
-            TopAbs_State aState2 = theDom2.Classify(aPntOnF2, global::Kerf.Engine.Foundation.Precision.Confusion());
+            Containment aState1 = theDom1.Classify(aPntOnF1, global::Kerf.Engine.Foundation.Precision.Confusion());
+            Containment aState2 = theDom2.Classify(aPntOnF2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-            if (aState1 == TopAbs_OUT || aState2 == TopAbs_OUT)
+            if (aState1 == Out || aState2 == Out)
             {
                 aDelOuterPointsHash[i] = 1;
                 aChangedLast = true; // Move vertex to first good point
@@ -338,14 +340,14 @@ public static partial class IntPatch_WLineTool
     }
 
     // Define is surface plane like or not.
-    private static bool IsSurfPlaneLike(Adaptor3d_Surface theS)
+    private static bool IsSurfPlaneLike(SurfaceAdaptorBase theS)
     {
         if (theS.GetType() == Plane)
         {
             return true;
         }
 
-        if (theS.GetType() == BSplineSurface)
+        if (theS.GetType() == SurfaceKind.BSplineSurface)
         {
             if (theS.UDegree() == 1 && theS.VDegree() == 1)
             {
@@ -357,8 +359,8 @@ public static partial class IntPatch_WLineTool
     }
 
     // Check and delete points using tube criteria.
-    private static IntPatch_WLine DeleteByTube(IntPatch_WLine theWLine, Adaptor3d_Surface theS1,
-                                               Adaptor3d_Surface theS2)
+    private static IntPatch_WLine DeleteByTube(IntPatch_WLine theWLine, SurfaceAdaptorBase theS1,
+                                               SurfaceAdaptorBase theS2)
     {
         // III: Check points for tube criteria:
         // Workaround to handle case of small amount points after purge.
@@ -543,9 +545,9 @@ public static partial class IntPatch_WLineTool
     /// points inside the tube around their neighbours. Returns a new line (sharing nothing with the given one, except
     /// that the given line may be returned as it is), or null if the line degenerates to a point.
     /// </summary>
-    public static IntPatch_WLine? ComputePurgedWLine(IntPatch_WLine theWLine, Adaptor3d_Surface theS1,
-                                                     Adaptor3d_Surface theS2, Adaptor3d_TopolTool theDom1,
-                                                     Adaptor3d_TopolTool theDom2)
+    public static IntPatch_WLine? ComputePurgedWLine(IntPatch_WLine theWLine, SurfaceAdaptorBase theS1,
+                                                     SurfaceAdaptorBase theS2, TopolTool theDom1,
+                                                     TopolTool theDom2)
     {
         int i, k, v, nb, nbvtx;
         IntPatch_WLine? aResult = null;
@@ -771,7 +773,7 @@ public static partial class IntPatch_WLineTool
     }
 
     // Check if joining is possible (see JoinWLines). A global (non-static) function in OCCT's .cxx.
-    private static bool CheckArgumentsToJoin(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
+    private static bool CheckArgumentsToJoin(SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
                                              in IntSurf_PntOn2S thePnt, in Point3D theP1, in Point3D theP2,
                                              in Point3D theP3, double theMinRad)
     {
@@ -820,7 +822,7 @@ public static partial class IntPatch_WLineTool
     /// <paramref name="theSPnt"/>. For two cylindrical surfaces only (their radii give the minimal curvature radius).
     /// </summary>
     public static void JoinWLines(NCollection_Sequence<IntPatch_Line> theSlin, NCollection_Sequence<IntPatch_Point> theSPnt,
-                                  Adaptor3d_Surface theS1, Adaptor3d_Surface theS2, double theTol3D)
+                                  SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2, double theTol3D)
     {
         if (theSlin.Length() == 0)
         {
@@ -832,8 +834,8 @@ public static partial class IntPatch_WLineTool
 
         ReadOnlySpan<double> anArrPeriods = stackalloc double[4]
         {
-            theS1.IsUPeriodic() ? theS1.UPeriod() : 0.0, theS1.IsVPeriodic() ? theS1.VPeriod() : 0.0,
-            theS2.IsUPeriodic() ? theS2.UPeriod() : 0.0, theS2.IsVPeriodic() ? theS2.VPeriod() : 0.0
+            theS1.IsUPeriodic ? theS1.UPeriod() : 0.0, theS1.IsVPeriodic ? theS1.VPeriod() : 0.0,
+            theS2.IsUPeriodic ? theS2.UPeriod() : 0.0, theS2.IsVPeriodic ? theS2.VPeriod() : 0.0
         };
 
         ReadOnlySpan<double> anArrFBonds = stackalloc double[4]

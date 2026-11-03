@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>The default discrete edge.</summary>
@@ -13,7 +15,7 @@ public class BRepMeshData_Edge : IMeshData_Edge
     private readonly NCollection_DataMap<IMeshData_Face, NCollection_List<int>> myPCurvesMap;
 
     /// <summary>A discrete edge of the edge, with an empty 3D curve.</summary>
-    public BRepMeshData_Edge(in TopoDS_Edge theEdge) : base(theEdge)
+    public BRepMeshData_Edge(in Edge theEdge) : base(theEdge)
     {
         myPCurves = new NCollection_DynamicArray<IMeshData_PCurve>(256);
         myPCurvesMap = new NCollection_DataMap<IMeshData_Face, NCollection_List<int>>(ReferenceEqualityComparer.Instance);
@@ -24,7 +26,7 @@ public class BRepMeshData_Edge : IMeshData_Edge
     public override int PCurvesNb() => myPCurves.Length();
 
     /// <inheritdoc/>
-    public override IMeshData_PCurve AddPCurve(IMeshData_Face theDFace, TopAbs_Orientation theOrientation)
+    public override IMeshData_PCurve AddPCurve(IMeshData_Face theDFace, Orientation theOrientation)
     {
         int aPCurveIndex = PCurvesNb();
         // Add pcurve to list of pcurves
@@ -44,7 +46,7 @@ public class BRepMeshData_Edge : IMeshData_Edge
     }
 
     /// <inheritdoc/>
-    public override IMeshData_PCurve GetPCurve(IMeshData_Face theDFace, TopAbs_Orientation theOrientation)
+    public override IMeshData_PCurve GetPCurve(IMeshData_Face theDFace, Orientation theOrientation)
     {
         NCollection_List<int> aListOfPCurves = myPCurvesMap.Find(theDFace);
         IMeshData_PCurve aPCurve1 = myPCurves.Value(aListOfPCurves.First());

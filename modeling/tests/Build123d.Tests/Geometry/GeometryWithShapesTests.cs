@@ -16,6 +16,7 @@
 // (test_location test_intersection's e1.intersect("line") is kept as the ArgumentException the port's object
 // overload throws.)
 // - test_rotation.py and test_matrix.py: no cases use topology.
+using Kerf.Engine.Measurement;
 using Occt;
 using Ops = Build123d.Operations;
 
@@ -122,7 +123,7 @@ public class PlaneWithShapesTests
         for (int i = 0; i < faces.Count; i++)
         {
             var p = new Plane(faces[i]);
-            var props = new GProp_GProps();
+            var props = new Properties();
             var face = faces[i].Wrapped;
             BRepGProp.SurfaceProperties(face, props);
             var centre = props.CentreOfMass();

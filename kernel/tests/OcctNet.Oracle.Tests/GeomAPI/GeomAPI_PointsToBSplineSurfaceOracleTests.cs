@@ -1,9 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Xunit.Abstractions;
-using static Occt.Approx_ParametrizationType;
+using static Kerf.Engine.Approximation.ParametrizationType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -43,31 +44,31 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
         return aNativeError is null && aPortError is null;
     }
 
-    private static void SameSurface(Oracle theO, N.Geom_BSplineSurface theNative, Geom_BSplineSurface thePort,
+    private static void SameSurface(Oracle theO, N.Geom_BSplineSurface theNative, BSplineSurface thePort,
                                     string theWhat, double theTolerance)
     {
         theO.Same(theNative.UDegree(), thePort.UDegree(), $"{theWhat} UDegree");
         theO.Same(theNative.VDegree(), thePort.VDegree(), $"{theWhat} VDegree");
-        theO.Same(theNative.IsUPeriodic(), thePort.IsUPeriodic(), $"{theWhat} UPeriodic");
-        theO.Same(theNative.IsVPeriodic(), thePort.IsVPeriodic(), $"{theWhat} VPeriodic");
-        theO.Same(theNative.NbUPoles(), thePort.NbUPoles(), $"{theWhat} NbUPoles");
-        theO.Same(theNative.NbVPoles(), thePort.NbVPoles(), $"{theWhat} NbVPoles");
-        theO.Same(theNative.NbUKnots(), thePort.NbUKnots(), $"{theWhat} NbUKnots");
-        theO.Same(theNative.NbVKnots(), thePort.NbVKnots(), $"{theWhat} NbVKnots");
-        for (int i = 1; i <= thePort.NbUPoles(); i++)
+        theO.Same(theNative.IsUPeriodic(), thePort.IsUPeriodic, $"{theWhat} UPeriodic");
+        theO.Same(theNative.IsVPeriodic(), thePort.IsVPeriodic, $"{theWhat} VPeriodic");
+        theO.Same(theNative.NbUPoles(), thePort.UPoleCount, $"{theWhat} NbUPoles");
+        theO.Same(theNative.NbVPoles(), thePort.VPoleCount, $"{theWhat} NbVPoles");
+        theO.Same(theNative.NbUKnots(), thePort.UKnotCount, $"{theWhat} NbUKnots");
+        theO.Same(theNative.NbVKnots(), thePort.VKnotCount, $"{theWhat} NbVKnots");
+        for (int i = 1; i <= thePort.UPoleCount; i++)
         {
-            for (int j = 1; j <= thePort.NbVPoles(); j++)
+            for (int j = 1; j <= thePort.VPoleCount; j++)
             {
                 using N.gp_Pnt aNP = theNative.Pole(i, j);
                 theO.Same(aNP, thePort.Pole(i, j), $"{theWhat} pole {i},{j}", theTolerance);
             }
         }
-        for (int i = 1; i <= thePort.NbUKnots(); i++)
+        for (int i = 1; i <= thePort.UKnotCount; i++)
         {
             theO.Same(theNative.UKnot(i), thePort.UKnot(i), $"{theWhat} uknot {i}", theTolerance);
             theO.Same(theNative.UMultiplicity(i), thePort.UMultiplicity(i), $"{theWhat} umult {i}");
         }
-        for (int j = 1; j <= thePort.NbVKnots(); j++)
+        for (int j = 1; j <= thePort.VKnotCount; j++)
         {
             theO.Same(theNative.VKnot(j), thePort.VKnot(j), $"{theWhat} vknot {j}", theTolerance);
             theO.Same(theNative.VMultiplicity(j), thePort.VMultiplicity(j), $"{theWhat} vmult {j}");
@@ -135,11 +136,11 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
         return aT;
     }
 
-    private static Approx_ParametrizationType ParType(Oracle theO) => theO.Int(0, 2) switch
+    private static ParametrizationType ParType(Oracle theO) => theO.Int(0, 2) switch
     {
-        0 => Approx_ChordLength,
-        1 => Approx_Centripetal,
-        _ => Approx_IsoParametric,
+        0 => ChordLength,
+        1 => Centripetal,
+        _ => IsoParametric,
     };
 
     [Fact]
@@ -159,7 +160,7 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
             double aTol3D = AppDefOracleTests.Tolerance(anOracle);
             int aDegMin = anOracle.Int(1, 4);
             int aDegMax = anOracle.Int(Math.Max(aDegMin, 2), 8);
-            Approx_ParametrizationType aParType = ParType(anOracle);
+            ParametrizationType aParType = ParType(anOracle);
             N.GeomAbs_Shape aNCont = (N.GeomAbs_Shape)(int)aCont;
             N.Approx_ParametrizationType aNParType = (N.Approx_ParametrizationType)(int)aParType;
 

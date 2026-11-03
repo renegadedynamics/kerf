@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -20,13 +21,13 @@ namespace Occt;
 /// </remarks>
 public class GeomFill_BoundWithSurf : GeomFill_Boundary
 {
-    private readonly Adaptor3d_CurveOnSurface myConS;
+    private readonly CurveOnSurface myConS;
     private Law_Function? myPar;
 
-    public GeomFill_BoundWithSurf(Adaptor3d_CurveOnSurface CurveOnSurf, double Tol3d, double Tolang)
+    public GeomFill_BoundWithSurf(CurveOnSurface CurveOnSurf, double Tol3d, double Tolang)
         : base(Tol3d, Tolang)
     {
-        myConS = (Adaptor3d_CurveOnSurface)CurveOnSurf.ShallowCopy();
+        myConS = (CurveOnSurface)CurveOnSurf.ShallowCopy();
     }
 
     public override Point3D Value(double U)

@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -16,11 +17,11 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// A working object of the fillet builders (decision 21): they set its curve, bounds and neighbours through the
-/// internal mutators. As an <see cref="Adaptor3d_Curve"/> it evaluates its curve between its own bounds.
+/// internal mutators. As an <see cref="CurveAdaptorBase"/> it evaluates its curve between its own bounds.
 /// </remarks>
-public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
+public sealed class ChFiDS_ElSpine : CurveAdaptorBase
 {
-    private GeomAdaptor_Curve curve = new();
+    private CurveAdaptor curve = new();
     private Point3D ptfirst = new();
     private Point3D ptlast = new();
     private Vector3D tgfirst = new();
@@ -46,12 +47,12 @@ public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
     }
 
     /// <summary>Shallow copy of the adaptor.</summary>
-    public override Adaptor3d_Curve ShallowCopy()
+    public override CurveAdaptorBase ShallowCopy()
     {
         ChFiDS_ElSpine aCopy = new();
 
-        Adaptor3d_Curve aCurve = curve.ShallowCopy();
-        aCopy.curve = (GeomAdaptor_Curve)aCurve;
+        CurveAdaptorBase aCurve = curve.ShallowCopy();
+        aCopy.curve = (CurveAdaptor)aCurve;
 
         aCopy.ptfirst = ptfirst;
         aCopy.ptlast = ptlast;
@@ -106,7 +107,7 @@ public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
     }
 
     /// <summary>The curve between <paramref name="First"/> and <paramref name="Last"/>.</summary>
-    public override Adaptor3d_Curve Trim(double First, double Last, double Tol)
+    public override CurveAdaptorBase Trim(double First, double Last, double Tol)
     {
         return curve.Trim(First, Last, Tol);
     }
@@ -121,9 +122,12 @@ public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
         return curve.GetType();
     }
 
-    public override bool IsPeriodic()
+    public override bool IsPeriodic
     {
-        return periodic;
+        get
+        {
+            return periodic;
+        }
     }
 
     internal void SetPeriodic(bool I)
@@ -147,17 +151,17 @@ public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
         return curve.EvalD0(theAbsC);
     }
 
-    public override Geom_Curve.ResD1 EvalD1(double theAbsC)
+    public override Curve3D.ResD1 EvalD1(double theAbsC)
     {
         return curve.EvalD1(theAbsC);
     }
 
-    public override Geom_Curve.ResD2 EvalD2(double theAbsC)
+    public override Curve3D.ResD2 EvalD2(double theAbsC)
     {
         return curve.EvalD2(theAbsC);
     }
 
-    public override Geom_Curve.ResD3 EvalD3(double theAbsC)
+    public override Curve3D.ResD3 EvalD3(double theAbsC)
     {
         return curve.EvalD3(theAbsC);
     }
@@ -193,7 +197,7 @@ public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
             throw new FailureException("Elspine non periodique");
         }
 
-        Geom_BSplineCurve? bs = curve.Curve() as Geom_BSplineCurve;
+        BSplineCurve3D? bs = curve.Curve() as BSplineCurve3D;
         if (bs is not null)
         {
             bs.SetOrigin(O, global::Kerf.Engine.Foundation.Precision.PConfusion());
@@ -240,7 +244,7 @@ public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
         return VerticesWithTangents[Index];
     }
 
-    internal void SetCurve(Geom_Curve C)
+    internal void SetCurve(Curve3D C)
     {
         curve.Load(C);
     }
@@ -284,12 +288,12 @@ public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
         return curve.Parabola();
     }
 
-    public override Geom_BezierCurve Bezier()
+    public override BezierCurve3D Bezier()
     {
         return curve.Bezier();
     }
 
-    public override Geom_BSplineCurve BSpline()
+    public override BSplineCurve3D BSpline()
     {
         return curve.BSpline();
     }

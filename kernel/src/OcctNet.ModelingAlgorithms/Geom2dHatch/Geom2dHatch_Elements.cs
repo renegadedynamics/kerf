@@ -4,8 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -18,7 +20,7 @@ namespace Occt;
 /// A working object (decision 21). The map is an <see cref="NCollection_IntDataMap{TValue}"/>, so the edges are
 /// explored in OCCT's order (decisions 543 and 666).
 /// </remarks>
-public sealed class Geom2dHatch_Elements : ITopClass_FaceExplorer<Geom2dAdaptor_Curve>
+public sealed class Geom2dHatch_Elements : ITopClass_FaceExplorer<CurveAdaptor2D>
 {
     //  Modified by skv - Fri Jul 14 17:03:47 2006 OCC12627
     private const double Probing_Start = 0.123;
@@ -113,9 +115,9 @@ public sealed class Geom2dHatch_Elements : ITopClass_FaceExplorer<Geom2dAdaptor_
             }
 
             ref Geom2dHatch_Element Item = ref myMap.ChangeFind(Itertemp.Key());
-            Geom2dAdaptor_Curve E = Item.ChangeCurve();
-            TopAbs_Orientation Or = Item.Orientation();
-            if (Or == TopAbs_FORWARD || Or == TopAbs_REVERSED)
+            CurveAdaptor2D E = Item.ChangeCurve();
+            Orientation Or = Item.Orientation();
+            if (Or == Forward || Or == Reversed)
             {
                 double aFPar = E.FirstParameter(), aLPar = E.LastParameter();
                 if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(aFPar))
@@ -233,10 +235,10 @@ public sealed class Geom2dHatch_Elements : ITopClass_FaceExplorer<Geom2dAdaptor_
     /// The current edge: a shallow copy of the element's curve (OCCT copies it into <paramref name="E"/>), and its
     /// orientation.
     /// </summary>
-    public void CurrentEdge(ref Geom2dAdaptor_Curve E, out TopAbs_Orientation Or)
+    public void CurrentEdge(ref CurveAdaptor2D E, out Orientation Or)
     {
         Geom2dHatch_Element anItem = myMap.Find(Iter.Key());
-        E = (Geom2dAdaptor_Curve)anItem.Curve().ShallowCopy();
+        E = (CurveAdaptor2D)anItem.Curve().ShallowCopy();
         Or = anItem.Orientation();
     }
 }

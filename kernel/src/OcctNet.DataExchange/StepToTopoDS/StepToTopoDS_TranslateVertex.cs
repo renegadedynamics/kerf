@@ -6,6 +6,10 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using static Occt.StepToTopoDS_TranslateVertexError;
 
 namespace Occt;
@@ -18,7 +22,7 @@ namespace Occt;
 public sealed class StepToTopoDS_TranslateVertex : StepToTopoDS_Root
 {
     private StepToTopoDS_TranslateVertexError myError;
-    private TopoDS_Shape myResult = new TopoDS_Shape();
+    private Shape myResult = new Shape();
 
     public StepToTopoDS_TranslateVertex()
     {
@@ -80,9 +84,9 @@ public sealed class StepToTopoDS_TranslateVertex : StepToTopoDS_Root
             }
 
             StepGeom_CartesianPoint P1 = P as StepGeom_CartesianPoint;
-            Geom_CartesianPoint P2 = StepToGeom.MakeCartesianPoint(P1, theLocalFactors);
-            var B = new BRep_Builder();
-            TopoDS_Vertex V = new TopoDS_Vertex();
+            CartesianPoint P2 = StepToGeom.MakeCartesianPoint(P1, theLocalFactors);
+            var B = new BrepBuilder();
+            Vertex V = new Vertex();
             B.MakeVertex(ref V, P2.Pnt(), Kerf.Engine.Foundation.Precision.Confusion()); //: S4136: preci
             aTool.Bind(aVertex, V);
             // Register Vertex in NM tool (ssv; 14.11.2010)
@@ -99,7 +103,7 @@ public sealed class StepToTopoDS_TranslateVertex : StepToTopoDS_Root
         }
         else
         {
-            myResult = TopoDS.Vertex(aTool.Find(aVertex));
+            myResult = ShapeCasts.Vertex(aTool.Find(aVertex));
         }
 
         myError = StepToTopoDS_TranslateVertexDone;
@@ -111,15 +115,15 @@ public sealed class StepToTopoDS_TranslateVertex : StepToTopoDS_Root
 
     /// <summary>The vertex, frozen.</summary>
     /// <exception cref="NotDoneException">The translation wasn't done.</exception>
-    public TopoDS_Shape Value()
+    public Shape Value()
     {
-        TopoDS_Shape aShape = InternalValue();
+        Shape aShape = InternalValue();
         aShape.TShape()?.FreezeGraph();
         return aShape;
     }
 
     /// <summary>As <see cref="Value"/>, without freezing: the reader's working shape.</summary>
-    internal TopoDS_Shape InternalValue()
+    internal Shape InternalValue()
     {
         StdFail_NotDone_Raise_if(!done, "StepToTopoDS_TranslateVertex::Value() - no result");
         return myResult;

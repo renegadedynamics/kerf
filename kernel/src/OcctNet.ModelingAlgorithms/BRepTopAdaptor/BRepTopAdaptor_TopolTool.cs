@@ -4,11 +4,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -17,18 +22,18 @@ namespace Occt;
 /// vertices the edges' vertices, and points are classified with a <see cref="BRepTopAdaptor_FClass2d"/>.
 /// </summary>
 /// <remarks>
-/// A working object (decision 101). The surface given to <see cref="Initialize(Adaptor3d_Surface)"/> must be a
-/// <see cref="BRepAdaptor_Surface"/>, the curves <see cref="BRepAdaptor_Curve2d"/>s. The 2D classifier is built at
+/// A working object (decision 101). The surface given to <see cref="Initialize(SurfaceAdaptorBase)"/> must be a
+/// <see cref="FaceSurfaceAdaptor"/>, the curves <see cref="EdgeCurve2DAdaptor"/>s. The 2D classifier is built at
 /// the first classification, with that call's tolerance, and kept (OCCT's <c>void*</c>).
 /// </remarks>
-public class BRepTopAdaptor_TopolTool : Adaptor3d_TopolTool
+public class BRepTopAdaptor_TopolTool : TopolTool
 {
-    private readonly TopExp_Explorer myVIterator = new();
-    private TopoDS_Face myFace = new();
+    private readonly Explorer myVIterator = new();
+    private Face myFace = new();
     private BRepTopAdaptor_FClass2d? myFClass2d;
-    private BRepAdaptor_Curve2d? myCurve;
-    private readonly NCollection_List<BRepAdaptor_Curve2d> myCurves = new();
-    private NCollection_List<BRepAdaptor_Curve2d>.Iterator myCIterator = new();
+    private EdgeCurve2DAdaptor? myCurve;
+    private readonly NCollection_List<EdgeCurve2DAdaptor> myCurves = new();
+    private NCollection_List<EdgeCurve2DAdaptor>.Iterator myCIterator = new();
     private double myU0;
     private double myV0;
     private double myDU;
@@ -42,11 +47,11 @@ public class BRepTopAdaptor_TopolTool : Adaptor3d_TopolTool
         myV0 = 0.0;
         myDU = 0.0;
         myDV = 0.0;
-        myNbSamplesU = -1;
+        _nbSamplesU = -1;
     }
 
     /// <summary>The tool of the face of <paramref name="S"/> (a BRepAdaptor_Surface).</summary>
-    public BRepTopAdaptor_TopolTool(Adaptor3d_Surface S)
+    public BRepTopAdaptor_TopolTool(SurfaceAdaptorBase S)
     {
         myFClass2d = null;
         Initialize(S);
@@ -61,35 +66,35 @@ public class BRepTopAdaptor_TopolTool : Adaptor3d_TopolTool
 
     /// <summary>Loads the face of <paramref name="S"/> (a BRepAdaptor_Surface) and the pcurves of its edges.</summary>
     /// <exception cref="ConstructionErrorException">The surface is not a BRepAdaptor_Surface.</exception>
-    public override void Initialize(Adaptor3d_Surface S)
+    public override void Initialize(SurfaceAdaptorBase S)
     {
-        if (S is not BRepAdaptor_Surface brhs)
+        if (S is not FaceSurfaceAdaptor brhs)
         {
             throw new ConstructionErrorException();
         }
 
-        TopoDS_Shape s_wnt = brhs.Face();
-        s_wnt.Orientation(TopAbs_FORWARD);
-        myFace = TopoDS.Face(s_wnt);
+        Shape s_wnt = brhs.Face();
+        s_wnt.Orientation(Forward);
+        myFace = ShapeCasts.Face(s_wnt);
         myFClass2d = null;
-        myNbSamplesU = -1;
-        myS = S;
+        _nbSamplesU = -1;
+        _s = S;
         myCurves.Clear();
-        var ex = new TopExp_Explorer(myFace, TopAbs_EDGE);
+        var ex = new Explorer(myFace, global::Kerf.Topology.ShapeType.Edge);
         for (; ex.More(); ex.Next())
         {
-            var aCurve = new BRepAdaptor_Curve2d(TopoDS.Edge(ex.Current()), myFace);
+            var aCurve = new EdgeCurve2DAdaptor(ShapeCasts.Edge(ex.Current()), myFace);
             myCurves.Append(aCurve);
         }
 
-        myCIterator = new NCollection_List<BRepAdaptor_Curve2d>.Iterator();
+        myCIterator = new NCollection_List<EdgeCurve2DAdaptor>.Iterator();
     }
 
     /// <summary>Loads the restriction <paramref name="C"/> (a BRepAdaptor_Curve2d) for the vertex iteration.</summary>
     /// <exception cref="ConstructionErrorException">The curve is not a BRepAdaptor_Curve2d.</exception>
-    public override void Initialize(Adaptor2d_Curve2d C)
+    public override void Initialize(Curve2DAdaptorBase C)
     {
-        myCurve = C as BRepAdaptor_Curve2d;
+        myCurve = C as EdgeCurve2DAdaptor;
         if (myCurve is null)
         {
             throw new ConstructionErrorException();
@@ -104,35 +109,35 @@ public class BRepTopAdaptor_TopolTool : Adaptor3d_TopolTool
     public override void Next() => myCIterator.Next();
 
     /// <summary>The current restriction (a BRepAdaptor_Curve2d).</summary>
-    public override Adaptor2d_Curve2d Value() => myCIterator.Value();
+    public override Curve2DAdaptorBase Value() => myCIterator.Value();
 
     /// <summary>The edge of the current restriction (a boxed TopoDS_Edge: OCCT's <c>void*</c> to it).</summary>
     // modified by NIZNHY-PKV Tue Mar 27 14:23:40 2001 f
     public override object? Edge()
     {
-        BRepAdaptor_Curve2d aHCurve = myCIterator.Value();
+        EdgeCurve2DAdaptor aHCurve = myCIterator.Value();
         return aHCurve.Edge();
     }
 
-    /// <summary>Starts the iteration over the vertices of the restriction loaded by <see cref="Initialize(Adaptor2d_Curve2d)"/>.</summary>
-    public override void InitVertexIterator() => myVIterator.Init(myCurve!.Edge(), TopAbs_VERTEX);
+    /// <summary>Starts the iteration over the vertices of the restriction loaded by <see cref="Initialize(Curve2DAdaptorBase)"/>.</summary>
+    public override void InitVertexIterator() => myVIterator.Init(myCurve!.Edge(), global::Kerf.Topology.ShapeType.Vertex);
 
     public override bool MoreVertex() => myVIterator.More();
 
     public override void NextVertex() => myVIterator.Next();
 
     /// <summary>The current vertex (a new BRepTopAdaptor_HVertex).</summary>
-    public override Adaptor3d_HVertex Vertex() => new BRepTopAdaptor_HVertex(TopoDS.Vertex(myVIterator.Current()), myCurve!);
+    public override HVertex Vertex() => new BRepTopAdaptor_HVertex(ShapeCasts.Vertex(myVIterator.Current()), myCurve!);
 
     /// <summary>
     /// The state of the point <paramref name="P"/> in the face (UNKNOWN if no face is loaded). The 2D classifier is
     /// built at the first call, with its tolerance <paramref name="Tol"/>.
     /// </summary>
-    public override TopAbs_State Classify(in Point2D P, double Tol, bool RecadreOnPeriodic = true)
+    public override Containment Classify(in Point2D P, double Tol, bool RecadreOnPeriodic = true)
     {
-        if (myFace.IsNull())
+        if (myFace.IsNull)
         {
-            return TopAbs_UNKNOWN;
+            return Unknown;
         }
 
         myFClass2d ??= new BRepTopAdaptor_FClass2d(myFace, Tol);
@@ -145,21 +150,21 @@ public class BRepTopAdaptor_TopolTool : Adaptor3d_TopolTool
     {
         myFClass2d ??= new BRepTopAdaptor_FClass2d(myFace, Tol);
 
-        return (TopAbs_ON == myFClass2d.TestOnRestriction(P, Tol, RecadreOnPeriodic));
+        return (On == myFClass2d.TestOnRestriction(P, Tol, RecadreOnPeriodic));
     }
 
     /// <summary>Drops the 2D classifier (OCCT's Destroy, also called by its destructor).</summary>
     public void Destroy() => myFClass2d = null;
 
     /// <summary>The orientation of the edge of the arc <paramref name="C"/> (a BRepAdaptor_Curve2d).</summary>
-    public override TopAbs_Orientation Orientation(Adaptor2d_Curve2d C)
+    public override Orientation Orientation(Curve2DAdaptorBase C)
     {
-        var brhc = (BRepAdaptor_Curve2d)C;
+        var brhc = (EdgeCurve2DAdaptor)C;
         return brhc.Edge().Orientation();
     }
 
     /// <summary>The orientation of the vertex.</summary>
-    public override TopAbs_Orientation Orientation(Adaptor3d_HVertex C) => base.Orientation(C);
+    public override Orientation Orientation(HVertex C) => base.Orientation(C);
 
     //-- ============================================================
     //-- methods  used for samples
@@ -290,10 +295,10 @@ public class BRepTopAdaptor_TopolTool : Adaptor3d_TopolTool
     public override void ComputeSamplePoints()
     {
         double uinf, usup, vinf, vsup;
-        uinf = myS!.FirstUParameter();
-        usup = myS.LastUParameter();
-        vinf = myS.FirstVParameter();
-        vsup = myS.LastVParameter();
+        uinf = _s!.FirstUParameter();
+        usup = _s.LastUParameter();
+        vinf = _s.FirstVParameter();
+        vsup = _s.LastVParameter();
         if (usup < uinf)
         {
             double temp = uinf;
@@ -337,7 +342,7 @@ public class BRepTopAdaptor_TopolTool : Adaptor3d_TopolTool
         }
 
         int nbsu, nbsv;
-        SurfaceKind typS = myS.GetType();
+        SurfaceKind typS = _s.GetType();
         switch (typS)
         {
             case Plane:
@@ -346,23 +351,23 @@ public class BRepTopAdaptor_TopolTool : Adaptor3d_TopolTool
                 nbsu = 2;
             }
                 break;
-            case BezierSurface:
+            case SurfaceKind.BezierSurface:
             {
-                nbsv = 3 + myS.NbVPoles();
-                nbsu = 3 + myS.NbUPoles();
+                nbsv = 3 + _s.VPoleCount;
+                nbsu = 3 + _s.UPoleCount;
             }
                 break;
-            case BSplineSurface:
+            case SurfaceKind.BSplineSurface:
             {
-                nbsv = myS.NbVKnots();
-                nbsv *= myS.VDegree();
+                nbsv = _s.VKnotCount;
+                nbsv *= _s.VDegree();
                 if (nbsv < 4)
                 {
                     nbsv = 4;
                 }
 
-                nbsu = myS.NbUKnots();
-                nbsu *= myS.UDegree();
+                nbsu = _s.UKnotCount;
+                nbsu *= _s.UDegree();
                 if (nbsu < 4)
                 {
                     nbsu = 4;
@@ -429,32 +434,32 @@ public class BRepTopAdaptor_TopolTool : Adaptor3d_TopolTool
             nbsv = 10;
         }
 
-        myNbSamplesU = nbsu;
-        myNbSamplesV = nbsv;
+        _nbSamplesU = nbsu;
+        _nbSamplesV = nbsv;
 
         //-- printf("\n BRepTopAdaptor_TopolTool NbSu=%d NbSv=%d ",nbsu,nbsv);
         if (nbsu > 10 || nbsv > 10)
         {
-            if (typS == BSplineSurface)
+            if (typS == SurfaceKind.BSplineSurface)
             {
-                Geom_BSplineSurface Bspl = myS.BSpline();
-                int nbup = Bspl.NbUPoles();
-                int nbvp = Bspl.NbVPoles();
+                global::Kerf.Geometry.BSplineSurface Bspl = _s.BSpline();
+                int nbup = Bspl.UPoleCount;
+                int nbvp = Bspl.VPoleCount;
                 NCollection_Array2<Point3D> array2 = Bspl.Poles();
-                Analyse(array2, nbup, nbvp, ref myNbSamplesU, ref myNbSamplesV);
-                nbsu = myNbSamplesU;
-                nbsv = myNbSamplesV;
+                Analyse(array2, nbup, nbvp, ref _nbSamplesU, ref _nbSamplesV);
+                nbsu = _nbSamplesU;
+                nbsv = _nbSamplesV;
                 //-- printf("\n Apres analyse BSPline  NbSu=%d NbSv=%d ",myNbSamplesU,myNbSamplesV);
             }
-            else if (typS == BezierSurface)
+            else if (typS == SurfaceKind.BezierSurface)
             {
-                Geom_BezierSurface Bez = myS.Bezier();
-                int nbup = Bez.NbUPoles();
-                int nbvp = Bez.NbVPoles();
+                global::Kerf.Geometry.BezierSurface Bez = _s.Bezier();
+                int nbup = Bez.UPoleCount;
+                int nbvp = Bez.VPoleCount;
                 NCollection_Array2<Point3D> array2 = Bez.Poles();
-                Analyse(array2, nbup, nbvp, ref myNbSamplesU, ref myNbSamplesV);
-                nbsu = myNbSamplesU;
-                nbsv = myNbSamplesV;
+                Analyse(array2, nbup, nbvp, ref _nbSamplesU, ref _nbSamplesV);
+                nbsu = _nbSamplesU;
+                nbsv = _nbSamplesV;
                 //-- printf("\n Apres analyse Bezier  NbSu=%d NbSv=%d ",myNbSamplesU,myNbSamplesV);
             }
         }
@@ -469,68 +474,68 @@ public class BRepTopAdaptor_TopolTool : Adaptor3d_TopolTool
             nbsv = 10;
         }
 
-        myNbSamplesU = nbsu;
-        myNbSamplesV = nbsv;
+        _nbSamplesU = nbsu;
+        _nbSamplesV = nbsv;
 
         myU0 = uinf;
         myV0 = vinf;
 
-        myDU = (usup - uinf) / (myNbSamplesU + 1);
-        myDV = (vsup - vinf) / (myNbSamplesV + 1);
+        myDU = (usup - uinf) / (_nbSamplesU + 1);
+        myDV = (vsup - vinf) / (_nbSamplesV + 1);
     }
 
     /// <summary>The number of sample points in U (computed at the first call).</summary>
     public override int NbSamplesU()
     {
-        if (myNbSamplesU < 0)
+        if (_nbSamplesU < 0)
         {
             ComputeSamplePoints();
         }
 
-        return (myNbSamplesU);
+        return (_nbSamplesU);
     }
 
     /// <summary>The number of sample points in V (computed at the first call).</summary>
     public override int NbSamplesV()
     {
-        if (myNbSamplesU < 0)
+        if (_nbSamplesU < 0)
         {
             ComputeSamplePoints();
         }
 
-        return (myNbSamplesV);
+        return (_nbSamplesV);
     }
 
     /// <summary>The number of sample points (computed at the first call).</summary>
     public override int NbSamples()
     {
-        if (myNbSamplesU < 0)
+        if (_nbSamplesU < 0)
         {
             ComputeSamplePoints();
         }
 
-        return (myNbSamplesU * myNbSamplesV);
+        return (_nbSamplesU * _nbSamplesV);
     }
 
     /// <summary>The sample point of index <paramref name="i"/>, in the parametric domain and in 3D.</summary>
     public override void SamplePoint(int i, out Point2D P2d, out Point3D P3d)
     {
-        int iv = 1 + i / myNbSamplesU;
-        int iu = 1 + i - (iv - 1) * myNbSamplesU;
+        int iv = 1 + i / _nbSamplesU;
+        int iu = 1 + i - (iv - 1) * _nbSamplesU;
         double u = myU0 + iu * myDU;
         double v = myV0 + iv * myDV;
         P2d = new Point2D(u, v);
-        P3d = myS!.Value(u, v);
+        P3d = _s!.Value(u, v);
     }
 
     /// <summary>True if one of the bounds of the surface is infinite.</summary>
     public override bool DomainIsInfinite()
     {
         double uinf, usup, vinf, vsup;
-        uinf = myS!.FirstUParameter();
-        usup = myS.LastUParameter();
-        vinf = myS.FirstVParameter();
-        vsup = myS.LastVParameter();
+        uinf = _s!.FirstUParameter();
+        usup = _s.LastUParameter();
+        vinf = _s.FirstVParameter();
+        vsup = _s.LastVParameter();
         if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(uinf))
         {
             return (true);
@@ -559,55 +564,55 @@ public class BRepTopAdaptor_TopolTool : Adaptor3d_TopolTool
 
     /// <summary>The 3D tolerance of the edge of the arc <paramref name="C"/>.</summary>
     /// <exception cref="DomainErrorException">The arc is not a BRepAdaptor_Curve2d with an edge.</exception>
-    public override double Tol3d(Adaptor2d_Curve2d C)
+    public override double Tol3d(Curve2DAdaptorBase C)
     {
-        if (C is not BRepAdaptor_Curve2d brhc)
+        if (C is not EdgeCurve2DAdaptor brhc)
         {
             throw new DomainErrorException("BRepTopAdaptor_TopolTool: arc has no 3d representation");
         }
 
-        TopoDS_Edge edge = brhc.Edge();
-        if (edge.IsNull())
+        Edge edge = brhc.Edge();
+        if (edge.IsNull)
         {
             throw new DomainErrorException("BRepTopAdaptor_TopolTool: arc has no 3d representation");
         }
 
-        return BRep_Tool.Tolerance(edge);
+        return Tool.Tolerance(edge);
     }
 
     /// <summary>The 3D tolerance of the vertex <paramref name="V"/>.</summary>
     /// <exception cref="DomainErrorException">The vertex is not a BRepTopAdaptor_HVertex with a vertex.</exception>
-    public override double Tol3d(Adaptor3d_HVertex V)
+    public override double Tol3d(HVertex V)
     {
         if (V is not BRepTopAdaptor_HVertex brhv)
         {
             throw new DomainErrorException("BRepTopAdaptor_TopolTool: vertex has no 3d representation");
         }
 
-        TopoDS_Vertex ver = brhv.Vertex();
-        if (ver.IsNull())
+        Vertex ver = brhv.Vertex();
+        if (ver.IsNull)
         {
             throw new DomainErrorException("BRepTopAdaptor_TopolTool: vertex has no 3d representation");
         }
 
-        return BRep_Tool.Tolerance(ver);
+        return Tool.Tolerance(ver);
     }
 
     /// <summary>The 3D point of the vertex <paramref name="V"/>.</summary>
     /// <exception cref="DomainErrorException">The vertex is not a BRepTopAdaptor_HVertex with a vertex.</exception>
-    public override Point3D Pnt(Adaptor3d_HVertex V)
+    public override Point3D Pnt(HVertex V)
     {
         if (V is not BRepTopAdaptor_HVertex brhv)
         {
             throw new DomainErrorException("BRepTopAdaptor_TopolTool: vertex has no 3d representation");
         }
 
-        TopoDS_Vertex ver = brhv.Vertex();
-        if (ver.IsNull())
+        Vertex ver = brhv.Vertex();
+        if (ver.IsNull)
         {
             throw new DomainErrorException("BRepTopAdaptor_TopolTool: vertex has no 3d representation");
         }
 
-        return BRep_Tool.Pnt(ver);
+        return Tool.Pnt(ver);
     }
 }

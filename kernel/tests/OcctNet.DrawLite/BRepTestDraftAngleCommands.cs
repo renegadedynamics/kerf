@@ -1,10 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 using static Occt.BRepBuilderAPI_TransitionMode;
 using static Occt.Draft_ErrorStatus;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite;
 
@@ -51,19 +53,19 @@ internal static class BRepTestDraftAngleCommands
         {
             return 1;
         }
-        TopoDS_Shape V = theDI.GetShape(a[2]);
+        Shape V = theDI.GetShape(a[2]);
         BRepOffsetAPI_DraftAngle drft = new(V);
 
         Direction3D Dirextract = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
 
-        TopoDS_Face F;
+        Face F;
         double Angle;
         Point3D Pax = new();
         Direction3D Dax = new();
         for (int ii = 0; ii < (narg - 6) / 8; ii++)
         {
-            TopoDS_Shape aLocalShape = theDI.GetShape(a[8 * ii + 6], TopAbs_FACE);
-            F = TopoDS.Face(aLocalShape);
+            Shape aLocalShape = theDI.GetShape(a[8 * ii + 6], ShapeType.Face);
+            F = ShapeCasts.Face(aLocalShape);
             //    F = TopoDS::Face(DBRep::Get(a[8*ii+6],TopAbs_FACE));
             Angle = theDI.Atof(a[8 * ii + 7]) * Math.PI / 180.0;
             Pax.SetCoord(theDI.Atof(a[8 * ii + 8]), theDI.Atof(a[8 * ii + 9]), theDI.Atof(a[8 * ii + 10]));
@@ -102,8 +104,8 @@ internal static class BRepTestDraftAngleCommands
         {
             return 1;
         }
-        TopoDS_Shape V = theDI.GetShape(a[2]);
-        if (V.IsNull())
+        Shape V = theDI.GetShape(a[2]);
+        if (V.IsNull)
         {
             theCommands.Append(a[2]).Append(" is not a Shape\n");
             return 1;
@@ -113,18 +115,18 @@ internal static class BRepTestDraftAngleCommands
 
         Direction3D Dirextract = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
 
-        TopoDS_Face F;
+        Face F;
         double Angle;
         Point3D Pax = new();
         Direction3D Dax = new();
         bool Flag;
         for (int ii = 0; ii < (narg - 6) / 9; ii++)
         {
-            TopoDS_Shape aLocalFace = theDI.GetShape(a[9 * ii + 6], TopAbs_FACE);
-            F = TopoDS.Face(aLocalFace);
+            Shape aLocalFace = theDI.GetShape(a[9 * ii + 6], ShapeType.Face);
+            F = ShapeCasts.Face(aLocalFace);
             //    F = TopoDS::Face(DBRep::Get(a[9*ii+6],TopAbs_FACE));
 
-            if (F.IsNull())
+            if (F.IsNull)
             {
                 theCommands.Append(a[9 * ii + 6]).Append(" is not a face\n");
                 return 1;
@@ -172,7 +174,7 @@ internal static class BRepTestDraftAngleCommands
         }
 
         double x, y, z, teta;
-        TopoDS_Shape SInit = theDI.GetShape(a[2]); // shape d'arret
+        Shape SInit = theDI.GetShape(a[2]); // shape d'arret
 
         x = theDI.Atof(a[3]);
         y = theDI.Atof(a[4]); // direction de depouille
@@ -230,8 +232,8 @@ internal static class BRepTestDraftAngleCommands
             di.Append("External Draft : \n");
         }
 
-        TopoDS_Shape Stop = theDI.GetShape(a[7]); // shape d'arret
-        if (!Stop.IsNull())
+        Shape Stop = theDI.GetShape(a[7]); // shape d'arret
+        if (!Stop.IsNull)
         {
             bool KeepOutside = true;
             if (Inside == 0)
@@ -242,7 +244,7 @@ internal static class BRepTestDraftAngleCommands
         }
         else
         {
-            Geom_Surface? Surf = DrawTrSurf.GetSurface(theDI, a[7]);
+            Surface? Surf = DrawTrSurf.GetSurface(theDI, a[7]);
             if (Surf is not null)
             { // surface d'arret
                 bool KeepInside = true;

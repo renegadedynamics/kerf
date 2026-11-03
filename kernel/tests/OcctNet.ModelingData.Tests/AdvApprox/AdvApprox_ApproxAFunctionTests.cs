@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation.Advanced;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
@@ -14,7 +15,7 @@ namespace OcctNet.ModelingData.Tests;
 public class AdvApprox_ApproxAFunctionTests
 {
     /// <summary>A function given by a delegate filling the values or derivatives.</summary>
-    private sealed class Evaluator(Action<double, int, Span<double>> theF) : AdvApprox_EvaluatorFunction
+    private sealed class Evaluator(Action<double, int, Span<double>> theF) : EvaluatorFunction
     {
         public int NbCalls;
 
@@ -27,7 +28,7 @@ public class AdvApprox_ApproxAFunctionTests
         }
     }
 
-    private sealed class FailingEvaluator : AdvApprox_EvaluatorFunction
+    private sealed class FailingEvaluator : EvaluatorFunction
     {
         public override void Evaluate(int Dimension, ReadOnlySpan<double> StartEnd, double Parameter,
                                       int DerivativeRequest, Span<double> Result, out int ErrorCode)
@@ -69,7 +70,7 @@ public class AdvApprox_ApproxAFunctionTests
         return aTol;
     }
 
-    private static double Eval1d(AdvApprox_ApproxAFunction theApprox, int theIndex, double theU)
+    private static double Eval1d(ApproxAFunction theApprox, int theIndex, double theU)
     {
         NCollection_Array1<double> aPoles = new(1, theApprox.NbPoles());
         theApprox.Poles1d(theIndex, aPoles);
@@ -78,7 +79,7 @@ public class AdvApprox_ApproxAFunctionTests
         return aP;
     }
 
-    private static Point2D Eval2d(AdvApprox_ApproxAFunction theApprox, int theIndex, double theU)
+    private static Point2D Eval2d(ApproxAFunction theApprox, int theIndex, double theU)
     {
         NCollection_Array1<Point2D> aPoles = new(1, theApprox.NbPoles());
         theApprox.Poles2d(theIndex, aPoles);
@@ -87,7 +88,7 @@ public class AdvApprox_ApproxAFunctionTests
         return aP;
     }
 
-    private static Point3D Eval3d(AdvApprox_ApproxAFunction theApprox, int theIndex, double theU)
+    private static Point3D Eval3d(ApproxAFunction theApprox, int theIndex, double theU)
     {
         NCollection_Array1<Point3D> aPoles = new(1, theApprox.NbPoles());
         theApprox.Poles(theIndex, aPoles);
@@ -103,16 +104,16 @@ public class AdvApprox_ApproxAFunctionTests
     public void Polynomial_is_reproduced(Continuity theContinuity)
     {
         Evaluator aF = new(Cubic);
-        AdvApprox_ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-9), null, null, 0.0, 2.0, theContinuity, 10, 5, aF);
+        ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-9), null, null, 0.0, 2.0, theContinuity, 10, 5, aF);
 
-        Assert.True(anApprox.IsDone());
-        Assert.True(anApprox.HasResult());
+        Assert.True(anApprox.IsDone);
+        Assert.True(anApprox.HasResult);
         Assert.Equal(1, anApprox.NumSubSpaces(1));
         Assert.Equal(0, anApprox.NumSubSpaces(2));
         Assert.True(anApprox.MaxError(1, 1) <= 1e-9);
         Assert.True(anApprox.AverageError(1, 1) <= anApprox.MaxError(1, 1));
         // One segment is enough for a cubic
-        Assert.Equal(2, anApprox.NbKnots());
+        Assert.Equal(2, anApprox.KnotCount);
         Assert.Equal(0.0, anApprox.Knots()![1]);
         Assert.Equal(2.0, anApprox.Knots()![2]);
 
@@ -130,12 +131,12 @@ public class AdvApprox_ApproxAFunctionTests
     {
         const double aTol = 1e-7;
         Evaluator aF = new((t, d, r) => r[0] = SinD(t, d));
-        AdvApprox_ApproxAFunction anApprox =
+        ApproxAFunction anApprox =
             new(1, 0, 0, Tol(aTol), null, null, 0.0, 2 * Math.PI, C1, 8, 20, aF);
 
-        Assert.True(anApprox.IsDone());
+        Assert.True(anApprox.IsDone);
         Assert.True(anApprox.MaxError(1, 1) <= aTol);
-        Assert.True(anApprox.NbKnots() > 2, "a degree 8 polynomial can't approximate sin over a period to 1e-7");
+        Assert.True(anApprox.KnotCount > 2, "a degree 8 polynomial can't approximate sin over a period to 1e-7");
         Assert.True(anApprox.Degree() <= 8);
 
         double aMaxErr = 0;
@@ -160,10 +161,10 @@ public class AdvApprox_ApproxAFunctionTests
             r[4] = SinD(t, d);
             r[5] = d switch { 0 => 0.5 * t, 1 => 0.5, _ => 0 };
         });
-        AdvApprox_ApproxAFunction anApprox =
+        ApproxAFunction anApprox =
             new(1, 1, 1, Tol(1e-6), Tol(1e-5), Tol(1e-4), 0.0, 3.0, C2, 11, 30, aF);
 
-        Assert.True(anApprox.IsDone());
+        Assert.True(anApprox.IsDone);
         Assert.Equal(1, anApprox.NumSubSpaces(1));
         Assert.Equal(1, anApprox.NumSubSpaces(2));
         Assert.Equal(1, anApprox.NumSubSpaces(3));
@@ -194,9 +195,9 @@ public class AdvApprox_ApproxAFunctionTests
     public void Result_has_the_requested_continuity(Continuity theContinuity, int theOrder)
     {
         Evaluator aF = new((t, d, r) => r[0] = SinD(3 * t, d) * Math.Pow(3, d));
-        AdvApprox_ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-8), null, null, 0.0, 4.0, theContinuity, 7, 50, aF);
+        ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-8), null, null, 0.0, 4.0, theContinuity, 7, 50, aF);
 
-        Assert.True(anApprox.IsDone());
+        Assert.True(anApprox.IsDone);
         NCollection_HArray1<int> aMults = anApprox.Multiplicities()!;
         Assert.True(aMults.Length() > 2);
         Assert.Equal(anApprox.Degree() + 1, aMults[aMults.Lower()]);
@@ -217,11 +218,11 @@ public class AdvApprox_ApproxAFunctionTests
             double s = t - 0.7;
             r[0] = s <= 0 ? 0 : d switch { 0 => s * s * s, 1 => 3 * s * s, 2 => 6 * s, _ => 6 };
         });
-        AdvApprox_PrefCutting aCut = new(NCollection_Array1<double>.From([0.7]));
-        AdvApprox_ApproxAFunction anApprox =
+        PrefCutting aCut = new(NCollection_Array1<double>.From([0.7]));
+        ApproxAFunction anApprox =
             new(1, 0, 0, Tol(1e-10), null, null, 0.0, 2.0, C1, 6, 10, aF, aCut);
 
-        Assert.True(anApprox.IsDone());
+        Assert.True(anApprox.IsDone);
         NCollection_HArray1<double> aKnots = anApprox.Knots()!;
         Assert.Contains(0.7, aKnots.AsSpan().ToArray());
         // A cubic on each side: two pieces, each exact
@@ -234,7 +235,7 @@ public class AdvApprox_ApproxAFunctionTests
     public void Accessors_return_copies()
     {
         Evaluator aF = new(Cubic);
-        AdvApprox_ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-9), null, null, 0.0, 2.0, C1, 10, 5, aF);
+        ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-9), null, null, 0.0, 2.0, C1, 10, 5, aF);
 
         NCollection_HArray1<double> aKnots = anApprox.Knots()!;
         aKnots[1] = 42;
@@ -262,16 +263,16 @@ public class AdvApprox_ApproxAFunctionTests
     {
         Evaluator aF = new(Cubic);
         Assert.ThrowsAny<ConstructionErrorException>(
-            () => new AdvApprox_ApproxAFunction(0, 0, 0, null, null, null, 0, 1, C1, 5, 5, aF));
+            () => new ApproxAFunction(0, 0, 0, null, null, null, 0, 1, C1, 5, 5, aF));
         Assert.ThrowsAny<ConstructionErrorException>(
-            () => new AdvApprox_ApproxAFunction(1, 0, 0, Tol(1e-6), null, null, 1, 0, C1, 5, 5, aF));
+            () => new ApproxAFunction(1, 0, 0, Tol(1e-6), null, null, 1, 0, C1, 5, 5, aF));
         Assert.ThrowsAny<ConstructionErrorException>(
-            () => new AdvApprox_ApproxAFunction(1, 0, 0, Tol(1e-6), null, null, 0, 1, G1, 5, 5, aF));
+            () => new ApproxAFunction(1, 0, 0, Tol(1e-6), null, null, 0, 1, G1, 5, 5, aF));
 
-        AdvApprox_ApproxAFunction anApprox =
+        ApproxAFunction anApprox =
             new(1, 0, 0, Tol(1e-6), null, null, 0, 1, C1, 5, 5, new FailingEvaluator());
-        Assert.False(anApprox.IsDone());
-        Assert.False(anApprox.HasResult());
+        Assert.False(anApprox.IsDone);
+        Assert.False(anApprox.HasResult);
         Assert.Equal(0, anApprox.NbPoles());
         Assert.Null(anApprox.Knots());
     }
@@ -281,10 +282,10 @@ public class AdvApprox_ApproxAFunctionTests
     {
         // Too few segments for the tolerance: the best result is kept, flagged by the error
         Evaluator aF = new((t, d, r) => r[0] = SinD(10 * t, d) * Math.Pow(10, d));
-        AdvApprox_ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-12), null, null, 0, 3, C1, 5, 2, aF);
-        Assert.True(anApprox.HasResult());
+        ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-12), null, null, 0, 3, C1, 5, 2, aF);
+        Assert.True(anApprox.HasResult);
         Assert.True(anApprox.MaxError(1, 1) > 1e-12);
-        Assert.True(anApprox.NbKnots() <= 3);
+        Assert.True(anApprox.KnotCount <= 3);
     }
 
     [Fact]
@@ -297,13 +298,13 @@ public class AdvApprox_ApproxAFunctionTests
         NCollection_Array1<double> aCoeffs = new(1, 4 * 6 * 1);
         NCollection_Array1<double> anIntervals = new(1, 5);
         NCollection_Array1<double> anErrMax = new(1, 4), anErrAvg = new(1, 4);
-        AdvApprox_ApproxAFunction.Approximation(1, 1, aDims, 0, 1, aF, new AdvApprox_DichoCutting(), 1, 6, 4,
+        ApproxAFunction.Approximation(1, 1, aDims, 0, 1, aF, new DichoCutting(), 1, 6, 4,
                                                 aTols, 1, out _, aNbCoeffs, aCoeffs, anIntervals, anErrMax,
                                                 anErrAvg, out int anError);
         Assert.Equal(1, anError);
 
         aDims[1] = 1;
-        AdvApprox_ApproxAFunction.Approximation(1, 1, aDims, 0, 1, aF, new AdvApprox_DichoCutting(), 1, 6, 4,
+        ApproxAFunction.Approximation(1, 1, aDims, 0, 1, aF, new DichoCutting(), 1, 6, 4,
                                                 aTols, 1, out int aNbCurves, aNbCoeffs, aCoeffs, anIntervals,
                                                 anErrMax, anErrAvg, out anError);
         Assert.Equal(0, anError);
@@ -323,7 +324,7 @@ public class AdvApprox_ApproxAFunctionTests
     public void Dump_writes_the_errors()
     {
         Evaluator aF = new(Cubic);
-        AdvApprox_ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-9), null, null, 0.0, 2.0, C1, 10, 5, aF);
+        ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-9), null, null, 0.0, 2.0, C1, 10, 5, aF);
         StringWriter aWriter = new();
         anApprox.Dump(aWriter);
         Assert.StartsWith("Dump of ApproxAFunction\nError(s) 1d = \n   ", aWriter.ToString());

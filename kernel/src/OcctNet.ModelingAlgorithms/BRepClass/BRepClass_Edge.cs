@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -15,76 +19,76 @@ namespace Occt;
 /// </remarks>
 public partial struct BRepClass_Edge
 {
-    private TopoDS_Edge myEdge;
-    private TopoDS_Face myFace;
-    private TopoDS_Edge myNextEdge;
+    private Edge myEdge;
+    private Face myFace;
+    private Edge myNextEdge;
     private double myMaxTolerance;
     private bool myUseBndBox;
 
     /// <summary>An empty edge.</summary>
     public BRepClass_Edge()
     {
-        myEdge = new TopoDS_Edge();
-        myFace = new TopoDS_Face();
-        myNextEdge = new TopoDS_Edge();
+        myEdge = new Edge();
+        myFace = new Face();
+        myNextEdge = new Edge();
         myMaxTolerance = global::Kerf.Engine.Foundation.Precision.Infinite();
         myUseBndBox = false;
     }
 
     /// <summary>The edge <paramref name="E"/> of the face <paramref name="F"/>.</summary>
-    public BRepClass_Edge(in TopoDS_Edge E, in TopoDS_Face F)
+    public BRepClass_Edge(in Edge E, in Face F)
     {
         myEdge = E;
         myFace = F;
-        myNextEdge = new TopoDS_Edge();
+        myNextEdge = new Edge();
         myMaxTolerance = global::Kerf.Engine.Foundation.Precision.Infinite();
         myUseBndBox = false;
     }
 
     /// <summary>The current edge.</summary>
-    public readonly TopoDS_Edge Edge() => myEdge;
+    public readonly Edge Edge() => myEdge;
 
     /// <summary>OCCT's non-const <c>Edge()</c>.</summary>
     [System.Diagnostics.CodeAnalysis.UnscopedRef]
-    internal ref TopoDS_Edge ChangeEdge() => ref myEdge;
+    internal ref Edge ChangeEdge() => ref myEdge;
 
     /// <summary>The face of the current edge.</summary>
-    public readonly TopoDS_Face Face() => myFace;
+    public readonly Face Face() => myFace;
 
     /// <summary>OCCT's non-const <c>Face()</c>.</summary>
     [System.Diagnostics.CodeAnalysis.UnscopedRef]
-    internal ref TopoDS_Face ChangeFace() => ref myFace;
+    internal ref Face ChangeFace() => ref myFace;
 
     /// <summary>The next edge (null if none was found).</summary>
-    public readonly TopoDS_Edge NextEdge() => myNextEdge;
+    public readonly Edge NextEdge() => myNextEdge;
 
     /// <summary>
     /// Finds and sets the next edge of the current one: the other edge at its last vertex, when that vertex has exactly
     /// two edges in <paramref name="theMapVE"/>. Leaves the next edge unchanged otherwise.
     /// </summary>
-    internal void SetNextEdge(NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMapVE)
+    internal void SetNextEdge(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMapVE)
     {
-        if (theMapVE.IsEmpty() || myEdge.IsNull())
+        if (theMapVE.IsEmpty() || myEdge.IsNull)
         {
             return;
         }
 
-        TopExp.Vertices(myEdge, out TopoDS_Vertex aVF, out TopoDS_Vertex aVL, true);
+        Exploration.Vertices(myEdge, out Vertex aVF, out Vertex aVL, true);
 
-        if (aVL.IsNull() || aVL.IsSame(aVF))
+        if (aVL.IsNull || aVL.IsSame(aVF))
         {
             return;
         }
 
         // The vertex is in the map of its own wire (C++ dereferences the result of Seek unchecked)
-        theMapVE.FindFromKey(aVL, out NCollection_List<TopoDS_Shape>? aListE);
+        theMapVE.FindFromKey(aVL, out NCollection_List<Shape>? aListE);
         if (aListE!.Extent() == 2)
         {
-            for (var anIt = new NCollection_List<TopoDS_Shape>.Iterator(aListE); anIt.More(); anIt.Next())
+            for (var anIt = new NCollection_List<Shape>.Iterator(aListE); anIt.More(); anIt.Next())
             {
-                if ((!anIt.Value().IsNull()) && (!anIt.Value().IsSame(myEdge)))
+                if ((!anIt.Value().IsNull) && (!anIt.Value().IsSame(myEdge)))
                 {
-                    myNextEdge = TopoDS.Edge(anIt.Value());
+                    myNextEdge = ShapeCasts.Edge(anIt.Value());
                 }
             }
         }
@@ -105,7 +109,7 @@ public partial struct BRepClass_Edge
     // Functional twins
 
     /// <summary>The edge with the next edge found in <paramref name="theMapVE"/> (see <see cref="SetNextEdge"/>).</summary>
-    public readonly BRepClass_Edge WithNextEdge(NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMapVE)
+    public readonly BRepClass_Edge WithNextEdge(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMapVE)
     {
         BRepClass_Edge aCopy = this;
         aCopy.SetNextEdge(theMapVE);

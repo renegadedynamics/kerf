@@ -5,7 +5,9 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Geometry.Projection;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
@@ -54,7 +56,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
     }
 
     /// <summary>Sets the surface to project on and the precision.</summary>
-    public virtual void Init(Geom_Surface theSurf, double thePreci)
+    public virtual void Init(Surface theSurf, double thePreci)
     {
         Init(new ShapeAnalysis_Surface(theSurf), thePreci);
     }
@@ -67,7 +69,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
     }
 
     /// <summary>Sets the surface to project on.</summary>
-    public void SetSurface(Geom_Surface theSurf)
+    public void SetSurface(Surface theSurf)
     {
         SetSurface(new ShapeAnalysis_Surface(theSurf));
     }
@@ -104,7 +106,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
     /// (frozen) is same-parameter with the 3D curve on that range; a straight pcurve may be an infinite line.
     /// Returns false if the projection fails.
     /// </summary>
-    public bool Perform(Geom_Curve? theC3D, double theFirst, double theLast, out Geom2d_Curve? theC2D,
+    public bool Perform(Curve3D? theC3D, double theFirst, double theLast, out Curve2D? theC2D,
                         double theTolFirst = Precision_Confusion, double theTolLast = Precision_Confusion)
     {
         bool aResult = InternalPerform(theC3D, theFirst, theLast, out theC2D, theTolFirst, theTolLast);
@@ -116,7 +118,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
     private const double Precision_Confusion = 1.0e-7;
 
     /// <summary>The projection, as <see cref="Perform"/>, without freezing the pcurve (ported code; OCCT's virtual).</summary>
-    internal virtual bool InternalPerform(Geom_Curve? theC3D, double theFirst, double theLast, out Geom2d_Curve? theC2D,
+    internal virtual bool InternalPerform(Curve3D? theC3D, double theFirst, double theLast, out Curve2D? theC2D,
                                           double theTolFirst = Precision_Confusion, double theTolLast = Precision_Confusion)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
@@ -129,10 +131,10 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
         }
 
         // Try analytical projection first
-        Geom_Curve aCurve3DTrim = theC3D;
-        if (theC3D is not Geom_BoundedCurve)
+        Curve3D aCurve3DTrim = theC3D;
+        if (theC3D is not BoundedCurve3D)
         {
-            aCurve3DTrim = new Geom_TrimmedCurve(theC3D, theFirst, theLast);
+            aCurve3DTrim = new TrimmedCurve3D(theC3D, theFirst, theLast);
         }
 
         theC2D = projectAnalytic(aCurve3DTrim);
@@ -184,7 +186,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
     /// Projects the 3D curve with ProjLib's standard projector. Returns false if it fails, raises an exception or cuts
     /// the curve by the surface's bounds.
     /// </summary>
-    protected bool PerformByProjLib(Geom_Curve theC3D, double theFirst, double theLast, out Geom2d_Curve? theC2D)
+    protected bool PerformByProjLib(Curve3D theC3D, double theFirst, double theLast, out Curve2D? theC2D)
     {
         theC2D = null;
         if (mySurf is null)
@@ -195,26 +197,26 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
 
         try
         {
-            GeomAdaptor_Surface? aGAS = mySurf.Adaptor3d();
-            GeomAdaptor_Curve aGAC = new(theC3D, theFirst, theLast);
-            ProjLib_ProjectedCurve aProjector = new(aGAS!, aGAC);
+            SurfaceAdaptor? aGAS = mySurf.Adaptor3d();
+            CurveAdaptor aGAC = new(theC3D, theFirst, theLast);
+            ProjectedCurve aProjector = new(aGAS!, aGAC);
 
             switch (aProjector.GetType())
             {
                 case Line:
-                    theC2D = new Geom2d_Line(aProjector.Line());
+                    theC2D = new LineCurve2D(aProjector.Line());
                     break;
                 case Circle:
-                    theC2D = new Geom2d_Circle(aProjector.Circle());
+                    theC2D = new CircleCurve2D(aProjector.Circle());
                     break;
                 case Ellipse:
-                    theC2D = new Geom2d_Ellipse(aProjector.Ellipse());
+                    theC2D = new EllipseCurve2D(aProjector.Ellipse());
                     break;
                 case Parabola:
-                    theC2D = new Geom2d_Parabola(aProjector.Parabola());
+                    theC2D = new ParabolaCurve2D(aProjector.Parabola());
                     break;
                 case Hyperbola:
-                    theC2D = new Geom2d_Hyperbola(aProjector.Hyperbola());
+                    theC2D = new HyperbolaCurve2D(aProjector.Hyperbola());
                     break;
                 case BSplineCurve:
                     theC2D = aProjector.BSpline();
@@ -243,41 +245,41 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
     }
 
     /// <summary>The analytic projection on a plane (also trimmed or offset), or null.</summary>
-    protected Geom2d_Curve? projectAnalytic(Geom_Curve theC3D)
+    protected Curve2D? projectAnalytic(Curve3D theC3D)
     {
-        Geom2d_Curve? aResult = null;
+        Curve2D? aResult = null;
 
-        Geom_Surface? aSurf = mySurf!.Surface();
-        Geom_Plane? aPlane = aSurf as Geom_Plane;
+        Surface? aSurf = mySurf!.Surface();
+        PlaneSurface? aPlane = aSurf as PlaneSurface;
 
         if (aPlane is null)
         {
-            if (aSurf is Geom_RectangularTrimmedSurface aRTS)
+            if (aSurf is TrimmedSurface aRTS)
             {
-                aPlane = aRTS.BasisSurface() as Geom_Plane;
+                aPlane = aRTS.BasisSurface() as PlaneSurface;
             }
             else
             {
-                if (aSurf is Geom_OffsetSurface anOS)
+                if (aSurf is OffsetSurface anOS)
                 {
-                    aPlane = anOS.BasisSurface() as Geom_Plane;
+                    aPlane = anOS.BasisSurface() as PlaneSurface;
                 }
             }
         }
 
         if (aPlane is not null)
         {
-            Geom_Curve? aProjOnPlane = GeomProjLib.ProjectOnPlane(theC3D, aPlane, aPlane.Position().Direction(), true);
-            GeomAdaptor_Curve aHC = new(aProjOnPlane!);
-            ProjLib_ProjectedCurve aProj = new(mySurf.Adaptor3d()!, aHC);
+            Curve3D? aProjOnPlane = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(theC3D, aPlane, aPlane.Position().Direction(), true);
+            CurveAdaptor aHC = new(aProjOnPlane!);
+            ProjectedCurve aProj = new(mySurf.Adaptor3d()!, aHC);
 
-            aResult = Geom2dAdaptor.MakeCurve(aProj);
+            aResult = global::Kerf.Engine.Geometry.Adaptors.Geom2dAdaptor.MakeCurve(aProj);
             if (aResult is null)
             {
                 return aResult;
             }
 
-            if (aResult is Geom2d_TrimmedCurve aTC)
+            if (aResult is TrimmedCurve2D aTC)
             {
                 aResult = aTC.BasisCurve();
             }
@@ -319,7 +321,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
     /// Tries to represent the pcurve by a Geom2d_Line or a degree-1 B-spline within <paramref name="theTol"/>; null
     /// if the 3D points aren't on such a line of the parametric space.
     /// </summary>
-    protected Geom2d_Curve? getLine(NCollection_Array1<Point3D> thePoints, NCollection_Array1<double> theParams,
+    protected Curve2D? getLine(NCollection_Array1<Point3D> thePoints, NCollection_Array1<double> theParams,
                                     NCollection_Array1<Point2D> thePoints2d, double theTol, ref bool theIsRecompute,
                                     ref bool theIsFromCache)
     {
@@ -335,8 +337,8 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
 
         double aTol2 = theTol * theTol;
         double aTolWorking = theTol;
-        bool isPeriodicU = mySurf!.Surface()!.IsUPeriodic();
-        bool isPeriodicV = mySurf.Surface()!.IsVPeriodic();
+        bool isPeriodicU = mySurf!.Surface()!.IsUPeriodic;
+        bool isPeriodicV = mySurf.Surface()!.IsVPeriodic;
 
         // Protection against bad tolerance shapes
         if (aTol2 > 1.0)
@@ -399,7 +401,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
             }
         }
 
-        if (theIsRecompute && mySurf.Surface() is Geom_SphericalSurface)
+        if (theIsRecompute && mySurf.Surface() is SphericalSurface)
         {
             return null;
         }
@@ -418,7 +420,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
 
         Vector2D aVec0 = new(aP2d[0], aP2d[3]);
         Vector2D aVec = aVec0 / dPar;
-        Geom_Surface aSurf = mySurf.Surface()!;
+        Surface aSurf = mySurf.Surface()!;
         bool isNormalCheck = aSurf.IsCNu(1) && aSurf.IsCNv(1);
 
         if (isNormalCheck)
@@ -465,7 +467,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
         {
             Xy aDirL = aVec0.XY() / aLLength;
             Point2D aPL = new(aP2d[0].XY() - theParams[1] * aDirL);
-            return new Geom2d_Line(aPL, new Direction2D(aDirL));
+            return new LineCurve2D(aPL, new Direction2D(aDirL));
         }
 
         // Create straight bspline
@@ -481,7 +483,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
         aMults[1] = 2;
         aMults[2] = 2;
 
-        return new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 1);
+        return new BSplineCurve2D(aPoles, aKnots, aMults, 1);
     }
 
     /// <summary>
@@ -489,9 +491,9 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
     /// returns a straight pcurve in <paramref name="theC2D"/> when <c>getLine</c> finds one (else null, the points in
     /// <paramref name="thePoints2d"/>). The arrays may grow by inserted points.
     /// </summary>
-    protected bool approxPCurve(int theNbPnt, Geom_Curve theC3D, double theTolFirst, double theTolLast,
+    protected bool approxPCurve(int theNbPnt, Curve3D theC3D, double theTolFirst, double theTolLast,
                                 ref NCollection_Array1<Point3D> thePoints, ref NCollection_Array1<double> theParams,
-                                ref NCollection_Array1<Point2D> thePoints2d, out Geom2d_Curve? theC2D)
+                                ref NCollection_Array1<Point2D> thePoints2d, out Curve2D? theC2D)
     {
         // For performance, first try to handle typical case when pcurve is straight
         bool isRecompute = false;
@@ -530,12 +532,12 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
         // OCCT leaves these unset when isAnIsoparametric doesn't write them; they're read only where it did
         bool isoPar2d3d = false;
         Point2D valueP1 = new(), valueP2 = new();
-        Geom_Curve? cIso = null;
+        Curve3D? cIso = null;
         double t1 = 0.0, t2 = 0.0;
 
-        Geom_Surface aSurface = mySurf!.Surface()!;
+        Surface aSurface = mySurf!.Surface()!;
         bool isAnalytic = true;
-        if (aSurface.GetType() == typeof(Geom_BezierSurface) || aSurface.GetType() == typeof(Geom_BSplineSurface))
+        if (aSurface.GetType() == typeof(BezierSurface) || aSurface.GetType() == typeof(BSplineSurface))
         {
             isAnalytic = false;
         }
@@ -806,13 +808,13 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
             {
                 if (Math.Abs(p2d.X() - prevP2d.X()) > 0.95 * Up && prevP3d.Distance(p3d) < myPreci
                     && !mySurf.IsUClosed(myPreci) && mySurf.NbSingularities(myPreci) > 0
-                    && aSurface is Geom_BSplineSurface)
+                    && aSurface is BSplineSurface)
                 {
                     needResolveUJump = true;
                 }
                 if (Math.Abs(p2d.Y() - prevP2d.Y()) > 0.95 * Vp && prevP3d.Distance(p3d) < myPreci
                     && !mySurf.IsVClosed(myPreci) && mySurf.NbSingularities(myPreci) > 0
-                    && aSurface is Geom_BSplineSurface)
+                    && aSurface is BSplineSurface)
                 {
                     needResolveVJump = true;
                 }
@@ -887,7 +889,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
                 }
             }
 
-            if (aSurface.IsUPeriodic() && isFromCache)
+            if (aSurface.IsUPeriodic && isFromCache)
             {
                 double aMinParam = uf, aMaxParam = ul;
                 while (aMinParam > aSavedPoint.X())
@@ -952,7 +954,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
         }
 
         // Handle V-closed surfaces
-        if (mySurf.IsVClosed(myPreci) || needResolveVJump || aSurface is Geom_SphericalSurface)
+        if (mySurf.IsVClosed(myPreci) || needResolveVJump || aSurface is SphericalSurface)
         {
             double prevY, firstY = thePoints2d[1].Y();
             if (!isFromCache)
@@ -969,7 +971,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
                 }
             }
 
-            if (aSurface.IsVPeriodic() && isFromCache)
+            if (aSurface.IsVPeriodic && isFromCache)
             {
                 double aMinParam = vf, aMaxParam = vl;
                 while (aMinParam > aSavedPoint.Y())
@@ -1034,7 +1036,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
         }
 
         // Handle V-closed seam adjustment
-        if (mySurf.IsVClosed(myPreci) || aSurface is Geom_SphericalSurface)
+        if (mySurf.IsVClosed(myPreci) || aSurface is SphericalSurface)
         {
             for (int aPntIter = 2; aPntIter <= thePoints2d.Length(); ++aPntIter)
             {
@@ -1254,7 +1256,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
     }
 
     /// <summary>Corrects an end point of the pcurve near a singularity of the surface.</summary>
-    protected void correctExtremity(Geom_Curve theC3D, NCollection_Array1<double> theParams,
+    protected void correctExtremity(Curve3D theC3D, NCollection_Array1<double> theParams,
                                     NCollection_Array1<Point2D> thePoints2d, bool theIsFirstPoint,
                                     in Point2D thePointOnIsoLine, bool theIsUIso)
     {
@@ -1268,7 +1270,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
         Line2D anIsoLine = new(EndPoint, aDir);
         IntRes2d_Domain Dom1 = new(), Dom2 = new();
 
-        bool IsPeriodic = (theIsUIso) ? mySurf!.Surface()!.IsVPeriodic() : mySurf!.Surface()!.IsUPeriodic();
+        bool IsPeriodic = (theIsUIso) ? mySurf!.Surface()!.IsVPeriodic : mySurf!.Surface()!.IsUPeriodic;
 
         Point2D FirstPointOfLine, SecondPointOfLine;
         double FinishParam, FirstParam, SecondParam;
@@ -1378,7 +1380,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
     /// </summary>
     protected void insertAdditionalPointOrAdjust(ref bool theToAdjust, int theIndCoord, double thePeriod,
                                                  double theTolOnPeriod, ref double theCurCoord, double thePrevCoord,
-                                                 Geom_Curve theC3D, ref int theIndex,
+                                                 Curve3D theC3D, ref int theIndex,
                                                  ref NCollection_Array1<Point3D> thePoints,
                                                  ref NCollection_Array1<double> theParams,
                                                  ref NCollection_Array1<Point2D> thePoints2d)
@@ -1480,10 +1482,10 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
     }
 
     /// <summary>Interpolates the pcurve through the points (Geom2dAPI_Interpolate), or null on failure.</summary>
-    protected Geom2d_Curve? interpolatePCurve(int theNbPnt, NCollection_Array1<Point2D> thePoints2d,
+    protected Curve2D? interpolatePCurve(int theNbPnt, NCollection_Array1<Point2D> thePoints2d,
                                               NCollection_Array1<double> theParams)
     {
-        Geom2d_Curve? aC2D = null;
+        Curve2D? aC2D = null;
         double theTolerance2d = myPreci / (100 * theNbPnt);
 
         try
@@ -1536,10 +1538,10 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
     }
 
     /// <summary>Approximates the pcurve through the points (GeomAPI_PointsToBSpline), or null on failure.</summary>
-    protected Geom2d_Curve? approximatePCurve(NCollection_Array1<Point2D> thePoints2d, NCollection_Array1<double> theParams)
+    protected Curve2D? approximatePCurve(NCollection_Array1<Point2D> thePoints2d, NCollection_Array1<double> theParams)
     {
         double theTolerance2d = myPreci;
-        Geom2d_Curve? aC2D;
+        Curve2D? aC2D;
 
         try
         {
@@ -1565,9 +1567,9 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
             }
 
             GeomAPI_PointsToBSpline appr = new(points3d, @params, 1, 10, C1, theTolerance2d);
-            Geom_BSplineCurve crv3d = appr.Curve();
+            BSplineCurve3D crv3d = appr.Curve();
 
-            int NbPoles = crv3d.NbPoles();
+            int NbPoles = crv3d.PoleCount;
             NCollection_Array1<Point3D> poles3d = crv3d.InternalPoles();
             NCollection_Array1<Point2D> poles2d = new(1, NbPoles);
 
@@ -1580,7 +1582,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
             NCollection_Array1<double> knots = crv3d.InternalKnots();
             NCollection_Array1<int> multiplicities = crv3d.InternalMultiplicities();
 
-            aC2D = new Geom2d_BSplineCurve(poles2d, weights, knots, multiplicities, crv3d.Degree(), crv3d.IsPeriodic());
+            aC2D = new BSplineCurve2D(poles2d, weights, knots, multiplicities, crv3d.Degree(), crv3d.IsPeriodic);
             return aC2D;
         }
         catch (FailureException)
@@ -1767,7 +1769,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
     protected bool isAnIsoparametric(int theNbPnt, NCollection_Array1<Point3D> thePoints, NCollection_Array1<double> theParams,
                                      ref bool theIsTypeU, ref bool theP1OnIso, ref Point2D theValueP1,
                                      ref bool theP2OnIso, ref Point2D theValueP2, ref bool theIsoPar2d3d,
-                                     ref Geom_Curve? theCIso, ref double theT1, ref double theT2,
+                                     ref Curve3D? theCIso, ref double theT1, ref double theT2,
                                      NCollection_Array1<double> theParamsOut)
     {
         try
@@ -1779,7 +1781,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
 
             mySurf!.Bounds(out double U1, out double U2, out double V1, out double V2);
 
-            if (mySurf.Surface() is Geom_RectangularTrimmedSurface sTrim)
+            if (mySurf.Surface() is TrimmedSurface sTrim)
             {
                 sTrim.Bounds(out U1, out U2, out V1, out V2);
             }
@@ -1805,7 +1807,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
             {
                 double isoVal = 0.0;
                 bool isoU = false;
-                Geom_Curve? cI = null;
+                Curve3D? cI = null;
                 double tt1, tt2;
 
                 if (j == 1)
@@ -1905,7 +1907,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
                         continue;
                     }
 
-                    if (mySurf.Surface() is Geom_SphericalSurface && !isoU)
+                    if (mySurf.Surface() is SphericalSurface && !isoU)
                     {
                         continue;
                     }
@@ -2093,7 +2095,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
                 return;
             }
 
-            if (theSurf.Surface() is Geom_BSplineSurface aBSplineSurf)
+            if (theSurf.Surface() is BSplineSurface aBSplineSurf)
             {
                 buildCornerCache(aBSplineSurf);
             }
@@ -2125,18 +2127,18 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
         public double Gap() => mySurf!.Gap();
 
         // Builds the cache from the B-spline surface's corner poles (where it is clamped).
-        private void buildCornerCache(Geom_BSplineSurface theSurface)
+        private void buildCornerCache(BSplineSurface theSurface)
         {
-            int aNbPolesU = theSurface.NbUPoles();
-            int aNbPolesV = theSurface.NbVPoles();
+            int aNbPolesU = theSurface.UPoleCount;
+            int aNbPolesV = theSurface.VPoleCount;
             int aDegreeU = theSurface.UDegree();
             int aDegreeV = theSurface.VDegree();
 
             // Check if surface is clamped (end multiplicities = degree + 1)
             int aFirstUMult = theSurface.UMultiplicity(1);
-            int aLastUMult = theSurface.UMultiplicity(theSurface.NbUKnots());
+            int aLastUMult = theSurface.UMultiplicity(theSurface.UKnotCount);
             int aFirstVMult = theSurface.VMultiplicity(1);
-            int aLastVMult = theSurface.VMultiplicity(theSurface.NbVKnots());
+            int aLastVMult = theSurface.VMultiplicity(theSurface.VKnotCount);
 
             bool isUFirstClamped = (aFirstUMult >= aDegreeU + 1);
             bool isULastClamped = (aLastUMult >= aDegreeU + 1);
@@ -2145,9 +2147,9 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
 
             // Get parameter bounds
             double aUFirst = theSurface.UKnot(1);
-            double aULast = theSurface.UKnot(theSurface.NbUKnots());
+            double aULast = theSurface.UKnot(theSurface.UKnotCount);
             double aVFirst = theSurface.VKnot(1);
-            double aVLast = theSurface.VKnot(theSurface.NbVKnots());
+            double aVLast = theSurface.VKnot(theSurface.VKnotCount);
 
             // Corner (1, 1) - UFirst, VFirst
             if (isUFirstClamped && isVFirstClamped)
@@ -2195,30 +2197,30 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
     }
 
     // Extracts the B-spline basis of a possibly nested trimmed curve, or null.
-    private static Geom_BSplineCurve? extractBSplineCurve(Geom_Curve? theCurve)
+    private static BSplineCurve3D? extractBSplineCurve(Curve3D? theCurve)
     {
-        Geom_Curve? aCurve = theCurve;
+        Curve3D? aCurve = theCurve;
 
         // Recursively unwrap trimmed curves
-        while (aCurve is Geom_TrimmedCurve aTrimmed)
+        while (aCurve is TrimmedCurve3D aTrimmed)
         {
             aCurve = aTrimmed.BasisCurve();
         }
 
-        return aCurve as Geom_BSplineCurve;
+        return aCurve as BSplineCurve3D;
     }
 
     // Adjusts the second point to the first within half a period of a periodic surface.
-    private static void adjustSecondToFirstPoint(in Point2D theFirstPoint, ref Point2D theSecondPoint, Geom_Surface theSurf)
+    private static void adjustSecondToFirstPoint(in Point2D theFirstPoint, ref Point2D theSecondPoint, Surface theSurf)
     {
-        if (theSurf.IsUPeriodic())
+        if (theSurf.IsUPeriodic)
         {
             double anUPeriod = theSurf.UPeriod();
             double aNewU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(theSecondPoint.X(), theFirstPoint.X() - anUPeriod / 2,
                                            theFirstPoint.X() + anUPeriod / 2);
             theSecondPoint.SetX(aNewU);
         }
-        if (theSurf.IsVPeriodic())
+        if (theSurf.IsVPeriodic)
         {
             double aVPeriod = theSurf.VPeriod();
             double aNewV = global::Kerf.Engine.Geometry.ElCLib.InPeriod(theSecondPoint.Y(), theFirstPoint.Y() - aVPeriod / 2,
@@ -2355,8 +2357,8 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
     }
 
     // True if the B-spline curve (possibly trimmed) has a parametrisation so uneven that ProjLib must project it.
-    private static bool isBSplineCurveInvalid(Geom_Curve theCurve, double theFirst, double theLast,
-                                              out Geom_BSplineCurve? theBSpline)
+    private static bool isBSplineCurveInvalid(Curve3D theCurve, double theFirst, double theLast,
+                                              out BSplineCurve3D? theBSpline)
     {
         theBSpline = extractBSplineCurve(theCurve);
         if (theBSpline is null)
@@ -2371,7 +2373,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
 
         // Find first knot index
         int anIdx = 1;
-        for (; anIdx <= theBSpline.NbKnots() && aFirstParam < theLast; anIdx++)
+        for (; anIdx <= theBSpline.KnotCount && aFirstParam < theLast; anIdx++)
         {
             if (theBSpline.Knot(anIdx) > theFirst)
             {
@@ -2379,11 +2381,11 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
             }
         }
 
-        GeomAdaptor_Curve aC3DAdaptor = new(theCurve);
+        CurveAdaptor aC3DAdaptor = new(theCurve);
         double aMinParSpeed = global::Kerf.Engine.Foundation.Precision.Infinite();
         NCollection_Sequence<double> aKnotCoeffs = new();
 
-        for (; anIdx <= theBSpline.NbKnots() && aFirstParam < theLast; anIdx++)
+        for (; anIdx <= theBSpline.KnotCount && aFirstParam < theLast; anIdx++)
         {
             // Fill current knot interval
             aLastParam = Min(theLast, theBSpline.Knot(anIdx));
@@ -2456,16 +2458,16 @@ public class ShapeConstruct_ProjectCurveOnSurface : Transient
 
     // Generates the discretization points of a curve: uniform, at least theNbControlPoints, more for B-splines with
     // many spans. Resizes the arrays and returns the number of points.
-    private static int generateCurvePoints(Geom_Curve theCurve, double theFirst, double theLast, int theNbControlPoints,
+    private static int generateCurvePoints(Curve3D theCurve, double theFirst, double theLast, int theNbControlPoints,
                                            NCollection_Array1<Point3D> thePoints, NCollection_Array1<double> theParams)
     {
-        Geom_BSplineCurve? aBSpline = extractBSplineCurve(theCurve);
+        BSplineCurve3D? aBSpline = extractBSplineCurve(theCurve);
         int aNbPini = theNbControlPoints;
 
         if (aBSpline is not null)
         {
             int aUsedKnots = 0;
-            for (int i = 1; i < aBSpline.NbKnots(); i++)
+            for (int i = 1; i < aBSpline.KnotCount; i++)
             {
                 if (aBSpline.Knot(i + 1) > theFirst && aBSpline.Knot(i) < theLast)
                 {

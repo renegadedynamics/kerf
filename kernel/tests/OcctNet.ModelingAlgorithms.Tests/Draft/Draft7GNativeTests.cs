@@ -1,14 +1,18 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 using OcctNet.ModelingData.Tests;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -53,17 +57,17 @@ public class Draft7GNativeTests(ITestOutputHelper output)
     private static double FromHex(string theHex) =>
         BitConverter.Int64BitsToDouble(long.Parse(theHex, NumberStyles.HexNumber, CultureInfo.InvariantCulture));
 
-    private static TopoDS_Shape Read(string theText)
+    private static Shape Read(string theText)
     {
-        BRepTools.Read(out TopoDS_Shape aShape, new StringReader(theText));
+        BrepTools.Read(out Shape aShape, new StringReader(theText));
         aShape.TShape()?.FreezeGraph(); // a caller's shape
         return aShape;
     }
 
-    private static string Text(in TopoDS_Shape theS)
+    private static string Text(in Shape theS)
     {
         var aS = new StringWriter(CultureInfo.InvariantCulture) { NewLine = "\n" };
-        BRepTools.Write(theS, aS, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3);
+        BrepTools.Write(theS, aS, true, false, FormatVersion.FormatVersion_VERSION_3);
         return aS.ToString();
     }
 
@@ -73,14 +77,14 @@ public class Draft7GNativeTests(ITestOutputHelper output)
         public readonly List<string> Differences = [];
     }
 
-    private static void CompareText(Tally theTally, string theWhat, string theNative, in TopoDS_Shape thePort)
+    private static void CompareText(Tally theTally, string theWhat, string theNative, in Shape thePort)
     {
-        if (!thePort.IsNull() && !thePort.TShape()!.IsFrozen)
+        if (!thePort.IsNull && !thePort.TShape()!.IsFrozen)
         {
             theTally.NotFrozen++;
             theTally.Differences.Add($"{theWhat}: the port's result isn't frozen");
         }
-        string aPort = thePort.IsNull() ? "" : Text(thePort);
+        string aPort = thePort.IsNull ? "" : Text(thePort);
         if (aPort.Length > 0 && aPort[^1] != '\n')
         {
             aPort += "\n"; // the recording ends every block with a newline
@@ -108,7 +112,7 @@ public class Draft7GNativeTests(ITestOutputHelper output)
             theTally.FreeMasked++;
             return;
         }
-        BRepTools.Read(out TopoDS_Shape aN, new StringReader(theNative));
+        BrepTools.Read(out Shape aN, new StringReader(theNative));
         CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aN, thePort, new CanonicalOptions { CheckValidity = false });
         if (aCanon.IsIdentical)
         {
@@ -157,14 +161,14 @@ public class Draft7GNativeTests(ITestOutputHelper output)
             {
                 aNative.Add(aRecords[++r]);
             }
-            var aSnaps = new List<(TopoDS_Shape, ShapeSnapshot)>();
-            TopoDS_Shape Input(string theName)
+            var aSnaps = new List<(Shape, ShapeSnapshot)>();
+            Shape Input(string theName)
             {
-                TopoDS_Shape aS = Read(anInputs[theName]);
+                Shape aS = Read(anInputs[theName]);
                 aSnaps.Add((aS, ShapeSnapshot.Of(aS)));
                 return aS;
             }
-            var aPort = new List<(string Head, TopoDS_Shape? Shape)>();
+            var aPort = new List<(string Head, Shape? Shape)>();
             try
             {
                 switch (w[0])
@@ -186,28 +190,28 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                                 aMk.Perform(FromHex(w[6]));
                                 break;
                             case "S":
-                                aMk.Perform(new Geom_Plane(new Point3D(0, 0, FromHex(w[6])), new Direction3D(0, 0, 1)), true);
+                                aMk.Perform(new PlaneSurface(new Point3D(0, 0, FromHex(w[6])), new Direction3D(0, 0, 1)), true);
                                 break;
                             default:
                                 aMk.Perform(Input(w[6]), true);
                                 break;
                         }
-                        TopoDS_Shape aShape = aMk.Shape();
+                        Shape aShape = aMk.Shape();
                         aPort.Add(("DONE " + (aMk.IsDone() ? "1" : "0"), aShape));
                         aPort.Add(("SHELL", aMk.Shell()));
                         break;
                     }
                     case "ROLL":
                     {
-                        TopoDS_Shape aS = Input(w[1]);
-                        var aFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                        TopExp.MapShapes(aS, TopAbs_FACE, aFaces);
+                        Shape aS = Input(w[1]);
+                        var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                        Exploration.MapShapes(aS, ShapeType.Face, aFaces);
                         var aRoll = new BiTgte_Blend();
                         aRoll.Init(aS, FromHex(w[2]), 1.0e-4, false);
                         int[] anIdx = w[4].Split(',').Select(s => int.Parse(s, CultureInfo.InvariantCulture)).ToArray();
                         for (int i = 0; i + 1 < anIdx.Length; i += 2)
                         {
-                            aRoll.SetFaces(TopoDS.Face(aFaces[anIdx[i]]), TopoDS.Face(aFaces[anIdx[i + 1]]));
+                            aRoll.SetFaces(ShapeCasts.Face(aFaces[anIdx[i]]), ShapeCasts.Face(aFaces[anIdx[i + 1]]));
                         }
                         aRoll.Perform(w[3] == "1");
                         // the recorder writes the contact types as it goes: an exception ends the line
@@ -231,9 +235,9 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                     }
                     default:
                     {
-                        var aMk = new BRepOffsetAPI_MakeEvolved(Input(w[1]), TopoDS.Wire(Input(w[2])), JoinKind.Arc, true,
+                        var aMk = new BRepOffsetAPI_MakeEvolved(Input(w[1]), ShapeCasts.Wire(Input(w[2])), JoinKind.Arc, true,
                                                                 w[3] == "1", false, 1.0e-7, true);
-                        aPort.Add(("DONE " + (aMk.IsDone() ? "1" : "0"), aMk.IsDone() ? aMk.Shape() : new TopoDS_Shape()));
+                        aPort.Add(("DONE " + (aMk.IsDone() ? "1" : "0"), aMk.IsDone() ? aMk.Shape() : new Shape()));
                         break;
                     }
                 }
@@ -242,7 +246,7 @@ public class Draft7GNativeTests(ITestOutputHelper output)
             {
                 aPort.Add(("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()), null));
             }
-            foreach ((TopoDS_Shape aS, ShapeSnapshot aSnap) in aSnaps)
+            foreach ((Shape aS, ShapeSnapshot aSnap) in aSnaps)
             {
                 try
                 {
@@ -292,7 +296,7 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                     aTally.Differences.Add($"{aHead}: native {aNative[k].Head}, port {aPort[k].Head}");
                     continue;
                 }
-                CompareText(aTally, $"{aHead} {aNKey}", aNative[k].Body, aPort[k].Shape ?? new TopoDS_Shape());
+                CompareText(aTally, $"{aHead} {aNKey}", aNative[k].Body, aPort[k].Shape ?? new Shape());
             }
         }
 

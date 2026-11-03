@@ -3,11 +3,16 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
-using static Occt.Extrema_ExtAlgo;
-using static Occt.Extrema_ExtFlag;
+using Kerf.Topology;
+using static Kerf.Engine.Extrema.ExtAlgo;
+using static Kerf.Engine.Extrema.ExtFlag;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -15,28 +20,28 @@ namespace Occt;
 /// <remarks>A working object (decision 21): initialize with a face, then perform with any number of vertices.</remarks>
 public sealed class BRepExtrema_ExtPF
 {
-    private readonly Extrema_ExtPS myExtPS = new();
+    private readonly ExtPS myExtPS = new();
     private readonly NCollection_Sequence<double> mySqDist = new();
-    private readonly NCollection_Sequence<Extrema_POnSurf> myPoints = new();
-    private readonly BRepAdaptor_Surface mySurf = new();
+    private readonly NCollection_Sequence<POnSurf> myPoints = new();
+    private readonly FaceSurfaceAdaptor mySurf = new();
 
     public BRepExtrema_ExtPF()
     {
     }
 
     /// <summary>Computes all the extrema between the vertex and the face.</summary>
-    public BRepExtrema_ExtPF(in TopoDS_Vertex TheVertex,
-                             in TopoDS_Face TheFace,
-                             Extrema_ExtFlag TheFlag = Extrema_ExtFlag_MINMAX,
-                             Extrema_ExtAlgo TheAlgo = Extrema_ExtAlgo_Grad)
+    public BRepExtrema_ExtPF(in Vertex TheVertex,
+                             in Face TheFace,
+                             ExtFlag TheFlag = ExtFlag_MINMAX,
+                             ExtAlgo TheAlgo = ExtAlgo_Grad)
     {
         Initialize(TheFace, TheFlag, TheAlgo);
         Perform(TheVertex, TheFace);
     }
 
-    public void Initialize(in TopoDS_Face TheFace,
-                           Extrema_ExtFlag TheFlag = Extrema_ExtFlag_MINMAX,
-                           Extrema_ExtAlgo TheAlgo = Extrema_ExtAlgo_Grad)
+    public void Initialize(in Face TheFace,
+                           ExtFlag TheFlag = ExtFlag_MINMAX,
+                           ExtAlgo TheAlgo = ExtAlgo_Grad)
     {
         // cette surface doit etre en champ. Extrema ne fait
         // pas de copie et prend seulement un pointeur dessus.
@@ -47,12 +52,12 @@ public sealed class BRepExtrema_ExtPF
             return; // protect against non-geometric type (e.g. triangulation)
         }
 
-        double Tol = Min(BRep_Tool.Tolerance(TheFace), global::Kerf.Engine.Foundation.Precision.Confusion());
+        double Tol = Min(Tool.Tolerance(TheFace), global::Kerf.Engine.Foundation.Precision.Confusion());
         double aTolU, aTolV;
         aTolU = Max(mySurf.UResolution(Tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
         aTolV = Max(mySurf.VResolution(Tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
         double U1, U2, V1, V2;
-        BRepTools.UVBounds(TheFace, out U1, out U2, out V1, out V2);
+        BrepTools.UVBounds(TheFace, out U1, out U2, out V1, out V2);
         myExtPS.SetFlag(TheFlag);
         myExtPS.SetAlgo(TheAlgo);
         myExtPS.Initialize(mySurf, U1, U2, V1, V2, aTolU, aTolV);
@@ -62,12 +67,12 @@ public sealed class BRepExtrema_ExtPF
     /// Computes the extrema for the vertex. The face is used only to classify the points, not for the surface (which
     /// is the one given to Initialize).
     /// </summary>
-    public void Perform(in TopoDS_Vertex TheVertex, in TopoDS_Face TheFace)
+    public void Perform(in Vertex TheVertex, in Face TheFace)
     {
         mySqDist.Clear();
         myPoints.Clear();
 
-        Point3D P = BRep_Tool.Pnt(TheVertex);
+        Point3D P = Tool.Pnt(TheVertex);
         if (mySurf.GetType() == OtherSurface)
         {
             return; // protect against non-geometric type (e.g. triangulation)
@@ -76,18 +81,18 @@ public sealed class BRepExtrema_ExtPF
         myExtPS.Perform(P);
 
         // Exploration of points and classification
-        if (myExtPS.IsDone())
+        if (myExtPS.IsDone)
         {
             var classifier = new BRepClass_FaceClassifier();
             double U1, U2;
-            double Tol = BRep_Tool.Tolerance(TheFace);
-            for (int i = 1; i <= myExtPS.NbExt(); i++)
+            double Tol = Tool.Tolerance(TheFace);
+            for (int i = 1; i <= myExtPS.ExtCount; i++)
             {
                 myExtPS.Point(i).Parameter(out U1, out U2);
                 var Puv = new Point2D(U1, U2);
                 classifier.Perform(TheFace, Puv, Tol);
-                TopAbs_State state = classifier.State();
-                if (state == TopAbs_ON || state == TopAbs_IN)
+                Containment state = classifier.State();
+                if (state == On || state == In)
                 {
                     mySqDist.Append(myExtPS.SquareDistance(i));
                     myPoints.Append(myExtPS.Point(i));
@@ -97,7 +102,7 @@ public sealed class BRepExtrema_ExtPF
     }
 
     /// <summary>True if the distances are found.</summary>
-    public bool IsDone() => myExtPS.IsDone();
+    public bool IsDone() => myExtPS.IsDone;
 
     /// <summary>The number of extremum distances.</summary>
     public int NbExt() => myPoints.Length();
@@ -111,7 +116,7 @@ public sealed class BRepExtrema_ExtPF
     /// <summary>The point of the <paramref name="N"/>th extremum distance.</summary>
     public Point3D Point(int N) => myPoints.Value(N).Value();
 
-    public void SetFlag(Extrema_ExtFlag F) => myExtPS.SetFlag(F);
+    public void SetFlag(ExtFlag F) => myExtPS.SetFlag(F);
 
-    public void SetAlgo(Extrema_ExtAlgo A) => myExtPS.SetAlgo(A);
+    public void SetAlgo(ExtAlgo A) => myExtPS.SetAlgo(A);
 }

@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
 using static Occt.BlendFunc_SectionShape;
@@ -106,12 +107,12 @@ public static class BlendFunc
                 {
                     Frame3D popAx2 = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
                     Circle3D C = new Circle3D(popAx2, 1);
-                    Geom_TrimmedCurve Sect1 = new Geom_TrimmedCurve(new Geom_Circle(C), 0.0, MaxAng);
-                    Geom_BSplineCurve CtoBspl = GeomConvert.CurveToBSplineCurve(Sect1, TConv);
+                    TrimmedCurve3D Sect1 = new TrimmedCurve3D(new CircleCurve3D(C), 0.0, MaxAng);
+                    BSplineCurve3D CtoBspl = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(Sect1, TConv);
                     Weights.Assign(CtoBspl.InternalWeightsArray());
                     double angle_min = Max(global::Kerf.Engine.Foundation.Precision.PConfusion(), MinAng);
-                    Geom_TrimmedCurve Sect2 = new Geom_TrimmedCurve(new Geom_Circle(C), 0.0, angle_min);
-                    CtoBspl = GeomConvert.CurveToBSplineCurve(Sect2, TConv);
+                    TrimmedCurve3D Sect2 = new TrimmedCurve3D(new CircleCurve3D(C), 0.0, angle_min);
+                    CtoBspl = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(Sect2, TConv);
                     NCollection_Array1<double> poids = CtoBspl.InternalWeightsArray();
                     for (int ii = Weights.Lower(); ii <= Weights.Upper(); ii++)
                     {
@@ -147,7 +148,7 @@ public static class BlendFunc
     /// The normal of <paramref name="Surf"/> at <paramref name="p2d"/> from its higher derivatives, where the first
     /// ones are parallel (a singular point); false when it is not defined.
     /// </summary>
-    public static bool ComputeNormal(Adaptor3d_Surface Surf, in Point2D p2d, ref Vector3D Normal)
+    public static bool ComputeNormal(SurfaceAdaptorBase Surf, in Point2D p2d, ref Vector3D Normal)
     {
         const int MaxOrder = 3;
         double U = p2d.X();
@@ -195,7 +196,7 @@ public static class BlendFunc
     }
 
     /// <summary>As <see cref="ComputeNormal"/>, with the normal's derivatives in U and V.</summary>
-    public static bool ComputeDNormal(Adaptor3d_Surface Surf, in Point2D p2d, ref Vector3D Normal, ref Vector3D DNu,
+    public static bool ComputeDNormal(SurfaceAdaptorBase Surf, in Point2D p2d, ref Vector3D Normal, ref Vector3D DNu,
                                       ref Vector3D DNv)
     {
         const int MaxOrder = 3;

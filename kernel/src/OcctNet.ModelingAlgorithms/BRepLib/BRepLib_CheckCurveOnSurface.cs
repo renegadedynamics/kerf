@@ -3,64 +3,78 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+
+using Kerf.Engine.Geometry.Library;
+
+using Kerf.Engine.Topology;
+
+using Kerf.Engine.Topology.Adaptors;
+
+using Kerf.Engine.Topology.Brep;
+
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
 /// Computes the max distance between an edge's 3D curve and its 2D representation on a face (both pcurves on a
 /// closed surface). Not intended for edges that aren't SameParameter.
 /// </summary>
-/// <remarks>A working object over <see cref="GeomLib_CheckCurveOnSurface"/> (decision 293).</remarks>
+/// <remarks>A working object over <see cref="CheckCurveOnSurface"/> (decision 293).</remarks>
 public class BRepLib_CheckCurveOnSurface
 {
-    private readonly GeomLib_CheckCurveOnSurface myCOnSurfGeom = new();
-    private Adaptor3d_CurveOnSurface? myAdaptorCurveOnSurface;
-    private Adaptor3d_CurveOnSurface? myAdaptorCurveOnSurface2;
+    private readonly CheckCurveOnSurface myCOnSurfGeom = new();
+    private CurveOnSurface? myAdaptorCurveOnSurface;
+    private CurveOnSurface? myAdaptorCurveOnSurface2;
     private bool myIsParallel;
 
     /// <summary>An empty algorithm; <see cref="Init"/> sets its data.</summary>
     public BRepLib_CheckCurveOnSurface() => myIsParallel = false;
 
-    public BRepLib_CheckCurveOnSurface(in TopoDS_Edge theEdge, in TopoDS_Face theFace)
+    public BRepLib_CheckCurveOnSurface(in Edge theEdge, in Face theFace)
     {
         myIsParallel = false;
         Init(theEdge, theFace);
     }
 
     /// <summary>Sets the data for the algorithm; nothing for a null, degenerated or non-geometric edge.</summary>
-    public void Init(in TopoDS_Edge theEdge, in TopoDS_Face theFace)
+    public void Init(in Edge theEdge, in Face theFace)
     {
         myCOnSurfGeom.Init();
 
-        if (theEdge.IsNull() || theFace.IsNull())
+        if (theEdge.IsNull || theFace.IsNull)
         {
             return;
         }
 
         //
-        if (BRep_Tool.Degenerated(theEdge) || !BRep_Tool.IsGeometric(theEdge))
+        if (Tool.Degenerated(theEdge) || !Tool.IsGeometric(theEdge))
         {
             return;
         }
 
         // 3D curve initialization
-        Adaptor3d_Curve anAdaptor3dCurve = new BRepAdaptor_Curve(theEdge);
+        CurveAdaptorBase anAdaptor3dCurve = new EdgeCurveAdaptor(theEdge);
 
         // Surface initialization
-        Geom2d_Curve? aGeom2dCurve = BRep_Tool.CurveOnSurface(theEdge, theFace, out double aFirstParam, out double aLastParam);
-        Geom_Surface? aGeomSurface = BRep_Tool.Surface(theFace);
+        Curve2D? aGeom2dCurve = Tool.CurveOnSurface(theEdge, theFace, out double aFirstParam, out double aLastParam);
+        Surface? aGeomSurface = Tool.Surface(theFace);
 
         // 2D curves initialization
-        Adaptor2d_Curve2d anAdaptorCurve = new Geom2dAdaptor_Curve(aGeom2dCurve!, aFirstParam, aLastParam);
-        var aGeomAdaptorSurface = new GeomAdaptor_Surface(aGeomSurface!);
+        Curve2DAdaptorBase anAdaptorCurve = new CurveAdaptor2D(aGeom2dCurve!, aFirstParam, aLastParam);
+        var aGeomAdaptorSurface = new SurfaceAdaptor(aGeomSurface!);
 
-        myAdaptorCurveOnSurface = new Adaptor3d_CurveOnSurface(anAdaptorCurve, aGeomAdaptorSurface);
+        myAdaptorCurveOnSurface = new CurveOnSurface(anAdaptorCurve, aGeomAdaptorSurface);
 
-        if (BRep_Tool.IsClosed(theEdge, theFace))
+        if (Tool.IsClosed(theEdge, theFace))
         {
-            Geom2d_Curve? aGeom2dReversedCurve =
-                BRep_Tool.CurveOnSurface(TopoDS.Edge(theEdge.Reversed()), theFace, out aFirstParam, out aLastParam);
-            Adaptor2d_Curve2d anAdaptorReversedCurve = new Geom2dAdaptor_Curve(aGeom2dReversedCurve!, aFirstParam, aLastParam);
-            myAdaptorCurveOnSurface2 = new Adaptor3d_CurveOnSurface(anAdaptorReversedCurve, aGeomAdaptorSurface);
+            Curve2D? aGeom2dReversedCurve =
+                Tool.CurveOnSurface(ShapeCasts.Edge(theEdge.Reversed()), theFace, out aFirstParam, out aLastParam);
+            Curve2DAdaptorBase anAdaptorReversedCurve = new CurveAdaptor2D(aGeom2dReversedCurve!, aFirstParam, aLastParam);
+            myAdaptorCurveOnSurface2 = new CurveOnSurface(anAdaptorReversedCurve, aGeomAdaptorSurface);
         }
 
         myCOnSurfGeom.Init(anAdaptor3dCurve);
@@ -101,7 +115,7 @@ public class BRepLib_CheckCurveOnSurface
     public double MaxParameter() => myCOnSurfGeom.MaxParameter();
 
     /// <summary>Computes the max distance between the 3D curve and <paramref name="theCurveOnSurface"/>.</summary>
-    protected void Compute(Adaptor3d_CurveOnSurface? theCurveOnSurface)
+    protected void Compute(CurveOnSurface? theCurveOnSurface)
     {
         myCOnSurfGeom.SetParallel(myIsParallel);
         myCOnSurfGeom.Perform(theCurveOnSurface);

@@ -4,7 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Numerics;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
 
@@ -14,7 +16,7 @@ namespace Occt;
 /// The global properties of a bounded curve in 3D space (the curve of an edge), by Gauss integration over each interval
 /// of continuity. The curve must be at least C1.
 /// </summary>
-public class BRepGProp_Cinert : GProp_GProps
+public class BRepGProp_Cinert : Properties
 {
     /// <summary>An empty system.</summary>
     public BRepGProp_Cinert()
@@ -22,20 +24,20 @@ public class BRepGProp_Cinert : GProp_GProps
     }
 
     /// <summary>The global properties of <paramref name="C"/>, inertia at <paramref name="CLocation"/>.</summary>
-    public BRepGProp_Cinert(BRepAdaptor_Curve C, in Point3D CLocation)
+    public BRepGProp_Cinert(EdgeCurveAdaptor C, in Point3D CLocation)
     {
         SetLocation(CLocation);
         Perform(C);
     }
 
     /// <summary>Sets the reference point.</summary>
-    public void SetLocation(in Point3D CLocation) => loc = CLocation;
+    public void SetLocation(in Point3D CLocation) => _loc = CLocation;
 
     /// <summary>Computes the global properties of <paramref name="C"/>.</summary>
-    public void Perform(BRepAdaptor_Curve C)
+    public void Perform(EdgeCurveAdaptor C)
     {
         double Ix, Iy, Iz, Ixx, Iyy, Izz, Ixy, Ixz, Iyz;
-        dim = Ix = Iy = Iz = Ixx = Iyy = Izz = Ixy = Ixz = Iyz = 0.0;
+        _dim = Ix = Iy = Iz = Ixx = Iyy = Izz = Ixy = Ixz = Iyz = 0.0;
 
         double Lower = BRepGProp_EdgeTool.FirstParameter(C);
         double Upper = BRepGProp_EdgeTool.LastParameter(C);
@@ -90,7 +92,7 @@ public class BRepGProp_Cinert : GProp_GProps
             dimLocal = IxLocal = IyLocal = IzLocal = IxxLocal = IyyLocal = IzzLocal = IxyLocal = IxzLocal = IyzLocal = 0.0;
             // modified by NIZHNY-MKK  Thu Jun  9 12:13:32 2005.END
 
-            loc.Coord(out xloc, out yloc, out zloc);
+            _loc.Coord(out xloc, out yloc, out zloc);
 
             int i;
 
@@ -135,7 +137,7 @@ public class BRepGProp_Cinert : GProp_GProps
             IxzLocal *= ur;
             IyzLocal *= ur;
 
-            dim += dimLocal;
+            _dim += dimLocal;
             Ix += IxLocal;
             Iy += IyLocal;
             Iz += IzLocal;
@@ -148,15 +150,15 @@ public class BRepGProp_Cinert : GProp_GProps
         }
         // modified by NIZHNY-MKK  Thu Jun  9 12:13:55 2005.END
 
-        inertia = new Matrix3x3(new Xyz(Ixx, -Ixy, -Ixz), new Xyz(-Ixy, Iyy, -Iyz), new Xyz(-Ixz, -Iyz, Izz));
+        _inertia = new Matrix3x3(new Xyz(Ixx, -Ixy, -Ixz), new Xyz(-Ixy, Iyy, -Iyz), new Xyz(-Ixz, -Iyz, Izz));
 
-        if (Math.Abs(dim) < Constants.Resolution())
+        if (Math.Abs(_dim) < Constants.Resolution())
         {
-            g = P;
+            _g = P;
         }
         else
         {
-            g.SetCoord(Ix / dim, Iy / dim, Iz / dim);
+            _g.SetCoord(Ix / _dim, Iy / _dim, Iz / _dim);
         }
     }
 }

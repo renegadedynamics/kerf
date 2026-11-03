@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
 
@@ -38,20 +40,20 @@ internal static class BOPTestPeriodicityCommands
         };
 
     /// <summary>A list of shapes as Draw sets it: null if empty, the shape if one, else a compound.</summary>
-    internal static TopoDS_Shape ListShape(IReadOnlyList<TopoDS_Shape> theList)
+    internal static Shape ListShape(IReadOnlyList<Shape> theList)
     {
         if (theList.Count == 0)
         {
-            return new TopoDS_Shape();
+            return new Shape();
         }
         if (theList.Count == 1)
         {
             return theList[0];
         }
-        BRep_Builder aBB = new();
-        TopoDS_Compound aC = new();
+        BrepBuilder aBB = new();
+        Compound aC = new();
         aBB.MakeCompound(ref aC);
-        foreach (TopoDS_Shape aS in theList)
+        foreach (Shape aS in theList)
         {
             aBB.Add(aC, aS);
         }
@@ -67,8 +69,8 @@ internal static class BOPTestPeriodicityCommands
         }
 
         // Get the shape to make periodic
-        TopoDS_Shape aShape = theDI.GetShape(theArgv[2]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(theArgv[2]);
+        if (aShape.IsNull)
         {
             di.Append("Error: ").Append(theArgv[2]).Append(" is a null shape.\n");
             return 1;
@@ -150,14 +152,14 @@ internal static class BOPTestPeriodicityCommands
         }
 
         // Get the shape to find twins
-        TopoDS_Shape aShape = theDI.GetShape(theArgv[2]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(theArgv[2]);
+        if (aShape.IsNull)
         {
             di.Append("Error: ").Append(theArgv[2]).Append(" is a null shape.\n");
             return 1;
         }
 
-        IReadOnlyList<TopoDS_Shape> aTwins = [.. Maker(theDI).GetTwins(aShape)];
+        IReadOnlyList<Shape> aTwins = [.. Maker(theDI).GetTwins(aShape)];
         if (aTwins.Count == 0)
         {
             di.Append("No twins for the shape.\n");

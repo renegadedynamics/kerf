@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.GeomFill_FillingStyle;
 using static Kerf.Engine.Foundation.Standard;
@@ -177,7 +178,7 @@ public class GeomFill_FillingTests
     //=============================================================================================
     // BSplineCurves and BezierCurves
 
-    private static Geom_BSplineCurve BS(params Point3D[] thePoles)
+    private static BSplineCurve3D BS(params Point3D[] thePoles)
     {
         int n = thePoles.Length;
         int aDeg = Math.Min(3, n - 1);
@@ -189,11 +190,11 @@ public class GeomFill_FillingTests
             aK[i] = i - 1;
             aM[i] = (i == 1 || i == aNbK) ? aDeg + 1 : 1;
         }
-        return new Geom_BSplineCurve(Row(thePoles), aK, aM, aDeg);
+        return new BSplineCurve3D(Row(thePoles), aK, aM, aDeg);
     }
 
     // a contour (0,0) -> (4,0) -> (4,3) -> (0,3) -> (0,0), bumped in z, given in a shuffled order and direction
-    private static Geom_BSplineCurve[] Contour() =>
+    private static BSplineCurve3D[] Contour() =>
     [
         BS(new Point3D(0, 0, 0), new Point3D(1, 0, 1), new Point3D(2, 0, -1), new Point3D(3, 0, 0.5), new Point3D(4, 0, 0)),
         BS(new Point3D(0, 3, 0), new Point3D(2, 3, 1), new Point3D(4, 3, 0)),            // C3, left to right
@@ -201,7 +202,7 @@ public class GeomFill_FillingTests
         BS(new Point3D(0, 0, 0), new Point3D(0, 1.5, 2), new Point3D(0, 3, 0)),          // C4, bottom to top
     ];
 
-    private static double MaxDistanceToSurface(Geom_Curve theC, Geom_Surface theS)
+    private static double MaxDistanceToSurface(Curve3D theC, Surface theS)
     {
         double aMax = 0;
         for (int k = 0; k <= 20; k++)
@@ -219,18 +220,18 @@ public class GeomFill_FillingTests
     [InlineData(GeomFill_CurvedStyle)]
     public void BSplineCurves_fill_four_curves_in_any_order_and_direction(GeomFill_FillingStyle theStyle)
     {
-        Geom_BSplineCurve[] C = Contour();
-        foreach (Geom_BSplineCurve c in C)
+        BSplineCurve3D[] C = Contour();
+        foreach (BSplineCurve3D c in C)
         {
             c.Freeze(); // frozen inputs: the filling works on copies
         }
         string[] aBefore = C.Select(c => string.Join(";", c.Poles())).ToArray();
         GeomFill_BSplineCurves aFill = new(C[0], C[1], C[2], C[3], theStyle);
-        Geom_BSplineSurface aS = aFill.Surface()!;
+        BSplineSurface aS = aFill.Surface()!;
         Assert.True(aS.IsFrozen);
         Assert.Same(aS, aFill.Surface());
         Assert.Equal(aBefore, C.Select(c => string.Join(";", c.Poles())).ToArray());
-        foreach (Geom_BSplineCurve c in C)
+        foreach (BSplineCurve3D c in C)
         {
             Assert.True(MaxDistanceToSurface(c, aS) < 1e-7);
         }
@@ -243,9 +244,9 @@ public class GeomFill_FillingTests
     [Fact]
     public void BSplineCurves_three_curves_are_closed_by_a_segment()
     {
-        Geom_BSplineCurve[] C = Contour();
+        BSplineCurve3D[] C = Contour();
         GeomFill_BSplineCurves aFill = new(C[0], C[2], C[1], GeomFill_StretchStyle);
-        Geom_BSplineSurface aS = aFill.Surface()!;
+        BSplineSurface aS = aFill.Surface()!;
         for (int k = 0; k < 3; k++)
         {
             Assert.True(MaxDistanceToSurface(C[k], aS) < 1e-7);
@@ -257,16 +258,16 @@ public class GeomFill_FillingTests
     [Fact]
     public void BSplineCurves_two_curves_make_a_ruled_or_a_translated_surface()
     {
-        Geom_BSplineCurve C1 = BS(new Point3D(0, 0, 0), new Point3D(1, 0, 1), new Point3D(2, 0, 0));
-        Geom_BSplineCurve C2 = BS(new Point3D(0, 3, 1), new Point3D(1, 3, 0), new Point3D(2, 3, 2), new Point3D(3, 3, 1));
-        Geom_BSplineSurface aRuled = new GeomFill_BSplineCurves(C1, C2, GeomFill_StretchStyle).Surface()!;
+        BSplineCurve3D C1 = BS(new Point3D(0, 0, 0), new Point3D(1, 0, 1), new Point3D(2, 0, 0));
+        BSplineCurve3D C2 = BS(new Point3D(0, 3, 1), new Point3D(1, 3, 0), new Point3D(2, 3, 2), new Point3D(3, 3, 1));
+        BSplineSurface aRuled = new GeomFill_BSplineCurves(C1, C2, GeomFill_StretchStyle).Surface()!;
         Assert.Equal(1, aRuled.VDegree());
         Assert.True(MaxDistanceToSurface(C1, aRuled) < 1e-7);
         Assert.True(MaxDistanceToSurface(C2, aRuled) < 1e-7);
 
         // Curved: C1 translated along a curve starting at C1's start
-        Geom_BSplineCurve C3 = BS(new Point3D(0, 0, 0), new Point3D(0, 1, 1), new Point3D(0, 2, 0));
-        Geom_BSplineSurface aT = new GeomFill_BSplineCurves(C1, C3, GeomFill_CurvedStyle).Surface()!;
+        BSplineCurve3D C3 = BS(new Point3D(0, 0, 0), new Point3D(0, 1, 1), new Point3D(0, 2, 0));
+        BSplineSurface aT = new GeomFill_BSplineCurves(C1, C3, GeomFill_CurvedStyle).Surface()!;
         Assert.True(MaxDistanceToSurface(C1, aT) < 1e-7);
         Assert.True(MaxDistanceToSurface(C3, aT) < 1e-7);
 
@@ -278,10 +279,10 @@ public class GeomFill_FillingTests
     {
         // C1's end is C2's start: OCCT reverses the caller's C1 (and builds from the unreversed copy); the port
         // builds the same surface and leaves C1 alone (decision 846, occt-issues.md)
-        Geom_BSplineCurve C1 = BS(new Point3D(0, 0, 0), new Point3D(1, 0, 1), new Point3D(2, 0, 0));
-        Geom_BSplineCurve C2 = BS(new Point3D(2, 0, 0), new Point3D(2, 1, 1), new Point3D(2, 2, 0));
+        BSplineCurve3D C1 = BS(new Point3D(0, 0, 0), new Point3D(1, 0, 1), new Point3D(2, 0, 0));
+        BSplineCurve3D C2 = BS(new Point3D(2, 0, 0), new Point3D(2, 1, 1), new Point3D(2, 2, 0));
         C1.Freeze();
-        Geom_BSplineSurface aS = new GeomFill_BSplineCurves(C1, C2, GeomFill_CurvedStyle).Surface()!;
+        BSplineSurface aS = new GeomFill_BSplineCurves(C1, C2, GeomFill_CurvedStyle).Surface()!;
         Assert.Equal(new Point3D(0, 0, 0), C1.StartPoint());
         // the copy is not reversed: the poles are C1's translated by C2's poles from C2's start
         Assert.Equal(new Point3D(0, 0, 0), aS.Pole(1, 1));
@@ -291,19 +292,19 @@ public class GeomFill_FillingTests
     [Fact]
     public void BSplineCurves_reject_open_contours_and_too_few_poles_for_Coons()
     {
-        Geom_BSplineCurve[] C = Contour();
-        Geom_BSplineCurve aFar = BS(new Point3D(10, 10, 10), new Point3D(11, 10, 10));
+        BSplineCurve3D[] C = Contour();
+        BSplineCurve3D aFar = BS(new Point3D(10, 10, 10), new Point3D(11, 10, 10));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new GeomFill_BSplineCurves(C[0], C[1], C[2], aFar, GeomFill_StretchStyle));
-        Geom_BSplineCurve L1 = BS(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
-        Geom_BSplineCurve L2 = BS(new Point3D(1, 0, 0), new Point3D(1, 1, 0));
-        Geom_BSplineCurve L3 = BS(new Point3D(1, 1, 0), new Point3D(0, 1, 0));
-        Geom_BSplineCurve L4 = BS(new Point3D(0, 1, 0), new Point3D(0, 0, 0));
+        BSplineCurve3D L1 = BS(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+        BSplineCurve3D L2 = BS(new Point3D(1, 0, 0), new Point3D(1, 1, 0));
+        BSplineCurve3D L3 = BS(new Point3D(1, 1, 0), new Point3D(0, 1, 0));
+        BSplineCurve3D L4 = BS(new Point3D(0, 1, 0), new Point3D(0, 0, 0));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new GeomFill_BSplineCurves(L1, L2, L3, L4, GeomFill_CoonsStyle));
-        Geom_BSplineSurface aPlane = new GeomFill_BSplineCurves(L1, L2, L3, L4, GeomFill_StretchStyle).Surface()!;
+        BSplineSurface aPlane = new GeomFill_BSplineCurves(L1, L2, L3, L4, GeomFill_StretchStyle).Surface()!;
         Assert.True(aPlane.Value(0.5, 0.5).Distance(new Point3D(0.5, 0.5, 0)) < 1e-15);
     }
 
-    private static Geom_BezierCurve BZ(params Point3D[] thePoles) => new(Row(thePoles));
+    private static BezierCurve3D BZ(params Point3D[] thePoles) => new(Row(thePoles));
 
     [Theory]
     [InlineData(GeomFill_StretchStyle)]
@@ -311,14 +312,14 @@ public class GeomFill_FillingTests
     [InlineData(GeomFill_CurvedStyle)]
     public void BezierCurves_fill_two_three_and_four_curves(GeomFill_FillingStyle theStyle)
     {
-        Geom_BezierCurve C1 = BZ(new Point3D(0, 0, 0), new Point3D(1, 0, 1), new Point3D(2, 0, 0));
-        Geom_BezierCurve C2 = BZ(new Point3D(2, 0, 0), new Point3D(2, 1, -1), new Point3D(2, 2, 1), new Point3D(2, 3, 0));
-        Geom_BezierCurve C3 = BZ(new Point3D(0, 3, 0), new Point3D(2, 3, 0)); // left to right
-        Geom_BezierCurve C4 = BZ(new Point3D(0, 3, 0), new Point3D(0, 1.5, 1), new Point3D(0, 0, 0)); // top to bottom
+        BezierCurve3D C1 = BZ(new Point3D(0, 0, 0), new Point3D(1, 0, 1), new Point3D(2, 0, 0));
+        BezierCurve3D C2 = BZ(new Point3D(2, 0, 0), new Point3D(2, 1, -1), new Point3D(2, 2, 1), new Point3D(2, 3, 0));
+        BezierCurve3D C3 = BZ(new Point3D(0, 3, 0), new Point3D(2, 3, 0)); // left to right
+        BezierCurve3D C4 = BZ(new Point3D(0, 3, 0), new Point3D(0, 1.5, 1), new Point3D(0, 0, 0)); // top to bottom
         C1.Freeze();
-        Geom_BezierSurface aS = new GeomFill_BezierCurves(C1, C2, C3, C4, theStyle).Surface()!;
+        BezierSurface aS = new GeomFill_BezierCurves(C1, C2, C3, C4, theStyle).Surface()!;
         Assert.True(aS.IsFrozen);
-        foreach (Geom_BezierCurve c in new[] { C1, C2, C3, C4 })
+        foreach (BezierCurve3D c in new[] { C1, C2, C3, C4 })
         {
             Assert.True(MaxDistanceToSurface(c, aS) < 1e-7);
         }
@@ -326,24 +327,24 @@ public class GeomFill_FillingTests
         {
             Assert.True(aS.UDegree() >= 3 && aS.VDegree() >= 3);
         }
-        Geom_BezierSurface a3 = new GeomFill_BezierCurves(C1, C2, C3, theStyle).Surface()!;
+        BezierSurface a3 = new GeomFill_BezierCurves(C1, C2, C3, theStyle).Surface()!;
         Assert.True(MaxDistanceToSurface(C2, a3) < 1e-7);
 
-        Geom_BezierCurve D2 = BZ(new Point3D(0, 0, 0), new Point3D(0, 1, 1), new Point3D(0, 2, 0));
-        Geom_BezierSurface a2 = new GeomFill_BezierCurves(C1, D2, theStyle).Surface()!;
+        BezierCurve3D D2 = BZ(new Point3D(0, 0, 0), new Point3D(0, 1, 1), new Point3D(0, 2, 0));
+        BezierSurface a2 = new GeomFill_BezierCurves(C1, D2, theStyle).Surface()!;
         Assert.True(MaxDistanceToSurface(C1, a2) < 1e-7);
     }
 
     [Fact]
     public void BezierCurves_rational_corners_get_the_same_weights()
     {
-        Geom_BezierCurve C1 = new(Row(new Point3D(0, 0, 0), new Point3D(1, 0, 1), new Point3D(2, 0, 0)), Weights(1, 2, 1));
-        Geom_BezierCurve C2 = BZ(new Point3D(2, 0, 0), new Point3D(2, 2, 0));
-        Geom_BezierCurve C3 = new(Row(new Point3D(0, 2, 0), new Point3D(1, 2, 1), new Point3D(2, 2, 0)), Weights(2, 1, 2));
-        Geom_BezierCurve C4 = BZ(new Point3D(0, 0, 0), new Point3D(0, 2, 0));
-        Geom_BezierSurface aS = new GeomFill_BezierCurves(C1, C2, C3, C4, GeomFill_StretchStyle).Surface()!;
-        Assert.True(aS.IsURational() || aS.IsVRational());
-        foreach (Geom_BezierCurve c in new[] { C1, C2, C3, C4 })
+        BezierCurve3D C1 = new(Row(new Point3D(0, 0, 0), new Point3D(1, 0, 1), new Point3D(2, 0, 0)), Weights(1, 2, 1));
+        BezierCurve3D C2 = BZ(new Point3D(2, 0, 0), new Point3D(2, 2, 0));
+        BezierCurve3D C3 = new(Row(new Point3D(0, 2, 0), new Point3D(1, 2, 1), new Point3D(2, 2, 0)), Weights(2, 1, 2));
+        BezierCurve3D C4 = BZ(new Point3D(0, 0, 0), new Point3D(0, 2, 0));
+        BezierSurface aS = new GeomFill_BezierCurves(C1, C2, C3, C4, GeomFill_StretchStyle).Surface()!;
+        Assert.True(aS.IsURational || aS.IsVRational);
+        foreach (BezierCurve3D c in new[] { C1, C2, C3, C4 })
         {
             Assert.True(MaxDistanceToSurface(c, aS) < 1e-7);
         }
@@ -352,7 +353,7 @@ public class GeomFill_FillingTests
     //=============================================================================================
     // Boundaries
 
-    private static Geom_BSplineSurface Patch()
+    private static BSplineSurface Patch()
     {
         NCollection_Array2<Point3D> aP = new(1, 4, 1, 4);
         for (int i = 1; i <= 4; i++)
@@ -367,7 +368,7 @@ public class GeomFill_FillingTests
         K[2] = 1;
         NCollection_Array1<int> M = new(1, 2);
         M[1] = M[2] = 4;
-        return new Geom_BSplineSurface(aP, K, K, M, M, 3, 3);
+        return new BSplineSurface(aP, K, K, M, M, 3, 3);
     }
 
     private static void CheckD1(GeomFill_Boundary theB, double theW, double theTol)
@@ -382,7 +383,7 @@ public class GeomFill_FillingTests
     [Fact]
     public void SimpleBound_evaluates_its_curve_and_its_reparametrisation()
     {
-        Geom_BSplineSurface S = Patch();
+        BSplineSurface S = Patch();
         GeomFill_Boundary B = FillRecordings.MakeBound(S, 0, 0, 1e-4, 1e-2);
         Assert.False(B.HasNormals());
         Assert.False(B.IsDegenerated());
@@ -408,7 +409,7 @@ public class GeomFill_FillingTests
     [Fact]
     public void BoundWithSurf_normals_are_the_surfaces()
     {
-        Geom_BSplineSurface S = Patch();
+        BSplineSurface S = Patch();
         for (int k = 0; k < 4; k++)
         {
             GeomFill_Boundary B = FillRecordings.MakeBound(S, k, 1, 1e-4, 1e-2);
@@ -454,7 +455,7 @@ public class GeomFill_FillingTests
     [Fact]
     public void CoonsAlgPatch_derivatives_match_finite_differences()
     {
-        Geom_BSplineSurface S = Patch();
+        BSplineSurface S = Patch();
         GeomFill_Boundary[] B = [.. Enumerable.Range(0, 4).Select(k => FillRecordings.MakeBound(S, k, 1, 1e-4, 1e-2))];
         GeomFill_CoonsAlgPatch K = new(B[0], B[1], B[2], B[3]);
         Assert.True(K.Corner(0).Distance(S.Value(0, 0)) < 1e-12);
@@ -496,7 +497,7 @@ public class GeomFill_FillingTests
     [Fact]
     public void TgtOnCoons_is_orthogonal_to_the_normal_and_its_derivative_matches()
     {
-        Geom_BSplineSurface S = Patch();
+        BSplineSurface S = Patch();
         GeomFill_Boundary[] B = [.. Enumerable.Range(0, 4).Select(k => FillRecordings.MakeBound(S, k, 1, 1e-4, 1e-2))];
         GeomFill_CoonsAlgPatch K = new(B[0], B[1], B[2], B[3]);
         for (int i = 0; i < 4; i++)
@@ -544,7 +545,7 @@ public class GeomFill_FillingTests
     //=============================================================================================
     // ConstrainedFilling
 
-    private static double MaxBoundaryGap(GeomFill_ConstrainedFilling theF, Geom_Surface theS, int theI)
+    private static double MaxBoundaryGap(GeomFill_ConstrainedFilling theF, Surface theS, int theI)
     {
         double aMax = 0;
         GeomFill_Boundary b = theF.Boundary(theI);
@@ -562,12 +563,12 @@ public class GeomFill_FillingTests
     [InlineData(1, true)]
     public void ConstrainedFilling_fills_four_boundaries(int theType, bool theNoCheck)
     {
-        Geom_BSplineSurface S = Patch();
+        BSplineSurface S = Patch();
         GeomFill_Boundary[] B = [.. Enumerable.Range(0, 4).Select(k => FillRecordings.MakeBound(S, k, theType, 1e-4, 1e-2))];
         GeomFill_ConstrainedFilling F = new(8, 10);
         Assert.Throws<global::Kerf.Engine.Foundation.FailureException>(() => F.ReBuild());
         F.Init(B[2], B[0], B[3], B[1], theNoCheck); // any order
-        Geom_BSplineSurface R = F.Surface()!;
+        BSplineSurface R = F.Surface()!;
         Assert.True(R.IsFrozen);
         for (int i = 0; i < 4; i++)
         {
@@ -596,18 +597,18 @@ public class GeomFill_FillingTests
     public void ConstrainedFilling_three_sides_and_SetDomain()
     {
         // a triangle (0,0)-(4,0)-(0,4) on the plane z = 0, its sides as lines on the plane
-        Geom_Plane aPlane = new(new Plane3D(new Point3D(), new Direction3D(Direction3D.D.Z)));
+        PlaneSurface aPlane = new(new Plane3D(new Point3D(), new Direction3D(Direction3D.D.Z)));
         GeomFill_Boundary Side(Point2D theA, Point2D theB)
         {
-            Geom2d_Line aL = new(theA, new Direction2D(new Vector2D(theA, theB)));
-            Adaptor3d_CurveOnSurface aCoS = new(new Geom2dAdaptor_Curve(aL, 0.0, theA.Distance(theB)),
-                                                new GeomAdaptor_Surface(aPlane));
+            LineCurve2D aL = new(theA, new Direction2D(new Vector2D(theA, theB)));
+            CurveOnSurface aCoS = new(new CurveAdaptor2D(aL, 0.0, theA.Distance(theB)),
+                                                new SurfaceAdaptor(aPlane));
             return new GeomFill_BoundWithSurf(aCoS, 1e-4, 1e-2);
         }
         Point2D A = new(0, 0), Bp = new(4, 0), C = new(0, 4);
         GeomFill_ConstrainedFilling F = new(8, 10);
         F.Init(Side(A, Bp), Side(C, A), Side(Bp, C)); // any order and direction
-        Geom_BSplineSurface R = F.Surface()!;
+        BSplineSurface R = F.Surface()!;
         Assert.True(F.Boundary(2).IsDegenerated());
         for (int i = 0; i < 4; i++)
         {
@@ -623,7 +624,7 @@ public class GeomFill_FillingTests
         string aBefore = string.Join(";", R.Poles());
         F.SetDomain(0.5, aB0);
         F.ReBuild();
-        Geom_BSplineSurface R2 = F.Surface()!;
+        BSplineSurface R2 = F.Surface()!;
         Assert.NotSame(R, R2);
         Assert.Equal(aBefore, string.Join(";", R.Poles()));
         Assert.True(MaxBoundaryGap(F, R2, 0) < 1e-3);

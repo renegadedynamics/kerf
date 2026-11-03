@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
@@ -48,7 +49,7 @@ public sealed class Geom2dGcc_Lin2d2TanIter
             throw new GccEnt_BadQualifier();
         }
         Circle2D                  C1   = Qualified1.Qualified();
-        Geom2dAdaptor_Curve        Cu2  = Qualified2.Qualified();
+        CurveAdaptor2D        Cu2  = Qualified2.Qualified();
         double                     U1   = Geom2dGcc_CurveTool.FirstParameter(Cu2);
         double                     U2   = Geom2dGcc_CurveTool.LastParameter(Cu2);
         Geom2dGcc_FunctionTanCirCu func = new(C1, Cu2);
@@ -137,8 +138,8 @@ public sealed class Geom2dGcc_Lin2d2TanIter
         {
             throw new GccEnt_BadQualifier();
         }
-        Geom2dAdaptor_Curve       Cu1    = Qualified1.Qualified();
-        Geom2dAdaptor_Curve       Cu2    = Qualified2.Qualified();
+        CurveAdaptor2D       Cu1    = Qualified1.Qualified();
+        CurveAdaptor2D       Cu2    = Qualified2.Qualified();
         Geom2dGcc_FunctionTanCuCu Func   = new(Cu1, Cu2);
         math_Vector               Umin   = new(1, 2);
         math_Vector               Umax   = new(1, 2);
@@ -209,7 +210,7 @@ public sealed class Geom2dGcc_Lin2d2TanIter
         {
             throw new GccEnt_BadQualifier();
         }
-        Geom2dAdaptor_Curve        Cu1  = Qualified1.Qualified();
+        CurveAdaptor2D        Cu1  = Qualified1.Qualified();
         double                     U1   = Geom2dGcc_CurveTool.FirstParameter(Cu1);
         double                     U2   = Geom2dGcc_CurveTool.LastParameter(Cu1);
         Geom2dGcc_FunctionTanCuPnt func = new(Cu1, ThePoint);

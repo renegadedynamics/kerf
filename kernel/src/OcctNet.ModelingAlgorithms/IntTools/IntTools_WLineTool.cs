@@ -5,7 +5,10 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -26,7 +29,7 @@ public static class IntTools_WLineTool
     // oscillations that we would not like to have.
 
     // static subfunction in IsDegeneratedZone
-    private static bool IsDegeneratedZone(in Point2D aP2d, Geom_Surface aS, int iDir)
+    private static bool IsDegeneratedZone(in Point2D aP2d, Surface aS, int iDir)
     {
         bool bFlag = true;
         double US1, US2, VS1, VS2, dY, dX, d1, d2, dD;
@@ -99,20 +102,20 @@ public static class IntTools_WLineTool
     }
 
     // static subfunction in NotUseSurfacesForApprox
-    private static bool IsPointInDegeneratedZone(in IntSurf_PntOn2S aP2S, in TopoDS_Face aF1, in TopoDS_Face aF2)
+    private static bool IsPointInDegeneratedZone(in IntSurf_PntOn2S aP2S, in Face aF1, in Face aF2)
     {
         bool bFlag = true;
         double US11, US12, VS11, VS12, US21, US22, VS21, VS22;
         double U1, V1, U2, V2, aDelta, aD;
         Point2D aP2d = new();
 
-        Geom_Surface aS1 = BRep_Tool.Surface(aF1)!;
+        Surface aS1 = Tool.Surface(aF1)!;
         aS1.Bounds(out US11, out US12, out VS11, out VS12);
-        GeomAdaptor_Surface aGAS1 = new(aS1);
+        SurfaceAdaptor aGAS1 = new(aS1);
 
-        Geom_Surface aS2 = BRep_Tool.Surface(aF2)!;
+        Surface aS2 = Tool.Surface(aF2)!;
         aS1.Bounds(out US21, out US22, out VS21, out VS22); // OCCT reads the first surface's bounds for the second
-        GeomAdaptor_Surface aGAS2 = new(aS2);
+        SurfaceAdaptor aGAS2 = new(aS2);
         //
         aP2S.Parameters(out U1, out V1, out U2, out V2);
         //
@@ -197,7 +200,7 @@ public static class IntTools_WLineTool
     /// True if the first or the last point of the walking line's range [ifprm, ilprm] is in a degenerated zone of
     /// one of the faces' surfaces (a boundary that is a point): the approximation then shouldn't use the surfaces.
     /// </summary>
-    public static bool NotUseSurfacesForApprox(in TopoDS_Face aF1, in TopoDS_Face aF2, IntPatch_WLine WL, int ifprm,
+    public static bool NotUseSurfacesForApprox(in Face aF1, in Face aF2, IntPatch_WLine WL, int ifprm,
                                                int ilprm)
     {
         bool bPInDZ;
@@ -252,12 +255,12 @@ public static class IntTools_WLineTool
 
     // static subfunction in DecompositionOfWLine
     private static Point2D AdjustByNeighbour(in Point2D theaNeighbourPoint, in Point2D theOriginalPoint,
-                                              GeomAdaptor_Surface theGASurface)
+                                              SurfaceAdaptor theGASurface)
     {
         Point2D ap1 = theaNeighbourPoint;
         Point2D ap2 = theOriginalPoint;
 
-        if (theGASurface.IsUPeriodic())
+        if (theGASurface.IsUPeriodic)
         {
             double aPeriod = theGASurface.UPeriod();
             Point2D aPTest = ap2;
@@ -275,7 +278,7 @@ public static class IntTools_WLineTool
                 }
             }
         }
-        if (theGASurface.IsVPeriodic())
+        if (theGASurface.IsVPeriodic)
         {
             double aPeriod = theGASurface.VPeriod();
             Point2D aPTest = ap2;
@@ -443,9 +446,9 @@ public static class IntTools_WLineTool
     /// dropped and the pieces' ends moved onto the boundary), restricted to the line constructor's parts unless
     /// theAvoidLConstructor. The pieces are appended to theNewLines; false if the line isn't split.
     /// </summary>
-    public static bool DecompositionOfWLine(IntPatch_WLine theWLine, GeomAdaptor_Surface theSurface1,
-                                            GeomAdaptor_Surface theSurface2, in TopoDS_Face theFace1,
-                                            in TopoDS_Face theFace2, GeomInt_LineConstructor theLConstructor,
+    public static bool DecompositionOfWLine(IntPatch_WLine theWLine, SurfaceAdaptor theSurface1,
+                                            SurfaceAdaptor theSurface2, in Face theFace1,
+                                            in Face theFace2, GeomInt_LineConstructor theLConstructor,
                                             bool theAvoidLConstructor, double theTol,
                                             NCollection_Sequence<IntPatch_Line> theNewLines, IntTools_Context aContext)
     {
@@ -499,7 +502,7 @@ public static class IntTools_WLineTool
             // Surface
             for (i = 0; i < 2; ++i)
             {
-                GeomAdaptor_Surface aGASurface = (i == 0) ? theSurface1 : theSurface2;
+                SurfaceAdaptor aGASurface = (i == 0) ? theSurface1 : theSurface2;
                 aGASurface.Surface()!.Bounds(out umin, out umax, out vmin, out vmax);
                 if (i == 0)
                 {
@@ -512,7 +515,7 @@ public static class IntTools_WLineTool
                 // U, V
                 for (j = 0; j < 2; j++)
                 {
-                    isperiodic = (j == 0) ? aGASurface.IsUPeriodic() : aGASurface.IsVPeriodic();
+                    isperiodic = (j == 0) ? aGASurface.IsUPeriodic : aGASurface.IsVPeriodic;
                     if (!isperiodic)
                     {
                         continue;
@@ -626,7 +629,7 @@ public static class IntTools_WLineTool
                 for (int surfit = 0; surfit < 2; surfit++)
                 {
 
-                    GeomAdaptor_Surface aGASurface = (surfit == 0) ? theSurface1 : theSurface2;
+                    SurfaceAdaptor aGASurface = (surfit == 0) ? theSurface1 : theSurface2;
                     double umin = 0.0, umax = 0.0, vmin = 0.0, vmax = 0.0;
                     aGASurface.Surface()!.Bounds(out umin, out umax, out vmin, out vmax);
                     double U = 0.0, V = 0.0;
@@ -648,7 +651,7 @@ public static class IntTools_WLineTool
 
                     for (int parit = 0; parit < 2; parit++)
                     {
-                        bool isperiodic = (parit == 0) ? aGASurface.IsUPeriodic() : aGASurface.IsVPeriodic();
+                        bool isperiodic = (parit == 0) ? aGASurface.IsUPeriodic : aGASurface.IsVPeriodic;
 
                         double aResolution = (parit == 0) ? aGASurface.UResolution(aTol) : aGASurface.VResolution(aTol);
                         double alowerboundary = (parit == 0) ? umin : vmin;
@@ -705,7 +708,7 @@ public static class IntTools_WLineTool
                     }
                     else if (nbboundaries == 1)
                     {
-                        bool isperiodic = (bIsUBoundary) ? aGASurface.IsUPeriodic() : aGASurface.IsVPeriodic();
+                        bool isperiodic = (bIsUBoundary) ? aGASurface.IsUPeriodic : aGASurface.IsVPeriodic;
 
                         if (isperiodic)
                         {
@@ -864,7 +867,7 @@ public static class IntTools_WLineTool
                             Point2D ap1 = new(nU1, nV1);
                             Point2D ap2;
 
-                            if (aGASurface.IsUPeriodic() || aGASurface.IsVPeriodic())
+                            if (aGASurface.IsUPeriodic || aGASurface.IsVPeriodic)
                             {
                                 // re-compute point near boundary if shifted on a period
                                 ap2 = AdjustByNeighbour(ap1, anewpoint, aGASurface);
@@ -930,9 +933,9 @@ public static class IntTools_WLineTool
                             double aCriteria = theTol;
                             GeomAPI_ProjectPointOnSurf aProjector =
                                 (surfit == 0) ? aContext.ProjPS(theFace2) : aContext.ProjPS(theFace1);
-                            GeomAdaptor_Surface aSurface = (surfit == 0) ? theSurface1 : theSurface2;
+                            SurfaceAdaptor aSurface = (surfit == 0) ? theSurface1 : theSurface2;
 
-                            GeomAdaptor_Surface aSurfaceOther = (surfit == 0) ? theSurface2 : theSurface1;
+                            SurfaceAdaptor aSurfaceOther = (surfit == 0) ? theSurface2 : theSurface1;
 
                             Point3D aP3d = aSurface.Value(anewpoint.X(), anewpoint.Y());
                             aProjector.Perform(aP3d);

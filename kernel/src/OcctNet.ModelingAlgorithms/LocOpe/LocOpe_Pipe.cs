@@ -6,9 +6,12 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -32,39 +35,39 @@ namespace Occt;
 public sealed class LocOpe_Pipe
 {
     private readonly BRepFill_Pipe myPipe;
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myMap = new(TopTools_ShapeMapHasher.Instance);
-    private TopoDS_Shape myRes = new();
-    private NCollection_List<TopoDS_Shape> myGShap = new();
-    private readonly NCollection_Sequence<Geom_Curve?> myCrvs = new();
-    private readonly TopoDS_Wire mySpine;
-    private readonly TopoDS_Shape myProfile;
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> myMap = new(ShapeHasher.Instance);
+    private Shape myRes = new();
+    private NCollection_List<Shape> myGShap = new();
+    private readonly NCollection_Sequence<Curve3D?> myCrvs = new();
+    private readonly Wire mySpine;
+    private readonly Shape myProfile;
     private readonly LocOpe_WorkingShapes myWork = new();
 
-    public LocOpe_Pipe(in TopoDS_Wire Spine, in TopoDS_Shape Profile)
+    public LocOpe_Pipe(in Wire Spine, in Shape Profile)
     {
         mySpine = Spine;
         myProfile = Profile;
         // OCCT.NET: the pipe writes into the profile it shares (decisions 910, 1014)
-        TopoDS_Wire aSpine = TopoDS.Wire(myWork.Working(Spine));
-        TopoDS_Shape aProfile = myWork.Working(Profile);
+        Wire aSpine = ShapeCasts.Wire(myWork.Working(Spine));
+        Shape aProfile = myWork.Working(Profile);
         myPipe = new BRepFill_Pipe(aSpine, aProfile);
 
-        TopoDS_Shape Result = myPipe.InternalShape();
+        Shape Result = myPipe.InternalShape();
 
         // On enleve les faces generees par les edges de connexite du profile,
         // et on fusionne les plans si possible
 
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEFMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(aProfile, TopAbs_EDGE, TopAbs_FACE, theEFMap);
-        TopExp_Explorer exp = new();
-        NCollection_List<TopoDS_Shape>.Iterator it = new();
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theEFMap = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aProfile, ShapeType.Edge, ShapeType.Face, theEFMap);
+        Explorer exp = new();
+        NCollection_List<Shape>.Iterator it = new();
 
-        NCollection_List<TopoDS_Shape> goodfaces = new();
+        NCollection_List<Shape> goodfaces = new();
 
         for (int i = 1; i <= theEFMap.Extent(); i++)
         {
-            TopoDS_Edge edgpr = TopoDS.Edge(theEFMap.FindKey(i));
-            myMap.Bind(edgpr, new NCollection_List<TopoDS_Shape>());
+            Edge edgpr = ShapeCasts.Edge(theEFMap.FindKey(i));
+            myMap.Bind(edgpr, new NCollection_List<Shape>());
             if (theEFMap[i].Extent() >= 2)
             {
                 // on ne prend pas les faces generees
@@ -72,19 +75,19 @@ public sealed class LocOpe_Pipe
             else
             {
                 // on mappe les plans generes par cet edge (in the order they are generated: see the remarks)
-                NCollection_IndexedMap<TopoDS_Shape> MapFac = new(TopTools_ShapeMapHasher.Instance);
-                for (exp.Init(aSpine, TopAbs_EDGE); exp.More(); exp.Next())
+                NCollection_IndexedMap<Shape> MapFac = new(ShapeHasher.Instance);
+                for (exp.Init(aSpine, ShapeType.Edge); exp.More(); exp.Next())
                 {
-                    TopoDS_Edge edgsp = TopoDS.Edge(exp.Current());
-                    TopoDS_Face resfac = myPipe.InternalFace(edgsp, edgpr);
-                    if (!resfac.IsNull())
+                    Edge edgsp = ShapeCasts.Edge(exp.Current());
+                    Face resfac = myPipe.InternalFace(edgsp, edgpr);
+                    if (!resfac.IsNull)
                     {
-                        Geom_Surface P0 = BRep_Tool.Surface(resfac)!;
-                        if (P0.GetType() == typeof(Geom_RectangularTrimmedSurface))
+                        Surface P0 = Tool.Surface(resfac)!;
+                        if (P0.GetType() == typeof(TrimmedSurface))
                         {
-                            P0 = ((Geom_RectangularTrimmedSurface)P0).BasisSurface();
+                            P0 = ((TrimmedSurface)P0).BasisSurface();
                         }
-                        if (P0.GetType() == typeof(Geom_Plane))
+                        if (P0.GetType() == typeof(PlaneSurface))
                         {
                             MapFac.Add(resfac);
                         }
@@ -111,24 +114,24 @@ public sealed class LocOpe_Pipe
 
                 while (MapFac.Extent() >= 2)
                 {
-                    NCollection_List<TopoDS_Shape> FacFuse = new();
-                    TopoDS_Face FaceRef = TopoDS.Face(MapFac[1]);
+                    NCollection_List<Shape> FacFuse = new();
+                    Face FaceRef = ShapeCasts.Face(MapFac[1]);
                     FacFuse.Append(FaceRef);
-                    Geom_Surface P = BRep_Tool.Surface(FaceRef)!;
-                    if (P.GetType() == typeof(Geom_RectangularTrimmedSurface))
+                    Surface P = Tool.Surface(FaceRef)!;
+                    if (P.GetType() == typeof(TrimmedSurface))
                     {
-                        P = ((Geom_RectangularTrimmedSurface)P).BasisSurface();
+                        P = ((TrimmedSurface)P).BasisSurface();
                     }
-                    Plane3D Plref = ((Geom_Plane)P).Pln();
+                    Plane3D Plref = ((PlaneSurface)P).Pln();
 
                     for (int itm = 2; itm <= MapFac.Extent(); itm++)
                     {
-                        P = BRep_Tool.Surface(TopoDS.Face(MapFac[itm]))!;
-                        if (P.GetType() == typeof(Geom_RectangularTrimmedSurface))
+                        P = Tool.Surface(ShapeCasts.Face(MapFac[itm]))!;
+                        if (P.GetType() == typeof(TrimmedSurface))
                         {
-                            P = ((Geom_RectangularTrimmedSurface)P).BasisSurface();
+                            P = ((TrimmedSurface)P).BasisSurface();
                         }
-                        Plane3D Pl0 = ((Geom_Plane)P).Pln();
+                        Plane3D Pl0 = ((PlaneSurface)P).Pln();
                         if (Pl0.Axis().IsParallel(Plref.Axis(), global::Kerf.Engine.Foundation.Precision.Angular())
                             && Plref.Contains(Pl0.Location(), global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
@@ -141,25 +144,25 @@ public sealed class LocOpe_Pipe
 
                     while (FacFuse.Extent() >= 2)
                     {
-                        FaceRef = TopoDS.Face(FacFuse.First());
+                        FaceRef = ShapeCasts.Face(FacFuse.First());
                         // Recuperer l'orientation
-                        TopAbs_Orientation orref = Orientation(FaceRef, Result);
-                        P = BRep_Tool.Surface(FaceRef)!;
-                        if (P.GetType() == typeof(Geom_RectangularTrimmedSurface))
+                        Orientation orref = Orientation(FaceRef, Result);
+                        P = Tool.Surface(FaceRef)!;
+                        if (P.GetType() == typeof(TrimmedSurface))
                         {
-                            P = ((Geom_RectangularTrimmedSurface)P).BasisSurface();
+                            P = ((TrimmedSurface)P).BasisSurface();
                         }
-                        Plref = ((Geom_Plane)P).Pln();
+                        Plref = ((PlaneSurface)P).Pln();
                         Direction3D Dirref = Plref.Axis().Direction();
-                        if ((Plref.Direct() && orref == TopAbs_REVERSED) || (!Plref.Direct() && orref == TopAbs_FORWARD))
+                        if ((Plref.Direct() && orref == Reversed) || (!Plref.Direct() && orref == Forward))
                         {
                             Dirref.Reverse();
                         }
 
                         // OCCT iterates this map (keyed by the edges' addresses) to build the fused face's wire: the
                         // order of its edges depends on the run natively; the port keeps them in the order they come
-                        NCollection_IndexedMap<TopoDS_Shape> MapEd = new(TopTools_ShapeMapHasher.Instance);
-                        for (exp.Init(FaceRef.Oriented(TopAbs_FORWARD), TopAbs_EDGE); exp.More(); exp.Next())
+                        NCollection_IndexedMap<Shape> MapEd = new(ShapeHasher.Instance);
+                        for (exp.Init(FaceRef.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
                         {
                             MapEd.Add(exp.Current());
                         }
@@ -174,7 +177,7 @@ public sealed class LocOpe_Pipe
                             MoreFound = false;
                             for (it.Initialize(FacFuse); it.More(); it.Next())
                             {
-                                for (exp.Init(it.Value(), TopAbs_EDGE); exp.More(); exp.Next())
+                                for (exp.Init(it.Value(), ShapeType.Edge); exp.More(); exp.Next())
                                 {
                                     if (MapEd.Contains(exp.Current()))
                                     {
@@ -190,29 +193,29 @@ public sealed class LocOpe_Pipe
                             }
                             if (MoreFound)
                             {
-                                TopoDS_Face fac = TopoDS.Face(it.Value());
-                                TopAbs_Orientation orrelat = Orientation(fac, Result);
-                                Geom_Surface OtherP = BRep_Tool.Surface(fac)!;
-                                if (OtherP.GetType() == typeof(Geom_RectangularTrimmedSurface))
+                                Face fac = ShapeCasts.Face(it.Value());
+                                Orientation orrelat = Orientation(fac, Result);
+                                Surface OtherP = Tool.Surface(fac)!;
+                                if (OtherP.GetType() == typeof(TrimmedSurface))
                                 {
-                                    OtherP = ((Geom_RectangularTrimmedSurface)OtherP).BasisSurface();
+                                    OtherP = ((TrimmedSurface)OtherP).BasisSurface();
                                 }
-                                Plane3D Pl = ((Geom_Plane)OtherP).Pln();
+                                Plane3D Pl = ((PlaneSurface)OtherP).Pln();
                                 Direction3D Dirpl = Pl.Axis().Direction();
                                 // OCCT: the second test reads the reference plane's Direct (occt-issues.md)
-                                if ((Pl.Direct() && orrelat == TopAbs_REVERSED) || (!Plref.Direct() && orrelat == TopAbs_FORWARD))
+                                if ((Pl.Direct() && orrelat == Reversed) || (!Plref.Direct() && orrelat == Forward))
                                 {
                                     Dirpl.Reverse();
                                 }
                                 if (Dirpl.Dot(Dirref) > 0)
                                 {
-                                    orrelat = TopAbs_FORWARD;
+                                    orrelat = Forward;
                                 }
                                 else
                                 {
-                                    orrelat = TopAbs_REVERSED;
+                                    orrelat = Reversed;
                                 }
-                                for (exp.Init(fac.Oriented(orrelat), TopAbs_EDGE); exp.More(); exp.Next())
+                                for (exp.Init(fac.Oriented(orrelat), ShapeType.Edge); exp.More(); exp.Next())
                                 {
                                     if (MapEd.Contains(exp.Current()))
                                     {
@@ -230,16 +233,16 @@ public sealed class LocOpe_Pipe
 
                         if (FaceToFuse)
                         {
-                            TopoDS_Face NewFace = new();
-                            BRep_Builder B = new();
-                            B.MakeFace(ref NewFace, P, BRep_Tool.Tolerance(FaceRef));
-                            TopoDS_Wire NewWire = new();
+                            Face NewFace = new();
+                            BrepBuilder B = new();
+                            B.MakeFace(ref NewFace, P, Tool.Tolerance(FaceRef));
+                            Wire NewWire = new();
                             B.MakeWire(ref NewWire);
                             for (int itm2 = 1; itm2 <= MapEd.Extent(); itm2++)
                             {
                                 B.Add(NewWire, MapEd[itm2]);
                             }
-                            exp.Init(FaceRef.Oriented(TopAbs_FORWARD), TopAbs_WIRE);
+                            exp.Init(FaceRef.Oriented(Forward), ShapeType.Wire);
                             NewWire.Orientation(exp.Current().Orientation());
                             B.Add(NewFace, NewWire);
                             myMap[edgpr].Append(NewFace);
@@ -256,11 +259,11 @@ public sealed class LocOpe_Pipe
             }
         }
 
-        for (exp.Init(myPipe.InternalFirstShape(), TopAbs_FACE); exp.More(); exp.Next())
+        for (exp.Init(myPipe.InternalFirstShape(), ShapeType.Face); exp.More(); exp.Next())
         {
             goodfaces.Append(exp.Current());
         }
-        for (exp.Init(myPipe.InternalLastShape(), TopAbs_FACE); exp.More(); exp.Next())
+        for (exp.Init(myPipe.InternalLastShape(), ShapeType.Face); exp.More(); exp.Next())
         {
             goodfaces.Append(exp.Current());
         }
@@ -271,14 +274,14 @@ public sealed class LocOpe_Pipe
         // OCCT.NET: the copies left unchanged come back as the caller's sub-shapes
         if (myWork.IsCopied())
         {
-            var aShapes = new List<TopoDS_Shape> { myRes, myPipe.InternalShape(), myPipe.InternalFirstShape(), myPipe.InternalLastShape() };
-            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anItem in myMap)
+            var aShapes = new List<Shape> { myRes, myPipe.InternalShape(), myPipe.InternalFirstShape(), myPipe.InternalLastShape() };
+            foreach (KeyValuePair<Shape, NCollection_List<Shape>> anItem in myMap)
             {
                 aShapes.AddRange(anItem.Value);
             }
             myWork.Finish(aShapes);
             myRes = myWork.Final(myRes);
-            foreach (TopoDS_Shape aKey in myMap.Keys.ToList())
+            foreach (Shape aKey in myMap.Keys.ToList())
             {
                 myMap[aKey] = myWork.Final(myMap[aKey]);
             }
@@ -286,45 +289,45 @@ public sealed class LocOpe_Pipe
     }
 
     /// <summary>The spine (the caller's).</summary>
-    public TopoDS_Shape Spine() => mySpine;
+    public Shape Spine() => mySpine;
 
     /// <summary>The profile (the caller's).</summary>
-    public TopoDS_Shape Profile() => myProfile;
+    public Shape Profile() => myProfile;
 
     /// <summary>The profile's image at the start of the pipe (frozen).</summary>
-    public TopoDS_Shape FirstShape() => LocOpe_WorkingShapes.Published(InternalFirstShape());
+    public Shape FirstShape() => LocOpe_WorkingShapes.Published(InternalFirstShape());
 
     /// <summary><see cref="FirstShape"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shape InternalFirstShape() => myWork.Final(myPipe.InternalFirstShape());
+    internal Shape InternalFirstShape() => myWork.Final(myPipe.InternalFirstShape());
 
     /// <summary>The profile's image at the end of the pipe (frozen).</summary>
-    public TopoDS_Shape LastShape() => LocOpe_WorkingShapes.Published(InternalLastShape());
+    public Shape LastShape() => LocOpe_WorkingShapes.Published(InternalLastShape());
 
     /// <summary><see cref="LastShape"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shape InternalLastShape() => myWork.Final(myPipe.InternalLastShape());
+    internal Shape InternalLastShape() => myWork.Final(myPipe.InternalLastShape());
 
     /// <summary>The pipe (frozen).</summary>
-    public TopoDS_Shape Shape() => LocOpe_WorkingShapes.Published(myRes);
+    public Shape Shape() => LocOpe_WorkingShapes.Published(myRes);
 
     /// <summary><see cref="Shape"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shape InternalShape() => myRes;
+    internal Shape InternalShape() => myRes;
 
     /// <summary>
     /// The faces generated by the edge <paramref name="S"/> of the profile, or the edges generated by its vertex
     /// (frozen).
     /// </summary>
-    public NCollection_List<TopoDS_Shape> Shapes(in TopoDS_Shape S) => LocOpe_WorkingShapes.Published(InternalShapes(S));
+    public NCollection_List<Shape> Shapes(in Shape S) => LocOpe_WorkingShapes.Published(InternalShapes(S));
 
     /// <summary><see cref="Shapes"/> without freezing, for ported code (of the caller's shape or its working copy).</summary>
-    internal NCollection_List<TopoDS_Shape> InternalShapes(in TopoDS_Shape S0)
+    internal NCollection_List<Shape> InternalShapes(in Shape S0)
     {
-        TopoDS_Shape S = myWork.Copied(S0);
-        TopAbs_ShapeEnum typS = S.ShapeType();
-        if (typS != TopAbs_EDGE && typS != TopAbs_VERTEX)
+        Shape S = myWork.Copied(S0);
+        ShapeType typS = S.ShapeType();
+        if (typS != ShapeType.Edge && typS != ShapeType.Vertex)
         {
             throw new DomainErrorException();
         }
-        TopExp_Explorer exp = new(myWork.Copied(myProfile), typS);
+        Explorer exp = new(myWork.Copied(myProfile), typS);
         for (; exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(S))
@@ -337,15 +340,15 @@ public sealed class LocOpe_Pipe
             throw new NoSuchObjectException();
         }
 
-        myGShap = new NCollection_List<TopoDS_Shape>(); // OCCT clears the list it returned before
-        if (typS == TopAbs_VERTEX)
+        myGShap = new NCollection_List<Shape>(); // OCCT clears the list it returned before
+        if (typS == ShapeType.Vertex)
         {
-            TopoDS_Vertex VProfile = TopoDS.Vertex(S);
-            for (exp.Init(myWork.Copied(mySpine), TopAbs_EDGE); exp.More(); exp.Next())
+            Vertex VProfile = ShapeCasts.Vertex(S);
+            for (exp.Init(myWork.Copied(mySpine), ShapeType.Edge); exp.More(); exp.Next())
             {
-                TopoDS_Edge edsp = TopoDS.Edge(exp.Current());
-                TopoDS_Edge resed = myPipe.InternalEdge(edsp, VProfile);
-                if (!resed.IsNull())
+                Edge edsp = ShapeCasts.Edge(exp.Current());
+                Edge resed = myPipe.InternalEdge(edsp, VProfile);
+                if (!resed.IsNull)
                 {
                     myGShap.Append(myWork.Final(resed));
                 }
@@ -353,16 +356,16 @@ public sealed class LocOpe_Pipe
             return myGShap;
         }
         // TopAbs_EDGE
-        TopoDS_Edge EProfile = TopoDS.Edge(S);
+        Edge EProfile = ShapeCasts.Edge(S);
         return myMap[EProfile];
     }
 
     // OCCT.NET: OCCT segments and re-knots the converted curve in place; a frozen one is changed on a copy
-    private static Geom_BSplineCurve Writable(Geom_BSplineCurve theCurve) =>
-        theCurve.IsFrozen ? (Geom_BSplineCurve)theCurve.Copy() : theCurve;
+    private static BSplineCurve3D Writable(BSplineCurve3D theCurve) =>
+        theCurve.IsFrozen ? (BSplineCurve3D)theCurve.Copy() : theCurve;
 
     /// <summary>The curves along the pipe through the points <paramref name="Spt"/> (one per point, null if none).</summary>
-    public NCollection_Sequence<Geom_Curve?> Curves(NCollection_Sequence<Point3D> Spt)
+    public NCollection_Sequence<Curve3D?> Curves(NCollection_Sequence<Point3D> Spt)
     {
         myCrvs.Clear();
 
@@ -372,19 +375,19 @@ public sealed class LocOpe_Pipe
         {
             Point3D P1 = Spt[i];
             int MaxDeg = 0;
-            NCollection_Sequence<Geom_Curve> seq = new();
-            TopoDS_Wire W = myPipe.InternalPipeLine(P1);
+            NCollection_Sequence<Curve3D> seq = new();
+            Wire W = myPipe.InternalPipeLine(P1);
 
-            TopExp_Explorer ex = new(W, TopAbs_EDGE);
+            Explorer ex = new(W, ShapeType.Edge);
             for (; ex.More(); ex.Next())
             {
-                Geom_Curve C1 = BRep_Tool.Curve(TopoDS.Edge(ex.Current()), out double p1, out double p2)!;
-                Geom_BSplineCurve? C0 = GeomConvert.CurveToBSplineCurve(C1);
+                Curve3D C1 = Tool.Curve(ShapeCasts.Edge(ex.Current()), out double p1, out double p2)!;
+                BSplineCurve3D? C0 = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(C1);
                 if (C0 is null)
                 {
                     continue;
                 }
-                Geom_BSplineCurve C = Writable(C0);
+                BSplineCurve3D C = Writable(C0);
                 MaxDeg = Max(MaxDeg, C.Degree());
                 P1 = C.Value(p2);
                 if (p1 != C.FirstParameter() || p2 != C.LastParameter())
@@ -397,7 +400,7 @@ public sealed class LocOpe_Pipe
                 seq.Append(C);
             }
 
-            Geom_Curve? newC = null;
+            Curve3D? newC = null;
             int Nbkn = 0, Nbp = 0;
             int Nbcurv = seq.Length();
             if (Nbcurv == 0)
@@ -406,13 +409,13 @@ public sealed class LocOpe_Pipe
                 continue;
             }
 
-            Geom_BSplineCurve Bsp;
+            BSplineCurve3D Bsp;
             for (j = 1; j <= Nbcurv; j++)
             {
-                Bsp = (Geom_BSplineCurve)seq[j];
+                Bsp = (BSplineCurve3D)seq[j];
                 Bsp.IncreaseDegree(MaxDeg);
-                Nbp += Bsp.NbPoles();
-                Nbkn += Bsp.NbKnots();
+                Nbp += Bsp.PoleCount;
+                Nbkn += Bsp.KnotCount;
             }
             Nbp -= Nbcurv - 1;
             Nbkn -= Nbcurv - 1;
@@ -421,13 +424,13 @@ public sealed class LocOpe_Pipe
             NCollection_Array1<Point3D> Tpol = new(1, Nbp);
             int Ik = 0, Ip = 0;
 
-            Bsp = (Geom_BSplineCurve)seq[1];
-            for (k = 1; k <= Bsp.NbPoles(); k++)
+            Bsp = (BSplineCurve3D)seq[1];
+            for (k = 1; k <= Bsp.PoleCount; k++)
             {
                 Ip++;
                 Tpol[Ip] = Bsp.Pole(k);
             }
-            for (k = 1; k <= Bsp.NbKnots(); k++)
+            for (k = 1; k <= Bsp.KnotCount; k++)
             {
                 Ik++;
                 Tkn2[Ik] = Bsp.Knot(k);
@@ -437,13 +440,13 @@ public sealed class LocOpe_Pipe
 
             for (j = 2; j <= Nbcurv; j++)
             {
-                Bsp = (Geom_BSplineCurve)seq[j];
-                for (k = 2; k <= Bsp.NbPoles(); k++)
+                Bsp = (BSplineCurve3D)seq[j];
+                for (k = 2; k <= Bsp.PoleCount; k++)
                 {
                     Ip++;
                     Tpol[Ip] = Bsp.Pole(k);
                 }
-                for (k = 2; k <= Bsp.NbKnots(); k++)
+                for (k = 2; k <= Bsp.KnotCount; k++)
                 {
                     Ik++;
                     Tkn2[Ik] = Bsp.Knot(k);
@@ -452,16 +455,16 @@ public sealed class LocOpe_Pipe
                 Tmu[Ik]--;
             }
             Tmu[Ik]++;
-            newC = new Geom_BSplineCurve(Tpol, Tkn2, Tmu, MaxDeg);
+            newC = new BSplineCurve3D(Tpol, Tkn2, Tmu, MaxDeg);
             myCrvs.Append(newC);
         }
 
         return myCrvs;
     }
 
-    private static TopAbs_Orientation Orientation(in TopoDS_Shape Sub, in TopoDS_Shape S)
+    private static Orientation Orientation(in Shape Sub, in Shape S)
     {
-        TopExp_Explorer exp = new();
+        Explorer exp = new();
         for (exp.Init(S, Sub.ShapeType()); exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(Sub))
@@ -473,12 +476,12 @@ public sealed class LocOpe_Pipe
     }
 
     /// <summary>The curve along the pipe through the barycentre of the first shape's sample points.</summary>
-    public Geom_Curve BarycCurve()
+    public Curve3D BarycCurve()
     {
         int j, k;
 
         NCollection_Sequence<Point3D> spt = new();
-        TopoDS_Shape Base = InternalFirstShape();
+        Shape Base = InternalFirstShape();
         LocOpe.SampleEdges(Base, spt);
         Xyz aBar = new(0.0, 0.0, 0.0);
         for (int jj = 1; jj <= spt.Length(); jj++)
@@ -492,20 +495,20 @@ public sealed class LocOpe_Pipe
         Point3D P1 = bar;
 
         int MaxDeg = 0;
-        NCollection_Sequence<Geom_Curve> seq = new();
-        TopoDS_Wire W = myPipe.InternalPipeLine(P1);
+        NCollection_Sequence<Curve3D> seq = new();
+        Wire W = myPipe.InternalPipeLine(P1);
 
-        TopExp_Explorer ex = new(W, TopAbs_EDGE);
+        Explorer ex = new(W, ShapeType.Edge);
         for (; ex.More(); ex.Next())
         {
-            Geom_Curve C1 = BRep_Tool.Curve(TopoDS.Edge(ex.Current()), out double p1, out double p2)!;
-            Geom_BSplineCurve? C0 = GeomConvert.CurveToBSplineCurve(C1);
+            Curve3D C1 = Tool.Curve(ShapeCasts.Edge(ex.Current()), out double p1, out double p2)!;
+            BSplineCurve3D? C0 = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(C1);
 
             if (C0 is null)
             {
                 continue;
             }
-            Geom_BSplineCurve C = Writable(C0);
+            BSplineCurve3D C = Writable(C0);
             MaxDeg = Max(MaxDeg, C.Degree());
             P1 = C.Value(p2);
             if (p1 != C.FirstParameter() || p2 != C.LastParameter())
@@ -517,20 +520,20 @@ public sealed class LocOpe_Pipe
             C.SetKnots(Tkn0);
             seq.Append(C);
         }
-        Geom_Curve? newC = null;
+        Curve3D? newC = null;
         int Nbkn = 0, Nbp = 0;
         int Nbcurv = seq.Length();
         if (Nbcurv == 0)
         {
             myCrvs.Append(newC); // OCCT: and goes on, to throw reading the first curve below
         }
-        Geom_BSplineCurve Bsp;
+        BSplineCurve3D Bsp;
         for (j = 1; j <= Nbcurv; j++)
         {
-            Bsp = (Geom_BSplineCurve)seq[j];
+            Bsp = (BSplineCurve3D)seq[j];
             Bsp.IncreaseDegree(MaxDeg);
-            Nbp += Bsp.NbPoles();
-            Nbkn += Bsp.NbKnots();
+            Nbp += Bsp.PoleCount;
+            Nbkn += Bsp.KnotCount;
         }
         Nbp -= Nbcurv - 1;
         Nbkn -= Nbcurv - 1;
@@ -539,13 +542,13 @@ public sealed class LocOpe_Pipe
         NCollection_Array1<Point3D> Tpol = new(1, Nbp);
         int Ik = 0, Ip = 0;
 
-        Bsp = (Geom_BSplineCurve)seq[1];
-        for (k = 1; k <= Bsp.NbPoles(); k++)
+        Bsp = (BSplineCurve3D)seq[1];
+        for (k = 1; k <= Bsp.PoleCount; k++)
         {
             Ip++;
             Tpol[Ip] = Bsp.Pole(k);
         }
-        for (k = 1; k <= Bsp.NbKnots(); k++)
+        for (k = 1; k <= Bsp.KnotCount; k++)
         {
             Ik++;
             Tkn[Ik] = Bsp.Knot(k);
@@ -555,13 +558,13 @@ public sealed class LocOpe_Pipe
 
         for (j = 2; j <= Nbcurv; j++)
         {
-            Bsp = (Geom_BSplineCurve)seq[j];
-            for (k = 2; k <= Bsp.NbPoles(); k++)
+            Bsp = (BSplineCurve3D)seq[j];
+            for (k = 2; k <= Bsp.PoleCount; k++)
             {
                 Ip++;
                 Tpol[Ip] = Bsp.Pole(k);
             }
-            for (k = 2; k <= Bsp.NbKnots(); k++)
+            for (k = 2; k <= Bsp.KnotCount; k++)
             {
                 Ik++;
                 Tkn[Ik] = Bsp.Knot(k);
@@ -570,7 +573,7 @@ public sealed class LocOpe_Pipe
             Tmu[Ik]--;
         }
         Tmu[Ik]++;
-        newC = new Geom_BSplineCurve(Tpol, Tkn, Tmu, MaxDeg);
+        newC = new BSplineCurve3D(Tpol, Tkn, Tmu, MaxDeg);
 
         return newC;
     }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
 
@@ -43,8 +44,8 @@ internal static class BOPTestMkConnectedCommands
 
         for (int i = 2; i < theArgc; ++i)
         {
-            TopoDS_Shape aS = theDI.GetShape(theArgv[i]);
-            if (aS.IsNull())
+            Shape aS = theDI.GetShape(theArgv[i]);
+            if (aS.IsNull)
             {
                 di.Append("Error: ").Append(theArgv[i]).Append(" is a null shape. Skip it.\n");
                 continue;
@@ -81,7 +82,7 @@ internal static class BOPTestMkConnectedCommands
         }
 
         BOPAlgo_MakeConnected aTool = Tool(theDI);
-        if (aTool.InternalShape().IsNull() || aTool.HasErrors())
+        if (aTool.InternalShape().IsNull || aTool.HasErrors())
         {
             di.Append("Make the shapes connected first.\n");
             return 1;
@@ -218,8 +219,8 @@ internal static class BOPTestMkConnectedCommands
         }
 
         // Get the shape to get materials
-        TopoDS_Shape aShape = theDI.GetShape(theArgv[3]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(theArgv[3]);
+        if (aShape.IsNull)
         {
             di.Append("Error: ").Append(theArgv[3]).Append(" is a null shape.\n");
             return 1;
@@ -242,7 +243,7 @@ internal static class BOPTestMkConnectedCommands
         }
 
         BOPAlgo_MakeConnected aTool = Tool(theDI);
-        IReadOnlyList<TopoDS_Shape> aLS = [.. bPositive ? aTool.MaterialsOnPositiveSide(aShape) : aTool.MaterialsOnNegativeSide(aShape)];
+        IReadOnlyList<Shape> aLS = [.. bPositive ? aTool.MaterialsOnPositiveSide(aShape) : aTool.MaterialsOnNegativeSide(aShape)];
         if (aLS.Count == 0)
         {
             di.Append("No materials on this side.\n");
@@ -259,14 +260,14 @@ internal static class BOPTestMkConnectedCommands
         }
 
         // Get the shape to find twins
-        TopoDS_Shape aShape = theDI.GetShape(theArgv[2]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(theArgv[2]);
+        if (aShape.IsNull)
         {
             di.Append("Error: ").Append(theArgv[2]).Append(" is a null shape.\n");
             return 1;
         }
 
-        IReadOnlyList<TopoDS_Shape> aTwins = [.. Tool(theDI).PeriodicityTool().GetTwins(aShape)];
+        IReadOnlyList<Shape> aTwins = [.. Tool(theDI).PeriodicityTool().GetTwins(aShape)];
         if (aTwins.Count == 0)
         {
             di.Append("No twins for the shape.\n");

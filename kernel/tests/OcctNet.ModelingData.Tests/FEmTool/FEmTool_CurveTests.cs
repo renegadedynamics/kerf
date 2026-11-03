@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation.FiniteElements;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
@@ -38,10 +39,10 @@ public class FEmTool_CurveTests
         return aCoeffs;
     }
 
-    private static FEmTool_Curve MakeCurve()
+    private static Curve MakeCurve()
     {
         global::Kerf.Engine.Numerics.Polynomials.HermitJacobi aBase = new(WorkDegree, C1);
-        FEmTool_Curve aCurve = new(2, 2, aBase, 1e-7);
+        Curve aCurve = new(2, 2, aBase, 1e-7);
         NCollection_Array1<double> aKnots = aCurve.Knots();
         aKnots[1] = 0;
         aKnots[2] = 1;
@@ -54,8 +55,8 @@ public class FEmTool_CurveTests
     [Fact]
     public void Curve_evaluates_the_polynomial()
     {
-        FEmTool_Curve aCurve = MakeCurve();
-        Assert.Equal(2, aCurve.NbElements());
+        Curve aCurve = MakeCurve();
+        Assert.Equal(2, aCurve.ElementCount);
         Assert.Equal(2, aCurve.Dimension());
         Assert.Equal(WorkDegree, aCurve.Degree(1));
         Assert.Equal(WorkDegree, aCurve.Base().WorkDegree());
@@ -79,7 +80,7 @@ public class FEmTool_CurveTests
     [Fact]
     public void Curve_elements_degrees_and_polynomials()
     {
-        FEmTool_Curve aCurve = MakeCurve();
+        Curve aCurve = MakeCurve();
 
         NCollection_Array2<double> anElement = new(1, WorkDegree + 1, 1, 2);
         aCurve.GetElement(2, anElement);
@@ -126,7 +127,7 @@ public class FEmTool_CurveTests
     {
         // OCCT rescales the derivative coefficients of columns j1 + 1 to Dimension only, where j1 = LowerCol - 1:
         // with LowerCol = 2, the second column keeps the coefficients relative to the [-1, 1] parametrisation
-        FEmTool_Curve aCurve = MakeCurve();
+        Curve aCurve = MakeCurve();
         NCollection_Array2<double> anElement = new(1, WorkDegree + 1, 2, 3);
         aCurve.GetElement(2, anElement);
         NCollection_Array2<double> anExpected = Element(1, 3);
@@ -143,7 +144,7 @@ public class FEmTool_CurveTests
     {
         // A straight line P(U) = (U, 2U), as cubic elements
         global::Kerf.Engine.Numerics.Polynomials.HermitJacobi aBase = new(WorkDegree, C1);
-        FEmTool_Curve aLine = new(2, 3, aBase, 1e-7);
+        Curve aLine = new(2, 3, aBase, 1e-7);
         NCollection_Array1<double> aKnots = aLine.Knots();
         aKnots[1] = 0;
         aKnots[2] = 1;
@@ -190,16 +191,16 @@ public class FEmTool_CurveTests
         // x''' = 6: 36 * 2
         double aJerk = 72.0;
 
-        FEmTool_ElementaryCriterion[] aCriteria =
+        ElementaryCriterion[] aCriteria =
         [
-            new FEmTool_LinearTension(WorkDegree, C1),
-            new FEmTool_LinearFlexion(WorkDegree, C1),
-            new FEmTool_LinearJerk(WorkDegree, C1),
+            new LinearTension(WorkDegree, C1),
+            new LinearFlexion(WorkDegree, C1),
+            new LinearJerk(WorkDegree, C1),
         ];
         double[] anExpected = [aTension, aFlexion, aJerk];
         for (int c = 0; c < 3; c++)
         {
-            FEmTool_ElementaryCriterion aCriterion = aCriteria[c];
+            ElementaryCriterion aCriterion = aCriteria[c];
             NCollection_HArray2<double> aCoeffs = CriterionCoeffs(0, 2);
             aCriterion.Set(aCoeffs);
             aCriterion.Set(0.0, 2.0);
@@ -249,10 +250,10 @@ public class FEmTool_CurveTests
         aCoeffs[3, 1] = 1;
         aCoeffs[3, 2] = 2;
 
-        FEmTool_LinearTension aTension = new(WorkDegree, C1);
-        FEmTool_LinearFlexion aFlexion = new(WorkDegree, C1);
-        FEmTool_LinearJerk aJerk = new(WorkDegree, C1);
-        foreach (FEmTool_ElementaryCriterion aCriterion in new FEmTool_ElementaryCriterion[] { aTension, aFlexion, aJerk })
+        LinearTension aTension = new(WorkDegree, C1);
+        LinearFlexion aFlexion = new(WorkDegree, C1);
+        LinearJerk aJerk = new(WorkDegree, C1);
+        foreach (ElementaryCriterion aCriterion in new ElementaryCriterion[] { aTension, aFlexion, aJerk })
         {
             aCriterion.Set(aCoeffs);
             aCriterion.Set(1.0, 3.0);
@@ -279,7 +280,7 @@ public class FEmTool_CurveTests
                 aCoeffs[1, 1] = 1;
                 aCoeffs[aNiv + 2, 1] = 1;
             }
-            FEmTool_LinearTension aCriterion = new(10, theOrder);
+            LinearTension aCriterion = new(10, theOrder);
             aCriterion.Set(aCoeffs);
             aCriterion.Set(0.0, 1.0);
             return aCriterion.Value();
@@ -289,8 +290,8 @@ public class FEmTool_CurveTests
         Assert.Equal(1.0, Tension(C1), 1e-12);
         Assert.Equal(1.0, Tension(C0), 1e-12);
 
-        Assert.ThrowsAny<ConstructionErrorException>(() => new FEmTool_LinearJerk(15, C1));
-        FEmTool_LinearTension anUnset = new(5, C0);
+        Assert.ThrowsAny<ConstructionErrorException>(() => new LinearJerk(15, C1));
+        LinearTension anUnset = new(5, C0);
         Assert.ThrowsAny<DomainErrorException>(() => anUnset.DependenceTable());
     }
 
@@ -300,7 +301,7 @@ public class FEmTool_CurveTests
         global::Kerf.Engine.Numerics.Polynomials.HermitJacobi aBase = new(6, C1);
         for (int aDer = 0; aDer <= 3; aDer++)
         {
-            FEmTool_ElementsOfRefMatrix anElem = new(aBase, aDer);
+            ElementsOfRefMatrix anElem = new(aBase, aDer);
             Assert.Equal(1, anElem.NbVariables());
             Assert.Equal(28, anElem.NbEquations());
             math_Vector aX = new(1, 1, 0.3);
@@ -320,7 +321,7 @@ public class FEmTool_CurveTests
             }
             Assert.ThrowsAny<OutOfRangeException>(() => anElem.Value(aX, new math_Vector(1, 27)));
         }
-        Assert.ThrowsAny<ConstructionErrorException>(() => new FEmTool_ElementsOfRefMatrix(aBase, 4));
+        Assert.ThrowsAny<ConstructionErrorException>(() => new ElementsOfRefMatrix(aBase, 4));
     }
 
     [Fact]
@@ -331,7 +332,7 @@ public class FEmTool_CurveTests
         // before the array) and the previous element's top second-derivative coefficients for the others.
         // A C0 base, where FEmTool_Curve::ReduceDegree may leave degree 1 elements; arbitrary coefficients.
         global::Kerf.Engine.Numerics.Polynomials.HermitJacobi aBase = new(WorkDegree, C0);
-        FEmTool_Curve aCurve = new(2, 2, aBase, 1e-7);
+        Curve aCurve = new(2, 2, aBase, 1e-7);
         NCollection_Array1<double> aKnots = aCurve.Knots();
         aKnots[1] = 0;
         aKnots[2] = 1;

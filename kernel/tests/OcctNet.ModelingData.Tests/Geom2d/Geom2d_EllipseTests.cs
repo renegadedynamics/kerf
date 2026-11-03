@@ -9,8 +9,8 @@ namespace OcctNet.ModelingData.Tests;
 public class Geom2d_EllipseTest
 {
     // Ellipse centered at origin, major radius 10, minor radius 5
-    private readonly Geom2d_Ellipse myEllipse =
-        new Geom2d_Ellipse(new Ellipse2D(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 10.0, 5.0));
+    private readonly EllipseCurve2D myEllipse =
+        new EllipseCurve2D(new Ellipse2D(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 10.0, 5.0));
 
     [Fact]
     public void Radii()
@@ -29,8 +29,8 @@ public class Geom2d_EllipseTest
     [Fact]
     public void IsClosedAndPeriodic()
     {
-        Assert.True(myEllipse.IsClosed());
-        Assert.True(myEllipse.IsPeriodic());
+        Assert.True(myEllipse.IsClosed);
+        Assert.True(myEllipse.IsPeriodic);
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public class Geom2d_EllipseTest
     [Fact]
     public void EvalD1_AtZero()
     {
-        Geom2d_Curve.ResD1 aR = myEllipse.EvalD1(0.0);
+        Curve2D.ResD1 aR = myEllipse.EvalD1(0.0);
         // At U=0: tangent is (0, b) = (0, 5)
         Assert.Equal(0.0, aR.D1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(5.0, aR.D1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -98,7 +98,7 @@ public class Geom2d_EllipseTest
     [Fact]
     public void EvalD2_AtZero()
     {
-        Geom2d_Curve.ResD2 aR = myEllipse.EvalD2(0.0);
+        Curve2D.ResD2 aR = myEllipse.EvalD2(0.0);
         // At U=0: second derivative is (-a, 0) = (-10, 0)
         Assert.Equal(-10.0, aR.D2.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aR.D2.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -135,8 +135,8 @@ public class Geom2d_EllipseTest
     [Fact]
     public void Copy()
     {
-        Geom2d_Geometry aCopyGeom = myEllipse.Copy();
-        Geom2d_Ellipse? aCopy = aCopyGeom as Geom2d_Ellipse;
+        Geometry2D aCopyGeom = myEllipse.Copy();
+        EllipseCurve2D? aCopy = aCopyGeom as EllipseCurve2D;
         Assert.NotNull(aCopy);
         Assert.Equal(10.0, aCopy.MajorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(5.0, aCopy.MinorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());

@@ -6,7 +6,9 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 using static Occt.TopoDSToStep_BuilderError;
 
 namespace Occt;
@@ -24,19 +26,19 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
         done = false;
     }
 
-    public TopoDSToStep_Builder(in TopoDS_Shape S, TopoDSToStep_Tool T, Transfer_FinderProcess FP, int theTessellatedGeomParam,
+    public TopoDSToStep_Builder(in Shape S, TopoDSToStep_Tool T, Transfer_FinderProcess FP, int theTessellatedGeomParam,
                                 in StepData_Factors theLocalFactors, ProgressRange theProgress = default)
     {
         done = false;
         Init(S, T, FP, theTessellatedGeomParam, theLocalFactors, theProgress);
     }
 
-    public TopoDSToStep_Builder(in TopoDS_Shape S, TopoDSToStep_Tool T, Transfer_FinderProcess FP, int theTessellatedGeomParam)
+    public TopoDSToStep_Builder(in Shape S, TopoDSToStep_Tool T, Transfer_FinderProcess FP, int theTessellatedGeomParam)
         : this(S, T, FP, theTessellatedGeomParam, new StepData_Factors())
     {
     }
 
-    public void Init(in TopoDS_Shape aShape, TopoDSToStep_Tool myTool, Transfer_FinderProcess FP, int theTessellatedGeomParam,
+    public void Init(in Shape aShape, TopoDSToStep_Tool myTool, Transfer_FinderProcess FP, int theTessellatedGeomParam,
                      in StepData_Factors theLocalFactors, ProgressRange theProgress = default)
     {
         if (myTool.IsBound(aShape))
@@ -49,9 +51,9 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
 
         switch (aShape.ShapeType())
         {
-            case TopAbs_SHELL:
+            case ShapeType.Shell:
             {
-                TopoDS_Shell myShell = TopoDS.Shell(aShape);
+                Shell myShell = ShapeCasts.Shell(aShape);
                 myTool.SetCurrentShell(myShell);
 
                 StepShape_FaceSurface FS;
@@ -69,22 +71,22 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
                 //  Il reste ici et la du code relatif a "en Faceted on combine differemment"
                 //  -> reste encore du menage a faire
 
-                var anExp = new TopExp_Explorer();
+                var anExp = new Explorer();
 
                 var MkFace = new TopoDSToStep_MakeStepFace();
 
                 using var aPS = new ProgressScope(theProgress, null, (theTessellatedGeomParam != 0) ? 2 : 1);
 
                 int nbshapes = 0;
-                for (anExp.Init(myShell, TopAbs_FACE); anExp.More(); anExp.Next())
+                for (anExp.Init(myShell, ShapeType.Face); anExp.More(); anExp.Next())
                 {
                     nbshapes++;
                 }
 
                 using var aPS1 = new ProgressScope(aPS.Next(), null, nbshapes);
-                for (anExp.Init(myShell, TopAbs_FACE); anExp.More() && aPS1.More(); anExp.Next(), aPS1.Next())
+                for (anExp.Init(myShell, ShapeType.Face); anExp.More() && aPS1.More(); anExp.Next(), aPS1.Next())
                 {
-                    TopoDS_Face Face = TopoDS.Face(anExp.Current());
+                    Face Face = ShapeCasts.Face(anExp.Current());
 
                     MkFace.Init(Face, myTool, FP, theLocalFactors);
 
@@ -158,9 +160,9 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
                 break;
             }
 
-            case TopAbs_FACE:
+            case ShapeType.Face:
             {
-                TopoDS_Face Face = TopoDS.Face(aShape);
+                Face Face = ShapeCasts.Face(aShape);
 
                 StepShape_FaceSurface FS;
                 StepShape_TopologicalRepresentationItem Fpms;
@@ -208,7 +210,7 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
         }
     }
 
-    public void Init(in TopoDS_Shape aShape, TopoDSToStep_Tool myTool, Transfer_FinderProcess FP, int theTessellatedGeomParam)
+    public void Init(in Shape aShape, TopoDSToStep_Tool myTool, Transfer_FinderProcess FP, int theTessellatedGeomParam)
         => Init(aShape, myTool, FP, theTessellatedGeomParam, new StepData_Factors());
 
     public TopoDSToStep_BuilderError Error() => myError;

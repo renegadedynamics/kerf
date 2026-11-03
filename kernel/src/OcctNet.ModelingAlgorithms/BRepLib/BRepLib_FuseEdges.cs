@@ -3,12 +3,18 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Schematiq.Collections;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -24,22 +30,22 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepLib_FuseEdges
 {
-    private TopoDS_Shape myShape;
+    private Shape myShape;
     private bool myShapeDone;
     private bool myEdgesDone;
     private bool myResultEdgesDone;
-    private readonly NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myMapVerLstEdg =
-        new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myMapEdgLstFac =
-        new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_DataMap<int, NCollection_List<TopoDS_Shape>> myMapLstEdg = new();
-    private readonly NCollection_DataMap<int, TopoDS_Shape> myMapEdg = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myMapFaces = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> myMapVerLstEdg =
+        new(ShapeHasher.Instance);
+    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> myMapEdgLstFac =
+        new(ShapeHasher.Instance);
+    private readonly NCollection_DataMap<int, NCollection_List<Shape>> myMapLstEdg = new();
+    private readonly NCollection_DataMap<int, Shape> myMapEdg = new();
+    private readonly NCollection_DataMap<Shape, Shape> myMapFaces = new(ShapeHasher.Instance);
     private int myNbConnexEdge;
-    private NCollection_IndexedMap<TopoDS_Shape> myAvoidEdg = new(TopTools_ShapeMapHasher.Instance);
+    private NCollection_IndexedMap<Shape> myAvoidEdg = new(ShapeHasher.Instance);
     private bool myConcatBSpl;
 
-    private static void BCSmoothing(Geom_BSplineCurve theC, int theCont, double theTol)
+    private static void BCSmoothing(BSplineCurve3D theC, int theCont, double theTol)
     {
         int aNbIter = 5;
         bool bContinue = true;
@@ -49,7 +55,7 @@ public sealed class BRepLib_FuseEdges
 
         while (bContinue && iter <= aNbIter)
         {
-            int aNbKnots = theC.NbKnots();
+            int aNbKnots = theC.KnotCount;
             NCollection_Array1<int> aMults = new(theC.InternalMultiplicities());
             NCollection_Array1<double> aKnots = new(theC.InternalKnots());
             int i, m = theC.Degree();
@@ -121,14 +127,14 @@ public sealed class BRepLib_FuseEdges
         }
     }
 
-    private static void MakeClosedCurve(ref Geom_Curve C, in Point3D PF, ref double f, ref double l)
+    private static void MakeClosedCurve(ref Curve3D C, in Point3D PF, ref double f, ref double l)
     {
-        Geom_BSplineCurve aBC = (Geom_BSplineCurve)C;
+        BSplineCurve3D aBC = (BSplineCurve3D)C;
         // OCCT.NET: frozen. OCCT makes the curve periodic and moves its origin in place, and the curve can be the old
         // edge's own (or the basis curve of its trimmed curve), shared with the caller's shape: the port works on a copy.
         if (aBC.IsFrozen)
         {
-            aBC = (Geom_BSplineCurve)aBC.Copy();
+            aBC = (BSplineCurve3D)aBC.Copy();
         }
         Continuity aCont = aBC.Continuity();
         // Find new origin
@@ -160,9 +166,9 @@ public sealed class BRepLib_FuseEdges
         if (porig > l)
         {
             // try to project
-            var aGAC = new GeomAdaptor_Curve(aBC);
-            var aPrj = new Extrema_LocateExtPC(PF, aGAC, pmin, global::Kerf.Engine.Foundation.Precision.PConfusion());
-            if (aPrj.IsDone())
+            var aGAC = new CurveAdaptor(aBC);
+            var aPrj = new LocateExtPC(PF, aGAC, pmin, global::Kerf.Engine.Foundation.Precision.PConfusion());
+            if (aPrj.IsDone)
             {
                 porig = aPrj.Point().Parameter();
             }
@@ -190,7 +196,7 @@ public sealed class BRepLib_FuseEdges
     /// the work is done on demand.
     /// </summary>
     /// <exception cref="NullObjectException">The shape is null.</exception>
-    public BRepLib_FuseEdges(in TopoDS_Shape theShape, bool PerformNow = false)
+    public BRepLib_FuseEdges(in Shape theShape, bool PerformNow = false)
     {
         _ = PerformNow;
         myShape = theShape;
@@ -201,14 +207,14 @@ public sealed class BRepLib_FuseEdges
         myConcatBSpl = false;
         //  if (theShape.ShapeType() != TopAbs_SHELL && theShape.ShapeType() != TopAbs_SOLID)
         //    throw Standard_ConstructionError("FuseEdges");
-        Standard_NullObject_Raise_if(theShape.IsNull(), "FuseEdges");
+        Standard_NullObject_Raise_if(theShape.IsNull, "FuseEdges");
         myMapFaces.Clear();
     }
 
     /// <summary>Sets the edges that must not be fused (a copy of the map is kept).</summary>
-    public void AvoidEdges(NCollection_IndexedMap<TopoDS_Shape> theMapEdg)
+    public void AvoidEdges(NCollection_IndexedMap<Shape> theMapEdg)
     {
-        myAvoidEdg = new NCollection_IndexedMap<TopoDS_Shape>(theMapEdg);
+        myAvoidEdg = new NCollection_IndexedMap<Shape>(theMapEdg);
     }
 
     /// <summary>Sets whether connected B-spline edges that are only G1 at their common vertex may be concatenated.</summary>
@@ -221,12 +227,12 @@ public sealed class BRepLib_FuseEdges
     /// The lists of connected edges to be fused, by index: each list is a set of connected edges, in the forward
     /// direction, that can be fused into one. The edges are the input shape's own.
     /// </summary>
-    public IReadOnlyDictionary<int, ISchematiqList<TopoDS_Shape>> Edges()
+    public IReadOnlyDictionary<int, ISchematiqList<Shape>> Edges()
     {
-        var aMap = new NCollection_DataMap<int, NCollection_List<TopoDS_Shape>>();
+        var aMap = new NCollection_DataMap<int, NCollection_List<Shape>>();
         Edges(aMap);
-        var aResult = new Dictionary<int, ISchematiqList<TopoDS_Shape>>();
-        foreach (KeyValuePair<int, NCollection_List<TopoDS_Shape>> anItem in aMap)
+        var aResult = new Dictionary<int, ISchematiqList<Shape>>();
+        foreach (KeyValuePair<int, NCollection_List<Shape>> anItem in aMap)
         {
             aResult.Add(anItem.Key, PackedList.Own([.. anItem.Value]));
         }
@@ -234,7 +240,7 @@ public sealed class BRepLib_FuseEdges
     }
 
     /// <summary>OCCT's form: copies the lists of edges to be fused into <paramref name="theMapLstEdg"/> (ported code).</summary>
-    internal void Edges(NCollection_DataMap<int, NCollection_List<TopoDS_Shape>> theMapLstEdg)
+    internal void Edges(NCollection_DataMap<int, NCollection_List<Shape>> theMapLstEdg)
     {
         if (!myEdgesDone)
         {
@@ -243,19 +249,19 @@ public sealed class BRepLib_FuseEdges
 
         // theMapLstEdg = myMapLstEdg: C++ copies the map and its lists
         theMapLstEdg.Clear();
-        foreach (KeyValuePair<int, NCollection_List<TopoDS_Shape>> anItem in myMapLstEdg)
+        foreach (KeyValuePair<int, NCollection_List<Shape>> anItem in myMapLstEdg)
         {
-            theMapLstEdg.Bind(anItem.Key, new NCollection_List<TopoDS_Shape>(anItem.Value));
+            theMapLstEdg.Bind(anItem.Key, new NCollection_List<Shape>(anItem.Value));
         }
     }
 
     /// <summary>The fused edges (frozen), by the index of the list of edges each replaces (see <see cref="Edges()"/>).</summary>
-    public IReadOnlyDictionary<int, TopoDS_Shape> ResultEdges()
+    public IReadOnlyDictionary<int, Shape> ResultEdges()
     {
-        var aMap = new NCollection_DataMap<int, TopoDS_Shape>();
+        var aMap = new NCollection_DataMap<int, Shape>();
         ResultEdges(aMap);
-        var aResult = new Dictionary<int, TopoDS_Shape>();
-        foreach (KeyValuePair<int, TopoDS_Shape> anItem in aMap)
+        var aResult = new Dictionary<int, Shape>();
+        foreach (KeyValuePair<int, Shape> anItem in aMap)
         {
             anItem.Value.TShape()?.FreezeGraph();
             aResult.Add(anItem.Key, anItem.Value);
@@ -264,7 +270,7 @@ public sealed class BRepLib_FuseEdges
     }
 
     /// <summary>OCCT's form: copies the fused edges into <paramref name="theMapEdg"/>, unfrozen (ported code).</summary>
-    internal void ResultEdges(NCollection_DataMap<int, TopoDS_Shape> theMapEdg)
+    internal void ResultEdges(NCollection_DataMap<int, Shape> theMapEdg)
     {
         if (!myEdgesDone)
         {
@@ -277,19 +283,19 @@ public sealed class BRepLib_FuseEdges
         }
 
         theMapEdg.Clear();
-        foreach (KeyValuePair<int, TopoDS_Shape> anItem in myMapEdg)
+        foreach (KeyValuePair<int, Shape> anItem in myMapEdg)
         {
             theMapEdg.Bind(anItem.Key, anItem.Value);
         }
     }
 
     /// <summary>The faces modified by the fusion: each face of the input mapped to its new face (frozen).</summary>
-    public IReadOnlyDictionary<TopoDS_Shape, TopoDS_Shape> Faces()
+    public IReadOnlyDictionary<Shape, Shape> Faces()
     {
-        var aMap = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aMap = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
         Faces(aMap);
-        var aResult = new Dictionary<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> anItem in aMap)
+        var aResult = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
+        foreach (KeyValuePair<Shape, Shape> anItem in aMap)
         {
             anItem.Value.TShape()?.FreezeGraph();
             aResult.Add(anItem.Key, anItem.Value);
@@ -298,7 +304,7 @@ public sealed class BRepLib_FuseEdges
     }
 
     /// <summary>OCCT's form: copies the modified faces into <paramref name="theMapFac"/>, unfrozen (ported code).</summary>
-    internal void Faces(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theMapFac)
+    internal void Faces(NCollection_DataMap<Shape, Shape> theMapFac)
     {
         if (!myEdgesDone)
         {
@@ -316,7 +322,7 @@ public sealed class BRepLib_FuseEdges
         }
 
         theMapFac.Clear();
-        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> anItem in myMapFaces)
+        foreach (KeyValuePair<Shape, Shape> anItem in myMapFaces)
         {
             theMapFac.Bind(anItem.Key, anItem.Value);
         }
@@ -325,7 +331,7 @@ public sealed class BRepLib_FuseEdges
     /// <summary>The number of vertices removed by the fusion.</summary>
     public int NbVertices()
     {
-        Standard_NullObject_Raise_if(myShape.IsNull(), "FuseEdges : No Shape");
+        Standard_NullObject_Raise_if(myShape.IsNull, "FuseEdges : No Shape");
         int nbedges, nbvertices = 0;
 
         if (!myEdgesDone)
@@ -335,10 +341,10 @@ public sealed class BRepLib_FuseEdges
 
         if ((nbedges = myMapLstEdg.Extent()) > 0)
         {
-            foreach (KeyValuePair<int, NCollection_List<TopoDS_Shape>> itEdg in myMapLstEdg)
+            foreach (KeyValuePair<int, NCollection_List<Shape>> itEdg in myMapLstEdg)
             {
                 int iLst = itEdg.Key;
-                NCollection_List<TopoDS_Shape> LmapEdg = myMapLstEdg.Find(iLst);
+                NCollection_List<Shape> LmapEdg = myMapLstEdg.Find(iLst);
                 nbvertices += LmapEdg.Extent() - 1;
             }
         }
@@ -347,17 +353,17 @@ public sealed class BRepLib_FuseEdges
     }
 
     /// <summary>The shape with its edges fused (performed on demand), frozen.</summary>
-    public TopoDS_Shape Shape()
+    public Shape Shape()
     {
-        TopoDS_Shape aShape = InternalShape();
+        Shape aShape = InternalShape();
         aShape.TShape()?.FreezeGraph();
         return aShape;
     }
 
     /// <summary>The shape with its edges fused, without freezing it (ported code).</summary>
-    internal TopoDS_Shape InternalShape()
+    internal Shape InternalShape()
     {
-        Standard_NullObject_Raise_if(myShape.IsNull(), "FuseEdges : No Shape");
+        Standard_NullObject_Raise_if(myShape.IsNull, "FuseEdges : No Shape");
 
         if (!myEdgesDone)
         {
@@ -389,21 +395,21 @@ public sealed class BRepLib_FuseEdges
         myMapVerLstEdg.Clear();
         myMapEdgLstFac.Clear();
 
-        TopExp.MapShapesAndUniqueAncestors(myShape, TopAbs_VERTEX, TopAbs_EDGE, myMapVerLstEdg);
-        TopExp.MapShapesAndAncestors(myShape, TopAbs_EDGE, TopAbs_FACE, myMapEdgLstFac);
+        Exploration.MapShapesAndUniqueAncestors(myShape, ShapeType.Vertex, ShapeType.Edge, myMapVerLstEdg);
+        Exploration.MapShapesAndAncestors(myShape, ShapeType.Edge, ShapeType.Face, myMapEdgLstFac);
 
         int iEdg;
-        var mapUniqEdg = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var mapUniqEdg = new NCollection_Map<Shape>(ShapeHasher.Instance);
 
         // for each edge of myMapEdgLstFac
         for (iEdg = 1; iEdg <= myMapEdgLstFac.Extent(); iEdg++)
         {
-            TopoDS_Shape edgecur = myMapEdgLstFac.FindKey(iEdg);
-            var LstEdg = new NCollection_List<TopoDS_Shape>();
+            Shape edgecur = myMapEdgLstFac.FindKey(iEdg);
+            var LstEdg = new NCollection_List<Shape>();
 
             // if edge not already treated
             if (!mapUniqEdg.Contains(edgecur)
-                && (edgecur.Orientation() == TopAbs_FORWARD || edgecur.Orientation() == TopAbs_REVERSED))
+                && (edgecur.Orientation() == Forward || edgecur.Orientation() == Reversed))
             {
                 if (myAvoidEdg.Contains(edgecur))
                 {
@@ -427,59 +433,59 @@ public sealed class BRepLib_FuseEdges
         // if we have edges to fuse
         if (myMapLstEdg.Extent() > 0)
         {
-            TopoDS_Vertex VF, VL;
-            Geom_Curve C;
+            Vertex VF, VL;
+            Curve3D C;
             Placement loc;
             double f, l;
-            TopoDS_Edge NewEdge;
+            Edge NewEdge;
 
             myMapEdg.Clear();
 
-            foreach (KeyValuePair<int, NCollection_List<TopoDS_Shape>> itLstEdg in myMapLstEdg)
+            foreach (KeyValuePair<int, NCollection_List<Shape>> itLstEdg in myMapLstEdg)
             {
                 int iLst = itLstEdg.Key;
-                NCollection_List<TopoDS_Shape> LmapEdg = myMapLstEdg.Find(iLst);
+                NCollection_List<Shape> LmapEdg = myMapLstEdg.Find(iLst);
 
-                TopoDS_Edge OldEdge = TopoDS.Edge(LmapEdg.First());
+                Edge OldEdge = ShapeCasts.Edge(LmapEdg.First());
 
                 // the first edge of the list will be replaced by the result fusion edge
-                if (OldEdge.Orientation() == TopAbs_REVERSED)
+                if (OldEdge.Orientation() == Reversed)
                 {
-                    VL = TopExp.FirstVertex(TopoDS.Edge(LmapEdg.First()), true);
-                    VF = TopExp.LastVertex(TopoDS.Edge(LmapEdg.Last()), true);
+                    VL = Exploration.FirstVertex(ShapeCasts.Edge(LmapEdg.First()), true);
+                    VF = Exploration.LastVertex(ShapeCasts.Edge(LmapEdg.Last()), true);
                 }
                 else
                 {
-                    VF = TopExp.FirstVertex(TopoDS.Edge(LmapEdg.First()), true);
-                    VL = TopExp.LastVertex(TopoDS.Edge(LmapEdg.Last()), true);
+                    VF = Exploration.FirstVertex(ShapeCasts.Edge(LmapEdg.First()), true);
+                    VL = Exploration.LastVertex(ShapeCasts.Edge(LmapEdg.Last()), true);
                 }
-                C = BRep_Tool.Curve(OldEdge, out loc, out f, out l)!;
+                C = Tool.Curve(OldEdge, out loc, out f, out l)!;
 
                 if (!loc.IsIdentity)
                 {
-                    C = (Geom_Curve)C.Transformed(loc.Transformation());
+                    C = (Curve3D)C.Transformed(loc.Transformation());
                 }
                 // if the curve is trimmed we get the basis curve to fit the new vertices
                 // otherwise the makeedge will fail.
-                if (C.GetType() == typeof(Geom_TrimmedCurve))
+                if (C.GetType() == typeof(TrimmedCurve3D))
                 {
-                    C = ((Geom_TrimmedCurve)C).BasisCurve();
+                    C = ((TrimmedCurve3D)C).BasisCurve();
                 }
 
                 if (myConcatBSpl)
                 {
                     // Prepare common BSpline curve
-                    if (C.GetType() == typeof(Geom_BSplineCurve))
+                    if (C.GetType() == typeof(BSplineCurve3D))
                     {
-                        var anEdgIter = new NCollection_List<TopoDS_Shape>.Iterator(LmapEdg);
-                        var aTC = new Geom_TrimmedCurve(C, f, l);
-                        var Concat = new GeomConvert_CompCurveToBSplineCurve(aTC);
+                        var anEdgIter = new NCollection_List<Shape>.Iterator(LmapEdg);
+                        var aTC = new TrimmedCurve3D(C, f, l);
+                        var Concat = new CompCurveToBSplineCurve(aTC);
 
                         anEdgIter.Next();
                         for (; anEdgIter.More(); anEdgIter.Next())
                         {
-                            Geom_Curve aC = BRep_Tool.Curve(TopoDS.Edge(anEdgIter.Value()), out f, out l)!;
-                            aTC = new Geom_TrimmedCurve(aC, f, l);
+                            Curve3D aC = Tool.Curve(ShapeCasts.Edge(anEdgIter.Value()), out f, out l)!;
+                            aTC = new TrimmedCurve3D(aC, f, l);
                             if (!Concat.Add(aTC, global::Kerf.Engine.Foundation.Precision.Confusion()))
                             {
                                 // cannot merge curves
@@ -493,7 +499,7 @@ public sealed class BRepLib_FuseEdges
 
                 var ME = new BRepLib_MakeEdge();
 
-                bool isBSpline = C.GetType() == typeof(Geom_BSplineCurve);
+                bool isBSpline = C.GetType() == typeof(BSplineCurve3D);
 
                 if (VF.IsSame(VL) && isBSpline)
                 {
@@ -506,7 +512,7 @@ public sealed class BRepLib_FuseEdges
                     {
                         throw new ConstructionErrorException("FuseEdges : Curve must be closed");
                     }
-                    Point3D PF = BRep_Tool.Pnt(VF);
+                    Point3D PF = Tool.Pnt(VF);
                     if (PF.Distance(aPf) > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         MakeClosedCurve(ref C, PF, ref f, ref l);
@@ -530,13 +536,13 @@ public sealed class BRepLib_FuseEdges
                     // the curve which is not infinite and limited to old vertices
                     // we try to use ExtendCurveToPoint, then rebuild the NewEdge
 
-                    Geom_BoundedCurve? ExtC = C.Copy() as Geom_BoundedCurve;
+                    BoundedCurve3D? ExtC = C.Copy() as BoundedCurve3D;
                     if (ExtC is not null)
                     {
-                        Point3D PF = BRep_Tool.Pnt(VF);
-                        Point3D PL = BRep_Tool.Pnt(VL);
-                        GeomLib.ExtendCurveToPoint(ref ExtC, PF, 1, false);
-                        GeomLib.ExtendCurveToPoint(ref ExtC, PL, 1, true);
+                        Point3D PF = Tool.Pnt(VF);
+                        Point3D PL = Tool.Pnt(VL);
+                        global::Kerf.Engine.Geometry.Library.GeomLib.ExtendCurveToPoint(ref ExtC, PF, 1, false);
+                        global::Kerf.Engine.Geometry.Library.GeomLib.ExtendCurveToPoint(ref ExtC, PL, 1, true);
 
                         ME.Init(ExtC, VF, VL);
                         if (!ME.IsDone())
@@ -573,21 +579,21 @@ public sealed class BRepLib_FuseEdges
         // if we have fused edges
         if (myMapEdg.Extent() > 0)
         {
-            NCollection_List<TopoDS_Shape> EmptyList = new(), EdgeToSubs = new();
-            var Bsub = new BRepTools_Substitution();
+            NCollection_List<Shape> EmptyList = new(), EdgeToSubs = new();
+            var Bsub = new Substitution();
 
-            foreach (KeyValuePair<int, NCollection_List<TopoDS_Shape>> itLstEdg in myMapLstEdg)
+            foreach (KeyValuePair<int, NCollection_List<Shape>> itLstEdg in myMapLstEdg)
             {
                 int iLst = itLstEdg.Key;
                 if (!myMapEdg.IsBound(iLst))
                 {
                     continue;
                 }
-                NCollection_List<TopoDS_Shape> LmapEdg = myMapLstEdg.Find(iLst);
-                var itEdg = new NCollection_List<TopoDS_Shape>.Iterator();
+                NCollection_List<Shape> LmapEdg = myMapLstEdg.Find(iLst);
+                var itEdg = new NCollection_List<Shape>.Iterator();
 
                 EdgeToSubs.Clear();
-                TopoDS_Edge OldEdge = TopoDS.Edge(LmapEdg.First());
+                Edge OldEdge = ShapeCasts.Edge(LmapEdg.First());
 
                 EdgeToSubs.Append(myMapEdg[iLst]);
                 Bsub.Substitute(OldEdge, EdgeToSubs);
@@ -597,7 +603,7 @@ public sealed class BRepLib_FuseEdges
                 // the other edges of the list will be removed
                 while (itEdg.More())
                 {
-                    if (!OldEdge.IsSame(TopoDS.Edge(itEdg.Value())))
+                    if (!OldEdge.IsSame(ShapeCasts.Edge(itEdg.Value())))
                     {
                         Bsub.Substitute(itEdg.Value(), EmptyList);
                     }
@@ -609,11 +615,11 @@ public sealed class BRepLib_FuseEdges
             Bsub.Build(myShape);
 
             // before copying the resulting shape, map the modified faces into myMapFaces
-            var exp = new TopExp_Explorer(myShape, TopAbs_FACE);
+            var exp = new Explorer(myShape, ShapeType.Face);
 
             for (; exp.More(); exp.Next())
             {
-                TopoDS_Shape facecur = exp.Current();
+                Shape facecur = exp.Current();
                 if (Bsub.IsCopied(facecur))
                 {
                     myMapFaces.Bind(facecur, Bsub.InternalCopy(facecur).First());
@@ -632,19 +638,19 @@ public sealed class BRepLib_FuseEdges
     // giving one edge, build the list of connex edges which have vertices that have only two connex edges. All the
     // edges that are added to the list must be added also to the mapUniq, in order for the caller to not treat again
     // these edges. This list is always oriented in the "Forward" direction.
-    private void BuildListConnexEdge(in TopoDS_Shape theEdge,
-                                     NCollection_Map<TopoDS_Shape> theMapUniq,
-                                     NCollection_List<TopoDS_Shape> theLstEdg)
+    private void BuildListConnexEdge(in Shape theEdge,
+                                     NCollection_Map<Shape> theMapUniq,
+                                     NCollection_List<Shape> theLstEdg)
     {
-        TopoDS_Vertex VF, VL;
+        Vertex VF, VL;
 
-        VL = TopExp.LastVertex(TopoDS.Edge(theEdge), true);
-        TopoDS_Shape edgeconnex = new();
-        TopoDS_Shape edgecur = theEdge;
+        VL = Exploration.LastVertex(ShapeCasts.Edge(theEdge), true);
+        Shape edgeconnex = new();
+        Shape edgecur = theEdge;
         theLstEdg.Clear();
         theLstEdg.Append(edgecur);
         theMapUniq.Add(edgecur);
-        TopAbs_Orientation ori2;
+        Orientation ori2;
 
         // we first build the list of edges connex to edgecur by looking from the last Vertex VL
         while (NextConnexEdge(VL, edgecur, ref edgeconnex))
@@ -658,16 +664,16 @@ public sealed class BRepLib_FuseEdges
             // here take care about internal or external edges. It is non-sense to build
             // the connex list with such edges.
             ori2 = edgecur.Orientation();
-            if (ori2 == TopAbs_EXTERNAL || ori2 == TopAbs_INTERNAL)
+            if (ori2 == External || ori2 == Internal)
             {
                 break;
             }
-            VL = TopExp.LastVertex(TopoDS.Edge(edgecur), true);
+            VL = Exploration.LastVertex(ShapeCasts.Edge(edgecur), true);
             theMapUniq.Add(edgecur);
         }
 
         edgecur = theEdge;
-        VF = TopExp.FirstVertex(TopoDS.Edge(theEdge), true);
+        VF = Exploration.FirstVertex(ShapeCasts.Edge(theEdge), true);
 
         // then we build the list of edges connex to edgecur by looking from the first Vertex VF
         while (NextConnexEdge(VF, edgecur, ref edgeconnex))
@@ -681,11 +687,11 @@ public sealed class BRepLib_FuseEdges
             // here take care about internal or external edges. It is non-sense to build
             // the connex list with such edges.
             ori2 = edgecur.Orientation();
-            if (ori2 == TopAbs_EXTERNAL || ori2 == TopAbs_INTERNAL)
+            if (ori2 == External || ori2 == Internal)
             {
                 break;
             }
-            VF = TopExp.FirstVertex(TopoDS.Edge(edgecur), true);
+            VF = Exploration.FirstVertex(ShapeCasts.Edge(edgecur), true);
             theMapUniq.Add(edgecur);
         }
     }
@@ -695,13 +701,13 @@ public sealed class BRepLib_FuseEdges
     //   * the 2 connex edges must have exactly the 2 same connex faces
     //   * the 2 connex edges must lie on the same support.
     // theEdgeConnex is written only when theVertex has two edges, as in OCCT.
-    private bool NextConnexEdge(in TopoDS_Vertex theVertex, in TopoDS_Shape theEdge, ref TopoDS_Shape theEdgeConnex)
+    private bool NextConnexEdge(in Vertex theVertex, in Shape theEdge, ref Shape theEdgeConnex)
     {
-        NCollection_List<TopoDS_Shape> LmapEdg = myMapVerLstEdg.FindFromKey(theVertex);
+        NCollection_List<Shape> LmapEdg = myMapVerLstEdg.FindFromKey(theVertex);
         bool HasConnex = true;
-        var itEdg = new NCollection_List<TopoDS_Shape>.Iterator();
-        var itFac1 = new NCollection_List<TopoDS_Shape>.Iterator();
-        var itFac2 = new NCollection_List<TopoDS_Shape>.Iterator();
+        var itEdg = new NCollection_List<Shape>.Iterator();
+        var itFac1 = new NCollection_List<Shape>.Iterator();
+        var itFac2 = new NCollection_List<Shape>.Iterator();
 
         // 1st condition
         if (LmapEdg.Extent() == 2)
@@ -722,8 +728,8 @@ public sealed class BRepLib_FuseEdges
             // 2nd condition
             if (HasConnex)
             {
-                NCollection_List<TopoDS_Shape> LmapFac1 = myMapEdgLstFac.FindFromKey(theEdge);
-                NCollection_List<TopoDS_Shape> LmapFac2 = myMapEdgLstFac.FindFromKey(theEdgeConnex);
+                NCollection_List<Shape> LmapFac1 = myMapEdgLstFac.FindFromKey(theEdge);
+                NCollection_List<Shape> LmapFac2 = myMapEdgLstFac.FindFromKey(theEdgeConnex);
 
                 if (LmapFac1.Extent() == LmapFac2.Extent() && LmapFac1.Extent() < 3)
                 {
@@ -732,10 +738,10 @@ public sealed class BRepLib_FuseEdges
                     // for each face in LmapFac1 we look in LmapFac2 if it exists
                     while (itFac1.More() && HasConnex)
                     {
-                        TopoDS_Shape face1 = itFac1.Value();
+                        Shape face1 = itFac1.Value();
                         for (itFac2.Initialize(LmapFac2); itFac2.More(); itFac2.Next())
                         {
-                            TopoDS_Shape face2 = itFac2.Value();
+                            Shape face2 = itFac2.Value();
                             HasConnex = false;
                             if (face1.IsSame(face2))
                             {
@@ -749,7 +755,7 @@ public sealed class BRepLib_FuseEdges
                     // 3rd condition : same support
                     if (HasConnex)
                     {
-                        HasConnex = SameSupport(TopoDS.Edge(theEdge), TopoDS.Edge(theEdgeConnex));
+                        HasConnex = SameSupport(ShapeCasts.Edge(theEdge), ShapeCasts.Edge(theEdgeConnex));
                     }
                 }
                 else
@@ -766,19 +772,19 @@ public sealed class BRepLib_FuseEdges
         return HasConnex;
     }
 
-    private bool SameSupport(in TopoDS_Edge E1, in TopoDS_Edge E2)
+    private bool SameSupport(in Edge E1, in Edge E2)
     {
-        if (E1.IsNull() || E2.IsNull())
+        if (E1.IsNull || E2.IsNull)
         {
             return false;
         }
 
-        Geom_Curve? C1, C2;
+        Curve3D? C1, C2;
         Placement loc;
         double f1, l1, f2, l2;
         Type typC1, typC2;
 
-        C1 = BRep_Tool.Curve(E1, out loc, out f1, out l1);
+        C1 = Tool.Curve(E1, out loc, out f1, out l1);
         // modified by NIZNHY-PKV Mon Nov 15 16:24:10 1999
         // degenerated edges has no 3D curve
         if (C1 is null)
@@ -788,10 +794,10 @@ public sealed class BRepLib_FuseEdges
 
         if (!loc.IsIdentity)
         {
-            Geom_Geometry GG1 = C1.Transformed(loc.Transformation());
-            C1 = (Geom_Curve)GG1;
+            Geometry3D GG1 = C1.Transformed(loc.Transformation());
+            C1 = (Curve3D)GG1;
         }
-        C2 = BRep_Tool.Curve(E2, out loc, out f2, out l2);
+        C2 = Tool.Curve(E2, out loc, out f2, out l2);
         // modified by NIZNHY-PKV Mon Nov 15 16:24:38 1999
         // degenerated edges has no 3D curve
         if (C2 is null)
@@ -801,22 +807,22 @@ public sealed class BRepLib_FuseEdges
 
         if (!loc.IsIdentity)
         {
-            Geom_Geometry GG2 = C2.Transformed(loc.Transformation());
-            C2 = (Geom_Curve)GG2;
+            Geometry3D GG2 = C2.Transformed(loc.Transformation());
+            C2 = (Curve3D)GG2;
         }
 
         typC1 = C1.GetType();
         typC2 = C2.GetType();
 
-        if (typC1 == typeof(Geom_TrimmedCurve))
+        if (typC1 == typeof(TrimmedCurve3D))
         {
-            C1 = ((Geom_TrimmedCurve)C1).BasisCurve();
+            C1 = ((TrimmedCurve3D)C1).BasisCurve();
             typC1 = C1.GetType();
         }
 
-        if (typC2 == typeof(Geom_TrimmedCurve))
+        if (typC2 == typeof(TrimmedCurve3D))
         {
-            C2 = ((Geom_TrimmedCurve)C2).BasisCurve();
+            C2 = ((TrimmedCurve3D)C2).BasisCurve();
             typC2 = C2.GetType();
         }
 
@@ -825,9 +831,9 @@ public sealed class BRepLib_FuseEdges
             return false;
         }
 
-        if (typC1 != typeof(Geom_Line) && typC1 != typeof(Geom_Circle)
-            && typC1 != typeof(Geom_Ellipse) && typC1 != typeof(Geom_BSplineCurve)
-            && typC1 != typeof(Geom_BezierCurve))
+        if (typC1 != typeof(LineCurve3D) && typC1 != typeof(CircleCurve3D)
+            && typC1 != typeof(EllipseCurve3D) && typC1 != typeof(BSplineCurve3D)
+            && typC1 != typeof(BezierCurve3D))
         {
             return false;
         }
@@ -835,10 +841,10 @@ public sealed class BRepLib_FuseEdges
         // On a presomption de confusion
         double tollin = global::Kerf.Engine.Foundation.Precision.Confusion();
         double tolang = global::Kerf.Engine.Foundation.Precision.Angular();
-        if (typC1 == typeof(Geom_Line))
+        if (typC1 == typeof(LineCurve3D))
         {
-            Line3D li1 = ((Geom_Line)C1).Lin();
-            Line3D li2 = ((Geom_Line)C2).Lin();
+            Line3D li1 = ((LineCurve3D)C1).Lin();
+            Line3D li2 = ((LineCurve3D)C2).Lin();
             Direction3D dir1 = li1.Direction();
             Direction3D dir2 = li2.Direction();
 
@@ -846,33 +852,33 @@ public sealed class BRepLib_FuseEdges
             {
                 // on verifie que l'on n'a pas de cas degenere. Par exemple E1 et E2 connexes
                 // mais bouclant l'un sur l'autre (cas tres rare)
-                Point3D pf1 = BRep_Tool.Pnt(TopExp.FirstVertex(E1, true));
-                Point3D pl1 = BRep_Tool.Pnt(TopExp.LastVertex(E1, true));
-                Point3D pf2 = BRep_Tool.Pnt(TopExp.FirstVertex(E2, true));
-                Point3D pl2 = BRep_Tool.Pnt(TopExp.LastVertex(E2, true));
+                Point3D pf1 = Tool.Pnt(Exploration.FirstVertex(E1, true));
+                Point3D pl1 = Tool.Pnt(Exploration.LastVertex(E1, true));
+                Point3D pf2 = Tool.Pnt(Exploration.FirstVertex(E2, true));
+                Point3D pl2 = Tool.Pnt(Exploration.LastVertex(E2, true));
                 return pl1.Distance(pf2) >= tollin || pl2.Distance(pf1) >= tollin;
             }
             return false;
         }
-        else if (typC1 == typeof(Geom_Circle))
+        else if (typC1 == typeof(CircleCurve3D))
         {
-            Circle3D ci1 = ((Geom_Circle)C1).Circ();
-            Circle3D ci2 = ((Geom_Circle)C2).Circ();
+            Circle3D ci1 = ((CircleCurve3D)C1).Circ();
+            Circle3D ci2 = ((CircleCurve3D)C2).Circ();
             return Math.Abs(ci1.Radius() - ci2.Radius()) <= tollin
                    && ci1.Location().SquareDistance(ci2.Location()) <= tollin * tollin
                    && ci1.Axis().IsParallel(ci2.Axis(), tolang);
         }
-        else if (typC1 == typeof(Geom_Ellipse))
+        else if (typC1 == typeof(EllipseCurve3D))
         {
-            Ellipse3D ci1 = ((Geom_Ellipse)C1).Elips();
-            Ellipse3D ci2 = ((Geom_Ellipse)C2).Elips();
+            Ellipse3D ci1 = ((EllipseCurve3D)C1).Elips();
+            Ellipse3D ci2 = ((EllipseCurve3D)C2).Elips();
 
             return Math.Abs(ci1.MajorRadius() - ci2.MajorRadius()) <= tollin
                    && Math.Abs(ci1.MinorRadius() - ci2.MinorRadius()) <= tollin
                    && ci1.Location().SquareDistance(ci2.Location()) <= tollin * tollin
                    && ci1.Axis().IsParallel(ci2.Axis(), tolang);
         }
-        else if (typC1 == typeof(Geom_BSplineCurve))
+        else if (typC1 == typeof(BSplineCurve3D))
         {
             if (myConcatBSpl)
             {
@@ -911,17 +917,17 @@ public sealed class BRepLib_FuseEdges
                 return false;
             }
 
-            Geom_BSplineCurve B1 = (Geom_BSplineCurve)C1;
-            Geom_BSplineCurve B2 = (Geom_BSplineCurve)C2;
+            BSplineCurve3D B1 = (BSplineCurve3D)C1;
+            BSplineCurve3D B2 = (BSplineCurve3D)C2;
 
-            int nbpoles = B1.NbPoles();
-            if (nbpoles != B2.NbPoles())
+            int nbpoles = B1.PoleCount;
+            if (nbpoles != B2.PoleCount)
             {
                 return false;
             }
 
-            int nbknots = B1.NbKnots();
-            if (nbknots != B2.NbKnots())
+            int nbknots = B1.KnotCount;
+            if (nbknots != B2.KnotCount)
             {
                 return false;
             }
@@ -929,7 +935,7 @@ public sealed class BRepLib_FuseEdges
             NCollection_Array1<Point3D> P1 = B1.InternalPoles();
             NCollection_Array1<Point3D> P2 = B2.InternalPoles();
 
-            double tol3d = BRep_Tool.Tolerance(E1);
+            double tol3d = Tool.Tolerance(E1);
             for (int p = 1; p <= nbpoles; p++)
             {
                 if ((P1[p]).Distance(P2[p]) > tol3d)
@@ -957,22 +963,22 @@ public sealed class BRepLib_FuseEdges
                 }
             }
 
-            if (!B1.IsRational())
+            if (!B1.IsRational)
             {
-                if (B2.IsRational())
+                if (B2.IsRational)
                 {
                     return false;
                 }
             }
             else
             {
-                if (!B2.IsRational())
+                if (!B2.IsRational)
                 {
                     return false;
                 }
             }
 
-            if (B1.IsRational())
+            if (B1.IsRational)
             {
                 NCollection_Array1<double> W1 = B1.InternalWeightsArray();
                 NCollection_Array1<double> W2 = B2.InternalWeightsArray();
@@ -987,7 +993,7 @@ public sealed class BRepLib_FuseEdges
             }
             return true;
         }
-        else if (typC1 == typeof(Geom_BezierCurve))
+        else if (typC1 == typeof(BezierCurve3D))
         {
             // we must ensure that before fuse two bezier, the end of one curve does not
             // corresponds to the beginning of the second.
@@ -996,11 +1002,11 @@ public sealed class BRepLib_FuseEdges
                 return false;
             }
 
-            Geom_BezierCurve B1 = (Geom_BezierCurve)C1;
-            Geom_BezierCurve B2 = (Geom_BezierCurve)C2;
+            BezierCurve3D B1 = (BezierCurve3D)C1;
+            BezierCurve3D B2 = (BezierCurve3D)C2;
 
-            int nbpoles = B1.NbPoles();
-            if (nbpoles != B2.NbPoles())
+            int nbpoles = B1.PoleCount;
+            if (nbpoles != B2.PoleCount)
             {
                 return false;
             }
@@ -1016,22 +1022,22 @@ public sealed class BRepLib_FuseEdges
                 }
             }
 
-            if (!B1.IsRational())
+            if (!B1.IsRational)
             {
-                if (B2.IsRational())
+                if (B2.IsRational)
                 {
                     return false;
                 }
             }
             else
             {
-                if (!B2.IsRational())
+                if (!B2.IsRational)
                 {
                     return false;
                 }
             }
 
-            if (B1.IsRational())
+            if (B1.IsRational)
             {
                 NCollection_Array1<double> W1 = B1.InternalWeightsArray();
                 NCollection_Array1<double> W2 = B2.InternalWeightsArray();
@@ -1049,22 +1055,22 @@ public sealed class BRepLib_FuseEdges
         return false;
     }
 
-    private bool UpdatePCurve(in TopoDS_Edge theOldEdge, in TopoDS_Edge theNewEdge, NCollection_List<TopoDS_Shape> theLstEdg)
+    private bool UpdatePCurve(in Edge theOldEdge, in Edge theNewEdge, NCollection_List<Shape> theLstEdg)
     {
         // get the pcurve of edge to substitute (theOldEdge)
         // using CurveOnSurface with Index syntax, so we can update the pcurve
         // on all the faces
-        BRep_Builder B = new();
-        Geom2d_Curve? Curv2d = null;
-        Geom_Surface? Surf = null;
+        BrepBuilder B = new();
+        Curve2D? Curv2d = null;
+        Surface? Surf = null;
         Placement loc = new(), locbid;
         double ef, el, cf = 0.0, cl = 0.0;
         int iedg = 1;
 
         // take care that we want only Pcurve that maps on the surface where the 3D edges lies.
-        NCollection_List<TopoDS_Shape> LmapFac = myMapEdgLstFac.FindFromKey(theOldEdge);
+        NCollection_List<Shape> LmapFac = myMapEdgLstFac.FindFromKey(theOldEdge);
 
-        BRep_Tool.CurveOnSurface(theOldEdge, ref Curv2d, ref Surf, ref loc, ref cf, ref cl, iedg);
+        Tool.CurveOnSurface(theOldEdge, ref Curv2d, ref Surf, ref loc, ref cf, ref cl, iedg);
 
         bool pcurveRebuilt = false;
 
@@ -1073,12 +1079,12 @@ public sealed class BRepLib_FuseEdges
             // we look for a face that contains the same surface as the one that cames
             // from CurveOnSurface
             bool SameSurf = false;
-            var itFac = new NCollection_List<TopoDS_Shape>.Iterator();
+            var itFac = new NCollection_List<Shape>.Iterator();
 
             for (itFac.Initialize(LmapFac); itFac.More(); itFac.Next())
             {
-                TopoDS_Shape face = itFac.Value();
-                Geom_Surface? S = BRep_Tool.Surface(TopoDS.Face(face), out locbid);
+                Shape face = itFac.Value();
+                Surface? S = Tool.Surface(ShapeCasts.Face(face), out locbid);
                 if (ReferenceEquals(S, Surf))
                 {
                     SameSurf = true;
@@ -1088,61 +1094,61 @@ public sealed class BRepLib_FuseEdges
 
             if (SameSurf)
             {
-                BRep_Tool.Range(theNewEdge, out ef, out el);
+                Tool.Range(theNewEdge, out ef, out el);
 
                 // modified by NIZNHY-PKV Mon Nov 15 14:59:48 1999 _from
-                TopoDS_Edge aFEdge = theOldEdge;
-                aFEdge.Orientation(TopAbs_FORWARD);
+                Edge aFEdge = theOldEdge;
+                aFEdge.Orientation(Forward);
 
                 // take care if the edge is on the closing curve of a closed surface. In that case
                 // we get the second pcurve by reversing the edge and calling again CurveOnSurface method
 
-                BRep_Tool.CurveOnSurface(aFEdge, ref Curv2d, ref Surf, ref loc, ref cf, ref cl, iedg);
-                if (BRep_Tool.IsClosed(theOldEdge, Surf, loc))
+                Tool.CurveOnSurface(aFEdge, ref Curv2d, ref Surf, ref loc, ref cf, ref cl, iedg);
+                if (Tool.IsClosed(theOldEdge, Surf, loc))
                 {
                     aFEdge.Reverse();
-                    TopoDS_Face aFFace = TopoDS.Face(itFac.Value());
-                    aFFace.Orientation(TopAbs_FORWARD);
-                    Geom2d_Curve Curv2dR = BRep_Tool.CurveOnSurface(aFEdge, aFFace, out cf, out cl)!;
-                    if (Curv2d!.GetType() == typeof(Geom2d_TrimmedCurve))
+                    Face aFFace = ShapeCasts.Face(itFac.Value());
+                    aFFace.Orientation(Forward);
+                    Curve2D Curv2dR = Tool.CurveOnSurface(aFEdge, aFFace, out cf, out cl)!;
+                    if (Curv2d!.GetType() == typeof(TrimmedCurve2D))
                     {
-                        Curv2d = ((Geom2d_TrimmedCurve)Curv2d).BasisCurve();
+                        Curv2d = ((TrimmedCurve2D)Curv2d).BasisCurve();
                     }
-                    if (Curv2dR.GetType() == typeof(Geom2d_TrimmedCurve))
+                    if (Curv2dR.GetType() == typeof(TrimmedCurve2D))
                     {
-                        Curv2dR = ((Geom2d_TrimmedCurve)Curv2dR).BasisCurve();
+                        Curv2dR = ((TrimmedCurve2D)Curv2dR).BasisCurve();
                     }
 
-                    B.UpdateEdge(theNewEdge, Curv2d, Curv2dR, Surf, loc, BRep_Tool.Tolerance(theNewEdge));
+                    B.UpdateEdge(theNewEdge, Curv2d, Curv2dR, Surf, loc, Tool.Tolerance(theNewEdge));
                 }
                 else
                 {
                     // update the new edge
-                    if (Curv2d!.GetType() == typeof(Geom2d_TrimmedCurve))
+                    if (Curv2d!.GetType() == typeof(TrimmedCurve2D))
                     {
-                        Curv2d = ((Geom2d_TrimmedCurve)Curv2d).BasisCurve();
+                        Curv2d = ((TrimmedCurve2D)Curv2d).BasisCurve();
                     }
                     double f, l;
                     f = Curv2d.FirstParameter();
                     l = Curv2d.LastParameter();
                     if (l - f + 2.0 * Epsilon(l - f) < el - ef)
                     {
-                        Geom2d_BoundedCurve? bcurve = Curv2d as Geom2d_BoundedCurve;
+                        BoundedCurve2D? bcurve = Curv2d as BoundedCurve2D;
                         if (bcurve is null)
                         {
-                            bcurve = new Geom2d_TrimmedCurve(Curv2d, cf, cl);
+                            bcurve = new TrimmedCurve2D(Curv2d, cf, cl);
                         }
-                        var Concat = new Geom2dConvert_CompCurveToBSplineCurve(bcurve);
-                        var iter = new NCollection_List<TopoDS_Shape>.Iterator(theLstEdg);
+                        var Concat = new CompCurveToBSplineCurve2D(bcurve);
+                        var iter = new NCollection_List<Shape>.Iterator(theLstEdg);
                         iter.Next();
                         for (; iter.More(); iter.Next())
                         {
-                            TopoDS_Edge E = TopoDS.Edge(iter.Value());
-                            Geom2d_Curve C = BRep_Tool.CurveOnSurface(E, Surf, loc, out double first, out double last)!;
-                            Geom2d_BoundedCurve? BC = C as Geom2d_BoundedCurve;
+                            Edge E = ShapeCasts.Edge(iter.Value());
+                            Curve2D C = Tool.CurveOnSurface(E, Surf, loc, out double first, out double last)!;
+                            BoundedCurve2D? BC = C as BoundedCurve2D;
                             if (BC is null)
                             {
-                                BC = new Geom2d_TrimmedCurve(C, first, last);
+                                BC = new TrimmedCurve2D(C, first, last);
                             }
                             if (!Concat.Add(BC, global::Kerf.Engine.Foundation.Precision.PConfusion()))
                             {
@@ -1159,7 +1165,7 @@ public sealed class BRepLib_FuseEdges
                         if (Math.Abs(first2 - ef) > global::Kerf.Engine.Foundation.Precision.PConfusion()
                             || Math.Abs(last2 - el) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
-                            Geom2d_BSplineCurve bc = (Geom2d_BSplineCurve)Curv2d;
+                            BSplineCurve2D bc = (BSplineCurve2D)Curv2d;
                             NCollection_Array1<double> Knots = new(bc.InternalKnots());
                             global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(ef, el, Knots);
                             bc.SetKnots(Knots);
@@ -1167,7 +1173,7 @@ public sealed class BRepLib_FuseEdges
                         pcurveRebuilt = true;
                     }
 
-                    B.UpdateEdge(theNewEdge, Curv2d, Surf, loc, BRep_Tool.Tolerance(theNewEdge));
+                    B.UpdateEdge(theNewEdge, Curv2d, Surf, loc, Tool.Tolerance(theNewEdge));
                 }
 
                 // the old pcurve range is cf,cl. The new 3d edge range is ef,el. if we want
@@ -1176,7 +1182,7 @@ public sealed class BRepLib_FuseEdges
                 // the value 0.
                 if (!pcurveRebuilt)
                 {
-                    if (theOldEdge.Orientation() == TopAbs_REVERSED)
+                    if (theOldEdge.Orientation() == Reversed)
                     {
                         B.Range(theNewEdge, cl - el + ef, cl);
                     }
@@ -1189,14 +1195,14 @@ public sealed class BRepLib_FuseEdges
 
             // get next pcurve
             iedg++;
-            BRep_Tool.CurveOnSurface(theOldEdge, ref Curv2d, ref Surf, ref loc, ref cf, ref cl, iedg);
+            Tool.CurveOnSurface(theOldEdge, ref Curv2d, ref Surf, ref loc, ref cf, ref cl, iedg);
         }
 
         if (pcurveRebuilt)
         {
             // force same parameter
             B.SameParameter(theNewEdge, false);
-            BRepLib.SameParameter(theNewEdge, BRep_Tool.Tolerance(theNewEdge));
+            BRepLib.SameParameter(theNewEdge, Tool.Tolerance(theNewEdge));
         }
 
         return true;

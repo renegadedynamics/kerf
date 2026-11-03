@@ -8,6 +8,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -20,7 +21,7 @@ public class BlendFunc_Chamfer : BlendFunc_GenChamfer
     private readonly BlendFunc_Corde corde1;
     private readonly BlendFunc_Corde corde2;
 
-    public BlendFunc_Chamfer(Adaptor3d_Surface S1, Adaptor3d_Surface S2, Adaptor3d_Curve CG)
+    public BlendFunc_Chamfer(SurfaceAdaptorBase S1, SurfaceAdaptorBase S2, CurveAdaptorBase CG)
         : base(S1, S2, CG)
     {
         corde1 = new BlendFunc_Corde(S1, CG);

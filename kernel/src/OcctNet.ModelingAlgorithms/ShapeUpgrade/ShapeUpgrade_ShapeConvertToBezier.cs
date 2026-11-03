@@ -5,9 +5,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -19,7 +23,7 @@ namespace Occt;
 /// <para>
 /// A working object (decision 21). Unlike the other dividers, its last step writes into the result in place (edge
 /// ranges and curves, Bezier poles, the faces' Update), and the result shares the shape's unchanged sub-shapes; so a
-/// shape holding frozen shapes is copied at the entry (<see cref="BRepTools_CopyAtEntry"/>, decision 583) and the
+/// shape holding frozen shapes is copied at the entry (<see cref="CopyAtEntry"/>, decision 583) and the
 /// caller's own sub-shapes are given back where nothing changed, the context re-keyed to them (decision 999).
 /// </para>
 /// <para>
@@ -60,7 +64,7 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
     }
 
     /// <summary>Initializes by a shape.</summary>
-    public ShapeUpgrade_ShapeConvertToBezier(in TopoDS_Shape S) : base(S)
+    public ShapeUpgrade_ShapeConvertToBezier(in Shape S) : base(S)
     {
         myLevel = 0;
         my2dMode = false;
@@ -209,29 +213,29 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
 
         if (myLevel == 1)
         {
-            var B = new BRep_Builder();
+            var B = new BrepBuilder();
             var sae = new ShapeAnalysis_Edge();
             var sbe = new ShapeBuild_Edge();
             double preci = Kerf.Engine.Foundation.Precision.PConfusion();
-            for (var exp = new TopExp_Explorer(myResult, TopAbs_FACE); exp.More(); exp.Next())
+            for (var exp = new Explorer(myResult, ShapeType.Face); exp.More(); exp.Next())
             {
-                TopoDS_Face face = TopoDS.Face(exp.Current());
-                face.Orientation(TopAbs_FORWARD);
-                for (var exp1 = new TopExp_Explorer(face, TopAbs_WIRE); exp1.More(); exp1.Next())
+                Face face = ShapeCasts.Face(exp.Current());
+                face.Orientation(Forward);
+                for (var exp1 = new Explorer(face, ShapeType.Wire); exp1.More(); exp1.Next())
                 {
-                    TopoDS_Wire wire = TopoDS.Wire(exp1.Current());
+                    Wire wire = ShapeCasts.Wire(exp1.Current());
                     var sfw = new ShapeFix_Wire(wire, face, myPrecision);
                     sfw.FixReorder();
                     sfw.FixShifted(); // for cylinders.brep
                     ShapeExtend_WireData sewd = sfw.WireData()!;
                     for (int i = 1; i <= sewd.NbEdges(); i++)
                     {
-                        TopoDS_Edge edge = sewd.Edge(i);
+                        Edge edge = sewd.Edge(i);
                         double first, last;
-                        TopExp.Vertices(edge, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-                        if (sae.Curve3d(edge, out Geom_Curve? c3d, out first, out last, false))
+                        Exploration.Vertices(edge, out Vertex V1, out Vertex V2);
+                        if (sae.Curve3d(edge, out Curve3D? c3d, out first, out last, false))
                         {
-                            if (c3d is Geom_BezierCurve bezier3d)
+                            if (c3d is BezierCurve3D bezier3d)
                             {
                                 // B.SameRange(edge, false);
                                 if (first != 0 || last != 1)
@@ -247,8 +251,8 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                                 { // gka fix against small edges ; merging ends of 3d curves
                                     Point3D p1 = bezier3d.Value(first);
                                     Point3D p2 = bezier3d.Value(last);
-                                    Point3D p1v = BRep_Tool.Pnt(V1);
-                                    Point3D p2v = BRep_Tool.Pnt(V2);
+                                    Point3D p1v = Tool.Pnt(V1);
+                                    Point3D p2v = Tool.Pnt(V2);
                                     if (p1.Distance(p1v) > Kerf.Engine.Foundation.Precision.Confusion())
                                     {
                                         bezier3d = mutable3d(bezier3d);
@@ -257,7 +261,7 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                                     if (p2.Distance(p2v) > Kerf.Engine.Foundation.Precision.Confusion())
                                     {
                                         bezier3d = mutable3d(bezier3d);
-                                        bezier3d.SetPole(bezier3d.NbPoles(), p2v);
+                                        bezier3d.SetPole(bezier3d.PoleCount, p2v);
                                     }
                                     B.UpdateEdge(edge, bezier3d, 0.0);
                                 }
@@ -268,19 +272,19 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                             }
                         }
 
-                        Geom2d_Curve? c2drev = null;
-                        Geom2d_BezierCurve? bezier = null, bezierR = null;
-                        Geom2d_BezierCurve? beziernext = null, bezierRnext = null;
-                        TopoDS_Edge edgenext = sewd.Edge((i == sewd.NbEdges() ? 1 : i + 1));
-                        Geom2d_Curve? newRevCurve = null, newCurve = null, newnextCurve = null;
+                        Curve2D? c2drev = null;
+                        BezierCurve2D? bezier = null, bezierR = null;
+                        BezierCurve2D? beziernext = null, bezierRnext = null;
+                        Edge edgenext = sewd.Edge((i == sewd.NbEdges() ? 1 : i + 1));
+                        Curve2D? newRevCurve = null, newCurve = null, newnextCurve = null;
 
                         // OCCT.NET: OCCT changes the pcurves in place, so a curve held by several of these variables (a seam
                         // whose two pcurves are one curve, a wire of one edge) takes every change; the port changes copies
                         // (decision 998), carried over to each variable that held the curve changed
-                        Geom2d_BezierCurve change(in TopoDS_Edge theEdge, Geom2d_BezierCurve theCurve,
-                                                  Action<Geom2d_BezierCurve> theChange)
+                        BezierCurve2D change(in Edge theEdge, BezierCurve2D theCurve,
+                                                  Action<BezierCurve2D> theChange)
                         {
-                            Geom2d_BezierCurve aNew = changed2d(theEdge, theEdge.IsSame(edge) ? edgenext : edge, theCurve, theChange);
+                            BezierCurve2D aNew = changed2d(theEdge, theEdge.IsSame(edge) ? edgenext : edge, theCurve, theChange);
                             if (!ReferenceEquals(aNew, theCurve))
                             {
                                 if (ReferenceEquals(bezier, theCurve)) bezier = aNew;
@@ -294,24 +298,24 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                             return aNew;
                         }
 
-                        bool isSeam = BRep_Tool.IsClosed(edge, face);
-                        if (!sae.PCurve(edge, face, out Geom2d_Curve? c2d, out first, out last, false))
+                        bool isSeam = Tool.IsClosed(edge, face);
+                        if (!sae.PCurve(edge, face, out Curve2D? c2d, out first, out last, false))
                         {
                             continue;
                         }
 
-                        if (c2d is not Geom2d_BezierCurve)
+                        if (c2d is not BezierCurve2D)
                         {
                             continue;
                         }
-                        bezier = (Geom2d_BezierCurve)c2d;
+                        bezier = (BezierCurve2D)c2d;
                         if (isSeam)
                         {
-                            TopoDS_Shape aLocalShape = edge.Reversed();
-                            TopoDS_Edge tmpedge = TopoDS.Edge(aLocalShape);
+                            Shape aLocalShape = edge.Reversed();
+                            Edge tmpedge = ShapeCasts.Edge(aLocalShape);
                             if (sae.PCurve(tmpedge, face, out c2drev, out first, out last, false))
                             {
-                                if (c2drev is Geom2d_BezierCurve aRev)
+                                if (c2drev is BezierCurve2D aRev)
                                 {
                                     bezierR = aRev;
                                 }
@@ -329,7 +333,7 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                                 }
                                 else
                                 {
-                                    GeomLib.SameRange(preci, c2d, first, last, 0, 1, ref newCurve);
+                                    global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(preci, c2d, first, last, 0, 1, ref newCurve);
                                 }
                                 if (isSeam)
                                 {
@@ -341,9 +345,9 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                                     }
                                     else if (c2drev is not null)
                                     {
-                                        GeomLib.SameRange(preci, c2drev, first, last, 0, 1, ref newRevCurve);
+                                        global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(preci, c2drev, first, last, 0, 1, ref newRevCurve);
                                     }
-                                    if (edge.Orientation() == TopAbs_FORWARD)
+                                    if (edge.Orientation() == Forward)
                                     {
                                         B.UpdateEdge(edge, newCurve, newRevCurve, face, 0.0);
                                     }
@@ -356,25 +360,25 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                             B.Range(edge, face, 0, 1);
                         }
 
-                        Geom2d_Curve? c2drevnext = null;
-                        if (!sae.PCurve(edgenext, face, out Geom2d_Curve? c2dnext, out double first2, out double last2, false))
+                        Curve2D? c2drevnext = null;
+                        if (!sae.PCurve(edgenext, face, out Curve2D? c2dnext, out double first2, out double last2, false))
                         {
                             continue;
                         }
-                        if (c2dnext is not Geom2d_BezierCurve)
+                        if (c2dnext is not BezierCurve2D)
                         {
                             continue;
                         }
-                        beziernext = (Geom2d_BezierCurve)c2dnext;
+                        beziernext = (BezierCurve2D)c2dnext;
 
                         // occ::handle<Geom2d_Curve> newRevCurve;
                         if (isSeam)
                         {
-                            TopoDS_Shape aLocalShape = edgenext.Reversed();
-                            TopoDS_Edge tmpedge = TopoDS.Edge(aLocalShape);
+                            Shape aLocalShape = edgenext.Reversed();
+                            Edge tmpedge = ShapeCasts.Edge(aLocalShape);
                             if (sae.PCurve(tmpedge, face, out c2drevnext, out first, out last, false))
                             {
-                                if (c2drevnext is Geom2d_BezierCurve aRevNext)
+                                if (c2drevnext is BezierCurve2D aRevNext)
                                 {
                                     bezierRnext = aRevNext;
                                 }
@@ -392,7 +396,7 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                                 }
                                 else
                                 {
-                                    GeomLib.SameRange(preci, c2dnext, first2, last2, 0, 1, ref newnextCurve);
+                                    global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(preci, c2dnext, first2, last2, 0, 1, ref newnextCurve);
                                 }
                                 if (isSeam)
                                 {
@@ -404,9 +408,9 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                                     }
                                     else if (c2drevnext is not null)
                                     {
-                                        GeomLib.SameRange(preci, c2drevnext, first2, last2, 0, 1, ref newRevCurve);
+                                        global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(preci, c2drevnext, first2, last2, 0, 1, ref newRevCurve);
                                     }
-                                    if (edge.Orientation() == TopAbs_FORWARD)
+                                    if (edge.Orientation() == Forward)
                                     {
                                         B.UpdateEdge(edgenext, newnextCurve, newRevCurve, face, 0.0);
                                     }
@@ -441,25 +445,25 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                             change(edgenext, beziernext!, b => b.SetPole(theIndexNext, aPnt));
                         }
 
-                        if (edge.Orientation() == TopAbs_FORWARD && edgenext.Orientation() == TopAbs_FORWARD)
+                        if (edge.Orientation() == Forward && edgenext.Orientation() == Forward)
                         {
                             if (p2d2.Distance(p2d1next) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 var pmid = new Point2D(0.5 * (p2d2.XY() + p2d1next.XY()));
-                                setPoles(bezier.NbPoles(), 1, pmid);
+                                setPoles(bezier.PoleCount, 1, pmid);
                             }
                         }
 
-                        if (edge.Orientation() == TopAbs_FORWARD && edgenext.Orientation() == TopAbs_REVERSED)
+                        if (edge.Orientation() == Forward && edgenext.Orientation() == Reversed)
                         {
                             if (p2d2.Distance(p2d2next) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 var pmid = new Point2D(0.5 * (p2d2.XY() + p2d2next.XY()));
-                                setPoles(bezier.NbPoles(), beziernext.NbPoles(), pmid);
+                                setPoles(bezier.PoleCount, beziernext.PoleCount, pmid);
                             }
                         }
 
-                        if (edge.Orientation() == TopAbs_REVERSED && edgenext.Orientation() == TopAbs_FORWARD)
+                        if (edge.Orientation() == Reversed && edgenext.Orientation() == Forward)
                         {
                             if (p2d1.Distance(p2d1next) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
@@ -468,16 +472,16 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                             }
                         }
 
-                        if (edge.Orientation() == TopAbs_REVERSED && edgenext.Orientation() == TopAbs_REVERSED)
+                        if (edge.Orientation() == Reversed && edgenext.Orientation() == Reversed)
                         {
                             if (p2d1.Distance(p2d2next) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 var pmid = new Point2D(0.5 * (p2d1.XY() + p2d2next.XY()));
-                                setPoles(1, beziernext.NbPoles(), pmid);
+                                setPoles(1, beziernext.PoleCount, pmid);
                             }
                         }
                     }
-                    BRepTools.Update(face);
+                    BrepTools.Update(face);
                 }
             }
         }
@@ -488,21 +492,21 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
 
     // OCCT.NET: a 3D Bezier curve OCCT changes in place: the curve itself if ported code owns it, else a copy (the
     // edge's curve is frozen once attached); OCCT's following UpdateEdge attaches it.
-    private static Geom_BezierCurve mutable3d(Geom_BezierCurve theCurve) =>
-        theCurve.IsFrozen ? (Geom_BezierCurve)theCurve.Copy() : theCurve;
+    private static BezierCurve3D mutable3d(BezierCurve3D theCurve) =>
+        theCurve.IsFrozen ? (BezierCurve3D)theCurve.Copy() : theCurve;
 
     // OCCT.NET: changes a pcurve as OCCT does in place. A frozen curve (attached to the edge) is changed on a copy,
     // which then replaces the curve in the edge's representations, where OCCT's change would show; a curve that isn't
     // the edge's (a planar face's computed pcurve) is changed alone, as in OCCT.
-    private static Geom2d_BezierCurve changed2d(in TopoDS_Edge theEdge, in TopoDS_Edge theOther, Geom2d_BezierCurve theCurve,
-                                                Action<Geom2d_BezierCurve> theChange)
+    private static BezierCurve2D changed2d(in Edge theEdge, in Edge theOther, BezierCurve2D theCurve,
+                                                Action<BezierCurve2D> theChange)
     {
         if (!theCurve.IsFrozen)
         {
             theChange(theCurve);
             return theCurve;
         }
-        var aCopy = (Geom2d_BezierCurve)theCurve.Copy();
+        var aCopy = (BezierCurve2D)theCurve.Copy();
         theChange(aCopy);
         replaced(theEdge, theCurve, aCopy);
         if (!theOther.IsSame(theEdge))
@@ -513,16 +517,16 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
     }
 
     // The curve replaced in the edge's representations.
-    private static void replaced(in TopoDS_Edge theEdge, Geom2d_BezierCurve theCurve, Geom2d_BezierCurve aCopy)
+    private static void replaced(in Edge theEdge, BezierCurve2D theCurve, BezierCurve2D aCopy)
     {
-        var aTEdge = (BRep_TEdge)theEdge.TShape()!;
-        foreach (BRep_CurveRepresentation aRep in aTEdge.ChangeCurves())
+        var aTEdge = (BrepTEdge)theEdge.TShape()!;
+        foreach (CurveRepresentation aRep in aTEdge.ChangeCurves())
         {
             if (aRep.IsCurveOnSurface() && ReferenceEquals(aRep.PCurve(), theCurve))
             {
                 aRep.PCurve(aCopy);
             }
-            if (aRep.IsCurveOnClosedSurface() && ReferenceEquals(aRep.PCurve2(), theCurve))
+            if (aRep.IsCurveOnClosedSurface && ReferenceEquals(aRep.PCurve2(), theCurve))
             {
                 aRep.PCurve2(aCopy);
             }

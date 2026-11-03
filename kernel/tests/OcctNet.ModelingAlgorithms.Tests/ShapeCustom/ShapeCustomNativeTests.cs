@@ -1,5 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Reflection;
@@ -7,7 +12,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -94,11 +99,11 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
         return aS.ToString();
     }
 
-    private static string Text(Geom_Surface? theS) => theS is null ? "" : Text(w => GeomTools.Write(theS, w));
+    private static string Text(Surface? theS) => theS is null ? "" : Text(w => global::Kerf.Engine.Exchange.Brep.GeomTools.Write(theS, w));
 
-    private static string Text(Geom_Curve? theC) => theC is null ? "" : Text(w => GeomTools.Write(theC, w));
+    private static string Text(Curve3D? theC) => theC is null ? "" : Text(w => global::Kerf.Engine.Exchange.Brep.GeomTools.Write(theC, w));
 
-    private static string Text(Geom2d_Curve? theC) => theC is null ? "" : Text(w => GeomTools.Write(theC, w));
+    private static string Text(Curve2D? theC) => theC is null ? "" : Text(w => global::Kerf.Engine.Exchange.Brep.GeomTools.Write(theC, w));
 
     private static ShapeCustom_RestrictionParameters Parameters(int theSet)
     {
@@ -126,35 +131,35 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
         return aP;
     }
 
-    private static void BSR(Writer theW, in TopoDS_Shape theShape, int theSet)
+    private static void BSR(Writer theW, in Shape theShape, int theSet)
     {
         theW.Line($"BSR {theSet}");
         try
         {
-            TopoDS_Shape aRes = theSet == 1
+            Shape aRes = theSet == 1
                                   ? ShapeCustom.BSplineRestriction(theShape, 1e-3, 1e-3, 5, 100, C1, C1, true, true, Parameters(1))
                                   : ShapeCustom.BSplineRestriction(theShape, 1e-2, 1e-4, 3, 4, C2, C1, false, false, Parameters(2));
             Assert.True(aRes.TShape()!.IsFrozen);
-            theW.Block("OUT", Text(w => BRepTools.Write(aRes, w, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3)));
+            theW.Block("OUT", Text(w => BrepTools.Write(aRes, w, true, false, global::Kerf.Engine.Exchange.Brep.FormatVersion.FormatVersion_VERSION_3)));
         }
-        catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or TopoDS_LockedShape))
+        catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or LockedShapeException))
         {
             theW.Throw(e);
         }
     }
 
-    private static void Geometry(Writer theW, in TopoDS_Shape theShape)
+    private static void Geometry(Writer theW, in Shape theShape)
     {
-        var aFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var anEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, TopAbs_FACE, aFaces);
-        TopExp.MapShapes(theShape, TopAbs_EDGE, anEdges);
+        var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, ShapeType.Face, aFaces);
+        Exploration.MapShapes(theShape, ShapeType.Edge, anEdges);
 
         int aNbSurf = 0;
         for (int i = 1; i <= aFaces.Extent() && aNbSurf < 30; i++)
         {
-            Geom_Surface? aS = BRep_Tool.Surface(TopoDS.Face(aFaces[i]), out _);
-            if (aS is not (Geom_BSplineSurface or Geom_BezierSurface))
+            Surface? aS = Tool.Surface(ShapeCasts.Face(aFaces[i]), out _);
+            if (aS is not (BSplineSurface or BezierSurface))
             {
                 continue;
             }
@@ -165,10 +170,10 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
                 try
                 {
                     var aTool = new ShapeCustom_Surface(aS);
-                    Geom_Surface? aRes = aTool.ConvertToAnalytical(aTol, false);
+                    Surface? aRes = aTool.ConvertToAnalytical(aTol, false);
                     theW.Block($"ANA {Hex(aTol)} {Hex(aTool.Gap())}", Text(aRes));
                 }
-                catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or TopoDS_LockedShape))
+                catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or LockedShapeException))
                 {
                     theW.Throw(e);
                 }
@@ -176,13 +181,13 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
             try
             {
                 // the caller's frozen surface itself: the port converts a copy where OCCT changes it (decision 974)
-                bool wasPeriodic = aS.IsUPeriodic() || aS.IsVPeriodic();
-                Geom_Surface? aRes = new ShapeCustom_Surface(aS).ConvertToPeriodic(false);
-                Assert.Equal(wasPeriodic, aS.IsUPeriodic() || aS.IsVPeriodic());
+                bool wasPeriodic = aS.IsUPeriodic || aS.IsVPeriodic;
+                Surface? aRes = new ShapeCustom_Surface(aS).ConvertToPeriodic(false);
+                Assert.Equal(wasPeriodic, aS.IsUPeriodic || aS.IsVPeriodic);
                 Assert.True(aRes is null || !ReferenceEquals(aRes, aS));
                 theW.Block("PER", Text(aRes));
             }
-            catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or TopoDS_LockedShape))
+            catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or LockedShapeException))
             {
                 theW.Throw(e);
             }
@@ -191,8 +196,8 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
         int aNbCurv = 0;
         for (int i = 1; i <= anEdges.Extent() && aNbCurv < 30; i++)
         {
-            Geom_Curve? aC = BRep_Tool.Curve(TopoDS.Edge(anEdges[i]), out _, out _, out _);
-            if (aC is not Geom_BSplineCurve)
+            Curve3D? aC = Tool.Curve(ShapeCasts.Edge(anEdges[i]), out _, out _, out _);
+            if (aC is not BSplineCurve3D)
             {
                 continue;
             }
@@ -200,12 +205,12 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
             theW.Line($"CURV {i}");
             try
             {
-                bool wasPeriodic = aC.IsPeriodic();
-                Geom_Curve? aRes = new ShapeCustom_Curve(aC).ConvertToPeriodic(false);
-                Assert.Equal(wasPeriodic, aC.IsPeriodic());
+                bool wasPeriodic = aC.IsPeriodic;
+                Curve3D? aRes = new ShapeCustom_Curve(aC).ConvertToPeriodic(false);
+                Assert.Equal(wasPeriodic, aC.IsPeriodic);
                 theW.Block("PER", Text(aRes));
             }
-            catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or TopoDS_LockedShape))
+            catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or LockedShapeException))
             {
                 theW.Throw(e);
             }
@@ -214,14 +219,14 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
         int aNbPCurv = 0;
         for (int j = 1; j <= aFaces.Extent() && aNbPCurv < 40; j++)
         {
-            TopoDS_Face aF = TopoDS.Face(aFaces[j]);
-            var aFaceEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(aF, TopAbs_EDGE, aFaceEdges);
+            Face aF = ShapeCasts.Face(aFaces[j]);
+            var aFaceEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            Exploration.MapShapes(aF, ShapeType.Edge, aFaceEdges);
             for (int k = 1; k <= aFaceEdges.Extent() && aNbPCurv < 40; k++)
             {
-                TopoDS_Edge anE = TopoDS.Edge(aFaceEdges[k]);
-                Geom2d_Curve? aC = BRep_Tool.CurveOnSurface(anE, aF, out double f, out double l);
-                if (aC is not (Geom2d_BSplineCurve or Geom2d_BezierCurve))
+                Edge anE = ShapeCasts.Edge(aFaceEdges[k]);
+                Curve2D? aC = Tool.CurveOnSurface(anE, aF, out double f, out double l);
+                if (aC is not (BSplineCurve2D or BezierCurve2D))
                 {
                     continue;
                 }
@@ -230,25 +235,25 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
                 try
                 {
                     double cf = 0, cl = 0, aDev = 0;
-                    Geom2d_Line? aLine = ShapeCustom_Curve2d.ConvertToLine2d(aC, f, l, 1e-4, ref cf, ref cl, ref aDev);
+                    LineCurve2D? aLine = ShapeCustom_Curve2d.ConvertToLine2d(aC, f, l, 1e-4, ref cf, ref cl, ref aDev);
                     theW.Block($"LINE {Hex(cf)} {Hex(cl)} {Hex(aDev)}", Text(aLine));
                 }
-                catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or TopoDS_LockedShape))
+                catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or LockedShapeException))
                 {
                     theW.Throw(e);
                 }
-                if (aC is Geom2d_BSplineCurve aBS)
+                if (aC is BSplineCurve2D aBS)
                 {
                     try
                     {
                         // the caller's frozen pcurve itself: the port removes the knots from a copy (decision 974)
-                        int aNbKnots = aBS.NbKnots();
-                        Geom2d_BSplineCurve aCurve = aBS;
+                        int aNbKnots = aBS.KnotCount;
+                        BSplineCurve2D aCurve = aBS;
                         bool isDone = ShapeCustom_Curve2d.SimplifyBSpline2d(ref aCurve, global::Kerf.Engine.Foundation.Precision.Approximation());
-                        Assert.Equal(aNbKnots, aBS.NbKnots());
+                        Assert.Equal(aNbKnots, aBS.KnotCount);
                         theW.Block("SIMP " + (isDone ? "1" : "0"), Text(aCurve));
                     }
-                    catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or TopoDS_LockedShape))
+                    catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or LockedShapeException))
                     {
                         theW.Throw(e);
                     }
@@ -285,9 +290,9 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
                 continue;
             }
             aFiles++;
-            Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aPath), aPath);
+            Assert.True(BrepTools.Read(out Shape aShape, aPath), aPath);
             aShape.TShape()!.FreezeGraph(); // a caller's shape
-            string anInput = Text(w => BRepTools.Write(aShape, w, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
+            string anInput = Text(w => BrepTools.Write(aShape, w, true, false, global::Kerf.Engine.Exchange.Brep.FormatVersion.FormatVersion_VERSION_3));
 
             var aW = new Writer();
             if (new FileInfo(aPath).Length <= 30000)
@@ -296,7 +301,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
                 BSR(aW, aShape, 2);
             }
             Geometry(aW, aShape);
-            Assert.Equal(anInput, Text(w => BRepTools.Write(aShape, w, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3)));
+            Assert.Equal(anInput, Text(w => BrepTools.Write(aShape, w, true, false, global::Kerf.Engine.Exchange.Brep.FormatVersion.FormatVersion_VERSION_3)));
 
             List<(string Head, string Body)> aNative = Records(aLines);
             if (aNative.Count != aW.Records.Count)

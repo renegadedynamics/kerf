@@ -1,8 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -31,8 +32,8 @@ public class BRepClass3dOracleTests(ITestOutputHelper output)
                 continue;
             }
 
-            Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = ClassificationScenes.Scene(anOracle, aScene);
-            List<Twin<N.TopoDS_Shape, TopoDS_Shape>> aFaces = ClassificationScenes.Explore(aShape, TopAbs_FACE);
+            Twin<N.TopoDS_Shape, Shape> aShape = ClassificationScenes.Scene(anOracle, aScene);
+            List<Twin<N.TopoDS_Shape, Shape>> aFaces = ClassificationScenes.Explore(aShape, ShapeType.Face);
             List<Point3D> aPoints = ClassificationScenes.SamplePoints(anOracle, aShape.P, 25, 4);
             string aWhat = $"scene {aScene} ({ClassificationScenes.Name(aScene)})";
 
@@ -58,10 +59,10 @@ public class BRepClass3dOracleTests(ITestOutputHelper output)
                 aNbPoints++;
                 switch (aPC.State())
                 {
-                    case TopAbs_State.TopAbs_IN:
+                    case Containment.In:
                         aNbIn++;
                         break;
-                    case TopAbs_State.TopAbs_ON:
+                    case Containment.On:
                         aNbOn++;
                         break;
                     default:

@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -25,8 +27,8 @@ public static class BRepFilletAPI
 {
     /// <summary>The fillet of radius <paramref name="theRadius"/> on the edges <paramref name="theEdges"/> of <paramref name="theShape"/>.</summary>
     /// <exception cref="NotDoneException">The fillet could not be built.</exception>
-    public static TopoDS_Shape Fillet(in TopoDS_Shape theShape, IReadOnlyList<TopoDS_Edge> theEdges, double theRadius,
-                                      in BRepFilletAPI_FilletOptions theOptions, out BRepTools_History theHistory)
+    public static Shape Fillet(in Shape theShape, IReadOnlyList<Edge> theEdges, double theRadius,
+                                      in BRepFilletAPI_FilletOptions theOptions, out History theHistory)
     {
         BRepFilletAPI_MakeFillet aMaker = new(theShape, theOptions.FShape);
         aMaker.SetParams(theOptions.Tang, theOptions.Tesp, theOptions.T2d, theOptions.TApp3d, theOptions.TolApp2d,
@@ -39,15 +41,15 @@ public static class BRepFilletAPI
         return Run(aMaker, theShape, out theHistory);
     }
 
-    /// <inheritdoc cref="Fillet(in TopoDS_Shape, IReadOnlyList{TopoDS_Edge}, double, in BRepFilletAPI_FilletOptions, out BRepTools_History)"/>
-    public static TopoDS_Shape Fillet(in TopoDS_Shape theShape, IReadOnlyList<TopoDS_Edge> theEdges, double theRadius,
+    /// <inheritdoc cref="Fillet(in Shape, IReadOnlyList{Edge}, double, in BRepFilletAPI_FilletOptions, out History)"/>
+    public static Shape Fillet(in Shape theShape, IReadOnlyList<Edge> theEdges, double theRadius,
                                       in BRepFilletAPI_FilletOptions theOptions) =>
         Fillet(theShape, theEdges, theRadius, theOptions, out _);
 
     /// <summary>The symmetric chamfer of distance <paramref name="theDistance"/> on the edges <paramref name="theEdges"/>.</summary>
     /// <exception cref="NotDoneException">The chamfer could not be built.</exception>
-    public static TopoDS_Shape Chamfer(in TopoDS_Shape theShape, IReadOnlyList<TopoDS_Edge> theEdges, double theDistance,
-                                       in BRepFilletAPI_ChamferOptions theOptions, out BRepTools_History theHistory)
+    public static Shape Chamfer(in Shape theShape, IReadOnlyList<Edge> theEdges, double theDistance,
+                                       in BRepFilletAPI_ChamferOptions theOptions, out History theHistory)
     {
         BRepFilletAPI_MakeChamfer aMaker = new(theShape);
         aMaker.SetMode(theOptions.Mode);
@@ -58,24 +60,24 @@ public static class BRepFilletAPI
         return Run(aMaker, theShape, out theHistory);
     }
 
-    /// <inheritdoc cref="Chamfer(in TopoDS_Shape, IReadOnlyList{TopoDS_Edge}, double, in BRepFilletAPI_ChamferOptions, out BRepTools_History)"/>
-    public static TopoDS_Shape Chamfer(in TopoDS_Shape theShape, IReadOnlyList<TopoDS_Edge> theEdges, double theDistance,
+    /// <inheritdoc cref="Chamfer(in Shape, IReadOnlyList{Edge}, double, in BRepFilletAPI_ChamferOptions, out History)"/>
+    public static Shape Chamfer(in Shape theShape, IReadOnlyList<Edge> theEdges, double theDistance,
                                        in BRepFilletAPI_ChamferOptions theOptions) =>
         Chamfer(theShape, theEdges, theDistance, theOptions, out _);
 
     // Build, the frozen result (Shape() throws StdFail_NotDone when not done) and OCCT's history over the shape.
-    private static TopoDS_Shape Run(BRepFilletAPI_LocalOperation theMaker, in TopoDS_Shape theShape,
-                                    out BRepTools_History theHistory)
+    private static Shape Run(BRepFilletAPI_LocalOperation theMaker, in Shape theShape,
+                                    out History theHistory)
     {
         theMaker.Build();
         if (!theMaker.IsDone())
         {
             throw new NotDoneException("BRep_API: command not done");
         }
-        TopoDS_Shape aResult = theMaker.Shape();
-        NCollection_List<TopoDS_Shape> anArgs = new();
+        Shape aResult = theMaker.Shape();
+        NCollection_List<Shape> anArgs = new();
         anArgs.Append(theShape);
-        theHistory = new BRepTools_History(anArgs, theMaker);
+        theHistory = new History(anArgs, theMaker);
         return aResult;
     }
 }

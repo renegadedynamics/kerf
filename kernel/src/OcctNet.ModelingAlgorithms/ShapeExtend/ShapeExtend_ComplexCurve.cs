@@ -13,7 +13,7 @@ namespace Occt;
 /// A curve made of several segments, parametrised on [0, 1]: each global parameter is mapped to a segment and a
 /// local parameter on it, and derivatives are scaled by the segment's factor.
 /// </summary>
-public abstract class ShapeExtend_ComplexCurve : Geom_Curve
+public abstract class ShapeExtend_ComplexCurve : Curve3D
 {
     protected bool myClosed;
 
@@ -26,7 +26,7 @@ public abstract class ShapeExtend_ComplexCurve : Geom_Curve
     public abstract int NbCurves();
 
     /// <summary>Returns the curve of the given index.</summary>
-    public abstract Geom_Curve Curve(int index);
+    public abstract Curve3D Curve(int index);
 
     /// <summary>Returns the index of the curve holding the parameter U, and the local parameter on it.</summary>
     public abstract int LocateParameter(double U, out double UOut);
@@ -53,10 +53,10 @@ public abstract class ShapeExtend_ComplexCurve : Geom_Curve
     /// <summary>Returns 1.</summary>
     public override double LastParameter() => 1;
 
-    public override bool IsClosed() => myClosed;
+    public override bool IsClosed => myClosed;
 
     /// <summary>Returns false.</summary>
-    public override bool IsPeriodic() => false;
+    public override bool IsPeriodic => false;
 
     /// <summary>Returns GeomAbs_C0.</summary>
     public override Continuity Continuity() => C0;

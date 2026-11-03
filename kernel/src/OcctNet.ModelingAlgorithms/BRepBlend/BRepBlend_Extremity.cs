@@ -8,6 +8,7 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -24,7 +25,7 @@ namespace Occt;
 /// </remarks>
 public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
 {
-    private Adaptor3d_HVertex? vtx;
+    private HVertex? vtx;
     private NCollection_Sequence<BRepBlend_PointOnRst>? seqpt;
     private Point3D pt;
     private Vector3D tang;
@@ -61,7 +62,7 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
     }
 
     /// <summary>An extremity on the vertex <paramref name="Vtx"/>.</summary>
-    public BRepBlend_Extremity(in Point3D P, double U, double V, double Param, double Tol, Adaptor3d_HVertex Vtx)
+    public BRepBlend_Extremity(in Point3D P, double U, double V, double Param, double Tol, HVertex Vtx)
     {
         vtx = Vtx;
         pt = P;
@@ -98,7 +99,7 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
         seqpt = null; // seqpt.Clear()
     }
 
-    internal void SetValue(in Point3D P, double U, double V, double Param, double Tol, Adaptor3d_HVertex Vtx)
+    internal void SetValue(in Point3D P, double U, double V, double Param, double Tol, HVertex Vtx)
     {
         pt = P;
         u = U;
@@ -142,14 +143,14 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
 
     public readonly double Tolerance() => tol;
 
-    internal void SetVertex(Adaptor3d_HVertex V)
+    internal void SetVertex(HVertex V)
     {
         isvtx = true;
         vtx = V;
     }
 
     /// <summary>Adds the arc <paramref name="A"/> through the extremity, at parameter <paramref name="Param"/>.</summary>
-    internal void AddArc(Adaptor2d_Curve2d A, double Param, in IntSurf_Transition TLine, in IntSurf_Transition TArc)
+    internal void AddArc(Curve2DAdaptorBase A, double Param, in IntSurf_Transition TLine, in IntSurf_Transition TArc)
     {
         NCollection_Sequence<BRepBlend_PointOnRst> aSeq = seqpt is null ? new() : new(seqpt);
         aSeq.Append(new BRepBlend_PointOnRst(A, Param, TLine, TArc));
@@ -164,7 +165,7 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
 
     public readonly bool IsVertex() => isvtx;
 
-    public readonly Adaptor3d_HVertex Vertex()
+    public readonly HVertex Vertex()
     {
         if (!isvtx)
         {
@@ -198,7 +199,7 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
     }
 
     public readonly BRepBlend_Extremity WithValue(in Point3D P, double U, double V, double Param, double Tol,
-                                                  Adaptor3d_HVertex Vtx)
+                                                  HVertex Vtx)
     {
         BRepBlend_Extremity aCopy = this;
         aCopy.SetValue(P, U, V, Param, Tol, Vtx);
@@ -219,14 +220,14 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
         return aCopy;
     }
 
-    public readonly BRepBlend_Extremity WithVertex(Adaptor3d_HVertex V)
+    public readonly BRepBlend_Extremity WithVertex(HVertex V)
     {
         BRepBlend_Extremity aCopy = this;
         aCopy.SetVertex(V);
         return aCopy;
     }
 
-    public readonly BRepBlend_Extremity WithArc(Adaptor2d_Curve2d A, double Param, in IntSurf_Transition TLine,
+    public readonly BRepBlend_Extremity WithArc(Curve2DAdaptorBase A, double Param, in IntSurf_Transition TLine,
                                                 in IntSurf_Transition TArc)
     {
         BRepBlend_Extremity aCopy = this;

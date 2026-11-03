@@ -3,7 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_Orientation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -20,12 +25,12 @@ public sealed class BRepFill_ACRLaw : BRepFill_LocationLaw
     private readonly NCollection_HArray1<double> OrigParam;
 
     /// <summary>The law on <paramref name="Path"/> with the guide law <paramref name="theLaw"/>.</summary>
-    public BRepFill_ACRLaw(in TopoDS_Wire Path, GeomFill_LocationGuide theLaw)
+    public BRepFill_ACRLaw(in Wire Path, GeomFill_LocationGuide theLaw)
     {
         Init(Path);
 
         // calculate the nb of edge of the path
-        BRepTools_WireExplorer wexp = new();
+        WireExplorer wexp = new();
         int NbEdge = 0;
         for (wexp.Init(myPath); wexp.More(); wexp.Next())
         {
@@ -38,12 +43,12 @@ public sealed class BRepFill_ACRLaw : BRepFill_LocationLaw
         BRepFill.ComputeACR(Path, Orig);
 
         int ipath;
-        TopAbs_Orientation Or;
+        Orientation Or;
         // Class BRep_Tool without fields and without Constructor :
         //  BRep_Tool B;
-        TopoDS_Edge E;
-        Geom_Curve C;
-        GeomAdaptor_Curve AC;
+        Edge E;
+        Curve3D C;
+        CurveAdaptor AC;
 
         // return ACR of edges of the trajectory
         OrigParam.SetValue(0, 0);
@@ -57,21 +62,21 @@ public sealed class BRepFill_ACRLaw : BRepFill_LocationLaw
         {
             E = wexp.Current();
             //    if (!B.Degenerated(E)) {
-            if (!BRep_Tool.Degenerated(E))
+            if (!Tool.Degenerated(E))
             {
                 ipath++;
                 myEdges!.SetValue(ipath, E);
-                C = BRep_Tool.Curve(E, out double First, out double Last)!;
+                C = Tool.Curve(E, out double First, out double Last)!;
                 Or = E.Orientation();
-                if (Or == TopAbs_REVERSED)
+                if (Or == Reversed)
                 {
-                    Geom_TrimmedCurve CBis = new(C, First, Last);
+                    TrimmedCurve3D CBis = new(C, First, Last);
                     CBis.Reverse(); // To avoid damaging the topology
                     C = CBis;
                     First = C.FirstParameter();
                     Last = C.LastParameter();
                 }
-                AC = new GeomAdaptor_Curve(C, First, Last);
+                AC = new CurveAdaptor(C, First, Last);
 
                 // Set the parameters for the case multi-edges
                 // OCCT: OrigParam is indexed by all the wire's edges and ipath counts the non-degenerated ones only, so

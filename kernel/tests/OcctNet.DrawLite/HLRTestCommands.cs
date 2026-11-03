@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using Occt;
@@ -134,8 +136,8 @@ internal static class HLRTestCommands
             return 1;
         }
         string name = a.Count > 2 ? a[2] : "";
-        TopoDS_Shape S = theDI.GetShape(name);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(name);
+        if (S.IsNull)
         {
             di.Append(name).Append(" is not a shape.\n");
             return 1;
@@ -169,7 +171,7 @@ internal static class HLRTestCommands
             di.Append(name2).Append(" is not a projector.\n");
             return 1;
         }
-        NCollection_DataMap<TopoDS_Shape, BRepTopAdaptor_Tool> MST = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, BRepTopAdaptor_Tool> MST = new(ShapeHasher.Instance);
         HS.Fill(P, MST, nbIso);
         return 0;
     }
@@ -206,7 +208,7 @@ internal static class HLRTestCommands
             di.Append(name2).Append(" is not an OutLiner.\n");
             return 1;
         }
-        if (HS.OutLinedShape().IsNull())
+        if (HS.OutLinedShape().IsNull)
         {
             di.Append(name2).Append(" has no OutLinedShape.\n");
             return 1;
@@ -242,8 +244,8 @@ internal static class HLRTestCommands
             HLRTopoBRep_OutLiner? HS = GetOutLiner(theDI, name);
             if (HS is null)
             {
-                TopoDS_Shape S = theDI.GetShape(name);
-                if (S.IsNull())
+                Shape S = theDI.GetShape(name);
+                if (S.IsNull)
                 {
                     di.Append(name).Append(" is not an OutLiner and not a shape.\n");
                     return 1;
@@ -299,7 +301,7 @@ internal static class HLRTestCommands
 
     private static int Hres(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
-        TopoDS_Shape S = new(), V, V1, VN, VO, VI, H, H1, HN, HO, HI;
+        Shape S = new(), V, V1, VN, VO, VI, H, H1, HN, HO, HI;
         if (a.Count > 1)
         {
             string name = a[1];
@@ -307,7 +309,7 @@ internal static class HLRTestCommands
         }
         HLRBRep_HLRToShape HS = new(Hider(theDI));
 
-        if (S.IsNull())
+        if (S.IsNull)
         {
             V = HS.VCompound();
             V1 = HS.Rg1LineVCompound();
@@ -333,11 +335,11 @@ internal static class HLRTestCommands
             HO = HS.OutLineHCompound(S);
             HI = HS.IsoLineHCompound(S);
         }
-        (string Name, TopoDS_Shape Shape)[] aResults =
+        (string Name, Shape Shape)[] aResults =
             [("vl", V), ("v1l", V1), ("vnl", VN), ("vol", VO), ("vil", VI), ("hl", H), ("h1l", H1), ("hnl", HN), ("hol", HO), ("hil", HI)];
-        foreach ((string aName, TopoDS_Shape aShape) in aResults)
+        foreach ((string aName, Shape aShape) in aResults)
         {
-            if (!aShape.IsNull())
+            if (!aShape.IsNull)
             {
                 theDI.SetShape(aName, aShape);
             }
@@ -348,8 +350,8 @@ internal static class HLRTestCommands
     // reflectlines, hlrin3d and hlrin2d: HLRAppli_ReflectLines for the view direction (a[3], a[4], a[5])
     private static HLRAppli_ReflectLines? MakeReflector(DrawInterpreter theDI, IReadOnlyList<string> a, bool theEye)
     {
-        TopoDS_Shape aShape = theDI.GetShape(a[2]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(a[2]);
+        if (aShape.IsNull)
         {
             return null;
         }
@@ -407,13 +409,13 @@ internal static class HLRTestCommands
             return 1;
         }
 
-        TopoDS_Shape[] aParts =
+        Shape[] aParts =
         [
             Reflector.GetCompoundOf3dEdges(HLRBRep_Sharp, true, theIn3d),
             Reflector.GetCompoundOf3dEdges(HLRBRep_OutLine, true, theIn3d),
             Reflector.GetCompoundOf3dEdges(HLRBRep_Rg1Line, true, theIn3d),
         ];
-        theDI.SetShape(a[1], TopoDS_Builder.MakeCompound(aParts.Where(s => !s.IsNull()).ToArray()));
+        theDI.SetShape(a[1], Builder.MakeCompound(aParts.Where(s => !s.IsNull).ToArray()));
         return 0;
     }
 
@@ -434,14 +436,14 @@ internal static class HLRTestCommands
         }
 
         bool Ok;
-        TopoDS_Shape S = theDI.GetShape(a[1]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[1]);
+        if (S.IsNull)
         {
             return 1;
         }
 
         // in place in OCCT: on a copy here, rebound to the name (as mkedgecurve)
-        TopoDS_Shape aCopy = DrawShapeCopy.Copy(S);
+        Shape aCopy = DrawShapeCopy.Copy(S);
         if (n == 2)
         {
             Ok = BRepLib.BuildCurves3d(aCopy);

@@ -12,7 +12,7 @@ namespace Occt;
 /// Bisector_BisecCC): a 2D curve that knows the parameter of a point on it, whether it is extended at its ends, and
 /// its intervals of C1 continuity.
 /// </summary>
-public abstract class Bisector_Curve : Geom2d_Curve
+public abstract class Bisector_Curve : Curve2D
 {
     /// <summary>The parameter of the point P on the curve.</summary>
     public abstract double Parameter(in Point2D P);

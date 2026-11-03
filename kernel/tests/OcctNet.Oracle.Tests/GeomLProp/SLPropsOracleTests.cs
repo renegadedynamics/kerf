@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Properties;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
@@ -16,7 +18,7 @@ public class SLPropsOracleTests(ITestOutputHelper output)
 {
     private static Exception? Try(Action theAction) => Catch(theAction);
 
-    private static void Compare(Oracle theO, N.BRepLProp_SLProps theN, LProp_SLProps3d theP, string theWhat)
+    private static void Compare(Oracle theO, N.BRepLProp_SLProps theN, SLProps3d theP, string theWhat)
     {
         theO.Same(theN.Value(), theP.Value(), theWhat + " Value");
         theO.Same(theN.D1U(), theP.D1U(), theWhat + " D1U");
@@ -46,7 +48,7 @@ public class SLPropsOracleTests(ITestOutputHelper output)
         }
 
         bool aNormal = theN.IsNormalDefined();
-        theO.Same(aNormal, theP.IsNormalDefined(), theWhat + " IsNormalDefined");
+        theO.Same(aNormal, theP.IsNormalDefined, theWhat + " IsNormalDefined");
         if (aNormal)
         {
             using N.gp_Dir aND = theN.Normal();
@@ -73,7 +75,7 @@ public class SLPropsOracleTests(ITestOutputHelper output)
 
     // the Geom_Surface evaluation differs from the adaptor's (B-spline caches) in the last bits, which the
     // curvatures amplify near singular points: values within 1e-9 relative, flags equal
-    private static void CompareGeom(Oracle theO, N.BRepLProp_SLProps theN, GeomLProp_SLProps theP, string theWhat)
+    private static void CompareGeom(Oracle theO, N.BRepLProp_SLProps theN, SLProps theP, string theWhat)
     {
         const double aTol = 1e-9;
         theO.Same(theN.Value(), theP.Value(), theWhat + " Value", aTol);
@@ -96,14 +98,14 @@ public class SLPropsOracleTests(ITestOutputHelper output)
         foreach (int i in Tape.Budget(1100))
         {
             int aKind = i % SurfaceKinds.Length;
-            (N.Geom_Surface aNS, Geom_Surface aPS) = RandomSurface(anOracle, aKind);
+            (N.Geom_Surface aNS, Surface aPS) = RandomSurface(anOracle, aKind);
             using (aNS)
             {
                 using var aFace = new N.TopoDS_Face();
                 aBuilder.MakeFace(aFace, aNS, 1e-7);
                 // without the face's restriction: the adaptor on the whole surface, as GeomAdaptor_Surface(S)
                 using var aNAdaptor = new N.BRepAdaptor_Surface(aFace, false);
-                var aPAdaptor = new GeomAdaptor_Surface(aPS);
+                var aPAdaptor = new SurfaceAdaptor(aPS);
 
                 double aU1 = aPAdaptor.FirstUParameter(), aU2 = aPAdaptor.LastUParameter();
                 double aV1 = aPAdaptor.FirstVParameter(), aV2 = aPAdaptor.LastVParameter();
@@ -125,9 +127,9 @@ public class SLPropsOracleTests(ITestOutputHelper output)
 
                     // the curvatures asked first, before IsCurvatureDefined: OCCT returns the stale value
                     N.BRepLProp_SLProps? aNProps = null;
-                    LProp_SLProps3d? aPProps = null;
+                    SLProps3d? aPProps = null;
                     Exception? aNE = Try(() => aNProps = new N.BRepLProp_SLProps(aNAdaptor, aU, aV, aN, aTol));
-                    Exception? aPE = Try(() => aPProps = new LProp_SLProps3d(aPAdaptor, aU, aV, aN, aTol));
+                    Exception? aPE = Try(() => aPProps = new SLProps3d(aPAdaptor, aU, aV, aN, aTol));
                     if (!SameOutcome(aNE, aPE, aWhat + " constructor"))
                     {
                         continue;
@@ -147,7 +149,7 @@ public class SLPropsOracleTests(ITestOutputHelper output)
                         Compare(anOracle, aNProps!, aPProps!, aWhat);
 
                         // GeomLProp_SLProps, on the Geom_Surface itself, evaluates without the adaptor's caches
-                        var aGProps = new GeomLProp_SLProps(aPS, aU, aV, aN, aTol);
+                        var aGProps = new SLProps(aPS, aU, aV, aN, aTol);
                         aGProps.IsCurvatureDefined();
                         CompareGeom(aGeomOracle, aNProps!, aGProps, aWhat);
 
@@ -199,8 +201,8 @@ public class SLPropsOracleTests(ITestOutputHelper output)
         using var aNAdaptor = new N.BRepAdaptor_Surface(aFace, false);
         using var aNProps = new N.BRepLProp_SLProps(aNAdaptor, 0.3, 0.2, 2, 1e-7);
 
-        var aPSphere = new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
-        var aPProps = new GeomLProp_SLProps(aPSphere, 0.3, 0.2, 2, 1e-7);
+        var aPSphere = new SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
+        var aPProps = new SLProps(aPSphere, 0.3, 0.2, 2, 1e-7);
 
         Assert.Equal(0.0, aNProps.MaxCurvature());
         Assert.Equal(0.0, aPProps.MaxCurvature());

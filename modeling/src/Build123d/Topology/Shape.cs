@@ -1,3 +1,4 @@
+using Kerf.Engine.Topology;
 using Kerf.Topology;
 using Occt;
 
@@ -25,13 +26,13 @@ namespace Build123d;
 public abstract partial class Shape : IEquatable<Shape>
 {
     // The OCCT shape. Never modified: copies are made with Located/Moved/Reversed instead
-    private TopoDS_Shape _wrapped;
+    private global::Kerf.Topology.Shape _wrapped;
     private bool? _isEmpty;
     // The root Location the history describes: the shape's Location when it was recorded. A relocated copy shares
     // the record, so selection maps its sub-shapes back by the difference between this and its own.
     private Placement? _historyAt;
 
-    private protected Shape(TopoDS_Shape? obj, string label = "", Color? color = null)
+    private protected Shape(global::Kerf.Topology.Shape? obj, string label = "", Color? color = null)
     {
         _wrapped = obj is { } shape ? TopoUtil.Downcast(shape) : TopoUtil.EmptyCompound();
         Label = label;
@@ -75,13 +76,13 @@ public abstract partial class Shape : IEquatable<Shape>
     // ---- The OCCT shape ----
 
     /// <summary>The OCCT shape, for use inside the library. Never modify it.</summary>
-    internal TopoDS_Shape TopoShape => _wrapped;
+    internal global::Kerf.Topology.Shape TopoShape => _wrapped;
 
     /// <summary>
     /// The OCCT shape (a <c>TopoDS_Edge</c> for an edge, and so on): a new handle sharing this shape's geometry,
     /// which may be modified without affecting this shape.
     /// </summary>
-    public TopoDS_Shape Wrapped => TopoUtil.Downcast(_wrapped);
+    public global::Kerf.Topology.Shape Wrapped => TopoUtil.Downcast(_wrapped);
 
     /// <summary>True for the zero of a shape class: a shape with nothing in it.</summary>
     public bool IsEmpty => _isEmpty ??= TopoUtil.IsEmptyCompound(_wrapped);
@@ -121,7 +122,7 @@ public abstract partial class Shape : IEquatable<Shape>
     /// A copy of this shape around an already placed kernel shape: the same class and attributes, holding
     /// <paramref name="wrapped"/> rather than a copy of the geometry. The history is kept, as a relocated copy shares it.
     /// </summary>
-    internal Shape Placed(TopoDS_Shape wrapped)
+    internal Shape Placed(global::Kerf.Topology.Shape wrapped)
     {
         var copy = Clone();
         copy._wrapped = wrapped;
@@ -129,7 +130,7 @@ public abstract partial class Shape : IEquatable<Shape>
     }
 
     /// <summary>A copy of this shape around new geometry: the same class and attributes, without a history.</summary>
-    internal Shape Rewrapped(TopoDS_Shape wrapped)
+    internal Shape Rewrapped(global::Kerf.Topology.Shape wrapped)
     {
         var copy = Clone();
         copy._wrapped = TopoUtil.Downcast(wrapped);
@@ -230,23 +231,23 @@ public abstract partial class Shape : IEquatable<Shape>
     // ---- Casting ----
 
     /// <summary>The wrapper of the right class for an OCCT shape.</summary>
-    public static Shape Cast(TopoDS_Shape obj) => TopoUtil.ShapeTypeOf(obj) switch
+    public static Shape Cast(global::Kerf.Topology.Shape obj) => TopoUtil.ShapeTypeOf(obj) switch
     {
-        TopAbs_ShapeEnum.TopAbs_VERTEX => new Vertex(TopoDS.Vertex(obj)),
-        TopAbs_ShapeEnum.TopAbs_EDGE => new Edge(TopoDS.Edge(obj)),
-        TopAbs_ShapeEnum.TopAbs_WIRE => new Wire(TopoDS.Wire(obj)),
-        TopAbs_ShapeEnum.TopAbs_FACE => new Face(TopoDS.Face(obj)),
-        TopAbs_ShapeEnum.TopAbs_SHELL => new Shell(TopoDS.Shell(obj)),
-        TopAbs_ShapeEnum.TopAbs_SOLID => new Solid(TopoDS.Solid(obj)),
-        TopAbs_ShapeEnum.TopAbs_COMPOUND or TopAbs_ShapeEnum.TopAbs_COMPSOLID => new Compound(obj),
+        global::Kerf.Topology.ShapeType.Vertex => new Vertex(ShapeCasts.Vertex(obj)),
+        global::Kerf.Topology.ShapeType.Edge => new Edge(ShapeCasts.Edge(obj)),
+        global::Kerf.Topology.ShapeType.Wire => new Wire(ShapeCasts.Wire(obj)),
+        global::Kerf.Topology.ShapeType.Face => new Face(ShapeCasts.Face(obj)),
+        global::Kerf.Topology.ShapeType.Shell => new Shell(ShapeCasts.Shell(obj)),
+        global::Kerf.Topology.ShapeType.Solid => new Solid(ShapeCasts.Solid(obj)),
+        global::Kerf.Topology.ShapeType.Compound or global::Kerf.Topology.ShapeType.CompSolid => new Compound(obj),
         var t => throw new ArgumentException($"Unable to cast {t}"),
     };
 
     /// <summary>
-    /// <see cref="Cast(TopoDS_Shape)"/> on behalf of this shape's class: the kernel's empty compound has no type of
+    /// <see cref="Cast(Kerf.Topology.Shape)"/> on behalf of this shape's class: the kernel's empty compound has no type of
     /// its own, so it becomes the zero of this class.
     /// </summary>
-    internal Shape CastLike(TopoDS_Shape obj) =>
+    internal Shape CastLike(global::Kerf.Topology.Shape obj) =>
         TopoUtil.IsEmptyCompound(obj) ? MakeZero() : Cast(obj);
 
     /// <summary>The shape equivalent of a geometry object: a Vertex for a Vector or Location, an Edge for an Axis, a Face for a Plane.</summary>

@@ -3,6 +3,7 @@
 // IntPatch_PrmPrmIntersection.cxx: the Perform on the domains' samplings (IntPolyh_Intersection or the voxel search),
 // PointDepart and its file-local class IntPatch_InfoPD (see IntPatch_PrmPrmIntersection.cs).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
 using static Occt.IntSurf_TypeTrans;
@@ -20,8 +21,8 @@ public partial class IntPatch_PrmPrmIntersection
     /// <see cref="PointDepart"/>. With <paramref name="ClearFlag"/> false, the lines of an earlier Perform are kept (the
     /// voxel search keeps them in any case, as in OCCT).
     /// </summary>
-    public void Perform(Adaptor3d_Surface Surf1, Adaptor3d_TopolTool D1, Adaptor3d_Surface Surf2,
-                        Adaptor3d_TopolTool D2, double TolTangency, double Epsilon, double Deflection,
+    public void Perform(SurfaceAdaptorBase Surf1, TopolTool D1, SurfaceAdaptorBase Surf2,
+                        TopolTool D2, double TolTangency, double Epsilon, double Deflection,
                         double Increment, bool ClearFlag = true)
     {
         int Limit = 2500;
@@ -44,10 +45,10 @@ public partial class IntPatch_PrmPrmIntersection
         D2.VParameters(aVpars2);
 
         double[] Periods = new double[4];
-        Periods[0] = (Surf1.IsUPeriodic()) ? Surf1.UPeriod() : 0.0;
-        Periods[1] = (Surf1.IsVPeriodic()) ? Surf1.VPeriod() : 0.0;
-        Periods[2] = (Surf2.IsUPeriodic()) ? Surf2.UPeriod() : 0.0;
-        Periods[3] = (Surf2.IsVPeriodic()) ? Surf2.VPeriod() : 0.0;
+        Periods[0] = (Surf1.IsUPeriodic) ? Surf1.UPeriod() : 0.0;
+        Periods[1] = (Surf1.IsVPeriodic) ? Surf1.VPeriod() : 0.0;
+        Periods[2] = (Surf2.IsUPeriodic) ? Surf2.UPeriod() : 0.0;
+        Periods[3] = (Surf2.IsVPeriodic) ? Surf2.VPeriod() : 0.0;
 
         //---------------------------------------------
         if ((NbU1 * NbV1 <= Limit && NbV2 * NbU2 <= Limit))
@@ -643,8 +644,8 @@ public partial class IntPatch_PrmPrmIntersection
 
     // The rest of OCCT's Perform when a surface has more than 2,500 samples: walking lines started from the voxel
     // search's points. A separate method only because C# can't redeclare the locals of the block above.
-    private void PerformOnVoxels(Adaptor3d_Surface Surf1, Adaptor3d_TopolTool D1, Adaptor3d_Surface Surf2,
-                                 Adaptor3d_TopolTool D2, double TolTangency, double Epsilon, double Deflection,
+    private void PerformOnVoxels(SurfaceAdaptorBase Surf1, TopolTool D1, SurfaceAdaptorBase Surf2,
+                                 TopolTool D2, double TolTangency, double Epsilon, double Deflection,
                                  double Increment, int NbU1, int NbV1, int NbU2, int NbV2)
     {
         IntSurf_LineOn2S LOn2S = new();
@@ -908,8 +909,8 @@ public partial class IntPatch_PrmPrmIntersection
     /// and each voxel marked in both gives a point, with the parameters of samples in it (or the mean of the three
     /// nearest samples on each surface).
     /// </summary>
-    public void PointDepart(IntSurf_LineOn2S LineOn2S, Adaptor3d_Surface S1, int SU_1, int SV_1,
-                            Adaptor3d_Surface S2, int SU_2, int SV_2)
+    public void PointDepart(IntSurf_LineOn2S LineOn2S, SurfaceAdaptorBase S1, int SU_1, int SV_1,
+                            SurfaceAdaptorBase S2, int SU_2, int SV_2)
     {
         int i, j, xNBI;
         // modified by NIZNHY-PKV Tue May 24 11:37:38 2011f

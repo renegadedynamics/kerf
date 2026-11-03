@@ -2,7 +2,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -26,8 +30,8 @@ public class GeomFill_CorrectedFrenet_Test
         aMults[1] = 4;
         aMults[2] = 4;
 
-        Geom_BSplineCurve aCurve = new(aPoles, aKnots, aMults, 3);
-        GeomAdaptor_Curve anAdaptor = new(aCurve);
+        BSplineCurve3D aCurve = new(aPoles, aKnots, aMults, 3);
+        CurveAdaptor anAdaptor = new(aCurve);
 
         GeomFill_CorrectedFrenet aCorrectedFrenet = new(false);
         aCorrectedFrenet.SetCurve(anAdaptor);
@@ -65,8 +69,8 @@ public class GeomFill_CorrectedFrenet_Test
         aMults[1] = 2;
         aMults[2] = 2;
 
-        Geom_BSplineCurve aCurve = new(aPoles, aKnots, aMults, 1);
-        GeomAdaptor_Curve anAdaptor = new(aCurve);
+        BSplineCurve3D aCurve = new(aPoles, aKnots, aMults, 1);
+        CurveAdaptor anAdaptor = new(aCurve);
 
         GeomFill_CorrectedFrenet aCorrectedFrenet = new(false);
         aCorrectedFrenet.SetCurve(anAdaptor);
@@ -92,8 +96,8 @@ public class GeomFill_CorrectedFrenet_Test
         aMults[1] = 3;
         aMults[2] = 3;
 
-        Geom_BSplineCurve aCurve = new(aPoles, aKnots, aMults, 2);
-        GeomAdaptor_Curve anAdaptor = new(aCurve);
+        BSplineCurve3D aCurve = new(aPoles, aKnots, aMults, 2);
+        CurveAdaptor anAdaptor = new(aCurve);
 
         GeomFill_CorrectedFrenet aCorrectedFrenet = new(false);
         aCorrectedFrenet.SetCurve(anAdaptor);
@@ -122,12 +126,12 @@ public class GeomFill_CorrectedFrenet_Test
         ShapeExtend_WireData anExtend = new();
         for (int i = 2; i <= aPoints.Length(); i++)
         {
-            Geom_TrimmedCurve aCurve = new GC_MakeSegment(aPoints[i - 1], aPoints[i]).Value();
-            TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(aCurve).Edge();
+            TrimmedCurve3D aCurve = new MakeSegment(aPoints[i - 1], aPoints[i]).Value();
+            Edge anEdge = new BRepBuilderAPI_MakeEdge(aCurve).Edge();
             anExtend.Add(anEdge);
         }
 
-        BRepAdaptor_CompCurve anAdaptor = new(anExtend.WireAPIMake());
+        WireCurveAdaptor anAdaptor = new(anExtend.WireAPIMake());
 
         GeomFill_CorrectedFrenet aCorrectedFrenet = new(false);
 

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -17,16 +18,16 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
 {
     private const double Eps = 1.0e-15;
 
-    private readonly Adaptor3d_Surface surf1;
-    private readonly Adaptor3d_Surface surf2;
-    private readonly Adaptor3d_Curve curv;
-    private Adaptor2d_Curve2d? csurf;
+    private readonly SurfaceAdaptorBase surf1;
+    private readonly SurfaceAdaptorBase surf2;
+    private readonly CurveAdaptorBase curv;
+    private Curve2DAdaptorBase? csurf;
     private double ray1;
     private double ray2;
     private int choix;
     private bool first;
 
-    public BlendFunc_ConstRadInv(Adaptor3d_Surface S1, Adaptor3d_Surface S2, Adaptor3d_Curve C)
+    public BlendFunc_ConstRadInv(SurfaceAdaptorBase S1, SurfaceAdaptorBase S2, CurveAdaptorBase C)
     {
         surf1 = S1;
         surf2 = S2;
@@ -77,7 +78,7 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
         }
     }
 
-    public override void Set(bool OnFirst, Adaptor2d_Curve2d C)
+    public override void Set(bool OnFirst, Curve2DAdaptorBase C)
     {
         first = OnFirst;
         csurf = C;

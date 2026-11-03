@@ -59,18 +59,18 @@ public class BinToolsFormatTests
     [Fact]
     public void Primitives_are_little_endian()
     {
-        Assert.Equal(new byte[] { 4, 3, 2, 1 }, Bytes(s => BinTools.PutInteger(s, 0x01020304)));
-        Assert.Equal(new byte[] { 0, 0, 0, 0, 0, 0, 0xF0, 0x3F }, Bytes(s => BinTools.PutReal(s, 1.0)));
-        Assert.Equal(new byte[] { 0, 0, 0x80, 0x3F }, Bytes(s => BinTools.PutShortReal(s, 1.0f)));
-        Assert.Equal(new byte[] { 0x34, 0x12 }, Bytes(s => BinTools.PutExtChar(s, 'ሴ')));
-        Assert.Equal(new byte[] { 1, 0 }, Bytes(s => { BinTools.PutBool(s, true); BinTools.PutBool(s, false); }));
+        Assert.Equal(new byte[] { 4, 3, 2, 1 }, Bytes(s => global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(s, 0x01020304)));
+        Assert.Equal(new byte[] { 0, 0, 0, 0, 0, 0, 0xF0, 0x3F }, Bytes(s => global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(s, 1.0)));
+        Assert.Equal(new byte[] { 0, 0, 0x80, 0x3F }, Bytes(s => global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutShortReal(s, 1.0f)));
+        Assert.Equal(new byte[] { 0x34, 0x12 }, Bytes(s => global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutExtChar(s, 'ሴ')));
+        Assert.Equal(new byte[] { 1, 0 }, Bytes(s => { global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(s, true); global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(s, false); }));
 
         var aStream = new MemoryStream([4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0xF0, 0x3F, 0, 0, 0x80, 0x3F, 0x34, 0x12, 7]);
-        BinTools.GetInteger(aStream, out int anInt);
-        BinTools.GetReal(aStream, out double aReal);
-        BinTools.GetShortReal(aStream, out float aFloat);
-        BinTools.GetExtChar(aStream, out char aChar);
-        BinTools.GetBool(aStream, out bool aBool);
+        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(aStream, out int anInt);
+        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetReal(aStream, out double aReal);
+        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetShortReal(aStream, out float aFloat);
+        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetExtChar(aStream, out char aChar);
+        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetBool(aStream, out bool aBool);
         Assert.Equal(0x01020304, anInt);
         Assert.Equal(1.0, aReal);
         Assert.Equal(1.0f, aFloat);
@@ -78,14 +78,14 @@ public class BinToolsFormatTests
         Assert.True(aBool);
 
         // the end of the stream (OCCT: Storage_StreamTypeMismatchError, or garbage from a byte read)
-        Assert.Throws<global::Kerf.Engine.Foundation.StreamFormatErrorException>(() => BinTools.GetInteger(aStream, out _));
-        Assert.Throws<global::Kerf.Engine.Foundation.StreamFormatErrorException>(() => BinTools.GetBool(aStream, out _));
+        Assert.Throws<global::Kerf.Engine.Foundation.StreamFormatErrorException>(() => global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(aStream, out _));
+        Assert.Throws<global::Kerf.Engine.Foundation.StreamFormatErrorException>(() => global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetBool(aStream, out _));
     }
 
     [Fact]
     public void A_vertex_in_version_4()
     {
-        TopoDS_Vertex aVertex = TestShapes.Vertex(new Point3D(1, 2, 3));
+        Vertex aVertex = TestShapes.Vertex(new Point3D(1, 2, 3));
         byte[] anExpected = new Expected()
             .Text("\nOpen CASCADE Topology V4, (c) Open Cascade\n")
             .Text("Locations 0\n")
@@ -115,8 +115,8 @@ public class BinToolsFormatTests
     public void An_edge_on_a_line_in_version_2()
     {
         // an edge with a 3D curve and its two vertices, each with no point representation
-        var aLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        TopoDS_Edge anEdge = TestShapes.Edge(aLine, 0, 2);
+        var aLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Edge anEdge = TestShapes.Edge(aLine, 0, 2);
         byte[] aBytes = BinToolsRoundTripTests.WriteSet(anEdge, 2);
         string aText = Encoding.ASCII.GetString(aBytes);
         Assert.StartsWith("\nOpen CASCADE Topology V2 (c)\nLocations 0\nCurve2ds 0\nCurves 1\n", aText, StringComparison.Ordinal);
@@ -153,7 +153,7 @@ public class BinToolsFormatTests
         aR.SetScale(new Point3D(), 2.0);
         var aL1 = new Placement(aT);
         var aL2 = new Placement(aR);
-        var aSet = new BinTools_LocationSet();
+        var aSet = new global::Kerf.Engine.Exchange.Brep.Binary.BinaryLocationSet();
         aSet.Add(aL1 * aL2.Powered(3));
 
         byte[] anExpected = new Expected()
@@ -170,9 +170,9 @@ public class BinToolsFormatTests
     [Fact]
     public void The_position_based_format()
     {
-        TopoDS_Vertex aVertex = TestShapes.Vertex(new Point3D(1, 2, 3));
+        Vertex aVertex = TestShapes.Vertex(new Point3D(1, 2, 3));
         var aStream = new MemoryStream();
-        var aWriter = new BinTools_ShapeWriter();
+        var aWriter = new global::Kerf.Engine.Exchange.Brep.Binary.ShapeWriter();
         aWriter.Write(aVertex, aStream);
         aWriter.Write(aVertex.Reversed(), aStream);
         byte[] anExpected = new Expected()
@@ -192,9 +192,9 @@ public class BinToolsFormatTests
         var aT = new Transform3D();
         aT.SetTranslation(new Vector3D(0, 0, 1));
         var aLocations = new MemoryStream();
-        var aWriter2 = new BinTools_ShapeWriter();
-        aWriter2.Write(new TopoDS_Shape(), aLocations);
-        var anOStream = new BinTools_OStream(aLocations);
+        var aWriter2 = new global::Kerf.Engine.Exchange.Brep.Binary.ShapeWriter();
+        aWriter2.Write(new Shape(), aLocations);
+        var anOStream = new global::Kerf.Engine.Exchange.Brep.Binary.OStream(aLocations);
         aWriter2.WriteLocation(anOStream, new Placement(aT));
         var aLoc = new Placement(aT);
         aWriter2.WriteLocation(anOStream, aLoc);
@@ -211,7 +211,7 @@ public class BinToolsFormatTests
 
         // references of 16, 32 and 64 bits
         var aRefs = new MemoryStream();
-        var aRefStream = new BinTools_OStream(aRefs);
+        var aRefStream = new global::Kerf.Engine.Exchange.Brep.Binary.OStream(aRefs);
         for (int i = 0; i < 70000; i++)
         {
             aRefStream = aRefStream << (byte)0;
@@ -222,9 +222,9 @@ public class BinToolsFormatTests
         byte[] aRefBytes = aRefs.ToArray();
         Assert.Equal(new byte[] { 2, 0xE8, 0x03 }, aRefBytes.AsSpan(70000, 3).ToArray());
         Assert.Equal(new byte[] { 3, 0x73, 0x11, 0x01, 0x00 }, aRefBytes.AsSpan(70003, 5).ToArray());
-        var anIStream = new BinTools_IStream(new MemoryStream(aRefBytes) { Position = 70000 });
+        var anIStream = new global::Kerf.Engine.Exchange.Brep.Binary.IStream(new MemoryStream(aRefBytes) { Position = 70000 });
         anIStream.ReadType();
-        Assert.True(anIStream.IsReference());
+        Assert.True(anIStream.IsReference);
         Assert.Equal(69000UL, anIStream.ReadReference());
         anIStream.ReadType();
         Assert.Equal(0UL, anIStream.ReadReference());
@@ -235,20 +235,20 @@ public class BinToolsFormatTests
     public void Shape_type_bytes()
     {
         var aStream = new MemoryStream();
-        var anOStream = new BinTools_OStream(aStream);
-        anOStream.WriteShape(TopAbs_ShapeEnum.TopAbs_COMPOUND, TopAbs_Orientation.TopAbs_EXTERNAL);
-        anOStream.WriteShape(TopAbs_ShapeEnum.TopAbs_FACE, TopAbs_Orientation.TopAbs_REVERSED);
+        var anOStream = new global::Kerf.Engine.Exchange.Brep.Binary.OStream(aStream);
+        anOStream.WriteShape(ShapeType.Compound, Orientation.External);
+        anOStream.WriteShape(ShapeType.Face, Orientation.Reversed);
         anOStream.PutBools(true, false, true);
         Assert.Equal(new byte[] { 203, 217, 5 }, aStream.ToArray());
         Assert.Equal(3UL, anOStream.Position());
 
-        var anIStream = new BinTools_IStream(new MemoryStream(aStream.ToArray()));
+        var anIStream = new global::Kerf.Engine.Exchange.Brep.Binary.IStream(new MemoryStream(aStream.ToArray()));
         anIStream.ReadType();
-        Assert.Equal(TopAbs_ShapeEnum.TopAbs_COMPOUND, anIStream.ShapeType());
-        Assert.Equal(TopAbs_Orientation.TopAbs_EXTERNAL, anIStream.ShapeOrientation());
+        Assert.Equal(ShapeType.Compound, anIStream.ShapeType());
+        Assert.Equal(Orientation.External, anIStream.ShapeOrientation());
         anIStream.ReadType();
-        Assert.Equal(TopAbs_ShapeEnum.TopAbs_FACE, anIStream.ShapeType());
-        Assert.Equal(TopAbs_Orientation.TopAbs_REVERSED, anIStream.ShapeOrientation());
+        Assert.Equal(ShapeType.Face, anIStream.ShapeType());
+        Assert.Equal(Orientation.Reversed, anIStream.ShapeOrientation());
         anIStream.ReadBools(out bool a1, out bool a2, out bool a3);
         Assert.True(a1);
         Assert.False(a2);

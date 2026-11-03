@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using System.Diagnostics;
 using Occt;
 
@@ -81,9 +83,9 @@ internal static class BOPTestObjCommands
         {
             return 1;
         }
-        TopoDS_Shape aS = theDI.GetShape(a[1]);
-        NCollection_List<TopoDS_Shape> aLS = BOPTestObjects.Of(theDI).Shapes;
-        for (TopoDS_Iterator aIt = new(aS); aIt.More(); aIt.Next())
+        Shape aS = theDI.GetShape(a[1]);
+        NCollection_List<Shape> aLS = BOPTestObjects.Of(theDI).Shapes;
+        for (Iterator aIt = new(aS); aIt.More(); aIt.Next())
         {
             aLS.Append(aIt.Value());
         }
@@ -96,9 +98,9 @@ internal static class BOPTestObjCommands
         {
             return 1;
         }
-        TopoDS_Shape aS = theDI.GetShape(a[1]);
-        NCollection_List<TopoDS_Shape> aLT = BOPTestObjects.Of(theDI).Tools;
-        for (TopoDS_Iterator aIt = new(aS); aIt.More(); aIt.Next())
+        Shape aS = theDI.GetShape(a[1]);
+        NCollection_List<Shape> aLT = BOPTestObjects.Of(theDI).Tools;
+        for (Iterator aIt = new(aS); aIt.More(); aIt.Next())
         {
             aLT.Append(aIt.Value());
         }
@@ -111,7 +113,7 @@ internal static class BOPTestObjCommands
         {
             return 1;
         }
-        NCollection_List<TopoDS_Shape> aLS = BOPTestObjects.Of(theDI).Shapes;
+        NCollection_List<Shape> aLS = BOPTestObjects.Of(theDI).Shapes;
         for (int i = 1; i < a.Count; ++i)
         {
             aLS.Append(theDI.GetShape(a[i]));
@@ -135,7 +137,7 @@ internal static class BOPTestObjCommands
         {
             return 1;
         }
-        NCollection_List<TopoDS_Shape> aLS = BOPTestObjects.Of(theDI).Tools;
+        NCollection_List<Shape> aLS = BOPTestObjects.Of(theDI).Tools;
         for (int i = 1; i < a.Count; ++i)
         {
             aLS.Append(theDI.GetShape(a[i]));
@@ -172,7 +174,7 @@ internal static class BOPTestObjCommands
             return 1;
         }
         BOPTestObjects aSession = BOPTestObjects.Of(theDI);
-        NCollection_List<TopoDS_Shape> aLS = aSession.Shapes;
+        NCollection_List<Shape> aLS = aSession.Shapes;
         if (aLS.Extent() == 0)
         {
             di.Append("No objects to process\n");
@@ -192,12 +194,12 @@ internal static class BOPTestObjCommands
             }
         }
         //
-        NCollection_List<TopoDS_Shape> aLC = new();
-        foreach (TopoDS_Shape aS in aLS)
+        NCollection_List<Shape> aLC = new();
+        foreach (Shape aS in aLS)
         {
             aLC.Append(aS);
         }
-        foreach (TopoDS_Shape aS in aSession.Tools)
+        foreach (Shape aS in aSession.Tools)
         {
             aLC.Append(aS);
         }

@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -13,18 +14,18 @@ namespace Occt;
 /// <remarks>A value type (rules, section 3); its fields are internal, as OCCT's friend BRepFill_Filling reads them.</remarks>
 public readonly struct BRepFill_EdgeFaceAndOrder : IEquatable<BRepFill_EdgeFaceAndOrder>
 {
-    internal readonly TopoDS_Edge myEdge;
-    internal readonly TopoDS_Face myFace;
+    internal readonly Edge myEdge;
+    internal readonly Face myFace;
     internal readonly Continuity myOrder;
 
     public BRepFill_EdgeFaceAndOrder()
     {
-        myEdge = new TopoDS_Edge();
-        myFace = new TopoDS_Face();
+        myEdge = new Edge();
+        myFace = new Face();
         myOrder = default;
     }
 
-    public BRepFill_EdgeFaceAndOrder(in TopoDS_Edge anEdge, in TopoDS_Face aFace, Continuity anOrder)
+    public BRepFill_EdgeFaceAndOrder(in Edge anEdge, in Face aFace, Continuity anOrder)
     {
         myEdge = anEdge;
         myFace = aFace;

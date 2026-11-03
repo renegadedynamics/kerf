@@ -6,6 +6,8 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -16,12 +18,12 @@ public sealed class TopoDSToStep_MakeManifoldSolidBrep : TopoDSToStep_Root
     private StepVisual_TessellatedItem theTessellatedItem;
 
     private static (StepShape_ManifoldSolidBrep, StepVisual_TessellatedItem) MakeManifoldSolidBrep(
-        in TopoDS_Shell aShell, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors, ProgressRange theProgress)
+        in Shell aShell, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors, ProgressRange theProgress)
     {
         StepShape_ManifoldSolidBrep theManifoldSolidBrep = null;
         StepVisual_TessellatedItem aTessItem = null;
 
-        var aMap = new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
+        var aMap = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
         StepData_StepModel aStepModel = FP.Model() as StepData_StepModel;
         var aTool = new TopoDSToStep_Tool(aMap, false, aStepModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0);
         int aWriteTessGeom = (int)aStepModel.InternalParameters.WriteTessellated;
@@ -62,7 +64,7 @@ public sealed class TopoDSToStep_MakeManifoldSolidBrep : TopoDSToStep_Root
     }
 
     /// <summary>A manifold_solid_brep from a shell.</summary>
-    public TopoDSToStep_MakeManifoldSolidBrep(in TopoDS_Shell aShell, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
+    public TopoDSToStep_MakeManifoldSolidBrep(in Shell aShell, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
                                               ProgressRange theProgress = default)
     {
         (StepShape_ManifoldSolidBrep, StepVisual_TessellatedItem) aResult = MakeManifoldSolidBrep(aShell, FP, theLocalFactors, theProgress);
@@ -80,17 +82,17 @@ public sealed class TopoDSToStep_MakeManifoldSolidBrep : TopoDSToStep_Root
         }
     }
 
-    public TopoDSToStep_MakeManifoldSolidBrep(in TopoDS_Shell aShell, Transfer_FinderProcess FP)
+    public TopoDSToStep_MakeManifoldSolidBrep(in Shell aShell, Transfer_FinderProcess FP)
         : this(aShell, FP, new StepData_Factors())
     {
     }
 
     /// <summary>A manifold_solid_brep from a solid holding only one closed shell.</summary>
-    public TopoDSToStep_MakeManifoldSolidBrep(in TopoDS_Solid aSolid, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
+    public TopoDSToStep_MakeManifoldSolidBrep(in Solid aSolid, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
                                               ProgressRange theProgress = default)
     {
-        TopoDS_Shell aOuterShell = BRepClass3d.OuterShell(aSolid);
-        if (!aOuterShell.IsNull())
+        Shell aOuterShell = BRepClass3d.OuterShell(aSolid);
+        if (!aOuterShell.IsNull)
         {
             (StepShape_ManifoldSolidBrep, StepVisual_TessellatedItem) aResult =
                 MakeManifoldSolidBrep(aOuterShell, FP, theLocalFactors, theProgress);
@@ -129,7 +131,7 @@ public sealed class TopoDSToStep_MakeManifoldSolidBrep : TopoDSToStep_Root
         }
     }
 
-    public TopoDSToStep_MakeManifoldSolidBrep(in TopoDS_Solid aSolid, Transfer_FinderProcess FP)
+    public TopoDSToStep_MakeManifoldSolidBrep(in Solid aSolid, Transfer_FinderProcess FP)
         : this(aSolid, FP, new StepData_Factors())
     {
     }

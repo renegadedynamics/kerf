@@ -6,8 +6,10 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using static Occt.DESTEP_Parameters.WriteMode_StepSchema;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -18,11 +20,11 @@ public sealed class TopoDSToStep_MakeShellBasedSurfaceModel : TopoDSToStep_Root
     private StepVisual_TessellatedItem theTessellatedItem;
 
     /// <summary>A shell_based_surface_model of one open shell holding the face.</summary>
-    public TopoDSToStep_MakeShellBasedSurfaceModel(in TopoDS_Face aFace, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
+    public TopoDSToStep_MakeShellBasedSurfaceModel(in Face aFace, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
                                                    ProgressRange theProgress = default)
     {
         done = false;
-        var aMap = new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
+        var aMap = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
 
         StepData_StepModel aStepModel = FP.Model() as StepData_StepModel;
         int aWriteTessGeom = (int)aStepModel.InternalParameters.WriteTessellated;
@@ -72,13 +74,13 @@ public sealed class TopoDSToStep_MakeShellBasedSurfaceModel : TopoDSToStep_Root
         }
     }
 
-    public TopoDSToStep_MakeShellBasedSurfaceModel(in TopoDS_Face aFace, Transfer_FinderProcess FP)
+    public TopoDSToStep_MakeShellBasedSurfaceModel(in Face aFace, Transfer_FinderProcess FP)
         : this(aFace, FP, new StepData_Factors())
     {
     }
 
     /// <summary>A shell_based_surface_model of the shell.</summary>
-    public TopoDSToStep_MakeShellBasedSurfaceModel(in TopoDS_Shell aShell, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
+    public TopoDSToStep_MakeShellBasedSurfaceModel(in Shell aShell, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
                                                    ProgressRange theProgress = default)
     {
         done = false;
@@ -86,7 +88,7 @@ public sealed class TopoDSToStep_MakeShellBasedSurfaceModel : TopoDSToStep_Root
         NCollection_HArray1<StepShape_Shell> aSbsmBoundary;
         StepShape_OpenShell aOpenShell;
         StepShape_ClosedShell aClosedShell;
-        var aMap = new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
+        var aMap = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
 
         StepData_StepModel aStepModel = FP.Model() as StepData_StepModel;
         int aWriteTessGeom = (int)aStepModel.InternalParameters.WriteTessellated;
@@ -143,13 +145,13 @@ public sealed class TopoDSToStep_MakeShellBasedSurfaceModel : TopoDSToStep_Root
         TopoDSToStep.AddResult(FP, aTool);
     }
 
-    public TopoDSToStep_MakeShellBasedSurfaceModel(in TopoDS_Shell aShell, Transfer_FinderProcess FP)
+    public TopoDSToStep_MakeShellBasedSurfaceModel(in Shell aShell, Transfer_FinderProcess FP)
         : this(aShell, FP, new StepData_Factors())
     {
     }
 
     /// <summary>A shell_based_surface_model of the solid's shells.</summary>
-    public TopoDSToStep_MakeShellBasedSurfaceModel(in TopoDS_Solid aSolid, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
+    public TopoDSToStep_MakeShellBasedSurfaceModel(in Solid aSolid, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
                                                    ProgressRange theProgress = default)
     {
         done = false;
@@ -157,9 +159,9 @@ public sealed class TopoDSToStep_MakeShellBasedSurfaceModel : TopoDSToStep_Root
         NCollection_HArray1<StepShape_Shell> aSbsmBoundary;
         StepShape_OpenShell aOpenShell;
         StepShape_ClosedShell aClosedShell;
-        TopoDS_Iterator It = new TopoDS_Iterator();
-        TopoDS_Shell aShell = new TopoDS_Shell();
-        var aMap = new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
+        Iterator It = new Iterator();
+        Shell aShell = new Shell();
+        var aMap = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
         var S = new NCollection_Sequence<Transient>();
         var aTessShells = new NCollection_Sequence<Transient>();
 
@@ -176,7 +178,7 @@ public sealed class TopoDSToStep_MakeShellBasedSurfaceModel : TopoDSToStep_Root
         int nbshapes = 0;
         for (It.Initialize(aSolid); It.More(); It.Next())
         {
-            if (It.Value().ShapeType() == TopAbs_SHELL)
+            if (It.Value().ShapeType() == ShapeType.Shell)
             {
                 nbshapes++;
             }
@@ -185,9 +187,9 @@ public sealed class TopoDSToStep_MakeShellBasedSurfaceModel : TopoDSToStep_Root
         using var aPS = new ProgressScope(theProgress, null, nbshapes);
         for (It.Initialize(aSolid); It.More() && aPS.More(); It.Next())
         {
-            if (It.Value().ShapeType() == TopAbs_SHELL)
+            if (It.Value().ShapeType() == ShapeType.Shell)
             {
-                aShell = TopoDS.Shell(It.Value());
+                aShell = ShapeCasts.Shell(It.Value());
                 var aTool = new TopoDSToStep_Tool(aMap, false, aStepModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0);
                 var StepB = new TopoDSToStep_Builder(aShell, aTool, FP, aWriteTessGeom, theLocalFactors, aPS.Next());
                 TopoDSToStep.AddResult(FP, aTool);
@@ -268,7 +270,7 @@ public sealed class TopoDSToStep_MakeShellBasedSurfaceModel : TopoDSToStep_Root
         }
     }
 
-    public TopoDSToStep_MakeShellBasedSurfaceModel(in TopoDS_Solid aSolid, Transfer_FinderProcess FP)
+    public TopoDSToStep_MakeShellBasedSurfaceModel(in Solid aSolid, Transfer_FinderProcess FP)
         : this(aSolid, FP, new StepData_Factors())
     {
     }

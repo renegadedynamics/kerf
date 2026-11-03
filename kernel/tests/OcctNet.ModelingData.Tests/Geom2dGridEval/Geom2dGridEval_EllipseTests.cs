@@ -1,6 +1,7 @@
 // Port of OCCT's src/ModelingData/TKG2d/GTests/Geom2dGridEval_Ellipse_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -23,8 +24,8 @@ public class Geom2dGridEval_EllipseTest
     [Fact]
     public void BasicD0()
     {
-        Geom2d_Ellipse anEllipse = new(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
-        Geom2dGridEval_Ellipse anEval = new(anEllipse);
+        EllipseCurve2D anEllipse = new(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
+        EllipseGrid2D anEval = new(anEllipse);
         Assert.NotNull(anEval.Geometry());
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 2 * M_PI, 13);
@@ -42,8 +43,8 @@ public class Geom2dGridEval_EllipseTest
     [Fact]
     public void CardinalPoints()
     {
-        Geom2d_Ellipse anEllipse = new(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
-        Geom2dGridEval_Ellipse anEval = new(anEllipse);
+        EllipseCurve2D anEllipse = new(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
+        EllipseGrid2D anEval = new(anEllipse);
 
         NCollection_Array1<double> aParams = new(1, 4);
         aParams.SetValue(1, 0.0);
@@ -70,12 +71,12 @@ public class Geom2dGridEval_EllipseTest
     [Fact]
     public void D1()
     {
-        Geom2d_Ellipse anEllipse = new(new Frame2D(new Point2D(1, 2), new Direction2D(1, 0)), 5.0, 3.0);
-        Geom2dGridEval_Ellipse anEval = new(anEllipse);
+        EllipseCurve2D anEllipse = new(new Frame2D(new Point2D(1, 2), new Direction2D(1, 0)), 5.0, 3.0);
+        EllipseGrid2D anEval = new(anEllipse);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 2 * M_PI, 13);
 
-        NCollection_Array1<Geom2d_Curve.ResD1> aGrid = anEval.EvaluateGridD1(aParams);
+        NCollection_Array1<Curve2D.ResD1> aGrid = anEval.EvaluateGridD1(aParams);
 
         for (int i = 1; i <= 13; ++i)
         {
@@ -88,12 +89,12 @@ public class Geom2dGridEval_EllipseTest
     [Fact]
     public void D2()
     {
-        Geom2d_Ellipse anEllipse = new(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
-        Geom2dGridEval_Ellipse anEval = new(anEllipse);
+        EllipseCurve2D anEllipse = new(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
+        EllipseGrid2D anEval = new(anEllipse);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 2 * M_PI, 9);
 
-        NCollection_Array1<Geom2d_Curve.ResD2> aGrid = anEval.EvaluateGridD2(aParams);
+        NCollection_Array1<Curve2D.ResD2> aGrid = anEval.EvaluateGridD2(aParams);
 
         for (int i = 1; i <= 9; ++i)
         {
@@ -107,12 +108,12 @@ public class Geom2dGridEval_EllipseTest
     [Fact]
     public void D3()
     {
-        Geom2d_Ellipse anEllipse = new(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
-        Geom2dGridEval_Ellipse anEval = new(anEllipse);
+        EllipseCurve2D anEllipse = new(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
+        EllipseGrid2D anEval = new(anEllipse);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 2 * M_PI, 9);
 
-        NCollection_Array1<Geom2d_Curve.ResD3> aGrid = anEval.EvaluateGridD3(aParams);
+        NCollection_Array1<Curve2D.ResD3> aGrid = anEval.EvaluateGridD3(aParams);
 
         for (int i = 1; i <= 9; ++i)
         {

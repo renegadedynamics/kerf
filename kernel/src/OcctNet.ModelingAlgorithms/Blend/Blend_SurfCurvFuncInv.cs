@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 namespace Occt;
@@ -21,7 +22,7 @@ public abstract class Blend_SurfCurvFuncInv : FunctionSetWithDerivatives
     }
 
     /// <summary>Sets the restriction on which a solution is found.</summary>
-    public abstract void Set(Adaptor2d_Curve2d Rst);
+    public abstract void Set(Curve2DAdaptorBase Rst);
 
     /// <summary>The parametric tolerance of each of the 3 variables, from the 3d tolerance <paramref name="Tol"/>.</summary>
     public abstract void GetTolerance(math_Vector Tolerance, double Tol);

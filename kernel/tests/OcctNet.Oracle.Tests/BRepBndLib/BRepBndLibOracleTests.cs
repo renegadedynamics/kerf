@@ -3,6 +3,7 @@
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -25,7 +26,7 @@ public class BRepBndLibOracleTests(ITestOutputHelper output)
         int aCalls = 0;
         for (int aScene = 0; aScene < Scenes; aScene++)
         {
-            Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = ClassificationScenes.Scene(anOracle, aScene);
+            Twin<N.TopoDS_Shape, Shape> aShape = ClassificationScenes.Scene(anOracle, aScene);
             string aWhat = $"scene {aScene} ({ClassificationScenes.Name(aScene)})";
             bool aStartFull = anOracle.Bool();
             Point3D aMin = new(anOracle.Real(-30, 0), anOracle.Real(-30, 0), anOracle.Real(-30, 0));

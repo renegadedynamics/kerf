@@ -1,11 +1,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.IO.Compression;
 using System.Text;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -146,10 +151,10 @@ internal static class BRepFillRecordingCases
     private static void Line(string theLine) => theOut.Append(theLine).Append('\n');
 
     /// <summary>The BRep text of a shape with the Free flag masked, as main.cpp's Text.</summary>
-    private static void Text(string theTag, in TopoDS_Shape theShape)
+    private static void Text(string theTag, in Shape theShape)
     {
         StringWriter aWriter = new();
-        BRepTools.Write(theShape, aWriter);
+        BrepTools.Write(theShape, aWriter);
         Line(theTag);
         string[] aLines = aWriter.ToString().Split('\n');
         int aCount = aLines.Length;
@@ -215,7 +220,7 @@ internal static class BRepFillRecordingCases
         return aTr * aRot;
     }
 
-    private static Geom_BSplineCurve Cubic(Rng r, Point3D P1, Point3D P2, double theWiggle)
+    private static BSplineCurve3D Cubic(Rng r, Point3D P1, Point3D P2, double theWiggle)
     {
         NCollection_Array1<Point3D> aPoles = new(1, 4);
         aPoles[1] = P1;
@@ -235,12 +240,12 @@ internal static class BRepFillRecordingCases
         NCollection_Array1<int> aM = new(1, 2);
         aM[1] = 4;
         aM[2] = 4;
-        return new Geom_BSplineCurve(aPoles, aK, aM, 3);
+        return new BSplineCurve3D(aPoles, aK, aM, 3);
     }
 
-    private static TopoDS_Vertex Vertex(Point3D theP) => new BRepBuilderAPI_MakeVertex(theP).Vertex();
+    private static Vertex Vertex(Point3D theP) => new BRepBuilderAPI_MakeVertex(theP).Vertex();
 
-    private static TopoDS_Wire MakeWire(Rng r, int theKind, double theScale)
+    private static Wire MakeWire(Rng r, int theKind, double theScale)
     {
         BRepBuilderAPI_MakeWire aMW = new();
         if (theKind == 2)
@@ -264,7 +269,7 @@ internal static class BRepFillRecordingCases
             }
             aM[1] = 4;
             aM[aNbK] = 4;
-            Geom_BSplineCurve aC = new(aPoles, aK, aM, 3);
+            BSplineCurve3D aC = new(aPoles, aK, aM, 3);
             int aNE2 = r.I(1, 4);
             double aL = aK[aNbK];
             List<double> aT = [0];
@@ -273,14 +278,14 @@ internal static class BRepFillRecordingCases
                 aT.Add(aL * i / aNE2 + r.R(-0.1, 0.1));
             }
             aT.Add(aL);
-            List<TopoDS_Vertex> aV2 = [];
+            List<Vertex> aV2 = [];
             foreach (double t in aT)
             {
                 aV2.Add(Vertex(aC.Value(t)));
             }
             for (int i = 0; i < aNE2; i++)
             {
-                TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(aC, aV2[i], aV2[i + 1], aT[i], aT[i + 1]).Edge();
+                Edge anE = new BRepBuilderAPI_MakeEdge(aC, aV2[i], aV2[i + 1], aT[i], aT[i + 1]).Edge();
                 aMW.Add(anE);
             }
             return aMW.Wire();
@@ -288,7 +293,7 @@ internal static class BRepFillRecordingCases
         bool aClosed = theKind == 1;
         int aNE = aClosed ? r.I(3, 5) : r.I(1, 4);
         List<Point3D> aP = [];
-        List<TopoDS_Vertex> aV = [];
+        List<Vertex> aV = [];
         for (int i = 0; i < aNE; i++)
         {
             Point3D aQ = Pnt(r, theScale);
@@ -309,18 +314,18 @@ internal static class BRepFillRecordingCases
             int aTyp = r.I(0, 2);
             bool aRev = r.I(0, 3) == 0;
             int a = aRev ? j : i, b = aRev ? i : j;
-            Geom_Curve? aC = null;
+            Curve3D? aC = null;
             if (aTyp == 1)
             {
                 Point3D aM = new(aP[a].XYZ() * 0.5 + aP[b].XYZ() * 0.5);
                 Point3D aQ = Pnt(r, theScale * 0.5);
-                aC = new GC_MakeArcOfCircle(aP[a], new Point3D(aM.X() + aQ.X(), aM.Y() + aQ.Y(), aM.Z() + aQ.Z()), aP[b]).Value();
+                aC = new MakeArcOfCircle(aP[a], new Point3D(aM.X() + aQ.X(), aM.Y() + aQ.Y(), aM.Z() + aQ.Z()), aP[b]).Value();
             }
             else if (aTyp == 2)
             {
                 aC = Cubic(r, aP[a], aP[b], theScale * 0.5);
             }
-            TopoDS_Edge anE;
+            Edge anE;
             if (aC is null)
             {
                 anE = new BRepBuilderAPI_MakeEdge(aV[a], aV[b]).Edge();
@@ -338,14 +343,14 @@ internal static class BRepFillRecordingCases
         return aMW.Wire();
     }
 
-    private static TopoDS_Wire RandomWire(Rng r, int theMaxKind, double theS0, double theS1)
+    private static Wire RandomWire(Rng r, int theMaxKind, double theS0, double theS1)
     {
         int aKind = r.I(0, theMaxKind);
         double aScale = r.R(theS0, theS1);
         return MakeWire(r, aKind, aScale);
     }
 
-    private static TopoDS_Shape Box(Rng r)
+    private static Shape Box(Rng r)
     {
         double dx = r.R(1, 3);
         double dy = r.R(1, 3);
@@ -353,7 +358,7 @@ internal static class BRepFillRecordingCases
         return new BRepPrimAPI_MakeBox(dx, dy, dz).Shape();
     }
 
-    private static TopoDS_Shape Cylinder(Rng r)
+    private static Shape Cylinder(Rng r)
     {
         double aR = r.R(1, 3);
         double aH = r.R(1, 3);
@@ -420,9 +425,9 @@ internal static class BRepFillRecordingCases
             theLaw.CurvilinearBounds(i, out double f, out double l);
             aTotal = l;
             Line("CB " + Hex(f) + " " + Hex(l));
-            Line("V " + Hex(BRep_Tool.Pnt(theLaw.Vertex(i))));
+            Line("V " + Hex(Tool.Pnt(theLaw.Vertex(i))));
         }
-        Line("V " + Hex(BRep_Tool.Pnt(theLaw.Vertex(N + 1))));
+        Line("V " + Hex(Tool.Pnt(theLaw.Vertex(N + 1))));
         for (int k = 0; k <= 6; k++)
         {
             double s = k == 6 ? aTotal * 1.1 : (k == 5 ? r.R(0, aTotal) : aTotal * k / 4.0);
@@ -433,11 +438,11 @@ internal static class BRepFillRecordingCases
             {
                 Line("ABS " + Hex(theLaw.Abscissa(anInd, U)));
             }
-            TopoDS_Shape aV = Vertex(Pnt(r, 1));
+            Shape aV = Vertex(Pnt(r, 1));
             Guard(() =>
             {
                 theLaw.D0(s, ref aV);
-                Line(aV.IsNull() ? "D0 null" : "D0 " + Hex(BRep_Tool.Pnt(TopoDS.Vertex(aV))));
+                Line(aV.IsNull ? "D0 null" : "D0 " + Hex(Tool.Pnt(ShapeCasts.Vertex(aV))));
             });
         }
         for (int i = 1; i <= N; i++)
@@ -448,7 +453,7 @@ internal static class BRepFillRecordingCases
             theLaw.Law(i).D0(0.5 * (f + l), ref M, ref V);
             Line("LD0 " + Hex(M) + " " + Hex(V));
         }
-        TopoDS_Vertex anIn = Vertex(Pnt(r, 1));
+        Vertex anIn = Vertex(Pnt(r, 1));
         void Perform(string theTag)
         {
             for (int i = 0; i <= N; i++)
@@ -457,8 +462,8 @@ internal static class BRepFillRecordingCases
                 {
                     Guard(() =>
                     {
-                        theLaw.PerformVertex(i, anIn, 1.0e-7, out TopoDS_Vertex anOut, iloc);
-                        Line(theTag + " " + Hex(BRep_Tool.Pnt(anOut)) + " " + Hex(BRep_Tool.Tolerance(anOut)));
+                        theLaw.PerformVertex(i, anIn, 1.0e-7, out Vertex anOut, iloc);
+                        Line(theTag + " " + Hex(Tool.Pnt(anOut)) + " " + Hex(Tool.Tolerance(anOut)));
                     });
                 }
             }
@@ -479,7 +484,7 @@ internal static class BRepFillRecordingCases
         Line("HOLES2 " + Int(theLaw.NbHoles(1.0e-4)));
     }
 
-    private static void DumpSectionLaw(BRepFill_SectionLaw theLaw, TopoDS_Wire theWire)
+    private static void DumpSectionLaw(BRepFill_SectionLaw theLaw, Wire theWire)
     {
         Line("SEC " + Int(theLaw.NbLaw()) + " " + Int(theLaw.IsUClosed()) + " " + Int(theLaw.IsVClosed()) + " "
              + Int(theLaw.IsConstant()) + " " + Int(theLaw.IsVertex()) + " " + Int(theLaw.IsDone()));
@@ -534,11 +539,11 @@ internal static class BRepFillRecordingCases
             }
             for (int i = 1; i <= N + 1; i++)
             {
-                Guard(() => Line("VX " + Hex(BRep_Tool.Pnt(theLaw.Vertex(i, aMid)))));
+                Guard(() => Line("VX " + Hex(Tool.Pnt(theLaw.Vertex(i, aMid)))));
             }
-            for (TopExp_Explorer anExp = new(theWire, TopAbs_EDGE); anExp.More(); anExp.Next())
+            for (Explorer anExp = new(theWire, ShapeType.Edge); anExp.More(); anExp.Next())
             {
-                TopoDS_Shape anE = anExp.Current();
+                Shape anE = anExp.Current();
                 Guard(() => Line("IDX " + Int(theLaw.IndexOfEdge(anE))));
             }
         }
@@ -564,7 +569,7 @@ internal static class BRepFillRecordingCases
         });
         Guard(() =>
         {
-            TopoDS_Shape aS = new();
+            Shape aS = new();
             theLaw.D0(aMid, ref aS);
             Text("SD0", aS);
         });
@@ -574,7 +579,7 @@ internal static class BRepFillRecordingCases
 
     private static void Edge3D(Rng r)
     {
-        TopoDS_Wire aW = RandomWire(r, 2, 1, 5);
+        Wire aW = RandomWire(r, 2, 1, 5);
         int aKind = r.I(0, 3);
         Line("TRI " + Int(aKind));
         GeomFill_LocationLaw aL = MakeTrihedron(r, aKind);
@@ -587,16 +592,16 @@ internal static class BRepFillRecordingCases
 
     private static void Guided(Rng r, bool theACR)
     {
-        TopoDS_Wire aW = RandomWire(r, 2, 1, 5);
+        Wire aW = RandomWire(r, 2, 1, 5);
         Transform3D aT = new();
         double tx = r.R(-1, 1);
         double ty = r.R(2, 4);
         double tz = r.R(-1, 1);
         aT.SetTranslation(new Vector3D(tx, ty, tz));
-        TopoDS_Wire aG = TopoDS.Wire(new BRepBuilderAPI_Transform(aW, aT, true).Shape());
+        Wire aG = ShapeCasts.Wire(new BRepBuilderAPI_Transform(aW, aT, true).Shape());
         Guard(() =>
         {
-            BRepAdaptor_CompCurve aGuide = new(aG);
+            WireCurveAdaptor aGuide = new(aG);
             BRepFill_LocationLaw aLaw;
             if (theACR)
             {
@@ -617,13 +622,13 @@ internal static class BRepFillRecordingCases
     private static void EdgeOnSurf(Rng r)
     {
         int aKind = r.I(0, 2);
-        Geom_Surface aS;
+        Surface aS;
         double u0 = 0, u1 = 1, v0 = 0, v1 = 1;
         if (aKind == 0)
         {
             Point3D aO = Pnt(r, 2);
             Direction3D aD = Dir(r);
-            aS = new Geom_Plane(new CoordinateSystem(aO, aD));
+            aS = new PlaneSurface(new CoordinateSystem(aO, aD));
             u1 = v1 = 10;
         }
         else if (aKind == 1)
@@ -631,7 +636,7 @@ internal static class BRepFillRecordingCases
             Point3D aO = Pnt(r, 2);
             Direction3D aD = Dir(r);
             double aR = r.R(2, 5);
-            aS = new Geom_CylindricalSurface(new CoordinateSystem(aO, aD), aR);
+            aS = new CylindricalSurface(new CoordinateSystem(aO, aD), aR);
             u1 = 6;
             v1 = 10;
         }
@@ -652,9 +657,9 @@ internal static class BRepFillRecordingCases
             NCollection_Array1<int> aM = new(1, 2);
             aM[1] = 4;
             aM[2] = 4;
-            aS = new Geom_BSplineSurface(aP, aK, aK, aM, aM, 3, 3);
+            aS = new BSplineSurface(aP, aK, aK, aM, aM, 3, 3);
         }
-        TopoDS_Face aF = new BRepBuilderAPI_MakeFace(aS, u0, u1, v0, v1, 1.0e-7).Face();
+        Face aF = new BRepBuilderAPI_MakeFace(aS, u0, u1, v0, v1, 1.0e-7).Face();
         int aNE = r.I(1, 4);
         List<Point2D> aUV = [];
         for (int i = 0; i <= aNE; i++)
@@ -664,11 +669,11 @@ internal static class BRepFillRecordingCases
             aUV.Add(new Point2D(u, v));
         }
         // the vertices and edges stay unfrozen: BuildCurves3d writes into them, as natively
-        BRep_Builder B = new();
-        List<TopoDS_Vertex> aV = [];
+        BrepBuilder B = new();
+        List<Vertex> aV = [];
         foreach (Point2D aQ in aUV)
         {
-            TopoDS_Vertex aVx = new();
+            Vertex aVx = new();
             B.MakeVertex(ref aVx, aS.Value(aQ.X(), aQ.Y()), global::Kerf.Engine.Foundation.Precision.Confusion());
             aV.Add(aVx);
         }
@@ -677,8 +682,8 @@ internal static class BRepFillRecordingCases
         for (int i = 0; i < aNE; i++)
         {
             Vector2D aD = new(aUV[i], aUV[i + 1]);
-            Geom2d_Line aL = new(aUV[i], new Direction2D(aD));
-            TopoDS_Edge anE;
+            LineCurve2D aL = new(aUV[i], new Direction2D(aD));
+            Edge anE;
             if (aOff && i == aNE - 1)
             {
                 anE = new BRepBuilderAPI_MakeEdge(aV[i], aV[i + 1]).InternalEdge();
@@ -690,7 +695,7 @@ internal static class BRepFillRecordingCases
             }
             aMW.Add(anE);
         }
-        TopoDS_Wire aW = aMW.Wire();
+        Wire aW = aMW.Wire();
         Guard(() =>
         {
             BRepFill_EdgeOnSurfLaw aLaw = new(aW, aF);
@@ -708,11 +713,11 @@ internal static class BRepFillRecordingCases
         Line("KIND " + Int(aKind));
         if (aKind == 0)
         {
-            TopoDS_Vertex aV = Vertex(Pnt(r, 5));
-            Guard(() => DumpSectionLaw(new BRepFill_ShapeLaw(aV), new TopoDS_Wire()));
+            Vertex aV = Vertex(Pnt(r, 5));
+            Guard(() => DumpSectionLaw(new BRepFill_ShapeLaw(aV), new Wire()));
             return;
         }
-        TopoDS_Wire aW = RandomWire(r, 2, 0.5, 2);
+        Wire aW = RandomWire(r, 2, 0.5, 2);
         if (aKind == 1)
         {
             Guard(() => DumpSectionLaw(new BRepFill_ShapeLaw(aW), aW));
@@ -727,16 +732,16 @@ internal static class BRepFillRecordingCases
         }
     }
 
-    private static TopoDS_Wire PunctualWire(Point3D theP)
+    private static Wire PunctualWire(Point3D theP)
     {
-        TopoDS_Vertex aV = Vertex(theP);
-        BRep_Builder BB = new();
-        TopoDS_Edge DegEdge = new();
+        Vertex aV = Vertex(theP);
+        BrepBuilder BB = new();
+        Edge DegEdge = new();
         BB.MakeEdge(ref DegEdge);
-        BB.Add(DegEdge, aV.Oriented(TopAbs_FORWARD));
-        BB.Add(DegEdge, aV.Oriented(TopAbs_REVERSED));
+        BB.Add(DegEdge, aV.Oriented(Forward));
+        BB.Add(DegEdge, aV.Oriented(Reversed));
         BB.Degenerated(DegEdge, true);
-        TopoDS_Wire aW = new();
+        Wire aW = new();
         BB.MakeWire(ref aW);
         BB.Add(aW, DegEdge);
         aW.Closed(true);
@@ -745,9 +750,9 @@ internal static class BRepFillRecordingCases
 
     private static void NSections(Rng r)
     {
-        TopoDS_Wire aW0 = RandomWire(r, 1, 0.5, 2);
+        Wire aW0 = RandomWire(r, 1, 0.5, 2);
         int aNb = r.I(2, 4);
-        NCollection_Sequence<TopoDS_Shape> aS = new();
+        NCollection_Sequence<Shape> aS = new();
         NCollection_Sequence<Transform3D> aT = new();
         NCollection_Sequence<double> aP = new();
         bool aFirstPoint = r.I(0, 3) == 0;
@@ -781,7 +786,7 @@ internal static class BRepFillRecordingCases
             aP.Append(aPar);
             aPar += r.R(0.5, 2);
         }
-        TopoDS_Wire aRef = TopoDS.Wire(aS[aFirstPoint ? 2 : 1]);
+        Wire aRef = ShapeCasts.Wire(aS[aFirstPoint ? 2 : 1]);
         if (r.I(0, 1) == 0)
         {
             Line("NS1");
@@ -794,12 +799,12 @@ internal static class BRepFillRecordingCases
         }
     }
 
-    private static TopoDS_Shape Located(Rng r, in TopoDS_Shape theShape) => theShape.Moved(new Placement(Trsf(r, 3)));
+    private static Shape Located(Rng r, in Shape theShape) => theShape.Moved(new Placement(Trsf(r, 3)));
 
     private static void RemoveLoc(Rng r)
     {
         int aKind = r.I(0, 3);
-        TopoDS_Shape aShape;
+        Shape aShape;
         if (aKind == 0)
         {
             aShape = Located(r, Box(r));
@@ -814,8 +819,8 @@ internal static class BRepFillRecordingCases
         }
         else
         {
-            BRep_Builder B = new();
-            TopoDS_Compound C = new();
+            BrepBuilder B = new();
+            Compound C = new();
             B.MakeCompound(ref C);
             B.Add(C, Located(r, Box(r)));
             B.Add(C, Located(r, Cylinder(r)));
@@ -823,7 +828,7 @@ internal static class BRepFillRecordingCases
             aShape = Located(r, C);
         }
         int aLevel = r.I(0, 4);
-        TopAbs_ShapeEnum aL = aLevel == 0 ? TopAbs_SHAPE : (TopAbs_ShapeEnum)(aLevel - 1);
+        ShapeType aL = aLevel == 0 ? ShapeType.Shape : (ShapeType)(aLevel - 1);
         Line("LEVEL " + Int(aLevel));
         Guard(() =>
         {
@@ -838,7 +843,7 @@ internal static class BRepFillRecordingCases
     private static void Section(Rng r)
     {
         int aKind = r.I(0, 1);
-        TopoDS_Shape aProfile;
+        Shape aProfile;
         if (aKind == 0)
         {
             aProfile = Located(r, Vertex(Pnt(r, 2)));
@@ -847,7 +852,7 @@ internal static class BRepFillRecordingCases
         {
             aProfile = Located(r, RandomWire(r, 2, 1, 1));
         }
-        TopoDS_Vertex aV = Vertex(Pnt(r, 2));
+        Vertex aV = Vertex(Pnt(r, 2));
         Guard(() =>
         {
             bool aContact = r.I(0, 1) == 1;
@@ -855,13 +860,13 @@ internal static class BRepFillRecordingCases
             BRepFill_Section aSec = new(aProfile, aV, aContact, aCorrection);
             Line("SECT " + Int(aSec.IsPunctual()) + " " + Int(aSec.WithContact()) + " " + Int(aSec.WithCorrection()));
             Text("WIRE", aSec.Wire());
-            NCollection_IndexedMap<TopoDS_Shape> aMap = new(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(aSec.Wire(), aMap);
-            for (TopExp_Explorer anExp = new(aProfile, TopAbs_EDGE); anExp.More(); anExp.Next())
+            NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+            Exploration.MapShapes(aSec.Wire(), aMap);
+            for (Explorer anExp = new(aProfile, ShapeType.Edge); anExp.More(); anExp.Next())
             {
                 Line("MOD " + Int(aMap.FindIndex(aSec.ModifiedShape(anExp.Current()))));
             }
-            for (TopExp_Explorer anExp = new(aProfile, TopAbs_VERTEX); anExp.More(); anExp.Next())
+            for (Explorer anExp = new(aProfile, global::Kerf.Topology.ShapeType.Vertex); anExp.More(); anExp.Next())
             {
                 Line("MOD " + Int(aMap.FindIndex(aSec.ModifiedShape(anExp.Current()))));
             }
@@ -871,19 +876,19 @@ internal static class BRepFillRecordingCases
 
     private static void Placement(Rng r)
     {
-        TopoDS_Wire aW = RandomWire(r, 2, 1, 5);
+        Wire aW = RandomWire(r, 2, 1, 5);
         int aKind = r.I(0, 1);
         GeomFill_LocationLaw aL = MakeTrihedron(r, aKind);
         int aSecKind = r.I(0, 1);
         // a section near a point of the spine
-        BRepAdaptor_CompCurve aC = new(aW);
+        WireCurveAdaptor aC = new(aW);
         double t = r.R(aC.FirstParameter(), aC.LastParameter());
         Point3D aQ = aC.Value(t);
         double ox = r.R(-0.5, 0.5);
         double oy = r.R(-0.5, 0.5);
         double oz = r.R(-0.5, 0.5);
         Point3D aO = new(aQ.X() + ox, aQ.Y() + oy, aQ.Z() + oz);
-        TopoDS_Shape aSec;
+        Shape aSec;
         if (aSecKind == 0)
         {
             aSec = Vertex(aO);
@@ -910,7 +915,7 @@ internal static class BRepFillRecordingCases
             else
             {
                 int anIdx = r.I(1, aLaw.NbLaw() + 1);
-                TopoDS_Vertex aV = aLaw.Vertex(anIdx);
+                Vertex aV = aLaw.Vertex(anIdx);
                 BRepFill_SectionPlacement aP = new(aLaw, aSec, aV, aContact, aCorrection);
                 Line("TRSF " + Hex(aP.Transformation()));
                 Line("ABSC " + Hex(aP.AbscissaOnPath()));

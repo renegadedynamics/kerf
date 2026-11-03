@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -145,9 +148,9 @@ public class BRepAlgoAPIOracleTests(ITestOutputHelper output)
     // The recording state of one script: BOPTest's objects, tools and options.
     private sealed class Recorder
     {
-        public readonly List<TopoDS_Shape> Objects = [], Tools = [];
-        public List<TopoDS_Shape> FilledObjects = [], FilledTools = [];
-        public TopoDS_Shape BopA, BopB;
+        public readonly List<Shape> Objects = [], Tools = [];
+        public List<Shape> FilledObjects = [], FilledTools = [];
+        public Shape BopA, BopB;
         public double Fuzzy;
         public BOPAlgo_GlueEnum Glue = BOPAlgo_GlueEnum.BOPAlgo_GlueOff;
         public bool NonDestructive, UseOBB, CheckInverted = true;
@@ -184,10 +187,10 @@ public class BRepAlgoAPIOracleTests(ITestOutputHelper output)
 
     private static void Register(DrawInterpreter theInterp, Recorder theRec)
     {
-        TopoDS_Shape Get(DrawInterpreter i, string n)
+        Shape Get(DrawInterpreter i, string n)
         {
-            TopoDS_Shape aS = i.GetShape(n);
-            if (aS.IsNull())
+            Shape aS = i.GetShape(n);
+            if (aS.IsNull)
             {
                 throw new DrawException($"{n} is not a shape");
             }
@@ -249,33 +252,33 @@ public class BRepAlgoAPIOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void AddCompound(in TopoDS_Shape theC, List<TopoDS_Shape> theList)
+    private static void AddCompound(in Shape theC, List<Shape> theList)
     {
-        for (TopoDS_Iterator anIt = new(theC); anIt.More(); anIt.Next())
+        for (Iterator anIt = new(theC); anIt.More(); anIt.Next())
         {
             theList.Add(anIt.Value());
         }
     }
 
     // Records one operation and binds the port's result (so the script can go on).
-    private static string Record(DrawInterpreter theInterp, Recorder theRec, string theResult, List<TopoDS_Shape> theObjects,
-                                 List<TopoDS_Shape> theTools, Op theOp)
+    private static string Record(DrawInterpreter theInterp, Recorder theRec, string theResult, List<Shape> theObjects,
+                                 List<Shape> theTools, Op theOp)
     {
         if (theObjects.Count == 0 || theObjects.Count + theTools.Count < 2)
         {
             throw new DrawException("not enough arguments");
         }
-        TopoDS_Compound aC = TopoDS_Builder.MakeCompound(theObjects.Concat(theTools));
+        Compound aC = Builder.MakeCompound(theObjects.Concat(theTools));
         var aText = new StringWriter();
-        BRepTools.Write(aC, aText);
+        BrepTools.Write(aC, aText);
         var aCase = new Run($"{theRec.Name} #{theRec.Runs.Count + 1}", aText.ToString(), theObjects.Count, theOp, theRec.Fuzzy,
                             theRec.Glue, theRec.UseOBB, false, theRec.NonDestructive, theRec.CheckInverted);
         theRec.Runs.Add(aCase);
 
         // the port's result, bound for the rest of the script
-        var anArgs = new List<TopoDS_Shape>(theObjects.Concat(theTools));
-        (TopoDS_Shape? aRes, _, string? anErr) = BooleanOracleTests.RunPort(aCase, anArgs, false);
-        if (aRes is TopoDS_Shape aShape && anErr is null)
+        var anArgs = new List<Shape>(theObjects.Concat(theTools));
+        (Shape? aRes, _, string? anErr) = BooleanOracleTests.RunPort(aCase, anArgs, false);
+        if (aRes is Shape aShape && anErr is null)
         {
             theInterp.SetShape(theResult, aShape);
         }
@@ -303,14 +306,14 @@ public class BRepAlgoAPIOracleTests(ITestOutputHelper output)
         foreach (Run aCase0 in Tape.Budget(BooleanOracleTests.RandomRuns(anOracle, aRun, 96)))
         {
             Run aCase = aCase0 with { Simplify = k++ % 3 == 0 };
-            if (BooleanOracleTests.ReadArgs(aRun, aCase.ArgsText) is not (List<N.TopoDS_Shape> aNArgs, List<TopoDS_Shape> aPArgs))
+            if (BooleanOracleTests.ReadArgs(aRun, aCase.ArgsText) is not (List<N.TopoDS_Shape> aNArgs, List<Shape> aPArgs))
             {
                 continue;
             }
             aCases++;
-            string Record((TopoDS_Shape?, BRepTools_History?, string?) r) =>
-                (r.Item1 is TopoDS_Shape s ? aRun.PortText(s) : r.Item3 ?? "")
-                + DeterminismHarness.HistoryText(aPArgs, r.Item1 ?? new TopoDS_Shape(), r.Item2);
+            string Record((Shape?, History?, string?) r) =>
+                (r.Item1 is Shape s ? aRun.PortText(s) : r.Item3 ?? "")
+                + DeterminismHarness.HistoryText(aPArgs, r.Item1 ?? new Shape(), r.Item2);
             string aSerial = Record(BooleanOracleTests.RunPort(aCase, aPArgs, false));
             if (aSerial.StartsWith("errors", StringComparison.Ordinal) || aSerial.StartsWith("throws", StringComparison.Ordinal))
             {

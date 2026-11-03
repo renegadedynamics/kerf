@@ -2,9 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite;
 
@@ -37,8 +42,8 @@ internal static class BRepTestOtherCommands
             return 1;
         }
 
-        var B = new BRep_Builder();
-        TopoDS_Shape S = new();
+        var B = new BrepBuilder();
+        Shape S = new();
 
         if (n == 3)
         {
@@ -46,49 +51,49 @@ internal static class BRepTestOtherCommands
 
             if (a2 == "c")
             {
-                var SS = new TopoDS_Compound();
+                var SS = new Compound();
                 B.MakeCompound(ref SS);
                 S = SS;
             }
             else if (a2 == "cs")
             {
-                var SS = new TopoDS_CompSolid();
+                var SS = new CompSolid();
                 B.MakeCompSolid(ref SS);
                 S = SS;
             }
             else if (a2 == "so")
             {
-                var SS = new TopoDS_Solid();
+                var SS = new Solid();
                 B.MakeSolid(ref SS);
                 S = SS;
             }
             else if (a2 == "sh")
             {
-                var SS = new TopoDS_Shell();
+                var SS = new Shell();
                 B.MakeShell(ref SS);
                 S = SS;
             }
             else if (a2 == "f")
             {
-                var SS = new TopoDS_Face();
+                var SS = new Face();
                 B.MakeFace(ref SS);
                 S = SS;
             }
             else if (a2 == "w")
             {
-                var SS = new TopoDS_Wire();
+                var SS = new Wire();
                 B.MakeWire(ref SS);
                 S = SS;
             }
             else if (a2 == "e")
             {
-                var SS = new TopoDS_Edge();
+                var SS = new Edge();
                 B.MakeEdge(ref SS);
                 S = SS;
             }
             else if (a2 == "v")
             {
-                var SS = new TopoDS_Vertex();
+                var SS = new Vertex();
                 B.MakeVertex(ref SS);
                 S = SS;
             }
@@ -111,8 +116,8 @@ internal static class BRepTestOtherCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[1]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[1]);
+        if (S.IsNull)
         {
             return 0;
         }
@@ -121,7 +126,7 @@ internal static class BRepTestOtherCommands
         if (n == 3)
         {
             int isub = theDI.Atoi(a[2]);
-            var itr = new TopoDS_Iterator(S);
+            var itr = new Iterator(S);
             while (itr.More())
             {
                 i++;
@@ -138,25 +143,25 @@ internal static class BRepTestOtherCommands
         else
         {
             // explode a type
-            TopAbs_ShapeEnum typ;
+            ShapeType typ;
             char a20 = a[2].Length > 0 ? a[2][0] : '\0';
             char a21 = a[2].Length > 1 ? a[2][1] : '\0';
             switch (a20)
             {
                 case 'C':
                 case 'c':
-                    typ = TopAbs_COMPSOLID;
+                    typ = ShapeType.CompSolid;
                     break;
 
                 case 'S':
                 case 's':
                     if ((a21 == 'O') || (a21 == 'o'))
                     {
-                        typ = TopAbs_SOLID;
+                        typ = ShapeType.Solid;
                     }
                     else if ((a21 == 'H') || (a21 == 'h'))
                     {
-                        typ = TopAbs_SHELL;
+                        typ = ShapeType.Shell;
                     }
                     else
                     {
@@ -166,22 +171,22 @@ internal static class BRepTestOtherCommands
 
                 case 'F':
                 case 'f':
-                    typ = TopAbs_FACE;
+                    typ = ShapeType.Face;
                     break;
 
                 case 'W':
                 case 'w':
-                    typ = TopAbs_WIRE;
+                    typ = ShapeType.Wire;
                     break;
 
                 case 'E':
                 case 'e':
-                    typ = TopAbs_EDGE;
+                    typ = ShapeType.Edge;
                     break;
 
                 case 'V':
                 case 'v':
-                    typ = TopAbs_VERTEX;
+                    typ = ShapeType.Vertex;
                     break;
 
                 default:
@@ -189,9 +194,9 @@ internal static class BRepTestOtherCommands
             }
 
             int isub = theDI.Atoi(n > 3 ? a[3] : "");
-            var M = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            var M = new NCollection_Map<Shape>(ShapeHasher.Instance);
             M.Add(S);
-            var ex = new TopExp_Explorer(S, typ);
+            var ex = new Explorer(S, typ);
             while (ex.More())
             {
                 if (M.Add(ex.Current()))
@@ -222,16 +227,16 @@ internal static class BRepTestOtherCommands
             return 1;
         }
         int indshape = 2;
-        TopoDS_Shape S = new();
+        Shape S = new();
         for (; indshape <= n - 1; indshape++)
         {
             S = theDI.GetShape(a[indshape]);
-            if (!S.IsNull())
+            if (!S.IsNull)
             {
                 break;
             }
         }
-        if (S.IsNull())
+        if (S.IsNull)
         {
             theDI.Output.WriteLine("Invalid input shape");
             return 1;
@@ -249,13 +254,13 @@ internal static class BRepTestOtherCommands
             }
         }
         int nbpi = 0;
-        var aB = new BRep_Builder();
-        var aComp = new TopoDS_Compound();
+        var aB = new BrepBuilder();
+        var aComp = new Compound();
         aB.MakeCompound(ref aComp);
 
         void AddPoint(in Point3D curp)
         {
-            var aV = new TopoDS_Vertex();
+            var aV = new Vertex();
             aB.MakeVertex(ref aV, curp, 0);
             aB.Add(aComp, aV);
             nbpi++;
@@ -265,12 +270,12 @@ internal static class BRepTestOtherCommands
 
         if (indshape == 2)
         {
-            Geom_Curve? C = DrawTrSurf.GetCurve(theDI, a[1]);
+            Curve3D? C = DrawTrSurf.GetCurve(theDI, a[1]);
             if (C is null)
             {
                 return 2;
             }
-            var acur = new GeomAdaptor_Curve(C);
+            var acur = new CurveAdaptor(C);
             theAlg.Init(S, acur, tol);
 
             for (; theAlg.More(); theAlg.Next())
@@ -283,10 +288,10 @@ internal static class BRepTestOtherCommands
             theAlg.Load(S, tol);
             for (int il = 1; il < indshape; il++)
             {
-                Geom_Curve? hl = DrawTrSurf.GetCurve(theDI, a[il]);
+                Curve3D? hl = DrawTrSurf.GetCurve(theDI, a[il]);
                 if (hl is not null)
                 {
-                    theAlg.Init(new GeomAdaptor_Curve(hl));
+                    theAlg.Init(new CurveAdaptor(hl));
                     for (; theAlg.More(); theAlg.Next())
                     {
                         AddPoint(theAlg.Pnt());
@@ -315,21 +320,21 @@ internal static class BRepTestOtherCommands
             return 0;
         }
         //
-        TopoDS_Shape aS = theDI.GetShape(a[1]);
-        if (aS.IsNull())
+        Shape aS = theDI.GetShape(a[1]);
+        if (aS.IsNull)
         {
             di.Append(" null shapes is not allowed here\n");
             return 0;
         }
-        if (aS.ShapeType() != TopAbs_FACE)
+        if (aS.ShapeType() != ShapeType.Face)
         {
             di.Append(" shape").Append(a[1]).Append(" must be a face\n"); // OCCT: no space before the name
             return 0;
         }
         //
-        TopoDS_Face aF = TopoDS.Face(aS);
+        Face aF = ShapeCasts.Face(aS);
         //
-        BRepTools.UVBounds(aF, out double aUMin, out double aUMax, out double aVMin, out double aVMax);
+        BrepTools.UVBounds(aF, out double aUMin, out double aUMax, out double aVMin, out double aVMax);
         //
         // TCollection_AsciiString(double): %g
         di.Append(global::Kerf.Engine.Foundation.StreamUtilities.FormatReal(aUMin, 6)).Append("\n");
@@ -350,14 +355,14 @@ internal static class BRepTestOtherCommands
             return 1;
         }
 
-        TopoDS_Shape aS = theDI.GetShape(a[1]);
-        if (aS.IsNull())
+        Shape aS = theDI.GetShape(a[1]);
+        if (aS.IsNull)
         {
             aDI.Append(" Null Shape is not allowed here\n");
             return 0;
         }
 
-        if (aS.ShapeType() != TopAbs_SOLID)
+        if (aS.ShapeType() != ShapeType.Solid)
         {
             aDI.Append(" Shape type must be SOLID\n");
             return 0;
@@ -372,13 +377,13 @@ internal static class BRepTestOtherCommands
         var aSC = new BRepClass3d_SolidClassifier(aS);
         aSC.PerformInfinitePoint(aTol);
 
-        TopAbs_State aState = aSC.State();
+        Containment aState = aSC.State();
         aDI.Append("state is: ");
         aDI.Append(aState switch
         {
-            TopAbs_State.TopAbs_IN => "IN\n",
-            TopAbs_State.TopAbs_OUT => "OUT\n",
-            TopAbs_State.TopAbs_ON => "ON\n",
+            Containment.In => "IN\n",
+            Containment.Out => "OUT\n",
+            Containment.On => "ON\n",
             _ => "UNKNOWN\n",
         });
         //

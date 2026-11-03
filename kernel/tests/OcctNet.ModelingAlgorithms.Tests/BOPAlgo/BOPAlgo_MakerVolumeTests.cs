@@ -1,8 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.TestHarness;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -13,16 +16,16 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class BOPAlgo_MakerVolumeTests
 {
     // A = [0, 10]^3 and B = [5, 15]^3
-    internal static TopoDS_Shape BoxA() => new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
+    internal static Shape BoxA() => new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
 
-    internal static TopoDS_Shape BoxB() => new BRepPrimAPI_MakeBox(new Point3D(5, 5, 5), 10.0, 10.0, 10.0).Shape();
+    internal static Shape BoxB() => new BRepPrimAPI_MakeBox(new Point3D(5, 5, 5), 10.0, 10.0, 10.0).Shape();
 
-    internal static NCollection_List<TopoDS_Shape> Faces(params TopoDS_Shape[] theShapes)
+    internal static NCollection_List<Shape> Faces(params Shape[] theShapes)
     {
-        NCollection_List<TopoDS_Shape> aLS = new();
-        foreach (TopoDS_Shape aS in theShapes)
+        NCollection_List<Shape> aLS = new();
+        foreach (Shape aS in theShapes)
         {
-            for (TopExp_Explorer anExp = new(aS, TopAbs_FACE); anExp.More(); anExp.Next())
+            for (Explorer anExp = new(aS, ShapeType.Face); anExp.More(); anExp.Next())
             {
                 aLS.Append(anExp.Current());
             }
@@ -30,21 +33,21 @@ public class BOPAlgo_MakerVolumeTests
         return aLS;
     }
 
-    internal static double Volume(in TopoDS_Shape theShape)
+    internal static double Volume(in Shape theShape)
     {
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
-    internal static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    internal static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
-    private static BOPAlgo_MakerVolume Make(NCollection_List<TopoDS_Shape> theArgs, bool theIntersect = true,
+    private static BOPAlgo_MakerVolume Make(NCollection_List<Shape> theArgs, bool theIntersect = true,
                                             bool theAvoidInternal = false, bool theParallel = false)
     {
         BOPAlgo_MakerVolume aMV = new();
@@ -61,9 +64,9 @@ public class BOPAlgo_MakerVolumeTests
     {
         BOPAlgo_MakerVolume aMV = Make(Faces(BoxA(), BoxB()));
         Assert.False(aMV.HasErrors());
-        TopoDS_Shape aR = aMV.Shape();
-        Assert.Equal(TopAbs_COMPOUND, aR.ShapeType());
-        Assert.Equal(3, Count(aR, TopAbs_SOLID));
+        Shape aR = aMV.Shape();
+        Assert.Equal(ShapeType.Compound, aR.ShapeType());
+        Assert.Equal(3, Count(aR, ShapeType.Solid));
         Assert.Equal(1875.0, Volume(aR), 1.0e-6);
         Assert.True(aR.TShape()!.IsFrozen);
     }
@@ -72,10 +75,10 @@ public class BOPAlgo_MakerVolumeTests
     public void One_box_s_faces_make_one_solid()
     {
         BOPAlgo_MakerVolume aMV = Make(Faces(BoxA()));
-        TopoDS_Shape aR = aMV.Shape();
-        Assert.Equal(TopAbs_SOLID, aR.ShapeType());
+        Shape aR = aMV.Shape();
+        Assert.Equal(ShapeType.Solid, aR.ShapeType());
         Assert.Equal(1000.0, Volume(aR), 1.0e-6);
-        Assert.False(aMV.Box().IsNull());
+        Assert.False(aMV.Box().IsNull);
     }
 
     [Fact]
@@ -91,39 +94,39 @@ public class BOPAlgo_MakerVolumeTests
     [Fact]
     public void An_edge_inside_becomes_internal_unless_avoided()
     {
-        TopoDS_Shape anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(2, 2, 2), new Point3D(8, 8, 8)).Shape();
-        NCollection_List<TopoDS_Shape> anArgs = Faces(BoxA());
+        Shape anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(2, 2, 2), new Point3D(8, 8, 8)).Shape();
+        NCollection_List<Shape> anArgs = Faces(BoxA());
         anArgs.Append(anEdge);
 
-        TopoDS_Shape aWith = Make(anArgs).Shape();
-        Assert.Equal(1, Count(aWith, TopAbs_SOLID));
-        Assert.Equal(13, Count(aWith, TopAbs_EDGE));
+        Shape aWith = Make(anArgs).Shape();
+        Assert.Equal(1, Count(aWith, ShapeType.Solid));
+        Assert.Equal(13, Count(aWith, ShapeType.Edge));
 
-        TopoDS_Shape aWithout = Make(anArgs, theAvoidInternal: true).Shape();
-        Assert.Equal(12, Count(aWithout, TopAbs_EDGE));
+        Shape aWithout = Make(anArgs, theAvoidInternal: true).Shape();
+        Assert.Equal(12, Count(aWithout, ShapeType.Edge));
     }
 
     [Fact]
     public void No_arguments_is_an_error()
     {
-        BOPAlgo_MakerVolume aMV = Make(new NCollection_List<TopoDS_Shape>());
+        BOPAlgo_MakerVolume aMV = Make(new NCollection_List<Shape>());
         Assert.True(aMV.GetReport().HasAlert(typeof(BOPAlgo_AlertTooFewArguments)));
     }
 
     [Fact]
     public void Frozen_arguments_are_never_written_and_the_history_answers_for_them()
     {
-        TopoDS_Shape aA = BoxA(), aB = BoxB();
+        Shape aA = BoxA(), aB = BoxB();
         string aTextA = BRepTextComparison.Write(aA), aTextB = BRepTextComparison.Write(aB);
-        NCollection_List<TopoDS_Shape> anArgs = Faces(aA, aB);
+        NCollection_List<Shape> anArgs = Faces(aA, aB);
         BOPAlgo_MakerVolume aMV = Make(anArgs);
         Assert.Equal(aTextA, BRepTextComparison.Write(aA));
         Assert.Equal(aTextB, BRepTextComparison.Write(aB));
         // the face of A at x = 10 is split by B
-        TopoDS_Shape aSplit = anArgs.First();
+        Shape aSplit = anArgs.First();
         Assert.NotNull(aMV.History());
         int aModified = 0;
-        foreach (TopoDS_Shape aF in anArgs)
+        foreach (Shape aF in anArgs)
         {
             aModified += aMV.Modified(aF).Count;
         }

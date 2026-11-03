@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -19,9 +20,9 @@ namespace Occt;
 /// </remarks>
 public partial struct IntTools_Curve
 {
-    private Geom_Curve? my3dCurve;
-    private Geom2d_Curve? my2dCurve1;
-    private Geom2d_Curve? my2dCurve2;
+    private Curve3D? my3dCurve;
+    private Curve2D? my2dCurve1;
+    private Curve2D? my2dCurve2;
     private double myTolerance;
     private double myTangentialTolerance;
 
@@ -33,7 +34,7 @@ public partial struct IntTools_Curve
     }
 
     /// <summary>A 3D curve, two 2D curves and two tolerances.</summary>
-    public IntTools_Curve(Geom_Curve? the3dCurve, Geom2d_Curve? the2dCurve1, Geom2d_Curve? the2dCurve2,
+    public IntTools_Curve(Curve3D? the3dCurve, Curve2D? the2dCurve1, Curve2D? the2dCurve2,
                           double theTolerance = 0.0, double theTangentialTolerance = 0.0)
     {
         myTolerance = theTolerance;
@@ -41,31 +42,31 @@ public partial struct IntTools_Curve
         SetCurves(the3dCurve, the2dCurve1, the2dCurve2);
     }
 
-    internal void SetCurves(Geom_Curve? the3dCurve, Geom2d_Curve? the2dCurve1, Geom2d_Curve? the2dCurve2)
+    internal void SetCurves(Curve3D? the3dCurve, Curve2D? the2dCurve1, Curve2D? the2dCurve2)
     {
         my3dCurve = the3dCurve;
         my2dCurve1 = the2dCurve1;
         my2dCurve2 = the2dCurve2;
     }
 
-    internal void SetCurve(Geom_Curve? the3dCurve) => my3dCurve = the3dCurve;
+    internal void SetCurve(Curve3D? the3dCurve) => my3dCurve = the3dCurve;
 
-    internal void SetFirstCurve2d(Geom2d_Curve? the2dCurve1) => my2dCurve1 = the2dCurve1;
+    internal void SetFirstCurve2d(Curve2D? the2dCurve1) => my2dCurve1 = the2dCurve1;
 
-    internal void SetSecondCurve2d(Geom2d_Curve? the2dCurve2) => my2dCurve2 = the2dCurve2;
+    internal void SetSecondCurve2d(Curve2D? the2dCurve2) => my2dCurve2 = the2dCurve2;
 
     internal void SetTolerance(double theTolerance) => myTolerance = theTolerance;
 
     internal void SetTangentialTolerance(double theTangentialTolerance) => myTangentialTolerance = theTangentialTolerance;
 
     /// <summary>The 3D curve.</summary>
-    public readonly Geom_Curve? Curve() => my3dCurve;
+    public readonly Curve3D? Curve() => my3dCurve;
 
     /// <summary>The first 2D curve.</summary>
-    public readonly Geom2d_Curve? FirstCurve2d() => my2dCurve1;
+    public readonly Curve2D? FirstCurve2d() => my2dCurve1;
 
     /// <summary>The second 2D curve.</summary>
-    public readonly Geom2d_Curve? SecondCurve2d() => my2dCurve2;
+    public readonly Curve2D? SecondCurve2d() => my2dCurve2;
 
     public readonly double Tolerance() => myTolerance;
 
@@ -74,7 +75,7 @@ public partial struct IntTools_Curve
     /// <summary>True if the 3D curve is a bounded curve.</summary>
     public readonly bool HasBounds()
     {
-        bool bIsBounded = my3dCurve is Geom_BoundedCurve;
+        bool bIsBounded = my3dCurve is BoundedCurve3D;
         return bIsBounded;
     }
 
@@ -113,14 +114,14 @@ public partial struct IntTools_Curve
     /// <summary>The type of the 3D curve.</summary>
     public readonly CurveKind Type()
     {
-        GeomAdaptor_Curve aGAC = new(my3dCurve!);
+        CurveAdaptor aGAC = new(my3dCurve!);
         CurveKind aType = aGAC.GetType();
         return aType;
     }
 
     // ---- OCCT.NET additions: the setters' non-mutating twins
 
-    public readonly IntTools_Curve WithCurves(Geom_Curve? the3dCurve, Geom2d_Curve? the2dCurve1, Geom2d_Curve? the2dCurve2)
+    public readonly IntTools_Curve WithCurves(Curve3D? the3dCurve, Curve2D? the2dCurve1, Curve2D? the2dCurve2)
     {
         IntTools_Curve aCopy = this;
         aCopy.SetCurves(the3dCurve, the2dCurve1, the2dCurve2);

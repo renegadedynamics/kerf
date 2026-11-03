@@ -5,11 +5,14 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -24,23 +27,23 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepFill_TrimSurfaceTool
 {
-    private readonly TopoDS_Face myFace1;
-    private readonly TopoDS_Face myFace2;
-    private readonly TopoDS_Edge myEdge1;
-    private readonly TopoDS_Edge myEdge2;
+    private readonly Face myFace1;
+    private readonly Face myFace2;
+    private readonly Edge myEdge1;
+    private readonly Edge myEdge2;
     private readonly bool myInv1;
     private readonly bool myInv2;
-    private readonly Geom2d_Curve myBis;
+    private readonly Curve2D myBis;
 
     /// <summary>
     /// Initialisation with two neighbour faces. Edge1 and Edge2 are the parallel edges corresponding to the minimum
     /// iso on Face1 and Face2 (Edge1 is Umin or Vmin on Face1); Inv1 and Inv2 say whether they are reversed.
     /// </summary>
-    public BRepFill_TrimSurfaceTool(Geom2d_Curve Bis,
-                                    in TopoDS_Face Face1,
-                                    in TopoDS_Face Face2,
-                                    in TopoDS_Edge Edge1,
-                                    in TopoDS_Edge Edge2,
+    public BRepFill_TrimSurfaceTool(Curve2D Bis,
+                                    in Face Face1,
+                                    in Face Face2,
+                                    in Edge Edge1,
+                                    in Edge Edge2,
                                     bool Inv1,
                                     bool Inv2)
     {
@@ -74,19 +77,19 @@ public sealed class BRepFill_TrimSurfaceTool
         }
     }
 
-    private static double EvalPhase(in TopoDS_Edge Edge, in TopoDS_Face Face, GeomAdaptor_Surface GAS, in CoordinateSystem Axis)
+    private static double EvalPhase(in Edge Edge, in Face Face, SurfaceAdaptor GAS, in CoordinateSystem Axis)
     {
         Point2D PF1, PF2;
         double VDeg;
         double V = 0.0;
-        BRep_Tool.UVPoints(Edge, Face, out Point2D PE1, out Point2D _);
+        Tool.UVPoints(Edge, Face, out Point2D PE1, out Point2D _);
         VDeg = PE1.Y();
-        TopExp_Explorer Exp = new(Face, TopAbs_EDGE);
+        Explorer Exp = new(Face, global::Kerf.Topology.ShapeType.Edge);
         for (; Exp.More(); Exp.Next())
         {
-            if (!TopoDS.Edge(Exp.Current()).IsSame(Edge))
+            if (!ShapeCasts.Edge(Exp.Current()).IsSame(Edge))
             {
-                BRep_Tool.UVPoints(TopoDS.Edge(Exp.Current()), Face, out PF1, out PF2);
+                Tool.UVPoints(ShapeCasts.Edge(Exp.Current()), Face, out PF1, out PF2);
                 V = (Math.Abs(PF1.Y() - VDeg) > Math.Abs(PF2.Y() - VDeg)) ? PF1.Y() : PF2.Y();
                 break;
             }
@@ -103,12 +106,12 @@ public sealed class BRepFill_TrimSurfaceTool
         }
     }
 
-    private static void EvalParameters(in TopoDS_Edge Edge, in TopoDS_Face Face, Geom2d_Curve Bis, NCollection_Sequence<Point3D> Seq)
+    private static void EvalParameters(in Edge Edge, in Face Face, Curve2D Bis, NCollection_Sequence<Point3D> Seq)
     {
-        bool Degener = BRep_Tool.Degenerated(Edge);
+        bool Degener = Tool.Degenerated(Edge);
         // return curves 3d associated to edges.
-        Geom_TrimmedCurve CT;
-        Geom_Plane Plane = new(0, 0, 1, 0);
+        TrimmedCurve3D CT;
+        PlaneSurface Plane = new(0, 0, 1, 0);
 
         Geom2dInt_GInter Intersector;
 
@@ -122,14 +125,14 @@ public sealed class BRepFill_TrimSurfaceTool
 
         if (!Degener)
         {
-            Geom_Curve C = BRep_Tool.Curve(Edge, out Placement L, out double f, out double l)!;
-            CT = new Geom_TrimmedCurve(C, f, l);
+            Curve3D C = Tool.Curve(Edge, out Placement L, out double f, out double l)!;
+            CT = new TrimmedCurve3D(C, f, l);
             CT.Transform(L.Transformation());
             // projection of 3d curves in the plane xOy
-            Geom2d_Curve C2d = GeomProjLib.Curve2d(CT, Plane)!;
+            Curve2D C2d = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(CT, Plane)!;
 
-            Geom2dAdaptor_Curve AC = new(C2d);
-            Geom2dAdaptor_Curve ABis = new(Bis);
+            CurveAdaptor2D AC = new(C2d);
+            CurveAdaptor2D ABis = new(Bis);
 
             Intersector = new Geom2dInt_GInter(ABis, AC, TolC, Tol);
 
@@ -154,8 +157,8 @@ public sealed class BRepFill_TrimSurfaceTool
                                       && BisType != OffsetCurve && BisType != OtherCurve;
 
                 // OCCT: the down-casts are not checked (a curve that isn't trimmed crashes natively)
-                Geom2d_TrimmedCurve TBis = (Bis as Geom2d_TrimmedCurve)!;
-                Geom2d_TrimmedCurve TC2d = (C2d as Geom2d_TrimmedCurve)!;
+                TrimmedCurve2D TBis = (Bis as TrimmedCurve2D)!;
+                TrimmedCurve2D TC2d = (C2d as TrimmedCurve2D)!;
 
                 if (canElongateC)
                 {
@@ -230,7 +233,7 @@ public sealed class BRepFill_TrimSurfaceTool
             // the edge is degenerated : the point and it is found if it is
             // on the bissectrice.
 
-            Point3D P3d = BRep_Tool.Pnt(TopExp.FirstVertex(Edge));
+            Point3D P3d = Tool.Pnt(Exploration.FirstVertex(Edge));
             Point2D P2d = new(P3d.X(), P3d.Y());
 
             double UBis = Bis.FirstParameter();
@@ -258,8 +261,8 @@ public sealed class BRepFill_TrimSurfaceTool
             }
 
             // evaluate parameter intersection.
-            Geom_Surface GS = BRep_Tool.Surface(Face)!;
-            GeomAdaptor_Surface GAS = new(GS);
+            Surface GS = Tool.Surface(Face)!;
+            SurfaceAdaptor GAS = new(GS);
 
             CoordinateSystem Axis;
             double Phase = 0.0;
@@ -291,9 +294,9 @@ public sealed class BRepFill_TrimSurfaceTool
                         // if myFace1 is not at the same side of the apex as the point
                         // of parameter 0 0 on the cone => phase = M_PI.
                         //----------------------------------------------------------
-                        Geom_SurfaceOfRevolution GSRev = (Geom_SurfaceOfRevolution)GS;
-                        GeomAdaptor_Curve HC = new(GSRev.BasisCurve());
-                        GeomAdaptor_SurfaceOfRevolution ASRev = new(HC, GAS.AxeOfRevolution());
+                        RevolutionSurface GSRev = (RevolutionSurface)GS;
+                        CurveAdaptor HC = new(GSRev.BasisCurve());
+                        RevolutionSurfaceAdaptor ASRev = new(HC, GAS.AxeOfRevolution());
                         Axis = ASRev.Axis();
                         Phase = EvalPhase(Edge, Face, GAS, Axis);
                         break;
@@ -322,7 +325,7 @@ public sealed class BRepFill_TrimSurfaceTool
     /// parameter on EdgeOnF1, parameter on EdgeOnF2), by increasing parameter on the bisector.
     /// </summary>
     /// <exception cref="NotDoneException">The two edges give different numbers of intersections.</exception>
-    public void IntersectWith(in TopoDS_Edge EdgeOnF1, in TopoDS_Edge EdgeOnF2, NCollection_Sequence<Point3D> Points)
+    public void IntersectWith(in Edge EdgeOnF1, in Edge EdgeOnF2, NCollection_Sequence<Point3D> Points)
     {
         Points.Clear();
         NCollection_Sequence<Point3D> Points2 = new();
@@ -366,15 +369,15 @@ public sealed class BRepFill_TrimSurfaceTool
     }
 
     /// <summary>The parameter of the projection of <paramref name="Point"/> on the edge's curve projected on xOy.</summary>
-    public double ProjOn(in Point2D Point, in TopoDS_Edge Edge)
+    public double ProjOn(in Point2D Point, in Edge Edge)
     {
-        Geom_Curve C1 = BRep_Tool.Curve(Edge, out Placement L, out double f, out double l)!;
-        Geom_TrimmedCurve CT = new(C1, f, l);
+        Curve3D C1 = Tool.Curve(Edge, out Placement L, out double f, out double l)!;
+        TrimmedCurve3D CT = new(C1, f, l);
         CT.Transform(L.Transformation());
 
         // projection of curves 3d in the plane xOy
-        Geom_Plane Plane = new(0, 0, 1, 0);
-        Geom2d_Curve C2d = GeomProjLib.Curve2d(CT, Plane)!;
+        PlaneSurface Plane = new(0, 0, 1, 0);
+        Curve2D C2d = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(CT, Plane)!;
 
         // evaluate the projection of the point on the curve.
         Geom2dAPI_ProjectPointOnCurve Projector = new(Point, C2d);
@@ -389,12 +392,12 @@ public sealed class BRepFill_TrimSurfaceTool
     /// </summary>
     public void Project(double U1,
                         double U2,
-                        out Geom_Curve? Curve,
-                        out Geom2d_Curve? PCurve1,
-                        out Geom2d_Curve? PCurve2,
+                        out Curve3D? Curve,
+                        out Curve2D? PCurve1,
+                        out Curve2D? PCurve2,
                         out Continuity Cont)
     {
-        Geom2d_TrimmedCurve CT = new(myBis, U1, U2);
+        TrimmedCurve2D CT = new(myBis, U1, U2);
         BRepFill_MultiLine ML = new(myFace1, myFace2, myEdge1, myEdge2, myInv1, myInv2, CT);
 
         Cont = ML.Continuity();

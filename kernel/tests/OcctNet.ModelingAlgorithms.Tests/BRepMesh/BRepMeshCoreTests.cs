@@ -4,6 +4,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepMesh_DegreeOfFreedom;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -310,10 +311,10 @@ public class BRepMeshCoreTests
         aClassifier.RegisterWire(anOuter, (1e-7, 1e-7), (0.0, 4.0), (0.0, 4.0));
         aClassifier.RegisterWire(aHole, (1e-7, 1e-7), (0.0, 4.0), (0.0, 4.0));
 
-        Assert.Equal(TopAbs_State.TopAbs_IN, aClassifier.Perform(new Point2D(0.5, 0.5)));
-        Assert.Equal(TopAbs_State.TopAbs_OUT, aClassifier.Perform(new Point2D(2.0, 2.0)));
-        Assert.Equal(TopAbs_State.TopAbs_OUT, aClassifier.Perform(new Point2D(5.0, 2.0)));
-        Assert.Equal(TopAbs_State.TopAbs_OUT, aClassifier.Perform(new Point2D(0.0, 2.0)));
+        Assert.Equal(Containment.In, aClassifier.Perform(new Point2D(0.5, 0.5)));
+        Assert.Equal(Containment.Out, aClassifier.Perform(new Point2D(2.0, 2.0)));
+        Assert.Equal(Containment.Out, aClassifier.Perform(new Point2D(5.0, 2.0)));
+        Assert.Equal(Containment.Out, aClassifier.Perform(new Point2D(0.0, 2.0)));
     }
 
     [Fact]

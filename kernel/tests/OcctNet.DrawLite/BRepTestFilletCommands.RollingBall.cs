@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using Occt;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite;
 
@@ -34,8 +36,8 @@ internal static partial class BRepTestFilletCommands
         }
 
         // OCCT reads a[2] and a[3] whatever n is (past the arguments for n < 4); Draw-lite reads empty words.
-        TopoDS_Shape S = theDI.GetShape(n > 2 ? a[2] : "");
-        if (S.IsNull())
+        Shape S = theDI.GetShape(n > 2 ? a[2] : "");
+        if (S.IsNull)
         {
             return 1;
         }
@@ -57,9 +59,9 @@ internal static partial class BRepTestFilletCommands
 
             if (Nb == 0)
             { // return stop faces.
-                TopoDS_Shape aLocalFace = theDI.GetShape(a[i], TopAbs_FACE);
-                TopoDS_Face F1 = TopoDS.Face(aLocalFace);
-                if (F1.IsNull())
+                Shape aLocalFace = theDI.GetShape(a[i], ShapeType.Face);
+                Face F1 = ShapeCasts.Face(aLocalFace);
+                if (F1.IsNull)
                 {
                     di.Append(" Stop face not referenced.\n");
                     return 1;
@@ -68,8 +70,8 @@ internal static partial class BRepTestFilletCommands
             }
             else if (Nb == 1)
             { // return faces on which the ball rotates
-                TopoDS_Shape aLocalFace = theDI.GetShape(a[i], TopAbs_FACE);
-                TopoDS_Face F1 = TopoDS.Face(aLocalFace);
+                Shape aLocalFace = theDI.GetShape(a[i], ShapeType.Face);
+                Face F1 = ShapeCasts.Face(aLocalFace);
                 i++;
                 // OCCT reads a[n] (the null terminator) when the support faces are odd in number at the end.
                 if (i >= n || a[i] == "@")
@@ -77,9 +79,9 @@ internal static partial class BRepTestFilletCommands
                     di.Append(" Even number of ball support faces is required \n");
                     return 1;
                 }
-                aLocalFace = theDI.GetShape(a[i], TopAbs_FACE);
-                TopoDS_Face F2 = TopoDS.Face(aLocalFace);
-                if (F1.IsNull() || F2.IsNull())
+                aLocalFace = theDI.GetShape(a[i], ShapeType.Face);
+                Face F2 = ShapeCasts.Face(aLocalFace);
+                if (F1.IsNull || F2.IsNull)
                 {
                     di.Append(" Support face not referenced.\n");
                     return 1;
@@ -88,9 +90,9 @@ internal static partial class BRepTestFilletCommands
             }
             else if (Nb == 2)
             { // return the edge on which the ball rotates
-                TopoDS_Shape aLocalShape = theDI.GetShape(a[i], TopAbs_EDGE);
-                TopoDS_Edge E = TopoDS.Edge(aLocalShape);
-                if (E.IsNull())
+                Shape aLocalShape = theDI.GetShape(a[i], ShapeType.Edge);
+                Edge E = ShapeCasts.Edge(aLocalShape);
+                if (E.IsNull)
                 {
                     di.Append(" Edge not referenced.\n");
                     return 1;
@@ -113,7 +115,7 @@ internal static partial class BRepTestFilletCommands
                 di.Append("   ").Append(From).Append("     ").Append(To).Append("\n");
                 for (int j = From; j <= To; j++)
                 {
-                    TopoDS_Shape CurF = Roll.Face(j);
+                    Shape CurF = Roll.Face(j);
                     string localname = a[1] + "_" + i + "_" + j;
                     theDI.SetShape(localname, CurF);
                 }

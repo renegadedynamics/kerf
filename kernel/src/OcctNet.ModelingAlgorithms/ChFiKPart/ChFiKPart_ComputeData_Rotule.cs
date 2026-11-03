@@ -4,9 +4,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Intersection;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ChFiKPart_ComputeData_Fcts;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -18,9 +20,9 @@ internal static class ChFiKPart_ComputeData_Rotule
     /// <summary>The torus of radii <paramref name="r"/> and <paramref name="r"/> on the plane <paramref name="pl"/>
     /// around the edge of <paramref name="pl1"/> and <paramref name="pl2"/>.</summary>
     internal static bool ChFiKPart_MakeRotule(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Data, in Plane3D pl,
-                                              in Plane3D pl1, in Plane3D pl2, TopAbs_Orientation opl,
-                                              TopAbs_Orientation opl1, TopAbs_Orientation opl2, double r,
-                                              TopAbs_Orientation ofpl)
+                                              in Plane3D pl1, in Plane3D pl2, Orientation opl,
+                                              Orientation opl1, Orientation opl2, double r,
+                                              Orientation ofpl)
     {
         // calcul du tore.
         //---------------
@@ -28,30 +30,30 @@ internal static class ChFiKPart_ComputeData_Rotule
         Direction3D dpl = pos.XDirection().Crossed(pos.YDirection());
         Direction3D dfpl = dpl;
         Direction3D dplnat = dpl;
-        if (opl == TopAbs_REVERSED)
+        if (opl == Reversed)
         {
             dpl.Reverse();
         }
-        if (ofpl == TopAbs_REVERSED)
+        if (ofpl == Reversed)
         {
             dfpl.Reverse();
         }
         pos = pl1.Position();
         Direction3D dpl1 = pos.XDirection().Crossed(pos.YDirection());
-        if (opl1 == TopAbs_REVERSED)
+        if (opl1 == Reversed)
         {
             dpl1.Reverse();
         }
         pos = pl2.Position();
         Direction3D dpl2 = pos.XDirection().Crossed(pos.YDirection());
-        if (opl2 == TopAbs_REVERSED)
+        if (opl2 == Reversed)
         {
             dpl2.Reverse();
         }
         double alpha = dpl1.Angle(dpl2);
-        IntAna_QuadQuadGeo LInt = new(pl1, pl2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        QuadQuadGeo LInt = new(pl1, pl2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Point3D ptor = new(), pcirc;
-        if (LInt.IsDone())
+        if (LInt.IsDone)
         {
             pcirc = global::Kerf.Engine.Geometry.ElCLib.Value(global::Kerf.Engine.Geometry.ElCLib.Parameter(LInt.Line(1), pl.Location()), LInt.Line(1));
             ptor.SetCoord(pcirc.X() + r * dpl.X(), pcirc.Y() + r * dpl.Y(), pcirc.Z() + r * dpl.Z());
@@ -65,7 +67,7 @@ internal static class ChFiKPart_ComputeData_Rotule
         {
             ppos.YReverse();
         }
-        Geom_ToroidalSurface gtor = new(ppos, r, r);
+        ToroidalSurface gtor = new(ppos, r, r);
         Data.ChangeSurf(ChFiKPart_IndexSurfaceInDS(gtor, DStr));
         // on compare l orientation du tore a celle de la face en bout.
         //------------------------------------------------------------
@@ -75,11 +77,11 @@ internal static class ChFiKPart_ComputeData_Rotule
         bool reversefil = (drot.Dot(dfpl) <= 0.0);
         if (reversefil)
         {
-            Data.ChangeOrientation() = TopAbs_REVERSED;
+            Data.ChangeOrientation() = Reversed;
         }
         else
         {
-            Data.ChangeOrientation() = TopAbs_FORWARD;
+            Data.ChangeOrientation() = Forward;
         }
         // on charge les FaceInterferences avec les pcurves et courbes 3d.
         //-----------------------------------------------------------------
@@ -87,7 +89,7 @@ internal static class ChFiKPart_ComputeData_Rotule
         //---------------
         Frame3D circAx2 = ppos.Ax2();
         circAx2.SetLocation(pcirc);
-        Geom_Circle GC = new(circAx2, r);
+        CircleCurve3D GC = new(circAx2, r);
         double u, v;
         global::Kerf.Engine.Geometry.ElSLib.Parameters(pl, pcirc, out u, out v);
         Point2D p2dcirc = new(u, v);
@@ -95,21 +97,21 @@ internal static class ChFiKPart_ComputeData_Rotule
         Direction2D dy2d = new(ppos.YDirection().Dot(pl.Position().XDirection()),
                             ppos.YDirection().Dot(pl.Position().YDirection()));
         Frame2D circ2dax = new(p2dcirc, dx2d, dy2d);
-        Geom2d_Circle GC2d = new(circ2dax, r);
+        CircleCurve2D GC2d = new(circ2dax, r);
         Point2D p2dlin = new(0.0, Math.PI / 2);
-        Geom2d_Line GL2d = new(p2dlin, Constants.DX2d());
-        TopAbs_Orientation trans = TopAbs_REVERSED;
+        LineCurve2D GL2d = new(p2dlin, Constants.DX2d());
+        Orientation trans = Reversed;
         if (reversecur)
         {
-            trans = TopAbs_FORWARD;
+            trans = Forward;
         }
         Data.ChangeInterferenceOnS1().SetInterference(ChFiKPart_IndexCurveInDS(GC, DStr), trans, GC2d, GL2d);
         // du cote pointu
         //--------------
-        Geom_Curve? bid = null;
-        Geom2d_Curve? bid2d = null;
+        Curve3D? bid = null;
+        Curve2D? bid2d = null;
         p2dlin.SetCoord(0.0, Math.PI);
-        Geom2d_Line GL2dcoin = new(p2dlin, Constants.DX2d());
+        LineCurve2D GL2dcoin = new(p2dlin, Constants.DX2d());
         Data.ChangeInterferenceOnS2().SetInterference(ChFiKPart_IndexCurveInDS(bid, DStr), trans, bid2d, GL2dcoin);
         // et les points
         //-------------

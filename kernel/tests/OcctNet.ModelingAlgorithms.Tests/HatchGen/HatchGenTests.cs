@@ -6,8 +6,8 @@ using static Occt.HatchGen_IntersectionType;
 using static Occt.IntRes2d_Position;
 using static Occt.IntRes2d_Situation;
 using static Occt.IntRes2d_TypeTrans;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -26,21 +26,21 @@ public class HatchGenTests
     {
         HatchGen_PointOnElement anIn = new(Crossing(IntRes2d_In, IntRes2d_Middle));
         Assert.Equal(0.75, anIn.Parameter());
-        Assert.Equal(TopAbs_INTERNAL, anIn.Position());
-        Assert.Equal(TopAbs_OUT, anIn.StateBefore());
-        Assert.Equal(TopAbs_IN, anIn.StateAfter());
+        Assert.Equal(Internal, anIn.Position());
+        Assert.Equal(Out, anIn.StateBefore());
+        Assert.Equal(In, anIn.StateAfter());
         Assert.Equal(HatchGen_TRUE, anIn.IntersectionType());
 
         HatchGen_PointOnElement anOutAtEnd = new(Crossing(IntRes2d_Out, IntRes2d_End));
-        Assert.Equal(TopAbs_REVERSED, anOutAtEnd.Position());
-        Assert.Equal(TopAbs_IN, anOutAtEnd.StateBefore());
-        Assert.Equal(TopAbs_OUT, anOutAtEnd.StateAfter());
+        Assert.Equal(Reversed, anOutAtEnd.Position());
+        Assert.Equal(In, anOutAtEnd.StateBefore());
+        Assert.Equal(Out, anOutAtEnd.StateAfter());
         Assert.Equal(HatchGen_TOUCH, anOutAtEnd.IntersectionType());
 
         HatchGen_PointOnHatching aPntH = new(Crossing(IntRes2d_In, IntRes2d_Head));
         Assert.Equal(0.25, aPntH.Parameter());
-        Assert.Equal(TopAbs_INTERNAL, aPntH.Position());
-        Assert.Equal(TopAbs_UNKNOWN, aPntH.StateBefore());
+        Assert.Equal(Internal, aPntH.Position());
+        Assert.Equal(Unknown, aPntH.StateBefore());
         Assert.Equal(0, aPntH.NbPoints());
     }
 
@@ -52,15 +52,15 @@ public class HatchGenTests
         IntRes2d_Transition aTrsE = new(true, IntRes2d_Middle, IntRes2d_Inside, false);
         HatchGen_PointOnElement aPntE = new(new IntRes2d_IntersectionPoint(new Point2D(), 0.0, 1.0, aTrsH, aTrsE, false));
         Assert.Equal(HatchGen_TANGENT, aPntE.IntersectionType());
-        Assert.Equal(TopAbs_IN, aPntE.StateBefore());
-        Assert.Equal(TopAbs_IN, aPntE.StateAfter());
+        Assert.Equal(In, aPntE.StateBefore());
+        Assert.Equal(In, aPntE.StateAfter());
 
         // Undecided
         IntRes2d_Transition anUndecided = new(IntRes2d_Head);
         HatchGen_PointOnElement aPntU = new(new IntRes2d_IntersectionPoint(new Point2D(), 0.0, 1.0, anUndecided, anUndecided, false));
         Assert.Equal(HatchGen_UNDETERMINED, aPntU.IntersectionType());
-        Assert.Equal(TopAbs_UNKNOWN, aPntU.StateBefore());
-        Assert.Equal(TopAbs_FORWARD, aPntU.Position());
+        Assert.Equal(Unknown, aPntU.StateBefore());
+        Assert.Equal(Forward, aPntU.Position());
     }
 
     [Fact]

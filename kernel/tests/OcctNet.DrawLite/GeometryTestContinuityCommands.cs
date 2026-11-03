@@ -80,13 +80,13 @@ internal static class GeometryTestContinuityCommands
         InitEpsSurf(out double epsnl, out double epsC0, out double epsC1, out double epsC2, out double epsG1,
                     out double perce, out double maxlen);
 
-        Geom_Surface? surf1 = DrawTrSurf.GetSurface(theDI, a[2]);
+        Surface? surf1 = DrawTrSurf.GetSurface(theDI, a[2]);
         if (surf1 is null)
         {
             return 1;
         }
 
-        Geom_Surface? surf2 = DrawTrSurf.GetSurface(theDI, a[5]);
+        Surface? surf2 = DrawTrSurf.GetSurface(theDI, a[5]);
         if (surf2 is null)
         {
             return 1;
@@ -200,13 +200,13 @@ internal static class GeometryTestContinuityCommands
         InitEpsSurf(out double epsnl, out double epsC0, out double epsC1, out double epsC2, out double epsG1,
                     out double perce, out double maxlen);
 
-        Geom_Surface? surf1 = DrawTrSurf.GetSurface(theDI, a[2]);
+        Surface? surf1 = DrawTrSurf.GetSurface(theDI, a[2]);
         if (surf1 is null)
         {
             return 1;
         }
 
-        Geom_Surface? surf2 = DrawTrSurf.GetSurface(theDI, a[5]);
+        Surface? surf2 = DrawTrSurf.GetSurface(theDI, a[5]);
         if (surf2 is null)
         {
             return 1;
@@ -303,12 +303,12 @@ internal static class GeometryTestContinuityCommands
             return 1;
         }
 
-        Geom_Curve? curv1 = DrawTrSurf.GetCurve(theDI, a[2]);
+        Curve3D? curv1 = DrawTrSurf.GetCurve(theDI, a[2]);
         if (curv1 is null)
         {
             return 1;
         }
-        Geom_Curve? curv2 = DrawTrSurf.GetCurve(theDI, a[4]);
+        Curve3D? curv2 = DrawTrSurf.GetCurve(theDI, a[4]);
         if (curv2 is null)
         {
             return 1;
@@ -408,12 +408,12 @@ internal static class GeometryTestContinuityCommands
             return 1;
         }
 
-        Geom_Curve? curv1 = DrawTrSurf.GetCurve(theDI, a[2]);
+        Curve3D? curv1 = DrawTrSurf.GetCurve(theDI, a[2]);
         if (curv1 is null)
         {
             return 1;
         }
-        Geom_Curve? curv2 = DrawTrSurf.GetCurve(theDI, a[4]);
+        Curve3D? curv2 = DrawTrSurf.GetCurve(theDI, a[4]);
         if (curv2 is null)
         {
             return 1;
@@ -521,8 +521,8 @@ internal static class GeometryTestContinuityCommands
             return 1;
         }
 
-        Geom2d_Curve? GC2d;
-        Geom_Curve? GC3d = DrawTrSurf.GetCurve(theDI, theArgv[1]);
+        Curve2D? GC2d;
+        Curve3D? GC3d = DrawTrSurf.GetCurve(theDI, theArgv[1]);
         if (GC3d is null)
         {
             GC2d = DrawTrSurf.GetCurve2d(theDI, theArgv[1]);
@@ -553,7 +553,7 @@ internal static class GeometryTestContinuityCommands
             return 1;
         }
 
-        Geom_Surface? GS1 = DrawTrSurf.GetSurface(theDI, theArgv[1]);
+        Surface? GS1 = DrawTrSurf.GetSurface(theDI, theArgv[1]);
         if (GS1 is null)
         {
             theResult.Append("Argument is not a surface!\n");

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2015-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -12,14 +13,14 @@ namespace Occt;
 /// <summary>The function of a general chamfer between two surfaces along a guide curve: linear sections.</summary>
 public abstract class BlendFunc_GenChamfer : Blend_Function
 {
-    protected readonly Adaptor3d_Surface surf1;
-    protected readonly Adaptor3d_Surface surf2;
-    protected readonly Adaptor3d_Curve curv;
+    protected readonly SurfaceAdaptorBase surf1;
+    protected readonly SurfaceAdaptorBase surf2;
+    protected readonly CurveAdaptorBase curv;
     protected int choix;
     protected double tol;
     protected double distmin;
 
-    protected BlendFunc_GenChamfer(Adaptor3d_Surface S1, Adaptor3d_Surface S2, Adaptor3d_Curve CG)
+    protected BlendFunc_GenChamfer(SurfaceAdaptorBase S1, SurfaceAdaptorBase S2, CurveAdaptorBase CG)
     {
         surf1 = S1;
         surf2 = S2;

@@ -1,4 +1,9 @@
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace Build123d;
@@ -12,7 +17,7 @@ public sealed class Vertex : Shape
     public Vertex() : base(null) { }
 
     /// <summary>A vertex wrapping an OCCT vertex.</summary>
-    public Vertex(TopoDS_Vertex vertex) : base(vertex) { }
+    public Vertex(global::Kerf.Topology.Vertex vertex) : base(vertex) { }
 
     /// <summary>A vertex at a point.</summary>
     public Vertex(double x, double y, double z = 0) : base(Make(new Vector(x, y, z))) { }
@@ -20,14 +25,14 @@ public sealed class Vertex : Shape
     /// <summary>A vertex at a point.</summary>
     public Vertex(Vector point) : base(Make(point)) { }
 
-    private static TopoDS_Vertex Make(Vector point)
+    private static global::Kerf.Topology.Vertex Make(Vector point)
     {
         var pnt = point.ToGpPnt();
         var maker = new BRepBuilderAPI_MakeVertex(pnt);
         return maker.Vertex();
     }
 
-    internal TopoDS_Vertex TopoVertex => TopoDS.Vertex(TopoShape);
+    internal global::Kerf.Topology.Vertex TopoVertex => ShapeCasts.Vertex(TopoShape);
 
     internal override int? Dim => 0;
 
@@ -43,7 +48,7 @@ public sealed class Vertex : Shape
         get
         {
             NeedsGeometry("position");
-            return BRep_Tool.Pnt(TopoVertex);
+            return Tool.Pnt(TopoVertex);
         }
     }
 
@@ -155,26 +160,26 @@ public sealed class Vertex : Shape
     }
 
     /// <summary>The innermost face this vertex was selected through, if any.</summary>
-    private TopoDS_Face? OwningFace()
+    private global::Kerf.Topology.Face? OwningFace()
     {
         for (int i = TopoPath.Count - 1; i >= 0; i--)
-            if (!TopoPath[i].IsEmpty && TopoPath[i].TopoShape.ShapeType() == TopAbs_ShapeEnum.TopAbs_FACE)
-                return TopoDS.Face(TopoPath[i].TopoShape);
+            if (!TopoPath[i].IsEmpty && TopoPath[i].TopoShape.ShapeType() == global::Kerf.Topology.ShapeType.Face)
+                return ShapeCasts.Face(TopoPath[i].TopoShape);
         return null;
     }
 
     /// <summary>The one face of a sketch-like parent (no solids or shells) that holds this vertex.</summary>
-    private TopoDS_Face? OnlyFace()
+    private global::Kerf.Topology.Face? OnlyFace()
     {
         var parent = TopoParent;
         if (parent is null || parent.IsEmpty || parent.Solids().Count > 0 || parent.Shells().Count > 0)
             return null;
-        var holding = new List<TopoDS_Face>();
-        var faces = new TopExp_Explorer(parent.TopoShape, TopAbs_ShapeEnum.TopAbs_FACE);
+        var holding = new List<global::Kerf.Topology.Face>();
+        var faces = new Explorer(parent.TopoShape, global::Kerf.Topology.ShapeType.Face);
         for (; faces.More(); faces.Next())
         {
-            var face = TopoDS.Face(faces.Current());
-            var vertices = new TopExp_Explorer(face, TopAbs_ShapeEnum.TopAbs_VERTEX);
+            var face = ShapeCasts.Face(faces.Current());
+            var vertices = new Explorer(face, global::Kerf.Topology.ShapeType.Vertex);
             for (; vertices.More(); vertices.Next())
                 if (vertices.Current().IsSame(TopoShape))
                 {
@@ -190,19 +195,19 @@ public sealed class Vertex : Shape
     }
 
     /// <summary>Unit directions leading away from this vertex in the face's (u, v) parameters.</summary>
-    private List<(double U, double V)> FaceTangents(TopoDS_Face face)
+    private List<(double U, double V)> FaceTangents(global::Kerf.Topology.Face face)
     {
-        var here = BRep_Tool.Parameters(TopoVertex, face);
-        var seen = new List<TopoDS_Edge>();
+        var here = Tool.Parameters(TopoVertex, face);
+        var seen = new List<global::Kerf.Topology.Edge>();
         var directions = new List<(double, double)>();
-        var explorer = new TopExp_Explorer(face, TopAbs_ShapeEnum.TopAbs_EDGE);
+        var explorer = new Explorer(face, global::Kerf.Topology.ShapeType.Edge);
         for (; explorer.More(); explorer.Next())
         {
-            var edge = TopoDS.Edge(explorer.Current());
+            var edge = ShapeCasts.Edge(explorer.Current());
             if (seen.Any(e => edge.IsSame(e)))
                 continue;   // a seam edge is met once per side
             seen.Add(edge);
-            var curve = new BRepAdaptor_Curve2d(edge, face);
+            var curve = new EdgeCurve2DAdaptor(edge, face);
             foreach (var (param, sign) in new[] { (curve.FirstParameter(), 1.0), (curve.LastParameter(), -1.0) })
             {
                 var end = curve.Value(param);
@@ -223,7 +228,7 @@ public sealed class Vertex : Shape
     /// Which way the face's boundary turns at this corner. The two edges leaving the vertex bound a wedge of less than
     /// half a turn, and their bisector points into it: material there and the corner is convex, else concave.
     /// </summary>
-    private Convexity CornerConvexity(TopoDS_Face face)
+    private Convexity CornerConvexity(global::Kerf.Topology.Face face)
     {
         var directions = FaceTangents(face);
         if (directions.Count != 2)
@@ -235,12 +240,12 @@ public sealed class Vertex : Shape
         if (span < Constants.Tolerance)
             return Convexity.Smooth;   // the boundary runs straight through
         double uMin = 0, uMax = 0, vMin = 0, vMax = 0;
-        BRepTools.UVBounds(face, out uMin, out uMax, out vMin, out vMax);
+        BrepTools.UVBounds(face, out uMin, out uMax, out vMin, out vMax);
         var step = 1e-4 * Math.Sqrt(Math.Pow(uMax - uMin, 2) + Math.Pow(vMax - vMin, 2)) / span;
-        var here = BRep_Tool.Parameters(TopoVertex, face);
+        var here = Tool.Parameters(TopoVertex, face);
         var probe = new Point2D(here.X() + bisector.U * step, here.Y() + bisector.V * step);
         var classifier = new IntTools_FClass2d(face, Constants.Tolerance);
-        return classifier.Perform(probe) == TopAbs_State.TopAbs_IN ? Convexity.Convex : Convexity.Concave;
+        return classifier.Perform(probe) == Containment.In ? Convexity.Convex : Convexity.Concave;
     }
 
     /// <summary>Classifies by the creases meeting at this vertex of a solid or shell.</summary>
@@ -250,8 +255,8 @@ public sealed class Vertex : Shape
         if (parent is null || parent.IsEmpty)
             throw new InvalidOperationException(
                 "this vertex was not selected from a shape, so there is nothing to classify it against - take it from a face or solid");
-        var map = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(parent.TopoShape, TopAbs_ShapeEnum.TopAbs_VERTEX, TopAbs_ShapeEnum.TopAbs_EDGE, map);
+        var map = new NCollection_IndexedDataMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(parent.TopoShape, global::Kerf.Topology.ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, map);
         var own = TopoUtil.FindSame(TopoShape, Enumerable.Range(1, map.Extent()).Select(map.FindKey))
                   ?? throw new InvalidOperationException("this vertex is not part of its topo_parent");
         var kinds = new HashSet<Convexity>();
@@ -270,16 +275,16 @@ public sealed class Vertex : Shape
     /// <summary>The vertex the two edges share, or the empty Vertex if they share none.</summary>
     public static Vertex CommonVertex(Edge edge1, Edge edge2) => CommonVertex(edge1.TopoEdge, edge2.TopoEdge);
 
-    internal static Vertex CommonVertex(TopoDS_Edge edge1, TopoDS_Edge edge2)
+    internal static Vertex CommonVertex(global::Kerf.Topology.Edge edge1, global::Kerf.Topology.Edge edge2)
     {
-        var first = new TopExp_Explorer(edge1, TopAbs_ShapeEnum.TopAbs_VERTEX);
+        var first = new Explorer(edge1, global::Kerf.Topology.ShapeType.Vertex);
         for (; first.More(); first.Next())
         {
             var vertex1 = first.Current();
-            var second = new TopExp_Explorer(edge2, TopAbs_ShapeEnum.TopAbs_VERTEX);
+            var second = new Explorer(edge2, global::Kerf.Topology.ShapeType.Vertex);
             for (; second.More(); second.Next())
                 if (vertex1.IsSame(second.Current()))
-                    return new Vertex(TopoDS.Vertex(vertex1));
+                    return new Vertex(ShapeCasts.Vertex(vertex1));
         }
         return new Vertex();
     }

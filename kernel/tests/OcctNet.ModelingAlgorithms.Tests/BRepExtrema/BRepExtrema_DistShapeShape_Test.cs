@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -20,8 +22,8 @@ public class BRepExtrema_DistShapeShapeTest
     [Fact]
     public void BUC60870_EdgeToVertexMinimumDistance()
     {
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(0, 1, 0)).Edge();
-        TopoDS_Vertex aVertex = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0.3, 1)).Vertex();
+        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(0, 1, 0)).Edge();
+        Vertex aVertex = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0.3, 1)).Vertex();
 
         var aDist = new BRepExtrema_DistShapeShape(anEdge, aVertex, 2.0);
 
@@ -39,13 +41,13 @@ public class BRepExtrema_DistShapeShapeTest
     [Fact]
     public void EdgeEdge_Null3DCurve_NoCrash()
     {
-        TopoDS_Edge aEdge1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        Edge aEdge1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
 
-        var aCircle = new Geom_Circle(new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 0, 1)), 1.0);
-        TopoDS_Edge aEdge2 = new BRepBuilderAPI_MakeEdge(aCircle).InternalEdge();
+        var aCircle = new CircleCurve3D(new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 0, 1)), 1.0);
+        Edge aEdge2 = new BRepBuilderAPI_MakeEdge(aCircle).InternalEdge();
 
-        var aBuilder = new BRep_Builder();
-        aBuilder.UpdateEdge(aEdge2, (Geom_Curve?)null, 1e-7);
+        var aBuilder = new BrepBuilder();
+        aBuilder.UpdateEdge(aEdge2, (Curve3D?)null, 1e-7);
         aEdge2.TShape()!.FreezeGraph();
 
         var aDist = new BRepExtrema_DistShapeShape(aEdge1, aEdge2, 10.0);
@@ -58,14 +60,14 @@ public class BRepExtrema_DistShapeShapeTest
     [Fact]
     public void EdgeFace_Null3DCurve_NoCrash()
     {
-        var aCircle = new Geom_Circle(new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 0, 1)), 1.0);
-        TopoDS_Edge aEdge = new BRepBuilderAPI_MakeEdge(aCircle).InternalEdge();
+        var aCircle = new CircleCurve3D(new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 0, 1)), 1.0);
+        Edge aEdge = new BRepBuilderAPI_MakeEdge(aCircle).InternalEdge();
 
-        var aBuilder = new BRep_Builder();
-        aBuilder.UpdateEdge(aEdge, (Geom_Curve?)null, 1e-7);
+        var aBuilder = new BrepBuilder();
+        aBuilder.UpdateEdge(aEdge, (Curve3D?)null, 1e-7);
         aEdge.TShape()!.FreezeGraph();
 
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)), -10, 10, -10, 10).Face();
+        Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)), -10, 10, -10, 10).Face();
 
         var aDist = new BRepExtrema_DistShapeShape(aEdge, aFace, 10.0);
         _ = aDist;

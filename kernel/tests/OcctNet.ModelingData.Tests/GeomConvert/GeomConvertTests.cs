@@ -13,8 +13,8 @@ public class GeomConvertTest
     [Fact]
     public void CircleToBSpline()
     {
-        Geom_Circle aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
-        Geom_BSplineCurve aBSpline = GeomConvert.CurveToBSplineCurve(aCircle);
+        CircleCurve3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
+        BSplineCurve3D aBSpline = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aCircle);
         Assert.NotNull(aBSpline);
 
         aCircle.D0(0.0, out Point3D aOrigPnt);
@@ -25,9 +25,9 @@ public class GeomConvertTest
     [Fact]
     public void LineToBSpline()
     {
-        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        Geom_TrimmedCurve aTrimmed = new(aLine, 0.0, 10.0);
-        Geom_BSplineCurve aBSpline = GeomConvert.CurveToBSplineCurve(aTrimmed);
+        LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        TrimmedCurve3D aTrimmed = new(aLine, 0.0, 10.0);
+        BSplineCurve3D aBSpline = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aTrimmed);
         Assert.NotNull(aBSpline);
 
         aBSpline.D0(5.0, out Point3D aPnt);
@@ -37,9 +37,9 @@ public class GeomConvertTest
     [Fact]
     public void PlaneToBSplineSurface()
     {
-        Geom_Plane aPlane = new(new CoordinateSystem(Constants.XOY()));
-        Geom_RectangularTrimmedSurface aTrimmed = new(aPlane, 0.0, 10.0, 0.0, 10.0);
-        Geom_BSplineSurface aBSurf = GeomConvert.SurfaceToBSplineSurface(aTrimmed);
+        PlaneSurface aPlane = new(new CoordinateSystem(Constants.XOY()));
+        TrimmedSurface aTrimmed = new(aPlane, 0.0, 10.0, 0.0, 10.0);
+        BSplineSurface aBSurf = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(aTrimmed);
         Assert.NotNull(aBSurf);
 
         aBSurf.D0(5.0, 5.0, out Point3D aPnt);

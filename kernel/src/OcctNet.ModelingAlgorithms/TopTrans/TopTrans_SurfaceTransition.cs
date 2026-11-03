@@ -4,8 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -38,7 +39,7 @@ public class TopTrans_SurfaceTransition
     private double myCurvRef;
     private readonly NCollection_Array2<double> myAng;
     private readonly NCollection_Array2<double> myCurv;
-    private readonly NCollection_Array2<TopAbs_Orientation> myOri;
+    private readonly NCollection_Array2<Orientation> myOri;
     private bool myIsDefined;
     private bool myTouchFlag;
 
@@ -48,7 +49,7 @@ public class TopTrans_SurfaceTransition
         myCurvRef = 0.0;
         myAng = new NCollection_Array2<double>(1, 2, 1, 2);
         myCurv = new NCollection_Array2<double>(1, 2, 1, 2);
-        myOri = new NCollection_Array2<TopAbs_Orientation>(1, 2, 1, 2);
+        myOri = new NCollection_Array2<Orientation>(1, 2, 1, 2);
         myIsDefined = false;
         myTouchFlag = false;
     }
@@ -148,7 +149,7 @@ public class TopTrans_SurfaceTransition
     /// <paramref name="Norm"/> must be oriented outside the geometric matter.
     /// </remarks>
     public void Compare(double Tole, in Direction3D Norm, in Direction3D MaxD, in Direction3D MinD, double MaxCurv, double MinCurv,
-                        TopAbs_Orientation S, TopAbs_Orientation O)
+                        Orientation S, Orientation O)
     {
         if (!myIsDefined)
         {
@@ -243,7 +244,7 @@ public class TopTrans_SurfaceTransition
                 if (refn > 0)
                 {
                     myAng[i, j] = Ang;
-                    myOri[i, j] = (refn == M_Ointernal) ? TopAbs_INTERNAL : S;
+                    myOri[i, j] = (refn == M_Ointernal) ? Internal : S;
                     myCurv[i, j] = Curv;
                 }
             } // n=1..nmax
@@ -251,7 +252,7 @@ public class TopTrans_SurfaceTransition
     }
 
     /// <summary>Adds a plane or a cylindrical face to the boundary.</summary>
-    public void Compare(double Tole, in Direction3D Norm, TopAbs_Orientation S, TopAbs_Orientation O)
+    public void Compare(double Tole, in Direction3D Norm, Orientation S, Orientation O)
     {
         if (!myIsDefined)
         {
@@ -302,7 +303,7 @@ public class TopTrans_SurfaceTransition
                 if (refn > 0)
                 {
                     myAng[i, j] = Ang;
-                    myOri[i, j] = (refn == M_Ointernal) ? TopAbs_INTERNAL : S;
+                    myOri[i, j] = (refn == M_Ointernal) ? Internal : S;
                 }
             } // n=1..nmax
         } // k=1..kmax
@@ -312,15 +313,15 @@ public class TopTrans_SurfaceTransition
     /// The state of the reference surface before the interference: the position relative to the surface of a
     /// point very close to the intersection on the negative side of the tangent.
     /// </summary>
-    public TopAbs_State StateBefore()
+    public Containment StateBefore()
     {
         if (!myIsDefined)
         {
-            return TopAbs_UNKNOWN;
+            return Unknown;
         }
 
         // we take the state before of before orientations
-        TopAbs_State before = FUN_getstate(myAng, myOri, BEFORE, BEFORE);
+        Containment before = FUN_getstate(myAng, myOri, BEFORE, BEFORE);
         if (M_UNKNOWN(before))
         {
             // looking back in before for defined states
@@ -329,13 +330,13 @@ public class TopTrans_SurfaceTransition
             // eap Mar 25 2002
             if (myTouchFlag)
             {
-                if (before == TopAbs_OUT)
+                if (before == Out)
                 {
-                    before = TopAbs_IN;
+                    before = In;
                 }
-                else if (before == TopAbs_IN)
+                else if (before == In)
                 {
-                    before = TopAbs_OUT;
+                    before = Out;
                 }
             }
         }
@@ -347,14 +348,14 @@ public class TopTrans_SurfaceTransition
     /// The state of the reference surface after the interference: the position relative to the surface of a
     /// point very close to the intersection on the positive side of the tangent.
     /// </summary>
-    public TopAbs_State StateAfter()
+    public Containment StateAfter()
     {
         if (!myIsDefined)
         {
-            return TopAbs_UNKNOWN;
+            return Unknown;
         }
 
-        TopAbs_State after = FUN_getstate(myAng, myOri, AFTER, AFTER);
+        Containment after = FUN_getstate(myAng, myOri, AFTER, AFTER);
         if (M_UNKNOWN(after))
         {
             // looking back in before for defined states
@@ -362,13 +363,13 @@ public class TopTrans_SurfaceTransition
             // eap Mar 25 2002
             if (myTouchFlag)
             {
-                if (after == TopAbs_OUT)
+                if (after == Out)
                 {
-                    after = TopAbs_IN;
+                    after = In;
                 }
-                else if (after == TopAbs_IN)
+                else if (after == In)
                 {
-                    after = TopAbs_OUT;
+                    after = Out;
                 }
             }
         }
@@ -377,44 +378,44 @@ public class TopTrans_SurfaceTransition
     }
 
     /// <summary>The state before a transition of orientation <paramref name="Tran"/>.</summary>
-    public static TopAbs_State GetBefore(TopAbs_Orientation Tran)
+    public static Containment GetBefore(Orientation Tran)
     {
         switch (Tran)
         {
-            case TopAbs_FORWARD:
-            case TopAbs_EXTERNAL:
-                return TopAbs_OUT;
-            case TopAbs_REVERSED:
-            case TopAbs_INTERNAL:
-                return TopAbs_IN;
+            case Forward:
+            case External:
+                return Out;
+            case Reversed:
+            case Internal:
+                return In;
         }
 
-        return TopAbs_OUT;
+        return Out;
     }
 
     /// <summary>The state after a transition of orientation <paramref name="Tran"/>.</summary>
-    public static TopAbs_State GetAfter(TopAbs_Orientation Tran)
+    public static Containment GetAfter(Orientation Tran)
     {
         switch (Tran)
         {
-            case TopAbs_FORWARD:
-            case TopAbs_INTERNAL:
-                return TopAbs_IN;
-            case TopAbs_REVERSED:
-            case TopAbs_EXTERNAL:
-                return TopAbs_OUT;
+            case Forward:
+            case Internal:
+                return In;
+            case Reversed:
+            case External:
+                return Out;
         }
 
-        return TopAbs_OUT;
+        return Out;
     }
 
     // File-static functions of TopTrans_SurfaceTransition.cxx
 
-    private static bool M_REVERSED(TopAbs_Orientation st) => st == TopAbs_REVERSED;
+    private static bool M_REVERSED(Orientation st) => st == Reversed;
 
-    private static bool M_INTERNAL(TopAbs_Orientation st) => st == TopAbs_INTERNAL;
+    private static bool M_INTERNAL(Orientation st) => st == Internal;
 
-    private static bool M_UNKNOWN(TopAbs_State st) => st == TopAbs_UNKNOWN;
+    private static bool M_UNKNOWN(Containment st) => st == Unknown;
 
     // Modified: eap Mar 25 2002 (occ102,occ227), touch case
     private static Direction3D FUN_nCinsideS(in Direction3D tgC, in Direction3D ngS)
@@ -443,7 +444,7 @@ public class TopTrans_SurfaceTransition
         return 0;
     }
 
-    private static double FUN_Ang(in Direction3D _, in Direction3D beafter, in Direction3D TgC, in Direction3D Norm, TopAbs_Orientation O)
+    private static double FUN_Ang(in Direction3D _, in Direction3D beafter, in Direction3D TgC, in Direction3D Norm, Orientation O)
     {
         Direction3D dironF = FUN_nCinsideS(TgC, Norm);
         if (M_REVERSED(O))
@@ -480,7 +481,7 @@ public class TopTrans_SurfaceTransition
         }
     }
 
-    private static int FUN_refnearest(double Angref, TopAbs_Orientation Oriref, double Ang, TopAbs_Orientation Ori,
+    private static int FUN_refnearest(double Angref, Orientation Oriref, double Ang, Orientation Ori,
                                       double tola)
     {
         bool undef = Angref == 100.0;
@@ -497,7 +498,7 @@ public class TopTrans_SurfaceTransition
             // and have tangent normals, if they have opposite orientations
             // we choose INTERNAL as resulting complex transition (case EXTERNAL
             // referring to no logical case)
-            if (TopAbs.Complement(Ori) == Oriref)
+            if (global::Kerf.Engine.Topology.TopAbs.Complement(Ori) == Oriref)
             {
                 return M_Ointernal;
             }
@@ -511,8 +512,8 @@ public class TopTrans_SurfaceTransition
         return updateref;
     }
 
-    private static int FUN_refnearest(int i, int j, double CurvSref, double Angref, TopAbs_Orientation Oriref,
-                                      double Curvref, double Ang, TopAbs_Orientation Ori, double Curv, double tola,
+    private static int FUN_refnearest(int i, int j, double CurvSref, double Angref, Orientation Oriref,
+                                      double Curvref, double Ang, Orientation Ori, double Curv, double tola,
                                       ref bool TouchFlag) // eap Mar 25 2002
     {
         bool iisj = i == j;
@@ -575,7 +576,7 @@ public class TopTrans_SurfaceTransition
             // and have sma dironF.
             if (Math.Abs(Curvref - Curv) < 1.0e-4)
             {
-                if (TopAbs.Complement(Ori) == Oriref)
+                if (global::Kerf.Engine.Topology.TopAbs.Complement(Ori) == Oriref)
                 {
                     return M_Ointernal;
                 }
@@ -629,7 +630,7 @@ public class TopTrans_SurfaceTransition
         return updateref;
     }
 
-    private static TopAbs_State FUN_getstate(NCollection_Array2<double> Ang, NCollection_Array2<TopAbs_Orientation> Ori,
+    private static Containment FUN_getstate(NCollection_Array2<double> Ang, NCollection_Array2<Orientation> Ori,
                                              int iSTA, int iINDEX)
     {
         double a1 = Ang[iSTA, 1], a2 = Ang[iSTA, 2];
@@ -637,23 +638,23 @@ public class TopTrans_SurfaceTransition
         bool undef = undef1 && undef2;
         if (undef)
         {
-            return TopAbs_UNKNOWN;
+            return Unknown;
         }
 
         if (undef1 || undef2)
         {
             int jok = undef1 ? 2 : 1;
-            TopAbs_Orientation o = Ori[iSTA, jok];
-            TopAbs_State st = (iINDEX == BEFORE) ? GetBefore(o) : GetAfter(o);
+            Orientation o = Ori[iSTA, jok];
+            Containment st = (iINDEX == BEFORE) ? GetBefore(o) : GetAfter(o);
             return st;
         }
 
-        TopAbs_Orientation o1 = Ori[iSTA, 1], o2 = Ori[iSTA, 2];
-        TopAbs_State st1 = (iINDEX == BEFORE) ? GetBefore(o1) : GetAfter(o1);
-        TopAbs_State st2 = (iINDEX == BEFORE) ? GetBefore(o2) : GetAfter(o2);
+        Orientation o1 = Ori[iSTA, 1], o2 = Ori[iSTA, 2];
+        Containment st1 = (iINDEX == BEFORE) ? GetBefore(o1) : GetAfter(o1);
+        Containment st2 = (iINDEX == BEFORE) ? GetBefore(o2) : GetAfter(o2);
         if (st1 != st2)
         {
-            return TopAbs_UNKNOWN; // Incoherent data
+            return Unknown; // Incoherent data
         }
 
         return st1;

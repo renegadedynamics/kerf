@@ -6,10 +6,12 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -30,7 +32,7 @@ namespace Occt;
 /// </para>
 /// <para>
 /// <see cref="ProcessShape"/> never writes into its input (ShapeProcess's working copy, decision 1022) and returns a
-/// frozen shape. <see cref="CheckPCurve(in TopoDS_Edge, in TopoDS_Face, double, bool, Interface_StaticSet)"/> writes into the edge it is given, as OCCT's: it is for a reader's edges
+/// frozen shape. <see cref="CheckPCurve(in Edge, in Face, double, bool, Interface_StaticSet)"/> writes into the edge it is given, as OCCT's: it is for a reader's edges
 /// under construction, not for published shapes (a frozen edge throws).
 /// </para>
 /// </remarks>
@@ -66,10 +68,10 @@ public class XSAlgo_ShapeProcessor
     /// Process the shape by applying the specified operations. Returns the processed shape (frozen); may be the same as
     /// the input shape if no modifications were made.
     /// </summary>
-    public TopoDS_Shape ProcessShape(in TopoDS_Shape theShape, ShapeProcess.OperationsFlags theOperations,
+    public Shape ProcessShape(in Shape theShape, ShapeProcess.OperationsFlags theOperations,
                                      ProgressRange theProgress = default)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return theShape;
         }
@@ -81,10 +83,10 @@ public class XSAlgo_ShapeProcessor
     /// As <see cref="ProcessShape"/>, without freezing the result (OCCT.NET, for STEPControl_ActorRead, decision 1273):
     /// a reader's working shapes are processed in place, as OCCT's, so that the items sharing them keep sharing them.
     /// </summary>
-    internal TopoDS_Shape InternalProcessShape(in TopoDS_Shape theShape, ShapeProcess.OperationsFlags theOperations,
+    internal Shape InternalProcessShape(in Shape theShape, ShapeProcess.OperationsFlags theOperations,
                                                ProgressRange theProgress = default)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return theShape;
         }
@@ -109,7 +111,7 @@ public class XSAlgo_ShapeProcessor
     }
 
     // Initialize the context with the specified shape.
-    private void initializeContext(in TopoDS_Shape theShape)
+    private void initializeContext(in Shape theShape)
     {
         myContext = new ShapeProcess_ShapeContext(theShape, null);
         foreach (KeyValuePair<string, string> aParameterIter in myParameters)
@@ -119,7 +121,7 @@ public class XSAlgo_ShapeProcessor
         // Read and set detalization level.
         if (myParameters.Find("DetalizationLevel", out string aResult) && TCollection_AsciiString.IsIntegerValue(aResult))
         {
-            TopAbs_ShapeEnum aDetalizationLevel = (TopAbs_ShapeEnum)TCollection_AsciiString.IntegerValue(aResult);
+            ShapeType aDetalizationLevel = (ShapeType)TCollection_AsciiString.IntegerValue(aResult);
             myContext.SetDetalisation(aDetalizationLevel);
         }
         // Read and set non-manifold flag.
@@ -131,7 +133,7 @@ public class XSAlgo_ShapeProcessor
     }
 
     // Add messages from the specified shape to the transfer binder.
-    private static void addMessages(ShapeExtend_MsgRegistrator? theMessages, in TopoDS_Shape theShape, Transfer_Binder theBinder)
+    private static void addMessages(ShapeExtend_MsgRegistrator? theMessages, in Shape theShape, Transfer_Binder theBinder)
     {
         if (theMessages is null)
         {
@@ -153,7 +155,7 @@ public class XSAlgo_ShapeProcessor
     /// <paramref name="theFirstTPItemIndex"/> get the shapes their results became, and the messages attached to them.
     /// </summary>
     public static void MergeShapeTransferInfo(Transfer_TransientProcess theTransientProcess,
-                                              NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theModifiedShapesMap,
+                                              NCollection_DataMap<Shape, Shape> theModifiedShapesMap,
                                               int theFirstTPItemIndex,
                                               ShapeExtend_MsgRegistrator? theMessages)
     {
@@ -165,12 +167,12 @@ public class XSAlgo_ShapeProcessor
         for (int i = Math.Max(theFirstTPItemIndex, 1); i <= theTransientProcess.NbMapped(); ++i)
         {
             TransferBRep_ShapeBinder? aShapeBinder = theTransientProcess.MapItem(i) as TransferBRep_ShapeBinder;
-            if (aShapeBinder is null || aShapeBinder.Result().IsNull())
+            if (aShapeBinder is null || aShapeBinder.Result().IsNull)
             {
                 continue;
             }
 
-            TopoDS_Shape anOriginalShape = aShapeBinder.Result();
+            Shape anOriginalShape = aShapeBinder.Result();
             if (theModifiedShapesMap.IsBound(anOriginalShape))
             {
                 aShapeBinder.SetResult(theModifiedShapesMap.Find(anOriginalShape));
@@ -178,7 +180,7 @@ public class XSAlgo_ShapeProcessor
             else if (!anOriginalShape.Location().IsIdentity)
             {
                 var aNullLoc = new Placement();
-                TopoDS_Shape aTemporaryShape = anOriginalShape.Located(aNullLoc);
+                Shape aTemporaryShape = anOriginalShape.Located(aNullLoc);
                 if (theModifiedShapesMap.IsBound(aTemporaryShape))
                 {
                     aShapeBinder.SetResult(theModifiedShapesMap.Find(aTemporaryShape));
@@ -187,22 +189,22 @@ public class XSAlgo_ShapeProcessor
             else
             {
                 // Some of edges may be modified.
-                var aReShaper = new BRepTools_ReShape();
+                var aReShaper = new ReShape();
                 bool aHasModifiedEdges = false;
                 // Remember modifications.
-                for (var anExpSE = new TopExp_Explorer(anOriginalShape, TopAbs_EDGE); anExpSE.More(); anExpSE.Next())
+                for (var anExpSE = new Explorer(anOriginalShape, ShapeType.Edge); anExpSE.More(); anExpSE.Next())
                 {
                     if (theModifiedShapesMap.IsBound(anExpSE.Current()))
                     {
                         aHasModifiedEdges = true;
-                        TopoDS_Shape aModifiedShape = theModifiedShapesMap.Find(anExpSE.Current());
+                        Shape aModifiedShape = theModifiedShapesMap.Find(anExpSE.Current());
                         aReShaper.Replace(anExpSE.Current(), aModifiedShape);
                     }
                 }
                 // Apply modifications and store result in binder.
                 if (aHasModifiedEdges)
                 {
-                    TopoDS_Shape aReshapedShape = aReShaper.Apply(anOriginalShape);
+                    Shape aReshapedShape = aReShaper.Apply(anOriginalShape);
                     aShapeBinder.SetResult(aReshapedShape);
                 }
             }
@@ -238,7 +240,7 @@ public class XSAlgo_ShapeProcessor
     /// its entries (decision 1204).
     /// </remarks>
     public static void MergeShapeTransferInfo(Transfer_FinderProcess theFinderProcess,
-                                              NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theModifiedShapesMap,
+                                              NCollection_DataMap<Shape, Shape> theModifiedShapesMap,
                                               ShapeExtend_MsgRegistrator? theMessages)
     {
         if (theModifiedShapesMap.IsEmpty())
@@ -246,10 +248,10 @@ public class XSAlgo_ShapeProcessor
             return;
         }
         bool aToPrint = theMessages is not null && !theMessages.MapShape().IsEmpty();
-        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> ShapeShapeIterator in theModifiedShapesMap)
+        foreach (KeyValuePair<Shape, Shape> ShapeShapeIterator in theModifiedShapesMap)
         {
-            TopoDS_Shape anOriginalShape = ShapeShapeIterator.Key;
-            TopoDS_Shape aResultShape = ShapeShapeIterator.Value;
+            Shape anOriginalShape = ShapeShapeIterator.Key;
+            Shape aResultShape = ShapeShapeIterator.Value;
 
             TransferBRep_ShapeMapper aResultMapper = TransferBRep.ShapeMapper(theFinderProcess, aResultShape);
             Transfer_Binder? aResultBinder = theFinderProcess.Find(aResultMapper);
@@ -261,11 +263,11 @@ public class XSAlgo_ShapeProcessor
                 //  into Transfer_TransientListBinder.
                 if (anOriginalShape.ShapeType() > aResultShape.ShapeType())
                 {
-                    TopoDS_Shape aSubShape = new TopoDS_Shape();
+                    Shape aSubShape = new Shape();
                     var aTransientListBinder = new Transfer_TransientListBinder();
-                    for (var aSubShapeIter = new TopoDS_Iterator(aResultShape); aSubShapeIter.More(); aSubShapeIter.Next())
+                    for (var aSubShapeIter = new Iterator(aResultShape); aSubShapeIter.More(); aSubShapeIter.Next())
                     {
-                        TopoDS_Shape aCurrentSubShape = aSubShapeIter.Value();
+                        Shape aCurrentSubShape = aSubShapeIter.Value();
                         Transfer_Finder? aSubShapeMapper = TransferBRep.ShapeMapper(theFinderProcess, aCurrentSubShape);
                         if (aSubShapeMapper is null)
                         {
@@ -320,12 +322,12 @@ public class XSAlgo_ShapeProcessor
     }
 
     // Create a new edge with the same geometry as the source edge.
-    private static TopoDS_Edge MakeEdgeOnCurve(in TopoDS_Edge aSourceEdge)
+    private static Edge MakeEdgeOnCurve(in Edge aSourceEdge)
     {
-        TopoDS_Edge aResult = new TopoDS_Edge();
+        Edge aResult = new Edge();
 
         var anEdgeAnalyzer = new ShapeAnalysis_Edge();
-        if (!anEdgeAnalyzer.Curve3d(aSourceEdge, out Geom_Curve? aSourceGeomCurve, out double aStartParam, out double anEndParam, false))
+        if (!anEdgeAnalyzer.Curve3d(aSourceEdge, out Curve3D? aSourceGeomCurve, out double aStartParam, out double anEndParam, false))
         {
             return aResult;
         }
@@ -343,7 +345,7 @@ public class XSAlgo_ShapeProcessor
     /// was corrected, false if it was dropped. Reads <c>read.stdsameparameter.mode</c> in <paramref name="theStatics"/>.
     /// </summary>
     /// <remarks>Writes into <paramref name="theEdge"/> and its vertices, which must not be frozen.</remarks>
-    public static bool CheckPCurve(in TopoDS_Edge theEdge, in TopoDS_Face theFace, double thePrecision, bool theIsSeam,
+    public static bool CheckPCurve(in Edge theEdge, in Face theFace, double thePrecision, bool theIsSeam,
                                    Interface_StaticSet theStatics)
         => CheckPCurve(theEdge, theFace, thePrecision, theIsSeam, theStatics.IVal("read.stdsameparameter.mode") != 0);
 
@@ -351,19 +353,19 @@ public class XSAlgo_ShapeProcessor
     /// As the form with statics, given the value of <c>read.stdsameparameter.mode</c> (OCCT.NET addition: StepToTopoDS
     /// takes it from its model's parameters, decision 1246).
     /// </summary>
-    internal static bool CheckPCurve(in TopoDS_Edge theEdge, in TopoDS_Face theFace, double thePrecision, bool theIsSeam,
+    internal static bool CheckPCurve(in Edge theEdge, in Face theFace, double thePrecision, bool theIsSeam,
                                      bool theStdSameParameterMode)
     {
         var anEdgeAnalyzer = new ShapeAnalysis_Edge();
 
         // Retrieve pcurve and its parameters.
-        if (!anEdgeAnalyzer.PCurve(theEdge, theFace, out Geom2d_Curve? aCurve2D, out double aCurve2DParam1, out double aCurve2DParam2, false))
+        if (!anEdgeAnalyzer.PCurve(theEdge, theFace, out Curve2D? aCurve2D, out double aCurve2DParam1, out double aCurve2DParam2, false))
         {
             return false;
         }
 
         // Check for pcurve longer than surface.
-        Geom_Surface aSurface = BRep_Tool.Surface(theFace);
+        Surface aSurface = Tool.Surface(theFace);
         aSurface.Bounds(out double aFaceSurfaceU1, out double aFaceSurfaceU2, out double aFaceSurfaceV1, out double aFaceSurfaceV2);
         Point2D aCurve2DPoint1 = aCurve2D.Value(aCurve2DParam1);
         Point2D aCurve2DPoint2 = aCurve2D.Value(aCurve2DParam2);
@@ -382,14 +384,14 @@ public class XSAlgo_ShapeProcessor
         // Second Check: 2D and 3D consistency (if the Pcurve has not been dropped)
         // We also check that it does not wrap around too much...
         // Example: UVV in DEGREES on a surface in RADIANS, adjusted = 57 turns!
-        anEdgeAnalyzer.Curve3d(theEdge, out Geom_Curve? aCurve3D, out double aCurve3DParam1, out double aCurve3DParam2, false);
+        anEdgeAnalyzer.Curve3d(theEdge, out Curve3D? aCurve3D, out double aCurve3DParam1, out double aCurve3DParam2, false);
 
         Point3D aCurve3DPoint1 = aSurface.Value(aCurve2DPoint1.X(), aCurve2DPoint1.Y());
         Point3D aCurve3DPoint2 = aSurface.Value(aCurve2DPoint2.X(), aCurve2DPoint2.Y());
-        TopoDS_Vertex aVertex1 = TopExp.FirstVertex(theEdge);
-        TopoDS_Vertex aVertex2 = TopExp.LastVertex(theEdge);
-        Point3D aPV1 = aCurve3D is null ? BRep_Tool.Pnt(aVertex1) : aCurve3D.Value(aCurve3DParam1);
-        Point3D aPV2 = aCurve3D is null ? BRep_Tool.Pnt(aVertex2) : aCurve3D.Value(aCurve3DParam2);
+        Vertex aVertex1 = Exploration.FirstVertex(theEdge);
+        Vertex aVertex2 = Exploration.LastVertex(theEdge);
+        Point3D aPV1 = aCurve3D is null ? Tool.Pnt(aVertex1) : aCurve3D.Value(aCurve3DParam1);
+        Point3D aPV2 = aCurve3D is null ? Tool.Pnt(aVertex2) : aCurve3D.Value(aCurve3DParam2);
         double aDist11 = aPV1.Distance(aCurve3DPoint1);
         double aDist22 = aPV2.Distance(aCurve3DPoint2);
         if ((aDist11 > thePrecision) || (aDist22 > thePrecision))
@@ -404,18 +406,18 @@ public class XSAlgo_ShapeProcessor
         {
             return false;
         }
-        TopoDS_Edge aTmpEdge = MakeEdgeOnCurve(theEdge);
+        Edge aTmpEdge = MakeEdgeOnCurve(theEdge);
 
         // fill it with pcurve(s)
-        var aBuilder = new BRep_Builder();
-        Geom2d_Curve? aSeamPCurve;
+        var aBuilder = new BrepBuilder();
+        Curve2D? aSeamPCurve;
         if (theIsSeam)
         {
-            TopoDS_Edge aReversedEdge = TopoDS.Edge(theEdge.Reversed());
+            Edge aReversedEdge = ShapeCasts.Edge(theEdge.Reversed());
             if (!anEdgeAnalyzer.PCurve(aReversedEdge, theFace, out aSeamPCurve, out double aSeamPCurveParam1, out double aSeamPCurveParam2, false)
                 || aSeamPCurve == aCurve2D)
             {
-                aSeamPCurve = aCurve2D.Copy() as Geom2d_Curve;
+                aSeamPCurve = aCurve2D.Copy() as Curve2D;
             }
             aBuilder.UpdateEdge(aTmpEdge, aCurve2D, aSeamPCurve, theFace, 0.0);
         }
@@ -434,23 +436,23 @@ public class XSAlgo_ShapeProcessor
         // call FixSP to see what it will do
         var anEdgeFixer = new ShapeFix_Edge();
         anEdgeFixer.FixSameParameter(aTmpEdge);
-        double aTolerance = BRep_Tool.Tolerance(aTmpEdge);
-        bool aSameRangeFlag = BRep_Tool.SameRange(aTmpEdge);
-        bool aSameParameterFlag = BRep_Tool.SameParameter(aTmpEdge);
+        double aTolerance = Tool.Tolerance(aTmpEdge);
+        bool aSameRangeFlag = Tool.SameRange(aTmpEdge);
+        bool aSameParameterFlag = Tool.SameParameter(aTmpEdge);
 
         // if result is not nice, try to call projection and take the best
         if (aTolerance > Math.Min(1.0, 2.0 * thePrecision) || !aSameRangeFlag)
         {
             // pdn trying to recompute pcurve
-            TopoDS_Edge anEdgePr = MakeEdgeOnCurve(theEdge);
+            Edge anEdgePr = MakeEdgeOnCurve(theEdge);
             anEdgeFixer.FixAddPCurve(anEdgePr, theFace, theIsSeam, thePrecision);
             anEdgeFixer.FixSameParameter(anEdgePr);
-            double aTolerancePr = BRep_Tool.Tolerance(anEdgePr);
+            double aTolerancePr = Tool.Tolerance(anEdgePr);
             // pdn choose the best pcurve
             if (aTolerancePr < aTolerance || !aSameRangeFlag)
             {
-                aSameRangeFlag = BRep_Tool.SameRange(anEdgePr);
-                aSameParameterFlag = BRep_Tool.SameParameter(anEdgePr);
+                aSameRangeFlag = Tool.SameRange(anEdgePr);
+                aSameParameterFlag = Tool.SameParameter(anEdgePr);
                 aTolerance = aTolerancePr;
                 aTmpEdge = anEdgePr;
             }
@@ -460,10 +462,10 @@ public class XSAlgo_ShapeProcessor
         anEdgeAnalyzer.PCurve(aTmpEdge, theFace, out aCurve2D, out aCurve2DParam1, out aCurve2DParam2, false);
         if (theIsSeam)
         {
-            TopoDS_Edge aReversedTmpEdge = TopoDS.Edge(aTmpEdge.Reversed());
+            Edge aReversedTmpEdge = ShapeCasts.Edge(aTmpEdge.Reversed());
             anEdgeAnalyzer.PCurve(aReversedTmpEdge, theFace, out aSeamPCurve, out double aReversedTmpEdgeParam1,
                                   out double aReversedTmpEdgeParam2, false);
-            if (theEdge.Orientation() == TopAbs_REVERSED) //: abv 14.11.01: coneEl.sat loop
+            if (theEdge.Orientation() == Reversed) //: abv 14.11.01: coneEl.sat loop
             {
                 aBuilder.UpdateEdge(theEdge, aSeamPCurve, aCurve2D, theFace, aTolerance);
             }
@@ -480,11 +482,11 @@ public class XSAlgo_ShapeProcessor
         aBuilder.UpdateVertex(aVertex1, aTolerance);
         aBuilder.UpdateVertex(aVertex2, aTolerance);
         aBuilder.Range(theEdge, theFace, aCurve2DParam1, aCurve2DParam2);
-        if (BRep_Tool.SameRange(theEdge))
+        if (Tool.SameRange(theEdge))
         {
             aBuilder.SameRange(theEdge, aSameRangeFlag);
         }
-        if (BRep_Tool.SameParameter(theEdge))
+        if (Tool.SameParameter(theEdge))
         {
             aBuilder.SameParameter(theEdge, aSameParameterFlag);
         }
@@ -502,7 +504,7 @@ public class XSAlgo_ShapeProcessor
         string theFileResourceName, string theScopeResourceName, Interface_StaticSet theStatics)
     {
         string aFileName = theStatics.CVal(theFileResourceName);
-        var aContext = new ShapeProcess_ShapeContext(new TopoDS_Shape(), aFileName);
+        var aContext = new ShapeProcess_ShapeContext(new Shape(), aFileName);
         if (!aContext.ResourceManager().IsInitialized)
         {
             // If resource file wasn't found, use static values instead

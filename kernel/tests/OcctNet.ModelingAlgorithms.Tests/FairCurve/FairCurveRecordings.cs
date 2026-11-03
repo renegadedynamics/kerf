@@ -81,15 +81,15 @@ internal static class FairCurveRecordings
 
     private static string Str(int theValue) => theValue.ToString(CultureInfo.InvariantCulture);
 
-    private static string Curve(Geom2d_BSplineCurve theC)
+    private static string Curve(BSplineCurve2D theC)
     {
-        StringBuilder aS = new(Str(theC.Degree()) + "," + Str(theC.NbPoles()));
-        for (int i = 1; i <= theC.NbPoles(); i++)
+        StringBuilder aS = new(Str(theC.Degree()) + "," + Str(theC.PoleCount));
+        for (int i = 1; i <= theC.PoleCount; i++)
         {
             aS.Append(',').Append(Hex(theC.Pole(i)));
         }
-        aS.Append(',').Append(Str(theC.NbKnots()));
-        for (int i = 1; i <= theC.NbKnots(); i++)
+        aS.Append(',').Append(Str(theC.KnotCount));
+        for (int i = 1; i <= theC.KnotCount; i++)
         {
             aS.Append(',').Append(Hex(theC.Knot(i))).Append(',').Append(Str(theC.Multiplicity(i)));
         }

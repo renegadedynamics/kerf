@@ -4,9 +4,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Intersection;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ChFiKPart_ComputeData_Fcts;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -18,25 +20,25 @@ internal static class ChFiKPart_ComputeData_FilPlnPln
     /// <summary>Fills <paramref name="Data"/> with the cylinder of radius <paramref name="Radius"/> between the
     /// planes, its origin at <paramref name="First"/> on the guide line.</summary>
     internal static bool ChFiKPart_MakeFillet(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Data, in Plane3D Pl1,
-                                              in Plane3D Pl2, TopAbs_Orientation Or1, TopAbs_Orientation Or2,
-                                              double Radius, in Line3D Spine, double First, TopAbs_Orientation Of1)
+                                              in Plane3D Pl2, Orientation Or1, Orientation Or2,
+                                              double Radius, in Line3D Spine, double First, Orientation Of1)
     {
         // calcul du cylindre
         CoordinateSystem Pos1 = Pl1.Position();
         Direction3D D1 = Pos1.XDirection().Crossed(Pos1.YDirection());
-        if (Or1 == TopAbs_REVERSED)
+        if (Or1 == Reversed)
         {
             D1.Reverse();
         }
         CoordinateSystem Pos2 = Pl2.Position();
         Direction3D D2 = Pos2.XDirection().Crossed(Pos2.YDirection());
-        if (Or2 == TopAbs_REVERSED)
+        if (Or2 == Reversed)
         {
             D2.Reverse();
         }
-        IntAna_QuadQuadGeo LInt = new(Pl1, Pl2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        QuadQuadGeo LInt = new(Pl1, Pl2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Point3D Pv;
-        if (LInt.IsDone())
+        if (LInt.IsDone)
         {
             // On met l origine du cylindre au point de depart fourni sur la
             // ligne guide.
@@ -59,7 +61,7 @@ internal static class ChFiKPart_ComputeData_FilPlnPln
         {
             CylAx3.YReverse();
         }
-        Geom_CylindricalSurface gcyl = new(CylAx3, Radius);
+        CylindricalSurface gcyl = new(CylAx3, Radius);
         Data.ChangeSurf(ChFiKPart_IndexSurfaceInDS(gcyl, DStr));
 
         // On regarde si l orientation du cylindre est la meme que celle
@@ -68,18 +70,18 @@ internal static class ChFiKPart_ComputeData_FilPlnPln
         Direction3D norcyl = new(deru.Crossed(derv));
         Direction3D norpl = Pos1.XDirection().Crossed(Pos1.YDirection());
         Direction3D norface = norpl;
-        if (Of1 == TopAbs_REVERSED)
+        if (Of1 == Reversed)
         {
             norface.Reverse();
         }
         bool toreverse = (norcyl.Dot(norface) <= 0.0);
         if (toreverse)
         {
-            Data.ChangeOrientation() = TopAbs_REVERSED;
+            Data.ChangeOrientation() = Reversed;
         }
         else
         {
-            Data.ChangeOrientation() = TopAbs_FORWARD;
+            Data.ChangeOrientation() = Forward;
         }
 
         // On charge les FaceInterferences avec les pcurves et courbes 3d.
@@ -90,20 +92,20 @@ internal static class ChFiKPart_ComputeData_FilPlnPln
         Point2D p2dPln = new(u, v);
         Direction2D dir2dPln = new(AxisCylinder.Dot(Pos1.XDirection()), AxisCylinder.Dot(Pos1.YDirection()));
         Line2D lin2dPln = new(p2dPln, dir2dPln);
-        Geom2d_Line GLin2dPln1 = new(lin2dPln);
+        LineCurve2D GLin2dPln1 = new(lin2dPln);
         Line3D linPln = new(P, AxisCylinder);
-        Geom_Line GLinPln1 = new(linPln);
+        LineCurve3D GLinPln1 = new(linPln);
         Line2D lin2dCyl = new(new Point2D(0.0, 0.0), Constants.DY2d());
-        Geom2d_Line GLin2dCyl1 = new(lin2dCyl);
-        TopAbs_Orientation trans;
+        LineCurve2D GLin2dCyl1 = new(lin2dCyl);
+        Orientation trans;
         toreverse = (norcyl.Dot(norpl) <= 0.0);
         if (toreverse)
         {
-            trans = TopAbs_REVERSED;
+            trans = Reversed;
         }
         else
         {
-            trans = TopAbs_FORWARD;
+            trans = Forward;
         }
         Data.ChangeInterferenceOnS1().SetInterference(ChFiKPart_IndexCurveInDS(GLinPln1, DStr), trans, GLin2dPln1,
                                                       GLin2dCyl1);
@@ -118,19 +120,19 @@ internal static class ChFiKPart_ComputeData_FilPlnPln
         dir2dPln.SetCoord(AxisCylinder.Dot(Pos2.XDirection()), AxisCylinder.Dot(Pos2.YDirection()));
         lin2dPln.SetLocation(p2dPln);
         lin2dPln.SetDirection(dir2dPln);
-        Geom2d_Line GLin2dPln2 = new(lin2dPln);
+        LineCurve2D GLin2dPln2 = new(lin2dPln);
         linPln.SetLocation(P);
         linPln.SetDirection(AxisCylinder);
-        Geom_Line GLinPln2 = new(linPln);
+        LineCurve3D GLinPln2 = new(linPln);
         lin2dCyl.SetLocation(new Point2D(Ang, 0.0));
-        Geom2d_Line GLin2dCyl2 = new(lin2dCyl);
+        LineCurve2D GLin2dCyl2 = new(lin2dCyl);
         if (toreverse)
         {
-            trans = TopAbs_FORWARD;
+            trans = Forward;
         }
         else
         {
-            trans = TopAbs_REVERSED;
+            trans = Reversed;
         }
         Data.ChangeInterferenceOnS2().SetInterference(ChFiKPart_IndexCurveInDS(GLinPln2, DStr), trans, GLin2dPln2,
                                                       GLin2dCyl2);

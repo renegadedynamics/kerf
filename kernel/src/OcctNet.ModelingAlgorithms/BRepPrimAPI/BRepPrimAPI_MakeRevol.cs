@@ -3,13 +3,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Schematiq.Collections;
 using static Kerf.Geometry.CurveKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -27,12 +31,12 @@ namespace Occt;
 public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
 {
     private readonly BRepSweep_Revol myRevol;
-    private readonly NCollection_List<TopoDS_Shape> myDegenerated = new();
-    private BRepTools_History? myHist;
+    private readonly NCollection_List<Shape> myDegenerated = new();
+    private History? myHist;
     private bool myIsBuild;
 
     // perform checks on the argument
-    private static TopoDS_Shape check(in TopoDS_Shape S)
+    private static Shape check(in Shape S)
     {
         BRepLib.BuildCurves3d(S);
         return S;
@@ -42,9 +46,9 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
     /// The revolution of <paramref name="S"/> around <paramref name="A"/> by the angle <paramref name="D"/> (radians,
     /// reduced to [0, 2π]). With <paramref name="Copy"/>, S's sub-shapes are copied.
     /// </summary>
-    public BRepPrimAPI_MakeRevol(in TopoDS_Shape S, in Axis3D A, double D, bool Copy = false)
+    public BRepPrimAPI_MakeRevol(in Shape S, in Axis3D A, double D, bool Copy = false)
     {
-        TopoDS_Shape aS = GeneratingShapeForWrite(S);
+        Shape aS = GeneratingShapeForWrite(S);
         myRevol = new BRepSweep_Revol(check(aS), A, D, Copy);
         myIsBuild = false;
         if (!CheckValidity(check(aS), A))
@@ -59,9 +63,9 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
     }
 
     /// <summary>The whole revolution of <paramref name="S"/> around <paramref name="A"/>.</summary>
-    public BRepPrimAPI_MakeRevol(in TopoDS_Shape S, in Axis3D A, bool Copy = false)
+    public BRepPrimAPI_MakeRevol(in Shape S, in Axis3D A, bool Copy = false)
     {
-        TopoDS_Shape aS = GeneratingShapeForWrite(S);
+        Shape aS = GeneratingShapeForWrite(S);
         myRevol = new BRepSweep_Revol(check(aS), A, 2.0 * Math.PI, Copy);
         myIsBuild = false;
         if (!CheckValidity(check(aS), A))
@@ -93,26 +97,26 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
 
         myHist = null;
         myDegenerated.Clear();
-        var aDegE = new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        var aBB = new BRep_Builder();
+        var aDegE = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var aBB = new BrepBuilder();
 
-        var anExp = new TopExp_Explorer(myShape, TopAbs_EDGE);
+        var anExp = new Explorer(myShape, ShapeType.Edge);
         // Problem is that some degenerated edges can be shared by different faces.
         // It is not valid for correct shape.
         // To solve problem it is possible to copy shared degenerated edge for each face, which has it,
         // and replace shared edge by its copy
         for (; anExp.More(); anExp.Next())
         {
-            TopoDS_Shape anEdge = anExp.Current();
-            var aTEdge = (BRep_TEdge)anEdge.TShape()!;
+            Shape anEdge = anExp.Current();
+            var aTEdge = (BrepTEdge)anEdge.TShape()!;
             if (aTEdge.Degenerated())
             {
-                if (aDegE.Find(anEdge, out NCollection_List<TopoDS_Shape> anL))
+                if (aDegE.Find(anEdge, out NCollection_List<Shape> anL))
                 {
                     // Make the copy if degenerated edge occurs more then once
-                    TopoDS_Shape aCopyE = anEdge.EmptyCopied();
-                    aCopyE.Orientation(TopAbs_FORWARD);
-                    var aVIter = new TopoDS_Iterator(anEdge.Oriented(TopAbs_FORWARD), false);
+                    Shape aCopyE = anEdge.EmptyCopied();
+                    aCopyE.Orientation(Forward);
+                    var aVIter = new Iterator(anEdge.Oriented(Forward), false);
                     for (; aVIter.More(); aVIter.Next())
                     {
                         aBB.Add(aCopyE, aVIter.Value());
@@ -123,7 +127,7 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
                 }
                 else
                 {
-                    anL = aDegE.Bound(anEdge, new NCollection_List<TopoDS_Shape>());
+                    anL = aDegE.Bound(anEdge, new NCollection_List<Shape>());
                     anL.Append(anEdge);
                     myDegenerated.Append(anEdge);
                 }
@@ -131,24 +135,24 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
         }
         if (!myDegenerated.IsEmpty())
         {
-            var aSubs = new BRepTools_ReShape();
-            var aDegF = new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+            var aSubs = new ReShape();
+            var aDegF = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             bool isReplaced = false;
-            anExp.Init(myShape, TopAbs_FACE);
+            anExp.Init(myShape, ShapeType.Face);
             // Replace degenerated edge by its copies for different faces
             // First, for each face list of d.e. is created
             for (; anExp.More(); anExp.Next())
             {
-                TopoDS_Shape aF = anExp.Current();
-                var anExpE = new TopExp_Explorer(aF, TopAbs_EDGE);
+                Shape aF = anExp.Current();
+                var anExpE = new Explorer(aF, ShapeType.Edge);
                 for (; anExpE.More(); anExpE.Next())
                 {
-                    TopoDS_Shape anE = anExpE.Current();
-                    if (BRep_Tool.Degenerated(TopoDS.Edge(anE)))
+                    Shape anE = anExpE.Current();
+                    if (Tool.Degenerated(ShapeCasts.Edge(anE)))
                     {
-                        if (!aDegF.Find(aF, out NCollection_List<TopoDS_Shape> anL))
+                        if (!aDegF.Find(aF, out NCollection_List<Shape> anL))
                         {
-                            anL = aDegF.Bound(aF, new NCollection_List<TopoDS_Shape>());
+                            anL = aDegF.Bound(aF, new NCollection_List<Shape>());
                         }
                         anL.Append(anE);
                     }
@@ -156,23 +160,23 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
             }
             //
             // Second, replace edges by copies using ReShape
-            var aSubsF = new BRepTools_ReShape();
+            var aSubsF = new ReShape();
             // OCCT iterates its map in the hash order of the faces' TShape addresses; the port's map iterates in the
             // order the faces were bound (decision 18). Which face keeps the original degenerated edge may differ.
-            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aFIter in aDegF)
+            foreach (KeyValuePair<Shape, NCollection_List<Shape>> aFIter in aDegF)
             {
                 aSubs.Clear();
                 isReplaced = false;
-                TopoDS_Shape aF = aFIter.Key;
-                NCollection_List<TopoDS_Shape> aDEL = aFIter.Value;
-                var anEIter = new NCollection_List<TopoDS_Shape>.Iterator(aDEL);
+                Shape aF = aFIter.Key;
+                NCollection_List<Shape> aDEL = aFIter.Value;
+                var anEIter = new NCollection_List<Shape>.Iterator(aDEL);
                 for (; anEIter.More(); anEIter.Next())
                 {
-                    TopoDS_Shape anE = anEIter.Value();
+                    Shape anE = anEIter.Value();
                     if (aDegE.IsBound(anE))
                     {
-                        NCollection_List<TopoDS_Shape> aCEL = aDegE.ChangeFind(anE);
-                        var anIt = new NCollection_List<TopoDS_Shape>.Iterator(aCEL);
+                        NCollection_List<Shape> aCEL = aDegE.ChangeFind(anE);
+                        var anIt = new NCollection_List<Shape>.Iterator(aCEL);
                         for (; anIt.More(); anIt.Next())
                         {
                             if (anIt.Value().IsEqual(anE))
@@ -195,7 +199,7 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
                 }
                 if (isReplaced)
                 {
-                    TopoDS_Shape aNF = aSubs.InternalApply(aF);
+                    Shape aNF = aSubs.InternalApply(aF);
                     aSubsF.Replace(aF, aNF);
                     if (myHist is null)
                     {
@@ -222,7 +226,7 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
 
     // used in CheckValidity to find out is there
     // intersection between curve and axe of revolution
-    private static bool IsIntersect(Adaptor3d_Curve theC, in Axis3D theAxe)
+    private static bool IsIntersect(CurveAdaptorBase theC, in Axis3D theAxe)
     {
         var anAxis = new Line3D(theAxe);
         // Quick test for circle
@@ -238,22 +242,22 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
                 return false;
             }
         }
-        var aL = new Geom_Line(anAxis);
-        var aLin = new GeomAdaptor_Curve(aL);
+        var aL = new LineCurve3D(anAxis);
+        var aLin = new CurveAdaptor(aL);
         double aParTol = theC.Resolution(global::Kerf.Engine.Foundation.Precision.Confusion());
         double aParF = theC.FirstParameter() + aParTol, aParL = theC.LastParameter() - aParTol;
 
-        var anExtr = new Extrema_ExtCC(theC, aLin);
+        var anExtr = new ExtCC(theC, aLin);
         anExtr.Perform();
-        if (anExtr.IsDone() && anExtr.NbExt() > 0)
+        if (anExtr.IsDone && anExtr.ExtCount > 0)
         {
-            for (int i = 1; i <= anExtr.NbExt(); i++)
+            for (int i = 1; i <= anExtr.ExtCount; i++)
             {
                 if (anExtr.SquareDistance(i) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     continue;
                 }
-                anExtr.Points(i, out Extrema_POnCurv aP1, out Extrema_POnCurv _);
+                anExtr.Points(i, out POnCurv aP1, out POnCurv _);
                 if ((aParF < aP1.Parameter()) && (aP1.Parameter() < aParL))
                 {
                     return true;
@@ -264,25 +268,25 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
     }
 
     /// <summary>False if an edge of <paramref name="theShape"/> crosses the axis (edges lying on it are valid).</summary>
-    protected bool CheckValidity(in TopoDS_Shape theShape, in Axis3D theA)
+    protected bool CheckValidity(in Shape theShape, in Axis3D theA)
     {
-        var anExp = new TopExp_Explorer(theShape, TopAbs_EDGE);
+        var anExp = new Explorer(theShape, ShapeType.Edge);
         bool IsValid = true;
         for (; anExp.More(); anExp.Next())
         {
-            TopoDS_Edge anE = TopoDS.Edge(anExp.Current());
-            if (BRep_Tool.Degenerated(anE))
+            Edge anE = ShapeCasts.Edge(anExp.Current());
+            if (Tool.Degenerated(anE))
             {
                 continue;
             }
 
-            Geom_Curve C = BRep_Tool.Curve(anE, out Placement L, out double First, out double Last)!;
+            Curve3D C = Tool.Curve(anE, out Placement L, out double First, out double Last)!;
             Transform3D Tr = L.Transformation();
-            C = (Geom_Curve)C.Copy();
-            C = new Geom_TrimmedCurve(C, First, Last);
+            C = (Curve3D)C.Copy();
+            C = new TrimmedCurve3D(C, First, Last);
             C.Transform(Tr);
 
-            var HC = new GeomAdaptor_Curve();
+            var HC = new CurveAdaptor();
             HC.Load(C, First, Last);
 
             // Checking coincidence axe of revolution and basis curve
@@ -315,32 +319,32 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
         return IsValid;
     }
 
-    internal override TopoDS_Shape InternalFirstShape() => FromSwept(myRevol.FirstShape());
+    internal override Shape InternalFirstShape() => FromSwept(myRevol.FirstShape());
 
-    internal override TopoDS_Shape InternalLastShape() => FromSwept(myRevol.LastShape());
+    internal override Shape InternalLastShape() => FromSwept(myRevol.LastShape());
 
     /// <summary>The list of shapes generated from the shape <paramref name="S"/>.</summary>
-    internal override NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape S)
+    internal override NCollection_List<Shape> InternalGenerated(in Shape S)
     {
         myGenerated.Clear();
-        TopoDS_Shape aSS = ToSwept(S);
+        Shape aSS = ToSwept(S);
 
         if (!myRevol.IsUsed(aSS))
         {
             return myGenerated;
         }
 
-        TopoDS_Shape aGS = myRevol.Shape(aSS);
-        if (!aGS.IsNull())
+        Shape aGS = myRevol.Shape(aSS);
+        if (!aGS.IsNull)
         {
-            if (BRepTools_History.IsSupportedType(aGS))
+            if (History.IsSupportedType(aGS))
             {
-                if (aGS.ShapeType() == TopAbs_EDGE)
+                if (aGS.ShapeType() == ShapeType.Edge)
                 {
-                    bool isDeg = BRep_Tool.Degenerated(TopoDS.Edge(aGS));
+                    bool isDeg = Tool.Degenerated(ShapeCasts.Edge(aGS));
                     if (isDeg)
                     {
-                        var anIt = new NCollection_List<TopoDS_Shape>.Iterator(myDegenerated);
+                        var anIt = new NCollection_List<Shape>.Iterator(myDegenerated);
                         for (; anIt.More(); anIt.Next())
                         {
                             if (aGS.IsSame(anIt.Value()))
@@ -348,7 +352,7 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
                                 myGenerated.Append(FromSwept(aGS));
                                 if (myHist is not null)
                                 {
-                                    foreach (TopoDS_Shape aM in myHist.Modified(aGS))
+                                    foreach (Shape aM in myHist.Modified(aGS))
                                     {
                                         myGenerated.Append(FromSwept(aM));
                                     }
@@ -366,14 +370,14 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
                     return myGenerated;
                 }
                 //
-                ISchematiqList<TopoDS_Shape> aModified = myHist.Modified(aGS);
+                ISchematiqList<Shape> aModified = myHist.Modified(aGS);
                 if (aModified.Count == 0)
                 {
                     myGenerated.Append(FromSwept(aGS));
                     return myGenerated;
                 }
                 //
-                foreach (TopoDS_Shape aM in aModified)
+                foreach (Shape aM in aModified)
                 {
                     myGenerated.Append(FromSwept(aM));
                 }
@@ -383,29 +387,29 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
     }
 
     /// <summary>True if the shape <paramref name="S"/> has been deleted.</summary>
-    public override bool IsDeleted(in TopoDS_Shape S)
+    public override bool IsDeleted(in Shape S)
     {
         return !myRevol.IsUsed(ToSwept(S));
     }
 
     /// <summary>The shape at the beginning of the revolution generated with <paramref name="theShape"/>, a sub-shape of the generating shape (frozen).</summary>
-    public TopoDS_Shape FirstShape(in TopoDS_Shape theShape) => Published(InternalFirstShape(theShape));
+    public Shape FirstShape(in Shape theShape) => Published(InternalFirstShape(theShape));
 
-    /// <summary><see cref="FirstShape(in TopoDS_Shape)"/> without freezing.</summary>
-    internal TopoDS_Shape InternalFirstShape(in TopoDS_Shape theShape) => FromSwept(myRevol.FirstShape(ToSwept(theShape)));
+    /// <summary><see cref="FirstShape(in Shape)"/> without freezing.</summary>
+    internal Shape InternalFirstShape(in Shape theShape) => FromSwept(myRevol.FirstShape(ToSwept(theShape)));
 
     /// <summary>The shape at the end of the revolution generated with <paramref name="theShape"/>, a sub-shape of the generating shape (frozen).</summary>
-    public TopoDS_Shape LastShape(in TopoDS_Shape theShape) => Published(InternalLastShape(theShape));
+    public Shape LastShape(in Shape theShape) => Published(InternalLastShape(theShape));
 
-    /// <summary><see cref="LastShape(in TopoDS_Shape)"/> without freezing.</summary>
-    internal TopoDS_Shape InternalLastShape(in TopoDS_Shape theShape) => FromSwept(myRevol.LastShape(ToSwept(theShape)));
+    /// <summary><see cref="LastShape(in Shape)"/> without freezing.</summary>
+    internal Shape InternalLastShape(in Shape theShape) => FromSwept(myRevol.LastShape(ToSwept(theShape)));
 
     /// <summary>True if the result has degenerated edges.</summary>
     public bool HasDegenerated() => !myDegenerated.IsEmpty();
 
     /// <summary>The degenerated edges of the result (frozen).</summary>
-    public ISchematiqList<TopoDS_Shape> Degenerated() => PublishedList(myDegenerated);
+    public ISchematiqList<Shape> Degenerated() => PublishedList(myDegenerated);
 
     /// <summary>The list of degenerated edges, unfrozen (OCCT's const reference).</summary>
-    internal NCollection_List<TopoDS_Shape> InternalDegenerated() => myDegenerated;
+    internal NCollection_List<Shape> InternalDegenerated() => myDegenerated;
 }

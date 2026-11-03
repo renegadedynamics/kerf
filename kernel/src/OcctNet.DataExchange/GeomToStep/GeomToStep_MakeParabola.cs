@@ -20,7 +20,7 @@ public sealed class GeomToStep_MakeParabola : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D parabola.</summary>
-    public GeomToStep_MakeParabola(Geom2d_Parabola C, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeParabola(ParabolaCurve2D C, in StepData_Factors theLocalFactors)
     {
         Parabola2D gpPar;
         gpPar = C.Parab2d();
@@ -41,7 +41,7 @@ public sealed class GeomToStep_MakeParabola : GeomToStep_Root
     }
 
     /// <summary>A 2D parabola.</summary>
-    public GeomToStep_MakeParabola(Geom2d_Parabola C) : this(C, new StepData_Factors())
+    public GeomToStep_MakeParabola(ParabolaCurve2D C) : this(C, new StepData_Factors())
     {
     }
 
@@ -51,7 +51,7 @@ public sealed class GeomToStep_MakeParabola : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D parabola, its position and focal length divided by the length factor.</summary>
-    public GeomToStep_MakeParabola(Geom_Parabola C, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeParabola(ParabolaCurve3D C, in StepData_Factors theLocalFactors)
     {
         Parabola3D gpPar;
         gpPar = C.Parab();
@@ -72,7 +72,7 @@ public sealed class GeomToStep_MakeParabola : GeomToStep_Root
     }
 
     /// <summary>A 3D parabola (default factors).</summary>
-    public GeomToStep_MakeParabola(Geom_Parabola C) : this(C, new StepData_Factors())
+    public GeomToStep_MakeParabola(ParabolaCurve3D C) : this(C, new StepData_Factors())
     {
     }
 

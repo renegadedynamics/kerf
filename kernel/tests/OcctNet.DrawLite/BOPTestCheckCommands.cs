@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Globalization;
 using Occt;
@@ -66,8 +68,8 @@ internal static class BOPTestCheckCommands
             return 1;
         }
         //
-        TopoDS_Shape aS = theDI.GetShape(a[1]);
-        if (aS.IsNull())
+        Shape aS = theDI.GetShape(a[1]);
+        if (aS.IsNull)
         {
             di.Append("null shapes are not allowed here!");
             return 1;
@@ -106,7 +108,7 @@ internal static class BOPTestCheckCommands
         string[] aInterfTypes = ["V/V", "V/E", "E/E", "V/F", "E/F", "F/F", "V/Z", "E/Z", "F/Z", "Z/Z"];
         //
         BOPAlgo_CheckerSI aChecker = new();
-        NCollection_List<TopoDS_Shape> aLS = new();
+        NCollection_List<Shape> aLS = new();
         //
         if (aLevel < (aNbInterfTypes - 1))
         {
@@ -149,8 +151,8 @@ internal static class BOPTestCheckCommands
                 continue;
             }
             //
-            TopAbs_ShapeEnum aType1 = aDS.ShapeInfo(n1).ShapeType();
-            TopAbs_ShapeEnum aType2 = aDS.ShapeInfo(n2).ShapeType();
+            ShapeType aType1 = aDS.ShapeInfo(n1).ShapeType();
+            ShapeType aType2 = aDS.ShapeInfo(n2).ShapeType();
             //
             int iT = BOPDS_Tools.TypeToInteger(aType1, aType2);
             aVec.Add(new BOPTestInterf(n1, n2, iT));
@@ -169,8 +171,8 @@ internal static class BOPTestCheckCommands
             }
             //
             // the shape's own sub-shapes (the checker works on a copy of a frozen shape)
-            TopoDS_Shape aS1 = aChecker.Original(aDS.Shape(n1));
-            TopoDS_Shape aS2 = aChecker.Original(aDS.Shape(n2));
+            Shape aS1 = aChecker.Original(aDS.Shape(n1));
+            Shape aS2 = aChecker.Original(aDS.Shape(n2));
             //
             di.Append(aInterfTypes[aBI.Type]).Append(": ");
             //
@@ -246,9 +248,9 @@ internal static class BOPTestCheckCommands
             return 1;
         }
 
-        TopoDS_Shape aS1 = theDI.GetShape(a[1]);
+        Shape aS1 = theDI.GetShape(a[1]);
 
-        if (aS1.IsNull())
+        if (aS1.IsNull)
         {
             di.Append("Error: null shape not allowed!\n");
             di.Append("Type bopargcheck without arguments for more ");
@@ -297,7 +299,7 @@ internal static class BOPTestCheckCommands
         }
 
         // set & test second shape
-        TopoDS_Shape aS22 = new(), aS2 = new();
+        Shape aS22 = new(), aS2 = new();
         if (isS2)
         {
             if (indxS2 != 2)
@@ -309,7 +311,7 @@ internal static class BOPTestCheckCommands
             else
             {
                 aS22 = theDI.GetShape(a[2]);
-                if (aS22.IsNull())
+                if (aS22.IsNull)
                 {
                     di.Append("Error: second shape is null!\n");
                     di.Append("Type bopargcheck without arguments for more information\n");
@@ -336,7 +338,7 @@ internal static class BOPTestCheckCommands
         aChecker.CurveOnSurfaceMode() = true;
 
         // test & set options and operation for two shapes
-        if (!aS22.IsNull())
+        if (!aS22.IsNull)
         {
             aS2 = new BRepBuilderAPI_Copy(aS22).Shape();
             aChecker.SetShape2(aS2);
@@ -496,17 +498,17 @@ internal static class BOPTestCheckCommands
 
         foreach (BOPAlgo_CheckResult aResult in aChecker.InternalGetCheckResult())
         {
-            TopoDS_Shape aSS1 = aResult.InternalGetShape1();
-            TopoDS_Shape aSS2 = aResult.InternalGetShape2();
-            NCollection_List<TopoDS_Shape> aLS1 = aResult.InternalGetFaultyShapes1();
-            NCollection_List<TopoDS_Shape> aLS2 = aResult.InternalGetFaultyShapes2();
+            Shape aSS1 = aResult.InternalGetShape1();
+            Shape aSS2 = aResult.InternalGetShape2();
+            NCollection_List<Shape> aLS1 = aResult.InternalGetFaultyShapes1();
+            NCollection_List<Shape> aLS2 = aResult.InternalGetFaultyShapes2();
             bool isL1 = !aLS1.IsEmpty();
             bool isL2 = !aLS2.IsEmpty();
 
             void Count(ref int theS1, ref int theS1All, ref int theS2, ref int theS2All, string theBase1, string theBase2,
                        bool theCurveOnSurf = false)
             {
-                if (!aSS1.IsNull())
+                if (!aSS1.IsNull)
                 {
                     theS1++;
                     if (isL1)
@@ -515,7 +517,7 @@ internal static class BOPTestCheckCommands
                                                aResult.GetMaxDistance1(), aResult.GetMaxParameter1());
                     }
                 }
-                if (!aSS2.IsNull())
+                if (!aSS2.IsNull)
                 {
                     theS2++;
                     if (isL2)
@@ -530,11 +532,11 @@ internal static class BOPTestCheckCommands
             {
                 case BOPAlgo_CheckStatus.BOPAlgo_BadType:
                 {
-                    if (!aSS1.IsNull())
+                    if (!aSS1.IsNull)
                     {
                         S1_BadType++;
                     }
-                    if (!aSS2.IsNull())
+                    if (!aSS2.IsNull)
                     {
                         S2_BadType++;
                     }
@@ -568,11 +570,11 @@ internal static class BOPTestCheckCommands
                     break;
                 case BOPAlgo_CheckStatus.BOPAlgo_OperationAborted:
                 {
-                    if (!aSS1.IsNull())
+                    if (!aSS1.IsNull)
                     {
                         S1_OpAb++;
                     }
-                    if (!aSS2.IsNull())
+                    if (!aSS2.IsNull)
                     {
                         S2_OpAb++;
                     }
@@ -650,16 +652,16 @@ internal static class BOPTestCheckCommands
 
     // MakeShapeForFullOutput: the faulty shapes as the compound <base><index>, counted
     private static void MakeShapeForFullOutput(DrawInterpreter theDI, string aBaseName, int aIndex,
-                                               NCollection_List<TopoDS_Shape> aList, ref int aCount, DrawResult di,
+                                               NCollection_List<Shape> aList, ref int aCount, DrawResult di,
                                                bool bCurveOnSurf, double aMaxDist, double aMaxParameter)
     {
         string name = aBaseName + aIndex.ToString(CultureInfo.InvariantCulture);
 
-        TopoDS_Compound cmp = new();
-        BRep_Builder BB = new();
+        Compound cmp = new();
+        BrepBuilder BB = new();
         BB.MakeCompound(ref cmp);
 
-        foreach (TopoDS_Shape aS in aList)
+        foreach (Shape aS in aList)
         {
             BB.Add(cmp, aS);
             aCount++;
@@ -684,8 +686,8 @@ internal static class BOPTestCheckCommands
             return 1;
         }
 
-        TopoDS_Shape aS1 = theDI.GetShape(a[1]);
-        TopoDS_Shape aS2 = new();
+        Shape aS1 = theDI.GetShape(a[1]);
+        Shape aS2 = new();
         if (n > 2)
         {
             // Try to get the second shape
@@ -696,7 +698,7 @@ internal static class BOPTestCheckCommands
         bool bTestSE = true;
         bool bTestSI = true;
 
-        for (int i = aS2.IsNull() ? 2 : 3; i < n; ++i)
+        for (int i = aS2.IsNull ? 2 : 3; i < n; ++i)
         {
             if (a[i] == "-op")
             {
@@ -742,7 +744,7 @@ internal static class BOPTestCheckCommands
         BRepAlgoAPI_Check aChecker = new(aS1, aS2, anOp, bTestSE, bTestSI);
         if (aChecker.IsValid())
         {
-            if (aS2.IsNull())
+            if (aS2.IsNull)
             {
                 di.Append("The shape seems to be valid\n");
             }
@@ -768,11 +770,11 @@ internal static class BOPTestCheckCommands
             {
                 if (!isInv1)
                 {
-                    isInv1 = !aFaulty.InternalGetShape1().IsNull();
+                    isInv1 = !aFaulty.InternalGetShape1().IsNull;
                 }
                 if (!isInv2)
                 {
-                    isInv2 = !aFaulty.InternalGetShape2().IsNull();
+                    isInv2 = !aFaulty.InternalGetShape2().IsNull;
                 }
             }
 
@@ -784,7 +786,7 @@ internal static class BOPTestCheckCommands
 
         if (isInv1)
         {
-            if (aS2.IsNull())
+            if (aS2.IsNull)
             {
                 di.Append("The shape is invalid\n");
             }
@@ -799,7 +801,7 @@ internal static class BOPTestCheckCommands
         }
         if (isBadOp)
         {
-            if (aS2.IsNull())
+            if (aS2.IsNull)
             {
                 di.Append("The shape is empty\n");
             }
@@ -819,23 +821,23 @@ internal static class BOPTestCheckCommands
             return 1;
         }
         //
-        TopoDS_Shape aS1 = theDI.GetShape(a[1]);
-        TopoDS_Shape aS2 = theDI.GetShape(a[2]);
+        Shape aS1 = theDI.GetShape(a[1]);
+        Shape aS2 = theDI.GetShape(a[2]);
         //
-        if (aS1.IsNull() || aS2.IsNull())
+        if (aS1.IsNull || aS2.IsNull)
         {
             di.Append("null shapes\n");
             return 1;
         }
         //
-        if (aS1.ShapeType() != TopAbs_ShapeEnum.TopAbs_EDGE || aS2.ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE)
+        if (aS1.ShapeType() != ShapeType.Edge || aS2.ShapeType() != ShapeType.Face)
         {
             di.Append("type mismatch\n");
             return 1;
         }
         //
-        TopoDS_Edge anEdge = TopoDS.Edge(aS1);
-        TopoDS_Face aFace = TopoDS.Face(aS2);
+        Edge anEdge = global::Kerf.Engine.Topology.ShapeCasts.Edge(aS1);
+        Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(aS2);
         //
         if (!BOPTools_AlgoTools.ComputeTolerance(aFace, anEdge, out double aMaxDist, out double aMaxPar))
         {
@@ -859,8 +861,8 @@ internal static class BOPTestCheckCommands
             return 1;
         }
         //
-        TopoDS_Shape aS = theDI.GetShape(a[1]);
-        if (aS.IsNull())
+        Shape aS = theDI.GetShape(a[1]);
+        if (aS.IsNull)
         {
             di.Append("null shape\n");
             return 1;
@@ -868,29 +870,29 @@ internal static class BOPTestCheckCommands
         //
         int nE, nF, anECounter, aFCounter;
         double aT, aTolE, aDMax;
-        TopExp_Explorer aExpF = new(), aExpE = new();
-        NCollection_DataMap<TopoDS_Shape, double> aDMETol = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_DataMap<TopoDS_Shape, int> aMSI = new(TopTools_ShapeMapHasher.Instance);
+        global::Kerf.Engine.Topology.Explorer aExpF = new(), aExpE = new();
+        NCollection_DataMap<Shape, double> aDMETol = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        NCollection_DataMap<Shape, int> aMSI = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         //
         anECounter = 0;
         aFCounter = 0;
         //
-        aExpF.Init(aS, TopAbs_ShapeEnum.TopAbs_FACE);
+        aExpF.Init(aS, ShapeType.Face);
         for (; aExpF.More(); aExpF.Next())
         {
-            TopoDS_Face aF = TopoDS.Face(aExpF.Current());
+            Face aF = global::Kerf.Engine.Topology.ShapeCasts.Face(aExpF.Current());
             //
-            aExpE.Init(aF, TopAbs_ShapeEnum.TopAbs_EDGE);
+            aExpE.Init(aF, ShapeType.Edge);
             for (; aExpE.More(); aExpE.Next())
             {
-                TopoDS_Edge aE = TopoDS.Edge(aExpE.Current());
+                Edge aE = global::Kerf.Engine.Topology.ShapeCasts.Edge(aExpE.Current());
                 //
                 if (!BOPTools_AlgoTools.ComputeTolerance(aF, aE, out aDMax, out aT))
                 {
                     continue;
                 }
                 //
-                aTolE = BRep_Tool.Tolerance(aE);
+                aTolE = Tool.Tolerance(aE);
                 if (!(aDMax > aTolE))
                 {
                     continue;
@@ -950,11 +952,11 @@ internal static class BOPTestCheckCommands
             di.Append("\n\nSugestions to fix the shape:\n");
             di.Append("explode ").Append(a[1]).Append(" e;\n");
             //
-            NCollection_Map<TopoDS_Shape> M = new(TopTools_ShapeMapHasher.Instance);
-            aExpE.Init(aS, TopAbs_ShapeEnum.TopAbs_EDGE);
+            NCollection_Map<Shape> M = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            aExpE.Init(aS, ShapeType.Edge);
             for (anECounter = 0; aExpE.More(); aExpE.Next())
             {
-                TopoDS_Shape aE = aExpE.Current();
+                Shape aE = aExpE.Current();
                 if (!M.Add(aE))
                 {
                     continue;

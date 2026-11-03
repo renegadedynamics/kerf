@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -51,7 +52,7 @@ public sealed class GeomToStep_MakeCartesianPoint : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D point, its coordinates divided by <paramref name="aFactor"/>.</summary>
-    public GeomToStep_MakeCartesianPoint(Geom_CartesianPoint P, double aFactor)
+    public GeomToStep_MakeCartesianPoint(CartesianPoint P, double aFactor)
     {
         StepGeom_CartesianPoint Pstep = new StepGeom_CartesianPoint();
         P.Coord(out double X, out double Y, out double Z);
@@ -66,7 +67,7 @@ public sealed class GeomToStep_MakeCartesianPoint : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D point.</summary>
-    public GeomToStep_MakeCartesianPoint(Geom2d_CartesianPoint P)
+    public GeomToStep_MakeCartesianPoint(CartesianPoint2 P)
     {
         StepGeom_CartesianPoint Pstep = new StepGeom_CartesianPoint();
         P.Coord(out double X, out double Y);

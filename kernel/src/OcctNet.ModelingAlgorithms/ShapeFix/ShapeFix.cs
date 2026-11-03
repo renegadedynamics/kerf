@@ -5,12 +5,16 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Engine.Foundation.Gravity;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -31,33 +35,33 @@ public static partial class ShapeFix
     /// tolerances of the edges on planes. Returns false if an edge couldn't be made SameParameter. With
     /// <paramref name="enforce"/>, the SameRange and SameParameter flags are reset first. Writes into the shape.
     /// </summary>
-    internal static bool SameParameter(in TopoDS_Shape shape, bool enforce, double preci = 0.0,
+    internal static bool SameParameter(in Shape shape, bool enforce, double preci = 0.0,
                                        ProgressRange theProgress = default,
                                        ShapeExtend_BasicMsgRegistrator? theMsgReg = null)
     {
         // Calculate number of edges
         int aNbEdges = 0;
-        for (var anEdgeExp = new TopExp_Explorer(shape, TopAbs_EDGE); anEdgeExp.More(); anEdgeExp.Next())
+        for (var anEdgeExp = new Explorer(shape, ShapeType.Edge); anEdgeExp.More(); anEdgeExp.Next())
         {
             ++aNbEdges;
         }
 
         // Calculate number of faces
         int aNbFaces = 0;
-        for (var anEdgeExp = new TopExp_Explorer(shape, TopAbs_FACE); anEdgeExp.More(); anEdgeExp.Next())
+        for (var anEdgeExp = new Explorer(shape, ShapeType.Face); anEdgeExp.More(); anEdgeExp.Next())
         {
             ++aNbFaces;
         }
 
-        var aMapEF = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(shape, TopAbs_EDGE, TopAbs_FACE, aMapEF);
+        var aMapEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(shape, ShapeType.Edge, ShapeType.Face, aMapEF);
 
-        var    B       = new BRep_Builder();
+        var    B       = new BrepBuilder();
         bool   status  = true;
         double tol     = preci;
         bool   iatol   = (tol > 0);
         var    sfe     = new ShapeFix_Edge();
-        var    ex      = new TopExp_Explorer(shape, TopAbs_EDGE);
+        var    ex      = new Explorer(shape, ShapeType.Edge);
         var    doneMsg = new Msg("FixEdge.SameParameter.MSG0");
 
         // Start progress scope (no need to check if progress exists -- it is safe)
@@ -69,16 +73,16 @@ public static partial class ShapeFix
 
             while (ex.More())
             {
-                TopoDS_Edge E;
+                Edge E;
                 while (ex.More() && aPS.More())
                 {
                     int ierr = 0;
-                    E = TopoDS.Edge(ex.Current());
+                    E = ShapeCasts.Edge(ex.Current());
                     ex.Next();
 
                     if (!iatol)
                     {
-                        tol = BRep_Tool.Tolerance(E);
+                        tol = Tool.Tolerance(E);
                     }
                     if (enforce)
                     {
@@ -86,13 +90,13 @@ public static partial class ShapeFix
                         B.SameParameter(E, false);
                     }
 
-                    aMapEF.FindFromKey(E, out NCollection_List<TopoDS_Shape> aListOfFaces);
+                    aMapEF.FindFromKey(E, out NCollection_List<Shape> aListOfFaces);
                     if (aListOfFaces.Extent() != 0)
                     {
-                        var aListOfFacesIt = new NCollection_List<TopoDS_Shape>.Iterator(aListOfFaces);
+                        var aListOfFacesIt = new NCollection_List<Shape>.Iterator(aListOfFaces);
                         for (; aListOfFacesIt.More(); aListOfFacesIt.Next())
                         {
-                            TopoDS_Face aF = TopoDS.Face(aListOfFacesIt.Value());
+                            Face aF = ShapeCasts.Face(aListOfFacesIt.Value());
                             sfe.FixSameParameter(E, aF);
                         }
                     }
@@ -101,7 +105,7 @@ public static partial class ShapeFix
                         sfe.FixSameParameter(E); // K2-SEP97
                     }
 
-                    if (!BRep_Tool.SameParameter(E))
+                    if (!Tool.SameParameter(E))
                     {
                         ierr = 1;
                     }
@@ -135,17 +139,17 @@ public static partial class ShapeFix
 
             //: i2 abv 21 Aug 98: ProSTEP TR8 Motor.rle face 710:
             // Update tolerance of edges on planes (no pcurves are stored)
-            for (var exp = new TopExp_Explorer(shape, TopAbs_FACE); exp.More() && aPS.More(); exp.Next(), aPS.Next())
+            for (var exp = new Explorer(shape, ShapeType.Face); exp.More() && aPS.More(); exp.Next(), aPS.Next())
             {
-                TopoDS_Face   face = TopoDS.Face(exp.Current());
-                Geom_Surface? Surf = BRep_Tool.Surface(face);
+                Face   face = ShapeCasts.Face(exp.Current());
+                Surface? Surf = Tool.Surface(face);
 
-                Geom_Plane? plane = Surf as Geom_Plane;
+                PlaneSurface? plane = Surf as PlaneSurface;
                 if (plane is null)
                 {
-                    if (Surf is Geom_RectangularTrimmedSurface GRTS)
+                    if (Surf is TrimmedSurface GRTS)
                     {
-                        plane = GRTS.BasisSurface() as Geom_Plane;
+                        plane = GRTS.BasisSurface() as PlaneSurface;
                     }
                     if (plane is null)
                     {
@@ -153,25 +157,25 @@ public static partial class ShapeFix
                     }
                 }
 
-                var AS = new GeomAdaptor_Surface(plane);
-                for (var ed = new TopExp_Explorer(face, TopAbs_EDGE); ed.More(); ed.Next())
+                var AS = new SurfaceAdaptor(plane);
+                for (var ed = new Explorer(face, ShapeType.Edge); ed.More(); ed.Next())
                 {
-                    TopoDS_Edge edge = TopoDS.Edge(ed.Current());
-                    Geom_Curve? crv  = BRep_Tool.Curve(edge, out double f, out double l);
+                    Edge edge = ShapeCasts.Edge(ed.Current());
+                    Curve3D? crv  = Tool.Curve(edge, out double f, out double l);
                     if (crv is null)
                     {
                         continue;
                     }
 
-                    Geom2d_Curve? c2d = BRep_Tool.CurveOnSurface(edge, face, out f, out l);
+                    Curve2D? c2d = Tool.CurveOnSurface(edge, face, out f, out l);
                     if (c2d is null)
                     {
                         continue;
                     }
-                    var GHPC = new Geom2dAdaptor_Curve(c2d, f, l);
-                    var ACS  = new Adaptor3d_CurveOnSurface(GHPC, AS);
+                    var GHPC = new CurveAdaptor2D(c2d, f, l);
+                    var ACS  = new CurveOnSurface(GHPC, AS);
 
-                    double    tol0      = BRep_Tool.Tolerance(edge);
+                    double    tol0      = Tool.Tolerance(edge);
                     tol = tol0;
                     double    tol2      = tol * tol;
                     bool      isChanged = false;
@@ -194,10 +198,10 @@ public static partial class ShapeFix
                         if (tol >= tol0)
                         {
                             B.UpdateEdge(edge, tol);
-                            for (var itV = new TopoDS_Iterator(edge); itV.More(); itV.Next())
+                            for (var itV = new Iterator(edge); itV.More(); itV.Next())
                             {
-                                TopoDS_Shape S = itV.Value();
-                                B.UpdateVertex(TopoDS.Vertex(S), tol);
+                                Shape S = itV.Value();
+                                B.UpdateVertex(ShapeCasts.Vertex(S), tol);
                             }
                         }
                     }
@@ -214,7 +218,7 @@ public static partial class ShapeFix
     }
 
     /// <summary>Runs BRepLib's EncodeRegularity on the shape. Writes into the shape.</summary>
-    internal static void EncodeRegularity(in TopoDS_Shape shape, double tolang = 1.0e-10)
+    internal static void EncodeRegularity(in Shape shape, double tolang = 1.0e-10)
     {
         BRepLib.EncodeRegularity(shape, tolang);
     }
@@ -225,7 +229,7 @@ public static partial class ShapeFix
     /// of the fix in <paramref name="context"/>, which answers for the caller's sub-shapes. The shape itself isn't
     /// changed (ShapeFix_Shape copies a frozen shape first).
     /// </summary>
-    public static TopoDS_Shape RemoveSmallEdges(in TopoDS_Shape Shape, double Tolerance, out ShapeBuild_ReShape context)
+    public static Shape RemoveSmallEdges(in Shape Shape, double Tolerance, out ShapeBuild_ReShape context)
     {
         ShapeFix_Shape sfs = removeSmallEdges(Shape, Tolerance);
         context = sfs.Context()!;
@@ -236,14 +240,14 @@ public static partial class ShapeFix
     /// <see cref="RemoveSmallEdges"/> without freezing the result, for ported code fixing a shape it owns (fixed in
     /// place, as in OCCT).
     /// </summary>
-    internal static TopoDS_Shape InternalRemoveSmallEdges(in TopoDS_Shape Shape, double Tolerance, out ShapeBuild_ReShape context)
+    internal static Shape InternalRemoveSmallEdges(in Shape Shape, double Tolerance, out ShapeBuild_ReShape context)
     {
         ShapeFix_Shape sfs = removeSmallEdges(Shape, Tolerance);
         context = sfs.Context()!;
         return sfs.InternalShape();
     }
 
-    private static ShapeFix_Shape removeSmallEdges(in TopoDS_Shape Shape, double Tolerance)
+    private static ShapeFix_Shape removeSmallEdges(in Shape Shape, double Tolerance)
     {
         var sfs = new ShapeFix_Shape();
         sfs.Init(Shape);
@@ -267,28 +271,28 @@ public static partial class ShapeFix
     // function : ReplaceVertex
     // purpose  : auxiliary for FixVertexPosition
     //=======================================================================
-    private static TopoDS_Edge ReplaceVertex(in TopoDS_Edge theEdge, in Point3D theP, bool theFwd)
+    private static Edge ReplaceVertex(in Edge theEdge, in Point3D theP, bool theFwd)
     {
-        var aNewVertex = new TopoDS_Vertex();
-        var aB         = new BRep_Builder();
+        var aNewVertex = new Vertex();
+        var aB         = new BrepBuilder();
         aB.MakeVertex(ref aNewVertex, theP, Kerf.Engine.Foundation.Precision.Confusion());
-        var aV1 = new TopoDS_Vertex();
-        var aV2 = new TopoDS_Vertex();
+        var aV1 = new Vertex();
+        var aV2 = new Vertex();
         if (theFwd)
         {
             aV1 = aNewVertex;
-            aV1.Orientation(TopAbs_FORWARD);
+            aV1.Orientation(Forward);
         }
         else
         {
             aV2 = aNewVertex;
-            aV2.Orientation(TopAbs_REVERSED);
+            aV2.Orientation(Reversed);
         }
         var                aSbe = new ShapeBuild_Edge();
-        TopoDS_Edge        e1   = theEdge;
-        TopAbs_Orientation Ori  = e1.Orientation();
-        e1.Orientation(TopAbs_FORWARD);
-        TopoDS_Edge aNewEdge = aSbe.InternalCopyReplaceVertices(e1, aV1, aV2);
+        Edge        e1   = theEdge;
+        Orientation Ori  = e1.Orientation();
+        e1.Orientation(Forward);
+        Edge aNewEdge = aSbe.InternalCopyReplaceVertices(e1, aV1, aV2);
         aNewEdge.Orientation(Ori);
         return aNewEdge;
     }
@@ -334,10 +338,10 @@ public static partial class ShapeFix
     // function : getNearestEdges
     // purpose  : auxiliary for FixVertexPosition
     //=======================================================================
-    private static bool getNearestEdges(NCollection_List<TopoDS_Shape> theLEdges,
-                                        in TopoDS_Vertex theVert,
-                                        NCollection_Sequence<TopoDS_Shape> theSuitEdges,
-                                        NCollection_Sequence<TopoDS_Shape> theRejectEdges,
+    private static bool getNearestEdges(NCollection_List<Shape> theLEdges,
+                                        in Vertex theVert,
+                                        NCollection_Sequence<Shape> theSuitEdges,
+                                        NCollection_Sequence<Shape> theRejectEdges,
                                         double theTolerance,
                                         ref Xyz thecentersuit,
                                         ref Xyz thecenterreject)
@@ -346,15 +350,15 @@ public static partial class ShapeFix
         {
             return false;
         }
-        var aMapEdges = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aMapEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
 
-        var atempList = new NCollection_List<TopoDS_Shape>(theLEdges);
-        var alIter    = new NCollection_List<TopoDS_Shape>.Iterator(atempList);
+        var atempList = new NCollection_List<Shape>(theLEdges);
+        var alIter    = new NCollection_List<Shape>.Iterator(atempList);
 
-        TopoDS_Edge aEdge1 = TopoDS.Edge(alIter.Value());
-        TopExp.Vertices(aEdge1, out TopoDS_Vertex aVert11, out TopoDS_Vertex aVert12);
+        Edge aEdge1 = ShapeCasts.Edge(alIter.Value());
+        Exploration.Vertices(aEdge1, out Vertex aVert11, out Vertex aVert12);
         aMapEdges.Add(aEdge1);
-        Geom_Curve? aCurve1  = BRep_Tool.Curve(aEdge1, out double aFirst1, out double aLast1);
+        Curve3D? aCurve1  = Tool.Curve(aEdge1, out double aFirst1, out double aLast1);
         var         p11      = new Point3D();
         var         p12      = new Point3D();
         bool        isFirst1 = theVert.IsSame(aVert11);
@@ -379,20 +383,20 @@ public static partial class ShapeFix
             return false;
         }
         alIter.Next();
-        var aseqreject = new NCollection_Sequence<TopoDS_Shape>();
-        var aseqsuit   = new NCollection_Sequence<TopoDS_Shape>();
+        var aseqreject = new NCollection_Sequence<Shape>();
+        var aseqsuit   = new NCollection_Sequence<Shape>();
 
         int anumLoop = 0;
         for (; alIter.More();)
         {
-            TopoDS_Edge aEdge = TopoDS.Edge(alIter.Value());
+            Edge aEdge = ShapeCasts.Edge(alIter.Value());
             if (aMapEdges.Contains(aEdge))
             {
                 atempList.Remove(alIter);
                 continue;
             }
 
-            TopExp.Vertices(aEdge, out TopoDS_Vertex aVert1, out TopoDS_Vertex aVert2);
+            Exploration.Vertices(aEdge, out Vertex aVert1, out Vertex aVert2);
             bool isFirst = theVert.IsSame(aVert1); // OCCT declares it double
             bool isSame  = aVert1.IsSame(aVert2);
 
@@ -406,7 +410,7 @@ public static partial class ShapeFix
                 continue;
             }
             aMapEdges.Add(aEdge);
-            Geom_Curve? aCurve = BRep_Tool.Curve(aEdge, out double aFirst, out double aLast);
+            Curve3D? aCurve = Tool.Curve(aEdge, out double aFirst, out double aLast);
             if (aCurve is not null)
             {
                 Point3D p1;
@@ -515,18 +519,18 @@ public static partial class ShapeFix
     /// replacing them (and edges whose ends are too far apart) in the context; the shape becomes the context applied
     /// to it if anything was done. Writes the vertices' Modified flag.
     /// </summary>
-    internal static bool FixVertexPosition(ref TopoDS_Shape theshape, double theTolerance, ShapeBuild_ReShape thecontext)
+    internal static bool FixVertexPosition(ref Shape theshape, double theTolerance, ShapeBuild_ReShape thecontext)
     {
-        var aMapVertEdges = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        var aExp1         = new TopExp_Explorer(theshape, TopAbs_EDGE);
+        var aMapVertEdges = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var aExp1         = new Explorer(theshape, ShapeType.Edge);
         for (; aExp1.More(); aExp1.Next())
         {
-            var aVert1 = new TopoDS_Shape();
+            var aVert1 = new Shape();
             int nV     = 1;
-            var aExp3  = new TopoDS_Iterator(aExp1.Current());
+            var aExp3  = new Iterator(aExp1.Current());
             for (; aExp3.More(); aExp3.Next(), nV++)
             {
-                TopoDS_Shape aVert = aExp3.Value();
+                Shape aVert = aExp3.Value();
                 if (nV == 1)
                 {
                     aVert1 = aVert;
@@ -541,7 +545,7 @@ public static partial class ShapeFix
                 }
                 else
                 {
-                    var alEdges = new NCollection_List<TopoDS_Shape>();
+                    var alEdges = new NCollection_List<Shape>();
                     alEdges.Append(aExp1.Current());
                     aMapVertEdges.Add(aVert, alEdges);
                 }
@@ -551,22 +555,22 @@ public static partial class ShapeFix
         int  i      = 1;
         for (; i <= aMapVertEdges.Extent(); i++)
         {
-            TopoDS_Vertex aVert    = TopoDS.Vertex(aMapVertEdges.FindKey(i));
-            double        aTolVert = BRep_Tool.Tolerance(aVert);
+            Vertex aVert    = ShapeCasts.Vertex(aMapVertEdges.FindKey(i));
+            double        aTolVert = Tool.Tolerance(aVert);
             if (aTolVert <= theTolerance)
             {
                 continue;
             }
 
-            var aB1 = new BRep_Builder();
+            var aB1 = new BrepBuilder();
             aB1.UpdateVertex(aVert, theTolerance);
-            Point3D aPvert        = BRep_Tool.Pnt(aVert);
+            Point3D aPvert        = Tool.Pnt(aVert);
             Xyz acenter       = aPvert.XYZ();
             Xyz acenterreject = aPvert.XYZ();
 
-            var aSuitEdges   = new NCollection_Sequence<TopoDS_Shape>();
-            var aRejectEdges = new NCollection_Sequence<TopoDS_Shape>();
-            var aledges      = new NCollection_List<TopoDS_Shape>(aMapVertEdges.FindFromIndex(i));
+            var aSuitEdges   = new NCollection_Sequence<Shape>();
+            var aRejectEdges = new NCollection_Sequence<Shape>();
+            var aledges      = new NCollection_List<Shape>(aMapVertEdges.FindFromIndex(i));
             if (aledges.Extent() == 1)
             {
                 continue;
@@ -584,8 +588,8 @@ public static partial class ShapeFix
             int  k     = 1;
             for (; k <= aSuitEdges.Length(); k++)
             {
-                TopoDS_Edge aEdgeOld = TopoDS.Edge(aSuitEdges.Value(k));
-                TopExp.Vertices(aEdgeOld, out TopoDS_Vertex aVert1, out TopoDS_Vertex aVert2);
+                Edge aEdgeOld = ShapeCasts.Edge(aSuitEdges.Value(k));
+                Exploration.Vertices(aEdgeOld, out Vertex aVert1, out Vertex aVert2);
 
                 bool isFirst = (aVert1.IsSame(aVert));
                 bool isLast  = (aVert2.IsSame(aVert));
@@ -593,10 +597,10 @@ public static partial class ShapeFix
                 {
                     continue;
                 }
-                TopoDS_Edge aEdge = TopoDS.Edge(thecontext.InternalApply(aEdgeOld));
+                Edge aEdge = ShapeCasts.Edge(thecontext.InternalApply(aEdgeOld));
 
-                TopExp.Vertices(aEdge, out TopoDS_Vertex aVert1n, out TopoDS_Vertex aVert2n);
-                Geom_Curve? aCurve = BRep_Tool.Curve(aEdge, out double aFirst, out double aLast);
+                Exploration.Vertices(aEdge, out Vertex aVert1n, out Vertex aVert2n);
+                Curve3D? aCurve = Tool.Curve(aEdge, out double aFirst, out double aLast);
                 if (aCurve is not null)
                 {
                     Point3D p1 = aCurve.Value(aFirst);
@@ -616,7 +620,7 @@ public static partial class ShapeFix
                         }
                         if (isReplace)
                         {
-                            TopoDS_Edge enew;
+                            Edge enew;
                             if (p1.Distance(new Point3D(acenter)) < p2.Distance(new Point3D(acenter)))
                             {
                                 enew = ReplaceVertex(aEdge, p2, false);
@@ -638,7 +642,7 @@ public static partial class ShapeFix
                         }
                         if (isReplace)
                         {
-                            TopoDS_Edge enew;
+                            Edge enew;
                             if (p1.Distance(new Point3D(acenter)) < p2.Distance(new Point3D(acenter)))
                             {
                                 enew = ReplaceVertex(aEdge, p2, false);
@@ -658,12 +662,12 @@ public static partial class ShapeFix
 
             if (isAdd && aPvert.Distance(new Point3D(acenter)) > theTolerance)
             {
-                var aB = new BRep_Builder();
+                var aB = new BrepBuilder();
 
                 //  aB.UpdateVertex(aVert,Precision::Confusion());
                 // else {
                 isDone = true;
-                var aNewVertex = new TopoDS_Vertex();
+                var aNewVertex = new Vertex();
                 aB.MakeVertex(ref aNewVertex, new Point3D(acenter), Kerf.Engine.Foundation.Precision.Confusion());
                 aNewVertex.Orientation(aVert.Orientation());
                 thecontext.Replace(aVert, aNewVertex);
@@ -671,8 +675,8 @@ public static partial class ShapeFix
 
             for (k = 1; k <= aRejectEdges.Length(); k++)
             {
-                TopoDS_Edge aEdgeOld = TopoDS.Edge(aRejectEdges.Value(k));
-                TopExp.Vertices(aEdgeOld, out TopoDS_Vertex aVert1, out TopoDS_Vertex aVert2);
+                Edge aEdgeOld = ShapeCasts.Edge(aRejectEdges.Value(k));
+                Exploration.Vertices(aEdgeOld, out Vertex aVert1, out Vertex aVert2);
 
                 bool isFirst = (aVert1.IsSame(aVert));
                 bool isLast  = (aVert2.IsSame(aVert));
@@ -681,16 +685,16 @@ public static partial class ShapeFix
                     continue;
                 }
                 bool        isSame = aVert1.IsSame(aVert2);
-                TopoDS_Edge aEdge  = TopoDS.Edge(thecontext.InternalApply(aEdgeOld));
+                Edge aEdge  = ShapeCasts.Edge(thecontext.InternalApply(aEdgeOld));
 
-                TopExp.Vertices(aEdge, out TopoDS_Vertex aVert1n, out TopoDS_Vertex aVert2n);
+                Exploration.Vertices(aEdge, out Vertex aVert1n, out Vertex aVert2n);
 
-                Geom_Curve? aCurve = BRep_Tool.Curve(aEdge, out double aFirst, out double aLast);
+                Curve3D? aCurve = Tool.Curve(aEdge, out double aFirst, out double aLast);
                 if (aCurve is not null)
                 {
                     Point3D      p1 = aCurve.Value(aFirst);
                     Point3D      p2 = aCurve.Value(aLast);
-                    TopoDS_Edge enew;
+                    Edge enew;
                     if (isFirst)
                     {
                         enew = ReplaceVertex(aEdge, p1, true);
@@ -723,13 +727,13 @@ public static partial class ShapeFix
     /// <summary>
     /// The smallest size of the edges of the shape: the diagonal of the box of each 3D curve's ends and middle.
     /// </summary>
-    public static double LeastEdgeSize(in TopoDS_Shape theShape)
+    public static double LeastEdgeSize(in Shape theShape)
     {
         double aRes = RealLast();
-        for (var exp = new TopExp_Explorer(theShape, TopAbs_EDGE); exp.More(); exp.Next())
+        for (var exp = new Explorer(theShape, ShapeType.Edge); exp.More(); exp.Next())
         {
-            TopoDS_Edge edge = TopoDS.Edge(exp.Current());
-            Geom_Curve? c3d  = BRep_Tool.Curve(edge, out double first, out double last);
+            Edge edge = ShapeCasts.Edge(exp.Current());
+            Curve3D? c3d  = Tool.Curve(edge, out double first, out double last);
             if (c3d is not null)
             {
                 var bb = new Box();

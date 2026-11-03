@@ -7,26 +7,30 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 internal static class PrimitiveGTestHelpers
 {
-    public static int CountFaces(in TopoDS_Shape theShape)
+    public static int CountFaces(in Shape theShape)
     {
         int aFaceCount = 0;
-        for (TopExp_Explorer anExp = new(theShape, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(theShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
             aFaceCount++;
         }
         return aFaceCount;
     }
 
-    public static double Volume(in TopoDS_Shape theShape)
+    public static double Volume(in Shape theShape)
     {
-        GProp_GProps aProps = new();
+        Properties aProps = new();
         BRepGProp.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
@@ -38,10 +42,10 @@ public class BRepPrimAPI_MakeBoxTest
     public void UnitBox()
     {
         BRepPrimAPI_MakeBox aBox = new(1.0, 1.0, 1.0);
-        TopoDS_Shape aShape = aBox.Shape();
+        Shape aShape = aBox.Shape();
 
         Assert.True(aBox.IsDone(), "Unit box creation failed");
-        Assert.False(aShape.IsNull(), "Resulting shape is null");
+        Assert.False(aShape.IsNull, "Resulting shape is null");
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
         Assert.True(anAnalyzer.IsValid(), "Unit box shape is not valid");
@@ -51,13 +55,13 @@ public class BRepPrimAPI_MakeBoxTest
     public void TopologyCounts()
     {
         BRepPrimAPI_MakeBox aBox = new(10.0, 20.0, 30.0);
-        TopoDS_Shape aShape = aBox.Shape();
+        Shape aShape = aBox.Shape();
         Assert.True(aBox.IsDone());
 
         Assert.Equal(6, PrimitiveGTestHelpers.CountFaces(aShape));
 
         int anEdgeCount = 0;
-        for (TopExp_Explorer anExp = new(aShape, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(aShape, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             anEdgeCount++;
         }
@@ -65,7 +69,7 @@ public class BRepPrimAPI_MakeBoxTest
         Assert.Equal(24, anEdgeCount);
 
         int aVertexCount = 0;
-        for (TopExp_Explorer anExp = new(aShape, TopAbs_VERTEX); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(aShape, ShapeType.Vertex); anExp.More(); anExp.Next())
         {
             aVertexCount++;
         }
@@ -80,7 +84,7 @@ public class BRepPrimAPI_MakeBoxTest
         const double aHeight = 4.0;
         const double aDepth = 5.0;
         BRepPrimAPI_MakeBox aBox = new(aWidth, aHeight, aDepth);
-        TopoDS_Shape aShape = aBox.Shape();
+        Shape aShape = aBox.Shape();
         Assert.True(aBox.IsDone());
 
         Assert.Equal(aWidth * aHeight * aDepth, PrimitiveGTestHelpers.Volume(aShape), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -93,10 +97,10 @@ public class BRepPrimAPI_MakeBoxTest
         const double aH = 4.0;
         const double aD = 5.0;
         BRepPrimAPI_MakeBox aBox = new(aW, aH, aD);
-        TopoDS_Shape aShape = aBox.Shape();
+        Shape aShape = aBox.Shape();
         Assert.True(aBox.IsDone());
 
-        GProp_GProps aProps = new();
+        Properties aProps = new();
         BRepGProp.SurfaceProperties(aShape, aProps);
         double anExpectedArea = 2.0 * (aW * aH + aW * aD + aH * aD);
         Assert.Equal(anExpectedArea, aProps.Mass(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -108,9 +112,9 @@ public class BRepPrimAPI_MakeBoxTest
         Point3D aP1 = new(1.0, 2.0, 3.0);
         Point3D aP2 = new(4.0, 6.0, 8.0);
         BRepPrimAPI_MakeBox aBox = new(aP1, aP2);
-        TopoDS_Shape aShape = aBox.Shape();
+        Shape aShape = aBox.Shape();
         Assert.True(aBox.IsDone(), "Box from two corner points failed");
-        Assert.False(aShape.IsNull());
+        Assert.False(aShape.IsNull);
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
         Assert.True(anAnalyzer.IsValid(), "Box from two points is not valid");
@@ -123,7 +127,7 @@ public class BRepPrimAPI_MakeBoxTest
     public void ShapeValidity()
     {
         BRepPrimAPI_MakeBox aBox = new(100.0, 200.0, 300.0);
-        TopoDS_Shape aShape = aBox.Shape();
+        Shape aShape = aBox.Shape();
         Assert.True(aBox.IsDone());
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
@@ -137,9 +141,9 @@ public class BRepPrimAPI_MakeConeTest
     public void FullCone()
     {
         BRepPrimAPI_MakeCone aCone = new(new Frame3D(), 5.0, 0.0, 10.0);
-        TopoDS_Shape aShape = aCone.Shape();
+        Shape aShape = aCone.Shape();
         Assert.True(aCone.IsDone(), "Full cone creation failed");
-        Assert.False(aShape.IsNull(), "Resulting shape is null");
+        Assert.False(aShape.IsNull, "Resulting shape is null");
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
         Assert.True(anAnalyzer.IsValid(), "Full cone shape is not valid");
@@ -149,9 +153,9 @@ public class BRepPrimAPI_MakeConeTest
     public void TruncatedCone()
     {
         BRepPrimAPI_MakeCone aCone = new(new Frame3D(), 5.0, 2.0, 10.0);
-        TopoDS_Shape aShape = aCone.Shape();
+        Shape aShape = aCone.Shape();
         Assert.True(aCone.IsDone(), "Truncated cone creation failed");
-        Assert.False(aShape.IsNull(), "Resulting shape is null");
+        Assert.False(aShape.IsNull, "Resulting shape is null");
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
         Assert.True(anAnalyzer.IsValid(), "Truncated cone shape is not valid");
@@ -161,7 +165,7 @@ public class BRepPrimAPI_MakeConeTest
     public void FullConeFaceCount()
     {
         BRepPrimAPI_MakeCone aCone = new(new Frame3D(), 5.0, 0.0, 10.0);
-        TopoDS_Shape aShape = aCone.Shape();
+        Shape aShape = aCone.Shape();
         Assert.True(aCone.IsDone());
 
         // lateral + base
@@ -172,7 +176,7 @@ public class BRepPrimAPI_MakeConeTest
     public void TruncatedConeFaceCount()
     {
         BRepPrimAPI_MakeCone aCone = new(new Frame3D(), 5.0, 2.0, 10.0);
-        TopoDS_Shape aShape = aCone.Shape();
+        Shape aShape = aCone.Shape();
         Assert.True(aCone.IsDone());
 
         // lateral + 2 bases
@@ -186,7 +190,7 @@ public class BRepPrimAPI_MakeConeTest
         const double aR2 = 2.0;
         const double aH = 10.0;
         BRepPrimAPI_MakeCone aCone = new(new Frame3D(), aR1, aR2, aH);
-        TopoDS_Shape aShape = aCone.Shape();
+        Shape aShape = aCone.Shape();
         Assert.True(aCone.IsDone());
 
         // V = PI * H / 3 * (R1^2 + R1*R2 + R2^2)
@@ -198,9 +202,9 @@ public class BRepPrimAPI_MakeConeTest
     public void PartialCone()
     {
         BRepPrimAPI_MakeCone aCone = new(new Frame3D(), 5.0, 2.0, 10.0, M_PI);
-        TopoDS_Shape aShape = aCone.Shape();
+        Shape aShape = aCone.Shape();
         Assert.True(aCone.IsDone(), "Partial cone creation failed");
-        Assert.False(aShape.IsNull(), "Resulting shape is null");
+        Assert.False(aShape.IsNull, "Resulting shape is null");
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
         Assert.True(anAnalyzer.IsValid(), "Partial cone shape is not valid");
@@ -217,9 +221,9 @@ public class BRepPrimAPI_MakeCylinderTest
         const double aRadius = 5.0;
         const double aHeight = 10.0;
         BRepPrimAPI_MakeCylinder aCylinder = new(aRadius, aHeight);
-        TopoDS_Shape aShape = aCylinder.Shape();
+        Shape aShape = aCylinder.Shape();
         Assert.True(aCylinder.IsDone(), "Full cylinder creation failed");
-        Assert.False(aShape.IsNull(), "Resulting shape is null");
+        Assert.False(aShape.IsNull, "Resulting shape is null");
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
         Assert.True(anAnalyzer.IsValid(), "Full cylinder shape is not valid");
@@ -229,7 +233,7 @@ public class BRepPrimAPI_MakeCylinderTest
     public void FaceCount()
     {
         BRepPrimAPI_MakeCylinder aCylinder = new(5.0, 10.0);
-        TopoDS_Shape aShape = aCylinder.Shape();
+        Shape aShape = aCylinder.Shape();
         Assert.True(aCylinder.IsDone());
 
         // Full cylinder: 1 lateral + 2 caps = 3
@@ -242,7 +246,7 @@ public class BRepPrimAPI_MakeCylinderTest
         const double aRadius = 5.0;
         const double aHeight = 10.0;
         BRepPrimAPI_MakeCylinder aCylinder = new(aRadius, aHeight);
-        TopoDS_Shape aShape = aCylinder.Shape();
+        Shape aShape = aCylinder.Shape();
         Assert.True(aCylinder.IsDone());
 
         double anExpectedVolume = M_PI * aRadius * aRadius * aHeight;
@@ -256,9 +260,9 @@ public class BRepPrimAPI_MakeCylinderTest
         const double aHeight = 10.0;
         // Half cylinder: angle = PI
         BRepPrimAPI_MakeCylinder aCylinder = new(aRadius, aHeight, M_PI);
-        TopoDS_Shape aShape = aCylinder.Shape();
+        Shape aShape = aCylinder.Shape();
         Assert.True(aCylinder.IsDone(), "Partial cylinder creation failed");
-        Assert.False(aShape.IsNull());
+        Assert.False(aShape.IsNull);
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
         Assert.True(anAnalyzer.IsValid(), "Partial cylinder shape is not valid");
@@ -271,7 +275,7 @@ public class BRepPrimAPI_MakeCylinderTest
     public void ShapeValidity()
     {
         BRepPrimAPI_MakeCylinder aCylinder = new(100.0, 200.0);
-        TopoDS_Shape aShape = aCylinder.Shape();
+        Shape aShape = aCylinder.Shape();
         Assert.True(aCylinder.IsDone());
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
@@ -286,9 +290,9 @@ public class BRepPrimAPI_MakeSphereTest
     {
         const double aRadius = 5.0;
         BRepPrimAPI_MakeSphere aSphere = new(aRadius);
-        TopoDS_Shape aShape = aSphere.Shape();
+        Shape aShape = aSphere.Shape();
         Assert.True(aSphere.IsDone(), "Full sphere creation failed");
-        Assert.False(aShape.IsNull(), "Resulting shape is null");
+        Assert.False(aShape.IsNull, "Resulting shape is null");
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
         Assert.True(anAnalyzer.IsValid(), "Full sphere shape is not valid");
@@ -298,7 +302,7 @@ public class BRepPrimAPI_MakeSphereTest
     public void FaceCount()
     {
         BRepPrimAPI_MakeSphere aSphere = new(5.0);
-        TopoDS_Shape aShape = aSphere.Shape();
+        Shape aShape = aSphere.Shape();
         Assert.True(aSphere.IsDone());
 
         Assert.Equal(1, PrimitiveGTestHelpers.CountFaces(aShape));
@@ -309,7 +313,7 @@ public class BRepPrimAPI_MakeSphereTest
     {
         const double aRadius = 5.0;
         BRepPrimAPI_MakeSphere aSphere = new(aRadius);
-        TopoDS_Shape aShape = aSphere.Shape();
+        Shape aShape = aSphere.Shape();
         Assert.True(aSphere.IsDone());
 
         double anExpectedVolume = (4.0 / 3.0) * M_PI * aRadius * aRadius * aRadius;
@@ -322,9 +326,9 @@ public class BRepPrimAPI_MakeSphereTest
         const double aRadius = 5.0;
         // Half sphere: angle from 0 to PI
         BRepPrimAPI_MakeSphere aSphere = new(aRadius, M_PI);
-        TopoDS_Shape aShape = aSphere.Shape();
+        Shape aShape = aSphere.Shape();
         Assert.True(aSphere.IsDone(), "Partial sphere creation failed");
-        Assert.False(aShape.IsNull());
+        Assert.False(aShape.IsNull);
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
         Assert.True(anAnalyzer.IsValid(), "Partial sphere shape is not valid");
@@ -337,10 +341,10 @@ public class BRepPrimAPI_MakeSphereTest
     {
         const double aRadius = 5.0;
         BRepPrimAPI_MakeSphere aSphere = new(aRadius);
-        TopoDS_Shape aShape = aSphere.Shape();
+        Shape aShape = aSphere.Shape();
         Assert.True(aSphere.IsDone());
 
-        GProp_GProps aProps = new();
+        Properties aProps = new();
         BRepGProp.VolumeProperties(aShape, aProps);
         Point3D aCOM = aProps.CentreOfMass();
 
@@ -359,8 +363,8 @@ public class BRepPrimAPI_MakeTorusTest
     {
         Frame3D anAxis = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         BRepPrimAPI_MakeTorus aMakeTorus = new(anAxis, theR1, theR2, theAngle1, theAngle2, theAngle);
-        TopoDS_Shape aShape = aMakeTorus.Shape();
-        if (!aMakeTorus.IsDone() || aShape.IsNull())
+        Shape aShape = aMakeTorus.Shape();
+        if (!aMakeTorus.IsDone() || aShape.IsNull)
         {
             return false;
         }
@@ -376,10 +380,10 @@ public class BRepPrimAPI_MakeTorusTest
         const double R2 = 2.0;
 
         BRepPrimAPI_MakeTorus aMakeTorus = new(R1, R2);
-        TopoDS_Shape aShape = aMakeTorus.Shape();
+        Shape aShape = aMakeTorus.Shape();
 
         Assert.True(aMakeTorus.IsDone(), "Full torus creation failed");
-        Assert.False(aShape.IsNull(), "Resulting shape is null");
+        Assert.False(aShape.IsNull, "Resulting shape is null");
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
         Assert.True(anAnalyzer.IsValid(), "Full torus shape is not valid");
@@ -396,10 +400,10 @@ public class BRepPrimAPI_MakeTorusTest
         const double angle = M_PI; // Half torus around Z axis
 
         BRepPrimAPI_MakeTorus aMakeTorus = new(R1, R2, angle);
-        TopoDS_Shape aShape = aMakeTorus.Shape();
+        Shape aShape = aMakeTorus.Shape();
 
         Assert.True(aMakeTorus.IsDone(), "Partial torus (angle only) creation failed");
-        Assert.False(aShape.IsNull(), "Resulting shape is null");
+        Assert.False(aShape.IsNull, "Resulting shape is null");
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
         Assert.True(anAnalyzer.IsValid(), "Partial torus (angle only) shape is not valid");
@@ -415,15 +419,15 @@ public class BRepPrimAPI_MakeTorusTest
         const double R2 = 1.0;
 
         BRepPrimAPI_MakeTorus aMakeTorus = new(R1, R2);
-        TopoDS_Shape aShape = aMakeTorus.Shape();
+        Shape aShape = aMakeTorus.Shape();
         Assert.True(aMakeTorus.IsDone());
 
-        TopExp_Explorer anExp = new(aShape, TopAbs_FACE);
+        Explorer anExp = new(aShape, ShapeType.Face);
         Assert.True(anExp.More(), "No faces found");
 
-        TopoDS_Face aFace = TopoDS.Face(anExp.Current());
-        Geom_Surface? aSurface = BRep_Tool.Surface(aFace);
-        var aTorusSurf = aSurface as Geom_ToroidalSurface;
+        Face aFace = ShapeCasts.Face(anExp.Current());
+        Surface? aSurface = Tool.Surface(aFace);
+        var aTorusSurf = aSurface as ToroidalSurface;
         Assert.NotNull(aTorusSurf);
 
         Assert.Equal(R1, aTorusSurf.MajorRadius(), 1e-10);
@@ -450,10 +454,10 @@ public class BRepPrimAPI_MakeTorusTest
 
         Frame3D anAxis = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         BRepPrimAPI_MakeTorus aMakeTorus = new(anAxis, R1, R2, angle1, angle2, angle);
-        TopoDS_Shape aShape = aMakeTorus.Shape();
+        Shape aShape = aMakeTorus.Shape();
 
         Assert.True(aMakeTorus.IsDone(), "Torus creation failed");
-        Assert.False(aShape.IsNull(), "Resulting shape is null");
+        Assert.False(aShape.IsNull, "Resulting shape is null");
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
         Assert.True(anAnalyzer.IsValid(), "Symmetric partial torus should be valid");
@@ -484,10 +488,10 @@ public class BRepPrimAPI_MakeTorusTest
 
         Frame3D anAxis = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         BRepPrimAPI_MakeTorus aMakeTorus = new(anAxis, R1, R2, angle1, angle2, angle);
-        TopoDS_Shape aShape = aMakeTorus.Shape();
+        Shape aShape = aMakeTorus.Shape();
 
         Assert.True(aMakeTorus.IsDone(), "Torus creation failed");
-        Assert.False(aShape.IsNull(), "Resulting shape is null");
+        Assert.False(aShape.IsNull, "Resulting shape is null");
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
         Assert.True(anAnalyzer.IsValid(), "Bug 23612 fixed: V range (90, 270) should produce valid shape");
@@ -593,10 +597,10 @@ public class BRepPrimAPI_MakeTorusTest
 
         // Full revolution (2*PI) - no sides
         BRepPrimAPI_MakeTorus aMakeTorus = new(anAxis, R1, R2, angle1, angle2);
-        TopoDS_Shape aShape = aMakeTorus.Shape();
+        Shape aShape = aMakeTorus.Shape();
 
         Assert.True(aMakeTorus.IsDone(), "Torus creation failed");
-        Assert.False(aShape.IsNull(), "Shape is null");
+        Assert.False(aShape.IsNull, "Shape is null");
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
         Assert.True(anAnalyzer.IsValid(), "Full torus (no sides) with equal heights should be valid");
@@ -609,9 +613,9 @@ public class BRepPrimAPI_MakeWedgeTest
     public void WedgeFromDimensions()
     {
         BRepPrimAPI_MakeWedge aWedge = new(10.0, 10.0, 10.0, 5.0);
-        TopoDS_Shape aShape = aWedge.Shape();
+        Shape aShape = aWedge.Shape();
         Assert.True(aWedge.IsDone(), "Wedge creation failed");
-        Assert.False(aShape.IsNull(), "Resulting shape is null");
+        Assert.False(aShape.IsNull, "Resulting shape is null");
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
         Assert.True(anAnalyzer.IsValid(), "Wedge shape is not valid");
@@ -621,7 +625,7 @@ public class BRepPrimAPI_MakeWedgeTest
     public void WedgeFaceCount_Ltx5()
     {
         BRepPrimAPI_MakeWedge aWedge = new(10.0, 10.0, 10.0, 5.0);
-        TopoDS_Shape aShape = aWedge.Shape();
+        Shape aShape = aWedge.Shape();
         Assert.True(aWedge.IsDone());
 
         Assert.Equal(6, PrimitiveGTestHelpers.CountFaces(aShape));
@@ -631,7 +635,7 @@ public class BRepPrimAPI_MakeWedgeTest
     public void WedgeFaceCount_Ltx0()
     {
         BRepPrimAPI_MakeWedge aWedge = new(10.0, 10.0, 10.0, 0.0);
-        TopoDS_Shape aShape = aWedge.Shape();
+        Shape aShape = aWedge.Shape();
         Assert.True(aWedge.IsDone());
 
         // the top degenerates to a line
@@ -646,7 +650,7 @@ public class BRepPrimAPI_MakeWedgeTest
         const double aDz = 10.0;
         const double aLtx = 5.0;
         BRepPrimAPI_MakeWedge aWedge = new(aDx, aDy, aDz, aLtx);
-        TopoDS_Shape aShape = aWedge.Shape();
+        Shape aShape = aWedge.Shape();
         Assert.True(aWedge.IsDone());
 
         // Volume = dy * dz * (dx + ltx) / 2
@@ -658,9 +662,9 @@ public class BRepPrimAPI_MakeWedgeTest
     public void WedgeFullParams()
     {
         BRepPrimAPI_MakeWedge aWedge = new(20.0, 10.0, 20.0, 5.0, 5.0, 15.0, 15.0);
-        TopoDS_Shape aShape = aWedge.Shape();
+        Shape aShape = aWedge.Shape();
         Assert.True(aWedge.IsDone(), "Wedge with full parameters creation failed");
-        Assert.False(aShape.IsNull(), "Resulting shape is null");
+        Assert.False(aShape.IsNull, "Resulting shape is null");
 
         BRepCheck_Analyzer anAnalyzer = new(aShape);
         Assert.True(anAnalyzer.IsValid(), "Wedge with full parameters shape is not valid");

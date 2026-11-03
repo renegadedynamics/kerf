@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -48,8 +49,8 @@ public class Geom2dGcc_Circ2d3TanTests
     private static Geom2dGcc_QualifiedCurve createQualifiedCircle(double theX, double theY, double theRadius)
     {
         Point2D aCenter = new(theX, theY);
-        Geom2d_Circle aCircle = new(new Circle2D(new Axis2D(aCenter, new Direction2D(1, 0)), theRadius));
-        Geom2dAdaptor_Curve anAdaptor = new(aCircle);
+        CircleCurve2D aCircle = new(new Circle2D(new Axis2D(aCenter, new Direction2D(1, 0)), theRadius));
+        CurveAdaptor2D anAdaptor = new(aCircle);
         return Geom2dGcc.Unqualified(anAdaptor);
     }
 
@@ -322,7 +323,7 @@ public class Geom2dGcc_Circ2d3TanTests
         NCollection_Array1<int> aMults = new(1, 2);
         aMults[1] = 2;
         aMults[2] = 2;
-        return Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 1)));
+        return Geom2dGcc.Unqualified(new CurveAdaptor2D(new BSplineCurve2D(aPoles, aKnots, aMults, 1)));
     }
 
     [Fact]

@@ -5,7 +5,10 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -56,15 +59,15 @@ public class BRepPrimAPI_MakeWedge : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The wedge as a shell (frozen).</summary>
-    public TopoDS_Shell Shell()
+    public Shell Shell()
     {
-        TopoDS_Shell aShell = InternalShell();
+        Shell aShell = InternalShell();
         aShell.TShape()?.FreezeGraph();
         return aShell;
     }
 
     /// <summary><see cref="Shell"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shell InternalShell()
+    internal Shell InternalShell()
     {
         Build();
         return myWedge.Shell();
@@ -73,9 +76,9 @@ public class BRepPrimAPI_MakeWedge : BRepBuilderAPI_MakeShape
     /// <summary>Stores the solid in the result (a new solid holding the shell each time, as OCCT).</summary>
     public override void Build(ProgressRange theRange = default)
     {
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         // OCCT.NET: a new solid in a new variable (OCCT remakes the one in myShape, decision 414).
-        TopoDS_Solid aSolid = new();
+        Solid aSolid = new();
         B.MakeSolid(ref aSolid);
         B.Add(aSolid, myWedge.Shell());
         myShape = aSolid;
@@ -83,23 +86,23 @@ public class BRepPrimAPI_MakeWedge : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The wedge as a solid (frozen).</summary>
-    public TopoDS_Solid Solid()
+    public Solid Solid()
     {
-        TopoDS_Solid aSolid = InternalSolid();
+        Solid aSolid = InternalSolid();
         aSolid.TShape()?.FreezeGraph();
         return aSolid;
     }
 
     /// <summary><see cref="Solid"/> without freezing, for ported code.</summary>
-    internal TopoDS_Solid InternalSolid()
+    internal Solid InternalSolid()
     {
         Build();
-        return TopoDS.Solid(myShape);
+        return ShapeCasts.Solid(myShape);
     }
 
     /// <summary>The shell (OCCT's conversion operator; frozen).</summary>
-    public static explicit operator TopoDS_Shell(BRepPrimAPI_MakeWedge theMaker) => theMaker.Shell();
+    public static explicit operator Shell(BRepPrimAPI_MakeWedge theMaker) => theMaker.Shell();
 
     /// <summary>The solid (OCCT's conversion operator; frozen).</summary>
-    public static explicit operator TopoDS_Solid(BRepPrimAPI_MakeWedge theMaker) => theMaker.Solid();
+    public static explicit operator Solid(BRepPrimAPI_MakeWedge theMaker) => theMaker.Solid();
 }

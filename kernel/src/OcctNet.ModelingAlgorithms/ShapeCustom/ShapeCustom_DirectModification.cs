@@ -7,6 +7,9 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 
 using Kerf.Topology;
@@ -30,17 +33,17 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
     }
 
     // S4181 returns 0 - none, 1 - indirect, 2 - negative cone, 3 - indirect negative cone
-    private static int IsIndirectSurface(ref Geom_Surface S, in Placement L)
+    private static int IsIndirectSurface(ref Surface S, in Placement L)
     {
         int result = 0;
 
-        Geom_Surface TS = S;
-        while (TS is Geom_RectangularTrimmedSurface aRTS)
+        Surface TS = S;
+        while (TS is TrimmedSurface aRTS)
         {
             TS = aRTS.BasisSurface();
         }
 
-        if (TS is Geom_ElementarySurface ES)
+        if (TS is ElementarySurface ES)
         {
             // is the surface indirect ?
             Transform3D t = L.Transformation();
@@ -51,7 +54,7 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
             {
                 result = 1;
             }
-            if (ES is Geom_ConicalSurface CS)
+            if (ES is ConicalSurface CS)
             {
                 // does the cone have negative semiangle ?
                 if (CS.SemiAngle() < 0.0)
@@ -73,8 +76,8 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
     /// reversed (in U for an indirect surface, in U and V for a negative cone, in V for both), and the face and its
     /// wires are reversed for an indirect surface.
     /// </summary>
-    public override bool NewSurface(in TopoDS_Face F,
-                                    out Geom_Surface? S,
+    public override bool NewSurface(in Face F,
+                                    out Surface? S,
                                     out Placement L,
                                     out double Tol,
                                     out bool RevWires,
@@ -82,9 +85,9 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
     {
         Tol = 0.0;
         RevWires = RevFace = false;
-        S = BRep_Tool.Surface(F, out L);
+        S = Tool.Surface(F, out L);
         // OCCT.NET: OCCT dereferences the surface of a face without one; the port finds it not indirect
-        Geom_Surface aS = S!;
+        Surface aS = S!;
 
         switch (IsIndirectSurface(ref aS, L))
         {
@@ -120,7 +123,7 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
 
         SendMsg(F, new Msg("DirectModification.NewSurface.MSG0"));
 
-        Tol = BRep_Tool.Tolerance(F);
+        Tol = Tool.Tolerance(F);
 
         return true;
     }
@@ -129,41 +132,41 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
     /// True if the edge has a pcurve on an indirect surface (so that the edge is copied): then C is a copy of its 3D
     /// curve.
     /// </summary>
-    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out Placement L, out double Tol)
+    public override bool NewCurve(in Edge E, out Curve3D? C, out Placement L, out double Tol)
     {
         C = null;
         L = new Placement();
         Tol = 0.0;
         //: p5 abv 26 Feb 99: force copying of edge if any its pcurve will be replaced
-        BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
+        BrepTEdge TE = (BrepTEdge)E.TShape()!;
 
         // iterate on pcurves
-        var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(TE.Curves());
+        var itcr = new NCollection_List<CurveRepresentation>.Iterator(TE.Curves());
         for (; itcr.More(); itcr.Next())
         {
-            if (itcr.Value() is not BRep_GCurve GC || !GC.IsCurveOnSurface())
+            if (itcr.Value() is not GCurve GC || !GC.IsCurveOnSurface())
             {
                 continue;
             }
-            Geom_Surface S = GC.Surface()!;
+            Surface S = GC.Surface()!;
             Placement Loc = GC.Location();
             if (IsIndirectSurface(ref S, Loc) == 0)
             {
                 continue;
             }
-            C = BRep_Tool.Curve(E, out L, out double f, out double l);
+            C = Tool.Curve(E, out L, out double f, out double l);
             if (C is not null)
             {
-                C = (Geom_Curve)C.Copy();
+                C = (Curve3D)C.Copy();
             }
-            Tol = BRep_Tool.Tolerance(E);
+            Tol = Tool.Tolerance(E);
             return true;
         }
         return false;
     }
 
     /// <summary>False: 3D points are never modified.</summary>
-    public override bool NewPoint(in TopoDS_Vertex V, out Point3D P, out double Tol)
+    public override bool NewPoint(in Vertex V, out Point3D P, out double Tol)
     {
         P = new Point3D();
         Tol = 0.0;
@@ -175,26 +178,26 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
     /// True if the face lies on an indirect surface (C is the pcurve mirrored accordingly) or the edge was copied (C
     /// is a copy of the pcurve).
     /// </summary>
-    public override bool NewCurve2d(in TopoDS_Edge E,
-                                    in TopoDS_Face F,
-                                    in TopoDS_Edge NewE,
-                                    in TopoDS_Face NewF,
-                                    out Geom2d_Curve? C,
+    public override bool NewCurve2d(in Edge E,
+                                    in Face F,
+                                    in Edge NewE,
+                                    in Face NewF,
+                                    out Curve2D? C,
                                     out double Tol)
     {
         C = null;
         Tol = 0.0;
-        Geom_Surface? S = BRep_Tool.Surface(F, out Placement L);
+        Surface? S = Tool.Surface(F, out Placement L);
 
-        Geom_Surface aS = S!;
+        Surface aS = S!;
         int result = IsIndirectSurface(ref aS, L);
         if (result == 0 && E.IsSame(NewE))
         {
             return false;
         }
 
-        C = BRep_Tool.CurveOnSurface(E, F, out double f, out double l);
-        Tol = BRep_Tool.Tolerance(E);
+        C = Tool.CurveOnSurface(E, F, out double f, out double l);
+        Tol = Tool.Tolerance(E);
 
         if (result != 0)
         {
@@ -206,14 +209,14 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
                 { // Indirect surface
                     // mirror the PCurve about the V axis
                     T.SetMirror(Constants.OY2d());
-                    C = (Geom2d_Curve)C!.Transformed(T);
+                    C = (Curve2D)C!.Transformed(T);
                     break;
                 }
                 case 2:
                 { // Negative cone
                     // mirror the PCurve about the U and V axis
                     T.SetMirror(Constants.OX2d());
-                    C = (Geom2d_Curve)C!.Transformed(T);
+                    C = (Curve2D)C!.Transformed(T);
                     T.SetMirror(Constants.OY2d());
                     C.Transform(T);
                     break;
@@ -222,21 +225,21 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
                 { // Indirect negative cone
                     // mirror the PCurve about the U axis
                     T.SetMirror(Constants.OX2d());
-                    C = (Geom2d_Curve)C!.Transformed(T);
+                    C = (Curve2D)C!.Transformed(T);
                     break;
                 }
             }
 
             // #26 rln When seam edge contains triangulations trimming is lost by BRep_Builder::UpdateEdge
-            if (BRepTools.IsReallyClosed(E, F))
+            if (BrepTools.IsReallyClosed(E, F))
             {
                 // szv#4:S4163:12Mar99 SGI warning
-                TopoDS_Shape sh = NewE.Reversed();
-                Geom2d_Curve? tmp = BRep_Tool.CurveOnSurface(TopoDS.Edge(sh), NewF, out f, out l);
+                Shape sh = NewE.Reversed();
+                Curve2D? tmp = Tool.CurveOnSurface(ShapeCasts.Edge(sh), NewF, out f, out l);
                 if (tmp is null)
                 {
-                    tmp = BRep_Tool.CurveOnSurface(E, F, out f, out l);
-                    BRep_Builder B = new BRep_Builder();
+                    tmp = Tool.CurveOnSurface(E, F, out f, out l);
+                    BrepBuilder B = new BrepBuilder();
                     // OCCT.NET: NewE is the modifier's new edge here, never the caller's (decision 973)
                     B.UpdateEdge(NewE, tmp, C, NewF, Tol);
                     B.Range(NewE, NewF, f, l);
@@ -249,7 +252,7 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
             //: p5 abv 26 Feb 99: force copying of pcurves if edge was copied
             if (C is not null)
             {
-                C = (Geom2d_Curve)C.Copy();
+                C = (Curve2D)C.Copy();
             }
         }
 
@@ -257,19 +260,19 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
     }
 
     /// <summary>False: parameters are never modified.</summary>
-    public override bool NewParameter(in TopoDS_Vertex V, in TopoDS_Edge E, ref double P, ref double Tol)
+    public override bool NewParameter(in Vertex V, in Edge E, ref double P, ref double Tol)
     {
         return false;
     }
 
     /// <summary>The continuity of the edge between the faces, unchanged.</summary>
-    public override Continuity Continuity(in TopoDS_Edge E,
-                                             in TopoDS_Face F1,
-                                             in TopoDS_Face F2,
-                                             in TopoDS_Edge NewE,
-                                             in TopoDS_Face NewF1,
-                                             in TopoDS_Face NewF2)
+    public override Continuity Continuity(in Edge E,
+                                             in Face F1,
+                                             in Face F2,
+                                             in Edge NewE,
+                                             in Face NewF1,
+                                             in Face NewF2)
     {
-        return BRep_Tool.Continuity(E, F1, F2);
+        return Tool.Continuity(E, F1, F2);
     }
 }

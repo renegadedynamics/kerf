@@ -1,8 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests.BRepAlgoAPI;
 
@@ -18,10 +21,10 @@ public static class TKBool_BRepAlgoAPITests
         double aDelt = 5.0 * global::Kerf.Engine.Foundation.Precision.Confusion();
 
         // Create outer box solid
-        TopoDS_Solid aFullSolid = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), 30.0, 30.0, 30.0).Solid();
+        Solid aFullSolid = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), 30.0, 30.0, 30.0).Solid();
 
         // Create inner box solid
-        TopoDS_Solid anInnerSolid = new BRepPrimAPI_MakeBox(new Point3D(10, 10, 10), 10.0, 10.0, 10.0).Solid();
+        Solid anInnerSolid = new BRepPrimAPI_MakeBox(new Point3D(10, 10, 10), 10.0, 10.0, 10.0).Solid();
 
         // Cut inner from outer
         BRepAlgoAPI_Cut aCut = new(aFullSolid, anInnerSolid);
@@ -31,13 +34,13 @@ public static class TKBool_BRepAlgoAPITests
         }
 
         // Extract the single solid from the cut result
-        TopoDS_Solid aCutSolid = new();
+        Solid aCutSolid = new();
         int aNbSolids = 0;
-        TopExp_Explorer anExp = new();
-        for (anExp.Init(aCut.Shape(), TopAbs_SOLID); anExp.More(); anExp.Next())
+        Explorer anExp = new();
+        for (anExp.Init(aCut.Shape(), ShapeType.Solid); anExp.More(); anExp.Next())
         {
-            TopoDS_Solid aSol = TopoDS.Solid(anExp.Current());
-            if (!aSol.IsNull())
+            Solid aSol = ShapeCasts.Solid(anExp.Current());
+            if (!aSol.IsNull)
             {
                 aCutSolid = aSol;
                 aNbSolids++;
@@ -49,7 +52,7 @@ public static class TKBool_BRepAlgoAPITests
         }
 
         // Calculate original volume
-        GProp_GProps aVProps = new();
+        Properties aVProps = new();
         BRepGProp.VolumeProperties(aCutSolid, aVProps);
         double anOriginalVolume = aVProps.Mass();
         if (anOriginalVolume <= 0.0)
@@ -90,7 +93,7 @@ public static class TKBool_BRepAlgoAPITests
         double aStepZ = (aZmax - aZmin) / aNz;
         int aNbSubvols = aNx * aNy * aNz;
 
-        NCollection_Array1<TopoDS_Shape> aSubvols = new(0, aNbSubvols - 1);
+        NCollection_Array1<Shape> aSubvols = new(0, aNbSubvols - 1);
         NCollection_Array1<double> aSubvolVols = new(0, aNbSubvols - 1);
 
         // Build grid cells
@@ -114,7 +117,7 @@ public static class TKBool_BRepAlgoAPITests
         double anAccumulated = 0.0;
         for (l = 0; l < aNbSubvols; l++)
         {
-            TopoDS_Shape aCopySolid = new BRepBuilderAPI_Copy(aCutSolid).Shape();
+            Shape aCopySolid = new BRepBuilderAPI_Copy(aCutSolid).Shape();
             BRepAlgoAPI_Common aCommon = new(aCopySolid, aSubvols[l]);
             if (!aCommon.IsDone())
             {
@@ -122,11 +125,11 @@ public static class TKBool_BRepAlgoAPITests
             }
 
             int aNbCommon = 0;
-            TopoDS_Shape aFoundSolid = new();
-            for (anExp.Init(aCommon.Shape(), TopAbs_SOLID); anExp.More(); anExp.Next())
+            Shape aFoundSolid = new();
+            for (anExp.Init(aCommon.Shape(), ShapeType.Solid); anExp.More(); anExp.Next())
             {
-                TopoDS_Solid aSol = TopoDS.Solid(anExp.Current());
-                if (!aSol.IsNull())
+                Solid aSol = ShapeCasts.Solid(anExp.Current());
+                if (!aSol.IsNull)
                 {
                     aFoundSolid = aSol;
                     aNbCommon++;
@@ -176,23 +179,23 @@ public static class TKBool_BRepAlgoAPITests
         [Fact]
         public void HollowBox_SurfaceAreaAndValidity()
         {
-            TopoDS_Solid aFullSolid = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), 30.0, 30.0, 30.0).Solid();
-            TopoDS_Solid anInnerSolid = new BRepPrimAPI_MakeBox(new Point3D(10, 10, 10), 10.0, 10.0, 10.0).Solid();
+            Solid aFullSolid = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), 30.0, 30.0, 30.0).Solid();
+            Solid anInnerSolid = new BRepPrimAPI_MakeBox(new Point3D(10, 10, 10), 10.0, 10.0, 10.0).Solid();
 
             BRepAlgoAPI_Cut aCut = new(aFullSolid, anInnerSolid);
             Assert.True(aCut.IsDone());
 
             // Extract solid
-            TopoDS_Solid aCutSolid = new();
-            TopExp_Explorer anExp = new();
-            for (anExp.Init(aCut.Shape(), TopAbs_SOLID); anExp.More(); anExp.Next())
+            Solid aCutSolid = new();
+            Explorer anExp = new();
+            for (anExp.Init(aCut.Shape(), ShapeType.Solid); anExp.More(); anExp.Next())
             {
-                aCutSolid = TopoDS.Solid(anExp.Current());
+                aCutSolid = ShapeCasts.Solid(anExp.Current());
             }
-            Assert.False(aCutSolid.IsNull());
+            Assert.False(aCutSolid.IsNull);
 
             // Surface area: outer box 6*900=5400, inner box adds 6*100=600 => total=6000
-            GProp_GProps aSProps = new();
+            Properties aSProps = new();
             BRepGProp.SurfaceProperties(aCutSolid, aSProps);
             Assert.Equal(6000.0, aSProps.Mass(), 6.0); // 0.1% tolerance
 
@@ -201,11 +204,11 @@ public static class TKBool_BRepAlgoAPITests
         }
     }
 
-    private static void CheckResult(in TopoDS_Shape aResult, double theArea, double theTol)
+    private static void CheckResult(in Shape aResult, double theArea, double theTol)
     {
-        Assert.False(aResult.IsNull());
+        Assert.False(aResult.IsNull);
 
-        GProp_GProps aSProps = new();
+        Properties aSProps = new();
         BRepGProp.SurfaceProperties(aResult, aSProps);
         Assert.Equal(theArea, aSProps.Mass(), theTol); // 0.1% tolerance
 
@@ -220,12 +223,12 @@ public static class TKBool_BRepAlgoAPITests
         public void CylinderAndCone_FuseThenCut()
         {
             Frame3D anAxis1 = new(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
-            TopoDS_Shape aCylIn = new BRepPrimAPI_MakeCylinder(anAxis1, 40, 110).Shape();
-            TopoDS_Shape aCylOut = new BRepPrimAPI_MakeCylinder(anAxis1, 50, 100).Shape();
+            Shape aCylIn = new BRepPrimAPI_MakeCylinder(anAxis1, 40, 110).Shape();
+            Shape aCylOut = new BRepPrimAPI_MakeCylinder(anAxis1, 50, 100).Shape();
 
             Frame3D anAxis2 = new(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.NZ));
-            TopoDS_Shape aConIn = new BRepPrimAPI_MakeCone(anAxis2, 40, 60, 110).Shape();
-            TopoDS_Shape aConOut = new BRepPrimAPI_MakeCone(anAxis2, 50, 70, 100).Shape();
+            Shape aConIn = new BRepPrimAPI_MakeCone(anAxis2, 40, 60, 110).Shape();
+            Shape aConOut = new BRepPrimAPI_MakeCone(anAxis2, 50, 70, 100).Shape();
 
             BRepAlgoAPI_Fuse aFuseIn = new(aCylIn, aConIn);
             Assert.True(aFuseIn.IsDone());
@@ -242,8 +245,8 @@ public static class TKBool_BRepAlgoAPITests
         [Fact]
         public void BoxAndSphere()
         {
-            TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), new Point3D(100, 100, 100)).Shape();
-            TopoDS_Shape aSphere = new BRepPrimAPI_MakeSphere(new Point3D(100, 50, 50), 25.0).Shape();
+            Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), new Point3D(100, 100, 100)).Shape();
+            Shape aSphere = new BRepPrimAPI_MakeSphere(new Point3D(100, 50, 50), 25.0).Shape();
 
             BRepAlgoAPI_Fuse aFuse = new(aBox, aSphere);
             Assert.True(aFuse.IsDone());
@@ -255,11 +258,11 @@ public static class TKBool_BRepAlgoAPITests
         public void TwoCylinders()
         {
             Frame3D anAxis1 = new(new Point3D(40, 50, 0), new Direction3D(100, 0, 0));
-            TopoDS_Shape aCyl1 = new BRepPrimAPI_MakeCylinder(anAxis1, 20, 100).Shape();
+            Shape aCyl1 = new BRepPrimAPI_MakeCylinder(anAxis1, 20, 100).Shape();
 
             const double aSize = 0.001;
             Frame3D anAxis2 = new(new Point3D(100, 50, aSize), new Direction3D(0, aSize, 80));
-            TopoDS_Shape aCyl2 = new BRepPrimAPI_MakeCylinder(anAxis2, 20, 80).Shape();
+            Shape aCyl2 = new BRepPrimAPI_MakeCylinder(anAxis2, 20, 80).Shape();
 
             BRepAlgoAPI_Fuse aFuse = new(aCyl2, aCyl1);
             Assert.True(aFuse.IsDone());
@@ -272,8 +275,8 @@ public static class TKBool_BRepAlgoAPITests
         {
             Point3D aCenter = new(100, 0, 0);
             Frame3D anAxis = new(aCenter, new Direction3D(Direction3D.D.NX));
-            TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(anAxis, 20, 100).Shape();
-            TopoDS_Shape aSphere = new BRepPrimAPI_MakeSphere(aCenter, 20.0).Shape();
+            Shape aCyl = new BRepPrimAPI_MakeCylinder(anAxis, 20, 100).Shape();
+            Shape aSphere = new BRepPrimAPI_MakeSphere(aCenter, 20.0).Shape();
 
             BRepAlgoAPI_Fuse aFuse = new(aCyl, aSphere);
             Assert.True(aFuse.IsDone());
@@ -293,10 +296,10 @@ public static class TKBool_BRepAlgoAPITests
             aWire.Add(new Point3D(aX1, aY2, 0));
             aWire.Add(new Point3D(aX1, aY1, 0));
 
-            TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aWire.Wire(), false).Face();
+            Face aFace = new BRepBuilderAPI_MakeFace(aWire.Wire(), false).Face();
             Axis3D anAxis = new(new Point3D(0, 0, 0), new Direction3D(0, 30, 0));
-            TopoDS_Shape aRevol = new BRepPrimAPI_MakeRevol(aFace, anAxis, 2.0 * M_PI).Shape();
-            TopoDS_Shape aSphere = new BRepPrimAPI_MakeSphere(new Point3D(166.373, 77.0402, 96.0555), 23.218586).Shape();
+            Shape aRevol = new BRepPrimAPI_MakeRevol(aFace, anAxis, 2.0 * M_PI).Shape();
+            Shape aSphere = new BRepPrimAPI_MakeSphere(new Point3D(166.373, 77.0402, 96.0555), 23.218586).Shape();
 
             BRepAlgoAPI_Fuse aFuse = new(aRevol, aSphere);
             Assert.True(aFuse.IsDone());
@@ -314,15 +317,15 @@ public static class TKBool_BRepAlgoAPITests
             aWire.Add(new Point3D(10, 0, 50));
             aWire.Add(new Point3D(10, 0, 0));
 
-            TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aWire.Wire(), false).Face();
+            Face aFace = new BRepBuilderAPI_MakeFace(aWire.Wire(), false).Face();
             Axis3D anAxis = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 30));
-            TopoDS_Shape aRevol = new BRepPrimAPI_MakeRevol(aFace, anAxis, 2.0 * M_PI).Shape();
+            Shape aRevol = new BRepPrimAPI_MakeRevol(aFace, anAxis, 2.0 * M_PI).Shape();
 
             const double aMajRad = 15.0;
             const double aMinRad = 5.0;
 
-            TopoDS_Shape aTor1 = new BRepPrimAPI_MakeTorus(new Frame3D(new Point3D(0, 0, 50), new Direction3D(0, 0, 30)), aMajRad, aMinRad).Shape();
-            TopoDS_Shape aTor2 = new BRepPrimAPI_MakeTorus(new Frame3D(new Point3D(0, 0, 10), new Direction3D(0, 0, 30)), aMajRad, aMinRad).Shape();
+            Shape aTor1 = new BRepPrimAPI_MakeTorus(new Frame3D(new Point3D(0, 0, 50), new Direction3D(0, 0, 30)), aMajRad, aMinRad).Shape();
+            Shape aTor2 = new BRepPrimAPI_MakeTorus(new Frame3D(new Point3D(0, 0, 10), new Direction3D(0, 0, 30)), aMajRad, aMinRad).Shape();
 
             BRepAlgoAPI_Fuse aFuse1 = new(aTor1, aRevol);
             Assert.True(aFuse1.IsDone());
@@ -341,14 +344,14 @@ public static class TKBool_BRepAlgoAPITests
         public void OCCN2_CylinderSphereSectionIsDone()
         {
             BRepPrimAPI_MakeCylinder aCylMaker = new(50.0, 200.0);
-            TopoDS_Shape aCylinder = aCylMaker.Shape();
+            Shape aCylinder = aCylMaker.Shape();
 
             BRepPrimAPI_MakeSphere aSphereMaker = new(new Point3D(60.0, 0.0, 100.0), 50.0);
-            TopoDS_Shape aSphere = aSphereMaker.Shape();
+            Shape aSphere = aSphereMaker.Shape();
 
             BRepAlgoAPI_Section aSection = new(aCylinder, aSphere);
             Assert.True(aSection.IsDone());
-            Assert.False(aSection.Shape().IsNull());
+            Assert.False(aSection.Shape().IsNull);
         }
     }
 }

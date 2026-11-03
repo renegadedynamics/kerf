@@ -6,7 +6,8 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -45,7 +46,7 @@ public sealed class ChFiDS_SurfData : Transient
     private bool isoncurv2;
     private bool twistons1;
     private bool twistons2;
-    private TopAbs_Orientation orientation;
+    private Orientation orientation;
 
     public ChFiDS_SurfData()
     {
@@ -62,7 +63,7 @@ public sealed class ChFiDS_SurfData : Transient
         isoncurv2 = false;
         twistons1 = false;
         twistons2 = false;
-        orientation = TopAbs_FORWARD;
+        orientation = Forward;
     }
 
     /// <summary>
@@ -146,7 +147,7 @@ public sealed class ChFiDS_SurfData : Transient
         return indexOfConge;
     }
 
-    public TopAbs_Orientation Orientation()
+    public Orientation Orientation()
     {
         return orientation;
     }
@@ -208,7 +209,7 @@ public sealed class ChFiDS_SurfData : Transient
         isoncurv2 = (theIndex != 0);
     }
 
-    internal ref TopAbs_Orientation ChangeOrientation() => ref orientation;
+    internal ref Orientation ChangeOrientation() => ref orientation;
 
     internal ref ChFiDS_FaceInterference ChangeInterferenceOnS1() => ref intf1;
 

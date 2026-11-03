@@ -12,22 +12,22 @@ internal static class ShapeExtensions
     /// <c>std::hash&lt;TopoDS_Shape&gt;</c>: equal for shapes that are <c>IsSame</c> (the same TShape at the same
     /// Location), whatever their orientation.
     /// </summary>
-    public static ulong StdHash(this TopoDS_Shape shape) => unchecked((uint)shape.GetHashCode());
+    public static ulong StdHash(this global::Kerf.Topology.Shape shape) => unchecked((uint)shape.GetHashCode());
 
     /// <summary>Whether the shape isn't null and is of <paramref name="type"/>.</summary>
-    public static bool Is(this TopoDS_Shape shape, TopAbs_ShapeEnum type) => !shape.IsNull() && shape.ShapeType() == type;
+    public static bool Is(this global::Kerf.Topology.Shape shape, global::Kerf.Topology.ShapeType type) => !shape.IsNull && shape.ShapeType() == type;
 
-    public static bool IsVertex(this TopoDS_Shape shape) => shape.Is(TopAbs_ShapeEnum.TopAbs_VERTEX);
+    public static bool IsVertex(this global::Kerf.Topology.Shape shape) => shape.Is(global::Kerf.Topology.ShapeType.Vertex);
 
-    public static bool IsEdge(this TopoDS_Shape shape) => shape.Is(TopAbs_ShapeEnum.TopAbs_EDGE);
+    public static bool IsEdge(this global::Kerf.Topology.Shape shape) => shape.Is(global::Kerf.Topology.ShapeType.Edge);
 
-    public static bool IsWire(this TopoDS_Shape shape) => shape.Is(TopAbs_ShapeEnum.TopAbs_WIRE);
+    public static bool IsWire(this global::Kerf.Topology.Shape shape) => shape.Is(global::Kerf.Topology.ShapeType.Wire);
 
-    public static bool IsFace(this TopoDS_Shape shape) => shape.Is(TopAbs_ShapeEnum.TopAbs_FACE);
+    public static bool IsFace(this global::Kerf.Topology.Shape shape) => shape.Is(global::Kerf.Topology.ShapeType.Face);
 
-    public static bool IsShell(this TopoDS_Shape shape) => shape.Is(TopAbs_ShapeEnum.TopAbs_SHELL);
+    public static bool IsShell(this global::Kerf.Topology.Shape shape) => shape.Is(global::Kerf.Topology.ShapeType.Shell);
 
-    public static bool IsSolid(this TopoDS_Shape shape) => shape.Is(TopAbs_ShapeEnum.TopAbs_SOLID);
+    public static bool IsSolid(this global::Kerf.Topology.Shape shape) => shape.Is(global::Kerf.Topology.ShapeType.Solid);
 
-    public static bool IsCompound(this TopoDS_Shape shape) => shape.Is(TopAbs_ShapeEnum.TopAbs_COMPOUND);
+    public static bool IsCompound(this global::Kerf.Topology.Shape shape) => shape.Is(global::Kerf.Topology.ShapeType.Compound);
 }

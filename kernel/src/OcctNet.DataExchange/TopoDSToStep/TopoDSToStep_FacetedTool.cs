@@ -5,7 +5,11 @@
 
 #nullable disable warnings
 
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 using static Occt.TopoDSToStep_FacetedError;
 
 namespace Occt;
@@ -13,24 +17,24 @@ namespace Occt;
 /// <summary>Checks whether a shape can be written as a faceted brep: planar faces with linear pcurves.</summary>
 public static class TopoDSToStep_FacetedTool
 {
-    public static TopoDSToStep_FacetedError CheckTopoDSShape(in TopoDS_Shape aShape)
+    public static TopoDSToStep_FacetedError CheckTopoDSShape(in Shape aShape)
     {
-        TopExp_Explorer FaceExp = new TopExp_Explorer(), EdgeExp = new TopExp_Explorer();
-        FaceExp.Init(aShape, TopAbs_FACE);
+        Explorer FaceExp = new Explorer(), EdgeExp = new Explorer();
+        FaceExp.Init(aShape, ShapeType.Face);
         while (FaceExp.More())
         {
-            TopoDS_Face aFace = TopoDS.Face(FaceExp.Current());
+            Face aFace = ShapeCasts.Face(FaceExp.Current());
             FaceExp.Next();
 
-            Geom_Surface Su = BRep_Tool.Surface(aFace);
+            Surface Su = Tool.Surface(aFace);
 
-            if (Su is Geom_Plane)
+            if (Su is PlaneSurface)
             {
                 // OK -> no further check
             }
-            else if (Su is Geom_BSplineSurface)
+            else if (Su is BSplineSurface)
             {
-                Geom_BSplineSurface aBsplS = Su as Geom_BSplineSurface;
+                BSplineSurface aBsplS = Su as BSplineSurface;
                 int uDeg, vDeg, nUPol, nVPol;
                 uDeg = aBsplS.UDegree();
                 if (uDeg == 1)
@@ -38,8 +42,8 @@ public static class TopoDSToStep_FacetedTool
                     vDeg = aBsplS.VDegree();
                     if (vDeg == 1)
                     {
-                        nUPol = aBsplS.NbUPoles();
-                        nVPol = aBsplS.NbVPoles();
+                        nUPol = aBsplS.UPoleCount;
+                        nVPol = aBsplS.VPoleCount;
                         if (nUPol != 2 || nVPol != 2)
                         {
                             return TopoDSToStep_SurfaceNotPlane;
@@ -57,9 +61,9 @@ public static class TopoDSToStep_FacetedTool
                     return TopoDSToStep_SurfaceNotPlane;
                 }
             }
-            else if (Su is Geom_BezierSurface)
+            else if (Su is BezierSurface)
             {
-                Geom_BezierSurface aBzS = Su as Geom_BezierSurface;
+                BezierSurface aBzS = Su as BezierSurface;
                 int uDeg, vDeg, nUPol, nVPol;
                 uDeg = aBzS.UDegree();
                 if (uDeg == 1)
@@ -67,8 +71,8 @@ public static class TopoDSToStep_FacetedTool
                     vDeg = aBzS.VDegree();
                     if (vDeg == 1)
                     {
-                        nUPol = aBzS.NbUPoles();
-                        nVPol = aBzS.NbVPoles();
+                        nUPol = aBzS.UPoleCount;
+                        nVPol = aBzS.VPoleCount;
                         if (nUPol != 2 || nVPol != 2)
                         {
                             return TopoDSToStep_SurfaceNotPlane;
@@ -94,30 +98,30 @@ public static class TopoDSToStep_FacetedTool
 
             // surface is flat; now check, if the PCurves are linear
 
-            EdgeExp.Init(aFace, TopAbs_EDGE);
+            EdgeExp.Init(aFace, ShapeType.Edge);
             while (EdgeExp.More())
             {
-                TopoDS_Edge anEdge = TopoDS.Edge(EdgeExp.Current());
+                Edge anEdge = ShapeCasts.Edge(EdgeExp.Current());
                 EdgeExp.Next();
 
-                Geom2d_Curve C2d = BRep_Tool.CurveOnSurface(anEdge, aFace, out double cf, out double cl);
+                Curve2D C2d = Tool.CurveOnSurface(anEdge, aFace, out double cf, out double cl);
 
-                if (C2d is Geom2d_Line)
+                if (C2d is LineCurve2D)
                 {
                     return TopoDSToStep_FacetedDone; // OCCT: the first linear pcurve accepts the whole shape
                 }
-                else if (C2d is Geom2d_BSplineCurve)
+                else if (C2d is BSplineCurve2D)
                 {
-                    Geom2d_BSplineCurve aBspl2d = C2d as Geom2d_BSplineCurve;
-                    if ((aBspl2d.Degree() != 1) || (aBspl2d.NbPoles() != 2))
+                    BSplineCurve2D aBspl2d = C2d as BSplineCurve2D;
+                    if ((aBspl2d.Degree() != 1) || (aBspl2d.PoleCount != 2))
                     {
                         return TopoDSToStep_PCurveNotLinear;
                     }
                 }
-                else if (C2d is Geom2d_BezierCurve)
+                else if (C2d is BezierCurve2D)
                 {
-                    Geom2d_BezierCurve aBzC2d = C2d as Geom2d_BezierCurve;
-                    if ((aBzC2d.Degree() != 1) || (aBzC2d.NbPoles() != 2))
+                    BezierCurve2D aBzC2d = C2d as BezierCurve2D;
+                    if ((aBzC2d.Degree() != 1) || (aBzC2d.PoleCount != 2))
                     {
                         return TopoDSToStep_PCurveNotLinear;
                     }

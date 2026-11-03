@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.SurfaceKind;
 
@@ -15,15 +16,15 @@ namespace Occt;
 public static class Contap_SurfProps
 {
     /// <summary>Computes the point <paramref name="P"/> and the normal <paramref name="Norm"/> of <paramref name="S"/> at (U, V).</summary>
-    public static void Normale(Adaptor3d_Surface S, double U, double V, out Point3D P, out Vector3D Norm)
+    public static void Normale(SurfaceAdaptorBase S, double U, double V, out Point3D P, out Vector3D Norm)
     {
         Norm = new Vector3D();
-        SurfaceKind typS = Adaptor3d_HSurfaceTool.GetType(S);
+        SurfaceKind typS = HSurfaceTool.GetType(S);
         switch (typS)
         {
             case Plane:
             {
-                Plane3D pl = Adaptor3d_HSurfaceTool.Plane(S);
+                Plane3D pl = HSurfaceTool.Plane(S);
                 Norm = new Vector3D(pl.Axis().Direction());
                 P = global::Kerf.Engine.Geometry.ElSLib.Value(U, V, pl);
                 if (!pl.Direct())
@@ -35,7 +36,7 @@ public static class Contap_SurfProps
 
             case SurfaceKind.Sphere:
             {
-                Sphere sp = Adaptor3d_HSurfaceTool.Sphere(S);
+                Sphere sp = HSurfaceTool.Sphere(S);
                 P = global::Kerf.Engine.Geometry.ElSLib.Value(U, V, sp);
                 Norm = new Vector3D(sp.Location(), P);
                 if (sp.Direct())
@@ -51,7 +52,7 @@ public static class Contap_SurfProps
 
             case SurfaceKind.Cylinder:
             {
-                Cylinder cy = Adaptor3d_HSurfaceTool.Cylinder(S);
+                Cylinder cy = HSurfaceTool.Cylinder(S);
                 P = global::Kerf.Engine.Geometry.ElSLib.Value(U, V, cy);
                 Norm.SetLinearForm(Math.Cos(U), new Vector3D(cy.XAxis().Direction()), Math.Sin(U),
                                    new Vector3D(cy.YAxis().Direction()));
@@ -64,7 +65,7 @@ public static class Contap_SurfProps
 
             case SurfaceKind.Cone:
             {
-                Cone co = Adaptor3d_HSurfaceTool.Cone(S);
+                Cone co = HSurfaceTool.Cone(S);
                 P = global::Kerf.Engine.Geometry.ElSLib.Value(U, V, co);
                 double Angle = co.SemiAngle();
                 double Sina = Math.Sin(Angle);
@@ -98,7 +99,7 @@ public static class Contap_SurfProps
             break;
             default:
             {
-                Adaptor3d_HSurfaceTool.D1(S, U, V, out P, out Vector3D d1u, out Vector3D d1v);
+                HSurfaceTool.D1(S, U, V, out P, out Vector3D d1u, out Vector3D d1v);
                 Norm = d1u.Crossed(d1v);
             }
             break;
@@ -106,16 +107,16 @@ public static class Contap_SurfProps
     }
 
     /// <summary>Computes the point, the first derivatives and the normal of <paramref name="S"/> at (U, V).</summary>
-    public static void DerivAndNorm(Adaptor3d_Surface S, double U, double V, out Point3D P, out Vector3D d1u,
+    public static void DerivAndNorm(SurfaceAdaptorBase S, double U, double V, out Point3D P, out Vector3D d1u,
                                     out Vector3D d1v, out Vector3D Norm)
     {
         Norm = new Vector3D();
-        SurfaceKind typS = Adaptor3d_HSurfaceTool.GetType(S);
+        SurfaceKind typS = HSurfaceTool.GetType(S);
         switch (typS)
         {
             case Plane:
             {
-                Plane3D pl = Adaptor3d_HSurfaceTool.Plane(S);
+                Plane3D pl = HSurfaceTool.Plane(S);
                 Norm = new Vector3D(pl.Axis().Direction());
                 global::Kerf.Engine.Geometry.ElSLib.D1(U, V, pl, out P, out d1u, out d1v);
                 if (!pl.Direct())
@@ -127,7 +128,7 @@ public static class Contap_SurfProps
 
             case SurfaceKind.Sphere:
             {
-                Sphere sp = Adaptor3d_HSurfaceTool.Sphere(S);
+                Sphere sp = HSurfaceTool.Sphere(S);
                 global::Kerf.Engine.Geometry.ElSLib.D1(U, V, sp, out P, out d1u, out d1v);
                 Norm = new Vector3D(sp.Location(), P);
                 if (sp.Direct())
@@ -143,7 +144,7 @@ public static class Contap_SurfProps
 
             case SurfaceKind.Cylinder:
             {
-                Cylinder cy = Adaptor3d_HSurfaceTool.Cylinder(S);
+                Cylinder cy = HSurfaceTool.Cylinder(S);
                 global::Kerf.Engine.Geometry.ElSLib.D1(U, V, cy, out P, out d1u, out d1v);
                 Norm.SetLinearForm(Math.Cos(U), new Vector3D(cy.XAxis().Direction()), Math.Sin(U),
                                    new Vector3D(cy.YAxis().Direction()));
@@ -156,7 +157,7 @@ public static class Contap_SurfProps
 
             case SurfaceKind.Cone:
             {
-                Cone co = Adaptor3d_HSurfaceTool.Cone(S);
+                Cone co = HSurfaceTool.Cone(S);
                 global::Kerf.Engine.Geometry.ElSLib.D1(U, V, co, out P, out d1u, out d1v);
                 double Angle = co.SemiAngle();
                 double Sina = Math.Sin(Angle);
@@ -166,7 +167,7 @@ public static class Contap_SurfProps
                 double Vcalc = V;
                 if (Math.Abs(V * Sina + Rad) <= RealEpsilon())
                 { // on est a l'apex
-                    double Vfi = Adaptor3d_HSurfaceTool.FirstVParameter(S);
+                    double Vfi = HSurfaceTool.FirstVParameter(S);
                     if (Vfi < -Rad / Sina)
                     { // partie valide pour V < Vapex
                         Vcalc = V - 1;
@@ -197,7 +198,7 @@ public static class Contap_SurfProps
             break;
             default:
             {
-                Adaptor3d_HSurfaceTool.D1(S, U, V, out P, out d1u, out d1v);
+                HSurfaceTool.D1(S, U, V, out P, out d1u, out d1v);
                 Norm = d1u.Crossed(d1v);
             }
             break;
@@ -205,18 +206,18 @@ public static class Contap_SurfProps
     }
 
     /// <summary>Computes the point, the normal and its derivatives of <paramref name="S"/> at (U, V).</summary>
-    public static void NormAndDn(Adaptor3d_Surface S, double U, double V, out Point3D P, out Vector3D Norm,
+    public static void NormAndDn(SurfaceAdaptorBase S, double U, double V, out Point3D P, out Vector3D Norm,
                                  out Vector3D Dnu, out Vector3D Dnv)
     {
         Norm = new Vector3D();
         Dnu = new Vector3D();
         Dnv = new Vector3D();
-        SurfaceKind typS = Adaptor3d_HSurfaceTool.GetType(S);
+        SurfaceKind typS = HSurfaceTool.GetType(S);
         switch (typS)
         {
             case Plane:
             {
-                Plane3D pl = Adaptor3d_HSurfaceTool.Plane(S);
+                Plane3D pl = HSurfaceTool.Plane(S);
                 P = global::Kerf.Engine.Geometry.ElSLib.Value(U, V, pl);
                 Norm = new Vector3D(pl.Axis().Direction());
                 if (!pl.Direct())
@@ -229,7 +230,7 @@ public static class Contap_SurfProps
 
             case SurfaceKind.Sphere:
             {
-                Sphere sp = Adaptor3d_HSurfaceTool.Sphere(S);
+                Sphere sp = HSurfaceTool.Sphere(S);
                 global::Kerf.Engine.Geometry.ElSLib.D1(U, V, sp, out P, out Dnu, out Dnv);
                 Norm = new Vector3D(sp.Location(), P);
                 double Rad = sp.Radius();
@@ -245,7 +246,7 @@ public static class Contap_SurfProps
 
             case SurfaceKind.Cylinder:
             {
-                Cylinder cy = Adaptor3d_HSurfaceTool.Cylinder(S);
+                Cylinder cy = HSurfaceTool.Cylinder(S);
                 P = global::Kerf.Engine.Geometry.ElSLib.Value(U, V, cy);
                 Norm.SetLinearForm(Math.Cos(U), new Vector3D(cy.XAxis().Direction()), Math.Sin(U),
                                    new Vector3D(cy.YAxis().Direction()));
@@ -262,7 +263,7 @@ public static class Contap_SurfProps
 
             case SurfaceKind.Cone:
             {
-                Cone co = Adaptor3d_HSurfaceTool.Cone(S);
+                Cone co = HSurfaceTool.Cone(S);
                 P = global::Kerf.Engine.Geometry.ElSLib.Value(U, V, co);
                 double Angle = co.SemiAngle();
                 double Sina = Math.Sin(Angle);
@@ -271,7 +272,7 @@ public static class Contap_SurfProps
                 double Vcalc = V;
                 if (Math.Abs(V * Sina + Rad) <= RealEpsilon())
                 { // on est a l'apex
-                    double Vfi = Adaptor3d_HSurfaceTool.FirstVParameter(S);
+                    double Vfi = HSurfaceTool.FirstVParameter(S);
                     if (Vfi < -Rad / Sina)
                     { // partie valide pour V < Vapex
                         Vcalc = V - 1;
@@ -307,7 +308,7 @@ public static class Contap_SurfProps
 
             default:
             {
-                Adaptor3d_HSurfaceTool.D2(S, U, V, out P, out Vector3D d1u, out Vector3D d1v, out Vector3D d2u,
+                HSurfaceTool.D2(S, U, V, out P, out Vector3D d1u, out Vector3D d1v, out Vector3D d2u,
                                           out Vector3D d2v, out Vector3D d2uv);
                 Norm = d1u.Crossed(d1v);
                 Dnu = d2u.Crossed(d1v) + d1u.Crossed(d2uv);

@@ -18,35 +18,35 @@ internal static class GeomIsoCurveCompare
         {
             if (aC is not null)
             {
-                return nameof(Geom_Line);
+                return global::Kerf.Engine.Foundation.OcctTypeNames.Of(typeof(LineCurve3D));
             }
         }
         using (var aC = N.Geom_Circle.DownCast(theN))
         {
             if (aC is not null)
             {
-                return nameof(Geom_Circle);
+                return global::Kerf.Engine.Foundation.OcctTypeNames.Of(typeof(CircleCurve3D));
             }
         }
         using (var aC = N.Geom_TrimmedCurve.DownCast(theN))
         {
             if (aC is not null)
             {
-                return nameof(Geom_TrimmedCurve);
+                return global::Kerf.Engine.Foundation.OcctTypeNames.Of(typeof(TrimmedCurve3D));
             }
         }
         using (var aC = N.Geom_BezierCurve.DownCast(theN))
         {
             if (aC is not null)
             {
-                return nameof(Geom_BezierCurve);
+                return global::Kerf.Engine.Foundation.OcctTypeNames.Of(typeof(BezierCurve3D));
             }
         }
         using (var aC = N.Geom_BSplineCurve.DownCast(theN))
         {
             if (aC is not null)
             {
-                return nameof(Geom_BSplineCurve);
+                return global::Kerf.Engine.Foundation.OcctTypeNames.Of(typeof(BSplineCurve3D));
             }
         }
         return "another curve";
@@ -60,12 +60,12 @@ internal static class GeomIsoCurveCompare
     }
 
     /// <summary>The class and the definition of the curve.</summary>
-    private static void SameDefinition(Oracle theOracle, N.Geom_Curve theN, Geom_Curve theP, string theWhat)
+    private static void SameDefinition(Oracle theOracle, N.Geom_Curve theN, Curve3D theP, string theWhat)
     {
         Assert.True(NativeKind(theN) == global::Kerf.Engine.Foundation.OcctTypeNames.Of(theP.GetType()), $"{theWhat}: native {NativeKind(theN)}, port {Kerf.Engine.Foundation.OcctTypeNames.Of(theP.GetType())}");
         switch (theP)
         {
-            case Geom_Line aLine:
+            case LineCurve3D aLine:
             {
                 using var aNLine = N.Geom_Line.DownCast(theN)!;
                 using N.gp_Ax1 aNPos = aNLine.Position();
@@ -75,7 +75,7 @@ internal static class GeomIsoCurveCompare
                 SameDir(theOracle, aNDir, aLine.Position().Direction(), theWhat + " line direction");
                 break;
             }
-            case Geom_Circle aCircle:
+            case CircleCurve3D aCircle:
             {
                 using var aNCircle = N.Geom_Circle.DownCast(theN)!;
                 using N.gp_Ax2 aNPos = aNCircle.Position();
@@ -88,19 +88,19 @@ internal static class GeomIsoCurveCompare
                 SameDir(theOracle, aNXDir, aCircle.Position().XDirection(), theWhat + " circle X direction");
                 break;
             }
-            case Geom_TrimmedCurve aTrimmed:
+            case TrimmedCurve3D aTrimmed:
             {
                 using var aNTrimmed = N.Geom_TrimmedCurve.DownCast(theN)!;
                 using N.Geom_Curve aNBasis = aNTrimmed.BasisCurve()!;
                 SameDefinition(theOracle, aNBasis, aTrimmed.BasisCurve(), theWhat + " basis");
                 break;
             }
-            case Geom_BezierCurve aBezier:
+            case BezierCurve3D aBezier:
             {
                 using var aNBezier = N.Geom_BezierCurve.DownCast(theN)!;
                 theOracle.Same(aNBezier.Degree(), aBezier.Degree(), theWhat + " Bezier degree");
-                theOracle.Same(aNBezier.IsRational(), aBezier.IsRational(), theWhat + " Bezier IsRational");
-                for (int i = 1; i <= aBezier.NbPoles(); i++)
+                theOracle.Same(aNBezier.IsRational(), aBezier.IsRational, theWhat + " Bezier IsRational");
+                for (int i = 1; i <= aBezier.PoleCount; i++)
                 {
                     using N.gp_Pnt aNPole = aNBezier.Pole(i);
                     theOracle.Same(aNPole, aBezier.Pole(i), theWhat + " Bezier pole");
@@ -108,20 +108,20 @@ internal static class GeomIsoCurveCompare
                 }
                 break;
             }
-            case Geom_BSplineCurve aBSpline:
+            case BSplineCurve3D aBSpline:
             {
                 using var aNBSpline = N.Geom_BSplineCurve.DownCast(theN)!;
                 theOracle.Same(aNBSpline.Degree(), aBSpline.Degree(), theWhat + " B-spline degree");
-                theOracle.Same(aNBSpline.IsRational(), aBSpline.IsRational(), theWhat + " B-spline IsRational");
-                theOracle.Same(aNBSpline.NbPoles(), aBSpline.NbPoles(), theWhat + " B-spline NbPoles");
-                theOracle.Same(aNBSpline.NbKnots(), aBSpline.NbKnots(), theWhat + " B-spline NbKnots");
-                for (int i = 1; i <= aBSpline.NbPoles(); i++)
+                theOracle.Same(aNBSpline.IsRational(), aBSpline.IsRational, theWhat + " B-spline IsRational");
+                theOracle.Same(aNBSpline.NbPoles(), aBSpline.PoleCount, theWhat + " B-spline NbPoles");
+                theOracle.Same(aNBSpline.NbKnots(), aBSpline.KnotCount, theWhat + " B-spline NbKnots");
+                for (int i = 1; i <= aBSpline.PoleCount; i++)
                 {
                     using N.gp_Pnt aNPole = aNBSpline.Pole(i);
                     theOracle.Same(aNPole, aBSpline.Pole(i), theWhat + " B-spline pole");
                     theOracle.Same(aNBSpline.Weight(i), aBSpline.Weight(i), theWhat + " B-spline weight");
                 }
-                for (int i = 1; i <= aBSpline.NbKnots(); i++)
+                for (int i = 1; i <= aBSpline.KnotCount; i++)
                 {
                     theOracle.Same(aNBSpline.Knot(i), aBSpline.Knot(i), theWhat + " B-spline knot");
                     theOracle.Same(aNBSpline.Multiplicity(i), aBSpline.Multiplicity(i), theWhat + " B-spline multiplicity");
@@ -145,7 +145,7 @@ internal static class GeomIsoCurveCompare
     }
 
     /// <summary>D0 to D3 and DN (1 to 3) at U; both must throw, or neither.</summary>
-    private static void SameEvaluation(Oracle theOracle, N.Geom_Curve theN, Geom_Curve theP, double U, string theWhat)
+    private static void SameEvaluation(Oracle theOracle, N.Geom_Curve theN, Curve3D theP, double U, string theWhat)
     {
         using var aNP = new N.gp_Pnt();
         using var aNV1 = new N.gp_Vec();
@@ -189,12 +189,12 @@ internal static class GeomIsoCurveCompare
     /// The iso-curves at theParam of the two surfaces (UIso if theU), compared as the class header says; both
     /// surfaces must throw, or neither.
     /// </summary>
-    internal static void SameIso(Oracle theOracle, N.Geom_Surface theN, Geom_Surface theP, bool theU, double theParam,
+    internal static void SameIso(Oracle theOracle, N.Geom_Surface theN, Surface theP, bool theU, double theParam,
                                  string theWhat)
     {
         theWhat += (theU ? " UIso" : " VIso") + "(" + theParam.ToString("R", System.Globalization.CultureInfo.InvariantCulture) + ")";
         N.Geom_Curve? aN = null;
-        Geom_Curve? aP = null;
+        Curve3D? aP = null;
         Exception? aNErr = Catch(() => aN = theU ? theN.UIso(theParam) : theN.VIso(theParam));
         Exception? aPErr = Catch(() => aP = theU ? theP.UIso(theParam) : theP.VIso(theParam));
         Assert.True((aNErr is null) == (aPErr is null), $"{theWhat}: native {aNErr?.Message ?? "ok"}, port {aPErr?.ToString() ?? "ok"}");
@@ -209,16 +209,16 @@ internal static class GeomIsoCurveCompare
     }
 
     /// <summary>Two iso-curves, compared as the class header says.</summary>
-    internal static void SameCurve(Oracle theOracle, N.Geom_Curve theN, Geom_Curve theP, string theWhat)
+    internal static void SameCurve(Oracle theOracle, N.Geom_Curve theN, Curve3D theP, string theWhat)
     {
         SameDefinition(theOracle, theN, theP, theWhat);
 
         double aF = theP.FirstParameter(), aL = theP.LastParameter();
         theOracle.Same(theN.FirstParameter(), aF, theWhat + " FirstParameter");
         theOracle.Same(theN.LastParameter(), aL, theWhat + " LastParameter");
-        theOracle.Same(theN.IsClosed(), theP.IsClosed(), theWhat + " IsClosed");
-        theOracle.Same(theN.IsPeriodic(), theP.IsPeriodic(), theWhat + " IsPeriodic");
-        if (theP.IsPeriodic())
+        theOracle.Same(theN.IsClosed(), theP.IsClosed, theWhat + " IsClosed");
+        theOracle.Same(theN.IsPeriodic(), theP.IsPeriodic, theWhat + " IsPeriodic");
+        if (theP.IsPeriodic)
         {
             theOracle.Same(theN.Period(), theP.Period(), theWhat + " Period");
         }
@@ -245,7 +245,7 @@ internal static class GeomIsoCurveCompare
     /// UIso and VIso at the bounds of a finite surface, and at random parameters inside the bounds (and outside
     /// the first period of a periodic direction).
     /// </summary>
-    internal static void SameIsos(Oracle theOracle, N.Geom_Surface theN, Geom_Surface theP, string theWhat)
+    internal static void SameIsos(Oracle theOracle, N.Geom_Surface theN, Surface theP, string theWhat)
     {
         theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         foreach (bool aU in new[] { true, false })
@@ -263,7 +263,7 @@ internal static class GeomIsoCurveCompare
                 aParams.Add(aL);
                 aParams.Add(theOracle.Real(aF, aL));
                 aParams.Add(theOracle.Real(aF, aL));
-                if (aU ? theP.IsUPeriodic() : theP.IsVPeriodic())
+                if (aU ? theP.IsUPeriodic : theP.IsVPeriodic)
                 {
                     aParams.Add(theOracle.Real(aF, aL) + 2 * (aL - aF));
                 }

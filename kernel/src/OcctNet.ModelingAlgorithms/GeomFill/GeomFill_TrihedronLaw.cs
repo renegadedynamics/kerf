@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -19,11 +20,11 @@ namespace Occt;
 /// </remarks>
 public abstract class GeomFill_TrihedronLaw : Transient
 {
-    protected Adaptor3d_Curve? myCurve;
-    protected Adaptor3d_Curve? myTrimmed;
+    protected CurveAdaptorBase? myCurve;
+    protected CurveAdaptorBase? myTrimmed;
 
     /// <summary>Initializes the curve of the trihedron law; returns true.</summary>
-    public virtual bool SetCurve(Adaptor3d_Curve C)
+    public virtual bool SetCurve(CurveAdaptorBase C)
     {
         myCurve = C;
         myTrimmed = myCurve;

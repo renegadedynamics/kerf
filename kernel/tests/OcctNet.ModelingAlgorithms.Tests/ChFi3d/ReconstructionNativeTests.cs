@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
@@ -110,7 +112,7 @@ public class ReconstructionNativeTests
         // unit 7N2's two invalid results end to end (decision 1125): from native's data structure the reconstruction
         // gives native's faults (pyramid_base_edges: native's exactly, its geometry equal), so they are ChFi3d's data
         ReconCase aCase = ReconRecordings.Cases[theName];
-        TopoDS_Shape aNative = aCase.Result!.Value;
+        Shape aNative = aCase.Result!.Value;
         Assert.False(new BRepCheck_Analyzer(aNative).IsValid());
         Assert.Contains(theFaults.Trim('{', '}'), ReconComparison.Faults(aNative));
         ReconComparison.Run aRun = ReconComparison.Reconstruct(aCase);
@@ -128,6 +130,6 @@ public class ReconstructionNativeTests
             return;
         }
         ReconComparison.Run aRun = ReconComparison.Reconstruct(ReconRecordings.Cases[theName], theFreezeInput: true);
-        Assert.False(aRun.Result.IsNull());
+        Assert.False(aRun.Result.IsNull);
     }
 }

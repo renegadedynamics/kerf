@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 
@@ -83,10 +85,10 @@ public sealed class Geom2dGcc_Circ2d2TanRad
         }
         else
         {
-            Geom2dAdaptor_Curve C1    = Qualified1.Qualified();
-            Geom2dAdaptor_Curve C2    = Qualified2.Qualified();
-            Geom2d_Curve?       CC1   = C1.Curve();
-            Geom2d_Curve?       CC2   = C2.Curve();
+            CurveAdaptor2D C1    = Qualified1.Qualified();
+            CurveAdaptor2D C2    = Qualified2.Qualified();
+            Curve2D?       CC1   = C1.Curve();
+            Curve2D?       CC2   = C2.Curve();
             CurveKind   Type1 = C1.GetType();
             CurveKind   Type2 = C2.GetType();
 
@@ -101,12 +103,12 @@ public sealed class Geom2dGcc_Circ2d2TanRad
             {
                 if (Type1 == Circle)
                 {
-                    Geom2d_Circle        CCC1 = (CC1 as Geom2d_Circle)!;
+                    CircleCurve2D        CCC1 = (CC1 as CircleCurve2D)!;
                     Circle2D            c1   = CCC1.Circ2d();
                     GccEnt_QualifiedCirc Qc1  = new(c1, Qualified1.Qualifier());
                     if (Type2 == Circle)
                     {
-                        Geom2d_Circle        CCC2    = (CC2 as Geom2d_Circle)!;
+                        CircleCurve2D        CCC2    = (CC2 as CircleCurve2D)!;
                         Circle2D            c2      = CCC2.Circ2d();
                         GccAna_Circ2d2TanRad CircAna = new(Qc1, new GccEnt_QualifiedCirc(c2, Qualified2.Qualifier()), Radius, Tolerance);
                         WellDone = CircAna.IsDone();
@@ -119,7 +121,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                     }
                     else
                     {
-                        Geom2d_Line LL2 = (CC2 as Geom2d_Line)!;
+                        LineCurve2D LL2 = (CC2 as LineCurve2D)!;
                         Line2D    l2  = LL2.Lin2d();
                         if (!Qualified2.IsEnclosing())
                         {
@@ -141,7 +143,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                 }
                 else
                 {
-                    Geom2d_Line LL1 = (CC1 as Geom2d_Line)!;
+                    LineCurve2D LL1 = (CC1 as LineCurve2D)!;
                     Line2D    l1  = LL1.Lin2d();
                     if (Qualified1.IsEnclosing())
                     {
@@ -153,7 +155,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                         GccEnt_QualifiedLin Ql1 = new(l1, Qualified1.Qualifier());
                         if (Type2 == Circle)
                         {
-                            Geom2d_Circle CCC2 = (CC2 as Geom2d_Circle)!;
+                            CircleCurve2D CCC2 = (CC2 as CircleCurve2D)!;
                             Circle2D     c2   = CCC2.Circ2d();
                             Invert             = true;
                             GccAna_Circ2d2TanRad CircAna = new(new GccEnt_QualifiedCirc(c2, Qualified2.Qualifier()), Ql1, Radius, Tolerance);
@@ -167,7 +169,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                         }
                         else
                         {
-                            Geom2d_Line LL2 = (CC2 as Geom2d_Line)!;
+                            LineCurve2D LL2 = (CC2 as LineCurve2D)!;
                             Line2D    l2  = LL2.Lin2d();
                             if (!Qualified2.IsEnclosing())
                             {
@@ -196,7 +198,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
             {
                 if (Type1 == Line)
                 {
-                    Geom2d_Line LL1 = (CC1 as Geom2d_Line)!;
+                    LineCurve2D LL1 = (CC1 as LineCurve2D)!;
                     Line2D    l1  = LL1.Lin2d();
                     if (Qualified1.IsEnclosing())
                     {
@@ -219,7 +221,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                 }
                 else if (Type1 == Circle)
                 {
-                    Geom2d_Circle              CCC1    = (CC1 as Geom2d_Circle)!;
+                    CircleCurve2D              CCC1    = (CC1 as CircleCurve2D)!;
                     Circle2D                  c1      = CCC1.Circ2d();
                     GccEnt_QualifiedCirc       Qc1     = new(c1, Qualified1.Qualifier());
                     Geom2dGcc_QCurve           Qc2     = new(C2, Qualified2.Qualifier());
@@ -235,7 +237,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                 else if (Type2 == Line)
                 {
                     Invert          = true;
-                    Geom2d_Line LL2 = (CC2 as Geom2d_Line)!;
+                    LineCurve2D LL2 = (CC2 as LineCurve2D)!;
                     Line2D    l2  = LL2.Lin2d();
                     if (Qualified2.IsEnclosing())
                     {
@@ -259,7 +261,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                 else if (Type2 == Circle)
                 {
                     Invert                             = true;
-                    Geom2d_Circle              CCC2    = (CC2 as Geom2d_Circle)!;
+                    CircleCurve2D              CCC2    = (CC2 as CircleCurve2D)!;
                     Circle2D                  c2      = CCC2.Circ2d();
                     GccEnt_QualifiedCirc       Qc2     = new(c2, Qualified2.Qualifier());
                     Geom2dGcc_QCurve           Qc1     = new(C1, Qualified1.Qualifier());
@@ -291,7 +293,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
 
     /// <summary>Circles of radius Radius tangent to a qualified curve and passing through a point.</summary>
     /// <exception cref="NegativeValueException">Radius is negative.</exception>
-    public Geom2dGcc_Circ2d2TanRad(in Geom2dGcc_QualifiedCurve Qualified1, Geom2d_Point Point, double Radius, double Tolerance)
+    public Geom2dGcc_Circ2d2TanRad(in Geom2dGcc_QualifiedCurve Qualified1, Point2 Point, double Radius, double Tolerance)
         : this(aNbSolMAX)
     {
         if (Radius < 0.0)
@@ -300,8 +302,8 @@ public sealed class Geom2dGcc_Circ2d2TanRad
         }
         else
         {
-            Geom2dAdaptor_Curve C1    = Qualified1.Qualified();
-            Geom2d_Curve?       CC1   = C1.Curve();
+            CurveAdaptor2D C1    = Qualified1.Qualified();
+            Curve2D?       CC1   = C1.Curve();
             CurveKind   Type1 = C1.GetType();
 
             //=============================================================================
@@ -314,7 +316,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
             {
                 if (Type1 == Circle)
                 {
-                    Geom2d_Circle        CCC1    = (CC1 as Geom2d_Circle)!;
+                    CircleCurve2D        CCC1    = (CC1 as CircleCurve2D)!;
                     Circle2D            c1      = CCC1.Circ2d();
                     GccEnt_QualifiedCirc Qc1     = new(c1, Qualified1.Qualifier());
                     GccAna_Circ2d2TanRad CircAna = new(Qc1, Point.Pnt2d(), Radius, Tolerance);
@@ -328,7 +330,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                 }
                 else
                 {
-                    Geom2d_Line          LLL1    = (CC1 as Geom2d_Line)!;
+                    LineCurve2D          LLL1    = (CC1 as LineCurve2D)!;
                     Line2D             l1      = LLL1.Lin2d();
                     GccEnt_QualifiedLin  Ql1     = new(l1, Qualified1.Qualifier());
                     GccAna_Circ2d2TanRad CircAna = new(Ql1, Point.Pnt2d(), Radius, Tolerance);
@@ -361,7 +363,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
 
     /// <summary>Circles of radius Radius passing through two points.</summary>
     /// <exception cref="NegativeValueException">Radius is negative.</exception>
-    public Geom2dGcc_Circ2d2TanRad(Geom2d_Point Point1, Geom2d_Point Point2, double Radius, double Tolerance)
+    public Geom2dGcc_Circ2d2TanRad(Point2 Point1, Point2 Point2, double Radius, double Tolerance)
         : this(2)
     {
         if (Radius < 0.0)

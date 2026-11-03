@@ -8,9 +8,13 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -22,7 +26,7 @@ namespace Occt;
 /// <para>
 /// A working object (decision 21). <see cref="Init"/> only records the shell. <see cref="Perform"/> and
 /// <see cref="FixFaceOrientation"/> edit the shell they work on in place, as OCCT's: a shell holding frozen shapes (any
-/// shell a caller holds) is copied first (<see cref="BRepTools_CopyAtEntry"/>, decision 583) and the caller's shell
+/// shell a caller holds) is copied first (<see cref="CopyAtEntry"/>, decision 583) and the caller's shell
 /// never changes. At the end of the fix the copies left unchanged are the caller's own again, and the context answers
 /// for the caller's sub-shapes. <see cref="Shell"/>, <see cref="Shape"/> and <see cref="ErrorFaces"/> freeze what they
 /// return; ported code that goes on building reads the internal forms.
@@ -31,9 +35,9 @@ namespace Occt;
 public class ShapeFix_Shell : ShapeFix_Root
 {
     /// <summary>The shell fixed (the first of the shells made).</summary>
-    protected TopoDS_Shell    myShell;
+    protected Shell    myShell;
     /// <summary>The faces that couldn't be oriented (Moebius-like).</summary>
-    protected TopoDS_Compound myErrFaces;
+    protected Compound myErrFaces;
     /// <summary>The status.</summary>
     protected int             myStatus;
     /// <summary>The face fixing tool.</summary>
@@ -53,8 +57,8 @@ public class ShapeFix_Shell : ShapeFix_Root
     /// <summary>Empty constructor.</summary>
     public ShapeFix_Shell()
     {
-        myShell              = new TopoDS_Shell();
-        myErrFaces           = new TopoDS_Compound();
+        myShell              = new Shell();
+        myErrFaces           = new Compound();
         myStatus             = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         myFixFaceMode        = -1;
         myFixOrientationMode = -1;
@@ -64,10 +68,10 @@ public class ShapeFix_Shell : ShapeFix_Root
     }
 
     /// <summary>Initializes by a shell.</summary>
-    public ShapeFix_Shell(in TopoDS_Shell shape)
+    public ShapeFix_Shell(in Shell shape)
     {
-        myShell              = new TopoDS_Shell();
-        myErrFaces           = new TopoDS_Compound();
+        myShell              = new Shell();
+        myErrFaces           = new Compound();
         myStatus             = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         myFixFaceMode        = -1;
         myFixOrientationMode = -1;
@@ -77,7 +81,7 @@ public class ShapeFix_Shell : ShapeFix_Root
     }
 
     /// <summary>Initializes by a shell.</summary>
-    public void Init(in TopoDS_Shell shell)
+    public void Init(in Shell shell)
     {
         myShape    = shell;
         myShell    = shell;
@@ -94,8 +98,8 @@ public class ShapeFix_Shell : ShapeFix_Root
         {
             SetContext(new ShapeBuild_ReShape());
         }
-        var anEntry = new BRepTools_CopyAtEntry(myShell, Context());
-        myShell = TopoDS.Shell(anEntry.Shape());
+        var anEntry = new CopyAtEntry(myShell, Context());
+        myShell = ShapeCasts.Shell(anEntry.Shape());
         myShape = myShell;
         bool status = perform(theProgress);
         finish(anEntry);
@@ -115,18 +119,18 @@ public class ShapeFix_Shell : ShapeFix_Root
 
         if (NeedFix(myFixFaceMode))
         {
-            TopoDS_Shape S = aContext.InternalApply(myShell);
+            Shape S = aContext.InternalApply(myShell);
 
             // Get the number of faces for progress indication
-            int aNbFaces = S.NbChildren();
+            int aNbFaces = S.ChildCount;
 
             // Start progress scope (no need to check if progress exists -- it is safe)
             using var aPS = new ProgressScope(theProgress, "Fixing face", aNbFaces);
 
-            for (var iter = new TopoDS_Iterator(S); iter.More() && aPS.More(); iter.Next(), aPS.Next())
+            for (var iter = new Iterator(S); iter.More() && aPS.More(); iter.Next(), aPS.Next())
             {
-                TopoDS_Shape sh      = iter.Value();
-                TopoDS_Face  tmpFace = TopoDS.Face(sh);
+                Shape sh      = iter.Value();
+                Face  tmpFace = ShapeCasts.Face(sh);
                 myFixFace.Init(tmpFace);
                 if (myFixFace.Perform())
                 {
@@ -142,17 +146,17 @@ public class ShapeFix_Shell : ShapeFix_Root
             }
         }
 
-        TopoDS_Shape newsh = aContext.InternalApply(myShell);
+        Shape newsh = aContext.InternalApply(myShell);
         if (NeedFix(myFixOrientationMode))
         {
-            fixFaceOrientation(TopoDS.Shell(newsh), true, myNonManifold);
+            fixFaceOrientation(ShapeCasts.Shell(newsh), true, myNonManifold);
         }
 
-        TopoDS_Shape aNewsh = aContext.InternalApply(newsh);
+        Shape aNewsh = aContext.InternalApply(newsh);
         var          aSas   = new ShapeAnalysis_Shell();
-        for (var aShellExp = new TopExp_Explorer(aNewsh, TopAbs_SHELL); aShellExp.More(); aShellExp.Next())
+        for (var aShellExp = new Explorer(aNewsh, global::Kerf.Topology.ShapeType.Shell); aShellExp.More(); aShellExp.Next())
         {
-            TopoDS_Shell aCurShell = TopoDS.Shell(aShellExp.Current());
+            Shell aCurShell = ShapeCasts.Shell(aShellExp.Current());
             if (aCurShell.Closed())
             {
                 aSas.LoadShells(aCurShell);
@@ -179,13 +183,13 @@ public class ShapeFix_Shell : ShapeFix_Root
 
     //=================================================================================================
 
-    private static bool GetFreeEdges(in TopoDS_Shape aShape, NCollection_Map<TopoDS_Shape> MapEdges)
+    private static bool GetFreeEdges(in Shape aShape, NCollection_Map<Shape> MapEdges)
     {
-        for (var aExpF = new TopExp_Explorer(aShape, TopAbs_FACE); aExpF.More(); aExpF.Next())
+        for (var aExpF = new Explorer(aShape, ShapeType.Face); aExpF.More(); aExpF.Next())
         {
-            for (var aExpE = new TopExp_Explorer(aExpF.Current(), TopAbs_EDGE); aExpE.More(); aExpE.Next())
+            for (var aExpE = new Explorer(aExpF.Current(), ShapeType.Edge); aExpE.More(); aExpE.Next())
             {
-                TopoDS_Edge edge = TopoDS.Edge(aExpE.Current());
+                Edge edge = ShapeCasts.Edge(aExpE.Current());
                 if (!MapEdges.Contains(edge))
                 {
                     MapEdges.Add(edge);
@@ -201,29 +205,29 @@ public class ShapeFix_Shell : ShapeFix_Root
 
     // OCCT's FaceEdgesMap: NCollection_IndexedDataMap<TopoDS_Face, NCollection_Array1<TopoDS_Edge>> with the default
     // hasher (IsEqual); EdgeFacesMap: a DataMap of the edges' faces with the shape hasher.
-    private static NCollection_IndexedDataMap<TopoDS_Shape, NCollection_Array1<TopoDS_Shape>> NewFaceEdgesMap() =>
-        new(EqualityComparer<TopoDS_Shape>.Default);
+    private static NCollection_IndexedDataMap<Shape, NCollection_Array1<Shape>> NewFaceEdgesMap() =>
+        new(EqualityComparer<Shape>.Default);
 
     /// Groups connected faces into separate sequences using existing connectivity data.
     /// Uses depth-first search to find connected components through shared edges.
     /// Each face appears in exactly one group, ensuring no duplicates across groups.
     /// Groups are sorted by size with the largest group first.
-    private static NCollection_List<NCollection_Sequence<TopoDS_Shape>> GetConnectedFaceGroups(
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_Array1<TopoDS_Shape>> theFaceEdges,
-        NCollection_DataMap<TopoDS_Shape, NCollection_DynamicArray<TopoDS_Shape>> theEdgeFaces)
+    private static NCollection_List<NCollection_Sequence<Shape>> GetConnectedFaceGroups(
+        NCollection_IndexedDataMap<Shape, NCollection_Array1<Shape>> theFaceEdges,
+        NCollection_DataMap<Shape, NCollection_DynamicArray<Shape>> theEdgeFaces)
     {
-        var aConnectedGroups = new NCollection_List<NCollection_Sequence<TopoDS_Shape>>();
+        var aConnectedGroups = new NCollection_List<NCollection_Sequence<Shape>>();
 
         if (theFaceEdges.IsEmpty())
         {
             return aConnectedGroups;
         }
 
-        var aVisitedFaces = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aVisitedFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
 
         for (int aFaceIndex = 1; aFaceIndex <= theFaceEdges.Extent(); aFaceIndex++)
         {
-            TopoDS_Shape aStartFace = theFaceEdges.FindKey(aFaceIndex);
+            Shape aStartFace = theFaceEdges.FindKey(aFaceIndex);
 
             if (aVisitedFaces.Contains(aStartFace))
             {
@@ -231,30 +235,30 @@ public class ShapeFix_Shell : ShapeFix_Root
             }
 
             // Start new connected group
-            var aConnectedGroup = new NCollection_Sequence<TopoDS_Shape>();
+            var aConnectedGroup = new NCollection_Sequence<Shape>();
 
             // DFS traversal
-            var aStack = new Stack<TopoDS_Shape>();
+            var aStack = new Stack<Shape>();
             aStack.Push(aStartFace);
             aVisitedFaces.Add(aStartFace);
 
             while (aStack.Count != 0)
             {
-                TopoDS_Shape aCurrentFace = aStack.Pop();
+                Shape aCurrentFace = aStack.Pop();
                 aConnectedGroup.Append(aCurrentFace);
 
                 // Find connected faces through shared edges
-                if (theFaceEdges.FindFromKey(aCurrentFace, out NCollection_Array1<TopoDS_Shape> aFaceEdgesArray))
+                if (theFaceEdges.FindFromKey(aCurrentFace, out NCollection_Array1<Shape> aFaceEdgesArray))
                 {
                     for (int anEdgeIdx = aFaceEdgesArray.Lower(); anEdgeIdx <= aFaceEdgesArray.Upper(); ++anEdgeIdx)
                     {
-                        TopoDS_Shape anEdge = aFaceEdgesArray.Value(anEdgeIdx);
+                        Shape anEdge = aFaceEdgesArray.Value(anEdgeIdx);
 
-                        if (theEdgeFaces.Find(anEdge, out NCollection_DynamicArray<TopoDS_Shape> aConnectedFaces))
+                        if (theEdgeFaces.Find(anEdge, out NCollection_DynamicArray<Shape> aConnectedFaces))
                         {
                             for (int aFaceIdx = 0; aFaceIdx < aConnectedFaces.Length(); ++aFaceIdx)
                             {
-                                TopoDS_Shape aNeighborFace = aConnectedFaces.Value(aFaceIdx);
+                                Shape aNeighborFace = aConnectedFaces.Value(aFaceIdx);
 
                                 if (!aVisitedFaces.Contains(aNeighborFace))
                                 {
@@ -270,7 +274,7 @@ public class ShapeFix_Shell : ShapeFix_Root
             // Insert in sorted order (largest groups first)
             bool anIsInserted = false;
 
-            for (var anIter = new NCollection_List<NCollection_Sequence<TopoDS_Shape>>.Iterator(aConnectedGroups);
+            for (var anIter = new NCollection_List<NCollection_Sequence<Shape>>.Iterator(aConnectedGroups);
                  anIter.More();
                  anIter.Next())
             {
@@ -294,37 +298,37 @@ public class ShapeFix_Shell : ShapeFix_Root
     /// Creates shells from connected face groups using connectivity analysis.
     /// Processes only the largest connected group for shell construction, improving efficiency
     /// by focusing on faces that are actually topologically connected.
-    private static bool GetShells(NCollection_Sequence<TopoDS_Shape> theLfaces,
-                                  NCollection_Map<TopoDS_Shape> theMapMultiConnectEdges,
-                                  NCollection_Sequence<TopoDS_Shape> theSeqShells,
-                                  NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theMapFaceShells,
-                                  NCollection_Sequence<TopoDS_Shape> theErrFaces)
+    private static bool GetShells(NCollection_Sequence<Shape> theLfaces,
+                                  NCollection_Map<Shape> theMapMultiConnectEdges,
+                                  NCollection_Sequence<Shape> theSeqShells,
+                                  NCollection_DataMap<Shape, Shape> theMapFaceShells,
+                                  NCollection_Sequence<Shape> theErrFaces)
     {
         bool aDone = false;
         if (theLfaces.Length() == 0)
         {
             return false;
         }
-        var nshell = new TopoDS_Shell();
-        var B      = new BRep_Builder();
+        var nshell = new Shell();
+        var B      = new BrepBuilder();
         B.MakeShell(ref nshell);
         bool anIsMultiConnex    = !theMapMultiConnectEdges.IsEmpty();
         int  aFaceIdx           = 1, aFacesInShellCount = 1;
-        var  aSeqUnconnectFaces = new NCollection_Sequence<TopoDS_Shape>();
+        var  aSeqUnconnectFaces = new NCollection_Sequence<Shape>();
 
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_Array1<TopoDS_Shape>> aFaceEdges = NewFaceEdgesMap();
+        NCollection_IndexedDataMap<Shape, NCollection_Array1<Shape>> aFaceEdges = NewFaceEdgesMap();
         int aNumberOfEdges = 0;
-        var aTempEdges     = new NCollection_DynamicArray<TopoDS_Shape>();
+        var aTempEdges     = new NCollection_DynamicArray<Shape>();
         for (int aLfaceIdx = 1; aLfaceIdx <= theLfaces.Length(); aLfaceIdx++)
         {
             aTempEdges.Clear();
-            TopoDS_Face aFace = TopoDS.Face(theLfaces.Value(aLfaceIdx));
-            for (var anEdgeExp = new TopExp_Explorer(aFace, TopAbs_EDGE); anEdgeExp.More(); anEdgeExp.Next())
+            Face aFace = ShapeCasts.Face(theLfaces.Value(aLfaceIdx));
+            for (var anEdgeExp = new Explorer(aFace, ShapeType.Edge); anEdgeExp.More(); anEdgeExp.Next())
             {
-                aTempEdges.Append(TopoDS.Edge(anEdgeExp.Current()));
+                aTempEdges.Append(ShapeCasts.Edge(anEdgeExp.Current()));
                 aNumberOfEdges++;
             }
-            var aFaceEdgesArray = new NCollection_Array1<TopoDS_Shape>(1, aTempEdges.Length());
+            var aFaceEdgesArray = new NCollection_Array1<Shape>(1, aTempEdges.Length());
             for (int idx = 0; idx < aTempEdges.Length(); ++idx)
             {
                 aFaceEdgesArray.SetValue(idx + 1, aTempEdges.Value(idx));
@@ -332,22 +336,22 @@ public class ShapeFix_Shell : ShapeFix_Root
             aFaceEdges.Add(aFace, aFaceEdgesArray);
         }
 
-        var aEdgeFaces = new NCollection_DataMap<TopoDS_Shape, NCollection_DynamicArray<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+        var aEdgeFaces = new NCollection_DataMap<Shape, NCollection_DynamicArray<Shape>>(ShapeHasher.Instance);
 
         for (int aFaceInd = 1; aFaceInd <= aFaceEdges.Extent(); ++aFaceInd)
         {
-            TopoDS_Shape                       aFace           = aFaceEdges.FindKey(aFaceInd);
-            NCollection_Array1<TopoDS_Shape> aFaceEdgesArray = aFaceEdges.FindFromIndex(aFaceInd);
+            Shape                       aFace           = aFaceEdges.FindKey(aFaceInd);
+            NCollection_Array1<Shape> aFaceEdgesArray = aFaceEdges.FindFromIndex(aFaceInd);
 
             for (int anEdgeInd = aFaceEdgesArray.Lower(); anEdgeInd <= aFaceEdgesArray.Upper(); ++anEdgeInd)
             {
-                TopoDS_Shape anEdge = aFaceEdgesArray.Value(anEdgeInd);
+                Shape anEdge = aFaceEdgesArray.Value(anEdgeInd);
 
                 if (!aEdgeFaces.IsBound(anEdge))
                 {
-                    aEdgeFaces.Bind(anEdge, new NCollection_DynamicArray<TopoDS_Shape>());
+                    aEdgeFaces.Bind(anEdge, new NCollection_DynamicArray<Shape>());
                 }
-                NCollection_DynamicArray<TopoDS_Shape> aFacesArray = aEdgeFaces.Find(anEdge);
+                NCollection_DynamicArray<Shape> aFacesArray = aEdgeFaces.Find(anEdge);
 
                 // Check if face already exists in the array
                 bool aFaceExists = false;
@@ -371,7 +375,7 @@ public class ShapeFix_Shell : ShapeFix_Root
         }
 
         // Get connected groups of faces using existing connectivity data
-        NCollection_List<NCollection_Sequence<TopoDS_Shape>> aConnectedGroups = GetConnectedFaceGroups(aFaceEdges, aEdgeFaces);
+        NCollection_List<NCollection_Sequence<Shape>> aConnectedGroups = GetConnectedFaceGroups(aFaceEdges, aEdgeFaces);
 
         // Process only the largest connected group for shell construction
         if (aConnectedGroups.IsEmpty())
@@ -380,23 +384,23 @@ public class ShapeFix_Shell : ShapeFix_Root
         }
 
         // Some assumption that each edge can be in two orientations
-        var aProcessedEdges = new NCollection_DataMap<TopoDS_Shape, (bool first, bool second)>(TopTools_ShapeMapHasher.Instance);
+        var aProcessedEdges = new NCollection_DataMap<Shape, (bool first, bool second)>(ShapeHasher.Instance);
 
-        NCollection_Sequence<TopoDS_Shape> aProcessingFaces = aConnectedGroups.First();
+        NCollection_Sequence<Shape> aProcessingFaces = aConnectedGroups.First();
 
-        var aTempProcessedEdges = new NCollection_DataMap<TopoDS_Shape, (bool first, bool second)>(TopTools_ShapeMapHasher.Instance);
+        var aTempProcessedEdges = new NCollection_DataMap<Shape, (bool first, bool second)>(ShapeHasher.Instance);
         for (; aFaceIdx <= aProcessingFaces.Length(); aFaceIdx++)
         {
             aTempProcessedEdges.Clear();
 
             int         aBadOrientationCount = 0, aGoodOrientationCount = 0;
-            TopoDS_Face F1                   = TopoDS.Face(aProcessingFaces.Value(aFaceIdx));
+            Face F1                   = ShapeCasts.Face(aProcessingFaces.Value(aFaceIdx));
             // Get edges of the face
-            NCollection_Array1<TopoDS_Shape> aFaceEdgesArray = aFaceEdges.FindFromKey(F1);
+            NCollection_Array1<Shape> aFaceEdgesArray = aFaceEdges.FindFromKey(F1);
 
             for (int anEdgeInd = aFaceEdgesArray.Lower(); anEdgeInd <= aFaceEdgesArray.Upper(); ++anEdgeInd)
             {
-                TopoDS_Shape edge = aFaceEdgesArray.Value(anEdgeInd);
+                Shape edge = aFaceEdgesArray.Value(anEdgeInd);
 
                 // if multiconnexity mode is equal to true faces contains
                 // the same multiconnexity edges are not added to one shell.
@@ -409,16 +413,16 @@ public class ShapeFix_Shell : ShapeFix_Root
                 {
                     if (!aTempProcessedEdges.IsBound(edge))
                     {
-                        (bool, bool) anEdgeOrientationPair = (edge.Orientation() == TopAbs_FORWARD,
-                                                              edge.Orientation() == TopAbs_REVERSED);
+                        (bool, bool) anEdgeOrientationPair = (edge.Orientation() == Forward,
+                                                              edge.Orientation() == Reversed);
 
                         aTempProcessedEdges.Bind(edge, anEdgeOrientationPair);
                     }
                     else
                     {
                         ref (bool first, bool second) aTempProcessedEdgeIt = ref aTempProcessedEdges.ChangeFind(edge);
-                        aTempProcessedEdgeIt.first  = aTempProcessedEdgeIt.first || (edge.Orientation() == TopAbs_FORWARD);
-                        aTempProcessedEdgeIt.second = aTempProcessedEdgeIt.second || (edge.Orientation() == TopAbs_REVERSED);
+                        aTempProcessedEdgeIt.first  = aTempProcessedEdgeIt.first || (edge.Orientation() == Forward);
+                        aTempProcessedEdgeIt.second = aTempProcessedEdgeIt.second || (edge.Orientation() == Reversed);
                     }
                     continue;
                 }
@@ -428,13 +432,13 @@ public class ShapeFix_Shell : ShapeFix_Root
                 bool isDirect   = aPair.first;
                 bool isReversed = aPair.second;
 
-                if ((edge.Orientation() == TopAbs_FORWARD && isDirect)
-                    || (edge.Orientation() == TopAbs_REVERSED && isReversed))
+                if ((edge.Orientation() == Forward && isDirect)
+                    || (edge.Orientation() == Reversed && isReversed))
                 {
                     aBadOrientationCount++;
                 }
-                else if ((edge.Orientation() == TopAbs_FORWARD && isReversed)
-                         || (edge.Orientation() == TopAbs_REVERSED && isDirect))
+                else if ((edge.Orientation() == Forward && isReversed)
+                         || (edge.Orientation() == Reversed && isDirect))
                 {
                     aGoodOrientationCount++;
                 }
@@ -479,9 +483,9 @@ public class ShapeFix_Shell : ShapeFix_Root
                 {
                     F1.Reverse();
 
-                    foreach (KeyValuePair<TopoDS_Shape, (bool first, bool second)> aTempEdgeIter in aTempProcessedEdges)
+                    foreach (KeyValuePair<Shape, (bool first, bool second)> aTempEdgeIter in aTempProcessedEdges)
                     {
-                        TopoDS_Shape                  edge                  = aTempEdgeIter.Key;
+                        Shape                  edge                  = aTempEdgeIter.Key;
                         (bool first, bool second)     anEdgeOrientationPair = aTempEdgeIter.Value;
 
                         (bool, bool) aRevertedPair = (!anEdgeOrientationPair.first, !anEdgeOrientationPair.second);
@@ -499,9 +503,9 @@ public class ShapeFix_Shell : ShapeFix_Root
                 }
                 else
                 {
-                    foreach (KeyValuePair<TopoDS_Shape, (bool first, bool second)> aTempEdgeIter in aTempProcessedEdges)
+                    foreach (KeyValuePair<Shape, (bool first, bool second)> aTempEdgeIter in aTempProcessedEdges)
                     {
-                        TopoDS_Shape              edge                  = aTempEdgeIter.Key;
+                        Shape              edge                  = aTempEdgeIter.Key;
                         (bool first, bool second) anEdgeOrientationPair = aTempEdgeIter.Value;
 
                         if (!aProcessedEdges.IsBound(edge))
@@ -522,11 +526,11 @@ public class ShapeFix_Shell : ShapeFix_Root
                 // check if closed shell is obtained in multi connex mode and add to sequence of
                 // shells and new shell begin to construct.
                 // (check is n*2)
-                if (anIsMultiConnex && BRep_Tool.IsClosed(nshell))
+                if (anIsMultiConnex && Tool.IsClosed(nshell))
                 {
                     nshell.Closed(true);
                     theSeqShells.Append(nshell);
-                    var nshellnext = new TopoDS_Shell();
+                    var nshellnext = new Shell();
                     B.MakeShell(ref nshellnext);
                     nshell             = nshellnext;
                     aFacesInShellCount = 1;
@@ -538,13 +542,13 @@ public class ShapeFix_Shell : ShapeFix_Root
             //  This shell is removed.
             if (aProcessingFaces.Length() != 0 && aFaceIdx == aProcessingFaces.Length() && aFacesInShellCount <= 2)
             {
-                var aItf = new TopoDS_Iterator(nshell, false);
+                var aItf = new Iterator(nshell, false);
                 if (aItf.More())
                 {
                     aSeqUnconnectFaces.Append(aItf.Value());
                     theMapFaceShells.UnBind(aItf.Value());
                 }
-                var nshellnext = new TopoDS_Shell();
+                var nshellnext = new Shell();
                 B.MakeShell(ref nshellnext);
                 nshell             = nshellnext;
                 aFaceIdx           = 0;
@@ -559,8 +563,8 @@ public class ShapeFix_Shell : ShapeFix_Root
         if (!isContains)
         {
             int          numFace = 0;
-            TopoDS_Shape aFace   = new();
-            for (var aItf = new TopoDS_Iterator(nshell, false); aItf.More(); aItf.Next())
+            Shape aFace   = new();
+            for (var aItf = new Iterator(nshell, false); aItf.More(); aItf.Next())
             {
                 aFace = aItf.Value();
                 numFace++;
@@ -570,7 +574,7 @@ public class ShapeFix_Shell : ShapeFix_Root
                 // close all closed shells in no multi connex mode
                 if (!anIsMultiConnex)
                 {
-                    nshell.Closed(BRep_Tool.IsClosed(nshell));
+                    nshell.Closed(Tool.IsClosed(nshell));
                 }
                 theSeqShells.Append(nshell);
             }
@@ -586,7 +590,7 @@ public class ShapeFix_Shell : ShapeFix_Root
 
         // Add all unprocessed connected groups (second group and after) to unconnected faces
         int aGroupIndex = 1;
-        foreach (NCollection_Sequence<TopoDS_Shape> aUnprocessedGroup in aConnectedGroups)
+        foreach (NCollection_Sequence<Shape> aUnprocessedGroup in aConnectedGroups)
         {
             if (aGroupIndex++ == 1)
             {
@@ -616,31 +620,31 @@ public class ShapeFix_Shell : ShapeFix_Root
     //            are added to shells having free boundary contains the same
     //            multiconnexity edges as faces.
     //=======================================================================
-    private static bool AddMultiConexityFaces(NCollection_Sequence<TopoDS_Shape> Lface,
-                                              NCollection_Map<TopoDS_Shape> aMapMultiConnectEdges,
-                                              NCollection_Sequence<TopoDS_Shape> SeqShells,
-                                              NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aMapFaceShells,
-                                              NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMapEdgeFaces,
-                                              NCollection_Sequence<TopoDS_Shape> ErrFaces,
+    private static bool AddMultiConexityFaces(NCollection_Sequence<Shape> Lface,
+                                              NCollection_Map<Shape> aMapMultiConnectEdges,
+                                              NCollection_Sequence<Shape> SeqShells,
+                                              NCollection_DataMap<Shape, Shape> aMapFaceShells,
+                                              NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMapEdgeFaces,
+                                              NCollection_Sequence<Shape> ErrFaces,
                                               bool NonManifold)
     {
         bool done = false;
         //  BRep_Builder aB;
-        var llPosibleShells = new NCollection_Sequence<TopoDS_Shape>();
-        var AddShapes       = new NCollection_Sequence<TopoDS_Shape>();
+        var llPosibleShells = new NCollection_Sequence<Shape>();
+        var AddShapes       = new NCollection_Sequence<Shape>();
         for (int i1 = 1; i1 <= Lface.Length(); i1++)
         {
-            TopoDS_Shape aShape = Lface.Value(i1);
+            Shape aShape = Lface.Value(i1);
 
             int aNbMultEdges = 0;
 
             // Finds faces having only multiconnexity boundary.
-            for (var aItWires = new TopoDS_Iterator(aShape, false); aItWires.More(); aItWires.Next())
+            for (var aItWires = new Iterator(aShape, false); aItWires.More(); aItWires.Next())
             {
                 int aNbEdges = 0;
-                for (var aItEdges = new TopoDS_Iterator(aItWires.Value(), false); aItEdges.More(); aItEdges.Next(), aNbEdges++)
+                for (var aItEdges = new Iterator(aItWires.Value(), false); aItEdges.More(); aItEdges.Next(), aNbEdges++)
                 {
-                    TopoDS_Shape edge = aItEdges.Value();
+                    Shape edge = aItEdges.Value();
                     if (!aMapMultiConnectEdges.Contains(edge))
                     {
                         continue;
@@ -664,22 +668,22 @@ public class ShapeFix_Shell : ShapeFix_Root
         }
 
         // Attempt to create shell from unconnected which have not only multiconnexity boundary.
-        var aTmpShells = new NCollection_Sequence<TopoDS_Shape>();
+        var aTmpShells = new NCollection_Sequence<Shape>();
         if (!llPosibleShells.IsEmpty())
         {
-            var aMap          = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            var aTmp          = new NCollection_Sequence<TopoDS_Shape>();
-            var aTmpFaceShell = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            var aMap          = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var aTmp          = new NCollection_Sequence<Shape>();
+            var aTmpFaceShell = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
             if (GetShells(llPosibleShells, aMap, aTmpShells, aTmpFaceShell, aTmp))
             {
                 for (int kk = 1; kk <= aTmpShells.Length(); kk++)
                 {
-                    TopoDS_Shape aSh      = aTmpShells.Value(kk);
-                    var          mapEdges = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+                    Shape aSh      = aTmpShells.Value(kk);
+                    var          mapEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
                     if (GetFreeEdges(aSh, mapEdges))
                     {
                         int nbedge = 0;
-                        foreach (TopoDS_Shape aKey in mapEdges)
+                        foreach (Shape aKey in mapEdges)
                         {
                             if (aMapMultiConnectEdges.Contains(aKey))
                             {
@@ -698,28 +702,28 @@ public class ShapeFix_Shell : ShapeFix_Root
         // Add chosen faces to shells.
         for (int k1 = 1; k1 <= AddShapes.Length(); k1++)
         {
-            var          MapOtherShells = new NCollection_DataMap<TopoDS_Shape, int>(TopTools_ShapeMapHasher.Instance);
-            var          dire           = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            var          reve           = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            TopoDS_Shape aSh            = AddShapes.Value(k1);
-            var          mapEdges       = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            var          MapOtherShells = new NCollection_DataMap<Shape, int>(ShapeHasher.Instance);
+            var          dire           = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var          reve           = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            Shape aSh            = AddShapes.Value(k1);
+            var          mapEdges       = new NCollection_Map<Shape>(ShapeHasher.Instance);
             if (!GetFreeEdges(aSh, mapEdges))
             {
                 continue;
             }
-            var lfaces = new NCollection_List<TopoDS_Shape>();
+            var lfaces = new NCollection_List<Shape>();
 
             // Fill MapOtherShells which will contain shells with orientation in which selected shape aSh
             // will be add.
 
-            foreach (TopoDS_Shape aKey in mapEdges)
+            foreach (Shape aKey in mapEdges)
             {
                 if (!aMapMultiConnectEdges.Contains(aKey))
                 {
                     continue;
                 }
-                TopoDS_Edge edge = TopoDS.Edge(aKey);
-                if (edge.Orientation() == TopAbs_FORWARD)
+                Edge edge = ShapeCasts.Edge(aKey);
+                if (edge.Orientation() == Forward)
                 {
                     dire.Add(edge);
                 }
@@ -727,30 +731,30 @@ public class ShapeFix_Shell : ShapeFix_Root
                 {
                     reve.Add(edge);
                 }
-                NCollection_List<TopoDS_Shape> lf = aMapEdgeFaces.FindFromKey(edge);
-                lfaces.Append(new NCollection_List<TopoDS_Shape>(lf));
+                NCollection_List<Shape> lf = aMapEdgeFaces.FindFromKey(edge);
+                lfaces.Append(new NCollection_List<Shape>(lf));
             }
-            foreach (TopoDS_Shape aF in lfaces)
+            foreach (Shape aF in lfaces)
             {
                 if (!aMapFaceShells.IsBound(aF))
                 {
                     continue;
                 }
 
-                TopoDS_Shape aOthershell = aMapFaceShells.Find(aF);
+                Shape aOthershell = aMapFaceShells.Find(aF);
                 if (MapOtherShells.IsBound(aOthershell))
                 {
                     continue;
                 }
-                if (!NonManifold && BRep_Tool.IsClosed(aOthershell))
+                if (!NonManifold && Tool.IsClosed(aOthershell))
                 {
                     continue;
                 }
 
-                var mapShellEdges = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+                var mapShellEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
                 GetFreeEdges(aOthershell, mapShellEdges);
                 bool isAdd = true;
-                foreach (TopoDS_Shape aKey1 in mapEdges)
+                foreach (Shape aKey1 in mapEdges)
                 {
                     if (!isAdd)
                     {
@@ -766,20 +770,20 @@ public class ShapeFix_Shell : ShapeFix_Root
                 int nbdir = 0, nbrev = 0;
 
                 // add only free face whome all edges contains in the shell as open boundary.
-                foreach (TopoDS_Shape aKeyS in mapShellEdges)
+                foreach (Shape aKeyS in mapShellEdges)
                 {
-                    TopoDS_Edge edgeS = TopoDS.Edge(aKeyS);
+                    Edge edgeS = ShapeCasts.Edge(aKeyS);
                     if (!aMapMultiConnectEdges.Contains(edgeS))
                     {
                         continue;
                     }
-                    if ((edgeS.Orientation() == TopAbs_FORWARD && dire.Contains(edgeS))
-                        || (edgeS.Orientation() == TopAbs_REVERSED && reve.Contains(edgeS)))
+                    if ((edgeS.Orientation() == Forward && dire.Contains(edgeS))
+                        || (edgeS.Orientation() == Reversed && reve.Contains(edgeS)))
                     {
                         nbrev++;
                     }
-                    else if ((edgeS.Orientation() == TopAbs_FORWARD && reve.Contains(edgeS))
-                             || (edgeS.Orientation() == TopAbs_REVERSED && dire.Contains(edgeS)))
+                    else if ((edgeS.Orientation() == Forward && reve.Contains(edgeS))
+                             || (edgeS.Orientation() == Reversed && dire.Contains(edgeS)))
                     {
                         nbdir++;
                     }
@@ -817,10 +821,10 @@ public class ShapeFix_Shell : ShapeFix_Root
                 }
                 ind++;
                 int          isRev     = MapOtherShells.Find(SeqShells.Value(l));
-                TopoDS_Shape anewShape = (isRev != 0 ? aSh.Reversed() : aSh);
+                Shape anewShape = (isRev != 0 ? aSh.Reversed() : aSh);
 
-                var          aB1    = new BRep_Builder();
-                TopoDS_Shape aShell = SeqShells.Value(l);
+                var          aB1    = new BrepBuilder();
+                Shape aShell = SeqShells.Value(l);
                 if (ind == 1 || !NonManifold)
                 {
                     if (ind == 1)
@@ -828,7 +832,7 @@ public class ShapeFix_Shell : ShapeFix_Root
                         FirstRev = isRev;
                         FirstInd = l;
                     }
-                    for (var aE = new TopExp_Explorer(anewShape, TopAbs_FACE); aE.More(); aE.Next())
+                    for (var aE = new Explorer(anewShape, ShapeType.Face); aE.More(); aE.Next())
                     {
                         aB1.Add(aShell, aE.Current());
                     }
@@ -838,9 +842,9 @@ public class ShapeFix_Shell : ShapeFix_Root
                 {
                     bool isReversed = ((isRev != 0) || FirstRev != 0) && (!(isRev != 0) || FirstRev == 0);
                     aShell          = SeqShells.Value(FirstInd);
-                    for (var aItF = new TopoDS_Iterator(SeqShells.Value(l), false); aItF.More(); aItF.Next())
+                    for (var aItF = new Iterator(SeqShells.Value(l), false); aItF.More(); aItF.Next())
                     {
-                        TopoDS_Shape nF = (isReversed ? aItF.Value().Reversed() : aItF.Value());
+                        Shape nF = (isReversed ? aItF.Value().Reversed() : aItF.Value());
                         aB1.Add(aShell, nF);
                     }
                     SeqShells.ChangeValue(FirstInd) = aShell;
@@ -850,7 +854,7 @@ public class ShapeFix_Shell : ShapeFix_Root
 
             dire.Clear();
             reve.Clear();
-            for (var aEt = new TopExp_Explorer(aSh, TopAbs_FACE); aEt.More(); aEt.Next())
+            for (var aEt = new Explorer(aSh, ShapeType.Face); aEt.More(); aEt.Next())
             {
                 for (int kk = 1; kk <= Lface.Length(); kk++)
                 {
@@ -897,7 +901,7 @@ public class ShapeFix_Shell : ShapeFix_Root
     //            For case of compsolid when a few shells are created from
     //            the same set of faces.
     //=======================================================================
-    private static void GetClosedShells(NCollection_Sequence<TopoDS_Shape> Shells, NCollection_Sequence<TopoDS_Shape> aRemainShells)
+    private static void GetClosedShells(NCollection_Sequence<Shape> Shells, NCollection_Sequence<Shape> aRemainShells)
     {
         var aBoxes = new NCollection_Array1<Box>(1, Shells.Length());
         for (int i = 1; i <= Shells.Length(); i++)
@@ -938,34 +942,34 @@ public class ShapeFix_Shell : ShapeFix_Root
     // function : GlueClosedCandidate
     // purpose  : First, attempt to create closed shells from sequence of open shells.
     //=======================================================================
-    private static void GlueClosedCandidate(NCollection_Sequence<TopoDS_Shape> OpenShells,
-                                            NCollection_Map<TopoDS_Shape> aMapMultiConnectEdges,
-                                            NCollection_Sequence<TopoDS_Shape> aSeqNewShells)
+    private static void GlueClosedCandidate(NCollection_Sequence<Shape> OpenShells,
+                                            NCollection_Map<Shape> aMapMultiConnectEdges,
+                                            NCollection_Sequence<Shape> aSeqNewShells)
     {
         // Creating new shells if some open shells contain the same free boundary.
         for (int i = 1; i < OpenShells.Length(); i++)
         {
-            TopoDS_Shape aShell    = OpenShells.Value(i);
-            var          mapEdges1 = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            var          dire      = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            var          reve      = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            Shape aShell    = OpenShells.Value(i);
+            var          mapEdges1 = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var          dire      = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var          reve      = new NCollection_Map<Shape>(ShapeHasher.Instance);
             if (!GetFreeEdges(aShell, mapEdges1))
             {
                 continue;
             }
 
-            foreach (TopoDS_Shape aKey in mapEdges1)
+            foreach (Shape aKey in mapEdges1)
             {
-                TopoDS_Edge edge1 = TopoDS.Edge(aKey);
+                Edge edge1 = ShapeCasts.Edge(aKey);
                 if (!aMapMultiConnectEdges.Contains(edge1))
                 {
                     break;
                 }
-                if (edge1.Orientation() == TopAbs_FORWARD)
+                if (edge1.Orientation() == Forward)
                 {
                     dire.Add(edge1);
                 }
-                else if (edge1.Orientation() == TopAbs_REVERSED)
+                else if (edge1.Orientation() == Reversed)
                 {
                     reve.Add(edge1);
                 }
@@ -977,24 +981,24 @@ public class ShapeFix_Shell : ShapeFix_Root
 
             // Filling map MapOtherShells which contains candidate to creation of closed shell
             //  with aShell.
-            var MapOtherShells = new NCollection_DataMap<TopoDS_Shape, bool>(TopTools_ShapeMapHasher.Instance);
+            var MapOtherShells = new NCollection_DataMap<Shape, bool>(ShapeHasher.Instance);
             for (int j = i + 1; j <= OpenShells.Length(); j++)
             {
                 bool         isAddShell = true;
                 bool         isReversed = false;
-                var          mapEdges2  = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                TopoDS_Shape aShell2    = OpenShells.Value(j);
+                var          mapEdges2  = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                Shape aShell2    = OpenShells.Value(j);
                 if (!GetFreeEdges(aShell2, mapEdges2))
                 {
                     continue;
                 }
-                foreach (TopoDS_Shape aKey2 in mapEdges2)
+                foreach (Shape aKey2 in mapEdges2)
                 {
                     if (!isAddShell)
                     {
                         break;
                     }
-                    TopoDS_Edge edge2 = TopoDS.Edge(aKey2);
+                    Edge edge2 = ShapeCasts.Edge(aKey2);
                     if (!aMapMultiConnectEdges.Contains(edge2))
                     {
                         isAddShell = false;
@@ -1002,8 +1006,8 @@ public class ShapeFix_Shell : ShapeFix_Root
                         // continue;
                     }
                     isAddShell = (dire.Contains(edge2) || reve.Contains(edge2));
-                    if ((edge2.Orientation() == TopAbs_FORWARD && dire.Contains(edge2))
-                        || (edge2.Orientation() == TopAbs_REVERSED && reve.Contains(edge2)))
+                    if ((edge2.Orientation() == Forward && dire.Contains(edge2))
+                        || (edge2.Orientation() == Reversed && reve.Contains(edge2)))
                     {
                         isReversed = true;
                     }
@@ -1023,10 +1027,10 @@ public class ShapeFix_Shell : ShapeFix_Root
             if (!MapOtherShells.IsEmpty())
             {
                 // Case of compsolid when more than two shells have the same free boundary.
-                var aSeqCandidate = new NCollection_Sequence<TopoDS_Shape>();
+                var aSeqCandidate = new NCollection_Sequence<Shape>();
                 aSeqCandidate.Append(OpenShells.Value(i));
 
-                foreach (KeyValuePair<TopoDS_Shape, bool> aIt in MapOtherShells)
+                foreach (KeyValuePair<Shape, bool> aIt in MapOtherShells)
                 {
                     aSeqCandidate.Append(aIt.Key);
                 }
@@ -1034,15 +1038,15 @@ public class ShapeFix_Shell : ShapeFix_Root
                 // Creation of all possible shells from chosen candidate.
                 //  And the addition of them to temporary sequence.
 
-                var aTmpSeq = new NCollection_Sequence<TopoDS_Shape>();
+                var aTmpSeq = new NCollection_Sequence<Shape>();
                 for (int k = 1; k <= aSeqCandidate.Length(); k++)
                 {
                     for (int l = k + 1; l <= aSeqCandidate.Length(); l++)
                     {
-                        var aNewSh = new TopoDS_Shell();
-                        var aB     = new BRep_Builder();
+                        var aNewSh = new Shell();
+                        var aB     = new BrepBuilder();
                         aB.MakeShell(ref aNewSh);
-                        for (var aIt1 = new TopoDS_Iterator(aSeqCandidate.Value(k), false); aIt1.More(); aIt1.Next())
+                        for (var aIt1 = new Iterator(aSeqCandidate.Value(k), false); aIt1.More(); aIt1.Next())
                         {
                             aB.Add(aNewSh, aIt1.Value());
                         }
@@ -1051,9 +1055,9 @@ public class ShapeFix_Shell : ShapeFix_Root
                         {
                             isRev = (isRev == MapOtherShells.Find(aSeqCandidate.Value(k)));
                         }
-                        for (var aExp = new TopExp_Explorer(aSeqCandidate.Value(l), TopAbs_FACE); aExp.More(); aExp.Next())
+                        for (var aExp = new Explorer(aSeqCandidate.Value(l), ShapeType.Face); aExp.More(); aExp.Next())
                         {
-                            TopoDS_Shape aFace = (isRev ? aExp.Current().Reversed() : aExp.Current());
+                            Shape aFace = (isRev ? aExp.Current().Reversed() : aExp.Current());
                             aB.Add(aNewSh, aFace);
                         }
                         aTmpSeq.Append(aNewSh);
@@ -1061,7 +1065,7 @@ public class ShapeFix_Shell : ShapeFix_Root
                 }
 
                 // Choice from temporary sequence shells contains different set of faces (case of compsolid)
-                var aRemainShells = new NCollection_Sequence<TopoDS_Shape>();
+                var aRemainShells = new NCollection_Sequence<Shape>();
                 GetClosedShells(aTmpSeq, aRemainShells);
                 aSeqNewShells.Append(aRemainShells);
 
@@ -1076,9 +1080,9 @@ public class ShapeFix_Shell : ShapeFix_Root
             }
             else
             {
-                var          aB         = new BRep_Builder();
-                TopoDS_Shape aNewShell  = aShell;
-                TopoDS_Shape addShell   = new();
+                var          aB         = new BrepBuilder();
+                Shape aNewShell  = aShell;
+                Shape addShell   = new();
                 bool         isReversed = false;
                 for (int j1 = i + 1; j1 <= OpenShells.Length(); j1++)
                 {
@@ -1091,9 +1095,9 @@ public class ShapeFix_Shell : ShapeFix_Root
                     break;
                 }
 
-                for (var aExpF = new TopExp_Explorer(addShell, TopAbs_FACE); aExpF.More(); aExpF.Next())
+                for (var aExpF = new Explorer(addShell, ShapeType.Face); aExpF.More(); aExpF.Next())
                 {
-                    TopoDS_Shape aFace = aExpF.Current();
+                    Shape aFace = aExpF.Current();
                     if (isReversed)
                     {
                         aFace.Reverse();
@@ -1112,16 +1116,16 @@ public class ShapeFix_Shell : ShapeFix_Root
     // function : CreateNonManifoldShells
     // purpose  : Attempt to create max possible shells from open shells.
     //=======================================================================
-    private static void CreateNonManifoldShells(NCollection_Sequence<TopoDS_Shape> SeqShells,
-                                                NCollection_Map<TopoDS_Shape> aMapMultiConnectEdges)
+    private static void CreateNonManifoldShells(NCollection_Sequence<Shape> SeqShells,
+                                                NCollection_Map<Shape> aMapMultiConnectEdges)
     {
-        var aMap = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+        var aMap = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         for (int i = 1; i <= SeqShells.Length(); i++)
         {
-            TopoDS_Shape aShell = SeqShells.Value(i);
-            var          medeg  = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(aShell, TopAbs_EDGE, medeg);
-            foreach (TopoDS_Shape ae in aMapMultiConnectEdges)
+            Shape aShell = SeqShells.Value(i);
+            var          medeg  = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            Exploration.MapShapes(aShell, ShapeType.Edge, medeg);
+            foreach (Shape ae in aMapMultiConnectEdges)
             {
                 // for(TopExp_Explorer aExp(aShell,TopAbs_EDGE); aExp.More(); aExp.Next(),nbe++) {
                 // TopoDS_Shape ae = aExp.Current();
@@ -1134,28 +1138,28 @@ public class ShapeFix_Shell : ShapeFix_Root
                     }
                     else
                     {
-                        var al = new NCollection_List<TopoDS_Shape>();
+                        var al = new NCollection_List<Shape>();
                         al.Append(aShell);
                         aMap.Add(ae, al);
                     }
                 }
             }
         }
-        var aMapShells = new NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aMapShells = new NCollection_IndexedDataMap<Shape, Shape>(ShapeHasher.Instance);
         for (int j = 1; j <= aMap.Extent(); j++)
         {
-            NCollection_List<TopoDS_Shape> LShells   = aMap.FindFromIndex(j);
-            var                            aNewShell = new TopoDS_Shell();
-            var                            aB        = new BRep_Builder();
+            NCollection_List<Shape> LShells   = aMap.FindFromIndex(j);
+            var                            aNewShell = new Shell();
+            var                            aB        = new BrepBuilder();
             aB.MakeShell(ref aNewShell);
-            var  mapmerge = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            var  mapmerge = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
             bool ismerged = false;
             int  num      = 1;
-            for (var alit = new NCollection_List<TopoDS_Shape>.Iterator(LShells); alit.More(); alit.Next(), num++)
+            for (var alit = new NCollection_List<Shape>.Iterator(LShells); alit.More(); alit.Next(), num++)
             {
                 if (!aMapShells.Contains(alit.Value()))
                 {
-                    for (var aEf = new TopExp_Explorer(alit.Value(), TopAbs_FACE); aEf.More(); aEf.Next())
+                    for (var aEf = new Explorer(alit.Value(), ShapeType.Face); aEf.More(); aEf.Next())
                     {
                         aB.Add(aNewShell, aEf.Current());
                     }
@@ -1164,10 +1168,10 @@ public class ShapeFix_Shell : ShapeFix_Root
                 }
                 else if (ismerged)
                 {
-                    TopoDS_Shape arshell = aMapShells.FindFromKey(alit.Value());
+                    Shape arshell = aMapShells.FindFromKey(alit.Value());
                     while (aMapShells.Contains(arshell))
                     {
-                        TopoDS_Shape ss = aMapShells.FindFromKey(arshell);
+                        Shape ss = aMapShells.FindFromKey(arshell);
                         if (ss.IsSame(arshell))
                         {
                             break;
@@ -1177,7 +1181,7 @@ public class ShapeFix_Shell : ShapeFix_Root
 
                     if (!mapmerge.Contains(arshell))
                     {
-                        for (var aEf = new TopExp_Explorer(arshell, TopAbs_FACE); aEf.More(); aEf.Next())
+                        for (var aEf = new Explorer(arshell, ShapeType.Face); aEf.More(); aEf.Next())
                         {
                             aB.Add(aNewShell, aEf.Current());
                         }
@@ -1186,10 +1190,10 @@ public class ShapeFix_Shell : ShapeFix_Root
                 }
                 else
                 {
-                    TopoDS_Shape arshell = aMapShells.FindFromKey(alit.Value());
+                    Shape arshell = aMapShells.FindFromKey(alit.Value());
                     while (aMapShells.Contains(arshell))
                     {
-                        TopoDS_Shape ss = aMapShells.FindFromKey(arshell);
+                        Shape ss = aMapShells.FindFromKey(arshell);
                         if (ss.IsSame(arshell))
                         {
                             break;
@@ -1198,7 +1202,7 @@ public class ShapeFix_Shell : ShapeFix_Root
                     }
                     if (num == 1)
                     {
-                        for (var aEf = new TopExp_Explorer(arshell, TopAbs_FACE); aEf.More(); aEf.Next())
+                        for (var aEf = new Explorer(arshell, ShapeType.Face); aEf.More(); aEf.Next())
                         {
                             aB.Add(aNewShell, aEf.Current());
                         }
@@ -1207,7 +1211,7 @@ public class ShapeFix_Shell : ShapeFix_Root
                     }
                     else if (!mapmerge.Contains(arshell))
                     {
-                        for (var aEf = new TopExp_Explorer(arshell, TopAbs_FACE); aEf.More(); aEf.Next())
+                        for (var aEf = new Explorer(arshell, ShapeType.Face); aEf.More(); aEf.Next())
                         {
                             aB.Add(aNewShell, aEf.Current());
                         }
@@ -1221,7 +1225,7 @@ public class ShapeFix_Shell : ShapeFix_Root
                 // and IndexedDataMap::Add of a key already bound keeps its first value either way
                 for (int m = 1; m <= mapmerge.Extent(); m++)
                 {
-                    TopoDS_Shape oldShell = mapmerge.FindKey(m);
+                    Shape oldShell = mapmerge.FindKey(m);
                     // while(aMapShells.Contains(oldShell)) {
                     //   TopoDS_Shape ss = aMapShells.FindFromKey(oldShell);
                     //   if(ss.IsSame(oldShell)) break;
@@ -1231,15 +1235,15 @@ public class ShapeFix_Shell : ShapeFix_Root
                 }
             }
         }
-        var MapNewShells = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var MapNewShells = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         for (int nn = 1; nn <= SeqShells.Length(); nn++)
         {
             if (aMapShells.Contains(SeqShells.Value(nn)))
             {
-                TopoDS_Shape aNewShell = aMapShells.FindFromKey(SeqShells.Value(nn));
+                Shape aNewShell = aMapShells.FindFromKey(SeqShells.Value(nn));
                 while (aMapShells.Contains(aNewShell))
                 {
-                    TopoDS_Shape ss = aMapShells.FindFromKey(aNewShell);
+                    Shape ss = aMapShells.FindFromKey(aNewShell);
                     if (ss.IsSame(aNewShell))
                     {
                         break;
@@ -1261,10 +1265,10 @@ public class ShapeFix_Shell : ShapeFix_Root
     // function : CreateClosedShell
     // purpose  : Attempt to create max possible shells from open shells.
     //=======================================================================
-    private static void CreateClosedShell(NCollection_Sequence<TopoDS_Shape> OpenShells,
-                                          NCollection_Map<TopoDS_Shape> aMapMultiConnectEdges)
+    private static void CreateClosedShell(NCollection_Sequence<Shape> OpenShells,
+                                          NCollection_Map<Shape> aMapMultiConnectEdges)
     {
-        var aNewShells = new NCollection_Sequence<TopoDS_Shape>();
+        var aNewShells = new NCollection_Sequence<Shape>();
         // First, attempt to create closed shells.
         GlueClosedCandidate(OpenShells, aMapMultiConnectEdges, aNewShells);
 
@@ -1272,29 +1276,29 @@ public class ShapeFix_Shell : ShapeFix_Root
         for (int i = 1; i < OpenShells.Length(); i++)
         {
             bool         isAddShell = false;
-            TopoDS_Shape aShell     = OpenShells.Value(i);
+            Shape aShell     = OpenShells.Value(i);
             bool         isReversed = false;
             for (int j = i + 1; j <= OpenShells.Length(); j++)
             {
-                var mapEdges1 = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                var dire      = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                var reve      = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+                var mapEdges1 = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                var dire      = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                var reve      = new NCollection_Map<Shape>(ShapeHasher.Instance);
                 if (!GetFreeEdges(aShell, mapEdges1))
                 {
                     break;
                 }
-                foreach (TopoDS_Shape aKey in mapEdges1)
+                foreach (Shape aKey in mapEdges1)
                 {
-                    TopoDS_Edge edge1 = TopoDS.Edge(aKey);
+                    Edge edge1 = ShapeCasts.Edge(aKey);
                     if (!aMapMultiConnectEdges.Contains(edge1))
                     {
                         continue;
                     }
-                    if (edge1.Orientation() == TopAbs_FORWARD)
+                    if (edge1.Orientation() == Forward)
                     {
                         dire.Add(edge1);
                     }
-                    else if (edge1.Orientation() == TopAbs_REVERSED)
+                    else if (edge1.Orientation() == Reversed)
                     {
                         reve.Add(edge1);
                     }
@@ -1303,15 +1307,15 @@ public class ShapeFix_Shell : ShapeFix_Root
                 {
                     break;
                 }
-                var          mapEdges2 = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                TopoDS_Shape aShell2   = OpenShells.Value(j);
+                var          mapEdges2 = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                Shape aShell2   = OpenShells.Value(j);
                 if (!GetFreeEdges(aShell2, mapEdges2))
                 {
                     continue;
                 }
-                foreach (TopoDS_Shape aKey2 in mapEdges2)
+                foreach (Shape aKey2 in mapEdges2)
                 {
-                    TopoDS_Edge edge2 = TopoDS.Edge(aKey2);
+                    Edge edge2 = ShapeCasts.Edge(aKey2);
                     if (!aMapMultiConnectEdges.Contains(edge2))
                     {
                         continue;
@@ -1321,8 +1325,8 @@ public class ShapeFix_Shell : ShapeFix_Root
                         continue;
                     }
                     isAddShell = true;
-                    if ((edge2.Orientation() == TopAbs_FORWARD && dire.Contains(edge2))
-                        || (edge2.Orientation() == TopAbs_REVERSED && reve.Contains(edge2)))
+                    if ((edge2.Orientation() == Forward && dire.Contains(edge2))
+                        || (edge2.Orientation() == Reversed && reve.Contains(edge2)))
                     {
                         isReversed = true;
                     }
@@ -1332,11 +1336,11 @@ public class ShapeFix_Shell : ShapeFix_Root
                 {
                     continue;
                 }
-                var aB = new BRep_Builder();
+                var aB = new BrepBuilder();
 
-                for (var aExpF21 = new TopExp_Explorer(OpenShells.Value(j), TopAbs_FACE); aExpF21.More(); aExpF21.Next())
+                for (var aExpF21 = new Explorer(OpenShells.Value(j), ShapeType.Face); aExpF21.More(); aExpF21.Next())
                 {
-                    TopoDS_Shape aFace = aExpF21.Current();
+                    Shape aFace = aExpF21.Current();
                     if (isReversed)
                     {
                         aFace.Reverse();
@@ -1362,28 +1366,28 @@ public class ShapeFix_Shell : ShapeFix_Root
     /// replacement of the shell is recorded in the context.
     /// </summary>
     /// <remarks>A shell holding frozen shapes is copied first (see the class's remarks).</remarks>
-    public bool FixFaceOrientation(in TopoDS_Shell shell, bool isAccountMultiConex = true, bool NonManifold = false)
+    public bool FixFaceOrientation(in Shell shell, bool isAccountMultiConex = true, bool NonManifold = false)
     {
-        var anEntry = new BRepTools_CopyAtEntry(shell, Context());
-        bool done = fixFaceOrientation(TopoDS.Shell(anEntry.Shape()), isAccountMultiConex, NonManifold);
+        var anEntry = new CopyAtEntry(shell, Context());
+        bool done = fixFaceOrientation(ShapeCasts.Shell(anEntry.Shape()), isAccountMultiConex, NonManifold);
         finish(anEntry);
         return done;
     }
 
-    private bool fixFaceOrientation(in TopoDS_Shell shell, bool isAccountMultiConex, bool NonManifold)
+    private bool fixFaceOrientation(in Shell shell, bool isAccountMultiConex, bool NonManifold)
     {
         // myStatus = ShapeExtend::EncodeStatus (ShapeExtend_OK);
         bool done           = false;
-        var  aSeqShells     = new NCollection_Sequence<TopoDS_Shape>();
-        var  aErrFaces      = new NCollection_Sequence<TopoDS_Shape>(); // Compound of faces like to Mebiuce leaf.
-        var  Lface          = new NCollection_Sequence<TopoDS_Shape>();
-        var  aMapFaceShells = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var  aSeqShells     = new NCollection_Sequence<Shape>();
+        var  aErrFaces      = new NCollection_Sequence<Shape>(); // Compound of faces like to Mebiuce leaf.
+        var  Lface          = new NCollection_Sequence<Shape>();
+        var  aMapFaceShells = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
         myShell = shell;
         myShape = shell;
         int aNumMultShell = 0;
         int nbF           = 0;
-        var aMapAdded     = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        for (var iter = new TopoDS_Iterator(shell); iter.More(); iter.Next(), nbF++)
+        var aMapAdded     = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        for (var iter = new Iterator(shell); iter.More(); iter.Next(), nbF++)
         {
             if (aMapAdded.Add(iter.Value()))
             {
@@ -1395,17 +1399,17 @@ public class ShapeFix_Shell : ShapeFix_Root
             done = true;
         }
 
-        var aMapEdgeFaces = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(myShell, TopAbs_EDGE, TopAbs_FACE, aMapEdgeFaces);
-        var  aMapMultiConnectEdges = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aMapEdgeFaces = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(myShell, ShapeType.Edge, ShapeType.Face, aMapEdgeFaces);
+        var  aMapMultiConnectEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
         bool isFreeBoundaries      = false;
         for (int k = 1; k <= aMapEdgeFaces.Extent(); k++)
         {
             int aFaceCount = aMapEdgeFaces.FindFromIndex(k).Extent();
             if (!isFreeBoundaries && aFaceCount == 1)
             {
-                TopoDS_Edge E = TopoDS.Edge(aMapEdgeFaces.FindKey(k));
-                if (!BRep_Tool.Degenerated(E))
+                Edge E = ShapeCasts.Edge(aMapEdgeFaces.FindKey(k));
+                if (!Tool.Degenerated(E))
                 {
                     isFreeBoundaries = true;
                 }
@@ -1416,7 +1420,7 @@ public class ShapeFix_Shell : ShapeFix_Root
                 aMapMultiConnectEdges.Add(aMapEdgeFaces.FindKey(k));
             }
         }
-        if (BRep_Tool.IsClosed(myShell) ? isFreeBoundaries : !isFreeBoundaries)
+        if (Tool.IsClosed(myShell) ? isFreeBoundaries : !isFreeBoundaries)
         {
             myShell.Closed(!isFreeBoundaries);
             SendWarning(new Msg("FixAdvShell.FixClosedFlag.MSG0")); // Shell has incorrect flag isClosed
@@ -1425,7 +1429,7 @@ public class ShapeFix_Shell : ShapeFix_Root
         // Gets possible shells with taking in account of multiconnexity.
         while (isGetShells && Lface.Length() != 0)
         {
-            var aTmpSeqShells = new NCollection_Sequence<TopoDS_Shape>();
+            var aTmpSeqShells = new NCollection_Sequence<Shape>();
             if (GetShells(Lface, aMapMultiConnectEdges, aTmpSeqShells, aMapFaceShells, aErrFaces))
             {
                 done = true;
@@ -1460,9 +1464,9 @@ public class ShapeFix_Shell : ShapeFix_Root
         if (!aErrFaces.IsEmpty())
         {
             // if Shell contains of Mebius faces one shell will be created from each those face.
-            var B = new BRep_Builder();
+            var B = new BrepBuilder();
             B.MakeCompound(ref myErrFaces);
-            var aCompShells = new TopoDS_Compound();
+            var aCompShells = new Compound();
             B.MakeCompound(ref aCompShells);
             for (int n = 1; n <= aErrFaces.Length(); n++)
             {
@@ -1475,7 +1479,7 @@ public class ShapeFix_Shell : ShapeFix_Root
                     B.Add(aCompShells, aSeqShells.Value(1));
                     for (int n1 = 1; n1 <= aErrFaces.Length(); n1++)
                     {
-                        var aSh = new TopoDS_Shell();
+                        var aSh = new Shell();
                         B.MakeShell(ref aSh);
                         B.Add(aSh, aErrFaces.Value(n1));
                         B.Add(aCompShells, aSh);
@@ -1490,7 +1494,7 @@ public class ShapeFix_Shell : ShapeFix_Root
                     }
                     for (int n1 = 1; n1 <= aErrFaces.Length(); n1++)
                     {
-                        var aSh = new TopoDS_Shell();
+                        var aSh = new Shell();
                         B.MakeShell(ref aSh);
                         B.Add(aSh, aErrFaces.Value(n1));
                         B.Add(aCompShells, aSh);
@@ -1506,11 +1510,11 @@ public class ShapeFix_Shell : ShapeFix_Root
         }
         if (aNumMultShell > 1)
         {
-            var OpenShells = new NCollection_Sequence<TopoDS_Shape>();
+            var OpenShells = new NCollection_Sequence<Shape>();
             for (int i1 = 1; i1 <= aSeqShells.Length(); i1++)
             {
-                TopoDS_Shape aShell = aSeqShells.Value(i1);
-                if (!BRep_Tool.IsClosed(aShell))
+                Shape aShell = aSeqShells.Value(i1);
+                if (!Tool.IsClosed(aShell))
                 {
                     OpenShells.Append(aShell);
                     aSeqShells.Remove(i1--);
@@ -1530,8 +1534,8 @@ public class ShapeFix_Shell : ShapeFix_Root
         {
             for (int i = 1; i <= Lface.Length(); i++)
             {
-                var aB       = new BRep_Builder();
-                var OneShell = new TopoDS_Shell();
+                var aB       = new BrepBuilder();
+                var OneShell = new Shell();
                 aB.MakeShell(ref OneShell);
                 aB.Add(OneShell, Lface.Value(i));
                 aSeqShells.Append(OneShell);
@@ -1547,14 +1551,14 @@ public class ShapeFix_Shell : ShapeFix_Root
         }
         if (aSeqShells.Length() == 1)
         {
-            myShell    = TopoDS.Shell(aSeqShells.Value(1));
+            myShell    = ShapeCasts.Shell(aSeqShells.Value(1));
             myShape    = myShell;
             myNbShells = 1;
         }
         else
         {
-            var B           = new BRep_Builder();
-            var aCompShells = new TopoDS_Compound();
+            var B           = new BrepBuilder();
+            var aCompShells = new Compound();
             B.MakeCompound(ref aCompShells);
             for (int i = 1; i <= aSeqShells.Length(); i++)
             {
@@ -1589,25 +1593,25 @@ public class ShapeFix_Shell : ShapeFix_Root
     public bool Status(ShapeExtend_Status status) => ShapeExtend.DecodeStatus(myStatus, status);
 
     /// <summary>Returns the fixed shell (or the first of the subshells made), frozen.</summary>
-    public TopoDS_Shell Shell() => TopoDS.Shell(Published(myShell));
+    public Shell Shell() => ShapeCasts.Shell(Published(myShell));
 
     /// <summary>Returns the fixed shell, unfrozen, for ported callers working on shapes they own.</summary>
-    internal TopoDS_Shell InternalShell() => myShell;
+    internal Shell InternalShell() => myShell;
 
     /// <summary>Returns the result: a shell, or a compound of the shells made, frozen.</summary>
-    public TopoDS_Shape Shape() => Published(myShape);
+    public Shape Shape() => Published(myShape);
 
     /// <summary>Returns the result, unfrozen, for ported callers working on shapes they own.</summary>
-    internal TopoDS_Shape InternalShape() => myShape;
+    internal Shape InternalShape() => myShape;
 
     /// <summary>Returns the number of shells made.</summary>
     public int NbShells() => myNbShells;
 
     /// <summary>Returns the faces that couldn't be oriented (Moebius-like), as a compound, frozen.</summary>
-    public TopoDS_Compound ErrorFaces() => TopoDS.Compound(Published(myErrFaces));
+    public Compound ErrorFaces() => ShapeCasts.Compound(Published(myErrFaces));
 
     /// <summary>The faces that couldn't be oriented, unfrozen.</summary>
-    internal TopoDS_Compound InternalErrorFaces() => myErrFaces;
+    internal Compound InternalErrorFaces() => myErrFaces;
 
     /// <summary>Returns the face fixing tool.</summary>
     public ShapeFix_Face FixFaceTool() => myFixFace;
@@ -1654,19 +1658,19 @@ public class ShapeFix_Shell : ShapeFix_Root
 
     // The end of a fix of a copied shell: the copies left unchanged are the caller's again, in the results and in the
     // context.
-    private void finish(BRepTools_CopyAtEntry theEntry)
+    private void finish(CopyAtEntry theEntry)
     {
-        if (!theEntry.IsCopied())
+        if (!theEntry.IsCopied)
         {
             theEntry.Finish(myShape);
             return;
         }
         myShape    = theEntry.Finish(myShape, [myShell, myErrFaces]);
-        myShell    = TopoDS.Shell(theEntry.Final(myShell));
-        myErrFaces = TopoDS.Compound(theEntry.Final(myErrFaces));
+        myShell    = ShapeCasts.Shell(theEntry.Final(myShell));
+        myErrFaces = ShapeCasts.Compound(theEntry.Final(myErrFaces));
     }
 
-    private static TopoDS_Shape Published(in TopoDS_Shape theShape)
+    private static Shape Published(in Shape theShape)
     {
         theShape.TShape()?.FreezeGraph();
         return theShape;

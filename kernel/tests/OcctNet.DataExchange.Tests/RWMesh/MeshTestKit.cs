@@ -2,6 +2,8 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Globalization;
@@ -18,11 +20,11 @@ internal static class MeshTestKit
     public static IMeshTools_Parameters MeshParameters => new() { Deflection = 0.1, Angle = 0.5 };
 
     /// <summary>A box, unmeshed.</summary>
-    public static TopoDS_Shape Box(double theDx, double theDy, double theDz)
+    public static Shape Box(double theDx, double theDy, double theDz)
         => new BRepPrimAPI_MakeBox(theDx, theDy, theDz).Shape();
 
     /// <summary>A box, meshed (frozen).</summary>
-    public static TopoDS_Shape MeshedBox(double theDx, double theDy, double theDz)
+    public static Shape MeshedBox(double theDx, double theDy, double theDz)
         => BRepMesh_IncrementalMesh.Meshed(Box(theDx, theDy, theDz), MeshParameters);
 
     public static Placement Translation(double theX, double theY, double theZ)
@@ -39,10 +41,10 @@ internal static class MeshTestKit
     /// </summary>
     public static XdeDoc_Tree SampleTree(bool isMeshed = true)
     {
-        TopoDS_Shape aBox = isMeshed ? MeshedBox(10, 20, 30) : Box(10, 20, 30);
-        TopoDS_Shape aPlate = isMeshed ? MeshedBox(5, 5, 1) : Box(5, 5, 1);
+        Shape aBox = isMeshed ? MeshedBox(10, 20, 30) : Box(10, 20, 30);
+        Shape aPlate = isMeshed ? MeshedBox(5, 5, 1) : Box(5, 5, 1);
         XdeDoc_Product aBoxPart = XdeDoc_Product.Part(aBox, new XdeDoc_Attributes { Name = "Box", SurfaceColor = Red });
-        TopoDS_Shape aFirstFace = new TopExp_Explorer(aPlate, TopAbs_ShapeEnum.TopAbs_FACE).Current();
+        Shape aFirstFace = new Explorer(aPlate, ShapeType.Face).Current();
         XdeDoc_Product aPlatePart = XdeDoc_Product.Part(aPlate, new XdeDoc_Attributes { Name = "Plate", Layers = ["L1"] })
                                                   .WithSubShape(aFirstFace, new XdeDoc_Attributes { SurfaceColor = Blue });
         XdeDoc_Product anAssembly = XdeDoc_Product.Assembly("Asm",
@@ -61,16 +63,16 @@ internal static class MeshTestKit
         var aResult = new List<string>();
         foreach (XdeDoc_FlatItem anItem in theTree.Flatten())
         {
-            for (var anExp = new TopExp_Explorer(anItem.Shape, TopAbs_ShapeEnum.TopAbs_FACE); anExp.More(); anExp.Next())
+            for (var anExp = new Explorer(anItem.Shape, ShapeType.Face); anExp.More(); anExp.Next())
             {
-                TopoDS_Face aFace = TopoDS.Face(anExp.Current());
-                Triangulation? aTri = BRep_Tool.Triangulation(aFace, out Placement aLoc);
+                Face aFace = ShapeCasts.Face(anExp.Current());
+                Triangulation? aTri = Tool.Triangulation(aFace, out Placement aLoc);
                 if (aTri is null)
                 {
                     continue;
                 }
                 Transform3D aTrsf = aLoc.Transformation();
-                bool toSwap = (aFace.Orientation() == TopAbs_Orientation.TopAbs_REVERSED) ^ (aTrsf.VectorialPart().Determinant() < 0);
+                bool toSwap = (aFace.Orientation() == Orientation.Reversed) ^ (aTrsf.VectorialPart().Determinant() < 0);
                 for (int i = 1; i <= aTri.TriangleCount; i++)
                 {
                     aTri.Triangle(i).Get(out int a, out int b, out int c);
@@ -110,11 +112,11 @@ internal static class MeshTestKit
         return r(theP.X()) + "," + r(theP.Y()) + "," + r(theP.Z());
     }
 
-    public static int CountShapes(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    public static int CountShapes(in Shape theShape, ShapeType theType)
     {
         int aCount = 0;
-        var aSeen = new HashSet<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        for (var anExp = new TopExp_Explorer(theShape, theType); anExp.More(); anExp.Next())
+        var aSeen = new HashSet<Shape>(ShapeHasher.Instance);
+        for (var anExp = new Explorer(theShape, theType); anExp.More(); anExp.Next())
         {
             if (aSeen.Add(anExp.Current()))
             {
@@ -125,12 +127,12 @@ internal static class MeshTestKit
     }
 
     /// <summary>The triangles and nodes of the shape's faces, as Draw's checktrinfo counts them (each face found).</summary>
-    public static (int Triangles, int Nodes) TriInfo(in TopoDS_Shape theShape)
+    public static (int Triangles, int Nodes) TriInfo(in Shape theShape)
     {
         int aTris = 0, aNodes = 0;
-        for (var anExp = new TopExp_Explorer(theShape, TopAbs_ShapeEnum.TopAbs_FACE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(theShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            Triangulation? aTri = BRep_Tool.Triangulation(TopoDS.Face(anExp.Current()), out _);
+            Triangulation? aTri = Tool.Triangulation(ShapeCasts.Face(anExp.Current()), out _);
             if (aTri is not null)
             {
                 aTris += aTri.TriangleCount;

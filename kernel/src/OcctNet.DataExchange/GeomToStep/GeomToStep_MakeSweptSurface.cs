@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of SweptSurface from Geom to a STEP swept_surface (linear extrusion or revolution).</summary>
@@ -18,18 +20,18 @@ public sealed class GeomToStep_MakeSweptSurface : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A swept surface.</summary>
-    public GeomToStep_MakeSweptSurface(Geom_SweptSurface S, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeSweptSurface(SweptSurface S, in StepData_Factors theLocalFactors)
     {
         done = true;
-        if (S is Geom_SurfaceOfLinearExtrusion)
+        if (S is ExtrusionSurface)
         {
-            Geom_SurfaceOfLinearExtrusion Sur = S as Geom_SurfaceOfLinearExtrusion;
+            ExtrusionSurface Sur = S as ExtrusionSurface;
             GeomToStep_MakeSurfaceOfLinearExtrusion MkLinear = new GeomToStep_MakeSurfaceOfLinearExtrusion(Sur, theLocalFactors);
             theSweptSurface = MkLinear.Value();
         }
-        else if (S is Geom_SurfaceOfRevolution)
+        else if (S is RevolutionSurface)
         {
-            Geom_SurfaceOfRevolution Sur = S as Geom_SurfaceOfRevolution;
+            RevolutionSurface Sur = S as RevolutionSurface;
             GeomToStep_MakeSurfaceOfRevolution MkRevol = new GeomToStep_MakeSurfaceOfRevolution(Sur, theLocalFactors);
             theSweptSurface = MkRevol.Value();
         }
@@ -40,7 +42,7 @@ public sealed class GeomToStep_MakeSweptSurface : GeomToStep_Root
     }
 
     /// <summary>A swept surface (default factors).</summary>
-    public GeomToStep_MakeSweptSurface(Geom_SweptSurface S) : this(S, new StepData_Factors())
+    public GeomToStep_MakeSweptSurface(SweptSurface S) : this(S, new StepData_Factors())
     {
     }
 

@@ -1,58 +1,62 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>TopOpeBRepTool_ShapeTool (unit 7L) against OCCT's semantics on primitives.</summary>
 public class TopOpeBRepTool_ShapeToolTests
 {
-    private static TopoDS_Shape Sub(in TopoDS_Shape S, TopAbs_ShapeEnum T, int k)
+    private static Shape Sub(in Shape S, ShapeType T, int k)
     {
-        NCollection_IndexedMap<TopoDS_Shape> M = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(S, T, M);
+        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        Exploration.MapShapes(S, T, M);
         return M.FindKey(k);
     }
 
     [Fact]
     public void TolerancesAndPoints()
     {
-        TopoDS_Shape B = new BRepPrimAPI_MakeBox(1.0, 2.0, 3.0).Shape();
-        Assert.Equal(0.0, TopOpeBRepTool_ShapeTool.Tolerance(new TopoDS_Shape()));
-        Assert.Equal(BRep_Tool.Tolerance(TopoDS.Face(Sub(B, TopAbs_FACE, 1))), TopOpeBRepTool_ShapeTool.Tolerance(Sub(B, TopAbs_FACE, 1)));
+        Shape B = new BRepPrimAPI_MakeBox(1.0, 2.0, 3.0).Shape();
+        Assert.Equal(0.0, TopOpeBRepTool_ShapeTool.Tolerance(new Shape()));
+        Assert.Equal(Tool.Tolerance(ShapeCasts.Face(Sub(B, ShapeType.Face, 1))), TopOpeBRepTool_ShapeTool.Tolerance(Sub(B, ShapeType.Face, 1)));
         Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => TopOpeBRepTool_ShapeTool.Tolerance(B));
-        Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => TopOpeBRepTool_ShapeTool.Pnt(Sub(B, TopAbs_EDGE, 1)));
-        Assert.True(TopOpeBRepTool_ShapeTool.Pnt(Sub(B, TopAbs_VERTEX, 1)).IsEqual(BRep_Tool.Pnt(TopoDS.Vertex(Sub(B, TopAbs_VERTEX, 1))), 0.0));
+        Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => TopOpeBRepTool_ShapeTool.Pnt(Sub(B, ShapeType.Edge, 1)));
+        Assert.True(TopOpeBRepTool_ShapeTool.Pnt(Sub(B, ShapeType.Vertex, 1)).IsEqual(Tool.Pnt(ShapeCasts.Vertex(Sub(B, ShapeType.Vertex, 1))), 0.0));
     }
 
     [Fact]
     public void SameOrientation()
     {
-        TopoDS_Shape B = new BRepPrimAPI_MakeBox(1.0, 2.0, 3.0).Shape();
-        TopoDS_Shape E = Sub(B, TopAbs_EDGE, 1), F = Sub(B, TopAbs_FACE, 1);
+        Shape B = new BRepPrimAPI_MakeBox(1.0, 2.0, 3.0).Shape();
+        Shape E = Sub(B, ShapeType.Edge, 1), F = Sub(B, ShapeType.Face, 1);
         Assert.True(TopOpeBRepTool_ShapeTool.ShapesSameOriented(E, E));
         Assert.False(TopOpeBRepTool_ShapeTool.ShapesSameOriented(E, E.Reversed()));
         Assert.False(TopOpeBRepTool_ShapeTool.ShapesSameOriented(F, F.Reversed()));
         Assert.True(TopOpeBRepTool_ShapeTool.ShapesSameOriented(B, B));
 
         // opposite faces of a box: parallel planes whose outward normals are opposite
-        TopoDS_Shape F1 = Sub(B, TopAbs_FACE, 1), F2 = Sub(B, TopAbs_FACE, 2);
+        Shape F1 = Sub(B, ShapeType.Face, 1), F2 = Sub(B, ShapeType.Face, 2);
         Assert.False(TopOpeBRepTool_ShapeTool.FacesSameOriented(F1, F2));
         Assert.True(TopOpeBRepTool_ShapeTool.FacesSameOriented(F1, F2.Reversed()));
         // OCCT only compares lines; any other pair is "same oriented"
-        TopoDS_Shape C = new BRepPrimAPI_MakeCylinder(1.0, 2.0).Shape();
-        TopoDS_Shape aCircle = TopExp_EdgeOfType(C, CurveKind.Circle);
+        Shape C = new BRepPrimAPI_MakeCylinder(1.0, 2.0).Shape();
+        Shape aCircle = TopExp_EdgeOfType(C, CurveKind.Circle);
         Assert.True(TopOpeBRepTool_ShapeTool.EdgesSameOriented(aCircle, aCircle.Reversed()) == false);
-        Assert.True(TopOpeBRepTool_ShapeTool.CurvesSameOriented(new BRepAdaptor_Curve(TopoDS.Edge(aCircle)),
-                                                                new BRepAdaptor_Curve(TopoDS.Edge(aCircle.Reversed()))));
+        Assert.True(TopOpeBRepTool_ShapeTool.CurvesSameOriented(new EdgeCurveAdaptor(ShapeCasts.Edge(aCircle)),
+                                                                new EdgeCurveAdaptor(ShapeCasts.Edge(aCircle.Reversed()))));
     }
 
-    private static TopoDS_Shape TopExp_EdgeOfType(in TopoDS_Shape S, CurveKind T)
+    private static Shape TopExp_EdgeOfType(in Shape S, CurveKind T)
     {
-        for (TopExp_Explorer ex = new(S, TopAbs_EDGE); ex.More(); ex.Next())
+        for (Explorer ex = new(S, ShapeType.Edge); ex.More(); ex.Next())
         {
-            if (new BRepAdaptor_Curve(TopoDS.Edge(ex.Current())).GetType() == T)
+            if (new EdgeCurveAdaptor(ShapeCasts.Edge(ex.Current())).GetType() == T)
             {
                 return ex.Current();
             }
@@ -63,9 +67,9 @@ public class TopOpeBRepTool_ShapeToolTests
     [Fact]
     public void SeamsAndPeriods()
     {
-        TopoDS_Shape C = new BRepPrimAPI_MakeCylinder(1.0, 2.0).Shape();
-        TopoDS_Shape aSeam = TopExp_EdgeOfType(C, CurveKind.Line);
-        TopoDS_Shape aLateral = TopoDS_FaceOfType(C, SurfaceKind.Cylinder);
+        Shape C = new BRepPrimAPI_MakeCylinder(1.0, 2.0).Shape();
+        Shape aSeam = TopExp_EdgeOfType(C, CurveKind.Line);
+        Shape aLateral = TopoDS_FaceOfType(C, SurfaceKind.Cylinder);
         Assert.True(TopOpeBRepTool_ShapeTool.Closed(aSeam, aLateral));
         Assert.False(TopOpeBRepTool_ShapeTool.Closed(TopExp_EdgeOfType(C, CurveKind.Circle), aLateral));
 
@@ -82,20 +86,20 @@ public class TopOpeBRepTool_ShapeToolTests
 
         bool aUPer = false, aVPer = false;
         double u1 = 0, u2 = 0, v1 = 0, v2 = 0;
-        TopOpeBRepTool_ShapeTool.UVBOUNDS(TopoDS.Face(aLateral), ref aUPer, ref aVPer, ref u1, ref u2, ref v1, ref v2);
+        TopOpeBRepTool_ShapeTool.UVBOUNDS(ShapeCasts.Face(aLateral), ref aUPer, ref aVPer, ref u1, ref u2, ref v1, ref v2);
         Assert.True(aUPer);
         Assert.False(aVPer);
         Assert.Equal(aPeriod, u2, 1.0e-12);
 
-        Assert.Equal(1.0e-3, TopOpeBRepTool_ShapeTool.Resolution3d(TopoDS.Face(aLateral), 1.0e-3), 1.0e-12);
-        Assert.IsType<Geom_Line>(TopOpeBRepTool_ShapeTool.BASISCURVE(new Geom_TrimmedCurve(new Geom_Line(new Axis3D()), 0.0, 1.0)));
+        Assert.Equal(1.0e-3, TopOpeBRepTool_ShapeTool.Resolution3d(ShapeCasts.Face(aLateral), 1.0e-3), 1.0e-12);
+        Assert.IsType<LineCurve3D>(TopOpeBRepTool_ShapeTool.BASISCURVE(new TrimmedCurve3D(new LineCurve3D(new Axis3D()), 0.0, 1.0)));
     }
 
-    private static TopoDS_Shape TopoDS_FaceOfType(in TopoDS_Shape S, SurfaceKind T)
+    private static Shape TopoDS_FaceOfType(in Shape S, SurfaceKind T)
     {
-        for (TopExp_Explorer ex = new(S, TopAbs_FACE); ex.More(); ex.Next())
+        for (Explorer ex = new(S, ShapeType.Face); ex.More(); ex.Next())
         {
-            if (new BRepAdaptor_Surface(TopoDS.Face(ex.Current())).GetType() == T)
+            if (new FaceSurfaceAdaptor(ShapeCasts.Face(ex.Current())).GetType() == T)
             {
                 return ex.Current();
             }
@@ -107,8 +111,8 @@ public class TopOpeBRepTool_ShapeToolTests
     public void EdgeDataNeverComputesTheNormal()
     {
         // OCCT compares the curvature with RealLast, so the normal is never set (occt-issues 7L)
-        TopoDS_Shape C = new BRepPrimAPI_MakeCylinder(2.0, 2.0).Shape();
-        TopoDS_Shape aCircle = TopExp_EdgeOfType(C, CurveKind.Circle);
+        Shape C = new BRepPrimAPI_MakeCylinder(2.0, 2.0).Shape();
+        Shape aCircle = TopExp_EdgeOfType(C, CurveKind.Circle);
         Direction3D T = new(), N = new(0, 0, 1);
         double aCurv = 0.0;
         double aTol = TopOpeBRepTool_ShapeTool.EdgeData(aCircle, 0.0, ref T, ref N, ref aCurv);

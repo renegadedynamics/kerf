@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -16,11 +17,11 @@ namespace Occt;
 /// <remarks>A working object; it keeps the caller's adaptors and only evaluates them.</remarks>
 public sealed class GeomFill_FunctionDraft : FunctionSetWithDerivatives
 {
-    private readonly Adaptor3d_Curve TheCurve;
-    private readonly Adaptor3d_Surface TheSurface;
+    private readonly CurveAdaptorBase TheCurve;
+    private readonly SurfaceAdaptorBase TheSurface;
 
     /// <summary>Initialises the section (the generatrix) and the stop surface.</summary>
-    public GeomFill_FunctionDraft(Adaptor3d_Surface S, Adaptor3d_Curve C)
+    public GeomFill_FunctionDraft(SurfaceAdaptorBase S, CurveAdaptorBase C)
     {
         TheCurve = C;
         TheSurface = S;
@@ -77,7 +78,7 @@ public sealed class GeomFill_FunctionDraft : FunctionSetWithDerivatives
     }
 
     /// <summary>The first derivative in t.</summary>
-    public bool DerivT(Adaptor3d_Curve C, double Param, double W, in Vector3D dN, double teta, math_Vector F)
+    public bool DerivT(CurveAdaptorBase C, double Param, double W, in Vector3D dN, double teta, math_Vector F)
     {
         C.D1(Param, out _, out Vector3D DP); // derivee de la section
 
@@ -91,7 +92,7 @@ public sealed class GeomFill_FunctionDraft : FunctionSetWithDerivatives
     }
 
     /// <summary>The second derivative in t.</summary>
-    public bool Deriv2T(Adaptor3d_Curve C, double Param, double W, in Vector3D d2N, double teta, math_Vector F)
+    public bool Deriv2T(CurveAdaptorBase C, double Param, double W, in Vector3D d2N, double teta, math_Vector F)
     {
         C.D2(Param, out _, out _, out Vector3D D2P); // derivee de la section
 

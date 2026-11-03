@@ -5,7 +5,11 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Schematiq.Collections;
 using static Occt.BOPAlgo_GlueEnum;
@@ -130,16 +134,16 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     // Periodic/Trim/Repeat directions
     private static readonly Direction3D[] MY_DIRECTIONS = [Constants.DX(), Constants.DY(), Constants.DZ()];
 
-    protected TopoDS_Shape myInputShape = new();                    //!< Input shape to make periodic
+    protected Shape myInputShape = new();                    //!< Input shape to make periodic
     protected PeriodicityParams myPeriodicityParams = new();        //!< Periodicity parameters
-    protected TopoDS_Shape myShape = new();                         //!< Resulting periodic shape (base for repetitions)
-    protected TopoDS_Shape myRepeatedShape = new();                 //!< Resulting shape after making repetitions of the base
+    protected Shape myShape = new();                         //!< Resulting periodic shape (base for repetitions)
+    protected Shape myRepeatedShape = new();                 //!< Resulting shape after making repetitions of the base
     protected double[] myRepeatPeriod = new double[3];              //!< XYZ repeat period
-    protected NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myRepeatedTwins = new(TopTools_ShapeMapHasher.Instance); //!< Map of associations of the identical sub-shapes
-    protected NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myTwins = new(TopTools_ShapeMapHasher.Instance); //!< Map of associations of the identical sub-shapes
-    protected BRepTools_History? mySplitHistory;                    //!< Split history - history of shapes modification
-    protected BRepTools_History? myHistory;                         //!< Final history of shapes modifications
-    private BRepTools_History myCopies = new();                     //!< OCCT.NET: the frozen shapes replaced by copies
+    protected NCollection_DataMap<Shape, NCollection_List<Shape>> myRepeatedTwins = new(ShapeHasher.Instance); //!< Map of associations of the identical sub-shapes
+    protected NCollection_DataMap<Shape, NCollection_List<Shape>> myTwins = new(ShapeHasher.Instance); //!< Map of associations of the identical sub-shapes
+    protected History? mySplitHistory;                    //!< Split history - history of shapes modification
+    protected History? myHistory;                         //!< Final history of shapes modifications
+    private History myCopies = new();                     //!< OCCT.NET: the frozen shapes replaced by copies
 
     public BOPAlgo_MakePeriodic()
     {
@@ -147,7 +151,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     }
 
     /// <summary>Sets the shape to make periodic.</summary>
-    public void SetShape(in TopoDS_Shape theShape) => myInputShape = theShape;
+    public void SetShape(in Shape theShape) => myInputShape = theShape;
 
     /// <summary>Sets all periodicity parameters.</summary>
     public void SetPeriodicityParameters(in PeriodicityParams theParams) => myPeriodicityParams = theParams;
@@ -234,27 +238,27 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     public double ZPeriodFirst() => PeriodFirst(2);
 
     /// <summary>Repeats the periodic shape in the direction (negative times: in the negative direction); returns it, frozen.</summary>
-    public TopoDS_Shape RepeatShape(int theDirectionID, int theTimes)
+    public Shape RepeatShape(int theDirectionID, int theTimes)
     {
         InternalRepeatShape(theDirectionID, theTimes);
         return RepeatedShape();
     }
 
-    public TopoDS_Shape XRepeat(int theTimes) => RepeatShape(0, theTimes);
+    public Shape XRepeat(int theTimes) => RepeatShape(0, theTimes);
 
-    public TopoDS_Shape YRepeat(int theTimes) => RepeatShape(1, theTimes);
+    public Shape YRepeat(int theTimes) => RepeatShape(1, theTimes);
 
-    public TopoDS_Shape ZRepeat(int theTimes) => RepeatShape(2, theTimes);
+    public Shape ZRepeat(int theTimes) => RepeatShape(2, theTimes);
 
     /// <summary>The repeated shape (frozen).</summary>
-    public TopoDS_Shape RepeatedShape()
+    public Shape RepeatedShape()
     {
         myRepeatedShape.TShape()?.FreezeGraph();
         return myRepeatedShape;
     }
 
     /// <summary>The repeated shape, unfrozen, for ported code.</summary>
-    internal TopoDS_Shape InternalRepeatedShape() => myRepeatedShape;
+    internal Shape InternalRepeatedShape() => myRepeatedShape;
 
     /// <summary>Clears the repetitions, keeping the shape periodic.</summary>
     public void ClearRepetitions()
@@ -273,58 +277,58 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     }
 
     /// <summary>The periodic shape (frozen).</summary>
-    public TopoDS_Shape Shape()
+    public Shape Shape()
     {
         myShape.TShape()?.FreezeGraph();
         return myShape;
     }
 
     /// <summary>The periodic shape, unfrozen, for ported code.</summary>
-    internal TopoDS_Shape InternalShape() => myShape;
+    internal Shape InternalShape() => myShape;
 
     /// <summary>
     /// The sub-shapes identical to <paramref name="theS"/> on the opposite sides (of the repeated shape once it is
     /// repeated). The result graphs are frozen first.
     /// </summary>
-    public ISchematiqList<TopoDS_Shape> GetTwins(in TopoDS_Shape theS)
+    public ISchematiqList<Shape> GetTwins(in Shape theS)
     {
         FreezeResults();
-        return new PackedList<TopoDS_Shape>([.. InternalGetTwins(theS)]);
+        return new PackedList<Shape>([.. InternalGetTwins(theS)]);
     }
 
     /// <summary>OCCT's GetTwins, the algorithm's own list (empty if none), without freezing.</summary>
-    internal NCollection_List<TopoDS_Shape> InternalGetTwins(in TopoDS_Shape theS)
+    internal NCollection_List<Shape> InternalGetTwins(in Shape theS)
     {
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMap =
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aMap =
             myRepeatedTwins.IsEmpty() ? myTwins : myRepeatedTwins;
-        if (aMap.Find(theS, out NCollection_List<TopoDS_Shape> aTwins))
+        if (aMap.Find(theS, out NCollection_List<Shape> aTwins))
         {
             return aTwins;
         }
         // OCCT.NET: a frozen shape the algorithm replaced by a copy (decision on CopyFrozenForWrite) has the twins of
         // its copy, which natively is the shape itself
-        foreach (TopoDS_Shape aCopy in myCopies.Modified(theS))
+        foreach (Shape aCopy in myCopies.Modified(theS))
         {
             if (aMap.Find(aCopy, out aTwins))
             {
                 return aTwins;
             }
         }
-        return new NCollection_List<TopoDS_Shape>();
+        return new NCollection_List<Shape>();
     }
 
     /// <summary>The history of the operation (null before it is performed); the result graphs are frozen first.</summary>
-    public BRepTools_History? History()
+    public History? History()
     {
         FreezeResults();
         return myHistory;
     }
 
     /// <summary>The history, without freezing.</summary>
-    internal BRepTools_History? InternalHistory() => myHistory;
+    internal History? InternalHistory() => myHistory;
 
     /// <summary>OCCT.NET: the frozen shapes the algorithm replaced by copies to write into, modified into the copies.</summary>
-    internal BRepTools_History InternalCopies() => myCopies;
+    internal History InternalCopies() => myCopies;
 
     private void FreezeResults()
     {
@@ -336,7 +340,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     public override void Clear()
     {
         base.Clear();
-        myCopies = new BRepTools_History();
+        myCopies = new History();
         myPeriodicityParams.Clear();
         myShape.Nullify();
         mySplitHistory?.Clear();
@@ -390,21 +394,21 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     }
 
     // Adds the shape <theWhat> to the shape <theWhere>
-    private static void AddToShape(in TopoDS_Shape theWhat, ref TopoDS_Shape theWhere)
+    private static void AddToShape(in Shape theWhat, ref Shape theWhere)
     {
-        if (theWhere.IsNull())
+        if (theWhere.IsNull)
         {
-            TopoDS_Compound aC = new();
-            new BRep_Builder().MakeCompound(ref aC);
+            Compound aC = new();
+            new BrepBuilder().MakeCompound(ref aC);
             theWhere = aC;
         }
-        new BRep_Builder().Add(theWhere, theWhat);
+        new BrepBuilder().Add(theWhere, theWhat);
     }
 
     // Adds the shape in the list <theLWhat> to the shape <theWhere>
-    private static void AddToShape(NCollection_List<TopoDS_Shape> theLWhat, ref TopoDS_Shape theWhere)
+    private static void AddToShape(NCollection_List<Shape> theLWhat, ref Shape theWhere)
     {
-        NCollection_List<TopoDS_Shape>.Iterator it = new(theLWhat);
+        NCollection_List<Shape>.Iterator it = new(theLWhat);
         for (; it.More(); it.Next())
         {
             AddToShape(it.Value(), ref theWhere);
@@ -446,23 +450,23 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
 
         // Build Trimming solid using corner points
         BRepPrimAPI_MakeBox aMBox = new(aPMin, aPMax);
-        TopoDS_Shape aTrimBox = aMBox.InternalSolid();
+        Shape aTrimBox = aMBox.InternalSolid();
 
         // OCCT.NET: the Common below is destructive and natively writes into the input (tolerances, p-curves): the
         // frozen parts of the input (the caller's shape, or the arguments' sub-shapes a connected shape shares) are
         // replaced by copies first, which it then writes into
-        BRepTools_History aCopyHistory = new();
-        myInputShape = BRepTools.CopyFrozenForWrite(myInputShape, aCopyHistory);
+        History aCopyHistory = new();
+        myInputShape = BrepTools.CopyFrozenForWrite(myInputShape, aCopyHistory);
         myCopies.Merge(aCopyHistory);
 
         // Perform trimming of the shape by solid
         BRepAlgoAPI_Common aCommon = new();
         // Set Object
-        NCollection_List<TopoDS_Shape> anObj = new();
+        NCollection_List<Shape> anObj = new();
         anObj.Append(myInputShape);
         aCommon.SetArguments(anObj);
         // Set Tool
-        NCollection_List<TopoDS_Shape> aTool = new();
+        NCollection_List<Shape> aTool = new();
         aTool.Append(aTrimBox);
         aCommon.SetTools(aTool);
         // Set the parallel processing mode
@@ -475,7 +479,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
             // Merge errors from Common operation
             myReport.Merge(aCommon.GetReport());
             // Add new error saving the shapes for analysis
-            TopoDS_Shape aWS = new();
+            Shape aWS = new();
             AddToShape(myInputShape, ref aWS);
             AddToShape(aTrimBox, ref aWS);
             AddError(new BOPAlgo_AlertUnableToTrim(aWS));
@@ -484,7 +488,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
         // Get the trimmed shape
         myShape = aCommon.InternalShape();
         // Fill the History for the object only
-        mySplitHistory = new BRepTools_History();
+        mySplitHistory = new History();
         mySplitHistory.Merge(aCopyHistory);
         mySplitHistory.Merge(anObj, new MakeShapeHistory(aCommon));
     }
@@ -492,12 +496,12 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     /// <summary>Makes the shape look the same on the opposite sides in the required periodic directions.</summary>
     protected void MakeIdentical()
     {
-        if (myShape.IsNull())
+        if (myShape.IsNull)
         {
             myShape = myInputShape;
         }
 
-        mySplitHistory ??= new BRepTools_History();
+        mySplitHistory ??= new History();
 
         // Split the negative side of the shape with the geometry
         // located on the positive side
@@ -513,7 +517,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
         // Make associations between identical opposite shapes.
         SplitPositive();
 
-        myHistory = new BRepTools_History();
+        myHistory = new History();
         myHistory.Merge(mySplitHistory);
     }
 
@@ -538,24 +542,24 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
             BRepBuilderAPI_Transform aNegT = new(myShape, aNegTrsf, false);
 
             // Split the negative side of the shape.
-            NCollection_List<TopoDS_Shape> aTools = new();
+            NCollection_List<Shape> aTools = new();
             aTools.Append(aNegT.InternalShape());
             SplitShape(aTools, mySplitHistory);
         }
     }
 
     // Associates the shape <theS> with the shape <theTwin> in the map.
-    private static void AddTwin(in TopoDS_Shape theS, in TopoDS_Shape theTwin,
-                                NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMap)
+    private static void AddTwin(in Shape theS, in Shape theTwin,
+                                NCollection_DataMap<Shape, NCollection_List<Shape>> theMap)
     {
-        if (!theMap.Find(theS, out NCollection_List<TopoDS_Shape> aTwins))
+        if (!theMap.Find(theS, out NCollection_List<Shape> aTwins))
         {
-            theMap.Bound(theS, new NCollection_List<TopoDS_Shape>()).Append(theTwin);
+            theMap.Bound(theS, new NCollection_List<Shape>()).Append(theTwin);
             return;
         }
 
         // Check if the twin shape is not yet present in the list
-        NCollection_List<TopoDS_Shape>.Iterator itLT = new(aTwins);
+        NCollection_List<Shape>.Iterator itLT = new(aTwins);
         for (; itLT.More(); itLT.Next())
         {
             if (theTwin.IsSame(itLT.Value()))
@@ -578,16 +582,16 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     {
         // Prepare map of the sub-shapes of the input shape to make
         // associations of the opposite shapes
-        NCollection_IndexedMap<TopoDS_Shape> aSubShapesMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(myShape, aSubShapesMap);
+        NCollection_IndexedMap<Shape> aSubShapesMap = new(ShapeHasher.Instance);
+        Exploration.MapShapes(myShape, aSubShapesMap);
         int aNbS = aSubShapesMap.Extent();
 
         // Translate the shape to the positive periodic directions to make the
         // shapes look identical on the opposite sides.
-        NCollection_List<TopoDS_Shape> aTools = new();
+        NCollection_List<Shape> aTools = new();
 
         // Remember the history of shapes translation
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aTranslationHistMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aTranslationHistMap = new(ShapeHasher.Instance);
 
         // Make translations for all periodic directions
         for (int i = 0; i < 3; ++i)
@@ -606,14 +610,14 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
             // Fill the translation history map
             for (int j = 1; j <= aNbS; ++j)
             {
-                TopoDS_Shape aS = aSubShapesMap[j];
-                if (BRepTools_History.IsSupportedType(aS))
+                Shape aS = aSubShapesMap[j];
+                if (global::Kerf.Engine.Topology.History.IsSupportedType(aS))
                 {
-                    NCollection_List<TopoDS_Shape> aSM = aTranslator.InternalModified(aS);
+                    NCollection_List<Shape> aSM = aTranslator.InternalModified(aS);
                     int anIndex = aTranslationHistMap.FindIndex(aS);
                     if (anIndex == 0)
                     {
-                        anIndex = aTranslationHistMap.Add(aS, new NCollection_List<TopoDS_Shape>());
+                        anIndex = aTranslationHistMap.Add(aS, new NCollection_List<Shape>());
                     }
                     aTranslationHistMap[anIndex].Append(aSM.First());
                 }
@@ -622,7 +626,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
 
         // Keep the split shape history and history of tools modifications
         // during the split for making association of the opposite identical shapes
-        BRepTools_History aSplitShapeHist = new(), aSplitToolsHist = new();
+        History aSplitShapeHist = new(), aSplitToolsHist = new();
         // Split the positive side of the shape
         SplitShape(aTools, aSplitShapeHist, aSplitToolsHist);
         if (HasErrors())
@@ -636,8 +640,8 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
         int aNbSH = aTranslationHistMap.Extent();
         for (int i = 1; i <= aNbSH; ++i)
         {
-            TopoDS_Shape pS = aTranslationHistMap.FindKey(i);
-            ISchematiqList<TopoDS_Shape> aSIm = aSplitShapeHist.Modified(pS);
+            Shape pS = aTranslationHistMap.FindKey(i);
+            ISchematiqList<Shape> aSIm = aSplitShapeHist.Modified(pS);
             if (aSIm.Count == 1)
             {
                 pS = aSIm[0];
@@ -647,17 +651,17 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
                 continue;
             }
 
-            NCollection_List<TopoDS_Shape> aLTranslated = aTranslationHistMap[i];
+            NCollection_List<Shape> aLTranslated = aTranslationHistMap[i];
 
-            NCollection_List<TopoDS_Shape>.Iterator itLT = new(aLTranslated);
+            NCollection_List<Shape>.Iterator itLT = new(aLTranslated);
             for (; itLT.More(); itLT.Next())
             {
-                TopoDS_Shape aT = itLT.Value();
+                Shape aT = itLT.Value();
                 // Get shapes modifications during the split
-                ISchematiqList<TopoDS_Shape> aTSplits = aSplitToolsHist.Modified(aT);
+                ISchematiqList<Shape> aTSplits = aSplitToolsHist.Modified(aT);
 
                 // Associate the shapes to each other
-                foreach (TopoDS_Shape aSp in aTSplits)
+                foreach (Shape aSp in aTSplits)
                 {
                     AddTwin(pS, aSp, myTwins);
                     AddTwin(aSp, pS, myTwins);
@@ -667,8 +671,8 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     }
 
     /// <summary>Splits the shape by the given tools.</summary>
-    protected void SplitShape(NCollection_List<TopoDS_Shape> theTools, BRepTools_History? theSplitShapeHistory = null,
-                              BRepTools_History? theSplitToolsHistory = null)
+    protected void SplitShape(NCollection_List<Shape> theTools, History? theSplitShapeHistory = null,
+                              History? theSplitToolsHistory = null)
     {
         // Make sure that the geometry from the tools will be copied to the split
         // shape. For that, the tool shapes should be given to the Boolean Operations
@@ -695,7 +699,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
             // Copy the intersection errors
             myReport.Merge(anIntersector.GetReport());
             // Add new error saving the shapes for analysis
-            TopoDS_Shape aWS = new();
+            Shape aWS = new();
             AddToShape(theTools, ref aWS);
             AddToShape(myShape, ref aWS);
             AddError(new BOPAlgo_AlertUnableToMakeIdentical(aWS));
@@ -705,7 +709,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
         // Perform the splitting of the shape with the precomputed intersection results
         BRepAlgoAPI_Splitter aSplitter = new(anIntersector);
         // Set Object
-        NCollection_List<TopoDS_Shape> anObj = new();
+        NCollection_List<Shape> anObj = new();
         anObj.Append(myShape);
         aSplitter.SetArguments(anObj);
         // Set Tools
@@ -723,7 +727,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
             // Copy the splitter errors
             myReport.Merge(aSplitter.GetReport());
             // Add new error saving the shape for analysis
-            TopoDS_Shape aWS = new();
+            Shape aWS = new();
             AddToShape(theTools, ref aWS);
             AddToShape(myShape, ref aWS);
             AddError(new BOPAlgo_AlertUnableToMakeIdentical(aWS));
@@ -737,9 +741,9 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     }
 
     /// <summary>Repeats the shape in the required periodic direction; returns the repeated shape, unfrozen.</summary>
-    internal TopoDS_Shape InternalRepeatShape(int theDir, int theTimes)
+    internal Shape InternalRepeatShape(int theDir, int theTimes)
     {
-        if (myRepeatedShape.IsNull())
+        if (myRepeatedShape.IsNull)
         {
             myRepeatedShape = myShape;
         }
@@ -774,19 +778,19 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
 
         // Create the translation history - all translated shapes will be
         // created as Generated from the shape.
-        BRepTools_History aTranslationHistory = new();
-        NCollection_IndexedMap<TopoDS_Shape> aSubShapesMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(myRepeatedShape, aSubShapesMap);
+        History aTranslationHistory = new();
+        NCollection_IndexedMap<Shape> aSubShapesMap = new(ShapeHasher.Instance);
+        Exploration.MapShapes(myRepeatedShape, aSubShapesMap);
         int aNbS = aSubShapesMap.Extent();
 
         // Add shapes for gluing
-        NCollection_List<TopoDS_Shape> aShapes = new();
+        NCollection_List<Shape> aShapes = new();
         // Add the shape itself
         aShapes.Append(myRepeatedShape);
         for (int i = 1; i <= aNbS; ++i)
         {
-            TopoDS_Shape aS = aSubShapesMap[i];
-            if (BRepTools_History.IsSupportedType(aS))
+            Shape aS = aSubShapesMap[i];
+            if (global::Kerf.Engine.Topology.History.IsSupportedType(aS))
             {
                 aTranslationHistory.AddGenerated(aS, aS);
             }
@@ -803,10 +807,10 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
             // Fill the translation history
             for (int j = 1; j <= aNbS; ++j)
             {
-                TopoDS_Shape aS = aSubShapesMap[j];
-                if (BRepTools_History.IsSupportedType(aS))
+                Shape aS = aSubShapesMap[j];
+                if (global::Kerf.Engine.Topology.History.IsSupportedType(aS))
                 {
-                    NCollection_List<TopoDS_Shape> aLT = aTranslator.InternalModified(aS);
+                    NCollection_List<Shape> aLT = aTranslator.InternalModified(aS);
                     aTranslationHistory.AddGenerated(aS, aLT.First());
                 }
             }
@@ -828,7 +832,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
         {
             // Repetition in this direction is not possible
             // Add warning saving the shapes for analysis
-            TopoDS_Shape aWS = new();
+            Shape aWS = new();
             AddToShape(aShapes, ref aWS);
             AddWarning(new BOPAlgo_AlertUnableToRepeat(aWS));
             return myRepeatedShape;
@@ -840,7 +844,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
         myRepeatPeriod[id] += Math.Abs(theTimes) * myRepeatPeriod[id];
 
         // Update history with the Gluing history
-        BRepTools_History aGluingHistory = new(aShapes, new BuilderHistory(aGluer));
+        History aGluingHistory = new(aShapes, new BuilderHistory(aGluer));
         myHistory.Merge(aGluingHistory);
 
         // Update the map of twins after repetition
@@ -855,13 +859,13 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     /// </summary>
     private void CopyFrozenForWrite()
     {
-        if (!BRepTools.HoldsFrozen(myRepeatedShape))
+        if (!BrepTools.HoldsFrozen(myRepeatedShape))
         {
             return;
         }
-        BRepTools_History aCopyHistory = new();
+        History aCopyHistory = new();
         bool anIsShape = myRepeatedShape.IsSame(myShape);
-        myRepeatedShape = BRepTools.CopyFrozenForWrite(myRepeatedShape, aCopyHistory);
+        myRepeatedShape = BrepTools.CopyFrozenForWrite(myRepeatedShape, aCopyHistory);
         if (anIsShape)
         {
             myShape = myRepeatedShape.Oriented(myShape.Orientation());
@@ -874,19 +878,19 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     }
 
     // The twins with the copied shapes in place of the frozen ones
-    private static NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> CopiedTwins(
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMap, BRepTools_History theCopyHistory)
+    private static NCollection_DataMap<Shape, NCollection_List<Shape>> CopiedTwins(
+        NCollection_DataMap<Shape, NCollection_List<Shape>> theMap, History theCopyHistory)
     {
-        TopoDS_Shape Copied(in TopoDS_Shape theS)
+        Shape Copied(in Shape theS)
         {
-            ISchematiqList<TopoDS_Shape> aM = theCopyHistory.Modified(theS);
+            ISchematiqList<Shape> aM = theCopyHistory.Modified(theS);
             return aM.Count == 1 ? aM[0].Oriented(theS.Orientation()) : theS;
         }
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aCopy = new(TopTools_ShapeMapHasher.Instance);
-        foreach ((TopoDS_Shape aKey, NCollection_List<TopoDS_Shape> aList) in theMap)
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aCopy = new(ShapeHasher.Instance);
+        foreach ((Shape aKey, NCollection_List<Shape> aList) in theMap)
         {
-            NCollection_List<TopoDS_Shape> aNew = new();
-            foreach (TopoDS_Shape aS in aList)
+            NCollection_List<Shape> aNew = new();
+            foreach (Shape aS in aList)
             {
                 aNew.Append(Copied(aS));
             }
@@ -896,7 +900,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     }
 
     /// <summary>Updates the map of twins after repetition.</summary>
-    protected void UpdateTwins(BRepTools_History theTranslationHistory, BRepTools_History theGluingHistory)
+    protected void UpdateTwins(History theTranslationHistory, History theGluingHistory)
     {
         if (myTwins.IsEmpty())
         {
@@ -909,19 +913,19 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
         }
 
         // New twins
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aNewTwinsMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aNewTwinsMap = new(ShapeHasher.Instance);
 
         // Fence map to avoid repeated fill for the twins
-        NCollection_Map<TopoDS_Shape> aMTwinsDone = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMTwinsDone = new(ShapeHasher.Instance);
 
         // Update the map of twins with the new repeated shapes
         // (native: address order; the port: insertion order, occt-issues.md)
-        foreach ((TopoDS_Shape aS, NCollection_List<TopoDS_Shape> aLTwins) in myRepeatedTwins)
+        foreach ((Shape aS, NCollection_List<Shape> aLTwins) in myRepeatedTwins)
         {
             aMTwinsDone.Add(aS);
 
             // Check if the twins have not been already processed
-            NCollection_List<TopoDS_Shape>.Iterator itLT = new(aLTwins);
+            NCollection_List<Shape>.Iterator itLT = new(aLTwins);
             for (; itLT.More(); itLT.Next())
             {
                 if (aMTwinsDone.Contains(itLT.Value()))
@@ -937,22 +941,22 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
 
             // All shapes generated from the shape itself and generated
             // from its twins will be the new twins for the shape
-            NCollection_IndexedMap<TopoDS_Shape> aNewGroup = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_IndexedMap<Shape> aNewGroup = new(ShapeHasher.Instance);
             itLT.Initialize(aLTwins);
 
             for (bool bShape = true; itLT.More();)
             {
-                TopoDS_Shape aTwin = bShape ? aS : itLT.Value();
-                foreach (TopoDS_Shape aG in theTranslationHistory.Generated(aTwin))
+                Shape aTwin = bShape ? aS : itLT.Value();
+                foreach (Shape aG in theTranslationHistory.Generated(aTwin))
                 {
-                    ISchematiqList<TopoDS_Shape> aLM = theGluingHistory.Modified(aG);
+                    ISchematiqList<Shape> aLM = theGluingHistory.Modified(aG);
                     if (aLM.Count == 0)
                     {
                         aNewGroup.Add(aG);
                     }
                     else
                     {
-                        foreach (TopoDS_Shape aM in aLM)
+                        foreach (Shape aM in aLM)
                         {
                             aNewGroup.Add(aM);
                         }
@@ -973,7 +977,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
             int aNbTwins = aNewGroup.Extent();
             for (int i = 1; i <= aNbTwins; ++i)
             {
-                ref NCollection_List<TopoDS_Shape> pTwins = ref aNewTwinsMap.Bound(aNewGroup[i], new NCollection_List<TopoDS_Shape>());
+                ref NCollection_List<Shape> pTwins = ref aNewTwinsMap.Bound(aNewGroup[i], new NCollection_List<Shape>());
                 for (int j = 1; j <= aNbTwins; ++j)
                 {
                     if (i != j)
@@ -988,13 +992,13 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     }
 
     // OCCT's map assignment copies the lists
-    private static NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> CopyTwins(
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMap)
+    private static NCollection_DataMap<Shape, NCollection_List<Shape>> CopyTwins(
+        NCollection_DataMap<Shape, NCollection_List<Shape>> theMap)
     {
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aCopy = new(TopTools_ShapeMapHasher.Instance);
-        foreach ((TopoDS_Shape aKey, NCollection_List<TopoDS_Shape> aList) in theMap)
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aCopy = new(ShapeHasher.Instance);
+        foreach ((Shape aKey, NCollection_List<Shape> aList) in theMap)
         {
-            aCopy.Bind(aKey, new NCollection_List<TopoDS_Shape>(aList));
+            aCopy.Bind(aKey, new NCollection_List<Shape>(aList));
         }
         return aCopy;
     }
@@ -1003,22 +1007,22 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     /// The history methods of a BRepBuilderAPI maker without publishing (OCCT's template history constructor and
     /// Merge take the algorithm; the port's public Modified/Generated would freeze the maker's result).
     /// </summary>
-    internal sealed class MakeShapeHistory(BRepBuilderAPI_MakeShape theAlgo) : BRepTools_History.IAlgorithm
+    internal sealed class MakeShapeHistory(BRepBuilderAPI_MakeShape theAlgo) : global::Kerf.Engine.Topology.History.IAlgorithm
     {
-        public bool IsDeleted(in TopoDS_Shape theS) => theAlgo.IsDeleted(theS);
+        public bool IsDeleted(in Shape theS) => theAlgo.IsDeleted(theS);
 
-        public IEnumerable<TopoDS_Shape> Modified(in TopoDS_Shape theS) => [.. theAlgo.InternalModified(theS)];
+        public IEnumerable<Shape> Modified(in Shape theS) => [.. theAlgo.InternalModified(theS)];
 
-        public IEnumerable<TopoDS_Shape> Generated(in TopoDS_Shape theS) => [.. theAlgo.InternalGenerated(theS)];
+        public IEnumerable<Shape> Generated(in Shape theS) => [.. theAlgo.InternalGenerated(theS)];
     }
 
     /// <summary>The history methods of a BOPAlgo builder (BOPAlgo_BuilderShape's Modified, Generated, IsDeleted).</summary>
-    internal sealed class BuilderHistory(BOPAlgo_BuilderShape theAlgo) : BRepTools_History.IAlgorithm
+    internal sealed class BuilderHistory(BOPAlgo_BuilderShape theAlgo) : global::Kerf.Engine.Topology.History.IAlgorithm
     {
-        public bool IsDeleted(in TopoDS_Shape theS) => theAlgo.IsDeleted(theS);
+        public bool IsDeleted(in Shape theS) => theAlgo.IsDeleted(theS);
 
-        public IEnumerable<TopoDS_Shape> Modified(in TopoDS_Shape theS) => theAlgo.Modified(theS);
+        public IEnumerable<Shape> Modified(in Shape theS) => theAlgo.Modified(theS);
 
-        public IEnumerable<TopoDS_Shape> Generated(in TopoDS_Shape theS) => theAlgo.Generated(theS);
+        public IEnumerable<Shape> Generated(in Shape theS) => theAlgo.Generated(theS);
     }
 }

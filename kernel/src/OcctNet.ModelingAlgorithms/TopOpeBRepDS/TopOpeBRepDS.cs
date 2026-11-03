@@ -4,9 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using System.Globalization;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 using static Occt.TopOpeBRepDS_Config;
 using static Occt.TopOpeBRepDS_Kind;
 
@@ -16,21 +17,21 @@ namespace Occt;
 public static class TopOpeBRepDS
 {
     /// <summary>The two-letter name of a state (IN, OU, ON, UN).</summary>
-    public static string SPrint(TopAbs_State S)
+    public static string SPrint(Containment S)
     {
         string s = "";
         switch (S)
         {
-            case TopAbs_IN:
+            case In:
                 s = s + "IN";
                 break;
-            case TopAbs_OUT:
+            case Out:
                 s = s + "OU";
                 break;
-            case TopAbs_ON:
+            case On:
                 s = s + "ON";
                 break;
-            case TopAbs_UNKNOWN:
+            case Unknown:
                 s = s + "UN";
                 break;
         }
@@ -38,7 +39,7 @@ public static class TopOpeBRepDS
     }
 
     /// <summary>Writes the name of a state.</summary>
-    public static TextWriter Print(TopAbs_State S, TextWriter OS)
+    public static TextWriter Print(Containment S, TextWriter OS)
     {
         OS.Write(SPrint(S));
         return OS;
@@ -118,20 +119,20 @@ public static class TopOpeBRepDS
 
     /// <summary>The two-letter name of a shape type.</summary>
     /// <exception cref="ProgramErrorException">The type is TopAbs_SHAPE.</exception>
-    public static string SPrint(TopAbs_ShapeEnum t) => SPrint(ShapeToKind(t));
+    public static string SPrint(ShapeType t) => SPrint(ShapeToKind(t));
 
     /// <summary>A shape type and index.</summary>
-    public static string SPrint(TopAbs_ShapeEnum t, int i) => SPrint(ShapeToKind(t), i);
+    public static string SPrint(ShapeType t, int i) => SPrint(ShapeToKind(t), i);
 
     /// <summary>Writes a shape type and index.</summary>
-    public static TextWriter Print(TopAbs_ShapeEnum t, int i, TextWriter s)
+    public static TextWriter Print(ShapeType t, int i, TextWriter s)
     {
         s.Write(SPrint(ShapeToKind(t), i));
         return s;
     }
 
     /// <summary>The name of an orientation.</summary>
-    public static string SPrint(TopAbs_Orientation o) => TopAbs.ShapeOrientationToString(o);
+    public static string SPrint(Orientation o) => global::Kerf.Engine.Topology.TopAbs.ShapeOrientationToString(o);
 
     /// <summary>The name of a configuration (UNSH, SAME, DIFF).</summary>
     public static string SPrint(TopOpeBRepDS_Config C)
@@ -195,33 +196,33 @@ public static class TopOpeBRepDS
 
     /// <summary>The kind of a shape type.</summary>
     /// <exception cref="ProgramErrorException">The type is TopAbs_SHAPE.</exception>
-    public static TopOpeBRepDS_Kind ShapeToKind(TopAbs_ShapeEnum S)
+    public static TopOpeBRepDS_Kind ShapeToKind(ShapeType S)
     {
         TopOpeBRepDS_Kind res = TopOpeBRepDS_SOLID; // bidon
         switch (S)
         {
-            case TopAbs_VERTEX:
+            case ShapeType.Vertex:
                 res = TopOpeBRepDS_VERTEX;
                 break;
-            case TopAbs_EDGE:
+            case ShapeType.Edge:
                 res = TopOpeBRepDS_EDGE;
                 break;
-            case TopAbs_WIRE:
+            case ShapeType.Wire:
                 res = TopOpeBRepDS_WIRE;
                 break;
-            case TopAbs_FACE:
+            case ShapeType.Face:
                 res = TopOpeBRepDS_FACE;
                 break;
-            case TopAbs_SHELL:
+            case ShapeType.Shell:
                 res = TopOpeBRepDS_SHELL;
                 break;
-            case TopAbs_SOLID:
+            case ShapeType.Solid:
                 res = TopOpeBRepDS_SOLID;
                 break;
-            case TopAbs_COMPSOLID:
+            case ShapeType.CompSolid:
                 res = TopOpeBRepDS_COMPSOLID;
                 break;
-            case TopAbs_COMPOUND:
+            case ShapeType.Compound:
                 res = TopOpeBRepDS_COMPOUND;
                 break;
             default:
@@ -231,9 +232,9 @@ public static class TopOpeBRepDS
     }
 
     /// <summary>The shape type of a kind (TopAbs_SHAPE for a geometry).</summary>
-    public static TopAbs_ShapeEnum KindToShape(TopOpeBRepDS_Kind K)
+    public static ShapeType KindToShape(TopOpeBRepDS_Kind K)
     {
-        TopAbs_ShapeEnum res = TopAbs_SHAPE; // bidon
+        ShapeType res = ShapeType.Shape; // bidon
         if (!IsTopology(K))
         {
             return res;
@@ -242,28 +243,28 @@ public static class TopOpeBRepDS
         switch (K)
         {
             case TopOpeBRepDS_VERTEX:
-                res = TopAbs_VERTEX;
+                res = ShapeType.Vertex;
                 break;
             case TopOpeBRepDS_EDGE:
-                res = TopAbs_EDGE;
+                res = ShapeType.Edge;
                 break;
             case TopOpeBRepDS_WIRE:
-                res = TopAbs_WIRE;
+                res = ShapeType.Wire;
                 break;
             case TopOpeBRepDS_FACE:
-                res = TopAbs_FACE;
+                res = ShapeType.Face;
                 break;
             case TopOpeBRepDS_SHELL:
-                res = TopAbs_SHELL;
+                res = ShapeType.Shell;
                 break;
             case TopOpeBRepDS_SOLID:
-                res = TopAbs_SOLID;
+                res = ShapeType.Solid;
                 break;
             case TopOpeBRepDS_COMPSOLID:
-                res = TopAbs_COMPSOLID;
+                res = ShapeType.CompSolid;
                 break;
             case TopOpeBRepDS_COMPOUND:
-                res = TopAbs_COMPOUND;
+                res = ShapeType.Compound;
                 break;
             default:
                 throw new ProgramErrorException("TopOpeBRepDS::KindToShape");

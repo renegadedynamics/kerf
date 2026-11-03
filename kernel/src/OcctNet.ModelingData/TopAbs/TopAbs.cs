@@ -3,27 +3,29 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using Occt;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Topology;
 
 /// <summary>Operations on the topological enumerations: composing and reversing orientations, names of types.</summary>
 public static class TopAbs
 {
-    private static readonly TopAbs_Orientation[,] ComposeTable =
+    private static readonly Orientation[,] ComposeTable =
     {
-        { TopAbs_FORWARD, TopAbs_REVERSED, TopAbs_INTERNAL, TopAbs_EXTERNAL },
-        { TopAbs_REVERSED, TopAbs_FORWARD, TopAbs_INTERNAL, TopAbs_EXTERNAL },
-        { TopAbs_INTERNAL, TopAbs_INTERNAL, TopAbs_INTERNAL, TopAbs_INTERNAL },
-        { TopAbs_EXTERNAL, TopAbs_EXTERNAL, TopAbs_EXTERNAL, TopAbs_EXTERNAL },
+        { Forward, Reversed, Internal, External },
+        { Reversed, Forward, Internal, External },
+        { Internal, Internal, Internal, Internal },
+        { External, External, External, External },
     };
 
-    private static readonly TopAbs_Orientation[] ReverseTable =
-        [TopAbs_REVERSED, TopAbs_FORWARD, TopAbs_INTERNAL, TopAbs_EXTERNAL];
+    private static readonly Orientation[] ReverseTable =
+        [Reversed, Forward, Internal, External];
 
-    private static readonly TopAbs_Orientation[] ComplementTable =
-        [TopAbs_REVERSED, TopAbs_FORWARD, TopAbs_EXTERNAL, TopAbs_INTERNAL];
+    private static readonly Orientation[] ComplementTable =
+        [Reversed, Forward, External, Internal];
 
     private static readonly string[] TopAbs_Table_PrintShapeEnum =
         ["COMPOUND", "COMPSOLID", "SOLID", "SHELL", "FACE", "WIRE", "EDGE", "VERTEX", "SHAPE"];
@@ -35,60 +37,60 @@ public static class TopAbs
     private static readonly string[] TopAbs_Table_PrintState = ["ON", "IN", "OUT", "UNKNOWN"];
 
     /// <summary>
-    /// The orientation of a shape S of orientation <paramref name="Or2"/> inside a shape of orientation
-    /// <paramref name="Or1"/>: FORWARD is the identity, REVERSED reverses, INTERNAL and EXTERNAL absorb.
+    /// The orientation of a shape S of orientation <paramref name="or2"/> inside a shape of orientation
+    /// <paramref name="or1"/>: FORWARD is the identity, REVERSED reverses, INTERNAL and EXTERNAL absorb.
     /// </summary>
-    public static TopAbs_Orientation Compose(TopAbs_Orientation Or1, TopAbs_Orientation Or2) =>
-        ComposeTable[(int)Or2, (int)Or1];
+    public static Orientation Compose(Orientation or1, Orientation or2) =>
+        ComposeTable[(int)or2, (int)or1];
 
     /// <summary>The reverse orientation: FORWARD and REVERSED swap, INTERNAL and EXTERNAL stay.</summary>
-    public static TopAbs_Orientation Reverse(TopAbs_Orientation Or) => ReverseTable[(int)Or];
+    public static Orientation Reverse(Orientation or) => ReverseTable[(int)or];
 
     /// <summary>The complement orientation: FORWARD and REVERSED swap, as do INTERNAL and EXTERNAL.</summary>
-    public static TopAbs_Orientation Complement(TopAbs_Orientation Or) => ComplementTable[(int)Or];
+    public static Orientation Complement(Orientation or) => ComplementTable[(int)or];
 
     /// <summary>Writes the shape type's name.</summary>
-    public static TextWriter Print(TopAbs_ShapeEnum theShapeType, TextWriter theStream)
+    public static TextWriter Print(ShapeType shapeType, TextWriter stream)
     {
-        theStream.Write(ShapeTypeToString(theShapeType));
-        return theStream;
+        stream.Write(ShapeTypeToString(shapeType));
+        return stream;
     }
 
     /// <summary>Writes the orientation's name.</summary>
-    public static TextWriter Print(TopAbs_Orientation theOrientation, TextWriter theStream)
+    public static TextWriter Print(Orientation orientation, TextWriter stream)
     {
-        theStream.Write(ShapeOrientationToString(theOrientation));
-        return theStream;
+        stream.Write(ShapeOrientationToString(orientation));
+        return stream;
     }
 
     /// <summary>Writes the state's name (with OCCT's mismatched table, see the remarks of occt-issues.md).</summary>
-    public static TextWriter Print(TopAbs_State St, TextWriter S)
+    public static TextWriter Print(Containment st, TextWriter s)
     {
-        S.Write(TopAbs_Table_PrintState[(int)St]);
-        return S;
+        s.Write(TopAbs_Table_PrintState[(int)st]);
+        return s;
     }
 
     /// <summary>The upper-case name of the shape type ("COMPOUND", ..., "SHAPE").</summary>
-    public static string ShapeTypeToString(TopAbs_ShapeEnum theType) => TopAbs_Table_PrintShapeEnum[(int)theType];
+    public static string ShapeTypeToString(ShapeType type) => TopAbs_Table_PrintShapeEnum[(int)type];
 
     /// <summary>The shape type of a name (case-insensitive), or SHAPE if the name is unknown.</summary>
-    public static TopAbs_ShapeEnum ShapeTypeFromString(string theTypeString)
+    public static ShapeType ShapeTypeFromString(string typeString)
     {
-        TopAbs_ShapeEnum aType = TopAbs_SHAPE;
-        ShapeTypeFromString(theTypeString, ref aType);
-        return aType;
+        ShapeType type = ShapeType.Shape;
+        ShapeTypeFromString(typeString, ref type);
+        return type;
     }
 
-    /// <summary>Finds the shape type of a name (case-insensitive); false, leaving <paramref name="theType"/> unchanged, if unknown.</summary>
-    public static bool ShapeTypeFromString(string theTypeString, ref TopAbs_ShapeEnum theType)
+    /// <summary>Finds the shape type of a name (case-insensitive); false, leaving <paramref name="type"/> unchanged, if unknown.</summary>
+    public static bool ShapeTypeFromString(string typeString, ref ShapeType type)
     {
-        string aName = theTypeString.ToUpperInvariant();
-        for (int aTypeIter = 0; aTypeIter <= (int)TopAbs_SHAPE; ++aTypeIter)
+        string name = typeString.ToUpperInvariant();
+        for (int typeIter = 0; typeIter <= (int)ShapeType.Shape; ++typeIter)
         {
-            string aTypeName = TopAbs_Table_PrintShapeEnum[aTypeIter];
-            if (aName == aTypeName)
+            string typeName = TopAbs_Table_PrintShapeEnum[typeIter];
+            if (name == typeName)
             {
-                theType = (TopAbs_ShapeEnum)aTypeIter;
+                type = (ShapeType)typeIter;
                 return true;
             }
         }
@@ -96,27 +98,27 @@ public static class TopAbs
     }
 
     /// <summary>The upper-case name of the orientation ("FORWARD", ...).</summary>
-    public static string ShapeOrientationToString(TopAbs_Orientation theOrientation) =>
-        TopAbs_Table_PrintOrientation[(int)theOrientation];
+    public static string ShapeOrientationToString(Orientation orientation) =>
+        TopAbs_Table_PrintOrientation[(int)orientation];
 
     /// <summary>The orientation of a name (case-insensitive), or FORWARD if the name is unknown.</summary>
-    public static TopAbs_Orientation ShapeOrientationFromString(string theOrientationString)
+    public static Orientation ShapeOrientationFromString(string orientationString)
     {
-        TopAbs_Orientation aType = TopAbs_FORWARD;
-        ShapeOrientationFromString(theOrientationString, ref aType);
-        return aType;
+        Orientation type = Forward;
+        ShapeOrientationFromString(orientationString, ref type);
+        return type;
     }
 
-    /// <summary>Finds the orientation of a name (case-insensitive); false, leaving <paramref name="theOrientation"/> unchanged, if unknown.</summary>
-    public static bool ShapeOrientationFromString(string theOrientationString, ref TopAbs_Orientation theOrientation)
+    /// <summary>Finds the orientation of a name (case-insensitive); false, leaving <paramref name="orientation"/> unchanged, if unknown.</summary>
+    public static bool ShapeOrientationFromString(string orientationString, ref Orientation orientation)
     {
-        string aName = theOrientationString.ToUpperInvariant();
-        for (int anOrientationIter = 0; anOrientationIter <= (int)TopAbs_EXTERNAL; ++anOrientationIter)
+        string name = orientationString.ToUpperInvariant();
+        for (int orientationIter = 0; orientationIter <= (int)External; ++orientationIter)
         {
-            string anOrientationName = TopAbs_Table_PrintOrientation[anOrientationIter];
-            if (aName == anOrientationName)
+            string orientationName = TopAbs_Table_PrintOrientation[orientationIter];
+            if (name == orientationName)
             {
-                theOrientation = (TopAbs_Orientation)anOrientationIter;
+                orientation = (Orientation)orientationIter;
                 return true;
             }
         }

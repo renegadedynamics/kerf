@@ -4,11 +4,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 
 namespace Occt;
 
 /// <summary>
-/// The constant topology modifications done with a <see cref="BRepTools_Modifier"/>: <see cref="BRepBuilderAPI_Copy"/>,
+/// The constant topology modifications done with a <see cref="Modifier"/>: <see cref="BRepBuilderAPI_Copy"/>,
 /// <see cref="BRepBuilderAPI_Transform"/>, <see cref="BRepBuilderAPI_GTransform"/>, <see cref="BRepBuilderAPI_NurbsConvert"/>.
 /// </summary>
 /// <remarks>
@@ -19,34 +21,34 @@ namespace Occt;
 /// </remarks>
 public abstract class BRepBuilderAPI_ModifyShape : BRepBuilderAPI_MakeShape
 {
-    protected BRepTools_Modifier myModifier;
-    protected TopoDS_Shape myInitialShape = new();
-    protected BRepTools_Modification? myModification;
+    protected Modifier myModifier;
+    protected Shape myInitialShape = new();
+    protected Modification? myModification;
 
     /// <summary>Empty constructor.</summary>
     protected BRepBuilderAPI_ModifyShape()
     {
-        myModifier = new BRepTools_Modifier();
+        myModifier = new Modifier();
     }
 
     /// <summary>Initializes the modifier with the shape <paramref name="S"/>.</summary>
-    protected BRepBuilderAPI_ModifyShape(in TopoDS_Shape S)
+    protected BRepBuilderAPI_ModifyShape(in Shape S)
     {
-        myModifier = new BRepTools_Modifier(S);
+        myModifier = new Modifier(S);
         myInitialShape = S;
     }
 
     /// <summary>Sets the modification.</summary>
-    protected BRepBuilderAPI_ModifyShape(BRepTools_Modification M)
+    protected BRepBuilderAPI_ModifyShape(Modification M)
     {
-        myModifier = new BRepTools_Modifier();
+        myModifier = new Modifier();
         myModification = M;
     }
 
     /// <summary>Initializes the modifier with the shape <paramref name="S"/> and performs the modification <paramref name="M"/>.</summary>
-    protected BRepBuilderAPI_ModifyShape(in TopoDS_Shape S, BRepTools_Modification M)
+    protected BRepBuilderAPI_ModifyShape(in Shape S, Modification M)
     {
-        myModifier = new BRepTools_Modifier(S);
+        myModifier = new Modifier(S);
         myInitialShape = S;
         myModification = M;
         DoModif();
@@ -54,12 +56,12 @@ public abstract class BRepBuilderAPI_ModifyShape : BRepBuilderAPI_MakeShape
 
     private void DoModif()
     {
-        if (myInitialShape.IsNull() || myModification is null)
+        if (myInitialShape.IsNull || myModification is null)
         {
             throw new NullObjectException();
         }
         myModifier.Perform(myModification);
-        if (myModifier.IsDone())
+        if (myModifier.IsDone)
         {
             Done();
             myShape = myModifier.InternalModifiedShape(myInitialShape);
@@ -71,7 +73,7 @@ public abstract class BRepBuilderAPI_ModifyShape : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Performs the previously given modification on the shape <paramref name="S"/>.</summary>
-    protected void DoModif(in TopoDS_Shape S)
+    protected void DoModif(in Shape S)
     {
         if (!S.IsEqual(myInitialShape) || !IsDone())
         {
@@ -82,14 +84,14 @@ public abstract class BRepBuilderAPI_ModifyShape : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Performs the modification <paramref name="M"/> on the previously given shape.</summary>
-    protected void DoModif(BRepTools_Modification M)
+    protected void DoModif(Modification M)
     {
         myModification = M;
         DoModif();
     }
 
     /// <summary>Performs the modification <paramref name="M"/> on the shape <paramref name="S"/>.</summary>
-    protected void DoModif(in TopoDS_Shape S, BRepTools_Modification M)
+    protected void DoModif(in Shape S, Modification M)
     {
         myInitialShape = S;
         myModifier.Init(S);
@@ -101,20 +103,20 @@ public abstract class BRepBuilderAPI_ModifyShape : BRepBuilderAPI_MakeShape
     /// The modified shape corresponding to <paramref name="S"/>, the initial shape or one of its sub-shapes (frozen).
     /// </summary>
     /// <exception cref="NoSuchObjectException"><paramref name="S"/> isn't the initial shape or one of its sub-shapes.</exception>
-    public TopoDS_Shape ModifiedShape(in TopoDS_Shape S)
+    public Shape ModifiedShape(in Shape S)
     {
-        TopoDS_Shape aShape = InternalModifiedShape(S);
+        Shape aShape = InternalModifiedShape(S);
         aShape.TShape()?.FreezeGraph();
         return aShape;
     }
 
     /// <summary><see cref="ModifiedShape"/> without freezing (OCCT's virtual), for ported code.</summary>
-    internal virtual TopoDS_Shape InternalModifiedShape(in TopoDS_Shape S)
+    internal virtual Shape InternalModifiedShape(in Shape S)
     {
         return myModifier.InternalModifiedShape(S);
     }
 
-    internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape F)
+    internal override NCollection_List<Shape> InternalModified(in Shape F)
     {
         myGenerated.Clear();
         myGenerated.Append(myModifier.InternalModifiedShape(F));

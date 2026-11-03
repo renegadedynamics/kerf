@@ -4,6 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using static Occt.IMeshData_Status;
 
 namespace Occt;
@@ -24,7 +27,7 @@ namespace Occt;
 /// <item>On an unfrozen shape (ported code's), it meshes in place, as OCCT does; <see cref="History"/> is empty.</item>
 /// </list>
 /// So build123d.NET's <c>new BRepMesh_IncrementalMesh(copy, tol, rel, ang, true)</c> becomes
-/// <c>new BRepMesh_IncrementalMesh(shape, tol, rel, ang, true).Shape()</c>. The functional twin is <see cref="Meshed(in TopoDS_Shape, in IMeshTools_Parameters)"/>.
+/// <c>new BRepMesh_IncrementalMesh(shape, tol, rel, ang, true).Shape()</c>. The functional twin is <see cref="Meshed(in Shape, in IMeshTools_Parameters)"/>.
 /// </para>
 /// <para>
 /// The default <see cref="Perform(ProgressRange)"/> runs a <see cref="BRepMesh_Context"/> with the parameters'
@@ -47,7 +50,7 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
     protected int myStatus;
 
     // OCCT.NET: the copy for write (decision 489)
-    private BRepTools_History myHistory = new();
+    private History myHistory = new();
     private bool myToCopyAlways;
 
     /// <summary>An algorithm without a shape.</summary>
@@ -62,7 +65,7 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
     /// faces then take their edges' maximum) and the angular deflection, in parallel if <paramref name="isInParallel"/>.
     /// </summary>
     /// <exception cref="NumericErrorException">The deflection or the angle is too small.</exception>
-    public BRepMesh_IncrementalMesh(in TopoDS_Shape theShape,
+    public BRepMesh_IncrementalMesh(in Shape theShape,
                                     double theLinDeflection,
                                     bool isRelative = false,
                                     double theAngDeflection = 0.5,
@@ -81,7 +84,7 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
 
     /// <summary>Meshes the shape with the parameters.</summary>
     /// <exception cref="NumericErrorException">The deflection or the angle is too small.</exception>
-    public BRepMesh_IncrementalMesh(in TopoDS_Shape theShape,
+    public BRepMesh_IncrementalMesh(in Shape theShape,
                                     in IMeshTools_Parameters theParameters,
                                     ProgressRange theRange = default)
     {
@@ -103,10 +106,10 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
         initParameters();
 
         // OCCT.NET: a shape holding frozen TShapes is meshed on an exact copy (decision 489)
-        TopoDS_Shape anInput = Shape();
-        bool isCopy = !anInput.IsNull() && (myToCopyAlways || BRepTools.HoldsFrozen(anInput));
-        TopoDS_Shape aTarget = isCopy ? BRepTools.ExactCopyForWrite(anInput, out _) : anInput;
-        myHistory = new BRepTools_History();
+        Shape anInput = Shape();
+        bool isCopy = !anInput.IsNull && (myToCopyAlways || BrepTools.HoldsFrozen(anInput));
+        Shape aTarget = isCopy ? BrepTools.ExactCopyForWrite(anInput, out _) : anInput;
+        myHistory = new History();
 
         theContext.SetShape(aTarget);
         theContext.ChangeParameters() = myParameters;
@@ -140,7 +143,7 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
         // OCCT.NET: publish the meshed copy, sharing what meshing left unchanged
         if (isCopy)
         {
-            myShape = BRepTools.KeepUnchanged(anInput, aTarget, out myHistory);
+            myShape = BrepTools.KeepUnchanged(anInput, aTarget, out myHistory);
             myShape.TShape()?.FreezeGraph();
         }
 
@@ -153,15 +156,15 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
     /// meshing changed nothing. The input is never written, frozen or not (decision 489).
     /// </summary>
     /// <exception cref="NumericErrorException">The deflection or the angle is too small.</exception>
-    public static TopoDS_Shape Meshed(in TopoDS_Shape theShape, in IMeshTools_Parameters theParameters)
+    public static Shape Meshed(in Shape theShape, in IMeshTools_Parameters theParameters)
         => Meshed(theShape, theParameters, out _);
 
     /// <summary>
-    /// <see cref="Meshed(in TopoDS_Shape, in IMeshTools_Parameters)"/>, with the history from the input's vertices,
+    /// <see cref="Meshed(in Shape, in IMeshTools_Parameters)"/>, with the history from the input's vertices,
     /// edges, faces and solids to the result's.
     /// </summary>
-    public static TopoDS_Shape Meshed(in TopoDS_Shape theShape, in IMeshTools_Parameters theParameters,
-                                      out BRepTools_History theHistory)
+    public static Shape Meshed(in Shape theShape, in IMeshTools_Parameters theParameters,
+                                      out History theHistory)
     {
         BRepMesh_IncrementalMesh anAlgo = new();
         anAlgo.myParameters = theParameters;
@@ -190,7 +193,7 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
     /// The history of the meshed copy (OCCT.NET, decision 489): the input's vertices, edges, faces and solids modified
     /// into the result's. Empty when the shape was meshed in place, or left as it was.
     /// </summary>
-    public BRepTools_History History() => myHistory;
+    public History History() => myHistory;
 
     // Initializes specific parameters
     private void initParameters()
@@ -232,7 +235,7 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
     /// The plugin interface of the mesh factories: an algorithm for the shape with the deflections, in parallel if
     /// <see cref="IsParallelDefault"/>, not yet performed. Returns 0 (no error).
     /// </summary>
-    public static int Discret(in TopoDS_Shape theShape,
+    public static int Discret(in Shape theShape,
                               double theDeflection,
                               double theAngle,
                               out BRepMesh_DiscretRoot theAlgo)

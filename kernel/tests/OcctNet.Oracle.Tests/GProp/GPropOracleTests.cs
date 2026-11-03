@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 
@@ -18,14 +19,14 @@ public class GPropOracleTests(ITestOutputHelper output)
     private const int Cases = 150;
 
     /// <summary>A GProp_GProps holding given properties, with the reference point at the centre of mass.</summary>
-    private sealed class LoadedProps : GProp_GProps
+    private sealed class LoadedProps : Properties
     {
         public LoadedProps(double theMass, in Point3D theCentre, in Matrix3x3 theInertia)
         {
-            loc = theCentre;
-            g = Kerf.Engine.Geometry.Constants.Origin();
-            dim = theMass;
-            inertia = theInertia;
+            _loc = theCentre;
+            _g = Kerf.Engine.Geometry.Constants.Origin();
+            _dim = theMass;
+            _inertia = theInertia;
         }
     }
 
@@ -173,7 +174,7 @@ public class GPropOracleTests(ITestOutputHelper output)
                 }
 
                 using N.GProp_PrincipalProps aNPP = aNative.PrincipalProperties();
-                GProp_PrincipalProps aPPP = aPort.PrincipalProperties();
+                PrincipalProperties aPPP = aPort.PrincipalProperties();
                 double aN1 = 0, aN2 = 0, aN3 = 0;
                 aNPP.Moments(ref aN1, ref aN2, ref aN3);
                 aPPP.Moments(out double aP1, out double aP2, out double aP3);
@@ -221,7 +222,7 @@ public class GPropOracleTests(ITestOutputHelper output)
             Point3D aLoc = anOracle.Pnt();
             using N.gp_Pnt aNLoc = Oracle.ToNative(aLoc);
             using var aNative = new N.GProp_GProps(aNLoc);
-            var aPort = new GProp_GProps(aLoc);
+            var aPort = new Properties(aLoc);
             int aNb = anOracle.Int(1, 4);
             for (int i = 0; i < aNb; i++)
             {
@@ -246,7 +247,7 @@ public class GPropOracleTests(ITestOutputHelper output)
             anOracle.Same(aNative.MomentOfInertia(aNAxis), aPort.MomentOfInertia(anAxis), aWhat + " MomentOfInertia", 1e-9);
 
             // A copy behaves as the original.
-            var aCopy = new GProp_GProps(aPort);
+            var aCopy = new Properties(aPort);
             anOracle.Same(aPort.Mass(), aCopy.Mass(), aWhat + " copy Mass");
         }
         anOracle.Report("GProp_GProps.Add");

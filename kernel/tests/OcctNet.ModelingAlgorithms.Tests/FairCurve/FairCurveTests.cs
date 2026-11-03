@@ -14,13 +14,13 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class FairCurveTests
 {
-    private static double TangentAngle(Geom2d_BSplineCurve theC, double theU)
+    private static double TangentAngle(BSplineCurve2D theC, double theU)
     {
         theC.D1(theU, out _, out Vector2D aV);
         return Math.Atan2(aV.Y(), aV.X());
     }
 
-    private static double Curvature(Geom2d_BSplineCurve theC, double theU)
+    private static double Curvature(BSplineCurve2D theC, double theU)
     {
         theC.D2(theU, out _, out Vector2D aV1, out Vector2D aV2);
         return (aV1 ^ aV2) / Math.Pow(aV1.Magnitude(), 3);
@@ -30,10 +30,10 @@ public class FairCurveTests
     public void Batten_starts_as_a_straight_line_of_degree_9()
     {
         FairCurve_Batten b = new(new Point2D(1, 2), new Point2D(10, 2), 0.5);
-        Geom2d_BSplineCurve c = b.Curve();
+        BSplineCurve2D c = b.Curve();
         Assert.Equal(9, c.Degree());
-        Assert.Equal(10, c.NbPoles());
-        Assert.Equal(2, c.NbKnots());
+        Assert.Equal(10, c.PoleCount);
+        Assert.Equal(2, c.KnotCount);
         for (int i = 1; i <= 10; i++)
         {
             Assert.Equal(1 + (i - 1), c.Pole(i).X(), 1e-14);
@@ -81,7 +81,7 @@ public class FairCurveTests
             b.SetAngle2(a2 * M_PI / 180);
             Assert.True(b.Compute(out FairCurve_AnalysisCode aCode));
             Assert.Equal(FairCurve_OK, aCode);
-            Geom2d_BSplineCurve c = b.Curve();
+            BSplineCurve2D c = b.Curve();
             Assert.True(c.StartPoint().IsEqual(P1, 1e-12));
             Assert.True(c.EndPoint().IsEqual(P2, 1e-12));
             Assert.Equal(aChord + a1 * M_PI / 180, TangentAngle(c, c.FirstParameter()), 1e-12);
@@ -99,8 +99,8 @@ public class FairCurveTests
         b.SetAngle2(0.5);
         Assert.True(b.Compute(out FairCurve_AnalysisCode aCode));
         Assert.Equal(FairCurve_OK, aCode);
-        Geom2d_BSplineCurve c = b.Curve();
-        int n = c.NbPoles();
+        BSplineCurve2D c = b.Curve();
+        int n = c.PoleCount;
         for (int i = 1; i <= n; i++)
         {
             Assert.Equal(-c.Pole(n + 1 - i).X(), c.Pole(i).X(), 1e-6);
@@ -122,7 +122,7 @@ public class FairCurveTests
         Assert.True(b.GetFreeSliding());
         // the free sliding is computed, and the free angle is the curve's
         Assert.NotEqual(1.0, b.GetSlidingFactor());
-        Geom2d_BSplineCurve c = b.Curve();
+        BSplineCurve2D c = b.Curve();
         Assert.Equal(-b.GetAngle2(), TangentAngle(c, c.LastParameter()), 1e-12);
     }
 
@@ -166,9 +166,9 @@ public class FairCurveTests
         b.SetAngle1(1.5);
         b.SetAngle2(-1.5);
         Assert.True(b.Compute(out _));
-        Geom2d_BSplineCurve c = b.Curve();
-        Assert.True(c.NbKnots() > 2);
-        for (int i = 2; i < c.NbKnots(); i++)
+        BSplineCurve2D c = b.Curve();
+        Assert.True(c.KnotCount > 2);
+        for (int i = 2; i < c.KnotCount; i++)
         {
             Assert.Equal(6, c.Multiplicity(i));
         }
@@ -186,7 +186,7 @@ public class FairCurveTests
         m.SetCurvature2(-0.02);
         Assert.True(m.Compute(out FairCurve_AnalysisCode aCode));
         Assert.Equal(FairCurve_OK, aCode);
-        Geom2d_BSplineCurve c = m.Curve();
+        BSplineCurve2D c = m.Curve();
         Assert.Equal(0.05, Curvature(c, c.FirstParameter()), 1e-9);
         Assert.Equal(-0.02, Curvature(c, c.LastParameter()), 1e-9);
         Assert.Equal(0.05, m.GetCurvature1());
@@ -197,7 +197,7 @@ public class FairCurveTests
         m.SetConstraintOrder1(1);
         m.SetConstraintOrder2(1);
         m.Compute(out _);
-        Geom2d_BSplineCurve c2 = m.Curve();
+        BSplineCurve2D c2 = m.Curve();
         Assert.Equal(Curvature(c2, c2.FirstParameter()), m.GetCurvature1(), 1e-12);
     }
 
@@ -207,7 +207,7 @@ public class FairCurveTests
         FairCurve_Batten b = new(new Point2D(0, 0), new Point2D(10, 0), 0.5);
         b.SetAngle1(0.3);
         b.Compute(out _);
-        Geom2d_BSplineCurve c1 = b.Curve(), c2 = b.Curve();
+        BSplineCurve2D c1 = b.Curve(), c2 = b.Curve();
         Assert.NotSame(c1, c2);
         Assert.True(c1.IsFrozen);
         Assert.Throws<ImmutableObjectException>(() => c1.SetPole(1, new Point2D(1, 1)));

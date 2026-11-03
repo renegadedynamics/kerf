@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Geometry;
 using static OcctNet.ModelingData.Tests.GeomEval_SurfaceTestHelpers;
 
@@ -19,7 +20,7 @@ public class GeomEval_EllipsoidSurfaceTest
     public void Construction_ValidParams()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
+        EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
         Assert.Equal(3.0, aSurf.SemiAxisA(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(2.0, aSurf.SemiAxisB(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(1.0, aSurf.SemiAxisC(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -30,9 +31,9 @@ public class GeomEval_EllipsoidSurfaceTest
     public void Construction_InvalidAxes_Throws()
     {
         CoordinateSystem anAx3 = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new GeomEval_EllipsoidSurface(anAx3, 0.0, 1.0, 1.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new GeomEval_EllipsoidSurface(anAx3, 1.0, -1.0, 1.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new GeomEval_EllipsoidSurface(anAx3, 1.0, 1.0, 0.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new EllipsoidSurface(anAx3, 0.0, 1.0, 1.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new EllipsoidSurface(anAx3, 1.0, -1.0, 1.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new EllipsoidSurface(anAx3, 1.0, 1.0, 0.0));
     }
 
     // Test EvalD0 at u=0, v=0: P = (A, 0, 0)
@@ -41,7 +42,7 @@ public class GeomEval_EllipsoidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         const double aA = 3.0, aB = 2.0, aC = 1.0;
-        GeomEval_EllipsoidSurface aSurf = new(anAx3, aA, aB, aC);
+        EllipsoidSurface aSurf = new(anAx3, aA, aB, aC);
         Point3D aP = aSurf.EvalD0(0.0, 0.0);
         Assert.Equal(aA, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -54,7 +55,7 @@ public class GeomEval_EllipsoidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         const double aA = 3.0, aB = 2.0, aC = 1.0;
-        GeomEval_EllipsoidSurface aSurf = new(anAx3, aA, aB, aC);
+        EllipsoidSurface aSurf = new(anAx3, aA, aB, aC);
         Point3D aP = aSurf.EvalD0(M_PI / 2.0, 0.0);
         Assert.Equal(0.0, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(aB, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -67,7 +68,7 @@ public class GeomEval_EllipsoidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         const double aA = 3.0, aB = 2.0, aC = 1.0;
-        GeomEval_EllipsoidSurface aSurf = new(anAx3, aA, aB, aC);
+        EllipsoidSurface aSurf = new(anAx3, aA, aB, aC);
         Point3D aP = aSurf.EvalD0(0.0, M_PI / 2.0);
         Assert.Equal(0.0, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -79,10 +80,10 @@ public class GeomEval_EllipsoidSurfaceTest
     public void EvalD1_ConsistentWithD0()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
+        EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
         const double aU = 1.0, aV = 0.5;
 
-        Geom_Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
+        Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
         Point3D aPu1 = aSurf.EvalD0(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Point3D aPu2 = aSurf.EvalD0(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Point3D aPv1 = aSurf.EvalD0(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -100,23 +101,23 @@ public class GeomEval_EllipsoidSurfaceTest
     public void Bounds_Periodicity()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_EllipsoidSurface aSurf = new(anAx3, 1.0, 1.0, 1.0);
+        EllipsoidSurface aSurf = new(anAx3, 1.0, 1.0, 1.0);
         aSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal(0.0, aU1, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(2.0 * M_PI, aU2, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(-M_PI / 2.0, aV1, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(M_PI / 2.0, aV2, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aSurf.IsUPeriodic());
-        Assert.True(aSurf.IsUClosed());
-        Assert.False(aSurf.IsVPeriodic());
-        Assert.False(aSurf.IsVClosed());
+        Assert.True(aSurf.IsUPeriodic);
+        Assert.True(aSurf.IsUClosed);
+        Assert.False(aSurf.IsVPeriodic);
+        Assert.False(aSurf.IsVClosed);
     }
 
     [Fact]
     public void Iso_NotImplemented()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
+        EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UIso(0.5));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VIso(0.5));
     }
@@ -125,7 +126,7 @@ public class GeomEval_EllipsoidSurfaceTest
     public void Reverse_NotImplemented()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
+        EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReverse());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReverse());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReversedParameter(0.5));
@@ -137,7 +138,7 @@ public class GeomEval_EllipsoidSurfaceTest
     public void Coefficients_SatisfiedAtEvalPoints()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.5);
+        EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.5);
         aSurf.Coefficients(out double aA1, out double aA2, out double aA3, out double aB1, out double aB2,
                            out double aB3, out double aC1, out double aC2, out double aC3, out double aD);
 
@@ -160,7 +161,7 @@ public class GeomEval_EllipsoidSurfaceTest
     public void Transform_NotImplemented()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
+        EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
         Transform3D aTrsf = new();
         aTrsf.SetTranslation(new Vector3D(1.0, 2.0, 3.0));
 
@@ -173,10 +174,10 @@ public class GeomEval_EllipsoidSurfaceTest
     public void Copy_Independent()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
-        Geom_Geometry aCopy = aSurf.Copy();
+        EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
+        Geometry3D aCopy = aSurf.Copy();
         Assert.NotNull(aCopy);
-        GeomEval_EllipsoidSurface? aCopySurf = aCopy as GeomEval_EllipsoidSurface;
+        EllipsoidSurface? aCopySurf = aCopy as EllipsoidSurface;
         Assert.NotNull(aCopySurf);
         Assert.Equal(3.0, aCopySurf.SemiAxisA(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(2.0, aCopySurf.SemiAxisB(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -189,7 +190,7 @@ public class GeomEval_EllipsoidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         const double aR = 5.0;
-        GeomEval_EllipsoidSurface anEllipsoid = new(anAx3, aR, aR, aR);
+        EllipsoidSurface anEllipsoid = new(anAx3, aR, aR, aR);
 
         double[][] aParams =
         [
@@ -213,7 +214,7 @@ public class GeomEval_EllipsoidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         const double aR = 5.0;
-        GeomEval_EllipsoidSurface anEllipsoid = new(anAx3, aR, aR, aR);
+        EllipsoidSurface anEllipsoid = new(anAx3, aR, aR, aR);
 
         double[][] aParams = [[0.0, 0.0], [M_PI / 4.0, M_PI / 4.0], [1.0, 0.3], [M_PI, -M_PI / 4.0]];
 
@@ -221,8 +222,8 @@ public class GeomEval_EllipsoidSurfaceTest
         {
             double aU = aUV[0];
             double aV = aUV[1];
-            Geom_Surface.ResD1 aDE = anEllipsoid.EvalD1(aU, aV);
-            Geom_Surface.ResD1 aDS = SphereEvalD1(anAx3, aR, aU, aV);
+            Surface.ResD1 aDE = anEllipsoid.EvalD1(aU, aV);
+            Surface.ResD1 aDS = SphereEvalD1(anAx3, aR, aU, aV);
 
             ExpectNear(aDE.Point, aDS.Point, global::Kerf.Engine.Foundation.Precision.Confusion());
             ExpectNear(aDE.D1U, aDS.D1U, global::Kerf.Engine.Foundation.Precision.Angular());
@@ -236,7 +237,7 @@ public class GeomEval_EllipsoidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         const double aR = 5.0;
-        GeomEval_EllipsoidSurface anEllipsoid = new(anAx3, aR, aR, aR);
+        EllipsoidSurface anEllipsoid = new(anAx3, aR, aR, aR);
 
         double[][] aParams = [[0.0, 0.0], [M_PI / 4.0, M_PI / 4.0], [1.0, 0.3]];
 
@@ -244,8 +245,8 @@ public class GeomEval_EllipsoidSurfaceTest
         {
             double aU = aUV[0];
             double aV = aUV[1];
-            Geom_Surface.ResD2 aDE = anEllipsoid.EvalD2(aU, aV);
-            Geom_Surface.ResD2 aDS = SphereEvalD2(anAx3, aR, aU, aV);
+            Surface.ResD2 aDE = anEllipsoid.EvalD2(aU, aV);
+            Surface.ResD2 aDS = SphereEvalD2(anAx3, aR, aU, aV);
 
             ExpectNear(aDE.Point, aDS.Point, global::Kerf.Engine.Foundation.Precision.Confusion());
             ExpectNear(aDE.D1U, aDS.D1U, global::Kerf.Engine.Foundation.Precision.Angular());
@@ -262,7 +263,7 @@ public class GeomEval_EllipsoidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         const double aR = 5.0;
-        GeomEval_EllipsoidSurface anEllipsoid = new(anAx3, aR, aR, aR);
+        EllipsoidSurface anEllipsoid = new(anAx3, aR, aR, aR);
 
         double[][] aParams = [[M_PI / 4.0, M_PI / 4.0], [1.0, 0.3]];
 
@@ -270,8 +271,8 @@ public class GeomEval_EllipsoidSurfaceTest
         {
             double aU = aUV[0];
             double aV = aUV[1];
-            Geom_Surface.ResD3 aDE = anEllipsoid.EvalD3(aU, aV);
-            Geom_Surface.ResD3 aDS = SphereEvalD3(anAx3, aR, aU, aV);
+            Surface.ResD3 aDE = anEllipsoid.EvalD3(aU, aV);
+            Surface.ResD3 aDS = SphereEvalD3(anAx3, aR, aU, aV);
 
             ExpectNear(aDE.Point, aDS.Point, global::Kerf.Engine.Foundation.Precision.Confusion());
             ExpectNear(aDE.D1U, aDS.D1U, global::Kerf.Engine.Foundation.Precision.Angular());
@@ -291,20 +292,20 @@ public class GeomEval_EllipsoidSurfaceTest
     public void EvalD2_ConsistentWithD1()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
+        EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
         const double aU = 1.0, aV = 0.5;
 
-        Geom_Surface.ResD2 aD2 = aSurf.EvalD2(aU, aV);
+        Surface.ResD2 aD2 = aSurf.EvalD2(aU, aV);
 
         // D2U ~ (D1U(u+h,v) - D1U(u-h,v)) / (2h)
-        Geom_Surface.ResD1 aD1Up = aSurf.EvalD1(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
-        Geom_Surface.ResD1 aD1Um = aSurf.EvalD1(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
+        Surface.ResD1 aD1Up = aSurf.EvalD1(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
+        Surface.ResD1 aD1Um = aSurf.EvalD1(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Vector3D aFD_D2U = new((aD1Up.D1U.XYZ() - aD1Um.D1U.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
         ExpectNear(aD2.D2U, aFD_D2U, THE_FD_TOL);
 
         // D2V ~ (D1V(u,v+h) - D1V(u,v-h)) / (2h)
-        Geom_Surface.ResD1 aD1Vp = aSurf.EvalD1(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
-        Geom_Surface.ResD1 aD1Vm = aSurf.EvalD1(aU, aV - global::Kerf.Engine.Foundation.Precision.Confusion());
+        Surface.ResD1 aD1Vp = aSurf.EvalD1(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Surface.ResD1 aD1Vm = aSurf.EvalD1(aU, aV - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector3D aFD_D2V = new((aD1Vp.D1V.XYZ() - aD1Vm.D1V.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
         ExpectNear(aD2.D2V, aFD_D2V, THE_FD_TOL);
 
@@ -318,20 +319,20 @@ public class GeomEval_EllipsoidSurfaceTest
     public void EvalD3_ConsistentWithD2()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
+        EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
         const double aU = 1.0, aV = 0.5;
 
-        Geom_Surface.ResD3 aD3 = aSurf.EvalD3(aU, aV);
+        Surface.ResD3 aD3 = aSurf.EvalD3(aU, aV);
 
         // D3U ~ (D2U(u+h,v) - D2U(u-h,v)) / (2h)
-        Geom_Surface.ResD2 aD2Up = aSurf.EvalD2(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
-        Geom_Surface.ResD2 aD2Um = aSurf.EvalD2(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
+        Surface.ResD2 aD2Up = aSurf.EvalD2(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
+        Surface.ResD2 aD2Um = aSurf.EvalD2(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Vector3D aFD_D3U = new((aD2Up.D2U.XYZ() - aD2Um.D2U.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
         ExpectNear(aD3.D3U, aFD_D3U, THE_FD_TOL);
 
         // D3V ~ (D2V(u,v+h) - D2V(u,v-h)) / (2h)
-        Geom_Surface.ResD2 aD2Vp = aSurf.EvalD2(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
-        Geom_Surface.ResD2 aD2Vm = aSurf.EvalD2(aU, aV - global::Kerf.Engine.Foundation.Precision.Confusion());
+        Surface.ResD2 aD2Vp = aSurf.EvalD2(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Surface.ResD2 aD2Vm = aSurf.EvalD2(aU, aV - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector3D aFD_D3V = new((aD2Vp.D2V.XYZ() - aD2Vm.D2V.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
         ExpectNear(aD3.D3V, aFD_D3V, THE_FD_TOL);
 
@@ -349,10 +350,10 @@ public class GeomEval_EllipsoidSurfaceTest
     public void EvalDN_ConsistentWithD3()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
+        EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.0);
         const double aU = 1.0, aV = 0.5;
 
-        Geom_Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
+        Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
 
         // EvalDN(u, v, 1, 0) must match D1U
         Vector3D aDN10 = aSurf.EvalDN(aU, aV, 1, 0);
@@ -368,7 +369,7 @@ public class GeomEval_EllipsoidSurfaceTest
     public void Derivatives_MatchFiniteDifferences()
     {
         CoordinateSystem anAx3 = new(new Point3D(1.0, -2.0, 0.5), new Direction3D(1.0, 1.0, 1.0), new Direction3D(1.0, -1.0, 0.0));
-        GeomEval_EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.5);
+        EllipsoidSurface aSurf = new(anAx3, 3.0, 2.0, 1.5);
         for (double aU = 0.1; aU < 2.0 * M_PI; aU += 0.7)
         {
             for (double aV = -1.2; aV <= 1.2; aV += 0.6)
@@ -382,8 +383,8 @@ public class GeomEval_EllipsoidSurfaceTest
     [Fact]
     public void Setters_WithTwins_Freeze()
     {
-        GeomEval_EllipsoidSurface aSurf = new(new CoordinateSystem(), 3.0, 2.0, 1.0);
-        GeomEval_EllipsoidSurface aCopy = aSurf.WithSemiAxisA(4.0).WithSemiAxisB(5.0).WithSemiAxisC(6.0);
+        EllipsoidSurface aSurf = new(new CoordinateSystem(), 3.0, 2.0, 1.0);
+        EllipsoidSurface aCopy = aSurf.WithSemiAxisA(4.0).WithSemiAxisB(5.0).WithSemiAxisC(6.0);
         Assert.Equal(3.0, aSurf.SemiAxisA());
         Assert.Equal(4.0, aCopy.SemiAxisA());
         Assert.Equal(5.0, aCopy.SemiAxisB());

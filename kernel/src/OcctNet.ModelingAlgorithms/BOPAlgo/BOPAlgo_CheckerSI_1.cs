@@ -3,9 +3,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -14,9 +17,9 @@ internal sealed class BOPAlgo_VertexSolid : BOPTools_Parallel.IContextSolver<Int
 {
     private int myIV;
     private int myIZ;
-    private TopAbs_State myState;
-    private TopoDS_Vertex myV = new();
-    private TopoDS_Solid myZ = new();
+    private Containment myState;
+    private Vertex myV = new();
+    private Solid myZ = new();
     private IntTools_Context? myContext;
     private ProgressRange myProgressRange;
 
@@ -24,7 +27,7 @@ internal sealed class BOPAlgo_VertexSolid : BOPTools_Parallel.IContextSolver<Int
     {
         myIV = -1;
         myIZ = -1;
-        myState = TopAbs_UNKNOWN;
+        myState = Unknown;
     }
 
     //
@@ -42,16 +45,16 @@ internal sealed class BOPAlgo_VertexSolid : BOPTools_Parallel.IContextSolver<Int
     }
 
     //
-    public void SetVertex(in TopoDS_Vertex aV) => myV = aV;
+    public void SetVertex(in Vertex aV) => myV = aV;
 
     //
-    public TopoDS_Vertex Vertex() => myV;
+    public Vertex Vertex() => myV;
 
     //
-    public void SetSolid(in TopoDS_Solid aZ) => myZ = aZ;
+    public void SetSolid(in Solid aZ) => myZ = aZ;
 
     //
-    public TopoDS_Solid Solid() => myZ;
+    public Solid Solid() => myZ;
 
     //
     public void SetContext(IntTools_Context aContext) => myContext = aContext;
@@ -60,7 +63,7 @@ internal sealed class BOPAlgo_VertexSolid : BOPTools_Parallel.IContextSolver<Int
     public IntTools_Context? Context() => myContext;
 
     //
-    public TopAbs_State State() => myState;
+    public Containment State() => myState;
 
     //
     public void SetProgressRange(ProgressRange theRange) => myProgressRange = theRange;
@@ -79,8 +82,8 @@ internal sealed class BOPAlgo_VertexSolid : BOPTools_Parallel.IContextSolver<Int
         //
         BRepClass3d_SolidClassifier aSC = myContext!.SolidClassifier(myZ);
         //
-        aPV = BRep_Tool.Pnt(myV);
-        aTol = BRep_Tool.Tolerance(myV);
+        aPV = Tool.Pnt(myV);
+        aTol = Tool.Tolerance(myV);
         //
         aSC.Perform(aPV, aTol);
         //
@@ -182,10 +185,10 @@ public partial class BOPAlgo_CheckerSI
         using var aPSOuter = new ProgressScope(theRange, null, 1);
 
         int iSize, nV, nZ, k, aNbVVS;
-        TopAbs_State aState;
+        Containment aState;
         NCollection_Map<BOPDS_Pair> aMPK = new();
         //
-        myIterator!.Initialize(TopAbs_VERTEX, TopAbs_SOLID);
+        myIterator!.Initialize(ShapeType.Vertex, ShapeType.Solid);
         iSize = myIterator.ExpectedLength();
         if (iSize == 0)
         {
@@ -219,8 +222,8 @@ public partial class BOPAlgo_CheckerSI
                 continue;
             }
             //
-            TopoDS_Vertex aV = TopoDS.Vertex(myDS.Shape(nVSD));
-            TopoDS_Solid aZ = TopoDS.Solid(myDS.Shape(nZ));
+            Vertex aV = ShapeCasts.Vertex(myDS.Shape(nVSD));
+            Solid aZ = ShapeCasts.Solid(myDS.Shape(nZ));
             //
             BOPAlgo_VertexSolid aVertexSolid = new();
             aVVS.Add(aVertexSolid);
@@ -247,7 +250,7 @@ public partial class BOPAlgo_CheckerSI
         {
             BOPAlgo_VertexSolid aVertexSolid = aVVS[k];
             aState = aVertexSolid.State();
-            if (aState == TopAbs_IN)
+            if (aState == In)
             {
                 aVertexSolid.Indices(out nV, out nZ);
                 //
@@ -262,13 +265,13 @@ public partial class BOPAlgo_CheckerSI
     /// <summary>Edge/solid intersection.</summary>
     protected virtual void PerformEZ(ProgressRange theRange)
     {
-        PerformSZ(TopAbs_EDGE, theRange);
+        PerformSZ(ShapeType.Edge, theRange);
     }
 
     /// <summary>Face/solid intersection.</summary>
     protected virtual void PerformFZ(ProgressRange theRange)
     {
-        PerformSZ(TopAbs_FACE, theRange);
+        PerformSZ(ShapeType.Face, theRange);
     }
 
     /// <summary>Solid/solid intersection.</summary>
@@ -279,7 +282,7 @@ public partial class BOPAlgo_CheckerSI
         bool bHasInterf;
         int iSize, nZ1, nZ, k, aNbSolidSolid;
         //
-        myIterator!.Initialize(TopAbs_SOLID, TopAbs_SOLID);
+        myIterator!.Initialize(ShapeType.Solid, ShapeType.Solid);
         iSize = myIterator.ExpectedLength();
         if (iSize == 0)
         {
@@ -332,14 +335,14 @@ public partial class BOPAlgo_CheckerSI
     }
 
     /// <summary>Edge/solid or face/solid intersection: the shape and the solid share interfering sub-shapes.</summary>
-    protected virtual void PerformSZ(TopAbs_ShapeEnum theTS, ProgressRange theRange)
+    protected virtual void PerformSZ(ShapeType theTS, ProgressRange theRange)
     {
         using var aPSOuter = new ProgressScope(theRange, null, 1);
 
         bool bHasInterf;
         int iSize, nS, nZ, k, aNbShapeSolid;
         //
-        myIterator!.Initialize(theTS, TopAbs_SOLID);
+        myIterator!.Initialize(theTS, ShapeType.Solid);
         iSize = myIterator.ExpectedLength();
         if (iSize == 0)
         {
@@ -361,7 +364,7 @@ public partial class BOPAlgo_CheckerSI
         aNbShapeSolid = aVShapeSolid.Count;
 
         using var aPSParallel = new ProgressScope(aPSOuter.Next(),
-                                                          theTS == TopAbs_EDGE ? "Performing Edge-Solid intersection"
+                                                          theTS == ShapeType.Edge ? "Performing Edge-Solid intersection"
                                                                                : "Performing Face-Solid intersection",
                                                           aNbShapeSolid);
         for (int iSS = 0; iSS < aNbShapeSolid; ++iSS)
@@ -387,7 +390,7 @@ public partial class BOPAlgo_CheckerSI
             {
                 aShapeSolid.Indices(out nS, out nZ);
                 //
-                if (theTS == TopAbs_EDGE)
+                if (theTS == ShapeType.Edge)
                 {
                     BOPDS_InterfEZ aEZ = aEZs.Append(new BOPDS_InterfEZ());
                     aEZ.SetIndices(nS, nZ);

@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -25,7 +26,7 @@ public class Geom_AxisPlacementTests
         Assert.Equal(theExpected.Z(), theActual.Z(), Tol);
     }
 
-    private static void AssertAx2(in Frame3D theExpected, Geom_Axis2Placement theActual)
+    private static void AssertAx2(in Frame3D theExpected, Axis2Placement theActual)
     {
         AssertPnt(theExpected.Location(), theActual.Location());
         AssertDir(theExpected.Direction(), theActual.Direction());
@@ -39,12 +40,12 @@ public class Geom_AxisPlacementTests
     public void Axis1Placement_matches_gp_Ax1()
     {
         Axis3D A = new(new Point3D(1, 2, 3), new Direction3D(1, 2, 2));
-        Geom_Axis1Placement G = new(A.Location(), A.Direction());
+        Axis1Placement G = new(A.Location(), A.Direction());
         Assert.Equal(A, G.Ax1());
         Assert.Equal(A, G.Axis());
 
         Transform3D T = Transform3D.Rotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0.5);
-        Geom_Axis1Placement GT = (Geom_Axis1Placement)G.Transformed(T);
+        Axis1Placement GT = (Axis1Placement)G.Transformed(T);
         Axis3D AT = A.Transformed(T);
         AssertPnt(AT.Location(), GT.Location());
         AssertDir(AT.Direction(), GT.Direction());
@@ -53,7 +54,7 @@ public class Geom_AxisPlacementTests
         Assert.Equal(A.Direction(), G.Direction());
         Assert.Equal(M_PI, G.Angle(G.Reversed()), Tol);
 
-        Geom_AxisPlacement GD = G.WithDirection(new Direction3D(0, 0, 1));
+        AxisPlacement GD = G.WithDirection(new Direction3D(0, 0, 1));
         AssertDir(new Direction3D(0, 0, 1), GD.Direction());
         AssertPnt(A.Location(), GD.Location());
         AssertPnt(new Point3D(9, 9, 9), G.WithLocation(new Point3D(9, 9, 9)).Location());
@@ -68,19 +69,19 @@ public class Geom_AxisPlacementTests
         Direction3D N = new(0, 0.6, 0.8);
         Direction3D Vx = new(1, 1, 0);
         Frame3D A = new(P, N, Vx);
-        Geom_Axis2Placement G = new(P, N, Vx);
+        Axis2Placement G = new(P, N, Vx);
         AssertAx2(A, G);
-        AssertAx2(A, new Geom_Axis2Placement(A));
+        AssertAx2(A, new Axis2Placement(A));
 
         Transform3D T = Transform3D.Rotation(new Axis3D(new Point3D(3, 0, 0), new Direction3D(1, 1, 1)), 1.2)
                       .Multiplied(Transform3D.Translation(new Vector3D(1, 2, 3)));
-        AssertAx2(A.Transformed(T), (Geom_Axis2Placement)G.Transformed(T));
-        AssertAx2(A.Mirrored(new Point3D(0, 0, 0)), (Geom_Axis2Placement)G.Mirrored(new Point3D(0, 0, 0)));
+        AssertAx2(A.Transformed(T), (Axis2Placement)G.Transformed(T));
+        AssertAx2(A.Mirrored(new Point3D(0, 0, 0)), (Axis2Placement)G.Mirrored(new Point3D(0, 0, 0)));
 
         Direction3D aNewMain = new(1, 0, 0);
         Frame3D AD = A;
         AD.SetDirection(aNewMain);
-        AssertAx2(AD, (Geom_Axis2Placement)G.WithDirection(aNewMain));
+        AssertAx2(AD, (Axis2Placement)G.WithDirection(aNewMain));
 
         Frame3D AX = A;
         AX.SetXDirection(new Direction3D(1, 0, 0));
@@ -96,7 +97,7 @@ public class Geom_AxisPlacementTests
         // The original is unchanged, and its copy is equal and unfrozen
         AssertAx2(A, G);
         G.Freeze();
-        Geom_Axis2Placement C = (Geom_Axis2Placement)G.Copy();
+        Axis2Placement C = (Axis2Placement)G.Copy();
         Assert.False(C.IsFrozen);
         AssertAx2(A, C);
         Assert.Throws<ImmutableObjectException>(() => G.SetXDirection(new Direction3D(1, 0, 0)));
@@ -108,7 +109,7 @@ public class Geom_AxisPlacementTests
     [Fact]
     public void Axis2Placement_SetDirection_parallel_to_X_throws()
     {
-        Geom_Axis2Placement G = new(new Frame3D());
+        Axis2Placement G = new(new Frame3D());
         Assert.Throws<ConstructionErrorException>(() => G.WithDirection(new Direction3D(1, 0, 0).Reversed()));
     }
 
@@ -117,8 +118,8 @@ public class Geom_AxisPlacementTests
     {
         // OCCT: Geom_AxisPlacement::SetAxis only assigns the axis, so a Geom_Axis2Placement's X and Y directions
         // are not recomputed as documented (docs/occt-issues.md). Reproduced on purpose.
-        Geom_Axis2Placement G = new(new Frame3D());
-        Geom_Axis2Placement S = (Geom_Axis2Placement)G.WithAxis(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 1)));
+        Axis2Placement G = new(new Frame3D());
+        Axis2Placement S = (Axis2Placement)G.WithAxis(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 1)));
         AssertDir(new Direction3D(0, 1, 1), S.Direction());
         AssertDir(new Direction3D(1, 0, 0), S.XDirection());
         AssertDir(new Direction3D(0, 1, 0), S.YDirection()); // no longer perpendicular to the main direction

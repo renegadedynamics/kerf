@@ -2,6 +2,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
 using Kerf.Topology;
 using System.Collections.Immutable;
 
@@ -84,7 +85,7 @@ public sealed class XdeDoc_Tree
     public XdeDoc_Tree(XdeDoc_Instance theRoot) : this([theRoot]) { }
 
     /// <summary>A tree of one part: the shape (frozen) with a name, at its place.</summary>
-    public static XdeDoc_Tree FromShape(in TopoDS_Shape theShape, string? theName = null)
+    public static XdeDoc_Tree FromShape(in Shape theShape, string? theName = null)
         => new(new XdeDoc_Instance(XdeDoc_Product.Part(theShape, theName)));
 
     /// <summary>The roots (XCAF's free shapes).</summary>
@@ -215,7 +216,7 @@ public sealed class XdeDoc_Tree
     }
 
     /// <summary>
-    /// The tree with every part meshed (<see cref="BRepMesh_IncrementalMesh.Meshed(in TopoDS_Shape, in IMeshTools_Parameters, out BRepTools_History)"/>),
+    /// The tree with every part meshed (<see cref="BRepMesh_IncrementalMesh.Meshed(in Shape, in IMeshTools_Parameters, out History)"/>),
     /// sharing what meshing leaves unchanged: faces already meshed, and products whose faces all are. Sub-shape
     /// attributes follow their sub-shapes into the meshed parts. Null if cancelled.
     /// </summary>
@@ -232,7 +233,7 @@ public sealed class XdeDoc_Tree
                     return null;
                 }
                 aPS.Next();
-                TopoDS_Shape aMeshed = BRepMesh_IncrementalMesh.Meshed(aPart.Shape, theParameters, out BRepTools_History aHistory);
+                Shape aMeshed = BRepMesh_IncrementalMesh.Meshed(aPart.Shape, theParameters, out History aHistory);
                 if (aMeshed.IsEqual(aPart.Shape))
                 {
                     aMap[aPart] = aPart;
@@ -248,7 +249,7 @@ public sealed class XdeDoc_Tree
                     }
                     else
                     {
-                        foreach (TopoDS_Shape aNew in aModified)
+                        foreach (Shape aNew in aModified)
                         {
                             aSubs.Add(new XdeDoc_SubShape(aNew, aSub.Attributes));
                         }

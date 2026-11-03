@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
@@ -20,7 +21,7 @@ public static class HLRBRep_TheCurveLocatorOfTheProjPCurOfCInter
     /// the curve, the one nearest <paramref name="theP"/>.
     /// </summary>
     /// <exception cref="OutOfRangeException"><paramref name="theNbU"/> is less than 2.</exception>
-    public static void Locate(in Point2D theP, HLRBRep_Curve theC, int theNbU, out Extrema_POnCurv2d thePapp)
+    public static void Locate(in Point2D theP, HLRBRep_Curve theC, int theNbU, out POnCurv2d thePapp)
     {
         if (theNbU < 2)
         {
@@ -46,7 +47,7 @@ public static class HLRBRep_TheCurveLocatorOfTheProjPCurOfCInter
                 aPntMin = aPt;
             }
         }
-        thePapp = new Extrema_POnCurv2d(aUMin, aPntMin);
+        thePapp = new POnCurv2d(aUMin, aPntMin);
     }
 
     /// <summary>
@@ -55,7 +56,7 @@ public static class HLRBRep_TheCurveLocatorOfTheProjPCurOfCInter
     /// </summary>
     /// <exception cref="OutOfRangeException"><paramref name="theNbU"/> is less than 2.</exception>
     public static void Locate(in Point2D theP, HLRBRep_Curve theC, int theNbU, double theUmin, double theUsup,
-                              out Extrema_POnCurv2d thePapp)
+                              out POnCurv2d thePapp)
     {
         if (theNbU < 2)
         {
@@ -98,6 +99,6 @@ public static class HLRBRep_TheCurveLocatorOfTheProjPCurOfCInter
                 aPntMin = aPt;
             }
         }
-        thePapp = new Extrema_POnCurv2d(aUMin, aPntMin);
+        thePapp = new POnCurv2d(aUMin, aPntMin);
     }
 }

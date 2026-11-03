@@ -4,6 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopOpeBRepDS_Config;
 
 namespace Occt;
@@ -16,7 +19,7 @@ namespace Occt;
 /// <para>
 /// Surfaces, curves and points are numbered from 1 in the order added; a removed curve or surface keeps its number
 /// (unbound, or not kept). Shapes are numbered from 1 in the order added (an indexed map keyed by
-/// <see cref="TopTools_ShapeMapHasher"/>: same TShape and location, any orientation).
+/// <see cref="ShapeHasher"/>: same TShape and location, any orientation).
 /// </para>
 /// <para>
 /// A working object, internal to the fillet builders and to unit 7R's reconstruction (plan 2.1): the mutators are
@@ -38,24 +41,24 @@ public sealed class TopOpeBRepDS_DataStructure
     internal readonly NCollection_DataMap<int, TopOpeBRepDS_CurveData> myCurves = new();
     private int myNbPoints;
     internal readonly NCollection_DataMap<int, TopOpeBRepDS_PointData> myPoints = new();
-    private readonly NCollection_IndexedDataMap<TopoDS_Shape, TopOpeBRepDS_ShapeData> myShapes = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_IndexedMap<TopoDS_Shape> mySectionEdges = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedDataMap<Shape, TopOpeBRepDS_ShapeData> myShapes = new(ShapeHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> mySectionEdges = new(ShapeHasher.Instance);
     private readonly NCollection_List<TopOpeBRepDS_Interference> myEmptyListOfInterference = new();
-    private readonly NCollection_List<TopoDS_Shape> myEmptyListOfShape = new();
-    private TopoDS_Shape myEmptyShape = new();
+    private readonly NCollection_List<Shape> myEmptyListOfShape = new();
+    private Shape myEmptyShape = new();
     private TopOpeBRepDS_Point myEmptyPoint = new();
     private TopOpeBRepDS_Surface myEmptySurface = new();
     private TopOpeBRepDS_Curve myEmptyCurve = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, Geom_Surface> myNewSurface = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, Surface> myNewSurface = new(ShapeHasher.Instance);
     private bool myIsfafa;
     private int myI;
-    private readonly NCollection_IndexedDataMap<TopoDS_Shape, TopOpeBRepDS_ShapeWithState> myMapOfShapeWithStateObj = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_IndexedDataMap<TopoDS_Shape, TopOpeBRepDS_ShapeWithState> myMapOfShapeWithStateTool = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myMapOfRejectedShapesObj = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myMapOfRejectedShapesTool = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedDataMap<Shape, TopOpeBRepDS_ShapeWithState> myMapOfShapeWithStateObj = new(ShapeHasher.Instance);
+    private readonly NCollection_IndexedDataMap<Shape, TopOpeBRepDS_ShapeWithState> myMapOfShapeWithStateTool = new(ShapeHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myMapOfRejectedShapesObj = new(ShapeHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myMapOfRejectedShapesTool = new(ShapeHasher.Instance);
 
     // OCCT.NET: OCCT's function-scope statics of ChangeMapOfShapeWithState and GetShapeWithState (decision 1063)
-    private readonly NCollection_IndexedDataMap<TopoDS_Shape, TopOpeBRepDS_ShapeWithState> myDummyMapOfShapeWithState = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedDataMap<Shape, TopOpeBRepDS_ShapeWithState> myDummyMapOfShapeWithState = new(ShapeHasher.Instance);
     private readonly TopOpeBRepDS_ShapeWithState myDummyShapeWithState = new();
 
     /// <summary>An empty data structure.</summary>
@@ -158,7 +161,7 @@ public sealed class TopOpeBRepDS_DataStructure
     internal void RemoveCurve(int I)
     {
         ref TopOpeBRepDS_Curve C = ref ChangeCurve(I);
-        C.GetShapes(out TopoDS_Shape S1, out TopoDS_Shape S2);
+        C.GetShapes(out Shape S1, out Shape S2);
         TopOpeBRepDS_Interference? I1 = C.GetSCI1();
         TopOpeBRepDS_Interference? I2 = C.GetSCI2();
         if (I1 is not null)
@@ -209,7 +212,7 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>Adds a copy of the point <paramref name="PDS"/> (the shapes are ignored, as in OCCT); returns its index.</summary>
-    internal int AddPointSS(in TopOpeBRepDS_Point PDS, in TopoDS_Shape S1, in TopoDS_Shape S2)
+    internal int AddPointSS(in TopOpeBRepDS_Point PDS, in Shape S1, in Shape S2)
     {
         _ = S1;
         _ = S2;
@@ -251,7 +254,7 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>Adds the shape <paramref name="S"/> if it is new (its own same-domain reference); returns its index.</summary>
-    internal int AddShape(in TopoDS_Shape S)
+    internal int AddShape(in Shape S)
     {
         int iS = myShapes.FindIndex(S);
         if (iS == 0)
@@ -269,7 +272,7 @@ public sealed class TopOpeBRepDS_DataStructure
     /// Adds the shape <paramref name="S"/> if it is new, with the ancestor rank <paramref name="Ianc"/>; returns its
     /// index. The rank of a shape already there is not changed.
     /// </summary>
-    internal int AddShape(in TopoDS_Shape S, int Ianc)
+    internal int AddShape(in Shape S, int Ianc)
     {
         int iS = myShapes.FindIndex(S);
         if (iS == 0)
@@ -290,7 +293,7 @@ public sealed class TopOpeBRepDS_DataStructure
         bool b = false;
         if (I >= 1 && I <= myShapes.Extent())
         {
-            TopoDS_Shape S = myShapes.FindKey(I);
+            Shape S = myShapes.FindKey(I);
             if (FindKeep)
             {
                 b = KeepShape(S);
@@ -304,10 +307,10 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>Whether the shape <paramref name="S"/> is in the data structure and (if <paramref name="FindKeep"/>) is kept.</summary>
-    public bool KeepShape(in TopoDS_Shape S, bool FindKeep = true)
+    public bool KeepShape(in Shape S, bool FindKeep = true)
     {
         bool b = false;
-        if ((!myShapes.IsEmpty()) && (!S.IsNull()) && myShapes.Contains(S))
+        if ((!myShapes.IsEmpty()) && (!S.IsNull) && myShapes.Contains(S))
         {
             TopOpeBRepDS_ShapeData SD = myShapes.FindFromKey(S);
             if (FindKeep)
@@ -326,14 +329,14 @@ public sealed class TopOpeBRepDS_DataStructure
     {
         if (I >= 1 && I <= myShapes.Extent())
         {
-            TopoDS_Shape S = myShapes.FindKey(I);
+            Shape S = myShapes.FindKey(I);
             ChangeKeepShape(S, FindKeep);
         }
     }
 
-    internal void ChangeKeepShape(in TopoDS_Shape S, bool FindKeep)
+    internal void ChangeKeepShape(in Shape S, bool FindKeep)
     {
-        if (!S.IsNull() && myShapes.Contains(S))
+        if (!S.IsNull && myShapes.Contains(S))
         {
             TopOpeBRepDS_ShapeData SD = myShapes.ChangeFromKey(S);
             SD.ChangeKeep(FindKeep);
@@ -346,7 +349,7 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>Adds the section edge <paramref name="E"/> if it is new; returns its index among the section edges.</summary>
-    internal int AddSectionEdge(in TopoDS_Edge E)
+    internal int AddSectionEdge(in Edge E)
     {
         int iE = mySectionEdges.FindIndex(E);
         if (iE == 0)
@@ -357,7 +360,7 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>The map of the shapes and their data.</summary>
-    internal NCollection_IndexedDataMap<TopoDS_Shape, TopOpeBRepDS_ShapeData> ChangeShapes() => myShapes;
+    internal NCollection_IndexedDataMap<Shape, TopOpeBRepDS_ShapeData> ChangeShapes() => myShapes;
 
     /// <summary>The interferences of the surface <paramref name="I"/> (the shared empty list if there is none).</summary>
     public NCollection_List<TopOpeBRepDS_Interference> SurfaceInterferences(int I)
@@ -429,7 +432,7 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>The interferences of the shape <paramref name="S"/> (the shared empty list if it isn't there or kept).</summary>
-    public NCollection_List<TopOpeBRepDS_Interference> ShapeInterferences(in TopoDS_Shape S, bool FindKeep = true)
+    public NCollection_List<TopOpeBRepDS_Interference> ShapeInterferences(in Shape S, bool FindKeep = true)
     {
         if (HasShape(S, FindKeep))
         {
@@ -438,7 +441,7 @@ public sealed class TopOpeBRepDS_DataStructure
         return myEmptyListOfInterference;
     }
 
-    internal NCollection_List<TopOpeBRepDS_Interference> ChangeShapeInterferences(in TopoDS_Shape S)
+    internal NCollection_List<TopOpeBRepDS_Interference> ChangeShapeInterferences(in Shape S)
     {
         if (!HasShape(S))
         {
@@ -466,33 +469,33 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>The shapes sharing the geometrical domain of <paramref name="S"/>.</summary>
-    public NCollection_List<TopoDS_Shape> ShapeSameDomain(in TopoDS_Shape S)
+    public NCollection_List<Shape> ShapeSameDomain(in Shape S)
     {
-        if (!S.IsNull())
+        if (!S.IsNull)
         {
             if (myShapes.Contains(S))
             {
                 TopOpeBRepDS_ShapeData SD = myShapes.FindFromKey(S);
-                NCollection_List<TopoDS_Shape> l = SD.mySameDomain;
+                NCollection_List<Shape> l = SD.mySameDomain;
                 return l;
             }
         }
         return myEmptyListOfShape;
     }
 
-    internal NCollection_List<TopoDS_Shape> ChangeShapeSameDomain(in TopoDS_Shape S)
+    internal NCollection_List<Shape> ChangeShapeSameDomain(in Shape S)
     {
         TopOpeBRepDS_ShapeData SD = myShapes.ChangeFromKey(S);
         return SD.mySameDomain;
     }
 
     /// <summary>The shapes sharing the geometrical domain of the shape <paramref name="I"/>.</summary>
-    public NCollection_List<TopoDS_Shape> ShapeSameDomain(int I)
+    public NCollection_List<Shape> ShapeSameDomain(int I)
     {
         if (I >= 1 && I <= myShapes.Extent())
         {
             TopOpeBRepDS_ShapeData SD = myShapes.FindFromIndex(I);
-            NCollection_List<TopoDS_Shape> l = SD.mySameDomain;
+            NCollection_List<Shape> l = SD.mySameDomain;
             return l;
         }
         else
@@ -501,20 +504,20 @@ public sealed class TopOpeBRepDS_DataStructure
         }
     }
 
-    internal NCollection_List<TopoDS_Shape> ChangeShapeSameDomain(int I)
+    internal NCollection_List<Shape> ChangeShapeSameDomain(int I)
     {
         TopOpeBRepDS_ShapeData SD = myShapes.ChangeFromIndex(I);
         return SD.mySameDomain;
     }
 
-    internal void AddShapeSameDomain(in TopoDS_Shape S, in TopoDS_Shape SSD)
+    internal void AddShapeSameDomain(in Shape S, in Shape SSD)
     {
         bool append = true;
         {
-            NCollection_List<TopoDS_Shape>.Iterator it = new(ShapeSameDomain(S));
+            NCollection_List<Shape>.Iterator it = new(ShapeSameDomain(S));
             for (; it.More(); it.Next())
             {
-                TopoDS_Shape itS = it.Value();
+                Shape itS = it.Value();
                 if (itS.IsSame(SSD))
                 {
                     append = false;
@@ -528,13 +531,13 @@ public sealed class TopOpeBRepDS_DataStructure
         }
     }
 
-    internal void RemoveShapeSameDomain(in TopoDS_Shape S, in TopoDS_Shape SSD)
+    internal void RemoveShapeSameDomain(in Shape S, in Shape SSD)
     {
-        NCollection_List<TopoDS_Shape> L = ChangeShapeSameDomain(S);
-        NCollection_List<TopoDS_Shape>.Iterator it = new(L);
+        NCollection_List<Shape> L = ChangeShapeSameDomain(S);
+        NCollection_List<Shape>.Iterator it = new(L);
         while (it.More())
         {
-            TopoDS_Shape itS = it.Value();
+            Shape itS = it.Value();
             bool remove = itS.IsSame(SSD);
             if (remove)
             {
@@ -558,9 +561,9 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>The index of the same-domain reference of the shape <paramref name="S"/>, or 0.</summary>
-    public int SameDomainRef(in TopoDS_Shape S)
+    public int SameDomainRef(in Shape S)
     {
-        if (S.IsNull())
+        if (S.IsNull)
         {
             return 0;
         }
@@ -580,9 +583,9 @@ public sealed class TopOpeBRepDS_DataStructure
         }
     }
 
-    internal void SameDomainRef(in TopoDS_Shape S, int Ref)
+    internal void SameDomainRef(in Shape S, int Ref)
     {
-        if (S.IsNull())
+        if (S.IsNull)
         {
             return;
         }
@@ -604,9 +607,9 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>How the shape <paramref name="S"/> lies with respect to its same-domain reference.</summary>
-    public TopOpeBRepDS_Config SameDomainOri(in TopoDS_Shape S)
+    public TopOpeBRepDS_Config SameDomainOri(in Shape S)
     {
-        if (!S.IsNull())
+        if (!S.IsNull)
         {
             if (myShapes.Contains(S))
             {
@@ -625,9 +628,9 @@ public sealed class TopOpeBRepDS_DataStructure
         }
     }
 
-    internal void SameDomainOri(in TopoDS_Shape S, TopOpeBRepDS_Config Ori)
+    internal void SameDomainOri(in Shape S, TopOpeBRepDS_Config Ori)
     {
-        if (!S.IsNull())
+        if (!S.IsNull)
         {
             if (myShapes.Contains(S))
             {
@@ -648,9 +651,9 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>The same-domain index of the shape <paramref name="S"/>, or 0.</summary>
-    public int SameDomainInd(in TopoDS_Shape S)
+    public int SameDomainInd(in Shape S)
     {
-        if (!S.IsNull())
+        if (!S.IsNull)
         {
             if (myShapes.Contains(S))
             {
@@ -669,9 +672,9 @@ public sealed class TopOpeBRepDS_DataStructure
         }
     }
 
-    internal void SameDomainInd(in TopoDS_Shape S, int Ind)
+    internal void SameDomainInd(in Shape S, int Ind)
     {
-        if (S.IsNull())
+        if (S.IsNull)
         {
             return;
         }
@@ -693,9 +696,9 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>The ancestor rank of the shape <paramref name="S"/>, or 0.</summary>
-    public int AncestorRank(in TopoDS_Shape S)
+    public int AncestorRank(in Shape S)
     {
-        if (S.IsNull())
+        if (S.IsNull)
         {
             return 0;
         }
@@ -715,9 +718,9 @@ public sealed class TopOpeBRepDS_DataStructure
         }
     }
 
-    internal void AncestorRank(in TopoDS_Shape S, int Ianc)
+    internal void AncestorRank(in Shape S, int Ianc)
     {
-        if (S.IsNull())
+        if (S.IsNull)
         {
             return;
         }
@@ -729,12 +732,12 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>Appends the interference <paramref name="I"/> to the shape's list (to the shared empty list if the shape isn't there).</summary>
-    internal void AddShapeInterference(in TopoDS_Shape S, TopOpeBRepDS_Interference I)
+    internal void AddShapeInterference(in Shape S, TopOpeBRepDS_Interference I)
     {
         ChangeShapeInterferences(S).Append(I);
     }
 
-    internal void RemoveShapeInterference(in TopoDS_Shape S, TopOpeBRepDS_Interference I)
+    internal void RemoveShapeInterference(in Shape S, TopOpeBRepDS_Interference I)
     {
         NCollection_List<TopOpeBRepDS_Interference> L = ChangeShapeInterferences(S);
         NCollection_List<TopOpeBRepDS_Interference>.Iterator it = new(L);
@@ -749,10 +752,10 @@ public sealed class TopOpeBRepDS_DataStructure
     /// Records that <paramref name="S1"/> (of the first argument) and <paramref name="S2"/> (of the second) share
     /// their geometrical domain, and gives both the same reference.
     /// </summary>
-    internal void FillShapesSameDomain(in TopoDS_Shape S1, in TopoDS_Shape S2, bool refFirst = true)
+    internal void FillShapesSameDomain(in Shape S1, in Shape S2, bool refFirst = true)
     {
-        TopAbs_Orientation o1 = S1.Orientation();
-        TopAbs_Orientation o2 = S2.Orientation();
+        Orientation o1 = S1.Orientation();
+        Orientation o2 = S2.Orientation();
 
         int iS1 = AddShape(S1, 1);
         TopOpeBRepDS_ShapeData SD1 = myShapes.ChangeFromIndex(iS1);
@@ -832,9 +835,9 @@ public sealed class TopOpeBRepDS_DataStructure
             throw new ProgramErrorException("FacesFiller::Insert SD 2");
         }
 
-        TopoDS_Shape Sr = Shape(r);
+        Shape Sr = Shape(r);
         TopOpeBRepDS_ShapeData SD = myShapes.FindFromKey(Sr);
-        TopAbs_Orientation oSr = SD.myOrientation;
+        Orientation oSr = SD.myOrientation;
         Sr.Orientation(oSr);
 
         if (r != r1 || todef1)
@@ -873,8 +876,8 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>As the other overload, with the configurations <paramref name="c1"/> and <paramref name="c2"/> given.</summary>
-    internal void FillShapesSameDomain(in TopoDS_Shape S1,
-                                       in TopoDS_Shape S2,
+    internal void FillShapesSameDomain(in Shape S1,
+                                       in Shape S2,
                                        TopOpeBRepDS_Config c1,
                                        TopOpeBRepDS_Config c2,
                                        bool refFirst = true)
@@ -913,7 +916,7 @@ public sealed class TopOpeBRepDS_DataStructure
         }
     }
 
-    internal void UnfillShapesSameDomain(in TopoDS_Shape S1, in TopoDS_Shape S2)
+    internal void UnfillShapesSameDomain(in Shape S1, in Shape S2)
     {
         RemoveShapeSameDomain(S1, S2);
         RemoveShapeSameDomain(S2, S1);
@@ -1050,18 +1053,18 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>The shape <paramref name="I"/>, or a null shape if it isn't there or (if <paramref name="FindKeep"/>) kept.</summary>
-    public TopoDS_Shape Shape(int I, bool FindKeep = true)
+    public Shape Shape(int I, bool FindKeep = true)
     {
         if (KeepShape(I, FindKeep))
         {
-            TopoDS_Shape S = myShapes.FindKey(I);
+            Shape S = myShapes.FindKey(I);
             return S;
         }
         return myEmptyShape;
     }
 
     /// <summary>The index of the shape <paramref name="S"/>, or 0 if it isn't there or (if <paramref name="FindKeep"/>) kept.</summary>
-    public int Shape(in TopoDS_Shape S, bool FindKeep = true)
+    public int Shape(in Shape S, bool FindKeep = true)
     {
         int i = 0;
         bool hs = HasShape(S, FindKeep);
@@ -1073,18 +1076,18 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>The section edge <paramref name="I"/>, or a null edge if it isn't a kept shape of the data structure.</summary>
-    public TopoDS_Edge SectionEdge(int I, bool FindKeep = true)
+    public Edge SectionEdge(int I, bool FindKeep = true)
     {
-        TopoDS_Shape S = mySectionEdges.FindKey(I);
+        Shape S = mySectionEdges.FindKey(I);
         if (HasShape(S, FindKeep))
         {
-            return TopoDS.Edge(S);
+            return ShapeCasts.Edge(S);
         }
-        return TopoDS.Edge(myEmptyShape);
+        return ShapeCasts.Edge(myEmptyShape);
     }
 
     /// <summary>The index of the section edge <paramref name="S"/>, or 0.</summary>
-    public int SectionEdge(in TopoDS_Edge S, bool FindKeep = true)
+    public int SectionEdge(in Edge S, bool FindKeep = true)
     {
         int i = 0;
         if (KeepShape(S, FindKeep))
@@ -1095,7 +1098,7 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>Whether <paramref name="S"/> is a section edge.</summary>
-    public bool IsSectionEdge(in TopoDS_Edge S, bool FindKeep = true)
+    public bool IsSectionEdge(in Edge S, bool FindKeep = true)
     {
         bool b = KeepShape(S, FindKeep);
         if (b)
@@ -1106,7 +1109,7 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>Whether the shape <paramref name="S"/> is in the data structure with at least one interference.</summary>
-    public bool HasGeometry(in TopoDS_Shape S)
+    public bool HasGeometry(in Shape S)
     {
         bool has = HasShape(S);
         if (has)
@@ -1117,27 +1120,27 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>Whether the shape <paramref name="S"/> is in the data structure and (if <paramref name="FindKeep"/>) kept.</summary>
-    public bool HasShape(in TopoDS_Shape S, bool FindKeep = true)
+    public bool HasShape(in Shape S, bool FindKeep = true)
     {
         bool res = KeepShape(S, FindKeep);
         return res;
     }
 
     /// <summary>Sets the new surface of the face <paramref name="F"/>.</summary>
-    internal void SetNewSurface(in TopoDS_Shape F, Geom_Surface S)
+    internal void SetNewSurface(in Shape F, Surface S)
     {
         myNewSurface.Bind(F, S);
     }
 
     /// <summary>Whether the face <paramref name="F"/> has a new surface.</summary>
-    public bool HasNewSurface(in TopoDS_Shape F)
+    public bool HasNewSurface(in Shape F)
     {
         bool b = myNewSurface.IsBound(F);
         return b;
     }
 
     /// <summary>The new surface of the face <paramref name="F"/>, or null.</summary>
-    public Geom_Surface? NewSurface(in TopoDS_Shape F)
+    public Surface? NewSurface(in Shape F)
     {
         if (HasNewSurface(F))
         {
@@ -1167,10 +1170,10 @@ public sealed class TopOpeBRepDS_DataStructure
     /// <summary>Whether the data structure comes from a face/face operation.</summary>
     public bool Isfafa() => myIsfafa;
 
-    internal NCollection_IndexedDataMap<TopoDS_Shape, TopOpeBRepDS_ShapeWithState> ChangeMapOfShapeWithStateObj()
+    internal NCollection_IndexedDataMap<Shape, TopOpeBRepDS_ShapeWithState> ChangeMapOfShapeWithStateObj()
         => myMapOfShapeWithStateObj;
 
-    internal NCollection_IndexedDataMap<TopoDS_Shape, TopOpeBRepDS_ShapeWithState> ChangeMapOfShapeWithStateTool()
+    internal NCollection_IndexedDataMap<Shape, TopOpeBRepDS_ShapeWithState> ChangeMapOfShapeWithStateTool()
         => myMapOfShapeWithStateTool;
 
     /// <summary>
@@ -1178,7 +1181,7 @@ public sealed class TopOpeBRepDS_DataStructure
     /// <paramref name="aFlag"/> is false and the result is an empty map.
     /// </summary>
     /// <remarks>OCCT returns a function-scope static map, shared by every data structure; the port's is this one's (decision 1063).</remarks>
-    internal NCollection_IndexedDataMap<TopoDS_Shape, TopOpeBRepDS_ShapeWithState> ChangeMapOfShapeWithState(in TopoDS_Shape aShape,
+    internal NCollection_IndexedDataMap<Shape, TopOpeBRepDS_ShapeWithState> ChangeMapOfShapeWithState(in Shape aShape,
                                                                                                              out bool aFlag)
     {
         aFlag = true;
@@ -1198,7 +1201,7 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>The shape with state of <paramref name="aShape"/>, or an empty one.</summary>
-    public TopOpeBRepDS_ShapeWithState GetShapeWithState(in TopoDS_Shape aShape)
+    public TopOpeBRepDS_ShapeWithState GetShapeWithState(in Shape aShape)
     {
         if (myMapOfShapeWithStateObj.Contains(aShape))
         {
@@ -1211,7 +1214,7 @@ public sealed class TopOpeBRepDS_DataStructure
         return myDummyShapeWithState;
     }
 
-    internal NCollection_IndexedMap<TopoDS_Shape> ChangeMapOfRejectedShapesObj() => myMapOfRejectedShapesObj;
+    internal NCollection_IndexedMap<Shape> ChangeMapOfRejectedShapesObj() => myMapOfRejectedShapesObj;
 
-    internal NCollection_IndexedMap<TopoDS_Shape> ChangeMapOfRejectedShapesTool() => myMapOfRejectedShapesTool;
+    internal NCollection_IndexedMap<Shape> ChangeMapOfRejectedShapesTool() => myMapOfRejectedShapesTool;
 }

@@ -5,13 +5,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.Blend_DecrochStatus;
 using static Occt.Blend_Status;
 using static Occt.IntSurf_TypeTrans;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -29,12 +31,12 @@ public class BRepBlend_RstRstLineBuilder
     private bool done;
     private BRepBlend_Line? line;
     private readonly math_Vector sol;
-    private readonly Adaptor3d_Surface surf1;
-    private readonly Adaptor3d_TopolTool domain1;
-    private readonly Adaptor3d_Surface surf2;
-    private readonly Adaptor3d_TopolTool domain2;
-    private readonly Adaptor2d_Curve2d rst1;
-    private readonly Adaptor2d_Curve2d rst2;
+    private readonly SurfaceAdaptorBase surf1;
+    private readonly TopolTool domain1;
+    private readonly SurfaceAdaptorBase surf2;
+    private readonly TopolTool domain2;
+    private readonly Curve2DAdaptorBase rst1;
+    private readonly Curve2DAdaptorBase rst2;
     private double tolpoint3d;
     private double tolgui;
     private double pasmax;
@@ -50,8 +52,8 @@ public class BRepBlend_RstRstLineBuilder
     private Blend_DecrochStatus decrochdeb;
     private Blend_DecrochStatus decrochfin;
 
-    public BRepBlend_RstRstLineBuilder(Adaptor3d_Surface Surf1, Adaptor2d_Curve2d Rst1, Adaptor3d_TopolTool Domain1,
-                                       Adaptor3d_Surface Surf2, Adaptor2d_Curve2d Rst2, Adaptor3d_TopolTool Domain2)
+    public BRepBlend_RstRstLineBuilder(SurfaceAdaptorBase Surf1, Curve2DAdaptorBase Rst1, TopolTool Domain1,
+                                       SurfaceAdaptorBase Surf2, Curve2DAdaptorBase Rst2, TopolTool Domain2)
     {
         done = false;
         sol = new math_Vector(1, 2);
@@ -109,7 +111,7 @@ public class BRepBlend_RstRstLineBuilder
 
         if (Appro)
         {
-            TopAbs_State siturst1, siturst2;
+            Containment siturst1, siturst2;
             Blend_DecrochStatus decroch;
             math_Vector tolerance = new(1, 2), infbound = new(1, 2), supbound = new(1, 2);
             Func.GetTolerance(tolerance, tolpoint3d);
@@ -198,7 +200,7 @@ public class BRepBlend_RstRstLineBuilder
         double trst11 = 0.0, trst12 = 0.0, trst21 = 0.0, trst22 = 0.0;
         math_Vector infbound = new(1, 2), supbound = new(1, 2), tolerance = new(1, 2);
         math_Vector solinvp1 = new(1, 2), solinvp2 = new(1, 2), solinvrst1 = new(1, 3), solinvrst2 = new(1, 3);
-        Adaptor3d_HVertex? Vtxp1 = null, Vtxp2 = null, Vtxrst1 = null, Vtxrst2 = null;
+        HVertex? Vtxp1 = null, Vtxp2 = null, Vtxrst1 = null, Vtxrst2 = null;
         bool IsVtxp1 = false, IsVtxp2 = false, IsVtxrst1 = false, IsVtxrst2 = false;
         wp1 = wp2 = wrst1 = wrst2 = Pmax;
         param = Pdep;
@@ -483,14 +485,14 @@ public class BRepBlend_RstRstLineBuilder
         }
         Blend_Status State = Blend_OnRst12;
         double trst11 = 0.0, trst12 = 0.0, trst21 = 0.0, trst22 = 0.0;
-        TopAbs_State situonc1 = TopAbs_UNKNOWN, situonc2 = TopAbs_UNKNOWN;
+        Containment situonc1 = Unknown, situonc2 = Unknown;
         Blend_DecrochStatus decroch = Blend_NoDecroch;
         bool Arrive, recadp1, recadp2, recadrst1, recadrst2, echecrecad;
         double wp1, wp2, wrst1, wrst2;
         math_Vector infbound = new(1, 2), supbound = new(1, 2);
         math_Vector parinit = new(1, 2), tolerance = new(1, 2);
         math_Vector solinvp1 = new(1, 2), solinvp2 = new(1, 2), solinvrst1 = new(1, 3), solinvrst2 = new(1, 3);
-        Adaptor3d_HVertex? Vtxp1 = null, Vtxp2 = null, Vtxrst1 = null, Vtxrst2 = null;
+        HVertex? Vtxp1 = null, Vtxp2 = null, Vtxrst1 = null, Vtxrst2 = null;
         bool IsVtxp1 = false, IsVtxp2 = false, IsVtxrst1 = false, IsVtxrst2 = false;
         BRepBlend_Extremity Extrst1 = new(), Extrst2 = new();
 
@@ -534,7 +536,7 @@ public class BRepBlend_RstRstLineBuilder
                 wp1 = wp2 = wrst1 = wrst2 = Bound;
                 recadp1 = recadp2 = recadrst1 = recadrst2 = false;
                 echecrecad = false;
-                if (situonc1 != TopAbs_IN)
+                if (situonc1 != In)
                 {
                     // pb inversion rst/rst
                     recadp1 = Recadre1(FinvP1, solinvp1, ref IsVtxp1, ref Vtxp1);
@@ -548,7 +550,7 @@ public class BRepBlend_RstRstLineBuilder
                     }
                 }
 
-                if (situonc2 != TopAbs_IN)
+                if (situonc2 != In)
                 {
                     // pb inversion point/surf
                     recadp2 = Recadre2(FinvP2, solinvp2, ref IsVtxp2, ref Vtxp2);
@@ -948,7 +950,7 @@ public class BRepBlend_RstRstLineBuilder
 
     // IsVtx and Vtx are written only on success (OCCT's references), so they are ref parameters.
     private bool Recadre1(Blend_RstRstFunction Func, Blend_SurfCurvFuncInv Finv, math_Vector Solinv, ref bool IsVtx,
-                          ref Adaptor3d_HVertex? Vtx)
+                          ref HVertex? Vtx)
     {
         math_Vector toler = new(1, 3), infb = new(1, 3), supb = new(1, 3);
         Finv.GetTolerance(toler, tolpoint3d);
@@ -1024,7 +1026,7 @@ public class BRepBlend_RstRstLineBuilder
     }
 
     private bool Recadre2(Blend_RstRstFunction Func, Blend_SurfCurvFuncInv Finv, math_Vector Solinv, ref bool IsVtx,
-                          ref Adaptor3d_HVertex? Vtx)
+                          ref HVertex? Vtx)
     {
         math_Vector toler = new(1, 3), infb = new(1, 3), supb = new(1, 3);
         Finv.GetTolerance(toler, tolpoint3d);
@@ -1097,7 +1099,7 @@ public class BRepBlend_RstRstLineBuilder
         return false;
     }
 
-    private bool Recadre1(Blend_CurvPointFuncInv FinvP, math_Vector Solinv, ref bool IsVtx, ref Adaptor3d_HVertex? Vtx)
+    private bool Recadre1(Blend_CurvPointFuncInv FinvP, math_Vector Solinv, ref bool IsVtx, ref HVertex? Vtx)
     {
         // One is located on the last or the first point, following the direction of processing.
         Point2D p2drst1;
@@ -1130,8 +1132,8 @@ public class BRepBlend_RstRstLineBuilder
         if (FinvP.IsSolution(Solinv, tolpoint3d))
         {
             Point2D p2drst2 = rst2.Value(Solinv[2]);
-            TopAbs_State situ = domain2.Classify(p2drst2, toler[2], false);
-            if ((situ != TopAbs_IN) && (situ != TopAbs_ON))
+            Containment situ = domain2.Classify(p2drst2, toler[2], false);
+            if ((situ != In) && (situ != On))
             {
                 return false;
             }
@@ -1161,7 +1163,7 @@ public class BRepBlend_RstRstLineBuilder
         return false;
     }
 
-    private bool Recadre2(Blend_CurvPointFuncInv FinvP, math_Vector Solinv, ref bool IsVtx, ref Adaptor3d_HVertex? Vtx)
+    private bool Recadre2(Blend_CurvPointFuncInv FinvP, math_Vector Solinv, ref bool IsVtx, ref HVertex? Vtx)
     {
         // One is located on the last or the first point, following the direction of processing.
         Point2D p2drst2;
@@ -1194,8 +1196,8 @@ public class BRepBlend_RstRstLineBuilder
         if (FinvP.IsSolution(Solinv, tolpoint3d))
         {
             Point2D p2drst1 = rst1.Value(Solinv[2]);
-            TopAbs_State situ = domain1.Classify(p2drst1, toler[2], false);
-            if ((situ != TopAbs_IN) && (situ != TopAbs_ON))
+            Containment situ = domain1.Classify(p2drst1, toler[2], false);
+            if ((situ != In) && (situ != On))
             {
                 return false;
             }
@@ -1225,7 +1227,7 @@ public class BRepBlend_RstRstLineBuilder
         return false;
     }
 
-    private void Transition(bool OnFirst, Adaptor2d_Curve2d Arc, double Param, ref IntSurf_Transition TLine,
+    private void Transition(bool OnFirst, Curve2DAdaptorBase Arc, double Param, ref IntSurf_Transition TLine,
                             ref IntSurf_Transition TArc)
     {
         bool computetranstionaveclacorde = false;
@@ -1287,12 +1289,12 @@ public class BRepBlend_RstRstLineBuilder
     }
 
     // Produces the extremity of a curve.
-    private void MakeExtremity(ref BRepBlend_Extremity Extrem, bool OnFirst, Adaptor2d_Curve2d Arc, double Param,
-                               bool IsVtx, Adaptor3d_HVertex? Vtx)
+    private void MakeExtremity(ref BRepBlend_Extremity Extrem, bool OnFirst, Curve2DAdaptorBase Arc, double Param,
+                               bool IsVtx, HVertex? Vtx)
     {
         IntSurf_Transition Tline = new(), Tarc = new();
         double prm;
-        Adaptor3d_TopolTool Iter;
+        TopolTool Iter;
         if (OnFirst)
         {
             Extrem.SetValue(previousP.PointOnC1(), sol[1], previousP.Parameter(), tolpoint3d);
@@ -1323,7 +1325,7 @@ public class BRepBlend_RstRstLineBuilder
             Extrem.SetVertex(Vtx!);
             while (Iter.More())
             {
-                Adaptor2d_Curve2d arc = Iter.Value();
+                Curve2DAdaptorBase arc = Iter.Value();
                 if (!ReferenceEquals(arc, Arc))
                 {
                     Iter.Initialize(arc);
@@ -1522,9 +1524,9 @@ public class BRepBlend_RstRstLineBuilder
         return Blend_OK;
     }
 
-    private static IntSurf_TypeTrans ConvOrToTra(TopAbs_Orientation O)
+    private static IntSurf_TypeTrans ConvOrToTra(Orientation O)
     {
-        if (O == TopAbs_FORWARD)
+        if (O == Forward)
         {
             return IntSurf_In;
         }
@@ -1593,13 +1595,13 @@ public class BRepBlend_RstRstLineBuilder
                 Vector2D tg2drstref;
                 rst1.D1(sol[1], out p2drstref, out tg2drstref);
                 double testra = tg2drst1.Dot(tg2drstref);
-                TopAbs_Orientation Or = domain1.Orientation(rst1);
+                Orientation Or = domain1.Orientation(rst1);
 
                 if (Math.Abs(testra) > tolpoint3d)
                 {
                     if (testra < 0.0)
                     {
-                        trarst1 = ConvOrToTra(TopAbs.Reverse(Or));
+                        trarst1 = ConvOrToTra(global::Kerf.Engine.Topology.TopAbs.Reverse(Or));
                     }
                     else if (testra > 0.0)
                     {
@@ -1614,7 +1616,7 @@ public class BRepBlend_RstRstLineBuilder
                     {
                         if (testra < 0.0)
                         {
-                            trarst2 = ConvOrToTra(TopAbs.Reverse(Or));
+                            trarst2 = ConvOrToTra(global::Kerf.Engine.Topology.TopAbs.Reverse(Or));
                         }
                         else if (testra > 0.0)
                         {
@@ -1654,7 +1656,7 @@ public class BRepBlend_RstRstLineBuilder
         return Blend_StepTooLarge;
     }
 
-    private bool CheckInside(Blend_RstRstFunction Func, out TopAbs_State SituOnC1, out TopAbs_State SituOnC2,
+    private bool CheckInside(Blend_RstRstFunction Func, out Containment SituOnC1, out Containment SituOnC2,
                              out Blend_DecrochStatus Decroch)
     {
         math_Vector tolerance = new(1, 2);
@@ -1664,36 +1666,36 @@ public class BRepBlend_RstRstLineBuilder
         double v = sol[1];
         if (v < rst1.FirstParameter() - tolerance[2] || v > rst1.LastParameter() + tolerance[2])
         {
-            SituOnC1 = TopAbs_OUT;
+            SituOnC1 = Out;
         }
         else if (v > rst1.FirstParameter() && v < rst1.LastParameter())
         {
-            SituOnC1 = TopAbs_IN;
+            SituOnC1 = In;
         }
         else
         {
-            SituOnC1 = TopAbs_ON;
+            SituOnC1 = On;
         }
 
         // face pcurve 2.
         v = sol[2];
         if (v < rst2.FirstParameter() - tolerance[2] || v > rst2.LastParameter() + tolerance[2])
         {
-            SituOnC2 = TopAbs_OUT;
+            SituOnC2 = Out;
         }
         else if (v > rst2.FirstParameter() && v < rst2.LastParameter())
         {
-            SituOnC2 = TopAbs_IN;
+            SituOnC2 = In;
         }
         else
         {
-            SituOnC2 = TopAbs_ON;
+            SituOnC2 = On;
         }
 
         // lost contact
         Vector3D tgrst1, norst1, tgrst2, norst2;
         Decroch = Func.Decroch(sol, out tgrst1, out norst1, out tgrst2, out norst2);
 
-        return (SituOnC1 == TopAbs_IN && SituOnC2 == TopAbs_IN && Decroch == Blend_NoDecroch);
+        return (SituOnC1 == In && SituOnC2 == In && Decroch == Blend_NoDecroch);
     }
 }

@@ -5,6 +5,7 @@
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -14,7 +15,7 @@ public partial struct HLRBRep_BiPnt2D : IEquatable<HLRBRep_BiPnt2D>
 {
     private Point2D myP1;
     private Point2D myP2;
-    private TopoDS_Shape myShape;
+    private Shape myShape;
     private bool myRg1Line;
     private bool myRgNLine;
     private bool myOutLine;
@@ -24,14 +25,14 @@ public partial struct HLRBRep_BiPnt2D : IEquatable<HLRBRep_BiPnt2D>
     {
         myP1 = new Point2D();
         myP2 = new Point2D();
-        myShape = new TopoDS_Shape();
+        myShape = new Shape();
         myRg1Line = false;
         myRgNLine = false;
         myOutLine = false;
         myIntLine = false;
     }
 
-    public HLRBRep_BiPnt2D(double x1, double y1, double x2, double y2, in TopoDS_Shape S, bool reg1, bool regn, bool outl, bool intl)
+    public HLRBRep_BiPnt2D(double x1, double y1, double x2, double y2, in Shape S, bool reg1, bool regn, bool outl, bool intl)
     {
         myP1 = new Point2D(x1, y1);
         myP2 = new Point2D(x2, y2);
@@ -42,7 +43,7 @@ public partial struct HLRBRep_BiPnt2D : IEquatable<HLRBRep_BiPnt2D>
         myIntLine = intl;
     }
 
-    public HLRBRep_BiPnt2D(in Xy thePoint1, in Xy thePoint2, in TopoDS_Shape S, bool reg1, bool regn, bool outl, bool intl)
+    public HLRBRep_BiPnt2D(in Xy thePoint1, in Xy thePoint2, in Shape S, bool reg1, bool regn, bool outl, bool intl)
     {
         myP1 = new Point2D(thePoint1);
         myP2 = new Point2D(thePoint2);
@@ -57,9 +58,9 @@ public partial struct HLRBRep_BiPnt2D : IEquatable<HLRBRep_BiPnt2D>
 
     public readonly Point2D P2() => myP2;
 
-    public readonly TopoDS_Shape Shape() => myShape;
+    public readonly Shape Shape() => myShape;
 
-    internal void Shape(in TopoDS_Shape S) => myShape = S;
+    internal void Shape(in Shape S) => myShape = S;
 
     public readonly bool Rg1Line() => myRg1Line;
 
@@ -77,7 +78,7 @@ public partial struct HLRBRep_BiPnt2D : IEquatable<HLRBRep_BiPnt2D>
 
     internal void IntLine(bool B) => myIntLine = B;
 
-    public readonly HLRBRep_BiPnt2D WithShape(in TopoDS_Shape S)
+    public readonly HLRBRep_BiPnt2D WithShape(in Shape S)
     {
         HLRBRep_BiPnt2D aCopy = this;
         aCopy.Shape(S);

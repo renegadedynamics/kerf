@@ -4,9 +4,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -17,18 +19,18 @@ namespace Occt;
 /// <remarks>A working object (decision 21): it only reads the shapes; the edges are theirs.</remarks>
 public sealed class LocOpe_FindEdges
 {
-    private TopoDS_Shape myFFrom = new();
-    private TopoDS_Shape myFTo = new();
-    private readonly NCollection_List<TopoDS_Shape> myLFrom = new();
-    private readonly NCollection_List<TopoDS_Shape> myLTo = new();
-    private readonly NCollection_List<TopoDS_Shape>.Iterator myItFrom = new();
-    private readonly NCollection_List<TopoDS_Shape>.Iterator myItTo = new();
+    private Shape myFFrom = new();
+    private Shape myFTo = new();
+    private readonly NCollection_List<Shape> myLFrom = new();
+    private readonly NCollection_List<Shape> myLTo = new();
+    private readonly NCollection_List<Shape>.Iterator myItFrom = new();
+    private readonly NCollection_List<Shape>.Iterator myItTo = new();
 
     public LocOpe_FindEdges()
     {
     }
 
-    public LocOpe_FindEdges(in TopoDS_Shape FFrom, in TopoDS_Shape FTo)
+    public LocOpe_FindEdges(in Shape FFrom, in Shape FTo)
     {
         Set(FFrom, FTo);
     }
@@ -41,9 +43,9 @@ public sealed class LocOpe_FindEdges
 
     public bool More() => myItFrom.More();
 
-    public TopoDS_Edge EdgeFrom() => TopoDS.Edge(myItFrom.Value());
+    public Edge EdgeFrom() => ShapeCasts.Edge(myItFrom.Value());
 
-    public TopoDS_Edge EdgeTo() => TopoDS.Edge(myItTo.Value());
+    public Edge EdgeTo() => ShapeCasts.Edge(myItTo.Value());
 
     public void Next()
     {
@@ -51,51 +53,51 @@ public sealed class LocOpe_FindEdges
         myItTo.Next();
     }
 
-    public void Set(in TopoDS_Shape FFrom, in TopoDS_Shape FTo)
+    public void Set(in Shape FFrom, in Shape FTo)
     {
         myFFrom = FFrom;
         myFTo = FTo;
         myLFrom.Clear();
         myLTo.Clear();
 
-        TopExp_Explorer expf = new(), expt = new();
-        Geom_Curve Cf, Ct;
+        Explorer expf = new(), expt = new();
+        Curve3D Cf, Ct;
         double ff, lf, ft, lt;
         Type Tf, Tt;
 
-        for (expf.Init(myFFrom, TopAbs_EDGE); expf.More(); expf.Next())
+        for (expf.Init(myFFrom, ShapeType.Edge); expf.More(); expf.Next())
         {
-            TopoDS_Edge edgf = TopoDS.Edge(expf.Current());
-            Cf = BRep_Tool.Curve(edgf, out Placement Loc, out ff, out lf)!;
+            Edge edgf = ShapeCasts.Edge(expf.Current());
+            Cf = Tool.Curve(edgf, out Placement Loc, out ff, out lf)!;
             if (!Loc.IsIdentity)
             {
-                Geom_Geometry GGf = Cf.Transformed(Loc.Transformation());
-                Cf = (Geom_Curve)GGf;
+                Geometry3D GGf = Cf.Transformed(Loc.Transformation());
+                Cf = (Curve3D)GGf;
             }
             Tf = Cf.GetType();
-            if (Tf == typeof(Geom_TrimmedCurve))
+            if (Tf == typeof(TrimmedCurve3D))
             {
-                Cf = ((Geom_TrimmedCurve)Cf).BasisCurve();
+                Cf = ((TrimmedCurve3D)Cf).BasisCurve();
                 Tf = Cf.GetType();
             }
-            if (Tf != typeof(Geom_Line) && Tf != typeof(Geom_Circle) && Tf != typeof(Geom_Ellipse)
-                && Tf != typeof(Geom_BSplineCurve) && Tf != typeof(Geom_BezierCurve))
+            if (Tf != typeof(LineCurve3D) && Tf != typeof(CircleCurve3D) && Tf != typeof(EllipseCurve3D)
+                && Tf != typeof(BSplineCurve3D) && Tf != typeof(BezierCurve3D))
             {
                 continue;
             }
-            for (expt.Init(myFTo, TopAbs_EDGE); expt.More(); expt.Next())
+            for (expt.Init(myFTo, ShapeType.Edge); expt.More(); expt.Next())
             {
-                TopoDS_Edge edgt = TopoDS.Edge(expt.Current());
-                Ct = BRep_Tool.Curve(edgt, out Loc, out ft, out lt)!;
+                Edge edgt = ShapeCasts.Edge(expt.Current());
+                Ct = Tool.Curve(edgt, out Loc, out ft, out lt)!;
                 if (!Loc.IsIdentity)
                 {
-                    Geom_Geometry GGt = Ct.Transformed(Loc.Transformation());
-                    Ct = (Geom_Curve)GGt;
+                    Geometry3D GGt = Ct.Transformed(Loc.Transformation());
+                    Ct = (Curve3D)GGt;
                 }
                 Tt = Ct.GetType();
-                if (Tt == typeof(Geom_TrimmedCurve))
+                if (Tt == typeof(TrimmedCurve3D))
                 {
-                    Ct = ((Geom_TrimmedCurve)Ct).BasisCurve();
+                    Ct = ((TrimmedCurve3D)Ct).BasisCurve();
                     Tt = Ct.GetType();
                 }
                 if (Tt != Tf)
@@ -104,10 +106,10 @@ public sealed class LocOpe_FindEdges
                 }
                 // On a presomption de confusion
                 double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
-                if (Tt == typeof(Geom_Line))
+                if (Tt == typeof(LineCurve3D))
                 {
-                    Line3D lif = ((Geom_Line)Cf).Lin();
-                    Line3D lit = ((Geom_Line)Ct).Lin();
+                    Line3D lif = ((LineCurve3D)Cf).Lin();
+                    Line3D lit = ((LineCurve3D)Ct).Lin();
                     Point3D p1 = global::Kerf.Engine.Geometry.ElCLib.Value(ff, lif);
                     Point3D p2 = global::Kerf.Engine.Geometry.ElCLib.Value(lf, lif);
                     double prm1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(lit, p1);
@@ -128,10 +130,10 @@ public sealed class LocOpe_FindEdges
                         }
                     }
                 }
-                else if (Tt == typeof(Geom_Circle))
+                else if (Tt == typeof(CircleCurve3D))
                 {
-                    Circle3D cif = ((Geom_Circle)Cf).Circ();
-                    Circle3D cit = ((Geom_Circle)Ct).Circ();
+                    Circle3D cif = ((CircleCurve3D)Cf).Circ();
+                    Circle3D cit = ((CircleCurve3D)Ct).Circ();
                     if (Math.Abs(cif.Radius() - cit.Radius()) <= Tol
                         && cif.Location().SquareDistance(cit.Location()) <= Tol * Tol)
                     {
@@ -181,10 +183,10 @@ public sealed class LocOpe_FindEdges
                         }
                     }
                 }
-                else if (Tt == typeof(Geom_Ellipse))
+                else if (Tt == typeof(EllipseCurve3D))
                 {
-                    Ellipse3D cif = ((Geom_Ellipse)Cf).Elips();
-                    Ellipse3D cit = ((Geom_Ellipse)Ct).Elips();
+                    Ellipse3D cif = ((EllipseCurve3D)Cf).Elips();
+                    Ellipse3D cit = ((EllipseCurve3D)Ct).Elips();
 
                     if (Math.Abs(cif.MajorRadius() - cit.MajorRadius()) <= Tol
                         && Math.Abs(cif.MinorRadius() - cit.MinorRadius()) <= Tol
@@ -231,23 +233,23 @@ public sealed class LocOpe_FindEdges
                         }
                     }
                 }
-                else if (Tt == typeof(Geom_BSplineCurve))
+                else if (Tt == typeof(BSplineCurve3D))
                 {
-                    Geom_BSplineCurve Bf = (Geom_BSplineCurve)Cf;
-                    Geom_BSplineCurve Bt = (Geom_BSplineCurve)Ct;
+                    BSplineCurve3D Bf = (BSplineCurve3D)Cf;
+                    BSplineCurve3D Bt = (BSplineCurve3D)Ct;
 
                     bool IsSame = true;
 
-                    int nbpoles = Bf.NbPoles();
-                    if (nbpoles != Bt.NbPoles())
+                    int nbpoles = Bf.PoleCount;
+                    if (nbpoles != Bt.PoleCount)
                     {
                         IsSame = false;
                     }
 
                     if (IsSame)
                     {
-                        int nbknots = Bf.NbKnots();
-                        if (nbknots != Bt.NbKnots())
+                        int nbknots = Bf.KnotCount;
+                        if (nbknots != Bt.KnotCount)
                         {
                             IsSame = false;
                         }
@@ -257,7 +259,7 @@ public sealed class LocOpe_FindEdges
                             NCollection_Array1<Point3D> Pf = Bf.InternalPoles();
                             NCollection_Array1<Point3D> Pt = Bt.InternalPoles();
 
-                            double tol3d = BRep_Tool.Tolerance(edgt);
+                            double tol3d = Tool.Tolerance(edgt);
                             for (int p = 1; p <= nbpoles; p++)
                             {
                                 if ((Pf[p]).Distance(Pt[p]) > tol3d)
@@ -289,22 +291,22 @@ public sealed class LocOpe_FindEdges
                                     }
                                 }
 
-                                if (!Bf.IsRational())
+                                if (!Bf.IsRational)
                                 {
-                                    if (Bt.IsRational())
+                                    if (Bt.IsRational)
                                     {
                                         IsSame = false;
                                     }
                                 }
                                 else
                                 {
-                                    if (!Bt.IsRational())
+                                    if (!Bt.IsRational)
                                     {
                                         IsSame = false;
                                     }
                                 }
 
-                                if (IsSame && Bf.IsRational())
+                                if (IsSame && Bf.IsRational)
                                 {
                                     NCollection_Array1<double> Wf = Bf.InternalWeightsArray();
                                     NCollection_Array1<double> Wt = Bt.InternalWeightsArray();
@@ -330,15 +332,15 @@ public sealed class LocOpe_FindEdges
                         }
                     }
                 }
-                else if (Tt == typeof(Geom_BezierCurve))
+                else if (Tt == typeof(BezierCurve3D))
                 {
-                    Geom_BezierCurve Bf = (Geom_BezierCurve)Cf;
-                    Geom_BezierCurve Bt = (Geom_BezierCurve)Ct;
+                    BezierCurve3D Bf = (BezierCurve3D)Cf;
+                    BezierCurve3D Bt = (BezierCurve3D)Ct;
 
                     bool IsSame = true;
 
-                    int nbpoles = Bf.NbPoles();
-                    if (nbpoles != Bt.NbPoles())
+                    int nbpoles = Bf.PoleCount;
+                    if (nbpoles != Bt.PoleCount)
                     {
                         IsSame = false;
                     }
@@ -359,22 +361,22 @@ public sealed class LocOpe_FindEdges
 
                         if (IsSame)
                         {
-                            if (!Bf.IsRational())
+                            if (!Bf.IsRational)
                             {
-                                if (Bt.IsRational())
+                                if (Bt.IsRational)
                                 {
                                     IsSame = false;
                                 }
                             }
                             else
                             {
-                                if (!Bt.IsRational())
+                                if (!Bt.IsRational)
                                 {
                                     IsSame = false;
                                 }
                             }
 
-                            if (IsSame && Bf.IsRational())
+                            if (IsSame && Bf.IsRational)
                             {
                                 NCollection_Array1<double> Wf = Bf.InternalWeightsArray();
                                 NCollection_Array1<double> Wt = Bt.InternalWeightsArray();

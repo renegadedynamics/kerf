@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Properties;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
 using static Occt.LocalAnalysis_StatusErrorType;
@@ -59,12 +60,12 @@ public class LocalAnalysis_SurfaceContinuity
     private bool myIsDone;
     private LocalAnalysis_StatusErrorType myErrorStatus;
 
-    private void SurfC0(GeomLProp_SLProps Surf1, GeomLProp_SLProps Surf2)
+    private void SurfC0(SLProps Surf1, SLProps Surf2)
     {
         myContC0 = (Surf1.Value()).Distance(Surf2.Value());
     }
 
-    private void SurfC1(GeomLProp_SLProps Surf1, GeomLProp_SLProps Surf2)
+    private void SurfC1(SLProps Surf1, SLProps Surf2)
     {
         Vector3D V1u, V2u, V1v, V2v;
         double norm1u, norm2u, norm1v, norm2v, angu, angv;
@@ -124,7 +125,7 @@ public class LocalAnalysis_SurfaceContinuity
         }
     }
 
-    private void SurfC2(GeomLProp_SLProps Surf1, GeomLProp_SLProps Surf2)
+    private void SurfC2(SLProps Surf1, SLProps Surf2)
     {
         Vector3D V11u, V12u, V21u, V22u, V11v, V12v, V21v, V22v;
         double norm11u, norm12u, norm21u, norm22u, norm11v, norm12v, norm21v, norm22v;
@@ -220,9 +221,9 @@ public class LocalAnalysis_SurfaceContinuity
         }
     }
 
-    private void SurfG1(GeomLProp_SLProps Surf1, GeomLProp_SLProps Surf2)
+    private void SurfG1(SLProps Surf1, SLProps Surf2)
     {
-        if (Surf1.IsNormalDefined() && Surf2.IsNormalDefined())
+        if (Surf1.IsNormalDefined && Surf2.IsNormalDefined)
         {
             Direction3D D1 = Surf1.Normal();
             Direction3D D2 = Surf2.Normal();
@@ -243,7 +244,7 @@ public class LocalAnalysis_SurfaceContinuity
         }
     }
 
-    private void SurfG2(GeomLProp_SLProps Surf1, GeomLProp_SLProps Surf2)
+    private void SurfG2(SLProps Surf1, SLProps Surf2)
     {
         double RMIN1, RMIN2, RMAX1, RMAX2;
         double x1, x2, y1, y2, z1, z2;
@@ -306,7 +307,7 @@ public class LocalAnalysis_SurfaceContinuity
 
     /// <summary>Analyses the continuity of the order between the points of the two surfaces' local properties.</summary>
     /// <remarks>The properties must have been computed to the order's derivative (2 for C2 and G2, 1 for C1 and G1).</remarks>
-    public void ComputeAnalysis(GeomLProp_SLProps Surf1, GeomLProp_SLProps Surf2, Continuity Order)
+    public void ComputeAnalysis(SLProps Surf1, SLProps Surf2, Continuity Order)
     {
         myTypeCont = Order;
         switch (Order)
@@ -347,7 +348,7 @@ public class LocalAnalysis_SurfaceContinuity
     /// bounds the curvature gap for G2; <paramref name="Maxlen"/> is the surfaces' greatest length, used to detect null
     /// curvature.
     /// </remarks>
-    public LocalAnalysis_SurfaceContinuity(Geom_Surface Surf1, double u1, double v1, Geom_Surface Surf2, double u2,
+    public LocalAnalysis_SurfaceContinuity(Surface Surf1, double u1, double v1, Surface Surf2, double u2,
                                            double v2, Continuity Order, double EpsNul = 0.001, double EpsC0 = 0.001,
                                            double EpsC1 = 0.001, double EpsC2 = 0.001, double EpsG1 = 0.001,
                                            double Percent = 0.01, double Maxlen = 10000)
@@ -369,8 +370,8 @@ public class LocalAnalysis_SurfaceContinuity
     /// parameter <paramref name="U"/> and <paramref name="Surf2"/> at <paramref name="curv2"/>'s; not done when
     /// <paramref name="U"/> is outside either curve's range.
     /// </summary>
-    public LocalAnalysis_SurfaceContinuity(Geom2d_Curve curv1, Geom2d_Curve curv2, double U, Geom_Surface Surf1,
-                                           Geom_Surface Surf2, Continuity Order, double EpsNul = 0.001,
+    public LocalAnalysis_SurfaceContinuity(Curve2D curv1, Curve2D curv2, double U, Surface Surf1,
+                                           Surface Surf2, Continuity Order, double EpsNul = 0.001,
                                            double EpsC0 = 0.001, double EpsC1 = 0.001, double EpsC2 = 0.001,
                                            double EpsG1 = 0.001, double Percent = 0.01, double Maxlen = 10000)
     {
@@ -407,29 +408,29 @@ public class LocalAnalysis_SurfaceContinuity
     }
 
     // The switch both constructors with surfaces repeat in OCCT (decision 742's pattern)
-    private void Analyse(Geom_Surface Surf1, double u1, double v1, Geom_Surface Surf2, double u2, double v2, Continuity Ordre)
+    private void Analyse(Surface Surf1, double u1, double v1, Surface Surf2, double u2, double v2, Continuity Ordre)
     {
         switch (Ordre)
         {
             case C0:
             {
-                var Surfa1 = new GeomLProp_SLProps(Surf1, u1, v1, 0, myepsnul);
-                var Surfa2 = new GeomLProp_SLProps(Surf2, u2, v2, 0, myepsnul);
+                var Surfa1 = new SLProps(Surf1, u1, v1, 0, myepsnul);
+                var Surfa2 = new SLProps(Surf2, u2, v2, 0, myepsnul);
                 SurfC0(Surfa1, Surfa2);
                 break;
             }
             case C1:
             {
-                var Surfa1 = new GeomLProp_SLProps(Surf1, u1, v1, 1, myepsnul);
-                var Surfa2 = new GeomLProp_SLProps(Surf2, u2, v2, 1, myepsnul);
+                var Surfa1 = new SLProps(Surf1, u1, v1, 1, myepsnul);
+                var Surfa2 = new SLProps(Surf2, u2, v2, 1, myepsnul);
                 SurfC0(Surfa1, Surfa2);
                 SurfC1(Surfa1, Surfa2);
                 break;
             }
             case C2:
             {
-                var Surfa1 = new GeomLProp_SLProps(Surf1, u1, v1, 2, myepsnul);
-                var Surfa2 = new GeomLProp_SLProps(Surf2, u2, v2, 2, myepsnul);
+                var Surfa1 = new SLProps(Surf1, u1, v1, 2, myepsnul);
+                var Surfa2 = new SLProps(Surf2, u2, v2, 2, myepsnul);
                 SurfC0(Surfa1, Surfa2);
                 SurfC1(Surfa1, Surfa2);
                 SurfC2(Surfa1, Surfa2);
@@ -437,16 +438,16 @@ public class LocalAnalysis_SurfaceContinuity
             }
             case G1:
             {
-                var Surfa1 = new GeomLProp_SLProps(Surf1, u1, v1, 1, myepsnul);
-                var Surfa2 = new GeomLProp_SLProps(Surf2, u2, v2, 1, myepsnul);
+                var Surfa1 = new SLProps(Surf1, u1, v1, 1, myepsnul);
+                var Surfa2 = new SLProps(Surf2, u2, v2, 1, myepsnul);
                 SurfC0(Surfa1, Surfa2);
                 SurfG1(Surfa1, Surfa2);
                 break;
             }
             case G2:
             {
-                var Surfa1 = new GeomLProp_SLProps(Surf1, u1, v1, 2, myepsnul);
-                var Surfa2 = new GeomLProp_SLProps(Surf2, u2, v2, 2, myepsnul);
+                var Surfa1 = new SLProps(Surf1, u1, v1, 2, myepsnul);
+                var Surfa2 = new SLProps(Surf2, u2, v2, 2, myepsnul);
                 SurfC0(Surfa1, Surfa2);
                 SurfG1(Surfa1, Surfa2);
                 SurfG2(Surfa1, Surfa2);

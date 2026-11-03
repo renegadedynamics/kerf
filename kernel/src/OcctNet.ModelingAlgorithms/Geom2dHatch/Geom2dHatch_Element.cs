@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_Orientation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -17,40 +19,40 @@ namespace Occt;
 /// </remarks>
 public struct Geom2dHatch_Element : IEquatable<Geom2dHatch_Element>
 {
-    private readonly Geom2dAdaptor_Curve myCurve;
-    private TopAbs_Orientation myOrientation;
+    private readonly CurveAdaptor2D myCurve;
+    private Orientation myOrientation;
 
     /// <summary>An element on an empty curve.</summary>
     public Geom2dHatch_Element()
     {
-        myCurve = new Geom2dAdaptor_Curve();
-        myOrientation = TopAbs_FORWARD;
+        myCurve = new CurveAdaptor2D();
+        myOrientation = Forward;
     }
 
     /// <summary>An element on (a copy of) <paramref name="Curve"/>, with the given orientation.</summary>
-    public Geom2dHatch_Element(Geom2dAdaptor_Curve Curve, TopAbs_Orientation Orientation = TopAbs_FORWARD)
+    public Geom2dHatch_Element(CurveAdaptor2D Curve, Orientation Orientation = Forward)
     {
-        myCurve = (Geom2dAdaptor_Curve)Curve.ShallowCopy();
+        myCurve = (CurveAdaptor2D)Curve.ShallowCopy();
         myOrientation = Orientation;
     }
 
     /// <summary>The curve of the element.</summary>
-    public readonly Geom2dAdaptor_Curve Curve() => myCurve;
+    public readonly CurveAdaptor2D Curve() => myCurve;
 
     /// <summary>The curve of the element, for writing (OCCT's non-const reference).</summary>
-    internal readonly Geom2dAdaptor_Curve ChangeCurve() => myCurve;
+    internal readonly CurveAdaptor2D ChangeCurve() => myCurve;
 
     /// <summary>Sets the orientation of the element.</summary>
-    internal void Orientation(TopAbs_Orientation Orientation)
+    internal void Orientation(Orientation Orientation)
     {
         myOrientation = Orientation;
     }
 
     /// <summary>The orientation of the element.</summary>
-    public readonly TopAbs_Orientation Orientation() => myOrientation;
+    public readonly Orientation Orientation() => myOrientation;
 
     /// <summary>A copy with the orientation <paramref name="Orientation"/>.</summary>
-    public readonly Geom2dHatch_Element WithOrientation(TopAbs_Orientation Orientation)
+    public readonly Geom2dHatch_Element WithOrientation(Orientation Orientation)
     {
         Geom2dHatch_Element aCopy = this;
         aCopy.Orientation(Orientation);

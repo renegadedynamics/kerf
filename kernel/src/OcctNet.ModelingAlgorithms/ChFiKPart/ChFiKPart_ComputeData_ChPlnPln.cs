@@ -4,10 +4,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Intersection;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ChFiDS_ChamfMode;
 using static Occt.ChFiKPart_ComputeData_Fcts;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -33,29 +35,29 @@ internal static class ChFiKPart_ComputeData_ChPlnPln
     /// </summary>
     internal static bool ChFiKPart_MakeChamfer(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Data,
                                                ChFiDS_ChamfMode theMode, in Plane3D Pl1, in Plane3D Pl2,
-                                               TopAbs_Orientation Or1, TopAbs_Orientation Or2, double theDis1,
+                                               Orientation Or1, Orientation Or2, double theDis1,
                                                double theDis2, in Line3D Spine, double First,
-                                               TopAbs_Orientation Of1)
+                                               Orientation Of1)
     {
         // Creation of the plane which carry the chamfer
         // compute the normals to the planes Pl1 and Pl2
         CoordinateSystem Pos1 = Pl1.Position();
         Direction3D D1 = Pos1.XDirection().Crossed(Pos1.YDirection());
-        if (Or1 == TopAbs_REVERSED)
+        if (Or1 == Reversed)
         {
             D1.Reverse();
         }
         CoordinateSystem Pos2 = Pl2.Position();
         Direction3D D2 = Pos2.XDirection().Crossed(Pos2.YDirection());
-        if (Or2 == TopAbs_REVERSED)
+        if (Or2 == Reversed)
         {
             D2.Reverse();
         }
         // compute the intersection line of Pl1 and Pl2
-        IntAna_QuadQuadGeo LInt = new(Pl1, Pl2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        QuadQuadGeo LInt = new(Pl1, Pl2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Point3D P;
         double Fint;
-        if (LInt.IsDone())
+        if (LInt.IsDone)
         {
             Fint = global::Kerf.Engine.Geometry.ElCLib.Parameter(LInt.Line(1), global::Kerf.Engine.Geometry.ElCLib.Value(First, Spine));
             P = global::Kerf.Engine.Geometry.ElCLib.Value(Fint, LInt.Line(1));
@@ -115,13 +117,13 @@ internal static class ChFiKPart_ComputeData_ChPlnPln
         {
             PlanAx3.YReverse();
         }
-        Geom_Plane gpl = new(PlanAx3);
+        PlaneSurface gpl = new(PlanAx3);
         Data.ChangeSurf(ChFiKPart_IndexSurfaceInDS(gpl, DStr));
         // About the orientation of the chamfer plane
         // Compute the normal to the face 1
         Direction3D norpl = Pos1.XDirection().Crossed(Pos1.YDirection());
         Direction3D norface1 = norpl;
-        if (Of1 == TopAbs_REVERSED)
+        if (Of1 == Reversed)
         {
             norface1.Reverse();
         }
@@ -135,28 +137,28 @@ internal static class ChFiKPart_ComputeData_ChPlnPln
         }
         if (toreverse)
         {
-            Data.ChangeOrientation() = TopAbs_REVERSED;
+            Data.ChangeOrientation() = Reversed;
         }
         else
         {
-            Data.ChangeOrientation() = TopAbs_FORWARD;
+            Data.ChangeOrientation() = Forward;
         }
         // Loading of the FaceInterferences with pcurves & 3d curves.
         // case face 1
         Line3D linPln = new(P1, xdir);
-        Geom_Line GLinPln1 = new(linPln);
+        LineCurve3D GLinPln1 = new(linPln);
         double u, v;
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(Pos1, P1, out u, out v);
         Point2D p2dPln = new(u, v);
         Direction2D dir2dPln = new(xdir.Dot(Pos1.XDirection()), xdir.Dot(Pos1.YDirection()));
         Line2D lin2dPln = new(p2dPln, dir2dPln);
-        Geom2d_Line GLin2dPln1 = new(lin2dPln);
+        LineCurve2D GLin2dPln1 = new(lin2dPln);
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(PlanAx3, P1, out u, out v);
         p2dPln.SetCoord(u, v);
         lin2dPln.SetLocation(p2dPln);
         lin2dPln.SetDirection(Constants.DX2d());
-        Geom2d_Line GLin2dPlnCh1 = new(lin2dPln);
-        TopAbs_Orientation trans;
+        LineCurve2D GLin2dPlnCh1 = new(lin2dPln);
+        Orientation trans;
         toreverse = (norplch.Dot(norpl) <= 0.0);
         if (VecTransl1.Dot(DirCh12) > 0)
         {
@@ -164,28 +166,28 @@ internal static class ChFiKPart_ComputeData_ChPlnPln
         }
         if (toreverse)
         {
-            trans = TopAbs_FORWARD;
+            trans = Forward;
         }
         else
         {
-            trans = TopAbs_REVERSED;
+            trans = Reversed;
         }
         Data.ChangeInterferenceOnS1().SetInterference(ChFiKPart_IndexCurveInDS(GLinPln1, DStr), trans, GLin2dPln1,
                                                       GLin2dPlnCh1);
         // case face 2
         linPln.SetLocation(P2);
-        Geom_Line GLinPln2 = new(linPln);
+        LineCurve3D GLinPln2 = new(linPln);
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(Pos2, P2, out u, out v);
         p2dPln.SetCoord(u, v);
         dir2dPln.SetCoord(xdir.Dot(Pos2.XDirection()), xdir.Dot(Pos2.YDirection()));
         lin2dPln.SetLocation(p2dPln);
         lin2dPln.SetDirection(dir2dPln);
-        Geom2d_Line GLin2dPln2 = new(lin2dPln);
+        LineCurve2D GLin2dPln2 = new(lin2dPln);
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(PlanAx3, P2, out u, out v);
         p2dPln.SetCoord(u, v);
         lin2dPln.SetLocation(p2dPln);
         lin2dPln.SetDirection(Constants.DX2d());
-        Geom2d_Line GLin2dPlnCh2 = new(lin2dPln);
+        LineCurve2D GLin2dPlnCh2 = new(lin2dPln);
         norpl = Pos2.XDirection().Crossed(Pos2.YDirection());
         toreverse = (norplch.Dot(norpl) <= 0.0);
         if (VecTransl2.Dot(DirCh12) < 0)
@@ -194,11 +196,11 @@ internal static class ChFiKPart_ComputeData_ChPlnPln
         }
         if (toreverse)
         {
-            trans = TopAbs_REVERSED;
+            trans = Reversed;
         }
         else
         {
-            trans = TopAbs_FORWARD;
+            trans = Forward;
         }
         Data.ChangeInterferenceOnS2().SetInterference(ChFiKPart_IndexCurveInDS(GLinPln2, DStr), trans, GLin2dPln2,
                                                       GLin2dPlnCh2);

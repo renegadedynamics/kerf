@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 using static Occt.IntPatch_IType;
@@ -52,7 +53,7 @@ public class ImpImpIntersectionOracleTests(ITestOutputHelper output)
     }
 
     // The port's surface on the native surface's own position (null if it doesn't round-trip).
-    private static Geom_Surface? Port(Kind theKind, in CoordinateSystem theAx, N.Geom_Surface theNative, double theR, double theAng)
+    private static Surface? Port(Kind theKind, in CoordinateSystem theAx, N.Geom_Surface theNative, double theR, double theAng)
     {
         using var anElem = N.Geom_ElementarySurface.DownCast(theNative)!;
         using var aPos = anElem.Position();
@@ -71,11 +72,11 @@ public class ImpImpIntersectionOracleTests(ITestOutputHelper output)
         }
         return theKind switch
         {
-            Kind.Plane => new Geom_Plane(anAx),
-            Kind.Cylinder => new Geom_CylindricalSurface(anAx, theR),
-            Kind.Cone => new Geom_ConicalSurface(anAx, theAng, theR),
-            Kind.Sphere => new Geom_SphericalSurface(anAx, theR),
-            _ => new Geom_ToroidalSurface(anAx, theR + 1.0, 0.5 * theR),
+            Kind.Plane => new PlaneSurface(anAx),
+            Kind.Cylinder => new CylindricalSurface(anAx, theR),
+            Kind.Cone => new ConicalSurface(anAx, theAng, theR),
+            Kind.Sphere => new SphericalSurface(anAx, theR),
+            _ => new ToroidalSurface(anAx, theR + 1.0, 0.5 * theR),
         };
     }
 
@@ -209,7 +210,7 @@ public class ImpImpIntersectionOracleTests(ITestOutputHelper output)
 
             using N.Geom_Surface aN1 = Native(aK1, anAx1, aR1, anA1);
             using N.Geom_Surface aN2 = Native(aK2, anAx2, aR2, anA2);
-            Geom_Surface? aP1 = Port(aK1, anAx1, aN1, aR1, anA1), aP2 = Port(aK2, anAx2, aN2, aR2, anA2);
+            Surface? aP1 = Port(aK1, anAx1, aN1, aR1, anA1), aP2 = Port(aK2, anAx2, aN2, aR2, anA2);
             if (aP1 is null || aP2 is null)
             {
                 aSkipped++;
@@ -238,9 +239,9 @@ public class ImpImpIntersectionOracleTests(ITestOutputHelper output)
                 }
             }
 
-            GeomAdaptor_Surface aS1 = new(aP1), aS2 = new(aP2);
-            var aPort = new IntPatch_ImpImpIntersection(aS1, new Adaptor3d_TopolTool(aS1), aS2,
-                                                        new Adaptor3d_TopolTool(aS2), 1.0e-7, 1.0e-7);
+            SurfaceAdaptor aS1 = new(aP1), aS2 = new(aP2);
+            var aPort = new IntPatch_ImpImpIntersection(aS1, new TopolTool(aS1), aS2,
+                                                        new TopolTool(aS2), 1.0e-7, 1.0e-7);
             Assert.True(aPort.IsDone() || aNativeConics.Count == 0, $"pair {i}: the port failed");
             aPairs++;
             List<(string Type, double[] Values)> aPortConics = [];

@@ -8,12 +8,16 @@
 // "canonically identical" when IsIdentical holds, and its ToString() says which sub-shapes differ and by how much.
 // CanonicalKeys.Build(shape) gives each sub-shape's key, which HistoryComparison uses to compare histories.
 
+using Kerf.Engine.Exchange.Brep;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.TestHarness;
 
@@ -46,7 +50,7 @@ internal sealed class CanonicalOptions
 internal sealed class CanonicalComparison
 {
     /// <summary>The number of unique sub-shapes (TShape and location) of each type: native, port.</summary>
-    public SortedDictionary<TopAbs_ShapeEnum, (int Native, int Port)> Counts { get; } = new();
+    public SortedDictionary<ShapeType, (int Native, int Port)> Counts { get; } = new();
 
     /// <summary>Sub-shapes with no match on the other side: type, key description, count native, count port.</summary>
     public List<string> Unmatched { get; } = [];
@@ -77,11 +81,11 @@ internal sealed class CanonicalComparison
             return "canonically identical";
         }
         var aText = new StringBuilder("canonically different:");
-        foreach ((TopAbs_ShapeEnum aType, (int aNative, int aPort)) in Counts)
+        foreach ((ShapeType aType, (int aNative, int aPort)) in Counts)
         {
             if (aNative != aPort)
             {
-                aText.Append(CultureInfo.InvariantCulture, $"\n  {aType}: {aNative} native, {aPort} port");
+                aText.Append(CultureInfo.InvariantCulture, $"\n  {Kerf.Engine.Foundation.OcctTypeNames.Of(aType)}: {aNative} native, {aPort} port");
             }
         }
         foreach (string aLine in Unmatched.Take(20))
@@ -131,23 +135,23 @@ internal sealed class CanonicalComparison
 /// </remarks>
 internal sealed class CanonicalKeys
 {
-    private readonly Dictionary<TopoDS_Shape, string> myKeys = new(TopTools_ShapeMapHasher.Instance);
+    private readonly Dictionary<Shape, string> myKeys = new(ShapeHasher.Instance);
     private readonly Dictionary<string, string> myDescriptions = new(StringComparer.Ordinal);
     private readonly bool myCheckOrientation;
-    private readonly Func<TopoDS_Vertex, string?>? myVertexKeyOverride;
+    private readonly Func<Vertex, string?>? myVertexKeyOverride;
 
-    private CanonicalKeys(bool theCheckOrientation, Func<TopoDS_Vertex, string?>? theVertexKeyOverride)
+    private CanonicalKeys(bool theCheckOrientation, Func<Vertex, string?>? theVertexKeyOverride)
     {
         myCheckOrientation = theCheckOrientation;
         myVertexKeyOverride = theVertexKeyOverride;
     }
 
     /// <summary>The keys of every sub-shape of <paramref name="theShape"/>.</summary>
-    public static CanonicalKeys Build(TopoDS_Shape theShape, bool theCheckOrientation = false,
-                                      Func<TopoDS_Vertex, string?>? theVertexKeyOverride = null)
+    public static CanonicalKeys Build(Shape theShape, bool theCheckOrientation = false,
+                                      Func<Vertex, string?>? theVertexKeyOverride = null)
     {
         var aKeys = new CanonicalKeys(theCheckOrientation, theVertexKeyOverride);
-        if (!theShape.IsNull())
+        if (!theShape.IsNull)
         {
             aKeys.Key(theShape);
         }
@@ -155,7 +159,7 @@ internal sealed class CanonicalKeys
     }
 
     /// <summary>The key of a shape (computed and remembered on first use; any shape, not only sub-shapes).</summary>
-    public string Key(TopoDS_Shape theShape)
+    public string Key(Shape theShape)
     {
         if (myKeys.TryGetValue(theShape, out string? aKey))
         {
@@ -164,12 +168,12 @@ internal sealed class CanonicalKeys
         string aDescription;
         string aText = theShape.ShapeType() switch
         {
-            TopAbs_VERTEX => VertexText(TopoDS.Vertex(theShape), out aDescription),
-            TopAbs_EDGE => EdgeText(TopoDS.Edge(theShape), out aDescription),
-            TopAbs_FACE => FaceText(TopoDS.Face(theShape), out aDescription),
+            ShapeType.Vertex => VertexText(ShapeCasts.Vertex(theShape), out aDescription),
+            ShapeType.Edge => EdgeText(ShapeCasts.Edge(theShape), out aDescription),
+            ShapeType.Face => FaceText(ShapeCasts.Face(theShape), out aDescription),
             _ => ContainerText(theShape, out aDescription),
         };
-        aKey = theShape.ShapeType() == TopAbs_VERTEX && aText.StartsWith('#') ? aText[1..] : Hash(aText);
+        aKey = theShape.ShapeType() == ShapeType.Vertex && aText.StartsWith('#') ? aText[1..] : Hash(aText);
         myKeys[theShape] = aKey;
         myDescriptions.TryAdd(aKey, aDescription);
         return aKey;
@@ -182,21 +186,21 @@ internal sealed class CanonicalKeys
     public static string PointKey(in Point3D theP) =>
         "V" + Bits(theP.X()) + Bits(theP.Y()) + Bits(theP.Z());
 
-    private string VertexText(TopoDS_Vertex theV, out string theDescription)
+    private string VertexText(Vertex theV, out string theDescription)
     {
-        Point3D aP = BRep_Tool.Pnt(theV);
+        Point3D aP = Tool.Pnt(theV);
         theDescription = string.Create(CultureInfo.InvariantCulture, $"vertex ({aP.X():R} {aP.Y():R} {aP.Z():R})");
         // '#' marks a ready key, not hashed: overriding keys are other vertices' keys
         return "#" + (myVertexKeyOverride?.Invoke(theV) ?? PointKey(aP));
     }
 
-    private string EdgeText(TopoDS_Edge theE, out string theDescription)
+    private string EdgeText(Edge theE, out string theDescription)
     {
         var aText = new StringBuilder("E ");
-        BRep_Tool.Range(theE, out double aFirst, out double aLast);
-        Geom_Curve? aCurve = BRep_Tool.Curve(theE, out Placement aLoc, out _, out _);
+        Tool.Range(theE, out double aFirst, out double aLast);
+        Curve3D? aCurve = Tool.Curve(theE, out Placement aLoc, out _, out _);
         string aCurveName;
-        if (BRep_Tool.Degenerated(theE))
+        if (Tool.Degenerated(theE))
         {
             aText.Append("degenerated");
             aCurveName = "degenerated";
@@ -208,32 +212,32 @@ internal sealed class CanonicalKeys
         }
         else
         {
-            Geom_Curve aGlobal = aLoc.IsIdentity ? aCurve : (Geom_Curve)aCurve.Transformed(aLoc.Transformation());
+            Curve3D aGlobal = aLoc.IsIdentity ? aCurve : (Curve3D)aCurve.Transformed(aLoc.Transformation());
             using var aWriter = new StringWriter(CultureInfo.InvariantCulture);
-            GeomTools_CurveSet.PrintCurve(aGlobal, aWriter, true);
+            CurveSet.PrintCurve(aGlobal, aWriter, true);
             aText.Append(aWriter.ToString());
             aCurveName = global::Kerf.Engine.Foundation.OcctTypeNames.Of(aCurve.GetType());
         }
         aText.Append(" range ").Append(Bits(aFirst)).Append(Bits(aLast));
-        aText.Append(" vertices ").Append(ChildKeys(theE, TopAbs_VERTEX, false));
+        aText.Append(" vertices ").Append(ChildKeys(theE, ShapeType.Vertex, false));
         theDescription = string.Create(CultureInfo.InvariantCulture, $"edge {aCurveName} [{aFirst:R}, {aLast:R}]");
         return aText.ToString();
     }
 
-    private string FaceText(TopoDS_Face theF, out string theDescription)
+    private string FaceText(Face theF, out string theDescription)
     {
         var aText = new StringBuilder("F ");
-        Geom_Surface? aSurface = BRep_Tool.Surface(theF, out Placement aLoc);
+        Surface? aSurface = Tool.Surface(theF, out Placement aLoc);
         if (aSurface is not null)
         {
-            Geom_Surface aGlobal = aLoc.IsIdentity ? aSurface : (Geom_Surface)aSurface.Transformed(aLoc.Transformation());
+            Surface aGlobal = aLoc.IsIdentity ? aSurface : (Surface)aSurface.Transformed(aLoc.Transformation());
             using var aWriter = new StringWriter(CultureInfo.InvariantCulture);
-            GeomTools_SurfaceSet.PrintSurface(aGlobal, aWriter, true);
+            SurfaceSet.PrintSurface(aGlobal, aWriter, true);
             aText.Append(aWriter.ToString());
         }
         // the face's edges as a multiset of keys (each unique edge once); with orientations, its wires
-        var anEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theF, TopAbs_EDGE, anEdges);
+        var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theF, ShapeType.Edge, anEdges);
         var aKeys = new List<string>();
         for (int i = 1; i <= anEdges.Extent(); ++i)
         {
@@ -243,32 +247,32 @@ internal sealed class CanonicalKeys
         aText.Append(" edges ").AppendJoin(',', aKeys);
         if (myCheckOrientation)
         {
-            aText.Append(" wires ").Append(ChildKeys(theF, TopAbs_WIRE, true));
+            aText.Append(" wires ").Append(ChildKeys(theF, ShapeType.Wire, true));
         }
         int aNbEdges = aKeys.Count;
         theDescription = $"face {aSurface?.GetType().Name ?? "without surface"}, {aNbEdges} edges";
         return aText.ToString();
     }
 
-    private string ContainerText(TopoDS_Shape theS, out string theDescription)
+    private string ContainerText(Shape theS, out string theDescription)
     {
         string aChildren = ChildKeys(theS, null, myCheckOrientation);
         int aNb = 0;
-        for (var anIt = new TopoDS_Iterator(theS); anIt.More(); anIt.Next())
+        for (var anIt = new Iterator(theS); anIt.More(); anIt.Next())
         {
             ++aNb;
         }
-        theDescription = $"{theS.ShapeType()} of {aNb} children";
-        return theS.ShapeType() + " " + aChildren;
+        theDescription = $"{Kerf.Engine.Foundation.OcctTypeNames.Of(theS.ShapeType())} of {aNb} children";
+        return Kerf.Engine.Foundation.OcctTypeNames.Of(theS.ShapeType()) + " " + aChildren;
     }
 
     // The sorted keys of the direct children (of the given type), with their orientations if asked.
-    private string ChildKeys(TopoDS_Shape theS, TopAbs_ShapeEnum? theType, bool theWithOrientation)
+    private string ChildKeys(Shape theS, ShapeType? theType, bool theWithOrientation)
     {
         var aKeys = new List<string>();
-        for (var anIt = new TopoDS_Iterator(theS); anIt.More(); anIt.Next())
+        for (var anIt = new Iterator(theS); anIt.More(); anIt.Next())
         {
-            TopoDS_Shape aChild = anIt.Value();
+            Shape aChild = anIt.Value();
             if (theType is not null && aChild.ShapeType() != theType)
             {
                 continue;
@@ -290,11 +294,11 @@ internal sealed class CanonicalKeys
 /// <summary>Compares two shapes canonically (decision 581).</summary>
 internal static class CanonicalShapeComparer
 {
-    private static readonly TopAbs_ShapeEnum[] Types =
-        [TopAbs_VERTEX, TopAbs_EDGE, TopAbs_WIRE, TopAbs_FACE, TopAbs_SHELL, TopAbs_SOLID, TopAbs_COMPSOLID, TopAbs_COMPOUND];
+    private static readonly ShapeType[] Types =
+        [ShapeType.Vertex, ShapeType.Edge, ShapeType.Wire, ShapeType.Face, ShapeType.Shell, ShapeType.Solid, ShapeType.CompSolid, ShapeType.Compound];
 
     /// <summary>Compares <paramref name="theNative"/> with <paramref name="thePort"/>.</summary>
-    public static CanonicalComparison Compare(TopoDS_Shape theNative, TopoDS_Shape thePort, CanonicalOptions? theOptions = null)
+    public static CanonicalComparison Compare(Shape theNative, Shape thePort, CanonicalOptions? theOptions = null)
     {
         CanonicalOptions anOptions = theOptions ?? new CanonicalOptions();
         var aResult = new CanonicalComparison();
@@ -303,10 +307,10 @@ internal static class CanonicalShapeComparer
         CanonicalKeys aPortKeys = CanonicalKeys.Build(thePort, anOptions.CheckOrientation,
                                                       VertexMatcher(theNative, aNativeKeys, anOptions.VertexTolerance));
 
-        foreach (TopAbs_ShapeEnum aType in Types)
+        foreach (ShapeType aType in Types)
         {
-            List<TopoDS_Shape> aNativeShapes = SubShapes(theNative, aType);
-            List<TopoDS_Shape> aPortShapes = SubShapes(thePort, aType);
+            List<Shape> aNativeShapes = SubShapes(theNative, aType);
+            List<Shape> aPortShapes = SubShapes(thePort, aType);
             aResult.Counts[aType] = (aNativeShapes.Count, aPortShapes.Count);
 
             Dictionary<string, List<string>> aNativeGroups = Groups(aNativeShapes, aNativeKeys);
@@ -318,7 +322,7 @@ internal static class CanonicalShapeComparer
                 string aDescription = aNativeAttributes.Count > 0 ? aNativeKeys.Describe(aKey) : aPortKeys.Describe(aKey);
                 if (aNativeAttributes.Count != aPortAttributes.Count)
                 {
-                    aResult.Unmatched.Add($"{aType} {aDescription} [{aKey}]: {aNativeAttributes.Count} native, {aPortAttributes.Count} port");
+                    aResult.Unmatched.Add($"{Kerf.Engine.Foundation.OcctTypeNames.Of(aType)} {aDescription} [{aKey}]: {aNativeAttributes.Count} native, {aPortAttributes.Count} port");
                     continue;
                 }
                 aNativeAttributes.Sort(StringComparer.Ordinal);
@@ -326,18 +330,18 @@ internal static class CanonicalShapeComparer
                 if (!aNativeAttributes.SequenceEqual(aPortAttributes, StringComparer.Ordinal))
                 {
                     aResult.AttributeDifferences.Add(
-                        $"{aType} {aDescription}: native {string.Join(" | ", aNativeAttributes)}; port {string.Join(" | ", aPortAttributes)}");
+                        $"{Kerf.Engine.Foundation.OcctTypeNames.Of(aType)} {aDescription}: native {string.Join(" | ", aNativeAttributes)}; port {string.Join(" | ", aPortAttributes)}");
                 }
             }
         }
 
-        if (anOptions.CheckOrientation && !theNative.IsNull() && !thePort.IsNull()
+        if (anOptions.CheckOrientation && !theNative.IsNull && !thePort.IsNull
             && theNative.Orientation() != thePort.Orientation())
         {
             aResult.OrientationDifference = $"top-level orientation: native {theNative.Orientation()}, port {thePort.Orientation()}";
         }
 
-        if (anOptions.CheckProperties && !theNative.IsNull() && !thePort.IsNull())
+        if (anOptions.CheckProperties && !theNative.IsNull && !thePort.IsNull)
         {
             CompareProperties(theNative, thePort, anOptions.PropertyRelativeTolerance, aResult);
         }
@@ -350,22 +354,22 @@ internal static class CanonicalShapeComparer
     }
 
     /// <summary>Asserts that the shapes are canonically identical, with the comparison's report as the message.</summary>
-    public static void AssertIdentical(TopoDS_Shape theNative, TopoDS_Shape thePort, CanonicalOptions? theOptions = null)
+    public static void AssertIdentical(Shape theNative, Shape thePort, CanonicalOptions? theOptions = null)
     {
         CanonicalComparison aComparison = Compare(theNative, thePort, theOptions);
         Assert.True(aComparison.IsIdentical, aComparison.ToString());
     }
 
     /// <summary>The unique sub-shapes of the type (TShape and location), in TopExp.MapShapes order.</summary>
-    internal static List<TopoDS_Shape> SubShapes(TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    internal static List<Shape> SubShapes(Shape theShape, ShapeType theType)
     {
-        var aResult = new List<TopoDS_Shape>();
-        if (theShape.IsNull())
+        var aResult = new List<Shape>();
+        if (theShape.IsNull)
         {
             return aResult;
         }
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         for (int i = 1; i <= aMap.Extent(); ++i)
         {
             aResult.Add(aMap.FindKey(i));
@@ -374,10 +378,10 @@ internal static class CanonicalShapeComparer
     }
 
     // Key -> the attributes (tolerances and flags) of each sub-shape with that key.
-    private static Dictionary<string, List<string>> Groups(List<TopoDS_Shape> theShapes, CanonicalKeys theKeys)
+    private static Dictionary<string, List<string>> Groups(List<Shape> theShapes, CanonicalKeys theKeys)
     {
         var aGroups = new Dictionary<string, List<string>>(StringComparer.Ordinal);
-        foreach (TopoDS_Shape aShape in theShapes)
+        foreach (Shape aShape in theShapes)
         {
             string aKey = theKeys.Key(aShape);
             if (!aGroups.TryGetValue(aKey, out List<string>? aList))
@@ -390,14 +394,14 @@ internal static class CanonicalShapeComparer
     }
 
     // The tolerance (bits) and flags of a sub-shape, but not Free, Modified, Checked or Locked.
-    private static string Attributes(TopoDS_Shape theShape)
+    private static string Attributes(Shape theShape)
     {
         string aFlags = $"closed={B(theShape.Closed())} orientable={B(theShape.Orientable())} convex={B(theShape.Convex())} infinite={B(theShape.Infinite())}";
         return theShape.ShapeType() switch
         {
-            TopAbs_VERTEX => $"tol={R(BRep_Tool.Tolerance(TopoDS.Vertex(theShape)))} {aFlags}",
-            TopAbs_EDGE => $"tol={R(BRep_Tool.Tolerance(TopoDS.Edge(theShape)))} degenerated={B(BRep_Tool.Degenerated(TopoDS.Edge(theShape)))} sameparameter={B(BRep_Tool.SameParameter(TopoDS.Edge(theShape)))} samerange={B(BRep_Tool.SameRange(TopoDS.Edge(theShape)))} {aFlags}",
-            TopAbs_FACE => $"tol={R(BRep_Tool.Tolerance(TopoDS.Face(theShape)))} naturalrestriction={B(BRep_Tool.NaturalRestriction(TopoDS.Face(theShape)))} {aFlags}",
+            ShapeType.Vertex => $"tol={R(Tool.Tolerance(ShapeCasts.Vertex(theShape)))} {aFlags}",
+            ShapeType.Edge => $"tol={R(Tool.Tolerance(ShapeCasts.Edge(theShape)))} degenerated={B(Tool.Degenerated(ShapeCasts.Edge(theShape)))} sameparameter={B(Tool.SameParameter(ShapeCasts.Edge(theShape)))} samerange={B(Tool.SameRange(ShapeCasts.Edge(theShape)))} {aFlags}",
+            ShapeType.Face => $"tol={R(Tool.Tolerance(ShapeCasts.Face(theShape)))} naturalrestriction={B(Tool.NaturalRestriction(ShapeCasts.Face(theShape)))} {aFlags}",
             _ => aFlags,
         };
 
@@ -407,20 +411,20 @@ internal static class CanonicalShapeComparer
 
     // With a vertex tolerance, a port vertex without an exact native match takes the nearest unmatched native
     // vertex's key within the tolerance.
-    private static Func<TopoDS_Vertex, string?>? VertexMatcher(TopoDS_Shape theNative, CanonicalKeys theNativeKeys, double theTolerance)
+    private static Func<Vertex, string?>? VertexMatcher(Shape theNative, CanonicalKeys theNativeKeys, double theTolerance)
     {
         if (theTolerance <= 0.0)
         {
             return null;
         }
-        var aNative = SubShapes(theNative, TopAbs_VERTEX)
-                      .Select(v => (Point: BRep_Tool.Pnt(TopoDS.Vertex(v)), Key: theNativeKeys.Key(v)))
+        var aNative = SubShapes(theNative, ShapeType.Vertex)
+                      .Select(v => (Point: Tool.Pnt(ShapeCasts.Vertex(v)), Key: theNativeKeys.Key(v)))
                       .ToList();
         var anExact = new HashSet<string>(aNative.Select(v => v.Key), StringComparer.Ordinal);
         var aUsed = new HashSet<int>();
         return theV =>
         {
-            Point3D aP = BRep_Tool.Pnt(theV);
+            Point3D aP = Tool.Pnt(theV);
             string anExactKey = CanonicalKeys.PointKey(aP);
             if (anExact.Contains(anExactKey))
             {
@@ -446,14 +450,14 @@ internal static class CanonicalShapeComparer
         };
     }
 
-    private static void CompareProperties(TopoDS_Shape theNative, TopoDS_Shape thePort, double theRelTol, CanonicalComparison theResult)
+    private static void CompareProperties(Shape theNative, Shape thePort, double theRelTol, CanonicalComparison theResult)
     {
-        var aNativeVolume = new GProp_GProps();
-        var aPortVolume = new GProp_GProps();
+        var aNativeVolume = new Properties();
+        var aPortVolume = new Properties();
         BRepGProp.VolumeProperties(theNative, aNativeVolume);
         BRepGProp.VolumeProperties(thePort, aPortVolume);
-        var aNativeArea = new GProp_GProps();
-        var aPortArea = new GProp_GProps();
+        var aNativeArea = new Properties();
+        var aPortArea = new Properties();
         BRepGProp.SurfaceProperties(theNative, aNativeArea);
         BRepGProp.SurfaceProperties(thePort, aPortArea);
 
@@ -485,5 +489,5 @@ internal static class CanonicalShapeComparer
         }
     }
 
-    private static bool IsValid(TopoDS_Shape theShape) => theShape.IsNull() || new BRepCheck_Analyzer(theShape).IsValid();
+    private static bool IsValid(Shape theShape) => theShape.IsNull || new BRepCheck_Analyzer(theShape).IsValid();
 }

@@ -4,7 +4,9 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -19,18 +21,18 @@ public class BRepMesh_GeomTool_Test
 
         // Test 1: Discretize an arc
         double aFirstP = 0.0, aLastP = Math.PI;
-        Geom_Circle aCircle = new(new Frame3D(Constants.Origin(), Constants.DZ()), 10);
-        Geom_TrimmedCurve aHalf = new(aCircle, aFirstP, aLastP);
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(aHalf).Edge();
-        BRepAdaptor_Curve anAdaptor = new(anEdge);
+        CircleCurve3D aCircle = new(new Frame3D(Constants.Origin(), Constants.DZ()), 10);
+        TrimmedCurve3D aHalf = new(aCircle, aFirstP, aLastP);
+        Edge anEdge = new BRepBuilderAPI_MakeEdge(aHalf).Edge();
+        EdgeCurveAdaptor anAdaptor = new(anEdge);
         BRepMesh_GeomTool aGeomTool = new(anAdaptor, aFirstP, aLastP, 0.1, 0.5);
 
         Assert.True(aGeomTool.NbPoints() > 0, "BRepMesh_GeomTool failed to discretize an arc");
 
         // Test 2: Test Normal() static method
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(Constants.Origin(), Constants.DZ())).Face();
-        BRepAdaptor_Surface aSurf = new(aFace);
-        BRepAdaptor_Surface aHSurf = (BRepAdaptor_Surface)aSurf.ShallowCopy();
+        Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(Constants.Origin(), Constants.DZ())).Face();
+        FaceSurfaceAdaptor aSurf = new(aFace);
+        FaceSurfaceAdaptor aHSurf = (FaceSurfaceAdaptor)aSurf.ShallowCopy();
 
         bool isNormalComputed = BRepMesh_GeomTool.Normal(aHSurf, 10.0, 10.0, out Point3D _, out Direction3D _);
 

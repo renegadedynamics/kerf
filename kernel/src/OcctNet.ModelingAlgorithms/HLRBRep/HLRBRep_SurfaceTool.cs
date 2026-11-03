@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.SurfaceKind;
 
@@ -47,10 +48,10 @@ public readonly struct HLRBRep_SurfaceTool : IIntCurveSurface_SurfaceTool<HLRBRe
         theSurf.Surface().VIntervals(theTab, theSh);
     }
 
-    public static Adaptor3d_Surface UTrim(in HLRBRep_Surface theSurf, double theFirst, double theLast, double theTol) =>
+    public static SurfaceAdaptorBase UTrim(in HLRBRep_Surface theSurf, double theFirst, double theLast, double theTol) =>
         theSurf.Surface().UTrim(theFirst, theLast, theTol);
 
-    public static Adaptor3d_Surface VTrim(in HLRBRep_Surface theSurf, double theFirst, double theLast, double theTol) =>
+    public static SurfaceAdaptorBase VTrim(in HLRBRep_Surface theSurf, double theFirst, double theLast, double theTol) =>
         theSurf.Surface().VTrim(theFirst, theLast, theTol);
 
     public static bool IsUClosed(in HLRBRep_Surface theSurf) =>
@@ -126,10 +127,10 @@ public readonly struct HLRBRep_SurfaceTool : IIntCurveSurface_SurfaceTool<HLRBRe
     public static Torus Torus(in HLRBRep_Surface theSurf) =>
         theSurf.Torus();
 
-    public static Geom_BezierSurface Bezier(in HLRBRep_Surface theSurf) =>
+    public static global::Kerf.Geometry.BezierSurface Bezier(in HLRBRep_Surface theSurf) =>
         theSurf.Surface().Bezier();
 
-    public static Geom_BSplineSurface BSpline(in HLRBRep_Surface theSurf) =>
+    public static global::Kerf.Geometry.BSplineSurface BSpline(in HLRBRep_Surface theSurf) =>
         theSurf.Surface().BSpline();
 
     public static Axis3D AxeOfRevolution(in HLRBRep_Surface theSurf) =>
@@ -138,10 +139,10 @@ public readonly struct HLRBRep_SurfaceTool : IIntCurveSurface_SurfaceTool<HLRBRe
     public static Direction3D Direction(in HLRBRep_Surface theSurf) =>
         theSurf.Surface().Direction();
 
-    public static Adaptor3d_Curve BasisCurve(in HLRBRep_Surface theSurf) =>
+    public static CurveAdaptorBase BasisCurve(in HLRBRep_Surface theSurf) =>
         theSurf.Surface().BasisCurve();
 
-    public static Adaptor3d_Surface BasisSurface(in HLRBRep_Surface theSurf) =>
+    public static SurfaceAdaptorBase BasisSurface(in HLRBRep_Surface theSurf) =>
         theSurf.Surface().BasisSurface();
 
     public static double OffsetValue(in HLRBRep_Surface theSurf) =>
@@ -157,10 +158,10 @@ public readonly struct HLRBRep_SurfaceTool : IIntCurveSurface_SurfaceTool<HLRBRe
             case global::Kerf.Geometry.SurfaceKind.Plane:
                 nbs = 2;
                 break;
-            case BezierSurface:
+            case SurfaceKind.BezierSurface:
                 nbs = 3 + theSurf.NbUPoles();
                 break;
-            case BSplineSurface:
+            case SurfaceKind.BSplineSurface:
                 nbs = theSurf.NbUKnots();
                 nbs *= theSurf.UDegree();
                 if (nbs < 2)
@@ -195,10 +196,10 @@ public readonly struct HLRBRep_SurfaceTool : IIntCurveSurface_SurfaceTool<HLRBRe
             case global::Kerf.Geometry.SurfaceKind.Plane:
                 nbs = 2;
                 break;
-            case BezierSurface:
+            case SurfaceKind.BezierSurface:
                 nbs = 3 + theSurf.NbVPoles();
                 break;
-            case BSplineSurface:
+            case SurfaceKind.BSplineSurface:
                 nbs = theSurf.NbVKnots();
                 nbs *= theSurf.VDegree();
                 if (nbs < 2)

@@ -3,21 +3,25 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
+using Occt;
 using System.Text;
 
-namespace Occt;
+namespace Kerf.Engine.Topology.Tools;
 
 // BRepTools' Dump, Write and Read: OCCT's text format of shapes (BRepTools_ShapeSet)
-public static partial class BRepTools
+public static partial class BrepTools
 {
     /// <summary>Dumps the topological structure and the geometry of the shape in a readable form.</summary>
-    public static void Dump(in TopoDS_Shape Sh, TextWriter S)
+    public static void Dump(in Shape sh, TextWriter s)
     {
-        BRepTools_ShapeSet SS = new();
-        SS.Add(Sh);
-        SS.Dump(Sh, S);
-        SS.Dump(S);
+        BrepShapeSet ss = new();
+        ss.Add(sh);
+        ss.Dump(sh, s);
+        ss.Dump(s);
     }
 
     /// <summary>
@@ -25,31 +29,31 @@ public static partial class BRepTools
     /// without their normals: the text native <c>BRepTools::Write</c> writes to a stream, byte for byte, with
     /// <c>'\n'</c> line ends.
     /// </summary>
-    public static void Write(in TopoDS_Shape theShape, TextWriter theStream, ProgressRange theProgress = default)
+    public static void Write(in Shape shape, TextWriter stream, ProgressRange progress = default)
     {
-        Write(theShape, theStream, true, false, TopTools_FormatVersion.TopTools_FormatVersion_CURRENT, theProgress);
+        Write(shape, stream, true, false, FormatVersion.FormatVersion_CURRENT, progress);
     }
 
     /// <summary>
     /// Writes the shape to the writer in OCCT's text format, in the version given, with or without its triangulations
     /// and their normals (which a face with a triangulation and no surface always writes).
     /// </summary>
-    public static void Write(in TopoDS_Shape theShape,
-                             TextWriter theStream,
-                             bool theWithTriangles,
-                             bool theWithNormals,
-                             TopTools_FormatVersion theVersion,
-                             ProgressRange theProgress = default)
+    public static void Write(in Shape shape,
+                             TextWriter stream,
+                             bool withTriangles,
+                             bool withNormals,
+                             FormatVersion version,
+                             ProgressRange progress = default)
     {
-        BRepTools_ShapeSet aShapeSet = new(theWithTriangles, theWithNormals);
-        aShapeSet.SetFormatNb((int)theVersion);
-        aShapeSet.Add(theShape);
-        aShapeSet.Write(theStream, theProgress);
-        aShapeSet.Write(theShape, theStream);
+        BrepShapeSet shapeSet = new(withTriangles, withNormals);
+        shapeSet.SetFormatNb((int)version);
+        shapeSet.Add(shape);
+        shapeSet.Write(stream, progress);
+        shapeSet.Write(shape, stream);
     }
 
     /// <summary>
-    /// Reads a shape written by <see cref="Write(in TopoDS_Shape, TextWriter, ProgressRange)"/> (or native
+    /// Reads a shape written by <see cref="Write(in Shape, TextWriter, ProgressRange)"/> (or native
     /// OCCT) from the reader. The shape is frozen; it is null if the text isn't a shape set.
     /// </summary>
     /// <remarks>
@@ -60,41 +64,41 @@ public static partial class BRepTools
     /// </remarks>
     /// <exception cref="StreamFormatErrorException">The input can't be read safely.</exception>
     /// <exception cref="FailureException">OCCT's own exceptions on malformed input.</exception>
-    public static void Read(out TopoDS_Shape Sh, TextReader S, ProgressRange theProgress = default)
+    public static void Read(out Shape sh, TextReader s, ProgressRange progress = default)
     {
-        Read(out Sh, S, new BRep_Builder(), theProgress);
+        Read(out sh, s, new BrepBuilder(), progress);
     }
 
     /// <summary>Reads a shape from the reader, building it with the builder.</summary>
-    internal static void Read(out TopoDS_Shape Sh, TextReader S, BRep_Builder B, ProgressRange theProgress = default)
+    internal static void Read(out Shape sh, TextReader s, BrepBuilder b, ProgressRange progress = default)
     {
-        BRepTools_ShapeSet SS = new(B);
-        SS.Read(S, theProgress);
-        ReadShape(SS, out Sh, S);
+        BrepShapeSet ss = new(b);
+        ss.Read(s, progress);
+        ReadShape(ss, out sh, s);
     }
 
     // SS.Read(Sh, S), with the exceptions of malformed input reported as the set's Read reports them
-    private static void ReadShape(BRepTools_ShapeSet SS, out TopoDS_Shape Sh, TextReader S)
+    private static void ReadShape(BrepShapeSet ss, out Shape sh, TextReader s)
     {
         try
         {
-            SS.Read(out Sh, S);
+            ss.Read(out sh, s);
         }
-        catch (Exception anException) when (TopTools_ShapeSet.IsSignal(anException))
+        catch (Exception exception) when (ShapeSet.IsSignal(exception))
         {
             // OCCT.NET: untrusted input
-            throw new StreamFormatErrorException("BRepTools::Read: " + anException.Message, anException);
+            throw new StreamFormatErrorException("BRepTools::Read: " + exception.Message, exception);
         }
     }
 
     /// <summary>
     /// Writes the shape to a file in OCCT's text format, the current version, with its triangulations: a
     /// <c>DBRep_DrawableShape</c> line, which Draw reads, then the text of
-    /// <see cref="Write(in TopoDS_Shape, TextWriter, ProgressRange)"/>. False if the file can't be written.
+    /// <see cref="Write(in Shape, TextWriter, ProgressRange)"/>. False if the file can't be written.
     /// </summary>
-    public static bool Write(in TopoDS_Shape theShape, string theFile, ProgressRange theProgress = default)
+    public static bool Write(in Shape shape, string file, ProgressRange progress = default)
     {
-        return Write(theShape, theFile, true, false, TopTools_FormatVersion.TopTools_FormatVersion_CURRENT, theProgress);
+        return Write(shape, file, true, false, FormatVersion.FormatVersion_CURRENT, progress);
     }
 
     /// <summary>
@@ -102,37 +106,37 @@ public static partial class BRepTools
     /// their normals. The file has <c>'\n'</c> line ends, as native OCCT 8 writes it (in binary mode). False if the
     /// file can't be written.
     /// </summary>
-    public static bool Write(in TopoDS_Shape theShape,
-                             string theFile,
-                             bool theWithTriangles,
-                             bool theWithNormals,
-                             TopTools_FormatVersion theVersion,
-                             ProgressRange theProgress = default)
+    public static bool Write(in Shape shape,
+                             string file,
+                             bool withTriangles,
+                             bool withNormals,
+                             FormatVersion version,
+                             ProgressRange progress = default)
     {
-        StreamWriter aStream;
+        StreamWriter stream;
         try
         {
-            aStream = new StreamWriter(theFile, false, new UTF8Encoding(false));
+            stream = new StreamWriter(file, false, new UTF8Encoding(false));
         }
-        catch (Exception anException) when (anException is IOException or UnauthorizedAccessException
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
                                                 or ArgumentException or NotSupportedException)
         {
             // OCCT: the file system couldn't open the stream
             return false;
         }
 
-        using (aStream)
+        using (stream)
         {
             try
             {
-                BRepTools_ShapeSet SS = new(theWithTriangles, theWithNormals);
-                SS.SetFormatNb((int)theVersion);
-                SS.Add(theShape);
+                BrepShapeSet ss = new(withTriangles, withNormals);
+                ss.SetFormatNb((int)version);
+                ss.Add(shape);
 
-                aStream.Write("DBRep_DrawableShape\n"); // for easy Draw read
-                SS.Write(aStream, theProgress);
-                SS.Write(theShape, aStream);
-                aStream.Flush();
+                stream.Write("DBRep_DrawableShape\n"); // for easy Draw read
+                ss.Write(stream, progress);
+                ss.Write(shape, stream);
+                stream.Flush();
             }
             catch (IOException)
             {
@@ -151,37 +155,37 @@ public static partial class BRepTools
     /// </summary>
     /// <exception cref="StreamFormatErrorException">The file can't be read safely.</exception>
     /// <exception cref="FailureException">OCCT's own exceptions on malformed input.</exception>
-    public static bool Read(out TopoDS_Shape Sh, string File, ProgressRange theProgress = default)
+    public static bool Read(out Shape sh, string file, ProgressRange progress = default)
     {
-        return Read(out Sh, File, new BRep_Builder(), theProgress);
+        return Read(out sh, file, new BrepBuilder(), progress);
     }
 
     /// <summary>Reads a shape from a file, building it with the builder.</summary>
-    internal static bool Read(out TopoDS_Shape Sh, string File, BRep_Builder B, ProgressRange theProgress = default)
+    internal static bool Read(out Shape sh, string file, BrepBuilder b, ProgressRange progress = default)
     {
-        Sh = new TopoDS_Shape();
-        StreamReader aStream;
+        sh = new Shape();
+        StreamReader stream;
         try
         {
-            aStream = new StreamReader(File, Encoding.Latin1, false);
+            stream = new StreamReader(file, Encoding.Latin1, false);
         }
-        catch (Exception anException) when (anException is IOException or UnauthorizedAccessException
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
                                                 or ArgumentException or NotSupportedException)
         {
             // OCCT: the file system couldn't open the stream
             return false;
         }
 
-        using (aStream)
+        using (stream)
         {
-            BRepTools_ShapeSet SS = new(B);
-            SS.Read(aStream, theProgress);
-            if (SS.NbShapes() == 0)
+            BrepShapeSet ss = new(b);
+            ss.Read(stream, progress);
+            if (ss.ShapeCount == 0)
             {
                 return false;
             }
 
-            ReadShape(SS, out Sh, aStream);
+            ReadShape(ss, out sh, stream);
             return true;
         }
     }

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -13,7 +14,7 @@ internal static class ChFiKPart_ComputeData_CS
     /// <summary>The circle of radius <paramref name="R"/> from the point <paramref name="P1S2"/> to
     /// <paramref name="P2S2"/> of <paramref name="S2"/>, in the plane normal to the plane <paramref name="S1"/>, and
     /// the cylinder around it; [<paramref name="First"/>, <paramref name="Last"/>] its parameters.</summary>
-    internal static void ChFiKPart_CornerSpine(Adaptor3d_Surface S1, Adaptor3d_Surface S2, in Point2D P1S1,
+    internal static void ChFiKPart_CornerSpine(SurfaceAdaptorBase S1, SurfaceAdaptorBase S2, in Point2D P1S1,
                                                in Point2D P2S1, in Point2D P1S2, in Point2D P2S2, double R,
                                                ref Cylinder cyl, ref Circle3D circ, out double First,
                                                out double Last)

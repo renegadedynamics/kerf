@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -20,15 +23,15 @@ namespace Occt;
 /// </para>
 /// <para>
 /// Equality is OCCT's <see cref="IsEqual"/>: the same number of shapes, and every shape of the other set
-/// <see cref="TopoDS_Shape.IsSame"/> as one of this set. The hash is OCCT's <see cref="GetSum"/>, a sum of the shapes'
-/// normalised <see cref="TopTools_ShapeMapHasher"/> hashes. The hash values differ from native's (native hashes
+/// <see cref="Shape.IsSame"/> as one of this set. The hash is OCCT's <see cref="GetSum"/>, a sum of the shapes'
+/// normalised <see cref="ShapeHasher"/> hashes. The hash values differ from native's (native hashes
 /// addresses), which changes no result: the port's maps iterate in insertion order (decision 18).
 /// </para>
 /// </remarks>
 public sealed class BOPTools_Set : IEquatable<BOPTools_Set>
 {
-    private NCollection_DynamicArray<TopoDS_Shape> myShapes;
-    private TopoDS_Shape myShape;
+    private NCollection_DynamicArray<Shape> myShapes;
+    private Shape myShape;
     private int myNbShapes;
     private ulong mySum;
     private int myUpper;
@@ -36,7 +39,7 @@ public sealed class BOPTools_Set : IEquatable<BOPTools_Set>
     /// <summary>An empty set.</summary>
     public BOPTools_Set()
     {
-        myShapes = new NCollection_DynamicArray<TopoDS_Shape>(256);
+        myShapes = new NCollection_DynamicArray<Shape>(256);
         myNbShapes = 0;
         mySum = 0;
         myUpper = 432123;
@@ -49,7 +52,7 @@ public sealed class BOPTools_Set : IEquatable<BOPTools_Set>
         myNbShapes = theOther.myNbShapes;
         mySum = theOther.mySum;
         myUpper = theOther.myUpper;
-        myShapes = new NCollection_DynamicArray<TopoDS_Shape>(theOther.myShapes);
+        myShapes = new NCollection_DynamicArray<Shape>(theOther.myShapes);
     }
 
     /// <summary>Makes this set a copy of the other (OCCT's assignment).</summary>
@@ -59,22 +62,22 @@ public sealed class BOPTools_Set : IEquatable<BOPTools_Set>
         myNbShapes = theOther.myNbShapes;
         mySum = theOther.mySum;
         myUpper = theOther.myUpper;
-        myShapes = new NCollection_DynamicArray<TopoDS_Shape>(theOther.myShapes);
+        myShapes = new NCollection_DynamicArray<Shape>(theOther.myShapes);
         return this;
     }
 
     /// <summary>The shape the set was made from.</summary>
-    public TopoDS_Shape Shape() => myShape;
+    public Shape Shape() => myShape;
 
     /// <summary>
     /// Fills the set with the sub-shapes of type <paramref name="theType"/> of <paramref name="theS"/>, replacing its
     /// content. Don't call it on a set that is a key of a map.
     /// </summary>
-    public void Add(in TopoDS_Shape theS, TopAbs_ShapeEnum theType)
+    public void Add(in Shape theS, ShapeType theType)
     {
         ulong aId, aIdN;
-        TopAbs_Orientation aOr;
-        TopExp_Explorer aExp = new();
+        Orientation aOr;
+        Explorer aExp = new();
         //
         myShape = theS;
         myShapes.Clear();
@@ -84,27 +87,27 @@ public sealed class BOPTools_Set : IEquatable<BOPTools_Set>
         aExp.Init(theS, theType);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Shape aSx = aExp.Current();
-            if (theType == TopAbs_EDGE)
+            Shape aSx = aExp.Current();
+            if (theType == ShapeType.Edge)
             {
-                TopoDS_Edge aEx = TopoDS.Edge(aSx);
-                if (BRep_Tool.Degenerated(aEx))
+                Edge aEx = ShapeCasts.Edge(aSx);
+                if (Tool.Degenerated(aEx))
                 {
                     continue;
                 }
             }
             //
             aOr = aSx.Orientation();
-            if (aOr == TopAbs_INTERNAL)
+            if (aOr == Internal)
             {
-                TopoDS_Shape aSy;
+                Shape aSy;
                 //
                 aSy = aSx;
                 //
-                aSy.Orientation(TopAbs_FORWARD);
+                aSy.Orientation(Forward);
                 myShapes.Append(aSy);
                 //
-                aSy.Orientation(TopAbs_REVERSED);
+                aSy.Orientation(Reversed);
                 myShapes.Append(aSy);
             }
             else
@@ -121,9 +124,9 @@ public sealed class BOPTools_Set : IEquatable<BOPTools_Set>
         //
         for (int i = 0; i < myShapes.Length(); ++i)
         {
-            TopoDS_Shape aSx = myShapes.Value(i);
+            Shape aSx = myShapes.Value(i);
             // OCCT's size_t hash; the port's is an int, taken as unsigned
-            aId = unchecked((ulong)(uint)TopTools_ShapeMapHasher.Instance.GetHashCode(aSx)) % (ulong)myUpper + 1;
+            aId = unchecked((ulong)(uint)ShapeHasher.Instance.GetHashCode(aSx)) % (ulong)myUpper + 1;
             aIdN = NormalizedIds(aId, myNbShapes);
             mySum = unchecked(mySum + aIdN);
         }
@@ -140,7 +143,7 @@ public sealed class BOPTools_Set : IEquatable<BOPTools_Set>
             return false;
         }
         //
-        NCollection_Map<TopoDS_Shape> aM1 = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aM1 = new(ShapeHasher.Instance);
         //
         for (int i = 0; i < myShapes.Length(); ++i)
         {

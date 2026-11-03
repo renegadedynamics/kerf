@@ -2,10 +2,14 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -14,37 +18,37 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class BRepToolsTests
 {
-    private static TopoDS_Face FaceAt(in TopoDS_Shape theShape, int theIndex)
+    private static Face FaceAt(in Shape theShape, int theIndex)
     {
-        var anExp = new TopExp_Explorer(theShape, TopAbs_FACE);
+        var anExp = new Explorer(theShape, ShapeType.Face);
         for (int i = 0; i < theIndex; i++)
         {
             anExp.Next();
         }
 
-        return TopoDS.Face(anExp.Current());
+        return ShapeCasts.Face(anExp.Current());
     }
 
     /// <summary>A square face [0, 4] x [0, 4] on XOY with a square hole [1, 2] x [1, 3], the hole's wire first.</summary>
-    private static TopoDS_Face FaceWithHole()
+    private static Face FaceWithHole()
     {
-        var aV = new TopoDS_Vertex[8];
+        var aV = new Vertex[8];
         Point3D[] aPts = [new(0, 0, 0), new(4, 0, 0), new(4, 4, 0), new(0, 4, 0), new(1, 1, 0), new(1, 3, 0), new(2, 3, 0), new(2, 1, 0)];
         for (int i = 0; i < 8; i++)
         {
             aV[i] = TestShapes.Vertex(aPts[i]);
         }
 
-        var anEdges = new Dictionary<(int, int), TopoDS_Edge>();
-        var aPlane = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
-        TopoDS_Face anOuter = TestShapes.PolygonFace(aV, new Direction3D(0, 0, 1), anEdges, [0, 1, 2, 3], aPlane);
-        TopoDS_Face aHole = TestShapes.PolygonFace(aV, new Direction3D(0, 0, 1), anEdges, [4, 5, 6, 7], aPlane);
+        var anEdges = new Dictionary<(int, int), Edge>();
+        var aPlane = new PlaneSurface(new CoordinateSystem(Constants.XOY()));
+        Face anOuter = TestShapes.PolygonFace(aV, new Direction3D(0, 0, 1), anEdges, [0, 1, 2, 3], aPlane);
+        Face aHole = TestShapes.PolygonFace(aV, new Direction3D(0, 0, 1), anEdges, [4, 5, 6, 7], aPlane);
 
         // one face on the plane, with the hole's wire first: the edges have their pcurves on that plane
-        var aBuilder = new BRep_Builder();
-        TopoDS_Face aFace = TopoDS.Face(anOuter.EmptyCopied());
-        aBuilder.Add(aFace, new TopoDS_Iterator(aHole).Value());
-        aBuilder.Add(aFace, new TopoDS_Iterator(anOuter).Value());
+        var aBuilder = new BrepBuilder();
+        Face aFace = ShapeCasts.Face(anOuter.EmptyCopied());
+        aBuilder.Add(aFace, new Iterator(aHole).Value());
+        aBuilder.Add(aFace, new Iterator(anOuter).Value());
         return TestShapes.Frozen(aFace);
     }
 
@@ -59,51 +63,51 @@ public class BRepToolsTests
     [Fact]
     public void UVBounds_of_faces_wires_and_edges()
     {
-        TopoDS_Face aFace = FaceWithHole();
-        BRepTools.UVBounds(aFace, out double u1, out double u2, out double v1, out double v2);
+        Face aFace = FaceWithHole();
+        BrepTools.UVBounds(aFace, out double u1, out double u2, out double v1, out double v2);
         AssertBounds((0.0, 4.0, 0.0, 4.0), (u1, u2, v1, v2));
 
-        var aWireExp = new TopExp_Explorer(aFace, TopAbs_WIRE);
-        BRepTools.UVBounds(aFace, TopoDS.Wire(aWireExp.Current()), out u1, out u2, out v1, out v2);
+        var aWireExp = new Explorer(aFace, ShapeType.Wire);
+        BrepTools.UVBounds(aFace, ShapeCasts.Wire(aWireExp.Current()), out u1, out u2, out v1, out v2);
         AssertBounds((1.0, 2.0, 1.0, 3.0), (u1, u2, v1, v2));
 
-        TopoDS_Edge anEdge = TopoDS.Edge(new TopExp_Explorer(aFace, TopAbs_EDGE).Current());
-        BRepTools.UVBounds(aFace, anEdge, out u1, out u2, out v1, out v2);
+        Edge anEdge = ShapeCasts.Edge(new Explorer(aFace, ShapeType.Edge).Current());
+        BrepTools.UVBounds(aFace, anEdge, out u1, out u2, out v1, out v2);
         AssertBounds((1.0, 1.0, 1.0, 3.0), (u1, u2, v1, v2));
 
         // a face without edges: the surface's natural bounds; without a surface: zeros
-        var aBuilder = new BRep_Builder();
-        TopoDS_Face aBare = new();
-        aBuilder.MakeFace(ref aBare, new Geom_RectangularTrimmedSurface(new Geom_Plane(new CoordinateSystem(Constants.XOY())), -1, 2, -3, 4), 1e-7);
-        BRepTools.UVBounds(aBare, out u1, out u2, out v1, out v2);
+        var aBuilder = new BrepBuilder();
+        Face aBare = new();
+        aBuilder.MakeFace(ref aBare, new TrimmedSurface(new PlaneSurface(new CoordinateSystem(Constants.XOY())), -1, 2, -3, 4), 1e-7);
+        BrepTools.UVBounds(aBare, out u1, out u2, out v1, out v2);
         AssertBounds((-1.0, 2.0, -3.0, 4.0), (u1, u2, v1, v2));
-        TopoDS_Face aNoSurface = new();
+        Face aNoSurface = new();
         aBuilder.MakeFace(ref aNoSurface);
-        BRepTools.UVBounds(aNoSurface, out u1, out u2, out v1, out v2);
+        BrepTools.UVBounds(aNoSurface, out u1, out u2, out v1, out v2);
         Assert.Equal((0.0, 0.0, 0.0, 0.0), (u1, u2, v1, v2));
     }
 
     [Fact]
     public void OuterWire_is_the_one_containing_the_others()
     {
-        TopoDS_Face aFace = FaceWithHole();
-        TopoDS_Wire anOuter = BRepTools.OuterWire(aFace);
-        var anIt = new TopoDS_Iterator(aFace);
+        Face aFace = FaceWithHole();
+        Wire anOuter = BrepTools.OuterWire(aFace);
+        var anIt = new Iterator(aFace);
         anIt.Next();
         Assert.True(anOuter.IsSame(anIt.Value())); // the second wire
-        Assert.True(BRepTools.OuterWire(new TopoDS_Face()).IsNull());
+        Assert.True(BrepTools.OuterWire(new Face()).IsNull);
     }
 
     [Fact]
     public void UVBounds_of_a_cylinder_face()
     {
-        TopoDS_Face aFace = TestShapes.Frozen(TestShapes.CylinderFace(2.0, 3.0));
-        BRepTools.UVBounds(aFace, out double u1, out double u2, out double v1, out double v2);
+        Face aFace = TestShapes.Frozen(TestShapes.CylinderFace(2.0, 3.0));
+        BrepTools.UVBounds(aFace, out double u1, out double u2, out double v1, out double v2);
         Assert.Equal(0.0, u1);
         Assert.Equal(2.0 * Math.PI, u2, 15);
         Assert.Equal((0.0, 3.0), (v1, v2));
 
-        var anAdaptor = new BRepAdaptor_Surface(aFace);
+        var anAdaptor = new FaceSurfaceAdaptor(aFace);
         Assert.Equal(SurfaceKind.Cylinder, anAdaptor.GetType());
         Assert.Equal(3.0, anAdaptor.LastVParameter());
         Assert.True(anAdaptor.Value(0.0, 1.5).Distance(new Point3D(2, 0, 1.5)) < 1e-15);
@@ -114,53 +118,53 @@ public class BRepToolsTests
     [Fact]
     public void BRepAdaptor_Surface_applies_the_location()
     {
-        TopoDS_Face aFace = TestShapes.Frozen(TestShapes.CylinderFace(2.0, 3.0));
+        Face aFace = TestShapes.Frozen(TestShapes.CylinderFace(2.0, 3.0));
         var aLoc = new Placement(Transform3D.Translation(new Vector3D(10, 0, 0)));
-        TopoDS_Face aMoved = TopoDS.Face(aFace.Moved(aLoc));
-        var anAdaptor = new BRepAdaptor_Surface(aMoved);
+        Face aMoved = ShapeCasts.Face(aFace.Moved(aLoc));
+        var anAdaptor = new FaceSurfaceAdaptor(aMoved);
         Assert.True(anAdaptor.Value(0.0, 0.0).Distance(new Point3D(12, 0, 0)) < 1e-15);
-        var aCopy = (BRepAdaptor_Surface)anAdaptor.ShallowCopy();
+        var aCopy = (FaceSurfaceAdaptor)anAdaptor.ShallowCopy();
         Assert.True(aCopy.Value(0.0, 0.0).Distance(new Point3D(12, 0, 0)) < 1e-15);
         Assert.True(aCopy.Face() == aMoved);
         // without restriction, the surface's own bounds
-        var anUnbounded = new BRepAdaptor_Surface(aMoved, false);
+        var anUnbounded = new FaceSurfaceAdaptor(aMoved, false);
         Assert.True(global::Kerf.Engine.Foundation.Precision.IsInfinite(anUnbounded.LastVParameter()));
     }
 
     [Fact]
     public void Compare_and_orientation_of_edges()
     {
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        TopoDS_Face aFace = FaceAt(aBox, 0);
-        var anExp = new TopExp_Explorer(aFace, TopAbs_EDGE);
-        TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
-        Assert.Equal(anEdge.Orientation(), BRepTools.OriEdgeInFace(anEdge, aFace));
-        Assert.True(BRepTools.Compare(anEdge, TopoDS.Edge(anEdge.Reversed())));
+        Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        Face aFace = FaceAt(aBox, 0);
+        var anExp = new Explorer(aFace, ShapeType.Edge);
+        Edge anEdge = ShapeCasts.Edge(anExp.Current());
+        Assert.Equal(anEdge.Orientation(), BrepTools.OriEdgeInFace(anEdge, aFace));
+        Assert.True(BrepTools.Compare(anEdge, ShapeCasts.Edge(anEdge.Reversed())));
         Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(
-            () => BRepTools.OriEdgeInFace(TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0)), aFace));
+            () => BrepTools.OriEdgeInFace(TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0)), aFace));
 
-        TopoDS_Vertex aV1 = TestShapes.Vertex(new Point3D(0, 0, 0));
-        TopoDS_Vertex aV2 = TestShapes.Vertex(new Point3D(0, 0, 0.5e-7));
-        TopoDS_Vertex aV3 = TestShapes.Vertex(new Point3D(0, 0, 1));
-        Assert.True(BRepTools.Compare(aV1, aV2));
-        Assert.False(BRepTools.Compare(aV1, aV3));
+        Vertex aV1 = TestShapes.Vertex(new Point3D(0, 0, 0));
+        Vertex aV2 = TestShapes.Vertex(new Point3D(0, 0, 0.5e-7));
+        Vertex aV3 = TestShapes.Vertex(new Point3D(0, 0, 1));
+        Assert.True(BrepTools.Compare(aV1, aV2));
+        Assert.False(BrepTools.Compare(aV1, aV3));
 
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        BRepTools.Map3DEdges(aBox, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        BrepTools.Map3DEdges(aBox, aMap);
         Assert.Equal(12, aMap.Extent());
     }
 
     [Fact]
     public void Triangulation_and_CheckLocations()
     {
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        Assert.False(BRepTools.Triangulation(aBox, 0.1));
+        Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        Assert.False(BrepTools.Triangulation(aBox, 0.1));
 
-        var aList = new NCollection_List<TopoDS_Shape>();
-        BRepTools.CheckLocations(aBox, aList);
+        var aList = new NCollection_List<Shape>();
+        BrepTools.CheckLocations(aBox, aList);
         Assert.True(aList.IsEmpty());
-        TopoDS_Shape aScaled = aBox.Moved(new Placement(Transform3D.Scale(new Point3D(), 2.0)));
-        BRepTools.CheckLocations(aScaled, aList);
+        Shape aScaled = aBox.Moved(new Placement(Transform3D.Scale(new Point3D(), 2.0)));
+        BrepTools.CheckLocations(aScaled, aList);
         Assert.Equal(1, aList.Extent());
     }
 
@@ -168,42 +172,42 @@ public class BRepToolsTests
     public void In_place_statics_refuse_frozen_shapes_and_change_unfrozen_ones()
     {
         // a face with a triangulation and edges with polygons on it
-        TopoDS_Solid aBox = TestShapes.Box(1, 1, 1);
-        TopoDS_Face aFace = FaceAt(aBox, 0);
+        Solid aBox = TestShapes.Box(1, 1, 1);
+        Face aFace = FaceAt(aBox, 0);
         var aTri = new Triangulation(4, 2, false);
-        var aBuilder = new BRep_Builder();
+        var aBuilder = new BrepBuilder();
         aBuilder.UpdateFace(aFace, aTri);
-        for (var anExp = new TopExp_Explorer(aFace, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aFace, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            aBuilder.UpdateEdge(TopoDS.Edge(anExp.Current()), new PolygonOnTriangulation(2, false), aTri, new Placement());
+            aBuilder.UpdateEdge(ShapeCasts.Edge(anExp.Current()), new PolygonOnTriangulation(2, false), aTri, new Placement());
         }
 
-        TopoDS_Solid aFrozen = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        Assert.Throws<TopoDS_LockedShape>(() => BRepTools.CleanGeometry(aFrozen));
+        Solid aFrozen = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        Assert.Throws<LockedShapeException>(() => BrepTools.CleanGeometry(aFrozen));
 
-        BRepTools.Clean(aBox);
-        Assert.Null(BRep_Tool.Triangulation(aFace, out _));
-        TopoDS_Edge anEdge = TopoDS.Edge(new TopExp_Explorer(aFace, TopAbs_EDGE).Current());
-        Assert.Null(BRep_Tool.PolygonOnTriangulation(anEdge, aTri, new Placement()));
+        BrepTools.Clean(aBox);
+        Assert.Null(Tool.Triangulation(aFace, out _));
+        Edge anEdge = ShapeCasts.Edge(new Explorer(aFace, ShapeType.Edge).Current());
+        Assert.Null(Tool.PolygonOnTriangulation(anEdge, aTri, new Placement()));
 
         // CleanGeometry removes the surfaces and curves, and the pcurves on surfaces no face uses any more
-        BRepTools.CleanGeometry(aBox);
-        Assert.False(BRep_Tool.IsGeometric(aFace));
-        Assert.False(BRep_Tool.IsGeometric(anEdge));
+        BrepTools.CleanGeometry(aBox);
+        Assert.False(Tool.IsGeometric(aFace));
+        Assert.False(Tool.IsGeometric(anEdge));
     }
 
     [Fact]
     public void RemoveInternals_removes_internal_sub_shapes()
     {
-        var aBuilder = new BRep_Builder();
-        TopoDS_Compound aCompound = new();
+        var aBuilder = new BrepBuilder();
+        Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
-        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
+        Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
         aBuilder.Add(aCompound, anEdge);
-        aBuilder.Add(aCompound, TestShapes.Edge(new Point3D(0, 1, 0), new Point3D(1, 1, 0)).Oriented(TopAbs_INTERNAL));
-        BRepTools.RemoveInternals(aCompound);
-        Assert.Equal(1, aCompound.NbChildren());
-        Assert.True(new TopoDS_Iterator(aCompound).Value() == anEdge);
+        aBuilder.Add(aCompound, TestShapes.Edge(new Point3D(0, 1, 0), new Point3D(1, 1, 0)).Oriented(Internal));
+        BrepTools.RemoveInternals(aCompound);
+        Assert.Equal(1, aCompound.ChildCount);
+        Assert.True(new Iterator(aCompound).Value() == anEdge);
         Assert.True(aCompound.Free()); // restored
     }
 }

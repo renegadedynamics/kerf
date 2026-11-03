@@ -2,6 +2,9 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using System.Buffers.Binary;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -82,8 +85,8 @@ public class RWGltfReaderTests
     private static Triangulation SingleTriangulation(XdeDoc_Tree theTree, out XdeDoc_FlatItem theItem)
     {
         theItem = Assert.Single(theTree.Flatten());
-        TopoDS_Face aFace = TopoDS.Face(theItem.Product.Shape);
-        return BRep_Tool.Triangulation(aFace, out _)!;
+        Face aFace = ShapeCasts.Face(theItem.Product.Shape);
+        return Tool.Triangulation(aFace, out _)!;
     }
 
     [Fact]

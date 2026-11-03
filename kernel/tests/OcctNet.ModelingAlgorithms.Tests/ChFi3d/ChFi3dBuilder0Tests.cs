@@ -1,10 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ChFi3d_Builder_0;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 using static Occt.TopOpeBRepDS_Kind;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -15,10 +19,10 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ChFi3dBuilder0Tests
 {
-    private static TopoDS_Vertex FirstVertex(in TopoDS_Shape S)
+    private static Vertex FirstVertex(in Shape S)
     {
-        TopExp_Explorer ex = new(S, TopAbs_VERTEX);
-        return TopoDS.Vertex(ex.Current());
+        global::Kerf.Engine.Topology.Explorer ex = new(S, ShapeType.Vertex);
+        return global::Kerf.Engine.Topology.ShapeCasts.Vertex(ex.Current());
     }
 
     [Fact]
@@ -26,24 +30,24 @@ public class ChFi3dBuilder0Tests
     {
         // OCCT's line 2333: the common point's vertex gets the point's position and tolerance. The builder works on a
         // copy of its input (unit 7N2); a frozen input vertex is refused, never changed (decision 1087).
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
-        TopoDS_Vertex aFrozen = FirstVertex(aBox);
-        double aTol = BRep_Tool.Tolerance(aFrozen);
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
+        Vertex aFrozen = FirstVertex(aBox);
+        double aTol = Tool.Tolerance(aFrozen);
         ChFiDS_CommonPoint P = new();
         P.SetVertex(aFrozen);
-        P.SetPoint(BRep_Tool.Pnt(aFrozen));
+        P.SetPoint(Tool.Pnt(aFrozen));
         P.SetTolerance(1.0e-3);
         TopOpeBRepDS_DataStructure DS = new();
-        Assert.Throws<TopoDS_LockedShape>(() => ChFi3d_IndexPointInDS(P, DS));
-        Assert.Equal(aTol, BRep_Tool.Tolerance(aFrozen));
+        Assert.Throws<global::Kerf.Engine.Topology.LockedShapeException>(() => ChFi3d_IndexPointInDS(P, DS));
+        Assert.Equal(aTol, Tool.Tolerance(aFrozen));
 
-        TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(aBox, out BRepTools_History _);
-        TopoDS_Vertex aV = FirstVertex(aCopy);
+        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out global::Kerf.Engine.Topology.History _);
+        Vertex aV = FirstVertex(aCopy);
         P.SetVertex(aV);
         int i = ChFi3d_IndexPointInDS(P, DS);
-        Assert.Equal(1.0e-3, BRep_Tool.Tolerance(aV));
+        Assert.Equal(1.0e-3, Tool.Tolerance(aV));
         Assert.True(DS.Shape(i).IsSame(aV));
-        Assert.Equal(aTol, BRep_Tool.Tolerance(aFrozen));
+        Assert.Equal(aTol, Tool.Tolerance(aFrozen));
 
         // a point that is not a vertex is a new point of the data structure
         ChFiDS_CommonPoint Q = new();
@@ -67,13 +71,13 @@ public class ChFi3dBuilder0Tests
         k[2] = 1.0;
         NCollection_Array1<int> m = new(1, 2);
         m.Init(3);
-        Geom2d_BSplineCurve aBS = new(p, k, m, 2);
+        BSplineCurve2D aBS = new(p, k, m, 2);
         aBS.Freeze();
-        Geom2d_Curve? aPc = new Geom2d_TrimmedCurve(aBS, 0.25, 0.75);
+        Curve2D? aPc = new TrimmedCurve2D(aBS, 0.25, 0.75);
         // the trimmed curve copies its basis: freeze that copy too, as GeomInt's results are
-        ((Geom2d_TrimmedCurve)aPc).BasisCurve().Freeze();
+        ((TrimmedCurve2D)aPc).BasisCurve().Freeze();
         ChFi3d_ReparamPcurv(10.0, 20.0, ref aPc);
-        Geom2d_BSplineCurve aRes = Assert.IsType<Geom2d_BSplineCurve>(aPc);
+        BSplineCurve2D aRes = Assert.IsType<BSplineCurve2D>(aPc);
         Assert.Equal(10.0, aRes.FirstParameter());
         Assert.Equal(20.0, aRes.LastParameter());
         Assert.True(aRes.Value(10.0).IsEqual(aBS.Value(0.25), 1.0e-12));
@@ -85,44 +89,44 @@ public class ChFi3dBuilder0Tests
     [Fact]
     public void FilPointAndCurveInterferences()
     {
-        TopOpeBRepDS_CurvePointInterference I = ChFi3d_FilPointInDS(TopAbs_REVERSED, 3, 7, 1.5, true);
+        TopOpeBRepDS_CurvePointInterference I = ChFi3d_FilPointInDS(Reversed, 3, 7, 1.5, true);
         Assert.Equal(TopOpeBRepDS_CURVE, I.SupportType());
         Assert.Equal(3, I.Support());
         Assert.Equal(TopOpeBRepDS_VERTEX, I.GeometryType());
         Assert.Equal(7, I.Geometry());
         Assert.Equal(1.5, I.Parameter());
-        Assert.Equal(TopAbs_REVERSED, I.Transition().Orientation(TopAbs_State.TopAbs_IN));
-        Assert.Equal(TopOpeBRepDS_POINT, ChFi3d_FilPointInDS(TopAbs_FORWARD, 3, 7, 1.5).GeometryType());
+        Assert.Equal(Reversed, I.Transition().Orientation(Containment.In));
+        Assert.Equal(TopOpeBRepDS_POINT, ChFi3d_FilPointInDS(Forward, 3, 7, 1.5).GeometryType());
 
-        Geom2d_Line L = new(new Point2D(0, 0), new Direction2D(1, 0));
-        TopOpeBRepDS_SurfaceCurveInterference S = ChFi3d_FilCurveInDS(4, 2, L, TopAbs_FORWARD);
+        LineCurve2D L = new(new Point2D(0, 0), new Direction2D(1, 0));
+        TopOpeBRepDS_SurfaceCurveInterference S = ChFi3d_FilCurveInDS(4, 2, L, Forward);
         Assert.Equal(TopOpeBRepDS_SURFACE, S.SupportType());
         Assert.Equal(2, S.Support());
         Assert.Equal(TopOpeBRepDS_CURVE, S.GeometryType());
         Assert.Equal(4, S.Geometry());
         Assert.Same(L, S.PCurve());
 
-        Assert.Equal(TopAbs_FORWARD, ChFi3d_TrsfTrans(IntSurf_TypeTrans.IntSurf_In));
-        Assert.Equal(TopAbs_REVERSED, ChFi3d_TrsfTrans(IntSurf_TypeTrans.IntSurf_Out));
-        Assert.Equal(TopAbs_INTERNAL, ChFi3d_TrsfTrans(IntSurf_TypeTrans.IntSurf_Undecided));
+        Assert.Equal(Forward, ChFi3d_TrsfTrans(IntSurf_TypeTrans.IntSurf_In));
+        Assert.Equal(Reversed, ChFi3d_TrsfTrans(IntSurf_TypeTrans.IntSurf_Out));
+        Assert.Equal(Internal, ChFi3d_TrsfTrans(IntSurf_TypeTrans.IntSurf_Undecided));
     }
 
     [Fact]
     public void FilCommonPointMeetsTheVertexOfTheArc()
     {
         // an extremity of the walking at the end of a box edge: the common point takes the edge's vertex
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
-        TopExp_Explorer exf = new(aBox, TopAbs_FACE);
-        TopoDS_Face F = TopoDS.Face(exf.Current());
-        TopExp_Explorer exe = new(F, TopAbs_EDGE);
-        TopoDS_Edge E = TopoDS.Edge(exe.Current());
-        TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex _);
-        Point3D P = BRep_Tool.Pnt(V1);
-        BRepAdaptor_Curve2d anArc = new(E, F);
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
+        global::Kerf.Engine.Topology.Explorer exf = new(aBox, ShapeType.Face);
+        Face F = global::Kerf.Engine.Topology.ShapeCasts.Face(exf.Current());
+        global::Kerf.Engine.Topology.Explorer exe = new(F, ShapeType.Edge);
+        Edge E = global::Kerf.Engine.Topology.ShapeCasts.Edge(exe.Current());
+        global::Kerf.Engine.Topology.Exploration.Vertices(E, out Vertex V1, out Vertex _);
+        Point3D P = Tool.Pnt(V1);
+        EdgeCurve2DAdaptor anArc = new(E, F);
         BRepBlend_Extremity SP = new(P, 0.0, 0.0, 2.5, 1.0e-6);
         SP.SetTangent(new Vector3D(0, 0, 1));
         IntSurf_Transition T = new();
-        SP.AddArc(anArc, BRep_Tool.Parameter(V1, E), T, T);
+        SP.AddArc(anArc, Tool.Parameter(V1, E), T, T);
         ChFiDS_CommonPoint CP = new();
         ChFi3d_FilCommonPoint(SP, IntSurf_TypeTrans.IntSurf_In, true, ref CP, 1.0e-5);
         Assert.True(CP.IsVertex());
@@ -131,8 +135,8 @@ public class ChFi3dBuilder0Tests
         Assert.True(CP.Arc().IsSame(E));
         Assert.Equal(2.5, CP.Parameter());
         Assert.True(CP.Vector().IsEqual(new Vector3D(0, 0, -1), 1.0e-15, 1.0e-15));
-        Assert.Equal(TopAbs.Reverse(TopAbs.Compose(TopAbs_FORWARD, E.Orientation())), CP.TransitionOnArc());
-        Assert.True(CP.Tolerance() >= BRep_Tool.Tolerance(V1));
+        Assert.Equal(global::Kerf.Engine.Topology.TopAbs.Reverse(global::Kerf.Engine.Topology.TopAbs.Compose(Forward, E.Orientation())), CP.TransitionOnArc());
+        Assert.True(CP.Tolerance() >= Tool.Tolerance(V1));
     }
 
     [Fact]
@@ -155,19 +159,19 @@ public class ChFi3dBuilder0Tests
     [Fact]
     public void KParticularOnABoxAndACylinder()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
         ChFiDS_Map EF = new();
-        EF.Fill(aBox, TopAbs_EDGE, TopAbs_FACE);
-        TopExp_Explorer ex = new(aBox, TopAbs_EDGE);
-        TopoDS_Edge E = TopoDS.Edge(ex.Current());
-        ChFi3d_conexfaces(E, out TopoDS_Face F1, out TopoDS_Face F2, EF);
+        EF.Fill(aBox, ShapeType.Edge, ShapeType.Face);
+        global::Kerf.Engine.Topology.Explorer ex = new(aBox, ShapeType.Edge);
+        Edge E = global::Kerf.Engine.Topology.ShapeCasts.Edge(ex.Current());
+        ChFi3d_conexfaces(E, out Face F1, out Face F2, EF);
         ChFiDS_FilSpine Sp = new();
         Sp.SetEdges(E);
         Sp.Load();
         Sp.SetRadius(1.0);
-        Assert.True(ChFi3d_KParticular(Sp, 1, new BRepAdaptor_Surface(F1), new BRepAdaptor_Surface(F2)));
+        Assert.True(ChFi3d_KParticular(Sp, 1, new FaceSurfaceAdaptor(F1), new FaceSurfaceAdaptor(F2)));
         // an evolving radius is not particular
         Sp.SetRadius(new Xy(0.0, 2.0), 1);
-        Assert.False(ChFi3d_KParticular(Sp, 1, new BRepAdaptor_Surface(F1), new BRepAdaptor_Surface(F2)));
+        Assert.False(ChFi3d_KParticular(Sp, 1, new FaceSurfaceAdaptor(F1), new FaceSurfaceAdaptor(F2)));
     }
 }

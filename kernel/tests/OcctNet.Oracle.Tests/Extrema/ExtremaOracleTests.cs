@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 
@@ -20,7 +21,7 @@ public class ExtremaOracleTests(ITestOutputHelper output)
             Point3D aP = anOracle.Pnt();
             using var aNP = Oracle.ToNative(aP);
             using var aNative = new N.Extrema_POnCurv(aU, aNP);
-            var aPort = new Extrema_POnCurv(aU, aP);
+            var aPort = new POnCurv(aU, aP);
             using (var aNV = aNative.Value())
             {
                 anOracle.Same(Oracle.FromNative(aNV).XYZ(), aPort.Value().XYZ(), "Value");
@@ -28,7 +29,7 @@ public class ExtremaOracleTests(ITestOutputHelper output)
             anOracle.Same(aNative.Parameter(), aPort.Parameter(), "Parameter");
 
             using var aNEmpty = new N.Extrema_POnCurv();
-            var anEmpty = new Extrema_POnCurv();
+            var anEmpty = new POnCurv();
             using (var aNV = aNEmpty.Value())
             {
                 anOracle.Same(Oracle.FromNative(aNV).XYZ(), anEmpty.Value().XYZ(), "indefinite Value");
@@ -75,7 +76,7 @@ public class ExtremaOracleTests(ITestOutputHelper output)
             double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
             int aKind = i % 3;
             N.Geom_Curve aNCurve;
-            Extrema_ExtPElC aPort;
+            ExtPElC aPort;
             double aUinf, aUsup;
             bool isPeriodic = aKind != 0;
             if (aKind == 0)
@@ -84,7 +85,7 @@ public class ExtremaOracleTests(ITestOutputHelper output)
                 aUsup = 150.0;
                 using var aNAx1 = new N.gp_Ax1(aNLoc, aNN);
                 aNCurve = new N.Geom_Line(aNAx1);
-                aPort = new Extrema_ExtPElC(aP, new Line3D(anAx.Axis()), aTol, aUinf, aUsup);
+                aPort = new ExtPElC(aP, new Line3D(anAx.Axis()), aTol, aUinf, aUsup);
             }
             else if (aKind == 1)
             {
@@ -92,7 +93,7 @@ public class ExtremaOracleTests(ITestOutputHelper output)
                 aUsup = 2.0 * Math.PI;
                 double aR = anOracle.Real(1, 100);
                 aNCurve = new N.Geom_Circle(aNAx, aR);
-                aPort = new Extrema_ExtPElC(aP, new Circle3D(anAx, aR), aTol, aUinf, aUsup);
+                aPort = new ExtPElC(aP, new Circle3D(anAx, aR), aTol, aUinf, aUsup);
             }
             else
             {
@@ -101,21 +102,21 @@ public class ExtremaOracleTests(ITestOutputHelper output)
                 double aMinor = anOracle.Real(1, 50);
                 double aMajor = aMinor + anOracle.Real(0.5, 50);
                 aNCurve = new N.Geom_Ellipse(aNAx, aMajor, aMinor);
-                aPort = new Extrema_ExtPElC(aP, new Ellipse3D(anAx, aMajor, aMinor), aTol, aUinf, aUsup);
+                aPort = new ExtPElC(aP, new Ellipse3D(anAx, aMajor, aMinor), aTol, aUinf, aUsup);
             }
 
             using (aNCurve)
             {
                 using var anAdaptor = new N.GeomAdaptor_Curve(aNCurve, aUinf, aUsup);
                 using var aNative = new N.Extrema_ExtPC(aNP, anAdaptor, aUinf, aUsup);
-                anOracle.Same(aNative.IsDone(), aPort.IsDone(), "IsDone");
+                anOracle.Same(aNative.IsDone(), aPort.IsDone, "IsDone");
                 if (!aNative.IsDone())
                 {
                     continue;
                 }
 
                 // Extrema_ExtPC keeps the parameters in range; with the ranges above it drops none
-                anOracle.Same(aNative.NbExt(), aPort.NbExt(), "NbExt");
+                anOracle.Same(aNative.NbExt(), aPort.ExtCount, "NbExt");
                 for (int j = 1; j <= aNative.NbExt(); j++)
                 {
                     double aU = aPort.Point(j).Parameter();
@@ -153,32 +154,32 @@ public class ExtremaOracleTests(ITestOutputHelper output)
             double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
             int aKind = i % 3;
             N.Geom2d_Curve aNCurve;
-            Extrema_ExtPElC2d aPort;
+            ExtPElC2d aPort;
             bool isPeriodic = aKind != 0;
             if (aKind == 0)
             {
                 using var aNAx1 = Oracle.ToNative(anAx.XAxis());
                 aNCurve = new N.Geom2d_Line(aNAx1);
-                aPort = new Extrema_ExtPElC2d(aP, new Line2D(anAx.XAxis()), aTol, -global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite());
+                aPort = new ExtPElC2d(aP, new Line2D(anAx.XAxis()), aTol, -global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite());
             }
             else if (aKind == 1)
             {
                 double aR = anOracle.Real(1, 100);
                 aNCurve = new N.Geom2d_Circle(aNAx, aR);
-                aPort = new Extrema_ExtPElC2d(aP, new Circle2D(anAx, aR), aTol, 0.0, 2.0 * Math.PI);
+                aPort = new ExtPElC2d(aP, new Circle2D(anAx, aR), aTol, 0.0, 2.0 * Math.PI);
             }
             else
             {
                 double aMinor = anOracle.Real(1, 50);
                 double aMajor = aMinor + anOracle.Real(0.5, 50);
                 aNCurve = new N.Geom2d_Ellipse(aNAx, aMajor, aMinor);
-                aPort = new Extrema_ExtPElC2d(aP, new Ellipse2D(anAx, aMajor, aMinor), aTol, 0.0, 2.0 * Math.PI);
+                aPort = new ExtPElC2d(aP, new Ellipse2D(anAx, aMajor, aMinor), aTol, 0.0, 2.0 * Math.PI);
             }
 
             using (aNCurve)
             {
                 using var aNative = new N.Geom2dAPI_ProjectPointOnCurve(aNP, aNCurve);
-                int aNb = aPort.IsDone() ? aPort.NbExt() : 0;
+                int aNb = aPort.IsDone ? aPort.ExtCount : 0;
                 anOracle.Same(aNative.NbPoints(), aNb, "NbPoints");
                 for (int j = 1; j <= aNative.NbPoints(); j++)
                 {

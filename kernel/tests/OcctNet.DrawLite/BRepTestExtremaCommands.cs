@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Diagnostics;
 using Occt;
 
@@ -33,9 +35,9 @@ internal static class BRepTestExtremaCommands
             return 1;
         }
 
-        TopoDS_Shape S1 = theDI.GetShape(a[1]);
-        TopoDS_Shape S2 = theDI.GetShape(a[2]);
-        if (S1.IsNull() || S2.IsNull())
+        Shape S1 = theDI.GetShape(a[1]);
+        Shape S2 = theDI.GetShape(a[2]);
+        if (S1.IsNull || S2.IsNull)
         {
             return 1;
         }
@@ -60,7 +62,7 @@ internal static class BRepTestExtremaCommands
         }
 
         string ns1 = a[2], ns2 = a[3], ns0 = a[1];
-        TopoDS_Shape S1 = theDI.GetShape(ns1), S2 = theDI.GetShape(ns2);
+        Shape S1 = theDI.GetShape(ns1), S2 = theDI.GetShape(ns2);
 
         double aDeflection = global::Kerf.Engine.Foundation.Precision.Confusion();
         int anIndex = 4;
@@ -105,7 +107,7 @@ internal static class BRepTestExtremaCommands
                 Point3D P1 = dst.PointOnShape1(i1);
                 Point3D P2 = dst.PointOnShape2(i1);
                 string aName = i1 == 1 ? ns0 : ns0 + i1.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                TopoDS_Shape aSolution = dst.Value() <= 1.0e-9
+                Shape aSolution = dst.Value() <= 1.0e-9
                                        ? new BRepLib_MakeVertex(P1).Vertex()
                                        : new BRepLib_MakeEdge(P1, P2).Edge();
                 theDI.SetShape(aName, aSolution);
@@ -135,9 +137,9 @@ internal static class BRepTestExtremaCommands
             return 1;
         }
 
-        TopoDS_Shape aShape1 = theDI.GetShape(theArgs[1]);
-        TopoDS_Shape aShape2 = theDI.GetShape(theArgs[2]);
-        if (aShape1.IsNull() || aShape2.IsNull())
+        Shape aShape1 = theDI.GetShape(theArgs[1]);
+        Shape aShape2 = theDI.GetShape(theArgs[2]);
+        if (aShape1.IsNull || aShape2.IsNull)
         {
             theDI.Output.WriteLine("Error: Failed to find specified shapes");
             return 1;
@@ -217,24 +219,24 @@ internal static class BRepTestExtremaCommands
         }
         else
         {
-            var aCompBuilder = new TopoDS_Builder();
-            TopoDS_Compound aFaceCompound1 = new();
+            var aCompBuilder = new Builder();
+            Compound aFaceCompound1 = new();
             aCompBuilder.MakeCompound(ref aFaceCompound1);
             foreach (int aKey in Keys(aTool.OverlapSubShapes1()))
             {
                 string aStr = $"{theArgs[1]}_{aKey + 1}";
-                TopoDS_Shape aShape = aTool.GetSubShape1(aKey);
+                Shape aShape = aTool.GetSubShape1(aKey);
                 aCompBuilder.Add(aFaceCompound1, aShape);
                 theDI.SetShape(aStr, aShape);
                 theResult.Append(aStr).Append(" \n");
             }
 
-            TopoDS_Compound aFaceCompound2 = new();
+            Compound aFaceCompound2 = new();
             aCompBuilder.MakeCompound(ref aFaceCompound2);
             foreach (int aKey in Keys(aTool.OverlapSubShapes2()))
             {
                 string aStr = $"{theArgs[2]}_{aKey + 1}";
-                TopoDS_Shape aShape = aTool.GetSubShape2(aKey);
+                Shape aShape = aTool.GetSubShape2(aKey);
                 aCompBuilder.Add(aFaceCompound2, aShape);
                 theDI.SetShape(aStr, aShape);
                 theResult.Append(aStr).Append(" \n");
@@ -263,8 +265,8 @@ internal static class BRepTestExtremaCommands
             return 1;
         }
 
-        TopoDS_Shape aShape = theDI.GetShape(theArgs[1]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(theArgs[1]);
+        if (aShape.IsNull)
         {
             theDI.Output.WriteLine("Error: Failed to find specified shape");
             return 1;
@@ -317,13 +319,13 @@ internal static class BRepTestExtremaCommands
             theResult.Append("Executing self-intersection test: ").Append(aWorkTime).Append("\n");
         }
 
-        var aCompBuilder = new TopoDS_Builder();
-        TopoDS_Compound aFaceCompound = new();
+        var aCompBuilder = new Builder();
+        Compound aFaceCompound = new();
         aCompBuilder.MakeCompound(ref aFaceCompound);
         foreach (int aKey in Keys(aTool.OverlapElements()))
         {
             string aStr = $"{theArgs[1]}_{aKey + 1}";
-            TopoDS_Face aFace = aTool.GetSubShape(aKey);
+            Face aFace = aTool.GetSubShape(aKey);
             aCompBuilder.Add(aFaceCompound, aFace);
             theDI.SetShape(aStr, aFace);
             theResult.Append(aStr).Append(" \n");

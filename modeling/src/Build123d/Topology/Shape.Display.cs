@@ -1,3 +1,5 @@
+using Kerf.Engine.Construction.Values;
+using Kerf.Engine.Topology;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Occt;
@@ -12,11 +14,11 @@ public abstract partial class Shape
     }
 
     // Containers first, as build123d orders the shape types
-    private static readonly TopAbs_ShapeEnum[] OrderedShapes =
+    private static readonly global::Kerf.Topology.ShapeType[] OrderedShapes =
     [
-        TopAbs_ShapeEnum.TopAbs_COMPOUND, TopAbs_ShapeEnum.TopAbs_COMPSOLID, TopAbs_ShapeEnum.TopAbs_SOLID,
-        TopAbs_ShapeEnum.TopAbs_SHELL, TopAbs_ShapeEnum.TopAbs_FACE, TopAbs_ShapeEnum.TopAbs_WIRE,
-        TopAbs_ShapeEnum.TopAbs_EDGE, TopAbs_ShapeEnum.TopAbs_VERTEX,
+        global::Kerf.Topology.ShapeType.Compound, global::Kerf.Topology.ShapeType.CompSolid, global::Kerf.Topology.ShapeType.Solid,
+        global::Kerf.Topology.ShapeType.Shell, global::Kerf.Topology.ShapeType.Face, global::Kerf.Topology.ShapeType.Wire,
+        global::Kerf.Topology.ShapeType.Edge, global::Kerf.Topology.ShapeType.Vertex,
     ];
 
     /// <summary>
@@ -41,14 +43,14 @@ public abstract partial class Shape
         showCenter ? "Center" + node.Center().ToString(".6g") : node.Location.Repr(),
         node is Compound c ? [.. c.AssemblyChildren.Select(ch => AssemblyTree(ch, showCenter))] : []);
 
-    private static DisplayNode BuildTree(TopoDS_Shape shape, TopAbs_ShapeEnum limit, bool showCenter, string caption)
+    private static DisplayNode BuildTree(global::Kerf.Topology.Shape shape, global::Kerf.Topology.ShapeType limit, bool showCenter, string caption)
     {
         var label = TopoUtil.FromTopAbs(shape.ShapeType()).ToString();
         var position = caption + (showCenter
             ? BoundBox.FromTopoDS(shape).Center().ToString(".6g")
             : new Location(shape.Location()).Position.ToString(".6g"));
         var children = new List<DisplayNode>();
-        var it = new TopoDS_Iterator();
+        var it = new Iterator();
         it.Initialize(shape);
         for (; it.More(); it.Next())
         {
@@ -137,12 +139,12 @@ internal static class SurfaceIntersection
         if (shape.IsEmpty)
             return [];
         var ax1 = axis.ToGpAx1();
-        var makeLin = new gce_MakeLin(ax1);
+        var makeLin = new MakeLin(ax1);
         var line = makeLin.Value();
         var inter = new BRepIntCurveSurface_Inter();
         inter.Init(shape.TopoShape, line, tolerance);
         var plane = new Plane(axis);
-        var found = new List<(TopoDS_Face Face, Vector Point, double Distance)>();
+        var found = new List<(global::Kerf.Topology.Face Face, Vector Point, double Distance)>();
         for (; inter.More(); inter.Next())
         {
             var p = inter.Pnt();

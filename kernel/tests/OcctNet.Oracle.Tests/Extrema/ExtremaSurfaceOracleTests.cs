@@ -1,9 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Xunit.Abstractions;
-using static Occt.Extrema_ExtAlgo;
-using static Occt.Extrema_ExtFlag;
+using static Kerf.Engine.Extrema.ExtAlgo;
+using static Kerf.Engine.Extrema.ExtFlag;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -59,7 +61,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
     }
 
     // A point near the surface (on it, or at some distance from a point of it) or anywhere.
-    private static Point3D RandomPoint(Oracle theO, Geom_Surface theS, double theU1, double theU2, double theV1, double theV2)
+    private static Point3D RandomPoint(Oracle theO, Surface theS, double theU1, double theU2, double theV1, double theV2)
     {
         int aKind = theO.Int(0, 4);
         if (aKind == 4)
@@ -93,7 +95,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
         for (int c = 0; c < 1100; c++)
         {
             int aKind = c % AdaptorOracleInputs.SurfaceKinds.Length;
-            (N.Geom_Surface aNS, Geom_Surface aPS) = AdaptorOracleInputs.RandomSurface(anOracle, aKind);
+            (N.Geom_Surface aNS, Surface aPS) = AdaptorOracleInputs.RandomSurface(anOracle, aKind);
             using (aNS)
             {
                 aPS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
@@ -102,12 +104,12 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                 (double aWV1, double aWV2) = Window(anOracle, aV1, aV2, aWhole);
                 bool aWithTol = anOracle.Bool();
                 double aTol = aWithTol ? Math.Pow(10, anOracle.Real(-9, -4)) : 0.0;
-                Extrema_ExtAlgo anAlgo = anOracle.Int(0, 3) == 0 ? Extrema_ExtAlgo_Tree : Extrema_ExtAlgo_Grad;
-                Extrema_ExtFlag aFlag = anOracle.Int(0, 3) switch
+                ExtAlgo anAlgo = anOracle.Int(0, 3) == 0 ? ExtAlgo_Tree : ExtAlgo_Grad;
+                ExtFlag aFlag = anOracle.Int(0, 3) switch
                 {
-                    0 => Extrema_ExtFlag_MIN,
-                    1 => Extrema_ExtFlag_MAX,
-                    _ => Extrema_ExtFlag_MINMAX,
+                    0 => ExtFlag_MIN,
+                    1 => ExtFlag_MAX,
+                    _ => ExtFlag_MINMAX,
                 };
                 string aW = $"{AdaptorOracleInputs.SurfaceKinds[aKind]} #{c} ({(aWhole ? "whole" : "range")}, {anAlgo}, {aFlag}, tol {aTol:R})";
 
@@ -207,9 +209,9 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
 
     // A face on a random untrimmed surface (BRepLib_MakeFace would replace a trimmed surface by its basis) over a
     // window of its parameters; null when MakeFace fails.
-    private static (N.TopoDS_Face Face, Geom_Surface Surface, string Kind)? RandomFace(Oracle theO, int theKind)
+    private static (N.TopoDS_Face Face, Surface Surface, string Kind)? RandomFace(Oracle theO, int theKind)
     {
-        (N.Geom_Surface aNS, Geom_Surface aPS) = AdaptorOracleInputs.RandomSurface(theO, theKind);
+        (N.Geom_Surface aNS, Surface aPS) = AdaptorOracleInputs.RandomSurface(theO, theKind);
         using (aNS)
         {
             aPS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
@@ -252,21 +254,21 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
 
     // The surface BRepLib_MakeFace stores for theS: an offset of a swept surface is trimmed (on both directions when
     // the offset's U bounds are infinite, else in V for an extrusion; in V for a revolution with infinite V bounds).
-    private static Geom_Surface StoredSurface(Geom_Surface theS, double theU1, double theU2, double theV1, double theV2)
+    private static Surface StoredSurface(Surface theS, double theU1, double theU2, double theV1, double theV2)
     {
-        if (theS is Geom_OffsetSurface anOS)
+        if (theS is OffsetSurface anOS)
         {
             anOS.Bounds(out double umin, out double umax, out double vmin, out double vmax);
-            Geom_Surface aBase = anOS.BasisSurface();
-            if (aBase is Geom_SurfaceOfLinearExtrusion)
+            Surface aBase = anOS.BasisSurface();
+            if (aBase is ExtrusionSurface)
             {
                 return global::Kerf.Engine.Foundation.Precision.IsInfinite(umin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(umax)
-                    ? new Geom_RectangularTrimmedSurface(anOS, theU1, theU2, theV1, theV2)
-                    : new Geom_RectangularTrimmedSurface(anOS, theV1, theV2, false);
+                    ? new TrimmedSurface(anOS, theU1, theU2, theV1, theV2)
+                    : new TrimmedSurface(anOS, theV1, theV2, false);
             }
-            if (aBase is Geom_SurfaceOfRevolution && (global::Kerf.Engine.Foundation.Precision.IsInfinite(vmin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vmax)))
+            if (aBase is RevolutionSurface && (global::Kerf.Engine.Foundation.Precision.IsInfinite(vmin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vmax)))
             {
-                return new Geom_RectangularTrimmedSurface(anOS, theV1, theV2, false);
+                return new TrimmedSurface(anOS, theV1, theV2, false);
             }
         }
         return theS;
@@ -300,7 +302,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
             {
                 continue;
             }
-            (N.TopoDS_Face aNF, Geom_Surface aPS, string aKindName) = aFace.Value;
+            (N.TopoDS_Face aNF, Surface aPS, string aKindName) = aFace.Value;
             using (aNF)
             {
                 (double aU1, double aU2, double aV1, double aV2) = UVBounds(aNF);
@@ -312,13 +314,13 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                 using var aN = new N.BRepExtrema_DistShapeShape(aNV, aNF);
 
                 // The port's side of BRepExtrema_ExtPF(V, F, MINMAX, Grad)
-                var aSurf = new GeomAdaptor_TransformedSurface(aPS, new Transform3D()); // BRepAdaptor_Surface
+                var aSurf = new TransformedSurface(aPS, new Transform3D()); // BRepAdaptor_Surface
                 double aTol = Math.Min(N.BRep_Tool.Tolerance(aNF), global::Kerf.Engine.Foundation.Precision.Confusion());
                 double aTolU = Math.Max(aSurf.UResolution(aTol), global::Kerf.Engine.Foundation.Precision.PConfusion());
                 double aTolV = Math.Max(aSurf.VResolution(aTol), global::Kerf.Engine.Foundation.Precision.PConfusion());
-                var aPort = new Extrema_ExtPS();
-                aPort.SetFlag(Extrema_ExtFlag_MINMAX);
-                aPort.SetAlgo(Extrema_ExtAlgo_Grad);
+                var aPort = new ExtPS();
+                aPort.SetFlag(ExtFlag_MINMAX);
+                aPort.SetAlgo(ExtAlgo_Grad);
                 aPort.Initialize(aSurf, aU1, aU2, aV1, aV2, aTolU, aTolV);
                 aPort.Perform(aP);
                 aCases++;
@@ -327,7 +329,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                 {
                     continue;
                 }
-                int aNbPort = aPort.IsDone() ? aPort.NbExt() : 0;
+                int aNbPort = aPort.IsDone ? aPort.ExtCount : 0;
                 for (int i = 1; i <= aN.NbSolution(); i++)
                 {
                     if (aN.SupportTypeShape2(i) != N.BRepExtrema_SupportType.BRepExtrema_IsInFace)
@@ -350,7 +352,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                     }
                     Assert.True(aMatch != 0 && aBest < 1e-6,
                         $"{aW}: native solution ({aNU:R}, {aNV2:R}) is not an extremum of the port's Extrema_ExtPS");
-                    Extrema_POnSurf aQ = aPort.Point(aMatch);
+                    POnSurf aQ = aPort.Point(aMatch);
                     aQ.Parameter(out double aQU, out double aQV);
                     anOracle.Same(aNU, aQU, $"{aW} U");
                     anOracle.Same(aNV2, aQV, $"{aW} V");
@@ -389,9 +391,9 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
             {
                 continue;
             }
-            (N.TopoDS_Face aNF, Geom_Surface aPS, string aKindName) = aFace.Value;
+            (N.TopoDS_Face aNF, Surface aPS, string aKindName) = aFace.Value;
             N.Geom_Curve aNC;
-            Geom_Curve aPC;
+            Curve3D aPC;
             // A Bezier curve, a smooth B-spline curve, or a conic Extrema_ExtCS doesn't solve analytically on this
             // surface (a circle off planes, cylinders and spheres, a hyperbola off planes, any ellipse or parabola)
             int aCurveKind = anOracle.Int(0, 2) < 2 ? anOracle.Int(5, 6) : anOracle.Int(1, 4);
@@ -402,12 +404,12 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
             double aF, aL;
             if (aCurveKind == 5)
             {
-                (N.Geom_BezierCurve aNB, Geom_BezierCurve aPB) = AdaptorOracleInputs.RandomBezierCurve(anOracle, 5);
+                (N.Geom_BezierCurve aNB, BezierCurve3D aPB) = AdaptorOracleInputs.RandomBezierCurve(anOracle, 5);
                 (aNC, aPC) = (aNB, aPB);
             }
             else if (aCurveKind == 6)
             {
-                (N.Geom_BSplineCurve aNB, Geom_BSplineCurve aPB) =
+                (N.Geom_BSplineCurve aNB, BSplineCurve3D aPB) =
                     AdaptorOracleInputs.RandomBSplineCurve(anOracle, false, 2, 5, 4);
                 (aNC, aPC) = (aNB, aPB);
             }
@@ -416,7 +418,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                 (aNC, aPC, _) = AdaptorOracleInputs.RandomCurve(anOracle, aCurveKind);
             }
             string aCurveName = AdaptorOracleInputs.CurveKinds[aCurveKind];
-            if (aPC.IsPeriodic())
+            if (aPC.IsPeriodic)
             {
                 aF = anOracle.Real(-Math.PI, Math.PI);
                 aL = aF + anOracle.Real(0.5, 2 * Math.PI);
@@ -464,21 +466,21 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                 N.BRep_Tool.Range(aNE, ref aF, ref aL);
 
                 // The port's side of BRepExtrema_ExtCF(E, F) and Extrema_ExtCS's generic path
-                var aCurve = new GeomAdaptor_Curve(aPC, aF, aL);
+                var aCurve = new CurveAdaptor(aPC, aF, aL);
                 if (aCurve.NbIntervals(Continuity.C1) != 1)
                 {
                     continue;
                 }
                 using var aN = new N.BRepExtrema_DistShapeShape(aNE, aNF);
 
-                var aSurf = new GeomAdaptor_TransformedSurface(aPS, aU1, aU2, aV1, aV2, new Transform3D()); // BRepAdaptor_Surface
+                var aSurf = new TransformedSurface(aPS, aU1, aU2, aV1, aV2, new Transform3D()); // BRepAdaptor_Surface
                 double aTolS = Math.Min(N.BRep_Tool.Tolerance(aNF), global::Kerf.Engine.Foundation.Precision.Confusion());
                 aTolS = Math.Min(aSurf.UResolution(aTolS), aSurf.VResolution(aTolS));
                 aTolS = Math.Max(aTolS, global::Kerf.Engine.Foundation.Precision.PConfusion());
                 double aTolC = Math.Min(N.BRep_Tool.Tolerance(aNE), global::Kerf.Engine.Foundation.Precision.Confusion());
                 aTolC = aCurve.Resolution(aTolC);
                 aTolC = Math.Max(aTolC, global::Kerf.Engine.Foundation.Precision.PConfusion());
-                var aGen = new Extrema_GenExtCS();
+                var aGen = new GenExtCS();
                 aGen.Initialize(aSurf, 10, 10, aTolS);
                 // Extrema_ExtCS::Perform: 13 samples on circles and B-spline curves, 12 otherwise; hyperbolas within
                 // [-20, 20]
@@ -493,24 +495,24 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                 }
                 aCases++;
                 List<(double T, double U, double V, Point3D PC, Point3D PS, double D2)> aSols = [];
-                if (aGen.IsDone())
+                if (aGen.IsDone)
                 {
-                    for (int j = 1; j <= aGen.NbExt(); j++)
+                    for (int j = 1; j <= aGen.ExtCount; j++)
                     {
-                        Extrema_POnCurv aPOnC = aGen.PointOnCurve(j);
-                        Extrema_POnSurf aPOnS = aGen.PointOnSurface(j);
+                        POnCurv aPOnC = aGen.PointOnCurve(j);
+                        POnSurf aPOnS = aGen.PointOnSurface(j);
                         aPOnS.Parameter(out double aU, out double aV);
                         // Extrema_ExtCS::AddSolution
                         double aT = aPOnC.Parameter();
-                        if (aCurve.IsPeriodic())
+                        if (aCurve.IsPeriodic)
                         {
                             aT = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aT, aF, aF + aCurve.Period());
                         }
-                        if (aSurf.IsUPeriodic())
+                        if (aSurf.IsUPeriodic)
                         {
                             aU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aU, aU1, aU1 + aSurf.UPeriod());
                         }
-                        if (aSurf.IsVPeriodic())
+                        if (aSurf.IsVPeriodic)
                         {
                             aV = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aV, aV1, aV1 + aSurf.VPeriod());
                         }
@@ -581,13 +583,13 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
             {
                 continue;
             }
-            (N.TopoDS_Face aNF1, Geom_Surface aPS1, string aKind1) = aFace1.Value;
+            (N.TopoDS_Face aNF1, Surface aPS1, string aKind1) = aFace1.Value;
             using (aNF1)
             {
                 (double aU11, double aU12, double aV11, double aV12) = UVBounds(aNF1);
                 // Surface 2, moved near a point of face 1 before its face is made
                 int aKind2 = anOracle.Int(0, 9);
-                (N.Geom_Surface aNS2, Geom_Surface aPS2) = AdaptorOracleInputs.RandomSurface(anOracle, aKind2);
+                (N.Geom_Surface aNS2, Surface aPS2) = AdaptorOracleInputs.RandomSurface(anOracle, aKind2);
                 using (aNS2)
                 {
                     aPS2.Bounds(out double aB1, out double aB2, out double aB3, out double aB4);
@@ -652,13 +654,13 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                     using var aNOwner = aN;
 
                     // The port's side of BRepExtrema_ExtFF(F1, F2)
-                    var aSurf2 = new GeomAdaptor_TransformedSurface(aPS2, aU21, aU22, aV21, aV22, new Transform3D()); // BRepAdaptor_Surface
+                    var aSurf2 = new TransformedSurface(aPS2, aU21, aU22, aV21, aV22, new Transform3D()); // BRepAdaptor_Surface
                     double aTol2 = Math.Min(N.BRep_Tool.Tolerance(aNF2), global::Kerf.Engine.Foundation.Precision.Confusion());
                     aTol2 = Math.Min(aSurf2.UResolution(aTol2), aSurf2.VResolution(aTol2));
                     aTol2 = Math.Max(aTol2, global::Kerf.Engine.Foundation.Precision.PConfusion());
-                    var aPort = new Extrema_ExtSS();
+                    var aPort = new ExtSS();
                     aPort.Initialize(aSurf2, aU21, aU22, aV21, aV22, aTol2);
-                    var aSurf1 = new GeomAdaptor_TransformedSurface(aPS1, aU11, aU12, aV11, aV12, new Transform3D());
+                    var aSurf1 = new TransformedSurface(aPS1, aU11, aU12, aV11, aV12, new Transform3D());
                     double aTol1 = Math.Min(N.BRep_Tool.Tolerance(aNF1), global::Kerf.Engine.Foundation.Precision.Confusion());
                     aTol1 = Math.Min(aSurf1.UResolution(aTol1), aSurf1.VResolution(aTol1));
                     aTol1 = Math.Max(aTol1, global::Kerf.Engine.Foundation.Precision.PConfusion());
@@ -669,7 +671,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                     {
                         continue;
                     }
-                    int aNbPort = aPort.IsDone() && !aPort.IsParallel() ? aPort.NbExt() : 0;
+                    int aNbPort = aPort.IsDone && !aPort.IsParallel ? aPort.ExtCount : 0;
                     for (int i = 1; i <= aN.NbSolution(); i++)
                     {
                         if (aN.SupportTypeShape1(i) != N.BRepExtrema_SupportType.BRepExtrema_IsInFace
@@ -684,7 +686,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                         double aBest = double.MaxValue;
                         for (int j = 1; j <= aNbPort; j++)
                         {
-                            aPort.Points(j, out Extrema_POnSurf aP1, out Extrema_POnSurf aP2);
+                            aPort.Points(j, out POnSurf aP1, out POnSurf aP2);
                             aP1.Parameter(out double u1, out double v1);
                             aP2.Parameter(out double u2, out double v2);
                             double aD = Math.Abs(u1 - aNU1) + Math.Abs(v1 - aNV1) + Math.Abs(u2 - aNU2) + Math.Abs(v2 - aNV2);
@@ -696,7 +698,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                         }
                         Assert.True(aMatch != 0 && aBest < 1e-6,
                             $"{aW}: native solution ({aNU1:R}, {aNV1:R}; {aNU2:R}, {aNV2:R}) is not an extremum of the port's Extrema_ExtSS");
-                        aPort.Points(aMatch, out Extrema_POnSurf aQ1, out Extrema_POnSurf aQ2);
+                        aPort.Points(aMatch, out POnSurf aQ1, out POnSurf aQ2);
                         aQ1.Parameter(out double aQU1, out double aQV1);
                         aQ2.Parameter(out double aQU2, out double aQV2);
                         anOracle.Same(aNU1, aQU1, $"{aW} U1");

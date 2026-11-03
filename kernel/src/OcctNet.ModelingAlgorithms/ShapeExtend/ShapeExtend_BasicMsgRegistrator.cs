@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -26,7 +27,7 @@ public class ShapeExtend_BasicMsgRegistrator : Transient
     }
 
     /// <summary>Sends a message to be attached to the shape.</summary>
-    public virtual void Send(in TopoDS_Shape shape, Msg message, Gravity gravity)
+    public virtual void Send(in Shape shape, Msg message, Gravity gravity)
     {
     }
 

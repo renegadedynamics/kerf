@@ -2,12 +2,17 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Xunit.Abstractions;
 using static Kerf.Geometry.CurveKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -41,7 +46,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
         var aCounts = new Counts();
         foreach (int aScene in Tape.Budget(Scenes))
         {
-            Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = (aScene % 6) switch
+            Twin<N.TopoDS_Shape, Shape> aShape = (aScene % 6) switch
             {
                 4 => PCurveScene(anOracle),
                 5 => WireScene(anOracle),
@@ -59,7 +64,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
     // Scenes
 
     /// <summary>A planar face on a random plane whose edges have only pcurves, at a random location, maybe reversed.</summary>
-    private static Twin<N.TopoDS_Shape, TopoDS_Shape> PCurveScene(Oracle theOracle)
+    private static Twin<N.TopoDS_Shape, Shape> PCurveScene(Oracle theOracle)
     {
         var aTwins = new TwinShapes();
         Point3D anOrigin = theOracle.Pnt();
@@ -71,7 +76,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
         }
 
         double a = theOracle.Real(2, 8), b = theOracle.Real(2, 8);
-        Twin<N.TopoDS_Shape, TopoDS_Shape> aFace = TwinShapes.Up(
+        Twin<N.TopoDS_Shape, Shape> aFace = TwinShapes.Up(
             aTwins.PCurveOnlyFace(anOrigin, aNormal, anX, (0, 0), (a, theOracle.Real(-1, 1)), (a, b), (theOracle.Real(-1, 1), b)));
         return Placed(theOracle, aFace);
     }
@@ -80,7 +85,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
     /// A wire of a line, a B-spline and a circular arc (closed by a fourth line half the time), the edges' order and
     /// orientations shuffled in the wire, at a random location.
     /// </summary>
-    private static Twin<N.TopoDS_Shape, TopoDS_Shape> WireScene(Oracle theOracle)
+    private static Twin<N.TopoDS_Shape, Shape> WireScene(Oracle theOracle)
     {
         var aTwins = new TwinShapes();
 
@@ -106,17 +111,17 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
 
         NCollection_Array1<double>? aWeights = theOracle.Bool() ? theOracle.Weights(aNbPoles, true) : null;
         N.Geom_BSplineCurve aNBS = Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, aDegree, false);
-        Geom_BSplineCurve aBS = aWeights is null
-            ? new Geom_BSplineCurve(aPoles, aKnots, aMults, aDegree)
-            : new Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, aDegree);
+        BSplineCurve3D aBS = aWeights is null
+            ? new BSplineCurve3D(aPoles, aKnots, aMults, aDegree)
+            : new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, aDegree);
         double f = aKnots[1], l = aKnots[aNbKnots];
 
         // the vertices where the port's curves put them (both sides use these coordinates)
         Point3D aP1 = aBS.Value(f), aP2 = aBS.Value(l);
         Point3D aP0 = new Point3D(aP1.X() - theOracle.Real(1, 3), aP1.Y() + theOracle.Real(-1, 1), aP1.Z());
-        Twin<N.TopoDS_Vertex, TopoDS_Vertex> aV0 = aTwins.Vertex(aP0), aV1 = aTwins.Vertex(aP1, 1e-6), aV2 = aTwins.Vertex(aP2, 1e-6);
-        Twin<N.TopoDS_Edge, TopoDS_Edge> aLine = aTwins.Segment(aV0, aP0, aV1, aP1);
-        Twin<N.TopoDS_Edge, TopoDS_Edge> aSpline = aTwins.EdgeOn(aNBS, aBS, new Placement(), null, f, l, aV1, aV2);
+        Twin<N.TopoDS_Vertex, Vertex> aV0 = aTwins.Vertex(aP0), aV1 = aTwins.Vertex(aP1, 1e-6), aV2 = aTwins.Vertex(aP2, 1e-6);
+        Twin<N.TopoDS_Edge, Edge> aLine = aTwins.Segment(aV0, aP0, aV1, aP1);
+        Twin<N.TopoDS_Edge, Edge> aSpline = aTwins.EdgeOn(aNBS, aBS, new Placement(), null, f, l, aV1, aV2);
 
         // an arc of a circle in a plane through aP2: centre aP2 + r X, from angle Pi
         double r = theOracle.Real(0.5, 3), anArc = theOracle.Real(0.5, 2.5);
@@ -125,13 +130,13 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
         using var aNZ = new N.gp_Dir(0, 0, 1);
         using var aNXd = new N.gp_Dir(1, 0, 0);
         using var aNAx2 = new N.gp_Ax2(aNC, aNZ, aNXd);
-        var aCircle = new Geom_Circle(new Frame3D(aCentre, new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
+        var aCircle = new CircleCurve3D(new Frame3D(aCentre, new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
         Point3D aP3 = aCircle.Value(Math.PI + anArc);
-        Twin<N.TopoDS_Vertex, TopoDS_Vertex> aV3 = aTwins.Vertex(aP3, 1e-6);
-        Twin<N.TopoDS_Edge, TopoDS_Edge> anArcEdge =
+        Twin<N.TopoDS_Vertex, Vertex> aV3 = aTwins.Vertex(aP3, 1e-6);
+        Twin<N.TopoDS_Edge, Edge> anArcEdge =
             aTwins.EdgeOn(new N.Geom_Circle(aNAx2, r), aCircle, new Placement(), null, Math.PI, Math.PI + anArc, aV2, aV3);
 
-        var anEdges = new List<Twin<N.TopoDS_Edge, TopoDS_Edge>> { aLine, aSpline, anArcEdge };
+        var anEdges = new List<Twin<N.TopoDS_Edge, Edge>> { aLine, aSpline, anArcEdge };
         bool isClosed = theOracle.Bool();
         if (isClosed)
         {
@@ -141,7 +146,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
         // shuffle, and reverse some edges (a reversed edge in the wire is the chain's edge run backwards: the wire
         // explorer must then find the chain in the other direction, so reverse all or none)
         int aShift = theOracle.Int(0, anEdges.Count - 1);
-        var aShuffled = new List<Twin<N.TopoDS_Edge, TopoDS_Edge>>();
+        var aShuffled = new List<Twin<N.TopoDS_Edge, Edge>>();
         for (int i = 0; i < anEdges.Count; i++)
         {
             aShuffled.Add(anEdges[(i + aShift) % anEdges.Count]);
@@ -149,16 +154,16 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
 
         if (theOracle.Bool())
         {
-            aShuffled = [.. aShuffled.Select(e => new Twin<N.TopoDS_Edge, TopoDS_Edge>(N.TopoDS.Edge(e.N.Reversed()), TopoDS.Edge(e.P.Reversed())))];
+            aShuffled = [.. aShuffled.Select(e => new Twin<N.TopoDS_Edge, Edge>(N.TopoDS.Edge(e.N.Reversed()), ShapeCasts.Edge(e.P.Reversed())))];
         }
 
-        Twin<N.TopoDS_Wire, TopoDS_Wire> aWire = aTwins.Wire(isClosed, [.. aShuffled]);
+        Twin<N.TopoDS_Wire, Wire> aWire = aTwins.Wire(isClosed, [.. aShuffled]);
         return Placed(theOracle, TwinShapes.Up(aWire));
     }
 
-    private static Twin<N.TopoDS_Shape, TopoDS_Shape> Placed(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape)
+    private static Twin<N.TopoDS_Shape, Shape> Placed(Oracle theOracle, Twin<N.TopoDS_Shape, Shape> theShape)
     {
-        Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = theShape;
+        Twin<N.TopoDS_Shape, Shape> aShape = theShape;
         if (theOracle.Bool())
         {
             (N.TopLoc_Location aNL, Placement aL) = TopologyOracleTests.RandomLocation(theOracle);
@@ -170,16 +175,16 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
 
     // Comparisons
 
-    private static void Compare(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, Counts theCounts)
+    private static void Compare(Oracle theOracle, Twin<N.TopoDS_Shape, Shape> theShape, Counts theCounts)
     {
         // edges alone
-        foreach (Twin<N.TopoDS_Shape, TopoDS_Shape> anE in TopologyOracleTests.Explore(theShape, TopAbs_EDGE))
+        foreach (Twin<N.TopoDS_Shape, Shape> anE in TopologyOracleTests.Explore(theShape, ShapeType.Edge))
         {
             theCounts.Edges++;
             N.TopoDS_Edge aNE = N.TopoDS.Edge(anE.N);
-            TopoDS_Edge aPE = TopoDS.Edge(anE.P);
+            Edge aPE = ShapeCasts.Edge(anE.P);
             using var aNC = new N.BRepAdaptor_Curve(aNE);
-            var aPC = new BRepAdaptor_Curve(aPE);
+            var aPC = new EdgeCurveAdaptor(aPE);
             theOracle.Same(aNC.Is3DCurve(), aPC.Is3DCurve(), "Is3DCurve");
             theOracle.Same(aNC.Tolerance(), aPC.Tolerance(), "Tolerance");
             CompareCurve(theOracle, theOracle.Int(0, 1000), aNC, aPC, "BRepAdaptor_Curve");
@@ -189,34 +194,34 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
         }
 
         // edges on faces
-        foreach (Twin<N.TopoDS_Shape, TopoDS_Shape> aF in TopologyOracleTests.Explore(theShape, TopAbs_FACE))
+        foreach (Twin<N.TopoDS_Shape, Shape> aF in TopologyOracleTests.Explore(theShape, ShapeType.Face))
         {
             theCounts.Faces++;
             N.TopoDS_Face aNF = N.TopoDS.Face(aF.N);
-            TopoDS_Face aPF = TopoDS.Face(aF.P);
-            foreach (Twin<N.TopoDS_Shape, TopoDS_Shape> anE in TopologyOracleTests.Explore(aF, TopAbs_EDGE))
+            Face aPF = ShapeCasts.Face(aF.P);
+            foreach (Twin<N.TopoDS_Shape, Shape> anE in TopologyOracleTests.Explore(aF, ShapeType.Edge))
             {
                 theCounts.EdgeFaces++;
                 N.TopoDS_Edge aNE = N.TopoDS.Edge(anE.N);
-                TopoDS_Edge aPE = TopoDS.Edge(anE.P);
+                Edge aPE = ShapeCasts.Edge(anE.P);
                 using var aNC = new N.BRepAdaptor_Curve(aNE, aNF);
-                var aPC = new BRepAdaptor_Curve(aPE, aPF);
+                var aPC = new EdgeCurveAdaptor(aPE, aPF);
                 CompareCurve(theOracle, theOracle.Int(0, 1000), aNC, aPC, "BRepAdaptor_Curve(E, F)");
                 CompareTrim(theOracle, aNC, aPC);
                 using var aNC2 = new N.BRepAdaptor_Curve2d(aNE, aNF);
-                var aPC2 = new BRepAdaptor_Curve2d(aPE, aPF);
+                var aPC2 = new EdgeCurve2DAdaptor(aPE, aPF);
                 CompareCurve2d(theOracle, aNC2, aPC2);
             }
 
             CompareSurfaceProps(theOracle, aNF, aPF);
-            foreach (Twin<N.TopoDS_Shape, TopoDS_Shape> aW in TopologyOracleTests.Explore(aF, TopAbs_WIRE))
+            foreach (Twin<N.TopoDS_Shape, Shape> aW in TopologyOracleTests.Explore(aF, ShapeType.Wire))
             {
                 CompareWireExplorer(theOracle, aW, aF, theCounts);
             }
         }
 
         // wires (with no face), and the composite curves
-        foreach (Twin<N.TopoDS_Shape, TopoDS_Shape> aW in TopologyOracleTests.Explore(theShape, TopAbs_WIRE))
+        foreach (Twin<N.TopoDS_Shape, Shape> aW in TopologyOracleTests.Explore(theShape, ShapeType.Wire))
         {
             theCounts.Wires++;
             CompareWireExplorer(theOracle, aW, null, theCounts);
@@ -235,15 +240,15 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
         return [.. aList];
     }
 
-    private static void CompareCurve(Oracle theOracle, int theSeed, N.Adaptor3d_Curve theN, Adaptor3d_Curve theP, string theWhat)
+    private static void CompareCurve(Oracle theOracle, int theSeed, N.Adaptor3d_Curve theN, CurveAdaptorBase theP, string theWhat)
     {
         double f = theN.FirstParameter(), l = theN.LastParameter();
         theOracle.Same(f, theP.FirstParameter(), theWhat + " First");
         theOracle.Same(l, theP.LastParameter(), theWhat + " Last");
         theOracle.Same((int)theN.Continuity(), (int)theP.Continuity(), theWhat + " Continuity");
         theOracle.Same((int)theN.GetType_(), (int)theP.GetType(), theWhat + " GetType");
-        theOracle.Same(theN.IsClosed(), theP.IsClosed(), theWhat + " IsClosed");
-        theOracle.Same(theN.IsPeriodic(), theP.IsPeriodic(), theWhat + " IsPeriodic");
+        theOracle.Same(theN.IsClosed(), theP.IsClosed, theWhat + " IsClosed");
+        theOracle.Same(theN.IsPeriodic(), theP.IsPeriodic, theWhat + " IsPeriodic");
         if (theN.IsPeriodic())
         {
             theOracle.Same(theN.Period(), theP.Period(), theWhat + " Period");
@@ -290,8 +295,8 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
             case BSplineCurve:
             case BezierCurve:
                 theOracle.Same(theN.Degree(), theP.Degree(), theWhat + " Degree");
-                theOracle.Same(theN.NbPoles(), theP.NbPoles(), theWhat + " NbPoles");
-                theOracle.Same(theN.IsRational(), theP.IsRational(), theWhat + " IsRational");
+                theOracle.Same(theN.NbPoles(), theP.PoleCount, theWhat + " NbPoles");
+                theOracle.Same(theN.IsRational(), theP.IsRational, theWhat + " IsRational");
                 break;
         }
 
@@ -327,7 +332,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void CompareTrim(Oracle theOracle, N.Adaptor3d_Curve theN, Adaptor3d_Curve theP)
+    private static void CompareTrim(Oracle theOracle, N.Adaptor3d_Curve theN, CurveAdaptorBase theP)
     {
         double f = theN.FirstParameter(), l = theN.LastParameter();
         double a = f + (l - f) * theOracle.Real(0, 0.4), b = f + (l - f) * theOracle.Real(0.6, 1);
@@ -335,14 +340,14 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
         CompareCurve(theOracle, theOracle.Int(0, 1000), aNT, theP.Trim(a, b, 1e-9), "Trim");
     }
 
-    private static void CompareCurve2d(Oracle theOracle, N.BRepAdaptor_Curve2d theN, BRepAdaptor_Curve2d theP)
+    private static void CompareCurve2d(Oracle theOracle, N.BRepAdaptor_Curve2d theN, EdgeCurve2DAdaptor theP)
     {
         double f = theN.FirstParameter(), l = theN.LastParameter();
         theOracle.Same(f, theP.FirstParameter(), "Curve2d First");
         theOracle.Same(l, theP.LastParameter(), "Curve2d Last");
         theOracle.Same((int)theN.GetType_(), (int)theP.GetType(), "Curve2d GetType");
         theOracle.Same((int)theN.Continuity(), (int)theP.Continuity(), "Curve2d Continuity");
-        theOracle.Same(theN.IsPeriodic(), theP.IsPeriodic(), "Curve2d IsPeriodic");
+        theOracle.Same(theN.IsPeriodic(), theP.IsPeriodic, "Curve2d IsPeriodic");
         theOracle.SameRelative(theN.Resolution(1e-3), theP.Resolution(1e-3), "Curve2d Resolution");
         foreach (double u in Samples(theOracle, f, l, 3))
         {
@@ -359,51 +364,51 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
         }
 
         using N.Adaptor2d_Curve2d aNCopy = theN.ShallowCopy()!;
-        Adaptor2d_Curve2d aCopy = theP.ShallowCopy();
+        Curve2DAdaptorBase aCopy = theP.ShallowCopy();
         double m = 0.5 * (f + l);
         using N.gp_Pnt2d aNM = aNCopy.Value(m);
         theOracle.Same(aNM, aCopy.Value(m), "Curve2d ShallowCopy");
     }
 
     /// <summary>The wire explorer's order, orientations and vertices, with or without the face.</summary>
-    private static void CompareWireExplorer(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theWire,
-                                            Twin<N.TopoDS_Shape, TopoDS_Shape>? theFace, Counts theCounts)
+    private static void CompareWireExplorer(Oracle theOracle, Twin<N.TopoDS_Shape, Shape> theWire,
+                                            Twin<N.TopoDS_Shape, Shape>? theFace, Counts theCounts)
     {
-        List<Twin<N.TopoDS_Shape, TopoDS_Shape>> anEdges = TopologyOracleTests.Explore(theWire, TopAbs_EDGE);
+        List<Twin<N.TopoDS_Shape, Shape>> anEdges = TopologyOracleTests.Explore(theWire, ShapeType.Edge);
         N.TopoDS_Wire aNW = N.TopoDS.Wire(theWire.N);
-        TopoDS_Wire aPW = TopoDS.Wire(theWire.P);
+        Wire aPW = ShapeCasts.Wire(theWire.P);
         using N.BRepTools_WireExplorer aNExp = theFace is { } aF ? new N.BRepTools_WireExplorer(aNW, N.TopoDS.Face(aF.N)) : new N.BRepTools_WireExplorer(aNW);
-        BRepTools_WireExplorer anExp = theFace is { } aF2 ? new BRepTools_WireExplorer(aPW, TopoDS.Face(aF2.P)) : new BRepTools_WireExplorer(aPW);
+        WireExplorer anExp = theFace is { } aF2 ? new WireExplorer(aPW, ShapeCasts.Face(aF2.P)) : new WireExplorer(aPW);
         N.BRepAdaptor_Curve? aNPrev = null;
-        BRepAdaptor_Curve? aPrev = null;
+        EdgeCurveAdaptor? aPrev = null;
         for (; anExp.More(); anExp.Next(), aNExp.Next())
         {
             theOracle.Same(true, aNExp.More(), "WireExplorer.More");
             N.TopoDS_Edge aNE = aNExp.Current();
-            TopoDS_Edge aPE = anExp.Current();
+            Edge aPE = anExp.Current();
             int anIndex = anEdges.FindIndex(e => e.N.IsEqual(aNE));
             Assert.True(anIndex >= 0);
             theOracle.Same(true, anEdges[anIndex].P.IsEqual(aPE), "WireExplorer.Current");
             theOracle.Same((int)aNExp.Orientation(), (int)anExp.Orientation(), "WireExplorer.Orientation");
             using N.TopoDS_Vertex aNV = aNExp.CurrentVertex();
-            TopoDS_Vertex aV = anExp.CurrentVertex();
-            theOracle.Same(aNV.IsNull(), aV.IsNull(), "WireExplorer.CurrentVertex is null");
-            if (!aV.IsNull())
+            Vertex aV = anExp.CurrentVertex();
+            theOracle.Same(aNV.IsNull(), aV.IsNull, "WireExplorer.CurrentVertex is null");
+            if (!aV.IsNull)
             {
                 using N.gp_Pnt aNPnt = N.BRep_Tool.Pnt(aNV);
-                theOracle.Same(aNPnt, BRep_Tool.Pnt(aV), "WireExplorer.CurrentVertex");
+                theOracle.Same(aNPnt, Tool.Pnt(aV), "WireExplorer.CurrentVertex");
             }
 
             // BRepLProp::Continuity at the junction with the previous edge (wires without a face only)
             if (theFace is null && !N.BRep_Tool.Degenerated(aNE))
             {
                 var aNC = new N.BRepAdaptor_Curve(aNE);
-                var aPC = new BRepAdaptor_Curve(aPE);
+                var aPC = new EdgeCurveAdaptor(aPE);
                 if (aPrev is not null)
                 {
                     theCounts.Junctions++;
-                    double u1 = aPrev.Edge().Orientation() == TopAbs_REVERSED ? aPrev.FirstParameter() : aPrev.LastParameter();
-                    double u2 = aPE.Orientation() == TopAbs_REVERSED ? aPC.LastParameter() : aPC.FirstParameter();
+                    double u1 = aPrev.Edge().Orientation() == Reversed ? aPrev.FirstParameter() : aPrev.LastParameter();
+                    double u2 = aPE.Orientation() == Reversed ? aPC.LastParameter() : aPC.FirstParameter();
                     bool isNThrow = false, isPThrow = false;
                     N.GeomAbs_Shape aNCont = N.GeomAbs_Shape.GeomAbs_C0;
                     Continuity aPCont = Continuity.C0;
@@ -418,7 +423,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
 
                     try
                     {
-                        aPCont = BRepLProp.Continuity(aPrev, aPC, u1, u2);
+                        aPCont = global::Kerf.Engine.Topology.Properties.BRepLProp.Continuity(aPrev, aPC, u1, u2);
                     }
                     catch (FailureException)
                     {
@@ -439,15 +444,15 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
         theOracle.Same(false, aNExp.More(), "WireExplorer.More at the end");
     }
 
-    private static void CompareCompCurve(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theWire)
+    private static void CompareCompCurve(Oracle theOracle, Twin<N.TopoDS_Shape, Shape> theWire)
     {
         N.TopoDS_Wire aNW = N.TopoDS.Wire(theWire.N);
-        TopoDS_Wire aPW = TopoDS.Wire(theWire.P);
+        Wire aPW = ShapeCasts.Wire(theWire.P);
         // a wire of only degenerated edges has no curve
         bool hasEdge = false;
-        for (var anExp = new BRepTools_WireExplorer(aPW); anExp.More(); anExp.Next())
+        for (var anExp = new WireExplorer(aPW); anExp.More(); anExp.Next())
         {
-            hasEdge |= !BRep_Tool.Degenerated(anExp.Current());
+            hasEdge |= !Tool.Degenerated(anExp.Current());
         }
 
         if (!hasEdge)
@@ -458,7 +463,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
         foreach (bool isAC in new[] { false, true })
         {
             using var aNC = new N.BRepAdaptor_CompCurve(aNW, isAC);
-            var aPC = new BRepAdaptor_CompCurve(aPW, isAC);
+            var aPC = new WireCurveAdaptor(aPW, isAC);
             string aWhat = isAC ? "CompCurve(AC)" : "CompCurve";
             CompareCurve(theOracle, theOracle.Int(0, 1000), aNC, aPC, aWhat);
             CompareCompEdges(theOracle, aNC, aPC, aWhat);
@@ -469,7 +474,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
             using N.Adaptor3d_Curve aNT = aNC.Trim(a, b, 1e-7)!;
             CompareCurve(theOracle, theOracle.Int(0, 1000), aNT, aPC.Trim(a, b, 1e-7), aWhat + ".Trim");
             using var aNT2 = new N.BRepAdaptor_CompCurve(aNW, isAC, a, b, 1e-7);
-            var aPT2 = new BRepAdaptor_CompCurve(aPW, isAC, a, b, 1e-7);
+            var aPT2 = new WireCurveAdaptor(aPW, isAC, a, b, 1e-7);
             CompareCurve(theOracle, theOracle.Int(0, 1000), aNT2, aPT2, aWhat + "(trimmed)");
             CompareCompEdges(theOracle, aNT2, aPT2, aWhat + "(trimmed)");
 
@@ -478,7 +483,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void CompareCompEdges(Oracle theOracle, N.BRepAdaptor_CompCurve theN, BRepAdaptor_CompCurve theP, string theWhat)
+    private static void CompareCompEdges(Oracle theOracle, N.BRepAdaptor_CompCurve theN, WireCurveAdaptor theP, string theWhat)
     {
         double f = theN.FirstParameter(), l = theN.LastParameter();
         var aParams = new List<double>(Samples(theOracle, f, l, 4));
@@ -492,26 +497,26 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
             var aNE = new N.TopoDS_Edge();
             double aNU = 0;
             theN.Edge(u, aNE, ref aNU);
-            theP.Edge(u, out TopoDS_Edge aPE, out double aPU);
+            theP.Edge(u, out Edge aPE, out double aPU);
             theOracle.Same(aNU, aPU, theWhat + " Edge.UonE");
             using N.gp_Pnt aNP = N.BRep_Tool.Pnt(N.TopExp.FirstVertex(aNE, true));
-            theOracle.Same(aNP, BRep_Tool.Pnt(TopExp.FirstVertex(aPE, true)), theWhat + " Edge");
+            theOracle.Same(aNP, Tool.Pnt(Exploration.FirstVertex(aPE, true)), theWhat + " Edge");
             theOracle.Same((int)aNE.Orientation(), (int)aPE.Orientation(), theWhat + " Edge.Orientation");
         }
     }
 
     /// <summary>BRepLProp_SLProps on the face's adaptor, at random parameters inside its UV bounds.</summary>
-    private static void CompareSurfaceProps(Oracle theOracle, N.TopoDS_Face theNF, in TopoDS_Face theF)
+    private static void CompareSurfaceProps(Oracle theOracle, N.TopoDS_Face theNF, in Face theF)
     {
         using var aNS = new N.BRepAdaptor_Surface(theNF);
-        var aS = new BRepAdaptor_Surface(theF);
+        var aS = new FaceSurfaceAdaptor(theF);
         double u1 = aS.FirstUParameter(), u2 = aS.LastUParameter(), v1 = aS.FirstVParameter(), v2 = aS.LastVParameter();
         for (int i = 0; i < 3; i++)
         {
             double u = u1 + (u2 - u1) * theOracle.Real(0, 1), v = v1 + (v2 - v1) * theOracle.Real(0, 1);
             int aN = theOracle.Int(0, 2);
             using var aNP = new N.BRepLProp_SLProps(aNS, u, v, aN, 1e-9);
-            var aP = new BRepLProp_SLProps(aS, u, v, aN, 1e-9);
+            var aP = new global::Kerf.Engine.Topology.Properties.SLProps(aS, u, v, aN, 1e-9);
             using N.gp_Pnt aNV = aNP.Value();
             theOracle.Same(aNV, aP.Value(), "SLProps.Value");
             using N.gp_Vec aND1U = aNP.D1U();
@@ -523,7 +528,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
             using N.gp_Vec aNDUV = aNP.DUV();
             theOracle.Same(aNDUV, aP.DUV(), "SLProps.DUV");
             bool isN = aNP.IsNormalDefined();
-            theOracle.Same(isN, aP.IsNormalDefined(), "SLProps.IsNormalDefined");
+            theOracle.Same(isN, aP.IsNormalDefined, "SLProps.IsNormalDefined");
             if (isN)
             {
                 using N.gp_Dir aNN = aNP.Normal();

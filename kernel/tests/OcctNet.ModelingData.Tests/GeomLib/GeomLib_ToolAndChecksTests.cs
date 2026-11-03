@@ -4,6 +4,8 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Library;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -14,7 +16,7 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class GeomLib_ToolAndChecksTests
 {
-    private static Geom_BSplineCurve Wavy3d()
+    private static BSplineCurve3D Wavy3d()
     {
         NCollection_Array1<Point3D> aPoles = new(1, 7);
         for (int i = 1; i <= 7; i++)
@@ -30,47 +32,47 @@ public class GeomLib_ToolAndChecksTests
         }
         aMults[1] = 4;
         aMults[5] = 4;
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 3);
     }
 
     [Fact]
     public void Tool_Parameter_Curve_FindsPointOnCurve()
     {
-        Geom_BSplineCurve aCurve = Wavy3d();
+        BSplineCurve3D aCurve = Wavy3d();
         for (double u = 0.0; u <= 4.0; u += 0.37)
         {
             Point3D aP = aCurve.Value(u);
-            Assert.True(GeomLib_Tool.Parameter(aCurve, aP, 1e-7, out double aU));
+            Assert.True(GeometryLibraryTool.Parameter(aCurve, aP, 1e-7, out double aU));
             Assert.Equal(u, aU, 1e-7);
         }
         // Too far
-        Assert.False(GeomLib_Tool.Parameter(aCurve, new Point3D(2.0, 50.0, 0.0), 1.0, out double aFar));
+        Assert.False(GeometryLibraryTool.Parameter(aCurve, new Point3D(2.0, 50.0, 0.0), 1.0, out double aFar));
         Assert.Equal(0.0, aFar);
-        Assert.False(GeomLib_Tool.Parameter((Geom_Curve?)null, new Point3D(), 1.0, out _));
+        Assert.False(GeometryLibraryTool.Parameter((Curve3D?)null, new Point3D(), 1.0, out _));
     }
 
     [Fact]
     public void Tool_Parameter_Curve2d_FindsPointOnCircle()
     {
-        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(1.0, 2.0), new Direction2D(1.0, 0.0)), 3.0);
-        Assert.True(GeomLib_Tool.Parameter(aCircle, aCircle.Value(2.5), 1e-7, out double aU));
+        CircleCurve2D aCircle = new(new Axis2D(new Point2D(1.0, 2.0), new Direction2D(1.0, 0.0)), 3.0);
+        Assert.True(GeometryLibraryTool.Parameter(aCircle, aCircle.Value(2.5), 1e-7, out double aU));
         Assert.Equal(2.5, aU, 1e-9);
         // A point 0.1 off the circle: found within 0.2, not within 0.05
         Point2D anOff = new(1.0 + 3.1 * Math.Cos(1.0), 2.0 + 3.1 * Math.Sin(1.0));
-        Assert.True(GeomLib_Tool.Parameter(aCircle, anOff, 0.2, out aU));
+        Assert.True(GeometryLibraryTool.Parameter(aCircle, anOff, 0.2, out aU));
         Assert.Equal(1.0, aU, 1e-9);
-        Assert.False(GeomLib_Tool.Parameter(aCircle, anOff, 0.05, out _));
+        Assert.False(GeometryLibraryTool.Parameter(aCircle, anOff, 0.05, out _));
     }
 
     [Fact]
     public void Tool_Parameters_Surface_FindsPointOnSphere()
     {
-        Geom_SphericalSurface aSphere = new(new CoordinateSystem(new Point3D(1, 1, 1), new Direction3D(0, 0, 1)), 2.0);
+        SphericalSurface aSphere = new(new CoordinateSystem(new Point3D(1, 1, 1), new Direction3D(0, 0, 1)), 2.0);
         Point3D aP = aSphere.Value(1.2, 0.4);
-        Assert.True(GeomLib_Tool.Parameters(aSphere, aP, 1e-7, out double aU, out double aV));
+        Assert.True(GeometryLibraryTool.Parameters(aSphere, aP, 1e-7, out double aU, out double aV));
         Assert.Equal(1.2, aU, 1e-8);
         Assert.Equal(0.4, aV, 1e-8);
-        Assert.False(GeomLib_Tool.Parameters(aSphere, new Point3D(10, 10, 10), 1.0, out aU, out aV));
+        Assert.False(GeometryLibraryTool.Parameters(aSphere, new Point3D(10, 10, 10), 1.0, out aU, out aV));
         Assert.Equal(0.0, aU);
         Assert.Equal(0.0, aV);
     }
@@ -79,11 +81,11 @@ public class GeomLib_ToolAndChecksTests
     public void Tool_ComputeDeviation_OfCircularArc()
     {
         // Arc of radius 1 from -a to a: the sagitta 1 - cos(a) is at parameter 0.
-        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 1.0);
-        Geom2dAdaptor_Curve anAC = new(aCircle);
+        CircleCurve2D aCircle = new(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 1.0);
+        CurveAdaptor2D anAC = new(aCircle);
         double a = 0.8;
         double aPrm = -10.0;
-        double aRough = GeomLib_Tool.ComputeDeviation(anAC, -a, a, 5, 10, ref aPrm);
+        double aRough = GeometryLibraryTool.ComputeDeviation(anAC, -a, a, 5, 10, ref aPrm);
         Assert.True(aRough > 0.0);
         Assert.InRange(aPrm, -a, a);
 
@@ -91,19 +93,19 @@ public class GeomLib_ToolAndChecksTests
         Point2D aPt = new();
         Vector2D aVec = new();
         Line2D aLin = new();
-        double aDefl = GeomLib_Tool.ComputeDeviation(anAC, -a, a, aPrm, 100, ref aPrmOn, ref aPt, ref aVec, ref aLin);
+        double aDefl = GeometryLibraryTool.ComputeDeviation(anAC, -a, a, aPrm, 100, ref aPrmOn, ref aPt, ref aVec, ref aLin);
         Assert.Equal(1.0 - Math.Cos(a), aDefl, 1e-12);
         Assert.Equal(0.0, aPrmOn, 1e-7);
         Assert.Equal(1.0, aPt.X(), 1e-12);
         Assert.Equal(-(1.0 - Math.Cos(a)), aVec.X(), 1e-12);
         Assert.Equal(Math.Cos(a), aLin.Location().X(), 1e-15);
         Assert.Equal(1.0, Math.Abs(aLin.Direction().Y()), 1e-15);
-        Assert.Equal(aDefl, GeomLib_Tool.ComputeDeviation(anAC, -a, a, aPrm));
+        Assert.Equal(aDefl, GeometryLibraryTool.ComputeDeviation(anAC, -a, a, aPrm));
 
         // Start outside the range, or a degenerate chord
-        Assert.Equal(-1.0, GeomLib_Tool.ComputeDeviation(anAC, -a, a, 2.0));
-        Assert.Equal(-1.0, GeomLib_Tool.ComputeDeviation(anAC, 0.0, 2.0 * Math.PI, 1.0));
-        Assert.Equal(-1.0, GeomLib_Tool.ComputeDeviation(anAC, 0.0, 2.0 * Math.PI, 4));
+        Assert.Equal(-1.0, GeometryLibraryTool.ComputeDeviation(anAC, -a, a, 2.0));
+        Assert.Equal(-1.0, GeometryLibraryTool.ComputeDeviation(anAC, 0.0, 2.0 * Math.PI, 1.0));
+        Assert.Equal(-1.0, GeometryLibraryTool.ComputeDeviation(anAC, 0.0, 2.0 * Math.PI, 4));
     }
 
     [Fact]
@@ -121,18 +123,18 @@ public class GeomLib_ToolAndChecksTests
         NCollection_Array1<int> aMults = new(1, 4);
         aKnots[1] = 0; aKnots[2] = 1; aKnots[3] = 2; aKnots[4] = 3;
         aMults[1] = 4; aMults[2] = 1; aMults[3] = 1; aMults[4] = 4;
-        Geom_BSplineCurve aCurve = new(aPoles, aKnots, aMults, 3);
+        BSplineCurve3D aCurve = new(aPoles, aKnots, aMults, 3);
 
-        GeomLib_CheckBSplineCurve aCheck = new(aCurve, 1e-7, 1e-7);
-        Assert.False(aCheck.IsDone());
+        CheckBSplineCurve aCheck = new(aCurve, 1e-7, 1e-7);
+        Assert.False(aCheck.IsDone);
         aCheck.NeedTangentFix(out bool aFirst, out bool aLast);
         Assert.True(aFirst);
         Assert.False(aLast);
 
         Assert.Null(aCheck.FixedTangent(false, true));
-        Geom_BSplineCurve? aFixed = aCheck.FixedTangent(true, true);
+        BSplineCurve3D? aFixed = aCheck.FixedTangent(true, true);
         Assert.NotNull(aFixed);
-        Assert.True(aCheck.IsDone());
+        Assert.True(aCheck.IsDone);
         // Pole 2 is moved halfway between poles 1 and 3; the input is untouched.
         Assert.Equal(new Point3D(0.5, 0, 0), aFixed!.Pole(2));
         Assert.Equal(new Point3D(-0.1, 0, 0), aCurve.Pole(2));
@@ -142,14 +144,14 @@ public class GeomLib_ToolAndChecksTests
         Assert.Equal(new Point3D(0.5, 0, 0), aCurve.Pole(2));
 
         // A frozen curve can't be fixed in place
-        Geom_BSplineCurve aFrozen = (Geom_BSplineCurve)aFixed.Copy();
+        BSplineCurve3D aFrozen = (BSplineCurve3D)aFixed.Copy();
         aFrozen.SetPole(2, new Point3D(-0.1, 0, 0));
         aFrozen.Freeze();
-        GeomLib_CheckBSplineCurve aCheckFrozen = new(aFrozen, 1e-7, 1e-7);
+        CheckBSplineCurve aCheckFrozen = new(aFrozen, 1e-7, 1e-7);
         Assert.Throws<ImmutableObjectException>(() => aCheckFrozen.FixTangent(true, true));
 
         // A curve without reversed tangents needs no fix
-        GeomLib_CheckBSplineCurve aWavy = new(Wavy3d(), 1e-7, 1e-7);
+        CheckBSplineCurve aWavy = new(Wavy3d(), 1e-7, 1e-7);
         aWavy.NeedTangentFix(out aFirst, out aLast);
         Assert.False(aFirst || aLast);
         Assert.Null(aWavy.FixedTangent(true, true));
@@ -166,7 +168,7 @@ public class GeomLib_ToolAndChecksTests
         NCollection_Array1<int> aMults = new(1, 2);
         aKnots[1] = 0; aKnots[2] = 1;
         aMults[1] = 3; aMults[2] = 3;
-        Assert.True(new GeomLib_CheckBSplineCurve(new Geom_BSplineCurve(aPoles, aKnots, aMults, 2), 1e-7, 1e-7).IsDone());
+        Assert.True(new CheckBSplineCurve(new BSplineCurve3D(aPoles, aKnots, aMults, 2), 1e-7, 1e-7).IsDone);
     }
 
     [Fact]
@@ -182,13 +184,13 @@ public class GeomLib_ToolAndChecksTests
         NCollection_Array1<int> aMults = new(1, 3);
         aKnots[1] = 0; aKnots[2] = 1; aKnots[3] = 2;
         aMults[1] = 4; aMults[2] = 1; aMults[3] = 4;
-        Geom2d_BSplineCurve aCurve = new(aPoles, aKnots, aMults, 3);
+        BSplineCurve2D aCurve = new(aPoles, aKnots, aMults, 3);
 
-        GeomLib_Check2dBSplineCurve aCheck = new(aCurve, 1e-7, 1e-7);
+        Check2dBSplineCurve aCheck = new(aCurve, 1e-7, 1e-7);
         aCheck.NeedTangentFix(out bool aFirst, out bool aLast);
         Assert.False(aFirst);
         Assert.True(aLast);
-        Geom2d_BSplineCurve? aFixed = aCheck.FixedTangent(false, true);
+        BSplineCurve2D? aFixed = aCheck.FixedTangent(false, true);
         Assert.NotNull(aFixed);
         // The pre-last pole is moved halfway between the last pole and pole 3.
         Assert.Equal(new Point2D(2.5, 0), aFixed!.Pole(4));
@@ -208,10 +210,10 @@ public class GeomLib_ToolAndChecksTests
         }
         foreach (int aDegree in new[] { 3, 4, 5 })
         {
-            GeomLib_Interpolate anInterp = new(aDegree, aNb, aPoints, aParams);
-            Assert.True(anInterp.IsDone());
-            Assert.Equal(GeomLib_InterpolationErrors.GeomLib_NoError, anInterp.Error());
-            Geom_BSplineCurve aCurve = anInterp.Curve()!;
+            Interpolate anInterp = new(aDegree, aNb, aPoints, aParams);
+            Assert.True(anInterp.IsDone);
+            Assert.Equal(InterpolationErrors.NoError, anInterp.Error());
+            BSplineCurve3D aCurve = anInterp.Curve()!;
             Assert.True(aCurve.IsFrozen);
             Assert.Same(aCurve, anInterp.Curve());
             // An even degree gives degree - 1
@@ -222,11 +224,11 @@ public class GeomLib_ToolAndChecksTests
             }
         }
 
-        Assert.Equal(GeomLib_InterpolationErrors.GeomLib_DegreeSmallerThan3,
-                     new GeomLib_Interpolate(2, aNb, aPoints, aParams).Error());
-        GeomLib_Interpolate aTooFew = new(7, aNb, aPoints, aParams);
-        Assert.False(aTooFew.IsDone());
-        Assert.Equal(GeomLib_InterpolationErrors.GeomLib_NotEnoughtPoints, aTooFew.Error());
+        Assert.Equal(InterpolationErrors.DegreeSmallerThan3,
+                     new Interpolate(2, aNb, aPoints, aParams).Error());
+        Interpolate aTooFew = new(7, aNb, aPoints, aParams);
+        Assert.False(aTooFew.IsDone);
+        Assert.Equal(InterpolationErrors.NotEnoughtPoints, aTooFew.Error());
         Assert.Null(aTooFew.Curve());
     }
 
@@ -234,7 +236,7 @@ public class GeomLib_ToolAndChecksTests
     public void CheckCurveOnSurface_BSplines_ParallelMatchesSequential()
     {
         // A B-spline 3D curve against the image of a B-spline 2D curve on a plane: the general (PSO + Newton) path.
-        Geom_BSplineCurve aC3 = Wavy3d();
+        BSplineCurve3D aC3 = Wavy3d();
         NCollection_Array1<Point2D> aPoles2d = new(1, 7);
         for (int i = 1; i <= 7; i++)
         {
@@ -249,14 +251,14 @@ public class GeomLib_ToolAndChecksTests
         }
         aMults[1] = 4;
         aMults[5] = 4;
-        Geom2d_BSplineCurve aC2 = new(aPoles2d, aKnots, aMults, 3);
-        Geom_Plane aPlane = new(new CoordinateSystem(Constants.XOY()));
-        Adaptor3d_CurveOnSurface aCoS = new(new Geom2dAdaptor_Curve(aC2), new GeomAdaptor_Surface(aPlane));
-        GeomAdaptor_Curve aGC = new(aC3);
+        BSplineCurve2D aC2 = new(aPoles2d, aKnots, aMults, 3);
+        PlaneSurface aPlane = new(new CoordinateSystem(Constants.XOY()));
+        CurveOnSurface aCoS = new(new CurveAdaptor2D(aC2), new SurfaceAdaptor(aPlane));
+        CurveAdaptor aGC = new(aC3);
 
-        GeomLib_CheckCurveOnSurface aSeq = new(aGC);
+        CheckCurveOnSurface aSeq = new(aGC);
         aSeq.Perform(aCoS);
-        Assert.True(aSeq.IsDone());
+        Assert.True(aSeq.IsDone);
 
         // Dense sampling bounds the maximum from below.
         double aSampled = 0.0;
@@ -270,11 +272,11 @@ public class GeomLib_ToolAndChecksTests
         double aPrm = aSeq.MaxParameter();
         Assert.Equal(aSeq.MaxDistance(), aC3.Value(aPrm).Distance(aCoS.Value(aPrm)), 1e-12);
 
-        GeomLib_CheckCurveOnSurface aPar = new(aGC);
+        CheckCurveOnSurface aPar = new(aGC);
         aPar.SetParallel(true);
-        Assert.True(aPar.IsParallel());
+        Assert.True(aPar.IsParallel);
         aPar.Perform(aCoS);
-        Assert.True(aPar.IsDone());
+        Assert.True(aPar.IsDone);
         Assert.Equal(aSeq.MaxDistance(), aPar.MaxDistance());
         Assert.Equal(aSeq.MaxParameter(), aPar.MaxParameter());
     }
@@ -282,25 +284,25 @@ public class GeomLib_ToolAndChecksTests
     [Fact]
     public void CheckCurveOnSurface_ErrorStatuses()
     {
-        GeomLib_CheckCurveOnSurface anEmpty = new();
+        CheckCurveOnSurface anEmpty = new();
         anEmpty.Perform(null);
         Assert.Equal(1, anEmpty.ErrorStatus());
-        Assert.False(anEmpty.IsDone());
+        Assert.False(anEmpty.IsDone);
 
-        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        Geom2d_Line aLine2d = new(new Point2D(0, 0), new Direction2D(1, 0));
-        Adaptor3d_CurveOnSurface aCoS = new(new Geom2dAdaptor_Curve(aLine2d, 0.0, 1.0),
-                                            new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem(Constants.XOY()))));
+        LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        LineCurve2D aLine2d = new(new Point2D(0, 0), new Direction2D(1, 0));
+        CurveOnSurface aCoS = new(new CurveAdaptor2D(aLine2d, 0.0, 1.0),
+                                            new SurfaceAdaptor(new PlaneSurface(new CoordinateSystem(Constants.XOY()))));
 
         // The 3D range doesn't cover the curve on surface's
-        GeomLib_CheckCurveOnSurface aCheck = new(new GeomAdaptor_Curve(aLine, 0.0, 0.5));
+        CheckCurveOnSurface aCheck = new(new CurveAdaptor(aLine, 0.0, 0.5));
         aCheck.Perform(aCoS);
         Assert.Equal(2, aCheck.ErrorStatus());
         Assert.Equal(RealLast(), aCheck.MaxDistance());
 
-        aCheck.Init(new GeomAdaptor_Curve(aLine, 0.0, 1.0));
+        aCheck.Init(new CurveAdaptor(aLine, 0.0, 1.0));
         aCheck.Perform(aCoS);
-        Assert.True(aCheck.IsDone());
+        Assert.True(aCheck.IsDone);
         Assert.Equal(0.0, aCheck.MaxDistance());
 
         aCheck.Init();

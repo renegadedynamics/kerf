@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -26,8 +27,8 @@ internal static class BOPTestRemoveFeaturesCommands
         }
 
         // Get the shape to remove the features from
-        TopoDS_Shape aShape = theDI.GetShape(a[2]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(a[2]);
+        if (aShape.IsNull)
         {
             di.Append("Error: ").Append(a[2]).Append(" is a null shape.\n");
             return 1;
@@ -39,8 +40,8 @@ internal static class BOPTestRemoveFeaturesCommands
         // Add faces to remove
         for (int i = 3; i < theArgc; ++i)
         {
-            TopoDS_Shape aF = theDI.GetShape(a[i]);
-            if (aF.IsNull())
+            Shape aF = theDI.GetShape(a[i]);
+            if (aF.IsNull)
             {
                 if (a[i] == "-parallel")
                 {
@@ -75,7 +76,7 @@ internal static class BOPTestRemoveFeaturesCommands
             return 0;
         }
 
-        TopoDS_Shape aResult = aRF.Shape();
+        Shape aResult = aRF.Shape();
         theDI.SetShape(a[1], aResult);
 
         return 0;

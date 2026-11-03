@@ -3,11 +3,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.CurveKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -27,39 +33,39 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepMAT2d_Explorer
 {
-    private readonly NCollection_Sequence<NCollection_Sequence<Geom2d_Curve>> theCurves = new();
+    private readonly NCollection_Sequence<NCollection_Sequence<Curve2D>> theCurves = new();
     private int current;
     private int currentContour;
-    private TopoDS_Shape myShape;
+    private Shape myShape;
     private readonly NCollection_Sequence<bool> myIsClosed = new();
-    private readonly NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> myModifShapes =
-        new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedDataMap<Shape, Shape> myModifShapes =
+        new(ShapeHasher.Instance);
 
     public BRepMAT2d_Explorer()
     {
         Clear();
     }
 
-    public BRepMAT2d_Explorer(in TopoDS_Face aFace)
+    public BRepMAT2d_Explorer(in Face aFace)
     {
         Perform(aFace);
     }
 
     /// <summary>Reads the contours of aFace.</summary>
-    public void Perform(in TopoDS_Face aFace)
+    public void Perform(in Face aFace)
     {
         Clear();
         myShape = aFace;
-        TopoDS_Face F = TopoDS.Face(aFace);
-        F.Orientation(TopAbs_FORWARD);
-        TopExp_Explorer Exp = new(F, TopAbs_WIRE);
-        Geom_Surface aSurf = BRep_Tool.Surface(F)!;
+        Face F = ShapeCasts.Face(aFace);
+        F.Orientation(Forward);
+        Explorer Exp = new(F, ShapeType.Wire);
+        Surface aSurf = Tool.Surface(F)!;
         // OCCT.NET: InternalFace, unfrozen: the wires are added to it.
-        TopoDS_Face aNewF = new BRepBuilderAPI_MakeFace(aSurf, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalFace();
+        Face aNewF = new BRepBuilderAPI_MakeFace(aSurf, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalFace();
 
         while (Exp.More())
         {
-            Add(TopoDS.Wire(Exp.Current()), F, aNewF);
+            Add(ShapeCasts.Wire(Exp.Current()), F, aNewF);
             Exp.Next();
         }
 
@@ -70,11 +76,11 @@ public sealed class BRepMAT2d_Explorer
 
     // Adds the contour of the wire Spine of aFace, checking the connection of its curves, and adds the wire (or its
     // new version) to aNewFace.
-    private void Add(in TopoDS_Wire Spine, in TopoDS_Face aFace, in TopoDS_Face aNewFace)
+    private void Add(in Wire Spine, in Face aFace, in Face aNewFace)
     {
         // Taking into account the side of the bisecting loci: the wire as it is in the face.
-        BRepTools_WireExplorer anExp = new(Spine, aFace);
-        NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> anOldNewE = new(TopTools_ShapeMapHasher.Instance);
+        WireExplorer anExp = new(Spine, aFace);
+        NCollection_IndexedDataMap<Shape, Shape> anOldNewE = new(ShapeHasher.Instance);
 
         if (!anExp.More())
         {
@@ -85,12 +91,12 @@ public sealed class BRepMAT2d_Explorer
         NewContour();
         myIsClosed[currentContour] = Spine.Closed();
 
-        TopoDS_Edge aFirstEdge = anExp.Current();
-        TopoDS_Edge aPrevEdge = aFirstEdge;
+        Edge aFirstEdge = anExp.Current();
+        Edge aPrevEdge = aFirstEdge;
         double UFirst, ULast, aD;
-        Geom2d_Curve C2d;
-        Geom2d_TrimmedCurve CT2d;
-        Geom2d_TrimmedCurve aFirstCurve;
+        Curve2D C2d;
+        TrimmedCurve2D CT2d;
+        TrimmedCurve2D aFirstCurve;
         Point2D aPFirst;
         Point2D aPLast;
         Point2D aPCurFirst;
@@ -100,10 +106,10 @@ public sealed class BRepMAT2d_Explorer
 
         // The first edge of the wire.
         anOldNewE.Add(aFirstEdge, aFirstEdge);
-        C2d = BRep_Tool.CurveOnSurface(aFirstEdge, aFace, out UFirst, out ULast)!;
-        CT2d = new Geom2d_TrimmedCurve(C2d, UFirst, ULast);
+        C2d = Tool.CurveOnSurface(aFirstEdge, aFace, out UFirst, out ULast)!;
+        CT2d = new TrimmedCurve2D(C2d, UFirst, ULast);
 
-        if (aFirstEdge.Orientation() == TopAbs_REVERSED)
+        if (aFirstEdge.Orientation() == Reversed)
         {
             CT2d.Reverse();
         }
@@ -118,13 +124,13 @@ public sealed class BRepMAT2d_Explorer
         // The next edges.
         for (; anExp.More(); anExp.Next())
         {
-            TopoDS_Edge anEdge = anExp.Current();
+            Edge anEdge = anExp.Current();
 
             anOldNewE.Add(anEdge, anEdge);
-            C2d = BRep_Tool.CurveOnSurface(anEdge, aFace, out UFirst, out ULast)!;
-            CT2d = new Geom2d_TrimmedCurve(C2d, UFirst, ULast);
+            C2d = Tool.CurveOnSurface(anEdge, aFace, out UFirst, out ULast)!;
+            CT2d = new TrimmedCurve2D(C2d, UFirst, ULast);
 
-            if (anEdge.Orientation() == TopAbs_REVERSED)
+            if (anEdge.Orientation() == Reversed)
             {
                 CT2d.Reverse();
             }
@@ -139,7 +145,7 @@ public sealed class BRepMAT2d_Explorer
                 isModif = true;
 
                 int aNbC = theCurves.Value(currentContour).Length();
-                Geom2d_BoundedCurve CPrev = (Geom2d_BoundedCurve)theCurves.ChangeValue(currentContour).ChangeValue(aNbC);
+                BoundedCurve2D CPrev = (BoundedCurve2D)theCurves.ChangeValue(currentContour).ChangeValue(aNbC);
                 CurveKind TCPrev = GetCurveType(CPrev);
                 CurveKind TCCurr = GetCurveType(CT2d);
 
@@ -147,11 +153,11 @@ public sealed class BRepMAT2d_Explorer
                 {
                     CT2d = AdjustCurveEnd(CT2d, aPLast, true);
                     // Creation of a new edge.
-                    TopoDS_Edge aNewEdge;
-                    TopoDS_Vertex aVf = TopExp.FirstVertex(anEdge);
-                    TopoDS_Vertex aVl = TopExp.LastVertex(anEdge);
+                    Edge aNewEdge;
+                    Vertex aVf = Exploration.FirstVertex(anEdge);
+                    Vertex aVl = Exploration.LastVertex(anEdge);
 
-                    if (anEdge.Orientation() == TopAbs_FORWARD)
+                    if (anEdge.Orientation() == Forward)
                     {
                         aNewEdge = MakeEdge(CT2d, aNewFace, aVf, aVl);
                     }
@@ -170,11 +176,11 @@ public sealed class BRepMAT2d_Explorer
                     CPrev = AdjustCurveEnd(CPrev, aP, false);
                     theCurves.ChangeValue(currentContour).ChangeValue(aNbC) = CPrev;
                     // Change of the previous edge.
-                    TopoDS_Edge aNewEdge;
-                    TopoDS_Vertex aVf = TopExp.FirstVertex(aPrevEdge);
-                    TopoDS_Vertex aVl = TopExp.LastVertex(aPrevEdge);
+                    Edge aNewEdge;
+                    Vertex aVf = Exploration.FirstVertex(aPrevEdge);
+                    Vertex aVl = Exploration.LastVertex(aPrevEdge);
 
-                    if (aPrevEdge.Orientation() == TopAbs_FORWARD)
+                    if (aPrevEdge.Orientation() == Forward)
                     {
                         aNewEdge = MakeEdge(CPrev, aNewFace, aVf, aVl);
                     }
@@ -199,7 +205,7 @@ public sealed class BRepMAT2d_Explorer
             isModif = true;
 
             int aNbC = theCurves.Value(currentContour).Length();
-            Geom2d_BoundedCurve CPrev = (Geom2d_BoundedCurve)theCurves.ChangeValue(currentContour).ChangeValue(aNbC);
+            BoundedCurve2D CPrev = (BoundedCurve2D)theCurves.ChangeValue(currentContour).ChangeValue(aNbC);
             CurveKind TCPrev = GetCurveType(CPrev);
             CurveKind TCCurr = GetCurveType(aFirstCurve);
 
@@ -208,11 +214,11 @@ public sealed class BRepMAT2d_Explorer
                 aFirstCurve = AdjustCurveEnd(aFirstCurve, aPLast, true);
                 theCurves.ChangeValue(currentContour).ChangeValue(1) = aFirstCurve;
                 // Creation of a new edge.
-                TopoDS_Edge aNewEdge;
-                TopoDS_Vertex aVf = TopExp.FirstVertex(aFirstEdge);
-                TopoDS_Vertex aVl = TopExp.LastVertex(aFirstEdge);
+                Edge aNewEdge;
+                Vertex aVf = Exploration.FirstVertex(aFirstEdge);
+                Vertex aVl = Exploration.LastVertex(aFirstEdge);
 
-                if (aFirstEdge.Orientation() == TopAbs_FORWARD)
+                if (aFirstEdge.Orientation() == Forward)
                 {
                     aNewEdge = MakeEdge(aFirstCurve, aNewFace, aVf, aVl);
                 }
@@ -231,11 +237,11 @@ public sealed class BRepMAT2d_Explorer
                 CPrev = AdjustCurveEnd(CPrev, aP, false);
                 theCurves.ChangeValue(currentContour).ChangeValue(aNbC) = CPrev;
                 // Change of the previous edge.
-                TopoDS_Edge aNewEdge;
-                TopoDS_Vertex aVf = TopExp.FirstVertex(aPrevEdge);
-                TopoDS_Vertex aVl = TopExp.LastVertex(aPrevEdge);
+                Edge aNewEdge;
+                Vertex aVf = Exploration.FirstVertex(aPrevEdge);
+                Vertex aVl = Exploration.LastVertex(aPrevEdge);
 
-                if (aPrevEdge.Orientation() == TopAbs_FORWARD)
+                if (aPrevEdge.Orientation() == Forward)
                 {
                     aNewEdge = MakeEdge(CPrev, aNewFace, aVf, aVl);
                 }
@@ -249,8 +255,8 @@ public sealed class BRepMAT2d_Explorer
             }
         }
 
-        TopoDS_Wire aNewWire = new();
-        BRep_Builder aBuilder = new();
+        Wire aNewWire = new();
+        BrepBuilder aBuilder = new();
 
         if (isModif)
         {
@@ -261,8 +267,8 @@ public sealed class BRepMAT2d_Explorer
 
             for (i = 1; i <= aNbEdges; i++)
             {
-                TopoDS_Shape aKey = anOldNewE.FindKey(i);
-                TopoDS_Shape aNewEdge = anOldNewE.FindFromIndex(i);
+                Shape aKey = anOldNewE.FindKey(i);
+                Shape aNewEdge = anOldNewE.FindFromIndex(i);
 
                 aBuilder.Add(aNewWire, aNewEdge);
                 myModifShapes.Add(aKey, aNewEdge);
@@ -295,14 +301,14 @@ public sealed class BRepMAT2d_Explorer
 
     private void NewContour()
     {
-        NCollection_Sequence<Geom2d_Curve> Contour = new();
+        NCollection_Sequence<Curve2D> Contour = new();
         theCurves.Append(Contour);
         myIsClosed.Append(false);
         currentContour++;
     }
 
     // Adds aCurve to the current contour.
-    private void Add(Geom2d_Curve aCurve) => theCurves.ChangeValue(currentContour).Append(aCurve);
+    private void Add(Curve2D aCurve) => theCurves.ChangeValue(currentContour).Append(aCurve);
 
     /// <summary>The number of contours.</summary>
     public int NumberOfContours() => theCurves.Length();
@@ -324,20 +330,20 @@ public sealed class BRepMAT2d_Explorer
     public void Next() => current++;
 
     /// <summary>The current curve of the contour.</summary>
-    public Geom2d_Curve Value() => theCurves.Value(currentContour).Value(current);
+    public Curve2D Value() => theCurves.Value(currentContour).Value(current);
 
     /// <summary>The face read.</summary>
-    public TopoDS_Shape Shape() => myShape;
+    public Shape Shape() => myShape;
 
     /// <summary>The curves of the contour IC.</summary>
-    public NCollection_Sequence<Geom2d_Curve> Contour(int IC) => theCurves.Value(IC);
+    public NCollection_Sequence<Curve2D> Contour(int IC) => theCurves.Value(IC);
 
     /// <summary>True if aShape (the face, a wire or an edge read) was replaced.</summary>
-    public bool IsModified(in TopoDS_Shape aShape)
+    public bool IsModified(in Shape aShape)
     {
         if (myModifShapes.Contains(aShape))
         {
-            TopoDS_Shape aNewShape = myModifShapes.FindFromKey(aShape);
+            Shape aNewShape = myModifShapes.FindFromKey(aShape);
             bool isSame = aNewShape.IsSame(aShape);
 
             return !isSame;
@@ -347,11 +353,11 @@ public sealed class BRepMAT2d_Explorer
     }
 
     /// <summary>The shape that replaces aShape, or aShape itself if it isn't replaced.</summary>
-    public TopoDS_Shape ModifiedShape(in TopoDS_Shape aShape)
+    public Shape ModifiedShape(in Shape aShape)
     {
         if (myModifShapes.Contains(aShape))
         {
-            TopoDS_Shape aNewShape = myModifShapes.FindFromKey(aShape);
+            Shape aNewShape = myModifShapes.FindFromKey(aShape);
 
             return aNewShape;
         }
@@ -363,63 +369,63 @@ public sealed class BRepMAT2d_Explorer
     public NCollection_Sequence<bool> GetIsClosed() => myIsClosed;
 
     // An edge from a 2D curve on a face and two vertices.
-    private static TopoDS_Edge MakeEdge(Geom2d_Curve theCurve, in TopoDS_Face theFace, in TopoDS_Vertex theVFirst,
-        in TopoDS_Vertex theVLast)
+    private static Edge MakeEdge(Curve2D theCurve, in Face theFace, in Vertex theVFirst,
+        in Vertex theVLast)
     {
-        TopoDS_Edge aNewEdge = new();
-        BRep_Builder aBuilder = new();
+        Edge aNewEdge = new();
+        BrepBuilder aBuilder = new();
         double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         double aFPar = theCurve.FirstParameter();
         double aLPar = theCurve.LastParameter();
 
         aBuilder.MakeEdge(ref aNewEdge);
         aBuilder.UpdateEdge(aNewEdge, theCurve, theFace, aTol);
-        aBuilder.Add(aNewEdge, theVFirst.Oriented(TopAbs_FORWARD));
-        aBuilder.Add(aNewEdge, theVLast.Oriented(TopAbs_REVERSED));
+        aBuilder.Add(aNewEdge, theVFirst.Oriented(Forward));
+        aBuilder.Add(aNewEdge, theVLast.Oriented(Reversed));
         aBuilder.Range(aNewEdge, aFPar, aLPar);
 
         return aNewEdge;
     }
 
-    private static CurveKind GetCurveType(Geom2d_Curve theC2d)
+    private static CurveKind GetCurveType(Curve2D theC2d)
     {
         CurveKind aTypeCurve;
         Type TheType = theC2d.GetType();
 
-        if (TheType == typeof(Geom2d_TrimmedCurve))
+        if (TheType == typeof(TrimmedCurve2D))
         {
-            TheType = ((Geom2d_TrimmedCurve)theC2d).ChangeBasisCurve().GetType();
+            TheType = ((TrimmedCurve2D)theC2d).ChangeBasisCurve().GetType();
         }
 
-        if (TheType == typeof(Geom2d_Circle))
+        if (TheType == typeof(CircleCurve2D))
         {
             aTypeCurve = Circle;
         }
-        else if (TheType == typeof(Geom2d_Line))
+        else if (TheType == typeof(LineCurve2D))
         {
             aTypeCurve = Line;
         }
-        else if (TheType == typeof(Geom2d_Ellipse))
+        else if (TheType == typeof(EllipseCurve2D))
         {
             aTypeCurve = Ellipse;
         }
-        else if (TheType == typeof(Geom2d_Parabola))
+        else if (TheType == typeof(ParabolaCurve2D))
         {
             aTypeCurve = Parabola;
         }
-        else if (TheType == typeof(Geom2d_Hyperbola))
+        else if (TheType == typeof(HyperbolaCurve2D))
         {
             aTypeCurve = Hyperbola;
         }
-        else if (TheType == typeof(Geom2d_BezierCurve))
+        else if (TheType == typeof(BezierCurve2D))
         {
             aTypeCurve = BezierCurve;
         }
-        else if (TheType == typeof(Geom2d_BSplineCurve))
+        else if (TheType == typeof(BSplineCurve2D))
         {
             aTypeCurve = BSplineCurve;
         }
-        else if (TheType == typeof(Geom2d_OffsetCurve))
+        else if (TheType == typeof(OffsetCurve2D))
         {
             aTypeCurve = OffsetCurve;
         }
@@ -431,7 +437,7 @@ public sealed class BRepMAT2d_Explorer
         return aTypeCurve;
     }
 
-    private static Geom2d_TrimmedCurve AdjustCurveEnd(Geom2d_BoundedCurve theC2d, Point2D theP, bool isFirst)
+    private static TrimmedCurve2D AdjustCurveEnd(BoundedCurve2D theC2d, Point2D theP, bool isFirst)
     {
         CurveKind aType = GetCurveType(theC2d);
 
@@ -441,28 +447,28 @@ public sealed class BRepMAT2d_Explorer
             if (isFirst)
             {
                 Point2D aP = theC2d.Value(theC2d.LastParameter());
-                return new GC_MakeSegment2d(theP, aP).Value();
+                return new MakeSegment2d(theP, aP).Value();
             }
             else
             {
                 Point2D aP = theC2d.Value(theC2d.FirstParameter());
-                return new GC_MakeSegment2d(aP, theP).Value();
+                return new MakeSegment2d(aP, theP).Value();
             }
         }
         else
         {
             // Converted to a B-spline whose end pole is moved.
-            Geom2d_BSplineCurve BCurve = Geom2dConvert.CurveToBSplineCurve(theC2d, QuasiAngular);
+            BSplineCurve2D BCurve = Geom2dConvert2D.CurveToBSplineCurve(theC2d, QuasiAngular);
 
             if (isFirst)
             {
                 BCurve.SetPole(1, theP);
-                return new Geom2d_TrimmedCurve(BCurve, BCurve.FirstParameter(), BCurve.LastParameter());
+                return new TrimmedCurve2D(BCurve, BCurve.FirstParameter(), BCurve.LastParameter());
             }
             else
             {
-                BCurve.SetPole(BCurve.NbPoles(), theP);
-                return new Geom2d_TrimmedCurve(BCurve, BCurve.FirstParameter(), BCurve.LastParameter());
+                BCurve.SetPole(BCurve.PoleCount, theP);
+                return new TrimmedCurve2D(BCurve, BCurve.FirstParameter(), BCurve.LastParameter());
             }
         }
     }

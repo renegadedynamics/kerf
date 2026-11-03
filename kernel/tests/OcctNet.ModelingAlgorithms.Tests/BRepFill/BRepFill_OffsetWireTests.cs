@@ -2,7 +2,12 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -15,7 +20,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepFill_OffsetWireTests
 {
-    private static TopoDS_Wire Polygon(bool theClosed, params double[] theXY)
+    private static Wire Polygon(bool theClosed, params double[] theXY)
     {
         BRepBuilderAPI_MakePolygon aMP = new();
         for (int i = 0; i < theXY.Length; i += 2)
@@ -29,32 +34,32 @@ public class BRepFill_OffsetWireTests
         return aMP.Wire();
     }
 
-    private static TopoDS_Wire Square(double theSize = 10) => Polygon(true, 0, 0, theSize, 0, theSize, theSize, 0, theSize);
+    private static Wire Square(double theSize = 10) => Polygon(true, 0, 0, theSize, 0, theSize, theSize, 0, theSize);
 
-    private static TopoDS_Face Frozen(in TopoDS_Face theFace)
+    private static Face Frozen(in Face theFace)
     {
         theFace.TShape()!.FreezeGraph();
         return theFace;
     }
 
-    private static string Text(in TopoDS_Shape theShape)
+    private static string Text(in Shape theShape)
     {
         using StringWriter aWriter = new();
-        BRepTools.Write(theShape, aWriter);
+        BrepTools.Write(theShape, aWriter);
         return aWriter.ToString();
     }
 
-    private static double Length(in TopoDS_Shape theShape)
+    private static double Length(in Shape theShape)
     {
-        GProp_GProps aProps = new();
+        Properties aProps = new();
         BRepGProp.LinearProperties(theShape, aProps);
         return aProps.Mass();
     }
 
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
-        NCollection_IndexedMap<TopoDS_Shape> aMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
@@ -65,7 +70,7 @@ public class BRepFill_OffsetWireTests
     [InlineData(global::Kerf.Geometry.JoinKind.Arc, 2.5, 20.0)]
     public void Parallel_inside_a_square(global::Kerf.Geometry.JoinKind theJoin, double theOffset, double theLength)
     {
-        TopoDS_Face aFace = Frozen(new BRepBuilderAPI_MakeFace(Square(), true).Face());
+        Face aFace = Frozen(new BRepBuilderAPI_MakeFace(Square(), true).Face());
         string aText = Text(aFace);
 
         BRepFill_OffsetWire anOW = new(aFace, theJoin);
@@ -73,19 +78,19 @@ public class BRepFill_OffsetWireTests
         Assert.True(anOW.IsDone());
         Assert.Equal(theJoin, anOW.JoinType());
         Assert.False(anOW.InternalShape().TShape()!.IsFrozen);
-        TopoDS_Shape aResult = anOW.Shape();
+        Shape aResult = anOW.Shape();
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.Equal(TopAbs_ShapeEnum.TopAbs_WIRE, aResult.ShapeType());
+        Assert.Equal(ShapeType.Wire, aResult.ShapeType());
         Assert.True(aResult.Closed());
         Assert.Equal(theLength, Length(aResult), 1.0e-9);
         Assert.True(anOW.Spine().TShape()!.IsFrozen);
 
         // every edge of the square generates one parallel edge of the result
-        for (TopExp_Explorer anExp = new(aFace, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(aFace, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            ISchematiqList<TopoDS_Shape> aGenerated = anOW.GeneratedShapes(anExp.Current());
+            ISchematiqList<Shape> aGenerated = anOW.GeneratedShapes(anExp.Current());
             Assert.Single(aGenerated);
-            Assert.Equal(TopAbs_ShapeEnum.TopAbs_EDGE, aGenerated[0].ShapeType());
+            Assert.Equal(ShapeType.Edge, aGenerated[0].ShapeType());
             Assert.True(aGenerated[0].TShape()!.IsFrozen);
         }
         Assert.Equal(aText, Text(aFace));
@@ -95,31 +100,31 @@ public class BRepFill_OffsetWireTests
     public void Parallel_inside_a_holed_face_and_too_far_inside()
     {
         BRepBuilderAPI_MakeFace aMaker = new(Square(20), true);
-        aMaker.Add(TopoDS.Wire(Polygon(true, 8, 8, 12, 8, 12, 12, 8, 12).Reversed()));
-        TopoDS_Face aFace = Frozen(aMaker.Face());
+        aMaker.Add(ShapeCasts.Wire(Polygon(true, 8, 8, 12, 8, 12, 12, 8, 12).Reversed()));
+        Face aFace = Frozen(aMaker.Face());
         string aText = Text(aFace);
 
         // inward from both wires: a square 16 wide and one around the hole, rounded
         BRepOffsetAPI_MakeOffset anOffset = new(aFace);
         anOffset.Perform(-2.0);
         Assert.True(anOffset.IsDone());
-        TopoDS_Shape aResult = anOffset.Shape();
+        Shape aResult = anOffset.Shape();
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.Equal(2, Count(aResult, TopAbs_ShapeEnum.TopAbs_WIRE));
+        Assert.Equal(2, Count(aResult, ShapeType.Wire));
         Assert.Equal(64 + 16 + 4 * Math.PI, Length(aResult), 1.0e-9);
 
         // too far: the parallels vanish, an empty result that is done (as natively)
         anOffset.Perform(-5.0);
         Assert.True(anOffset.IsDone());
-        Assert.Equal(0, Count(anOffset.Shape(), TopAbs_ShapeEnum.TopAbs_EDGE));
+        Assert.Equal(0, Count(anOffset.Shape(), ShapeType.Edge));
         Assert.Equal(aText, Text(aFace));
     }
 
     [Fact]
     public void Circle_is_offset_directly()
     {
-        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5)).Edge();
-        TopoDS_Face aFace = Frozen(new BRepBuilderAPI_MakeFace(new BRepBuilderAPI_MakeWire(aCircle).Wire(), true).Face());
+        Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5)).Edge();
+        Face aFace = Frozen(new BRepBuilderAPI_MakeFace(new BRepBuilderAPI_MakeWire(aCircle).Wire(), true).Face());
         BRepFill_OffsetWire anOW = new(aFace);
         anOW.Perform(2.0);
         Assert.True(anOW.IsDone());
@@ -131,7 +136,7 @@ public class BRepFill_OffsetWireTests
     [Fact]
     public void Zero_offset_gives_the_spine_at_the_altitude()
     {
-        TopoDS_Face aFace = Frozen(new BRepBuilderAPI_MakeFace(Square(), true).Face());
+        Face aFace = Frozen(new BRepBuilderAPI_MakeFace(Square(), true).Face());
         BRepFill_OffsetWire anOW = new(aFace);
         anOW.Perform(0.0, 3.0);
         Assert.True(anOW.IsDone());
@@ -148,14 +153,14 @@ public class BRepFill_OffsetWireTests
     [InlineData(true)]
     public void Open_wire_closed_around_or_open(bool theIsOpenResult)
     {
-        TopoDS_Wire aWire = Polygon(false, 0, 0, 10, 0, 10, 10);
+        Wire aWire = Polygon(false, 0, 0, 10, 0, 10, 10);
         aWire.TShape()!.FreezeGraph();
         string aText = Text(aWire);
         BRepOffsetAPI_MakeOffset anOffset = new(aWire, global::Kerf.Geometry.JoinKind.Arc, theIsOpenResult);
         anOffset.Perform(1.0);
         Assert.True(anOffset.IsDone());
-        TopoDS_Shape aResult = anOffset.Shape();
-        Assert.Equal(1, Count(aResult, TopAbs_ShapeEnum.TopAbs_WIRE));
+        Shape aResult = anOffset.Shape();
+        Assert.Equal(1, Count(aResult, ShapeType.Wire));
         if (theIsOpenResult)
         {
             // one open parallel, on the side of the positive offset: 10 + 10 and a quarter circle (as natively)
@@ -173,7 +178,7 @@ public class BRepFill_OffsetWireTests
     [Fact]
     public void Reused_maker_equals_fresh_makers_on_both_sides()
     {
-        TopoDS_Wire aWire = Polygon(true, 0, 0, 10, 0, 10, 4, 4, 4, 4, 10, 0, 10);
+        Wire aWire = Polygon(true, 0, 0, 10, 0, 10, 4, 4, 4, 4, 10, 0, 10);
         aWire.TShape()!.FreezeGraph();
         BRepOffsetAPI_MakeOffset aReused = new(aWire, global::Kerf.Geometry.JoinKind.Intersection);
         foreach (double anOffset in new[] { 1.0, -1.0, 2.0, -0.5 })
@@ -195,20 +200,20 @@ public class BRepFill_OffsetWireTests
     [Fact]
     public void Generated_lists_the_parallels_of_the_spine_edges()
     {
-        TopoDS_Face aFace = Frozen(new BRepBuilderAPI_MakeFace(Square(), true).Face());
+        Face aFace = Frozen(new BRepBuilderAPI_MakeFace(Square(), true).Face());
         BRepOffsetAPI_MakeOffset anOffset = new(aFace);
         anOffset.Perform(1.0);
-        TopoDS_Shape aResult = anOffset.Shape();
-        NCollection_IndexedMap<TopoDS_Shape> aResultEdges = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aResult, TopAbs_ShapeEnum.TopAbs_EDGE, aResultEdges);
-        for (TopExp_Explorer anExp = new(aFace, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+        Shape aResult = anOffset.Shape();
+        NCollection_IndexedMap<Shape> aResultEdges = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aResult, ShapeType.Edge, aResultEdges);
+        for (Explorer anExp = new(aFace, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            ISchematiqList<TopoDS_Shape> aGenerated = anOffset.Generated(anExp.Current());
+            ISchematiqList<Shape> aGenerated = anOffset.Generated(anExp.Current());
             Assert.Single(aGenerated);
             Assert.True(aResultEdges.Contains(aGenerated[0]));
         }
         // the arcs come from the vertices
-        for (TopExp_Explorer anExp = new(aFace, TopAbs_ShapeEnum.TopAbs_VERTEX); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(aFace, ShapeType.Vertex); anExp.More(); anExp.Next())
         {
             Assert.NotEmpty(anOffset.Generated(anExp.Current()));
         }
@@ -217,15 +222,15 @@ public class BRepFill_OffsetWireTests
     [Fact]
     public void Approximation_and_ConvertFace()
     {
-        TopoDS_Edge anEllipse = new BRepBuilderAPI_MakeEdge(new Ellipse3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10, 5)).Edge();
-        TopoDS_Face aFace = Frozen(new BRepBuilderAPI_MakeFace(new BRepBuilderAPI_MakeWire(anEllipse).Wire(), true).Face());
+        Edge anEllipse = new BRepBuilderAPI_MakeEdge(new Ellipse3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10, 5)).Edge();
+        Face aFace = Frozen(new BRepBuilderAPI_MakeFace(new BRepBuilderAPI_MakeWire(anEllipse).Wire(), true).Face());
         string aText = Text(aFace);
 
-        TopoDS_Face aConverted = BRepOffsetAPI_MakeOffset.ConvertFace(aFace, 0.1);
+        Face aConverted = BRepOffsetAPI_MakeOffset.ConvertFace(aFace, 0.1);
         Assert.True(aConverted.TShape()!.IsFrozen);
-        for (TopExp_Explorer anExp = new(aConverted, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(aConverted, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            CurveKind aType = new BRepAdaptor_Curve(TopoDS.Edge(anExp.Current())).GetType();
+            CurveKind aType = new EdgeCurveAdaptor(ShapeCasts.Edge(anExp.Current())).GetType();
             Assert.True(aType is CurveKind.Line or CurveKind.Circle, $"{aType}");
         }
 

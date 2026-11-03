@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation;
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using static OcctNet.ModelingData.Tests.GeomEval_SurfaceTestHelpers;
 
@@ -18,7 +20,7 @@ public class GeomEval_TBezierSurfaceTest
     // Helper to create a T-Bezier surface representing a unit sphere patch.
     // Basis: {1, sin(u), cos(u)} x {1, sin(v), cos(v)} with alpha=1.
     // S(u,v) = cos(u)*cos(v)*X + sin(u)*cos(v)*Y + sin(v)*Z, domain [0, Pi]x[0, Pi].
-    private static GeomEval_TBezierSurface createSpherePatch()
+    private static TBezierSurface createSpherePatch()
     {
         NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
         // All poles default to origin (0,0,0)
@@ -35,11 +37,11 @@ public class GeomEval_TBezierSurfaceTest
         aPoles.SetValue(2, 3, new Point3D(0.0, 1.0, 0.0));
         // P(3,3) = (1,0,0) corresponds to cos(u)*cos(v) -> X component
         aPoles.SetValue(3, 3, new Point3D(1.0, 0.0, 0.0));
-        return new GeomEval_TBezierSurface(aPoles, 1.0, 1.0);
+        return new TBezierSurface(aPoles, 1.0, 1.0);
     }
 
     // Helper to create a simple 3x3 (order 1 in both directions) T-Bezier surface
-    private static GeomEval_TBezierSurface createSimpleSurface()
+    private static TBezierSurface createSimpleSurface()
     {
         NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
         for (int i = 1; i <= 3; ++i)
@@ -49,20 +51,20 @@ public class GeomEval_TBezierSurfaceTest
                 aPoles.SetValue(i, j, new Point3D((double)(i - 1), (double)(j - 1), 0.0));
             }
         }
-        return new GeomEval_TBezierSurface(aPoles, 1.0, 1.0);
+        return new TBezierSurface(aPoles, 1.0, 1.0);
     }
 
     [Fact]
     public void Construction_ValidParams()
     {
-        GeomEval_TBezierSurface aSurf = createSimpleSurface();
-        Assert.Equal(3, aSurf.NbUPoles());
-        Assert.Equal(3, aSurf.NbVPoles());
+        TBezierSurface aSurf = createSimpleSurface();
+        Assert.Equal(3, aSurf.UPoleCount);
+        Assert.Equal(3, aSurf.VPoleCount);
         Assert.Equal(1, aSurf.OrderU());
         Assert.Equal(1, aSurf.OrderV());
         Assert.Equal(1.0, aSurf.AlphaU(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(1.0, aSurf.AlphaV(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.False(aSurf.IsRational());
+        Assert.False(aSurf.IsRational);
     }
 
     [Fact]
@@ -77,13 +79,13 @@ public class GeomEval_TBezierSurfaceTest
                 aPoles.SetValue(i, j, new Point3D((double)(i), (double)(j), 0.0));
             }
         }
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new GeomEval_TBezierSurface(aPoles, 1.0, 1.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new TBezierSurface(aPoles, 1.0, 1.0));
     }
 
     [Fact]
     public void ParameterRange()
     {
-        GeomEval_TBezierSurface aSurf = createSimpleSurface();
+        TBezierSurface aSurf = createSimpleSurface();
         double aU1, aU2, aV1, aV2;
         aSurf.Bounds(out aU1, out aU2, out aV1, out aV2);
         Assert.Equal(0.0, aU1, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -95,7 +97,7 @@ public class GeomEval_TBezierSurfaceTest
     [Fact]
     public void EvalD0_Corners()
     {
-        GeomEval_TBezierSurface aSurf = createSimpleSurface();
+        TBezierSurface aSurf = createSimpleSurface();
         double aU1, aU2, aV1, aV2;
         aSurf.Bounds(out aU1, out aU2, out aV1, out aV2);
 
@@ -114,10 +116,10 @@ public class GeomEval_TBezierSurfaceTest
     [Fact]
     public void EvalD1_ConsistentWithD0()
     {
-        GeomEval_TBezierSurface aSurf = createSimpleSurface();
+        TBezierSurface aSurf = createSimpleSurface();
         double aU = M_PI / 3.0, aV = M_PI / 4.0;
 
-        Geom_Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
+        Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
         Point3D aPu1 = aSurf.EvalD0(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Point3D aPu2 = aSurf.EvalD0(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Point3D aPv1 = aSurf.EvalD0(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -137,15 +139,15 @@ public class GeomEval_TBezierSurfaceTest
     [Fact]
     public void Periodicity()
     {
-        GeomEval_TBezierSurface aSurf = createSimpleSurface();
-        Assert.False(aSurf.IsUPeriodic());
-        Assert.False(aSurf.IsVPeriodic());
+        TBezierSurface aSurf = createSimpleSurface();
+        Assert.False(aSurf.IsUPeriodic);
+        Assert.False(aSurf.IsVPeriodic);
     }
 
     [Fact]
     public void Reverse_NotImplemented()
     {
-        GeomEval_TBezierSurface aSurf = createSimpleSurface();
+        TBezierSurface aSurf = createSimpleSurface();
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReverse());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReverse());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReversedParameter(0.5));
@@ -155,7 +157,7 @@ public class GeomEval_TBezierSurfaceTest
     [Fact]
     public void Iso_NotImplemented()
     {
-        GeomEval_TBezierSurface aSurf = createSimpleSurface();
+        TBezierSurface aSurf = createSimpleSurface();
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UIso(0.5));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VIso(0.5));
     }
@@ -163,7 +165,7 @@ public class GeomEval_TBezierSurfaceTest
     [Fact]
     public void Transform_NotImplemented()
     {
-        GeomEval_TBezierSurface aSurf = createSimpleSurface();
+        TBezierSurface aSurf = createSimpleSurface();
         Transform3D aTrsf = new();
         aTrsf.SetTranslation(new Vector3D(1.0, 2.0, 3.0));
 
@@ -174,26 +176,26 @@ public class GeomEval_TBezierSurfaceTest
     [Fact]
     public void Copy_Independent()
     {
-        GeomEval_TBezierSurface aSurf = createSimpleSurface();
-        Geom_Geometry aCopy = aSurf.Copy();
+        TBezierSurface aSurf = createSimpleSurface();
+        Geometry3D aCopy = aSurf.Copy();
         Assert.NotNull(aCopy);
-        GeomEval_TBezierSurface? aCopySurf = aCopy as GeomEval_TBezierSurface;
+        TBezierSurface? aCopySurf = aCopy as TBezierSurface;
         Assert.NotNull(aCopySurf);
-        Assert.Equal(3, aCopySurf.NbUPoles());
-        Assert.Equal(3, aCopySurf.NbVPoles());
+        Assert.Equal(3, aCopySurf.UPoleCount);
+        Assert.Equal(3, aCopySurf.VPoleCount);
     }
 
     [Fact]
     public void EvalD2_ConsistentWithD1()
     {
-        GeomEval_TBezierSurface aSurf = createSimpleSurface();
+        TBezierSurface aSurf = createSimpleSurface();
         double aU = M_PI / 4.0, aV = M_PI / 4.0;
 
-        Geom_Surface.ResD2 aD2 = aSurf.EvalD2(aU, aV);
+        Surface.ResD2 aD2 = aSurf.EvalD2(aU, aV);
 
         // D2U: finite difference of D1U w.r.t. U
-        Geom_Surface.ResD1 aD1Uplus = aSurf.EvalD1(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
-        Geom_Surface.ResD1 aD1Uminus = aSurf.EvalD1(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
+        Surface.ResD1 aD1Uplus = aSurf.EvalD1(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
+        Surface.ResD1 aD1Uminus = aSurf.EvalD1(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Vector3D aFD_D2U = new((aD1Uplus.D1U.XYZ() - aD1Uminus.D1U.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
         Assert.Equal(aFD_D2U.X(), aD2.D2U.X(), THE_FD_TOL_D2);
@@ -201,8 +203,8 @@ public class GeomEval_TBezierSurfaceTest
         Assert.Equal(aFD_D2U.Z(), aD2.D2U.Z(), THE_FD_TOL_D2);
 
         // D2V: finite difference of D1V w.r.t. V
-        Geom_Surface.ResD1 aD1Vplus = aSurf.EvalD1(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
-        Geom_Surface.ResD1 aD1Vminus = aSurf.EvalD1(aU, aV - global::Kerf.Engine.Foundation.Precision.Confusion());
+        Surface.ResD1 aD1Vplus = aSurf.EvalD1(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Surface.ResD1 aD1Vminus = aSurf.EvalD1(aU, aV - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector3D aFD_D2V = new((aD1Vplus.D1V.XYZ() - aD1Vminus.D1V.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
         Assert.Equal(aFD_D2V.X(), aD2.D2V.X(), THE_FD_TOL_D2);
@@ -220,14 +222,14 @@ public class GeomEval_TBezierSurfaceTest
     [Fact]
     public void EvalD3_ConsistentWithD2()
     {
-        GeomEval_TBezierSurface aSurf = createSimpleSurface();
+        TBezierSurface aSurf = createSimpleSurface();
         double aU = M_PI / 3.0, aV = M_PI / 3.0;
 
-        Geom_Surface.ResD3 aD3 = aSurf.EvalD3(aU, aV);
+        Surface.ResD3 aD3 = aSurf.EvalD3(aU, aV);
 
         // D3U: finite difference of D2U w.r.t. U
-        Geom_Surface.ResD2 aD2Uplus = aSurf.EvalD2(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
-        Geom_Surface.ResD2 aD2Uminus = aSurf.EvalD2(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
+        Surface.ResD2 aD2Uplus = aSurf.EvalD2(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
+        Surface.ResD2 aD2Uminus = aSurf.EvalD2(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Vector3D aFD_D3U = new((aD2Uplus.D2U.XYZ() - aD2Uminus.D2U.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
         Assert.Equal(aFD_D3U.X(), aD3.D3U.X(), THE_FD_TOL_D2);
@@ -235,8 +237,8 @@ public class GeomEval_TBezierSurfaceTest
         Assert.Equal(aFD_D3U.Z(), aD3.D3U.Z(), THE_FD_TOL_D2);
 
         // D3V: finite difference of D2V w.r.t. V
-        Geom_Surface.ResD2 aD2Vplus = aSurf.EvalD2(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
-        Geom_Surface.ResD2 aD2Vminus = aSurf.EvalD2(aU, aV - global::Kerf.Engine.Foundation.Precision.Confusion());
+        Surface.ResD2 aD2Vplus = aSurf.EvalD2(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Surface.ResD2 aD2Vminus = aSurf.EvalD2(aU, aV - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector3D aFD_D3V = new((aD2Vplus.D2V.XYZ() - aD2Vminus.D2V.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
         Assert.Equal(aFD_D3V.X(), aD3.D3V.X(), THE_FD_TOL_D2);
@@ -261,10 +263,10 @@ public class GeomEval_TBezierSurfaceTest
     [Fact]
     public void EvalDN_ConsistentWithD1()
     {
-        GeomEval_TBezierSurface aSurf = createSimpleSurface();
+        TBezierSurface aSurf = createSimpleSurface();
         double aU = M_PI / 4.0, aV = M_PI / 3.0;
 
-        Geom_Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
+        Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
         Vector3D aDN_U = aSurf.EvalDN(aU, aV, 1, 0);
         Vector3D aDN_V = aSurf.EvalDN(aU, aV, 0, 1);
 
@@ -280,7 +282,7 @@ public class GeomEval_TBezierSurfaceTest
     [Fact]
     public void EvalD0_MatchesSphere()
     {
-        GeomEval_TBezierSurface aTBez = createSpherePatch();
+        TBezierSurface aTBez = createSpherePatch();
         CoordinateSystem aSphere = new();
 
         double[] aUParams =
@@ -300,7 +302,7 @@ public class GeomEval_TBezierSurfaceTest
     [Fact]
     public void EvalD1_MatchesSphere()
     {
-        GeomEval_TBezierSurface aTBez = createSpherePatch();
+        TBezierSurface aTBez = createSpherePatch();
         CoordinateSystem aSphere = new();
 
         double[] aUParams = [M_PI / 6.0, M_PI / 3.0, M_PI / 2.0, 2.0 * M_PI / 3.0];
@@ -309,8 +311,8 @@ public class GeomEval_TBezierSurfaceTest
         {
             foreach (double aV in aVParams)
             {
-                Geom_Surface.ResD1 aDT = aTBez.EvalD1(aU, aV);
-                Geom_Surface.ResD1 aDS = SphereEvalD1(aSphere, 1.0, aU, aV);
+                Surface.ResD1 aDT = aTBez.EvalD1(aU, aV);
+                Surface.ResD1 aDS = SphereEvalD1(aSphere, 1.0, aU, aV);
 
                 Assert.Equal(0.0, aDT.Point.Distance(aDS.Point), global::Kerf.Engine.Foundation.Precision.Angular());
                 Assert.Equal(aDS.D1U.X(), aDT.D1U.X(), global::Kerf.Engine.Foundation.Precision.Angular());
@@ -326,7 +328,7 @@ public class GeomEval_TBezierSurfaceTest
     [Fact]
     public void EvalD2_MatchesSphere()
     {
-        GeomEval_TBezierSurface aTBez = createSpherePatch();
+        TBezierSurface aTBez = createSpherePatch();
         CoordinateSystem aSphere = new();
 
         double[] aUParams = [M_PI / 6.0, M_PI / 3.0, M_PI / 2.0];
@@ -335,8 +337,8 @@ public class GeomEval_TBezierSurfaceTest
         {
             foreach (double aV in aVParams)
             {
-                Geom_Surface.ResD2 aDT = aTBez.EvalD2(aU, aV);
-                Geom_Surface.ResD2 aDS = SphereEvalD2(aSphere, 1.0, aU, aV);
+                Surface.ResD2 aDT = aTBez.EvalD2(aU, aV);
+                Surface.ResD2 aDS = SphereEvalD2(aSphere, 1.0, aU, aV);
 
                 Assert.Equal(0.0, aDT.Point.Distance(aDS.Point), global::Kerf.Engine.Foundation.Precision.Angular());
                 Assert.Equal(aDS.D1U.X(), aDT.D1U.X(), global::Kerf.Engine.Foundation.Precision.Angular());
@@ -358,7 +360,7 @@ public class GeomEval_TBezierSurfaceTest
         }
     }
 
-    private static GeomEval_TBezierSurface createGeneralSurface(int theNbU, int theNbV, bool theRational)
+    private static TBezierSurface createGeneralSurface(int theNbU, int theNbV, bool theRational)
     {
         NCollection_Array2<Point3D> aPoles = new(1, theNbU, 1, theNbV);
         NCollection_Array2<double> aWeights = new(1, theNbU, 1, theNbV);
@@ -370,8 +372,8 @@ public class GeomEval_TBezierSurfaceTest
                 aWeights.SetValue(i, j, (i == 1 && j == 1) ? 4.0 : 0.5 + 0.1 * i + 0.05 * j);
             }
         }
-        return theRational ? new GeomEval_TBezierSurface(aPoles, aWeights, 0.9, 1.3)
-                           : new GeomEval_TBezierSurface(aPoles, 0.9, 1.3);
+        return theRational ? new TBezierSurface(aPoles, aWeights, 0.9, 1.3)
+                           : new TBezierSurface(aPoles, 0.9, 1.3);
     }
 
     // OCCT.NET addition: partial derivatives against finite differences, non-rational up to order 4 and rational up
@@ -382,8 +384,8 @@ public class GeomEval_TBezierSurfaceTest
     [InlineData(3, 7)]
     public void Derivatives_MatchFiniteDifferences(int theNbU, int theNbV)
     {
-        GeomEval_TBezierSurface aSurf = createGeneralSurface(theNbU, theNbV, false);
-        GeomEval_TBezierSurface aRational = createGeneralSurface(theNbU, theNbV, true);
+        TBezierSurface aSurf = createGeneralSurface(theNbU, theNbV, false);
+        TBezierSurface aRational = createGeneralSurface(theNbU, theNbV, true);
         for (double aU = 0.1; aU < M_PI / 0.9; aU += 0.7)
         {
             for (double aV = 0.1; aV < M_PI / 1.3; aV += 0.55)
@@ -392,14 +394,14 @@ public class GeomEval_TBezierSurfaceTest
                 EvalTestUtils.CheckSurfaceDerivatives(aRational, aU, aV, 3);
             }
         }
-        Assert.ThrowsAny<Geom_UndefinedDerivative>(() => aRational.EvalDN(0.5, 0.5, 2, 2));
+        Assert.ThrowsAny<UndefinedDerivative3DException>(() => aRational.EvalDN(0.5, 0.5, 2, 2));
     }
 
     // OCCT.NET addition: Poles() and Weights() are row-major copies of the grids.
     [Fact]
     public void Poles_Weights_RowMajor()
     {
-        GeomEval_TBezierSurface aSurf = createGeneralSurface(5, 3, true);
+        TBezierSurface aSurf = createGeneralSurface(5, 3, true);
         Assert.Equal(15, aSurf.Poles().Count);
         Assert.Equal(new Point3D(2 + 0.3 * Math.Sin(3), 3 - 0.2 * 2, Math.Cos(2 * 0.7 + 3 * 1.1)), aSurf.Poles()[1 * 3 + 2]);
         Assert.Equal(0.5 + 0.1 * 2 + 0.05 * 3, aSurf.Weights()[1 * 3 + 2]);
@@ -419,8 +421,8 @@ public class GeomEval_TBezierSurfaceTest
             aPoles.SetValue(2, j, new Point3D(0.0, 0.0, 1.0));
             aPoles.SetValue(3, j, new Point3D(1.0, j, 0.0));
         }
-        GeomEval_TBezierSurface aSurf = new(aPoles, 1.0, 1.0);
-        Assert.True(aSurf.IsUClosed());
+        TBezierSurface aSurf = new(aPoles, 1.0, 1.0);
+        Assert.True(aSurf.IsUClosed);
         Assert.True(aSurf.EvalD0(0.0, 0.5).Distance(aSurf.EvalD0(M_PI, 0.5)) > 1.0);
     }
 }

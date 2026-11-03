@@ -4,7 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -12,21 +14,21 @@ namespace Occt;
 /// <remarks>It only reads the shape; the shapes it hands out are the shape's own sub-shapes.</remarks>
 public sealed class LocOpe_GluedShape : LocOpe_GeneratedShape
 {
-    private TopoDS_Shape myShape = new();
+    private Shape myShape = new();
     // OCCT iterates this map keyed by the faces' addresses; the port in the order the faces were glued
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myMap = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myGShape = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myMap = new(ShapeHasher.Instance);
+    private readonly NCollection_DataMap<Shape, Shape> myGShape = new(ShapeHasher.Instance);
 
     public LocOpe_GluedShape()
     {
     }
 
-    public LocOpe_GluedShape(in TopoDS_Shape S)
+    public LocOpe_GluedShape(in Shape S)
     {
         myShape = S;
     }
 
-    public void Init(in TopoDS_Shape S)
+    public void Init(in Shape S)
     {
         myShape = S;
         myMap.Clear();
@@ -35,9 +37,9 @@ public sealed class LocOpe_GluedShape : LocOpe_GeneratedShape
         myGEdges.Clear();
     }
 
-    public void GlueOnFace(in TopoDS_Face F)
+    public void GlueOnFace(in Face F)
     {
-        TopExp_Explorer exp = new(myShape, TopAbs_FACE);
+        Explorer exp = new(myShape, ShapeType.Face);
         for (; exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(F))
@@ -61,19 +63,19 @@ public sealed class LocOpe_GluedShape : LocOpe_GeneratedShape
 
         // Edges et faces generes
 
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMapEF = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(myShape, TopAbs_EDGE, TopAbs_FACE, theMapEF);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMapEF = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(myShape, ShapeType.Edge, ShapeType.Face, theMapEF);
 
-        NCollection_Map<TopoDS_Shape> mapdone = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape>.Iterator itl = new();
-        TopExp_Explorer exp = new(), exp2 = new(), exp3 = new();
+        NCollection_Map<Shape> mapdone = new(ShapeHasher.Instance);
+        NCollection_List<Shape>.Iterator itl = new();
+        Explorer exp = new(), exp2 = new(), exp3 = new();
 
         for (int itm = 1; itm <= myMap.Extent(); itm++)
         {
-            TopoDS_Face fac = TopoDS.Face(myMap[itm]);
-            for (exp.Init(fac, TopAbs_EDGE); exp.More(); exp.Next())
+            Face fac = ShapeCasts.Face(myMap[itm]);
+            for (exp.Init(fac, ShapeType.Edge); exp.More(); exp.Next())
             {
-                TopoDS_Edge edg = TopoDS.Edge(exp.Current());
+                Edge edg = ShapeCasts.Edge(exp.Current());
                 if (mapdone.Contains(edg))
                 {
                     continue;
@@ -105,27 +107,27 @@ public sealed class LocOpe_GluedShape : LocOpe_GeneratedShape
 
         for (itl.Initialize(myGEdges); itl.More(); itl.Next())
         {
-            TopoDS_Edge edg = TopoDS.Edge(itl.Value());
-            for (exp.Init(edg, TopAbs_VERTEX); exp.More(); exp.Next())
+            Edge edg = ShapeCasts.Edge(itl.Value());
+            for (exp.Init(edg, ShapeType.Vertex); exp.More(); exp.Next())
             {
-                TopoDS_Vertex vtx = TopoDS.Vertex(exp.Current());
+                Vertex vtx = ShapeCasts.Vertex(exp.Current());
                 if (myGShape.IsBound(vtx))
                 {
                     continue;
                 }
-                for (exp2.Init(myGShape[edg], TopAbs_EDGE); exp2.More(); exp2.Next())
+                for (exp2.Init(myGShape[edg], ShapeType.Edge); exp2.More(); exp2.Next())
                 {
                     if (exp2.Current().IsSame(edg))
                     {
                         continue;
                     }
-                    for (exp3.Init(exp2.Current(), TopAbs_VERTEX); exp3.More(); exp3.Next())
+                    for (exp3.Init(exp2.Current(), ShapeType.Vertex); exp3.More(); exp3.Next())
                     {
                         if (exp3.Current().IsSame(vtx))
                         {
                             if (myGShape.IsBound(exp2.Current()))
                             {
-                                myGShape.Bind(vtx, new TopoDS_Edge());
+                                myGShape.Bind(vtx, new Edge());
                             }
                             else
                             {
@@ -144,7 +146,7 @@ public sealed class LocOpe_GluedShape : LocOpe_GeneratedShape
 
         // liste de faces
 
-        for (exp.Init(myShape, TopAbs_FACE); exp.More(); exp.Next())
+        for (exp.Init(myShape, ShapeType.Face); exp.More(); exp.Next())
         {
             if (!myMap.Contains(exp.Current()))
             {
@@ -153,7 +155,7 @@ public sealed class LocOpe_GluedShape : LocOpe_GeneratedShape
         }
     }
 
-    public override NCollection_List<TopoDS_Shape> GeneratingEdges()
+    public override NCollection_List<Shape> GeneratingEdges()
     {
         if (myGShape.IsEmpty())
         {
@@ -162,25 +164,25 @@ public sealed class LocOpe_GluedShape : LocOpe_GeneratedShape
         return myGEdges;
     }
 
-    public override TopoDS_Edge Generated(in TopoDS_Vertex V)
+    public override Edge Generated(in Vertex V)
     {
         if (myGShape.IsEmpty())
         {
             MapEdgeAndVertices();
         }
-        return TopoDS.Edge(myGShape[V]);
+        return ShapeCasts.Edge(myGShape[V]);
     }
 
-    public override TopoDS_Face Generated(in TopoDS_Edge E)
+    public override Face Generated(in Edge E)
     {
         if (myGShape.IsEmpty())
         {
             MapEdgeAndVertices();
         }
-        return TopoDS.Face(myGShape[E]);
+        return ShapeCasts.Face(myGShape[E]);
     }
 
-    public override NCollection_List<TopoDS_Shape> OrientedFaces()
+    public override NCollection_List<Shape> OrientedFaces()
     {
         if (myGShape.IsEmpty())
         {

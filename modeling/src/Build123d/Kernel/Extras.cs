@@ -1,5 +1,10 @@
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Geometry;
 using System.Text;
 using Occt;
 
@@ -15,12 +20,12 @@ internal static partial class Extras
     /// Whether the edge's own 3D curve lies in a plane normal to <paramref name="normal"/>
     /// (<c>ShapeAnalysis_Curve::IsPlanar</c> on the curve in <c>BRep_TEdge::Curves()</c>), or null if it has none.
     /// </summary>
-    public static bool? EdgeCurve3DIsPlanar(TopoDS_Edge edge, Xyz normal, double tolerance)
+    public static bool? EdgeCurve3DIsPlanar(global::Kerf.Topology.Edge edge, Xyz normal, double tolerance)
     {
-        if (edge.TShape() is not BRep_TEdge tedge)
+        if (edge.TShape() is not BrepTEdge tedge)
             return null;
         foreach (var rep in tedge.CurveRepresentations())
-            if (rep.IsCurve3D())
+            if (rep.IsCurve3D)
             {
                 var n = normal;   // OCCT computes a normal into a null one; the caller's stays as it is
                 return ShapeAnalysis_Curve.IsPlanar(rep.Curve3D()!, ref n, tolerance);
@@ -29,10 +34,10 @@ internal static partial class Extras
     }
 
     /// <summary>A shape in OCCT's BRep text format, with its triangulations if <paramref name="withTriangles"/>.</summary>
-    public static byte[] WriteBRep(TopoDS_Shape shape, bool withTriangles = false)
+    public static byte[] WriteBRep(global::Kerf.Topology.Shape shape, bool withTriangles = false)
     {
         var writer = new StringWriter(System.Globalization.CultureInfo.InvariantCulture) { NewLine = "\n" };
-        BRepTools.Write(shape, writer, withTriangles, false, TopTools_FormatVersion.TopTools_FormatVersion_CURRENT);
+        BrepTools.Write(shape, writer, withTriangles, false, FormatVersion.FormatVersion_CURRENT);
         return Encoding.ASCII.GetBytes(writer.ToString());
     }
 
@@ -40,7 +45,7 @@ internal static partial class Extras
     /// A shape read from OCCT's BRep text format. Data that isn't BRep, or is truncated or malformed, throws
     /// <see cref="StreamFormatErrorException"/>.
     /// </summary>
-    public static TopoDS_Shape ReadBRep(ReadOnlySpan<byte> data)
+    public static global::Kerf.Topology.Shape ReadBRep(ReadOnlySpan<byte> data)
     {
         // The native reader overran on long words and looped at the end of truncated data, so the native binding checked
         // first; OCCT.NET's reader is safe, but the same input is refused the same way
@@ -55,12 +60,12 @@ internal static partial class Extras
                 throw new StreamFormatErrorException("BRep data is text, without NULs");
         }
         var text = Encoding.ASCII.GetString(data);
-        TopoDS_Shape shape;
+        global::Kerf.Topology.Shape shape;
         try
         {
             var reader = new StringReader(text);
             StreamUtilities.SetInputLength(reader, text.Length);
-            BRepTools.Read(out shape, reader);
+            BrepTools.Read(out shape, reader);
         }
         catch (FailureException e) when (e is not StreamFormatErrorException)
         {
@@ -70,7 +75,7 @@ internal static partial class Extras
         {
             throw new StreamFormatErrorException("BRep data is truncated or malformed");
         }
-        if (shape.IsNull())
+        if (shape.IsNull)
             throw new StreamFormatErrorException("BRep data holds no shape");
         return shape;
     }
@@ -79,7 +84,7 @@ internal static partial class Extras
     /// A rough estimate of the memory a shape holds, in bytes: its sub-shapes, curves, surfaces and triangulations,
     /// each counted once however often it's shared (the native shim's estimate, for the same shapes).
     /// </summary>
-    public static long EstimateMemory(TopoDS_Shape shape)
+    public static long EstimateMemory(global::Kerf.Topology.Shape shape)
     {
         try
         {
@@ -120,89 +125,89 @@ internal static partial class Extras
         private readonly HashSet<object> _seen = new(ReferenceEqualityComparer.Instance);
         private long _bytes;
 
-        public long Of(TopoDS_Shape shape)
+        public long Of(global::Kerf.Topology.Shape shape)
         {
-            if (!shape.IsNull())
+            if (!shape.IsNull)
                 Visit(shape);
             return _bytes;
         }
 
         private bool First(object? o) => o is not null && _seen.Add(o);
 
-        private void Visit(TopoDS_Shape shape)
+        private void Visit(global::Kerf.Topology.Shape shape)
         {
             var tshape = shape.TShape();
             if (!First(tshape))
                 return;
             _bytes += 96;
-            if (tshape is BRep_TEdge tedge)
+            if (tshape is BrepTEdge tedge)
                 foreach (var rep in tedge.CurveRepresentations())
                 {
                     _bytes += 64;
-                    if (rep.IsCurve3D())
+                    if (rep.IsCurve3D)
                         Curve(rep.Curve3D());
                     else if (rep.IsCurveOnSurface())
                     {
                         Curve2d(rep.PCurve());
-                        if (rep.IsCurveOnClosedSurface())
+                        if (rep.IsCurveOnClosedSurface)
                             Curve2d(rep.PCurve2());
                     }
-                    else if (rep.IsPolygon3D() && rep.Polygon3D() is { } p && First(p))
+                    else if (rep.IsPolygon3D && rep.Polygon3D() is { } p && First(p))
                         _bytes += 32L * p.NodeCount;
                     else if (rep.IsPolygonOnTriangulation() && rep.PolygonOnTriangulation() is { } pt && First(pt))
                         _bytes += 12L * pt.NodeCount;
                 }
-            else if (tshape is BRep_TFace tface)
+            else if (tshape is BrepTFace tface)
             {
                 Surface(tface.Surface());
                 foreach (var tri in tface.TriangulationList())
                     if (First(tri))
                         _bytes += (long)tri.NodeCount * (24 + (tri.HasUVNodes ? 16 : 0) + (tri.HasNormals ? 12 : 0)) + 12L * tri.TriangleCount;
             }
-            for (var it = new TopoDS_Iterator(shape, false, false); it.More(); it.Next())
+            for (var it = new Iterator(shape, false, false); it.More(); it.Next())
                 Visit(it.Value());
         }
 
-        private void Curve(Geom_Curve? c)
+        private void Curve(Curve3D? c)
         {
             if (!First(c))
                 return;
             _bytes += 80;
             switch (c)
             {
-                case Geom_BSplineCurve b: _bytes += 32L * b.NbPoles() + 12L * b.NbKnots(); break;
-                case Geom_BezierCurve z: _bytes += 32L * z.NbPoles(); break;
-                case Geom_TrimmedCurve t: Curve(t.BasisCurve()); break;
-                case Geom_OffsetCurve o: Curve(o.BasisCurve()); break;
+                case BSplineCurve3D b: _bytes += 32L * b.PoleCount + 12L * b.KnotCount; break;
+                case BezierCurve3D z: _bytes += 32L * z.PoleCount; break;
+                case TrimmedCurve3D t: Curve(t.BasisCurve()); break;
+                case OffsetCurve3D o: Curve(o.BasisCurve()); break;
             }
         }
 
-        private void Curve2d(Geom2d_Curve? c)
+        private void Curve2d(Curve2D? c)
         {
             if (!First(c))
                 return;
             _bytes += 64;
             switch (c)
             {
-                case Geom2d_BSplineCurve b: _bytes += 24L * b.NbPoles() + 12L * b.NbKnots(); break;
-                case Geom2d_BezierCurve z: _bytes += 24L * z.NbPoles(); break;
-                case Geom2d_TrimmedCurve t: Curve2d(t.BasisCurve()); break;
-                case Geom2d_OffsetCurve o: Curve2d(o.BasisCurve()); break;
+                case BSplineCurve2D b: _bytes += 24L * b.PoleCount + 12L * b.KnotCount; break;
+                case BezierCurve2D z: _bytes += 24L * z.PoleCount; break;
+                case TrimmedCurve2D t: Curve2d(t.BasisCurve()); break;
+                case OffsetCurve2D o: Curve2d(o.BasisCurve()); break;
             }
         }
 
-        private void Surface(Geom_Surface? s)
+        private void Surface(Surface? s)
         {
             if (!First(s))
                 return;
             _bytes += 120;
             switch (s)
             {
-                case Geom_BSplineSurface b: _bytes += 32L * b.NbUPoles() * b.NbVPoles() + 12L * (b.NbUKnots() + b.NbVKnots()); break;
-                case Geom_BezierSurface z: _bytes += 32L * z.NbUPoles() * z.NbVPoles(); break;
-                case Geom_RectangularTrimmedSurface t: Surface(t.BasisSurface()); break;
-                case Geom_OffsetSurface o: Surface(o.BasisSurface()); break;
-                case Geom_SweptSurface w: Curve(w.BasisCurve()); break;
+                case BSplineSurface b: _bytes += 32L * b.UPoleCount * b.VPoleCount + 12L * (b.UKnotCount + b.VKnotCount); break;
+                case BezierSurface z: _bytes += 32L * z.UPoleCount * z.VPoleCount; break;
+                case TrimmedSurface t: Surface(t.BasisSurface()); break;
+                case OffsetSurface o: Surface(o.BasisSurface()); break;
+                case SweptSurface w: Curve(w.BasisCurve()); break;
             }
         }
     }

@@ -4,15 +4,19 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.BRepFill_TransitionStyle;
 using static Kerf.Geometry.Continuity;
 using static Occt.GeomFill_ApproxStyle;
 using static Occt.GeomFill_Trihedron;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -35,21 +39,21 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepFill_Pipe
 {
-    private TopoDS_Wire mySpine = new();
-    private TopoDS_Shape myProfile = new();
-    private TopoDS_Shape myShape = new();
+    private Wire mySpine = new();
+    private Shape myProfile = new();
+    private Shape myShape = new();
     private Transform3D myTrsf = new();
     private BRepFill_LocationLaw? myLoc;
-    private NCollection_HArray2<TopoDS_Shape>? mySections;
-    private NCollection_HArray2<TopoDS_Shape>? myFaces;
-    private NCollection_HArray2<TopoDS_Shape>? myEdges;
-    private readonly NCollection_Map<TopoDS_Shape> myReversedEdges = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_HArray2<TopoDS_Shape>> myTapes = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_HArray2<TopoDS_Shape>> myRails = new(TopTools_ShapeMapHasher.Instance);
+    private NCollection_HArray2<Shape>? mySections;
+    private NCollection_HArray2<Shape>? myFaces;
+    private NCollection_HArray2<Shape>? myEdges;
+    private readonly NCollection_Map<Shape> myReversedEdges = new(ShapeHasher.Instance);
+    private readonly NCollection_DataMap<Shape, NCollection_HArray2<Shape>> myTapes = new(ShapeHasher.Instance);
+    private readonly NCollection_DataMap<Shape, NCollection_HArray2<Shape>> myRails = new(ShapeHasher.Instance);
     private int myCurIndexOfSectionEdge;
-    private TopoDS_Shape myFirst = new();
-    private TopoDS_Shape myLast = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myGenMap = new(TopTools_ShapeMapHasher.Instance);
+    private Shape myFirst = new();
+    private Shape myLast = new();
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> myGenMap = new(ShapeHasher.Instance);
     private int myDegmax;
     private int mySegmax;
     private Continuity myContinuity;
@@ -59,17 +63,17 @@ public sealed class BRepFill_Pipe
 
     //=================================================================================================
 
-    private static bool UpdateMap(in TopoDS_Shape theKey,
-                                  in TopoDS_Shape theValue,
-                                  NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMap)
+    private static bool UpdateMap(in Shape theKey,
+                                  in Shape theValue,
+                                  NCollection_DataMap<Shape, NCollection_List<Shape>> theMap)
     {
         if (!theMap.IsBound(theKey))
         {
-            NCollection_List<TopoDS_Shape> thelist = new();
+            NCollection_List<Shape> thelist = new();
             theMap.Bind(theKey, thelist);
         }
-        NCollection_List<TopoDS_Shape> aList = theMap.ChangeFind(theKey);
-        NCollection_List<TopoDS_Shape>.Iterator anIt = new(aList);
+        NCollection_List<Shape> aList = theMap.ChangeFind(theKey);
+        NCollection_List<Shape>.Iterator anIt = new(aList);
         bool found = false;
 
         for (; anIt.More(); anIt.Next())
@@ -89,26 +93,26 @@ public sealed class BRepFill_Pipe
         return !found;
     }
 
-    private static void UpdateTolFromTopOrBottomPCurve(in TopoDS_Face aFace, in TopoDS_Edge anEdge)
+    private static void UpdateTolFromTopOrBottomPCurve(in Face aFace, in Edge anEdge)
     {
-        Geom2d_Curve? aPCurve = BRep_Tool.CurveOnSurface(anEdge, aFace, out double fpar, out double lpar);
+        Curve2D? aPCurve = Tool.CurveOnSurface(anEdge, aFace, out double fpar, out double lpar);
         if (aPCurve is null)
         {
             return;
         }
 
-        Geom_Curve? aCurve = BRep_Tool.Curve(anEdge, out fpar, out lpar);
+        Curve3D? aCurve = Tool.Curve(anEdge, out fpar, out lpar);
         if (aCurve is null)
         {
             return;
         }
 
-        Geom2dAdaptor_Curve GAHC2d = new(aPCurve, fpar, lpar);
-        Geom_Surface aSurf = BRep_Tool.Surface(aFace)!;
-        GeomAdaptor_Surface GAHS = new(aSurf);
-        Adaptor3d_CurveOnSurface ConS = new(GAHC2d, GAHS);
+        CurveAdaptor2D GAHC2d = new(aPCurve, fpar, lpar);
+        Surface aSurf = Tool.Surface(aFace)!;
+        SurfaceAdaptor GAHS = new(aSurf);
+        CurveOnSurface ConS = new(GAHC2d, GAHS);
 
-        double Tol = BRep_Tool.Tolerance(anEdge);
+        double Tol = Tool.Tolerance(anEdge);
         double InitTol = Tol;
         double TolTol = Tol * Tol;
         const int NCONTROL = 22;
@@ -127,12 +131,12 @@ public sealed class BRepFill_Pipe
         Tol = 1.00005 * Math.Sqrt(TolTol);
         if (Tol >= InitTol)
         {
-            BRep_Builder BB = new();
+            BrepBuilder BB = new();
             BB.UpdateEdge(anEdge, Tol);
-            TopoDS_Iterator itv = new(anEdge);
+            Iterator itv = new(anEdge);
             for (; itv.More(); itv.Next())
             {
-                TopoDS_Vertex aVertex = TopoDS.Vertex(itv.Value());
+                Vertex aVertex = ShapeCasts.Vertex(itv.Value());
                 BB.UpdateVertex(aVertex, Tol);
             }
         }
@@ -159,8 +163,8 @@ public sealed class BRepFill_Pipe
     /// <paramref name="aMode"/> (Frenet, corrected Frenet or discrete; any other mode is corrected Frenet), and an
     /// attempt at C1 surfaces where a swept surface is C0 with <paramref name="ForceApproxC1"/>.
     /// </summary>
-    public BRepFill_Pipe(in TopoDS_Wire Spine,
-                         in TopoDS_Shape Profile,
+    public BRepFill_Pipe(in Wire Spine,
+                         in Shape Profile,
                          GeomFill_Trihedron aMode = GeomFill_IsCorrectedFrenet,
                          bool ForceApproxC1 = false,
                          bool KPart = false)
@@ -193,8 +197,8 @@ public sealed class BRepFill_Pipe
 
     /// <summary>Builds the pipe of <paramref name="Profile"/> along <paramref name="Spine"/>.</summary>
     /// <exception cref="DomainErrorException">The profile contains solids.</exception>
-    public void Perform(in TopoDS_Wire Spine,
-                        in TopoDS_Shape Profile,
+    public void Perform(in Wire Spine,
+                        in Shape Profile,
                         bool KPart = false)
 
     {
@@ -208,7 +212,7 @@ public sealed class BRepFill_Pipe
 
         DefineRealSegmax();
 
-        TopoDS_Shape TheProf;
+        Shape TheProf;
 
         GeomFill_TrihedronLaw? TLaw = null;
         switch (myMode)
@@ -270,7 +274,7 @@ public sealed class BRepFill_Pipe
         }
 
         ShapeUpgrade_RemoveLocations RemLoc = new();
-        RemLoc.SetRemoveLevel(TopAbs_COMPOUND);
+        RemLoc.SetRemoveLevel(ShapeType.Compound);
         RemLoc.Remove(myFirst);
         myFirst = RemLoc.InternalGetResult();
 
@@ -314,33 +318,33 @@ public sealed class BRepFill_Pipe
     //=================================================================================================
 
     /// <summary>The spine (frozen).</summary>
-    public TopoDS_Shape Spine() => Published(mySpine);
+    public Shape Spine() => Published(mySpine);
 
     /// <summary>The profile (frozen).</summary>
-    public TopoDS_Shape Profile() => Published(myProfile);
+    public Shape Profile() => Published(myProfile);
 
     /// <summary>The pipe (frozen).</summary>
-    public TopoDS_Shape Shape() => Published(myShape);
+    public Shape Shape() => Published(myShape);
 
     /// <summary><see cref="Shape"/> without freezing, for ported callers.</summary>
-    internal TopoDS_Shape InternalShape() => myShape;
+    internal Shape InternalShape() => myShape;
 
     /// <summary>The approximation error of the swept surfaces.</summary>
     public double ErrorOnSurface() => myErrorOnSurf;
 
     /// <summary>The shape at the start of the pipe (frozen).</summary>
-    public TopoDS_Shape FirstShape() => Published(myFirst);
+    public Shape FirstShape() => Published(myFirst);
 
     /// <summary><see cref="FirstShape"/> without freezing, for ported callers.</summary>
-    internal TopoDS_Shape InternalFirstShape() => myFirst;
+    internal Shape InternalFirstShape() => myFirst;
 
     /// <summary>The shape at the end of the pipe (frozen).</summary>
-    public TopoDS_Shape LastShape() => Published(myLast);
+    public Shape LastShape() => Published(myLast);
 
     /// <summary><see cref="LastShape"/> without freezing, for ported callers.</summary>
-    internal TopoDS_Shape InternalLastShape() => myLast;
+    internal Shape InternalLastShape() => myLast;
 
-    private static TopoDS_Shape Published(TopoDS_Shape theShape)
+    private static Shape Published(Shape theShape)
     {
         theShape.TShape()?.FreezeGraph();
         return theShape;
@@ -352,17 +356,17 @@ public sealed class BRepFill_Pipe
     /// Fills <paramref name="theList"/> with the shapes generated from <paramref name="theShape"/>, a sub-shape of
     /// the profile or the spine (frozen).
     /// </summary>
-    public void Generated(in TopoDS_Shape theShape, NCollection_List<TopoDS_Shape> theList)
+    public void Generated(in Shape theShape, NCollection_List<Shape> theList)
     {
         InternalGenerated(theShape, theList);
-        for (NCollection_List<TopoDS_Shape>.Iterator anIt = new(theList); anIt.More(); anIt.Next())
+        for (NCollection_List<Shape>.Iterator anIt = new(theList); anIt.More(); anIt.Next())
         {
             anIt.Value().TShape()?.FreezeGraph();
         }
     }
 
     /// <summary><see cref="Generated"/> without freezing, for ported callers.</summary>
-    internal void InternalGenerated(in TopoDS_Shape theShape, NCollection_List<TopoDS_Shape> theList)
+    internal void InternalGenerated(in Shape theShape, NCollection_List<Shape> theList)
     {
         theList.Clear();
 
@@ -379,19 +383,19 @@ public sealed class BRepFill_Pipe
     /// of the profile (frozen; null for a degenerated profile edge).
     /// </summary>
     /// <exception cref="DomainErrorException">An edge isn't in the spine or the profile.</exception>
-    public TopoDS_Face Face(in TopoDS_Edge ESpine, in TopoDS_Edge EProfile)
+    public Face Face(in Edge ESpine, in Edge EProfile)
     {
-        TopoDS_Face aFace = InternalFace(ESpine, EProfile);
+        Face aFace = InternalFace(ESpine, EProfile);
         aFace.TShape()?.FreezeGraph();
         return aFace;
     }
 
     /// <summary><see cref="Face"/> without freezing, for ported callers.</summary>
-    internal TopoDS_Face InternalFace(in TopoDS_Edge ESpine, in TopoDS_Edge EProfile)
+    internal Face InternalFace(in Edge ESpine, in Edge EProfile)
     {
-        TopoDS_Face theFace = new();
+        Face theFace = new();
 
-        if (BRep_Tool.Degenerated(EProfile))
+        if (Tool.Degenerated(EProfile))
         {
             return theFace;
         }
@@ -425,7 +429,7 @@ public sealed class BRepFill_Pipe
             throw new DomainErrorException("BRepFill_Pipe::Edge  : Edge not in the Spine");
         }
 
-        theFace = TopoDS.Face(myFaces!.Value(iprof, ispin));
+        theFace = ShapeCasts.Face(myFaces!.Value(iprof, ispin));
         return theFace;
     }
 
@@ -436,15 +440,15 @@ public sealed class BRepFill_Pipe
     /// <paramref name="VProfile"/> of the profile (frozen).
     /// </summary>
     /// <exception cref="DomainErrorException">The edge or the vertex isn't in the spine or the profile.</exception>
-    public TopoDS_Edge Edge(in TopoDS_Edge ESpine, in TopoDS_Vertex VProfile)
+    public Edge Edge(in Edge ESpine, in Vertex VProfile)
     {
-        TopoDS_Edge anEdge = InternalEdge(ESpine, VProfile);
+        Edge anEdge = InternalEdge(ESpine, VProfile);
         anEdge.TShape()?.FreezeGraph();
         return anEdge;
     }
 
     /// <summary><see cref="Edge"/> without freezing, for ported callers.</summary>
-    internal TopoDS_Edge InternalEdge(in TopoDS_Edge ESpine, in TopoDS_Vertex VProfile)
+    internal Edge InternalEdge(in Edge ESpine, in Vertex VProfile)
     {
         int ii, ispin = 0, iprof = 0, count = 0;
 
@@ -478,8 +482,8 @@ public sealed class BRepFill_Pipe
         // *************************************************
         // Generate the corresponding Shape
         // *************************************************
-        TopoDS_Edge theEdge;
-        theEdge = TopoDS.Edge(myEdges!.Value(iprof, ispin)); // OCCT: myEdges is null for a vertex profile (an access violation natively)
+        Edge theEdge;
+        theEdge = ShapeCasts.Edge(myEdges!.Value(iprof, ispin)); // OCCT: myEdges is null for a vertex profile (an access violation natively)
 
         return theEdge;
     }
@@ -488,10 +492,10 @@ public sealed class BRepFill_Pipe
 
     /// <summary>The profile at the position of the spine's vertex <paramref name="VSpine"/>, as a compound (frozen).</summary>
     /// <exception cref="DomainErrorException">The vertex isn't in the spine.</exception>
-    public TopoDS_Shape Section(in TopoDS_Vertex VSpine) => Published(InternalSection(VSpine));
+    public Shape Section(in Vertex VSpine) => Published(InternalSection(VSpine));
 
     /// <summary><see cref="Section"/> without freezing, for ported callers.</summary>
-    internal TopoDS_Shape InternalSection(in TopoDS_Vertex VSpine)
+    internal Shape InternalSection(in Vertex VSpine)
     {
         int ii, ispin = 0;
 
@@ -514,8 +518,8 @@ public sealed class BRepFill_Pipe
             throw new DomainErrorException("BRepFill_Pipe::Section  : Vertex not in the Spine");
         }
 
-        BRep_Builder B = new();
-        TopoDS_Compound Comp = new();
+        BrepBuilder B = new();
+        Compound Comp = new();
         B.MakeCompound(ref Comp);
         for (ii = 1; ii <= mySections!.ColLength(); ii++)
         {
@@ -531,22 +535,22 @@ public sealed class BRepFill_Pipe
     //=======================================================================
 
     /// <summary>The wire swept by <paramref name="Point"/> (placed with the profile) along the spine (frozen).</summary>
-    public TopoDS_Wire PipeLine(in Point3D Point)
+    public Wire PipeLine(in Point3D Point)
     {
-        TopoDS_Wire aWire = InternalPipeLine(Point);
+        Wire aWire = InternalPipeLine(Point);
         aWire.TShape()?.FreezeGraph();
         return aWire;
     }
 
     /// <summary><see cref="PipeLine"/> without freezing, for ported callers.</summary>
-    internal TopoDS_Wire InternalPipeLine(in Point3D Point)
+    internal Wire InternalPipeLine(in Point3D Point)
     {
         // Positioning
         Point3D P;
         P = Point;
         P.Transform(myTrsf);
 
-        TopoDS_Vertex VertexSection = new BRepLib_MakeVertex(P).InternalVertex();
+        Vertex VertexSection = new BRepLib_MakeVertex(P).InternalVertex();
         BRepFill_ShapeLaw Section = new(VertexSection);
 
         // Sweeping
@@ -560,24 +564,24 @@ public sealed class BRepFill_Pipe
                    GeomFill_Location,
                    myDegmax,
                    mySegmax);
-        TopoDS_Shape aLocalShape = MkSw.Shape();
+        Shape aLocalShape = MkSw.Shape();
         myErrorOnSurf = MkSw.ErrorOnSurface();
         BuildHistory(MkSw, VertexSection);
-        return TopoDS.Wire(aLocalShape);
+        return ShapeCasts.Wire(aLocalShape);
         // return TopoDS::Wire(MkSw.Shape());
     }
 
     //=================================================================================================
 
-    private TopoDS_Shape MakeShape(in TopoDS_Shape S,
-                                   in TopoDS_Shape theOriginalS,
-                                   in TopoDS_Shape FirstShape,
-                                   in TopoDS_Shape LastShape)
+    private Shape MakeShape(in Shape S,
+                                   in Shape theOriginalS,
+                                   in Shape FirstShape,
+                                   in Shape LastShape)
     {
-        TopoDS_Shape result = new();
-        BRep_Builder B = new();
+        Shape result = new();
+        BrepBuilder B = new();
         bool explode = false;
-        TopoDS_Shape TheS, TheFirst, TheLast;
+        Shape TheS, TheFirst, TheLast;
         int InitialLength = 0;
         TheS = S;
         TheFirst = FirstShape;
@@ -601,80 +605,80 @@ public sealed class BRepFill_Pipe
         switch (S.ShapeType())
         {
 
-            case TopAbs_VERTEX:
+            case ShapeType.Vertex:
             {
-                TopoDS_Wire aW = new();
+                Wire aW = new();
                 B.MakeWire(ref aW);
                 result = aW;
                 break;
             }
 
-            case TopAbs_EDGE:
+            case global::Kerf.Topology.ShapeType.Edge:
             {
-                TopoDS_Wire W = new();
-                TopoDS_Shell aSh = new();
+                Wire W = new();
+                Shell aSh = new();
                 B.MakeShell(ref aSh);
                 result = aSh;
                 B.MakeWire(ref W);
                 B.Add(W, S);
-                W.Closed(BRep_Tool.IsClosed(S));
+                W.Closed(Tool.IsClosed(S));
                 TheS = W;
-                if (!FirstShape.IsNull())
+                if (!FirstShape.IsNull)
                 {
                     B.MakeWire(ref W);
                     B.Add(W, FirstShape);
-                    W.Closed(BRep_Tool.IsClosed(FirstShape));
+                    W.Closed(Tool.IsClosed(FirstShape));
                     TheFirst = W;
                 }
-                if (!LastShape.IsNull())
+                if (!LastShape.IsNull)
                 {
                     B.MakeWire(ref W);
                     B.Add(W, LastShape);
-                    W.Closed(BRep_Tool.IsClosed(LastShape));
+                    W.Closed(Tool.IsClosed(LastShape));
                     TheLast = W;
                 }
-                result.Closed(BRep_Tool.IsClosed(result));
+                result.Closed(Tool.IsClosed(result));
                 break;
             }
 
-            case TopAbs_WIRE:
+            case ShapeType.Wire:
             {
-                TopoDS_Shell aSh = new();
+                Shell aSh = new();
                 B.MakeShell(ref aSh);
                 result = aSh;
                 break;
             }
 
-            case TopAbs_FACE:
+            case global::Kerf.Topology.ShapeType.Face:
             {
-                TopoDS_Shell aSh = new();
+                Shell aSh = new();
                 B.MakeShell(ref aSh);
                 result = aSh;
                 explode = true;
-                if (!mySpine.Closed() && !TheFirst.IsNull())
+                if (!mySpine.Closed() && !TheFirst.IsNull)
                 {
                     B.Add(result, TheFirst.Reversed());
                 }
-                result.Closed(BRep_Tool.IsClosed(result));
+                result.Closed(Tool.IsClosed(result));
                 break;
             }
 
-            case TopAbs_SHELL:
+            case ShapeType.Shell:
             {
-                TopoDS_CompSolid aCS = new();
+                CompSolid aCS = new();
                 B.MakeCompSolid(ref aCS);
                 result = aCS;
                 explode = true;
                 break;
             }
 
-            case TopAbs_SOLID:
-            case TopAbs_COMPSOLID:
+            case ShapeType.Solid:
+            case ShapeType.CompSolid:
                 throw new DomainErrorException("BRepFill_Pipe::profile contains solids");
 
-            case TopAbs_COMPOUND:
+            case ShapeType.Compound:
             {
-                TopoDS_Compound aC = new();
+                Compound aC = new();
                 B.MakeCompound(ref aC);
                 result = aC;
                 explode = true;
@@ -687,30 +691,30 @@ public sealed class BRepFill_Pipe
         if (explode)
         {
             // add the subshapes
-            TopoDS_Iterator itFirst = new(), itLast = new();
-            TopoDS_Shape first = new(), last = new();
-            if (!TheFirst.IsNull())
+            Iterator itFirst = new(), itLast = new();
+            Shape first = new(), last = new();
+            if (!TheFirst.IsNull)
             {
                 itFirst.Initialize(TheFirst);
             }
-            if (!TheLast.IsNull())
+            if (!TheLast.IsNull)
             {
                 itLast.Initialize(TheLast);
             }
 
-            TopoDS_Iterator it = new(S);
-            TopoDS_Iterator itorig = new(theOriginalS);
+            Iterator it = new(S);
+            Iterator itorig = new(theOriginalS);
             for (; it.More(); it.Next(), itorig.Next())
             {
-                if (!TheFirst.IsNull())
+                if (!TheFirst.IsNull)
                 {
                     first = itFirst.Value();
                 }
-                if (!TheLast.IsNull())
+                if (!TheLast.IsNull)
                 {
                     last = itLast.Value();
                 }
-                if (TheS.ShapeType() == TopAbs_FACE)
+                if (TheS.ShapeType() == global::Kerf.Topology.ShapeType.Face)
                 {
                     MakeShape(it.Value(), itorig.Value(), first, last);
                 }
@@ -719,11 +723,11 @@ public sealed class BRepFill_Pipe
                     B.Add(result, MakeShape(it.Value(), itorig.Value(), first, last));
                 }
 
-                if (!TheFirst.IsNull())
+                if (!TheFirst.IsNull)
                 {
                     itFirst.Next();
                 }
-                if (!TheLast.IsNull())
+                if (!TheLast.IsNull)
                 {
                     itLast.Next();
                 }
@@ -732,9 +736,9 @@ public sealed class BRepFill_Pipe
 
         else
         {
-            if (TheS.ShapeType() == TopAbs_VERTEX)
+            if (TheS.ShapeType() == ShapeType.Vertex)
             {
-                BRepFill_ShapeLaw Section = new(TopoDS.Vertex(TheS));
+                BRepFill_ShapeLaw Section = new(ShapeCasts.Vertex(TheS));
                 BRepFill_Sweep MkSw = new(Section, myLoc!, true);
                 MkSw.SetForceApproxC1(myForceApproxC1);
                 MkSw.Build(myReversedEdges,
@@ -749,7 +753,7 @@ public sealed class BRepFill_Pipe
                 UpdateMap(theOriginalS, result, myGenMap);
                 myErrorOnSurf = MkSw.ErrorOnSurface();
 
-                NCollection_HArray2<TopoDS_Shape>? aSections = MkSw.Sections();
+                NCollection_HArray2<Shape>? aSections = MkSw.Sections();
 
                 if (aSections is not null)
                 {
@@ -762,11 +766,11 @@ public sealed class BRepFill_Pipe
                 BuildHistory(MkSw, theOriginalS);
             }
 
-            if (TheS.ShapeType() == TopAbs_WIRE)
+            if (TheS.ShapeType() == ShapeType.Wire)
             {
-                BRepFill_ShapeLaw Section = new(TopoDS.Wire(TheS));
+                BRepFill_ShapeLaw Section = new(ShapeCasts.Wire(TheS));
                 BRepFill_Sweep MkSw = new(Section, myLoc!, true);
-                MkSw.SetBounds(TopoDS.Wire(TheFirst), TopoDS.Wire(TheLast));
+                MkSw.SetBounds(ShapeCasts.Wire(TheFirst), ShapeCasts.Wire(TheLast));
                 MkSw.SetForceApproxC1(myForceApproxC1);
                 MkSw.Build(myReversedEdges,
                            myTapes,
@@ -788,13 +792,13 @@ public sealed class BRepFill_Pipe
                 }
                 else
                 {
-                    NCollection_HArray2<TopoDS_Shape> Aux, Somme;
+                    NCollection_HArray2<Shape> Aux, Somme;
                     int length;
                     int ii, jj, kk;
 
                     Aux = MkSw.SubShape()!;
                     length = Aux.ColLength() + myFaces!.ColLength();
-                    Somme = new NCollection_HArray2<TopoDS_Shape>(1, length, 1, Aux.RowLength());
+                    Somme = new NCollection_HArray2<Shape>(1, length, 1, Aux.RowLength());
                     for (jj = 1; jj <= myFaces.RowLength(); jj++)
                     {
                         for (ii = 1; ii <= myFaces.ColLength(); ii++)
@@ -811,7 +815,7 @@ public sealed class BRepFill_Pipe
 
                     Aux = MkSw.Sections()!;
                     length = Aux.ColLength() + mySections.ColLength();
-                    Somme = new NCollection_HArray2<TopoDS_Shape>(1, length, 1, Aux.RowLength());
+                    Somme = new NCollection_HArray2<Shape>(1, length, 1, Aux.RowLength());
                     for (jj = 1; jj <= mySections.RowLength(); jj++)
                     {
                         for (ii = 1; ii <= mySections.ColLength(); ii++)
@@ -830,7 +834,7 @@ public sealed class BRepFill_Pipe
 
                     Aux = MkSw.InterFaces()!;
                     length = Aux.ColLength() + myEdges!.ColLength();
-                    Somme = new NCollection_HArray2<TopoDS_Shape>(1, length, 1, Aux.RowLength());
+                    Somme = new NCollection_HArray2<Shape>(1, length, 1, Aux.RowLength());
                     for (jj = 1; jj <= myEdges.RowLength(); jj++)
                     {
                         for (ii = 1; ii <= myEdges.ColLength(); ii++)
@@ -851,26 +855,26 @@ public sealed class BRepFill_Pipe
             }
         }
 
-        if (TheS.ShapeType() == TopAbs_FACE)
+        if (TheS.ShapeType() == global::Kerf.Topology.ShapeType.Face)
         {
             int ii, jj;
             // jgv
-            TopExp_Explorer Explo = new(result, TopAbs_FACE);
+            Explorer Explo = new(result, global::Kerf.Topology.ShapeType.Face);
             for (; Explo.More(); Explo.Next())
             {
-                TopoDS_Shape aFace = Explo.Current();
+                Shape aFace = Explo.Current();
                 RebuildTopOrBottomFace(aFace.Reversed(), true); // top face was reversed
             }
             /////
-            TopoDS_Face F;
+            Face F;
             for (ii = InitialLength + 1; ii <= myFaces!.ColLength(); ii++)
             {
                 for (jj = 1; jj <= myFaces.RowLength(); jj++)
                 {
-                    if (myFaces.Value(ii, jj).ShapeType() == TopAbs_FACE)
+                    if (myFaces.Value(ii, jj).ShapeType() == global::Kerf.Topology.ShapeType.Face)
                     {
-                        F = TopoDS.Face(myFaces.Value(ii, jj));
-                        if (!F.IsNull())
+                        F = ShapeCasts.Face(myFaces.Value(ii, jj));
+                        if (!F.IsNull)
                         {
                             B.Add(result, F);
                         }
@@ -886,23 +890,23 @@ public sealed class BRepFill_Pipe
                 // jgv
                 RebuildTopOrBottomFace(TheLast, false); // bottom face
                 /////
-                B.Add(result, TopoDS.Face(TheLast));
+                B.Add(result, ShapeCasts.Face(TheLast));
             }
 
-            TopoDS_Solid solid = new();
-            BRep_Builder BS = new();
+            Solid solid = new();
+            BrepBuilder BS = new();
             BS.MakeSolid(ref solid);
 
             result.Closed(true);
-            BS.Add(solid, TopoDS.Shell(result));
+            BS.Add(solid, ShapeCasts.Shell(result));
 
             BRepClass3d_SolidClassifier SC = new(solid);
             SC.PerformInfinitePoint(global::Kerf.Engine.Foundation.Precision.Confusion());
-            if (SC.State() == TopAbs_IN)
+            if (SC.State() == In)
             {
                 BS.MakeSolid(ref solid);
-                TopoDS_Shape aLocalShape = result.Reversed();
-                BS.Add(solid, TopoDS.Shell(aLocalShape));
+                Shape aLocalShape = result.Reversed();
+                BS.Add(solid, ShapeCasts.Shell(aLocalShape));
                 //      BS.Add(solid,TopoDS::Shell(result.Reversed()));
             }
             UpdateMap(theOriginalS, solid, myGenMap);
@@ -919,14 +923,14 @@ public sealed class BRepFill_Pipe
     // purpose  : Find the number of edge corresponding to the edge of the profile.
     //============================================================================
 
-    private int FindEdge(in TopoDS_Shape S, in TopoDS_Edge E, ref int InitialLength)
+    private int FindEdge(in Shape S, in Edge E, ref int InitialLength)
     {
         int result = 0;
 
         switch (S.ShapeType())
         {
 
-            case TopAbs_EDGE:
+            case global::Kerf.Topology.ShapeType.Edge:
             {
                 InitialLength++;
                 if (S.IsSame(E))
@@ -936,9 +940,9 @@ public sealed class BRepFill_Pipe
                 break;
             }
 
-            case TopAbs_WIRE:
+            case ShapeType.Wire:
             {
-                BRepFill_ShapeLaw Section = new(TopoDS.Wire(S), false);
+                BRepFill_ShapeLaw Section = new(ShapeCasts.Wire(S), false);
                 int NbLaw = Section.NbLaw();
 
                 for (int ii = 1; (ii <= NbLaw) && (result == 0); ii++)
@@ -952,19 +956,19 @@ public sealed class BRepFill_Pipe
                 break;
             }
 
-            case TopAbs_FACE:
-            case TopAbs_SHELL:
-            case TopAbs_COMPOUND:
+            case global::Kerf.Topology.ShapeType.Face:
+            case ShapeType.Shell:
+            case ShapeType.Compound:
             {
-                for (TopoDS_Iterator it = new(S); it.More() && (result == 0); it.Next())
+                for (Iterator it = new(S); it.More() && (result == 0); it.Next())
                 {
                     result = FindEdge(it.Value(), E, ref InitialLength);
                 }
                 break;
             }
 
-            case TopAbs_SOLID:
-            case TopAbs_COMPSOLID:
+            case ShapeType.Solid:
+            case ShapeType.CompSolid:
                 throw new DomainErrorException("BRepFill_Pipe::SOLID or COMPSOLID");
             default:
                 break;
@@ -978,13 +982,13 @@ public sealed class BRepFill_Pipe
     // purpose  : Find the number of edge corresponding to an edge of the profile.
     //=======================================================================
 
-    private int FindVertex(in TopoDS_Shape S, in TopoDS_Vertex V, ref int InitialLength)
+    private int FindVertex(in Shape S, in Vertex V, ref int InitialLength)
     {
         int result = 0;
 
         switch (S.ShapeType())
         {
-            case TopAbs_VERTEX:
+            case ShapeType.Vertex:
             {
                 InitialLength++;
                 if (S.IsSame(V))
@@ -994,12 +998,12 @@ public sealed class BRepFill_Pipe
                 break;
             }
 
-            case TopAbs_EDGE:
+            case global::Kerf.Topology.ShapeType.Edge:
             {
-                TopExp.Vertices(TopoDS.Edge(S), out TopoDS_Vertex VF, out TopoDS_Vertex VL);
-                if (S.Orientation() == TopAbs_REVERSED)
+                Exploration.Vertices(ShapeCasts.Edge(S), out Vertex VF, out Vertex VL);
+                if (S.Orientation() == Reversed)
                 {
-                    TopoDS_Vertex aux;
+                    Vertex aux;
                     aux = VF;
                     VF = VL;
                     VL = aux;
@@ -1016,10 +1020,10 @@ public sealed class BRepFill_Pipe
                 break;
             }
 
-            case TopAbs_WIRE:
+            case ShapeType.Wire:
             {
                 int ii = InitialLength + 1;
-                BRepFill_ShapeLaw Section = new(TopoDS.Wire(S), false);
+                BRepFill_ShapeLaw Section = new(ShapeCasts.Wire(S), false);
                 InitialLength += Section.NbLaw() + 1;
 
                 for (; (ii <= InitialLength) && (result == 0); ii++)
@@ -1032,19 +1036,19 @@ public sealed class BRepFill_Pipe
                 break;
             }
 
-            case TopAbs_FACE:
-            case TopAbs_SHELL:
-            case TopAbs_COMPOUND:
+            case global::Kerf.Topology.ShapeType.Face:
+            case ShapeType.Shell:
+            case ShapeType.Compound:
             {
-                for (TopoDS_Iterator it = new(S); it.More() && (result == 0); it.Next())
+                for (Iterator it = new(S); it.More() && (result == 0); it.Next())
                 {
                     result = FindVertex(it.Value(), V, ref InitialLength);
                 }
                 break;
             }
 
-            case TopAbs_SOLID:
-            case TopAbs_COMPSOLID:
+            case ShapeType.Solid:
+            case ShapeType.CompSolid:
                 throw new DomainErrorException("BRepFill_Pipe::SOLID or COMPSOLID");
             default:
                 break;
@@ -1063,31 +1067,31 @@ public sealed class BRepFill_Pipe
     {
         int RealSegmax = 0;
 
-        TopoDS_Iterator iter = new(mySpine);
+        Iterator iter = new(mySpine);
         for (; iter.More(); iter.Next())
         {
-            TopoDS_Edge E = TopoDS.Edge(iter.Value());
-            Geom_Curve? C = BRep_Tool.Curve(E, out double first, out double last);
+            Edge E = ShapeCasts.Edge(iter.Value());
+            Curve3D? C = Tool.Curve(E, out double first, out double last);
             if (C is null)
             {
                 continue;
             }
-            while (C.GetType() == typeof(Geom_TrimmedCurve)
-                   || C.GetType() == typeof(Geom_OffsetCurve))
+            while (C.GetType() == typeof(TrimmedCurve3D)
+                   || C.GetType() == typeof(OffsetCurve3D))
             {
-                if (C.GetType() == typeof(Geom_TrimmedCurve))
+                if (C.GetType() == typeof(TrimmedCurve3D))
                 {
-                    C = ((Geom_TrimmedCurve)C).BasisCurve();
+                    C = ((TrimmedCurve3D)C).BasisCurve();
                 }
-                if (C.GetType() == typeof(Geom_OffsetCurve))
+                if (C.GetType() == typeof(OffsetCurve3D))
                 {
-                    C = ((Geom_OffsetCurve)C).BasisCurve();
+                    C = ((OffsetCurve3D)C).BasisCurve();
                 }
             }
-            if (C.GetType() == typeof(Geom_BSplineCurve))
+            if (C.GetType() == typeof(BSplineCurve3D))
             {
-                Geom_BSplineCurve BC = (Geom_BSplineCurve)C;
-                int NbKnots = BC.NbKnots();
+                BSplineCurve3D BC = (BSplineCurve3D)C;
+                int NbKnots = BC.KnotCount;
                 int RealNbKnots = NbKnots;
                 if (first > BC.FirstParameter())
                 {
@@ -1115,25 +1119,25 @@ public sealed class BRepFill_Pipe
     //           according to new 3d and 2d curves taken from swept surfaces
     //=======================================================================
 
-    private void RebuildTopOrBottomFace(in TopoDS_Shape aFace, bool IsTop)
+    private void RebuildTopOrBottomFace(in Shape aFace, bool IsTop)
     {
         int IndexOfSection = (IsTop) ? 1 : mySections!.RowLength();
 
         int ii;
-        BRep_Builder BB = new();
-        TopoDS_Iterator itf = new(aFace);
+        BrepBuilder BB = new();
+        Iterator itf = new(aFace);
         for (; itf.More(); itf.Next())
         {
-            TopoDS_Shape aWire = itf.Value();
-            NCollection_Sequence<TopoDS_Shape> InitEdges = new();
-            NCollection_Sequence<TopoDS_Shape> ResEdges = new();
-            TopoDS_Iterator itw = new(aWire);
+            Shape aWire = itf.Value();
+            NCollection_Sequence<Shape> InitEdges = new();
+            NCollection_Sequence<Shape> ResEdges = new();
+            Iterator itw = new(aWire);
             for (; itw.More(); itw.Next())
             {
-                TopoDS_Shape anEdge = itw.Value();
+                Shape anEdge = itw.Value();
                 for (ii = myCurIndexOfSectionEdge; ii <= mySections!.ColLength(); ii++)
                 {
-                    TopoDS_Shape aVisoEdge = mySections.Value(ii, IndexOfSection);
+                    Shape aVisoEdge = mySections.Value(ii, IndexOfSection);
                     if (anEdge.IsSame(aVisoEdge))
                     {
                         InitEdges.Append(anEdge);
@@ -1147,7 +1151,7 @@ public sealed class BRepFill_Pipe
             for (ii = 1; ii <= InitEdges.Length(); ii++)
             {
                 BB.Remove(aWire, InitEdges[ii]);
-                UpdateTolFromTopOrBottomPCurve(TopoDS.Face(aFace), TopoDS.Edge(ResEdges[ii]));
+                UpdateTolFromTopOrBottomPCurve(ShapeCasts.Face(aFace), ShapeCasts.Edge(ResEdges[ii]));
                 BB.Add(aWire, ResEdges[ii]);
             }
         }
@@ -1158,22 +1162,22 @@ public sealed class BRepFill_Pipe
     // purpose  : Builds history for edges and vertices
     //           of section and path
     //=======================================================================
-    private void BuildHistory(BRepFill_Sweep theSweep, in TopoDS_Shape theSection)
+    private void BuildHistory(BRepFill_Sweep theSweep, in Shape theSection)
     {
         // Filling of <myGenMap>
-        NCollection_HArray2<TopoDS_Shape> anUEdges = theSweep.InterFaces()!;
+        NCollection_HArray2<Shape> anUEdges = theSweep.InterFaces()!;
 
         int inde;
 
-        if (theSection.ShapeType() == TopAbs_WIRE)
+        if (theSection.ShapeType() == ShapeType.Wire)
         {
-            TopoDS_Wire aSection = TopoDS.Wire(theSection);
-            BRepTools_WireExplorer wexp_sec = new(aSection);
+            Wire aSection = ShapeCasts.Wire(theSection);
+            WireExplorer wexp_sec = new(aSection);
             for (inde = 0; wexp_sec.More(); wexp_sec.Next())
             {
                 inde++;
-                TopoDS_Edge anEdge = TopoDS.Edge(wexp_sec.Current());
-                if (BRep_Tool.Degenerated(anEdge))
+                Edge anEdge = ShapeCasts.Edge(wexp_sec.Current());
+                if (Tool.Degenerated(anEdge))
                 {
                     continue;
                 }
@@ -1182,13 +1186,13 @@ public sealed class BRepFill_Pipe
                     continue;
                 }
 
-                TopoDS_Vertex[] aVertex = new TopoDS_Vertex[2];
-                TopExp.Vertices(anEdge, out aVertex[0], out aVertex[1]);
+                Vertex[] aVertex = new Vertex[2];
+                Exploration.Vertices(anEdge, out aVertex[0], out aVertex[1]);
 
                 // For an edge generated shape is a "tape" -
                 // a shell usually containing this edge and
                 // passing from beginning of path to its end
-                TopoDS_Shell aTape = TopoDS.Shell(theSweep.Tape(inde));
+                Shell aTape = ShapeCasts.Shell(theSweep.Tape(inde));
 
                 // Processing of vertices of <anEdge>
                 // We should choose right index in <anUEdges>
@@ -1197,7 +1201,7 @@ public sealed class BRepFill_Pipe
                 UIndex[0] = inde;
                 UIndex[1] = inde + 1;
 
-                if (anEdge.Orientation() == TopAbs_REVERSED)
+                if (anEdge.Orientation() == Reversed)
                 {
                     int Tmp = UIndex[0];
                     UIndex[0] = UIndex[1];
@@ -1212,20 +1216,20 @@ public sealed class BRepFill_Pipe
                     }
 
                     // Assemble the list of edges ("rail" along the path)
-                    NCollection_List<TopoDS_Shape> Elist = myGenMap.Bound(aVertex[kk], new NCollection_List<TopoDS_Shape>());
+                    NCollection_List<Shape> Elist = myGenMap.Bound(aVertex[kk], new NCollection_List<Shape>());
                     int jj;
                     for (jj = 1; jj <= anUEdges.UpperCol(); jj++)
                     {
-                        TopoDS_Shape anUedge = anUEdges.Value(UIndex[kk], jj);
-                        if (!anUedge.IsNull())
+                        Shape anUedge = anUEdges.Value(UIndex[kk], jj);
+                        if (!anUedge.IsNull)
                         {
                             Elist.Append(anUedge);
                         }
                     }
                 } // for (int kk = 0; kk < 2; kk++)
 
-                NCollection_List<TopoDS_Shape> Flist = myGenMap.Bound(anEdge, new NCollection_List<TopoDS_Shape>());
-                TopoDS_Iterator itsh = new(aTape);
+                NCollection_List<Shape> Flist = myGenMap.Bound(anEdge, new NCollection_List<Shape>());
+                Iterator itsh = new(aTape);
                 for (; itsh.More(); itsh.Next())
                 {
                     Flist.Append(itsh.Value());
@@ -1234,10 +1238,10 @@ public sealed class BRepFill_Pipe
         } // if (theSection.ShapeType() == TopAbs_WIRE)
 
         // For subshapes of spine
-        NCollection_HArray2<TopoDS_Shape> aFaces = theSweep.SubShape()!;
-        NCollection_HArray2<TopoDS_Shape> aVEdges = theSweep.Sections()!;
+        NCollection_HArray2<Shape> aFaces = theSweep.SubShape()!;
+        NCollection_HArray2<Shape> aVEdges = theSweep.Sections()!;
 
-        BRepTools_WireExplorer wexp = new(mySpine);
+        WireExplorer wexp = new(mySpine);
         inde = 0;
         bool ToExit = false;
         for (;;)
@@ -1251,18 +1255,18 @@ public sealed class BRepFill_Pipe
 
             if (!ToExit)
             {
-                TopoDS_Edge anEdgeOfSpine = wexp.Current();
+                Edge anEdgeOfSpine = wexp.Current();
                 for (int i = 1; i <= aFaces.UpperRow(); i++)
                 {
-                    TopoDS_Shape aFace = aFaces.Value(i, inde);
+                    Shape aFace = aFaces.Value(i, inde);
                     UpdateMap(anEdgeOfSpine, aFace, myGenMap);
                 }
             }
 
-            TopoDS_Vertex aVertexOfSpine = wexp.CurrentVertex();
+            Vertex aVertexOfSpine = wexp.CurrentVertex();
             for (int i = 1; i <= aVEdges.UpperRow(); i++)
             {
-                TopoDS_Shape aVedge = aVEdges.Value(i, inde);
+                Shape aVedge = aVEdges.Value(i, inde);
                 UpdateMap(aVertexOfSpine, aVedge, myGenMap);
             }
 

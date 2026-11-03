@@ -1,9 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -14,43 +17,43 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class Draft7GUnitTests
 {
-    private static List<TopoDS_Shape> Sub(in TopoDS_Shape theS, TopAbs_ShapeEnum theType) =>
+    private static List<Shape> Sub(in Shape theS, ShapeType theType) =>
         BRepOffset_MakeOffsetTests.SubShapes(theS, theType);
 
-    private static TopoDS_Wire Square(double theZ) =>
+    private static Wire Square(double theZ) =>
         new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, theZ), new Point3D(10, 0, theZ), new Point3D(10, 10, theZ),
                                        new Point3D(0, 10, theZ), true).Wire();
 
     [Fact]
     public void NormalProjection_of_a_circle_on_a_box_gives_edges_on_its_faces()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-10, -10, -10), 20, 20, 10).Shape();
-        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 3), new Direction3D(0, 0, 1)), 4)).Edge();
+        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-10, -10, -10), 20, 20, 10).Shape();
+        Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 3), new Direction3D(0, 0, 1)), 4)).Edge();
         ShapeSnapshot aBoxSnap = ShapeSnapshot.Of(aBox), anEdgeSnap = ShapeSnapshot.Of(aCircle);
 
         var aProj = new BRepOffsetAPI_NormalProjection(aBox);
         aProj.Add(aCircle);
         aProj.Build();
         Assert.True(aProj.IsDone());
-        TopoDS_Shape aResult = aProj.Shape();
+        Shape aResult = aProj.Shape();
         aBoxSnap.AssertUnchanged(aBox);
         anEdgeSnap.AssertUnchanged(aCircle);
         Assert.True(BRepOffset_MakeOffsetTests.AllFrozen(aResult));
 
-        List<TopoDS_Shape> anEdges = Sub(aResult, TopAbs_EDGE);
+        List<Shape> anEdges = Sub(aResult, ShapeType.Edge);
         Assert.NotEmpty(anEdges);
         // the circle projects along the normals onto the top face (z = 0) and the bottom one (z = -10)
         Assert.Equal(2, anEdges.Count);
-        double aLength = anEdges.Sum(e => { var p = new GProp_GProps(); BRepGProp.LinearProperties(e, p); return p.Mass(); });
+        double aLength = anEdges.Sum(e => { var p = new Properties(); BRepGProp.LinearProperties(e, p); return p.Mass(); });
         Assert.Equal(2 * 2 * Math.PI * 4, aLength, 1.0e-3);
-        foreach (TopoDS_Shape anEdge in anEdges)
+        foreach (Shape anEdge in anEdges)
         {
-            Assert.True(aProj.Ancestor(TopoDS.Edge(anEdge)).IsSame(aCircle));
-            Assert.Contains(Sub(aBox, TopAbs_FACE), f => f.IsSame(aProj.Couple(TopoDS.Edge(anEdge))));
+            Assert.True(aProj.Ancestor(ShapeCasts.Edge(anEdge)).IsSame(aCircle));
+            Assert.Contains(Sub(aBox, ShapeType.Face), f => f.IsSame(aProj.Couple(ShapeCasts.Edge(anEdge))));
         }
         // OCCT: the edges the face bounds trim (BRepAlgoAPI_Section) are not recorded as generated
         Assert.Empty(aProj.Generated(aCircle));
-        var aWires = new NCollection_List<TopoDS_Shape>();
+        var aWires = new NCollection_List<Shape>();
         Assert.False(aProj.BuildWire(aWires)); // two loops, not one wire
     }
 
@@ -58,10 +61,10 @@ public class Draft7GUnitTests
     public void FindContigousEdges_finds_the_edge_two_separate_faces_share()
     {
         // two squares side by side, made apart: their common side is one contiguous edge; a box's faces share theirs
-        TopoDS_Face aF1 = new BRepBuilderAPI_MakeFace(Square(0)).Face();
+        Face aF1 = new BRepBuilderAPI_MakeFace(Square(0)).Face();
         Transform3D aT = new();
         aT.SetTranslation(new Vector3D(10, 0, 0));
-        TopoDS_Shape aF2 = new BRepBuilderAPI_Transform(new BRepBuilderAPI_MakeFace(Square(0)).Face(), aT, true).Shape();
+        Shape aF2 = new BRepBuilderAPI_Transform(new BRepBuilderAPI_MakeFace(Square(0)).Face(), aT, true).Shape();
         var aFinder = new BRepOffsetAPI_FindContigousEdges();
         aFinder.Add(aF1);
         aFinder.Add(aF2);
@@ -72,7 +75,7 @@ public class Draft7GUnitTests
         Assert.Equal(0, aFinder.NbDegeneratedShapes());
 
         var aBoxFinder = new BRepOffsetAPI_FindContigousEdges();
-        foreach (TopoDS_Shape aF in Sub(new BRepPrimAPI_MakeBox(10, 10, 10).Shape(), TopAbs_FACE))
+        foreach (Shape aF in Sub(new BRepPrimAPI_MakeBox(10, 10, 10).Shape(), ShapeType.Face))
         {
             aBoxFinder.Add(aF);
         }
@@ -83,18 +86,18 @@ public class Draft7GUnitTests
     [Fact]
     public void MakeDraft_of_a_square_wire_by_length_is_a_shell_of_four_faces()
     {
-        TopoDS_Wire aWire = Square(0);
+        Wire aWire = Square(0);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aWire);
         var aDraft = new BRepOffsetAPI_MakeDraft(aWire, new Direction3D(0, 0, 1), 5.0 * Math.PI / 180.0);
         Assert.False(aDraft.IsDone());
         aDraft.Perform(8.0);
         Assert.True(aDraft.IsDone());
         aSnap.AssertUnchanged(aWire);
-        TopoDS_Shape aResult = aDraft.Shape();
+        Shape aResult = aDraft.Shape();
         Assert.True(BRepOffset_MakeOffsetTests.AllFrozen(aResult));
-        Assert.Equal(4, Sub(aResult, TopAbs_FACE).Count);
-        Assert.Equal(4, Sub(aDraft.Shell(), TopAbs_FACE).Count);
-        foreach (TopoDS_Shape anEdge in Sub(aWire, TopAbs_EDGE))
+        Assert.Equal(4, Sub(aResult, ShapeType.Face).Count);
+        Assert.Equal(4, Sub(aDraft.Shell(), ShapeType.Face).Count);
+        foreach (Shape anEdge in Sub(aWire, ShapeType.Edge))
         {
             Assert.Single(aDraft.Generated(anEdge));
         }
@@ -103,32 +106,32 @@ public class Draft7GUnitTests
     [Fact]
     public void MakeDraft_of_a_face_up_to_a_plane_is_sewn_to_the_face()
     {
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(Square(0)).Face();
+        Face aFace = new BRepBuilderAPI_MakeFace(Square(0)).Face();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFace);
         var aDraft = new BRepOffsetAPI_MakeDraft(aFace, new Direction3D(0, 0, 1), 5.0 * Math.PI / 180.0);
-        aDraft.Perform(new Geom_Plane(new Point3D(0, 0, 6), new Direction3D(0, 0, 1)));
+        aDraft.Perform(new PlaneSurface(new Point3D(0, 0, 6), new Direction3D(0, 0, 1)));
         Assert.True(aDraft.IsDone());
         aSnap.AssertUnchanged(aFace);
-        Assert.True(Sub(aDraft.Shape(), TopAbs_FACE).Count >= 5);
+        Assert.True(Sub(aDraft.Shape(), ShapeType.Face).Count >= 5);
         Assert.Throws<ConstructionErrorException>(() => new BRepOffsetAPI_MakeDraft(new BRepPrimAPI_MakeBox(1, 1, 1).Shape(), new Direction3D(0, 0, 1), 0.1));
     }
 
     [Fact]
     public void BiTgte_Blend_between_two_faces_of_a_frozen_box_keeps_the_box()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        List<TopoDS_Shape> aFaces = Sub(aBox, TopAbs_FACE);
+        List<Shape> aFaces = Sub(aBox, ShapeType.Face);
         var aRoll = new BiTgte_Blend(aBox, -2.0, 1.0e-4, false);
-        aRoll.SetFaces(TopoDS.Face(aFaces[0]), TopoDS.Face(aFaces[2]));
+        aRoll.SetFaces(ShapeCasts.Face(aFaces[0]), ShapeCasts.Face(aFaces[2]));
         aRoll.Perform(true);
         Assert.True(aRoll.IsDone());
         aSnap.AssertUnchanged(aBox);
         Assert.True(aRoll.NbSurfaces() > 0);
-        TopoDS_Shape aResult = aRoll.Shape();
+        Shape aResult = aRoll.Shape();
         Assert.True(BRepOffset_MakeOffsetTests.AllFrozen(aResult));
         Assert.True(BRepOffset_MakeOffsetTests.AllFrozen(aRoll.Face(1)));
-        var aCenters = new NCollection_List<TopoDS_Shape>();
+        var aCenters = new NCollection_List<Shape>();
         aRoll.CenterLines(aCenters);
         Assert.Equal(aRoll.NbSurfaces(), aCenters.Extent());
         Assert.True(aRoll.NbBranches() >= 1);
@@ -140,15 +143,15 @@ public class Draft7GUnitTests
     [Fact]
     public void BiTgte_curves_evaluate_their_points()
     {
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(0, 0, 10)).Edge();
-        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)), 2)).Edge();
+        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(0, 0, 10)).Edge();
+        Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)), 2)).Edge();
         var aCurve = new BiTgte_CurveOnEdge(aCircle, anEdge);
         Assert.Equal(CurveKind.Circle, aCurve.GetType());
         Assert.Equal(0.0, aCurve.Circle().Radius());
         Assert.True(aCurve.Value(1.0).Distance(new Point3D(0, 0, 5)) < 1.0e-9);
         Assert.Throws<MethodNotImplementedException>(() => aCurve.Continuity());
 
-        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(1, 2, 3)).Vertex();
+        Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(1, 2, 3)).Vertex();
         var aOnVertex = new BiTgte_CurveOnVertex(aCircle, aV);
         Assert.True(aOnVertex.Value(0.5).IsEqual(new Point3D(1, 2, 3), 0.0));
         Assert.Equal(2 * Math.PI, aOnVertex.LastParameter(), 1.0e-12);

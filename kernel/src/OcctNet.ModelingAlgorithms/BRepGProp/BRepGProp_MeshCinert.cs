@@ -5,10 +5,12 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
 
 using Kerf.Engine.Numerics;
 
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 
 using Kerf.Topology;
@@ -19,7 +21,7 @@ namespace Occt;
 /// The global properties of a polyline given by its points: for an edge with no exact geometry (no 3D curve or pcurve)
 /// but with a polygon.
 /// </summary>
-public class BRepGProp_MeshCinert : GProp_GProps
+public class BRepGProp_MeshCinert : Properties
 {
     /// <summary>An empty system.</summary>
     public BRepGProp_MeshCinert()
@@ -27,13 +29,13 @@ public class BRepGProp_MeshCinert : GProp_GProps
     }
 
     /// <summary>Sets the reference point.</summary>
-    public void SetLocation(in Point3D CLocation) => loc = CLocation;
+    public void SetLocation(in Point3D CLocation) => _loc = CLocation;
 
     /// <summary>Computes the global properties of the polyline through <paramref name="theNodes"/>.</summary>
     public void Perform(NCollection_Array1<Point3D> theNodes)
     {
         double Ix, Iy, Iz, Ixx, Iyy, Izz, Ixy, Ixz, Iyz;
-        dim = Ix = Iy = Iz = Ixx = Iyy = Izz = Ixy = Ixz = Iyz = 0.0;
+        _dim = Ix = Iy = Iz = Ixx = Iyy = Izz = Ixy = Ixz = Iyz = 0.0;
 
         int Order = 2;
         double ds;
@@ -58,7 +60,7 @@ public class BRepGProp_MeshCinert : GProp_GProps
             double dimLocal, IxLocal, IyLocal, IzLocal, IxxLocal, IyyLocal, IzzLocal, IxyLocal, IxzLocal, IyzLocal;
             dimLocal = IxLocal = IyLocal = IzLocal = IxxLocal = IyyLocal = IzzLocal = IxyLocal = IxzLocal = IyzLocal = 0.0;
 
-            loc.Coord(out xloc, out yloc, out zloc);
+            _loc.Coord(out xloc, out yloc, out zloc);
 
             int i;
             Upper = (aP2 - aP1).Modulus();
@@ -105,7 +107,7 @@ public class BRepGProp_MeshCinert : GProp_GProps
             IxzLocal *= ur;
             IyzLocal *= ur;
 
-            dim += dimLocal;
+            _dim += dimLocal;
             Ix += IxLocal;
             Iy += IyLocal;
             Iz += IzLocal;
@@ -117,15 +119,15 @@ public class BRepGProp_MeshCinert : GProp_GProps
             Iyz += IyzLocal;
         }
 
-        inertia = new Matrix3x3(new Xyz(Ixx, -Ixy, -Ixz), new Xyz(-Ixy, Iyy, -Iyz), new Xyz(-Ixz, -Iyz, Izz));
+        _inertia = new Matrix3x3(new Xyz(Ixx, -Ixy, -Ixz), new Xyz(-Ixy, Iyy, -Iyz), new Xyz(-Ixz, -Iyz, Izz));
 
-        if (Math.Abs(dim) < Constants.Resolution())
+        if (Math.Abs(_dim) < Constants.Resolution())
         {
-            g = new Point3D(P);
+            _g = new Point3D(P);
         }
         else
         {
-            g.SetCoord(Ix / dim, Iy / dim, Iz / dim);
+            _g.SetCoord(Ix / _dim, Iy / _dim, Iz / _dim);
         }
     }
 
@@ -133,10 +135,10 @@ public class BRepGProp_MeshCinert : GProp_GProps
     /// The 3D points of a polygon of the edge: its 3D polygon, else its polygon on a triangulation, else its 2D polygon
     /// on a surface (evaluated on the surface), placed by the location; null if the edge has none.
     /// </summary>
-    public static NCollection_HArray1<Point3D>? PreparePolygon(in TopoDS_Edge theE)
+    public static NCollection_HArray1<Point3D>? PreparePolygon(in Edge theE)
     {
         NCollection_HArray1<Point3D>? thePolyg = null;
-        Polygon3D? aPolyg = BRep_Tool.Polygon3D(theE, out Placement aLoc);
+        Polygon3D? aPolyg = Tool.Polygon3D(theE, out Placement aLoc);
         if (aPolyg is not null)
         {
             NCollection_Array1<Point3D> aNodes = aPolyg.Nodes();
@@ -162,7 +164,7 @@ public class BRepGProp_MeshCinert : GProp_GProps
         }
 
         // Try to get PolygonOnTriangulation
-        BRep_Tool.PolygonOnTriangulation(theE, out PolygonOnTriangulation? aPOnTri, out Triangulation? aTri, out aLoc);
+        Tool.PolygonOnTriangulation(theE, out PolygonOnTriangulation? aPOnTri, out Triangulation? aTri, out aLoc);
         if (aPOnTri is not null)
         {
             int aNbNodes = aPOnTri.NodeCount;
@@ -189,7 +191,7 @@ public class BRepGProp_MeshCinert : GProp_GProps
         }
 
         // Try to get Polygon2D on Surface
-        BRep_Tool.PolygonOnSurface(theE, out Polygon2D? aPolyg2D, out Geom_Surface? aS, out aLoc);
+        Tool.PolygonOnSurface(theE, out Polygon2D? aPolyg2D, out Surface? aS, out aLoc);
         if (aPolyg2D is not null)
         {
             int aNbNodes = aPolyg2D.NodeCount;

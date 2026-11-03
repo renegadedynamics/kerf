@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Hashing;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -12,21 +13,21 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class GeomTools_PortTests
 {
-    private static string Write(GeomTools_CurveSet theSet)
+    private static string Write(global::Kerf.Engine.Exchange.Brep.CurveSet theSet)
     {
         var aWriter = new StringWriter();
         theSet.Write(aWriter);
         return aWriter.ToString();
     }
 
-    private static string Write(GeomTools_Curve2dSet theSet)
+    private static string Write(global::Kerf.Engine.Exchange.Brep.Curve2dSet theSet)
     {
         var aWriter = new StringWriter();
         theSet.Write(aWriter);
         return aWriter.ToString();
     }
 
-    private static string Write(GeomTools_SurfaceSet theSet)
+    private static string Write(global::Kerf.Engine.Exchange.Brep.SurfaceSet theSet)
     {
         var aWriter = new StringWriter();
         theSet.Write(aWriter);
@@ -35,18 +36,18 @@ public class GeomTools_PortTests
 
     // kinds whose text holds no direction, which reading normalises again: their text comes back exactly
     private static bool HasNoDirection(object theGeometry)
-        => theGeometry is Geom_BezierCurve or Geom_BSplineCurve or Geom_BezierSurface or Geom_BSplineSurface
-                          or Geom2d_BezierCurve or Geom2d_BSplineCurve;
+        => theGeometry is BezierCurve3D or BSplineCurve3D or BezierSurface or BSplineSurface
+                          or BezierCurve2D or BSplineCurve2D;
 
     [Fact]
     public void Random_curves_of_every_kind_round_trip()
     {
         var aRand = new Random(20261029);
-        var aSet = new GeomTools_CurveSet();
-        var aCurves = new List<Geom_Curve>();
+        var aSet = new global::Kerf.Engine.Exchange.Brep.CurveSet();
+        var aCurves = new List<Curve3D>();
         for (int i = 0; i < 550; i++)
         {
-            Geom_Curve aCurve = GeomHash_PortTests.Curve(aRand, i % 11);
+            Curve3D aCurve = GeomHash_PortTests.Curve(aRand, i % 11);
             aCurves.Add(aCurve);
             Assert.Equal(i + 1, aSet.Add(aCurve));
         }
@@ -55,12 +56,12 @@ public class GeomTools_PortTests
         string aText = Write(aSet);
         Assert.StartsWith("Curves 550\n", aText, StringComparison.Ordinal);
 
-        var aRead = new GeomTools_CurveSet();
+        var aRead = new global::Kerf.Engine.Exchange.Brep.CurveSet();
         aRead.Read(new StringReader(aText));
-        var aHasher = new GeomHash_CurveHasher();
+        var aHasher = new CurveHasher();
         for (int i = 1; i <= aCurves.Count; i++)
         {
-            Geom_Curve? aCurve = aRead.Curve(i);
+            Curve3D? aCurve = aRead.Curve(i);
             Assert.NotNull(aCurve);
             Assert.True(aCurve.IsFrozen);
             Assert.Equal(aCurves[i - 1].DynamicType(), aCurve.DynamicType());
@@ -69,17 +70,17 @@ public class GeomTools_PortTests
 
             var aWriter = new StringWriter();
             StreamUtilities.Precision(aWriter, 17);
-            GeomTools.Write(aCurves[i - 1], aWriter);
+            global::Kerf.Engine.Exchange.Brep.GeomTools.Write(aCurves[i - 1], aWriter);
             string anOne = aWriter.ToString();
             aWriter = new StringWriter();
             StreamUtilities.Precision(aWriter, 17);
-            GeomTools.Write(aCurve, aWriter);
+            global::Kerf.Engine.Exchange.Brep.GeomTools.Write(aCurve, aWriter);
             if (HasNoDirection(aCurve))
             {
                 Assert.Equal(anOne, aWriter.ToString());
             }
 
-            GeomTools.Read(out Geom_Curve? aSingle, new StringReader(anOne));
+            global::Kerf.Engine.Exchange.Brep.GeomTools.Read(out Curve3D? aSingle, new StringReader(anOne));
             Assert.NotNull(aSingle);
             Assert.False(aSingle.IsFrozen);
             Assert.True(aHasher.Equals(aCurves[i - 1], aSingle));
@@ -93,11 +94,11 @@ public class GeomTools_PortTests
     public void Random_2d_curves_of_every_kind_round_trip()
     {
         var aRand = new Random(20261030);
-        var aSet = new GeomTools_Curve2dSet();
-        var aCurves = new List<Geom2d_Curve>();
+        var aSet = new global::Kerf.Engine.Exchange.Brep.Curve2dSet();
+        var aCurves = new List<Curve2D>();
         for (int i = 0; i < 500; i++)
         {
-            Geom2d_Curve aCurve = GeomHash_PortTests.Curve2d(aRand, i % 10);
+            Curve2D aCurve = GeomHash_PortTests.Curve2d(aRand, i % 10);
             aCurves.Add(aCurve);
             aSet.Add(aCurve);
         }
@@ -105,21 +106,21 @@ public class GeomTools_PortTests
         string aText = Write(aSet);
         Assert.StartsWith("Curve2ds 500\n", aText, StringComparison.Ordinal);
 
-        var aRead = new GeomTools_Curve2dSet();
+        var aRead = new global::Kerf.Engine.Exchange.Brep.Curve2dSet();
         aRead.Read(new StringReader(aText));
-        var aHasher = new Geom2dHash_CurveHasher();
+        var aHasher = new CurveHasher2D();
         for (int i = 1; i <= aCurves.Count; i++)
         {
-            Geom2d_Curve? aCurve = aRead.Curve2d(i);
+            Curve2D? aCurve = aRead.Curve2d(i);
             Assert.NotNull(aCurve);
             Assert.True(aCurve.IsFrozen);
             Assert.Equal(aCurves[i - 1].DynamicType(), aCurve.DynamicType());
             Assert.True(aHasher.Equals(aCurves[i - 1], aCurve), $"curve {i}, {aCurve.DynamicTypeName()}");
             if (HasNoDirection(aCurve))
             {
-                var aSingle = new GeomTools_Curve2dSet();
+                var aSingle = new global::Kerf.Engine.Exchange.Brep.Curve2dSet();
                 aSingle.Add(aCurve);
-                var anOriginal = new GeomTools_Curve2dSet();
+                var anOriginal = new global::Kerf.Engine.Exchange.Brep.Curve2dSet();
                 anOriginal.Add(aCurves[i - 1]);
                 Assert.Equal(Write(anOriginal), Write(aSingle));
             }
@@ -130,11 +131,11 @@ public class GeomTools_PortTests
     public void Random_surfaces_of_every_kind_round_trip()
     {
         var aRand = new Random(20261031);
-        var aSet = new GeomTools_SurfaceSet();
-        var aSurfaces = new List<Geom_Surface>();
+        var aSet = new global::Kerf.Engine.Exchange.Brep.SurfaceSet();
+        var aSurfaces = new List<Surface>();
         for (int i = 0; i < 600; i++)
         {
-            Geom_Surface aSurface = GeomHash_PortTests.Surface(aRand, i % 12);
+            Surface aSurface = GeomHash_PortTests.Surface(aRand, i % 12);
             aSurfaces.Add(aSurface);
             aSet.Add(aSurface);
         }
@@ -142,12 +143,12 @@ public class GeomTools_PortTests
         string aText = Write(aSet);
         Assert.StartsWith("Surfaces 600\n", aText, StringComparison.Ordinal);
 
-        var aRead = new GeomTools_SurfaceSet();
+        var aRead = new global::Kerf.Engine.Exchange.Brep.SurfaceSet();
         aRead.Read(new StringReader(aText));
-        var aHasher = new GeomHash_SurfaceHasher();
+        var aHasher = new SurfaceHasher();
         for (int i = 1; i <= aSurfaces.Count; i++)
         {
-            Geom_Surface? aSurface = aRead.Surface(i);
+            Surface? aSurface = aRead.Surface(i);
             Assert.NotNull(aSurface);
             Assert.True(aSurface.IsFrozen);
             Assert.Equal(aSurfaces[i - 1].DynamicType(), aSurface.DynamicType());
@@ -156,10 +157,10 @@ public class GeomTools_PortTests
             {
                 var aWriter = new StringWriter();
                 StreamUtilities.Precision(aWriter, 17);
-                GeomTools.Write(aSurface, aWriter);
+                global::Kerf.Engine.Exchange.Brep.GeomTools.Write(aSurface, aWriter);
                 var anOriginal = new StringWriter();
                 StreamUtilities.Precision(anOriginal, 17);
-                GeomTools.Write(aSurfaces[i - 1], anOriginal);
+                global::Kerf.Engine.Exchange.Brep.GeomTools.Write(aSurfaces[i - 1], anOriginal);
                 Assert.Equal(anOriginal.ToString(), aWriter.ToString());
             }
         }
@@ -170,13 +171,13 @@ public class GeomTools_PortTests
     {
         var anAx3 = new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
         anAx3.YReverse();
-        var aCylinder = new Geom_CylindricalSurface(anAx3, 2.0);
+        var aCylinder = new CylindricalSurface(anAx3, 2.0);
         var aWriter = new StringWriter();
-        GeomTools.Write(aCylinder, aWriter);
+        global::Kerf.Engine.Exchange.Brep.GeomTools.Write(aCylinder, aWriter);
         Assert.Equal("2 1 2 3 0 0 1 1 0 -0 0 -1 -0 2\n", aWriter.ToString());
 
-        GeomTools.Read(out Geom_Surface? aRead, new StringReader(aWriter.ToString()));
-        var aCylinder2 = Assert.IsType<Geom_CylindricalSurface>(aRead);
+        global::Kerf.Engine.Exchange.Brep.GeomTools.Read(out Surface? aRead, new StringReader(aWriter.ToString()));
+        var aCylinder2 = Assert.IsType<CylindricalSurface>(aRead);
         Assert.False(aCylinder2.Position().Direct());
         Assert.Equal(-1.0, aCylinder2.Position().YDirection().Y());
     }
@@ -184,12 +185,12 @@ public class GeomTools_PortTests
     [Fact]
     public void Write_uses_the_writer_precision_and_restores_it()
     {
-        var aCircle = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0 / 3.0);
+        var aCircle = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0 / 3.0);
         var aWriter = new StringWriter();
-        GeomTools.Write(aCircle, aWriter);
+        global::Kerf.Engine.Exchange.Brep.GeomTools.Write(aCircle, aWriter);
         Assert.Equal("2 0 0 0 0 0 1 1 0 -0 -0 1 0 0.333333\n", aWriter.ToString());
 
-        var aSet = new GeomTools_CurveSet();
+        var aSet = new global::Kerf.Engine.Exchange.Brep.CurveSet();
         aSet.Add(aCircle);
         aWriter = new StringWriter();
         aSet.Write(aWriter);
@@ -200,9 +201,9 @@ public class GeomTools_PortTests
     [Fact]
     public void Dumps_are_OCCT_s()
     {
-        var aLine = new Geom_Line(new Point3D(1, 2, 3), new Direction3D(0, 0, 1));
+        var aLine = new LineCurve3D(new Point3D(1, 2, 3), new Direction3D(0, 0, 1));
         var aWriter = new StringWriter();
-        GeomTools.Dump(aLine, aWriter);
+        global::Kerf.Engine.Exchange.Brep.GeomTools.Dump(aLine, aWriter);
         Assert.Equal("Line\n  Origin :1, 2, 3 \n  Axis   :0, 0, 1 \n\n", aWriter.ToString());
 
         var aPoles = new NCollection_Array1<Point3D>(1, 2);
@@ -214,8 +215,8 @@ public class GeomTools_PortTests
         var aMults = new NCollection_Array1<int>(1, 2);
         aMults[1] = 2;
         aMults[2] = 2;
-        var aSpline = new Geom_BSplineCurve(aPoles, aKnots, aMults, 1);
-        var aSet = new GeomTools_CurveSet();
+        var aSpline = new BSplineCurve3D(aPoles, aKnots, aMults, 1);
+        var aSet = new global::Kerf.Engine.Exchange.Brep.CurveSet();
         aSet.Add(aLine);
         aSet.Add(aSpline);
         aWriter = new StringWriter();
@@ -226,40 +227,40 @@ public class GeomTools_PortTests
                      + "Knots :\n\n   1 :  0 2\n   2 :  1 2\n\n",
                      aWriter.ToString());
 
-        var aSphere = new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
+        var aSphere = new SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         aWriter = new StringWriter();
-        GeomTools.Dump(aSphere, aWriter);
+        global::Kerf.Engine.Exchange.Brep.GeomTools.Dump(aSphere, aWriter);
         Assert.Equal("SphericalSurface\n  Center :0, 0, 0 \n  Axis   :0, 0, 1 \n  XAxis  :1, 0, -0 \n  YAxis  :-0, 1, 0 \n"
                      + "  Radius :2\n\n", aWriter.ToString());
 
-        var aCircle2d = new Geom2d_Circle(new Axis2D(new Point2D(1, 1), new Direction2D(1, 0)), 0.5);
+        var aCircle2d = new CircleCurve2D(new Axis2D(new Point2D(1, 1), new Direction2D(1, 0)), 0.5);
         aWriter = new StringWriter();
-        GeomTools.Dump(aCircle2d, aWriter);
+        global::Kerf.Engine.Exchange.Brep.GeomTools.Dump(aCircle2d, aWriter);
         Assert.Equal("Circle\n  Center :1, 1 \n  XAxis  :1, 0 \n  YAxis  :-0, 1 \n  Radius :0.5\n\n", aWriter.ToString());
     }
 
     [Fact]
     public void Sets_index_and_null_as_OCCT_does()
     {
-        var aLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        var aCurves = new GeomTools_CurveSet();
+        var aLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        var aCurves = new global::Kerf.Engine.Exchange.Brep.CurveSet();
         Assert.Equal(0, aCurves.Add(null));
         Assert.Equal(1, aCurves.Add(aLine));
         Assert.Equal(1, aCurves.Add(aLine));
-        Assert.Equal(2, aCurves.Add((Geom_Curve)aLine.Copy()));
+        Assert.Equal(2, aCurves.Add((Curve3D)aLine.Copy()));
         Assert.Equal(0, aCurves.Index(null));
-        Assert.Equal(0, aCurves.Index(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0))));
+        Assert.Equal(0, aCurves.Index(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0))));
         Assert.False(aLine.IsFrozen);
         aCurves.Clear();
         Assert.Null(aCurves.Curve(1));
 
         // the 2D and surface sets add a null handle, once
-        var aCurves2d = new GeomTools_Curve2dSet();
+        var aCurves2d = new global::Kerf.Engine.Exchange.Brep.Curve2dSet();
         Assert.Equal(1, aCurves2d.Add(null));
         Assert.Equal(1, aCurves2d.Add(null));
         Assert.Equal(1, aCurves2d.Index(null));
         Assert.Null(aCurves2d.Curve2d(1));
-        var aSurfaces = new GeomTools_SurfaceSet();
+        var aSurfaces = new global::Kerf.Engine.Exchange.Brep.SurfaceSet();
         Assert.Equal(0, aSurfaces.Index(null));
         Assert.Equal(1, aSurfaces.Add(null));
         Assert.Equal(1, aSurfaces.Index(null));
@@ -270,17 +271,17 @@ public class GeomTools_PortTests
     {
         // a null direction (gp_Dir throws), a good line, a circle with a negative radius, a good circle
         const string aText = "Curves 4\n1 0 0 0 0 0 0 \n1 1 2 3 0 0 1 \n2 0 0 0 0 0 1 1 0 0 0 1 0 -1\n2 0 0 0 0 0 1 1 0 0 0 1 0 1\n";
-        var aSet = new GeomTools_CurveSet();
+        var aSet = new global::Kerf.Engine.Exchange.Brep.CurveSet();
         aSet.Read(new StringReader(aText));
 
         // OCCT's map holds the null handle once: four curves read, three entries
         Assert.Null(aSet.Curve(1));
-        Assert.IsType<Geom_Line>(aSet.Curve(2));
-        Assert.IsType<Geom_Circle>(aSet.Curve(3));
+        Assert.IsType<LineCurve3D>(aSet.Curve(2));
+        Assert.IsType<CircleCurve3D>(aSet.Curve(3));
         Assert.Null(aSet.Curve(4));
 
         // a trimmed curve of a curve that can't be read
-        GeomTools.Read(out Geom_Curve? aTrimmed, new StringReader("8 0 1\n1 0 0 0 0 0 0 \n"));
+        global::Kerf.Engine.Exchange.Brep.GeomTools.Read(out Curve3D? aTrimmed, new StringReader("8 0 1\n1 0 0 0 0 0 0 \n"));
         Assert.Null(aTrimmed);
     }
 
@@ -288,37 +289,37 @@ public class GeomTools_PortTests
     public void Truncated_and_foreign_text_reads_as_OCCT_reads_it()
     {
         // the stream ends in the middle of a B-spline: the missing numbers are 0, and the curve can't be built
-        GeomTools.Read(out Geom_Curve? aCurve, new StringReader("7 0 0  1 2 2  0 0 0  1 0"));
+        global::Kerf.Engine.Exchange.Brep.GeomTools.Read(out Curve3D? aCurve, new StringReader("7 0 0  1 2 2  0 0 0  1 0"));
         Assert.Null(aCurve);
 
         // not a table of curves: nothing is read
-        var aSet = new GeomTools_CurveSet();
+        var aSet = new global::Kerf.Engine.Exchange.Brep.CurveSet();
         aSet.Read(new StringReader("Surfaces 1\n1 0 0 0 0 0 1 1 0 0 0 1 0 \n"));
         Assert.Null(aSet.Curve(1));
 
         // GetReal reads the numeric prefix of a word, and 0 for none
         var aReader = new StringReader("1.5abc xyz 2e3");
-        GeomTools.GetReal(aReader, out double aValue);
+        global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(aReader, out double aValue);
         Assert.Equal(1.5, aValue);
-        GeomTools.GetReal(aReader, out aValue);
+        global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(aReader, out aValue);
         Assert.Equal(0.0, aValue);
-        GeomTools.GetReal(aReader, out aValue);
+        global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(aReader, out aValue);
         Assert.Equal(2000.0, aValue);
         Assert.True(StreamUtilities.Eof(aReader));
-        GeomTools.GetReal(aReader, out aValue);
+        global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(aReader, out aValue);
         Assert.Equal(0.0, aValue);
 
         // the sets read OCCT's files with CRLF line ends
-        var aSurfaces = new GeomTools_SurfaceSet();
+        var aSurfaces = new global::Kerf.Engine.Exchange.Brep.SurfaceSet();
         aSurfaces.Read(new StringReader("Surfaces 1\r\n1 0 0 0 0 0 1 1 0 0 0 1 0 \r\n"));
-        Assert.IsType<Geom_Plane>(aSurfaces.Surface(1));
+        Assert.IsType<PlaneSurface>(aSurfaces.Surface(1));
     }
 
-    private sealed class ReadingHandler : GeomTools_UndefinedTypeHandler
+    private sealed class ReadingHandler : global::Kerf.Engine.Exchange.Brep.UndefinedTypeHandler
     {
         public int Printed;
 
-        public override void PrintCurve(Geom_Curve C, TextWriter OS, bool compact = false)
+        public override void PrintCurve(Curve3D C, TextWriter OS, bool compact = false)
         {
             Printed++;
             OS.Write("42 ");
@@ -326,11 +327,11 @@ public class GeomTools_PortTests
             OS.Write("\n");
         }
 
-        public override TextReader ReadCurve(int ctype, TextReader IS, ref Geom_Curve? C)
+        public override TextReader ReadCurve(int ctype, TextReader IS, ref Curve3D? C)
         {
             if (ctype == 42)
             {
-                GeomTools.GetReal(IS, out double anX);
+                global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(IS, out double anX);
                 C = new TestLine(new Point3D(anX, 0, 0), new Vector3D(1, 0, 0));
             }
 
@@ -343,37 +344,37 @@ public class GeomTools_PortTests
     {
         var aTestLine = new TestLine(new Point3D(7, 0, 0), new Vector3D(1, 0, 0));
         var aWriter = new StringWriter();
-        GeomTools.Dump(aTestLine, aWriter);
+        global::Kerf.Engine.Exchange.Brep.GeomTools.Dump(aTestLine, aWriter);
         Assert.Equal("****** UNKNOWN CURVE TYPE ******\n", aWriter.ToString());
         aWriter = new StringWriter();
-        GeomTools.Dump(new TestSaddle(), aWriter);
+        global::Kerf.Engine.Exchange.Brep.GeomTools.Dump(new TestSaddle(), aWriter);
         Assert.Equal("****** UNKNOWN SURFACE TYPE ******\n", aWriter.ToString());
 
-        GeomTools.Read(out Geom_Curve? anUnknown, new StringReader("42 7\n"));
+        global::Kerf.Engine.Exchange.Brep.GeomTools.Read(out Curve3D? anUnknown, new StringReader("42 7\n"));
         Assert.Null(anUnknown);
 
-        GeomTools_UndefinedTypeHandler aDefault = GeomTools.GetUndefinedTypeHandler();
+        global::Kerf.Engine.Exchange.Brep.UndefinedTypeHandler aDefault = global::Kerf.Engine.Exchange.Brep.GeomTools.GetUndefinedTypeHandler();
         var aHandler = new ReadingHandler();
         try
         {
-            GeomTools.SetUndefinedTypeHandler(aHandler);
-            GeomTools.SetUndefinedTypeHandler(null);
-            Assert.Same(aHandler, GeomTools.GetUndefinedTypeHandler());
+            global::Kerf.Engine.Exchange.Brep.GeomTools.SetUndefinedTypeHandler(aHandler);
+            global::Kerf.Engine.Exchange.Brep.GeomTools.SetUndefinedTypeHandler(null);
+            Assert.Same(aHandler, global::Kerf.Engine.Exchange.Brep.GeomTools.GetUndefinedTypeHandler());
 
-            var aSet = new GeomTools_CurveSet();
+            var aSet = new global::Kerf.Engine.Exchange.Brep.CurveSet();
             aSet.Add(aTestLine);
             aWriter = new StringWriter();
             aSet.Write(aWriter);
             Assert.Equal("Curves 1\n42 7\n", aWriter.ToString());
             Assert.Equal(1, aHandler.Printed);
 
-            var aRead = new GeomTools_CurveSet();
+            var aRead = new global::Kerf.Engine.Exchange.Brep.CurveSet();
             aRead.Read(new StringReader(aWriter.ToString()));
             Assert.Equal(7.0, Assert.IsType<TestLine>(aRead.Curve(1)).Origin().X());
         }
         finally
         {
-            GeomTools.SetUndefinedTypeHandler(aDefault);
+            global::Kerf.Engine.Exchange.Brep.GeomTools.SetUndefinedTypeHandler(aDefault);
         }
     }
 }

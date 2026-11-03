@@ -176,11 +176,11 @@ public sealed class MeshNode
     /// </summary>
     internal static MeshNode Of(Shape shape, MeshTolerances tolerances)
     {
-        var cache = new List<(TopoDS_Shape Key, ShapeMesh Mesh)>();
+        var cache = new List<(global::Kerf.Topology.Shape Key, ShapeMesh Mesh)>();
         return Build(shape, tolerances, cache);
     }
 
-    private static MeshNode Build(Shape shape, MeshTolerances tolerances, List<(TopoDS_Shape Key, ShapeMesh Mesh)> cache)
+    private static MeshNode Build(Shape shape, MeshTolerances tolerances, List<(global::Kerf.Topology.Shape Key, ShapeMesh Mesh)> cache)
     {
         var location = shape.IsEmpty ? new Location() : shape.Location;
         if (!shape.IsEmpty && shape is Compound { AssemblyChildren.Count: > 0 } assembly)
@@ -190,7 +190,7 @@ public sealed class MeshNode
     }
 
     /// <summary>The mesh of a part in its own coordinates, shared with any earlier part of the same geometry.</summary>
-    private static ShapeMesh Instance(Shape shape, MeshTolerances tolerances, List<(TopoDS_Shape Key, ShapeMesh Mesh)> cache)
+    private static ShapeMesh Instance(Shape shape, MeshTolerances tolerances, List<(global::Kerf.Topology.Shape Key, ShapeMesh Mesh)> cache)
     {
         if (shape.IsEmpty)
             return ShapeMesh.Empty;

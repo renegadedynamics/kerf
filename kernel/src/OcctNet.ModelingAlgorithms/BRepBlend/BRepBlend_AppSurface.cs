@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
 
@@ -17,13 +18,13 @@ namespace Occt;
 /// <remarks>A working object (decision 21); the arrays the accessors return are the approximation's own.</remarks>
 public class BRepBlend_AppSurface : AppBlend_Approx
 {
-    private readonly Approx_SweepApproximation approx;
+    private readonly SweepApproximation approx;
 
-    public BRepBlend_AppSurface(Approx_SweepFunction Func, double First, double Last, double Tol3d, double Tol2d,
+    public BRepBlend_AppSurface(SweepFunction Func, double First, double Last, double Tol3d, double Tol2d,
                                 double TolAngular, Continuity Continuity = C0, int Degmax = 11,
                                 int Segmax = 50)
     {
-        approx = new Approx_SweepApproximation(Func);
+        approx = new SweepApproximation(Func);
 
         int Nb2d = Func.Nb2dCurves();
         int NbPolSect, NbKnotSect, udeg;
@@ -65,7 +66,7 @@ public class BRepBlend_AppSurface : AppBlend_Approx
         approx.Perform(First, Last, Tol3d, Tol3d, Tol2d, TolAngular, continuity, Degmax, Segmax);
     }
 
-    public override bool IsDone() => approx.IsDone();
+    public override bool IsDone() => approx.IsDone;
 
     public override void SurfShape(out int UDegree, out int VDegree, out int NbUPoles, out int NbVPoles,
                                    out int NbUKnots, out int NbVKnots)
@@ -102,7 +103,7 @@ public class BRepBlend_AppSurface : AppBlend_Approx
         return approx.MaxErrorOnSurf();
     }
 
-    public override int NbCurves2d() => approx.NbCurves2d();
+    public override int NbCurves2d() => approx.Curves2dCount;
 
     public override void Curves2dShape(out int Degree, out int NbPoles, out int NbKnots)
     {
@@ -138,7 +139,7 @@ public class BRepBlend_AppSurface : AppBlend_Approx
     {
         Tol3d = approx.MaxErrorOnSurf();
         Tol2d = 0;
-        for (int ii = 1; ii <= approx.NbCurves2d(); ii++)
+        for (int ii = 1; ii <= approx.Curves2dCount; ii++)
         {
             Tol2d = Max(Tol2d, approx.Max2dError(ii));
         }

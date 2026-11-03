@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+
 namespace Occt;
 
 /// <summary>
@@ -11,22 +13,22 @@ namespace Occt;
 /// </summary>
 /// <remarks>Not done (<see cref="IsDone"/> false) when the surface is not a quadric or a root search failed.</remarks>
 public sealed class IntCurveSurface_TheQuadCurvExactHInter
-    : IIntCurveSurface_TheQuadCurvExactInter<IntCurveSurface_TheQuadCurvExactHInter, Adaptor3d_Surface, Adaptor3d_Curve>
+    : IIntCurveSurface_TheQuadCurvExactInter<IntCurveSurface_TheQuadCurvExactHInter, SurfaceAdaptorBase, CurveAdaptorBase>
 {
     private readonly int nbpnts;
     private readonly NCollection_Sequence<double> pnts = new();
     private readonly int nbintv;
     private readonly NCollection_Sequence<double> intv = new();
 
-    public IntCurveSurface_TheQuadCurvExactHInter(Adaptor3d_Surface S, Adaptor3d_Curve C)
+    public IntCurveSurface_TheQuadCurvExactHInter(SurfaceAdaptorBase S, CurveAdaptorBase C)
     {
         IntCurveSurface_QuadricCurveExactInterUtils.PerformIntersection<
-            Adaptor3d_Surface, IntCurveSurface_TheHSurfaceTool, Adaptor3d_Curve, IntCurveSurface_TheHCurveTool,
+            SurfaceAdaptorBase, IntCurveSurface_TheHSurfaceTool, CurveAdaptorBase, IntCurveSurface_TheHCurveTool,
             IntCurveSurface_TheQuadCurvFuncOfTheQuadCurvExactHInter>(S, C, pnts, intv, out nbpnts, out nbintv);
     }
 
-    static IntCurveSurface_TheQuadCurvExactHInter IIntCurveSurface_TheQuadCurvExactInter<IntCurveSurface_TheQuadCurvExactHInter, Adaptor3d_Surface, Adaptor3d_Curve>.Create(
-        in Adaptor3d_Surface S, in Adaptor3d_Curve C) => new(S, C);
+    static IntCurveSurface_TheQuadCurvExactHInter IIntCurveSurface_TheQuadCurvExactInter<IntCurveSurface_TheQuadCurvExactHInter, SurfaceAdaptorBase, CurveAdaptorBase>.Create(
+        in SurfaceAdaptorBase S, in CurveAdaptorBase C) => new(S, C);
 
     public bool IsDone() => (nbpnts != -1);
 

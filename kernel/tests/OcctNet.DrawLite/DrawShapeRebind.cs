@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -21,14 +23,14 @@ internal static class DrawShapeRebind
     /// result's; the TShapes above it are copied with their flags and representations (DrawShapeCopy), so shared
     /// sub-shapes stay shared. The DrawShape objects are updated in place, so their names and protection are kept.
     /// </summary>
-    public static void Rebind(DrawInterpreter theDI, in TopoDS_Shape theOriginal, in TopoDS_Shape theResult)
+    public static void Rebind(DrawInterpreter theDI, in Shape theOriginal, in Shape theResult)
     {
-        if (theOriginal.IsNull() || theResult.IsNull() || ReferenceEquals(theOriginal.TShape(), theResult.TShape()))
+        if (theOriginal.IsNull || theResult.IsNull || ReferenceEquals(theOriginal.TShape(), theResult.TShape()))
         {
             return;
         }
 
-        var aMap = new Dictionary<TopoDS_TShape, TopoDS_TShape>(ReferenceEqualityComparer.Instance);
+        var aMap = new Dictionary<TShape, TShape>(ReferenceEqualityComparer.Instance);
         MapGraphs(theOriginal.TShape()!, theResult.TShape()!, aMap);
 
         var aVisited = new HashSet<DrawShape>(ReferenceEqualityComparer.Instance);
@@ -59,20 +61,20 @@ internal static class DrawShapeRebind
     }
 
     /// <summary>Maps each TShape of the original graph to the one at the same place in the result's.</summary>
-    private static void MapGraphs(TopoDS_TShape theOriginal, TopoDS_TShape theResult, Dictionary<TopoDS_TShape, TopoDS_TShape> theMap)
+    private static void MapGraphs(TShape theOriginal, TShape theResult, Dictionary<TShape, TShape> theMap)
     {
         if (!theMap.TryAdd(theOriginal, theResult) || ReferenceEquals(theOriginal, theResult)
-            || theOriginal.myShapes.Extent() != theResult.myShapes.Extent())
+            || theOriginal._shapes.Extent() != theResult._shapes.Extent())
         {
             // an original kept in the result keeps its whole graph
             return;
         }
 
-        using IEnumerator<TopoDS_Shape> aResultChildren = theResult.myShapes.GetEnumerator();
-        foreach (TopoDS_Shape aChild in theOriginal.myShapes)
+        using IEnumerator<Shape> aResultChildren = theResult._shapes.GetEnumerator();
+        foreach (Shape aChild in theOriginal._shapes)
         {
             aResultChildren.MoveNext();
-            if (!aChild.IsNull() && !aResultChildren.Current.IsNull())
+            if (!aChild.IsNull && !aResultChildren.Current.IsNull)
             {
                 MapGraphs(aChild.TShape()!, aResultChildren.Current.TShape()!, theMap);
             }
@@ -80,45 +82,45 @@ internal static class DrawShapeRebind
     }
 
     /// <summary>The shape with each mapped TShape replaced, and the TShapes above them copied; frozen.</summary>
-    private static TopoDS_Shape Substitute(in TopoDS_Shape theShape, Dictionary<TopoDS_TShape, TopoDS_TShape> theMap)
+    private static Shape Substitute(in Shape theShape, Dictionary<TShape, TShape> theMap)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return theShape;
         }
 
-        TopoDS_TShape aTShape = theShape.TShape()!;
-        TopoDS_TShape aNew = Substitute(aTShape, theMap);
+        TShape aTShape = theShape.TShape()!;
+        TShape aNew = Substitute(aTShape, theMap);
         if (ReferenceEquals(aNew, aTShape))
         {
             return theShape;
         }
 
-        TopoDS_Shape aResult = theShape;
+        Shape aResult = theShape;
         aResult.TShape(aNew);
         aNew.FreezeGraph();
         return aResult;
     }
 
-    private static TopoDS_TShape Substitute(TopoDS_TShape theTShape, Dictionary<TopoDS_TShape, TopoDS_TShape> theMap)
+    private static TShape Substitute(TShape theTShape, Dictionary<TShape, TShape> theMap)
     {
-        if (theMap.TryGetValue(theTShape, out TopoDS_TShape? aKnown))
+        if (theMap.TryGetValue(theTShape, out TShape? aKnown))
         {
             return aKnown;
         }
 
-        List<TopoDS_Shape>? aChildren = null;
+        List<Shape>? aChildren = null;
         int anIndex = 0;
-        foreach (TopoDS_Shape aChild in theTShape.myShapes)
+        foreach (Shape aChild in theTShape._shapes)
         {
-            TopoDS_Shape aNewChild = aChild;
-            if (!aChild.IsNull())
+            Shape aNewChild = aChild;
+            if (!aChild.IsNull)
             {
-                TopoDS_TShape aNewTShape = Substitute(aChild.TShape()!, theMap);
+                TShape aNewTShape = Substitute(aChild.TShape()!, theMap);
                 if (!ReferenceEquals(aNewTShape, aChild.TShape()))
                 {
                     aNewChild.TShape(aNewTShape);
-                    aChildren ??= theTShape.myShapes.Take(anIndex).ToList();
+                    aChildren ??= theTShape._shapes.Take(anIndex).ToList();
                 }
             }
 
@@ -126,13 +128,13 @@ internal static class DrawShapeRebind
             anIndex++;
         }
 
-        TopoDS_TShape aResult = theTShape;
+        TShape aResult = theTShape;
         if (aChildren is not null)
         {
             aResult = DrawShapeCopy.CopyNode(theTShape);
-            foreach (TopoDS_Shape aChild in aChildren)
+            foreach (Shape aChild in aChildren)
             {
-                aResult.myShapes.Append(aChild);
+                aResult._shapes.Append(aChild);
             }
         }
 

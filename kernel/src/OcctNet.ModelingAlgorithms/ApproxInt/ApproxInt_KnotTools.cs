@@ -3,8 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Geometry;
-using static Occt.Approx_ParametrizationType;
+using static Kerf.Engine.Approximation.ParametrizationType;
 
 namespace Occt;
 
@@ -634,12 +635,12 @@ public static class ApproxInt_KnotTools
     /// The preferable parametrisation of the points <paramref name="theFpar"/> to <paramref name="theLpar"/> of
     /// <paramref name="theWL"/>: centripetal where the curvature varies much, else chord length.
     /// </summary>
-    public static Approx_ParametrizationType DefineParType(IntPatch_WLine theWL, int theFpar, int theLpar,
+    public static ParametrizationType DefineParType(IntPatch_WLine theWL, int theFpar, int theLpar,
                                                            bool theApproxXYZ, bool theApproxU1V1, bool theApproxU2V2)
     {
         if (theLpar - theFpar == 1)
         {
-            return Approx_IsoParametric;
+            return IsoParametric;
         }
 
         int nbp3d = theApproxXYZ ? 1 : 0, nbp2d = (theApproxU1V1 ? 1 : 0) + (theApproxU2V2 ? 1 : 0);
@@ -741,7 +742,7 @@ public static class ApproxInt_KnotTools
         const double aCritRat = 500.0;
         const double aCritParRat = 100.0;
         math_Vector aPars = new(theFpar, theLpar);
-        Approx_ParametrizationType aParType = Approx_ChordLength;
+        ParametrizationType aParType = ChordLength;
         GeomInt_WLApprox.Parameters(aTestLine, theFpar, theLpar, aParType, aPars);
         NCollection_Array1<double> aCurv = new(aPars.Lower(), aPars.Upper());
         BuildCurvature(aCoords, aDim, aPars, aCurv, out double aMaxCurv);
@@ -781,14 +782,14 @@ public static class ApproxInt_KnotTools
         {
             if (aRat > 5.0 * aCritRat)
             {
-                aParType = Approx_Centripetal;
+                aParType = Centripetal;
             }
             else
             {
                 double aParRat = MaxParamRatio(aPars);
                 if (aParRat > aCritParRat)
                 {
-                    aParType = Approx_Centripetal;
+                    aParType = Centripetal;
                 }
             }
         }

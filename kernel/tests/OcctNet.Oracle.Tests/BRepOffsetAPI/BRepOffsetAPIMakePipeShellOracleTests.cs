@@ -1,11 +1,17 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Diagnostics;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -57,33 +63,33 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         return aText;
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
+        Assert.True(BrepTools.Write(theShape, aFile, true, false, FormatVersion.FormatVersion_VERSION_3));
         string aText = File.ReadAllText(aFile);
         File.Delete(aFile);
         return aText;
     }
 
     // Writes the port's shapes in one compound and reads it on both sides (the port's frozen); the children in order
-    private (N.TopoDS_Shape[] N, TopoDS_Shape[] P) Both(params TopoDS_Shape[] theShapes)
+    private (N.TopoDS_Shape[] N, Shape[] P) Both(params Shape[] theShapes)
     {
-        BRep_Builder aB = new();
-        TopoDS_Compound aComp = new();
+        BrepBuilder aB = new();
+        Compound aComp = new();
         aB.MakeCompound(ref aComp);
-        foreach (TopoDS_Shape aS in theShapes)
+        foreach (Shape aS in theShapes)
         {
             aB.Add(aComp, aS);
         }
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(aComp, aFile, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
+        Assert.True(BrepTools.Write(aComp, aFile, true, false, FormatVersion.FormatVersion_VERSION_3));
         var aNShape = new N.TopoDS_Shape();
         using (var aBuilder = new N.BRep_Builder())
         {
             Assert.True(N.BRepTools.Read(aNShape, aFile, aBuilder));
         }
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile));
+        Assert.True(BrepTools.Read(out Shape aPShape, aFile));
         File.Delete(aFile);
         aPShape.TShape()!.FreezeGraph();
         var aN = new List<N.TopoDS_Shape>();
@@ -92,8 +98,8 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             aN.Add(anIt.Value());
         }
         GC.KeepAlive(aNShape); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
-        var aP = new List<TopoDS_Shape>();
-        for (TopoDS_Iterator anIt = new(aPShape); anIt.More(); anIt.Next())
+        var aP = new List<Shape>();
+        for (global::Kerf.Engine.Topology.Iterator anIt = new(aPShape); anIt.More(); anIt.Next())
         {
             aP.Add(anIt.Value());
         }
@@ -104,17 +110,17 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
 
     private enum Mode { Default, CorrectedFrenet, Frenet, Discrete, Fixed, BiNormal, Auxiliary, Darboux }
 
-    private sealed record Section(TopoDS_Shape Profile, int SpineVertex, bool WithContact, bool WithCorrection);
+    private sealed record Section(Shape Profile, int SpineVertex, bool WithContact, bool WithCorrection);
 
     private sealed class Case
     {
         public required string Name;
-        public required TopoDS_Wire Spine;
+        public required Wire Spine;
         public required List<Section> Sections;
         public Mode Mode;
         public Frame3D Axe = new();
         public Direction3D BiNormal = new();
-        public TopoDS_Shape Aux = new(); // auxiliary spine, or Darboux support
+        public Shape Aux = new(); // auxiliary spine, or Darboux support
         public bool Curvilinear;
         public BRepFill_TypeOfContact Contact;
         public BRepBuilderAPI_TransitionMode Transition;
@@ -122,17 +128,17 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         public int Simulate;
     }
 
-    private static TopoDS_Wire Wire(params TopoDS_Edge[] theEdges)
+    private static Wire Wire(params Edge[] theEdges)
     {
         BRepBuilderAPI_MakeWire aMW = new();
-        foreach (TopoDS_Edge anE in theEdges)
+        foreach (Edge anE in theEdges)
         {
             aMW.Add(anE);
         }
         return aMW.Wire();
     }
 
-    private static TopoDS_Wire Polyline(bool theClosed, params Point3D[] thePoints)
+    private static Wire Polyline(bool theClosed, params Point3D[] thePoints)
     {
         BRepBuilderAPI_MakePolygon aP = new();
         foreach (Point3D aQ in thePoints)
@@ -147,7 +153,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
     }
 
     // A random spine and its kind
-    private static (TopoDS_Wire Wire, string Kind) RandomSpine(Oracle theOracle, int theKind)
+    private static (Wire Wire, string Kind) RandomSpine(Oracle theOracle, int theKind)
     {
         switch (theKind)
         {
@@ -169,14 +175,14 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             {
                 // a G1 chain: a line, then tangent arcs
                 Point3D aP0 = new(0, 0, 0), aP1 = new(0, 0, theOracle.Real(5, 10));
-                List<TopoDS_Edge> anEdges = [new BRepBuilderAPI_MakeEdge(aP0, aP1).Edge()];
+                List<Edge> anEdges = [new BRepBuilderAPI_MakeEdge(aP0, aP1).Edge()];
                 Vector3D aTangent = new(0, 0, 1);
                 int aNb = theOracle.Int(1, 2);
                 for (int i = 0; i < aNb; i++)
                 {
                     Point3D aNext = aP1.Translated(aTangent * theOracle.Real(4, 8)
                                                   + new Vector3D(theOracle.Real(-6, 6), theOracle.Real(-6, 6), 0));
-                    Geom_TrimmedCurve anArc = new GC_MakeArcOfCircle(aP1, aTangent, aNext).Value();
+                    TrimmedCurve3D anArc = new MakeArcOfCircle(aP1, aTangent, aNext).Value();
                     anEdges.Add(new BRepBuilderAPI_MakeEdge(anArc).Edge());
                     anArc.D1(anArc.LastParameter(), out _, out aTangent);
                     aTangent.Normalize();
@@ -229,9 +235,9 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
     }
 
     // The frame normal to the spine at its start
-    private static Frame3D StartFrame(in TopoDS_Wire theSpine)
+    private static Frame3D StartFrame(in Wire theSpine)
     {
-        BRepAdaptor_CompCurve aC = new(theSpine);
+        WireCurveAdaptor aC = new(theSpine);
         aC.D1(aC.FirstParameter(), out Point3D aP, out Vector3D aV);
         return new Frame3D(aP, new Direction3D(aV));
     }
@@ -240,7 +246,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         => theAx.Location().Translated(new Vector3D(theAx.XDirection()) * theU + new Vector3D(theAx.YDirection()) * theV);
 
     // A random profile in the plane theAx, its kind
-    private static (TopoDS_Shape Shape, string Kind) RandomProfile(Oracle theOracle, in Frame3D theAx, double theSize, bool theClosedOnly)
+    private static (Shape Shape, string Kind) RandomProfile(Oracle theOracle, in Frame3D theAx, double theSize, bool theClosedOnly)
     {
         int aKind = theOracle.Int(0, theClosedOnly ? 4 : 6);
         switch (aKind)
@@ -287,7 +293,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                 return (Polyline(false, OnPlane(theAx, -theSize, 0), OnPlane(theAx, 0, theSize * theOracle.Real(0.2, 1)),
                                  OnPlane(theAx, theSize, 0)), "open polyline");
             default:
-                return (Wire(new BRepBuilderAPI_MakeEdge(new GC_MakeArcOfCircle(OnPlane(theAx, -theSize, 0), OnPlane(theAx, 0, theSize * 0.6),
+                return (Wire(new BRepBuilderAPI_MakeEdge(new MakeArcOfCircle(OnPlane(theAx, -theSize, 0), OnPlane(theAx, 0, theSize * 0.6),
                                                                                 OnPlane(theAx, theSize, 0)).Value()).Edge()), "open arc");
         }
     }
@@ -305,12 +311,12 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
     {
         myCases++;
         // the inputs: spine, auxiliary shape, profiles
-        List<TopoDS_Shape> anInputs = [theCase.Spine, theCase.Aux.IsNull() ? theCase.Spine : theCase.Aux];
+        List<Shape> anInputs = [theCase.Spine, theCase.Aux.IsNull ? theCase.Spine : theCase.Aux];
         anInputs.AddRange(theCase.Sections.Select(s => s.Profile));
-        (N.TopoDS_Shape[] aNIn, TopoDS_Shape[] aPIn) = Both([.. anInputs]);
+        (N.TopoDS_Shape[] aNIn, Shape[] aPIn) = Both([.. anInputs]);
         string[] anInputTexts = [.. aPIn.Select(s => PortText(s))];
         N.TopoDS_Wire aNSpine = N.TopoDS.Wire(aNIn[0]);
-        TopoDS_Wire aPSpine = TopoDS.Wire(aPIn[0]);
+        Wire aPSpine = global::Kerf.Engine.Topology.ShapeCasts.Wire(aPIn[0]);
 
         string aWhat = theCase.Name;
         var aWatch = Stopwatch.StartNew();
@@ -370,7 +376,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                 // built as native builds them from the coordinates (gp_Ax2(P, N, Vx) and gp_Dir(x, y, z) normalise again)
                 case Mode.Fixed: aP.SetMode(new Frame3D(theCase.Axe.Location(), Renormalised(theCase.Axe.Direction()), Renormalised(theCase.Axe.XDirection()))); break;
                 case Mode.BiNormal: aP.SetMode(Renormalised(theCase.BiNormal)); break;
-                case Mode.Auxiliary: aP.SetMode(TopoDS.Wire(aPIn[1]), theCase.Curvilinear, theCase.Contact); break;
+                case Mode.Auxiliary: aP.SetMode(global::Kerf.Engine.Topology.ShapeCasts.Wire(aPIn[1]), theCase.Curvilinear, theCase.Contact); break;
                 case Mode.Darboux: aP.SetMode(aPIn[1]); break;
             }
             aP.SetTransitionMode(theCase.Transition);
@@ -395,7 +401,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         catch (FailureException f)
         {
             aPError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType());
-            if (f is ImmutableObjectException or TopoDS_LockedShape)
+            if (f is ImmutableObjectException or global::Kerf.Engine.Topology.LockedShapeException)
             {
                 aPError += " " + string.Join(" / ", (f.StackTrace ?? "").Split('\n').Take(4).Select(l => l.Trim()));
             }
@@ -469,7 +475,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         mySolids += aPSolid ? 1 : 0;
 
         N.TopoDS_Shape aNRes = aN.Shape();
-        TopoDS_Shape aPRes = aP.Shape();
+        Shape aPRes = aP.Shape();
         if (!CompareShapes(aWhat + " result", aNRes, aPRes, true))
         {
             return;
@@ -481,8 +487,8 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         // Generated, as indices in the result
         var aNResMap = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(aNRes, aNResMap);
-        NCollection_IndexedMap<TopoDS_Shape> aPResMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aPRes, aPResMap);
+        NCollection_IndexedMap<Shape> aPResMap = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        global::Kerf.Engine.Topology.Exploration.MapShapes(aPRes, aPResMap);
         var aNH = new List<string>();
         var aPH = new List<string>();
         for (int k = 0; k < aPIn.Length; k++)
@@ -493,8 +499,8 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             }
             var aNInMap = new N.TopTools_IndexedMapOfShape();
             N.TopExp.MapShapes(aNIn[k], aNInMap);
-            NCollection_IndexedMap<TopoDS_Shape> aPInMap = new(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(aPIn[k], aPInMap);
+            NCollection_IndexedMap<Shape> aPInMap = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            global::Kerf.Engine.Topology.Exploration.MapShapes(aPIn[k], aPInMap);
             for (int i = 1; i <= aNInMap.Extent(); i++)
             {
                 aNH.Add($"{k}.{i}:" + string.Join(",", aN.Generated(aNInMap.FindKey(i)).Select(s => aNResMap.FindIndex(s))));
@@ -535,11 +541,11 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             aPSim.Add(aPIn[2]);
             using var aNList = new N.TopTools_ListOfShape();
             aNSim.Simulate(theCase.Simulate, aNList);
-            NCollection_List<TopoDS_Shape> aPList = new();
+            NCollection_List<Shape> aPList = new();
             aPSim.Simulate(theCase.Simulate, aPList);
             N.TopoDS_Shape[] aNSecs = [.. aNList];
-            List<TopoDS_Shape> aPSecs = [];
-            for (NCollection_List<TopoDS_Shape>.Iterator anIt = new(aPList); anIt.More(); anIt.Next())
+            List<Shape> aPSecs = [];
+            for (NCollection_List<Shape>.Iterator anIt = new(aPList); anIt.More(); anIt.Next())
             {
                 aPSecs.Add(anIt.Value());
             }
@@ -563,21 +569,21 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         return N.TopoDS.Vertex(aMap.FindKey(Math.Min(theIndex + 1, aMap.Extent())));
     }
 
-    private static TopoDS_Vertex PortVertex(in TopoDS_Wire theSpine, int theIndex)
+    private static Vertex PortVertex(in Wire theSpine, int theIndex)
     {
-        NCollection_IndexedMap<TopoDS_Shape> aMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theSpine, TopAbs_VERTEX, aMap);
-        return TopoDS.Vertex(aMap.FindKey(Math.Min(theIndex + 1, aMap.Extent())));
+        NCollection_IndexedMap<Shape> aMap = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        global::Kerf.Engine.Topology.Exploration.MapShapes(theSpine, ShapeType.Vertex, aMap);
+        return global::Kerf.Engine.Topology.ShapeCasts.Vertex(aMap.FindKey(Math.Min(theIndex + 1, aMap.Extent())));
     }
 
     // Compares the shapes: BRep text, then with the Free column masked, then canonically. Counts the results' outcomes.
-    private bool CompareShapes(string theWhat, N.TopoDS_Shape theN, in TopoDS_Shape theP, bool theCount)
+    private bool CompareShapes(string theWhat, N.TopoDS_Shape theN, in Shape theP, bool theCount)
     {
-        if (theN.IsNull() || theP.IsNull())
+        if (theN.IsNull() || theP.IsNull)
         {
-            if (theN.IsNull() != theP.IsNull())
+            if (theN.IsNull() != theP.IsNull)
             {
-                myDifferences.Add($"{theWhat}: null natively {theN.IsNull()}, in the port {theP.IsNull()}");
+                myDifferences.Add($"{theWhat}: null natively {theN.IsNull()}, in the port {theP.IsNull}");
                 return false;
             }
             return true;
@@ -598,9 +604,9 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         // canonically, both read back from their texts (the text rounds coordinates to 15 digits)
         string aTextFile = NewFile();
         File.WriteAllText(aTextFile, aNT);
-        Assert.True(BRepTools.Read(out TopoDS_Shape aNP, aTextFile));
+        Assert.True(BrepTools.Read(out Shape aNP, aTextFile));
         File.WriteAllText(aTextFile, aPT);
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPP, aTextFile));
+        Assert.True(BrepTools.Read(out Shape aPP, aTextFile));
         File.Delete(aTextFile);
         CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aNP, aPP);
         if (aCanon.IsIdentical)
@@ -641,9 +647,9 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             {
                 foreach (Mode aMode in aModes)
                 {
-                    (TopoDS_Wire aSpine, string aKind) = RandomSpine(anOracle, aSpineKind);
+                    (Wire aSpine, string aKind) = RandomSpine(anOracle, aSpineKind);
                     Frame3D aFrame = StartFrame(aSpine);
-                    (TopoDS_Shape aProfile, string aProfKind) = RandomProfile(anOracle, aFrame, anOracle.Real(0.3, 1.5), false);
+                    (Shape aProfile, string aProfKind) = RandomProfile(anOracle, aFrame, anOracle.Real(0.3, 1.5), false);
                     Case c = new()
                     {
                         Name = $"case {aCase++} {aKind} {aProfKind} {aMode}",
@@ -683,13 +689,13 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                 Axis3D anAxis = new(new Point3D(), new Direction3D(anOracle.Real(-1, 1), anOracle.Real(-1, 1), 0.01));
                 aDir = aDir.Rotated(anAxis, anAngle);
             }
-            TopoDS_Wire aSpine = Polyline(false, [.. aPoints]);
+            Wire aSpine = Polyline(false, [.. aPoints]);
             Frame3D aFrame = StartFrame(aSpine);
             foreach (BRepBuilderAPI_TransitionMode aTransition in new[] { BRepBuilderAPI_TransitionMode.BRepBuilderAPI_Transformed,
                                                                           BRepBuilderAPI_TransitionMode.BRepBuilderAPI_RightCorner,
                                                                           BRepBuilderAPI_TransitionMode.BRepBuilderAPI_RoundCorner })
             {
-                (TopoDS_Shape aProfile, string aProfKind) = RandomProfile(anOracle, aFrame, anOracle.Real(0.5, 2), true);
+                (Shape aProfile, string aProfKind) = RandomProfile(anOracle, aFrame, anOracle.Real(0.5, 2), true);
                 Run(new Case
                 {
                     Name = $"corner case {aCase++} {aNb} segments {aProfKind} {aTransition}",
@@ -712,12 +718,12 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         int aCase = 0;
         foreach (int i in Tape.Budget(30))
         {
-            (TopoDS_Wire aSpine, string aKind) = RandomSpine(anOracle, anOracle.Int(0, 2) switch { 0 => 0, 1 => 2, _ => 3 });
+            (Wire aSpine, string aKind) = RandomSpine(anOracle, anOracle.Int(0, 2) switch { 0 => 0, 1 => 2, _ => 3 });
             Frame3D aFrame = StartFrame(aSpine);
             // the guide: the spine moved sideways (build123d.NET's twisted extrusion uses a twisted copy)
             Transform3D aT = new();
             aT.SetTranslation(new Vector3D(aFrame.XDirection()) * anOracle.Real(2, 5));
-            TopoDS_Wire aGuide = TopoDS.Wire(new BRepBuilderAPI_Transform(aSpine, aT, true).Shape());
+            Wire aGuide = global::Kerf.Engine.Topology.ShapeCasts.Wire(new BRepBuilderAPI_Transform(aSpine, aT, true).Shape());
             foreach (bool aCurvilinear in new[] { true, false })
             {
                 BRepFill_TypeOfContact aContact = (BRepFill_TypeOfContact)anOracle.Int(0, 2);
@@ -727,7 +733,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                     // Debug port; four such cases met native's access violation (decision 930)
                     aContact = BRepFill_TypeOfContact.BRepFill_NoContact;
                 }
-                (TopoDS_Shape aProfile, string aProfKind) = RandomProfile(anOracle, aFrame, anOracle.Real(0.5, 1.5), true);
+                (Shape aProfile, string aProfKind) = RandomProfile(anOracle, aFrame, anOracle.Real(0.5, 1.5), true);
                 Run(new Case
                 {
                     Name = $"aux case {aCase++} {aKind} {aProfKind} curvilinear {aCurvilinear} {aContact}",
@@ -753,43 +759,43 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         int aCase = 0;
         for (int i = 0; i < 20; i++)
         {
-            TopoDS_Shape aSupport;
-            TopoDS_Wire aSpine;
+            Shape aSupport;
+            Wire aSpine;
             if (anOracle.Bool())
             {
                 // a box's face, the spine its outer wire or a part of it
-                TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(anOracle.Real(5, 15), anOracle.Real(5, 15), anOracle.Real(5, 15)).Shape();
-                NCollection_IndexedMap<TopoDS_Shape> aFaces = new(TopTools_ShapeMapHasher.Instance);
-                TopExp.MapShapes(aBox, TopAbs_FACE, aFaces);
-                TopoDS_Face aFace = TopoDS.Face(aFaces.FindKey(anOracle.Int(1, 6)));
+                Shape aBox = new BRepPrimAPI_MakeBox(anOracle.Real(5, 15), anOracle.Real(5, 15), anOracle.Real(5, 15)).Shape();
+                NCollection_IndexedMap<Shape> aFaces = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+                global::Kerf.Engine.Topology.Exploration.MapShapes(aBox, ShapeType.Face, aFaces);
+                Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(aFaces.FindKey(anOracle.Int(1, 6)));
                 aSupport = anOracle.Bool() ? aFace : aBox;
-                aSpine = BRepTools.OuterWire(aFace);
+                aSpine = BrepTools.OuterWire(aFace);
             }
             else
             {
                 // a cylinder's lateral face, the spine its top circle
-                TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(anOracle.Real(3, 8), anOracle.Real(4, 10)).Shape();
-                NCollection_IndexedMap<TopoDS_Shape> aFaces = new(TopTools_ShapeMapHasher.Instance);
-                TopExp.MapShapes(aCyl, TopAbs_FACE, aFaces);
+                Shape aCyl = new BRepPrimAPI_MakeCylinder(anOracle.Real(3, 8), anOracle.Real(4, 10)).Shape();
+                NCollection_IndexedMap<Shape> aFaces = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+                global::Kerf.Engine.Topology.Exploration.MapShapes(aCyl, ShapeType.Face, aFaces);
                 aSupport = aFaces.FindKey(1);
-                NCollection_IndexedMap<TopoDS_Shape> anEdges = new(TopTools_ShapeMapHasher.Instance);
-                TopExp.MapShapes(aSupport, TopAbs_EDGE, anEdges);
-                TopoDS_Edge aCircle = new();
+                NCollection_IndexedMap<Shape> anEdges = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+                global::Kerf.Engine.Topology.Exploration.MapShapes(aSupport, ShapeType.Edge, anEdges);
+                Edge aCircle = new();
                 for (int k = 1; k <= anEdges.Extent(); k++)
                 {
-                    if (!BRep_Tool.IsClosed(TopoDS.Edge(anEdges.FindKey(k)), TopoDS.Face(aSupport)))
+                    if (!Tool.IsClosed(global::Kerf.Engine.Topology.ShapeCasts.Edge(anEdges.FindKey(k)), global::Kerf.Engine.Topology.ShapeCasts.Face(aSupport)))
                     {
-                        aCircle = TopoDS.Edge(anEdges.FindKey(k));
+                        aCircle = global::Kerf.Engine.Topology.ShapeCasts.Edge(anEdges.FindKey(k));
                         break;
                     }
                 }
                 aSpine = Wire(aCircle);
             }
             Frame3D aFrame = StartFrame(aSpine);
-            (TopoDS_Shape aProfile, string aProfKind) = RandomProfile(anOracle, aFrame, anOracle.Real(0.3, 1.0), true);
+            (Shape aProfile, string aProfKind) = RandomProfile(anOracle, aFrame, anOracle.Real(0.3, 1.0), true);
             Run(new Case
             {
-                Name = $"darboux case {aCase++} {aSupport.ShapeType()} {aProfKind}",
+                Name = $"darboux case {aCase++} {Kerf.Engine.Foundation.OcctTypeNames.Of(aSupport.ShapeType())} {aProfKind}",
                 Spine = aSpine,
                 Sections = [new Section(aProfile, -1, false, false)],
                 Mode = Mode.Darboux,
@@ -809,10 +815,10 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         int aCase = 0;
         foreach (int i in Tape.Budget(40))
         {
-            (TopoDS_Wire aSpine, string aKind) = RandomSpine(anOracle, anOracle.Int(0, 2));
-            NCollection_IndexedMap<TopoDS_Shape> aVertices = new(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(aSpine, TopAbs_VERTEX, aVertices);
-            BRepAdaptor_CompCurve aC = new(aSpine);
+            (Wire aSpine, string aKind) = RandomSpine(anOracle, anOracle.Int(0, 2));
+            NCollection_IndexedMap<Shape> aVertices = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            global::Kerf.Engine.Topology.Exploration.MapShapes(aSpine, ShapeType.Vertex, aVertices);
+            WireCurveAdaptor aC = new(aSpine);
             List<Section> aSections = [];
             int aShape = anOracle.Int(0, 3);
             if (aShape == 0)
@@ -863,9 +869,9 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         int aCase = 0;
         foreach (int i in Tape.Budget(30))
         {
-            (TopoDS_Wire aSpine, string aKind) = RandomSpine(anOracle, anOracle.Int(0, 2));
+            (Wire aSpine, string aKind) = RandomSpine(anOracle, anOracle.Int(0, 2));
             Frame3D aFrame = StartFrame(aSpine);
-            (TopoDS_Shape aProfile, string aProfKind) = RandomProfile(anOracle, aFrame, anOracle.Real(0.3, 1.2), true);
+            (Shape aProfile, string aProfKind) = RandomProfile(anOracle, aFrame, anOracle.Real(0.3, 1.2), true);
             int aStyle = anOracle.Int(0, 3);
             Case c = new()
             {
@@ -881,7 +887,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             {
                 Transform3D aT = new();
                 aT.SetTranslation(new Vector3D(aFrame.XDirection()) * anOracle.Real(2, 5));
-                c.Aux = TopoDS.Wire(new BRepBuilderAPI_Transform(aSpine, aT, true).Shape());
+                c.Aux = global::Kerf.Engine.Topology.ShapeCasts.Wire(new BRepBuilderAPI_Transform(aSpine, aT, true).Shape());
                 c.Curvilinear = aStyle == 2;
             }
             Run(c);
@@ -904,11 +910,11 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         }
         GeomAPI_Interpolate anInt = new(aPoints, false, 1e-7);
         anInt.Perform();
-        Geom_OffsetCurve anOffset = new(anInt.Curve(), 4.0, new Direction3D(0, 0, 1));
-        TopoDS_Wire aSpine = Wire(new BRepBuilderAPI_MakeEdge(anOffset).Edge());
+        OffsetCurve3D anOffset = new(anInt.Curve(), 4.0, new Direction3D(0, 0, 1));
+        Wire aSpine = Wire(new BRepBuilderAPI_MakeEdge(anOffset).Edge());
         Frame3D aFrame = StartFrame(aSpine);
-        TopoDS_Shape aProfile = Wire(new BRepBuilderAPI_MakeEdge(new Circle3D(aFrame, 0.8)).Edge());
-        (N.TopoDS_Shape[] aNIn, TopoDS_Shape[] aPIn) = Both(aSpine, aProfile);
+        Shape aProfile = Wire(new BRepBuilderAPI_MakeEdge(new Circle3D(aFrame, 0.8)).Edge());
+        (N.TopoDS_Shape[] aNIn, Shape[] aPIn) = Both(aSpine, aProfile);
 
         var aWatch = Stopwatch.StartNew();
         using var aN = new N.BRepOffsetAPI_MakePipeShell(N.TopoDS.Wire(aNIn[0]));
@@ -917,7 +923,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         aN.Build();
         double aNative = aWatch.Elapsed.TotalSeconds;
         aWatch.Restart();
-        BRepOffsetAPI_MakePipeShell aP = new(TopoDS.Wire(aPIn[0]));
+        BRepOffsetAPI_MakePipeShell aP = new(global::Kerf.Engine.Topology.ShapeCasts.Wire(aPIn[0]));
         aP.SetMode(false);
         aP.Add(aPIn[1]);
         aP.Build();

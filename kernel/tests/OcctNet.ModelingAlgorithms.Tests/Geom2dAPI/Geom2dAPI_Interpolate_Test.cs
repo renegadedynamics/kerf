@@ -46,7 +46,7 @@ public class Geom2dAPI_InterpolateTest
         anInterpWithScale.Load(aTangents, aTangentFlags);
         anInterpWithScale.Perform();
         Assert.True(anInterpWithScale.IsDone());
-        Geom2d_BSplineCurve aCurveWithScale = anInterpWithScale.Curve();
+        BSplineCurve2D aCurveWithScale = anInterpWithScale.Curve();
         Assert.NotNull(aCurveWithScale);
 
         // Interpolation without tangent scale
@@ -54,7 +54,7 @@ public class Geom2dAPI_InterpolateTest
         anInterpWithoutScale.Load(aTangents, aTangentFlags, false);
         anInterpWithoutScale.Perform();
         Assert.True(anInterpWithoutScale.IsDone());
-        Geom2d_BSplineCurve aCurveWithoutScale = anInterpWithoutScale.Curve();
+        BSplineCurve2D aCurveWithoutScale = anInterpWithoutScale.Curve();
         Assert.NotNull(aCurveWithoutScale);
 
         // Both curves must pass through all given points

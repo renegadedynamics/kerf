@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.IntSurf_TypeTrans;
 
@@ -45,7 +46,7 @@ public partial class IntPatch_PrmPrmIntersection
     //=================================================================================================
 
     /// <summary>The self-intersection of <paramref name="Surf1"/>, on a polyhedron of its domain's sampling.</summary>
-    public void Perform(Adaptor3d_Surface Surf1, Adaptor3d_TopolTool D1, double TolTangency, double Epsilon,
+    public void Perform(SurfaceAdaptorBase Surf1, TopolTool D1, double TolTangency, double Epsilon,
                         double Deflection, double Increment)
     {
         IntPatch_Polyhedron Poly1 = new(Surf1, D1.NbSamplesU(), D1.NbSamplesV());
@@ -58,8 +59,8 @@ public partial class IntPatch_PrmPrmIntersection
     /// The intersection of <paramref name="Surf1"/>, approximated by <paramref name="Poly1"/>, and
     /// <paramref name="Surf2"/>, whose polyhedron is computed.
     /// </summary>
-    public void Perform(Adaptor3d_Surface Surf1, IntPatch_Polyhedron Poly1, Adaptor3d_TopolTool D1,
-                        Adaptor3d_Surface Surf2, Adaptor3d_TopolTool D2, double TolTangency, double Epsilon,
+    public void Perform(SurfaceAdaptorBase Surf1, IntPatch_Polyhedron Poly1, TopolTool D1,
+                        SurfaceAdaptorBase Surf2, TopolTool D2, double TolTangency, double Epsilon,
                         double Deflection, double Increment)
     {
         IntPatch_Polyhedron Poly2 = new(Surf2);
@@ -72,8 +73,8 @@ public partial class IntPatch_PrmPrmIntersection
     /// The intersection of <paramref name="Surf1"/>, whose polyhedron is computed, and <paramref name="Surf2"/>,
     /// approximated by <paramref name="Poly2"/>.
     /// </summary>
-    public void Perform(Adaptor3d_Surface Surf1, Adaptor3d_TopolTool D1, Adaptor3d_Surface Surf2,
-                        IntPatch_Polyhedron Poly2, Adaptor3d_TopolTool D2, double TolTangency, double Epsilon,
+    public void Perform(SurfaceAdaptorBase Surf1, TopolTool D1, SurfaceAdaptorBase Surf2,
+                        IntPatch_Polyhedron Poly2, TopolTool D2, double TolTangency, double Epsilon,
                         double Deflection, double Increment)
     {
         IntPatch_Polyhedron Poly1 = new(Surf1);
@@ -87,8 +88,8 @@ public partial class IntPatch_PrmPrmIntersection
     /// <paramref name="Poly1"/> and <paramref name="Poly2"/>: walking lines started from the section lines and
     /// tangent zones of the polyhedra's interference.
     /// </summary>
-    public void Perform(Adaptor3d_Surface Surf1, IntPatch_Polyhedron Poly1, Adaptor3d_TopolTool D1,
-                        Adaptor3d_Surface Surf2, IntPatch_Polyhedron Poly2, Adaptor3d_TopolTool D2,
+    public void Perform(SurfaceAdaptorBase Surf1, IntPatch_Polyhedron Poly1, TopolTool D1,
+                        SurfaceAdaptorBase Surf2, IntPatch_Polyhedron Poly2, TopolTool D2,
                         double TolTangency, double Epsilon, double Deflection, double Increment)
     {
         IntPatch_InterferencePolyhedron Interference = new(Poly1, Poly2);
@@ -588,7 +589,7 @@ public partial class IntPatch_PrmPrmIntersection
     /// The self-intersection of <paramref name="Surf1"/>, approximated by <paramref name="Poly1"/>: walking lines
     /// started from the polyhedron's self-interference, keeping the parts away from the diagonal (U1, V1) = (U2, V2).
     /// </summary>
-    public void Perform(Adaptor3d_Surface Surf1, IntPatch_Polyhedron Poly1, Adaptor3d_TopolTool D1, double TolTangency,
+    public void Perform(SurfaceAdaptorBase Surf1, IntPatch_Polyhedron Poly1, TopolTool D1, double TolTangency,
                         double Epsilon, double Deflection, double Increment)
     {
         IntPatch_InterferencePolyhedron Interference = new(Poly1);
@@ -957,7 +958,7 @@ public partial class IntPatch_PrmPrmIntersection
     // its vertices on the restrictions, appended to SLin. Returns true where OCCT sets empt to false; OCCT's
     // `continue` after PutVertexOnLine (a line of fewer than two points) is the `return false`, which reaches the end
     // of the loop body as the `continue` does.
-    private bool KeepOffDiagonalPart(IntWalk_PWalking PW, Adaptor3d_Surface Surf1, Adaptor3d_TopolTool D1,
+    private bool KeepOffDiagonalPart(IntWalk_PWalking PW, SurfaceAdaptorBase Surf1, TopolTool D1,
                                      IntSurf_TypeTrans trans1, IntSurf_TypeTrans trans2, double TolTangency,
                                      Point3D Point3dDebut, Point3D Point3dFin)
     {
@@ -1061,7 +1062,7 @@ public partial class IntPatch_PrmPrmIntersection
     /// </summary>
     /// <exception cref="OutOfRangeException">The line index is out of range or <paramref name="Low"/> ≥ <paramref name="High"/>.</exception>
     /// <exception cref="NotDoneException">The intersection is not done.</exception>
-    public IntPatch_Line NewLine(Adaptor3d_Surface Surf1, Adaptor3d_Surface Surf2, int NumLine, int Low, int High,
+    public IntPatch_Line NewLine(SurfaceAdaptorBase Surf1, SurfaceAdaptorBase Surf2, int NumLine, int Low, int High,
                                  int NbPntsToInsert)
     {
         int NbPnts = NbPntsToInsert + High - Low;
@@ -1298,8 +1299,8 @@ public partial class IntPatch_PrmPrmIntersection
     /// other side of the seams, which are appended to <paramref name="LOfPnts"/>). Lines already computed by an
     /// earlier Perform are kept.
     /// </summary>
-    public void Perform(Adaptor3d_Surface Surf1, Adaptor3d_TopolTool D1, Adaptor3d_Surface Surf2,
-                        Adaptor3d_TopolTool D2, double TolTangency, double Epsilon, double Deflection,
+    public void Perform(SurfaceAdaptorBase Surf1, TopolTool D1, SurfaceAdaptorBase Surf2,
+                        TopolTool D2, double TolTangency, double Epsilon, double Deflection,
                         double Increment, NCollection_List<IntSurf_PntOn2S> LOfPnts)
     {
         if (LOfPnts.IsEmpty())
@@ -1325,13 +1326,13 @@ public partial class IntPatch_PrmPrmIntersection
         VmaxLig2 = Surf2.LastVParameter();
 
         double[] Periods = new double[4];
-        Periods[0] = (Surf1.IsUPeriodic()) ? Surf1.UPeriod() : 0.0;
-        Periods[1] = (Surf1.IsVPeriodic()) ? Surf1.VPeriod() : 0.0;
-        Periods[2] = (Surf2.IsUPeriodic()) ? Surf2.UPeriod() : 0.0;
-        Periods[3] = (Surf2.IsVPeriodic()) ? Surf2.VPeriod() : 0.0;
+        Periods[0] = (Surf1.IsUPeriodic) ? Surf1.UPeriod() : 0.0;
+        Periods[1] = (Surf1.IsVPeriodic) ? Surf1.VPeriod() : 0.0;
+        Periods[2] = (Surf2.IsUPeriodic) ? Surf2.UPeriod() : 0.0;
+        Periods[3] = (Surf2.IsVPeriodic) ? Surf2.VPeriod() : 0.0;
 
         NCollection_List<IntSurf_PntOn2S>.Iterator IterLOP1 = new(LOfPnts);
-        if (Surf1.IsUClosed() || Surf1.IsVClosed() || Surf2.IsUClosed() || Surf2.IsVClosed())
+        if (Surf1.IsUClosed || Surf1.IsVClosed || Surf2.IsUClosed || Surf2.IsVClosed)
         {
             double TolPar = global::Kerf.Engine.Foundation.Precision.PConfusion();
             NCollection_List<IntSurf_PntOn2S> AdditionalPnts = new();
@@ -1341,7 +1342,7 @@ public partial class IntPatch_PrmPrmIntersection
                 IntSurf_PntOn2S Pnt = IterLOP1.Value();
                 Pnt.Parameters(out U1, out V1, out U2, out V2);
                 IntSurf_PntOn2S NewPnt = new();
-                if (Surf1.IsUClosed())
+                if (Surf1.IsUClosed)
                 {
                     if (Math.Abs(U1 - Surf1.FirstUParameter()) <= TolPar)
                     {
@@ -1356,7 +1357,7 @@ public partial class IntPatch_PrmPrmIntersection
                         AdditionalPnts.Append(NewPnt);
                     }
                 }
-                if (Surf1.IsVClosed())
+                if (Surf1.IsVClosed)
                 {
                     if (Math.Abs(V1 - Surf1.FirstVParameter()) <= TolPar)
                     {
@@ -1371,7 +1372,7 @@ public partial class IntPatch_PrmPrmIntersection
                         AdditionalPnts.Append(NewPnt);
                     }
                 }
-                if (Surf2.IsUClosed())
+                if (Surf2.IsUClosed)
                 {
                     if (Math.Abs(U2 - Surf2.FirstUParameter()) <= TolPar)
                     {
@@ -1386,7 +1387,7 @@ public partial class IntPatch_PrmPrmIntersection
                         AdditionalPnts.Append(NewPnt);
                     }
                 }
-                if (Surf2.IsVClosed())
+                if (Surf2.IsVClosed)
                 {
                     if (Math.Abs(V2 - Surf2.FirstVParameter()) <= TolPar)
                     {
@@ -1610,8 +1611,8 @@ public partial class IntPatch_PrmPrmIntersection
     /// The intersection line walked from the given start parameters on both surfaces (none if no start point is
     /// found near them).
     /// </summary>
-    public void Perform(Adaptor3d_Surface Surf1, Adaptor3d_TopolTool D1, Adaptor3d_Surface Surf2,
-                        Adaptor3d_TopolTool D2, double U1Depart, double V1Depart, double U2Depart, double V2Depart,
+    public void Perform(SurfaceAdaptorBase Surf1, TopolTool D1, SurfaceAdaptorBase Surf2,
+                        TopolTool D2, double U1Depart, double V1Depart, double U2Depart, double V2Depart,
                         double TolTangency, double Epsilon, double Deflection, double Increment)
     {
         //-- Traitement des Lignes de sections

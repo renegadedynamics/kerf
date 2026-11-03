@@ -3,10 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -24,24 +28,24 @@ public static class HLRBRep_ShapeToHLR
 {
     /// <summary>Outlines S for the projector P (nbIso isolines) and loads the result in a new data structure.</summary>
     public static HLRBRep_Data Load(HLRTopoBRep_OutLiner S, in HLRAlgo_Projector P,
-                                    NCollection_DataMap<TopoDS_Shape, BRepTopAdaptor_Tool> MST, int nbIso = 0)
+                                    NCollection_DataMap<Shape, BRepTopAdaptor_Tool> MST, int nbIso = 0)
     {
         S.Fill(P, MST, nbIso);
         HLRTopoBRep_Data TopDS = S.DataStructure();
 
-        NCollection_IndexedMap<TopoDS_Shape> FM = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_IndexedMap<TopoDS_Shape> EM = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> VerticesToEdges =
-            new(TopTools_ShapeMapHasher.Instance);
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> EdgesToFaces =
-            new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> FM = new(ShapeHasher.Instance);
+        NCollection_IndexedMap<Shape> EM = new(ShapeHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> VerticesToEdges =
+            new(ShapeHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> EdgesToFaces =
+            new(ShapeHasher.Instance);
 
-        TopExp_Explorer exshell = new(), exface = new();
-        TopoDS_Shape anOutLined = S.InternalOutLinedShape();
+        Explorer exshell = new(), exface = new();
+        Shape anOutLined = S.InternalOutLinedShape();
 
-        for (exshell.Init(anOutLined, TopAbs_SHELL); exshell.More(); exshell.Next())
+        for (exshell.Init(anOutLined, ShapeType.Shell); exshell.More(); exshell.Next())
         { // faces in a shell
-            for (exface.Init(exshell.Current(), TopAbs_FACE); exface.More(); exface.Next())
+            for (exface.Init(exshell.Current(), ShapeType.Face); exface.More(); exface.Next())
             {
                 if (!FM.Contains(exface.Current()))
                 {
@@ -50,7 +54,7 @@ public static class HLRBRep_ShapeToHLR
             }
         }
 
-        for (exface.Init(anOutLined, TopAbs_FACE, TopAbs_SHELL); exface.More(); exface.Next())
+        for (exface.Init(anOutLined, ShapeType.Face, ShapeType.Shell); exface.More(); exface.Next())
         { // faces not in a shell
             if (!FM.Contains(exface.Current()))
             {
@@ -58,21 +62,21 @@ public static class HLRBRep_ShapeToHLR
             }
         }
 
-        TopExp.MapShapes(anOutLined, TopAbs_EDGE, EM);
+        Exploration.MapShapes(anOutLined, ShapeType.Edge, EM);
 
         int i;
         int nbEdge = EM.Extent();
 
         for (i = 1; i <= nbEdge; i++)
         { // vertices back to edges
-            TopExp.MapShapesAndAncestors(EM.FindKey(i), TopAbs_VERTEX, TopAbs_EDGE, VerticesToEdges);
+            Exploration.MapShapesAndAncestors(EM.FindKey(i), ShapeType.Vertex, ShapeType.Edge, VerticesToEdges);
         }
 
         int nbVert = VerticesToEdges.Extent();
         int nbFace = FM.Extent();
 
-        TopoDS_Vertex VF, VL;
-        NCollection_List<TopoDS_Shape>.Iterator itn = new();
+        Vertex VF, VL;
+        NCollection_List<Shape>.Iterator itn = new();
         int i1, i2;
         bool o1, o2;
         bool c1, c2;
@@ -89,14 +93,14 @@ public static class HLRBRep_ShapeToHLR
 
         for (i = 1; i <= nbFace; i++)
         { // test of Double edges
-            TopExp.MapShapesAndAncestors(FM.FindKey(i), TopAbs_EDGE, TopAbs_FACE, EdgesToFaces);
+            Exploration.MapShapesAndAncestors(FM.FindKey(i), ShapeType.Edge, ShapeType.Face, EdgesToFaces);
         }
 
         for (i = 1; i <= nbEdge; i++)
         { // load the Edges
-            TopoDS_Edge Edg = TopoDS.Edge(EM.FindKey(i));
-            TopExp.Vertices(Edg, out VF, out VL);
-            BRep_Tool.Range(Edg, out pf, out pl);
+            Edge Edg = ShapeCasts.Edge(EM.FindKey(i));
+            Exploration.Vertices(Edg, out VF, out VL);
+            Tool.Range(Edg, out pf, out pl);
             bool reg1 = false;
             bool regn = false;
             int inde = EdgesToFaces.FindIndex(Edg);
@@ -105,16 +109,16 @@ public static class HLRBRep_ShapeToHLR
                 if (EdgesToFaces[inde].Extent() == 2)
                 {
                     itn.Initialize(EdgesToFaces[inde]);
-                    TopoDS_Face F1 = TopoDS.Face(itn.Value());
+                    Face F1 = ShapeCasts.Face(itn.Value());
                     itn.Next();
-                    TopoDS_Face F2 = TopoDS.Face(itn.Value());
-                    Continuity rg = BRep_Tool.Continuity(Edg, F1, F2);
+                    Face F2 = ShapeCasts.Face(itn.Value());
+                    Continuity rg = Tool.Continuity(Edg, F1, F2);
                     reg1 = rg >= G1;
                     regn = rg >= G2;
                 }
             }
 
-            if (VF.IsNull())
+            if (VF.IsNull)
             {
                 i1 = 0;
                 o1 = false;
@@ -127,10 +131,10 @@ public static class HLRBRep_ShapeToHLR
                 i1 = VerticesToEdges.FindIndex(VF);
                 o1 = TopDS.IsOutV(VF);
                 c1 = TopDS.IsIntV(VF);
-                tf = (float)BRep_Tool.Tolerance(VF);
+                tf = (float)Tool.Tolerance(VF);
             }
 
-            if (VL.IsNull())
+            if (VL.IsNull)
             {
                 i2 = 0;
                 o2 = false;
@@ -143,7 +147,7 @@ public static class HLRBRep_ShapeToHLR
                 i2 = VerticesToEdges.FindIndex(VL);
                 o2 = TopDS.IsOutV(VL);
                 c2 = TopDS.IsIntV(VL);
-                tl = (float)BRep_Tool.Tolerance(VL);
+                tl = (float)Tool.Tolerance(VL);
             }
 
             DS.EDataArray()[ed].Set(reg1, regn, Edg, i1, i2, o1, o2, c1, c2, pf, tf, pl, tl);
@@ -155,20 +159,20 @@ public static class HLRBRep_ShapeToHLR
         return DS;
     }
 
-    private static void ExploreFace(HLRTopoBRep_OutLiner S, HLRBRep_Data DS, NCollection_IndexedMap<TopoDS_Shape> FM,
-                                    NCollection_IndexedMap<TopoDS_Shape> EM, ref int i, in TopoDS_Face F, bool closed)
+    private static void ExploreFace(HLRTopoBRep_OutLiner S, HLRBRep_Data DS, NCollection_IndexedMap<Shape> FM,
+                                    NCollection_IndexedMap<Shape> EM, ref int i, in Face F, bool closed)
     {
         i++;
-        TopExp_Explorer Ex1 = new(), Ex2 = new();
+        Explorer Ex1 = new(), Ex2 = new();
         HLRTopoBRep_Data TopDS = S.DataStructure();
-        TopAbs_Orientation orient = FM.FindKey(i).Orientation();
-        TopoDS_Face theFace = TopoDS.Face(FM.FindKey(i));
-        theFace.Orientation(TopAbs_FORWARD);
+        Orientation orient = FM.FindKey(i).Orientation();
+        Face theFace = ShapeCasts.Face(FM.FindKey(i));
+        theFace.Orientation(Forward);
         HLRBRep_FaceData fd = DS.FDataArray()[i];
 
         int nw = 0;
 
-        for (Ex1.Init(theFace, TopAbs_WIRE); Ex1.More(); Ex1.Next())
+        for (Ex1.Init(theFace, ShapeType.Wire); Ex1.More(); Ex1.Next())
         {
             nw++;
         }
@@ -176,15 +180,15 @@ public static class HLRBRep_ShapeToHLR
         fd.Set(theFace, orient, closed, nw);
         nw = 0;
 
-        for (Ex1.Init(theFace, TopAbs_WIRE); Ex1.More(); Ex1.Next())
+        for (Ex1.Init(theFace, ShapeType.Wire); Ex1.More(); Ex1.Next())
         {
             nw++;
             int ne = 0;
 
-            for (Ex2.Init(Ex1.Current(), TopAbs_EDGE); Ex2.More(); Ex2.Next())
+            for (Ex2.Init(Ex1.Current(), ShapeType.Edge); Ex2.More(); Ex2.Next())
             {
-                TopoDS_Edge anEdge = TopoDS.Edge(Ex2.Current());
-                if (!BRep_Tool.Degenerated(anEdge))
+                Edge anEdge = ShapeCasts.Edge(Ex2.Current());
+                if (!Tool.Degenerated(anEdge))
                 {
                     ne++;
                 }
@@ -193,20 +197,20 @@ public static class HLRBRep_ShapeToHLR
             fd.SetWire(nw, ne);
             ne = 0;
 
-            for (Ex2.Init(Ex1.Current(), TopAbs_EDGE); Ex2.More(); Ex2.Next())
+            for (Ex2.Init(Ex1.Current(), ShapeType.Edge); Ex2.More(); Ex2.Next())
             {
-                TopoDS_Edge E = TopoDS.Edge(Ex2.Current());
-                if (BRep_Tool.Degenerated(E))
+                Edge E = ShapeCasts.Edge(Ex2.Current());
+                if (Tool.Degenerated(E))
                 {
                     continue;
                 }
                 ne++;
                 int ie = EM.FindIndex(E);
-                TopAbs_Orientation anOrientE = E.Orientation();
+                Orientation anOrientE = E.Orientation();
                 bool Int = TopDS.IsIntLFaceEdge(F, E);
                 bool Iso = TopDS.IsIsoLFaceEdge(F, E);
                 bool Out = TopDS.IsOutLFaceEdge(F, E);
-                bool Dbl = BRepTools.IsReallyClosed(TopoDS.Edge(E), theFace);
+                bool Dbl = BrepTools.IsReallyClosed(ShapeCasts.Edge(E), theFace);
                 fd.SetWEdge(nw, ne, ie, anOrientE, Out, Int, Dbl, Iso);
             }
         }
@@ -214,15 +218,15 @@ public static class HLRBRep_ShapeToHLR
         DS.FaceMap().Add(theFace);
     }
 
-    private static void ExploreShape(HLRTopoBRep_OutLiner S, HLRBRep_Data DS, NCollection_IndexedMap<TopoDS_Shape> FM,
-                                     NCollection_IndexedMap<TopoDS_Shape> EM)
+    private static void ExploreShape(HLRTopoBRep_OutLiner S, HLRBRep_Data DS, NCollection_IndexedMap<Shape> FM,
+                                     NCollection_IndexedMap<Shape> EM)
     {
-        NCollection_Map<TopoDS_Shape> ShapeMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp_Explorer exshell = new(), exface = new(), exedge = new();
+        NCollection_Map<Shape> ShapeMap = new(ShapeHasher.Instance);
+        Explorer exshell = new(), exface = new(), exedge = new();
         int i = 0;
-        TopoDS_Shape anOriginal = S.InternalWorkingShape(); // decision 1095
+        Shape anOriginal = S.InternalWorkingShape(); // decision 1095
 
-        for (exshell.Init(anOriginal, TopAbs_SHELL); exshell.More(); exshell.Next())
+        for (exshell.Init(anOriginal, ShapeType.Shell); exshell.More(); exshell.Next())
         { // faces in a shell (open or close)
 
             bool closed = exshell.Current().Closed();
@@ -238,18 +242,18 @@ public static class HLRBRep_ShapeToHLR
                     flag[ie] = 0;
                 }
 
-                for (exedge.Init(exshell.Current(), TopAbs_EDGE); exedge.More(); exedge.Next())
+                for (exedge.Init(exshell.Current(), ShapeType.Edge); exedge.More(); exedge.Next())
                 {
-                    TopoDS_Edge E = TopoDS.Edge(exedge.Current());
+                    Edge E = ShapeCasts.Edge(exedge.Current());
                     ie = EM.FindIndex(E);
-                    TopAbs_Orientation orient = E.Orientation();
-                    if (!BRep_Tool.Degenerated(E))
+                    Orientation orient = E.Orientation();
+                    if (!Tool.Degenerated(E))
                     {
-                        if (orient == TopAbs_FORWARD)
+                        if (orient == Forward)
                         {
                             flag[ie] += 1;
                         }
-                        else if (orient == TopAbs_REVERSED)
+                        else if (orient == Reversed)
                         {
                             flag[ie] -= 1;
                         }
@@ -263,20 +267,20 @@ public static class HLRBRep_ShapeToHLR
                 }
             }
 
-            for (exface.Init(exshell.Current(), TopAbs_FACE); exface.More(); exface.Next())
+            for (exface.Init(exshell.Current(), ShapeType.Face); exface.More(); exface.Next())
             {
                 if (ShapeMap.Add(exface.Current()))
                 {
-                    ExploreFace(S, DS, FM, EM, ref i, TopoDS.Face(exface.Current()), closed);
+                    ExploreFace(S, DS, FM, EM, ref i, ShapeCasts.Face(exface.Current()), closed);
                 }
             }
         }
 
-        for (exface.Init(anOriginal, TopAbs_FACE, TopAbs_SHELL); exface.More(); exface.Next())
+        for (exface.Init(anOriginal, ShapeType.Face, ShapeType.Shell); exface.More(); exface.Next())
         { // faces not in a shell
             if (ShapeMap.Add(exface.Current()))
             {
-                ExploreFace(S, DS, FM, EM, ref i, TopoDS.Face(exface.Current()), false);
+                ExploreFace(S, DS, FM, EM, ref i, ShapeCasts.Face(exface.Current()), false);
             }
         }
     }

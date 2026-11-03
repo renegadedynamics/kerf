@@ -6,8 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFi3d_FilBuilder_C3;
 using static Occt.ChFiDS_ErrorStatus;
@@ -15,9 +18,9 @@ using static Occt.ChFiDS_State;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 using static Occt.TopOpeBRepDS_Kind;
 
 namespace Occt;
@@ -47,7 +50,7 @@ public partial class ChFi3d_FilBuilder
 
 
         TopOpeBRepDS_DataStructure DStr = myDS.ChangeDS();
-        TopoDS_Vertex Vtx = myVDataMap.FindKey(Jndex);
+        Vertex Vtx = myVDataMap.FindKey(Jndex);
         NCollection_List<ChFiDS_Stripe>.Iterator It = new();
         int[] Index = new int[3];
         int pivot = 0, deb = 0, fin = 0, ii = 0, jj = 0, kk = 0;
@@ -57,7 +60,7 @@ public partial class ChFi3d_FilBuilder
         bool c1toric = false;
         bool c1spheric = false;
         ChFiDS_Stripe?[] CD = new ChFiDS_Stripe?[3];
-        TopoDS_Face[] face = [new(), new(), new()];
+        Face[] face = [new(), new(), new()];
         int[,] jf = new int[3, 3];
         bool[] sameside = new bool[3], oksea = new bool[3];
         for (int g = 0; g <= 2; g++)
@@ -255,8 +258,8 @@ public partial class ChFi3d_FilBuilder
         // HSurfaces and other suitable tools are constructed.
         // ----------------------------------------------------------
 
-        TopAbs_Orientation OFac = face[pivot].Orientation();
-        BRepAdaptor_Surface? Fac = new BRepAdaptor_Surface(face[pivot]);
+        Orientation OFac = face[pivot].Orientation();
+        FaceSurfaceAdaptor? Fac = new FaceSurfaceAdaptor(face[pivot]);
         Point2D ppp1 = new(), ppp2 = new();
         ChFiDS_FaceInterference bid1 = 
             CD[pivot].SetOfSurfData().Value(i[pivot, deb]).InterferenceOnS1();
@@ -265,7 +268,7 @@ public partial class ChFi3d_FilBuilder
             CD[pivot].SetOfSurfData().Value(i[pivot, deb]).InterferenceOnS2();
         ppp2 = bid2.PCurveOnSurf().Value(bid2.LastParameter());
         double uu1 = ppp1.X(), uu2 = ppp2.X(), vv1 = ppp1.Y(), vv2 = ppp2.Y();
-        GeomAdaptor_Surface gasurf = new((DStr.Surface(CD[pivot].SetOfSurfData().Value(i[pivot, deb]).Surf())).Surface(),
+        SurfaceAdaptor gasurf = new((DStr.Surface(CD[pivot].SetOfSurfData().Value(i[pivot, deb]).Surf())).Surface(),
                                          uu1, uu2, vv1, vv2);
         SurfaceKind styp = gasurf.GetType();
         if (styp == SurfaceKind.Cylinder)
@@ -282,26 +285,26 @@ public partial class ChFi3d_FilBuilder
             uu2 += 0.1 * h;
             gasurf.Load((DStr.Surface(CD[pivot].SetOfSurfData().Value(i[pivot, deb]).Surf())).Surface(), uu1, uu2, vv1, vv2);
         }
-        else if (styp == BezierSurface || styp == BSplineSurface)
+        else if (styp == SurfaceKind.BezierSurface || styp == SurfaceKind.BSplineSurface)
         {
             gasurf.Load((DStr.Surface(CD[pivot].SetOfSurfData().Value(i[pivot, deb]).Surf())).Surface());
         }
 
-        GeomAdaptor_Surface? Surf = gasurf; // OCCT copies gasurf into a handle; gasurf is not used again
+        SurfaceAdaptor? Surf = gasurf; // OCCT copies gasurf into a handle; gasurf is not used again
         //  occ::handle<BRepTopAdaptor_TopolTool> IFac = new BRepTopAdaptor_TopolTool(Fac);
         // Try to not classify on the face for cases of reentering fillets which naturally depass
         // the border.
-        GeomAdaptor_Surface? bidsurf = new GeomAdaptor_Surface(Fac.GeomSurfaceOriginal());
-        Adaptor3d_TopolTool? IFac = new Adaptor3d_TopolTool(bidsurf);
+        SurfaceAdaptor? bidsurf = new SurfaceAdaptor(Fac.GeomSurfaceOriginal());
+        TopolTool? IFac = new TopolTool(bidsurf);
         // end of the attempt.
-        Adaptor3d_TopolTool? ISurf = new Adaptor3d_TopolTool(Surf);
+        TopolTool? ISurf = new TopolTool(Surf);
         ChFiDS_Stripe? corner = new ChFiDS_Stripe();
         ref NCollection_HSequence<ChFiDS_SurfData>? cornerset = ref 
             corner.ChangeSetOfSurfData();
         cornerset = new NCollection_HSequence<ChFiDS_SurfData>();
         ChFiDS_SurfData? coin = new ChFiDS_SurfData();
         cornerset.Append(coin);
-        TopAbs_Orientation o1 = default, o2 = default, os1 = default, os2 = default, oo1 = default, oo2 = default;
+        Orientation o1 = default, o2 = default, os1 = default, os2 = default, oo1 = default, oo2 = default;
         int choix = CD[deb].Choix();
         o1 = face[pivot].Orientation();
         o2 = fdpiv.Orientation();
@@ -410,7 +413,7 @@ public partial class ChFi3d_FilBuilder
                 double locfleche = fleche;
 
                 double WFirst = 0.0, WLast = 0.0;
-                Geom_Curve? spinecoin = 
+                Curve3D? spinecoin = 
                     ChFi3d_CircularSpine(ref WFirst, ref WLast, Pdeb, Vdeb, Pfin, Vfin, radpondere);
                 if (spinecoin is null)
                 {
@@ -504,7 +507,7 @@ public partial class ChFi3d_FilBuilder
                 // of two pcurves (only one if c1pointu) calculated as possible
                 // on piv and the opposite face.
                 GeomFill_Boundary? Bdeb = null, Bfin = null, Bpiv = null, Bfac = null;
-                Geom2d_Curve? PCurveOnFace = null;
+                Curve2D? PCurveOnFace = null;
                 if (!c1pointu)
                 {
                     Bfac = ChFi3d_mkbound(Fac, out PCurveOnFace, sens[deb], pfac1, vfac1, sens[fin], pfac2, vfac2, tolapp3d, 2.0e-4);
@@ -518,7 +521,7 @@ public partial class ChFi3d_FilBuilder
                 kkk =
                     CD[fin].SetOfSurfData().Value(i[fin, pivot]).Interference(jf[fin, pivot]).LineIndex();
                 DStr.Curve(kkk).Curve().D1(p[fin, pivot], out ppbid, out vp2);
-                Geom2d_Curve? PCurveOnPiv = null;
+                Curve2D? PCurveOnPiv = null;
                 //      Bpiv = ChFi3d_mkbound(Surf,PCurveOnPiv,sens[deb],psurf1,vp1,
                 //			    sens[fin],psurf2,vp2,tolesp,2.e-4);
                 Bpiv = ChFi3d_mkbound(Surf, out PCurveOnPiv, psurf1, psurf2, tolapp3d, 2.0e-4, false);
@@ -553,9 +556,9 @@ public partial class ChFi3d_FilBuilder
                                                       .Interference(jf[fin, deb])
                                                       .PCurveOnSurf()
                                                       .Value(parfin2);
-                Geom_Surface? sdeb = 
+                Surface? sdeb = 
                     DStr.Surface(CD[deb].SetOfSurfData().Value(i[deb, pivot]).Surf()).Surface();
-                Geom_Surface? sfin = 
+                Surface? sfin = 
                     DStr.Surface(CD[fin].SetOfSurfData().Value(i[fin, pivot]).Surf()).Surface();
 
                 Bdeb = ChFi3d_mkbound(sdeb, pdeb1, pdeb2, tolapp3d, 2.0e-4);
@@ -571,7 +574,7 @@ public partial class ChFi3d_FilBuilder
                     fil.Init(Bpiv, Bfin, Bfac, Bdeb, true);
                 }
 
-                Geom_Surface? Surfcoin = fil.InternalSurface();
+                Surface? Surfcoin = fil.InternalSurface();
                 Surfcoin.VReverse(); // revert to direction face surface;
                 done = CompleteData(coin, Surfcoin, Fac, PCurveOnFace, Surf, PCurveOnPiv, fdpiv.Orientation(), false, false,
                                                         false, false, false);
@@ -641,7 +644,7 @@ public partial class ChFi3d_FilBuilder
             }
             coin.ChangeIndexOfS2(-fdpiv.Surf());
 
-            Geom_Curve? C3d = null;
+            Curve3D? C3d = null;
             double tolreached = 0.0;
             ChFi3d_ComputeArete(Pf1, pp1, Pf2, pp2, DStr.Surface(coin.Surf()).Surface(), ref C3d,
                                                     ref corner.ChangeFirstPCurve(), ref P1deb, ref P2deb, tolapp3d, tol2d, out tolreached, 0);
@@ -685,7 +688,7 @@ public partial class ChFi3d_FilBuilder
                 isurf2 = 1;
                 parpp1 = p[deb, pivot];
                 parpp2 = p[deb, fin];
-                CD[deb].SetOrientation(TopAbs_REVERSED, isfirst);
+                CD[deb].SetOrientation(Reversed, isfirst);
             }
             pp1 = fddeb.InterferenceOnS1().PCurveOnSurf().Value(parpp1);
             pp2 = fddeb.InterferenceOnS2().PCurveOnSurf().Value(parpp2);
@@ -698,7 +701,7 @@ public partial class ChFi3d_FilBuilder
             fddeb.ChangeInterferenceOnS1().SetParameter(parpp1, isfirst);
             fddeb.ChangeInterferenceOnS2().SetParameter(parpp2, isfirst);
             ref TopOpeBRepDS_Curve tcdeb = ref DStr.ChangeCurve(Icf);
-            Geom_Curve? crefdeb = tcdeb.Curve();
+            Curve3D? crefdeb = tcdeb.Curve();
             double tolrdeb = 0.0;
             ChFi3d_ComputePCurv(crefdeb, pp1, pp2, out CD[deb].ChangePCurve(isfirst), DStr.Surface(fddeb.Surf()).Surface(),
                                                     P1deb, P2deb, tolapp3d, out tolrdeb, rev);
@@ -726,7 +729,7 @@ public partial class ChFi3d_FilBuilder
                 isurf2 = 1;
                 parpp1 = p[fin, pivot];
                 parpp2 = p[fin, deb];
-                CD[fin].SetOrientation(TopAbs_REVERSED, isfirst);
+                CD[fin].SetOrientation(Reversed, isfirst);
             }
             pp1 = fdfin.InterferenceOnS1().PCurveOnSurf().Value(parpp1);
             pp2 = fdfin.InterferenceOnS2().PCurveOnSurf().Value(parpp2);
@@ -739,7 +742,7 @@ public partial class ChFi3d_FilBuilder
             fdfin.ChangeInterferenceOnS1().SetParameter(parpp1, isfirst);
             fdfin.ChangeInterferenceOnS2().SetParameter(parpp2, isfirst);
             ref TopOpeBRepDS_Curve tcfin = ref DStr.ChangeCurve(Icl);
-            Geom_Curve? creffin = tcfin.Curve();
+            Curve3D? creffin = tcfin.Curve();
             double tolrfin = 0.0;
             ChFi3d_ComputePCurv(creffin, pp1, pp2, out CD[fin].ChangePCurve(isfirst), DStr.Surface(fdfin.Surf()).Surface(),
                                                     P1fin, P2fin, tolapp3d, out tolrfin, rev);
@@ -764,14 +767,14 @@ public partial class ChFi3d_FilBuilder
             {
                 isurf1 = 2;
                 isurf2 = 1;
-                CD[pivot].SetOrientation(TopAbs_REVERSED, isfirst);
+                CD[pivot].SetOrientation(Reversed, isfirst);
             }
             int ICcoinpiv = fi.LineIndex();
             ref TopOpeBRepDS_Curve TCcoinpiv = ref DStr.ChangeCurve(ICcoinpiv);
             CD[pivot].SetCurve(ICcoinpiv, isfirst);
-            Geom_Curve? Ccoinpiv = DStr.Curve(ICcoinpiv).Curve();
-            ref Geom2d_Curve? C2dOnPiv = ref fi.ChangePCurveOnFace();
-            Geom_Surface? Spiv = DStr.Surface(fdpiv.Surf()).Surface();
+            Curve3D? Ccoinpiv = DStr.Curve(ICcoinpiv).Curve();
+            ref Curve2D? C2dOnPiv = ref fi.ChangePCurveOnFace();
+            Surface? Spiv = DStr.Surface(fdpiv.Surf()).Surface();
             double tolr = 0.0;
             ChFi3d_SameParameter(Ccoinpiv, ref C2dOnPiv, Spiv, fi.FirstParameter(), fi.LastParameter(), tolapp3d, out tolr);
             TCcoinpiv.Tolerance(Max(TCcoinpiv.Tolerance(), tolr));
@@ -879,7 +882,7 @@ internal static class ChFi3d_FilBuilder_C3
         return -1;
     }
 
-    internal static bool SearchFD(TopOpeBRepDS_DataStructure DStr, ChFiDS_Stripe? cd1, ChFiDS_Stripe? cd2, int sens1, int sens2, ref int i1, ref int i2, ref double p1, ref double p2, int ind1, int ind2, ref TopoDS_Face face, ref bool sameside, ref int jf1, ref int jf2)
+    internal static bool SearchFD(TopOpeBRepDS_DataStructure DStr, ChFiDS_Stripe? cd1, ChFiDS_Stripe? cd2, int sens1, int sens2, ref int i1, ref int i2, ref double p1, ref double p2, int ind1, int ind2, ref Face face, ref bool sameside, ref int jf1, ref int jf2)
     {
         bool found = false;
         int id1 = ind1, id2 = ind2;
@@ -889,7 +892,7 @@ internal static class ChFi3d_FilBuilder_C3
         int i = 0;
         bool fini1 = false, fini2 = false;
         bool visavis = false;
-        TopoDS_Vertex Vtx = new();
+        Vertex Vtx = new();
         while (!found)
         {
             for (i = id1; (i * sens1) <= (if1 * sens1) && !found && !fini2; i = i + sens1)
@@ -941,13 +944,13 @@ internal static class ChFi3d_FilBuilder_C3
         return found;
     }
 
-    internal static bool ToricCorner(in TopoDS_Face F, double rd, double rf, in Vector3D v)
+    internal static bool ToricCorner(in Face F, double rd, double rf, in Vector3D v)
     {
         if (Math.Abs(rd - rf) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return false;
         }
-        BRepAdaptor_Surface bs = new(F);
+        FaceSurfaceAdaptor bs = new(F);
         if (bs.GetType() != Plane)
         {
             return false;

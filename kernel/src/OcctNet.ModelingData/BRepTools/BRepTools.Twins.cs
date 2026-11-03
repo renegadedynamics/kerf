@@ -3,223 +3,227 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Meshing;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Geometry;
+using Kerf.Topology;
+using Occt;
+using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Topology.Tools;
 
-public static partial class BRepTools
+public static partial class BrepTools
 {
     /// <summary>
     /// A structural copy of the shape for ported code that must write into it: new TShapes and representations
-    /// sharing the shape's frozen curves, surfaces and meshes, made by <see cref="BRepTools_Modifier"/> with
-    /// <see cref="BRepTools_CopyModification"/> (no copy of the geometry) as BRepBuilderAPI_Copy does. The copy is
-    /// unfrozen. <paramref name="theHistory"/> records each vertex, edge, face and solid of the shape as modified into
-    /// its copy, for merging with the history of what the caller does next (<see cref="BRepTools_History.Merge(BRepTools_History?)"/>).
+    /// sharing the shape's frozen curves, surfaces and meshes, made by <see cref="Modifier"/> with
+    /// <see cref="CopyModification"/> (no copy of the geometry) as BRepBuilderAPI_Copy does. The copy is
+    /// unfrozen. <paramref name="history"/> records each vertex, edge, face and solid of the shape as modified into
+    /// its copy, for merging with the history of what the caller does next (<see cref="History.Merge(History?)"/>).
     /// </summary>
     /// <remarks>
-    /// With <paramref name="theCopyMesh"/> (the default) the copy keeps the meshes: each face's list of triangulations
+    /// With <paramref name="copyMesh"/> (the default) the copy keeps the meshes: each face's list of triangulations
     /// with its active one (BRepTools_CopyModification carries the active one only), the 3D polygons and the polygons
     /// on triangulations. Polygons on surfaces (Poly_Polygon2D) aren't carried, as in BRepBuilderAPI_Copy.
     /// </remarks>
-    internal static TopoDS_Shape CopyForWrite(in TopoDS_Shape theShape, out BRepTools_History theHistory, bool theCopyMesh = true)
+    internal static Shape CopyForWrite(in Shape shape, out History history, bool copyMesh = true)
     {
-        theHistory = new BRepTools_History();
-        if (theShape.IsNull())
+        history = new History();
+        if (shape.IsNull)
         {
-            return new TopoDS_Shape();
+            return new Shape();
         }
 
-        var aModifier = new BRepTools_Modifier(theShape, new BRepTools_CopyModification(false, theCopyMesh));
-        TopoDS_Shape aCopy = aModifier.InternalModifiedShape(theShape);
+        var modifier = new Modifier(shape, new CopyModification(false, copyMesh));
+        Shape copy = modifier.InternalModifiedShape(shape);
 
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, aMap);
-        for (int i = 1; i <= aMap.Extent(); ++i)
+        var map = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(shape, map);
+        for (int i = 1; i <= map.Extent(); ++i)
         {
-            TopoDS_Shape aS = aMap[i];
-            TopoDS_Shape aNewS = aModifier.InternalModifiedShape(aS);
-            if (theCopyMesh && aS.ShapeType() == TopAbs_FACE && !ReferenceEquals(aS.TShape(), aNewS.TShape()))
+            Shape s = map[i];
+            Shape newS = modifier.InternalModifiedShape(s);
+            if (copyMesh && s.ShapeType() == ShapeType.Face && !ReferenceEquals(s.TShape(), newS.TShape()))
             {
-                BRep_TFace aTF = (BRep_TFace)aS.TShape()!;
-                if (aTF.NbTriangulations() > 1)
+                BrepTFace tf = (BrepTFace)s.TShape()!;
+                if (tf.TriangulationCount > 1)
                 {
-                    ((BRep_TFace)aNewS.TShape()!).Triangulations(new NCollection_List<Triangulation>(aTF.Triangulations()),
-                                                               aTF.ActiveTriangulation());
+                    ((BrepTFace)newS.TShape()!).Triangulations(new NCollection_List<Triangulation>(tf.Triangulations()),
+                                                               tf.ActiveTriangulation());
                 }
             }
-            if (BRepTools_History.IsSupportedType(aS))
+            if (History.IsSupportedType(s))
             {
-                theHistory.AddModified(aS, aNewS);
+                history.AddModified(s, newS);
             }
         }
-        return aCopy;
+        return copy;
     }
 
     // The twin of an in-place static: the operation on a copy for write, frozen.
-    private static TopoDS_Shape onCopy(in TopoDS_Shape theShape, Action<TopoDS_Shape> theOperation, out BRepTools_History theHistory)
+    private static Shape OnCopy(in Shape shape, Action<Shape> operation, out History history)
     {
-        TopoDS_Shape aCopy = CopyForWrite(theShape, out theHistory);
-        if (aCopy.IsNull())
+        Shape copy = CopyForWrite(shape, out history);
+        if (copy.IsNull)
         {
-            return aCopy;
+            return copy;
         }
-        theOperation(aCopy);
-        aCopy.TShape()!.FreezeGraph();
-        return aCopy;
+        operation(copy);
+        copy.TShape()!.FreezeGraph();
+        return copy;
     }
 
     /// <summary>
-    /// The functional twin of <see cref="Update(in TopoDS_Shape)"/>: a copy of the shape whose faces have their UV
+    /// The functional twin of <see cref="Update(in Shape)"/>: a copy of the shape whose faces have their UV
     /// points updated (unless checked) and are marked checked.
     /// </summary>
-    public static TopoDS_Shape Updated(in TopoDS_Shape S) => Updated(S, out _);
+    public static Shape Updated(in Shape s) => Updated(s, out _);
 
-    /// <summary>The functional twin of <see cref="Update(in TopoDS_Shape)"/>, with the history from the shape to the copy.</summary>
-    public static TopoDS_Shape Updated(in TopoDS_Shape S, out BRepTools_History theHistory)
-        => onCopy(S, aCopy => Update(aCopy), out theHistory);
+    /// <summary>The functional twin of <see cref="Update(in Shape)"/>, with the history from the shape to the copy.</summary>
+    public static Shape Updated(in Shape s, out History history)
+        => OnCopy(s, aCopy => Update(aCopy), out history);
 
     /// <summary>
     /// The functional twin of <see cref="UpdateFaceUVPoints"/>: a copy of the face whose edges' UV points are reset to
     /// the end points of their pcurves.
     /// </summary>
-    public static TopoDS_Face FaceUVPointsUpdated(in TopoDS_Face theF) => FaceUVPointsUpdated(theF, out _);
+    public static Face FaceUVPointsUpdated(in Face f) => FaceUVPointsUpdated(f, out _);
 
     /// <summary>The functional twin of <see cref="UpdateFaceUVPoints"/>, with the history from the face to the copy.</summary>
-    public static TopoDS_Face FaceUVPointsUpdated(in TopoDS_Face theF, out BRepTools_History theHistory)
-        => TopoDS.Face(onCopy(theF, aCopy => UpdateFaceUVPoints(TopoDS.Face(aCopy)), out theHistory));
+    public static Face FaceUVPointsUpdated(in Face f, out History history)
+        => ShapeCasts.Face(OnCopy(f, aCopy => UpdateFaceUVPoints(ShapeCasts.Face(aCopy)), out history));
 
     /// <summary>
     /// The functional twin of <see cref="Clean"/>: a copy of the shape without the triangulations of its faces that
-    /// have a surface, nor the polygons of its edges that have geometry (with <paramref name="theForce"/>, without any
+    /// have a surface, nor the polygons of its edges that have geometry (with <paramref name="force"/>, without any
     /// polygon on triangulation).
     /// </summary>
-    public static TopoDS_Shape Cleaned(in TopoDS_Shape theShape, bool theForce = false) => Cleaned(theShape, out _, theForce);
+    public static Shape Cleaned(in Shape shape, bool force = false) => Cleaned(shape, out _, force);
 
     /// <summary>The functional twin of <see cref="Clean"/>, with the history from the shape to the copy.</summary>
-    public static TopoDS_Shape Cleaned(in TopoDS_Shape theShape, out BRepTools_History theHistory, bool theForce = false)
-        => onCopy(theShape, aCopy => Clean(aCopy, theForce), out theHistory);
+    public static Shape Cleaned(in Shape shape, out History history, bool force = false)
+        => OnCopy(shape, aCopy => Clean(aCopy, force), out history);
 
     /// <summary>
     /// The functional twin of <see cref="CleanGeometry"/>: a copy of the shape without the geometry of its faces and
     /// edges (curves, pcurves, surfaces), keeping the meshes.
     /// </summary>
-    public static TopoDS_Shape GeometryCleaned(in TopoDS_Shape theShape) => GeometryCleaned(theShape, out _);
+    public static Shape GeometryCleaned(in Shape shape) => GeometryCleaned(shape, out _);
 
     /// <summary>The functional twin of <see cref="CleanGeometry"/>, with the history from the shape to the copy.</summary>
-    public static TopoDS_Shape GeometryCleaned(in TopoDS_Shape theShape, out BRepTools_History theHistory)
-        => onCopy(theShape, aCopy => CleanGeometry(aCopy), out theHistory);
+    public static Shape GeometryCleaned(in Shape shape, out History history)
+        => OnCopy(shape, aCopy => CleanGeometry(aCopy), out history);
 
     /// <summary>
     /// The functional twin of <see cref="RemoveUnusedPCurves"/>: a copy of the shape whose edges keep only the pcurves
     /// on the surfaces of its faces.
     /// </summary>
-    public static TopoDS_Shape UnusedPCurvesRemoved(in TopoDS_Shape S) => UnusedPCurvesRemoved(S, out _);
+    public static Shape UnusedPCurvesRemoved(in Shape s) => UnusedPCurvesRemoved(s, out _);
 
     /// <summary>The functional twin of <see cref="RemoveUnusedPCurves"/>, with the history from the shape to the copy.</summary>
-    public static TopoDS_Shape UnusedPCurvesRemoved(in TopoDS_Shape S, out BRepTools_History theHistory)
-        => onCopy(S, aCopy => RemoveUnusedPCurves(aCopy), out theHistory);
+    public static Shape UnusedPCurvesRemoved(in Shape s, out History history)
+        => OnCopy(s, aCopy => RemoveUnusedPCurves(aCopy), out history);
 
     /// <summary>
     /// The functional twin of <see cref="RemoveInternals"/>: a copy of the shape without its INTERNAL sub-shapes
-    /// (with <paramref name="theForce"/>, also those that connect other sub-shapes).
+    /// (with <paramref name="force"/>, also those that connect other sub-shapes).
     /// </summary>
-    public static TopoDS_Shape InternalsRemoved(in TopoDS_Shape theS, bool theForce = false) => InternalsRemoved(theS, out _, theForce);
+    public static Shape InternalsRemoved(in Shape s, bool force = false) => InternalsRemoved(s, out _, force);
 
     /// <summary>
     /// The functional twin of <see cref="RemoveInternals"/>, with the history from the shape to the copy: the removed
     /// INTERNAL sub-shapes stay recorded as modified into their copies, which the result no longer contains.
     /// </summary>
-    public static TopoDS_Shape InternalsRemoved(in TopoDS_Shape theS, out BRepTools_History theHistory, bool theForce = false)
-        => onCopy(theS, aCopy => RemoveInternals(aCopy, theForce), out theHistory);
+    public static Shape InternalsRemoved(in Shape s, out History history, bool force = false)
+        => OnCopy(s, aCopy => RemoveInternals(aCopy, force), out history);
 
     /// <summary>
     /// The functional twin of <see cref="LoadTriangulation"/>: a copy of the shape whose faces' triangulations (the
     /// active ones, or those of the index) have their deferred data loaded, made active if asked.
-    /// <paramref name="theIsLoaded"/> is LoadTriangulation's result.
+    /// <paramref name="isLoaded"/> is LoadTriangulation's result.
     /// </summary>
-    public static TopoDS_Shape TriangulationLoaded(in TopoDS_Shape theShape,
-                                                   out bool theIsLoaded,
-                                                   int theTriangulationIdx = -1,
-                                                   bool theToSetAsActive = false)
+    public static Shape TriangulationLoaded(in Shape shape,
+                                                   out bool isLoaded,
+                                                   int triangulationIdx = -1,
+                                                   bool toSetAsActive = false)
     {
         bool anIsLoaded = false;
-        TopoDS_Shape aResult = onCopy(theShape,
-                                      aCopy => anIsLoaded = LoadTriangulation(aCopy, theTriangulationIdx, theToSetAsActive),
+        Shape result = OnCopy(shape,
+                                      aCopy => anIsLoaded = LoadTriangulation(aCopy, triangulationIdx, toSetAsActive),
                                       out _);
-        theIsLoaded = anIsLoaded;
-        return aResult;
+        isLoaded = anIsLoaded;
+        return result;
     }
 
     /// <summary>
     /// The functional twin of <see cref="LoadAllTriangulations"/>: a copy of the shape whose faces' triangulations all
-    /// have their deferred data loaded. <paramref name="theIsLoaded"/> is LoadAllTriangulations' result.
+    /// have their deferred data loaded. <paramref name="isLoaded"/> is LoadAllTriangulations' result.
     /// </summary>
-    public static TopoDS_Shape AllTriangulationsLoaded(in TopoDS_Shape theShape, out bool theIsLoaded)
+    public static Shape AllTriangulationsLoaded(in Shape shape, out bool isLoaded)
     {
         bool anIsLoaded = false;
-        TopoDS_Shape aResult = onCopy(theShape, aCopy => anIsLoaded = LoadAllTriangulations(aCopy), out _);
-        theIsLoaded = anIsLoaded;
-        return aResult;
+        Shape result = OnCopy(shape, aCopy => anIsLoaded = LoadAllTriangulations(aCopy), out _);
+        isLoaded = anIsLoaded;
+        return result;
     }
 
     /// <summary>
     /// The functional twin of <see cref="UnloadTriangulation"/>: a copy of the shape whose faces' triangulations (the
-    /// active ones, or those of the index) have their deferred data unloaded. <paramref name="theIsUnloaded"/> is
+    /// active ones, or those of the index) have their deferred data unloaded. <paramref name="isUnloaded"/> is
     /// UnloadTriangulation's result.
     /// </summary>
-    public static TopoDS_Shape TriangulationUnloaded(in TopoDS_Shape theShape, out bool theIsUnloaded, int theTriangulationIdx = -1)
+    public static Shape TriangulationUnloaded(in Shape shape, out bool isUnloaded, int triangulationIdx = -1)
     {
         bool anIsUnloaded = false;
-        TopoDS_Shape aResult = onCopy(theShape, aCopy => anIsUnloaded = UnloadTriangulation(aCopy, theTriangulationIdx), out _);
-        theIsUnloaded = anIsUnloaded;
-        return aResult;
+        Shape result = OnCopy(shape, aCopy => anIsUnloaded = UnloadTriangulation(aCopy, triangulationIdx), out _);
+        isUnloaded = anIsUnloaded;
+        return result;
     }
 
     /// <summary>
     /// The functional twin of <see cref="UnloadAllTriangulations"/>: a copy of the shape whose faces' triangulations
-    /// all have their deferred data unloaded. <paramref name="theIsUnloaded"/> is UnloadAllTriangulations' result.
+    /// all have their deferred data unloaded. <paramref name="isUnloaded"/> is UnloadAllTriangulations' result.
     /// </summary>
-    public static TopoDS_Shape AllTriangulationsUnloaded(in TopoDS_Shape theShape, out bool theIsUnloaded)
+    public static Shape AllTriangulationsUnloaded(in Shape shape, out bool isUnloaded)
     {
         bool anIsUnloaded = false;
-        TopoDS_Shape aResult = onCopy(theShape, aCopy => anIsUnloaded = UnloadAllTriangulations(aCopy), out _);
-        theIsUnloaded = anIsUnloaded;
-        return aResult;
+        Shape result = OnCopy(shape, aCopy => anIsUnloaded = UnloadAllTriangulations(aCopy), out _);
+        isUnloaded = anIsUnloaded;
+        return result;
     }
 
     /// <summary>
     /// The functional twin of <see cref="ActivateTriangulation"/>: a copy of the shape whose faces have the
-    /// triangulation of the index active. <paramref name="theIsActivated"/> is ActivateTriangulation's result.
+    /// triangulation of the index active. <paramref name="isActivated"/> is ActivateTriangulation's result.
     /// </summary>
-    public static TopoDS_Shape TriangulationActivated(in TopoDS_Shape theShape,
-                                                      int theTriangulationIdx,
-                                                      out bool theIsActivated,
-                                                      bool theToActivateStrictly = false)
+    public static Shape TriangulationActivated(in Shape shape,
+                                                      int triangulationIdx,
+                                                      out bool isActivated,
+                                                      bool toActivateStrictly = false)
     {
         bool anIsActivated = false;
-        TopoDS_Shape aResult = onCopy(theShape,
-                                      aCopy => anIsActivated = ActivateTriangulation(aCopy, theTriangulationIdx, theToActivateStrictly),
+        Shape result = OnCopy(shape,
+                                      aCopy => anIsActivated = ActivateTriangulation(aCopy, triangulationIdx, toActivateStrictly),
                                       out _);
-        theIsActivated = anIsActivated;
-        return aResult;
+        isActivated = anIsActivated;
+        return result;
     }
 
     /// <summary>
     /// The functional twin of <see cref="EvalAndUpdateTol"/>: a copy of the edge whose tolerance is raised to the
-    /// deviation of the pcurve <paramref name="C2d"/> on <paramref name="S"/> from <paramref name="C3d"/> over
-    /// [f, l] if larger. <paramref name="theTol"/> is EvalAndUpdateTol's result.
+    /// deviation of the pcurve <paramref name="c2d"/> on <paramref name="s"/> from <paramref name="c3d"/> over
+    /// [f, l] if larger. <paramref name="tol"/> is EvalAndUpdateTol's result.
     /// </summary>
-    public static TopoDS_Edge TolEvaluatedAndUpdated(in TopoDS_Edge theE,
-                                                     Geom_Curve C3d,
-                                                     Geom2d_Curve C2d,
-                                                     Geom_Surface S,
+    public static Edge TolEvaluatedAndUpdated(in Edge e,
+                                                     Curve3D c3d,
+                                                     Curve2D c2d,
+                                                     Surface s,
                                                      double f,
                                                      double l,
-                                                     out double theTol)
+                                                     out double tol)
     {
         double aTol = 0.0;
-        TopoDS_Shape aResult = onCopy(theE, aCopy => aTol = EvalAndUpdateTol(TopoDS.Edge(aCopy), C3d, C2d, S, f, l), out _);
-        theTol = aTol;
-        return TopoDS.Edge(aResult);
+        Shape result = OnCopy(e, aCopy => aTol = EvalAndUpdateTol(ShapeCasts.Edge(aCopy), c3d, c2d, s, f, l), out _);
+        tol = aTol;
+        return ShapeCasts.Edge(result);
     }
 }

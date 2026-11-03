@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+
 namespace Occt;
 
 /// <summary>
@@ -18,8 +20,8 @@ namespace Occt;
 public sealed class IntPolyh_Intersection
 {
     // Inputs
-    private readonly Adaptor3d_Surface mySurf1; // First surface
-    private readonly Adaptor3d_Surface mySurf2; // Second surface
+    private readonly SurfaceAdaptorBase mySurf1; // First surface
+    private readonly SurfaceAdaptorBase mySurf2; // Second surface
     private readonly int myNbSU1; // Number of samples in U direction for first surface
     private readonly int myNbSV1; // Number of samples in V direction for first surface
     private readonly int myNbSU2; // Number of samples in U direction for second surface
@@ -31,7 +33,7 @@ public sealed class IntPolyh_Intersection
     private bool myIsParallel;
 
     /// <summary>Intersects two surfaces with 10 x 10 samples each.</summary>
-    public IntPolyh_Intersection(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2)
+    public IntPolyh_Intersection(SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2)
     {
         mySurf1 = theS1;
         mySurf2 = theS2;
@@ -48,7 +50,7 @@ public sealed class IntPolyh_Intersection
 
     /// <summary>Intersects two surfaces with <paramref name="theNbSU1"/> x <paramref name="theNbSV1"/> samples on the
     /// first and <paramref name="theNbSU2"/> x <paramref name="theNbSV2"/> on the second.</summary>
-    public IntPolyh_Intersection(Adaptor3d_Surface theS1, int theNbSU1, int theNbSV1, Adaptor3d_Surface theS2,
+    public IntPolyh_Intersection(SurfaceAdaptorBase theS1, int theNbSU1, int theNbSV1, SurfaceAdaptorBase theS2,
                                  int theNbSU2, int theNbSV2)
     {
         mySurf1 = theS1;
@@ -65,8 +67,8 @@ public sealed class IntPolyh_Intersection
     }
 
     /// <summary>Intersects two surfaces at the given samplings (parameters from 1).</summary>
-    public IntPolyh_Intersection(Adaptor3d_Surface theS1, NCollection_Array1<double> theUPars1,
-                                 NCollection_Array1<double> theVPars1, Adaptor3d_Surface theS2,
+    public IntPolyh_Intersection(SurfaceAdaptorBase theS1, NCollection_Array1<double> theUPars1,
+                                 NCollection_Array1<double> theVPars1, SurfaceAdaptorBase theS2,
                                  NCollection_Array1<double> theUPars2, NCollection_Array1<double> theVPars2)
     {
         mySurf1 = theS1;

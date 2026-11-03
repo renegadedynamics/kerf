@@ -10,7 +10,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class GeomFill_NSections_Test
 {
     // Builds a simple degree-1 BSpline line segment from (0,0,0) to (1,0,0).
-    private static Geom_BSplineCurve makeSimpleLinearCurve()
+    private static BSplineCurve3D makeSimpleLinearCurve()
     {
         NCollection_Array1<Point3D> aPoles = new(1, 2);
         aPoles[1] = new Point3D(0.0, 0.0, 0.0);
@@ -24,7 +24,7 @@ public class GeomFill_NSections_Test
         aMults[1] = 2;
         aMults[2] = 2;
 
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 1);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 1);
     }
 
     // Tests that GeomFill_NSections with a single-curve sequence does not throw.
@@ -33,11 +33,11 @@ public class GeomFill_NSections_Test
     [Fact]
     public void OCC27875_SingleCurveDoesNotThrow()
     {
-        Geom_BSplineCurve aCurve = makeSimpleLinearCurve();
+        BSplineCurve3D aCurve = makeSimpleLinearCurve();
         Assert.NotNull(aCurve);
 
         // The NCollection_IncAllocator argument of OCCT's sequence is dropped (translation rules 9).
-        NCollection_Sequence<Geom_Curve> aNC = new();
+        NCollection_Sequence<Curve3D> aNC = new();
         aNC.Append(aCurve);
 
         // Must not throw even though result may be degenerate

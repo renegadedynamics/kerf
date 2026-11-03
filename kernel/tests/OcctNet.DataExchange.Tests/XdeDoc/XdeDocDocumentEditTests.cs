@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using static OcctNet.DataExchange.Tests.MeshTestKit;
 
 namespace OcctNet.DataExchange.Tests;
@@ -11,22 +14,22 @@ namespace OcctNet.DataExchange.Tests;
 /// </summary>
 public class XdeDocDocumentEditTests
 {
-    private static TopoDS_Compound Compound(params TopoDS_Shape[] theShapes)
+    private static Compound Compound(params Shape[] theShapes)
     {
-        var aBuilder = new BRep_Builder();
-        TopoDS_Compound aCompound = new();
+        var aBuilder = new BrepBuilder();
+        Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
-        foreach (TopoDS_Shape aShape in theShapes)
+        foreach (Shape aShape in theShapes)
         {
             aBuilder.Add(aCompound, aShape);
         }
         return aCompound;
     }
 
-    private static int CountChildren(in TopoDS_Shape theShape)
+    private static int CountChildren(in Shape theShape)
     {
         int aCount = 0;
-        for (var anIt = new TopoDS_Iterator(theShape); anIt.More(); anIt.Next())
+        for (var anIt = new Iterator(theShape); anIt.More(); anIt.Next())
         {
             aCount++;
         }
@@ -36,8 +39,8 @@ public class XdeDocDocumentEditTests
     [Fact]
     public void ACompoundAddedAsAnAssemblyIsFoundByItsShape()
     {
-        TopoDS_Shape aBox1 = Box(1, 1, 1), aBox2 = Box(2, 2, 2);
-        TopoDS_Compound aCompound = Compound(aBox1, aBox2);
+        Shape aBox1 = Box(1, 1, 1), aBox2 = Box(2, 2, 2);
+        Compound aCompound = Compound(aBox1, aBox2);
         var aDoc = new XdeDoc_Document();
         XdeDoc_Label aLabel = aDoc.AddShape(aCompound);
         Assert.Equal("0:1:1:1", aLabel.Entry());
@@ -48,7 +51,7 @@ public class XdeDocDocumentEditTests
     [Fact]
     public void AutoNamingNamesAsXcaf()
     {
-        TopoDS_Compound aCompound = Compound(Box(1, 1, 1), Box(2, 2, 2));
+        Compound aCompound = Compound(Box(1, 1, 1), Box(2, 2, 2));
         var aPlain = new XdeDoc_Document();
         aPlain.AddShape(aCompound);
         Assert.False(aPlain.GetName(aPlain.FindLabel("0:1:1:1"), out _));
@@ -108,7 +111,7 @@ public class XdeDocDocumentEditTests
     [Fact]
     public void ShapesComponentsAndLayersAreRemoved()
     {
-        TopoDS_Shape aBox1 = Box(1, 1, 1), aBox2 = Box(2, 2, 2);
+        Shape aBox1 = Box(1, 1, 1), aBox2 = Box(2, 2, 2);
         var aDoc = new XdeDoc_Document();
         XdeDoc_Label anAssembly = aDoc.AddShape(Compound(aBox1, aBox2));
         XdeDoc_Label aComp2 = aDoc.FindLabel("0:1:1:1:2");
@@ -119,7 +122,7 @@ public class XdeDocDocumentEditTests
         Assert.Equal(1, aDoc.NbComponents(anAssembly));
         Assert.Equal(1, CountChildren(aDoc.GetShape(anAssembly)));
         Assert.True(aDoc.RemoveShape(aPart2));
-        Assert.True(aDoc.GetShape(aPart2).IsNull());
+        Assert.True(aDoc.GetShape(aPart2).IsNull);
         Assert.True(aDoc.FindShape(aBox2).IsNull());
         var aFree = new NCollection_Sequence<XdeDoc_Label>();
         aDoc.GetFreeShapes(aFree);

@@ -10,15 +10,15 @@ namespace Occt;
 
 /// <summary>
 /// Splits a 3D curve with a criterion (the base class splits at the values given). The curve given is copied at
-/// <see cref="Init(Geom_Curve, double, double)"/>, so it is never modified.
+/// <see cref="Init(Curve3D, double, double)"/>, so it is never modified.
 /// </summary>
 /// <remarks>A working object (decision 21). The resulting curves are the tool's own, unfrozen.</remarks>
 public class ShapeUpgrade_SplitCurve3d : ShapeUpgrade_SplitCurve
 {
     /// <summary>The tool's copy of the curve.</summary>
-    protected Geom_Curve? myCurve;
+    protected Curve3D? myCurve;
     /// <summary>The resulting curves.</summary>
-    protected NCollection_HArray1<Geom_Curve>? myResultingCurves;
+    protected NCollection_HArray1<Curve3D>? myResultingCurves;
 
     /// <summary>Empty constructor.</summary>
     public ShapeUpgrade_SplitCurve3d()
@@ -26,22 +26,22 @@ public class ShapeUpgrade_SplitCurve3d : ShapeUpgrade_SplitCurve
     }
 
     /// <summary>Initializes with the curve over its whole range.</summary>
-    public void Init(Geom_Curve C)
+    public void Init(Curve3D C)
     {
         Init(C, C.FirstParameter(), C.LastParameter());
     }
 
     /// <summary>Initializes with a copy of the curve, bounded by the parameters (clipped to a non-periodic curve's domain).</summary>
-    public void Init(Geom_Curve C, double First, double Last)
+    public void Init(Curve3D C, double First, double Last)
     {
-        Geom_Curve CopyOfC = (Geom_Curve)C.Copy();
+        Curve3D CopyOfC = (Curve3D)C.Copy();
         myCurve = CopyOfC;
 
         double precision = Kerf.Engine.Foundation.Precision.PConfusion();
         double firstPar = First;
         double lastPar = Last;
-        Geom_Curve aCurve = myCurve;
-        if (aCurve is Geom_TrimmedCurve aTrimmed)
+        Curve3D aCurve = myCurve;
+        if (aCurve is TrimmedCurve3D aTrimmed)
         {
             aCurve = aTrimmed.BasisCurve();
         }
@@ -92,19 +92,19 @@ public class ShapeUpgrade_SplitCurve3d : ShapeUpgrade_SplitCurve
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
         }
-        if (myCurve is Geom_TrimmedCurve tmp)
+        if (myCurve is TrimmedCurve3D tmp)
         {
-            Geom_Curve BasCurve = tmp.BasisCurve();
+            Curve3D BasCurve = tmp.BasisCurve();
             var spc = new ShapeUpgrade_SplitCurve3d();
             spc.Init(BasCurve, First, Last);
             spc.SetSplitValues(mySplitValues);
             spc.Build(Segment);
             myNbCurves = spc.GetCurves()!.Length();
 
-            myResultingCurves = new NCollection_HArray1<Geom_Curve>(1, myNbCurves);
+            myResultingCurves = new NCollection_HArray1<Curve3D>(1, myNbCurves);
             if (myNbCurves == 1)
             {
-                var NewTrimCurve = new Geom_TrimmedCurve(spc.GetCurves()!.Value(1), First, Last);
+                var NewTrimCurve = new TrimmedCurve3D(spc.GetCurves()!.Value(1), First, Last);
                 myResultingCurves.SetValue(1, NewTrimCurve);
             }
             else
@@ -114,9 +114,9 @@ public class ShapeUpgrade_SplitCurve3d : ShapeUpgrade_SplitCurve
             myStatus |= spc.myStatus;
             return;
         }
-        else if (myCurve is Geom_OffsetCurve tmpOffset)
+        else if (myCurve is OffsetCurve3D tmpOffset)
         {
-            Geom_Curve BasCurve = tmpOffset.BasisCurve();
+            Curve3D BasCurve = tmpOffset.BasisCurve();
             double Offset = tmpOffset.Offset();
             Direction3D Direct = tmpOffset.Direction();
             var spc = new ShapeUpgrade_SplitCurve3d();
@@ -124,10 +124,10 @@ public class ShapeUpgrade_SplitCurve3d : ShapeUpgrade_SplitCurve
             spc.SetSplitValues(mySplitValues);
             spc.Build(Segment);
             myNbCurves = spc.GetCurves()!.Length();
-            myResultingCurves = new NCollection_HArray1<Geom_Curve>(1, myNbCurves);
+            myResultingCurves = new NCollection_HArray1<Curve3D>(1, myNbCurves);
             for (int i = 1; i <= myNbCurves; i++)
             {
-                var NewOffsetCurve = new Geom_OffsetCurve(spc.GetCurves()!.Value(i), Offset, Direct);
+                var NewOffsetCurve = new OffsetCurve3D(spc.GetCurves()!.Value(i), Offset, Direct);
                 myResultingCurves.SetValue(i, NewOffsetCurve);
             }
             myStatus |= spc.myStatus;
@@ -165,7 +165,7 @@ public class ShapeUpgrade_SplitCurve3d : ShapeUpgrade_SplitCurve
         }
 
         myNbCurves = mySplitValues.Length() - 1;
-        myResultingCurves = new NCollection_HArray1<Geom_Curve>(1, myNbCurves);
+        myResultingCurves = new NCollection_HArray1<Curve3D>(1, myNbCurves);
         if (myNbCurves == 1)
         {
             bool filled = true;
@@ -174,11 +174,11 @@ public class ShapeUpgrade_SplitCurve3d : ShapeUpgrade_SplitCurve
             {
                 myResultingCurves.SetValue(1, myCurve);
             }
-            else if (!Segment || (myCurve is not Geom_BSplineCurve && myCurve is not Geom_BezierCurve)
+            else if (!Segment || (myCurve is not BSplineCurve3D && myCurve is not BezierCurve3D)
                      || !Status(ShapeExtend_DONE2))
             {
                 // OCCT's commented-out segmentation left out
-                var theNewCurve = new Geom_TrimmedCurve((Geom_Curve)myCurve.Copy(), First, Last);
+                var theNewCurve = new TrimmedCurve3D((Curve3D)myCurve.Copy(), First, Last);
                 myResultingCurves.SetValue(1, theNewCurve);
             }
             else
@@ -191,9 +191,9 @@ public class ShapeUpgrade_SplitCurve3d : ShapeUpgrade_SplitCurve
             }
         }
 
-        if (myCurve is Geom_BSplineCurve)
+        if (myCurve is BSplineCurve3D)
         {
-            var BsCurve = (Geom_BSplineCurve)myCurve.Copy();
+            var BsCurve = (BSplineCurve3D)myCurve.Copy();
             int FirstInd = BsCurve.FirstUKnotIndex(), LastInd = BsCurve.LastUKnotIndex();
             int j = FirstInd;
             for (int ii = 1; ii <= mySplitValues.Length(); ii++)
@@ -222,33 +222,33 @@ public class ShapeUpgrade_SplitCurve3d : ShapeUpgrade_SplitCurve
         {
             // skl : in the next block I change "First","Last" to "Firstt","Lastt"
             double Firstt = mySplitValues.Value(i), Lastt = mySplitValues.Value(i + 1);
-            Geom_Curve? theNewCurve = null;
+            Curve3D? theNewCurve = null;
             if (Segment)
             {
-                if (myCurve is Geom_BSplineCurve || myCurve is Geom_BezierCurve)
+                if (myCurve is BSplineCurve3D || myCurve is BezierCurve3D)
                 {
-                    theNewCurve = (Geom_Curve)myCurve!.Copy();
+                    theNewCurve = (Curve3D)myCurve!.Copy();
                     try
                     {
-                        if (myCurve is Geom_BSplineCurve)
+                        if (myCurve is BSplineCurve3D)
                         {
-                            ((Geom_BSplineCurve)theNewCurve).Segment(Firstt, Lastt);
+                            ((BSplineCurve3D)theNewCurve).Segment(Firstt, Lastt);
                         }
-                        else if (myCurve is Geom_BezierCurve)
+                        else if (myCurve is BezierCurve3D)
                         {
-                            ((Geom_BezierCurve)theNewCurve).Segment(Firstt, Lastt);
+                            ((BezierCurve3D)theNewCurve).Segment(Firstt, Lastt);
                         }
                         myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE3);
                     }
                     catch (Exception anException) when (ShapeUpgrade.IsCaughtFailure(anException))
                     {
                         // OCCT_DEBUG output left out
-                        theNewCurve = new Geom_TrimmedCurve((Geom_Curve)myCurve.Copy(), Firstt, Lastt);
+                        theNewCurve = new TrimmedCurve3D((Curve3D)myCurve.Copy(), Firstt, Lastt);
                     }
                 }
                 else
                 {
-                    theNewCurve = new Geom_TrimmedCurve((Geom_Curve)myCurve!.Copy(), Firstt, Lastt);
+                    theNewCurve = new TrimmedCurve3D((Curve3D)myCurve!.Copy(), Firstt, Lastt);
                 }
             }
             myResultingCurves.SetValue(i, theNewCurve!);
@@ -256,5 +256,5 @@ public class ShapeUpgrade_SplitCurve3d : ShapeUpgrade_SplitCurve
     }
 
     /// <summary>Returns the resulting curves (the tool's own).</summary>
-    public NCollection_HArray1<Geom_Curve>? GetCurves() => myResultingCurves;
+    public NCollection_HArray1<Curve3D>? GetCurves() => myResultingCurves;
 }

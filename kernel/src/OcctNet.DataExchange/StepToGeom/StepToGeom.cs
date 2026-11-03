@@ -7,13 +7,18 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using static Kerf.Geometry.Continuity;
 using static Occt.StepData_Logical;
 using static Occt.StepGeom_KnotType;
 using static Occt.StepGeom_TrimmingPreference;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -34,9 +39,9 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts an axis1_placement.</summary>
-    public static Geom_Axis1Placement? MakeAxis1Placement(StepGeom_Axis1Placement SA, in StepData_Factors theLocalFactors)
+    public static Axis1Placement? MakeAxis1Placement(StepGeom_Axis1Placement SA, in StepData_Factors theLocalFactors)
     {
-        Geom_CartesianPoint? P = MakeCartesianPoint(SA.Location(), theLocalFactors);
+        CartesianPoint? P = MakeCartesianPoint(SA.Location(), theLocalFactors);
         if (P is not null)
         {
             // sln 22.10.2001. CTS23496: If problems with creation of axis direction occur default direction
@@ -44,28 +49,28 @@ public static class StepToGeom
             Direction3D D = new Direction3D(Direction3D.D.Z);
             if (SA.HasAxis())
             {
-                Geom_Direction? D1 = MakeDirection(SA.Axis());
+                Direction? D1 = MakeDirection(SA.Axis());
                 if (D1 is not null)
                 {
                     D = D1.Dir();
                 }
             }
-            return new Geom_Axis1Placement(P.Pnt(), D);
+            return new Axis1Placement(P.Pnt(), D);
         }
         return null;
     }
 
     /// <summary>Converts an axis1_placement (default factors).</summary>
-    public static Geom_Axis1Placement? MakeAxis1Placement(StepGeom_Axis1Placement SA) => MakeAxis1Placement(SA, new StepData_Factors());
+    public static Axis1Placement? MakeAxis1Placement(StepGeom_Axis1Placement SA) => MakeAxis1Placement(SA, new StepData_Factors());
 
     //=============================================================================
     // Creation d' un Axis2Placement de Geom a partir d' un axis2_placement_3d de Step
     //=============================================================================
 
     /// <summary>Converts an axis2_placement_3d.</summary>
-    public static Geom_Axis2Placement? MakeAxis2Placement(StepGeom_Axis2Placement3d SA, in StepData_Factors theLocalFactors)
+    public static Axis2Placement? MakeAxis2Placement(StepGeom_Axis2Placement3d SA, in StepData_Factors theLocalFactors)
     {
-        Geom_CartesianPoint? P = MakeCartesianPoint(SA.Location(), theLocalFactors);
+        CartesianPoint? P = MakeCartesianPoint(SA.Location(), theLocalFactors);
         if (P is not null)
         {
             Point3D Pgp = P.Pnt();
@@ -75,7 +80,7 @@ public static class StepToGeom
             Direction3D Ngp = new Direction3D(Direction3D.D.Z);
             if (SA.HasAxis())
             {
-                Geom_Direction? D = MakeDirection(SA.Axis());
+                Direction? D = MakeDirection(SA.Axis());
                 if (D is not null)
                 {
                     Ngp = D.Dir();
@@ -86,7 +91,7 @@ public static class StepToGeom
             bool isDefaultDirectionUsed = true;
             if (SA.HasRefDirection())
             {
-                Geom_Direction? D = MakeDirection(SA.RefDirection());
+                Direction? D = MakeDirection(SA.RefDirection());
                 if (D is not null)
                 {
                     Direction3D Vxgp = D.Dir();
@@ -102,20 +107,20 @@ public static class StepToGeom
                 gpAx2 = new Frame3D(Pgp, Ngp);
             }
 
-            return new Geom_Axis2Placement(gpAx2);
+            return new Axis2Placement(gpAx2);
         }
         return null;
     }
 
     /// <summary>Converts an axis2_placement_3d (default factors).</summary>
-    public static Geom_Axis2Placement? MakeAxis2Placement(StepGeom_Axis2Placement3d SA) => MakeAxis2Placement(SA, new StepData_Factors());
+    public static Axis2Placement? MakeAxis2Placement(StepGeom_Axis2Placement3d SA) => MakeAxis2Placement(SA, new StepData_Factors());
 
     //=============================================================================
     // Creation of an AxisPlacement from a Kinematic SuParameters for Step
     //=============================================================================
 
     /// <summary>Converts the kinematic su_parameters into a placement.</summary>
-    public static Geom_Axis2Placement MakeAxis2Placement(StepGeom_SuParameters theSP)
+    public static Axis2Placement MakeAxis2Placement(StepGeom_SuParameters theSP)
     {
         double aLocX = theSP.A() * Math.Cos(theSP.Gamma()) + theSP.B() * Math.Sin(theSP.Gamma()) * Math.Sin(theSP.Alpha());
         double aLocY = theSP.A() * Math.Sin(theSP.Gamma()) - theSP.B() * Math.Cos(theSP.Gamma()) * Math.Sin(theSP.Alpha());
@@ -132,7 +137,7 @@ public static class StepToGeom
         Direction3D Ngp = new Direction3D(anAsisX, anAxisY, anAxisZ);
         Direction3D Vxgp = new Direction3D(aDirX, aDirY, aDirZ);
         Frame3D gpAx2 = new Frame3D(Pgp, Ngp, Vxgp);
-        return new Geom_Axis2Placement(gpAx2);
+        return new Axis2Placement(gpAx2);
     }
 
     //=============================================================================
@@ -140,9 +145,9 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts an axis2_placement_2d.</summary>
-    public static Geom2d_AxisPlacement? MakeAxisPlacement(StepGeom_Axis2Placement2d SA, in StepData_Factors theLocalFactors)
+    public static AxisPlacement2? MakeAxisPlacement(StepGeom_Axis2Placement2d SA, in StepData_Factors theLocalFactors)
     {
-        Geom2d_CartesianPoint? P = MakeCartesianPoint2d(SA.Location(), theLocalFactors);
+        CartesianPoint2? P = MakeCartesianPoint2d(SA.Location(), theLocalFactors);
         if (P is not null)
         {
             // sln 23.10.2001. CTS23496: If problems with creation of direction occur default direction is
@@ -150,27 +155,27 @@ public static class StepToGeom
             Direction2D Vxgp = new Direction2D(Direction2D.D.X);
             if (SA.HasRefDirection())
             {
-                Geom2d_Direction? Vx = MakeDirection2d(SA.RefDirection());
+                Direction2? Vx = MakeDirection2d(SA.RefDirection());
                 if (Vx is not null)
                 {
                     Vxgp = Vx.Dir2d();
                 }
             }
 
-            return new Geom2d_AxisPlacement(P.Pnt2d(), Vxgp);
+            return new AxisPlacement2(P.Pnt2d(), Vxgp);
         }
         return null;
     }
 
     /// <summary>Converts an axis2_placement_2d (default factors).</summary>
-    public static Geom2d_AxisPlacement? MakeAxisPlacement(StepGeom_Axis2Placement2d SA) => MakeAxisPlacement(SA, new StepData_Factors());
+    public static AxisPlacement2? MakeAxisPlacement(StepGeom_Axis2Placement2d SA) => MakeAxisPlacement(SA, new StepData_Factors());
 
     //=============================================================================
     // Creation d' une BoundedCurve de Geom a partir d' une BoundedCurve de Step
     //=============================================================================
 
     /// <summary>Converts a bounded_curve (B-splines, Bezier, uniform and quasi-uniform curves, trimmed curves, polylines).</summary>
-    public static Geom_BoundedCurve? MakeBoundedCurve(StepGeom_BoundedCurve SC, in StepData_Factors theLocalFactors)
+    public static BoundedCurve3D? MakeBoundedCurve(StepGeom_BoundedCurve SC, in StepData_Factors theLocalFactors)
     {
         if (SC is StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve)
         {
@@ -191,7 +196,7 @@ public static class StepToGeom
         {
             StepGeom_BezierCurve BzC = SC as StepGeom_BezierCurve;
             int aDegree = BzC.Degree();
-            if (aDegree < 1 || aDegree > Geom_BSplineCurve.MaxDegree())
+            if (aDegree < 1 || aDegree > BSplineCurve3D.MaxDegree())
             {
                 return null;
             }
@@ -218,7 +223,7 @@ public static class StepToGeom
         {
             StepGeom_UniformCurve UC = SC as StepGeom_UniformCurve;
             int aDegree = UC.Degree();
-            if (aDegree < 1 || aDegree > Geom_BSplineCurve.MaxDegree())
+            if (aDegree < 1 || aDegree > BSplineCurve3D.MaxDegree())
             {
                 return null;
             }
@@ -248,7 +253,7 @@ public static class StepToGeom
         {
             StepGeom_QuasiUniformCurve QUC = SC as StepGeom_QuasiUniformCurve;
             int aDegree = QUC.Degree();
-            if (aDegree < 1 || aDegree > Geom_BSplineCurve.MaxDegree())
+            if (aDegree < 1 || aDegree > BSplineCurve3D.MaxDegree())
             {
                 return null;
             }
@@ -280,7 +285,7 @@ public static class StepToGeom
         {
             StepGeom_UniformCurveAndRationalBSplineCurve RUC = SC as StepGeom_UniformCurveAndRationalBSplineCurve;
             int aDegree = RUC.Degree();
-            if (aDegree < 1 || aDegree > Geom_BSplineCurve.MaxDegree())
+            if (aDegree < 1 || aDegree > BSplineCurve3D.MaxDegree())
             {
                 return null;
             }
@@ -315,7 +320,7 @@ public static class StepToGeom
         {
             StepGeom_QuasiUniformCurveAndRationalBSplineCurve RQUC = SC as StepGeom_QuasiUniformCurveAndRationalBSplineCurve;
             int aDegree = RQUC.Degree();
-            if (aDegree < 1 || aDegree > Geom_BSplineCurve.MaxDegree())
+            if (aDegree < 1 || aDegree > BSplineCurve3D.MaxDegree())
             {
                 return null;
             }
@@ -356,14 +361,14 @@ public static class StepToGeom
     }
 
     /// <summary>Converts a bounded_curve (default factors).</summary>
-    public static Geom_BoundedCurve? MakeBoundedCurve(StepGeom_BoundedCurve SC) => MakeBoundedCurve(SC, new StepData_Factors());
+    public static BoundedCurve3D? MakeBoundedCurve(StepGeom_BoundedCurve SC) => MakeBoundedCurve(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' une BoundedCurve de Geom a partir d' une BoundedCurve de Step
     //=============================================================================
 
     /// <summary>Converts a bounded_curve into a 2D curve.</summary>
-    public static Geom2d_BoundedCurve? MakeBoundedCurve2d(StepGeom_BoundedCurve SC, in StepData_Factors theLocalFactors)
+    public static BoundedCurve2D? MakeBoundedCurve2d(StepGeom_BoundedCurve SC, in StepData_Factors theLocalFactors)
     {
         if (SC is StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve)
         {
@@ -385,14 +390,14 @@ public static class StepToGeom
     }
 
     /// <summary>Converts a bounded_curve into a 2D curve (default factors).</summary>
-    public static Geom2d_BoundedCurve? MakeBoundedCurve2d(StepGeom_BoundedCurve SC) => MakeBoundedCurve2d(SC, new StepData_Factors());
+    public static BoundedCurve2D? MakeBoundedCurve2d(StepGeom_BoundedCurve SC) => MakeBoundedCurve2d(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' une BoundedSurface de Geom a partir d' une BoundedSurface de Step
     //=============================================================================
 
     /// <summary>Converts a bounded_surface (B-splines, Bezier, uniform and quasi-uniform surfaces, rectangular trimmed surfaces).</summary>
-    public static Geom_BoundedSurface? MakeBoundedSurface(StepGeom_BoundedSurface SS, in StepData_Factors theLocalFactors)
+    public static BoundedSurface? MakeBoundedSurface(StepGeom_BoundedSurface SS, in StepData_Factors theLocalFactors)
     {
         if (SS is StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface)
         {
@@ -619,7 +624,7 @@ public static class StepToGeom
     }
 
     /// <summary>Converts a bounded_surface (default factors).</summary>
-    public static Geom_BoundedSurface? MakeBoundedSurface(StepGeom_BoundedSurface SS) => MakeBoundedSurface(SS, new StepData_Factors());
+    public static BoundedSurface? MakeBoundedSurface(StepGeom_BoundedSurface SS) => MakeBoundedSurface(SS, new StepData_Factors());
 
     //=============================================================================
     // Template function for use in MakeBSplineCurve / MakeBSplineCurve2d
@@ -764,7 +769,7 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a B-spline curve with knots (rational or not).</summary>
-    public static Geom_BSplineCurve? MakeBSplineCurve(StepGeom_BSplineCurve theStepGeom_BSplineCurve, in StepData_Factors theLocalFactors)
+    public static BSplineCurve3D? MakeBSplineCurve(StepGeom_BSplineCurve theStepGeom_BSplineCurve, in StepData_Factors theLocalFactors)
     {
         if (!MakeBSplineCurveKnots(theStepGeom_BSplineCurve, out StepGeom_BSplineCurveWithKnots aBSplineCurveWithKnots,
                                    out StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve aBSplineCurveWithKnotsAndRationalBSplineCurve,
@@ -787,7 +792,7 @@ public static class StepToGeom
 
         for (int i = 1 + aFirstMuultypisityDifference; i <= NbPoles - aLastMuultypisityDifference; ++i)
         {
-            Geom_CartesianPoint? aPoint = MakeCartesianPoint(aControlPointsList.Value(i), theLocalFactors);
+            CartesianPoint? aPoint = MakeCartesianPoint(aControlPointsList.Value(i), theLocalFactors);
             if (aPoint is not null)
             {
                 Point3D aGpPnt = aPoint.Pnt();
@@ -801,22 +806,22 @@ public static class StepToGeom
 
         bool shouldBePeriodic = ShouldBePeriodic(aUniqueKnotMultiplicities, NbPoles, aDegree);
 
-        Geom_BSplineCurve aBSplineCurve;
+        BSplineCurve3D aBSplineCurve;
         if (theStepGeom_BSplineCurve is StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve)
         {
             NCollection_Array1<double> aUniqueWeights =
                 UniqueWeights(aBSplineCurveWithKnotsAndRationalBSplineCurve, NbPoles, aFirstMuultypisityDifference, aLastMuultypisityDifference);
-            aBSplineCurve = new Geom_BSplineCurve(Poles, aUniqueWeights, aUniqueKnots, aUniqueKnotMultiplicities, aDegree, shouldBePeriodic);
+            aBSplineCurve = new BSplineCurve3D(Poles, aUniqueWeights, aUniqueKnots, aUniqueKnotMultiplicities, aDegree, shouldBePeriodic);
         }
         else
         {
-            aBSplineCurve = new Geom_BSplineCurve(Poles, aUniqueKnots, aUniqueKnotMultiplicities, aDegree, shouldBePeriodic);
+            aBSplineCurve = new BSplineCurve3D(Poles, aUniqueKnots, aUniqueKnotMultiplicities, aDegree, shouldBePeriodic);
         }
 
         // abv 04.07.00 CAX-IF TRJ4: trj4_k1_top-md-203.stp #716 (face #581):
         // force periodicity on closed curves
         // OCCT: the logical is tested as a C++ bool, so UNKNOWN counts as closed (occt-issues.md, 8D)
-        if (theStepGeom_BSplineCurve.ClosedCurve() != StepData_LFalse && aBSplineCurve.Degree() > 1 && aBSplineCurve.IsClosed())
+        if (theStepGeom_BSplineCurve.ClosedCurve() != StepData_LFalse && aBSplineCurve.Degree() > 1 && aBSplineCurve.IsClosed)
         {
             aBSplineCurve.SetPeriodic();
         }
@@ -824,7 +829,7 @@ public static class StepToGeom
     }
 
     /// <summary>Converts a B-spline curve with knots (default factors).</summary>
-    public static Geom_BSplineCurve? MakeBSplineCurve(StepGeom_BSplineCurve theStepGeom_BSplineCurve) =>
+    public static BSplineCurve3D? MakeBSplineCurve(StepGeom_BSplineCurve theStepGeom_BSplineCurve) =>
         MakeBSplineCurve(theStepGeom_BSplineCurve, new StepData_Factors());
 
     //=============================================================================
@@ -833,7 +838,7 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a B-spline curve with knots (rational or not) into a 2D curve.</summary>
-    public static Geom2d_BSplineCurve? MakeBSplineCurve2d(StepGeom_BSplineCurve theStepGeom_BSplineCurve, in StepData_Factors theLocalFactors)
+    public static BSplineCurve2D? MakeBSplineCurve2d(StepGeom_BSplineCurve theStepGeom_BSplineCurve, in StepData_Factors theLocalFactors)
     {
         if (!MakeBSplineCurveKnots(theStepGeom_BSplineCurve, out StepGeom_BSplineCurveWithKnots aBSplineCurveWithKnots,
                                    out StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve aBSplineCurveWithKnotsAndRationalBSplineCurve,
@@ -856,7 +861,7 @@ public static class StepToGeom
 
         for (int i = 1 + aFirstMuultypisityDifference; i <= NbPoles - aLastMuultypisityDifference; ++i)
         {
-            Geom2d_CartesianPoint? aPoint = MakeCartesianPoint2d(aControlPointsList.Value(i), theLocalFactors);
+            CartesianPoint2? aPoint = MakeCartesianPoint2d(aControlPointsList.Value(i), theLocalFactors);
             if (aPoint is not null)
             {
                 Point2D aGpPnt = aPoint.Pnt2d();
@@ -870,22 +875,22 @@ public static class StepToGeom
 
         bool shouldBePeriodic = ShouldBePeriodic(aUniqueKnotMultiplicities, NbPoles, aDegree);
 
-        Geom2d_BSplineCurve aBSplineCurve;
+        BSplineCurve2D aBSplineCurve;
         if (theStepGeom_BSplineCurve is StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve)
         {
             NCollection_Array1<double> aUniqueWeights =
                 UniqueWeights(aBSplineCurveWithKnotsAndRationalBSplineCurve, NbPoles, aFirstMuultypisityDifference, aLastMuultypisityDifference);
-            aBSplineCurve = new Geom2d_BSplineCurve(Poles, aUniqueWeights, aUniqueKnots, aUniqueKnotMultiplicities, aDegree, shouldBePeriodic);
+            aBSplineCurve = new BSplineCurve2D(Poles, aUniqueWeights, aUniqueKnots, aUniqueKnotMultiplicities, aDegree, shouldBePeriodic);
         }
         else
         {
-            aBSplineCurve = new Geom2d_BSplineCurve(Poles, aUniqueKnots, aUniqueKnotMultiplicities, aDegree, shouldBePeriodic);
+            aBSplineCurve = new BSplineCurve2D(Poles, aUniqueKnots, aUniqueKnotMultiplicities, aDegree, shouldBePeriodic);
         }
 
         // abv 04.07.00 CAX-IF TRJ4: trj4_k1_top-md-203.stp #716 (face #581):
         // force periodicity on closed curves
         // OCCT: the logical is tested as a C++ bool, so UNKNOWN counts as closed (occt-issues.md, 8D)
-        if (theStepGeom_BSplineCurve.ClosedCurve() != StepData_LFalse && aBSplineCurve.Degree() > 1 && aBSplineCurve.IsClosed())
+        if (theStepGeom_BSplineCurve.ClosedCurve() != StepData_LFalse && aBSplineCurve.Degree() > 1 && aBSplineCurve.IsClosed)
         {
             aBSplineCurve.SetPeriodic();
         }
@@ -893,7 +898,7 @@ public static class StepToGeom
     }
 
     /// <summary>Converts a B-spline curve with knots into a 2D curve (default factors).</summary>
-    public static Geom2d_BSplineCurve? MakeBSplineCurve2d(StepGeom_BSplineCurve theStepGeom_BSplineCurve) =>
+    public static BSplineCurve2D? MakeBSplineCurve2d(StepGeom_BSplineCurve theStepGeom_BSplineCurve) =>
         MakeBSplineCurve2d(theStepGeom_BSplineCurve, new StepData_Factors());
 
     //=============================================================================
@@ -902,7 +907,7 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a B-spline surface with knots (rational or not).</summary>
-    public static Geom_BSplineSurface? MakeBSplineSurface(StepGeom_BSplineSurface SS, in StepData_Factors theLocalFactors)
+    public static BSplineSurface? MakeBSplineSurface(StepGeom_BSplineSurface SS, in StepData_Factors theLocalFactors)
     {
         int i, j;
         StepGeom_BSplineSurfaceWithKnots BS;
@@ -928,7 +933,7 @@ public static class StepToGeom
         {
             for (j = 1; j <= NVPoles; j++)
             {
-                Geom_CartesianPoint? P = MakeCartesianPoint(aControlPointsList.Value(i, j), theLocalFactors);
+                CartesianPoint? P = MakeCartesianPoint(aControlPointsList.Value(i, j), theLocalFactors);
                 if (P is not null)
                 {
                     Poles.SetValue(i, j, P.Pnt());
@@ -1057,7 +1062,7 @@ public static class StepToGeom
             shouldBeVPeriodic = true;
         }
 
-        Geom_BSplineSurface CS;
+        BSplineSurface CS;
         if (SS is StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface)
         {
             NCollection_HArray2<double> aWeight = BSR.WeightsData();
@@ -1069,24 +1074,24 @@ public static class StepToGeom
                     W.SetValue(i, j, aWeight.Value(i, j));
                 }
             }
-            CS = new Geom_BSplineSurface(Poles, W, KUn, KVn, UMult, VMult, UDeg, VDeg, shouldBeUPeriodic, shouldBeVPeriodic);
+            CS = new BSplineSurface(Poles, W, KUn, KVn, UMult, VMult, UDeg, VDeg, shouldBeUPeriodic, shouldBeVPeriodic);
         }
         else
         {
-            CS = new Geom_BSplineSurface(Poles, KUn, KVn, UMult, VMult, UDeg, VDeg, shouldBeUPeriodic, shouldBeVPeriodic);
+            CS = new BSplineSurface(Poles, KUn, KVn, UMult, VMult, UDeg, VDeg, shouldBeUPeriodic, shouldBeVPeriodic);
         }
         return CS;
     }
 
     /// <summary>Converts a B-spline surface with knots (default factors).</summary>
-    public static Geom_BSplineSurface? MakeBSplineSurface(StepGeom_BSplineSurface SS) => MakeBSplineSurface(SS, new StepData_Factors());
+    public static BSplineSurface? MakeBSplineSurface(StepGeom_BSplineSurface SS) => MakeBSplineSurface(SS, new StepData_Factors());
 
     //=============================================================================
     // Creation d' un CartesianPoint de Geom a partir d' un CartesianPoint de Step
     //=============================================================================
 
     /// <summary>Converts a 3D cartesian_point (null if it hasn't three coordinates).</summary>
-    public static Geom_CartesianPoint? MakeCartesianPoint(StepGeom_CartesianPoint SP, in StepData_Factors theLocalFactors)
+    public static CartesianPoint? MakeCartesianPoint(StepGeom_CartesianPoint SP, in StepData_Factors theLocalFactors)
     {
         if (SP is not null && SP.NbCoordinates() == 3)
         {
@@ -1094,13 +1099,13 @@ public static class StepToGeom
             double X = SP.CoordinatesValue(1) * LF;
             double Y = SP.CoordinatesValue(2) * LF;
             double Z = SP.CoordinatesValue(3) * LF;
-            return new Geom_CartesianPoint(X, Y, Z);
+            return new CartesianPoint(X, Y, Z);
         }
         return null;
     }
 
     /// <summary>Converts a 3D cartesian_point (default factors).</summary>
-    public static Geom_CartesianPoint? MakeCartesianPoint(StepGeom_CartesianPoint SP) => MakeCartesianPoint(SP, new StepData_Factors());
+    public static CartesianPoint? MakeCartesianPoint(StepGeom_CartesianPoint SP) => MakeCartesianPoint(SP, new StepData_Factors());
 
     //=============================================================================
     // Creation d' un CartesianPoint de Geom2d a partir d' un CartesianPoint de
@@ -1108,71 +1113,71 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a 2D cartesian_point (null if it hasn't two coordinates). The factors aren't used.</summary>
-    public static Geom2d_CartesianPoint? MakeCartesianPoint2d(StepGeom_CartesianPoint SP, in StepData_Factors theLocalFactors)
+    public static CartesianPoint2? MakeCartesianPoint2d(StepGeom_CartesianPoint SP, in StepData_Factors theLocalFactors)
     {
         // OCCT: SP isn't checked for null (a null point is a null dereference; occt-issues.md, 8D)
         if (SP.NbCoordinates() == 2)
         {
             double X = SP.CoordinatesValue(1);
             double Y = SP.CoordinatesValue(2);
-            return new Geom2d_CartesianPoint(X, Y);
+            return new CartesianPoint2(X, Y);
         }
         return null;
     }
 
     /// <summary>Converts a 2D cartesian_point.</summary>
-    public static Geom2d_CartesianPoint? MakeCartesianPoint2d(StepGeom_CartesianPoint SP) => MakeCartesianPoint2d(SP, new StepData_Factors());
+    public static CartesianPoint2? MakeCartesianPoint2d(StepGeom_CartesianPoint SP) => MakeCartesianPoint2d(SP, new StepData_Factors());
 
     //=============================================================================
     // Creation d' un Circle de Geom a partir d' un Circle de Step
     //=============================================================================
 
     /// <summary>Converts a circle placed by an axis2_placement_3d.</summary>
-    public static Geom_Circle? MakeCircle(StepGeom_Circle SC, in StepData_Factors theLocalFactors)
+    public static CircleCurve3D? MakeCircle(StepGeom_Circle SC, in StepData_Factors theLocalFactors)
     {
         StepGeom_Axis2Placement AxisSelect = SC.Position();
         if (AxisSelect.CaseNum(AxisSelect.Value()) == 2)
         {
-            Geom_Axis2Placement? A = MakeAxis2Placement(AxisSelect.Value() as StepGeom_Axis2Placement3d, theLocalFactors);
+            Axis2Placement? A = MakeAxis2Placement(AxisSelect.Value() as StepGeom_Axis2Placement3d, theLocalFactors);
             if (A is not null)
             {
-                return new Geom_Circle(A.Ax2(), SC.Radius() * theLocalFactors.LengthFactor());
+                return new CircleCurve3D(A.Ax2(), SC.Radius() * theLocalFactors.LengthFactor());
             }
         }
         return null;
     }
 
     /// <summary>Converts a circle (default factors).</summary>
-    public static Geom_Circle? MakeCircle(StepGeom_Circle SC) => MakeCircle(SC, new StepData_Factors());
+    public static CircleCurve3D? MakeCircle(StepGeom_Circle SC) => MakeCircle(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' un Circle de Geom2d a partir d' un Circle de Step
     //=============================================================================
 
     /// <summary>Converts a circle placed by an axis2_placement_2d.</summary>
-    public static Geom2d_Circle? MakeCircle2d(StepGeom_Circle SC, in StepData_Factors theLocalFactors)
+    public static CircleCurve2D? MakeCircle2d(StepGeom_Circle SC, in StepData_Factors theLocalFactors)
     {
         StepGeom_Axis2Placement AxisSelect = SC.Position();
         if (AxisSelect.CaseNum(AxisSelect.Value()) == 1)
         {
-            Geom2d_AxisPlacement? A1 = MakeAxisPlacement(AxisSelect.Value() as StepGeom_Axis2Placement2d, theLocalFactors);
+            AxisPlacement2? A1 = MakeAxisPlacement(AxisSelect.Value() as StepGeom_Axis2Placement2d, theLocalFactors);
             if (A1 is not null)
             {
-                return new Geom2d_Circle(A1.Ax2d(), SC.Radius());
+                return new CircleCurve2D(A1.Ax2d(), SC.Radius());
             }
         }
         return null;
     }
 
     /// <summary>Converts a 2D circle (default factors).</summary>
-    public static Geom2d_Circle? MakeCircle2d(StepGeom_Circle SC) => MakeCircle2d(SC, new StepData_Factors());
+    public static CircleCurve2D? MakeCircle2d(StepGeom_Circle SC) => MakeCircle2d(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' une Conic de Geom a partir d' une Conic de Step
     //=============================================================================
 
     /// <summary>Converts a conic (circle, ellipse, hyperbola, parabola).</summary>
-    public static Geom_Conic? MakeConic(StepGeom_Conic SC, in StepData_Factors theLocalFactors)
+    public static ConicCurve3D? MakeConic(StepGeom_Conic SC, in StepData_Factors theLocalFactors)
     {
         if (SC is StepGeom_Circle)
         {
@@ -1195,14 +1200,14 @@ public static class StepToGeom
     }
 
     /// <summary>Converts a conic (default factors).</summary>
-    public static Geom_Conic? MakeConic(StepGeom_Conic SC) => MakeConic(SC, new StepData_Factors());
+    public static ConicCurve3D? MakeConic(StepGeom_Conic SC) => MakeConic(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' une Conic de Geom2d a partir d' une Conic de Step
     //=============================================================================
 
     /// <summary>Converts a conic into a 2D conic.</summary>
-    public static Geom2d_Conic? MakeConic2d(StepGeom_Conic SC, in StepData_Factors theLocalFactors)
+    public static ConicCurve2D? MakeConic2d(StepGeom_Conic SC, in StepData_Factors theLocalFactors)
     {
         if (SC is StepGeom_Circle)
         {
@@ -1225,7 +1230,7 @@ public static class StepToGeom
     }
 
     /// <summary>Converts a conic into a 2D conic (default factors).</summary>
-    public static Geom2d_Conic? MakeConic2d(StepGeom_Conic SC) => MakeConic2d(SC, new StepData_Factors());
+    public static ConicCurve2D? MakeConic2d(StepGeom_Conic SC) => MakeConic2d(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' une ConicalSurface de Geom a partir d' une ConicalSurface de
@@ -1233,29 +1238,29 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a conical_surface (its semi-angle at least Precision::Angular()).</summary>
-    public static Geom_ConicalSurface? MakeConicalSurface(StepGeom_ConicalSurface SS, in StepData_Factors theLocalFactors)
+    public static ConicalSurface? MakeConicalSurface(StepGeom_ConicalSurface SS, in StepData_Factors theLocalFactors)
     {
-        Geom_Axis2Placement? A = MakeAxis2Placement(SS.Position(), theLocalFactors);
+        Axis2Placement? A = MakeAxis2Placement(SS.Position(), theLocalFactors);
         if (A is not null)
         {
             double R = SS.Radius() * theLocalFactors.LengthFactor();
             double Ang = SS.SemiAngle() * theLocalFactors.PlaneAngleFactor();
             // #2(K3-3) rln 12/02/98 ProSTEP ct_turbine-A.stp entity #518, #3571 (gp::Resolution() is too
             // little)
-            return new Geom_ConicalSurface(new CoordinateSystem(A.Ax2()), Max(Ang, global::Kerf.Engine.Foundation.Precision.Angular()), R);
+            return new ConicalSurface(new CoordinateSystem(A.Ax2()), Max(Ang, global::Kerf.Engine.Foundation.Precision.Angular()), R);
         }
         return null;
     }
 
     /// <summary>Converts a conical_surface (default factors).</summary>
-    public static Geom_ConicalSurface? MakeConicalSurface(StepGeom_ConicalSurface SS) => MakeConicalSurface(SS, new StepData_Factors());
+    public static ConicalSurface? MakeConicalSurface(StepGeom_ConicalSurface SS) => MakeConicalSurface(SS, new StepData_Factors());
 
     //=============================================================================
     // Creation d' une Curve de Geom a partir d' une Curve de Step
     //=============================================================================
 
     /// <summary>Converts a curve: lines, conics, bounded curves, curve replicas, 3D offset curves and surface curves.</summary>
-    public static Geom_Curve? MakeCurve(StepGeom_Curve SC, in StepData_Factors theLocalFactors)
+    public static Curve3D? MakeCurve(StepGeom_Curve SC, in StepData_Factors theLocalFactors)
     {
         if (SC is null)
         {
@@ -1288,7 +1293,7 @@ public static class StepToGeom
             // protect against cyclic references and wrong type of cartop
             if (T is not null && PC != SC)
             {
-                Geom_Curve? C1 = MakeCurve(PC, theLocalFactors);
+                Curve3D? C1 = MakeCurve(PC, theLocalFactors);
                 if (C1 is not null)
                 {
                     Transform3D T1 = new Transform3D();
@@ -1306,13 +1311,13 @@ public static class StepToGeom
             StepGeom_Curve BC = OC.BasisCurve();
             if (BC != SC)
             { // protect against loop
-                Geom_Curve? C1 = MakeCurve(BC, theLocalFactors);
+                Curve3D? C1 = MakeCurve(BC, theLocalFactors);
                 if (C1 is not null)
                 {
-                    Geom_Direction? RD = MakeDirection(OC.RefDirection());
+                    Direction? RD = MakeDirection(OC.RefDirection());
                     if (RD is not null)
                     {
-                        return new Geom_OffsetCurve(C1, -OC.Distance(), RD.Dir());
+                        return new OffsetCurve3D(C1, -OC.Distance(), RD.Dir());
                     }
                 }
             }
@@ -1326,14 +1331,14 @@ public static class StepToGeom
     }
 
     /// <summary>Converts a curve (default factors).</summary>
-    public static Geom_Curve? MakeCurve(StepGeom_Curve SC) => MakeCurve(SC, new StepData_Factors());
+    public static Curve3D? MakeCurve(StepGeom_Curve SC) => MakeCurve(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' une Curve de Geom2d a partir d' une Curve de Step
     //=============================================================================
 
     /// <summary>Converts a curve into a 2D curve: lines, conics, bounded curves and curve replicas.</summary>
-    public static Geom2d_Curve? MakeCurve2d(StepGeom_Curve SC, in StepData_Factors theLocalFactors)
+    public static Curve2D? MakeCurve2d(StepGeom_Curve SC, in StepData_Factors theLocalFactors)
     {
         // as in MakeCurve (decision 1240)
         RuntimeHelpers.EnsureSufficientExecutionStack();
@@ -1357,7 +1362,7 @@ public static class StepToGeom
             // protect against cyclic references and wrong type of cartop
             if (T is not null && PC != SC)
             {
-                Geom2d_Curve? C1 = MakeCurve2d(PC, theLocalFactors);
+                Curve2D? C1 = MakeCurve2d(PC, theLocalFactors);
                 if (C1 is not null)
                 {
                     Transform2D T1 = new Transform2D();
@@ -1373,7 +1378,7 @@ public static class StepToGeom
     }
 
     /// <summary>Converts a curve into a 2D curve (default factors).</summary>
-    public static Geom2d_Curve? MakeCurve2d(StepGeom_Curve SC) => MakeCurve2d(SC, new StepData_Factors());
+    public static Curve2D? MakeCurve2d(StepGeom_Curve SC) => MakeCurve2d(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' une CylindricalSurface de Geom a partir d' une
@@ -1381,18 +1386,18 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a cylindrical_surface.</summary>
-    public static Geom_CylindricalSurface? MakeCylindricalSurface(StepGeom_CylindricalSurface SS, in StepData_Factors theLocalFactors)
+    public static CylindricalSurface? MakeCylindricalSurface(StepGeom_CylindricalSurface SS, in StepData_Factors theLocalFactors)
     {
-        Geom_Axis2Placement? A = MakeAxis2Placement(SS.Position(), theLocalFactors);
+        Axis2Placement? A = MakeAxis2Placement(SS.Position(), theLocalFactors);
         if (A is not null)
         {
-            return new Geom_CylindricalSurface(new CoordinateSystem(A.Ax2()), SS.Radius() * theLocalFactors.LengthFactor());
+            return new CylindricalSurface(new CoordinateSystem(A.Ax2()), SS.Radius() * theLocalFactors.LengthFactor());
         }
         return null;
     }
 
     /// <summary>Converts a cylindrical_surface (default factors).</summary>
-    public static Geom_CylindricalSurface? MakeCylindricalSurface(StepGeom_CylindricalSurface SS) =>
+    public static CylindricalSurface? MakeCylindricalSurface(StepGeom_CylindricalSurface SS) =>
         MakeCylindricalSurface(SS, new StepData_Factors());
 
     //=============================================================================
@@ -1400,7 +1405,7 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a 3D direction (null if it has fewer than three ratios, an infinite one, or a null magnitude).</summary>
-    public static Geom_Direction? MakeDirection(StepGeom_Direction SD)
+    public static Direction? MakeDirection(StepGeom_Direction SD)
     {
         // OCCT: SD isn't checked for null (occt-issues.md, 8D)
         if (SD.NbDirectionRatios() >= 3)
@@ -1416,7 +1421,7 @@ public static class StepToGeom
             // sln 22.10.2001. CTS23496: Direction is not created if it has null magnitude
             if (new Xyz(X, Y, Z).SquareModulus() > Constants.Resolution() * Constants.Resolution())
             {
-                return new Geom_Direction(X, Y, Z);
+                return new Direction(X, Y, Z);
             }
         }
         return null;
@@ -1427,7 +1432,7 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a 2D direction (null if it has fewer than two ratios or a null magnitude).</summary>
-    public static Geom2d_Direction? MakeDirection2d(StepGeom_Direction SD)
+    public static Direction2? MakeDirection2d(StepGeom_Direction SD)
     {
         // OCCT: SD isn't checked for null (occt-issues.md, 8D)
         if (SD.NbDirectionRatios() >= 2)
@@ -1437,7 +1442,7 @@ public static class StepToGeom
             // sln 23.10.2001. CTS23496: Direction is not created if it has null magnitude
             if (new Xy(X, Y).SquareModulus() > Constants.Resolution() * Constants.Resolution())
             {
-                return new Geom2d_Direction(X, Y);
+                return new Direction2(X, Y);
             }
         }
         return null;
@@ -1449,7 +1454,7 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts an elementary surface (plane, cylinder, cone, sphere, torus).</summary>
-    public static Geom_ElementarySurface? MakeElementarySurface(StepGeom_ElementarySurface SS, in StepData_Factors theLocalFactors)
+    public static ElementarySurface? MakeElementarySurface(StepGeom_ElementarySurface SS, in StepData_Factors theLocalFactors)
     {
         if (SS is StepGeom_Plane)
         {
@@ -1475,7 +1480,7 @@ public static class StepToGeom
     }
 
     /// <summary>Converts an elementary surface (default factors).</summary>
-    public static Geom_ElementarySurface? MakeElementarySurface(StepGeom_ElementarySurface SS) =>
+    public static ElementarySurface? MakeElementarySurface(StepGeom_ElementarySurface SS) =>
         MakeElementarySurface(SS, new StepData_Factors());
 
     //=============================================================================
@@ -1483,12 +1488,12 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts an ellipse (its axes swapped when the first semi-axis is the smaller).</summary>
-    public static Geom_Ellipse? MakeEllipse(StepGeom_Ellipse SC, in StepData_Factors theLocalFactors)
+    public static EllipseCurve3D? MakeEllipse(StepGeom_Ellipse SC, in StepData_Factors theLocalFactors)
     {
         StepGeom_Axis2Placement AxisSelect = SC.Position();
         if (AxisSelect.CaseNum(AxisSelect.Value()) == 2)
         {
-            Geom_Axis2Placement? A1 = MakeAxis2Placement(AxisSelect.Value() as StepGeom_Axis2Placement3d, theLocalFactors);
+            Axis2Placement? A1 = MakeAxis2Placement(AxisSelect.Value() as StepGeom_Axis2Placement3d, theLocalFactors);
             if (A1 is not null)
             {
                 Frame3D A = A1.Ax2();
@@ -1497,13 +1502,13 @@ public static class StepToGeom
                 double minorR = SC.SemiAxis2() * LF;
                 if (majorR - minorR >= 0.0)
                 { //: o9 abv 19 Feb 99
-                    return new Geom_Ellipse(A, majorR, minorR);
+                    return new EllipseCurve3D(A, majorR, minorR);
                 }
                 //: o9 abv 19 Feb 99
                 else
                 {
                     A.SetXDirection(A.XDirection() ^ A.Direction());
-                    return new Geom_Ellipse(A, minorR, majorR);
+                    return new EllipseCurve3D(A, minorR, majorR);
                 }
             }
         }
@@ -1511,19 +1516,19 @@ public static class StepToGeom
     }
 
     /// <summary>Converts an ellipse (default factors).</summary>
-    public static Geom_Ellipse? MakeEllipse(StepGeom_Ellipse SC) => MakeEllipse(SC, new StepData_Factors());
+    public static EllipseCurve3D? MakeEllipse(StepGeom_Ellipse SC) => MakeEllipse(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' un Ellipse de Geom2d a partir d' un Ellipse de Step
     //=============================================================================
 
     /// <summary>Converts an ellipse into a 2D ellipse.</summary>
-    public static Geom2d_Ellipse? MakeEllipse2d(StepGeom_Ellipse SC, in StepData_Factors theLocalFactors)
+    public static EllipseCurve2D? MakeEllipse2d(StepGeom_Ellipse SC, in StepData_Factors theLocalFactors)
     {
         StepGeom_Axis2Placement AxisSelect = SC.Position();
         if (AxisSelect.CaseNum(AxisSelect.Value()) == 1)
         {
-            Geom2d_AxisPlacement? A1 = MakeAxisPlacement(AxisSelect.Value() as StepGeom_Axis2Placement2d, theLocalFactors);
+            AxisPlacement2? A1 = MakeAxisPlacement(AxisSelect.Value() as StepGeom_Axis2Placement2d, theLocalFactors);
             if (A1 is not null)
             {
                 Frame2D A = new Frame2D(A1.Ax2d());
@@ -1531,13 +1536,13 @@ public static class StepToGeom
                 double minorR = SC.SemiAxis2();
                 if (majorR - minorR >= 0.0)
                 { //: o9 abv 19 Feb 99: bm4_id_punch_b.stp #678: protection
-                    return new Geom2d_Ellipse(A, majorR, minorR);
+                    return new EllipseCurve2D(A, majorR, minorR);
                 }
                 else
                 {
                     Direction2D X = A.XDirection();
                     A.SetXDirection(new Direction2D(X.X(), -X.Y()));
-                    return new Geom2d_Ellipse(A, minorR, majorR);
+                    return new EllipseCurve2D(A, minorR, majorR);
                 }
             }
         }
@@ -1545,67 +1550,67 @@ public static class StepToGeom
     }
 
     /// <summary>Converts an ellipse into a 2D ellipse (default factors).</summary>
-    public static Geom2d_Ellipse? MakeEllipse2d(StepGeom_Ellipse SC) => MakeEllipse2d(SC, new StepData_Factors());
+    public static EllipseCurve2D? MakeEllipse2d(StepGeom_Ellipse SC) => MakeEllipse2d(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' un Hyperbola de Geom a partir d' un Hyperbola de Step
     //=============================================================================
 
     /// <summary>Converts a hyperbola.</summary>
-    public static Geom_Hyperbola? MakeHyperbola(StepGeom_Hyperbola SC, in StepData_Factors theLocalFactors)
+    public static HyperbolaCurve3D? MakeHyperbola(StepGeom_Hyperbola SC, in StepData_Factors theLocalFactors)
     {
         StepGeom_Axis2Placement AxisSelect = SC.Position();
         if (AxisSelect.CaseNum(AxisSelect.Value()) == 2)
         {
-            Geom_Axis2Placement? A1 = MakeAxis2Placement(AxisSelect.Value() as StepGeom_Axis2Placement3d, theLocalFactors);
+            Axis2Placement? A1 = MakeAxis2Placement(AxisSelect.Value() as StepGeom_Axis2Placement3d, theLocalFactors);
             if (A1 is not null)
             {
                 Frame3D A = A1.Ax2();
                 double LF = theLocalFactors.LengthFactor();
-                return new Geom_Hyperbola(A, SC.SemiAxis() * LF, SC.SemiImagAxis() * LF);
+                return new HyperbolaCurve3D(A, SC.SemiAxis() * LF, SC.SemiImagAxis() * LF);
             }
         }
         return null;
     }
 
     /// <summary>Converts a hyperbola (default factors).</summary>
-    public static Geom_Hyperbola? MakeHyperbola(StepGeom_Hyperbola SC) => MakeHyperbola(SC, new StepData_Factors());
+    public static HyperbolaCurve3D? MakeHyperbola(StepGeom_Hyperbola SC) => MakeHyperbola(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' un Hyperbola de Geom2d a partir d' un Hyperbola de Step
     //=============================================================================
 
     /// <summary>Converts a hyperbola into a 2D hyperbola.</summary>
-    public static Geom2d_Hyperbola? MakeHyperbola2d(StepGeom_Hyperbola SC, in StepData_Factors theLocalFactors)
+    public static HyperbolaCurve2D? MakeHyperbola2d(StepGeom_Hyperbola SC, in StepData_Factors theLocalFactors)
     {
         StepGeom_Axis2Placement AxisSelect = SC.Position();
         if (AxisSelect.CaseNum(AxisSelect.Value()) == 1)
         {
-            Geom2d_AxisPlacement? A1 = MakeAxisPlacement(AxisSelect.Value() as StepGeom_Axis2Placement2d, theLocalFactors);
+            AxisPlacement2? A1 = MakeAxisPlacement(AxisSelect.Value() as StepGeom_Axis2Placement2d, theLocalFactors);
             if (A1 is not null)
             {
                 Frame2D A = new Frame2D(A1.Ax2d());
-                return new Geom2d_Hyperbola(A, SC.SemiAxis(), SC.SemiImagAxis());
+                return new HyperbolaCurve2D(A, SC.SemiAxis(), SC.SemiImagAxis());
             }
         }
         return null;
     }
 
     /// <summary>Converts a hyperbola into a 2D hyperbola (default factors).</summary>
-    public static Geom2d_Hyperbola? MakeHyperbola2d(StepGeom_Hyperbola SC) => MakeHyperbola2d(SC, new StepData_Factors());
+    public static HyperbolaCurve2D? MakeHyperbola2d(StepGeom_Hyperbola SC) => MakeHyperbola2d(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' une Line de Geom a partir d' une Line de Step
     //=============================================================================
 
     /// <summary>Converts a line (null if its vector is shorter than Precision::Confusion()).</summary>
-    public static Geom_Line? MakeLine(StepGeom_Line SC, in StepData_Factors theLocalFactors)
+    public static LineCurve3D? MakeLine(StepGeom_Line SC, in StepData_Factors theLocalFactors)
     {
-        Geom_CartesianPoint? P = MakeCartesianPoint(SC.Pnt(), theLocalFactors);
+        CartesianPoint? P = MakeCartesianPoint(SC.Pnt(), theLocalFactors);
         if (P is not null)
         {
             // sln 22.10.2001. CTS23496: Line is not created if direction have not been successfully created
-            Geom_VectorWithMagnitude? D = MakeVectorWithMagnitude(SC.Dir(), theLocalFactors);
+            VectorWithMagnitude? D = MakeVectorWithMagnitude(SC.Dir(), theLocalFactors);
             if (D is not null)
             {
                 if (D.Vec().SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion())
@@ -1613,106 +1618,106 @@ public static class StepToGeom
                     return null;
                 }
                 Direction3D V = new Direction3D(D.Vec());
-                return new Geom_Line(P.Pnt(), V);
+                return new LineCurve3D(P.Pnt(), V);
             }
         }
         return null;
     }
 
     /// <summary>Converts a line (default factors).</summary>
-    public static Geom_Line? MakeLine(StepGeom_Line SC) => MakeLine(SC, new StepData_Factors());
+    public static LineCurve3D? MakeLine(StepGeom_Line SC) => MakeLine(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' une Line de Geom2d a partir d' une Line de Step
     //=============================================================================
 
     /// <summary>Converts a line into a 2D line.</summary>
-    public static Geom2d_Line? MakeLine2d(StepGeom_Line SC, in StepData_Factors theLocalFactors)
+    public static LineCurve2D? MakeLine2d(StepGeom_Line SC, in StepData_Factors theLocalFactors)
     {
-        Geom2d_CartesianPoint? P = MakeCartesianPoint2d(SC.Pnt(), theLocalFactors);
+        CartesianPoint2? P = MakeCartesianPoint2d(SC.Pnt(), theLocalFactors);
         if (P is not null)
         {
             // sln 23.10.2001. CTS23496: Line is not created if direction have not been successfully created
-            Geom2d_VectorWithMagnitude? D = MakeVectorWithMagnitude2d(SC.Dir());
+            VectorWithMagnitude2? D = MakeVectorWithMagnitude2d(SC.Dir());
             if (D is not null)
             {
                 Direction2D D1 = new Direction2D(D.Vec2d());
-                return new Geom2d_Line(P.Pnt2d(), D1);
+                return new LineCurve2D(P.Pnt2d(), D1);
             }
         }
         return null;
     }
 
     /// <summary>Converts a line into a 2D line (default factors).</summary>
-    public static Geom2d_Line? MakeLine2d(StepGeom_Line SC) => MakeLine2d(SC, new StepData_Factors());
+    public static LineCurve2D? MakeLine2d(StepGeom_Line SC) => MakeLine2d(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' un Parabola de Geom a partir d' un Parabola de Step
     //=============================================================================
 
     /// <summary>Converts a parabola.</summary>
-    public static Geom_Parabola? MakeParabola(StepGeom_Parabola SC, in StepData_Factors theLocalFactors)
+    public static ParabolaCurve3D? MakeParabola(StepGeom_Parabola SC, in StepData_Factors theLocalFactors)
     {
         StepGeom_Axis2Placement AxisSelect = SC.Position();
         if (AxisSelect.CaseNum(AxisSelect.Value()) == 2)
         {
-            Geom_Axis2Placement? A = MakeAxis2Placement(AxisSelect.Value() as StepGeom_Axis2Placement3d, theLocalFactors);
+            Axis2Placement? A = MakeAxis2Placement(AxisSelect.Value() as StepGeom_Axis2Placement3d, theLocalFactors);
             if (A is not null)
             {
-                return new Geom_Parabola(A.Ax2(), SC.FocalDist() * theLocalFactors.LengthFactor());
+                return new ParabolaCurve3D(A.Ax2(), SC.FocalDist() * theLocalFactors.LengthFactor());
             }
         }
         return null;
     }
 
     /// <summary>Converts a parabola (default factors).</summary>
-    public static Geom_Parabola? MakeParabola(StepGeom_Parabola SC) => MakeParabola(SC, new StepData_Factors());
+    public static ParabolaCurve3D? MakeParabola(StepGeom_Parabola SC) => MakeParabola(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' un Parabola de Geom2d a partir d' un Parabola de Step
     //=============================================================================
 
     /// <summary>Converts a parabola into a 2D parabola.</summary>
-    public static Geom2d_Parabola? MakeParabola2d(StepGeom_Parabola SC, in StepData_Factors theLocalFactors)
+    public static ParabolaCurve2D? MakeParabola2d(StepGeom_Parabola SC, in StepData_Factors theLocalFactors)
     {
         StepGeom_Axis2Placement AxisSelect = SC.Position();
         if (AxisSelect.CaseNum(AxisSelect.Value()) == 1)
         {
-            Geom2d_AxisPlacement? A1 = MakeAxisPlacement(AxisSelect.Value() as StepGeom_Axis2Placement2d, theLocalFactors);
+            AxisPlacement2? A1 = MakeAxisPlacement(AxisSelect.Value() as StepGeom_Axis2Placement2d, theLocalFactors);
             if (A1 is not null)
             {
                 Frame2D A = new Frame2D(A1.Ax2d());
-                return new Geom2d_Parabola(A, SC.FocalDist());
+                return new ParabolaCurve2D(A, SC.FocalDist());
             }
         }
         return null;
     }
 
     /// <summary>Converts a parabola into a 2D parabola (default factors).</summary>
-    public static Geom2d_Parabola? MakeParabola2d(StepGeom_Parabola SC) => MakeParabola2d(SC, new StepData_Factors());
+    public static ParabolaCurve2D? MakeParabola2d(StepGeom_Parabola SC) => MakeParabola2d(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' un Plane de Geom a partir d' un plane de Step
     //=============================================================================
 
     /// <summary>Converts a plane.</summary>
-    public static Geom_Plane? MakePlane(StepGeom_Plane SP, in StepData_Factors theLocalFactors)
+    public static PlaneSurface? MakePlane(StepGeom_Plane SP, in StepData_Factors theLocalFactors)
     {
-        Geom_Axis2Placement? A = MakeAxis2Placement(SP.Position(), theLocalFactors);
+        Axis2Placement? A = MakeAxis2Placement(SP.Position(), theLocalFactors);
         if (A is not null)
         {
-            return new Geom_Plane(new CoordinateSystem(A.Ax2()));
+            return new PlaneSurface(new CoordinateSystem(A.Ax2()));
         }
         return null;
     }
 
     /// <summary>Converts a plane (default factors).</summary>
-    public static Geom_Plane? MakePlane(StepGeom_Plane SP) => MakePlane(SP, new StepData_Factors());
+    public static PlaneSurface? MakePlane(StepGeom_Plane SP) => MakePlane(SP, new StepData_Factors());
 
     //=================================================================================================
 
     /// <summary>Converts a polyline into a B-spline curve of degree 1.</summary>
-    public static Geom_BSplineCurve? MakePolyline(StepGeom_Polyline SPL, in StepData_Factors theLocalFactors)
+    public static BSplineCurve3D? MakePolyline(StepGeom_Polyline SPL, in StepData_Factors theLocalFactors)
     {
         if (SPL is null)
         {
@@ -1728,7 +1733,7 @@ public static class StepToGeom
 
             for (int i = 1; i <= nbp; i++)
             {
-                Geom_CartesianPoint? P = MakeCartesianPoint(SPL.PointsValue(i), theLocalFactors);
+                CartesianPoint? P = MakeCartesianPoint(SPL.PointsValue(i), theLocalFactors);
                 if (P is not null)
                 {
                     Poles.SetValue(i, P.Pnt());
@@ -1743,18 +1748,18 @@ public static class StepToGeom
             Mults.SetValue(1, 2);
             Mults.SetValue(nbp, 2);
 
-            return new Geom_BSplineCurve(Poles, Knots, Mults, 1);
+            return new BSplineCurve3D(Poles, Knots, Mults, 1);
         }
         return null;
     }
 
     /// <summary>Converts a polyline (default factors).</summary>
-    public static Geom_BSplineCurve? MakePolyline(StepGeom_Polyline SPL) => MakePolyline(SPL, new StepData_Factors());
+    public static BSplineCurve3D? MakePolyline(StepGeom_Polyline SPL) => MakePolyline(SPL, new StepData_Factors());
 
     //=================================================================================================
 
     /// <summary>Converts a polyline into a 2D B-spline curve of degree 1.</summary>
-    public static Geom2d_BSplineCurve? MakePolyline2d(StepGeom_Polyline SPL, in StepData_Factors theLocalFactors)
+    public static BSplineCurve2D? MakePolyline2d(StepGeom_Polyline SPL, in StepData_Factors theLocalFactors)
     {
         if (SPL is null)
         {
@@ -1770,7 +1775,7 @@ public static class StepToGeom
 
             for (int i = 1; i <= nbp; i++)
             {
-                Geom2d_CartesianPoint? P = MakeCartesianPoint2d(SPL.PointsValue(i), theLocalFactors);
+                CartesianPoint2? P = MakeCartesianPoint2d(SPL.PointsValue(i), theLocalFactors);
                 if (P is not null)
                 {
                     Poles.SetValue(i, P.Pnt2d());
@@ -1785,13 +1790,13 @@ public static class StepToGeom
             Mults.SetValue(1, 2);
             Mults.SetValue(nbp, 2);
 
-            return new Geom2d_BSplineCurve(Poles, Knots, Mults, 1);
+            return new BSplineCurve2D(Poles, Knots, Mults, 1);
         }
         return null;
     }
 
     /// <summary>Converts a polyline into a 2D curve (default factors).</summary>
-    public static Geom2d_BSplineCurve? MakePolyline2d(StepGeom_Polyline SPL) => MakePolyline2d(SPL, new StepData_Factors());
+    public static BSplineCurve2D? MakePolyline2d(StepGeom_Polyline SPL) => MakePolyline2d(SPL, new StepData_Factors());
 
     //=============================================================================
     // Creation d' une RectangularTrimmedSurface de Geom a partir d' une
@@ -1799,9 +1804,9 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a rectangular_trimmed_surface (its parameters scaled by the basis surface's units).</summary>
-    public static Geom_RectangularTrimmedSurface? MakeRectangularTrimmedSurface(StepGeom_RectangularTrimmedSurface SS, in StepData_Factors theLocalFactors)
+    public static TrimmedSurface? MakeRectangularTrimmedSurface(StepGeom_RectangularTrimmedSurface SS, in StepData_Factors theLocalFactors)
     {
-        Geom_Surface? theBasis = MakeSurface(SS.BasisSurface(), theLocalFactors);
+        Surface? theBasis = MakeSurface(SS.BasisSurface(), theLocalFactors);
         if (theBasis is not null)
         {
             // -----------------------------------------
@@ -1813,26 +1818,26 @@ public static class StepToGeom
             double LengthFact = theLocalFactors.LengthFactor();
             double AngleFact = theLocalFactors.PlaneAngleFactor(); // abv 30.06.00 trj4_k1_geo-tc-214.stp #1477: PI/180.;
 
-            if (theBasis is Geom_SphericalSurface || theBasis is Geom_ToroidalSurface)
+            if (theBasis is SphericalSurface || theBasis is ToroidalSurface)
             {
                 uFact = vFact = AngleFact;
             }
-            else if (theBasis is Geom_CylindricalSurface)
+            else if (theBasis is CylindricalSurface)
             {
                 uFact = AngleFact;
                 vFact = LengthFact;
             }
-            else if (theBasis is Geom_SurfaceOfRevolution)
+            else if (theBasis is RevolutionSurface)
             {
                 uFact = AngleFact;
             }
-            else if (theBasis is Geom_ConicalSurface)
+            else if (theBasis is ConicalSurface)
             {
-                Geom_ConicalSurface conicS = theBasis as Geom_ConicalSurface;
+                ConicalSurface conicS = theBasis as ConicalSurface;
                 uFact = AngleFact;
                 vFact = LengthFact / Math.Cos(conicS.SemiAngle());
             }
-            else if (theBasis is Geom_Plane)
+            else if (theBasis is PlaneSurface)
             {
                 uFact = vFact = LengthFact;
             }
@@ -1842,13 +1847,13 @@ public static class StepToGeom
             double V1 = SS.V1() * vFact;
             double V2 = SS.V2() * vFact;
 
-            return new Geom_RectangularTrimmedSurface(theBasis, U1, U2, V1, V2, SS.Usense(), SS.Vsense());
+            return new TrimmedSurface(theBasis, U1, U2, V1, V2, SS.Usense(), SS.Vsense());
         }
         return null;
     }
 
     /// <summary>Converts a rectangular_trimmed_surface (default factors).</summary>
-    public static Geom_RectangularTrimmedSurface? MakeRectangularTrimmedSurface(StepGeom_RectangularTrimmedSurface SS) =>
+    public static TrimmedSurface? MakeRectangularTrimmedSurface(StepGeom_RectangularTrimmedSurface SS) =>
         MakeRectangularTrimmedSurface(SS, new StepData_Factors());
 
     //=============================================================================
@@ -1857,18 +1862,18 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a spherical_surface.</summary>
-    public static Geom_SphericalSurface? MakeSphericalSurface(StepGeom_SphericalSurface SS, in StepData_Factors theLocalFactors)
+    public static SphericalSurface? MakeSphericalSurface(StepGeom_SphericalSurface SS, in StepData_Factors theLocalFactors)
     {
-        Geom_Axis2Placement? A = MakeAxis2Placement(SS.Position(), theLocalFactors);
+        Axis2Placement? A = MakeAxis2Placement(SS.Position(), theLocalFactors);
         if (A is not null)
         {
-            return new Geom_SphericalSurface(new CoordinateSystem(A.Ax2()), SS.Radius() * theLocalFactors.LengthFactor());
+            return new SphericalSurface(new CoordinateSystem(A.Ax2()), SS.Radius() * theLocalFactors.LengthFactor());
         }
         return null;
     }
 
     /// <summary>Converts a spherical_surface (default factors).</summary>
-    public static Geom_SphericalSurface? MakeSphericalSurface(StepGeom_SphericalSurface SS) => MakeSphericalSurface(SS, new StepData_Factors());
+    public static SphericalSurface? MakeSphericalSurface(StepGeom_SphericalSurface SS) => MakeSphericalSurface(SS, new StepData_Factors());
 
     //=============================================================================
     // Creation d' une Surface de Geom a partir d' une Surface de Step
@@ -1878,7 +1883,7 @@ public static class StepToGeom
     /// Converts a surface: bounded, elementary and swept surfaces, offset surfaces (a C0 basis made C1 through Shape
     /// Healing's <see cref="ShapeAlgo.AlgoContainer"/>) and surface replicas. Null on any failure.
     /// </summary>
-    public static Geom_Surface? MakeSurface(StepGeom_Surface SS, in StepData_Factors theLocalFactors)
+    public static Surface? MakeSurface(StepGeom_Surface SS, in StepData_Factors theLocalFactors)
     {
         // sln 01.10.2001 BUC61003. If entry shell is NULL do nothing
         if (SS is null)
@@ -1913,7 +1918,7 @@ public static class StepToGeom
             { //: d4 abv 12 Mar 98
                 StepGeom_OffsetSurface OS = SS as StepGeom_OffsetSurface;
 
-                Geom_Surface? aBasisSurface = MakeSurface(OS.BasisSurface(), theLocalFactors);
+                Surface? aBasisSurface = MakeSurface(OS.BasisSurface(), theLocalFactors);
                 if (aBasisSurface is not null)
                 {
                     // sln 03.10.01. BUC61003. creation of  offset surface is corrected
@@ -1924,16 +1929,16 @@ public static class StepToGeom
                         if (aBFace.IsDone())
                         {
                             // OCCT: the process-wide container (null before ShapeAlgo.Init, as in OCCT)
-                            TopoDS_Shape aResult = ShapeAlgo.AlgoContainer().C0ShapeToC1Shape(aBFace.Face(), Math.Abs(anOffset));
-                            if (aResult.ShapeType() == TopAbs_FACE)
+                            Shape aResult = ShapeAlgo.AlgoContainer().C0ShapeToC1Shape(aBFace.Face(), Math.Abs(anOffset));
+                            if (aResult.ShapeType() == ShapeType.Face)
                             {
-                                aBasisSurface = BRep_Tool.Surface(TopoDS.Face(aResult));
+                                aBasisSurface = Tool.Surface(ShapeCasts.Face(aResult));
                             }
                         }
                     }
                     if (aBasisSurface.Continuity() != C0)
                     {
-                        return new Geom_OffsetSurface(aBasisSurface, anOffset);
+                        return new OffsetSurface(aBasisSurface, anOffset);
                     }
                 }
             }
@@ -1945,7 +1950,7 @@ public static class StepToGeom
                 // protect against cyclic references and wrong type of cartop
                 if (T is not null && PS != SS)
                 {
-                    Geom_Surface? S1 = MakeSurface(PS, theLocalFactors);
+                    Surface? S1 = MakeSurface(PS, theLocalFactors);
                     if (S1 is not null)
                     {
                         Transform3D T1 = new Transform3D();
@@ -1968,7 +1973,7 @@ public static class StepToGeom
     }
 
     /// <summary>Converts a surface (default factors).</summary>
-    public static Geom_Surface? MakeSurface(StepGeom_Surface SS) => MakeSurface(SS, new StepData_Factors());
+    public static Surface? MakeSurface(StepGeom_Surface SS) => MakeSurface(SS, new StepData_Factors());
 
     //=============================================================================
     // Creation d' une SurfaceOfLinearExtrusion de Geom a partir d' une
@@ -1976,30 +1981,30 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a surface_of_linear_extrusion (null for a line extruded along itself).</summary>
-    public static Geom_SurfaceOfLinearExtrusion? MakeSurfaceOfLinearExtrusion(StepGeom_SurfaceOfLinearExtrusion SS, in StepData_Factors theLocalFactors)
+    public static ExtrusionSurface? MakeSurfaceOfLinearExtrusion(StepGeom_SurfaceOfLinearExtrusion SS, in StepData_Factors theLocalFactors)
     {
-        Geom_Curve? C = MakeCurve(SS.SweptCurve(), theLocalFactors);
+        Curve3D? C = MakeCurve(SS.SweptCurve(), theLocalFactors);
         if (C is not null)
         {
             // sln 23.10.2001. CTS23496: Surface is not created if extrusion axis have not been successfully
             // created
-            Geom_VectorWithMagnitude? V = MakeVectorWithMagnitude(SS.ExtrusionAxis(), theLocalFactors);
+            VectorWithMagnitude? V = MakeVectorWithMagnitude(SS.ExtrusionAxis(), theLocalFactors);
             if (V is not null)
             {
                 Direction3D D = new Direction3D(V.Vec());
-                Geom_Line aLine = C as Geom_Line;
+                LineCurve3D aLine = C as LineCurve3D;
                 if (aLine is not null && aLine.Lin().Direction().IsParallel(D, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     return null;
                 }
-                return new Geom_SurfaceOfLinearExtrusion(C, D);
+                return new ExtrusionSurface(C, D);
             }
         }
         return null;
     }
 
     /// <summary>Converts a surface_of_linear_extrusion (default factors).</summary>
-    public static Geom_SurfaceOfLinearExtrusion? MakeSurfaceOfLinearExtrusion(StepGeom_SurfaceOfLinearExtrusion SS) =>
+    public static ExtrusionSurface? MakeSurfaceOfLinearExtrusion(StepGeom_SurfaceOfLinearExtrusion SS) =>
         MakeSurfaceOfLinearExtrusion(SS, new StepData_Factors());
 
     //=============================================================================
@@ -2008,19 +2013,19 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a surface_of_revolution (a circle or ellipse through the axis trimmed to a half).</summary>
-    public static Geom_SurfaceOfRevolution? MakeSurfaceOfRevolution(StepGeom_SurfaceOfRevolution SS, in StepData_Factors theLocalFactors)
+    public static RevolutionSurface? MakeSurfaceOfRevolution(StepGeom_SurfaceOfRevolution SS, in StepData_Factors theLocalFactors)
     {
-        Geom_Curve? C = MakeCurve(SS.SweptCurve(), theLocalFactors);
+        Curve3D? C = MakeCurve(SS.SweptCurve(), theLocalFactors);
         if (C is not null)
         {
-            Geom_Axis1Placement? A1 = MakeAxis1Placement(SS.AxisPosition(), theLocalFactors);
+            Axis1Placement? A1 = MakeAxis1Placement(SS.AxisPosition(), theLocalFactors);
             if (A1 is not null)
             {
                 Axis3D A = A1.Ax1();
                 // skl for OCC952 (one bad case revolution of circle)
-                if (C is Geom_Circle || C is Geom_Ellipse)
+                if (C is CircleCurve3D || C is EllipseCurve3D)
                 {
-                    Geom_Conic conic = C as Geom_Conic;
+                    ConicCurve3D conic = C as ConicCurve3D;
                     Point3D pc = conic.Location();
                     Line3D rl = new Line3D(A);
                     if (rl.Distance(pc) < global::Kerf.Engine.Foundation.Precision.Confusion())
@@ -2030,23 +2035,23 @@ public static class StepToGeom
                         Direction3D xAxis = conic.XAxis().Direction();
                         // checking A2 lies on plane of circle
                         if (dirline.IsNormal(norm, global::Kerf.Engine.Foundation.Precision.Angular())
-                            && (dirline.IsParallel(xAxis, global::Kerf.Engine.Foundation.Precision.Angular()) || C is Geom_Circle))
+                            && (dirline.IsParallel(xAxis, global::Kerf.Engine.Foundation.Precision.Angular()) || C is CircleCurve3D))
                         {
                             // change parametrization for trimming
                             Frame3D axnew = new Frame3D(pc, norm, dirline.Reversed());
                             conic.SetPosition(axnew);
-                            C = new Geom_TrimmedCurve(conic, 0.0, M_PI);
+                            C = new TrimmedCurve3D(conic, 0.0, M_PI);
                         }
                     }
                 }
-                return new Geom_SurfaceOfRevolution(C, A);
+                return new RevolutionSurface(C, A);
             }
         }
         return null;
     }
 
     /// <summary>Converts a surface_of_revolution (default factors).</summary>
-    public static Geom_SurfaceOfRevolution? MakeSurfaceOfRevolution(StepGeom_SurfaceOfRevolution SS) =>
+    public static RevolutionSurface? MakeSurfaceOfRevolution(StepGeom_SurfaceOfRevolution SS) =>
         MakeSurfaceOfRevolution(SS, new StepData_Factors());
 
     //=============================================================================
@@ -2055,7 +2060,7 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a swept surface (linear extrusion or revolution).</summary>
-    public static Geom_SweptSurface? MakeSweptSurface(StepGeom_SweptSurface SS, in StepData_Factors theLocalFactors)
+    public static SweptSurface? MakeSweptSurface(StepGeom_SweptSurface SS, in StepData_Factors theLocalFactors)
     {
         if (SS is StepGeom_SurfaceOfLinearExtrusion)
         {
@@ -2069,7 +2074,7 @@ public static class StepToGeom
     }
 
     /// <summary>Converts a swept surface (default factors).</summary>
-    public static Geom_SweptSurface? MakeSweptSurface(StepGeom_SweptSurface SS) => MakeSweptSurface(SS, new StepData_Factors());
+    public static SweptSurface? MakeSweptSurface(StepGeom_SweptSurface SS) => MakeSweptSurface(SS, new StepData_Factors());
 
     //=============================================================================
     // Creation d' une ToroidalSurface de Geom a partir d' une
@@ -2077,19 +2082,19 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a toroidal_surface (its radii taken positive).</summary>
-    public static Geom_ToroidalSurface? MakeToroidalSurface(StepGeom_ToroidalSurface SS, in StepData_Factors theLocalFactors)
+    public static ToroidalSurface? MakeToroidalSurface(StepGeom_ToroidalSurface SS, in StepData_Factors theLocalFactors)
     {
-        Geom_Axis2Placement? A = MakeAxis2Placement(SS.Position(), theLocalFactors);
+        Axis2Placement? A = MakeAxis2Placement(SS.Position(), theLocalFactors);
         if (A is not null)
         {
             double LF = theLocalFactors.LengthFactor();
-            return new Geom_ToroidalSurface(new CoordinateSystem(A.Ax2()), Math.Abs(SS.MajorRadius() * LF), Math.Abs(SS.MinorRadius() * LF));
+            return new ToroidalSurface(new CoordinateSystem(A.Ax2()), Math.Abs(SS.MajorRadius() * LF), Math.Abs(SS.MinorRadius() * LF));
         }
         return null;
     }
 
     /// <summary>Converts a toroidal_surface (default factors).</summary>
-    public static Geom_ToroidalSurface? MakeToroidalSurface(StepGeom_ToroidalSurface SS) => MakeToroidalSurface(SS, new StepData_Factors());
+    public static ToroidalSurface? MakeToroidalSurface(StepGeom_ToroidalSurface SS) => MakeToroidalSurface(SS, new StepData_Factors());
 
     //=================================================================================================
 
@@ -2100,7 +2105,7 @@ public static class StepToGeom
     public static bool MakeTransformation2d(StepGeom_CartesianTransformationOperator2d SCTO, ref Transform2D CT, in StepData_Factors theLocalFactors)
     {
         //  NB : on ne s interesse ici qu au deplacement rigide
-        Geom2d_CartesianPoint? CP = MakeCartesianPoint2d(SCTO.LocalOrigin(), theLocalFactors);
+        CartesianPoint2? CP = MakeCartesianPoint2d(SCTO.LocalOrigin(), theLocalFactors);
         if (CP is not null)
         {
             Direction2D D1 = new Direction2D(Direction2D.D.X);
@@ -2109,7 +2114,7 @@ public static class StepToGeom
             StepGeom_Direction A = SCTO.Axis1();
             if (A is not null)
             {
-                Geom2d_Direction? D = MakeDirection2d(A);
+                Direction2? D = MakeDirection2d(A);
                 if (D is not null)
                 {
                     D1 = D.Dir2d();
@@ -2135,7 +2140,7 @@ public static class StepToGeom
     /// </summary>
     public static bool MakeTransformation3d(StepGeom_CartesianTransformationOperator3d SCTO, ref Transform3D CT, in StepData_Factors theLocalFactors)
     {
-        Geom_CartesianPoint? CP = MakeCartesianPoint(SCTO.LocalOrigin(), theLocalFactors);
+        CartesianPoint? CP = MakeCartesianPoint(SCTO.LocalOrigin(), theLocalFactors);
         if (CP is not null)
         {
             Point3D Pgp = CP.Pnt();
@@ -2146,7 +2151,7 @@ public static class StepToGeom
             StepGeom_Direction A1 = SCTO.Axis1();
             if (A1 is not null)
             {
-                Geom_Direction? D = MakeDirection(A1);
+                Direction? D = MakeDirection(A1);
                 if (D is not null)
                 {
                     D1 = D.Dir();
@@ -2157,7 +2162,7 @@ public static class StepToGeom
             StepGeom_Direction A2 = SCTO.Axis2();
             if (A2 is not null)
             {
-                Geom_Direction? D = MakeDirection(A2);
+                Direction? D = MakeDirection(A2);
                 if (D is not null)
                 {
                     D2 = D.Dir();
@@ -2169,7 +2174,7 @@ public static class StepToGeom
             StepGeom_Direction A3 = SCTO.Axis3();
             if (A3 is not null)
             {
-                Geom_Direction? D = MakeDirection(A3);
+                Direction? D = MakeDirection(A3);
                 if (D is not null)
                 {
                     D3 = D.Dir();
@@ -2202,7 +2207,7 @@ public static class StepToGeom
     // ----------------------------------------------------------------
     //: o6 abv 18 Feb 99: parameter Factor added
     //: p3 abv 23 Feb 99: parameter Shift added
-    private static bool ExtractParameter(Geom_Curve aGeomCurve,
+    private static bool ExtractParameter(Curve3D aGeomCurve,
                                          NCollection_HArray1<StepGeom_TrimmingSelect> TS,
                                          int nbSel,
                                          int MasterRep,
@@ -2225,7 +2230,7 @@ public static class StepToGeom
             else if (MasterRep == 1 && theSel.CaseNumber() > 0)
             {
                 aPoint = theSel.CartesianPoint();
-                Geom_CartesianPoint? theGeomPnt = MakeCartesianPoint(aPoint, theLocalFactors);
+                CartesianPoint? theGeomPnt = MakeCartesianPoint(aPoint, theLocalFactors);
                 // OCCT: a point that isn't 3D gives a null point here, dereferenced (occt-issues.md, 8D)
                 Point3D thegpPnt = theGeomPnt.Pnt();
 
@@ -2256,7 +2261,7 @@ public static class StepToGeom
             if (theSel.CaseNumber() > 0)
             {
                 aPoint = theSel.CartesianPoint();
-                Geom_CartesianPoint? theGeomPnt = MakeCartesianPoint(aPoint, theLocalFactors);
+                CartesianPoint? theGeomPnt = MakeCartesianPoint(aPoint, theLocalFactors);
                 // OCCT: as above, a point that isn't 3D is dereferenced null
                 Point3D thegpPnt = theGeomPnt.Pnt();
                 // Project Point On Curve
@@ -2276,10 +2281,10 @@ public static class StepToGeom
     /// Converts a trimmed_curve: its trims taken as parameters (scaled by the basis curve's units) or as points
     /// projected on the curve, as its master representation says.
     /// </summary>
-    public static Geom_TrimmedCurve? MakeTrimmedCurve(StepGeom_TrimmedCurve SC, in StepData_Factors theLocalFactors)
+    public static TrimmedCurve3D? MakeTrimmedCurve(StepGeom_TrimmedCurve SC, in StepData_Factors theLocalFactors)
     {
         StepGeom_Curve theSTEPCurve = SC.BasisCurve();
-        Geom_Curve? theCurve = MakeCurve(theSTEPCurve, theLocalFactors);
+        Curve3D? theCurve = MakeCurve(theSTEPCurve, theLocalFactors);
         if (theCurve is null)
         {
             return null;
@@ -2367,11 +2372,11 @@ public static class StepToGeom
                         {
                             if (SC.SenseAgreement())
                             {
-                                return new Geom_TrimmedCurve(theCurve, 0.0, 2.0 * M_PI, true);
+                                return new TrimmedCurve3D(theCurve, 0.0, 2.0 * M_PI, true);
                             }
                             else
                             {
-                                return new Geom_TrimmedCurve(theCurve, 2.0 * M_PI, 0.0, false);
+                                return new TrimmedCurve3D(theCurve, 2.0 * M_PI, 0.0, false);
                             }
                         }
                     }
@@ -2389,7 +2394,7 @@ public static class StepToGeom
             double cf = theCurve.FirstParameter();
             double cl = theCurve.LastParameter();
             //: abv 09.04.99: S4136: bm2_ug_t4-B.stp #70610: protect against OutOfRange
-            if (!theCurve.IsPeriodic())
+            if (!theCurve.IsPeriodic)
             {
                 if (trim1 < cf)
                 {
@@ -2410,11 +2415,11 @@ public static class StepToGeom
             }
             if (Math.Abs(trim1 - trim2) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                if (theCurve.IsPeriodic())
+                if (theCurve.IsPeriodic)
                 {
                     global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(cf, cl, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref trim1, ref trim2);
                 }
-                else if (theCurve.IsClosed())
+                else if (theCurve.IsClosed)
                 {
                     if (Math.Abs(trim1 - cf) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
@@ -2436,18 +2441,18 @@ public static class StepToGeom
             //: o6    trim2 = trim2 * fact;
             if (SC.SenseAgreement())
             {
-                return new Geom_TrimmedCurve(theCurve, trim1, trim2, true);
+                return new TrimmedCurve3D(theCurve, trim1, trim2, true);
             }
             else
             { //: abv 29.09.00 PRO20362: reverse parameters in case of reversed curve
-                return new Geom_TrimmedCurve(theCurve, trim2, trim1, false);
+                return new TrimmedCurve3D(theCurve, trim2, trim1, false);
             }
         }
         return null;
     }
 
     /// <summary>Converts a trimmed_curve (default factors).</summary>
-    public static Geom_TrimmedCurve? MakeTrimmedCurve(StepGeom_TrimmedCurve SC) => MakeTrimmedCurve(SC, new StepData_Factors());
+    public static TrimmedCurve3D? MakeTrimmedCurve(StepGeom_TrimmedCurve SC) => MakeTrimmedCurve(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d'une Trimmed Curve de Geom2d a partir d' une Trimmed Curve de Step
@@ -2458,18 +2463,18 @@ public static class StepToGeom
     /// Converts a trimmed_curve into a 2D B-spline curve (trims by parameter only; a B-spline basis curve is
     /// returned untrimmed).
     /// </summary>
-    public static Geom2d_BSplineCurve? MakeTrimmedCurve2d(StepGeom_TrimmedCurve SC, in StepData_Factors theLocalFactors)
+    public static BSplineCurve2D? MakeTrimmedCurve2d(StepGeom_TrimmedCurve SC, in StepData_Factors theLocalFactors)
     {
         StepGeom_Curve BasisCurve = SC.BasisCurve();
-        Geom2d_Curve? theGeomBasis = MakeCurve2d(BasisCurve, theLocalFactors);
+        Curve2D? theGeomBasis = MakeCurve2d(BasisCurve, theLocalFactors);
         if (theGeomBasis is null)
         {
             return null;
         }
 
-        if (theGeomBasis is Geom2d_BSplineCurve)
+        if (theGeomBasis is BSplineCurve2D)
         {
-            return theGeomBasis as Geom2d_BSplineCurve;
+            return theGeomBasis as BSplineCurve2D;
         }
 
         NCollection_HArray1<StepGeom_TrimmingSelect> theTrimSel1 = SC.Trim1();
@@ -2508,49 +2513,49 @@ public static class StepToGeom
             double newU1 = shift + u1 * fact;
             double newU2 = shift + u2 * fact;
 
-            Geom2d_TrimmedCurve theTrimmed = new Geom2d_TrimmedCurve(theGeomBasis, newU1, newU2, SC.SenseAgreement());
-            return Geom2dConvert.CurveToBSplineCurve(theTrimmed);
+            TrimmedCurve2D theTrimmed = new TrimmedCurve2D(theGeomBasis, newU1, newU2, SC.SenseAgreement());
+            return Geom2dConvert2D.CurveToBSplineCurve(theTrimmed);
         }
         return null;
     }
 
     /// <summary>Converts a trimmed_curve into a 2D B-spline curve (default factors).</summary>
-    public static Geom2d_BSplineCurve? MakeTrimmedCurve2d(StepGeom_TrimmedCurve SC) => MakeTrimmedCurve2d(SC, new StepData_Factors());
+    public static BSplineCurve2D? MakeTrimmedCurve2d(StepGeom_TrimmedCurve SC) => MakeTrimmedCurve2d(SC, new StepData_Factors());
 
     //=============================================================================
     // Creation d' un VectorWithMagnitude de Geom a partir d' un Vector de Step
     //=============================================================================
 
     /// <summary>Converts a vector (its magnitude a length).</summary>
-    public static Geom_VectorWithMagnitude? MakeVectorWithMagnitude(StepGeom_Vector SV, in StepData_Factors theLocalFactors)
+    public static VectorWithMagnitude? MakeVectorWithMagnitude(StepGeom_Vector SV, in StepData_Factors theLocalFactors)
     {
         // sln 22.10.2001. CTS23496: Vector is not created if direction have not been successfully created
-        Geom_Direction? D = MakeDirection(SV.Orientation());
+        Direction? D = MakeDirection(SV.Orientation());
         if (D is not null)
         {
             Vector3D V = new Vector3D(D.Dir().XYZ() * SV.Magnitude() * theLocalFactors.LengthFactor());
-            return new Geom_VectorWithMagnitude(V);
+            return new VectorWithMagnitude(V);
         }
         return null;
     }
 
     /// <summary>Converts a vector (default factors).</summary>
-    public static Geom_VectorWithMagnitude? MakeVectorWithMagnitude(StepGeom_Vector SV) => MakeVectorWithMagnitude(SV, new StepData_Factors());
+    public static VectorWithMagnitude? MakeVectorWithMagnitude(StepGeom_Vector SV) => MakeVectorWithMagnitude(SV, new StepData_Factors());
 
     //=============================================================================
     // Creation d' un VectorWithMagnitude de Geom2d a partir d' un Vector de Step
     //=============================================================================
 
     /// <summary>Converts a vector into a 2D vector.</summary>
-    public static Geom2d_VectorWithMagnitude? MakeVectorWithMagnitude2d(StepGeom_Vector SV)
+    public static VectorWithMagnitude2? MakeVectorWithMagnitude2d(StepGeom_Vector SV)
     {
         // sln 23.10.2001. CTS23496: Vector is not created if direction have not been successfully created
         // (MakeVectorWithMagnitude2d(...) function)
-        Geom2d_Direction? D = MakeDirection2d(SV.Orientation());
+        Direction2? D = MakeDirection2d(SV.Orientation());
         if (D is not null)
         {
             Vector2D V = new Vector2D(D.Dir2d().XY() * SV.Magnitude());
-            return new Geom2d_VectorWithMagnitude(V);
+            return new VectorWithMagnitude2(V);
         }
         return null;
     }
@@ -2576,7 +2581,7 @@ public static class StepToGeom
             return null;
         }
         // rotation is a rotation_about_direction
-        Geom_Direction anAxis = new Geom_Direction(SR.RotationAboutDirection().DirectionOfAxis().DirectionRatiosValue(1),
+        Direction anAxis = new Direction(SR.RotationAboutDirection().DirectionOfAxis().DirectionRatiosValue(1),
                                                    SR.RotationAboutDirection().DirectionOfAxis().DirectionRatiosValue(2),
                                                    SR.RotationAboutDirection().DirectionOfAxis().DirectionRatiosValue(3));
         double anAngle = SR.RotationAboutDirection().RotationAngle();

@@ -4,6 +4,7 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -17,20 +18,20 @@ public class IntPatch_PrmPrmIntersectionTests
 {
     private const double THE_TOL = 1.0e-7, THE_FLECHE = 0.01, THE_PAS = 0.05;
 
-    private static IntPatch_PrmPrmIntersection Sampled(Geom_Surface theS1, Geom_Surface theS2,
-                                                        out GeomAdaptor_Surface theA1, out GeomAdaptor_Surface theA2)
+    private static IntPatch_PrmPrmIntersection Sampled(Surface theS1, Surface theS2,
+                                                        out SurfaceAdaptor theA1, out SurfaceAdaptor theA2)
     {
-        theA1 = new GeomAdaptor_Surface(theS1);
-        theA2 = new GeomAdaptor_Surface(theS2);
+        theA1 = new SurfaceAdaptor(theS1);
+        theA2 = new SurfaceAdaptor(theS2);
         var anInt = new IntPatch_PrmPrmIntersection();
-        anInt.Perform(theA1, new Adaptor3d_TopolTool(theA1), theA2, new Adaptor3d_TopolTool(theA2), THE_TOL, THE_TOL,
+        anInt.Perform(theA1, new TopolTool(theA1), theA2, new TopolTool(theA2), THE_TOL, THE_TOL,
                       THE_FLECHE, THE_PAS);
         return anInt;
     }
 
     // Every point of every line, and every vertex, is on both surfaces at its parameters.
-    private static void AssertLinesOnBothSurfaces(IntPatch_PrmPrmIntersection theInt, Adaptor3d_Surface theS1,
-                                                  Adaptor3d_Surface theS2, double theTol)
+    private static void AssertLinesOnBothSurfaces(IntPatch_PrmPrmIntersection theInt, SurfaceAdaptorBase theS1,
+                                                  SurfaceAdaptorBase theS2, double theTol)
     {
         for (int i = 1; i <= theInt.NbLines(); i++)
         {
@@ -69,7 +70,7 @@ public class IntPatch_PrmPrmIntersectionTests
     [Fact]
     public void OffsetBSpline_LinesOnBothSurfaces()
     {
-        IntPatch_PrmPrmIntersection anInt = Sampled(new Geom_OffsetSurface(IntPatchPrmPrmNativeTests.PatchA(), 0.15),
+        IntPatch_PrmPrmIntersection anInt = Sampled(new OffsetSurface(IntPatchPrmPrmNativeTests.PatchA(), 0.15),
                                                     IntPatchPrmPrmNativeTests.PatchB(), out var aS1, out var aS2);
         Assert.True(anInt.IsDone());
         Assert.Equal(2, anInt.NbLines());
@@ -89,10 +90,10 @@ public class IntPatch_PrmPrmIntersectionTests
     [Fact]
     public void Polyhedra_LinesOnBothSurfaces_AndTheSameWithPolyhedraGivenEitherWay()
     {
-        var aS1 = new GeomAdaptor_Surface(IntPatchPrmPrmNativeTests.PatchA());
-        var aS2 = new GeomAdaptor_Surface(IntPatchPrmPrmNativeTests.PatchB());
-        var aD1 = new Adaptor3d_TopolTool(aS1);
-        var aD2 = new Adaptor3d_TopolTool(aS2);
+        var aS1 = new SurfaceAdaptor(IntPatchPrmPrmNativeTests.PatchA());
+        var aS2 = new SurfaceAdaptor(IntPatchPrmPrmNativeTests.PatchB());
+        var aD1 = new TopolTool(aS1);
+        var aD2 = new TopolTool(aS2);
         var aPoly1 = new IntPatch_Polyhedron(aS1);
         var aPoly2 = new IntPatch_Polyhedron(aS2);
 
@@ -124,9 +125,9 @@ public class IntPatch_PrmPrmIntersectionTests
     [Fact]
     public void SelfIntersection_OffTheDiagonal()
     {
-        var aS = new GeomAdaptor_Surface(IntPatchPrmPrmNativeTests.Folded());
+        var aS = new SurfaceAdaptor(IntPatchPrmPrmNativeTests.Folded());
         var anInt = new IntPatch_PrmPrmIntersection();
-        anInt.Perform(aS, new Adaptor3d_TopolTool(aS), THE_TOL, THE_TOL, THE_FLECHE, THE_PAS);
+        anInt.Perform(aS, new TopolTool(aS), THE_TOL, THE_TOL, THE_FLECHE, THE_PAS);
         Assert.True(anInt.IsDone());
         Assert.Equal(1, anInt.NbLines());
         AssertLinesOnBothSurfaces(anInt, aS, aS, 1.0e-6);
@@ -138,19 +139,19 @@ public class IntPatch_PrmPrmIntersectionTests
     [Fact]
     public void StartPoint_OneLine_AndNoneFarFromTheSurfaces()
     {
-        var aS1 = new GeomAdaptor_Surface(IntPatchPrmPrmNativeTests.PatchA());
-        var aS2 = new GeomAdaptor_Surface(IntPatchPrmPrmNativeTests.PatchB());
+        var aS1 = new SurfaceAdaptor(IntPatchPrmPrmNativeTests.PatchA());
+        var aS2 = new SurfaceAdaptor(IntPatchPrmPrmNativeTests.PatchB());
         var anInt = new IntPatch_PrmPrmIntersection();
-        anInt.Perform(aS1, new Adaptor3d_TopolTool(aS1), aS2, new Adaptor3d_TopolTool(aS2), 0.5, 0.5, 0.5, 0.5, THE_TOL,
+        anInt.Perform(aS1, new TopolTool(aS1), aS2, new TopolTool(aS2), 0.5, 0.5, 0.5, 0.5, THE_TOL,
                       THE_TOL, THE_FLECHE, THE_PAS);
         Assert.Equal(1, anInt.NbLines());
         AssertLinesOnBothSurfaces(anInt, aS1, aS2, 1.0e-6);
 
         // Two parallel planes 1 apart: no start point, done and empty.
-        var aP1 = new GeomAdaptor_Surface(new Geom_Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), -1, 1, -1, 1);
-        var aP2 = new GeomAdaptor_Surface(new Geom_Plane(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), -1, 1, -1, 1);
+        var aP1 = new SurfaceAdaptor(new PlaneSurface(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), -1, 1, -1, 1);
+        var aP2 = new SurfaceAdaptor(new PlaneSurface(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), -1, 1, -1, 1);
         var anEmpty = new IntPatch_PrmPrmIntersection();
-        anEmpty.Perform(aP1, new Adaptor3d_TopolTool(aP1), aP2, new Adaptor3d_TopolTool(aP2), 0.0, 0.0, 0.0, 0.0,
+        anEmpty.Perform(aP1, new TopolTool(aP1), aP2, new TopolTool(aP2), 0.0, 0.0, 0.0, 0.0,
                         THE_TOL, THE_TOL, THE_FLECHE, THE_PAS);
         Assert.True(anEmpty.IsDone());
         Assert.True(anEmpty.IsEmpty());
@@ -160,15 +161,15 @@ public class IntPatch_PrmPrmIntersectionTests
     [Fact]
     public void ListOfPoints_ClosedSurface_AddsTheSeamImages_AndAnEmptyListIsDone()
     {
-        var aS1 = new GeomAdaptor_Surface(new Geom_RectangularTrimmedSurface(IntPatchPrmPrmNativeTests.Cylinder(), 0.0,
+        var aS1 = new SurfaceAdaptor(new TrimmedSurface(IntPatchPrmPrmNativeTests.Cylinder(), 0.0,
                                                                              2.0 * M_PI, -2.0, 2.0));
-        var aS2 = new GeomAdaptor_Surface(IntPatchPrmPrmNativeTests.Patch(0.0, 3.0, -2.0, 2.0));
+        var aS2 = new SurfaceAdaptor(IntPatchPrmPrmNativeTests.Patch(0.0, 3.0, -2.0, 2.0));
         var aList = new NCollection_List<IntSurf_PntOn2S>();
         IntSurf_PntOn2S aP = new();
         aP.SetValue(0.0, 0.0, 1.0 / 3.0, 0.5);
         aList.Append(aP);
         var anInt = new IntPatch_PrmPrmIntersection();
-        anInt.Perform(aS1, new Adaptor3d_TopolTool(aS1), aS2, new Adaptor3d_TopolTool(aS2), THE_TOL, THE_TOL,
+        anInt.Perform(aS1, new TopolTool(aS1), aS2, new TopolTool(aS2), THE_TOL, THE_TOL,
                       THE_FLECHE, THE_PAS, aList);
         Assert.True(anInt.IsDone());
         // The point on the seam U = 0 gains its image at U = 2 pi, appended to the caller's list.
@@ -177,7 +178,7 @@ public class IntPatch_PrmPrmIntersectionTests
         Assert.Equal(2.0 * M_PI, u1);
 
         var anEmpty = new IntPatch_PrmPrmIntersection();
-        anEmpty.Perform(aS1, new Adaptor3d_TopolTool(aS1), aS2, new Adaptor3d_TopolTool(aS2), THE_TOL, THE_TOL,
+        anEmpty.Perform(aS1, new TopolTool(aS1), aS2, new TopolTool(aS2), THE_TOL, THE_TOL,
                         THE_FLECHE, THE_PAS, new NCollection_List<IntSurf_PntOn2S>());
         Assert.True(anEmpty.IsDone());
         Assert.Equal(0, anEmpty.NbLines());
@@ -196,11 +197,11 @@ public class IntPatch_PrmPrmIntersectionTests
     [Fact]
     public void DisjointSurfaces_DoneAndEmpty()
     {
-        var aFar = new Geom_Plane(new Point3D(0, 0, 10), new Direction3D(0, 0, 1));
-        var aS1 = new GeomAdaptor_Surface(IntPatchPrmPrmNativeTests.PatchA());
-        var aS2 = new GeomAdaptor_Surface(aFar, -2, 2, -2, 2);
+        var aFar = new PlaneSurface(new Point3D(0, 0, 10), new Direction3D(0, 0, 1));
+        var aS1 = new SurfaceAdaptor(IntPatchPrmPrmNativeTests.PatchA());
+        var aS2 = new SurfaceAdaptor(aFar, -2, 2, -2, 2);
         var anInt = new IntPatch_PrmPrmIntersection();
-        anInt.Perform(aS1, new Adaptor3d_TopolTool(aS1), aS2, new Adaptor3d_TopolTool(aS2), THE_TOL, THE_TOL,
+        anInt.Perform(aS1, new TopolTool(aS1), aS2, new TopolTool(aS2), THE_TOL, THE_TOL,
                       THE_FLECHE, THE_PAS);
         Assert.True(anInt.IsDone());
         Assert.True(anInt.IsEmpty());
@@ -284,7 +285,7 @@ public class IntPatch_PrmPrmIntersectionTests
     public void Polyhedron_DegenerateTriangles_VoidBoxes_LeftOutOfTheBVH()
     {
         // The sphere's poles collapse a row of triangles.
-        var aSphere = new GeomAdaptor_Surface(new Geom_SphericalSurface(new CoordinateSystem(), 1.0));
+        var aSphere = new SurfaceAdaptor(new SphericalSurface(new CoordinateSystem(), 1.0));
         var aPoly = new IntPatch_Polyhedron(aSphere, 4, 4);
         int aNbVoid = 0;
         for (int i = 1; i <= aPoly.NbTriangles(); i++)
@@ -311,7 +312,7 @@ public class IntPatch_PrmPrmIntersectionTests
     [Fact]
     public void InterferencePolyhedron_SelfPerformComputesNothing_AsInOcct()
     {
-        var aS = new GeomAdaptor_Surface(IntPatchPrmPrmNativeTests.Folded());
+        var aS = new SurfaceAdaptor(IntPatchPrmPrmNativeTests.Folded());
         var aPoly = new IntPatch_Polyhedron(aS, 7, 5);
         var aBuilt = new IntPatch_InterferencePolyhedron(aPoly);
         Assert.True(aBuilt.NbSectionLines() > 0);
@@ -324,9 +325,9 @@ public class IntPatch_PrmPrmIntersectionTests
         Assert.Equal(aBuilt.GetTolerance(), aPerformed.GetTolerance());
 
         // Perform on two polyhedra gives what the constructor gives.
-        var aS2 = new GeomAdaptor_Surface(IntPatchPrmPrmNativeTests.PatchB());
+        var aS2 = new SurfaceAdaptor(IntPatchPrmPrmNativeTests.PatchB());
         var aPoly2 = new IntPatch_Polyhedron(aS2);
-        var aPoly1 = new IntPatch_Polyhedron(new GeomAdaptor_Surface(IntPatchPrmPrmNativeTests.PatchA()));
+        var aPoly1 = new IntPatch_Polyhedron(new SurfaceAdaptor(IntPatchPrmPrmNativeTests.PatchA()));
         var aC = new IntPatch_InterferencePolyhedron(aPoly1, aPoly2);
         var aP = new IntPatch_InterferencePolyhedron();
         aP.Perform(aPoly1, aPoly2);

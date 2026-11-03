@@ -6,11 +6,13 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.IMeshData_Status;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -66,7 +68,7 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
             {
                 if (aDEdge.IsSet(IMeshData_Outdated))
                 {
-                    BRep_Tool.Polygon3D(aDEdge.GetEdge(), out Placement aLoc);
+                    Tool.Polygon3D(aDEdge.GetEdge(), out Placement aLoc);
                     BRepMesh_ShapeTool.NullifyEdge(aDEdge.GetEdge(), aLoc);
                 }
 
@@ -82,7 +84,7 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
                     aUsedFaces.Add(aDFace);
                     if (aDFace.IsSet(IMeshData_Outdated))
                     {
-                        Triangulation? aTriangulation = BRep_Tool.Triangulation(aDFace.GetFace(), out Placement aLoc);
+                        Triangulation? aTriangulation = Tool.Triangulation(aDFace.GetFace(), out Placement aLoc);
 
                         // Clean all edges of oudated face.
                         for (int aWireIt = 0; aWireIt < aDFace.WiresNb(); ++aWireIt)
@@ -120,12 +122,12 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
         public void Process(int theFaceIndex)
         {
             IMeshData_Face aDFace = myModel.GetFace(theFaceIndex);
-            if (aDFace.IsSet(IMeshData_Outdated) || aDFace.GetFace().IsNull())
+            if (aDFace.IsSet(IMeshData_Outdated) || aDFace.GetFace().IsNull)
             {
                 return;
             }
 
-            Triangulation? aTriangulation = BRep_Tool.Triangulation(aDFace.GetFace(), out Placement _);
+            Triangulation? aTriangulation = Tool.Triangulation(aDFace.GetFace(), out Placement _);
 
             if (aTriangulation is not null)
             {
@@ -196,14 +198,14 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
             {
                 IMeshData_Edge aDEdge = aDWire.GetEdge(aEdgeIdx);
 
-                if (aDEdge.GetPCurve(aDFace, TopAbs_FORWARD) != aDEdge.GetPCurve(aDFace, TopAbs_REVERSED))
+                if (aDEdge.GetPCurve(aDFace, Forward) != aDEdge.GetPCurve(aDFace, Reversed))
                 {
                     if (aDEdge.GetCurve().ParametersNb() == 2)
                     {
                         if (splitEdge(aDEdge, aDFace, Math.Abs(getConeStep(aDFace))))
                         {
                             Triangulation? aTriangulation =
-                                BRep_Tool.Triangulation(aDFace.GetFace(), out Placement _);
+                                Tool.Triangulation(aDFace.GetFace(), out Placement _);
 
                             if (aTriangulation is not null)
                             {
@@ -242,10 +244,10 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
         // Splits 3D and all pcurves accordingly using the specified step.
         private static bool splitEdge(IMeshData_Edge theDEdge, IMeshData_Face theDFace, double theDU)
         {
-            TopoDS_Edge aE = theDEdge.GetEdge();
-            TopoDS_Face aF = theDFace.GetFace();
+            Edge aE = theDEdge.GetEdge();
+            Face aF = theDFace.GetFace();
 
-            Geom_Curve? aHC = BRep_Tool.Curve(aE, out double aFParam, out double aLParam);
+            Curve3D? aHC = Tool.Curve(aE, out double aFParam, out double aLParam);
 
             IMeshData_PCurve aIPC1 = theDEdge.GetPCurve(0);
             IMeshData_PCurve aIPC2 = theDEdge.GetPCurve(1);
@@ -268,11 +270,11 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
             }
 
             // Define two pcurves of the seam-edge.
-            aE = TopoDS.Edge(aE.Oriented(TopAbs_FORWARD));
-            Geom2d_Curve? aPC1 = BRep_Tool.CurveOnSurface(aE, aF, out double _, out double _);
+            aE = ShapeCasts.Edge(aE.Oriented(Forward));
+            Curve2D? aPC1 = Tool.CurveOnSurface(aE, aF, out double _, out double _);
 
-            aE = TopoDS.Edge(aE.Oriented(TopAbs_REVERSED));
-            Geom2d_Curve? aPC2 = BRep_Tool.CurveOnSurface(aE, aF, out double _, out double _);
+            aE = ShapeCasts.Edge(aE.Oriented(Reversed));
+            Curve2D? aPC2 = Tool.CurveOnSurface(aE, aF, out double _, out double _);
 
             if (aPC1 is null || aPC2 is null)
             {
@@ -294,7 +296,7 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
         }
 
         // Splits the given curve using the specified step (OCCT's template, instantiated for the 3D curve).
-        private static bool splitCurve(Geom_Curve theGeomCurve, IMeshData_Curve theCurve, double theDT)
+        private static bool splitCurve(Curve3D theGeomCurve, IMeshData_Curve theCurve, double theDT)
         {
             bool isUpdated = false;
 
@@ -322,7 +324,7 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
         }
 
         // Splits the given curve using the specified step (OCCT's template, instantiated for a pcurve).
-        private static bool splitCurve(Geom2d_Curve theGeomCurve, IMeshData_PCurve theCurve, double theDT)
+        private static bool splitCurve(Curve2D theGeomCurve, IMeshData_PCurve theCurve, double theDT)
         {
             bool isUpdated = false;
 

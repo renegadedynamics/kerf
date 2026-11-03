@@ -2,18 +2,21 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>OCCT's GTests of ShapeBuild_ReShape (and the ShapeFix_Shape stability test of the same file).</summary>
 public class ShapeBuild_ReShapeTest
 {
-    private static int CountSubShapes(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int CountSubShapes(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
@@ -22,12 +25,12 @@ public class ShapeBuild_ReShapeTest
     [Fact]
     public void Apply_PerformsVertexReplacementOnCompound()
     {
-        TopoDS_Vertex aV1 = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Vertex();
-        TopoDS_Vertex aV2 = new BRepBuilderAPI_MakeVertex(new Point3D(1, 0, 0)).Vertex();
-        TopoDS_Vertex aV2Repl = new BRepBuilderAPI_MakeVertex(new Point3D(1.5, 0, 0)).Vertex();
+        Vertex aV1 = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Vertex();
+        Vertex aV2 = new BRepBuilderAPI_MakeVertex(new Point3D(1, 0, 0)).Vertex();
+        Vertex aV2Repl = new BRepBuilderAPI_MakeVertex(new Point3D(1.5, 0, 0)).Vertex();
 
-        TopoDS_Compound aParent = new();
-        var aBuilder = new BRep_Builder();
+        Compound aParent = new();
+        var aBuilder = new BrepBuilder();
         aBuilder.MakeCompound(ref aParent);
         aBuilder.Add(aParent, aV1);
         aBuilder.Add(aParent, aV2);
@@ -35,11 +38,11 @@ public class ShapeBuild_ReShapeTest
         var aReShape = new ShapeBuild_ReShape();
         aReShape.Replace(aV2, aV2Repl);
 
-        TopoDS_Shape aResult = aReShape.Apply(aParent);
-        Assert.False(aResult.IsNull());
+        Shape aResult = aReShape.Apply(aParent);
+        Assert.False(aResult.IsNull);
 
         bool aFoundReplacement = false;
-        for (var anIt = new TopoDS_Iterator(aResult); anIt.More(); anIt.Next())
+        for (var anIt = new Iterator(aResult); anIt.More(); anIt.Next())
         {
             if (ReferenceEquals(anIt.Value().TShape(), aV2Repl.TShape()))
             {
@@ -56,13 +59,13 @@ public class ShapeBuild_ReShapeTest
     [Fact]
     public void Apply_StructuralContainmentWithoutCrash()
     {
-        TopoDS_Vertex aV1 = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Vertex();
-        TopoDS_Vertex aV2 = new BRepBuilderAPI_MakeVertex(new Point3D(1, 0, 0)).Vertex();
-        TopoDS_Vertex aV3 = new BRepBuilderAPI_MakeVertex(new Point3D(2, 0, 0)).Vertex();
-        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(aV1, aV2).Edge();
+        Vertex aV1 = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Vertex();
+        Vertex aV2 = new BRepBuilderAPI_MakeVertex(new Point3D(1, 0, 0)).Vertex();
+        Vertex aV3 = new BRepBuilderAPI_MakeVertex(new Point3D(2, 0, 0)).Vertex();
+        Edge anE = new BRepBuilderAPI_MakeEdge(aV1, aV2).Edge();
 
-        TopoDS_Compound aContainer = new();
-        var aBuilder = new BRep_Builder();
+        Compound aContainer = new();
+        var aBuilder = new BrepBuilder();
         aBuilder.MakeCompound(ref aContainer);
         aBuilder.Add(aContainer, anE);
         aBuilder.Add(aContainer, aV3);
@@ -70,8 +73,8 @@ public class ShapeBuild_ReShapeTest
         var aReShape = new ShapeBuild_ReShape();
         aReShape.Replace(anE, aContainer);
 
-        TopoDS_Shape aResult = aReShape.Apply(anE);
-        Assert.False(aResult.IsNull());
+        Shape aResult = aReShape.Apply(anE);
+        Assert.False(aResult.IsNull);
     }
 
     // Regression test for the originally reported symptom: running shape healing
@@ -84,27 +87,27 @@ public class ShapeBuild_ReShapeTest
     public void RepeatedPerformDoesNotMultiplyEdges()
     {
         var aMakeBox = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0);
-        TopoDS_Shape aBox = aMakeBox.Shape();
+        Shape aBox = aMakeBox.Shape();
         Assert.True(aMakeBox.IsDone());
 
-        int aNbEdgesInitial = CountSubShapes(aBox, TopAbs_EDGE);
-        int aNbVerticesInitial = CountSubShapes(aBox, TopAbs_VERTEX);
-        int aNbFacesInitial = CountSubShapes(aBox, TopAbs_FACE);
+        int aNbEdgesInitial = CountSubShapes(aBox, ShapeType.Edge);
+        int aNbVerticesInitial = CountSubShapes(aBox, ShapeType.Vertex);
+        int aNbFacesInitial = CountSubShapes(aBox, ShapeType.Face);
         Assert.Equal(12, aNbEdgesInitial);
 
-        TopoDS_Shape aCurrent = aBox;
+        Shape aCurrent = aBox;
         for (int anIter = 0; anIter < 5; ++anIter)
         {
             var aFixer = new ShapeFix_Shape(aCurrent);
             aFixer.Perform();
             aCurrent = aFixer.Shape();
-            Assert.False(aCurrent.IsNull(), $"iteration {anIter}");
+            Assert.False(aCurrent.IsNull, $"iteration {anIter}");
 
             // Counts must remain identical across every iteration - no multiplication,
             // no loss of shapes on a valid input.
-            Assert.Equal(aNbFacesInitial, CountSubShapes(aCurrent, TopAbs_FACE));
-            Assert.Equal(aNbEdgesInitial, CountSubShapes(aCurrent, TopAbs_EDGE));
-            Assert.Equal(aNbVerticesInitial, CountSubShapes(aCurrent, TopAbs_VERTEX));
+            Assert.Equal(aNbFacesInitial, CountSubShapes(aCurrent, ShapeType.Face));
+            Assert.Equal(aNbEdgesInitial, CountSubShapes(aCurrent, ShapeType.Edge));
+            Assert.Equal(aNbVerticesInitial, CountSubShapes(aCurrent, ShapeType.Vertex));
         }
     }
 
@@ -114,13 +117,13 @@ public class ShapeBuild_ReShapeTest
     [Fact]
     public void Apply_DiamondSharedVertexInTwoCompounds()
     {
-        TopoDS_Vertex aShared = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Vertex();
-        TopoDS_Vertex aSharedNew = new BRepBuilderAPI_MakeVertex(new Point3D(0.1, 0, 0)).Vertex();
-        TopoDS_Vertex anOther1 = new BRepBuilderAPI_MakeVertex(new Point3D(1, 0, 0)).Vertex();
-        TopoDS_Vertex anOther2 = new BRepBuilderAPI_MakeVertex(new Point3D(2, 0, 0)).Vertex();
+        Vertex aShared = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Vertex();
+        Vertex aSharedNew = new BRepBuilderAPI_MakeVertex(new Point3D(0.1, 0, 0)).Vertex();
+        Vertex anOther1 = new BRepBuilderAPI_MakeVertex(new Point3D(1, 0, 0)).Vertex();
+        Vertex anOther2 = new BRepBuilderAPI_MakeVertex(new Point3D(2, 0, 0)).Vertex();
 
-        TopoDS_Compound aParentA = new(), aParentB = new(), aGrand = new();
-        var aBuilder = new BRep_Builder();
+        Compound aParentA = new(), aParentB = new(), aGrand = new();
+        var aBuilder = new BrepBuilder();
         aBuilder.MakeCompound(ref aParentA);
         aBuilder.Add(aParentA, aShared);
         aBuilder.Add(aParentA, anOther1);
@@ -134,12 +137,12 @@ public class ShapeBuild_ReShapeTest
         var aReShape = new ShapeBuild_ReShape();
         aReShape.Replace(aShared, aSharedNew);
 
-        TopoDS_Shape aResult = aReShape.Apply(aGrand);
-        Assert.False(aResult.IsNull());
+        Shape aResult = aReShape.Apply(aGrand);
+        Assert.False(aResult.IsNull);
 
         int aNbReplVerts = 0;
         int aNbOriginals = 0;
-        for (var anExp = new TopExp_Explorer(aResult, TopAbs_VERTEX); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aResult, ShapeType.Vertex); anExp.More(); anExp.Next())
         {
             if (ReferenceEquals(anExp.Current().TShape(), aSharedNew.TShape()))
             {

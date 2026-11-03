@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using static Occt.BRepLib_ShapeModification;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -32,43 +34,43 @@ public class BRepBuilderAPI_MakeSolid : BRepBuilderAPI_MakeShape
         myMakeSolid = new BRepLib_MakeSolid();
     }
 
-    public BRepBuilderAPI_MakeSolid(in TopoDS_CompSolid S)
+    public BRepBuilderAPI_MakeSolid(in CompSolid S)
     {
         myMakeSolid = new BRepLib_MakeSolid(S);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeSolid(in TopoDS_Shell S)
+    public BRepBuilderAPI_MakeSolid(in Shell S)
     {
         myMakeSolid = new BRepLib_MakeSolid(S);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeSolid(in TopoDS_Shell S1, in TopoDS_Shell S2)
+    public BRepBuilderAPI_MakeSolid(in Shell S1, in Shell S2)
     {
         myMakeSolid = new BRepLib_MakeSolid(S1, S2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeSolid(in TopoDS_Shell S1, in TopoDS_Shell S2, in TopoDS_Shell S3)
+    public BRepBuilderAPI_MakeSolid(in Shell S1, in Shell S2, in Shell S3)
     {
         myMakeSolid = new BRepLib_MakeSolid(S1, S2, S3);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeSolid(in TopoDS_Solid So)
+    public BRepBuilderAPI_MakeSolid(in Solid So)
     {
         myMakeSolid = new BRepLib_MakeSolid(So);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeSolid(in TopoDS_Solid So, in TopoDS_Shell S)
+    public BRepBuilderAPI_MakeSolid(in Solid So, in Shell S)
     {
         myMakeSolid = new BRepLib_MakeSolid(So, S);
         TakeResult();
     }
 
-    public void Add(in TopoDS_Shell S)
+    public void Add(in Shell S)
     {
         myMakeSolid.Add(S);
         TakeResult();
@@ -81,26 +83,26 @@ public class BRepBuilderAPI_MakeSolid : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The solid (frozen).</summary>
-    public TopoDS_Solid Solid()
+    public Solid Solid()
     {
         return myMakeSolid.Solid();
     }
 
     /// <summary><see cref="Solid"/> without freezing, for ported code.</summary>
-    internal TopoDS_Solid InternalSolid()
+    internal Solid InternalSolid()
     {
         return myMakeSolid.InternalSolid();
     }
 
     /// <summary>The solid (OCCT's conversion operator; frozen).</summary>
-    public static explicit operator TopoDS_Solid(BRepBuilderAPI_MakeSolid theMaker) => theMaker.Solid();
+    public static explicit operator Solid(BRepBuilderAPI_MakeSolid theMaker) => theMaker.Solid();
 
     /// <summary>True if the face <paramref name="S"/> was deleted (BRepLib's face status).</summary>
-    public override bool IsDeleted(in TopoDS_Shape S)
+    public override bool IsDeleted(in Shape S)
     {
-        if (S.ShapeType() == TopAbs_FACE)
+        if (S.ShapeType() == ShapeType.Face)
         {
-            BRepLib_ShapeModification aStatus = myMakeSolid.FaceStatus(TopoDS.Face(S));
+            BRepLib_ShapeModification aStatus = myMakeSolid.FaceStatus(ShapeCasts.Face(S));
 
             if (aStatus == BRepLib_Deleted)
             {

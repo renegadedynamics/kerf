@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Geometry;
 using static OcctNet.ModelingData.Tests.GeomEval_SurfaceTestHelpers;
 
@@ -18,7 +19,7 @@ public class GeomEval_HypParaboloidSurfaceTest
     public void Construction_ValidParams()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
+        HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
         Assert.Equal(2.0, aSurf.SemiAxisA(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(3.0, aSurf.SemiAxisB(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -28,9 +29,9 @@ public class GeomEval_HypParaboloidSurfaceTest
     public void Construction_InvalidAxes_Throws()
     {
         CoordinateSystem anAx3 = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new GeomEval_HypParaboloidSurface(anAx3, -1.0, 1.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new GeomEval_HypParaboloidSurface(anAx3, 1.0, 0.0));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new GeomEval_HypParaboloidSurface(anAx3, 0.0, 1.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HypParaboloidSurface(anAx3, -1.0, 1.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HypParaboloidSurface(anAx3, 1.0, 0.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new HypParaboloidSurface(anAx3, 0.0, 1.0));
     }
 
     // Test EvalD0 at u=0, v=0: P = origin
@@ -38,7 +39,7 @@ public class GeomEval_HypParaboloidSurfaceTest
     public void EvalD0_Origin()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
+        HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
         Point3D aP = aSurf.EvalD0(0.0, 0.0);
         Assert.Equal(0.0, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -51,7 +52,7 @@ public class GeomEval_HypParaboloidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         const double aA = 2.0, aB = 3.0;
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, aA, aB);
+        HypParaboloidSurface aSurf = new(anAx3, aA, aB);
         Point3D aP = aSurf.EvalD0(1.0, 0.0);
         Assert.Equal(1.0, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -64,7 +65,7 @@ public class GeomEval_HypParaboloidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         const double aA = 2.0, aB = 3.0;
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, aA, aB);
+        HypParaboloidSurface aSurf = new(anAx3, aA, aB);
         Point3D aP = aSurf.EvalD0(0.0, 1.0);
         Assert.Equal(0.0, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(1.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -76,10 +77,10 @@ public class GeomEval_HypParaboloidSurfaceTest
     public void EvalD1_ConsistentWithD0()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
+        HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
         const double aU = 1.5, aV = 0.7;
 
-        Geom_Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
+        Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
         Point3D aPu1 = aSurf.EvalD0(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Point3D aPu2 = aSurf.EvalD0(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Point3D aPv1 = aSurf.EvalD0(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -98,12 +99,12 @@ public class GeomEval_HypParaboloidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         const double aA = 2.0, aB = 3.0;
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, aA, aB);
+        HypParaboloidSurface aSurf = new(anAx3, aA, aB);
 
         // Evaluate at several parameter values: D2 should be constant
-        Geom_Surface.ResD2 aD2a = aSurf.EvalD2(0.0, 0.0);
-        Geom_Surface.ResD2 aD2b = aSurf.EvalD2(1.0, 2.0);
-        Geom_Surface.ResD2 aD2c = aSurf.EvalD2(-3.0, 5.0);
+        Surface.ResD2 aD2a = aSurf.EvalD2(0.0, 0.0);
+        Surface.ResD2 aD2b = aSurf.EvalD2(1.0, 2.0);
+        Surface.ResD2 aD2c = aSurf.EvalD2(-3.0, 5.0);
 
         double aExpD2U_Z = 2.0 / (aA * aA);
         double aExpD2V_Z = -2.0 / (aB * aB);
@@ -122,23 +123,23 @@ public class GeomEval_HypParaboloidSurfaceTest
     public void Bounds_Periodicity()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, 1.0, 1.0);
+        HypParaboloidSurface aSurf = new(anAx3, 1.0, 1.0);
         aSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.True(aU1 < -1e10);
         Assert.True(aU2 > 1e10);
         Assert.True(aV1 < -1e10);
         Assert.True(aV2 > 1e10);
-        Assert.False(aSurf.IsUPeriodic());
-        Assert.False(aSurf.IsUClosed());
-        Assert.False(aSurf.IsVPeriodic());
-        Assert.False(aSurf.IsVClosed());
+        Assert.False(aSurf.IsUPeriodic);
+        Assert.False(aSurf.IsUClosed);
+        Assert.False(aSurf.IsVPeriodic);
+        Assert.False(aSurf.IsVClosed);
     }
 
     [Fact]
     public void Iso_NotImplemented()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
+        HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UIso(0.5));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VIso(0.5));
     }
@@ -147,7 +148,7 @@ public class GeomEval_HypParaboloidSurfaceTest
     public void Reverse_NotImplemented()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
+        HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReverse());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReverse());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReversedParameter(0.5));
@@ -159,7 +160,7 @@ public class GeomEval_HypParaboloidSurfaceTest
     public void Coefficients_SatisfiedAtEvalPoints()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
+        HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
         aSurf.Coefficients(out double aA1, out double aA2, out double aA3, out double aB1, out double aB2,
                            out double aB3, out double aC1, out double aC2, out double aC3, out double aD);
 
@@ -179,7 +180,7 @@ public class GeomEval_HypParaboloidSurfaceTest
     public void Transform_NotImplemented()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
+        HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
         Transform3D aTrsf = new();
         aTrsf.SetTranslation(new Vector3D(1.0, 2.0, 3.0));
 
@@ -192,10 +193,10 @@ public class GeomEval_HypParaboloidSurfaceTest
     public void Copy_Independent()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
-        Geom_Geometry aCopy = aSurf.Copy();
+        HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
+        Geometry3D aCopy = aSurf.Copy();
         Assert.NotNull(aCopy);
-        GeomEval_HypParaboloidSurface? aCopySurf = aCopy as GeomEval_HypParaboloidSurface;
+        HypParaboloidSurface? aCopySurf = aCopy as HypParaboloidSurface;
         Assert.NotNull(aCopySurf);
         Assert.Equal(2.0, aCopySurf.SemiAxisA(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(3.0, aCopySurf.SemiAxisB(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -206,9 +207,9 @@ public class GeomEval_HypParaboloidSurfaceTest
     public void EvalD3_Zero()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
+        HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
 
-        Geom_Surface.ResD3 aD3 = aSurf.EvalD3(1.0, 1.0);
+        Surface.ResD3 aD3 = aSurf.EvalD3(1.0, 1.0);
 
         Assert.True(aD3.D3U.Magnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion());
         Assert.True(aD3.D3V.Magnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion());
@@ -221,12 +222,12 @@ public class GeomEval_HypParaboloidSurfaceTest
     public void EvalD2_CrossDerivative()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
+        HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
 
         double[][] aTestPoints = [[0.0, 0.0], [1.5, -2.0], [-3.0, 4.5]];
         foreach (double[] aPt in aTestPoints)
         {
-            Geom_Surface.ResD2 aD2 = aSurf.EvalD2(aPt[0], aPt[1]);
+            Surface.ResD2 aD2 = aSurf.EvalD2(aPt[0], aPt[1]);
             Assert.Equal(0.0, aD2.D2UV.X(), global::Kerf.Engine.Foundation.Precision.SquareConfusion());
             Assert.Equal(0.0, aD2.D2UV.Y(), global::Kerf.Engine.Foundation.Precision.SquareConfusion());
             Assert.Equal(0.0, aD2.D2UV.Z(), global::Kerf.Engine.Foundation.Precision.SquareConfusion());
@@ -239,9 +240,9 @@ public class GeomEval_HypParaboloidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         const double aA = 2.0, aB = 3.0;
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, aA, aB);
+        HypParaboloidSurface aSurf = new(anAx3, aA, aB);
 
-        Geom_Surface.ResD2 aD2 = aSurf.EvalD2(1.5, -2.7);
+        Surface.ResD2 aD2 = aSurf.EvalD2(1.5, -2.7);
 
         // D2U = (0, 0, 2/A^2)
         Assert.Equal(0.0, aD2.D2U.X(), global::Kerf.Engine.Foundation.Precision.SquareConfusion());
@@ -260,10 +261,10 @@ public class GeomEval_HypParaboloidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         const double aA = 2.0, aB = 3.0;
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, aA, aB);
+        HypParaboloidSurface aSurf = new(anAx3, aA, aB);
         const double aU = 1.0, aV = 1.0;
 
-        Geom_Surface.ResD2 aD2 = aSurf.EvalD2(aU, aV);
+        Surface.ResD2 aD2 = aSurf.EvalD2(aU, aV);
 
         // EvalDN(u,v,2,0) should match D2U
         Vector3D aDN20 = aSurf.EvalDN(aU, aV, 2, 0);
@@ -283,7 +284,7 @@ public class GeomEval_HypParaboloidSurfaceTest
     public void Derivatives_MatchFiniteDifferences()
     {
         CoordinateSystem anAx3 = new(new Point3D(1.0, -2.0, 0.5), new Direction3D(1.0, 1.0, 1.0), new Direction3D(1.0, -1.0, 0.0));
-        GeomEval_HypParaboloidSurface aSurf = new(anAx3, 2.0, 1.5);
+        HypParaboloidSurface aSurf = new(anAx3, 2.0, 1.5);
         for (double aU = -2.0; aU <= 2.0; aU += 0.7)
         {
             for (double aV = -2.0; aV <= 2.0; aV += 0.7)
@@ -297,8 +298,8 @@ public class GeomEval_HypParaboloidSurfaceTest
     [Fact]
     public void Setters_WithTwins_Freeze()
     {
-        GeomEval_HypParaboloidSurface aSurf = new(new CoordinateSystem(), 2.0, 3.0);
-        GeomEval_HypParaboloidSurface aCopy = aSurf.WithSemiAxisA(4.0).WithSemiAxisB(5.0);
+        HypParaboloidSurface aSurf = new(new CoordinateSystem(), 2.0, 3.0);
+        HypParaboloidSurface aCopy = aSurf.WithSemiAxisA(4.0).WithSemiAxisB(5.0);
         Assert.Equal(2.0, aSurf.SemiAxisA());
         Assert.Equal(4.0, aCopy.SemiAxisA());
         Assert.Equal(5.0, aCopy.SemiAxisB());

@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -77,9 +80,9 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
         return aCases;
     }
 
-    private static TopoDS_Shape Read(string theText)
+    private static Shape Read(string theText)
     {
-        BRepTools.Read(out TopoDS_Shape aShape, new StringReader(theText));
+        BrepTools.Read(out Shape aShape, new StringReader(theText));
         return aShape;
     }
 
@@ -100,19 +103,19 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
     private static void Block(StringBuilder theB, string theTag, string theText)
         => theB.Append(theTag).Append(' ').Append(Encoding.Latin1.GetByteCount(theText)).Append('\n').Append(theText).Append('\n');
 
-    private static string Dump(Report theReport, TopoDS_Shape theResult, List<TopoDS_Shape> theArgs,
-                               BRepTools_History? theHistory, string theExtra)
+    private static string Dump(Report theReport, Shape theResult, List<Shape> theArgs,
+                               History? theHistory, string theExtra)
     {
         StringBuilder aB = new();
         aB.Append("errors").Append(Alerts(theReport, Gravity.Fail)).Append("\nwarnings")
           .Append(Alerts(theReport, Gravity.Warning)).Append('\n');
-        Block(aB, "result", theResult.IsNull() ? "" : BRepTextComparison.Write(theResult));
+        Block(aB, "result", theResult.IsNull ? "" : BRepTextComparison.Write(theResult));
         Block(aB, "history", DeterminismHarness.HistoryText(theArgs, theResult, theHistory));
         Block(aB, "extra", theExtra);
         return aB.ToString();
     }
 
-    private static string Indices(IEnumerable<TopoDS_Shape> theList, NCollection_IndexedMap<TopoDS_Shape> theMap, bool theSort)
+    private static string Indices(IEnumerable<Shape> theList, NCollection_IndexedMap<Shape> theMap, bool theSort)
     {
         IEnumerable<int> aV = theList.Select(theMap.FindIndex);
         if (theSort)
@@ -122,19 +125,19 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
         return string.Concat(aV.Select(i => " " + i.ToString(CultureInfo.InvariantCulture)));
     }
 
-    private static NCollection_IndexedMap<TopoDS_Shape> Map(IEnumerable<TopoDS_Shape> theShapes)
+    private static NCollection_IndexedMap<Shape> Map(IEnumerable<Shape> theShapes)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        foreach (TopoDS_Shape aS in theShapes)
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        foreach (Shape aS in theShapes)
         {
-            TopExp.MapShapes(aS, aMap);
+            Exploration.MapShapes(aS, aMap);
         }
         return aMap;
     }
 
-    private static string Twins(BOPAlgo_MakePeriodic theMaker, TopoDS_Shape theResult)
+    private static string Twins(BOPAlgo_MakePeriodic theMaker, Shape theResult)
     {
-        if (theResult.IsNull())
+        if (theResult.IsNull)
         {
             return "";
         }
@@ -142,7 +145,7 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
         var aMap = Map([theResult]);
         for (int i = 1; i <= aMap.Extent(); ++i)
         {
-            NCollection_List<TopoDS_Shape> aT = theMaker.InternalGetTwins(aMap[i]);
+            NCollection_List<Shape> aT = theMaker.InternalGetTwins(aMap[i]);
             if (!aT.IsEmpty())
             {
                 aB.Append(CultureInfo.InvariantCulture, $"t {i}:{Indices(aT, aMap, true)}\n");
@@ -151,9 +154,9 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
         return aB.ToString();
     }
 
-    private static string Materials(BOPAlgo_MakeConnected theTool, TopoDS_Shape theResult, List<TopoDS_Shape> theArgs)
+    private static string Materials(BOPAlgo_MakeConnected theTool, Shape theResult, List<Shape> theArgs)
     {
-        if (theResult.IsNull())
+        if (theResult.IsNull)
         {
             return "";
         }
@@ -162,9 +165,9 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
         var anArgMap = Map(theArgs);
         for (int i = 1; i <= aMap.Extent(); ++i)
         {
-            NCollection_List<TopoDS_Shape> aP = theTool.InternalMaterialsOnPositiveSide(aMap[i]);
-            NCollection_List<TopoDS_Shape> aN = theTool.InternalMaterialsOnNegativeSide(aMap[i]);
-            NCollection_List<TopoDS_Shape> aO = theTool.InternalGetOrigins(aMap[i]);
+            NCollection_List<Shape> aP = theTool.InternalMaterialsOnPositiveSide(aMap[i]);
+            NCollection_List<Shape> aN = theTool.InternalMaterialsOnNegativeSide(aMap[i]);
+            NCollection_List<Shape> aO = theTool.InternalGetOrigins(aMap[i]);
             if (aP.IsEmpty() && aN.IsEmpty() && aO.IsEmpty())
             {
                 continue;
@@ -179,25 +182,25 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
     private sealed class State(bool thePublish, bool theParallel)
     {
         public readonly BOPAlgo_MakePeriodic Periodic = new();
-        public List<TopoDS_Shape> PeriodicArgs = [];
+        public List<Shape> PeriodicArgs = [];
         public readonly BOPAlgo_MakeConnected Connected = new();
-        public List<TopoDS_Shape> ConnectedArgs = [];
+        public List<Shape> ConnectedArgs = [];
         public readonly bool Publish = thePublish;
         public readonly bool Parallel = theParallel;
     }
 
-    private static string Run(State theState, Step theStep, Dictionary<string, TopoDS_Shape> theShapes)
+    private static string Run(State theState, Step theStep, Dictionary<string, Shape> theShapes)
     {
         string[] a = theStep.Words;
         int n = a.Length;
-        TopoDS_Shape Shape(string theName) => theShapes.TryGetValue(theName, out TopoDS_Shape aS) ? aS : new TopoDS_Shape();
+        Shape Shape(string theName) => theShapes.TryGetValue(theName, out Shape aS) ? aS : new Shape();
         BOPAlgo_MakePeriodic aM = theState.Periodic;
         BOPAlgo_MakeConnected aT = theState.Connected;
         switch (a[0])
         {
             case "makeperiodic":
             {
-                TopoDS_Shape aS = Shape(a[2]);
+                Shape aS = Shape(a[2]);
                 aM.Clear();
                 aM.SetShape(aS);
                 aM.SetRunParallel(theState.Parallel);
@@ -214,13 +217,13 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
                     }
                 }
                 aM.Perform();
-                TopoDS_Shape aR = aM.HasErrors() ? new TopoDS_Shape() : theState.Publish ? aM.Shape() : aM.InternalShape();
+                Shape aR = aM.HasErrors() ? new Shape() : theState.Publish ? aM.Shape() : aM.InternalShape();
                 return Dump(aM.GetReport(), aR, theState.PeriodicArgs, aM.InternalHistory(), Twins(aM, aR));
             }
             case "repeatshape":
             case "clearrepetitions":
             {
-                TopoDS_Shape aR;
+                Shape aR;
                 if (a[0] == "repeatshape")
                 {
                     for (int i = 2; i < n; ++i)
@@ -228,7 +231,7 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
                         int anID = DirID(a[i]);
                         aM.InternalRepeatShape(anID, int.Parse(a[++i], CultureInfo.InvariantCulture));
                     }
-                    aR = aM.HasErrors() ? new TopoDS_Shape() : theState.Publish ? aM.RepeatedShape() : aM.InternalRepeatedShape();
+                    aR = aM.HasErrors() ? new Shape() : theState.Publish ? aM.RepeatedShape() : aM.InternalRepeatedShape();
                 }
                 else
                 {
@@ -244,15 +247,15 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
                 theState.ConnectedArgs = [];
                 for (int i = 2; i < n; ++i)
                 {
-                    TopoDS_Shape aS = Shape(a[i]);
-                    if (!aS.IsNull())
+                    Shape aS = Shape(a[i]);
+                    if (!aS.IsNull)
                     {
                         aT.AddArgument(aS);
                         theState.ConnectedArgs.Add(aS);
                     }
                 }
                 aT.Perform();
-                TopoDS_Shape aR = aT.HasErrors() ? new TopoDS_Shape() : theState.Publish ? aT.Shape() : aT.InternalShape();
+                Shape aR = aT.HasErrors() ? new Shape() : theState.Publish ? aT.Shape() : aT.InternalShape();
                 return Dump(aT.GetReport(), aR, theState.ConnectedArgs, aT.InternalHistory(), Materials(aT, aR, theState.ConnectedArgs));
             }
             case "cmakeperiodic":
@@ -287,7 +290,7 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
             default:
                 throw new InvalidOperationException(a[0]);
         }
-        TopoDS_Shape aCR = aT.HasErrors() ? new TopoDS_Shape() : theState.Publish ? aT.PeriodicShape() : aT.InternalPeriodicShape();
+        Shape aCR = aT.HasErrors() ? new Shape() : theState.Publish ? aT.PeriodicShape() : aT.InternalPeriodicShape();
         return Dump(aT.GetReport(), aCR, theState.ConnectedArgs, aT.InternalHistory(),
                     Materials(aT, aCR, theState.ConnectedArgs) + Twins(aT.PeriodicityTool(), aCR));
     }
@@ -299,7 +302,7 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
         List<string> aDumps = [];
         foreach (Step aStep in theCase.Steps)
         {
-            Dictionary<string, TopoDS_Shape> aShapes = aStep.Shapes.ToDictionary(p => p.Key, p => Read(p.Value), StringComparer.Ordinal);
+            Dictionary<string, Shape> aShapes = aStep.Shapes.ToDictionary(p => p.Key, p => Read(p.Value), StringComparer.Ordinal);
             try
             {
                 aDumps.Add(Run(aState, aStep, aShapes));
@@ -565,7 +568,7 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
             State aState = new(false, false);
             foreach (Step aStep in aCase.Steps)
             {
-                Dictionary<string, TopoDS_Shape> aShapes = aStep.Shapes.ToDictionary(p => p.Key, p => Read(p.Value), StringComparer.Ordinal);
+                Dictionary<string, Shape> aShapes = aStep.Shapes.ToDictionary(p => p.Key, p => Read(p.Value), StringComparer.Ordinal);
                 try
                 {
                     Run(aState, aStep, aShapes);
@@ -573,7 +576,7 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
                 catch (FailureException)
                 {
                 }
-                foreach ((string aKey, TopoDS_Shape aS) in aShapes)
+                foreach ((string aKey, Shape aS) in aShapes)
                 {
                     Assert.Equal(BRepTextComparison.Write(Read(aStep.Shapes[aKey])), BRepTextComparison.Write(aS));
                 }

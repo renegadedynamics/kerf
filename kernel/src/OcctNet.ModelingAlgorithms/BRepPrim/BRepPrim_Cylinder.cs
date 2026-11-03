@@ -6,6 +6,7 @@
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -63,10 +64,10 @@ internal sealed class BRepPrim_Cylinder : BRepPrim_Revolution
     }
 
     /// <summary>The surface normal should be directed towards the outside.</summary>
-    public override TopoDS_Face MakeEmptyLateralFace()
+    public override Face MakeEmptyLateralFace()
     {
-        Geom_CylindricalSurface C = new(new CoordinateSystem(Axes()), myRadius);
-        TopoDS_Face F = new();
+        CylindricalSurface C = new(new CoordinateSystem(Axes()), myRadius);
+        Face F = new();
         myBuilder.Builder().MakeFace(ref F, C, global::Kerf.Engine.Foundation.Precision.Confusion());
         return F;
     }
@@ -77,8 +78,8 @@ internal sealed class BRepPrim_Cylinder : BRepPrim_Revolution
         V.Multiply(myRadius);
         Axis3D A = Axes().Axis();
         A.Translate(V);
-        Geom_Line L = new(A);
-        Geom2d_Line L2d = new(new Point2D(myRadius, 0), new Direction2D(Direction2D.D.Y));
+        LineCurve3D L = new(A);
+        LineCurve2D L2d = new(new Point2D(myRadius, 0), new Direction2D(Direction2D.D.Y));
         Meridian(L, L2d);
     }
 }

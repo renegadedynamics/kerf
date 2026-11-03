@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.Continuity;
@@ -19,7 +22,7 @@ namespace Occt;
 /// A working object (decision 21): it keeps the caller's adaptors and <see cref="SetInterval"/> trims them into new
 /// adaptors.
 /// </remarks>
-public class GeomFill_CircularBlendFunc : Approx_SweepFunction
+public class GeomFill_CircularBlendFunc : SweepFunction
 {
     private const double TolAng = 1.0e-6;
 
@@ -28,12 +31,12 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
     private double maxang;
     private double minang;
     private double distmin;
-    private readonly Adaptor3d_Curve myPath;
-    private readonly Adaptor3d_Curve myCurve1;
-    private readonly Adaptor3d_Curve myCurve2;
-    private Adaptor3d_Curve myTPath;
-    private Adaptor3d_Curve myTCurve1;
-    private Adaptor3d_Curve myTCurve2;
+    private readonly CurveAdaptorBase myPath;
+    private readonly CurveAdaptorBase myCurve1;
+    private readonly CurveAdaptorBase myCurve2;
+    private CurveAdaptorBase myTPath;
+    private CurveAdaptorBase myTCurve1;
+    private CurveAdaptorBase myTCurve2;
     private readonly int myDegree;
     private readonly int myNbKnots;
     private readonly int myNbPoles;
@@ -120,7 +123,7 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
     /// The blend of radius Radius between Curve1 and Curve2 around Path, polynomial if Polynomial, else rational
     /// (quasi-angular when the arcs exceed 0.65 pi, else in tan(theta/2)).
     /// </summary>
-    public GeomFill_CircularBlendFunc(Adaptor3d_Curve Path, Adaptor3d_Curve Curve1, Adaptor3d_Curve Curve2,
+    public GeomFill_CircularBlendFunc(CurveAdaptorBase Path, CurveAdaptorBase Curve1, CurveAdaptorBase Curve2,
                                       double Radius, bool Polynomial = false)
     {
         maxang = RealFirst();
@@ -161,7 +164,7 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
         double TLast = myPath.LastParameter(), T;
         int ii;
         double L1, L2;
-        Adaptor3d_Curve C;
+        CurveAdaptorBase C;
         Point3D P1, P2, P3, Center;
         Vector3D DCenter;
 
@@ -189,15 +192,15 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
 
         double Fleche = 1.0e-2 * L;
         double Angle, Cosa, Percent;
-        GCPnts_QuasiUniformDeflection Samp = new GCPnts_QuasiUniformDeflection();
+        QuasiUniformDeflection Samp = new QuasiUniformDeflection();
         Samp.Initialize(C, Fleche);
         myBary.SetCoord(0.0, 0.0, 0.0);
         Vector3D ns1 = new Vector3D(), ns2 = new Vector3D();
 
-        if (Samp.IsDone())
+        if (Samp.IsDone)
         {
-            Percent = ((double)1) / (2 * Samp.NbPoints());
-            for (ii = 1; ii <= Samp.NbPoints(); ii++)
+            Percent = ((double)1) / (2 * Samp.PointCount);
+            for (ii = 1; ii <= Samp.PointCount; ii++)
             {
                 T = Samp.Parameter(ii);
                 myCurve1.D0(T, out P1);
@@ -547,7 +550,7 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
         GeomFill.Mults(myTConv, TMults);
     }
 
-    public override bool IsRational() => (myTConv != Polynomial);
+    public override bool IsRational => (myTConv != Polynomial);
 
     public override int NbIntervals(Continuity S)
     {

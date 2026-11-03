@@ -5,8 +5,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Properties;
 using Kerf.Geometry;
-using static Occt.LProp_Status;
+using static Kerf.Engine.Geometry.Properties.Status;
 
 namespace Occt;
 
@@ -17,7 +18,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// OCCT's alias <c>GeomLProp_SLPropsBase&lt;HLRBRep_SurfacePtr, LProp_SurfaceUtils::ToolAccess&lt;HLRBRep_SLPropsATool&gt;&gt;</c>,
-/// generated from <see cref="LProp_SLProps3d"/> by substituting the surface (decision 1091). The tool
+/// generated from <see cref="SLProps3d"/> by substituting the surface (decision 1091). The tool
 /// HLRBRep_SLPropsATool forwards the evaluators to the surface, but its <c>Bounds</c> are RealFirst and RealLast in
 /// both directions, not the surface's (its <c>Continuity</c> is never read). A working object: its setters are public.
 /// </remarks>
@@ -44,10 +45,10 @@ public class HLRBRep_SLProps
     private double myGausCurv = 0.0;
     private int mySignificantFirstDerivativeOrderU = 0;
     private int mySignificantFirstDerivativeOrderV = 0;
-    private LProp_Status myUTangentStatus;
-    private LProp_Status myVTangentStatus;
-    private LProp_Status myNormalStatus;
-    private LProp_Status myCurvatureStatus;
+    private Status myUTangentStatus;
+    private Status myVTangentStatus;
+    private Status myNormalStatus;
+    private Status myCurvatureStatus;
 
     /// <summary>
     /// The properties of the surface S at (U, V), computing derivatives up to order N (0 to 2), with the linear
@@ -61,10 +62,10 @@ public class HLRBRep_SLProps
         myDerOrder = N;
         myCN = 4;
         myLinTol = Resolution;
-        myUTangentStatus = LProp_Undecided;
-        myVTangentStatus = LProp_Undecided;
-        myNormalStatus = LProp_Undecided;
-        myCurvatureStatus = LProp_Undecided;
+        myUTangentStatus = Undecided;
+        myVTangentStatus = Undecided;
+        myNormalStatus = Undecided;
+        myCurvatureStatus = Undecided;
         Standard_OutOfRange_Raise_if(N < 0 || N > 2, "GeomLProp_SLPropsBase::GeomLProp_SLPropsBase()");
         SetParameters(U, V);
     }
@@ -78,10 +79,10 @@ public class HLRBRep_SLProps
         myDerOrder = N;
         myCN = 4;
         myLinTol = Resolution;
-        myUTangentStatus = LProp_Undecided;
-        myVTangentStatus = LProp_Undecided;
-        myNormalStatus = LProp_Undecided;
-        myCurvatureStatus = LProp_Undecided;
+        myUTangentStatus = Undecided;
+        myVTangentStatus = Undecided;
+        myNormalStatus = Undecided;
+        myCurvatureStatus = Undecided;
         Standard_OutOfRange_Raise_if(N < 0 || N > 2, "GeomLProp_SLPropsBase::GeomLProp_SLPropsBase()");
     }
 
@@ -94,10 +95,10 @@ public class HLRBRep_SLProps
         myDerOrder = N;
         myCN = 0;
         myLinTol = Resolution;
-        myUTangentStatus = LProp_Undecided;
-        myVTangentStatus = LProp_Undecided;
-        myNormalStatus = LProp_Undecided;
-        myCurvatureStatus = LProp_Undecided;
+        myUTangentStatus = Undecided;
+        myVTangentStatus = Undecided;
+        myNormalStatus = Undecided;
+        myCurvatureStatus = Undecided;
         Standard_OutOfRange_Raise_if(N < 0 || N > 2, "GeomLProp_SLPropsBase::GeomLProp_SLPropsBase() bad level");
     }
 
@@ -115,10 +116,10 @@ public class HLRBRep_SLProps
         myU = U;
         myV = V;
         EvalSurfDerivatives(myU, myV, myDerOrder);
-        myUTangentStatus = LProp_Undecided;
-        myVTangentStatus = LProp_Undecided;
-        myNormalStatus = LProp_Undecided;
-        myCurvatureStatus = LProp_Undecided;
+        myUTangentStatus = Undecided;
+        myVTangentStatus = Undecided;
+        myNormalStatus = Undecided;
+        myCurvatureStatus = Undecided;
     }
 
     /// <summary>The point.</summary>
@@ -163,12 +164,12 @@ public class HLRBRep_SLProps
     public bool IsTangentUDefined()
     {
         // LProp_SurfaceUtils::IsTangentUDefined
-        if (myUTangentStatus == LProp_Undefined)
+        if (myUTangentStatus == Undefined)
         {
             return false;
         }
 
-        if (myUTangentStatus >= LProp_Defined)
+        if (myUTangentStatus >= Defined)
         {
             return true;
         }
@@ -176,7 +177,7 @@ public class HLRBRep_SLProps
         // OCCT passes D1U() and D2U() as references to the fields, read after both are evaluated
         D1U();
         D2U();
-        return LProp_SurfaceUtils.FindSurfTangentOrder(myD1u,
+        return SurfaceUtils.FindSurfTangentOrder(myD1u,
                                                        myD2u,
                                                        myCN,
                                                        myLinTol * myLinTol,
@@ -190,7 +191,7 @@ public class HLRBRep_SLProps
         // LProp_SurfaceUtils::TangentU
         if (!IsTangentUDefined())
         {
-            throw new LProp_NotDefined();
+            throw new NotDefinedException();
         }
 
         ComputeSurfTangent(myD1u, myD2u, mySignificantFirstDerivativeOrderU, true, out D);
@@ -200,12 +201,12 @@ public class HLRBRep_SLProps
     public bool IsTangentVDefined()
     {
         // LProp_SurfaceUtils::IsTangentVDefined
-        if (myVTangentStatus == LProp_Undefined)
+        if (myVTangentStatus == Undefined)
         {
             return false;
         }
 
-        if (myVTangentStatus >= LProp_Defined)
+        if (myVTangentStatus >= Defined)
         {
             return true;
         }
@@ -213,7 +214,7 @@ public class HLRBRep_SLProps
         // OCCT passes D1V() and D2V() as references to the fields, read after both are evaluated
         D1V();
         D2V();
-        return LProp_SurfaceUtils.FindSurfTangentOrder(myD1v,
+        return SurfaceUtils.FindSurfTangentOrder(myD1v,
                                                        myD2v,
                                                        myCN,
                                                        myLinTol * myLinTol,
@@ -227,7 +228,7 @@ public class HLRBRep_SLProps
         // LProp_SurfaceUtils::TangentV
         if (!IsTangentVDefined())
         {
-            throw new LProp_NotDefined();
+            throw new NotDefinedException();
         }
 
         ComputeSurfTangent(myD1v, myD2v, mySignificantFirstDerivativeOrderV, false, out D);
@@ -236,7 +237,7 @@ public class HLRBRep_SLProps
     /// <summary>True if the normal is defined (by CSLib::Normal on the first derivatives).</summary>
     public bool IsNormalDefined()
     {
-        return LProp_SurfaceUtils.IsNormalDefined(myD1u, myD1v, myLinTol, ref myNormal, ref myNormalStatus);
+        return SurfaceUtils.IsNormalDefined(myD1u, myD1v, myLinTol, ref myNormal, ref myNormalStatus);
     }
 
     /// <summary>The normal direction; throws LProp_NotDefined if it isn't defined.</summary>
@@ -245,7 +246,7 @@ public class HLRBRep_SLProps
         // LProp_SurfaceUtils::Normal
         if (!IsNormalDefined())
         {
-            throw new LProp_NotDefined();
+            throw new NotDefinedException();
         }
 
         return myNormal;
@@ -258,31 +259,31 @@ public class HLRBRep_SLProps
     public bool IsCurvatureDefined()
     {
         // LProp_SurfaceUtils::IsCurvatureDefined
-        if (myCurvatureStatus == LProp_Undefined)
+        if (myCurvatureStatus == Undefined)
         {
             return false;
         }
 
-        if (myCurvatureStatus >= LProp_Defined)
+        if (myCurvatureStatus >= Defined)
         {
             return true;
         }
 
         if (myCN < 2)
         {
-            myCurvatureStatus = LProp_Undefined;
+            myCurvatureStatus = Undefined;
             return false;
         }
 
         if (!IsNormalDefined())
         {
-            myCurvatureStatus = LProp_Undefined;
+            myCurvatureStatus = Undefined;
             return false;
         }
 
         if (!IsTangentUDefined() || !IsTangentVDefined())
         {
-            myCurvatureStatus = LProp_Undefined;
+            myCurvatureStatus = Undefined;
             return false;
         }
 
@@ -291,7 +292,7 @@ public class HLRBRep_SLProps
             D2U();
         }
 
-        if (LProp_SurfaceUtils.ComputeSurfCurvatures(myD1u,
+        if (SurfaceUtils.ComputeSurfCurvatures(myD1u,
                                                      myD1v,
                                                      myD2u,
                                                      myD2v,
@@ -304,11 +305,11 @@ public class HLRBRep_SLProps
                                                      ref myMeanCurv,
                                                      ref myGausCurv))
         {
-            myCurvatureStatus = LProp_Computed;
+            myCurvatureStatus = Computed;
             return true;
         }
 
-        myCurvatureStatus = LProp_Undefined;
+        myCurvatureStatus = Undefined;
         return false;
     }
 
@@ -329,7 +330,7 @@ public class HLRBRep_SLProps
         double theMinCurv = myMinCurv;
         if (!IsCurvatureDefined())
         {
-            throw new LProp_NotDefined();
+            throw new NotDefinedException();
         }
 
         return Math.Abs(theMaxCurv - theMinCurv) < Math.Abs(Epsilon(theMaxCurv));
@@ -352,7 +353,7 @@ public class HLRBRep_SLProps
         // LProp_SurfaceUtils::CurvatureDirections
         if (!IsCurvatureDefined())
         {
-            throw new LProp_NotDefined();
+            throw new NotDefinedException();
         }
 
         MaxD = myDirMaxCurv;
@@ -372,7 +373,7 @@ public class HLRBRep_SLProps
     {
         if (!IsCurvatureDefined())
         {
-            throw new LProp_NotDefined();
+            throw new NotDefinedException();
         }
 
         return theValue;

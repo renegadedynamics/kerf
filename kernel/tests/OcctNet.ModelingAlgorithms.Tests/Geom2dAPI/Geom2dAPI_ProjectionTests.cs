@@ -13,7 +13,7 @@ public class Geom2dAPI_ProjectionTests
     [Fact]
     public void ProjectPointOnCircle()
     {
-        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(1, 1), new Direction2D(1, 0)), 2.0);
+        CircleCurve2D aCircle = new(new Axis2D(new Point2D(1, 1), new Direction2D(1, 0)), 2.0);
         Geom2dAPI_ProjectPointOnCurve aProj = new(new Point2D(4, 1), aCircle);
         Assert.Equal(2, aProj.NbPoints());
         Assert.Equal(1.0, aProj.LowerDistance(), 1e-12);
@@ -29,7 +29,7 @@ public class Geom2dAPI_ProjectionTests
     [Fact]
     public void ProjectPointOnLine_WithRange()
     {
-        Geom2d_Line aLine = new(new Point2D(0, 0), new Direction2D(1, 0));
+        LineCurve2D aLine = new(new Point2D(0, 0), new Direction2D(1, 0));
         Geom2dAPI_ProjectPointOnCurve aProj = new(new Point2D(3, 2), aLine, -10, 10);
         Assert.Equal(1, aProj.NbPoints());
         Assert.Equal(3.0, aProj.Parameter(1), 1e-12);
@@ -52,7 +52,7 @@ public class Geom2dAPI_ProjectionTests
         aPoles[2] = new Point2D(1, 2);
         aPoles[3] = new Point2D(3, 2);
         aPoles[4] = new Point2D(4, 0);
-        Geom2d_BezierCurve aBez = new(aPoles);
+        BezierCurve2D aBez = new(aPoles);
         Point2D aP = new(2, 3);
         Geom2dAPI_ProjectPointOnCurve aProj = new(aP, aBez);
         Assert.True(aProj.NbPoints() >= 1);
@@ -74,8 +74,8 @@ public class Geom2dAPI_ProjectionTests
     [Fact]
     public void ExtremaCircleLine()
     {
-        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0);
-        Geom2d_Line aLine = new(new Point2D(-10, 3), new Direction2D(1, 0));
+        CircleCurve2D aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0);
+        LineCurve2D aLine = new(new Point2D(-10, 3), new Direction2D(1, 0));
         Geom2dAPI_ExtremaCurveCurve anExt = new(aCircle, aLine, 0, 2 * Math.PI, -20, 20);
         Assert.True(anExt.NbExtrema() >= 1);
         Assert.Equal(2.0, anExt.LowerDistance(), 1e-12);
@@ -102,8 +102,8 @@ public class Geom2dAPI_ProjectionTests
         aPoles2[1] = new Point2D(0, 3);
         aPoles2[2] = new Point2D(1, 2);
         aPoles2[3] = new Point2D(2, 3);
-        Geom2d_BezierCurve aC1 = new(aPoles1);
-        Geom2d_BezierCurve aC2 = new(aPoles2);
+        BezierCurve2D aC1 = new(aPoles1);
+        BezierCurve2D aC2 = new(aPoles2);
         Geom2dAPI_ExtremaCurveCurve anExt = new(aC1, aC2, 0, 1, 0, 1);
         Assert.True(anExt.NbExtrema() >= 1);
         // Apexes at (1, 0.5) and (1, 2.5).

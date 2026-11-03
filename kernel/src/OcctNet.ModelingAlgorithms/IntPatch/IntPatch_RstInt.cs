@@ -16,6 +16,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
@@ -115,14 +116,14 @@ public static class IntPatch_RstInt
 
     private static double Confusion => global::Kerf.Engine.Foundation.Precision.Confusion();
 
-    private static double Tol3d(Adaptor3d_HVertex vtx, Adaptor3d_TopolTool Domain, double tolDef = 0.0) =>
+    private static double Tol3d(HVertex vtx, TopolTool Domain, double tolDef = 0.0) =>
         (Domain.Has3d() ? Domain.Tol3d(vtx) : tolDef < Confusion ? Confusion : tolDef);
 
-    private static double Tol3d(Adaptor2d_Curve2d arc, Adaptor3d_TopolTool Domain, double tolDef = 0.0) =>
+    private static double Tol3d(Curve2DAdaptorBase arc, TopolTool Domain, double tolDef = 0.0) =>
         (Domain.Has3d() ? Domain.Tol3d(arc) : tolDef < Confusion ? Confusion : tolDef);
 
-    private static bool CoincideOnArc(in Point3D Ptsommet, Adaptor2d_Curve2d A, Adaptor3d_Surface Surf, double Toler,
-                                      Adaptor3d_TopolTool Domain, ref Adaptor3d_HVertex? Vtx)
+    private static bool CoincideOnArc(in Point3D Ptsommet, Curve2DAdaptorBase A, SurfaceAdaptorBase Surf, double Toler,
+                                      TopolTool Domain, ref HVertex? Vtx)
     {
         double distmin = RealLast();
         double tolarc = Max(Toler, Tol3d(A, Domain));
@@ -131,7 +132,7 @@ public static class IntPatch_RstInt
         Domain.InitVertexIterator();
         while (Domain.MoreVertex())
         {
-            Adaptor3d_HVertex vtx1 = Domain.Vertex();
+            HVertex vtx1 = Domain.Vertex();
             double prm = IntPatch_HInterTool.Parameter(vtx1, A);
             Point2D p2d = A.Value(prm);
             Point3D point = Surf.Value(p2d.X(), p2d.Y());
@@ -238,7 +239,7 @@ public static class IntPatch_RstInt
     }
 
     // MSV 28.03.2002: find parameter on WLine in 2d space
-    private static bool FindParameter(IntPatch_Line L, Adaptor3d_Surface OtherSurf, double Tol, in Point3D Ptsom,
+    private static bool FindParameter(IntPatch_Line L, SurfaceAdaptorBase OtherSurf, double Tol, in Point3D Ptsom,
                                       in Point2D Ptsom2d, ref double Param, ref Vector3D Tgl, int ParamApproche,
                                       bool OnFirst)
     {
@@ -381,8 +382,8 @@ public static class IntPatch_RstInt
     /// if <paramref name="Surf"/> is the first surface of the intersection. Then recomputes the line's vertex
     /// parameters. Throws Standard_DomainError on another kind of line.
     /// </summary>
-    public static void PutVertexOnLine(IntPatch_Line L, Adaptor3d_Surface Surf, Adaptor3d_TopolTool Domain,
-                                       Adaptor3d_Surface OtherSurf, bool OnFirst, double Tol)
+    public static void PutVertexOnLine(IntPatch_Line L, SurfaceAdaptorBase Surf, TopolTool Domain,
+                                       SurfaceAdaptorBase OtherSurf, bool OnFirst, double Tol)
     {
         // Domain est le domaine de restriction de la surface Surf.
         // On intersectera un arc de Surf avec la surface OtherSurf.
@@ -414,8 +415,8 @@ public static class IntPatch_RstInt
         Vector2D d2d;
 
         IntPatch_Point Sommet = new(), ptline = new();
-        Adaptor3d_HVertex? vtxarc = null;
-        Adaptor2d_Curve2d arc;
+        HVertex? vtxarc = null;
+        Curve2DAdaptorBase arc;
         bool VtxOnArc, duplicate, found;
         IntSurf_Transition transarc = new(), transline = new();
 
@@ -440,10 +441,10 @@ public static class IntPatch_RstInt
             PLin.ResetError();
         }
 
-        bool SurfaceIsUClosed = Surf.IsUClosed();
-        bool SurfaceIsVClosed = Surf.IsVClosed();
-        bool OSurfaceIsUClosed = OtherSurf.IsUClosed();
-        bool OSurfaceIsVClosed = OtherSurf.IsVClosed();
+        bool SurfaceIsUClosed = Surf.IsUClosed;
+        bool SurfaceIsVClosed = Surf.IsVClosed;
+        bool OSurfaceIsUClosed = OtherSurf.IsUClosed;
+        bool OSurfaceIsVClosed = OtherSurf.IsVClosed;
         bool possiblyClosed = (SurfaceIsUClosed || SurfaceIsVClosed || OSurfaceIsUClosed || OSurfaceIsVClosed);
         double tolUClosed = 0.0, tolVClosed = 0.0, tolOUClosed = 0.0, tolOVClosed = 0.0;
         if (possiblyClosed)
@@ -471,8 +472,8 @@ public static class IntPatch_RstInt
         //-- il faut dans ce cas considerer la restriction                      --
         //--                                la restriction decalee de +-2PI     --
         //------------------------------------------------------------------------
-        Adaptor3d_Surface Surf1 = (OnFirst ? Surf : OtherSurf);
-        Adaptor3d_Surface Surf2 = (OnFirst ? OtherSurf : Surf);
+        SurfaceAdaptorBase Surf1 = (OnFirst ? Surf : OtherSurf);
+        SurfaceAdaptorBase Surf2 = (OnFirst ? OtherSurf : Surf);
         SurfaceKind TypeS1 = Surf1.GetType();
         SurfaceKind TypeS2 = Surf2.GetType();
         bool SurfaceIsPeriodic = false;
@@ -518,7 +519,7 @@ public static class IntPatch_RstInt
             Domain.Initialize(arc);
             for (Domain.InitVertexIterator(); Domain.MoreVertex(); Domain.NextVertex())
             {
-                Adaptor3d_HVertex vtx = Domain.Vertex();
+                HVertex vtx = Domain.Vertex();
                 double prm = IntPatch_HInterTool.Parameter(vtx, arc);
                 if (Math.Abs(prm - PFirst) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
@@ -564,7 +565,7 @@ public static class IntPatch_RstInt
                 break;
                 case BezierCurve:
                 {
-                    NbEchant = (3 + arc.NbPoles());
+                    NbEchant = (3 + arc.PoleCount);
                     if (NbEchant < 10)
                     {
                         NbEchant = 10;
@@ -579,7 +580,7 @@ public static class IntPatch_RstInt
                 {
                     // szv:const double nbs = (arc->NbKnots() * arc->Degree())*(arc->LastParameter() -
                     // arc->FirstParameter())/(PLast-PFirst);
-                    double nbs = (arc.NbKnots() * arc.Degree()) * (PLast - PFirst)
+                    double nbs = (arc.KnotCount * arc.Degree()) * (PLast - PFirst)
                                  / (arc.LastParameter() - arc.FirstParameter());
                     NbEchant = (nbs < 2.0 ? 2 : (int)nbs);
                     if (NbEchant < 10)
@@ -1028,7 +1029,7 @@ public static class IntPatch_RstInt
                                     }
                                     else
                                     {
-                                        Adaptor3d_HVertex vtxref = (OnFirst) ? (ptline.VertexOnS1()) : (ptline.VertexOnS2());
+                                        HVertex vtxref = (OnFirst) ? (ptline.VertexOnS1()) : (ptline.VertexOnS2());
                                         if ((OnFirst && !ptline.IsOnDomS2()) || (!OnFirst && !ptline.IsOnDomS1()))
                                         {
                                             ptline.SetArc(OnFirst, arc, paramarc, transline, transarc);
@@ -1186,20 +1187,20 @@ public static class IntPatch_RstInt
                     break;
                 default:
                 {
-                    if (Surf1.IsUPeriodic())
+                    if (Surf1.IsUPeriodic)
                     {
                         pu1 = Surf1.UPeriod();
                     }
-                    else if (Surf1.IsUClosed())
+                    else if (Surf1.IsUClosed)
                     {
                         pu1 = Surf1.LastUParameter() - Surf1.FirstUParameter();
                         // std::cout<<" UClosed1 "<<pu1<<std::endl;
                     }
-                    if (Surf1.IsVPeriodic())
+                    if (Surf1.IsVPeriodic)
                     {
                         pv1 = Surf1.VPeriod();
                     }
-                    else if (Surf1.IsVClosed())
+                    else if (Surf1.IsVClosed)
                     {
                         pv1 = Surf1.LastVParameter() - Surf1.FirstVParameter();
                         // std::cout<<" VClosed1 "<<pv1<<std::endl;
@@ -1220,21 +1221,21 @@ public static class IntPatch_RstInt
                     break;
                 default:
                 {
-                    if (Surf2.IsUPeriodic())
+                    if (Surf2.IsUPeriodic)
                     {
                         pu2 = Surf2.UPeriod();
                     }
-                    else if (Surf2.IsUClosed())
+                    else if (Surf2.IsUClosed)
                     {
                         pu2 = Surf2.LastUParameter() - Surf2.FirstUParameter();
                         // std::cout<<" UClosed2 "<<pu2<<std::endl;
                     }
 
-                    if (Surf2.IsVPeriodic())
+                    if (Surf2.IsVPeriodic)
                     {
                         pv2 = Surf2.VPeriod();
                     }
-                    else if (Surf2.IsVClosed())
+                    else if (Surf2.IsVClosed)
                     {
                         pv2 = Surf2.LastVParameter() - Surf2.FirstVParameter();
                         // std::cout<<" VClosed2 "<<pv2<<std::endl;

@@ -5,9 +5,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepFeat_PerfSelection;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -23,13 +25,13 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepFeat_MakePipe : BRepFeat_Form
 {
-    private TopoDS_Shape myPbase = new();
+    private Shape myPbase = new();
     // OCCT: the class declares its own mySkface, hiding BRepFeat_Form's, which stays null
-    private new TopoDS_Face mySkface = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> mySlface = new(TopTools_ShapeMapHasher.Instance);
-    private TopoDS_Wire mySpine = new();
-    private NCollection_Sequence<Geom_Curve> myCurves = new();
-    private Geom_Curve? myBCurve;
+    private new Face mySkface = new();
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> mySlface = new(ShapeHasher.Instance);
+    private Wire mySpine = new();
+    private NCollection_Sequence<Curve3D> myCurves = new();
+    private Curve3D? myBCurve;
 
     /// <summary>An empty pipe feature.</summary>
     public BRepFeat_MakePipe()
@@ -41,14 +43,14 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
     /// <paramref name="Sbase"/>, from the sketch face <paramref name="Skface"/>; <paramref name="Fuse"/> is the mode
     /// (0 cut, 1 fuse, 2 the feature alone).
     /// </summary>
-    public BRepFeat_MakePipe(in TopoDS_Shape Sbase, in TopoDS_Shape Pbase, in TopoDS_Face Skface, in TopoDS_Wire Spine,
+    public BRepFeat_MakePipe(in Shape Sbase, in Shape Pbase, in Face Skface, in Wire Spine,
                              int Fuse, bool Modify)
     {
         Init(Sbase, Pbase, Skface, Spine, Fuse, Modify);
     }
 
     /// <summary>Initializes the pipe feature (see the constructor).</summary>
-    public void Init(in TopoDS_Shape Sbase, in TopoDS_Shape Pbase, in TopoDS_Face Skface, in TopoDS_Wire Spine, int Mode,
+    public void Init(in Shape Sbase, in Shape Pbase, in Face Skface, in Wire Spine, int Mode,
                      bool Modify)
     {
         // OCCT.NET: the working copies of frozen inputs (decision 1052)
@@ -59,7 +61,7 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         SketchFaceValid();
         myPbase = Working(Pbase);
         mySlface.Clear();
-        mySpine = TopoDS.Wire(Working(Spine));
+        mySpine = ShapeCasts.Wire(Working(Spine));
         if (Mode == 0)
         {
             myFuse = false;
@@ -82,10 +84,10 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         myMap.Clear();
         myFShape.Nullify();
         myLShape.Nullify();
-        TopExp_Explorer exp = new();
-        for (exp.Init(mySbase, TopAbs_FACE); exp.More(); exp.Next())
+        Explorer exp = new();
+        for (exp.Init(mySbase, ShapeType.Face); exp.More(); exp.Next())
         {
-            NCollection_List<TopoDS_Shape> thelist = new();
+            NCollection_List<Shape> thelist = new();
             myMap.Bind(exp.Current(), thelist);
             myMap[exp.Current()].Append(exp.Current());
         }
@@ -94,10 +96,10 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
 
     /// <summary>Adds an element of sliding: the edge <paramref name="E"/> of the profile slides on the face <paramref name="F"/>.</summary>
     /// <exception cref="ConstructionErrorException">F isn't a face of the basis shape, or E an edge of the profile.</exception>
-    public void Add(in TopoDS_Edge E, in TopoDS_Face F)
+    public void Add(in Edge E, in Face F)
     {
-        TopExp_Explorer exp = new();
-        for (exp.Init(mySbase, TopAbs_FACE); exp.More(); exp.Next())
+        Explorer exp = new();
+        for (exp.Init(mySbase, ShapeType.Face); exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(Working(F)))
             {
@@ -109,7 +111,7 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
             throw new ConstructionErrorException();
         }
 
-        for (exp.Init(myPbase, TopAbs_EDGE); exp.More(); exp.Next())
+        for (exp.Init(myPbase, ShapeType.Edge); exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(Working(E)))
             {
@@ -123,10 +125,10 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
 
         if (!mySlface.IsBound(F))
         {
-            NCollection_List<TopoDS_Shape> thelist1 = new();
+            NCollection_List<Shape> thelist1 = new();
             mySlface.Bind(F, thelist1);
         }
-        NCollection_List<TopoDS_Shape>.Iterator itl = new(mySlface[F]);
+        NCollection_List<Shape>.Iterator itl = new(mySlface[F]);
         for (; itl.More(); itl.Next())
         {
             if (itl.Value().IsSame(E))
@@ -150,9 +152,9 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         myGluedF.Clear();
         myPerfSelection = BRepFeat_NoSelection;
         PerfSelectionValid();
-        TopoDS_Shape theBase = myPbase;
+        Shape theBase = myPbase;
         LocOpe_Pipe thePipe = new(mySpine, theBase);
-        TopoDS_Shape VraiPipe = thePipe.InternalShape();
+        Shape VraiPipe = thePipe.InternalShape();
         MajMap(myPbase, thePipe, myMap, ref myFShape, ref myLShape);
         myGShape = VraiPipe;
         GeneratedShapeValid();
@@ -181,7 +183,7 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
             myFShape = thePipe.InternalFirstShape();
             NCollection_Sequence<Point3D> spt = new();
             LocOpe.SampleEdges(myFShape, spt);
-            myCurves = new NCollection_Sequence<Geom_Curve>(thePipe.Curves(spt)!);
+            myCurves = new NCollection_Sequence<Curve3D>(thePipe.Curves(spt)!);
             myBCurve = thePipe.BarycCurve();
             GlobalPerform();
         }
@@ -189,13 +191,13 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
 
     /// <summary>Builds the pipe up to the shape <paramref name="Until"/>.</summary>
     /// <exception cref="ConstructionErrorException">Until is null or has no face.</exception>
-    public void Perform(in TopoDS_Shape Until)
+    public void Perform(in Shape Until)
     {
-        if (Until.IsNull())
+        if (Until.IsNull)
         {
             throw new ConstructionErrorException();
         }
-        TopExp_Explorer exp = new(Until, TopAbs_FACE);
+        Explorer exp = new(Until, ShapeType.Face);
         if (!exp.More())
         {
             throw new ConstructionErrorException();
@@ -209,7 +211,7 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         TransformShapeFU(1);
         ShapeUntilValid();
         LocOpe_Pipe thePipe = new(mySpine, myPbase);
-        TopoDS_Shape VraiTuyau = thePipe.InternalShape();
+        Shape VraiTuyau = thePipe.InternalShape();
         MajMap(myPbase, thePipe, myMap, ref myFShape, ref myLShape);
         myGShape = VraiTuyau;
         GeneratedShapeValid();
@@ -218,20 +220,20 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         myFShape = thePipe.InternalFirstShape();
         NCollection_Sequence<Point3D> spt = new();
         LocOpe.SampleEdges(myFShape, spt);
-        myCurves = new NCollection_Sequence<Geom_Curve>(thePipe.Curves(spt)!);
+        myCurves = new NCollection_Sequence<Curve3D>(thePipe.Curves(spt)!);
         myBCurve = thePipe.BarycCurve();
         GlobalPerform();
     }
 
     /// <summary>Builds the pipe from the shape <paramref name="From"/> up to the shape <paramref name="Until"/>.</summary>
     /// <exception cref="ConstructionErrorException">From or Until is null or has no face.</exception>
-    public void Perform(in TopoDS_Shape From, in TopoDS_Shape Until)
+    public void Perform(in Shape From, in Shape Until)
     {
-        if (From.IsNull() || Until.IsNull())
+        if (From.IsNull || Until.IsNull)
         {
             throw new ConstructionErrorException();
         }
-        if (!mySkface.IsNull())
+        if (!mySkface.IsNull)
         {
             if (Working(From).IsSame(mySkface))
             {
@@ -247,12 +249,12 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         myGluedF.Clear();
         myPerfSelection = BRepFeat_SelectionFU;
         PerfSelectionValid();
-        TopExp_Explorer exp = new(From, TopAbs_FACE);
+        Explorer exp = new(From, ShapeType.Face);
         if (!exp.More())
         {
             throw new ConstructionErrorException();
         }
-        exp.Init(Until, TopAbs_FACE);
+        exp.Init(Until, ShapeType.Face);
         if (!exp.More())
         {
             throw new ConstructionErrorException();
@@ -264,7 +266,7 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         TransformShapeFU(1);
         ShapeUntilValid();
         LocOpe_Pipe thePipe = new(mySpine, myPbase);
-        TopoDS_Shape VraiTuyau = thePipe.InternalShape();
+        Shape VraiTuyau = thePipe.InternalShape();
         MajMap(myPbase, thePipe, myMap, ref myFShape, ref myLShape);
         myGShape = VraiTuyau;
         GeneratedShapeValid();
@@ -272,56 +274,56 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         myFShape = thePipe.InternalFirstShape();
         NCollection_Sequence<Point3D> spt = new();
         LocOpe.SampleEdges(myFShape, spt);
-        myCurves = new NCollection_Sequence<Geom_Curve>(thePipe.Curves(spt)!);
+        myCurves = new NCollection_Sequence<Curve3D>(thePipe.Curves(spt)!);
         myBCurve = thePipe.BarycCurve();
         GlobalPerform();
     }
 
     /// <summary>The curves of the pipe through the sample points of its first shape.</summary>
-    public override void Curves(NCollection_Sequence<Geom_Curve> scur)
+    public override void Curves(NCollection_Sequence<Curve3D> scur)
     {
         scur.Assign(myCurves);
     }
 
     /// <summary>The curve of the pipe through the barycentre of its first shape.</summary>
-    public override Geom_Curve? BarycCurve()
+    public override Curve3D? BarycCurve()
     {
         return myBCurve;
     }
 
-    private static void MajMap(in TopoDS_Shape theB, LocOpe_Pipe theP,
-                               NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMap,
-                               ref TopoDS_Shape theFShape, ref TopoDS_Shape theLShape)
+    private static void MajMap(in Shape theB, LocOpe_Pipe theP,
+                               NCollection_DataMap<Shape, NCollection_List<Shape>> theMap,
+                               ref Shape theFShape, ref Shape theLShape)
     {
-        TopExp_Explorer exp = new(theP.InternalFirstShape(), TopAbs_WIRE);
+        Explorer exp = new(theP.InternalFirstShape(), ShapeType.Wire);
         if (exp.More())
         {
             theFShape = exp.Current();
-            NCollection_List<TopoDS_Shape> thelist2 = new();
+            NCollection_List<Shape> thelist2 = new();
             theMap.Bind(theFShape, thelist2);
-            for (exp.Init(theP.InternalFirstShape(), TopAbs_FACE); exp.More(); exp.Next())
+            for (exp.Init(theP.InternalFirstShape(), ShapeType.Face); exp.More(); exp.Next())
             {
                 theMap[theFShape].Append(exp.Current());
             }
         }
 
-        exp.Init(theP.InternalLastShape(), TopAbs_WIRE);
+        exp.Init(theP.InternalLastShape(), ShapeType.Wire);
         if (exp.More())
         {
             theLShape = exp.Current();
-            NCollection_List<TopoDS_Shape> thelist3 = new();
+            NCollection_List<Shape> thelist3 = new();
             theMap.Bind(theLShape, thelist3);
-            for (exp.Init(theP.InternalLastShape(), TopAbs_FACE); exp.More(); exp.Next())
+            for (exp.Init(theP.InternalLastShape(), ShapeType.Face); exp.More(); exp.Next())
             {
                 theMap[theLShape].Append(exp.Current());
             }
         }
 
-        for (exp.Init(theB, TopAbs_EDGE); exp.More(); exp.Next())
+        for (exp.Init(theB, ShapeType.Edge); exp.More(); exp.Next())
         {
             if (!theMap.IsBound(exp.Current()))
             {
-                theMap.Bind(exp.Current(), new NCollection_List<TopoDS_Shape>(theP.InternalShapes(exp.Current())));
+                theMap.Bind(exp.Current(), new NCollection_List<Shape>(theP.InternalShapes(exp.Current())));
             }
         }
     }

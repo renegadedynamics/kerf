@@ -2,13 +2,17 @@
 
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.IMeshData_Status;
 using static Kerf.Engine.Foundation.Status;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 using static OcctNet.ModelingAlgorithms.Tests.BRepMeshModelKit;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -20,12 +24,12 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepMeshModelTests
 {
-    private static TopoDS_Shape Box() => new BRepPrimAPI_MakeBox(1, 2, 3).Solid();
+    private static Shape Box() => new BRepPrimAPI_MakeBox(1, 2, 3).Solid();
 
-    private static List<TopoDS_Shape> Explore(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static List<Shape> Explore(in Shape theShape, ShapeType theType)
     {
-        var aList = new List<TopoDS_Shape>();
-        for (var anExp = new TopExp_Explorer(theShape, theType); anExp.More(); anExp.Next())
+        var aList = new List<Shape>();
+        for (var anExp = new Explorer(theShape, theType); anExp.More(); anExp.Next())
         {
             aList.Add(anExp.Current());
         }
@@ -37,7 +41,7 @@ public class BRepMeshModelTests
     [Fact]
     public void Box_model_has_its_faces_wires_edges_and_pcurves_with_their_orientations()
     {
-        TopoDS_Shape aBox = Box();
+        Shape aBox = Box();
         IMeshData_Model aModel = Model(aBox, Params(0.1), Stage.Built);
 
         Assert.Equal(6, aModel.FacesNb());
@@ -45,17 +49,17 @@ public class BRepMeshModelTests
         for (int i = 0; i < aModel.FacesNb(); i++)
         {
             IMeshData_Face aDFace = aModel.GetFace(i);
-            Assert.Equal(TopAbs_FORWARD, aDFace.GetFace().Orientation());
+            Assert.Equal(Forward, aDFace.GetFace().Orientation());
             Assert.True(aDFace.IsEqual(IMeshData_NoError));
             Assert.Equal(1, aDFace.WiresNb());
             IMeshData_Wire aDWire = aDFace.GetWire(0);
             Assert.Equal(4, aDWire.EdgesNb());
 
-            List<TopoDS_Shape> aFaceEdges = Explore(aDFace.GetFace(), TopAbs_EDGE);
+            List<Shape> aFaceEdges = Explore(aDFace.GetFace(), ShapeType.Edge);
             for (int e = 0; e < aDWire.EdgesNb(); e++)
             {
                 IMeshData_Edge aDEdge = aDWire.GetEdge(e);
-                TopAbs_Orientation anOri = aDWire.GetEdgeOrientation(e);
+                Orientation anOri = aDWire.GetEdgeOrientation(e);
 
                 // The orientation is the edge's in the face; the pcurve on this face has it.
                 Assert.Contains(aFaceEdges, s => s.IsSame(aDEdge.GetEdge()) && s.Orientation() == anOri);
@@ -65,8 +69,8 @@ public class BRepMeshModelTests
 
                 // The wire is ordered: each edge starts where the previous one ends.
                 IMeshData_Edge aNext = aDWire.GetEdge((e + 1) % 4);
-                TopoDS_Vertex aLast = TopExp.LastVertex(TopoDS.Edge(aDEdge.GetEdge().Oriented(anOri)), true);
-                TopoDS_Vertex aFirst = TopExp.FirstVertex(TopoDS.Edge(aNext.GetEdge().Oriented(aDWire.GetEdgeOrientation((e + 1) % 4))), true);
+                Vertex aLast = Exploration.LastVertex(ShapeCasts.Edge(aDEdge.GetEdge().Oriented(anOri)), true);
+                Vertex aFirst = Exploration.FirstVertex(ShapeCasts.Edge(aNext.GetEdge().Oriented(aDWire.GetEdgeOrientation((e + 1) % 4))), true);
                 Assert.True(aLast.IsSame(aFirst));
             }
         }
@@ -106,9 +110,9 @@ public class BRepMeshModelTests
                     }
                 }
                 Assert.NotNull(aSeam);
-                Assert.NotSame(aSeam.GetPCurve(aDFace, TopAbs_FORWARD), aSeam.GetPCurve(aDFace, TopAbs_REVERSED));
-                Assert.Equal(TopAbs_FORWARD, aSeam.GetPCurve(aDFace, TopAbs_FORWARD).GetOrientation());
-                Assert.Equal(TopAbs_REVERSED, aSeam.GetPCurve(aDFace, TopAbs_REVERSED).GetOrientation());
+                Assert.NotSame(aSeam.GetPCurve(aDFace, Forward), aSeam.GetPCurve(aDFace, Reversed));
+                Assert.Equal(Forward, aSeam.GetPCurve(aDFace, Forward).GetOrientation());
+                Assert.Equal(Reversed, aSeam.GetPCurve(aDFace, Reversed).GetOrientation());
             }
         }
 
@@ -129,7 +133,7 @@ public class BRepMeshModelTests
         for (int i = 0; i < aSphere.EdgesNb(); i++)
         {
             IMeshData_Edge aDEdge = aSphere.GetEdge(i);
-            if (BRep_Tool.Degenerated(aDEdge.GetEdge()))
+            if (Tool.Degenerated(aDEdge.GetEdge()))
             {
                 aDegenerated++;
                 Assert.True(aDEdge.GetDegenerated());
@@ -144,7 +148,7 @@ public class BRepMeshModelTests
     [Fact]
     public void Outer_wire_comes_first_whatever_the_face_order()
     {
-        TopoDS_Face aFace = ShapeAnalysis_WireTests.FaceWithHoles(out TopoDS_Wire anOuter, out TopoDS_Wire aHole1, out TopoDS_Wire aHole2);
+        Face aFace = ShapeAnalysis_WireTests.FaceWithHoles(out Wire anOuter, out Wire aHole1, out Wire aHole2);
         IMeshData_Model aModel = Model(aFace, Params(0.1), Stage.Built);
         Assert.Equal(1, aModel.FacesNb());
         IMeshData_Face aDFace = aModel.GetFace(0);
@@ -159,11 +163,11 @@ public class BRepMeshModelTests
     [Fact]
     public void Free_edges_come_first_and_the_max_size_follows_the_parameters()
     {
-        var aB = new BRep_Builder();
-        TopoDS_Compound aComp = new();
+        var aB = new BrepBuilder();
+        Compound aComp = new();
         aB.MakeCompound(ref aComp);
         aB.Add(aComp, Box());
-        TopoDS_Edge aFree = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
+        Edge aFree = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
         aB.Add(aComp, aFree);
 
         IMeshData_Model aModel = Model(aComp, Params(0.1), Stage.Built);
@@ -184,8 +188,8 @@ public class BRepMeshModelTests
     [Fact]
     public void Empty_shape_gives_no_model_and_Fail1()
     {
-        var aB = new BRep_Builder();
-        TopoDS_Compound aComp = new();
+        var aB = new BrepBuilder();
+        Compound aComp = new();
         aB.MakeCompound(ref aComp);
         var aBuilder = new BRepMesh_ModelBuilder();
         Assert.Null(aBuilder.Perform(aComp, Params(0.1)));
@@ -203,9 +207,9 @@ public class BRepMeshModelTests
     [Fact]
     public void A_frozen_shape_without_meshes_is_only_read()
     {
-        foreach (TopoDS_Shape aShape in new[]
+        foreach (Shape aShape in new[]
                  {
-                     TestShapes.Frozen(Box()), TestShapes.Frozen((TopoDS_Shape)new BRepPrimAPI_MakeCone(2, 1, 4).Solid()),
+                     TestShapes.Frozen(Box()), TestShapes.Frozen((Shape)new BRepPrimAPI_MakeCone(2, 1, 4).Solid()),
                      ReadDataOcc("wing.brep"), ReadDataOcc("face1.brep"),
                  })
         {
@@ -222,16 +226,16 @@ public class BRepMeshModelTests
     {
         foreach (string aName in new[] { "solid.brep", "wedge_ok.brep", "face1.brep", "Ball.brep", "mal_vis.brep", "wing.brep" })
         {
-            TopoDS_Shape aShape = ReadDataOcc(aName);
+            Shape aShape = ReadDataOcc(aName);
             IMeshData_Model aModel = Model(aShape, Params(0.05, isRelative: true), Stage.Built);
 
-            var aFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            var anEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            foreach (TopoDS_Shape aF in Explore(aShape, TopAbs_FACE))
+            var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            foreach (Shape aF in Explore(aShape, ShapeType.Face))
             {
                 aFaces.Add(aF.Located(new Placement()));
             }
-            TopExp.MapShapes(aShape, TopAbs_EDGE, anEdges);
+            Exploration.MapShapes(aShape, ShapeType.Edge, anEdges);
             Assert.Equal(aFaces.Extent(), aModel.FacesNb());
             Assert.Equal(anEdges.Extent(), aModel.EdgesNb());
 
@@ -244,7 +248,7 @@ public class BRepMeshModelTests
                 {
                     aWireEdges += aDFace.GetWire(w).EdgesNb();
                 }
-                int aFaceEdges = Explore(aDFace.GetFace(), TopAbs_EDGE).Count(e => e.Orientation() != TopAbs_EXTERNAL);
+                int aFaceEdges = Explore(aDFace.GetFace(), ShapeType.Edge).Count(e => e.Orientation() != External);
                 Assert.Equal(aFaceEdges, aWireEdges);
             }
         }
@@ -264,15 +268,15 @@ public class BRepMeshModelTests
             Assert.Equal(0.5, aDEdge.GetAngularDeflection());
             IMeshData_Curve aCurve = aDEdge.GetCurve();
             Assert.Equal(2, aCurve.ParametersNb());
-            TopExp.Vertices(aDEdge.GetEdge(), out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
-            Assert.Equal(BRep_Tool.Pnt(aV1), aCurve.GetPoint(0));
-            Assert.Equal(BRep_Tool.Pnt(aV2), aCurve.GetPoint(1));
+            Exploration.Vertices(aDEdge.GetEdge(), out Vertex aV1, out Vertex aV2);
+            Assert.Equal(Tool.Pnt(aV1), aCurve.GetPoint(0));
+            Assert.Equal(Tool.Pnt(aV2), aCurve.GetPoint(1));
 
             for (int p = 0; p < aDEdge.PCurvesNb(); p++)
             {
                 IMeshData_PCurve aPCurve = aDEdge.GetPCurve(p);
                 Assert.Equal(2, aPCurve.ParametersNb());
-                Geom2d_Curve aC2d = BRep_Tool.CurveOnSurface(TopoDS.Edge(aDEdge.GetEdge().Oriented(aPCurve.GetOrientation())),
+                Curve2D aC2d = Tool.CurveOnSurface(ShapeCasts.Edge(aDEdge.GetEdge().Oriented(aPCurve.GetOrientation())),
                                                              aPCurve.GetFace().GetFace(), out _, out _)!;
                 for (int k = 0; k < 2; k++)
                 {
@@ -292,7 +296,7 @@ public class BRepMeshModelTests
         for (int i = 0; i < aModel.EdgesNb(); i++)
         {
             IMeshData_Edge aDEdge = aModel.GetEdge(i);
-            if (new BRepAdaptor_Curve(aDEdge.GetEdge()).GetType() != CurveKind.Circle)
+            if (new EdgeCurveAdaptor(aDEdge.GetEdge()).GetType() != CurveKind.Circle)
             {
                 continue;
             }
@@ -300,7 +304,7 @@ public class BRepMeshModelTests
             aCircles++;
             IMeshData_Curve aCurve = aDEdge.GetCurve();
             Assert.True(aCurve.ParametersNb() >= 4);
-            Circle3D aCirc = new BRepAdaptor_Curve(aDEdge.GetEdge()).Circle();
+            Circle3D aCirc = new EdgeCurveAdaptor(aDEdge.GetEdge()).Circle();
             for (int k = 1; k < aCurve.ParametersNb(); k++)
             {
                 Assert.True(aCurve.GetParameter(k) > aCurve.GetParameter(k - 1));
@@ -322,7 +326,7 @@ public class BRepMeshModelTests
     {
         foreach (string aName in new[] { "Room.brep", "solid.brep", "mal_tige.brep", "MODERN_MVCooker_1.brep" })
         {
-            TopoDS_Shape aShape = ReadDataOcc(aName);
+            Shape aShape = ReadDataOcc(aName);
             var aSnapshot = ShapeSnapshot.Of(aShape);
 
             // A coarse deflection: every polygon with parameters fits (BRepMesh_Deflection.IsConsistent).
@@ -342,8 +346,8 @@ public class BRepMeshModelTests
                 Triangulation? aBestTri = null;
                 for (int p = 0; p < aDEdge.PCurvesNb(); p++)
                 {
-                    Triangulation? aTri = BRep_Tool.Triangulation(aDEdge.GetPCurve(p).GetFace().GetFace(), out Placement aLoc);
-                    PolygonOnTriangulation? aPoly = aTri is null ? null : BRep_Tool.PolygonOnTriangulation(aDEdge.GetEdge(), aTri, aLoc);
+                    Triangulation? aTri = Tool.Triangulation(aDEdge.GetPCurve(p).GetFace().GetFace(), out Placement aLoc);
+                    PolygonOnTriangulation? aPoly = aTri is null ? null : Tool.PolygonOnTriangulation(aDEdge.GetEdge(), aTri, aLoc);
                     if (aPoly is not null && aPoly.HasParameters && (aBest is null || aPoly.Deflection() < aBest.Deflection()))
                     {
                         (aBest, aBestLoc, aBestTri) = (aPoly, aLoc, aTri);
@@ -378,7 +382,7 @@ public class BRepMeshModelTests
             for (int i = 0; i < aPre.FacesNb(); i++)
             {
                 IMeshData_Face aDFace = aPre.GetFace(i);
-                if (BRep_Tool.Triangulation(aDFace.GetFace(), out _) is not null && !aDFace.IsSet(IMeshData_Outdated))
+                if (Tool.Triangulation(aDFace.GetFace(), out _) is not null && !aDFace.IsSet(IMeshData_Outdated))
                 {
                     Assert.True(aDFace.IsSet(IMeshData_Reused), $"{aName} face {i}");
                 }
@@ -390,7 +394,7 @@ public class BRepMeshModelTests
     [Fact]
     public void Outdated_meshes_are_removed_from_a_copy_never_from_the_frozen_input()
     {
-        TopoDS_Shape aShape = ReadDataOcc("solid.brep");
+        Shape aShape = ReadDataOcc("solid.brep");
         Assert.True(aShape.TShape()!.IsFrozen);
         var aSnapshot = ShapeSnapshot.Of(aShape);
 
@@ -399,14 +403,14 @@ public class BRepMeshModelTests
         Assert.True(aContext.BuildModel() && aContext.DiscretizeEdges() && aContext.HealModel());
         // The reader's shapes are frozen and locked: the first removal throws (TopoDS_LockedShape), never writes.
         Exception anError = Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => aContext.PreProcessModel());
-        Assert.True(anError is global::Kerf.Engine.Foundation.ImmutableObjectException or TopoDS_LockedShape, global::Kerf.Engine.Foundation.OcctTypeNames.Of(anError.GetType()));
+        Assert.True(anError is global::Kerf.Engine.Foundation.ImmutableObjectException or LockedShapeException, global::Kerf.Engine.Foundation.OcctTypeNames.Of(anError.GetType()));
         aSnapshot.AssertUnchanged(aShape);
 
-        TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(aShape, out _);
+        Shape aCopy = BrepTools.ExactCopyForWrite(aShape, out _);
         var aFaceMeshes = new HashSet<Triangulation>(ReferenceEqualityComparer.Instance);
-        foreach (TopoDS_Shape aF in Explore(aCopy, TopAbs_FACE))
+        foreach (Shape aF in Explore(aCopy, ShapeType.Face))
         {
-            aFaceMeshes.Add(BRep_Tool.Triangulation(TopoDS.Face(aF), out _)!);
+            aFaceMeshes.Add(Tool.Triangulation(ShapeCasts.Face(aF), out _)!);
         }
         IMeshData_Model aModel = Model(aCopy, Params(0.01));
         int anOutdated = 0;
@@ -417,18 +421,18 @@ public class BRepMeshModelTests
             if (aDFace.IsSet(IMeshData_Outdated))
             {
                 anOutdated++;
-                Assert.Null(BRep_Tool.Triangulation(aDFace.GetFace(), out _));
+                Assert.Null(Tool.Triangulation(aDFace.GetFace(), out _));
             }
         }
         Assert.Equal(aModel.FacesNb(), anOutdated);
         // The edges' polygons on those triangulations are gone; the file's stale polygons, on triangulations no face
         // holds, stay, as in OCCT.
         int aStale = 0;
-        foreach (TopoDS_Shape anE in Explore(aCopy, TopAbs_EDGE))
+        foreach (Shape anE in Explore(aCopy, ShapeType.Edge))
         {
             for (int p = 1; ; p++)
             {
-                BRep_Tool.PolygonOnTriangulation(TopoDS.Edge(anE), out PolygonOnTriangulation? aPoly,
+                Tool.PolygonOnTriangulation(ShapeCasts.Edge(anE), out PolygonOnTriangulation? aPoly,
                                                  out Triangulation? aTri, out _, p);
                 if (aPoly is null)
                 {
@@ -462,7 +466,7 @@ public class BRepMeshModelTests
     }
 
     /// <summary>A disk of radius 10 with a hole of radius 1 whose far point is 0.01 from the rim, at the given angle.</summary>
-    private static TopoDS_Face DiskWithHole(double theAngle)
+    private static Face DiskWithHole(double theAngle)
     {
         var anOuter = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(), 10)).Edge()).Wire();
         var aMaker = new BRepBuilderAPI_MakeFace(anOuter, true);
@@ -471,7 +475,7 @@ public class BRepMeshModelTests
             var aDir = new Direction3D(Math.Cos(theAngle), Math.Sin(theAngle), 0);
             var aCenter = new Point3D(8.99 * aDir.X(), 8.99 * aDir.Y(), 0);
             var aHole = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(aCenter, new Direction3D(0, 0, 1), aDir), 1)).Edge()).Wire();
-            aMaker.Add(TopoDS.Wire(aHole.Reversed()));
+            aMaker.Add(ShapeCasts.Wire(aHole.Reversed()));
         }
         return aMaker.Face();
     }
@@ -483,7 +487,7 @@ public class BRepMeshModelTests
         IMeshData_Model aDisk = Model(DiskWithHole(double.NaN), Params(1.0), Stage.EdgesDiscretized);
         double anAngle = 0.5 * aDisk.GetEdge(0).GetCurve().GetParameter(1);
 
-        TopoDS_Face aFace = DiskWithHole(anAngle);
+        Face aFace = DiskWithHole(anAngle);
         IMeshData_Model aModel = Model(aFace, Params(1.0), Stage.EdgesDiscretized);
         IMeshData_Face aDFace = aModel.GetFace(0);
         Assert.Equal(2, aDFace.WiresNb());
@@ -514,13 +518,13 @@ public class BRepMeshModelTests
     }
 
     /// <summary>A planar face bounded by a bow tie: (0,0), (1,1), (1,0), (0,1), its edges forward or reversed.</summary>
-    private static TopoDS_Face BowTie(bool isReversed)
+    private static Face BowTie(bool isReversed)
     {
-        TopoDS_Wire aBowTie = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(1, 0, 0),
+        Wire aBowTie = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(1, 0, 0),
                                                              new Point3D(0, 1, 0), true).Wire();
-        var aB = new BRep_Builder();
-        TopoDS_Face aFace = new();
-        aB.MakeFace(ref aFace, new Geom_Plane(new Plane3D()), global::Kerf.Engine.Foundation.Precision.Confusion());
+        var aB = new BrepBuilder();
+        Face aFace = new();
+        aB.MakeFace(ref aFace, new PlaneSurface(new Plane3D()), global::Kerf.Engine.Foundation.Precision.Confusion());
         aB.Add(aFace, isReversed ? aBowTie.Reversed() : aBowTie);
         return aFace;
     }
@@ -530,7 +534,7 @@ public class BRepMeshModelTests
     {
         IMeshData_Model aModel = Model(BowTie(false), Params(0.01), Stage.Healed);
         IMeshData_Face aDFace = aModel.GetFace(0);
-        Assert.Equal(TopAbs_FORWARD, aDFace.GetWire(0).GetEdgeOrientation(0));
+        Assert.Equal(Forward, aDFace.GetWire(0).GetEdgeOrientation(0));
         Assert.True(aDFace.IsSet(IMeshData_SelfIntersectingWire));
         Assert.True(aDFace.IsSet(IMeshData_Failure));
         Assert.False(aDFace.IsValid());
@@ -555,7 +559,7 @@ public class BRepMeshModelTests
         // (occt-issues.md, 4C).
         IMeshData_Model aModel = Model(BowTie(true), Params(0.01), Stage.Healed);
         IMeshData_Face aDFace = aModel.GetFace(0);
-        Assert.Equal(TopAbs_REVERSED, aDFace.GetWire(0).GetEdgeOrientation(0));
+        Assert.Equal(Reversed, aDFace.GetWire(0).GetEdgeOrientation(0));
         Assert.True(aDFace.IsEqual(IMeshData_NoError));
         Assert.True(new BRepMesh_FaceChecker(aDFace, Params(0.01)).Perform());
     }
@@ -600,12 +604,12 @@ public class BRepMeshModelTests
     [Fact]
     public void Post_processor_commits_polygons_and_reuse_gives_back_the_mesh()
     {
-        var aB = new BRep_Builder();
-        TopoDS_Compound aComp = new();
+        var aB = new BrepBuilder();
+        Compound aComp = new();
         aB.MakeCompound(ref aComp);
         aB.Add(aComp, new BRepPrimAPI_MakeCylinder(1, 2).Solid());
         aB.Add(aComp, new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 0, 1)), 1), 0, 2).Edge());
-        TopoDS_Shape anInput = TestShapes.Frozen((TopoDS_Shape)aComp);
+        Shape anInput = TestShapes.Frozen((Shape)aComp);
         var aSnapshot = ShapeSnapshot.Of(anInput);
 
         IMeshTools_Parameters aParams = Params(0.05);
@@ -613,20 +617,20 @@ public class BRepMeshModelTests
         aMesh.SetShape(anInput);
         aMesh.ChangeParameters() = aParams;
         var aFaces = new FanFaceDiscret();
-        IMeshTools_Context aContext = Context(new TopoDS_Shape(), aParams, aFaces);
+        IMeshTools_Context aContext = Context(new Shape(), aParams, aFaces);
         aMesh.Perform(aContext);
         Assert.True(aMesh.IsDone());
         Assert.Equal(3, aFaces.Meshed);
         aSnapshot.AssertUnchanged(anInput);
 
-        TopoDS_Shape aResult = aMesh.Shape();
+        Shape aResult = aMesh.Shape();
         Assert.True(aResult.TShape()!.IsFrozen);
 
         // Each face's triangulation, with the deflection measured and the parameters it was made with.
         IMeshData_Model aModel = aContext.GetModel()!; // of the copy, whose meshed sub-shapes the result holds
-        foreach (TopoDS_Shape aF in Explore(aResult, TopAbs_FACE))
+        foreach (Shape aF in Explore(aResult, ShapeType.Face))
         {
-            Triangulation aTri = BRep_Tool.Triangulation(TopoDS.Face(aF), out _)!;
+            Triangulation aTri = Tool.Triangulation(ShapeCasts.Face(aF), out _)!;
             Assert.True(aTri.IsFrozen);
             Assert.Equal(0.05, aTri.Parameters()!.Deflection());
             Assert.Equal(0.5, aTri.Parameters()!.Angle());
@@ -635,11 +639,11 @@ public class BRepMeshModelTests
 
         // Each edge's polygons: its discrete pcurves' parameters, nodes that are its points, its deflection.
         int aPolygons = 0;
-        var anEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aResult, TopAbs_EDGE, anEdges);
+        var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(aResult, ShapeType.Edge, anEdges);
         for (int anEdgeIt = 1; anEdgeIt <= anEdges.Extent(); anEdgeIt++)
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(anEdges.FindKey(anEdgeIt));
+            Edge anEdge = ShapeCasts.Edge(anEdges.FindKey(anEdgeIt));
             IMeshData_Edge? aDEdge = null;
             for (int i = 0; i < aModel.EdgesNb() && aDEdge is null; i++)
             {
@@ -652,7 +656,7 @@ public class BRepMeshModelTests
             IMeshData_Curve aCurve = aDEdge!.GetCurve();
             for (int p = 1; ; p++)
             {
-                BRep_Tool.PolygonOnTriangulation(anEdge, out PolygonOnTriangulation? aPoly, out Triangulation? aTri,
+                Tool.PolygonOnTriangulation(anEdge, out PolygonOnTriangulation? aPoly, out Triangulation? aTri,
                                                  out Placement aLoc, p);
                 if (aPoly is null)
                 {
@@ -668,13 +672,13 @@ public class BRepMeshModelTests
                     Assert.True(aTri!.Node(aPoly.Node(k)).Transformed(aLoc.Transformation()).Distance(aCurve.GetPoint(k - 1)) < 1e-12);
                 }
             }
-            if (BRep_Tool.Degenerated(anEdge))
+            if (Tool.Degenerated(anEdge))
             {
                 continue;
             }
             if (aDEdge.IsFree())
             {
-                Polygon3D aPoly3D = BRep_Tool.Polygon3D(anEdge, out _)!;
+                Polygon3D aPoly3D = Tool.Polygon3D(anEdge, out _)!;
                 Assert.True(aPoly3D.IsFrozen);
                 Assert.Equal(aCurve.ParametersNb(), aPoly3D.NodeCount);
                 Assert.Equal(aDEdge.GetDeflection(), aPoly3D.Deflection());
@@ -687,7 +691,7 @@ public class BRepMeshModelTests
         aRemesh.SetShape(aResult);
         aRemesh.ChangeParameters() = aParams;
         var aNoFaces = new FanFaceDiscret();
-        aRemesh.Perform(Context(new TopoDS_Shape(), aParams, aNoFaces));
+        aRemesh.Perform(Context(new Shape(), aParams, aNoFaces));
         Assert.Equal(0, aNoFaces.Meshed);
         Assert.Same(aResult.TShape(), aRemesh.Shape().TShape());
         Assert.Equal((int)IMeshData_Reused, aRemesh.GetStatusFlags());
@@ -697,12 +701,12 @@ public class BRepMeshModelTests
         aFiner.SetShape(aResult);
         aFiner.ChangeParameters() = Params(0.01);
         var aFinerFaces = new FanFaceDiscret();
-        aFiner.Perform(Context(new TopoDS_Shape(), Params(0.01), aFinerFaces));
+        aFiner.Perform(Context(new Shape(), Params(0.01), aFinerFaces));
         Assert.Equal(3, aFinerFaces.Meshed);
         Assert.NotSame(aResult.TShape(), aFiner.Shape().TShape());
-        foreach (TopoDS_Shape aF in Explore(aFiner.Shape(), TopAbs_FACE))
+        foreach (Shape aF in Explore(aFiner.Shape(), ShapeType.Face))
         {
-            Assert.Equal(0.01, BRep_Tool.Triangulation(TopoDS.Face(aF), out _)!.Parameters()!.Deflection());
+            Assert.Equal(0.01, Tool.Triangulation(ShapeCasts.Face(aF), out _)!.Parameters()!.Deflection());
         }
     }
 
@@ -713,12 +717,12 @@ public class BRepMeshModelTests
         // and the last as the reversed edge's, whatever their orientations. On BRepPrimAPI's cylinder the wire is
         // ordered top, seam (reversed, u = 0), bottom, seam (forward, u = 2pi): the forward edge's polygon gets the
         // nodes at u = 0 (occt-issues.md, 4C).
-        TopoDS_Shape anInput = TestShapes.Frozen((TopoDS_Shape)new BRepPrimAPI_MakeCylinder(1, 2).Solid());
+        Shape anInput = TestShapes.Frozen((Shape)new BRepPrimAPI_MakeCylinder(1, 2).Solid());
         IMeshTools_Parameters aParams = Params(0.05);
         var aMesh = new BRepMesh_IncrementalMesh();
         aMesh.SetShape(anInput);
         aMesh.ChangeParameters() = aParams;
-        IMeshTools_Context aContext = Context(new TopoDS_Shape(), aParams, new FanFaceDiscret());
+        IMeshTools_Context aContext = Context(new Shape(), aParams, new FanFaceDiscret());
         aMesh.Perform(aContext);
         IMeshData_Model aModel = aContext.GetModel()!;
 
@@ -733,16 +737,16 @@ public class BRepMeshModelTests
 
             aSeams++;
             IMeshData_PCurve aFirst = aDEdge.GetPCurve(0), aLast = aDEdge.GetPCurve(1);
-            Assert.Equal(TopAbs_REVERSED, aFirst.GetOrientation());
+            Assert.Equal(Reversed, aFirst.GetOrientation());
             Assert.Equal(0.0, aFirst.GetPoint(0).X(), 1e-12);
             Assert.Equal(2 * Math.PI, aLast.GetPoint(0).X(), 1e-12);
 
-            TopoDS_Face aFace = aFirst.GetFace().GetFace();
-            Triangulation aTri = BRep_Tool.Triangulation(aFace, out Placement aLoc)!;
+            Face aFace = aFirst.GetFace().GetFace();
+            Triangulation aTri = Tool.Triangulation(aFace, out Placement aLoc)!;
             PolygonOnTriangulation aForward =
-                BRep_Tool.PolygonOnTriangulation(TopoDS.Edge(aDEdge.GetEdge().Oriented(TopAbs_FORWARD)), aTri, aLoc)!;
+                Tool.PolygonOnTriangulation(ShapeCasts.Edge(aDEdge.GetEdge().Oriented(Forward)), aTri, aLoc)!;
             PolygonOnTriangulation aReversed =
-                BRep_Tool.PolygonOnTriangulation(TopoDS.Edge(aDEdge.GetEdge().Oriented(TopAbs_REVERSED)), aTri, aLoc)!;
+                Tool.PolygonOnTriangulation(ShapeCasts.Edge(aDEdge.GetEdge().Oriented(Reversed)), aTri, aLoc)!;
             for (int k = 1; k <= aForward.NodeCount; k++)
             {
                 Assert.Equal(aFirst.GetIndex(k - 1), aForward.Node(k));
@@ -758,7 +762,7 @@ public class BRepMeshModelTests
     [Fact]
     public void Parallel_models_are_the_serial_model_bit_for_bit()
     {
-        var aShapes = new List<(string, TopoDS_Shape)>
+        var aShapes = new List<(string, Shape)>
         {
             ("box", Box()),
             ("cylinder", new BRepPrimAPI_MakeCylinder(2, 5).Solid()),
@@ -776,22 +780,22 @@ public class BRepMeshModelTests
             }
         }
 
-        foreach ((string aName, TopoDS_Shape aShape) in aShapes)
+        foreach ((string aName, Shape aShape) in aShapes)
         {
             foreach (IMeshTools_Parameters aBase in new[] { Params(0.05, 0.5, isRelative: true), Params(0.5, 0.3) })
             {
                 IMeshTools_Parameters aSerial = aBase, aParallel = aBase;
                 aSerial.InParallel = false;
                 aParallel.InParallel = true;
-                string aReference = Dump(Model(BRepTools.ExactCopyForWrite(aShape, out _), aSerial));
+                string aReference = Dump(Model(BrepTools.ExactCopyForWrite(aShape, out _), aSerial));
                 for (int aRun = 0; aRun < 2; aRun++)
                 {
-                    string aDump = Dump(Model(BRepTools.ExactCopyForWrite(aShape, out _), aParallel));
+                    string aDump = Dump(Model(BrepTools.ExactCopyForWrite(aShape, out _), aParallel));
                     Assert.True(aReference == aDump, $"{aName}: parallel run {aRun} differs");
                 }
                 using (global::Kerf.Engine.Foundation.OsdParallel.ForceSerialScope())
                 {
-                    Assert.True(aReference == Dump(Model(BRepTools.ExactCopyForWrite(aShape, out _), aParallel)), $"{aName}: forced serial");
+                    Assert.True(aReference == Dump(Model(BrepTools.ExactCopyForWrite(aShape, out _), aParallel)), $"{aName}: forced serial");
                 }
             }
         }

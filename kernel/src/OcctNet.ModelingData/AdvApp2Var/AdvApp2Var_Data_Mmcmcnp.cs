@@ -6,23 +6,25 @@
 // as written (decisions 77 and 902). Properties returning a ReadOnlySpan over a constant array are stored in the
 // assembly's data section: reading them allocates nothing. Don't edit: regenerate.
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Approximation.Advanced;
 
 /// <summary>The <c>mmcmcnp_1_</c> common block: views of one constant table (decision 112).</summary>
-internal readonly ref struct mmcmcnp_1_
+internal readonly ref struct MmcmcnpCommon
 {
     /// <summary><c>double cnp[3721]</c> (was [61][61]), from element 0.</summary>
-    public readonly F2cConstPtr<double> cnp;
+    public readonly global::Kerf.Engine.Approximation.Advanced.F2cConstPtr<double> cnp;
 
-    internal mmcmcnp_1_(ReadOnlySpan<double> theTable)
+    internal MmcmcnpCommon(ReadOnlySpan<double> table)
     {
-        cnp = new F2cConstPtr<double>(theTable, 0);
+        cnp = new global::Kerf.Engine.Approximation.Advanced.F2cConstPtr<double>(table, 0);
     }
 }
 
-internal static partial class AdvApp2Var_Data
+internal static partial class Data
 {
-    public static mmcmcnp_1_ Getmmcmcnp() => new(s_e_Mmcmcnp);
+    public static MmcmcnpCommon Getmmcmcnp() => new(s_e_Mmcmcnp);
 
     // C++: static double e_1[3721], cast to mmcmcnp_1_.
     private static ReadOnlySpan<double> s_e_Mmcmcnp => [

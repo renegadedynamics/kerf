@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -13,10 +15,10 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 internal static class CanonicalRecognitionTestUtils
 {
     // OCCT's tests: BRepBuilderAPI_Sewing with its defaults, each face added, Perform, SewedShape.
-    public static TopoDS_Shape Sew(params TopoDS_Face[] theFaces)
+    public static Shape Sew(params Face[] theFaces)
     {
         var aSewing = new BRepBuilderAPI_Sewing();
-        foreach (TopoDS_Face aFace in theFaces)
+        foreach (Face aFace in theFaces)
         {
             aSewing.Add(aFace);
         }
@@ -24,7 +26,7 @@ internal static class CanonicalRecognitionTestUtils
         return aSewing.SewedShape();
     }
 
-    public static TopoDS_Shape NurbsConverted(in TopoDS_Shape theShape)
+    public static Shape NurbsConverted(in Shape theShape)
     {
         var aNurbsConvert = new BRepBuilderAPI_NurbsConvert(theShape);
         Assert.True(aNurbsConvert.IsDone(), "Failed to convert to NURBS");
@@ -49,7 +51,7 @@ public class CanonicalRecognitionApproxTest
         aPolygonMaker.Close();
 
         Assert.True(aPolygonMaker.IsDone(), "Failed to create polyline");
-        TopoDS_Wire aWire = aPolygonMaker.Wire();
+        Wire aWire = aPolygonMaker.Wire();
 
         myRecognizer.SetShape(aWire);
         var aResultPlane = new Plane3D();
@@ -67,10 +69,10 @@ public class CanonicalRecognitionApproxTest
     public void CylinderRecognition_A2()
     {
         var aAxis = new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 1, 1));
-        var aCylSurf = new Geom_CylindricalSurface(new CoordinateSystem(aAxis), 1.0);
+        var aCylSurf = new CylindricalSurface(new CoordinateSystem(aAxis), 1.0);
         var aFaceMaker = new BRepBuilderAPI_MakeFace(aCylSurf, 0, 2 * M_PI, 0, 1, Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aFaceMaker.IsDone());
-        TopoDS_Face aNurbsFace = TopoDS.Face(CanonicalRecognitionTestUtils.NurbsConverted(aFaceMaker.Face()));
+        Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(aFaceMaker.Face()));
 
         myRecognizer.SetShape(aNurbsFace);
         var aResultCylinder = new Cylinder();
@@ -85,10 +87,10 @@ public class CanonicalRecognitionApproxTest
     {
         double aHalfAngle = M_PI / 6.0;
         var aAxis = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
-        var aConeSurf = new Geom_ConicalSurface(new CoordinateSystem(aAxis), aHalfAngle, 2.0);
+        var aConeSurf = new ConicalSurface(new CoordinateSystem(aAxis), aHalfAngle, 2.0);
         var aFaceMaker = new BRepBuilderAPI_MakeFace(aConeSurf, 0, 2 * M_PI, 0, 3, Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aFaceMaker.IsDone());
-        TopoDS_Face aNurbsFace = TopoDS.Face(CanonicalRecognitionTestUtils.NurbsConverted(aFaceMaker.Face()));
+        Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(aFaceMaker.Face()));
 
         myRecognizer.SetShape(aNurbsFace);
         var aResultCone = new Cone();
@@ -102,10 +104,10 @@ public class CanonicalRecognitionApproxTest
     public void SphericalSurfaceRecognition_A4()
     {
         var aAxis = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
-        var aSphereSurf = new Geom_SphericalSurface(new CoordinateSystem(aAxis), 1.0);
+        var aSphereSurf = new SphericalSurface(new CoordinateSystem(aAxis), 1.0);
         var aFaceMaker = new BRepBuilderAPI_MakeFace(aSphereSurf, 0, 2 * M_PI, 0, M_PI / 2, Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aFaceMaker.IsDone());
-        TopoDS_Face aNurbsFace = TopoDS.Face(CanonicalRecognitionTestUtils.NurbsConverted(aFaceMaker.Face()));
+        Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(aFaceMaker.Face()));
 
         myRecognizer.SetShape(aNurbsFace);
         var aResultSphere = new Sphere();
@@ -122,16 +124,16 @@ public class CanonicalRecognitionBaseCurveTest
     private readonly ShapeAnalysis_CanonicalRecognition myRecognizer = new();
     private readonly double myTolerance = 1.0e-3;
 
-    private static Geom_BezierCurve NearlyLinearBezier(double theDeviation)
+    private static BezierCurve3D NearlyLinearBezier(double theDeviation)
     {
         var aControlPoints = new NCollection_Array1<Point3D>(1, 3);
         aControlPoints[1] = new Point3D(0, 0, 0);
         aControlPoints[2] = new Point3D(0.5, theDeviation, 0);
         aControlPoints[3] = new Point3D(1, 0, 0);
-        return new Geom_BezierCurve(aControlPoints);
+        return new BezierCurve3D(aControlPoints);
     }
 
-    private static TopoDS_Wire ThreeEdgeWire(Geom_Curve theCurve, double theP1, double theP2, double theP3, double theP4)
+    private static Wire ThreeEdgeWire(Curve3D theCurve, double theP1, double theP2, double theP3, double theP4)
     {
         var aEdgeMaker1 = new BRepBuilderAPI_MakeEdge(theCurve, theP1, theP2);
         var aEdgeMaker2 = new BRepBuilderAPI_MakeEdge(theCurve, theP2, theP3);
@@ -151,7 +153,7 @@ public class CanonicalRecognitionBaseCurveTest
     {
         var aEdgeMaker = new BRepBuilderAPI_MakeEdge(NearlyLinearBezier(0.0005));
         Assert.True(aEdgeMaker.IsDone());
-        TopoDS_Edge anEdge = aEdgeMaker.Edge();
+        Edge anEdge = aEdgeMaker.Edge();
 
         myRecognizer.SetShape(anEdge);
         var aResultLine = new Line3D();
@@ -167,7 +169,7 @@ public class CanonicalRecognitionBaseCurveTest
     {
         var aEdgeMaker = new BRepBuilderAPI_MakeEdge(NearlyLinearBezier(0.0005));
         Assert.True(aEdgeMaker.IsDone());
-        TopoDS_Edge anEdge = aEdgeMaker.Edge();
+        Edge anEdge = aEdgeMaker.Edge();
 
         myRecognizer.SetShape(anEdge);
         var aResultCircle = new Circle3D();
@@ -181,11 +183,11 @@ public class CanonicalRecognitionBaseCurveTest
     public void EllipseToEllipseRecognition_A3()
     {
         var aAxis = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
-        var aEllipse = new Geom_Ellipse(aAxis, 1.0, 0.5);
-        Geom_BSplineCurve aBSplineCurve = GeomConvert.CurveToBSplineCurve(aEllipse);
+        var aEllipse = new EllipseCurve3D(aAxis, 1.0, 0.5);
+        BSplineCurve3D aBSplineCurve = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aEllipse);
         var aEdgeMaker = new BRepBuilderAPI_MakeEdge(aBSplineCurve);
         Assert.True(aEdgeMaker.IsDone());
-        TopoDS_Edge anEdge = aEdgeMaker.Edge();
+        Edge anEdge = aEdgeMaker.Edge();
 
         myRecognizer.SetShape(anEdge);
         var aResultEllipse = new Ellipse3D();
@@ -199,7 +201,7 @@ public class CanonicalRecognitionBaseCurveTest
     [Fact]
     public void MultiSegmentWireToLineRecognition_A4()
     {
-        TopoDS_Wire aWire = ThreeEdgeWire(NearlyLinearBezier(0.0000005), 0.0, 0.3, 0.7, 1.0);
+        Wire aWire = ThreeEdgeWire(NearlyLinearBezier(0.0000005), 0.0, 0.3, 0.7, 1.0);
 
         myRecognizer.SetShape(aWire);
         var aResultLine = new Line3D();
@@ -212,9 +214,9 @@ public class CanonicalRecognitionBaseCurveTest
     public void MultiSegmentCircleWireRecognition_A5()
     {
         var aAxis = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
-        var aCircle = new Geom_Circle(aAxis, 1.0);
-        Geom_BSplineCurve aBSplineCurve = GeomConvert.CurveToBSplineCurve(aCircle);
-        TopoDS_Wire aWire = ThreeEdgeWire(aBSplineCurve, 0.0, 1.0, 2.5, 6.0);
+        var aCircle = new CircleCurve3D(aAxis, 1.0);
+        BSplineCurve3D aBSplineCurve = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aCircle);
+        Wire aWire = ThreeEdgeWire(aBSplineCurve, 0.0, 1.0, 2.5, 6.0);
 
         myRecognizer.SetShape(aWire);
         var aResultCircle = new Circle3D();
@@ -228,9 +230,9 @@ public class CanonicalRecognitionBaseCurveTest
     public void MultiSegmentEllipseWireRecognition_A6()
     {
         var aAxis = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
-        var aEllipse = new Geom_Ellipse(aAxis, 1.0, 0.5);
-        Geom_BSplineCurve aBSplineCurve = GeomConvert.CurveToBSplineCurve(aEllipse);
-        TopoDS_Wire aWire = ThreeEdgeWire(aBSplineCurve, 0.0, 1.0, 2.5, 6.0);
+        var aEllipse = new EllipseCurve3D(aAxis, 1.0, 0.5);
+        BSplineCurve3D aBSplineCurve = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aEllipse);
+        Wire aWire = ThreeEdgeWire(aBSplineCurve, 0.0, 1.0, 2.5, 6.0);
 
         myRecognizer.SetShape(aWire);
         var aResultEllipse = new Ellipse3D();
@@ -248,7 +250,7 @@ public class CanonicalRecognitionBaseSurfaceTest
     private readonly ShapeAnalysis_CanonicalRecognition myRecognizer = new();
     private readonly double myTolerance = 1.0e-7;
 
-    private static TopoDS_Face Face(Geom_Surface theSurf, double theU1, double theU2, double theV1, double theV2)
+    private static Face Face(Surface theSurf, double theU1, double theU2, double theV1, double theV2)
     {
         var aFaceMaker = new BRepBuilderAPI_MakeFace(theSurf, theU1, theU2, theV1, theV2, Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aFaceMaker.IsDone(), "Failed to create face");
@@ -258,8 +260,8 @@ public class CanonicalRecognitionBaseSurfaceTest
     [Fact]
     public void TrimmedPlaneRecognition_B1()
     {
-        var aPlane = new Geom_Plane(new Plane3D());
-        TopoDS_Face aNurbsFace = TopoDS.Face(CanonicalRecognitionTestUtils.NurbsConverted(Face(aPlane, -1, 1, -1, 1)));
+        var aPlane = new PlaneSurface(new Plane3D());
+        Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(Face(aPlane, -1, 1, -1, 1)));
 
         myRecognizer.SetShape(aNurbsFace);
         var aResultPlane = new Plane3D();
@@ -272,8 +274,8 @@ public class CanonicalRecognitionBaseSurfaceTest
     [Fact]
     public void TrimmedCylinderRecognition_B2()
     {
-        var aCylSurf = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 1.0);
-        TopoDS_Face aNurbsFace = TopoDS.Face(CanonicalRecognitionTestUtils.NurbsConverted(Face(aCylSurf, 0, 2 * M_PI, -1, 1)));
+        var aCylSurf = new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 1.0);
+        Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(Face(aCylSurf, 0, 2 * M_PI, -1, 1)));
 
         myRecognizer.SetShape(aNurbsFace);
         var aResultCylinder = new Cylinder();
@@ -287,8 +289,8 @@ public class CanonicalRecognitionBaseSurfaceTest
     public void TrimmedConeRecognition_B3()
     {
         double aSemiAngle = M_PI / 6.0;
-        var aConeSurf = new Geom_ConicalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), aSemiAngle, 0);
-        TopoDS_Face aNurbsFace = TopoDS.Face(CanonicalRecognitionTestUtils.NurbsConverted(Face(aConeSurf, 0, 2 * M_PI, -1, 0)));
+        var aConeSurf = new ConicalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), aSemiAngle, 0);
+        Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(Face(aConeSurf, 0, 2 * M_PI, -1, 0)));
 
         myRecognizer.SetShape(aNurbsFace);
         var aResultCone = new Cone();
@@ -301,11 +303,11 @@ public class CanonicalRecognitionBaseSurfaceTest
     [Fact]
     public void ConvertedSphereRecognition_B4()
     {
-        var aSphereSurf = new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 1.0);
-        Geom_BSplineSurface aBSplineSurf = GeomConvert.SurfaceToBSplineSurface(aSphereSurf);
+        var aSphereSurf = new SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 1.0);
+        BSplineSurface aBSplineSurf = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(aSphereSurf);
         var aFaceMaker = new BRepBuilderAPI_MakeFace(aBSplineSurf, Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aFaceMaker.IsDone());
-        TopoDS_Face aFace = aFaceMaker.Face();
+        Face aFace = aFaceMaker.Face();
 
         myRecognizer.SetShape(aFace);
         var aResultSphere = new Sphere();
@@ -318,11 +320,11 @@ public class CanonicalRecognitionBaseSurfaceTest
     [Fact]
     public void SewnPlanarSurfaceRecognition_B5()
     {
-        var aPlane = new Geom_Plane(new Plane3D());
-        TopoDS_Shape aSewnShape = CanonicalRecognitionTestUtils.Sew(
+        var aPlane = new PlaneSurface(new Plane3D());
+        Shape aSewnShape = CanonicalRecognitionTestUtils.Sew(
             Face(aPlane, -1, 0, -1, 0), Face(aPlane, -1, 0, 0, 1), Face(aPlane, 0, 1, 0, 1), Face(aPlane, 0, 1, -1, 0));
-        Assert.False(aSewnShape.IsNull());
-        TopoDS_Shape aNurbsShape = CanonicalRecognitionTestUtils.NurbsConverted(aSewnShape);
+        Assert.False(aSewnShape.IsNull);
+        Shape aNurbsShape = CanonicalRecognitionTestUtils.NurbsConverted(aSewnShape);
 
         myRecognizer.SetShape(aNurbsShape);
         var aResultPlane = new Plane3D();
@@ -335,10 +337,10 @@ public class CanonicalRecognitionBaseSurfaceTest
     [Fact]
     public void SewnCylindricalSurfaceRecognition_B6()
     {
-        var aCylSurf = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 1.0);
-        TopoDS_Shape aSewnShape = CanonicalRecognitionTestUtils.Sew(
+        var aCylSurf = new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 1.0);
+        Shape aSewnShape = CanonicalRecognitionTestUtils.Sew(
             Face(aCylSurf, 0, 3, -1, 0), Face(aCylSurf, 0, 3, 0, 1), Face(aCylSurf, 3, 6, 0, 1), Face(aCylSurf, 3, 6, -1, 0));
-        TopoDS_Shape aNurbsShape = CanonicalRecognitionTestUtils.NurbsConverted(aSewnShape);
+        Shape aNurbsShape = CanonicalRecognitionTestUtils.NurbsConverted(aSewnShape);
 
         myRecognizer.SetShape(aNurbsShape);
         var aResultCylinder = new Cylinder();
@@ -352,10 +354,10 @@ public class CanonicalRecognitionBaseSurfaceTest
     public void SewnConicalSurfaceRecognition_B7()
     {
         double aSemiAngle = M_PI / 6.0;
-        var aConeSurf = new Geom_ConicalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), aSemiAngle, 0);
-        TopoDS_Shape aSewnShape = CanonicalRecognitionTestUtils.Sew(
+        var aConeSurf = new ConicalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), aSemiAngle, 0);
+        Shape aSewnShape = CanonicalRecognitionTestUtils.Sew(
             Face(aConeSurf, 0, 3, 0, 1), Face(aConeSurf, 0, 3, 1, 2), Face(aConeSurf, 3, 6, 1, 2), Face(aConeSurf, 3, 6, 0, 1));
-        TopoDS_Shape aNurbsShape = CanonicalRecognitionTestUtils.NurbsConverted(aSewnShape);
+        Shape aNurbsShape = CanonicalRecognitionTestUtils.NurbsConverted(aSewnShape);
 
         myRecognizer.SetShape(aNurbsShape);
         var aResultCone = new Cone();
@@ -368,9 +370,9 @@ public class CanonicalRecognitionBaseSurfaceTest
     [Fact]
     public void SewnSphericalSurfaceRecognition_B8()
     {
-        var aSphereSurf = new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 1.0);
-        Geom_BSplineSurface aBSplineSurf = GeomConvert.SurfaceToBSplineSurface(aSphereSurf);
-        TopoDS_Shape aSewnShape = CanonicalRecognitionTestUtils.Sew(
+        var aSphereSurf = new SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 1.0);
+        BSplineSurface aBSplineSurf = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(aSphereSurf);
+        Shape aSewnShape = CanonicalRecognitionTestUtils.Sew(
             Face(aBSplineSurf, 0, 3, -1.5, 0), Face(aBSplineSurf, 0, 3, 0, 1.5), Face(aBSplineSurf, 3, 6, 0, 1.5),
             Face(aBSplineSurf, 3, 6, -1.5, 0));
 
@@ -385,10 +387,10 @@ public class CanonicalRecognitionBaseSurfaceTest
     [Fact]
     public void ComplexCylindricalRecognitionWithSection_B9()
     {
-        var aCylSurf = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 1.0);
-        TopoDS_Shape aSewnShape = CanonicalRecognitionTestUtils.Sew(
+        var aCylSurf = new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 1.0);
+        Shape aSewnShape = CanonicalRecognitionTestUtils.Sew(
             Face(aCylSurf, 0, 1, -1, 1), Face(aCylSurf, 1, 2, -1, 1), Face(aCylSurf, 2, 3, -1, 1), Face(aCylSurf, 3, 4, -1, 1));
-        TopoDS_Shape aNurbsShape = CanonicalRecognitionTestUtils.NurbsConverted(aSewnShape);
+        Shape aNurbsShape = CanonicalRecognitionTestUtils.NurbsConverted(aSewnShape);
 
         myRecognizer.SetShape(aNurbsShape);
         var aResultCylinder = new Cylinder();
@@ -401,18 +403,18 @@ public class CanonicalRecognitionBaseSurfaceTest
     [Fact]
     public void ExtrudedCylindricalSurfaceRecognition_B10()
     {
-        var aCylSurf = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 1.0);
-        var aGeomPlane = new Geom_Plane(new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 1)));
+        var aCylSurf = new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 1.0);
+        var aGeomPlane = new PlaneSurface(new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 1)));
 
         var anIntersector = new GeomAPI_IntSS(aCylSurf, aGeomPlane, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(anIntersector.IsDone(), "Surface-surface intersection failed");
         Assert.True(anIntersector.NbLines() > 0, "No intersection curves found");
-        Geom_Curve anIntCurve = anIntersector.Line(1);
+        Curve3D anIntCurve = anIntersector.Line(1);
         Assert.NotNull(anIntCurve);
 
-        var anExtSurf = new Geom_SurfaceOfLinearExtrusion(anIntCurve, new Direction3D(Direction3D.D.Z));
+        var anExtSurf = new ExtrusionSurface(anIntCurve, new Direction3D(Direction3D.D.Z));
         anExtSurf.Bounds(out double uMin, out double uMax, out double _, out double _);
-        TopoDS_Face aNurbsFace = TopoDS.Face(CanonicalRecognitionTestUtils.NurbsConverted(Face(anExtSurf, uMin, uMax, -1, 1)));
+        Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(Face(anExtSurf, uMin, uMax, -1, 1)));
 
         myRecognizer.SetShape(aNurbsFace);
         var aResultCylinder = new Cylinder();
@@ -425,8 +427,8 @@ public class CanonicalRecognitionBaseSurfaceTest
     [Fact]
     public void PlaneDetectionWithGapValidation_Bug33170()
     {
-        var aBasePlane = new Geom_Plane(new Plane3D());
-        TopoDS_Face aFace = Face(aBasePlane, -1, 1, -1, 1);
+        var aBasePlane = new PlaneSurface(new Plane3D());
+        Face aFace = Face(aBasePlane, -1, 1, -1, 1);
 
         myRecognizer.SetShape(aFace);
         var aResultPlane1 = new Plane3D();

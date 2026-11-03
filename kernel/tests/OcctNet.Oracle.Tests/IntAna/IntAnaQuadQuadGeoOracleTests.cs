@@ -1,8 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Intersection;
 using Kerf.Geometry;
 using Xunit.Abstractions;
-using static Occt.IntAna_ResultType;
+using static Kerf.Engine.Intersection.ResultType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -42,18 +43,18 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
         theOracle.Same(aSign * theNative.Z(), thePort.Z(), $"{theWhat} normal Z");
     }
 
-    private static void Compare(Oracle theOracle, N.Geom_Surface theS1, N.Geom_Surface theS2, IntAna_QuadQuadGeo thePort,
+    private static void Compare(Oracle theOracle, N.Geom_Surface theS1, N.Geom_Surface theS2, QuadQuadGeo thePort,
                                 string theWhat)
     {
         using var anIntSS = new N.GeomAPI_IntSS(theS1, theS2, Tol);
-        theOracle.Same(anIntSS.IsDone(), thePort.IsDone(), $"{theWhat} IsDone");
-        if (!anIntSS.IsDone() || !thePort.IsDone())
+        theOracle.Same(anIntSS.IsDone(), thePort.IsDone, $"{theWhat} IsDone");
+        if (!anIntSS.IsDone() || !thePort.IsDone)
         {
             return;
         }
 
-        IntAna_ResultType aType = thePort.TypeInter();
-        bool aCurve = aType == IntAna_Line || aType == IntAna_Circle || aType == IntAna_Ellipse;
+        ResultType aType = thePort.TypeInter();
+        bool aCurve = aType == Line || aType == Circle || aType == Ellipse;
         theOracle.Same(aCurve, anIntSS.NbLines() > 0, $"{theWhat} has curves");
         if (!aCurve || anIntSS.NbLines() == 0)
         {
@@ -64,7 +65,7 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
         using var aBasis = Basis(aLine);
         switch (aType)
         {
-            case IntAna_Line:
+            case Line:
             {
                 using var aNLine = N.Geom_Line.DownCast(aBasis)!;
                 using var aLin = aNLine.Lin();
@@ -77,7 +78,7 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
                 theOracle.Same(aDir.Z(), aPort.Direction().Z(), $"{theWhat} line direction Z");
                 break;
             }
-            case IntAna_Circle:
+            case Circle:
             {
                 using var aNCircle = N.Geom_Circle.DownCast(aBasis)!;
                 using var aCirc = aNCircle.Circ();
@@ -90,7 +91,7 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
                 SameAxisDirection(theOracle, aNormal, aPort.Axis().Direction(), $"{theWhat} circle");
                 break;
             }
-            case IntAna_Ellipse:
+            case Ellipse:
             {
                 using var aNEllipse = N.Geom_Ellipse.DownCast(aBasis)!;
                 using var aLoc = aNEllipse.Location();
@@ -114,7 +115,7 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
             using var aNAx2 = Oracle.ToNative(anAx2);
             using var aS1 = new N.Geom_Plane(aNAx1);
             using var aS2 = new N.Geom_Plane(aNAx2);
-            var aPort = new IntAna_QuadQuadGeo(new Plane3D(anAx1), new Plane3D(anAx2), TolAng, Tol);
+            var aPort = new QuadQuadGeo(new Plane3D(anAx1), new Plane3D(anAx2), TolAng, Tol);
             Compare(anOracle, aS1, aS2, aPort, $"case {i}");
         }
         anOracle.Report("IntAna_QuadQuadGeo plane/plane");
@@ -132,7 +133,7 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
             using var aNAx2 = Oracle.ToNative(anAx2);
             using var aS1 = new N.Geom_Plane(aNAx1);
             using var aS2 = new N.Geom_CylindricalSurface(aNAx2, aR);
-            var aPort = new IntAna_QuadQuadGeo(new Plane3D(anAx1), new Cylinder(anAx2, aR), TolAng, Tol);
+            var aPort = new QuadQuadGeo(new Plane3D(anAx1), new Cylinder(anAx2, aR), TolAng, Tol);
             Compare(anOracle, aS1, aS2, aPort, $"case {i}");
         }
         anOracle.Report("IntAna_QuadQuadGeo plane/cylinder");
@@ -150,7 +151,7 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
             using var aNAx2 = Oracle.ToNative(anAx2);
             using var aS1 = new N.Geom_Plane(aNAx1);
             using var aS2 = new N.Geom_SphericalSurface(aNAx2, aR);
-            var aPort = new IntAna_QuadQuadGeo(new Plane3D(anAx1), new Sphere(anAx2, aR));
+            var aPort = new QuadQuadGeo(new Plane3D(anAx1), new Sphere(anAx2, aR));
             Compare(anOracle, aS1, aS2, aPort, $"case {i}");
         }
         anOracle.Report("IntAna_QuadQuadGeo plane/sphere");
@@ -168,7 +169,7 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
             using var aNAx2 = Oracle.ToNative(anAx2);
             using var aS1 = new N.Geom_SphericalSurface(aNAx1, aR1);
             using var aS2 = new N.Geom_SphericalSurface(aNAx2, aR2);
-            var aPort = new IntAna_QuadQuadGeo(new Sphere(anAx1, aR1), new Sphere(anAx2, aR2), Tol);
+            var aPort = new QuadQuadGeo(new Sphere(anAx1, aR1), new Sphere(anAx2, aR2), Tol);
             Compare(anOracle, aS1, aS2, aPort, $"case {i}");
         }
         anOracle.Report("IntAna_QuadQuadGeo sphere/sphere");

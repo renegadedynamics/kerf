@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 
 using Kerf.Geometry;
@@ -42,7 +43,7 @@ public class IntPatch_PolyArc : IntPatch_Polygo
     /// with <paramref name="NbSample"/> points. Throws Standard_ConstructionError on infinite bounds or fewer than two
     /// samples.
     /// </summary>
-    public IntPatch_PolyArc(Adaptor2d_Curve2d Line, int NbSample, double aPdeb, double aPfin, in Box2d BoxOtherPolygon)
+    public IntPatch_PolyArc(Curve2DAdaptorBase Line, int NbSample, double aPdeb, double aPfin, in Box2d BoxOtherPolygon)
     {
         brise = new NCollection_Array1<Point2D>(1, Max(1, NbSample));
         param = new NCollection_Array1<double>(1, Max(1, NbSample));

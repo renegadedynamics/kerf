@@ -3,13 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using static Occt.BRepGProp_Gauss.BRepGProp_GaussType;
 
 namespace Occt;
 
 /// <summary>The global properties of a face in 3D space, by Gauss integration (<see cref="BRepGProp_Gauss"/>).</summary>
-public class BRepGProp_Sinert : GProp_GProps
+public class BRepGProp_Sinert : Properties
 {
     private double myEpsilon;
 
@@ -45,7 +46,7 @@ public class BRepGProp_Sinert : GProp_GProps
     }
 
     /// <summary>Sets the reference point.</summary>
-    public void SetLocation(in Point3D SLocation) => loc = SLocation;
+    public void SetLocation(in Point3D SLocation) => _loc = SLocation;
 
     /// <summary>Computes the global properties of the face over its natural bounds.</summary>
     public void Perform(BRepGProp_Face S)
@@ -53,7 +54,7 @@ public class BRepGProp_Sinert : GProp_GProps
         myEpsilon = 1.0;
 
         var aGauss = new BRepGProp_Gauss(Sinert);
-        aGauss.Compute(S, loc, ref dim, ref g, ref inertia);
+        aGauss.Compute(S, _loc, ref _dim, ref _g, ref _inertia);
     }
 
     /// <summary>Computes the global properties of the face bounded by its edges.</summary>
@@ -62,7 +63,7 @@ public class BRepGProp_Sinert : GProp_GProps
         myEpsilon = 1.0;
 
         var aGauss = new BRepGProp_Gauss(Sinert);
-        aGauss.Compute(S, D, loc, ref dim, ref g, ref inertia);
+        aGauss.Compute(S, D, _loc, ref _dim, ref _g, ref _inertia);
     }
 
     /// <summary>Computes the global properties of the face over its natural bounds, adaptively; returns the relative error.</summary>
@@ -76,7 +77,7 @@ public class BRepGProp_Sinert : GProp_GProps
     public double Perform(BRepGProp_Face S, BRepGProp_Domain D, double Eps)
     {
         var aGauss = new BRepGProp_Gauss(Sinert);
-        return myEpsilon = aGauss.Compute(S, D, loc, Eps, ref dim, ref g, ref inertia);
+        return myEpsilon = aGauss.Compute(S, D, _loc, Eps, ref _dim, ref _g, ref _inertia);
     }
 
     /// <summary>The relative error of the last adaptive computation, else 1.</summary>

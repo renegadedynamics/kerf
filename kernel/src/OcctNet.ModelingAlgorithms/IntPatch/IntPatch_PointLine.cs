@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -81,7 +82,7 @@ public abstract class IntPatch_PointLine : IntPatch_Line
     /// <summary>
     /// The radius of curvature of the intersection line at a point; negative if it can't be computed.
     /// </summary>
-    public static double CurvatureRadiusOfIntersLine(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
+    public static double CurvatureRadiusOfIntersLine(SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
                                                      in IntSurf_PntOn2S theUVPoint)
     {
         double aSmallValue = 1.0 / global::Kerf.Engine.Foundation.Precision.Infinite();

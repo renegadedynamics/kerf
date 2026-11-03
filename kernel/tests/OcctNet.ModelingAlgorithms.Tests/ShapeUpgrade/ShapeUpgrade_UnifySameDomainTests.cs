@@ -1,11 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Reflection;
 using OcctNet.ModelingData.Tests;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -22,33 +26,33 @@ public class ShapeUpgrade_UnifySameDomainTests
 
     // A shell of two coplanar rectangles [0, 5] x [0, 4] and [5, 10] x [0, 4] sharing the edge x = 5, built as a
     // caller would get it: the faces are planar faces of their own (two Geom_Plane objects).
-    private static TopoDS_Shell TwoCoplanarFaces(bool theToFreeze, out TopoDS_Edge theSharedEdge)
+    private static Shell TwoCoplanarFaces(bool theToFreeze, out Edge theSharedEdge)
     {
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         Point3D[] aP = [new(0, 0, 0), new(5, 0, 0), new(10, 0, 0), new(10, 4, 0), new(5, 4, 0), new(0, 4, 0)];
-        var aV = new TopoDS_Vertex[6];
+        var aV = new Vertex[6];
         for (int i = 0; i < 6; i++)
         {
             B.MakeVertex(ref aV[i], aP[i], global::Kerf.Engine.Foundation.Precision.Confusion());
         }
-        TopoDS_Edge E(int i, int j) => new BRepBuilderAPI_MakeEdge(aV[i], aV[j]).InternalEdge();
-        TopoDS_Edge e01 = E(0, 1), e12 = E(1, 2), e23 = E(2, 3), e34 = E(3, 4), e45 = E(4, 5), e50 = E(5, 0), e14 = E(1, 4);
+        Edge E(int i, int j) => new BRepBuilderAPI_MakeEdge(aV[i], aV[j]).InternalEdge();
+        Edge e01 = E(0, 1), e12 = E(1, 2), e23 = E(2, 3), e34 = E(3, 4), e45 = E(4, 5), e50 = E(5, 0), e14 = E(1, 4);
 
-        TopoDS_Face F(params TopoDS_Edge[] theEdges)
+        Face F(params Edge[] theEdges)
         {
-            var aW = new TopoDS_Wire();
+            var aW = new Wire();
             B.MakeWire(ref aW);
-            foreach (TopoDS_Edge anEdge in theEdges)
+            foreach (Edge anEdge in theEdges)
             {
                 B.Add(aW, anEdge);
             }
             aW.Closed(true);
             return new BRepBuilderAPI_MakeFace(new Plane3D(new CoordinateSystem(Constants.XOY())), aW).InternalFace();
         }
-        TopoDS_Face aLeft = F(e01, e14, e45, e50);
-        TopoDS_Face aRight = F(e12, e23, e34, TopoDS.Edge(e14.Reversed()));
+        Face aLeft = F(e01, e14, e45, e50);
+        Face aRight = F(e12, e23, e34, ShapeCasts.Edge(e14.Reversed()));
 
-        var aShell = new TopoDS_Shell();
+        var aShell = new Shell();
         B.MakeShell(ref aShell);
         B.Add(aShell, aLeft);
         B.Add(aShell, aRight);
@@ -60,52 +64,52 @@ public class ShapeUpgrade_UnifySameDomainTests
         return aShell;
     }
 
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
-    private static HashSet<TopoDS_TShape> TShapes(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static HashSet<TShape> TShapes(in Shape theShape, ShapeType theType)
     {
-        var aSet = new HashSet<TopoDS_TShape>(ReferenceEqualityComparer.Instance);
-        for (var anExp = new TopExp_Explorer(theShape, theType); anExp.More(); anExp.Next())
+        var aSet = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
+        for (var anExp = new Explorer(theShape, theType); anExp.More(); anExp.Next())
         {
             aSet.Add(anExp.Current().TShape()!);
         }
         return aSet;
     }
 
-    private static bool AllFrozen(in TopoDS_Shape theShape)
+    private static bool AllFrozen(in Shape theShape)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, aMap);
         return aMap.All(s => s.TShape()!.IsFrozen);
     }
 
     [Fact]
     public void FrozenShell_CoplanarFacesAreMerged_TheInputIsUnchanged_TheHistoryAnswersForTheCallersShapes()
     {
-        TopoDS_Shell aShell = TwoCoplanarFaces(true, out TopoDS_Edge aShared);
+        Shell aShell = TwoCoplanarFaces(true, out Edge aShared);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShell);
 
         var aUnifier = new ShapeUpgrade_UnifySameDomain(aShell, true, true, true);
         aUnifier.AllowInternalEdges(false);
         aUnifier.Build();
-        TopoDS_Shape aResult = aUnifier.Shape();
+        Shape aResult = aUnifier.Shape();
 
         aSnap.AssertUnchanged(aShell);
         Assert.True(AllFrozen(aResult));
-        Assert.Equal(1, Count(aResult, TopAbs_FACE));
+        Assert.Equal(1, Count(aResult, ShapeType.Face));
         // the bottom and top edges are merged across x = 5: 4 edges, 4 vertices
-        Assert.Equal(4, Count(aResult, TopAbs_EDGE));
-        Assert.Equal(4, Count(aResult, TopAbs_VERTEX));
+        Assert.Equal(4, Count(aResult, ShapeType.Edge));
+        Assert.Equal(4, Count(aResult, ShapeType.Vertex));
 
         // the history answers for the caller's sub-shapes
-        BRepTools_History aHistory = aUnifier.History()!;
-        TopoDS_Shape aFace = new TopExp_Explorer(aResult, TopAbs_FACE).Current();
-        for (var anExp = new TopExp_Explorer(aShell, TopAbs_FACE); anExp.More(); anExp.Next())
+        History aHistory = aUnifier.History()!;
+        Shape aFace = new Explorer(aResult, ShapeType.Face).Current();
+        for (var anExp = new Explorer(aShell, ShapeType.Face); anExp.More(); anExp.Next())
         {
             Assert.Single(aHistory.Modified(anExp.Current()));
             Assert.True(aHistory.Modified(anExp.Current())[0].IsSame(aFace));
@@ -115,99 +119,99 @@ public class ShapeUpgrade_UnifySameDomainTests
         // faces only: the six boundary edges are the caller's own
         var aFacesOnly = new ShapeUpgrade_UnifySameDomain(aShell, false, true);
         aFacesOnly.Build();
-        TopoDS_Shape aResult2 = aFacesOnly.Shape();
+        Shape aResult2 = aFacesOnly.Shape();
         aSnap.AssertUnchanged(aShell);
-        Assert.Equal(6, TShapes(aResult2, TopAbs_EDGE).Intersect(TShapes(aShell, TopAbs_EDGE)).Count());
-        Assert.Equal(6, Count(aResult2, TopAbs_EDGE));
+        Assert.Equal(6, TShapes(aResult2, ShapeType.Edge).Intersect(TShapes(aShell, ShapeType.Edge)).Count());
+        Assert.Equal(6, Count(aResult2, ShapeType.Edge));
     }
 
     [Fact]
     public void NothingToUnify_GivesBackTheInputItself()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), new Point3D(10, 10, 10)).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), new Point3D(10, 10, 10)).Shape();
         var aUnifier = new ShapeUpgrade_UnifySameDomain(aBox, true, true, true);
         aUnifier.Build();
-        TopoDS_Shape aResult = aUnifier.Shape();
+        Shape aResult = aUnifier.Shape();
         Assert.Same(aBox.TShape(), aResult.TShape());
-        BRepTools_History aHistory = aUnifier.History()!;
-        Assert.False(aHistory.HasModified());
-        Assert.False(aHistory.HasRemoved());
+        History aHistory = aUnifier.History()!;
+        Assert.False(aHistory.HasModified);
+        Assert.False(aHistory.HasRemoved);
     }
 
     [Fact]
     public void SafeInputModeOff_OnAFrozenInput_ActsOnACopy()
     {
-        TopoDS_Shell aShell = TwoCoplanarFaces(true, out _);
+        Shell aShell = TwoCoplanarFaces(true, out _);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShell);
 
         var aUnifier = new ShapeUpgrade_UnifySameDomain(aShell);
         aUnifier.SetSafeInputMode(false);
         aUnifier.Build();
-        TopoDS_Shape aResult = aUnifier.Shape();
+        Shape aResult = aUnifier.Shape();
 
         aSnap.AssertUnchanged(aShell);
-        Assert.Equal(1, Count(aResult, TopAbs_FACE));
-        Assert.Equal(4, Count(aResult, TopAbs_EDGE));
+        Assert.Equal(1, Count(aResult, ShapeType.Face));
+        Assert.Equal(4, Count(aResult, ShapeType.Edge));
     }
 
     [Fact]
     public void UnfrozenInput_IsWorkedOnInPlace_AndTheResultIsInternal()
     {
-        TopoDS_Shell aShell = TwoCoplanarFaces(false, out _);
-        HashSet<TopoDS_TShape> anEdges = TShapes(aShell, TopAbs_EDGE);
+        Shell aShell = TwoCoplanarFaces(false, out _);
+        HashSet<TShape> anEdges = TShapes(aShell, ShapeType.Edge);
 
         var aUnifier = new ShapeUpgrade_UnifySameDomain(aShell, false, true);
         aUnifier.Build();
-        TopoDS_Shape anInternal = aUnifier.InternalShape();
+        Shape anInternal = aUnifier.InternalShape();
         Assert.False(anInternal.TShape()!.IsFrozen);
-        Assert.Equal(1, Count(anInternal, TopAbs_FACE));
+        Assert.Equal(1, Count(anInternal, ShapeType.Face));
         // no copy: the boundary edges are the input's, as in OCCT
-        Assert.Equal(6, TShapes(anInternal, TopAbs_EDGE).Intersect(anEdges).Count());
+        Assert.Equal(6, TShapes(anInternal, ShapeType.Edge).Intersect(anEdges).Count());
         Assert.True(aUnifier.Shape().TShape()!.IsFrozen);
     }
 
     [Fact]
     public void KeepShape_TheCallersEdge_ForbidsTheMerge()
     {
-        TopoDS_Shell aShell = TwoCoplanarFaces(true, out TopoDS_Edge aShared);
+        Shell aShell = TwoCoplanarFaces(true, out Edge aShared);
         var aUnifier = new ShapeUpgrade_UnifySameDomain(aShell);
         aUnifier.KeepShape(aShared);
         aUnifier.Build();
-        TopoDS_Shape aResult = aUnifier.Shape();
-        Assert.Equal(2, Count(aResult, TopAbs_FACE));
+        Shape aResult = aUnifier.Shape();
+        Assert.Equal(2, Count(aResult, ShapeType.Face));
         Assert.Same(aShell.TShape(), aResult.TShape());
 
         // a kept vertex forbids the merge of the edges through it
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aShell, TopAbs_VERTEX, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(aShell, ShapeType.Vertex, aMap);
         var aUnifier2 = new ShapeUpgrade_UnifySameDomain(aShell);
         for (int i = 1; i <= aMap.Extent(); i++)
         {
             aUnifier2.KeepShape(aMap[i]);
         }
         aUnifier2.Build();
-        TopoDS_Shape aResult2 = aUnifier2.Shape();
-        Assert.Equal(1, Count(aResult2, TopAbs_FACE));
-        Assert.Equal(6, Count(aResult2, TopAbs_EDGE));
+        Shape aResult2 = aUnifier2.Shape();
+        Assert.Equal(1, Count(aResult2, ShapeType.Face));
+        Assert.Equal(6, Count(aResult2, ShapeType.Edge));
     }
 
     [Fact]
     public void NullHistory_CollectsNone_AndInitializeReuses()
     {
-        TopoDS_Shell aShell = TwoCoplanarFaces(true, out _);
+        Shell aShell = TwoCoplanarFaces(true, out _);
         var aUnifier = new ShapeUpgrade_UnifySameDomain();
         aUnifier.Initialize(aShell);
         aUnifier.History(null);
         aUnifier.Build();
         Assert.Null(aUnifier.History());
-        Assert.Equal(1, Count(aUnifier.Shape(), TopAbs_FACE));
+        Assert.Equal(1, Count(aUnifier.Shape(), ShapeType.Face));
 
-        TopoDS_Shell aShell2 = TwoCoplanarFaces(true, out _);
-        aUnifier.History(new BRepTools_History());
+        Shell aShell2 = TwoCoplanarFaces(true, out _);
+        aUnifier.History(new History());
         aUnifier.Initialize(aShell2, true, false);
         aUnifier.Build();
         // edges only: the faces stay, nothing to merge
-        Assert.Equal(2, Count(aUnifier.Shape(), TopAbs_FACE));
+        Assert.Equal(2, Count(aUnifier.Shape(), ShapeType.Face));
         Assert.Same(aShell2.TShape(), aUnifier.Shape().TShape());
     }
 
@@ -222,28 +226,28 @@ public class ShapeUpgrade_UnifySameDomainTests
         {
             return;
         }
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aFile));
+        Assert.True(BrepTools.Read(out Shape aShape, aFile));
         aShape.TShape()!.FreezeGraph();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
-        var aSurfaces = new List<(Geom_BSplineSurface, bool, bool)>();
-        for (var anExp = new TopExp_Explorer(aShape, TopAbs_FACE); anExp.More(); anExp.Next())
+        var aSurfaces = new List<(BSplineSurface, bool, bool)>();
+        for (var anExp = new Explorer(aShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            if (BRep_Tool.Surface(TopoDS.Face(anExp.Current())) is Geom_BSplineSurface aBS)
+            if (Tool.Surface(ShapeCasts.Face(anExp.Current())) is BSplineSurface aBS)
             {
-                aSurfaces.Add((aBS, aBS.IsUPeriodic(), aBS.IsVPeriodic()));
+                aSurfaces.Add((aBS, aBS.IsUPeriodic, aBS.IsVPeriodic));
             }
         }
 
         var aUnifier = new ShapeUpgrade_UnifySameDomain(aShape, true, true, true);
         aUnifier.Build();
-        TopoDS_Shape aResult = aUnifier.Shape();
+        Shape aResult = aUnifier.Shape();
 
         aSnap.AssertUnchanged(aShape);
-        Assert.All(aSurfaces, s => Assert.Equal((s.Item2, s.Item3), (s.Item1.IsUPeriodic(), s.Item1.IsVPeriodic())));
+        Assert.All(aSurfaces, s => Assert.Equal((s.Item2, s.Item3), (s.Item1.IsUPeriodic, s.Item1.IsVPeriodic)));
         bool hasPeriodic = false;
-        for (var anExp = new TopExp_Explorer(aResult, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aResult, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            if (BRep_Tool.Surface(TopoDS.Face(anExp.Current())) is Geom_BSplineSurface aBS && (aBS.IsUPeriodic() || aBS.IsVPeriodic()))
+            if (Tool.Surface(ShapeCasts.Face(anExp.Current())) is BSplineSurface aBS && (aBS.IsUPeriodic || aBS.IsVPeriodic))
             {
                 hasPeriodic = true;
                 Assert.DoesNotContain(aSurfaces, s => ReferenceEquals(s.Item1, aBS));

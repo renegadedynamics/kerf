@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -38,15 +40,15 @@ internal static class BOPTestBOPCommands
     private static int Bop(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
         int n = a.Count;
-        NCollection_List<TopoDS_Shape> aLC = new();
+        NCollection_List<Shape> aLC = new();
         if (n != 3)
         {
             di.Append(" use bop s1 s2 \n");
             return 0;
         }
-        TopoDS_Shape aS1 = theDI.GetShape(a[1]);
-        TopoDS_Shape aS2 = theDI.GetShape(a[2]);
-        if (aS1.IsNull() || aS2.IsNull())
+        Shape aS1 = theDI.GetShape(a[1]);
+        Shape aS2 = theDI.GetShape(a[2]);
+        if (aS1.IsNull || aS2.IsNull)
         {
             di.Append(" null shapes are not allowed \n");
             return 0;
@@ -93,7 +95,7 @@ internal static class BOPTestBOPCommands
             return 0;
         }
         BOPAlgo_BOP aBOP = new();
-        NCollection_List<TopoDS_Shape> aLC = pPF.Arguments();
+        NCollection_List<Shape> aLC = pPF.Arguments();
         int aNb = aLC.Extent();
         if (aNb != 2)
         {
@@ -101,8 +103,8 @@ internal static class BOPTestBOPCommands
             return 0;
         }
         bool bRunParallel = BOPTestObjects.Of(theDI).RunParallel;
-        TopoDS_Shape aS1 = aLC.First();
-        TopoDS_Shape aS2 = aLC.Last();
+        Shape aS1 = aLC.First();
+        Shape aS2 = aLC.Last();
         aBOP.AddArgument(aS1);
         aBOP.AddTool(aS2);
         aBOP.SetOperation(aOp);
@@ -121,8 +123,8 @@ internal static class BOPTestBOPCommands
         {
             return 0;
         }
-        TopoDS_Shape aR = aBOP.Shape();
-        if (aR.IsNull())
+        Shape aR = aBOP.Shape();
+        if (aR.IsNull)
         {
             di.Append(" null shape\n");
             return 0;
@@ -152,7 +154,7 @@ internal static class BOPTestBOPCommands
             return 0;
         }
         BOPAlgo_Section aBOP = new();
-        NCollection_List<TopoDS_Shape> aLC = pPF.Arguments();
+        NCollection_List<Shape> aLC = pPF.Arguments();
         int aNb = aLC.Extent();
         if (aNb != 2)
         {
@@ -160,8 +162,8 @@ internal static class BOPTestBOPCommands
             return 0;
         }
         bool bRunParallel = BOPTestObjects.Of(theDI).RunParallel;
-        TopoDS_Shape aS1 = aLC.First();
-        TopoDS_Shape aS2 = aLC.Last();
+        Shape aS1 = aLC.First();
+        Shape aS2 = aLC.Last();
         aBOP.AddArgument(aS1);
         aBOP.AddArgument(aS2);
         aBOP.SetRunParallel(bRunParallel);
@@ -179,8 +181,8 @@ internal static class BOPTestBOPCommands
         {
             return 0;
         }
-        TopoDS_Shape aR = aBOP.Shape();
-        if (aR.IsNull())
+        Shape aR = aBOP.Shape();
+        if (aR.IsNull)
         {
             di.Append(" null shape\n");
             return 0;
@@ -198,9 +200,9 @@ internal static class BOPTestBOPCommands
             di.Append("use bsection r s1 s2 [-n2d/-n2d1/-n2d2] [-na] [tol]\n");
             return 0;
         }
-        TopoDS_Shape aS1 = theDI.GetShape(a[2]);
-        TopoDS_Shape aS2 = theDI.GetShape(a[3]);
-        if (aS1.IsNull() || aS2.IsNull())
+        Shape aS1 = theDI.GetShape(a[2]);
+        Shape aS2 = theDI.GetShape(a[3]);
+        if (aS1.IsNull || aS2.IsNull)
         {
             di.Append(" Null shapes are not allowed \n");
             return 0;
@@ -261,8 +263,8 @@ internal static class BOPTestBOPCommands
             di.Append(aSStream.ToString());
             return 0;
         }
-        TopoDS_Shape aR = aSec.Shape();
-        if (aR.IsNull())
+        Shape aR = aSec.Shape();
+        if (aR.IsNull)
         {
             di.Append(" null shape\n");
             return 0;
@@ -275,15 +277,15 @@ internal static class BOPTestBOPCommands
     private static int BSmt(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a, BOPAlgo_Operation aOp)
     {
         int n = a.Count;
-        NCollection_List<TopoDS_Shape> aLC = new();
+        NCollection_List<Shape> aLC = new();
         if (n != 4)
         {
             di.Append(" use bx r s1 s2\n");
             return 0;
         }
-        TopoDS_Shape aS1 = theDI.GetShape(a[2]);
-        TopoDS_Shape aS2 = theDI.GetShape(a[3]);
-        if (aS1.IsNull() || aS2.IsNull())
+        Shape aS1 = theDI.GetShape(a[2]);
+        Shape aS2 = theDI.GetShape(a[3]);
+        if (aS1.IsNull || aS2.IsNull)
         {
             di.Append(" null shapes are not allowed \n");
             return 0;
@@ -314,8 +316,8 @@ internal static class BOPTestBOPCommands
         {
             return 0;
         }
-        TopoDS_Shape aR = aBOP.Shape();
-        if (aR.IsNull())
+        Shape aR = aBOP.Shape();
+        if (aR.IsNull)
         {
             di.Append(" null shape\n");
             return 0;
@@ -337,27 +339,27 @@ internal static class BOPTestBOPCommands
                       + "[-p u1 v1 u2 v2 (to add start points] [-v (for extended output)]\n");
             return 1;
         }
-        TopoDS_Shape S1 = theDI.GetShape(a[1]);
-        TopoDS_Shape S2 = theDI.GetShape(a[2]);
-        if (S1.IsNull() || S2.IsNull())
+        Shape S1 = theDI.GetShape(a[1]);
+        Shape S2 = theDI.GetShape(a[2]);
+        if (S1.IsNull || S2.IsNull)
         {
             di.Append(" Null shapes are not allowed \n");
             return 1;
         }
-        TopAbs_ShapeEnum aType = S1.ShapeType();
-        if (aType != TopAbs_ShapeEnum.TopAbs_FACE)
+        ShapeType aType = S1.ShapeType();
+        if (aType != ShapeType.Face)
         {
             di.Append(" Type mismatch F1\n");
             return 1;
         }
         aType = S2.ShapeType();
-        if (aType != TopAbs_ShapeEnum.TopAbs_FACE)
+        if (aType != ShapeType.Face)
         {
             di.Append(" Type mismatch F2\n");
             return 1;
         }
-        TopoDS_Face aF1 = TopoDS.Face(S1);
-        TopoDS_Face aF2 = TopoDS.Face(S2);
+        Face aF1 = ShapeCasts.Face(S1);
+        Face aF2 = ShapeCasts.Face(S2);
         NCollection_List<IntSurf_PntOn2S> aListOfPnts = new();
         string aNm = "c_", aNp = "p_";
         double anAppTol = 0.0000001;
@@ -447,7 +449,7 @@ internal static class BOPTestBOPCommands
             {
                 IntTools_Curve anIC = aSCs[i];
 
-                Geom_Curve? aC3D = anIC.Curve();
+                Curve3D? aC3D = anIC.Curve();
 
                 if (aC3D is null)
                 {
@@ -460,8 +462,8 @@ internal static class BOPTestBOPCommands
 
                 DrawTrSurf.Set(theDI, nameC, aC3D);
                 di.Append(nameC).Append(" ");
-                Geom2d_Curve? aPC1 = anIC.FirstCurve2d();
-                Geom2d_Curve? aPC2 = anIC.SecondCurve2d();
+                Curve2D? aPC1 = anIC.FirstCurve2d();
+                Curve2D? aPC2 = anIC.SecondCurve2d();
                 if (aPC1 is not null || aPC2 is not null)
                 {
                     di.Append("(");
@@ -537,12 +539,12 @@ internal static class BOPTestBOPCommands
         bool bToIntersect = true;
         bool bCompounds = false;
         bool bAvoidInternal = false;
-        NCollection_List<TopoDS_Shape> aLS = new();
+        NCollection_List<Shape> aLS = new();
         //
         for (int i = 2; i < n; ++i)
         {
-            TopoDS_Shape aS = theDI.GetShape(a[i]);
-            if (!aS.IsNull())
+            Shape aS = theDI.GetShape(a[i]);
+            if (!aS.IsNull)
             {
                 aLS.Append(aS);
             }
@@ -573,10 +575,10 @@ internal static class BOPTestBOPCommands
         // treat list of arguments for the case of compounds
         if (bToIntersect && bCompounds)
         {
-            NCollection_List<TopoDS_Shape> aLSx = new();
-            foreach (TopoDS_Shape aSx in aLS)
+            NCollection_List<Shape> aLSx = new();
+            foreach (Shape aSx in aLS)
             {
-                for (TopoDS_Iterator aItS = new(aSx); aItS.More(); aItS.Next())
+                for (Iterator aItS = new(aSx); aItS.More(); aItS.Next())
                 {
                     aLSx.Append(aItS.Value());
                 }
@@ -620,11 +622,11 @@ internal static class BOPTestBOPCommands
 /// The standard history methods of a BOPAlgo builder, for BRepTest_Objects::SetHistory(arguments, algorithm) (OCCT's
 /// template over any algorithm with IsDeleted, Modified and Generated).
 /// </summary>
-internal sealed class BOPTestBuilderHistory(BOPAlgo_BuilderShape theAlgo) : BRepTools_History.IAlgorithm
+internal sealed class BOPTestBuilderHistory(BOPAlgo_BuilderShape theAlgo) : History.IAlgorithm
 {
-    public bool IsDeleted(in TopoDS_Shape theS) => theAlgo.IsDeleted(theS);
+    public bool IsDeleted(in Shape theS) => theAlgo.IsDeleted(theS);
 
-    public IEnumerable<TopoDS_Shape> Modified(in TopoDS_Shape theS) => theAlgo.Modified(theS);
+    public IEnumerable<Shape> Modified(in Shape theS) => theAlgo.Modified(theS);
 
-    public IEnumerable<TopoDS_Shape> Generated(in TopoDS_Shape theS) => theAlgo.Generated(theS);
+    public IEnumerable<Shape> Generated(in Shape theS) => theAlgo.Generated(theS);
 }

@@ -5,6 +5,10 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Topology;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -16,10 +20,10 @@ public class TransferBRep_ShapeListBinder : Transfer_Binder
 {
     public TransferBRep_ShapeListBinder()
     {
-        theres = new NCollection_HSequence<TopoDS_Shape>();
+        theres = new NCollection_HSequence<Shape>();
     }
 
-    public TransferBRep_ShapeListBinder(NCollection_HSequence<TopoDS_Shape>? list)
+    public TransferBRep_ShapeListBinder(NCollection_HSequence<Shape>? list)
     {
         theres = list;
     }
@@ -40,18 +44,18 @@ public class TransferBRep_ShapeListBinder : Transfer_Binder
     }
 
     /// <summary>Adds an item to the result list.</summary>
-    public void AddResult(in TopoDS_Shape shape)
+    public void AddResult(in Shape shape)
     {
         theres.Append(shape);
     }
 
-    public NCollection_HSequence<TopoDS_Shape>? Result()
+    public NCollection_HSequence<Shape>? Result()
     {
         return theres;
     }
 
     /// <summary>Changes an already defined sub-result.</summary>
-    public void SetResult(int num, in TopoDS_Shape shape)
+    public void SetResult(int num, in Shape shape)
     {
         theres.SetValue(num, shape);
     }
@@ -61,55 +65,55 @@ public class TransferBRep_ShapeListBinder : Transfer_Binder
         return theres.Length();
     }
 
-    public TopoDS_Shape Shape(int num)
+    public Shape Shape(int num)
     {
         return theres.Value(num);
     }
 
-    public TopAbs_ShapeEnum ShapeType(int num)
+    public ShapeType ShapeType(int num)
     {
         return theres.Value(num).ShapeType();
     }
 
-    public TopoDS_Vertex Vertex(int num)
+    public Vertex Vertex(int num)
     {
-        return TopoDS.Vertex(theres.Value(num));
+        return ShapeCasts.Vertex(theres.Value(num));
     }
 
-    public TopoDS_Edge Edge(int num)
+    public Edge Edge(int num)
     {
-        return TopoDS.Edge(theres.Value(num));
+        return ShapeCasts.Edge(theres.Value(num));
     }
 
-    public TopoDS_Wire Wire(int num)
+    public Wire Wire(int num)
     {
-        return TopoDS.Wire(theres.Value(num));
+        return ShapeCasts.Wire(theres.Value(num));
     }
 
-    public TopoDS_Face Face(int num)
+    public Face Face(int num)
     {
-        return TopoDS.Face(theres.Value(num));
+        return ShapeCasts.Face(theres.Value(num));
     }
 
-    public TopoDS_Shell Shell(int num)
+    public Shell Shell(int num)
     {
-        return TopoDS.Shell(theres.Value(num));
+        return ShapeCasts.Shell(theres.Value(num));
     }
 
-    public TopoDS_Solid Solid(int num)
+    public Solid Solid(int num)
     {
-        return TopoDS.Solid(theres.Value(num));
+        return ShapeCasts.Solid(theres.Value(num));
     }
 
-    public TopoDS_CompSolid CompSolid(int num)
+    public CompSolid CompSolid(int num)
     {
-        return TopoDS.CompSolid(theres.Value(num));
+        return ShapeCasts.CompSolid(theres.Value(num));
     }
 
-    public TopoDS_Compound Compound(int num)
+    public Compound Compound(int num)
     {
-        return TopoDS.Compound(theres.Value(num));
+        return ShapeCasts.Compound(theres.Value(num));
     }
 
-    private readonly NCollection_HSequence<TopoDS_Shape>? theres;
+    private readonly NCollection_HSequence<Shape>? theres;
 }

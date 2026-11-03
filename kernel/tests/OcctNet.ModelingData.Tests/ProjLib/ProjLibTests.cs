@@ -73,11 +73,11 @@ public class ProjLibTests
             var aParab = new Parabola3D(aCAx, aMin);
             var aHypr = new Hyperbola3D(aCAx, aMaj, aMin);
             var aLin = new Line3D(aLoc, aX);
-            Circle2D aCirc2d = ProjLib.Project(aPln, aCirc);
-            Ellipse2D anElips2d = ProjLib.Project(aPln, anElips);
-            Parabola2D aParab2d = ProjLib.Project(aPln, aParab);
-            Hyperbola2D aHypr2d = ProjLib.Project(aPln, aHypr);
-            Line2D aLin2d = ProjLib.Project(aPln, aLin);
+            Circle2D aCirc2d = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, aCirc);
+            Ellipse2D anElips2d = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, anElips);
+            Parabola2D aParab2d = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, aParab);
+            Hyperbola2D aHypr2d = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, aHypr);
+            Line2D aLin2d = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, aLin);
             for (int j = 0; j <= 10; j++)
             {
                 double aT = -3 + 0.6 * j;
@@ -105,8 +105,8 @@ public class ProjLibTests
                 continue;
             }
             var aLin = new Line3D(RandomPnt(aRandom), aD);
-            var aProj = new ProjLib_Plane(aPln, aLin);
-            Assert.True(aProj.IsDone());
+            var aProj = new global::Kerf.Engine.Geometry.Projection.PlaneProjector(aPln, aLin);
+            Assert.True(aProj.IsDone);
             Assert.Equal(Line, aProj.GetType());
             Line2D aLin2d = aProj.Line();
             for (int j = 0; j <= 10; j++)
@@ -122,13 +122,13 @@ public class ProjLibTests
     [Fact]
     public void Plane_ThrowsOnOtherType()
     {
-        var aProj = new ProjLib_Plane(new Plane3D(), new Line3D(new Point3D(), new Direction3D(1, 0, 0)));
+        var aProj = new global::Kerf.Engine.Geometry.Projection.PlaneProjector(new Plane3D(), new Line3D(new Point3D(), new Direction3D(1, 0, 0)));
         Assert.Throws<NoSuchObjectException>(() => aProj.Circle());
         Assert.Throws<NoSuchObjectException>(() => aProj.Ellipse());
         Assert.Throws<NoSuchObjectException>(() => aProj.Parabola());
         Assert.Throws<NoSuchObjectException>(() => aProj.Hyperbola());
-        var anEmpty = new ProjLib_Plane();
-        Assert.False(anEmpty.IsDone());
+        var anEmpty = new global::Kerf.Engine.Geometry.Projection.PlaneProjector();
+        Assert.False(anEmpty.IsDone);
         Assert.Equal(BSplineCurve, anEmpty.GetType());
         Assert.Null(anEmpty.BSpline());
         Assert.Null(anEmpty.Bezier());
@@ -139,7 +139,7 @@ public class ProjLibTests
     {
         // The projected direction is null: gp_Dir2d throws, where OCCT's release build (No_Exception) returns a
         // line with a NaN direction (decision 9)
-        Assert.Throws<ConstructionErrorException>(() => ProjLib.Project(new Plane3D(), new Line3D()));
+        Assert.Throws<ConstructionErrorException>(() => global::Kerf.Engine.Geometry.Projection.ProjLib.Project(new Plane3D(), new Line3D()));
     }
 
     // Cylinder
@@ -159,14 +159,14 @@ public class ProjLibTests
             // A generatrix, either way
             Direction3D aD = aRandom.Next(2) == 0 ? anAx.Direction() : anAx.Direction().Reversed();
             var aLin = new Line3D(aP, aD);
-            Line2D aLin2d = ProjLib.Project(aCyl, aLin);
+            Line2D aLin2d = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aCyl, aLin);
 
             // A parallel, either orientation, starting anywhere
             Point3D aC = global::Kerf.Engine.Geometry.ElSLib.Value(0, aV, aCyl).Translated(new Vector3D(anAx.XDirection()) * -aR);
             Point3D aStart = global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aCyl);
             var aCirc = new Circle3D(new Frame3D(aC, aRandom.Next(2) == 0 ? anAx.Direction() : anAx.Direction().Reversed(),
                                                new Direction3D(new Vector3D(aC, aStart))), aR);
-            Line2D aCirc2d = ProjLib.Project(aCyl, aCirc);
+            Line2D aCirc2d = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aCyl, aCirc);
             for (int j = 0; j <= 10; j++)
             {
                 double aT = -3 + 0.6 * j;
@@ -181,14 +181,14 @@ public class ProjLibTests
     public void Cylinder_SkewLineAndTiltedCircle_NotDone()
     {
         var aCyl = new Cylinder(new CoordinateSystem(), 2.0);
-        var aLin = new ProjLib_Cylinder(aCyl, new Line3D(new Point3D(2, 0, 0), new Direction3D(0, 1, 1)));
-        Assert.False(aLin.IsDone());
+        var aLin = new global::Kerf.Engine.Geometry.Projection.CylinderProjector(aCyl, new Line3D(new Point3D(2, 0, 0), new Direction3D(0, 1, 1)));
+        Assert.False(aLin.IsDone);
         Assert.Equal(OtherCurve, aLin.GetType());
         Assert.Throws<NoSuchObjectException>(() => aLin.Line());
-        var aCirc = new ProjLib_Cylinder(aCyl, new Circle3D(new Frame3D(new Point3D(), new Direction3D(0, 1, 1)), 2.0));
-        Assert.False(aCirc.IsDone());
-        var anElips = new ProjLib_Cylinder(aCyl, new Ellipse3D(new Frame3D(new Point3D(), new Direction3D(0, 1, 1)), 3.0, 2.0));
-        Assert.False(anElips.IsDone());
+        var aCirc = new global::Kerf.Engine.Geometry.Projection.CylinderProjector(aCyl, new Circle3D(new Frame3D(new Point3D(), new Direction3D(0, 1, 1)), 2.0));
+        Assert.False(aCirc.IsDone);
+        var anElips = new global::Kerf.Engine.Geometry.Projection.CylinderProjector(aCyl, new Ellipse3D(new Frame3D(new Point3D(), new Direction3D(0, 1, 1)), 3.0, 2.0));
+        Assert.False(anElips.IsDone);
         Assert.Equal(OtherCurve, anElips.GetType());
     }
 
@@ -210,8 +210,8 @@ public class ProjLibTests
             global::Kerf.Engine.Geometry.ElSLib.ConeD1(aU, aV, aCone.Position(), aCone.RefRadius(), aCone.SemiAngle(), out _, out _, out Vector3D aDv);
             Direction3D aD = aRandom.Next(2) == 0 ? new Direction3D(aDv) : new Direction3D(aDv).Reversed();
             var aLin = new Line3D(aP, aD);
-            var aLinProj = new ProjLib_Cone(aCone, aLin);
-            Assert.True(aLinProj.IsDone(), $"case {i} line");
+            var aLinProj = new global::Kerf.Engine.Geometry.Projection.ConeProjector(aCone, aLin);
+            Assert.True(aLinProj.IsDone, $"case {i} line");
 
             // A parallel, either orientation, starting anywhere
             double aVc = aV;
@@ -224,8 +224,8 @@ public class ProjLibTests
             Point3D aStart = global::Kerf.Engine.Geometry.ElSLib.Value(aU, aVc, aCone);
             var aCirc = new Circle3D(new Frame3D(aC, aRandom.Next(2) == 0 ? anAx.Direction() : anAx.Direction().Reversed(),
                                                new Direction3D(new Vector3D(aC, aStart))), Math.Abs(aRc));
-            var aCircProj = new ProjLib_Cone(aCone, aCirc);
-            Assert.True(aCircProj.IsDone(), $"case {i} circle");
+            var aCircProj = new global::Kerf.Engine.Geometry.Projection.ConeProjector(aCone, aCirc);
+            Assert.True(aCircProj.IsDone, $"case {i} circle");
             for (int j = 0; j <= 10; j++)
             {
                 double aT = -3 + 0.6 * j;
@@ -240,8 +240,8 @@ public class ProjLibTests
     public void Cone_SkewLine_NotDone()
     {
         var aCone = new Cone(new CoordinateSystem(), M_PI / 6, 2.0);
-        var aProj = new ProjLib_Cone(aCone, new Line3D(new Point3D(2, 0, 0), new Direction3D(0, 1, 0)));
-        Assert.False(aProj.IsDone());
+        var aProj = new global::Kerf.Engine.Geometry.Projection.ConeProjector(aCone, new Line3D(new Point3D(2, 0, 0), new Direction3D(0, 1, 0)));
+        Assert.False(aProj.IsDone);
         Assert.Equal(OtherCurve, aProj.GetType());
     }
 
@@ -271,8 +271,8 @@ public class ProjLibTests
 
             foreach ((Circle3D aCirc, string aWhat) in new[] { (aPar, "parallel"), (aMer, "meridian") })
             {
-                var aProj = new ProjLib_Sphere(aSph, aCirc);
-                Assert.True(aProj.IsDone(), $"case {i} {aWhat}");
+                var aProj = new global::Kerf.Engine.Geometry.Projection.SphereProjector(aSph, aCirc);
+                Assert.True(aProj.IsDone, $"case {i} {aWhat}");
                 for (int j = 0; j <= 10; j++)
                 {
                     double aT = -3 + 0.6 * j;
@@ -299,10 +299,10 @@ public class ProjLibTests
     public void Sphere_OtherCircle_NotDone()
     {
         var aSph = new Sphere(new CoordinateSystem(), 2.0);
-        var aProj = new ProjLib_Sphere(aSph, new Circle3D(new Frame3D(new Point3D(0.5, 0, 0), new Direction3D(0, 1, 1)), 1.0));
-        Assert.False(aProj.IsDone());
+        var aProj = new global::Kerf.Engine.Geometry.Projection.SphereProjector(aSph, new Circle3D(new Frame3D(new Point3D(0.5, 0, 0), new Direction3D(0, 1, 1)), 1.0));
+        Assert.False(aProj.IsDone);
         Assert.Throws<NotDoneException>(() => aProj.SetInBounds(0.0));
-        var aLin = new ProjLib_Sphere(aSph);
+        var aLin = new global::Kerf.Engine.Geometry.Projection.SphereProjector(aSph);
         aLin.Project(new Line3D());
         Assert.Equal(OtherCurve, aLin.GetType());
     }
@@ -334,8 +334,8 @@ public class ProjLibTests
 
             foreach ((Circle3D aCirc, string aWhat) in new[] { (aPar, "parallel"), (aMer, "meridian") })
             {
-                var aProj = new ProjLib_Torus(aTor, aCirc);
-                Assert.True(aProj.IsDone(), $"case {i} {aWhat}");
+                var aProj = new global::Kerf.Engine.Geometry.Projection.TorusProjector(aTor, aCirc);
+                Assert.True(aProj.IsDone, $"case {i} {aWhat}");
                 for (int j = 0; j <= 10; j++)
                 {
                     double aT = -3 + 0.6 * j;
@@ -361,11 +361,11 @@ public class ProjLibTests
             var aCone = new Cone(anAx, 0.5, 3);
             var aSph = new Sphere(anAx, 3);
             var aTor = new Torus(anAx, 5, 2);
-            Check(ProjLib.Project(aPln, global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aPln)), aU, aV);
-            Check(ProjLib.Project(aCyl, global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aCyl)), aU, aV);
-            Check(ProjLib.Project(aCone, global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aCone)), aU, aV);
-            Check(ProjLib.Project(aSph, global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aSph)), aU, aV);
-            Check(ProjLib.Project(aTor, global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV + 1.5, aTor)), aU, aV + 1.5);
+            Check(global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aPln)), aU, aV);
+            Check(global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aCyl, global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aCyl)), aU, aV);
+            Check(global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aCone, global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aCone)), aU, aV);
+            Check(global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aSph, global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aSph)), aU, aV);
+            Check(global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aTor, global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV + 1.5, aTor)), aU, aV + 1.5);
         }
 
         static void Check(in Point2D theP, double theU, double theV)
@@ -378,20 +378,20 @@ public class ProjLibTests
     [Fact]
     public void Projector_Frames()
     {
-        var aProj = new ProjLib_Projector();
+        var aProj = new global::Kerf.Engine.Geometry.Projection.Projector();
         aProj.SetType(Line);
         aProj.UFrame(0, 1, 0, 2 * M_PI); // the default line (origin, X) is already in the frame
         Assert.Equal(0.0, aProj.Line().Location().X());
 
-        var aCyl = new ProjLib_Cylinder(new Cylinder(new CoordinateSystem(), 1.0),
+        var aCyl = new global::Kerf.Engine.Geometry.Projection.CylinderProjector(new Cylinder(new CoordinateSystem(), 1.0),
                                         new Line3D(new Point3D(0, 1, 0), new Direction3D(0, 0, 1)));
         Assert.Equal(M_PI / 2, aCyl.Line().Location().X(), 1e-15);
         aCyl.UFrame(0.0, 1.0, 10.0, 2 * M_PI);
         Assert.Equal(M_PI / 2 + 4 * M_PI, aCyl.Line().Location().X(), 1e-12);
         aCyl.VFrame(0.0, 1.0, 5.0, 2.0);
         Assert.Equal(6.0, aCyl.Line().Location().Y(), 1e-12);
-        Assert.False(aCyl.IsPeriodic());
+        Assert.False(aCyl.IsPeriodic);
         aCyl.SetPeriodic();
-        Assert.True(aCyl.IsPeriodic());
+        Assert.True(aCyl.IsPeriodic);
     }
 }

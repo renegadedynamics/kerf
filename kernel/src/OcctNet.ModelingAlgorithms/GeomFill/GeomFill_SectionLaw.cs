@@ -32,7 +32,7 @@ public abstract class GeomFill_SectionLaw : Transient
     }
 
     /// <summary>A B-spline surface whose v-isos are the sections if there is one, else null (the default).</summary>
-    public virtual Geom_BSplineSurface? BSplineSurface() => null;
+    public virtual BSplineSurface? BSplineSurface() => null;
 
     /// <summary>The format of a section.</summary>
     public abstract void SectionShape(out int NbPoles, out int NbKnots, out int Degree);
@@ -102,7 +102,7 @@ public abstract class GeomFill_SectionLaw : Transient
     }
 
     /// <summary>A copy of the constant section, if the law is constant.</summary>
-    public virtual Geom_Curve ConstantSection()
+    public virtual Curve3D ConstantSection()
     {
         throw new DomainErrorException("GeomFill_SectionLaw::ConstantSection");
     }
@@ -115,7 +115,7 @@ public abstract class GeomFill_SectionLaw : Transient
     }
 
     /// <summary>The circle section at Param, if the law is conical.</summary>
-    public virtual Geom_Curve CirclSection(double Param)
+    public virtual Curve3D CirclSection(double Param)
     {
         throw new DomainErrorException("GeomFill_SectionLaw::CirclSection");
     }

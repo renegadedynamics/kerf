@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.SurfaceKind;
 
@@ -17,7 +18,7 @@ namespace Occt;
 /// <remarks>A working object (decision 21).</remarks>
 public sealed class ShapeCustom_Surface
 {
-    private Geom_Surface? mySurf;
+    private Surface? mySurf;
     private double myGap;
 
     /// <summary>An empty tool.</summary>
@@ -27,14 +28,14 @@ public sealed class ShapeCustom_Surface
     }
 
     /// <summary>A tool on the surface.</summary>
-    public ShapeCustom_Surface(Geom_Surface? S)
+    public ShapeCustom_Surface(Surface? S)
     {
         myGap = 0;
         Init(S);
     }
 
     /// <summary>Sets the surface.</summary>
-    public void Init(Geom_Surface? S)
+    public void Init(Surface? S)
     {
         mySurf = S;
     }
@@ -50,24 +51,24 @@ public sealed class ShapeCustom_Surface
     /// returns it, or null. With <paramref name="substitute"/>, the result replaces the tool's surface. The
     /// parametrisation isn't kept, so pcurves must be redone.
     /// </summary>
-    public Geom_Surface? ConvertToAnalytical(double tol, bool substitute)
+    public Surface? ConvertToAnalytical(double tol, bool substitute)
     {
-        Geom_Surface? newSurf = null;
+        Surface? newSurf = null;
 
         int nUP, nVP, nCP, i, j, UDeg, VDeg;
         double U1, U2, V1, V2, C1, C2, DU, DV, U = 0, V = 0;
-        Geom_Curve? iso = null;
+        Curve3D? iso = null;
         bool uClosed = true;
 
         // seuls cas traites : BSpline et Bezier
-        Geom_BSplineSurface? theBSplneS = mySurf as Geom_BSplineSurface;
+        global::Kerf.Geometry.BSplineSurface? theBSplneS = mySurf as global::Kerf.Geometry.BSplineSurface;
         if (theBSplneS is null)
         {
-            Geom_BezierSurface? theBezierS = mySurf as Geom_BezierSurface;
+            global::Kerf.Geometry.BezierSurface? theBezierS = mySurf as global::Kerf.Geometry.BezierSurface;
             if (theBezierS is not null)
             { // Bezier :
-                nUP = theBezierS.NbUPoles();
-                nVP = theBezierS.NbVPoles();
+                nUP = theBezierS.UPoleCount;
+                nVP = theBezierS.VPoleCount;
                 UDeg = theBezierS.UDegree();
                 VDeg = theBezierS.VDegree();
             }
@@ -78,8 +79,8 @@ public sealed class ShapeCustom_Surface
         }
         else
         { // BSpline :
-            nUP = theBSplneS.NbUPoles();
-            nVP = theBSplneS.NbVPoles();
+            nUP = theBSplneS.UPoleCount;
+            nVP = theBSplneS.VPoleCount;
             UDeg = theBSplneS.UDegree();
             VDeg = theBSplneS.VDegree();
         }
@@ -101,9 +102,9 @@ public sealed class ShapeCustom_Surface
                 aPlanar = true;
             }
         }
-        else if (mySurf.IsUClosed())
+        else if (mySurf.IsUClosed)
         { // VRAI IsUClosed
-            if (mySurf.IsVClosed())
+            if (mySurf.IsVClosed)
             {
                 aToroid = true;
             }
@@ -114,7 +115,7 @@ public sealed class ShapeCustom_Surface
         }
         else
         {
-            if (mySurf.IsVClosed())
+            if (mySurf.IsVClosed)
             { // VRAI IsVClosed
                 aCySpCo = true;
                 uClosed = false;
@@ -142,7 +143,7 @@ public sealed class ShapeCustom_Surface
             //    On regarde sur chaque surface les vecteurs P(U0->U1),P(V0->V1)
             //    On prend la normale : les deux normales doivent etre dans le meme sens
             //    Sinon, inverser la normale (pas le Pln entier !) et refaire la Plane
-            newSurf = new Geom_Plane(aPln);
+            newSurf = new PlaneSurface(aPln);
             Vector3D uold = new Vector3D(Pnts[1], Pnts[2]);
             Vector3D vold = new Vector3D(Pnts[1], Pnts[3]);
             Vector3D nold = uold.Crossed(vold);
@@ -155,7 +156,7 @@ public sealed class ShapeCustom_Surface
                 ax3.ZReverse();
                 ax3.XReverse();
                 aPln = new Plane3D(ax3);
-                newSurf = new Geom_Plane(aPln);
+                newSurf = new PlaneSurface(aPln);
             }
 
             if (substitute)
@@ -229,7 +230,7 @@ public sealed class ShapeCustom_Surface
             {
                 if ((Math.Abs(R[1]) < tol) && (Math.Abs(R[2]) < tol) && (Math.Abs(R[3]) > tol))
                 {
-                    Geom_SphericalSurface anObject = new Geom_SphericalSurface(aAx3, R[3]);
+                    SphericalSurface anObject = new SphericalSurface(aAx3, R[3]);
                     if (!uClosed)
                     {
                         anObject.UReverse();
@@ -241,7 +242,7 @@ public sealed class ShapeCustom_Surface
             {
                 if (Math.Abs(R[2] - R[1]) < tol)
                 {
-                    Geom_CylindricalSurface anObject = new Geom_CylindricalSurface(aAx3, R[1]);
+                    CylindricalSurface anObject = new CylindricalSurface(aAx3, R[1]);
                     if (!uClosed)
                     {
                         anObject.UReverse();
@@ -254,7 +255,7 @@ public sealed class ShapeCustom_Surface
                     double angle = aVec.Angle(aVec2);
                     if (R[1] < R[2])
                     {
-                        Geom_ConicalSurface anObject = new Geom_ConicalSurface(aAx3, angle, R[1]);
+                        ConicalSurface anObject = new ConicalSurface(aAx3, angle, R[1]);
                         // if (!uClosed) anObject->UReverse();
                         anObject.UReverse();
                         newSurf = anObject;
@@ -265,7 +266,7 @@ public sealed class ShapeCustom_Surface
                         Vector3D anotherXVec = new Vector3D(p3[2], p1[2]);
                         Direction3D anotherXDir = new Direction3D(anotherXVec);
                         CoordinateSystem anotherAx3 = new CoordinateSystem(p3[2], aDir, anotherXDir);
-                        Geom_ConicalSurface anObject = new Geom_ConicalSurface(anotherAx3, angle, R[2]);
+                        ConicalSurface anObject = new ConicalSurface(anotherAx3, angle, R[2]);
                         // if (!uClosed) anObject->UReverse();
                         anObject.UReverse();
                         newSurf = anObject;
@@ -339,7 +340,7 @@ public sealed class ShapeCustom_Surface
                         RR1 = RR2;
                         RR2 = RR3;
                     }
-                    Geom_ToroidalSurface anObject = new Geom_ToroidalSurface(aAx3, RR1, RR2);
+                    ToroidalSurface anObject = new ToroidalSurface(aAx3, RR1, RR2);
                     if (j == 2)
                     {
                         anObject.UReverse();
@@ -359,8 +360,8 @@ public sealed class ShapeCustom_Surface
         //                 verification
         //---------------------------------------------------------------------
 
-        GeomAdaptor_Surface NHS = new GeomAdaptor_Surface(newSurf);
-        GeomAdaptor_Surface SurfAdapt = NHS;
+        SurfaceAdaptor NHS = new SurfaceAdaptor(newSurf);
+        SurfaceAdaptor SurfAdapt = NHS;
 
         const int NP = 21;
         double S = 0.0, T = 0.0; // U,V deja fait
@@ -454,10 +455,10 @@ public sealed class ShapeCustom_Surface
     /// OCCT makes the surface itself periodic when its knots needn't be rearranged; the port makes a copy of a frozen
     /// surface periodic instead (decision 974), so the caller's surface never changes.
     /// </remarks>
-    public Geom_Surface? ConvertToPeriodic(bool substitute, double preci = -1)
+    public Surface? ConvertToPeriodic(bool substitute, double preci = -1)
     {
-        Geom_Surface? newSurf = null;
-        Geom_BSplineSurface? BSpl = mySurf as Geom_BSplineSurface;
+        Surface? newSurf = null;
+        global::Kerf.Geometry.BSplineSurface? BSpl = mySurf as global::Kerf.Geometry.BSplineSurface;
         if (BSpl is null)
         {
             return newSurf;
@@ -474,16 +475,16 @@ public sealed class ShapeCustom_Surface
 
         bool converted = false; //: p6
 
-        if (uclosed && !BSpl.IsUPeriodic() && BSpl.NbUPoles() > 3)
+        if (uclosed && !BSpl.IsUPeriodic && BSpl.UPoleCount > 3)
         {
             bool set = true;
             // if degree+1 at ends, first change it to 1 by rearranging knots
             if (BSpl.UMultiplicity(1) == BSpl.UDegree() + 1
-                && BSpl.UMultiplicity(BSpl.NbUKnots()) == BSpl.UDegree() + 1)
+                && BSpl.UMultiplicity(BSpl.UKnotCount) == BSpl.UDegree() + 1)
             {
                 NCollection_Array2<Point3D> oldPoles = BSpl.InternalPoles();
                 NCollection_Array2<double> oldWeights = BSpl.InternalWeightsArray();
-                int nbUKnots = BSpl.NbUKnots();
+                int nbUKnots = BSpl.UKnotCount;
                 NCollection_Array1<double> oldUKnots = BSpl.InternalUKnots();
                 NCollection_Array1<double> oldVKnots = BSpl.InternalVKnots();
                 NCollection_Array1<int> oldUMults = BSpl.InternalUMultiplicities();
@@ -503,7 +504,7 @@ public sealed class ShapeCustom_Surface
                     newUMults[i] = oldUMults[i - 1];
                 }
                 newUMults[2] = newUMults[nbUKnots + 1] = BSpl.UDegree();
-                Geom_BSplineSurface res = new Geom_BSplineSurface(oldPoles,
+                global::Kerf.Geometry.BSplineSurface res = new global::Kerf.Geometry.BSplineSurface(oldPoles,
                                                                   oldWeights,
                                                                   newUKnots,
                                                                   oldVKnots,
@@ -511,12 +512,12 @@ public sealed class ShapeCustom_Surface
                                                                   oldVMults,
                                                                   BSpl.UDegree(),
                                                                   BSpl.VDegree(),
-                                                                  BSpl.IsUPeriodic(),
-                                                                  BSpl.IsVPeriodic());
+                                                                  BSpl.IsUPeriodic,
+                                                                  BSpl.IsVPeriodic);
                 BSpl = res;
             }
             else if (BSpl.UMultiplicity(1) > BSpl.UDegree()
-                     || BSpl.UMultiplicity(BSpl.NbUKnots()) > BSpl.UDegree() + 1)
+                     || BSpl.UMultiplicity(BSpl.UKnotCount) > BSpl.UDegree() + 1)
             {
                 set = false;
             }
@@ -526,23 +527,23 @@ public sealed class ShapeCustom_Surface
                 // (decision 974)
                 if (BSpl.IsFrozen)
                 {
-                    BSpl = (Geom_BSplineSurface)BSpl.Copy();
+                    BSpl = (global::Kerf.Geometry.BSplineSurface)BSpl.Copy();
                 }
                 BSpl.SetUPeriodic(); // make periodic
                 converted = true;
             }
         }
 
-        if (vclosed && !BSpl.IsVPeriodic() && BSpl.NbVPoles() > 3)
+        if (vclosed && !BSpl.IsVPeriodic && BSpl.VPoleCount > 3)
         {
             bool set = true;
             // if degree+1 at ends, first change it to 1 by rearranging knots
             if (BSpl.VMultiplicity(1) == BSpl.VDegree() + 1
-                && BSpl.VMultiplicity(BSpl.NbVKnots()) == BSpl.VDegree() + 1)
+                && BSpl.VMultiplicity(BSpl.VKnotCount) == BSpl.VDegree() + 1)
             {
                 NCollection_Array2<Point3D> oldPoles = BSpl.InternalPoles();
                 NCollection_Array2<double> oldWeights = BSpl.InternalWeightsArray();
-                int nbVKnots = BSpl.NbVKnots();
+                int nbVKnots = BSpl.VKnotCount;
                 NCollection_Array1<double> oldUKnots = BSpl.InternalUKnots();
                 NCollection_Array1<double> oldVKnots = BSpl.InternalVKnots();
                 NCollection_Array1<int> oldUMults = BSpl.InternalUMultiplicities();
@@ -562,7 +563,7 @@ public sealed class ShapeCustom_Surface
                     newVMults[i] = oldVMults[i - 1];
                 }
                 newVMults[2] = newVMults[nbVKnots + 1] = BSpl.VDegree();
-                Geom_BSplineSurface res = new Geom_BSplineSurface(oldPoles,
+                global::Kerf.Geometry.BSplineSurface res = new global::Kerf.Geometry.BSplineSurface(oldPoles,
                                                                   oldWeights,
                                                                   oldUKnots,
                                                                   newVKnots,
@@ -570,12 +571,12 @@ public sealed class ShapeCustom_Surface
                                                                   newVMults,
                                                                   BSpl.UDegree(),
                                                                   BSpl.VDegree(),
-                                                                  BSpl.IsUPeriodic(),
-                                                                  BSpl.IsVPeriodic());
+                                                                  BSpl.IsUPeriodic,
+                                                                  BSpl.IsVPeriodic);
                 BSpl = res;
             }
             else if (BSpl.VMultiplicity(1) > BSpl.VDegree()
-                     || BSpl.VMultiplicity(BSpl.NbVKnots()) > BSpl.VDegree() + 1)
+                     || BSpl.VMultiplicity(BSpl.VKnotCount) > BSpl.VDegree() + 1)
             {
                 set = false;
             }
@@ -584,7 +585,7 @@ public sealed class ShapeCustom_Surface
                 // OCCT.NET: as above (decision 974)
                 if (BSpl.IsFrozen)
                 {
-                    BSpl = (Geom_BSplineSurface)BSpl.Copy();
+                    BSpl = (global::Kerf.Geometry.BSplineSurface)BSpl.Copy();
                 }
                 BSpl.SetVPeriodic(); // make periodic
                 converted = true;

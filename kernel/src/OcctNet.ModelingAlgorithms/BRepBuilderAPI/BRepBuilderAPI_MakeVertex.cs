@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -34,17 +35,17 @@ public class BRepBuilderAPI_MakeVertex : BRepBuilderAPI_MakeShape
 
 
     /// <summary>The vertex (frozen).</summary>
-    public TopoDS_Vertex Vertex()
+    public Vertex Vertex()
     {
         return myMakeVertex.Vertex();
     }
 
     /// <summary><see cref="Vertex"/> without freezing, for ported code.</summary>
-    internal TopoDS_Vertex InternalVertex()
+    internal Vertex InternalVertex()
     {
         return myMakeVertex.InternalVertex();
     }
 
     /// <summary>The vertex (OCCT's conversion operator; frozen).</summary>
-    public static explicit operator TopoDS_Vertex(BRepBuilderAPI_MakeVertex theMaker) => theMaker.Vertex();
+    public static explicit operator Vertex(BRepBuilderAPI_MakeVertex theMaker) => theMaker.Vertex();
 }

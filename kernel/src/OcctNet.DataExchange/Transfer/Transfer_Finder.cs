@@ -6,6 +6,7 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Objects;
 using static Occt.Interface_ParamType;
 
 namespace Occt;
@@ -119,7 +120,7 @@ public abstract class Transfer_Finder : Transient
         {
             return Interface_ParamInteger;
         }
-        if (atr.DynamicType() == typeof(Geom2d_CartesianPoint))
+        if (atr.DynamicType() == typeof(CartesianPoint2))
         {
             return Interface_ParamReal;
         }
@@ -168,7 +169,7 @@ public abstract class Transfer_Finder : Transient
     /// <summary>Adds a real value for an attribute.</summary>
     public void SetRealAttribute(string name, double val)
     {
-        Geom2d_CartesianPoint rval = new Geom2d_CartesianPoint(val, 0);
+        CartesianPoint2 rval = new CartesianPoint2(val, 0);
         SetAttribute(name, rval);
     }
 
@@ -178,7 +179,7 @@ public abstract class Transfer_Finder : Transient
     /// </summary>
     public bool GetRealAttribute(string name, out double val)
     {
-        Geom2d_CartesianPoint? rval = Attribute(name) as Geom2d_CartesianPoint;
+        CartesianPoint2? rval = Attribute(name) as CartesianPoint2;
         if (rval is null)
         {
             val = 0.0;
@@ -191,7 +192,7 @@ public abstract class Transfer_Finder : Transient
     /// <summary>Returns a real attribute from its name. 0.0 if not recorded.</summary>
     public double RealAttribute(string name)
     {
-        Geom2d_CartesianPoint? rval = Attribute(name) as Geom2d_CartesianPoint;
+        CartesianPoint2? rval = Attribute(name) as CartesianPoint2;
         if (rval is null)
         {
             return 0;
@@ -294,11 +295,11 @@ public abstract class Transfer_Finder : Transient
                     ival.CValue() = intval;
                     newatr = ival;
                 }
-                Geom2d_CartesianPoint? rval = atr as Geom2d_CartesianPoint;
+                CartesianPoint2? rval = atr as CartesianPoint2;
                 if (rval is not null)
                 {
                     double realval = rval.X();
-                    rval = new Geom2d_CartesianPoint(realval, 0);
+                    rval = new CartesianPoint2(realval, 0);
                     newatr = rval;
                 }
                 TCollection_HAsciiString? hval = atr as TCollection_HAsciiString;

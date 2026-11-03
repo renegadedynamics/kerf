@@ -5,7 +5,11 @@
 
 // 25.12.98 pdn: adding empty constructor
 
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -28,25 +32,25 @@ public sealed class ShapeFix_ShapeTolerance
     /// and their vertices; any other for all three) to [tmin, tmax] (no maximum if tmax &lt; tmin). Returns true if a
     /// tolerance changed. Writes into the shape.
     /// </summary>
-    internal bool LimitTolerance(in TopoDS_Shape shape, double tmin, double tmax = 0.0, TopAbs_ShapeEnum styp = TopAbs_SHAPE)
+    internal bool LimitTolerance(in Shape shape, double tmin, double tmax = 0.0, ShapeType styp = ShapeType.Shape)
     {
-        if (shape.IsNull() || tmin < 0)
+        if (shape.IsNull || tmin < 0)
         {
             return false;
         }
         bool   iamax = (tmax >= tmin);
         double prec;
         bool   fait = false;
-        if (styp == TopAbs_VERTEX || styp == TopAbs_EDGE || styp == TopAbs_FACE)
+        if (styp == ShapeType.Vertex || styp == ShapeType.Edge || styp == ShapeType.Face)
         {
-            for (var ex = new TopExp_Explorer(shape, styp); ex.More(); ex.Next())
+            for (var ex = new Explorer(shape, styp); ex.More(); ex.Next())
             {
-                TopoDS_Shape sh     = ex.Current();
+                Shape sh     = ex.Current();
                 int          newtol = 0;
-                if (styp == TopAbs_VERTEX)
+                if (styp == ShapeType.Vertex)
                 {
-                    TopoDS_Vertex V = TopoDS.Vertex(sh);
-                    prec = BRep_Tool.Tolerance(V);
+                    Vertex V = ShapeCasts.Vertex(sh);
+                    prec = Tool.Tolerance(V);
                     if (iamax && prec > tmax)
                     {
                         newtol = 1;
@@ -57,15 +61,15 @@ public sealed class ShapeFix_ShapeTolerance
                     }
                     if (newtol != 0)
                     {
-                        var TV = (BRep_TVertex)V.TShape()!;
+                        var TV = (BrepTVertex)V.TShape()!;
                         TV.Tolerance((newtol > 0 ? tmax : tmin));
                         fait = true;
                     }
                 }
-                else if (styp == TopAbs_EDGE)
+                else if (styp == ShapeType.Edge)
                 {
-                    TopoDS_Edge E = TopoDS.Edge(sh);
-                    prec = BRep_Tool.Tolerance(E);
+                    Edge E = ShapeCasts.Edge(sh);
+                    prec = Tool.Tolerance(E);
                     if (iamax && prec > tmax)
                     {
                         newtol = 1;
@@ -76,15 +80,15 @@ public sealed class ShapeFix_ShapeTolerance
                     }
                     if (newtol != 0)
                     {
-                        var TE = (BRep_TEdge)E.TShape()!;
+                        var TE = (BrepTEdge)E.TShape()!;
                         TE.Tolerance((newtol > 0 ? tmax : tmin));
                         fait = true;
                     }
                 }
-                else if (styp == TopAbs_FACE)
+                else if (styp == ShapeType.Face)
                 {
-                    TopoDS_Face F = TopoDS.Face(sh);
-                    prec = BRep_Tool.Tolerance(F);
+                    Face F = ShapeCasts.Face(sh);
+                    prec = Tool.Tolerance(F);
                     if (iamax && prec > tmax)
                     {
                         newtol = 1;
@@ -95,38 +99,38 @@ public sealed class ShapeFix_ShapeTolerance
                     }
                     if (newtol != 0)
                     {
-                        var TF = (BRep_TFace)F.TShape()!;
+                        var TF = (BrepTFace)F.TShape()!;
                         TF.Tolerance((newtol > 0 ? tmax : tmin));
                         fait = true;
                     }
                 }
             }
         }
-        else if (styp == TopAbs_WIRE)
+        else if (styp == ShapeType.Wire)
         {
-            for (var ex = new TopExp_Explorer(shape, TopAbs_EDGE); ex.More(); ex.Next())
+            for (var ex = new Explorer(shape, ShapeType.Edge); ex.More(); ex.Next())
             {
-                TopoDS_Shape sh = ex.Current();
-                TopoDS_Edge  E  = TopoDS.Edge(sh);
+                Shape sh = ex.Current();
+                Edge  E  = ShapeCasts.Edge(sh);
                 // OCCT: the edges' own result isn't added to fait (only their vertices'): a change of edge
                 // tolerances alone returns false
-                LimitTolerance(E, tmin, tmax, TopAbs_EDGE);
-                TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-                if (!V1.IsNull())
+                LimitTolerance(E, tmin, tmax, ShapeType.Edge);
+                Exploration.Vertices(E, out Vertex V1, out Vertex V2);
+                if (!V1.IsNull)
                 {
-                    fait |= LimitTolerance(V1, tmin, tmax, TopAbs_VERTEX);
+                    fait |= LimitTolerance(V1, tmin, tmax, ShapeType.Vertex);
                 }
-                if (!V2.IsNull())
+                if (!V2.IsNull)
                 {
-                    fait |= LimitTolerance(V2, tmin, tmax, TopAbs_VERTEX);
+                    fait |= LimitTolerance(V2, tmin, tmax, ShapeType.Vertex);
                 }
             }
         }
         else
         {
-            fait |= LimitTolerance(shape, tmin, tmax, TopAbs_VERTEX);
-            fait |= LimitTolerance(shape, tmin, tmax, TopAbs_EDGE);
-            fait |= LimitTolerance(shape, tmin, tmax, TopAbs_FACE);
+            fait |= LimitTolerance(shape, tmin, tmax, ShapeType.Vertex);
+            fait |= LimitTolerance(shape, tmin, tmax, ShapeType.Edge);
+            fait |= LimitTolerance(shape, tmin, tmax, ShapeType.Face);
         }
         return fait;
     }
@@ -135,72 +139,72 @@ public sealed class ShapeFix_ShapeTolerance
     /// Sets the tolerances of the sub-shapes of type <paramref name="styp"/> (as <see cref="LimitTolerance"/>) to
     /// <paramref name="preci"/> (nothing if it isn't positive). Writes into the shape.
     /// </summary>
-    internal void SetTolerance(in TopoDS_Shape shape, double preci, TopAbs_ShapeEnum styp = TopAbs_SHAPE)
+    internal void SetTolerance(in Shape shape, double preci, ShapeType styp = ShapeType.Shape)
     {
         //   VERTEX ou EDGE ou FACE : ces types seulement
         //   WIRE : EDGE + VERTEX
         //   Autres : TOUT (donc == WIRE + FACE)
-        if (shape.IsNull() || preci <= 0)
+        if (shape.IsNull || preci <= 0)
         {
             return;
         }
-        if (styp == TopAbs_VERTEX || styp == TopAbs_EDGE || styp == TopAbs_FACE)
+        if (styp == ShapeType.Vertex || styp == ShapeType.Edge || styp == ShapeType.Face)
         {
-            for (var ex = new TopExp_Explorer(shape, styp); ex.More(); ex.Next())
+            for (var ex = new Explorer(shape, styp); ex.More(); ex.Next())
             {
-                TopoDS_Shape sh = ex.Current();
-                if (styp == TopAbs_VERTEX)
+                Shape sh = ex.Current();
+                if (styp == ShapeType.Vertex)
                 {
-                    TopoDS_Vertex V = TopoDS.Vertex(sh);
+                    Vertex V = ShapeCasts.Vertex(sh);
                     //	B.UpdateVertex (V,preci);
-                    var TV = (BRep_TVertex)V.TShape()!;
+                    var TV = (BrepTVertex)V.TShape()!;
                     TV.Tolerance(preci);
                 }
-                else if (styp == TopAbs_EDGE)
+                else if (styp == ShapeType.Edge)
                 {
-                    TopoDS_Edge E = TopoDS.Edge(sh);
+                    Edge E = ShapeCasts.Edge(sh);
                     //	B.UpdateEdge   (E,preci);
-                    var TE = (BRep_TEdge)E.TShape()!;
+                    var TE = (BrepTEdge)E.TShape()!;
                     TE.Tolerance(preci);
                 }
-                else if (styp == TopAbs_FACE)
+                else if (styp == ShapeType.Face)
                 {
-                    TopoDS_Face F = TopoDS.Face(sh);
+                    Face F = ShapeCasts.Face(sh);
                     //	B.UpdateFace   (F,preci);
-                    var TF = (BRep_TFace)F.TShape()!;
+                    var TF = (BrepTFace)F.TShape()!;
                     TF.Tolerance(preci);
                 }
             }
         }
-        else if (styp == TopAbs_WIRE)
+        else if (styp == ShapeType.Wire)
         {
-            for (var ex = new TopExp_Explorer(shape, TopAbs_EDGE); ex.More(); ex.Next())
+            for (var ex = new Explorer(shape, ShapeType.Edge); ex.More(); ex.Next())
             {
-                TopoDS_Shape sh = ex.Current();
-                TopoDS_Edge  E  = TopoDS.Edge(sh);
+                Shape sh = ex.Current();
+                Edge  E  = ShapeCasts.Edge(sh);
                 //      B.UpdateEdge   (E,preci);
-                var TE = (BRep_TEdge)E.TShape()!;
+                var TE = (BrepTEdge)E.TShape()!;
                 TE.Tolerance(preci);
-                TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-                if (!V1.IsNull())
+                Exploration.Vertices(E, out Vertex V1, out Vertex V2);
+                if (!V1.IsNull)
                 {
                     //	B.UpdateVertex (V1,preci);
-                    var TV = (BRep_TVertex)V1.TShape()!;
+                    var TV = (BrepTVertex)V1.TShape()!;
                     TV.Tolerance(preci);
                 }
-                if (!V2.IsNull())
+                if (!V2.IsNull)
                 {
                     //	B.UpdateVertex (V2,preci);
-                    var TV = (BRep_TVertex)V2.TShape()!;
+                    var TV = (BrepTVertex)V2.TShape()!;
                     TV.Tolerance(preci);
                 }
             }
         }
         else
         {
-            SetTolerance(shape, preci, TopAbs_VERTEX);
-            SetTolerance(shape, preci, TopAbs_EDGE);
-            SetTolerance(shape, preci, TopAbs_FACE);
+            SetTolerance(shape, preci, ShapeType.Vertex);
+            SetTolerance(shape, preci, ShapeType.Edge);
+            SetTolerance(shape, preci, ShapeType.Face);
         }
     }
 
@@ -211,12 +215,12 @@ public sealed class ShapeFix_ShapeTolerance
     /// first, and the sub-shapes left unchanged are the caller's own; a shape needing no change is returned itself.
     /// <paramref name="theIsDone"/> is <c>LimitTolerance</c>'s result (true if a tolerance changed).
     /// </summary>
-    public TopoDS_Shape ToleranceLimited(in TopoDS_Shape shape, double tmin, out bool theIsDone, double tmax = 0.0,
-                                         TopAbs_ShapeEnum styp = TopAbs_SHAPE)
+    public Shape ToleranceLimited(in Shape shape, double tmin, out bool theIsDone, double tmax = 0.0,
+                                         ShapeType styp = ShapeType.Shape)
     {
-        var anEntry = new BRepTools_CopyAtEntry(shape);
+        var anEntry = new CopyAtEntry(shape);
         theIsDone = LimitTolerance(anEntry.Shape(), tmin, tmax, styp);
-        TopoDS_Shape aResult = anEntry.Finish(anEntry.Shape());
+        Shape aResult = anEntry.Finish(anEntry.Shape());
         aResult.TShape()?.FreezeGraph();
         return aResult;
     }
@@ -225,11 +229,11 @@ public sealed class ShapeFix_ShapeTolerance
     /// The shape with the tolerances set as <see cref="SetTolerance"/> does, frozen; see
     /// <see cref="ToleranceLimited"/>.
     /// </summary>
-    public TopoDS_Shape WithTolerance(in TopoDS_Shape shape, double preci, TopAbs_ShapeEnum styp = TopAbs_SHAPE)
+    public Shape WithTolerance(in Shape shape, double preci, ShapeType styp = ShapeType.Shape)
     {
-        var anEntry = new BRepTools_CopyAtEntry(shape);
+        var anEntry = new CopyAtEntry(shape);
         SetTolerance(anEntry.Shape(), preci, styp);
-        TopoDS_Shape aResult = anEntry.Finish(anEntry.Shape());
+        Shape aResult = anEntry.Finish(anEntry.Shape());
         aResult.TShape()?.FreezeGraph();
         return aResult;
     }

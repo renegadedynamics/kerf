@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -21,9 +24,9 @@ namespace Occt;
 /// </remarks>
 public sealed class ShapeAnalysis_Shell
 {
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myShells = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myBad = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myFree = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myShells = new(ShapeHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myBad = new(ShapeHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myFree = new(ShapeHasher.Instance);
     private bool myConex;
 
     /// <summary>An empty analyser.</summary>
@@ -42,22 +45,22 @@ public sealed class ShapeAnalysis_Shell
     }
 
     /// <summary>Loads the shape if it is a shell, else its shells.</summary>
-    public void LoadShells(in TopoDS_Shape shape)
+    public void LoadShells(in Shape shape)
     {
-        if (shape.IsNull())
+        if (shape.IsNull)
         {
             return;
         }
 
-        if (shape.ShapeType() == TopAbs_SHELL)
+        if (shape.ShapeType() == ShapeType.Shell)
         {
             myShells.Add(shape); // szv#4:S4163:12Mar99 i =
         }
         else
         {
-            for (var exs = new TopExp_Explorer(shape, TopAbs_SHELL); exs.More(); exs.Next())
+            for (var exs = new Explorer(shape, ShapeType.Shell); exs.More(); exs.Next())
             {
-                TopoDS_Shape sh = exs.Current();
+                Shape sh = exs.Current();
                 myShells.Add(sh); // szv#4:S4163:12Mar99 i =
             }
         }
@@ -69,15 +72,15 @@ public sealed class ShapeAnalysis_Shell
     //  On utilise pour cela une fonction auxiliaire : CheckEdges
     //    Qui alimente 2 maps auxiliaires : les edges directes et les inverses
 
-    private static bool CheckEdges(in TopoDS_Shape shape, NCollection_IndexedMap<TopoDS_Shape> bads,
-                                   NCollection_IndexedMap<TopoDS_Shape> dirs, NCollection_IndexedMap<TopoDS_Shape> revs,
-                                   NCollection_IndexedMap<TopoDS_Shape> ints)
+    private static bool CheckEdges(in Shape shape, NCollection_IndexedMap<Shape> bads,
+                                   NCollection_IndexedMap<Shape> dirs, NCollection_IndexedMap<Shape> revs,
+                                   NCollection_IndexedMap<Shape> ints)
     {
         bool res = false;
 
-        if (shape.ShapeType() != TopAbs_EDGE)
+        if (shape.ShapeType() != ShapeType.Edge)
         {
-            for (var it = new TopoDS_Iterator(shape); it.More(); it.Next())
+            for (var it = new Iterator(shape); it.More(); it.Next())
             {
                 if (CheckEdges(it.Value(), bads, dirs, revs, ints))
                 {
@@ -87,13 +90,13 @@ public sealed class ShapeAnalysis_Shell
         }
         else
         {
-            TopoDS_Edge E = TopoDS.Edge(shape);
-            if (BRep_Tool.Degenerated(E))
+            Edge E = ShapeCasts.Edge(shape);
+            if (Tool.Degenerated(E))
             {
                 return false;
             }
 
-            if (shape.Orientation() == TopAbs_FORWARD)
+            if (shape.Orientation() == Forward)
             {
                 // szv#4:S4163:12Mar99 optimized
                 if (dirs.FindIndex(shape) == 0)
@@ -106,7 +109,7 @@ public sealed class ShapeAnalysis_Shell
                     res = true;
                 }
             }
-            if (shape.Orientation() == TopAbs_REVERSED)
+            if (shape.Orientation() == Reversed)
             {
                 // szv#4:S4163:12Mar99 optimized
                 if (revs.FindIndex(shape) == 0)
@@ -119,7 +122,7 @@ public sealed class ShapeAnalysis_Shell
                     res = true;
                 }
             }
-            if (shape.Orientation() == TopAbs_INTERNAL)
+            if (shape.Orientation() == Internal)
             {
                 if (ints.FindIndex(shape) == 0)
                 {
@@ -138,21 +141,21 @@ public sealed class ShapeAnalysis_Shell
     /// orientation only) are found too, not counting the INTERNAL ones as free with
     /// <paramref name="checkinternaledges"/>.
     /// </summary>
-    public bool CheckOrientedShells(in TopoDS_Shape shape, bool alsofree = false, bool checkinternaledges = false)
+    public bool CheckOrientedShells(in Shape shape, bool alsofree = false, bool checkinternaledges = false)
     {
         myConex = false;
-        if (shape.IsNull())
+        if (shape.IsNull)
         {
             return false;
         }
         bool res = false;
 
-        var dirs = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var revs = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var ints = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        for (var exs = new TopExp_Explorer(shape, TopAbs_SHELL); exs.More(); exs.Next())
+        var dirs = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var revs = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var ints = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        for (var exs = new Explorer(shape, ShapeType.Shell); exs.More(); exs.Next())
         {
-            TopoDS_Shape sh = exs.Current();
+            Shape sh = exs.Current();
             // szv#4:S4163:12Mar99 optimized
             if (CheckEdges(sh, myBad, dirs, revs, ints))
             {
@@ -175,7 +178,7 @@ public sealed class ShapeAnalysis_Shell
         int i; // svv Jan11 2000 : porting on DEC
         for (i = 1; i <= nb; i++)
         {
-            TopoDS_Shape sh = dirs.FindKey(i);
+            Shape sh = dirs.FindKey(i);
             if (!myBad.Contains(sh))
             {
                 if (!revs.Contains(sh))
@@ -210,7 +213,7 @@ public sealed class ShapeAnalysis_Shell
         nb = revs.Extent();
         for (i = 1; i <= nb; i++)
         {
-            TopoDS_Shape sh = revs.FindKey(i);
+            Shape sh = revs.FindKey(i);
             if (!myBad.Contains(sh))
             {
                 if (!dirs.Contains(sh))
@@ -246,9 +249,9 @@ public sealed class ShapeAnalysis_Shell
     }
 
     /// <summary>True if the shape is a loaded shell.</summary>
-    public bool IsLoaded(in TopoDS_Shape shape)
+    public bool IsLoaded(in Shape shape)
     {
-        if (shape.IsNull())
+        if (shape.IsNull)
         {
             return false;
         }
@@ -259,19 +262,19 @@ public sealed class ShapeAnalysis_Shell
     public int NbLoaded() => myShells.Extent();
 
     /// <summary>The loaded shell of the given rank (from 1), as given.</summary>
-    public TopoDS_Shape Loaded(int num) => myShells.FindKey(num);
+    public Shape Loaded(int num) => myShells.FindKey(num);
 
     /// <summary>True if bad edges were found by <see cref="CheckOrientedShells"/>.</summary>
     public bool HasBadEdges() => (myBad.Extent() > 0);
 
     /// <summary>A compound of the bad edges. Frozen.</summary>
-    public TopoDS_Compound BadEdges() => Published(InternalBadEdges());
+    public Compound BadEdges() => Published(InternalBadEdges());
 
     /// <summary>A compound of the bad edges, as <see cref="BadEdges"/>, unfrozen (ported code).</summary>
-    internal TopoDS_Compound InternalBadEdges()
+    internal Compound InternalBadEdges()
     {
-        TopoDS_Compound C = new();
-        BRep_Builder B = new();
+        Compound C = new();
+        BrepBuilder B = new();
         B.MakeCompound(ref C);
         int n = myBad.Extent();
         for (int i = 1; i <= n; i++)
@@ -285,13 +288,13 @@ public sealed class ShapeAnalysis_Shell
     public bool HasFreeEdges() => (myFree.Extent() > 0);
 
     /// <summary>A compound of the free edges. Frozen.</summary>
-    public TopoDS_Compound FreeEdges() => Published(InternalFreeEdges());
+    public Compound FreeEdges() => Published(InternalFreeEdges());
 
     /// <summary>A compound of the free edges, as <see cref="FreeEdges"/>, unfrozen (ported code).</summary>
-    internal TopoDS_Compound InternalFreeEdges()
+    internal Compound InternalFreeEdges()
     {
-        TopoDS_Compound C = new();
-        BRep_Builder B = new();
+        Compound C = new();
+        BrepBuilder B = new();
         B.MakeCompound(ref C);
         int n = myFree.Extent();
         for (int i = 1; i <= n; i++)
@@ -304,7 +307,7 @@ public sealed class ShapeAnalysis_Shell
     /// <summary>True if edges shared by two faces (in opposite orientations) were found.</summary>
     public bool HasConnectedEdges() => myConex;
 
-    private static TopoDS_Compound Published(in TopoDS_Compound theShape)
+    private static Compound Published(in Compound theShape)
     {
         theShape.TShape()?.FreezeGraph();
         return theShape;

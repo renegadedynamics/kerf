@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -15,12 +17,12 @@ namespace Occt;
 public sealed class Draft_EdgeInfo
 {
     private bool myNewGeom;
-    private Geom_Curve? myGeom;
-    private TopoDS_Face myFirstF = new();
-    private TopoDS_Face mySeconF = new();
-    private Geom2d_Curve? myFirstPC;
-    private Geom2d_Curve? mySeconPC;
-    private TopoDS_Face myRootFace = new();
+    private Curve3D? myGeom;
+    private Face myFirstF = new();
+    private Face mySeconF = new();
+    private Curve2D? myFirstPC;
+    private Curve2D? mySeconPC;
+    private Face myRootFace = new();
     private bool myTgt;
     private Point3D myPt = new();
     private double myTol;
@@ -39,20 +41,20 @@ public sealed class Draft_EdgeInfo
         myTol = 0;
     }
 
-    public void Add(in TopoDS_Face F)
+    public void Add(in Face F)
     {
-        if (myFirstF.IsNull())
+        if (myFirstF.IsNull)
         {
             myFirstF = F;
         }
-        else if (!myFirstF.IsSame(F) && mySeconF.IsNull())
+        else if (!myFirstF.IsSame(F) && mySeconF.IsNull)
         {
             mySeconF = F;
         }
-        myTol = Max(myTol, BRep_Tool.Tolerance(F));
+        myTol = Max(myTol, Tool.Tolerance(F));
     }
 
-    public void RootFace(in TopoDS_Face F) => myRootFace = F;
+    public void RootFace(in Face F) => myRootFace = F;
 
     public void Tangent(in Point3D P)
     {
@@ -70,23 +72,23 @@ public sealed class Draft_EdgeInfo
 
     public void SetNewGeometry(bool NewGeom) => myNewGeom = NewGeom;
 
-    public Geom_Curve? Geometry() => myGeom;
+    public Curve3D? Geometry() => myGeom;
 
-    public TopoDS_Face FirstFace() => myFirstF;
+    public Face FirstFace() => myFirstF;
 
-    public TopoDS_Face SecondFace() => mySeconF;
+    public Face SecondFace() => mySeconF;
 
-    public Geom2d_Curve? FirstPC() => myFirstPC;
+    public Curve2D? FirstPC() => myFirstPC;
 
-    public Geom2d_Curve? SecondPC() => mySeconPC;
+    public Curve2D? SecondPC() => mySeconPC;
 
-    public ref Geom_Curve? ChangeGeometry() => ref myGeom;
+    public ref Curve3D? ChangeGeometry() => ref myGeom;
 
-    public ref Geom2d_Curve? ChangeFirstPC() => ref myFirstPC;
+    public ref Curve2D? ChangeFirstPC() => ref myFirstPC;
 
-    public ref Geom2d_Curve? ChangeSecondPC() => ref mySeconPC;
+    public ref Curve2D? ChangeSecondPC() => ref mySeconPC;
 
-    public TopoDS_Face RootFace() => myRootFace;
+    public Face RootFace() => myRootFace;
 
     public void Tolerance(double tol) => myTol = tol;
 

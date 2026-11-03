@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using System.Globalization;
 using Occt;
 
@@ -60,7 +63,7 @@ internal static class BOPTestDebugCommands
             return 1;
         }
         int aNbS = pDS.NbSourceShapes();
-        TopAbs_ShapeEnum aType = TopAbs_ShapeEnum.TopAbs_SHAPE;
+        ShapeType aType = ShapeType.Shape;
         if (n == 2)
         {
             aType = GetTypeByName(a[1]);
@@ -68,12 +71,12 @@ internal static class BOPTestDebugCommands
         for (int i = 0; i < aNbS; ++i)
         {
             BOPDS_ShapeInfo aSI = pDS.ShapeInfo(i);
-            TopoDS_Shape aS = aSI.Shape();
-            TopAbs_ShapeEnum aTypeShape = aSI.ShapeType();
+            Shape aS = aSI.Shape();
+            ShapeType aTypeShape = aSI.ShapeType();
             if (n == 1)
             {
-                if (aTypeShape is TopAbs_ShapeEnum.TopAbs_COMPOUND or TopAbs_ShapeEnum.TopAbs_COMPSOLID
-                    or TopAbs_ShapeEnum.TopAbs_SOLID or TopAbs_ShapeEnum.TopAbs_SHELL or TopAbs_ShapeEnum.TopAbs_WIRE)
+                if (aTypeShape is ShapeType.Compound or ShapeType.CompSolid
+                    or ShapeType.Solid or ShapeType.Shell or ShapeType.Wire)
                 {
                     continue;
                 }
@@ -111,8 +114,8 @@ internal static class BOPTestDebugCommands
         aIt.Prepare(aCtx, aSession.UseOBB, aSession.FuzzyValue);
         if (n == 1)
         {
-            TopAbs_ShapeEnum[] aT =
-                [TopAbs_ShapeEnum.TopAbs_VERTEX, TopAbs_ShapeEnum.TopAbs_EDGE, TopAbs_ShapeEnum.TopAbs_FACE, TopAbs_ShapeEnum.TopAbs_SOLID];
+            ShapeType[] aT =
+                [ShapeType.Vertex, ShapeType.Edge, ShapeType.Face, ShapeType.Solid];
             for (int i = 0; i < 4; ++i)
             {
                 string aST1 = GetNameByType(aT[i]);
@@ -130,8 +133,8 @@ internal static class BOPTestDebugCommands
         }
         else if (n == 3)
         {
-            TopAbs_ShapeEnum aT1 = GetTypeByName(a[1]);
-            TopAbs_ShapeEnum aT2 = GetTypeByName(a[2]);
+            ShapeType aT1 = GetTypeByName(a[1]);
+            ShapeType aT2 = GetTypeByName(a[2]);
             string aST1 = GetNameByType(aT1);
             string aST2 = GetNameByType(aT2);
             aIt.Initialize(aT1, aT2);
@@ -157,11 +160,11 @@ internal static class BOPTestDebugCommands
             di.Append(" prepare PaveFiller first\n");
             return 1;
         }
-        TopAbs_ShapeEnum aT1 = GetTypeByName(a[1]);
-        TopAbs_ShapeEnum aT2 = GetTypeByName(a[2]);
-        bool Is(TopAbs_ShapeEnum theA, TopAbs_ShapeEnum theB) => (aT1 == theA && aT2 == theB) || (aT2 == theA && aT1 == theB);
-        const TopAbs_ShapeEnum V = TopAbs_ShapeEnum.TopAbs_VERTEX, E = TopAbs_ShapeEnum.TopAbs_EDGE,
-                               F = TopAbs_ShapeEnum.TopAbs_FACE, S = TopAbs_ShapeEnum.TopAbs_SOLID;
+        ShapeType aT1 = GetTypeByName(a[1]);
+        ShapeType aT2 = GetTypeByName(a[2]);
+        bool Is(ShapeType theA, ShapeType theB) => (aT1 == theA && aT2 == theB) || (aT2 == theA && aT1 == theB);
+        const ShapeType V = ShapeType.Vertex, E = ShapeType.Edge,
+                               F = ShapeType.Face, S = ShapeType.Solid;
         if (aT1 == V && aT2 == V)
         {
             di.Append("V/V: ");
@@ -250,7 +253,7 @@ internal static class BOPTestDebugCommands
         }
         di.Append("the shape is new\n");
         BOPDS_ShapeInfo aSI = pDS.ShapeInfo(ind);
-        if (aSI.ShapeType() != TopAbs_ShapeEnum.TopAbs_VERTEX)
+        if (aSI.ShapeType() != ShapeType.Vertex)
         {
             return 0;
         }
@@ -328,8 +331,8 @@ internal static class BOPTestDebugCommands
             di.Append(" prepare PaveFiller first\n");
             return 1;
         }
-        TopAbs_ShapeEnum aType = GetTypeByName(a[1]);
-        if (aType != TopAbs_ShapeEnum.TopAbs_VERTEX && aType != TopAbs_ShapeEnum.TopAbs_EDGE && aType != TopAbs_ShapeEnum.TopAbs_FACE)
+        ShapeType aType = GetTypeByName(a[1]);
+        if (aType != ShapeType.Vertex && aType != ShapeType.Edge && aType != ShapeType.Face)
         {
             di.Append("Use: bopnews v/e/f\n");
             return 1;
@@ -371,8 +374,8 @@ internal static class BOPTestDebugCommands
             di.Append(" prepare PaveFiller first\n");
             return 1;
         }
-        TopoDS_Shape aS = theDI.GetShape(a[1]);
-        if (aS.IsNull())
+        Shape aS = theDI.GetShape(a[1]);
+        if (aS.IsNull)
         {
             di.Append(a[1]).Append(" is a null shape\n");
             return 1;
@@ -554,7 +557,7 @@ internal static class BOPTestDebugCommands
         for (int ind = i1; ind < i2; ++ind)
         {
             BOPDS_ShapeInfo aSI = pDS.ShapeInfo(ind);
-            if (aSI.ShapeType() != TopAbs_ShapeEnum.TopAbs_EDGE)
+            if (aSI.ShapeType() != ShapeType.Edge)
             {
                 continue;
             }
@@ -673,7 +676,7 @@ internal static class BOPTestDebugCommands
             di.Append(" DS does not contain the shape\n");
             return 1;
         }
-        if (pDS.ShapeInfo(nF).ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE)
+        if (pDS.ShapeInfo(nF).ShapeType() != ShapeType.Face)
         {
             di.Append(" The shape is not a face\n");
             return 1;
@@ -743,7 +746,7 @@ internal static class BOPTestDebugCommands
             di.Append("DS does not contain the shape\n");
             return 1;
         }
-        if (pDS.ShapeInfo(nF).ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE)
+        if (pDS.ShapeInfo(nF).ShapeType() != ShapeType.Face)
         {
             di.Append(" The shape is not a face\n");
             return 1;
@@ -782,23 +785,23 @@ internal static class BOPTestDebugCommands
             di.Append(" prepare PaveFiller first\n");
             return 1;
         }
-        TopoDS_Shape aS = theDI.GetShape(a[1]);
-        if (aS.IsNull())
+        Shape aS = theDI.GetShape(a[1]);
+        if (aS.IsNull)
         {
             di.Append(a[1]).Append(" is a null shape\n");
             return 1;
         }
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anImages = aSession.Builder().Images();
+        NCollection_DataMap<Shape, NCollection_List<Shape>> anImages = aSession.Builder().Images();
         if (!anImages.IsBound(aS))
         {
             di.Append(" no images found\n");
             return 0;
         }
-        BRep_Builder aBB = new();
-        TopoDS_Compound aC = new();
+        BrepBuilder aBB = new();
+        Compound aC = new();
         aBB.MakeCompound(ref aC);
         int i = 0;
-        foreach (TopoDS_Shape aSIm in anImages.Find(aS))
+        foreach (Shape aSIm in anImages.Find(aS))
         {
             aBB.Add(aC, aSIm);
             ++i;
@@ -823,31 +826,31 @@ internal static class BOPTestDebugCommands
             di.Append(" prepare PaveFiller first\n");
             return 1;
         }
-        TopoDS_Shape aS = theDI.GetShape(a[1]);
-        if (aS.IsNull())
+        Shape aS = theDI.GetShape(a[1]);
+        if (aS.IsNull)
         {
             di.Append(a[1]).Append(" is a null shape\n");
             return 0;
         }
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMI = aSession.Builder().Origins();
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aDMI = aSession.Builder().Origins();
         if (!aDMI.IsBound(aS))
         {
             di.Append(" no origins found\n");
             return 0;
         }
         string buf = a[1] + "_or";
-        NCollection_List<TopoDS_Shape> aLSx = aDMI.Find(aS);
+        NCollection_List<Shape> aLSx = aDMI.Find(aS);
         if (aLSx.Extent() == 1)
         {
             theDI.SetShape(buf, aLSx.First());
             di.Append("1 origin found\n").Append(buf).Append("\n");
             return 0;
         }
-        TopoDS_Compound aCOr = new();
-        new BRep_Builder().MakeCompound(ref aCOr);
-        foreach (TopoDS_Shape aSx in aLSx)
+        Compound aCOr = new();
+        new BrepBuilder().MakeCompound(ref aCOr);
+        foreach (Shape aSx in aLSx)
         {
-            new BRep_Builder().Add(aCOr, aSx);
+            new BrepBuilder().Add(aCOr, aSx);
         }
         theDI.SetShape(buf, aCOr);
         di.Append(aLSx.Extent()).Append(" origins found\n");
@@ -868,23 +871,23 @@ internal static class BOPTestDebugCommands
             di.Append(" prepare PaveFiller first\n");
             return 1;
         }
-        TopoDS_Shape aS = theDI.GetShape(a[1]);
-        if (aS.IsNull())
+        Shape aS = theDI.GetShape(a[1]);
+        if (aS.IsNull)
         {
             di.Append(a[1]).Append(" is a null shape\n");
             return 1;
         }
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aDMSD = aSession.Builder().ShapesSD();
+        NCollection_DataMap<Shape, Shape> aDMSD = aSession.Builder().ShapesSD();
         if (!aDMSD.IsBound(aS))
         {
             di.Append(" shape has no sd shape\n");
             return 0;
         }
-        BRep_Builder aBB = new();
-        TopoDS_Compound aC = new();
+        BrepBuilder aBB = new();
+        Compound aC = new();
         aBB.MakeCompound(ref aC);
         int i = 0;
-        foreach ((TopoDS_Shape aSK, TopoDS_Shape aSV) in aDMSD)
+        foreach ((Shape aSK, Shape aSV) in aDMSD)
         {
             // OCCT adds the face itself, not its SD face
             if (aSK.IsEqual(aS))
@@ -918,30 +921,30 @@ internal static class BOPTestDebugCommands
             di.Append("Build faces from surface and set of shared edges. Use: bopbface fr cx\n");
             return 1;
         }
-        TopoDS_Shape aS = theDI.GetShape(a[2]);
-        if (aS.IsNull())
+        Shape aS = theDI.GetShape(a[2]);
+        if (aS.IsNull)
         {
             di.Append(a[1]).Append(" is a null shape\n");
             return 1;
         }
-        TopoDS_Face aF = new();
-        NCollection_List<TopoDS_Shape> aLE = new();
+        Face aF = new();
+        NCollection_List<Shape> aLE = new();
         int i = 0;
-        for (TopoDS_Iterator aItS = new(aS); aItS.More(); aItS.Next(), ++i)
+        for (Iterator aItS = new(aS); aItS.More(); aItS.Next(), ++i)
         {
-            TopoDS_Shape aSx = aItS.Value();
+            Shape aSx = aItS.Value();
             if (i == 0)
             {
-                if (aSx.ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE)
+                if (aSx.ShapeType() != ShapeType.Face)
                 {
                     di.Append(" shape ").Append(i).Append(" is not a face\n");
                     return 1;
                 }
-                aF = TopoDS.Face(aSx);
+                aF = ShapeCasts.Face(aSx);
             }
             else
             {
-                if (aSx.ShapeType() != TopAbs_ShapeEnum.TopAbs_EDGE)
+                if (aSx.ShapeType() != ShapeType.Edge)
                 {
                     di.Append(" shape ").Append(i).Append(" is not an edge\n");
                     return 1;
@@ -958,9 +961,9 @@ internal static class BOPTestDebugCommands
         {
             return 0;
         }
-        NCollection_List<TopoDS_Shape> aLFR = aBF.Areas();
+        NCollection_List<Shape> aLFR = aBF.Areas();
         i = 1;
-        foreach (TopoDS_Shape aFR in aLFR)
+        foreach (Shape aFR in aLFR)
         {
             string buf = $"{a[1]}_{i++}";
             theDI.SetShape(buf, aFR);
@@ -985,14 +988,14 @@ internal static class BOPTestDebugCommands
             di.Append("Build solids from set of shared faces. Use: bopbsolid sr cx\n");
             return 1;
         }
-        TopoDS_Shape aS = theDI.GetShape(a[2]);
-        if (aS.IsNull())
+        Shape aS = theDI.GetShape(a[2]);
+        if (aS.IsNull)
         {
             di.Append(a[1]).Append(" is a null shape\n");
             return 1;
         }
-        NCollection_List<TopoDS_Shape> aLF = new();
-        for (TopExp_Explorer aExp = new(aS, TopAbs_ShapeEnum.TopAbs_FACE); aExp.More(); aExp.Next())
+        NCollection_List<Shape> aLF = new();
+        for (Explorer aExp = new(aS, ShapeType.Face); aExp.More(); aExp.Next())
         {
             aLF.Append(aExp.Current());
         }
@@ -1009,9 +1012,9 @@ internal static class BOPTestDebugCommands
         {
             return 0;
         }
-        NCollection_List<TopoDS_Shape> aLSR = aBS.Areas();
+        NCollection_List<Shape> aLSR = aBS.Areas();
         int i = 1;
-        foreach (TopoDS_Shape aSR in aLSR)
+        foreach (Shape aSR in aLSR)
         {
             string buf = $"{a[1]}_{i++}";
             theDI.SetShape(buf, aSR);
@@ -1029,29 +1032,29 @@ internal static class BOPTestDebugCommands
         return 0;
     }
 
-    private static TopAbs_ShapeEnum GetTypeByName(string theName) => theName switch
+    private static ShapeType GetTypeByName(string theName) => theName switch
     {
-        "v" or "V" => TopAbs_ShapeEnum.TopAbs_VERTEX,
-        "e" or "E" => TopAbs_ShapeEnum.TopAbs_EDGE,
-        "w" or "W" => TopAbs_ShapeEnum.TopAbs_WIRE,
-        "f" or "F" => TopAbs_ShapeEnum.TopAbs_FACE,
-        "sh" or "Sh" or "SH" => TopAbs_ShapeEnum.TopAbs_SHELL,
-        "s" or "S" => TopAbs_ShapeEnum.TopAbs_SOLID,
-        "cs" or "Cs" or "CS" => TopAbs_ShapeEnum.TopAbs_COMPSOLID,
-        "c" or "C" => TopAbs_ShapeEnum.TopAbs_COMPOUND,
-        _ => TopAbs_ShapeEnum.TopAbs_SHAPE,
+        "v" or "V" => ShapeType.Vertex,
+        "e" or "E" => ShapeType.Edge,
+        "w" or "W" => ShapeType.Wire,
+        "f" or "F" => ShapeType.Face,
+        "sh" or "Sh" or "SH" => ShapeType.Shell,
+        "s" or "S" => ShapeType.Solid,
+        "cs" or "Cs" or "CS" => ShapeType.CompSolid,
+        "c" or "C" => ShapeType.Compound,
+        _ => ShapeType.Shape,
     };
 
-    private static string GetNameByType(TopAbs_ShapeEnum theType) => theType switch
+    private static string GetNameByType(ShapeType theType) => theType switch
     {
-        TopAbs_ShapeEnum.TopAbs_VERTEX => "V",
-        TopAbs_ShapeEnum.TopAbs_EDGE => "E",
-        TopAbs_ShapeEnum.TopAbs_WIRE => "w",
-        TopAbs_ShapeEnum.TopAbs_FACE => "F",
-        TopAbs_ShapeEnum.TopAbs_SHELL => "Sh",
-        TopAbs_ShapeEnum.TopAbs_SOLID => "S",
-        TopAbs_ShapeEnum.TopAbs_COMPSOLID => "Cs",
-        TopAbs_ShapeEnum.TopAbs_COMPOUND => "c",
+        ShapeType.Vertex => "V",
+        ShapeType.Edge => "E",
+        ShapeType.Wire => "w",
+        ShapeType.Face => "F",
+        ShapeType.Shell => "Sh",
+        ShapeType.Solid => "S",
+        ShapeType.CompSolid => "Cs",
+        ShapeType.Compound => "c",
         _ => "Shape",
     };
 

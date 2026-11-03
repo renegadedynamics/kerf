@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
@@ -19,8 +21,8 @@ public class Geom2dGcc_Circ2dTanOnRadTests
     {
         Circle2D                c1  = new(new Axis2D(new Point2D(1, 2), DX), 3);
         Line2D                 lon = new(new Point2D(-5, 0), new Direction2D(1, 0.2));
-        Geom2dGcc_Circ2dTanOnRad aCirc = new(Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(new Geom2d_Circle(c1))),
-                                             new Geom2dAdaptor_Curve(new Geom2d_Line(lon)), 1.5, 1e-9);
+        Geom2dGcc_Circ2dTanOnRad aCirc = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c1))),
+                                             new CurveAdaptor2D(new LineCurve2D(lon)), 1.5, 1e-9);
         GccAna_Circ2dTanOnRad    anAna = new(GccEnt.Unqualified(c1), lon, 1.5, 1e-9);
         Assert.True(aCirc.IsDone());
         Assert.Equal(anAna.NbSolutions(), aCirc.NbSolutions());
@@ -46,8 +48,8 @@ public class Geom2dGcc_Circ2dTanOnRadTests
         // A circle and an ellipse to centre on: Geo's qualified-circle constructor (through
         // Geom2dInt_TheIntConicCurveOfGInter)
         Circle2D                c1    = new(new Axis2D(new Point2D(1, 0.5), DX), 1);
-        Geom2dAdaptor_Curve      anEll = new(new Geom2d_Ellipse(new Axis2D(new Point2D(0, 0), DX), 3, 1));
-        Geom2dGcc_Circ2dTanOnRad aCirc = new(Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(new Geom2d_Circle(c1))), anEll,
+        CurveAdaptor2D      anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
+        Geom2dGcc_Circ2dTanOnRad aCirc = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c1))), anEll,
                                              0.4, 1e-9);
         Assert.True(aCirc.IsDone());
         Assert.True(aCirc.NbSolutions() > 0);
@@ -72,9 +74,9 @@ public class Geom2dGcc_Circ2dTanOnRadTests
         // OCCT: for a free-form argument, Geo's constructor wraps the curve to centre on in an Adaptor2d_OffsetCurve
         // made without an offset, whose parameter range is [0, 0], so it intersects the argument's offsets with a
         // single point of that curve: done, but no solution here.
-        Geom2dAdaptor_Curve      anEll = new(new Geom2d_Ellipse(new Axis2D(new Point2D(0, 0), DX), 3, 1));
+        CurveAdaptor2D      anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
         Line2D                 lon   = new(new Point2D(0, 0), new Direction2D(1, 0.3));
-        Geom2dGcc_Circ2dTanOnRad aCirc = new(Geom2dGcc.Unqualified(anEll), new Geom2dAdaptor_Curve(new Geom2d_Line(lon)),
+        Geom2dGcc_Circ2dTanOnRad aCirc = new(Geom2dGcc.Unqualified(anEll), new CurveAdaptor2D(new LineCurve2D(lon)),
                                              0.2, 1e-9);
         Assert.True(aCirc.IsDone());
         Assert.Equal(0, aCirc.NbSolutions());
@@ -94,10 +96,10 @@ public class Geom2dGcc_Circ2dTanOnRadTests
         NCollection_Array1<int> aMults = new(1, 2);
         aMults[1] = 4;
         aMults[2] = 4;
-        Geom2dAdaptor_Curve aBS = new(new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 3));
+        CurveAdaptor2D aBS = new(new BSplineCurve2D(aPoles, aKnots, aMults, 3));
         Point2D            aP  = new(0, 0.5);
 
-        Geom2dGcc_Circ2dTanOnRad aCirc = new(new Geom2d_CartesianPoint(aP), aBS, 1.0, 1e-9);
+        Geom2dGcc_Circ2dTanOnRad aCirc = new(new CartesianPoint2(aP), aBS, 1.0, 1e-9);
         Assert.True(aCirc.IsDone());
         Assert.True(aCirc.NbSolutions() > 0);
         for (int i = 1; i <= aCirc.NbSolutions(); i++)
@@ -114,8 +116,8 @@ public class Geom2dGcc_Circ2dTanOnRadTests
     [Fact]
     public void Accessors_ThrowAsOCCT()
     {
-        Geom2dAdaptor_Curve anEll = new(new Geom2d_Ellipse(new Axis2D(new Point2D(0, 0), DX), 3, 1));
-        Geom2dAdaptor_Curve aLine = new(new Geom2d_Line(new Point2D(0, -2), new Direction2D(1, 0.3)));
+        CurveAdaptor2D anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
+        CurveAdaptor2D aLine = new(new LineCurve2D(new Point2D(0, -2), new Direction2D(1, 0.3)));
         Assert.Throws<NegativeValueException>(() => new Geom2dGcc_Circ2dTanOnRad(Geom2dGcc.Unqualified(anEll), aLine, -1, 1e-9));
         Assert.Throws<GccEnt_BadQualifier>(
             () => new Geom2dGcc_Circ2dTanOnRad(new Geom2dGcc_QualifiedCurve(anEll, GccEnt_noqualifier), aLine, 1, 1e-9));

@@ -8,6 +8,7 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -30,12 +31,12 @@ public partial struct Contap_Point : IEquatable<Contap_Point>
     private double vparam;
     private double paraline;
     private bool onarc;
-    private Adaptor2d_Curve2d? arc;
+    private Curve2DAdaptorBase? arc;
     private IntSurf_Transition traline;
     private IntSurf_Transition traarc;
     private double prmarc;
     private bool isvtx;
-    private Adaptor3d_HVertex? vtx;
+    private HVertex? vtx;
     private bool ismult;
     private bool myInternal;
 
@@ -87,14 +88,14 @@ public partial struct Contap_Point : IEquatable<Contap_Point>
     }
 
     /// <summary>Makes the point a vertex of the domain.</summary>
-    internal void SetVertex(Adaptor3d_HVertex V)
+    internal void SetVertex(HVertex V)
     {
         isvtx = true;
         vtx = V;
     }
 
     /// <summary>Sets the arc, the parameter on it and the transitions of the line and the arc.</summary>
-    internal void SetArc(Adaptor2d_Curve2d A, double Param, in IntSurf_Transition TLine, in IntSurf_Transition TArc)
+    internal void SetArc(Curve2DAdaptorBase A, double Param, in IntSurf_Transition TLine, in IntSurf_Transition TArc)
     {
         onarc = true;
         arc = A;
@@ -132,7 +133,7 @@ public partial struct Contap_Point : IEquatable<Contap_Point>
     public readonly bool IsOnArc() => onarc;
 
     /// <summary>The arc of restriction; throws Standard_DomainError if the point is on none.</summary>
-    public readonly Adaptor2d_Curve2d Arc()
+    public readonly Curve2DAdaptorBase Arc()
     {
         if (!onarc)
         {
@@ -175,7 +176,7 @@ public partial struct Contap_Point : IEquatable<Contap_Point>
     public readonly bool IsVertex() => isvtx;
 
     /// <summary>The vertex; throws Standard_DomainError if the point is not one.</summary>
-    public readonly Adaptor3d_HVertex Vertex()
+    public readonly HVertex Vertex()
     {
         if (!isvtx)
         {

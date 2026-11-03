@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static OcctNet.ModelingAlgorithms.Tests.LocationLawTestSupport;
 
@@ -8,10 +9,10 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 
 public class GeomFill_DraftTrihedronTests
 {
-    private static GeomFill_DraftTrihedron Draft(Geom_Curve theCurve, double theAngle = 0.2)
+    private static GeomFill_DraftTrihedron Draft(Curve3D theCurve, double theAngle = 0.2)
     {
         var aLaw = new GeomFill_DraftTrihedron(new Vector3D(0, 0, 2), theAngle);
-        aLaw.SetCurve(new GeomAdaptor_Curve(theCurve));
+        aLaw.SetCurve(new CurveAdaptor(theCurve));
         return aLaw;
     }
 
@@ -74,7 +75,7 @@ public class GeomFill_DraftTrihedronTests
     public void D0_TangentAlongTheDraftDirection_ReturnsFalse()
     {
         var aLaw = new GeomFill_DraftTrihedron(new Vector3D(0, 0, 1), 0.1);
-        aLaw.SetCurve(new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 1));
+        aLaw.SetCurve(new CurveAdaptor(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 1));
         Vector3D T = new(), N = new(), B = new();
         Assert.False(aLaw.D0(0.5, ref T, ref N, ref B));
     }
@@ -96,7 +97,7 @@ public class GeomFill_DraftTrihedronTests
         aMults[1] = 4;
         aMults[2] = 2;
         aMults[3] = 4;
-        GeomFill_DraftTrihedron aLaw = Draft(new Geom_BSplineCurve(aPoles, aKnots, aMults, 3));
+        GeomFill_DraftTrihedron aLaw = Draft(new BSplineCurve3D(aPoles, aKnots, aMults, 3));
         Assert.Equal(2, aLaw.NbIntervals(Continuity.C0));
         var T = new NCollection_Array1<double>(1, 3);
         aLaw.Intervals(T, Continuity.C0);
@@ -108,16 +109,16 @@ public class GeomFill_DraftTrihedronTests
     [Fact]
     public void IsConstant_IsOnlyBy3dCurve()
     {
-        GeomFill_DraftTrihedron aLine = Draft(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)));
+        GeomFill_DraftTrihedron aLine = Draft(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)));
         Assert.True(aLine.IsConstant());
         Assert.False(aLine.IsOnlyBy3dCurve());
 
-        GeomFill_DraftTrihedron aCircle = Draft(new Geom_Circle(Constants.XOY(), 3));
+        GeomFill_DraftTrihedron aCircle = Draft(new CircleCurve3D(Constants.XOY(), 3));
         Assert.False(aCircle.IsConstant());
         Assert.True(aCircle.IsOnlyBy3dCurve()); // the circle's axis is the draft direction
 
         var aTilted = new GeomFill_DraftTrihedron(new Vector3D(0, 1, 1), 0.2);
-        aTilted.SetCurve(new GeomAdaptor_Curve(new Geom_Circle(Constants.XOY(), 3)));
+        aTilted.SetCurve(new CurveAdaptor(new CircleCurve3D(Constants.XOY(), 3)));
         Assert.False(aTilted.IsOnlyBy3dCurve());
     }
 

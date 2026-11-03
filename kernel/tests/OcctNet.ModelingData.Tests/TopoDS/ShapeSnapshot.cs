@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Geometry;
 using Kerf.Topology;
 using System.Globalization;
 using System.Text;
@@ -24,60 +27,60 @@ internal sealed class ShapeSnapshot
         myObjects = theObjects;
     }
 
-    public static ShapeSnapshot Of(in TopoDS_Shape theShape)
+    public static ShapeSnapshot Of(in Shape theShape)
     {
         var aText = new StringBuilder();
         var anObjects = new List<object?>();
-        var anIndex = new Dictionary<TopoDS_TShape, int>(ReferenceEqualityComparer.Instance);
+        var anIndex = new Dictionary<TShape, int>(ReferenceEqualityComparer.Instance);
         aText.Append(CultureInfo.InvariantCulture, $"root {Ref(theShape, anIndex, anObjects)}\n");
-        var aQueue = new Queue<TopoDS_TShape>();
-        if (!theShape.IsNull())
+        var aQueue = new Queue<TShape>();
+        if (!theShape.IsNull)
         {
             aQueue.Enqueue(theShape.TShape()!);
         }
 
-        var aDone = new HashSet<TopoDS_TShape>(ReferenceEqualityComparer.Instance);
+        var aDone = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
         while (aQueue.Count > 0)
         {
-            TopoDS_TShape aT = aQueue.Dequeue();
+            TShape aT = aQueue.Dequeue();
             if (!aDone.Add(aT))
             {
                 continue;
             }
 
             aText.Append(CultureInfo.InvariantCulture,
-                         $"T{anIndex[aT]} {aT.ShapeType()} free={aT.Free()} locked={aT.LockedFlag()} mod={aT.Modified()} chk={aT.Checked()} "
+                         $"T{anIndex[aT]} {Kerf.Engine.Foundation.OcctTypeNames.Of(aT.ShapeType())} free={aT.Free()} locked={aT.LockedFlag()} mod={aT.Modified()} chk={aT.Checked()} "
                          + $"ori={aT.Orientable()} closed={aT.Closed()} inf={aT.Infinite()} cvx={aT.Convex()} frozen={aT.IsFrozen}\n");
-            for (var anIt = new TopoDS_Iterator(new TopoDS_Shape(aT, new Placement(), TopAbs_Orientation.TopAbs_FORWARD), false, false);
+            for (var anIt = new Iterator(new Shape(aT, new Placement(), Orientation.Forward), false, false);
                  anIt.More(); anIt.Next())
             {
-                TopoDS_Shape aChild = anIt.Value();
+                Shape aChild = anIt.Value();
                 aText.Append(CultureInfo.InvariantCulture, $"  child {Ref(aChild, anIndex, anObjects)}\n");
                 aQueue.Enqueue(aChild.TShape()!);
             }
 
             switch (aT)
             {
-                case BRep_TVertex aV:
+                case BrepTVertex aV:
                     aText.Append(CultureInfo.InvariantCulture, $"  pnt {aV.Pnt()} tol {aV.Tolerance():R}\n");
-                    foreach (BRep_PointRepresentation aPR in aV.PointRepresentations())
+                    foreach (PointRepresentation aPR in aV.PointRepresentations())
                     {
                         anObjects.Add(aPR);
                         aText.Append(CultureInfo.InvariantCulture, $"  prep {Kerf.Engine.Foundation.OcctTypeNames.Of(aPR.GetType())} {aPR.Parameter():R} {Loc(aPR.Location())}\n");
                     }
 
                     break;
-                case BRep_TEdge anE:
+                case BrepTEdge anE:
                     aText.Append(CultureInfo.InvariantCulture,
                                  $"  tol {anE.Tolerance():R} sp={anE.SameParameter()} sr={anE.SameRange()} deg={anE.Degenerated()}\n");
-                    foreach (BRep_CurveRepresentation aCR in anE.CurveRepresentations())
+                    foreach (CurveRepresentation aCR in anE.CurveRepresentations())
                     {
                         anObjects.Add(aCR);
                         aText.Append(CultureInfo.InvariantCulture, $"  crep {Kerf.Engine.Foundation.OcctTypeNames.Of(aCR.GetType())} {Loc(aCR.Location())} frozen={aCR.IsFrozen}");
-                        if (aCR is BRep_GCurve aGC)
+                        if (aCR is GCurve aGC)
                         {
                             aText.Append(CultureInfo.InvariantCulture, $" [{aGC.First():R}, {aGC.Last():R}]");
-                            anObjects.Add(aGC.IsCurve3D() ? aGC.Curve3D() : null);
+                            anObjects.Add(aGC.IsCurve3D ? aGC.Curve3D() : null);
                             anObjects.Add(aGC.IsCurveOnSurface() ? aGC.PCurve() : null);
                             anObjects.Add(aGC.IsCurveOnSurface() ? aGC.Surface() : null);
                         }
@@ -86,9 +89,9 @@ internal sealed class ShapeSnapshot
                     }
 
                     break;
-                case BRep_TFace aF:
+                case BrepTFace aF:
                     aText.Append(CultureInfo.InvariantCulture,
-                                 $"  tol {aF.Tolerance():R} nat={aF.NaturalRestriction()} {Loc(aF.Location())} ntri={aF.NbTriangulations()}\n");
+                                 $"  tol {aF.Tolerance():R} nat={aF.NaturalRestriction()} {Loc(aF.Location())} ntri={aF.TriangulationCount}\n");
                     anObjects.Add(aF.Surface());
                     anObjects.Add(aF.ActiveTriangulation());
                     foreach (Triangulation aTri in aF.TriangulationList())
@@ -103,14 +106,14 @@ internal sealed class ShapeSnapshot
         return new ShapeSnapshot(aText.ToString(), anObjects);
     }
 
-    private static string Ref(in TopoDS_Shape theShape, Dictionary<TopoDS_TShape, int> theIndex, List<object?> theObjects)
+    private static string Ref(in Shape theShape, Dictionary<TShape, int> theIndex, List<object?> theObjects)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return "null";
         }
 
-        TopoDS_TShape aT = theShape.TShape()!;
+        TShape aT = theShape.TShape()!;
         if (!theIndex.TryGetValue(aT, out int anIndex))
         {
             anIndex = theIndex.Count;
@@ -131,7 +134,7 @@ internal sealed class ShapeSnapshot
     public void AssertSameValues(ShapeSnapshot theOther)
     {
         static string WithoutFrozen(string theText) => System.Text.RegularExpressions.Regex.Replace(theText, @" frozen=\w+", "");
-        static bool IsGeometry(object? theObject) => theObject is null or Geom_Geometry or Geom2d_Geometry or Triangulation
+        static bool IsGeometry(object? theObject) => theObject is null or Geometry3D or Geometry2D or Triangulation
                                                          or Polygon3D or Polygon2D or PolygonOnTriangulation;
         Assert.Equal(WithoutFrozen(myText), WithoutFrozen(theOther.myText));
         List<object?> aMine = myObjects.Where(IsGeometry).ToList();
@@ -144,7 +147,7 @@ internal sealed class ShapeSnapshot
     }
 
     /// <summary>Asserts that the shape graph is as recorded.</summary>
-    public void AssertUnchanged(in TopoDS_Shape theShape)
+    public void AssertUnchanged(in Shape theShape)
     {
         ShapeSnapshot aNow = Of(theShape);
         Assert.Equal(myText, aNow.myText);

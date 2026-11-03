@@ -24,6 +24,8 @@
 // test_wire is SingleWire (the C# name of wire(); a method can't be named after the Wire type it uses).
 // test_zero_offset_returns_a_copy doesn't check identity: shapes are immutable, so returning the same face is fine.
 // test_is_convex_concave's BuildPart is the offset and fillet operations in algebra form.
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Occt;
 using Ops = Build123d.Operations;
@@ -526,7 +528,7 @@ public class FaceTests
 
         // a face across both seams of a torus: periodic parameters land in the face's own range, in u and in v
         var ax3 = new CoordinateSystem();
-        var toroidal = new Geom_ToroidalSurface(ax3, 10, 2);
+        var toroidal = new ToroidalSurface(ax3, 10, 2);
         var maker = new BRepBuilderAPI_MakeFace(toroidal, -Math.PI / 2, Math.PI / 2, -Math.PI / 3, Math.PI / 3, 1e-6);
         var across = new Face(maker.Face());
         foreach (var (u, v) in new[] { (0.1, 0.1), (0.9, 0.9), (0.1, 0.9) })
@@ -905,8 +907,8 @@ public class FaceTests
         var origin = new Point3D(0, 0, 0);
         var up = new Direction3D(0, 0, 1);
         var ax3 = new CoordinateSystem(origin, up);
-        var cylSurf = new Geom_CylindricalSurface(ax3, 2.0);
-        var trimSurf = new Geom_RectangularTrimmedSurface(cylSurf, 0.0, 1.0, 0.5, 1.5);
+        var cylSurf = new CylindricalSurface(ax3, 2.0);
+        var trimSurf = new TrimmedSurface(cylSurf, 0.0, 1.0, 0.5, 1.5);
         var trimMaker = new BRepBuilderAPI_MakeFace(trimSurf, 1e-6);
         var trimFace = new Face(trimMaker.Face());
         Check.AlmostEqual((0, 0, 1), trimFace.AxisOfRotation!.Value.Direction, 5);
@@ -914,7 +916,7 @@ public class FaceTests
         Check.AlmostEqual(2.0, trimFace.Radius!.Value, 5);
 
         // Geom_OffsetSurface
-        var cylOffSurf = new Geom_OffsetSurface(cylSurf, 0.5);
+        var cylOffSurf = new OffsetSurface(cylSurf, 0.5);
         var offMaker = new BRepBuilderAPI_MakeFace(cylOffSurf, 1e-6);
         var offFace = new Face(offMaker.Face());
         Check.AlmostEqual((0, 0, 1), offFace.AxisOfRotation!.Value.Direction, 5);
@@ -1140,8 +1142,8 @@ public class FacePropertiesTests
     {
         // A cone that arrived as a trimmed surface is still a cone
         var lateral = Obj.Cone(5, 0, 5).Faces().FilterBy(GeomType.Cone)[0];
-        var surface = BRep_Tool.Surface(TopoDS.Face(lateral.Wrapped));
-        var trimmed = new Geom_RectangularTrimmedSurface(surface!, 0.0, 1.0, 0.0, 2.0);
+        var surface = Tool.Surface(ShapeCasts.Face(lateral.Wrapped));
+        var trimmed = new TrimmedSurface(surface!, 0.0, 1.0, 0.0, 2.0);
         var maker = new BRepBuilderAPI_MakeFace(trimmed, 1e-6);
         var face = new Face(maker.Face());
         Assert.Equal(GeomType.Cone, face.GeomType);

@@ -15,16 +15,16 @@ public class GeomAPI_IntSS_Test
 {
     //! OCC26675: BSplineSurface intersect SurfaceOfLinearExtrusion. The surface data is generated inline to avoid
     //! file I/O (saving/loading would suppress the bug).
-    private static void MakeOCC26675Surfaces(out Geom_Surface aS1, out Geom_Surface aS2)
+    private static void MakeOCC26675Surfaces(out Surface aS1, out Surface aS2)
     {
         Point3D aCircCenter = new(-112.93397037070100000000, +177.52792379072199000000, +10.63374076104853900000);
         Direction3D aCircN = new(+0.00000000000000000000, +1.00000000000000000000, +0.00000000000000000000);
         Direction3D aCircX = new(+0.00000000000000000000, -0.00000000000000000000, +1.00000000000000000000);
         Direction3D anExtrDir = new(-500.00000000000000000000, -866.02540378443609000000, +0.00000000000000000000);
         Frame3D aCircAxes = new(aCircCenter, aCircN, aCircX);
-        Geom_Curve aCurv = new Geom_Circle(aCircAxes, +50.00000000000000000000);
+        Curve3D aCurv = new CircleCurve3D(aCircAxes, +50.00000000000000000000);
 
-        aS2 = new Geom_SurfaceOfLinearExtrusion(aCurv, anExtrDir);
+        aS2 = new ExtrusionSurface(aCurv, anExtrDir);
 
         NCollection_Array2<Point3D> aPoles = new(1, 7, 1, 81);
         NCollection_Array2<double> aWeights = new(1, 7, 1, 81);
@@ -70,14 +70,14 @@ public class GeomAPI_IntSS_Test
                                       OCC26675_PolesAndWeights[k, 5]);
         }
 
-        aS1 = new Geom_BSplineSurface(aPoles, aWeights, aUKnots, aVKnots, aUMult, aVMult, aUDegree, aVDegree);
+        aS1 = new BSplineSurface(aPoles, aWeights, aUKnots, aVKnots, aUMult, aVMult, aUDegree, aVDegree);
     }
 
     //! Verifies that GeomAPI_IntSS finds exactly one intersection curve.
     [Fact]
     public void OCC26675_IntersectionCurveCount()
     {
-        MakeOCC26675Surfaces(out Geom_Surface aS1, out Geom_Surface aS2);
+        MakeOCC26675Surfaces(out Surface aS1, out Surface aS2);
 
         GeomAPI_IntSS anIntersection = new(aS1, aS2, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(anIntersection.IsDone(), "Intersection failed");
@@ -90,14 +90,14 @@ public class GeomAPI_IntSS_Test
     [Fact]
     public void OCC26675_IntersectionCurveRangeNonDegenerate()
     {
-        MakeOCC26675Surfaces(out Geom_Surface aS1, out Geom_Surface aS2);
+        MakeOCC26675Surfaces(out Surface aS1, out Surface aS2);
 
         GeomAPI_IntSS anIntersection = new(aS1, aS2, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(anIntersection.IsDone(), "Intersection failed");
         Assert.True(anIntersection.NbLines() >= 1, "No intersection curves found");
 
         // Verify the first curve has a non-degenerate parameter range
-        Geom_Curve aCurve = anIntersection.Line(1);
+        Curve3D aCurve = anIntersection.Line(1);
         Assert.NotNull(aCurve);
 
         double aU1 = aCurve.FirstParameter();
@@ -113,14 +113,14 @@ public class GeomAPI_IntSS_Test
     {
         // Specific cone parameters that previously triggered an exception in math_FunctionRoots.
         // Cannot read these from files: slight rounding would hide the bug.
-        Geom_ConicalSurface aCone1 =
+        ConicalSurface aCone1 =
             new(new CoordinateSystem(new Point3D(123.694345356663, 789.9, 68.15),
                            new Direction3D(-1, 3.48029791472957e-016, -8.41302743359754e-017),
                            new Direction3D(-3.48029791472957e-016, -1, -3.17572289932207e-016)),
                 0.780868809443031,
                 3.28206830417112);
 
-        Geom_ConicalSurface aCone2 =
+        ConicalSurface aCone2 =
             new(new CoordinateSystem(new Point3D(123.694345356663, 784.9, 68.15),
                            new Direction3D(-1, -2.5209507537117e-016, -1.49772808948866e-016),
                            new Direction3D(1.49772808948866e-016, 3.17572289932207e-016, -1)),
@@ -130,8 +130,8 @@ public class GeomAPI_IntSS_Test
         // Trim to a finite V range so that GeomAPI_IntSS does not search an infinite domain.
         // The two cones are offset by 5 units in Y with half-angle ~44.7 deg and base R ~3.28,
         // so intersection curves lie within V [0, 10].
-        Geom_Surface aS1 = new Geom_RectangularTrimmedSurface(aCone1, 0.0, 2.0 * M_PI, 0.0, 10.0);
-        Geom_Surface aS2 = new Geom_RectangularTrimmedSurface(aCone2, 0.0, 2.0 * M_PI, 0.0, 10.0);
+        Surface aS1 = new TrimmedSurface(aCone1, 0.0, 2.0 * M_PI, 0.0, 10.0);
+        Surface aS2 = new TrimmedSurface(aCone2, 0.0, 2.0 * M_PI, 0.0, 10.0);
 
         GeomAPI_IntSS anIntersection = new();
         Assert.Null(Record.Exception(() => anIntersection.Perform(aS1, aS2, 1.0e-7)));
@@ -143,7 +143,7 @@ public class GeomAPI_IntSS_Test
         // Verify each intersection curve is non-null and has a non-degenerate parameter range.
         for (int anIdx = 1; anIdx <= anIntersection.NbLines(); ++anIdx)
         {
-            Geom_Curve aCurve = anIntersection.Line(anIdx);
+            Curve3D aCurve = anIntersection.Line(anIdx);
             Assert.NotNull(aCurve);
 
             double aU1 = aCurve.FirstParameter();

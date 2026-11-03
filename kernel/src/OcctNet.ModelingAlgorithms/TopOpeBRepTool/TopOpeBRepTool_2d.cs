@@ -5,6 +5,8 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Topology.Brep;
+using Kerf.Geometry;
 using Kerf.Topology;
 
 namespace Occt;
@@ -22,14 +24,14 @@ namespace Occt;
 /// </para>
 /// <para>
 /// OCCT keeps the "new" pcurves in a per-thread cache that only <c>FC2D_Prepare</c> (and <c>FC2D_FancestorE</c>,
-/// which needs it) creates. Neither runs in the port, so the cache never exists: <see cref="FC2D_HasNewCurveOnSurface(in TopoDS_Edge, in TopoDS_Face, out Geom2d_Curve?, out double, out double, out double)"/>
+/// which needs it) creates. Neither runs in the port, so the cache never exists: <see cref="FC2D_HasNewCurveOnSurface(in Edge, in Face, out Curve2D?, out double, out double, out double)"/>
 /// is false and <see cref="FC2D_AddNewCurveOnSurface"/> returns 1, as OCCT's code does without a cache (decision 792).
 /// </para>
 /// </remarks>
 public static class TopOpeBRepTool_2d
 {
     /// <summary>Whether <paramref name="E"/> has a pcurve on <paramref name="F"/>, stored or computed.</summary>
-    public static bool FC2D_HasCurveOnSurface(in TopoDS_Edge E, in TopoDS_Face F)
+    public static bool FC2D_HasCurveOnSurface(in Edge E, in Face F)
     {
         bool hasold = FC2D_HasOldCurveOnSurface(E, F, out _);
         bool hasnew = FC2D_HasNewCurveOnSurface(E, F, out _);
@@ -41,22 +43,22 @@ public static class TopOpeBRepTool_2d
     /// The pcurve of <paramref name="E"/> on <paramref name="F"/> as BRep_Tool gives it (stored, or computed on a
     /// plane), its range, and the edge's tolerance; whether there is one.
     /// </summary>
-    public static bool FC2D_HasOldCurveOnSurface(in TopoDS_Edge E,
-                                                 in TopoDS_Face F,
-                                                 out Geom2d_Curve? C2D,
+    public static bool FC2D_HasOldCurveOnSurface(in Edge E,
+                                                 in Face F,
+                                                 out Curve2D? C2D,
                                                  out double f2d,
                                                  out double l2d,
                                                  out double tol)
     {
         bool hasold = false;
-        tol = BRep_Tool.Tolerance(E);
-        C2D = BRep_Tool.CurveOnSurface(E, F, out f2d, out l2d);
+        tol = Tool.Tolerance(E);
+        C2D = Tool.CurveOnSurface(E, F, out f2d, out l2d);
         hasold = C2D is not null;
         return hasold;
     }
 
     /// <summary>The pcurve of <paramref name="E"/> on <paramref name="F"/> as BRep_Tool gives it; whether there is one.</summary>
-    public static bool FC2D_HasOldCurveOnSurface(in TopoDS_Edge E, in TopoDS_Face F, out Geom2d_Curve? C2D)
+    public static bool FC2D_HasOldCurveOnSurface(in Edge E, in Face F, out Curve2D? C2D)
     {
         bool hasold = FC2D_HasOldCurveOnSurface(E, F, out C2D, out _, out _, out _);
         return hasold;
@@ -66,9 +68,9 @@ public static class TopOpeBRepTool_2d
     /// The pcurve of <paramref name="E"/> on <paramref name="F"/> in the cache of new pcurves. The cache never exists
     /// in the port (see the remarks), so this is false and leaves its outputs null or zero.
     /// </summary>
-    public static bool FC2D_HasNewCurveOnSurface(in TopoDS_Edge E,
-                                                 in TopoDS_Face F,
-                                                 out Geom2d_Curve? C2D,
+    public static bool FC2D_HasNewCurveOnSurface(in Edge E,
+                                                 in Face F,
+                                                 out Curve2D? C2D,
                                                  out double f2d,
                                                  out double l2d,
                                                  out double tol)
@@ -83,7 +85,7 @@ public static class TopOpeBRepTool_2d
     }
 
     /// <summary>The pcurve of <paramref name="E"/> on <paramref name="F"/> in the cache of new pcurves (never, see the remarks).</summary>
-    public static bool FC2D_HasNewCurveOnSurface(in TopoDS_Edge E, in TopoDS_Face F, out Geom2d_Curve? C2D)
+    public static bool FC2D_HasNewCurveOnSurface(in Edge E, in Face F, out Curve2D? C2D)
     {
         bool b = FC2D_HasNewCurveOnSurface(E, F, out C2D, out _, out _, out _);
         return b;
@@ -93,9 +95,9 @@ public static class TopOpeBRepTool_2d
     /// Stores a computed pcurve in the cache of new pcurves: 1 (nothing stored) when <paramref name="C2D"/> is null or
     /// the cache doesn't exist, which in the port is always (see the remarks).
     /// </summary>
-    public static int FC2D_AddNewCurveOnSurface(Geom2d_Curve? C2D,
-                                                in TopoDS_Edge E,
-                                                in TopoDS_Face F,
+    public static int FC2D_AddNewCurveOnSurface(Curve2D? C2D,
+                                                in Edge E,
+                                                in Face F,
                                                 double f2d,
                                                 double l2d,
                                                 double tol)
@@ -109,33 +111,33 @@ public static class TopOpeBRepTool_2d
     }
 
     // FC2D_make2d (the overload without a reference edge)
-    private static Geom2d_Curve? FC2D_make2d(in TopoDS_Edge E,
-                                             in TopoDS_Face F,
+    private static Curve2D? FC2D_make2d(in Edge E,
+                                             in Face F,
                                              ref double f2d,
                                              ref double l2d,
                                              ref double tol,
                                              bool trim3d = false)
     {
-        Geom2d_Curve? C2D = BRep_Tool.CurveOnSurface(E, F, out f2d, out l2d);
+        Curve2D? C2D = Tool.CurveOnSurface(E, F, out f2d, out l2d);
         if (C2D is not null)
         {
             return C2D;
         }
 
         // pas de 2D
-        Geom_Curve? C1 = BRep_Tool.Curve(E, out Placement eloc, out double f3d, out double l3d);
+        Curve3D? C1 = Tool.Curve(E, out Placement eloc, out double f3d, out double l3d);
         bool hasC3D = C1 is not null;
         if (hasC3D)
         {
             bool elocid = eloc.IsIdentity;
-            Geom_Curve C2;
+            Curve3D C2;
             if (elocid)
             {
                 C2 = C1!;
             }
             else
             {
-                C2 = (Geom_Curve)C1!.Transformed(eloc.Transformation());
+                C2 = (Curve3D)C1!.Transformed(eloc.Transformation());
             }
             double f = 0.0, l = 0.0;
             if (trim3d)
@@ -159,14 +161,14 @@ public static class TopOpeBRepTool_2d
     /// curve, trimmed to its range with <paramref name="trim3d"/>) and adds it to the cache of new pcurves.
     /// </summary>
     /// <exception cref="NullObjectException">The edge has neither a pcurve on the face nor a 3D curve (native crashes).</exception>
-    public static Geom2d_Curve? FC2D_MakeCurveOnSurface(in TopoDS_Edge E,
-                                                        in TopoDS_Face F,
+    public static Curve2D? FC2D_MakeCurveOnSurface(in Edge E,
+                                                        in Face F,
                                                         ref double f,
                                                         ref double l,
                                                         ref double tol,
                                                         bool trim3d = false)
     {
-        Geom2d_Curve? C2D = FC2D_make2d(E, F, ref f, ref l, ref tol, trim3d);
+        Curve2D? C2D = FC2D_make2d(E, F, ref f, ref l, ref tol, trim3d);
         FC2D_AddNewCurveOnSurface(C2D, E, F, f, l, tol);
         return C2D;
     }
@@ -176,14 +178,14 @@ public static class TopOpeBRepTool_2d
     /// computed one (<see cref="FC2D_MakeCurveOnSurface"/>).
     /// </summary>
     /// <exception cref="NullObjectException">The edge has neither a pcurve on the face nor a 3D curve (native crashes).</exception>
-    public static Geom2d_Curve? FC2D_CurveOnSurface(in TopoDS_Edge E,
-                                                    in TopoDS_Face F,
+    public static Curve2D? FC2D_CurveOnSurface(in Edge E,
+                                                    in Face F,
                                                     out double f,
                                                     out double l,
                                                     out double tol,
                                                     bool trim3d = false)
     {
-        Geom2d_Curve? C2D;
+        Curve2D? C2D;
         bool hasold = FC2D_HasOldCurveOnSurface(E, F, out C2D, out f, out l, out tol);
         if (hasold)
         {

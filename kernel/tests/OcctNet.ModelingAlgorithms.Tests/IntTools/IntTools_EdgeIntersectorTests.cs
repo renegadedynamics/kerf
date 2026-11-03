@@ -1,8 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 using static OcctNet.ModelingAlgorithms.Tests.EdgeIntersectorRecordings;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -14,10 +17,10 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class IntTools_EdgeIntersectorTests
 {
-    private static TopoDS_Edge Segment(double x1, double y1, double z1, double x2, double y2, double z2) =>
+    private static global::Kerf.Topology.Edge Segment(double x1, double y1, double z1, double x2, double y2, double z2) =>
         new BRepBuilderAPI_MakeEdge(new Point3D(x1, y1, z1), new Point3D(x2, y2, z2)).Edge();
 
-    private static TopoDS_Face PlaneFace(double theSize) =>
+    private static global::Kerf.Topology.Face PlaneFace(double theSize) =>
         new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), -theSize, theSize, -theSize, theSize).Face();
 
     [Fact]
@@ -28,7 +31,7 @@ public class IntTools_EdgeIntersectorTests
         Assert.True(anEE.IsDone());
         Assert.Equal(1, anEE.CommonParts().Length());
         IntTools_CommonPrt aCP = anEE.CommonParts().Value(1);
-        Assert.Equal(TopAbs_VERTEX, aCP.Type());
+        Assert.Equal(ShapeType.Vertex, aCP.Type());
         Assert.Equal(1.0, aCP.VertexParameter1(), 1e-12);
         Assert.Equal(1.0, aCP.VertexParameter2(), 1e-12);
     }
@@ -40,7 +43,7 @@ public class IntTools_EdgeIntersectorTests
         anEE.Perform();
         Assert.Equal(1, anEE.CommonParts().Length());
         IntTools_CommonPrt aCP = anEE.CommonParts().Value(1);
-        Assert.Equal(TopAbs_EDGE, aCP.Type());
+        Assert.Equal(global::Kerf.Topology.ShapeType.Edge, aCP.Type());
         aCP.Range1(out double f, out double l);
         Assert.Equal(1.0, f, 1e-12);
         Assert.Equal(2.0, l, 1e-12);
@@ -65,16 +68,16 @@ public class IntTools_EdgeIntersectorTests
     [Fact]
     public void EdgeEdge_CircleAndLine_GiveTwoVertices_InEdge1sParameters()
     {
-        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0)).Edge();
-        TopoDS_Edge aLine = Segment(-2, 0.5, 0, 2, 0.5, 0);
+        global::Kerf.Topology.Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0)).Edge();
+        global::Kerf.Topology.Edge aLine = Segment(-2, 0.5, 0, 2, 0.5, 0);
         IntTools_EdgeEdge anEE = new(aLine, aCircle);
         anEE.Perform();
         Assert.Equal(2, anEE.CommonParts().Length());
         foreach (IntTools_CommonPrt aCP in anEE.CommonParts())
         {
-            Assert.Equal(TopAbs_VERTEX, aCP.Type());
+            Assert.Equal(ShapeType.Vertex, aCP.Type());
             Assert.True(aCP.Edge1().IsSame(aLine)); // the edges are swapped inside, not in the common parts
-            Point3D aP = BRep_Tool.Curve(aLine, out _, out _)!.Value(aCP.VertexParameter1());
+            Point3D aP = Tool.Curve(aLine, out _, out _)!.Value(aCP.VertexParameter1());
             Assert.Equal(1.0, Math.Sqrt(aP.X() * aP.X() + aP.Y() * aP.Y()), 1e-6);
         }
     }
@@ -82,24 +85,24 @@ public class IntTools_EdgeIntersectorTests
     [Fact]
     public void EdgeFace_LineThroughPlane_GivesOneVertex_LineInPlane_GivesTheEdge()
     {
-        TopoDS_Face aF = PlaneFace(5);
-        foreach ((TopoDS_Edge E, TopAbs_ShapeEnum Type, double Param) in new[]
+        global::Kerf.Topology.Face aF = PlaneFace(5);
+        foreach ((global::Kerf.Topology.Edge E, ShapeType Type, double Param) in new[]
                  {
-                     (Segment(1, 1, -1, 1, 1, 3), TopAbs_VERTEX, 1.0),
-                     (Segment(-1, 0, 0, 3, 0, 0), TopAbs_EDGE, 0.0),
+                     (Segment(1, 1, -1, 1, 1, 3), ShapeType.Vertex, 1.0),
+                     (Segment(-1, 0, 0, 3, 0, 0), global::Kerf.Topology.ShapeType.Edge, 0.0),
                  })
         {
             IntTools_EdgeFace anEF = new();
             anEF.SetEdge(E);
             anEF.SetFace(aF);
-            BRep_Tool.Range(E, out double f, out double l);
+            Tool.Range(E, out double f, out double l);
             anEF.SetRange(f, l);
             anEF.Perform();
             Assert.True(anEF.IsDone());
             Assert.Equal(0, anEF.ErrorStatus());
             Assert.Equal(1, anEF.CommonParts().Length());
             Assert.Equal(Type, anEF.CommonParts().Value(1).Type());
-            if (Type == TopAbs_VERTEX)
+            if (Type == ShapeType.Vertex)
             {
                 Assert.Equal(Param, anEF.CommonParts().Value(1).VertexParameter1(), 1e-9);
             }
@@ -118,10 +121,10 @@ public class IntTools_EdgeIntersectorTests
     [Fact]
     public void BeanFace_CircleOnCylinder_IsCoincident_LineMissingSphere_IsEmpty()
     {
-        TopoDS_Face aCyl = TopoDS.Face(new TopExp_Explorer(new BRepPrimAPI_MakeCylinder(1, 2).Shape(), TopAbs_FACE).Current());
-        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), 1.0)).Edge();
+        global::Kerf.Topology.Face aCyl = ShapeCasts.Face(new Explorer(new BRepPrimAPI_MakeCylinder(1, 2).Shape(), global::Kerf.Topology.ShapeType.Face).Current());
+        global::Kerf.Topology.Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), 1.0)).Edge();
         IntTools_BeanFaceIntersector aBF = new(aCircle, aCyl);
-        BRep_Tool.Range(aCircle, out double f, out double l);
+        Tool.Range(aCircle, out double f, out double l);
         aBF.SetBeanParameters(f, l);
         aBF.Perform();
         Assert.True(aBF.IsDone());
@@ -132,8 +135,8 @@ public class IntTools_EdgeIntersectorTests
         aBF.Result(aCopy);
         Assert.Equal(1, aCopy.Length());
 
-        TopoDS_Face aSph = TopoDS.Face(new TopExp_Explorer(new BRepPrimAPI_MakeSphere(1).Shape(), TopAbs_FACE).Current());
-        TopoDS_Edge aLine = Segment(-3, 2, 0, 3, 2, 0);
+        global::Kerf.Topology.Face aSph = ShapeCasts.Face(new Explorer(new BRepPrimAPI_MakeSphere(1).Shape(), global::Kerf.Topology.ShapeType.Face).Current());
+        global::Kerf.Topology.Edge aLine = Segment(-3, 2, 0, 3, 2, 0);
         IntTools_BeanFaceIntersector aBF2 = new(aLine, aSph);
         aBF2.SetBeanParameters(0, 6);
         aBF2.Perform();
@@ -142,7 +145,7 @@ public class IntTools_EdgeIntersectorTests
     }
 
     /// <summary>An edge/face pair as BOPAlgo_EdgeFace runs it: through BOPTools_Parallel with the worker's context.</summary>
-    private sealed class EFSolver(TopoDS_Edge theE, TopoDS_Face theF, double theFuzz)
+    private sealed class EFSolver(global::Kerf.Topology.Edge theE, global::Kerf.Topology.Face theF, double theFuzz)
         : BOPTools_Parallel.IContextSolver<IntTools_Context>
     {
         private IntTools_Context? myContext;

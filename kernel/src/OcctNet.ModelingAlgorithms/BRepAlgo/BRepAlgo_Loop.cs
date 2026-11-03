@@ -3,10 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -21,14 +23,14 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepAlgo_Loop
 {
-    private TopoDS_Face myFace = new();
-    private readonly NCollection_List<TopoDS_Shape> myConstEdges = new();
-    private readonly NCollection_List<TopoDS_Shape> myEdges = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myVerOnEdges = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_List<TopoDS_Shape> myNewWires = new();
-    private readonly NCollection_List<TopoDS_Shape> myNewFaces = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myCutEdges = new(TopTools_ShapeMapHasher.Instance);
-    private NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myVerticesForSubstitute = new(TopTools_ShapeMapHasher.Instance);
+    private Face myFace = new();
+    private readonly NCollection_List<Shape> myConstEdges = new();
+    private readonly NCollection_List<Shape> myEdges = new();
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> myVerOnEdges = new(ShapeHasher.Instance);
+    private readonly NCollection_List<Shape> myNewWires = new();
+    private readonly NCollection_List<Shape> myNewFaces = new();
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> myCutEdges = new(ShapeHasher.Instance);
+    private NCollection_DataMap<Shape, Shape> myVerticesForSubstitute = new(ShapeHasher.Instance);
     private readonly BRepAlgo_Image myImageVV = new();
     private double myTolConf;
 
@@ -39,7 +41,7 @@ public sealed class BRepAlgo_Loop
     }
 
     /// <summary>Starts again on the face <paramref name="F"/>; the edges must have pcurves on it.</summary>
-    public void Init(in TopoDS_Face F)
+    public void Init(in Face F)
     {
         myConstEdges.Clear();
         myEdges.Clear();
@@ -51,7 +53,7 @@ public sealed class BRepAlgo_Loop
     }
 
     // Orders the sequence of vertices by increasing parameter on E (removing duplicates)
-    private static void Bubble(in TopoDS_Edge E, NCollection_Sequence<TopoDS_Shape> Seq)
+    private static void Bubble(in Edge E, NCollection_Sequence<Shape> Seq)
     {
         // Remove duplicates
         for (int i = 1; i < Seq.Length(); i++)
@@ -69,20 +71,20 @@ public sealed class BRepAlgo_Loop
         bool Invert = true;
         int NbPoints = Seq.Length();
         double U1, U2;
-        TopoDS_Vertex V1, V2;
+        Vertex V1, V2;
 
         while (Invert)
         {
             Invert = false;
             for (int i = 1; i < NbPoints; i++)
             {
-                TopoDS_Shape aLocalV = Seq.Value(i).Oriented(TopAbs_INTERNAL);
-                V1 = TopoDS.Vertex(aLocalV);
-                aLocalV = Seq.Value(i + 1).Oriented(TopAbs_INTERNAL);
-                V2 = TopoDS.Vertex(aLocalV);
+                Shape aLocalV = Seq.Value(i).Oriented(Internal);
+                V1 = ShapeCasts.Vertex(aLocalV);
+                aLocalV = Seq.Value(i + 1).Oriented(Internal);
+                V2 = ShapeCasts.Vertex(aLocalV);
 
-                U1 = BRep_Tool.Parameter(V1, E);
-                U2 = BRep_Tool.Parameter(V2, E);
+                U1 = Tool.Parameter(V1, E);
+                U2 = Tool.Parameter(V2, E);
                 if (U2 < U1)
                 {
                     Seq.Exchange(i, i + 1);
@@ -93,22 +95,22 @@ public sealed class BRepAlgo_Loop
     }
 
     /// <summary>Adds the edge <paramref name="E"/>, to be cut at the vertices <paramref name="LV"/>.</summary>
-    public void AddEdge(in TopoDS_Edge E, NCollection_List<TopoDS_Shape> LV)
+    public void AddEdge(in Edge E, NCollection_List<Shape> LV)
     {
         myEdges.Append(E);
-        myVerOnEdges.Bind(E, new NCollection_List<TopoDS_Shape>(LV));
+        myVerOnEdges.Bind(E, new NCollection_List<Shape>(LV));
     }
 
     /// <summary>Adds the constant edge <paramref name="E"/>, which can be in the result as it is.</summary>
-    public void AddConstEdge(in TopoDS_Edge E)
+    public void AddConstEdge(in Edge E)
     {
         myConstEdges.Append(E);
     }
 
     /// <summary>Adds the constant edges <paramref name="LE"/>.</summary>
-    public void AddConstEdges(NCollection_List<TopoDS_Shape> LE)
+    public void AddConstEdges(NCollection_List<Shape> LE)
     {
-        NCollection_List<TopoDS_Shape>.Iterator itl = new(LE);
+        NCollection_List<Shape>.Iterator itl = new(LE);
         for (; itl.More(); itl.Next())
         {
             myConstEdges.Append(itl.Value());
@@ -123,15 +125,15 @@ public sealed class BRepAlgo_Loop
 
     // If the first or the last vertex of intersection coincides with the closing vertex, it is removed from SV; it will
     // be added at the beginning and the end of SV by the caller
-    private static TopoDS_Vertex UpdateClosedEdge(in TopoDS_Edge E, NCollection_Sequence<TopoDS_Shape> SV)
+    private static Vertex UpdateClosedEdge(in Edge E, NCollection_Sequence<Shape> SV)
     {
-        TopoDS_Vertex[] VB = [new(), new()];
-        TopoDS_Vertex VRes = new();
+        Vertex[] VB = [new(), new()];
+        Vertex VRes = new();
         Point3D P, PC;
         bool OnStart = false, OnEnd = false;
         //// modified by jgv, 13.04.04 for OCC5634 ////
-        TopExp.Vertices(E, out TopoDS_Vertex V1, out _);
-        double Tol = BRep_Tool.Tolerance(V1);
+        Exploration.Vertices(E, out Vertex V1, out _);
+        double Tol = Tool.Tolerance(V1);
         ///////////////////////////////////////////////
 
         if (SV.IsEmpty())
@@ -139,13 +141,13 @@ public sealed class BRepAlgo_Loop
             return VRes;
         }
 
-        VB[0] = TopoDS.Vertex(SV.First());
-        VB[1] = TopoDS.Vertex(SV.Last());
-        PC = BRep_Tool.Pnt(V1);
+        VB[0] = ShapeCasts.Vertex(SV.First());
+        VB[1] = ShapeCasts.Vertex(SV.Last());
+        PC = Tool.Pnt(V1);
 
         for (int i = 0; i < 2; i++)
         {
-            P = BRep_Tool.Pnt(VB[i]);
+            P = Tool.Pnt(VB[i]);
             if (P.IsEqual(PC, Tol))
             {
                 VRes = VB[i];
@@ -187,32 +189,32 @@ public sealed class BRepAlgo_Loop
     }
 
     // Removes the hanging edges
-    private static void RemovePendingEdges(NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> MVE)
+    private static void RemovePendingEdges(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> MVE)
     {
         //--------------------------------
         // Remove hanging edges.
         //--------------------------------
-        NCollection_List<TopoDS_Shape>.Iterator itl = new();
+        NCollection_List<Shape>.Iterator itl = new();
         bool YaSupress = true;
 
         while (YaSupress)
         {
             YaSupress = false;
-            NCollection_List<TopoDS_Shape> VToRemove = new();
-            NCollection_Map<TopoDS_Shape> EToRemove = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_List<Shape> VToRemove = new();
+            NCollection_Map<Shape> EToRemove = new(ShapeHasher.Instance);
 
             for (int iV = 1; iV <= MVE.Extent(); iV++)
             {
-                TopoDS_Shape aVertex = MVE.FindKey(iV);
-                NCollection_List<TopoDS_Shape> anEdges = MVE.FindFromIndex(iV);
+                Shape aVertex = MVE.FindKey(iV);
+                NCollection_List<Shape> anEdges = MVE.FindFromIndex(iV);
                 if (anEdges.IsEmpty())
                 {
                     VToRemove.Append(aVertex);
                 }
                 if (anEdges.Extent() == 1)
                 {
-                    TopoDS_Edge E = TopoDS.Edge(anEdges.First());
-                    TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+                    Edge E = ShapeCasts.Edge(anEdges.First());
+                    Exploration.Vertices(E, out Vertex V1, out Vertex V2);
                     if (!V1.IsSame(V2))
                     {
                         VToRemove.Append(aVertex);
@@ -232,7 +234,7 @@ public sealed class BRepAlgo_Loop
                 {
                     for (int iV = 1; iV <= MVE.Extent(); iV++)
                     {
-                        NCollection_List<TopoDS_Shape> LE = MVE.ChangeFromIndex(iV);
+                        NCollection_List<Shape> LE = MVE.ChangeFromIndex(iV);
                         itl.Initialize(LE);
                         while (itl.More())
                         {
@@ -252,14 +254,14 @@ public sealed class BRepAlgo_Loop
     }
 
     // Whether E1's start and E2's end meet at V in the face's parametric space (100 times V's tolerance)
-    private static bool SamePnt2d(in TopoDS_Vertex V, in TopoDS_Edge E1, in TopoDS_Edge E2, in TopoDS_Face F)
+    private static bool SamePnt2d(in Vertex V, in Edge E1, in Edge E2, in Face F)
     {
         Point2D P1, P2;
-        TopoDS_Shape aLocalF = F.Oriented(TopAbs_FORWARD);
-        TopoDS_Face FF = TopoDS.Face(aLocalF);
-        Geom2d_Curve C1 = BRep_Tool.CurveOnSurface(E1, FF, out double f1, out double l1)!;
-        Geom2d_Curve C2 = BRep_Tool.CurveOnSurface(E2, FF, out double f2, out double l2)!;
-        if (E1.Orientation() == TopAbs_FORWARD)
+        Shape aLocalF = F.Oriented(Forward);
+        Face FF = ShapeCasts.Face(aLocalF);
+        Curve2D C1 = Tool.CurveOnSurface(E1, FF, out double f1, out double l1)!;
+        Curve2D C2 = Tool.CurveOnSurface(E2, FF, out double f2, out double l2)!;
+        if (E1.Orientation() == Forward)
         {
             P1 = C1.Value(f1);
         }
@@ -268,7 +270,7 @@ public sealed class BRepAlgo_Loop
             P1 = C1.Value(l1);
         }
 
-        if (E2.Orientation() == TopAbs_FORWARD)
+        if (E2.Orientation() == Forward)
         {
             P2 = C2.Value(l2);
         }
@@ -276,21 +278,21 @@ public sealed class BRepAlgo_Loop
         {
             P2 = C2.Value(f2);
         }
-        double Tol = 100 * BRep_Tool.Tolerance(V);
+        double Tol = 100 * Tool.Tolerance(V);
         double Dist = P1.Distance(P2);
         return Dist < Tol;
     }
 
     // Finds the edge NE connected to CE by the vertex CV in LE and removes it from LE; also removes CE from LE if it is
     // there with the same orientation
-    private static bool SelectEdge(in TopoDS_Face F,
-                                   in TopoDS_Edge CE,
-                                   in TopoDS_Vertex CV,
-                                   out TopoDS_Edge NE,
-                                   NCollection_List<TopoDS_Shape> LE)
+    private static bool SelectEdge(in Face F,
+                                   in Edge CE,
+                                   in Vertex CV,
+                                   out Edge NE,
+                                   NCollection_List<Shape> LE)
     {
-        NCollection_List<TopoDS_Shape>.Iterator itl = new();
-        NE = new TopoDS_Edge();
+        NCollection_List<Shape>.Iterator itl = new();
+        NE = new Edge();
 
         for (itl.Initialize(LE); itl.More(); itl.Next())
         {
@@ -311,14 +313,14 @@ public sealed class BRepAlgo_Loop
             // - If several edges give representation less than the tolerance.
             // discrimination on tangents.
             //--------------------------------------------------------------
-            TopoDS_Face FForward = F;
-            FForward.Orientation(TopAbs_FORWARD);
+            Face FForward = F;
+            FForward.Orientation(Forward);
 
-            Geom2d_Curve C = BRep_Tool.CurveOnSurface(CE, FForward, out double f, out double l)!;
+            Curve2D C = Tool.CurveOnSurface(CE, FForward, out double f, out double l)!;
             int k = 1, kmin = 0;
-            double dist, distmin = 100 * BRep_Tool.Tolerance(CV);
+            double dist, distmin = 100 * Tool.Tolerance(CV);
             double u;
-            if (CE.Orientation() == TopAbs_FORWARD)
+            if (CE.Orientation() == Forward)
             {
                 u = l;
             }
@@ -331,11 +333,11 @@ public sealed class BRepAlgo_Loop
 
             for (itl.Initialize(LE); itl.More(); itl.Next())
             {
-                TopoDS_Edge E = TopoDS.Edge(itl.Value());
+                Edge E = ShapeCasts.Edge(itl.Value());
                 if (!E.IsSame(CE))
                 {
-                    C = BRep_Tool.CurveOnSurface(E, FForward, out f, out l)!;
-                    if (E.Orientation() == TopAbs_FORWARD)
+                    C = Tool.CurveOnSurface(E, FForward, out f, out l)!;
+                    if (E.Orientation() == Forward)
                     {
                         u = f;
                     }
@@ -366,12 +368,12 @@ public sealed class BRepAlgo_Loop
                 k++;
                 itl.Next();
             }
-            NE = TopoDS.Edge(itl.Value());
+            NE = ShapeCasts.Edge(itl.Value());
             LE.Remove(itl);
         }
         else if (LE.Extent() == 1)
         {
-            NE = TopoDS.Edge(LE.First());
+            NE = ShapeCasts.Edge(LE.First());
             LE.RemoveFirst();
         }
         else
@@ -382,17 +384,17 @@ public sealed class BRepAlgo_Loop
     }
 
     // Keeps in the lists of new edges only the edges used in the wires
-    private static void PurgeNewEdges(NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> NewEdges,
-                                      NCollection_Map<TopoDS_Shape> UsedEdges)
+    private static void PurgeNewEdges(NCollection_DataMap<Shape, NCollection_List<Shape>> NewEdges,
+                                      NCollection_Map<Shape> UsedEdges)
     {
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> it in NewEdges)
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> it in NewEdges)
         {
-            NCollection_List<TopoDS_Shape> LNE = it.Value;
-            NCollection_List<TopoDS_Shape>.Iterator itL = new(LNE);
+            NCollection_List<Shape> LNE = it.Value;
+            NCollection_List<Shape>.Iterator itL = new(LNE);
 
             while (itL.More())
             {
-                TopoDS_Shape NE = itL.Value();
+                Shape NE = itL.Value();
                 if (!UsedEdges.Contains(NE))
                 {
                     LNE.Remove(itL);
@@ -407,37 +409,37 @@ public sealed class BRepAlgo_Loop
 
     // Adds E to the map vertex -> edges, first replacing its vertices by vertices of the map at the same place
     // (within theTolConf), recorded in VerticesForSubstitute; doubles the seams
-    private static void StoreInMVE(in TopoDS_Face F,
-                                   in TopoDS_Edge E,
-                                   NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> MVE,
+    private static void StoreInMVE(in Face F,
+                                   in Edge E,
+                                   NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> MVE,
                                    ref bool YaCouture,
-                                   NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> VerticesForSubstitute,
+                                   NCollection_DataMap<Shape, Shape> VerticesForSubstitute,
                                    double theTolConf)
     {
-        TopoDS_Vertex V1, V2, V;
+        Vertex V1, V2, V;
         Point3D P1, P;
-        BRep_Builder BB = new();
+        BrepBuilder BB = new();
         for (int iV = 1; iV <= MVE.Extent(); iV++)
         {
-            V = TopoDS.Vertex(MVE.FindKey(iV));
-            P = BRep_Tool.Pnt(V);
-            NCollection_List<TopoDS_Shape> VList = new();
-            TopoDS_Iterator VerExp = new(E);
+            V = ShapeCasts.Vertex(MVE.FindKey(iV));
+            P = Tool.Pnt(V);
+            NCollection_List<Shape> VList = new();
+            Iterator VerExp = new(E);
             for (; VerExp.More(); VerExp.Next())
             {
                 VList.Append(VerExp.Value());
             }
-            NCollection_List<TopoDS_Shape>.Iterator itl = new(VList);
+            NCollection_List<Shape>.Iterator itl = new(VList);
             for (; itl.More(); itl.Next())
             {
-                V1 = TopoDS.Vertex(itl.Value());
-                P1 = BRep_Tool.Pnt(V1);
+                V1 = ShapeCasts.Vertex(itl.Value());
+                P1 = Tool.Pnt(V1);
                 if (P.IsEqual(P1, theTolConf) && !V.IsSame(V1))
                 {
                     V.Orientation(V1.Orientation());
                     if (VerticesForSubstitute.IsBound(V1))
                     {
-                        TopoDS_Shape OldNewV = VerticesForSubstitute[V1];
+                        Shape OldNewV = VerticesForSubstitute[V1];
                         if (!OldNewV.IsSame(V))
                         {
                             VerticesForSubstitute.Bind(OldNewV, V);
@@ -448,7 +450,7 @@ public sealed class BRepAlgo_Loop
                     {
                         if (VerticesForSubstitute.IsBound(V))
                         {
-                            TopoDS_Shape NewNewV = VerticesForSubstitute[V];
+                            Shape NewNewV = VerticesForSubstitute[V];
                             if (!NewNewV.IsSame(V1))
                             {
                                 VerticesForSubstitute.Bind(V1, NewNewV);
@@ -458,15 +460,15 @@ public sealed class BRepAlgo_Loop
                         {
                             VerticesForSubstitute.Bind(V1, V);
                             // OCCT changes the map's values while iterating it: the keys are collected first
-                            NCollection_List<TopoDS_Shape> aKeys = new();
-                            foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> mapit in VerticesForSubstitute)
+                            NCollection_List<Shape> aKeys = new();
+                            foreach (KeyValuePair<Shape, Shape> mapit in VerticesForSubstitute)
                             {
                                 if (mapit.Value.IsSame(V1))
                                 {
                                     aKeys.Append(mapit.Key);
                                 }
                             }
-                            for (NCollection_List<TopoDS_Shape>.Iterator itk = new(aKeys); itk.More(); itk.Next())
+                            for (NCollection_List<Shape>.Iterator itk = new(aKeys); itk.More(); itk.Next())
                             {
                                 VerticesForSubstitute[itk.Value()] = V;
                             }
@@ -479,27 +481,27 @@ public sealed class BRepAlgo_Loop
             }
         }
 
-        TopExp.Vertices(E, out V1, out V2);
-        if (V1.IsNull() && V2.IsNull())
+        Exploration.Vertices(E, out V1, out V2);
+        if (V1.IsNull && V2.IsNull)
         {
             YaCouture = false;
             return;
         }
         if (!MVE.Contains(V1))
         {
-            MVE.Add(V1, new NCollection_List<TopoDS_Shape>());
+            MVE.Add(V1, new NCollection_List<Shape>());
         }
         MVE.ChangeFromKey(V1).Append(E);
         if (!V1.IsSame(V2))
         {
             if (!MVE.Contains(V2))
             {
-                MVE.Add(V2, new NCollection_List<TopoDS_Shape>());
+                MVE.Add(V2, new NCollection_List<Shape>());
             }
             MVE.ChangeFromKey(V2).Append(E);
         }
-        Geom_Surface? S = BRep_Tool.Surface(F, out Placement L);
-        if (BRep_Tool.IsClosed(E, S, L))
+        Surface? S = Tool.Surface(F, out Placement L);
+        if (Tool.IsClosed(E, S, L))
         {
             MVE.ChangeFromKey(V2).Append(E.Reversed());
             if (!V1.IsSame(V2))
@@ -513,8 +515,8 @@ public sealed class BRepAlgo_Loop
     /// <summary>Cuts the edges and builds the wires.</summary>
     public void Perform()
     {
-        NCollection_List<TopoDS_Shape>.Iterator itl = new(), itl1 = new();
-        TopoDS_Vertex V1, V2;
+        NCollection_List<Shape>.Iterator itl = new(), itl1 = new();
+        Vertex V1, V2;
         bool YaCouture = false;
 
         //------------------------------------------------
@@ -522,9 +524,9 @@ public sealed class BRepAlgo_Loop
         //------------------------------------------------
         for (itl.Initialize(myEdges); itl.More(); itl.Next())
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(itl.Value());
-            NCollection_List<TopoDS_Shape> LCE = new();
-            if (myVerOnEdges.Find(anEdge, out NCollection_List<TopoDS_Shape> pVertices))
+            Edge anEdge = ShapeCasts.Edge(itl.Value());
+            NCollection_List<Shape> LCE = new();
+            if (myVerOnEdges.Find(anEdge, out NCollection_List<Shape> pVertices))
             {
                 CutEdge(anEdge, pVertices, LCE);
                 myCutEdges.Bind(anEdge, LCE);
@@ -533,17 +535,17 @@ public sealed class BRepAlgo_Loop
         //-----------------------------------
         // Construction map vertex => edges
         //-----------------------------------
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> MVE = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> MVE = new(ShapeHasher.Instance);
 
         // add cut edges.
-        NCollection_Map<TopoDS_Shape> Emap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> Emap = new(ShapeHasher.Instance);
         for (itl.Initialize(myEdges); itl.More(); itl.Next())
         {
-            if (myCutEdges.Find(itl.Value(), out NCollection_List<TopoDS_Shape> pLCE))
+            if (myCutEdges.Find(itl.Value(), out NCollection_List<Shape> pLCE))
             {
                 for (itl1.Initialize(pLCE); itl1.More(); itl1.Next())
                 {
-                    TopoDS_Edge E = TopoDS.Edge(itl1.Value());
+                    Edge E = ShapeCasts.Edge(itl1.Value());
                     if (!Emap.Add(E))
                     {
                         continue;
@@ -556,10 +558,10 @@ public sealed class BRepAlgo_Loop
         // add const edges
         // Sewn edges can be doubled or not in myConstEdges
         // => call only once StoreInMVE which should double them
-        NCollection_Map<TopoDS_Shape> DejaVu = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> DejaVu = new(ShapeHasher.Instance);
         for (itl.Initialize(myConstEdges); itl.More(); itl.Next())
         {
-            TopoDS_Edge E = TopoDS.Edge(itl.Value());
+            Edge E = ShapeCasts.Edge(itl.Value());
             if (DejaVu.Add(E))
             {
                 StoreInMVE(myFace, E, MVE, ref YaCouture, myVerticesForSubstitute, myTolConf);
@@ -569,15 +571,15 @@ public sealed class BRepAlgo_Loop
         //-----------------------------------------------
         // Construction of wires and new faces.
         //----------------------------------------------
-        TopoDS_Vertex VF, CV;
-        TopoDS_Edge CE, NE, EF;
-        BRep_Builder B = new();
-        TopoDS_Wire NW = new();
+        Vertex VF, CV;
+        Edge CE, NE, EF;
+        BrepBuilder B = new();
+        Wire NW = new();
         bool End;
 
         UpdateVEmap(MVE);
 
-        NCollection_Map<TopoDS_Shape> UsedEdges = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> UsedEdges = new(ShapeHasher.Instance);
 
         while (MVE.Extent() > 0)
         {
@@ -594,12 +596,12 @@ public sealed class BRepAlgo_Loop
             //--------------------------------
             // Start edge.
             //--------------------------------
-            EF = CE = TopoDS.Edge(MVE.FindFromIndex(1).First());
-            TopExp.Vertices(CE, out V1, out V2);
+            EF = CE = ShapeCasts.Edge(MVE.FindFromIndex(1).First());
+            Exploration.Vertices(CE, out V1, out V2);
             //--------------------------------
             // VF vertex start of new wire
             //--------------------------------
-            if (CE.Orientation() == TopAbs_FORWARD)
+            if (CE.Orientation() == Forward)
             {
                 CV = VF = V1;
             }
@@ -611,7 +613,7 @@ public sealed class BRepAlgo_Loop
             {
                 continue;
             }
-            NCollection_List<TopoDS_Shape> aListEdges = MVE.ChangeFromKey(CV);
+            NCollection_List<Shape> aListEdges = MVE.ChangeFromKey(CV);
             for (itl.Initialize(aListEdges); itl.More(); itl.Next())
             {
                 if (itl.Value().IsEqual(CE))
@@ -627,7 +629,7 @@ public sealed class BRepAlgo_Loop
                 //-------------------------------
                 // Construction of a wire.
                 //-------------------------------
-                TopExp.Vertices(CE, out V1, out V2);
+                Exploration.Vertices(CE, out V1, out V2);
                 if (!CV.IsSame(V1))
                 {
                     CV = V1;
@@ -668,9 +670,9 @@ public sealed class BRepAlgo_Loop
                     NW.Closed(true);
                     myNewWires.Append(NW);
                 }
-                else if (BRep_Tool.Tolerance(VF) < myTolConf)
+                else if (Tool.Tolerance(VF) < myTolConf)
                 {
-                    BRep_Builder aBB = new();
+                    BrepBuilder aBB = new();
                     aBB.UpdateVertex(VF, myTolConf);
                     if (SamePnt2d(VF, EF, CE, myFace))
                     {
@@ -687,16 +689,16 @@ public sealed class BRepAlgo_Loop
     /// Cuts the edge <paramref name="E"/> at the vertices <paramref name="VOnE"/> (FORWARD for a start, REVERSED for an
     /// end) into the edges <paramref name="NE"/>, dropping pieces shorter than 0.001 in the face's parametric space.
     /// </summary>
-    public void CutEdge(in TopoDS_Edge E, NCollection_List<TopoDS_Shape> VOnE, NCollection_List<TopoDS_Shape> NE)
+    public void CutEdge(in Edge E, NCollection_List<Shape> VOnE, NCollection_List<Shape> NE)
     {
-        TopoDS_Shape aLocalE = E.Oriented(TopAbs_FORWARD);
-        TopoDS_Edge WE = TopoDS.Edge(aLocalE);
+        Shape aLocalE = E.Oriented(Forward);
+        Edge WE = ShapeCasts.Edge(aLocalE);
 
         double U1, U2;
-        TopoDS_Vertex V1, V2;
-        NCollection_Sequence<TopoDS_Shape> SV = new();
-        NCollection_List<TopoDS_Shape>.Iterator it = new(VOnE);
-        BRep_Builder B = new();
+        Vertex V1, V2;
+        NCollection_Sequence<Shape> SV = new();
+        NCollection_List<Shape>.Iterator it = new(VOnE);
+        BrepBuilder B = new();
 
         for (; it.More(); it.Next())
         {
@@ -718,8 +720,8 @@ public sealed class BRepAlgo_Loop
             NE.Append(E);
             return;
         }
-        BRep_Tool.Range(WE, out double f, out double l);
-        TopExp.Vertices(WE, out TopoDS_Vertex VF, out TopoDS_Vertex VL);
+        Tool.Range(WE, out double f, out double l);
+        Exploration.Vertices(WE, out Vertex VF, out Vertex VL);
 
         if (NbVer == 2)
         {
@@ -734,17 +736,17 @@ public sealed class BRepAlgo_Loop
         // If a vertex of intersection is on the common vertex
         // it should appear at the beginning and end of SV.
         //----------------------------------------------------
-        TopoDS_Vertex VCEI;
+        Vertex VCEI;
 
-        if (!VF.IsNull() && VF.IsSame(VL))
+        if (!VF.IsNull && VF.IsSame(VL))
         {
             VCEI = UpdateClosedEdge(WE, SV);
-            if (!VCEI.IsNull())
+            if (!VCEI.IsNull)
             {
-                TopoDS_Shape aLocalV = VCEI.Oriented(TopAbs_FORWARD);
-                VF = TopoDS.Vertex(aLocalV);
-                aLocalV = VCEI.Oriented(TopAbs_REVERSED);
-                VL = TopoDS.Vertex(aLocalV);
+                Shape aLocalV = VCEI.Oriented(Forward);
+                VF = ShapeCasts.Vertex(aLocalV);
+                aLocalV = VCEI.Oriented(Reversed);
+                VL = ShapeCasts.Vertex(aLocalV);
             }
             SV.Prepend(VF);
             SV.Append(VL);
@@ -754,11 +756,11 @@ public sealed class BRepAlgo_Loop
             //-----------------------------------------
             // Eventually all extremities of the edge.
             //-----------------------------------------
-            if (!VF.IsNull() && !VF.IsSame(SV.First()))
+            if (!VF.IsNull && !VF.IsSame(SV.First()))
             {
                 SV.Prepend(VF);
             }
-            if (!VL.IsNull() && !VL.IsSame(SV.Last()))
+            if (!VL.IsNull && !VL.IsSame(SV.Last()))
             {
                 SV.Append(VL);
             }
@@ -766,7 +768,7 @@ public sealed class BRepAlgo_Loop
 
         while (!SV.IsEmpty())
         {
-            while (!SV.IsEmpty() && SV.First().Orientation() != TopAbs_FORWARD)
+            while (!SV.IsEmpty() && SV.First().Orientation() != Forward)
             {
                 SV.Remove(1);
             }
@@ -774,32 +776,32 @@ public sealed class BRepAlgo_Loop
             {
                 break;
             }
-            V1 = TopoDS.Vertex(SV.First());
+            V1 = ShapeCasts.Vertex(SV.First());
             SV.Remove(1);
             if (SV.IsEmpty())
             {
                 break;
             }
-            if (SV.First().Orientation() == TopAbs_REVERSED)
+            if (SV.First().Orientation() == Reversed)
             {
-                V2 = TopoDS.Vertex(SV.First());
+                V2 = ShapeCasts.Vertex(SV.First());
                 SV.Remove(1);
                 //-------------------------------------------
                 // Copy the edge and restriction by V1 V2.
                 //-------------------------------------------
-                TopoDS_Shape NewEdge = WE.EmptyCopied();
-                TopoDS_Shape aLocalEdge = V1.Oriented(TopAbs_FORWARD);
+                Shape NewEdge = WE.EmptyCopied();
+                Shape aLocalEdge = V1.Oriented(Forward);
                 B.Add(NewEdge, aLocalEdge);
-                aLocalEdge = V2.Oriented(TopAbs_REVERSED);
-                B.Add(TopoDS.Edge(NewEdge), aLocalEdge);
+                aLocalEdge = V2.Oriented(Reversed);
+                B.Add(ShapeCasts.Edge(NewEdge), aLocalEdge);
                 if (V1.IsSame(VF))
                 {
                     U1 = f;
                 }
                 else
                 {
-                    TopoDS_Shape aLocalV = V1.Oriented(TopAbs_INTERNAL);
-                    U1 = BRep_Tool.Parameter(TopoDS.Vertex(aLocalV), WE);
+                    Shape aLocalV = V1.Oriented(Internal);
+                    U1 = Tool.Parameter(ShapeCasts.Vertex(aLocalV), WE);
                 }
                 if (V2.IsSame(VL))
                 {
@@ -807,10 +809,10 @@ public sealed class BRepAlgo_Loop
                 }
                 else
                 {
-                    TopoDS_Shape aLocalV = V2.Oriented(TopAbs_INTERNAL);
-                    U2 = BRep_Tool.Parameter(TopoDS.Vertex(aLocalV), WE);
+                    Shape aLocalV = V2.Oriented(Internal);
+                    U2 = Tool.Parameter(ShapeCasts.Vertex(aLocalV), WE);
                 }
-                B.Range(TopoDS.Edge(NewEdge), U1, U2);
+                B.Range(ShapeCasts.Edge(NewEdge), U1, U2);
                 NE.Append(NewEdge.Oriented(E.Orientation()));
             }
         }
@@ -821,16 +823,16 @@ public sealed class BRepAlgo_Loop
         while (it.More())
         {
             // skl : I change "E" to "EE"
-            TopoDS_Edge EE = TopoDS.Edge(it.Value());
-            BRep_Tool.Range(EE, out double fpar, out double lpar);
+            Edge EE = ShapeCasts.Edge(it.Value());
+            Tool.Range(EE, out double fpar, out double lpar);
             if (lpar - fpar <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 NE.Remove(it);
             }
             else
             {
-                BRep_Tool.UVPoints(EE, myFace, out Point2D pf, out Point2D pl);
-                if (pf.Distance(pl) <= Tol && !BRep_Tool.IsClosed(EE))
+                Tool.UVPoints(EE, myFace, out Point2D pf, out Point2D pl);
+                if (pf.Distance(pl) <= Tol && !Tool.IsClosed(EE))
                 {
                     NE.Remove(it);
                 }
@@ -843,7 +845,7 @@ public sealed class BRepAlgo_Loop
     }
 
     /// <summary>The wires built (possibly none).</summary>
-    public NCollection_List<TopoDS_Shape> NewWires() => myNewWires;
+    public NCollection_List<Shape> NewWires() => myNewWires;
 
     /// <summary>Builds the faces the wires bound on the face (<see cref="BRepAlgo_FaceRestrictor"/>).</summary>
     public void WiresToFaces()
@@ -851,19 +853,19 @@ public sealed class BRepAlgo_Loop
         if (!myNewWires.IsEmpty())
         {
             BRepAlgo_FaceRestrictor FR = new();
-            TopoDS_Shape aLocalS = myFace.Oriented(TopAbs_FORWARD);
-            FR.Init(TopoDS.Face(aLocalS), false);
-            NCollection_List<TopoDS_Shape>.Iterator it = new(myNewWires);
+            Shape aLocalS = myFace.Oriented(Forward);
+            FR.Init(ShapeCasts.Face(aLocalS), false);
+            NCollection_List<Shape>.Iterator it = new(myNewWires);
             for (; it.More(); it.Next())
             {
-                FR.Add(TopoDS.Wire(it.Value()));
+                FR.Add(ShapeCasts.Wire(it.Value()));
             }
 
             FR.InternalPerform();
 
             if (FR.IsDone())
             {
-                TopAbs_Orientation OriF = myFace.Orientation();
+                Orientation OriF = myFace.Orientation();
                 for (; FR.More(); FR.Next())
                 {
                     myNewFaces.Append(FR.InternalCurrent().Oriented(OriF));
@@ -873,51 +875,51 @@ public sealed class BRepAlgo_Loop
     }
 
     /// <summary>The faces built by <see cref="WiresToFaces"/> (possibly none).</summary>
-    public NCollection_List<TopoDS_Shape> NewFaces() => myNewFaces;
+    public NCollection_List<Shape> NewFaces() => myNewFaces;
 
     /// <summary>The edges cut from the edge <paramref name="E"/> and used in the wires (possibly none).</summary>
-    public NCollection_List<TopoDS_Shape> NewEdges(in TopoDS_Edge E) => myCutEdges[E];
+    public NCollection_List<Shape> NewEdges(in Edge E) => myCutEdges[E];
 
     /// <summary>Fills <paramref name="VerVerMap"/> with the vertices and their substitutes.</summary>
-    public void GetVerticesForSubstitute(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> VerVerMap)
+    public void GetVerticesForSubstitute(NCollection_DataMap<Shape, Shape> VerVerMap)
     {
         VerVerMap.Clear();
-        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> anItem in myVerticesForSubstitute)
+        foreach (KeyValuePair<Shape, Shape> anItem in myVerticesForSubstitute)
         {
             VerVerMap.Bind(anItem.Key, anItem.Value);
         }
     }
 
     /// <summary>Sets the vertices and their substitutes (a copy of <paramref name="VerVerMap"/>).</summary>
-    public void VerticesForSubstitute(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> VerVerMap)
+    public void VerticesForSubstitute(NCollection_DataMap<Shape, Shape> VerVerMap)
     {
-        myVerticesForSubstitute = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(VerVerMap);
+        myVerticesForSubstitute = new NCollection_DataMap<Shape, Shape>(VerVerMap);
     }
 
     /// <summary>
     /// Merges the vertices of single edges in <paramref name="theVEmap"/> that are images of the same vertex (the image
     /// set by <see cref="SetImageVV"/>) into one, then rebuilds the map.
     /// </summary>
-    public void UpdateVEmap(NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theVEmap)
+    public void UpdateVEmap(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theVEmap)
     {
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> VerLver = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> VerLver = new(ShapeHasher.Instance);
 
         for (int ii = 1; ii <= theVEmap.Extent(); ii++)
         {
-            TopoDS_Vertex aVertex = TopoDS.Vertex(theVEmap.FindKey(ii));
-            NCollection_List<TopoDS_Shape> aElist = theVEmap.FindFromIndex(ii);
+            Vertex aVertex = ShapeCasts.Vertex(theVEmap.FindKey(ii));
+            NCollection_List<Shape> aElist = theVEmap.FindFromIndex(ii);
             if (aElist.Extent() == 1 && myImageVV.IsImage(aVertex))
             {
-                TopoDS_Vertex aProVertex = TopoDS.Vertex(myImageVV.ImageFrom(aVertex));
+                Vertex aProVertex = ShapeCasts.Vertex(myImageVV.ImageFrom(aVertex));
                 if (VerLver.Contains(aProVertex))
                 {
-                    NCollection_List<TopoDS_Shape> aVlist = VerLver.ChangeFromKey(aProVertex);
-                    aVlist.Append(aVertex.Oriented(TopAbs_FORWARD));
+                    NCollection_List<Shape> aVlist = VerLver.ChangeFromKey(aProVertex);
+                    aVlist.Append(aVertex.Oriented(Forward));
                 }
                 else
                 {
-                    NCollection_List<TopoDS_Shape> aVlist = new();
-                    aVlist.Append(aVertex.Oriented(TopAbs_FORWARD));
+                    NCollection_List<Shape> aVlist = new();
+                    aVlist.Append(aVertex.Oriented(Forward));
                     VerLver.Add(aProVertex, aVlist);
                 }
             }
@@ -928,10 +930,10 @@ public sealed class BRepAlgo_Loop
             return;
         }
 
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
         for (int ii = 1; ii <= VerLver.Extent(); ii++)
         {
-            NCollection_List<TopoDS_Shape> aVlist = VerLver.FindFromIndex(ii);
+            NCollection_List<Shape> aVlist = VerLver.FindFromIndex(ii);
             if (aVlist.Extent() == 1)
             {
                 continue;
@@ -940,18 +942,18 @@ public sealed class BRepAlgo_Loop
             double aMaxTol = 0.0;
             NCollection_Array1<Point3D> Points = new(1, aVlist.Extent());
 
-            NCollection_List<TopoDS_Shape>.Iterator itl = new(aVlist);
+            NCollection_List<Shape>.Iterator itl = new(aVlist);
             int jj = 0;
             for (; itl.More(); itl.Next())
             {
-                TopoDS_Vertex aVertex = TopoDS.Vertex(itl.Value());
-                double aTol = BRep_Tool.Tolerance(aVertex);
+                Vertex aVertex = ShapeCasts.Vertex(itl.Value());
+                double aTol = Tool.Tolerance(aVertex);
                 aMaxTol = Max(aMaxTol, aTol);
-                Point3D aPnt = BRep_Tool.Pnt(aVertex);
+                Point3D aPnt = Tool.Pnt(aVertex);
                 Points[++jj] = aPnt;
             }
 
-            GeomLib.AxeOfInertia(Points, out Frame3D anAxis, out _);
+            global::Kerf.Engine.Geometry.Library.GeomLib.AxeOfInertia(Points, out Frame3D anAxis, out _);
             Point3D aCentre = anAxis.Location();
             double aMaxDist = 0.0;
             for (jj = 1; jj <= Points.Upper(); jj++)
@@ -963,13 +965,13 @@ public sealed class BRepAlgo_Loop
             aMaxTol = Max(aMaxTol, aMaxDist);
 
             // Find constant vertex
-            TopoDS_Vertex aConstVertex = new();
+            Vertex aConstVertex = new();
             for (itl.Initialize(aVlist); itl.More(); itl.Next())
             {
-                TopoDS_Vertex aVertex = TopoDS.Vertex(itl.Value());
-                NCollection_List<TopoDS_Shape> aElist = theVEmap.FindFromKey(aVertex);
-                TopoDS_Shape anEdge = aElist.First();
-                NCollection_List<TopoDS_Shape>.Iterator itcedges = new(myConstEdges);
+                Vertex aVertex = ShapeCasts.Vertex(itl.Value());
+                NCollection_List<Shape> aElist = theVEmap.FindFromKey(aVertex);
+                Shape anEdge = aElist.First();
+                NCollection_List<Shape>.Iterator itcedges = new(myConstEdges);
                 for (; itcedges.More(); itcedges.Next())
                 {
                     if (anEdge.IsSame(itcedges.Value()))
@@ -978,41 +980,41 @@ public sealed class BRepAlgo_Loop
                         break;
                     }
                 }
-                if (!aConstVertex.IsNull())
+                if (!aConstVertex.IsNull)
                 {
                     break;
                 }
             }
-            if (aConstVertex.IsNull())
+            if (aConstVertex.IsNull)
             {
-                aConstVertex = TopoDS.Vertex(aVlist.First());
+                aConstVertex = ShapeCasts.Vertex(aVlist.First());
             }
             aBB.UpdateVertex(aConstVertex, aCentre, aMaxTol);
 
             for (itl.Initialize(aVlist); itl.More(); itl.Next())
             {
-                TopoDS_Vertex aVertex = TopoDS.Vertex(itl.Value());
+                Vertex aVertex = ShapeCasts.Vertex(itl.Value());
                 if (aVertex.IsSame(aConstVertex))
                 {
                     continue;
                 }
 
-                NCollection_List<TopoDS_Shape> aElist = theVEmap.FindFromKey(aVertex);
-                TopoDS_Edge anEdge = TopoDS.Edge(aElist.First());
-                anEdge.Orientation(TopAbs_FORWARD);
-                TopExp.Vertices(anEdge, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
-                TopoDS_Vertex aVertexToRemove = aV1.IsSame(aVertex) ? aV1 : aV2;
+                NCollection_List<Shape> aElist = theVEmap.FindFromKey(aVertex);
+                Edge anEdge = ShapeCasts.Edge(aElist.First());
+                anEdge.Orientation(Forward);
+                Exploration.Vertices(anEdge, out Vertex aV1, out Vertex aV2);
+                Vertex aVertexToRemove = aV1.IsSame(aVertex) ? aV1 : aV2;
                 anEdge.Free(true);
                 aBB.Remove(anEdge, aVertexToRemove);
                 aBB.Add(anEdge, aConstVertex.Oriented(aVertexToRemove.Orientation()));
             }
         }
 
-        NCollection_IndexedMap<TopoDS_Shape> Emap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> Emap = new(ShapeHasher.Instance);
         for (int ii = 1; ii <= theVEmap.Extent(); ii++)
         {
-            NCollection_List<TopoDS_Shape> aElist = theVEmap.FindFromIndex(ii);
-            NCollection_List<TopoDS_Shape>.Iterator itl = new(aElist);
+            NCollection_List<Shape> aElist = theVEmap.FindFromIndex(ii);
+            NCollection_List<Shape>.Iterator itl = new(aElist);
             for (; itl.More(); itl.Next())
             {
                 Emap.Add(itl.Value());
@@ -1022,7 +1024,7 @@ public sealed class BRepAlgo_Loop
         theVEmap.Clear();
         for (int ii = 1; ii <= Emap.Extent(); ii++)
         {
-            TopExp.MapShapesAndAncestors(Emap.FindKey(ii), TopAbs_VERTEX, TopAbs_EDGE, theVEmap);
+            Exploration.MapShapesAndAncestors(Emap.FindKey(ii), ShapeType.Vertex, ShapeType.Edge, theVEmap);
         }
     }
 

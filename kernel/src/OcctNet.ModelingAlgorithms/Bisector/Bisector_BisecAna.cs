@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using static Occt.GccInt_IType;
 using static Kerf.Geometry.JoinKind;
@@ -22,7 +23,7 @@ namespace Occt;
 /// </remarks>
 public sealed class Bisector_BisecAna : Bisector_Curve
 {
-    private Geom2d_TrimmedCurve thebisector = null!;
+    private TrimmedCurve2D thebisector = null!;
 
     /// <summary>An empty bisector: Perform or Init must be called before it is used.</summary>
     public Bisector_BisecAna()
@@ -34,7 +35,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
     {
         if (thebisector.IsFrozen)
         {
-            thebisector = (Geom2d_TrimmedCurve)thebisector.Copy();
+            thebisector = (TrimmedCurve2D)thebisector.Copy();
         }
     }
 
@@ -214,7 +215,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
     /// defined by afirstvector, asecondvector and adirection. oncurve is true if apoint is common to the curves.
     /// </summary>
     /// <exception cref="NotDoneException">A curve is neither a line nor a circle.</exception>
-    internal void Perform(Geom2d_Curve afirstcurve, Geom2d_Curve asecondcurve, in Point2D apoint,
+    internal void Perform(Curve2D afirstcurve, Curve2D asecondcurve, in Point2D apoint,
                           in Vector2D afirstvector, in Vector2D asecondvector, double adirection,
                           JoinKind ajointype, double tolerance, bool oncurve = true)
     {
@@ -228,8 +229,8 @@ public sealed class Bisector_BisecAna : Bisector_Curve
 
         Type type1 = afirstcurve.GetType();
         Type type2 = asecondcurve.GetType();
-        Geom2d_Curve CurveF;
-        Geom2d_Curve CurveE;
+        Curve2D CurveF;
+        Curve2D CurveE;
         GccInt_Bisec? TheSol = null;
 
         // jgv: for OCC26296
@@ -245,18 +246,18 @@ public sealed class Bisector_BisecAna : Bisector_Curve
 
         tan1.Reverse();
 
-        if (type1 == typeof(Geom2d_TrimmedCurve))
+        if (type1 == typeof(TrimmedCurve2D))
         {
-            CurveF = ((Geom2d_TrimmedCurve)afirstcurve).ChangeBasisCurve();
+            CurveF = ((TrimmedCurve2D)afirstcurve).ChangeBasisCurve();
         }
         else
         {
             CurveF = afirstcurve;
         }
 
-        if (type2 == typeof(Geom2d_TrimmedCurve))
+        if (type2 == typeof(TrimmedCurve2D))
         {
-            CurveE = ((Geom2d_TrimmedCurve)asecondcurve).ChangeBasisCurve();
+            CurveE = ((TrimmedCurve2D)asecondcurve).ChangeBasisCurve();
         }
         else
         {
@@ -273,42 +274,42 @@ public sealed class Bisector_BisecAna : Bisector_Curve
         //                Determination of the nature of arguments.
         //=============================================================================
 
-        if (type1 == typeof(Geom2d_Circle))
+        if (type1 == typeof(CircleCurve2D))
         {
-            if (type2 == typeof(Geom2d_Circle))
+            if (type2 == typeof(CircleCurve2D))
             {
                 cas = 1;
-                Geom2d_Circle C1 = (Geom2d_Circle)CurveF;
+                CircleCurve2D C1 = (CircleCurve2D)CurveF;
                 circle1 = C1.Circ2d();
-                Geom2d_Circle C2 = (Geom2d_Circle)CurveE;
+                CircleCurve2D C2 = (CircleCurve2D)CurveE;
                 circle2 = C2.Circ2d();
             }
-            else if (type2 == typeof(Geom2d_Line))
+            else if (type2 == typeof(LineCurve2D))
             {
                 cas = 2;
-                Geom2d_Circle C1 = (Geom2d_Circle)CurveF;
+                CircleCurve2D C1 = (CircleCurve2D)CurveF;
                 circle1 = C1.Circ2d();
-                Geom2d_Line L2 = (Geom2d_Line)CurveE;
+                LineCurve2D L2 = (LineCurve2D)CurveE;
                 line2 = L2.Lin2d();
             }
             // else: OCCT prints "Not yet implemented" (left out).
         }
-        else if (type1 == typeof(Geom2d_Line))
+        else if (type1 == typeof(LineCurve2D))
         {
-            if (type2 == typeof(Geom2d_Circle))
+            if (type2 == typeof(CircleCurve2D))
             {
                 cas = 2;
-                Geom2d_Circle C1 = (Geom2d_Circle)CurveE;
+                CircleCurve2D C1 = (CircleCurve2D)CurveE;
                 circle1 = C1.Circ2d();
-                Geom2d_Line L2 = (Geom2d_Line)CurveF;
+                LineCurve2D L2 = (LineCurve2D)CurveF;
                 line2 = L2.Lin2d();
             }
-            else if (type2 == typeof(Geom2d_Line))
+            else if (type2 == typeof(LineCurve2D))
             {
                 cas = 3;
-                Geom2d_Line L1 = (Geom2d_Line)CurveF;
+                LineCurve2D L1 = (LineCurve2D)CurveF;
                 line1 = L1.Lin2d();
-                Geom2d_Line L2 = (Geom2d_Line)CurveE;
+                LineCurve2D L2 = (LineCurve2D)CurveE;
                 line2 = L2.Lin2d();
             }
             // else: OCCT prints "Not yet implemented" (left out).
@@ -372,17 +373,17 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                                                  ref parameter, ref sense, out ok);
                     }
                     //  Modified by skv - Tue Feb 15 17:51:29 2005 Integration End
-                    Geom2d_Curve bisectorcurve = new Geom2d_Line(line);
+                    Curve2D bisectorcurve = new LineCurve2D(line);
                     if (!sense)
                     {
-                        thebisector = new Geom2d_TrimmedCurve(bisectorcurve, parameter, -global::Kerf.Engine.Foundation.Precision.Infinite());
+                        thebisector = new TrimmedCurve2D(bisectorcurve, parameter, -global::Kerf.Engine.Foundation.Precision.Infinite());
                     }
                     else
                     {
                         double parameter2;
                         parameter2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(line, circle1.Location());
                         parameter2 += 1.0e-8;
-                        thebisector = new Geom2d_TrimmedCurve(bisectorcurve, parameter, parameter2);
+                        thebisector = new TrimmedCurve2D(bisectorcurve, parameter, parameter2);
                     }
                     break;
                 } // end of case mixed circles.
@@ -476,12 +477,12 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                     // OCCT: with no solution kept, the bisector stays unset (occt-issues.md).
                     if (TheSol is not null)
                     {
-                        Geom2d_Curve bisectorcurve;
+                        Curve2D bisectorcurve;
                         GccInt_IType type = TheSol.ArcType();
                         if (type == GccInt_Lin)
                         {
                             Line2D gpline = TheSol.Line();
-                            bisectorcurve = new Geom2d_Line(gpline);
+                            bisectorcurve = new LineCurve2D(gpline);
 
                             double secondparameter = global::Kerf.Engine.Foundation.Precision.Infinite();
                             if (!thesense)
@@ -519,7 +520,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                                         {
                                             distancemini = aNewDMin;
                                             firstparameter = global::Kerf.Engine.Geometry.ElCLib.Parameter(aNewLin, apoint);
-                                            bisectorcurve = new Geom2d_Line(aNewLin);
+                                            bisectorcurve = new LineCurve2D(aNewLin);
                                         }
                                     }
                                     //  Modified by skv - Tue Apr 13 17:23:32 2004 IDEM(Airbus) End
@@ -557,47 +558,47 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                                 }
                             }
 
-                            thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter, secondparameter);
+                            thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter, secondparameter);
                         }
                         else if (type == GccInt_Cir)
                         {
-                            bisectorcurve = new Geom2d_Circle(TheSol.Circle());
+                            bisectorcurve = new CircleCurve2D(TheSol.Circle());
                             if (!thesense)
                             {
-                                thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter - 2.0 * M_PI,
+                                thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter - 2.0 * M_PI,
                                                                       firstparameter, thesense);
                             }
                             else
                             {
-                                thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter,
+                                thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter,
                                                                       firstparameter + 2.0 * M_PI, thesense);
                             }
                         }
                         else if (type == GccInt_Hpr)
                         {
-                            bisectorcurve = new Geom2d_Hyperbola(TheSol.Hyperbola());
+                            bisectorcurve = new HyperbolaCurve2D(TheSol.Hyperbola());
                             if (!thesense)
                             {
                                 thebisector =
-                                    new Geom2d_TrimmedCurve(bisectorcurve, firstparameter, -global::Kerf.Engine.Foundation.Precision.Infinite());
+                                    new TrimmedCurve2D(bisectorcurve, firstparameter, -global::Kerf.Engine.Foundation.Precision.Infinite());
                             }
                             else
                             {
                                 thebisector =
-                                    new Geom2d_TrimmedCurve(bisectorcurve, firstparameter, global::Kerf.Engine.Foundation.Precision.Infinite());
+                                    new TrimmedCurve2D(bisectorcurve, firstparameter, global::Kerf.Engine.Foundation.Precision.Infinite());
                             }
                         }
                         else if (type == GccInt_Ell)
                         {
-                            bisectorcurve = new Geom2d_Ellipse(TheSol.Ellipse());
+                            bisectorcurve = new EllipseCurve2D(TheSol.Ellipse());
                             if (!thesense)
                             {
-                                thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter - 2.0 * M_PI,
+                                thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter - 2.0 * M_PI,
                                                                       firstparameter, thesense);
                             }
                             else
                             {
-                                thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter,
+                                thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter,
                                                                       firstparameter + 2.0 * M_PI, thesense);
                             }
                         }
@@ -667,7 +668,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                     if (TheSol is not null)
                     {
                         GccInt_IType type = TheSol.ArcType();
-                        Geom2d_Curve bisectorcurve;
+                        Curve2D bisectorcurve;
                         if (type == GccInt_Lin)
                         {
                             // -----------------------------------------------------------------
@@ -684,7 +685,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                             circlecenter = circle1.Location();
                             gpline = TheSol.Line();
                             secondparameter = global::Kerf.Engine.Geometry.ElCLib.Parameter(gpline, circlecenter);
-                            bisectorcurve = new Geom2d_Line(gpline);
+                            bisectorcurve = new LineCurve2D(gpline);
 
                             if (!thesense)
                             {
@@ -709,11 +710,11 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                                 }
                             }
 
-                            thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter, secondparameter);
+                            thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter, secondparameter);
                         }
                         else if (type == GccInt_Par)
                         {
-                            bisectorcurve = new Geom2d_Parabola(TheSol.Parabola());
+                            bisectorcurve = new ParabolaCurve2D(TheSol.Parabola());
                             Point2D apex = bisectorcurve.Value(0.0);
                             Point2D firstpnt = bisectorcurve.Value(firstparameter);
                             double ChordLen = apex.Distance(firstpnt);
@@ -726,7 +727,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                                 { // first parameter is too far from peak of parabola
                                     secondparameter = 0.0;
                                 }
-                                thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter, -secondparameter);
+                                thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter, -secondparameter);
                             }
                             else
                             {
@@ -735,7 +736,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                                 { // first parameter is too far from peak of parabola
                                     secondparameter = 0.0;
                                 }
-                                thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter, secondparameter);
+                                thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter, secondparameter);
                             }
                         }
                     }
@@ -784,15 +785,15 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                     }
                     //  Modified by skv - Tue Feb 15 17:51:29 2005 Integration End
                     firstparameter = parameter;
-                    Geom2d_Curve bisectorcurve;
-                    bisectorcurve = new Geom2d_Line(line);
+                    Curve2D bisectorcurve;
+                    bisectorcurve = new LineCurve2D(line);
                     if (!sense)
                     {
-                        thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter, -global::Kerf.Engine.Foundation.Precision.Infinite());
+                        thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter, -global::Kerf.Engine.Foundation.Precision.Infinite());
                     }
                     else
                     {
-                        thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter, global::Kerf.Engine.Foundation.Precision.Infinite());
+                        thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter, global::Kerf.Engine.Foundation.Precision.Infinite());
                     }
                     //  Modified by skv - Wed Jul  7 17:21:09 2004 IDEM(Airbus) End
                 }
@@ -820,15 +821,15 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                         distancemini = distanceptsol;
                     }
                     TheSol = new GccInt_BLine(l);
-                    Geom2d_Curve bisectorcurve;
-                    bisectorcurve = new Geom2d_Line(TheSol.Line());
+                    Curve2D bisectorcurve;
+                    bisectorcurve = new LineCurve2D(TheSol.Line());
                     if (!thesense)
                     {
-                        thebisector = new Geom2d_TrimmedCurve(bisectorcurve, 0.0, -global::Kerf.Engine.Foundation.Precision.Infinite());
+                        thebisector = new TrimmedCurve2D(bisectorcurve, 0.0, -global::Kerf.Engine.Foundation.Precision.Infinite());
                     }
                     else
                     {
-                        thebisector = new Geom2d_TrimmedCurve(bisectorcurve, 0.0, global::Kerf.Engine.Foundation.Precision.Infinite());
+                        thebisector = new TrimmedCurve2D(bisectorcurve, 0.0, global::Kerf.Engine.Foundation.Precision.Infinite());
                     }
                 }
             }
@@ -854,7 +855,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
     /// Computes the bisecting curve of a line or circle (possibly trimmed) and a point, from the point apoint.
     /// oncurve is true if apoint is the point asecondpoint.
     /// </summary>
-    internal void Perform(Geom2d_Curve afirstcurve, Geom2d_Point asecondpoint, in Point2D apoint,
+    internal void Perform(Curve2D afirstcurve, Point2 asecondpoint, in Point2D apoint,
                           in Vector2D afirstvector, in Vector2D asecondvector, double adirection, double tolerance,
                           bool oncurve = true)
     {
@@ -863,7 +864,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
         bool thesense = false, sense;
         double distanceptsol, parameter = 0.0, firstparameter = 0.0, secondparameter;
         Vector2D VecRef = new(0.0, 0.0);
-        Geom2d_Curve curve;
+        Curve2D curve;
         GccInt_Bisec? TheSol = null;
 
         Circle2D circle = new();
@@ -874,9 +875,9 @@ public sealed class Bisector_BisecAna : Bisector_Curve
 
         Type aFirstCurveType = afirstcurve.GetType();
 
-        if (aFirstCurveType == typeof(Geom2d_TrimmedCurve))
+        if (aFirstCurveType == typeof(TrimmedCurve2D))
         {
-            curve = ((Geom2d_TrimmedCurve)afirstcurve).ChangeBasisCurve();
+            curve = ((TrimmedCurve2D)afirstcurve).ChangeBasisCurve();
         }
         else
         {
@@ -886,16 +887,16 @@ public sealed class Bisector_BisecAna : Bisector_Curve
         aFirstCurveType = curve.GetType();
         // OCCT reads asecondpoint->Pnt2d() into an unused constant here.
 
-        if (aFirstCurveType == typeof(Geom2d_Circle))
+        if (aFirstCurveType == typeof(CircleCurve2D))
         {
             cas = 1;
-            Geom2d_Circle C1 = (Geom2d_Circle)curve;
+            CircleCurve2D C1 = (CircleCurve2D)curve;
             circle = C1.Circ2d();
         }
-        else if (aFirstCurveType == typeof(Geom2d_Line))
+        else if (aFirstCurveType == typeof(LineCurve2D))
         {
             cas = 2;
-            Geom2d_Line L1 = (Geom2d_Line)curve;
+            LineCurve2D L1 = (LineCurve2D)curve;
             line = L1.Lin2d();
         }
         // else: OCCT prints "Not yet implemented" (left out).
@@ -932,7 +933,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                     if (TheSol is not null)
                     {
                         GccInt_IType aSolType = TheSol.ArcType();
-                        Geom2d_Curve bisectorcurve;
+                        Curve2D bisectorcurve;
                         if (aSolType == GccInt_Lin)
                         {
                             // ----------------------------------------------------------------------------
@@ -946,7 +947,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                             circlecenter = circle.Location();
                             line = TheSol.Line();
                             secondparameter = global::Kerf.Engine.Geometry.ElCLib.Parameter(line, circlecenter);
-                            bisectorcurve = new Geom2d_Line(line);
+                            bisectorcurve = new LineCurve2D(line);
 
                             if (!thesense)
                             {
@@ -971,47 +972,47 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                                 }
                             }
 
-                            thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter, secondparameter);
+                            thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter, secondparameter);
                         }
                         else if (aSolType == GccInt_Cir)
                         {
-                            bisectorcurve = new Geom2d_Circle(TheSol.Circle());
+                            bisectorcurve = new CircleCurve2D(TheSol.Circle());
                             if (!thesense)
                             {
-                                thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter - 2.0 * M_PI,
+                                thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter - 2.0 * M_PI,
                                                                       firstparameter, thesense);
                             }
                             else
                             {
-                                thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter,
+                                thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter,
                                                                       firstparameter + 2.0 * M_PI, thesense);
                             }
                         }
                         else if (aSolType == GccInt_Hpr)
                         {
-                            bisectorcurve = new Geom2d_Hyperbola(TheSol.Hyperbola());
+                            bisectorcurve = new HyperbolaCurve2D(TheSol.Hyperbola());
                             if (!thesense)
                             {
                                 thebisector =
-                                    new Geom2d_TrimmedCurve(bisectorcurve, firstparameter, -global::Kerf.Engine.Foundation.Precision.Infinite());
+                                    new TrimmedCurve2D(bisectorcurve, firstparameter, -global::Kerf.Engine.Foundation.Precision.Infinite());
                             }
                             else
                             {
                                 thebisector =
-                                    new Geom2d_TrimmedCurve(bisectorcurve, firstparameter, global::Kerf.Engine.Foundation.Precision.Infinite());
+                                    new TrimmedCurve2D(bisectorcurve, firstparameter, global::Kerf.Engine.Foundation.Precision.Infinite());
                             }
                         }
                         else if (aSolType == GccInt_Ell)
                         {
-                            bisectorcurve = new Geom2d_Ellipse(TheSol.Ellipse());
+                            bisectorcurve = new EllipseCurve2D(TheSol.Ellipse());
                             if (!thesense)
                             {
-                                thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter - 2.0 * M_PI,
+                                thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter - 2.0 * M_PI,
                                                                       firstparameter, thesense);
                             }
                             else
                             {
-                                thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter,
+                                thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter,
                                                                       firstparameter + 2.0 * M_PI, thesense);
                             }
                         }
@@ -1030,15 +1031,15 @@ public sealed class Bisector_BisecAna : Bisector_Curve
                 GccInt_Bisec solution = Bisector.ThisSolution();
                 Degenerate(ref solution, tolerance);
                 GccInt_IType type = solution.ArcType();
-                Geom2d_Curve bisectorcurve = null!;
+                Curve2D bisectorcurve = null!;
 
                 if (type == GccInt_Lin)
                 {
-                    bisectorcurve = new Geom2d_Line(solution.Line());
+                    bisectorcurve = new LineCurve2D(solution.Line());
                 }
                 else if (type == GccInt_Par)
                 {
-                    bisectorcurve = new Geom2d_Parabola(solution.Parabola());
+                    bisectorcurve = new ParabolaCurve2D(solution.Parabola());
                 }
                 sense = false;
                 distanceptsol = Distance(apoint, solution, afirstvector, asecondvector, VecRef, adirection,
@@ -1051,11 +1052,11 @@ public sealed class Bisector_BisecAna : Bisector_Curve
 
                 if (!thesense)
                 {
-                    thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter, -global::Kerf.Engine.Foundation.Precision.Infinite());
+                    thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter, -global::Kerf.Engine.Foundation.Precision.Infinite());
                 }
                 else
                 {
-                    thebisector = new Geom2d_TrimmedCurve(bisectorcurve, firstparameter, global::Kerf.Engine.Foundation.Precision.Infinite());
+                    thebisector = new TrimmedCurve2D(bisectorcurve, firstparameter, global::Kerf.Engine.Foundation.Precision.Infinite());
                 }
             }
             break;
@@ -1082,7 +1083,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
     /// with the vectors exchanged and the direction reversed, and a tolerance of 0 (Tolerance is unused, as in
     /// OCCT).
     /// </summary>
-    internal void Perform(Geom2d_Point afirstpoint, Geom2d_Curve asecondcurve, in Point2D apoint,
+    internal void Perform(Point2 afirstpoint, Curve2D asecondcurve, in Point2D apoint,
                           in Vector2D afirstvector, in Vector2D asecondvector, double adirection, double Tolerance,
                           bool oncurve = true)
     {
@@ -1109,7 +1110,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
     /// Computes the bisecting line of two points, from the point apoint (Tolerance is unused, as in OCCT).
     /// </summary>
     /// <exception cref="GccAna_NoSolution">The points coincide.</exception>
-    internal void Perform(Geom2d_Point afirstpoint, Geom2d_Point asecondpoint, in Point2D apoint,
+    internal void Perform(Point2 afirstpoint, Point2 asecondpoint, in Point2D apoint,
                           in Vector2D afirstvector, in Vector2D asecondvector, double adirection,
                           double Tolerance = 0.0, bool oncurve = true)
     {
@@ -1127,14 +1128,14 @@ public sealed class Bisector_BisecAna : Bisector_Curve
         // OCCT: otherwise the bisector stays unset, and Bisector_Bisec dereferences it (occt-issues.md).
         if (ok || !oncurve)
         {
-            Geom2d_Curve bisectorcurve = new Geom2d_Line(line);
+            Curve2D bisectorcurve = new LineCurve2D(line);
             if (!sense)
             {
-                thebisector = new Geom2d_TrimmedCurve(bisectorcurve, parameter, -global::Kerf.Engine.Foundation.Precision.Infinite());
+                thebisector = new TrimmedCurve2D(bisectorcurve, parameter, -global::Kerf.Engine.Foundation.Precision.Infinite());
             }
             else
             {
-                thebisector = new Geom2d_TrimmedCurve(bisectorcurve, parameter, global::Kerf.Engine.Foundation.Precision.Infinite());
+                thebisector = new TrimmedCurve2D(bisectorcurve, parameter, global::Kerf.Engine.Foundation.Precision.Infinite());
             }
         }
     }
@@ -1154,7 +1155,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
     /// <summary>
     /// Trims the bisector by the domain of the curve Cu: does nothing, OCCT's body is commented out.
     /// </summary>
-    internal void SetTrim(Geom2d_Curve Cu)
+    internal void SetTrim(Curve2D Cu)
     {
         CheckMutable();
         // OCCT's body is commented out (the trimming by the limit lines of Cu's domain).
@@ -1184,10 +1185,10 @@ public sealed class Bisector_BisecAna : Bisector_Curve
     public override bool IsCN(int N) => thebisector.IsCN(N);
 
     /// <summary>A new, unfrozen bisector with a copy of the trimmed conic.</summary>
-    public override Geom2d_Geometry Copy()
+    public override Geometry2D Copy()
     {
         Bisector_BisecAna C = new();
-        C.Init((Geom2d_TrimmedCurve)thebisector.Copy());
+        C.Init((TrimmedCurve2D)thebisector.Copy());
         return C;
     }
 
@@ -1212,10 +1213,10 @@ public sealed class Bisector_BisecAna : Bisector_Curve
     public override double LastParameter() => thebisector.LastParameter();
 
     /// <summary>True if the conic is closed.</summary>
-    public override bool IsClosed() => thebisector.ChangeBasisCurve().IsClosed();
+    public override bool IsClosed => thebisector.ChangeBasisCurve().IsClosed;
 
     /// <summary>True if the conic is periodic.</summary>
-    public override bool IsPeriodic() => thebisector.ChangeBasisCurve().IsPeriodic();
+    public override bool IsPeriodic => thebisector.ChangeBasisCurve().IsPeriodic;
 
     /// <summary>The trimmed conic's continuity.</summary>
     public override Continuity Continuity() => thebisector.Continuity();
@@ -1236,7 +1237,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
     public override Vector2D EvalDN(double U, int N) => thebisector.ChangeBasisCurve().EvalDN(U, N);
 
     /// <summary>The conic (line, circle, ellipse, parabola or hyperbola), frozen.</summary>
-    public Geom2d_Curve Geom2dCurve() => thebisector.BasisCurve();
+    public Curve2D Geom2dCurve() => thebisector.BasisCurve();
 
     /// <summary>The parameter of the point P on the conic.</summary>
     public override double Parameter(in Point2D P)
@@ -1247,32 +1248,32 @@ public sealed class Bisector_BisecAna : Bisector_Curve
         Circle2D gpcircle;
         Line2D gpline;
 
-        Geom2d_Curve BasisCurve = thebisector.ChangeBasisCurve();
+        Curve2D BasisCurve = thebisector.ChangeBasisCurve();
         Type Type = BasisCurve.GetType();
 
-        if (Type == typeof(Geom2d_Line))
+        if (Type == typeof(LineCurve2D))
         {
-            gpline = ((Geom2d_Line)BasisCurve).Lin2d();
+            gpline = ((LineCurve2D)BasisCurve).Lin2d();
             return global::Kerf.Engine.Geometry.ElCLib.Parameter(gpline, P);
         }
-        else if (Type == typeof(Geom2d_Circle))
+        else if (Type == typeof(CircleCurve2D))
         {
-            gpcircle = ((Geom2d_Circle)BasisCurve).Circ2d();
+            gpcircle = ((CircleCurve2D)BasisCurve).Circ2d();
             return global::Kerf.Engine.Geometry.ElCLib.Parameter(gpcircle, P);
         }
-        else if (Type == typeof(Geom2d_Hyperbola))
+        else if (Type == typeof(HyperbolaCurve2D))
         {
-            gphyperbola = ((Geom2d_Hyperbola)BasisCurve).Hypr2d();
+            gphyperbola = ((HyperbolaCurve2D)BasisCurve).Hypr2d();
             return global::Kerf.Engine.Geometry.ElCLib.Parameter(gphyperbola, P);
         }
-        else if (Type == typeof(Geom2d_Parabola))
+        else if (Type == typeof(ParabolaCurve2D))
         {
-            gpparabola = ((Geom2d_Parabola)BasisCurve).Parab2d();
+            gpparabola = ((ParabolaCurve2D)BasisCurve).Parab2d();
             return global::Kerf.Engine.Geometry.ElCLib.Parameter(gpparabola, P);
         }
-        else if (Type == typeof(Geom2d_Ellipse))
+        else if (Type == typeof(EllipseCurve2D))
         {
-            gpellipse = ((Geom2d_Ellipse)BasisCurve).Elips2d();
+            gpellipse = ((EllipseCurve2D)BasisCurve).Elips2d();
             return global::Kerf.Engine.Geometry.ElCLib.Parameter(gpellipse, P);
         }
         return 0.0;
@@ -1310,7 +1311,7 @@ public sealed class Bisector_BisecAna : Bisector_Curve
     }
 
     /// <summary>Makes Bis the bisector (shared, as OCCT's handle; copied before this curve changes if frozen).</summary>
-    internal void Init(Geom2d_TrimmedCurve Bis)
+    internal void Init(TrimmedCurve2D Bis)
     {
         CheckMutable();
         thebisector = Bis;

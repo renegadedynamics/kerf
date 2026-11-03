@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using System.Globalization;
 using System.Text;
 
@@ -22,8 +24,8 @@ internal static partial class Build123dPhase7Capture
     private static bool IsTracked(N.TopAbs_ShapeEnum theType) =>
         theType is N.TopAbs_ShapeEnum.TopAbs_VERTEX or N.TopAbs_ShapeEnum.TopAbs_EDGE or N.TopAbs_ShapeEnum.TopAbs_FACE or N.TopAbs_ShapeEnum.TopAbs_SOLID;
 
-    private static bool IsTracked(TopAbs_ShapeEnum theType) =>
-        theType is TopAbs_ShapeEnum.TopAbs_VERTEX or TopAbs_ShapeEnum.TopAbs_EDGE or TopAbs_ShapeEnum.TopAbs_FACE or TopAbs_ShapeEnum.TopAbs_SOLID;
+    private static bool IsTracked(ShapeType theType) =>
+        theType is ShapeType.Vertex or ShapeType.Edge or ShapeType.Face or ShapeType.Solid;
 
     // Make3DResult's unwrapping of a compound of one shape
     private static N.TopoDS_Shape NUnwrap(N.TopoDS_Shape theShape)
@@ -38,11 +40,11 @@ internal static partial class Build123dPhase7Capture
         return theShape;
     }
 
-    private static TopoDS_Shape PUnwrap(TopoDS_Shape theShape)
+    private static Shape PUnwrap(Shape theShape)
     {
-        while (theShape.ShapeType() == TopAbs_ShapeEnum.TopAbs_COMPOUND && theShape.NbChildren() == 1)
+        while (theShape.ShapeType() == ShapeType.Compound && theShape.ChildCount == 1)
         {
-            theShape = new TopoDS_Iterator(theShape).Value();
+            theShape = new Iterator(theShape).Value();
         }
         return theShape;
     }
@@ -55,7 +57,7 @@ internal static partial class Build123dPhase7Capture
         return aCheck.IsValid();
     }
 
-    private static bool PValid(TopoDS_Shape theShape)
+    private static bool PValid(Shape theShape)
     {
         var aCheck = new BRepCheck_Analyzer(PUnwrap(theShape));
         aCheck.SetParallel(true);
@@ -142,16 +144,16 @@ internal static partial class Build123dPhase7Capture
         return aSb.ToString();
     }
 
-    private static string BlendHistory(in TopoDS_Shape theOp, in TopoDS_Shape theResult, BRepBuilderAPI_MakeShape theMaker)
+    private static string BlendHistory(in Shape theOp, in Shape theResult, BRepBuilderAPI_MakeShape theMaker)
     {
-        var anIn = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theOp, anIn);
-        var aRes = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theResult, aRes);
+        var anIn = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theOp, anIn);
+        var aRes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theResult, aRes);
         var aSb = new StringBuilder();
         for (int i = 1; i <= anIn.Extent(); i++)
         {
-            TopoDS_Shape aS = anIn[i];
+            Shape aS = anIn[i];
             if (!IsTracked(aS.ShapeType()))
             {
                 continue;
@@ -166,8 +168,8 @@ internal static partial class Build123dPhase7Capture
     private static N.TopoDS_Edge NEdge(N.TopTools_IndexedMapOfShape theEdges, int theK) =>
         N.TopoDS.Edge(theEdges.FindKey(Math.Abs(theK)).Oriented(theK < 0 ? N.TopAbs_Orientation.TopAbs_REVERSED : N.TopAbs_Orientation.TopAbs_FORWARD));
 
-    private static TopoDS_Edge PEdge(NCollection_IndexedMap<TopoDS_Shape> theEdges, int theK) =>
-        TopoDS.Edge(theEdges[Math.Abs(theK)].Oriented(theK < 0 ? TopAbs_Orientation.TopAbs_REVERSED : TopAbs_Orientation.TopAbs_FORWARD));
+    private static Edge PEdge(NCollection_IndexedMap<Shape> theEdges, int theK) =>
+        ShapeCasts.Edge(theEdges[Math.Abs(theK)].Oriented(theK < 0 ? Orientation.Reversed : Orientation.Forward));
 
     // One fillet natively: the result (or the exception), the status (done; the faulty contours' details by index)
     private static (string? Error, string Status, N.TopoDS_Shape? Result, string History, string? Details) NativeFillet(
@@ -222,18 +224,18 @@ internal static partial class Build123dPhase7Capture
         return (anError, aStatus.ToString(), aRes, aHistory, aDetails);
     }
 
-    private static (string? Error, string Status, TopoDS_Shape? Result, string History) PortFillet(TopoDS_Shape theShape, int[] theEdges,
+    private static (string? Error, string Status, Shape? Result, string History) PortFillet(Shape theShape, int[] theEdges,
                                                                                                     double theRadius, bool theHistory)
     {
-        var anEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, TopAbs_ShapeEnum.TopAbs_EDGE, anEdges);
+        var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, ShapeType.Edge, anEdges);
         var aB = new BRepFilletAPI_MakeFillet(theShape);
         foreach (int k in theEdges)
         {
             aB.Add(theRadius, PEdge(anEdges, k));
         }
         string? anError = null;
-        TopoDS_Shape? aRes = null;
+        Shape? aRes = null;
         try
         {
             aRes = aB.Shape();
@@ -262,7 +264,7 @@ internal static partial class Build123dPhase7Capture
             aFaulty.Add((Reason(aStripe), aSet));
         }
         aStatus.Append(" details=").Append(Details(theEdges, aFaulty));
-        string aHistory = theHistory && aRes is TopoDS_Shape r ? BlendHistory(theShape, r, aB) : "";
+        string aHistory = theHistory && aRes is Shape r ? BlendHistory(theShape, r, aB) : "";
         return (anError, aStatus.ToString(), aRes, aHistory);
     }
 
@@ -362,38 +364,38 @@ internal static partial class Build123dPhase7Capture
         }
     }
 
-    private static P7Port RunBlendPort(P7Call theCall, List<TopoDS_Shape> theOps, bool theHistory)
+    private static P7Port RunBlendPort(P7Call theCall, List<Shape> theOps, bool theHistory)
     {
         P7Args a = theCall.Args;
-        TopoDS_Shape aShape = theOps[0];
+        Shape aShape = theOps[0];
         try
         {
             switch (theCall.Op)
             {
                 case P7Op.Fillet:
                 {
-                    (string? anError, string aStatus, TopoDS_Shape? aRes, string aHistory) = PortFillet(aShape, a.Edges!, a.Value, theHistory);
+                    (string? anError, string aStatus, Shape? aRes, string aHistory) = PortFillet(aShape, a.Edges!, a.Value, theHistory);
                     return new P7Port(anError, aStatus, aRes, aHistory);
                 }
                 case P7Op.Chamfer:
                 {
-                    var anEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                    TopExp.MapShapes(aShape, TopAbs_ShapeEnum.TopAbs_EDGE, anEdges);
-                    var aFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                    TopExp.MapShapes(aShape, TopAbs_ShapeEnum.TopAbs_FACE, aFaces);
-                    var anEF = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-                    TopExp.MapShapesAndAncestors(aShape, TopAbs_ShapeEnum.TopAbs_EDGE, TopAbs_ShapeEnum.TopAbs_FACE, anEF);
+                    var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                    Exploration.MapShapes(aShape, ShapeType.Edge, anEdges);
+                    var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                    Exploration.MapShapes(aShape, ShapeType.Face, aFaces);
+                    var anEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+                    Exploration.MapShapesAndAncestors(aShape, ShapeType.Edge, ShapeType.Face, anEF);
                     var aB = new BRepFilletAPI_MakeChamfer(aShape);
                     var aChosen = new List<int>();
                     for (int i = 0; i < a.Edges!.Length; i++)
                     {
-                        TopoDS_Edge anE = PEdge(anEdges, a.Edges[i]);
-                        TopoDS_Face aF = a.Faces![i] > 0 ? TopoDS.Face(aFaces[a.Faces[i]]) : TopoDS.Face(anEF.FindFromKey(anE).First());
+                        Edge anE = PEdge(anEdges, a.Edges[i]);
+                        Face aF = a.Faces![i] > 0 ? ShapeCasts.Face(aFaces[a.Faces[i]]) : ShapeCasts.Face(anEF.FindFromKey(anE).First());
                         aChosen.Add(aFaces.FindIndex(aF));
                         aB.Add(a.Value, a.Value2, anE, aF);
                     }
                     string? anError = null;
-                    TopoDS_Shape? aRes = null;
+                    Shape? aRes = null;
                     try
                     {
                         aRes = aB.Shape();
@@ -403,7 +405,7 @@ internal static partial class Build123dPhase7Capture
                         anError = ErrorOf(e);
                     }
                     string aStatus = $"done={aB.IsDone()} contours={aB.NbContours()} faces={string.Join(',', aChosen)}";
-                    return new P7Port(anError, aStatus, aRes, theHistory && aRes is TopoDS_Shape r ? BlendHistory(aShape, r, aB) : "");
+                    return new P7Port(anError, aStatus, aRes, theHistory && aRes is Shape r ? BlendHistory(aShape, r, aB) : "");
                 }
                 default:
                 {
@@ -419,8 +421,8 @@ internal static partial class Build123dPhase7Capture
                         {
                             throw new InvalidOperationException();
                         }
-                        (string? anError, _, TopoDS_Shape? aRes, _) = PortFillet(aShape, a.Edges!, aMid, false);
-                        bool isOk = anError is null && aRes is TopoDS_Shape r && PValid(r);
+                        (string? anError, _, Shape? aRes, _) = PortFillet(aShape, a.Edges!, aMid, false);
+                        bool isOk = anError is null && aRes is Shape r && PValid(r);
                         aTrace.Append(isOk ? " +" : " -").Append(aMid.ToString("R", CultureInfo.InvariantCulture));
                         if (!isOk)
                         {

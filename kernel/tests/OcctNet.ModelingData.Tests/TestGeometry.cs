@@ -11,7 +11,7 @@ namespace OcctNet.ModelingData.Tests;
 /// protected internal mutators: <c>protected internal override</c> here, because this assembly sees
 /// ModelingData's internals; <c>protected override</c> in an assembly that doesn't.
 /// </summary>
-internal sealed class TestLine : Geom_Curve
+internal sealed class TestLine : Curve3D
 {
     private Point3D myOrigin;
     private Vector3D myDir;
@@ -33,7 +33,7 @@ internal sealed class TestLine : Geom_Curve
         myDir.Transform(T);
     }
 
-    public override Geom_Geometry Copy() => new TestLine(myOrigin, myDir);
+    public override Geometry3D Copy() => new TestLine(myOrigin, myDir);
 
     protected internal override void Reverse()
     {
@@ -47,9 +47,9 @@ internal sealed class TestLine : Geom_Curve
 
     public override double LastParameter() => global::Kerf.Engine.Foundation.Precision.Infinite();
 
-    public override bool IsClosed() => false;
+    public override bool IsClosed => false;
 
-    public override bool IsPeriodic() => false;
+    public override bool IsPeriodic => false;
 
     public override Continuity Continuity() => CN;
 
@@ -71,11 +71,11 @@ internal sealed class TestLine : Geom_Curve
 /// A minimal concrete surface: S(u, v) = (u, 2v, u * v), with nontrivial mixed derivatives so that parameter
 /// maps (scale and UV swap) show in every derivative.
 /// </summary>
-internal sealed class TestSaddle : Geom_Surface
+internal sealed class TestSaddle : Surface
 {
     protected internal override void Transform(in Transform3D T) => throw new NotSupportedException();
 
-    public override Geom_Geometry Copy() => new TestSaddle();
+    public override Geometry3D Copy() => new TestSaddle();
 
     protected internal override void UReverse() => throw new NotSupportedException();
 
@@ -93,17 +93,17 @@ internal sealed class TestSaddle : Geom_Surface
         V2 = 10;
     }
 
-    public override bool IsUClosed() => false;
+    public override bool IsUClosed => false;
 
-    public override bool IsVClosed() => false;
+    public override bool IsVClosed => false;
 
-    public override bool IsUPeriodic() => false;
+    public override bool IsUPeriodic => false;
 
-    public override bool IsVPeriodic() => false;
+    public override bool IsVPeriodic => false;
 
-    public override Geom_Curve UIso(double U) => throw new NotSupportedException();
+    public override Curve3D UIso(double U) => throw new NotSupportedException();
 
-    public override Geom_Curve VIso(double V) => throw new NotSupportedException();
+    public override Curve3D VIso(double V) => throw new NotSupportedException();
 
     public override Continuity Continuity() => CN;
 

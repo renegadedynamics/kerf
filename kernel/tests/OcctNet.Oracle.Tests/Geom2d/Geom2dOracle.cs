@@ -83,7 +83,7 @@ internal static class Geom2dOracle
     }
 
     /// <summary>Compares D0 to D3 and DN (orders 1 to theMaxN) at U.</summary>
-    public static void SameEval(Oracle theOracle, N.Geom2d_Curve theNative, Geom2d_Curve thePort, double U, string theWhat,
+    public static void SameEval(Oracle theOracle, N.Geom2d_Curve theNative, Curve2D thePort, double U, string theWhat,
                                 int theMaxN = 4, double theTolerance = Oracle.Tolerance)
     {
         using var aNP = new N.gp_Pnt2d();
@@ -121,12 +121,12 @@ internal static class Geom2dOracle
     }
 
     /// <summary>Compares the parameter range, closure and periodicity.</summary>
-    public static void SameBounds(Oracle theOracle, N.Geom2d_Curve theNative, Geom2d_Curve thePort, string theWhat)
+    public static void SameBounds(Oracle theOracle, N.Geom2d_Curve theNative, Curve2D thePort, string theWhat)
     {
         theOracle.Same(theNative.FirstParameter(), thePort.FirstParameter(), $"{theWhat} FirstParameter");
         theOracle.Same(theNative.LastParameter(), thePort.LastParameter(), $"{theWhat} LastParameter");
-        theOracle.Same(theNative.IsClosed(), thePort.IsClosed(), $"{theWhat} IsClosed");
-        theOracle.Same(theNative.IsPeriodic(), thePort.IsPeriodic(), $"{theWhat} IsPeriodic");
+        theOracle.Same(theNative.IsClosed(), thePort.IsClosed, $"{theWhat} IsClosed");
+        theOracle.Same(theNative.IsPeriodic(), thePort.IsPeriodic, $"{theWhat} IsPeriodic");
         theOracle.Same((int)theNative.Continuity(), (int)thePort.Continuity(), $"{theWhat} Continuity");
     }
 
@@ -191,14 +191,14 @@ internal static class Geom2dOracle
         }
     }
 
-    public static Geom2d_BSplineCurve ToPort(BSplineSpec theSpec)
+    public static BSplineCurve2D ToPort(BSplineSpec theSpec)
     {
         var aPoles = NCollection_Array1<Point2D>.From(theSpec.Poles);
         var aKnots = NCollection_Array1<double>.From(theSpec.Knots);
         var aMults = NCollection_Array1<int>.From(theSpec.Mults);
         return theSpec.Weights is null
-                   ? new Geom2d_BSplineCurve(aPoles, aKnots, aMults, theSpec.Degree, theSpec.Periodic)
-                   : new Geom2d_BSplineCurve(aPoles, NCollection_Array1<double>.From(theSpec.Weights), aKnots, aMults,
+                   ? new BSplineCurve2D(aPoles, aKnots, aMults, theSpec.Degree, theSpec.Periodic)
+                   : new BSplineCurve2D(aPoles, NCollection_Array1<double>.From(theSpec.Weights), aKnots, aMults,
                                              theSpec.Degree, theSpec.Periodic);
     }
 
@@ -211,13 +211,13 @@ internal static class Geom2dOracle
                              theSpec.Periodic);
 
     /// <summary>Compares the whole definition: degree, flags, poles, weights, knots, multiplicities, flat knots.</summary>
-    public static void SameStructure(Oracle theOracle, N.Geom2d_BSplineCurve theNative, Geom2d_BSplineCurve thePort, string theWhat)
+    public static void SameStructure(Oracle theOracle, N.Geom2d_BSplineCurve theNative, BSplineCurve2D thePort, string theWhat)
     {
         theOracle.Same(theNative.Degree(), thePort.Degree(), $"{theWhat} Degree");
-        theOracle.Same(theNative.IsPeriodic(), thePort.IsPeriodic(), $"{theWhat} IsPeriodic");
-        theOracle.Same(theNative.IsRational(), thePort.IsRational(), $"{theWhat} IsRational");
-        theOracle.Same(theNative.NbPoles(), thePort.NbPoles(), $"{theWhat} NbPoles");
-        theOracle.Same(theNative.NbKnots(), thePort.NbKnots(), $"{theWhat} NbKnots");
+        theOracle.Same(theNative.IsPeriodic(), thePort.IsPeriodic, $"{theWhat} IsPeriodic");
+        theOracle.Same(theNative.IsRational(), thePort.IsRational, $"{theWhat} IsRational");
+        theOracle.Same(theNative.NbPoles(), thePort.PoleCount, $"{theWhat} NbPoles");
+        theOracle.Same(theNative.NbKnots(), thePort.KnotCount, $"{theWhat} NbKnots");
         theOracle.Same((int)theNative.KnotDistribution(), (int)thePort.KnotDistribution(), $"{theWhat} KnotDistribution");
         theOracle.Same((int)theNative.Continuity(), (int)thePort.Continuity(), $"{theWhat} Continuity");
 
@@ -226,7 +226,7 @@ internal static class Geom2dOracle
         {
             PackedList<Point2D> aPoles = thePort.Poles();
             PackedList<double> aWeights = thePort.WeightsArray();
-            for (int i = 1; i <= thePort.NbPoles(); i++)
+            for (int i = 1; i <= thePort.PoleCount; i++)
             {
                 using var aNP = aNPoles.Value(i);
                 theOracle.Same(Oracle.FromNative(aNP), aPoles[i - 1].XY(), $"{theWhat} Pole({i})");
@@ -242,7 +242,7 @@ internal static class Geom2dOracle
         {
             PackedList<double> aKnots = thePort.Knots();
             PackedList<int> aMults = thePort.Multiplicities();
-            for (int i = 1; i <= thePort.NbKnots(); i++)
+            for (int i = 1; i <= thePort.KnotCount; i++)
             {
                 theOracle.Same(aNKnots.Value(i), aKnots[i - 1], $"{theWhat} Knots({i})");
                 theOracle.Same(theNative.Knot(i), thePort.Knot(i), $"{theWhat} Knot({i})");
@@ -266,7 +266,7 @@ internal static class Geom2dOracle
         theOracle.Same(theNative.LastUKnotIndex(), thePort.LastUKnotIndex(), $"{theWhat} LastUKnotIndex");
         theOracle.Same(theNative.FirstParameter(), thePort.FirstParameter(), $"{theWhat} FirstParameter");
         theOracle.Same(theNative.LastParameter(), thePort.LastParameter(), $"{theWhat} LastParameter");
-        theOracle.Same(theNative.IsClosed(), thePort.IsClosed(), $"{theWhat} IsClosed");
+        theOracle.Same(theNative.IsClosed(), thePort.IsClosed, $"{theWhat} IsClosed");
         using var aNStart = theNative.StartPoint();
         using var aNEnd = theNative.EndPoint();
         theOracle.Same(Oracle.FromNative(aNStart), thePort.StartPoint().XY(), $"{theWhat} StartPoint");
@@ -274,7 +274,7 @@ internal static class Geom2dOracle
     }
 
     /// <summary>A random parameter in the curve's range (or slightly outside, for extrapolation).</summary>
-    public static double Param(Oracle theOracle, Geom2d_Curve theCurve, double theOutside = 0.0)
+    public static double Param(Oracle theOracle, Curve2D theCurve, double theOutside = 0.0)
     {
         double aF = theCurve.FirstParameter(), aL = theCurve.LastParameter();
         double aD = (aL - aF) * theOutside;

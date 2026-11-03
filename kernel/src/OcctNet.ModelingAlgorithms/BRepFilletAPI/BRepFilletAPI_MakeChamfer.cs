@@ -4,9 +4,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using static Occt.ChFiDS_ChamfMethod;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -22,12 +24,12 @@ namespace Occt;
 public class BRepFilletAPI_MakeChamfer : BRepFilletAPI_LocalOperation
 {
     private readonly ChFi3d_ChBuilder myBuilder;
-    private readonly NCollection_Map<TopoDS_Shape> myMap = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_Map<Shape> myMap = new(ShapeHasher.Instance);
 
     //=================================================================================================
 
     /// <summary>Initializes an algorithm for computing chamfers on the shape <paramref name="S"/>.</summary>
-    public BRepFilletAPI_MakeChamfer(in TopoDS_Shape S)
+    public BRepFilletAPI_MakeChamfer(in Shape S)
     {
         myBuilder = new ChFi3d_ChBuilder(S);
     }
@@ -35,7 +37,7 @@ public class BRepFilletAPI_MakeChamfer : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>Adds the edge <paramref name="E"/> (and the edges tangent to it) as a contour; the distances are set after.</summary>
-    public override void Add(in TopoDS_Edge E)
+    public override void Add(in Edge E)
     {
         myBuilder.Add(E);
     }
@@ -43,7 +45,7 @@ public class BRepFilletAPI_MakeChamfer : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>Adds a symmetric chamfer contour of distance <paramref name="Dis"/> on the edge <paramref name="E"/>.</summary>
-    public void Add(double Dis, in TopoDS_Edge E)
+    public void Add(double Dis, in Edge E)
     {
         myBuilder.Add(Dis, E);
     }
@@ -51,7 +53,7 @@ public class BRepFilletAPI_MakeChamfer : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>Sets the distance of the symmetric chamfer of the contour <paramref name="IC"/>.</summary>
-    public void SetDist(double Dis, int IC, in TopoDS_Face F)
+    public void SetDist(double Dis, int IC, in Face F)
     {
         myBuilder.SetDist(Dis, IC, F);
     }
@@ -70,7 +72,7 @@ public class BRepFilletAPI_MakeChamfer : BRepFilletAPI_LocalOperation
     /// Adds a chamfer contour by two distances on the edge <paramref name="E"/>: <paramref name="Dis1"/> measured on the
     /// face <paramref name="F"/>, <paramref name="Dis2"/> on the other.
     /// </summary>
-    public void Add(double Dis1, double Dis2, in TopoDS_Edge E, in TopoDS_Face F)
+    public void Add(double Dis1, double Dis2, in Edge E, in Face F)
     {
         myBuilder.Add(Dis1, Dis2, E, F);
     }
@@ -78,7 +80,7 @@ public class BRepFilletAPI_MakeChamfer : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>Sets the two distances of the contour <paramref name="IC"/>, <paramref name="Dis1"/> on the face <paramref name="F"/>.</summary>
-    public void SetDists(double Dis1, double Dis2, int IC, in TopoDS_Face F)
+    public void SetDists(double Dis1, double Dis2, int IC, in Face F)
     {
         myBuilder.SetDists(Dis1, Dis2, IC, F);
     }
@@ -100,7 +102,7 @@ public class BRepFilletAPI_MakeChamfer : BRepFilletAPI_LocalOperation
     /// Adds a chamfer contour by a distance <paramref name="Dis"/> on the face <paramref name="F"/> and an angle
     /// <paramref name="Angle"/> (radians) on the edge <paramref name="E"/>.
     /// </summary>
-    public void AddDA(double Dis, double Angle, in TopoDS_Edge E, in TopoDS_Face F)
+    public void AddDA(double Dis, double Angle, in Edge E, in Face F)
     {
         myBuilder.AddDA(Dis, Angle, E, F);
     }
@@ -108,7 +110,7 @@ public class BRepFilletAPI_MakeChamfer : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>Sets the distance and the angle of the contour <paramref name="IC"/>, the distance on the face <paramref name="F"/>.</summary>
-    public void SetDistAngle(double Dis, double Angle, int IC, in TopoDS_Face F)
+    public void SetDistAngle(double Dis, double Angle, int IC, in Face F)
     {
         myBuilder.SetDistAngle(Dis, Angle, IC, F);
     }
@@ -193,7 +195,7 @@ public class BRepFilletAPI_MakeChamfer : BRepFilletAPI_LocalOperation
 
     //=================================================================================================
 
-    public override int Contour(in TopoDS_Edge E)
+    public override int Contour(in Edge E)
     {
         return myBuilder.Contains(E);
     }
@@ -210,16 +212,16 @@ public class BRepFilletAPI_MakeChamfer : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>The edge <paramref name="J"/> of the contour <paramref name="I"/>: the caller's edge.</summary>
-    public override TopoDS_Edge Edge(int I, int J)
+    public override Edge Edge(int I, int J)
     {
         ChFiDS_Spine Spine = myBuilder.Value(I)!;
-        TopoDS_Edge S = Spine.Edges(J);
-        return TopoDS.Edge(myBuilder.FromWork(S)); // the caller's (OCCT.NET)
+        Edge S = Spine.Edges(J);
+        return ShapeCasts.Edge(myBuilder.FromWork(S)); // the caller's (OCCT.NET)
     }
 
     //=================================================================================================
 
-    public override void Remove(in TopoDS_Edge E)
+    public override void Remove(in Edge E)
     {
         myBuilder.Remove(E);
     }
@@ -233,28 +235,28 @@ public class BRepFilletAPI_MakeChamfer : BRepFilletAPI_LocalOperation
 
     //=================================================================================================
 
-    public override TopoDS_Vertex FirstVertex(int IC)
+    public override Vertex FirstVertex(int IC)
     {
         return myBuilder.FirstVertex(IC);
     }
 
     //=================================================================================================
 
-    public override TopoDS_Vertex LastVertex(int IC)
+    public override Vertex LastVertex(int IC)
     {
         return myBuilder.LastVertex(IC);
     }
 
     //=================================================================================================
 
-    public override double Abscissa(int IC, in TopoDS_Vertex V)
+    public override double Abscissa(int IC, in Vertex V)
     {
         return myBuilder.Abscissa(IC, V);
     }
 
     //=================================================================================================
 
-    public override double RelativeAbscissa(int IC, in TopoDS_Vertex V)
+    public override double RelativeAbscissa(int IC, in Vertex V)
     {
         return myBuilder.RelativeAbscissa(IC, V);
     }
@@ -299,8 +301,8 @@ public class BRepFilletAPI_MakeChamfer : BRepFilletAPI_LocalOperation
             myShape = myBuilder.InternalShape();
 
             // creation of the Map.
-            TopExp_Explorer ex = new();
-            for (ex.Init(myShape, TopAbs_FACE); ex.More(); ex.Next())
+            Explorer ex = new();
+            for (ex.Init(myShape, ShapeType.Face); ex.More(); ex.Next())
             {
                 myMap.Add(ex.Current());
             }
@@ -352,7 +354,7 @@ public class BRepFilletAPI_MakeChamfer : BRepFilletAPI_LocalOperation
     }
 
     // Generated(EorV): the faces of the chamfers on the edge or vertex EorV.
-    internal override NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape EorV)
+    internal override NCollection_List<Shape> InternalGenerated(in Shape EorV)
     {
         return myBuilder.InternalGenerated(EorV);
     }
@@ -361,30 +363,30 @@ public class BRepFilletAPI_MakeChamfer : BRepFilletAPI_LocalOperation
 
     // Modified(F): the pieces of the face F (the union of the states OUT, IN and ON, as OCCT; the reconstruction
     // builds IN only, decision 1110).
-    internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape theF)
+    internal override NCollection_List<Shape> InternalModified(in Shape theF)
     {
-        TopoDS_Shape F = myBuilder.ToWork(theF); // the working copy's (OCCT.NET)
+        Shape F = myBuilder.ToWork(theF); // the working copy's (OCCT.NET)
         myGenerated.Clear();
 
-        if (myBuilder.Builder().IsSplit(F, TopAbs_OUT))
+        if (myBuilder.Builder().IsSplit(F, Out))
         {
-            NCollection_List<TopoDS_Shape>.Iterator It = new(myBuilder.Builder().Splits(F, TopAbs_OUT));
+            NCollection_List<Shape>.Iterator It = new(myBuilder.Builder().Splits(F, Out));
             for (; It.More(); It.Next())
             {
                 myGenerated.Append(It.Value());
             }
         }
-        if (myBuilder.Builder().IsSplit(F, TopAbs_IN))
+        if (myBuilder.Builder().IsSplit(F, In))
         {
-            NCollection_List<TopoDS_Shape>.Iterator It = new(myBuilder.Builder().Splits(F, TopAbs_IN));
+            NCollection_List<Shape>.Iterator It = new(myBuilder.Builder().Splits(F, In));
             for (; It.More(); It.Next())
             {
                 myGenerated.Append(It.Value());
             }
         }
-        if (myBuilder.Builder().IsSplit(F, TopAbs_ON))
+        if (myBuilder.Builder().IsSplit(F, On))
         {
-            NCollection_List<TopoDS_Shape>.Iterator It = new(myBuilder.Builder().Splits(F, TopAbs_ON));
+            NCollection_List<Shape>.Iterator It = new(myBuilder.Builder().Splits(F, On));
             for (; It.More(); It.Next())
             {
                 myGenerated.Append(It.Value());
@@ -396,11 +398,11 @@ public class BRepFilletAPI_MakeChamfer : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>True if the face <paramref name="F"/> is neither in the result nor split.</summary>
-    public override bool IsDeleted(in TopoDS_Shape F)
+    public override bool IsDeleted(in Shape F)
     {
-        TopoDS_Shape aWork = myBuilder.ToWork(F); // the working copy's (OCCT.NET)
-        return !(myMap.Contains(F) || myMap.Contains(aWork) || myBuilder.Builder().IsSplit(aWork, TopAbs_OUT)
-                 || myBuilder.Builder().IsSplit(aWork, TopAbs_IN)
-                 || myBuilder.Builder().IsSplit(aWork, TopAbs_ON));
+        Shape aWork = myBuilder.ToWork(F); // the working copy's (OCCT.NET)
+        return !(myMap.Contains(F) || myMap.Contains(aWork) || myBuilder.Builder().IsSplit(aWork, Out)
+                 || myBuilder.Builder().IsSplit(aWork, In)
+                 || myBuilder.Builder().IsSplit(aWork, On));
     }
 }

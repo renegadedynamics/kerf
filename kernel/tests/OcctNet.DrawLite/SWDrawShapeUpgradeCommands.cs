@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -73,8 +76,8 @@ internal static partial class SWDrawShapeUpgradeCommands
             return 1;
         }
 
-        TopoDS_Shape aShape = theDI.GetShape(a[2]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(a[2]);
+        if (aShape.IsNull)
         {
             return 1;
         }
@@ -87,14 +90,14 @@ internal static partial class SWDrawShapeUpgradeCommands
         bool   isSafeInputMode = true;
         double aLinTol         = global::Kerf.Engine.Foundation.Precision.Confusion();
         double aAngTol         = global::Kerf.Engine.Foundation.Precision.Angular();
-        var    aKeepShapes     = new List<TopoDS_Shape>();
+        var    aKeepShapes     = new List<Shape>();
 
         if (n > 3)
         {
             for (int i = 3; i < n; i++)
             {
-                TopoDS_Shape aKeepShape = theDI.GetShape(a[i]);
-                if (!aKeepShape.IsNull())
+                Shape aKeepShape = theDI.GetShape(a[i]);
+                if (!aKeepShape.IsNull)
                 {
                     aKeepShapes.Add(aKeepShape);
                 }
@@ -144,9 +147,9 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
 
         // OCCT works on the input itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
-        var anEntry = new BRepTools_CopyAtEntry(aShape, null, true);
-        var aMapOfShapes = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        foreach (TopoDS_Shape aKeepShape in aKeepShapes)
+        var anEntry = new CopyAtEntry(aShape, null, true);
+        var aMapOfShapes = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        foreach (Shape aKeepShape in aKeepShapes)
         {
             aMapOfShapes.Add(anEntry.Copied(aKeepShape));
         }
@@ -162,8 +165,8 @@ internal static partial class SWDrawShapeUpgradeCommands
 
         // the copy's sub-shapes left unchanged are the input's again, in the result and in the copy, so only the
         // variables sharing a changed sub-shape are rebound
-        TopoDS_Shape aWork = anEntry.Shape();
-        TopoDS_Shape Result = anEntry.Finish(aUnifier.InternalShape(), [aWork]);
+        Shape aWork = anEntry.Shape();
+        Shape Result = anEntry.Finish(aUnifier.InternalShape(), [aWork]);
         DrawShapeRebind.Rebind(theDI, aShape, anEntry.Final(aWork));
         theDI.SetShape(a[1], Result);
         // BRepTest_Objects::SetHistory(aUnifier.History()), composed with the copy so it answers for the input's shapes
@@ -176,30 +179,30 @@ internal static partial class SWDrawShapeUpgradeCommands
 
     /// <summary>
     /// The history of an algorithm run on <paramref name="theEntry"/>'s copy of <paramref name="theInput"/>, answering
-    /// both for the input's sub-shapes (<see cref="BRepTools_CopyAtEntry.Composed"/>) and for the changed copies that
+    /// both for the input's sub-shapes (<see cref="CopyAtEntry.Composed"/>) and for the changed copies that
     /// the rebound variables now hold in their place (unit 6L). In DRAWEXE a sub-shape changed in place is still the
     /// same TShape, so a variable exploded after the command (the unify_same_domain grid's end script explodes the
     /// input again) asks the history about it; here it holds the changed copy, whose entries are its copy's own: removed,
     /// modified and generated as the algorithm says, and not modified when the algorithm says nothing (natively the
     /// shape itself is in the result).
     /// </summary>
-    private static BRepTools_History ReboundHistory(in TopoDS_Shape theInput, BRepTools_CopyAtEntry theEntry, BRepTools_History? theHistory)
+    private static History ReboundHistory(in Shape theInput, CopyAtEntry theEntry, History? theHistory)
     {
-        BRepTools_History aComposed = theEntry.Composed(theHistory);
-        if (theHistory is null || !theEntry.IsCopied())
+        History aComposed = theEntry.Composed(theHistory);
+        if (theHistory is null || !theEntry.IsCopied)
         {
             return aComposed;
         }
-        var aSubShapes = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theInput, aSubShapes);
-        foreach (TopoDS_Shape aSub in aSubShapes)
+        var aSubShapes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theInput, aSubShapes);
+        foreach (Shape aSub in aSubShapes)
         {
-            if (!BRepTools_History.IsSupportedType(aSub))
+            if (!History.IsSupportedType(aSub))
             {
                 continue;
             }
-            TopoDS_Shape aCopy = theEntry.Copied(aSub);
-            TopoDS_Shape aNow = theEntry.Final(aCopy);
+            Shape aCopy = theEntry.Copied(aSub);
+            Shape aNow = theEntry.Final(aCopy);
             if (ReferenceEquals(aNow.TShape(), aSub.TShape()))
             {
                 continue;
@@ -209,15 +212,15 @@ internal static partial class SWDrawShapeUpgradeCommands
                 aComposed.Remove(aNow);
                 continue;
             }
-            foreach (TopoDS_Shape aModified in theHistory.Modified(aCopy))
+            foreach (Shape aModified in theHistory.Modified(aCopy))
             {
-                TopoDS_Shape aFinal = theEntry.Final(aModified);
+                Shape aFinal = theEntry.Final(aModified);
                 if (!aFinal.IsSame(aNow))
                 {
                     aComposed.AddModified(aNow, aFinal);
                 }
             }
-            foreach (TopoDS_Shape aGenerated in theHistory.Generated(aCopy))
+            foreach (Shape aGenerated in theHistory.Generated(aCopy))
             {
                 aComposed.AddGenerated(aNow, theEntry.Final(aGenerated));
             }
@@ -235,18 +238,18 @@ internal static partial class SWDrawShapeUpgradeCommands
             return 1;
         }
 
-        TopoDS_Shape aShape = theDI.GetShape(argv[2]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(argv[2]);
+        if (aShape.IsNull)
         {
             return 1;
         }
         var aRemLoc = new ShapeUpgrade_RemoveLocations();
         if (argc > 3)
         {
-            aRemLoc.SetRemoveLevel((TopAbs_ShapeEnum)theDI.Atoi(argv[3]));
+            aRemLoc.SetRemoveLevel((ShapeType)theDI.Atoi(argv[3]));
         }
         aRemLoc.Remove(aShape);
-        TopoDS_Shape aNewShape = aRemLoc.GetResult();
+        Shape aNewShape = aRemLoc.GetResult();
 
         theDI.SetShape(argv[1], aNewShape);
         return 0;
@@ -260,8 +263,8 @@ internal static partial class SWDrawShapeUpgradeCommands
             di.Append("bad number of arguments. Should be:  copytranslate res shape dx dy dz\n");
             return 1;
         }
-        TopoDS_Shape aShape = theDI.GetShape(argv[2]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(argv[2]);
+        if (aShape.IsNull)
         {
             return 1;
         }
@@ -272,7 +275,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         aTrsf.SetTranslation(new Vector3D(aDx, aDy, aDz));
         var builderTransform = new BRepBuilderAPI_Transform(aTrsf);
         builderTransform.Perform(aShape, true);
-        TopoDS_Shape aNewShape = builderTransform.Shape();
+        Shape aNewShape = builderTransform.Shape();
         theDI.SetShape(argv[1], aNewShape);
         return 0;
     }
@@ -290,16 +293,16 @@ internal static partial class SWDrawShapeUpgradeCommands
             return 1;
         }
 
-        TopoDS_Shape aSource = theDI.GetShape(theArgv[2]);
-        if (aSource.IsNull())
+        Shape aSource = theDI.GetShape(theArgv[2]);
+        if (aSource.IsNull)
         {
             theResult.Append("Error: source shape ('").Append(theArgv[2]).Append("') is null\n");
             return 1;
         }
 
-        var aReShaper = new BRepTools_ReShape();
+        var aReShaper = new ReShape();
 
-        TopAbs_ShapeEnum aShapeLevel = TopAbs_ShapeEnum.TopAbs_SHAPE;
+        ShapeType aShapeLevel = ShapeType.Shape;
 
         // Record the requested modifications
         for (int i = 3; i < theArgc; ++i)
@@ -314,15 +317,15 @@ internal static partial class SWDrawShapeUpgradeCommands
                     return 1;
                 }
 
-                TopoDS_Shape aWhat = theDI.GetShape(theArgv[++i]);
-                if (aWhat.IsNull())
+                Shape aWhat = theDI.GetShape(theArgv[++i]);
+                if (aWhat.IsNull)
                 {
                     theResult.Append("Error: argument shape ('").Append(theArgv[i]).Append("') is null\n");
                     return 1;
                 }
 
-                TopoDS_Shape aWith = theDI.GetShape(theArgv[++i]);
-                if (aWith.IsNull())
+                Shape aWith = theDI.GetShape(theArgv[++i]);
+                if (aWith.IsNull)
                 {
                     theResult.Append("Error: replacement shape ('").Append(theArgv[i]).Append("') is null\n");
                     return 1;
@@ -338,8 +341,8 @@ internal static partial class SWDrawShapeUpgradeCommands
                     return 1;
                 }
 
-                TopoDS_Shape aWhat = theDI.GetShape(theArgv[++i]);
-                if (aWhat.IsNull())
+                Shape aWhat = theDI.GetShape(theArgv[++i]);
+                if (aWhat.IsNull)
                 {
                     theResult.Append("Error: shape to remove ('").Append(theArgv[i]).Append("') is null\n");
                     return 1;
@@ -358,39 +361,39 @@ internal static partial class SWDrawShapeUpgradeCommands
                 string aLevelStr = theArgv[++i].ToLowerInvariant();
                 if (aLevelStr == "compound" || aLevelStr == "cd")
                 {
-                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_COMPOUND;
+                    aShapeLevel = ShapeType.Compound;
                 }
                 else if (aLevelStr == "compsolid" || aLevelStr == "c")
                 {
-                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_COMPSOLID;
+                    aShapeLevel = ShapeType.CompSolid;
                 }
                 else if (aLevelStr == "solid" || aLevelStr == "so")
                 {
-                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_SOLID;
+                    aShapeLevel = ShapeType.Solid;
                 }
                 else if (aLevelStr == "shell" || aLevelStr == "sh")
                 {
-                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_SHELL;
+                    aShapeLevel = ShapeType.Shell;
                 }
                 else if (aLevelStr == "face" || aLevelStr == "f")
                 {
-                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_FACE;
+                    aShapeLevel = ShapeType.Face;
                 }
                 else if (aLevelStr == "wire" || aLevelStr == "w")
                 {
-                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_WIRE;
+                    aShapeLevel = ShapeType.Wire;
                 }
                 else if (aLevelStr == "edge" || aLevelStr == "e")
                 {
-                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_EDGE;
+                    aShapeLevel = ShapeType.Edge;
                 }
                 else if (aLevelStr == "vertex" || aLevelStr == "v")
                 {
-                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_VERTEX;
+                    aShapeLevel = ShapeType.Vertex;
                 }
                 else if (aLevelStr == "shape" || aLevelStr == "s")
                 {
-                    aShapeLevel = TopAbs_ShapeEnum.TopAbs_SHAPE;
+                    aShapeLevel = ShapeType.Shape;
                 }
                 else
                 {
@@ -406,8 +409,8 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
 
         // Apply all the recorded modifications
-        TopoDS_Shape aResult = aReShaper.Apply(aSource, aShapeLevel);
-        if (aResult.IsNull())
+        Shape aResult = aReShaper.Apply(aSource, aShapeLevel);
+        if (aResult.IsNull)
         {
             theResult.Append("Error: result shape is null\n");
             return 1;

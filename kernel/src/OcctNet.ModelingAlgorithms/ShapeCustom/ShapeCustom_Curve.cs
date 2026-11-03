@@ -11,7 +11,7 @@ namespace Occt;
 /// <remarks>A working object (decision 21).</remarks>
 public sealed class ShapeCustom_Curve
 {
-    private Geom_Curve? myCurve;
+    private Curve3D? myCurve;
 
     /// <summary>An empty tool.</summary>
     public ShapeCustom_Curve()
@@ -19,13 +19,13 @@ public sealed class ShapeCustom_Curve
     }
 
     /// <summary>A tool on the curve.</summary>
-    public ShapeCustom_Curve(Geom_Curve? C)
+    public ShapeCustom_Curve(Curve3D? C)
     {
         Init(C);
     }
 
     /// <summary>Sets the curve.</summary>
-    public void Init(Geom_Curve? C)
+    public void Init(Curve3D? C)
     {
         myCurve = C;
     }
@@ -39,10 +39,10 @@ public sealed class ShapeCustom_Curve
     /// OCCT makes the curve itself periodic when its knots needn't be rearranged; the port makes a copy of a frozen
     /// curve periodic instead (decision 974), so the caller's curve never changes.
     /// </remarks>
-    public Geom_Curve? ConvertToPeriodic(bool substitute, double preci = -1)
+    public Curve3D? ConvertToPeriodic(bool substitute, double preci = -1)
     {
-        Geom_Curve? newCurve = null;
-        Geom_BSplineCurve? BSpl = myCurve as Geom_BSplineCurve;
+        Curve3D? newCurve = null;
+        BSplineCurve3D? BSpl = myCurve as BSplineCurve3D;
         if (BSpl is null)
         {
             return newCurve;
@@ -58,16 +58,16 @@ public sealed class ShapeCustom_Curve
 
         bool converted = false; //: p6
 
-        if (closed && !BSpl.IsPeriodic() && BSpl.NbPoles() > 3)
+        if (closed && !BSpl.IsPeriodic && BSpl.PoleCount > 3)
         {
             bool set = true;
             // if degree+1 at ends, first change it to 1 by rearranging knots
             if (BSpl.Multiplicity(1) == BSpl.Degree() + 1
-                && BSpl.Multiplicity(BSpl.NbKnots()) == BSpl.Degree() + 1)
+                && BSpl.Multiplicity(BSpl.KnotCount) == BSpl.Degree() + 1)
             {
                 NCollection_Array1<Point3D> oldPoles = BSpl.InternalPoles();
                 NCollection_Array1<double> oldWeights = BSpl.InternalWeightsArray();
-                int nbKnots = BSpl.NbKnots();
+                int nbKnots = BSpl.KnotCount;
                 NCollection_Array1<double> oldKnots = BSpl.InternalKnots();
                 NCollection_Array1<int> oldMults = BSpl.InternalMultiplicities();
 
@@ -85,16 +85,16 @@ public sealed class ShapeCustom_Curve
                     newMults[i] = oldMults[i - 1];
                 }
                 newMults[2] = newMults[nbKnots + 1] = BSpl.Degree();
-                Geom_BSplineCurve res = new Geom_BSplineCurve(oldPoles,
+                BSplineCurve3D res = new BSplineCurve3D(oldPoles,
                                                               oldWeights,
                                                               newKnots,
                                                               newMults,
                                                               BSpl.Degree(),
-                                                              BSpl.IsPeriodic());
+                                                              BSpl.IsPeriodic);
                 BSpl = res;
             }
             else if (BSpl.Multiplicity(1) > BSpl.Degree()
-                     || BSpl.Multiplicity(BSpl.NbKnots()) > BSpl.Degree() + 1)
+                     || BSpl.Multiplicity(BSpl.KnotCount) > BSpl.Degree() + 1)
             {
                 set = false;
             }
@@ -104,7 +104,7 @@ public sealed class ShapeCustom_Curve
                 // (decision 974)
                 if (BSpl.IsFrozen)
                 {
-                    BSpl = (Geom_BSplineCurve)BSpl.Copy();
+                    BSpl = (BSplineCurve3D)BSpl.Copy();
                 }
                 BSpl.SetPeriodic(); // make periodic
                 converted = true;

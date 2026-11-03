@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
@@ -39,24 +40,24 @@ public class DrawPipeCommandsTests(ITestOutputHelper output)
         i.Eval("beziercurve path 4 0 0 0 10 0 0 10 10 0 20 10 5");
         // a constant radius
         Assert.StartsWith("Accuracy of approximation = ", i.Eval("tuyau r1 path 1.5"), StringComparison.Ordinal);
-        Assert.IsType<Geom_BSplineSurface>(Geometry<Geom_Surface>(i, "r1"));
+        Assert.IsType<BSplineSurface>(Geometry<Surface>(i, "r1"));
 
         // a constant section: a straight path and a circle make a cylinder
         i.Eval("line l 0 0 0 0 0 1; trim l l 0 10; circle c 0 0 0 0 0 1 2");
         Assert.Equal("Accuracy of approximation = 0\n", i.Eval("tuyau r2 l c"));
-        var aCyl = Geometry<Geom_RectangularTrimmedSurface>(i, "r2");
-        Assert.IsType<Geom_CylindricalSurface>(aCyl.BasisSurface());
+        var aCyl = Geometry<TrimmedSurface>(i, "r2");
+        Assert.IsType<CylindricalSurface>(aCyl.BasisSurface());
 
         // two sections on a planar convex path
         i.Eval("circle arc 0 20 0 20; trim arc arc -1.5707963267948966 -0.5");
         i.Eval("circle s1 0 0 0 1 0 0 1; circle s2 0 0 0 1 0 0 2");
         Assert.StartsWith("Accuracy of approximation = ", i.Eval("tuyau r3 arc s1 s2"), StringComparison.Ordinal);
-        Assert.IsType<Geom_BSplineSurface>(Geometry<Geom_Surface>(i, "r3"));
+        Assert.IsType<BSplineSurface>(Geometry<Surface>(i, "r3"));
 
         // a pipe on an edge between two guide lines: the parallel lines of a cylinder
         i.Eval("line g1 2 0 0 0 0 1; trim g1 g1 0 10; line g2 0 2 0 0 0 1; trim g2 g2 0 10");
         Assert.Equal("", i.Eval("tuyau r4 l g1 g2 2"));
-        Assert.IsType<Geom_CylindricalSurface>(Geometry<Geom_RectangularTrimmedSurface>(i, "r4").BasisSurface());
+        Assert.IsType<CylindricalSurface>(Geometry<TrimmedSurface>(i, "r4").BasisSurface());
 
         // wrong arguments: a C++ command returning 1
         Assert.ThrowsAny<DrawException>(() => i.Eval("tuyau r5 path"));
@@ -72,7 +73,7 @@ public class DrawPipeCommandsTests(ITestOutputHelper output)
         foreach (string anOption in new[] { "", "-FX ", "-FR ", "-CF " })
         {
             Assert.StartsWith("Accuracy of approximation = ", i.Eval($"sweep s {anOption}path c"), StringComparison.Ordinal);
-            Assert.IsType<Geom_BSplineSurface>(Geometry<Geom_Surface>(i, "s"));
+            Assert.IsType<BSplineSurface>(Geometry<Surface>(i, "s"));
         }
         // a constant normal: sweep result -CN dx dy dz path section
         Assert.StartsWith("Accuracy of approximation = ", i.Eval("sweep s -CN 0 0 1 path c"), StringComparison.Ordinal);

@@ -4,11 +4,17 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -25,7 +31,7 @@ public sealed class BRepTopAdaptor_FClass2d
     private readonly NCollection_Sequence<Class2d> TabClass = new();
     private readonly NCollection_Sequence<int> TabOrien = new();
     private double Toluv;
-    private TopoDS_Face Face;
+    private Face Face;
     // The period of the surface, set in U1..U2, V1..V2 and never read (as decision 221's fields)
 #pragma warning disable CS0414
     private double U1;
@@ -69,7 +75,7 @@ public sealed class BRepTopAdaptor_FClass2d
     // The check is performed by sampling the curve at several points and measuring the distance to the
     // start point. If all sampled points are closer than Precision::Confusion() to the start point, the
     // curve is considered degenerated.
-    private static bool isDegenerated(BRepAdaptor_Curve theCurve, double theStartParam, double theEndParam)
+    private static bool isDegenerated(EdgeCurveAdaptor theCurve, double theStartParam, double theEndParam)
     {
         double aParametricStep = (theEndParam - theStartParam) * 0.1;
         Point3D aStartPoint = theCurve.Value(theStartParam);
@@ -87,7 +93,7 @@ public sealed class BRepTopAdaptor_FClass2d
     }
 
     /// <summary>A classifier of the face <paramref name="aFace"/> with the tolerance <paramref name="TolUV"/> in its parameter space.</summary>
-    public BRepTopAdaptor_FClass2d(in TopoDS_Face aFace, double TolUV)
+    public BRepTopAdaptor_FClass2d(in Face aFace, double TolUV)
     {
         Toluv = TolUV;
         Face = aFace;
@@ -98,12 +104,12 @@ public sealed class BRepTopAdaptor_FClass2d
 
         //-- dead end on surfaces defined on more than one period
 
-        Face.Orientation(TopAbs_FORWARD);
-        var surf = new BRepAdaptor_Surface();
+        Face.Orientation(Forward);
+        var surf = new FaceSurfaceAdaptor();
         surf.Initialize(aFace, false);
-        TopoDS_Edge edge;
-        TopAbs_Orientation Or;
-        var WireExplorer = new BRepTools_WireExplorer();
+        Edge edge;
+        Orientation Or;
+        var WireExplorer = new WireExplorer();
 
         Umin = Vmin = 0.0; // RealLast();
         Umax = Vmax = -Umin;
@@ -111,7 +117,7 @@ public sealed class BRepTopAdaptor_FClass2d
         int aNbE = 0;
         const double eps = 1.0e-10;
         bool anIsBadWire = false;
-        for (var aFaceExplorer = new TopExp_Explorer(Face, TopAbs_WIRE); (aFaceExplorer.More() && !anIsBadWire);
+        for (var aFaceExplorer = new Explorer(Face, ShapeType.Wire); (aFaceExplorer.More() && !anIsBadWire);
              aFaceExplorer.Next())
         {
             int nbpnts = 0;
@@ -122,8 +128,8 @@ public sealed class BRepTopAdaptor_FClass2d
             bool WireIsNotEmpty = false;
             int NbEdges = 0;
 
-            var Explorer = new TopExp_Explorer();
-            for (Explorer.Init(aFaceExplorer.Current(), TopAbs_EDGE); Explorer.More(); Explorer.Next())
+            var Explorer = new Explorer();
+            for (Explorer.Init(aFaceExplorer.Current(), ShapeType.Edge); Explorer.More(); Explorer.Next())
             {
                 NbEdges++;
             }
@@ -133,16 +139,16 @@ public sealed class BRepTopAdaptor_FClass2d
             Point3D Ancienpnt3d = new(0, 0, 0);
             bool Ancienpnt3dinitialise = false;
 
-            for (WireExplorer.Init(TopoDS.Wire(aFaceExplorer.Current()), Face); WireExplorer.More();
+            for (WireExplorer.Init(ShapeCasts.Wire(aFaceExplorer.Current()), Face); WireExplorer.More();
                  WireExplorer.Next())
             {
                 NbEdges--;
                 edge = WireExplorer.Current();
                 Or = edge.Orientation();
-                if (Or == TopAbs_FORWARD || Or == TopAbs_REVERSED)
+                if (Or == Forward || Or == Reversed)
                 {
                     double pfbid, plbid;
-                    if (BRep_Tool.CurveOnSurface(edge, Face, out pfbid, out plbid) is null)
+                    if (Tool.CurveOnSurface(edge, Face, out pfbid, out plbid) is null)
                     {
                         // OCCT returns here, leaving the classifier half built: the wires explored so far, Umin..Vmax as far as
                         // they got and U1..V2 at 0 (occt-issues.md)
@@ -155,24 +161,24 @@ public sealed class BRepTopAdaptor_FClass2d
                     }
 
                     bool degenerated = false;
-                    if (BRep_Tool.Degenerated(edge))
+                    if (Tool.Degenerated(edge))
                     {
                         degenerated = true;
                     }
 
-                    if (BRep_Tool.IsClosed(edge, Face))
+                    if (Tool.IsClosed(edge, Face))
                     {
                         degenerated = true;
                     }
 
-                    TopExp.Vertices(edge, out TopoDS_Vertex Va, out TopoDS_Vertex Vb);
-                    if (Va.IsNull() || Vb.IsNull())
+                    Exploration.Vertices(edge, out Vertex Va, out Vertex Vb);
+                    if (Va.IsNull || Vb.IsNull)
                     {
                         degenerated = true;
                     }
 
-                    var aCurveAdaptor2D = new BRepAdaptor_Curve2d(edge, Face);
-                    var aCurveAdaptor3D = new BRepAdaptor_Curve(edge, Face);
+                    var aCurveAdaptor2D = new EdgeCurve2DAdaptor(edge, Face);
+                    var aCurveAdaptor3D = new EdgeCurveAdaptor(edge, Face);
                     //-- Check cases when it was forgotten to code degenerated :  PRO17410 (janv 99)
                     if (!degenerated)
                     {
@@ -190,7 +196,7 @@ public sealed class BRepTopAdaptor_FClass2d
 
                     double du = (plbid - pfbid) / (double)(nbs - 1);
                     double u = 0.0;
-                    if (Or == TopAbs_FORWARD)
+                    if (Or == Forward)
                     {
                         u = pfbid;
                     }
@@ -356,29 +362,29 @@ public sealed class BRepTopAdaptor_FClass2d
                         SeqPnt2d.Clear();
                         FlecheU = 0.0;
                         FlecheV = 0.0;
-                        for (WireExplorer.Init(TopoDS.Wire(aFaceExplorer.Current()), Face); WireExplorer.More();
+                        for (WireExplorer.Init(ShapeCasts.Wire(aFaceExplorer.Current()), Face); WireExplorer.More();
                              WireExplorer.Next())
                         {
                             edge = WireExplorer.Current();
                             Or = edge.Orientation();
-                            if (Or == TopAbs_FORWARD || Or == TopAbs_REVERSED)
+                            if (Or == Forward || Or == Reversed)
                             {
-                                BRep_Tool.Range(edge, Face, out double pfbid, out double plbid);
+                                Tool.Range(edge, Face, out double pfbid, out double plbid);
                                 if (Math.Abs(plbid - pfbid) < 1.0e-9)
                                 {
                                     continue;
                                 }
 
-                                var C = new BRepAdaptor_Curve2d(edge, Face);
-                                var aDiscr = new GCPnts_QuasiUniformDeflection(C, aDiscrDefl);
-                                if (!aDiscr.IsDone())
+                                var C = new EdgeCurve2DAdaptor(edge, Face);
+                                var aDiscr = new QuasiUniformDeflection(C, aDiscrDefl);
+                                if (!aDiscr.IsDone)
                                 {
                                     break;
                                 }
 
-                                int nbp = aDiscr.NbPoints();
+                                int nbp = aDiscr.PointCount;
                                 int iStep = 1, i = 1, iEnd = nbp + 1;
-                                if (Or == TopAbs_REVERSED)
+                                if (Or == Reversed)
                                 {
                                     iStep = -1;
                                     i = nbp;
@@ -517,11 +523,11 @@ public sealed class BRepTopAdaptor_FClass2d
     }
 
     /// <summary>The state of a point far outside the face's UV box (IN if the face has no box).</summary>
-    public TopAbs_State PerformInfinitePoint()
+    public Containment PerformInfinitePoint()
     {
         if (Umax == -RealLast() || Vmax == -RealLast() || Umin == RealLast() || Vmin == RealLast())
         {
-            return (TopAbs_IN);
+            return (In);
         }
 
         Point2D P = new(Umin - (Umax - Umin), Vmin - (Vmax - Vmin));
@@ -532,27 +538,27 @@ public sealed class BRepTopAdaptor_FClass2d
     /// The state of the point <paramref name="_Puv"/> in the face. On a periodic surface the point is also tried at
     /// its periods within the face's UV box, if <paramref name="RecadreOnPeriodic"/>.
     /// </summary>
-    public TopAbs_State Perform(in Point2D _Puv, bool RecadreOnPeriodic = true)
+    public Containment Perform(in Point2D _Puv, bool RecadreOnPeriodic = true)
         => Classify(_Puv, Toluv, RecadreOnPeriodic, false);
 
     /// <summary>
     /// The state of the point <paramref name="_Puv"/> tested with an offset of <paramref name="Tol"/>: ON where the
     /// polygons can't decide (internal use).
     /// </summary>
-    public TopAbs_State TestOnRestriction(in Point2D _Puv, double Tol, bool RecadreOnPeriodic = true)
+    public Containment TestOnRestriction(in Point2D _Puv, double Tol, bool RecadreOnPeriodic = true)
         => Classify(_Puv, Tol, RecadreOnPeriodic, true);
 
     // Perform and TestOnRestriction, which OCCT writes out twice: they differ in the polygon test (SiDans or
     // SiDans_OnMode with Tol), in what an undecided polygon gives (the face classifier with Toluv capped at 4, or ON)
     // and in the face classifier's tolerance for a bad wire (Toluv or Tol).
-    private TopAbs_State Classify(in Point2D _Puv, double Tol, bool RecadreOnPeriodic, bool theOnMode)
+    private Containment Classify(in Point2D _Puv, double Tol, bool RecadreOnPeriodic, bool theOnMode)
     {
         int dedans;
         int nbtabclass = TabClass.Length();
 
         if (nbtabclass == 0)
         {
-            return (TopAbs_IN);
+            return (In);
         }
 
         //-- U1 is the First Param and U2 in this case is U1+Period
@@ -560,13 +566,13 @@ public sealed class BRepTopAdaptor_FClass2d
         double v = _Puv.Y();
         double uu = u, vv = v;
 
-        var surf = new BRepAdaptor_Surface();
+        var surf = new FaceSurfaceAdaptor();
         surf.Initialize(Face, false);
-        bool IsUPer = surf.IsUPeriodic();
-        bool IsVPer = surf.IsVPeriodic();
+        bool IsUPer = surf.IsUPeriodic;
+        bool IsVPer = surf.IsVPeriodic;
         double uperiod = IsUPer ? surf.UPeriod() : 0.0;
         double vperiod = IsVPer ? surf.VPeriod() : 0.0;
-        TopAbs_State aStatus = TopAbs_UNKNOWN;
+        Containment aStatus = Unknown;
         bool urecadre = false, vrecadre = false;
 
         if (RecadreOnPeriodic)
@@ -649,7 +655,7 @@ public sealed class BRepTopAdaptor_FClass2d
                 {
                     if (theOnMode)
                     {
-                        aStatus = TopAbs_ON;
+                        aStatus = On;
                     }
                     else
                     {
@@ -663,12 +669,12 @@ public sealed class BRepTopAdaptor_FClass2d
 
                 if (dedans == 1)
                 {
-                    aStatus = TopAbs_IN;
+                    aStatus = In;
                 }
 
                 if (dedans == -1)
                 {
-                    aStatus = TopAbs_OUT;
+                    aStatus = Out;
                 }
             }
             else
@@ -684,7 +690,7 @@ public sealed class BRepTopAdaptor_FClass2d
                 return aStatus;
             }
 
-            if (aStatus == TopAbs_IN || aStatus == TopAbs_ON)
+            if (aStatus == In || aStatus == On)
             {
                 return aStatus;
             }

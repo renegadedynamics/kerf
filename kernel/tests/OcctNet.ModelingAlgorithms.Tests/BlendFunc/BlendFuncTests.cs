@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
@@ -73,7 +74,7 @@ public class BlendFuncTests
     public void BlendFunc_ComputeNormalAtASingularPoint()
     {
         // At the pole of a sphere the first derivatives are parallel: the normal comes from the higher ones.
-        GeomAdaptor_Surface aSphere = new(new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
+        SurfaceAdaptor aSphere = new(new SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                                                     2.0));
         Vector3D N = new(), DNu = new(), DNv = new();
         Assert.True(BlendFunc.ComputeNormal(aSphere, new Point2D(0.3, Math.PI / 2.0), ref N));
@@ -100,8 +101,8 @@ public class BlendFuncTests
     [Fact]
     public void Functions_SmallMembers()
     {
-        Adaptor3d_Surface S1 = BlendRecorder.Surf(0), S2 = BlendRecorder.Surf(1);
-        Adaptor3d_Curve G = BlendRecorder.Guide(0);
+        SurfaceAdaptorBase S1 = BlendRecorder.Surf(0), S2 = BlendRecorder.Surf(1);
+        CurveAdaptorBase G = BlendRecorder.Guide(0);
         BlendFunc_ConstRad aConstRad = new(S1, S2, G);
         Assert.Equal(4, aConstRad.NbVariables());
         Assert.Equal(4, aConstRad.NbEquations());

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using static Occt.ChFi2d_ConstructionError;
 
 namespace Occt;
@@ -15,10 +17,10 @@ public static class ChFi2d
     /// <paramref name="V"/> (the first vertex of <paramref name="E1"/> if it is shared, else its last). <paramref name="V"/>
     /// is unchanged when they share none.
     /// </summary>
-    public static bool CommonVertex(in TopoDS_Edge E1, in TopoDS_Edge E2, ref TopoDS_Vertex V)
+    public static bool CommonVertex(in Edge E1, in Edge E2, ref Vertex V)
     {
-        TopExp.Vertices(E1, out TopoDS_Vertex firstVertex1, out TopoDS_Vertex lastVertex1);
-        TopExp.Vertices(E2, out TopoDS_Vertex firstVertex2, out TopoDS_Vertex lastVertex2);
+        Exploration.Vertices(E1, out Vertex firstVertex1, out Vertex lastVertex1);
+        Exploration.Vertices(E2, out Vertex firstVertex2, out Vertex lastVertex2);
 
         if (firstVertex1.IsSame(firstVertex2) || firstVertex1.IsSame(lastVertex2))
         {
@@ -39,20 +41,20 @@ public static class ChFi2d
     /// or doesn't connect exactly two edges (<paramref name="E1"/> and <paramref name="E2"/> are then written as far as
     /// they were found, as OCCT does).
     /// </summary>
-    public static ChFi2d_ConstructionError FindConnectedEdges(in TopoDS_Face F,
-                                                              in TopoDS_Vertex V,
-                                                              ref TopoDS_Edge E1,
-                                                              ref TopoDS_Edge E2)
+    public static ChFi2d_ConstructionError FindConnectedEdges(in Face F,
+                                                              in Vertex V,
+                                                              ref Edge E1,
+                                                              ref Edge E2)
     {
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> vertexMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(F, TopAbs_ShapeEnum.TopAbs_VERTEX, TopAbs_ShapeEnum.TopAbs_EDGE, vertexMap);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vertexMap = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(F, ShapeType.Vertex, ShapeType.Edge, vertexMap);
 
         if (vertexMap.Contains(V))
         {
-            NCollection_List<TopoDS_Shape>.Iterator iterator = new(vertexMap.FindFromKey(V));
+            NCollection_List<Shape>.Iterator iterator = new(vertexMap.FindFromKey(V));
             if (iterator.More())
             {
-                E1 = TopoDS.Edge(iterator.Value());
+                E1 = ShapeCasts.Edge(iterator.Value());
                 iterator.Next();
             } // if ...
             else
@@ -61,7 +63,7 @@ public static class ChFi2d
             }
             if (iterator.More())
             {
-                E2 = TopoDS.Edge(iterator.Value());
+                E2 = ShapeCasts.Edge(iterator.Value());
                 iterator.Next();
             } // if ...
             else

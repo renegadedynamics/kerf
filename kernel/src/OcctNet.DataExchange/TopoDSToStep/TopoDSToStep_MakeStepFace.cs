@@ -6,10 +6,15 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 using static Occt.TopoDSToStep_MakeFaceError;
 
 namespace Occt;
@@ -29,27 +34,27 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
         done = false;
     }
 
-    public TopoDSToStep_MakeStepFace(in TopoDS_Face F, TopoDSToStep_Tool T, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
+    public TopoDSToStep_MakeStepFace(in Face F, TopoDSToStep_Tool T, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
     {
         done = false;
         Init(F, T, FP, theLocalFactors);
     }
 
-    public TopoDSToStep_MakeStepFace(in TopoDS_Face F, TopoDSToStep_Tool T, Transfer_FinderProcess FP)
+    public TopoDSToStep_MakeStepFace(in Face F, TopoDSToStep_Tool T, Transfer_FinderProcess FP)
         : this(F, T, FP, new StepData_Factors())
     {
     }
 
     /// <remarks>Needs <see cref="ShapeAlgo.Init"/> (degenerate tori are rewritten through its container).</remarks>
-    public void Init(in TopoDS_Face aFace, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
+    public void Init(in Face aFace, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
     {
         // --------------------------------------------------------------
         // the face is given with its relative orientation (in the Shell)
         // --------------------------------------------------------------
 
         // szv#4:S4163:12Mar99 SGI warns
-        TopoDS_Shape sh = aFace.Oriented(TopAbs_FORWARD);
-        TopoDS_Face ForwardFace = TopoDS.Face(sh);
+        Shape sh = aFace.Oriented(Forward);
+        Face ForwardFace = ShapeCasts.Face(sh);
         aTool.SetCurrentFace(ForwardFace);
         var errShape = new TransferBRep_ShapeMapper(aFace); // on ne sait jamais
 
@@ -80,7 +85,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
             return;
         }
 
-        if (aFace.Orientation() == TopAbs_INTERNAL || aFace.Orientation() == TopAbs_EXTERNAL)
+        if (aFace.Orientation() == Internal || aFace.Orientation() == External)
         {
             FP.AddWarning(errShape, " Face from Non Manifold Topology");
             myError = TopoDSToStep_NonManifoldFace;
@@ -92,9 +97,9 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
         // Get the Outer Wire
         // ------------------
 
-        TopoDS_Wire theOuterWire = BRepTools.OuterWire(ForwardFace);
+        Wire theOuterWire = BrepTools.OuterWire(ForwardFace);
 
-        if (theOuterWire.IsNull())
+        if (theOuterWire.IsNull)
         {
             FP.AddWarning(errShape, " Face without wire not mapped");
             myError = TopoDSToStep_InfiniteFace;
@@ -108,7 +113,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
             // Translate Surface
             // -----------------
 
-            Geom_Surface Su = BRep_Tool.Surface(ForwardFace);
+            Surface Su = Tool.Surface(ForwardFace);
             if (Su is null)
             {
                 FP.AddWarning(errShape, " Face without geometry not mapped");
@@ -120,7 +125,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
             //  CKY  23 SEP 1996 : une FACE de Step n a pas droit a RECTANGULAR_TRIMMED...
             //  Il faut donc d abord "demonter" la RectangularTrimmedSurface pour
             //  passer la Surface de base
-            Geom_RectangularTrimmedSurface aRTS = Su as Geom_RectangularTrimmedSurface;
+            TrimmedSurface aRTS = Su as TrimmedSurface;
             if (aRTS is not null)
             {
                 Su = aRTS.BasisSurface();
@@ -138,23 +143,23 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
             {
                 // If the surface is Offset it is necessary to check the base surface
                 bool aSurfaceIsOffset = false;
-                Geom_OffsetSurface anOffsetSu = null;
-                if (Su is Geom_OffsetSurface)
+                OffsetSurface anOffsetSu = null;
+                if (Su is OffsetSurface)
                 {
                     aSurfaceIsOffset = true;
-                    anOffsetSu = Su as Geom_OffsetSurface;
+                    anOffsetSu = Su as OffsetSurface;
                 }
 
-                if ((Spms is StepGeom_ToroidalSurface) || ((aSurfaceIsOffset) && anOffsetSu.BasisSurface() is Geom_ToroidalSurface))
+                if ((Spms is StepGeom_ToroidalSurface) || ((aSurfaceIsOffset) && anOffsetSu.BasisSurface() is ToroidalSurface))
                 {
-                    Geom_ToroidalSurface TS;
+                    ToroidalSurface TS;
                     if (aSurfaceIsOffset)
                     {
-                        TS = anOffsetSu.BasisSurface() as Geom_ToroidalSurface;
+                        TS = anOffsetSu.BasisSurface() as ToroidalSurface;
                     }
                     else
                     {
-                        TS = Su as Geom_ToroidalSurface;
+                        TS = Su as ToroidalSurface;
                     }
 
                     double R = TS.MajorRadius();
@@ -169,7 +174,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
                         // create basis curve
                         ShapeAlgo.AlgoContainer().GetFaceUVBounds(aFace, out double UF, out double UL, out double VF, out double VL);
                         Frame3D Ax2 = new Frame3D(new Point3D(pos.XYZ() + X.XYZ() * TS.MajorRadius()), X ^ dir, X);
-                        Geom_Curve BasisCurve = new Geom_Circle(Ax2, TS.MinorRadius());
+                        Curve3D BasisCurve = new CircleCurve3D(Ax2, TS.MinorRadius());
 
                         // convert basis curve to bspline in order to avoid self-intersecting
                         // surface of revolution (necessary e.g. for CATIA)
@@ -186,14 +191,14 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
                             Axis.Reverse();
                         }
 
-                        var Rev = new Geom_SurfaceOfRevolution(BasisCurve, Axis);
+                        var Rev = new RevolutionSurface(BasisCurve, Axis);
 
                         // and translate it
                         if (aSurfaceIsOffset)
                         {
                             // OCCT.NET: OCCT changes the face's own offset surface; the port changes a copy, so the
                             // shape written never changes (decision 1252)
-                            anOffsetSu = (Geom_OffsetSurface)anOffsetSu.Copy();
+                            anOffsetSu = (OffsetSurface)anOffsetSu.Copy();
                             anOffsetSu.SetBasisSurface(Rev);
                             var MkRev = new GeomToStep_MakeSurface(anOffsetSu, theLocalFactors);
                             Spms = MkRev.Value();
@@ -218,11 +223,11 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
 
             // Initialize the Wire Explorer with the forward face
 
-            var WireExp = new TopExp_Explorer();
-            for (WireExp.Init(ForwardFace, TopAbs_WIRE); WireExp.More(); WireExp.Next())
+            var WireExp = new Explorer();
+            for (WireExp.Init(ForwardFace, ShapeType.Wire); WireExp.More(); WireExp.Next())
             {
-                TopoDS_Wire CurrentWire = TopoDS.Wire(WireExp.Current());
-                if (!CurrentWire.IsNull())
+                Wire CurrentWire = ShapeCasts.Wire(WireExp.Current());
+                if (!CurrentWire.IsNull)
                 {
                     MkWire.Init(CurrentWire, aTool, FP, theLocalFactors);
                     if (MkWire.IsDone())
@@ -255,13 +260,13 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
                 // toujours les sous-shapes d'un shape de maniere FORWARD !
                 // la modif (on ajoute : si context faceted ... sinon) est a verifier
                 // aupres des autres editeurs de CFAO de la Round Table.
-                if (!aTool.Faceted() && aFace.Orientation() == TopAbs_REVERSED)
+                if (!aTool.Faceted() && aFace.Orientation() == Reversed)
                 {
-                    FaceBound.Init(aName, Loop, (CurrentWire.Orientation() == TopAbs_REVERSED));
+                    FaceBound.Init(aName, Loop, (CurrentWire.Orientation() == Reversed));
                 }
                 else
                 {
-                    FaceBound.Init(aName, Loop, (CurrentWire.Orientation() == TopAbs_FORWARD));
+                    FaceBound.Init(aName, Loop, (CurrentWire.Orientation() == Forward));
                 }
 
                 mySeq.Append(FaceBound);
@@ -273,7 +278,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
 
             if (!aTool.Faceted() && aTool.PCurveMode() != 0)
             {
-                var Ex = new TopExp_Explorer(ForwardFace, TopAbs_EDGE);
+                var Ex = new Explorer(ForwardFace, ShapeType.Edge);
 
                 // ------------------------------------------------
                 // Exploration of all the Edges in the current face
@@ -281,10 +286,10 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
 
                 for (; Ex.More(); Ex.Next())
                 {
-                    TopoDS_Edge E = TopoDS.Edge(Ex.Current());
-                    Geom2d_Curve C2d = BRep_Tool.CurveOnSurface(E, ForwardFace, out double cf, out double cl);
+                    Edge E = ShapeCasts.Edge(Ex.Current());
+                    Curve2D C2d = Tool.CurveOnSurface(E, ForwardFace, out double cf, out double cl);
 
-                    if (BRep_Tool.Degenerated(E) || C2d is null)
+                    if (Tool.Degenerated(E) || C2d is null)
                     {
                         // The edge 2D Geometry degenerates in 3D
                         // The edge 2D geometry is not mapped onto any Step entity
@@ -293,7 +298,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
                     }
 
                     // Copy the Curve2d which might be changed
-                    C2d = (Geom2d_Curve)C2d.Copy();
+                    C2d = (Curve2D)C2d.Copy();
 
                     // for writing VERTEX_LOOP
                     if (!aTool.IsBound(E))
@@ -309,34 +314,34 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
 
                     if (aTool.IsBound(E))
                     {
-                        if (C2d is Geom2d_Hyperbola || C2d is Geom2d_Parabola)
+                        if (C2d is HyperbolaCurve2D || C2d is ParabolaCurve2D)
                         {
-                            if (Su is Geom_SphericalSurface || Su is Geom_CylindricalSurface || Su is Geom_ConicalSurface
-                                || Su is Geom_ToroidalSurface)
+                            if (Su is SphericalSurface || Su is CylindricalSurface || Su is ConicalSurface
+                                || Su is ToroidalSurface)
                             {
-                                C2d = new Geom2d_TrimmedCurve(C2d, cf, cl, true);
+                                C2d = new TrimmedCurve2D(C2d, cf, cl, true);
                             }
                         }
 
-                        if ((C2d is Geom2d_TrimmedCurve) || (C2d is Geom2d_BezierCurve))
+                        if ((C2d is TrimmedCurve2D) || (C2d is BezierCurve2D))
                         {
-                            C2d = Geom2dConvert.CurveToBSplineCurve(C2d);
+                            C2d = Geom2dConvert2D.CurveToBSplineCurve(C2d);
                         }
 
                         // if the Surface is a RectangularTrimmedSurface,
                         // use the BasisSurface.
                         //   CKY  23 SEP 1996 : on reste en Radian car on code des Radians
                         //    sauf que ca ne marche pas bien ...
-                        Geom2d_Curve C2dMapped;
-                        if (Su is Geom_RectangularTrimmedSurface)
+                        Curve2D C2dMapped;
+                        if (Su is TrimmedSurface)
                         {
-                            Geom_RectangularTrimmedSurface alocalRTS = Su as Geom_RectangularTrimmedSurface;
-                            C2dMapped = GeomConvert_Units.RadianToDegree(C2d, alocalRTS.BasisSurface(), theLocalFactors.LengthFactor(),
+                            TrimmedSurface alocalRTS = Su as TrimmedSurface;
+                            C2dMapped = Units.RadianToDegree(C2d, alocalRTS.BasisSurface(), theLocalFactors.LengthFactor(),
                                                                          theLocalFactors.FactorRadianDegree());
                         }
                         else
                         {
-                            C2dMapped = GeomConvert_Units.RadianToDegree(C2d, Su, theLocalFactors.LengthFactor(),
+                            C2dMapped = Units.RadianToDegree(C2d, Su, theLocalFactors.LengthFactor(),
                                                                          theLocalFactors.FactorRadianDegree());
                         }
 
@@ -410,7 +415,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
                 // The underlying surface has always a direct axis (see above)
                 var aName = new TCollection_HAsciiString("");
 
-                Fpms.Init(aName, aBounds, Spms, aFace.Orientation() == TopAbs_FORWARD);
+                Fpms.Init(aName, aBounds, Spms, aFace.Orientation() == Forward);
 
                 aTool.Bind(aFace, Fpms);
                 myError = TopoDSToStep_FaceDone;
@@ -435,7 +440,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
         }
     }
 
-    public void Init(in TopoDS_Face aFace, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP)
+    public void Init(in Face aFace, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP)
         => Init(aFace, aTool, FP, new StepData_Factors());
 
     /// <exception cref="NotDoneException">The mapping wasn't done.</exception>

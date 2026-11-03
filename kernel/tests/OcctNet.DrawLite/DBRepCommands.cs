@@ -1,13 +1,19 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Occt;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite;
 
@@ -265,13 +271,13 @@ internal static class DBRepCommands
             return 1;
         }
 
-        var B = new BRep_Builder();
-        TopoDS_Compound C = new();
+        var B = new BrepBuilder();
+        Compound C = new();
         B.MakeCompound(ref C);
         for (int i = 1; i < n - 1; i++)
         {
-            TopoDS_Shape S2 = theDI.GetShape(a[i]);
-            if (!S2.IsNull())
+            Shape S2 = theDI.GetShape(a[i]);
+            if (!S2.IsNull)
             {
                 B.Add(C, S2);
             }
@@ -289,8 +295,8 @@ internal static class DBRepCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[n == 2 ? 1 : 2]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[n == 2 ? 1 : 2]);
+        if (S.IsNull)
         {
             return 1;
         }
@@ -311,14 +317,14 @@ internal static class DBRepCommands
             return 1;
         }
 
-        TopoDS_Shape S1 = theDI.GetShape(a[1]);
-        if (S1.IsNull())
+        Shape S1 = theDI.GetShape(a[1]);
+        if (S1.IsNull)
         {
             return 1;
         }
 
-        TopoDS_Shape S2 = theDI.GetShape(a[2]);
-        if (S2.IsNull())
+        Shape S2 = theDI.GetShape(a[2]);
+        if (S2.IsNull)
         {
             return 1;
         }
@@ -326,11 +332,11 @@ internal static class DBRepCommands
         // OCCT's TopoDS_Builder::Add refuses a shape that isn't free before it changes anything
         if (!S2.Free())
         {
-            throw new TopoDS_FrozenShape("TopoDS_Builder::Add");
+            throw new FrozenShapeException("TopoDS_Builder::Add");
         }
 
-        TopoDS_Shape aCopy = WritableCopy(S2);
-        new BRep_Builder().Add(aCopy, S1);
+        Shape aCopy = WritableCopy(S2);
+        new BrepBuilder().Add(aCopy, S1);
         theDI.SetShape(a[2], aCopy);
         return 0;
     }
@@ -339,14 +345,14 @@ internal static class DBRepCommands
     /// A new, unfrozen TShape in place of the shape's: its EmptyCopy (the geometry), the flags, and the same children,
     /// at the shape's location and orientation. What OCCT's in-place changes of a TShape change, the copy can take.
     /// </summary>
-    internal static TopoDS_Shape WritableCopy(in TopoDS_Shape theShape)
+    internal static Shape WritableCopy(in Shape theShape)
     {
-        TopoDS_Shape aCopy = theShape.EmptyCopied();
-        TopoDS_TShape aFrom = theShape.TShape()!;
-        TopoDS_TShape aTo = aCopy.TShape()!;
+        Shape aCopy = theShape.EmptyCopied();
+        TShape aFrom = theShape.TShape()!;
+        TShape aTo = aCopy.TShape()!;
         aTo.Free(true);
-        var B = new BRep_Builder();
-        for (var it = new TopoDS_Iterator(theShape); it.More(); it.Next())
+        var B = new BrepBuilder();
+        for (var it = new Iterator(theShape); it.More(); it.Next())
         {
             B.Add(aCopy, it.Value());
         }
@@ -371,8 +377,8 @@ internal static class DBRepCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[1]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[1]);
+        if (S.IsNull)
         {
             return 0;
         }
@@ -381,7 +387,7 @@ internal static class DBRepCommands
         int i = 0;
         if (n == 2)
         {
-            for (var itr = new TopoDS_Iterator(S); itr.More(); itr.Next())
+            for (var itr = new Iterator(S); itr.More(); itr.Next())
             {
                 i++;
                 string aName = aPrefix + i.ToString(CultureInfo.InvariantCulture);
@@ -396,22 +402,22 @@ internal static class DBRepCommands
         string aType = a[2];
         char c0 = aType.Length > 0 ? aType[0] : '\0';
         char c1 = aType.Length > 1 ? aType[1] : '\0';
-        TopAbs_ShapeEnum typ;
+        ShapeType typ;
         switch (c0)
         {
             case 'C':
             case 'c':
-                typ = c1 is 'd' or 'D' ? TopAbs_COMPOUND : TopAbs_COMPSOLID;
+                typ = c1 is 'd' or 'D' ? global::Kerf.Topology.ShapeType.Compound : ShapeType.CompSolid;
                 break;
             case 'S':
             case 's':
                 if (c1 is 'O' or 'o')
                 {
-                    typ = TopAbs_SOLID;
+                    typ = ShapeType.Solid;
                 }
                 else if (c1 is 'H' or 'h')
                 {
-                    typ = TopAbs_SHELL;
+                    typ = ShapeType.Shell;
                 }
                 else
                 {
@@ -421,29 +427,29 @@ internal static class DBRepCommands
                 break;
             case 'F':
             case 'f':
-                typ = TopAbs_FACE;
+                typ = ShapeType.Face;
                 break;
             case 'W':
             case 'w':
-                typ = TopAbs_WIRE;
+                typ = ShapeType.Wire;
                 break;
             case 'E':
             case 'e':
-                typ = TopAbs_EDGE;
+                typ = ShapeType.Edge;
                 break;
             case 'V':
             case 'v':
-                typ = TopAbs_VERTEX;
+                typ = ShapeType.Vertex;
                 break;
             default:
                 return 1;
         }
 
-        var M = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var M = new NCollection_Map<Shape>(ShapeHasher.Instance);
         M.Add(S);
-        for (var ex = new TopExp_Explorer(S, typ); ex.More(); ex.Next())
+        for (var ex = new Explorer(S, typ); ex.More(); ex.Next())
         {
-            TopoDS_Shape Sx = ex.Current();
+            Shape Sx = ex.Current();
             if (M.Add(Sx))
             {
                 i++;
@@ -464,43 +470,43 @@ internal static class DBRepCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[1]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[1]);
+        if (S.IsNull)
         {
             return 0;
         }
 
         string aPrefix = a[1] + "_";
-        TopAbs_ShapeEnum typ;
+        ShapeType typ;
         switch (a[2].Length > 0 ? a[2][0] : '\0')
         {
             case 'F':
             case 'f':
-                typ = TopAbs_FACE;
+                typ = ShapeType.Face;
                 break;
             case 'E':
             case 'e':
-                typ = TopAbs_EDGE;
+                typ = ShapeType.Edge;
                 break;
             case 'V':
             case 'v':
-                typ = TopAbs_VERTEX;
+                typ = ShapeType.Vertex;
                 break;
             default:
                 return 1;
         }
 
-        var IMOStmp = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var MShape = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var IMOStmp = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var MShape = new NCollection_Map<Shape>(ShapeHasher.Instance);
         IMOStmp.Add(S);
-        TopExp.MapShapes(S, typ, IMOStmp);
+        Exploration.MapShapes(S, typ, IMOStmp);
         // OCCT bug: one less than the sub-shapes when the shape is of the type itself (occt-issues.md)
         int MaxShapes = IMOStmp.Extent() - 1;
-        var aShapes = new NCollection_Array1<TopoDS_Shape>(1, MaxShapes);
+        var aShapes = new NCollection_Array1<Shape>(1, MaxShapes);
 
         // explode
         int Index = 0;
-        for (var Exp = new TopExp_Explorer(S, typ); Exp.More(); Exp.Next())
+        for (var Exp = new Explorer(S, typ); Exp.More(); Exp.Next())
         {
             if (MShape.Add(Exp.Current()))
             {
@@ -511,22 +517,22 @@ internal static class DBRepCommands
 
         var OrderInd = new NCollection_Array1<int>(1, MaxShapes);
         var MidXYZ = new NCollection_Array1<double>(1, MaxShapes);
-        var GPr = new GProp_GProps();
+        var GPr = new Properties();
 
         // the centre of mass of an edge or a face (of its edges), the point of a vertex
         for (Index = 1; Index <= MaxShapes; Index++)
         {
             OrderInd.SetValue(Index, Index);
-            TopoDS_Shape aS = aShapes[Index];
+            Shape aS = aShapes[Index];
             Point3D GPoint;
-            if (aS.ShapeType() != TopAbs_VERTEX)
+            if (aS.ShapeType() != ShapeType.Vertex)
             {
                 BRepGProp.LinearProperties(aS, GPr);
                 GPoint = GPr.CentreOfMass();
             }
             else
             {
-                GPoint = BRep_Tool.Pnt(TopoDS.Vertex(aS));
+                GPoint = Tool.Pnt(ShapeCasts.Vertex(aS));
             }
 
             MidXYZ.SetValue(Index, GPoint.X() * 999 + GPoint.Y() * 99 + GPoint.Z() * 0.9);
@@ -573,14 +579,14 @@ internal static class DBRepCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[1]);
-        if (S.IsNull() || S.ShapeType() != TopAbs_WIRE)
+        Shape S = theDI.GetShape(a[1]);
+        if (S.IsNull || S.ShapeType() != ShapeType.Wire)
         {
             return 0;
         }
 
         int i = 0;
-        for (var ex = new BRepTools_WireExplorer(TopoDS.Wire(S)); ex.More(); ex.Next())
+        for (var ex = new WireExplorer(ShapeCasts.Wire(S)); ex.More(); ex.Next())
         {
             i++;
             theDI.SetShape(a[1] + "_" + i.ToString(CultureInfo.InvariantCulture), ex.Current());
@@ -597,16 +603,16 @@ internal static class DBRepCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[1]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[1]);
+        if (S.IsNull)
         {
             return 0;
         }
 
-        var B = new BRep_Builder();
-        TopoDS_Shape NS = S.EmptyCopied();
+        var B = new BrepBuilder();
+        Shape NS = S.EmptyCopied();
         NS.Closed(S.Closed());
-        for (var itr = new TopoDS_Iterator(S); itr.More(); itr.Next())
+        for (var itr = new Iterator(S); itr.More(); itr.Next())
         {
             B.Add(NS, itr.Value().Reversed());
         }
@@ -625,7 +631,7 @@ internal static class DBRepCommands
         }
 
         int cas = 0;
-        TopAbs_Orientation ori = TopAbs_FORWARD;
+        Orientation ori = Forward;
         int last = n;
         string aCommand = a[0].ToLowerInvariant();
         if (aCommand == "orientation")
@@ -639,16 +645,16 @@ internal static class DBRepCommands
             switch (a[n - 1].Length > 0 ? a[n - 1][0] : '\0')
             {
                 case 'F':
-                    ori = TopAbs_FORWARD;
+                    ori = Forward;
                     break;
                 case 'R':
-                    ori = TopAbs_REVERSED;
+                    ori = Reversed;
                     break;
                 case 'I':
-                    ori = TopAbs_INTERNAL;
+                    ori = Internal;
                     break;
                 case 'E':
-                    ori = TopAbs_EXTERNAL;
+                    ori = External;
                     break;
             }
         }
@@ -663,8 +669,8 @@ internal static class DBRepCommands
 
         for (int i = 1; i < last; i++)
         {
-            TopoDS_Shape S = theDI.GetShape(a[i]);
-            if (!S.IsNull())
+            Shape S = theDI.GetShape(a[i]);
+            if (!S.IsNull)
             {
                 S = cas == -2 ? S.Complemented() : cas == -1 ? S.Reversed() : S.Oriented(ori);
                 theDI.SetShape(a[i], S);
@@ -683,10 +689,10 @@ internal static class DBRepCommands
 
         for (int i = 1; i < a.Count; i++)
         {
-            TopoDS_Shape S = theDI.GetShape(a[i]);
-            if (!S.IsNull())
+            Shape S = theDI.GetShape(a[i]);
+            if (!S.IsNull)
             {
-                var BS = new BRepTools_ShapeSet();
+                var BS = new BrepShapeSet();
                 BS.Add(S);
                 di.Append("Number of shapes in ").Append(a[i]).Append("\n");
                 string Astr = "";
@@ -700,7 +706,7 @@ internal static class DBRepCommands
     }
 
     /// <summary>nbshapes -t: the sub-shapes of each type with different locations counted apart.</summary>
-    private static string DumpExtent(in TopoDS_Shape aS)
+    private static string DumpExtent(in Shape aS)
     {
         string[] pNames =
         [
@@ -709,11 +715,11 @@ internal static class DBRepCommands
         ];
         var aStr = new StringBuilder();
         int aNbSh = 0;
-        var aM = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aM = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         for (int i = 7; i >= 0; --i)
         {
             aM.Clear();
-            TopExp.MapShapes(aS, (TopAbs_ShapeEnum)i, aM);
+            Exploration.MapShapes(aS, (ShapeType)i, aM);
             int aNb = aM.Extent();
             aStr.Append(pNames[i + 1]).Append(aNb.ToString(CultureInfo.InvariantCulture)).Append('\n');
             aNbSh += aNb;
@@ -778,8 +784,8 @@ internal static class DBRepCommands
             return 1;
         }
 
-        TopoDS_Shape aShape = theDI.GetShape(a[1]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(a[1]);
+        if (aShape.IsNull)
         {
             di.Append(a[1]).Append("is a null shape\n");
             return 1;
@@ -793,7 +799,7 @@ internal static class DBRepCommands
 
         aShape = SWDRAWShapeFixCommands.InPlace(theDI, aShape, s =>
         {
-            BRepTools.RemoveInternals(s, isForce);
+            BrepTools.RemoveInternals(s, isForce);
             return s;
         });
 
@@ -813,8 +819,8 @@ internal static class DBRepCommands
         bool aTotal = a[n - 1] == "-t";
         for (int i = 1; i < n; i++)
         {
-            TopoDS_Shape S = theDI.GetShape(a[i]);
-            if (!S.IsNull())
+            Shape S = theDI.GetShape(a[i]);
+            if (!S.IsNull)
             {
                 di.Append("Number of shapes in ").Append(a[i]).Append("\n");
                 if (aTotal)
@@ -823,7 +829,7 @@ internal static class DBRepCommands
                 }
                 else
                 {
-                    var BS = new BRepTools_ShapeSet();
+                    var BS = new BrepShapeSet();
                     BS.Add(S);
                     string Astr = "";
                     BS.DumpExtent(ref Astr);
@@ -842,26 +848,26 @@ internal static class DBRepCommands
             return 1;
         }
 
-        (TopAbs_ShapeEnum Type, string Label)[] aTypes =
+        (ShapeType Type, string Label)[] aTypes =
         [
-            (TopAbs_VERTEX, " VERTEX     : "), (TopAbs_EDGE, " EDGE       : "), (TopAbs_WIRE, " WIRE       : "),
-            (TopAbs_FACE, " FACE       : "), (TopAbs_SHELL, " SHELL      : "), (TopAbs_SOLID, " SOLID      : "),
-            (TopAbs_COMPSOLID, " COMPSOLID  : "), (TopAbs_COMPOUND, " COMPOUND   : "),
+            (ShapeType.Vertex, " VERTEX     : "), (ShapeType.Edge, " EDGE       : "), (ShapeType.Wire, " WIRE       : "),
+            (ShapeType.Face, " FACE       : "), (ShapeType.Shell, " SHELL      : "), (ShapeType.Solid, " SOLID      : "),
+            (ShapeType.CompSolid, " COMPSOLID  : "), (global::Kerf.Topology.ShapeType.Compound, " COMPOUND   : "),
         ];
         for (int i = 1; i < a.Count; i++)
         {
-            TopoDS_Shape Sh = theDI.GetShape(a[i]);
-            if (Sh.IsNull())
+            Shape Sh = theDI.GetShape(a[i]);
+            if (Sh.IsNull)
             {
                 continue;
             }
 
             di.Append("Number of shapes in ").Append(a[i]).Append("\n");
-            var M = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            foreach ((TopAbs_ShapeEnum aType, string aLabel) in aTypes)
+            var M = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            foreach ((ShapeType aType, string aLabel) in aTypes)
             {
                 int nbElem = 0;
-                for (var ex = new TopExp_Explorer(Sh, aType); ex.More(); ex.Next())
+                for (var ex = new Explorer(Sh, aType); ex.More(); ex.Next())
                 {
                     if (M.Add(ex.Current()))
                     {
@@ -880,7 +886,7 @@ internal static class DBRepCommands
     }
 
     // setflags shape flag1 [flag2...]: free, modified, checked, orientable, closed, infinite, convex, locked
-    private static void SetProp(TopoDS_TShape Sh, IReadOnlyList<string> a)
+    private static void SetProp(TShape Sh, IReadOnlyList<string> a)
     {
         for (int i = 2; i < a.Count; i++)
         {
@@ -938,17 +944,17 @@ internal static class DBRepCommands
             return 1;
         }
 
-        TopoDS_Shape Sh = theDI.GetShape(a[1]);
-        if (Sh.IsNull())
+        Shape Sh = theDI.GetShape(a[1]);
+        if (Sh.IsNull)
         {
             return 1;
         }
 
-        TopoDS_Shape aCopy = BRepTools.CopyForWrite(Sh, out _);
+        Shape aCopy = BrepTools.CopyForWrite(Sh, out _);
         SetProp(aCopy.TShape()!, a);
-        foreach (TopAbs_ShapeEnum aType in new[] { TopAbs_VERTEX, TopAbs_EDGE, TopAbs_FACE })
+        foreach (ShapeType aType in new[] { ShapeType.Vertex, ShapeType.Edge, ShapeType.Face })
         {
-            for (var ex = new TopExp_Explorer(aCopy, aType); ex.More(); ex.Next())
+            for (var ex = new Explorer(aCopy, aType); ex.More(); ex.Next())
             {
                 SetProp(ex.Current().TShape()!, a);
             }
@@ -998,7 +1004,7 @@ internal static class DBRepCommands
     {
         int aVersion = -1;
         string aShapeName = "", aFileName = "";
-        TopoDS_Shape aShape = new();
+        Shape aShape = new();
         bool isBinaryFormat = a[0].Equals("binsave", StringComparison.OrdinalIgnoreCase);
         bool isWithTriangles = true;
         bool isWithNormals = false;
@@ -1034,7 +1040,7 @@ internal static class DBRepCommands
             {
                 aShapeName = a[anArgIter];
                 aShape = theDI.GetShape(aShapeName);
-                if (aShape.IsNull())
+                if (aShape.IsNull)
                 {
                     di.Append("Syntax error: ").Append(aShapeName).Append(" is not a shape");
                     return 1;
@@ -1060,41 +1066,41 @@ internal static class DBRepCommands
         byte[] aBytes;
         if (isBinaryFormat)
         {
-            if (aVersion > (int)BinTools_FormatVersionBounds.BinTools_FormatVersion_UPPER)
+            if (aVersion > (int)global::Kerf.Engine.Exchange.Brep.Binary.BinaryFormatVersionBounds.BinTools_FormatVersion_UPPER)
             {
                 di.Append("Syntax error: unknown format version");
                 return 1;
             }
 
-            if (isWithNormals && aVersion > 0 && aVersion < (int)BinTools_FormatVersion.BinTools_FormatVersion_VERSION_4)
+            if (isWithNormals && aVersion > 0 && aVersion < (int)global::Kerf.Engine.Exchange.Brep.Binary.BinaryFormatVersion.FormatVersion_VERSION_4)
             {
                 di.Append("Error: vertex normals require binary format version 4 or later");
                 return 1;
             }
 
-            var aVersionNb = aVersion > 0 ? (BinTools_FormatVersion)aVersion : BinTools_FormatVersion.BinTools_FormatVersion_CURRENT;
+            var aVersionNb = aVersion > 0 ? (global::Kerf.Engine.Exchange.Brep.Binary.BinaryFormatVersion)aVersion : global::Kerf.Engine.Exchange.Brep.Binary.BinaryFormatVersion.FormatVersion_CURRENT;
             var aStream = new MemoryStream();
-            BinTools.Write(aShape, aStream, isWithTriangles, isWithNormals, aVersionNb);
+            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.Write(aShape, aStream, isWithTriangles, isWithNormals, aVersionNb);
             aBytes = aStream.ToArray();
         }
         else
         {
-            if (aVersion > (int)TopTools_FormatVersionBounds.TopTools_FormatVersion_UPPER)
+            if (aVersion > (int)FormatVersionBounds.TopTools_FormatVersion_UPPER)
             {
                 di.Append("Syntax error: unknown format version");
                 return 1;
             }
 
-            if (isWithNormals && aVersion > 0 && aVersion < (int)TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3)
+            if (isWithNormals && aVersion > 0 && aVersion < (int)FormatVersion.FormatVersion_VERSION_3)
             {
                 di.Append("Error: vertex normals require ascii format version 3 or later");
                 return 1;
             }
 
-            var aVersionNb = aVersion > 0 ? (TopTools_FormatVersion)aVersion : TopTools_FormatVersion.TopTools_FormatVersion_CURRENT;
+            var aVersionNb = aVersion > 0 ? (FormatVersion)aVersion : FormatVersion.FormatVersion_CURRENT;
             var aStream = new StringWriter { NewLine = "\n" };
             aStream.Write("DBRep_DrawableShape\n");
-            BRepTools.Write(aShape, aStream, isWithTriangles, isWithNormals, aVersionNb);
+            BrepTools.Write(aShape, aStream, isWithTriangles, isWithNormals, aVersionNb);
             aBytes = Encoding.Latin1.GetBytes(aStream.ToString());
         }
 
@@ -1122,19 +1128,19 @@ internal static class DBRepCommands
         }
 
         bool isBinaryFormat = !aBytes.AsSpan().StartsWith("DBRep_DrawableShape"u8);
-        TopoDS_Shape aShape;
+        Shape aShape;
         if (isBinaryFormat)
         {
-            BinTools.Read(out aShape, new MemoryStream(aBytes, false));
+            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.Read(out aShape, new MemoryStream(aBytes, false));
         }
         else
         {
             string aText = Encoding.Latin1.GetString(aBytes);
             var aReader = new StringReader(aText);
             StreamUtilities.SetInputLength(aReader, aText.Length);
-            var aShapeSet = new BRepTools_ShapeSet();
+            var aShapeSet = new BrepShapeSet();
             aShapeSet.Read(aReader);
-            if (aShapeSet.NbShapes() == 0)
+            if (aShapeSet.ShapeCount == 0)
             {
                 di.Append("Error: cannot read from the file '").Append(aFileName).Append("'");
                 return 1;

@@ -16,6 +16,7 @@
 //   ... -- wasm-compare report.json data-folder: the WebAssembly demo's report against win-x64 (run-headless.ps1).
 // Pass the same -p:OcctSourceDir as for the tests.
 
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Globalization;
 using BenchmarkDotNet.Attributes;
@@ -124,7 +125,7 @@ namespace OcctNet.Benchmarks
                 {
                     continue;
                 }
-                TopoDS_Shape aPortInput = Cases.PortRead(aCase.F1);
+                Shape aPortInput = Cases.PortRead(aCase.F1);
                 foreach (bool isParallel in new[] { false, true })
                 {
                     long anAllocated = 0;
@@ -132,7 +133,7 @@ namespace OcctNet.Benchmarks
                     {
                         long aBytes = GC.GetTotalAllocatedBytes(true);
                         long t0 = Stopwatch.GetTimestamp();
-                        TopoDS_Shape aMeshed = new BRepMesh_IncrementalMesh(aPortInput, aCase.Deflection, false, Cases.Angle, isParallel).Shape();
+                        Shape aMeshed = new BRepMesh_IncrementalMesh(aPortInput, aCase.Deflection, false, Cases.Angle, isParallel).Shape();
                         long t1 = Stopwatch.GetTimestamp();
                         MeshExtraction.Extract(aMeshed, aCase.Deflection, Cases.Angle);
                         long t2 = Stopwatch.GetTimestamp();
@@ -154,7 +155,7 @@ namespace OcctNet.Benchmarks
     public class MeshBenchmarks
     {
         private Case myCase = null!;
-        private TopoDS_Shape myPortInput;
+        private Shape myPortInput;
 
         public static IEnumerable<string> Names() => ["Pump_Nut.brep", "bottle.brep", "CrankArm.brep", "filleted block with holes", "sphere"];
 

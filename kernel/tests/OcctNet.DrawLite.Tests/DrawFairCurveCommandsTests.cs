@@ -22,7 +22,7 @@ public class DrawFairCurveCommandsTests(ITestOutputHelper output)
 
     private static DrawFairCurve Batten(DrawInterpreter theDI, string theName) => Assert.IsType<DrawFairCurve>(theDI.GetDrawable(theName));
 
-    private static void SameCurve(Geom2d_BSplineCurve theExpected, Geom2d_BSplineCurve theActual)
+    private static void SameCurve(BSplineCurve2D theExpected, BSplineCurve2D theActual)
     {
         Assert.Equal(theExpected.Degree(), theActual.Degree());
         Assert.Equal(theExpected.Poles().ToArray(), theActual.Poles().ToArray());
@@ -128,9 +128,9 @@ public class DrawFairCurveCommandsTests(ITestOutputHelper output)
         Assert.Same(Batten(i, "b").Curve, Assert.IsType<DrawGeometry>(i.GetDrawable("c")).Geometry);
 
         // the 2D transformations read the batten's curve (Draw-lite binds the transformed curve to the name)
-        Geom2d_BSplineCurve aCurve = Batten(i, "b").Curve;
+        BSplineCurve2D aCurve = Batten(i, "b").Curve;
         i.Eval("2dtranslate b 1 2");
-        var aMoved = Assert.IsType<Geom2d_BSplineCurve>(Assert.IsType<DrawGeometry>(i.GetDrawable("b")).Geometry);
+        var aMoved = Assert.IsType<BSplineCurve2D>(Assert.IsType<DrawGeometry>(i.GetDrawable("b")).Geometry);
         Assert.Equal(aCurve.Pole(3).X() + 1, aMoved.Pole(3).X(), 1e-12);
         Assert.Equal(aCurve.Pole(3).Y() + 2, aMoved.Pole(3).Y(), 1e-12);
     }

@@ -3,6 +3,8 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -26,7 +28,7 @@ public class GeomAdaptor_TransformedSurfaceTest
         return aTrsf;
     }
 
-    private static Geom_BSplineSurface createBSplineSurface()
+    private static BSplineSurface createBSplineSurface()
     {
         NCollection_Array2<Point3D> aPoles = new(1, 2, 1, 2);
         aPoles.SetValue(1, 1, new Point3D(0.0, 0.0, 0.0));
@@ -46,17 +48,17 @@ public class GeomAdaptor_TransformedSurfaceTest
         aUMults.SetValue(2, 2);
         aVMults.SetValue(1, 2);
         aVMults.SetValue(2, 2);
-        return new Geom_BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, 1, 1);
+        return new BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, 1, 1);
     }
 
-    private static Geom_Plane XOYPlane() => new(new Plane3D(new CoordinateSystem(Constants.XOY())));
+    private static PlaneSurface XOYPlane() => new(new Plane3D(new CoordinateSystem(Constants.XOY())));
 
     [Fact]
     public void IdentityTransformUsesOriginalSurface()
     {
-        Geom_Plane aPlane = XOYPlane();
+        PlaneSurface aPlane = XOYPlane();
 
-        GeomAdaptor_TransformedSurface anAdaptor = new(aPlane, new Transform3D());
+        TransformedSurface anAdaptor = new(aPlane, new Transform3D());
 
         Assert.Same(aPlane, anAdaptor.GeomSurfaceOriginal());
         Assert.Same(aPlane, anAdaptor.GeomSurfaceTransformed());
@@ -65,10 +67,10 @@ public class GeomAdaptor_TransformedSurfaceTest
     [Fact]
     public void PlaneCachesTransformedSurface()
     {
-        GeomAdaptor_TransformedSurface anAdaptor = new(XOYPlane(), createTranslation(0.0, 0.0, 5.0));
+        TransformedSurface anAdaptor = new(XOYPlane(), createTranslation(0.0, 0.0, 5.0));
 
-        Geom_Surface? aFirst = anAdaptor.GeomSurfaceTransformed();
-        Geom_Surface? aSecond = anAdaptor.GeomSurfaceTransformed();
+        Surface? aFirst = anAdaptor.GeomSurfaceTransformed();
+        Surface? aSecond = anAdaptor.GeomSurfaceTransformed();
         Assert.Same(aFirst, aSecond);
 
         Plane3D aCachedPlane = anAdaptor.Plane();
@@ -78,13 +80,13 @@ public class GeomAdaptor_TransformedSurfaceTest
     [Fact]
     public void BSplineCachePreservedByShallowCopy()
     {
-        GeomAdaptor_TransformedSurface anAdaptor = new(createBSplineSurface(), createTranslation(4.0, 0.0, 0.0));
+        TransformedSurface anAdaptor = new(createBSplineSurface(), createTranslation(4.0, 0.0, 0.0));
 
-        Geom_Surface? aSurface = anAdaptor.GeomSurfaceTransformed();
-        Geom_BSplineSurface aBSpline = anAdaptor.BSpline();
+        Surface? aSurface = anAdaptor.GeomSurfaceTransformed();
+        BSplineSurface aBSpline = anAdaptor.BSpline();
 
-        Adaptor3d_Surface aCopyBase = anAdaptor.ShallowCopy();
-        GeomAdaptor_TransformedSurface? aCopy = aCopyBase as GeomAdaptor_TransformedSurface;
+        SurfaceAdaptorBase aCopyBase = anAdaptor.ShallowCopy();
+        TransformedSurface? aCopy = aCopyBase as TransformedSurface;
         Assert.NotNull(aCopy);
 
         Assert.Same(aSurface, aCopy.GeomSurfaceTransformed());
@@ -94,13 +96,13 @@ public class GeomAdaptor_TransformedSurfaceTest
     [Fact]
     public void ShallowCopyFromUnbuiltStateBuildsCacheLazily()
     {
-        GeomAdaptor_TransformedSurface anAdaptor = new(XOYPlane(), createTranslation(0.0, 0.0, 4.0));
+        TransformedSurface anAdaptor = new(XOYPlane(), createTranslation(0.0, 0.0, 4.0));
 
-        GeomAdaptor_TransformedSurface? aCopy = anAdaptor.ShallowCopy() as GeomAdaptor_TransformedSurface;
+        TransformedSurface? aCopy = anAdaptor.ShallowCopy() as TransformedSurface;
         Assert.NotNull(aCopy);
 
-        Geom_Surface? aFirst = aCopy.GeomSurfaceTransformed();
-        Geom_Surface? aSecond = aCopy.GeomSurfaceTransformed();
+        Surface? aFirst = aCopy.GeomSurfaceTransformed();
+        Surface? aSecond = aCopy.GeomSurfaceTransformed();
         Assert.Same(aFirst, aSecond);
         Assert.Equal(4.0, aCopy.Plane().Location().Z(), THE_TOLERANCE);
     }
@@ -108,11 +110,11 @@ public class GeomAdaptor_TransformedSurfaceTest
     [Fact]
     public void SetTrsfRebuildsCache()
     {
-        GeomAdaptor_TransformedSurface anAdaptor = new(XOYPlane(), createTranslation(0.0, 0.0, 1.0));
+        TransformedSurface anAdaptor = new(XOYPlane(), createTranslation(0.0, 0.0, 1.0));
 
-        Geom_Surface? aFirst = anAdaptor.GeomSurfaceTransformed();
+        Surface? aFirst = anAdaptor.GeomSurfaceTransformed();
         anAdaptor.SetTrsf(createTranslation(0.0, 0.0, 3.0));
-        Geom_Surface? aSecond = anAdaptor.GeomSurfaceTransformed();
+        Surface? aSecond = anAdaptor.GeomSurfaceTransformed();
 
         Assert.NotSame(aFirst, aSecond);
         Assert.Equal(3.0, anAdaptor.Plane().Location().Z(), THE_TOLERANCE);
@@ -121,15 +123,15 @@ public class GeomAdaptor_TransformedSurfaceTest
     [Fact]
     public void LoadRebuildsCache()
     {
-        GeomAdaptor_TransformedSurface anAdaptor = new(XOYPlane(), createTranslation(0.0, 0.0, 2.0));
+        TransformedSurface anAdaptor = new(XOYPlane(), createTranslation(0.0, 0.0, 2.0));
 
-        Geom_Surface? aFirst = anAdaptor.GeomSurfaceTransformed();
+        Surface? aFirst = anAdaptor.GeomSurfaceTransformed();
 
         CoordinateSystem aSphereAx = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_SphericalSurface aSphere = new(aSphereAx, 3.0);
+        SphericalSurface aSphere = new(aSphereAx, 3.0);
         anAdaptor.Load(aSphere, new Transform3D());
 
-        Geom_Surface? aSecond = anAdaptor.GeomSurfaceTransformed();
+        Surface? aSecond = anAdaptor.GeomSurfaceTransformed();
         Assert.NotSame(aFirst, aSecond);
         Assert.Equal(SurfaceKind.Sphere, anAdaptor.GetType());
         Assert.Equal(3.0, anAdaptor.Sphere().Radius(), THE_TOLERANCE);
@@ -138,17 +140,17 @@ public class GeomAdaptor_TransformedSurfaceTest
     [Fact]
     public void ExtrusionCachesDirectionAndBasisCurve()
     {
-        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
-        Geom_SurfaceOfLinearExtrusion anExt = new(aLine, new Direction3D(0.0, 0.0, 1.0));
+        LineCurve3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        ExtrusionSurface anExt = new(aLine, new Direction3D(0.0, 0.0, 1.0));
 
-        GeomAdaptor_TransformedSurface anAdaptor = new(anExt, createRotationY(M_PI / 2.0));
+        TransformedSurface anAdaptor = new(anExt, createRotationY(M_PI / 2.0));
 
         Direction3D aDirection = anAdaptor.Direction();
         Assert.Equal(1.0, aDirection.X(), THE_TOLERANCE);
         Assert.Equal(0.0, aDirection.Y(), THE_TOLERANCE);
         Assert.Equal(0.0, aDirection.Z(), THE_TOLERANCE);
 
-        Adaptor3d_Curve aCurve = anAdaptor.BasisCurve();
+        CurveAdaptorBase aCurve = anAdaptor.BasisCurve();
         Assert.NotNull(aCurve);
         Assert.Equal(CurveKind.Line, aCurve.GetType());
     }
@@ -156,17 +158,17 @@ public class GeomAdaptor_TransformedSurfaceTest
     [Fact]
     public void RevolutionCachesAxisAndBasisCurve()
     {
-        Geom_Line aLine = new(new Point3D(2.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_SurfaceOfRevolution aRev = new(aLine, new Axis3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)));
+        LineCurve3D aLine = new(new Point3D(2.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        RevolutionSurface aRev = new(aLine, new Axis3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)));
 
-        GeomAdaptor_TransformedSurface anAdaptor = new(aRev, createRotationY(M_PI / 2.0));
+        TransformedSurface anAdaptor = new(aRev, createRotationY(M_PI / 2.0));
 
         Axis3D aAxis = anAdaptor.AxeOfRevolution();
         Assert.Equal(1.0, aAxis.Direction().X(), THE_TOLERANCE);
         Assert.Equal(0.0, aAxis.Direction().Y(), THE_TOLERANCE);
         Assert.Equal(0.0, aAxis.Direction().Z(), THE_TOLERANCE);
 
-        Adaptor3d_Curve aCurve = anAdaptor.BasisCurve();
+        CurveAdaptorBase aCurve = anAdaptor.BasisCurve();
         Assert.NotNull(aCurve);
         Assert.Equal(CurveKind.Line, aCurve.GetType());
     }
@@ -174,11 +176,11 @@ public class GeomAdaptor_TransformedSurfaceTest
     [Fact]
     public void OffsetCachesBasisSurfaceAndOffsetValue()
     {
-        Geom_OffsetSurface anOffset = new(XOYPlane(), 2.5);
+        OffsetSurface anOffset = new(XOYPlane(), 2.5);
 
-        GeomAdaptor_TransformedSurface anAdaptor = new(anOffset, createTranslation(0.0, 0.0, 3.0));
+        TransformedSurface anAdaptor = new(anOffset, createTranslation(0.0, 0.0, 3.0));
 
-        Adaptor3d_Surface aBasis = anAdaptor.BasisSurface();
+        SurfaceAdaptorBase aBasis = anAdaptor.BasisSurface();
         Assert.NotNull(aBasis);
         Assert.Equal(SurfaceKind.Plane, aBasis.GetType());
         Assert.Equal(2.5, anAdaptor.OffsetValue(), THE_TOLERANCE);
@@ -187,9 +189,9 @@ public class GeomAdaptor_TransformedSurfaceTest
     [Fact]
     public void UTrimPreservesRestrictedBounds()
     {
-        GeomAdaptor_TransformedSurface anAdaptor = new(XOYPlane(), 2.0, 8.0, 3.0, 9.0, createTranslation(0.0, 0.0, 5.0), 0.1, 0.2);
+        TransformedSurface anAdaptor = new(XOYPlane(), 2.0, 8.0, 3.0, 9.0, createTranslation(0.0, 0.0, 5.0), 0.1, 0.2);
 
-        GeomAdaptor_Surface? aTrimmed = anAdaptor.UTrim(4.0, 6.0, 0.05) as GeomAdaptor_Surface;
+        SurfaceAdaptor? aTrimmed = anAdaptor.UTrim(4.0, 6.0, 0.05) as SurfaceAdaptor;
         Assert.NotNull(aTrimmed);
 
         Assert.Equal(4.0, aTrimmed.FirstUParameter(), THE_TOLERANCE);
@@ -206,9 +208,9 @@ public class GeomAdaptor_TransformedSurfaceTest
     [Fact]
     public void VTrimPreservesRestrictedBounds()
     {
-        GeomAdaptor_TransformedSurface anAdaptor = new(XOYPlane(), 2.0, 8.0, 3.0, 9.0, createTranslation(0.0, 0.0, 7.0), 0.1, 0.2);
+        TransformedSurface anAdaptor = new(XOYPlane(), 2.0, 8.0, 3.0, 9.0, createTranslation(0.0, 0.0, 7.0), 0.1, 0.2);
 
-        GeomAdaptor_Surface? aTrimmed = anAdaptor.VTrim(4.0, 6.0, 0.15) as GeomAdaptor_Surface;
+        SurfaceAdaptor? aTrimmed = anAdaptor.VTrim(4.0, 6.0, 0.15) as SurfaceAdaptor;
         Assert.NotNull(aTrimmed);
 
         Assert.Equal(2.0, aTrimmed.FirstUParameter(), THE_TOLERANCE);
@@ -225,10 +227,10 @@ public class GeomAdaptor_TransformedSurfaceTest
     [Fact]
     public void GridEvalUsesTransformedGeometryOnlyOnce()
     {
-        Geom_Plane aPlane = new(new Plane3D(new CoordinateSystem(Constants.XOY())));
-        GeomAdaptor_TransformedSurface anAdaptor = new(aPlane, createTranslation(0.0, 0.0, 5.0));
+        PlaneSurface aPlane = new(new Plane3D(new CoordinateSystem(Constants.XOY())));
+        TransformedSurface anAdaptor = new(aPlane, createTranslation(0.0, 0.0, 5.0));
 
-        GeomGridEval_Surface anEval = new(anAdaptor);
+        SurfaceGrid anEval = new(anAdaptor);
 
         NCollection_Array1<double> aUParams = new(1, 2);
         NCollection_Array1<double> aVParams = new(1, 2);

@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.IntSurf_Situation;
 using static Occt.IntSurf_TypeTrans;
@@ -307,8 +308,8 @@ public class IntSurfTests
     [Fact]
     public void SetPeriod_reads_both_surfaces()
     {
-        GeomAdaptor_Surface aCyl = new(new Geom_CylindricalSurface(new CoordinateSystem(), 2));
-        GeomAdaptor_Surface aPln = new(new Geom_Plane(new Plane3D()));
+        SurfaceAdaptor aCyl = new(new CylindricalSurface(new CoordinateSystem(), 2));
+        SurfaceAdaptor aPln = new(new PlaneSurface(new Plane3D()));
         Span<double> aPeriods = stackalloc double[4];
         IntSurf.SetPeriod(aCyl, aPln, aPeriods);
         Assert.Equal(new[] { 2 * Math.PI, 0, 0, 0 }, aPeriods.ToArray());

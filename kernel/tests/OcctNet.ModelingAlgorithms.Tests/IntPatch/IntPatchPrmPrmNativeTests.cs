@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using System.Globalization;
 using System.Reflection;
@@ -22,7 +23,7 @@ public class IntPatchPrmPrmNativeTests
     private const double THE_TOL = 1.0e-7, THE_FLECHE = 0.01, THE_PAS = 0.05;
 
     // tools/walkrec's main.cpp, line for line.
-    internal static Geom_BSplineSurface Patch(double theX0, double theX1, double theY0, double theY1, int theTable = 0)
+    internal static BSplineSurface Patch(double theX0, double theX1, double theY0, double theY1, int theTable = 0)
     {
         var aPoles = new NCollection_Array2<Point3D>(1, 4, 1, 4);
         double[,] aZ =
@@ -53,10 +54,10 @@ public class IntPatchPrmPrmNativeTests
         var aMults = new NCollection_Array1<int>(1, 2);
         aMults[1] = 4;
         aMults[2] = 4;
-        return new Geom_BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 3, 3);
+        return new BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 3, 3);
     }
 
-    internal static Geom_BSplineSurface Bumpy(int theSeed, double theZ0)
+    internal static BSplineSurface Bumpy(int theSeed, double theZ0)
     {
         const int aN = 30;
         var aPoles = new NCollection_Array2<Point3D>(1, aN, 1, aN);
@@ -76,10 +77,10 @@ public class IntPatchPrmPrmNativeTests
             aKnots[k] = (k - 1) / (double)(aN - 3);
             aMults[k] = (k == 1 || k == aN - 2) ? 4 : 1;
         }
-        return new Geom_BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 3, 3);
+        return new BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 3, 3);
     }
 
-    internal static Geom_BSplineSurface Folded()
+    internal static BSplineSurface Folded()
     {
         double[] aX = [-1.0, 2.0, 2.0, 0.0, 0.0, 1.5];
         double[] aZ = [0.0, 0.0, 1.2, 1.2, -0.6, -0.6];
@@ -105,14 +106,14 @@ public class IntPatchPrmPrmNativeTests
         aVKnots[2] = 1.0;
         aVMults[1] = 4;
         aVMults[2] = 4;
-        return new Geom_BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, 3, 3);
+        return new BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, 3, 3);
     }
 
-    internal static Geom_BSplineSurface PatchA() => Patch(-2.0, 2.0, -2.0, 2.0);
+    internal static BSplineSurface PatchA() => Patch(-2.0, 2.0, -2.0, 2.0);
 
-    internal static Geom_BSplineSurface PatchB() => Patch(-2.0, 2.0, -2.0, 2.0, 1);
+    internal static BSplineSurface PatchB() => Patch(-2.0, 2.0, -2.0, 2.0, 1);
 
-    internal static Geom_CylindricalSurface Cylinder() =>
+    internal static CylindricalSurface Cylinder() =>
         new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
 
     private static void Hex(StringBuilder theOut, double theValue) =>
@@ -209,13 +210,13 @@ public class IntPatchPrmPrmNativeTests
         }
     }
 
-    private static (GeomAdaptor_Surface, Adaptor3d_TopolTool) Domain(Geom_Surface theS)
+    private static (SurfaceAdaptor, TopolTool) Domain(Surface theS)
     {
-        var aS = new GeomAdaptor_Surface(theS);
-        return (aS, new Adaptor3d_TopolTool(aS));
+        var aS = new SurfaceAdaptor(theS);
+        return (aS, new TopolTool(aS));
     }
 
-    private static void PrmPrm(StringBuilder theOut, Geom_Surface theS1, Geom_Surface theS2)
+    private static void PrmPrm(StringBuilder theOut, Surface theS1, Surface theS2)
     {
         var (aS1, aD1) = Domain(theS1);
         var (aS2, aD2) = Domain(theS2);
@@ -224,7 +225,7 @@ public class IntPatchPrmPrmNativeTests
         DumpPrmPrm(theOut, anInt);
     }
 
-    private static void PrmPrmPoly(StringBuilder theOut, Geom_Surface theS1, Geom_Surface theS2)
+    private static void PrmPrmPoly(StringBuilder theOut, Surface theS1, Surface theS2)
     {
         var (aS1, aD1) = Domain(theS1);
         var (aS2, aD2) = Domain(theS2);
@@ -238,7 +239,7 @@ public class IntPatchPrmPrmNativeTests
         DumpPrmPrm(theOut, anInt);
     }
 
-    private static void PrmPrmSelf(StringBuilder theOut, Geom_Surface theS)
+    private static void PrmPrmSelf(StringBuilder theOut, Surface theS)
     {
         var (aS, aD) = Domain(theS);
         var aPoly = new IntPatch_Polyhedron(aS, aD.NbSamplesU(), aD.NbSamplesV());
@@ -249,7 +250,7 @@ public class IntPatchPrmPrmNativeTests
         DumpPrmPrm(theOut, anInt);
     }
 
-    private static void PrmPrmVoxels(StringBuilder theOut, Geom_Surface theS1, Geom_Surface theS2)
+    private static void PrmPrmVoxels(StringBuilder theOut, Surface theS1, Surface theS2)
     {
         var (aS1, aD1) = Domain(theS1);
         var (aS2, aD2) = Domain(theS2);
@@ -269,7 +270,7 @@ public class IntPatchPrmPrmNativeTests
         DumpPrmPrm(theOut, anInt);
     }
 
-    private static void PrmPrmStart(StringBuilder theOut, Geom_Surface theS1, Geom_Surface theS2, double theU1,
+    private static void PrmPrmStart(StringBuilder theOut, Surface theS1, Surface theS2, double theU1,
                                     double theV1, double theU2, double theV2)
     {
         var (aS1, aD1) = Domain(theS1);
@@ -279,7 +280,7 @@ public class IntPatchPrmPrmNativeTests
         DumpPrmPrm(theOut, anInt);
     }
 
-    private static void PrmPrmList(StringBuilder theOut, Geom_Surface theS1, Geom_Surface theS2)
+    private static void PrmPrmList(StringBuilder theOut, Surface theS1, Surface theS2)
     {
         var (aS1, aD1) = Domain(theS1);
         var (aS2, aD2) = Domain(theS2);
@@ -314,7 +315,7 @@ public class IntPatchPrmPrmNativeTests
                     PrmPrm(aOut, PatchA(), PatchB());
                     break;
                 case "prmprm-offset-bspline":
-                    PrmPrm(aOut, new Geom_OffsetSurface(PatchA(), 0.15), PatchB());
+                    PrmPrm(aOut, new OffsetSurface(PatchA(), 0.15), PatchB());
                     break;
                 case "prmprm-poly":
                     PrmPrmPoly(aOut, PatchA(), PatchB());
@@ -326,7 +327,7 @@ public class IntPatchPrmPrmNativeTests
                     PrmPrmVoxels(aOut, Bumpy(1, 0.0), Bumpy(2, 0.12));
                     break;
                 case "prmprm-listpnts":
-                    PrmPrmList(aOut, new Geom_RectangularTrimmedSurface(Cylinder(), 0.0, 2.0 * M_PI, -2.0, 2.0),
+                    PrmPrmList(aOut, new TrimmedSurface(Cylinder(), 0.0, 2.0 * M_PI, -2.0, 2.0),
                                Patch(0.0, 3.0, -2.0, 2.0));
                     break;
                 case "prmprm-self":

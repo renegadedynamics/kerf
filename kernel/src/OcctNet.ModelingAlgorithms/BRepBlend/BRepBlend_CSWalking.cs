@@ -4,11 +4,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.Blend_Status;
 using static Occt.IntSurf_TypeTrans;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -25,9 +27,9 @@ public class BRepBlend_CSWalking
 {
     private bool done;
     private BRepBlend_Line? line;
-    private readonly Adaptor3d_Surface surf;
-    private readonly Adaptor3d_Curve curv;
-    private Adaptor3d_TopolTool domain;
+    private readonly SurfaceAdaptorBase surf;
+    private readonly CurveAdaptorBase curv;
+    private TopolTool domain;
     private double tolpoint3d;
     private double tolgui;
     private double pasmax;
@@ -43,7 +45,7 @@ public class BRepBlend_CSWalking
     private bool comptra;
     private double sens;
 
-    public BRepBlend_CSWalking(Adaptor3d_Curve Curv, Adaptor3d_Surface Surf, Adaptor3d_TopolTool Domain)
+    public BRepBlend_CSWalking(CurveAdaptorBase Curv, SurfaceAdaptorBase Surf, TopolTool Domain)
     {
         done = false;
         surf = Surf;
@@ -89,7 +91,7 @@ public class BRepBlend_CSWalking
 
         if (Appro)
         {
-            TopAbs_State situ;
+            Containment situ;
             math_Vector tolerance = new(1, Nbvar), infbound = new(1, Nbvar), supbound = new(1, Nbvar);
             Func.GetTolerance(tolerance, tolpoint3d);
             Func.GetBounds(infbound, supbound);
@@ -105,7 +107,7 @@ public class BRepBlend_CSWalking
 
             situ = domain.Classify(Func.Pnt2d(), Min(tolerance[1], tolerance[2]));
 
-            if (situ != TopAbs_IN)
+            if (situ != In)
             {
                 return;
             }
@@ -310,8 +312,8 @@ public class BRepBlend_CSWalking
 
         prevP = previousP.PointOnS();
         prevTg = previousP.TangentOnS();
-        tolu = Adaptor3d_HSurfaceTool.UResolution(surf, tolpoint3d);
-        tolv = Adaptor3d_HSurfaceTool.VResolution(surf, tolpoint3d);
+        tolu = HSurfaceTool.UResolution(surf, tolpoint3d);
+        tolv = HSurfaceTool.VResolution(surf, tolpoint3d);
 
         Vector3D Corde = new(prevP, Psurf);
         Norme = Corde.SquareMagnitude();
@@ -461,7 +463,7 @@ public class BRepBlend_CSWalking
 
     // OCCT's Recadre is commented out in its source; not ported.
 
-    private void Transition(Adaptor2d_Curve2d A, double Param, ref IntSurf_Transition TLine,
+    private void Transition(Curve2DAdaptorBase A, double Param, ref IntSurf_Transition TLine,
                             ref IntSurf_Transition TArc)
     {
         Point2D p2d;
@@ -471,7 +473,7 @@ public class BRepBlend_CSWalking
         Vector3D d1u, d1v, normale, tgrst = new();
 
         BRepBlend_HCurve2dTool.D1(A, Param, out p2d, out dp2d);
-        Adaptor3d_HSurfaceTool.D1(surf, p2d.X(), p2d.Y(), out pbid, out d1u, out d1v);
+        HSurfaceTool.D1(surf, p2d.X(), p2d.Y(), out pbid, out d1u, out d1v);
 
         tgrst.SetLinearForm(dp2d.X(), d1u, dp2d.Y(), d1v);
         normale = d1u.Crossed(d1v);
@@ -480,12 +482,12 @@ public class BRepBlend_CSWalking
     }
 
     private void MakeExtremity(ref BRepBlend_Extremity Extrem, int Index, double Param, bool IsVtx,
-                               Adaptor3d_HVertex? Vtx)
+                               HVertex? Vtx)
     {
         IntSurf_Transition Tline = new(), Tarc = new();
         double prm, U, V;
         int nbarc;
-        Adaptor3d_TopolTool Iter;
+        TopolTool Iter;
 
         previousP.ParametersOnS(out U, out V);
         Extrem.SetValue(previousP.PointOnS(), U, V, previousP.Parameter(), tolpoint3d);
@@ -510,7 +512,7 @@ public class BRepBlend_CSWalking
             Extrem.SetVertex(Vtx!);
             while (Iter.More())
             {
-                Adaptor2d_Curve2d arc = Iter.Value();
+                Curve2DAdaptorBase arc = Iter.Value();
                 if (nbarc != Index)
                 {
                     Iter.Initialize(arc);
@@ -543,7 +545,7 @@ public class BRepBlend_CSWalking
         double parprec = param;
 
         Blend_Status State;
-        TopAbs_State situ;
+        Containment situ;
         double w, U, V;
         int nbarc;
         int Index = 0;
@@ -554,7 +556,7 @@ public class BRepBlend_CSWalking
         math_Vector tolerance = new(1, Nbvar), infbound = new(1, Nbvar), supbound = new(1, Nbvar),
                     parinit = new(1, Nbvar);
         math_Vector solrst = new(1, Nbvar);
-        Adaptor3d_HVertex? Vtx = null;
+        HVertex? Vtx = null;
         BRepBlend_Extremity Exts = new(), Extc = new();
 
         Func.GetTolerance(tolerance, tolpoint3d);
@@ -585,7 +587,7 @@ public class BRepBlend_CSWalking
                 recad = false;
                 echecrecad = false;
 
-                if (situ == TopAbs_OUT || situ == TopAbs_ON)
+                if (situ == Out || situ == On)
                 {
                     // inverse problem on surf
                     //	recad = Recadre(FuncInv,sol,solrst,Index,Isvtx,Vtx);

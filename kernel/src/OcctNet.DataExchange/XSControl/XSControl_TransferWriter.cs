@@ -6,6 +6,7 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using static Occt.IFSelect_ReturnStatus;
 
 namespace Occt;
@@ -128,8 +129,8 @@ public class XSControl_TransferWriter : Transient
             return false;
         }
         XSControl_Utils xu = new XSControl_Utils();
-        TopoDS_Shape sh = xu.BinderShape(obj);
-        if (!sh.IsNull())
+        Shape sh = xu.BinderShape(obj);
+        if (!sh.IsNull)
         {
             return RecognizeShape(sh);
         }
@@ -182,13 +183,13 @@ public class XSControl_TransferWriter : Transient
     /// <summary>
     /// Tells if a Shape is valid for a transfer to a model Asks the Controller (RecognizeWriteShape)
     /// </summary>
-    public bool RecognizeShape(TopoDS_Shape shape)
+    public bool RecognizeShape(Shape shape)
     {
         if (myController is null)
         {
             return false;
         }
-        if (shape.IsNull())
+        if (shape.IsNull)
         {
             return false;
         }
@@ -200,7 +201,7 @@ public class XSControl_TransferWriter : Transient
     /// Works by calling the Controller Returns status : =0 if OK, &gt;0 if error during transfer, &lt;0 if
     /// transfer badly initialised
     /// </summary>
-    public IFSelect_ReturnStatus TransferWriteShape(Interface_InterfaceModel? theModel, TopoDS_Shape theShape, ProgressRange theProgress = default)
+    public IFSelect_ReturnStatus TransferWriteShape(Interface_InterfaceModel? theModel, Shape theShape, ProgressRange theProgress = default)
     {
         IFSelect_ReturnStatus status = IFSelect_RetVoid;
         if (myController is null)
@@ -212,7 +213,7 @@ public class XSControl_TransferWriter : Transient
             return IFSelect_RetVoid;
         }
 
-        TopoDS_Shape aShape = theShape;
+        Shape aShape = theShape;
 
         if (myTransferWriter is null)
         {

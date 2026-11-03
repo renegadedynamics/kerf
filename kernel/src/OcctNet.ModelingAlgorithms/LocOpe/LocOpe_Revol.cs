@@ -5,8 +5,11 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -23,16 +26,16 @@ namespace Occt;
 /// </remarks>
 public sealed class LocOpe_Revol
 {
-    private TopoDS_Shape myBase = new();
+    private Shape myBase = new();
     private Axis3D myAxis = new();
     private double myAngle;
     private double myAngTra;
     private bool myIsTrans;
     private bool myDone;
-    private TopoDS_Shape myRes = new();
-    private TopoDS_Shape myFirstShape = new();
-    private TopoDS_Shape myLastShape = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myMap = new(TopTools_ShapeMapHasher.Instance);
+    private Shape myRes = new();
+    private Shape myFirstShape = new();
+    private Shape myLastShape = new();
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> myMap = new(ShapeHasher.Instance);
     private LocOpe_WorkingShapes myWork = new();
 
     public LocOpe_Revol()
@@ -43,7 +46,7 @@ public sealed class LocOpe_Revol
         myDone = false;
     }
 
-    public void Perform(in TopoDS_Shape Base, in Axis3D Axis, double Angle)
+    public void Perform(in Shape Base, in Axis3D Axis, double Angle)
     {
         myMap.Clear();
         myFirstShape.Nullify();
@@ -58,7 +61,7 @@ public sealed class LocOpe_Revol
         IntPerf();
     }
 
-    public void Perform(in TopoDS_Shape Base, in Axis3D Axis, double Angle, double angledec)
+    public void Perform(in Shape Base, in Axis3D Axis, double Angle, double angledec)
     {
         myMap.Clear();
         myFirstShape.Nullify();
@@ -75,13 +78,13 @@ public sealed class LocOpe_Revol
 
     private void IntPerf()
     {
-        TopoDS_Shape theBase = myBase;
-        BRepTools_Modifier Modif = new();
+        Shape theBase = myBase;
+        Modifier Modif = new();
         if (myIsTrans)
         {
             Transform3D T = new();
             T.SetRotation(myAxis, myAngTra);
-            BRepTools_TrsfModification modbase = new(T);
+            TrsfModification modbase = new(T);
             Modif.Init(theBase);
             Modif.Perform(modbase);
             theBase = Modif.InternalModifiedShape(theBase);
@@ -96,18 +99,18 @@ public sealed class LocOpe_Revol
         myFirstShape = theRevol.FirstShape();
         myLastShape = theRevol.LastShape();
 
-        TopExp_Explorer exp = new();
-        if (theBase.ShapeType() == TopAbs_FACE)
+        Explorer exp = new();
+        if (theBase.ShapeType() == ShapeType.Face)
         {
-            for (exp.Init(theBase, TopAbs_EDGE); exp.More(); exp.Next())
+            for (exp.Init(theBase, ShapeType.Edge); exp.More(); exp.Next())
             {
-                TopoDS_Edge edg = TopoDS.Edge(exp.Current());
+                Edge edg = ShapeCasts.Edge(exp.Current());
                 if (!myMap.IsBound(edg))
                 {
-                    NCollection_List<TopoDS_Shape> thelist = new();
+                    NCollection_List<Shape> thelist = new();
                     myMap.Bind(edg, thelist);
-                    TopoDS_Shape desc = theRevol.Shape(edg);
-                    if (!desc.IsNull())
+                    Shape desc = theRevol.Shape(edg);
+                    if (!desc.IsNull)
                     {
                         myMap[edg].Append(desc);
                     }
@@ -119,17 +122,17 @@ public sealed class LocOpe_Revol
         else
         {
             // Cas base != FACE
-            NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEFMap = new(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapesAndAncestors(theBase, TopAbs_EDGE, TopAbs_FACE, theEFMap);
-            NCollection_List<TopoDS_Shape> lfaces = new();
+            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theEFMap = new(ShapeHasher.Instance);
+            Exploration.MapShapesAndAncestors(theBase, ShapeType.Edge, ShapeType.Face, theEFMap);
+            NCollection_List<Shape> lfaces = new();
             bool toremove = false;
             for (int i = 1; i <= theEFMap.Extent(); i++)
             {
-                TopoDS_Shape edg = theEFMap.FindKey(i);
-                NCollection_List<TopoDS_Shape> thelist1 = new();
+                Shape edg = theEFMap.FindKey(i);
+                NCollection_List<Shape> thelist1 = new();
                 myMap.Bind(edg, thelist1);
-                TopoDS_Shape desc = theRevol.Shape(edg);
-                if (!desc.IsNull())
+                Shape desc = theRevol.Shape(edg);
+                if (!desc.IsNull)
                 {
                     if (theEFMap[i].Extent() >= 2)
                     {
@@ -145,11 +148,11 @@ public sealed class LocOpe_Revol
             if (toremove)
             {
                 // Rajouter les faces de FirstShape et LastShape
-                for (exp.Init(myFirstShape, TopAbs_FACE); exp.More(); exp.Next())
+                for (exp.Init(myFirstShape, ShapeType.Face); exp.More(); exp.Next())
                 {
                     lfaces.Append(exp.Current());
                 }
-                for (exp.Init(myLastShape, TopAbs_FACE); exp.More(); exp.Next())
+                for (exp.Init(myLastShape, ShapeType.Face); exp.More(); exp.Next())
                 {
                     lfaces.Append(exp.Current());
                 }
@@ -159,15 +162,15 @@ public sealed class LocOpe_Revol
             }
             else
             {
-                for (exp.Init(theBase, TopAbs_EDGE); exp.More(); exp.Next())
+                for (exp.Init(theBase, ShapeType.Edge); exp.More(); exp.Next())
                 {
-                    TopoDS_Edge edg = TopoDS.Edge(exp.Current());
+                    Edge edg = ShapeCasts.Edge(exp.Current());
                     if (!myMap.IsBound(edg))
                     {
-                        NCollection_List<TopoDS_Shape> thelist2 = new();
+                        NCollection_List<Shape> thelist2 = new();
                         myMap.Bind(edg, thelist2);
-                        TopoDS_Shape desc = theRevol.Shape(edg);
-                        if (!desc.IsNull())
+                        Shape desc = theRevol.Shape(edg);
+                        if (!desc.IsNull)
                         {
                             myMap[edg].Append(desc);
                         }
@@ -180,11 +183,11 @@ public sealed class LocOpe_Revol
         if (myIsTrans)
         {
             // m-a-j des descendants
-            TopExp_Explorer anExp = new();
-            for (anExp.Init(myBase, TopAbs_EDGE); anExp.More(); anExp.Next())
+            Explorer anExp = new();
+            for (anExp.Init(myBase, ShapeType.Edge); anExp.More(); anExp.Next())
             {
-                TopoDS_Edge edg = TopoDS.Edge(anExp.Current());
-                TopoDS_Edge edgbis = TopoDS.Edge(myWork.Copied(Modif.InternalModifiedShape(edg)));
+                Edge edg = ShapeCasts.Edge(anExp.Current());
+                Edge edgbis = ShapeCasts.Edge(myWork.Copied(Modif.InternalModifiedShape(edg)));
                 if (!edgbis.IsSame(edg) && myMap.IsBound(edgbis))
                 {
                     myMap.Bind(edg, myMap[edgbis]);
@@ -196,8 +199,8 @@ public sealed class LocOpe_Revol
         // OCCT.NET: the copies left unchanged come back as the caller's sub-shapes
         if (myWork.IsCopied())
         {
-            var aShapes = new List<TopoDS_Shape> { myRes, myFirstShape, myLastShape };
-            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anItem in myMap)
+            var aShapes = new List<Shape> { myRes, myFirstShape, myLastShape };
+            foreach (KeyValuePair<Shape, NCollection_List<Shape>> anItem in myMap)
             {
                 aShapes.AddRange(anItem.Value);
             }
@@ -205,7 +208,7 @@ public sealed class LocOpe_Revol
             myRes = myWork.Final(myRes);
             myFirstShape = myWork.Final(myFirstShape);
             myLastShape = myWork.Final(myLastShape);
-            foreach (TopoDS_Shape aKey in myMap.Keys.ToList())
+            foreach (Shape aKey in myMap.Keys.ToList())
             {
                 myMap[aKey] = myWork.Final(myMap[aKey]);
             }
@@ -214,10 +217,10 @@ public sealed class LocOpe_Revol
     }
 
     /// <summary>The revolution (frozen).</summary>
-    public TopoDS_Shape Shape() => LocOpe_WorkingShapes.Published(InternalShape());
+    public Shape Shape() => LocOpe_WorkingShapes.Published(InternalShape());
 
     /// <summary><see cref="Shape"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shape InternalShape()
+    internal Shape InternalShape()
     {
         if (!myDone)
         {
@@ -227,25 +230,25 @@ public sealed class LocOpe_Revol
     }
 
     /// <summary>The base's image at the start (frozen).</summary>
-    public TopoDS_Shape FirstShape() => LocOpe_WorkingShapes.Published(myFirstShape);
+    public Shape FirstShape() => LocOpe_WorkingShapes.Published(myFirstShape);
 
     /// <summary><see cref="FirstShape"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shape InternalFirstShape() => myFirstShape;
+    internal Shape InternalFirstShape() => myFirstShape;
 
     /// <summary>The base's image at the end (frozen).</summary>
-    public TopoDS_Shape LastShape() => LocOpe_WorkingShapes.Published(myLastShape);
+    public Shape LastShape() => LocOpe_WorkingShapes.Published(myLastShape);
 
     /// <summary><see cref="LastShape"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shape InternalLastShape() => myLastShape;
+    internal Shape InternalLastShape() => myLastShape;
 
     /// <summary>The faces generated by the edge <paramref name="S"/> of the base (frozen).</summary>
-    public NCollection_List<TopoDS_Shape> Shapes(in TopoDS_Shape S) => LocOpe_WorkingShapes.Published(InternalShapes(S));
+    public NCollection_List<Shape> Shapes(in Shape S) => LocOpe_WorkingShapes.Published(InternalShapes(S));
 
     /// <summary><see cref="Shapes"/> without freezing, for ported code (of the caller's edge or its working copy).</summary>
-    internal NCollection_List<TopoDS_Shape> InternalShapes(in TopoDS_Shape S) => myMap[myWork.Copied(S)];
+    internal NCollection_List<Shape> InternalShapes(in Shape S) => myMap[myWork.Copied(S)];
 
     /// <summary>The circles around the axis through sample points of the first shape's edges.</summary>
-    public void Curves(NCollection_Sequence<Geom_Curve> Scurves)
+    public void Curves(NCollection_Sequence<Curve3D> Scurves)
     {
         Scurves.Clear();
         NCollection_Sequence<Point3D> spt = new();
@@ -258,14 +261,14 @@ public sealed class LocOpe_Revol
             {
                 Frame3D A2 = CAX.Position();
                 double r = CAX.Radius();
-                Geom_Circle Ci = new(A2, r);
+                CircleCurve3D Ci = new(A2, r);
                 Scurves.Append(Ci);
             }
         }
     }
 
     /// <summary>The circle around the axis through the barycentre of the first shape's sample points (null if on the axis).</summary>
-    public Geom_Curve? BarycCurve()
+    public Curve3D? BarycCurve()
     {
         NCollection_Sequence<Point3D> spt = new();
         LocOpe.SampleEdges(myFirstShape, spt);
@@ -278,12 +281,12 @@ public sealed class LocOpe_Revol
         aBar.Divide(spt.Length());
         Point3D bar = new(aBar);
         Circle3D CAX = new();
-        Geom_Circle? theCi = null;
+        CircleCurve3D? theCi = null;
         if (FindCircle(myAxis, bar, ref CAX))
         {
             Frame3D A2 = CAX.Position();
             double r = CAX.Radius();
-            theCi = new Geom_Circle(A2, r);
+            theCi = new CircleCurve3D(A2, r);
         }
         return theCi;
     }

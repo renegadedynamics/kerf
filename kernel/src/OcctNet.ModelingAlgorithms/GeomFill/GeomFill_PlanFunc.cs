@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -21,9 +22,9 @@ public class GeomFill_PlanFunc : FunctionWithDerivative
     private Xyz myVec;
     private Xyz V;
     private Point3D G;
-    private readonly Adaptor3d_Curve myCurve;
+    private readonly CurveAdaptorBase myCurve;
 
-    public GeomFill_PlanFunc(in Point3D theP, in Vector3D theV, Adaptor3d_Curve theC)
+    public GeomFill_PlanFunc(in Point3D theP, in Vector3D theV, CurveAdaptorBase theC)
     {
         myCurve = theC;
         myPnt = theP.XYZ();

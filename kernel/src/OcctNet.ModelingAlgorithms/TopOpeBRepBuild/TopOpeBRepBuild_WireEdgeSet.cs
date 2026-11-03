@@ -4,11 +4,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -24,28 +27,28 @@ namespace Occt;
 /// </remarks>
 public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
 {
-    private readonly TopoDS_Face myFace;
+    private readonly Face myFace;
 
     /// <summary>A wire/edge set on the face <paramref name="F"/>.</summary>
-    public TopOpeBRepBuild_WireEdgeSet(in TopoDS_Shape F)
-        : base(TopAbs_VERTEX)
+    public TopOpeBRepBuild_WireEdgeSet(in Shape F)
+        : base(ShapeType.Vertex)
     {
-        myFace = TopoDS.Face(F);
+        myFace = ShapeCasts.Face(F);
     }
 
     /// <summary>
     /// Adds the wire <paramref name="S"/> (not checked on a face closed in U or V; checking is off anyway, see the base
     /// class).
     /// </summary>
-    public override void AddShape(in TopoDS_Shape S)
+    public override void AddShape(in Shape S)
     {
         bool tocheck = true;
-        bool iswire = S.ShapeType() == TopAbs_WIRE;
+        bool iswire = S.ShapeType() == ShapeType.Wire;
         if (iswire)
         {
-            BRepAdaptor_Surface bas = new(myFace, false);
-            bool uc = bas.IsUClosed();
-            bool vc = bas.IsVClosed();
+            FaceSurfaceAdaptor bas = new(myFace, false);
+            bool uc = bas.IsUClosed;
+            bool vc = bas.IsVClosed;
             if (uc || vc)
             {
                 tocheck = false;
@@ -66,13 +69,13 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
     }
 
     /// <summary>Adds the start edge <paramref name="S"/> (BSpline and Bezier edges are not checked).</summary>
-    public override void AddStartElement(in TopoDS_Shape S)
+    public override void AddStartElement(in Shape S)
     {
         bool tocheck = true;
-        bool isedge = S.ShapeType() == TopAbs_EDGE;
+        bool isedge = S.ShapeType() == ShapeType.Edge;
         if (isedge)
         {
-            BRepAdaptor_Curve cac = new(TopoDS.Edge(S));
+            EdgeCurveAdaptor cac = new(ShapeCasts.Edge(S));
             CurveKind t = cac.GetType();
             bool b = t == BSplineCurve || t == BezierCurve;
             tocheck = !b;
@@ -92,16 +95,16 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
     }
 
     /// <inheritdoc/>
-    public override void AddElement(in TopoDS_Shape S)
+    public override void AddElement(in Shape S)
     {
         base.AddElement(S);
     }
 
     /// <summary>The face.</summary>
-    public TopoDS_Face Face() => myFace;
+    public Face Face() => myFace;
 
     /// <inheritdoc/>
-    public override void InitNeighbours(in TopoDS_Shape E)
+    public override void InitNeighbours(in Shape E)
     {
         mySubShapeExplorer.Init(E, mySubShapeType);
         myCurrentShape = E;
@@ -116,8 +119,8 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
             // l = list of edges neighbour of edge myCurrentShape through
             // the vertex mySubShapeExplorer.Current(), which is a vertex of the
             // edge myCurrentShape.
-            TopoDS_Shape V = mySubShapeExplorer.Current();
-            NCollection_List<TopoDS_Shape> l = MakeNeighboursList(myCurrentShape, V);
+            Shape V = mySubShapeExplorer.Current();
+            NCollection_List<Shape> l = MakeNeighboursList(myCurrentShape, V);
 
             // myIncidentShapesIter iterates on the neighbour edges of the edge
             // given as InitNeighbours() argument (this edge has been stored
@@ -139,12 +142,12 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
     /// The edges incident to the vertex <paramref name="Varg"/> of <paramref name="Earg"/>; where closing edges meet
     /// there, only the closing edges connected to Earg and on the right side of its tangent.
     /// </summary>
-    public override NCollection_List<TopoDS_Shape> MakeNeighboursList(in TopoDS_Shape Earg, in TopoDS_Shape Varg)
+    public override NCollection_List<Shape> MakeNeighboursList(in Shape Earg, in Shape Varg)
     {
-        TopoDS_Edge E = TopoDS.Edge(Earg);
-        TopoDS_Vertex V = TopoDS.Vertex(Varg);
+        Edge E = ShapeCasts.Edge(Earg);
+        Vertex V = ShapeCasts.Vertex(Varg);
 
-        NCollection_List<TopoDS_Shape> l = mySubShapeMap.FindFromKey(V);
+        NCollection_List<Shape> l = mySubShapeMap.FindFromKey(V);
 
         int nclosing = NbClosingShapes(l);
         if (nclosing != 0)
@@ -154,9 +157,9 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
 
             myCurrentShapeNeighbours.Clear();
 
-            for (NCollection_List<TopoDS_Shape>.Iterator it = new(l); it.More(); it.Next())
+            for (NCollection_List<Shape>.Iterator it = new(l); it.More(); it.Next())
             {
-                TopoDS_Shape curn = it.Value(); // current neighbour
+                Shape curn = it.Value(); // current neighbour
                 bool k = VertexConnectsEdgesClosing(V, E, curn);
                 if (k)
                 {
@@ -167,7 +170,7 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
             int newn = NbClosingShapes(myCurrentShapeNeighbours);
             if (newn >= 2)
             {
-                TopoDS_Face F = myFace;
+                Face F = myFace;
 
                 // plusieurs aretes de couture connexes a E par V et telle que :
                 // orientation de V dans E # orientation de V dans ces aretes.
@@ -176,9 +179,9 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
 
                 Vector2D d1E;
                 Point2D pE;
-                double parE = BRep_Tool.Parameter(V, E);
+                double parE = Tool.Parameter(V, E);
                 bool trim3d = true;
-                Geom2d_Curve? PCE = TopOpeBRepTool_2d.FC2D_CurveOnSurface(E, F, out _, out _, out _, trim3d);
+                Curve2D? PCE = TopOpeBRepTool_2d.FC2D_CurveOnSurface(E, F, out _, out _, out _, trim3d);
                 if (PCE is not null)
                 {
                     PCE.D1(parE, out pE, out d1E);
@@ -188,13 +191,13 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
                     LocalD1(F, E, V, out pE, out d1E);
                 }
 
-                TopAbs_Orientation Eori = E.Orientation();
-                if (Eori == TopAbs_REVERSED)
+                Orientation Eori = E.Orientation();
+                if (Eori == Reversed)
                 {
                     d1E.Reverse();
                 }
 
-                NCollection_List<TopoDS_Shape>.Iterator lclo = new(myCurrentShapeNeighbours);
+                NCollection_List<Shape>.Iterator lclo = new(myCurrentShapeNeighbours);
                 while (lclo.More())
                 {
                     if (!IsClosed(lclo.Value()))
@@ -203,11 +206,11 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
                         continue;
                     }
 
-                    TopoDS_Edge EE = TopoDS.Edge(lclo.Value());
+                    Edge EE = ShapeCasts.Edge(lclo.Value());
                     Vector2D d1EE;
                     Point2D pEE;
-                    double parEE = BRep_Tool.Parameter(V, EE);
-                    Geom2d_Curve? PCEE = TopOpeBRepTool_2d.FC2D_CurveOnSurface(EE, F, out _, out _, out _, trim3d);
+                    double parEE = Tool.Parameter(V, EE);
+                    Curve2D? PCEE = TopOpeBRepTool_2d.FC2D_CurveOnSurface(EE, F, out _, out _, out _, trim3d);
                     if (PCEE is not null)
                     {
                         PCEE.D1(parEE, out pEE, out d1EE);
@@ -217,16 +220,16 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
                         LocalD1(F, EE, V, out pEE, out d1EE);
                     }
 
-                    TopAbs_Orientation EEori = EE.Orientation();
-                    if (EEori == TopAbs_REVERSED)
+                    Orientation EEori = EE.Orientation();
+                    if (EEori == Reversed)
                     {
                         d1EE.Reverse();
                     }
 
                     double cross = d1E.Crossed(d1EE);
-                    VertexConnectsEdges(V, E, EE, out TopAbs_Orientation oVE, out _);
+                    VertexConnectsEdges(V, E, EE, out Orientation oVE, out _);
 
-                    bool t2 = ((cross > 0) && oVE == TopAbs_REVERSED) || ((cross < 0) && oVE == TopAbs_FORWARD);
+                    bool t2 = ((cross > 0) && oVE == Reversed) || ((cross < 0) && oVE == Forward);
 
                     if (t2)
                     { //-- t1
@@ -251,20 +254,20 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
     // Whether V is shared by E1 and E2 with different orientations; the orientations of V on E1 and E2 if shared.
     // OCCT leaves o1 and o2 unwritten when V isn't shared, and MakeNeighboursList then reads its oVE uninitialised;
     // the port sets them to FORWARD first.
-    private bool VertexConnectsEdges(in TopoDS_Shape V,
-                                     in TopoDS_Shape E1,
-                                     in TopoDS_Shape E2,
-                                     out TopAbs_Orientation o1,
-                                     out TopAbs_Orientation o2)
+    private bool VertexConnectsEdges(in Shape V,
+                                     in Shape E1,
+                                     in Shape E2,
+                                     out Orientation o1,
+                                     out Orientation o2)
     {
-        o1 = TopAbs_FORWARD;
-        o2 = TopAbs_FORWARD;
+        o1 = Forward;
+        o2 = Forward;
         TopOpeBRepTool_ShapeExplorer ex1 = new(), ex2 = new();
-        for (ex1.Init(E1, TopAbs_VERTEX); ex1.More(); ex1.Next())
+        for (ex1.Init(E1, ShapeType.Vertex); ex1.More(); ex1.Next())
         {
             if (V.IsSame(ex1.Current()))
             {
-                for (ex2.Init(E2, TopAbs_VERTEX); ex2.More(); ex2.Next())
+                for (ex2.Init(E2, ShapeType.Vertex); ex2.More(); ex2.Next())
                 {
                     if (V.IsSame(ex2.Current()))
                     {
@@ -281,7 +284,7 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
         return false;
     }
 
-    private bool VertexConnectsEdgesClosing(in TopoDS_Shape V, in TopoDS_Shape E1, in TopoDS_Shape E2)
+    private bool VertexConnectsEdgesClosing(in Shape V, in Shape E1, in Shape E2)
     {
         // Let S the set of incident edges on vertex V.
         // S contains at least one closed edge on the periodic face to build.
@@ -317,8 +320,8 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
             // cto 012 O2 arete de couture de face cylindrique
             // chaque arete de couture est en double dans le WES
             // (une FORWARD et une REVERSED)
-            TopAbs_Orientation oe1 = E1.Orientation();
-            TopAbs_Orientation oe2 = E2.Orientation();
+            Orientation oe1 = E1.Orientation();
+            Orientation oe2 = E2.Orientation();
             bool iseq = E1.IsEqual(E2);
             if ((c1 && c2) && (oe1 == oe2) && (!iseq))
             {
@@ -328,12 +331,12 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
         return resu;
     }
 
-    private int NbClosingShapes(NCollection_List<TopoDS_Shape> L)
+    private int NbClosingShapes(NCollection_List<Shape> L)
     {
         int n = 0;
-        for (NCollection_List<TopoDS_Shape>.Iterator it = new(L); it.More(); it.Next())
+        for (NCollection_List<Shape>.Iterator it = new(L); it.More(); it.Next())
         {
-            TopoDS_Shape S = it.Value();
+            Shape S = it.Value();
             if (IsClosed(S))
             {
                 n++;
@@ -343,19 +346,19 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
     }
 
     // The point and first derivative at V of the projection of E's 3D curve on F's surface
-    private void LocalD1(in TopoDS_Shape SF, in TopoDS_Shape SE, in TopoDS_Shape SV, out Point2D pE, out Vector2D d1E)
+    private void LocalD1(in Shape SF, in Shape SE, in Shape SV, out Point2D pE, out Vector2D d1E)
     {
-        TopoDS_Face F = TopoDS.Face(SF);
-        TopoDS_Edge E = TopoDS.Edge(SE);
-        TopoDS_Vertex V = TopoDS.Vertex(SV);
-        double parE = BRep_Tool.Parameter(V, E);
+        Face F = ShapeCasts.Face(SF);
+        Edge E = ShapeCasts.Edge(SE);
+        Vertex V = ShapeCasts.Vertex(SV);
+        double parE = Tool.Parameter(V, E);
 
-        Geom_Curve CE = BRep_Tool.Curve(E, out Placement Loc, out _, out _)!;
-        CE = (Geom_Curve)CE.Transformed(Loc.Transformation());
+        Curve3D CE = Tool.Curve(E, out Placement Loc, out _, out _)!;
+        CE = (Curve3D)CE.Transformed(Loc.Transformation());
 
         CE.D1(parE, out Point3D p3dE, out Vector3D d3dE);
 
-        Geom_Surface S = BRep_Tool.Surface(F)!;
+        Surface S = Tool.Surface(F)!;
         GeomAPI_ProjectPointOnSurf proj = new(p3dE, S);
         proj.LowerDistanceParameters(out double u, out double v);
         pE = new Point2D(u, v);
@@ -366,19 +369,19 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
     }
 
     // Whether E is a closing edge of myFace
-    private bool IsClosed(in TopoDS_Shape E)
+    private bool IsClosed(in Shape E)
     {
-        TopoDS_Edge EE = TopoDS.Edge(E);
-        bool closed = BRep_Tool.IsClosed(EE, myFace);
+        Edge EE = ShapeCasts.Edge(E);
+        bool closed = Tool.IsClosed(EE, myFace);
         return closed;
     }
 
     /// <summary>Whether the pcurve of <paramref name="E"/> on <paramref name="F"/> is a U or V isoline.</summary>
     /// <exception cref="ProgramErrorException">The edge has no pcurve on the face.</exception>
-    public static void IsUVISO(in TopoDS_Edge E, in TopoDS_Face F, out bool uiso, out bool viso)
+    public static void IsUVISO(in Edge E, in Face F, out bool uiso, out bool viso)
     {
         uiso = viso = false;
-        Geom2d_Curve? PC;
+        Curve2D? PC;
         bool trim3d = true;
         PC = TopOpeBRepTool_2d.FC2D_CurveOnSurface(E, F, out _, out _, out _, trim3d);
         if (PC is null)
@@ -386,9 +389,9 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
             throw new ProgramErrorException("TopOpeBRepBuild_WireEdgeSet::IsUVISO");
         }
 
-        if (PC.GetType() == typeof(Geom2d_Line))
+        if (PC.GetType() == typeof(LineCurve2D))
         {
-            Geom2d_Line HL = (Geom2d_Line)PC;
+            LineCurve2D HL = (LineCurve2D)PC;
             Direction2D D = HL.Direction();
             double tol = global::Kerf.Engine.Foundation.Precision.Angular();
 
@@ -404,17 +407,17 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
     }
 
     // Whether E is a closing edge on U of myFace
-    private bool IsUClosed(in TopoDS_Shape E)
+    private bool IsUClosed(in Shape E)
     {
-        TopoDS_Edge EE = TopoDS.Edge(E);
+        Edge EE = ShapeCasts.Edge(E);
         IsUVISO(EE, myFace, out bool closed, out _);
         return closed;
     }
 
     // Whether E is a closing edge on V of myFace
-    private bool IsVClosed(in TopoDS_Shape E)
+    private bool IsVClosed(in Shape E)
     {
-        TopoDS_Edge EE = TopoDS.Edge(E);
+        Edge EE = ShapeCasts.Edge(E);
         IsUVISO(EE, myFace, out _, out bool closed);
         return closed;
     }

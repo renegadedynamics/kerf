@@ -5,7 +5,9 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -103,15 +105,15 @@ internal abstract class BRepPrim_OneAxis
     private double myVMin;
     private double myVMax;
     private double myMeridianOffset;
-    private TopoDS_Shell myShell = new();
+    private Shell myShell = new();
     private bool ShellBuilt;
-    private readonly TopoDS_Vertex[] myVertices = BRepPrim_GWedge.NewArray<TopoDS_Vertex>(NBVERTICES);
+    private readonly Vertex[] myVertices = BRepPrim_GWedge.NewArray<Vertex>(NBVERTICES);
     private readonly bool[] VerticesBuilt = new bool[NBVERTICES];
-    private readonly TopoDS_Edge[] myEdges = BRepPrim_GWedge.NewArray<TopoDS_Edge>(NBEDGES);
+    private readonly Edge[] myEdges = BRepPrim_GWedge.NewArray<Edge>(NBEDGES);
     private readonly bool[] EdgesBuilt = new bool[NBEDGES];
-    private readonly TopoDS_Wire[] myWires = BRepPrim_GWedge.NewArray<TopoDS_Wire>(NBWIRES);
+    private readonly Wire[] myWires = BRepPrim_GWedge.NewArray<Wire>(NBWIRES);
     private readonly bool[] WiresBuilt = new bool[NBWIRES];
-    private readonly TopoDS_Face[] myFaces = BRepPrim_GWedge.NewArray<TopoDS_Face>(NBFACES);
+    private readonly Face[] myFaces = BRepPrim_GWedge.NewArray<Face>(NBFACES);
     private readonly bool[] FacesBuilt = new bool[NBFACES];
 
     /// <summary>Creates a OneAxis algorithm. <paramref name="B"/> is used to build the Topology. The angle defaults to 2π.</summary>
@@ -199,13 +201,13 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>A face with no edges on the lateral surface, normals pointing outward; U is the angle, V the meridian's parameter.</summary>
-    public abstract TopoDS_Face MakeEmptyLateralFace();
+    public abstract Face MakeEmptyLateralFace();
 
     /// <summary>An edge with a 3D curve made from the meridian rotated by <paramref name="Ang"/> (0 or the angle) around the axis.</summary>
-    public abstract TopoDS_Edge MakeEmptyMeridianEdge(double Ang);
+    public abstract Edge MakeEmptyMeridianEdge(double Ang);
 
     /// <summary>Sets the pcurve of the edge on the face to the 2D representation of the meridian.</summary>
-    public abstract void SetMeridianPCurve(in TopoDS_Edge E, in TopoDS_Face F);
+    public abstract void SetMeridianPCurve(in Edge E, in Face F);
 
     /// <summary>The meridian point at parameter <paramref name="V"/> in the plane XZ.</summary>
     public abstract Point2D MeridianValue(double V);
@@ -311,7 +313,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The shell containing all the faces of the primitive (unfrozen).</summary>
-    public TopoDS_Shell Shell()
+    public Shell Shell()
     {
         if (!ShellBuilt)
         {
@@ -332,7 +334,7 @@ internal abstract class BRepPrim_OneAxis
                 myBuilder.AddShellFace(myShell, EndFace());
             }
 
-            myShell.Closed(BRep_Tool.IsClosed(myShell));
+            myShell.Closed(Tool.IsClosed(myShell));
             myBuilder.CompleteShell(myShell);
             ShellBuilt = true;
         }
@@ -340,7 +342,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The lateral face, oriented toward the outside of the primitive.</summary>
-    public TopoDS_Face LateralFace()
+    public Face LateralFace()
     {
         // do it if not done
         if (!FacesBuilt[FLATERAL])
@@ -418,7 +420,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The top planar face, oriented toward +Z (outside).</summary>
-    public TopoDS_Face TopFace()
+    public Face TopFace()
     {
         // do it if not done
         if (!FacesBuilt[FTOP])
@@ -454,7 +456,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The bottom planar face, oriented toward -Z (outside).</summary>
-    public TopoDS_Face BottomFace()
+    public Face BottomFace()
     {
         // do it if not done
         if (!FacesBuilt[FBOTTOM])
@@ -491,7 +493,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The face starting the slice, oriented toward the exterior.</summary>
-    public TopoDS_Face StartFace()
+    public Face StartFace()
     {
         // do it if not done
         if (!FacesBuilt[FSTART])
@@ -550,7 +552,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The face ending the slice, oriented toward the exterior.</summary>
-    public TopoDS_Face EndFace()
+    public Face EndFace()
     {
         // do it if not done
         if (!FacesBuilt[FEND])
@@ -608,7 +610,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The wire in the lateral face.</summary>
-    public TopoDS_Wire LateralWire()
+    public Wire LateralWire()
     {
         // do it if not done
         if (!WiresBuilt[WLATERAL])
@@ -633,7 +635,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The wire in the lateral face with the start edge.</summary>
-    public TopoDS_Wire LateralStartWire()
+    public Wire LateralStartWire()
     {
         // do it if not done
         if (!WiresBuilt[WLATERALSTART])
@@ -649,7 +651,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The wire in the lateral face with the end edge.</summary>
-    public TopoDS_Wire LateralEndWire()
+    public Wire LateralEndWire()
     {
         // do it if not done
         if (!WiresBuilt[WLATERALEND])
@@ -665,7 +667,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The wire in the top face.</summary>
-    public TopoDS_Wire TopWire()
+    public Wire TopWire()
     {
         // do it if not done
         if (!WiresBuilt[WTOP])
@@ -687,7 +689,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The wire in the bottom face.</summary>
-    public TopoDS_Wire BottomWire()
+    public Wire BottomWire()
     {
         // do it if not done
         if (!WiresBuilt[WBOTTOM])
@@ -710,7 +712,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The wire in the start face.</summary>
-    public TopoDS_Wire StartWire()
+    public Wire StartWire()
     {
         // do it if not done
         if (!WiresBuilt[WSTART])
@@ -751,7 +753,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The wire in the start face with the AxisEdge.</summary>
-    public TopoDS_Wire AxisStartWire()
+    public Wire AxisStartWire()
     {
         // do it if not done
         if (!WiresBuilt[WAXISSTART])
@@ -774,7 +776,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The wire in the end face.</summary>
-    public TopoDS_Wire EndWire()
+    public Wire EndWire()
     {
         // do it if not done
         if (!WiresBuilt[WEND])
@@ -813,7 +815,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The wire in the end face with the AxisEdge.</summary>
-    public TopoDS_Wire AxisEndWire()
+    public Wire AxisEndWire()
     {
         // do it if not done
         if (!WiresBuilt[WAXISEND])
@@ -836,7 +838,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The edge along the axis, oriented on +Z.</summary>
-    public TopoDS_Edge AxisEdge()
+    public Edge AxisEdge()
     {
         // do it if not done
         if (!EdgesBuilt[EAXIS])
@@ -880,7 +882,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The edge at angle 0.</summary>
-    public TopoDS_Edge StartEdge()
+    public Edge StartEdge()
     {
         // do it if not done
         if (!EdgesBuilt[ESTART])
@@ -923,7 +925,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The edge at angle Angle. Without sides, the start and end edges are the same edge.</summary>
-    public TopoDS_Edge EndEdge()
+    public Edge EndEdge()
     {
         // do it if not done
         if (!EdgesBuilt[EEND])
@@ -966,7 +968,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The linear edge between the start face and the top face.</summary>
-    public TopoDS_Edge StartTopEdge()
+    public Edge StartTopEdge()
     {
         // do it if not done
         if (!EdgesBuilt[ETOPSTART])
@@ -989,7 +991,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The linear edge between the start face and the bottom face.</summary>
-    public TopoDS_Edge StartBottomEdge()
+    public Edge StartBottomEdge()
     {
         // do it if not done
         if (!EdgesBuilt[EBOTSTART])
@@ -1012,7 +1014,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The linear edge between the end face and the top face.</summary>
-    public TopoDS_Edge EndTopEdge()
+    public Edge EndTopEdge()
     {
         // do it if not done
         if (!EdgesBuilt[ETOPEND])
@@ -1037,7 +1039,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The linear edge between the end face and the bottom face.</summary>
-    public TopoDS_Edge EndBottomEdge()
+    public Edge EndBottomEdge()
     {
         // do it if not done
         if (!EdgesBuilt[EBOTEND])
@@ -1062,7 +1064,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The edge at VMax. If the meridian is closed, the top and bottom edges are the same edge.</summary>
-    public TopoDS_Edge TopEdge()
+    public Edge TopEdge()
     {
         // do it if not done
         if (!EdgesBuilt[ETOP])
@@ -1108,7 +1110,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The edge at VMin. If the meridian is closed, the top and bottom edges are the same edge.</summary>
-    public TopoDS_Edge BottomEdge()
+    public Edge BottomEdge()
     {
         // do it if not done
         if (!EdgesBuilt[EBOTTOM])
@@ -1154,7 +1156,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The vertex at the top altitude on the axis.</summary>
-    public TopoDS_Vertex AxisTopVertex()
+    public Vertex AxisTopVertex()
     {
         // do it if not done
         if (!VerticesBuilt[VAXISTOP])
@@ -1190,7 +1192,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The vertex at the bottom altitude on the axis.</summary>
-    public TopoDS_Vertex AxisBottomVertex()
+    public Vertex AxisBottomVertex()
     {
         // do it if not done
         if (!VerticesBuilt[VAXISBOT])
@@ -1226,7 +1228,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The vertex (0, VMax).</summary>
-    public TopoDS_Vertex TopStartVertex()
+    public Vertex TopStartVertex()
     {
         // do it if not done
         if (!VerticesBuilt[VTOPSTART])
@@ -1266,7 +1268,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The vertex (Angle, VMax).</summary>
-    public TopoDS_Vertex TopEndVertex()
+    public Vertex TopEndVertex()
     {
         // do it if not done
         if (!VerticesBuilt[VTOPEND])
@@ -1307,7 +1309,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The vertex (0, VMin).</summary>
-    public TopoDS_Vertex BottomStartVertex()
+    public Vertex BottomStartVertex()
     {
         // do it if not done
         if (!VerticesBuilt[VBOTSTART])
@@ -1347,7 +1349,7 @@ internal abstract class BRepPrim_OneAxis
     }
 
     /// <summary>The vertex (Angle, VMin).</summary>
-    public TopoDS_Vertex BottomEndVertex()
+    public Vertex BottomEndVertex()
     {
         // do it if not done
         if (!VerticesBuilt[VBOTEND])

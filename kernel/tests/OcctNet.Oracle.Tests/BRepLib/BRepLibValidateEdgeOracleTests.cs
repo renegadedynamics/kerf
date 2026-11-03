@@ -1,8 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Xunit.Abstractions;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -47,32 +50,32 @@ public class BRepLibValidateEdgeOracleTests(ITestOutputHelper output)
             }
 
             var aNB = new N.BRep_Builder();
-            var aB = new BRep_Builder();
+            var aB = new BrepBuilder();
             using var aNO = new N.gp_Pnt(0, 0, 0);
             using var aNZ = new N.gp_Dir(0, 0, 1);
             using var aNX = new N.gp_Dir(1, 0, 0);
             using var aNAx3 = new N.gp_Ax3(aNO, aNZ, aNX);
             var aNPlane = new N.Geom_Plane(aNAx3);
-            var aPlane = new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
+            var aPlane = new PlaneSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
             var aNF = new N.TopoDS_Face();
             aNB.MakeFace(aNF, aNPlane, anEdgeTol);
-            TopoDS_Face aF = new();
+            Face aF = new();
             aB.MakeFace(ref aF, aPlane, anEdgeTol);
 
             var aNV = new N.TopoDS_Vertex[3];
-            var aV = new TopoDS_Vertex[3];
+            var aV = new Vertex[3];
             for (int i = 0; i < 3; i++)
             {
                 aNV[i] = new N.TopoDS_Vertex();
                 using var aNP = Oracle.ToNative(aP[i]);
                 aNB.MakeVertex(aNV[i], aNP, VertexTol);
-                aV[i] = new TopoDS_Vertex();
+                aV[i] = new Vertex();
                 aB.MakeVertex(ref aV[i], aP[i], VertexTol);
             }
 
             var aNW = new N.TopoDS_Wire();
             aNB.MakeWire(aNW);
-            TopoDS_Wire aW = new();
+            Wire aW = new();
             aB.MakeWire(ref aW);
             bool isPortValid = true;
             for (int i = 0; i < 3; i++)
@@ -107,20 +110,20 @@ public class BRepLibValidateEdgeOracleTests(ITestOutputHelper output)
 
                 aNB.Add(aNW, aNE);
 
-                var aLine = new Geom_Line(aP1, new Direction3D(dx, dy, 0));
-                var aPCurve = new Geom2d_Line(new Point2D(u0, v0), new Direction2D(du, dv));
-                TopoDS_Edge anE = new();
+                var aLine = new LineCurve3D(aP1, new Direction3D(dx, dy, 0));
+                var aPCurve = new LineCurve2D(new Point2D(u0, v0), new Direction2D(du, dv));
+                Edge anE = new();
                 aB.MakeEdge(ref anE, aLine, anEdgeTol);
-                aB.Add(anE, aV[i].Oriented(TopAbs_FORWARD));
-                aB.Add(anE, aV[(i + 1) % 3].Oriented(TopAbs_REVERSED));
+                aB.Add(anE, aV[i].Oriented(Forward));
+                aB.Add(anE, aV[(i + 1) % 3].Oriented(Reversed));
                 aB.Range(anE, 0.0, aLength);
                 aB.UpdateEdge(anE, aPCurve, aF, anEdgeTol);
                 aB.Add(aW, anE);
 
                 // ValidateEdge as BRepCheck_Edge::InContext runs it
-                var aRef = new GeomAdaptor_Curve(aLine, 0.0, aLength);
-                var anACS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aPCurve, 0.0, aLength),
-                                                         new GeomAdaptor_Surface(aPlane));
+                var aRef = new CurveAdaptor(aLine, 0.0, aLength);
+                var anACS = new CurveOnSurface(new CurveAdaptor2D(aPCurve, 0.0, aLength),
+                                                         new SurfaceAdaptor(aPlane));
                 var aValidate = new BRepLib_ValidateEdge(aRef, anACS, true);
                 aValidate.SetExitIfToleranceExceeded(anEdgeTol);
                 aValidate.SetExactMethod(isExact);

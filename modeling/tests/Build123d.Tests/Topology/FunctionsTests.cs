@@ -2,6 +2,7 @@
 // Omitted:
 // - Functions.parse_intersect_args: a TypeError for intersecting with a tuple of strings, which the compiler rules out.
 // - MakeTopodsFaceFromWires.builder_failure: patches BRepBuilderAPI_MakeFace with a MagicMock.
+using Kerf.Engine.Topology;
 using Occt;
 
 namespace Build123d.Tests.Topology;
@@ -59,18 +60,18 @@ public class FunctionsTests
         var c2 = new Compound([b1, c1]);
         var c3 = new Compound([c2]);
         var c4 = new Compound([c3]);
-        Assert.Equal(1, c4.Wrapped.NbChildren());
-        var c5 = new Compound(TopoUtil.UnwrapCompound(TopoDS.Compound(c4.Wrapped), false));
-        Assert.Equal(2, c5.Wrapped.NbChildren());
+        Assert.Equal(1, c4.Wrapped.ChildCount);
+        var c5 = new Compound(TopoUtil.UnwrapCompound(ShapeCasts.Compound(c4.Wrapped), false));
+        Assert.Equal(2, c5.Wrapped.ChildCount);
 
         // unwrap fully
         var c0 = new Compound([b1]);
         c1 = new Compound([c0]);
-        var result = Shape.Cast(TopoUtil.UnwrapCompound(TopoDS.Compound(c1.Wrapped), true));
+        var result = Shape.Cast(TopoUtil.UnwrapCompound(ShapeCasts.Compound(c1.Wrapped), true));
         Assert.IsAssignableFrom<Solid>(result);
 
         // unwrap not fully
-        result = Shape.Cast(TopoUtil.UnwrapCompound(TopoDS.Compound(c1.Wrapped), false));
+        result = Shape.Cast(TopoUtil.UnwrapCompound(ShapeCasts.Compound(c1.Wrapped), false));
         Assert.IsAssignableFrom<Compound>(result);
     }
 }
@@ -103,19 +104,19 @@ public class UnwrappedShapetypeTests
 {
     [Fact]
     public void SingleShape() =>
-        Assert.Equal(TopAbs_ShapeEnum.TopAbs_SOLID, TopoUtil.UnwrappedShapeType(CompoundObjects.Box(1, 1, 1).SingleSolid()));
+        Assert.Equal(global::Kerf.Topology.ShapeType.Solid, TopoUtil.UnwrappedShapeType(CompoundObjects.Box(1, 1, 1).SingleSolid()));
 
     [Fact]
     public void UniformCompound()
     {
         var compound = new Compound([CompoundObjects.Box(1, 1, 1).SingleSolid(), CompoundObjects.Box(2, 2, 2).SingleSolid()]);
-        Assert.Equal(TopAbs_ShapeEnum.TopAbs_SOLID, TopoUtil.UnwrappedShapeType(compound));
+        Assert.Equal(global::Kerf.Topology.ShapeType.Solid, TopoUtil.UnwrappedShapeType(compound));
     }
 
     [Fact]
     public void MixedCompound()
     {
         var compound = new Compound([CompoundObjects.Box(1, 1, 1).SingleSolid(), Edge.MakeLine((5, 0), (6, 0))]);
-        Assert.Equal(TopAbs_ShapeEnum.TopAbs_COMPOUND, TopoUtil.UnwrappedShapeType(compound));
+        Assert.Equal(global::Kerf.Topology.ShapeType.Compound, TopoUtil.UnwrappedShapeType(compound));
     }
 }

@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Brep;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -68,14 +72,14 @@ public sealed class HLRBRep_EdgeData
     }
 
     /// <summary>Sets the edge, its vertices and their flags, and the bounds of its status.</summary>
-    public void Set(bool Rg1L, bool RgNL, in TopoDS_Edge EG, int V1, int V2, bool Out1, bool Out2, bool Cut1, bool Cut2,
+    public void Set(bool Rg1L, bool RgNL, in Edge EG, int V1, int V2, bool Out1, bool Out2, bool Cut1, bool Cut2,
                     double Start, float TolStart, double End, float TolEnd)
     {
         Rg1Line(Rg1L);
         RgNLine(RgNL);
         Used(false);
         ChangeGeometry().Curve(EG);
-        myTolerance = (float)(BRep_Tool.Tolerance(EG));
+        myTolerance = (float)(Tool.Tolerance(EG));
         VSta(V1);
         VEnd(V2);
         OutLVSta(Out1);

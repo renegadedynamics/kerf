@@ -4,9 +4,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Occt;
 using static Kerf.Geometry.CurveKind;
 
-namespace Occt;
+namespace Kerf.Engine.Geometry.Adaptors;
 
 /// <summary>The geometric definition of 2D curves compatible with the Adaptor package.</summary>
 public static class Geom2dAdaptor
@@ -16,65 +18,65 @@ public static class Geom2dAdaptor
     /// curve's. Bezier, B-spline and offset curves are those of the adaptor (shared, not copied).
     /// </summary>
     /// <exception cref="DomainErrorException">HC is of another curve type, or an offset curve adaptor that is
-    /// not a <see cref="Geom2dAdaptor_Curve"/>.</exception>
-    public static Geom2d_Curve MakeCurve(Adaptor2d_Curve2d HC)
+    /// not a <see cref="CurveAdaptor2D"/>.</exception>
+    public static Curve2D MakeCurve(Curve2DAdaptorBase hc)
     {
-        Geom2d_Curve? C2D = null;
-        switch (HC.GetType())
+        Curve2D? c2D = null;
+        switch (hc.GetType())
         {
 
             case Line:
                 {
-                    Geom2d_Line GL = new Geom2d_Line(HC.Line());
-                    C2D = GL;
+                    LineCurve2D gl = new LineCurve2D(hc.Line());
+                    c2D = gl;
                 }
                 break;
 
             case Circle:
                 {
-                    Geom2d_Circle GL = new Geom2d_Circle(HC.Circle());
-                    C2D = GL;
+                    CircleCurve2D gl = new CircleCurve2D(hc.Circle());
+                    c2D = gl;
                 }
                 break;
 
             case Ellipse:
                 {
-                    Geom2d_Ellipse GL = new Geom2d_Ellipse(HC.Ellipse());
-                    C2D = GL;
+                    EllipseCurve2D gl = new EllipseCurve2D(hc.Ellipse());
+                    c2D = gl;
                 }
                 break;
 
             case Parabola:
                 {
-                    Geom2d_Parabola GL = new Geom2d_Parabola(HC.Parabola());
-                    C2D = GL;
+                    ParabolaCurve2D gl = new ParabolaCurve2D(hc.Parabola());
+                    c2D = gl;
                 }
                 break;
 
             case Hyperbola:
                 {
-                    Geom2d_Hyperbola GL = new Geom2d_Hyperbola(HC.Hyperbola());
-                    C2D = GL;
+                    HyperbolaCurve2D gl = new HyperbolaCurve2D(hc.Hyperbola());
+                    c2D = gl;
                 }
                 break;
 
             case BezierCurve:
                 {
-                    C2D = HC.Bezier();
+                    c2D = hc.Bezier();
                 }
                 break;
 
             case BSplineCurve:
                 {
-                    C2D = HC.BSpline();
+                    c2D = hc.BSpline();
                 }
                 break;
 
             case OffsetCurve:
                 {
-                    if (HC is Geom2dAdaptor_Curve pGAC)
+                    if (hc is CurveAdaptor2D pGAC)
                     {
-                        C2D = pGAC.Curve();
+                        c2D = pGAC.Curve();
                     }
                     else
                     {
@@ -88,25 +90,25 @@ public static class Geom2dAdaptor
         }
 
         // trim the curve if necassary.
-        if (C2D is not null
-            && ((HC.FirstParameter() != C2D.FirstParameter())
-                || (HC.LastParameter() != C2D.LastParameter())))
+        if (c2D is not null
+            && ((hc.FirstParameter() != c2D.FirstParameter())
+                || (hc.LastParameter() != c2D.LastParameter())))
         {
 
-            if (C2D.IsPeriodic()
-                || (HC.FirstParameter() >= C2D.FirstParameter()
-                    && HC.LastParameter() <= C2D.LastParameter()))
+            if (c2D.IsPeriodic
+                || (hc.FirstParameter() >= c2D.FirstParameter()
+                    && hc.LastParameter() <= c2D.LastParameter()))
             {
-                C2D = new Geom2d_TrimmedCurve(C2D, HC.FirstParameter(), HC.LastParameter());
+                c2D = new TrimmedCurve2D(c2D, hc.FirstParameter(), hc.LastParameter());
             }
             else
             {
-                double tf = Max(HC.FirstParameter(), C2D.FirstParameter());
-                double tl = Min(HC.LastParameter(), C2D.LastParameter());
-                C2D = new Geom2d_TrimmedCurve(C2D, tf, tl);
+                double tf = Max(hc.FirstParameter(), c2D.FirstParameter());
+                double tl = Min(hc.LastParameter(), c2D.LastParameter());
+                c2D = new TrimmedCurve2D(c2D, tf, tl);
             }
         }
 
-        return C2D!;
+        return c2D!;
     }
 }

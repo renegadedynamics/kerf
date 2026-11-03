@@ -7,10 +7,13 @@ using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -41,7 +44,7 @@ public class BRepBuilderAPI_FastSewing : Transient
         FS_Exception = 0x00000080
     }
 
-    private TopoDS_Shape myResShape = new();
+    private Shape myResShape = new();
 
     // myFaceVec, myVertexVec and myEdgeVec lists are filled only once!!!!!
     // Vector of faces
@@ -90,7 +93,7 @@ public class BRepBuilderAPI_FastSewing : Transient
 
     //=================================================================================================
 
-    private static Geom2d_Curve Get2DCurve(int theIndex,
+    private static Curve2D Get2DCurve(int theIndex,
                                            double theUfirst,
                                            double theUlast,
                                            double theVfirst,
@@ -102,33 +105,33 @@ public class BRepBuilderAPI_FastSewing : Transient
             throw new OutOfRangeException("BRepBuilderAPI_FastSewing.cxx, Get2DCurve(): OUT of Range");
         }
 
-        Geom2d_Curve? a2dCurv = null;
+        Curve2D? a2dCurv = null;
 
         if (!theIsReverse)
         {
             switch (theIndex)
             {
                 case 0:
-                    a2dCurv = new Geom2d_TrimmedCurve(
-                        new Geom2d_Line(new Point2D(0.0, theVfirst), new Direction2D(Direction2D.D.X)),
+                    a2dCurv = new TrimmedCurve2D(
+                        new LineCurve2D(new Point2D(0.0, theVfirst), new Direction2D(Direction2D.D.X)),
                         theUfirst,
                         theUlast);
                     break;
                 case 1:
-                    a2dCurv = new Geom2d_TrimmedCurve(
-                        new Geom2d_Line(new Point2D(theUlast, 0.0), new Direction2D(Direction2D.D.Y)),
+                    a2dCurv = new TrimmedCurve2D(
+                        new LineCurve2D(new Point2D(theUlast, 0.0), new Direction2D(Direction2D.D.Y)),
                         theVfirst,
                         theVlast);
                     break;
                 case 2:
-                    a2dCurv = new Geom2d_TrimmedCurve(
-                        new Geom2d_Line(new Point2D(0.0, theVlast), new Direction2D(Direction2D.D.X)),
+                    a2dCurv = new TrimmedCurve2D(
+                        new LineCurve2D(new Point2D(0.0, theVlast), new Direction2D(Direction2D.D.X)),
                         theUfirst,
                         theUlast);
                     break;
                 case 3:
-                    a2dCurv = new Geom2d_TrimmedCurve(
-                        new Geom2d_Line(new Point2D(theUfirst, 0.0), new Direction2D(Direction2D.D.Y)),
+                    a2dCurv = new TrimmedCurve2D(
+                        new LineCurve2D(new Point2D(theUfirst, 0.0), new Direction2D(Direction2D.D.Y)),
                         theVfirst,
                         theVlast);
                     break;
@@ -141,26 +144,26 @@ public class BRepBuilderAPI_FastSewing : Transient
             switch (theIndex)
             {
                 case 0:
-                    a2dCurv = new Geom2d_TrimmedCurve(
-                        new Geom2d_Line(new Point2D(theUfirst + theUlast, theVfirst), new Direction2D(Direction2D.D.NX)),
+                    a2dCurv = new TrimmedCurve2D(
+                        new LineCurve2D(new Point2D(theUfirst + theUlast, theVfirst), new Direction2D(Direction2D.D.NX)),
                         theUfirst,
                         theUlast);
                     break;
                 case 1:
-                    a2dCurv = new Geom2d_TrimmedCurve(
-                        new Geom2d_Line(new Point2D(theUlast, theVfirst + theVlast), new Direction2D(Direction2D.D.NY)),
+                    a2dCurv = new TrimmedCurve2D(
+                        new LineCurve2D(new Point2D(theUlast, theVfirst + theVlast), new Direction2D(Direction2D.D.NY)),
                         theVfirst,
                         theVlast);
                     break;
                 case 2:
-                    a2dCurv = new Geom2d_TrimmedCurve(
-                        new Geom2d_Line(new Point2D(theUfirst + theUlast, theVlast), new Direction2D(Direction2D.D.NX)),
+                    a2dCurv = new TrimmedCurve2D(
+                        new LineCurve2D(new Point2D(theUfirst + theUlast, theVlast), new Direction2D(Direction2D.D.NX)),
                         theUfirst,
                         theUlast);
                     break;
                 case 3:
-                    a2dCurv = new Geom2d_TrimmedCurve(
-                        new Geom2d_Line(new Point2D(theUfirst, theVfirst + theVlast), new Direction2D(Direction2D.D.NY)),
+                    a2dCurv = new TrimmedCurve2D(
+                        new LineCurve2D(new Point2D(theUfirst, theVfirst + theVlast), new Direction2D(Direction2D.D.NY)),
                         theVfirst,
                         theVlast);
                     break;
@@ -188,7 +191,7 @@ public class BRepBuilderAPI_FastSewing : Transient
     public double GetTolerance() => myTolerance;
 
     /// <summary>The resulting shape, frozen.</summary>
-    public TopoDS_Shape GetResult()
+    public Shape GetResult()
     {
         myResShape.TShape()?.FreezeGraph();
         return myResShape;
@@ -205,31 +208,31 @@ public class BRepBuilderAPI_FastSewing : Transient
     //=================================================================================================
 
     /// <summary>Adds the faces of a shape; false if none was added.</summary>
-    public bool Add(in TopoDS_Shape theShape)
+    public bool Add(in Shape theShape)
     {
         bool aResult = false;
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             SetStatus(FS_Statuses.FS_EmptyInput);
             return aResult;
         }
 
-        var aMS = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aMS = new NCollection_Map<Shape>(ShapeHasher.Instance);
         // aMS.Add(theShape);
-        var aFExp = new TopExp_Explorer(theShape, TopAbs_FACE);
+        var aFExp = new Explorer(theShape, ShapeType.Face);
         for (; aFExp.More(); aFExp.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(aFExp.Current());
+            Face aFace = ShapeCasts.Face(aFExp.Current());
             if (aMS.Add(aFace))
             {
-                Geom_Surface? aSurf = BRep_Tool.Surface(aFace);
+                Surface? aSurf = Tool.Surface(aFace);
                 if (aSurf is null)
                 {
                     SetStatus(FS_Statuses.FS_FaceWithNullSurface);
                     continue;
                 }
 
-                if (aSurf is Geom_RectangularTrimmedSurface)
+                if (aSurf is TrimmedSurface)
                 {
                     SetStatus(FS_Statuses.FS_NotNaturalBoundsFace);
                     continue;
@@ -257,7 +260,7 @@ public class BRepBuilderAPI_FastSewing : Transient
     //=================================================================================================
 
     /// <summary>Adds a surface; false if it can't be sewn (null, trimmed or infinite).</summary>
-    public bool Add(Geom_Surface? theSurface)
+    public bool Add(Surface? theSurface)
     {
         if (theSurface is null)
         {
@@ -265,7 +268,7 @@ public class BRepBuilderAPI_FastSewing : Transient
             return false;
         }
 
-        if (theSurface is Geom_RectangularTrimmedSurface)
+        if (theSurface is TrimmedSurface)
         {
             SetStatus(FS_Statuses.FS_NotNaturalBoundsFace);
             return false;
@@ -281,7 +284,7 @@ public class BRepBuilderAPI_FastSewing : Transient
 
         var aFace = new FS_Face();
 
-        var aBuilder = new BRep_Builder();
+        var aBuilder = new BrepBuilder();
 
         aBuilder.MakeFace(ref aFace.mySrcFace);
         aBuilder.MakeFace(ref aFace.mySrcFace, theSurface, myTolerance);
@@ -336,7 +339,7 @@ public class BRepBuilderAPI_FastSewing : Transient
             }
 
             // Shell
-            var aQuilt = new BRepTools_Quilt();
+            var aQuilt = new Quilt();
 
             // Faces
             for (int i = myFaceVec.Lower(); i <= myFaceVec.Upper(); i++)
@@ -409,7 +412,7 @@ public class BRepBuilderAPI_FastSewing : Transient
     {
         const int aNbPoints = 4;
         FS_Face aFace = myFaceVec.Value(theSurfID);
-        Geom_Surface aSurf = BRep_Tool.Surface(aFace.mySrcFace)!;
+        Surface aSurf = Tool.Surface(aFace.mySrcFace)!;
         aSurf.Bounds(out double aUf, out double aUl, out double aVf, out double aVl);
 
         Point3D[] aPnts = [aSurf.Value(aUf, aVf),
@@ -555,7 +558,7 @@ public class BRepBuilderAPI_FastSewing : Transient
         for (int i = myFaceVec.Lower(); i <= myFaceVec.Upper(); i++)
         {
             FS_Face aFace = myFaceVec.Value(i);
-            Geom_Surface? aSurf = BRep_Tool.Surface(aFace.mySrcFace);
+            Surface? aSurf = Tool.Surface(aFace.mySrcFace);
 
             if (aSurf is null)
             {
@@ -588,7 +591,7 @@ public class BRepBuilderAPI_FastSewing : Transient
     {
         /// <summary>Geometry point of this Vertex</summary>
         public Point3D myPnt = new();
-        public TopoDS_Vertex myTopoVert = new();
+        public Vertex myTopoVert = new();
         /// <summary>List of faces and edges which share this vertex</summary>
         public readonly NCollection_List<int> myFaces = new();
         public readonly NCollection_List<int> myEdges = new();
@@ -603,7 +606,7 @@ public class BRepBuilderAPI_FastSewing : Transient
         /// <summary>Creates topological member (vertex)</summary>
         public void CreateTopologicalVertex(double theToler)
         {
-            var aBuilder = new BRep_Builder();
+            var aBuilder = new BrepBuilder();
             aBuilder.MakeVertex(ref myTopoVert, myPnt, theToler);
         }
     }
@@ -611,9 +614,9 @@ public class BRepBuilderAPI_FastSewing : Transient
     /// <summary>A face of the result.</summary>
     protected sealed class FS_Face
     {
-        public TopoDS_Face mySrcFace = new();
-        public TopoDS_Wire myWire = new();
-        public TopoDS_Face myRetFace = new();
+        public Face mySrcFace = new();
+        public Wire myWire = new();
+        public Face myRetFace = new();
         /// <summary>
         /// myEdges[i] number of the edge in myEdgeVec; (i==0) &lt;-&gt; (V=Vf); (i==1) &lt;-&gt; (U=Ul);
         /// (i==2) &lt;-&gt; (V=Vl); (i==3) &lt;-&gt; (U=Uf)
@@ -654,11 +657,11 @@ public class BRepBuilderAPI_FastSewing : Transient
         public void CreateTopologicalWire(NCollection_DynamicArray<FS_Edge> theEdgeVec, double theToler)
         {
             // 3D-curves in 1st and 2nd faces are considered to be in same-range
-            Geom_Surface aSurf = BRep_Tool.Surface(mySrcFace, out Placement aLocation)!;
+            Surface aSurf = Tool.Surface(mySrcFace, out Placement aLocation)!;
 
             aSurf.Bounds(out double aUf, out double aUl, out double aVf, out double aVl);
 
-            var aB = new BRep_Builder();
+            var aB = new BrepBuilder();
             aB.MakeWire(ref myWire);
             for (int anEdge = 0; anEdge < 4; anEdge++)
             {
@@ -667,8 +670,8 @@ public class BRepBuilderAPI_FastSewing : Transient
                     "BRepBuilderAPI_FastSewing::FS_Face::CreateTopologicalWire: Wire is not closed.");
 
                 FS_Edge aFSEdge = theEdgeVec.Value(myEdges[anEdge]);
-                TopAbs_Orientation anOri = anEdge < 2 ? TopAbs_FORWARD : TopAbs_REVERSED;
-                TopoDS_Edge anTopE = aFSEdge.myTopoEdge;
+                Orientation anOri = anEdge < 2 ? Forward : Reversed;
+                Edge anTopE = aFSEdge.myTopoEdge;
 
                 if (aFSEdge.IsDegenerated())
                 {
@@ -680,8 +683,8 @@ public class BRepBuilderAPI_FastSewing : Transient
                 // Check if 3D and 2D-curve have same-orientation.
                 // If it is not, 2d-curve will be reversed.
                 {
-                    Geom_Curve a3dCurv = BRep_Tool.Curve(anTopE, out double aFirstPar, out double aLastPar)!;
-                    Geom2d_Curve a2dCurv = Get2DCurve(anEdge, aUf, aUl, aVf, aVl);
+                    Curve3D a3dCurv = Tool.Curve(anTopE, out double aFirstPar, out double aLastPar)!;
+                    Curve2D a2dCurv = Get2DCurve(anEdge, aUf, aUl, aVf, aVl);
                     Point3D aPref = a3dCurv.Value(aFirstPar);
                     Point2D aP2df = a2dCurv.Value(aFirstPar), aP2dl = a2dCurv.Value(aLastPar);
                     Point3D aP3df = aSurf.Value(aP2df.X(), aP2df.Y());
@@ -696,7 +699,7 @@ public class BRepBuilderAPI_FastSewing : Transient
                     if (aSqD2 < aSqD1)
                     {
                         a2dCurv = Get2DCurve(anEdge, aUf, aUl, aVf, aVl, true);
-                        anOri = TopAbs.Reverse(anOri);
+                        anOri = global::Kerf.Engine.Topology.TopAbs.Reverse(anOri);
                     }
 
                     aB.UpdateEdge(anTopE, a2dCurv, aSurf, aLocation, theToler);
@@ -716,11 +719,11 @@ public class BRepBuilderAPI_FastSewing : Transient
         public void CreateTopologicalFace()
         {
             Standard_ProgramError_Raise_if(
-                myWire.IsNull(),
+                myWire.IsNull,
                 "BRepBuilderAPI_FastSewing::FS_Face::CreateTopologicalFace: Cannot create wire.");
 
-            var aBuilder = new BRep_Builder();
-            myRetFace = TopoDS.Face(mySrcFace.EmptyCopied());
+            var aBuilder = new BrepBuilder();
+            myRetFace = ShapeCasts.Face(mySrcFace.EmptyCopied());
             aBuilder.Add(myRetFace, myWire);
             aBuilder.NaturalRestriction(myRetFace, true);
         }
@@ -733,7 +736,7 @@ public class BRepBuilderAPI_FastSewing : Transient
         public readonly NCollection_Sequence<int> myFaces = new();
         /// <summary>Identifies the place of this Edge in BRepBuilderAPI_FastSewing::myEdgeVec list</summary>
         public int myID;
-        public TopoDS_Edge myTopoEdge = new();
+        public Edge myTopoEdge = new();
         // Index of the vertex in myVertexVec array
         private readonly int[] myVertices = new int[2];
 
@@ -767,20 +770,20 @@ public class BRepBuilderAPI_FastSewing : Transient
                                           NCollection_DynamicArray<FS_Face> theFaceVec,
                                           double theTol)
         {
-            var aBuilder = new BRep_Builder();
+            var aBuilder = new BrepBuilder();
 
-            TopoDS_Vertex aV1 = theVertexVec.Value(myVertices[0]).myTopoVert;
-            TopoDS_Vertex aV2 = theVertexVec.Value(myVertices[1]).myTopoVert;
+            Vertex aV1 = theVertexVec.Value(myVertices[0]).myTopoVert;
+            Vertex aV2 = theVertexVec.Value(myVertices[1]).myTopoVert;
 
-            aV1.Orientation(TopAbs_FORWARD);
-            aV2.Orientation(TopAbs_REVERSED);
+            aV1.Orientation(Forward);
+            aV2.Orientation(Reversed);
 
-            Geom_Curve a3dCurv;
+            Curve3D a3dCurv;
 
             FS_Face aFace = theFaceVec.Value(myFaces.Value(NCollection_Sequence<int>.Lower()));
 
             // 3D-curves in 1st and 2nd faces are considered to be in same-range
-            Geom_Surface aSurf = BRep_Tool.Surface(aFace.mySrcFace, out Placement aLocation)!;
+            Surface aSurf = Tool.Surface(aFace.mySrcFace, out Placement aLocation)!;
 
             aSurf.Bounds(out double aUf, out double aUl, out double aVf, out double aVl);
 
@@ -800,7 +803,7 @@ public class BRepBuilderAPI_FastSewing : Transient
 
             if (IsDegenerated())
             {
-                Geom2d_Curve a2dCurv = Get2DCurve(anEdgeID, aUf, aUl, aVf, aVl);
+                Curve2D a2dCurv = Get2DCurve(anEdgeID, aUf, aUl, aVf, aVl);
                 double aFPar = a2dCurv.FirstParameter(), aLPar = a2dCurv.LastParameter();
 
                 aBuilder.MakeEdge(ref myTopoEdge);

@@ -1,3 +1,5 @@
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -39,14 +41,14 @@ internal static class ShapeLog
     private static string? s_test;
     private static int s_seq;
     // The TShapes seen in the current test, by the hash of the shape without its location; IsPartner settles collisions
-    private static readonly Dictionary<ulong, List<TopoDS_Shape>> s_seen = [];
+    private static readonly Dictionary<ulong, List<global::Kerf.Topology.Shape>> s_seen = [];
 
     /// <summary>Logs <paramref name="wrapped"/> if it is new in the running test.</summary>
-    internal static void Record(Shape shape, TopoDS_Shape wrapped)
+    internal static void Record(Shape shape, global::Kerf.Topology.Shape wrapped)
     {
         try
         {
-            if (wrapped.IsNull() || TopoUtil.IsEmptyCompound(wrapped))
+            if (wrapped.IsNull || TopoUtil.IsEmptyCompound(wrapped))
                 return;
             var (test, api, inner) = Callers();
             lock (s_lock)
@@ -78,13 +80,13 @@ internal static class ShapeLog
     /// A digest of the exact bits of the shape's vertex points, in exploration order: BRep text has 15 digits, which
     /// can hide a difference of an ulp that a later operation shows.
     /// </summary>
-    private static string ExactPoints(TopoDS_Shape shape)
+    private static string ExactPoints(global::Kerf.Topology.Shape shape)
     {
         var hash = 14695981039346656037UL;
-        var explorer = new TopExp_Explorer(shape, TopAbs_ShapeEnum.TopAbs_VERTEX);
+        var explorer = new Explorer(shape, global::Kerf.Topology.ShapeType.Vertex);
         for (; explorer.More(); explorer.Next())
         {
-            var point = BRep_Tool.Pnt(TopoDS.Vertex(explorer.Current()));
+            var point = Tool.Pnt(ShapeCasts.Vertex(explorer.Current()));
             foreach (var c in (ReadOnlySpan<double>)[point.X(), point.Y(), point.Z()])
                 hash = (hash ^ (ulong)BitConverter.DoubleToInt64Bits(c)) * 1099511628211UL;
         }
@@ -92,15 +94,15 @@ internal static class ShapeLog
     }
 
     /// <summary>Registers the TShape and its sub-shapes; false if the TShape was registered already.</summary>
-    private static bool Register(TopoDS_Shape shape)
+    private static bool Register(global::Kerf.Topology.Shape shape)
     {
         if (!Add(shape))
             return false;
-        var stack = new Stack<TopoDS_Shape>([shape]);
+        var stack = new Stack<global::Kerf.Topology.Shape>([shape]);
         while (stack.Count > 0)
         {
             var current = stack.Pop();
-            var it = new TopoDS_Iterator(current, false, false);
+            var it = new Iterator(current, false, false);
             for (; it.More(); it.Next())
             {
                 var child = it.Value();
@@ -112,7 +114,7 @@ internal static class ShapeLog
         return true;
     }
 
-    private static bool Add(TopoDS_Shape shape)
+    private static bool Add(global::Kerf.Topology.Shape shape)
     {
         var identity = new Placement();
         var bare = shape.Located(identity);

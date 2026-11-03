@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Intersection;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 
@@ -46,16 +47,16 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
     private readonly record struct PortPoint(double U, double V, double W);
 
     /// <summary>The points IntCurveSurface keeps (ComputeAppendPoint): parameters put in the period, then bounded.</summary>
-    private static List<PortPoint> Keep(IntAna_IntConicQuad theInter, Conic theConic, Surf theSurf, in Plane3D thePln,
+    private static List<PortPoint> Keep(IntConicQuad theInter, Conic theConic, Surf theSurf, in Plane3D thePln,
                                         in Cylinder theCyl, in Cone theCone, in Sphere theSph)
     {
         var aResult = new List<PortPoint>();
-        if (!theInter.IsDone() || theInter.IsInQuadric() || theInter.IsParallel())
+        if (!theInter.IsDone || theInter.IsInQuadric || theInter.IsParallel)
         {
             return aResult;
         }
 
-        for (int i = 1; i <= theInter.NbPoints(); i++)
+        for (int i = 1; i <= theInter.PointCount; i++)
         {
             Point3D aP = theInter.Point(i);
             double aW = theInter.ParamOnConic(i), aU = 0, aV = 0;
@@ -125,12 +126,12 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
                 Surf.Cone => new N.Geom_ConicalSurface(aNSAx, aSemiAngle, aR),
                 _ => new N.Geom_SphericalSurface(aNSAx, aR),
             };
-            IntAna_Quadric aQuad = theSurf switch
+            Quadric aQuad = theSurf switch
             {
-                Surf.Plane => new IntAna_Quadric(aPln),
-                Surf.Cylinder => new IntAna_Quadric(aCyl),
-                Surf.Cone => new IntAna_Quadric(aCone),
-                _ => new IntAna_Quadric(aSph),
+                Surf.Plane => new Quadric(aPln),
+                Surf.Cylinder => new Quadric(aCyl),
+                Surf.Cone => new Quadric(aCone),
+                _ => new Quadric(aSph),
             };
 
             // The conic near the surface's location
@@ -139,7 +140,7 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
             Frame3D aCAx = SettledAx2(anOracle, aLoc);
             double aMaj = anOracle.Real(0.5, 2 * aR), aMin = anOracle.Real(0.2, aMaj);
             using var aNCAx = Oracle.ToNative(aCAx);
-            var anInter = new IntAna_IntConicQuad();
+            var anInter = new IntConicQuad();
             N.Geom_Curve aNC;
             Func<double, Point3D> aValue;
             switch (theConic)
@@ -278,16 +279,16 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
             using var aNAx1 = Oracle.ToNative(aLin.Position());
             using var aNC = new N.Geom_Line(aNAx1);
 
-            var anInter = new IntAna_IntLinTorus(aLin, aTorus);
+            var anInter = new IntLinTorus(aLin, aTorus);
             using var anIntCS = new N.GeomAPI_IntCS(aNC, aNS);
             anOracle.Same(true, anIntCS.IsDone(), $"{aWhat} IsDone");
             // A failed IntLinTorus sends IntCurveSurface to its sampling algorithm: not compared
-            if (!anInter.IsDone())
+            if (!anInter.IsDone)
             {
                 continue;
             }
-            anOracle.Same(anIntCS.NbPoints(), anInter.NbPoints(), $"{aWhat} NbPoints");
-            for (int j = 1; j <= anInter.NbPoints(); j++)
+            anOracle.Same(anIntCS.NbPoints(), anInter.PointCount, $"{aWhat} NbPoints");
+            for (int j = 1; j <= anInter.PointCount; j++)
             {
                 double aU = 0, aV = 0, aW = 0;
                 anIntCS.Parameters(j, ref aU, ref aV, ref aW);

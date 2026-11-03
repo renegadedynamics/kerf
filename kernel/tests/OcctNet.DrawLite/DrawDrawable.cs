@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using Occt;
 
@@ -37,22 +39,22 @@ public abstract class DrawDrawable
 }
 
 /// <summary>A shape (DBRep_DrawableShape). The shape is frozen when it is stored (decision 272).</summary>
-public sealed class DrawShape(in TopoDS_Shape theShape) : DrawDrawable
+public sealed class DrawShape(in Shape theShape) : DrawDrawable
 {
     /// <summary>The shape; rebound in place when a command meshes or cleans a shape sharing its sub-shapes (DrawShapeRebind).</summary>
-    public TopoDS_Shape Shape { get; internal set; } = theShape;
+    public Shape Shape { get; internal set; } = theShape;
 
     public override string TypeName => "DBRep_DrawableShape";
 
     public override void Whatis(DrawResult theResult)
     {
-        if (Shape.IsNull())
+        if (Shape.IsNull)
         {
             return;
         }
 
-        theResult.Append("shape ").Append(TopAbs.ShapeTypeToString(Shape.ShapeType())).Append(" ")
-                 .Append(TopAbs.ShapeOrientationToString(Shape.Orientation()));
+        theResult.Append("shape ").Append(global::Kerf.Engine.Topology.TopAbs.ShapeTypeToString(Shape.ShapeType())).Append(" ")
+                 .Append(global::Kerf.Engine.Topology.TopAbs.ShapeOrientationToString(Shape.Orientation()));
         if (Shape.Free())
         {
             theResult.Append(" Free");
@@ -84,10 +86,10 @@ public sealed class DrawShape(in TopoDS_Shape theShape) : DrawDrawable
         }
     }
 
-    public override void Dump(TextWriter theStream) => BRepTools.Dump(Shape, theStream);
+    public override void Dump(TextWriter theStream) => BrepTools.Dump(Shape, theStream);
 
     /// <summary>DBRep_DrawableShape::Save: the shape set, then the shape (BRepTools::Write's text).</summary>
-    public override void Save(TextWriter theStream) => BRepTools.Write(Shape, theStream);
+    public override void Save(TextWriter theStream) => BrepTools.Write(Shape, theStream);
 
     public override DrawDrawable Copy() => new DrawShape(Shape);
 }
@@ -124,15 +126,15 @@ public sealed class DrawGeometry : DrawDrawable
 
     public override string TypeName => Geometry switch
     {
-        Geom_BSplineCurve => "DrawTrSurf_BSplineCurve",
-        Geom_BezierCurve => "DrawTrSurf_BezierCurve",
-        Geom_Curve => "DrawTrSurf_Curve",
-        Geom2d_BSplineCurve => "DrawTrSurf_BSplineCurve2d",
-        Geom2d_BezierCurve => "DrawTrSurf_BezierCurve2d",
-        Geom2d_Curve => "DrawTrSurf_Curve2d",
-        Geom_BSplineSurface => "DrawTrSurf_BSplineSurface",
-        Geom_BezierSurface => "DrawTrSurf_BezierSurface",
-        Geom_Surface => "DrawTrSurf_Surface",
+        BSplineCurve3D => "DrawTrSurf_BSplineCurve",
+        BezierCurve3D => "DrawTrSurf_BezierCurve",
+        Curve3D => "DrawTrSurf_Curve",
+        BSplineCurve2D => "DrawTrSurf_BSplineCurve2d",
+        BezierCurve2D => "DrawTrSurf_BezierCurve2d",
+        Curve2D => "DrawTrSurf_Curve2d",
+        BSplineSurface => "DrawTrSurf_BSplineSurface",
+        BezierSurface => "DrawTrSurf_BezierSurface",
+        Surface => "DrawTrSurf_Surface",
         Point3D or Point2D => "DrawTrSurf_Point",
         global::Kerf.Engine.Meshing.Polygon3D => "DrawTrSurf_Polygon3D",
         global::Kerf.Engine.Meshing.Polygon2D => "DrawTrSurf_Polygon2D",
@@ -141,9 +143,9 @@ public sealed class DrawGeometry : DrawDrawable
 
     public override void Whatis(DrawResult theResult) => theResult.Append(Geometry switch
     {
-        Geom_Curve => " a 3d curve",
-        Geom2d_Curve => "2d curve",
-        Geom_Surface => "a surface",
+        Curve3D => " a 3d curve",
+        Curve2D => "2d curve",
+        Surface => "a surface",
         Point3D or Point2D => "point",
         global::Kerf.Engine.Meshing.Polygon3D => "polygon3D",
         global::Kerf.Engine.Meshing.Polygon2D => "polygon2D",
@@ -154,14 +156,14 @@ public sealed class DrawGeometry : DrawDrawable
     {
         switch (Geometry)
         {
-            case Geom_Curve aCurve:
-                GeomTools_CurveSet.PrintCurve(aCurve, theStream);
+            case Curve3D aCurve:
+                global::Kerf.Engine.Exchange.Brep.CurveSet.PrintCurve(aCurve, theStream);
                 break;
-            case Geom2d_Curve aCurve:
-                GeomTools_Curve2dSet.PrintCurve2d(aCurve, theStream);
+            case Curve2D aCurve:
+                global::Kerf.Engine.Exchange.Brep.Curve2dSet.PrintCurve2d(aCurve, theStream);
                 break;
-            case Geom_Surface aSurface:
-                GeomTools_SurfaceSet.PrintSurface(aSurface, theStream);
+            case Surface aSurface:
+                global::Kerf.Engine.Exchange.Brep.SurfaceSet.PrintSurface(aSurface, theStream);
                 break;
             case Point3D aPoint:
                 theStream.Write(string.Create(CultureInfo.InvariantCulture,
@@ -187,14 +189,14 @@ public sealed class DrawGeometry : DrawDrawable
     {
         switch (Geometry)
         {
-            case Geom_Curve aCurve:
-                GeomTools_CurveSet.PrintCurve(aCurve, theStream, true);
+            case Curve3D aCurve:
+                global::Kerf.Engine.Exchange.Brep.CurveSet.PrintCurve(aCurve, theStream, true);
                 break;
-            case Geom2d_Curve aCurve:
-                GeomTools_Curve2dSet.PrintCurve2d(aCurve, theStream, true);
+            case Curve2D aCurve:
+                global::Kerf.Engine.Exchange.Brep.Curve2dSet.PrintCurve2d(aCurve, theStream, true);
                 break;
-            case Geom_Surface aSurface:
-                GeomTools_SurfaceSet.PrintSurface(aSurface, theStream, true);
+            case Surface aSurface:
+                global::Kerf.Engine.Exchange.Brep.SurfaceSet.PrintSurface(aSurface, theStream, true);
                 break;
             case Point3D aPoint:
                 theStream.Write($"1 {DrawFormat.Scientific(aPoint.X(), 15)} {DrawFormat.Scientific(aPoint.Y(), 15)} {DrawFormat.Scientific(aPoint.Z(), 15)}\n");
@@ -228,28 +230,28 @@ public sealed class DrawGeometry : DrawDrawable
             case "DrawTrSurf_Curve":
             case "DrawTrSurf_BSplineCurve":
             case "DrawTrSurf_BezierCurve":
-                aGeometry = GeomTools_CurveSet.ReadCurve(theStream);
+                aGeometry = global::Kerf.Engine.Exchange.Brep.CurveSet.ReadCurve(theStream);
                 break;
             case "DrawTrSurf_Curve2d":
             case "DrawTrSurf_BSplineCurve2d":
             case "DrawTrSurf_BezierCurve2d":
-                aGeometry = GeomTools_Curve2dSet.ReadCurve2d(theStream);
+                aGeometry = global::Kerf.Engine.Exchange.Brep.Curve2dSet.ReadCurve2d(theStream);
                 break;
             case "DrawTrSurf_Surface":
             case "DrawTrSurf_BSplineSurface":
             case "DrawTrSurf_BezierSurface":
-                aGeometry = GeomTools_SurfaceSet.ReadSurface(theStream);
+                aGeometry = global::Kerf.Engine.Exchange.Brep.SurfaceSet.ReadSurface(theStream);
                 break;
             case "DrawTrSurf_Point":
             {
                 int anIs3d = 0;
                 StreamUtilities.Read(theStream, ref anIs3d);
                 // C++'s >> into a double, as GeomTools::GetReal reads
-                GeomTools.GetReal(theStream, out double x);
-                GeomTools.GetReal(theStream, out double y);
+                global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(theStream, out double x);
+                global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(theStream, out double y);
                 if (anIs3d != 0)
                 {
-                    GeomTools.GetReal(theStream, out double z);
+                    global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(theStream, out double z);
                     aGeometry = new Point3D(x, y, z);
                 }
                 else

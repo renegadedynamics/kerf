@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -15,7 +16,7 @@ public class BRepMeshData_PCurve : IMeshData_PCurve
     private readonly List<int> myIndices = [];
 
     /// <summary>An empty pcurve on the discrete face, for the edge with the given orientation.</summary>
-    public BRepMeshData_PCurve(IMeshData_Face theDFace, TopAbs_Orientation theOrientation)
+    public BRepMeshData_PCurve(IMeshData_Face theDFace, Orientation theOrientation)
         : base(theDFace, theOrientation)
     {
     }

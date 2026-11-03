@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -129,17 +131,17 @@ internal sealed record ReconCase(string Name, bool Done, string BRepText, string
                                  List<(bool Deleted, int[] Modified)> Solids)
 {
     /// <summary>The input shape (a new one at each call).</summary>
-    internal TopoDS_Shape Input
+    internal Shape Input
     {
         get
         {
-            BRepTools.Read(out TopoDS_Shape aShape, new StringReader(BRepText));
+            BrepTools.Read(out Shape aShape, new StringReader(BRepText));
             return aShape;
         }
     }
 
     /// <summary>Native's result (a new one at each call), null if native's maker was not done.</summary>
-    internal TopoDS_Shape? Result
+    internal Shape? Result
     {
         get
         {
@@ -147,7 +149,7 @@ internal sealed record ReconCase(string Name, bool Done, string BRepText, string
             {
                 return null;
             }
-            BRepTools.Read(out TopoDS_Shape aShape, new StringReader(ResultText));
+            BrepTools.Read(out Shape aShape, new StringReader(ResultText));
             return aShape;
         }
     }

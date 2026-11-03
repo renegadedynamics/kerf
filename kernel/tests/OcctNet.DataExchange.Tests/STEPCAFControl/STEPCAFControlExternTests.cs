@@ -32,7 +32,7 @@ public sealed class STEPCAFControlExternTests : IDisposable
         }
     }
 
-    private static TopoDS_Shape Box(double theSize) => new BRepPrimAPI_MakeBox(theSize, theSize, theSize).Shape();
+    private static Shape Box(double theSize) => new BRepPrimAPI_MakeBox(theSize, theSize, theSize).Shape();
 
     private static XdeDoc_Document Assembly()
     {

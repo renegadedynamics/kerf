@@ -1,11 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
 using static Occt.ChFi3d_FilletShape;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite;
 
@@ -148,8 +151,8 @@ internal static partial class BRepTestFilletCommands
         {
             return 1;
         }
-        TopoDS_Shape V = theDI.GetShape(a[2]);
-        if (V.IsNull())
+        Shape V = theDI.GetShape(a[2]);
+        if (V.IsNull)
         {
             return 1;
         }
@@ -173,9 +176,9 @@ internal static partial class BRepTestFilletCommands
         for (int ii = 1; ii < (narg - 1) / 2; ii++)
         {
             double Rad = theDI.Atof(a[2 * ii + 1]);
-            TopoDS_Shape aLocalEdge = theDI.GetShape(a[2 * ii + 2], TopAbs_EDGE);
-            TopoDS_Edge E = TopoDS.Edge(aLocalEdge);
-            if (!E.IsNull())
+            Shape aLocalEdge = theDI.GetShape(a[2 * ii + 2], ShapeType.Edge);
+            Edge E = ShapeCasts.Edge(aLocalEdge);
+            if (!E.IsNull)
             {
                 Rakk.Add(Rad, E);
                 nbedge++;
@@ -194,20 +197,20 @@ internal static partial class BRepTestFilletCommands
         // Save history for fillet
         if (BRepTestHistoryCommands.IsHistoryNeeded(theDI))
         {
-            NCollection_List<TopoDS_Shape> anArg = new();
+            NCollection_List<Shape> anArg = new();
             anArg.Append(V);
             BRepTestHistoryCommands.SetHistory(theDI, anArg, Rakk);
         }
 
-        TopoDS_Shape res = Rakk.Shape();
+        Shape res = Rakk.Shape();
         theDI.SetShape(a[1], res);
         return 0;
     }
 
-    private static void PrintHist(DrawInterpreter theDI, in TopoDS_Shape S, IEnumerable<TopoDS_Shape> It, ref int nbgen)
+    private static void PrintHist(DrawInterpreter theDI, in Shape S, IEnumerable<Shape> It, ref int nbgen)
     {
-        TopoDS_Compound C = new();
-        BRep_Builder B = new();
+        Compound C = new();
+        BrepBuilder B = new();
         B.MakeCompound(ref C);
         B.Add(C, S);
         string localname;
@@ -223,7 +226,7 @@ internal static partial class BRepTestFilletCommands
         {
             localname = "generated_" + nbgen++;
         }
-        foreach (TopoDS_Shape aS in It)
+        foreach (Shape aS in It)
         {
             B.Add(C, aS);
         }
@@ -247,7 +250,7 @@ internal static partial class BRepTestFilletCommands
         int nbgen = 0;
         for (int i = 1; i <= nbc; i++)
         {
-            TopoDS_Shape curshape = Rakk.FirstVertex(i);
+            Shape curshape = Rakk.FirstVertex(i);
             PrintHist(theDI, curshape, Rakk.Generated(curshape), ref nbgen);
             int nbe = Rakk.NbEdges(i);
             for (int j = 1; j <= nbe; j++)
@@ -272,7 +275,7 @@ internal static partial class BRepTestFilletCommands
         {
             return 1;
         }
-        TopoDS_Shape V = theDI.GetShape(a[2]);
+        Shape V = theDI.GetShape(a[2]);
         BRepFilletAPI_MakeFillet Rake = new(V);
         s.Rake = Rake;
         Rake.SetParams(s.ta, s.tesp, s.t2d, s.t3d, s.t2d, s.fl);
@@ -308,8 +311,8 @@ internal static partial class BRepTestFilletCommands
             return 1;
         }
         NCollection_Array1<Point2D> uandr = new(1, (narg / 2) - 1);
-        TopoDS_Shape aLocalEdge = theDI.GetShape(a[1], TopAbs_EDGE);
-        TopoDS_Edge E = TopoDS.Edge(aLocalEdge);
+        Shape aLocalEdge = theDI.GetShape(a[1], ShapeType.Edge);
+        Edge E = ShapeCasts.Edge(aLocalEdge);
         for (int ii = 1; ii <= (narg / 2) - 1; ii++)
         {
             double Par = theDI.Atof(a[2 * ii]);
@@ -334,7 +337,7 @@ internal static partial class BRepTestFilletCommands
         s.Rake = null;
         if (Rake.IsDone())
         {
-            TopoDS_Shape result = Rake.Shape();
+            Shape result = Rake.Shape();
             theDI.SetShape(s.name, result);
             return 0;
         }
@@ -358,9 +361,9 @@ internal static partial class BRepTestFilletCommands
         }
 
         bool fuse = a[0] == "bfuseblend";
-        TopoDS_Shape S1 = theDI.GetShape(a[2]);
-        TopoDS_Shape S2 = theDI.GetShape(a[3]);
-        if (S1.IsNull() || S2.IsNull())
+        Shape S1 = theDI.GetShape(a[2]);
+        Shape S2 = theDI.GetShape(a[3]);
+        if (S1.IsNull || S2.IsNull)
         {
             theDI.Output.WriteLine(" Null shapes are not allowed");
             return 1;
@@ -369,7 +372,7 @@ internal static partial class BRepTestFilletCommands
         bool isDebug = narg == 6 && a[5] == "-d";
 
         BOPAlgo_PaveFiller theDSFiller = new();
-        NCollection_List<TopoDS_Shape> aLS = new();
+        NCollection_List<Shape> aLS = new();
         aLS.Append(S1);
         aLS.Append(S2);
         theDSFiller.SetArguments(aLS);
@@ -391,7 +394,7 @@ internal static partial class BRepTestFilletCommands
             return 1;
         }
 
-        TopoDS_Shape ResultOfBop = pBuilder.Shape();
+        Shape ResultOfBop = pBuilder.Shape();
 
         if (isDebug)
         {
@@ -401,7 +404,7 @@ internal static partial class BRepTestFilletCommands
         }
 
         BRepAlgoAPI_Section aSection = new(S1, S2, theDSFiller);
-        TopoDS_Shape theSection = aSection.Shape();
+        Shape theSection = aSection.Shape();
 
         if (isDebug)
         {
@@ -410,23 +413,23 @@ internal static partial class BRepTestFilletCommands
             di.Append("Intermediate bopsection result is saved to \"").Append(aBuff).Append("\" variable\n");
         }
 
-        TopoDS_Compound result = new();
-        BRep_Builder BB = new();
+        Compound result = new();
+        BrepBuilder BB = new();
         BB.MakeCompound(ref result);
 
-        TopExp_Explorer Explo = new(ResultOfBop, TopAbs_SOLID);
+        Explorer Explo = new(ResultOfBop, ShapeType.Solid);
         for (; Explo.More(); Explo.Next())
         {
-            TopoDS_Shape aSolid = Explo.Current();
+            Shape aSolid = Explo.Current();
 
             BRepFilletAPI_MakeFillet Blender = new(aSolid);
             Blender.SetParams(s.ta, s.tesp, s.t2d, s.t3d, s.t2d, s.fl);
             Blender.SetContinuity(s.blend_cont, s.tapp_angle);
 
-            TopExp_Explorer expsec = new(theSection, TopAbs_EDGE);
+            Explorer expsec = new(theSection, ShapeType.Edge);
             for (; expsec.More(); expsec.Next())
             {
-                TopoDS_Edge anEdge = TopoDS.Edge(expsec.Current());
+                Edge anEdge = ShapeCasts.Edge(expsec.Current());
                 Blender.Add(Rad, anEdge);
             }
 

@@ -170,7 +170,7 @@ internal static class DrawTrSurfCommands
 
         for (int i = 1; i <= last; i++)
         {
-            Geom_Geometry? G = DrawTrSurf.Get(theDI, a[i]);
+            Geometry3D? G = DrawTrSurf.Get(theDI, a[i]);
             if (G is not null)
             {
                 DrawTrSurf.Set(theDI, a[i], G.Transformed(T));
@@ -265,10 +265,10 @@ internal static class DrawTrSurfCommands
 
         for (int i = 1; i <= last; i++)
         {
-            Geom2d_Curve? G = DrawTrSurf.GetCurve2d(theDI, a[i]);
+            Curve2D? G = DrawTrSurf.GetCurve2d(theDI, a[i]);
             if (G is not null)
             {
-                DrawTrSurf.Set(theDI, a[i], (Geom2d_Curve)G.Transformed(T));
+                DrawTrSurf.Set(theDI, a[i], (Curve2D)G.Transformed(T));
             }
             else
             {

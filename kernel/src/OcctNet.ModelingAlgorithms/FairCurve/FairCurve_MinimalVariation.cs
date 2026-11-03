@@ -321,7 +321,7 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
 
         mults.Init(L);
 
-        Geom2d_BSplineCurve DeltaCurve = new(HermitePoles, knots, mults, L - 1);
+        BSplineCurve2D DeltaCurve = new(HermitePoles, knots, mults, L - 1);
 
         DeltaCurve.IncreaseDegree(Degree);
         if (Mults.Length() > 2)
@@ -518,7 +518,7 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
 
         if (NewKnots)
         {
-            Geom2d_BSplineCurve NewBS = new(NPoles.Array1(), Knots.Array1(), Mults.Array1(), Degree);
+            BSplineCurve2D NewBS = new(NPoles.Array1(), Knots.Array1(), Mults.Array1(), Degree);
 
             NCollection_HArray1<int> NMults = new(1, NbKnots);
             NMults.Init(Degree - 3);

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
 using System.Diagnostics.Tracing;
 using System.Globalization;
 using Occt;
@@ -48,7 +49,7 @@ internal sealed class Allocations : EventListener
             {
                 continue;
             }
-            TopoDS_Shape anInput = Cases.PortRead(aCase.F1);
+            Shape anInput = Cases.PortRead(aCase.F1);
             Cases.PortMeshAndExtract(anInput, aCase.Deflection, false);
             lock (aListener.myBytes)
             {

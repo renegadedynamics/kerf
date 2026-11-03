@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
 
@@ -33,14 +36,14 @@ public sealed class ShapeConstruct_Curve
     /// (if <paramref name="take2"/>): the end poles of a B-spline, the whole line of a line (both points). Returns
     /// false for other curves. In place: throws on a frozen curve. Doesn't check whether the curve should be reversed.
     /// </summary>
-    public bool AdjustCurve(Geom_Curve C3D, in Point3D P1, in Point3D P2, bool take1 = true, bool take2 = true)
+    public bool AdjustCurve(Curve3D C3D, in Point3D P1, in Point3D P2, bool take1 = true, bool take2 = true)
     {
         if (!take1 && !take2)
         {
             return true;
         }
 
-        if (C3D is Geom_BSplineCurve BSPL)
+        if (C3D is BSplineCurve3D BSPL)
         {
             if (take1)
             {
@@ -48,12 +51,12 @@ public sealed class ShapeConstruct_Curve
             }
             if (take2)
             {
-                BSPL.SetPole(BSPL.NbPoles(), P2);
+                BSPL.SetPole(BSPL.PoleCount, P2);
             }
             return true;
         }
 
-        if (C3D is Geom_Line L3D)
+        if (C3D is LineCurve3D L3D)
         {
             //   ATTENTION, P1 et P2 sont supposes tous deux pertinents ...
             Vector3D avec = new(P1, P2);
@@ -72,9 +75,9 @@ public sealed class ShapeConstruct_Curve
     /// As <see cref="AdjustCurve"/>, a B-spline being first segmented to [<paramref name="U1"/>, <paramref name="U2"/>]
     /// (within its range). In place: throws on a frozen curve.
     /// </summary>
-    public bool AdjustCurveSegment(Geom_Curve C3D, in Point3D P1, in Point3D P2, double U1, double U2)
+    public bool AdjustCurveSegment(Curve3D C3D, in Point3D P1, in Point3D P2, double U1, double U2)
     {
-        if (C3D is Geom_BSplineCurve BSPL)
+        if (C3D is BSplineCurve3D BSPL)
         {
             //    Forcer l extremite c est bien
             //    Propager sur le reste, c est pas mal non plus
@@ -86,11 +89,11 @@ public sealed class ShapeConstruct_Curve
             double UU2 = Min(U2, BSPL.LastParameter());
             BSPL.Segment(UU1, UU2);
             BSPL.SetPole(1, P1);
-            BSPL.SetPole(BSPL.NbPoles(), P2);
+            BSPL.SetPole(BSPL.PoleCount, P2);
             return true;
         }
 
-        if (C3D is Geom_Line L3D)
+        if (C3D is LineCurve3D L3D)
         {
             //   ATTENTION, P1 et P2 sont supposes tous deux pertinents ...
             //   NB : on ne s aide pas de U1 et U2
@@ -107,14 +110,14 @@ public sealed class ShapeConstruct_Curve
     }
 
     /// <summary>The 2D form of <see cref="AdjustCurve"/>. In place: throws on a frozen curve.</summary>
-    public bool AdjustCurve2d(Geom2d_Curve C2D, in Point2D P1, in Point2D P2, bool take1 = true, bool take2 = true)
+    public bool AdjustCurve2d(Curve2D C2D, in Point2D P1, in Point2D P2, bool take1 = true, bool take2 = true)
     {
         if (!take1 && !take2)
         {
             return true;
         }
 
-        if (C2D is Geom2d_BSplineCurve BSPL)
+        if (C2D is BSplineCurve2D BSPL)
         {
             if (take1)
             {
@@ -122,12 +125,12 @@ public sealed class ShapeConstruct_Curve
             }
             if (take2)
             {
-                BSPL.SetPole(BSPL.NbPoles(), P2);
+                BSPL.SetPole(BSPL.PoleCount, P2);
             }
             return true;
         }
 
-        if (C2D is Geom2d_Line L2D)
+        if (C2D is LineCurve2D L2D)
         {
             //   ATTENTION, P1 et P2 sont supposes tous deux pertinents ...
             Vector2D avec = new(P1, P2);
@@ -148,31 +151,31 @@ public sealed class ShapeConstruct_Curve
     /// curves approximated within <paramref name="prec"/> (Approx_Curve3d, C1, degree 9, 1000 segments). Null on
     /// failure.
     /// </summary>
-    public Geom_BSplineCurve? ConvertToBSpline(Geom_Curve C, double first, double last, double prec)
+    public BSplineCurve3D? ConvertToBSpline(Curve3D C, double first, double last, double prec)
     {
-        Geom_BSplineCurve? aResult = InternalConvertToBSpline(C, first, last, prec);
+        BSplineCurve3D? aResult = InternalConvertToBSpline(C, first, last, prec);
         aResult?.Freeze();
         return aResult;
     }
 
     /// <summary>
-    /// <see cref="ConvertToBSpline(Geom_Curve, double, double, double)"/> without freezing (ported code): a new curve
+    /// <see cref="ConvertToBSpline(Curve3D, double, double, double)"/> without freezing (ported code): a new curve
     /// is unfrozen; the given B-spline itself is returned as it is when no segment is needed.
     /// </summary>
-    internal Geom_BSplineCurve? InternalConvertToBSpline(Geom_Curve C, double first, double last, double prec)
+    internal BSplineCurve3D? InternalConvertToBSpline(Curve3D C, double first, double last, double prec)
     {
-        Geom_BSplineCurve? bspl = null;
+        BSplineCurve3D? bspl = null;
 
-        if (C is Geom_BSplineCurve aBSpline)
+        if (C is BSplineCurve3D aBSpline)
         {
             bspl = aBSpline;
         }
-        else if (C is Geom_BezierCurve || C is Geom_Line)
+        else if (C is BezierCurve3D || C is LineCurve3D)
         {
-            Geom_Curve tc = new Geom_TrimmedCurve(C, first, last);
+            Curve3D tc = new TrimmedCurve3D(C, first, last);
             try
             {
-                bspl = GeomConvert.CurveToBSplineCurve(tc);
+                bspl = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(tc);
             }
             catch (FailureException)
             {
@@ -200,7 +203,7 @@ public sealed class ShapeConstruct_Curve
             }
             try
             {
-                bspl = (Geom_BSplineCurve)bspl.Copy();
+                bspl = (BSplineCurve3D)bspl.Copy();
                 bspl.Segment(fbsp, lbsp);
                 return bspl;
             }
@@ -210,7 +213,7 @@ public sealed class ShapeConstruct_Curve
         }
 
         // Approx is used for conics and when ordinary methods fail
-        Geom_Curve newc = C;
+        Curve3D newc = C;
         if (bspl is not null)
         {
             newc = bspl;
@@ -218,8 +221,8 @@ public sealed class ShapeConstruct_Curve
         }
         try
         {
-            Approx_Curve3d Conv = new(new GeomAdaptor_Curve(newc, first, last), prec, C1, 9, 1000);
-            if (Conv.IsDone() || Conv.HasResult())
+            Curve3d Conv = new(new CurveAdaptor(newc, first, last), prec, C1, 9, 1000);
+            if (Conv.IsDone || Conv.HasResult)
             {
                 bspl = Conv.InternalCurve();
             }
@@ -231,31 +234,31 @@ public sealed class ShapeConstruct_Curve
     }
 
     /// <summary>
-    /// The 2D form of <see cref="ConvertToBSpline(Geom_Curve, double, double, double)"/> (Approx_Curve2d for other
+    /// The 2D form of <see cref="ConvertToBSpline(Curve3D, double, double, double)"/> (Approx_Curve2d for other
     /// curves). Frozen; null on failure.
     /// </summary>
-    public Geom2d_BSplineCurve? ConvertToBSpline(Geom2d_Curve C, double first, double last, double prec)
+    public BSplineCurve2D? ConvertToBSpline(Curve2D C, double first, double last, double prec)
     {
-        Geom2d_BSplineCurve? aResult = InternalConvertToBSpline(C, first, last, prec);
+        BSplineCurve2D? aResult = InternalConvertToBSpline(C, first, last, prec);
         aResult?.Freeze();
         return aResult;
     }
 
     /// <summary>The 2D <c>ConvertToBSpline</c> without freezing (ported code).</summary>
-    internal Geom2d_BSplineCurve? InternalConvertToBSpline(Geom2d_Curve C, double first, double last, double prec)
+    internal BSplineCurve2D? InternalConvertToBSpline(Curve2D C, double first, double last, double prec)
     {
-        Geom2d_BSplineCurve? bspl = null;
+        BSplineCurve2D? bspl = null;
 
-        if (C is Geom2d_BSplineCurve aBSpline)
+        if (C is BSplineCurve2D aBSpline)
         {
             bspl = aBSpline;
         }
-        else if (C is Geom2d_BezierCurve || C is Geom2d_Line)
+        else if (C is BezierCurve2D || C is LineCurve2D)
         {
-            Geom2d_Curve tc = new Geom2d_TrimmedCurve(C, first, last);
+            Curve2D tc = new TrimmedCurve2D(C, first, last);
             try
             {
-                bspl = Geom2dConvert.CurveToBSplineCurve(tc);
+                bspl = Geom2dConvert2D.CurveToBSplineCurve(tc);
             }
             catch (FailureException)
             {
@@ -283,7 +286,7 @@ public sealed class ShapeConstruct_Curve
             }
             try
             {
-                bspl = (Geom2d_BSplineCurve)bspl.Copy();
+                bspl = (BSplineCurve2D)bspl.Copy();
                 bspl.Segment(fbsp, lbsp);
                 return bspl;
             }
@@ -293,7 +296,7 @@ public sealed class ShapeConstruct_Curve
         }
 
         // Approx is used for conics and when ordinary methods fail
-        Geom2d_Curve newc = C;
+        Curve2D newc = C;
         if (bspl is not null)
         {
             newc = bspl;
@@ -301,9 +304,9 @@ public sealed class ShapeConstruct_Curve
         }
         try
         {
-            Approx_Curve2d Conv = new(new Geom2dAdaptor_Curve(newc, first, last), first, last, prec, prec, C1, 9,
+            Curve2d Conv = new(new CurveAdaptor2D(newc, first, last), first, last, prec, prec, C1, 9,
                                       1000);
-            if (Conv.IsDone() || Conv.HasResult())
+            if (Conv.IsDone || Conv.HasResult)
             {
                 bspl = Conv.InternalCurve();
             }
@@ -366,7 +369,7 @@ public sealed class ShapeConstruct_Curve
     /// The functional twin of <see cref="AdjustCurve"/>: an adjusted copy of the curve (frozen), or the curve itself
     /// when <paramref name="isDone"/> is false or nothing is taken.
     /// </summary>
-    public Geom_Curve CurveAdjusted(Geom_Curve C3D, in Point3D P1, in Point3D P2, out bool isDone, bool take1 = true,
+    public Curve3D CurveAdjusted(Curve3D C3D, in Point3D P1, in Point3D P2, out bool isDone, bool take1 = true,
                                     bool take2 = true)
     {
         if (!take1 && !take2)
@@ -374,7 +377,7 @@ public sealed class ShapeConstruct_Curve
             isDone = true;
             return C3D;
         }
-        Geom_Curve aCopy = (Geom_Curve)C3D.Copy();
+        Curve3D aCopy = (Curve3D)C3D.Copy();
         isDone = AdjustCurve(aCopy, P1, P2, take1, take2);
         if (!isDone)
         {
@@ -388,9 +391,9 @@ public sealed class ShapeConstruct_Curve
     /// The functional twin of <see cref="AdjustCurveSegment"/>: an adjusted copy (frozen), or the curve itself when
     /// <paramref name="isDone"/> is false.
     /// </summary>
-    public Geom_Curve CurveSegmentAdjusted(Geom_Curve C3D, in Point3D P1, in Point3D P2, double U1, double U2, out bool isDone)
+    public Curve3D CurveSegmentAdjusted(Curve3D C3D, in Point3D P1, in Point3D P2, double U1, double U2, out bool isDone)
     {
-        Geom_Curve aCopy = (Geom_Curve)C3D.Copy();
+        Curve3D aCopy = (Curve3D)C3D.Copy();
         isDone = AdjustCurveSegment(aCopy, P1, P2, U1, U2);
         if (!isDone)
         {
@@ -404,7 +407,7 @@ public sealed class ShapeConstruct_Curve
     /// The functional twin of <see cref="AdjustCurve2d"/>: an adjusted copy (frozen), or the curve itself when
     /// <paramref name="isDone"/> is false or nothing is taken.
     /// </summary>
-    public Geom2d_Curve Curve2dAdjusted(Geom2d_Curve C2D, in Point2D P1, in Point2D P2, out bool isDone, bool take1 = true,
+    public Curve2D Curve2dAdjusted(Curve2D C2D, in Point2D P1, in Point2D P2, out bool isDone, bool take1 = true,
                                         bool take2 = true)
     {
         if (!take1 && !take2)
@@ -412,7 +415,7 @@ public sealed class ShapeConstruct_Curve
             isDone = true;
             return C2D;
         }
-        Geom2d_Curve aCopy = (Geom2d_Curve)C2D.Copy();
+        Curve2D aCopy = (Curve2D)C2D.Copy();
         isDone = AdjustCurve2d(aCopy, P1, P2, take1, take2);
         if (!isDone)
         {

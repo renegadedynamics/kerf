@@ -1,11 +1,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Port of: src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_Test.cxx (OCCT V8_0_1)
 
+using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ChFi3d_FilletShape;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -18,9 +23,9 @@ public class BRepFilletAPI_MakeFilletTests
     /// </summary>
     private static readonly HashSet<string> KnownReconstructionGaps = [];
 
-    private static double Area(in TopoDS_Shape S)
+    private static double Area(in Shape S)
     {
-        GProp_GProps aProps = new();
+        Properties aProps = new();
         BRepGProp.SurfaceProperties(S, aProps);
         return aProps.Mass();
     }
@@ -29,16 +34,16 @@ public class BRepFilletAPI_MakeFilletTests
     public void FilletOneEdge()
     {
         BRepPrimAPI_MakeBox aBoxMaker = new(20.0, 20.0, 20.0);
-        TopoDS_Shape aBox = aBoxMaker.Shape();
+        Shape aBox = aBoxMaker.Shape();
         Assert.True(aBoxMaker.IsDone());
 
-        TopExp_Explorer anExp = new(aBox, TopAbs_EDGE);
+        Explorer anExp = new(aBox, ShapeType.Edge);
         Assert.True(anExp.More());
-        TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
+        Edge anEdge = ShapeCasts.Edge(anExp.Current());
 
         BRepFilletAPI_MakeFillet aFillet = new(aBox);
         aFillet.Add(2.0, anEdge);
-        TopoDS_Shape aResult = aFillet.Shape();
+        Shape aResult = aFillet.Shape();
         Assert.True(aFillet.IsDone());
 
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
@@ -48,15 +53,15 @@ public class BRepFilletAPI_MakeFilletTests
     public void FilletAllEdges()
     {
         BRepPrimAPI_MakeBox aBoxMaker = new(20.0, 20.0, 20.0);
-        TopoDS_Shape aBox = aBoxMaker.Shape();
+        Shape aBox = aBoxMaker.Shape();
         Assert.True(aBoxMaker.IsDone());
 
         BRepFilletAPI_MakeFillet aFillet = new(aBox);
-        for (TopExp_Explorer anExp = new(aBox, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(aBox, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            aFillet.Add(1.0, TopoDS.Edge(anExp.Current()));
+            aFillet.Add(1.0, ShapeCasts.Edge(anExp.Current()));
         }
-        TopoDS_Shape aResult = aFillet.Shape();
+        Shape aResult = aFillet.Shape();
         Assert.True(aFillet.IsDone());
 
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
@@ -66,19 +71,19 @@ public class BRepFilletAPI_MakeFilletTests
     public void FilletMoreFaces()
     {
         BRepPrimAPI_MakeBox aBoxMaker = new(20.0, 20.0, 20.0);
-        TopoDS_Shape aBox = aBoxMaker.Shape();
+        Shape aBox = aBoxMaker.Shape();
         Assert.True(aBoxMaker.IsDone());
 
         BRepFilletAPI_MakeFillet aFillet = new(aBox);
-        for (TopExp_Explorer anExp = new(aBox, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(aBox, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            aFillet.Add(1.0, TopoDS.Edge(anExp.Current()));
+            aFillet.Add(1.0, ShapeCasts.Edge(anExp.Current()));
         }
-        TopoDS_Shape aResult = aFillet.Shape();
+        Shape aResult = aFillet.Shape();
         Assert.True(aFillet.IsDone());
 
         int aFaceCount = 0;
-        for (TopExp_Explorer aFaceExp = new(aResult, TopAbs_FACE); aFaceExp.More(); aFaceExp.Next())
+        for (Explorer aFaceExp = new(aResult, ShapeType.Face); aFaceExp.More(); aFaceExp.Next())
         {
             aFaceCount++;
         }
@@ -89,16 +94,16 @@ public class BRepFilletAPI_MakeFilletTests
     public void FilletVariableRadius()
     {
         BRepPrimAPI_MakeBox aBoxMaker = new(20.0, 20.0, 20.0);
-        TopoDS_Shape aBox = aBoxMaker.Shape();
+        Shape aBox = aBoxMaker.Shape();
         Assert.True(aBoxMaker.IsDone());
 
-        TopExp_Explorer anExp = new(aBox, TopAbs_EDGE);
+        Explorer anExp = new(aBox, ShapeType.Edge);
         Assert.True(anExp.More());
-        TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
+        Edge anEdge = ShapeCasts.Edge(anExp.Current());
 
         BRepFilletAPI_MakeFillet aFillet = new(aBox);
         aFillet.Add(1.0, 3.0, anEdge);
-        TopoDS_Shape aResult = aFillet.Shape();
+        Shape aResult = aFillet.Shape();
         Assert.True(aFillet.IsDone());
 
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
@@ -110,20 +115,20 @@ public class BRepFilletAPI_MakeFilletTests
     public void OCC570_MixedVariableConstantRadius()
     {
         BRepPrimAPI_MakeBox aBoxMaker = new(100.0, 100.0, 100.0);
-        TopoDS_Shape aBox = aBoxMaker.Shape();
+        Shape aBox = aBoxMaker.Shape();
 
         // Take the first wire of the box and its 4 edges
-        TopExp_Explorer aWireExp = new(aBox, TopAbs_WIRE);
+        Explorer aWireExp = new(aBox, ShapeType.Wire);
         Assert.True(aWireExp.More());
 
-        TopExp_Explorer anEdgeExp = new(aWireExp.Current(), TopAbs_EDGE);
-        TopoDS_Edge anE1 = TopoDS.Edge(anEdgeExp.Current());
+        Explorer anEdgeExp = new(aWireExp.Current(), ShapeType.Edge);
+        Edge anE1 = ShapeCasts.Edge(anEdgeExp.Current());
         anEdgeExp.Next();
-        TopoDS_Edge anE2 = TopoDS.Edge(anEdgeExp.Current());
+        Edge anE2 = ShapeCasts.Edge(anEdgeExp.Current());
         anEdgeExp.Next();
-        TopoDS_Edge anE3 = TopoDS.Edge(anEdgeExp.Current());
+        Edge anE3 = ShapeCasts.Edge(anEdgeExp.Current());
         anEdgeExp.Next();
-        TopoDS_Edge anE4 = TopoDS.Edge(anEdgeExp.Current());
+        Edge anE4 = ShapeCasts.Edge(anEdgeExp.Current());
 
         // Variable radius law: 4 (parameter, radius) control points
         NCollection_Array1<Point2D> aVarRadius = new(1, 4);
@@ -142,7 +147,7 @@ public class BRepFilletAPI_MakeFilletTests
         aFillet.Build();
         Assert.True(aFillet.IsDone(), "Fillet operation should succeed");
 
-        TopoDS_Shape aResult = aFillet.Shape();
+        Shape aResult = aFillet.Shape();
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid(), "Result shape should be valid");
         Assert.Equal(58500.0, Area(aResult), 58500.0 * 0.01);
     }
@@ -155,21 +160,21 @@ public class BRepFilletAPI_MakeFilletTests
         Point3D aPnt11 = new(-27.598139, -7.0408573, 0.0);
         Point3D aPnt12 = new(-28.483755, -17.487625, 0.0);
         Point3D aPnt13 = new(-19.555504, -22.983587, 0.0);
-        GC_MakeArcOfCircle anArc1 = new(aPnt11, aPnt12, aPnt13);
+        MakeArcOfCircle anArc1 = new(aPnt11, aPnt12, aPnt13);
 
         Point3D aPnt21 = new(12.125083, -22.983587, 0.0);
         Point3D aPnt22 = new(21.1572, -17.27554, 0.0);
         Point3D aPnt23 = new(19.878168, -6.6677585, 0.0);
-        GC_MakeArcOfCircle anArc2 = new(aPnt21, aPnt22, aPnt23);
+        MakeArcOfCircle anArc2 = new(aPnt21, aPnt22, aPnt23);
 
         Point3D aPnt31 = new(3.265825, 13.724955, 0.0);
         Point3D aPnt32 = new(-4.7233953, 17.406338, 0.0);
         Point3D aPnt33 = new(-12.529893, 13.351856, 0.0);
-        GC_MakeArcOfCircle anArc3 = new(aPnt31, aPnt32, aPnt33);
+        MakeArcOfCircle anArc3 = new(aPnt31, aPnt32, aPnt33);
 
-        GC_MakeSegment aSegment1 = new(aPnt13, aPnt21);
-        GC_MakeSegment aSegment2 = new(aPnt23, aPnt31);
-        GC_MakeSegment aSegment3 = new(aPnt33, aPnt11);
+        MakeSegment aSegment1 = new(aPnt13, aPnt21);
+        MakeSegment aSegment2 = new(aPnt23, aPnt31);
+        MakeSegment aSegment3 = new(aPnt33, aPnt11);
 
         BRepBuilderAPI_MakeWire aWireMaker = new();
         aWireMaker.Add(new BRepBuilderAPI_MakeEdge(anArc1.Value()).Edge());
@@ -180,26 +185,26 @@ public class BRepFilletAPI_MakeFilletTests
         aWireMaker.Add(new BRepBuilderAPI_MakeEdge(aSegment3.Value()).Edge());
         Assert.True(aWireMaker.IsDone());
 
-        TopoDS_Wire aWire = aWireMaker.Wire();
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aWire).Face();
-        Assert.False(aFace.IsNull());
+        Wire aWire = aWireMaker.Wire();
+        Face aFace = new BRepBuilderAPI_MakeFace(aWire).Face();
+        Assert.False(aFace.IsNull);
 
         const double aSlabThick = 111.0;
         BRepPrimAPI_MakePrism aSlab = new(aFace, new Vector3D(0, 0, aSlabThick), true);
         Assert.True(aSlab.IsDone());
-        TopoDS_Shape aSlabShape = aSlab.Shape();
+        Shape aSlabShape = aSlab.Shape();
         Assert.True(new BRepCheck_Analyzer(aSlabShape).IsValid(), "Prism shape should be valid");
 
-        List<TopoDS_Edge> anEdges = [];
-        for (TopExp_Explorer anExp = new(aSlabShape, TopAbs_EDGE); anExp.More(); anExp.Next())
+        List<Edge> anEdges = [];
+        for (Explorer anExp = new(aSlabShape, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            anEdges.Add(TopoDS.Edge(anExp.Current()));
+            anEdges.Add(ShapeCasts.Edge(anExp.Current()));
         }
         Assert.True(anEdges.Count >= 2, "Expected at least 2 edges in the prism");
 
         const double aTargetArea = 17816.2;
         const double aTargetTolerance = aTargetArea * 0.002;
-        TopoDS_Shape aResult = new();
+        Shape aResult = new();
         bool hasMatchingPair = false;
         double aBestArea = 0.0, aBestDelta = 1.0e100;
         int aBestEdgeIndex1 = 0, aBestEdgeIndex2 = 0;
@@ -222,8 +227,8 @@ public class BRepFilletAPI_MakeFilletTests
                     {
                         continue;
                     }
-                    TopoDS_Shape aCandidateResult = aFillet.Shape();
-                    if (aCandidateResult.IsNull() || !new BRepCheck_Analyzer(aCandidateResult).IsValid())
+                    Shape aCandidateResult = aFillet.Shape();
+                    if (aCandidateResult.IsNull || !new BRepCheck_Analyzer(aCandidateResult).IsValid())
                     {
                         continue;
                     }
@@ -259,7 +264,7 @@ public class BRepFilletAPI_MakeFilletTests
     // Helpers for OCC1077 test: boolean operations + fillet on each resulting solid
 
     // Apply fillet of given radius to all section edges of a boolean operation.
-    private static TopoDS_Shape occ1077BoolBl(BRepAlgoAPI_BooleanOperation theBoolOp, double theRadius)
+    private static Shape occ1077BoolBl(BRepAlgoAPI_BooleanOperation theBoolOp, double theRadius)
     {
         const double aTesp = 1.0e-4;
         const double aT3d = 1.0e-4;
@@ -269,23 +274,23 @@ public class BRepFilletAPI_MakeFilletTests
         const double aTappAngl = 1.0e-2;
         const Continuity aBlendCont = C1;
 
-        TopoDS_Shape aShapeCut = theBoolOp.Shape();
+        Shape aShapeCut = theBoolOp.Shape();
 
-        TopoDS_Compound aResult = new();
-        BRep_Builder aBuilder = new();
+        Compound aResult = new();
+        BrepBuilder aBuilder = new();
         aBuilder.MakeCompound(ref aResult);
 
-        for (TopExp_Explorer anExp = new(aShapeCut, TopAbs_SOLID); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(aShapeCut, ShapeType.Solid); anExp.More(); anExp.Next())
         {
-            TopoDS_Shape aSolid = anExp.Current();
+            Shape aSolid = anExp.Current();
 
             BRepFilletAPI_MakeFillet aFill = new(aSolid);
             aFill.SetParams(aTa, aTesp, aT2d, aT3d, aT2d, aFl);
             aFill.SetContinuity(aBlendCont, aTappAngl);
 
-            foreach (TopoDS_Shape anEdge in theBoolOp.SectionEdges())
+            foreach (Shape anEdge in theBoolOp.SectionEdges())
             {
-                aFill.Add(theRadius, TopoDS.Edge(anEdge));
+                aFill.Add(theRadius, ShapeCasts.Edge(anEdge));
             }
 
             aFill.Build();
@@ -302,7 +307,7 @@ public class BRepFilletAPI_MakeFilletTests
     }
 
     // Cut theShapeToCut with aTool and fillet the section edges with given radius.
-    private static TopoDS_Shape occ1077CutBlend(in TopoDS_Shape theShapeToCut, in TopoDS_Shape theTool, double theRadius)
+    private static Shape occ1077CutBlend(in Shape theShapeToCut, in Shape theTool, double theRadius)
     {
         BRepAlgoAPI_Cut aCut = new(theShapeToCut, theTool);
         return occ1077BoolBl(aCut, theRadius);
@@ -313,31 +318,31 @@ public class BRepFilletAPI_MakeFilletTests
     {
         // Build box-sphere common, then subtract 3 cylinders with fillets on section edges.
         // TCL reference: checkprops result -s 587.181; checkshape result
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, -5), 10, 10, 10).Shape();
-        TopoDS_Shape aSphere = new BRepPrimAPI_MakeSphere(7).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, -5), 10, 10, 10).Shape();
+        Shape aSphere = new BRepPrimAPI_MakeSphere(7).Shape();
 
-        TopoDS_Shape aCommon = new BRepAlgoAPI_Common(aBox, aSphere).Shape();
+        Shape aCommon = new BRepAlgoAPI_Common(aBox, aSphere).Shape();
 
-        TopoDS_Shape aCyl1 = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, 0, -10), new Direction3D(0, 0, 1)), 3, 20).Shape();
-        TopoDS_Shape aCyl2 = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(-10, 0, 0), new Direction3D(1, 0, 0)), 3, 20).Shape();
-        TopoDS_Shape aCyl3 = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, -10, 0), new Direction3D(0, 1, 0)), 3, 20).Shape();
+        Shape aCyl1 = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, 0, -10), new Direction3D(0, 0, 1)), 3, 20).Shape();
+        Shape aCyl2 = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(-10, 0, 0), new Direction3D(1, 0, 0)), 3, 20).Shape();
+        Shape aCyl3 = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, -10, 0), new Direction3D(0, 1, 0)), 3, 20).Shape();
 
-        TopoDS_Shape aTmp1 = occ1077CutBlend(aCommon, aCyl1, 0.7);
+        Shape aTmp1 = occ1077CutBlend(aCommon, aCyl1, 0.7);
         ShapeFix_Shape aFixer = new(aTmp1);
         aFixer.Perform();
         aTmp1 = aFixer.Shape();
 
-        TopoDS_Shape aTmp2 = occ1077CutBlend(aTmp1, aCyl2, 0.7);
+        Shape aTmp2 = occ1077CutBlend(aTmp1, aCyl2, 0.7);
         aFixer.Init(aTmp2);
         aFixer.Perform();
         aTmp2 = aFixer.Shape();
 
-        TopoDS_Shape aResult = occ1077CutBlend(aTmp2, aCyl3, 0.7);
+        Shape aResult = occ1077CutBlend(aTmp2, aCyl3, 0.7);
         aFixer.Init(aResult);
         aFixer.Perform();
         aResult = aFixer.Shape();
 
-        Assert.False(aResult.IsNull(), "Result shape must not be null");
+        Assert.False(aResult.IsNull, "Result shape must not be null");
         if (KnownReconstructionGaps.Contains("OCC1077"))
         {
             // unit 7R's reconstruction (the oracle: the fillet faces are native's): a face with a seam keeps the band the
@@ -362,9 +367,9 @@ public class BRepFilletAPI_MakeFilletTests
         aW1.Add(new Point3D(20, 0, 10));
         aW1.Add(new Point3D(10, 0, 10));
         aW1.Add(new Point3D(10, 0, 0));
-        TopoDS_Face aF1 = new BRepBuilderAPI_MakeFace(aW1.Wire(), false).Face();
+        Face aF1 = new BRepBuilderAPI_MakeFace(aW1.Wire(), false).Face();
         Axis3D aAxis1 = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
-        TopoDS_Shape aRs1 = new BRepPrimAPI_MakeRevol(aF1, aAxis1, 2.0 * Math.PI).Shape();
+        Shape aRs1 = new BRepPrimAPI_MakeRevol(aF1, aAxis1, 2.0 * Math.PI).Shape();
 
         // --- Solid 2: 270-degree ring at 45-degree radius offset, Z=[10..20] ---
         const double aF1Val = 7.0710678118654752440;
@@ -375,9 +380,9 @@ public class BRepFilletAPI_MakeFilletTests
         aW2.Add(new Point3D(aF2Val, aF2Val, 20));
         aW2.Add(new Point3D(aF1Val, aF1Val, 20));
         aW2.Add(new Point3D(aF1Val, aF1Val, 10));
-        TopoDS_Face aF2 = new BRepBuilderAPI_MakeFace(aW2.Wire(), false).Face();
+        Face aF2 = new BRepBuilderAPI_MakeFace(aW2.Wire(), false).Face();
         Axis3D aAxis2 = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
-        TopoDS_Shape aRs2 = new BRepPrimAPI_MakeRevol(aF2, aAxis2, 270.0 * Math.PI / 180.0).Shape();
+        Shape aRs2 = new BRepPrimAPI_MakeRevol(aF2, aAxis2, 270.0 * Math.PI / 180.0).Shape();
 
         // --- Solid 3: full 360-degree ring, Z=[20..30], R=[10..20] ---
         BRepBuilderAPI_MakePolygon aW3 = new();
@@ -386,9 +391,9 @@ public class BRepFilletAPI_MakeFilletTests
         aW3.Add(new Point3D(20, 0, 30));
         aW3.Add(new Point3D(10, 0, 30));
         aW3.Add(new Point3D(10, 0, 20));
-        TopoDS_Face aF3 = new BRepBuilderAPI_MakeFace(aW3.Wire(), false).Face();
+        Face aF3 = new BRepBuilderAPI_MakeFace(aW3.Wire(), false).Face();
         Axis3D aAxis3 = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
-        TopoDS_Shape aRs3 = new BRepPrimAPI_MakeRevol(aF3, aAxis3, 2.0 * Math.PI).Shape();
+        Shape aRs3 = new BRepPrimAPI_MakeRevol(aF3, aAxis3, 2.0 * Math.PI).Shape();
 
         Assert.True(new BRepCheck_Analyzer(aRs1).IsValid(), "rs1 must be valid");
         Assert.True(new BRepCheck_Analyzer(aRs2).IsValid(), "rs2 must be valid");
@@ -397,28 +402,28 @@ public class BRepFilletAPI_MakeFilletTests
         // --- Fuse all three solids ---
         BRepAlgoAPI_Fuse aFuse32 = new(aRs3, aRs2);
         Assert.True(aFuse32.IsDone(), "Fuse rs3+rs2 must succeed");
-        TopoDS_Shape aFuse32Shape = aFuse32.Shape();
+        Shape aFuse32Shape = aFuse32.Shape();
         Assert.True(new BRepCheck_Analyzer(aFuse32Shape).IsValid(), "fuse32 must be valid");
 
         BRepAlgoAPI_Fuse aFuse321 = new(aFuse32Shape, aRs1);
         Assert.True(aFuse321.IsDone(), "Fuse fuse32+rs1 must succeed");
-        TopoDS_Shape aFuse321Shape = aFuse321.Shape();
+        Shape aFuse321Shape = aFuse321.Shape();
         Assert.True(new BRepCheck_Analyzer(aFuse321Shape).IsValid(), "fuse321 must be valid");
 
         // --- Unify same-domain faces ---
         ShapeUpgrade_UnifySameDomain anUnify = new(aFuse321Shape, true, true, true);
         anUnify.Build();
-        TopoDS_Shape aFuseUnif = anUnify.Shape();
+        Shape aFuseUnif = anUnify.Shape();
 
         // --- Collect all unique edges and apply fillet of radius 1 ---
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anEdgeMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(aFuseUnif, TopAbs_EDGE, TopAbs_SOLID, anEdgeMap);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anEdgeMap = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aFuseUnif, ShapeType.Edge, ShapeType.Solid, anEdgeMap);
 
         BRepFilletAPI_MakeFillet aBlend = new(aFuseUnif, ChFi3d_Rational);
         for (int i = 1; i <= anEdgeMap.Extent(); i++)
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(anEdgeMap.FindKey(i));
-            if (!anEdge.IsNull())
+            Edge anEdge = ShapeCasts.Edge(anEdgeMap.FindKey(i));
+            if (!anEdge.IsNull)
             {
                 aBlend.Add(1.0, anEdge);
             }
@@ -435,8 +440,8 @@ public class BRepFilletAPI_MakeFilletTests
         }
 
         Assert.True(aBlend.IsDone(), "Fillet must be done");
-        TopoDS_Shape aResult = aBlend.Shape();
-        Assert.False(aResult.IsNull(), "Result shape must not be null");
+        Shape aResult = aBlend.Shape();
+        Assert.False(aResult.IsNull, "Result shape must not be null");
         if (KnownReconstructionGaps.Contains("OCC426"))
         {
             // unit 7R's reconstruction (the oracle: the fillet faces are native's): a face with a seam keeps the band the

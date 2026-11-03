@@ -5,7 +5,9 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -36,7 +38,7 @@ public sealed class ShapeAnalysis_WireVertex
     }
 
     /// <summary>Loads a wire (the precision argument is unused, as in OCCT).</summary>
-    public void Init(in TopoDS_Wire wire, double preci)
+    public void Init(in Wire wire, double preci)
     {
         Init(new ShapeExtend_WireData(wire), preci);
     }
@@ -62,7 +64,7 @@ public sealed class ShapeAnalysis_WireVertex
     }
 
     /// <summary>Loads a wire.</summary>
-    public void Load(in TopoDS_Wire wire)
+    public void Load(in Wire wire)
     {
         Init(wire, myPreci);
     }
@@ -96,14 +98,14 @@ public sealed class ShapeAnalysis_WireVertex
             stat = -1; // au depart
 
             j = (i == nb ? 1 : i + 1);
-            TopoDS_Vertex V1 = EA.LastVertex(myWire!.Edge(i));
-            TopoDS_Vertex V2 = EA.FirstVertex(myWire.Edge(j));
-            Point3D PV1 = BRep_Tool.Pnt(V1);
-            Point3D PV2 = BRep_Tool.Pnt(V2);
-            double tol1 = BRep_Tool.Tolerance(V1);
-            double tol2 = BRep_Tool.Tolerance(V2);
-            EA.Curve3d(myWire.Edge(i), out Geom_Curve? c1, out double cf, out double upre);
-            EA.Curve3d(myWire.Edge(j), out Geom_Curve? c2, out double ufol, out double cl);
+            Vertex V1 = EA.LastVertex(myWire!.Edge(i));
+            Vertex V2 = EA.FirstVertex(myWire.Edge(j));
+            Point3D PV1 = Tool.Pnt(V1);
+            Point3D PV2 = Tool.Pnt(V2);
+            double tol1 = Tool.Tolerance(V1);
+            double tol2 = Tool.Tolerance(V2);
+            EA.Curve3d(myWire.Edge(i), out Curve3D? c1, out double cf, out double upre);
+            EA.Curve3d(myWire.Edge(j), out Curve3D? c2, out double ufol, out double cl);
             if (c1 is null || c2 is null)
             {
                 continue; // on ne peut rien faire ...

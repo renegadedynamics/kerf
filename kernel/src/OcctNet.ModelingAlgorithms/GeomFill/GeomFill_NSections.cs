@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.CurveKind;
@@ -27,22 +29,22 @@ public class GeomFill_NSections : GeomFill_SectionLaw
     private double ULast;
     private double VFirst;
     private double VLast;
-    private readonly NCollection_Sequence<Geom_Curve> mySections = new();
+    private readonly NCollection_Sequence<Curve3D> mySections = new();
     private readonly NCollection_Sequence<Transform3D> myTrsfs = new();
     private readonly NCollection_Sequence<double> myParams = new();
-    private Geom_BSplineSurface? mySurface;
-    private Geom_BSplineSurface? myRefSurf;
+    private BSplineSurface? mySurface;
+    private BSplineSurface? myRefSurf;
 
     // fonction d'evaluation des poles et des poids de mySurface pour D1 et D2
-    private static void ResultEval(Geom_BSplineSurface surf, double V, int deriv, NCollection_Array1<double> Result)
+    private static void ResultEval(BSplineSurface surf, double V, int deriv, NCollection_Array1<double> Result)
     {
-        bool rational = surf.IsVRational();
+        bool rational = surf.IsVRational;
         int gap = 3;
         if (rational)
         {
             gap++;
         }
-        int Cdeg = surf.VDegree(), Cdim = surf.NbUPoles() * gap, NbP = surf.NbVPoles();
+        int Cdeg = surf.VDegree(), Cdim = surf.UPoleCount * gap, NbP = surf.VPoleCount;
 
         //  les noeuds plats
         NCollection_Array1<double> FKnots = surf.InternalVKnotSequence();
@@ -53,7 +55,7 @@ public class GeomFill_NSections : GeomFill_SectionLaw
         int ii, jj, ipole = 1;
         for (jj = 1; jj <= NbP; jj++)
         {
-            for (ii = 1; ii <= surf.NbUPoles(); ii++)
+            for (ii = 1; ii <= surf.UPoleCount; ii++)
             {
                 SPoles[ipole] = surf.Pole(ii, jj).X();
                 SPoles[ipole + 1] = surf.Pole(ii, jj).Y();
@@ -82,7 +84,7 @@ public class GeomFill_NSections : GeomFill_SectionLaw
     }
 
     /// <summary>The law through the sections NC, with u in [0, 1] and v in [0, 1].</summary>
-    public GeomFill_NSections(NCollection_Sequence<Geom_Curve> NC)
+    public GeomFill_NSections(NCollection_Sequence<Curve3D> NC)
     {
         mySections.Assign(NC);
         UFirst = 0.0;
@@ -94,7 +96,7 @@ public class GeomFill_NSections : GeomFill_SectionLaw
     }
 
     /// <summary>The law through the sections NC at the parameters NP.</summary>
-    public GeomFill_NSections(NCollection_Sequence<Geom_Curve> NC, NCollection_Sequence<double> NP)
+    public GeomFill_NSections(NCollection_Sequence<Curve3D> NC, NCollection_Sequence<double> NP)
     {
         mySections.Assign(NC);
         myParams.Assign(NP);
@@ -107,7 +109,7 @@ public class GeomFill_NSections : GeomFill_SectionLaw
     }
 
     /// <summary>The law through the sections NC at the parameters NP, with u in [theUF, theUL].</summary>
-    public GeomFill_NSections(NCollection_Sequence<Geom_Curve> theNC, NCollection_Sequence<double> theNP,
+    public GeomFill_NSections(NCollection_Sequence<Curve3D> theNC, NCollection_Sequence<double> theNP,
                               double theUF, double theUL)
     {
         mySections.Assign(theNC);
@@ -121,7 +123,7 @@ public class GeomFill_NSections : GeomFill_SectionLaw
     }
 
     /// <summary>The law through the sections NC at the parameters NP, with u in [UF, UL] and v in [VF, VL].</summary>
-    public GeomFill_NSections(NCollection_Sequence<Geom_Curve> NC, NCollection_Sequence<double> NP, double UF,
+    public GeomFill_NSections(NCollection_Sequence<Curve3D> NC, NCollection_Sequence<double> NP, double UF,
                               double UL, double VF, double VL)
     {
         mySections.Assign(NC);
@@ -138,9 +140,9 @@ public class GeomFill_NSections : GeomFill_SectionLaw
     /// The law through the sections NC placed by Trsfs at the parameters NP, cut from the reference surface Surf
     /// (u in [UF, UL], v in [VF, VL]).
     /// </summary>
-    public GeomFill_NSections(NCollection_Sequence<Geom_Curve> NC, NCollection_Sequence<Transform3D> Trsfs,
+    public GeomFill_NSections(NCollection_Sequence<Curve3D> NC, NCollection_Sequence<Transform3D> Trsfs,
                               NCollection_Sequence<double> NP, double UF, double UL, double VF, double VL,
-                              Geom_BSplineSurface? Surf)
+                              BSplineSurface? Surf)
     {
         mySections.Assign(NC);
         myTrsfs.Assign(Trsfs);
@@ -161,7 +163,7 @@ public class GeomFill_NSections : GeomFill_SectionLaw
         }
         else
         {
-            Geom_BSplineCurve Curve = (Geom_BSplineCurve)mySurface.VIso(V, false);
+            BSplineCurve3D Curve = (BSplineCurve3D)mySurface.VIso(V, false);
             NCollection_Array1<Point3D> poles = Curve.InternalPoles();
             NCollection_Array1<double> weights = Curve.InternalWeightsArray();
             int ii, L = Poles.Length();
@@ -189,23 +191,23 @@ public class GeomFill_NSections : GeomFill_SectionLaw
         }
 
         int L = Poles.Length(), derivative_request = 1;
-        bool rational = mySurface.IsVRational();
+        bool rational = mySurface.IsVRational;
         int gap = 3;
         if (rational)
         {
             gap++;
         }
 
-        int dimResult = mySurface.NbUPoles() * gap;
-        Geom_BSplineSurface? surf_deper = null;
-        if (mySurface.IsVPeriodic())
+        int dimResult = mySurface.UPoleCount * gap;
+        BSplineSurface? surf_deper = null;
+        if (mySurface.IsVPeriodic)
         {
-            surf_deper = (Geom_BSplineSurface)mySurface.Copy();
+            surf_deper = (BSplineSurface)mySurface.Copy();
             surf_deper.SetVNotPeriodic();
-            dimResult = surf_deper.NbUPoles() * gap;
+            dimResult = surf_deper.UPoleCount * gap;
         }
         NCollection_Array1<double> Result = new(1, dimResult);
-        if (mySurface.IsVPeriodic())
+        if (mySurface.IsVPeriodic)
         {
             ResultEval(surf_deper!, V, derivative_request, Result);
         }
@@ -270,23 +272,23 @@ public class GeomFill_NSections : GeomFill_SectionLaw
         }
 
         int L = Poles.Length(), derivative_request = 2;
-        bool rational = mySurface.IsVRational();
+        bool rational = mySurface.IsVRational;
         int gap = 3;
         if (rational)
         {
             gap++;
         }
 
-        int dimResult = mySurface.NbUPoles() * gap;
-        Geom_BSplineSurface? surf_deper = null;
-        if (mySurface.IsVPeriodic())
+        int dimResult = mySurface.UPoleCount * gap;
+        BSplineSurface? surf_deper = null;
+        if (mySurface.IsVPeriodic)
         {
-            surf_deper = (Geom_BSplineSurface)mySurface.Copy();
+            surf_deper = (BSplineSurface)mySurface.Copy();
             surf_deper.SetVNotPeriodic();
-            dimResult = surf_deper.NbUPoles() * gap;
+            dimResult = surf_deper.UPoleCount * gap;
         }
         NCollection_Array1<double> Result = new(1, dimResult);
-        if (mySurface.IsVPeriodic())
+        if (mySurface.IsVPeriodic)
         {
             ResultEval(surf_deper!, V, derivative_request, Result);
         }
@@ -331,17 +333,17 @@ public class GeomFill_NSections : GeomFill_SectionLaw
     }
 
     /// <summary>The law's surface (frozen), null if it couldn't be built (fewer than two sections).</summary>
-    public override Geom_BSplineSurface? BSplineSurface()
+    public override BSplineSurface? BSplineSurface()
     {
         mySurface?.Freeze();
         return mySurface;
     }
 
     /// <summary>The law's surface, not frozen, for ported callers.</summary>
-    internal Geom_BSplineSurface? InternalBSplineSurface() => mySurface;
+    internal BSplineSurface? InternalBSplineSurface() => mySurface;
 
     /// <summary>Sets the reference surface used by the next <see cref="ComputeSurface"/>.</summary>
-    public void SetSurface(Geom_BSplineSurface? RefSurf)
+    public void SetSurface(BSplineSurface? RefSurf)
     {
         myRefSurf = RefSurf;
     }
@@ -349,7 +351,7 @@ public class GeomFill_NSections : GeomFill_SectionLaw
     /// <summary>Builds the law's surface: approximated through the sections, or cut from the reference surface.</summary>
     public void ComputeSurface()
     {
-        Geom_BSplineSurface BS;
+        BSplineSurface BS;
         if (myRefSurf is null)
         {
             double myPres3d = 1.0e-06;
@@ -366,19 +368,19 @@ public class GeomFill_NSections : GeomFill_SectionLaw
             for (j = jdeb; j <= jfin; j++)
             {
                 // read the j-th curve
-                Geom_Curve curv = mySections[j];
+                Curve3D curv = mySections[j];
 
                 // transformation to BSpline reparametrized to [UFirst,ULast]
-                Geom_BSplineCurve? curvBS = curv as Geom_BSplineCurve;
+                BSplineCurve3D? curvBS = curv as BSplineCurve3D;
                 if (curvBS is null)
                 {
-                    curvBS = GeomConvert.CurveToBSplineCurve(curv, QuasiAngular);
+                    curvBS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(curv, QuasiAngular);
                 }
                 else
                 {
                     // OCCT reparametrises the caller's curve in place; the port reparametrises a copy and keeps it in
                     // its own sequence, as OCCT's sequence then holds the reparametrised curve (decisions.md).
-                    curvBS = (Geom_BSplineCurve)curvBS.Copy();
+                    curvBS = (BSplineCurve3D)curvBS.Copy();
                     mySections[j] = curvBS;
                 }
 
@@ -410,7 +412,7 @@ public class GeomFill_NSections : GeomFill_SectionLaw
             bool SpApprox = true;
             anApprox.Perform(line, section, SpApprox);
 
-            BS = new Geom_BSplineSurface(anApprox.SurfPoles(),
+            BS = new BSplineSurface(anApprox.SurfPoles(),
                                          anApprox.SurfWeights(),
                                          anApprox.SurfUKnots(),
                                          anApprox.SurfVKnots(),
@@ -425,7 +427,7 @@ public class GeomFill_NSections : GeomFill_SectionLaw
         {
             // segmentation de myRefSurf
             double Ui1, Ui2, V0, V1;
-            BS = (Geom_BSplineSurface)myRefSurf.Copy();
+            BS = (BSplineSurface)myRefSurf.Copy();
             Ui1 = UFirst;
             Ui2 = ULast;
             int i1, i2;
@@ -468,8 +470,8 @@ public class GeomFill_NSections : GeomFill_SectionLaw
             return;
         }
 
-        NbPoles = mySurface.NbUPoles();
-        NbKnots = mySurface.NbUKnots();
+        NbPoles = mySurface.UPoleCount;
+        NbKnots = mySurface.UKnotCount;
         Degree = mySurface.UDegree();
     }
 
@@ -493,7 +495,7 @@ public class GeomFill_NSections : GeomFill_SectionLaw
     {
         if (mySurface is not null)
         {
-            return mySurface.IsURational();
+            return mySurface.IsURational;
         }
 
         return false;
@@ -503,7 +505,7 @@ public class GeomFill_NSections : GeomFill_SectionLaw
     {
         if (mySurface is not null)
         {
-            return mySurface.IsUPeriodic();
+            return mySurface.IsUPeriodic;
         }
 
         return false;
@@ -513,7 +515,7 @@ public class GeomFill_NSections : GeomFill_SectionLaw
     {
         if (mySurface is not null)
         {
-            return mySurface.IsVPeriodic();
+            return mySurface.IsVPeriodic;
         }
 
         return false;
@@ -526,7 +528,7 @@ public class GeomFill_NSections : GeomFill_SectionLaw
             return 0;
         }
 
-        GeomAdaptor_Surface AdS = new GeomAdaptor_Surface(mySurface);
+        SurfaceAdaptor AdS = new SurfaceAdaptor(mySurface);
         return AdS.NbVIntervals(S);
     }
 
@@ -537,7 +539,7 @@ public class GeomFill_NSections : GeomFill_SectionLaw
             return;
         }
 
-        GeomAdaptor_Surface AdS = new GeomAdaptor_Surface(mySurface);
+        SurfaceAdaptor AdS = new SurfaceAdaptor(mySurface);
         AdS.VIntervals(T, S);
     }
 
@@ -604,8 +606,8 @@ public class GeomFill_NSections : GeomFill_SectionLaw
         int ii;
         for (ii = 1; ii <= mySections.Length(); ii++)
         {
-            GeomAdaptor_Curve AC = new GeomAdaptor_Curve(mySections[ii]);
-            L = GCPnts_AbscissaPoint.Length(AC);
+            CurveAdaptor AC = new CurveAdaptor(mySections[ii]);
+            L = AbscissaPoint.Length(AC);
             if (L > Lmax)
             {
                 Lmax = L;
@@ -621,9 +623,9 @@ public class GeomFill_NSections : GeomFill_SectionLaw
             return;
         }
 
-        if (mySurface.IsURational())
+        if (mySurface.IsURational)
         {
-            int NbU = mySurface.NbUPoles(), NbV = mySurface.NbVPoles();
+            int NbU = mySurface.UPoleCount, NbV = mySurface.VPoleCount;
             NCollection_Array2<double>? aWSurfPtr = mySurface.InternalWeights();
             if (aWSurfPtr is null)
             {
@@ -659,9 +661,9 @@ public class GeomFill_NSections : GeomFill_SectionLaw
 
         if (isconst)
         {
-            GeomAdaptor_Curve AC1 = new GeomAdaptor_Curve(mySections[1]);
+            CurveAdaptor AC1 = new CurveAdaptor(mySections[1]);
             CurveKind CType = AC1.GetType();
-            GeomAdaptor_Curve AC2 = new GeomAdaptor_Curve(mySections[2]);
+            CurveAdaptor AC2 = new CurveAdaptor(mySections[2]);
             // les sections doivent avoir le meme type
             isconst = (AC2.GetType() == CType);
 
@@ -711,12 +713,12 @@ public class GeomFill_NSections : GeomFill_SectionLaw
     }
 
     /// <summary>A new copy of the first section.</summary>
-    public override Geom_Curve ConstantSection()
+    public override Curve3D ConstantSection()
     {
         //  double Err;
         //  if (!IsConstant(Err)) throw StdFail_NotDone("The Law is not Constant!");
-        Geom_Curve C;
-        C = (Geom_Curve)mySections[1].Copy();
+        Curve3D C;
+        C = (Curve3D)mySections[1].Copy();
         return C;
     }
 
@@ -726,8 +728,8 @@ public class GeomFill_NSections : GeomFill_SectionLaw
         double Err = 0.0;
         if (isconic)
         {
-            GeomAdaptor_Curve AC1 = new GeomAdaptor_Curve(mySections[1]);
-            GeomAdaptor_Curve AC2 = new GeomAdaptor_Curve(mySections[2]);
+            CurveAdaptor AC1 = new CurveAdaptor(mySections[1]);
+            CurveAdaptor AC2 = new CurveAdaptor(mySections[2]);
             isconic = (AC1.GetType() == Circle) && (AC2.GetType() == Circle);
             if (isconic)
             {
@@ -767,7 +769,7 @@ public class GeomFill_NSections : GeomFill_SectionLaw
     }
 
     /// <summary>The circle section at V (new geometry); throws StdFail_NotDone if the law is not conical.</summary>
-    public override Geom_Curve CirclSection(double V)
+    public override Curve3D CirclSection(double V)
     {
         double Err = 0;
         if (!IsConicalLaw(ref Err))
@@ -775,8 +777,8 @@ public class GeomFill_NSections : GeomFill_SectionLaw
             throw new NotDoneException("The Law is not Conical!");
         }
 
-        GeomAdaptor_Curve AC1 = new GeomAdaptor_Curve(mySections[1]);
-        GeomAdaptor_Curve AC2 = new GeomAdaptor_Curve(mySections[mySections.Length()]);
+        CurveAdaptor AC1 = new CurveAdaptor(mySections[1]);
+        CurveAdaptor AC2 = new CurveAdaptor(mySections[mySections.Length()]);
         Circle3D C1 = AC1.Circle();
         Circle3D C2 = AC2.Circle();
 
@@ -784,15 +786,15 @@ public class GeomFill_NSections : GeomFill_SectionLaw
         double radius = (C2.Radius() - C1.Radius()) * (V - p1) / (p2 - p1) + C1.Radius();
 
         C1.SetRadius(radius);
-        Geom_Curve C = new Geom_Circle(C1);
+        Curve3D C = new CircleCurve3D(C1);
 
         double aParF = AC1.FirstParameter();
         double aParL = AC1.LastParameter();
-        double aPeriod = AC1.IsPeriodic() ? AC1.Period() : 0.0;
+        double aPeriod = AC1.IsPeriodic ? AC1.Period() : 0.0;
 
         if ((aPeriod == 0.0) || (Math.Abs(aParL - aParF - aPeriod) > global::Kerf.Engine.Foundation.Precision.PConfusion()))
         {
-            Geom_Curve Cbis = new Geom_TrimmedCurve(C, aParF, aParL);
+            Curve3D Cbis = new TrimmedCurve3D(C, aParF, aParL);
             C = Cbis;
         }
         return C;

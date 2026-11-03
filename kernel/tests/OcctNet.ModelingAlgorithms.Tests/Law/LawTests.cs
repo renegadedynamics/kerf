@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -95,7 +96,7 @@ public class LawTests
         aPoles[1] = new Point3D(0, 0, 0);
         aPoles[2] = new Point3D(0.5, 0, 0);
         aPoles[3] = new Point3D(1, 1, 0);
-        var aCurve = new GeomAdaptor_Curve(new Geom_BezierCurve(aPoles));
+        var aCurve = new CurveAdaptor(new BezierCurve3D(aPoles));
         Law_BSpline aLaw = Law.Reparametrize(aCurve, 0.0, 1.0, false, false, 0.0, 0.0, false, 21);
         Assert.False(aLaw.IsFrozen);
         Assert.Equal(0.0, aLaw.Value(0.0), 1.0e-12);

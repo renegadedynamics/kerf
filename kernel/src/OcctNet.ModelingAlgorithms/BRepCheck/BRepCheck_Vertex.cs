@@ -3,11 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.BRepCheck_Status;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -18,7 +20,7 @@ namespace Occt;
 public class BRepCheck_Vertex : BRepCheck_Result
 {
     /// <summary>Checks the vertex on its own (<see cref="Minimum"/>).</summary>
-    public BRepCheck_Vertex(in TopoDS_Vertex V)
+    public BRepCheck_Vertex(in Vertex V)
     {
         Init(V);
     }
@@ -40,7 +42,7 @@ public class BRepCheck_Vertex : BRepCheck_Result
     /// Checks the vertex in an edge (its point on each curve representation of the edge) or a face (its point on the
     /// surface), within the larger of the two tolerances.
     /// </summary>
-    public override void InContext(in TopoDS_Shape S)
+    public override void InContext(in Shape S)
     {
         NCollection_List<BRepCheck_Status> aHList;
         {
@@ -71,7 +73,7 @@ public class BRepCheck_Vertex : BRepCheck_Result
 
         NCollection_List<BRepCheck_Status> lst = aHList;
 
-        var exp = new TopExp_Explorer(S, TopAbs_VERTEX);
+        var exp = new Explorer(S, ShapeType.Vertex);
         for (; exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(myShape))
@@ -86,41 +88,41 @@ public class BRepCheck_Vertex : BRepCheck_Result
             return; // leaves
         }
 
-        var TV = (BRep_TVertex)myShape.TShape()!;
+        var TV = (BrepTVertex)myShape.TShape()!;
         Point3D prep = TV.Pnt();
         Point3D Controlp;
 
-        TopAbs_ShapeEnum styp = S.ShapeType();
+        ShapeType styp = S.ShapeType();
         switch (styp)
         {
-            case TopAbs_EDGE:
+            case ShapeType.Edge:
             {
                 // Try to find the vertex on the edge
-                TopoDS_Edge E = TopoDS.Edge(S);
-                var itv = new TopoDS_Iterator(E.Oriented(TopAbs_FORWARD));
-                TopoDS_Vertex VFind = new();
+                Edge E = ShapeCasts.Edge(S);
+                var itv = new Iterator(E.Oriented(Forward));
+                Vertex VFind = new();
                 bool multiple = false;
                 while (itv.More())
                 {
-                    TopoDS_Vertex VF = TopoDS.Vertex(itv.Value());
+                    Vertex VF = ShapeCasts.Vertex(itv.Value());
                     if (itv.Value().IsSame(myShape))
                     {
-                        if (VFind.IsNull())
+                        if (VFind.IsNull)
                         {
                             VFind = VF;
                         }
                         else
                         {
-                            if ((VFind.Orientation() == TopAbs_FORWARD && VF.Orientation() == TopAbs_REVERSED)
-                                || (VFind.Orientation() == TopAbs_REVERSED && VF.Orientation() == TopAbs_FORWARD))
+                            if ((VFind.Orientation() == Forward && VF.Orientation() == Reversed)
+                                || (VFind.Orientation() == Reversed && VF.Orientation() == Forward))
                             {
                                 // the vertex on the edge is at once F and R
                                 multiple = true;
                             }
 
-                            if (VFind.Orientation() != TopAbs_FORWARD && VFind.Orientation() != TopAbs_REVERSED)
+                            if (VFind.Orientation() != Forward && VFind.Orientation() != Reversed)
                             {
-                                if (VF.Orientation() == TopAbs_FORWARD || VF.Orientation() == TopAbs_REVERSED)
+                                if (VF.Orientation() == Forward || VF.Orientation() == Reversed)
                                 {
                                     VFind = VF;
                                 }
@@ -132,33 +134,33 @@ public class BRepCheck_Vertex : BRepCheck_Result
                 }
 
                 // VFind is not null for sure
-                TopAbs_Orientation orv = VFind.Orientation();
+                Orientation orv = VFind.Orientation();
 
-                double Tol = BRep_Tool.Tolerance(TopoDS.Vertex(myShape));
-                Tol = Max(Tol, BRep_Tool.Tolerance(E)); // to check
+                double Tol = Tool.Tolerance(ShapeCasts.Vertex(myShape));
+                Tol = Max(Tol, Tool.Tolerance(E)); // to check
                 Tol *= Tol;
 
-                var TE = (BRep_TEdge)E.TShape()!;
-                var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(TE.Curves());
+                var TE = (BrepTEdge)E.TShape()!;
+                var itcr = new NCollection_List<CurveRepresentation>.Iterator(TE.Curves());
                 Placement Eloc = E.Location();
 
-                var itpr = new NCollection_List<BRep_PointRepresentation>.Iterator();
+                var itpr = new NCollection_List<PointRepresentation>.Iterator();
                 while (itcr.More())
                 {
                     // For each CurveRepresentation, the provided parameter is checked
-                    BRep_CurveRepresentation cr = itcr.Value();
+                    CurveRepresentation cr = itcr.Value();
                     Placement loc = cr.Location();
                     Placement L = (Eloc * loc).Predivided(myShape.Location());
 
-                    if (cr.IsCurve3D())
+                    if (cr.IsCurve3D)
                     {
-                        Geom_Curve? C = cr.Curve3D();
+                        Curve3D? C = cr.Curve3D();
                         if (C is not null) // edge non degenerated
                         {
                             itpr.Initialize(TV.Points());
                             while (itpr.More())
                             {
-                                BRep_PointRepresentation pr = itpr.Value();
+                                PointRepresentation pr = itpr.Value();
                                 if (pr.IsPointOnCurve(C, L))
                                 {
                                     Controlp = C.Value(pr.Parameter());
@@ -172,10 +174,10 @@ public class BRepCheck_Vertex : BRepCheck_Result
                                 itpr.Next();
                             }
 
-                            if (orv == TopAbs_FORWARD || orv == TopAbs_REVERSED)
+                            if (orv == Forward || orv == Reversed)
                             {
-                                var GC = (BRep_GCurve)cr;
-                                if (orv == TopAbs_FORWARD || multiple)
+                                var GC = (GCurve)cr;
+                                if (orv == Forward || multiple)
                                 {
                                     Controlp = C.Value(GC.First());
                                     Controlp.Transform(L.Transformation());
@@ -185,7 +187,7 @@ public class BRepCheck_Vertex : BRepCheck_Result
                                     }
                                 }
 
-                                if (orv == TopAbs_REVERSED || multiple)
+                                if (orv == Reversed || multiple)
                                 {
                                     Controlp = C.Value(GC.Last());
                                     Controlp.Transform(L.Transformation());
@@ -199,10 +201,10 @@ public class BRepCheck_Vertex : BRepCheck_Result
                     }
                     else if (cr.IsCurveOnSurface())
                     {
-                        Geom_Surface Su = cr.Surface()!;
-                        Geom2d_Curve PC = cr.PCurve()!;
-                        Geom2d_Curve? PC2 = null;
-                        if (cr.IsCurveOnClosedSurface())
+                        Surface Su = cr.Surface()!;
+                        Curve2D PC = cr.PCurve()!;
+                        Curve2D? PC2 = null;
+                        if (cr.IsCurveOnClosedSurface)
                         {
                             PC2 = cr.PCurve2();
                         }
@@ -210,7 +212,7 @@ public class BRepCheck_Vertex : BRepCheck_Result
                         itpr.Initialize(TV.Points());
                         while (itpr.More())
                         {
-                            BRep_PointRepresentation pr = itpr.Value();
+                            PointRepresentation pr = itpr.Value();
                             if (pr.IsPointOnCurveOnSurface(PC, Su, L))
                             {
                                 Point2D p2d = PC.Value(pr.Parameter());
@@ -247,22 +249,22 @@ public class BRepCheck_Vertex : BRepCheck_Result
 
                 break;
             }
-            case TopAbs_FACE:
+            case ShapeType.Face:
             {
-                var TF = (BRep_TFace)S.TShape()!;
+                var TF = (BrepTFace)S.TShape()!;
                 Placement Floc = S.Location();
                 Placement TFloc = TF.Location();
-                Geom_Surface? Su = TF.Surface();
+                Surface? Su = TF.Surface();
                 Placement L = (Floc * TFloc).Predivided(myShape.Location());
 
-                double Tol = BRep_Tool.Tolerance(TopoDS.Vertex(myShape));
-                Tol = Max(Tol, BRep_Tool.Tolerance(TopoDS.Face(S))); // to check
+                double Tol = Tool.Tolerance(ShapeCasts.Vertex(myShape));
+                Tol = Max(Tol, Tool.Tolerance(ShapeCasts.Face(S))); // to check
                 Tol *= Tol;
 
-                var itpr = new NCollection_List<BRep_PointRepresentation>.Iterator(TV.Points());
+                var itpr = new NCollection_List<PointRepresentation>.Iterator(TV.Points());
                 while (itpr.More())
                 {
-                    BRep_PointRepresentation pr = itpr.Value();
+                    PointRepresentation pr = itpr.Value();
                     if (pr.IsPointOnSurface(Su, L))
                     {
                         Controlp = Su!.Value(pr.Parameter(), pr.Parameter2());
@@ -308,17 +310,17 @@ public class BRepCheck_Vertex : BRepCheck_Result
     public double Tolerance()
     {
         // Check all the representations  of the vertex. (i-e checks the TVertex
-        var TV = (BRep_TVertex)myShape.TShape()!;
+        var TV = (BrepTVertex)myShape.TShape()!;
         Point3D prep = TV.Pnt();
-        double Tol = BRep_Tool.Tolerance(TopoDS.Vertex(myShape));
+        double Tol = Tool.Tolerance(ShapeCasts.Vertex(myShape));
         Tol *= Tol;
 
         Point3D Controlp;
         Controlp = prep;
-        var itpr = new NCollection_List<BRep_PointRepresentation>.Iterator(TV.Points());
+        var itpr = new NCollection_List<PointRepresentation>.Iterator(TV.Points());
         while (itpr.More())
         {
-            BRep_PointRepresentation pr = itpr.Value();
+            PointRepresentation pr = itpr.Value();
             Placement loc = pr.Location();
             if (pr.IsPointOnCurve())
             {

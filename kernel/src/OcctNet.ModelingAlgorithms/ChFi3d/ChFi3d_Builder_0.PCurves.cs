@@ -2,8 +2,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Projection;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
@@ -24,8 +27,8 @@ internal static partial class ChFi3d_Builder_0
                                           ChFiDS_SurfData fd2, double pref2, ref double p2, int jf2, int sens2,
                                           in Point2D RefP2d, bool Check2dDistance = false, bool enlarge = false)
     {
-        Geom2dAdaptor_Curve C1 = new();
-        Geom2dAdaptor_Curve C2 = new();
+        CurveAdaptor2D C1 = new();
+        CurveAdaptor2D C2 = new();
         // pcurves are enlarged to be sure that there is intersection
         // additionally all periodic curves are taken and points on
         // them are filtered using a specific criterion.
@@ -41,15 +44,15 @@ internal static partial class ChFi3d_Builder_0
         {
             delta = Math.Min(0.1, 0.05 * (last - first));
         }
-        Geom2d_Curve? pcf1 = fd1.Interference(jf1).PCurveOnFace();
+        Curve2D? pcf1 = fd1.Interference(jf1).PCurveOnFace();
         if (pcf1 is null)
         {
             return false;
         }
-        bool isper1 = pcf1.IsPeriodic();
+        bool isper1 = pcf1.IsPeriodic;
         if (isper1)
         {
-            if (pcf1 is Geom2d_TrimmedCurve tr1)
+            if (pcf1 is TrimmedCurve2D tr1)
             {
                 pcf1 = tr1.BasisCurve();
             }
@@ -71,15 +74,15 @@ internal static partial class ChFi3d_Builder_0
         {
             delta = Math.Min(0.1, 0.05 * (last - first));
         }
-        Geom2d_Curve? pcf2 = fd2.Interference(jf2).PCurveOnFace();
+        Curve2D? pcf2 = fd2.Interference(jf2).PCurveOnFace();
         if (pcf2 is null)
         {
             return false;
         }
-        bool isper2 = pcf2.IsPeriodic();
+        bool isper2 = pcf2.IsPeriodic;
         if (isper2)
         {
-            if (pcf2 is Geom2d_TrimmedCurve tr2)
+            if (pcf2 is TrimmedCurve2D tr2)
             {
                 pcf2 = tr2.BasisCurve();
             }
@@ -233,7 +236,7 @@ internal static partial class ChFi3d_Builder_0
     /// reparametrizes it on [<paramref name="Uf"/>, <paramref name="Ul"/>].</summary>
     /// <remarks>OCCT segments the B-spline in place; a frozen one (an intersection's result) is segmented on a copy
     /// (decision 1088).</remarks>
-    internal static void ChFi3d_ReparamPcurv(double Uf, double Ul, ref Geom2d_Curve? Pcurv)
+    internal static void ChFi3d_ReparamPcurv(double Uf, double Ul, ref Curve2D? Pcurv)
     {
         if (Pcurv is null)
         {
@@ -241,12 +244,12 @@ internal static partial class ChFi3d_Builder_0
         }
         double upcf = Pcurv.FirstParameter();
         double upcl = Pcurv.LastParameter();
-        Geom2d_Curve basis = Pcurv;
-        if (Pcurv is Geom2d_TrimmedCurve trpc)
+        Curve2D basis = Pcurv;
+        if (Pcurv is TrimmedCurve2D trpc)
         {
             basis = trpc.BasisCurve();
         }
-        if (basis is not Geom2d_BSplineCurve pc)
+        if (basis is not BSplineCurve2D pc)
         {
             return;
         }
@@ -264,7 +267,7 @@ internal static partial class ChFi3d_Builder_0
             NCollection_Array1<int> mu = pc.InternalMultiplicities();
             int deg = pc.Degree();
             global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(Uf, Ul, kn);
-            pc = new Geom2d_BSplineCurve(pol, kn, mu, deg);
+            pc = new BSplineCurve2D(pol, kn, mu, deg);
         }
         Pcurv = pc;
     }
@@ -278,38 +281,38 @@ internal static partial class ChFi3d_Builder_0
     /// <summary>The projection of <paramref name="HCg"/> on <paramref name="HSg"/> (not a Bézier or B-spline
     /// surface: <paramref name="Pcurv"/> and <paramref name="tolreached"/> are then left unchanged).</summary>
     /// <exception cref="MethodNotImplementedException">The projection is not a conic, a Bézier or a B-spline.</exception>
-    internal static void ChFi3d_ProjectPCurv(Adaptor3d_Curve HCg, Adaptor3d_Surface HSg, ref Geom2d_Curve? Pcurv,
+    internal static void ChFi3d_ProjectPCurv(CurveAdaptorBase HCg, SurfaceAdaptorBase HSg, ref Curve2D? Pcurv,
                                              double tol, ref double tolreached)
     {
-        if (HSg.GetType() != BezierSurface && HSg.GetType() != BSplineSurface)
+        if (HSg.GetType() != SurfaceKind.BezierSurface && HSg.GetType() != SurfaceKind.BSplineSurface)
         {
-            ProjLib_ProjectedCurve Projc = new(HSg, HCg, tol);
+            ProjectedCurve Projc = new(HSg, HCg, tol);
             tolreached = Projc.GetTolerance();
             switch (Projc.GetType())
             {
                 case Line:
                 {
-                    Pcurv = new Geom2d_Line(Projc.Line());
+                    Pcurv = new LineCurve2D(Projc.Line());
                 }
                     break;
                 case Circle:
                 {
-                    Pcurv = new Geom2d_Circle(Projc.Circle());
+                    Pcurv = new CircleCurve2D(Projc.Circle());
                 }
                     break;
                 case Ellipse:
                 {
-                    Pcurv = new Geom2d_Ellipse(Projc.Ellipse());
+                    Pcurv = new EllipseCurve2D(Projc.Ellipse());
                 }
                     break;
                 case Hyperbola:
                 {
-                    Pcurv = new Geom2d_Hyperbola(Projc.Hyperbola());
+                    Pcurv = new HyperbolaCurve2D(Projc.Hyperbola());
                 }
                     break;
                 case Parabola:
                 {
-                    Pcurv = new Geom2d_Parabola(Projc.Parabola());
+                    Pcurv = new ParabolaCurve2D(Projc.Parabola());
                 }
                     break;
                 case BezierCurve:
@@ -335,7 +338,7 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>Whether <paramref name="Pcurv"/> on <paramref name="S"/> follows <paramref name="C3d"/> within
     /// <paramref name="tol3d"/>, at 45 points; twice the deviation in <paramref name="tolreached"/>.</summary>
-    internal static bool ChFi3d_CheckSameParameter(Adaptor3d_Curve C3d, Geom2d_Curve Pcurv, Adaptor3d_Surface S,
+    internal static bool ChFi3d_CheckSameParameter(CurveAdaptorBase C3d, Curve2D Pcurv, SurfaceAdaptorBase S,
                                                    double tol3d, out double tolreached)
     {
         tolreached = 0.0;
@@ -372,19 +375,19 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>Makes <paramref name="Pcurv"/> same parameter with <paramref name="C3d"/> on <paramref name="S"/>
     /// (Approx_SameParameter when the check fails).</summary>
-    internal static bool ChFi3d_SameParameter(Adaptor3d_Curve C3d, ref Geom2d_Curve Pcurv, Adaptor3d_Surface S,
+    internal static bool ChFi3d_SameParameter(CurveAdaptorBase C3d, ref Curve2D Pcurv, SurfaceAdaptorBase S,
                                               double tol3d, out double tolreached)
     {
         if (ChFi3d_CheckSameParameter(C3d, Pcurv, S, tol3d, out tolreached))
         {
             return true;
         }
-        Approx_SameParameter sp = new(C3d, Pcurv, S, tol3d);
-        if (sp.IsDone() && !sp.IsSameParameter())
+        SameParameter sp = new(C3d, Pcurv, S, tol3d);
+        if (sp.IsDone && !sp.IsSameParameter)
         {
             Pcurv = sp.Curve2d()!;
         }
-        else if (!sp.IsDone() && !sp.IsSameParameter())
+        else if (!sp.IsDone && !sp.IsSameParameter)
         {
             return false;
         }
@@ -399,13 +402,13 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>Makes <paramref name="Pcurv"/> same parameter with <paramref name="C3d"/> on
     /// [<paramref name="Pardeb"/>, <paramref name="Parfin"/>] on <paramref name="S"/>.</summary>
-    internal static bool ChFi3d_SameParameter(Geom_Curve C3d, ref Geom2d_Curve Pcurv, Geom_Surface S, double Pardeb,
+    internal static bool ChFi3d_SameParameter(Curve3D C3d, ref Curve2D Pcurv, Surface S, double Pardeb,
                                               double Parfin, double tol3d, out double tolreached)
     {
         /*szv:static*/
-        GeomAdaptor_Surface hs = new(S);
+        SurfaceAdaptor hs = new(S);
         /*szv:static*/
-        GeomAdaptor_Curve hc = new(C3d, Pardeb, Parfin);
+        CurveAdaptor hc = new(C3d, Pardeb, Parfin);
         return ChFi3d_SameParameter(hc, ref Pcurv, hs, tol3d, out tolreached);
     }
 
@@ -418,8 +421,8 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The segment from <paramref name="UV1"/> to <paramref name="UV2"/> on [<paramref name="Pardeb"/>,
     /// <paramref name="Parfin"/>], made same parameter with <paramref name="C3d"/>.</summary>
-    internal static void ChFi3d_ComputePCurv(Adaptor3d_Curve C3d, in Point2D UV1, in Point2D UV2,
-                                             out Geom2d_Curve Pcurv, Adaptor3d_Surface S, double Pardeb,
+    internal static void ChFi3d_ComputePCurv(CurveAdaptorBase C3d, in Point2D UV1, in Point2D UV2,
+                                             out Curve2D Pcurv, SurfaceAdaptorBase S, double Pardeb,
                                              double Parfin, double tol3d, out double tolreached, bool reverse = false)
     {
         ChFi3d_ComputePCurv(UV1, UV2, out Pcurv, Pardeb, Parfin, reverse);
@@ -435,12 +438,12 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The segment from <paramref name="UV1"/> to <paramref name="UV2"/> on [<paramref name="Pardeb"/>,
     /// <paramref name="Parfin"/>], made same parameter with <paramref name="C3d"/> on <paramref name="S"/>.</summary>
-    internal static void ChFi3d_ComputePCurv(Geom_Curve C3d, in Point2D UV1, in Point2D UV2,
-                                             out Geom2d_Curve Pcurv, Geom_Surface S, double Pardeb, double Parfin,
+    internal static void ChFi3d_ComputePCurv(Curve3D C3d, in Point2D UV1, in Point2D UV2,
+                                             out Curve2D Pcurv, Surface S, double Pardeb, double Parfin,
                                              double tol3d, out double tolreached, bool reverse = false)
     {
-        Adaptor3d_Surface hs = new GeomAdaptor_Surface(S);
-        Adaptor3d_Curve hc = new GeomAdaptor_Curve(C3d, Pardeb, Parfin);
+        SurfaceAdaptorBase hs = new SurfaceAdaptor(S);
+        CurveAdaptorBase hc = new CurveAdaptor(C3d, Pardeb, Parfin);
         ChFi3d_ComputePCurv(hc, UV1, UV2, out Pcurv, hs, Pardeb, Parfin, tol3d, out tolreached, reverse);
     }
 
@@ -453,7 +456,7 @@ internal static partial class ChFi3d_Builder_0
     /// <summary>The segment from <paramref name="UV1"/> to <paramref name="UV2"/> (reversed by
     /// <paramref name="reverse"/>) on [<paramref name="Pardeb"/>, <paramref name="Parfin"/>]: an isoparametric line
     /// when it is one with that length, else a degree 1 B-spline; trimmed.</summary>
-    internal static void ChFi3d_ComputePCurv(in Point2D UV1, in Point2D UV2, out Geom2d_Curve Pcurv,
+    internal static void ChFi3d_ComputePCurv(in Point2D UV1, in Point2D UV2, out Curve2D Pcurv,
                                              double Pardeb, double Parfin, bool reverse = false)
     {
         double tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
@@ -472,22 +475,22 @@ internal static partial class ChFi3d_Builder_0
         if (Math.Abs(p1.X() - p2.X()) <= tol && Math.Abs((p2.Y() - p1.Y()) - (Parfin - Pardeb)) <= tol)
         {
             Point2D ppp = new(p1.X(), p1.Y() - Pardeb);
-            Pcurv = new Geom2d_Line(ppp, Constants.DY2d());
+            Pcurv = new LineCurve2D(ppp, Constants.DY2d());
         }
         else if (Math.Abs(p1.X() - p2.X()) <= tol && Math.Abs((p1.Y() - p2.Y()) - (Parfin - Pardeb)) <= tol)
         {
             Point2D ppp = new(p1.X(), p1.Y() + Pardeb);
-            Pcurv = new Geom2d_Line(ppp, Constants.DY2d().Reversed());
+            Pcurv = new LineCurve2D(ppp, Constants.DY2d().Reversed());
         }
         else if (Math.Abs(p1.Y() - p2.Y()) <= tol && Math.Abs((p2.X() - p1.X()) - (Parfin - Pardeb)) <= tol)
         {
             Point2D ppp = new(p1.X() - Pardeb, p1.Y());
-            Pcurv = new Geom2d_Line(ppp, Constants.DX2d());
+            Pcurv = new LineCurve2D(ppp, Constants.DX2d());
         }
         else if (Math.Abs(p1.Y() - p2.Y()) <= tol && Math.Abs((p1.X() - p2.X()) - (Parfin - Pardeb)) <= tol)
         {
             Point2D ppp = new(p1.X() + Pardeb, p1.Y());
-            Pcurv = new Geom2d_Line(ppp, Constants.DX2d().Reversed());
+            Pcurv = new LineCurve2D(ppp, Constants.DX2d().Reversed());
         }
         else
         {
@@ -499,16 +502,16 @@ internal static partial class ChFi3d_Builder_0
             k[2] = Parfin;
             p[1] = p1;
             p[2] = p2;
-            Pcurv = new Geom2d_BSplineCurve(p, k, m, 1);
+            Pcurv = new BSplineCurve2D(p, k, m, 1);
         }
-        Pcurv = new Geom2d_TrimmedCurve(Pcurv, Pardeb, Parfin);
+        Pcurv = new TrimmedCurve2D(Pcurv, Pardeb, Parfin);
     }
 
     //=================================================================================================
 
     /// <summary>The boundary on <paramref name="Fac"/> from <paramref name="pfac1"/> to <paramref name="pfac2"/>
     /// with the given tangents (reversed by the senses); <paramref name="curv"/> its pcurve.</summary>
-    internal static GeomFill_Boundary ChFi3d_mkbound(Adaptor3d_Surface Fac, out Geom2d_Curve curv, int sens1,
+    internal static GeomFill_Boundary ChFi3d_mkbound(SurfaceAdaptorBase Fac, out Curve2D curv, int sens1,
                                                      in Point2D pfac1, in Vector2D vfac1, int sens2,
                                                      in Point2D pfac2, in Vector2D vfac2, double t3d, double ta)
     {
@@ -530,7 +533,7 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The boundary on <paramref name="Surf"/> from <paramref name="p1"/> to <paramref name="p2"/> with
     /// the given 3D tangents (reversed in place by the senses); <paramref name="curv"/> its pcurve.</summary>
-    internal static GeomFill_Boundary ChFi3d_mkbound(Adaptor3d_Surface Surf, out Geom2d_Curve curv, int sens1,
+    internal static GeomFill_Boundary ChFi3d_mkbound(SurfaceAdaptorBase Surf, out Curve2D curv, int sens1,
                                                      in Point2D p1, ref Vector3D v1, int sens2, in Point2D p2,
                                                      ref Vector3D v2, double t3d, double ta)
     {
@@ -550,10 +553,10 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The boundary on <paramref name="s"/> along the segment from <paramref name="p1"/> to
     /// <paramref name="p2"/>.</summary>
-    internal static GeomFill_Boundary ChFi3d_mkbound(Geom_Surface s, in Point2D p1, in Point2D p2, double t3d,
+    internal static GeomFill_Boundary ChFi3d_mkbound(Surface s, in Point2D p1, in Point2D p2, double t3d,
                                                      double ta, bool isfreeboundary = false)
     {
-        Adaptor3d_Surface HS = new GeomAdaptor_Surface(s);
+        SurfaceAdaptorBase HS = new SurfaceAdaptor(s);
         return ChFi3d_mkbound(HS, p1, p2, t3d, ta, isfreeboundary);
     }
 
@@ -561,13 +564,13 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The boundary on <paramref name="HS"/> along the segment from <paramref name="p1"/> to
     /// <paramref name="p2"/>.</summary>
-    internal static GeomFill_Boundary ChFi3d_mkbound(Adaptor3d_Surface HS, in Point2D p1, in Point2D p2,
+    internal static GeomFill_Boundary ChFi3d_mkbound(SurfaceAdaptorBase HS, in Point2D p1, in Point2D p2,
                                                      double t3d, double ta, bool isfreeboundary = false)
     {
         NCollection_Array1<Point2D> pol = new(1, 2);
         pol[1] = p1;
         pol[2] = p2;
-        Geom2d_Curve curv = new Geom2d_BezierCurve(pol);
+        Curve2D curv = new BezierCurve2D(pol);
         return ChFi3d_mkbound(HS, curv, t3d, ta, isfreeboundary);
     }
 
@@ -575,14 +578,14 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The boundary on <paramref name="HS"/> along <paramref name="curv"/>: with the surface's normals, or a
     /// simple boundary if it is free.</summary>
-    internal static GeomFill_Boundary ChFi3d_mkbound(Adaptor3d_Surface HS, Geom2d_Curve curv, double t3d, double ta,
+    internal static GeomFill_Boundary ChFi3d_mkbound(SurfaceAdaptorBase HS, Curve2D curv, double t3d, double ta,
                                                      bool isfreeboundary = false)
     {
-        Geom2dAdaptor_Curve HC = new(curv);
-        Adaptor3d_CurveOnSurface COnS = new(HC, HS);
+        CurveAdaptor2D HC = new(curv);
+        CurveOnSurface COnS = new(HC, HS);
         if (isfreeboundary)
         {
-            Adaptor3d_CurveOnSurface HCOnS = (Adaptor3d_CurveOnSurface)COnS.ShallowCopy();
+            CurveOnSurface HCOnS = (CurveOnSurface)COnS.ShallowCopy();
             return new GeomFill_SimpleBound(HCOnS, t3d, ta);
         }
         return new GeomFill_BoundWithSurf(COnS, t3d, ta);
@@ -592,14 +595,14 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The boundary on <paramref name="Fac"/> along the segment from <paramref name="p1"/> to
     /// <paramref name="p2"/>; <paramref name="curv"/> its pcurve.</summary>
-    internal static GeomFill_Boundary ChFi3d_mkbound(Adaptor3d_Surface Fac, out Geom2d_Curve curv, in Point2D p1,
+    internal static GeomFill_Boundary ChFi3d_mkbound(SurfaceAdaptorBase Fac, out Curve2D curv, in Point2D p1,
                                                      in Point2D p2, double t3d, double ta,
                                                      bool isfreeboundary = false)
     {
         NCollection_Array1<Point2D> pol = new(1, 2);
         pol[1] = p1;
         pol[2] = p2;
-        curv = new Geom2d_BezierCurve(pol);
+        curv = new BezierCurve2D(pol);
         return ChFi3d_mkbound(Fac, curv, t3d, ta, isfreeboundary);
     }
 
@@ -608,7 +611,7 @@ internal static partial class ChFi3d_Builder_0
     /// <summary>A cubic from <paramref name="p1"/> to <paramref name="p2"/> with the tangent directions
     /// <paramref name="d1"/> and <paramref name="d2"/> (turned towards each other first, by
     /// <paramref name="redresse"/>).</summary>
-    internal static Geom2d_Curve ChFi3d_BuildPCurve(in Point2D p1, ref Direction2D d1, in Point2D p2, ref Direction2D d2,
+    internal static Curve2D ChFi3d_BuildPCurve(in Point2D p1, ref Direction2D d1, in Point2D p2, ref Direction2D d2,
                                                     bool redresse = true)
     {
         Vector2D vref = new(p1, p2);
@@ -635,14 +638,14 @@ internal static partial class ChFi3d_Builder_0
         double Lambda2 = Math.Max(Math.Abs(d1.Dot(d2)), Math.Abs(dref.Dot(d2)));
         Lambda2 = Math.Max(0.5 * mref * Lambda2, 1.0e-5);
         pol[3] = new Point2D(p2.XY().Added(d2.XY().Multiplied(Lambda2)));
-        return new Geom2d_BezierCurve(pol);
+        return new BezierCurve2D(pol);
     }
 
     //=================================================================================================
 
     /// <summary>The cubic of the 2D tangents <paramref name="v1"/> and <paramref name="v2"/> built in the space
     /// scaled by the surface's resolutions.</summary>
-    internal static Geom2d_Curve ChFi3d_BuildPCurve(Adaptor3d_Surface Surf, in Point2D p1, in Vector2D v1,
+    internal static Curve2D ChFi3d_BuildPCurve(SurfaceAdaptorBase Surf, in Point2D p1, in Vector2D v1,
                                                     in Point2D p2, in Vector2D v2, bool redresse = false)
     {
         Point2D pp1 = p1, pp2 = p2;
@@ -660,9 +663,9 @@ internal static partial class ChFi3d_Builder_0
         vv2.SetX(invures * vv2.X());
         vv2.SetY(invvres * vv2.Y());
         Direction2D d1 = new(vv1), d2 = new(vv2);
-        Geom2d_Curve g2dc = ChFi3d_BuildPCurve(pp1, ref d1, pp2, ref d2, redresse);
-        Geom2d_BezierCurve pc = (Geom2d_BezierCurve)g2dc;
-        int nbp = pc.NbPoles();
+        Curve2D g2dc = ChFi3d_BuildPCurve(pp1, ref d1, pp2, ref d2, redresse);
+        BezierCurve2D pc = (BezierCurve2D)g2dc;
+        int nbp = pc.PoleCount;
         for (int ip = 1; ip <= nbp; ip++)
         {
             Point2D pol = pc.Pole(ip);
@@ -677,7 +680,7 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The cubic on <paramref name="Surf"/> of the 3D tangents <paramref name="v1"/> and
     /// <paramref name="v2"/> brought to the parametric space.</summary>
-    internal static Geom2d_Curve ChFi3d_BuildPCurve(Adaptor3d_Surface Surf, in Point2D p1, in Vector3D v1,
+    internal static Curve2D ChFi3d_BuildPCurve(SurfaceAdaptorBase Surf, in Point2D p1, in Vector3D v1,
                                                     in Point2D p2, in Vector3D v2, bool redresse = false)
     {
         Vector3D D1u, D1v;
@@ -706,6 +709,6 @@ internal static partial class ChFi3d_Builder_0
 
     // OCCT.NET: OCCT changes these curves in place; one frozen elsewhere (a projection's or an intersection's
     // result) is changed on a copy (decisions 974 and 1088).
-    private static T Writable<T>(T theCurve) where T : Geom2d_Geometry =>
+    private static T Writable<T>(T theCurve) where T : Geometry2D =>
         theCurve.IsFrozen ? (T)theCurve.Copy() : theCurve;
 }

@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -113,7 +116,7 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
         return d;
     }
 
-    private static TopoDS_Edge MakeEdge(EdgeData d, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
+    private static Edge MakeEdge(EdgeData d, in Vertex V1, in Vertex V2)
     {
         BRepBuilderAPI_MakeEdge aMaker;
         switch (d.Type)
@@ -140,12 +143,12 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
                     NCollection_Array1<int> aMults = new(1, 2);
                     aMults[1] = 4;
                     aMults[2] = 4;
-                    var aC = new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
+                    var aC = new BSplineCurve3D(aPoles, aKnots, aMults, 3);
                     aMaker = new BRepBuilderAPI_MakeEdge(aC, V1, V2);
                     break;
                 }
         }
-        return aMaker.IsDone() ? aMaker.Edge() : new TopoDS_Edge();
+        return aMaker.IsDone() ? aMaker.Edge() : new Edge();
     }
 
     private static string Hex(double theValue) => BitConverter.DoubleToInt64Bits(theValue).ToString("x", CultureInfo.InvariantCulture);
@@ -154,24 +157,24 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
 
     private static string ExcName(Exception theE) => "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theE.GetType());
 
-    private static string Desc(in TopoDS_Edge theE)
+    private static string Desc(in Edge theE)
     {
-        if (theE.IsNull())
+        if (theE.IsNull)
         {
             return "null";
         }
-        Geom_Curve? aC = BRep_Tool.Curve(theE, out double f, out double l);
+        Curve3D? aC = Tool.Curve(theE, out double f, out double l);
         if (aC is null)
         {
             return "nocurve";
         }
         string s = global::Kerf.Engine.Foundation.OcctTypeNames.Of(aC.GetType());
         s += "," + Hex(f) + "," + Hex(l) + "," + Hex(aC.Value(f)) + "," + Hex(aC.Value(0.5 * (f + l))) + "," + Hex(aC.Value(l));
-        s += theE.Orientation() == TopAbs_Orientation.TopAbs_FORWARD ? ",F"
-           : theE.Orientation() == TopAbs_Orientation.TopAbs_REVERSED ? ",R" : ",O";
-        TopExp.Vertices(theE, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
-        s += "," + (aV1.IsNull() ? "nv" : Hex(BRep_Tool.Pnt(aV1)));
-        s += "," + (aV2.IsNull() ? "nv" : Hex(BRep_Tool.Pnt(aV2)));
+        s += theE.Orientation() == Orientation.Forward ? ",F"
+           : theE.Orientation() == Orientation.Reversed ? ",R" : ",O";
+        Exploration.Vertices(theE, out Vertex aV1, out Vertex aV2);
+        s += "," + (aV1.IsNull ? "nv" : Hex(Tool.Pnt(aV1)));
+        s += "," + (aV2.IsNull ? "nv" : Hex(Tool.Pnt(aV2)));
         return s;
     }
 
@@ -220,12 +223,12 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
         }
         Assert.True(r.AtEnd, "inputs not all read");
 
-        TopoDS_Vertex aV11 = new BRepBuilderAPI_MakeVertex(d1.P1).Vertex();
-        TopoDS_Vertex aV12 = new BRepBuilderAPI_MakeVertex(d1.P2).Vertex();
-        TopoDS_Vertex aV21 = isShared ? aV12 : new BRepBuilderAPI_MakeVertex(d2.P1).Vertex();
-        TopoDS_Vertex aV22 = new BRepBuilderAPI_MakeVertex(d2.P2).Vertex();
+        Vertex aV11 = new BRepBuilderAPI_MakeVertex(d1.P1).Vertex();
+        Vertex aV12 = new BRepBuilderAPI_MakeVertex(d1.P2).Vertex();
+        Vertex aV21 = isShared ? aV12 : new BRepBuilderAPI_MakeVertex(d2.P1).Vertex();
+        Vertex aV22 = new BRepBuilderAPI_MakeVertex(d2.P2).Vertex();
 
-        TopoDS_Edge anE1 = new(), anE2 = new();
+        Edge anE1 = new(), anE2 = new();
         try
         {
             anE1 = MakeEdge(d1, aV11, aV12);
@@ -235,20 +238,20 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
         {
             aOut.Add("edges:" + ExcName(e));
         }
-        if (anE1.IsNull() || anE2.IsNull())
+        if (anE1.IsNull || anE2.IsNull)
         {
             aOut.Add("edges:0");
             return aOut;
         }
         if (isRev1)
         {
-            anE1 = TopoDS.Edge(anE1.Reversed());
+            anE1 = ShapeCasts.Edge(anE1.Reversed());
         }
         if (isRev2)
         {
-            anE2 = TopoDS.Edge(anE2.Reversed());
+            anE2 = ShapeCasts.Edge(anE2.Reversed());
         }
-        TopoDS_Wire aWire = new();
+        Wire aWire = new();
         if (isWire)
         {
             var aMW = new BRepBuilderAPI_MakeWire(anE1, anE2);
@@ -292,11 +295,11 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
                 Tok("nb", () => anAlgo.NbResults(aC).ToString(CultureInfo.InvariantCulture));
                 foreach (int iSol in new[] { -1, 1, 2 })
                 {
-                    TopoDS_Edge aM1 = new(), aM2 = new();
+                    Edge aM1 = new(), aM2 = new();
                     bool isRes = false;
                     Tok(iSol == -1 ? "res" : (iSol == 1 ? "res1" : "res2"), () =>
                     {
-                        TopoDS_Edge aF = anAlgo.Result(aC, ref aM1, ref aM2, iSol);
+                        Edge aF = anAlgo.Result(aC, ref aM1, ref aM2, iSol);
                         isRes = true;
                         return Desc(aF);
                     });
@@ -327,11 +330,11 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
             });
             if (isDone)
             {
-                TopoDS_Edge aM1 = new(), aM2 = new();
+                Edge aM1 = new(), aM2 = new();
                 bool isRes = false;
                 Tok("res", () =>
                 {
-                    TopoDS_Edge aCh = anAlgo.Result(ref aM1, ref aM2, aL1, aL2);
+                    Edge aCh = anAlgo.Result(ref aM1, ref aM2, aL1, aL2);
                     isRes = true;
                     return Desc(aCh);
                 });

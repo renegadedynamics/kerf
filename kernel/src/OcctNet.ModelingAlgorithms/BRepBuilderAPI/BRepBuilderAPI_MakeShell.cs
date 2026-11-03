@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepBuilderAPI_ShellError;
 using static Occt.BRepLib_ShellError;
 
@@ -32,19 +34,19 @@ public class BRepBuilderAPI_MakeShell : BRepBuilderAPI_MakeShape
         myMakeShell = new BRepLib_MakeShell();
     }
 
-    public BRepBuilderAPI_MakeShell(Geom_Surface S, bool Segment = false)
+    public BRepBuilderAPI_MakeShell(Surface S, bool Segment = false)
     {
         myMakeShell = new BRepLib_MakeShell(S, Segment);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeShell(Geom_Surface S, double UMin, double UMax, double VMin, double VMax, bool Segment = false)
+    public BRepBuilderAPI_MakeShell(Surface S, double UMin, double UMax, double VMin, double VMax, bool Segment = false)
     {
         myMakeShell = new BRepLib_MakeShell(S, UMin, UMax, VMin, VMax, Segment);
         TakeResult();
     }
 
-    public void Init(Geom_Surface S, double UMin, double UMax, double VMin, double VMax, bool Segment = false)
+    public void Init(Surface S, double UMin, double UMax, double VMin, double VMax, bool Segment = false)
     {
         myMakeShell.Init(S, UMin, UMax, VMin, VMax, Segment);
         TakeResult();
@@ -76,17 +78,17 @@ public class BRepBuilderAPI_MakeShell : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The shell (frozen). As in OCCT, it doesn't check <see cref="IsDone"/>.</summary>
-    public TopoDS_Shell Shell()
+    public Shell Shell()
     {
         return myMakeShell.Shell();
     }
 
     /// <summary><see cref="Shell"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shell InternalShell()
+    internal Shell InternalShell()
     {
         return myMakeShell.InternalShell();
     }
 
     /// <summary>The shell (OCCT's conversion operator; frozen).</summary>
-    public static explicit operator TopoDS_Shell(BRepBuilderAPI_MakeShell theMaker) => theMaker.Shell();
+    public static explicit operator Shell(BRepBuilderAPI_MakeShell theMaker) => theMaker.Shell();
 }

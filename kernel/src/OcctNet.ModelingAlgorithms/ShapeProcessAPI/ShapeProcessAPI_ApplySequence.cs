@@ -5,7 +5,8 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Foundation.Resources;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -32,7 +33,7 @@ public class ShapeProcessAPI_ApplySequence
                                          string? theUserDefaultsDirectory = null)
     {
         myContext = new ShapeProcess_ShapeContext(rscName, "", theDefaultsDirectory, theUserDefaultsDirectory);
-        myContext.SetDetalisation(TopAbs_FACE);
+        myContext.SetDetalisation(ShapeType.Face);
         string str = seqName;
 
         // initialize operators
@@ -54,19 +55,19 @@ public class ShapeProcessAPI_ApplySequence
     /// Performs the sequence on the shape (if the resource file defines it) and returns the result, frozen. The
     /// other arguments are unused, as in OCCT.
     /// </summary>
-    public TopoDS_Shape PrepareShape(in TopoDS_Shape shape, bool fillmap = false, TopAbs_ShapeEnum until = TopAbs_SHAPE,
+    public Shape PrepareShape(in Shape shape, bool fillmap = false, ShapeType until = ShapeType.Shape,
                                      ProgressRange theProgress = default)
     {
-        TopoDS_Shape aResult = InternalPrepareShape(shape, theProgress);
-        return shape.IsNull() ? aResult : myContext.Result();
+        Shape aResult = InternalPrepareShape(shape, theProgress);
+        return shape.IsNull ? aResult : myContext.Result();
     }
 
     /// <summary>
     /// <see cref="PrepareShape"/> without freezing the result, for ported code (Draw-lite runs it on a copy it owns).
     /// </summary>
-    internal TopoDS_Shape InternalPrepareShape(in TopoDS_Shape shape, ProgressRange theProgress = default)
+    internal Shape InternalPrepareShape(in Shape shape, ProgressRange theProgress = default)
     {
-        if (shape.IsNull())
+        if (shape.IsNull)
         {
             return shape;
         }
@@ -90,7 +91,7 @@ public class ShapeProcessAPI_ApplySequence
     }
 
     /// <summary>The history: each sub-shape modified, with what it became. Its values are frozen.</summary>
-    public NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> Map() => myContext.Map();
+    public NCollection_DataMap<Shape, Shape> Map() => myContext.Map();
 
     /// <summary>Prints statistics on the history (shells and faces mapped, the preparation ratio) to the messenger.</summary>
     public void PrintPreparationResult()

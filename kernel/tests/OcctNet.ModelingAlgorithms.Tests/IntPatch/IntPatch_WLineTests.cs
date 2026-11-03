@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_TypeTrans;
@@ -36,8 +37,8 @@ public class IntPatch_WLineTests
         return aV;
     }
 
-    private static Adaptor2d_Curve2d Arc() =>
-        new Geom2dAdaptor_Curve(new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), -100, 100);
+    private static Curve2DAdaptorBase Arc() =>
+        new CurveAdaptor2D(new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0)), -100, 100);
 
     [Fact]
     public void Construction_and_flags()
@@ -60,7 +61,7 @@ public class IntPatch_WLineTests
         Assert.Equal((1.0, 2.0, 3.0, 4.0), (aW.U1Period(), aW.V1Period(), aW.U2Period(), aW.V2Period()));
 
         Assert.False(aW.HasArcOnS1());
-        Adaptor2d_Curve2d anArc = Arc();
+        Curve2DAdaptorBase anArc = Arc();
         aW.SetArcOnS2(anArc);
         Assert.True(aW.HasArcOnS2());
         Assert.Same(anArc, aW.GetArcOnS2());
@@ -156,7 +157,7 @@ public class IntPatch_WLineTests
     [Fact]
     public void ComputeVertexParameters_merges_a_free_vertex_into_an_arc_vertex()
     {
-        Adaptor2d_Curve2d anArc = Arc();
+        Curve2DAdaptorBase anArc = Arc();
         IntPatch_WLine aW = new(StraightLine(4), false);
         IntPatch_Point aOnArc = Vtx(1, 2, 1e-3);
         aOnArc.SetArc(true, anArc, 0.5, new IntSurf_Transition(false, IntSurf_In),

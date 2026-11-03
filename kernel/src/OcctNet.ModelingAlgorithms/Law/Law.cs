@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -154,7 +155,7 @@ public static class Law
     /// ends if HasDF and HasDL.
     /// </summary>
     /// <exception cref="FailureException">The interpolation failed.</exception>
-    public static Law_BSpline Reparametrize(Adaptor3d_Curve Curve, double First, double Last, bool HasDF, bool HasDL,
+    public static Law_BSpline Reparametrize(CurveAdaptorBase Curve, double First, double Last, bool HasDF, bool HasDL,
                                             double DFirst, double DLast, bool Rev, int NbPoints)
     {
         // On evalue la longeur approximative de la courbe.

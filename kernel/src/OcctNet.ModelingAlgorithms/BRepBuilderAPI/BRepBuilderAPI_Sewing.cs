@@ -5,15 +5,21 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Schematiq.Collections;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -43,31 +49,31 @@ public class BRepBuilderAPI_Sewing : Transient
     protected bool myAnalysis;
     protected bool myCutting;
     protected bool myNonmanifold;
-    protected NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> myOldShapes = new(TopTools_ShapeMapHasher.Instance);
-    protected TopoDS_Shape mySewedShape = new();
-    protected NCollection_IndexedMap<TopoDS_Shape> myDegenerated = new(TopTools_ShapeMapHasher.Instance);
-    protected NCollection_IndexedMap<TopoDS_Shape> myFreeEdges = new(TopTools_ShapeMapHasher.Instance);
-    protected NCollection_IndexedMap<TopoDS_Shape> myMultipleEdges = new(TopTools_ShapeMapHasher.Instance);
-    protected NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myContigousEdges =
-        new(TopTools_ShapeMapHasher.Instance);
-    protected NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myContigSecBound = new(TopTools_ShapeMapHasher.Instance);
+    protected NCollection_IndexedDataMap<Shape, Shape> myOldShapes = new(ShapeHasher.Instance);
+    protected Shape mySewedShape = new();
+    protected NCollection_IndexedMap<Shape> myDegenerated = new(ShapeHasher.Instance);
+    protected NCollection_IndexedMap<Shape> myFreeEdges = new(ShapeHasher.Instance);
+    protected NCollection_IndexedMap<Shape> myMultipleEdges = new(ShapeHasher.Instance);
+    protected NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> myContigousEdges =
+        new(ShapeHasher.Instance);
+    protected NCollection_DataMap<Shape, Shape> myContigSecBound = new(ShapeHasher.Instance);
     protected int myNbShapes;
     protected int myNbVertices;
     protected int myNbEdges;
-    protected NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myBoundFaces =
-        new(TopTools_ShapeMapHasher.Instance);
-    protected NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myBoundSections =
-        new(TopTools_ShapeMapHasher.Instance);
-    protected NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> mySectionBound = new(TopTools_ShapeMapHasher.Instance);
-    protected NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> myVertexNode = new(TopTools_ShapeMapHasher.Instance);
-    protected NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> myVertexNodeFree = new(TopTools_ShapeMapHasher.Instance);
-    protected NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myNodeSections =
-        new(TopTools_ShapeMapHasher.Instance);
-    protected NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myCuttingNode =
-        new(TopTools_ShapeMapHasher.Instance);
-    protected NCollection_IndexedMap<TopoDS_Shape> myLittleFace = new(TopTools_ShapeMapHasher.Instance);
-    protected TopoDS_Shape myShape = new();
-    protected BRepTools_ReShape myReShape;
+    protected NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> myBoundFaces =
+        new(ShapeHasher.Instance);
+    protected NCollection_DataMap<Shape, NCollection_List<Shape>> myBoundSections =
+        new(ShapeHasher.Instance);
+    protected NCollection_DataMap<Shape, Shape> mySectionBound = new(ShapeHasher.Instance);
+    protected NCollection_IndexedDataMap<Shape, Shape> myVertexNode = new(ShapeHasher.Instance);
+    protected NCollection_IndexedDataMap<Shape, Shape> myVertexNodeFree = new(ShapeHasher.Instance);
+    protected NCollection_DataMap<Shape, NCollection_List<Shape>> myNodeSections =
+        new(ShapeHasher.Instance);
+    protected NCollection_DataMap<Shape, NCollection_List<Shape>> myCuttingNode =
+        new(ShapeHasher.Instance);
+    protected NCollection_IndexedMap<Shape> myLittleFace = new(ShapeHasher.Instance);
+    protected Shape myShape = new();
+    protected ReShape myReShape;
 
     private bool myFaceMode;
     private bool myFloatingEdgesMode;
@@ -75,12 +81,12 @@ public class BRepBuilderAPI_Sewing : Transient
     private bool myLocalToleranceMode;
     private double myMinTolerance;
     private double myMaxTolerance;
-    private readonly NCollection_Map<TopoDS_Shape> myMergedEdges = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_Map<Shape> myMergedEdges = new(ShapeHasher.Instance);
 
     // OCCT.NET: copy at entry (decision 583). When an input holds a frozen shape, Perform works on an exact copy:
     // sewing (the original where sewing left the copy unchanged, the copy otherwise). Both null otherwise.
-    private Dictionary<TopoDS_TShape, TopoDS_TShape>? myWorkCopies;
-    private Dictionary<TopoDS_TShape, TopoDS_TShape>? myWorkReplaced;
+    private Dictionary<TShape, TShape>? myWorkCopies;
+    private Dictionary<TShape, TShape>? myWorkReplaced;
 
     /// <summary>
     /// Creates an object with the tolerance of connexity <paramref name="tolerance"/> and the options for sewing
@@ -93,7 +99,7 @@ public class BRepBuilderAPI_Sewing : Transient
                                  bool option3 = true,
                                  bool option4 = false)
     {
-        myReShape = new BRepTools_ReShape();
+        myReShape = new ReShape();
         Init(tolerance, option1, option2, option3, option4);
     }
 
@@ -155,11 +161,11 @@ public class BRepBuilderAPI_Sewing : Transient
     // OCCT.NET: publication and the copy at entry (decision 583).
 
     // The shape the algorithm works on for a shape a caller passes: its working copy when the inputs were copied.
-    private TopoDS_Shape toWork(in TopoDS_Shape theShape)
+    private Shape toWork(in Shape theShape)
     {
-        TopoDS_Shape aShape = theShape;
-        if (myWorkCopies is not null && !aShape.IsNull()
-            && myWorkCopies.TryGetValue(aShape.TShape()!, out TopoDS_TShape? aCopy))
+        Shape aShape = theShape;
+        if (myWorkCopies is not null && !aShape.IsNull
+            && myWorkCopies.TryGetValue(aShape.TShape()!, out TShape? aCopy))
         {
             aShape.TShape(aCopy);
         }
@@ -168,26 +174,26 @@ public class BRepBuilderAPI_Sewing : Transient
 
     // The shape a caller sees for a working shape: each copy that sewing left unchanged is the caller's original again,
     // in the shape's unfrozen graph (as BRepTools.KeepUnchangedIn does for the result) and at its top.
-    private TopoDS_Shape fromWork(in TopoDS_Shape theShape)
+    private Shape fromWork(in Shape theShape)
     {
-        TopoDS_Shape aShape = theShape;
-        if (myWorkReplaced is null || myWorkReplaced.Count == 0 || aShape.IsNull())
+        Shape aShape = theShape;
+        if (myWorkReplaced is null || myWorkReplaced.Count == 0 || aShape.IsNull)
         {
             return aShape;
         }
-        if (myWorkReplaced.TryGetValue(aShape.TShape()!, out TopoDS_TShape? anOriginal))
+        if (myWorkReplaced.TryGetValue(aShape.TShape()!, out TShape? anOriginal))
         {
             aShape.TShape(anOriginal);
             return aShape;
         }
-        substituteTShapes(aShape.TShape()!, myWorkReplaced, new HashSet<TopoDS_TShape>(ReferenceEqualityComparer.Instance));
+        substituteTShapes(aShape.TShape()!, myWorkReplaced, new HashSet<TShape>(ReferenceEqualityComparer.Instance));
         return aShape;
     }
 
     // Replaces, in the unfrozen TShapes reachable from theTShape, each child whose TShape is a key of the map by the
     // map's value, keeping its place, location and orientation (BRepTools.KeepUnchangedIn's walk).
-    private static void substituteTShapes(TopoDS_TShape theTShape, Dictionary<TopoDS_TShape, TopoDS_TShape> theMap,
-                                          HashSet<TopoDS_TShape> theVisited)
+    private static void substituteTShapes(TShape theTShape, Dictionary<TShape, TShape> theMap,
+                                          HashSet<TShape> theVisited)
     {
         if (theTShape.IsFrozen || !theVisited.Add(theTShape))
         {
@@ -195,12 +201,12 @@ public class BRepBuilderAPI_Sewing : Transient
         }
 
         RuntimeHelpers.EnsureSufficientExecutionStack();
-        var aChildren = new List<TopoDS_Shape>();
+        var aChildren = new List<Shape>();
         bool isChanged = false;
-        for (NCollection_List<TopoDS_Shape>.Iterator anIt = new(theTShape.myShapes); anIt.More(); anIt.Next())
+        for (NCollection_List<Shape>.Iterator anIt = new(theTShape._shapes); anIt.More(); anIt.Next())
         {
-            TopoDS_Shape aChild = anIt.Value();
-            if (theMap.TryGetValue(aChild.TShape()!, out TopoDS_TShape? aNew))
+            Shape aChild = anIt.Value();
+            if (theMap.TryGetValue(aChild.TShape()!, out TShape? aNew))
             {
                 aChild.TShape(aNew);
                 isChanged = true;
@@ -214,64 +220,64 @@ public class BRepBuilderAPI_Sewing : Transient
 
         if (isChanged)
         {
-            theTShape.myShapes.Clear();
-            foreach (TopoDS_Shape aChild in aChildren)
+            theTShape._shapes.Clear();
+            foreach (Shape aChild in aChildren)
             {
-                theTShape.myShapes.Append(aChild);
+                theTShape._shapes.Append(aChild);
             }
         }
     }
 
     // A working shape handed to a caller: the caller's view of it (fromWork), frozen.
-    private TopoDS_Shape published(in TopoDS_Shape theShape)
+    private Shape published(in Shape theShape)
     {
-        TopoDS_Shape aShape = fromWork(theShape);
+        Shape aShape = fromWork(theShape);
         aShape.TShape()?.FreezeGraph();
         return aShape;
     }
 
     // Before Perform: when an input holds a frozen shape, replaces the inputs by an exact copy of them all (one copy,
     // so that sub-shapes shared between inputs stay shared). Returns the compound of the inputs and its copy.
-    private bool beginWork(out TopoDS_Shape theOriginals, out TopoDS_Shape theCopy,
-                           out Dictionary<TopoDS_TShape, TopoDS_TShape>? theCopies)
+    private bool beginWork(out Shape theOriginals, out Shape theCopy,
+                           out Dictionary<TShape, TShape>? theCopies)
     {
         myWorkCopies = null;
         myWorkReplaced = null;
-        theCopy = new TopoDS_Shape();
+        theCopy = new Shape();
         theCopies = null;
 
-        var B = new BRep_Builder();
-        var aComp = new TopoDS_Compound();
+        var B = new BrepBuilder();
+        var aComp = new Compound();
         B.MakeCompound(ref aComp);
-        if (!myShape.IsNull())
+        if (!myShape.IsNull)
         {
             B.Add(aComp, myShape);
         }
         for (int i = 1; i <= myOldShapes.Extent(); i++)
         {
-            if (!myOldShapes[i].IsNull())
+            if (!myOldShapes[i].IsNull)
             {
                 B.Add(aComp, myOldShapes[i]);
             }
         }
         theOriginals = aComp;
-        if (!BRepTools.HoldsFrozen(aComp))
+        if (!BrepTools.HoldsFrozen(aComp))
         {
             return false;
         }
 
-        theCopy = BRepTools.ExactCopyForWrite(aComp, out _, out Dictionary<TopoDS_TShape, TopoDS_TShape> aCopies);
+        theCopy = BrepTools.ExactCopyForWrite(aComp, out _, out Dictionary<TShape, TShape> aCopies);
         theCopies = aCopies;
         myWorkCopies = aCopies;
-        var anIt = new TopoDS_Iterator(theCopy);
-        if (!myShape.IsNull())
+        var anIt = new Iterator(theCopy);
+        if (!myShape.IsNull)
         {
             myShape = anIt.Value();
             anIt.Next();
         }
         for (int i = 1; i <= myOldShapes.Extent(); i++)
         {
-            if (!myOldShapes[i].IsNull())
+            if (!myOldShapes[i].IsNull)
             {
                 myOldShapes[i] = anIt.Value();
                 anIt.Next();
@@ -282,15 +288,15 @@ public class BRepBuilderAPI_Sewing : Transient
 
     // After Perform on copies: gives back the caller's sub-shapes wherever sewing left the copy unchanged, in the
     // sewn shape (BRepTools.KeepUnchangedIn) and, through fromWork, in every answer.
-    private void endWork(in TopoDS_Shape theOriginals, in TopoDS_Shape theCopy,
-                         Dictionary<TopoDS_TShape, TopoDS_TShape> theCopies)
+    private void endWork(in Shape theOriginals, in Shape theCopy,
+                         Dictionary<TShape, TShape> theCopies)
     {
-        TopoDS_Shape aResult = mySewedShape;
-        Dictionary<TopoDS_TShape, TopoDS_TShape> aFinal =
-            BRepTools.KeepUnchangedIn(theOriginals, theCopy, theCopies, ref aResult, out _);
+        Shape aResult = mySewedShape;
+        Dictionary<TShape, TShape> aFinal =
+            BrepTools.KeepUnchangedIn(theOriginals, theCopy, theCopies, ref aResult, out _);
         mySewedShape = aResult;
-        myWorkReplaced = new Dictionary<TopoDS_TShape, TopoDS_TShape>(ReferenceEqualityComparer.Instance);
-        foreach (KeyValuePair<TopoDS_TShape, TopoDS_TShape> aCF in aFinal)
+        myWorkReplaced = new Dictionary<TShape, TShape>(ReferenceEqualityComparer.Instance);
+        foreach (KeyValuePair<TShape, TShape> aCF in aFinal)
         {
             if (!ReferenceEquals(aCF.Key, aCF.Value))
             {
@@ -303,16 +309,16 @@ public class BRepBuilderAPI_Sewing : Transient
 
     /// <summary>The pcurve given the range RequestedFirst to RequestedLast (GeomLib.SameRange); null on failure.</summary>
     /// <remarks>Called from SameParameterEdge only.</remarks>
-    protected virtual Geom2d_Curve? SameRange(Geom2d_Curve? CurvePtr,
+    protected virtual Curve2D? SameRange(Curve2D? CurvePtr,
                                               double FirstOnCurve,
                                               double LastOnCurve,
                                               double RequestedFirst,
                                               double RequestedLast)
     {
-        Geom2d_Curve? NewCurvePtr = null;
+        Curve2D? NewCurvePtr = null;
         try
         {
-            GeomLib.SameRange(global::Kerf.Engine.Foundation.Precision.PConfusion(),
+            global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(global::Kerf.Engine.Foundation.Precision.PConfusion(),
                               CurvePtr,
                               FirstOnCurve,
                               LastOnCurve,
@@ -332,13 +338,13 @@ public class BRepBuilderAPI_Sewing : Transient
     //=======================================================================
 
     /// <summary>The <paramref name="index"/>-th face whose border is the edge (or the edge's bound), frozen; a null face if none.</summary>
-    public TopoDS_Face WhichFace(in TopoDS_Edge theEdg, int index = 1) =>
-        TopoDS.Face(published(InternalWhichFace(TopoDS.Edge(toWork(theEdg)), index)));
+    public Face WhichFace(in Edge theEdg, int index = 1) =>
+        ShapeCasts.Face(published(InternalWhichFace(ShapeCasts.Edge(toWork(theEdg)), index)));
 
     /// <summary><see cref="WhichFace"/> on the working shapes, without freezing (ported code).</summary>
-    internal TopoDS_Face InternalWhichFace(in TopoDS_Edge theEdg, int index = 1)
+    internal Face InternalWhichFace(in Edge theEdg, int index = 1)
     {
-        TopoDS_Shape bound = theEdg;
+        Shape bound = theEdg;
         if (mySectionBound.IsBound(bound))
         {
             bound = mySectionBound[bound];
@@ -346,45 +352,45 @@ public class BRepBuilderAPI_Sewing : Transient
         if (myBoundFaces.Contains(bound))
         {
             int i = 1;
-            var itf = new NCollection_List<TopoDS_Shape>.Iterator(myBoundFaces.FindFromKey(bound));
+            var itf = new NCollection_List<Shape>.Iterator(myBoundFaces.FindFromKey(bound));
             for (; itf.More(); itf.Next(), i++)
             {
                 if (i == index)
                 {
-                    return TopoDS.Face(itf.Value());
+                    return ShapeCasts.Face(itf.Value());
                 }
             }
         }
-        return new TopoDS_Face();
+        return new Face();
     }
 
     //=================================================================================================
 
-    private static bool IsClosedShape(in TopoDS_Shape theshape, in TopoDS_Shape v1, in TopoDS_Shape v2)
+    private static bool IsClosedShape(in Shape theshape, in Shape v1, in Shape v2)
     {
         double TotLength = 0.0;
-        var aexp = new TopExp_Explorer();
-        for (aexp.Init(theshape, TopAbs_EDGE); aexp.More(); aexp.Next())
+        var aexp = new Explorer();
+        for (aexp.Init(theshape, ShapeType.Edge); aexp.More(); aexp.Next())
         {
-            TopoDS_Edge aedge = TopoDS.Edge(aexp.Current());
-            if (aedge.IsNull())
+            Edge aedge = ShapeCasts.Edge(aexp.Current());
+            if (aedge.IsNull)
             {
                 continue;
             }
-            TopExp.Vertices(aedge, out TopoDS_Vertex ve1, out TopoDS_Vertex ve2);
+            Exploration.Vertices(aedge, out Vertex ve1, out Vertex ve2);
             if (!ve1.IsSame(v1) && !ve1.IsSame(v2))
             {
                 continue;
             }
-            if (BRep_Tool.Degenerated(aedge))
+            if (Tool.Degenerated(aedge))
             {
                 continue;
             }
-            Geom_Curve? c3d = BRep_Tool.Curve(TopoDS.Edge(aedge), out double first, out double last);
+            Curve3D? c3d = Tool.Curve(ShapeCasts.Edge(aedge), out double first, out double last);
             if (c3d is not null)
             {
-                var cAdapt = new GeomAdaptor_Curve(c3d);
-                double length = GCPnts_AbscissaPoint.Length(cAdapt, first, last);
+                var cAdapt = new CurveAdaptor(c3d);
+                double length = AbscissaPoint.Length(cAdapt, first, last);
                 TotLength += length;
                 if (ve2.IsSame(v1) || ve2.IsSame(v2))
                 {
@@ -394,8 +400,8 @@ public class BRepBuilderAPI_Sewing : Transient
         }
         if (TotLength > 0.0)
         {
-            Point3D p1 = BRep_Tool.Pnt(TopoDS.Vertex(v1));
-            Point3D p2 = BRep_Tool.Pnt(TopoDS.Vertex(v2));
+            Point3D p1 = Tool.Pnt(ShapeCasts.Vertex(v1));
+            Point3D p2 = Tool.Pnt(ShapeCasts.Vertex(v2));
             return (p1.Distance(p2) < TotLength / (1.2 * M_PI));
         }
         return false;
@@ -403,20 +409,20 @@ public class BRepBuilderAPI_Sewing : Transient
 
     //=================================================================================================
 
-    private static bool IsClosedByIsos(Geom_Surface thesurf,
-                                       Geom2d_Curve acrv2d,
+    private static bool IsClosedByIsos(Surface thesurf,
+                                       Curve2D acrv2d,
                                        double f2d,
                                        double l2d,
                                        bool isUIsos)
     {
         bool isClosed = false;
 
-        Point2D psurf1 = (acrv2d.IsPeriodic() ? acrv2d.Value(f2d)
+        Point2D psurf1 = (acrv2d.IsPeriodic ? acrv2d.Value(f2d)
                                                : acrv2d.Value(Max(f2d, acrv2d.FirstParameter())));
-        Point2D psurf2 = (acrv2d.IsPeriodic() ? acrv2d.Value(l2d)
+        Point2D psurf2 = (acrv2d.IsPeriodic ? acrv2d.Value(l2d)
                                                : acrv2d.Value(Min(l2d, acrv2d.LastParameter())));
-        Geom_Curve aCrv1;
-        Geom_Curve aCrv2;
+        Curve3D aCrv1;
+        Curve3D aCrv2;
         if (isUIsos)
         {
             aCrv1 = thesurf.UIso(psurf1.X());
@@ -448,24 +454,24 @@ public class BRepBuilderAPI_Sewing : Transient
     //=================================================================================================
 
     /// <summary>Defines if the surface is U-closed (along the edge).</summary>
-    protected virtual bool IsUClosedSurface(Geom_Surface surf, in TopoDS_Shape theEdge, in Placement theloc)
+    protected virtual bool IsUClosedSurface(Surface surf, in Shape theEdge, in Placement theloc)
     {
-        Geom_Surface tmpsurf = surf;
-        if (tmpsurf is Geom_RectangularTrimmedSurface aRTS)
+        Surface tmpsurf = surf;
+        if (tmpsurf is TrimmedSurface aRTS)
         {
             tmpsurf = aRTS.BasisSurface();
         }
-        else if (tmpsurf is Geom_OffsetSurface anOS)
+        else if (tmpsurf is OffsetSurface anOS)
         {
             tmpsurf = anOS.BasisSurface();
         }
         else
         {
-            bool isClosed = tmpsurf.IsUClosed();
+            bool isClosed = tmpsurf.IsUClosed;
             if (!isClosed)
             {
-                Geom2d_Curve? acrv2d =
-                    BRep_Tool.CurveOnSurface(TopoDS.Edge(theEdge), surf, theloc, out double f2d, out double l2d);
+                Curve2D? acrv2d =
+                    Tool.CurveOnSurface(ShapeCasts.Edge(theEdge), surf, theloc, out double f2d, out double l2d);
                 if (acrv2d is not null)
                 {
                     isClosed = IsClosedByIsos(tmpsurf, acrv2d, f2d, l2d, false);
@@ -479,24 +485,24 @@ public class BRepBuilderAPI_Sewing : Transient
     //=================================================================================================
 
     /// <summary>Defines if the surface is V-closed (along the edge).</summary>
-    protected virtual bool IsVClosedSurface(Geom_Surface surf, in TopoDS_Shape theEdge, in Placement theloc)
+    protected virtual bool IsVClosedSurface(Surface surf, in Shape theEdge, in Placement theloc)
     {
-        Geom_Surface tmpsurf = surf;
-        if (tmpsurf is Geom_RectangularTrimmedSurface aRTS)
+        Surface tmpsurf = surf;
+        if (tmpsurf is TrimmedSurface aRTS)
         {
             tmpsurf = aRTS.BasisSurface();
         }
-        else if (tmpsurf is Geom_OffsetSurface anOS)
+        else if (tmpsurf is OffsetSurface anOS)
         {
             tmpsurf = anOS.BasisSurface();
         }
         else
         {
-            bool isClosed = tmpsurf.IsVClosed();
+            bool isClosed = tmpsurf.IsVClosed;
             if (!isClosed)
             {
-                Geom2d_Curve? acrv2d =
-                    BRep_Tool.CurveOnSurface(TopoDS.Edge(theEdge), surf, theloc, out double f2d, out double l2d);
+                Curve2D? acrv2d =
+                    Tool.CurveOnSurface(ShapeCasts.Edge(theEdge), surf, theloc, out double f2d, out double l2d);
                 if (acrv2d is not null)
                 {
                     isClosed = IsClosedByIsos(tmpsurf, acrv2d, f2d, l2d, true);
@@ -510,7 +516,7 @@ public class BRepBuilderAPI_Sewing : Transient
     //=================================================================================================
 
     /// <summary>BRepLib.SameParameter on the edge, failures ignored. Called from SameParameterEdge only.</summary>
-    protected virtual void SameParameter(in TopoDS_Edge edge)
+    protected virtual void SameParameter(in Edge edge)
     {
         try
         {
@@ -533,37 +539,37 @@ public class BRepBuilderAPI_Sewing : Transient
     //=======================================================================
 
     /// <summary>Merges the sections <paramref name="seqEdges"/> with <paramref name="edge"/>. Called from Merging only.</summary>
-    protected virtual TopoDS_Edge SameParameterEdge(in TopoDS_Shape edge,
-                                                    NCollection_Sequence<TopoDS_Shape> seqEdges,
+    protected virtual Edge SameParameterEdge(in Shape edge,
+                                                    NCollection_Sequence<Shape> seqEdges,
                                                     NCollection_Sequence<bool> seqForward,
-                                                    NCollection_Map<TopoDS_Shape> mapMerged,
-                                                    BRepTools_ReShape locReShape)
+                                                    NCollection_Map<Shape> mapMerged,
+                                                    ReShape locReShape)
     {
         // Retrieve reference section
-        TopoDS_Shape aTmpShape = myReShape.InternalApply(edge); // for porting
-        TopoDS_Edge Edge1 = TopoDS.Edge(aTmpShape);
+        Shape aTmpShape = myReShape.InternalApply(edge); // for porting
+        Edge Edge1 = ShapeCasts.Edge(aTmpShape);
         aTmpShape = locReShape.InternalApply(Edge1);
         if (locReShape != myReShape)
         {
-            Edge1 = TopoDS.Edge(aTmpShape);
+            Edge1 = ShapeCasts.Edge(aTmpShape);
         }
         bool isDone = false;
 
         // Create data structures for temporary merged edges
-        var listFaces1 = new NCollection_List<TopoDS_Shape>();
-        var MergedFaces = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var listFaces1 = new NCollection_List<Shape>();
+        var MergedFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
 
         if (mySewing)
         {
             // Fill MergedFaces with faces of Edge1
-            TopoDS_Shape bnd1 = edge;
+            Shape bnd1 = edge;
             if (mySectionBound.IsBound(bnd1))
             {
                 bnd1 = mySectionBound[bnd1];
             }
             if (myBoundFaces.Contains(bnd1))
             {
-                var itf = new NCollection_List<TopoDS_Shape>.Iterator(myBoundFaces.FindFromKey(bnd1));
+                var itf = new NCollection_List<Shape>.Iterator(myBoundFaces.FindFromKey(bnd1));
                 for (; itf.More(); itf.Next())
                 {
                     if (MergedFaces.Add(itf.Value()))
@@ -576,24 +582,24 @@ public class BRepBuilderAPI_Sewing : Transient
         else
         {
             // Create presentation edge
-            TopExp.Vertices(Edge1, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+            Exploration.Vertices(Edge1, out Vertex V1, out Vertex V2);
             if (myVertexNode.Contains(V1))
             {
-                V1 = TopoDS.Vertex(myVertexNode.FindFromKey(V1));
+                V1 = ShapeCasts.Vertex(myVertexNode.FindFromKey(V1));
             }
             if (myVertexNode.Contains(V2))
             {
-                V2 = TopoDS.Vertex(myVertexNode.FindFromKey(V2));
+                V2 = ShapeCasts.Vertex(myVertexNode.FindFromKey(V2));
             }
 
-            TopoDS_Edge NewEdge = Edge1;
+            Edge NewEdge = Edge1;
             NewEdge.EmptyCopy();
 
             // Add the vertices
-            var aBuilder = new BRep_Builder();
-            TopoDS_Shape anEdge = NewEdge.Oriented(TopAbs_FORWARD);
-            aBuilder.Add(anEdge, V1.Oriented(TopAbs_FORWARD));
-            aBuilder.Add(anEdge, V2.Oriented(TopAbs_REVERSED));
+            var aBuilder = new BrepBuilder();
+            Shape anEdge = NewEdge.Oriented(Forward);
+            aBuilder.Add(anEdge, V1.Oriented(Forward));
+            aBuilder.Add(anEdge, V2.Oriented(Reversed));
 
             Edge1 = NewEdge;
         }
@@ -604,16 +610,16 @@ public class BRepBuilderAPI_Sewing : Transient
         for (int i = 1; i <= seqEdges.Length(); i++)
         {
             // Retrieve candidate section
-            TopoDS_Shape oedge2 = seqEdges[i];
+            Shape oedge2 = seqEdges[i];
 
             if (mySewing)
             {
                 aTmpShape = myReShape.InternalApply(oedge2); // for porting
-                TopoDS_Edge Edge2 = TopoDS.Edge(aTmpShape);
+                Edge Edge2 = ShapeCasts.Edge(aTmpShape);
                 aTmpShape = locReShape.InternalApply(Edge2);
                 if (locReShape != myReShape)
                 {
-                    Edge2 = TopoDS.Edge(aTmpShape);
+                    Edge2 = ShapeCasts.Edge(aTmpShape);
                 }
 
                 // Calculate relative orientation
@@ -624,7 +630,7 @@ public class BRepBuilderAPI_Sewing : Transient
                 }
 
                 // Retrieve faces information for the second edge
-                TopoDS_Shape bnd2 = oedge2;
+                Shape bnd2 = oedge2;
                 if (mySectionBound.IsBound(bnd2))
                 {
                     bnd2 = mySectionBound[bnd2];
@@ -633,18 +639,18 @@ public class BRepBuilderAPI_Sewing : Transient
                 {
                     continue; // Skip floating edge
                 }
-                NCollection_List<TopoDS_Shape> listFaces2 = myBoundFaces.FindFromKey(bnd2);
+                NCollection_List<Shape> listFaces2 = myBoundFaces.FindFromKey(bnd2);
 
                 int whichSec = 1; // Indicates on which edge the pCurve has been reported
-                TopoDS_Edge NewEdge =
+                Edge NewEdge =
                     SameParameterEdge(Edge1, Edge2, listFaces1, listFaces2, Orientation, ref whichSec);
-                if (NewEdge.IsNull())
+                if (NewEdge.IsNull)
                 {
                     continue;
                 }
 
                 // Record faces information for the temporary merged edge
-                var itf = new NCollection_List<TopoDS_Shape>.Iterator(listFaces2);
+                var itf = new NCollection_List<Shape>.Iterator(listFaces2);
                 for (; itf.More(); itf.Next())
                 {
                     if (MergedFaces.Add(itf.Value()))
@@ -674,7 +680,7 @@ public class BRepBuilderAPI_Sewing : Transient
         if (isDone)
         {
             // Change result orientation
-            Edge1.Orientation(isForward ? TopAbs_FORWARD : TopAbs_REVERSED);
+            Edge1.Orientation(isForward ? Forward : Reversed);
         }
         else
         {
@@ -686,15 +692,15 @@ public class BRepBuilderAPI_Sewing : Transient
 
     //=================================================================================================
 
-    private static bool findNMVertices(in TopoDS_Edge theEdge,
-                                       NCollection_Sequence<TopoDS_Shape> theSeqNMVert,
+    private static bool findNMVertices(in Edge theEdge,
+                                       NCollection_Sequence<Shape> theSeqNMVert,
                                        NCollection_Sequence<double> theSeqPars)
     {
-        var aItV = new TopoDS_Iterator(theEdge, false);
+        var aItV = new Iterator(theEdge, false);
         for (; aItV.More(); aItV.Next())
         {
-            if (aItV.Value().Orientation() == TopAbs_INTERNAL
-                || aItV.Value().Orientation() == TopAbs_EXTERNAL)
+            if (aItV.Value().Orientation() == Internal
+                || aItV.Value().Orientation() == External)
             {
                 theSeqNMVert.Append(aItV.Value());
             }
@@ -704,27 +710,27 @@ public class BRepBuilderAPI_Sewing : Transient
         {
             return false;
         }
-        Geom_Curve? c3d = BRep_Tool.Curve(theEdge, out double first, out double last);
-        var GAC = new GeomAdaptor_Curve(c3d!);
-        var locProj = new Extrema_ExtPC();
+        Curve3D? c3d = Tool.Curve(theEdge, out double first, out double last);
+        var GAC = new CurveAdaptor(c3d!);
+        var locProj = new CurvePointExtrema();
         locProj.Initialize(GAC, first, last);
         Point3D pfirst = GAC.Value(first), plast = GAC.Value(last);
 
         for (int i = 1; i <= nbV; i++)
         {
-            TopoDS_Vertex aV = TopoDS.Vertex(theSeqNMVert.Value(i));
-            Point3D pt = BRep_Tool.Pnt(aV);
+            Vertex aV = ShapeCasts.Vertex(theSeqNMVert.Value(i));
+            Point3D pt = Tool.Pnt(aV);
 
             double distF2 = pfirst.SquareDistance(pt);
             double distL2 = plast.SquareDistance(pt);
             double apar = (distF2 > distL2 ? last : first);
             // Project current point on curve
             locProj.Perform(pt);
-            if (locProj.IsDone() && locProj.NbExt() > 0)
+            if (locProj.IsDone && locProj.ExtCount > 0)
             {
                 double dist2Min = Min(distF2, distL2);
                 int ind, indMin = 0;
-                for (ind = 1; ind <= locProj.NbExt(); ind++)
+                for (ind = 1; ind <= locProj.ExtCount; ind++)
                 {
                     double dProj2 = locProj.SquareDistance(ind);
                     if (dProj2 < dist2Min)
@@ -744,22 +750,22 @@ public class BRepBuilderAPI_Sewing : Transient
         return true;
     }
 
-    private static void ComputeToleranceVertex(TopoDS_Vertex theV1, TopoDS_Vertex theV2, ref TopoDS_Vertex theNewV)
+    private static void ComputeToleranceVertex(Vertex theV1, Vertex theV2, ref Vertex theNewV)
     {
         int m, n;
         double dR, aD, aEps;
         Span<double> aR = stackalloc double[2];
-        var aV = new TopoDS_Vertex[2];
+        var aV = new Vertex[2];
         var aP = new Point3D[2];
-        var aBB = new BRep_Builder();
+        var aBB = new BrepBuilder();
         //
         aEps = RealEpsilon();
         aV[0] = theV1;
         aV[1] = theV2;
         for (m = 0; m < 2; ++m)
         {
-            aP[m] = BRep_Tool.Pnt(aV[m]);
-            aR[m] = BRep_Tool.Tolerance(aV[m]);
+            aP[m] = Tool.Pnt(aV[m]);
+            aR[m] = Tool.Tolerance(aV[m]);
         }
         //
         m = 0; // max R
@@ -792,24 +798,24 @@ public class BRepBuilderAPI_Sewing : Transient
         }
     }
 
-    private static void ComputeToleranceVertex(TopoDS_Vertex theV1,
-                                               TopoDS_Vertex theV2,
-                                               TopoDS_Vertex theV3,
-                                               ref TopoDS_Vertex theNewV)
+    private static void ComputeToleranceVertex(Vertex theV1,
+                                               Vertex theV2,
+                                               Vertex theV3,
+                                               ref Vertex theNewV)
     {
         double aDi, aDmax;
         var aCenter = new Point3D();
         var aP = new Point3D[3];
         Span<double> aR = stackalloc double[3];
-        var aV = new TopoDS_Vertex[3];
+        var aV = new Vertex[3];
         var aXYZ = new Xyz(0.0, 0.0, 0.0);
         aV[0] = theV1;
         aV[1] = theV2;
         aV[2] = theV3;
         for (int i = 0; i < 3; ++i)
         {
-            aP[i] = BRep_Tool.Pnt(aV[i]);
-            aR[i] = BRep_Tool.Tolerance(aV[i]);
+            aP[i] = Tool.Pnt(aV[i]);
+            aR[i] = Tool.Tolerance(aV[i]);
             aXYZ = aXYZ + aP[i].XYZ();
         }
         //
@@ -827,7 +833,7 @@ public class BRepBuilderAPI_Sewing : Transient
             }
         }
 
-        var aBB = new BRep_Builder();
+        var aBB = new BrepBuilder();
         aBB.MakeVertex(ref theNewV, aCenter, aDmax);
     }
 
@@ -835,10 +841,10 @@ public class BRepBuilderAPI_Sewing : Transient
     /// Merges two sections into a new edge keeping the 3D curve, range and parametrisation of one of them (the longer
     /// one at the first call; <paramref name="whichSec"/> tells which) and the pcurves of both. Called from Merging only.
     /// </summary>
-    protected virtual TopoDS_Edge SameParameterEdge(in TopoDS_Edge edgeFirst,
-                                                    in TopoDS_Edge edgeLast,
-                                                    NCollection_List<TopoDS_Shape> listFacesFirst,
-                                                    NCollection_List<TopoDS_Shape> listFacesLast,
+    protected virtual Edge SameParameterEdge(in Edge edgeFirst,
+                                                    in Edge edgeLast,
+                                                    NCollection_List<Shape> listFacesFirst,
+                                                    NCollection_List<Shape> listFacesLast,
                                                     bool secForward,
                                                     ref int whichSec,
                                                     bool firstCall = true)
@@ -846,20 +852,20 @@ public class BRepBuilderAPI_Sewing : Transient
         // Do not process floating edges
         if (listFacesFirst.Extent() == 0 || listFacesLast.Extent() == 0)
         {
-            return new TopoDS_Edge();
+            return new Edge();
         }
 
         // Sort input edges
-        TopoDS_Edge edge1 = new(), edge2 = new();
+        Edge edge1 = new(), edge2 = new();
         if (firstCall)
         {
             // Take the longest edge as first
-            Geom_Curve? c3d1 = BRep_Tool.Curve(TopoDS.Edge(edgeFirst), out double f, out double l);
-            var cAdapt1 = new GeomAdaptor_Curve(c3d1!);
-            double len1 = GCPnts_AbscissaPoint.Length(cAdapt1, f, l);
-            Geom_Curve? c3d2 = BRep_Tool.Curve(TopoDS.Edge(edgeLast), out f, out l);
-            var cAdapt2 = new GeomAdaptor_Curve(c3d2!);
-            double len2 = GCPnts_AbscissaPoint.Length(cAdapt2, f, l);
+            Curve3D? c3d1 = Tool.Curve(ShapeCasts.Edge(edgeFirst), out double f, out double l);
+            var cAdapt1 = new CurveAdaptor(c3d1!);
+            double len1 = AbscissaPoint.Length(cAdapt1, f, l);
+            Curve3D? c3d2 = Tool.Curve(ShapeCasts.Edge(edgeLast), out f, out l);
+            var cAdapt2 = new CurveAdaptor(c3d2!);
+            double len2 = AbscissaPoint.Length(cAdapt2, f, l);
             if (len1 < len2)
             {
                 edge1 = edgeLast;
@@ -889,38 +895,38 @@ public class BRepBuilderAPI_Sewing : Transient
             }
         }
 
-        BRep_Tool.Range(edge1, out double first, out double last);
-        var aBuilder = new BRep_Builder();
+        Tool.Range(edge1, out double first, out double last);
+        var aBuilder = new BrepBuilder();
 
         // To keep NM vertices on edge
-        var aSeqNMVert = new NCollection_Sequence<TopoDS_Shape>();
+        var aSeqNMVert = new NCollection_Sequence<Shape>();
         var aSeqNMPars = new NCollection_Sequence<double>();
         findNMVertices(edge1, aSeqNMVert, aSeqNMPars);
         findNMVertices(edge2, aSeqNMVert, aSeqNMPars);
 
         // Create new edge
-        var edge = new TopoDS_Edge();
+        var edge = new Edge();
         aBuilder.MakeEdge(ref edge);
         edge.Orientation(edge1.Orientation());
 
         // Retrieve edge curve
-        Geom_Curve? c3d = BRep_Tool.Curve(edge1, out Placement loc3d, out double first3d, out double last3d);
+        Curve3D? c3d = Tool.Curve(edge1, out Placement loc3d, out double first3d, out double last3d);
         if (!loc3d.IsIdentity)
         {
-            c3d = (Geom_Curve)c3d!.Copy();
+            c3d = (Curve3D)c3d!.Copy();
             c3d.Transform(loc3d.Transformation());
         }
-        aBuilder.UpdateEdge(edge, c3d, BRep_Tool.Tolerance(edge1));
+        aBuilder.UpdateEdge(edge, c3d, Tool.Tolerance(edge1));
         aBuilder.Range(edge, first, last);
         aBuilder.SameRange(edge, false); // true
         aBuilder.SameParameter(edge, false);
         // Create and add new vertices
         {
-            TopoDS_Vertex V1New = new(), V2New = new();
+            Vertex V1New = new(), V2New = new();
 
             // Retrieve original vertices from edges
-            TopExp.Vertices(edge1, out TopoDS_Vertex V11, out TopoDS_Vertex V12);
-            TopExp.Vertices(edge2, out TopoDS_Vertex V21, out TopoDS_Vertex V22);
+            Exploration.Vertices(edge1, out Vertex V11, out Vertex V12);
+            Exploration.Vertices(edge2, out Vertex V21, out Vertex V22);
 
             // check that edges merged valid way (for edges having length less than specified
             // tolerance
@@ -933,14 +939,14 @@ public class BRepBuilderAPI_Sewing : Transient
                 {
                     if (V11.IsSame(V22) || V12.IsSame(V21))
                     {
-                        return new TopoDS_Edge();
+                        return new Edge();
                     }
                 }
                 else
                 {
                     if (V11.IsSame(V21) || V12.IsSame(V22))
                     {
-                        return new TopoDS_Edge();
+                        return new Edge();
                     }
                 }
             }
@@ -1006,10 +1012,10 @@ public class BRepBuilderAPI_Sewing : Transient
                 }
             }
             // Add the vertices in the good sense
-            TopoDS_Shape anEdge = edge.Oriented(TopAbs_FORWARD);
-            TopoDS_Shape aLocalEdge = V1New.Oriented(TopAbs_FORWARD); //(listNode.First()).Oriented(TopAbs_FORWARD);
+            Shape anEdge = edge.Oriented(Forward);
+            Shape aLocalEdge = V1New.Oriented(Forward); //(listNode.First()).Oriented(TopAbs_FORWARD);
             aBuilder.Add(anEdge, aLocalEdge);
-            aLocalEdge = V2New.Oriented(TopAbs_REVERSED); //(listNode.Last()).Oriented(TopAbs_REVERSED);
+            aLocalEdge = V2New.Oriented(Reversed); //(listNode.Last()).Oriented(TopAbs_REVERSED);
             aBuilder.Add(anEdge, aLocalEdge);
 
             int k = 1;
@@ -1021,9 +1027,9 @@ public class BRepBuilderAPI_Sewing : Transient
 
         // Retrieve second PCurves
         var loc2 = new Placement();
-        Geom_Surface? surf2 = null;
+        Surface? surf2 = null;
 
-        var itf2 = new NCollection_List<TopoDS_Shape>.Iterator();
+        var itf2 = new NCollection_List<Shape>.Iterator();
         if (whichSec == 1)
         {
             itf2.Initialize(listFacesLast);
@@ -1033,26 +1039,26 @@ public class BRepBuilderAPI_Sewing : Transient
             itf2.Initialize(listFacesFirst);
         }
         bool isResEdge = false;
-        var fac2 = new TopoDS_Face();
+        var fac2 = new Face();
         for (; itf2.More(); itf2.Next())
         {
-            Geom2d_Curve? c2d2 = null, c2d21 = null;
+            Curve2D? c2d2 = null, c2d21 = null;
             double firstOld, lastOld;
-            fac2 = TopoDS.Face(itf2.Value());
+            fac2 = ShapeCasts.Face(itf2.Value());
 
-            surf2 = BRep_Tool.Surface(fac2, out loc2);
+            surf2 = Tool.Surface(fac2, out loc2);
             bool isSeam2 = ((IsUClosedSurface(surf2!, edge2, loc2) || IsVClosedSurface(surf2!, edge2, loc2))
-                            && BRep_Tool.IsClosed(TopoDS.Edge(edge2), fac2));
+                            && Tool.IsClosed(ShapeCasts.Edge(edge2), fac2));
             if (isSeam2)
             {
                 if (!myNonmanifold)
                 {
-                    return new TopoDS_Edge();
+                    return new Edge();
                 }
-                TopoDS_Shape aTmpShape = edge2.Reversed(); // for porting
-                c2d21 = BRep_Tool.CurveOnSurface(TopoDS.Edge(aTmpShape), fac2, out firstOld, out lastOld);
+                Shape aTmpShape = edge2.Reversed(); // for porting
+                c2d21 = Tool.CurveOnSurface(ShapeCasts.Edge(aTmpShape), fac2, out firstOld, out lastOld);
             }
-            c2d2 = BRep_Tool.CurveOnSurface(edge2, fac2, out firstOld, out lastOld);
+            c2d2 = Tool.CurveOnSurface(edge2, fac2, out firstOld, out lastOld);
             if (c2d2 is null && c2d21 is null)
             {
                 continue;
@@ -1060,12 +1066,12 @@ public class BRepBuilderAPI_Sewing : Transient
 
             if (c2d21 is not null)
             {
-                c2d21 = (Geom2d_Curve)c2d21.Copy();
+                c2d21 = (Curve2D)c2d21.Copy();
                 if (!secForward)
                 {
-                    if (c2d21 is Geom2d_Line)
+                    if (c2d21 is LineCurve2D)
                     {
-                        c2d21 = new Geom2d_TrimmedCurve(c2d21, firstOld, lastOld);
+                        c2d21 = new TrimmedCurve2D(c2d21, firstOld, lastOld);
                     }
                     double first2d = firstOld; // c2dTmp->FirstParameter(); BUG USA60321
                     double last2d = lastOld;   // c2dTmp->LastParameter();
@@ -1077,13 +1083,13 @@ public class BRepBuilderAPI_Sewing : Transient
             }
 
             // Make second PCurve sameRange with the 3d curve
-            c2d2 = (Geom2d_Curve)c2d2!.Copy(); // OCCT: null when only the seam's reversed pcurve exists
+            c2d2 = (Curve2D)c2d2!.Copy(); // OCCT: null when only the seam's reversed pcurve exists
 
             if (!secForward)
             {
-                if (c2d2 is Geom2d_Line)
+                if (c2d2 is LineCurve2D)
                 {
-                    c2d2 = new Geom2d_TrimmedCurve(c2d2, firstOld, lastOld);
+                    c2d2 = new TrimmedCurve2D(c2d2, firstOld, lastOld);
                 }
                 double first2d = firstOld;
                 double last2d = lastOld;
@@ -1100,9 +1106,9 @@ public class BRepBuilderAPI_Sewing : Transient
 
             // Add second PCurve
             bool isSeam = false;
-            TopAbs_Orientation Ori = TopAbs_FORWARD;
+            Orientation Ori = Forward;
 
-            var itf1 = new NCollection_List<TopoDS_Shape>.Iterator();
+            var itf1 = new NCollection_List<Shape>.Iterator();
             if (whichSec == 1)
             {
                 itf1.Initialize(listFacesFirst);
@@ -1113,31 +1119,31 @@ public class BRepBuilderAPI_Sewing : Transient
             }
             for (; itf1.More() && !isSeam; itf1.Next())
             {
-                Geom2d_Curve? c2d1 = null, c2d11 = null;
-                TopoDS_Face fac1 = TopoDS.Face(itf1.Value());
+                Curve2D? c2d1 = null, c2d11 = null;
+                Face fac1 = ShapeCasts.Face(itf1.Value());
 
-                Geom_Surface? surf1 = BRep_Tool.Surface(fac1, out Placement loc1);
+                Surface? surf1 = Tool.Surface(fac1, out Placement loc1);
 
                 double first2d, last2d;
                 bool isSeam1 = ((IsUClosedSurface(surf1!, edge1, loc1) || IsVClosedSurface(surf1!, edge1, loc1))
-                                && BRep_Tool.IsClosed(TopoDS.Edge(edge1), fac1));
-                c2d1 = BRep_Tool.CurveOnSurface(edge1, fac1, out first2d, out last2d);
+                                && Tool.IsClosed(ShapeCasts.Edge(edge1), fac1));
+                c2d1 = Tool.CurveOnSurface(edge1, fac1, out first2d, out last2d);
                 Ori = edge1.Orientation();
-                if (fac1.Orientation() == TopAbs_REVERSED)
+                if (fac1.Orientation() == Reversed)
                 {
-                    Ori = TopAbs.Reverse(Ori);
+                    Ori = global::Kerf.Engine.Topology.TopAbs.Reverse(Ori);
                 }
 
                 if (isSeam1)
                 {
                     if (!myNonmanifold)
                     {
-                        return new TopoDS_Edge();
+                        return new Edge();
                     }
-                    TopoDS_Shape aTmpShape = edge1.Reversed(); // for porting
-                    c2d11 = BRep_Tool.CurveOnSurface(TopoDS.Edge(aTmpShape), fac1, out first2d, out last2d);
+                    Shape aTmpShape = edge1.Reversed(); // for porting
+                    c2d11 = Tool.CurveOnSurface(ShapeCasts.Edge(aTmpShape), fac1, out first2d, out last2d);
                     // if(fac1.Orientation() == TopAbs_REVERSED) //
-                    if (Ori == TopAbs_FORWARD)
+                    if (Ori == Forward)
                     {
                         aBuilder.UpdateEdge(edge, c2d1, c2d11, fac1, 0);
                     }
@@ -1173,7 +1179,7 @@ public class BRepBuilderAPI_Sewing : Transient
                             surf2!.Bounds(out double U1, out double U2, out double V1, out double V2);
                             isSeam = ((uclosed && aDist > 0.75 * (Math.Abs(U2 - U1)))
                                       || (vclosed && aDist > 0.75 * (Math.Abs(V2 - V1))));
-                            if (!isSeam && BRep_Tool.IsClosed(TopoDS.Edge(edge), fac1))
+                            if (!isSeam && Tool.IsClosed(ShapeCasts.Edge(edge), fac1))
                             {
                                 continue;
                             }
@@ -1184,7 +1190,7 @@ public class BRepBuilderAPI_Sewing : Transient
                 isResEdge = true;
                 if (isSeam)
                 {
-                    if (Ori == TopAbs_FORWARD)
+                    if (Ori == Forward)
                     {
                         aBuilder.UpdateEdge(edge, c2d1, c2d2, surf2, loc2, global::Kerf.Engine.Foundation.Precision.Confusion());
                     }
@@ -1195,19 +1201,19 @@ public class BRepBuilderAPI_Sewing : Transient
                 }
                 else if (isSeam2)
                 {
-                    TopAbs_Orientation InitOri = edge2.Orientation();
-                    TopAbs_Orientation SecOri = edge.Orientation();
-                    if (fac2.Orientation() == TopAbs_REVERSED)
+                    Orientation InitOri = edge2.Orientation();
+                    Orientation SecOri = edge.Orientation();
+                    if (fac2.Orientation() == Reversed)
                     {
-                        InitOri = TopAbs.Reverse(InitOri);
-                        SecOri = TopAbs.Reverse(SecOri);
+                        InitOri = global::Kerf.Engine.Topology.TopAbs.Reverse(InitOri);
+                        SecOri = global::Kerf.Engine.Topology.TopAbs.Reverse(SecOri);
                     }
                     if (!secForward)
                     {
-                        InitOri = TopAbs.Reverse(InitOri);
+                        InitOri = global::Kerf.Engine.Topology.TopAbs.Reverse(InitOri);
                     }
 
-                    if (InitOri == TopAbs_FORWARD)
+                    if (InitOri == Forward)
                     {
                         aBuilder.UpdateEdge(edge, c2d2, c2d21, surf2, loc2, global::Kerf.Engine.Foundation.Precision.Confusion());
                     }
@@ -1231,10 +1237,10 @@ public class BRepBuilderAPI_Sewing : Transient
                 SameParameter(edge);
             }
 
-            if (BRep_Tool.SameParameter(edge))
+            if (Tool.SameParameter(edge))
             {
                 isSamePar = true;
-                tolReached = BRep_Tool.Tolerance(edge);
+                tolReached = Tool.Tolerance(edge);
             }
         }
         catch (FailureException)
@@ -1247,17 +1253,17 @@ public class BRepBuilderAPI_Sewing : Transient
             int whichSecn = whichSec;
             // Try to merge on the second section
             bool second_ok = false;
-            TopoDS_Edge s_edge = SameParameterEdge(edgeFirst,
+            Edge s_edge = SameParameterEdge(edgeFirst,
                                                    edgeLast,
                                                    listFacesFirst,
                                                    listFacesLast,
                                                    secForward,
                                                    ref whichSecn,
                                                    false);
-            if (!s_edge.IsNull())
+            if (!s_edge.IsNull)
             {
-                double tolReached_2 = BRep_Tool.Tolerance(s_edge);
-                second_ok = (BRep_Tool.SameParameter(s_edge) && tolReached_2 < tolReached);
+                double tolReached_2 = Tool.Tolerance(s_edge);
+                second_ok = (Tool.SameParameter(s_edge) && tolReached_2 < tolReached);
                 if (second_ok)
                 {
                     edge = s_edge;
@@ -1266,9 +1272,9 @@ public class BRepBuilderAPI_Sewing : Transient
                 }
             }
 
-            if (!second_ok && !edge.IsNull())
+            if (!second_ok && !edge.IsNull)
             {
-                var c3dAdapt = new GeomAdaptor_Curve(c3d!);
+                var c3dAdapt = new CurveAdaptor(c3d!);
 
                 // Discretize edge curve
                 int i, j, nbp = 23;
@@ -1284,16 +1290,16 @@ public class BRepBuilderAPI_Sewing : Transient
 
                 for (j = 1; more; j++)
                 {
-                    Geom2d_Curve? c2d2 = null;
-                    BRep_Tool.CurveOnSurface(edge, ref c2d2, ref surf2, ref loc2, ref first, ref last, j);
+                    Curve2D? c2d2 = null;
+                    Tool.CurveOnSurface(edge, ref c2d2, ref surf2, ref loc2, ref first, ref last, j);
 
                     more = c2d2 is not null;
                     if (more)
                     {
-                        Geom_Surface aS = surf2!;
+                        Surface aS = surf2!;
                         if (!loc2.IsIdentity)
                         {
-                            aS = (Geom_Surface)surf2!.Transformed(loc2.Transformation());
+                            aS = (Surface)surf2!.Transformed(loc2.Transformation());
                         }
 
                         double dist2 = 0.0;
@@ -1317,7 +1323,7 @@ public class BRepBuilderAPI_Sewing : Transient
                     if (tolReached > MaxTolerance())
                     {
                         // Set tolerance directly to overwrite too large tolerance
-                        ((BRep_TEdge)edge.TShape()!).Tolerance(maxTol);
+                        ((BrepTEdge)edge.TShape()!).Tolerance(maxTol);
                     }
                     else
                     {
@@ -1329,7 +1335,7 @@ public class BRepBuilderAPI_Sewing : Transient
             }
         }
 
-        double tolEdge1 = BRep_Tool.Tolerance(edge);
+        double tolEdge1 = Tool.Tolerance(edge);
         if (tolEdge1 > MaxTolerance())
         {
             edge.Nullify();
@@ -1340,7 +1346,7 @@ public class BRepBuilderAPI_Sewing : Transient
     //=================================================================================================
 
     /// <summary>Evaluates the mean angles between the normals along the sections. Called from MergingOfSections only.</summary>
-    protected virtual void EvaluateAngulars(NCollection_Sequence<TopoDS_Shape> sequenceSec,
+    protected virtual void EvaluateAngulars(NCollection_Sequence<Shape> sequenceSec,
                                             NCollection_Array1<bool> secForward,
                                             NCollection_Array1<double> tabAng,
                                             int indRef)
@@ -1349,34 +1355,34 @@ public class BRepBuilderAPI_Sewing : Transient
 
         int i, j, npt = 4, lengSec = sequenceSec.Length();
 
-        TopoDS_Edge edge;
-        TopoDS_Face face;
+        Edge edge;
+        Face face;
         Placement loc;
         double first = 0.0, last = 0.0;
-        Geom_Curve? c3d;
-        Geom2d_Curve? c2d = null;
-        Geom_Surface? surf = null;
+        Curve3D? c3d;
+        Curve2D? c2d = null;
+        Surface? surf = null;
         var normRef = new NCollection_Array1<Vector3D>(1, npt);
 
         for (i = indRef; i <= lengSec; i++)
         {
-            edge = TopoDS.Edge(sequenceSec[i]);
+            edge = ShapeCasts.Edge(sequenceSec[i]);
 
-            TopoDS_Shape bnd = edge;
+            Shape bnd = edge;
             if (mySectionBound.IsBound(bnd))
             {
                 bnd = mySectionBound[bnd];
             }
             if (myBoundFaces.Contains(bnd))
             {
-                face = TopoDS.Face(myBoundFaces.FindFromKey(bnd).First());
-                surf = BRep_Tool.Surface(face, out loc);
+                face = ShapeCasts.Face(myBoundFaces.FindFromKey(bnd).First());
+                surf = Tool.Surface(face, out loc);
                 if (!loc.IsIdentity)
                 {
-                    surf = (Geom_Surface)surf!.Copy();
+                    surf = (Surface)surf!.Copy();
                     surf.Transform(loc.Transformation());
                 }
-                c2d = BRep_Tool.CurveOnSurface(edge, face, out first, out last);
+                c2d = Tool.CurveOnSurface(edge, face, out first, out last);
             }
             else if (i == indRef)
             {
@@ -1387,15 +1393,15 @@ public class BRepBuilderAPI_Sewing : Transient
                 continue;
             }
 
-            c3d = BRep_Tool.Curve(edge, out loc, out first, out last);
+            c3d = Tool.Curve(edge, out loc, out first, out last);
             if (!loc.IsIdentity)
             {
-                c3d = (Geom_Curve)c3d!.Copy();
+                c3d = (Curve3D)c3d!.Copy();
                 c3d.Transform(loc.Transformation());
             }
 
-            var adapt = new GeomAdaptor_Curve(c3d!);
-            var uniAbs = new GCPnts_UniformAbscissa(adapt, npt, first, last);
+            var adapt = new CurveAdaptor(c3d!);
+            var uniAbs = new UniformAbscissa(adapt, npt, first, last);
 
             double cumulateAngular = 0.0;
             int nbComputedAngle = 0;
@@ -1439,7 +1445,7 @@ public class BRepBuilderAPI_Sewing : Transient
     /// Evaluates the distances between the section <paramref name="indRef"/> and the following ones, with their mutual
     /// orientations, lengths and least distances. Called from MergingOfSections only.
     /// </summary>
-    protected virtual void EvaluateDistances(NCollection_Sequence<TopoDS_Shape> sequenceSec,
+    protected virtual void EvaluateDistances(NCollection_Sequence<Shape> sequenceSec,
                                              NCollection_Array1<bool> secForward,
                                              NCollection_Array1<double> tabDst,
                                              NCollection_Array1<double> arrLen,
@@ -1456,22 +1462,22 @@ public class BRepBuilderAPI_Sewing : Transient
 
         int i, j, lengSec = sequenceSec.Length();
 
-        Geom_Curve? c3dRef = null;
+        Curve3D? c3dRef = null;
         double firstRef = 0.0, lastRef = 0.0;
 
         for (i = indRef; i <= lengSec; i++)
         {
             // reading of the edge (attention for the first one: reference)
-            TopoDS_Edge sec = TopoDS.Edge(sequenceSec[i]);
+            Edge sec = ShapeCasts.Edge(sequenceSec[i]);
 
-            Geom_Curve? c3d = BRep_Tool.Curve(sec, out Placement loc, out double first, out double last);
+            Curve3D? c3d = Tool.Curve(sec, out Placement loc, out double first, out double last);
             if (c3d is null)
             {
                 continue;
             }
             if (!loc.IsIdentity)
             {
-                c3d = (Geom_Curve)c3d.Copy();
+                c3d = (Curve3D)c3d.Copy();
                 c3d.Transform(loc.Transformation());
             }
 
@@ -1617,10 +1623,10 @@ public class BRepBuilderAPI_Sewing : Transient
     //=================================================================================================
 
     /// <summary>True if the two edges, on a closed surface of the face, would make a merged closed edge.</summary>
-    protected bool IsMergedClosed(in TopoDS_Edge Edge1, in TopoDS_Edge Edge2, in TopoDS_Face face)
+    protected bool IsMergedClosed(in Edge Edge1, in Edge Edge2, in Face face)
     {
         // Check for closed surface
-        Geom_Surface? surf = BRep_Tool.Surface(face, out Placement loc);
+        Surface? surf = Tool.Surface(face, out Placement loc);
         bool isUClosed = IsUClosedSurface(surf!, Edge1, loc);
         bool isVClosed = IsVClosedSurface(surf!, Edge1, loc);
         if (!isUClosed && !isVClosed)
@@ -1628,8 +1634,8 @@ public class BRepBuilderAPI_Sewing : Transient
             return false;
         }
         // Check condition on closed surface
-        Geom2d_Curve? C2d1 = BRep_Tool.CurveOnSurface(Edge1, face, out double first2d1, out double last2d1);
-        Geom2d_Curve? C2d2 = BRep_Tool.CurveOnSurface(Edge2, face, out double first2d2, out double last2d2);
+        Curve2D? C2d1 = Tool.CurveOnSurface(Edge1, face, out double first2d1, out double last2d1);
+        Curve2D? C2d2 = Tool.CurveOnSurface(Edge2, face, out double first2d2, out double last2d2);
         if (C2d1 is null || C2d2 is null)
         {
             return false;
@@ -1640,10 +1646,10 @@ public class BRepBuilderAPI_Sewing : Transient
         double C2Umin, C2Vmin, C2Umax, C2Vmax;
         { // szv: Use brackets to destroy local variables
             Box2d B1 = new(), B2 = new();
-            var aC2d1 = new Geom2dAdaptor_Curve(C2d1);
-            var aC2d2 = new Geom2dAdaptor_Curve(C2d2);
-            BndLib_Add2dCurve.Add(aC2d1, first2d1, last2d1, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref B1);
-            BndLib_Add2dCurve.Add(aC2d2, first2d2, last2d2, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref B2);
+            var aC2d1 = new CurveAdaptor2D(C2d1);
+            var aC2d2 = new CurveAdaptor2D(C2d2);
+            Add2dCurve.Add(aC2d1, first2d1, last2d1, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref B1);
+            Add2dCurve.Add(aC2d2, first2d2, last2d2, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref B2);
             B1.Get(out C1Umin, out C1Vmin, out C1Umax, out C1Vmax);
             B2.Get(out C2Umin, out C2Vmin, out C2Umax, out C2Vmax);
             double du, dv;
@@ -1691,15 +1697,15 @@ public class BRepBuilderAPI_Sewing : Transient
     //=================================================================================================
 
     /// <summary>Removes from the candidates the sections that have nearer sections on the work face.</summary>
-    protected void AnalysisNearestEdges(NCollection_Sequence<TopoDS_Shape> sequenceSec,
+    protected void AnalysisNearestEdges(NCollection_Sequence<Shape> sequenceSec,
                                         NCollection_Sequence<int> seqIndCandidate,
                                         NCollection_Sequence<bool> seqOrientations,
                                         bool evalDist = true)
     {
         int workIndex = seqIndCandidate.First();
-        TopoDS_Shape workedge = sequenceSec.Value(workIndex);
-        TopoDS_Shape bnd = workedge;
-        var workfaces = new NCollection_List<TopoDS_Shape>();
+        Shape workedge = sequenceSec.Value(workIndex);
+        Shape bnd = workedge;
+        var workfaces = new NCollection_List<Shape>();
         if (mySectionBound.IsBound(bnd))
         {
             bnd = mySectionBound[bnd];
@@ -1712,8 +1718,8 @@ public class BRepBuilderAPI_Sewing : Transient
         {
             return;
         }
-        var mapFaces = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var lIt = new NCollection_List<TopoDS_Shape>.Iterator();
+        var mapFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var lIt = new NCollection_List<Shape>.Iterator();
         for (lIt.Initialize(workfaces); lIt.More(); lIt.Next())
         {
             mapFaces.Add(lIt.Value());
@@ -1735,7 +1741,7 @@ public class BRepBuilderAPI_Sewing : Transient
             }
             if (!isRemove)
             {
-                TopoDS_Shape bnd2 = sequenceSec.Value(index);
+                Shape bnd2 = sequenceSec.Value(index);
                 if (mySectionBound.IsBound(bnd2))
                 {
                     bnd2 = mySectionBound[bnd2];
@@ -1743,17 +1749,17 @@ public class BRepBuilderAPI_Sewing : Transient
 
                 if (myBoundFaces.Contains(bnd2))
                 {
-                    NCollection_List<TopoDS_Shape> listfaces = myBoundFaces.FindFromKey(bnd2);
+                    NCollection_List<Shape> listfaces = myBoundFaces.FindFromKey(bnd2);
                     bool isMerged = true;
                     for (lIt.Initialize(listfaces); lIt.More() && isMerged; lIt.Next())
                     {
                         if (mapFaces.Contains(lIt.Value()))
                         {
-                            Geom_Surface? surf = BRep_Tool.Surface(TopoDS.Face(lIt.Value()), out Placement loc);
+                            Surface? surf = Tool.Surface(ShapeCasts.Face(lIt.Value()), out Placement loc);
                             isMerged = ((IsUClosedSurface(surf!, bnd2, loc) || IsVClosedSurface(surf!, bnd2, loc))
-                                        && IsMergedClosed(TopoDS.Edge(sequenceSec.Value(index)),
-                                                          TopoDS.Edge(workedge),
-                                                          TopoDS.Face(lIt.Value())));
+                                        && IsMergedClosed(ShapeCasts.Edge(sequenceSec.Value(index)),
+                                                          ShapeCasts.Edge(workedge),
+                                                          ShapeCasts.Face(lIt.Value())));
                         }
                     }
                     if (!isMerged)
@@ -1793,8 +1799,8 @@ public class BRepBuilderAPI_Sewing : Transient
         for (int k = 1; k <= seqNotCandidate.Length(); k++)
         {
             int index1 = seqNotCandidate.Value(k);
-            TopoDS_Shape edge = sequenceSec.Value(index1);
-            var tmpSeq = new NCollection_Sequence<TopoDS_Shape>();
+            Shape edge = sequenceSec.Value(index1);
+            var tmpSeq = new NCollection_Sequence<Shape>();
             tmpSeq.Append(edge);
             for (int kk = 1; kk <= seqIndCandidate.Length(); kk++)
             {
@@ -1858,7 +1864,7 @@ public class BRepBuilderAPI_Sewing : Transient
     /// Finds the sections that can be merged with the last reference of <paramref name="mapReference"/>, sorted by
     /// distance, with their orientations.
     /// </summary>
-    protected bool FindCandidates(NCollection_Sequence<TopoDS_Shape> seqSections,
+    protected bool FindCandidates(NCollection_Sequence<Shape> seqSections,
                                   NCollection_IndexedMap<int> mapReference,
                                   NCollection_Sequence<int> seqCandidates,
                                   NCollection_Sequence<bool> seqOrientations)
@@ -1871,22 +1877,22 @@ public class BRepBuilderAPI_Sewing : Transient
         // Retrieve last reference index
         int indReference = mapReference[mapReference.Extent()];
         int nbCandidates = 0;
-        var Faces1 = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var Faces1 = new NCollection_Map<Shape>(ShapeHasher.Instance);
         // if (nbSections > 1) {
 
-        TopoDS_Edge Edge1 = TopoDS.Edge(seqSections[indReference]);
+        Edge Edge1 = ShapeCasts.Edge(seqSections[indReference]);
 
         // Retrieve faces for reference section
 
         { // szv: Use brackets to destroy local variables
-            TopoDS_Shape bnd = Edge1;
+            Shape bnd = Edge1;
             if (mySectionBound.IsBound(bnd))
             {
                 bnd = mySectionBound[bnd];
             }
             if (myBoundFaces.Contains(bnd))
             {
-                var itf1 = new NCollection_List<TopoDS_Shape>.Iterator(myBoundFaces.FindFromKey(bnd));
+                var itf1 = new NCollection_List<Shape>.Iterator(myBoundFaces.FindFromKey(bnd));
                 for (; itf1.More(); itf1.Next())
                 {
                     Faces1.Add(itf1.Value());
@@ -1895,7 +1901,7 @@ public class BRepBuilderAPI_Sewing : Transient
         }
 
         // Check merging conditions for candidates and remove unsatisfactory
-        var seqSectionsNew = new NCollection_Sequence<TopoDS_Shape>();
+        var seqSectionsNew = new NCollection_Sequence<Shape>();
         var seqCandidatesNew = new NCollection_Sequence<int>();
         for (i = 1; i <= nbSections; i++)
         {
@@ -1906,7 +1912,7 @@ public class BRepBuilderAPI_Sewing : Transient
             }
             else
             {
-                TopoDS_Edge Edge2 = TopoDS.Edge(seqSections[i]);
+                Edge Edge2 = ShapeCasts.Edge(seqSections[i]);
                 seqSectionsNew.Append(Edge2);
                 seqCandidatesNew.Append(i);
             }
@@ -2052,8 +2058,8 @@ public class BRepBuilderAPI_Sewing : Transient
         if (nbCandidates > 0)
         {
             int anInd = seqCandidates.Value(1);
-            TopoDS_Edge Edge2 = TopoDS.Edge(seqSections[anInd]);
-            TopoDS_Shape bnd = Edge2;
+            Edge Edge2 = ShapeCasts.Edge(seqSections[anInd]);
+            Shape bnd = Edge2;
             if (mySectionBound.IsBound(bnd))
             {
                 bnd = mySectionBound[bnd];
@@ -2062,10 +2068,10 @@ public class BRepBuilderAPI_Sewing : Transient
             if (myBoundFaces.Contains(bnd))
             {
                 bool isOK = true;
-                var itf2 = new NCollection_List<TopoDS_Shape>.Iterator(myBoundFaces.FindFromKey(bnd));
+                var itf2 = new NCollection_List<Shape>.Iterator(myBoundFaces.FindFromKey(bnd));
                 for (; itf2.More() && isOK; itf2.Next())
                 {
-                    TopoDS_Face Face2 = TopoDS.Face(itf2.Value());
+                    Face Face2 = ShapeCasts.Face(itf2.Value());
                     // Check whether condition is satisfied
                     isOK = !Faces1.Contains(Face2);
                     if (!isOK)
@@ -2115,16 +2121,16 @@ public class BRepBuilderAPI_Sewing : Transient
         myLocalToleranceMode = false;
         mySewedShape.Nullify();
         // Load empty shape
-        Load(new TopoDS_Shape());
+        Load(new Shape());
     }
 
     //=================================================================================================
 
     /// <summary>Loads the context shape (and clears the inputs and results).</summary>
-    public void Load(in TopoDS_Shape theShape)
+    public void Load(in Shape theShape)
     {
         myReShape.Clear();
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             myShape.Nullify();
         }
@@ -2159,13 +2165,13 @@ public class BRepBuilderAPI_Sewing : Transient
     //=================================================================================================
 
     /// <summary>Adds a shape to be sewn or controlled.</summary>
-    public void Add(in TopoDS_Shape aShape)
+    public void Add(in Shape aShape)
     {
-        if (aShape.IsNull())
+        if (aShape.IsNull)
         {
             return;
         }
-        TopoDS_Shape oShape = myReShape.InternalApply(aShape);
+        Shape oShape = myReShape.InternalApply(aShape);
         myOldShapes.Add(aShape, oShape);
         myNbShapes = myOldShapes.Extent();
     }
@@ -2180,8 +2186,8 @@ public class BRepBuilderAPI_Sewing : Transient
     public void Perform(ProgressRange theProgress = default)
     {
         // OCCT.NET: copy at entry (decision 583).
-        bool isCopied = beginWork(out TopoDS_Shape anOriginals, out TopoDS_Shape aCopy,
-                                  out Dictionary<TopoDS_TShape, TopoDS_TShape>? aCopies);
+        bool isCopied = beginWork(out Shape anOriginals, out Shape aCopy,
+                                  out Dictionary<TShape, TShape>? aCopies);
         performSewing(theProgress);
         if (isCopied)
         {
@@ -2205,7 +2211,7 @@ public class BRepBuilderAPI_Sewing : Transient
             }
         }
 
-        if (myNbShapes != 0 || !myShape.IsNull())
+        if (myNbShapes != 0 || !myShape.IsNull)
         {
             FindFreeBoundaries();
 
@@ -2294,10 +2300,10 @@ public class BRepBuilderAPI_Sewing : Transient
     /// The sewn shape, frozen: a face, a shell, a solid or a compound; a null shape if nothing was built (all inputs
     /// degenerated).
     /// </summary>
-    public TopoDS_Shape SewedShape() => published(mySewedShape);
+    public Shape SewedShape() => published(mySewedShape);
 
     /// <summary>The sewn shape, as <see cref="SewedShape"/>, without freezing it (ported code).</summary>
-    internal TopoDS_Shape InternalSewedShape() => fromWork(mySewedShape);
+    internal Shape InternalSewedShape() => fromWork(mySewedShape);
 
     //=================================================================================================
 
@@ -2305,13 +2311,13 @@ public class BRepBuilderAPI_Sewing : Transient
     public int NbFreeEdges() => myFreeEdges.Extent();
 
     /// <summary>The <paramref name="index"/>-th free edge, frozen.</summary>
-    public TopoDS_Edge FreeEdge(int index) => TopoDS.Edge(published(InternalFreeEdge(index)));
+    public Edge FreeEdge(int index) => ShapeCasts.Edge(published(InternalFreeEdge(index)));
 
     /// <summary>The <paramref name="index"/>-th free edge, without freezing it (ported code).</summary>
-    internal TopoDS_Edge InternalFreeEdge(int index)
+    internal Edge InternalFreeEdge(int index)
     {
         Standard_OutOfRange_Raise_if(index < 0 || index > NbFreeEdges(), "BRepBuilderAPI_Sewing::FreeEdge");
-        return TopoDS.Edge(fromWork(myFreeEdges[index]));
+        return ShapeCasts.Edge(fromWork(myFreeEdges[index]));
     }
 
     //=================================================================================================
@@ -2320,10 +2326,10 @@ public class BRepBuilderAPI_Sewing : Transient
     public int NbMultipleEdges() => myMultipleEdges.Extent();
 
     /// <summary>The <paramref name="index"/>-th multiple edge, frozen.</summary>
-    public TopoDS_Edge MultipleEdge(int index)
+    public Edge MultipleEdge(int index)
     {
         Standard_OutOfRange_Raise_if(index < 0 || index > NbMultipleEdges(), "BRepBuilderAPI_Sewing::MultipleEdge");
-        return TopoDS.Edge(published(myMultipleEdges[index]));
+        return ShapeCasts.Edge(published(myMultipleEdges[index]));
     }
 
     //=================================================================================================
@@ -2332,21 +2338,21 @@ public class BRepBuilderAPI_Sewing : Transient
     public int NbContigousEdges() => myContigousEdges.Extent();
 
     /// <summary>The <paramref name="index"/>-th contiguous edge, frozen.</summary>
-    public TopoDS_Edge ContigousEdge(int index)
+    public Edge ContigousEdge(int index)
     {
         Standard_OutOfRange_Raise_if(index < 0 || index > NbContigousEdges(), "BRepBuilderAPI_Sewing::ContigousEdge");
-        return TopoDS.Edge(published(myContigousEdges.FindKey(index)));
+        return ShapeCasts.Edge(published(myContigousEdges.FindKey(index)));
     }
 
     //=================================================================================================
 
     /// <summary>The sections (edges) of the <paramref name="index"/>-th contiguous edge, frozen, in a new list.</summary>
-    public ISchematiqList<TopoDS_Shape> ContigousEdgeCouple(int index)
+    public ISchematiqList<Shape> ContigousEdgeCouple(int index)
     {
-        NCollection_List<TopoDS_Shape> aList = InternalContigousEdgeCouple(index);
-        var aShapes = new TopoDS_Shape[aList.Extent()];
+        NCollection_List<Shape> aList = InternalContigousEdgeCouple(index);
+        var aShapes = new Shape[aList.Extent()];
         int i = 0;
-        for (var anIt = new NCollection_List<TopoDS_Shape>.Iterator(aList); anIt.More(); anIt.Next())
+        for (var anIt = new NCollection_List<Shape>.Iterator(aList); anIt.More(); anIt.Next())
         {
             aShapes[i++] = published(anIt.Value());
         }
@@ -2354,7 +2360,7 @@ public class BRepBuilderAPI_Sewing : Transient
     }
 
     /// <summary>The sections of the <paramref name="index"/>-th contiguous edge: the algorithm's own list (ported code).</summary>
-    internal NCollection_List<TopoDS_Shape> InternalContigousEdgeCouple(int index)
+    internal NCollection_List<Shape> InternalContigousEdgeCouple(int index)
     {
         Standard_OutOfRange_Raise_if(index < 0 || index > NbContigousEdges(),
                                      "BRepBuilderAPI_Sewing::ContigousEdgeCouple");
@@ -2364,7 +2370,7 @@ public class BRepBuilderAPI_Sewing : Transient
     //=================================================================================================
 
     /// <summary>True if the section is bound to a boundary (see <see cref="SectionToBoundary"/>).</summary>
-    public bool IsSectionBound(in TopoDS_Edge section) => myContigSecBound.IsBound(toWork(section));
+    public bool IsSectionBound(in Edge section) => myContigSecBound.IsBound(toWork(section));
 
     //=================================================================================================
 
@@ -2373,10 +2379,10 @@ public class BRepBuilderAPI_Sewing : Transient
     /// edge gives the surface the section is attached to.
     /// </summary>
     /// <exception cref="NoSuchObjectException">The section isn't bound.</exception>
-    public TopoDS_Edge SectionToBoundary(in TopoDS_Edge section)
+    public Edge SectionToBoundary(in Edge section)
     {
         Standard_NoSuchObject_Raise_if(!IsSectionBound(section), "BRepBuilderAPI_Sewing::SectionToBoundary");
-        return TopoDS.Edge(published(myContigSecBound[toWork(section)]));
+        return ShapeCasts.Edge(published(myContigSecBound[toWork(section)]));
     }
 
     //=================================================================================================
@@ -2385,10 +2391,10 @@ public class BRepBuilderAPI_Sewing : Transient
     public int NbDeletedFaces() => myLittleFace.Extent();
 
     /// <summary>The <paramref name="index"/>-th deleted face, frozen.</summary>
-    public TopoDS_Face DeletedFace(int index)
+    public Face DeletedFace(int index)
     {
         Standard_OutOfRange_Raise_if(index < 0 || index > NbDeletedFaces(), "BRepBuilderAPI_Sewing::DeletedFace");
-        return TopoDS.Face(published(myLittleFace[index]));
+        return ShapeCasts.Face(published(myLittleFace[index]));
     }
 
     //=================================================================================================
@@ -2397,7 +2403,7 @@ public class BRepBuilderAPI_Sewing : Transient
     public int NbDegeneratedShapes() => myDegenerated.Extent();
 
     /// <summary>The <paramref name="index"/>-th degenerated shape, frozen.</summary>
-    public TopoDS_Shape DegeneratedShape(int index)
+    public Shape DegeneratedShape(int index)
     {
         Standard_OutOfRange_Raise_if(index < 0 || index > NbDegeneratedShapes(),
                                      "BRepBuilderAPI_Sewing::DegereratedShape");
@@ -2407,30 +2413,30 @@ public class BRepBuilderAPI_Sewing : Transient
     //=================================================================================================
 
     /// <summary>True if the input shape is degenerated.</summary>
-    public bool IsDegenerated(in TopoDS_Shape aShape)
+    public bool IsDegenerated(in Shape aShape)
     {
-        TopoDS_Shape NewShape = myReShape.InternalApply(toWork(aShape));
+        Shape NewShape = myReShape.InternalApply(toWork(aShape));
         // Degenerated face
-        if (aShape.ShapeType() == TopAbs_FACE)
+        if (aShape.ShapeType() == ShapeType.Face)
         {
-            return NewShape.IsNull();
+            return NewShape.IsNull;
         }
-        if (NewShape.IsNull())
+        if (NewShape.IsNull)
         {
             return false;
         }
         // Degenerated edge
-        if (NewShape.ShapeType() == TopAbs_EDGE)
+        if (NewShape.ShapeType() == ShapeType.Edge)
         {
-            return BRep_Tool.Degenerated(TopoDS.Edge(NewShape));
+            return Tool.Degenerated(ShapeCasts.Edge(NewShape));
         }
         // Degenerated wire
-        if (NewShape.ShapeType() == TopAbs_WIRE)
+        if (NewShape.ShapeType() == ShapeType.Wire)
         {
             bool isDegenerated = true;
-            for (var aIt = new TopoDS_Iterator(NewShape); aIt.More() && isDegenerated; aIt.Next())
+            for (var aIt = new Iterator(NewShape); aIt.More() && isDegenerated; aIt.Next())
             {
-                isDegenerated = BRep_Tool.Degenerated(TopoDS.Edge(aIt.Value()));
+                isDegenerated = Tool.Degenerated(ShapeCasts.Edge(aIt.Value()));
             }
             return isDegenerated;
         }
@@ -2440,9 +2446,9 @@ public class BRepBuilderAPI_Sewing : Transient
     //=================================================================================================
 
     /// <summary>True if the input shape has been modified.</summary>
-    public bool IsModified(in TopoDS_Shape aShape)
+    public bool IsModified(in Shape aShape)
     {
-        TopoDS_Shape NewShape = aShape;
+        Shape NewShape = aShape;
         if (myOldShapes.Contains(aShape))
         {
             NewShape = fromWork(myOldShapes.FindFromKey(aShape));
@@ -2457,7 +2463,7 @@ public class BRepBuilderAPI_Sewing : Transient
     //=================================================================================================
 
     /// <summary>The modified input shape, frozen (the shape itself if it isn't an input).</summary>
-    public TopoDS_Shape Modified(in TopoDS_Shape aShape)
+    public Shape Modified(in Shape aShape)
     {
         if (myOldShapes.Contains(aShape))
         {
@@ -2468,7 +2474,7 @@ public class BRepBuilderAPI_Sewing : Transient
     }
 
     /// <summary>The modified input shape, as <see cref="Modified"/>, without freezing it (ported code).</summary>
-    internal TopoDS_Shape InternalModified(in TopoDS_Shape aShape)
+    internal Shape InternalModified(in Shape aShape)
     {
         if (myOldShapes.Contains(aShape))
         {
@@ -2480,20 +2486,20 @@ public class BRepBuilderAPI_Sewing : Transient
     //=================================================================================================
 
     /// <summary>True if the input sub-shape has been modified.</summary>
-    public bool IsModifiedSubShape(in TopoDS_Shape aShape)
+    public bool IsModifiedSubShape(in Shape aShape)
     {
-        TopoDS_Shape NewShape = fromWork(myReShape.InternalApply(toWork(aShape)));
+        Shape NewShape = fromWork(myReShape.InternalApply(toWork(aShape)));
         return !NewShape.IsSame(aShape);
     }
 
     //=================================================================================================
 
     /// <summary>The modified sub-shape, frozen (the sub-shape itself if it isn't modified).</summary>
-    public TopoDS_Shape ModifiedSubShape(in TopoDS_Shape aShape) =>
+    public Shape ModifiedSubShape(in Shape aShape) =>
         published(myReShape.InternalApply(toWork(aShape)));
 
     /// <summary>The modified sub-shape, as <see cref="ModifiedSubShape"/>, without freezing it (ported code).</summary>
-    internal TopoDS_Shape InternalModifiedSubShape(in TopoDS_Shape aShape) =>
+    internal Shape InternalModifiedSubShape(in Shape aShape) =>
         fromWork(myReShape.InternalApply(toWork(aShape)));
 
     //=================================================================================================
@@ -2505,11 +2511,11 @@ public class BRepBuilderAPI_Sewing : Transient
     public void Dump(TextWriter theOS)
     {
         int i, NbBounds = myBoundFaces.Extent(), NbSections = 0;
-        var mapVertices = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var mapEdges = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var mapVertices = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
         for (i = 1; i <= NbBounds; i++)
         {
-            TopoDS_Shape bound = myBoundFaces.FindKey(i);
+            Shape bound = myBoundFaces.FindKey(i);
             if (myBoundSections.IsBound(bound))
             {
                 NbSections += myBoundSections[bound].Extent();
@@ -2518,12 +2524,12 @@ public class BRepBuilderAPI_Sewing : Transient
             {
                 NbSections++;
             }
-            var aExp = new TopExp_Explorer(myReShape.InternalApply(bound), TopAbs_EDGE);
+            var aExp = new Explorer(myReShape.InternalApply(bound), ShapeType.Edge);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Edge E = TopoDS.Edge(aExp.Current());
+                Edge E = ShapeCasts.Edge(aExp.Current());
                 mapEdges.Add(E);
-                TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+                Exploration.Vertices(E, out Vertex V1, out Vertex V2);
                 mapVertices.Add(V1);
                 mapVertices.Add(V2);
             }
@@ -2561,57 +2567,57 @@ public class BRepBuilderAPI_Sewing : Transient
     /// <summary>Makes small edges degenerated and removes small faces. Called from Perform only.</summary>
     protected virtual void FaceAnalysis(ProgressRange theProgress = default)
     {
-        if (!myShape.IsNull() && myOldShapes.IsEmpty())
+        if (!myShape.IsNull && myOldShapes.IsEmpty())
         {
             Add(myShape);
             myShape.Nullify();
         }
 
-        var B = new BRep_Builder();
-        var SmallEdges = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var GluedVertices = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+        var B = new BrepBuilder();
+        var SmallEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var GluedVertices = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         int i = 1;
         using var aPS = new ProgressScope(theProgress, "Shape analysis", myOldShapes.Extent());
         for (i = 1; i <= myOldShapes.Extent() && aPS.More(); i++, aPS.Next())
         {
-            for (var fexp = new TopExp_Explorer(myOldShapes[i], TopAbs_FACE); fexp.More(); fexp.Next())
+            for (var fexp = new Explorer(myOldShapes[i], ShapeType.Face); fexp.More(); fexp.Next())
             {
                 // Retrieve current face
-                TopoDS_Shape aTmpShape = fexp.Current(); // for porting
-                TopoDS_Face face = TopoDS.Face(aTmpShape);
+                Shape aTmpShape = fexp.Current(); // for porting
+                Face face = ShapeCasts.Face(aTmpShape);
                 int nbEdges = 0, nbSmall = 0;
 
                 // Build replacing face
-                aTmpShape = face.EmptyCopied().Oriented(TopAbs_FORWARD); // for porting
-                TopoDS_Face nface = TopoDS.Face(aTmpShape);
+                aTmpShape = face.EmptyCopied().Oriented(Forward); // for porting
+                Face nface = ShapeCasts.Face(aTmpShape);
                 bool isFaceChanged = false;
 
-                var witer = new TopoDS_Iterator(face.Oriented(TopAbs_FORWARD));
+                var witer = new Iterator(face.Oriented(Forward));
                 for (; witer.More(); witer.Next())
                 {
                     // Retrieve current wire
                     aTmpShape = witer.Value(); // for porting
-                    if (aTmpShape.ShapeType() != TopAbs_WIRE)
+                    if (aTmpShape.ShapeType() != ShapeType.Wire)
                     {
                         continue;
                     }
-                    TopoDS_Wire wire = TopoDS.Wire(aTmpShape);
+                    Wire wire = ShapeCasts.Wire(aTmpShape);
 
                     // Build replacing wire
-                    aTmpShape = wire.EmptyCopied().Oriented(TopAbs_FORWARD);
-                    TopoDS_Wire nwire = TopoDS.Wire(aTmpShape);
+                    aTmpShape = wire.EmptyCopied().Oriented(Forward);
+                    Wire nwire = ShapeCasts.Wire(aTmpShape);
                     bool isWireChanged = false;
 
-                    var eiter = new TopoDS_Iterator(wire.Oriented(TopAbs_FORWARD));
+                    var eiter = new Iterator(wire.Oriented(Forward));
                     for (; eiter.More(); eiter.Next())
                     {
                         // Retrieve current edge
                         aTmpShape = eiter.Value(); // for porting
-                        TopoDS_Edge edge = TopoDS.Edge(aTmpShape);
+                        Edge edge = ShapeCasts.Edge(aTmpShape);
                         nbEdges++;
 
                         // Process degenerated edge
-                        if (BRep_Tool.Degenerated(edge))
+                        if (Tool.Degenerated(edge))
                         {
                             B.Add(nwire, edge); // Old edge kept
                             myDegenerated.Add(edge);
@@ -2623,7 +2629,7 @@ public class BRepBuilderAPI_Sewing : Transient
                         if (!isSmall)
                         {
                             // Check for small edge
-                            Geom_Curve? c3d = BRep_Tool.Curve(edge, out double first, out double last);
+                            Curve3D? c3d = Tool.Curve(edge, out double first, out double last);
                             if (c3d is null)
                             {
                                 // Warning: Possibly small edge can be sewed: No 3D curve
@@ -2651,23 +2657,23 @@ public class BRepBuilderAPI_Sewing : Transient
                                 // Store small edge in the map
                                 SmallEdges.Add(edge);
 
-                                TopExp.Vertices(edge, out TopoDS_Vertex v1, out TopoDS_Vertex v2);
-                                TopoDS_Shape nv1 = myReShape.InternalApply(v1), nv2 = myReShape.InternalApply(v2);
+                                Exploration.Vertices(edge, out Vertex v1, out Vertex v2);
+                                Shape nv1 = myReShape.InternalApply(v1), nv2 = myReShape.InternalApply(v2);
 
                                 // Store glued vertices
                                 if (!nv1.IsSame(v1))
                                 {
-                                    NCollection_List<TopoDS_Shape> vlist1 = GluedVertices.ChangeFromKey(nv1);
+                                    NCollection_List<Shape> vlist1 = GluedVertices.ChangeFromKey(nv1);
                                     // First vertex was already glued
                                     if (!nv2.IsSame(v2))
                                     {
                                         // Merge lists of glued vertices
                                         if (!nv1.IsSame(nv2))
                                         {
-                                            var liter = new NCollection_List<TopoDS_Shape>.Iterator(GluedVertices.FindFromKey(nv2));
+                                            var liter = new NCollection_List<Shape>.Iterator(GluedVertices.FindFromKey(nv2));
                                             for (; liter.More(); liter.Next())
                                             {
-                                                TopoDS_Shape v = liter.Value();
+                                                Shape v = liter.Value();
                                                 myReShape.Replace(v, nv1.Oriented(v.Orientation()));
                                                 vlist1.Append(v);
                                             }
@@ -2690,9 +2696,9 @@ public class BRepBuilderAPI_Sewing : Transient
                                 else if (!v1.IsSame(v2))
                                 {
                                     // Record new glued vertices
-                                    var nv = new TopoDS_Vertex();
+                                    var nv = new Vertex();
                                     B.MakeVertex(ref nv);
-                                    var vlist = new NCollection_List<TopoDS_Shape>();
+                                    var vlist = new NCollection_List<Shape>();
                                     vlist.Append(v1);
                                     vlist.Append(v2);
                                     GluedVertices.Add(nv, vlist);
@@ -2707,17 +2713,17 @@ public class BRepBuilderAPI_Sewing : Transient
                         {
                             nbSmall++;
                             // Create new degenerated edge
-                            aTmpShape = edge.Oriented(TopAbs_FORWARD);
-                            TopoDS_Edge fedge = TopoDS.Edge(aTmpShape);
-                            Geom2d_Curve? c2d = BRep_Tool.CurveOnSurface(fedge, face, out double pfirst, out double plast);
+                            aTmpShape = edge.Oriented(Forward);
+                            Edge fedge = ShapeCasts.Edge(aTmpShape);
+                            Curve2D? c2d = Tool.CurveOnSurface(fedge, face, out double pfirst, out double plast);
                             if (c2d is not null)
                             {
-                                var nedge = new TopoDS_Edge();
+                                var nedge = new Edge();
                                 B.MakeEdge(ref nedge);
                                 B.UpdateEdge(nedge, c2d, face, global::Kerf.Engine.Foundation.Precision.Confusion());
                                 B.Range(nedge, pfirst, plast);
                                 B.Degenerated(nedge, true);
-                                TopExp.Vertices(fedge, out TopoDS_Vertex v1, out TopoDS_Vertex v2);
+                                Exploration.Vertices(fedge, out Vertex v1, out Vertex v2);
                                 B.Add(nedge, myReShape.InternalApply(v1).Oriented(v1.Orientation()));
                                 B.Add(nedge, myReShape.InternalApply(v2).Oriented(v2.Orientation()));
                                 B.Add(nwire, nedge.Oriented(edge.Orientation()));
@@ -2759,29 +2765,29 @@ public class BRepBuilderAPI_Sewing : Transient
         // Update glued vertices
         for (int aMIter = 1; aMIter <= GluedVertices.Extent(); aMIter++)
         {
-            TopoDS_Vertex vnew = TopoDS.Vertex(GluedVertices.FindKey(aMIter));
+            Vertex vnew = ShapeCasts.Vertex(GluedVertices.FindKey(aMIter));
             var coord = new Xyz(0.0, 0.0, 0.0);
             int nbPoints = 0;
-            NCollection_List<TopoDS_Shape> vlist = GluedVertices[aMIter];
-            var liter1 = new NCollection_List<TopoDS_Shape>.Iterator(vlist);
+            NCollection_List<Shape> vlist = GluedVertices[aMIter];
+            var liter1 = new NCollection_List<Shape>.Iterator(vlist);
             for (; liter1.More(); liter1.Next())
             {
-                coord += BRep_Tool.Pnt(TopoDS.Vertex(liter1.Value())).XYZ();
+                coord += Tool.Pnt(ShapeCasts.Vertex(liter1.Value())).XYZ();
                 nbPoints++;
             }
             if (nbPoints != 0)
             {
                 var vp = new Point3D(coord / nbPoints);
                 double tol = 0.0, mtol = 0.0;
-                var liter2 = new NCollection_List<TopoDS_Shape>.Iterator(vlist);
+                var liter2 = new NCollection_List<Shape>.Iterator(vlist);
                 for (; liter2.More(); liter2.Next())
                 {
-                    double vtol = BRep_Tool.Tolerance(TopoDS.Vertex(liter2.Value()));
+                    double vtol = Tool.Tolerance(ShapeCasts.Vertex(liter2.Value()));
                     if (mtol < vtol)
                     {
                         mtol = vtol;
                     }
-                    vtol = vp.Distance(BRep_Tool.Pnt(TopoDS.Vertex(liter2.Value())));
+                    vtol = vp.Distance(Tool.Pnt(ShapeCasts.Vertex(liter2.Value())));
                     if (tol < vtol)
                     {
                         tol = vtol;
@@ -2811,8 +2817,8 @@ public class BRepBuilderAPI_Sewing : Transient
     protected virtual void FindFreeBoundaries()
     {
         // Take into account the context shape if needed
-        var NewShapes = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        if (!myShape.IsNull())
+        var NewShapes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        if (!myShape.IsNull)
         {
             if (myOldShapes.IsEmpty())
             {
@@ -2821,46 +2827,46 @@ public class BRepBuilderAPI_Sewing : Transient
             }
             else
             {
-                TopoDS_Shape newShape = myReShape.InternalApply(myShape);
-                if (!newShape.IsNull())
+                Shape newShape = myReShape.InternalApply(myShape);
+                if (!newShape.IsNull)
                 {
                     NewShapes.Add(newShape);
                 }
             }
         }
         // Create map Edge -> Faces
-        var EdgeFaces = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+        var EdgeFaces = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         int i, nbShapes = myOldShapes.Extent();
         for (i = 1; i <= nbShapes; i++)
         {
             // Retrieve new shape
-            TopoDS_Shape shape = myOldShapes[i];
-            if (shape.IsNull())
+            Shape shape = myOldShapes[i];
+            if (shape.IsNull)
             {
                 continue;
             }
             NewShapes.Add(shape);
             // Explore shape to find all boundaries
-            for (var eExp = new TopExp_Explorer(shape, TopAbs_EDGE); eExp.More(); eExp.Next())
+            for (var eExp = new Explorer(shape, ShapeType.Edge); eExp.More(); eExp.Next())
             {
-                TopoDS_Shape edge = eExp.Current();
+                Shape edge = eExp.Current();
                 if (!EdgeFaces.Contains(edge))
                 {
-                    var listFaces = new NCollection_List<TopoDS_Shape>();
+                    var listFaces = new NCollection_List<Shape>();
                     EdgeFaces.Add(edge, listFaces);
                 }
             }
         }
         // Fill map Edge -> Faces
         nbShapes = NewShapes.Extent();
-        var mapFaces = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var mapFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
         for (i = 1; i <= nbShapes; i++)
         {
             // Explore shape to find all faces
-            var fExp = new TopExp_Explorer(NewShapes.FindKey(i), TopAbs_FACE);
+            var fExp = new Explorer(NewShapes.FindKey(i), ShapeType.Face);
             for (; fExp.More(); fExp.Next())
             {
-                TopoDS_Shape face = fExp.Current();
+                Shape face = fExp.Current();
                 if (mapFaces.Contains(face))
                 {
                     continue;
@@ -2870,15 +2876,15 @@ public class BRepBuilderAPI_Sewing : Transient
                     mapFaces.Add(face);
                 }
                 // Explore face to find all boundaries
-                for (var aIw = new TopoDS_Iterator(face); aIw.More(); aIw.Next())
+                for (var aIw = new Iterator(face); aIw.More(); aIw.Next())
                 {
-                    if (aIw.Value().ShapeType() != TopAbs_WIRE)
+                    if (aIw.Value().ShapeType() != ShapeType.Wire)
                     {
                         continue;
                     }
-                    for (var aIIe = new TopoDS_Iterator(aIw.Value()); aIIe.More(); aIIe.Next())
+                    for (var aIIe = new Iterator(aIw.Value()); aIIe.More(); aIIe.Next())
                     {
-                        TopoDS_Shape edge = aIIe.Value();
+                        Shape edge = aIIe.Value();
 
                         if (EdgeFaces.Contains(edge))
                         {
@@ -2891,42 +2897,42 @@ public class BRepBuilderAPI_Sewing : Transient
         // Find free boundaries
         for (int anIterEF = 1; anIterEF <= EdgeFaces.Extent(); anIterEF++)
         {
-            NCollection_List<TopoDS_Shape> listFaces = EdgeFaces[anIterEF];
+            NCollection_List<Shape> listFaces = EdgeFaces[anIterEF];
             int nbFaces = listFaces.Extent();
-            TopoDS_Shape edge = EdgeFaces.FindKey(anIterEF);
-            if (edge.Orientation() == TopAbs_INTERNAL)
+            Shape edge = EdgeFaces.FindKey(anIterEF);
+            if (edge.Orientation() == Internal)
             {
                 continue;
             }
             bool isSeam = false;
             if (nbFaces == 1)
             {
-                TopoDS_Face face = TopoDS.Face(listFaces.First());
-                isSeam = BRep_Tool.IsClosed(TopoDS.Edge(edge), face);
+                Face face = ShapeCasts.Face(listFaces.First());
+                isSeam = Tool.IsClosed(ShapeCasts.Edge(edge), face);
                 if (isSeam)
                 {
-                    var aB = new BRep_Builder();
-                    TopoDS_Shape anewEdge = edge.EmptyCopied();
-                    var aItV = new TopoDS_Iterator(edge);
+                    var aB = new BrepBuilder();
+                    Shape anewEdge = edge.EmptyCopied();
+                    var aItV = new Iterator(edge);
                     for (; aItV.More(); aItV.Next())
                     {
                         aB.Add(anewEdge, aItV.Value());
                     }
 
-                    Geom2d_Curve? c2dold =
-                        BRep_Tool.CurveOnSurface(TopoDS.Edge(edge),
-                                                 TopoDS.Face(listFaces.First()),
+                    Curve2D? c2dold =
+                        Tool.CurveOnSurface(ShapeCasts.Edge(edge),
+                                                 ShapeCasts.Face(listFaces.First()),
                                                  out double first2d,
                                                  out double last2d);
 
-                    Geom2d_Curve? c2d = null;
-                    var B = new BRep_Builder();
-                    B.UpdateEdge(TopoDS.Edge(anewEdge), c2d, c2d, TopoDS.Face(listFaces.First()), 0);
-                    B.UpdateEdge(TopoDS.Edge(anewEdge), c2dold, TopoDS.Face(listFaces.First()), 0);
+                    Curve2D? c2d = null;
+                    var B = new BrepBuilder();
+                    B.UpdateEdge(ShapeCasts.Edge(anewEdge), c2d, c2d, ShapeCasts.Face(listFaces.First()), 0);
+                    B.UpdateEdge(ShapeCasts.Edge(anewEdge), c2dold, ShapeCasts.Face(listFaces.First()), 0);
 
-                    BRep_Tool.Range(TopoDS.Edge(edge), out double aFirst, out double aLast);
-                    aB.Range(TopoDS.Edge(anewEdge), aFirst, aLast);
-                    aB.Range(TopoDS.Edge(anewEdge), TopoDS.Face(listFaces.First()), first2d, last2d);
+                    Tool.Range(ShapeCasts.Edge(edge), out double aFirst, out double aLast);
+                    aB.Range(ShapeCasts.Edge(anewEdge), aFirst, aLast);
+                    aB.Range(ShapeCasts.Edge(anewEdge), ShapeCasts.Face(listFaces.First()), first2d, last2d);
                     myReShape.Replace(edge, anewEdge);
                     edge = anewEdge;
 
@@ -2938,21 +2944,21 @@ public class BRepBuilderAPI_Sewing : Transient
             if (isBound || isBoundFloat)
             {
                 // Ignore degenerated edge
-                if (BRep_Tool.Degenerated(TopoDS.Edge(edge)))
+                if (Tool.Degenerated(ShapeCasts.Edge(edge)))
                 {
                     continue;
                 }
                 // Add to BoundFaces
-                var listFacesCopy = new NCollection_List<TopoDS_Shape>();
+                var listFacesCopy = new NCollection_List<Shape>();
                 listFacesCopy.Append(listFaces);
                 myBoundFaces.Add(edge, listFacesCopy);
                 // Process edge vertices
-                TopExp.Vertices(TopoDS.Edge(edge), out TopoDS_Vertex vFirst, out TopoDS_Vertex vLast);
-                if (vFirst.IsNull() || vLast.IsNull())
+                Exploration.Vertices(ShapeCasts.Edge(edge), out Vertex vFirst, out Vertex vLast);
+                if (vFirst.IsNull || vLast.IsNull)
                 {
                     continue;
                 }
-                if (vFirst.Orientation() == TopAbs_INTERNAL || vLast.Orientation() == TopAbs_INTERNAL)
+                if (vFirst.Orientation() == Internal || vLast.Orientation() == Internal)
                 {
                     continue;
                 }
@@ -2993,20 +2999,20 @@ public class BRepBuilderAPI_Sewing : Transient
     //
     //=======================================================================
 
-    private static bool CreateNewNodes(NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> NodeNearestNode,
-                                       NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> NodeVertices,
-                                       NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> aVertexNode,
-                                       NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aNodeEdges)
+    private static bool CreateNewNodes(NCollection_IndexedDataMap<Shape, Shape> NodeNearestNode,
+                                       NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> NodeVertices,
+                                       NCollection_IndexedDataMap<Shape, Shape> aVertexNode,
+                                       NCollection_DataMap<Shape, NCollection_List<Shape>> aNodeEdges)
     {
         // Create new nodes
-        var B = new BRep_Builder();
-        var OldNodeNewNode = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var NewNodeOldNodes = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+        var B = new BrepBuilder();
+        var OldNodeNewNode = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var NewNodeOldNodes = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         for (int anIter = 1; anIter <= NodeNearestNode.Extent(); anIter++)
         {
             // Retrieve a pair of nodes to merge
-            TopoDS_Shape oldnode1 = NodeNearestNode.FindKey(anIter);
-            TopoDS_Shape oldnode2 = NodeNearestNode[anIter];
+            Shape oldnode1 = NodeNearestNode.FindKey(anIter);
+            Shape oldnode2 = NodeNearestNode[anIter];
             // Second node should also be in the map
             if (!NodeNearestNode.Contains(oldnode2))
             {
@@ -3015,18 +3021,18 @@ public class BRepBuilderAPI_Sewing : Transient
             // Get new node for old node #1
             if (OldNodeNewNode.IsBound(oldnode1))
             {
-                TopoDS_Shape newnode1 = OldNodeNewNode[oldnode1];
+                Shape newnode1 = OldNodeNewNode[oldnode1];
                 if (OldNodeNewNode.IsBound(oldnode2))
                 {
-                    TopoDS_Shape newnode2 = OldNodeNewNode[oldnode2];
+                    Shape newnode2 = OldNodeNewNode[oldnode2];
                     if (!newnode1.IsSame(newnode2))
                     {
                         // Change data for new node #2
-                        NCollection_List<TopoDS_Shape> lnode1 = NewNodeOldNodes.ChangeFromKey(newnode1);
-                        var itn = new NCollection_List<TopoDS_Shape>.Iterator(NewNodeOldNodes.FindFromKey(newnode2));
+                        NCollection_List<Shape> lnode1 = NewNodeOldNodes.ChangeFromKey(newnode1);
+                        var itn = new NCollection_List<Shape>.Iterator(NewNodeOldNodes.FindFromKey(newnode2));
                         for (; itn.More(); itn.Next())
                         {
-                            TopoDS_Shape node2 = itn.Value();
+                            Shape node2 = itn.Value();
                             lnode1.Append(node2);
                             OldNodeNewNode[node2] = newnode1;
                         }
@@ -3045,18 +3051,18 @@ public class BRepBuilderAPI_Sewing : Transient
                 if (OldNodeNewNode.IsBound(oldnode2))
                 {
                     // Old node #1 is not bound - add to old node #2
-                    TopoDS_Shape newnode2 = OldNodeNewNode[oldnode2];
+                    Shape newnode2 = OldNodeNewNode[oldnode2];
                     OldNodeNewNode.Bind(oldnode1, newnode2);
                     NewNodeOldNodes.ChangeFromKey(newnode2).Append(oldnode1);
                 }
                 else
                 {
                     // Nodes are not bound - create new node
-                    var newnode = new TopoDS_Vertex();
+                    var newnode = new Vertex();
                     B.MakeVertex(ref newnode);
                     OldNodeNewNode.Bind(oldnode1, newnode);
                     OldNodeNewNode.Bind(oldnode2, newnode);
-                    var lnodes = new NCollection_List<TopoDS_Shape>();
+                    var lnodes = new NCollection_List<Shape>();
                     lnodes.Append(oldnode1);
                     lnodes.Append(oldnode2);
                     NewNodeOldNodes.Add(newnode, lnodes);
@@ -3072,34 +3078,34 @@ public class BRepBuilderAPI_Sewing : Transient
 
         for (int anIter1 = 1; anIter1 <= NewNodeOldNodes.Extent(); anIter1++)
         {
-            TopoDS_Vertex newnode = TopoDS.Vertex(NewNodeOldNodes.FindKey(anIter1));
+            Vertex newnode = ShapeCasts.Vertex(NewNodeOldNodes.FindKey(anIter1));
             // Calculate new node center point
             var theCoordinates = new Xyz(0.0, 0.0, 0.0);
-            var lvert = new NCollection_List<TopoDS_Shape>(); // Accumulate node vertices
-            var medge = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            var ledge = new NCollection_List<TopoDS_Shape>(); // Accumulate node edges
+            var lvert = new NCollection_List<Shape>(); // Accumulate node vertices
+            var medge = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var ledge = new NCollection_List<Shape>(); // Accumulate node edges
             // Iterate on old nodes
-            var itn = new NCollection_List<TopoDS_Shape>.Iterator(NewNodeOldNodes[anIter1]);
+            var itn = new NCollection_List<Shape>.Iterator(NewNodeOldNodes[anIter1]);
             for (; itn.More(); itn.Next())
             {
-                TopoDS_Shape oldnode = itn.Value();
+                Shape oldnode = itn.Value();
                 // Iterate on node vertices
-                var itv1 = new NCollection_List<TopoDS_Shape>.Iterator(NodeVertices.FindFromKey(oldnode));
+                var itv1 = new NCollection_List<Shape>.Iterator(NodeVertices.FindFromKey(oldnode));
                 for (; itv1.More(); itv1.Next())
                 {
-                    TopoDS_Vertex vertex = TopoDS.Vertex(itv1.Value());
+                    Vertex vertex = ShapeCasts.Vertex(itv1.Value());
                     // Change node for vertex
                     aVertexNode.ChangeFromKey(vertex) = newnode;
                     // Accumulate coordinates
-                    theCoordinates += BRep_Tool.Pnt(vertex).XYZ();
+                    theCoordinates += Tool.Pnt(vertex).XYZ();
                     lvert.Append(vertex);
                 }
                 // Iterate on node edges
-                NCollection_List<TopoDS_Shape> edges = aNodeEdges[oldnode];
-                var ite = new NCollection_List<TopoDS_Shape>.Iterator(edges);
+                NCollection_List<Shape> edges = aNodeEdges[oldnode];
+                var ite = new NCollection_List<Shape>.Iterator(edges);
                 for (; ite.More(); ite.Next())
                 {
-                    TopoDS_Shape edge = ite.Value();
+                    Shape edge = ite.Value();
                     if (!medge.Contains(edge))
                     {
                         medge.Add(edge);
@@ -3114,11 +3120,11 @@ public class BRepBuilderAPI_Sewing : Transient
             var center = new Point3D(theCoordinates / lvert.Extent());
             // Calculate new node tolerance
             double toler = 0.0;
-            var itv = new NCollection_List<TopoDS_Shape>.Iterator(lvert);
+            var itv = new NCollection_List<Shape>.Iterator(lvert);
             for (; itv.More(); itv.Next())
             {
-                TopoDS_Vertex vertex = TopoDS.Vertex(itv.Value());
-                double t = center.Distance(BRep_Tool.Pnt(vertex)) + BRep_Tool.Tolerance(vertex);
+                Vertex vertex = ShapeCasts.Vertex(itv.Value());
+                double t = center.Distance(Tool.Pnt(vertex)) + Tool.Tolerance(vertex);
                 if (toler < t)
                 {
                     toler = t;
@@ -3131,44 +3137,44 @@ public class BRepBuilderAPI_Sewing : Transient
         return true;
     }
 
-    private static int IsMergedVertices(in TopoDS_Shape face1,
-                                        in TopoDS_Shape e1,
-                                        in TopoDS_Shape e2,
-                                        in TopoDS_Shape vtx1,
-                                        in TopoDS_Shape vtx2)
+    private static int IsMergedVertices(in Shape face1,
+                                        in Shape e1,
+                                        in Shape e2,
+                                        in Shape vtx1,
+                                        in Shape vtx2)
     {
         // Case of floating edges
-        if (face1.IsNull())
+        if (face1.IsNull)
         {
             return (!IsClosedShape(e1, vtx1, vtx2)) ? 1 : 0;
         }
 
         // Find wires containing given edges
-        TopoDS_Shape wire1 = new(), wire2 = new();
-        var itw = new TopExp_Explorer(face1, TopAbs_WIRE);
-        for (; itw.More() && (wire1.IsNull() || wire2.IsNull()); itw.Next())
+        Shape wire1 = new(), wire2 = new();
+        var itw = new Explorer(face1, ShapeType.Wire);
+        for (; itw.More() && (wire1.IsNull || wire2.IsNull); itw.Next())
         {
-            var ite = new TopoDS_Iterator(itw.Current(), false);
-            for (; ite.More() && (wire1.IsNull() || wire2.IsNull()); ite.Next())
+            var ite = new Iterator(itw.Current(), false);
+            for (; ite.More() && (wire1.IsNull || wire2.IsNull); ite.Next())
             {
-                if (wire1.IsNull() && e1.IsSame(ite.Value()))
+                if (wire1.IsNull && e1.IsSame(ite.Value()))
                 {
                     wire1 = itw.Current();
                 }
-                if (wire2.IsNull() && e2.IsSame(ite.Value()))
+                if (wire2.IsNull && e2.IsSame(ite.Value()))
                 {
                     wire2 = itw.Current();
                 }
             }
         }
         int Status = 0;
-        if (!wire1.IsNull() && !wire2.IsNull())
+        if (!wire1.IsNull && !wire2.IsNull)
         {
             if (wire1.IsSame(wire2))
             {
-                for (var aIte = new TopoDS_Iterator(wire1, false); aIte.More(); aIte.Next())
+                for (var aIte = new Iterator(wire1, false); aIte.More(); aIte.Next())
                 {
-                    TopExp.Vertices(TopoDS.Edge(aIte.Value()), out TopoDS_Vertex ve1, out TopoDS_Vertex ve2);
+                    Exploration.Vertices(ShapeCasts.Edge(aIte.Value()), out Vertex ve1, out Vertex ve2);
                     if ((ve1.IsSame(vtx1) && ve2.IsSame(vtx2)) || (ve2.IsSame(vtx1) && ve1.IsSame(vtx2)))
                     {
                         return (IsClosedShape(aIte.Value(), vtx1, vtx2) ? 0 : 1);
@@ -3176,7 +3182,7 @@ public class BRepBuilderAPI_Sewing : Transient
                 }
                 if (IsClosedShape(wire1, vtx1, vtx2))
                 {
-                    TopExp.Vertices(TopoDS.Wire(wire1), out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+                    Exploration.Vertices(ShapeCasts.Wire(wire1), out Vertex V1, out Vertex V2);
                     bool isEndVertex =
                         ((V1.IsSame(vtx1) && V2.IsSame(vtx2)) || (V2.IsSame(vtx1) && V1.IsSame(vtx2)));
                     if (!isEndVertex)
@@ -3197,43 +3203,43 @@ public class BRepBuilderAPI_Sewing : Transient
         return Status;
     }
 
-    private static bool GlueVertices(NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> aVertexNode,
-                                     NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aNodeEdges,
-                                     NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aBoundFaces,
+    private static bool GlueVertices(NCollection_IndexedDataMap<Shape, Shape> aVertexNode,
+                                     NCollection_DataMap<Shape, NCollection_List<Shape>> aNodeEdges,
+                                     NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aBoundFaces,
                                      double Tolerance,
                                      ProgressRange theProgress)
     {
         // Create map of node -> vertices
-        var NodeVertices = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+        var NodeVertices = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         var aFilter = new CellFilter<BRepBuilderAPI_VertexInspector, int, Xyz>(Tolerance);
         var anInspector = new BRepBuilderAPI_VertexInspector(Tolerance);
         for (int anIter1 = 1; anIter1 <= aVertexNode.Extent(); anIter1++)
         {
-            TopoDS_Shape vertex = aVertexNode.FindKey(anIter1);
-            TopoDS_Vertex node = TopoDS.Vertex(aVertexNode[anIter1]);
+            Shape vertex = aVertexNode.FindKey(anIter1);
+            Vertex node = ShapeCasts.Vertex(aVertexNode[anIter1]);
             if (NodeVertices.Contains(node))
             {
                 NodeVertices.ChangeFromKey(node).Append(vertex);
             }
             else
             {
-                var vlist = new NCollection_List<TopoDS_Shape>();
+                var vlist = new NCollection_List<Shape>();
                 vlist.Append(vertex);
                 NodeVertices.Add(node, vlist);
-                Point3D aPnt = BRep_Tool.Pnt(TopoDS.Vertex(node));
+                Point3D aPnt = Tool.Pnt(ShapeCasts.Vertex(node));
                 aFilter.Add(NodeVertices.FindIndex(node), aPnt.XYZ());
                 anInspector.Add(aPnt.XYZ());
             }
         }
         int nbNodes = NodeVertices.Extent();
         // Merge nearest nodes
-        var NodeNearestNode = new NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var NodeNearestNode = new NCollection_IndexedDataMap<Shape, Shape>(ShapeHasher.Instance);
         using var aPS = new ProgressScope(theProgress, "Glueing nodes", nbNodes, true);
         for (int i = 1; i <= nbNodes && aPS.More(); i++, aPS.Next())
         {
-            TopoDS_Vertex node1 = TopoDS.Vertex(NodeVertices.FindKey(i));
+            Vertex node1 = ShapeCasts.Vertex(NodeVertices.FindKey(i));
             // Find near nodes
-            Point3D pt1 = BRep_Tool.Pnt(node1);
+            Point3D pt1 = Tool.Pnt(node1);
             anInspector.SetCurrent(pt1.XYZ());
             Xyz aPntMin = BRepBuilderAPI_VertexInspector.Shift(pt1.XYZ(), -Tolerance);
             Xyz aPntMax = BRepBuilderAPI_VertexInspector.Shift(pt1.XYZ(), Tolerance);
@@ -3243,32 +3249,32 @@ public class BRepBuilderAPI_Sewing : Transient
                 continue;
             }
             // Retrieve list of edges for the first node
-            NCollection_List<TopoDS_Shape> ledges1 = aNodeEdges[node1];
+            NCollection_List<Shape> ledges1 = aNodeEdges[node1];
             // Explore list of near nodes and fill the sequence of glued nodes
-            var SeqNodes = new NCollection_Sequence<TopoDS_Shape>();
-            var listNodesSameEdge = new NCollection_List<TopoDS_Shape>();
+            var SeqNodes = new NCollection_Sequence<Shape>();
+            var listNodesSameEdge = new NCollection_List<Shape>();
             var iter1 = new NCollection_List<int>.Iterator(anInspector.ResInd());
             for (; iter1.More(); iter1.Next())
             {
-                TopoDS_Vertex node2 = TopoDS.Vertex(NodeVertices.FindKey(iter1.Value()));
+                Vertex node2 = ShapeCasts.Vertex(NodeVertices.FindKey(iter1.Value()));
                 if (node1 == node2)
                 {
                     continue;
                 }
                 // Retrieve list of edges for the second node
-                NCollection_List<TopoDS_Shape> ledges2 = aNodeEdges[node2];
+                NCollection_List<Shape> ledges2 = aNodeEdges[node2];
                 // Check merging condition for the pair of nodes
                 int Status = 0;
                 bool isSameEdge = false;
                 // Explore edges of the first node
-                var Ie1 = new NCollection_List<TopoDS_Shape>.Iterator(ledges1);
+                var Ie1 = new NCollection_List<Shape>.Iterator(ledges1);
                 for (; Ie1.More() && Status == 0 && !isSameEdge; Ie1.Next())
                 {
-                    TopoDS_Shape e1 = Ie1.Value();
+                    Shape e1 = Ie1.Value();
                     // Obtain real vertex from edge
-                    TopoDS_Shape v1 = node1;
+                    Shape v1 = node1;
                     { // szv: Use brackets to destroy local variables
-                        TopExp.Vertices(TopoDS.Edge(e1), out TopoDS_Vertex ov1, out TopoDS_Vertex ov2);
+                        Exploration.Vertices(ShapeCasts.Edge(e1), out Vertex ov1, out Vertex ov2);
                         if (aVertexNode.Contains(ov1))
                         {
                             if (node1.IsSame(aVertexNode.FindFromKey(ov1)))
@@ -3285,28 +3291,28 @@ public class BRepBuilderAPI_Sewing : Transient
                         }
                     }
                     // Create map of faces for e1
-                    var Faces1 = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                    NCollection_List<TopoDS_Shape> lfac1 = aBoundFaces.FindFromKey(e1);
+                    var Faces1 = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                    NCollection_List<Shape> lfac1 = aBoundFaces.FindFromKey(e1);
                     if (lfac1.Extent() != 0)
                     {
-                        var itf = new NCollection_List<TopoDS_Shape>.Iterator(lfac1);
+                        var itf = new NCollection_List<Shape>.Iterator(lfac1);
                         for (; itf.More(); itf.Next())
                         {
-                            if (!itf.Value().IsNull())
+                            if (!itf.Value().IsNull)
                             {
                                 Faces1.Add(itf.Value());
                             }
                         }
                     }
                     // Explore edges of the second node
-                    var Ie2 = new NCollection_List<TopoDS_Shape>.Iterator(ledges2);
+                    var Ie2 = new NCollection_List<Shape>.Iterator(ledges2);
                     for (; Ie2.More() && Status == 0 && !isSameEdge; Ie2.Next())
                     {
-                        TopoDS_Shape e2 = Ie2.Value();
+                        Shape e2 = Ie2.Value();
                         // Obtain real vertex from edge
-                        TopoDS_Shape v2 = node2;
+                        Shape v2 = node2;
                         { // szv: Use brackets to destroy local variables
-                            TopExp.Vertices(TopoDS.Edge(e2), out TopoDS_Vertex ov1, out TopoDS_Vertex ov2);
+                            Exploration.Vertices(ShapeCasts.Edge(e2), out Vertex ov1, out Vertex ov2);
                             if (aVertexNode.Contains(ov1))
                             {
                                 if (node2.IsSame(aVertexNode.FindFromKey(ov1)))
@@ -3323,10 +3329,10 @@ public class BRepBuilderAPI_Sewing : Transient
                             }
                         }
                         // Explore faces for e2
-                        NCollection_List<TopoDS_Shape> lfac2 = aBoundFaces.FindFromKey(e2);
+                        NCollection_List<Shape> lfac2 = aBoundFaces.FindFromKey(e2);
                         if (lfac2.Extent() != 0)
                         {
-                            var itf = new NCollection_List<TopoDS_Shape>.Iterator(lfac2);
+                            var itf = new NCollection_List<Shape>.Iterator(lfac2);
                             for (; itf.More() && Status == 0 && !isSameEdge; itf.Next())
                             {
                                 // Check merging conditions for the same face
@@ -3346,7 +3352,7 @@ public class BRepBuilderAPI_Sewing : Transient
                         }
                         else if (Faces1.IsEmpty() && e1 == e2)
                         {
-                            int stat = IsMergedVertices(new TopoDS_Face(), e1, e1, v1, v2);
+                            int stat = IsMergedVertices(new Face(), e1, e1, v1, v2);
                             if (stat == 1)
                             {
                                 isSameEdge = true;
@@ -3368,14 +3374,14 @@ public class BRepBuilderAPI_Sewing : Transient
                     listNodesSameEdge.Append(node2);
                 }
                 // Append near node to the sequence
-                Point3D pt2 = BRep_Tool.Pnt(node2);
+                Point3D pt2 = Tool.Pnt(node2);
                 double dist = pt1.Distance(pt2);
                 if (dist < Tolerance)
                 {
                     bool isIns = false;
                     for (int kk = 1; kk <= SeqNodes.Length() && !isIns; kk++)
                     {
-                        Point3D pt = BRep_Tool.Pnt(TopoDS.Vertex(SeqNodes.Value(kk)));
+                        Point3D pt = Tool.Pnt(ShapeCasts.Vertex(SeqNodes.Value(kk)));
                         if (dist < pt1.Distance(pt))
                         {
                             SeqNodes.InsertBefore(kk, node2);
@@ -3393,17 +3399,17 @@ public class BRepBuilderAPI_Sewing : Transient
                 // Remove nodes near to some other from the same edge
                 if (listNodesSameEdge.Extent() != 0)
                 {
-                    var lInt = new NCollection_List<TopoDS_Shape>.Iterator(listNodesSameEdge);
+                    var lInt = new NCollection_List<Shape>.Iterator(listNodesSameEdge);
                     for (; lInt.More(); lInt.Next())
                     {
-                        TopoDS_Vertex n2 = TopoDS.Vertex(lInt.Value());
-                        Point3D p2 = BRep_Tool.Pnt(n2);
+                        Vertex n2 = ShapeCasts.Vertex(lInt.Value());
+                        Point3D p2 = Tool.Pnt(n2);
                         for (int k = 1; k <= SeqNodes.Length();)
                         {
-                            TopoDS_Vertex n1 = TopoDS.Vertex(SeqNodes.Value(k));
+                            Vertex n1 = ShapeCasts.Vertex(SeqNodes.Value(k));
                             if (n1 != n2)
                             {
-                                Point3D p1 = BRep_Tool.Pnt(n1);
+                                Point3D p1 = Tool.Pnt(n1);
                                 if (p2.Distance(p1) >= pt1.Distance(p1))
                                 {
                                     k++;
@@ -3444,17 +3450,17 @@ public class BRepBuilderAPI_Sewing : Transient
             int i;
             for (i = 1; i <= myBoundFaces.Extent(); i++)
             {
-                TopoDS_Shape bound = myBoundFaces.FindKey(i);
-                for (var itv = new TopoDS_Iterator(bound, false); itv.More(); itv.Next())
+                Shape bound = myBoundFaces.FindKey(i);
+                for (var itv = new Iterator(bound, false); itv.More(); itv.Next())
                 {
-                    TopoDS_Shape node = itv.Value();
+                    Shape node = itv.Value();
                     if (myNodeSections.IsBound(node))
                     {
                         myNodeSections[node].Append(bound);
                     }
                     else
                     {
-                        var lbnd = new NCollection_List<TopoDS_Shape>();
+                        var lbnd = new NCollection_List<Shape>();
                         lbnd.Append(bound);
                         myNodeSections.Bind(node, lbnd);
                     }
@@ -3484,26 +3490,26 @@ public class BRepBuilderAPI_Sewing : Transient
     // function : replaceNMVertices
     // purpose  : internal use (static)
     //=======================================================================
-    private static void replaceNMVertices(in TopoDS_Edge theEdge,
-                                          in TopoDS_Vertex theV1,
-                                          in TopoDS_Vertex theV2,
-                                          BRepTools_ReShape theReShape)
+    private static void replaceNMVertices(in Edge theEdge,
+                                          in Vertex theV1,
+                                          in Vertex theV2,
+                                          ReShape theReShape)
     {
         // To keep NM vertices on edge
-        var aSeqNMVert = new NCollection_Sequence<TopoDS_Shape>();
+        var aSeqNMVert = new NCollection_Sequence<Shape>();
         var aSeqNMPars = new NCollection_Sequence<double>();
         bool hasNMVert = findNMVertices(theEdge, aSeqNMVert, aSeqNMPars);
         if (!hasNMVert)
         {
             return;
         }
-        BRep_Tool.Range(theEdge, out double first, out double last);
-        Geom_Curve? c3d = BRep_Tool.Curve(theEdge, out Placement aLoc, out first, out last);
+        Tool.Range(theEdge, out double first, out double last);
+        Curve3D? c3d = Tool.Curve(theEdge, out Placement aLoc, out first, out last);
         if (c3d is null)
         {
             return;
         }
-        var aEdVert = new NCollection_Sequence<TopoDS_Shape>();
+        var aEdVert = new NCollection_Sequence<Shape>();
         var aEdParams = new NCollection_Sequence<double>();
         int i = 1, nb = aSeqNMPars.Length();
 
@@ -3520,7 +3526,7 @@ public class BRepBuilderAPI_Sewing : Transient
                 theReShape.Replace(aSeqNMVert.Value(i), theV2);
                 continue;
             }
-            TopoDS_Shape aV = aSeqNMVert.Value(i);
+            Shape aV = aSeqNMVert.Value(i);
             int j = 1;
             for (; j <= aEdParams.Length(); j++)
             {
@@ -3532,11 +3538,11 @@ public class BRepBuilderAPI_Sewing : Transient
                 }
                 else if (apar < apar2)
                 {
-                    TopoDS_Shape anewV = aV.EmptyCopied();
+                    Shape anewV = aV.EmptyCopied();
                     aEdVert.InsertBefore(j, anewV);
                     aEdParams.InsertBefore(j, apar);
-                    NCollection_List<BRep_PointRepresentation> alistrep = ((BRep_TVertex)anewV.TShape()!).ChangePoints();
-                    var aPRep = new BRep_PointOnCurve(apar, c3d, aLoc);
+                    NCollection_List<PointRepresentation> alistrep = ((BrepTVertex)anewV.TShape()!).ChangePoints();
+                    var aPRep = new PointOnCurve(apar, c3d, aLoc);
                     alistrep.Append(aPRep);
                     theReShape.Replace(aV, anewV);
                     break;
@@ -3544,11 +3550,11 @@ public class BRepBuilderAPI_Sewing : Transient
             }
             if (j > aEdParams.Length())
             {
-                TopoDS_Shape anewV = aV.EmptyCopied();
+                Shape anewV = aV.EmptyCopied();
                 aEdVert.Append(anewV);
                 aEdParams.Append(apar);
-                NCollection_List<BRep_PointRepresentation> alistrep = ((BRep_TVertex)anewV.TShape()!).ChangePoints();
-                var aPRep = new BRep_PointOnCurve(apar, c3d, aLoc);
+                NCollection_List<PointRepresentation> alistrep = ((BrepTVertex)anewV.TShape()!).ChangePoints();
+                var aPRep = new PointOnCurve(apar, c3d, aLoc);
                 alistrep.Append(aPRep);
                 theReShape.Replace(aV, anewV);
             }
@@ -3557,10 +3563,10 @@ public class BRepBuilderAPI_Sewing : Transient
         int newnb = aEdParams.Length();
         if (newnb < nb)
         {
-            TopoDS_Shape anewEdge = theEdge.EmptyCopied();
-            TopAbs_Orientation anOri = theEdge.Orientation();
-            anewEdge.Orientation(TopAbs_FORWARD);
-            var aB = new BRep_Builder();
+            Shape anewEdge = theEdge.EmptyCopied();
+            Orientation anOri = theEdge.Orientation();
+            anewEdge.Orientation(Forward);
+            var aB = new BrepBuilder();
             aB.Add(anewEdge, theV1);
             aB.Add(anewEdge, theV2);
 
@@ -3578,36 +3584,36 @@ public class BRepBuilderAPI_Sewing : Transient
     // purpose  : internal use (static)
     //=======================================================================
 
-    private static void ReplaceEdge(in TopoDS_Shape oldEdge, in TopoDS_Shape theNewShape, BRepTools_ReShape aReShape)
+    private static void ReplaceEdge(in Shape oldEdge, in Shape theNewShape, ReShape aReShape)
     {
-        TopoDS_Shape oldShape = aReShape.InternalApply(oldEdge);
-        TopoDS_Shape newShape = aReShape.InternalApply(theNewShape);
+        Shape oldShape = aReShape.InternalApply(oldEdge);
+        Shape newShape = aReShape.InternalApply(theNewShape);
         if (oldShape.IsSame(newShape) || aReShape.IsRecorded(newShape))
         {
             return;
         }
 
         aReShape.Replace(oldShape, newShape);
-        TopoDS_Vertex V1new = new(), V2new = new();
-        TopExp.Vertices(TopoDS.Edge(oldShape), out TopoDS_Vertex V1old, out TopoDS_Vertex V2old);
-        TopAbs_Orientation Orold = oldShape.Orientation();
-        TopAbs_Orientation Ornew = Orold;
-        if (newShape.ShapeType() == TopAbs_EDGE)
+        Vertex V1new = new(), V2new = new();
+        Exploration.Vertices(ShapeCasts.Edge(oldShape), out Vertex V1old, out Vertex V2old);
+        Orientation Orold = oldShape.Orientation();
+        Orientation Ornew = Orold;
+        if (newShape.ShapeType() == ShapeType.Edge)
         {
-            TopoDS_Edge aEn = TopoDS.Edge(newShape);
-            TopExp.Vertices(aEn, out V1new, out V2new);
+            Edge aEn = ShapeCasts.Edge(newShape);
+            Exploration.Vertices(aEn, out V1new, out V2new);
             Ornew = aEn.Orientation();
             replaceNMVertices(aEn, V1new, V2new, aReShape);
         }
-        else if (newShape.ShapeType() == TopAbs_WIRE)
+        else if (newShape.ShapeType() == ShapeType.Wire)
         {
-            for (var aex = new TopExp_Explorer(newShape, TopAbs_EDGE); aex.More(); aex.Next())
+            for (var aex = new Explorer(newShape, ShapeType.Edge); aex.More(); aex.Next())
             {
-                TopoDS_Edge ed = TopoDS.Edge(aex.Current());
+                Edge ed = ShapeCasts.Edge(aex.Current());
                 Ornew = ed.Orientation();
-                TopExp.Vertices(ed, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
+                Exploration.Vertices(ed, out Vertex aV1, out Vertex aV2);
                 replaceNMVertices(ed, aV1, aV2, aReShape);
-                if (V1new.IsNull())
+                if (V1new.IsNull)
                 {
                     V1new = aV1;
                 }
@@ -3661,12 +3667,12 @@ public class BRepBuilderAPI_Sewing : Transient
     protected void Merging(bool passage, ProgressRange theProgress = default)
     {
         _ = passage; // OCCT: unused (firstTime)
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         //  NCollection_Map<TopoDS_Shape, TopTools_ShapeMapHasher> MergedEdges;
         using var aPS = new ProgressScope(theProgress, "Merging bounds", myBoundFaces.Extent());
         for (int anIterB = 1; anIterB <= myBoundFaces.Extent() && aPS.More(); anIterB++, aPS.Next())
         {
-            TopoDS_Shape bound = myBoundFaces.FindKey(anIterB);
+            Shape bound = myBoundFaces.FindKey(anIterB);
 
             // If bound was already merged - continue
             if (myMergedEdges.Contains(bound))
@@ -3677,8 +3683,8 @@ public class BRepBuilderAPI_Sewing : Transient
             if (myBoundFaces[anIterB].Extent() == 0)
             {
                 // Merge free edge - only vertices
-                TopExp.Vertices(TopoDS.Edge(bound), out TopoDS_Vertex no1, out TopoDS_Vertex no2);
-                TopoDS_Shape nno1 = no1, nno2 = no2;
+                Exploration.Vertices(ShapeCasts.Edge(bound), out Vertex no1, out Vertex no2);
+                Shape nno1 = no1, nno2 = no2;
                 if (myVertexNodeFree.Contains(no1))
                 {
                     nno1 = myVertexNodeFree.FindFromKey(no1);
@@ -3702,7 +3708,7 @@ public class BRepBuilderAPI_Sewing : Transient
             }
 
             // Check for previous splitting, build replacing wire
-            var BoundWire = new TopoDS_Wire();
+            var BoundWire = new Wire();
             bool isPrevSplit = false;
             bool hasCuttingSections = myBoundSections.IsBound(bound);
             if (hasCuttingSections)
@@ -3710,10 +3716,10 @@ public class BRepBuilderAPI_Sewing : Transient
                 B.MakeWire(ref BoundWire);
                 BoundWire.Orientation(bound.Orientation());
                 // Iterate on cutting sections
-                var its = new NCollection_List<TopoDS_Shape>.Iterator(myBoundSections[bound]);
+                var its = new NCollection_List<Shape>.Iterator(myBoundSections[bound]);
                 for (; its.More(); its.Next())
                 {
-                    TopoDS_Shape section = its.Value();
+                    Shape section = its.Value();
                     B.Add(BoundWire, section);
                     if (myMergedEdges.Contains(section))
                     {
@@ -3723,11 +3729,11 @@ public class BRepBuilderAPI_Sewing : Transient
             }
 
             // Merge with bound
-            var MergedWithBound = new NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            var MergedWithBound = new NCollection_IndexedDataMap<Shape, Shape>(ShapeHasher.Instance);
             if (!isPrevSplit)
             {
                 // Obtain sequence of edges merged with bound
-                var seqMergedWithBound = new NCollection_Sequence<TopoDS_Shape>();
+                var seqMergedWithBound = new NCollection_Sequence<Shape>();
                 var seqMergedWithBoundOri = new NCollection_Sequence<bool>();
                 if (MergedNearestEdges(bound, seqMergedWithBound, seqMergedWithBoundOri))
                 {
@@ -3737,7 +3743,7 @@ public class BRepBuilderAPI_Sewing : Transient
                     int ii = 1;
                     while (ii <= seqMergedWithBound.Length())
                     {
-                        TopoDS_Shape iedge = seqMergedWithBound.Value(ii);
+                        Shape iedge = seqMergedWithBound.Value(ii);
                         // Remove edge if recorded as merged
                         bool isRejected = (myMergedEdges.Contains(iedge) || MergedWithBound.Contains(iedge));
                         if (!isRejected)
@@ -3745,10 +3751,10 @@ public class BRepBuilderAPI_Sewing : Transient
                             if (myBoundSections.IsBound(iedge))
                             {
                                 // Edge is split - check sections
-                                var lit = new NCollection_List<TopoDS_Shape>.Iterator(myBoundSections[iedge]);
+                                var lit = new NCollection_List<Shape>.Iterator(myBoundSections[iedge]);
                                 for (; lit.More() && !isRejected; lit.Next())
                                 {
-                                    TopoDS_Shape sec = lit.Value();
+                                    Shape sec = lit.Value();
                                     // Remove edge (bound) if at least one of its sections already merged
                                     isRejected = (myMergedEdges.Contains(sec) || MergedWithBound.Contains(sec));
                                 }
@@ -3758,7 +3764,7 @@ public class BRepBuilderAPI_Sewing : Transient
                                 if (mySectionBound.IsBound(iedge))
                                 {
                                     // Edge is a section - check bound
-                                    TopoDS_Shape bnd = mySectionBound[iedge];
+                                    Shape bnd = mySectionBound[iedge];
                                     // Remove edge (section) if its bound already merged
                                     isRejected = (myMergedEdges.Contains(bnd) || MergedWithBound.Contains(bnd));
                                 }
@@ -3782,34 +3788,34 @@ public class BRepBuilderAPI_Sewing : Transient
                     if (nbMerged != 0)
                     {
                         // Create same parameter edge
-                        var ActuallyMerged = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                        TopoDS_Edge MergedEdge = SameParameterEdge(bound,
+                        var ActuallyMerged = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                        Edge MergedEdge = SameParameterEdge(bound,
                                                                    seqMergedWithBound,
                                                                    seqMergedWithBoundOri,
                                                                    ActuallyMerged,
                                                                    myReShape);
                         bool isForward = false;
-                        if (!MergedEdge.IsNull())
+                        if (!MergedEdge.IsNull)
                         {
-                            isForward = (MergedEdge.Orientation() == TopAbs_FORWARD);
+                            isForward = (MergedEdge.Orientation() == Forward);
                         }
                         // Process actually merged edges
                         int nbActuallyMerged = 0;
                         for (ii = 1; ii <= nbMerged; ii++)
                         {
-                            TopoDS_Shape iedge = seqMergedWithBound[ii];
+                            Shape iedge = seqMergedWithBound[ii];
                             if (ActuallyMerged.Contains(iedge))
                             {
                                 nbActuallyMerged++;
                                 // Record merged edge in the map
-                                TopAbs_Orientation orient = iedge.Orientation();
+                                Orientation orient = iedge.Orientation();
                                 if (!isForward)
                                 {
-                                    orient = TopAbs.Reverse(orient);
+                                    orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orient);
                                 }
                                 if (!seqMergedWithBoundOri[ii])
                                 {
-                                    orient = TopAbs.Reverse(orient);
+                                    orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orient);
                                 }
                                 MergedWithBound.ChangeFromKey(iedge) = MergedEdge.Oriented(orient);
                             }
@@ -3821,10 +3827,10 @@ public class BRepBuilderAPI_Sewing : Transient
                         if (nbActuallyMerged != 0)
                         {
                             // Record merged bound in the map
-                            TopAbs_Orientation orient = bound.Orientation();
+                            Orientation orient = bound.Orientation();
                             if (!isForward)
                             {
-                                orient = TopAbs.Reverse(orient);
+                                orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orient);
                             }
                             MergedWithBound.ChangeFromKey(bound) = MergedEdge.Oriented(orient);
                         }
@@ -3840,23 +3846,23 @@ public class BRepBuilderAPI_Sewing : Transient
             bool isMerged = !MergedWithBound.IsEmpty();
 
             // Merge with cutting sections
-            var SectionsReShape = new BRepTools_ReShape();
-            var MergedWithSections = new NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            var SectionsReShape = new ReShape();
+            var MergedWithSections = new NCollection_IndexedDataMap<Shape, Shape>(ShapeHasher.Instance);
             if (hasCuttingSections)
             {
                 // Iterate on cutting sections
-                var its = new NCollection_List<TopoDS_Shape>.Iterator(myBoundSections[bound]);
+                var its = new NCollection_List<Shape>.Iterator(myBoundSections[bound]);
                 for (; its.More(); its.Next())
                 {
                     // Retrieve cutting section
-                    TopoDS_Shape section = its.Value();
+                    Shape section = its.Value();
                     // Skip section if already merged
                     if (myMergedEdges.Contains(section))
                     {
                         continue;
                     }
                     // Merge cutting section
-                    var seqMergedWithSection = new NCollection_Sequence<TopoDS_Shape>();
+                    var seqMergedWithSection = new NCollection_Sequence<Shape>();
                     var seqMergedWithSectionOri = new NCollection_Sequence<bool>();
                     if (MergedNearestEdges(section, seqMergedWithSection, seqMergedWithSectionOri))
                     {
@@ -3866,7 +3872,7 @@ public class BRepBuilderAPI_Sewing : Transient
                         int ii = 1;
                         while (ii <= seqMergedWithSection.Length())
                         {
-                            TopoDS_Shape iedge = seqMergedWithSection.Value(ii);
+                            Shape iedge = seqMergedWithSection.Value(ii);
                             // Remove edge if recorded as merged
                             bool isRejected = (myMergedEdges.Contains(iedge) || MergedWithSections.Contains(iedge));
                             if (!isRejected)
@@ -3874,10 +3880,10 @@ public class BRepBuilderAPI_Sewing : Transient
                                 if (myBoundSections.IsBound(iedge))
                                 {
                                     // Edge is split - check sections
-                                    var lit = new NCollection_List<TopoDS_Shape>.Iterator(myBoundSections[iedge]);
+                                    var lit = new NCollection_List<Shape>.Iterator(myBoundSections[iedge]);
                                     for (; lit.More() && !isRejected; lit.Next())
                                     {
-                                        TopoDS_Shape sec = lit.Value();
+                                        Shape sec = lit.Value();
                                         // Remove edge (bound) if at least one of its sections already merged
                                         isRejected = (myMergedEdges.Contains(sec) || MergedWithSections.Contains(sec));
                                     }
@@ -3887,7 +3893,7 @@ public class BRepBuilderAPI_Sewing : Transient
                                     if (mySectionBound.IsBound(iedge))
                                     {
                                         // Edge is a section - check bound
-                                        TopoDS_Shape bnd = mySectionBound[iedge];
+                                        Shape bnd = mySectionBound[iedge];
                                         // Remove edge (section) if its bound already merged
                                         isRejected = (myMergedEdges.Contains(bnd) || MergedWithSections.Contains(bnd));
                                     }
@@ -3911,36 +3917,36 @@ public class BRepBuilderAPI_Sewing : Transient
                         if (nbMerged != 0)
                         {
                             // Create same parameter edge
-                            var ActuallyMerged = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-                            TopoDS_Edge MergedEdge = SameParameterEdge(section,
+                            var ActuallyMerged = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                            Edge MergedEdge = SameParameterEdge(section,
                                                                        seqMergedWithSection,
                                                                        seqMergedWithSectionOri,
                                                                        ActuallyMerged,
                                                                        SectionsReShape);
                             bool isForward = false;
-                            if (!MergedEdge.IsNull())
+                            if (!MergedEdge.IsNull)
                             {
-                                isForward = (MergedEdge.Orientation() == TopAbs_FORWARD);
+                                isForward = (MergedEdge.Orientation() == Forward);
                             }
                             // Process actually merged edges
                             int nbActuallyMerged = 0;
                             for (ii = 1; ii <= nbMerged; ii++)
                             {
-                                TopoDS_Shape iedge = seqMergedWithSection[ii];
+                                Shape iedge = seqMergedWithSection[ii];
                                 if (ActuallyMerged.Contains(iedge))
                                 {
                                     nbActuallyMerged++;
                                     // Record merged edge in the map
-                                    TopAbs_Orientation orient = iedge.Orientation();
+                                    Orientation orient = iedge.Orientation();
                                     if (!isForward)
                                     {
-                                        orient = TopAbs.Reverse(orient);
+                                        orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orient);
                                     }
                                     if (!seqMergedWithSectionOri[ii])
                                     {
-                                        orient = TopAbs.Reverse(orient);
+                                        orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orient);
                                     }
-                                    TopoDS_Shape oedge = MergedEdge.Oriented(orient);
+                                    Shape oedge = MergedEdge.Oriented(orient);
                                     MergedWithSections.ChangeFromKey(iedge) = oedge;
                                     ReplaceEdge(myReShape.InternalApply(iedge), oedge, SectionsReShape);
                                 }
@@ -3952,12 +3958,12 @@ public class BRepBuilderAPI_Sewing : Transient
                             if (nbActuallyMerged != 0)
                             {
                                 // Record merged section in the map
-                                TopAbs_Orientation orient = section.Orientation();
+                                Orientation orient = section.Orientation();
                                 if (!isForward)
                                 {
-                                    orient = TopAbs.Reverse(orient);
+                                    orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orient);
                                 }
-                                TopoDS_Shape oedge = MergedEdge.Oriented(orient);
+                                Shape oedge = MergedEdge.Oriented(orient);
                                 MergedWithSections.ChangeFromKey(section) = oedge;
                                 ReplaceEdge(myReShape.InternalApply(section), oedge, SectionsReShape);
                             }
@@ -3997,17 +4003,17 @@ public class BRepBuilderAPI_Sewing : Transient
             if (isMerged && isMergedSplit && !isPrevSplit)
             {
                 // Fill map of merged cutting sections
-                var MapSplitEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+                var MapSplitEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
                 for (int anItm = 1; anItm <= MergedWithSections.Extent(); anItm++)
                 {
-                    TopoDS_Shape edge = MergedWithSections.FindKey(anItm);
+                    Shape edge = MergedWithSections.FindKey(anItm);
                     MapSplitEdges.Add(edge);
                 }
                 // Iterate on edges merged with bound
                 for (int anItm1 = 1; anItm1 <= MergedWithBound.Extent(); anItm1++)
                 {
                     // Retrieve edge merged with bound
-                    TopoDS_Shape edge = MergedWithBound.FindKey(anItm1);
+                    Shape edge = MergedWithBound.FindKey(anItm1);
                     // Remove edge from the map
                     if (MapSplitEdges.Contains(edge))
                     {
@@ -4016,10 +4022,10 @@ public class BRepBuilderAPI_Sewing : Transient
                     if (myBoundSections.IsBound(edge))
                     {
                         // Edge has cutting sections
-                        var its = new NCollection_List<TopoDS_Shape>.Iterator(myBoundSections[edge]);
+                        var its = new NCollection_List<Shape>.Iterator(myBoundSections[edge]);
                         for (; its.More(); its.Next())
                         {
-                            TopoDS_Shape sec = its.Value();
+                            Shape sec = its.Value();
                             // Remove section from the map
                             if (MapSplitEdges.Contains(sec))
                             {
@@ -4032,12 +4038,12 @@ public class BRepBuilderAPI_Sewing : Transient
                 double MinSplitTol = RealLast();
                 for (int ii = 1; ii <= MapSplitEdges.Extent(); ii++)
                 {
-                    TopoDS_Edge edge = TopoDS.Edge(MergedWithSections.FindFromKey(MapSplitEdges.FindKey(ii)));
-                    MinSplitTol = Min(MinSplitTol, BRep_Tool.Tolerance(edge));
+                    Edge edge = ShapeCasts.Edge(MergedWithSections.FindFromKey(MapSplitEdges.FindKey(ii)));
+                    MinSplitTol = Min(MinSplitTol, Tool.Tolerance(edge));
                 }
                 // Calculate bound merging tolerance
-                TopoDS_Edge BoundEdge = TopoDS.Edge(MergedWithBound.FindFromKey(bound));
-                double BoundEdgeTol = BRep_Tool.Tolerance(BoundEdge);
+                Edge BoundEdge = ShapeCasts.Edge(MergedWithBound.FindFromKey(bound));
+                double BoundEdgeTol = Tool.Tolerance(BoundEdge);
                 isSplitted = ((MinSplitTol < BoundEdgeTol + MinTolerance()) || myNonmanifold);
                 isSplitted = (!MapSplitEdges.IsEmpty() && isSplitted);
             }
@@ -4049,8 +4055,8 @@ public class BRepBuilderAPI_Sewing : Transient
                 myReShape.Replace(myReShape.InternalApply(bound), myReShape.InternalApply(BoundWire));
                 for (int anItm = 1; anItm <= MergedWithSections.Extent(); anItm++)
                 {
-                    TopoDS_Shape oldedge = MergedWithSections.FindKey(anItm);
-                    TopoDS_Shape newedge = SectionsReShape.InternalApply(MergedWithSections[anItm]);
+                    Shape oldedge = MergedWithSections.FindKey(anItm);
+                    Shape newedge = SectionsReShape.InternalApply(MergedWithSections[anItm]);
                     ReplaceEdge(myReShape.InternalApply(oldedge), newedge, myReShape);
                     myMergedEdges.Add(oldedge);
                     if (myBoundSections.IsBound(oldedge))
@@ -4065,8 +4071,8 @@ public class BRepBuilderAPI_Sewing : Transient
                 // myMergedEdges.Add(bound);
                 for (int anItm = 1; anItm <= MergedWithBound.Extent(); anItm++)
                 {
-                    TopoDS_Shape oldedge = MergedWithBound.FindKey(anItm);
-                    TopoDS_Shape newedge = MergedWithBound[anItm];
+                    Shape oldedge = MergedWithBound.FindKey(anItm);
+                    Shape newedge = MergedWithBound[anItm];
                     ReplaceEdge(myReShape.InternalApply(oldedge), newedge, myReShape);
                     myMergedEdges.Add(oldedge);
                     if (myBoundSections.IsBound(oldedge))
@@ -4095,13 +4101,13 @@ public class BRepBuilderAPI_Sewing : Transient
     //=================================================================================================
 
     /// <summary>Finds the edges to merge with the edge (the sections between the same nodes), with their orientations.</summary>
-    protected bool MergedNearestEdges(in TopoDS_Shape edge,
-                                      NCollection_Sequence<TopoDS_Shape> SeqMergedEdge,
+    protected bool MergedNearestEdges(in Shape edge,
+                                      NCollection_Sequence<Shape> SeqMergedEdge,
                                       NCollection_Sequence<bool> SeqMergedOri)
     {
         // Retrieve edge nodes
-        TopExp.Vertices(TopoDS.Edge(edge), out TopoDS_Vertex no1, out TopoDS_Vertex no2);
-        TopoDS_Shape nno1 = no1, nno2 = no2;
+        Exploration.Vertices(ShapeCasts.Edge(edge), out Vertex no1, out Vertex no2);
+        Shape nno1 = no1, nno2 = no2;
         bool isNode1 = myVertexNode.Contains(no1);
         bool isNode2 = myVertexNode.Contains(no2);
         if (isNode1)
@@ -4114,21 +4120,21 @@ public class BRepBuilderAPI_Sewing : Transient
         }
 
         // Fill map of nodes connected to the node #1
-        var mapVert1 = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var mapVert1 = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         mapVert1.Add(nno1);
         if (myCuttingNode.IsBound(nno1))
         {
-            var ilv = new NCollection_List<TopoDS_Shape>.Iterator(myCuttingNode[nno1]);
+            var ilv = new NCollection_List<Shape>.Iterator(myCuttingNode[nno1]);
             for (; ilv.More(); ilv.Next())
             {
-                TopoDS_Shape v1 = ilv.Value();
+                Shape v1 = ilv.Value();
                 mapVert1.Add(v1);
                 if (!isNode1 && myCuttingNode.IsBound(v1))
                 {
-                    var ilvn = new NCollection_List<TopoDS_Shape>.Iterator(myCuttingNode[v1]);
+                    var ilvn = new NCollection_List<Shape>.Iterator(myCuttingNode[v1]);
                     for (; ilvn.More(); ilvn.Next())
                     {
-                        TopoDS_Shape vn = ilvn.Value();
+                        Shape vn = ilvn.Value();
                         mapVert1.Add(vn);
                     }
                 }
@@ -4136,21 +4142,21 @@ public class BRepBuilderAPI_Sewing : Transient
         }
 
         // Fill map of nodes connected to the node #2
-        var mapVert2 = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var mapVert2 = new NCollection_Map<Shape>(ShapeHasher.Instance);
         mapVert2.Add(nno2);
         if (myCuttingNode.IsBound(nno2))
         {
-            var ilv = new NCollection_List<TopoDS_Shape>.Iterator(myCuttingNode[nno2]);
+            var ilv = new NCollection_List<Shape>.Iterator(myCuttingNode[nno2]);
             for (; ilv.More(); ilv.Next())
             {
-                TopoDS_Shape v1 = ilv.Value();
+                Shape v1 = ilv.Value();
                 mapVert2.Add(v1);
                 if (!isNode2 && myCuttingNode.IsBound(v1))
                 {
-                    var ilvn = new NCollection_List<TopoDS_Shape>.Iterator(myCuttingNode[v1]);
+                    var ilvn = new NCollection_List<Shape>.Iterator(myCuttingNode[v1]);
                     for (; ilvn.More(); ilvn.Next())
                     {
-                        TopoDS_Shape vn = ilvn.Value();
+                        Shape vn = ilvn.Value();
                         mapVert2.Add(vn);
                     }
                 }
@@ -4158,28 +4164,28 @@ public class BRepBuilderAPI_Sewing : Transient
         }
 
         // Find all possible contiguous edges
-        var seqEdges = new NCollection_Sequence<TopoDS_Shape>();
+        var seqEdges = new NCollection_Sequence<Shape>();
         seqEdges.Append(edge);
-        var mapEdges = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var mapEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
         mapEdges.Add(edge);
         for (int i = 1; i <= mapVert1.Extent(); i++)
         {
-            TopoDS_Shape node1 = mapVert1.FindKey(i);
+            Shape node1 = mapVert1.FindKey(i);
             if (!myNodeSections.IsBound(node1))
             {
                 continue;
             }
-            var ilsec = new NCollection_List<TopoDS_Shape>.Iterator(myNodeSections[node1]);
+            var ilsec = new NCollection_List<Shape>.Iterator(myNodeSections[node1]);
             for (; ilsec.More(); ilsec.Next())
             {
-                TopoDS_Shape sec = ilsec.Value();
+                Shape sec = ilsec.Value();
                 if (sec.IsSame(edge))
                 {
                     continue;
                 }
                 // Retrieve section nodes
-                TopExp.Vertices(TopoDS.Edge(sec), out TopoDS_Vertex vs1, out TopoDS_Vertex vs2);
-                TopoDS_Shape vs1n = vs1, vs2n = vs2;
+                Exploration.Vertices(ShapeCasts.Edge(sec), out Vertex vs1, out Vertex vs2);
+                Shape vs1n = vs1, vs2n = vs2;
                 if (myVertexNode.Contains(vs1))
                 {
                     vs1n = myVertexNode.FindFromKey(vs1);
@@ -4197,10 +4203,10 @@ public class BRepBuilderAPI_Sewing : Transient
                         bool isRejected = myMergedEdges.Contains(sec);
                         if (!isRejected && myBoundSections.IsBound(sec))
                         {
-                            var its = new NCollection_List<TopoDS_Shape>.Iterator(myBoundSections[sec]);
+                            var its = new NCollection_List<Shape>.Iterator(myBoundSections[sec]);
                             for (; its.More() && !isRejected; its.Next())
                             {
-                                TopoDS_Shape section = its.Value();
+                                Shape section = its.Value();
 
                                 if (myMergedEdges.Contains(section))
                                 {
@@ -4210,7 +4216,7 @@ public class BRepBuilderAPI_Sewing : Transient
                         }
                         if (!isRejected && mySectionBound.IsBound(sec))
                         {
-                            TopoDS_Shape bnd = mySectionBound[sec];
+                            Shape bnd = mySectionBound[sec];
                             isRejected = (!myBoundSections.IsBound(bnd) || myMergedEdges.Contains(bnd));
                         }
 
@@ -4237,9 +4243,9 @@ public class BRepBuilderAPI_Sewing : Transient
                 double lenRef = 0.0;
                 for (i = 1; i <= nbSection; i++)
                 {
-                    Geom_Curve? c3d = BRep_Tool.Curve(TopoDS.Edge(seqEdges[i]), out double f, out double l);
-                    var cAdapt = new GeomAdaptor_Curve(c3d!);
-                    double len = GCPnts_AbscissaPoint.Length(cAdapt, f, l);
+                    Curve3D? c3d = Tool.Curve(ShapeCasts.Edge(seqEdges[i]), out double f, out double l);
+                    var cAdapt = new CurveAdaptor(c3d!);
+                    double len = AbscissaPoint.Length(cAdapt, f, l);
                     if (len > lenRef)
                     {
                         indRef = i;
@@ -4248,7 +4254,7 @@ public class BRepBuilderAPI_Sewing : Transient
                 }
                 if (indRef != 1)
                 {
-                    TopoDS_Shape longEdge = seqEdges[indRef];
+                    Shape longEdge = seqEdges[indRef];
                     seqEdges[indRef] = seqEdges[1];
                     seqEdges[1] = longEdge;
                 }
@@ -4266,7 +4272,7 @@ public class BRepBuilderAPI_Sewing : Transient
                 for (i = 1; i <= nbCandidates; i++)
                 {
                     // Retrieve merged edge
-                    TopoDS_Shape iedge = seqEdges[seqCandidates[i]];
+                    Shape iedge = seqEdges[seqCandidates[i]];
                     bool ori = seqForward[i];
                     SeqMergedEdge.Append(iedge);
                     SeqMergedOri.Append(ori);
@@ -4306,7 +4312,7 @@ public class BRepBuilderAPI_Sewing : Transient
         {
             for (i = 1; i <= nbVertices; i++)
             {
-                Point3D pt = BRep_Tool.Pnt(TopoDS.Vertex(myVertexNode.FindKey(i)));
+                Point3D pt = Tool.Pnt(ShapeCasts.Vertex(myVertexNode.FindKey(i)));
                 var aBox = new Box();
                 aBox.Set(pt);
                 aBox.Enlarge(eps);
@@ -4315,7 +4321,7 @@ public class BRepBuilderAPI_Sewing : Transient
             aTreeFiller.Fill();
         }
 
-        Geom_Curve? c3d;
+        Curve3D? c3d;
         Placement loc;
         double first, last;
         // Iterate on all boundaries
@@ -4323,34 +4329,34 @@ public class BRepBuilderAPI_Sewing : Transient
         using var aPS = new ProgressScope(theProgress, "Cutting bounds", nbBounds);
         for (int anIterB = 1; anIterB <= myBoundFaces.Extent() && aPS.More(); anIterB++, aPS.Next())
         {
-            TopoDS_Edge bound = TopoDS.Edge(myBoundFaces.FindKey(anIterB));
+            Edge bound = ShapeCasts.Edge(myBoundFaces.FindKey(anIterB));
             // Do not cut floating edges
             if (myBoundFaces[anIterB].Extent() == 0)
             {
                 continue;
             }
             // Obtain bound curve
-            c3d = BRep_Tool.Curve(bound, out loc, out first, out last);
+            c3d = Tool.Curve(bound, out loc, out first, out last);
             if (c3d is null)
             {
                 continue;
             }
             if (!loc.IsIdentity)
             {
-                c3d = (Geom_Curve)c3d.Copy();
+                c3d = (Curve3D)c3d.Copy();
                 c3d.Transform(loc.Transformation());
             }
             // Create cutting sections
-            var listSections = new NCollection_List<TopoDS_Shape>();
+            var listSections = new NCollection_List<Shape>();
             { // szv: Use brackets to destroy local variables
                 // Obtain candidate vertices
-                TopoDS_Vertex V1 = new(), V2 = new();
-                var CandidateVertices = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+                Vertex V1 = new(), V2 = new();
+                var CandidateVertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
                 { // szv: Use brackets to destroy local variables
                     // Create bounding box around curve
                     var aGlobalBox = new Box();
-                    var adptC = new GeomAdaptor_Curve(c3d, first, last);
-                    BndLib_Add3dCurve.Add(adptC, myTolerance, ref aGlobalBox);
+                    var adptC = new CurveAdaptor(c3d, first, last);
+                    Add3dCurve.Add(adptC, myTolerance, ref aGlobalBox);
                     // Sort vertices to find candidates
                     aSelector.SetCurrent(aGlobalBox);
                     aTree.Select(aSelector);
@@ -4360,18 +4366,18 @@ public class BRepBuilderAPI_Sewing : Transient
                         continue;
                     }
                     // Retrieve bound nodes
-                    TopExp.Vertices(bound, out V1, out V2);
-                    TopoDS_Shape Node1 = myVertexNode.FindFromKey(V1);
-                    TopoDS_Shape Node2 = myVertexNode.FindFromKey(V2);
+                    Exploration.Vertices(bound, out V1, out V2);
+                    Shape Node1 = myVertexNode.FindFromKey(V1);
+                    Shape Node2 = myVertexNode.FindFromKey(V2);
                     // Fill map of candidate vertices
                     var itl = new NCollection_List<int>.Iterator(aSelector.ResInd());
                     for (; itl.More(); itl.Next())
                     {
                         int index = itl.Value();
-                        TopoDS_Shape Node = myVertexNode.FindFromIndex(index);
+                        Shape Node = myVertexNode.FindFromIndex(index);
                         if (!Node.IsSame(Node1) && !Node.IsSame(Node2))
                         {
-                            TopoDS_Shape vertex = myVertexNode.FindKey(index);
+                            Shape vertex = myVertexNode.FindKey(index);
                             CandidateVertices.Add(vertex);
                         }
                     }
@@ -4389,11 +4395,11 @@ public class BRepBuilderAPI_Sewing : Transient
                 var arrProj = new NCollection_Array1<Point3D>(1, nbCandidates);
                 for (int j = 1; j <= nbCandidates; j++)
                 {
-                    arrPnt[j] = BRep_Tool.Pnt(TopoDS.Vertex(CandidateVertices[j]));
+                    arrPnt[j] = Tool.Pnt(ShapeCasts.Vertex(CandidateVertices[j]));
                 }
                 ProjectPointsOnCurve(arrPnt, c3d, first, last, arrDist, arrPara, arrProj, true);
                 // Create cutting nodes
-                var seqNode = new NCollection_Sequence<TopoDS_Shape>();
+                var seqNode = new NCollection_Sequence<Shape>();
                 var seqPara = new NCollection_Sequence<double>();
                 CreateCuttingNodes(CandidateVertices,
                                    bound,
@@ -4415,18 +4421,18 @@ public class BRepBuilderAPI_Sewing : Transient
             {
                 // modification of maps:
                 //                     myBoundSections
-                var its = new NCollection_List<TopoDS_Shape>.Iterator(listSections);
+                var its = new NCollection_List<Shape>.Iterator(listSections);
                 for (; its.More(); its.Next())
                 {
-                    TopoDS_Shape section = its.Value();
+                    Shape section = its.Value();
                     // Iterate on section vertices
-                    for (var itv = new TopoDS_Iterator(section); itv.More(); itv.Next())
+                    for (var itv = new Iterator(section); itv.More(); itv.Next())
                     {
-                        TopoDS_Shape vertex = itv.Value();
+                        Shape vertex = itv.Value();
                         // Convert vertex to node
                         if (myVertexNode.Contains(vertex))
                         {
-                            vertex = TopoDS.Vertex(myVertexNode.FindFromKey(vertex));
+                            vertex = ShapeCasts.Vertex(myVertexNode.FindFromKey(vertex));
                         }
                         // Update node sections
                         if (myNodeSections.IsBound(vertex))
@@ -4435,7 +4441,7 @@ public class BRepBuilderAPI_Sewing : Transient
                         }
                         else
                         {
-                            var lsec = new NCollection_List<TopoDS_Shape>();
+                            var lsec = new NCollection_List<Shape>();
                             lsec.Append(section);
                             myNodeSections.Bind(vertex, lsec);
                         }
@@ -4451,21 +4457,21 @@ public class BRepBuilderAPI_Sewing : Transient
 
     //=================================================================================================
 
-    private static void GetSeqEdges(in TopoDS_Shape edge,
-                                    NCollection_Sequence<TopoDS_Shape> seqEdges,
-                                    NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> VertEdge)
+    private static void GetSeqEdges(in Shape edge,
+                                    NCollection_Sequence<Shape> seqEdges,
+                                    NCollection_DataMap<Shape, NCollection_List<Shape>> VertEdge)
     {
         int numV = 0;
-        for (var Iv = new TopoDS_Iterator(edge, false); Iv.More(); Iv.Next())
+        for (var Iv = new Iterator(edge, false); Iv.More(); Iv.Next())
         {
-            TopoDS_Vertex V1 = TopoDS.Vertex(Iv.Value());
+            Vertex V1 = ShapeCasts.Vertex(Iv.Value());
             numV++;
             if (VertEdge.IsBound(V1))
             {
-                NCollection_List<TopoDS_Shape> listEdges = VertEdge.Find(V1);
-                for (var lIt = new NCollection_List<TopoDS_Shape>.Iterator(listEdges); lIt.More(); lIt.Next())
+                NCollection_List<Shape> listEdges = VertEdge.Find(V1);
+                for (var lIt = new NCollection_List<Shape>.Iterator(listEdges); lIt.More(); lIt.Next())
                 {
-                    TopoDS_Shape edge1 = lIt.Value();
+                    Shape edge1 = lIt.Value();
                     if (edge1.IsSame(edge))
                     {
                         continue;
@@ -4500,43 +4506,43 @@ public class BRepBuilderAPI_Sewing : Transient
     //=================================================================================================
 
     /// <summary>Chains the free edges into wires. Called from EdgeProcessing only.</summary>
-    protected virtual void GetFreeWires(NCollection_IndexedMap<TopoDS_Shape> MapFreeEdges,
-                                        NCollection_Sequence<TopoDS_Shape> seqWires)
+    protected virtual void GetFreeWires(NCollection_IndexedMap<Shape> MapFreeEdges,
+                                        NCollection_Sequence<Shape> seqWires)
     {
-        var VertEdge = new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        var seqFreeEdges = new NCollection_Sequence<TopoDS_Shape>();
+        var VertEdge = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var seqFreeEdges = new NCollection_Sequence<Shape>();
         for (int k = 1; k <= MapFreeEdges.Extent(); k++)
         {
-            TopoDS_Shape edge = MapFreeEdges.FindKey(k);
+            Shape edge = MapFreeEdges.FindKey(k);
             seqFreeEdges.Append(edge);
-            for (var Iv = new TopoDS_Iterator(edge, false); Iv.More(); Iv.Next())
+            for (var Iv = new Iterator(edge, false); Iv.More(); Iv.Next())
             {
-                TopoDS_Vertex V1 = TopoDS.Vertex(Iv.Value());
+                Vertex V1 = ShapeCasts.Vertex(Iv.Value());
                 if (VertEdge.IsBound(V1))
                 {
                     VertEdge.ChangeFind(V1).Append(edge);
                 }
                 else
                 {
-                    var ls = new NCollection_List<TopoDS_Shape>();
+                    var ls = new NCollection_List<Shape>();
                     ls.Append(edge);
                     VertEdge.Bind(V1, ls);
                 }
             }
         }
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         int i, j;
         for (i = 1; i <= seqFreeEdges.Length(); i++)
         {
-            var seqEdges = new NCollection_Sequence<TopoDS_Shape>();
-            TopoDS_Shape edge = seqFreeEdges.Value(i);
+            var seqEdges = new NCollection_Sequence<Shape>();
+            Shape edge = seqFreeEdges.Value(i);
             if (!MapFreeEdges.Contains(edge))
             {
                 continue;
             }
             seqEdges.Append(edge);
             GetSeqEdges(edge, seqEdges, VertEdge);
-            var wire = new TopoDS_Wire();
+            var wire = new Wire();
             B.MakeWire(ref wire);
             for (j = 1; j <= seqEdges.Length(); j++)
             {
@@ -4553,22 +4559,22 @@ public class BRepBuilderAPI_Sewing : Transient
 
     //=================================================================================================
 
-    private static bool IsDegeneratedWire(in TopoDS_Shape wire)
+    private static bool IsDegeneratedWire(in Shape wire)
     {
-        if (wire.ShapeType() != TopAbs_WIRE)
+        if (wire.ShapeType() != ShapeType.Wire)
         {
             return false;
         }
         // Get maximal vertices tolerance
-        TopoDS_Vertex V1 = new(), V2 = new();
+        Vertex V1 = new(), V2 = new();
         double wireLength = 0.0;
         int nume = 0;
         int isSmall = 0;
-        for (var aIt = new TopoDS_Iterator(wire, false); aIt.More(); aIt.Next())
+        for (var aIt = new Iterator(wire, false); aIt.More(); aIt.Next())
         {
             nume++;
-            TopoDS_Shape edge = aIt.Value();
-            TopExp.Vertices(TopoDS.Edge(edge), out TopoDS_Vertex Ve1, out TopoDS_Vertex Ve2);
+            Shape edge = aIt.Value();
+            Exploration.Vertices(ShapeCasts.Edge(edge), out Vertex Ve1, out Vertex Ve2);
             if (nume == 1)
             {
                 V1 = Ve1;
@@ -4593,10 +4599,10 @@ public class BRepBuilderAPI_Sewing : Transient
                     V2 = Ve1;
                 }
             }
-            Geom_Curve? c3d = BRep_Tool.Curve(TopoDS.Edge(aIt.Value()), out Placement loc, out double first, out double last);
+            Curve3D? c3d = Tool.Curve(ShapeCasts.Edge(aIt.Value()), out Placement loc, out double first, out double last);
             if (c3d is not null)
             {
-                c3d = (Geom_Curve)c3d.Copy();
+                c3d = (Curve3D)c3d.Copy();
                 if (!loc.IsIdentity)
                 {
                     c3d.Transform(loc.Transformation());
@@ -4611,10 +4617,10 @@ public class BRepBuilderAPI_Sewing : Transient
                 }
                 else
                 {
-                    var cAdapt = new GeomAdaptor_Curve(c3d);
-                    length = GCPnts_AbscissaPoint.Length(cAdapt, first, last);
+                    var cAdapt = new CurveAdaptor(c3d);
+                    length = AbscissaPoint.Length(cAdapt, first, last);
                 }
-                double tole = BRep_Tool.Tolerance(Ve1) + BRep_Tool.Tolerance(Ve2);
+                double tole = Tool.Tolerance(Ve1) + Tool.Tolerance(Ve2);
                 if (length <= tole)
                 {
                     isSmall++;
@@ -4626,7 +4632,7 @@ public class BRepBuilderAPI_Sewing : Transient
         {
             return true;
         }
-        double tol = BRep_Tool.Tolerance(V1) + BRep_Tool.Tolerance(V2); // Max(BRep_Tool::Tolerance(V1),BRep_Tool::Tolerance(V2));
+        double tol = Tool.Tolerance(V1) + Tool.Tolerance(V2); // Max(BRep_Tool::Tolerance(V1),BRep_Tool::Tolerance(V2));
         return wireLength <= tol;
     }
 
@@ -4636,86 +4642,86 @@ public class BRepBuilderAPI_Sewing : Transient
     //            create a new degenerated edge if the section is degenerated
     //=======================================================================
 
-    private static TopoDS_Edge DegeneratedSection(in TopoDS_Shape section, in TopoDS_Shape face)
+    private static Edge DegeneratedSection(in Shape section, in Shape face)
     {
         // Return if section is already degenerated
-        if (BRep_Tool.Degenerated(TopoDS.Edge(section)))
+        if (Tool.Degenerated(ShapeCasts.Edge(section)))
         {
-            return TopoDS.Edge(section);
+            return ShapeCasts.Edge(section);
         }
 
         // Retrieve edge curve
-        Geom_Curve? c3d = BRep_Tool.Curve(TopoDS.Edge(section), out Placement loc, out double first, out double last);
+        Curve3D? c3d = Tool.Curve(ShapeCasts.Edge(section), out Placement loc, out double first, out double last);
         if (c3d is null)
         { // gka
-            var aB = new BRep_Builder();
-            TopoDS_Edge edge1 = TopoDS.Edge(section);
+            var aB = new BrepBuilder();
+            Edge edge1 = ShapeCasts.Edge(section);
             aB.Degenerated(edge1, true);
             return edge1;
         }
         if (!loc.IsIdentity)
         {
-            c3d = (Geom_Curve)c3d.Copy();
+            c3d = (Curve3D)c3d.Copy();
             c3d.Transform(loc.Transformation());
         }
 
         // Test if the new edge is degenerated
-        TopExp.Vertices(TopoDS.Edge(section), out TopoDS_Vertex v1, out TopoDS_Vertex v2);
+        Exploration.Vertices(ShapeCasts.Edge(section), out Vertex v1, out Vertex v2);
 
         Point3D p1, p2, p3;
-        p1 = BRep_Tool.Pnt(v1);
-        p3 = BRep_Tool.Pnt(v2);
+        p1 = Tool.Pnt(v1);
+        p3 = Tool.Pnt(v2);
         c3d.D0(0.5 * (first + last), out p2);
 
-        TopoDS_Edge edge;
+        Edge edge;
 
         // processing
-        var aBuilder = new BRep_Builder();
-        edge = TopoDS.Edge(section);
+        var aBuilder = new BrepBuilder();
+        edge = ShapeCasts.Edge(section);
         edge.EmptyCopy();
         if (v1.IsSame(v2))
         {
-            TopoDS_Shape anEdge1 = edge.Oriented(TopAbs_FORWARD);
-            aBuilder.Add(anEdge1, v1.Oriented(TopAbs_FORWARD));
-            aBuilder.Add(anEdge1, v2.Oriented(TopAbs_REVERSED));
+            Shape anEdge1 = edge.Oriented(Forward);
+            aBuilder.Add(anEdge1, v1.Oriented(Forward));
+            aBuilder.Add(anEdge1, v2.Oriented(Reversed));
         }
         else
         {
-            var newVertex = new TopoDS_Vertex();
-            if (p1.Distance(p3) < BRep_Tool.Tolerance(v1))
+            var newVertex = new Vertex();
+            if (p1.Distance(p3) < Tool.Tolerance(v1))
             {
                 newVertex = v1;
             }
-            else if (p1.Distance(p3) < BRep_Tool.Tolerance(v2))
+            else if (p1.Distance(p3) < Tool.Tolerance(v2))
             {
                 newVertex = v2;
             }
             else
             {
-                double d1 = BRep_Tool.Tolerance(v1) + p2.Distance(p1);
-                double d2 = BRep_Tool.Tolerance(v2) + p2.Distance(p3);
+                double d1 = Tool.Tolerance(v1) + p2.Distance(p1);
+                double d2 = Tool.Tolerance(v2) + p2.Distance(p3);
                 double newTolerance = Max(d1, d2);
                 aBuilder.MakeVertex(ref newVertex, p2, newTolerance);
             }
-            TopoDS_Shape anEdge1 = edge.Oriented(TopAbs_FORWARD);
-            aBuilder.Add(anEdge1, newVertex.Oriented(TopAbs_FORWARD));
-            aBuilder.Add(anEdge1, newVertex.Oriented(TopAbs_REVERSED));
+            Shape anEdge1 = edge.Oriented(Forward);
+            aBuilder.Add(anEdge1, newVertex.Oriented(Forward));
+            aBuilder.Add(anEdge1, newVertex.Oriented(Reversed));
         }
 
-        BRep_Tool.Range(TopoDS.Edge(section), out first, out last);
-        TopoDS_Shape anEdge = edge.Oriented(TopAbs_FORWARD);
-        aBuilder.Range(TopoDS.Edge(anEdge), first, last);
+        Tool.Range(ShapeCasts.Edge(section), out first, out last);
+        Shape anEdge = edge.Oriented(Forward);
+        aBuilder.Range(ShapeCasts.Edge(anEdge), first, last);
         aBuilder.Degenerated(edge, true);
-        Geom_Curve? aC3dNew = null;
-        if (!face.IsNull())
+        Curve3D? aC3dNew = null;
+        if (!face.IsNull)
         {
-            Geom2d_Curve? aC2dt =
-                BRep_Tool.CurveOnSurface(TopoDS.Edge(section), TopoDS.Face(face), out double af, out double al);
+            Curve2D? aC2dt =
+                Tool.CurveOnSurface(ShapeCasts.Edge(section), ShapeCasts.Face(face), out double af, out double al);
             aBuilder.UpdateEdge(edge, aC3dNew, 0);
-            Geom2d_Curve? aC2dn = BRep_Tool.CurveOnSurface(edge, TopoDS.Face(face), out af, out al);
+            Curve2D? aC2dn = Tool.CurveOnSurface(edge, ShapeCasts.Face(face), out af, out al);
             if (aC2dn is null)
             {
-                aBuilder.UpdateEdge(edge, aC2dt, TopoDS.Face(face), 0);
+                aBuilder.UpdateEdge(edge, aC2dt, ShapeCasts.Face(face), 0);
             }
         }
 
@@ -4738,26 +4744,26 @@ public class BRepBuilderAPI_Sewing : Transient
     protected void EdgeProcessing(ProgressRange theProgress = default)
     {
         // constructs sectionEdge
-        var MapFreeEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var EdgeFace = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var MapFreeEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var EdgeFace = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
         using var aPS = new ProgressScope(theProgress, "Edge processing", myBoundFaces.Extent());
         for (int anIterB = 1; anIterB <= myBoundFaces.Extent() && aPS.More(); anIterB++, aPS.Next())
         {
-            TopoDS_Shape bound = myBoundFaces.FindKey(anIterB);
-            NCollection_List<TopoDS_Shape> listFaces = myBoundFaces[anIterB];
+            Shape bound = myBoundFaces.FindKey(anIterB);
+            NCollection_List<Shape> listFaces = myBoundFaces[anIterB];
             if (listFaces.Extent() == 1)
             {
                 if (myBoundSections.IsBound(bound))
                 {
-                    var liter = new NCollection_List<TopoDS_Shape>.Iterator(myBoundSections[bound]);
+                    var liter = new NCollection_List<Shape>.Iterator(myBoundSections[bound]);
                     for (; liter.More(); liter.Next())
                     {
                         if (!myMergedEdges.Contains(liter.Value()))
                         { // myReShape->IsRecorded(liter.Value())) {
-                            TopoDS_Shape edge = myReShape.InternalApply(liter.Value());
+                            Shape edge = myReShape.InternalApply(liter.Value());
                             if (!MapFreeEdges.Contains(edge))
                             {
-                                TopoDS_Shape face = listFaces.First();
+                                Shape face = listFaces.First();
                                 EdgeFace.Bind(edge, face);
                                 MapFreeEdges.Add(edge);
                             }
@@ -4768,10 +4774,10 @@ public class BRepBuilderAPI_Sewing : Transient
                 {
                     if (!myMergedEdges.Contains(bound))
                     {
-                        TopoDS_Shape edge = myReShape.InternalApply(bound);
+                        Shape edge = myReShape.InternalApply(bound);
                         if (!MapFreeEdges.Contains(edge))
                         {
-                            TopoDS_Shape face = listFaces.First();
+                            Shape face = listFaces.First();
                             EdgeFace.Bind(edge, face);
                             MapFreeEdges.Add(edge);
                         }
@@ -4782,26 +4788,26 @@ public class BRepBuilderAPI_Sewing : Transient
 
         if (!MapFreeEdges.IsEmpty())
         {
-            var seqWires = new NCollection_Sequence<TopoDS_Shape>();
+            var seqWires = new NCollection_Sequence<Shape>();
             GetFreeWires(MapFreeEdges, seqWires);
             for (int j = 1; j <= seqWires.Length(); j++)
             {
-                TopoDS_Wire wire = TopoDS.Wire(seqWires.Value(j));
+                Wire wire = ShapeCasts.Wire(seqWires.Value(j));
                 if (!IsDegeneratedWire(wire))
                 {
                     continue;
                 }
-                for (var Ie = new TopoDS_Iterator(wire, false); Ie.More(); Ie.Next())
+                for (var Ie = new Iterator(wire, false); Ie.More(); Ie.Next())
                 {
-                    TopoDS_Shape aTmpShape = myReShape.InternalApply(Ie.Value()); // for porting
-                    TopoDS_Edge edge = TopoDS.Edge(aTmpShape);
-                    var face = new TopoDS_Shape();
+                    Shape aTmpShape = myReShape.InternalApply(Ie.Value()); // for porting
+                    Edge edge = ShapeCasts.Edge(aTmpShape);
+                    var face = new Shape();
                     if (EdgeFace.IsBound(edge))
                     {
                         face = EdgeFace.Find(edge);
                     }
-                    TopoDS_Shape degedge = DegeneratedSection(edge, face);
-                    if (degedge.IsNull())
+                    Shape degedge = DegeneratedSection(edge, face);
+                    if (degedge.IsNull)
                     {
                         continue;
                     }
@@ -4809,7 +4815,7 @@ public class BRepBuilderAPI_Sewing : Transient
                     {
                         ReplaceEdge(edge, degedge, myReShape);
                     }
-                    if (BRep_Tool.Degenerated(TopoDS.Edge(degedge)))
+                    if (Tool.Degenerated(ShapeCasts.Edge(degedge)))
                     {
                         myDegenerated.Add(degedge);
                     }
@@ -4826,25 +4832,25 @@ public class BRepBuilderAPI_Sewing : Transient
     /// <summary>Recomputes the regularity of the merged edges.</summary>
     protected void EdgeRegularity(ProgressRange theProgress = default)
     {
-        var aMapEF = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(mySewedShape, TopAbs_EDGE, TopAbs_FACE, aMapEF);
+        var aMapEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(mySewedShape, ShapeType.Edge, ShapeType.Face, aMapEF);
 
         using var aPS = new ProgressScope(theProgress, "Encode edge regularity", myMergedEdges.Extent());
         // OCCT iterates its map in address order; the port in insertion order (decision 18). Each edge is encoded on
         // its own, so the order doesn't change the result.
-        foreach (TopoDS_Shape aMergedEdge in myMergedEdges)
+        foreach (Shape aMergedEdge in myMergedEdges)
         {
             if (!aPS.More())
             {
                 break;
             }
-            TopoDS_Edge anEdge = TopoDS.Edge(myReShape.InternalApply(aMergedEdge));
+            Edge anEdge = ShapeCasts.Edge(myReShape.InternalApply(aMergedEdge));
             // encode regularity if and only if edges is shared by two faces
-            if (aMapEF.FindFromKey(anEdge, out NCollection_List<TopoDS_Shape> aFaces) && aFaces.Extent() == 2)
+            if (aMapEF.FindFromKey(anEdge, out NCollection_List<Shape> aFaces) && aFaces.Extent() == 2)
             {
                 BRepLib.EncodeRegularity(anEdge,
-                                         TopoDS.Face(aFaces.First()),
-                                         TopoDS.Face(aFaces.Last()));
+                                         ShapeCasts.Face(aFaces.First()),
+                                         ShapeCasts.Face(aFaces.Last()));
             }
             aPS.Next();
         }
@@ -4860,18 +4866,18 @@ public class BRepBuilderAPI_Sewing : Transient
         // ---------------------
         // create the new shapes
         // ---------------------
-        var aQuilt = new BRepTools_Quilt();
-        bool isLocal = !myShape.IsNull();
+        var aQuilt = new Quilt();
+        bool isLocal = !myShape.IsNull;
         if (isLocal)
         {
             // Local sewing
-            TopoDS_Shape ns = myReShape.InternalApply(myShape);
+            Shape ns = myReShape.InternalApply(myShape);
             aQuilt.Add(ns);
         }
         for (int anIter = 1; anIter <= myOldShapes.Extent(); anIter++)
         {
-            TopoDS_Shape sh = myOldShapes[anIter];
-            if (!sh.IsNull())
+            Shape sh = myOldShapes[anIter];
+            if (!sh.IsNull)
             {
                 sh = myReShape.InternalApply(sh);
                 myOldShapes[anIter] = sh;
@@ -4881,19 +4887,19 @@ public class BRepBuilderAPI_Sewing : Transient
                 }
             }
         }
-        TopoDS_Shape aNewShape = aQuilt.InternalShells();
+        Shape aNewShape = aQuilt.InternalShells();
         int numsh = 0;
 
-        var OldShells = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var OldShells = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
 
-        var aB = new BRep_Builder();
-        var aComp = new TopoDS_Compound();
+        var aB = new BrepBuilder();
+        var aComp = new Compound();
         aB.MakeCompound(ref aComp);
-        for (var aExpSh = new TopoDS_Iterator(aNewShape, false); aExpSh.More(); aExpSh.Next())
+        for (var aExpSh = new Iterator(aNewShape, false); aExpSh.More(); aExpSh.Next())
         {
-            TopoDS_Shape sh = aExpSh.Value();
+            Shape sh = aExpSh.Value();
             bool hasEdges = false;
-            if (sh.ShapeType() == TopAbs_SHELL)
+            if (sh.ShapeType() == ShapeType.Shell)
             {
                 if (myNonmanifold)
                 {
@@ -4901,9 +4907,9 @@ public class BRepBuilderAPI_Sewing : Transient
                 }
                 else
                 {
-                    var face = new TopoDS_Shape();
+                    var face = new Shape();
                     int numf = 0;
-                    for (var aExpF = new TopExp_Explorer(sh, TopAbs_FACE); aExpF.More() && (numf < 2); aExpF.Next())
+                    for (var aExpF = new Explorer(sh, ShapeType.Face); aExpF.More() && (numf < 2); aExpF.Next())
                     {
                         face = aExpF.Current();
                         numf++;
@@ -4922,11 +4928,11 @@ public class BRepBuilderAPI_Sewing : Transient
                     }
                 }
             }
-            else if (sh.ShapeType() == TopAbs_FACE)
+            else if (sh.ShapeType() == ShapeType.Face)
             {
                 if (myNonmanifold)
                 {
-                    var ss = new TopoDS_Shell();
+                    var ss = new Shell();
                     aB.MakeShell(ref ss);
                     aB.Add(ss, sh);
                     sh = ss;
@@ -4955,10 +4961,10 @@ public class BRepBuilderAPI_Sewing : Transient
             if (nbOldShells == 1)
             {
                 // Single shell - check for single face
-                TopoDS_Shape sh = OldShells.FindKey(1);
-                var face = new TopoDS_Shape();
+                Shape sh = OldShells.FindKey(1);
+                var face = new Shape();
                 int numf = 0;
-                for (var aExpF = new TopExp_Explorer(sh, TopAbs_FACE); aExpF.More() && (numf < 2); aExpF.Next())
+                for (var aExpF = new Explorer(sh, ShapeType.Face); aExpF.More() && (numf < 2); aExpF.Next())
                 {
                     face = aExpF.Current();
                     numf++;
@@ -4982,27 +4988,27 @@ public class BRepBuilderAPI_Sewing : Transient
                 var IndexMerged = new NCollection_Map<int>();
                 while (IndexMerged.Extent() < nbOldShells)
                 {
-                    var NewShell = new TopoDS_Shell();
-                    var NewEdges = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+                    var NewShell = new Shell();
+                    var NewEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
                     for (int i = 1; i <= nbOldShells; i++)
                     {
                         if (IndexMerged.Contains(i))
                         {
                             continue;
                         }
-                        TopoDS_Shell shell = TopoDS.Shell(OldShells.FindKey(i));
-                        if (NewShell.IsNull())
+                        Shell shell = ShapeCasts.Shell(OldShells.FindKey(i));
+                        if (NewShell.IsNull)
                         {
                             aB.MakeShell(ref NewShell);
-                            var aItSS = new TopoDS_Iterator(shell);
+                            var aItSS = new Iterator(shell);
                             for (; aItSS.More(); aItSS.Next())
                             {
                                 aB.Add(NewShell, aItSS.Value());
                             }
                             // Fill map of edges
-                            for (var eexp = new TopExp_Explorer(shell, TopAbs_EDGE); eexp.More(); eexp.Next())
+                            for (var eexp = new Explorer(shell, ShapeType.Edge); eexp.More(); eexp.Next())
                             {
-                                TopoDS_Shape edge = eexp.Current();
+                                Shape edge = eexp.Current();
                                 NewEdges.Add(edge);
                             }
                             IndexMerged.Add(i);
@@ -5010,7 +5016,7 @@ public class BRepBuilderAPI_Sewing : Transient
                         else
                         {
                             bool hasSharedEdge = false;
-                            var eexp = new TopExp_Explorer(shell, TopAbs_EDGE);
+                            var eexp = new Explorer(shell, ShapeType.Edge);
                             for (; eexp.More() && !hasSharedEdge; eexp.Next())
                             {
                                 hasSharedEdge = NewEdges.Contains(eexp.Current());
@@ -5018,15 +5024,15 @@ public class BRepBuilderAPI_Sewing : Transient
                             if (hasSharedEdge)
                             {
                                 // Add edges to the map
-                                for (var eexp1 = new TopExp_Explorer(shell, TopAbs_EDGE); eexp1.More(); eexp1.Next())
+                                for (var eexp1 = new Explorer(shell, ShapeType.Edge); eexp1.More(); eexp1.Next())
                                 {
-                                    TopoDS_Shape edge = eexp1.Current();
+                                    Shape edge = eexp1.Current();
                                     NewEdges.Add(edge);
                                 }
                                 // Add faces to the shell
-                                for (var fexp = new TopExp_Explorer(shell, TopAbs_FACE); fexp.More(); fexp.Next())
+                                for (var fexp = new Explorer(shell, ShapeType.Face); fexp.More(); fexp.Next())
                                 {
-                                    TopoDS_Shape face = fexp.Current();
+                                    Shape face = fexp.Current();
                                     aB.Add(NewShell, face);
                                 }
                                 IndexMerged.Add(i);
@@ -5034,9 +5040,9 @@ public class BRepBuilderAPI_Sewing : Transient
                         }
                     }
                     // Process new shell
-                    var face1 = new TopoDS_Shape();
+                    var face1 = new Shape();
                     int numf = 0;
-                    var aExpF = new TopExp_Explorer(NewShell, TopAbs_FACE);
+                    var aExpF = new Explorer(NewShell, ShapeType.Face);
                     for (; aExpF.More() && (numf < 2); aExpF.Next())
                     {
                         face1 = aExpF.Current();
@@ -5060,7 +5066,7 @@ public class BRepBuilderAPI_Sewing : Transient
         if (numsh == 1)
         {
             // Extract single component
-            var aIt = new TopoDS_Iterator(aComp, false);
+            var aIt = new Iterator(aComp, false);
             mySewedShape = aIt.Value();
         }
         else
@@ -5086,24 +5092,24 @@ public class BRepBuilderAPI_Sewing : Transient
         // Construct edgeSections
         int i;
         // use index map for regulating free edges
-        var edgeSections = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+        var edgeSections = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         for (i = 1; i <= myBoundFaces.Extent(); i++)
         {
-            TopoDS_Shape bound = myBoundFaces.FindKey(i);
-            var lsect = new NCollection_List<TopoDS_Shape>();
+            Shape bound = myBoundFaces.FindKey(i);
+            var lsect = new NCollection_List<Shape>();
             if (myBoundSections.IsBound(bound))
             {
                 lsect.Assign(myBoundSections[bound]);
             }
-            var aExp = new TopExp_Explorer(myReShape.InternalApply(bound), TopAbs_EDGE);
+            var aExp = new Explorer(myReShape.InternalApply(bound), ShapeType.Edge);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Shape sec = bound;
-                TopoDS_Shape edge = aExp.Current();
-                var aI = new NCollection_List<TopoDS_Shape>.Iterator(lsect);
+                Shape sec = bound;
+                Shape edge = aExp.Current();
+                var aI = new NCollection_List<Shape>.Iterator(lsect);
                 for (; aI.More(); aI.Next())
                 {
-                    TopoDS_Shape section = aI.Value();
+                    Shape section = aI.Value();
                     if (edge.IsSame(myReShape.InternalApply(section)))
                     {
                         sec = section;
@@ -5116,7 +5122,7 @@ public class BRepBuilderAPI_Sewing : Transient
                 }
                 else
                 {
-                    var listSec = new NCollection_List<TopoDS_Shape>();
+                    var listSec = new NCollection_List<Shape>();
                     listSec.Append(sec);
                     edgeSections.Add(edge, listSec);
                 }
@@ -5126,11 +5132,11 @@ public class BRepBuilderAPI_Sewing : Transient
         // Fill maps of Free, Contiguous and Multiple edges
         for (int anIter = 1; anIter <= edgeSections.Extent(); anIter++)
         {
-            TopoDS_Shape edge = edgeSections.FindKey(anIter);
-            NCollection_List<TopoDS_Shape> listSection = edgeSections[anIter];
+            Shape edge = edgeSections.FindKey(anIter);
+            NCollection_List<Shape> listSection = edgeSections[anIter];
             if (listSection.Extent() == 1)
             {
-                if (BRep_Tool.Degenerated(TopoDS.Edge(edge)))
+                if (Tool.Degenerated(ShapeCasts.Edge(edge)))
                 {
                     myDegenerated.Add(edge);
                 }
@@ -5152,20 +5158,20 @@ public class BRepBuilderAPI_Sewing : Transient
         // constructs myContigSectBound
         for (i = 1; i <= myBoundFaces.Extent(); i++)
         {
-            TopoDS_Shape bound = myBoundFaces.FindKey(i);
+            Shape bound = myBoundFaces.FindKey(i);
             if (myBoundSections.IsBound(bound))
             {
-                var iter = new NCollection_List<TopoDS_Shape>.Iterator(myBoundSections[bound]);
+                var iter = new NCollection_List<Shape>.Iterator(myBoundSections[bound]);
                 for (; iter.More(); iter.Next())
                 {
-                    TopoDS_Shape section = iter.Value();
+                    Shape section = iter.Value();
                     if (!myMergedEdges.Contains(section)) // OCCT: empty after EdgeRegularity when sewing
                     {
                         continue;
                     }
                     // if (!myReShape->IsRecorded(section)) continue; // section is free
-                    TopoDS_Shape nedge = myReShape.InternalApply(section);
-                    if (nedge.IsNull())
+                    Shape nedge = myReShape.InternalApply(section);
+                    if (nedge.IsNull)
                     {
                         continue; // szv debug
                     }
@@ -5188,7 +5194,7 @@ public class BRepBuilderAPI_Sewing : Transient
     /// Called from Cutting only.
     /// </summary>
     protected void ProjectPointsOnCurve(NCollection_Array1<Point3D> arrPnt,
-                                        Geom_Curve? c3d,
+                                        Curve3D? c3d,
                                         double first,
                                         double last,
                                         NCollection_Array1<double> arrDist,
@@ -5198,8 +5204,8 @@ public class BRepBuilderAPI_Sewing : Transient
     {
         arrDist.Init(-1.0);
 
-        var GAC = new GeomAdaptor_Curve(c3d!);
-        var locProj = new Extrema_ExtPC();
+        var GAC = new CurveAdaptor(c3d!);
+        var locProj = new CurvePointExtrema();
         locProj.Initialize(GAC, first, last);
         Point3D pfirst = GAC.Value(first), plast = GAC.Value(last);
         int find = 1;              //(isConsiderEnds ? 1 : 2);
@@ -5216,12 +5222,12 @@ public class BRepBuilderAPI_Sewing : Transient
             {
                 // Project current point on curve
                 locProj.Perform(pt);
-                if (locProj.IsDone() && locProj.NbExt() > 0)
+                if (locProj.IsDone && locProj.ExtCount > 0)
                 {
                     double dist2Min = (isConsiderEnds || i1 == find || i1 == lind ? Min(distF2, distL2)
                                                                                  : global::Kerf.Engine.Foundation.Precision.Infinite());
                     int ind, indMin = 0;
-                    for (ind = 1; ind <= locProj.NbExt(); ind++)
+                    for (ind = 1; ind <= locProj.ExtCount; ind++)
                     {
                         double dProj2 = locProj.SquareDistance(ind);
                         if (dProj2 < dist2Min)
@@ -5233,7 +5239,7 @@ public class BRepBuilderAPI_Sewing : Transient
                     if (indMin != 0)
                     {
                         isProjected = true;
-                        Extrema_POnCurv pOnC = locProj.Point(indMin);
+                        POnCurv pOnC = locProj.Point(indMin);
                         double paramProj = pOnC.Parameter();
                         Point3D ptProj = GAC.Value(paramProj);
                         double distProj2 = ptProj.SquareDistance(pt);
@@ -5292,14 +5298,14 @@ public class BRepBuilderAPI_Sewing : Transient
     //=================================================================================================
 
     /// <summary>Creates the cutting vertices at the projections of the nodes on a bound. Called from Cutting only.</summary>
-    protected virtual void CreateCuttingNodes(NCollection_IndexedMap<TopoDS_Shape> MapVert,
-                                              in TopoDS_Shape bound,
-                                              in TopoDS_Shape vfirst,
-                                              in TopoDS_Shape vlast,
+    protected virtual void CreateCuttingNodes(NCollection_IndexedMap<Shape> MapVert,
+                                              in Shape bound,
+                                              in Shape vfirst,
+                                              in Shape vlast,
                                               NCollection_Array1<double> arrDist,
                                               NCollection_Array1<double> arrPara,
                                               NCollection_Array1<Point3D> arrPnt,
-                                              NCollection_Sequence<TopoDS_Shape> seqVert,
+                                              NCollection_Sequence<Shape> seqVert,
                                               NCollection_Sequence<double> seqPara)
     {
         int i, j, nbProj = MapVert.Extent();
@@ -5338,20 +5344,20 @@ public class BRepBuilderAPI_Sewing : Transient
             return;
         }
 
-        var aBuilder = new BRep_Builder();
+        var aBuilder = new BrepBuilder();
 
         // Insert two initial vertices (to be removed later)
         var seqDist = new NCollection_Sequence<double>();
         var seqPnt = new NCollection_Sequence<Point3D>();
         { // szv: Use brackets to destroy local variables
             // Retrieve bound curve
-            Geom_Curve? c3d = BRep_Tool.Curve(TopoDS.Edge(bound), out Placement loc, out double first, out double last);
+            Curve3D? c3d = Tool.Curve(ShapeCasts.Edge(bound), out Placement loc, out double first, out double last);
             if (!loc.IsIdentity)
             {
-                c3d = (Geom_Curve)c3d!.Copy();
+                c3d = (Curve3D)c3d!.Copy();
                 c3d.Transform(loc.Transformation());
             }
-            var GAC = new GeomAdaptor_Curve(c3d!);
+            var GAC = new CurveAdaptor(c3d!);
             seqVert.Prepend(vfirst);
             seqVert.Append(vlast);
             seqPara.Prepend(first);
@@ -5362,7 +5368,7 @@ public class BRepBuilderAPI_Sewing : Transient
             seqPnt.Append(GAC.Value(last));
         }
 
-        var NodeCuttingVertex = new NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var NodeCuttingVertex = new NCollection_IndexedDataMap<Shape, Shape>(ShapeHasher.Instance);
         for (i = 1; i <= nbProj; i++)
         {
             int index = seqOrderedIndex[i];
@@ -5370,7 +5376,7 @@ public class BRepBuilderAPI_Sewing : Transient
             Point3D pntProj = arrPnt[index];
 
             // Skip node if already bound to cutting vertex
-            TopoDS_Shape node = myVertexNode.FindFromKey(MapVert[index]);
+            Shape node = myVertexNode.FindFromKey(MapVert[index]);
             if (NodeCuttingVertex.Contains(node))
             {
                 continue;
@@ -5398,19 +5404,19 @@ public class BRepBuilderAPI_Sewing : Transient
                 {
                     // Bind new cutting node (end vertex only)
                     seqDist.SetValue(indexMin, disProj);
-                    TopoDS_Shape cvertex = seqVert.Value(indexMin);
+                    Shape cvertex = seqVert.Value(indexMin);
                     NodeCuttingVertex.Add(node, cvertex);
                 }
                 else
                 {
                     // Bind secondary cutting nodes
-                    NodeCuttingVertex.Add(node, new TopoDS_Vertex());
+                    NodeCuttingVertex.Add(node, new Vertex());
                 }
             }
             else
             {
                 // Build new cutting vertex
-                var cvertex = new TopoDS_Vertex();
+                var cvertex = new Vertex();
                 aBuilder.MakeVertex(ref cvertex, pntProj, global::Kerf.Engine.Foundation.Precision.Confusion());
                 // Bind new cutting vertex
                 NodeCuttingVertex.Add(node, cvertex);
@@ -5433,14 +5439,14 @@ public class BRepBuilderAPI_Sewing : Transient
         // filling map for cutting nodes
         for (int aMIt = 1; aMIt <= NodeCuttingVertex.Extent(); aMIt++)
         {
-            TopoDS_Shape cnode = NodeCuttingVertex[aMIt];
+            Shape cnode = NodeCuttingVertex[aMIt];
             // Skip secondary nodes
-            if (cnode.IsNull())
+            if (cnode.IsNull)
             {
                 continue;
             }
             // Obtain vertex node
-            TopoDS_Shape node = NodeCuttingVertex.FindKey(aMIt);
+            Shape node = NodeCuttingVertex.FindKey(aMIt);
             if (myVertexNode.Contains(cnode))
             {
                 // This is an end vertex
@@ -5449,7 +5455,7 @@ public class BRepBuilderAPI_Sewing : Transient
             else
             {
                 // Create link: cutting vertex -> node
-                var ls1 = new NCollection_List<TopoDS_Shape>();
+                var ls1 = new NCollection_List<Shape>();
                 ls1.Append(node);
                 myCuttingNode.Bind(cnode, ls1);
             }
@@ -5460,7 +5466,7 @@ public class BRepBuilderAPI_Sewing : Transient
             }
             else
             {
-                var ls = new NCollection_List<TopoDS_Shape>();
+                var ls = new NCollection_List<Shape>();
                 ls.Append(cnode);
                 myCuttingNode.Bind(node, ls);
             }
@@ -5476,37 +5482,37 @@ public class BRepBuilderAPI_Sewing : Transient
     //=================================================================================================
 
     /// <summary>Cuts the bound at the nodes into sections with their pcurves. Called from Cutting only.</summary>
-    protected virtual void CreateSections(in TopoDS_Shape section,
-                                          NCollection_Sequence<TopoDS_Shape> seqNode,
+    protected virtual void CreateSections(in Shape section,
+                                          NCollection_Sequence<Shape> seqNode,
                                           NCollection_Sequence<double> seqPara,
-                                          NCollection_List<TopoDS_Shape> listEdge)
+                                          NCollection_List<Shape> listEdge)
     {
-        TopoDS_Edge sec = TopoDS.Edge(section);
+        Edge sec = ShapeCasts.Edge(section);
         //  TopAbs_Orientation aInitOr = sec.Orientation();
 
         // To keep NM vertices on edge
-        var aSeqNMVert = new NCollection_Sequence<TopoDS_Shape>();
+        var aSeqNMVert = new NCollection_Sequence<Shape>();
         var aSeqNMPars = new NCollection_Sequence<double>();
         findNMVertices(sec, aSeqNMVert, aSeqNMPars);
 
-        var aBuilder = new BRep_Builder();
+        var aBuilder = new BrepBuilder();
 
-        BRep_Tool.Range(sec, out double first, out double last);
+        Tool.Range(sec, out double first, out double last);
 
         // Create cutting sections
         double par1, par2;
-        TopoDS_Shape V1, V2;
+        Shape V1, V2;
         int i, len = seqPara.Length() + 1;
         for (i = 1; i <= len; i++)
         {
-            TopoDS_Edge edge = sec;
+            Edge edge = sec;
             edge.EmptyCopy();
 
             if (i == 1)
             {
                 par1 = first;
                 par2 = seqPara[i];
-                V1 = TopExp.FirstVertex(sec);
+                V1 = Exploration.FirstVertex(sec);
                 V2 = seqNode[i];
             }
             else if (i == len)
@@ -5514,7 +5520,7 @@ public class BRepBuilderAPI_Sewing : Transient
                 par1 = seqPara[i - 1];
                 par2 = last;
                 V1 = seqNode[i - 1];
-                V2 = TopExp.LastVertex(sec);
+                V2 = Exploration.LastVertex(sec);
             }
             else
             {
@@ -5524,11 +5530,11 @@ public class BRepBuilderAPI_Sewing : Transient
                 V2 = seqNode[i];
             }
 
-            TopoDS_Shape aTmpShape = edge.Oriented(TopAbs_FORWARD);
-            TopoDS_Edge aTmpEdge = TopoDS.Edge(aTmpShape); // for porting
-            aTmpShape = V1.Oriented(TopAbs_FORWARD);
+            Shape aTmpShape = edge.Oriented(Forward);
+            Edge aTmpEdge = ShapeCasts.Edge(aTmpShape); // for porting
+            aTmpShape = V1.Oriented(Forward);
             aBuilder.Add(aTmpEdge, aTmpShape);
-            aTmpShape = V2.Oriented(TopAbs_REVERSED);
+            aTmpShape = V2.Oriented(Reversed);
             aBuilder.Add(aTmpEdge, aTmpShape);
             aBuilder.Range(aTmpEdge, par1, par2);
 
@@ -5547,29 +5553,29 @@ public class BRepBuilderAPI_Sewing : Transient
             listEdge.Append(edge);
         }
 
-        NCollection_List<TopoDS_Shape> listFaces = myBoundFaces.FindFromKey(sec);
+        NCollection_List<Shape> listFaces = myBoundFaces.FindFromKey(sec);
         if (listFaces.Extent() == 0)
         {
             return;
         }
 
-        double tolEdge = BRep_Tool.Tolerance(sec);
+        double tolEdge = Tool.Tolerance(sec);
 
         // Add cutting pcurves
-        var itf = new NCollection_List<TopoDS_Shape>.Iterator(listFaces);
+        var itf = new NCollection_List<Shape>.Iterator(listFaces);
         for (; itf.More(); itf.Next())
         {
-            TopoDS_Face fac = TopoDS.Face(itf.Value());
+            Face fac = ShapeCasts.Face(itf.Value());
 
             // Retrieve curve on surface
             double first2d1 = 0, last2d1 = 0.0;
-            Geom2d_Curve? c2d = BRep_Tool.CurveOnSurface(sec, fac, out double first2d, out double last2d);
+            Curve2D? c2d = Tool.CurveOnSurface(sec, fac, out double first2d, out double last2d);
             if (c2d is null)
             {
                 continue;
             }
-            Geom2d_Curve? c2d1 = null;
-            bool isSeam = BRep_Tool.IsClosed(sec, fac);
+            Curve2D? c2d1 = null;
+            bool isSeam = Tool.IsClosed(sec, fac);
 
             // gka  - Convert to BSpline was commented because
             // it is not necessary to create BSpline instead of Lines or cIrcles.
@@ -5581,9 +5587,9 @@ public class BRepBuilderAPI_Sewing : Transient
 
             if (isSeam)
             {
-                TopoDS_Edge secRev = TopoDS.Edge(sec.Reversed());
+                Edge secRev = ShapeCasts.Edge(sec.Reversed());
 
-                c2d1 = BRep_Tool.CurveOnSurface(secRev, fac, out first2d1, out last2d1);
+                c2d1 = Tool.CurveOnSurface(secRev, fac, out first2d1, out last2d1);
                 if (c2d1 is null)
                 {
                     continue;
@@ -5591,19 +5597,19 @@ public class BRepBuilderAPI_Sewing : Transient
             }
 
             // Update cutting sections
-            Geom2d_Curve? c2dNew = null, c2d1New = null;
-            var ite = new NCollection_List<TopoDS_Shape>.Iterator(listEdge);
+            Curve2D? c2dNew = null, c2d1New = null;
+            var ite = new NCollection_List<Shape>.Iterator(listEdge);
             for (; ite.More(); ite.Next())
             {
                 // Retrieve cutting section
-                TopoDS_Edge edge = TopoDS.Edge(ite.Value());
-                BRep_Tool.Range(edge, out par1, out par2);
+                Edge edge = ShapeCasts.Edge(ite.Value());
+                Tool.Range(edge, out par1, out par2);
 
                 // Cut BSpline pcurve
-                c2dNew = (Geom2d_Curve)c2d.Copy();
+                c2dNew = (Curve2D)c2d.Copy();
                 if (c2d1 is not null)
                 {
-                    c2d1New = (Geom2d_Curve)c2d1.Copy();
+                    c2d1New = (Curve2D)c2d1.Copy();
                 }
 
                 if (!isSeam && c2d1New is null)
@@ -5612,13 +5618,13 @@ public class BRepBuilderAPI_Sewing : Transient
                 }
                 else
                 {
-                    TopAbs_Orientation Ori = edge.Orientation();
-                    if (fac.Orientation() == TopAbs_REVERSED)
+                    Orientation Ori = edge.Orientation();
+                    if (fac.Orientation() == Reversed)
                     {
-                        Ori = TopAbs.Reverse(Ori);
+                        Ori = global::Kerf.Engine.Topology.TopAbs.Reverse(Ori);
                     }
 
-                    if (Ori == TopAbs_FORWARD)
+                    if (Ori == Forward)
                     {
                         aBuilder.UpdateEdge(edge, c2dNew, c2d1New, fac, tolEdge);
                     }
@@ -5642,14 +5648,14 @@ public class BRepBuilderAPI_Sewing : Transient
         {
             return;
         }
-        var exp = new TopExp_Explorer(mySewedShape, TopAbs_EDGE);
+        var exp = new Explorer(mySewedShape, ShapeType.Edge);
         // Le flag sameparameter est a false pour chaque edge cousue
         for (; exp.More(); exp.Next())
         {
-            TopoDS_Edge sec = TopoDS.Edge(exp.Current());
+            Edge sec = ShapeCasts.Edge(exp.Current());
             try
             {
-                BRepLib.SameParameter(sec, BRep_Tool.Tolerance(sec));
+                BRepLib.SameParameter(sec, Tool.Tolerance(sec));
             }
             catch (FailureException)
             {
@@ -5662,10 +5668,10 @@ public class BRepBuilderAPI_Sewing : Transient
 
     /// <summary>The context, which records the replacements made by sewing.</summary>
     /// <remarks>When the inputs were copied (they held frozen shapes), it records the working copies' sub-shapes.</remarks>
-    public BRepTools_ReShape GetContext() => myReShape;
+    public ReShape GetContext() => myReShape;
 
     //=================================================================================================
 
     /// <summary>Sets the context.</summary>
-    public void SetContext(BRepTools_ReShape theContext) => myReShape = theContext;
+    public void SetContext(ReShape theContext) => myReShape = theContext;
 }

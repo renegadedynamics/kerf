@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Algorithmic services specific to the mapping of STEP to OCCT topology.</summary>
@@ -157,14 +159,14 @@ public static class StepToTopoDS_GeometricTool
     /// edge crosses the parametric origin); false if that failed.
     /// </summary>
     /// <remarks>May reverse <paramref name="theCurve"/> in place, as OCCT does: the curve must be a working one.</remarks>
-    public static bool UpdateParam3d(Geom_Curve theCurve, ref double w1, ref double w2, double preci)
+    public static bool UpdateParam3d(Curve3D theCurve, ref double w1, ref double w2, double preci)
         => UpdateParam3d(ref theCurve, ref w1, ref w2, preci, false);
 
     /// <summary>
     /// As the public form; with <paramref name="theCopyFrozen"/>, a frozen curve (one an earlier edge took) is
     /// reversed in a copy that replaces it, where OCCT reverses the shared curve in place (decision 1248).
     /// </summary>
-    internal static bool UpdateParam3d(ref Geom_Curve theCurve, ref double w1, ref double w2, double preci, bool theCopyFrozen)
+    internal static bool UpdateParam3d(ref Curve3D theCurve, ref double w1, ref double w2, double preci, bool theCopyFrozen)
     {
         // w1 et/ou w2 peuvent etre en dehors des bornes naturelles de la courbe.
         // On donnera alors la valeur en bout a w1 et/ou w2
@@ -172,7 +174,7 @@ public static class StepToTopoDS_GeometricTool
         double cf = theCurve.FirstParameter();
         double cl = theCurve.LastParameter();
 
-        if (theCurve is Geom_BoundedCurve && !theCurve.IsClosed())
+        if (theCurve is BoundedCurve3D && !theCurve.IsClosed)
         {
             if (w1 < cf)
             {
@@ -198,11 +200,11 @@ public static class StepToTopoDS_GeometricTool
             return true;
         }
 
-        if (theCurve.IsPeriodic())
+        if (theCurve.IsPeriodic)
         {
             global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(cf, cl, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref w1, ref w2); //:a7 abv 11 Feb 98: preci -> PConfusion()
         }
-        else if (theCurve.IsClosed())
+        else if (theCurve.IsClosed)
         {
             // l'un des points projecte se trouve sur l'origine du parametrage
             // de la courbe 3D. L algo a donne cl +- preci au lieu de cf ou vice-versa
@@ -248,7 +250,7 @@ public static class StepToTopoDS_GeometricTool
             }
         }
         // The curve is closed within the 3D tolerance
-        else if (theCurve is Geom_BSplineCurve aBSpline)
+        else if (theCurve is BSplineCurve3D aBSpline)
         {
             if (aBSpline.StartPoint().Distance(aBSpline.EndPoint()) <= preci)
             {
@@ -284,7 +286,7 @@ public static class StepToTopoDS_GeometricTool
                 w2 = theCurve.ReversedParameter(w2);
                 if (theCopyFrozen && theCurve.IsFrozen)
                 {
-                    theCurve = (Geom_Curve)theCurve.Copy(); // OCCT.NET: decision 1248
+                    theCurve = (Curve3D)theCurve.Copy(); // OCCT.NET: decision 1248
                 }
 
                 theCurve.Reverse();
@@ -308,7 +310,7 @@ public static class StepToTopoDS_GeometricTool
                 w2 = theCurve.ReversedParameter(w2);
                 if (theCopyFrozen && theCurve.IsFrozen)
                 {
-                    theCurve = (Geom_Curve)theCurve.Copy(); // OCCT.NET: decision 1248
+                    theCurve = (Curve3D)theCurve.Copy(); // OCCT.NET: decision 1248
                 }
 
                 theCurve.Reverse();

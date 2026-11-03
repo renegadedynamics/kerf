@@ -4,9 +4,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -23,7 +28,7 @@ internal sealed class BOPAlgo_FaceSelfIntersect : IntTools_FaceFace, BOPTools_Pa
     private ProgressRange myProgressRange;
     private int myIF;
     private double myTolF;
-    private TopoDS_Face myF = new();
+    private Face myF = new();
 
     public BOPAlgo_FaceSelfIntersect()
     {
@@ -38,10 +43,10 @@ internal sealed class BOPAlgo_FaceSelfIntersect : IntTools_FaceFace, BOPTools_Pa
     public int IndexOfFace() => myIF;
 
     //
-    public void SetFace(in TopoDS_Face aF) => myF = aF;
+    public void SetFace(in Face aF) => myF = aF;
 
     //
-    public TopoDS_Face Face() => myF;
+    public Face Face() => myF;
 
     //
     public void SetTolF(double aTolF) => myTolF = aTolF;
@@ -141,11 +146,11 @@ public partial class BOPAlgo_CheckerSI : BOPAlgo_PaveFiller
             // curve passes through (PutPaveOnCurve, occt-issues.md), so the check of a shape holding frozen TShapes
             // runs on an exact copy of it (decision 882); the data structure then holds the copy's sub-shapes, and
             // Original maps them back to the argument's.
-            TopoDS_Shape anInput = myArguments.First();
-            myCopyAtEntry = new BRepTools_CopyAtEntry(anInput);
-            if (myCopyAtEntry.IsCopied())
+            Shape anInput = myArguments.First();
+            myCopyAtEntry = new CopyAtEntry(anInput);
+            if (myCopyAtEntry.IsCopied)
             {
-                myArguments = new NCollection_List<TopoDS_Shape>();
+                myArguments = new NCollection_List<Shape>();
                 myArguments.Append(myCopyAtEntry.Shape());
             }
             try
@@ -154,9 +159,9 @@ public partial class BOPAlgo_CheckerSI : BOPAlgo_PaveFiller
             }
             finally
             {
-                if (myCopyAtEntry.IsCopied())
+                if (myCopyAtEntry.IsCopied)
                 {
-                    myArguments = new NCollection_List<TopoDS_Shape>();
+                    myArguments = new NCollection_List<Shape>();
                     myArguments.Append(anInput);
                 }
             }
@@ -168,14 +173,14 @@ public partial class BOPAlgo_CheckerSI : BOPAlgo_PaveFiller
         }
     }
 
-    private BRepTools_CopyAtEntry? myCopyAtEntry;
+    private CopyAtEntry? myCopyAtEntry;
 
     /// <summary>
     /// The argument's own sub-shape for a shape of the data structure: the shape itself, unless the argument was
     /// checked on a copy (it held frozen TShapes), when it is the original of the copy's sub-shape.
     /// </summary>
-    internal TopoDS_Shape Original(in TopoDS_Shape theShape) =>
-        myCopyAtEntry is not null && myCopyAtEntry.IsCopied() ? myCopyAtEntry.Original(theShape) : theShape;
+    internal Shape Original(in Shape theShape) =>
+        myCopyAtEntry is not null && myCopyAtEntry.IsCopied ? myCopyAtEntry.Original(theShape) : theShape;
 
     // OCCT's Perform from its progress scope on (the body of its try block).
     private void PerformChecks(ProgressRange theRange)
@@ -297,7 +302,7 @@ public partial class BOPAlgo_CheckerSI : BOPAlgo_PaveFiller
         for (i = 0; i != aNb; ++i)
         {
             BOPDS_InterfEF aEF = aEFs.Value(i);
-            if (aEF.CommonPart().Type() == TopAbs_SHAPE)
+            if (aEF.CommonPart().Type() == ShapeType.Shape)
             {
                 continue;
             }
@@ -336,8 +341,8 @@ public partial class BOPAlgo_CheckerSI : BOPAlgo_PaveFiller
             {
                 if (bTangentFaces)
                 {
-                    TopoDS_Face aF1 = TopoDS.Face(myDS.Shape(n1));
-                    TopoDS_Face aF2 = TopoDS.Face(myDS.Shape(n2));
+                    Face aF1 = ShapeCasts.Face(myDS.Shape(n1));
+                    Face aF2 = ShapeCasts.Face(myDS.Shape(n2));
                     bFlag = BOPTools_AlgoTools.AreFacesSameDomain(aF1, aF2, myContext!, myFuzzyValue);
                     if (bFlag)
                     {
@@ -445,13 +450,13 @@ public partial class BOPAlgo_CheckerSI : BOPAlgo_PaveFiller
         for (int i = 0; i < aNbS; i++)
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() != TopAbs_FACE)
+            if (aSI.ShapeType() != ShapeType.Face)
             {
                 continue;
             }
             //
-            TopoDS_Face aF = TopoDS.Face(aSI.Shape());
-            BRepAdaptor_Surface BAsurf = new(aF, false);
+            Face aF = ShapeCasts.Face(aSI.Shape());
+            FaceSurfaceAdaptor BAsurf = new(aF, false);
             SurfaceKind aSurfType = BAsurf.GetType();
             if (aSurfType == Plane || aSurfType == SurfaceKind.Cylinder || aSurfType == SurfaceKind.Cone
                 || aSurfType == SurfaceKind.Sphere)
@@ -470,7 +475,7 @@ public partial class BOPAlgo_CheckerSI : BOPAlgo_PaveFiller
                 }
             }
 
-            double aTolF = BRep_Tool.Tolerance(aF);
+            double aTolF = Tool.Tolerance(aF);
 
             BOPAlgo_FaceSelfIntersect aFaceSelfIntersect = new();
             aVFace.Add(aFaceSelfIntersect);

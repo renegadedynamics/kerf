@@ -5,7 +5,10 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepMesh_DegreeOfFreedom;
 
 namespace Occt;
@@ -69,8 +72,8 @@ public sealed class BRepMesh_MeshTool : Transient
     /// </summary>
     public void DumpTriangles(string theFileName, NCollection_PackedMapOfInteger? theTriangles)
     {
-        BRep_Builder aBuilder = new();
-        TopoDS_Compound aResult = new();
+        BrepBuilder aBuilder = new();
+        Compound aResult = new();
         aBuilder.MakeCompound(ref aResult);
 
         NCollection_PackedMapOfInteger aTriangles = myStructure.ElementsOfDomain();
@@ -98,7 +101,7 @@ public sealed class BRepMesh_MeshTool : Transient
             aBuilder.Add(aResult, aFaceBuilder.Shape());
         }
 
-        BRepTools.Write(aResult, theFileName);
+        BrepTools.Write(aResult, theFileName);
     }
 
     /// <summary>Adds the triangle of the three nodes and legalizes its three links.</summary>

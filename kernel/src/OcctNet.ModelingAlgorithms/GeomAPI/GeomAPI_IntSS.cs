@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -21,13 +23,13 @@ public class GeomAPI_IntSS
     public GeomAPI_IntSS() { }
 
     /// <summary>Intersects S1 and S2 with the tolerance Tol.</summary>
-    public GeomAPI_IntSS(Geom_Surface S1, Geom_Surface S2, double Tol)
+    public GeomAPI_IntSS(Surface S1, Surface S2, double Tol)
     {
         myIntersec.Perform(S1, S2, Tol, true);
     }
 
     /// <summary>Intersects S1 and S2 with the tolerance Tol.</summary>
-    public void Perform(Geom_Surface S1, Geom_Surface S2, double Tol)
+    public void Perform(Surface S1, Surface S2, double Tol)
     {
         myIntersec.Perform(S1, S2, Tol, true);
     }
@@ -40,5 +42,5 @@ public class GeomAPI_IntSS
 
     /// <summary>The intersection line of index Index (1 to NbLines), frozen. Throws StdFail_NotDone if not done,
     /// Standard_OutOfRange if Index is out of range.</summary>
-    public Geom_Curve Line(int Index) => myIntersec.Line(Index);
+    public Curve3D Line(int Index) => myIntersec.Line(Index);
 }

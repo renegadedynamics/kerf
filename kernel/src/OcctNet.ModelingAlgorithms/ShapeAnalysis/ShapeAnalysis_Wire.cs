@@ -6,13 +6,18 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.IntRes2d_Position;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -30,7 +35,7 @@ namespace Occt;
 public class ShapeAnalysis_Wire : Transient
 {
     protected ShapeExtend_WireData?  myWire;
-    protected TopoDS_Face            myFace;
+    protected Face            myFace;
     protected ShapeAnalysis_Surface? mySurf;
     protected double                 myPrecision;
     protected double                 myMin3d;
@@ -54,33 +59,33 @@ public class ShapeAnalysis_Wire : Transient
     /// <summary>Empty constructor.</summary>
     public ShapeAnalysis_Wire()
     {
-        myFace = new TopoDS_Face();
+        myFace = new Face();
         ClearStatuses();
         myPrecision = Kerf.Engine.Foundation.Precision.Confusion();
     }
 
     /// <summary>Creates the object with a wire, a face and a precision.</summary>
-    public ShapeAnalysis_Wire(in TopoDS_Wire wire, in TopoDS_Face face, double precision)
+    public ShapeAnalysis_Wire(in Wire wire, in Face face, double precision)
     {
-        myFace = new TopoDS_Face();
+        myFace = new Face();
         Init(wire, face, precision);
     }
 
     /// <summary>Creates the object with a WireData object, a face and a precision.</summary>
-    public ShapeAnalysis_Wire(ShapeExtend_WireData? sbwd, in TopoDS_Face face, double precision)
+    public ShapeAnalysis_Wire(ShapeExtend_WireData? sbwd, in Face face, double precision)
     {
-        myFace = new TopoDS_Face();
+        myFace = new Face();
         Init(sbwd, face, precision);
     }
 
     /// <summary>Initializes the object with a wire, a face and a precision.</summary>
-    public void Init(in TopoDS_Wire wire, in TopoDS_Face face, double precision)
+    public void Init(in Wire wire, in Face face, double precision)
     {
         Init(new ShapeExtend_WireData(wire), face, precision);
     }
 
     /// <summary>Initializes the object with a WireData object, a face and a precision.</summary>
-    public void Init(ShapeExtend_WireData? sbwd, in TopoDS_Face face, double precision)
+    public void Init(ShapeExtend_WireData? sbwd, in Face face, double precision)
     {
         Load(sbwd);
         SetFace(face);
@@ -88,7 +93,7 @@ public class ShapeAnalysis_Wire : Transient
     }
 
     /// <summary>Loads the object with a wire.</summary>
-    public void Load(in TopoDS_Wire wire)
+    public void Load(in Wire wire)
     {
         ClearStatuses();
         myWire = new ShapeExtend_WireData(wire);
@@ -102,23 +107,23 @@ public class ShapeAnalysis_Wire : Transient
     }
 
     /// <summary>Loads the face the wire lies on.</summary>
-    public void SetFace(in TopoDS_Face face)
+    public void SetFace(in Face face)
     {
         myFace = face;
-        if (myFace.IsNull())
+        if (myFace.IsNull)
         {
             return;
         }
 
-        Geom_Surface? aSurface = BRep_Tool.Surface(myFace);
-        if (!face.IsNull() && aSurface is not null)
+        Surface? aSurface = Tool.Surface(myFace);
+        if (!face.IsNull && aSurface is not null)
         {
             mySurf = new ShapeAnalysis_Surface(aSurface);
         }
     }
 
     /// <summary>Loads the face the wire lies on and its surface analysis object.</summary>
-    public void SetFace(in TopoDS_Face theFace, ShapeAnalysis_Surface? theSurfaceAnalysis)
+    public void SetFace(in Face theFace, ShapeAnalysis_Surface? theSurfaceAnalysis)
     {
         myFace = theFace;
         mySurf = theSurfaceAnalysis;
@@ -131,16 +136,16 @@ public class ShapeAnalysis_Wire : Transient
     }
 
     /// <summary>Loads the surface the wire lies on.</summary>
-    public void SetSurface(Geom_Surface? surface)
+    public void SetSurface(Surface? surface)
     {
         SetSurface(surface, new Placement());
     }
 
     /// <summary>Loads the surface the wire lies on, with a location; a new face on it becomes the working face.</summary>
-    public void SetSurface(Geom_Surface? surface, in Placement location)
+    public void SetSurface(Surface? surface, in Placement location)
     {
-        BRep_Builder B    = new BRep_Builder();
-        TopoDS_Face  face = new TopoDS_Face();
+        BrepBuilder B    = new BrepBuilder();
+        Face  face = new Face();
         B.MakeFace(ref face, surface, location, Kerf.Engine.Foundation.Precision.Confusion());
         // OCCT.NET: the face is reachable through Face(), so it is published frozen (design 4.2)
         face.TShape()!.FreezeGraph();
@@ -172,7 +177,7 @@ public class ShapeAnalysis_Wire : Transient
     /// <summary>Returns true if <see cref="IsLoaded"/> and the face isn't null.</summary>
     public bool IsReady()
     {
-        return IsLoaded() && !myFace.IsNull();
+        return IsLoaded() && !myFace.IsNull;
     }
 
     /// <summary>The precision.</summary>
@@ -194,7 +199,7 @@ public class ShapeAnalysis_Wire : Transient
     }
 
     /// <summary>The working face.</summary>
-    public TopoDS_Face Face()
+    public Face Face()
     {
         return myFace;
     }
@@ -316,7 +321,7 @@ public class ShapeAnalysis_Wire : Transient
 
         for (i = 1; i <= nb; i++)
         {
-            TopoDS_Edge E = myWire.Edge(i);
+            Edge E = myWire.Edge(i);
 
             SAE.CheckCurve3dWithPCurve(E, myFace);
             if (SAE.Status(ShapeExtend_DONE))
@@ -451,17 +456,17 @@ public class ShapeAnalysis_Wire : Transient
         }
 
         NCollection_Array1<Box2d> boxes = new NCollection_Array1<Box2d>(1, nb);
-        Geom_Surface?        S    = BRep_Tool.Surface(Face(), out Placement L);
+        Surface?        S    = Tool.Surface(Face(), out Placement L);
         ShapeAnalysis_Edge   sae  = new ShapeAnalysis_Edge();
         ShapeExtend_WireData sbwd = WireData()!;
         for (i = 1; i <= nb; i++)
         {
-            TopoDS_Edge E = sbwd.Edge(i);
-            if (sae.PCurve(E, S, L, out Geom2d_Curve? c2d, out double cf, out double cl, false))
+            Edge E = sbwd.Edge(i);
+            if (sae.PCurve(E, S, L, out Curve2D? c2d, out double cf, out double cl, false))
             {
                 Box2d           box = new Box2d();
-                Geom2dAdaptor_Curve gac = new Geom2dAdaptor_Curve(c2d!, cf, cl);
-                BndLib_Add2dCurve.Add(gac, Kerf.Engine.Foundation.Precision.Confusion(), ref box);
+                CurveAdaptor2D gac = new CurveAdaptor2D(c2d!, cf, cl);
+                Add2dCurve.Add(gac, Kerf.Engine.Foundation.Precision.Confusion(), ref box);
                 boxes[i] = box;
             }
         }
@@ -654,7 +659,7 @@ public class ShapeAnalysis_Wire : Transient
     /// </remarks>
     public bool CheckOrder(ShapeAnalysis_WireOrder sawo, bool isClosed = true, bool theMode3D = true, bool theModeBoth = false)
     {
-        if ((!theMode3D || theModeBoth) && myFace.IsNull())
+        if ((!theMode3D || theModeBoth) && myFace.IsNull)
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
             return false;
@@ -667,29 +672,29 @@ public class ShapeAnalysis_Wire : Transient
         bool               isAll2dEdgesOk = true;
         for (int i = 1; i <= nb; i++)
         {
-            TopoDS_Edge E = myWire.Edge(i);
+            Edge E = myWire.Edge(i);
             Xyz      aP1XYZ = new Xyz(), aP2XYZ = new Xyz();
             Xy       aP1XY = new Xy(), aP2XY = new Xy();
             if (theMode3D || theModeBoth)
             {
-                TopoDS_Vertex V1 = EA.FirstVertex(E);
-                TopoDS_Vertex V2 = EA.LastVertex(E);
-                if (V1.IsNull() || V2.IsNull())
+                Vertex V1 = EA.FirstVertex(E);
+                Vertex V2 = EA.LastVertex(E);
+                if (V1.IsNull || V2.IsNull)
                 {
                     myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
                     return false;
                 }
                 else
                 {
-                    aP1XYZ = BRep_Tool.Pnt(V1).XYZ();
-                    aP2XYZ = BRep_Tool.Pnt(V2).XYZ();
+                    aP1XYZ = Tool.Pnt(V1).XYZ();
+                    aP2XYZ = Tool.Pnt(V2).XYZ();
                 }
             }
 
             if (!theMode3D || theModeBoth)
             {
-                TopoDS_Shape tmpF = myFace.Oriented(TopAbs_FORWARD);
-                if (!EA.PCurve(E, TopoDS.Face(tmpF), out Geom2d_Curve? c2d, out double f, out double l))
+                Shape tmpF = myFace.Oriented(Forward);
+                if (!EA.PCurve(E, ShapeCasts.Face(tmpF), out Curve2D? c2d, out double f, out double l))
                 {
                     // if mode is 2d, then we can nothing to do, else we can switch to 3d mode
                     if (!theMode3D && !theModeBoth)
@@ -780,12 +785,12 @@ public class ShapeAnalysis_Wire : Transient
         int n1 = (n2 > 1 ? n2 - 1 : NbEdges());
         //  if (n1 == n2) return 0;
 
-        TopoDS_Edge        E1  = WireData()!.Edge(n1);
-        TopoDS_Edge        E2  = WireData()!.Edge(n2);
+        Edge        E1  = WireData()!.Edge(n1);
+        Edge        E2  = WireData()!.Edge(n2);
         ShapeAnalysis_Edge sae = new ShapeAnalysis_Edge();
-        TopoDS_Vertex      V1  = sae.LastVertex(E1);
-        TopoDS_Vertex      V2  = sae.FirstVertex(E2);
-        if (V1.IsNull() || V2.IsNull())
+        Vertex      V1  = sae.LastVertex(E1);
+        Vertex      V2  = sae.FirstVertex(E2);
+        if (V1.IsNull || V2.IsNull)
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
             return false;
@@ -796,8 +801,8 @@ public class ShapeAnalysis_Wire : Transient
             return false;
         }
 
-        Point3D p1 = BRep_Tool.Pnt(V1);
-        Point3D p2 = BRep_Tool.Pnt(V2);
+        Point3D p1 = Tool.Pnt(V1);
+        Point3D p2 = Tool.Pnt(V2);
         myMin3d   = p1.Distance(p2);
         if (myMin3d <= Constants.Resolution())
         {
@@ -821,7 +826,7 @@ public class ShapeAnalysis_Wire : Transient
             else
             {
                 V2          = sae.LastVertex(E2);
-                p2          = BRep_Tool.Pnt(V2);
+                p2          = Tool.Pnt(V2);
                 double dist = p1.Distance(p2);
                 if (dist > myPrecision)
                 {
@@ -852,14 +857,14 @@ public class ShapeAnalysis_Wire : Transient
             return false;
         }
 
-        TopoDS_Edge        E   = myWire!.Edge(num != 0 ? num : NbEdges());
+        Edge        E   = myWire!.Edge(num != 0 ? num : NbEdges());
         ShapeAnalysis_Edge sae = new ShapeAnalysis_Edge();
 
-        if (BRep_Tool.Degenerated(E))
+        if (Tool.Degenerated(E))
         {
             //: n2 abv 22 Jan 99: ma-test5.igs -> IGES (brep) -> read (pref3d):
             // degen edge with no pcurve should be removed
-            if (!myFace.IsNull() && sae.HasPCurve(E, Face()))
+            if (!myFace.IsNull && sae.HasPCurve(E, Face()))
             {
                 return false;
             }
@@ -867,16 +872,16 @@ public class ShapeAnalysis_Wire : Transient
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
         }
 
-        TopoDS_Vertex V1 = sae.FirstVertex(E);
-        TopoDS_Vertex V2 = sae.LastVertex(E);
-        if (V1.IsNull() || V2.IsNull())
+        Vertex V1 = sae.FirstVertex(E);
+        Vertex V2 = sae.LastVertex(E);
+        if (V1.IsNull || V2.IsNull)
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
             return false;
         }
 
-        Point3D p1   = BRep_Tool.Pnt(V1);
-        Point3D p2   = BRep_Tool.Pnt(V2);
+        Point3D p1   = Tool.Pnt(V1);
+        Point3D p2   = Tool.Pnt(V2);
         double dist = p1.Distance(p2);
         double prec = precsmall; // Min ( myPrecision, precsmall );
         if (dist > prec)
@@ -888,14 +893,14 @@ public class ShapeAnalysis_Wire : Transient
         // To do this, we take the midpoint (is there anything better?)
         // If there's no 3D curve, we try 2D...
         Point3D aMidpoint;
-        if (sae.Curve3d(E, out Geom_Curve? c3d, out double cf, out double cl, false))
+        if (sae.Curve3d(E, out Curve3D? c3d, out double cf, out double cl, false))
         {
             aMidpoint = c3d!.Value((cf + cl) / 2.0);
         }
         else
         {
-            Geom2d_Curve? c2d = null;
-            if (!myFace.IsNull() && mySurf is not null && sae.PCurve(E, myFace, out c2d, out cf, out cl, false))
+            Curve2D? c2d = null;
+            if (!myFace.IsNull && mySurf is not null && sae.PCurve(E, myFace, out c2d, out cf, out cl, false))
             {
                 Point2D p2m = c2d!.Value((cf + cl) / 2.0);
                 aMidpoint    = mySurf.Value(p2m);
@@ -922,7 +927,7 @@ public class ShapeAnalysis_Wire : Transient
     /// pcurves of the forward and reversed edge, <paramref name="cf"/> and <paramref name="cl"/> their range (left
     /// unchanged when the edge isn't a seam).
     /// </summary>
-    public bool CheckSeam(int num, ref Geom2d_Curve? C1, ref Geom2d_Curve? C2, ref double cf, ref double cl)
+    public bool CheckSeam(int num, ref Curve2D? C1, ref Curve2D? C2, ref double cf, ref double cl)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         if (!IsReady())
@@ -936,20 +941,20 @@ public class ShapeAnalysis_Wire : Transient
             n = NbEdges();
         }
 
-        TopoDS_Edge E = myWire!.Edge(n);
+        Edge E = myWire!.Edge(n);
         if (!new ShapeAnalysis_Edge().IsSeam(E, myFace))
         {
             return false;
         }
 
         // Extract the Two PCurves of the Seam
-        TopoDS_Face ForwardFace = myFace;
-        ForwardFace.Orientation(TopAbs_FORWARD);
+        Face ForwardFace = myFace;
+        ForwardFace.Orientation(Forward);
         // szv#4:S4163:12Mar99 SGI warns
-        TopoDS_Shape EF = E.Oriented(TopAbs_FORWARD);
-        TopoDS_Shape ER = E.Oriented(TopAbs_REVERSED);
-        C1              = BRep_Tool.CurveOnSurface(TopoDS.Edge(EF), ForwardFace, out cf, out cl);
-        C2              = BRep_Tool.CurveOnSurface(TopoDS.Edge(ER), ForwardFace, out cf, out cl);
+        Shape EF = E.Oriented(Forward);
+        Shape ER = E.Oriented(Reversed);
+        C1              = Tool.CurveOnSurface(ShapeCasts.Edge(EF), ForwardFace, out cf, out cl);
+        C2              = Tool.CurveOnSurface(ShapeCasts.Edge(ER), ForwardFace, out cf, out cl);
         if (C1 is null || C2 is null)
         {
             return false;
@@ -969,7 +974,7 @@ public class ShapeAnalysis_Wire : Transient
     /// <summary>Checks if the pcurves of a seam edge are correctly oriented (see the other overload).</summary>
     public bool CheckSeam(int num)
     {
-        Geom2d_Curve? C1 = null, C2 = null;
+        Curve2D? C1 = null, C2 = null;
         double        cf = 0.0, cl = 0.0;
         return CheckSeam(num, ref C1, ref C2, ref cf, ref cl);
     }
@@ -995,19 +1000,19 @@ public class ShapeAnalysis_Wire : Transient
         int         n2 = (num > 0) ? num : NbEdges();
         int         n1 = (n2 > 1) ? n2 - 1 : NbEdges();
         int         n3 = (n2 < NbEdges()) ? n2 + 1 : 1;
-        TopoDS_Edge E1 = myWire!.Edge(n1);
-        TopoDS_Edge E2 = myWire.Edge(n2);
-        TopoDS_Edge E3 = myWire.Edge(n3);
+        Edge E1 = myWire!.Edge(n1);
+        Edge E2 = myWire.Edge(n2);
+        Edge E3 = myWire.Edge(n3);
 
         ShapeAnalysis_Edge sae = new ShapeAnalysis_Edge();
 
         // skip if edge is already marked as degenerated and has pcurve
-        if (BRep_Tool.Degenerated(E2) && sae.HasPCurve(E2, Face()))
+        if (Tool.Degenerated(E2) && sae.HasPCurve(E2, Face()))
         {
             // skl 30.12.2004 for OCC7630 - we have to check pcurve
             if (sae.HasPCurve(E1, Face()) && sae.HasPCurve(E3, Face()))
             {
-                sae.PCurve(E2, myFace, out Geom2d_Curve? c2d, out double fp, out double lp, true);
+                sae.PCurve(E2, myFace, out Curve2D? c2d, out double fp, out double lp, true);
                 Point2D p21 = c2d!.Value(fp);
                 Point2D p22 = c2d.Value(lp);
                 sae.PCurve(E1, myFace, out c2d, out fp, out lp, true);
@@ -1026,11 +1031,11 @@ public class ShapeAnalysis_Wire : Transient
         }
 
         // pdn allows to insert two sequences of degenerated edges (on separate bounds of surfaces)
-        if (n1 != n2 && BRep_Tool.Degenerated(E1) && !sae.HasPCurve(E1, Face()))
+        if (n1 != n2 && Tool.Degenerated(E1) && !sae.HasPCurve(E1, Face()))
         {
             //: abv 13.05.02: OCC320 - fail (to remove edge) if two consecutive degenerated edges w/o
             //: pcurves
-            if (BRep_Tool.Degenerated(E2))
+            if (Tool.Degenerated(E2))
             {
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
             }
@@ -1038,37 +1043,37 @@ public class ShapeAnalysis_Wire : Transient
             return false;
         }
 
-        TopoDS_Vertex Vp = sae.FirstVertex(E1); //: i9
-        TopoDS_Vertex V0 = sae.LastVertex(E1);
-        TopoDS_Vertex V1 = sae.FirstVertex(E2);
-        TopoDS_Vertex V2 = sae.LastVertex(E2);
+        Vertex Vp = sae.FirstVertex(E1); //: i9
+        Vertex V0 = sae.LastVertex(E1);
+        Vertex V1 = sae.FirstVertex(E2);
+        Vertex V2 = sae.LastVertex(E2);
 
-        if (Vp.IsNull() || V0.IsNull() || V1.IsNull() || V2.IsNull())
+        if (Vp.IsNull || V0.IsNull || V1.IsNull || V2.IsNull)
         {
             return false;
         }
 
-        Point3D pp = BRep_Tool.Pnt(Vp); //: i9
-        Point3D p0 = BRep_Tool.Pnt(V0);
-        Point3D p1 = BRep_Tool.Pnt(V1);
-        Point3D p2 = BRep_Tool.Pnt(V2);
+        Point3D pp = Tool.Pnt(Vp); //: i9
+        Point3D p0 = Tool.Pnt(V0);
+        Point3D p1 = Tool.Pnt(V1);
+        Point3D p2 = Tool.Pnt(V2);
         double par1 = 0.0, par2 = 0.0;
         bool   lack = false;
         bool   dgnr = false;
         // pdn 12.03.99 minimal value processing first
-        double precFirst = Min(myPrecision, BRep_Tool.Tolerance(V1));
-        double precFin   = Max(myPrecision, BRep_Tool.Tolerance(V1));
-        double precVtx   = (myPrecision < BRep_Tool.Tolerance(V1) ? 2 * precFin : precFin);
+        double precFirst = Min(myPrecision, Tool.Tolerance(V1));
+        double precFin   = Max(myPrecision, Tool.Tolerance(V1));
+        double precVtx   = (myPrecision < Tool.Tolerance(V1) ? 2 * precFin : precFin);
 
         //  forward : si Edge <num> FWD/REV. Si LACK, toujours True
-        bool forward = (E2.Orientation() == TopAbs_FORWARD);
+        bool forward = (E2.Orientation() == Forward);
         //  FIX FEV 1998 : recompute singularity according precision
         if (p1.Distance(p2) <= precFirst)
         { // edge DGNR
             dgnr = mySurf!.DegeneratedValues(p1, precVtx, ref p2d1, ref p2d2, ref par1, ref par2, forward); // smh#9
             if (dgnr)
             { // abv 24 Feb 00: trj3_as1-ac-214.stp #6065: avoid making closed edge degenerated
-                Geom_Curve? C3d = BRep_Tool.Curve(E2, out double a, out double b);
+                Curve3D? C3d = Tool.Curve(E2, out double a, out double b);
                 if (C3d is not null)
                 {
                     Point3D p = C3d.Value(0.5 * (a + b));
@@ -1084,7 +1089,7 @@ public class ShapeAnalysis_Wire : Transient
         {
             //: i9 abv 23 Sep 98: CTS20315-2 #63231: check that previous edge is not degenerated
             if (n1 != n2 && p1.Distance(pp) <= precFirst && mySurf!.IsDegenerated(pp, precFirst)
-                && !BRep_Tool.Degenerated(E1))
+                && !Tool.Degenerated(E1))
             {
                 return false;
             }
@@ -1129,7 +1134,7 @@ public class ShapeAnalysis_Wire : Transient
         {
             //: abv 29.08.01: if singularity not detected but edge is marked
             // as degenerated, report fail
-            if (BRep_Tool.Degenerated(E2) && !sae.HasPCurve(E2, Face()))
+            if (Tool.Degenerated(E2) && !sae.HasPCurve(E2, Face()))
             {
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
             }
@@ -1150,7 +1155,7 @@ public class ShapeAnalysis_Wire : Transient
         if (lack || n1 != n2)
         { //: i8 abv 18 Sep 98: ProSTEP TR9 r0501-ug.stp #182180: single degedge is a wire at apex of a
             //: cone
-            if (sae.PCurve(E1, myFace, out Geom2d_Curve? c2d, out double a, out double b, true))
+            if (sae.PCurve(E1, myFace, out Curve2D? c2d, out double a, out double b, true))
             {
                 p2d1 = c2d!.Value(b);
             }
@@ -1176,7 +1181,7 @@ public class ShapeAnalysis_Wire : Transient
         { //: s1 abv 22 Apr 99: PRO7226 #489490 //smh#9
             //: abv 24.05.02: OCC320 - fail (to remove edge) if two consecutive degenerated edges w/o
             //: pcurves
-            if (BRep_Tool.Degenerated(E2))
+            if (Tool.Degenerated(E2))
             {
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
             }
@@ -1187,7 +1192,7 @@ public class ShapeAnalysis_Wire : Transient
         // added by rln 18/12/97 CSR# CTS18544 entity 13638
         // the situation when degenerated edge already exists but flag is not set
         //(i.e. the parametric space is closed)
-        GeomAdaptor_Surface Ads = mySurf.Adaptor3d()!;
+        SurfaceAdaptor Ads = mySurf.Adaptor3d()!;
         double              max = Max(Ads.UResolution(myPrecision), Ads.VResolution(myPrecision));
         if (p2d1.Distance(p2d2) /*Abs (par1 - par2)*/ <= max + Constants.Resolution())
         {
@@ -1220,12 +1225,12 @@ public class ShapeAnalysis_Wire : Transient
 
         int                n2 = (num > 0 ? num : NbEdges());
         int                n1 = (n2 > 1 ? n2 - 1 : NbEdges());
-        TopoDS_Edge        E1 = myWire!.Edge(n1);
-        TopoDS_Edge        E2 = myWire.Edge(n2);
-        Geom_Curve?        C2 = null;
+        Edge        E1 = myWire!.Edge(n1);
+        Edge        E2 = myWire.Edge(n2);
+        Curve3D?        C2 = null;
         double             uf2 = 0.0, ul1;
         ShapeAnalysis_Edge SAE = new ShapeAnalysis_Edge();
-        if (!SAE.Curve3d(E1, out Geom_Curve? C1, out _, out ul1) || !SAE.Curve3d(E2, out C2, out uf2, out _))
+        if (!SAE.Curve3d(E1, out Curve3D? C1, out _, out ul1) || !SAE.Curve3d(E2, out C2, out uf2, out _))
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
             return false;
@@ -1248,7 +1253,7 @@ public class ShapeAnalysis_Wire : Transient
     /// </summary>
     public bool CheckGap2d(int num = 0)
     {
-        if (myFace.IsNull() || mySurf is null)
+        if (myFace.IsNull || mySurf is null)
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
             return false;
@@ -1263,12 +1268,12 @@ public class ShapeAnalysis_Wire : Transient
 
         int                n2 = (num > 0 ? num : NbEdges());
         int                n1 = (n2 > 1 ? n2 - 1 : NbEdges());
-        TopoDS_Edge        E1 = myWire!.Edge(n1);
-        TopoDS_Edge        E2 = myWire.Edge(n2);
-        Geom2d_Curve?      C2 = null;
+        Edge        E1 = myWire!.Edge(n1);
+        Edge        E2 = myWire.Edge(n2);
+        Curve2D?      C2 = null;
         double             uf2 = 0.0, ul1;
         ShapeAnalysis_Edge SAE = new ShapeAnalysis_Edge();
-        if (!SAE.PCurve(E1, myFace, out Geom2d_Curve? C1, out _, out ul1) || !SAE.PCurve(E2, myFace, out C2, out uf2, out _))
+        if (!SAE.PCurve(E1, myFace, out Curve2D? C1, out _, out ul1) || !SAE.PCurve(E2, myFace, out C2, out uf2, out _))
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
             return false;
@@ -1277,7 +1282,7 @@ public class ShapeAnalysis_Wire : Transient
         Point2D p1 = C1!.Value(ul1);
         Point2D p2 = C2!.Value(uf2);
         myMin2d = myMax2d = p1.Distance(p2);
-        GeomAdaptor_Surface SA = mySurf.Adaptor3d()!;
+        SurfaceAdaptor SA = mySurf.Adaptor3d()!;
         if (myMin2d > (Max(SA.UResolution(myPrecision), SA.VResolution(myPrecision)) + Kerf.Engine.Foundation.Precision.PConfusion()))
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
@@ -1299,23 +1304,23 @@ public class ShapeAnalysis_Wire : Transient
         }
 
         int                n   = (num > 0 ? num : NbEdges());
-        TopoDS_Edge        E   = myWire!.Edge(n);
+        Edge        E   = myWire!.Edge(n);
         ShapeAnalysis_Edge SAE = new ShapeAnalysis_Edge();
-        if (!SAE.Curve3d(E, out Geom_Curve? c, out double cuf, out double cul, false))
+        if (!SAE.Curve3d(E, out Curve3D? c, out double cuf, out double cul, false))
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
             return false;
         }
 
-        if (!SAE.PCurve(E, myFace, out Geom2d_Curve? pc, out double pcuf, out double pcul, false))
+        if (!SAE.PCurve(E, myFace, out Curve2D? pc, out double pcuf, out double pcul, false))
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
             return false;
         }
 
-        Geom2dAdaptor_Curve      AC  = new Geom2dAdaptor_Curve(pc!, pcuf, pcul);
-        GeomAdaptor_Surface      AS  = new GeomAdaptor_Surface(mySurf!.Surface()!);
-        Adaptor3d_CurveOnSurface ACS = new Adaptor3d_CurveOnSurface(AC, AS);
+        CurveAdaptor2D      AC  = new CurveAdaptor2D(pc!, pcuf, pcul);
+        SurfaceAdaptor      AS  = new SurfaceAdaptor(mySurf!.Surface()!);
+        CurveOnSurface ACS = new CurveOnSurface(AC, AS);
         Point3D                   cpnt, pcpnt;
         int                      nbp = 45;
         double                   dist, maxdist = 0.0;
@@ -1342,11 +1347,11 @@ public class ShapeAnalysis_Wire : Transient
     // auxiliary function
     //: h0 abv 29 May 98: PRO10105 1949: like in BRepCheck, point is to be taken
     // from 3d curve (but only if edge is SameParameter)
-    private static Point3D GetPointOnEdge(in TopoDS_Edge edge, ShapeAnalysis_Surface surf, Geom2dAdaptor_Curve Crv2d, double param)
+    private static Point3D GetPointOnEdge(in Edge edge, ShapeAnalysis_Surface surf, CurveAdaptor2D Crv2d, double param)
     {
-        if (BRep_Tool.SameParameter(edge))
+        if (Tool.SameParameter(edge))
         {
-            Geom_Curve? ConS = BRep_Tool.Curve(edge, out Placement L, out _, out _);
+            Curve3D? ConS = Tool.Curve(edge, out Placement L, out _, out _);
             if (ConS is not null)
             {
                 return ConS.Value(param).Transformed(L.Transformation());
@@ -1372,10 +1377,10 @@ public class ShapeAnalysis_Wire : Transient
             return false;
         }
 
-        TopoDS_Edge        edge = WireData()!.Edge(num > 0 ? num : NbEdges());
+        Edge        edge = WireData()!.Edge(num > 0 ? num : NbEdges());
         ShapeAnalysis_Edge sae  = new ShapeAnalysis_Edge();
 
-        if (!sae.PCurve(edge, myFace, out Geom2d_Curve? Crv, out double a, out double b, false))
+        if (!sae.PCurve(edge, myFace, out Curve2D? Crv, out double a, out double b, false))
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
             return false;
@@ -1389,25 +1394,25 @@ public class ShapeAnalysis_Wire : Transient
         double tolint = 1.0e-10;
         // szv#4:S4163:12Mar99 warning
         IntRes2d_Domain     domain = new IntRes2d_Domain(Crv!.Value(a), a, tolint, Crv.Value(b), b, tolint);
-        Geom2dAdaptor_Curve AC     = new Geom2dAdaptor_Curve(Crv);
+        CurveAdaptor2D AC     = new CurveAdaptor2D(Crv);
         Geom2dInt_GInter    Inter  = new Geom2dInt_GInter(AC, domain, tolint, tolint);
         if (!Inter.IsDone())
         {
             return false;
         }
 
-        TopoDS_Vertex V1 = sae.FirstVertex(edge);
-        TopoDS_Vertex V2 = sae.LastVertex(edge);
-        if (V1.IsNull() || V2.IsNull())
+        Vertex V1 = sae.FirstVertex(edge);
+        Vertex V2 = sae.LastVertex(edge);
+        if (V1.IsNull || V2.IsNull)
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
             return false;
         }
 
-        double tol1 = BRep_Tool.Tolerance(V1);
-        double tol2 = BRep_Tool.Tolerance(V2);
-        Point3D pnt1 = BRep_Tool.Pnt(V1);
-        Point3D pnt2 = BRep_Tool.Pnt(V2);
+        double tol1 = Tool.Tolerance(V1);
+        double tol2 = Tool.Tolerance(V2);
+        Point3D pnt1 = Tool.Pnt(V1);
+        Point3D pnt2 = Tool.Pnt(V2);
         for (int i = 1; i <= Inter.NbPoints(); i++)
         {
             IntRes2d_IntersectionPoint IP  = Inter.Point(i);
@@ -1461,34 +1466,34 @@ public class ShapeAnalysis_Wire : Transient
         // szv#4:S4163:12Mar99 optimized
         int         n2    = (num > 0) ? num : NbEdges();
         int         n1    = (n2 > 1) ? n2 - 1 : NbEdges();
-        TopoDS_Edge edge1 = myWire!.Edge(n1);
-        TopoDS_Edge edge2 = myWire.Edge(n2);
+        Edge edge1 = myWire!.Edge(n1);
+        Edge edge2 = myWire.Edge(n2);
 
         ShapeAnalysis_Edge sae = new ShapeAnalysis_Edge();
-        TopoDS_Vertex      V1  = sae.LastVertex(edge1);
-        TopoDS_Vertex      V2  = sae.FirstVertex(edge2);
-        if (V1.IsNull() || V2.IsNull())
+        Vertex      V1  = sae.LastVertex(edge1);
+        Vertex      V2  = sae.FirstVertex(edge2);
+        if (V1.IsNull || V2.IsNull)
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
             return false;
         }
 
-        if (!BRepTools.Compare(V1, V2))
+        if (!BrepTools.Compare(V1, V2))
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
             return false;
         }
 
-        TopoDS_Vertex Vp = sae.FirstVertex(edge1);
-        TopoDS_Vertex Vn = sae.LastVertex(edge2);
+        Vertex Vp = sae.FirstVertex(edge1);
+        Vertex Vn = sae.LastVertex(edge2);
 
-        if (!sae.PCurve(edge1, myFace, out Geom2d_Curve? Crv1, out double a1, out double b1, false))
+        if (!sae.PCurve(edge1, myFace, out Curve2D? Crv1, out double a1, out double b1, false))
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL3);
             return false;
         }
 
-        if (!sae.PCurve(edge2, myFace, out Geom2d_Curve? Crv2, out double a2, out double b2, false))
+        if (!sae.PCurve(edge2, myFace, out Curve2D? Crv2, out double a2, out double b2, false))
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL3);
             return false;
@@ -1499,17 +1504,17 @@ public class ShapeAnalysis_Wire : Transient
             return false; //:f7 abv 6 May 98: BUC50070 on #42276
         }
 
-        bool isForward1 = (edge1.Orientation() == TopAbs_FORWARD);
-        bool isForward2 = (edge2.Orientation() == TopAbs_FORWARD);
+        bool isForward1 = (edge1.Orientation() == Forward);
+        bool isForward2 = (edge2.Orientation() == Forward);
 
-        double tol0 = Max(BRep_Tool.Tolerance(V1), BRep_Tool.Tolerance(V2));
+        double tol0 = Max(Tool.Tolerance(V1), Tool.Tolerance(V2));
         double tol  = tol0;
 
-        Point3D pnt = BRep_Tool.Pnt(V1);
+        Point3D pnt = Tool.Pnt(V1);
 
         double tolint = 1.0e-10;
         // szv#4:S4163:12Mar99 warning
-        Geom2dAdaptor_Curve C1 = new Geom2dAdaptor_Curve(Crv1!), C2 = new Geom2dAdaptor_Curve(Crv2!);
+        CurveAdaptor2D C1 = new CurveAdaptor2D(Crv1!), C2 = new CurveAdaptor2D(Crv2!);
         IntRes2d_Domain     d1 = new IntRes2d_Domain(C1.Value(a1), a1, tolint, C1.Value(b1), b1, tolint);
         IntRes2d_Domain     d2 = new IntRes2d_Domain(C2.Value(a2), a2, tolint, C2.Value(b2), b2, tolint);
 
@@ -1537,8 +1542,8 @@ public class ShapeAnalysis_Wire : Transient
         //: 86 abv 22 Jan 98: fix self-intersection even if tolerance of vertex is enough
         // to annihilate it. This is done to prevent wrong effects if vertex tolerance
         // will be decreased (e.g., in FixLacking)
-        double tole = Max((BRep_Tool.SameParameter(edge1) ? BRep_Tool.Tolerance(edge1) : tol0),
-                          (BRep_Tool.SameParameter(edge2) ? BRep_Tool.Tolerance(edge2) : tol0));
+        double tole = Max((Tool.SameParameter(edge1) ? Tool.Tolerance(edge1) : tol0),
+                          (Tool.SameParameter(edge2) ? Tool.Tolerance(edge2) : tol0));
         double tolt = Min(tol, Max(tole, myPrecision));
         int isLacking = -1; //: l0 abv: CATIA01 #1727: protect against adding lacking
         // #83 rln 19.03.99 sim2.igs, entity 4292
@@ -1601,7 +1606,7 @@ public class ShapeAnalysis_Wire : Transient
                 Point2D end1 = Crv1!.Value(isForward1 ? b1 : a1);
                 Point2D end2 = Crv2!.Value(isForward2 ? a2 : b2);
                 //: l0 test like in BRepCheck
-                GeomAdaptor_Surface Ads   = mySurf!.Adaptor3d()!;
+                SurfaceAdaptor Ads   = mySurf!.Adaptor3d()!;
                 double              tol2d = 2 * Max(Ads.UResolution(tol), Ads.VResolution(tol));
                 isLacking                 = (end1.SquareDistance(end2) >= tol2d * tol2d) ? 1 : 0;
             }
@@ -1609,8 +1614,8 @@ public class ShapeAnalysis_Wire : Transient
             if ((dist2 > tolt * tolt || //: 86: tol -> tolt
                  isLacking != 0)
                 && //: l0
-                (!BRepTools.Compare(Vp, Vn) || //: 63
-                 dist2 < pint.SquareDistance(BRep_Tool.Pnt(Vp))))
+                (!BrepTools.Compare(Vp, Vn) || //: 63
+                 dist2 < pint.SquareDistance(Tool.Pnt(Vp))))
             { //: 63
                 points2d.Append(IP);
                 points3d.Append(pint);
@@ -1648,18 +1653,18 @@ public class ShapeAnalysis_Wire : Transient
         int                  n2   = (num2 > 0 ? num2 : sbwd.NbEdges());
         int                  n1   = (num1 > 0 ? num1 : sbwd.NbEdges());
 
-        TopoDS_Edge edge1 = sbwd.Edge(n1);
-        TopoDS_Edge edge2 = sbwd.Edge(n2);
+        Edge edge1 = sbwd.Edge(n1);
+        Edge edge2 = sbwd.Edge(n2);
 
         ShapeAnalysis_Edge sae = new ShapeAnalysis_Edge();
 
-        if (!sae.PCurve(edge1, myFace, out Geom2d_Curve? Crv1, out double a1, out double b1, false))
+        if (!sae.PCurve(edge1, myFace, out Curve2D? Crv1, out double a1, out double b1, false))
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL3);
             return false;
         }
 
-        if (!sae.PCurve(edge2, myFace, out Geom2d_Curve? Crv2, out double a2, out double b2, false))
+        if (!sae.PCurve(edge2, myFace, out Curve2D? Crv2, out double a2, out double b2, false))
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL3);
             return false;
@@ -1675,19 +1680,19 @@ public class ShapeAnalysis_Wire : Transient
         errors.Clear();
         NCollection_Array1<Point3D> vertexPoints = new NCollection_Array1<Point3D>(1, 4);
         NCollection_Array1<double> vertexTolers = new NCollection_Array1<double>(1, 4);
-        vertexPoints[1] = BRep_Tool.Pnt(sae.FirstVertex(edge1));
-        vertexTolers[1] = BRep_Tool.Tolerance(sae.FirstVertex(edge1));
-        vertexPoints[2] = BRep_Tool.Pnt(sae.LastVertex(edge1));
-        vertexTolers[2] = BRep_Tool.Tolerance(sae.LastVertex(edge1));
-        vertexPoints[3] = BRep_Tool.Pnt(sae.FirstVertex(edge2));
-        vertexTolers[3] = BRep_Tool.Tolerance(sae.FirstVertex(edge2));
-        vertexPoints[4] = BRep_Tool.Pnt(sae.LastVertex(edge2));
-        vertexTolers[4] = BRep_Tool.Tolerance(sae.LastVertex(edge2));
+        vertexPoints[1] = Tool.Pnt(sae.FirstVertex(edge1));
+        vertexTolers[1] = Tool.Tolerance(sae.FirstVertex(edge1));
+        vertexPoints[2] = Tool.Pnt(sae.LastVertex(edge1));
+        vertexTolers[2] = Tool.Tolerance(sae.LastVertex(edge1));
+        vertexPoints[3] = Tool.Pnt(sae.FirstVertex(edge2));
+        vertexTolers[3] = Tool.Tolerance(sae.FirstVertex(edge2));
+        vertexPoints[4] = Tool.Pnt(sae.LastVertex(edge2));
+        vertexTolers[4] = Tool.Tolerance(sae.LastVertex(edge2));
 
         double tolint = 1.0e-10;
         IntRes2d_Domain     d1 = new IntRes2d_Domain(Crv1!.Value(a1), a1, tolint, Crv1.Value(b1), b1, tolint);
         IntRes2d_Domain     d2 = new IntRes2d_Domain(Crv2!.Value(a2), a2, tolint, Crv2.Value(b2), b2, tolint);
-        Geom2dAdaptor_Curve C1 = new Geom2dAdaptor_Curve(Crv1), C2 = new Geom2dAdaptor_Curve(Crv2);
+        CurveAdaptor2D C1 = new CurveAdaptor2D(Crv1), C2 = new CurveAdaptor2D(Crv2);
 
         Geom2dInt_GInter Inter = new Geom2dInt_GInter();
         Inter.Perform(C1, d1, C2, d2, tolint, tolint);
@@ -1798,21 +1803,21 @@ public class ShapeAnalysis_Wire : Transient
         // szv#4:S4163:12Mar99 optimized
         int         n2 = (num > 0) ? num : NbEdges();
         int         n1 = (n2 > 1) ? n2 - 1 : NbEdges();
-        TopoDS_Edge E1 = myWire!.Edge(n1);
-        TopoDS_Edge E2 = myWire.Edge(n2);
+        Edge E1 = myWire!.Edge(n1);
+        Edge E2 = myWire.Edge(n2);
 
         ShapeAnalysis_Edge sae = new ShapeAnalysis_Edge();
-        TopoDS_Vertex      V1  = sae.LastVertex(E1);
-        TopoDS_Vertex      V2  = sae.FirstVertex(E2);
+        Vertex      V1  = sae.LastVertex(E1);
+        Vertex      V2  = sae.FirstVertex(E2);
 
         // CKY 4 MAR 1998 : protection against null vertex
-        if (V1.IsNull() || V2.IsNull())
+        if (V1.IsNull || V2.IsNull)
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
             return false;
         }
 
-        if (!BRepTools.Compare(V1, V2))
+        if (!BrepTools.Compare(V1, V2))
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
             return false;
@@ -1820,15 +1825,15 @@ public class ShapeAnalysis_Wire : Transient
 
         Vector2D v1, v2, v12;
 
-        if (!sae.PCurve(E1, myFace, out Geom2d_Curve? c2d, out double a, out double b, true))
+        if (!sae.PCurve(E1, myFace, out Curve2D? c2d, out double a, out double b, true))
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL3);
             return false;
         }
 
-        Geom2dAdaptor_Curve anAdapt = new Geom2dAdaptor_Curve(c2d!);
+        CurveAdaptor2D anAdapt = new CurveAdaptor2D(c2d!);
         anAdapt.D1(b, out p2d1, out v1);
-        if (E1.Orientation() == TopAbs_REVERSED)
+        if (E1.Orientation() == Reversed)
         {
             v1.Reverse();
         }
@@ -1841,7 +1846,7 @@ public class ShapeAnalysis_Wire : Transient
 
         anAdapt.Load(c2d!);
         anAdapt.D1(a, out p2d2, out v2);
-        if (E2.Orientation() == TopAbs_REVERSED)
+        if (E2.Orientation() == Reversed)
         {
             v2.Reverse();
         }
@@ -1850,9 +1855,9 @@ public class ShapeAnalysis_Wire : Transient
         myMax2d = v12.SquareMagnitude();
 
         // test like in BRepCheck
-        double tol = Max(BRep_Tool.Tolerance(V1), BRep_Tool.Tolerance(V2));
+        double tol = Max(Tool.Tolerance(V1), Tool.Tolerance(V2));
         tol        = (Tolerance > Constants.Resolution() && Tolerance < tol ? Tolerance : tol);
-        GeomAdaptor_Surface Ads   = mySurf!.Adaptor3d()!;
+        SurfaceAdaptor Ads   = mySurf!.Adaptor3d()!;
         double              tol2d = 2 * Max(Ads.UResolution(tol), Ads.VResolution(tol));
         if ( // tol2d < gp::Resolution() || //#2 smh 26.03.99 S4163 Zero divide
             myMax2d < tol2d * tol2d)
@@ -1896,7 +1901,7 @@ public class ShapeAnalysis_Wire : Transient
             return false;
         }
 
-        TopoDS_Wire wire;
+        Wire wire;
         if (APIMake)
         {
             wire = myWire!.InternalWireAPIMake();
@@ -1906,9 +1911,9 @@ public class ShapeAnalysis_Wire : Transient
             wire = myWire!.InternalWire();
         }
 
-        TopoDS_Shape sh   = myFace.EmptyCopied(); // szv#4:S4163:12Mar99 SGI warns
-        TopoDS_Face  face = TopoDS.Face(sh);
-        BRep_Builder B    = new BRep_Builder();
+        Shape sh   = myFace.EmptyCopied(); // szv#4:S4163:12Mar99 SGI warns
+        Face  face = ShapeCasts.Face(sh);
+        BrepBuilder B    = new BrepBuilder();
         B.Add(face, wire);
         if (ShapeAnalysis.IsOuterBound(face))
         {
@@ -1919,7 +1924,7 @@ public class ShapeAnalysis_Wire : Transient
         return true;
     }
 
-    private static double ProjectInside(Adaptor3d_CurveOnSurface AD, in Point3D pnt, double preci, out Point3D proj,
+    private static double ProjectInside(CurveOnSurface AD, in Point3D pnt, double preci, out Point3D proj,
                                         out double param, bool adjustToEnds = true)
     {
         ShapeAnalysis_Curve sac    = new ShapeAnalysis_Curve();
@@ -1960,25 +1965,25 @@ public class ShapeAnalysis_Wire : Transient
 
         int         n2 = (num > 0) ? num : NbEdges();
         int         n1 = (n2 > 1) ? n2 - 1 : NbEdges();
-        TopoDS_Edge E1 = myWire!.Edge(n1);
-        TopoDS_Edge E2 = myWire.Edge(n2);
+        Edge E1 = myWire!.Edge(n1);
+        Edge E2 = myWire.Edge(n2);
 
-        if (BRep_Tool.Degenerated(E1) || BRep_Tool.Degenerated(E2))
+        if (Tool.Degenerated(E1) || Tool.Degenerated(E2))
         {
             return false;
         }
 
         ShapeAnalysis_Edge sae = new ShapeAnalysis_Edge();
-        TopoDS_Vertex      V1  = sae.LastVertex(E1);
-        TopoDS_Vertex      V2  = sae.FirstVertex(E2);
+        Vertex      V1  = sae.LastVertex(E1);
+        Vertex      V2  = sae.FirstVertex(E2);
 
-        if (V1.IsNull() || V2.IsNull())
+        if (V1.IsNull || V2.IsNull)
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
             return false;
         }
 
-        if (!BRepTools.Compare(V1, V2))
+        if (!BrepTools.Compare(V1, V2))
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
             return false;
@@ -1986,13 +1991,13 @@ public class ShapeAnalysis_Wire : Transient
 
         Point2D p2d1, p2d2;
         Vector2D v1, v2;
-        if (!sae.PCurve(E1, myFace, out Geom2d_Curve? c2d1, out double a1, out double b1, false))
+        if (!sae.PCurve(E1, myFace, out Curve2D? c2d1, out double a1, out double b1, false))
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL3);
             return false;
         }
 
-        if (E1.Orientation() == TopAbs_REVERSED)
+        if (E1.Orientation() == Reversed)
         {
             c2d1!.D1(a1, out p2d1, out v1);
         }
@@ -2002,13 +2007,13 @@ public class ShapeAnalysis_Wire : Transient
             v1.Reverse();
         }
 
-        if (!sae.PCurve(E2, myFace, out Geom2d_Curve? c2d2, out double a2, out double b2, false))
+        if (!sae.PCurve(E2, myFace, out Curve2D? c2d2, out double a2, out double b2, false))
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL3);
             return false;
         }
 
-        if (E2.Orientation() == TopAbs_REVERSED)
+        if (E2.Orientation() == Reversed)
         {
             c2d2!.D1(b2, out p2d2, out v2);
             v2.Reverse();
@@ -2028,21 +2033,21 @@ public class ShapeAnalysis_Wire : Transient
             return false;
         }
 
-        Geom2dAdaptor_Curve      AC2d1 = new Geom2dAdaptor_Curve(c2d1, a1, b1);
-        GeomAdaptor_Surface      AdS1  = new GeomAdaptor_Surface(new Geom_Plane(new Plane3D()));
-        Adaptor3d_CurveOnSurface Ad1   = new Adaptor3d_CurveOnSurface(AC2d1, AdS1);
+        CurveAdaptor2D      AC2d1 = new CurveAdaptor2D(c2d1, a1, b1);
+        SurfaceAdaptor      AdS1  = new SurfaceAdaptor(new PlaneSurface(new Plane3D()));
+        CurveOnSurface Ad1   = new CurveOnSurface(AC2d1, AdS1);
 
-        Geom2dAdaptor_Curve      AC2d2 = new Geom2dAdaptor_Curve(c2d2, a2, b2);
-        GeomAdaptor_Surface      AdS2  = new GeomAdaptor_Surface(new Geom_Plane(new Plane3D()));
-        Adaptor3d_CurveOnSurface Ad2   = new Adaptor3d_CurveOnSurface(AC2d2, AdS2);
+        CurveAdaptor2D      AC2d2 = new CurveAdaptor2D(c2d2, a2, b2);
+        SurfaceAdaptor      AdS2  = new SurfaceAdaptor(new PlaneSurface(new Plane3D()));
+        CurveOnSurface Ad2   = new CurveOnSurface(AC2d2, AdS2);
 
-        Adaptor3d_CurveOnSurface longAD, shortAD;
+        CurveOnSurface longAD, shortAD;
         double                   lenP, firstP;
 
         ShapeAnalysis_Curve sac = new ShapeAnalysis_Curve();
 
-        p2d2         = c2d2.Value(E2.Orientation() == TopAbs_FORWARD ? b2 : a2);
-        p2d1         = c2d1.Value(E1.Orientation() == TopAbs_FORWARD ? a1 : b1);
+        p2d2         = c2d2.Value(E2.Orientation() == Forward ? b2 : a2);
+        p2d1         = c2d1.Value(E1.Orientation() == Forward ? a1 : b1);
         double dist1 = ProjectInside(Ad1, new Point3D(p2d2.X(), p2d2.Y(), 0), Tolerance, out Point3D Proj1, out double param1, false);
         double dist2 = ProjectInside(Ad2, new Point3D(p2d1.X(), p2d1.Y(), 0), Tolerance, out _, out double param2, false);
 
@@ -2087,7 +2092,7 @@ public class ShapeAnalysis_Wire : Transient
     /// Checks if the wire has a parametric area less than the precision. Status: DONE1 small; FAIL1 not ready; FAIL2 an
     /// edge has no pcurve or no 3d curve.
     /// </summary>
-    public bool CheckSmallArea(in TopoDS_Wire theWire)
+    public bool CheckSmallArea(in Wire theWire)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
         const int aNbControl = 23;
@@ -2106,7 +2111,7 @@ public class ShapeAnalysis_Wire : Transient
         for (int j = 1; j <= NbEdges; ++j)
         {
             ShapeAnalysis_Edge anAnalyzer = new ShapeAnalysis_Edge();
-            if (!anAnalyzer.PCurve(myWire.Edge(j), myFace, out Geom2d_Curve? aCurve2d, out aF, out aL))
+            if (!anAnalyzer.PCurve(myWire.Edge(j), myFace, out Curve2D? aCurve2d, out aF, out aL))
             {
                 myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
                 return false;
@@ -2129,7 +2134,7 @@ public class ShapeAnalysis_Wire : Transient
         for (int j = 1; j <= NbEdges; ++j)
         {
             ShapeAnalysis_Edge anAnalizer = new ShapeAnalysis_Edge();
-            if (!anAnalizer.Curve3d(myWire.Edge(j), out Geom_Curve? aCurve3d, out aF, out aL))
+            if (!anAnalizer.Curve3d(myWire.Edge(j), out Curve3D? aCurve3d, out aF, out aL))
             {
                 myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
                 return false;
@@ -2167,10 +2172,10 @@ public class ShapeAnalysis_Wire : Transient
         if (aCross.Modulus() < aTolerance)
         {
             // check real area in 3D
-            GProp_GProps aProps  = new GProp_GProps();
-            GProp_GProps aLProps = new GProp_GProps();
-            TopoDS_Face  aFace   = TopoDS.Face(myFace.EmptyCopied());
-            new BRep_Builder().Add(aFace, theWire);
+            Properties aProps  = new Properties();
+            Properties aLProps = new Properties();
+            Face  aFace   = ShapeCasts.Face(myFace.EmptyCopied());
+            new BrepBuilder().Add(aFace, theWire);
             BRepGProp.SurfaceProperties(aFace, aProps);
             BRepGProp.LinearProperties(aFace, aLProps);
 
@@ -2189,7 +2194,7 @@ public class ShapeAnalysis_Wire : Transient
     /// Checks with what orientation <paramref name="shape"/> (a wire or an edge) can be connected to the wire (see the
     /// other overload).
     /// </summary>
-    public bool CheckShapeConnect(in TopoDS_Shape shape, double prec = 0.0)
+    public bool CheckShapeConnect(in Shape shape, double prec = 0.0)
     {
         return CheckShapeConnect(out _, out _, out _, out _, shape, prec);
     }
@@ -2205,29 +2210,29 @@ public class ShapeAnalysis_Wire : Transient
     /// direct; FAIL1 neither an edge nor a wire; FAIL2 can't be connected. The distances are 0 when FAIL1.
     /// </remarks>
     public bool CheckShapeConnect(out double tailhead, out double tailtail, out double headtail, out double headhead,
-                                  in TopoDS_Shape shape, double prec = 0.0)
+                                  in Shape shape, double prec = 0.0)
     {
         // OCCT.NET: OCCT leaves the distances unchanged when it returns FAIL1; they are out here, set to 0
         tailhead = tailtail = headtail = headhead = 0.0;
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
-        if (!IsLoaded() || shape.IsNull())
+        if (!IsLoaded() || shape.IsNull)
         {
             return false;
         }
 
-        TopoDS_Vertex      V1, V2;
-        TopoDS_Edge        E;
-        TopoDS_Wire        W;
+        Vertex      V1, V2;
+        Edge        E;
+        Wire        W;
         ShapeAnalysis_Edge SAE = new ShapeAnalysis_Edge();
-        if (shape.ShapeType() == TopAbs_EDGE)
+        if (shape.ShapeType() == ShapeType.Edge)
         {
-            E  = TopoDS.Edge(shape);
+            E  = ShapeCasts.Edge(shape);
             V1 = SAE.FirstVertex(E);
             V2 = SAE.LastVertex(E);
         }
-        else if (shape.ShapeType() == TopAbs_WIRE)
+        else if (shape.ShapeType() == ShapeType.Wire)
         {
-            W = TopoDS.Wire(shape);
+            W = ShapeCasts.Wire(shape);
             ShapeAnalysis.FindBounds(W, out V1, out V2);
         }
         else
@@ -2237,13 +2242,13 @@ public class ShapeAnalysis_Wire : Transient
 
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
         //  on va comparer les points avec ceux de thevfirst et thevlast
-        Point3D p1 = BRep_Tool.Pnt(V1);
-        Point3D p2 = BRep_Tool.Pnt(V2);
+        Point3D p1 = Tool.Pnt(V1);
+        Point3D p2 = Tool.Pnt(V2);
 
-        TopoDS_Vertex vfirst = SAE.FirstVertex(myWire!.Edge(1)),
+        Vertex vfirst = SAE.FirstVertex(myWire!.Edge(1)),
                       vlast  = SAE.LastVertex(myWire.Edge(NbEdges()));
-        Point3D pf = BRep_Tool.Pnt(vfirst);
-        Point3D pl = BRep_Tool.Pnt(vlast);
+        Point3D pf = Tool.Pnt(vfirst);
+        Point3D pl = Tool.Pnt(vlast);
 
         tailhead   = p1.Distance(pl);
         tailtail   = p2.Distance(pl);
@@ -2303,10 +2308,10 @@ public class ShapeAnalysis_Wire : Transient
         return LastCheckStatus(ShapeExtend_DONE);
     }
 
-    private static bool isMultiVertex(NCollection_List<TopoDS_Shape> alshape, NCollection_Map<TopoDS_Shape> aMapSmallEdges,
-                                      NCollection_Map<TopoDS_Shape> aMapSeemEdges)
+    private static bool isMultiVertex(NCollection_List<Shape> alshape, NCollection_Map<Shape> aMapSmallEdges,
+                                      NCollection_Map<Shape> aMapSeemEdges)
     {
-        NCollection_List<TopoDS_Shape>.Iterator lIt1 = new NCollection_List<TopoDS_Shape>.Iterator(alshape);
+        NCollection_List<Shape>.Iterator lIt1 = new NCollection_List<Shape>.Iterator(alshape);
         int                                     nbNotAccount = 0;
 
         for (; lIt1.More(); lIt1.Next())
@@ -2329,9 +2334,9 @@ public class ShapeAnalysis_Wire : Transient
     /// edges not counted). Fills the maps (keyed with TopTools_ShapeMapHasher) of loop vertices, vertex to edges, small
     /// edges and seam edges. Status: DONE1 loops found; FAIL2 an edge has no vertex.
     /// </summary>
-    public bool CheckLoop(NCollection_IndexedMap<TopoDS_Shape> aMapLoopVertices,
-                          NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMapVertexEdges,
-                          NCollection_Map<TopoDS_Shape> aMapSmallEdges, NCollection_Map<TopoDS_Shape> aMapSeemEdges)
+    public bool CheckLoop(NCollection_IndexedMap<Shape> aMapLoopVertices,
+                          NCollection_DataMap<Shape, NCollection_List<Shape>> aMapVertexEdges,
+                          NCollection_Map<Shape> aMapSmallEdges, NCollection_Map<Shape> aMapSeemEdges)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         if (!IsLoaded() || NbEdges() < 2)
@@ -2345,9 +2350,9 @@ public class ShapeAnalysis_Wire : Transient
 
         for (; i <= myWire!.NbEdges(); i++)
         {
-            TopoDS_Edge aedge = myWire.Edge(i);
-            TopExp.Vertices(aedge, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
-            if (aV1.IsNull() || aV2.IsNull())
+            Edge aedge = myWire.Edge(i);
+            Exploration.Vertices(aedge, out Vertex aV1, out Vertex aV2);
+            if (aV1.IsNull || aV2.IsNull)
             {
                 // OCCT: the precision set to Infinite above isn't restored on this return
                 myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
@@ -2359,30 +2364,30 @@ public class ShapeAnalysis_Wire : Transient
             {
                 aMapSeemEdges.Add(aedge); // continue;
             }
-            else if (BRep_Tool.Degenerated(aedge))
+            else if (Tool.Degenerated(aedge))
             {
                 aMapSmallEdges.Add(aedge);
             }
-            else if (isSame && CheckSmall(i, BRep_Tool.Tolerance(aV1)))
+            else if (isSame && CheckSmall(i, Tool.Tolerance(aV1)))
             {
                 aMapSmallEdges.Add(aedge);
             }
 
             if (!aMapVertexEdges.IsBound(aV1))
             {
-                NCollection_List<TopoDS_Shape> alshape = new NCollection_List<TopoDS_Shape>();
+                NCollection_List<Shape> alshape = new NCollection_List<Shape>();
                 aMapVertexEdges.Bind(aV1, alshape);
             }
 
             if (!aMapVertexEdges.IsBound(aV2))
             {
-                NCollection_List<TopoDS_Shape> alshape = new NCollection_List<TopoDS_Shape>();
+                NCollection_List<Shape> alshape = new NCollection_List<Shape>();
                 aMapVertexEdges.Bind(aV2, alshape);
             }
 
             if (isSame)
             {
-                NCollection_List<TopoDS_Shape> alshape = aMapVertexEdges.ChangeFind(aV1);
+                NCollection_List<Shape> alshape = aMapVertexEdges.ChangeFind(aV1);
                 alshape.Append(aedge);
                 alshape.Append(aedge);
                 if (alshape.Extent() > 2 && isMultiVertex(alshape, aMapSmallEdges, aMapSeemEdges))
@@ -2392,14 +2397,14 @@ public class ShapeAnalysis_Wire : Transient
             }
             else
             {
-                NCollection_List<TopoDS_Shape> alshape = aMapVertexEdges.ChangeFind(aV1);
+                NCollection_List<Shape> alshape = aMapVertexEdges.ChangeFind(aV1);
                 alshape.Append(aedge);
                 if (alshape.Extent() > 2 && isMultiVertex(alshape, aMapSmallEdges, aMapSeemEdges))
                 {
                     aMapLoopVertices.Add(aV1);
                 }
 
-                NCollection_List<TopoDS_Shape> alshape2 = aMapVertexEdges.ChangeFind(aV2);
+                NCollection_List<Shape> alshape2 = aMapVertexEdges.ChangeFind(aV2);
                 alshape2.Append(aedge);
                 if (alshape2.Extent() > 2 && isMultiVertex(alshape2, aMapSmallEdges, aMapSeemEdges))
                 {
@@ -2419,7 +2424,7 @@ public class ShapeAnalysis_Wire : Transient
         return false;
     }
 
-    private static double Project(Geom_Curve theCurve, double theFirstParameter, double theLastParameter,
+    private static double Project(Curve3D theCurve, double theFirstParameter, double theLastParameter,
                                   in Point3D thePoint, double thePrecision, out double theParameter, out Point3D theProjection)
     {
         double aDist = new ShapeAnalysis_Curve().Project(theCurve, thePoint, thePrecision, out theProjection,
@@ -2448,9 +2453,9 @@ public class ShapeAnalysis_Wire : Transient
     /// The edge parts it cuts are new edges, published frozen (design 4.2); the outputs it doesn't set are left
     /// unchanged, as in OCCT.
     /// </remarks>
-    public bool CheckTail(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, double theMaxSine, double theMaxWidth,
-                          double theMaxTolerance, ref TopoDS_Edge theEdge11, ref TopoDS_Edge theEdge12,
-                          ref TopoDS_Edge theEdge21, ref TopoDS_Edge theEdge22) =>
+    public bool CheckTail(in Edge theEdge1, in Edge theEdge2, double theMaxSine, double theMaxWidth,
+                          double theMaxTolerance, ref Edge theEdge11, ref Edge theEdge12,
+                          ref Edge theEdge21, ref Edge theEdge22) =>
         checkTail(theEdge1, theEdge2, theMaxSine, theMaxWidth, theMaxTolerance, ref theEdge11, ref theEdge12, ref theEdge21,
                   ref theEdge22, true);
 
@@ -2458,18 +2463,18 @@ public class ShapeAnalysis_Wire : Transient
     /// <see cref="CheckTail"/> without freezing the edge parts it cuts, for ShapeFix_Wire.FixTails, which puts them
     /// into the wire it goes on fixing (the parts share the vertices of its working edges).
     /// </summary>
-    internal bool InternalCheckTail(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, double theMaxSine, double theMaxWidth,
-                                    double theMaxTolerance, ref TopoDS_Edge theEdge11, ref TopoDS_Edge theEdge12,
-                                    ref TopoDS_Edge theEdge21, ref TopoDS_Edge theEdge22) =>
+    internal bool InternalCheckTail(in Edge theEdge1, in Edge theEdge2, double theMaxSine, double theMaxWidth,
+                                    double theMaxTolerance, ref Edge theEdge11, ref Edge theEdge12,
+                                    ref Edge theEdge21, ref Edge theEdge22) =>
         checkTail(theEdge1, theEdge2, theMaxSine, theMaxWidth, theMaxTolerance, ref theEdge11, ref theEdge12, ref theEdge21,
                   ref theEdge22, false);
 
-    private bool checkTail(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, double theMaxSine, double theMaxWidth,
-                           double theMaxTolerance, ref TopoDS_Edge theEdge11, ref TopoDS_Edge theEdge12,
-                           ref TopoDS_Edge theEdge21, ref TopoDS_Edge theEdge22, bool theToFreeze)
+    private bool checkTail(in Edge theEdge1, in Edge theEdge2, double theMaxSine, double theMaxWidth,
+                           double theMaxTolerance, ref Edge theEdge11, ref Edge theEdge12,
+                           ref Edge theEdge21, ref Edge theEdge22, bool theToFreeze)
     {
-        TopoDS_Edge[] aEs = [theEdge1, theEdge2];
-        if (!IsReady() || BRep_Tool.Degenerated(aEs[0]) || BRep_Tool.Degenerated(aEs[1]))
+        Edge[] aEs = [theEdge1, theEdge2];
+        if (!IsReady() || Tool.Degenerated(aEs[0]) || Tool.Degenerated(aEs[1]))
         {
             return false;
         }
@@ -2480,7 +2485,7 @@ public class ShapeAnalysis_Wire : Transient
         double       aTol4   = theMaxWidth + 1.5 * Kerf.Engine.Foundation.Precision.Confusion();
         double       aSqTol2 = aTol2 * aTol2;
         double       aSqTol3 = aTol3 * aTol3;
-        Geom_Curve?[] aCs    = new Geom_Curve?[2];
+        Curve3D?[] aCs    = new Curve3D?[2];
         double[,]    aLs     = new double[2, 2];
         int[]        aVIs    = new int[2];
         Point3D[]     aVPs    = [new Point3D(), new Point3D()];
@@ -2492,7 +2497,7 @@ public class ShapeAnalysis_Wire : Transient
                     return false;
                 }
 
-                aVIs[aEI] = (aEs[aEI].Orientation() == TopAbs_REVERSED) ? aEI : 1 - aEI;
+                aVIs[aEI] = (aEs[aEI].Orientation() == Reversed) ? aEI : 1 - aEI;
                 aVPs[aEI] = aCs[aEI]!.Value(aLs[aEI, aVIs[aEI]]);
             }
 
@@ -2510,18 +2515,18 @@ public class ShapeAnalysis_Wire : Transient
             int      aReverse   = 0;
             for (int aEI = 0; aEI < 2; ++aEI)
             {
-                GeomAdaptor_Curve aCA = new GeomAdaptor_Curve(aCs[aEI]!);
-                if (GCPnts_AbscissaPoint.Length(aCA, aLs[aEI, 0], aLs[aEI, 1], 0.25 * Kerf.Engine.Foundation.Precision.Confusion())
+                CurveAdaptor aCA = new CurveAdaptor(aCs[aEI]!);
+                if (AbscissaPoint.Length(aCA, aLs[aEI, 0], aLs[aEI, 1], 0.25 * Kerf.Engine.Foundation.Precision.Confusion())
                     < 0.5 * Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     return false;
                 }
 
-                GCPnts_AbscissaPoint aAP = new GCPnts_AbscissaPoint(0.25 * Kerf.Engine.Foundation.Precision.Confusion(),
+                AbscissaPoint aAP = new AbscissaPoint(0.25 * Kerf.Engine.Foundation.Precision.Confusion(),
                                                                     aCA,
                                                                     0.5 * Kerf.Engine.Foundation.Precision.Confusion() * (1 - 2 * aVIs[aEI]),
                                                                     aLs[aEI, aVIs[aEI]]);
-                if (!aAP.IsDone())
+                if (!aAP.IsDone)
                 {
                     return false;
                 }
@@ -2651,7 +2656,7 @@ public class ShapeAnalysis_Wire : Transient
         aParams[1 - aFI] = aParams2[aFI];
         // Correct the cut for the parametrization tolerance.
         // OCCT's pointers to the four outputs: a local table copied back at the end
-        TopoDS_Edge[,] aEParts  = { { theEdge11, theEdge12 }, { theEdge21, theEdge22 } };
+        Edge[,] aEParts  = { { theEdge11, theEdge12 }, { theEdge21, theEdge22 } };
         int[]          aResults = [1, 1];
         for (int aEI = 0; aEI < 2; ++aEI)
         {
@@ -2675,22 +2680,22 @@ public class ShapeAnalysis_Wire : Transient
             }
 
             // Create the parts of the edge.
-            TopoDS_Edge                          aFE   = TopoDS.Edge(aEs[aEI].Oriented(TopAbs_FORWARD));
-            ShapeAnalysis_TransferParametersProj aSATPP = new ShapeAnalysis_TransferParametersProj(aFE, new TopoDS_Face());
+            Edge                          aFE   = ShapeCasts.Edge(aEs[aEI].Oriented(Forward));
+            ShapeAnalysis_TransferParametersProj aSATPP = new ShapeAnalysis_TransferParametersProj(aFE, new Face());
             aSATPP.SetMaxTolerance(theMaxTolerance);
-            TopoDS_Vertex aSplitV = new TopoDS_Vertex();
-            new BRep_Builder().MakeVertex(ref aSplitV, aCs[aEI]!.Value(aParams[aEI]), Kerf.Engine.Foundation.Precision.Confusion());
-            TopoDS_Edge[] aEParts2 =
+            Vertex aSplitV = new Vertex();
+            new BrepBuilder().MakeVertex(ref aSplitV, aCs[aEI]!.Value(aParams[aEI]), Kerf.Engine.Foundation.Precision.Confusion());
+            Edge[] aEParts2 =
             [
-                new ShapeBuild_Edge().InternalCopyReplaceVertices(aFE, new TopoDS_Vertex(), TopoDS.Vertex(aSplitV.Oriented(TopAbs_REVERSED))),
-                new ShapeBuild_Edge().InternalCopyReplaceVertices(aFE, aSplitV, new TopoDS_Vertex()),
+                new ShapeBuild_Edge().InternalCopyReplaceVertices(aFE, new Vertex(), ShapeCasts.Vertex(aSplitV.Oriented(Reversed))),
+                new ShapeBuild_Edge().InternalCopyReplaceVertices(aFE, aSplitV, new Vertex()),
             ];
             new ShapeBuild_Edge().CopyPCurves(aEParts2[0], aFE);
             new ShapeBuild_Edge().CopyPCurves(aEParts2[1], aFE);
-            new BRep_Builder().SameRange(aEParts2[0], false);
-            new BRep_Builder().SameRange(aEParts2[1], false);
-            new BRep_Builder().SameParameter(aEParts2[0], false);
-            new BRep_Builder().SameParameter(aEParts2[1], false);
+            new BrepBuilder().SameRange(aEParts2[0], false);
+            new BrepBuilder().SameRange(aEParts2[1], false);
+            new BrepBuilder().SameParameter(aEParts2[0], false);
+            new BrepBuilder().SameParameter(aEParts2[1], false);
             aSATPP.TransferRange(aEParts2[0], aLs[aEI, 0], aParams[aEI], false);
             aSATPP.TransferRange(aEParts2[1], aParams[aEI], aLs[aEI, 1], false);
             // OCCT.NET: the new parts are published frozen (design 4.2)
@@ -2699,7 +2704,7 @@ public class ShapeAnalysis_Wire : Transient
                 aEParts2[0].TShape()!.FreezeGraph();
                 aEParts2[1].TShape()!.FreezeGraph();
             }
-            GProp_GProps aLinProps = new GProp_GProps();
+            Properties aLinProps = new Properties();
             BRepGProp.LinearProperties(aEParts2[1 - aVIs[aEI]], aLinProps);
             if (aLinProps.Mass() <= Kerf.Engine.Foundation.Precision.Confusion())
             {

@@ -3,6 +3,8 @@
 // OCCT file: its members are exactly the HBuilder members TKFillet calls.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -44,24 +46,24 @@ internal abstract class ChFi3d_Reconstruction
 
     /// <summary><c>MergeSolid(S, State)</c>: assembles the parts of the solid or shell <paramref name="S"/> (a shape
     /// of the data structure) in the state <paramref name="TB"/>.</summary>
-    public abstract void MergeSolid(in TopoDS_Shape S, TopAbs_State TB);
+    public abstract void MergeSolid(in Shape S, Containment TB);
 
     /// <summary><c>IsSplit(S, State)</c>: true if the edge or face <paramref name="S"/> was split, with parts in the
     /// state <paramref name="ToBuild"/>.</summary>
-    public abstract bool IsSplit(in TopoDS_Shape S, TopAbs_State ToBuild);
+    public abstract bool IsSplit(in Shape S, Containment ToBuild);
 
     /// <summary><c>Splits(S, State)</c>: the parts of <paramref name="S"/> in the state <paramref name="ToBuild"/>.</summary>
-    public abstract NCollection_List<TopoDS_Shape> Splits(in TopoDS_Shape S, TopAbs_State ToBuild);
+    public abstract NCollection_List<Shape> Splits(in Shape S, Containment ToBuild);
 
     /// <summary><c>Merged(S, State)</c>: what <see cref="MergeSolid"/> made of <paramref name="S"/> (empty if it was
     /// not merged).</summary>
-    public abstract NCollection_List<TopoDS_Shape> Merged(in TopoDS_Shape S, TopAbs_State ToBuild);
+    public abstract NCollection_List<Shape> Merged(in Shape S, Containment ToBuild);
 
     /// <summary><c>NewFaces(I)</c>: the faces built on the data structure's surface <paramref name="I"/>.</summary>
-    public abstract NCollection_List<TopoDS_Shape> NewFaces(int I);
+    public abstract NCollection_List<Shape> NewFaces(int I);
 
     /// <summary><c>NewEdges(I)</c>: the edges built on the data structure's curve <paramref name="I"/>.</summary>
-    public abstract NCollection_List<TopoDS_Shape> NewEdges(int I);
+    public abstract NCollection_List<Shape> NewEdges(int I);
 
     /// <summary><c>DataStructure()</c>: the data structure given to <see cref="Perform"/> (null before).</summary>
     public abstract TopOpeBRepDS_HDataStructure? DataStructure();

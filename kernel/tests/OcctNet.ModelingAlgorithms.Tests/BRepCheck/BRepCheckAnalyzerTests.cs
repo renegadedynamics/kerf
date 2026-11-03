@@ -1,11 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Text;
 using OcctNet.ModelingData.Tests;
 using static Occt.BRepCheck_Status;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -25,35 +29,35 @@ public class BRepCheckAnalyzerTests
     // ---------------------------------------------------------------------------------------------------------------
     // Shapes
 
-    private static TopoDS_Face PlaneFace(Geom_Surface? theSurface = null)
+    private static Face PlaneFace(Surface? theSurface = null)
     {
-        var aB = new BRep_Builder();
-        TopoDS_Face aF = new();
-        aB.MakeFace(ref aF, theSurface ?? new Geom_Plane(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))), Tol);
+        var aB = new BrepBuilder();
+        Face aF = new();
+        aB.MakeFace(ref aF, theSurface ?? new PlaneSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))), Tol);
         return aF;
     }
 
-    private static TopoDS_Vertex V(double x, double y) => TestShapes.Vertex(new Point3D(x, y, 0));
+    private static Vertex V(double x, double y) => TestShapes.Vertex(new Point3D(x, y, 0));
 
     /// <summary>A segment between two vertices of the plane z = 0 with its pcurve on the face (UV = XY).</summary>
-    private static TopoDS_Edge Seg(in TopoDS_Face theFace, in TopoDS_Vertex theV1, in TopoDS_Vertex theV2, double theShift = 0)
+    private static Edge Seg(in Face theFace, in Vertex theV1, in Vertex theV2, double theShift = 0)
     {
-        var aB = new BRep_Builder();
-        Point3D aP1 = BRep_Tool.Pnt(theV1), aP2 = BRep_Tool.Pnt(theV2);
-        TopoDS_Edge anE = TestShapes.Edge(theV1, theV2);
+        var aB = new BrepBuilder();
+        Point3D aP1 = Tool.Pnt(theV1), aP2 = Tool.Pnt(theV2);
+        Edge anE = TestShapes.Edge(theV1, theV2);
         aB.UpdateEdge(anE,
-                      new Geom2d_Line(new Point2D(aP1.X(), aP1.Y() + theShift), new Direction2D(aP2.X() - aP1.X(), aP2.Y() - aP1.Y())),
+                      new LineCurve2D(new Point2D(aP1.X(), aP1.Y() + theShift), new Direction2D(aP2.X() - aP1.X(), aP2.Y() - aP1.Y())),
                       theFace, Tol);
         return anE;
     }
 
     /// <summary>A wire of segments through the corners of the plane z = 0, closed unless told otherwise.</summary>
-    private static TopoDS_Wire Polygon(in TopoDS_Face theFace, bool theClosed, params (double X, double Y)[] theCorners)
+    private static Wire Polygon(in Face theFace, bool theClosed, params (double X, double Y)[] theCorners)
     {
-        var aB = new BRep_Builder();
+        var aB = new BrepBuilder();
         int n = theCorners.Length;
         var aV = theCorners.Select(c => V(c.X, c.Y)).ToArray();
-        TopoDS_Wire aW = new();
+        Wire aW = new();
         aB.MakeWire(ref aW);
         for (int i = 0; i < (theClosed ? n : n - 1); i++)
         {
@@ -64,12 +68,12 @@ public class BRepCheckAnalyzerTests
         return aW;
     }
 
-    private static TopoDS_Face Square(params TopoDS_Wire[] theHoles)
+    private static Face Square(params Wire[] theHoles)
     {
-        TopoDS_Face aF = PlaneFace();
-        var aB = new BRep_Builder();
+        Face aF = PlaneFace();
+        var aB = new BrepBuilder();
         aB.Add(aF, Polygon(aF, true, (0, 0), (10, 0), (10, 10), (0, 10)));
-        foreach (TopoDS_Wire aW in theHoles)
+        foreach (Wire aW in theHoles)
         {
             aB.Add(aF, aW);
         }
@@ -78,13 +82,13 @@ public class BRepCheckAnalyzerTests
     }
 
     /// <summary>The unit square with its first edge built by <paramref name="theEdge"/> (from vertices (0,0), (10,0)).</summary>
-    private static (TopoDS_Face Face, TopoDS_Edge Edge) SquareWithEdge(Func<TopoDS_Face, TopoDS_Vertex, TopoDS_Vertex, TopoDS_Edge> theEdge)
+    private static (Face Face, Edge Edge) SquareWithEdge(Func<Face, Vertex, Vertex, Edge> theEdge)
     {
-        TopoDS_Face aF = PlaneFace();
-        var aB = new BRep_Builder();
-        TopoDS_Vertex v0 = V(0, 0), v1 = V(10, 0), v2 = V(10, 10), v3 = V(0, 10);
-        TopoDS_Edge anE = theEdge(aF, v0, v1);
-        TopoDS_Wire aW = new();
+        Face aF = PlaneFace();
+        var aB = new BrepBuilder();
+        Vertex v0 = V(0, 0), v1 = V(10, 0), v2 = V(10, 10), v3 = V(0, 10);
+        Edge anE = theEdge(aF, v0, v1);
+        Wire aW = new();
         aB.MakeWire(ref aW);
         aB.Add(aW, anE);
         aB.Add(aW, Seg(aF, v1, v2));
@@ -95,12 +99,12 @@ public class BRepCheckAnalyzerTests
         return (TestShapes.Frozen(aF), anE);
     }
 
-    private static TopoDS_Shell FirstShell(in TopoDS_Shape theSolid) => TopoDS.Shell(new TopoDS_Iterator(theSolid).Value());
+    private static Shell FirstShell(in Shape theSolid) => ShapeCasts.Shell(new Iterator(theSolid).Value());
 
-    private static List<TopoDS_Shape> Faces(in TopoDS_Shape theShape)
+    private static List<Shape> Faces(in Shape theShape)
     {
-        var aFaces = new List<TopoDS_Shape>();
-        for (var anIt = new TopoDS_Iterator(FirstShell(theShape)); anIt.More(); anIt.Next())
+        var aFaces = new List<Shape>();
+        for (var anIt = new Iterator(FirstShell(theShape)); anIt.More(); anIt.Next())
         {
             aFaces.Add(anIt.Value());
         }
@@ -108,12 +112,12 @@ public class BRepCheckAnalyzerTests
         return aFaces;
     }
 
-    private static TopoDS_Solid SolidOf(params TopoDS_Shape[] theChildren)
+    private static Solid SolidOf(params Shape[] theChildren)
     {
-        var aB = new BRep_Builder();
-        TopoDS_Solid aSolid = new();
+        var aB = new BrepBuilder();
+        Solid aSolid = new();
         aB.MakeSolid(ref aSolid);
-        foreach (TopoDS_Shape aC in theChildren)
+        foreach (Shape aC in theChildren)
         {
             aB.Add(aSolid, aC);
         }
@@ -121,12 +125,12 @@ public class BRepCheckAnalyzerTests
         return aSolid;
     }
 
-    private static TopoDS_Shell ShellOf(IEnumerable<TopoDS_Shape> theFaces, bool theClosed)
+    private static Shell ShellOf(IEnumerable<Shape> theFaces, bool theClosed)
     {
-        var aB = new BRep_Builder();
-        TopoDS_Shell aShell = new();
+        var aB = new BrepBuilder();
+        Shell aShell = new();
         aB.MakeShell(ref aShell);
-        foreach (TopoDS_Shape aF in theFaces)
+        foreach (Shape aF in theFaces)
         {
             aB.Add(aShell, aF);
         }
@@ -139,10 +143,10 @@ public class BRepCheckAnalyzerTests
     // Analysis in both modes
 
     /// <summary>Every status of every sub-shape (by MapShapes index), on its own and in each context, as text.</summary>
-    private static string Dump(BRepCheck_Analyzer theA, in TopoDS_Shape theShape)
+    private static string Dump(BRepCheck_Analyzer theA, in Shape theShape)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, aMap);
         var aText = new StringBuilder();
         for (int i = 1; i <= aMap.Extent(); i++)
         {
@@ -173,7 +177,7 @@ public class BRepCheckAnalyzerTests
     }
 
     /// <summary>The serial analysis, checked against the parallel one and its serial fallback, status by status.</summary>
-    private static BRepCheck_Analyzer Analyze(in TopoDS_Shape theShape, bool theGeomControls = true, bool theIsExact = false,
+    private static BRepCheck_Analyzer Analyze(in Shape theShape, bool theGeomControls = true, bool theIsExact = false,
                                               bool theMayFail = false)
     {
         var aSerial = new BRepCheck_Analyzer(theShape, theGeomControls, false, theIsExact);
@@ -197,20 +201,20 @@ public class BRepCheckAnalyzerTests
         return aSerial;
     }
 
-    private static readonly TopAbs_Orientation[] theOrientations = [TopAbs_FORWARD, TopAbs_REVERSED, TopAbs_INTERNAL, TopAbs_EXTERNAL];
+    private static readonly Orientation[] theOrientations = [Forward, Reversed, Internal, External];
 
     // The analyzer keeps a result per orientation met (OCCT's map compares with IsEqual); the statuses on the shape
     // itself are the same for all of them
-    private static List<BRepCheck_Status> StatusOf(BRepCheck_Analyzer theA, TopoDS_Shape theSub)
+    private static List<BRepCheck_Status> StatusOf(BRepCheck_Analyzer theA, Shape theSub)
         => L(theOrientations.Select(o => TryResult(theA, theSub.Oriented(o))).First(r => r is not null)!.Status());
 
     // ... and the contexts are on the orientation met first
-    private static List<BRepCheck_Status> StatusIn(BRepCheck_Analyzer theA, TopoDS_Shape theSub, TopoDS_Shape theContext)
+    private static List<BRepCheck_Status> StatusIn(BRepCheck_Analyzer theA, Shape theSub, Shape theContext)
         => L(theOrientations.Select(o => TryResult(theA, theSub.Oriented(o)))
                             .First(r => r is not null && r.IsStatusOnShape(theContext))!
                             .StatusOnShape(theContext));
 
-    private static BRepCheck_Result? TryResult(BRepCheck_Analyzer theA, in TopoDS_Shape theSub)
+    private static BRepCheck_Result? TryResult(BRepCheck_Analyzer theA, in Shape theSub)
     {
         try
         {
@@ -228,12 +232,12 @@ public class BRepCheckAnalyzerTests
     [Fact]
     public void A_box_is_valid_with_every_sub_shape()
     {
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(2, 3, 4));
+        Solid aBox = TestShapes.Frozen(TestShapes.Box(2, 3, 4));
         BRepCheck_Analyzer anA = Analyze(aBox);
         Assert.True(anA.IsValid());
         Assert.IsType<BRepCheck_Solid>(anA.Result(aBox));
         Assert.IsType<BRepCheck_Shell>(anA.Result(FirstShell(aBox)));
-        for (var anExp = new TopExp_Explorer(aBox, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aBox, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Assert.True(anA.IsValid(anExp.Current()));
             Assert.Equal([BRepCheck_NoError], StatusOf(anA, anExp.Current()));
@@ -243,8 +247,8 @@ public class BRepCheckAnalyzerTests
         Assert.True(Analyze(aBox, false).IsValid());
         Assert.True(Analyze(aBox, true, true).IsValid());
         // located, reversed and in a compound
-        TopoDS_Shape aPlaced = ClassificationTestShapes.RotatedZ(aBox, 0.7).Reversed();
-        TopoDS_Compound aC = TopoDS_Builder.MakeCompound(aBox, aPlaced);
+        Shape aPlaced = ClassificationTestShapes.RotatedZ(aBox, 0.7).Reversed();
+        Compound aC = Builder.MakeCompound(aBox, aPlaced);
         BRepCheck_Analyzer aCA = Analyze(aC);
         Assert.True(aCA.IsValid());
         Assert.Null(aCA.Result(aC));
@@ -254,10 +258,10 @@ public class BRepCheckAnalyzerTests
     public void Faces_with_holes_seams_and_voids_are_valid()
     {
         Assert.True(Analyze(TestShapes.Frozen(ClassificationTestShapes.HoledSquare())).IsValid());
-        TopoDS_Face aCyl = TestShapes.Frozen(TestShapes.CylinderFace(2, 5));
+        Face aCyl = TestShapes.Frozen(TestShapes.CylinderFace(2, 5));
         Assert.True(Analyze(aCyl).IsValid());
         Assert.True(Analyze(aCyl.Reversed()).IsValid());
-        TopoDS_Solid aVoid = TestShapes.Frozen(ClassificationTestShapes.BoxWithVoid(out _, out _));
+        Solid aVoid = TestShapes.Frozen(ClassificationTestShapes.BoxWithVoid(out _, out _));
         BRepCheck_Analyzer anA = Analyze(aVoid);
         Assert.True(anA.IsValid());
         Assert.Equal([BRepCheck_NoError], StatusOf(anA, aVoid));
@@ -266,8 +270,8 @@ public class BRepCheckAnalyzerTests
     [Fact]
     public void The_analyzer_checks_a_null_shape_never()
     {
-        Assert.Throws<global::Kerf.Engine.Foundation.NullObjectException>(() => new BRepCheck_Analyzer(new TopoDS_Shape()));
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        Assert.Throws<global::Kerf.Engine.Foundation.NullObjectException>(() => new BRepCheck_Analyzer(new Shape()));
+        Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         var anA = new BRepCheck_Analyzer(aBox);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => anA.Result(TestShapes.Frozen(TestShapes.Box(1, 1, 1))));
         anA.SetParallel(true);
@@ -285,35 +289,35 @@ public class BRepCheckAnalyzerTests
     public void A_vertex_off_its_edge_is_an_invalid_point_on_curve()
     {
         // the line goes from (0,0,0) to (10,0,0); the second vertex is 0.1 above its end
-        var aLine = new Geom_Line(new Point3D(), new Direction3D(1, 0, 0));
-        TopoDS_Vertex aV1 = TestShapes.Vertex(new Point3D());
-        TopoDS_Vertex aV2 = TestShapes.Vertex(new Point3D(10, 0, 0.1));
-        TopoDS_Edge anE = TestShapes.Frozen(TestShapes.Edge(aLine, 0, 10, aV1, aV2));
+        var aLine = new LineCurve3D(new Point3D(), new Direction3D(1, 0, 0));
+        Vertex aV1 = TestShapes.Vertex(new Point3D());
+        Vertex aV2 = TestShapes.Vertex(new Point3D(10, 0, 0.1));
+        Edge anE = TestShapes.Frozen(TestShapes.Edge(aLine, 0, 10, aV1, aV2));
         BRepCheck_Analyzer anA = Analyze(anE);
         Assert.False(anA.IsValid());
         Assert.Equal([BRepCheck_NoError], StatusOf(anA, anE));
         Assert.Equal([BRepCheck_InvalidPointOnCurve], StatusIn(anA, aV2, anE));
         Assert.Equal([BRepCheck_NoError], StatusIn(anA, aV1, anE));
-        var aCheck = (BRepCheck_Vertex)TryResult(anA, aV2.Oriented(TopAbs_REVERSED))!;
+        var aCheck = (BRepCheck_Vertex)TryResult(anA, aV2.Oriented(Reversed))!;
         // a vertex without point representations: its own tolerance, with OCCT's 5% margin on the square
         Assert.Equal(Math.Sqrt(global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion() * 1.05), aCheck.Tolerance(), 1e-20);
 
         // within a larger tolerance
-        var aB = new BRep_Builder();
-        TopoDS_Vertex aV3 = new();
+        var aB = new BrepBuilder();
+        Vertex aV3 = new();
         aB.MakeVertex(ref aV3, new Point3D(10, 0, 0.1), 0.2);
-        TopoDS_Edge anE2 = TestShapes.Frozen(TestShapes.Edge(aLine, 0, 10, aV1, aV3));
+        Edge anE2 = TestShapes.Frozen(TestShapes.Edge(aLine, 0, 10, aV1, aV3));
         Assert.True(Analyze(anE2).IsValid());
     }
 
     [Fact]
     public void Edge_minimum_finds_bad_flags_ranges_and_curves()
     {
-        var aB = new BRep_Builder();
-        var aLine = new Geom_Line(new Point3D(), new Direction3D(1, 0, 0));
+        var aB = new BrepBuilder();
+        var aLine = new LineCurve3D(new Point3D(), new Direction3D(1, 0, 0));
 
         // a reversed range
-        TopoDS_Edge aRange = TestShapes.Edge(aLine, 0, 10);
+        Edge aRange = TestShapes.Edge(aLine, 0, 10);
         aB.Range(aRange, 5, 1);
         aRange = TestShapes.Frozen(aRange);
         BRepCheck_Analyzer anA = Analyze(aRange);
@@ -322,9 +326,9 @@ public class BRepCheckAnalyzerTests
 
         // degenerated with a 3D curve
         // (BRep_Builder.Degenerated removes the 3D curve: put it back after)
-        TopoDS_Edge aDeg = TestShapes.Edge(aLine, 0, 10);
+        Edge aDeg = TestShapes.Edge(aLine, 0, 10);
         aB.Degenerated(aDeg, true);
-        TopoDS_Edge aDegNoCurve = TestShapes.Edge(aLine, 0, 10);
+        Edge aDegNoCurve = TestShapes.Edge(aLine, 0, 10);
         aB.Degenerated(aDegNoCurve, true);
         aDegNoCurve = TestShapes.Frozen(aDegNoCurve);
         Assert.Equal([BRepCheck_NoError], StatusOf(Analyze(aDegNoCurve), aDegNoCurve));
@@ -333,7 +337,7 @@ public class BRepCheckAnalyzerTests
         Assert.Equal([BRepCheck_InvalidDegeneratedFlag], StatusOf(Analyze(aDeg), aDeg));
 
         // same parameter without same range
-        TopoDS_Edge aFlags = TestShapes.Edge(aLine, 0, 10);
+        Edge aFlags = TestShapes.Edge(aLine, 0, 10);
         aB.SameRange(aFlags, false);
         aFlags = TestShapes.Frozen(aFlags);
         Assert.Equal([BRepCheck_InvalidSameParameterFlag], StatusOf(Analyze(aFlags), aFlags));
@@ -342,24 +346,24 @@ public class BRepCheckAnalyzerTests
         var aPoles = new NCollection_Array1<Point3D>(1, 2);
         aPoles[1] = new Point3D();
         aPoles[2] = new Point3D(10, 0, 0);
-        TopoDS_Edge aBeyond = TestShapes.Edge(new Geom_BezierCurve(aPoles), 0, 1);
+        Edge aBeyond = TestShapes.Edge(new BezierCurve3D(aPoles), 0, 1);
         aB.Range(aBeyond, -1, 1);
         aBeyond = TestShapes.Frozen(aBeyond);
         Assert.Equal([BRepCheck_InvalidRange], StatusOf(Analyze(aBeyond), aBeyond));
-        TopoDS_Edge aTrim = TestShapes.Edge(new Geom_TrimmedCurve(aLine, 0, 10), 0, 10);
+        Edge aTrim = TestShapes.Edge(new TrimmedCurve3D(aLine, 0, 10), 0, 10);
         aB.Range(aTrim, -1, 10);
         aTrim = TestShapes.Frozen(aTrim);
         Assert.Equal([BRepCheck_NoError], StatusOf(Analyze(aTrim), aTrim));
 
         // no 3D curve: only a pcurve on a face
-        (TopoDS_Face aFace, TopoDS_Edge aNo3D) = SquareWithEdge((f, v1, v2) =>
+        (Face aFace, Edge aNo3D) = SquareWithEdge((f, v1, v2) =>
         {
-            var aBB = new BRep_Builder();
-            TopoDS_Edge anE = new();
+            var aBB = new BrepBuilder();
+            Edge anE = new();
             aBB.MakeEdge(ref anE);
-            aBB.UpdateEdge(anE, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), f, Tol);
-            aBB.Add(anE, v1.Oriented(TopAbs_FORWARD));
-            aBB.Add(anE, v2.Oriented(TopAbs_REVERSED));
+            aBB.UpdateEdge(anE, new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0)), f, Tol);
+            aBB.Add(anE, v1.Oriented(Forward));
+            aBB.Add(anE, v2.Oriented(Reversed));
             aBB.Range(anE, 0, 10);
             return anE;
         });
@@ -377,11 +381,11 @@ public class BRepCheckAnalyzerTests
     [Fact]
     public void Edges_in_a_face_need_their_flags_and_a_matching_pcurve()
     {
-        var aB = new BRep_Builder();
+        var aB = new BrepBuilder();
         // SameParameter cleared
-        (TopoDS_Face aF1, TopoDS_Edge aE1) = SquareWithEdge((f, v1, v2) =>
+        (Face aF1, Edge aE1) = SquareWithEdge((f, v1, v2) =>
         {
-            TopoDS_Edge anE = Seg(f, v1, v2);
+            Edge anE = Seg(f, v1, v2);
             aB.SameParameter(anE, false);
             return anE;
         });
@@ -393,7 +397,7 @@ public class BRepCheckAnalyzerTests
         Assert.False(anA.IsValid(aF1));
 
         // a pcurve 0.5 away from the 3D curve
-        (TopoDS_Face aF2, TopoDS_Edge aE2) = SquareWithEdge((f, v1, v2) => Seg(f, v1, v2, 0.5));
+        (Face aF2, Edge aE2) = SquareWithEdge((f, v1, v2) => Seg(f, v1, v2, 0.5));
         anA = Analyze(aF2);
         Assert.False(anA.IsValid());
         Assert.Equal([BRepCheck_InvalidCurveOnSurface, BRepCheck_InvalidSameParameterFlag], StatusIn(anA, aE2, aF2));
@@ -407,7 +411,7 @@ public class BRepCheckAnalyzerTests
         Assert.False(((BRepCheck_Edge)aTopo.Result(aE2)!).GeometricControls());
 
         // a pcurve just inside the edge's tolerance
-        (TopoDS_Face aF3, _) = SquareWithEdge((f, v1, v2) => Seg(f, v1, v2, 0.5e-7));
+        (Face aF3, _) = SquareWithEdge((f, v1, v2) => Seg(f, v1, v2, 0.5e-7));
         Assert.True(Analyze(aF3).IsValid());
     }
 
@@ -415,22 +419,22 @@ public class BRepCheckAnalyzerTests
     public void An_edge_without_pcurve_on_a_curved_face_has_no_curve_on_surface()
     {
         // TestShapes.CylinderFace without the top circle's pcurve
-        var aB = new BRep_Builder();
-        var aSurf = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2);
+        var aB = new BrepBuilder();
+        var aSurf = new CylindricalSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2);
         double aTwoPi = 2.0 * Math.PI;
-        TopoDS_Vertex aV0 = TestShapes.Vertex(new Point3D(2, 0, 0));
-        TopoDS_Vertex aV1 = TestShapes.Vertex(new Point3D(2, 0, 3));
-        TopoDS_Edge aBottom = TestShapes.Edge(new Geom_Circle(new Frame3D(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2),
+        Vertex aV0 = TestShapes.Vertex(new Point3D(2, 0, 0));
+        Vertex aV1 = TestShapes.Vertex(new Point3D(2, 0, 3));
+        Edge aBottom = TestShapes.Edge(new CircleCurve3D(new Frame3D(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2),
                                               0.0, aTwoPi, aV0, aV0);
-        TopoDS_Edge aTop = TestShapes.Edge(new Geom_Circle(new Frame3D(new Point3D(0, 0, 3), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2),
+        Edge aTop = TestShapes.Edge(new CircleCurve3D(new Frame3D(new Point3D(0, 0, 3), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2),
                                            0.0, aTwoPi, aV1, aV1);
-        TopoDS_Edge aSeam = TestShapes.Edge(new Geom_Line(new Point3D(2, 0, 0), new Direction3D(0, 0, 1)), 0.0, 3, aV0, aV1);
-        TopoDS_Face aF = new();
+        Edge aSeam = TestShapes.Edge(new LineCurve3D(new Point3D(2, 0, 0), new Direction3D(0, 0, 1)), 0.0, 3, aV0, aV1);
+        Face aF = new();
         aB.MakeFace(ref aF, aSurf, Tol);
-        aB.UpdateEdge(aBottom, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aF, Tol);
-        aB.UpdateEdge(aSeam, new Geom2d_Line(new Point2D(aTwoPi, 0), new Direction2D(0, 1)),
-                      new Geom2d_Line(new Point2D(0, 0), new Direction2D(0, 1)), aF, Tol);
-        TopoDS_Wire aW = new();
+        aB.UpdateEdge(aBottom, new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0)), aF, Tol);
+        aB.UpdateEdge(aSeam, new LineCurve2D(new Point2D(aTwoPi, 0), new Direction2D(0, 1)),
+                      new LineCurve2D(new Point2D(0, 0), new Direction2D(0, 1)), aF, Tol);
+        Wire aW = new();
         aB.MakeWire(ref aW);
         aB.Add(aW, aBottom);
         aB.Add(aW, aSeam);
@@ -450,20 +454,20 @@ public class BRepCheckAnalyzerTests
     [Fact]
     public void Edges_in_a_solid_bound_two_faces()
     {
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        List<TopoDS_Shape> aFaces = Faces(aBox);
-        TopoDS_Solid anOpen = TestShapes.Frozen(SolidOf(ShellOf(aFaces.Skip(1), false)));
-        var anExp = new TopExp_Explorer(aFaces[0], TopAbs_EDGE);
-        TopoDS_Edge aFree = TopoDS.Edge(anExp.Current());
+        Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        List<Shape> aFaces = Faces(aBox);
+        Solid anOpen = TestShapes.Frozen(SolidOf(ShellOf(aFaces.Skip(1), false)));
+        var anExp = new Explorer(aFaces[0], ShapeType.Edge);
+        Edge aFree = ShapeCasts.Edge(anExp.Current());
         var aCheck = new BRepCheck_Edge(aFree);
         aCheck.InContext(aBox);
         Assert.Equal([BRepCheck_NoError], L(aCheck.StatusOnShape(aBox)));
         aCheck.InContext(anOpen);
         Assert.Equal([BRepCheck_FreeEdge], L(aCheck.StatusOnShape(anOpen)));
-        TopoDS_Solid aRepeated = TestShapes.Frozen(SolidOf(ShellOf(aFaces.Append(aFaces[0]), true)));
+        Solid aRepeated = TestShapes.Frozen(SolidOf(ShellOf(aFaces.Append(aFaces[0]), true)));
         aCheck.InContext(aRepeated);
         Assert.Equal([BRepCheck_InvalidMultiConnexity], L(aCheck.StatusOnShape(aRepeated)));
-        TopoDS_Edge anOther = TestShapes.Frozen(TestShapes.Edge(new Point3D(), new Point3D(1, 1, 1)));
+        Edge anOther = TestShapes.Frozen(TestShapes.Edge(new Point3D(), new Point3D(1, 1, 1)));
         aCheck.InContext(anOther);
         Assert.Equal([BRepCheck_SubshapeNotInShape], L(aCheck.StatusOnShape(anOther)));
         Assert.Equal(BRepCheck_NoError, aCheck.CheckPolygonOnTriangulation(aFree));
@@ -478,11 +482,11 @@ public class BRepCheckAnalyzerTests
     [Fact]
     public void An_open_wire_makes_its_face_unorientable()
     {
-        TopoDS_Face aF = PlaneFace();
-        TopoDS_Wire aW = Polygon(aF, false, (0, 0), (10, 0), (10, 10), (0, 10));
-        new BRep_Builder().Add(aF, aW);
+        Face aF = PlaneFace();
+        Wire aW = Polygon(aF, false, (0, 0), (10, 0), (10, 10), (0, 10));
+        new BrepBuilder().Add(aF, aW);
         aF = TestShapes.Frozen(aF);
-        aW = TopoDS.Wire(new TopoDS_Iterator(aF).Value());
+        aW = ShapeCasts.Wire(new Iterator(aF).Value());
         BRepCheck_Analyzer anA = Analyze(aF);
         Assert.False(anA.IsValid());
         Assert.Equal([BRepCheck_NotClosed], StatusIn(anA, aW, aF));
@@ -492,11 +496,11 @@ public class BRepCheckAnalyzerTests
     [Fact]
     public void A_figure_eight_wire_intersects_itself()
     {
-        TopoDS_Face aF = PlaneFace();
-        TopoDS_Wire aW = Polygon(aF, true, (0, 0), (10, 10), (10, 0), (0, 10));
-        new BRep_Builder().Add(aF, aW);
+        Face aF = PlaneFace();
+        Wire aW = Polygon(aF, true, (0, 0), (10, 10), (10, 0), (0, 10));
+        new BrepBuilder().Add(aF, aW);
         aF = TestShapes.Frozen(aF);
-        aW = TopoDS.Wire(new TopoDS_Iterator(aF).Value());
+        aW = ShapeCasts.Wire(new Iterator(aF).Value());
         BRepCheck_Analyzer anA = Analyze(aF);
         Assert.False(anA.IsValid());
         Assert.Equal([BRepCheck_SelfIntersectingWire], StatusIn(anA, aW, aF));
@@ -509,8 +513,8 @@ public class BRepCheckAnalyzerTests
     [Fact]
     public void A_hole_oriented_as_the_outer_wire_is_a_bad_orientation()
     {
-        TopoDS_Face aF = PlaneFace();
-        TopoDS_Wire aHole = Polygon(aF, true, (4, 4), (6, 4), (6, 6), (4, 6));
+        Face aF = PlaneFace();
+        Wire aHole = Polygon(aF, true, (4, 4), (6, 4), (6, 6), (4, 6));
         aF = TestShapes.Frozen(Square(aHole));
         BRepCheck_Analyzer anA = Analyze(aF);
         Assert.False(anA.IsValid());
@@ -522,8 +526,8 @@ public class BRepCheckAnalyzerTests
         Assert.Equal(BRepCheck_BadOrientationOfSubshape, aCheck.OrientationOfWires());
 
         // the same face with the hole clockwise
-        TopoDS_Face aGood = PlaneFace();
-        TopoDS_Face aValid = TestShapes.Frozen(Square(Polygon(aGood, true, (4, 4), (4, 6), (6, 6), (6, 4))));
+        Face aGood = PlaneFace();
+        Face aValid = TestShapes.Frozen(Square(Polygon(aGood, true, (4, 4), (4, 6), (6, 6), (6, 4))));
         Assert.True(Analyze(aValid).IsValid());
         Assert.True(Analyze(aValid.Reversed()).IsValid());
     }
@@ -531,29 +535,29 @@ public class BRepCheckAnalyzerTests
     [Fact]
     public void Wires_that_cross_or_lie_apart_are_found()
     {
-        TopoDS_Face aF = PlaneFace();
+        Face aF = PlaneFace();
         // a hole across the outer boundary
-        TopoDS_Face aCrossing = TestShapes.Frozen(Square(Polygon(aF, true, (8, 4), (8, 6), (12, 6), (12, 4))));
+        Face aCrossing = TestShapes.Frozen(Square(Polygon(aF, true, (8, 4), (8, 6), (12, 6), (12, 4))));
         BRepCheck_Analyzer anA = Analyze(aCrossing);
         Assert.False(anA.IsValid());
         Assert.Equal([BRepCheck_IntersectingWires], StatusOf(anA, aCrossing));
 
         // two outer wires
-        TopoDS_Face aTwo = TestShapes.Frozen(Square(Polygon(aF, true, (20, 0), (30, 0), (30, 10), (20, 10))));
+        Face aTwo = TestShapes.Frozen(Square(Polygon(aF, true, (20, 0), (30, 0), (30, 10), (20, 10))));
         anA = Analyze(aTwo);
         Assert.False(anA.IsValid());
         Assert.Equal([BRepCheck_InvalidImbricationOfWires], StatusOf(anA, aTwo));
 
         // a hole outside the face
-        TopoDS_Face anOutside = TestShapes.Frozen(Square(Polygon(aF, true, (20, 0), (20, 10), (30, 10), (30, 0))));
+        Face anOutside = TestShapes.Frozen(Square(Polygon(aF, true, (20, 0), (20, 10), (30, 10), (30, 0))));
         anA = Analyze(anOutside);
         Assert.False(anA.IsValid());
         Assert.Equal([BRepCheck_InvalidImbricationOfWires], StatusOf(anA, anOutside));
 
         // the same wire twice
-        TopoDS_Wire anOuter = Polygon(aF, true, (0, 0), (10, 0), (10, 10), (0, 10));
-        TopoDS_Face aTwice = PlaneFace();
-        var aB = new BRep_Builder();
+        Wire anOuter = Polygon(aF, true, (0, 0), (10, 0), (10, 10), (0, 10));
+        Face aTwice = PlaneFace();
+        var aB = new BrepBuilder();
         aB.Add(aTwice, anOuter);
         aB.Add(aTwice, anOuter);
         aTwice = TestShapes.Frozen(aTwice);
@@ -563,8 +567,8 @@ public class BRepCheckAnalyzerTests
     [Fact]
     public void A_face_without_surface_has_no_surface()
     {
-        var aB = new BRep_Builder();
-        TopoDS_Face aF = new();
+        var aB = new BrepBuilder();
+        Face aF = new();
         aB.MakeFace(ref aF);
         aF = TestShapes.Frozen(aF);
         BRepCheck_Analyzer anA = Analyze(aF);
@@ -584,59 +588,59 @@ public class BRepCheckAnalyzerTests
     [Fact]
     public void Reversed_missing_and_repeated_faces_break_the_shell_in_its_solid()
     {
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
-        List<TopoDS_Shape> aFaces = Faces(aBox);
+        Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
+        List<Shape> aFaces = Faces(aBox);
 
-        List<TopoDS_Shape> aReversed = [.. aFaces];
+        List<Shape> aReversed = [.. aFaces];
         aReversed[2] = aReversed[2].Reversed();
-        TopoDS_Solid aS1 = TestShapes.Frozen(SolidOf(ShellOf(aReversed, true)));
+        Solid aS1 = TestShapes.Frozen(SolidOf(ShellOf(aReversed, true)));
         BRepCheck_Analyzer anA = Analyze(aS1);
         Assert.False(anA.IsValid());
         Assert.Equal([BRepCheck_BadOrientationOfSubshape], StatusIn(anA, FirstShell(aS1), aS1));
         Assert.True(anA.IsValid(FirstShell(aS1)));
 
-        TopoDS_Solid aS2 = TestShapes.Frozen(SolidOf(ShellOf(aFaces.Skip(1), false)));
+        Solid aS2 = TestShapes.Frozen(SolidOf(ShellOf(aFaces.Skip(1), false)));
         anA = Analyze(aS2);
         Assert.False(anA.IsValid());
         Assert.Equal([BRepCheck_NotClosed], StatusIn(anA, FirstShell(aS2), aS2));
 
         // the whole shell reversed: an inside-out solid, valid for the shell check
-        TopoDS_Solid aS3 = TestShapes.Frozen(SolidOf(FirstShell(aBox).Reversed()));
+        Solid aS3 = TestShapes.Frozen(SolidOf(FirstShell(aBox).Reversed()));
         Assert.Equal([BRepCheck_NoError], StatusIn(Analyze(aS3), FirstShell(aS3), aS3));
     }
 
     [Fact]
     public void Solids_with_several_shells_or_stray_parts_are_found()
     {
-        TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        TopoDS_Shell aShell = FirstShell(aBox);
-        TopoDS_Shape aFar = ClassificationTestShapes.Translated(aShell, new Vector3D(5, 0, 0));
+        Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
+        Shell aShell = FirstShell(aBox);
+        Shape aFar = ClassificationTestShapes.Translated(aShell, new Vector3D(5, 0, 0));
 
         // two disjoint closed shells: two growths, and one outside the other
-        TopoDS_Solid aTwo = TestShapes.Frozen(SolidOf(aShell, aFar));
+        Solid aTwo = TestShapes.Frozen(SolidOf(aShell, aFar));
         BRepCheck_Analyzer anA = Analyze(aTwo);
         Assert.False(anA.IsValid());
         Assert.Equal([BRepCheck_EnclosedRegion, BRepCheck_SubshapeNotInShape], StatusOf(anA, aTwo));
 
         // a shell sharing faces with another
-        TopoDS_Solid aShared = TestShapes.Frozen(SolidOf(aShell, ShellOf(Faces(aBox).Take(2), false)));
+        Solid aShared = TestShapes.Frozen(SolidOf(aShell, ShellOf(Faces(aBox).Take(2), false)));
         Assert.Equal([BRepCheck_InvalidImbricationOfShells], StatusOf(Analyze(aShared), aShared));
 
         // a stray vertex, internal or not
-        TopoDS_Vertex aV = TestShapes.Vertex(new Point3D(0.5, 0.5, 0.5));
-        TopoDS_Solid aStray = TestShapes.Frozen(SolidOf(aShell, aV));
+        Vertex aV = TestShapes.Vertex(new Point3D(0.5, 0.5, 0.5));
+        Solid aStray = TestShapes.Frozen(SolidOf(aShell, aV));
         Assert.Equal([BRepCheck_BadOrientationOfSubshape], StatusOf(Analyze(aStray), aStray));
-        TopoDS_Solid anInternal = TestShapes.Frozen(SolidOf(aShell, aV.Oriented(TopAbs_INTERNAL)));
+        Solid anInternal = TestShapes.Frozen(SolidOf(aShell, aV.Oriented(Internal)));
         Assert.Equal([BRepCheck_NoError], StatusOf(Analyze(anInternal), anInternal));
 
         // only internal shells
-        List<TopoDS_Shape> anInternalFaces = [.. Faces(aBox).Select(f => f.Oriented(TopAbs_INTERNAL))];
-        TopoDS_Solid anOnlyInternal = TestShapes.Frozen(SolidOf(ShellOf(anInternalFaces, true)));
+        List<Shape> anInternalFaces = [.. Faces(aBox).Select(f => f.Oriented(Internal))];
+        Solid anOnlyInternal = TestShapes.Frozen(SolidOf(ShellOf(anInternalFaces, true)));
         Assert.Contains(BRepCheck_BadOrientationOfSubshape, StatusOf(Analyze(anOnlyInternal), anOnlyInternal));
 
         // a box with a void is valid; a void outside is not in the shape
-        TopoDS_Shape aFarVoid = ClassificationTestShapes.Translated(aShell, new Vector3D(5, 0, 0)).Reversed();
-        TopoDS_Solid aVoidOutside = TestShapes.Frozen(SolidOf(aShell, aFarVoid));
+        Shape aFarVoid = ClassificationTestShapes.Translated(aShell, new Vector3D(5, 0, 0)).Reversed();
+        Solid aVoidOutside = TestShapes.Frozen(SolidOf(aShell, aFarVoid));
         Assert.Equal([BRepCheck_SubshapeNotInShape], StatusOf(Analyze(aVoidOutside), aVoidOutside));
         var aSolidCheck = new BRepCheck_Solid(aVoidOutside);
         aSolidCheck.InContext(aBox);
@@ -648,13 +652,13 @@ public class BRepCheckAnalyzerTests
     public void The_checked_shapes_are_left_as_they_were()
     {
         // frozen shapes would throw on any write, and a throw would show as CheckFail; the BRep text is unchanged too
-        TopoDS_Solid aBox = TestShapes.Frozen(ClassificationTestShapes.BoxWithVoid(out _, out _));
+        Solid aBox = TestShapes.Frozen(ClassificationTestShapes.BoxWithVoid(out _, out _));
         var aBefore = new StringWriter();
-        BRepTools.Write(aBox, aBefore);
+        BrepTools.Write(aBox, aBefore);
         BRepCheck_Analyzer anA = Analyze(aBox);
         Assert.True(anA.IsValid());
         var anAfter = new StringWriter();
-        BRepTools.Write(aBox, anAfter);
+        BrepTools.Write(aBox, anAfter);
         Assert.Equal(aBefore.ToString(), anAfter.ToString());
     }
 }

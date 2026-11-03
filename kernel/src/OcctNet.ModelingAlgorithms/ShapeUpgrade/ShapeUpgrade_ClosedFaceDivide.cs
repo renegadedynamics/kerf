@@ -3,10 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -26,7 +30,7 @@ public class ShapeUpgrade_ClosedFaceDivide : ShapeUpgrade_FaceDivide
     }
 
     /// <summary>Initializes by a face.</summary>
-    public ShapeUpgrade_ClosedFaceDivide(in TopoDS_Face F) : base(F)
+    public ShapeUpgrade_ClosedFaceDivide(in Face F) : base(F)
     {
         myNbSplit = 1;
     }
@@ -40,12 +44,12 @@ public class ShapeUpgrade_ClosedFaceDivide : ShapeUpgrade_FaceDivide
             return false;
         }
 
-        if (myResult.IsNull() || myResult.ShapeType() != TopAbs_FACE)
+        if (myResult.IsNull || myResult.ShapeType() != ShapeType.Face)
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL3);
             return false;
         }
-        TopoDS_Face face = TopoDS.Face(myResult);
+        Face face = ShapeCasts.Face(myResult);
 
         ShapeAnalysis.GetFaceUVBounds(myFace, out double Uf, out double Ul, out double Vf, out double Vl);
         // 01.10.99 pdn Porting on DEC
@@ -55,33 +59,33 @@ public class ShapeUpgrade_ClosedFaceDivide : ShapeUpgrade_FaceDivide
             return false;
         }
 
-        Geom_Surface surf = BRep_Tool.Surface(face, out Placement L)!;
+        Surface surf = Tool.Surface(face, out Placement L)!;
 
         bool isUSplit = false;
         bool doSplit = false;
         var split = new NCollection_HSequence<double>();
 
-        for (var iter = new TopoDS_Iterator(face); iter.More() && !doSplit; iter.Next())
+        for (var iter = new Iterator(face); iter.More() && !doSplit; iter.Next())
         {
-            if (iter.Value().ShapeType() != TopAbs_WIRE)
+            if (iter.Value().ShapeType() != ShapeType.Wire)
             {
                 continue;
             }
-            TopoDS_Wire wire = TopoDS.Wire(iter.Value());
+            Wire wire = ShapeCasts.Wire(iter.Value());
             var sewd = new ShapeExtend_WireData(wire);
             for (int i = 1; i <= sewd.NbEdges() && !doSplit; i++)
             {
                 if (sewd.IsSeam(i))
                 {
                     doSplit = true;
-                    TopoDS_Edge edge = sewd.Edge(i);
+                    Edge edge = sewd.Edge(i);
                     var sae = new ShapeAnalysis_Edge();
-                    if (!sae.PCurve(edge, face, out Geom2d_Curve? c1, out double f1, out double l1, false))
+                    if (!sae.PCurve(edge, face, out Curve2D? c1, out double f1, out double l1, false))
                     {
                         continue;
                     }
-                    TopoDS_Shape tmpE = edge.Reversed();
-                    if (!sae.PCurve(TopoDS.Edge(tmpE), face, out Geom2d_Curve? c2, out double f2, out double l2, false))
+                    Shape tmpE = edge.Reversed();
+                    if (!sae.PCurve(ShapeCasts.Edge(tmpE), face, out Curve2D? c2, out double f2, out double l2, false))
                     {
                         continue;
                     }
@@ -155,11 +159,11 @@ public class ShapeUpgrade_ClosedFaceDivide : ShapeUpgrade_FaceDivide
             if (uclosed)
             {
                 surf.Bounds(out U1, out U2, out V1, out V2);
-                var GAS = new GeomAdaptor_Surface(surf);
+                var GAS = new SurfaceAdaptor(surf);
                 double toler = GAS.UResolution(Precision());
                 if ((U2 - U1) - (Ul - Uf) < toler)
                 {
-                    var rts = new Geom_RectangularTrimmedSurface(surf, U1, (U2 + U1) / 2, true);
+                    var rts = new TrimmedSurface(surf, U1, (U2 + U1) / 2, true);
                     var sast = new ShapeAnalysis_Surface(rts);
                     if (!sast.IsUClosed(Precision()))
                     {
@@ -179,11 +183,11 @@ public class ShapeUpgrade_ClosedFaceDivide : ShapeUpgrade_FaceDivide
             if (vclosed && !doSplit)
             {
                 surf.Bounds(out U1, out U2, out V1, out V2);
-                var GAS = new GeomAdaptor_Surface(surf);
+                var GAS = new SurfaceAdaptor(surf);
                 double toler = GAS.VResolution(Precision());
                 if ((V2 - V1) - (Vl - Vf) < toler)
                 {
-                    var rts = new Geom_RectangularTrimmedSurface(surf, V1, (V2 + V1) / 2, false);
+                    var rts = new TrimmedSurface(surf, V1, (V2 + V1) / 2, false);
                     var sast = new ShapeAnalysis_Surface(rts);
                     if (!sast.IsVClosed(Precision()))
                     {
@@ -235,12 +239,12 @@ public class ShapeUpgrade_ClosedFaceDivide : ShapeUpgrade_FaceDivide
         }
 
         // OCCT.NET: the result unfrozen, the caller's sub-shapes given back where the face was copied (decision 999)
-        TopoDS_Shape res = CompShell.InternalFinishedResult();
+        Shape res = CompShell.InternalFinishedResult();
         myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE2);
-        for (var exp = new TopExp_Explorer(res, TopAbs_FACE); exp.More(); exp.Next())
+        for (var exp = new Explorer(res, ShapeType.Face); exp.More(); exp.Next())
         {
-            TopoDS_Shape tempf = Context()!.InternalApply(exp.Current());
-            TopoDS_Face f = TopoDS.Face(tempf);
+            Shape tempf = Context()!.InternalApply(exp.Current());
+            Face f = ShapeCasts.Face(tempf);
             myResult = f;
             if (SplitSurface())
             {

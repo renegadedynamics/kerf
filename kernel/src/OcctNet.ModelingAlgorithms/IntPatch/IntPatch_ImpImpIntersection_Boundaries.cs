@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
@@ -20,7 +21,7 @@ public sealed partial class IntPatch_ImpImpIntersection
     private static bool IntersectionWithAnArc(ref Point3D PSurf,
                                               IntPatch_ALine alin,
                                               ref double para,
-                                              Adaptor2d_Curve2d thearc,
+                                              Curve2DAdaptorBase thearc,
                                               ref double _theparameteronarc,
                                               ref Point3D thepointonarc,
                                               in IntSurf_Quadric QuadSurf,
@@ -192,8 +193,8 @@ public sealed partial class IntPatch_ImpImpIntersection
     }
 
     //-- ======================================================================
-    private static void Recadre(Adaptor3d_Surface myHS1,
-                                Adaptor3d_Surface myHS2,
+    private static void Recadre(SurfaceAdaptorBase myHS1,
+                                SurfaceAdaptorBase myHS2,
                                 ref double u1,
                                 ref double v1,
                                 ref double u2,
@@ -348,12 +349,12 @@ public sealed partial class IntPatch_ImpImpIntersection
 
     //=================================================================================================
 
-    private static void PutPointsOnLine(Adaptor3d_Surface S1,
-                                        Adaptor3d_Surface S2,
+    private static void PutPointsOnLine(SurfaceAdaptorBase S1,
+                                        SurfaceAdaptorBase S2,
                                         NCollection_Sequence<IntPatch_ThePathPointOfTheSOnBounds> listpnt,
                                         NCollection_Sequence<IntPatch_Line> slin,
                                         bool OnFirst,
-                                        Adaptor3d_TopolTool Domain,
+                                        TopolTool Domain,
                                         in IntSurf_Quadric QuadSurf,
                                         in IntSurf_Quadric OtherQuad,
                                         bool multpoint,
@@ -385,8 +386,8 @@ public sealed partial class IntPatch_ImpImpIntersection
 
         IntSurf_Transition Transline = new(), Transarc = new();
 
-        Adaptor2d_Curve2d currentarc;
-        Adaptor3d_HVertex? vtx = null, vtxbis;
+        Curve2DAdaptorBase currentarc;
+        HVertex? vtx = null, vtxbis;
 
         IntPatch_Point solpnt = new();
         IntPatch_ThePathPointOfTheSOnBounds currentpointonrst;
@@ -454,7 +455,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                         //  Modified by skv - Thu Jan 15 15:57:15 2004 OCC4455 Begin
                         if (!currentpointonrst.IsNew())
                         {
-                            Adaptor3d_HVertex aVtx = currentpointonrst.Vertex();
+                            HVertex aVtx = currentpointonrst.Vertex();
                             double aVtxTol = aVtx.Resolution(currentarc);
                             double aTolAng = 0.01 * tolerance;
 
@@ -623,7 +624,7 @@ public sealed partial class IntPatch_ImpImpIntersection
     }
 
     private static bool MultiplePoint(NCollection_Sequence<IntPatch_ThePathPointOfTheSOnBounds> listpnt,
-                                      Adaptor3d_TopolTool Domain,
+                                      TopolTool Domain,
                                       in IntSurf_Quadric QuadSurf,
                                       in Vector3D Normale,
                                       NCollection_Sequence<IntPatch_Line> slin,
@@ -642,8 +643,8 @@ public sealed partial class IntPatch_ImpImpIntersection
         IntSurf_Transition Transline = new(), Transarc = new();
 
         IntPatch_Point intpt;
-        Adaptor2d_Curve2d currentarc;
-        Adaptor3d_HVertex? vtx = null, vtxbis;
+        Curve2DAdaptorBase currentarc;
+        HVertex? vtx = null, vtxbis;
 
         int nbpnt = listpnt.Length();
         IntPatch_ThePathPointOfTheSOnBounds currentpointonrst = listpnt.Value(Index);
@@ -786,7 +787,7 @@ public sealed partial class IntPatch_ImpImpIntersection
     // Duplication des points sur domaine de l autre surface.
     // On sait que le vertex sous-jacent est PntRef
     private static bool PointOnSecondDom(NCollection_Sequence<IntPatch_ThePathPointOfTheSOnBounds> listpnt,
-                                         Adaptor3d_TopolTool Domain,
+                                         TopolTool Domain,
                                          in IntSurf_Quadric QuadSurf,
                                          in Vector3D Normale,
                                          in Vector3D Vtgint,
@@ -800,8 +801,8 @@ public sealed partial class IntPatch_ImpImpIntersection
 
         IntSurf_Transition Transline = new(), Transarc = new();
         IntPatch_Point intpt;
-        Adaptor2d_Curve2d currentarc;
-        Adaptor3d_HVertex? vtx = null, vtxbis;
+        Curve2DAdaptorBase currentarc;
+        HVertex? vtx = null, vtxbis;
         Point3D ptbid = new();
         Vector3D Vtgrst = new();
 
@@ -915,7 +916,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                                  ref Vector3D Vtgtint,
                                  ref int theLineIdx,
                                  int OnlyThisLine,
-                                 Adaptor2d_Curve2d thearc,
+                                 Curve2DAdaptorBase thearc,
                                  ref double theparameteronarc,
                                  ref Point3D thepointonarc,
                                  in IntSurf_Quadric QuadSurf1,

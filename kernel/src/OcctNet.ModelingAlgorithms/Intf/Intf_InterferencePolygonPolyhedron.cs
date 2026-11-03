@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
@@ -885,17 +886,17 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
                 }
                 Direction3D DirTri = new(VecTri);
                 Line3D LinTri = new(BegT, DirTri);
-                Extrema_ExtElC Extrema = new(LinPol, LinTri, 0.00000001);
-                if (Extrema.IsDone())
+                ExtElC Extrema = new(LinPol, LinTri, 0.00000001);
+                if (Extrema.IsDone)
                 {
-                    if (Extrema.IsParallel() == false)
+                    if (Extrema.IsParallel == false)
                     {
-                        if (Extrema.NbExt() != 0)
+                        if (Extrema.ExtCount != 0)
                         {
                             dist2 = Extrema.SquareDistance();
                             if (dist2 <= Tolerance * Tolerance)
                             {
-                                Extrema.Points(1, out Extrema_POnCurv POnC1, out Extrema_POnCurv POnC2);
+                                Extrema.Points(1, out POnCurv POnC1, out POnCurv POnC2);
                                 Point3D PO = POnC1.Value();
                                 Point3D PT = POnC2.Value();
                                 if (IsInSegment(VecPol, new Vector3D(BegO, PO), NVecPol, out double ParamOnO, Tolerance))

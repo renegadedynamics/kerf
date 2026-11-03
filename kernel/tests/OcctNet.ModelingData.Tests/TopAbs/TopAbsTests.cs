@@ -1,8 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -11,57 +12,57 @@ public class TopAbsTests
     [Fact]
     public void Compose_Reverse_Complement()
     {
-        Assert.Equal(TopAbs_FORWARD, TopAbs.Compose(TopAbs_FORWARD, TopAbs_FORWARD));
-        Assert.Equal(TopAbs_REVERSED, TopAbs.Compose(TopAbs_FORWARD, TopAbs_REVERSED));
-        Assert.Equal(TopAbs_FORWARD, TopAbs.Compose(TopAbs_REVERSED, TopAbs_REVERSED));
-        Assert.Equal(TopAbs_INTERNAL, TopAbs.Compose(TopAbs_REVERSED, TopAbs_INTERNAL));
-        Assert.Equal(TopAbs_EXTERNAL, TopAbs.Compose(TopAbs_EXTERNAL, TopAbs_REVERSED));
-        Assert.Equal(TopAbs_INTERNAL, TopAbs.Compose(TopAbs_INTERNAL, TopAbs_FORWARD));
+        Assert.Equal(Forward, global::Kerf.Engine.Topology.TopAbs.Compose(Forward, Forward));
+        Assert.Equal(Reversed, global::Kerf.Engine.Topology.TopAbs.Compose(Forward, Reversed));
+        Assert.Equal(Forward, global::Kerf.Engine.Topology.TopAbs.Compose(Reversed, Reversed));
+        Assert.Equal(Internal, global::Kerf.Engine.Topology.TopAbs.Compose(Reversed, Internal));
+        Assert.Equal(External, global::Kerf.Engine.Topology.TopAbs.Compose(External, Reversed));
+        Assert.Equal(Internal, global::Kerf.Engine.Topology.TopAbs.Compose(Internal, Forward));
 
-        Assert.Equal(TopAbs_REVERSED, TopAbs.Reverse(TopAbs_FORWARD));
-        Assert.Equal(TopAbs_INTERNAL, TopAbs.Reverse(TopAbs_INTERNAL));
-        Assert.Equal(TopAbs_EXTERNAL, TopAbs.Complement(TopAbs_INTERNAL));
-        Assert.Equal(TopAbs_FORWARD, TopAbs.Complement(TopAbs_REVERSED));
+        Assert.Equal(Reversed, global::Kerf.Engine.Topology.TopAbs.Reverse(Forward));
+        Assert.Equal(Internal, global::Kerf.Engine.Topology.TopAbs.Reverse(Internal));
+        Assert.Equal(External, global::Kerf.Engine.Topology.TopAbs.Complement(Internal));
+        Assert.Equal(Forward, global::Kerf.Engine.Topology.TopAbs.Complement(Reversed));
     }
 
     [Fact]
     public void Names_round_trip()
     {
-        foreach (TopAbs_ShapeEnum aType in Enum.GetValues<TopAbs_ShapeEnum>())
+        foreach (ShapeType aType in Enum.GetValues<ShapeType>())
         {
-            Assert.Equal(aType, TopAbs.ShapeTypeFromString(TopAbs.ShapeTypeToString(aType).ToLowerInvariant()));
+            Assert.Equal(aType, global::Kerf.Engine.Topology.TopAbs.ShapeTypeFromString(global::Kerf.Engine.Topology.TopAbs.ShapeTypeToString(aType).ToLowerInvariant()));
         }
-        foreach (TopAbs_Orientation anOri in Enum.GetValues<TopAbs_Orientation>())
+        foreach (Orientation anOri in Enum.GetValues<Orientation>())
         {
-            Assert.Equal(anOri, TopAbs.ShapeOrientationFromString(TopAbs.ShapeOrientationToString(anOri)));
+            Assert.Equal(anOri, global::Kerf.Engine.Topology.TopAbs.ShapeOrientationFromString(global::Kerf.Engine.Topology.TopAbs.ShapeOrientationToString(anOri)));
         }
-        Assert.Equal("COMPSOLID", TopAbs.ShapeTypeToString(TopAbs_COMPSOLID));
+        Assert.Equal("COMPSOLID", global::Kerf.Engine.Topology.TopAbs.ShapeTypeToString(ShapeType.CompSolid));
 
-        TopAbs_ShapeEnum aRes = TopAbs_EDGE;
-        Assert.False(TopAbs.ShapeTypeFromString("nonsense", ref aRes));
-        Assert.Equal(TopAbs_EDGE, aRes);
-        Assert.Equal(TopAbs_SHAPE, TopAbs.ShapeTypeFromString("nonsense"));
-        Assert.Equal(TopAbs_FORWARD, TopAbs.ShapeOrientationFromString("nonsense"));
+        ShapeType aRes = ShapeType.Edge;
+        Assert.False(global::Kerf.Engine.Topology.TopAbs.ShapeTypeFromString("nonsense", ref aRes));
+        Assert.Equal(ShapeType.Edge, aRes);
+        Assert.Equal(ShapeType.Shape, global::Kerf.Engine.Topology.TopAbs.ShapeTypeFromString("nonsense"));
+        Assert.Equal(Forward, global::Kerf.Engine.Topology.TopAbs.ShapeOrientationFromString("nonsense"));
     }
 
     [Fact]
     public void Print_state_uses_OCCTs_mismatched_table()
     {
         // OCCT: the table is ON, IN, OUT, UNKNOWN while the enum is IN, OUT, ON, UNKNOWN (docs/occt-issues.md)
-        string Print(TopAbs_State s)
+        string Print(Containment s)
         {
             StringWriter w = new();
-            TopAbs.Print(s, w);
+            global::Kerf.Engine.Topology.TopAbs.Print(s, w);
             return w.ToString();
         }
-        Assert.Equal("ON", Print(TopAbs_IN));
-        Assert.Equal("IN", Print(TopAbs_OUT));
-        Assert.Equal("OUT", Print(TopAbs_ON));
-        Assert.Equal("UNKNOWN", Print(TopAbs_UNKNOWN));
+        Assert.Equal("ON", Print(In));
+        Assert.Equal("IN", Print(Out));
+        Assert.Equal("OUT", Print(On));
+        Assert.Equal("UNKNOWN", Print(Unknown));
 
         StringWriter aW = new();
-        TopAbs.Print(TopAbs_FACE, aW);
-        TopAbs.Print(TopAbs_INTERNAL, aW);
+        global::Kerf.Engine.Topology.TopAbs.Print(ShapeType.Face, aW);
+        global::Kerf.Engine.Topology.TopAbs.Print(Internal, aW);
         Assert.Equal("FACEINTERNAL", aW.ToString());
     }
 }

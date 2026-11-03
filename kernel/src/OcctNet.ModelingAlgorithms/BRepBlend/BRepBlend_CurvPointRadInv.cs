@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -17,14 +18,14 @@ namespace Occt;
 /// </summary>
 public class BRepBlend_CurvPointRadInv : Blend_CurvPointFuncInv
 {
-    private readonly Adaptor3d_Curve curv1;
-    private readonly Adaptor3d_Curve curv2;
+    private readonly CurveAdaptorBase curv1;
+    private readonly CurveAdaptorBase curv2;
     private Point3D point;
 #pragma warning disable CS0414 // set and never read, as in OCCT
     private int choix;
 #pragma warning restore CS0414
 
-    public BRepBlend_CurvPointRadInv(Adaptor3d_Curve C1, Adaptor3d_Curve C2)
+    public BRepBlend_CurvPointRadInv(CurveAdaptorBase C1, CurveAdaptorBase C2)
     {
         curv1 = C1;
         curv2 = C2;

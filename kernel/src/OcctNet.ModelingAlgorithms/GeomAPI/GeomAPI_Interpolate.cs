@@ -25,7 +25,7 @@ public class GeomAPI_Interpolate
     private readonly double myTolerance;
     private readonly NCollection_HArray1<Point3D> myPoints;
     private bool myIsDone;
-    private Geom_BSplineCurve? myCurve;
+    private BSplineCurve3D? myCurve;
     private NCollection_HArray1<Vector3D> myTangents;
     private NCollection_HArray1<bool> myTangentFlags;
     private NCollection_HArray1<double> myParameters;
@@ -424,7 +424,7 @@ public class GeomAPI_Interpolate
                 deg1_mults.SetValue(ii, 1);
             }
 
-            myCurve = new Geom_BSplineCurve(myPoints.Array1(), myParameters.Array1(), deg1_mults, degree, myPeriodic);
+            myCurve = new BSplineCurve3D(myPoints.Array1(), myParameters.Array1(), deg1_mults, degree, myPeriodic);
 
             myIsDone = true;
         }
@@ -560,7 +560,7 @@ public class GeomAPI_Interpolate
             if (inversion_problem == 0)
             {
                 NCollection_Array1<Point3D> newpoles = new(poles, 1, 1, num_poles - 2);
-                myCurve = new Geom_BSplineCurve(newpoles, myParameters.Array1(), mults, degree, myPeriodic);
+                myCurve = new BSplineCurve3D(newpoles, myParameters.Array1(), mults, degree, myPeriodic);
                 myIsDone = true;
             }
         }
@@ -629,7 +629,7 @@ public class GeomAPI_Interpolate
                 {
                     poles.SetValue(ii, myPoints.Value(ii));
                 }
-                myCurve = new Geom_BSplineCurve(poles, myParameters.Array1(), mults, degree);
+                myCurve = new BSplineCurve3D(poles, myParameters.Array1(), mults, degree);
                 myIsDone = true;
                 break;
             case 2:
@@ -643,7 +643,7 @@ public class GeomAPI_Interpolate
                                      out inversion_problem);
                 if (inversion_problem == 0)
                 {
-                    myCurve = new Geom_BSplineCurve(poles, knots, mults, degree);
+                    myCurve = new BSplineCurve3D(poles, knots, mults, degree);
                     myIsDone = true;
                 }
                 break;
@@ -743,7 +743,7 @@ public class GeomAPI_Interpolate
                 global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(degree, flatknots, parameters, contact_order_array, poles, out inversion_problem);
                 if (inversion_problem == 0)
                 {
-                    myCurve = new Geom_BSplineCurve(poles, myParameters.Array1(), mults, degree);
+                    myCurve = new BSplineCurve3D(poles, myParameters.Array1(), mults, degree);
                     myIsDone = true;
                 }
                 break;
@@ -751,7 +751,7 @@ public class GeomAPI_Interpolate
     }
 
     /// <summary>The interpolating curve (frozen). Throws StdFail_NotDone if the interpolation failed.</summary>
-    public Geom_BSplineCurve Curve()
+    public BSplineCurve3D Curve()
     {
         if (!myIsDone)
         {
@@ -762,7 +762,7 @@ public class GeomAPI_Interpolate
     }
 
     /// <summary>OCCT's <c>operator occ::handle&lt;Geom_BSplineCurve&gt;</c>: the curve, null if not computed.</summary>
-    public static explicit operator Geom_BSplineCurve?(GeomAPI_Interpolate theInterp)
+    public static explicit operator BSplineCurve3D?(GeomAPI_Interpolate theInterp)
     {
         theInterp.myCurve?.Freeze();
         return theInterp.myCurve;

@@ -4,9 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ChFiDS_ChamfMode;
 using static Occt.ChFiKPart_ComputeData_ChAsymPlnCon;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -35,9 +36,9 @@ internal static class ChFiKPart_ComputeData_ChPlnCon
     /// <remarks>The older direct construction OCCT keeps commented out after the function is not ported.</remarks>
     internal static bool ChFiKPart_MakeChamfer(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Data,
                                                ChFiDS_ChamfMode theMode, in Plane3D Pln, in Cone Con,
-                                               double fu, double lu, TopAbs_Orientation Or1,
-                                               TopAbs_Orientation Or2, double theDis1, double theDis2,
-                                               in Circle3D Spine, double First, TopAbs_Orientation Ofpl,
+                                               double fu, double lu, Orientation Or1,
+                                               Orientation Or2, double theDis1, double theDis2,
+                                               in Circle3D Spine, double First, Orientation Ofpl,
                                                bool plandab)
     {
         double angcon = Con.SemiAngle();
@@ -66,7 +67,7 @@ internal static class ChFiKPart_ComputeData_ChPlnCon
         bool IsResol;
         CoordinateSystem PosPl = Pln.Position();
         Direction3D Dpl = PosPl.XDirection().Crossed(PosPl.YDirection());
-        if (Or1 == TopAbs_REVERSED)
+        if (Or1 == Reversed)
         {
             Dpl.Reverse();
         }
@@ -82,7 +83,7 @@ internal static class ChFiKPart_ComputeData_ChPlnCon
         global::Kerf.Engine.Geometry.ElSLib.Parameters(Con, PtSp, out u, out v);
         global::Kerf.Engine.Geometry.ElSLib.D1(u, v, Con, out Point3D PtCon, out Vector3D deru, out Vector3D derv);
         Direction3D Dcon = new(deru.Crossed(derv));
-        if (Or2 == TopAbs_REVERSED)
+        if (Or2 == Reversed)
         {
             Dcon.Reverse();
         }

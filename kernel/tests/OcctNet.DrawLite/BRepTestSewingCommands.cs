@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -27,7 +28,7 @@ internal static class BRepTestSewingCommands
         int theArgc = theArgv.Count;
         var aSewing = new BRepBuilderAPI_Sewing();
         int aPar = 1;
-        var aSeq = new NCollection_Sequence<TopoDS_Shape>();
+        var aSeq = new NCollection_Sequence<Shape>();
 
         double aTol = 1.0e-06;
         bool aSewingMode = true;
@@ -104,8 +105,8 @@ internal static class BRepTestSewingCommands
             }
             else
             {
-                TopoDS_Shape aShape = theDI.GetShape(theArgv[i]);
-                if (!aShape.IsNull())
+                Shape aShape = theDI.GetShape(theArgv[i]);
+                if (!aShape.IsNull)
                 {
                     aSeq.Append(aShape);
                     aPar++;
@@ -181,8 +182,8 @@ internal static class BRepTestSewingCommands
         // OCCT dumps on std::cout
         aSewing.Dump(theDI.Output);
 
-        TopoDS_Shape aRes = aSewing.SewedShape();
-        if (!aRes.IsNull())
+        Shape aRes = aSewing.SewedShape();
+        if (!aRes.IsNull)
         {
             theDI.SetShape(theArgv[1], aRes);
         }
@@ -213,7 +214,7 @@ internal static class BRepTestSewingCommands
 
         for (int i = aStartIndex; i < theNArg; i++)
         {
-            TopoDS_Shape aS = theDI.GetShape(theArgVal[i]);
+            Shape aS = theDI.GetShape(theArgVal[i]);
 
             if (!aFS.Add(aS))
             {

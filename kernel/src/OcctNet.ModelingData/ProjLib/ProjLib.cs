@@ -4,149 +4,151 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
+using Occt;
 using static Kerf.Geometry.SurfaceKind;
 
-namespace Occt;
+namespace Kerf.Engine.Geometry.Projection;
 
 /// <summary>
 /// Projection of elementary 3D points and curves on elementary surfaces, giving their parametric (2D) form.
 /// </summary>
 public static partial class ProjLib
 {
-    public static Point2D Project(in Plane3D Pl, in Point3D P)
+    public static Point2D Project(in Plane3D pl, in Point3D p)
     {
-        double U, V;
-        global::Kerf.Engine.Geometry.ElSLib.Parameters(Pl, P, out U, out V);
-        return new Point2D(U, V);
+        double u, v;
+        global::Kerf.Engine.Geometry.ElSLib.Parameters(pl, p, out u, out v);
+        return new Point2D(u, v);
     }
 
-    public static Line2D Project(in Plane3D Pl, in Line3D L)
+    public static Line2D Project(in Plane3D pl, in Line3D l)
     {
-        ProjLib_Plane Proj = new(Pl, L);
-        return Proj.Line();
+        PlaneProjector proj = new(pl, l);
+        return proj.Line();
     }
 
-    public static Circle2D Project(in Plane3D Pl, in Circle3D C)
+    public static Circle2D Project(in Plane3D pl, in Circle3D c)
     {
-        ProjLib_Plane Proj = new(Pl, C);
-        return Proj.Circle();
+        PlaneProjector proj = new(pl, c);
+        return proj.Circle();
     }
 
-    public static Ellipse2D Project(in Plane3D Pl, in Ellipse3D E)
+    public static Ellipse2D Project(in Plane3D pl, in Ellipse3D e)
     {
-        ProjLib_Plane Proj = new(Pl, E);
-        return Proj.Ellipse();
+        PlaneProjector proj = new(pl, e);
+        return proj.Ellipse();
     }
 
-    public static Parabola2D Project(in Plane3D Pl, in Parabola3D P)
+    public static Parabola2D Project(in Plane3D pl, in Parabola3D p)
     {
-        ProjLib_Plane Proj = new(Pl, P);
-        return Proj.Parabola();
+        PlaneProjector proj = new(pl, p);
+        return proj.Parabola();
     }
 
-    public static Hyperbola2D Project(in Plane3D Pl, in Hyperbola3D H)
+    public static Hyperbola2D Project(in Plane3D pl, in Hyperbola3D h)
     {
-        ProjLib_Plane Proj = new(Pl, H);
-        return Proj.Hyperbola();
+        PlaneProjector proj = new(pl, h);
+        return proj.Hyperbola();
     }
 
-    public static Point2D Project(in Cylinder Cy, in Point3D P)
+    public static Point2D Project(in Cylinder cy, in Point3D p)
     {
-        double U, V;
-        global::Kerf.Engine.Geometry.ElSLib.Parameters(Cy, P, out U, out V);
-        return new Point2D(U, V);
+        double u, v;
+        global::Kerf.Engine.Geometry.ElSLib.Parameters(cy, p, out u, out v);
+        return new Point2D(u, v);
     }
 
     /// <exception cref="NoSuchObjectException">The line is not parallel to the axis.</exception>
-    public static Line2D Project(in Cylinder Cy, in Line3D L)
+    public static Line2D Project(in Cylinder cy, in Line3D l)
     {
-        ProjLib_Cylinder Proj = new(Cy, L);
-        return Proj.Line();
+        CylinderProjector proj = new(cy, l);
+        return proj.Line();
     }
 
     /// <exception cref="NoSuchObjectException">The circle is not normal to the axis.</exception>
-    public static Line2D Project(in Cylinder Cy, in Circle3D Ci)
+    public static Line2D Project(in Cylinder cy, in Circle3D ci)
     {
-        ProjLib_Cylinder Proj = new(Cy, Ci);
-        return Proj.Line();
+        CylinderProjector proj = new(cy, ci);
+        return proj.Line();
     }
 
-    public static Point2D Project(in Cone Co, in Point3D P)
+    public static Point2D Project(in Cone co, in Point3D p)
     {
-        double U, V;
-        global::Kerf.Engine.Geometry.ElSLib.Parameters(Co, P, out U, out V);
-        return new Point2D(U, V);
+        double u, v;
+        global::Kerf.Engine.Geometry.ElSLib.Parameters(co, p, out u, out v);
+        return new Point2D(u, v);
     }
 
     /// <exception cref="NoSuchObjectException">The line is not a generatrix of the cone.</exception>
-    public static Line2D Project(in Cone Co, in Line3D L)
+    public static Line2D Project(in Cone co, in Line3D l)
     {
-        ProjLib_Cone Proj = new(Co, L);
-        return Proj.Line();
+        ConeProjector proj = new(co, l);
+        return proj.Line();
     }
 
     /// <remarks>As in OCCT, a circle not normal to the axis gives the default line: ProjLib_Cone sets the type to
     /// Line before it checks.</remarks>
-    public static Line2D Project(in Cone Co, in Circle3D Ci)
+    public static Line2D Project(in Cone co, in Circle3D ci)
     {
-        ProjLib_Cone Proj = new(Co, Ci);
-        return Proj.Line();
+        ConeProjector proj = new(co, ci);
+        return proj.Line();
     }
 
-    public static Point2D Project(in Sphere Sp, in Point3D P)
+    public static Point2D Project(in Sphere sp, in Point3D p)
     {
-        double U, V;
-        global::Kerf.Engine.Geometry.ElSLib.Parameters(Sp, P, out U, out V);
-        return new Point2D(U, V);
+        double u, v;
+        global::Kerf.Engine.Geometry.ElSLib.Parameters(sp, p, out u, out v);
+        return new Point2D(u, v);
     }
 
     /// <exception cref="NoSuchObjectException">The circle is not an isoline.</exception>
-    public static Line2D Project(in Sphere Sp, in Circle3D Ci)
+    public static Line2D Project(in Sphere sp, in Circle3D ci)
     {
-        ProjLib_Sphere Proj = new(Sp, Ci);
-        return Proj.Line();
+        SphereProjector proj = new(sp, ci);
+        return proj.Line();
     }
 
-    public static Point2D Project(in Torus To, in Point3D P)
+    public static Point2D Project(in Torus to, in Point3D p)
     {
-        double U, V;
-        global::Kerf.Engine.Geometry.ElSLib.Parameters(To, P, out U, out V);
-        return new Point2D(U, V);
+        double u, v;
+        global::Kerf.Engine.Geometry.ElSLib.Parameters(to, p, out u, out v);
+        return new Point2D(u, v);
     }
 
-    public static Line2D Project(in Torus To, in Circle3D Ci)
+    public static Line2D Project(in Torus to, in Circle3D ci)
     {
-        ProjLib_Torus Proj = new(To, Ci);
-        return Proj.Line();
+        TorusProjector proj = new(to, ci);
+        return proj.Line();
     }
 
     /// <summary>
     /// Makes the 2D curve of a projection's result type: a new line or conic, or the projection's B-spline curve
-    /// itself (frozen, shared with <paramref name="PC"/>, as OCCT shares the handle).
+    /// itself (frozen, shared with <paramref name="pc"/>, as OCCT shares the handle).
     /// </summary>
     /// <exception cref="MethodNotImplementedException">The result is a Bezier curve or another curve.</exception>
-    public static void MakePCurveOfType(ProjLib_ProjectedCurve PC, out Geom2d_Curve C2D)
+    public static void MakePCurveOfType(ProjectedCurve pc, out Curve2D c2D)
     {
-        switch (PC.GetType())
+        switch (pc.GetType())
         {
             case CurveKind.Line:
-                C2D = new Geom2d_Line(PC.Line());
+                c2D = new LineCurve2D(pc.Line());
                 break;
             case CurveKind.Circle:
-                C2D = new Geom2d_Circle(PC.Circle());
+                c2D = new CircleCurve2D(pc.Circle());
                 break;
             case CurveKind.Ellipse:
-                C2D = new Geom2d_Ellipse(PC.Ellipse());
+                c2D = new EllipseCurve2D(pc.Ellipse());
                 break;
             case CurveKind.Parabola:
-                C2D = new Geom2d_Parabola(PC.Parabola());
+                c2D = new ParabolaCurve2D(pc.Parabola());
                 break;
             case CurveKind.Hyperbola:
-                C2D = new Geom2d_Hyperbola(PC.Hyperbola());
+                c2D = new HyperbolaCurve2D(pc.Hyperbola());
                 break;
             case CurveKind.BSplineCurve:
-                C2D = PC.BSpline();
+                c2D = pc.BSpline();
                 break;
             case CurveKind.BezierCurve:
             case CurveKind.OtherCurve:
@@ -158,7 +160,7 @@ public static partial class ProjLib
     /// <summary>
     /// True if the surface is analytical: a plane, cylinder, cone, sphere or torus.
     /// </summary>
-    public static bool IsAnaSurf(Adaptor3d_Surface theAS)
+    public static bool IsAnaSurf(SurfaceAdaptorBase theAS)
     {
         switch (theAS.GetType())
         {

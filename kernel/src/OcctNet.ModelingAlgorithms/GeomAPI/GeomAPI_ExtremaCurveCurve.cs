@@ -4,12 +4,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
 
 /// <summary>
-/// Computes the extrema of the distance between two 3D curves (through <see cref="Extrema_ExtCC"/>), the nearest
+/// Computes the extrema of the distance between two 3D curves (through <see cref="ExtCC"/>), the nearest
 /// pair among them, and with the <c>Total</c> methods the minimal distance including the curves' end points.
 /// </summary>
 /// <remarks>
@@ -21,9 +23,9 @@ public class GeomAPI_ExtremaCurveCurve
 {
     private bool myIsDone;
     private int myIndex;
-    private readonly Extrema_ExtCC myExtCC = new();
-    private readonly GeomAdaptor_Curve myC1 = new();
-    private readonly GeomAdaptor_Curve myC2 = new();
+    private readonly ExtCC myExtCC = new();
+    private readonly CurveAdaptor myC1 = new();
+    private readonly CurveAdaptor myC2 = new();
     private bool myTotalExt;
     private bool myIsInfinite;
     private double myTotalDist;
@@ -41,19 +43,19 @@ public class GeomAPI_ExtremaCurveCurve
     }
 
     /// <summary>The extrema between the whole curves <paramref name="C1"/> and <paramref name="C2"/>.</summary>
-    public GeomAPI_ExtremaCurveCurve(Geom_Curve C1, Geom_Curve C2)
+    public GeomAPI_ExtremaCurveCurve(Curve3D C1, Curve3D C2)
     {
         Init(C1, C2);
     }
 
     /// <summary>The extrema between <paramref name="C1"/> on [U1min, U1max] and <paramref name="C2"/> on [U2min, U2max].</summary>
-    public GeomAPI_ExtremaCurveCurve(Geom_Curve C1, Geom_Curve C2, double U1min, double U1max, double U2min, double U2max)
+    public GeomAPI_ExtremaCurveCurve(Curve3D C1, Curve3D C2, double U1min, double U1max, double U2min, double U2max)
     {
         Init(C1, C2, U1min, U1max, U2min, U2max);
     }
 
     /// <summary>Computes the extrema between the whole curves <paramref name="C1"/> and <paramref name="C2"/>.</summary>
-    public void Init(Geom_Curve C1, Geom_Curve C2)
+    public void Init(Curve3D C1, Curve3D C2)
     {
         myTotalExt = false;
 
@@ -63,7 +65,7 @@ public class GeomAPI_ExtremaCurveCurve
         myExtCC.Initialize(myC1, myC2, Tol, Tol);
         myExtCC.Perform();
 
-        myIsDone = myExtCC.IsDone() && (myExtCC.NbExt() > 0);
+        myIsDone = myExtCC.IsDone && (myExtCC.ExtCount > 0);
 
         if (myIsDone)
         {
@@ -71,7 +73,7 @@ public class GeomAPI_ExtremaCurveCurve
             double Dist2, Dist2Min = myExtCC.SquareDistance(1);
             myIndex = 1;
 
-            for (int i = 2; i <= myExtCC.NbExt(); i++)
+            for (int i = 2; i <= myExtCC.ExtCount; i++)
             {
                 Dist2 = myExtCC.SquareDistance(i);
                 if (Dist2 < Dist2Min)
@@ -84,7 +86,7 @@ public class GeomAPI_ExtremaCurveCurve
     }
 
     /// <summary>Computes the extrema between <paramref name="C1"/> on [U1min, U1max] and <paramref name="C2"/> on [U2min, U2max].</summary>
-    public void Init(Geom_Curve C1, Geom_Curve C2, double U1min, double U1max, double U2min, double U2max)
+    public void Init(Curve3D C1, Curve3D C2, double U1min, double U1max, double U2min, double U2max)
     {
         myTotalExt = false;
 
@@ -96,7 +98,7 @@ public class GeomAPI_ExtremaCurveCurve
         myExtCC.Initialize(myC1, myC2, U1min, U1max, U2min, U2max, Tol, Tol);
         myExtCC.Perform();
 
-        myIsDone = myExtCC.IsDone() && (myExtCC.NbExt() > 0);
+        myIsDone = myExtCC.IsDone && (myExtCC.ExtCount > 0);
 
         if (myIsDone)
         {
@@ -104,7 +106,7 @@ public class GeomAPI_ExtremaCurveCurve
             double Dist2, Dist2Min = myExtCC.SquareDistance(1);
             myIndex = 1;
 
-            for (int i = 2; i <= myExtCC.NbExt(); i++)
+            for (int i = 2; i <= myExtCC.ExtCount; i++)
             {
                 Dist2 = myExtCC.SquareDistance(i);
                 if (Dist2 < Dist2Min)
@@ -121,7 +123,7 @@ public class GeomAPI_ExtremaCurveCurve
     {
         if (myIsDone)
         {
-            return myExtCC.NbExt();
+            return myExtCC.ExtCount;
         }
         else
         {
@@ -130,14 +132,14 @@ public class GeomAPI_ExtremaCurveCurve
     }
 
     /// <summary>OCCT's <c>operator int</c>: the extrema algorithm's NbExt.</summary>
-    public static explicit operator int(GeomAPI_ExtremaCurveCurve theExt) => theExt.myExtCC.NbExt();
+    public static explicit operator int(GeomAPI_ExtremaCurveCurve theExt) => theExt.myExtCC.ExtCount;
 
     /// <summary>The points of the extremum of index <paramref name="Index"/>, on the first and second curve.</summary>
     public void Points(int Index, out Point3D P1, out Point3D P2)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > NbExtrema(), "GeomAPI_ExtremaCurveCurve::Points");
 
-        myExtCC.Points(Index, out Extrema_POnCurv PC1, out Extrema_POnCurv PC2);
+        myExtCC.Points(Index, out POnCurv PC1, out POnCurv PC2);
 
         P1 = PC1.Value();
         P2 = PC2.Value();
@@ -148,7 +150,7 @@ public class GeomAPI_ExtremaCurveCurve
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > NbExtrema(), "GeomAPI_ExtremaCurveCurve::Parameters");
 
-        myExtCC.Points(Index, out Extrema_POnCurv PC1, out Extrema_POnCurv PC2);
+        myExtCC.Points(Index, out POnCurv PC1, out POnCurv PC2);
 
         U1 = PC1.Parameter();
         U2 = PC2.Parameter();
@@ -163,7 +165,7 @@ public class GeomAPI_ExtremaCurveCurve
     }
 
     /// <summary>True if the curves are parallel (lines or circles).</summary>
-    public bool IsParallel() => myExtCC.IsParallel();
+    public bool IsParallel() => myExtCC.IsParallel;
 
     /// <summary>The points of the nearest extremum. Throws StdFail_NotDone if there is none.</summary>
     public void NearestPoints(out Point3D P1, out Point3D P2)
@@ -193,7 +195,7 @@ public class GeomAPI_ExtremaCurveCurve
     public static explicit operator double(GeomAPI_ExtremaCurveCurve theExt) => theExt.LowerDistance();
 
     /// <summary>The extrema algorithm, for advanced use.</summary>
-    public Extrema_ExtCC Extrema() => myExtCC;
+    public ExtCC Extrema() => myExtCC;
 
     /// <summary>
     /// The points of the minimal distance between the curves, end points included. False (and the outputs unchanged)
@@ -265,7 +267,7 @@ public class GeomAPI_ExtremaCurveCurve
 
         myIsInfinite = false;
 
-        if (infinite && myExtCC.IsParallel())
+        if (infinite && myExtCC.IsParallel)
         {
             myIsInfinite = true;
 
@@ -279,7 +281,7 @@ public class GeomAPI_ExtremaCurveCurve
 
         myTotalDist = RealLast();
 
-        if (myIsDone && !myExtCC.IsParallel())
+        if (myIsDone && !myExtCC.IsParallel)
         {
             Points(myIndex, out myTotalPoints[0], out myTotalPoints[1]);
             Parameters(myIndex, out myTotalPars[0], out myTotalPars[1]);

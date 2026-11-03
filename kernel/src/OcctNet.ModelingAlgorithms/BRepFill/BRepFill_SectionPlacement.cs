@@ -4,9 +4,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -22,23 +28,23 @@ namespace Occt;
 public sealed class BRepFill_SectionPlacement
 {
     private readonly BRepFill_LocationLaw myLaw;
-    private readonly TopoDS_Shape mySection;
+    private readonly Shape mySection;
     private Transform3D myTrsf = new();
     private double myParam;
     private int myIndex;
 
     //=================================================================================================
 
-    private static double SearchParam(BRepFill_LocationLaw Law, int Ind, in TopoDS_Vertex TheV)
+    private static double SearchParam(BRepFill_LocationLaw Law, int Ind, in Vertex TheV)
     {
         double t;
-        TopoDS_Edge E;
+        Edge E;
         E = Law.Edge(Ind);
-        t = BRep_Tool.Parameter(TheV, E);
-        if (E.Orientation() == TopAbs_REVERSED)
+        t = Tool.Parameter(TheV, E);
+        if (E.Orientation() == Reversed)
         {
             double Lf, Ll;
-            BRep_Tool.Curve(E, out double f, out double l);
+            Tool.Curve(E, out double f, out double l);
             Lf = Law.Law(Ind).GetCurve()!.FirstParameter();
             Ll = Law.Law(Ind).GetCurve()!.LastParameter();
             t = Ll - (t - f) * (Ll - Lf) / (l - f);
@@ -50,12 +56,12 @@ public sealed class BRepFill_SectionPlacement
 
     /// <summary>Automatic placement of <paramref name="Section"/> on <paramref name="Law"/>.</summary>
     /// <exception cref="ConstructionErrorException">The section's nearest point isn't on the path.</exception>
-    public BRepFill_SectionPlacement(BRepFill_LocationLaw Law, in TopoDS_Shape Section, bool WithContact = false,
+    public BRepFill_SectionPlacement(BRepFill_LocationLaw Law, in Shape Section, bool WithContact = false,
                                      bool WithCorrection = false)
     {
         myLaw = Law;
         mySection = Section;
-        TopoDS_Vertex VNull = new();
+        Vertex VNull = new();
         VNull.Nullify();
         Perform(WithContact, WithCorrection, VNull);
     }
@@ -64,7 +70,7 @@ public sealed class BRepFill_SectionPlacement
 
     /// <summary>Placement of <paramref name="Section"/> on <paramref name="Law"/> at the path's vertex <paramref name="Vertex"/>.</summary>
     /// <exception cref="ConstructionErrorException">The section's nearest point isn't on the path.</exception>
-    public BRepFill_SectionPlacement(BRepFill_LocationLaw Law, in TopoDS_Shape Section, in TopoDS_Shape Vertex,
+    public BRepFill_SectionPlacement(BRepFill_LocationLaw Law, in Shape Section, in Shape Vertex,
                                      bool WithContact = false, bool WithCorrection = false)
     {
         myLaw = Law;
@@ -74,23 +80,23 @@ public sealed class BRepFill_SectionPlacement
 
     //=================================================================================================
 
-    private void Perform(bool WithContact, bool WithCorrection, in TopoDS_Shape Vertex)
+    private void Perform(bool WithContact, bool WithCorrection, in Shape Vertex)
     {
         double anEdgeStartParam = 0.0;
         double anEdgeEndParam = 0.0;
-        Geom_Curve? aCurve = null;
+        Curve3D? aCurve = null;
 
         // Here we are simply looking for the first valid curve in the section.
-        TopExp_Explorer anEdgeExplorer = new(mySection, TopAbs_EDGE);
+        Explorer anEdgeExplorer = new(mySection, ShapeType.Edge);
         for (; anEdgeExplorer.More(); anEdgeExplorer.Next())
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(anEdgeExplorer.Current());
-            if (anEdge.IsNull() || BRep_Tool.Degenerated(anEdge))
+            Edge anEdge = ShapeCasts.Edge(anEdgeExplorer.Current());
+            if (anEdge.IsNull || Tool.Degenerated(anEdge))
             {
                 continue;
             }
 
-            aCurve = BRep_Tool.Curve(anEdge, out anEdgeStartParam, out anEdgeEndParam);
+            aCurve = Tool.Curve(anEdge, out anEdgeStartParam, out anEdgeEndParam);
             if (aCurve is null)
             {
                 continue;
@@ -99,44 +105,44 @@ public sealed class BRepFill_SectionPlacement
             break;
         }
 
-        Geom_Geometry aSection;
+        Geometry3D aSection;
         if (aCurve is null)
         {
             // No edge found : the section is a vertex
-            TopExp_Explorer aVertexExplorer = new(mySection, TopAbs_VERTEX);
-            TopoDS_Vertex aFirstVertex = TopoDS.Vertex(aVertexExplorer.Current());
-            Point3D aPoint = BRep_Tool.Pnt(aFirstVertex);
-            aSection = new Geom_CartesianPoint(aPoint);
+            Explorer aVertexExplorer = new(mySection, global::Kerf.Topology.ShapeType.Vertex);
+            Vertex aFirstVertex = ShapeCasts.Vertex(aVertexExplorer.Current());
+            Point3D aPoint = Tool.Pnt(aFirstVertex);
+            aSection = new CartesianPoint(aPoint);
         }
         else
         {
-            Geom_TrimmedCurve aTrimmedCurve = new(aCurve, anEdgeStartParam, anEdgeEndParam);
+            TrimmedCurve3D aTrimmedCurve = new(aCurve, anEdgeStartParam, anEdgeEndParam);
             anEdgeExplorer.Next();
 
             if (anEdgeExplorer.More())
             {
                 double aPrecisionTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
-                GeomConvert_CompCurveToBSplineCurve aBSplineConverter = new(aTrimmedCurve);
+                CompCurveToBSplineCurve aBSplineConverter = new(aTrimmedCurve);
                 for (; anEdgeExplorer.More(); anEdgeExplorer.Next())
                 {
-                    TopoDS_Edge anEdge = TopoDS.Edge(anEdgeExplorer.Current());
+                    Edge anEdge = ShapeCasts.Edge(anEdgeExplorer.Current());
                     // avoid null, degenerated edges
-                    if (anEdge.IsNull() || BRep_Tool.Degenerated(anEdge))
+                    if (anEdge.IsNull || Tool.Degenerated(anEdge))
                     {
                         continue;
                     }
 
-                    aCurve = BRep_Tool.Curve(anEdge, out anEdgeStartParam, out anEdgeEndParam);
+                    aCurve = Tool.Curve(anEdge, out anEdgeStartParam, out anEdgeEndParam);
                     if (aCurve is null)
                     {
                         continue;
                     }
 
-                    TopExp.Vertices(anEdge, out TopoDS_Vertex aFirstVertex, out TopoDS_Vertex aLastVertex);
+                    Exploration.Vertices(anEdge, out Vertex aFirstVertex, out Vertex aLastVertex);
                     double aVertexTolerance =
-                        Max(BRep_Tool.Tolerance(aFirstVertex), BRep_Tool.Tolerance(aLastVertex));
+                        Max(Tool.Tolerance(aFirstVertex), Tool.Tolerance(aLastVertex));
 
-                    aTrimmedCurve = new Geom_TrimmedCurve(aCurve, anEdgeStartParam, anEdgeEndParam);
+                    aTrimmedCurve = new TrimmedCurve3D(aCurve, anEdgeStartParam, anEdgeEndParam);
                     if (!aBSplineConverter.Add(aTrimmedCurve, Min(aPrecisionTolerance, aVertexTolerance)))
                     {
                         aBSplineConverter.Add(aTrimmedCurve, Max(aPrecisionTolerance, aVertexTolerance));
@@ -153,7 +159,7 @@ public sealed class BRepFill_SectionPlacement
         }
 
         GeomFill_SectionPlacement aSectionPlacement = new(myLaw.Law(1), aSection);
-        BRepAdaptor_CompCurve aWireAdaptor = new(myLaw.Wire());
+        WireCurveAdaptor aWireAdaptor = new(myLaw.Wire());
         aSectionPlacement.Perform(aWireAdaptor, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         double aSectionParam = aSectionPlacement.ParameterOnPath();
@@ -195,13 +201,13 @@ public sealed class BRepFill_SectionPlacement
 
         // Search of the <Ind1> by vertex <TheV>
         bool anIsVertexOnLaw = false;
-        TopoDS_Vertex aVertex = TopoDS.Vertex(Vertex);
-        if (!aVertex.IsNull())
+        Vertex aVertex = ShapeCasts.Vertex(Vertex);
+        if (!aVertex.IsNull)
         {
             for (int aCurrentLawIndex = 1; aCurrentLawIndex <= myLaw.NbLaw(); ++aCurrentLawIndex)
             {
-                TopoDS_Edge anEdge = myLaw.Edge(aCurrentLawIndex);
-                TopExp.Vertices(anEdge, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+                Edge anEdge = myLaw.Edge(aCurrentLawIndex);
+                Exploration.Vertices(anEdge, out Vertex V1, out Vertex V2);
                 if (V1.IsSame(aVertex) || V2.IsSame(aVertex))
                 {
                     anIsVertexOnLaw = true;

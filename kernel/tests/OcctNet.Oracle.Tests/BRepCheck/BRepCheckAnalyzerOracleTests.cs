@@ -1,10 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using Xunit.Abstractions;
-using static Occt.TopTools_FormatVersion;
+using static Kerf.Engine.Exchange.Brep.FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -45,7 +48,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
     private string NativeWrite(N.TopoDS_Shape theShape)
     {
         string aFile = Path.Combine(myDirectory, $"s{myFileNumber++}.brep");
-        Assert.True(N.BRepTools.Write(theShape, aFile, true, false, (N.TopTools_FormatVersion)(int)TopTools_FormatVersion_CURRENT));
+        Assert.True(N.BRepTools.Write(theShape, aFile, true, false, (N.TopTools_FormatVersion)(int)FormatVersion_CURRENT));
         return aFile;
     }
 
@@ -57,9 +60,9 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
         return aShape;
     }
 
-    private static TopoDS_Shape PortRead(string theFile)
+    private static Shape PortRead(string theFile)
     {
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, theFile), theFile);
+        Assert.True(BrepTools.Read(out Shape aShape, theFile), theFile);
         return aShape;
     }
 
@@ -89,10 +92,10 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
         }
     }
 
-    private static NCollection_IndexedMap<TopoDS_Shape> PortMap(in TopoDS_Shape theShape)
+    private static NCollection_IndexedMap<Shape> PortMap(in Shape theShape)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, aMap);
         return aMap;
     }
 
@@ -100,12 +103,12 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
     /// The port's IsValid of every sub-shape, and a dump of every status (on the sub-shape and in each context, the
     /// contexts by their index in the map), or the exception's type name.
     /// </summary>
-    private static (bool[]? Verdicts, string Dump, string? Error) PortVerdicts(in TopoDS_Shape theShape, bool theGeom, bool theParallel)
+    private static (bool[]? Verdicts, string Dump, string? Error) PortVerdicts(in Shape theShape, bool theGeom, bool theParallel)
     {
         try
         {
             var anAnalyzer = new BRepCheck_Analyzer(theShape, theGeom, theParallel);
-            NCollection_IndexedMap<TopoDS_Shape> aMap = PortMap(theShape);
+            NCollection_IndexedMap<Shape> aMap = PortMap(theShape);
             var aVerdicts = new bool[aMap.Extent()];
             for (int i = 1; i <= aMap.Extent(); i++)
             {
@@ -121,15 +124,15 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
     }
 
     private static string Statuses(NCollection_List<BRepCheck_Status> theList)
-        => string.Join(",", theList.Select(s => s.ToString().Replace("BRepCheck_", "", StringComparison.Ordinal)));
+        => string.Join(",", theList.Select(s => Kerf.Engine.Foundation.OcctTypeNames.Of(s).Replace("BRepCheck_", "", StringComparison.Ordinal)));
 
     /// <summary>Every status of every result; with <paramref name="theFaultsOnly"/>, only of the results with a fault.</summary>
-    private static string Dump(BRepCheck_Analyzer theAnalyzer, NCollection_IndexedMap<TopoDS_Shape> theMap, bool theFaultsOnly)
+    private static string Dump(BRepCheck_Analyzer theAnalyzer, NCollection_IndexedMap<Shape> theMap, bool theFaultsOnly)
     {
         var aText = new StringBuilder();
         for (int i = 1; i <= theMap.Extent(); i++)
         {
-            TopoDS_Shape aSub = theMap.FindKey(i);
+            Shape aSub = theMap.FindKey(i);
             BRepCheck_Result? aResult = theAnalyzer.Result(aSub);
             if (aResult is null)
             {
@@ -144,7 +147,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
 
             aContexts.Sort();
             string anOwn = Statuses(aResult.Status());
-            string aLine = $"{i} {aSub.ShapeType()}: {anOwn}; " + string.Join("; ", aContexts.Select(c => $"in {c.Item1}: {c.Item2}"));
+            string aLine = $"{i} {Kerf.Engine.Foundation.OcctTypeNames.Of(aSub.ShapeType())}: {anOwn}; " + string.Join("; ", aContexts.Select(c => $"in {c.Item1}: {c.Item2}"));
             bool isFaulty = anOwn != "NoError" || aContexts.Any(c => c.Item2 != "NoError");
             if (!theFaultsOnly || isFaulty)
             {
@@ -155,7 +158,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
         return aText.ToString();
     }
 
-    private static string FaultDump(in TopoDS_Shape theShape, bool theGeom)
+    private static string FaultDump(in Shape theShape, bool theGeom)
     {
         try
         {
@@ -178,7 +181,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
     private bool? CheckFile(string theCategory, string theFile, string theWhat, bool theParallel, bool theSubShapes)
     {
         using N.TopoDS_Shape aNative = NativeRead(theFile);
-        TopoDS_Shape aPort = PortRead(theFile);
+        Shape aPort = PortRead(theFile);
         Assert.Equal(PortMap(aPort).Extent(), CountNative(aNative));
         bool? aWhole = null;
         foreach (bool aGeom in (bool[])[true, false])
@@ -754,16 +757,16 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
     private const int MaxOccurrences = 200_000;
 
     /// <summary>The number of sub-shape occurrences (TopoDS_Iterator, nested), counted up to just past the limit.</summary>
-    private static int Occurrences(in TopoDS_Shape theShape, int theLimit)
+    private static int Occurrences(in Shape theShape, int theLimit)
     {
         int aCount = 0;
-        var aStack = new Stack<TopoDS_Shape>();
+        var aStack = new Stack<Shape>();
         aStack.Push(theShape);
         while (aStack.Count > 0 && aCount <= theLimit)
         {
-            TopoDS_Shape aShape = aStack.Pop();
+            Shape aShape = aStack.Pop();
             aCount++;
-            for (var anIt = new TopoDS_Iterator(aShape); anIt.More(); anIt.Next())
+            for (var anIt = new Iterator(aShape); anIt.More(); anIt.Next())
             {
                 aStack.Push(anIt.Value());
             }

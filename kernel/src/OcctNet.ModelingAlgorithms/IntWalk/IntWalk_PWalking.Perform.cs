@@ -2,6 +2,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Occt.IntImp_ConstIsoparametric;
@@ -28,18 +29,18 @@ public partial class IntWalk_PWalking
         done = false;
         //
         // Caro1 and Caro2
-        Adaptor3d_Surface Caro1 = myIntersectionOn2S.Function().AuxillarSurface1();
-        Adaptor3d_Surface Caro2 = myIntersectionOn2S.Function().AuxillarSurface2();
+        SurfaceAdaptorBase Caro1 = myIntersectionOn2S.Function().AuxillarSurface1();
+        SurfaceAdaptorBase Caro2 = myIntersectionOn2S.Function().AuxillarSurface2();
         //
-        double UFirst1 = Adaptor3d_HSurfaceTool.FirstUParameter(Caro1);
-        double VFirst1 = Adaptor3d_HSurfaceTool.FirstVParameter(Caro1);
-        double ULast1 = Adaptor3d_HSurfaceTool.LastUParameter(Caro1);
-        double VLast1 = Adaptor3d_HSurfaceTool.LastVParameter(Caro1);
+        double UFirst1 = HSurfaceTool.FirstUParameter(Caro1);
+        double VFirst1 = HSurfaceTool.FirstVParameter(Caro1);
+        double ULast1 = HSurfaceTool.LastUParameter(Caro1);
+        double VLast1 = HSurfaceTool.LastVParameter(Caro1);
 
-        double UFirst2 = Adaptor3d_HSurfaceTool.FirstUParameter(Caro2);
-        double VFirst2 = Adaptor3d_HSurfaceTool.FirstVParameter(Caro2);
-        double ULast2 = Adaptor3d_HSurfaceTool.LastUParameter(Caro2);
-        double VLast2 = Adaptor3d_HSurfaceTool.LastVParameter(Caro2);
+        double UFirst2 = HSurfaceTool.FirstUParameter(Caro2);
+        double VFirst2 = HSurfaceTool.FirstVParameter(Caro2);
+        double ULast2 = HSurfaceTool.LastUParameter(Caro2);
+        double VLast2 = HSurfaceTool.LastVParameter(Caro2);
         //
         ComputePasInit(u1max - u1min, v1max - v1min, u2max - u2min, v2max - v2min);
 

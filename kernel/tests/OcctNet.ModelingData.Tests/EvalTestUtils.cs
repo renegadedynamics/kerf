@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -36,11 +37,11 @@ internal static class EvalTestUtils
             $"{theWhat}: expected {theExpected}, got {theActual} (difference {aDiff})");
     }
 
-    private static Xyz CurveDeriv(Geom_Curve theCurve, double theU, int theN) =>
+    private static Xyz CurveDeriv(Curve3D theCurve, double theU, int theN) =>
         theN == 0 ? theCurve.EvalD0(theU).XYZ() : theCurve.EvalDN(theU, theN).XYZ();
 
     /// <summary>Checks the derivatives of orders 1 to <paramref name="theMaxOrder"/> of a 3D curve at U.</summary>
-    public static void CheckCurveDerivatives(Geom_Curve theCurve, double theU, int theMaxOrder = 5)
+    public static void CheckCurveDerivatives(Curve3D theCurve, double theU, int theMaxOrder = 5)
     {
         for (int aN = 1; aN <= theMaxOrder; ++aN)
         {
@@ -49,9 +50,9 @@ internal static class EvalTestUtils
             AssertClose(aFd, CurveDeriv(theCurve, theU, aN), FdTol, $"D{aN} at U={theU}");
         }
 
-        Geom_Curve.ResD3 aD3 = theCurve.EvalD3(theU);
-        Geom_Curve.ResD2 aD2 = theCurve.EvalD2(theU);
-        Geom_Curve.ResD1 aD1 = theCurve.EvalD1(theU);
+        Curve3D.ResD3 aD3 = theCurve.EvalD3(theU);
+        Curve3D.ResD2 aD2 = theCurve.EvalD2(theU);
+        Curve3D.ResD1 aD1 = theCurve.EvalD1(theU);
         Xyz aP = theCurve.EvalD0(theU).XYZ();
         AssertClose(aP, aD1.Point.XYZ(), EvalTol, "EvalD1 point");
         AssertClose(aP, aD2.Point.XYZ(), EvalTol, "EvalD2 point");
@@ -64,11 +65,11 @@ internal static class EvalTestUtils
         AssertClose(CurveDeriv(theCurve, theU, 3), aD3.D3.XYZ(), EvalTol, "EvalD3 D3");
     }
 
-    private static Xy Curve2dDeriv(Geom2d_Curve theCurve, double theU, int theN) =>
+    private static Xy Curve2dDeriv(Curve2D theCurve, double theU, int theN) =>
         theN == 0 ? theCurve.EvalD0(theU).XY() : theCurve.EvalDN(theU, theN).XY();
 
     /// <summary>Checks the derivatives of orders 1 to <paramref name="theMaxOrder"/> of a 2D curve at U.</summary>
-    public static void CheckCurveDerivatives(Geom2d_Curve theCurve, double theU, int theMaxOrder = 5)
+    public static void CheckCurveDerivatives(Curve2D theCurve, double theU, int theMaxOrder = 5)
     {
         for (int aN = 1; aN <= theMaxOrder; ++aN)
         {
@@ -77,9 +78,9 @@ internal static class EvalTestUtils
             AssertClose(aFd, Curve2dDeriv(theCurve, theU, aN), FdTol, $"D{aN} at U={theU}");
         }
 
-        Geom2d_Curve.ResD3 aD3 = theCurve.EvalD3(theU);
-        Geom2d_Curve.ResD2 aD2 = theCurve.EvalD2(theU);
-        Geom2d_Curve.ResD1 aD1 = theCurve.EvalD1(theU);
+        Curve2D.ResD3 aD3 = theCurve.EvalD3(theU);
+        Curve2D.ResD2 aD2 = theCurve.EvalD2(theU);
+        Curve2D.ResD1 aD1 = theCurve.EvalD1(theU);
         Xy aP = theCurve.EvalD0(theU).XY();
         AssertClose(aP, aD1.Point.XY(), EvalTol, "EvalD1 point");
         AssertClose(aP, aD2.Point.XY(), EvalTol, "EvalD2 point");
@@ -92,14 +93,14 @@ internal static class EvalTestUtils
         AssertClose(Curve2dDeriv(theCurve, theU, 3), aD3.D3.XY(), EvalTol, "EvalD3 D3");
     }
 
-    private static Xyz SurfDeriv(Geom_Surface theSurf, double theU, double theV, int theNu, int theNv) =>
+    private static Xyz SurfDeriv(Surface theSurf, double theU, double theV, int theNu, int theNv) =>
         theNu + theNv == 0 ? theSurf.EvalD0(theU, theV).XYZ() : theSurf.EvalDN(theU, theV, theNu, theNv).XYZ();
 
     /// <summary>
     /// Checks the partial derivatives of a surface at (U, V), up to total order <paramref name="theMaxOrder"/>:
     /// each against the central difference, in U (or in V when its U order is 0), of the one below.
     /// </summary>
-    public static void CheckSurfaceDerivatives(Geom_Surface theSurf, double theU, double theV, int theMaxOrder = 4)
+    public static void CheckSurfaceDerivatives(Surface theSurf, double theU, double theV, int theMaxOrder = 4)
     {
         for (int aNu = 0; aNu <= theMaxOrder; ++aNu)
         {
@@ -127,9 +128,9 @@ internal static class EvalTestUtils
             }
         }
 
-        Geom_Surface.ResD1 aD1 = theSurf.EvalD1(theU, theV);
-        Geom_Surface.ResD2 aD2 = theSurf.EvalD2(theU, theV);
-        Geom_Surface.ResD3 aD3 = theSurf.EvalD3(theU, theV);
+        Surface.ResD1 aD1 = theSurf.EvalD1(theU, theV);
+        Surface.ResD2 aD2 = theSurf.EvalD2(theU, theV);
+        Surface.ResD3 aD3 = theSurf.EvalD3(theU, theV);
         Xyz aP = theSurf.EvalD0(theU, theV).XYZ();
         AssertClose(aP, aD1.Point.XYZ(), EvalTol, "EvalD1 point");
         AssertClose(aP, aD2.Point.XYZ(), EvalTol, "EvalD2 point");

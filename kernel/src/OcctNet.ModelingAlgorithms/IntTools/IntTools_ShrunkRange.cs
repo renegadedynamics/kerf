@@ -5,7 +5,11 @@
 
 using Kerf.Engine.Geometry.Bounds;
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -20,9 +24,9 @@ namespace Occt;
 /// </remarks>
 public class IntTools_ShrunkRange
 {
-    protected TopoDS_Edge myEdge = new();
-    protected TopoDS_Vertex myV1 = new();
-    protected TopoDS_Vertex myV2 = new();
+    protected Edge myEdge = new();
+    protected Vertex myV1 = new();
+    protected Vertex myV2 = new();
     protected double myT1;
     protected double myT2;
     protected double myTS1;
@@ -45,7 +49,7 @@ public class IntTools_ShrunkRange
     }
 
     /// <summary>Sets the edge, its range and its vertices (resets the status, not the box).</summary>
-    public void SetData(in TopoDS_Edge aE, double aT1, double aT2, in TopoDS_Vertex aV1, in TopoDS_Vertex aV2)
+    public void SetData(in Edge aE, double aT1, double aT2, in Vertex aV1, in Vertex aV2)
     {
         myEdge = aE;
         myV1 = aV1;
@@ -67,8 +71,8 @@ public class IntTools_ShrunkRange
         myTS1 = aT1;
         myTS2 = aT2;
         //
-        BRepAdaptor_Curve aBAC = new(myEdge);
-        BndLib_Add3dCurve.Add(aBAC, aT1, aT2, 0.0, ref myBndBox);
+        EdgeCurveAdaptor aBAC = new(myEdge);
+        Add3dCurve.Add(aBAC, aT1, aT2, 0.0, ref myBndBox);
     }
 
     /// <summary>The shrunk range.</summary>
@@ -81,7 +85,7 @@ public class IntTools_ShrunkRange
     /// <summary>The bounding box of the edge on the shrunk range.</summary>
     public Box BndBox() => myBndBox;
 
-    public TopoDS_Edge Edge() => myEdge;
+    public Edge Edge() => myEdge;
 
     /// <summary>Computes the shrunk range, the length, the splittable flag and the box.</summary>
     public void Perform()
@@ -99,12 +103,12 @@ public class IntTools_ShrunkRange
             return;
         }
         //
-        Point3D aP1 = BRep_Tool.Pnt(myV1);
-        Point3D aP2 = BRep_Tool.Pnt(myV2);
+        Point3D aP1 = Tool.Pnt(myV1);
+        Point3D aP2 = Tool.Pnt(myV2);
         double aTolE, aTolV1, aTolV2;
-        aTolE = BRep_Tool.Tolerance(myEdge);
-        aTolV1 = BRep_Tool.Tolerance(myV1);
-        aTolV2 = BRep_Tool.Tolerance(myV2);
+        aTolE = Tool.Tolerance(myEdge);
+        aTolV1 = Tool.Tolerance(myV1);
+        aTolV2 = Tool.Tolerance(myV2);
         //
         if (aTolV1 < aTolE)
         {
@@ -123,7 +127,7 @@ public class IntTools_ShrunkRange
 
         // compute the shrunk range - part of the edge not covered
         // by the tolerance spheres of its vertices
-        BRepAdaptor_Curve aBAC = new(myEdge);
+        EdgeCurveAdaptor aBAC = new(myEdge);
         if (!BRepLib.FindValidRange(aBAC, aTolE, myT1, aP1, aTolV1, myT2, aP2, aTolV2, ref myTS1, ref myTS2))
         {
             // no valid range
@@ -147,7 +151,7 @@ public class IntTools_ShrunkRange
         {
             aPTolE = aPTolEMin;
         }
-        myLength = GCPnts_AbscissaPoint.Length(aBAC, myTS1, myTS2, aPTolE);
+        myLength = AbscissaPoint.Length(aBAC, myTS1, myTS2, aPTolE);
         if (myLength < aDTol)
         {
             // micro edge
@@ -167,7 +171,7 @@ public class IntTools_ShrunkRange
         }
         //
         // build bounding box for the edge on the shrunk range
-        BndLib_Add3dCurve.Add(aBAC, myTS1, myTS2, aTolE + aDTol, ref myBndBox);
+        Add3dCurve.Add(aBAC, myTS1, myTS2, aTolE + aDTol, ref myBndBox);
     }
 
     /// <summary>True if the shrunk range was computed.</summary>

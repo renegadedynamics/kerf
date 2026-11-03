@@ -1,11 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -86,8 +89,8 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
     /// <summary>The Draw session of a case, as tools/borec's.</summary>
     private sealed class Session
     {
-        public readonly List<(string Text, TopoDS_Shape Shape)> Read = [];
-        public readonly NCollection_List<TopoDS_Shape> Objects = new(), Tools = new();
+        public readonly List<(string Text, Shape Shape)> Read = [];
+        public readonly NCollection_List<Shape> Objects = new(), Tools = new();
         public BOPAlgo_PaveFiller PaveFiller = new();
         public bool HasDS;
         public readonly BOPAlgo_CellsBuilder Cells = new();
@@ -95,9 +98,9 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
         public double Fuzzy = global::Kerf.Engine.Foundation.Precision.Confusion();
         public BOPAlgo_GlueEnum Glue = BOPAlgo_GlueEnum.BOPAlgo_GlueOff;
 
-        public TopoDS_Shape Resolve(string theText)
+        public Shape Resolve(string theText)
         {
-            foreach ((string aT, TopoDS_Shape aS) in Read)
+            foreach ((string aT, Shape aS) in Read)
             {
                 if (aT == theText)
                 {
@@ -106,9 +109,9 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
             }
             for (int i = 0; i < Read.Count; ++i)
             {
-                for (TopAbs_ShapeEnum t = TopAbs_COMPOUND; t <= TopAbs_VERTEX; ++t)
+                for (ShapeType t = ShapeType.Compound; t <= ShapeType.Vertex; ++t)
                 {
-                    for (TopExp_Explorer anExp = new(Read[i].Shape, t); anExp.More(); anExp.Next())
+                    for (Explorer anExp = new(Read[i].Shape, t); anExp.More(); anExp.Next())
                     {
                         if (BRepTextComparison.Write(anExp.Current()) == theText)
                         {
@@ -118,7 +121,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
                     }
                 }
             }
-            BRepTools.Read(out TopoDS_Shape aNew, new StringReader(theText));
+            BrepTools.Read(out Shape aNew, new StringReader(theText));
             Read.Add((theText, aNew));
             return aNew;
         }
@@ -137,9 +140,9 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
     private static string Outcome(global::Kerf.Engine.Foundation.Report theReport)
         => "errors" + Alerts(theReport, global::Kerf.Engine.Foundation.Gravity.Fail) + "\nwarnings" + Alerts(theReport, global::Kerf.Engine.Foundation.Gravity.Warning) + "\n";
 
-    private static string ShapeOut(TopoDS_Shape theS)
+    private static string ShapeOut(Shape theS)
     {
-        if (theS.IsNull())
+        if (theS.IsNull)
         {
             return "null\n";
         }
@@ -147,7 +150,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
         return "shape " + aText.Length.ToString(CultureInfo.InvariantCulture) + "\n" + aText;
     }
 
-    private static List<TopoDS_Shape> ToList(NCollection_List<TopoDS_Shape> theL) => [.. theL];
+    private static List<Shape> ToList(NCollection_List<Shape> theL) => [.. theL];
 
     private static int Atoi(string theS) => (int)double.Parse(theS, CultureInfo.InvariantCulture);
 
@@ -157,7 +160,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
         List<string> a = theCall.Words;
         int n = a.Count;
         string c = a[0];
-        TopoDS_Shape Shape(int i) => theCall.Shapes.TryGetValue(a[i], out string? aText) ? theS.Resolve(aText) : new TopoDS_Shape();
+        Shape Shape(int i) => theCall.Shapes.TryGetValue(a[i], out string? aText) ? theS.Resolve(aText) : new Shape();
         bool aParallel = theS.RunParallel || theParallel;
         switch (c)
         {
@@ -170,7 +173,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
                 return "";
             case "baddcompound":
             case "baddctools":
-                for (TopoDS_Iterator it = new(Shape(1)); it.More(); it.Next())
+                for (Iterator it = new(Shape(1)); it.More(); it.Next())
                 {
                     (c == "baddcompound" ? theS.Objects : theS.Tools).Append(it.Value());
                 }
@@ -207,12 +210,12 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
                 {
                     return "no objects\n";
                 }
-                NCollection_List<TopoDS_Shape> aLC = new();
-                foreach (TopoDS_Shape aS in theS.Objects)
+                NCollection_List<Shape> aLC = new();
+                foreach (Shape aS in theS.Objects)
                 {
                     aLC.Append(aS);
                 }
-                foreach (TopoDS_Shape aS in theS.Tools)
+                foreach (Shape aS in theS.Tools)
                 {
                     aLC.Append(aS);
                 }
@@ -229,7 +232,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
         }
         BOPAlgo_CellsBuilder aCB = theS.Cells;
         string History() => DeterminismHarness.HistoryText(ToList(aCB.Arguments()), aCB.Shape(), aCB.History()) + "\n";
-        string CellsOut(TopoDS_Shape theR) => Outcome(aCB.GetReport()) + ShapeOut(theR) + History();
+        string CellsOut(Shape theR) => Outcome(aCB.GetReport()) + ShapeOut(theR) + History();
         switch (c)
         {
             case "bcbuild":
@@ -239,11 +242,11 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
                     return "no filler\n";
                 }
                 aCB.Clear();
-                foreach (TopoDS_Shape aS in theS.Objects)
+                foreach (Shape aS in theS.Objects)
                 {
                     aCB.AddArgument(aS);
                 }
-                foreach (TopoDS_Shape aS in theS.Tools)
+                foreach (Shape aS in theS.Tools)
                 {
                     aCB.AddArgument(aS);
                 }
@@ -283,7 +286,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
             case "bcadd":
             case "bcremove":
             {
-                NCollection_List<TopoDS_Shape> aLSToTake = new(), aLSToAvoid = new();
+                NCollection_List<Shape> aLSToTake = new(), aLSToAvoid = new();
                 int iMaterial = 0, n1 = n;
                 bool bUpdate = false;
                 if (c == "bcadd")
@@ -302,8 +305,8 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
                 }
                 for (int i = 2; i < n1; i += 2)
                 {
-                    TopoDS_Shape aS = Shape(i);
-                    if (aS.IsNull())
+                    Shape aS = Shape(i);
+                    if (aS.IsNull)
                     {
                         continue;
                     }
@@ -335,11 +338,11 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
             case "mkvolume":
             {
                 bool bToIntersect = true, bCompounds = false, bAvoidInternal = false;
-                NCollection_List<TopoDS_Shape> aLS = new();
+                NCollection_List<Shape> aLS = new();
                 for (int i = 2; i < n; ++i)
                 {
-                    TopoDS_Shape aS = Shape(i);
-                    if (!aS.IsNull())
+                    Shape aS = Shape(i);
+                    if (!aS.IsNull)
                     {
                         aLS.Append(aS);
                     }
@@ -362,10 +365,10 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
                 }
                 if (bToIntersect && bCompounds)
                 {
-                    NCollection_List<TopoDS_Shape> aLSx = new();
-                    foreach (TopoDS_Shape aSx in aLS)
+                    NCollection_List<Shape> aLSx = new();
+                    foreach (Shape aSx in aLS)
                     {
-                        for (TopoDS_Iterator itS = new(aSx); itS.More(); itS.Next())
+                        for (Iterator itS = new(aSx); itS.More(); itS.Next())
                         {
                             aLSx.Append(itS.Value());
                         }
@@ -426,9 +429,9 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
         return (theOut[..aPos], theOut.Substring(anEnd + 1, aLength), theOut[(anEnd + 1 + aLength)..]);
     }
 
-    private static TopoDS_Shape Read(string theText)
+    private static Shape Read(string theText)
     {
-        BRepTools.Read(out TopoDS_Shape aS, new StringReader(theText));
+        BrepTools.Read(out Shape aS, new StringReader(theText));
         return aS;
     }
 

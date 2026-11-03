@@ -7,9 +7,13 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -27,8 +31,8 @@ public sealed class BRepProj_Projection
 {
     private bool myIsDone;
     // (OCCT's myLsh, never used, is left out)
-    private TopoDS_Compound myShape = new();
-    private NCollection_HSequence<TopoDS_Shape>? mySection;
+    private Compound myShape = new();
+    private NCollection_HSequence<Shape>? mySection;
     private int myItr;
 
     //=======================================================================
@@ -36,7 +40,7 @@ public sealed class BRepProj_Projection
     // purpose  : Compute the minimum distance between input shapes
     //           (using Bounding Boxes of each Shape)
     //=======================================================================
-    private static double DistanceOut(in TopoDS_Shape S1, in TopoDS_Shape S2)
+    private static double DistanceOut(in Shape S1, in Shape S2)
     {
         Box BBox1 = new(), BBox2 = new();
         BRepBndLib.Add(S1, ref BBox1);
@@ -51,7 +55,7 @@ public sealed class BRepProj_Projection
     //           add each other with the minimum distance of shapes.
     //=======================================================================
 
-    private static double DistanceIn(in TopoDS_Shape S1, in TopoDS_Shape S2)
+    private static double DistanceIn(in Shape S1, in Shape S2)
     {
         Box LBBox = new(), SBBox = new();
         BRepBndLib.Add(S1, ref SBBox);
@@ -74,29 +78,29 @@ public sealed class BRepProj_Projection
     //           stores result as set of connected wires and compound
     //=======================================================================
 
-    private void BuildSection(in TopoDS_Shape theShape, in TopoDS_Shape theTool)
+    private void BuildSection(in Shape theShape, in Shape theTool)
     {
         myIsDone = false;
         mySection = null;
-        myShape = new TopoDS_Compound();
+        myShape = new Compound();
         myItr = 0;
 
         // if theShape is compound, extract only faces -- section algorithm
         // may refuse to work if e.g. vertex is present
-        TopoDS_Shape aShape = new();
-        if (theShape.ShapeType() == TopAbs_FACE || theShape.ShapeType() == TopAbs_SHELL
-            || theShape.ShapeType() == TopAbs_SOLID || theShape.ShapeType() == TopAbs_COMPSOLID)
+        Shape aShape = new();
+        if (theShape.ShapeType() == ShapeType.Face || theShape.ShapeType() == ShapeType.Shell
+            || theShape.ShapeType() == ShapeType.Solid || theShape.ShapeType() == ShapeType.CompSolid)
         {
             aShape = theShape;
         }
-        else if (theShape.ShapeType() == TopAbs_COMPOUND)
+        else if (theShape.ShapeType() == ShapeType.Compound)
         {
-            TopoDS_Compound C = new();
-            BRep_Builder B = new();
-            TopExp_Explorer exp = new(theShape, TopAbs_FACE);
+            Compound C = new();
+            BrepBuilder B = new();
+            Explorer exp = new(theShape, ShapeType.Face);
             for (; exp.More(); exp.Next())
             {
-                if (C.IsNull())
+                if (C.IsNull)
                 {
                     B.MakeCompound(ref C);
                 }
@@ -104,7 +108,7 @@ public sealed class BRepProj_Projection
             }
             aShape = C;
         }
-        if (aShape.IsNull())
+        if (aShape.IsNull)
         {
             throw new ConstructionErrorException("BRepProj_Projection.cxx: target shape has no faces");
         }
@@ -119,7 +123,7 @@ public sealed class BRepProj_Projection
         // OCCT.NET: the faces of a compound target are gathered in a new compound, which isn't locked, so the section
         // would run destructively and write pcurves into the caller's (frozen) edges, as OCCT writes into its target.
         // A target holding frozen shapes is sectioned non-destructively, as a frozen solid or face is (decision 939).
-        if (BRepTools.HoldsFrozen(aShape))
+        if (BrepTools.HoldsFrozen(aShape))
         {
             aSectionTool.SetNonDestructive(true);
         }
@@ -132,8 +136,8 @@ public sealed class BRepProj_Projection
         }
 
         // get edges of the result
-        NCollection_HSequence<TopoDS_Shape> anEdges = new();
-        TopExp_Explorer exp2 = new(aSectionTool.Shape(), TopAbs_EDGE);
+        NCollection_HSequence<Shape> anEdges = new();
+        Explorer exp2 = new(aSectionTool.Shape(), ShapeType.Edge);
         for (; exp2.More(); exp2.Next())
         {
             anEdges.Append(exp2.Current());
@@ -152,8 +156,8 @@ public sealed class BRepProj_Projection
         // collect all resulting wires to compound
         if (myIsDone)
         {
-            BRep_Builder B = new();
-            TopoDS_Compound aShapeC = new();
+            BrepBuilder B = new();
+            Compound aShapeC = new();
             B.MakeCompound(ref aShapeC);
             for (int i = 1; i <= mySection!.Length(); i++)
             {
@@ -176,13 +180,13 @@ public sealed class BRepProj_Projection
     /// <exception cref="NullObjectException">A null input shape.</exception>
     /// <exception cref="ConstructionErrorException">The projected shape is neither a wire nor an edge, or the target
     /// has no faces.</exception>
-    public BRepProj_Projection(in TopoDS_Shape Wire, in TopoDS_Shape Shape, in Direction3D D)
+    public BRepProj_Projection(in Shape Wire, in Shape Shape, in Direction3D D)
     {
         myIsDone = false;
         myItr = 0;
         // Check the input
-        Standard_NullObject_Raise_if((Wire.IsNull() || Shape.IsNull()), "BRepProj_Projection.cxx: null input shape");
-        if (Wire.ShapeType() != TopAbs_EDGE && Wire.ShapeType() != TopAbs_WIRE)
+        Standard_NullObject_Raise_if((Wire.IsNull || Shape.IsNull), "BRepProj_Projection.cxx: null input shape");
+        if (Wire.ShapeType() != ShapeType.Edge && Wire.ShapeType() != global::Kerf.Topology.ShapeType.Wire)
         {
             throw new ConstructionErrorException("BRepProj_Projection.cxx: projected shape is neither wire nor edge");
         }
@@ -196,9 +200,9 @@ public sealed class BRepProj_Projection
         Transform3D T = new();
         T.SetTranslation(Vinf);
         // Note: it is necessary to create copy of wire to avoid adding new pcurves into it
-        BRepTools_TrsfModification Trsf = new(T);
-        BRepTools_Modifier Modif = new(Wire, Trsf);
-        TopoDS_Shape WireBase = Modif.InternalModifiedShape(Wire);
+        TrsfModification Trsf = new(T);
+        Modifier Modif = new(Wire, Trsf);
+        Shape WireBase = Modif.InternalModifiedShape(Wire);
 
         // Creation of a cylindrical surface
         BRepSweep_Prism CylSurf = new(WireBase, Vsup, false);
@@ -216,39 +220,39 @@ public sealed class BRepProj_Projection
     /// <exception cref="NullObjectException">A null input shape.</exception>
     /// <exception cref="ConstructionErrorException">The projected shape is neither a wire nor an edge, the point is the
     /// wire's first vertex, or the target has no faces.</exception>
-    public BRepProj_Projection(in TopoDS_Shape Wire, in TopoDS_Shape Shape, in Point3D P)
+    public BRepProj_Projection(in Shape Wire, in Shape Shape, in Point3D P)
     {
         myIsDone = false;
         myItr = 0;
         // Check the input
-        Standard_NullObject_Raise_if((Wire.IsNull() || Shape.IsNull()), "BRepProj_Projection.cxx: null input shape");
-        if (Wire.ShapeType() != TopAbs_EDGE && Wire.ShapeType() != TopAbs_WIRE)
+        Standard_NullObject_Raise_if((Wire.IsNull || Shape.IsNull), "BRepProj_Projection.cxx: null input shape");
+        if (Wire.ShapeType() != ShapeType.Edge && Wire.ShapeType() != global::Kerf.Topology.ShapeType.Wire)
         {
             throw new ConstructionErrorException("BRepProj_Projection.cxx: projected shape is neither wire nor edge");
         }
 
         // if Wire is only an edge, transform it into a Wire
-        TopoDS_Wire aWire = new();
-        if (Wire.ShapeType() == TopAbs_EDGE)
+        Wire aWire = new();
+        if (Wire.ShapeType() == ShapeType.Edge)
         {
-            BRep_Builder BB = new();
+            BrepBuilder BB = new();
             BB.MakeWire(ref aWire);
             BB.Add(aWire, Wire);
         }
         else
         {
-            aWire = TopoDS.Wire(Wire);
+            aWire = ShapeCasts.Wire(Wire);
         }
 
         // compute the "length" of the conical surface to build
         double mdis = DistanceIn(Wire, Shape);
 
         // Initialize iterator to get first sub-shape of Wire
-        TopExp_Explorer ExpWire = new();
-        ExpWire.Init(aWire, TopAbs_VERTEX);
+        Explorer ExpWire = new();
+        ExpWire.Init(aWire, ShapeType.Vertex);
 
         // get the first Point of the first sub-shape os the Wire
-        Point3D PC = BRep_Tool.Pnt(TopoDS.Vertex(ExpWire.Current()));
+        Point3D PC = Tool.Pnt(ShapeCasts.Vertex(ExpWire.Current()));
 
         // compute the ratio of the scale transformation
         double Scale = PC.Distance(P);
@@ -261,19 +265,19 @@ public sealed class BRepProj_Projection
         // move the base of the conical surface by scaling it with ratio Scale
         Transform3D T = new();
         T.SetScale(P, Scale);
-        BRepTools_TrsfModification Tsca = new(T);
-        BRepTools_Modifier ModifScale = new(aWire, Tsca);
-        TopoDS_Shape ShapeGen1 = ModifScale.InternalModifiedShape(aWire);
+        TrsfModification Tsca = new(T);
+        Modifier ModifScale = new(aWire, Tsca);
+        Shape ShapeGen1 = ModifScale.InternalModifiedShape(aWire);
 
-        TopoDS_Vertex aVertex = new BRepLib_MakeVertex(P).Vertex();
-        TopoDS_Edge DegEdge = new();
-        BRep_Builder BB2 = new();
+        Vertex aVertex = new BRepLib_MakeVertex(P).Vertex();
+        Edge DegEdge = new();
+        BrepBuilder BB2 = new();
         BB2.MakeEdge(ref DegEdge);
-        BB2.Add(DegEdge, aVertex.Oriented(TopAbs_FORWARD));
-        BB2.Add(DegEdge, aVertex.Oriented(TopAbs_REVERSED));
+        BB2.Add(DegEdge, aVertex.Oriented(Forward));
+        BB2.Add(DegEdge, aVertex.Oriented(Reversed));
         BB2.Degenerated(DegEdge, true);
 
-        TopoDS_Wire DegWire = new();
+        Wire DegWire = new();
         BB2.MakeWire(ref DegWire);
         BB2.Add(DegWire, DegEdge);
         DegWire.Closed(true);
@@ -281,9 +285,9 @@ public sealed class BRepProj_Projection
         // Build the Ruled surface based shape
         BRepFill_Generator RuledSurf = new();
         RuledSurf.AddWire(DegWire);
-        RuledSurf.AddWire(TopoDS.Wire(ShapeGen1));
+        RuledSurf.AddWire(ShapeCasts.Wire(ShapeGen1));
         RuledSurf.Perform();
-        TopoDS_Shell SurfShell = RuledSurf.InternalShell();
+        Shell SurfShell = RuledSurf.InternalShell();
 
         // Perform section
         BuildSection(Shape, SurfShell);
@@ -310,8 +314,8 @@ public sealed class BRepProj_Projection
     }
 
     /// <summary>The current wire (frozen).</summary>
-    public TopoDS_Wire Current() => TopoDS.Wire(mySection!.Value(myItr));
+    public Wire Current() => ShapeCasts.Wire(mySection!.Value(myItr));
 
     /// <summary>The wires of the projection as a compound (frozen; null when not done).</summary>
-    public TopoDS_Compound Shape() => myShape;
+    public Compound Shape() => myShape;
 }

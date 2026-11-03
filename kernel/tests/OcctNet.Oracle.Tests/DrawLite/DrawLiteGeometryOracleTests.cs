@@ -87,11 +87,11 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
             return aParams;
         }
 
-        public void SameCurve(N.Geom_Curve theN, Geom_Curve theP, string theWhat)
+        public void SameCurve(N.Geom_Curve theN, Curve3D theP, string theWhat)
         {
             Same(theN.FirstParameter(), theP.FirstParameter(), theWhat + " First");
             Same(theN.LastParameter(), theP.LastParameter(), theWhat + " Last");
-            Same(theN.IsPeriodic(), theP.IsPeriodic(), theWhat + " IsPeriodic");
+            Same(theN.IsPeriodic(), theP.IsPeriodic, theWhat + " IsPeriodic");
             using var aNP = new N.gp_Pnt();
             using var aNV1 = new N.gp_Vec();
             using var aNV2 = new N.gp_Vec();
@@ -105,7 +105,7 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
             }
         }
 
-        public void SameCurve(N.Geom2d_Curve theN, Geom2d_Curve theP, string theWhat)
+        public void SameCurve(N.Geom2d_Curve theN, Curve2D theP, string theWhat)
         {
             Same(theN.FirstParameter(), theP.FirstParameter(), theWhat + " First");
             Same(theN.LastParameter(), theP.LastParameter(), theWhat + " Last");
@@ -122,7 +122,7 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
             }
         }
 
-        public void SameSurface(N.Geom_Surface theN, Geom_Surface theP, string theWhat)
+        public void SameSurface(N.Geom_Surface theN, Surface theP, string theWhat)
         {
             double aNU1 = 0, aNU2 = 0, aNV1 = 0, aNV2 = 0;
             theN.Bounds(ref aNU1, ref aNU2, ref aNV1, ref aNV2);
@@ -217,7 +217,7 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
                 double[] anAxis = aForm switch { 0 => P, 1 => [.. P, .. D], _ => [.. P, .. D, .. X] };
                 double[] aRadii = aKind is "ellipse" or "hyperbola" ? [r1, r2] : aKind == "line" ? [] : [r1];
                 i.Eval($"{aKind} g {Words(anAxis)} {Words(aRadii)}");
-                var aP = Assert.IsAssignableFrom<Geom_Curve>(Geometry(i, "g"));
+                var aP = Assert.IsAssignableFrom<Curve3D>(Geometry(i, "g"));
 
                 using N.gp_Pnt aNP = NPnt(P);
                 using N.gp_Dir aND = aForm == 0 ? new N.gp_Dir(0, 0, 1) : NDir(D);
@@ -246,19 +246,19 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
                 i.Eval($"line g {Words(P)} {Words(D)}");
                 using (var aN = new N.Geom2d_Line(aNP, NDir2d(D)))
                 {
-                    aBits.SameCurve(aN, Assert.IsAssignableFrom<Geom2d_Curve>(Geometry(i, "g")), $"2d line {c}");
+                    aBits.SameCurve(aN, Assert.IsAssignableFrom<Curve2D>(Geometry(i, "g")), $"2d line {c}");
                 }
 
                 i.Eval($"circle g {Words(anAxis)} {R(r1)}");
                 using (var aN = new N.Geom2d_Circle(aNAx, r1))
                 {
-                    aBits.SameCurve(aN, Assert.IsAssignableFrom<Geom2d_Curve>(Geometry(i, "g")), $"2d circle {c}");
+                    aBits.SameCurve(aN, Assert.IsAssignableFrom<Curve2D>(Geometry(i, "g")), $"2d circle {c}");
                 }
 
                 i.Eval($"ellipse g {Words(anAxis)} {R(r1)} {R(r2)}");
                 using (var aN = new N.Geom2d_Ellipse(aNAx, r1, r2))
                 {
-                    aBits.SameCurve(aN, Assert.IsAssignableFrom<Geom2d_Curve>(Geometry(i, "g")), $"2d ellipse {c}");
+                    aBits.SameCurve(aN, Assert.IsAssignableFrom<Curve2D>(Geometry(i, "g")), $"2d ellipse {c}");
                 }
             }
         }
@@ -290,7 +290,7 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
 
 
                 i.Eval($"{aKind} g {Words(anAxis)} {Words(aParams)}".TrimEnd());
-                var aP = Assert.IsAssignableFrom<Geom_Surface>(Geometry(i, "g"));
+                var aP = Assert.IsAssignableFrom<Surface>(Geometry(i, "g"));
 
                 using N.gp_Pnt aNP = aForm == 0 ? new N.gp_Pnt(0, 0, 0) : NPnt(P);
                 using N.gp_Ax3 aNAx = aForm switch
@@ -390,7 +390,7 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
 
                 using N.TColStd_Array1OfReal aNW = NArray(aWeights);
                 using N.Geom_BezierCurve aN = hasw ? new N.Geom_BezierCurve(aNPoles, aNW) : new N.Geom_BezierCurve(aNPoles);
-                aBits.SameCurve(aN, Assert.IsType<Geom_BezierCurve>(Geometry(i, "g")), $"beziercurve {c}");
+                aBits.SameCurve(aN, Assert.IsType<BezierCurve3D>(Geometry(i, "g")), $"beziercurve {c}");
             }
 
             // bsplinecurve, pbsplinecurve and their 2D forms
@@ -423,12 +423,12 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
                 using N.TColStd_Array1OfInteger aNM = NArray(M);
                 using (var aN = new N.Geom_BSplineCurve(aNPoles, aNW, aNK, aNM, deg, aPeriodic))
                 {
-                    aBits.SameCurve(aN, Assert.IsType<Geom_BSplineCurve>(Geometry(i, "g")), $"{aPrefix}bsplinecurve {c}");
+                    aBits.SameCurve(aN, Assert.IsType<BSplineCurve3D>(Geometry(i, "g")), $"{aPrefix}bsplinecurve {c}");
                 }
 
                 using (var aN = new N.Geom2d_BSplineCurve(aNPoles2, aNW, aNK, aNM, deg, aPeriodic))
                 {
-                    aBits.SameCurve(aN, Assert.IsType<Geom2d_BSplineCurve>(Geometry(i, "g2")), $"2d{aPrefix}bsplinecurve {c}");
+                    aBits.SameCurve(aN, Assert.IsType<BSplineCurve2D>(Geometry(i, "g2")), $"2d{aPrefix}bsplinecurve {c}");
                 }
             }
 
@@ -453,7 +453,7 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
 
                 i.Eval($"beziersurf g {nu} {nv} " + string.Join(" ", aWords));
                 using N.Geom_BezierSurface aN = hasw ? new N.Geom_BezierSurface(aNPoles, aNW) : new N.Geom_BezierSurface(aNPoles);
-                aBits.SameSurface(aN, Assert.IsType<Geom_BezierSurface>(Geometry(i, "g")), $"beziersurf {c}");
+                aBits.SameSurface(aN, Assert.IsType<BezierSurface>(Geometry(i, "g")), $"beziersurf {c}");
             }
 
             // bsplinesurf and the periodic forms
@@ -489,7 +489,7 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
                 using N.TColStd_Array1OfReal aNUK = NArray(UK), aNVK = NArray(VK);
                 using N.TColStd_Array1OfInteger aNUM = NArray(UM), aNVM = NArray(VM);
                 using var aN = new N.Geom_BSplineSurface(aNPoles, aNW, aNUK, aNVK, aNUM, aNVM, udeg, vdeg, uper, vper);
-                aBits.SameSurface(aN, Assert.IsType<Geom_BSplineSurface>(Geometry(i, "g")), $"{aName} {c}");
+                aBits.SameSurface(aN, Assert.IsType<BSplineSurface>(Geometry(i, "g")), $"{aName} {c}");
             }
         }
 
@@ -515,19 +515,19 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
             i.Eval($"extsurf e c {Words(D2)}");
             using (var aN = new N.Geom_SurfaceOfLinearExtrusion(aNC, NDir(D2)))
             {
-                aBits.SameSurface(aN, Assert.IsAssignableFrom<Geom_Surface>(Geometry(i, "e")), $"extsurf {c}");
+                aBits.SameSurface(aN, Assert.IsAssignableFrom<Surface>(Geometry(i, "e")), $"extsurf {c}");
             }
 
             i.Eval($"revsurf rv c {Words(A)} {Words(D2)}");
             using var aNRev = new N.Geom_SurfaceOfRevolution(aNC, new N.gp_Ax1(NPnt(A), NDir(D2)));
-            aBits.SameSurface(aNRev, Assert.IsAssignableFrom<Geom_Surface>(Geometry(i, "rv")), $"revsurf {c}");
+            aBits.SameSurface(aNRev, Assert.IsAssignableFrom<Surface>(Geometry(i, "rv")), $"revsurf {c}");
 
             // offset curve and surface
             double d = aBits.Real(-0.5, 2);
             i.Eval($"offset oc c {R(d)} {Words(D)}");
             using (var aN = new N.Geom_OffsetCurve(aNC, d, aND))
             {
-                aBits.SameCurve(aN, Assert.IsAssignableFrom<Geom_Curve>(Geometry(i, "oc")), $"offset curve {c}");
+                aBits.SameCurve(aN, Assert.IsAssignableFrom<Curve3D>(Geometry(i, "oc")), $"offset curve {c}");
             }
 
             i.Eval($"sphere s {Words(P)} {Words(D)} {R(r)}; offset os s {R(d)}");
@@ -535,7 +535,7 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
             using var aNS = new N.Geom_SphericalSurface(aNAx3, r);
             using (var aN = new N.Geom_OffsetSurface(aNS, d))
             {
-                aBits.SameSurface(aN, Assert.IsAssignableFrom<Geom_Surface>(Geometry(i, "os")), $"offset surface {c}");
+                aBits.SameSurface(aN, Assert.IsAssignableFrom<Surface>(Geometry(i, "os")), $"offset surface {c}");
             }
 
             // trims, with either sense
@@ -544,24 +544,24 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
             i.Eval($"trim tc c {R(u1)} {R(u2)} {(us ? 1 : 0)}");
             using (var aN = new N.Geom_TrimmedCurve(aNC, u1, u2, us))
             {
-                aBits.SameCurve(aN, Assert.IsType<Geom_TrimmedCurve>(Geometry(i, "tc")), $"trim curve {c}");
+                aBits.SameCurve(aN, Assert.IsType<TrimmedCurve3D>(Geometry(i, "tc")), $"trim curve {c}");
             }
 
             i.Eval($"trim ts rv {R(u1)} {R(u2)} {R(v1)} {R(v2)} {(us ? 1 : 0)} {(vs ? 1 : 0)}");
             using (var aN = new N.Geom_RectangularTrimmedSurface(aNRev, u1, u2, v1, v2, us, vs))
             {
-                aBits.SameSurface(aN, Assert.IsType<Geom_RectangularTrimmedSurface>(Geometry(i, "ts")), $"trim surface {c}");
+                aBits.SameSurface(aN, Assert.IsType<TrimmedSurface>(Geometry(i, "ts")), $"trim surface {c}");
             }
 
             i.Eval($"trimu tu s {R(u1)} {R(u2)} {(us ? 1 : 0)}; trimv tv s {R(v1)} {R(v2)} {(vs ? 1 : 0)}");
             using (var aN = new N.Geom_RectangularTrimmedSurface(aNS, u1, u2, true, us))
             {
-                aBits.SameSurface(aN, Assert.IsType<Geom_RectangularTrimmedSurface>(Geometry(i, "tu")), $"trimu {c}");
+                aBits.SameSurface(aN, Assert.IsType<TrimmedSurface>(Geometry(i, "tu")), $"trimu {c}");
             }
 
             using (var aN = new N.Geom_RectangularTrimmedSurface(aNS, v1, v2, false, vs))
             {
-                aBits.SameSurface(aN, Assert.IsType<Geom_RectangularTrimmedSurface>(Geometry(i, "tv")), $"trimv {c}");
+                aBits.SameSurface(aN, Assert.IsType<TrimmedSurface>(Geometry(i, "tv")), $"trimv {c}");
             }
 
             // 2D trim of a 2D circle
@@ -570,7 +570,7 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
             using var aNC2 = new N.Geom2d_Circle(new N.gp_Ax22d(NPnt2d(P2), new N.gp_Dir2d(1, 0), true), r);
             using (var aN = new N.Geom2d_TrimmedCurve(aNC2, u1, u2, us))
             {
-                aBits.SameCurve(aN, Assert.IsType<Geom2d_TrimmedCurve>(Geometry(i, "t2")), $"2d trim {c}");
+                aBits.SameCurve(aN, Assert.IsType<TrimmedCurve2D>(Geometry(i, "t2")), $"2d trim {c}");
             }
 
             // isos of the surface of revolution
@@ -578,23 +578,23 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
             i.Eval($"uiso iu rv {R(par)}; viso iv rv {R(par)}");
             using (N.Geom_Curve aN = aNRev.UIso(par)!)
             {
-                aBits.SameCurve(aN, Assert.IsAssignableFrom<Geom_Curve>(Geometry(i, "iu")), $"uiso {c}");
+                aBits.SameCurve(aN, Assert.IsAssignableFrom<Curve3D>(Geometry(i, "iu")), $"uiso {c}");
             }
 
             using (N.Geom_Curve aN = aNRev.VIso(par)!)
             {
-                aBits.SameCurve(aN, Assert.IsAssignableFrom<Geom_Curve>(Geometry(i, "iv")), $"viso {c}");
+                aBits.SameCurve(aN, Assert.IsAssignableFrom<Curve3D>(Geometry(i, "iv")), $"viso {c}");
             }
 
             // reverse, ureverse, vreverse: OCCT reverses in place, natively done on the native copies
             i.Eval("reverse c; ureverse s");
             aNC.Reverse();
             aNS.UReverse();
-            aBits.SameCurve(aNC, Assert.IsAssignableFrom<Geom_Curve>(Geometry(i, "c")), $"reverse {c}");
-            aBits.SameSurface(aNS, Assert.IsAssignableFrom<Geom_Surface>(Geometry(i, "s")), $"ureverse {c}");
+            aBits.SameCurve(aNC, Assert.IsAssignableFrom<Curve3D>(Geometry(i, "c")), $"reverse {c}");
+            aBits.SameSurface(aNS, Assert.IsAssignableFrom<Surface>(Geometry(i, "s")), $"ureverse {c}");
             i.Eval("vreverse s");
             aNS.VReverse();
-            aBits.SameSurface(aNS, Assert.IsAssignableFrom<Geom_Surface>(Geometry(i, "s")), $"vreverse {c}");
+            aBits.SameSurface(aNS, Assert.IsAssignableFrom<Surface>(Geometry(i, "s")), $"vreverse {c}");
 
             // segment of a B-spline
             i.Eval("bsplinecurve b 2 3 0 3 1 1 2 3 0 0 0 1 1 1 0 1 2 0 1 2 3 1 1 1");
@@ -609,7 +609,7 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
             using N.TColStd_Array1OfInteger aNM = NArray([3, 1, 3]);
             using var aNB = new N.Geom_BSplineCurve(aNPoles, aNW, aNK, aNM, 2, false);
             aNB.Segment(f, l, 1e-9);
-            aBits.SameCurve(aNB, Assert.IsType<Geom_BSplineCurve>(Geometry(i, "b")), $"segment {c}");
+            aBits.SameCurve(aNB, Assert.IsType<BSplineCurve3D>(Geometry(i, "b")), $"segment {c}");
         }
 
         Report(aBits, "extsurf, revsurf, offset, trim, trimu, trimv, uiso, viso, reverse, ureverse, vreverse, segment");

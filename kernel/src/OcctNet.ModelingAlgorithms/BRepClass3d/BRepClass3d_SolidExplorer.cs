@@ -4,14 +4,20 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.Extrema_ExtFlag;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Engine.Extrema.ExtFlag;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -26,22 +32,22 @@ namespace Occt;
 /// </remarks>
 public class BRepClass3d_SolidExplorer
 {
-    private TopoDS_Shape myShape = new();
+    private Shape myShape = new();
     private bool myReject;
     private int myFirstFace;
     private double myParamOnEdge;
-    private readonly TopExp_Explorer myShellExplorer = new();
-    private readonly TopExp_Explorer myFaceExplorer = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, IntCurvesFace_Intersector?> myMapOfInter =
-        new(TopTools_ShapeMapHasher.Instance);
+    private readonly Explorer myShellExplorer = new();
+    private readonly Explorer myFaceExplorer = new();
+    private readonly NCollection_DataMap<Shape, IntCurvesFace_Intersector?> myMapOfInter =
+        new(ShapeHasher.Instance);
     private readonly SpatialTree<int, Box> myTree = new();
-    private readonly NCollection_IndexedMap<TopoDS_Shape> myMapEV = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedMap<Shape> myMapEV = new(ShapeHasher.Instance);
 
     /// <summary>
     /// A point <paramref name="APoint_"/> in the face <paramref name="_face"/>: <paramref name="param_"/>, in ]0, 1[,
     /// initialises the search; different values give different points.
     /// </summary>
-    public static bool FindAPointInTheFace(in TopoDS_Face _face, ref Point3D APoint_, ref double param_)
+    public static bool FindAPointInTheFace(in Face _face, ref Point3D APoint_, ref double param_)
     {
         double u = 0.0, v = 0.0;
         bool r = FindAPointInTheFace(_face, ref APoint_, ref u, ref v, ref param_);
@@ -49,7 +55,7 @@ public class BRepClass3d_SolidExplorer
     }
 
     /// <summary>A point <paramref name="APoint_"/> in the face, with its parameters (see the other overloads).</summary>
-    public static bool FindAPointInTheFace(in TopoDS_Face _face,
+    public static bool FindAPointInTheFace(in Face _face,
                                            ref Point3D APoint_,
                                            ref double u_,
                                            ref double v_,
@@ -64,7 +70,7 @@ public class BRepClass3d_SolidExplorer
     /// a point a little inside an edge, moved towards the nearest other edge, where the surface isn't singular. The
     /// outputs are unchanged when none is found.
     /// </summary>
-    public static bool FindAPointInTheFace(in TopoDS_Face _face,
+    public static bool FindAPointInTheFace(in Face _face,
                                            ref Point3D APoint_,
                                            ref double u_,
                                            ref double v_,
@@ -72,16 +78,16 @@ public class BRepClass3d_SolidExplorer
                                            ref Vector3D theVecD1U,
                                            ref Vector3D theVecD1V)
     {
-        TopoDS_Face face = _face;
-        face.Orientation(TopAbs_FORWARD);
+        Face face = _face;
+        face.Orientation(Forward);
 
         Vector2D T;
         Point2D P;
 
-        for (var faceexplorer = new TopExp_Explorer(face, TopAbs_EDGE); faceexplorer.More(); faceexplorer.Next())
+        for (var faceexplorer = new Explorer(face, ShapeType.Edge); faceexplorer.More(); faceexplorer.Next())
         {
-            TopoDS_Edge Edge = TopoDS.Edge(faceexplorer.Current());
-            var c = new BRepAdaptor_Curve2d(Edge, face);
+            Edge Edge = ShapeCasts.Edge(faceexplorer.Current());
+            var c = new EdgeCurve2DAdaptor(Edge, face);
             if (c.Curve() is null)
             {
                 continue;
@@ -91,7 +97,7 @@ public class BRepClass3d_SolidExplorer
 
             double x = T.X();
             double y = T.Y();
-            if (Edge.Orientation() == TopAbs_FORWARD)
+            if (Edge.Orientation() == Forward)
             {
                 T.SetCoord(-y, x);
             }
@@ -110,13 +116,13 @@ public class BRepClass3d_SolidExplorer
             P.SetCoord(P.X() + TolInit * T.X(), P.Y() + TolInit * T.Y());
             FClassifier.Reset(new Line2D(P, new Direction2D(T)), ParamInit, RealEpsilon()); //-- Length and Tolerance #######
 
-            var otherfaceexplorer = new TopExp_Explorer();
+            var otherfaceexplorer = new Explorer();
             int aNbEdges = 0;
-            for (otherfaceexplorer.Init(face, TopAbs_EDGE); otherfaceexplorer.More();
+            for (otherfaceexplorer.Init(face, global::Kerf.Topology.ShapeType.Edge); otherfaceexplorer.More();
                  otherfaceexplorer.Next(), ++aNbEdges)
             {
-                TopoDS_Edge OtherEdge = TopoDS.Edge(otherfaceexplorer.Current());
-                if (OtherEdge.Orientation() != TopAbs_EXTERNAL && OtherEdge != Edge)
+                Edge OtherEdge = ShapeCasts.Edge(otherfaceexplorer.Current());
+                if (OtherEdge.Orientation() != External && OtherEdge != Edge)
                 {
                     var AEdge = new BRepClass_Edge(OtherEdge, face);
                     FClassifier.Compare(AEdge, OtherEdge.Orientation());
@@ -154,13 +160,13 @@ public class BRepClass3d_SolidExplorer
                 // Additional check
                 var Classifier = new BRepTopAdaptor_FClass2d(face, global::Kerf.Engine.Foundation.Precision.Confusion());
                 Point2D aPnt2d = new(u_, v_);
-                TopAbs_State StateOfResultingPoint = Classifier.Perform(aPnt2d);
-                if (StateOfResultingPoint != TopAbs_IN)
+                Containment StateOfResultingPoint = Classifier.Perform(aPnt2d);
+                if (StateOfResultingPoint != In)
                 {
                     return false;
                 }
 
-                var s = new BRepAdaptor_Surface();
+                var s = new FaceSurfaceAdaptor();
                 s.Initialize(face, false);
                 s.D1(u_, v_, out APoint_, out theVecD1U, out theVecD1V);
 
@@ -180,13 +186,13 @@ public class BRepClass3d_SolidExplorer
     }
 
     /// <summary>A point in the face, searched on a grid of the given UV bounds of <paramref name="surf"/> (see the overload with derivatives).</summary>
-    public bool PointInTheFace(in TopoDS_Face Face,
+    public bool PointInTheFace(in Face Face,
                                ref Point3D APoint_,
                                ref double u_,
                                ref double v_,
                                ref double param_,
                                ref int IndexPoint,
-                               BRepAdaptor_Surface surf,
+                               FaceSurfaceAdaptor surf,
                                double U1,
                                double V1,
                                double U2,
@@ -209,8 +215,8 @@ public class BRepClass3d_SolidExplorer
     }
 
     /// <summary>The state of a UV point in a face: ON within the tolerance of an edge or vertex, otherwise the intersector's.</summary>
-    protected TopAbs_State ClassifyUVPoint(IntCurvesFace_Intersector theIntersector,
-                                           BRepAdaptor_Surface theSurf,
+    protected Containment ClassifyUVPoint(IntCurvesFace_Intersector theIntersector,
+                                           FaceSurfaceAdaptor theSurf,
                                            in Point2D theP2d)
     {
         // first find if the point is near an edge/vertex
@@ -221,7 +227,7 @@ public class BRepClass3d_SolidExplorer
         if (aSelsVE > 0)
         {
             // The point is inside the tolerance area of vertices/edges => return ON state.
-            return TopAbs_ON;
+            return On;
         }
 
         return theIntersector.ClassifyUVPoint(theP2d);
@@ -230,15 +236,15 @@ public class BRepClass3d_SolidExplorer
     /// <summary>
     /// A point in the face, searched on a grid of the given UV bounds of <paramref name="surf"/> from the point of
     /// index <paramref name="IndexPoint"/>, which returns the index of the point found; then by
-    /// <see cref="FindAPointInTheFace(in TopoDS_Face, ref Point3D, ref double, ref double, ref double, ref Vector3D, ref Vector3D)"/>.
+    /// <see cref="FindAPointInTheFace(in Face, ref Point3D, ref double, ref double, ref double, ref Vector3D, ref Vector3D)"/>.
     /// </summary>
-    public bool PointInTheFace(in TopoDS_Face Face,
+    public bool PointInTheFace(in Face Face,
                                ref Point3D APoint_,
                                ref double u_,
                                ref double v_,
                                ref double param_,
                                ref int IndexPoint,
-                               BRepAdaptor_Surface surf,
+                               FaceSurfaceAdaptor surf,
                                double U1,
                                double V1,
                                double U2,
@@ -258,7 +264,7 @@ public class BRepClass3d_SolidExplorer
             dv = 1e-12;
         }
 
-        bool IsNotUper = !surf.IsUPeriodic(), IsNotVper = !surf.IsVPeriodic();
+        bool IsNotUper = !surf.IsUPeriodic, IsNotVper = !surf.IsVPeriodic;
         int NbPntCalc = 0;
         if (myMapOfInter.IsBound(Face))
         {
@@ -278,7 +284,7 @@ public class BRepClass3d_SolidExplorer
             {
                 IntCurvesFace_Intersector TheIntersector = ptr;
                 // Check if the point is already in the face
-                if (IsInside && (ClassifyUVPoint(TheIntersector, surf, new Point2D(u_, v_)) == TopAbs_IN))
+                if (IsInside && (ClassifyUVPoint(TheIntersector, surf, new Point2D(u_, v_)) == In))
                 {
                     surf.D1(u_, v_, out Point3D aPnt, out theVecD1U, out theVecD1V);
                     if (aPnt.SquareDistance(APoint_) < global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion())
@@ -301,7 +307,7 @@ public class BRepClass3d_SolidExplorer
                         //--  0  0    v increases
                         if (++NbPntCalc >= IndexPoint)
                         {
-                            if (ClassifyUVPoint(TheIntersector, surf, new Point2D(u, v)) == TopAbs_IN)
+                            if (ClassifyUVPoint(TheIntersector, surf, new Point2D(u, v)) == In)
                             {
                                 u_ = u;
                                 v_ = v;
@@ -321,7 +327,7 @@ public class BRepClass3d_SolidExplorer
                         //--  X  0    v decreases
                         if (++NbPntCalc >= IndexPoint)
                         {
-                            if (ClassifyUVPoint(TheIntersector, surf, new Point2D(u, v)) == TopAbs_IN)
+                            if (ClassifyUVPoint(TheIntersector, surf, new Point2D(u, v)) == In)
                             {
                                 u_ = u;
                                 v_ = v;
@@ -341,7 +347,7 @@ public class BRepClass3d_SolidExplorer
                         //--  0  0    v increases
                         if (++NbPntCalc >= IndexPoint)
                         {
-                            if (ClassifyUVPoint(TheIntersector, surf, new Point2D(u, v)) == TopAbs_IN)
+                            if (ClassifyUVPoint(TheIntersector, surf, new Point2D(u, v)) == In)
                             {
                                 u_ = u;
                                 v_ = v;
@@ -361,7 +367,7 @@ public class BRepClass3d_SolidExplorer
                         //--  0  X     v decreases
                         if (++NbPntCalc >= IndexPoint)
                         {
-                            if (ClassifyUVPoint(TheIntersector, surf, new Point2D(u, v)) == TopAbs_IN)
+                            if (ClassifyUVPoint(TheIntersector, surf, new Point2D(u, v)) == In)
                             {
                                 u_ = u;
                                 v_ = v;
@@ -392,7 +398,7 @@ public class BRepClass3d_SolidExplorer
                     {
                         if (++NbPntCalc >= IndexPoint)
                         {
-                            if (ClassifyUVPoint(TheIntersector, surf, new Point2D(u, v)) == TopAbs_IN)
+                            if (ClassifyUVPoint(TheIntersector, surf, new Point2D(u, v)) == In)
                             {
                                 u_ = u;
                                 v_ = v;
@@ -408,7 +414,7 @@ public class BRepClass3d_SolidExplorer
                 v = (V1 + V2) * 0.5;
                 if (++NbPntCalc >= IndexPoint)
                 {
-                    if (ClassifyUVPoint(TheIntersector, surf, new Point2D(u, v)) == TopAbs_IN)
+                    if (ClassifyUVPoint(TheIntersector, surf, new Point2D(u, v)) == In)
                     {
                         u_ = u;
                         v_ = v;
@@ -499,8 +505,8 @@ public class BRepClass3d_SolidExplorer
         double TolU = global::Kerf.Engine.Foundation.Precision.PConfusion();
         double TolV = TolU;
 
-        TopoDS_Face face;
-        var faceexplorer = new TopExp_Explorer();
+        Face face;
+        var faceexplorer = new Explorer();
         Point3D APoint = new();
         Vector3D aVecD1U = new(), aVecD1V = new();
         double maxscal = 0;
@@ -516,7 +522,7 @@ public class BRepClass3d_SolidExplorer
         for (;;)
         {
             myFirstFace++;
-            faceexplorer.Init(myShape, TopAbs_FACE);
+            faceexplorer.Init(myShape, ShapeType.Face);
             // look for point on face starting from myFirstFace
             //  Modified by skv - Thu Sep  4 14:31:12 2003 OCC578 Begin
             //     while (faceexplorer.More()) {
@@ -530,13 +536,13 @@ public class BRepClass3d_SolidExplorer
                     continue;
                 }
 
-                face = TopoDS.Face(faceexplorer.Current());
+                face = ShapeCasts.Face(faceexplorer.Current());
 
-                var surf = new BRepAdaptor_Surface();
+                var surf = new FaceSurfaceAdaptor();
                 if (aTestInvert)
                 {
                     var aClass = new BRepTopAdaptor_FClass2d(face, global::Kerf.Engine.Foundation.Precision.Confusion());
-                    if (aClass.PerformInfinitePoint() == TopAbs_IN)
+                    if (aClass.PerformInfinitePoint() == In)
                     {
                         aRestr = false;
                         if (myMapOfInter.IsBound(face))
@@ -558,7 +564,7 @@ public class BRepClass3d_SolidExplorer
                 V1 = surf.FirstVParameter();
                 U2 = surf.LastUParameter();
                 V2 = surf.LastVParameter();
-                face.Orientation(TopAbs_FORWARD);
+                face.Orientation(Forward);
                 //
                 // avoid process faces from uncorrected shells
                 double eps = global::Kerf.Engine.Foundation.Precision.PConfusion();
@@ -578,18 +584,18 @@ public class BRepClass3d_SolidExplorer
                 _u = (U1 + U2) * 0.5;
                 _v = (V1 + V2) * 0.5;
 
-                var GA = new GeomAdaptor_Surface(BRep_Tool.Surface(face)!);
-                var Ext = new Extrema_ExtPS(P, GA, TolU, TolV, Extrema_ExtFlag_MIN);
+                var GA = new SurfaceAdaptor(Tool.Surface(face)!);
+                var Ext = new ExtPS(P, GA, TolU, TolV, ExtFlag_MIN);
                 //
-                if (Ext.IsDone() && Ext.NbExt() > 0)
+                if (Ext.IsDone && Ext.ExtCount > 0)
                 {
                     int i, iNear, iEnd;
                     double aUx, aVx, Dist2, Dist2Min;
-                    Extrema_POnSurf aPx;
+                    POnSurf aPx;
                     //
                     iNear = 1;
                     Dist2Min = Ext.SquareDistance(1);
-                    iEnd = Ext.NbExt();
+                    iEnd = Ext.ExtCount;
                     for (i = 2; i <= iEnd; i++)
                     {
                         aPx = Ext.Point(i);
@@ -623,9 +629,9 @@ public class BRepClass3d_SolidExplorer
 
                             classifier2d.Perform(face, aPuv, global::Kerf.Engine.Foundation.Precision.PConfusion());
 
-                            TopAbs_State aState = classifier2d.State();
+                            Containment aState = classifier2d.State();
 
-                            if (aState == TopAbs_IN || aState == TopAbs_ON)
+                            if (aState == In || aState == On)
                             {
                                 return 1;
                             }
@@ -800,16 +806,16 @@ public class BRepClass3d_SolidExplorer
     //  Modified by skv - Thu Sep  4 12:30:14 2003 OCC578 End
 
     /// <summary>A point in the face, searched on a grid of its whole surface (infinite bounds limited to 1e10).</summary>
-    public bool PointInTheFace(in TopoDS_Face _face,
+    public bool PointInTheFace(in Face _face,
                                ref Point3D APoint_,
                                ref double u_,
                                ref double v_,
                                ref double param_,
                                ref int IndexPoint)
     {
-        TopoDS_Face Face = _face;
-        Face.Orientation(TopAbs_FORWARD);
-        var surf = new BRepAdaptor_Surface();
+        Face Face = _face;
+        Face.Orientation(Forward);
+        var surf = new FaceSurfaceAdaptor();
         surf.Initialize(Face);
         double U1, V1, U2, V2; //,u,v;
         U1 = surf.FirstUParameter();
@@ -821,7 +827,7 @@ public class BRepClass3d_SolidExplorer
     }
 
     /// <summary>A point in the face with its parameters, the search initialised with 0.1.</summary>
-    public static bool FindAPointInTheFace(in TopoDS_Face _face, ref Point3D APoint_, ref double u_, ref double v_)
+    public static bool FindAPointInTheFace(in Face _face, ref Point3D APoint_, ref double u_, ref double v_)
     {
         double param = 0.1;
         bool r = FindAPointInTheFace(_face, ref APoint_, ref u_, ref v_, ref param);
@@ -829,7 +835,7 @@ public class BRepClass3d_SolidExplorer
     }
 
     /// <summary>A point in the face, the search initialised with 0.1.</summary>
-    public static bool FindAPointInTheFace(in TopoDS_Face _face, ref Point3D APoint_)
+    public static bool FindAPointInTheFace(in Face _face, ref Point3D APoint_)
     {
         double u = 0.0, v = 0.0;
         bool r = FindAPointInTheFace(_face, ref APoint_, ref u, ref v);
@@ -837,7 +843,7 @@ public class BRepClass3d_SolidExplorer
     }
 
     /// <summary>The parameters of a point in the face, the search initialised with 0.1.</summary>
-    public static bool FindAPointInTheFace(in TopoDS_Face _face, ref double u_, ref double v_)
+    public static bool FindAPointInTheFace(in Face _face, ref double u_, ref double v_)
     {
         Point3D APoint = new();
         bool r = FindAPointInTheFace(_face, ref APoint, ref u_, ref v_);
@@ -853,7 +859,7 @@ public class BRepClass3d_SolidExplorer
     }
 
     /// <summary>An explorer of the shape <paramref name="S"/>.</summary>
-    public BRepClass3d_SolidExplorer(in TopoDS_Shape S)
+    public BRepClass3d_SolidExplorer(in Shape S)
     {
         InitShape(S);
     }
@@ -868,7 +874,7 @@ public class BRepClass3d_SolidExplorer
     /// Loads the shape <paramref name="S"/>: an intersector for each face, and the tree of the boxes of the edges
     /// and vertices of its FORWARD and REVERSED faces and edges (degenerated edges left out).
     /// </summary>
-    public void InitShape(in TopoDS_Shape S)
+    public void InitShape(in Shape S)
     {
         myMapEV.Clear();
         myTree.Clear();
@@ -882,10 +888,10 @@ public class BRepClass3d_SolidExplorer
 
         myReject = true; //-- case of infinite solid (without any face)
 
-        var Expl = new TopExp_Explorer();
-        for (Expl.Init(S, TopAbs_FACE); Expl.More(); Expl.Next())
+        var Expl = new Explorer();
+        for (Expl.Init(S, ShapeType.Face); Expl.More(); Expl.Next())
         {
-            TopoDS_Face Face = TopoDS.Face(Expl.Current());
+            Face Face = ShapeCasts.Face(Expl.Current());
             var ptr = new IntCurvesFace_Intersector(Face, global::Kerf.Engine.Foundation.Precision.Confusion(), true, false);
             myMapOfInter.Bind(Face, ptr);
             myReject = false; //-- at least one face in the solid
@@ -893,37 +899,37 @@ public class BRepClass3d_SolidExplorer
 
         // since the internal/external parts should be avoided in tree filler,
         // there is no need to add these parts in the EV map as well
-        var aExpF = new TopExp_Explorer(myShape, TopAbs_FACE);
+        var aExpF = new Explorer(myShape, ShapeType.Face);
         for (; aExpF.More(); aExpF.Next())
         {
-            TopoDS_Shape aF = aExpF.Current();
+            Shape aF = aExpF.Current();
             //
-            TopAbs_Orientation anOrF = aF.Orientation();
-            if (anOrF == TopAbs_INTERNAL || anOrF == TopAbs_EXTERNAL)
+            Orientation anOrF = aF.Orientation();
+            if (anOrF == Internal || anOrF == External)
             {
                 continue;
             }
 
             //
-            var aExpE = new TopExp_Explorer(aF, TopAbs_EDGE);
+            var aExpE = new Explorer(aF, ShapeType.Edge);
             for (; aExpE.More(); aExpE.Next())
             {
-                TopoDS_Shape aE = aExpE.Current();
+                Shape aE = aExpE.Current();
                 //
-                TopAbs_Orientation anOrE = aE.Orientation();
-                if (anOrE == TopAbs_INTERNAL || anOrE == TopAbs_EXTERNAL)
+                Orientation anOrE = aE.Orientation();
+                if (anOrE == Internal || anOrE == External)
                 {
                     continue;
                 }
 
                 //
-                if (BRep_Tool.Degenerated(TopoDS.Edge(aE)))
+                if (Tool.Degenerated(ShapeCasts.Edge(aE)))
                 {
                     continue;
                 }
 
                 //
-                TopExp.MapShapes(aE, myMapEV);
+                Exploration.MapShapes(aE, myMapEV);
             }
         }
 
@@ -934,7 +940,7 @@ public class BRepClass3d_SolidExplorer
         int i, aNbEV = myMapEV.Extent();
         for (i = 1; i <= aNbEV; ++i)
         {
-            TopoDS_Shape aS = myMapEV[i];
+            Shape aS = myMapEV[i];
             //
             Box aBox = new();
             BRepBndLib.Add(aS, ref aBox);
@@ -948,7 +954,7 @@ public class BRepClass3d_SolidExplorer
     public virtual bool Reject(in Point3D P) => (myReject); // case of solid without face
 
     /// <summary>Starts an exploration of the shells.</summary>
-    public void InitShell() => myShellExplorer.Init(myShape, TopAbs_SHELL);
+    public void InitShell() => myShellExplorer.Init(myShape, ShapeType.Shell);
 
     /// <summary>True if there is a current shell.</summary>
     public bool MoreShell() => (myShellExplorer.More());
@@ -957,13 +963,13 @@ public class BRepClass3d_SolidExplorer
     public void NextShell() => myShellExplorer.Next();
 
     /// <summary>The current shell.</summary>
-    public TopoDS_Shell CurrentShell() => (TopoDS.Shell(myShellExplorer.Current()));
+    public Shell CurrentShell() => (ShapeCasts.Shell(myShellExplorer.Current()));
 
     /// <summary>True if the shell is rejected: always false.</summary>
     public virtual bool RejectShell(in Line3D L) => (false);
 
     /// <summary>Starts an exploration of the faces of the current shell.</summary>
-    public void InitFace() => myFaceExplorer.Init(TopoDS.Shell(myShellExplorer.Current()), TopAbs_FACE);
+    public void InitFace() => myFaceExplorer.Init(ShapeCasts.Shell(myShellExplorer.Current()), ShapeType.Face);
 
     /// <summary>True if there is a current face in the current shell.</summary>
     public bool MoreFace() => (myFaceExplorer.More());
@@ -972,7 +978,7 @@ public class BRepClass3d_SolidExplorer
     public void NextFace() => myFaceExplorer.Next();
 
     /// <summary>The current face.</summary>
-    public TopoDS_Face CurrentFace() => (TopoDS.Face(myFaceExplorer.Current()));
+    public Face CurrentFace() => (ShapeCasts.Face(myFaceExplorer.Current()));
 
     /// <summary>True if the face is rejected: always false.</summary>
     public virtual bool RejectFace(in Line3D L) => (false);
@@ -988,7 +994,7 @@ public class BRepClass3d_SolidExplorer
 
     /// <summary>The intersector of the face <paramref name="F"/>.</summary>
     /// <exception cref="NoSuchObjectException">The face is not in the shape.</exception>
-    public IntCurvesFace_Intersector Intersector(in TopoDS_Face F)
+    public IntCurvesFace_Intersector Intersector(in Face F)
     {
         IntCurvesFace_Intersector? ptr = myMapOfInter.Find(F);
         IntCurvesFace_Intersector curr = ptr!;
@@ -996,16 +1002,16 @@ public class BRepClass3d_SolidExplorer
     }
 
     /// <summary>Does nothing (OCCT's debug output).</summary>
-    public virtual void DumpSegment(in Point3D P, in Line3D L, double Par, TopAbs_State S)
+    public virtual void DumpSegment(in Point3D P, in Line3D L, double Par, Containment S)
     {
     }
 
     /// <summary>The shape.</summary>
-    public TopoDS_Shape GetShape() => (myShape);
+    public Shape GetShape() => (myShape);
 
     /// <summary>The tree of the boxes of the edges and vertices (objects are indices in <see cref="GetMapEV"/>).</summary>
     public SpatialTree<int, Box> GetTree() => myTree;
 
     /// <summary>The edges and vertices of the shape.</summary>
-    public NCollection_IndexedMap<TopoDS_Shape> GetMapEV() => myMapEV;
+    public NCollection_IndexedMap<Shape> GetMapEV() => myMapEV;
 }

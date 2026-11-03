@@ -4,15 +4,17 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using static Kerf.Engine.Foundation.Gravity;
 
 namespace Occt;
 
 /// <summary>
-/// A modification for <see cref="BRepTools_Modifier"/> that can send messages about the shapes it modifies to a
+/// A modification for <see cref="Modifier"/> that can send messages about the shapes it modifies to a
 /// message registrator: the base of ShapeCustom's modifications.
 /// </summary>
-public abstract class ShapeCustom_Modification : BRepTools_Modification
+public abstract class ShapeCustom_Modification : Modification
 {
     private ShapeExtend_BasicMsgRegistrator? myMsgReg;
 
@@ -29,7 +31,7 @@ public abstract class ShapeCustom_Modification : BRepTools_Modification
     }
 
     /// <summary>Sends a message attached to the shape to the message registrator, if any.</summary>
-    public void SendMsg(in TopoDS_Shape shape, Msg message, Gravity gravity = Info)
+    public void SendMsg(in Shape shape, Msg message, Gravity gravity = Info)
     {
         if (myMsgReg is not null)
         {

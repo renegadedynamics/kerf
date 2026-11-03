@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -211,7 +212,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         bool wasSet = false;
 
         Point2D Pntinf = new(), Pntsup = new();
-        IntAna2d_AnaIntersection theIntAna2d = new();
+        AnalyticIntersection theIntAna2d = new();
 
         maxtol *= 100.0;
         //  if(maxtol<0.000001) maxtol = 0.000001;
@@ -219,13 +220,13 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         // OCCT offsets the line by (maxtol Dy, maxtol Dx), which is not normal to it (as is).
         Vector2D Offset = new(maxtol * L.Direction().Y(), maxtol * L.Direction().X());
         Line2D Lp = L.Translated(Offset);
-        theIntAna2d.Perform(P, new IntAna2d_Conic(Lp));
+        theIntAna2d.Perform(P, new Conic(Lp));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, P, maxtol,
                                 PARAM_MAX_ON_PARABOLA);
 
         Offset.Reverse();
         Line2D Lm = L.Translated(Offset);
-        theIntAna2d.Perform(P, new IntAna2d_Conic(Lm));
+        theIntAna2d.Perform(P, new Conic(Lm));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, P, maxtol,
                                 PARAM_MAX_ON_PARABOLA);
 
@@ -324,13 +325,13 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         }
         Vector2D Offset = new(maxtol * H.XAxis().Direction().X(), maxtol * H.XAxis().Direction().Y());
         Hyperbola2D Hp = H.Translated(Offset);
-        IntAna2d_AnaIntersection theIntAna2d = new();
-        theIntAna2d.Perform(Hp, new IntAna2d_Conic(L));
+        AnalyticIntersection theIntAna2d = new();
+        theIntAna2d.Perform(Hp, new Conic(L));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
         Offset.Reverse();
         Hyperbola2D Hm = H.Translated(Offset);
-        theIntAna2d.Perform(Hm, new IntAna2d_Conic(L));
+        theIntAna2d.Perform(Hm, new Conic(L));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
         if (binf <= bsup)
@@ -409,14 +410,14 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         maxtol = C.Radius() / 10.0;
         Circle2D Cp = C;
         Cp.SetRadius(C.Radius() + maxtol);
-        IntAna2d_AnaIntersection theIntAna2d = new();
-        theIntAna2d.Perform(P, new IntAna2d_Conic(Cp));
+        AnalyticIntersection theIntAna2d = new();
+        theIntAna2d.Perform(P, new Conic(Cp));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, P, maxtol,
                                 PARAM_MAX_ON_PARABOLA);
         if (C.Radius() > maxtol)
         {
             Cp.SetRadius(C.Radius() - maxtol);
-            theIntAna2d.Perform(P, new IntAna2d_Conic(Cp));
+            theIntAna2d.Perform(P, new Conic(Cp));
             SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, P, maxtol,
                                     PARAM_MAX_ON_PARABOLA);
         }
@@ -539,13 +540,13 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         maxtol = C.Radius() / 10.0;
         Vector2D Offset = new(maxtol * H.XAxis().Direction().X(), maxtol * H.XAxis().Direction().Y());
         Hyperbola2D Hp = H.Translated(Offset);
-        IntAna2d_AnaIntersection theIntAna2d = new();
-        theIntAna2d.Perform(Hp, new IntAna2d_Conic(C));
+        AnalyticIntersection theIntAna2d = new();
+        theIntAna2d.Perform(Hp, new Conic(C));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
         Offset.Reverse();
         Hyperbola2D Hm = H.Translated(Offset);
-        theIntAna2d.Perform(Hm, new IntAna2d_Conic(C));
+        theIntAna2d.Perform(Hm, new Conic(C));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
         if (binf <= bsup)
@@ -630,13 +631,13 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         }
         Vector2D Offset = new(maxtol * P2.MirrorAxis().Direction().X(), maxtol * P2.MirrorAxis().Direction().Y());
         Parabola2D Pp = P2.Translated(Offset);
-        IntAna2d_AnaIntersection theIntAna2d = new();
-        theIntAna2d.Perform(Pp, new IntAna2d_Conic(P1));
+        AnalyticIntersection theIntAna2d = new();
+        theIntAna2d.Perform(Pp, new Conic(P1));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, P2, maxtol,
                                 PARAM_MAX_ON_PARABOLA);
         Offset.Reverse();
         Parabola2D Pm = P2.Translated(Offset);
-        theIntAna2d.Perform(Pm, new IntAna2d_Conic(P1));
+        theIntAna2d.Perform(Pm, new Conic(P1));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, P2, maxtol,
                                 PARAM_MAX_ON_PARABOLA);
         if (binf <= bsup)
@@ -727,15 +728,15 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         Ellipse2D Ep = E;
         Ep.SetMajorRadius(E.MajorRadius() + maxtol);
         Ep.SetMinorRadius(E.MinorRadius() + maxtol);
-        IntAna2d_AnaIntersection theIntAna2d = new();
-        theIntAna2d.Perform(P, new IntAna2d_Conic(Ep));
+        AnalyticIntersection theIntAna2d = new();
+        theIntAna2d.Perform(P, new Conic(Ep));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, P, maxtol,
                                 PARAM_MAX_ON_PARABOLA);
         if (E.MinorRadius() > maxtol)
         {
             Ep.SetMinorRadius(E.MinorRadius() - maxtol);
             Ep.SetMajorRadius(E.MajorRadius() - maxtol);
-            theIntAna2d.Perform(P, new IntAna2d_Conic(Ep));
+            theIntAna2d.Perform(P, new Conic(Ep));
             SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, P, maxtol,
                                     PARAM_MAX_ON_PARABOLA);
         }
@@ -823,13 +824,13 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         }
         Vector2D Offset = new(maxtol * H.XAxis().Direction().X(), maxtol * H.XAxis().Direction().Y());
         Hyperbola2D Hp = H.Translated(Offset);
-        IntAna2d_AnaIntersection theIntAna2d = new();
-        theIntAna2d.Perform(Hp, new IntAna2d_Conic(P));
+        AnalyticIntersection theIntAna2d = new();
+        theIntAna2d.Perform(Hp, new Conic(P));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
         Offset.Reverse();
         Hyperbola2D Hm = H.Translated(Offset);
-        theIntAna2d.Perform(Hm, new IntAna2d_Conic(P));
+        theIntAna2d.Perform(Hm, new Conic(P));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
         if (binf <= bsup)
@@ -952,13 +953,13 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         maxtol = E.MinorRadius() / 10.0;
         Vector2D Offset = new(maxtol * H.XAxis().Direction().X(), maxtol * H.XAxis().Direction().Y());
         Hyperbola2D Hp = H.Translated(Offset);
-        IntAna2d_AnaIntersection theIntAna2d = new();
-        theIntAna2d.Perform(Hp, new IntAna2d_Conic(E));
+        AnalyticIntersection theIntAna2d = new();
+        theIntAna2d.Perform(Hp, new Conic(E));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
         Offset.Reverse();
         Hyperbola2D Hm = H.Translated(Offset);
-        theIntAna2d.Perform(Hm, new IntAna2d_Conic(E));
+        theIntAna2d.Perform(Hm, new Conic(E));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
         if (binf <= bsup)
@@ -1049,13 +1050,13 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         }
         Vector2D Offset = new(maxtol * H2.XAxis().Direction().X(), maxtol * H2.XAxis().Direction().Y());
         Hyperbola2D Hp = H2.Translated(Offset);
-        IntAna2d_AnaIntersection theIntAna2d = new();
-        theIntAna2d.Perform(Hp, new IntAna2d_Conic(H1));
+        AnalyticIntersection theIntAna2d = new();
+        theIntAna2d.Perform(Hp, new Conic(H1));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H2, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
         Offset.Reverse();
         Hyperbola2D Hm = H2.Translated(Offset);
-        theIntAna2d.Perform(Hm, new IntAna2d_Conic(H1));
+        theIntAna2d.Perform(Hm, new Conic(H1));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H2, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
         if (binf <= bsup)
@@ -1111,7 +1112,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
 
     //----------------------------------------------------------------------
 
-    private static void SetBinfBsupFromIntAna2d(IntAna2d_AnaIntersection theIntAna2d,
+    private static void SetBinfBsupFromIntAna2d(AnalyticIntersection theIntAna2d,
                                                 ref double binf,
                                                 ref Point2D Pntinf,
                                                 ref double bsup,
@@ -1120,11 +1121,11 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
                                                 double maxtol,
                                                 double LIMITE)
     {
-        if (theIntAna2d.IsDone())
+        if (theIntAna2d.IsDone)
         {
-            if (!theIntAna2d.IsEmpty())
+            if (!theIntAna2d.IsEmpty)
             {
-                for (int p = 1; p <= theIntAna2d.NbPoints(); p++)
+                for (int p = 1; p <= theIntAna2d.PointCount; p++)
                 {
                     double param = theIntAna2d.Point(p).ParamOnFirst();
 
@@ -1156,7 +1157,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         }
     }
 
-    private static void SetBinfBsupFromIntAna2d(IntAna2d_AnaIntersection theIntAna2d,
+    private static void SetBinfBsupFromIntAna2d(AnalyticIntersection theIntAna2d,
                                                 ref double binf,
                                                 ref Point2D Pntinf,
                                                 ref double bsup,
@@ -1165,11 +1166,11 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
                                                 double maxtol,
                                                 double LIMITE)
     {
-        if (theIntAna2d.IsDone())
+        if (theIntAna2d.IsDone)
         {
-            if (!theIntAna2d.IsEmpty())
+            if (!theIntAna2d.IsEmpty)
             {
-                for (int p = 1; p <= theIntAna2d.NbPoints(); p++)
+                for (int p = 1; p <= theIntAna2d.PointCount; p++)
                 {
                     double param = theIntAna2d.Point(p).ParamOnFirst();
 

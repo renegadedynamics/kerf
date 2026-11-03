@@ -4,9 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using static Occt.GProp_ValueType;
+using static Kerf.Engine.Measurement.PropertyValueType;
 
 namespace Occt;
 
@@ -25,7 +26,7 @@ public class BRepGProp_TFunction : Function
     private double myTolReached;
     private double myErrReached;
     private double myAbsError;
-    private GProp_ValueType myValueType;
+    private PropertyValueType myValueType;
     private readonly bool myIsByPoint;
     private int myNbPntOuter;
 
@@ -47,7 +48,7 @@ public class BRepGProp_TFunction : Function
         myTolReached = 0.0;
         myErrReached = 0.0;
         myAbsError = 0.0;
-        myValueType = GProp_Unknown;
+        myValueType = Unknown;
         myIsByPoint = IsByPoint;
         myNbPntOuter = 3;
     }
@@ -64,7 +65,7 @@ public class BRepGProp_TFunction : Function
     public void SetNbKronrodPoints(int theNbPoints) => myNbPntOuter = (theNbPoints % 2 == 0) ? theNbPoints + 1 : theNbPoints;
 
     /// <summary>Sets the type of the value returned, passed on to the U function.</summary>
-    public void SetValueType(GProp_ValueType theType)
+    public void SetValueType(PropertyValueType theType)
     {
         myValueType = theType;
         myUFunction.SetValueType(myValueType);
@@ -109,22 +110,22 @@ public class BRepGProp_TFunction : Function
 
         // aTol /= myNbPntOuter;
 
-        if (myValueType == GProp_Mass)
+        if (myValueType == Mass)
         {
             if (myIsByPoint)
             {
                 aCoeff /= 3.0;
             }
         }
-        else if (myValueType == GProp_CenterMassX || myValueType == GProp_CenterMassY || myValueType == GProp_CenterMassZ)
+        else if (myValueType == CenterMassX || myValueType == CenterMassY || myValueType == CenterMassZ)
         {
             if (myIsByPoint)
             {
                 aCoeff *= 0.25;
             }
         }
-        else if (myValueType == GProp_InertiaXX || myValueType == GProp_InertiaYY || myValueType == GProp_InertiaZZ
-                 || myValueType == GProp_InertiaXY || myValueType == GProp_InertiaXZ || myValueType == GProp_InertiaYZ)
+        else if (myValueType == InertiaXX || myValueType == InertiaYY || myValueType == InertiaZZ
+                 || myValueType == InertiaXY || myValueType == InertiaXZ || myValueType == InertiaYZ)
         {
             if (myIsByPoint)
             {

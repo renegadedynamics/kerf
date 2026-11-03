@@ -2,7 +2,10 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -31,21 +34,21 @@ public sealed class BRepFillAxeOracleTests(ITestOutputHelper output) : IDisposab
     }
 
     // Writes the port's shape and reads it on both sides (the port's frozen)
-    private (N.TopoDS_Shape N, TopoDS_Shape P) Both(in TopoDS_Shape theShape)
+    private (N.TopoDS_Shape N, Shape P) Both(in Shape theShape)
     {
         string aFile = Path.Combine(myDirectory, $"s{myFileNumber++}.brep");
-        Assert.True(BRepTools.Write(theShape, aFile));
+        Assert.True(BrepTools.Write(theShape, aFile));
         var aNShape = new N.TopoDS_Shape();
         using (var aBuilder = new N.BRep_Builder())
         {
             Assert.True(N.BRepTools.Read(aNShape, aFile, aBuilder));
         }
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile));
+        Assert.True(BrepTools.Read(out Shape aPShape, aFile));
         aPShape.TShape()!.FreezeGraph();
         return (aNShape, aPShape);
     }
 
-    private static TopoDS_Wire Polygon(IReadOnlyList<Point3D> thePoints, bool theClosed)
+    private static Wire Polygon(IReadOnlyList<Point3D> thePoints, bool theClosed)
     {
         BRepBuilderAPI_MakePolygon aMP = new();
         foreach (Point3D aP in thePoints)
@@ -78,9 +81,9 @@ public sealed class BRepFillAxeOracleTests(ITestOutputHelper output) : IDisposab
                 Point3D aP = new(aRadius * Math.Cos(anAngle), aRadius * Math.Sin(anAngle), 0);
                 aSpinePoints.Add(aP.Transformed(TrsfFrom(aPlane)));
             }
-            TopoDS_Wire aSpineWire = Polygon(aSpinePoints, true);
+            Wire aSpineWire = Polygon(aSpinePoints, true);
             bool isFace = anOracle.Bool();
-            TopoDS_Shape aSpine = isFace ? new BRepBuilderAPI_MakeFace(aSpineWire, true).Face() : aSpineWire;
+            Shape aSpine = isFace ? new BRepBuilderAPI_MakeFace(aSpineWire, true).Face() : aSpineWire;
 
             // a profile of 1 to 3 segments, starting on a spine vertex or somewhere near the spine
             bool isOnVertex = anOracle.Int(0, 3) == 0;
@@ -92,11 +95,11 @@ public sealed class BRepFillAxeOracleTests(ITestOutputHelper output) : IDisposab
             {
                 aProfilePoints.Add(aProfilePoints[^1].Translated(new Vector3D(anOracle.Real(-4, 4), anOracle.Real(-4, 4), anOracle.Real(-4, 4))));
             }
-            TopoDS_Wire aProfile = Polygon(aProfilePoints, false);
+            Wire aProfile = Polygon(aProfilePoints, false);
             double aTol = anOracle.Bool() ? 1.0e-7 : anOracle.Real(0.01, 3);
 
-            (N.TopoDS_Shape aNSpine, TopoDS_Shape aPSpine) = Both(aSpine);
-            (N.TopoDS_Shape aNProf, TopoDS_Shape aPProf) = Both(aProfile);
+            (N.TopoDS_Shape aNSpine, Shape aPSpine) = Both(aSpine);
+            (N.TopoDS_Shape aNProf, Shape aPProf) = Both(aProfile);
             aCases++;
             aOnVertex += isOnVertex ? 1 : 0;
 
@@ -115,7 +118,7 @@ public sealed class BRepFillAxeOracleTests(ITestOutputHelper output) : IDisposab
             bool aPOn = false;
             try
             {
-                BRepFill.Axe(aPSpine, TopoDS.Wire(aPProf), out aPAxe, out aPOn, aTol);
+                BRepFill.Axe(aPSpine, ShapeCasts.Wire(aPProf), out aPAxe, out aPOn, aTol);
             }
             catch (FailureException f)
             {

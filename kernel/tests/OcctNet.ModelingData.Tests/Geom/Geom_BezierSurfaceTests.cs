@@ -3,6 +3,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -13,7 +14,7 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class Geom_BezierSurfaceTests
 {
-    private readonly Geom_BezierSurface myOriginalSurface;
+    private readonly BezierSurface myOriginalSurface;
 
     public Geom_BezierSurfaceTests()
     {
@@ -25,7 +26,7 @@ public class Geom_BezierSurfaceTests
                 aPoles[i, j] = new Point3D(i, j, (i + j) * 0.1);
             }
         }
-        myOriginalSurface = new Geom_BezierSurface(aPoles);
+        myOriginalSurface = new BezierSurface(aPoles);
     }
 
     /// <summary>The 2 x 2 test poles (0,0,0), (1,0,0) / (0,1,0), (1,1,z11).</summary>
@@ -56,22 +57,22 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void CopyConstructorBasicProperties()
     {
-        Geom_BezierSurface aCopiedSurface = new(myOriginalSurface);
+        BezierSurface aCopiedSurface = new(myOriginalSurface);
         Assert.Equal(myOriginalSurface.UDegree(), aCopiedSurface.UDegree());
         Assert.Equal(myOriginalSurface.VDegree(), aCopiedSurface.VDegree());
-        Assert.Equal(myOriginalSurface.NbUPoles(), aCopiedSurface.NbUPoles());
-        Assert.Equal(myOriginalSurface.NbVPoles(), aCopiedSurface.NbVPoles());
-        Assert.Equal(myOriginalSurface.IsURational(), aCopiedSurface.IsURational());
-        Assert.Equal(myOriginalSurface.IsVRational(), aCopiedSurface.IsVRational());
+        Assert.Equal(myOriginalSurface.UPoleCount, aCopiedSurface.UPoleCount);
+        Assert.Equal(myOriginalSurface.VPoleCount, aCopiedSurface.VPoleCount);
+        Assert.Equal(myOriginalSurface.IsURational, aCopiedSurface.IsURational);
+        Assert.Equal(myOriginalSurface.IsVRational, aCopiedSurface.IsVRational);
     }
 
     [Fact]
     public void CopyConstructorPoles()
     {
-        Geom_BezierSurface aCopiedSurface = new(myOriginalSurface);
-        for (int i = 1; i <= myOriginalSurface.NbUPoles(); ++i)
+        BezierSurface aCopiedSurface = new(myOriginalSurface);
+        for (int i = 1; i <= myOriginalSurface.UPoleCount; ++i)
         {
-            for (int j = 1; j <= myOriginalSurface.NbVPoles(); ++j)
+            for (int j = 1; j <= myOriginalSurface.VPoleCount; ++j)
             {
                 Assert.True(myOriginalSurface.Pole(i, j).IsEqual(aCopiedSurface.Pole(i, j), 1e-10));
             }
@@ -81,7 +82,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void CopyMethodUsesOptimizedConstructor()
     {
-        Geom_BezierSurface? aCopiedSurface = myOriginalSurface.Copy() as Geom_BezierSurface;
+        BezierSurface? aCopiedSurface = myOriginalSurface.Copy() as BezierSurface;
         Assert.NotNull(aCopiedSurface);
         Assert.Equal(myOriginalSurface.UDegree(), aCopiedSurface.UDegree());
         Assert.Equal(myOriginalSurface.VDegree(), aCopiedSurface.VDegree());
@@ -97,12 +98,12 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void RationalSurfaceCopyConstructor()
     {
-        Geom_BezierSurface aRationalSurface = new(Poles2x2(), Weights2x2(1.0, 2.0, 2.0, 1.0));
-        Geom_BezierSurface aCopiedRational = new(aRationalSurface);
-        Assert.True(aCopiedRational.IsURational() || aCopiedRational.IsVRational());
-        for (int i = 1; i <= aRationalSurface.NbUPoles(); ++i)
+        BezierSurface aRationalSurface = new(Poles2x2(), Weights2x2(1.0, 2.0, 2.0, 1.0));
+        BezierSurface aCopiedRational = new(aRationalSurface);
+        Assert.True(aCopiedRational.IsURational || aCopiedRational.IsVRational);
+        for (int i = 1; i <= aRationalSurface.UPoleCount; ++i)
         {
-            for (int j = 1; j <= aRationalSurface.NbVPoles(); ++j)
+            for (int j = 1; j <= aRationalSurface.VPoleCount; ++j)
             {
                 Assert.Equal(aRationalSurface.Weight(i, j), aCopiedRational.Weight(i, j));
             }
@@ -112,7 +113,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void CopyIndependence()
     {
-        Geom_BezierSurface aCopiedSurface = new(myOriginalSurface);
+        BezierSurface aCopiedSurface = new(myOriginalSurface);
         Point3D aNewPole = new(10, 10, 10);
         myOriginalSurface.SetPole(2, 2, aNewPole);
         Assert.False(aCopiedSurface.Pole(2, 2).IsEqual(aNewPole, 1e-10));
@@ -154,12 +155,12 @@ public class Geom_BezierSurfaceTests
     {
         Assert.Equal(2, myOriginalSurface.UDegree());
         Assert.Equal(2, myOriginalSurface.VDegree());
-        Assert.False(myOriginalSurface.IsUPeriodic());
-        Assert.False(myOriginalSurface.IsVPeriodic());
-        Assert.False(myOriginalSurface.IsURational());
-        Assert.False(myOriginalSurface.IsVRational());
-        Assert.Equal(3, myOriginalSurface.NbUPoles());
-        Assert.Equal(3, myOriginalSurface.NbVPoles());
+        Assert.False(myOriginalSurface.IsUPeriodic);
+        Assert.False(myOriginalSurface.IsVPeriodic);
+        Assert.False(myOriginalSurface.IsURational);
+        Assert.False(myOriginalSurface.IsVRational);
+        Assert.Equal(3, myOriginalSurface.UPoleCount);
+        Assert.Equal(3, myOriginalSurface.VPoleCount);
         Assert.True(myOriginalSurface.IsCNu(100));
         Assert.True(myOriginalSurface.IsCNv(100));
     }
@@ -185,11 +186,11 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void SetWeight()
     {
-        Geom_BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 1.0, 1.0, 1.0));
+        BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 1.0, 1.0, 1.0));
         Point3D aValBefore = aSurf.Value(0.5, 0.5);
         aSurf.SetWeight(2, 2, 10.0);
         Assert.Equal(10.0, aSurf.Weight(2, 2));
-        Assert.True(aSurf.IsURational() || aSurf.IsVRational());
+        Assert.True(aSurf.IsURational || aSurf.IsVRational);
         Assert.False(aValBefore.IsEqual(aSurf.Value(0.5, 0.5), 1e-6));
     }
 
@@ -200,8 +201,8 @@ public class Geom_BezierSurfaceTests
         myOriginalSurface.Increase(4, 3);
         Assert.Equal(4, myOriginalSurface.UDegree());
         Assert.Equal(3, myOriginalSurface.VDegree());
-        Assert.Equal(5, myOriginalSurface.NbUPoles());
-        Assert.Equal(4, myOriginalSurface.NbVPoles());
+        Assert.Equal(5, myOriginalSurface.UPoleCount);
+        Assert.Equal(4, myOriginalSurface.VPoleCount);
         Assert.True(aValBefore.IsEqual(myOriginalSurface.Value(0.5, 0.5), 1e-10));
     }
 
@@ -244,7 +245,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void UIso()
     {
-        Geom_Curve anIso = myOriginalSurface.UIso(0.5);
+        Curve3D anIso = myOriginalSurface.UIso(0.5);
         Assert.NotNull(anIso);
 
         for (double v = 0.0; v <= 1.0; v += 0.25)
@@ -258,7 +259,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void VIso()
     {
-        Geom_Curve anIso = myOriginalSurface.VIso(0.5);
+        Curve3D anIso = myOriginalSurface.VIso(0.5);
         Assert.NotNull(anIso);
 
         for (double u = 0.0; u <= 1.0; u += 0.25)
@@ -293,18 +294,18 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void InsertPoleRowAfter()
     {
-        int aNbUBefore = myOriginalSurface.NbUPoles();
+        int aNbUBefore = myOriginalSurface.UPoleCount;
         myOriginalSurface.InsertPoleRowAfter(1, Points(new Point3D(1.5, 1, 0), new Point3D(1.5, 2, 0), new Point3D(1.5, 3, 0)));
-        Assert.Equal(aNbUBefore + 1, myOriginalSurface.NbUPoles());
+        Assert.Equal(aNbUBefore + 1, myOriginalSurface.UPoleCount);
         Assert.Equal(3, myOriginalSurface.UDegree());
     }
 
     [Fact]
     public void InsertPoleColAfter()
     {
-        int aNbVBefore = myOriginalSurface.NbVPoles();
+        int aNbVBefore = myOriginalSurface.VPoleCount;
         myOriginalSurface.InsertPoleColAfter(1, Points(new Point3D(1, 1.5, 0), new Point3D(2, 1.5, 0), new Point3D(3, 1.5, 0)));
-        Assert.Equal(aNbVBefore + 1, myOriginalSurface.NbVPoles());
+        Assert.Equal(aNbVBefore + 1, myOriginalSurface.VPoleCount);
         Assert.Equal(3, myOriginalSurface.VDegree());
     }
 
@@ -312,18 +313,18 @@ public class Geom_BezierSurfaceTests
     public void RemovePoleRow()
     {
         myOriginalSurface.InsertPoleRowAfter(1, Points(new Point3D(1.5, 1, 0), new Point3D(1.5, 2, 0), new Point3D(1.5, 3, 0)));
-        Assert.Equal(4, myOriginalSurface.NbUPoles());
+        Assert.Equal(4, myOriginalSurface.UPoleCount);
         myOriginalSurface.RemovePoleRow(2);
-        Assert.Equal(3, myOriginalSurface.NbUPoles());
+        Assert.Equal(3, myOriginalSurface.UPoleCount);
     }
 
     [Fact]
     public void RemovePoleCol()
     {
         myOriginalSurface.InsertPoleColAfter(1, Points(new Point3D(1, 1.5, 0), new Point3D(2, 1.5, 0), new Point3D(3, 1.5, 0)));
-        Assert.Equal(4, myOriginalSurface.NbVPoles());
+        Assert.Equal(4, myOriginalSurface.VPoleCount);
         myOriginalSurface.RemovePoleCol(2);
-        Assert.Equal(3, myOriginalSurface.NbVPoles());
+        Assert.Equal(3, myOriginalSurface.VPoleCount);
     }
 
     [Fact]
@@ -364,7 +365,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void MaxDegree()
     {
-        Assert.True(Geom_BezierSurface.MaxDegree() >= 25);
+        Assert.True(BezierSurface.MaxDegree() >= 25);
     }
 
     [Fact]
@@ -381,9 +382,9 @@ public class Geom_BezierSurfaceTests
         aWeights[2, 1] = 2.0;
         aWeights[2, 2] = 1.0;
 
-        Geom_BezierSurface aSurf = new(aPoles, aWeights);
+        BezierSurface aSurf = new(aPoles, aWeights);
 
-        Geom_Curve anIso = aSurf.UIso(0.5);
+        Curve3D anIso = aSurf.UIso(0.5);
         Assert.NotNull(anIso);
 
         for (double v = 0.0; v <= 1.0; v += 0.25)
@@ -405,18 +406,18 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void InsertPoleRowBefore()
     {
-        int aNbUBefore = myOriginalSurface.NbUPoles();
+        int aNbUBefore = myOriginalSurface.UPoleCount;
         myOriginalSurface.InsertPoleRowBefore(2, Points(new Point3D(0.5, 1, 0), new Point3D(0.5, 2, 0), new Point3D(0.5, 3, 0)));
-        Assert.Equal(aNbUBefore + 1, myOriginalSurface.NbUPoles());
+        Assert.Equal(aNbUBefore + 1, myOriginalSurface.UPoleCount);
         Assert.True(myOriginalSurface.Pole(2, 1).IsEqual(new Point3D(0.5, 1, 0), 1e-10));
     }
 
     [Fact]
     public void InsertPoleColBefore()
     {
-        int aNbVBefore = myOriginalSurface.NbVPoles();
+        int aNbVBefore = myOriginalSurface.VPoleCount;
         myOriginalSurface.InsertPoleColBefore(2, Points(new Point3D(1, 0.5, 0), new Point3D(2, 0.5, 0), new Point3D(3, 0.5, 0)));
-        Assert.Equal(aNbVBefore + 1, myOriginalSurface.NbVPoles());
+        Assert.Equal(aNbVBefore + 1, myOriginalSurface.VPoleCount);
         Assert.True(myOriginalSurface.Pole(1, 2).IsEqual(new Point3D(1, 0.5, 0), 1e-10));
     }
 
@@ -433,8 +434,8 @@ public class Geom_BezierSurfaceTests
                 aWeights[i, j] = 1.0 + 0.3 * ((i - 1) + (j - 1));
             }
         }
-        Geom_BezierSurface aSurf = new(aPoles, aWeights);
-        Assert.True(aSurf.IsURational() || aSurf.IsVRational());
+        BezierSurface aSurf = new(aPoles, aWeights);
+        Assert.True(aSurf.IsURational || aSurf.IsVRational);
         Point3D aMid = aSurf.Value(0.5, 0.5);
         aSurf.Segment(0.25, 0.75, 0.25, 0.75);
         Assert.True(aMid.IsEqual(aSurf.Value(0.5, 0.5), 1e-5));
@@ -443,7 +444,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void RationalIncrease()
     {
-        Geom_BezierSurface aSurf = new(Poles2x2(1.0), Weights2x2(1.0, 2.0, 2.0, 1.0));
+        BezierSurface aSurf = new(Poles2x2(1.0), Weights2x2(1.0, 2.0, 2.0, 1.0));
         Point3D aValBefore = aSurf.Value(0.5, 0.5);
         aSurf.Increase(3, 3);
         Assert.Equal(3, aSurf.UDegree());
@@ -454,7 +455,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void SetWeightRow()
     {
-        Geom_BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 2.0, 3.0, 4.0));
+        BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 2.0, 3.0, 4.0));
         aSurf.SetWeightRow(1, Reals(5.0, 6.0));
         Assert.Equal(5.0, aSurf.Weight(1, 1));
         Assert.Equal(6.0, aSurf.Weight(1, 2));
@@ -463,7 +464,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void SetWeightCol()
     {
-        Geom_BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 2.0, 3.0, 4.0));
+        BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 2.0, 3.0, 4.0));
         aSurf.SetWeightCol(1, Reals(7.0, 8.0));
         Assert.Equal(7.0, aSurf.Weight(1, 1));
         Assert.Equal(8.0, aSurf.Weight(2, 1));
@@ -472,9 +473,9 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void InsertPoleRowAfterWithWeights()
     {
-        Geom_BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 2.0, 2.0, 1.0));
+        BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 2.0, 2.0, 1.0));
         aSurf.InsertPoleRowAfter(1, Points(new Point3D(0, 0.5, 0), new Point3D(1, 0.5, 0)), Reals(3.0, 4.0));
-        Assert.Equal(3, aSurf.NbUPoles());
+        Assert.Equal(3, aSurf.UPoleCount);
         Assert.Equal(3.0, aSurf.Weight(2, 1));
         Assert.Equal(4.0, aSurf.Weight(2, 2));
     }
@@ -493,9 +494,9 @@ public class Geom_BezierSurfaceTests
         aWeights[2, 1] = 2.0;
         aWeights[2, 2] = 1.0;
 
-        Geom_BezierSurface aSurf = new(aPoles, aWeights);
+        BezierSurface aSurf = new(aPoles, aWeights);
 
-        Geom_Curve anIso = aSurf.VIso(0.5);
+        Curve3D anIso = aSurf.VIso(0.5);
         Assert.NotNull(anIso);
 
         for (double u = 0.0; u <= 1.0; u += 0.25)
@@ -509,7 +510,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void SetPoleWithWeight()
     {
-        Geom_BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 1.0, 1.0, 2.0));
+        BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 1.0, 1.0, 2.0));
         Point3D aNewPole = new(0.5, 0.5, 1.0);
         aSurf.SetPole(1, 1, aNewPole, 5.0);
         Assert.True(aSurf.Pole(1, 1).IsEqual(aNewPole, 1e-10));
@@ -519,7 +520,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void SetPoleColWithWeights()
     {
-        Geom_BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 2.0, 2.0, 1.0));
+        BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 2.0, 2.0, 1.0));
         aSurf.SetPoleCol(2, Points(new Point3D(5, 0, 0), new Point3D(5, 1, 0)), Reals(3.0, 4.0));
         Assert.True(aSurf.Pole(1, 2).IsEqual(new Point3D(5, 0, 0), 1e-10));
         Assert.Equal(3.0, aSurf.Weight(1, 2));
@@ -529,11 +530,11 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void WeightsArray_NonRational_ReturnsUnitWeights()
     {
-        Assert.False(myOriginalSurface.IsURational());
-        Assert.False(myOriginalSurface.IsVRational());
+        Assert.False(myOriginalSurface.IsURational);
+        Assert.False(myOriginalSurface.IsVRational);
         NCollection_Array2<double> aWeights = myOriginalSurface.WeightsArray();
-        Assert.Equal(myOriginalSurface.NbUPoles(), aWeights.ColLength());
-        Assert.Equal(myOriginalSurface.NbVPoles(), aWeights.RowLength());
+        Assert.Equal(myOriginalSurface.UPoleCount, aWeights.ColLength());
+        Assert.Equal(myOriginalSurface.VPoleCount, aWeights.RowLength());
         for (int i = aWeights.LowerRow(); i <= aWeights.UpperRow(); ++i)
         {
             for (int j = aWeights.LowerCol(); j <= aWeights.UpperCol(); ++j)
@@ -548,7 +549,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void WeightsArray_Rational_ReturnsOwning()
     {
-        Geom_BezierSurface aRational = new(Poles2x2(), Weights2x2(1.0, 2.0, 1.0, 1.0));
+        BezierSurface aRational = new(Poles2x2(), Weights2x2(1.0, 2.0, 1.0, 1.0));
         NCollection_Array2<double> aWeights = aRational.WeightsArray();
         Assert.Equal(4, aWeights.Size());
         Assert.True(aWeights.IsDeletable());
@@ -565,24 +566,24 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void IsoCurves_AreBezierCurves()
     {
-        Geom_BezierCurve aU = Assert.IsType<Geom_BezierCurve>(myOriginalSurface.UIso(0.5));
+        BezierCurve3D aU = Assert.IsType<BezierCurve3D>(myOriginalSurface.UIso(0.5));
         Assert.Equal(myOriginalSurface.VDegree(), aU.Degree());
-        Assert.False(aU.IsRational());
-        Geom_BezierCurve aV = Assert.IsType<Geom_BezierCurve>(myOriginalSurface.VIso(0.5));
+        Assert.False(aU.IsRational);
+        BezierCurve3D aV = Assert.IsType<BezierCurve3D>(myOriginalSurface.VIso(0.5));
         Assert.Equal(myOriginalSurface.UDegree(), aV.Degree());
 
         // Weights varying along V only (OCCT's "U rational"): the U iso-curves are rational, the V ones are not
-        NCollection_Array2<double> aWeights = new(1, myOriginalSurface.NbUPoles(), 1, myOriginalSurface.NbVPoles());
+        NCollection_Array2<double> aWeights = new(1, myOriginalSurface.UPoleCount, 1, myOriginalSurface.VPoleCount);
         aWeights.Init(1.0);
-        for (int i = 1; i <= myOriginalSurface.NbUPoles(); ++i)
+        for (int i = 1; i <= myOriginalSurface.UPoleCount; ++i)
         {
             aWeights[i, 2] = 3.0;
         }
-        Geom_BezierSurface aRational = new(myOriginalSurface.Poles(), aWeights);
-        Assert.True(aRational.IsURational());
-        Assert.False(aRational.IsVRational());
-        Assert.True(((Geom_BezierCurve)aRational.UIso(0.4)).IsRational());
-        Assert.False(((Geom_BezierCurve)aRational.VIso(0.4)).IsRational());
+        BezierSurface aRational = new(myOriginalSurface.Poles(), aWeights);
+        Assert.True(aRational.IsURational);
+        Assert.False(aRational.IsVRational);
+        Assert.True(((BezierCurve3D)aRational.UIso(0.4)).IsRational);
+        Assert.False(((BezierCurve3D)aRational.VIso(0.4)).IsRational);
         Assert.True(aRational.UIso(0.4).Value(0.3).IsEqual(aRational.Value(0.4, 0.3), 1e-14));
         Assert.True(aRational.VIso(0.4).Value(0.3).IsEqual(aRational.Value(0.3, 0.4), 1e-14));
     }
@@ -607,16 +608,16 @@ public class Geom_BezierSurfaceTests
         Assert.Throws<ImmutableObjectException>(() => myOriginalSurface.Increase(3, 3));
         Assert.Throws<ImmutableObjectException>(() => myOriginalSurface.VReverse());
 
-        Geom_BezierSurface aIncreased = myOriginalSurface.Increased(3, 4);
+        BezierSurface aIncreased = myOriginalSurface.Increased(3, 4);
         Assert.False(aIncreased.IsFrozen);
         Assert.Equal(4, aIncreased.VDegree());
         Assert.Equal(2, myOriginalSurface.VDegree());
-        Assert.Equal(2, myOriginalSurface.PoleColRemoved(2).NbVPoles());
+        Assert.Equal(2, myOriginalSurface.PoleColRemoved(2).VPoleCount);
         Assert.True(myOriginalSurface.Segmented(0.0, 0.5, 0.0, 1.0).Value(1.0, 0.0).IsEqual(myOriginalSurface.Value(0.5, 0.0), 1e-12));
-        Geom_BezierSurface aWeighted = myOriginalSurface.WithWeight(2, 2, 3.0);
-        Assert.True(aWeighted.IsURational());
-        Assert.False(myOriginalSurface.IsURational());
-        Assert.True(myOriginalSurface.IsUClosed() == false && myOriginalSurface.IsVClosed() == false);
+        BezierSurface aWeighted = myOriginalSurface.WithWeight(2, 2, 3.0);
+        Assert.True(aWeighted.IsURational);
+        Assert.False(myOriginalSurface.IsURational);
+        Assert.True(myOriginalSurface.IsUClosed == false && myOriginalSurface.IsVClosed == false);
     }
     [Fact]
     public void EvalRepresentation_KeptByPoleEdits_AsInOCCT()
@@ -626,19 +627,19 @@ public class Geom_BezierSurfaceTests
         aPoles[1, 2] = new Point3D(1, 0, 5);
         aPoles[2, 1] = new Point3D(0, 1, 5);
         aPoles[2, 2] = new Point3D(1, 1, 5);
-        Geom_BezierSurface aRep = new(aPoles);
-        Geom_BezierSurface aSurf = myOriginalSurface.WithEvalRepresentation(new GeomEval_RepSurfaceDesc.Full { Representation = aRep });
-        Assert.True(aSurf.HasEvalRepresentation());
-        Assert.False(myOriginalSurface.HasEvalRepresentation());
+        BezierSurface aRep = new(aPoles);
+        BezierSurface aSurf = myOriginalSurface.WithEvalRepresentation(new RepSurfaceDesc.Full { Representation = aRep });
+        Assert.True(aSurf.HasEvalRepresentation);
+        Assert.False(myOriginalSurface.HasEvalRepresentation);
         Assert.True(aSurf.Value(0.5, 0.5).IsEqual(aRep.Value(0.5, 0.5), 0.0));
-        Assert.True(aSurf.Copy() is Geom_BezierSurface { } aCopy && aCopy.HasEvalRepresentation());
+        Assert.True(aSurf.Copy() is BezierSurface { } aCopy && aCopy.HasEvalRepresentation);
 
         // OCCT: a pole edit keeps the representation (occt-issues.md), Transform drops it
         aSurf.SetPole(1, 1, new Point3D(-10, -10, -10));
-        Assert.True(aSurf.HasEvalRepresentation());
+        Assert.True(aSurf.HasEvalRepresentation);
         Assert.True(aSurf.Value(0.0, 0.0).IsEqual(new Point3D(0, 0, 5), 0.0));
         aSurf.Transform(Transform3D.Translation(new Vector3D(0, 0, 1)));
-        Assert.False(aSurf.HasEvalRepresentation());
+        Assert.False(aSurf.HasEvalRepresentation);
         Assert.True(aSurf.Value(0.0, 0.0).IsEqual(new Point3D(-10, -10, -9), 1e-12));
     }
 }

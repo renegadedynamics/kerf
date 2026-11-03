@@ -2,14 +2,19 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopTools_FormatVersion;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Engine.Exchange.Brep.FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -61,9 +66,9 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
 
     private static string Text(string theFile) => File.ReadAllText(theFile, Encoding.Latin1);
 
-    private static TopoDS_Shape PortRead(string theFile)
+    private static Shape PortRead(string theFile)
     {
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, theFile), theFile);
+        Assert.True(BrepTools.Read(out Shape aShape, theFile), theFile);
         return aShape;
     }
 
@@ -78,14 +83,14 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
     private string NativeWrite(N.TopoDS_Shape theShape, bool theWithTriangles = true)
     {
         string aFile = NewFile();
-        Assert.True(N.BRepTools.Write(theShape, aFile, theWithTriangles, false, (N.TopTools_FormatVersion)(int)TopTools_FormatVersion_CURRENT));
+        Assert.True(N.BRepTools.Write(theShape, aFile, theWithTriangles, false, (N.TopTools_FormatVersion)(int)FormatVersion_CURRENT));
         return aFile;
     }
 
-    private string PortWrite(in TopoDS_Shape theShape)
+    private string PortWrite(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile, true, false, TopTools_FormatVersion_CURRENT));
+        Assert.True(BrepTools.Write(theShape, aFile, true, false, FormatVersion_CURRENT));
         return aFile;
     }
 
@@ -99,10 +104,10 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
         return aF1;
     }
 
-    private static NCollection_IndexedMap<TopoDS_Shape> Map(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static NCollection_IndexedMap<Shape> Map(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap;
     }
 
@@ -317,9 +322,9 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>Meshes F1 on both sides with the setting and compares the results.</summary>
-    private void Compare(Tally theTally, string theName, string theF1, Setting theSetting, in TopoDS_Shape? thePortInput = null)
+    private void Compare(Tally theTally, string theName, string theF1, Setting theSetting, in Shape? thePortInput = null)
     {
-        TopoDS_Shape aPortF1 = thePortInput ?? PortRead(theF1);
+        Shape aPortF1 = thePortInput ?? PortRead(theF1);
         double aDeflection = theSetting.Deflection;
         if (aDeflection < 0)
         {
@@ -347,7 +352,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
         (string aF2, NativeTriangulation?[] aNativeTris, int aNativeStatus) = NativeMesh(theF1, aDeflection, theSetting);
 
         var aMesh = new BRepMesh_IncrementalMesh(aPortF1, aDeflection, theSetting.Relative, theSetting.Angle, theSetting.Parallel);
-        TopoDS_Shape aResult = aMesh.Shape();
+        Shape aResult = aMesh.Shape();
         string aP = PortWrite(aResult);
 
         theTally.Meshings++;
@@ -375,11 +380,11 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
             theTally.TextDifferences.Add($"{aWhat}: BRep text differs ({aF2}, {aP})");
         }
 
-        NCollection_IndexedMap<TopoDS_Shape> aFaces = Map(aResult, TopAbs_FACE);
+        NCollection_IndexedMap<Shape> aFaces = Map(aResult, ShapeType.Face);
         Assert.Equal(aNativeTris.Length, aFaces.Extent());
         for (int i = 1; i <= aFaces.Extent(); i++)
         {
-            Triangulation? aT = BRep_Tool.Triangulation(TopoDS.Face(aFaces.FindKey(i)), out _);
+            Triangulation? aT = Tool.Triangulation(ShapeCasts.Face(aFaces.FindKey(i)), out _);
             CompareFace(theTally, $"{aWhat} face {i}", aT, aNativeTris[i - 1]);
         }
     }
@@ -746,13 +751,13 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
                 using (new N.BRepMesh_IncrementalMesh(aNative, aSetting.Deflection, aSetting.Relative, aSetting.Angle, aSetting.Parallel))
                 {
                 }
-                TopoDS_Shape aPort = new BRepMesh_IncrementalMesh(PortRead(aF1), aSetting.Deflection, aSetting.Relative, aSetting.Angle, aSetting.Parallel).Shape();
+                Shape aPort = new BRepMesh_IncrementalMesh(PortRead(aF1), aSetting.Deflection, aSetting.Relative, aSetting.Angle, aSetting.Parallel).Shape();
                 string aWhat = $"{Path.GetFileName(aFile)} ({aSetting})";
 
                 using (var aN = new N.GProp_GProps())
                 {
                     N.BRepGProp.SurfaceProperties(aNative, aN, false, true);
-                    GProp_GProps aP = BRepGProp.SurfaceProperties(aPort, false, true);
+                    Properties aP = BRepGProp.SurfaceProperties(aPort, false, true);
                     anOracle.Same(aN.Mass(), aP.Mass(), aWhat + " area");
                     using N.gp_Pnt aNC = aN.CentreOfMass();
                     anOracle.Same(aNC, aP.CentreOfMass(), aWhat + " area centre");
@@ -760,7 +765,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
                 using (var aN = new N.GProp_GProps())
                 {
                     N.BRepGProp.LinearProperties(aNative, aN, false, true);
-                    GProp_GProps aP = BRepGProp.LinearProperties(aPort, false, true);
+                    Properties aP = BRepGProp.LinearProperties(aPort, false, true);
                     anOracle.Same(aN.Mass(), aP.Mass(), aWhat + " length");
                 }
                 using (var aNB = new N.Bnd_Box())
@@ -787,13 +792,13 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>The port's meshes as bytes: the BRep text and every triangulation's doubles.</summary>
-    private string PortDump(in TopoDS_Shape theShape)
+    private string PortDump(in Shape theShape)
     {
         var aBuilder = new StringBuilder(Text(PortWrite(theShape)));
-        NCollection_IndexedMap<TopoDS_Shape> aFaces = Map(theShape, TopAbs_FACE);
+        NCollection_IndexedMap<Shape> aFaces = Map(theShape, ShapeType.Face);
         for (int i = 1; i <= aFaces.Extent(); i++)
         {
-            Triangulation? aT = BRep_Tool.Triangulation(TopoDS.Face(aFaces.FindKey(i)), out _);
+            Triangulation? aT = Tool.Triangulation(ShapeCasts.Face(aFaces.FindKey(i)), out _);
             if (aT is null)
             {
                 aBuilder.Append("null\n");
@@ -834,7 +839,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
             }
             foreach ((double aDeflection, bool isRelative, double anAngle) in new[] { (0.05, true, 0.5), (0.02, true, 0.2) })
             {
-                TopoDS_Shape aShape = PortRead(aF1);
+                Shape aShape = PortRead(aF1);
                 string aSerial = PortDump(new BRepMesh_IncrementalMesh(aShape, aDeflection, isRelative, anAngle, false).Shape());
                 for (int aRun = 0; aRun < 3; aRun++)
                 {

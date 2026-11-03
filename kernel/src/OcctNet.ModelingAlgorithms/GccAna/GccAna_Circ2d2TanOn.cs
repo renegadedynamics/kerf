@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 using static Occt.GccInt_IType;
@@ -138,12 +139,12 @@ public sealed partial class GccAna_Circ2d2TanOn
             WellDone = true;
         }
         Line2D L = new(center1, new Direction2D(center2.XY() - center1.XY()));
-        IntAna2d_AnaIntersection Intp = new(OnLine, L);
-        if (Intp.IsDone())
+        AnalyticIntersection Intp = new(OnLine, L);
+        if (Intp.IsDone)
         {
-            if (!Intp.IsEmpty())
+            if (!Intp.IsEmpty)
             {
-                for (int j = 1; j <= Intp.NbPoints(); j++)
+                for (int j = 1; j <= Intp.PointCount; j++)
                 {
                     Point2D Center = Intp.Point(j).Value();
                     for (int i = 1; i <= nbsol; i++)
@@ -228,17 +229,17 @@ public sealed partial class GccAna_Circ2d2TanOn
                     }
                     else if (typ == GccInt_Hpr)
                     {
-                        Intp.Perform(OnLine, new IntAna2d_Conic(Sol.Hyperbola()));
+                        Intp.Perform(OnLine, new Conic(Sol.Hyperbola()));
                     }
                     else if (typ == GccInt_Ell)
                     {
-                        Intp.Perform(OnLine, new IntAna2d_Conic(Sol.Ellipse()));
+                        Intp.Perform(OnLine, new Conic(Sol.Ellipse()));
                     }
-                    if (Intp.IsDone())
+                    if (Intp.IsDone)
                     {
-                        if (!Intp.IsEmpty())
+                        if (!Intp.IsEmpty)
                         {
-                            for (int j = 1; j <= Intp.NbPoints(); j++)
+                            for (int j = 1; j <= Intp.PointCount; j++)
                             {
                                 Point2D Center = Intp.Point(j).Value();
                                 dist1 = Center.Distance(center1);

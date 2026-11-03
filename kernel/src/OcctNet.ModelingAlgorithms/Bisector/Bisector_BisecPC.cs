@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
 
@@ -21,7 +22,7 @@ namespace Occt;
 /// </remarks>
 public sealed class Bisector_BisecPC : Bisector_Curve
 {
-    private Geom2d_Curve curve = null!;
+    private Curve2D curve = null!;
     private Point2D point;
     private double sign;
     private NCollection_Sequence<double> startIntervals = new();
@@ -55,7 +56,7 @@ public sealed class Bisector_BisecPC : Bisector_Curve
     /// The bisector of the point P and the curve Cu, on the left of Cu if Side is 1, on its right if -1, limited to
     /// the points closer to Cu than DistMax.
     /// </summary>
-    public Bisector_BisecPC(Geom2d_Curve Cu, in Point2D P, double Side, double DistMax = 500)
+    public Bisector_BisecPC(Curve2D Cu, in Point2D P, double Side, double DistMax = 500)
     {
         Perform(Cu, P, Side, DistMax);
     }
@@ -68,9 +69,9 @@ public sealed class Bisector_BisecPC : Bisector_Curve
     /// OCCT leaves distMax, isEmpty, currentInterval and shiftParameter uninitialised here (and evaluates the end
     /// points with that shiftParameter); the port's are 0 and false (occt-issues.md).
     /// </remarks>
-    public Bisector_BisecPC(Geom2d_Curve Cu, in Point2D P, double Side, double UMin, double UMax)
+    public Bisector_BisecPC(Curve2D Cu, in Point2D P, double Side, double UMin, double UMax)
     {
-        curve = (Geom2d_Curve)Cu.Copy();
+        curve = (Curve2D)Cu.Copy();
         point = P;
         sign = Side;
         startIntervals.Append(UMin);
@@ -87,10 +88,10 @@ public sealed class Bisector_BisecPC : Bisector_Curve
     /// Computes the bisector of the point P and the curve Cu, on the left of Cu if Side is 1, on its right if -1,
     /// limited to the points closer to Cu than DistMax.
     /// </summary>
-    internal void Perform(Geom2d_Curve Cu, in Point2D P, double Side, double DistMax = 500)
+    internal void Perform(Curve2D Cu, in Point2D P, double Side, double DistMax = 500)
     {
         CheckMutable();
-        curve = (Geom2d_Curve)Cu.Copy();
+        curve = (Curve2D)Cu.Copy();
         point = P;
         distMax = DistMax;
         sign = Side;
@@ -152,9 +153,9 @@ public sealed class Bisector_BisecPC : Bisector_Curve
     public override double ReversedParameter(double U) => LastParameter() + FirstParameter() - U;
 
     /// <summary>A new, unfrozen bisector with a copy of the curve.</summary>
-    public override Geom2d_Geometry Copy()
+    public override Geometry2D Copy()
     {
-        Geom2d_Curve CopyC = (Geom2d_Curve)curve.Copy();
+        Curve2D CopyC = (Curve2D)curve.Copy();
         Bisector_BisecPC C = new();
 
         C.Init(CopyC, point, sign, startIntervals, endIntervals, bisInterval, currentInterval, shiftParameter, distMax,
@@ -231,24 +232,27 @@ public sealed class Bisector_BisecPC : Bisector_Curve
     }
 
     /// <summary>True if the curve is closed and the bisector has one interval, the curve's.</summary>
-    public override bool IsClosed()
+    public override bool IsClosed
     {
-        if (curve.IsClosed())
+        get
         {
-            //-----------------------------------------------------------------------
-            // The bisectrice is closed if the curve is closed and the bissectrice
-            // has only one domain of continuity equal to the one of the curve.
-            // -----------------------------------------------------------------------
-            if (startIntervals.First() == curve.FirstParameter() && endIntervals.First() == curve.LastParameter())
+            if (curve.IsClosed)
             {
-                return true;
+                //-----------------------------------------------------------------------
+                // The bisectrice is closed if the curve is closed and the bissectrice
+                // has only one domain of continuity equal to the one of the curve.
+                // -----------------------------------------------------------------------
+                if (startIntervals.First() == curve.FirstParameter() && endIntervals.First() == curve.LastParameter())
+                {
+                    return true;
+                }
             }
+            return false;
         }
-        return false;
     }
 
     /// <summary>False.</summary>
-    public override bool IsPeriodic() => false;
+    public override bool IsPeriodic => false;
 
     //=============================================================================
     //           Extension of the bisector by segments.
@@ -487,12 +491,12 @@ public sealed class Bisector_BisecPC : Bisector_Curve
     }
 
     /// <summary>The derivative of order N (1 to 3) at U.</summary>
-    /// <exception cref="Geom2d_UndefinedDerivative">N is not 1, 2 or 3.</exception>
+    /// <exception cref="UndefinedDerivative2DException">N is not 1, 2 or 3.</exception>
     public override Vector2D EvalDN(double U, int N)
     {
         if (N < 1)
         {
-            throw new Geom2d_UndefinedDerivative("Bisector_BisecPC::EvalDN");
+            throw new UndefinedDerivative2DException("Bisector_BisecPC::EvalDN");
         }
         Point2D P = point;
         Vector2D V1 = new(0.0, 0.0);
@@ -509,7 +513,7 @@ public sealed class Bisector_BisecPC : Bisector_Curve
                 return V3;
             default:
             {
-                throw new Geom2d_UndefinedDerivative("Bisector_BisecPC::EvalDN");
+                throw new UndefinedDerivative2DException("Bisector_BisecPC::EvalDN");
             }
         }
     }
@@ -619,7 +623,7 @@ public sealed class Bisector_BisecPC : Bisector_Curve
         // point of initial parameter is less then the interval of continuity.
         //------------------------------------------------------------------------
         // OCCT: dead code, one interval was appended (and Period() would throw: the bisector isn't periodic).
-        if (curve.IsPeriodic())
+        if (curve.IsPeriodic)
         {
             if (startIntervals.Length() > 1)
             { // Plusieurs intervals.
@@ -698,7 +702,7 @@ public sealed class Bisector_BisecPC : Bisector_Curve
         return LinkCurveBis(UOnCurve);
     }
 
-    private void Init(Geom2d_Curve Curve, in Point2D Point, double Sign, NCollection_Sequence<double> StartIntervals,
+    private void Init(Curve2D Curve, in Point2D Point, double Sign, NCollection_Sequence<double> StartIntervals,
                       NCollection_Sequence<double> EndIntervals, int BisInterval, int CurrentInterval,
                       double ShiftParameter, double DistMax, bool IsEmpty, bool IsConvex, bool ExtensionStart,
                       bool ExtensionEnd, in Point2D PointStartBis, in Point2D PointEndBis)

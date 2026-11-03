@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -17,9 +18,9 @@ namespace Occt;
 /// </summary>
 public class BlendFunc_Ruled : Blend_Function
 {
-    private readonly Adaptor3d_Surface surf1;
-    private readonly Adaptor3d_Surface surf2;
-    private readonly Adaptor3d_Curve curv;
+    private readonly SurfaceAdaptorBase surf1;
+    private readonly SurfaceAdaptorBase surf2;
+    private readonly CurveAdaptorBase curv;
     private Point3D pts1;
     private Point3D pts2;
     private bool istangent;
@@ -35,7 +36,7 @@ public class BlendFunc_Ruled : Blend_Function
     private double theD;
     private readonly double distmin;
 
-    public BlendFunc_Ruled(Adaptor3d_Surface S1, Adaptor3d_Surface S2, Adaptor3d_Curve C)
+    public BlendFunc_Ruled(SurfaceAdaptorBase S1, SurfaceAdaptorBase S2, CurveAdaptorBase C)
     {
         surf1 = S1;
         surf2 = S2;

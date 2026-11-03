@@ -4,6 +4,7 @@
 
 // a modifier le cas de 2 points confondus ( Insert a la place d'append ? )
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
 using static Occt.IntCurve_IntConicConic_Tool;
@@ -2457,10 +2458,10 @@ public sealed partial class IntCurve_IntConicConic
             double D = a2 * m2 + b2 - c2;
             if (D < 0.0)
             {
-                Extrema_ExtElC2d anExt = new(aTLine, aTEllipse);
+                ExtElC2d anExt = new(aTLine, aTEllipse);
                 int i, imin = 0;
                 double dmin = RealLast();
-                for (i = 1; i <= anExt.NbExt(); ++i)
+                for (i = 1; i <= anExt.ExtCount; ++i)
                 {
                     if (anExt.SquareDistance(i) < dmin)
                     {
@@ -2471,7 +2472,7 @@ public sealed partial class IntCurve_IntConicConic
                 if (imin > 0 && dmin <= TolTang * TolTang)
                 {
                     nbsol = 1;
-                    anExt.Points(imin, out _, out Extrema_POnCurv2d aPE2);
+                    anExt.Points(imin, out _, out POnCurv2d aPE2);
                     double pe = aPE2.Parameter();
                     EInt1.SetValues(pe, pe);
                 }

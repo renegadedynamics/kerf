@@ -1,8 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Port of: src/ModelingData/TKBRep/GTests/BRepTools_ReShape_Test.cxx (OCCT V8_0_1)
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -12,18 +15,18 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class BRepTools_ReShapeTest
 {
-    private static TopoDS_Vertex MakeVertex(double theX, double theY, double theZ)
+    private static Vertex MakeVertex(double theX, double theY, double theZ)
         => new BRepBuilderAPI_MakeVertex(new Point3D(theX, theY, theZ)).Vertex();
 
-    private static TopoDS_Edge MakeEdge(in TopoDS_Vertex theV1, in TopoDS_Vertex theV2)
+    private static Edge MakeEdge(in Vertex theV1, in Vertex theV2)
         => new BRepBuilderAPI_MakeEdge(theV1, theV2).Edge();
 
-    private static TopoDS_Compound MakeCompound(params TopoDS_Shape[] theShapes)
+    private static Compound MakeCompound(params Shape[] theShapes)
     {
-        var aBuilder = new BRep_Builder();
-        TopoDS_Compound aC = new();
+        var aBuilder = new BrepBuilder();
+        Compound aC = new();
         aBuilder.MakeCompound(ref aC);
-        foreach (TopoDS_Shape aS in theShapes)
+        foreach (Shape aS in theShapes)
         {
             aBuilder.Add(aC, aS);
         }
@@ -36,11 +39,11 @@ public class BRepTools_ReShapeTest
     [Fact]
     public void ValueLeaf_FollowsChainToLeaf()
     {
-        TopoDS_Vertex aA = MakeVertex(0, 0, 0);
-        TopoDS_Vertex aB = MakeVertex(1, 0, 0);
-        TopoDS_Vertex aC = MakeVertex(2, 0, 0);
+        Vertex aA = MakeVertex(0, 0, 0);
+        Vertex aB = MakeVertex(1, 0, 0);
+        Vertex aC = MakeVertex(2, 0, 0);
 
-        var aReShape = new BRepTools_ReShape();
+        var aReShape = new ReShape();
         aReShape.Replace(aA, aB);
         aReShape.Replace(aB, aC);
 
@@ -54,9 +57,9 @@ public class BRepTools_ReShapeTest
     [Fact]
     public void ValueLeaf_UnrecordedShapeIsIdentity()
     {
-        TopoDS_Vertex aA = MakeVertex(0, 0, 0);
+        Vertex aA = MakeVertex(0, 0, 0);
 
-        var aReShape = new BRepTools_ReShape();
+        var aReShape = new ReShape();
         Assert.True(aReShape.ValueLeaf(aA).IsSame(aA));
     }
 
@@ -64,14 +67,14 @@ public class BRepTools_ReShapeTest
     [Fact]
     public void ValueLeaf_ChainEndingInRemoveReturnsNull()
     {
-        TopoDS_Vertex aA = MakeVertex(0, 0, 0);
-        TopoDS_Vertex aB = MakeVertex(1, 0, 0);
+        Vertex aA = MakeVertex(0, 0, 0);
+        Vertex aB = MakeVertex(1, 0, 0);
 
-        var aReShape = new BRepTools_ReShape();
+        var aReShape = new ReShape();
         aReShape.Replace(aA, aB);
         aReShape.Remove(aB);
 
-        Assert.True(aReShape.ValueLeaf(aA).IsNull());
+        Assert.True(aReShape.ValueLeaf(aA).IsNull);
     }
 
     // A direct A->B then B->A creates a cycle in the replacement map; both bindings
@@ -79,10 +82,10 @@ public class BRepTools_ReShapeTest
     [Fact]
     public void Replace_DirectCycleHandledByApply()
     {
-        TopoDS_Vertex aA = MakeVertex(0, 0, 0);
-        TopoDS_Vertex aB = MakeVertex(1, 0, 0);
+        Vertex aA = MakeVertex(0, 0, 0);
+        Vertex aB = MakeVertex(1, 0, 0);
 
-        var aReShape = new BRepTools_ReShape();
+        var aReShape = new ReShape();
         aReShape.Replace(aA, aB);
         aReShape.Replace(aB, aA);
 
@@ -90,8 +93,8 @@ public class BRepTools_ReShapeTest
         Assert.True(aReShape.Value(aB).IsSame(aA));
 
         // Apply() must terminate (DFS in-flight guard) and return a defined shape.
-        TopoDS_Shape aResult = aReShape.Apply(aA);
-        Assert.False(aResult.IsNull(), "Apply must terminate via the DFS guard");
+        Shape aResult = aReShape.Apply(aA);
+        Assert.False(aResult.IsNull, "Apply must terminate via the DFS guard");
     }
 
     // Longer cycles A -> B -> C -> A are accepted at Replace() time and broken at
@@ -99,11 +102,11 @@ public class BRepTools_ReShapeTest
     [Fact]
     public void Replace_LongerCycleHandledByApply()
     {
-        TopoDS_Vertex aA = MakeVertex(0, 0, 0);
-        TopoDS_Vertex aB = MakeVertex(1, 0, 0);
-        TopoDS_Vertex aC = MakeVertex(2, 0, 0);
+        Vertex aA = MakeVertex(0, 0, 0);
+        Vertex aB = MakeVertex(1, 0, 0);
+        Vertex aC = MakeVertex(2, 0, 0);
 
-        var aReShape = new BRepTools_ReShape();
+        var aReShape = new ReShape();
         aReShape.Replace(aA, aB);
         aReShape.Replace(aB, aC);
         aReShape.Replace(aC, aA);
@@ -113,8 +116,8 @@ public class BRepTools_ReShapeTest
         Assert.True(aReShape.Value(aC).IsSame(aA));
 
         // Apply() must terminate (DFS in-flight guard) and return a defined shape.
-        TopoDS_Shape aResult = aReShape.Apply(aA);
-        Assert.False(aResult.IsNull(), "Apply must terminate via the DFS guard");
+        Shape aResult = aReShape.Apply(aA);
+        Assert.False(aResult.IsNull, "Apply must terminate via the DFS guard");
     }
 
     // Apply() must not stack-overflow when a shape's replacement is a compound that
@@ -122,19 +125,19 @@ public class BRepTools_ReShapeTest
     [Fact]
     public void Apply_HandlesStructuralContainmentWithoutCrash()
     {
-        TopoDS_Vertex aV1 = MakeVertex(0, 0, 0);
-        TopoDS_Vertex aV2 = MakeVertex(1, 0, 0);
-        TopoDS_Vertex aV3 = MakeVertex(2, 0, 0);
-        TopoDS_Edge anE = MakeEdge(aV1, aV2);
+        Vertex aV1 = MakeVertex(0, 0, 0);
+        Vertex aV2 = MakeVertex(1, 0, 0);
+        Vertex aV3 = MakeVertex(2, 0, 0);
+        Edge anE = MakeEdge(aV1, aV2);
 
         // Build a compound that contains the edge (plus another shape for flavour).
-        TopoDS_Compound aContainer = MakeCompound(anE, aV3);
+        Compound aContainer = MakeCompound(anE, aV3);
 
-        var aReShape = new BRepTools_ReShape();
+        var aReShape = new ReShape();
         aReShape.Replace(anE, aContainer); // e -> compound{e, v3}
 
-        TopoDS_Shape aResult = aReShape.Apply(anE);
-        Assert.False(aResult.IsNull());
+        Shape aResult = aReShape.Apply(anE);
+        Assert.False(aResult.IsNull);
     }
 
     // Legitimate diamond sharing (the same sub-shape reached via different parent
@@ -143,27 +146,27 @@ public class BRepTools_ReShapeTest
     [Fact]
     public void Apply_DiamondSharingIsProcessedCorrectly()
     {
-        TopoDS_Vertex aV1 = MakeVertex(0, 0, 0);
-        TopoDS_Vertex aV2 = MakeVertex(1, 0, 0);
-        TopoDS_Vertex aV3 = MakeVertex(2, 0, 0);
-        TopoDS_Vertex aV2Repl = MakeVertex(1.5, 0, 0);
+        Vertex aV1 = MakeVertex(0, 0, 0);
+        Vertex aV2 = MakeVertex(1, 0, 0);
+        Vertex aV3 = MakeVertex(2, 0, 0);
+        Vertex aV2Repl = MakeVertex(1.5, 0, 0);
 
         // aE1 and aE2 both reference aV2 as an endpoint - that's the diamond.
-        TopoDS_Edge aE1 = MakeEdge(aV1, aV2);
-        TopoDS_Edge aE2 = MakeEdge(aV2, aV3);
+        Edge aE1 = MakeEdge(aV1, aV2);
+        Edge aE2 = MakeEdge(aV2, aV3);
 
-        TopoDS_Compound aPair = MakeCompound(aE1, aE2);
+        Compound aPair = MakeCompound(aE1, aE2);
 
-        var aReShape = new BRepTools_ReShape();
+        var aReShape = new ReShape();
         aReShape.Replace(aV2, aV2Repl);
 
-        TopoDS_Shape aResult = aReShape.Apply(aPair);
-        Assert.False(aResult.IsNull());
+        Shape aResult = aReShape.Apply(aPair);
+        Assert.False(aResult.IsNull);
 
         // aV2 must have been substituted everywhere it appeared; aV2Repl must appear;
         // the original aV2 TShape must no longer be present in the result.
         int aNbReplVertices = 0;
-        for (var anExp = new TopExp_Explorer(aResult, TopAbs_VERTEX); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aResult, ShapeType.Vertex); anExp.More(); anExp.Next())
         {
             Assert.False(ReferenceEquals(anExp.Current().TShape(), aV2.TShape()),
                          "Original v2 must have been replaced on every diamond arm");
@@ -180,10 +183,10 @@ public class BRepTools_ReShapeTest
     [Fact]
     public void Clear_DropsAllBindings()
     {
-        TopoDS_Vertex aA = MakeVertex(0, 0, 0);
-        TopoDS_Vertex aB = MakeVertex(1, 0, 0);
+        Vertex aA = MakeVertex(0, 0, 0);
+        Vertex aB = MakeVertex(1, 0, 0);
 
-        var aReShape = new BRepTools_ReShape();
+        var aReShape = new ReShape();
         aReShape.Replace(aA, aB);
         Assert.True(aReShape.Value(aA).IsSame(aB));
 
@@ -196,11 +199,11 @@ public class BRepTools_ReShapeTest
     [Fact]
     public void Replace_LastWins()
     {
-        TopoDS_Vertex aA = MakeVertex(0, 0, 0);
-        TopoDS_Vertex aB = MakeVertex(1, 0, 0);
-        TopoDS_Vertex aC = MakeVertex(2, 0, 0);
+        Vertex aA = MakeVertex(0, 0, 0);
+        Vertex aB = MakeVertex(1, 0, 0);
+        Vertex aC = MakeVertex(2, 0, 0);
 
-        var aReShape = new BRepTools_ReShape();
+        var aReShape = new ReShape();
         aReShape.Replace(aA, aB);
         aReShape.Replace(aA, aC); // overwrite
 
@@ -212,9 +215,9 @@ public class BRepTools_ReShapeTest
     [Fact]
     public void Replace_SelfIsNoOp()
     {
-        TopoDS_Vertex aA = MakeVertex(0, 0, 0);
+        Vertex aA = MakeVertex(0, 0, 0);
 
-        var aReShape = new BRepTools_ReShape();
+        var aReShape = new ReShape();
         aReShape.Replace(aA, aA);
 
         Assert.False(aReShape.IsRecorded(aA));
@@ -226,20 +229,20 @@ public class BRepTools_ReShapeTest
     [Fact]
     public void Apply_RemoveDropsSubShapeFromParent()
     {
-        TopoDS_Vertex aV1 = MakeVertex(0, 0, 0);
-        TopoDS_Vertex aV2 = MakeVertex(1, 0, 0);
-        TopoDS_Vertex aV3 = MakeVertex(2, 0, 0);
+        Vertex aV1 = MakeVertex(0, 0, 0);
+        Vertex aV2 = MakeVertex(1, 0, 0);
+        Vertex aV3 = MakeVertex(2, 0, 0);
 
-        TopoDS_Compound aParent = MakeCompound(aV1, aV2, aV3);
+        Compound aParent = MakeCompound(aV1, aV2, aV3);
 
-        var aReShape = new BRepTools_ReShape();
+        var aReShape = new ReShape();
         aReShape.Remove(aV2);
 
-        TopoDS_Shape aResult = aReShape.Apply(aParent);
-        Assert.False(aResult.IsNull());
+        Shape aResult = aReShape.Apply(aParent);
+        Assert.False(aResult.IsNull);
 
         int aNbVerts = 0;
-        for (var anIt = new TopoDS_Iterator(aResult); anIt.More(); anIt.Next())
+        for (var anIt = new Iterator(aResult); anIt.More(); anIt.Next())
         {
             Assert.False(ReferenceEquals(anIt.Value().TShape(), aV2.TShape()), "v2 should have been removed");
             ++aNbVerts;
@@ -254,27 +257,27 @@ public class BRepTools_ReShapeTest
     [Fact]
     public void Apply_SharedEdgeAcrossTwoParents()
     {
-        TopoDS_Vertex aV1 = MakeVertex(0, 0, 0);
-        TopoDS_Vertex aV2 = MakeVertex(1, 0, 0);
-        TopoDS_Vertex aV3 = MakeVertex(2, 0, 0);
-        TopoDS_Edge aE1 = MakeEdge(aV1, aV2);
-        TopoDS_Edge aE2 = MakeEdge(aV2, aV3);
-        TopoDS_Edge aE1New = MakeEdge(MakeVertex(0.5, 0, 0), aV2);
+        Vertex aV1 = MakeVertex(0, 0, 0);
+        Vertex aV2 = MakeVertex(1, 0, 0);
+        Vertex aV3 = MakeVertex(2, 0, 0);
+        Edge aE1 = MakeEdge(aV1, aV2);
+        Edge aE2 = MakeEdge(aV2, aV3);
+        Edge aE1New = MakeEdge(MakeVertex(0.5, 0, 0), aV2);
 
         // Build two parents both referencing aE1: parentA{aE1, aV3}, parentB{aE1, aE2}.
-        TopoDS_Compound aParentA = MakeCompound(aE1, aV3);
-        TopoDS_Compound aParentB = MakeCompound(aE1, aE2);
+        Compound aParentA = MakeCompound(aE1, aV3);
+        Compound aParentB = MakeCompound(aE1, aE2);
 
-        var aReShape = new BRepTools_ReShape();
+        var aReShape = new ReShape();
         aReShape.Replace(aE1, aE1New);
 
-        TopoDS_Shape aResultA = aReShape.Apply(aParentA);
-        TopoDS_Shape aResultB = aReShape.Apply(aParentB);
-        Assert.False(aResultA.IsNull());
-        Assert.False(aResultB.IsNull());
+        Shape aResultA = aReShape.Apply(aParentA);
+        Shape aResultB = aReShape.Apply(aParentB);
+        Assert.False(aResultA.IsNull);
+        Assert.False(aResultB.IsNull);
 
         bool aFoundNewInA = false, aFoundNewInB = false;
-        for (var anExp = new TopExp_Explorer(aResultA, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aResultA, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Assert.False(ReferenceEquals(anExp.Current().TShape(), aE1.TShape()));
             if (ReferenceEquals(anExp.Current().TShape(), aE1New.TShape()))
@@ -283,7 +286,7 @@ public class BRepTools_ReShapeTest
             }
         }
 
-        for (var anExp = new TopExp_Explorer(aResultB, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aResultB, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Assert.False(ReferenceEquals(anExp.Current().TShape(), aE1.TShape()));
             if (ReferenceEquals(anExp.Current().TShape(), aE1New.TShape()))
@@ -301,12 +304,12 @@ public class BRepTools_ReShapeTest
     [Fact]
     public void Apply_NoBindingsIsIdentity()
     {
-        TopoDS_Vertex aV1 = MakeVertex(0, 0, 0);
-        TopoDS_Vertex aV2 = MakeVertex(1, 0, 0);
-        TopoDS_Edge anE = MakeEdge(aV1, aV2);
+        Vertex aV1 = MakeVertex(0, 0, 0);
+        Vertex aV2 = MakeVertex(1, 0, 0);
+        Edge anE = MakeEdge(aV1, aV2);
 
-        var aReShape = new BRepTools_ReShape();
-        TopoDS_Shape aResult = aReShape.Apply(anE);
+        var aReShape = new ReShape();
+        Shape aResult = aReShape.Apply(anE);
         Assert.True(aResult.IsSame(anE));
     }
 
@@ -315,30 +318,30 @@ public class BRepTools_ReShapeTest
     [Fact]
     public void Apply_DeepStructuralContainmentWithoutCrash()
     {
-        TopoDS_Vertex aV1 = MakeVertex(0, 0, 0);
-        TopoDS_Vertex aV2 = MakeVertex(1, 0, 0);
-        TopoDS_Vertex anExtra = MakeVertex(3, 0, 0);
-        TopoDS_Edge anE = MakeEdge(aV1, aV2);
+        Vertex aV1 = MakeVertex(0, 0, 0);
+        Vertex aV2 = MakeVertex(1, 0, 0);
+        Vertex anExtra = MakeVertex(3, 0, 0);
+        Edge anE = MakeEdge(aV1, aV2);
 
         // inner{e}, outer{inner, extra}: e is reachable two levels down.
-        TopoDS_Compound anInner = MakeCompound(anE);
-        TopoDS_Compound anOuter = MakeCompound(anInner, anExtra);
+        Compound anInner = MakeCompound(anE);
+        Compound anOuter = MakeCompound(anInner, anExtra);
 
-        var aReShape = new BRepTools_ReShape();
+        var aReShape = new ReShape();
         aReShape.Replace(anE, anOuter); // e -> outer{inner{e}, extra}
 
-        TopoDS_Shape aResult = aReShape.Apply(anE);
-        Assert.False(aResult.IsNull());
+        Shape aResult = aReShape.Apply(anE);
+        Assert.False(aResult.IsNull);
     }
 
     // Locations must be tracked when ModeConsiderLocation is enabled.
     [Fact]
     public void ValueLeaf_ConsidersLocationMode()
     {
-        TopoDS_Vertex aA = MakeVertex(0, 0, 0);
-        TopoDS_Vertex aB = MakeVertex(1, 0, 0);
+        Vertex aA = MakeVertex(0, 0, 0);
+        Vertex aB = MakeVertex(1, 0, 0);
 
-        var aReShape = new BRepTools_ReShape();
+        var aReShape = new ReShape();
         aReShape.ModeConsiderLocation(true); // OCCT: ModeConsiderLocation() = true
         aReShape.Replace(aA, aB);
 

@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.GeomFill_FillingStyle;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -15,7 +16,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class GeomFill_BSplineCurves_Test
 {
     // Builds the filled face from 3 boundary BSpline/Bezier curves (common setup for all OCC28131 tests).
-    internal static TopoDS_Shape createOCC28131Face()
+    internal static Shape createOCC28131Face()
     {
         const double aHeight = 8.5;
         Point3D aV0 = new(-17.6, 0.0, 0.0);
@@ -28,11 +29,11 @@ public class GeomFill_BSplineCurves_Test
         aBezierPoles[2] = new Point3D(aV0.X(), (5.4 / 13.2) * aV1.Y(), 0);
         aBezierPoles[3] = new Point3D((6.0 / 6.8) * aV0.X(), aV1.Y(), 0);
 
-        Geom_BezierCurve aBezier = new(aBezierPoles);
-        Geom_BSplineCurve anOutlineCurve = GeomConvert.CurveToBSplineCurve(aBezier);
+        BezierCurve3D aBezier = new(aBezierPoles);
+        BSplineCurve3D anOutlineCurve = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aBezier);
 
         // First side curve from 2D interpolation projected on YZ plane
-        Geom_BSplineCurve aCurve1;
+        BSplineCurve3D aCurve1;
         {
             NCollection_HArray1<Point2D> aHArray = new(1, 2);
             aHArray.SetValue(1, new Point2D(-aV1.Y(), 0));
@@ -41,11 +42,11 @@ public class GeomFill_BSplineCurves_Test
             anInterp.Load(new Vector2D(0, 1), new Vector2D(1, 0));
             anInterp.Perform();
             Plane3D aPln = new(new CoordinateSystem(new Point3D(), new Direction3D(Direction3D.D.X), new Direction3D(Direction3D.D.NY)));
-            aCurve1 = (Geom_BSplineCurve)GeomAPI.To3d(anInterp.Curve(), aPln);
+            aCurve1 = (BSplineCurve3D)GeomAPI.To3d(anInterp.Curve(), aPln);
         }
 
         // Second side curve from 2D interpolation projected on XZ plane
-        Geom_BSplineCurve aCurve2;
+        BSplineCurve3D aCurve2;
         {
             NCollection_HArray1<Point2D> aHArray = new(1, 3);
             aHArray.SetValue(1, new Point2D(-aV0.X(), 0));
@@ -54,21 +55,21 @@ public class GeomFill_BSplineCurves_Test
             Geom2dAPI_Interpolate anInterp = new(aHArray, false, 1e-6);
             anInterp.Perform();
             Plane3D aPln = new(new CoordinateSystem(new Point3D(), new Direction3D(Direction3D.D.NY), new Direction3D(Direction3D.D.NX)));
-            aCurve2 = (Geom_BSplineCurve)GeomAPI.To3d(anInterp.Curve(), aPln);
+            aCurve2 = (BSplineCurve3D)GeomAPI.To3d(anInterp.Curve(), aPln);
         }
 
         GeomFill_BSplineCurves aFill = new();
         aFill.Init(anOutlineCurve, aCurve1, aCurve2, GeomFill_CoonsStyle);
 
         BRepBuilderAPI_MakeFace aFaceBuilder = new(aFill.Surface()!, 0);
-        return aFaceBuilder.IsDone() ? aFaceBuilder.Shape() : new TopoDS_Shape();
+        return aFaceBuilder.IsDone() ? aFaceBuilder.Shape() : new Shape();
     }
 
     [Fact]
     public void OCC28131_FillSurfaceFromBezierAndInterpolatedCurves()
     {
-        TopoDS_Shape aFace = createOCC28131Face();
-        Assert.False(aFace.IsNull());
+        Shape aFace = createOCC28131Face();
+        Assert.False(aFace.IsNull);
         Assert.True(new BRepCheck_Analyzer(aFace).IsValid());
     }
 }

@@ -4,6 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -24,9 +27,9 @@ public abstract class BRepPrimAPI_MakeOneAxis : BRepBuilderAPI_MakeShape
     /// <summary>Stores the solid in the result (a new solid holding the shell each time, as OCCT).</summary>
     public override void Build(ProgressRange theRange = default)
     {
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         // OCCT.NET: a new solid in a new variable (OCCT remakes the one in myShape, decision 414).
-        TopoDS_Solid aSolid = new();
+        Solid aSolid = new();
         B.MakeSolid(ref aSolid);
         B.Add(aSolid, OneAxis().Shell());
         myShape = aSolid;
@@ -34,56 +37,56 @@ public abstract class BRepPrimAPI_MakeOneAxis : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The lateral face of the rotational primitive (frozen).</summary>
-    public TopoDS_Face Face()
+    public Face Face()
     {
-        TopoDS_Face aFace = InternalFace();
+        Face aFace = InternalFace();
         aFace.TShape()?.FreezeGraph();
         return aFace;
     }
 
     /// <summary><see cref="Face"/> without freezing, for ported code.</summary>
-    internal TopoDS_Face InternalFace()
+    internal Face InternalFace()
     {
         Build();
         return OneAxis().LateralFace();
     }
 
     /// <summary>The rotational primitive as a shell (frozen).</summary>
-    public TopoDS_Shell Shell()
+    public Shell Shell()
     {
-        TopoDS_Shell aShell = InternalShell();
+        Shell aShell = InternalShell();
         aShell.TShape()?.FreezeGraph();
         return aShell;
     }
 
     /// <summary><see cref="Shell"/> without freezing, for ported code.</summary>
-    internal TopoDS_Shell InternalShell()
+    internal Shell InternalShell()
     {
         Build();
         return OneAxis().Shell();
     }
 
     /// <summary>The rotational primitive as a solid (frozen).</summary>
-    public TopoDS_Solid Solid()
+    public Solid Solid()
     {
-        TopoDS_Solid aSolid = InternalSolid();
+        Solid aSolid = InternalSolid();
         aSolid.TShape()?.FreezeGraph();
         return aSolid;
     }
 
     /// <summary><see cref="Solid"/> without freezing, for ported code.</summary>
-    internal TopoDS_Solid InternalSolid()
+    internal Solid InternalSolid()
     {
         Build();
-        return TopoDS.Solid(myShape);
+        return ShapeCasts.Solid(myShape);
     }
 
     /// <summary>The lateral face (OCCT's conversion operator; frozen).</summary>
-    public static explicit operator TopoDS_Face(BRepPrimAPI_MakeOneAxis theMaker) => theMaker.Face();
+    public static explicit operator Face(BRepPrimAPI_MakeOneAxis theMaker) => theMaker.Face();
 
     /// <summary>The shell (OCCT's conversion operator; frozen).</summary>
-    public static explicit operator TopoDS_Shell(BRepPrimAPI_MakeOneAxis theMaker) => theMaker.Shell();
+    public static explicit operator Shell(BRepPrimAPI_MakeOneAxis theMaker) => theMaker.Shell();
 
     /// <summary>The solid (OCCT's conversion operator; frozen).</summary>
-    public static explicit operator TopoDS_Solid(BRepPrimAPI_MakeOneAxis theMaker) => theMaker.Solid();
+    public static explicit operator Solid(BRepPrimAPI_MakeOneAxis theMaker) => theMaker.Solid();
 }

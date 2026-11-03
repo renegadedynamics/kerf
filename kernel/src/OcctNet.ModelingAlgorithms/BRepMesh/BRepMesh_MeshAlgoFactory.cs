@@ -60,11 +60,11 @@ public class BRepMesh_MeshAlgoFactory : IMeshTools_MeshAlgoFactory
             case SurfaceOfExtrusion:
                 return new BRepMesh_DelaunayDeflectionControlMeshAlgo<BRepMesh_ExtrusionRangeSplitter>();
 
-            case BezierSurface:
-            case BSplineSurface:
+            case SurfaceKind.BezierSurface:
+            case SurfaceKind.BSplineSurface:
                 return new BRepMesh_DelaunayDeflectionControlMeshAlgo<BRepMesh_NURBSRangeSplitter>();
 
-            case OffsetSurface:
+            case SurfaceKind.OffsetSurface:
             case OtherSurface:
             default:
                 return new BRepMesh_DelaunayDeflectionControlMeshAlgo<BRepMesh_UndefinedRangeSplitter>();

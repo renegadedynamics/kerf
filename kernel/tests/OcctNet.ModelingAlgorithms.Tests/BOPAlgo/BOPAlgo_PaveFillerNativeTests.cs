@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -74,18 +77,18 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
         return aCases;
     }
 
-    internal static NCollection_List<TopoDS_Shape> Arguments(Case theCase, bool theFreeze)
+    internal static NCollection_List<Shape> Arguments(Case theCase, bool theFreeze)
     {
         // BRepTools.Read publishes frozen shapes; the destructive mode runs on an unfrozen exact copy
-        BRepTools.Read(out TopoDS_Shape aShape, new StringReader(theCase.ShapesText));
+        BrepTools.Read(out Shape aShape, new StringReader(theCase.ShapesText));
         if (!theFreeze)
         {
-            aShape = BRepTools.ExactCopyForWrite(aShape, out _);
+            aShape = BrepTools.ExactCopyForWrite(aShape, out _);
         }
-        NCollection_List<TopoDS_Shape> aLS = new();
-        for (TopoDS_Iterator anIt = new(aShape); anIt.More(); anIt.Next())
+        NCollection_List<Shape> aLS = new();
+        for (Iterator anIt = new(aShape); anIt.More(); anIt.Next())
         {
-            TopoDS_Shape anArg = anIt.Value();
+            Shape anArg = anIt.Value();
             aLS.Append(anArg);
         }
         return aLS;
@@ -102,7 +105,7 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
     }
 
     /// <summary>The port's record of a run, as the recorder writes native's.</summary>
-    internal static string Run(NCollection_List<TopoDS_Shape> theArgs, bool theNonDestructive, bool theParallel = false,
+    internal static string Run(NCollection_List<Shape> theArgs, bool theNonDestructive, bool theParallel = false,
                                double theFuzzy = 0.0)
     {
         BOPAlgo_PaveFiller aPF = new();
@@ -175,13 +178,13 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
         Assert.Empty(aDiffs);
     }
 
-    private static string Text(NCollection_List<TopoDS_Shape> theArgs)
+    private static string Text(NCollection_List<Shape> theArgs)
     {
         StringBuilder aB = new();
-        foreach (TopoDS_Shape aS in theArgs)
+        foreach (Shape aS in theArgs)
         {
             using StringWriter aW = new();
-            BRepTools.Write(aS, aW);
+            BrepTools.Write(aS, aW);
             aB.Append(aW.ToString());
         }
         return aB.ToString();
@@ -211,7 +214,7 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
     {
         foreach (Case aCase in Cases.Value)
         {
-            NCollection_List<TopoDS_Shape> anArgs = Arguments(aCase, false);
+            NCollection_List<Shape> anArgs = Arguments(aCase, false);
             string aBefore = Text(anArgs);
             Assert.Equal(aCase.Native[1], Run(anArgs, true, false, aCase.Fuzzy));
             Assert.Equal(aBefore, Text(anArgs));
@@ -225,7 +228,7 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
         int aChanged = 0;
         foreach (Case aCase in Cases.Value.Take(100))
         {
-            NCollection_List<TopoDS_Shape> anArgs = Arguments(aCase, false);
+            NCollection_List<Shape> anArgs = Arguments(aCase, false);
             string aBefore = Text(anArgs);
             Run(anArgs, false, false, aCase.Fuzzy);
             aChanged += aBefore != Text(anArgs) ? 1 : 0;

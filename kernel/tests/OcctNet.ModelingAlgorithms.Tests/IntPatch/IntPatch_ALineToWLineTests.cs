@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 
@@ -18,10 +19,10 @@ public class IntPatch_ALineToWLineTests
         new(new Point3D(x, y, z), new Direction3D(dx, dy, dz));
 
     private static (NCollection_Sequence<IntPatch_Line> Lines, int NbALines) Convert(
-        GeomAdaptor_Surface theS1, GeomAdaptor_Surface theS2, int theNbPoints = 200)
+        SurfaceAdaptor theS1, SurfaceAdaptor theS2, int theNbPoints = 200)
     {
-        var anII = new IntPatch_ImpImpIntersection(theS1, new Adaptor3d_TopolTool(theS1), theS2,
-                                                   new Adaptor3d_TopolTool(theS2), Tol, Tol);
+        var anII = new IntPatch_ImpImpIntersection(theS1, new TopolTool(theS1), theS2,
+                                                   new TopolTool(theS2), Tol, Tol);
         Assert.True(anII.IsDone());
         var aConv = new IntPatch_ALineToWLine(theS1, theS2, theNbPoints);
         var aLines = new NCollection_Sequence<IntPatch_Line>();
@@ -37,8 +38,8 @@ public class IntPatch_ALineToWLineTests
         return (aLines, aNbA);
     }
 
-    private static void Check(NCollection_Sequence<IntPatch_Line> theLines, GeomAdaptor_Surface theS1,
-                              GeomAdaptor_Surface theS2)
+    private static void Check(NCollection_Sequence<IntPatch_Line> theLines, SurfaceAdaptor theS1,
+                              SurfaceAdaptor theS2)
     {
         Assert.True(theLines.Length() > 0);
         for (int i = 1; i <= theLines.Length(); i++)
@@ -68,8 +69,8 @@ public class IntPatch_ALineToWLineTests
     [Fact]
     public void Cylinder_and_sphere()
     {
-        var aCyl = new GeomAdaptor_Surface(new Geom_CylindricalSurface(Ax(0, 0, 0, 0, 0, 1), 1), 0, 2 * M_PI, -3, 3);
-        var aSph = new GeomAdaptor_Surface(new Geom_SphericalSurface(Ax(1, 0, 0, 0, 0, 1), 2));
+        var aCyl = new SurfaceAdaptor(new CylindricalSurface(Ax(0, 0, 0, 0, 0, 1), 1), 0, 2 * M_PI, -3, 3);
+        var aSph = new SurfaceAdaptor(new SphericalSurface(Ax(1, 0, 0, 0, 0, 1), 2));
         var (aLines, aNbA) = Convert(aCyl, aSph);
         Assert.Equal(2, aNbA);
         Check(aLines, aCyl, aSph);
@@ -78,8 +79,8 @@ public class IntPatch_ALineToWLineTests
     [Fact]
     public void Cylinder_and_cone()
     {
-        var aCyl = new GeomAdaptor_Surface(new Geom_CylindricalSurface(Ax(0, 0, 0, 0, 0, 1), 1), 0, 2 * M_PI, -5, 5);
-        var aCone = new GeomAdaptor_Surface(new Geom_ConicalSurface(Ax(0.3, 0, 0, 1, 0, 1), M_PI / 8, 0.5), 0,
+        var aCyl = new SurfaceAdaptor(new CylindricalSurface(Ax(0, 0, 0, 0, 0, 1), 1), 0, 2 * M_PI, -5, 5);
+        var aCone = new SurfaceAdaptor(new ConicalSurface(Ax(0.3, 0, 0, 1, 0, 1), M_PI / 8, 0.5), 0,
                                             2 * M_PI, -5, 5);
         var (aLines, aNbA) = Convert(aCyl, aCone);
         Assert.True(aNbA > 0);
@@ -89,9 +90,9 @@ public class IntPatch_ALineToWLineTests
     [Fact]
     public void Cone_and_sphere()
     {
-        var aCone = new GeomAdaptor_Surface(new Geom_ConicalSurface(Ax(0, 0, 0, 0, 0, 1), M_PI / 6, 1), 0, 2 * M_PI,
+        var aCone = new SurfaceAdaptor(new ConicalSurface(Ax(0, 0, 0, 0, 0, 1), M_PI / 6, 1), 0, 2 * M_PI,
                                             -3, 3);
-        var aSph = new GeomAdaptor_Surface(new Geom_SphericalSurface(Ax(0.2, 0, 1, 0, 0, 1), 2));
+        var aSph = new SurfaceAdaptor(new SphericalSurface(Ax(0.2, 0, 1, 0, 0, 1), 2));
         var (aLines, aNbA) = Convert(aCone, aSph);
         Assert.Equal(2, aNbA);
         Check(aLines, aCone, aSph);
@@ -100,8 +101,8 @@ public class IntPatch_ALineToWLineTests
     [Fact]
     public void Fewer_points_still_on_both_surfaces()
     {
-        var aCyl = new GeomAdaptor_Surface(new Geom_CylindricalSurface(Ax(0, 0, 0, 0, 0, 1), 1), 0, 2 * M_PI, -3, 3);
-        var aSph = new GeomAdaptor_Surface(new Geom_SphericalSurface(Ax(1, 0, 0, 0, 0, 1), 2));
+        var aCyl = new SurfaceAdaptor(new CylindricalSurface(Ax(0, 0, 0, 0, 0, 1), 1), 0, 2 * M_PI, -3, 3);
+        var aSph = new SurfaceAdaptor(new SphericalSurface(Ax(1, 0, 0, 0, 0, 1), 2));
         var (aLines, _) = Convert(aCyl, aSph, 20);
         Check(aLines, aCyl, aSph);
     }
@@ -111,9 +112,9 @@ public class IntPatch_ALineToWLineTests
     {
         static string Bits()
         {
-            var aCyl = new GeomAdaptor_Surface(new Geom_CylindricalSurface(Ax(0, 0, 0, 0, 0, 1), 1), 0, 2 * M_PI, -5,
+            var aCyl = new SurfaceAdaptor(new CylindricalSurface(Ax(0, 0, 0, 0, 0, 1), 1), 0, 2 * M_PI, -5,
                                                5);
-            var aCone = new GeomAdaptor_Surface(new Geom_ConicalSurface(Ax(0.3, 0, 0, 1, 0, 1), M_PI / 8, 0.5), 0,
+            var aCone = new SurfaceAdaptor(new ConicalSurface(Ax(0.3, 0, 0, 1, 0, 1), M_PI / 8, 0.5), 0,
                                                 2 * M_PI, -5, 5);
             var (aLines, _) = Convert(aCyl, aCone);
             var aSb = new System.Text.StringBuilder();
@@ -141,7 +142,7 @@ public class IntPatch_ALineToWLineTests
     [Fact]
     public void Tolerances()
     {
-        var aCyl = new GeomAdaptor_Surface(new Geom_CylindricalSurface(Ax(0, 0, 0, 0, 0, 1), 1));
+        var aCyl = new SurfaceAdaptor(new CylindricalSurface(Ax(0, 0, 0, 0, 0, 1), 1));
         var aConv = new IntPatch_ALineToWLine(aCyl, aCyl);
         Assert.Equal(1.0e-9, aConv.TolOpenDomain());
         Assert.Equal(1.0e-8, aConv.TolTransition());

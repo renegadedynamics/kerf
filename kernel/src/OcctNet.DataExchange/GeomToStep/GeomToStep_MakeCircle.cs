@@ -36,7 +36,7 @@ public sealed class GeomToStep_MakeCircle : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D circle, its position and radius divided by the length factor.</summary>
-    public GeomToStep_MakeCircle(Geom_Circle Cer, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeCircle(CircleCurve3D Cer, in StepData_Factors theLocalFactors)
     {
         Circle3D C;
         C = Cer.Circ();
@@ -44,7 +44,7 @@ public sealed class GeomToStep_MakeCircle : GeomToStep_Root
     }
 
     /// <summary>A 3D circle (default factors).</summary>
-    public GeomToStep_MakeCircle(Geom_Circle Cer) : this(Cer, new StepData_Factors())
+    public GeomToStep_MakeCircle(CircleCurve3D Cer) : this(Cer, new StepData_Factors())
     {
     }
 
@@ -54,7 +54,7 @@ public sealed class GeomToStep_MakeCircle : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D circle.</summary>
-    public GeomToStep_MakeCircle(Geom2d_Circle Cer, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeCircle(CircleCurve2D Cer, in StepData_Factors theLocalFactors)
     {
         Circle2D C2d;
         C2d = Cer.Circ2d();
@@ -75,7 +75,7 @@ public sealed class GeomToStep_MakeCircle : GeomToStep_Root
     }
 
     /// <summary>A 2D circle.</summary>
-    public GeomToStep_MakeCircle(Geom2d_Circle Cer) : this(Cer, new StepData_Factors())
+    public GeomToStep_MakeCircle(CircleCurve2D Cer) : this(Cer, new StepData_Factors())
     {
     }
 

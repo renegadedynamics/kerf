@@ -6,12 +6,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.BOPAlgo_CheckStatus;
 using static Occt.BOPAlgo_Operation;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -31,8 +34,8 @@ namespace Occt;
 /// </remarks>
 public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
 {
-    private TopoDS_Shape myShape1 = new();
-    private TopoDS_Shape myShape2 = new();
+    private Shape myShape1 = new();
+    private Shape myShape2 = new();
     private bool myStopOnFirst;
     private BOPAlgo_Operation myOperation;
     private bool myArgumentTypeMode;
@@ -67,16 +70,16 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
     }
 
     /// <summary>Sets the object shape.</summary>
-    public void SetShape1(in TopoDS_Shape TheShape) => myShape1 = TheShape;
+    public void SetShape1(in Shape TheShape) => myShape1 = TheShape;
 
     /// <summary>Sets the tool shape.</summary>
-    public void SetShape2(in TopoDS_Shape TheShape) => myShape2 = TheShape;
+    public void SetShape2(in Shape TheShape) => myShape2 = TheShape;
 
     /// <summary>The object shape.</summary>
-    public TopoDS_Shape GetShape1() => myShape1;
+    public Shape GetShape1() => myShape1;
 
     /// <summary>The tool shape.</summary>
-    public TopoDS_Shape GetShape2() => myShape2;
+    public Shape GetShape2() => myShape2;
 
     /// <summary>The operation the shapes are checked for (modifiable).</summary>
     public ref BOPAlgo_Operation OperationType() => ref myOperation;
@@ -114,7 +117,7 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
     /// <summary>Prepares the data.</summary>
     protected void Prepare()
     {
-        bool isS1 = myShape1.IsNull(), isS2 = myShape2.IsNull();
+        bool isS1 = myShape1.IsNull, isS2 = myShape2.IsNull;
         if (!isS1)
         {
             myEmpty1 = BOPTools_AlgoTools3D.IsEmptyShape(myShape1);
@@ -266,7 +269,7 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
     /// <summary>Checks the types of the shapes, and for two shapes their dimensions for the operation.</summary>
     protected void TestTypes()
     {
-        bool isS1 = myShape1.IsNull(), isS2 = myShape2.IsNull();
+        bool isS1 = myShape1.IsNull, isS2 = myShape2.IsNull;
 
         if (isS1 && isS2)
         {
@@ -283,7 +286,7 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
 
             if (bIsEmpty || myOperation != BOPAlgo_UNKNOWN)
             {
-                TopoDS_Shape aS = isS1 ? myShape2 : myShape1;
+                Shape aS = isS1 ? myShape2 : myShape1;
                 BOPAlgo_CheckResult aResult = new();
                 aResult.SetShape1(aS);
                 aResult.SetCheckStatus(BOPAlgo_BadType);
@@ -304,7 +307,7 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
                 }
                 else
                 {
-                    TopoDS_Shape aS = myEmpty1 ? myShape1 : myShape2;
+                    Shape aS = myEmpty1 ? myShape1 : myShape2;
                     if (myEmpty1)
                     {
                         aResult.SetShape1(aS);
@@ -346,13 +349,13 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
     /// <summary>Checks each shape on self-interference with <see cref="BOPAlgo_CheckerSI"/>.</summary>
     protected void TestSelfInterferences(ProgressRange theRange)
     {
-        using var aPS = new ProgressScope(theRange, null, (!myShape1.IsNull() && !myShape2.IsNull() ? 2 : 1));
+        using var aPS = new ProgressScope(theRange, null, (!myShape1.IsNull && !myShape2.IsNull ? 2 : 1));
         int ii;
         //
         for (ii = 0; ii < 2; ii++)
         {
-            TopoDS_Shape aS = (ii == 0) ? myShape1 : myShape2;
-            if (aS.IsNull())
+            Shape aS = (ii == 0) ? myShape1 : myShape2;
+            if (aS.IsNull)
             {
                 continue;
             }
@@ -365,7 +368,7 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
             //
             int n1, n2;
             BOPDS_MapOfPair.Iterator aItMPK = new();
-            NCollection_List<TopoDS_Shape> anArgs = new();
+            NCollection_List<Shape> anArgs = new();
             BOPAlgo_CheckerSI aChecker = new();
             //
             anArgs.Append(aS);
@@ -391,8 +394,8 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
                 }
                 //
                 // OCCT.NET: the argument's own sub-shapes (the checker may have worked on a copy, decision 882)
-                TopoDS_Shape aS1 = aChecker.Original(aDS.Shape(n1));
-                TopoDS_Shape aS2 = aChecker.Original(aDS.Shape(n2));
+                Shape aS1 = aChecker.Original(aDS.Shape(n1));
+                Shape aS2 = aChecker.Original(aDS.Shape(n2));
                 //
                 BOPAlgo_CheckResult aResult = new();
                 if (ii == 0)
@@ -447,19 +450,19 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
 
         for (i = 0; i < 2; i++)
         {
-            TopoDS_Shape aS = (i == 0) ? myShape1 : myShape2;
+            Shape aS = (i == 0) ? myShape1 : myShape2;
 
-            if (aS.IsNull())
+            if (aS.IsNull)
             {
                 continue;
             }
 
-            TopExp_Explorer anExp = new(aS, TopAbs_EDGE);
+            Explorer anExp = new(aS, ShapeType.Edge);
 
             for (; anExp.More(); anExp.Next())
             {
-                TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
-                if (BRep_Tool.Degenerated(anEdge))
+                Edge anEdge = ShapeCasts.Edge(anExp.Current());
+                if (Tool.Degenerated(anEdge))
                 {
                     continue;
                 }
@@ -470,19 +473,19 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
 
                     if (myOperation == BOPAlgo_SECTION)
                     {
-                        TopoDS_Shape anOtherS = (i == 0) ? myShape2 : myShape1;
+                        Shape anOtherS = (i == 0) ? myShape2 : myShape1;
 
-                        if (!anOtherS.IsNull())
+                        if (!anOtherS.IsNull)
                         {
                             aDist.LoadS2(anOtherS);
 
                             bool bVertexIsOnShape = false;
                             int ii = 0;
-                            TopExp_Explorer anExpV = new(anEdge, TopAbs_VERTEX);
+                            Explorer anExpV = new(anEdge, ShapeType.Vertex);
 
                             for (; anExpV.More(); anExpV.Next())
                             {
-                                TopoDS_Shape aV = anExpV.Current();
+                                Shape aV = anExpV.Current();
 
                                 aDist.LoadS1(aV);
                                 aDist.Perform();
@@ -491,24 +494,24 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
                                 {
                                     for (ii = 1; ii <= aDist.NbSolution(); ii++)
                                     {
-                                        double aTolerance = BRep_Tool.Tolerance(TopoDS.Vertex(aV));
-                                        TopoDS_Shape aSupportShape = aDist.SupportOnShape2(ii);
+                                        double aTolerance = Tool.Tolerance(ShapeCasts.Vertex(aV));
+                                        Shape aSupportShape = aDist.SupportOnShape2(ii);
 
                                         switch (aSupportShape.ShapeType())
                                         {
-                                            case TopAbs_VERTEX:
+                                            case ShapeType.Vertex:
                                             {
-                                                aTolerance += BRep_Tool.Tolerance(TopoDS.Vertex(aSupportShape));
+                                                aTolerance += Tool.Tolerance(ShapeCasts.Vertex(aSupportShape));
                                                 break;
                                             }
-                                            case TopAbs_EDGE:
+                                            case ShapeType.Edge:
                                             {
-                                                aTolerance += BRep_Tool.Tolerance(TopoDS.Edge(aSupportShape));
+                                                aTolerance += Tool.Tolerance(ShapeCasts.Edge(aSupportShape));
                                                 break;
                                             }
-                                            case TopAbs_FACE:
+                                            case ShapeType.Face:
                                             {
-                                                aTolerance += BRep_Tool.Tolerance(TopoDS.Face(aSupportShape));
+                                                aTolerance += Tool.Tolerance(ShapeCasts.Face(aSupportShape));
                                                 break;
                                             }
                                             default:
@@ -570,37 +573,37 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
 
         for (i = 0; i < 2; i++)
         {
-            TopoDS_Shape aS = (i == 0) ? myShape1 : myShape2;
+            Shape aS = (i == 0) ? myShape1 : myShape2;
 
-            if (aS.IsNull())
+            if (aS.IsNull)
             {
                 continue;
             }
 
-            TopExp_Explorer anExp = new(aS, TopAbs_FACE);
-            NCollection_List<TopoDS_Shape> aLS = new();
+            Explorer anExp = new(aS, ShapeType.Face);
+            NCollection_List<Shape> aLS = new();
 
             for (; anExp.More(); anExp.Next())
             {
-                TopoDS_Face aFace = TopoDS.Face(anExp.Current());
+                Face aFace = ShapeCasts.Face(anExp.Current());
 
-                TopoDS_Face aFF = aFace;
-                aFF.Orientation(TopAbs_FORWARD);
-                TopExp_Explorer anExpE = new(aFF, TopAbs_EDGE);
+                Face aFF = aFace;
+                aFF.Orientation(Forward);
+                Explorer anExpE = new(aFF, ShapeType.Edge);
                 int nbstartedges = 0;
                 aLS.Clear();
                 //
                 for (; anExpE.More(); anExpE.Next())
                 {
-                    TopoDS_Edge aE = TopoDS.Edge(anExpE.Current());
-                    TopAbs_Orientation anOriE = aE.Orientation();
+                    Edge aE = ShapeCasts.Edge(anExpE.Current());
+                    Orientation anOriE = aE.Orientation();
                     //
-                    if (anOriE == TopAbs_INTERNAL)
+                    if (anOriE == Internal)
                     {
-                        TopoDS_Edge aEE = aE;
-                        aEE.Orientation(TopAbs_FORWARD);
+                        Edge aEE = aE;
+                        aEE.Orientation(Forward);
                         aLS.Append(aEE);
-                        aEE.Orientation(TopAbs_REVERSED);
+                        aEE.Orientation(Reversed);
                         aLS.Append(aEE);
                     }
                     else
@@ -613,7 +616,7 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
                 aBF.SetFace(aFace);
                 aBF.SetShapes(aLS);
                 aBF.Perform();
-                NCollection_List<TopoDS_Shape> aLF = aBF.Areas();
+                NCollection_List<Shape> aLF = aBF.Areas();
                 bool bBadFace = false;
 
                 if (aLF.Extent() != 1)
@@ -623,7 +626,7 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
                 else
                 {
                     int nbedgeused = 0;
-                    anExpE.Init(aLF.First(), TopAbs_EDGE);
+                    anExpE.Init(aLF.First(), ShapeType.Edge);
 
                     for (; anExpE.More(); anExpE.Next(), nbedgeused++)
                     {
@@ -669,9 +672,9 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
     }
 
     /// <summary>Finds sub-shapes of one shape that would merge with several of the other's.</summary>
-    protected void TestMergeSubShapes(TopAbs_ShapeEnum theType)
+    protected void TestMergeSubShapes(ShapeType theType)
     {
-        if (myShape1.IsNull() || myShape2.IsNull())
+        if (myShape1.IsNull || myShape2.IsNull)
         {
             return;
         }
@@ -685,17 +688,17 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
 
         switch (theType)
         {
-            case TopAbs_VERTEX:
+            case ShapeType.Vertex:
             {
                 aStatus = BOPAlgo_IncompatibilityOfVertex;
                 break;
             }
-            case TopAbs_EDGE:
+            case ShapeType.Edge:
             {
                 aStatus = BOPAlgo_IncompatibilityOfEdge;
                 break;
             }
-            case TopAbs_FACE:
+            case ShapeType.Face:
             {
                 aStatus = BOPAlgo_IncompatibilityOfFace;
                 break;
@@ -703,14 +706,14 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
             default:
                 return;
         }
-        TopExp_Explorer anExp1 = new(myShape1, theType);
-        TopExp_Explorer anExp2 = new(myShape2, theType);
-        NCollection_Sequence<TopoDS_Shape> aSeq1 = new(), aSeq2 = new();
-        NCollection_Map<TopoDS_Shape> aMap1 = new(TopTools_ShapeMapHasher.Instance), aMap2 = new(TopTools_ShapeMapHasher.Instance);
+        Explorer anExp1 = new(myShape1, theType);
+        Explorer anExp2 = new(myShape2, theType);
+        NCollection_Sequence<Shape> aSeq1 = new(), aSeq2 = new();
+        NCollection_Map<Shape> aMap1 = new(ShapeHasher.Instance), aMap2 = new(ShapeHasher.Instance);
 
         for (; anExp1.More(); anExp1.Next())
         {
-            TopoDS_Shape aS1 = anExp1.Current();
+            Shape aS1 = anExp1.Current();
 
             if (aMap1.Contains(aS1))
             {
@@ -722,7 +725,7 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
 
         for (; anExp2.More(); anExp2.Next())
         {
-            TopoDS_Shape aS2 = anExp2.Current();
+            Shape aS2 = anExp2.Current();
             if (aMap2.Contains(aS2))
             {
                 continue;
@@ -744,32 +747,32 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
 
         for (i = 1; i <= aSeq1.Length(); i++)
         {
-            TopoDS_Shape aS1 = aSeq1.Value(i);
-            NCollection_List<TopoDS_Shape> aListOfS2 = new();
+            Shape aS1 = aSeq1.Value(i);
+            NCollection_List<Shape> aListOfS2 = new();
             int nbs = 0;
 
             for (j = 1; j <= aSeq2.Length(); j++)
             {
-                TopoDS_Shape aS2 = aSeq2.Value(j);
+                Shape aS2 = aSeq2.Value(j);
                 bool bIsEqual = false;
 
-                if (theType == TopAbs_VERTEX)
+                if (theType == ShapeType.Vertex)
                 {
-                    TopoDS_Vertex aV1 = TopoDS.Vertex(aS1);
-                    TopoDS_Vertex aV2 = TopoDS.Vertex(aS2);
-                    Point3D aP1 = BRep_Tool.Pnt(aV1);
-                    Point3D aP2 = BRep_Tool.Pnt(aV2);
+                    Vertex aV1 = ShapeCasts.Vertex(aS1);
+                    Vertex aV2 = ShapeCasts.Vertex(aS2);
+                    Point3D aP1 = Tool.Pnt(aV1);
+                    Point3D aP2 = Tool.Pnt(aV2);
                     double aDist = aP1.Distance(aP2);
 
-                    if (aDist <= (BRep_Tool.Tolerance(aV1) + BRep_Tool.Tolerance(aV2)))
+                    if (aDist <= (Tool.Tolerance(aV1) + Tool.Tolerance(aV2)))
                     {
                         bIsEqual = true;
                     }
                 }
-                else if (theType == TopAbs_EDGE)
+                else if (theType == ShapeType.Edge)
                 {
-                    TopoDS_Edge aE1 = TopoDS.Edge(aS1);
-                    TopoDS_Edge aE2 = TopoDS.Edge(aS2);
+                    Edge aE1 = ShapeCasts.Edge(aS1);
+                    Edge aE2 = ShapeCasts.Edge(aS2);
                     //
                     IntTools_EdgeEdge aEE = new(aE1, aE2);
                     //
@@ -783,14 +786,14 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
                         {
                             IntTools_CommonPrt aCPart = aCPrts.Value(ii);
 
-                            if (aCPart.Type() == TopAbs_EDGE)
+                            if (aCPart.Type() == ShapeType.Edge)
                             {
                                 bIsEqual = true;
                             }
                         }
                     }
                 }
-                else if (theType == TopAbs_FACE)
+                else if (theType == ShapeType.Face)
                 {
                     // not yet implemented!
                 }
@@ -810,7 +813,7 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
                 aResult.SetShape1(myShape1);
                 aResult.SetShape2(myShape2);
                 aResult.AddFaultyShape1(aS1);
-                NCollection_List<TopoDS_Shape>.Iterator anIt = new(aListOfS2);
+                NCollection_List<Shape>.Iterator anIt = new(aListOfS2);
 
                 for (; anIt.More(); anIt.Next())
                 {
@@ -829,13 +832,13 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
 
         for (i = 1; i <= aSeq2.Length(); i++)
         {
-            TopoDS_Shape aS2 = aSeq2.Value(i);
-            NCollection_List<TopoDS_Shape> aListOfS1 = new();
+            Shape aS2 = aSeq2.Value(i);
+            NCollection_List<Shape> aListOfS1 = new();
             int nbs = 0;
 
             for (j = 1; j <= aSeq1.Length(); j++)
             {
-                TopoDS_Shape aS1 = aSeq1.Value(j);
+                Shape aS1 = aSeq1.Value(j);
 
                 if (anArrayOfFlag[j, i])
                 {
@@ -850,7 +853,7 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
 
                 aResult.SetShape1(myShape1);
                 aResult.SetShape2(myShape2);
-                NCollection_List<TopoDS_Shape>.Iterator anIt = new(aListOfS1);
+                NCollection_List<Shape>.Iterator anIt = new(aListOfS1);
 
                 for (; anIt.More(); anIt.Next())
                 {
@@ -872,51 +875,51 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
     /// <summary>Checks the vertices of the two shapes for merging problems.</summary>
     protected void TestMergeVertex()
     {
-        TestMergeSubShapes(TopAbs_VERTEX);
+        TestMergeSubShapes(ShapeType.Vertex);
     }
 
     /// <summary>Checks the edges of the two shapes for merging problems.</summary>
     protected void TestMergeEdge()
     {
-        TestMergeSubShapes(TopAbs_EDGE);
+        TestMergeSubShapes(ShapeType.Edge);
     }
 
     /// <summary>Lists the edges and faces whose geometry is only C0.</summary>
     protected void TestContinuity()
     {
         int i, j, aNbS;
-        TopExp_Explorer aExp = new();
+        Explorer aExp = new();
         //
         for (i = 0; i < 2; ++i)
         {
-            TopoDS_Shape aS = i == 0 ? myShape1 : myShape2;
-            if (aS.IsNull())
+            Shape aS = i == 0 ? myShape1 : myShape2;
+            if (aS.IsNull)
             {
                 continue;
             }
             //
-            NCollection_IndexedMap<TopoDS_Shape> aMS = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_IndexedMap<Shape> aMS = new(ShapeHasher.Instance);
             // Edges
-            aExp.Init(aS, TopAbs_EDGE);
+            aExp.Init(aS, ShapeType.Edge);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Edge aE = TopoDS.Edge(aExp.Current());
-                if (BRep_Tool.Degenerated(aE))
+                Edge aE = ShapeCasts.Edge(aExp.Current());
+                if (Tool.Degenerated(aE))
                 {
                     continue;
                 }
-                Geom_Curve? aC = BRep_Tool.Curve(aE, out _, out _);
+                Curve3D? aC = Tool.Curve(aE, out _, out _);
                 if (aC!.Continuity() == Continuity.C0)
                 {
                     aMS.Add(aE);
                 }
             }
             // Faces
-            aExp.Init(aS, TopAbs_FACE);
+            aExp.Init(aS, ShapeType.Face);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Face aF = TopoDS.Face(aExp.Current());
-                Geom_Surface aSurf = BRep_Tool.Surface(aF)!;
+                Face aF = ShapeCasts.Face(aExp.Current());
+                Surface aSurf = Tool.Surface(aF)!;
                 if (aSurf.Continuity() == Continuity.C0)
                 {
                     aMS.Add(aF);
@@ -927,7 +930,7 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
             aNbS = aMS.Extent();
             for (j = 1; j <= aNbS; ++j)
             {
-                TopoDS_Shape aFS = aMS.FindKey(j);
+                Shape aFS = aMS.FindKey(j);
                 BOPAlgo_CheckResult aResult = new();
                 if (i == 0)
                 {
@@ -950,29 +953,29 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
     {
         int i;
         double aT, aD, aTolE;
-        TopExp_Explorer aExpF = new(), aExpE = new();
+        Explorer aExpF = new(), aExpE = new();
         //
         for (i = 0; i < 2; i++)
         {
-            TopoDS_Shape aS = (i == 0) ? myShape1 : myShape2;
-            if (aS.IsNull())
+            Shape aS = (i == 0) ? myShape1 : myShape2;
+            if (aS.IsNull)
             {
                 continue;
             }
             //
-            aExpF.Init(aS, TopAbs_FACE);
+            aExpF.Init(aS, ShapeType.Face);
             for (; aExpF.More(); aExpF.Next())
             {
-                TopoDS_Face aF = TopoDS.Face(aExpF.Current());
+                Face aF = ShapeCasts.Face(aExpF.Current());
                 //
-                aExpE.Init(aF, TopAbs_EDGE);
+                aExpE.Init(aF, ShapeType.Edge);
                 for (; aExpE.More(); aExpE.Next())
                 {
-                    TopoDS_Edge aE = TopoDS.Edge(aExpE.Current());
+                    Edge aE = ShapeCasts.Edge(aExpE.Current());
                     //
                     if (BOPTools_AlgoTools.ComputeTolerance(aF, aE, out aD, out aT))
                     {
-                        aTolE = BRep_Tool.Tolerance(aE);
+                        aTolE = Tool.Tolerance(aE);
                         if (aD > aTolE)
                         {
                             BOPAlgo_CheckResult aResult = new();

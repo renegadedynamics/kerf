@@ -15,10 +15,12 @@
 //    abv 05.05.99 S4137: method CopyPCurves moved to ShapeBuild_Edge
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -32,7 +34,7 @@ namespace Occt;
 /// <para>
 /// The fixes write into the edge they are given (its curves, ranges, flags, tolerances, and its vertices'), so OCCT's
 /// in-place forms (<c>FixAddPCurve</c>, <c>FixSameParameter</c>, ...) are internal, for ported code fixing edges it
-/// owns. Callers use the public twins (<see cref="AddPCurveFixed(in TopoDS_Edge, in TopoDS_Face, bool, out bool, double)"/>,
+/// owns. Callers use the public twins (<see cref="AddPCurveFixed(in Edge, in Face, bool, out bool, double)"/>,
 /// ...), which run the fix on a copy of a frozen edge, give back its unchanged parts and freeze the result
 /// (decision 583). With a context, the vertex-tolerance fixes write only into new vertices recorded in the context,
 /// as OCCT documents.
@@ -57,16 +59,16 @@ public partial class ShapeFix_Edge : Transient
     /// <summary>
     /// Removes the edge's pcurve on the face if its ends don't lie on the vertices. Writes into the edge.
     /// </summary>
-    internal bool FixRemovePCurve(in TopoDS_Edge edge, in TopoDS_Face face)
+    internal bool FixRemovePCurve(in Edge edge, in Face face)
     {
-        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
+        Surface? S = Tool.Surface(face, out Placement L);
         return FixRemovePCurve(edge, S!, L);
     }
 
     /// <summary>
     /// Removes the edge's pcurve on the surface if its ends don't lie on the vertices. Writes into the edge.
     /// </summary>
-    internal bool FixRemovePCurve(in TopoDS_Edge edge, Geom_Surface surface, in Placement location)
+    internal bool FixRemovePCurve(in Edge edge, Surface surface, in Placement location)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         var  EA     = new ShapeAnalysis_Edge();
@@ -79,7 +81,7 @@ public partial class ShapeFix_Edge : Transient
     }
 
     /// <summary>Removes the edge's 3D curve if its ends don't lie on the vertices. Writes into the edge.</summary>
-    internal bool FixRemoveCurve3d(in TopoDS_Edge edge)
+    internal bool FixRemoveCurve3d(in Edge edge)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         var  EA     = new ShapeAnalysis_Edge();
@@ -96,31 +98,31 @@ public partial class ShapeFix_Edge : Transient
     /// the edge. Status: DONE1 pcurve added, DONE2 the projection was approximated, DONE3 the 3D curve was replaced;
     /// FAIL1 no 3D curve, FAIL2 the projection failed.
     /// </summary>
-    internal bool FixAddPCurve(in TopoDS_Edge edge, in TopoDS_Face face, bool isSeam, double prec = 0.0)
+    internal bool FixAddPCurve(in Edge edge, in Face face, bool isSeam, double prec = 0.0)
     {
-        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
+        Surface? S = Tool.Surface(face, out Placement L);
         return FixAddPCurve(edge, S!, L, isSeam, prec);
     }
 
     /// <summary>Adds the edge's pcurve(s) on the surface if missing; see the face form.</summary>
-    internal bool FixAddPCurve(in TopoDS_Edge edge, Geom_Surface surface, in Placement location, bool isSeam,
+    internal bool FixAddPCurve(in Edge edge, Surface surface, in Placement location, bool isSeam,
                                double prec = 0.0)
     {
-        Geom_Surface aTransSurf = surface;
+        Surface aTransSurf = surface;
         if (!location.IsIdentity)
         {
             Transform3D aTrsf = location.Transformation();
-            aTransSurf = (Geom_Surface)surface.Transformed(aTrsf);
+            aTransSurf = (Surface)surface.Transformed(aTrsf);
         }
         var sas = new ShapeAnalysis_Surface(aTransSurf);
         return FixAddPCurve(edge, surface, location, isSeam, sas, prec);
     }
 
     /// <summary>Adds the edge's pcurve(s) on the face if missing, with an analyser of its surface.</summary>
-    internal bool FixAddPCurve(in TopoDS_Edge edge, in TopoDS_Face face, bool isSeam, ShapeAnalysis_Surface surfana,
+    internal bool FixAddPCurve(in Edge edge, in Face face, bool isSeam, ShapeAnalysis_Surface surfana,
                                double prec = 0.0)
     {
-        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
+        Surface? S = Tool.Surface(face, out Placement L);
         return FixAddPCurve(edge, S!, L, isSeam, surfana, prec);
     }
 
@@ -135,18 +137,18 @@ public partial class ShapeFix_Edge : Transient
     // if a surface is periodic the whole contour may be shifted (e.g. ProSTEP,
     // file ug_exhaust-A.stp entity #284920)
 
-    private static Geom2d_Curve TranslatePCurve(Geom_Surface aSurf, Geom2d_Curve aC2d, double aTol)
+    private static Curve2D TranslatePCurve(Surface aSurf, Curve2D aC2d, double aTol)
     {
         aSurf.Bounds(out double uf, out double ul, out double vf, out double vl);
 
         // case of a line
-        if (aC2d is Geom2d_Line theL2d)
+        if (aC2d is LineCurve2D theL2d)
         {
             Point2D theLoc = theL2d.Location();
             Direction2D theDir = theL2d.Direction();
 
             var         newLoc    = new Point2D();
-            Geom2d_Line theNewL2d = theL2d;
+            LineCurve2D theNewL2d = theL2d;
 
             // case UClosed
             if (Math.Abs(theDir.X()) <= aTol && Math.Abs(theDir.Y()) >= aTol)
@@ -159,7 +161,7 @@ public partial class ShapeFix_Edge : Transient
                 {
                     newLoc.SetCoord(theLoc.X() - (ul - uf), theLoc.Y());
                 }
-                theNewL2d = new Geom2d_Line(newLoc, theDir);
+                theNewL2d = new LineCurve2D(newLoc, theDir);
             }
             // case VClosed
             if (Math.Abs(theDir.X()) >= aTol && Math.Abs(theDir.Y()) <= aTol)
@@ -172,7 +174,7 @@ public partial class ShapeFix_Edge : Transient
                 {
                     newLoc.SetCoord(theLoc.X(), theLoc.Y() - (vl - vf));
                 }
-                theNewL2d = new Geom2d_Line(newLoc, theDir);
+                theNewL2d = new LineCurve2D(newLoc, theDir);
             }
             // TODO Other case not yet implemented
             return theNewL2d; //*theL2d;
@@ -180,11 +182,11 @@ public partial class ShapeFix_Edge : Transient
         else
         {
             // case of BSpline curve
-            if (aC2d is not Geom2d_BSplineCurve aBC)
+            if (aC2d is not BSplineCurve2D aBC)
             {
                 return aC2d;
             }
-            var      newC       = (Geom2d_BSplineCurve)aBC.Copy();
+            var      newC       = (BSplineCurve2D)aBC.Copy();
             Point2D FirstPoint = aBC.StartPoint();
             Point2D LastPoint  = aBC.EndPoint();
             var      theVector  = new Vector2D(FirstPoint, LastPoint);
@@ -230,20 +232,20 @@ public partial class ShapeFix_Edge : Transient
     // (concerning seam edges) or BRepLib::SameParameter() (concerning call
     // to GeomLib::SameRange() with 3d tolerance)
 
-    private static void TempSameRange(in TopoDS_Edge AnEdge, double Tolerance)
+    private static void TempSameRange(in Edge AnEdge, double Tolerance)
     {
         var an_Iterator =
-            new NCollection_List<BRep_CurveRepresentation>.Iterator(((BRep_TEdge)AnEdge.TShape()!).ChangeCurves());
+            new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)AnEdge.TShape()!).ChangeCurves());
 
-        Geom2d_Curve? Curve2dPtr = null, NewCurve2dPtr = null;
-        Geom2d_Curve? Curve2dPtr2 = null, NewCurve2dPtr2 = null;
+        Curve2D? Curve2dPtr = null, NewCurve2dPtr = null;
+        Curve2D? Curve2dPtr2 = null, NewCurve2dPtr2 = null;
 
         // bool  IsSameRange = true //skl
         bool         first_time_in = true, has_curve, has_closed_curve;
-        BRep_GCurve? geometric_representation_ptr;
+        GCurve? geometric_representation_ptr;
         double       first, current_first, last, current_last;
 
-        Geom_Curve? C = BRep_Tool.Curve(AnEdge, out _, out current_first, out current_last);
+        Curve3D? C = Tool.Curve(AnEdge, out _, out current_first, out current_last);
         if (C is not null)
         {
             first_time_in = false;
@@ -251,7 +253,7 @@ public partial class ShapeFix_Edge : Transient
 
         while (an_Iterator.More())
         {
-            geometric_representation_ptr = an_Iterator.Value() as BRep_GCurve;
+            geometric_representation_ptr = an_Iterator.Value() as GCurve;
             if (geometric_representation_ptr is not null)
             {
                 has_closed_curve = has_curve = false;
@@ -262,7 +264,7 @@ public partial class ShapeFix_Edge : Transient
                     Curve2dPtr = geometric_representation_ptr.PCurve();
                     has_curve = true;
                 }
-                if (geometric_representation_ptr.IsCurveOnClosedSurface())
+                if (geometric_representation_ptr.IsCurveOnClosedSurface)
                 {
                     Curve2dPtr2 = geometric_representation_ptr.PCurve2();
                     has_closed_curve = true;
@@ -289,19 +291,19 @@ public partial class ShapeFix_Edge : Transient
                             // 15.11.2002 PTV OCC966
                             if (ShapeAnalysis_Curve.IsPeriodic(Curve2dPtr!))
                             {
-                                var    tc    = new Geom2d_TrimmedCurve(Curve2dPtr!, oldFirst, oldLast);
+                                var    tc    = new TrimmedCurve2D(Curve2dPtr!, oldFirst, oldLast);
                                 double shift = tc.FirstParameter() - oldFirst;
                                 oldFirst += shift;
                                 oldLast += shift;
                             }
                             // pdn 30.06.2000 work around on beziers
                             double oldFirstCurve1 = oldFirst, oldLastCurve1 = oldLast;
-                            if (Curve2dPtr is Geom2d_BezierCurve)
+                            if (Curve2dPtr is BezierCurve2D)
                             {
                                 double preci = Kerf.Engine.Foundation.Precision.PConfusion();
                                 if (Math.Abs(oldFirst) > preci || Math.Abs(oldLast - 1) > preci)
                                 {
-                                    var bezier = (Geom2d_BezierCurve)Curve2dPtr.Copy();
+                                    var bezier = (BezierCurve2D)Curve2dPtr.Copy();
                                     bezier.Segment(oldFirst, oldLast);
                                     Curve2dPtr = bezier;
                                 }
@@ -309,7 +311,7 @@ public partial class ShapeFix_Edge : Transient
                                 oldLastCurve1 = 1;
                             }
 
-                            GeomLib.SameRange(Tolerance,
+                            global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(Tolerance,
                                               Curve2dPtr,
                                               oldFirstCurve1,
                                               oldLastCurve1,
@@ -322,12 +324,12 @@ public partial class ShapeFix_Edge : Transient
                         {
                             double oldFirstCurve2 = oldFirst, oldLastCurve2 = oldLast;
 
-                            if (Curve2dPtr2 is Geom2d_BezierCurve)
+                            if (Curve2dPtr2 is BezierCurve2D)
                             {
                                 double preci = Kerf.Engine.Foundation.Precision.PConfusion();
                                 if (Math.Abs(oldFirst) > preci || Math.Abs(oldLast - 1) > preci)
                                 {
-                                    var bezier = (Geom2d_BezierCurve)Curve2dPtr2.Copy();
+                                    var bezier = (BezierCurve2D)Curve2dPtr2.Copy();
                                     bezier.Segment(oldFirst, oldLast);
                                     Curve2dPtr2 = bezier;
                                 }
@@ -335,7 +337,7 @@ public partial class ShapeFix_Edge : Transient
                                 oldLastCurve2 = 1;
                             }
 
-                            GeomLib.SameRange(Tolerance,
+                            global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(Tolerance,
                                               Curve2dPtr2,
                                               oldFirstCurve2,
                                               oldLastCurve2,
@@ -349,7 +351,7 @@ public partial class ShapeFix_Edge : Transient
             }
             an_Iterator.Next();
         }
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         B.Range(AnEdge, current_first, current_last);
         B.SameRange(AnEdge, true);
     }
@@ -357,10 +359,10 @@ public partial class ShapeFix_Edge : Transient
     /// <summary>
     /// Adds the edge's pcurve(s) on the surface if missing, with an analyser of the surface; see the face form.
     /// </summary>
-    internal bool FixAddPCurve(in TopoDS_Edge edge, Geom_Surface surface, in Placement location, bool isSeam,
+    internal bool FixAddPCurve(in Edge edge, Surface surface, in Placement location, bool isSeam,
                                ShapeAnalysis_Surface surfana, double prec = 0.0)
     {
-        Geom_Surface          surf = surface;
+        Surface          surf = surface;
         ShapeAnalysis_Surface sas  = surfana;
         var                   sae  = new ShapeAnalysis_Edge();
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
@@ -370,7 +372,7 @@ public partial class ShapeFix_Edge : Transient
         }
 
         // PCurve on Plane not computed
-        if (surf is Geom_Plane)
+        if (surf is PlaneSurface)
         {
             return false;
         }
@@ -378,10 +380,10 @@ public partial class ShapeFix_Edge : Transient
         //  double step = 0;
         try
         {
-            var B = new BRep_Builder();
+            var B = new BrepBuilder();
 
-            double      preci = (prec > 0.0 ? prec : BRep_Tool.Tolerance(edge));
-            Geom_Curve? c3d   = BRep_Tool.Curve(edge, /*Loc,*/ out double First, out double Last);
+            double      preci = (prec > 0.0 ? prec : Tool.Tolerance(edge));
+            Curve3D? c3d   = Tool.Curve(edge, /*Loc,*/ out double First, out double Last);
             if (c3d is null)
             {
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
@@ -390,19 +392,19 @@ public partial class ShapeFix_Edge : Transient
 
             //  A present, on projette
             //  stat : 0 pas pu faire, 1 analytique, 2 approx
-            Geom2d_Curve? c2d;
+            Curve2D? c2d;
             double        a1, b1;
             if (!sae.HasPCurve(edge, surf, location))
             {
                 double TolFirst = -1, TolLast = -1;
-                TopExp.Vertices(edge, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-                if (!V1.IsNull())
+                Exploration.Vertices(edge, out Vertex V1, out Vertex V2);
+                if (!V1.IsNull)
                 {
-                    TolFirst = BRep_Tool.Tolerance(V1);
+                    TolFirst = Tool.Tolerance(V1);
                 }
-                if (!V2.IsNull())
+                if (!V2.IsNull)
                 {
-                    TolLast = BRep_Tool.Tolerance(V2);
+                    TolLast = Tool.Tolerance(V2);
                 }
 
                 myProjector.Init(sas, preci);
@@ -430,7 +432,7 @@ public partial class ShapeFix_Edge : Transient
                 }
                 // On ne sait pas laquelle est Forward. Au PIF. La geometrie Forward
                 // sera mise a jour dans ComputeWire
-                var c2d2 = (Geom2d_Curve)c2d.Copy();
+                var c2d2 = (Curve2D)c2d.Copy();
                 //  ATTENTION : TranslatePCurve reconstruit une Line // bords, en
                 //  intuitant U ou V ...
                 //  Ici, on exploite les infos deja connues
@@ -480,15 +482,15 @@ public partial class ShapeFix_Edge : Transient
     }
 
     /// <summary>Adds the edge's 3D curve if missing (computed from a pcurve). Writes into the edge.</summary>
-    internal bool FixAddCurve3d(in TopoDS_Edge edge)
+    internal bool FixAddCurve3d(in Edge edge)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         var EA = new ShapeAnalysis_Edge();
-        if (BRep_Tool.Degenerated(edge) || EA.HasCurve3d(edge))
+        if (Tool.Degenerated(edge) || EA.HasCurve3d(edge))
         {
             return false;
         }
-        if (!BRep_Tool.SameRange(edge))
+        if (!Tool.SameRange(edge))
         {
             TempSameRange(edge, Kerf.Engine.Foundation.Precision.PConfusion());
         }
@@ -507,20 +509,20 @@ public partial class ShapeFix_Edge : Transient
     /// With a context, the vertices are replaced by more tolerant copies recorded in it; otherwise they are written
     /// in place.
     /// </summary>
-    internal bool FixVertexTolerance(in TopoDS_Edge edge, in TopoDS_Face face)
+    internal bool FixVertexTolerance(in Edge edge, in Face face)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
-        TopoDS_Edge anEdgeCopy = edge;
+        Edge anEdgeCopy = edge;
         var         sae        = new ShapeAnalysis_Edge();
         if (Context() is not null)
         {
-            TopoDS_Shape aShape = Context()!.InternalApply(edge);
-            if (aShape.IsNull() || aShape.ShapeType() != TopAbs_EDGE)
+            Shape aShape = Context()!.InternalApply(edge);
+            if (aShape.IsNull || aShape.ShapeType() != ShapeType.Edge)
             {
                 return false;
             }
 
-            anEdgeCopy = TopoDS.Edge(aShape);
+            anEdgeCopy = ShapeCasts.Edge(aShape);
         }
 
         if (!sae.CheckVertexTolerance(anEdgeCopy, face, out double toler1, out double toler2))
@@ -535,9 +537,9 @@ public partial class ShapeFix_Edge : Transient
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE2);
         }
-        var           B  = new BRep_Builder();
-        TopoDS_Vertex V1 = sae.FirstVertex(anEdgeCopy);
-        TopoDS_Vertex V2 = sae.LastVertex(anEdgeCopy);
+        var           B  = new BrepBuilder();
+        Vertex V1 = sae.FirstVertex(anEdgeCopy);
+        Vertex V2 = sae.LastVertex(anEdgeCopy);
         if (Context() is not null)
         {
             Context()!.CopyVertex(V1, toler1);
@@ -554,20 +556,20 @@ public partial class ShapeFix_Edge : Transient
     /// <summary>
     /// Raises the tolerances of the edge's vertices to cover the ends of its curves; see the face form.
     /// </summary>
-    internal bool FixVertexTolerance(in TopoDS_Edge edge)
+    internal bool FixVertexTolerance(in Edge edge)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
-        TopoDS_Edge anEdgeCopy = edge;
+        Edge anEdgeCopy = edge;
         var         sae        = new ShapeAnalysis_Edge();
         if (Context() is not null)
         {
-            TopoDS_Shape aShape = Context()!.InternalApply(edge);
-            if (aShape.IsNull() || aShape.ShapeType() != TopAbs_EDGE)
+            Shape aShape = Context()!.InternalApply(edge);
+            if (aShape.IsNull || aShape.ShapeType() != ShapeType.Edge)
             {
                 return false;
             }
 
-            anEdgeCopy = TopoDS.Edge(aShape);
+            anEdgeCopy = ShapeCasts.Edge(aShape);
         }
         if (!sae.CheckVertexTolerance(anEdgeCopy, out double toler1, out double toler2))
         {
@@ -581,9 +583,9 @@ public partial class ShapeFix_Edge : Transient
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE2);
         }
-        var           B  = new BRep_Builder();
-        TopoDS_Vertex V1 = sae.FirstVertex(anEdgeCopy);
-        TopoDS_Vertex V2 = sae.LastVertex(anEdgeCopy);
+        var           B  = new BrepBuilder();
+        Vertex V1 = sae.FirstVertex(anEdgeCopy);
+        Vertex V2 = sae.LastVertex(anEdgeCopy);
         if (Context() is not null)
         {
             Context()!.CopyVertex(V1, toler1);
@@ -598,16 +600,16 @@ public partial class ShapeFix_Edge : Transient
     }
 
     /// <summary>Reverses the edge's pcurve on the face if it is oriented against the 3D curve. Writes into the edge.</summary>
-    internal bool FixReversed2d(in TopoDS_Edge edge, in TopoDS_Face face)
+    internal bool FixReversed2d(in Edge edge, in Face face)
     {
-        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
+        Surface? S = Tool.Surface(face, out Placement L);
         return FixReversed2d(edge, S!, L);
     }
 
     /// <summary>
     /// Reverses the edge's pcurve on the surface if it is oriented against the 3D curve. Writes into the edge.
     /// </summary>
-    internal bool FixReversed2d(in TopoDS_Edge edge, Geom_Surface surface, in Placement location)
+    internal bool FixReversed2d(in Edge edge, Surface surface, in Placement location)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
 
@@ -626,21 +628,21 @@ public partial class ShapeFix_Edge : Transient
             return false;
         }
 
-        EA.PCurve(edge, surface, location, out Geom2d_Curve? c2d, out double f, out double l, false);
+        EA.PCurve(edge, surface, location, out Curve2D? c2d, out double f, out double l, false);
         // #46 rln 01.12.98 buc40130, entity 272 (4-th curve)
         double newf = c2d!.ReversedParameter(l), newl = c2d.ReversedParameter(f);
         // OCCT.NET: frozen. OCCT reverses the pcurve stored in the edge in place (any other edge sharing it is
         // reversed too); the port reverses a copy and puts it in the edge's representation in its place.
-        Geom2d_Curve aReversed = (Geom2d_Curve)c2d.Copy();
+        Curve2D aReversed = (Curve2D)c2d.Copy();
         aReversed.Reverse();
         InternalReplacePCurveObject(edge, c2d, aReversed);
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         // will break seams!  B.UpdateEdge (edge, c2d, surface, location, Precision::Confusion());
         B.Range(edge, surface, location, newf, newl);
         // #51 rln 15.12.98 pro6562 entity 2788
         // Because of numerical accuracy the range on B-Splines (moreover, on any curve!)
         // the range is changed
-        BRep_Tool.Range(edge, out double first, out double last);
+        Tool.Range(edge, out double first, out double last);
         if (first != newf || last != newl)
         {
             B.SameRange(edge, false);
@@ -652,12 +654,12 @@ public partial class ShapeFix_Edge : Transient
 
     // OCCT.NET: frozen. Puts theNew in place of the pcurve object theOld wherever the edge's representations hold it
     // (as OCCT's in-place change of theOld would be seen through them).
-    internal static void InternalReplacePCurveObject(in TopoDS_Edge edge, Geom2d_Curve theOld, Geom2d_Curve theNew)
+    internal static void InternalReplacePCurveObject(in Edge edge, Curve2D theOld, Curve2D theNew)
     {
-        var anIt = new NCollection_List<BRep_CurveRepresentation>.Iterator(((BRep_TEdge)edge.TShape()!).ChangeCurves());
+        var anIt = new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)edge.TShape()!).ChangeCurves());
         for (; anIt.More(); anIt.Next())
         {
-            if (anIt.Value() is not BRep_GCurve aGC)
+            if (anIt.Value() is not GCurve aGC)
             {
                 continue;
             }
@@ -665,7 +667,7 @@ public partial class ShapeFix_Edge : Transient
             {
                 aGC.PCurve(theNew);
             }
-            if (aGC.IsCurveOnClosedSurface() && ReferenceEquals(aGC.PCurve2(), theOld))
+            if (aGC.IsCurveOnClosedSurface && ReferenceEquals(aGC.PCurve2(), theOld))
             {
                 aGC.PCurve2(theNew);
             }
@@ -678,21 +680,21 @@ public partial class ShapeFix_Edge : Transient
     /// DONE1 tolerance raised, DONE2 not SameParameter and BRepLib failed, DONE3 BRepLib's result compared, DONE5 its
     /// pcurves taken; FAIL1 deviation not computed, FAIL2 BRepLib failed.
     /// </summary>
-    internal bool FixSameParameter(in TopoDS_Edge edge, double tolerance = 0.0)
+    internal bool FixSameParameter(in Edge edge, double tolerance = 0.0)
     {
-        var anEmptyFace = new TopoDS_Face();
+        var anEmptyFace = new Face();
         return FixSameParameter(edge, anEmptyFace, tolerance);
     }
 
     /// <summary>Makes the edge SameParameter, checking its pcurve on the face; see the other form.</summary>
-    internal bool FixSameParameter(in TopoDS_Edge edge, in TopoDS_Face face, double tolerance = 0.0)
+    internal bool FixSameParameter(in Edge edge, in Face face, double tolerance = 0.0)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
 
-        if (BRep_Tool.Degenerated(edge))
+        if (Tool.Degenerated(edge))
         {
-            var BD = new BRep_Builder();
-            if (!BRep_Tool.SameRange(edge))
+            var BD = new BrepBuilder();
+            if (!Tool.SameRange(edge))
             {
                 TempSameRange(edge, Kerf.Engine.Foundation.Precision.PConfusion());
             }
@@ -702,20 +704,20 @@ public partial class ShapeFix_Edge : Transient
 
         var SFST = new ShapeFix_ShapeTolerance();
         var sae  = new ShapeAnalysis_Edge();
-        var B    = new BRep_Builder();
+        var B    = new BrepBuilder();
 
-        var           copyedge = new TopoDS_Edge();
-        TopoDS_Vertex V1       = sae.FirstVertex(edge);
-        TopoDS_Vertex V2       = sae.LastVertex(edge);
-        double        TolFV    = (V1.IsNull() ? 0.0 : BRep_Tool.Tolerance(V1));
-        double        TolLV    = (V2.IsNull() ? 0.0 : BRep_Tool.Tolerance(V2));
-        double        tol      = BRep_Tool.Tolerance(edge);
+        var           copyedge = new Edge();
+        Vertex V1       = sae.FirstVertex(edge);
+        Vertex V2       = sae.LastVertex(edge);
+        double        TolFV    = (V1.IsNull ? 0.0 : Tool.Tolerance(V1));
+        double        TolLV    = (V2.IsNull ? 0.0 : Tool.Tolerance(V2));
+        double        tol      = Tool.Tolerance(edge);
 
-        bool wasSP = BRep_Tool.SameParameter(edge), SP = false;
+        bool wasSP = Tool.SameParameter(edge), SP = false;
         {
             try
             {
-                if (!BRep_Tool.SameRange(edge))
+                if (!Tool.SameRange(edge))
                 {
                     TempSameRange(edge, Kerf.Engine.Foundation.Precision.PConfusion());
                 }
@@ -731,10 +733,10 @@ public partial class ShapeFix_Edge : Transient
                     // In this case pcurves in BRepLib::SameParameter() will be changed as well
                     // and later ShapeBuild_Edge::CopyPCurves() will copy pcurves keeping original range.
                     // To prevent this discrepancy we enforce original 3D range.
-                    BRep_Tool.Range(edge, out double aF, out double aL);
+                    Tool.Range(edge, out double aF, out double aL);
                     B.Range(copyedge, aF, aL, true); // only 3D
                     BRepLib.SameParameter(copyedge, (tolerance >= Kerf.Engine.Foundation.Precision.Confusion() ? tolerance : tol));
-                    SP = BRep_Tool.SameParameter(copyedge);
+                    SP = Tool.SameParameter(copyedge);
                     if (!SP)
                     {
                         myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
@@ -752,10 +754,10 @@ public partial class ShapeFix_Edge : Transient
         B.SameParameter(edge, true);
 
         // Should check all pcurves in case of non-sameparametrization input.
-        TopoDS_Face aFace = face;
+        Face aFace = face;
         if (!wasSP)
         {
-            aFace = new TopoDS_Face();
+            aFace = new Face();
         }
 
         sae.CheckSameParameter(edge, aFace, ref maxdev);
@@ -767,7 +769,7 @@ public partial class ShapeFix_Edge : Transient
         // if BRepLib was OK, compare and select the best variant
         if (SP)
         {
-            double BRLTol = BRep_Tool.Tolerance(copyedge), BRLDev = 0.0;
+            double BRLTol = Tool.Tolerance(copyedge), BRLDev = 0.0;
             sae.CheckSameParameter(copyedge, ref BRLDev);
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE3);
             if (BRLTol < BRLDev)
@@ -785,19 +787,19 @@ public partial class ShapeFix_Edge : Transient
                 // copy pcurves and tolerances from copyedge
                 new ShapeBuild_Edge().CopyPCurves(edge, copyedge);
                 maxdev = BRLTol;
-                SFST.SetTolerance(edge, BRLTol, TopAbs_EDGE);
+                SFST.SetTolerance(edge, BRLTol, ShapeType.Edge);
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE5);
             }
         }
 
         // restore tolerances because they could be modified by BRepLib
-        if (!V1.IsNull())
+        if (!V1.IsNull)
         {
-            SFST.SetTolerance(V1, Max(maxdev, TolFV), TopAbs_VERTEX);
+            SFST.SetTolerance(V1, Max(maxdev, TolFV), ShapeType.Vertex);
         }
-        if (!V2.IsNull())
+        if (!V2.IsNull)
         {
-            SFST.SetTolerance(V2, Max(maxdev, TolLV), TopAbs_VERTEX);
+            SFST.SetTolerance(V2, Max(maxdev, TolLV), ShapeType.Vertex);
         }
 
         if (maxdev > tol)

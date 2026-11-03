@@ -6,6 +6,7 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -50,28 +51,28 @@ public class BRepOffsetAPI_MakeFilling : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Loads the face whose surface the filling starts from.</summary>
-    public void LoadInitSurface(in TopoDS_Face Surf)
+    public void LoadInitSurface(in Face Surf)
     {
         myFilling.LoadInitSurface(Surf);
     }
 
     /// <summary>Adds a boundary edge (or, with <paramref name="IsBound"/> false, a free edge) with no support face.</summary>
     /// <returns>The index of the constraint.</returns>
-    public int Add(in TopoDS_Edge Constr, Continuity Order, bool IsBound = true)
+    public int Add(in Edge Constr, Continuity Order, bool IsBound = true)
     {
         return myFilling.Add(Constr, Order, IsBound);
     }
 
     /// <summary>Adds an edge with its support face.</summary>
     /// <returns>The index of the constraint.</returns>
-    public int Add(in TopoDS_Edge Constr, in TopoDS_Face Support, Continuity Order, bool IsBound = true)
+    public int Add(in Edge Constr, in Face Support, Continuity Order, bool IsBound = true)
     {
         return myFilling.Add(Constr, Support, Order, IsBound);
     }
 
     /// <summary>Adds a free constraint: a face bounding a gap in the boundary.</summary>
     /// <returns>The index of the constraint.</returns>
-    public int Add(in TopoDS_Face Support, Continuity Order)
+    public int Add(in Face Support, Continuity Order)
     {
         return myFilling.Add(Support, Order);
     }
@@ -85,7 +86,7 @@ public class BRepOffsetAPI_MakeFilling : BRepBuilderAPI_MakeShape
 
     /// <summary>Adds a point constraint on a face.</summary>
     /// <returns>The index of the constraint.</returns>
-    public int Add(double U, double V, in TopoDS_Face Support, Continuity Order)
+    public int Add(double U, double V, in Face Support, Continuity Order)
     {
         return myFilling.Add(U, V, Support, Order);
     }
@@ -99,7 +100,7 @@ public class BRepOffsetAPI_MakeFilling : BRepBuilderAPI_MakeShape
 
     public override bool IsDone() => myFilling.IsDone();
 
-    internal override NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape S) => myFilling.InternalGenerated(S);
+    internal override NCollection_List<Shape> InternalGenerated(in Shape S) => myFilling.InternalGenerated(S);
 
     // The generated shapes are sub-shapes of the face: publishing them publishes the face (decision 414).
     private protected override void BeforePublishingLists()

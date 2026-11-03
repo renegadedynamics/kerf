@@ -55,7 +55,32 @@ public static partial class Tape
     {
         Session aSession = Current;
         aSession.Finish();
-        s_session.Value = new Session(aSession.File, $"{aSession.BaseKey}[{theRow}]", aSession.BaseKey);
+        s_session.Value = new Session(aSession.File, $"{aSession.BaseKey}[{RowName(aSession, theRow)}]", aSession.BaseKey);
+    }
+
+    /// <summary>
+    /// A row's name as recorded: an enum value of the kernel's was recorded under its OCCT name (Approx_Centripetal),
+    /// which unit 10E renamed (Centripetal), so the recorded name is found from the enum type's OCCT package.
+    /// </summary>
+    private static string RowName(Session theSession, object theRow)
+    {
+        string aName = theRow.ToString() ?? "";
+        if (theRow is not System.Enum || Load(theSession.File).ContainsKey($"{theSession.BaseKey}[{aName}]"))
+        {
+            return aName;
+        }
+
+        string anOcctType = global::Kerf.Engine.Foundation.OcctTypeNames.Of(theRow.GetType());
+        string aPackage = anOcctType.Contains('_') ? anOcctType[..anOcctType.IndexOf('_')] : anOcctType;
+        foreach (string aCandidate in new[] { aPackage + "_" + aName, aPackage + "_" + aName.ToUpperInvariant() })
+        {
+            if (Load(theSession.File).ContainsKey($"{theSession.BaseKey}[{aCandidate}]"))
+            {
+                return aCandidate;
+            }
+        }
+
+        return aName;
     }
 
     /// <summary>Ends the test's tape, checked used up.</summary>

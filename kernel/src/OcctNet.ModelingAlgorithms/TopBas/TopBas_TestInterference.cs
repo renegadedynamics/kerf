@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -20,12 +21,12 @@ public partial struct TopBas_TestInterference : IEquatable<TopBas_TestInterferen
 {
     private double myIntersection;
     private int myBoundary;
-    private TopAbs_Orientation myOrientation;
-    private TopAbs_Orientation myTransition;
-    private TopAbs_Orientation myBTransition;
+    private Orientation myOrientation;
+    private Orientation myTransition;
+    private Orientation myBTransition;
 
-    public TopBas_TestInterference(double Inters, int Bound, TopAbs_Orientation Orient, TopAbs_Orientation Trans,
-                                   TopAbs_Orientation BTrans)
+    public TopBas_TestInterference(double Inters, int Bound, Orientation Orient, Orientation Trans,
+                                   Orientation BTrans)
     {
         myIntersection = Inters;
         myBoundary = Bound;
@@ -40,11 +41,11 @@ public partial struct TopBas_TestInterference : IEquatable<TopBas_TestInterferen
 
     internal void Boundary(int B) => myBoundary = B;
 
-    internal void Orientation(TopAbs_Orientation Or) => myOrientation = Or;
+    internal void Orientation(Orientation Or) => myOrientation = Or;
 
-    internal void Transition(TopAbs_Orientation Or) => myTransition = Or;
+    internal void Transition(Orientation Or) => myTransition = Or;
 
-    internal void BoundaryTransition(TopAbs_Orientation Or) => myBTransition = Or;
+    internal void BoundaryTransition(Orientation Or) => myBTransition = Or;
 
     [System.Diagnostics.CodeAnalysis.UnscopedRef]
     internal ref double ChangeIntersection() => ref myIntersection;
@@ -58,11 +59,11 @@ public partial struct TopBas_TestInterference : IEquatable<TopBas_TestInterferen
 
     public readonly int Boundary() => myBoundary;
 
-    public readonly TopAbs_Orientation Orientation() => myOrientation;
+    public readonly Orientation Orientation() => myOrientation;
 
-    public readonly TopAbs_Orientation Transition() => myTransition;
+    public readonly Orientation Transition() => myTransition;
 
-    public readonly TopAbs_Orientation BoundaryTransition() => myBTransition;
+    public readonly Orientation BoundaryTransition() => myBTransition;
 
     public readonly TopBas_TestInterference WithIntersection(double I)
     {
@@ -78,21 +79,21 @@ public partial struct TopBas_TestInterference : IEquatable<TopBas_TestInterferen
         return aCopy;
     }
 
-    public readonly TopBas_TestInterference WithOrientation(TopAbs_Orientation Or)
+    public readonly TopBas_TestInterference WithOrientation(Orientation Or)
     {
         TopBas_TestInterference aCopy = this;
         aCopy.Orientation(Or);
         return aCopy;
     }
 
-    public readonly TopBas_TestInterference WithTransition(TopAbs_Orientation Or)
+    public readonly TopBas_TestInterference WithTransition(Orientation Or)
     {
         TopBas_TestInterference aCopy = this;
         aCopy.Transition(Or);
         return aCopy;
     }
 
-    public readonly TopBas_TestInterference WithBoundaryTransition(TopAbs_Orientation Or)
+    public readonly TopBas_TestInterference WithBoundaryTransition(Orientation Or)
     {
         TopBas_TestInterference aCopy = this;
         aCopy.BoundaryTransition(Or);

@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -56,7 +57,7 @@ public sealed class GeomToStep_MakeDirection : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D direction.</summary>
-    public GeomToStep_MakeDirection(Geom_Direction Direc)
+    public GeomToStep_MakeDirection(Direction Direc)
     {
         Direction3D D;
         StepGeom_Direction Dir = new StepGeom_Direction();
@@ -77,7 +78,7 @@ public sealed class GeomToStep_MakeDirection : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D direction.</summary>
-    public GeomToStep_MakeDirection(Geom2d_Direction Direc)
+    public GeomToStep_MakeDirection(Direction2 Direc)
     {
         Direction2D D;
         StepGeom_Direction Dir = new StepGeom_Direction();

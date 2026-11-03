@@ -212,7 +212,7 @@ internal static class XSDRAWSTEPCommands
                         string shname = $"{rnom}_{nbs}";
                         di.Append("Transfer entity n0 ").Append(num).Append(" OK  -> DRAW Shape: ").Append(shname).Append("\n");
                         di.Append("Now, ").Append(nbs).Append(" Shapes produced\n");
-                        TopoDS_Shape sh = sr.Shape(nbs);
+                        Shape sh = sr.Shape(nbs);
                         theDI.SetShape(shname, sh);
                     }
                 }
@@ -249,7 +249,7 @@ internal static class XSDRAWSTEPCommands
         var aParameters = new DESTEP_Parameters();
         aParameters.InitFromStatic(aStatics);
         int aNbSubShape = 0;
-        var aShapesMap = new List<(string, TopoDS_Shape)>();
+        var aShapesMap = new List<(string, Shape)>();
         for (int theIndex = 0; theIndex < aSize; theIndex++)
         {
             var aReader = new STEPControl_Reader(new XSControl_WorkSession(aStatics));
@@ -288,7 +288,7 @@ internal static class XSDRAWSTEPCommands
                 di.Append("Error: Problem with reading shape by file: ").Append("[").Append(aFileNames[theIndex]).Append("]");
             }
         }
-        foreach ((string aName, TopoDS_Shape aShape) in aShapesMap)
+        foreach ((string aName, Shape aShape) in aShapesMap)
         {
             theDI.SetShape(aName, aShape);
         }
@@ -304,8 +304,8 @@ internal static class XSDRAWSTEPCommands
             return 1;
         }
         XSControl_WorkSession aWS = XSDRAWCommands.Session(theDI);
-        TopoDS_Shape shape = theDI.GetShape(argv[1]);
-        if (shape.IsNull())
+        Shape shape = theDI.GetShape(argv[1]);
+        if (shape.IsNull)
         {
             di.Append("Not a shape : ").Append(argv[1]).Append("\n");
             return 1;
@@ -387,7 +387,7 @@ internal static class XSDRAWSTEPCommands
             ActWrite.SetGroupMode(aWS.Statics().IVal("write.step.assembly"));
         }
 
-        TopoDS_Shape shape = theDI.GetShape(argv[2]);
+        Shape shape = theDI.GetShape(argv[2]);
         var sw = new STEPControl_Writer(aWS, false);
         Interface_InterfaceModel? stepmodel = sw.Model();
         int nbavant = stepmodel is null ? 0 : stepmodel.NbEntities();
@@ -486,8 +486,8 @@ internal static class XSDRAWSTEPCommands
         {
             aFileNames[anInd - 1] = argv[anInd];
         }
-        TopoDS_Shape aShape = theDI.GetShape(aShName);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(aShName);
+        if (aShape.IsNull)
         {
             di.Append("Syntax error: wrong number of arguments");
             return 1;

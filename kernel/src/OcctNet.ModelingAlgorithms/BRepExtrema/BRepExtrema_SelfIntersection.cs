@@ -4,8 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using BVH_Vec3d = Occt.NCollection_Vec3<double>;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -19,7 +21,7 @@ public class BRepExtrema_SelfIntersection : BRepExtrema_ElementFilter
 {
     private double myTolerance;
     private bool myIsInit;
-    private readonly NCollection_DynamicArray<TopoDS_Shape> myFaceList = new();
+    private readonly NCollection_DynamicArray<Shape> myFaceList = new();
     private BRepExtrema_TriangleSet? myElementSet;
     private readonly BRepExtrema_OverlapTool myOverlapTool = new();
 
@@ -31,7 +33,7 @@ public class BRepExtrema_SelfIntersection : BRepExtrema_ElementFilter
     }
 
     /// <summary>A self-intersection tool for the shape.</summary>
-    public BRepExtrema_SelfIntersection(in TopoDS_Shape theShape, double theTolerance = 0.0)
+    public BRepExtrema_SelfIntersection(in Shape theShape, double theTolerance = 0.0)
     {
         myTolerance = theTolerance;
         LoadShape(theShape);
@@ -50,19 +52,19 @@ public class BRepExtrema_SelfIntersection : BRepExtrema_ElementFilter
     public NCollection_DataMap<int, NCollection_PackedMapOfInteger> OverlapElements() => myOverlapTool.OverlapSubShapes1();
 
     /// <summary>The face of the shape with the given index (from 0).</summary>
-    public TopoDS_Face GetSubShape(int theID) => TopoDS.Face(myFaceList.Value(theID));
+    public Face GetSubShape(int theID) => ShapeCasts.Face(myFaceList.Value(theID));
 
     /// <summary>The set of all the face triangles of the shape.</summary>
     public BRepExtrema_TriangleSet? ElementSet() => myElementSet;
 
     /// <summary>Loads the shape.</summary>
-    public bool LoadShape(in TopoDS_Shape theShape)
+    public bool LoadShape(in Shape theShape)
     {
         myFaceList.Clear();
 
-        for (var anIter = new TopExp_Explorer(theShape, TopAbs_FACE); anIter.More(); anIter.Next())
+        for (var anIter = new Explorer(theShape, ShapeType.Face); anIter.More(); anIter.Next())
         {
-            myFaceList.Append(TopoDS.Face(anIter.Current()));
+            myFaceList.Append(ShapeCasts.Face(anIter.Current()));
         }
 
         myElementSet ??= new BRepExtrema_TriangleSet();

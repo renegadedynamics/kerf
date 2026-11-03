@@ -3,9 +3,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -23,7 +28,7 @@ public partial class BOPAlgo_PaveFiller
         for (int anEdgeIndex = 0; anEdgeIndex < myDS!.NbSourceShapes(); ++anEdgeIndex)
         {
             BOPDS_ShapeInfo anEdgeInfo = myDS.ShapeInfo(anEdgeIndex);
-            if (anEdgeInfo.ShapeType() != TopAbs_EDGE)
+            if (anEdgeInfo.ShapeType() != ShapeType.Edge)
             {
                 continue;
             }
@@ -38,7 +43,7 @@ public partial class BOPAlgo_PaveFiller
                     nV = nVSD;
                 }
 
-                if (aSIF.ShapeType() == TopAbs_FACE)
+                if (aSIF.ShapeType() == ShapeType.Face)
                 {
                     // 1. Find PaveBlocks that go through nV for nF
                     NCollection_List<BOPDS_PaveBlock> aLPBOut = new();
@@ -62,19 +67,19 @@ public partial class BOPAlgo_PaveFiller
                     //
                     MakeSplitEdge(anEdgeIndex, nF);
                 }
-                if (aSIF.ShapeType() == TopAbs_EDGE)
+                if (aSIF.ShapeType() == ShapeType.Edge)
                 {
-                    TopoDS_Edge aDE = TopoDS.Edge(myDS.Shape(anEdgeIndex));
-                    TopoDS_Vertex aVn = TopoDS.Vertex(myDS.Shape(nV));
+                    Edge aDE = ShapeCasts.Edge(myDS.Shape(anEdgeIndex));
+                    Vertex aVn = ShapeCasts.Vertex(myDS.Shape(nV));
                     //
-                    TopoDS_Edge aE = aDE;
+                    Edge aE = aDE;
                     aE.EmptyCopy();
-                    BRep_Builder BB = new();
+                    BrepBuilder BB = new();
                     BB.Add(aE, aVn);
                     BB.Degenerated(aE, true);
                     BB.UpdateEdge(aE, global::Kerf.Engine.Foundation.Precision.Confusion());
                     BOPDS_ShapeInfo aSI = new();
-                    aSI.SetShapeType(TopAbs_EDGE);
+                    aSI.SetShapeType(ShapeType.Edge);
                     aSI.SetShape(aE);
                     int nEn = myDS.Append(aSI);
                     NCollection_List<BOPDS_PaveBlock> aLPBD = myDS.ChangePaveBlocks(anEdgeIndex);
@@ -117,17 +122,17 @@ public partial class BOPAlgo_PaveFiller
     {
         int nSp, nV1, nV2, aNbPB;
         double aT1, aT2;
-        TopoDS_Edge aDE, aSp = new();
-        TopoDS_Vertex aV1, aV2;
+        Edge aDE, aSp = new();
+        Vertex aV1, aV2;
         NCollection_List<BOPDS_PaveBlock>.Iterator aItLPB = new();
         BOPDS_ShapeInfo aSI = new();
         //
-        aSI.SetShapeType(TopAbs_EDGE);
+        aSI.SetShapeType(ShapeType.Edge);
         //
-        aDE = TopoDS.Edge(myDS!.Shape(nDE));
-        aDE.Orientation(TopAbs_FORWARD);
+        aDE = ShapeCasts.Edge(myDS!.Shape(nDE));
+        aDE.Orientation(Forward);
         //
-        TopoDS_Face aDF = TopoDS.Face(myDS.Shape(nDF));
+        Face aDF = ShapeCasts.Face(myDS.Shape(nDF));
         //
         NCollection_List<BOPDS_PaveBlock> aLPB = myDS.ChangePaveBlocks(nDE);
         aNbPB = aLPB.Extent();
@@ -145,11 +150,11 @@ public partial class BOPAlgo_PaveFiller
             //
             if (myDS.IsNewShape(nV1) || aNbPB > 1)
             {
-                aV1 = TopoDS.Vertex(myDS.Shape(nV1));
-                aV1.Orientation(TopAbs_FORWARD);
+                aV1 = ShapeCasts.Vertex(myDS.Shape(nV1));
+                aV1.Orientation(Forward);
                 //
-                aV2 = TopoDS.Vertex(myDS.Shape(nV2));
-                aV2.Orientation(TopAbs_REVERSED);
+                aV2 = ShapeCasts.Vertex(myDS.Shape(nV2));
+                aV2.Orientation(Reversed);
                 //
                 MakeSplitEdge1(aDE, aDF, aV1, aT1, aV2, aT2, out aSp);
                 //
@@ -178,12 +183,12 @@ public partial class BOPAlgo_PaveFiller
         BOPDS_Pave aPave = new();
         aPave.SetIndex(nVD);
         //
-        TopoDS_Vertex aDV = TopoDS.Vertex(myDS!.Shape(nVD));
-        TopoDS_Edge aDE = TopoDS.Edge(myDS.Shape(nED));
-        TopoDS_Face aDF = TopoDS.Face(myDS.Shape(nFD));
+        Vertex aDV = ShapeCasts.Vertex(myDS!.Shape(nVD));
+        Edge aDE = ShapeCasts.Edge(myDS.Shape(nED));
+        Face aDF = ShapeCasts.Face(myDS.Shape(nFD));
         //
-        double aTolV = BRep_Tool.Tolerance(aDV);
-        BRepAdaptor_Surface aBAS = myContext!.SurfaceAdaptor(aDF);
+        double aTolV = Tool.Tolerance(aDV);
+        FaceSurfaceAdaptor aBAS = myContext!.SurfaceAdaptor(aDF);
         //
         // 2D intersection tolerance should be computed as a resolution
         // from the tolerance of vertex to resolve the touching cases
@@ -200,7 +205,7 @@ public partial class BOPAlgo_PaveFiller
         // in the direction of the 2D curve of degenerated edge
         double aTolCmp = global::Kerf.Engine.Foundation.Precision.PConfusion();
         // Get 2D curve
-        Geom2d_Curve? aC2DDE = BRep_Tool.CurveOnSurface(aDE, aDF, out double aTD1, out double aTD2);
+        Curve2D? aC2DDE = Tool.CurveOnSurface(aDE, aDF, out double aTD1, out double aTD2);
         if (aC2DDE is null)
         {
             return;
@@ -212,7 +217,7 @@ public partial class BOPAlgo_PaveFiller
         aTolCmp = Max(aTolCmp, (bUDir ? aURes : aVRes));
         //
         // Prepare adaptor for the degenerated edge for intersection
-        Geom2dAdaptor_Curve aGAC1 = new();
+        CurveAdaptor2D aGAC1 = new();
         aGAC1.Load(aC2DDE, aTD1, aTD2);
         //
         NCollection_List<BOPDS_PaveBlock>.Iterator aItLPB = new(aLPBOut);
@@ -224,17 +229,17 @@ public partial class BOPAlgo_PaveFiller
             {
                 continue;
             }
-            TopoDS_Edge aE = TopoDS.Edge(myDS.Shape(nE));
-            Geom2d_Curve? aC2D = BRep_Tool.CurveOnSurface(aE, aDF, out double aT1, out double aT2);
+            Edge aE = ShapeCasts.Edge(myDS.Shape(nE));
+            Curve2D? aC2D = Tool.CurveOnSurface(aE, aDF, out double aT1, out double aT2);
             if (aC2D is null)
             {
                 continue;
             }
             //
             // Prepare adaptor for the passing edge for intersection
-            Geom2dAdaptor_Curve aGAC2 = new();
+            CurveAdaptor2D aGAC2 = new();
             //
-            Geom2d_Line? aL2D = aC2D as Geom2d_Line;
+            LineCurve2D? aL2D = aC2D as LineCurve2D;
             if (aL2D is not null)
             {
                 aGAC2.Load(aC2D);
@@ -274,15 +279,15 @@ public partial class BOPAlgo_PaveFiller
     }
 
     // A split of the degenerated edge: an empty copy with the two vertices and the range on the face.
-    private static void MakeSplitEdge1(in TopoDS_Edge aE, in TopoDS_Face aF, in TopoDS_Vertex aV1, double aP1,
-                                       in TopoDS_Vertex aV2, double aP2, out TopoDS_Edge aNewEdge)
+    private static void MakeSplitEdge1(in Edge aE, in Face aF, in Vertex aV1, double aP1,
+                                       in Vertex aV2, double aP2, out Edge aNewEdge)
     {
         double aTol = 1.0e-7;
 
-        TopoDS_Edge E = aE;
+        Edge E = aE;
 
         E.EmptyCopy();
-        BRep_Builder BB = new();
+        BrepBuilder BB = new();
         BB.Add(E, aV1);
         BB.Add(E, aV2);
 

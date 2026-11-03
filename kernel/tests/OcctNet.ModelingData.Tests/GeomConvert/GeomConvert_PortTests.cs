@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.Continuity;
@@ -19,20 +20,20 @@ public class GeomConvert_PortTests
 
     private static Point3D P(double theX, double theY, double theZ = 0.0) => new(theX, theY, theZ);
 
-    private static Geom_BSplineCurve Cubic()
+    private static BSplineCurve3D Cubic()
     {
         // A smooth cubic with three spans
         NCollection_Array1<Point3D> aPoles = NCollection_Array1<Point3D>.From([
             P(0, 0, 0), P(1, 2, 1), P(3, 3, 0), P(5, 1, -1), P(7, 2, 0), P(8, 0, 1)]);
-        return new Geom_BSplineCurve(aPoles, NCollection_Array1<double>.From([0.0, 1.0, 2.0, 3.0]),
+        return new BSplineCurve3D(aPoles, NCollection_Array1<double>.From([0.0, 1.0, 2.0, 3.0]),
                                      NCollection_Array1<int>.From([4, 1, 1, 4]), 3);
     }
 
-    private static Geom_BSplineCurve Segment(Point3D theP1, Point3D theP2) =>
+    private static BSplineCurve3D Segment(Point3D theP1, Point3D theP2) =>
         new(NCollection_Array1<Point3D>.From([theP1, theP2]), NCollection_Array1<double>.From([0.0, 1.0]),
             NCollection_Array1<int>.From([2, 2]), 1);
 
-    private static void AssertSamePoints(Geom_Curve theExpected, double theU1, double theU2, Geom_Curve theActual,
+    private static void AssertSamePoints(Curve3D theExpected, double theU1, double theU2, Curve3D theActual,
                                          double theV1, double theV2, double theTol)
     {
         for (int i = 0; i <= 20; i++)
@@ -46,9 +47,9 @@ public class GeomConvert_PortTests
     [Fact]
     public void CurveToBSplineCurve_WholeCircle_IsPeriodic_AndLongRationalC1Arc_IsJoined()
     {
-        Geom_Circle aCircle = new(new Frame3D(P(1, 2, 3), new Direction3D(0, 1, 1), new Direction3D(1, 0, 0)), 4.0);
-        Geom_BSplineCurve aWhole = GeomConvert.CurveToBSplineCurve(aCircle);
-        Assert.True(aWhole.IsPeriodic());
+        CircleCurve3D aCircle = new(new Frame3D(P(1, 2, 3), new Direction3D(0, 1, 1), new Direction3D(1, 0, 0)), 4.0);
+        BSplineCurve3D aWhole = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aCircle);
+        Assert.True(aWhole.IsPeriodic);
         Assert.False(aWhole.IsFrozen);
         Assert.True(aWhole.StartPoint().Distance(aCircle.Value(0.0)) < Tol);
         for (int i = 0; i <= 20; i++)
@@ -57,7 +58,7 @@ public class GeomConvert_PortTests
         }
 
         // An arc of 6.2 radians with RationalC1: two halves joined by GeomConvert_CompCurveToBSplineCurve
-        Geom_BSplineCurve aLong = GeomConvert.CurveToBSplineCurve(new Geom_TrimmedCurve(aCircle, 0.0, 6.2), RationalC1);
+        BSplineCurve3D aLong = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(new TrimmedCurve3D(aCircle, 0.0, 6.2), RationalC1);
         Assert.True(aLong.StartPoint().Distance(aCircle.Value(0.0)) < Tol);
         Assert.True(aLong.EndPoint().Distance(aCircle.Value(6.2)) < Tol);
         Assert.True(aLong.Continuity() >= C1);
@@ -66,11 +67,11 @@ public class GeomConvert_PortTests
     [Fact]
     public void CurveToBSplineCurve_FrozenTrimmedPeriodicBSpline_IsCopied()
     {
-        Geom_BSplineCurve aPeriodic = Cubic().KnotInserted(1.5, 1, 0.0, false);
-        aPeriodic = GeomConvert.CurveToBSplineCurve(new Geom_TrimmedCurve(aPeriodic, 0.0, 3.0));
+        BSplineCurve3D aPeriodic = Cubic().KnotInserted(1.5, 1, 0.0, false);
+        aPeriodic = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(new TrimmedCurve3D(aPeriodic, 0.0, 3.0));
         aPeriodic.Freeze();
-        Geom_TrimmedCurve aTrimmed = new(aPeriodic, 0.5, 2.5);
-        Geom_BSplineCurve aResult = GeomConvert.CurveToBSplineCurve(aTrimmed);
+        TrimmedCurve3D aTrimmed = new(aPeriodic, 0.5, 2.5);
+        BSplineCurve3D aResult = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aTrimmed);
         Assert.False(aResult.IsFrozen);
         AssertSamePoints(aPeriodic, 0.5, 2.5, aResult, 0.5, 2.5, Tol);
         Assert.Equal(3.0, aPeriodic.LastParameter());
@@ -79,8 +80,8 @@ public class GeomConvert_PortTests
     [Fact]
     public void CurveToBSplineCurve_OffsetCurve_IsApproximated_AndUnboundedCurvesThrow()
     {
-        Geom_OffsetCurve anOffset = new(Cubic(), 0.5, new Direction3D(0, 0, 1));
-        Geom_BSplineCurve aResult = GeomConvert.CurveToBSplineCurve(anOffset);
+        OffsetCurve3D anOffset = new(Cubic(), 0.5, new Direction3D(0, 0, 1));
+        BSplineCurve3D aResult = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(anOffset);
         Assert.False(aResult.IsFrozen);
         for (int i = 0; i <= 10; i++)
         {
@@ -88,34 +89,34 @@ public class GeomConvert_PortTests
             Assert.True(aResult.Value(aU).Distance(anOffset.Value(aU)) < 1e-3);
         }
 
-        Assert.ThrowsAny<DomainErrorException>(() => GeomConvert.CurveToBSplineCurve(new Geom_Line(P(0, 0), new Direction3D(1, 0, 0))));
+        Assert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(new LineCurve3D(P(0, 0), new Direction3D(1, 0, 0))));
         Assert.ThrowsAny<DomainErrorException>(
-            () => GeomConvert.CurveToBSplineCurve(new Geom_Parabola(new Frame3D(P(0, 0), new Direction3D(0, 0, 1)), 1.0)));
+            () => global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(new ParabolaCurve3D(new Frame3D(P(0, 0), new Direction3D(0, 0, 1)), 1.0)));
     }
 
     [Fact]
     public void SplitBSplineCurve_ByKnotsAndParameters()
     {
-        Geom_BSplineCurve aC = Cubic();
-        Geom_BSplineCurve aPart = GeomConvert.SplitBSplineCurve(aC, 2, 3);
+        BSplineCurve3D aC = Cubic();
+        BSplineCurve3D aPart = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 2, 3);
         Assert.Equal(1.0, aPart.FirstParameter());
         Assert.Equal(2.0, aPart.LastParameter());
         AssertSamePoints(aC, 1.0, 2.0, aPart, 1.0, 2.0, Tol);
 
-        Geom_BSplineCurve aReversed = GeomConvert.SplitBSplineCurve(aC, 3, 2);
+        BSplineCurve3D aReversed = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 3, 2);
         Assert.True(aReversed.StartPoint().Distance(aC.Value(2.0)) < Tol);
         Assert.True(aReversed.EndPoint().Distance(aC.Value(1.0)) < Tol);
 
-        Geom_BSplineCurve aByParams = GeomConvert.SplitBSplineCurve(aC, 2.5, 0.5, 1e-9);
+        BSplineCurve3D aByParams = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 2.5, 0.5, 1e-9);
         Assert.True(aByParams.StartPoint().Distance(aC.Value(2.5)) < Tol);
         Assert.True(aByParams.EndPoint().Distance(aC.Value(0.5)) < Tol);
 
         // GeomConvert throws Standard_DomainError for both (Geom2dConvert: Standard_OutOfRange for the second)
-        Assert.ThrowsAny<DomainErrorException>(() => GeomConvert.SplitBSplineCurve(aC, 2, 2));
-        Assert.ThrowsAny<DomainErrorException>(() => GeomConvert.SplitBSplineCurve(aC, 0, 2));
+        Assert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 2, 2));
+        Assert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 0, 2));
     }
 
-    private static Geom_BSplineSurface BiCubic()
+    private static BSplineSurface BiCubic()
     {
         NCollection_Array2<Point3D> aPoles = new(1, 5, 1, 4);
         for (int i = 1; i <= 5; i++)
@@ -126,7 +127,7 @@ public class GeomConvert_PortTests
             }
         }
 
-        return new Geom_BSplineSurface(aPoles, NCollection_Array1<double>.From([0.0, 1.0, 3.0]),
+        return new BSplineSurface(aPoles, NCollection_Array1<double>.From([0.0, 1.0, 3.0]),
                                        NCollection_Array1<double>.From([0.0, 2.0]), NCollection_Array1<int>.From([4, 1, 4]),
                                        NCollection_Array1<int>.From([4, 4]), 3, 3);
     }
@@ -134,26 +135,26 @@ public class GeomConvert_PortTests
     [Fact]
     public void SplitBSplineSurface_AllOverloads()
     {
-        Geom_BSplineSurface aS = BiCubic();
-        Geom_BSplineSurface aKnots = GeomConvert.SplitBSplineSurface(aS, 3, 2, 1, 2);
+        BSplineSurface aS = BiCubic();
+        BSplineSurface aKnots = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 3, 2, 1, 2);
         aKnots.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal((1.0, 3.0, 0.0, 2.0), (aU1, aU2, aV1, aV2));
         // reversed in U: the parameter u of the result is 4 - u on S
         Assert.True(aKnots.Value(1.5, 0.5).Distance(aS.Value(2.5, 0.5)) < Tol);
 
-        Geom_BSplineSurface aU = GeomConvert.SplitBSplineSurface(aS, 1, 2, true);
+        BSplineSurface aU = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 1, 2, true);
         aU.Bounds(out aU1, out aU2, out _, out _);
         Assert.Equal((0.0, 1.0), (aU1, aU2));
 
-        Geom_BSplineSurface aParams = GeomConvert.SplitBSplineSurface(aS, 0.5, 2.5, 1.5, 0.5, 1e-9);
+        BSplineSurface aParams = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 0.5, 2.5, 1.5, 0.5, 1e-9);
         Assert.True(aParams.Value(1.0, 1.0).Distance(aS.Value(1.0, 1.0)) < Tol);
         aParams.Bounds(out _, out _, out aV1, out aV2);
         // reversed in V
         Assert.True(aParams.Value(1.0, aV1).Distance(aS.Value(1.0, 1.5)) < Tol);
 
-        Assert.ThrowsAny<DomainErrorException>(() => GeomConvert.SplitBSplineSurface(aS, 1, 1, 1, 2));
-        Assert.ThrowsAny<DomainErrorException>(() => GeomConvert.SplitBSplineSurface(aS, 1, 4, false));
-        Assert.ThrowsAny<DomainErrorException>(() => GeomConvert.SplitBSplineSurface(aS, 1.0, 1.0, true, 1e-9));
+        Assert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 1, 1, 1, 2));
+        Assert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 1, 4, false));
+        Assert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 1.0, 1.0, true, 1e-9));
     }
 
     [Fact]
@@ -161,8 +162,8 @@ public class GeomConvert_PortTests
     {
         // OCCT's split by parameters in V tests FromParam1 > ToParam2 and reverses U where V is meant
         // (occt-issues.md): the V range is not reversed, the U one is.
-        Geom_BSplineSurface aS = BiCubic();
-        Geom_BSplineSurface aSplit = GeomConvert.SplitBSplineSurface(aS, 1.5, 0.5, false, 1e-9);
+        BSplineSurface aS = BiCubic();
+        BSplineSurface aSplit = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 1.5, 0.5, false, 1e-9);
         aSplit.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal((0.5, 1.5), (aV1, aV2));
         Assert.True(aSplit.Value(aU1, 0.5).Distance(aS.Value(3.0, 0.5)) < Tol);
@@ -173,30 +174,30 @@ public class GeomConvert_PortTests
     public void BSplineCurveKnotSplitting()
     {
         // Knot 2 with multiplicity 3 (C0), knot 3 with multiplicity 2 (C1)
-        Geom_BSplineCurve aC = Cubic().KnotInserted(1.0, 3, 0.0, false).KnotInserted(2.0, 2, 0.0, false);
-        GeomConvert_BSplineCurveKnotSplitting aSplit0 = new(aC, 0);
-        Assert.Equal(2, aSplit0.NbSplits());
-        GeomConvert_BSplineCurveKnotSplitting aSplit1 = new(aC, 1);
-        Assert.Equal(3, aSplit1.NbSplits());
+        BSplineCurve3D aC = Cubic().KnotInserted(1.0, 3, 0.0, false).KnotInserted(2.0, 2, 0.0, false);
+        global::Kerf.Engine.Geometry.Conversion.BSplineCurveKnotSplitting aSplit0 = new(aC, 0);
+        Assert.Equal(2, aSplit0.SplitCount);
+        global::Kerf.Engine.Geometry.Conversion.BSplineCurveKnotSplitting aSplit1 = new(aC, 1);
+        Assert.Equal(3, aSplit1.SplitCount);
         Assert.Equal(1, aSplit1.SplitValue(1));
         Assert.Equal(2, aSplit1.SplitValue(2));
         Assert.Equal(4, aSplit1.SplitValue(3));
-        GeomConvert_BSplineCurveKnotSplitting aSplit2 = new(aC, 2);
-        NCollection_Array1<int> aValues = new(1, aSplit2.NbSplits());
+        global::Kerf.Engine.Geometry.Conversion.BSplineCurveKnotSplitting aSplit2 = new(aC, 2);
+        NCollection_Array1<int> aValues = new(1, aSplit2.SplitCount);
         aSplit2.Splitting(aValues);
         Assert.Equal([1, 2, 3, 4], aValues.AsSpan().ToArray());
-        Assert.ThrowsAny<RangeErrorException>(() => new GeomConvert_BSplineCurveKnotSplitting(aC, -1));
+        Assert.ThrowsAny<RangeErrorException>(() => new global::Kerf.Engine.Geometry.Conversion.BSplineCurveKnotSplitting(aC, -1));
         Assert.ThrowsAny<RangeErrorException>(() => aSplit2.SplitValue(5));
     }
 
     [Fact]
     public void BSplineCurveToBezierCurve()
     {
-        Geom_BSplineCurve aC = Cubic();
+        BSplineCurve3D aC = Cubic();
         aC.Freeze();
-        GeomConvert_BSplineCurveToBezierCurve aConv = new(aC);
-        Assert.Equal(3, aConv.NbArcs());
-        NCollection_Array1<Geom_BezierCurve> anArcs = new(1, 3);
+        global::Kerf.Engine.Geometry.Conversion.BSplineCurveToBezierCurve aConv = new(aC);
+        Assert.Equal(3, aConv.ArcCount);
+        NCollection_Array1<BezierCurve3D> anArcs = new(1, 3);
         aConv.Arcs(anArcs);
         NCollection_Array1<double> aKnots = new(1, 4);
         aConv.Knots(aKnots);
@@ -212,19 +213,19 @@ public class GeomConvert_PortTests
         Assert.ThrowsAny<OutOfRangeException>(() => aConv.Arc(4));
 
         // A part, with bounds snapped onto knots within half the tolerance
-        GeomConvert_BSplineCurveToBezierCurve aPart = new(aC, 0.5, 2.0 + 1e-4, 1e-3);
-        Assert.Equal(2, aPart.NbArcs());
+        global::Kerf.Engine.Geometry.Conversion.BSplineCurveToBezierCurve aPart = new(aC, 0.5, 2.0 + 1e-4, 1e-3);
+        Assert.Equal(2, aPart.ArcCount);
         AssertSamePoints(aC, 0.5, 1.0, aPart.Arc(1), 0.0, 1.0, Tol);
-        Assert.ThrowsAny<DomainErrorException>(() => new GeomConvert_BSplineCurveToBezierCurve(aC, 1.0, 1.0, 1e-3));
+        Assert.ThrowsAny<DomainErrorException>(() => new global::Kerf.Engine.Geometry.Conversion.BSplineCurveToBezierCurve(aC, 1.0, 1.0, 1e-3));
 
         // Rational
-        Geom_BSplineCurve aRational = GeomConvert.CurveToBSplineCurve(
-            new Geom_TrimmedCurve(new Geom_Circle(new Frame3D(P(0, 0), new Direction3D(0, 0, 1)), 2.0), 0.0, 3.0));
-        GeomConvert_BSplineCurveToBezierCurve aRConv = new(aRational);
-        for (int i = 1; i <= aRConv.NbArcs(); i++)
+        BSplineCurve3D aRational = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(
+            new TrimmedCurve3D(new CircleCurve3D(new Frame3D(P(0, 0), new Direction3D(0, 0, 1)), 2.0), 0.0, 3.0));
+        global::Kerf.Engine.Geometry.Conversion.BSplineCurveToBezierCurve aRConv = new(aRational);
+        for (int i = 1; i <= aRConv.ArcCount; i++)
         {
-            Geom_BezierCurve anArc = aRConv.Arc(i);
-            Assert.True(anArc.IsRational());
+            BezierCurve3D anArc = aRConv.Arc(i);
+            Assert.True(anArc.IsRational);
             Assert.Equal(2.0, anArc.Value(0.37).Distance(P(0, 0)), 1e-12);
         }
     }
@@ -234,10 +235,10 @@ public class GeomConvert_PortTests
     {
         // GeomConvert keeps a periodic curve periodic (Geom2dConvert makes it non-periodic first, OCC7372)
         NCollection_Array1<Point3D> aPoles = NCollection_Array1<Point3D>.From([P(0, 0), P(4, 0, 1), P(4, 4), P(0, 4, -1), P(-1, 2)]);
-        Geom_BSplineCurve aPeriodic = new(aPoles, NCollection_Array1<double>.From([0.0, 1.0, 2.0, 3.0, 4.0, 5.0]),
+        BSplineCurve3D aPeriodic = new(aPoles, NCollection_Array1<double>.From([0.0, 1.0, 2.0, 3.0, 4.0, 5.0]),
                                           NCollection_Array1<int>.From([1, 1, 1, 1, 1, 1]), 3, true);
-        GeomConvert_BSplineCurveToBezierCurve aConv = new(aPeriodic);
-        Assert.Equal(5, aConv.NbArcs());
+        global::Kerf.Engine.Geometry.Conversion.BSplineCurveToBezierCurve aConv = new(aPeriodic);
+        Assert.Equal(5, aConv.ArcCount);
         for (int i = 1; i <= 5; i++)
         {
             AssertSamePoints(aPeriodic, i - 1.0, i, aConv.Arc(i), 0.0, 1.0, Tol);
@@ -247,13 +248,13 @@ public class GeomConvert_PortTests
     [Fact]
     public void CompCurveToBSplineCurve_KeepsHandedOutCurves_AndOptions()
     {
-        Geom_BSplineCurve aC = Cubic();
-        Geom_BSplineCurve aMiddle = GeomConvert.SplitBSplineCurve(aC, 2, 3);
-        Geom_BSplineCurve aFirst = GeomConvert.SplitBSplineCurve(aC, 1, 2);
-        Geom_BSplineCurve aLast = GeomConvert.SplitBSplineCurve(aC, 3, 4);
+        BSplineCurve3D aC = Cubic();
+        BSplineCurve3D aMiddle = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 2, 3);
+        BSplineCurve3D aFirst = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 1, 2);
+        BSplineCurve3D aLast = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 3, 4);
         aFirst.Freeze();
-        GeomConvert_CompCurveToBSplineCurve aComp = new(aMiddle);
-        Geom_BSplineCurve? aHandedOut = aComp.BSplineCurve();
+        global::Kerf.Engine.Geometry.Conversion.CompCurveToBSplineCurve aComp = new(aMiddle);
+        BSplineCurve3D? aHandedOut = aComp.BSplineCurve();
         Assert.NotNull(aHandedOut);
         Assert.True(aHandedOut.IsFrozen);
         Assert.Same(aHandedOut, aComp.BSplineCurve());
@@ -264,22 +265,22 @@ public class GeomConvert_PortTests
         Assert.Equal(1.0, aHandedOut.FirstParameter());
         Assert.Equal(2.0, aHandedOut.LastParameter());
 
-        Geom_BSplineCurve aResult = aComp.BSplineCurve()!;
+        BSplineCurve3D aResult = aComp.BSplineCurve()!;
         Assert.True(aResult.StartPoint().Distance(aC.StartPoint()) < Tol);
         Assert.True(aResult.EndPoint().Distance(aC.EndPoint()) < Tol);
         // The C2 junctions are merged back: the original knots
-        Assert.Equal(4, aResult.NbKnots());
+        Assert.Equal(4, aResult.KnotCount);
 
         // MinM keeps the joint knot's multiplicity
-        GeomConvert_CompCurveToBSplineCurve aKept = new(aFirst);
+        global::Kerf.Engine.Geometry.Conversion.CompCurveToBSplineCurve aKept = new(aFirst);
         Assert.True(aKept.Add(aMiddle, 1e-7, true, true, 2));
         Assert.Equal(2, aKept.BSplineCurve()!.Multiplicity(2));
 
         // A lower degree is raised; WithRatio false keeps the added curve's parametrisation length
-        Geom_TrimmedCurve aLine = new(new Geom_Line(aC.EndPoint(), new Direction3D(1, 0, 0)), 0.0, 10.0);
-        GeomConvert_CompCurveToBSplineCurve aWithLine = new(aC);
+        TrimmedCurve3D aLine = new(new LineCurve3D(aC.EndPoint(), new Direction3D(1, 0, 0)), 0.0, 10.0);
+        global::Kerf.Engine.Geometry.Conversion.CompCurveToBSplineCurve aWithLine = new(aC);
         Assert.True(aWithLine.Add(aLine, 1e-7, true, false));
-        Geom_BSplineCurve aJoined = aWithLine.BSplineCurve()!;
+        BSplineCurve3D aJoined = aWithLine.BSplineCurve()!;
         Assert.Equal(3, aJoined.Degree());
         Assert.Equal(13.0, aJoined.LastParameter(), 1e-12);
         Assert.True(aJoined.EndPoint().Distance(aLine.EndPoint()) < Tol);
@@ -288,35 +289,35 @@ public class GeomConvert_PortTests
     [Fact]
     public void ConcatG1_OpenAndClosed()
     {
-        Geom_BSplineCurve aC = Cubic();
-        NCollection_Array1<Geom_BSplineCurve> aCurves = new(0, 2);
-        aCurves[0] = GeomConvert.SplitBSplineCurve(aC, 1, 2);
-        aCurves[1] = GeomConvert.SplitBSplineCurve(aC, 2, 3);
-        aCurves[2] = GeomConvert.SplitBSplineCurve(aC, 3, 4);
-        foreach (Geom_BSplineCurve aCurve in new[] { aCurves[0], aCurves[1], aCurves[2] })
+        BSplineCurve3D aC = Cubic();
+        NCollection_Array1<BSplineCurve3D> aCurves = new(0, 2);
+        aCurves[0] = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 1, 2);
+        aCurves[1] = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 2, 3);
+        aCurves[2] = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 3, 4);
+        foreach (BSplineCurve3D aCurve in new[] { aCurves[0], aCurves[1], aCurves[2] })
         {
             aCurve.Freeze();
         }
 
         NCollection_Array1<double> aTols = NCollection_Array1<double>.From([1e-7, 1e-7], 0);
         bool isClosed = false;
-        GeomConvert.ConcatG1(aCurves, aTols, out NCollection_HArray1<Geom_BSplineCurve> aResult, ref isClosed, 1e-7);
+        global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatG1(aCurves, aTols, out NCollection_HArray1<BSplineCurve3D> aResult, ref isClosed, 1e-7);
         Assert.Equal(1, aResult.Length());
         AssertSamePoints(aC, 0.0, 3.0, aResult[0], 0.0, 3.0, 1e-9);
 
         // A closed G1 contour: four quarter circles, as rational B-splines
-        Geom_Circle aCircle = new(new Frame3D(P(0, 0, 1), new Direction3D(1, 1, 1)), 2.0);
-        NCollection_Array1<Geom_BSplineCurve> aQuarters = new(0, 3);
+        CircleCurve3D aCircle = new(new Frame3D(P(0, 0, 1), new Direction3D(1, 1, 1)), 2.0);
+        NCollection_Array1<BSplineCurve3D> aQuarters = new(0, 3);
         for (int i = 0; i < 4; i++)
         {
-            aQuarters[i] = GeomConvert.CurveToBSplineCurve(new Geom_TrimmedCurve(aCircle, i * M_PI / 2, (i + 1) * M_PI / 2));
+            aQuarters[i] = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(new TrimmedCurve3D(aCircle, i * M_PI / 2, (i + 1) * M_PI / 2));
             aQuarters[i].Freeze();
         }
 
         isClosed = true;
-        GeomConvert.ConcatG1(aQuarters, NCollection_Array1<double>.From([1e-7, 1e-7, 1e-7], 0), out aResult, ref isClosed, 1e-7);
+        global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatG1(aQuarters, NCollection_Array1<double>.From([1e-7, 1e-7, 1e-7], 0), out aResult, ref isClosed, 1e-7);
         Assert.Equal(1, aResult.Length());
-        Assert.True(aResult[0].IsPeriodic());
+        Assert.True(aResult[0].IsPeriodic);
         for (int i = 0; i <= 40; i++)
         {
             double aU = aResult[0].FirstParameter() + (aResult[0].LastParameter() - aResult[0].FirstParameter()) * i / 40.0;
@@ -327,29 +328,29 @@ public class GeomConvert_PortTests
     [Fact]
     public void ConcatG1_SingleClosedCurve_DoesNotChangeTheCaller()
     {
-        Geom_Circle aCircle = new(new Frame3D(P(0, 0), new Direction3D(0, 0, 1)), 2.0);
-        Geom_BSplineCurve aWhole = GeomConvert.CurveToBSplineCurve(new Geom_TrimmedCurve(aCircle, 0.0, 2 * M_PI));
+        CircleCurve3D aCircle = new(new Frame3D(P(0, 0), new Direction3D(0, 0, 1)), 2.0);
+        BSplineCurve3D aWhole = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(new TrimmedCurve3D(aCircle, 0.0, 2 * M_PI));
         aWhole.Freeze();
-        NCollection_Array1<Geom_BSplineCurve> aCurves = new(0, 0);
+        NCollection_Array1<BSplineCurve3D> aCurves = new(0, 0);
         aCurves[0] = aWhole;
         bool isClosed = true;
-        GeomConvert.ConcatG1(aCurves, new NCollection_Array1<double>(0, -1), out NCollection_HArray1<Geom_BSplineCurve> aResult,
+        global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatG1(aCurves, new NCollection_Array1<double>(0, -1), out NCollection_HArray1<BSplineCurve3D> aResult,
                              ref isClosed, 1e-7);
-        Assert.True(aResult[0].IsPeriodic());
-        Assert.False(aWhole.IsPeriodic());
+        Assert.True(aResult[0].IsPeriodic);
+        Assert.False(aWhole.IsPeriodic);
         Assert.NotSame(aWhole, aResult[0]);
     }
 
     [Fact]
     public void ConcatG1_CurvesThatDontJoin_Throw()
     {
-        Geom_BSplineCurve aC = Cubic();
-        NCollection_Array1<Geom_BSplineCurve> aCurves = new(0, 1);
-        aCurves[0] = GeomConvert.SplitBSplineCurve(aC, 1, 2);
-        aCurves[1] = GeomConvert.SplitBSplineCurve(aC, 3, 4);
+        BSplineCurve3D aC = Cubic();
+        NCollection_Array1<BSplineCurve3D> aCurves = new(0, 1);
+        aCurves[0] = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 1, 2);
+        aCurves[1] = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 3, 4);
         bool isClosed = false;
         // GeomLProp::Continuity: "Courbes non jointives"
-        Assert.ThrowsAny<FailureException>(() => GeomConvert.ConcatG1(aCurves, NCollection_Array1<double>.From([1e-7], 0),
+        Assert.ThrowsAny<FailureException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatG1(aCurves, NCollection_Array1<double>.From([1e-7], 0),
                                                                        out _, ref isClosed, 1e-7));
     }
 
@@ -359,7 +360,7 @@ public class GeomConvert_PortTests
         // As in Geom2dConvert (occt-issues.md): after reordering a closed wire, ConcatG1 merges each group with the
         // caller's tolerances, not the reordered ones, so s3 and s0 are merged with the tolerance of the junction s1-s2
         // instead of ClosedTolerance. (ConcatC1 reads the reordered ones in 3D.)
-        Geom_BSplineCurve[] aSegments =
+        BSplineCurve3D[] aSegments =
         [
             Segment(P(0, 0), P(1, 0)),
             Segment(P(1, 0), P(2, 0)),
@@ -367,15 +368,15 @@ public class GeomConvert_PortTests
             Segment(P(2, 1), P(1e-5, 0)),
         ];
 
-        NCollection_Array1<Geom_BSplineCurve> aCurves = NCollection_Array1<Geom_BSplineCurve>.From(aSegments, 0);
+        NCollection_Array1<BSplineCurve3D> aCurves = NCollection_Array1<BSplineCurve3D>.From(aSegments, 0);
         bool isClosed = true;
-        Assert.ThrowsAny<ConstructionErrorException>(() => GeomConvert.ConcatG1(
+        Assert.ThrowsAny<ConstructionErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatG1(
             aCurves, NCollection_Array1<double>.From([1e-7, 1e-12, 1e-7], 0), out _, ref isClosed, 1e-4));
 
-        aCurves = NCollection_Array1<Geom_BSplineCurve>.From(aSegments, 0);
+        aCurves = NCollection_Array1<BSplineCurve3D>.From(aSegments, 0);
         isClosed = true;
-        GeomConvert.ConcatC1(aCurves, NCollection_Array1<double>.From([1e-7, 1e-12, 1e-7], 0), out _,
-                             out NCollection_HArray1<Geom_BSplineCurve> aResult, ref isClosed, 1e-4);
+        global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatC1(aCurves, NCollection_Array1<double>.From([1e-7, 1e-12, 1e-7], 0), out _,
+                             out NCollection_HArray1<BSplineCurve3D> aResult, ref isClosed, 1e-4);
         Assert.Equal(2, aResult.Length());
         Assert.True(aResult[1].StartPoint().Distance(P(2, 1)) < Tol);
         Assert.True(aResult[1].EndPoint().Distance(P(2, 0)) < Tol);
@@ -386,15 +387,15 @@ public class GeomConvert_PortTests
     {
         // A polyline with a corner after the second segment: two groups
         Point3D[] aPts = [P(0, 0), P(1, 0), P(2, 0), P(2, 1)];
-        NCollection_Array1<Geom_BSplineCurve> aCurves = new(0, 2);
+        NCollection_Array1<BSplineCurve3D> aCurves = new(0, 2);
         for (int i = 0; i < 3; i++)
         {
             aCurves[i] = Segment(aPts[i], aPts[i + 1]);
         }
 
         bool isClosed = false;
-        GeomConvert.ConcatC1(aCurves, NCollection_Array1<double>.From([1e-7, 1e-7], 0), out NCollection_HArray1<int> anIndices,
-                             out NCollection_HArray1<Geom_BSplineCurve> aResult, ref isClosed, 1e-7);
+        global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatC1(aCurves, NCollection_Array1<double>.From([1e-7, 1e-7], 0), out NCollection_HArray1<int> anIndices,
+                             out NCollection_HArray1<BSplineCurve3D> aResult, ref isClosed, 1e-7);
         Assert.Equal(2, aResult.Length());
         Assert.Equal(3, anIndices.Length());
         Assert.Equal(0, anIndices[0]);
@@ -415,11 +416,11 @@ public class GeomConvert_PortTests
             [P(0, 0), P(1, 0), P(2, 1, 1), P(3, 1), P(4, 1)],
             [P(4, 1), P(5, 1), P(6, 2, -1), P(7, 0), P(8, 0)],
         ];
-        NCollection_Array1<Geom_BSplineCurve> aCurves = new(0, 1);
-        Geom_BSplineCurve[] anOriginals = new Geom_BSplineCurve[2];
+        NCollection_Array1<BSplineCurve3D> aCurves = new(0, 1);
+        BSplineCurve3D[] anOriginals = new BSplineCurve3D[2];
         for (int i = 0; i < 2; i++)
         {
-            anOriginals[i] = new Geom_BSplineCurve(NCollection_Array1<Point3D>.From(aPoles[i]),
+            anOriginals[i] = new BSplineCurve3D(NCollection_Array1<Point3D>.From(aPoles[i]),
                                                    NCollection_Array1<double>.From([2.0, 2.0, 1.0, 2.0, 2.0]),
                                                    NCollection_Array1<double>.From([0.0, 1.0]),
                                                    NCollection_Array1<int>.From([5, 5]), 4);
@@ -428,8 +429,8 @@ public class GeomConvert_PortTests
         }
 
         bool isClosed = false;
-        GeomConvert.ConcatC1(aCurves, NCollection_Array1<double>.From([1e-7], 0), out _,
-                             out NCollection_HArray1<Geom_BSplineCurve> aResult, ref isClosed, 1e-7);
+        global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatC1(aCurves, NCollection_Array1<double>.From([1e-7], 0), out _,
+                             out NCollection_HArray1<BSplineCurve3D> aResult, ref isClosed, 1e-7);
         Assert.Equal(1, aResult.Length());
         Assert.NotSame(anOriginals[0], aCurves[0]);
         Assert.Equal(2.0, anOriginals[0].Weight(1));
@@ -442,13 +443,13 @@ public class GeomConvert_PortTests
     [Fact]
     public void C0BSplineToC1BSplineCurve_RemovesG1Knots()
     {
-        Geom_BSplineCurve aC = Cubic();
+        BSplineCurve3D aC = Cubic();
         // Structurally C0 at knot 1, geometrically smooth
-        Geom_BSplineCurve aC0 = aC.KnotInserted(1.0, 3, 0.0, false);
+        BSplineCurve3D aC0 = aC.KnotInserted(1.0, 3, 0.0, false);
         Assert.Equal(3, aC0.Multiplicity(2));
         aC0.Freeze();
-        Geom_BSplineCurve aResult = aC0;
-        GeomConvert.C0BSplineToC1BSplineCurve(ref aResult, 1e-7);
+        BSplineCurve3D aResult = aC0;
+        global::Kerf.Engine.Geometry.Conversion.GeomConvert.C0BSplineToC1BSplineCurve(ref aResult, 1e-7);
         Assert.NotSame(aC0, aResult);
         Assert.False(aResult.IsFrozen);
         Assert.Equal(3, aC0.Multiplicity(2));
@@ -457,8 +458,8 @@ public class GeomConvert_PortTests
         Assert.True(aResult.EndPoint().Distance(aC.EndPoint()) < Tol);
 
         // Nothing to do: still a new curve (GeomConvert, unlike Geom2dConvert, always goes through the concatenation)
-        Geom_BSplineCurve aSmooth = aC;
-        GeomConvert.C0BSplineToC1BSplineCurve(ref aSmooth, 1e-7);
+        BSplineCurve3D aSmooth = aC;
+        global::Kerf.Engine.Geometry.Conversion.GeomConvert.C0BSplineToC1BSplineCurve(ref aSmooth, 1e-7);
         Assert.NotSame(aC, aSmooth);
         AssertSamePoints(aC, 0.0, 3.0, aSmooth, 0.0, 3.0, Tol);
     }
@@ -466,15 +467,15 @@ public class GeomConvert_PortTests
     [Fact]
     public void C0BSplineToArrayOfC1BSplineCurve_SplitsAtCorners()
     {
-        Geom_BSplineCurve aPolyline = new(NCollection_Array1<Point3D>.From([P(0, 0), P(1, 0), P(1, 1)]),
+        BSplineCurve3D aPolyline = new(NCollection_Array1<Point3D>.From([P(0, 0), P(1, 0), P(1, 1)]),
                                           NCollection_Array1<double>.From([0.0, 1.0, 2.0]), NCollection_Array1<int>.From([2, 1, 2]), 1);
-        GeomConvert.C0BSplineToArrayOfC1BSplineCurve(aPolyline, out NCollection_HArray1<Geom_BSplineCurve> aTab, 1e-7);
+        global::Kerf.Engine.Geometry.Conversion.GeomConvert.C0BSplineToArrayOfC1BSplineCurve(aPolyline, out NCollection_HArray1<BSplineCurve3D> aTab, 1e-7);
         Assert.Equal(2, aTab.Length());
         Assert.True(aTab[0].EndPoint().Distance(P(1, 0)) < Tol);
         Assert.True(aTab[1].StartPoint().Distance(P(1, 0)) < Tol);
 
-        Geom_BSplineCurve aC = Cubic();
-        GeomConvert.C0BSplineToArrayOfC1BSplineCurve(aC, out aTab, 1e-7);
+        BSplineCurve3D aC = Cubic();
+        global::Kerf.Engine.Geometry.Conversion.GeomConvert.C0BSplineToArrayOfC1BSplineCurve(aC, out aTab, 1e-7);
         Assert.Equal(1, aTab.Length());
         Assert.Same(aC, aTab[0]);
     }
@@ -482,12 +483,12 @@ public class GeomConvert_PortTests
     [Fact]
     public void ApproxCurve_OfAnOffsetCurve_AndThroughAnAdaptor()
     {
-        Geom_OffsetCurve anOffset = new(Cubic(), -0.3, new Direction3D(0, 0, 1));
-        GeomConvert_ApproxCurve anApprox = new(anOffset, 1e-5, C2, 20, 9);
-        Assert.True(anApprox.HasResult());
-        Assert.True(anApprox.IsDone());
+        OffsetCurve3D anOffset = new(Cubic(), -0.3, new Direction3D(0, 0, 1));
+        global::Kerf.Engine.Geometry.Conversion.ApproxCurve anApprox = new(anOffset, 1e-5, C2, 20, 9);
+        Assert.True(anApprox.HasResult);
+        Assert.True(anApprox.IsDone);
         Assert.True(anApprox.MaxError() < 1e-5);
-        Geom_BSplineCurve aCurve = anApprox.Curve()!;
+        BSplineCurve3D aCurve = anApprox.Curve()!;
         Assert.True(aCurve.IsFrozen);
         Assert.Same(aCurve, anApprox.Curve());
         for (int i = 0; i <= 30; i++)
@@ -496,8 +497,8 @@ public class GeomConvert_PortTests
             Assert.True(aCurve.Value(aU).Distance(anOffset.Value(aU)) < 1e-5);
         }
 
-        GeomConvert_ApproxCurve aPart = new(new GeomAdaptor_Curve(anOffset, 0.5, 2.0), 1e-5, C1, 20, 9);
-        Assert.True(aPart.HasResult());
+        global::Kerf.Engine.Geometry.Conversion.ApproxCurve aPart = new(new CurveAdaptor(anOffset, 0.5, 2.0), 1e-5, C1, 20, 9);
+        Assert.True(aPart.HasResult);
         Assert.Equal(0.5, aPart.Curve()!.FirstParameter());
         Assert.Equal(2.0, aPart.Curve()!.LastParameter());
         Assert.StartsWith("******* Dump of ApproxCurve *******\n*******Error   ", aPart.ToString());
@@ -506,11 +507,11 @@ public class GeomConvert_PortTests
     [Fact]
     public void ApproxSurface_OfAnOffsetSurface()
     {
-        Geom_BSplineSurface aBasis = BiCubic();
-        Geom_OffsetSurface anOffset = new(aBasis, 0.2);
-        GeomConvert_ApproxSurface anApprox = new(anOffset, 1e-4, C1, C1, 9, 9, 50, 1);
-        Assert.True(anApprox.HasResult());
-        Geom_BSplineSurface aSurface = anApprox.Surface()!;
+        BSplineSurface aBasis = BiCubic();
+        OffsetSurface anOffset = new(aBasis, 0.2);
+        global::Kerf.Engine.Geometry.Conversion.ApproxSurface anApprox = new(anOffset, 1e-4, C1, C1, 9, 9, 50, 1);
+        Assert.True(anApprox.HasResult);
+        BSplineSurface aSurface = anApprox.Surface()!;
         Assert.True(aSurface.IsFrozen);
         Assert.True(anApprox.MaxError() >= 0.0);
         for (int i = 0; i <= 6; i++)
@@ -525,7 +526,7 @@ public class GeomConvert_PortTests
         Assert.Contains("Result max error :", anApprox.ToString());
 
         // Through SurfaceToBSplineSurface: an unfrozen copy for the caller
-        Geom_BSplineSurface aConverted = GeomConvert.SurfaceToBSplineSurface(anOffset);
+        BSplineSurface aConverted = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(anOffset);
         Assert.False(aConverted.IsFrozen);
         Assert.True(aConverted.Value(1.0, 1.0).Distance(anOffset.Value(1.0, 1.0)) < 1e-3);
     }
@@ -534,12 +535,12 @@ public class GeomConvert_PortTests
     public void SurfaceToBSplineSurface_SweptAndElementary()
     {
         // A trimmed surface of revolution of a circle arc (a torus patch) and an extrusion of a B-spline curve
-        Geom_Circle aMeridian = new(new Frame3D(P(5, 0, 0), new Direction3D(0, 1, 0)), 1.0);
-        Geom_SurfaceOfRevolution aRevol = new(aMeridian, new Axis3D(P(0, 0, 0), new Direction3D(0, 0, 1)));
-        Geom_RectangularTrimmedSurface aRevolPatch = new(aRevol, 0.0, 4.0, 0.5, 2.0);
-        Geom_BSplineSurface aR = GeomConvert.SurfaceToBSplineSurface(aRevolPatch);
-        Geom_SurfaceOfLinearExtrusion anExtru = new(Cubic(), new Direction3D(0, 1, 1));
-        Geom_BSplineSurface anE = GeomConvert.SurfaceToBSplineSurface(new Geom_RectangularTrimmedSurface(anExtru, 0.5, 2.5, -1.0, 2.0));
+        CircleCurve3D aMeridian = new(new Frame3D(P(5, 0, 0), new Direction3D(0, 1, 0)), 1.0);
+        RevolutionSurface aRevol = new(aMeridian, new Axis3D(P(0, 0, 0), new Direction3D(0, 0, 1)));
+        TrimmedSurface aRevolPatch = new(aRevol, 0.0, 4.0, 0.5, 2.0);
+        BSplineSurface aR = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(aRevolPatch);
+        ExtrusionSurface anExtru = new(Cubic(), new Direction3D(0, 1, 1));
+        BSplineSurface anE = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(new TrimmedSurface(anExtru, 0.5, 2.5, -1.0, 2.0));
         for (int i = 0; i <= 8; i++)
         {
             double aT = i / 8.0;
@@ -549,9 +550,9 @@ public class GeomConvert_PortTests
         }
 
         Assert.ThrowsAny<DomainErrorException>(
-            () => GeomConvert.SurfaceToBSplineSurface(new Geom_CylindricalSurface(new CoordinateSystem(Constants.XOY()), 1.0)));
-        Geom_BSplineSurface aSphere = GeomConvert.SurfaceToBSplineSurface(new Geom_SphericalSurface(new CoordinateSystem(Constants.XOY()), 3.0));
-        Assert.True(aSphere.IsUPeriodic());
+            () => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(new CylindricalSurface(new CoordinateSystem(Constants.XOY()), 1.0)));
+        BSplineSurface aSphere = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(new SphericalSurface(new CoordinateSystem(Constants.XOY()), 3.0));
+        Assert.True(aSphere.IsUPeriodic);
         Assert.Equal(3.0, aSphere.Value(1.0, 0.3).Distance(P(0, 0)), 1e-12);
     }
 }

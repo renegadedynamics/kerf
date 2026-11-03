@@ -1,8 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -35,15 +39,15 @@ internal static class BRepTestBoundingCommands
 
         for (int i = 1; i < n; i++)
         {
-            TopoDS_Shape aShape = theDI.GetShape(a[i]);
-            if (aShape.IsNull())
+            Shape aShape = theDI.GetShape(a[i]);
+            if (aShape.IsNull)
             {
                 continue;
             }
 
-            if (aShape.ShapeType() == TopAbs_ShapeEnum.TopAbs_VERTEX)
+            if (aShape.ShapeType() == ShapeType.Vertex)
             {
-                Point3D aPnt = BRep_Tool.Pnt(TopoDS.Vertex(aShape));
+                Point3D aPnt = Tool.Pnt(ShapeCasts.Vertex(aShape));
                 di.Append(a[i]).Append(" (x,y,z) : ").Append(aPnt.X()).Append(" ").Append(aPnt.Y()).Append(" ").Append(aPnt.Z()).Append("\n");
             }
         }
@@ -80,7 +84,7 @@ internal static class BRepTestBoundingCommands
     {
         // 1. Parse arguments
         int theNArg = theArgVal.Count;
-        TopoDS_Shape aShape = new();
+        Shape aShape = new();
         Box anAABB = new();
 
         bool doPrint = false;
@@ -146,7 +150,7 @@ internal static class BRepTestBoundingCommands
             {
                 isFinitePart = true;
             }
-            else if (aShape.IsNull() && !theDI.GetShape(theArgVal[anArgIter]).IsNull())
+            else if (aShape.IsNull && !theDI.GetShape(theArgVal[anArgIter]).IsNull)
             {
                 aShape = theDI.GetShape(theArgVal[anArgIter]);
             }
@@ -161,7 +165,7 @@ internal static class BRepTestBoundingCommands
             }
         }
 
-        if (anAABB.IsVoid && aShape.IsNull())
+        if (anAABB.IsVoid && aShape.IsNull)
         {
             theDI.Output.WriteLine("Syntax error: input is not specified (neither shape nor coordinates)");
             return 1;
@@ -220,7 +224,7 @@ internal static class BRepTestBoundingCommands
         }
         else
         {
-            if (!aShape.IsNull())
+            if (!aShape.IsNull)
             {
                 anAABB = Box.Void();
                 if (isOptimal)
@@ -306,7 +310,7 @@ internal static class BRepTestBoundingCommands
     {
         if (theBox.IsVoid)
         {
-            theDI.SetShape(theName, new TopoDS_Shape());
+            theDI.SetShape(theName, new Shape());
             return 0;
         }
 
@@ -316,7 +320,7 @@ internal static class BRepTestBoundingCommands
 
         Frame3D anAxes = new(aBaryCenter, new Direction3D(aZDir), new Direction3D(aXDir));
         anAxes.SetLocation(new Point3D(aBaryCenter.XYZ() - aHalfX * aXDir - aHalfY * aYDir - aHalfZ * aZDir));
-        TopoDS_Solid aBox = new BRepPrimAPI_MakeBox(anAxes, 2.0 * aHalfX, 2.0 * aHalfY, 2.0 * aHalfZ).Solid();
+        Solid aBox = new BRepPrimAPI_MakeBox(anAxes, 2.0 * aHalfX, 2.0 * aHalfY, 2.0 * aHalfZ).Solid();
         theDI.SetShape(theName, aBox);
         return 0;
     }
@@ -337,8 +341,8 @@ internal static class BRepTestBoundingCommands
             return 1;
         }
 
-        TopoDS_Shape aShape1 = theDI.GetShape(theArgVal[1]);
-        TopoDS_Shape aShape2 = theDI.GetShape(theArgVal[2]);
+        Shape aShape1 = theDI.GetShape(theArgVal[1]);
+        Shape aShape2 = theDI.GetShape(theArgVal[2]);
 
         bool isOBB = theNArg > 3 && theArgVal[3] == "-o";
 
@@ -375,43 +379,43 @@ internal static class BRepTestBoundingCommands
         Box2d B2d = new();
         bool Is3d = true;
         object? aGeometry = (theDI.GetDrawable(a[1]) as DrawGeometry)?.Geometry;
-        if (aGeometry is Geom_Surface S)
+        if (aGeometry is Surface S)
         {
             // add surf
-            var aGAS = new GeomAdaptor_Surface(S);
+            var aGAS = new SurfaceAdaptor(S);
             if (IsOptimal)
             {
-                BndLib_AddSurface.AddOptimal(aGAS, global::Kerf.Engine.Foundation.Precision.Confusion(), ref B);
+                AddSurface.AddOptimal(aGAS, global::Kerf.Engine.Foundation.Precision.Confusion(), ref B);
             }
             else
             {
-                BndLib_AddSurface.Add(aGAS, global::Kerf.Engine.Foundation.Precision.Confusion(), ref B);
+                AddSurface.Add(aGAS, global::Kerf.Engine.Foundation.Precision.Confusion(), ref B);
             }
         }
-        else if (aGeometry is Geom_Curve C)
+        else if (aGeometry is Curve3D C)
         {
             // add cur
-            var aGAC = new GeomAdaptor_Curve(C);
+            var aGAC = new CurveAdaptor(C);
             if (IsOptimal)
             {
-                BndLib_Add3dCurve.AddOptimal(aGAC, global::Kerf.Engine.Foundation.Precision.Confusion(), ref B);
+                Add3dCurve.AddOptimal(aGAC, global::Kerf.Engine.Foundation.Precision.Confusion(), ref B);
             }
             else
             {
-                BndLib_Add3dCurve.Add(aGAC, global::Kerf.Engine.Foundation.Precision.Confusion(), ref B);
+                Add3dCurve.Add(aGAC, global::Kerf.Engine.Foundation.Precision.Confusion(), ref B);
             }
         }
-        else if (aGeometry is Geom2d_Curve C2d)
+        else if (aGeometry is Curve2D C2d)
         {
             // add cur2d
             Is3d = false;
             if (IsOptimal)
             {
-                BndLib_Add2dCurve.AddOptimal(C2d, C2d.FirstParameter(), C2d.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion(), ref B2d);
+                Add2dCurve.AddOptimal(C2d, C2d.FirstParameter(), C2d.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion(), ref B2d);
             }
             else
             {
-                BndLib_Add2dCurve.Add(C2d, C2d.FirstParameter(), C2d.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion(), ref B2d);
+                Add2dCurve.Add(C2d, C2d.FirstParameter(), C2d.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion(), ref B2d);
             }
         }
         else

@@ -5,11 +5,14 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -24,31 +27,31 @@ namespace Occt;
 /// </remarks>
 public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
 {
-    protected TopoDS_Face myFace = new();
-    protected TopAbs_Orientation myOrientation;
+    protected Face myFace = new();
+    protected Orientation myOrientation;
 
     public BOPAlgo_BuilderFace()
     {
-        myOrientation = TopAbs_EXTERNAL;
+        myOrientation = External;
     }
 
     /// <summary>Sets the face generatrix (kept forward; its orientation is <see cref="Orientation"/>).</summary>
-    public void SetFace(in TopoDS_Face theFace)
+    public void SetFace(in Face theFace)
     {
         myOrientation = theFace.Orientation();
         myFace = theFace;
-        myFace.Orientation(TopAbs_FORWARD);
+        myFace.Orientation(Forward);
     }
 
     /// <summary>The face generatrix.</summary>
-    public TopoDS_Face Face() => myFace;
+    public Face Face() => myFace;
 
     /// <summary>The orientation of the face generatrix.</summary>
-    public TopAbs_Orientation Orientation() => myOrientation;
+    public Orientation Orientation() => myOrientation;
 
     protected override void CheckData()
     {
-        if (myFace.IsNull())
+        if (myFace.IsNull)
         {
             AddError(new BOPAlgo_AlertNullInputShapes());
             return;
@@ -98,8 +101,8 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
     {
         bool bFound;
         int i, aNbV, aNbE;
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMVE = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new(myShapes);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMVE = new(ShapeHasher.Instance);
+        NCollection_List<Shape>.Iterator aIt = new(myShapes);
         //
         myShapesToAvoid.Clear();
         //
@@ -118,10 +121,10 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
             aIt.Initialize(myShapes);
             for (; aIt.More(); aIt.Next())
             {
-                TopoDS_Shape aE = aIt.Value();
+                Shape aE = aIt.Value();
                 if (!myShapesToAvoid.Contains(aE))
                 {
-                    TopExp.MapShapesAndAncestors(aE, TopAbs_VERTEX, TopAbs_EDGE, aMVE);
+                    Exploration.MapShapesAndAncestors(aE, ShapeType.Vertex, ShapeType.Edge, aMVE);
                 }
             }
             aNbV = aMVE.Extent();
@@ -129,23 +132,23 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
             // 2. myEdgesToAvoid
             for (i = 1; i <= aNbV; ++i)
             {
-                TopoDS_Vertex aV = TopoDS.Vertex(aMVE.FindKey(i));
+                Vertex aV = ShapeCasts.Vertex(aMVE.FindKey(i));
                 //
-                NCollection_List<TopoDS_Shape> aLE = aMVE.ChangeFromKey(aV);
+                NCollection_List<Shape> aLE = aMVE.ChangeFromKey(aV);
                 aNbE = aLE.Extent();
                 if (aNbE == 0)
                 {
                     continue;
                 }
                 //
-                TopoDS_Edge aE1 = TopoDS.Edge(aLE.First());
+                Edge aE1 = ShapeCasts.Edge(aLE.First());
                 if (aNbE == 1)
                 {
-                    if (BRep_Tool.Degenerated(aE1))
+                    if (Tool.Degenerated(aE1))
                     {
                         continue;
                     }
-                    if (aV.Orientation() == TopAbs_INTERNAL)
+                    if (aV.Orientation() == Internal)
                     {
                         continue;
                     }
@@ -154,10 +157,10 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
                 }
                 else if (aNbE == 2)
                 {
-                    TopoDS_Edge aE2 = TopoDS.Edge(aLE.Last());
+                    Edge aE2 = ShapeCasts.Edge(aLE.Last());
                     if (aE2.IsSame(aE1))
                     {
-                        TopExp.Vertices(aE1, out TopoDS_Vertex aV1x, out TopoDS_Vertex aV2x);
+                        Exploration.Vertices(aE1, out Vertex aV1x, out Vertex aV2x);
                         if (aV1x.IsSame(aV2x))
                         {
                             continue;
@@ -181,12 +184,12 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
     {
         bool bFlag;
         int i, aNbEA;
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new(myShapes);
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aVEMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_List<Shape>.Iterator aIt = new(myShapes);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aVEMap = new(ShapeHasher.Instance);
         // OCCT's NCollection_Map<TopoDS_Shape> with the default hasher (orientation included, decision 721)
-        NCollection_Map<TopoDS_Shape> aMAdded = new(EqualityComparer<TopoDS_Shape>.Default);
-        TopoDS_Iterator aItW = new();
-        BRep_Builder aBB = new();
+        NCollection_Map<Shape> aMAdded = new(EqualityComparer<Shape>.Default);
+        Iterator aItW = new();
+        BrepBuilder aBB = new();
         BOPAlgo_WireEdgeSet aWES = new();
         BOPAlgo_WireSplitter aWSp = new();
         //
@@ -199,7 +202,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         aIt.Initialize(myShapes);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aE = aIt.Value();
+            Shape aE = aIt.Value();
             if (!myShapesToAvoid.Contains(aE))
             {
                 aWES.AddStartElement(aE);
@@ -215,25 +218,25 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
             return;
         }
         //
-        NCollection_List<TopoDS_Shape> aLW = aWES.Shapes();
+        NCollection_List<Shape> aLW = aWES.Shapes();
         aIt.Initialize(aLW);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aW = aIt.Value();
+            Shape aW = aIt.Value();
             myLoops.Append(aW);
         }
         // Post Treatment
-        NCollection_Map<TopoDS_Shape> aMEP = new(EqualityComparer<TopoDS_Shape>.Default);
+        NCollection_Map<Shape> aMEP = new(EqualityComparer<Shape>.Default);
         //
         // a. collect all edges that are in loops
         aIt.Initialize(myLoops);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aW = aIt.Value();
+            Shape aW = aIt.Value();
             aItW.Initialize(aW);
             for (; aItW.More(); aItW.Next())
             {
-                TopoDS_Shape aE = aItW.Value();
+                Shape aE = aItW.Value();
                 aMEP.Add(aE);
             }
         }
@@ -246,7 +249,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         aNbEA = myShapesToAvoid.Extent();
         for (i = 1; i <= aNbEA; ++i)
         {
-            TopoDS_Shape aE = myShapesToAvoid[i];
+            Shape aE = myShapesToAvoid[i];
             aMEP.Add(aE);
         }
         //
@@ -254,7 +257,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         aIt.Initialize(myShapes);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aE = aIt.Value();
+            Shape aE = aIt.Value();
             if (!aMEP.Contains(aE))
             {
                 myShapesToAvoid.Add(aE);
@@ -271,14 +274,14 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         aNbEA = myShapesToAvoid.Extent();
         for (i = 1; i <= aNbEA; ++i)
         {
-            TopoDS_Shape aEE = myShapesToAvoid[i];
-            TopExp.MapShapesAndAncestors(aEE, TopAbs_VERTEX, TopAbs_EDGE, aVEMap);
+            Shape aEE = myShapesToAvoid[i];
+            Exploration.MapShapesAndAncestors(aEE, ShapeType.Vertex, ShapeType.Edge, aVEMap);
         }
         //
         bFlag = true;
         for (i = 1; (i <= aNbEA) && bFlag; ++i)
         {
-            TopoDS_Shape aEE = myShapesToAvoid[i];
+            Shape aEE = myShapesToAvoid[i];
             if (!aMAdded.Add(aEE))
             {
                 continue;
@@ -289,24 +292,24 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
                 return;
             }
             // make new wire
-            TopoDS_Wire aW = new();
+            Wire aW = new();
             aBB.MakeWire(ref aW);
             aBB.Add(aW, aEE);
             //
             aItW.Initialize(aW);
             for (; aItW.More() && bFlag; aItW.Next())
             {
-                TopoDS_Edge aE = TopoDS.Edge(aItW.Value());
+                Edge aE = ShapeCasts.Edge(aItW.Value());
                 //
-                TopoDS_Iterator aItE = new(aE);
+                Iterator aItE = new(aE);
                 for (; aItE.More() && bFlag; aItE.Next())
                 {
-                    TopoDS_Vertex aV = TopoDS.Vertex(aItE.Value());
-                    NCollection_List<TopoDS_Shape> aLE = aVEMap.FindFromKey(aV);
+                    Vertex aV = ShapeCasts.Vertex(aItE.Value());
+                    NCollection_List<Shape> aLE = aVEMap.FindFromKey(aV);
                     aIt.Initialize(aLE);
                     for (; aIt.More() && bFlag; aIt.Next())
                     {
-                        TopoDS_Shape aEx = aIt.Value();
+                        Shape aEx = aIt.Value();
                         if (aMAdded.Add(aEx))
                         {
                             aBB.Add(aW, aEx);
@@ -318,7 +321,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
                     } // for (; aIt.More(); aIt.Next()) {
                 } // for (; aItE.More(); aItE.Next()) {
             } // for (; aItW.More(); aItW.Next()) {
-            aW.Closed(BRep_Tool.IsClosed(aW));
+            aW.Closed(Tool.IsClosed(aW));
             myLoopsInternal.Append(aW);
         } // for (i = 1; (i <= aNbEA) && bFlag; ++i) {
     }
@@ -327,12 +330,12 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
     protected override void PerformAreas(ProgressRange theRange)
     {
         myAreas.Clear();
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
         // Location of the myFace
         // Get surface from myFace
-        Geom_Surface? aS = BRep_Tool.Surface(myFace, out Placement aLoc);
+        Surface? aS = Tool.Surface(myFace, out Placement aLoc);
         // Get tolerance of myFace
-        double aTol = BRep_Tool.Tolerance(myFace);
+        double aTol = Tool.Tolerance(myFace);
 
         using var aMainScope = new ProgressScope(theRange, null, 10);
 
@@ -341,9 +344,9 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         {
             if (myContext!.IsInfiniteFace(myFace))
             {
-                TopoDS_Face aFace0 = new();
+                Face aFace0 = new();
                 aBB.MakeFace(ref aFace0, aS, aLoc, aTol);
-                if (BRep_Tool.NaturalRestriction(myFace))
+                if (Tool.NaturalRestriction(myFace))
                 {
                     aBB.NaturalRestriction(aFace0, true);
                 }
@@ -353,18 +356,18 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         }
 
         // The new faces
-        NCollection_List<TopoDS_Shape> aNewFaces = new();
+        NCollection_List<Shape> aNewFaces = new();
         // The hole faces which has to be classified relatively new faces
-        NCollection_IndexedMap<TopoDS_Shape> aHoleFaces = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> aHoleFaces = new(ShapeHasher.Instance);
         // Map of the edges of the hole faces for quick check of the growths.
         // If the analyzed wire contains any of the edges from the hole faces
         // it is considered as growth.
-        NCollection_IndexedMap<TopoDS_Shape> aMHE = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> aMHE = new(ShapeHasher.Instance);
 
         // Analyze the new wires - classify them to be the holes and growths
         using (var aPSClass = new ProgressScope(aMainScope.Next(5), "Making faces", myLoops.Extent()))
         {
-            NCollection_List<TopoDS_Shape>.Iterator aItLL = new(myLoops);
+            NCollection_List<Shape>.Iterator aItLL = new(myLoops);
             for (; aItLL.More(); aItLL.Next(), aPSClass.Next())
             {
                 if (UserBreak(aPSClass))
@@ -372,9 +375,9 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
                     return;
                 }
 
-                TopoDS_Shape aWire = aItLL.Value();
+                Shape aWire = aItLL.Value();
 
-                TopoDS_Face aFace = new();
+                Face aFace = new();
                 aBB.MakeFace(ref aFace, aS, aLoc, aTol);
                 aBB.Add(aFace, aWire);
 
@@ -394,7 +397,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
                 else
                 {
                     aHoleFaces.Add(aFace);
-                    TopExp.MapShapes(aWire, TopAbs_EDGE, aMHE);
+                    Exploration.MapShapes(aWire, ShapeType.Edge, aMHE);
                 }
             }
         }
@@ -414,10 +417,10 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         aBoxTree.SetSize(aNbH);
         for (i = 1; i <= aNbH; ++i)
         {
-            TopoDS_Face aHFace = TopoDS.Face(aHoleFaces[i]);
+            Face aHFace = ShapeCasts.Face(aHoleFaces[i]);
             //
             Box2d aBox = new();
-            BRepTools.AddUVBounds(aHFace, ref aBox);
+            BrepTools.AddUVBounds(aHFace, ref aBox);
             aBoxTree.Add(i, Tools.Bnd2BVH(aBox));
         }
 
@@ -425,13 +428,13 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         aBoxTree.Build();
 
         // Find outer growth face that is most close to each hole face
-        NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> aHoleFaceMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, Shape> aHoleFaceMap = new(ShapeHasher.Instance);
 
         // Selector
         BOPTools_Box2dTreeSelector aSelector = new();
         aSelector.SetBVHSet(aBoxTree);
 
-        NCollection_List<TopoDS_Shape>.Iterator aItLS = new(aNewFaces);
+        NCollection_List<Shape>.Iterator aItLS = new(aNewFaces);
         using (var aPSHoles = new ProgressScope(aMainScope.Next(4), "Adding holes", aNewFaces.Extent()))
         {
             for (; aItLS.More(); aItLS.Next(), aPSHoles.Next())
@@ -440,11 +443,11 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
                 {
                     return;
                 }
-                TopoDS_Face aFace = TopoDS.Face(aItLS.Value());
+                Face aFace = ShapeCasts.Face(aItLS.Value());
 
                 // Build box
                 Box2d aBox = new();
-                BRepTools.AddUVBounds(aFace, ref aBox);
+                BrepTools.AddUVBounds(aFace, ref aBox);
 
                 aSelector.Clear();
                 aSelector.SetBox(Tools.Bnd2BVH(aBox));
@@ -455,7 +458,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
                 for (; aItLI.More(); aItLI.Next())
                 {
                     int k = aItLI.Value();
-                    TopoDS_Shape aHole = aHoleFaces[k];
+                    Shape aHole = aHoleFaces[k];
                     // Check if it is inside
                     if (!IsInside(aHole, aFace, myContext!))
                     {
@@ -480,18 +483,18 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         }
 
         // Make the back map from faces to holes
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aFaceHolesMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aFaceHolesMap = new(ShapeHasher.Instance);
 
         aNbH = aHoleFaceMap.Extent();
         for (i = 1; i <= aNbH; ++i)
         {
-            TopoDS_Shape aHole = aHoleFaceMap.FindKey(i);
-            TopoDS_Shape aFace = aHoleFaceMap[i];
+            Shape aHole = aHoleFaceMap.FindKey(i);
+            Shape aFace = aHoleFaceMap[i];
             //
             int anIndex = aFaceHolesMap.FindIndex(aFace);
-            NCollection_List<TopoDS_Shape> pLHoles = anIndex > 0
+            NCollection_List<Shape> pLHoles = anIndex > 0
                                                      ? aFaceHolesMap[anIndex]
-                                                     : aFaceHolesMap[aFaceHolesMap.Add(aFace, new NCollection_List<TopoDS_Shape>())];
+                                                     : aFaceHolesMap[aFaceHolesMap.Add(aFace, new NCollection_List<Shape>())];
             pLHoles.Append(aHole);
         }
 
@@ -503,14 +506,14 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
             if (aBoxF.IsOpenXmin || aBoxF.IsOpenXmax || aBoxF.IsOpenYmin || aBoxF.IsOpenYmax
                 || aBoxF.IsOpenZmin || aBoxF.IsOpenZmax)
             {
-                TopoDS_Face aFace = new();
+                Face aFace = new();
                 aBB.MakeFace(ref aFace, aS, aLoc, aTol);
-                NCollection_List<TopoDS_Shape> anUnUsedHoles =
-                  aFaceHolesMap[aFaceHolesMap.Add(aFace, new NCollection_List<TopoDS_Shape>())];
+                NCollection_List<Shape> anUnUsedHoles =
+                  aFaceHolesMap[aFaceHolesMap.Add(aFace, new NCollection_List<Shape>())];
                 aNbH = aHoleFaces.Extent();
                 for (i = 1; i <= aNbH; ++i)
                 {
-                    TopoDS_Shape aHole = aHoleFaces[i];
+                    Shape aHole = aHoleFaces[i];
                     if (!aHoleFaceMap.Contains(aHole))
                     {
                         anUnUsedHoles.Append(aHole);
@@ -531,16 +534,16 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
                 return;
             }
 
-            TopoDS_Face aFace = TopoDS.Face(aItLS.Value());
-            if (aFaceHolesMap.FindFromKey(aFace, out NCollection_List<TopoDS_Shape> pLHoles))
+            Face aFace = ShapeCasts.Face(aItLS.Value());
+            if (aFaceHolesMap.FindFromKey(aFace, out NCollection_List<Shape> pLHoles))
             {
                 // update faces with the holes
-                NCollection_List<TopoDS_Shape>.Iterator aItLH = new(pLHoles);
+                NCollection_List<Shape>.Iterator aItLH = new(pLHoles);
                 for (; aItLH.More(); aItLH.Next())
                 {
-                    TopoDS_Shape aFHole = aItLH.Value();
+                    Shape aFHole = aItLH.Value();
                     // The hole face contains only one wire
-                    TopoDS_Iterator aItW = new(aFHole);
+                    Iterator aItW = new(aFHole);
                     aBB.Add(aFace, aItW.Value());
                 }
 
@@ -573,27 +576,27 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         BOPTools_Box2dTree aBoxTree = new();
 
         // Map of edges to classify
-        NCollection_IndexedMap<TopoDS_Shape> anEdgesMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> anEdgesMap = new(ShapeHasher.Instance);
 
         // Main progress scope
         using var aMainScope = new ProgressScope(theRange, "Adding internal shapes", 3);
 
         // Fill the tree and the map
-        NCollection_List<TopoDS_Shape>.Iterator itLE = new(myLoopsInternal);
+        NCollection_List<Shape>.Iterator itLE = new(myLoopsInternal);
         for (; itLE.More(); itLE.Next())
         {
             if (UserBreak(aMainScope))
             {
                 return;
             }
-            TopoDS_Iterator itE = new(itLE.Value());
+            Iterator itE = new(itLE.Value());
             for (; itE.More(); itE.Next())
             {
-                TopoDS_Edge aE = TopoDS.Edge(itE.Value());
+                Edge aE = ShapeCasts.Edge(itE.Value());
                 if (!anEdgesMap.Contains(aE))
                 {
                     Box2d aBoxE = new();
-                    BRepTools.AddUVBounds(myFace, aE, ref aBoxE);
+                    BrepTools.AddUVBounds(myFace, aE, ref aBoxE);
                     // Make sure the index of edge in the map and
                     // of the box in the tree is the same
                     aBoxTree.Add(anEdgesMap.Add(aE), Tools.Bnd2BVH(aBoxE));
@@ -612,18 +615,18 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         // Classify edges relatively faces
         using (var aPSClass = new ProgressScope(aMainScope.Next(), null, myAreas.Extent()))
         {
-            NCollection_List<TopoDS_Shape>.Iterator itLF = new(myAreas);
+            NCollection_List<Shape>.Iterator itLF = new(myAreas);
             for (; itLF.More(); itLF.Next(), aPSClass.Next())
             {
                 if (UserBreak(aPSClass))
                 {
                     return;
                 }
-                TopoDS_Face aF = TopoDS.Face(itLF.Value());
+                Face aF = ShapeCasts.Face(itLF.Value());
 
                 // Build box
                 Box2d aBoxF = new();
-                BRepTools.AddUVBounds(aF, ref aBoxF);
+                BrepTools.AddUVBounds(aF, ref aBoxF);
 
                 // Select edges for the classification
                 BOPTools_Box2dTreeSelector aSelector = new();
@@ -635,7 +638,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
                 }
 
                 // Collect edges inside the face
-                NCollection_IndexedMap<TopoDS_Shape> anEdgesInside = new(TopTools_ShapeMapHasher.Instance);
+                NCollection_IndexedMap<Shape> anEdgesInside = new(ShapeHasher.Instance);
 
                 NCollection_List<int> aLI = aSelector.Indices();
                 NCollection_List<int>.Iterator itLI = new(aLI);
@@ -647,7 +650,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
                         continue;
                     }
 
-                    TopoDS_Edge aE = TopoDS.Edge(anEdgesMap[nE]);
+                    Edge aE = ShapeCasts.Edge(anEdgesMap[nE]);
                     if (IsInside(aE, aF, myContext!))
                     {
                         anEdgesInside.Add(aE);
@@ -661,15 +664,15 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
                 }
 
                 // Make internal wires
-                NCollection_List<TopoDS_Shape> aLSI0 = new();
+                NCollection_List<Shape> aLSI0 = new();
                 MakeInternalWires(anEdgesInside, aLSI0);
 
                 // Add wires to a face
-                NCollection_List<TopoDS_Shape>.Iterator itLSI = new(aLSI0);
+                NCollection_List<Shape>.Iterator itLSI = new(aLSI0);
                 for (; itLSI.More(); itLSI.Next())
                 {
-                    TopoDS_Shape aWI = itLSI.Value();
-                    new BRep_Builder().Add(aF, aWI);
+                    Shape aWI = itLSI.Value();
+                    new BrepBuilder().Add(aF, aWI);
                 }
 
                 // Condition of early exit
@@ -682,7 +685,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         }
 
         // Some edges are left unclassified - warn user about them
-        NCollection_IndexedMap<TopoDS_Shape> anEdgesUnUsed = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> anEdgesUnUsed = new(ShapeHasher.Instance);
         for (int i = 1; i <= anEdgesMap.Extent(); ++i)
         {
             if (!aMEDone.Contains(i))
@@ -692,107 +695,107 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         }
 
         // Make internal wires
-        NCollection_List<TopoDS_Shape> aLSI = new();
+        NCollection_List<Shape> aLSI = new();
         MakeInternalWires(anEdgesUnUsed, aLSI);
 
         // Make compound
-        TopoDS_Compound aWShape = new();
-        new BRep_Builder().MakeCompound(ref aWShape);
-        new BRep_Builder().Add(aWShape, myFace);
+        Compound aWShape = new();
+        new BrepBuilder().MakeCompound(ref aWShape);
+        new BrepBuilder().Add(aWShape, myFace);
         if (aLSI.Extent() == 1)
         {
-            new BRep_Builder().Add(aWShape, aLSI.First());
+            new BrepBuilder().Add(aWShape, aLSI.First());
         }
         else
         {
-            TopoDS_Compound aCE = new();
-            new BRep_Builder().MakeCompound(ref aCE);
-            for (NCollection_List<TopoDS_Shape>.Iterator it = new(aLSI); it.More(); it.Next())
+            Compound aCE = new();
+            new BrepBuilder().MakeCompound(ref aCE);
+            for (NCollection_List<Shape>.Iterator it = new(aLSI); it.More(); it.Next())
             {
-                new BRep_Builder().Add(aCE, it.Value());
+                new BrepBuilder().Add(aCE, it.Value());
             }
-            new BRep_Builder().Add(aWShape, aCE);
+            new BrepBuilder().Add(aWShape, aCE);
         }
 
         // Add warning
         AddWarning(new BOPAlgo_AlertFaceBuilderUnusedEdges(aWShape));
     }
 
-    private static void MakeInternalWires(NCollection_IndexedMap<TopoDS_Shape> theME, NCollection_List<TopoDS_Shape> theWires)
+    private static void MakeInternalWires(NCollection_IndexedMap<Shape> theME, NCollection_List<Shape> theWires)
     {
         int i, aNbE;
-        NCollection_Map<TopoDS_Shape> aAddedMap = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape>.Iterator aItE = new(theWires);
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMVE = new(TopTools_ShapeMapHasher.Instance);
-        BRep_Builder aBB = new();
+        NCollection_Map<Shape> aAddedMap = new(ShapeHasher.Instance);
+        NCollection_List<Shape>.Iterator aItE = new(theWires);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMVE = new(ShapeHasher.Instance);
+        BrepBuilder aBB = new();
         //
         aNbE = theME.Extent();
         for (i = 1; i <= aNbE; ++i)
         {
-            TopoDS_Shape aE = theME[i];
-            TopExp.MapShapesAndAncestors(aE, TopAbs_VERTEX, TopAbs_EDGE, aMVE);
+            Shape aE = theME[i];
+            Exploration.MapShapesAndAncestors(aE, ShapeType.Vertex, ShapeType.Edge, aMVE);
         }
         //
         for (i = 1; i <= aNbE; ++i)
         {
-            TopoDS_Shape aEE = theME[i];
+            Shape aEE = theME[i];
             if (!aAddedMap.Add(aEE))
             {
                 continue;
             }
             //
             // make a new shell
-            TopoDS_Wire aW = new();
+            Wire aW = new();
             aBB.MakeWire(ref aW);
-            aEE.Orientation(TopAbs_INTERNAL);
+            aEE.Orientation(Internal);
             aBB.Add(aW, aEE);
             //
-            TopoDS_Iterator aItAdded = new(aW);
+            Iterator aItAdded = new(aW);
             for (; aItAdded.More(); aItAdded.Next())
             {
-                TopoDS_Shape aE = aItAdded.Value();
+                Shape aE = aItAdded.Value();
                 //
-                TopExp_Explorer aExp = new(aE, TopAbs_VERTEX);
+                Explorer aExp = new(aE, ShapeType.Vertex);
                 for (; aExp.More(); aExp.Next())
                 {
-                    TopoDS_Shape aV = aExp.Current();
-                    NCollection_List<TopoDS_Shape> aLE = aMVE.FindFromKey(aV);
+                    Shape aV = aExp.Current();
+                    NCollection_List<Shape> aLE = aMVE.FindFromKey(aV);
                     aItE.Initialize(aLE);
                     for (; aItE.More(); aItE.Next())
                     {
-                        TopoDS_Shape aEL = aItE.Value();
+                        Shape aEL = aItE.Value();
                         if (aAddedMap.Add(aEL))
                         {
-                            aEL.Orientation(TopAbs_INTERNAL);
+                            aEL.Orientation(Internal);
                             aBB.Add(aW, aEL);
                         }
                     }
                 }
             }
-            aW.Closed(BRep_Tool.IsClosed(aW));
+            aW.Closed(Tool.IsClosed(aW));
             theWires.Append(aW);
         }
     }
 
     // Checks if the wire is located inside the face: takes a point of the wire and classifies it relatively the face.
-    private static bool IsInside(in TopoDS_Shape theWire, in TopoDS_Shape theF, IntTools_Context theContext)
+    private static bool IsInside(in Shape theWire, in Shape theF, IntTools_Context theContext)
     {
         // Avoid edges of the face
-        NCollection_IndexedMap<TopoDS_Shape> aFaceEdgesMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theF, TopAbs_EDGE, aFaceEdgesMap);
+        NCollection_IndexedMap<Shape> aFaceEdgesMap = new(ShapeHasher.Instance);
+        Exploration.MapShapes(theF, ShapeType.Edge, aFaceEdgesMap);
 
         // Get classification tool from the context
-        TopoDS_Face aF = TopoDS.Face(theF);
+        Face aF = ShapeCasts.Face(theF);
         IntTools_FClass2d aClassifier = theContext.FClass2d(aF);
 
         bool isInside = false;
 
         // Iterate on wire edges until first classification is performed
-        TopExp_Explorer anExp = new(theWire, TopAbs_EDGE);
+        Explorer anExp = new(theWire, ShapeType.Edge);
         for (; anExp.More(); anExp.Next())
         {
-            TopoDS_Edge aE = TopoDS.Edge(anExp.Current());
-            if (BRep_Tool.Degenerated(aE))
+            Edge aE = ShapeCasts.Edge(anExp.Current());
+            if (Tool.Degenerated(aE))
             {
                 // Avoid checking degenerated edges.
                 continue;
@@ -806,7 +809,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
             }
 
             // Get 2d curve of the edge on the face
-            Geom2d_Curve? aC2D = BRep_Tool.CurveOnSurface(aE, aF, out double aT1, out double aT2);
+            Curve2D? aC2D = Tool.CurveOnSurface(aE, aF, out double aT1, out double aT2);
             if (aC2D is null)
             {
                 continue;
@@ -816,18 +819,18 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
             Point2D aP2D = aC2D.Value((aT1 + aT2) / 2.0);
 
             // Classify the point
-            TopAbs_State aState = aClassifier.Perform(aP2D);
-            isInside = aState == TopAbs_IN;
+            Containment aState = aClassifier.Perform(aP2D);
+            isInside = aState == In;
             break;
         }
         return isInside;
     }
 
-    private static bool IsGrowthWire(in TopoDS_Shape theWire, NCollection_IndexedMap<TopoDS_Shape> theMHE)
+    private static bool IsGrowthWire(in Shape theWire, NCollection_IndexedMap<Shape> theMHE)
     {
         if (theMHE.Extent() != 0)
         {
-            TopoDS_Iterator aIt = new(theWire);
+            Iterator aIt = new(theWire);
             for (; aIt.More(); aIt.Next())
             {
                 if (theMHE.Contains(aIt.Value()))

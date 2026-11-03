@@ -5,11 +5,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -64,10 +66,10 @@ public sealed partial class IntPatch_ImpImpIntersection
     /// <paramref name="D2"/>. With <paramref name="theIsReqToKeepRLine"/> (kept for TopOpeBRep), a restriction line
     /// is kept beside another line even where they coincide.
     /// </summary>
-    public IntPatch_ImpImpIntersection(Adaptor3d_Surface S1,
-                                       Adaptor3d_TopolTool D1,
-                                       Adaptor3d_Surface S2,
-                                       Adaptor3d_TopolTool D2,
+    public IntPatch_ImpImpIntersection(SurfaceAdaptorBase S1,
+                                       TopolTool D1,
+                                       SurfaceAdaptorBase S2,
+                                       TopolTool D2,
                                        double TolArc,
                                        double TolTang,
                                        bool theIsReqToKeepRLine = false)
@@ -80,10 +82,10 @@ public sealed partial class IntPatch_ImpImpIntersection
     /// <paramref name="D2"/>; see the constructor.
     /// </summary>
     /// <exception cref="ConstructionErrorException">A surface is not a plane, cylinder, cone, sphere or torus.</exception>
-    public void Perform(Adaptor3d_Surface S1,
-                        Adaptor3d_TopolTool D1,
-                        Adaptor3d_Surface S2,
-                        Adaptor3d_TopolTool D2,
+    public void Perform(SurfaceAdaptorBase S1,
+                        TopolTool D1,
+                        SurfaceAdaptorBase S2,
+                        TopolTool D2,
                         double TolArc,
                         double TolTang,
                         bool theIsReqToKeepRLine = false)
@@ -145,7 +147,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                 { // Plane/Cylinder
                     double VMin, VMax, H;
                     //
-                    Adaptor3d_Surface aSCyl = bReverse ? S1 : S2;
+                    SurfaceAdaptorBase aSCyl = bReverse ? S1 : S2;
                     VMin = aSCyl.FirstVParameter();
                     VMax = aSCyl.LastVParameter();
                     H = (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(VMin) || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(VMax))
@@ -522,7 +524,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             for (i = 1; i <= aNbPnt; ++i)
             {
                 Point2D aP2D;
-                TopAbs_State aState1, aState2;
+                Containment aState1, aState2;
                 //
                 IntPatch_Point aIP = spnt[i];
                 aIP.Parameters(out double aU1, out double aV1, out double aU2, out double aV2);
@@ -533,7 +535,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                 aP2D = new Point2D(aU2, aV2);
                 aState2 = D2.Classify(aP2D, TolArc);
                 //
-                if (aState1 != TopAbs_OUT && aState2 != TopAbs_OUT)
+                if (aState1 != Out && aState2 != Out)
                 {
                     aSIP.Append(aIP);
                 }
@@ -716,7 +718,7 @@ public sealed partial class IntPatch_ImpImpIntersection
 
     //=================================================================================================
 
-    private static int SetQuad(Adaptor3d_Surface theS, out SurfaceKind theTS, ref IntSurf_Quadric theQuad)
+    private static int SetQuad(SurfaceAdaptorBase theS, out SurfaceKind theTS, ref IntSurf_Quadric theQuad)
     {
         theTS = theS.GetType();
         int iRet = 0;

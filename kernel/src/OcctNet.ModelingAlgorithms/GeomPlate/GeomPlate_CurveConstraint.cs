@@ -3,16 +3,20 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Properties;
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 
 namespace Occt;
 
 /// <summary>
 /// A curve constraint of a plate surface: a 3D curve the plate passes through (order 0, or -1 for a curve only
-/// approached), or a curve on a surface (an <see cref="Adaptor3d_CurveOnSurface"/> over a
-/// <see cref="GeomAdaptor_Surface"/>) whose tangent plane (order 1) or curvature (order 2) the plate must follow.
+/// approached), or a curve on a surface (an <see cref="CurveOnSurface"/> over a
+/// <see cref="SurfaceAdaptor"/>) whose tangent plane (order 1) or curvature (order 2) the plate must follow.
 /// </summary>
 /// <remarks>
 /// A working object (decision 21), as OCCT's: its setters are public, and GeomPlate_BuildPlateSurface sets the
@@ -20,20 +24,20 @@ namespace Occt;
 /// </remarks>
 public class GeomPlate_CurveConstraint : Transient
 {
-    protected Adaptor3d_CurveOnSurface? myFrontiere;
+    protected CurveOnSurface? myFrontiere;
     protected int myNbPoints;
     protected int myOrder;
-    protected Adaptor3d_Curve? my3dCurve;
+    protected CurveAdaptorBase? my3dCurve;
     protected int myTang;
-    protected Geom2d_Curve? my2dCurve;
-    protected Adaptor2d_Curve2d? myHCurve2d;
+    protected Curve2D? my2dCurve;
+    protected Curve2DAdaptorBase? myHCurve2d;
     protected Law_Function? myG0Crit;
     protected Law_Function? myG1Crit;
     protected Law_Function? myG2Crit;
     protected bool myConstG0;
     protected bool myConstG1;
     protected bool myConstG2;
-    protected GeomLProp_SLProps myLProp;
+    protected SLProps myLProp;
     protected double myTolDist;
     protected double myTolAng;
     protected double myTolCurv;
@@ -48,7 +52,7 @@ public class GeomPlate_CurveConstraint : Transient
         myConstG0 = false;
         myConstG1 = false;
         myConstG2 = false;
-        myLProp = new GeomLProp_SLProps(2, 1.0e-4);
+        myLProp = new SLProps(2, 1.0e-4);
         myTolDist = 0.0;
         myTolAng = 0.0;
         myTolCurv = 0.0;
@@ -62,10 +66,10 @@ public class GeomPlate_CurveConstraint : Transient
     /// </summary>
     /// <exception cref="FailureException">The order isn't -1 to 2, or a curve on a surface isn't on a
     /// GeomAdaptor_Surface.</exception>
-    public GeomPlate_CurveConstraint(Adaptor3d_Curve Boundary, int Tang, int NPt = 10, double TolDist = 0.0001,
+    public GeomPlate_CurveConstraint(CurveAdaptorBase Boundary, int Tang, int NPt = 10, double TolDist = 0.0001,
                                      double TolAng = 0.01, double TolCurv = 0.1)
     {
-        myLProp = new GeomLProp_SLProps(2, TolDist);
+        myLProp = new SLProps(2, TolDist);
         myTolDist = TolDist;
         myTolAng = TolAng;
         myTolCurv = TolCurv;
@@ -79,7 +83,7 @@ public class GeomPlate_CurveConstraint : Transient
         myConstG1 = true;
         myConstG2 = true;
 
-        myFrontiere = Boundary as Adaptor3d_CurveOnSurface;
+        myFrontiere = Boundary as CurveOnSurface;
 
         if (myFrontiere is null)
         {
@@ -87,8 +91,8 @@ public class GeomPlate_CurveConstraint : Transient
         }
         else
         {
-            Geom_Surface? Surf;
-            GeomAdaptor_Surface? GS1 = myFrontiere.GetSurface() as GeomAdaptor_Surface;
+            Surface? Surf;
+            SurfaceAdaptor? GS1 = myFrontiere.GetSurface() as SurfaceAdaptor;
 
             if (GS1 is not null)
             {
@@ -147,11 +151,11 @@ public class GeomPlate_CurveConstraint : Transient
     {
         if (my3dCurve is null)
         {
-            return GCPnts_AbscissaPoint.Length(myFrontiere!);
+            return AbscissaPoint.Length(myFrontiere!);
         }
         else
         {
-            return GCPnts_AbscissaPoint.Length(my3dCurve);
+            return AbscissaPoint.Length(my3dCurve);
         }
     }
 
@@ -270,15 +274,15 @@ public class GeomPlate_CurveConstraint : Transient
     /// The 2D curve on the surface: the one set, else an approximation of the projected curve (a new curve on each
     /// call), else null.
     /// </summary>
-    public Geom2d_Curve? Curve2dOnSurf()
+    public Curve2D? Curve2dOnSurf()
     {
         if (my2dCurve is null && myHCurve2d is not null)
         {
-            Geom2d_Curve? C2d;
+            Curve2D? C2d;
             Continuity Continuity = global::Kerf.Geometry.Continuity.C1;
             int MaxDegree = 10;
             int MaxSeg = 20 + myHCurve2d.NbIntervals(global::Kerf.Geometry.Continuity.C3);
-            Approx_Curve2d appr = new Approx_Curve2d(myHCurve2d, myHCurve2d.FirstParameter(), myHCurve2d.LastParameter(),
+            Curve2d appr = new Curve2d(myHCurve2d, myHCurve2d.FirstParameter(), myHCurve2d.LastParameter(),
                                                      myTolU, myTolV, Continuity, MaxDegree, MaxSeg);
             C2d = appr.Curve();
             return C2d;
@@ -289,21 +293,21 @@ public class GeomPlate_CurveConstraint : Transient
         }
     }
 
-    public void SetCurve2dOnSurf(Geom2d_Curve? Curve)
+    public void SetCurve2dOnSurf(Curve2D? Curve)
     {
         my2dCurve = Curve;
     }
 
-    public Adaptor2d_Curve2d? ProjectedCurve() => myHCurve2d;
+    public Curve2DAdaptorBase? ProjectedCurve() => myHCurve2d;
 
-    public void SetProjectedCurve(Adaptor2d_Curve2d? Curve, double TolU, double TolV)
+    public void SetProjectedCurve(Curve2DAdaptorBase? Curve, double TolU, double TolV)
     {
         myHCurve2d = Curve;
         myTolU = TolU;
         myTolV = TolV;
     }
 
-    public Adaptor3d_Curve Curve3d()
+    public CurveAdaptorBase Curve3d()
     {
         if (my3dCurve is null)
         {
@@ -331,7 +335,7 @@ public class GeomPlate_CurveConstraint : Transient
 
     /// <summary>The local properties of the support surface at the constraint's parameter U.</summary>
     /// <exception cref="FailureException">The constraint isn't on a surface.</exception>
-    public GeomLProp_SLProps LPropSurf(double U)
+    public SLProps LPropSurf(double U)
     {
         if (myFrontiere is null)
         {

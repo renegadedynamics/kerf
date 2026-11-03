@@ -100,8 +100,8 @@ public class HelixGeom_HelixCurveTests
 
         // Test not implemented methods
         Assert.ThrowsAny<MethodNotImplementedException>(() => aHelix.Resolution(1.0));
-        Assert.ThrowsAny<MethodNotImplementedException>(() => aHelix.IsClosed());
-        Assert.ThrowsAny<MethodNotImplementedException>(() => aHelix.IsPeriodic());
+        Assert.ThrowsAny<MethodNotImplementedException>(() => aHelix.IsClosed);
+        Assert.ThrowsAny<MethodNotImplementedException>(() => aHelix.IsPeriodic);
         Assert.ThrowsAny<DomainErrorException>(() => aHelix.Period());
     }
 
@@ -123,16 +123,16 @@ public class HelixGeom_HelixCurveTests
         var aCurves = aBuilder.Curves();
         Assert.Single(aCurves);
 
-        Geom_Curve aCurve = aCurves[0];
+        Curve3D aCurve = aCurves[0];
         Assert.NotNull(aCurve);
 
         // Verify that the curve is a B-spline
-        Geom_BSplineCurve? aBSpline = aCurve as Geom_BSplineCurve;
+        BSplineCurve3D? aBSpline = aCurve as BSplineCurve3D;
         Assert.NotNull(aBSpline);
 
         // Check B-spline properties
         Assert.True(aBSpline.Degree() <= 8);
-        Assert.True(aBSpline.NbPoles() > 0);
+        Assert.True(aBSpline.PoleCount > 0);
     }
 
     [Fact]
@@ -143,7 +143,7 @@ public class HelixGeom_HelixCurveTests
         aHelix.Load(0.0, 2.0 * M_PI, 10.0, 3.0, 0.0, true);
         var aHAdaptor = new HelixGeom_HelixCurve(aHelix);
 
-        Geom_BSplineCurve? aBSpline = null;
+        BSplineCurve3D? aBSpline = null;
         double aMaxError = 0;
 
         int aResult = HelixGeom_Tools.ApprCurve3D(aHAdaptor,
@@ -185,7 +185,7 @@ public class HelixGeom_HelixCurveTests
         var aHAdaptor = new HelixGeom_HelixCurve(aHelix);
 
         // Test C0 continuity
-        Geom_BSplineCurve? aBSplineC0 = null;
+        BSplineCurve3D? aBSplineC0 = null;
         double aMaxErrorC0 = 0;
         int aResultC0 = HelixGeom_Tools.ApprCurve3D(aHAdaptor, myTolerance, C0, 30, 4, ref aBSplineC0, ref aMaxErrorC0);
 
@@ -193,7 +193,7 @@ public class HelixGeom_HelixCurveTests
         Assert.NotNull(aBSplineC0);
 
         // Test C2 continuity
-        Geom_BSplineCurve? aBSplineC2 = null;
+        BSplineCurve3D? aBSplineC2 = null;
         double aMaxErrorC2 = 0;
         int aResultC2 = HelixGeom_Tools.ApprCurve3D(aHAdaptor, myTolerance, C2, 30, 6, ref aBSplineC2, ref aMaxErrorC2);
 

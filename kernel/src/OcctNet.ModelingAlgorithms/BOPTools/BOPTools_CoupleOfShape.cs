@@ -2,32 +2,34 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>A pair of shapes.</summary>
 /// <remarks>
 /// A value: a struct with internal setters and <c>With</c> twins (translation rules, section 3). Equality compares the
-/// two shapes with <see cref="TopoDS_Shape"/>'s equality (same TShape, location and orientation).
+/// two shapes with <see cref="Shape"/>'s equality (same TShape, location and orientation).
 /// </remarks>
 public partial struct BOPTools_CoupleOfShape : IEquatable<BOPTools_CoupleOfShape>
 {
-    private TopoDS_Shape myShape1;
-    private TopoDS_Shape myShape2;
+    private Shape myShape1;
+    private Shape myShape2;
 
     /// <summary>Sets the first shape.</summary>
-    internal void SetShape1(in TopoDS_Shape theShape) => myShape1 = theShape;
+    internal void SetShape1(in Shape theShape) => myShape1 = theShape;
 
     /// <summary>The first shape.</summary>
-    public readonly TopoDS_Shape Shape1() => myShape1;
+    public readonly Shape Shape1() => myShape1;
 
     /// <summary>Sets the second shape.</summary>
-    internal void SetShape2(in TopoDS_Shape theShape) => myShape2 = theShape;
+    internal void SetShape2(in Shape theShape) => myShape2 = theShape;
 
     /// <summary>The second shape.</summary>
-    public readonly TopoDS_Shape Shape2() => myShape2;
+    public readonly Shape Shape2() => myShape2;
 
     /// <summary>A copy with the first shape replaced.</summary>
-    public readonly BOPTools_CoupleOfShape WithShape1(in TopoDS_Shape theShape)
+    public readonly BOPTools_CoupleOfShape WithShape1(in Shape theShape)
     {
         BOPTools_CoupleOfShape aCopy = this;
         aCopy.SetShape1(theShape);
@@ -35,7 +37,7 @@ public partial struct BOPTools_CoupleOfShape : IEquatable<BOPTools_CoupleOfShape
     }
 
     /// <summary>A copy with the second shape replaced.</summary>
-    public readonly BOPTools_CoupleOfShape WithShape2(in TopoDS_Shape theShape)
+    public readonly BOPTools_CoupleOfShape WithShape2(in Shape theShape)
     {
         BOPTools_CoupleOfShape aCopy = this;
         aCopy.SetShape2(theShape);

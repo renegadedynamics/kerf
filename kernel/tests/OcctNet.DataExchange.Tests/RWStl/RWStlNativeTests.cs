@@ -2,7 +2,9 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Buffers.Binary;
 using System.Globalization;
 using System.IO.Compression;
@@ -99,10 +101,10 @@ public class RWStlNativeTests(ITestOutputHelper output)
         return $"{theTri.NodeCount} {theTri.TriangleCount} {Sha256(Encoding.ASCII.GetBytes(aDump.ToString()))}";
     }
 
-    private static string ShapeText(in TopoDS_Shape theShape)
+    private static string ShapeText(in Shape theShape)
     {
         var aWriter = new StringWriter(CultureInfo.InvariantCulture) { NewLine = "\n" };
-        BRepTools.Write(theShape, aWriter);
+        BrepTools.Write(theShape, aWriter);
         return aWriter.ToString();
     }
 
@@ -224,12 +226,12 @@ public class RWStlNativeTests(ITestOutputHelper output)
         {
             aLines.Add(Line("SHAPE", () =>
             {
-                TopoDS_Shape aShape = new();
+                Shape aShape = new();
                 return new StlAPI_Reader().Read(ref aShape, thePath) ? Bytes(Encoding.ASCII.GetBytes(ShapeText(aShape))) : "FAIL";
             }));
             aLines.Add(Line("SHAPES", () =>
             {
-                TopoDS_Shape aShape = new();
+                Shape aShape = new();
                 return new StlAPI_Reader().Read(ref aShape, new MemoryStream(theData)) ? Bytes(Encoding.ASCII.GetBytes(ShapeText(aShape))) : "FAIL";
             }));
         }
@@ -264,8 +266,8 @@ public class RWStlNativeTests(ITestOutputHelper output)
         {
             case "W":
             {
-                BRepTools.Read(out TopoDS_Shape aShape, Path.Combine(OcctSourceDir, "data", "occ", aWords[1]));
-                TopoDS_Shape aMeshed = new BRepMesh_IncrementalMesh(aShape, 0.1, true, 0.5, false).Shape();
+                BrepTools.Read(out Shape aShape, Path.Combine(OcctSourceDir, "data", "occ", aWords[1]));
+                Shape aMeshed = new BRepMesh_IncrementalMesh(aShape, 0.1, true, 0.5, false).Shape();
                 byte[] anAscii = [], aBinary = [];
                 aLines.Add(Line("ASCII", () =>
                 {

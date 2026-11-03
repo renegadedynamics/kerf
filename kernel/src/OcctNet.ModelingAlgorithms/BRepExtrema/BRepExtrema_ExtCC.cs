@@ -3,7 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -14,48 +18,48 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepExtrema_ExtCC
 {
-    private readonly Extrema_ExtCC myExtCC = new();
-    private BRepAdaptor_Curve? myHC;
+    private readonly ExtCC myExtCC = new();
+    private EdgeCurveAdaptor? myHC;
 
     public BRepExtrema_ExtCC()
     {
     }
 
     /// <summary>Computes all the extrema between the edges.</summary>
-    public BRepExtrema_ExtCC(in TopoDS_Edge E1, in TopoDS_Edge E2)
+    public BRepExtrema_ExtCC(in Edge E1, in Edge E2)
     {
         Initialize(E2);
         Perform(E1);
     }
 
-    public void Initialize(in TopoDS_Edge E2)
+    public void Initialize(in Edge E2)
     {
-        if (!BRep_Tool.IsGeometric(E2))
+        if (!Tool.IsGeometric(E2))
         {
             return; // protect against non-geometric type (e.g. polygon)
         }
         double V1, V2;
-        var Curv = new BRepAdaptor_Curve(E2);
+        var Curv = new EdgeCurveAdaptor(E2);
         myHC = Curv;
-        double Tol = Min(BRep_Tool.Tolerance(E2), global::Kerf.Engine.Foundation.Precision.Confusion());
+        double Tol = Min(Tool.Tolerance(E2), global::Kerf.Engine.Foundation.Precision.Confusion());
         Tol = Max(Curv.Resolution(Tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
-        BRep_Tool.Range(E2, out V1, out V2);
+        Tool.Range(E2, out V1, out V2);
         myExtCC.SetCurve(2, myHC, V1, V2);
         myExtCC.SetTolerance(2, Tol);
     }
 
-    public void Perform(in TopoDS_Edge E1)
+    public void Perform(in Edge E1)
     {
-        if (!BRep_Tool.IsGeometric(E1))
+        if (!Tool.IsGeometric(E1))
         {
             return; // protect against non-geometric type (e.g. polygon)
         }
         double U1, U2;
-        var Curv = new BRepAdaptor_Curve(E1);
-        BRepAdaptor_Curve HC = Curv;
-        double Tol = Min(BRep_Tool.Tolerance(E1), global::Kerf.Engine.Foundation.Precision.Confusion());
+        var Curv = new EdgeCurveAdaptor(E1);
+        EdgeCurveAdaptor HC = Curv;
+        double Tol = Min(Tool.Tolerance(E1), global::Kerf.Engine.Foundation.Precision.Confusion());
         Tol = Max(Curv.Resolution(Tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
-        BRep_Tool.Range(E1, out U1, out U2);
+        Tool.Range(E1, out U1, out U2);
         myExtCC.SetCurve(1, HC, U1, U2);
         myExtCC.SetTolerance(1, Tol);
         // If we enable SetSingleSolutionFlag Extrema will run much quicker on almost parallel curves
@@ -65,13 +69,13 @@ public sealed class BRepExtrema_ExtCC
     }
 
     /// <summary>True if the distances are found.</summary>
-    public bool IsDone() => myExtCC.IsDone();
+    public bool IsDone() => myExtCC.IsDone;
 
     /// <summary>The number of extremum distances.</summary>
-    public int NbExt() => myExtCC.NbExt();
+    public int NbExt() => myExtCC.ExtCount;
 
     /// <summary>True if the edges are parallel.</summary>
-    public bool IsParallel() => myExtCC.IsParallel();
+    public bool IsParallel() => myExtCC.IsParallel;
 
     /// <summary>The <paramref name="N"/>th extremum square distance.</summary>
     public double SquareDistance(int N) => myExtCC.SquareDistance(N);
@@ -79,28 +83,28 @@ public sealed class BRepExtrema_ExtCC
     /// <summary>The parameter on the first edge of the <paramref name="N"/>th extremum distance.</summary>
     public double ParameterOnE1(int N)
     {
-        myExtCC.Points(N, out Extrema_POnCurv POnE1, out _);
+        myExtCC.Points(N, out POnCurv POnE1, out _);
         return POnE1.Parameter();
     }
 
     /// <summary>The point on the first edge of the <paramref name="N"/>th extremum distance.</summary>
     public Point3D PointOnE1(int N)
     {
-        myExtCC.Points(N, out Extrema_POnCurv POnE1, out _);
+        myExtCC.Points(N, out POnCurv POnE1, out _);
         return POnE1.Value();
     }
 
     /// <summary>The parameter on the second edge of the <paramref name="N"/>th extremum distance.</summary>
     public double ParameterOnE2(int N)
     {
-        myExtCC.Points(N, out _, out Extrema_POnCurv POnE2);
+        myExtCC.Points(N, out _, out POnCurv POnE2);
         return POnE2.Parameter();
     }
 
     /// <summary>The point on the second edge of the <paramref name="N"/>th extremum distance.</summary>
     public Point3D PointOnE2(int N)
     {
-        myExtCC.Points(N, out _, out Extrema_POnCurv POnE2);
+        myExtCC.Points(N, out _, out POnCurv POnE2);
         return POnE2.Value();
     }
 

@@ -2,14 +2,17 @@
 
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Reflection;
 using Xunit.Abstractions;
 using static Occt.IMeshData_Status;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopTools_FormatVersion;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Engine.Exchange.Brep.FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -50,9 +53,9 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
                                                                        .Single(a => a.Key == "OcctSourceDir").Value!,
                         "data", "occ");
 
-    private static TopoDS_Shape PortRead(string theFile)
+    private static Shape PortRead(string theFile)
     {
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, theFile), theFile);
+        Assert.True(BrepTools.Read(out Shape aShape, theFile), theFile);
         return aShape;
     }
 
@@ -67,7 +70,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
     private string NativeWrite(N.TopoDS_Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(N.BRepTools.Write(theShape, aFile, true, false, (N.TopTools_FormatVersion)(int)TopTools_FormatVersion_CURRENT));
+        Assert.True(N.BRepTools.Write(theShape, aFile, true, false, (N.TopTools_FormatVersion)(int)FormatVersion_CURRENT));
         return aFile;
     }
 
@@ -119,7 +122,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
     }
 
     /// <summary>The port's model of the shape, as BRepMesh_Context's tools leave it before the faces are meshed.</summary>
-    private static IMeshData_Model PortModel(in TopoDS_Shape theShape, in IMeshTools_Parameters theParameters)
+    private static IMeshData_Model PortModel(in Shape theShape, in IMeshTools_Parameters theParameters)
     {
         var aContext = new IMeshTools_Context();
         aContext.SetModelBuilder(new BRepMesh_ModelBuilder());
@@ -137,10 +140,10 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
         public int Shapes, Edges, Polygons, Polygons3D, Values, ExactNodes, NotMeshed, Reused, Disagreements;
     }
 
-    private static NCollection_IndexedMap<TopoDS_Shape> Map(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static NCollection_IndexedMap<Shape> Map(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap;
     }
 
@@ -148,7 +151,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
     /// The index of the model's sub-shape in the map: the same TShape at the same location (the model keeps one edge or
     /// face per location); a free edge, which the model takes without its location, by its TShape.
     /// </summary>
-    private static int IndexOf(NCollection_IndexedMap<TopoDS_Shape> theMap, in TopoDS_Shape theShape)
+    private static int IndexOf(NCollection_IndexedMap<Shape> theMap, in Shape theShape)
     {
         int anIndex = theMap.FindIndex(theShape);
         if (anIndex == 0)
@@ -178,16 +181,16 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
     /// meshed file meshed anew, the polygon; for each free edge, the 3D polygon. With <paramref name="theOld"/> (the
     /// file meshed before), a face the port reuses must keep its polygons.
     /// </summary>
-    private void Compare(Oracle theO, Tally theTally, string theName, IMeshData_Model theModel, in TopoDS_Shape theF1,
-                         in TopoDS_Shape theMeshed, N.Poly_Triangulation?[] theNativeTriangulations, in TopoDS_Shape? theOld)
+    private void Compare(Oracle theO, Tally theTally, string theName, IMeshData_Model theModel, in Shape theF1,
+                         in Shape theMeshed, N.Poly_Triangulation?[] theNativeTriangulations, in Shape? theOld)
     {
-        NCollection_IndexedMap<TopoDS_Shape> anEdges1 = Map(theF1, TopAbs_EDGE), aFaces1 = Map(theF1, TopAbs_FACE);
-        NCollection_IndexedMap<TopoDS_Shape> anEdges2 = Map(theMeshed, TopAbs_EDGE), aFaces2 = Map(theMeshed, TopAbs_FACE);
-        NCollection_IndexedMap<TopoDS_Shape>? anOldEdges = null, anOldFaces = null;
-        if (theOld is TopoDS_Shape anOld)
+        NCollection_IndexedMap<Shape> anEdges1 = Map(theF1, ShapeType.Edge), aFaces1 = Map(theF1, ShapeType.Face);
+        NCollection_IndexedMap<Shape> anEdges2 = Map(theMeshed, ShapeType.Edge), aFaces2 = Map(theMeshed, ShapeType.Face);
+        NCollection_IndexedMap<Shape>? anOldEdges = null, anOldFaces = null;
+        if (theOld is Shape anOld)
         {
-            anOldEdges = Map(anOld, TopAbs_EDGE);
-            anOldFaces = Map(anOld, TopAbs_FACE);
+            anOldEdges = Map(anOld, ShapeType.Edge);
+            anOldFaces = Map(anOld, ShapeType.Face);
         }
 
         theTally.Shapes++;
@@ -196,7 +199,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
             IMeshData_Edge aDEdge = theModel.GetEdge(i);
             theTally.Edges++;
             int anEdgeIndex = IndexOf(anEdges1, aDEdge.GetEdge());
-            TopoDS_Edge anEdge2 = TopoDS.Edge(anEdges2.FindKey(anEdgeIndex));
+            Edge anEdge2 = ShapeCasts.Edge(anEdges2.FindKey(anEdgeIndex));
             IMeshData_Curve aCurve = aDEdge.GetCurve();
             string aWhat = $"{theName} edge {anEdgeIndex}";
 
@@ -204,7 +207,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
             {
                 // The model takes a free edge without its location: its points, and the polygon, are in the edge's
                 // own frame.
-                Polygon3D? aPoly3D = BRep_Tool.Polygon3D(TopoDS.Edge(anEdge2.Located(new Placement())), out _);
+                Polygon3D? aPoly3D = Tool.Polygon3D(ShapeCasts.Edge(anEdge2.Located(new Placement())), out _);
                 if (aDEdge.IsSet(IMeshData_Reused) || aPoly3D is null || aCurve.ParametersNb() == 0)
                 {
                     continue;
@@ -244,8 +247,8 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
             foreach (IMeshData_Face aDFace in aFaceOrder)
             {
                 int aFaceIndex = IndexOf(aFaces1, aDFace.GetFace());
-                TopoDS_Face aFace2 = TopoDS.Face(aFaces2.FindKey(aFaceIndex));
-                Triangulation? aTri = BRep_Tool.Triangulation(aFace2, out Placement aLoc);
+                Face aFace2 = ShapeCasts.Face(aFaces2.FindKey(aFaceIndex));
+                Triangulation? aTri = Tool.Triangulation(aFace2, out Placement aLoc);
                 if (aTri is null)
                 {
                     theTally.NotMeshed++;
@@ -257,11 +260,11 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
                 {
                     // Reused by the port: native kept the face's mesh and the edge's polygon on it.
                     theTally.Reused++;
-                    TopoDS_Face anOldFace = TopoDS.Face(anOldFaces!.FindKey(aFaceIndex));
-                    TopoDS_Edge anOldEdge = TopoDS.Edge(anOldEdges!.FindKey(anEdgeIndex));
-                    Triangulation? anOldTri = BRep_Tool.Triangulation(anOldFace, out Placement anOldLoc);
-                    PolygonOnTriangulation? anOldPoly = BRep_Tool.PolygonOnTriangulation(anOldEdge, anOldTri, anOldLoc);
-                    PolygonOnTriangulation? aNewPoly = BRep_Tool.PolygonOnTriangulation(anEdge2, aTri, aLoc);
+                    Face anOldFace = ShapeCasts.Face(anOldFaces!.FindKey(aFaceIndex));
+                    Edge anOldEdge = ShapeCasts.Edge(anOldEdges!.FindKey(anEdgeIndex));
+                    Triangulation? anOldTri = Tool.Triangulation(anOldFace, out Placement anOldLoc);
+                    PolygonOnTriangulation? anOldPoly = Tool.PolygonOnTriangulation(anOldEdge, anOldTri, anOldLoc);
+                    PolygonOnTriangulation? aNewPoly = Tool.PolygonOnTriangulation(anEdge2, aTri, aLoc);
                     if (anOldTri is null || aTri.NodeCount != anOldTri.NodeCount || aTri.TriangleCount != anOldTri.TriangleCount
                         || (anOldPoly is null) != (aNewPoly is null)
                         || (aNewPoly is not null && (aNewPoly.NodeCount != anOldPoly!.NodeCount || aNewPoly.Deflection() != anOldPoly.Deflection())))
@@ -274,8 +277,8 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
                 for (int aSide = 0; aSide < aPCurves.Count; aSide++)
                 {
                     IMeshData_PCurve aPCurve = aPCurves[aSide == 0 ? 0 : aPCurves.Count - 1];
-                    TopoDS_Edge anOriented = TopoDS.Edge(anEdge2.Oriented(aSide == 0 ? TopAbs_FORWARD : TopAbs_REVERSED));
-                    PolygonOnTriangulation? aPoly = BRep_Tool.PolygonOnTriangulation(anOriented, aTri, aLoc);
+                    Edge anOriented = ShapeCasts.Edge(anEdge2.Oriented(aSide == 0 ? Forward : Reversed));
+                    PolygonOnTriangulation? aPoly = Tool.PolygonOnTriangulation(anOriented, aTri, aLoc);
                     if (aPoly is null)
                     {
                         Disagree(theTally, $"{aWhat} face {aFaceIndex}: no native polygon");
@@ -320,7 +323,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
 
     private void Run(Oracle theO, Tally theTally, string theName, string theF1)
     {
-        TopoDS_Shape aPortF1 = PortRead(theF1);
+        Shape aPortF1 = PortRead(theF1);
         var aBox = new Box();
         BRepBndLib.Add(aPortF1, ref aBox, false);
         if (aBox.IsVoid)
@@ -417,8 +420,8 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
             foreach ((double aDeflection, double anAngle) in new[] { (0.1, 0.5), (0.05, 0.5), (0.02, 0.5), (0.05, 0.2) })
             {
                 string aF3 = NativeMesh(aF2, aDeflection, true, anAngle, out N.Poly_Triangulation?[] aNativeTris);
-                TopoDS_Shape aPortF2 = PortRead(aF2);
-                TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(aPortF2, out _);
+                Shape aPortF2 = PortRead(aF2);
+                Shape aCopy = BrepTools.ExactCopyForWrite(aPortF2, out _);
                 IMeshData_Model aModel = PortModel(aCopy, Params(aDeflection, true, anAngle));
                 Compare(anOracle, aTally, $"{aName} again at {aDeflection} {anAngle}", aModel, aCopy, PortRead(aF3), aNativeTris,
                         aPortF2);

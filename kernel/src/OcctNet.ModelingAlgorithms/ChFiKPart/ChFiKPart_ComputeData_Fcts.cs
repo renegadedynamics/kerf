@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Projection;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
@@ -47,7 +49,7 @@ internal static class ChFiKPart_ComputeData_Fcts
 
     /// <summary>The segment from <paramref name="UV1"/> to <paramref name="UV2"/> as a degree 1 B-spline over
     /// [<paramref name="Pardeb"/>, <paramref name="Parfin"/>].</summary>
-    internal static Geom2d_BSplineCurve ChFiKPart_PCurve(in Point2D UV1, in Point2D UV2, double Pardeb,
+    internal static BSplineCurve2D ChFiKPart_PCurve(in Point2D UV1, in Point2D UV2, double Pardeb,
                                                          double Parfin)
     {
         NCollection_Array1<Point2D> p = new(1, 2);
@@ -58,7 +60,7 @@ internal static class ChFiKPart_ComputeData_Fcts
         k[2] = Parfin;
         p[1] = UV1;
         p[2] = UV2;
-        Geom2d_BSplineCurve Pcurv = new(p, k, m, 1);
+        BSplineCurve2D Pcurv = new(p, k, m, 1);
         return Pcurv;
     }
 
@@ -71,50 +73,50 @@ internal static class ChFiKPart_ComputeData_Fcts
     /// <summary>The projection of <paramref name="Cg"/> on <paramref name="Sg"/> as a 2D curve.</summary>
     /// <exception cref="MethodNotImplementedException">The projection is not a line, a Bézier or a B-spline, or the
     /// surface is not elementary.</exception>
-    internal static void ChFiKPart_ProjPC(GeomAdaptor_Curve Cg, GeomAdaptor_Surface Sg, out Geom2d_Curve? Pcurv)
+    internal static void ChFiKPart_ProjPC(CurveAdaptor Cg, SurfaceAdaptor Sg, out Curve2D? Pcurv)
     {
         Pcurv = null;
-        if (Sg.GetType() < BezierSurface)
+        if (Sg.GetType() < SurfaceKind.BezierSurface)
         {
-            GeomAdaptor_Curve HCg = (GeomAdaptor_Curve)Cg.ShallowCopy(); // OCCT copy-constructs the adaptors
-            GeomAdaptor_Surface HSg = (GeomAdaptor_Surface)Sg.ShallowCopy();
-            ProjLib_ProjectedCurve Projc = new(HSg, HCg);
+            CurveAdaptor HCg = (CurveAdaptor)Cg.ShallowCopy(); // OCCT copy-constructs the adaptors
+            SurfaceAdaptor HSg = (SurfaceAdaptor)Sg.ShallowCopy();
+            ProjectedCurve Projc = new(HSg, HCg);
             switch (Projc.GetType())
             {
                 case Line:
                 {
-                    Pcurv = new Geom2d_Line(Projc.Line());
+                    Pcurv = new LineCurve2D(Projc.Line());
                 }
                     break;
                 case BezierCurve:
                 {
-                    Geom2d_BezierCurve BezProjc = Projc.Bezier();
+                    BezierCurve2D BezProjc = Projc.Bezier();
                     NCollection_Array1<Point2D> TP = BezProjc.InternalPoles();
-                    if (BezProjc.IsRational())
+                    if (BezProjc.IsRational)
                     {
-                        Pcurv = new Geom2d_BezierCurve(TP, BezProjc.InternalWeights()!);
+                        Pcurv = new BezierCurve2D(TP, BezProjc.InternalWeights()!);
                     }
                     else
                     {
-                        Pcurv = new Geom2d_BezierCurve(TP);
+                        Pcurv = new BezierCurve2D(TP);
                     }
                 }
                     break;
                 case BSplineCurve:
                 {
-                    Geom2d_BSplineCurve BspProjc = Projc.BSpline();
+                    BSplineCurve2D BspProjc = Projc.BSpline();
                     NCollection_Array1<Point2D> TP = BspProjc.InternalPoles();
                     NCollection_Array1<double> TK = BspProjc.InternalKnots();
                     NCollection_Array1<int> TM = BspProjc.InternalMultiplicities();
 
-                    if (BspProjc.IsRational())
+                    if (BspProjc.IsRational)
                     {
-                        Pcurv = new Geom2d_BSplineCurve(TP, BspProjc.InternalWeightsArray(), TK, TM,
+                        Pcurv = new BSplineCurve2D(TP, BspProjc.InternalWeightsArray(), TK, TM,
                                                         BspProjc.Degree());
                     }
                     else
                     {
-                        Pcurv = new Geom2d_BSplineCurve(TP, TK, TM, BspProjc.Degree());
+                        Pcurv = new BSplineCurve2D(TP, TK, TM, BspProjc.Degree());
                     }
                 }
                     break;
@@ -134,7 +136,7 @@ internal static class ChFiKPart_ComputeData_Fcts
     //=======================================================================
 
     /// <summary>Adds <paramref name="C"/> to the data structure with a null tolerance; returns its index.</summary>
-    internal static int ChFiKPart_IndexCurveInDS(Geom_Curve? C, TopOpeBRepDS_DataStructure DStr)
+    internal static int ChFiKPart_IndexCurveInDS(Curve3D? C, TopOpeBRepDS_DataStructure DStr)
     {
         return DStr.AddCurve(new TopOpeBRepDS_Curve(C, 0.0));
     }
@@ -145,7 +147,7 @@ internal static class ChFiKPart_ComputeData_Fcts
     //=======================================================================
 
     /// <summary>Adds <paramref name="S"/> to the data structure with a null tolerance; returns its index.</summary>
-    internal static int ChFiKPart_IndexSurfaceInDS(Geom_Surface? S, TopOpeBRepDS_DataStructure DStr)
+    internal static int ChFiKPart_IndexSurfaceInDS(Surface? S, TopOpeBRepDS_DataStructure DStr)
     {
         return DStr.AddSurface(new TopOpeBRepDS_Surface(S, 0.0));
     }

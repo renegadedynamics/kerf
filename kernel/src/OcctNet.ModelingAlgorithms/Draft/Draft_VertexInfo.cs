@@ -4,7 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.InteropServices;
 
 namespace Occt;
@@ -17,7 +19,7 @@ namespace Occt;
 public sealed class Draft_VertexInfo
 {
     private Point3D myGeom = new();
-    private readonly List<TopoDS_Shape> myEdges = [];
+    private readonly List<Shape> myEdges = [];
     private readonly List<double> myParams = [];
     private int myItEd; // OCCT's NCollection_List<TopoDS_Shape>::Iterator
 
@@ -25,7 +27,7 @@ public sealed class Draft_VertexInfo
     {
     }
 
-    public void Add(in TopoDS_Edge E)
+    public void Add(in Edge E)
     {
         for (myItEd = 0; myItEd < myEdges.Count; myItEd++)
         {
@@ -46,10 +48,10 @@ public sealed class Draft_VertexInfo
     public ref Point3D ChangeGeometry() => ref myGeom;
 
     /// <exception cref="DomainErrorException">The edge isn't one of the vertex's.</exception>
-    public double Parameter(in TopoDS_Edge E) => ChangeParameter(E);
+    public double Parameter(in Edge E) => ChangeParameter(E);
 
     /// <exception cref="DomainErrorException">The edge isn't one of the vertex's.</exception>
-    public ref double ChangeParameter(in TopoDS_Edge E)
+    public ref double ChangeParameter(in Edge E)
     {
         for (myItEd = 0; myItEd < myEdges.Count; myItEd++)
         {
@@ -63,7 +65,7 @@ public sealed class Draft_VertexInfo
 
     public void InitEdgeIterator() => myItEd = 0;
 
-    public TopoDS_Edge Edge() => TopoDS.Edge(myEdges[myItEd]);
+    public Edge Edge() => ShapeCasts.Edge(myEdges[myItEd]);
 
     public void NextEdge() => myItEd++;
 

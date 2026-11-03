@@ -6,7 +6,8 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -20,14 +21,14 @@ namespace Occt;
 /// </remarks>
 public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
 {
-    private TopoDS_Edge arc;
-    private TopoDS_Vertex vtx;
+    private Edge arc;
+    private Vertex vtx;
     private Point3D point;
     private Vector3D vector;
     private double tol;
     private double prmarc;
     private double prmtg;
-    private TopAbs_Orientation traarc;
+    private Orientation traarc;
     private bool isonarc;
     private bool isvtx;
     private bool hasvector;
@@ -35,14 +36,14 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
     /// <summary>Empty constructor.</summary>
     public ChFiDS_CommonPoint()
     {
-        arc = new TopoDS_Edge();
-        vtx = new TopoDS_Vertex();
+        arc = new Edge();
+        vtx = new Vertex();
         point = new Point3D();
         vector = new Vector3D();
         tol = 0.0;
         prmarc = 0.0;
         prmtg = 0.0;
-        traarc = TopAbs_FORWARD;
+        traarc = Forward;
         isonarc = false;
         isvtx = false;
         hasvector = false;
@@ -58,14 +59,14 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
     }
 
     /// <summary>The point is the vertex <paramref name="theVertex"/> of the restriction of one of the surfaces.</summary>
-    internal void SetVertex(in TopoDS_Vertex theVertex)
+    internal void SetVertex(in Vertex theVertex)
     {
         isvtx = true;
         vtx = theVertex;
     }
 
     /// <summary>The point is on the arc <paramref name="A"/>, at parameter <paramref name="Param"/>.</summary>
-    internal void SetArc(double Tol, in TopoDS_Edge A, double Param, TopAbs_Orientation TArc)
+    internal void SetArc(double Tol, in Edge A, double Param, Orientation TArc)
     {
         isonarc = true;
         if (Tol > tol)
@@ -114,14 +115,14 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
         return aCopy;
     }
 
-    public readonly ChFiDS_CommonPoint WithVertex(in TopoDS_Vertex theVertex)
+    public readonly ChFiDS_CommonPoint WithVertex(in Vertex theVertex)
     {
         ChFiDS_CommonPoint aCopy = this;
         aCopy.SetVertex(theVertex);
         return aCopy;
     }
 
-    public readonly ChFiDS_CommonPoint WithArc(double Tol, in TopoDS_Edge A, double Param, TopAbs_Orientation TArc)
+    public readonly ChFiDS_CommonPoint WithArc(double Tol, in Edge A, double Param, Orientation TArc)
     {
         ChFiDS_CommonPoint aCopy = this;
         aCopy.SetArc(Tol, A, Param, TArc);
@@ -169,7 +170,7 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
     }
 
     /// <summary>The vertex; throws <see cref="DomainErrorException"/> if the point is not a vertex.</summary>
-    public readonly TopoDS_Vertex Vertex()
+    public readonly Vertex Vertex()
     {
         if (!isvtx)
         {
@@ -186,7 +187,7 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
     }
 
     /// <summary>The arc of restriction containing the point.</summary>
-    public readonly TopoDS_Edge Arc()
+    public readonly Edge Arc()
     {
         if (!isonarc)
         {
@@ -197,7 +198,7 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
     }
 
     /// <summary>The transition of the point on the arc.</summary>
-    public readonly TopAbs_Orientation TransitionOnArc()
+    public readonly Orientation TransitionOnArc()
     {
         if (!isonarc)
         {

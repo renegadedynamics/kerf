@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -15,16 +16,16 @@ public class BisectorTests
 {
     private const double Tol = 1.0e-7;
 
-    private static Geom2d_TrimmedCurve Segment(double x1, double y1, double x2, double y2)
+    private static TrimmedCurve2D Segment(double x1, double y1, double x2, double y2)
     {
         Point2D p1 = new(x1, y1), p2 = new(x2, y2);
-        return new Geom2d_TrimmedCurve(new Geom2d_Line(p1, new Direction2D(x2 - x1, y2 - y1)), 0.0, p1.Distance(p2));
+        return new TrimmedCurve2D(new LineCurve2D(p1, new Direction2D(x2 - x1, y2 - y1)), 0.0, p1.Distance(p2));
     }
 
-    private static Geom2d_TrimmedCurve Arc(double cx, double cy, double r, double u1, double u2) =>
-        new(new Geom2d_Circle(new Circle2D(new Axis2D(new Point2D(cx, cy), new Direction2D(1.0, 0.0)), r)), u1, u2);
+    private static TrimmedCurve2D Arc(double cx, double cy, double r, double u1, double u2) =>
+        new(new CircleCurve2D(new Circle2D(new Axis2D(new Point2D(cx, cy), new Direction2D(1.0, 0.0)), r)), u1, u2);
 
-    private static Geom2d_BSplineCurve Spline(params double[] xy)
+    private static BSplineCurve2D Spline(params double[] xy)
     {
         NCollection_Array1<Point2D> aPoles = new(1, 4);
         for (int i = 1; i <= 4; i++)
@@ -37,10 +38,10 @@ public class BisectorTests
         NCollection_Array1<int> aMults = new(1, 2);
         aMults[1] = 4;
         aMults[2] = 4;
-        return new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 3);
+        return new BSplineCurve2D(aPoles, aKnots, aMults, 3);
     }
 
-    private static double Dist(Geom2d_Curve theC, in Point2D theP)
+    private static double Dist(Curve2D theC, in Point2D theP)
     {
         Geom2dAPI_ProjectPointOnCurve aProj = new(theP, theC, theC.FirstParameter(), theC.LastParameter());
         double aD = Math.Min(theP.Distance(theC.Value(theC.FirstParameter())),
@@ -52,13 +53,13 @@ public class BisectorTests
     public void SquareCorner_IsTheDiagonal()
     {
         // The corner (2, 0) of the square [0, 2]^2 travelled anticlockwise: the bisector goes inside along (-1, 1).
-        Geom2d_TrimmedCurve a = Segment(0, 0, 2, 0), b = Segment(2, 0, 2, 2);
+        TrimmedCurve2D a = Segment(0, 0, 2, 0), b = Segment(2, 0, 2, 2);
         Bisector_Bisec aBis = new();
         aBis.Perform(a, b, new Point2D(2, 0), new Vector2D(1, 0), new Vector2D(0, -1), 1.0, JoinKind.Arc,
                      Tol);
-        Geom2d_TrimmedCurve aCurve = aBis.Value();
+        TrimmedCurve2D aCurve = aBis.Value();
         Bisector_BisecAna anAna = Assert.IsType<Bisector_BisecAna>(aCurve.BasisCurve());
-        Assert.IsType<Geom2d_Line>(anAna.Geom2dCurve());
+        Assert.IsType<LineCurve2D>(anAna.Geom2dCurve());
         Assert.Equal(1, anAna.NbIntervals());
         Assert.False(anAna.IsExtendAtStart() || anAna.IsExtendAtEnd());
         Point2D aStart = aCurve.Value(aCurve.FirstParameter());
@@ -74,15 +75,15 @@ public class BisectorTests
     public void CirclesAndLines_AreEquidistant()
     {
         // A line then a quarter circle tangent to it; a point and a circle; two points.
-        Geom2d_TrimmedCurve a = Segment(-2, 1, 0, 1);
-        Geom2d_TrimmedCurve c = Arc(0, 0, 1, Math.PI / 2, 3.0);
+        TrimmedCurve2D a = Segment(-2, 1, 0, 1);
+        TrimmedCurve2D c = Arc(0, 0, 1, Math.PI / 2, 3.0);
         Bisector_Bisec aBis = new();
         aBis.Perform(a, c, new Point2D(-3, -2), new Vector2D(1, 1), new Vector2D(-1, 1), 1.0,
                      JoinKind.Arc, Tol, false);
-        Geom2d_TrimmedCurve aCurve = aBis.Value();
+        TrimmedCurve2D aCurve = aBis.Value();
         Assert.IsType<Bisector_BisecAna>(aCurve.BasisCurve());
-        Geom2d_Line aL = new(new Point2D(-2, 1), new Direction2D(1, 0));
-        Geom2d_Circle aC = new(new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0));
+        LineCurve2D aL = new(new Point2D(-2, 1), new Direction2D(1, 0));
+        CircleCurve2D aC = new(new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0));
         for (int k = 1; k <= 5; k++)
         {
             Point2D aP = aCurve.Value(aCurve.FirstParameter() + 0.3 * k);
@@ -92,7 +93,7 @@ public class BisectorTests
         }
 
         Bisector_Bisec aPP = new();
-        aPP.Perform(new Geom2d_CartesianPoint(0, 0), new Geom2d_CartesianPoint(2, 0), new Point2D(1, 0),
+        aPP.Perform(new CartesianPoint2(0, 0), new CartesianPoint2(2, 0), new Point2D(1, 0),
                     new Vector2D(0, 1), new Vector2D(0, -1), 1.0);
         Point2D aQ = aPP.Value().Value(aPP.Value().FirstParameter() + 3.0);
         Assert.Equal(1.0, aQ.X(), 1e-12);
@@ -102,18 +103,18 @@ public class BisectorTests
     public void CoincidentPoints_Throw()
     {
         Bisector_Bisec aPP = new();
-        Assert.ThrowsAny<GccAna_NoSolution>(() => aPP.Perform(new Geom2d_CartesianPoint(1, 1),
-                                                                 new Geom2d_CartesianPoint(1, 1), new Point2D(1, 1),
+        Assert.ThrowsAny<GccAna_NoSolution>(() => aPP.Perform(new CartesianPoint2(1, 1),
+                                                                 new CartesianPoint2(1, 1), new Point2D(1, 1),
                                                                  new Vector2D(1, 0), new Vector2D(0, 1), 1.0));
     }
 
     [Fact]
     public void PointAndSpline_IsBisecPC()
     {
-        Geom2d_BSplineCurve aS = Spline(0, 0, 1, 1, 2, 1, 3, 0);
+        BSplineCurve2D aS = Spline(0, 0, 1, 1, 2, 1, 3, 0);
         Bisector_BisecPC aPC = new(aS, new Point2D(1.5, -2.0), -1.0);
         Assert.False(aPC.IsEmpty());
-        Assert.False(aPC.IsPeriodic());
+        Assert.False(aPC.IsPeriodic);
         Assert.Equal(aPC.FirstParameter() + aPC.LastParameter() - 0.25, aPC.ReversedParameter(0.25));
         for (int k = 1; k < 10; k++)
         {
@@ -124,15 +125,15 @@ public class BisectorTests
             Assert.Equal(u, aPC.LinkCurveBis(aPC.LinkBisCurve(u)));
         }
         Assert.ThrowsAny<MethodNotImplementedException>(() => aPC.Reversed());
-        Assert.ThrowsAny<Geom2d_UndefinedDerivative>(() => aPC.DN(0.5, 4));
+        Assert.ThrowsAny<UndefinedDerivative2DException>(() => aPC.DN(0.5, 4));
     }
 
     [Fact]
     public void TwoSplines_IsBisecCC_WithChangeGuide()
     {
         // Two arcs of B-splines facing each other: the bisector between them, and the same parameterised by the second.
-        Geom2d_BSplineCurve aS1 = Spline(0, 0, 1, 0.5, 2, 0.5, 3, 0);
-        Geom2d_BSplineCurve aS2 = Spline(3, 3, 2, 2.5, 1, 2.5, 0, 3);
+        BSplineCurve2D aS1 = Spline(0, 0, 1, 0.5, 2, 0.5, 3, 0);
+        BSplineCurve2D aS2 = Spline(3, 3, 2, 2.5, 1, 2.5, 0, 3);
         Bisector_BisecCC aCC = new(aS1, aS2, 1.0, 1.0, new Point2D(0.0, 1.5));
         Assert.False(aCC.IsEmpty());
         Assert.True(aCC.Polygon().Length() > 2);
@@ -158,7 +159,7 @@ public class BisectorTests
     public void Inter_OfNeighbouringCorners()
     {
         // The square [0, 2]^2: the bisectors of the corners (2, 0) and (2, 2) meet at the centre.
-        Geom2d_TrimmedCurve a = Segment(0, 0, 2, 0), b = Segment(2, 0, 2, 2), c = Segment(2, 2, 0, 2);
+        TrimmedCurve2D a = Segment(0, 0, 2, 0), b = Segment(2, 0, 2, 2), c = Segment(2, 2, 0, 2);
         Bisector_Bisec aB1 = new(), aB2 = new();
         aB1.Perform(a, b, new Point2D(2, 0), new Vector2D(1, 0), new Vector2D(0, -1), 1.0, JoinKind.Arc,
                     Tol);
@@ -176,7 +177,7 @@ public class BisectorTests
     [Fact]
     public void IsConvex_BySide()
     {
-        Geom2d_TrimmedCurve anArc = Arc(0, 0, 1, 0, 1); // anticlockwise: the centre is on its left
+        TrimmedCurve2D anArc = Arc(0, 0, 1, 0, 1); // anticlockwise: the centre is on its left
         Assert.True(Bisector.IsConvex(anArc, -1.0));
         Assert.False(Bisector.IsConvex(anArc, 1.0));
         Assert.True(Bisector.IsConvex(Segment(0, 0, 1, 0), 1.0));
@@ -214,7 +215,7 @@ public class BisectorTests
     [Fact]
     public void Freezing_FollowsOcct()
     {
-        Geom2d_TrimmedCurve a = Segment(0, 0, 2, 0), b = Segment(2, 0, 2, 2);
+        TrimmedCurve2D a = Segment(0, 0, 2, 0), b = Segment(2, 0, 2, 2);
         Bisector_Bisec aBis = new();
         aBis.Perform(a, b, new Point2D(2, 0), new Vector2D(1, 0), new Vector2D(0, -1), 1.0, JoinKind.Arc,
                      Tol);
@@ -230,7 +231,7 @@ public class BisectorTests
         Assert.Equal(anAna.FirstParameter() + 1.0, anAna.LastParameter());
 
         // Geom2dCurve hands out the conic frozen; the bisector still re-trims (its trimmed curve is its own).
-        Geom2d_Curve aConic = anAna.Geom2dCurve();
+        Curve2D aConic = anAna.Geom2dCurve();
         Assert.True(aConic.IsFrozen);
         anAna.SetTrim(anAna.FirstParameter(), anAna.FirstParameter() + 2.0);
         Assert.Equal(anAna.FirstParameter() + 2.0, anAna.LastParameter());

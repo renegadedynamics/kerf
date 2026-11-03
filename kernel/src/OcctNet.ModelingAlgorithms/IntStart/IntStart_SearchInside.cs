@@ -4,9 +4,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -61,7 +63,7 @@ public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
         done = false;
     }
 
-    public IntStart_SearchInside(TheFunction Func, ThePSurface PS, Adaptor3d_TopolTool T, double Epsilon)
+    public IntStart_SearchInside(TheFunction Func, ThePSurface PS, TopolTool T, double Epsilon)
     {
         Perform(Func, PS, T, Epsilon);
     }
@@ -70,7 +72,7 @@ public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
     /// Searches the interior points from the sample points of the domain <paramref name="T"/>; two solutions within
     /// <paramref name="Epsilon"/> in 3D (and the parametric resolution) are one.
     /// </summary>
-    public void Perform(TheFunction Func, ThePSurface PS, Adaptor3d_TopolTool T, double Epsilon)
+    public void Perform(TheFunction Func, ThePSurface PS, TopolTool T, double Epsilon)
     {
         done = false;
         list.Clear();
@@ -78,7 +80,7 @@ public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
         Point3D psol;
         bool testpnt;
         int i, j, nbpt;
-        TopAbs_State situ;
+        Containment situ;
         double umin, umax, vmin, vmax;
         Binf[1] = umin = ThePSurfaceTool.FirstUParameter(PS);
         Binf[2] = vmin = ThePSurfaceTool.FirstVParameter(PS);
@@ -274,7 +276,7 @@ public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
                                 //	    situ = TheSITool::Classify(PS,UVap(1),UVap(2));
                                 situ = T.Classify(new Point2D(UVap[1], UVap[2]), Maxtoler1toler2,
                                                   false); //-- ,false pour ne pas recadrer on Periodic
-                                if (situ == TopAbs_IN)
+                                if (situ == In)
                                 {
                                     list.Append(new IntSurf_InteriorPoint(psol, UVap[1], UVap[2], Func.Direction3d(),
                                                                           new Vector2D(Func.Direction2d())));

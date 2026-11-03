@@ -4,6 +4,9 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Geometry.Properties;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -27,7 +30,7 @@ public class GeomPlate_ClassesTests
         return aPlate;
     }
 
-    private static Geom_Plane XYPlane() => new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
+    private static PlaneSurface XYPlane() => new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
 
     [Fact]
     public void Aij_compares_by_value()
@@ -51,7 +54,7 @@ public class GeomPlate_ClassesTests
         Assert.Equal(new Point2D(4, 5), aP.Pnt2dOnSurf());
         Assert.Throws<FailureException>(() => new GeomPlate_PointConstraint(new Point3D(), 2));
 
-        var aSphere = new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
+        var aSphere = new SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         var aS = new GeomPlate_PointConstraint(0.3, 0.4, aSphere, 2, 1e-4, 1e-3, 1e-2);
         aS.D2(out Point3D aP2, out Vector3D aD1U, out Vector3D aD1V, out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV);
         aSphere.D2(0.3, 0.4, out Point3D aQ, out Vector3D aE1U, out Vector3D aE1V, out Vector3D aE2U, out Vector3D aE2V, out Vector3D aE2UV);
@@ -62,7 +65,7 @@ public class GeomPlate_ClassesTests
         Assert.Equal(aE2U, aD2U);
         Assert.Equal(aE2V, aD2V);
         Assert.Equal(2, aS.Order());
-        GeomLProp_SLProps aProps = aS.LPropSurf();
+        SLProps aProps = aS.LPropSurf();
         Assert.True(aProps.IsCurvatureDefined()); // the curvatures are computed on demand (as OCCT's)
         Assert.Equal(0.25, aProps.MeanCurvature() * aProps.MeanCurvature(), 12);
     }
@@ -71,8 +74,8 @@ public class GeomPlate_ClassesTests
     public void Curve_constraints_on_a_surface_evaluate_through_it()
     {
         var aPlane = XYPlane();
-        var aLine = new Geom2d_Line(new Point2D(1, 1), new Direction2D(1, 0));
-        var aCOS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aLine, 0, 5), new GeomAdaptor_Surface(aPlane));
+        var aLine = new LineCurve2D(new Point2D(1, 1), new Direction2D(1, 0));
+        var aCOS = new CurveOnSurface(new CurveAdaptor2D(aLine, 0, 5), new SurfaceAdaptor(aPlane));
         var aC = new GeomPlate_CurveConstraint(aCOS, 1, 12);
         Assert.Equal(12, aC.NbPoints());
         Assert.Equal(0.0, aC.FirstParameter());
@@ -88,7 +91,7 @@ public class GeomPlate_ClassesTests
         Assert.Null(aC.Curve2dOnSurf());
 
         // a 3D curve: only G0 queries
-        var a3d = new GeomPlate_CurveConstraint(new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 1), 0);
+        var a3d = new GeomPlate_CurveConstraint(new CurveAdaptor(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 1), 0);
         Assert.Throws<FailureException>(() => a3d.D1(0.5, out _, out _, out _));
         Assert.Throws<FailureException>(() => a3d.G1Criterion(0.5));
         Assert.Throws<FailureException>(() => a3d.LPropSurf(0.5));
@@ -108,7 +111,7 @@ public class GeomPlate_ClassesTests
         Assert.Equal(aSurf.Value(0.3, 0.6), aP2);
         Assert.Equal(new Vector3D(1, 0, 0) + new Vector3D(aPlate.EvaluateDerivative(new Xy(0.3, 0.6), 1, 0)), aD1U);
         Assert.Equal(new Vector3D(aPlate.EvaluateDerivative(new Xy(0.3, 0.6), 2, 0)), aD2U);
-        Assert.Throws<Geom_UndefinedDerivative>(() => aSurf.D3(0.3, 0.6, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _));
+        Assert.Throws<UndefinedDerivative3DException>(() => aSurf.D3(0.3, 0.6, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _));
 
         // the surface keeps its own copy of the plate
         aPlate.Init();
@@ -159,7 +162,7 @@ public class GeomPlate_ClassesTests
         var aBAP = new GeomPlate_BuildAveragePlane(aPts, 4, 1e-7, 1, 1);
         Assert.True(aBAP.IsPlane());
         Assert.False(aBAP.IsLine());
-        Geom_Plane aPlane = aBAP.Plane()!;
+        PlaneSurface aPlane = aBAP.Plane()!;
         Assert.True(aPlane.IsFrozen);
         Assert.Equal(1.0, Math.Abs(aPlane.Pln().Axis().Direction().Z()), 12);
         Assert.Equal(1.0, aPlane.Pln().Location().Z(), 12);
@@ -214,7 +217,7 @@ public class GeomPlate_ClassesTests
         foreach (int aCrit in new[] { -1, 0, 1 })
         {
             var anApprox = new GeomPlate_MakeApprox(aSurf, 1e-4, 4, 6, 1e-5, aCrit, Continuity.C1, 1.0);
-            Geom_BSplineSurface aBS = anApprox.Surface()!;
+            BSplineSurface aBS = anApprox.Surface()!;
             Assert.True(aBS.IsFrozen);
             Assert.True(anApprox.ApproxError() < 1e-3, $"{aCrit}: {anApprox.ApproxError()}");
             Assert.Equal(aSurf.Value(0.4, 0.7).Z(), aBS.Value(0.4, 0.7).Z(), 3);

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 
@@ -51,10 +52,10 @@ public class GeomFill_FrenetOracleTests(ITestOutputHelper output)
             }
             NCollection_Array1<double>? aWeights = anOracle.Bool() ? null : anOracle.Weights(aNbPoles, true);
             using N.Geom_BSplineCurve aNC = Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, aDeg, false);
-            Geom_BSplineCurve aPC = aWeights is null ? new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg)
-                                                     : new Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, aDeg);
+            BSplineCurve3D aPC = aWeights is null ? new BSplineCurve3D(aPoles, aKnots, aMults, aDeg)
+                                                     : new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, aDeg);
             using var aNA = new N.GeomAdaptor_Curve(aNC);
-            var aPA = new GeomAdaptor_Curve(aPC);
+            var aPA = new CurveAdaptor(aPC);
             using var aNLaw = new N.GeomFill_Frenet();
             var aPLaw = new GeomFill_Frenet();
             TrihedronOracle.Compare(anOracle, aNLaw, aPLaw, aNA, aPA, $"planar #{i}");

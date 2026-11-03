@@ -4,7 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
@@ -35,28 +37,28 @@ public struct IntPatch_HInterTool : IIntStart_SOBTool
         vsup = 0.0;
     }
 
-    public static bool SingularOnUMin(Adaptor3d_Surface S) => false;
+    public static bool SingularOnUMin(SurfaceAdaptorBase S) => false;
 
-    public static bool SingularOnUMax(Adaptor3d_Surface S) => false;
+    public static bool SingularOnUMax(SurfaceAdaptorBase S) => false;
 
-    public static bool SingularOnVMin(Adaptor3d_Surface S) => false;
+    public static bool SingularOnVMin(SurfaceAdaptorBase S) => false;
 
-    public static bool SingularOnVMax(Adaptor3d_Surface S) => false;
+    public static bool SingularOnVMax(SurfaceAdaptorBase S) => false;
 
     /// <summary>The number of samples in U of a surface, by its type.</summary>
-    public static int NbSamplesU(Adaptor3d_Surface S, double u1, double u2)
+    public static int NbSamplesU(SurfaceAdaptorBase S, double u1, double u2)
     {
         switch (S.GetType())
         {
             case Plane:
                 return 2;
-            case BezierSurface:
-                return (3 + S.NbUPoles());
-            case BSplineSurface:
+            case SurfaceKind.BezierSurface:
+                return (3 + S.UPoleCount);
+            case SurfaceKind.BSplineSurface:
             {
-                int nbs = S.NbUKnots();
+                int nbs = S.UKnotCount;
                 nbs *= S.UDegree();
-                if (!S.IsURational())
+                if (!S.IsURational)
                 {
                     nbs *= 2;
                 }
@@ -73,7 +75,7 @@ public struct IntPatch_HInterTool : IIntStart_SOBTool
             case SurfaceKind.Sphere:
             case SurfaceOfRevolution:
             case SurfaceOfExtrusion:
-            case OffsetSurface:
+            case SurfaceKind.OffsetSurface:
             case OtherSurface:
                 return 10;
         }
@@ -81,19 +83,19 @@ public struct IntPatch_HInterTool : IIntStart_SOBTool
     }
 
     /// <summary>The number of samples in V of a surface, by its type.</summary>
-    public static int NbSamplesV(Adaptor3d_Surface S, double v1, double v2)
+    public static int NbSamplesV(SurfaceAdaptorBase S, double v1, double v2)
     {
         switch (S.GetType())
         {
             case Plane:
                 return 2;
-            case BezierSurface:
-                return (3 + S.NbVPoles());
-            case BSplineSurface:
+            case SurfaceKind.BezierSurface:
+                return (3 + S.VPoleCount);
+            case SurfaceKind.BSplineSurface:
             {
-                int nbs = S.NbVKnots();
+                int nbs = S.VKnotCount;
                 nbs *= S.VDegree();
-                if (!S.IsVRational())
+                if (!S.IsVRational)
                 {
                     nbs *= 2;
                 }
@@ -111,7 +113,7 @@ public struct IntPatch_HInterTool : IIntStart_SOBTool
             case SurfaceOfExtrusion:
                 return 15;
 
-            case OffsetSurface:
+            case SurfaceKind.OffsetSurface:
             case OtherSurface:
                 return 10;
         }
@@ -121,7 +123,7 @@ public struct IntPatch_HInterTool : IIntStart_SOBTool
     /// <summary>
     /// The number of sample points of a surface; sets the (finite) bounds that <see cref="SamplePoint"/> uses.
     /// </summary>
-    public int NbSamplePoints(Adaptor3d_Surface S)
+    public int NbSamplePoints(SurfaceAdaptorBase S)
     {
         uinf = S.FirstUParameter();
         usup = S.LastUParameter();
@@ -172,7 +174,7 @@ public struct IntPatch_HInterTool : IIntStart_SOBTool
     }
 
     /// <summary>The parameters of the sample point of range <paramref name="Index"/> (after <see cref="NbSamplePoints"/>).</summary>
-    public readonly void SamplePoint(Adaptor3d_Surface S, int Index, out double U, out double V)
+    public readonly void SamplePoint(SurfaceAdaptorBase S, int Index, out double U, out double V)
     {
         int nbIntU = 1 + NbSamplesU(S, uinf, usup);
         nbIntU >>= 1;
@@ -238,10 +240,10 @@ public struct IntPatch_HInterTool : IIntStart_SOBTool
     }
 
     /// <summary>True if all the intersection points and segments on the arc are known (never, here).</summary>
-    public static bool HasBeenSeen(Adaptor2d_Curve2d C) => false;
+    public static bool HasBeenSeen(Curve2DAdaptorBase C) => false;
 
     /// <summary>The number of samples on an arc, by its type.</summary>
-    public static int NbSamplesOnArc(Adaptor2d_Curve2d A)
+    public static int NbSamplesOnArc(Curve2DAdaptorBase A)
     {
         CurveKind CurveType = A.GetType();
 
@@ -259,12 +261,12 @@ public struct IntPatch_HInterTool : IIntStart_SOBTool
                 nbsOnC = 10;
                 break;
             case BezierCurve:
-                nbsOnC = A.NbPoles();
+                nbsOnC = A.PoleCount;
                 break;
             case BSplineCurve:
             {
                 //-- occ::handle<Geom2d_BSplineCurve>& BSC=A->BSpline();
-                nbsOnC = 2 + A.NbKnots() * A.Degree();
+                nbsOnC = 2 + A.KnotCount * A.Degree();
                 break;
             }
             default:
@@ -275,7 +277,7 @@ public struct IntPatch_HInterTool : IIntStart_SOBTool
     }
 
     /// <summary>The parametric limits of the arc.</summary>
-    public static void Bounds(Adaptor2d_Curve2d A, out double Ufirst, out double Ulast)
+    public static void Bounds(Curve2DAdaptorBase A, out double Ufirst, out double Ulast)
     {
         Ufirst = A.FirstParameter();
         Ulast = A.LastParameter();
@@ -284,7 +286,7 @@ public struct IntPatch_HInterTool : IIntStart_SOBTool
     /// <summary>
     /// Projects <paramref name="P"/> on the arc: true and the parameter and point of the nearest projection, or false.
     /// </summary>
-    public static bool Project(Adaptor2d_Curve2d C, in Point2D P, out double Paramproj, out Point2D Ptproj)
+    public static bool Project(Curve2DAdaptorBase C, in Point2D P, out double Paramproj, out Point2D Ptproj)
     {
         double epsX = 1.0e-8;
         int Nbu = 20;
@@ -293,12 +295,12 @@ public struct IntPatch_HInterTool : IIntStart_SOBTool
         Paramproj = 0.0;
         Ptproj = new Point2D();
 
-        Extrema_EPCOfExtPC2d extrema = new(P, C, Nbu, epsX, Tol);
-        if (!extrema.IsDone())
+        EpcOfExtPC2d extrema = new(P, C, Nbu, epsX, Tol);
+        if (!extrema.IsDone)
         {
             return false;
         }
-        int Nbext = extrema.NbExt();
+        int Nbext = extrema.ExtCount;
         if (Nbext == 0)
         {
             return false;
@@ -319,33 +321,33 @@ public struct IntPatch_HInterTool : IIntStart_SOBTool
     }
 
     /// <summary>The parametric tolerance within which the vertex and another point on the arc meet.</summary>
-    public static double Tolerance(Adaptor3d_HVertex V, Adaptor2d_Curve2d C) => V.Resolution(C);
+    public static double Tolerance(HVertex V, Curve2DAdaptorBase C) => V.Resolution(C);
 
     /// <summary>The parameter of the vertex on the arc.</summary>
-    public static double Parameter(Adaptor3d_HVertex V, Adaptor2d_Curve2d C) => V.Parameter(C);
+    public static double Parameter(HVertex V, Curve2DAdaptorBase C) => V.Parameter(C);
 
     /// <summary>The number of known intersection points on the arc (none).</summary>
-    public static int NbPoints(Adaptor2d_Curve2d C) => 0;
+    public static int NbPoints(Curve2DAdaptorBase C) => 0;
 
     /// <summary>A known intersection point (there is none: throws Standard_OutOfRange).</summary>
-    public static void Value(Adaptor2d_Curve2d C, int Index, out Point3D Pt, out double Tol, out double U) =>
+    public static void Value(Curve2DAdaptorBase C, int Index, out Point3D Pt, out double Tol, out double U) =>
         throw new OutOfRangeException();
 
-    public static bool IsVertex(Adaptor2d_Curve2d C, int Index) => false;
+    public static bool IsVertex(Curve2DAdaptorBase C, int Index) => false;
 
     /// <summary>The vertex of a known point (there is none: throws Standard_OutOfRange).</summary>
-    public static void Vertex(Adaptor2d_Curve2d C, int Index, out Adaptor3d_HVertex V) =>
+    public static void Vertex(Curve2DAdaptorBase C, int Index, out HVertex V) =>
         throw new OutOfRangeException();
 
     /// <summary>The number of known solution segments on the arc (none).</summary>
-    public static int NbSegments(Adaptor2d_Curve2d C) => 0;
+    public static int NbSegments(Curve2DAdaptorBase C) => 0;
 
-    public static bool HasFirstPoint(Adaptor2d_Curve2d C, int Index, out int IndFirst) =>
+    public static bool HasFirstPoint(Curve2DAdaptorBase C, int Index, out int IndFirst) =>
         throw new OutOfRangeException();
 
-    public static bool HasLastPoint(Adaptor2d_Curve2d C, int Index, out int IndLast) =>
+    public static bool HasLastPoint(Curve2DAdaptorBase C, int Index, out int IndLast) =>
         throw new OutOfRangeException();
 
     /// <summary>True when the whole arc is a solution (never known, here).</summary>
-    public static bool IsAllSolution(Adaptor2d_Curve2d C) => false;
+    public static bool IsAllSolution(Curve2DAdaptorBase C) => false;
 }

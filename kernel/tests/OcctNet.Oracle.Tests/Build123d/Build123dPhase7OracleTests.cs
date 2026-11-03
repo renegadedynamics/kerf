@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using System.Globalization;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
@@ -74,7 +78,7 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
 
     private string Text(N.TopoDS_Shape? theShape) => theShape is null || theShape.IsNull() ? "" : myRun.NativeText(theShape);
 
-    private string Text(TopoDS_Shape? theShape) => theShape is not TopoDS_Shape aS || aS.IsNull() ? "" : myRun.PortText(aS);
+    private string Text(Shape? theShape) => theShape is not Shape aS || aS.IsNull ? "" : myRun.PortText(aS);
 
     // ---------------------------------------------------------------------------------------------------------------
     // One call
@@ -93,14 +97,14 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
         string anOperands = Build123dPhase7Capture.OperandsText(theCall.Operands);
 
         P7Native aN = Build123dPhase7Capture.RunNative(theCall, Build123dPhase7Capture.NativeOperands(anOperands));
-        List<TopoDS_Shape> aPOps = Build123dPhase7Capture.PortOperands(anOperands);
+        List<Shape> aPOps = Build123dPhase7Capture.PortOperands(anOperands);
         string aPOpsText = string.Concat(aPOps.Select(BRepTextComparison.Write));
         P7Port aP = Build123dPhase7Capture.RunPort(theCall, aPOps);
         if (string.Concat(aPOps.Select(BRepTextComparison.Write)) != aPOpsText)
         {
             aTally.Differences.Add($"{aWhat}: the port changed its frozen operands");
         }
-        if (aP.Result is TopoDS_Shape aPR && !aPR.IsNull() && !aPR.TShape()!.IsFrozen)
+        if (aP.Result is Shape aPR && !aPR.IsNull && !aPR.TShape()!.IsFrozen)
         {
             aTally.Differences.Add($"{aWhat}: the port's result isn't frozen");
         }
@@ -212,7 +216,7 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
         }
         GC.KeepAlive(aBallast);
         bool isNativeVarying = aVariants.Count > 1;
-        TopoDS_Shape aNP = BooleanOracleTests.ReadPort(theNText), aPP = BooleanOracleTests.ReadPort(thePText);
+        Shape aNP = BooleanOracleTests.ReadPort(theNText), aPP = BooleanOracleTests.ReadPort(thePText);
         CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aNP, aPP, new CanonicalOptions { CheckValidity = false });
         bool isSame = aCanon.IsIdentical;
         if (!isSame && isNativeVarying)
@@ -263,9 +267,9 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
     // The history with each result index replaced by the canonical key of that sub-shape of the result read back, each list sorted
     private static string Keyed(string theHistory, string theResultText)
     {
-        TopoDS_Shape aResult = BooleanOracleTests.ReadPort(theResultText);
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aResult, aMap);
+        Shape aResult = BooleanOracleTests.ReadPort(theResultText);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(aResult, aMap);
         CanonicalKeys aKeys = CanonicalKeys.Build(aResult);
         return System.Text.RegularExpressions.Regex.Replace(theHistory, @"([GM]|left |right )\[([^\]]*)\]", m =>
             m.Groups[1].Value + "[" + string.Join(' ', m.Groups[2].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries)
@@ -345,9 +349,9 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
         aTally.Calls++;
         string aText = Build123dPhase7Capture.OperandsText(aPostOps);
         (string? aNErr, string aNStatus, N.TopoDS_Shape? aNRes) = NativePost(theCall, Build123dPhase7Capture.NativeOperands(aText));
-        List<TopoDS_Shape> aPOps = Build123dPhase7Capture.PortOperands(aText);
+        List<Shape> aPOps = Build123dPhase7Capture.PortOperands(aText);
         string aPOpsText = string.Concat(aPOps.Select(BRepTextComparison.Write));
-        (string? aPErr, string aPStatus, TopoDS_Shape? aPRes) = PortPost(theCall, aPOps);
+        (string? aPErr, string aPStatus, Shape? aPRes) = PortPost(theCall, aPOps);
         if (string.Concat(aPOps.Select(BRepTextComparison.Write)) != aPOpsText)
         {
             aTally.Differences.Add($"{theWhat} {theCall.Post}: the port changed its frozen operands");
@@ -488,19 +492,19 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
         }
     }
 
-    private static TopoDS_Shape PFirst(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType) => new TopExp_Explorer(theShape, theType).Current();
+    private static Shape PFirst(in Shape theShape, ShapeType theType) => new Explorer(theShape, theType).Current();
 
-    private static List<TopoDS_Shape> PChildren(in TopoDS_Shape theShape)
+    private static List<Shape> PChildren(in Shape theShape)
     {
-        var aList = new List<TopoDS_Shape>();
-        for (var anIt = new TopoDS_Iterator(theShape); anIt.More(); anIt.Next())
+        var aList = new List<Shape>();
+        for (var anIt = new Iterator(theShape); anIt.More(); anIt.Next())
         {
             aList.Add(anIt.Value());
         }
         return aList;
     }
 
-    private static TopoDS_Shape PFix(in TopoDS_Shape theShape)
+    private static Shape PFix(in Shape theShape)
     {
         if (new BRepCheck_Analyzer(theShape).IsValid())
         {
@@ -511,23 +515,23 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
         return aFix.Shape();
     }
 
-    private static TopoDS_Shape PForward(in TopoDS_Shape theShape)
+    private static Shape PForward(in Shape theShape)
     {
-        TopoDS_Shape aSolid = theShape;
-        if (theShape.ShapeType() == TopAbs_ShapeEnum.TopAbs_SOLID)
+        Shape aSolid = theShape;
+        if (theShape.ShapeType() == ShapeType.Solid)
         {
-            var aFlags = new List<TopAbs_Orientation> { theShape.Orientation() };
+            var aFlags = new List<Orientation> { theShape.Orientation() };
             aFlags.AddRange(PChildren(theShape).Select(s => s.Orientation()));
-            if (!aFlags.All(f => f == TopAbs_Orientation.TopAbs_FORWARD))
+            if (!aFlags.All(f => f == Orientation.Forward))
             {
-                var aB = new BRep_Builder();
-                var aForward = new TopoDS_Solid();
+                var aB = new BrepBuilder();
+                var aForward = new Solid();
                 aB.MakeSolid(ref aForward);
-                foreach (TopoDS_Shape aShell in PChildren(theShape))
+                foreach (Shape aShell in PChildren(theShape))
                 {
-                    var aNew = new TopoDS_Shell();
+                    var aNew = new Shell();
                     aB.MakeShell(ref aNew);
-                    foreach (TopoDS_Shape aFace in PChildren(aShell))
+                    foreach (Shape aFace in PChildren(aShell))
                     {
                         aB.Add(aNew, aFace);
                     }
@@ -536,12 +540,12 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
                 aSolid = aForward;
             }
         }
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.VolumeProperties(aSolid, aProps);
         return aProps.Mass() < 0 ? aSolid.Reversed() : aSolid;
     }
 
-    private static (string?, string, TopoDS_Shape?) PortPost(P7Call theCall, List<TopoDS_Shape> theOps)
+    private static (string?, string, Shape?) PortPost(P7Call theCall, List<Shape> theOps)
     {
         try
         {
@@ -549,8 +553,8 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
             {
                 case P7Post.HollowSolid:
                 {
-                    TopoDS_Shell aShell1 = TopoDS.Shell(PFirst(theOps[0], TopAbs_ShapeEnum.TopAbs_SHELL));
-                    TopoDS_Shell aShell2 = TopoDS.Shell(PFirst(theOps[1], TopAbs_ShapeEnum.TopAbs_SHELL));
+                    Shell aShell1 = ShapeCasts.Shell(PFirst(theOps[0], ShapeType.Shell));
+                    Shell aShell2 = ShapeCasts.Shell(PFirst(theOps[1], ShapeType.Shell));
                     var aMaker = theCall.Args.Value > 0 ? new BRepBuilderAPI_MakeSolid(aShell1, aShell2) : new BRepBuilderAPI_MakeSolid(aShell2, aShell1);
                     return (null, "", PFix(aMaker.Shape()));
                 }
@@ -573,10 +577,10 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
                 }
                 default:
                 {
-                    var aSides = new List<TopoDS_Shape>();
-                    foreach (TopoDS_Shape aSide in theOps)
+                    var aSides = new List<Shape>();
+                    foreach (Shape aSide in theOps)
                     {
-                        List<TopoDS_Shape> aFaces = PChildren(aSide);
+                        List<Shape> aFaces = PChildren(aSide);
                         if (aFaces.Count < 2)
                         {
                             aSides.AddRange(aFaces);
@@ -587,7 +591,7 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
                         aSewing.Perform();
                         aSides.Add(aSewing.SewedShape());
                     }
-                    return (null, "", TopoDS_Builder.MakeCompound(aSides));
+                    return (null, "", Builder.MakeCompound(aSides));
                 }
             }
         }

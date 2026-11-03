@@ -1,9 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite;
 
@@ -33,12 +35,12 @@ internal static class BRepTestPrimitiveCommands
     private const double DegToRad = Math.PI / 180.0;
 
     /// <summary>DrawTrSurf::Get(name) down-cast to Geom_Plane: the plane bound to the name, or null.</summary>
-    internal static Geom_Plane? GetPlane(DrawInterpreter theDI, string theName)
-        => theDI.GetDrawable(theName) is DrawGeometry { Geometry: Geom_Plane aPlane } ? aPlane : null;
+    internal static PlaneSurface? GetPlane(DrawInterpreter theDI, string theName)
+        => theDI.GetDrawable(theName) is DrawGeometry { Geometry: PlaneSurface aPlane } ? aPlane : null;
 
     // OCCT dereferences a null plane in these forms (pcone, psphere, ptorus with the most words); a .NET null
     // dereference stands for the access violation
-    private static Geom_Plane NonNull(Geom_Plane? P) => P ?? throw new NullReferenceException("DrawTrSurf::Get: not a plane");
+    private static PlaneSurface NonNull(PlaneSurface? P) => P ?? throw new NullReferenceException("DrawTrSurf::Get: not a plane");
 
     private static int Box(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
@@ -136,7 +138,7 @@ internal static class BRepTestPrimitiveCommands
 
         if (isPreview)
         {
-            TopoDS_Shape S;
+            Shape S;
             var aPreview = new BRepPreviewAPI_MakeBox();
             if (isMinMax)
             {
@@ -161,7 +163,7 @@ internal static class BRepTestPrimitiveCommands
         }
         else
         {
-            TopoDS_Solid S;
+            Solid S;
             if (isMinMax)
             {
                 S = new BRepPrimAPI_MakeBox(anOrigin, new Point3D(aParams)).Solid();
@@ -189,7 +191,7 @@ internal static class BRepTestPrimitiveCommands
     private static int Wedge(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
         int n = a.Count;
-        TopoDS_Solid S;
+        Solid S;
 
         if (n == 15 || n == 18)
         {
@@ -244,8 +246,8 @@ internal static class BRepTestPrimitiveCommands
             return 1;
         }
 
-        TopoDS_Solid S;
-        Geom_Plane? P = GetPlane(theDI, a[2]);
+        Solid S;
+        PlaneSurface? P = GetPlane(theDI, a[2]);
 
         if (n == 4)
         {
@@ -288,8 +290,8 @@ internal static class BRepTestPrimitiveCommands
             return 1;
         }
 
-        TopoDS_Solid S;
-        Geom_Plane? P = GetPlane(theDI, a[2]);
+        Solid S;
+        PlaneSurface? P = GetPlane(theDI, a[2]);
 
         if (n == 5)
         {
@@ -331,8 +333,8 @@ internal static class BRepTestPrimitiveCommands
             return 1;
         }
 
-        TopoDS_Solid S;
-        Geom_Plane? P = GetPlane(theDI, a[2]);
+        Solid S;
+        PlaneSurface? P = GetPlane(theDI, a[2]);
 
         if (n == 3)
         {
@@ -402,8 +404,8 @@ internal static class BRepTestPrimitiveCommands
             return 1;
         }
 
-        TopoDS_Solid S;
-        Geom_Plane? P = GetPlane(theDI, a[2]);
+        Solid S;
+        PlaneSurface? P = GetPlane(theDI, a[2]);
 
         if (n == 4)
         {
@@ -486,17 +488,17 @@ internal static class BRepTestPrimitiveCommands
         // The point on the side of the matter.
         var RefPnt = new Point3D(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
 
-        TopoDS_Shape Face = theDI.GetShape(a[2], TopAbs_FACE);
-        if (Face.IsNull())
+        Shape Face = theDI.GetShape(a[2], global::Kerf.Topology.ShapeType.Face);
+        if (Face.IsNull)
         {
-            TopoDS_Shape Shell = theDI.GetShape(a[2], TopAbs_SHELL);
-            if (Shell.IsNull())
+            Shape Shell = theDI.GetShape(a[2], global::Kerf.Topology.ShapeType.Shell);
+            if (Shell.IsNull)
             {
                 di.Append(a[2]).Append(" must be a face or a shell\n");
                 return 1;
             }
 
-            var Half = new BRepPrimAPI_MakeHalfSpace(TopoDS.Shell(Shell), RefPnt);
+            var Half = new BRepPrimAPI_MakeHalfSpace(ShapeCasts.Shell(Shell), RefPnt);
             if (Half.IsDone())
             {
                 theDI.SetShape(a[1], Half.Solid());
@@ -509,7 +511,7 @@ internal static class BRepTestPrimitiveCommands
         }
         else
         {
-            var Half = new BRepPrimAPI_MakeHalfSpace(TopoDS.Face(Face), RefPnt);
+            var Half = new BRepPrimAPI_MakeHalfSpace(ShapeCasts.Face(Face), RefPnt);
             if (Half.IsDone())
             {
                 theDI.SetShape(a[1], Half.Solid());

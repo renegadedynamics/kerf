@@ -5,8 +5,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using Schematiq.Collections;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -24,7 +26,7 @@ public sealed class BRepFeat_SplitShape : BRepBuilderAPI_MakeShape
 {
     private readonly LocOpe_Spliter mySShape;
     private LocOpe_WiresOnShape? myWOnShape;
-    private readonly NCollection_List<TopoDS_Shape> myRight = new();
+    private readonly NCollection_List<Shape> myRight = new();
 
     /// <summary>Empty constructor.</summary>
     public BRepFeat_SplitShape()
@@ -33,7 +35,7 @@ public sealed class BRepFeat_SplitShape : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Creates the process with the shape <paramref name="S"/>.</summary>
-    public BRepFeat_SplitShape(in TopoDS_Shape S)
+    public BRepFeat_SplitShape(in Shape S)
     {
         mySShape = new LocOpe_Spliter(S);
         myWOnShape = new LocOpe_WiresOnShape(S);
@@ -43,13 +45,13 @@ public sealed class BRepFeat_SplitShape : BRepBuilderAPI_MakeShape
     /// Adds splitting edges or wires for the whole initial shape, without saying which face or edge each lies on: puts
     /// each edge on the corresponding faces of the initial shape.
     /// </summary>
-    public bool Add(NCollection_Sequence<TopoDS_Shape> theEdges)
+    public bool Add(NCollection_Sequence<Shape> theEdges)
     {
         return myWOnShape!.Add(theEdges);
     }
 
     /// <summary>Initializes the process on the shape <paramref name="S"/>.</summary>
-    public void Init(in TopoDS_Shape S)
+    public void Init(in Shape S)
     {
         mySShape.Init(S);
         if (myWOnShape is null)
@@ -70,13 +72,13 @@ public sealed class BRepFeat_SplitShape : BRepBuilderAPI_MakeShape
 
     /// <summary>Adds the wire <paramref name="W"/> on the face <paramref name="F"/>.</summary>
     /// <exception cref="NoSuchObjectException"><paramref name="F"/> does not belong to the original shape.</exception>
-    public void Add(in TopoDS_Wire W, in TopoDS_Face F)
+    public void Add(in Wire W, in Face F)
     {
         myWOnShape!.Bind(W, F);
     }
 
     /// <summary>Adds the edge <paramref name="E"/> on the face <paramref name="F"/>.</summary>
-    public void Add(in TopoDS_Edge E, in TopoDS_Face F)
+    public void Add(in Edge E, in Face F)
     {
         myWOnShape!.Bind(E, F);
     }
@@ -86,19 +88,19 @@ public sealed class BRepFeat_SplitShape : BRepBuilderAPI_MakeShape
     /// geometrically must share their vertices.
     /// </summary>
     /// <exception cref="NoSuchObjectException"><paramref name="F"/> does not belong to the original shape.</exception>
-    public void Add(in TopoDS_Compound Comp, in TopoDS_Face F)
+    public void Add(in Compound Comp, in Face F)
     {
         myWOnShape!.Bind(Comp, F);
     }
 
     /// <summary>Adds the edge <paramref name="E"/> on the existing edge <paramref name="EOn"/>.</summary>
-    public void Add(in TopoDS_Edge E, in TopoDS_Edge EOn)
+    public void Add(in Edge E, in Edge EOn)
     {
         myWOnShape!.Bind(E, EOn);
     }
 
     /// <summary>Returns the faces which are the left of the projected wires (frozen).</summary>
-    public ISchematiqList<TopoDS_Shape> DirectLeft()
+    public ISchematiqList<Shape> DirectLeft()
     {
         BeforePublishingLists();
         return PublishedList(mySShape.InternalDirectLeft());
@@ -109,37 +111,37 @@ public sealed class BRepFeat_SplitShape : BRepBuilderAPI_MakeShape
     /// to this set, and so on (frozen).
     /// </summary>
     /// <exception cref="NotDoneException">The splitting isn't done.</exception>
-    public ISchematiqList<TopoDS_Shape> Left()
+    public ISchematiqList<Shape> Left()
     {
         BeforePublishingLists();
         return PublishedList(mySShape.InternalLeft());
     }
 
     /// <summary><see cref="Left"/> without freezing, for ported code.</summary>
-    internal NCollection_List<TopoDS_Shape> InternalLeft() => mySShape.InternalLeft();
+    internal NCollection_List<Shape> InternalLeft() => mySShape.InternalLeft();
 
     /// <summary>Returns the faces of the "right" part on the shape (frozen).</summary>
-    public ISchematiqList<TopoDS_Shape> Right()
+    public ISchematiqList<Shape> Right()
     {
         BeforePublishingLists();
         return PublishedList(InternalRight());
     }
 
     /// <summary><see cref="Right"/> without freezing, for ported code.</summary>
-    internal NCollection_List<TopoDS_Shape> InternalRight()
+    internal NCollection_List<Shape> InternalRight()
     {
         if (myRight.IsEmpty())
         {
-            NCollection_Map<TopoDS_Shape> aMapOfLeft = new(TopTools_ShapeMapHasher.Instance);
-            NCollection_List<TopoDS_Shape>.Iterator anIterator = new();
+            NCollection_Map<Shape> aMapOfLeft = new(ShapeHasher.Instance);
+            NCollection_List<Shape>.Iterator anIterator = new();
             for (anIterator.Initialize(mySShape.InternalLeft()); anIterator.More(); anIterator.Next())
             {
                 aMapOfLeft.Add(anIterator.Value());
             }
-            TopExp_Explorer anExplorer = new();
-            for (anExplorer.Init(myShape, TopAbs_FACE); anExplorer.More(); anExplorer.Next())
+            Explorer anExplorer = new();
+            for (anExplorer.Init(myShape, ShapeType.Face); anExplorer.More(); anExplorer.Next())
             {
-                TopoDS_Shape aFace = anExplorer.Current();
+                Shape aFace = anExplorer.Current();
                 if (!aMapOfLeft.Contains(aFace))
                 {
                     myRight.Append(aFace);
@@ -162,14 +164,14 @@ public sealed class BRepFeat_SplitShape : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Returns true if the shape has been deleted.</summary>
-    public override bool IsDeleted(in TopoDS_Shape F)
+    public override bool IsDeleted(in Shape F)
     {
-        NCollection_List<TopoDS_Shape>.Iterator itl = new(mySShape.InternalDescendantShapes(F));
+        NCollection_List<Shape>.Iterator itl = new(mySShape.InternalDescendantShapes(F));
         return !itl.More(); // a priori impossible
     }
 
     /// <summary>The shapes descending from <paramref name="F"/> (OCCT's virtual; unfrozen).</summary>
-    internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape F)
+    internal override NCollection_List<Shape> InternalModified(in Shape F)
     {
         return mySShape.InternalDescendantShapes(F);
     }

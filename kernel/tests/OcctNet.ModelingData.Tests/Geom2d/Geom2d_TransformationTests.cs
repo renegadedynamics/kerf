@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using static Kerf.Geometry.TransformForm;
 
@@ -12,11 +13,11 @@ public class Geom2d_TransformationTest
     [Fact]
     public void DefaultConstructor_Identity()
     {
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation();
+        Transformation2 aTrsf = new Transformation2();
 
         Assert.Equal(Identity, aTrsf.Form());
         Assert.Equal(1.0, aTrsf.ScaleFactor(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.False(aTrsf.IsNegative());
+        Assert.False(aTrsf.IsNegative);
     }
 
     [Fact]
@@ -25,14 +26,14 @@ public class Geom2d_TransformationTest
         Transform2D aGpTrsf = new();
         aGpTrsf.SetTranslation(new Vector2D(3.0, 4.0));
 
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation(aGpTrsf);
+        Transformation2 aTrsf = new Transformation2(aGpTrsf);
         Assert.Equal(Translation, aTrsf.Form());
     }
 
     [Fact]
     public void SetTranslation_Vector()
     {
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation();
+        Transformation2 aTrsf = new Transformation2();
         aTrsf.SetTranslation(new Vector2D(5.0, 10.0));
 
         Assert.Equal(Translation, aTrsf.Form());
@@ -46,7 +47,7 @@ public class Geom2d_TransformationTest
     [Fact]
     public void SetTranslation_TwoPoints()
     {
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation();
+        Transformation2 aTrsf = new Transformation2();
         aTrsf.SetTranslation(new Point2D(1.0, 1.0), new Point2D(4.0, 5.0));
 
         double aX = 0.0, aY = 0.0;
@@ -58,7 +59,7 @@ public class Geom2d_TransformationTest
     [Fact]
     public void SetRotation()
     {
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation();
+        Transformation2 aTrsf = new Transformation2();
         aTrsf.SetRotation(new Point2D(0.0, 0.0), M_PI / 2.0);
 
         Assert.Equal(Rotation, aTrsf.Form());
@@ -72,7 +73,7 @@ public class Geom2d_TransformationTest
     [Fact]
     public void SetRotation_180Degrees()
     {
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation();
+        Transformation2 aTrsf = new Transformation2();
         aTrsf.SetRotation(new Point2D(0.0, 0.0), M_PI);
 
         double aX = 3.0, aY = 4.0;
@@ -84,7 +85,7 @@ public class Geom2d_TransformationTest
     [Fact]
     public void SetScale()
     {
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation();
+        Transformation2 aTrsf = new Transformation2();
         aTrsf.SetScale(new Point2D(0.0, 0.0), 2.0);
 
         Assert.Equal(Scale, aTrsf.Form());
@@ -99,11 +100,11 @@ public class Geom2d_TransformationTest
     [Fact]
     public void SetScale_Negative()
     {
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation();
+        Transformation2 aTrsf = new Transformation2();
         aTrsf.SetScale(new Point2D(0.0, 0.0), -1.0);
 
         // In 2D, IsNegative checks determinant sign; scale(-1) has det = (-1)*(-1) = 1 > 0
-        Assert.False(aTrsf.IsNegative());
+        Assert.False(aTrsf.IsNegative);
         Assert.Equal(-1.0, aTrsf.ScaleFactor(), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         double aX = 3.0, aY = 4.0;
@@ -115,12 +116,12 @@ public class Geom2d_TransformationTest
     [Fact]
     public void SetMirror_Point()
     {
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation();
+        Transformation2 aTrsf = new Transformation2();
         aTrsf.SetMirror(new Point2D(0.0, 0.0));
 
         Assert.Equal(PntMirror, aTrsf.Form());
         // In 2D, point mirror has det = (-1)*(-1) = 1 > 0, so IsNegative is false
-        Assert.False(aTrsf.IsNegative());
+        Assert.False(aTrsf.IsNegative);
 
         double aX = 3.0, aY = 4.0;
         aTrsf.Transforms(ref aX, ref aY);
@@ -132,7 +133,7 @@ public class Geom2d_TransformationTest
     public void SetMirror_Axis()
     {
         // Mirror about X axis
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation();
+        Transformation2 aTrsf = new Transformation2();
         aTrsf.SetMirror(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)));
 
         Assert.Equal(Ax1Mirror, aTrsf.Form());
@@ -146,10 +147,10 @@ public class Geom2d_TransformationTest
     [Fact]
     public void Inverted()
     {
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation();
+        Transformation2 aTrsf = new Transformation2();
         aTrsf.SetTranslation(new Vector2D(5.0, 10.0));
 
-        Geom2d_Transformation anInv = aTrsf.Inverted();
+        Transformation2 anInv = aTrsf.Inverted();
 
         // Applying both should be identity
         double aX = 7.0, aY = 3.0;
@@ -163,14 +164,14 @@ public class Geom2d_TransformationTest
     public void Multiplied()
     {
         // Translation + Rotation
-        Geom2d_Transformation aTrans = new Geom2d_Transformation();
+        Transformation2 aTrans = new Transformation2();
         aTrans.SetTranslation(new Vector2D(1.0, 0.0));
 
-        Geom2d_Transformation aRot = new Geom2d_Transformation();
+        Transformation2 aRot = new Transformation2();
         aRot.SetRotation(new Point2D(0.0, 0.0), M_PI / 2.0);
 
         // aRot * aTrans: first translate, then rotate
-        Geom2d_Transformation aComposed = aRot.Multiplied(aTrans);
+        Transformation2 aComposed = aRot.Multiplied(aTrans);
 
         double aX = 0.0, aY = 0.0;
         aComposed.Transforms(ref aX, ref aY);
@@ -182,7 +183,7 @@ public class Geom2d_TransformationTest
     [Fact]
     public void Power_Zero_IsIdentity()
     {
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation();
+        Transformation2 aTrsf = new Transformation2();
         aTrsf.SetRotation(new Point2D(0.0, 0.0), M_PI / 4.0);
         aTrsf.Power(0);
 
@@ -192,7 +193,7 @@ public class Geom2d_TransformationTest
     [Fact]
     public void Power_Positive()
     {
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation();
+        Transformation2 aTrsf = new Transformation2();
         aTrsf.SetRotation(new Point2D(0.0, 0.0), M_PI / 2.0);
         aTrsf.Power(2); // Two 90-degree rotations = 180 degrees
 
@@ -205,7 +206,7 @@ public class Geom2d_TransformationTest
     [Fact]
     public void Value_Matrix()
     {
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation();
+        Transformation2 aTrsf = new Transformation2();
         // Identity matrix values
         Assert.Equal(1.0, aTrsf.Value(1, 1), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aTrsf.Value(1, 2), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -219,7 +220,7 @@ public class Geom2d_TransformationTest
         Transform2D aGpTrsf = new();
         aGpTrsf.SetRotation(new Point2D(1.0, 2.0), M_PI / 3.0);
 
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation(aGpTrsf);
+        Transformation2 aTrsf = new Transformation2(aGpTrsf);
         Transform2D                          aBack = aTrsf.Trsf2d();
 
         // Verify the round-trip preserves the transformation
@@ -234,10 +235,10 @@ public class Geom2d_TransformationTest
     [Fact]
     public void Copy()
     {
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation();
+        Transformation2 aTrsf = new Transformation2();
         aTrsf.SetScale(new Point2D(0.0, 0.0), 3.0);
 
-        Geom2d_Transformation aCopy = aTrsf.Copy();
+        Transformation2 aCopy = aTrsf.Copy();
         Assert.Equal(3.0, aCopy.ScaleFactor(), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Verify independence
@@ -249,7 +250,7 @@ public class Geom2d_TransformationTest
     public void SetScale_WithCenter()
     {
         // Scaling with center at (2, 3) by factor 2
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation();
+        Transformation2 aTrsf = new Transformation2();
         aTrsf.SetScale(new Point2D(2.0, 3.0), 2.0);
 
         // The center should remain fixed
@@ -270,7 +271,7 @@ public class Geom2d_TransformationTest
     public void SetRotation_WithCenter()
     {
         // 90-degree rotation about (1, 1)
-        Geom2d_Transformation aTrsf = new Geom2d_Transformation();
+        Transformation2 aTrsf = new Transformation2();
         aTrsf.SetRotation(new Point2D(1.0, 1.0), M_PI / 2.0);
 
         // Center stays fixed

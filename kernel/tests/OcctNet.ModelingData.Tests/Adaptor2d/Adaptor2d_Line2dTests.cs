@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
@@ -10,23 +11,23 @@ namespace OcctNet.ModelingData.Tests;
 
 public class Adaptor2d_Line2dTest
 {
-    private readonly Adaptor2d_Line2d myLine;
-    private readonly Adaptor2d_Line2d myDiagLine;
+    private readonly Line2d myLine;
+    private readonly Line2d myDiagLine;
 
     public Adaptor2d_Line2dTest()
     {
         // Line through origin along direction (1, 0) with bounds [0, 10]
-        myLine = new Adaptor2d_Line2d(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), 0.0, 10.0);
+        myLine = new Line2d(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), 0.0, 10.0);
 
         // Line through (1, 2) along direction (3, 4)/5 with bounds [-5, 5]
         myDiagLine =
-          new Adaptor2d_Line2d(new Point2D(1.0, 2.0), new Direction2D(3.0 / 5.0, 4.0 / 5.0), -5.0, 5.0);
+          new Line2d(new Point2D(1.0, 2.0), new Direction2D(3.0 / 5.0, 4.0 / 5.0), -5.0, 5.0);
     }
 
     [Fact]
     public void DefaultConstructor()
     {
-        Adaptor2d_Line2d aLine = new Adaptor2d_Line2d();
+        Line2d aLine = new Line2d();
         Assert.Equal(Line, aLine.GetType());
     }
 
@@ -64,13 +65,13 @@ public class Adaptor2d_Line2dTest
     [Fact]
     public void IsNotClosed()
     {
-        Assert.False(myLine.IsClosed());
+        Assert.False(myLine.IsClosed);
     }
 
     [Fact]
     public void IsNotPeriodic()
     {
-        Assert.False(myLine.IsPeriodic());
+        Assert.False(myLine.IsPeriodic);
     }
 
     [Fact]
@@ -189,7 +190,7 @@ public class Adaptor2d_Line2dTest
     [Fact]
     public void Load_WithLine()
     {
-        Adaptor2d_Line2d aLine = new Adaptor2d_Line2d();
+        Line2d aLine = new Line2d();
         Line2D         aLin = new(new Point2D(1.0, 1.0), new Direction2D(0.0, 1.0));
         aLine.Load(aLin);
 
@@ -201,7 +202,7 @@ public class Adaptor2d_Line2dTest
     [Fact]
     public void Load_WithBounds()
     {
-        Adaptor2d_Line2d aLine = new Adaptor2d_Line2d();
+        Line2d aLine = new Line2d();
         Line2D         aLin = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
         aLine.Load(aLin, 2.0, 8.0);
 
@@ -212,7 +213,7 @@ public class Adaptor2d_Line2dTest
     [Fact]
     public void Trim()
     {
-        Adaptor2d_Curve2d aTrimmed = myLine.Trim(2.0, 7.0, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Curve2DAdaptorBase aTrimmed = myLine.Trim(2.0, 7.0, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(2.0, aTrimmed.FirstParameter());
         Assert.Equal(7.0, aTrimmed.LastParameter());
 
@@ -223,7 +224,7 @@ public class Adaptor2d_Line2dTest
     [Fact]
     public void ShallowCopy()
     {
-        Adaptor2d_Curve2d aCopy = myLine.ShallowCopy();
+        Curve2DAdaptorBase aCopy = myLine.ShallowCopy();
         Assert.Equal(0.0, aCopy.FirstParameter());
         Assert.Equal(10.0, aCopy.LastParameter());
         Assert.Equal(Line, aCopy.GetType());

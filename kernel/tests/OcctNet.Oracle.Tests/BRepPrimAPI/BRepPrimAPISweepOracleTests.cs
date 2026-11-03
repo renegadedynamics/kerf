@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Text;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
@@ -42,10 +45,10 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile));
+        Assert.True(BrepTools.Write(theShape, aFile));
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 
@@ -69,7 +72,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             + string.Join(", ", Kinds.OrderBy(k => k.Key).Select(k => $"{k.Key} {k.Value}"));
     }
 
-    private void Compare(Tally theTally, string theWhat, N.TopoDS_Shape theNative, in TopoDS_Shape thePort)
+    private void Compare(Tally theTally, string theWhat, N.TopoDS_Shape theNative, in Shape thePort)
     {
         string aN = NativeText(theNative);
         string aP = PortText(thePort);
@@ -186,7 +189,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
         return aPts;
     }
 
-    private static (N.TopoDS_Wire, TopoDS_Wire) Polygon(Point3D[] thePoints, bool theClosed)
+    private static (N.TopoDS_Wire, Wire) Polygon(Point3D[] thePoints, bool theClosed)
     {
         var aNP = new N.BRepBuilderAPI_MakePolygon();
         var aPP = new BRepBuilderAPI_MakePolygon();
@@ -211,7 +214,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
     /// a triangle with an edge on the placement's Y axis), built the same way on both sides; null when a circle's
     /// placement can't be settled.
     /// </summary>
-    private static (N.TopoDS_Shape N, TopoDS_Shape P, string What)? Profile(Oracle theO, int theKind, in CoordinateSystem theAx, double theScale)
+    private static (N.TopoDS_Shape N, Shape P, string What)? Profile(Oracle theO, int theKind, in CoordinateSystem theAx, double theScale)
     {
         switch (theKind)
         {
@@ -247,7 +250,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             case 4:
             {
                 Point3D[] aPts = StarPolygon(theO, theAx, theO.Int(3, 6), theScale);
-                (N.TopoDS_Wire aNW, TopoDS_Wire aPW) = Polygon(aPts, theKind == 4);
+                (N.TopoDS_Wire aNW, Wire aPW) = Polygon(aPts, theKind == 4);
                 return (aNW, aPW, theKind == 4 ? "closed polygon" : "open polygon");
             }
             case 5:
@@ -258,15 +261,15 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 {
                     Array.Reverse(aPts);
                 }
-                (N.TopoDS_Wire aNW, TopoDS_Wire aPW) = Polygon(aPts, true);
+                (N.TopoDS_Wire aNW, Wire aPW) = Polygon(aPts, true);
                 N.TopoDS_Face aNF = new N.BRepBuilderAPI_MakeFace(aNW, true).Face();
-                TopoDS_Face aPF = new BRepBuilderAPI_MakeFace(aPW, true).Face();
+                Face aPF = new BRepBuilderAPI_MakeFace(aPW, true).Face();
                 if (theKind == 6)
                 {
                     Point3D[] aHole = StarPolygon(theO, theAx, theO.Int(3, 6), 0.2 * theScale);
-                    (N.TopoDS_Wire aNH, TopoDS_Wire aPH) = Polygon(aHole, true);
+                    (N.TopoDS_Wire aNH, Wire aPH) = Polygon(aHole, true);
                     aNF = new N.BRepBuilderAPI_MakeFace(aNF, N.TopoDS.Wire(aNH.Reversed())).Face();
-                    aPF = new BRepBuilderAPI_MakeFace(aPF, TopoDS.Wire(aPH.Reversed())).Face();
+                    aPF = new BRepBuilderAPI_MakeFace(aPF, ShapeCasts.Wire(aPH.Reversed())).Face();
                 }
                 return (aNF, aPF, theKind == 6 ? "face with hole" : "polygon face");
             }
@@ -283,7 +286,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 using var aNAx = Oracle.ToNative(anAx2);
                 using var aNC = new N.gp_Circ(aNAx, r);
                 N.TopoDS_Wire aNW = new N.BRepBuilderAPI_MakeWire(new N.BRepBuilderAPI_MakeEdge(aNC).Edge()).Wire();
-                TopoDS_Wire aPW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aCirc).Edge()).Wire();
+                Wire aPW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aCirc).Edge()).Wire();
                 return (new N.BRepBuilderAPI_MakeFace(aNW, true).Face(), new BRepBuilderAPI_MakeFace(aPW, true).Face(), "disk");
             }
             case 8:
@@ -303,7 +306,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 double v1 = theO.Real(-0.7, 0) * theScale, v2 = v1 + theO.Real(0.2, 0.7) * theScale;
                 using var aNAx = Oracle.ToNative(theAx);
                 return (new N.BRepBuilderAPI_MakeShell(new N.Geom_Plane(aNAx), u1, u2, v1, v2).Shape(),
-                        new BRepBuilderAPI_MakeShell(new Geom_Plane(theAx), u1, u2, v1, v2).Shape(), "shell");
+                        new BRepBuilderAPI_MakeShell(new PlaneSurface(theAx), u1, u2, v1, v2).Shape(), "shell");
             }
             case 10:
             {
@@ -315,14 +318,14 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 {
                     aPts2[i] = aPts2[i].Translated(aT);
                 }
-                (N.TopoDS_Wire aNW1, TopoDS_Wire aPW1) = Polygon(aPts1, true);
-                (N.TopoDS_Wire aNW2, TopoDS_Wire aPW2) = Polygon(aPts2, true);
+                (N.TopoDS_Wire aNW1, Wire aPW1) = Polygon(aPts1, true);
+                (N.TopoDS_Wire aNW2, Wire aPW2) = Polygon(aPts2, true);
                 var aNC = new N.TopoDS_Compound();
                 var aNB = new N.BRep_Builder();
                 aNB.MakeCompound(aNC);
                 aNB.Add(aNC, new N.BRepBuilderAPI_MakeFace(aNW1, true).Face());
                 aNB.Add(aNC, new N.BRepBuilderAPI_MakeFace(aNW2, true).Face());
-                TopoDS_Compound aPC = TopoDS_Builder.MakeCompound(new BRepBuilderAPI_MakeFace(aPW1, true).Face(),
+                Compound aPC = Builder.MakeCompound(new BRepBuilderAPI_MakeFace(aPW1, true).Face(),
                                                                   new BRepBuilderAPI_MakeFace(aPW2, true).Face());
                 return (aNC, aPC, "compound");
             }
@@ -335,7 +338,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                     global::Kerf.Engine.Geometry.ElSLib.PlaneValue(0, y1, theAx), global::Kerf.Engine.Geometry.ElSLib.PlaneValue(theO.Real(0.2, 0.7) * theScale, theO.Real(y1, y2), theAx),
                     global::Kerf.Engine.Geometry.ElSLib.PlaneValue(0, y2, theAx),
                 ];
-                (N.TopoDS_Wire aNW, TopoDS_Wire aPW) = Polygon(aPts, true);
+                (N.TopoDS_Wire aNW, Wire aPW) = Polygon(aPts, true);
                 if (theO.Bool())
                 {
                     return (aNW, aPW, "triangle wire on axis");
@@ -351,103 +354,103 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
     private static (int, int) Index(N.TopTools_IndexedMapOfShape theMap, N.TopoDS_Shape theS) =>
         theS.IsNull() ? (-1, -1) : (theMap.FindIndex(theS), (int)theS.Orientation());
 
-    private static (int, int) Index(NCollection_IndexedMap<TopoDS_Shape> theMap, in TopoDS_Shape theS) =>
-        theS.IsNull() ? (-1, -1) : (theMap.FindIndex(theS), (int)theS.Orientation());
+    private static (int, int) Index(NCollection_IndexedMap<Shape> theMap, in Shape theS) =>
+        theS.IsNull ? (-1, -1) : (theMap.FindIndex(theS), (int)theS.Orientation());
 
     private interface ISweepPair
     {
-        bool IsDeleted(N.TopoDS_Shape theN, in TopoDS_Shape theP, out bool thePort);
-        (N.TopTools_ListOfShape, IEnumerable<TopoDS_Shape>) Generated(N.TopoDS_Shape theN, in TopoDS_Shape theP);
-        (N.TopoDS_Shape, TopoDS_Shape) First(N.TopoDS_Shape theN, in TopoDS_Shape theP);
-        (N.TopoDS_Shape, TopoDS_Shape) Last(N.TopoDS_Shape theN, in TopoDS_Shape theP);
-        (N.TopoDS_Shape, TopoDS_Shape) First();
-        (N.TopoDS_Shape, TopoDS_Shape) Last();
+        bool IsDeleted(N.TopoDS_Shape theN, in Shape theP, out bool thePort);
+        (N.TopTools_ListOfShape, IEnumerable<Shape>) Generated(N.TopoDS_Shape theN, in Shape theP);
+        (N.TopoDS_Shape, Shape) First(N.TopoDS_Shape theN, in Shape theP);
+        (N.TopoDS_Shape, Shape) Last(N.TopoDS_Shape theN, in Shape theP);
+        (N.TopoDS_Shape, Shape) First();
+        (N.TopoDS_Shape, Shape) Last();
     }
 
     private sealed class PrismPair(N.BRepPrimAPI_MakePrism theN, BRepPrimAPI_MakePrism theP) : ISweepPair
     {
-        public bool IsDeleted(N.TopoDS_Shape theNS, in TopoDS_Shape thePS, out bool thePort)
+        public bool IsDeleted(N.TopoDS_Shape theNS, in Shape thePS, out bool thePort)
         {
             thePort = theP.IsDeleted(thePS);
             return theN.IsDeleted(theNS);
         }
 
-        public (N.TopTools_ListOfShape, IEnumerable<TopoDS_Shape>) Generated(N.TopoDS_Shape theNS, in TopoDS_Shape thePS) =>
+        public (N.TopTools_ListOfShape, IEnumerable<Shape>) Generated(N.TopoDS_Shape theNS, in Shape thePS) =>
             (theN.Generated(theNS), theP.Generated(thePS));
 
-        public (N.TopoDS_Shape, TopoDS_Shape) First(N.TopoDS_Shape theNS, in TopoDS_Shape thePS) =>
+        public (N.TopoDS_Shape, Shape) First(N.TopoDS_Shape theNS, in Shape thePS) =>
             (theN.FirstShape(theNS), theP.FirstShape(thePS));
 
-        public (N.TopoDS_Shape, TopoDS_Shape) Last(N.TopoDS_Shape theNS, in TopoDS_Shape thePS) =>
+        public (N.TopoDS_Shape, Shape) Last(N.TopoDS_Shape theNS, in Shape thePS) =>
             (theN.LastShape(theNS), theP.LastShape(thePS));
 
-        public (N.TopoDS_Shape, TopoDS_Shape) First() => (theN.FirstShape(), theP.FirstShape());
+        public (N.TopoDS_Shape, Shape) First() => (theN.FirstShape(), theP.FirstShape());
 
-        public (N.TopoDS_Shape, TopoDS_Shape) Last() => (theN.LastShape(), theP.LastShape());
+        public (N.TopoDS_Shape, Shape) Last() => (theN.LastShape(), theP.LastShape());
     }
 
     private sealed class RevolPair(N.BRepPrimAPI_MakeRevol theN, BRepPrimAPI_MakeRevol theP) : ISweepPair
     {
-        public bool IsDeleted(N.TopoDS_Shape theNS, in TopoDS_Shape thePS, out bool thePort)
+        public bool IsDeleted(N.TopoDS_Shape theNS, in Shape thePS, out bool thePort)
         {
             thePort = theP.IsDeleted(thePS);
             return theN.IsDeleted(theNS);
         }
 
-        public (N.TopTools_ListOfShape, IEnumerable<TopoDS_Shape>) Generated(N.TopoDS_Shape theNS, in TopoDS_Shape thePS) =>
+        public (N.TopTools_ListOfShape, IEnumerable<Shape>) Generated(N.TopoDS_Shape theNS, in Shape thePS) =>
             (theN.Generated(theNS), theP.Generated(thePS));
 
-        public (N.TopoDS_Shape, TopoDS_Shape) First(N.TopoDS_Shape theNS, in TopoDS_Shape thePS) =>
+        public (N.TopoDS_Shape, Shape) First(N.TopoDS_Shape theNS, in Shape thePS) =>
             (theN.FirstShape(theNS), theP.FirstShape(thePS));
 
-        public (N.TopoDS_Shape, TopoDS_Shape) Last(N.TopoDS_Shape theNS, in TopoDS_Shape thePS) =>
+        public (N.TopoDS_Shape, Shape) Last(N.TopoDS_Shape theNS, in Shape thePS) =>
             (theN.LastShape(theNS), theP.LastShape(thePS));
 
-        public (N.TopoDS_Shape, TopoDS_Shape) First() => (theN.FirstShape(), theP.FirstShape());
+        public (N.TopoDS_Shape, Shape) First() => (theN.FirstShape(), theP.FirstShape());
 
-        public (N.TopoDS_Shape, TopoDS_Shape) Last() => (theN.LastShape(), theP.LastShape());
+        public (N.TopoDS_Shape, Shape) Last() => (theN.LastShape(), theP.LastShape());
     }
 
     // Compares the histories of every sub-shape of the profile as indices and orientations in the result's map.
     private static void CompareHistories(Tally theTally, string theWhat, ISweepPair theSweep, N.TopoDS_Shape theNProfile,
-                                         in TopoDS_Shape thePProfile, N.TopoDS_Shape theNResult, in TopoDS_Shape thePResult)
+                                         in Shape thePProfile, N.TopoDS_Shape theNResult, in Shape thePResult)
     {
         using var aNP = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(theNProfile, aNP);
-        var aPP = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(thePProfile, aPP);
+        var aPP = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(thePProfile, aPP);
         Assert.Equal(aNP.Extent(), aPP.Extent());
 
         using var aNR = new N.TopTools_IndexedMapOfShape();
-        var aPR = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aPR = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         if (!theNResult.IsNull())
         {
             N.TopExp.MapShapes(theNResult, aNR);
-            TopExp.MapShapes(thePResult, aPR);
+            Exploration.MapShapes(thePResult, aPR);
         }
         Assert.Equal(aNR.Extent(), aPR.Extent());
 
-        (N.TopoDS_Shape aNF, TopoDS_Shape aPF) = theSweep.First();
+        (N.TopoDS_Shape aNF, Shape aPF) = theSweep.First();
         Assert.True(Index(aNR, aNF) == Index(aPR, aPF), $"{theWhat}: FirstShape");
-        (N.TopoDS_Shape aNL, TopoDS_Shape aPL) = theSweep.Last();
+        (N.TopoDS_Shape aNL, Shape aPL) = theSweep.Last();
         Assert.True(Index(aNR, aNL) == Index(aPR, aPL), $"{theWhat}: LastShape");
         theTally.HistoryValues += 2;
 
         for (int i = 1; i <= aNP.Extent(); i++)
         {
             N.TopoDS_Shape aNS = aNP.FindKey(i);
-            TopoDS_Shape aPS = aPP[i];
+            Shape aPS = aPP[i];
             bool aNDel = theSweep.IsDeleted(aNS, aPS, out bool aPDel);
             Assert.True(aNDel == aPDel, $"{theWhat}: IsDeleted of sub-shape {i}");
 
-            (N.TopTools_ListOfShape aNG, IEnumerable<TopoDS_Shape> aPG) = theSweep.Generated(aNS, aPS);
+            (N.TopTools_ListOfShape aNG, IEnumerable<Shape> aPG) = theSweep.Generated(aNS, aPS);
             var aNGI = aNG.Select(s => Index(aNR, s)).ToList();
             var aPGI = aPG.Select(s => Index(aPR, s)).ToList();
             Assert.True(aNGI.SequenceEqual(aPGI), $"{theWhat}: Generated of sub-shape {i}");
 
-            (N.TopoDS_Shape aNSF, TopoDS_Shape aPSF) = theSweep.First(aNS, aPS);
+            (N.TopoDS_Shape aNSF, Shape aPSF) = theSweep.First(aNS, aPS);
             Assert.True(Index(aNR, aNSF) == Index(aPR, aPSF), $"{theWhat}: FirstShape of sub-shape {i}");
-            (N.TopoDS_Shape aNSL, TopoDS_Shape aPSL) = theSweep.Last(aNS, aPS);
+            (N.TopoDS_Shape aNSL, Shape aPSL) = theSweep.Last(aNS, aPS);
             Assert.True(Index(aNR, aNSL) == Index(aPR, aPSL), $"{theWhat}: LastShape of sub-shape {i}");
             theTally.HistoryValues += 4 + aNGI.Count;
         }
@@ -472,7 +475,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             {
                 continue;
             }
-            (N.TopoDS_Shape aNS, TopoDS_Shape aPS, string aWhat) = aProfile.Value;
+            (N.TopoDS_Shape aNS, Shape aPS, string aWhat) = aProfile.Value;
             bool aCopy = anO.Int(0, 3) == 0;
             bool aCanonize = anO.Int(0, 3) != 0;
 
@@ -502,7 +505,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             aWhat += (aCopy ? ", copy" : "") + (aCanonize ? "" : ", not canonized");
             Assert.Equal(aNM.IsDone(), aPM.IsDone());
             N.TopoDS_Shape aNR = aNM.Shape();
-            TopoDS_Shape aPR = aPM.Shape();
+            Shape aPR = aPM.Shape();
             Compare(aT, aWhat, aNR, aPR);
             Count(aT, aWhat.Split(',')[0]);
             CompareHistories(aT, aWhat, new PrismPair(aNM, aPM), aNS, aPS, aNR, aPR);
@@ -527,7 +530,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             {
                 continue;
             }
-            (N.TopoDS_Shape aNS, TopoDS_Shape aPS, string aWhat) = aProfile.Value;
+            (N.TopoDS_Shape aNS, Shape aPS, string aWhat) = aProfile.Value;
             bool aCopy = anO.Int(0, 3) == 0;
 
             // the axis: the placement's Y axis for the triangles on it; otherwise parallel to it beyond the profile,
@@ -593,7 +596,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 continue;
             }
             N.TopoDS_Shape aNR = aNM.Shape();
-            TopoDS_Shape aPR = aPM.Shape();
+            Shape aPR = aPM.Shape();
             Compare(aT, aWhat, aNR, aPR);
             Assert.Equal(aNM.HasDegenerated(), aPM.HasDegenerated());
             CompareHistories(aT, aWhat, new RevolPair(aNM, aPM), aNS, aPS, aNR, aPR);
@@ -617,7 +620,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
         var anAx = new CoordinateSystem(new Point3D(100, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0));
         using var aNAx = Oracle.ToNative(anAx);
         // made again for each sweep: native OCCT's sweep without copy writes into its profile
-        var aFaces = new List<(Func<N.TopoDS_Shape>, Func<TopoDS_Shape>, string)>
+        var aFaces = new List<(Func<N.TopoDS_Shape>, Func<Shape>, string)>
         {
             (() => new N.BRepBuilderAPI_MakeFace(new N.gp_Cylinder(aNAx, 15), 0, 2 * Math.PI, 0, 40).Face(),
              () => new BRepBuilderAPI_MakeFace(new Cylinder(anAx, 15), 0, 2 * Math.PI, 0, 40).Face(), "cylinder"),
@@ -630,7 +633,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
         var aZ = new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         var aV = new Vector3D(0, 0, 25);
         using var aNV = Oracle.ToNative(aV);
-        foreach ((Func<N.TopoDS_Shape> aNF, Func<TopoDS_Shape> aPF, string aKind) in aFaces)
+        foreach ((Func<N.TopoDS_Shape> aNF, Func<Shape> aPF, string aKind) in aFaces)
         {
             foreach (bool aCopy in new[] { false, true })
             {
@@ -638,12 +641,12 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 {
                     string aWhat = $"{aKind}, revolved by {anAngle:R}{(aCopy ? ", copy" : "")}";
                     N.TopoDS_Shape aNS = aNF();
-                    TopoDS_Shape aPS = aPF();
+                    Shape aPS = aPF();
                     var aNM = new N.BRepPrimAPI_MakeRevol(aNS, aNZ, anAngle, aCopy);
                     var aPM = new BRepPrimAPI_MakeRevol(aPS, aZ, anAngle, aCopy);
                     Assert.True(aNM.IsDone() && aPM.IsDone(), aWhat);
                     N.TopoDS_Shape aNR = aNM.Shape();
-                    TopoDS_Shape aPR = aPM.Shape();
+                    Shape aPR = aPM.Shape();
                     Compare(aT, aWhat, aNR, aPR);
                     Count(aT, aKind);
                     CompareHistories(aT, aWhat, new RevolPair(aNM, aPM), aNS, aPS, aNR, aPR);
@@ -651,11 +654,11 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
 
                 string aPrism = $"{aKind}, prism{(aCopy ? ", copy" : "")}";
                 N.TopoDS_Shape aNPS = aNF();
-                TopoDS_Shape aPPS = aPF();
+                Shape aPPS = aPF();
                 var aNP = new N.BRepPrimAPI_MakePrism(aNPS, aNV, aCopy, true);
                 var aPP = new BRepPrimAPI_MakePrism(aPPS, aV, aCopy, true);
                 N.TopoDS_Shape aNPR = aNP.Shape();
-                TopoDS_Shape aPPR = aPP.Shape();
+                Shape aPPR = aPP.Shape();
                 Compare(aT, aPrism, aNPR, aPPR);
                 CompareHistories(aT, aPrism, new PrismPair(aNP, aPP), aNPS, aPPS, aNPR, aPPR);
             }

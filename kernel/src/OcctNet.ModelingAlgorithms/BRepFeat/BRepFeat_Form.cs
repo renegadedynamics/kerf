@@ -4,12 +4,16 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.BRepFeat_PerfSelection;
 using static Occt.BRepFeat_StatusError;
 using static Occt.LocOpe_Operation;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -30,20 +34,20 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
 {
     protected bool myFuse;
     protected bool myModify;
-    protected NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myMap = new(TopTools_ShapeMapHasher.Instance);
-    protected TopoDS_Shape myFShape = new();
-    protected TopoDS_Shape myLShape = new();
-    protected NCollection_List<TopoDS_Shape> myNewEdges = new();
-    protected NCollection_List<TopoDS_Shape> myTgtEdges = new();
+    protected NCollection_DataMap<Shape, NCollection_List<Shape>> myMap = new(ShapeHasher.Instance);
+    protected Shape myFShape = new();
+    protected Shape myLShape = new();
+    protected NCollection_List<Shape> myNewEdges = new();
+    protected NCollection_List<Shape> myTgtEdges = new();
     protected BRepFeat_PerfSelection myPerfSelection;
     protected bool myJustGluer;
     protected bool myJustFeat;
-    protected TopoDS_Shape mySbase = new();
-    protected TopoDS_Face mySkface = new();
-    protected TopoDS_Shape myGShape = new();
-    protected TopoDS_Shape mySFrom = new();
-    protected TopoDS_Shape mySUntil = new();
-    protected NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myGluedF = new(TopTools_ShapeMapHasher.Instance);
+    protected Shape mySbase = new();
+    protected Face mySkface = new();
+    protected Shape myGShape = new();
+    protected Shape mySFrom = new();
+    protected Shape mySUntil = new();
+    protected NCollection_DataMap<Shape, Shape> myGluedF = new(ShapeHasher.Instance);
 
     private bool mySbOK;
     private bool mySkOK;
@@ -60,7 +64,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
 
     // OCCT.NET: OCCT's IsSame(sh, F) in the history, where sh may be the changed working copy of the caller's F: OCCT
     // changes F in place, keeping its identity, so the copy counts as F (decision 1052)
-    private bool IsSameInHistory(in TopoDS_Shape sh, in TopoDS_Shape F) =>
+    private bool IsSameInHistory(in Shape sh, in Shape F) =>
         sh.IsSame(F) || (myFinishedWork is not null && myFinishedWork.Original(sh).IsSame(F));
 
     /// <summary>Redefines the empty constructor.</summary>
@@ -106,10 +110,10 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     public void PerfSelectionValid() => myPSOK = true;
 
     /// <summary>The curves the feature is intersected along with the from and until shapes.</summary>
-    public abstract void Curves(NCollection_Sequence<Geom_Curve> S);
+    public abstract void Curves(NCollection_Sequence<Curve3D> S);
 
     /// <summary>The curve through the barycentre of the feature, along its direction.</summary>
-    public abstract Geom_Curve? BarycCurve();
+    public abstract Curve3D? BarycCurve();
 
     /// <summary>The status of the last construction.</summary>
     public BRepFeat_StatusError CurrentStatusError() => myStatusError;
@@ -117,7 +121,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     /// <summary>
     /// OCCT.NET: starts the feature's working shapes (decision 1052). OCCT's feature writes into the shapes it is
     /// given: the Booleans it runs are destructive (they raise tolerances and add pcurves in place) and the sweeps
-    /// write into the profile. Every shape entering the feature goes through <see cref="Working(in TopoDS_Shape)"/>, which gives the
+    /// write into the profile. Every shape entering the feature goes through <see cref="Working(in Shape)"/>, which gives the
     /// exact copy for write of a frozen one, all copies sharing one map (a face of the basis shape given as the sketch
     /// face or the until shape has its one copy); the result, the history and the lists are given back on the caller's
     /// shapes where the feature left them unchanged, at the first publication (<see cref="FinishWorkingShapes"/>).
@@ -129,14 +133,14 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The working shape standing for <paramref name="S"/> (decision 1052).</summary>
-    private protected TopoDS_Shape Working(in TopoDS_Shape S)
+    private protected Shape Working(in Shape S)
     {
         myWork ??= new LocOpe_WorkingShapes();
         return myWork.Working(S);
     }
 
     /// <summary>The working face standing for <paramref name="F"/> (decision 1052).</summary>
-    private protected TopoDS_Face Working(in TopoDS_Face F) => F.IsNull() ? F : TopoDS.Face(Working((TopoDS_Shape)F));
+    private protected Face Working(in Face F) => F.IsNull ? F : ShapeCasts.Face(Working((Shape)F));
 
     /// <summary>
     /// OCCT.NET: ends the working shapes (decision 1052): every copy the feature left unchanged is replaced by the
@@ -151,8 +155,8 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
         }
         LocOpe_WorkingShapes aWork = myWork;
         myFinishedWork = aWork;
-        var aShapes = new List<TopoDS_Shape> { myShape };
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anItem in myMap)
+        var aShapes = new List<Shape> { myShape };
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> anItem in myMap)
         {
             aShapes.AddRange(anItem.Value);
         }
@@ -164,10 +168,10 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
             return;
         }
         myShape = aWork.Final(myShape);
-        var aMap = new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anItem in myMap)
+        var aMap = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> anItem in myMap)
         {
-            TopoDS_Shape aKey = aWork.Original(anItem.Key);
+            Shape aKey = aWork.Original(anItem.Key);
             if (!aMap.IsBound(aKey))
             {
                 aMap.Bind(aKey, aWork.Final(anItem.Value));
@@ -177,7 +181,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
         myNewEdges = aWork.Final(myNewEdges);
         myTgtEdges = aWork.Final(myTgtEdges);
         mySbase = aWork.Original(mySbase);
-        mySkface = TopoDS.Face(aWork.Original(mySkface));
+        mySkface = ShapeCasts.Face(aWork.Original(mySkface));
         mySFrom = aWork.Original(mySFrom);
         mySUntil = aWork.Original(mySUntil);
         myFShape = aWork.Original(myFShape);
@@ -185,7 +189,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The result, unfrozen, on the caller's shapes where they are unchanged (OCCT's virtual).</summary>
-    internal override TopoDS_Shape InternalShape()
+    internal override Shape InternalShape()
     {
         base.InternalShape();
         FinishWorkingShapes();
@@ -203,7 +207,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
         }
 
         //--- Initialisation
-        TopExp_Explorer exp = new(), exp2 = new();
+        Explorer exp = new(), exp2 = new();
         int theOpe = 2;
 
         if (myJustFeat && !myFuse)
@@ -225,13 +229,13 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
         bool FromInShape = false;
         bool UntilInShape = false;
 
-        if (!mySFrom.IsNull())
+        if (!mySFrom.IsNull)
         {
             FromInShape = true;
-            for (exp2.Init(mySFrom, TopAbs_FACE); exp2.More(); exp2.Next())
+            for (exp2.Init(mySFrom, ShapeType.Face); exp2.More(); exp2.Next())
             {
-                TopoDS_Shape ffrom = exp2.Current();
-                for (exp.Init(mySbase, TopAbs_FACE); exp.More(); exp.Next())
+                Shape ffrom = exp2.Current();
+                for (exp.Init(mySbase, ShapeType.Face); exp.More(); exp.Next())
                 {
                     if (exp.Current().IsSame(ffrom))
                     {
@@ -246,13 +250,13 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
             }
         }
 
-        if (!mySUntil.IsNull())
+        if (!mySUntil.IsNull)
         {
             UntilInShape = true;
-            for (exp2.Init(mySUntil, TopAbs_FACE); exp2.More(); exp2.Next())
+            for (exp2.Init(mySUntil, ShapeType.Face); exp2.More(); exp2.Next())
             {
-                TopoDS_Shape funtil = exp2.Current();
-                for (exp.Init(mySbase, TopAbs_FACE); exp.More(); exp.Next())
+                Shape funtil = exp2.Current();
+                for (exp.Init(mySbase, ShapeType.Face); exp.More(); exp.Next())
                 {
                     if (exp.Current().IsSame(funtil))
                     {
@@ -267,17 +271,17 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
             }
         }
 
-        NCollection_List<TopoDS_Shape>.Iterator it = new();
+        NCollection_List<Shape>.Iterator it = new();
         int sens = 0;
 
-        NCollection_Sequence<Geom_Curve> scur = new();
+        NCollection_Sequence<Curve3D> scur = new();
         Curves(scur);
 
         double mf, Mf, mu, Mu;
 
-        TopAbs_Orientation Orifuntil = TopAbs_INTERNAL;
-        TopAbs_Orientation Oriffrom = TopAbs_INTERNAL;
-        TopoDS_Face FFrom = new(), FUntil = new();
+        Orientation Orifuntil = Internal;
+        Orientation Oriffrom = Internal;
+        Face FFrom = new(), FUntil = new();
 
         LocOpe_CSIntersector ASI1 = new();
         LocOpe_CSIntersector ASI2 = new();
@@ -285,14 +289,14 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
         //--- 1) by intersection
 
         // Intersection Tool Shape From
-        if (!mySFrom.IsNull())
+        if (!mySFrom.IsNull)
         {
             ASI1.Init(mySFrom);
             ASI1.Perform(scur!);
         }
 
         // Intersection Tool Shape Until
-        if (!mySUntil.IsNull())
+        if (!mySUntil.IsNull)
         {
             ASI2.Init(mySUntil);
             ASI2.Perform(scur!);
@@ -316,7 +320,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                     }
                     mu = ASI2.Point(jj, 1).Parameter();
                     Mu = ASI2.Point(jj, ASI2.NbPoints(jj)).Parameter();
-                    if (!scur[jj].IsPeriodic())
+                    if (!scur[jj].IsPeriodic)
                     {
                         int ku, kf;
                         if (mu <= Mf && mf <= Mu)
@@ -349,27 +353,27 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                             kf = ASI1.NbPoints(jj);
                             ku = 1;
                         }
-                        if (Oriffrom == TopAbs_INTERNAL)
+                        if (Oriffrom == Internal)
                         {
-                            TopAbs_Orientation Oript = ASI1.Point(jj, kf).Orientation();
-                            if (Oript == TopAbs_FORWARD || Oript == TopAbs_REVERSED)
+                            Orientation Oript = ASI1.Point(jj, kf).Orientation();
+                            if (Oript == Forward || Oript == Reversed)
                             {
                                 if (sens == -1)
                                 {
-                                    Oript = TopAbs.Reverse(Oript);
+                                    Oript = global::Kerf.Engine.Topology.TopAbs.Reverse(Oript);
                                 }
-                                Oriffrom = TopAbs.Reverse(Oript);
+                                Oriffrom = global::Kerf.Engine.Topology.TopAbs.Reverse(Oript);
                                 FFrom = ASI1.Point(jj, kf).Face();
                             }
                         }
-                        if (Orifuntil == TopAbs_INTERNAL)
+                        if (Orifuntil == Internal)
                         {
-                            TopAbs_Orientation Oript = ASI2.Point(jj, ku).Orientation();
-                            if (Oript == TopAbs_FORWARD || Oript == TopAbs_REVERSED)
+                            Orientation Oript = ASI2.Point(jj, ku).Orientation();
+                            if (Oript == Forward || Oript == Reversed)
                             {
                                 if (sens == -1)
                                 {
-                                    Oript = TopAbs.Reverse(Oript);
+                                    Oript = global::Kerf.Engine.Topology.TopAbs.Reverse(Oript);
                                 }
                                 Orifuntil = Oript;
                                 FUntil = ASI2.Point(jj, ku).Face();
@@ -411,14 +415,14 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                     {
                         ku = ASI2.NbPoints(jj);
                     }
-                    if (Orifuntil == TopAbs_INTERNAL && sens != 0)
+                    if (Orifuntil == Internal && sens != 0)
                     {
-                        TopAbs_Orientation Oript = ASI2.Point(jj, ku).Orientation();
-                        if (Oript == TopAbs_FORWARD || Oript == TopAbs_REVERSED)
+                        Orientation Oript = ASI2.Point(jj, ku).Orientation();
+                        if (Oript == Forward || Oript == Reversed)
                         {
                             if (sens == -1)
                             {
-                                Oript = TopAbs.Reverse(Oript);
+                                Oript = global::Kerf.Engine.Topology.TopAbs.Reverse(Oript);
                             }
                             Orifuntil = Oript;
                             FUntil = ASI2.Point(jj, ku).Face();
@@ -441,34 +445,34 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
         {
             bool Collage = true;
             // cut by FFrom && FUntil
-            TopoDS_Compound Comp = new();
-            BRep_Builder B = new();
+            Compound Comp = new();
+            BrepBuilder B = new();
             B.MakeCompound(ref Comp);
-            if (!mySFrom.IsNull())
+            if (!mySFrom.IsNull)
             {
-                TopoDS_Solid S = BRepFeat.Tool(mySFrom, FFrom, Oriffrom);
-                if (!S.IsNull())
+                Solid S = BRepFeat.Tool(mySFrom, FFrom, Oriffrom);
+                if (!S.IsNull)
                 {
                     B.Add(Comp, S);
                 }
             }
-            if (!mySUntil.IsNull())
+            if (!mySUntil.IsNull)
             {
-                TopoDS_Solid S = BRepFeat.Tool(mySUntil, FUntil, Orifuntil);
-                if (!S.IsNull())
+                Solid S = BRepFeat.Tool(mySUntil, FUntil, Orifuntil);
+                if (!S.IsNull)
                 {
                     B.Add(Comp, S);
                 }
             }
 
             LocOpe_FindEdges theFE = new();
-            NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> locmap = new(TopTools_ShapeMapHasher.Instance);
-            TopExp_Explorer expp = new(Comp, TopAbs_SOLID);
-            if (expp.More() && !Comp.IsNull() && !myGShape.IsNull())
+            NCollection_DataMap<Shape, NCollection_List<Shape>> locmap = new(ShapeHasher.Instance);
+            Explorer expp = new(Comp, ShapeType.Solid);
+            if (expp.More() && !Comp.IsNull && !myGShape.IsNull)
             {
                 BRepAlgoAPI_Cut trP = new(myGShape, Comp);
-                exp.Init(trP.InternalShape(), TopAbs_SOLID);
-                if (exp.Current().IsNull())
+                exp.Init(trP.InternalShape(), ShapeType.Solid);
+                if (exp.Current().IsNull)
                 {
                     theOpe = 2;
                     ChangeOpe = true;
@@ -477,7 +481,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                 else
                 { // else X0
                     // Only solids are preserved
-                    TopoDS_Compound theGShape = new();
+                    Compound theGShape = new();
                     B.MakeCompound(ref theGShape);
                     for (; exp.More(); exp.Next())
                     {
@@ -491,21 +495,21 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                     }
                     else
                     { // else X1
-                        if (!mySFrom.IsNull())
+                        if (!mySFrom.IsNull)
                         {
-                            TopExp_Explorer ex = new();
-                            ex.Init(mySFrom, TopAbs_FACE);
+                            Explorer ex = new();
+                            ex.Init(mySFrom, ShapeType.Face);
                             for (; ex.More(); ex.Next())
                             {
-                                TopoDS_Face fac = TopoDS.Face(ex.Current());
+                                Face fac = ShapeCasts.Face(ex.Current());
                                 if (!FromInShape)
                                 {
-                                    NCollection_List<TopoDS_Shape> thelist = new();
+                                    NCollection_List<Shape> thelist = new();
                                     myMap.Bind(fac, thelist);
                                 }
                                 else
                                 {
-                                    NCollection_List<TopoDS_Shape> thelist1 = new();
+                                    NCollection_List<Shape> thelist1 = new();
                                     locmap.Bind(fac, thelist1);
                                 }
                                 if (trP.IsDeleted(fac))
@@ -513,7 +517,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                                 }
                                 else if (!FromInShape)
                                 {
-                                    myMap[fac] = new NCollection_List<TopoDS_Shape>(trP.InternalModified(fac));
+                                    myMap[fac] = new NCollection_List<Shape>(trP.InternalModified(fac));
                                     if (myMap[fac].IsEmpty())
                                     {
                                         myMap[fac].Append(fac);
@@ -521,7 +525,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                                 }
                                 else
                                 {
-                                    locmap[fac] = new NCollection_List<TopoDS_Shape>(trP.InternalModified(fac));
+                                    locmap[fac] = new NCollection_List<Shape>(trP.InternalModified(fac));
                                     if (locmap[fac].IsEmpty())
                                     {
                                         locmap[fac].Append(fac);
@@ -530,21 +534,21 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                             }
                         } // if(!mySFrom.IsNull())
                         //
-                        if (!mySUntil.IsNull())
+                        if (!mySUntil.IsNull)
                         {
-                            TopExp_Explorer ex = new();
-                            ex.Init(mySUntil, TopAbs_FACE);
+                            Explorer ex = new();
+                            ex.Init(mySUntil, ShapeType.Face);
                             for (; ex.More(); ex.Next())
                             {
-                                TopoDS_Face fac = TopoDS.Face(ex.Current());
+                                Face fac = ShapeCasts.Face(ex.Current());
                                 if (!UntilInShape)
                                 {
-                                    NCollection_List<TopoDS_Shape> thelist2 = new();
+                                    NCollection_List<Shape> thelist2 = new();
                                     myMap.Bind(fac, thelist2);
                                 }
                                 else
                                 {
-                                    NCollection_List<TopoDS_Shape> thelist3 = new();
+                                    NCollection_List<Shape> thelist3 = new();
                                     locmap.Bind(fac, thelist3);
                                 }
                                 if (trP.IsDeleted(fac))
@@ -552,7 +556,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                                 }
                                 else if (!UntilInShape)
                                 {
-                                    myMap[fac] = new NCollection_List<TopoDS_Shape>(trP.InternalModified(fac));
+                                    myMap[fac] = new NCollection_List<Shape>(trP.InternalModified(fac));
                                     if (myMap[fac].IsEmpty())
                                     {
                                         myMap[fac].Append(fac);
@@ -560,7 +564,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                                 }
                                 else
                                 {
-                                    locmap[fac] = new NCollection_List<TopoDS_Shape>(trP.InternalModified(fac));
+                                    locmap[fac] = new NCollection_List<Shape>(trP.InternalModified(fac));
                                     if (locmap[fac].IsEmpty())
                                     {
                                         locmap[fac].Append(fac);
@@ -572,25 +576,25 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                         UpdateDescendants(trP, theGShape, true); // skip faces
 
                         theGlue.Init(mySbase, theGShape);
-                        foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> itm in myGluedF)
+                        foreach (KeyValuePair<Shape, Shape> itm in myGluedF)
                         {
-                            TopoDS_Face gl = TopoDS.Face(itm.Key);
-                            NCollection_List<TopoDS_Shape> ldsc = new();
+                            Face gl = ShapeCasts.Face(itm.Key);
+                            NCollection_List<Shape> ldsc = new();
                             if (trP.IsDeleted(gl))
                             {
                             }
                             else
                             {
-                                ldsc = new NCollection_List<TopoDS_Shape>(trP.InternalModified(gl));
+                                ldsc = new NCollection_List<Shape>(trP.InternalModified(gl));
                                 if (ldsc.IsEmpty())
                                 {
                                     ldsc.Append(gl);
                                 }
                             }
-                            TopoDS_Face glface = TopoDS.Face(itm.Value);
+                            Face glface = ShapeCasts.Face(itm.Value);
                             for (it.Initialize(ldsc); it.More(); it.Next())
                             {
-                                TopoDS_Face fac = TopoDS.Face(it.Value());
+                                Face fac = ShapeCasts.Face(it.Value());
                                 Collage = BRepFeat.IsInside(fac, glface);
                                 if (!Collage)
                                 {
@@ -615,11 +619,11 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
             else
             {
                 theGlue.Init(mySbase, myGShape);
-                foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> itm in myGluedF)
+                foreach (KeyValuePair<Shape, Shape> itm in myGluedF)
                 {
-                    TopoDS_Face glface = TopoDS.Face(itm.Key);
-                    TopoDS_Face fac = TopoDS.Face(myGluedF[glface]);
-                    for (exp.Init(myGShape, TopAbs_FACE); exp.More(); exp.Next())
+                    Face glface = ShapeCasts.Face(itm.Key);
+                    Face fac = ShapeCasts.Face(myGluedF[glface]);
+                    for (exp.Init(myGShape, ShapeType.Face); exp.More(); exp.Next())
                     {
                         if (exp.Current().IsSame(glface))
                         {
@@ -651,13 +655,13 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
             // Add gluing on start and end face if necessary !!!
             if (FromInShape && Collage)
             {
-                TopExp_Explorer ex = new(mySFrom, TopAbs_FACE);
+                Explorer ex = new(mySFrom, ShapeType.Face);
                 for (; ex.More(); ex.Next())
                 {
-                    TopoDS_Face fac2 = TopoDS.Face(ex.Current());
+                    Face fac2 = ShapeCasts.Face(ex.Current());
                     for (it.Initialize(locmap.Find(fac2)); it.More(); it.Next())
                     {
-                        TopoDS_Face fac1 = TopoDS.Face(it.Value());
+                        Face fac1 = ShapeCasts.Face(it.Value());
                         theFE.Set(fac1, fac2);
                         theGlue.Bind(fac1, fac2);
                         for (theFE.InitIterator(); theFE.More(); theFE.Next())
@@ -670,13 +674,13 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
 
             if (UntilInShape && Collage)
             {
-                TopExp_Explorer ex = new(mySUntil, TopAbs_FACE);
+                Explorer ex = new(mySUntil, ShapeType.Face);
                 for (; ex.More(); ex.Next())
                 {
-                    TopoDS_Face fac2 = TopoDS.Face(ex.Current());
+                    Face fac2 = ShapeCasts.Face(ex.Current());
                     for (it.Initialize(locmap.Find(fac2)); it.More(); it.Next())
                     {
-                        TopoDS_Face fac1 = TopoDS.Face(it.Value());
+                        Face fac1 = ShapeCasts.Face(it.Value());
                         theGlue.Bind(fac1, fac2);
                         theFE.Set(fac1, fac2);
                         for (theFE.InitIterator(); theFE.More(); theFE.Next())
@@ -702,12 +706,12 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
             theGlue.Perform();
             if (theGlue.IsDone())
             {
-                TopoDS_Shape shshs = theGlue.InternalResultingShape();
+                Shape shshs = theGlue.InternalResultingShape();
                 if (BRepAlgo.IsValid(shshs))
                 {
                     UpdateDescendants(theGlue);
-                    myNewEdges = new NCollection_List<TopoDS_Shape>(theGlue.InternalEdges());
-                    myTgtEdges = new NCollection_List<TopoDS_Shape>(theGlue.InternalTgtEdges());
+                    myNewEdges = new NCollection_List<Shape>(theGlue.InternalEdges());
+                    myTgtEdges = new NCollection_List<Shape>(theGlue.InternalTgtEdges());
                     Done();
                     myShape = theGlue.InternalResultingShape();
                 }
@@ -736,29 +740,29 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
 
         if (theOpe == 2)
         {
-            TopoDS_Shape theGShape = myGShape;
+            Shape theGShape = myGShape;
 
-            TopoDS_Compound Comp = new();
-            BRep_Builder B = new();
+            Compound Comp = new();
+            BrepBuilder B = new();
             B.MakeCompound(ref Comp);
-            if (!mySFrom.IsNull() || !mySUntil.IsNull())
+            if (!mySFrom.IsNull || !mySUntil.IsNull)
             {
-                if (!mySFrom.IsNull() && !FromInShape)
+                if (!mySFrom.IsNull && !FromInShape)
                 {
-                    TopoDS_Solid S = BRepFeat.Tool(mySFrom, FFrom, Oriffrom);
-                    if (!S.IsNull())
+                    Solid S = BRepFeat.Tool(mySFrom, FFrom, Oriffrom);
+                    if (!S.IsNull)
                     {
                         B.Add(Comp, S);
                     }
                 }
-                if (!mySUntil.IsNull() && !UntilInShape)
+                if (!mySUntil.IsNull && !UntilInShape)
                 {
-                    if (!mySFrom.IsNull())
+                    if (!mySFrom.IsNull)
                     {
                         if (!mySFrom.IsSame(mySUntil))
                         {
-                            TopoDS_Solid S = BRepFeat.Tool(mySUntil, FUntil, Orifuntil);
-                            if (!S.IsNull())
+                            Solid S = BRepFeat.Tool(mySUntil, FUntil, Orifuntil);
+                            if (!S.IsNull)
                             {
                                 B.Add(Comp, S);
                             }
@@ -766,8 +770,8 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                     }
                     else
                     {
-                        TopoDS_Solid S = BRepFeat.Tool(mySUntil, FUntil, Orifuntil);
-                        if (!S.IsNull())
+                        Solid S = BRepFeat.Tool(mySUntil, FUntil, Orifuntil);
+                        if (!S.IsNull)
                         {
                             B.Add(Comp, S);
                         }
@@ -789,12 +793,12 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                 myPerfSelection = BRepFeat_NoSelection;
             }
 
-            TopExp_Explorer expp = new(Comp, TopAbs_SOLID);
-            if (expp.More() && !Comp.IsNull() && !myGShape.IsNull())
+            Explorer expp = new(Comp, ShapeType.Solid);
+            if (expp.More() && !Comp.IsNull && !myGShape.IsNull)
             {
                 BRepAlgoAPI_Cut trP = new(myGShape, Comp);
                 // the result is necessarily a compound.
-                exp.Init(trP.InternalShape(), TopAbs_SOLID);
+                exp.Init(trP.InternalShape(), ShapeType.Solid);
                 if (!exp.More())
                 {
                     myStatusError = BRepFeat_EmptyCutResult;
@@ -802,7 +806,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                     return;
                 }
                 // Only solids are preserved
-                TopoDS_Compound aGShape = new();
+                Compound aGShape = new();
                 B.MakeCompound(ref aGShape);
                 for (; exp.More(); exp.Next())
                 {
@@ -815,22 +819,22 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                     NotDone();
                     return;
                 }
-                if (!mySFrom.IsNull())
+                if (!mySFrom.IsNull)
                 {
                     if (!FromInShape)
                     {
-                        TopExp_Explorer ex = new(mySFrom, TopAbs_FACE);
+                        Explorer ex = new(mySFrom, ShapeType.Face);
                         for (; ex.More(); ex.Next())
                         {
-                            TopoDS_Face fac = TopoDS.Face(ex.Current());
-                            NCollection_List<TopoDS_Shape> thelist4 = new();
+                            Face fac = ShapeCasts.Face(ex.Current());
+                            NCollection_List<Shape> thelist4 = new();
                             myMap.Bind(fac, thelist4);
                             if (trP.IsDeleted(fac))
                             {
                             }
                             else
                             {
-                                myMap[fac] = new NCollection_List<TopoDS_Shape>(trP.InternalModified(fac));
+                                myMap[fac] = new NCollection_List<Shape>(trP.InternalModified(fac));
                                 if (myMap[fac].IsEmpty())
                                 {
                                     myMap[fac].Append(fac);
@@ -839,22 +843,22 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                         }
                     }
                 }
-                if (!mySUntil.IsNull())
+                if (!mySUntil.IsNull)
                 {
                     if (!UntilInShape)
                     {
-                        TopExp_Explorer ex = new(mySUntil, TopAbs_FACE);
+                        Explorer ex = new(mySUntil, ShapeType.Face);
                         for (; ex.More(); ex.Next())
                         {
-                            TopoDS_Face fac = TopoDS.Face(ex.Current());
-                            NCollection_List<TopoDS_Shape> thelist5 = new();
+                            Face fac = ShapeCasts.Face(ex.Current());
+                            NCollection_List<Shape> thelist5 = new();
                             myMap.Bind(fac, thelist5);
                             if (trP.IsDeleted(fac))
                             {
                             }
                             else
                             {
-                                myMap[fac] = new NCollection_List<TopoDS_Shape>(trP.InternalModified(fac));
+                                myMap[fac] = new NCollection_List<Shape>(trP.InternalModified(fac));
                                 if (myMap.IsEmpty()) // OCCT: tests the map, not the face's list
                                 {
                                     myMap[fac].Append(fac);
@@ -874,14 +878,14 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
             theBuilder.SetOperation(myFuse ? 1 : 0, bFlag);
             theBuilder.Perform();
             //
-            NCollection_List<TopoDS_Shape> lshape = new();
+            NCollection_List<Shape> lshape = new();
             theBuilder.PartsOfTool(lshape);
             //
             double pbmin = RealLast(), pbmax = RealFirst();
             double prmin = RealLast() - 2 * global::Kerf.Engine.Foundation.Precision.Confusion();
             double prmax = RealFirst() + 2 * global::Kerf.Engine.Foundation.Precision.Confusion();
             bool flag1 = false;
-            Geom_Curve? C = null;
+            Curve3D? C = null;
 
             //--- Selection of pieces of tool to be preserved
             if (!lshape.IsEmpty() && myPerfSelection != BRepFeat_NoSelection)
@@ -906,7 +910,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                     BRepFeat.ParametricMinMax(mySUntil, C, out double prmin2, out double prmax2, out double prbmin2, out double prbmax2, out flag1);
 
                     // case of revolutions
-                    if (C.IsPeriodic())
+                    if (C.IsPeriodic)
                     {
                         double period = C.Period();
                         prmax = prmax2;
@@ -997,16 +1001,16 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                 {
                     // modif of the test for cts21181 : (prbmax2 and prnmin2) -> (prbmin1 and prbmax1)
                     // correction take into account flag2 for pro15323 and flag3 for pro16060
-                    if (!mySUntil.IsNull())
+                    if (!mySUntil.IsNull)
                     {
-                        NCollection_Map<TopoDS_Shape> mapFuntil = new(TopTools_ShapeMapHasher.Instance);
+                        NCollection_Map<Shape> mapFuntil = new(ShapeHasher.Instance);
                         Descendants(mySUntil, theBuilder, mapFuntil);
                         if (!mapFuntil.IsEmpty())
                         {
                             for (it.Initialize(lshape); it.More(); it.Next())
                             {
-                                TopExp_Explorer expf = new();
-                                for (expf.Init(it.Value(), TopAbs_FACE); expf.More(); expf.Next())
+                                Explorer expf = new();
+                                for (expf.Init(it.Value(), ShapeType.Face); expf.More(); expf.Next())
                                 {
                                     if (mapFuntil.Contains(expf.Current()))
                                     {
@@ -1069,16 +1073,16 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                             it.Initialize(lshape);
                         }
                     }
-                    if (!mySFrom.IsNull())
+                    if (!mySFrom.IsNull)
                     {
-                        NCollection_Map<TopoDS_Shape> mapFfrom = new(TopTools_ShapeMapHasher.Instance);
+                        NCollection_Map<Shape> mapFfrom = new(ShapeHasher.Instance);
                         Descendants(mySFrom, theBuilder, mapFfrom);
                         if (!mapFfrom.IsEmpty())
                         {
                             for (it.Initialize(lshape); it.More(); it.Next())
                             {
-                                TopExp_Explorer expf = new();
-                                for (expf.Init(it.Value(), TopAbs_FACE); expf.More(); expf.Next())
+                                Explorer expf = new();
+                                for (expf.Init(it.Value(), ShapeType.Face); expf.More(); expf.Next())
                                 {
                                     if (mapFfrom.Contains(expf.Current()))
                                     {
@@ -1152,7 +1156,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                     bool flag2;
                     for (it.Initialize(lshape); it.More(); it.Next())
                     {
-                        if (C.IsPeriodic())
+                        if (C.IsPeriodic)
                         {
                             double period = C.Period();
                             BRepFeat.ParametricMinMax(it.Value(), C, out double pr, out prmax1, out double prb, out prbmax1, out flag2, true);
@@ -1187,7 +1191,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                         if ((min <= pmax - delta) && (max >= pmin + delta))
                         {
                             KeepParts = true;
-                            TopoDS_Shape S = it.Value();
+                            Shape S = it.Value();
                             theBuilder.KeepPart(S);
                         }
                     }
@@ -1206,7 +1210,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                     double prmin1, prmax1, prbmin1, prbmax1;
                     double min, max, pmin, pmax;
                     bool flag2;
-                    TopoDS_Compound Compo = new();
+                    Compound Compo = new();
                     B.MakeCompound(ref Compo);
                     for (it.Initialize(lshape); it.More(); it.Next())
                     {
@@ -1227,7 +1231,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                         }
                         if ((min < pmax - delta) && (max > pmin + delta))
                         {
-                            if (!it.Value().IsNull())
+                            if (!it.Value().IsNull)
                             {
                                 B.Add(Compo, it.Value());
                             }
@@ -1265,7 +1269,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>True if the face <paramref name="F"/> of the basis shape has no descendant in the result.</summary>
-    public override bool IsDeleted(in TopoDS_Shape F)
+    public override bool IsDeleted(in Shape F)
     {
         FinishWorkingShapes();
         if (myMap.IsBound(F))
@@ -1276,7 +1280,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The faces generated from the face <paramref name="F"/> (OCCT's virtual; unfrozen).</summary>
-    internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape F)
+    internal override NCollection_List<Shape> InternalModified(in Shape F)
     {
         FinishWorkingShapes();
         myGenerated.Clear();
@@ -1293,10 +1297,10 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
 
         if (myMap.IsBound(F))
         {
-            NCollection_List<TopoDS_Shape>.Iterator ite = new(myMap.Find(F));
+            NCollection_List<Shape>.Iterator ite = new(myMap.Find(F));
             for (; ite.More(); ite.Next())
             {
-                TopoDS_Shape sh = ite.Value();
+                Shape sh = ite.Value();
                 if (!IsSameInHistory(sh, F) && sh.ShapeType() == F.ShapeType())
                 {
                     myGenerated.Append(sh);
@@ -1307,7 +1311,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The faces created from the shape <paramref name="S"/> (OCCT's virtual; unfrozen).</summary>
-    internal override NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape S)
+    internal override NCollection_List<Shape> InternalGenerated(in Shape S)
     {
         FinishWorkingShapes();
         myGenerated.Clear();
@@ -1315,12 +1319,12 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
         {
             return myGenerated;
         }
-        if (myMap.IsBound(S) && S.ShapeType() != TopAbs_FACE)
+        if (myMap.IsBound(S) && S.ShapeType() != ShapeType.Face)
         { // check if filter on face or not
-            NCollection_List<TopoDS_Shape>.Iterator ite = new(myMap.Find(S));
+            NCollection_List<Shape>.Iterator ite = new(myMap.Find(S));
             for (; ite.More(); ite.Next())
             {
-                TopoDS_Shape sh = ite.Value();
+                Shape sh = ite.Value();
                 if (!IsSameInHistory(sh, S))
                 {
                     myGenerated.Append(sh);
@@ -1340,23 +1344,23 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
 
     protected void UpdateDescendants(LocOpe_Gluer G)
     {
-        NCollection_List<TopoDS_Shape>.Iterator it = new(), it2 = new();
+        NCollection_List<Shape>.Iterator it = new(), it2 = new();
 
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> itdm in myMap)
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> itdm in myMap)
         {
-            TopoDS_Shape orig = itdm.Key;
+            Shape orig = itdm.Key;
             // OCCT iterates this address-keyed map into the list: insertion order here (decision 1054)
-            NCollection_IndexedMap<TopoDS_Shape> newdsc = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_IndexedMap<Shape> newdsc = new(ShapeHasher.Instance);
             for (it.Initialize(itdm.Value); it.More(); it.Next())
             {
-                TopoDS_Face fdsc = TopoDS.Face(it.Value());
+                Face fdsc = ShapeCasts.Face(it.Value());
                 for (it2.Initialize(G.InternalDescendantFaces(fdsc)); it2.More(); it2.Next())
                 {
                     newdsc.Add(it2.Value());
                 }
             }
             myMap.ChangeFind(orig).Clear();
-            foreach (TopoDS_Shape itm in newdsc)
+            foreach (Shape itm in newdsc)
             {
                 myMap.ChangeFind(orig).Append(itm);
             }
@@ -1364,17 +1368,17 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The shapes created at the bottom of the created form; it may be empty (frozen).</summary>
-    public ISchematiqList<TopoDS_Shape> FirstShape()
+    public ISchematiqList<Shape> FirstShape()
     {
         BeforePublishingLists();
         return PublishedList(InternalFirstShape());
     }
 
     /// <summary><see cref="FirstShape"/> without freezing, for ported code.</summary>
-    internal NCollection_List<TopoDS_Shape> InternalFirstShape()
+    internal NCollection_List<Shape> InternalFirstShape()
     {
         FinishWorkingShapes();
-        if (!myFShape.IsNull())
+        if (!myFShape.IsNull)
         {
             return myMap.Find(myFShape);
         }
@@ -1382,17 +1386,17 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The shapes created at the top of the created form; it may be empty (frozen).</summary>
-    public ISchematiqList<TopoDS_Shape> LastShape()
+    public ISchematiqList<Shape> LastShape()
     {
         BeforePublishingLists();
         return PublishedList(InternalLastShape());
     }
 
     /// <summary><see cref="LastShape"/> without freezing, for ported code.</summary>
-    internal NCollection_List<TopoDS_Shape> InternalLastShape()
+    internal NCollection_List<Shape> InternalLastShape()
     {
         FinishWorkingShapes();
-        if (!myLShape.IsNull())
+        if (!myLShape.IsNull)
         {
             return myMap.Find(myLShape);
         }
@@ -1403,14 +1407,14 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     /// The limiting and glueing edges generated by the feature, which did not exist in the basis shape: the
     /// information needed to add fillets afterwards. It may be empty (frozen).
     /// </summary>
-    public ISchematiqList<TopoDS_Shape> NewEdges()
+    public ISchematiqList<Shape> NewEdges()
     {
         BeforePublishingLists();
         return PublishedList(InternalNewEdges());
     }
 
     /// <summary><see cref="NewEdges"/> without freezing, for ported code.</summary>
-    internal NCollection_List<TopoDS_Shape> InternalNewEdges()
+    internal NCollection_List<Shape> InternalNewEdges()
     {
         FinishWorkingShapes();
         return myNewEdges;
@@ -1419,14 +1423,14 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     /// <summary>
     /// The tangent edges among <see cref="NewEdges"/>: no fillet is possible on them. It may be empty (frozen).
     /// </summary>
-    public ISchematiqList<TopoDS_Shape> TgtEdges()
+    public ISchematiqList<Shape> TgtEdges()
     {
         BeforePublishingLists();
         return PublishedList(InternalTgtEdges());
     }
 
     /// <summary><see cref="TgtEdges"/> without freezing, for ported code.</summary>
-    internal NCollection_List<TopoDS_Shape> InternalTgtEdges()
+    internal NCollection_List<Shape> InternalTgtEdges()
     {
         FinishWorkingShapes();
         return myTgtEdges;
@@ -1437,7 +1441,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
     {
         bool Trf = false;
 
-        TopoDS_Shape shapefu;
+        Shape shapefu;
         if (flag == 0)
         {
             shapefu = mySFrom;
@@ -1451,7 +1455,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
             return Trf;
         }
 
-        TopExp_Explorer exp = new(shapefu, TopAbs_FACE);
+        Explorer exp = new(shapefu, ShapeType.Face);
         if (!exp.More())
         { // no faces... It is necessary to return an error
             return Trf;
@@ -1461,25 +1465,25 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
         if (!exp.More())
         { // the only face. Is it infinite?
             exp.ReInit();
-            TopoDS_Face fac = TopoDS.Face(exp.Current());
+            Face fac = ShapeCasts.Face(exp.Current());
 
-            Geom_Surface S = BRep_Tool.Surface(fac)!;
-            if (S is Geom_RectangularTrimmedSurface aTrimmed)
+            Surface S = Tool.Surface(fac)!;
+            if (S is TrimmedSurface aTrimmed)
             {
                 S = aTrimmed.BasisSurface();
             }
 
-            if (S.GetType() == typeof(Geom_Plane) || S.GetType() == typeof(Geom_CylindricalSurface)
-                || S.GetType() == typeof(Geom_ConicalSurface))
+            if (S.GetType() == typeof(PlaneSurface) || S.GetType() == typeof(CylindricalSurface)
+                || S.GetType() == typeof(ConicalSurface))
             {
-                TopExp_Explorer exp1 = new(fac, TopAbs_WIRE);
+                Explorer exp1 = new(fac, ShapeType.Wire);
                 if (!exp1.More())
                 {
                     Trf = true;
                 }
                 else
                 {
-                    Trf = BRep_Tool.NaturalRestriction(fac);
+                    Trf = Tool.NaturalRestriction(fac);
                 }
             }
             if (Trf)
@@ -1489,14 +1493,14 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
 
             if (flag == 0)
             {
-                NCollection_List<TopoDS_Shape> thelist6 = new();
+                NCollection_List<Shape> thelist6 = new();
                 myMap.Bind(mySFrom, thelist6);
                 myMap[mySFrom].Append(fac);
                 mySFrom = fac;
             }
             else if (flag == 1)
             {
-                NCollection_List<TopoDS_Shape> thelist7 = new();
+                NCollection_List<Shape> thelist7 = new();
                 myMap.Bind(mySUntil, thelist7);
                 myMap[mySUntil].Append(fac);
                 mySUntil = fac;
@@ -1506,8 +1510,8 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
         {
             for (exp.ReInit(); exp.More(); exp.Next())
             {
-                TopoDS_Shape fac = exp.Current();
-                NCollection_List<TopoDS_Shape> thelist8 = new();
+                Shape fac = exp.Current();
+                NCollection_List<Shape> thelist8 = new();
                 myMap.Bind(fac, thelist8);
                 myMap[fac].Append(fac);
             }
@@ -1515,34 +1519,34 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
         return Trf;
     }
 
-    private static void Descendants(in TopoDS_Shape S, BRepFeat_Builder theFB, NCollection_Map<TopoDS_Shape> mapF)
+    private static void Descendants(in Shape S, BRepFeat_Builder theFB, NCollection_Map<Shape> mapF)
     {
         mapF.Clear();
-        TopExp_Explorer exp = new();
-        for (exp.Init(S, TopAbs_FACE); exp.More(); exp.Next())
+        Explorer exp = new();
+        for (exp.Init(S, ShapeType.Face); exp.More(); exp.Next())
         {
-            TopoDS_Face fdsc = TopoDS.Face(exp.Current());
-            foreach (TopoDS_Shape aS in theFB.Modified(fdsc))
+            Face fdsc = ShapeCasts.Face(exp.Current());
+            foreach (Shape aS in theFB.Modified(fdsc))
             {
                 mapF.Add(aS);
             }
         }
     }
 
-    protected void UpdateDescendants(BRepAlgoAPI_BooleanOperation aBOP, in TopoDS_Shape S, bool SkipFace = false)
+    protected void UpdateDescendants(BRepAlgoAPI_BooleanOperation aBOP, in Shape S, bool SkipFace = false)
     {
-        NCollection_List<TopoDS_Shape>.Iterator it = new(), it2 = new();
-        TopExp_Explorer exp = new();
+        NCollection_List<Shape>.Iterator it = new(), it2 = new();
+        Explorer exp = new();
 
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> itdm in myMap)
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> itdm in myMap)
         {
-            TopoDS_Shape orig = itdm.Key;
-            if (SkipFace && orig.ShapeType() == TopAbs_FACE)
+            Shape orig = itdm.Key;
+            if (SkipFace && orig.ShapeType() == ShapeType.Face)
             {
                 continue;
             }
             // OCCT iterates this address-keyed map into the list: insertion order here (decision 1054)
-            NCollection_IndexedMap<TopoDS_Shape> newdsc = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_IndexedMap<Shape> newdsc = new(ShapeHasher.Instance);
 
             if (itdm.Value.IsEmpty())
             {
@@ -1551,13 +1555,13 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
 
             for (it.Initialize(itdm.Value); it.More(); it.Next())
             {
-                TopoDS_Shape sh = it.Value();
-                if (sh.ShapeType() != TopAbs_FACE)
+                Shape sh = it.Value();
+                if (sh.ShapeType() != ShapeType.Face)
                 {
                     continue;
                 }
-                TopoDS_Face fdsc = TopoDS.Face(it.Value());
-                for (exp.Init(S, TopAbs_FACE); exp.More(); exp.Next())
+                Face fdsc = ShapeCasts.Face(it.Value());
+                for (exp.Init(S, ShapeType.Face); exp.More(); exp.Next())
                 {
                     if (exp.Current().IsSame(fdsc))
                     { // preserved
@@ -1567,20 +1571,20 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                 }
                 if (!exp.More())
                 {
-                    NCollection_List<TopoDS_Shape> aLM = aBOP.InternalModified(fdsc);
+                    NCollection_List<Shape> aLM = aBOP.InternalModified(fdsc);
                     it2.Initialize(aLM);
                     for (; it2.More(); it2.Next())
                     {
-                        TopoDS_Shape aS = it2.Value();
+                        Shape aS = it2.Value();
                         newdsc.Add(aS);
                     }
                 }
             }
             myMap.ChangeFind(orig).Clear();
-            foreach (TopoDS_Shape itm in newdsc)
+            foreach (Shape itm in newdsc)
             {
                 // check the appartenance to the shape...
-                for (exp.Init(S, TopAbs_FACE); exp.More(); exp.Next())
+                for (exp.Init(S, ShapeType.Face); exp.More(); exp.Next())
                 {
                     if (exp.Current().IsSame(itm))
                     {

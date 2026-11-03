@@ -5,11 +5,13 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.ChFi3d_FilletShape;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -33,7 +35,7 @@ namespace Occt;
 public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
 {
     private readonly ChFi3d_FilBuilder myBuilder;
-    private readonly NCollection_Map<TopoDS_Shape> myMap = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_Map<Shape> myMap = new(ShapeHasher.Instance);
 
     //=================================================================================================
 
@@ -43,7 +45,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     /// ChFi3d_QuasiAngular (a NURBS representation whose parametrization matches the circle's) or ChFi3d_Polynomial
     /// (a polynomial representation of circles).
     /// </summary>
-    public BRepFilletAPI_MakeFillet(in TopoDS_Shape S, ChFi3d_FilletShape FShape = ChFi3d_Rational)
+    public BRepFilletAPI_MakeFillet(in Shape S, ChFi3d_FilletShape FShape = ChFi3d_Rational)
     {
         myBuilder = new ChFi3d_FilBuilder(S, FShape);
     }
@@ -70,7 +72,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>Adds a fillet contour (a contour of tangent edges); the radius must be set after.</summary>
-    public override void Add(in TopoDS_Edge E)
+    public override void Add(in Edge E)
     {
         myBuilder.Add(E);
     }
@@ -78,7 +80,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>Adds a fillet contour with the radius <paramref name="Radius"/>.</summary>
-    public void Add(double Radius, in TopoDS_Edge E)
+    public void Add(double Radius, in Edge E)
     {
         // myBuilder.Add(Radius,E);
         myBuilder.Add(E);
@@ -95,7 +97,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     /// Adds a fillet contour whose radius evolves linearly from <paramref name="R1"/> to <paramref name="R2"/>
     /// between the first and last vertices of the spine.
     /// </summary>
-    public void Add(double R1, double R2, in TopoDS_Edge E)
+    public void Add(double R1, double R2, in Edge E)
     {
         myBuilder.Add(E);
         int IC = myBuilder.Contains(E, out int IinC);
@@ -108,7 +110,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>Adds a fillet contour whose radius evolves by the law <paramref name="L"/>.</summary>
-    public void Add(Law_Function L, in TopoDS_Edge E)
+    public void Add(Law_Function L, in Edge E)
     {
         // myBuilder.Add(L,E);
         myBuilder.Add(E);
@@ -125,7 +127,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     /// Adds a fillet contour whose radius interpolates the pairs <paramref name="UandR"/>: X a relative parameter on
     /// the spine in [0, 1], Y the radius there.
     /// </summary>
-    public void Add(NCollection_Array1<Point2D> UandR, in TopoDS_Edge E)
+    public void Add(NCollection_Array1<Point2D> UandR, in Edge E)
     {
         myBuilder.Add(E);
         int IC = myBuilder.Contains(E, out int IinC);
@@ -234,7 +236,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>True if the radius along the edge <paramref name="E"/> of the contour <paramref name="IC"/> is constant.</summary>
-    public bool IsConstant(int IC, in TopoDS_Edge E)
+    public bool IsConstant(int IC, in Edge E)
     {
         return myBuilder.IsConstant(IC, E);
     }
@@ -242,7 +244,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>The constant radius along the edge <paramref name="E"/> of the contour <paramref name="IC"/> (-1 if none).</summary>
-    public double Radius(int IC, in TopoDS_Edge E)
+    public double Radius(int IC, in Edge E)
     {
         return myBuilder.Radius(IC, E);
     }
@@ -250,7 +252,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>Assigns the radius <paramref name="Radius"/> to the edge <paramref name="E"/> of the contour <paramref name="IC"/>.</summary>
-    public void SetRadius(double Radius, int IC, in TopoDS_Edge E)
+    public void SetRadius(double Radius, int IC, in Edge E)
     {
         myBuilder.SetRadius(Radius, IC, E);
     }
@@ -258,7 +260,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>The bounds of the law on the edge <paramref name="E"/> of the contour <paramref name="IC"/>; false if it has none.</summary>
-    public bool GetBounds(int IC, in TopoDS_Edge E, ref double F, ref double L)
+    public bool GetBounds(int IC, in Edge E, ref double F, ref double L)
     {
         return myBuilder.GetBounds(IC, E, ref F, ref L);
     }
@@ -266,7 +268,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>The radius law on the edge <paramref name="E"/> of the contour <paramref name="IC"/> (null if none).</summary>
-    public Law_Function? GetLaw(int IC, in TopoDS_Edge E)
+    public Law_Function? GetLaw(int IC, in Edge E)
     {
         return myBuilder.GetLaw(IC, E);
     }
@@ -274,7 +276,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>Sets the radius law <paramref name="L"/> on the edge <paramref name="E"/> of the contour <paramref name="IC"/>.</summary>
-    public void SetLaw(int IC, in TopoDS_Edge E, Law_Function L)
+    public void SetLaw(int IC, in Edge E, Law_Function L)
     {
         myBuilder.SetLaw(IC, E, L);
     }
@@ -282,7 +284,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>Assigns the radius <paramref name="Radius"/> at the vertex <paramref name="V"/> of the contour <paramref name="IC"/>.</summary>
-    public void SetRadius(double Radius, int IC, in TopoDS_Vertex V)
+    public void SetRadius(double Radius, int IC, in Vertex V)
     {
         myBuilder.SetRadius(Radius, IC, V);
     }
@@ -312,7 +314,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
 
     //=================================================================================================
 
-    public override int Contour(in TopoDS_Edge E)
+    public override int Contour(in Edge E)
     {
         return myBuilder.Contains(E);
     }
@@ -329,16 +331,16 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>The edge <paramref name="J"/> of the contour <paramref name="I"/>: the caller's edge.</summary>
-    public override TopoDS_Edge Edge(int I, int J)
+    public override Edge Edge(int I, int J)
     {
         ChFiDS_Spine Spine = myBuilder.Value(I)!;
-        TopoDS_Edge S = Spine.Edges(J);
-        return TopoDS.Edge(myBuilder.FromWork(S)); // the caller's (OCCT.NET)
+        Edge S = Spine.Edges(J);
+        return ShapeCasts.Edge(myBuilder.FromWork(S)); // the caller's (OCCT.NET)
     }
 
     //=================================================================================================
 
-    public override void Remove(in TopoDS_Edge E)
+    public override void Remove(in Edge E)
     {
         myBuilder.Remove(E);
     }
@@ -352,28 +354,28 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
 
     //=================================================================================================
 
-    public override TopoDS_Vertex FirstVertex(int IC)
+    public override Vertex FirstVertex(int IC)
     {
         return myBuilder.FirstVertex(IC);
     }
 
     //=================================================================================================
 
-    public override TopoDS_Vertex LastVertex(int IC)
+    public override Vertex LastVertex(int IC)
     {
         return myBuilder.LastVertex(IC);
     }
 
     //=================================================================================================
 
-    public override double Abscissa(int IC, in TopoDS_Vertex V)
+    public override double Abscissa(int IC, in Vertex V)
     {
         return myBuilder.Abscissa(IC, V);
     }
 
     //=================================================================================================
 
-    public override double RelativeAbscissa(int IC, in TopoDS_Vertex V)
+    public override double RelativeAbscissa(int IC, in Vertex V)
     {
         return myBuilder.RelativeAbscissa(IC, V);
     }
@@ -418,8 +420,8 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
             myShape = myBuilder.InternalShape();
 
             // creation of the Map.
-            TopExp_Explorer ex = new();
-            for (ex.Init(myShape, TopAbs_FACE); ex.More(); ex.Next())
+            Explorer ex = new();
+            for (ex.Init(myShape, ShapeType.Face); ex.More(); ex.Next())
             {
                 myMap.Add(ex.Current());
             }
@@ -447,7 +449,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>The faces built on the surface <paramref name="I"/> (frozen).</summary>
-    public ISchematiqList<TopoDS_Shape> NewFaces(int I)
+    public ISchematiqList<Shape> NewFaces(int I)
     {
         BeforePublishingLists();
         return PublishedList(myBuilder.Builder().NewFaces(I));
@@ -486,7 +488,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     }
 
     // Generated(EorV): the faces of the fillets on the edge or vertex EorV.
-    internal override NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape EorV)
+    internal override NCollection_List<Shape> InternalGenerated(in Shape EorV)
     {
         return myBuilder.InternalGenerated(EorV);
     }
@@ -495,30 +497,30 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
 
     // Modified(F): the pieces of the face F (the union of the states OUT, IN and ON, as OCCT; the reconstruction
     // builds IN only, decision 1110).
-    internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape theF)
+    internal override NCollection_List<Shape> InternalModified(in Shape theF)
     {
-        TopoDS_Shape F = myBuilder.ToWork(theF); // the working copy's (OCCT.NET)
+        Shape F = myBuilder.ToWork(theF); // the working copy's (OCCT.NET)
         myGenerated.Clear();
 
-        if (myBuilder.Builder().IsSplit(F, TopAbs_OUT))
+        if (myBuilder.Builder().IsSplit(F, Out))
         {
-            NCollection_List<TopoDS_Shape>.Iterator It = new(myBuilder.Builder().Splits(F, TopAbs_OUT));
+            NCollection_List<Shape>.Iterator It = new(myBuilder.Builder().Splits(F, Out));
             for (; It.More(); It.Next())
             {
                 myGenerated.Append(It.Value());
             }
         }
-        if (myBuilder.Builder().IsSplit(F, TopAbs_IN))
+        if (myBuilder.Builder().IsSplit(F, In))
         {
-            NCollection_List<TopoDS_Shape>.Iterator It = new(myBuilder.Builder().Splits(F, TopAbs_IN));
+            NCollection_List<Shape>.Iterator It = new(myBuilder.Builder().Splits(F, In));
             for (; It.More(); It.Next())
             {
                 myGenerated.Append(It.Value());
             }
         }
-        if (myBuilder.Builder().IsSplit(F, TopAbs_ON))
+        if (myBuilder.Builder().IsSplit(F, On))
         {
-            NCollection_List<TopoDS_Shape>.Iterator It = new(myBuilder.Builder().Splits(F, TopAbs_ON));
+            NCollection_List<Shape>.Iterator It = new(myBuilder.Builder().Splits(F, On));
             for (; It.More(); It.Next())
             {
                 myGenerated.Append(It.Value());
@@ -530,12 +532,12 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>True if the face <paramref name="F"/> is neither in the result nor split.</summary>
-    public override bool IsDeleted(in TopoDS_Shape F)
+    public override bool IsDeleted(in Shape F)
     {
-        TopoDS_Shape aWork = myBuilder.ToWork(F); // the working copy's (OCCT.NET)
-        return !(myMap.Contains(F) || myMap.Contains(aWork) || myBuilder.Builder().IsSplit(aWork, TopAbs_OUT)
-                 || myBuilder.Builder().IsSplit(aWork, TopAbs_IN)
-                 || myBuilder.Builder().IsSplit(aWork, TopAbs_ON));
+        Shape aWork = myBuilder.ToWork(F); // the working copy's (OCCT.NET)
+        return !(myMap.Contains(F) || myMap.Contains(aWork) || myBuilder.Builder().IsSplit(aWork, Out)
+                 || myBuilder.Builder().IsSplit(aWork, In)
+                 || myBuilder.Builder().IsSplit(aWork, On));
     }
 
     //=================================================================================================
@@ -565,7 +567,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>The surface <paramref name="IS"/> computed on the contour <paramref name="IC"/>.</summary>
-    public Geom_Surface? ComputedSurface(int IC, int IS)
+    public Surface? ComputedSurface(int IC, int IS)
     {
         return myBuilder.ComputedSurface(IC, IS);
     }
@@ -581,7 +583,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>The <paramref name="IV"/>-th vertex where the corner failed (the caller's).</summary>
-    public TopoDS_Vertex FaultyVertex(int IV)
+    public Vertex FaultyVertex(int IV)
     {
         return myBuilder.FaultyVertex(IV);
     }
@@ -598,7 +600,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
 
     /// <summary>The partial result (frozen).</summary>
     /// <exception cref="NoSuchObjectException">There is none (<see cref="HasResult"/> is false).</exception>
-    public TopoDS_Shape BadShape()
+    public Shape BadShape()
     {
         return myBuilder.BadShape();
     }

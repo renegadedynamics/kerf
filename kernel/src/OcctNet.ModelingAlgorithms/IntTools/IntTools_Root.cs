@@ -4,7 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -18,8 +19,8 @@ public partial struct IntTools_Root : IEquatable<IntTools_Root>
     private double myRoot;
     private int myType;
     private double myLayerHeight;
-    private TopAbs_State myStateBefore;
-    private TopAbs_State myStateAfter;
+    private Containment myStateBefore;
+    private Containment myStateAfter;
     private double myt1;
     private double myt2;
     private double myf1;
@@ -32,8 +33,8 @@ public partial struct IntTools_Root : IEquatable<IntTools_Root>
         myRoot = 0.0;
         myType = -1;
         myLayerHeight = 0.0;
-        myStateBefore = TopAbs_UNKNOWN;
-        myStateAfter = TopAbs_UNKNOWN;
+        myStateBefore = Unknown;
+        myStateAfter = Unknown;
         myt1 = 0.0;
         myt2 = 0.0;
         myf1 = 0.0;
@@ -44,8 +45,8 @@ public partial struct IntTools_Root : IEquatable<IntTools_Root>
     public IntTools_Root(double aRoot, int aType)
     {
         myLayerHeight = 0.0;
-        myStateBefore = TopAbs_UNKNOWN;
-        myStateAfter = TopAbs_UNKNOWN;
+        myStateBefore = Unknown;
+        myStateAfter = Unknown;
         myt1 = 0.0;
         myt2 = 0.0;
         myf1 = 0.0;
@@ -58,9 +59,9 @@ public partial struct IntTools_Root : IEquatable<IntTools_Root>
 
     internal void SetType(int aType) => myType = aType;
 
-    internal void SetStateBefore(TopAbs_State aState) => myStateBefore = aState;
+    internal void SetStateBefore(Containment aState) => myStateBefore = aState;
 
-    internal void SetStateAfter(TopAbs_State aState) => myStateAfter = aState;
+    internal void SetStateAfter(Containment aState) => myStateAfter = aState;
 
     /// <summary>Not used in the edge/edge algorithm.</summary>
     internal void SetLayerHeight(double aHeight) => myLayerHeight = aHeight;
@@ -92,9 +93,9 @@ public partial struct IntTools_Root : IEquatable<IntTools_Root>
     /// </summary>
     public readonly int Type() => myType;
 
-    public readonly TopAbs_State StateBefore() => myStateBefore;
+    public readonly Containment StateBefore() => myStateBefore;
 
-    public readonly TopAbs_State StateAfter() => myStateAfter;
+    public readonly Containment StateAfter() => myStateAfter;
 
     /// <summary>Not used in the edge/edge algorithm.</summary>
     public readonly double LayerHeight() => myLayerHeight;
@@ -102,19 +103,19 @@ public partial struct IntTools_Root : IEquatable<IntTools_Root>
     /// <summary>True for the state pairs (before, after) OUT/IN, OUT/ON, ON/OUT and IN/OUT.</summary>
     public readonly bool IsValid()
     {
-        if (myStateBefore == TopAbs_OUT && myStateAfter == TopAbs_IN)
+        if (myStateBefore == Out && myStateAfter == In)
         {
             return true;
         }
-        if (myStateBefore == TopAbs_OUT && myStateAfter == TopAbs_ON)
+        if (myStateBefore == Out && myStateAfter == On)
         {
             return true;
         }
-        if (myStateBefore == TopAbs_ON && myStateAfter == TopAbs_OUT)
+        if (myStateBefore == On && myStateAfter == Out)
         {
             return true;
         }
-        if (myStateBefore == TopAbs_IN && myStateAfter == TopAbs_OUT)
+        if (myStateBefore == In && myStateAfter == Out)
         {
             return true;
         }
@@ -137,14 +138,14 @@ public partial struct IntTools_Root : IEquatable<IntTools_Root>
         return aCopy;
     }
 
-    public readonly IntTools_Root WithStateBefore(TopAbs_State aState)
+    public readonly IntTools_Root WithStateBefore(Containment aState)
     {
         IntTools_Root aCopy = this;
         aCopy.SetStateBefore(aState);
         return aCopy;
     }
 
-    public readonly IntTools_Root WithStateAfter(TopAbs_State aState)
+    public readonly IntTools_Root WithStateAfter(Containment aState)
     {
         IntTools_Root aCopy = this;
         aCopy.SetStateAfter(aState);

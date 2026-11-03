@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation.Advanced;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
@@ -55,7 +56,7 @@ public class GeomFill_ConstrainedFilling
     private int nbd3;
     private NCollection_HArray2<Point3D>? S0;
     private NCollection_HArray2<Point3D>? S1;
-    private Geom_BSplineSurface? surf;
+    private BSplineSurface? surf;
 
     private static int inqadd(double d1, double d2, Span<double> k, Span<int> m, int deg, double tolk)
     {
@@ -311,7 +312,7 @@ public class GeomFill_ConstrainedFilling
     }
 
     // The evaluator of the curve approximation (OCCT's GeomFill_ConstrainedFilling_Eval).
-    private sealed class GeomFill_ConstrainedFilling_Eval(GeomFill_ConstrainedFilling theTool) : AdvApprox_EvaluatorFunction
+    private sealed class GeomFill_ConstrainedFilling_Eval(GeomFill_ConstrainedFilling theTool) : EvaluatorFunction
     {
         private readonly GeomFill_ConstrainedFilling curfil = theTool;
 
@@ -548,14 +549,14 @@ public class GeomFill_ConstrainedFilling
     public GeomFill_Boundary Boundary(int I) => ptch!.Bound(I);
 
     /// <summary>The surface (null before <c>Init</c>), frozen.</summary>
-    public Geom_BSplineSurface? Surface()
+    public BSplineSurface? Surface()
     {
         surf?.Freeze();
         return surf;
     }
 
     /// <summary>The surface, not frozen, for ported callers.</summary>
-    internal Geom_BSplineSurface? InternalSurface() => surf;
+    internal BSplineSurface? InternalSurface() => surf;
 
     private void Build()
     {
@@ -613,9 +614,9 @@ public class GeomFill_ConstrainedFilling
         ptch!.Bound(ibound[0]).Bounds(out f, out l);
 
         GeomFill_ConstrainedFilling_Eval ev = new(this);
-        AdvApprox_ApproxAFunction app = new(0, 0, nbd3, tol1d, tol2d, tol3d, f, l, C1, degmax, segmax, ev);
+        ApproxAFunction app = new(0, 0, nbd3, tol1d, tol2d, tol3d, f, l, C1, degmax, segmax, ev);
 
-        if (app.IsDone() || app.HasResult())
+        if (app.IsDone || app.HasResult)
         {
             int imk = Min(ibound[0], ibound[1]);
             int nbpol = app.NbPoles();
@@ -1138,7 +1139,7 @@ public class GeomFill_ConstrainedFilling
                 temp[i, j].SetXYZ(t0[i, j].XYZ().Added(t1[i, j].XYZ()));
             }
         }
-        surf = new Geom_BSplineSurface(temp, nk[0]!.Array1(), nk[1]!.Array1(), nm[0]!.Array1(), nm[1]!.Array1(),
+        surf = new BSplineSurface(temp, nk[0]!.Array1(), nk[1]!.Array1(), nm[0]!.Array1(), nm[1]!.Array1(),
                                        degree[0], degree[1]);
     }
 

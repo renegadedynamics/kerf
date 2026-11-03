@@ -2,10 +2,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.BRepCheck_Status;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -17,12 +20,12 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepCheck_FaceTest
 {
-    private static TopoDS_Wire MakeWire(params TopoDS_Edge[] theEdges)
+    private static Wire MakeWire(params Edge[] theEdges)
     {
-        var aB = new BRep_Builder();
-        TopoDS_Wire aW = new();
+        var aB = new BrepBuilder();
+        Wire aW = new();
         aB.MakeWire(ref aW);
-        foreach (TopoDS_Edge anE in theEdges)
+        foreach (Edge anE in theEdges)
         {
             aB.Add(aW, anE);
         }
@@ -30,47 +33,47 @@ public class BRepCheck_FaceTest
         return aW;
     }
 
-    private static TopoDS_Wire makeRectangle(double theXMin, double theYMin, double theXMax, double theYMax)
+    private static Wire makeRectangle(double theXMin, double theYMin, double theXMax, double theYMax)
     {
-        TopoDS_Vertex aP1 = TestShapes.Vertex(new Point3D(theXMin, theYMin, 0.0));
-        TopoDS_Vertex aP2 = TestShapes.Vertex(new Point3D(theXMax, theYMin, 0.0));
-        TopoDS_Vertex aP3 = TestShapes.Vertex(new Point3D(theXMax, theYMax, 0.0));
-        TopoDS_Vertex aP4 = TestShapes.Vertex(new Point3D(theXMin, theYMax, 0.0));
-        TopoDS_Wire aW = MakeWire(TestShapes.Edge(aP1, aP2), TestShapes.Edge(aP2, aP3), TestShapes.Edge(aP3, aP4),
+        Vertex aP1 = TestShapes.Vertex(new Point3D(theXMin, theYMin, 0.0));
+        Vertex aP2 = TestShapes.Vertex(new Point3D(theXMax, theYMin, 0.0));
+        Vertex aP3 = TestShapes.Vertex(new Point3D(theXMax, theYMax, 0.0));
+        Vertex aP4 = TestShapes.Vertex(new Point3D(theXMin, theYMax, 0.0));
+        Wire aW = MakeWire(TestShapes.Edge(aP1, aP2), TestShapes.Edge(aP2, aP3), TestShapes.Edge(aP3, aP4),
                                   TestShapes.Edge(aP4, aP1));
         aW.Closed(true);
         return aW;
     }
 
-    private static TopoDS_Face makePlanarFace()
+    private static Face makePlanarFace()
     {
-        TopoDS_Wire anOuterWire = makeRectangle(0.0, 0.0, 100.0, 100.0);
-        var aB = new BRep_Builder();
-        TopoDS_Face aF = new();
-        aB.MakeFace(ref aF, new Geom_Plane(new Plane3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0))),
+        Wire anOuterWire = makeRectangle(0.0, 0.0, 100.0, 100.0);
+        var aB = new BrepBuilder();
+        Face aF = new();
+        aB.MakeFace(ref aF, new PlaneSurface(new Plane3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0))),
                     global::Kerf.Engine.Foundation.Precision.Confusion());
         aB.Add(aF, anOuterWire);
         return aF;
     }
 
     // BRepBuilderAPI_MakeEdge(gp_Circ): a closed edge on one vertex, over [0, 2 Pi]
-    private static TopoDS_Edge CircleEdge(in Circle3D theCirc)
+    private static Edge CircleEdge(in Circle3D theCirc)
     {
-        var aC = new Geom_Circle(theCirc);
+        var aC = new CircleCurve3D(theCirc);
         return TestShapes.Edge(aC, 0.0, 2.0 * Math.PI);
     }
 
-    private static bool addCircularHole(in TopoDS_Face theFace, in Point3D theCenter, double theRadius)
+    private static bool addCircularHole(in Face theFace, in Point3D theCenter, double theRadius)
     {
-        TopoDS_Edge anEdge = CircleEdge(new Circle3D(new Frame3D(theCenter, new Direction3D(0.0, 0.0, 1.0)), theRadius));
-        TopoDS_Wire aHole = MakeWire(anEdge);
+        Edge anEdge = CircleEdge(new Circle3D(new Frame3D(theCenter, new Direction3D(0.0, 0.0, 1.0)), theRadius));
+        Wire aHole = MakeWire(anEdge);
         aHole.Closed(true);
         aHole.Reverse();
-        new BRep_Builder().Add(theFace, aHole);
+        new BrepBuilder().Add(theFace, aHole);
         return true;
     }
 
-    private static BRepCheck_Status classifyWires(in TopoDS_Face theFace)
+    private static BRepCheck_Status classifyWires(in Face theFace)
     {
         var aChecker = new BRepCheck_Face(theFace);
         return aChecker.ClassifyWires();
@@ -79,8 +82,8 @@ public class BRepCheck_FaceTest
     [Fact]
     public void ClassifyWires_DisjointHolesAreValid()
     {
-        TopoDS_Face aFace = makePlanarFace();
-        Assert.False(aFace.IsNull());
+        Face aFace = makePlanarFace();
+        Assert.False(aFace.IsNull);
 
         for (int aRow = 0; aRow < 5; ++aRow)
         {
@@ -99,21 +102,21 @@ public class BRepCheck_FaceTest
     [Fact]
     public void ClassifyWires_OffsetPCurve()
     {
-        TopoDS_Face aFace = makePlanarFace();
-        Assert.False(aFace.IsNull());
+        Face aFace = makePlanarFace();
+        Assert.False(aFace.IsNull);
 
         var aCenter2d = new Point2D(50.0, 50.0);
-        var aBasis = new Geom2d_Circle(new Axis2D(aCenter2d, new Direction2D(1.0, 0.0)), 4.0);
-        var anOffset = new Geom2d_OffsetCurve(aBasis, 1.0);
+        var aBasis = new CircleCurve2D(new Axis2D(aCenter2d, new Direction2D(1.0, 0.0)), 4.0);
+        var anOffset = new OffsetCurve2D(aBasis, 1.0);
         double aRadius = anOffset.Value(0.0).Distance(aCenter2d);
 
-        TopoDS_Edge anEdge = CircleEdge(new Circle3D(new Frame3D(new Point3D(50.0, 50.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), aRadius));
+        Edge anEdge = CircleEdge(new Circle3D(new Frame3D(new Point3D(50.0, 50.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), aRadius));
 
-        new BRep_Builder().UpdateEdge(anEdge, anOffset, aFace, global::Kerf.Engine.Foundation.Precision.Confusion());
-        TopoDS_Wire aHole = MakeWire(anEdge);
+        new BrepBuilder().UpdateEdge(anEdge, anOffset, aFace, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Wire aHole = MakeWire(anEdge);
         aHole.Closed(true);
         aHole.Reverse();
-        new BRep_Builder().Add(aFace, aHole);
+        new BrepBuilder().Add(aFace, aHole);
 
         aFace = TestShapes.Frozen(aFace);
         Assert.Equal(BRepCheck_NoError, classifyWires(aFace));
@@ -122,15 +125,15 @@ public class BRepCheck_FaceTest
     [Fact]
     public void ClassifyWires_OpenWireFallbackIsOrientationIndependent()
     {
-        TopoDS_Face aFace = makePlanarFace();
-        Assert.False(aFace.IsNull());
+        Face aFace = makePlanarFace();
+        Assert.False(aFace.IsNull);
 
-        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(120.0, 10.0, 0.0), new Point3D(130.0, 10.0, 0.0));
-        new BRep_Builder().Add(aFace, MakeWire(anEdge));
+        Edge anEdge = TestShapes.Edge(new Point3D(120.0, 10.0, 0.0), new Point3D(130.0, 10.0, 0.0));
+        new BrepBuilder().Add(aFace, MakeWire(anEdge));
 
         aFace = TestShapes.Frozen(aFace);
         BRepCheck_Status aForwardStatus = classifyWires(aFace);
-        TopoDS_Face aReversedFace = TopoDS.Face(aFace.Reversed());
+        Face aReversedFace = ShapeCasts.Face(aFace.Reversed());
         Assert.Equal(BRepCheck_NoError, aForwardStatus);
         Assert.Equal(aForwardStatus, classifyWires(aReversedFace));
     }
@@ -138,22 +141,22 @@ public class BRepCheck_FaceTest
     [Fact]
     public void ClassifyWires_UnboundedWireFallbackIsOrientationIndependent()
     {
-        TopoDS_Face aFace = makePlanarFace();
-        Assert.False(aFace.IsNull());
+        Face aFace = makePlanarFace();
+        Assert.False(aFace.IsNull);
 
-        var aLine = new Geom_Line(new Line3D(new Point3D(0.0, 120.0, 0.0), new Direction3D(1.0, 0.0, 0.0)));
+        var aLine = new LineCurve3D(new Line3D(new Point3D(0.0, 120.0, 0.0), new Direction3D(1.0, 0.0, 0.0)));
         // BRepBuilderAPI_MakeEdge(line): the whole line, without vertices
-        var aB = new BRep_Builder();
-        TopoDS_Edge anEdge = new();
+        var aB = new BrepBuilder();
+        Edge anEdge = new();
         aB.MakeEdge(ref anEdge, aLine, global::Kerf.Engine.Foundation.Precision.Confusion());
         aB.Range(anEdge, aLine.FirstParameter(), aLine.LastParameter());
         aB.Add(aFace, MakeWire(anEdge));
 
         aFace = TestShapes.Frozen(aFace);
         BRepCheck_Status aForwardStatus = classifyWires(aFace);
-        TopoDS_Face aReversedFace = TopoDS.Face(aFace.Reversed());
+        Face aReversedFace = ShapeCasts.Face(aFace.Reversed());
         Assert.Equal(BRepCheck_NoError, aForwardStatus);
         Assert.Equal(aForwardStatus, classifyWires(aReversedFace));
-        Assert.Equal(TopAbs_REVERSED, aReversedFace.Orientation());
+        Assert.Equal(Reversed, aReversedFace.Orientation());
     }
 }

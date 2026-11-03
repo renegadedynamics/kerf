@@ -6,11 +6,13 @@
 // as written (decisions 77 and 902). Properties returning a ReadOnlySpan over a constant array are stored in the
 // assembly's data section: reading them allocates nothing. Don't edit: regenerate.
 
-namespace Occt;
+using Occt;
 
-internal static partial class AdvApp2Var_Data
+namespace Kerf.Engine.Approximation.Advanced;
+
+internal static partial class Data
 {
-    private static readonly mdnombr_1_ s_mdnombr = new()
+    private static readonly MdnombrCommon S_mdnombr = new()
     {
         pi = 3.141592653589793,
         deuxpi = 6.283185307179586,
@@ -24,9 +26,9 @@ internal static partial class AdvApp2Var_Data
         a90 = 90.0,
     };
 
-    public static ref readonly mdnombr_1_ Getmdnombr() => ref s_mdnombr;
+    public static ref readonly MdnombrCommon Getmdnombr() => ref S_mdnombr;
 
-    public static minombr_1_ Getminombr() => new(s_nbr);
+    public static MinombrCommon Getminombr() => new(s_nbr);
 
     // C++: minombr_1_::nbr[1001].
     private static ReadOnlySpan<int> s_nbr => [
@@ -83,7 +85,7 @@ internal static partial class AdvApp2Var_Data
         1000,
     ];
 
-    private static readonly maovpar_1_ s_maovpar = new()
+    private static readonly MaovparCommon S_maovpar = new()
     {
         r8und = 2.225073858507201e-307,
         r8ovr = 1.797693134862315e307,
@@ -107,9 +109,9 @@ internal static partial class AdvApp2Var_Data
         i2ovn = -32768,
     };
 
-    public static ref readonly maovpar_1_ Getmaovpar() => ref s_maovpar;
+    public static ref readonly MaovparCommon Getmaovpar() => ref S_maovpar;
 
-    private static readonly maovpch_1_ s_maovpch = new()
+    private static readonly MaovpchCommon S_maovpch = new()
     {
         cnmmac = "SGI_IRIS        ",
         frmr4 = "(D15.6) ",
@@ -117,5 +119,5 @@ internal static partial class AdvApp2Var_Data
         cdcode = "D_FLOAT ",
     };
 
-    public static ref readonly maovpch_1_ Getmaovpch() => ref s_maovpch;
+    public static ref readonly MaovpchCommon Getmaovpch() => ref S_maovpch;
 }

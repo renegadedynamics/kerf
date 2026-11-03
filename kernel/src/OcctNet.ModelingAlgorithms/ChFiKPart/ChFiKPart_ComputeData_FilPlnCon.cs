@@ -4,9 +4,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Intersection;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ChFiKPart_ComputeData_Fcts;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -20,9 +22,9 @@ internal static class ChFiKPart_ComputeData_FilPlnCon
 
     /// <summary>The fillet between a plane and a cone orthogonal to it, along their circle.</summary>
     internal static bool ChFiKPart_MakeFillet(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Data, in Plane3D Pln,
-                                              in Cone Con, double fu, double lu, TopAbs_Orientation Or1,
-                                              TopAbs_Orientation Or2, double Radius, in Circle3D Spine, double First,
-                                              TopAbs_Orientation Ofpl, bool plandab)
+                                              in Cone Con, double fu, double lu, Orientation Or1,
+                                              Orientation Or2, double Radius, in Circle3D Spine, double First,
+                                              Orientation Ofpl, bool plandab)
     {
         // calculate the fillet (torus or sphere).
         bool c1sphere = false;
@@ -30,11 +32,11 @@ internal static class ChFiKPart_ComputeData_FilPlnCon
         Direction3D Dpnat = PosPl.XDirection().Crossed(PosPl.YDirection());
         Direction3D Dp = Dpnat;
         Direction3D Df = Dp;
-        if (Or1 == TopAbs_REVERSED)
+        if (Or1 == Reversed)
         {
             Dp.Reverse();
         }
-        if (Ofpl == TopAbs_REVERSED)
+        if (Ofpl == Reversed)
         {
             Df.Reverse();
         }
@@ -46,9 +48,9 @@ internal static class ChFiKPart_ComputeData_FilPlnCon
         Point3D cPln = Or;
         Or.SetCoord(Or.X() + Radius * Dp.X(), Or.Y() + Radius * Dp.Y(), Or.Z() + Radius * Dp.Z());
         global::Kerf.Engine.Geometry.ElCLib.D1(First, Spine, out Point3D PtSp, out Vector3D DSp);
-        IntAna_QuadQuadGeo CInt = new(Pln, Con, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        QuadQuadGeo CInt = new(Pln, Con, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Point3D Pv;
-        if (CInt.IsDone())
+        if (CInt.IsDone)
         {
             // The origin of the fillet is set at the start point on the
             // guideline.
@@ -63,7 +65,7 @@ internal static class ChFiKPart_ComputeData_FilPlnCon
         global::Kerf.Engine.Geometry.ElSLib.Parameters(Con, Pv, out u, out v);
         global::Kerf.Engine.Geometry.ElSLib.D1(u, v, Con, out Point3D PtCon, out Vector3D Vu, out Vector3D Vv);
         Direction3D Dc = new(Vu.Crossed(Vv));
-        if (Or2 == TopAbs_REVERSED)
+        if (Or2 == Reversed)
         {
             Dc.Reverse();
         }
@@ -116,12 +118,12 @@ internal static class ChFiKPart_ComputeData_FilPlnCon
         }
         if (c1sphere)
         {
-            Geom_SphericalSurface gsph = new(FilAx3, Radius);
+            SphericalSurface gsph = new(FilAx3, Radius);
             Data.ChangeSurf(ChFiKPart_IndexSurfaceInDS(gsph, DStr));
         }
         else
         {
-            Geom_ToroidalSurface gtor = new(FilAx3, Rad, Radius);
+            ToroidalSurface gtor = new(FilAx3, Rad, Radius);
             Data.ChangeSurf(ChFiKPart_IndexSurfaceInDS(gtor, DStr));
         }
         // It is checked if the orientation of the fillet is the same
@@ -148,18 +150,18 @@ internal static class ChFiKPart_ComputeData_FilPlnCon
         bool toreverse = (norFil.Dot(Df) <= 0.0);
         if (toreverse)
         {
-            Data.ChangeOrientation() = TopAbs_REVERSED;
+            Data.ChangeOrientation() = Reversed;
         }
         else
         {
-            Data.ChangeOrientation() = TopAbs_FORWARD;
+            Data.ChangeOrientation() = Forward;
         }
         // FaceInterferences are loaded with pcurves and curves 3d.
         // ---------------------------------------------------------------
         // The plane face.
         // --------------
-        Geom2d_Circle? GCirc2dPln = null;
-        Geom_Circle? GCircPln = null;
+        CircleCurve2D? GCirc2dPln = null;
+        CircleCurve3D? GCircPln = null;
         Frame3D circAx2 = FilAx3.Ax2();
         if (!c1sphere)
         {
@@ -168,22 +170,22 @@ internal static class ChFiKPart_ComputeData_FilPlnCon
             Direction2D d2d = new(DSp.Dot(new Vector3D(PosPl.XDirection())), DSp.Dot(new Vector3D(PosPl.YDirection())));
             Frame2D ax2dPln = new(c2dPln, new Direction2D(new Vector2D(c2dPln, p2dPln)), d2d);
             Circle2D circ2dPln = new(ax2dPln, Rad);
-            GCirc2dPln = new Geom2d_Circle(circ2dPln);
+            GCirc2dPln = new CircleCurve2D(circ2dPln);
             circAx2.SetLocation(cPln);
             Circle3D circPln = new(circAx2, Rad);
-            GCircPln = new Geom_Circle(circPln);
+            GCircPln = new CircleCurve3D(circPln);
         }
         Line2D lin2dFil = new(p2dFil, Constants.DX2d());
-        Geom2d_Line GLin2dFil1 = new(lin2dFil);
+        LineCurve2D GLin2dFil1 = new(lin2dFil);
         toreverse = (norFil.Dot(Dpnat) <= 0.0);
-        TopAbs_Orientation trans;
+        Orientation trans;
         if ((toreverse && plandab) || (!toreverse && !plandab))
         {
-            trans = TopAbs_FORWARD;
+            trans = Forward;
         }
         else
         {
-            trans = TopAbs_REVERSED;
+            trans = Reversed;
         }
         if (plandab)
         {
@@ -215,7 +217,7 @@ internal static class ChFiKPart_ComputeData_FilPlnCon
         norFil = new Direction3D(deru.Crossed(derv));
         p2dFil.SetCoord(0.0, v);
         lin2dFil.SetLocation(p2dFil);
-        Geom2d_Line GLin2dFil2 = new(lin2dFil);
+        LineCurve2D GLin2dFil2 = new(lin2dFil);
         global::Kerf.Engine.Geometry.ElSLib.Parameters(Con, P, out u, out v);
         double tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         bool careaboutsens = false;
@@ -252,20 +254,20 @@ internal static class ChFiKPart_ComputeData_FilPlnCon
         }
         Point2D p2dCon = new(u, v);
         Line2D lin2dCon = new(p2dCon, d2dCon);
-        Geom2d_Line GLin2dCon = new(lin2dCon);
+        LineCurve2D GLin2dCon = new(lin2dCon);
         double scal = new Vector3D(Dp).Dot(new Vector3D(Pv, P));
         PP.SetCoord(cPln.X() + scal * Dp.X(), cPln.Y() + scal * Dp.Y(), cPln.Z() + scal * Dp.Z());
         circAx2.SetLocation(PP);
         Circle3D circCon = new(circAx2, P.Distance(PP));
-        Geom_Circle GCircCon = new(circCon);
+        CircleCurve3D GCircCon = new(circCon);
         toreverse = (norFil.Dot(norCon) <= 0.0);
         if ((toreverse && plandab) || (!toreverse && !plandab))
         {
-            trans = TopAbs_REVERSED;
+            trans = Reversed;
         }
         else
         {
-            trans = TopAbs_FORWARD;
+            trans = Forward;
         }
         if (plandab)
         {

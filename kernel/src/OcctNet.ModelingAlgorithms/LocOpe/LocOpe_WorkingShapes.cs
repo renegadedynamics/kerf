@@ -3,6 +3,14 @@
 // OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+
+using Kerf.Engine.Topology.Brep;
+
+using Kerf.Engine.Topology.Tools;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -15,27 +23,27 @@ namespace Occt;
 /// a shape and other shapes that refer to it or lie on it (splitting edges and wires, vertices, a glued shape) and, as
 /// OCCT does, writes into all of them. A shape a caller holds is frozen, so every shape entering the operation goes
 /// through <see cref="Working"/>: a shape whose graph holds a frozen TShape is replaced by its exact copy for write
-/// (<see cref="BRepTools.ExactCopyForWrite(in TopoDS_Shape, Dictionary{TopoDS_TShape, TopoDS_TShape})"/>), all copies
+/// (<see cref="BrepTools.ExactCopyForWrite(in Shape, Dictionary{TShape, TShape})"/>), all copies
 /// sharing one map, so a vertex of a splitting edge and the same vertex given alone, or a face given with the shape it
 /// belongs to, have one copy; a shape without a frozen TShape (ported code's own) is worked on in place, as in OCCT.
 /// </para>
 /// <para>
 /// <see cref="Finish"/> ends the operation: every copy it left equal to its original is replaced by that original in the
-/// shapes it built (<see cref="BRepTools.KeepUnchangedIn"/>), so the result shares the caller's unchanged sub-shapes;
-/// <see cref="Final(in TopoDS_Shape)"/> then maps a shape the operation worked with to what stands for it. The caller's shapes given to a
+/// shapes it built (<see cref="BrepTools.KeepUnchangedIn"/>), so the result shares the caller's unchanged sub-shapes;
+/// <see cref="Final(in Shape)"/> then maps a shape the operation worked with to what stands for it. The caller's shapes given to a
 /// query are mapped to the working ones with <see cref="Copied"/>, which never copies. The operation's public accessors
 /// freeze what they hand out.
 /// </para>
 /// </remarks>
 internal sealed class LocOpe_WorkingShapes
 {
-    private readonly Dictionary<TopoDS_TShape, TopoDS_TShape> myCopies = new(ReferenceEqualityComparer.Instance);    // original -> copy
-    private readonly Dictionary<TopoDS_TShape, TopoDS_TShape> myOriginals = new(ReferenceEqualityComparer.Instance); // copy -> original
+    private readonly Dictionary<TShape, TShape> myCopies = new(ReferenceEqualityComparer.Instance);    // original -> copy
+    private readonly Dictionary<TShape, TShape> myOriginals = new(ReferenceEqualityComparer.Instance); // copy -> original
     // what ExactCopyForWrite reuses: the copies, and each copy as its own
-    private readonly Dictionary<TopoDS_TShape, TopoDS_TShape> myKnown = new(ReferenceEqualityComparer.Instance);
-    private readonly List<TopoDS_Shape> myOriginalRoots = [];
-    private readonly List<TopoDS_Shape> myCopyRoots = [];
-    private Dictionary<TopoDS_TShape, TopoDS_TShape>? myFinal; // copy -> what stands for it after Finish
+    private readonly Dictionary<TShape, TShape> myKnown = new(ReferenceEqualityComparer.Instance);
+    private readonly List<Shape> myOriginalRoots = [];
+    private readonly List<Shape> myCopyRoots = [];
+    private Dictionary<TShape, TShape>? myFinal; // copy -> what stands for it after Finish
     private bool myIsFinished;
 
     /// <summary>True when some shape was copied.</summary>
@@ -49,36 +57,36 @@ internal sealed class LocOpe_WorkingShapes
     /// it), a new copy if its graph holds a frozen TShape, else the shape itself. After <see cref="Finish"/>, only
     /// <see cref="Copied"/>.
     /// </summary>
-    public TopoDS_Shape Working(in TopoDS_Shape theShape)
+    public Shape Working(in Shape theShape)
     {
-        TopoDS_TShape? aTShape = theShape.TShape();
+        TShape? aTShape = theShape.TShape();
         if (aTShape is null)
         {
             return theShape;
         }
-        if (myKnown.TryGetValue(aTShape, out TopoDS_TShape? anImage))
+        if (myKnown.TryGetValue(aTShape, out TShape? anImage))
         {
             return withImage(theShape, anImage);
         }
-        if (myIsFinished || !BRepTools.HoldsFrozen(theShape))
+        if (myIsFinished || !BrepTools.HoldsFrozen(theShape))
         {
             return theShape;
         }
 
         int aNbKnown = myKnown.Count;
-        TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(theShape, myKnown);
+        Shape aCopy = BrepTools.ExactCopyForWrite(theShape, myKnown);
         if (myKnown.Count != aNbKnown)
         {
             // the new pairs: the TShapes of the shape's graph that weren't known
-            var aNew = new List<KeyValuePair<TopoDS_TShape, TopoDS_TShape>>();
-            foreach (KeyValuePair<TopoDS_TShape, TopoDS_TShape> aPair in myKnown)
+            var aNew = new List<KeyValuePair<TShape, TShape>>();
+            foreach (KeyValuePair<TShape, TShape> aPair in myKnown)
             {
                 if (!ReferenceEquals(aPair.Key, aPair.Value) && !myCopies.ContainsKey(aPair.Key))
                 {
                     aNew.Add(aPair);
                 }
             }
-            foreach (KeyValuePair<TopoDS_TShape, TopoDS_TShape> aPair in aNew)
+            foreach (KeyValuePair<TShape, TShape> aPair in aNew)
             {
                 myCopies[aPair.Key] = aPair.Value;
                 myOriginals[aPair.Value] = aPair.Key;
@@ -94,17 +102,17 @@ internal sealed class LocOpe_WorkingShapes
     /// The working shape standing for <paramref name="theShape"/> (a caller's shape given to a query): its copy if it
     /// was copied, else itself. Never copies.
     /// </summary>
-    public TopoDS_Shape Copied(in TopoDS_Shape theShape)
+    public Shape Copied(in Shape theShape)
     {
-        TopoDS_TShape? aTShape = theShape.TShape();
-        return aTShape is not null && myCopies.TryGetValue(aTShape, out TopoDS_TShape? anImage) ? withImage(theShape, anImage) : theShape;
+        TShape? aTShape = theShape.TShape();
+        return aTShape is not null && myCopies.TryGetValue(aTShape, out TShape? anImage) ? withImage(theShape, anImage) : theShape;
     }
 
     /// <summary>The caller's shape a working copy was made from (the shape itself if it isn't a copy).</summary>
-    public TopoDS_Shape Original(in TopoDS_Shape theShape)
+    public Shape Original(in Shape theShape)
     {
-        TopoDS_TShape? aTShape = theShape.TShape();
-        return aTShape is not null && myOriginals.TryGetValue(aTShape, out TopoDS_TShape? anImage) ? withImage(theShape, anImage) : theShape;
+        TShape? aTShape = theShape.TShape();
+        return aTShape is not null && myOriginals.TryGetValue(aTShape, out TShape? anImage) ? withImage(theShape, anImage) : theShape;
     }
 
     /// <summary>
@@ -112,7 +120,7 @@ internal sealed class LocOpe_WorkingShapes
     /// each of them if it is a copy), every copy left equal to its original is replaced by the original. Once only;
     /// nothing is done when nothing was copied.
     /// </summary>
-    public void Finish(IEnumerable<TopoDS_Shape> theShapes)
+    public void Finish(IEnumerable<Shape> theShapes)
     {
         if (myIsFinished)
         {
@@ -127,29 +135,29 @@ internal sealed class LocOpe_WorkingShapes
         // one unfrozen compound holds every shape, another the roots copied and a third their copies, so that
         // KeepUnchangedIn compares each copy with its original and replaces the kept ones in all the graphs at once.
         // The children are appended directly: BRep_Builder.Add would clear their Free flags.
-        TopoDS_Shape aHeld = holder(theShapes);
-        TopoDS_Shape anOriginals = holder(myOriginalRoots);
-        TopoDS_Shape aCopies = holder(myCopyRoots);
-        myFinal = BRepTools.KeepUnchangedIn(anOriginals, aCopies, myCopies, ref aHeld, out _);
+        Shape aHeld = holder(theShapes);
+        Shape anOriginals = holder(myOriginalRoots);
+        Shape aCopies = holder(myCopyRoots);
+        myFinal = BrepTools.KeepUnchangedIn(anOriginals, aCopies, myCopies, ref aHeld, out _);
     }
 
     /// <summary>
     /// After <see cref="Finish"/>, what stands for a shape the operation worked with: for a copy, its original if the
     /// operation left it unchanged, else the copy; any other shape is itself. Before, the shape itself.
     /// </summary>
-    public TopoDS_Shape Final(in TopoDS_Shape theShape)
+    public Shape Final(in Shape theShape)
     {
-        TopoDS_TShape? aTShape = theShape.TShape();
-        return aTShape is not null && myFinal is not null && myFinal.TryGetValue(aTShape, out TopoDS_TShape? anImage)
+        TShape? aTShape = theShape.TShape();
+        return aTShape is not null && myFinal is not null && myFinal.TryGetValue(aTShape, out TShape? anImage)
                    ? withImage(theShape, anImage)
                    : theShape;
     }
 
-    /// <summary>A new list of the <see cref="Final(in TopoDS_Shape)"/> shapes of <paramref name="theList"/>.</summary>
-    public NCollection_List<TopoDS_Shape> Final(NCollection_List<TopoDS_Shape> theList)
+    /// <summary>A new list of the <see cref="Final(in Shape)"/> shapes of <paramref name="theList"/>.</summary>
+    public NCollection_List<Shape> Final(NCollection_List<Shape> theList)
     {
-        var aList = new NCollection_List<TopoDS_Shape>();
-        for (NCollection_List<TopoDS_Shape>.Iterator anIt = new(theList); anIt.More(); anIt.Next())
+        var aList = new NCollection_List<Shape>();
+        for (NCollection_List<Shape>.Iterator anIt = new(theList); anIt.More(); anIt.Next())
         {
             aList.Append(Final(anIt.Value()));
         }
@@ -157,9 +165,9 @@ internal sealed class LocOpe_WorkingShapes
     }
 
     /// <summary>Freezes the shapes of a list a public accessor hands out, and returns it.</summary>
-    public static NCollection_List<TopoDS_Shape> Published(NCollection_List<TopoDS_Shape> theList)
+    public static NCollection_List<Shape> Published(NCollection_List<Shape> theList)
     {
-        for (NCollection_List<TopoDS_Shape>.Iterator anIt = new(theList); anIt.More(); anIt.Next())
+        for (NCollection_List<Shape>.Iterator anIt = new(theList); anIt.More(); anIt.Next())
         {
             anIt.Value().TShape()?.FreezeGraph();
         }
@@ -167,30 +175,30 @@ internal sealed class LocOpe_WorkingShapes
     }
 
     /// <summary>Freezes a shape a public accessor hands out, and returns it.</summary>
-    public static TopoDS_Shape Published(TopoDS_Shape theShape)
+    public static Shape Published(Shape theShape)
     {
         theShape.TShape()?.FreezeGraph();
         return theShape;
     }
 
-    private static TopoDS_Shape holder(IEnumerable<TopoDS_Shape> theShapes)
+    private static Shape holder(IEnumerable<Shape> theShapes)
     {
-        var aHolder = new TopoDS_Compound();
-        new BRep_Builder().MakeCompound(ref aHolder);
-        TopoDS_TShape aTShape = aHolder.TShape()!;
-        foreach (TopoDS_Shape aShape in theShapes)
+        var aHolder = new Compound();
+        new BrepBuilder().MakeCompound(ref aHolder);
+        TShape aTShape = aHolder.TShape()!;
+        foreach (Shape aShape in theShapes)
         {
-            if (!aShape.IsNull())
+            if (!aShape.IsNull)
             {
-                aTShape.myShapes.Append(aShape);
+                aTShape._shapes.Append(aShape);
             }
         }
         return aHolder;
     }
 
-    private static TopoDS_Shape withImage(in TopoDS_Shape theShape, TopoDS_TShape theImage)
+    private static Shape withImage(in Shape theShape, TShape theImage)
     {
-        TopoDS_Shape aShape = theShape;
+        Shape aShape = theShape;
         aShape.TShape(theImage);
         return aShape;
     }

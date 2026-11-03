@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2014 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
 using static Kerf.Geometry.SurfaceKind;
@@ -62,7 +63,7 @@ public static partial class IntPatch_WLineTool
 
     // Returns True if thePmid is intersection point between theS1 and theS2 with given tolerance. In this case,
     // parameters of thePmid on every quadric will be recomputed and returned.
-    private static bool IsIntersectionPoint(in Point3D thePmid, Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
+    private static bool IsIntersectionPoint(in Point3D thePmid, SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
                                             in IntSurf_PntOn2S theRefPt, double theTol,
                                             ReadOnlySpan<double> theArrPeriods, ref IntSurf_PntOn2S theNewPt)
     {
@@ -219,7 +220,7 @@ public static partial class IntPatch_WLineTool
 
     // Check if extending is possible (see ExtendTwoWLines).
     private static IntPatchWT_WLsConnectionType CheckArgumentsToExtend(
-        Adaptor3d_Surface theS1, Adaptor3d_Surface theS2, in IntSurf_PntOn2S thePtWL1, in IntSurf_PntOn2S thePtWL2,
+        SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2, in IntSurf_PntOn2S thePtWL1, in IntSurf_PntOn2S thePtWL2,
         ref IntSurf_PntOn2S theNewPoint, in Vector3D theVec1, in Vector3D theVec2, in Vector3D theVec3,
         in Box2d theBoxS1, in Box2d theBoxS2, double theToler3D, ReadOnlySpan<double> theArrPeriods)
     {
@@ -358,7 +359,7 @@ public static partial class IntPatch_WLineTool
     }
 
     // Performs extending theWLine1 and theWLine2 through their respecting start point.
-    private static void ExtendTwoWLFirstFirst(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
+    private static void ExtendTwoWLFirstFirst(SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
                                               IntPatch_WLine theWLine1, IntPatch_WLine theWLine2,
                                               in IntSurf_PntOn2S thePtWL1, in IntSurf_PntOn2S thePtWL2,
                                               in Vector3D theVec1, in Vector3D theVec2, in Vector3D theVec3,
@@ -428,7 +429,7 @@ public static partial class IntPatch_WLineTool
     }
 
     // Performs extending theWLine1 through its start point and theWLine2 through its end point.
-    private static void ExtendTwoWLFirstLast(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
+    private static void ExtendTwoWLFirstLast(SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
                                              IntPatch_WLine theWLine1, IntPatch_WLine theWLine2,
                                              in IntSurf_PntOn2S thePtWL1, in IntSurf_PntOn2S thePtWL2,
                                              in Vector3D theVec1, in Vector3D theVec2, in Vector3D theVec3,
@@ -496,7 +497,7 @@ public static partial class IntPatch_WLineTool
     }
 
     // Performs extending theWLine1 through its end point and theWLine2 through its start point.
-    private static void ExtendTwoWLLastFirst(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
+    private static void ExtendTwoWLLastFirst(SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
                                              IntPatch_WLine theWLine1, IntPatch_WLine theWLine2,
                                              in IntSurf_PntOn2S thePtWL1, in IntSurf_PntOn2S thePtWL2,
                                              in Vector3D theVec1, in Vector3D theVec2, in Vector3D theVec3,
@@ -559,7 +560,7 @@ public static partial class IntPatch_WLineTool
     }
 
     // Performs extending theWLine1 and theWLine2 through their end points.
-    private static void ExtendTwoWLLastLast(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
+    private static void ExtendTwoWLLastLast(SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
                                             IntPatch_WLine theWLine1, IntPatch_WLine theWLine2,
                                             in IntSurf_PntOn2S thePtWL1, in IntSurf_PntOn2S thePtWL2,
                                             in Vector3D theVec1, in Vector3D theVec2, in Vector3D theVec3,
@@ -651,8 +652,8 @@ public static partial class IntPatch_WLineTool
     /// periodic); the boxes are the surfaces' parametric domains. Lines ending at one of
     /// <paramref name="theListOfCriticalPoints"/> aren't extended there. The surfaces must be quadrics.
     /// </summary>
-    public static void ExtendTwoWLines(NCollection_Sequence<IntPatch_Line> theSlin, Adaptor3d_Surface theS1,
-                                       Adaptor3d_Surface theS2, double theToler3D, ReadOnlySpan<double> theArrPeriods,
+    public static void ExtendTwoWLines(NCollection_Sequence<IntPatch_Line> theSlin, SurfaceAdaptorBase theS1,
+                                       SurfaceAdaptorBase theS2, double theToler3D, ReadOnlySpan<double> theArrPeriods,
                                        in Box2d theBoxS1, in Box2d theBoxS2,
                                        NCollection_List<Point3D> theListOfCriticalPoints)
     {

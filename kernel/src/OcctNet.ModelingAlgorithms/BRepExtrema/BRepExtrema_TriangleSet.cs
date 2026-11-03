@@ -5,10 +5,12 @@
 
 using Kerf.Engine.Geometry.Bvh;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Engine.Geometry.Bvh.Constants;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -49,7 +51,7 @@ public class BRepExtrema_TriangleSet : PrimitiveSet<double, NCollection_Vec3<dou
     }
 
     /// <summary>A triangle set of the given shapes.</summary>
-    public BRepExtrema_TriangleSet(NCollection_DynamicArray<TopoDS_Shape> theFaces)
+    public BRepExtrema_TriangleSet(NCollection_DynamicArray<Shape> theFaces)
         : base(new LinearBuilder<double, NCollection_Vec3<double>>(BVH_Constants_LeafNodeSizeDefault, BVH_Constants_MaxTreeDepth))
     {
         // Set default builder - linear BVH (LBVH)
@@ -179,20 +181,20 @@ public class BRepExtrema_TriangleSet : PrimitiveSet<double, NCollection_Vec3<dou
     /// Initialises the set from the shapes (faces with triangulations, edges with 3D polygons) and builds its BVH.
     /// As in OCCT, it stops at the first shape without a mesh and still returns true.
     /// </summary>
-    public bool Init(NCollection_DynamicArray<TopoDS_Shape> theShapes)
+    public bool Init(NCollection_DynamicArray<Shape> theShapes)
     {
         Clear();
 
         bool isOK = true; // OCCT: isOK stops the loop at a shape without a mesh, but Init returns true regardless
         for (int aShapeIdx = 0; aShapeIdx < theShapes.Length() && isOK; ++aShapeIdx)
         {
-            if (theShapes[aShapeIdx].ShapeType() == TopAbs_FACE)
+            if (theShapes[aShapeIdx].ShapeType() == ShapeType.Face)
             {
-                isOK = initFace(TopoDS.Face(theShapes[aShapeIdx]), aShapeIdx);
+                isOK = initFace(ShapeCasts.Face(theShapes[aShapeIdx]), aShapeIdx);
             }
-            else if (theShapes[aShapeIdx].ShapeType() == TopAbs_EDGE)
+            else if (theShapes[aShapeIdx].ShapeType() == ShapeType.Edge)
             {
-                isOK = initEdge(TopoDS.Edge(theShapes[aShapeIdx]), aShapeIdx);
+                isOK = initEdge(ShapeCasts.Edge(theShapes[aShapeIdx]), aShapeIdx);
             }
         }
 
@@ -214,9 +216,9 @@ public class BRepExtrema_TriangleSet : PrimitiveSet<double, NCollection_Vec3<dou
         return true;
     }
 
-    private bool initFace(in TopoDS_Face theFace, int theIndex)
+    private bool initFace(in Face theFace, int theIndex)
     {
-        Triangulation? aTriangulation = BRep_Tool.Triangulation(theFace, out Placement aLocation);
+        Triangulation? aTriangulation = Tool.Triangulation(theFace, out Placement aLocation);
         if (aTriangulation is null)
         {
             return false;
@@ -241,9 +243,9 @@ public class BRepExtrema_TriangleSet : PrimitiveSet<double, NCollection_Vec3<dou
         return true;
     }
 
-    private bool initEdge(in TopoDS_Edge theEdge, int theIndex)
+    private bool initEdge(in Edge theEdge, int theIndex)
     {
-        Polygon3D? aPolygon = BRep_Tool.Polygon3D(theEdge, out Placement aLocation);
+        Polygon3D? aPolygon = Tool.Polygon3D(theEdge, out Placement aLocation);
         if (aPolygon is null)
         {
             return false;

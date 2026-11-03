@@ -9,8 +9,8 @@ namespace OcctNet.ModelingData.Tests;
 public class Geom2d_CircleTest
 {
     // Circle centered at origin, radius 5
-    private readonly Geom2d_Circle myCircle =
-        new Geom2d_Circle(new Circle2D(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 5.0));
+    private readonly CircleCurve2D myCircle =
+        new CircleCurve2D(new Circle2D(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 5.0));
 
     [Fact]
     public void ConstructFromCirc2d()
@@ -21,7 +21,7 @@ public class Geom2d_CircleTest
     [Fact]
     public void ConstructFromAxisAndRadius()
     {
-        Geom2d_Circle aCircle = new Geom2d_Circle(new Axis2D(new Point2D(1.0, 2.0), new Direction2D(1.0, 0.0)), 3.0);
+        CircleCurve2D aCircle = new CircleCurve2D(new Axis2D(new Point2D(1.0, 2.0), new Direction2D(1.0, 0.0)), 3.0);
         Assert.Equal(3.0, aCircle.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(1.0, aCircle.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(2.0, aCircle.Location().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -31,7 +31,7 @@ public class Geom2d_CircleTest
     public void ConstructFromAx22d()
     {
         Frame2D anAxis = new Frame2D(new Point2D(3.0, 4.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
-        Geom2d_Circle aCircle = new Geom2d_Circle(anAxis, 7.0);
+        CircleCurve2D aCircle = new CircleCurve2D(anAxis, 7.0);
         Assert.Equal(7.0, aCircle.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(3.0, aCircle.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -46,8 +46,8 @@ public class Geom2d_CircleTest
     [Fact]
     public void IsClosedAndPeriodic()
     {
-        Assert.True(myCircle.IsClosed());
-        Assert.True(myCircle.IsPeriodic());
+        Assert.True(myCircle.IsClosed);
+        Assert.True(myCircle.IsPeriodic);
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class Geom2d_CircleTest
     [Fact]
     public void EvalD1_AtZero()
     {
-        Geom2d_Curve.ResD1 aR = myCircle.EvalD1(0.0);
+        Curve2D.ResD1 aR = myCircle.EvalD1(0.0);
         // Tangent at U=0 is (0, R) = (0, 5)
         Assert.Equal(0.0, aR.D1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(5.0, aR.D1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -106,7 +106,7 @@ public class Geom2d_CircleTest
     [Fact]
     public void EvalD2_AtZero()
     {
-        Geom2d_Curve.ResD2 aR = myCircle.EvalD2(0.0);
+        Curve2D.ResD2 aR = myCircle.EvalD2(0.0);
         // Second derivative at U=0 is (-R, 0) = (-5, 0)
         Assert.Equal(-5.0, aR.D2.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aR.D2.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -131,8 +131,8 @@ public class Geom2d_CircleTest
     [Fact]
     public void Copy()
     {
-        Geom2d_Geometry aCopyGeom = myCircle.Copy();
-        Geom2d_Circle? aCopy = aCopyGeom as Geom2d_Circle;
+        Geometry2D aCopyGeom = myCircle.Copy();
+        CircleCurve2D? aCopy = aCopyGeom as CircleCurve2D;
         Assert.NotNull(aCopy);
         Assert.Equal(5.0, aCopy.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
         // Verify independence

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 
@@ -47,10 +48,10 @@ public class GeomFill_CorrectedFrenetOracleTests(ITestOutputHelper output)
             using var aNDirOwner = aNDir;
             using var aNBasis = new N.Geom_Circle(aNAx2, aR);
             using var aNC = new N.Geom_OffsetCurve(aNBasis, anOffset, aNDir, true);
-            var aPC = new Geom_OffsetCurve(new Geom_Circle(anAx2, aR), anOffset, aDir, true);
+            var aPC = new OffsetCurve3D(new CircleCurve3D(anAx2, aR), anOffset, aDir, true);
             double aF = anOracle.Real(0, 1), aL = aF + anOracle.Real(1, 4);
             using var aNA = new N.GeomAdaptor_Curve(aNC, aF, aL);
-            var aPA = new GeomAdaptor_Curve(aPC, aF, aL);
+            var aPA = new CurveAdaptor(aPC, aF, aL);
             using var aNLaw = new N.GeomFill_CorrectedFrenet();
             TrihedronOracle.Compare(anOracle, aNLaw, new GeomFill_CorrectedFrenet(), aNA, aPA, $"offset circle #{i}");
         }
@@ -90,12 +91,12 @@ public class GeomFill_CorrectedFrenetOracleTests(ITestOutputHelper output)
             }
             NCollection_Array1<double>? aWeights = anOracle.Bool() ? null : anOracle.Weights(aNbPoles, true);
             using N.Geom_BSplineCurve aNC = Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, aDeg, false);
-            Geom_BSplineCurve aPC = aWeights is null ? new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg)
-                                                     : new Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, aDeg);
+            BSplineCurve3D aPC = aWeights is null ? new BSplineCurve3D(aPoles, aKnots, aMults, aDeg)
+                                                     : new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, aDeg);
             foreach (bool aForEval in new[] { false, true })
             {
                 using var aNA = new N.GeomAdaptor_Curve(aNC);
-                var aPA = new GeomAdaptor_Curve(aPC);
+                var aPA = new CurveAdaptor(aPC);
                 using var aNLaw = new N.GeomFill_CorrectedFrenet(aForEval);
                 var aPLaw = new GeomFill_CorrectedFrenet(aForEval);
                 string aWhat = $"{(aPlanar ? "planar" : "twisted")} #{i} {(aForEval ? "evaluation" : "sweep")}";
@@ -103,7 +104,7 @@ public class GeomFill_CorrectedFrenetOracleTests(ITestOutputHelper output)
 
                 // EvaluateBestMode on a law over the whole curve
                 using var aNA2 = new N.GeomAdaptor_Curve(aNC);
-                var aPA2 = new GeomAdaptor_Curve(aPC);
+                var aPA2 = new CurveAdaptor(aPC);
                 using var aNLaw2 = new N.GeomFill_CorrectedFrenet(aForEval);
                 var aPLaw2 = new GeomFill_CorrectedFrenet(aForEval);
                 aNLaw2.SetCurve(aNA2);

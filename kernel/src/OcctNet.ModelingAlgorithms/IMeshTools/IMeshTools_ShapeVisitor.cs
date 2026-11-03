@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -16,8 +17,8 @@ public abstract class IMeshTools_ShapeVisitor : Transient
     }
 
     /// <summary>Handles a face.</summary>
-    public abstract void Visit(in TopoDS_Face theFace);
+    public abstract void Visit(in Face theFace);
 
     /// <summary>Handles an edge.</summary>
-    public abstract void Visit(in TopoDS_Edge theEdge);
+    public abstract void Visit(in Edge theEdge);
 }

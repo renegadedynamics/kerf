@@ -5,9 +5,12 @@
 
 using Kerf.Engine.Geometry.Bvh;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using BVH_PrjState = Kerf.Engine.Geometry.Bvh.Tools<double, Occt.NCollection_Vec3<double>>.BVH_PrjStateInTriangle;
 using BVH_Vec3d = Occt.NCollection_Vec3<double>;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -69,8 +72,8 @@ public class BRepExtrema_ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_
 
     private BRepExtrema_TriangleSet? mySet1;
     private BRepExtrema_TriangleSet? mySet2;
-    private NCollection_DynamicArray<TopoDS_Shape> myShapeList1 = new();
-    private NCollection_DynamicArray<TopoDS_Shape> myShapeList2 = new();
+    private NCollection_DynamicArray<Shape> myShapeList1 = new();
+    private NCollection_DynamicArray<Shape> myShapeList2 = new();
     private readonly int myNbSamples1; //!< Number of samples points on the first shape
     private bool myIsProxVtx1FromAddSet; //!< Is the vertex of the proximity point of the 1st shape from the additional set
     private NCollection_LinearVector<BVH_Vec3d> myAddVertices1 = new(); //!< Additional vertices on the 1st shape
@@ -97,8 +100,8 @@ public class BRepExtrema_ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_
                                          NCollection_LinearVector<BVH_Vec3d> theAddVertices1,
                                          NCollection_DynamicArray<ProxPnt_Status> theAddStatus1,
                                          BRepExtrema_TriangleSet theSet2,
-                                         NCollection_DynamicArray<TopoDS_Shape> theShapeList1,
-                                         NCollection_DynamicArray<TopoDS_Shape> theShapeList2)
+                                         NCollection_DynamicArray<Shape> theShapeList1,
+                                         NCollection_DynamicArray<Shape> theShapeList2)
     {
         myMinDistance = double.MaxValue;
         myProxDist = -1.0;
@@ -119,10 +122,10 @@ public class BRepExtrema_ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_
     }
 
     /// <summary>Loads the lists of sub-shapes (copies, as OCCT assigns by value).</summary>
-    public void LoadShapeLists(NCollection_DynamicArray<TopoDS_Shape> theShapeList1, NCollection_DynamicArray<TopoDS_Shape> theShapeList2)
+    public void LoadShapeLists(NCollection_DynamicArray<Shape> theShapeList1, NCollection_DynamicArray<Shape> theShapeList2)
     {
-        myShapeList1 = new NCollection_DynamicArray<TopoDS_Shape>(theShapeList1);
-        myShapeList2 = new NCollection_DynamicArray<TopoDS_Shape>(theShapeList2);
+        myShapeList1 = new NCollection_DynamicArray<Shape>(theShapeList1);
+        myShapeList2 = new NCollection_DynamicArray<Shape>(theShapeList2);
     }
 
     /// <summary>Loads the additional vertices of the first set and their statuses (copies).</summary>
@@ -373,7 +376,7 @@ public class BRepExtrema_ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_
 
         int aFaceID1 = mySet1!.GetShapeIDOfVtx(myProxVtxIdx1);
 
-        if (myShapeList1[aFaceID1].ShapeType() == TopAbs_EDGE)
+        if (myShapeList1[aFaceID1].ShapeType() == ShapeType.Edge)
         {
             NCollection_LinearVector<BVH_Vec3d> aVertices1 = mySet1.GetVertices();
             int aVtxSize = aVertices1.Size();
@@ -394,12 +397,12 @@ public class BRepExtrema_ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_
                 myPntStatus1 = ProxPnt_Status.ProxPnt_Status_MIDDLE;
             }
         }
-        else if (myShapeList1[aFaceID1].ShapeType() == TopAbs_FACE)
+        else if (myShapeList1[aFaceID1].ShapeType() == ShapeType.Face)
         {
             int aNodeIdx = mySet1.GetVtxIdxInShape(myProxVtxIdx1) + 1;
 
-            TopoDS_Face aF = TopoDS.Face(myShapeList1[aFaceID1]);
-            Triangulation aTr = BRep_Tool.Triangulation(aF, out _)!;
+            Face aF = ShapeCasts.Face(myShapeList1[aFaceID1]);
+            Triangulation aTr = Tool.Triangulation(aF, out _)!;
 
             if (IsNodeOnBorder(aNodeIdx, aTr))
             {
@@ -417,7 +420,7 @@ public class BRepExtrema_ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_
         int aTrgIdx = myProxPrjState.GetTrgIdx();
         int aFaceID2 = mySet2!.GetFaceID(aTrgIdx);
 
-        if (myShapeList2[aFaceID2].ShapeType() == TopAbs_EDGE)
+        if (myShapeList2[aFaceID2].ShapeType() == ShapeType.Edge)
         {
             if (myProxPrjState.GetPrjState() == BVH_PrjState.PrjStateInTriangle_INNER)
             {
@@ -468,7 +471,7 @@ public class BRepExtrema_ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_
                 }
             }
         }
-        else if (myShapeList2[aFaceID2].ShapeType() == TopAbs_FACE)
+        else if (myShapeList2[aFaceID2].ShapeType() == ShapeType.Face)
         {
             if (myProxPrjState.GetPrjState() == BVH_PrjState.PrjStateInTriangle_INNER)
             {
@@ -476,8 +479,8 @@ public class BRepExtrema_ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_
             }
             else
             {
-                TopoDS_Face aF = TopoDS.Face(myShapeList2[aFaceID2]);
-                Triangulation aTr = BRep_Tool.Triangulation(aF, out _)!;
+                Face aF = ShapeCasts.Face(myShapeList2[aFaceID2]);
+                Triangulation aTr = Tool.Triangulation(aF, out _)!;
 
                 mySet2.GetVtxIndices(aTrgIdx, out NCollection_Array1<int> aVtxIndicesOfTrg);
 

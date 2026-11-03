@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2013-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
@@ -30,41 +33,41 @@ public sealed class ChFi2d_FilletAPI
     }
 
     /// <summary>A fillet algorithm on a wire of two edges in a plane.</summary>
-    public ChFi2d_FilletAPI(in TopoDS_Wire theWire, in Plane3D thePlane)
+    public ChFi2d_FilletAPI(in Wire theWire, in Plane3D thePlane)
     {
         myIsAnalytical = false;
         Init(theWire, thePlane);
     }
 
     /// <summary>A fillet algorithm on two edges in a plane.</summary>
-    public ChFi2d_FilletAPI(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in Plane3D thePlane)
+    public ChFi2d_FilletAPI(in Edge theEdge1, in Edge theEdge2, in Plane3D thePlane)
     {
         myIsAnalytical = false;
         Init(theEdge1, theEdge2, thePlane);
     }
 
     /// <summary>Initializes a fillet algorithm: accepts a wire consisting of two edges in a plane.</summary>
-    public void Init(in TopoDS_Wire theWire, in Plane3D thePlane)
+    public void Init(in Wire theWire, in Plane3D thePlane)
     {
         // Decide whether we may apply an analytical solution.
-        TopoDS_Edge E1 = new(), E2 = new();
-        var itr = new TopoDS_Iterator(theWire);
+        Edge E1 = new(), E2 = new();
+        var itr = new Iterator(theWire);
         for (; itr.More(); itr.Next())
         {
-            if (E1.IsNull())
+            if (E1.IsNull)
             {
-                E1 = TopoDS.Edge(itr.Value());
+                E1 = ShapeCasts.Edge(itr.Value());
             }
-            else if (E2.IsNull())
+            else if (E2.IsNull)
             {
-                E2 = TopoDS.Edge(itr.Value());
+                E2 = ShapeCasts.Edge(itr.Value());
             }
             else
             {
                 break;
             }
         }
-        if (!E1.IsNull() && !E2.IsNull())
+        if (!E1.IsNull && !E2.IsNull)
         {
             myIsAnalytical = IsAnalytical(E1, E2);
         }
@@ -81,7 +84,7 @@ public sealed class ChFi2d_FilletAPI
     }
 
     /// <summary>Initializes a fillet algorithm: accepts two edges in a plane.</summary>
-    public void Init(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in Plane3D thePlane)
+    public void Init(in Edge theEdge1, in Edge theEdge2, in Plane3D thePlane)
     {
         // Decide whether we may apply an analytical solution.
         myIsAnalytical = IsAnalytical(theEdge1, theEdge2);
@@ -116,7 +119,7 @@ public sealed class ChFi2d_FilletAPI
     /// The fillet edge and the two edges it trims (all frozen): the solution nearest to <paramref name="thePoint"/> if
     /// <paramref name="iSolution"/> is -1, else that solution.
     /// </summary>
-    public TopoDS_Edge Result(in Point3D thePoint, ref TopoDS_Edge theEdge1, ref TopoDS_Edge theEdge2, int iSolution = -1)
+    public Edge Result(in Point3D thePoint, ref Edge theEdge1, ref Edge theEdge2, int iSolution = -1)
     {
         return myIsAnalytical ? myAnaFilletAlgo.Result(ref theEdge1, ref theEdge2)
                               : myFilletAlgo.Result(thePoint, ref theEdge1, ref theEdge2, iSolution);
@@ -125,11 +128,11 @@ public sealed class ChFi2d_FilletAPI
     // Decides whether the input parameters may use an analytical algorithm
     // for calculation of the fillets, or an iteration-recursive method is needed.
     // The analytical solution is applicable for linear and circular edges having a common point.
-    private static bool IsAnalytical(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2)
+    private static bool IsAnalytical(in Edge theEdge1, in Edge theEdge2)
     {
         bool ret = false;
-        var AC1 = new BRepAdaptor_Curve(theEdge1);
-        var AC2 = new BRepAdaptor_Curve(theEdge2);
+        var AC1 = new EdgeCurveAdaptor(theEdge1);
+        var AC2 = new EdgeCurveAdaptor(theEdge2);
         if ((AC1.GetType() == Line || AC1.GetType() == Circle)
             && (AC2.GetType() == Line || AC2.GetType() == Circle))
         {

@@ -1,8 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -12,14 +16,14 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BOPAlgo_BuilderFaceTests
 {
-    private static TopoDS_Vertex V(double x, double y) => new BRepBuilderAPI_MakeVertex(new Point3D(x, y, 0)).Vertex();
+    private static Vertex V(double x, double y) => new BRepBuilderAPI_MakeVertex(new Point3D(x, y, 0)).Vertex();
 
-    private static TopoDS_Edge E(in TopoDS_Vertex a, in TopoDS_Vertex b) => new BRepBuilderAPI_MakeEdge(a, b).Edge();
+    private static Edge E(in Vertex a, in Vertex b) => new BRepBuilderAPI_MakeEdge(a, b).Edge();
 
     // A 10 x 10 square on z = 0 whose bottom and top sides are split at x = 5, and the edge between the split points.
-    private static (TopoDS_Face Face, TopoDS_Edge Middle) SplitSquare()
+    private static (Face Face, Edge Middle) SplitSquare()
     {
-        TopoDS_Vertex v1 = V(0, 0), v2 = V(5, 0), v3 = V(10, 0), v4 = V(10, 10), v5 = V(5, 10), v6 = V(0, 10);
+        Vertex v1 = V(0, 0), v2 = V(5, 0), v3 = V(10, 0), v4 = V(10, 10), v5 = V(5, 10), v6 = V(0, 10);
         BRepBuilderAPI_MakeWire aMW = new();
         aMW.Add(E(v1, v2));
         aMW.Add(E(v2, v3));
@@ -27,27 +31,27 @@ public class BOPAlgo_BuilderFaceTests
         aMW.Add(E(v4, v5));
         aMW.Add(E(v5, v6));
         aMW.Add(E(v6, v1));
-        TopoDS_Face aF = new BRepBuilderAPI_MakeFace(aMW.Wire(), true).Face();
+        Face aF = new BRepBuilderAPI_MakeFace(aMW.Wire(), true).Face();
         return (aF, E(v2, v5));
     }
 
-    private static NCollection_List<TopoDS_Shape> EdgesOf(in TopoDS_Face theF)
+    private static NCollection_List<Shape> EdgesOf(in Face theF)
     {
-        NCollection_List<TopoDS_Shape> aLE = new();
-        for (TopExp_Explorer anExp = new(theF, TopAbs_EDGE); anExp.More(); anExp.Next())
+        NCollection_List<Shape> aLE = new();
+        for (global::Kerf.Engine.Topology.Explorer anExp = new(theF, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             aLE.Append(anExp.Current());
         }
         return aLE;
     }
 
-    private static void AddTwice(NCollection_List<TopoDS_Shape> theLE, in TopoDS_Edge theE)
+    private static void AddTwice(NCollection_List<Shape> theLE, in Edge theE)
     {
-        theLE.Append(theE.Oriented(TopAbs_FORWARD));
-        theLE.Append(theE.Oriented(TopAbs_REVERSED));
+        theLE.Append(theE.Oriented(Forward));
+        theLE.Append(theE.Oriented(Reversed));
     }
 
-    private static BOPAlgo_BuilderFace Build(in TopoDS_Face theF, NCollection_List<TopoDS_Shape> theLE, bool theParallel = false)
+    private static BOPAlgo_BuilderFace Build(in Face theF, NCollection_List<Shape> theLE, bool theParallel = false)
     {
         BOPAlgo_BuilderFace aBF = new();
         aBF.SetFace(theF);
@@ -58,30 +62,30 @@ public class BOPAlgo_BuilderFaceTests
         return aBF;
     }
 
-    private static double Area(in TopoDS_Shape theS)
+    private static double Area(in Shape theS)
     {
-        GProp_GProps aProps = new();
+        Properties aProps = new();
         BRepGProp.SurfaceProperties(theS, aProps);
         return aProps.Mass();
     }
 
-    private static string Text(NCollection_List<TopoDS_Shape> theLS)
+    private static string Text(NCollection_List<Shape> theLS)
     {
-        TopoDS_Compound aC = new();
-        BRep_Builder aBB = new();
+        Compound aC = new();
+        BrepBuilder aBB = new();
         aBB.MakeCompound(ref aC);
-        for (NCollection_List<TopoDS_Shape>.Iterator aIt = new(theLS); aIt.More(); aIt.Next())
+        for (NCollection_List<Shape>.Iterator aIt = new(theLS); aIt.More(); aIt.Next())
         {
             aBB.Add(aC, aIt.Value());
         }
         StringWriter aW = new();
-        BRepTools.Write(aC, aW);
+        BrepTools.Write(aC, aW);
         return aW.ToString();
     }
 
-    private static void AssertValid(NCollection_List<TopoDS_Shape> theLS)
+    private static void AssertValid(NCollection_List<Shape> theLS)
     {
-        for (NCollection_List<TopoDS_Shape>.Iterator aIt = new(theLS); aIt.More(); aIt.Next())
+        for (NCollection_List<Shape>.Iterator aIt = new(theLS); aIt.More(); aIt.Next())
         {
             Assert.True(new BRepCheck_Analyzer(aIt.Value()).IsValid());
         }
@@ -90,16 +94,16 @@ public class BOPAlgo_BuilderFaceTests
     [Fact]
     public void SquareSplitByAnEdge_GivesTwoHalves()
     {
-        (TopoDS_Face aF, TopoDS_Edge aMiddle) = SplitSquare();
-        NCollection_List<TopoDS_Shape> aLE = EdgesOf(aF);
+        (Face aF, Edge aMiddle) = SplitSquare();
+        NCollection_List<Shape> aLE = EdgesOf(aF);
         AddTwice(aLE, aMiddle);
 
-        BOPAlgo_BuilderFace aBF = Build(TopoDS.Face(aF.Oriented(TopAbs_REVERSED)), aLE);
-        Assert.Equal(TopAbs_REVERSED, aBF.Orientation());
-        Assert.Equal(TopAbs_FORWARD, aBF.Face().Orientation());
+        BOPAlgo_BuilderFace aBF = Build(global::Kerf.Engine.Topology.ShapeCasts.Face(aF.Oriented(Reversed)), aLE);
+        Assert.Equal(Reversed, aBF.Orientation());
+        Assert.Equal(Forward, aBF.Face().Orientation());
         Assert.Equal(2, aBF.Loops().Extent());
         Assert.Equal(2, aBF.Areas().Extent());
-        for (NCollection_List<TopoDS_Shape>.Iterator aIt = new(aBF.Areas()); aIt.More(); aIt.Next())
+        for (NCollection_List<Shape>.Iterator aIt = new(aBF.Areas()); aIt.More(); aIt.Next())
         {
             Assert.Equal(50.0, Area(aIt.Value()), 1e-9);
         }
@@ -110,21 +114,21 @@ public class BOPAlgo_BuilderFaceTests
     [Fact]
     public void SquareWithACircle_GivesAFaceWithAHoleAndADisc()
     {
-        (TopoDS_Face aF, _) = SplitSquare();
-        NCollection_List<TopoDS_Shape> aLE = EdgesOf(aF);
-        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(5, 5, 0), new Direction3D(0, 0, 1)), 2)).Edge();
+        (Face aF, _) = SplitSquare();
+        NCollection_List<Shape> aLE = EdgesOf(aF);
+        Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(5, 5, 0), new Direction3D(0, 0, 1)), 2)).Edge();
         AddTwice(aLE, aCircle);
 
         BOPAlgo_BuilderFace aBF = Build(aF, aLE);
         Assert.Equal(2, aBF.Areas().Extent());
         double aTotal = 0;
         bool hasHole = false, hasDisc = false;
-        for (NCollection_List<TopoDS_Shape>.Iterator aIt = new(aBF.Areas()); aIt.More(); aIt.Next())
+        for (NCollection_List<Shape>.Iterator aIt = new(aBF.Areas()); aIt.More(); aIt.Next())
         {
             double anArea = Area(aIt.Value());
             aTotal += anArea;
             int aNbW = 0;
-            for (TopoDS_Iterator aItW = new(aIt.Value()); aItW.More(); aItW.Next())
+            for (global::Kerf.Engine.Topology.Iterator aItW = new(aIt.Value()); aItW.More(); aItW.Next())
             {
                 aNbW++;
             }
@@ -147,20 +151,20 @@ public class BOPAlgo_BuilderFaceTests
     [Fact]
     public void DanglingEdge_IsAddedAsAnInternalWire_UnlessAvoided()
     {
-        (TopoDS_Face aF, _) = SplitSquare();
-        NCollection_List<TopoDS_Shape> aLE = EdgesOf(aF);
+        (Face aF, _) = SplitSquare();
+        NCollection_List<Shape> aLE = EdgesOf(aF);
         AddTwice(aLE, E(V(2, 2), V(3, 3)));
 
         BOPAlgo_BuilderFace aBF = Build(aF, aLE);
         Assert.Equal(1, aBF.Areas().Extent());
-        TopoDS_Shape aR = aBF.Areas().First();
+        Shape aR = aBF.Areas().First();
         int aNbInternal = 0, aNbW = 0;
-        for (TopoDS_Iterator aItW = new(aR); aItW.More(); aItW.Next())
+        for (global::Kerf.Engine.Topology.Iterator aItW = new(aR); aItW.More(); aItW.Next())
         {
             aNbW++;
-            for (TopoDS_Iterator aItE = new(aItW.Value()); aItE.More(); aItE.Next())
+            for (global::Kerf.Engine.Topology.Iterator aItE = new(aItW.Value()); aItE.More(); aItE.Next())
             {
-                aNbInternal += aItE.Value().Orientation() == TopAbs_INTERNAL ? 1 : 0;
+                aNbInternal += aItE.Value().Orientation() == Internal ? 1 : 0;
             }
         }
         Assert.Equal(2, aNbW);
@@ -175,7 +179,7 @@ public class BOPAlgo_BuilderFaceTests
         Assert.True(aBF2.IsAvoidInternalShapes());
         Assert.Equal(1, aBF2.Areas().Extent());
         int aNbW2 = 0;
-        for (TopoDS_Iterator aItW = new(aBF2.Areas().First()); aItW.More(); aItW.Next())
+        for (global::Kerf.Engine.Topology.Iterator aItW = new(aBF2.Areas().First()); aItW.More(); aItW.Next())
         {
             aNbW2++;
         }
@@ -185,8 +189,8 @@ public class BOPAlgo_BuilderFaceTests
     [Fact]
     public void DanglingEdgeOutside_IsReportedUnused()
     {
-        (TopoDS_Face aF, _) = SplitSquare();
-        NCollection_List<TopoDS_Shape> aLE = EdgesOf(aF);
+        (Face aF, _) = SplitSquare();
+        NCollection_List<Shape> aLE = EdgesOf(aF);
         AddTwice(aLE, E(V(20, 20), V(21, 21)));
 
         BOPAlgo_BuilderFace aBF = Build(aF, aLE);
@@ -199,17 +203,17 @@ public class BOPAlgo_BuilderFaceTests
     [Fact]
     public void CylinderLateralFace_WithItsSeam_IsRebuilt()
     {
-        TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 10).Shape();
-        TopoDS_Face aLateral = new();
-        for (TopExp_Explorer anExp = new(aCyl, TopAbs_FACE); anExp.More(); anExp.Next())
+        Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 10).Shape();
+        Face aLateral = new();
+        for (global::Kerf.Engine.Topology.Explorer anExp = new(aCyl, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            TopoDS_Face aFx = TopoDS.Face(anExp.Current());
-            if (BRep_Tool.Surface(aFx) is Geom_CylindricalSurface)
+            Face aFx = global::Kerf.Engine.Topology.ShapeCasts.Face(anExp.Current());
+            if (Tool.Surface(aFx) is CylindricalSurface)
             {
                 aLateral = aFx;
             }
         }
-        Assert.False(aLateral.IsNull());
+        Assert.False(aLateral.IsNull);
 
         BOPAlgo_BuilderFace aBF = Build(aLateral, EdgesOf(aLateral));
         Assert.Equal(1, aBF.Areas().Extent());
@@ -220,8 +224,8 @@ public class BOPAlgo_BuilderFaceTests
     [Fact]
     public void SphereFace_WithDegeneratedEdges_IsRebuilt()
     {
-        TopoDS_Shape aSph = new BRepPrimAPI_MakeSphere(3).Shape();
-        TopoDS_Face aF = TopoDS.Face(new TopExp_Explorer(aSph, TopAbs_FACE).Current());
+        Shape aSph = new BRepPrimAPI_MakeSphere(3).Shape();
+        Face aF = global::Kerf.Engine.Topology.ShapeCasts.Face(new global::Kerf.Engine.Topology.Explorer(aSph, ShapeType.Face).Current());
 
         BOPAlgo_BuilderFace aBF = Build(aF, EdgesOf(aF));
         Assert.Equal(1, aBF.Areas().Extent());
@@ -231,10 +235,10 @@ public class BOPAlgo_BuilderFaceTests
     [Fact]
     public void SerialEqualsParallel()
     {
-        (TopoDS_Face aF, TopoDS_Edge aMiddle) = SplitSquare();
-        NCollection_List<TopoDS_Shape> aLE = EdgesOf(aF);
+        (Face aF, Edge aMiddle) = SplitSquare();
+        NCollection_List<Shape> aLE = EdgesOf(aF);
         AddTwice(aLE, aMiddle);
-        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(2.5, 5, 0), new Direction3D(0, 0, 1)), 1)).Edge();
+        Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(2.5, 5, 0), new Direction3D(0, 0, 1)), 1)).Edge();
         AddTwice(aLE, aCircle);
 
         BOPAlgo_BuilderFace aSerial = Build(aF, aLE);
@@ -242,7 +246,7 @@ public class BOPAlgo_BuilderFaceTests
         Assert.Equal(3, aSerial.Areas().Extent());
         Assert.Equal(Text(aSerial.Areas()), Text(aParallel.Areas()));
         double aTotal = 0;
-        for (NCollection_List<TopoDS_Shape>.Iterator aIt = new(aSerial.Areas()); aIt.More(); aIt.Next())
+        for (NCollection_List<Shape>.Iterator aIt = new(aSerial.Areas()); aIt.More(); aIt.Next())
         {
             aTotal += Area(aIt.Value());
         }

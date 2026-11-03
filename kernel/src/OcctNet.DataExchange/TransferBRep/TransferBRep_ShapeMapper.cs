@@ -5,6 +5,10 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Topology;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -17,14 +21,14 @@ public class TransferBRep_ShapeMapper : Transfer_Finder
     /// Creates a Mapper with a Value. This Value can then not be changed. It is used by the Hasher to compute the
     /// HashCode, which will then be stored for an immediate reading.
     /// </summary>
-    public TransferBRep_ShapeMapper(in TopoDS_Shape akey)
+    public TransferBRep_ShapeMapper(in Shape akey)
     {
         theval = akey;
-        SetHashCode(TopTools_ShapeMapHasher.Instance.GetHashCode(akey));
+        SetHashCode(ShapeHasher.Instance.GetHashCode(akey));
     }
 
     /// <summary>Returns the contained value.</summary>
-    public TopoDS_Shape Value()
+    public Shape Value()
     {
         return theval;
     }
@@ -48,7 +52,7 @@ public class TransferBRep_ShapeMapper : Transfer_Finder
             return false;
         }
         TransferBRep_ShapeMapper another = (TransferBRep_ShapeMapper)other;
-        return TopTools_ShapeMapHasher.Instance.Equals(theval, another.Value());
+        return ShapeHasher.Instance.Equals(theval, another.Value());
     }
 
     /// <summary>Returns the Type of the Value.</summary>
@@ -63,5 +67,5 @@ public class TransferBRep_ShapeMapper : Transfer_Finder
         return TransferBRep_ShapeInfo.TypeName(theval);
     }
 
-    private readonly TopoDS_Shape theval;
+    private readonly Shape theval;
 }

@@ -47,7 +47,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
             var aParam = (ParameterisationType)anOracle.Int(0, 7);
             bool isWhole = aKind != Kind.Line && anOracle.Int(0, 3) == 0;
             N.Geom2d_Curve aNBasis;
-            Geom2d_Curve aBasis;
+            Curve2D aBasis;
             switch (aKind)
             {
                 case Kind.Line:
@@ -58,7 +58,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
                         aNBasis = new N.Geom2d_Line(aNAx);
                     }
 
-                    aBasis = new Geom2d_Line(anAx);
+                    aBasis = new LineCurve2D(anAx);
                     break;
                 }
                 case Kind.Circle:
@@ -71,7 +71,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
                         aNBasis = aKind == Kind.Circle ? new N.Geom2d_Circle(aNAx, aR1) : new N.Geom2d_Ellipse(aNAx, aR1, aR2);
                     }
 
-                    aBasis = aKind == Kind.Circle ? new Geom2d_Circle(anAx, aR1) : new Geom2d_Ellipse(anAx, aR1, aR2);
+                    aBasis = aKind == Kind.Circle ? new CircleCurve2D(anAx, aR1) : new EllipseCurve2D(anAx, aR1, aR2);
                     break;
                 }
                 default:
@@ -85,7 +85,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
 
             using N.Geom2d_Curve aNBasisOwned = aNBasis;
             N.Geom2d_Curve aNCurve = aNBasis;
-            Geom2d_Curve aCurve = aBasis;
+            Curve2D aCurve = aBasis;
             N.Geom2d_TrimmedCurve? aNTrimmed = null;
             if (!isWhole)
             {
@@ -94,7 +94,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
                 {
                     double aF = aBasis.FirstParameter(), aL = aBasis.LastParameter();
                     aU1 = anOracle.Real(aF, aL);
-                    aU2 = aBasis.IsPeriodic() && anOracle.Bool() ? aU1 + anOracle.Real(0.05, 1.0) * (aL - aF)
+                    aU2 = aBasis.IsPeriodic && anOracle.Bool() ? aU1 + anOracle.Real(0.05, 1.0) * (aL - aF)
                                                                   : anOracle.Real(aU1, aL);
                     if (aU2 - aU1 < 1e-3)
                     {
@@ -120,7 +120,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
                 bool aSense = anOracle.Int(0, 4) != 0;
                 aNTrimmed = new N.Geom2d_TrimmedCurve(aNBasis, aU1, aU2, aSense);
                 aNCurve = aNTrimmed;
-                aCurve = new Geom2d_TrimmedCurve(aBasis, aU1, aU2, aSense);
+                aCurve = new TrimmedCurve2D(aBasis, aU1, aU2, aSense);
             }
 
             using N.Geom2d_TrimmedCurve? aNTrimmedOwned = aNTrimmed;
@@ -135,11 +135,11 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
                 isNativeThrown = true;
             }
 
-            Geom2d_BSplineCurve? aPort = null;
+            BSplineCurve2D? aPort = null;
             bool isPortThrown = false;
             try
             {
-                aPort = Geom2dConvert.CurveToBSplineCurve(aCurve, aParam);
+                aPort = Geom2dConvert2D.CurveToBSplineCurve(aCurve, aParam);
             }
             catch (Exception)
             {
@@ -177,15 +177,15 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
             double aR1 = anOracle.Real(0.5, 20), aR2 = anOracle.Real(0.1, aR1);
             using N.gp_Ax22d aNAxOwned = aNAx;
             using N.Geom2d_Curve aNBasis = isCircle ? new N.Geom2d_Circle(aNAx, aR1) : new N.Geom2d_Ellipse(aNAx, aR1, aR2);
-            Geom2d_Curve aBasis = isCircle ? new Geom2d_Circle(anAx, aR1) : new Geom2d_Ellipse(anAx, aR1, aR2);
+            Curve2D aBasis = isCircle ? new CircleCurve2D(anAx, aR1) : new EllipseCurve2D(anAx, aR1, aR2);
             double aU1 = anOracle.Real(-10, 10);
             double aU2 = aU1 + (anOracle.Int(0, 4) == 0 ? 2 * Math.PI : anOracle.Real(6.0, 2 * Math.PI));
             bool aSense = anOracle.Bool();
             using var aNTrimmed = new N.Geom2d_TrimmedCurve(aNBasis, aU1, aU2, aSense);
-            var aTrimmed = new Geom2d_TrimmedCurve(aBasis, aU1, aU2, aSense);
+            var aTrimmed = new TrimmedCurve2D(aBasis, aU1, aU2, aSense);
             using N.Geom2d_BSplineCurve aNative =
                 N.Geom2dConvert.CurveToBSplineCurve(aNTrimmed, N.Convert_ParameterisationType.Convert_RationalC1)!;
-            Geom2d_BSplineCurve aPort = Geom2dConvert.CurveToBSplineCurve(aTrimmed, ParameterisationType.RationalC1);
+            BSplineCurve2D aPort = Geom2dConvert2D.CurveToBSplineCurve(aTrimmed, ParameterisationType.RationalC1);
             Geom2dOracle.SameStructure(anOracle, aNative, aPort, $"{(isCircle ? "circle" : "ellipse")} {aU2 - aU1}");
         }
 
@@ -219,11 +219,11 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
             using N.Geom2d_Curve aN2d = N.GeomAPI.To2d(aN3dTrimmed, aNPln)!;
             Assert.True(aN2d.IsKind(isParabola ? "Geom2d_Parabola" : "Geom2d_Hyperbola") || aN2d.IsKind("Geom2d_TrimmedCurve"));
 
-            Geom2d_Curve aBasis = isParabola ? new Geom2d_Parabola(ProjLib.Project(aPln, new Parabola3D(anAx2, aR1)))
-                                             : new Geom2d_Hyperbola(ProjLib.Project(aPln, new Hyperbola3D(anAx2, aR1, aR2)));
-            var aTrimmed = new Geom2d_TrimmedCurve(aBasis, aU1, aU2);
+            Curve2D aBasis = isParabola ? new ParabolaCurve2D(global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, new Parabola3D(anAx2, aR1)))
+                                             : new HyperbolaCurve2D(global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, new Hyperbola3D(anAx2, aR1, aR2)));
+            var aTrimmed = new TrimmedCurve2D(aBasis, aU1, aU2);
             using N.Geom2d_BSplineCurve aNative = N.Geom2dConvert.CurveToBSplineCurve(aN2d)!;
-            Geom2d_BSplineCurve aPort = Geom2dConvert.CurveToBSplineCurve(aTrimmed);
+            BSplineCurve2D aPort = Geom2dConvert2D.CurveToBSplineCurve(aTrimmed);
             Geom2dOracle.SameStructure(anOracle, aNative, aPort, isParabola ? "parabola" : "hyperbola");
         }
 
@@ -239,7 +239,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
         {
             BSplineSpec aSpec = Geom2dOracle.RandomBSpline(anOracle);
             using N.Geom2d_BSplineCurve aNC = Geom2dOracle.ToNative(aSpec);
-            Geom2d_BSplineCurve aC = Geom2dOracle.ToPort(aSpec);
+            BSplineCurve2D aC = Geom2dOracle.ToPort(aSpec);
             int aK1 = anOracle.Int(aC.FirstUKnotIndex(), aC.LastUKnotIndex());
             int aK2 = anOracle.Int(aC.FirstUKnotIndex(), aC.LastUKnotIndex());
             bool aSame = anOracle.Bool();
@@ -255,11 +255,11 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
                 isNativeThrown = true;
             }
 
-            Geom2d_BSplineCurve? aPort = null;
+            BSplineCurve2D? aPort = null;
             bool isPortThrown = false;
             try
             {
-                aPort = Geom2dConvert.SplitBSplineCurve(aC, aK1, aK2, aSame);
+                aPort = Geom2dConvert2D.SplitBSplineCurve(aC, aK1, aK2, aSame);
             }
             catch (Exception)
             {
@@ -290,7 +290,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
         {
             BSplineSpec aSpec = Geom2dOracle.RandomBSpline(anOracle);
             using N.Geom2d_BSplineCurve aNC = Geom2dOracle.ToNative(aSpec);
-            Geom2d_BSplineCurve aC = Geom2dOracle.ToPort(aSpec);
+            BSplineCurve2D aC = Geom2dOracle.ToPort(aSpec);
             double aF = aC.FirstParameter(), aL = aC.LastParameter();
             double aU1 = anOracle.Real(aF, aL), aU2 = anOracle.Real(aF, aL);
             if (anOracle.Int(0, 4) == 0)
@@ -312,11 +312,11 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
                 isNativeThrown = true;
             }
 
-            Geom2d_BSplineCurve? aPort = null;
+            BSplineCurve2D? aPort = null;
             bool isPortThrown = false;
             try
             {
-                aPort = Geom2dConvert.SplitBSplineCurve(aC, aU1, aU2, 1e-9, aSame);
+                aPort = Geom2dConvert2D.SplitBSplineCurve(aC, aU1, aU2, 1e-9, aSame);
             }
             catch (Exception)
             {

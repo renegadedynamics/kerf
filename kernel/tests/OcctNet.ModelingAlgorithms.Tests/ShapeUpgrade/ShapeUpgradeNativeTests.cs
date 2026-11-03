@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO.Compression;
@@ -10,7 +14,7 @@ using OcctNet.ModelingData.Tests;
 using Xunit.Abstractions;
 using static Kerf.Geometry.Continuity;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -75,27 +79,27 @@ public class ShapeUpgradeNativeTests(ITestOutputHelper output)
         return aHash;
     }
 
-    private static string Text(in TopoDS_Shape theShape)
+    private static string Text(in Shape theShape)
     {
         var aS = new StringWriter(CultureInfo.InvariantCulture) { NewLine = "\n" };
-        BRepTools.Write(theShape, aS, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3);
+        BrepTools.Write(theShape, aS, true, false, FormatVersion.FormatVersion_VERSION_3);
         return aS.ToString();
     }
 
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
-        if (theShape.IsNull())
+        if (theShape.IsNull)
         {
             return 0;
         }
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
-    private static string Record(string theTool, in TopoDS_Shape theRes, int theStatus)
+    private static string Record(string theTool, in Shape theRes, int theStatus)
     {
-        if (!theRes.IsNull() && !theRes.TShape()!.IsFrozen)
+        if (!theRes.IsNull && !theRes.TShape()!.IsFrozen)
         {
             throw new InvalidOperationException($"{theTool}: the result isn't frozen");
         }
@@ -105,7 +109,7 @@ public class ShapeUpgradeNativeTests(ITestOutputHelper output)
             File.WriteAllText(Path.Combine(s_dump, $"{s_name}.{theTool}.brep"), aText);
         }
         return string.Create(CultureInfo.InvariantCulture,
-                             $"{theTool} {theStatus:x5} {Hash(aText):x16} {Count(theRes, TopAbs_FACE)} {Count(theRes, TopAbs_EDGE)} {Count(theRes, TopAbs_VERTEX)}");
+                             $"{theTool} {theStatus:x5} {Hash(aText):x16} {Count(theRes, ShapeType.Face)} {Count(theRes, ShapeType.Edge)} {Count(theRes, ShapeType.Vertex)}");
     }
 
     private static readonly ShapeExtend_Status[] s_flags =
@@ -135,7 +139,7 @@ public class ShapeUpgradeNativeTests(ITestOutputHelper output)
             Trace("  " + theTool);
             return theRun();
         }
-        catch (Exception e) when (e is FailureException or NullReferenceException && e is not (ImmutableObjectException or TopoDS_LockedShape))
+        catch (Exception e) when (e is FailureException or NullReferenceException && e is not (ImmutableObjectException or LockedShapeException))
         {
             // an access violation natively (decision 977)
             return $"{theTool} THROW {(e is NullReferenceException ? "OSD_Exception_ACCESS_VIOLATION" : global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()))}";
@@ -167,9 +171,9 @@ public class ShapeUpgradeNativeTests(ITestOutputHelper output)
         });
 
     /// <summary>The recorder's runs on a frozen shape.</summary>
-    internal static List<string> Tools(in TopoDS_Shape theShape)
+    internal static List<string> Tools(in Shape theShape)
     {
-        TopoDS_Shape aShape = theShape;
+        Shape aShape = theShape;
         var aRecords = new List<string>
         {
             Divide("ANGLE", new ShapeUpgrade_ShapeDivideAngle(95 * Math.PI / 180, aShape)),
@@ -255,7 +259,7 @@ public class ShapeUpgradeNativeTests(ITestOutputHelper output)
                 Interlocked.Increment(ref aMissing);
                 return;
             }
-            Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aPath), aPath);
+            Assert.True(BrepTools.Read(out Shape aShape, aPath), aPath);
             aShape.TShape()!.FreezeGraph(); // a caller's shape
             Trace(aSections[i].Name);
             s_name = aSections[i].Name;

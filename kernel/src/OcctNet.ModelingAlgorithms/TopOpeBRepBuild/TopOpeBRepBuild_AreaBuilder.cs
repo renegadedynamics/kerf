@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Containment;
 using static Occt.TopOpeBRepBuild_LoopEnum;
 
 namespace Occt;
@@ -42,18 +43,18 @@ public class TopOpeBRepBuild_AreaBuilder
     /// The state of <paramref name="L"/> compared with the loops of <paramref name="LOL"/> of the kind
     /// <paramref name="what"/>: OUT at the first loop it is out of.
     /// </summary>
-    protected TopAbs_State CompareLoopWithListOfLoop(TopOpeBRepBuild_LoopClassifier LC,
+    protected Containment CompareLoopWithListOfLoop(TopOpeBRepBuild_LoopClassifier LC,
                                                      TopOpeBRepBuild_Loop L,
                                                      NCollection_List<TopOpeBRepBuild_Loop> LOL,
                                                      TopOpeBRepBuild_LoopEnum what)
     {
-        TopAbs_State state = TopAbs_UNKNOWN;
+        Containment state = Unknown;
         bool totest; // L must or not be tested
         NCollection_List<TopOpeBRepBuild_Loop>.Iterator LoopIter = new();
 
         if (LOL.IsEmpty())
         {
-            return TopAbs_OUT;
+            return Out;
         }
 
         for (LoopIter.Initialize(LOL); LoopIter.More(); LoopIter.Next())
@@ -77,7 +78,7 @@ public class TopOpeBRepBuild_AreaBuilder
             if (totest)
             {
                 state = LC.Compare(L, curL);
-                if (state == TopAbs_OUT)
+                if (state == Out)
                 {
                     // <L> is out of at least one Loop of <LOL> : stop to explore
                     break;
@@ -89,11 +90,11 @@ public class TopOpeBRepBuild_AreaBuilder
     }
 
     /// <summary>Replaces an UNKNOWN state by <paramref name="newstate"/> (or throws, if unknown states raise).</summary>
-    protected void Atomize(ref TopAbs_State state, TopAbs_State newstate)
+    protected void Atomize(ref Containment state, Containment newstate)
     {
         if (myUNKNOWNRaise)
         {
-            Standard_DomainError_Raise_if(state == TopAbs_UNKNOWN, "AreaBuilder : Position Unknown");
+            Standard_DomainError_Raise_if(state == Unknown, "AreaBuilder : Position Unknown");
         }
         else
         {
@@ -112,7 +113,7 @@ public class TopOpeBRepBuild_AreaBuilder
 
     private void initAreaBuilder(TopOpeBRepBuild_LoopSet LS, TopOpeBRepBuild_LoopClassifier LC, bool ForceClass)
     {
-        TopAbs_State state;
+        Containment state;
         bool Loopinside;
         bool loopoutside;
 
@@ -149,11 +150,11 @@ public class TopOpeBRepBuild_AreaBuilder
                         continue;
                     }
                     state = CompareLoopWithListOfLoop(LC, L, aArea, TopOpeBRepBuild_BLOCK);
-                    if (state == TopAbs_UNKNOWN)
+                    if (state == Unknown)
                     {
-                        Atomize(ref state, TopAbs_IN);
+                        Atomize(ref state, In);
                     }
-                    Loopinside = state == TopAbs_IN;
+                    Loopinside = state == In;
                     if (Loopinside)
                     {
                         break;
@@ -193,11 +194,11 @@ public class TopOpeBRepBuild_AreaBuilder
                         continue;
                     }
                     state = CompareLoopWithListOfLoop(LC, L, aArea, TopOpeBRepBuild_ANYLOOP);
-                    if (state == TopAbs_UNKNOWN)
+                    if (state == Unknown)
                     {
-                        Atomize(ref state, TopAbs_IN);
+                        Atomize(ref state, In);
                     }
-                    Loopinside = state == TopAbs_IN;
+                    Loopinside = state == In;
                     if (Loopinside)
                     {
                         break;
@@ -213,11 +214,11 @@ public class TopOpeBRepBuild_AreaBuilder
                     while (LoopIter.More())
                     {
                         state = LC.Compare(LoopIter.Value(), L);
-                        if (state == TopAbs_UNKNOWN)
+                        if (state == Unknown)
                         {
-                            Atomize(ref state, TopAbs_IN); // not OUT
+                            Atomize(ref state, In); // not OUT
                         }
-                        loopoutside = state == TopAbs_OUT;
+                        loopoutside = state == Out;
                         if (loopoutside)
                         {
                             TopOpeBRepBuild_Loop curL = LoopIter.Value();
@@ -263,19 +264,19 @@ public class TopOpeBRepBuild_AreaBuilder
                     {
                         ashapeinside = ablockinside = false;
                         state = LC.Compare(LoopIter.Value(), L);
-                        if (state == TopAbs_UNKNOWN)
+                        if (state == Unknown)
                         {
-                            Atomize(ref state, TopAbs_IN);
+                            Atomize(ref state, In);
                         }
-                        ashapeinside = state == TopAbs_IN;
+                        ashapeinside = state == In;
                         if (ashapeinside)
                         {
                             state = LC.Compare(L, LoopIter.Value());
-                            if (state == TopAbs_UNKNOWN)
+                            if (state == Unknown)
                             {
-                                Atomize(ref state, TopAbs_IN);
+                                Atomize(ref state, In);
                             }
-                            ablockinside = state == TopAbs_IN;
+                            ablockinside = state == In;
                         }
                         if (ashapeinside && ablockinside)
                         {

@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Reflection;
 using Xunit.Abstractions;
@@ -49,9 +52,9 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
 
     private static string DataOcc => Path.Combine(Metadata("OcctSourceDir"), "data", "occ");
 
-    private static TopoDS_Shape PortRead(string theFile)
+    private static Shape PortRead(string theFile)
     {
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, theFile), theFile);
+        Assert.True(BrepTools.Read(out Shape aShape, theFile), theFile);
         return aShape;
     }
 
@@ -66,7 +69,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     private string NativeWrite(N.TopoDS_Shape theShape, bool theWithTriangles)
     {
         string aFile = NewFile();
-        Assert.True(N.BRepTools.Write(theShape, aFile, theWithTriangles, false, (N.TopTools_FormatVersion)(int)TopTools_FormatVersion.TopTools_FormatVersion_CURRENT));
+        Assert.True(N.BRepTools.Write(theShape, aFile, theWithTriangles, false, (N.TopTools_FormatVersion)(int)FormatVersion.FormatVersion_CURRENT));
         return aFile;
     }
 
@@ -130,7 +133,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     }
 
     /// <summary>The viewer's deflection for a shape: 0.1% of its bounding box's diagonal (build123d.NET's MeshTolerances.For).</summary>
-    private static double ViewerDeflection(in TopoDS_Shape theShape)
+    private static double ViewerDeflection(in Shape theShape)
     {
         var aBox = new Box();
         BRepBndLib.Add(theShape, ref aBox, true);
@@ -259,7 +262,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     /// </summary>
     private void CompareSameMesh(Tally theTally, string theName, string theF1, double theDeflection, bool theRelative, double theAngle)
     {
-        TopoDS_Shape aPortF1 = PortRead(theF1);
+        Shape aPortF1 = PortRead(theF1);
         double aDeflection = theDeflection < 0 ? ViewerDeflection(aPortF1) : theDeflection;
         if (aDeflection < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
@@ -280,7 +283,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     /// <summary>End to end: both read F1, mesh it with the same arguments and extract.</summary>
     private void CompareEndToEnd(Tally theTally, string theName, string theF1, double theDeflection, bool theRelative, double theAngle, bool theParallel)
     {
-        TopoDS_Shape aPortF1 = PortRead(theF1);
+        Shape aPortF1 = PortRead(theF1);
         double aDeflection = theDeflection < 0 ? ViewerDeflection(aPortF1) : theDeflection;
         if (aDeflection < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
@@ -291,7 +294,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
         N.MeshBuffers aNativeBuffers = NativeExtract(aNative, aDeflection, theAngle);
         aNative.Dispose();
 
-        TopoDS_Shape aMeshed = new BRepMesh_IncrementalMesh(aPortF1, aDeflection, theRelative, theAngle, theParallel).Shape();
+        Shape aMeshed = new BRepMesh_IncrementalMesh(aPortF1, aDeflection, theRelative, theAngle, theParallel).Shape();
         MeshBuffers aPortBuffers = MeshExtraction.Extract(aMeshed, aDeflection, theAngle);
         Compare(theTally, theName, aPortBuffers, aNativeBuffers);
     }
@@ -411,7 +414,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
             {
                 continue;
             }
-            TopoDS_Shape aPort = PortRead(aF1);
+            Shape aPort = PortRead(aF1);
             double aDeflection = ViewerDeflection(aPort);
             if (aDeflection < global::Kerf.Engine.Foundation.Precision.Confusion())
             {

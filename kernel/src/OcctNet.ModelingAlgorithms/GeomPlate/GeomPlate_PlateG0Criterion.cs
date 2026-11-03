@@ -3,10 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation.Advanced;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using static Occt.AdvApp2Var_CriterionRepartition;
-using static Occt.AdvApp2Var_CriterionType;
+using static Kerf.Engine.Approximation.Advanced.CriterionRepartition;
+using static Kerf.Engine.Approximation.Advanced.CriterionType;
 
 namespace Occt;
 
@@ -15,23 +16,23 @@ namespace Occt;
 /// surface takes at given UV points.
 /// </summary>
 /// <remarks>The criterion keeps copies of the caller's sequences, as OCCT's.</remarks>
-public class GeomPlate_PlateG0Criterion : AdvApp2Var_Criterion
+public class GeomPlate_PlateG0Criterion : Criterion
 {
     private readonly NCollection_Sequence<Xy> myData;
     private readonly NCollection_Sequence<Xyz> myXYZ;
 
     public GeomPlate_PlateG0Criterion(NCollection_Sequence<Xy> Data, NCollection_Sequence<Xyz> G0Data, double Maximum,
-                                      AdvApp2Var_CriterionType Type = AdvApp2Var_Absolute,
-                                      AdvApp2Var_CriterionRepartition Repart = AdvApp2Var_Regular)
+                                      CriterionType Type = Absolute,
+                                      CriterionRepartition Repart = Regular)
     {
         myData = new NCollection_Sequence<Xy>(Data);
         myXYZ = new NCollection_Sequence<Xyz>(G0Data);
-        myMaxValue = Maximum;
-        myType = Type;
-        myRepartition = Repart;
+        _maxValue = Maximum;
+        _type = Type;
+        _repartition = Repart;
     }
 
-    public override void Value(AdvApp2Var_Patch P, AdvApp2Var_Context C)
+    public override void Value(Patch P, Context C)
     {
         Span<double> UInt = stackalloc double[2], VInt = stackalloc double[2];
         Span<int> MaxNbCoeff = stackalloc int[2], NbCoeff = stackalloc int[2];
@@ -39,8 +40,8 @@ public class GeomPlate_PlateG0Criterion : AdvApp2Var_Criterion
 
         MaxNbCoeff[0] = C.ULimit();
         MaxNbCoeff[1] = C.VLimit();
-        NbCoeff[0] = P.NbCoeffInU();
-        NbCoeff[1] = P.NbCoeffInV();
+        NbCoeff[0] = P.CoeffInUCount;
+        NbCoeff[1] = P.CoeffInVCount;
         UInt[0] = P.U0();
         UInt[1] = P.U1();
         VInt[0] = P.V0();
@@ -95,8 +96,8 @@ public class GeomPlate_PlateG0Criterion : AdvApp2Var_Criterion
         P.SetCritValue(Math.Sqrt(dist));
     }
 
-    public override bool IsSatisfied(AdvApp2Var_Patch P)
+    public override bool IsSatisfied(Patch P)
     {
-        return (P.CritValue() < myMaxValue);
+        return (P.CritValue() < _maxValue);
     }
 }

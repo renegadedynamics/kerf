@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -18,7 +19,7 @@ namespace Occt;
 /// </summary>
 public class BlendFunc_ConstThroatWithPenetration : BlendFunc_ConstThroat
 {
-    public BlendFunc_ConstThroatWithPenetration(Adaptor3d_Surface S1, Adaptor3d_Surface S2, Adaptor3d_Curve C)
+    public BlendFunc_ConstThroatWithPenetration(SurfaceAdaptorBase S1, SurfaceAdaptorBase S2, CurveAdaptorBase C)
         : base(S1, S2, C)
     {
     }

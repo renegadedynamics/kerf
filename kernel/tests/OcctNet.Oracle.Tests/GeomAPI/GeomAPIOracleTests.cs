@@ -1,10 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Xunit.Abstractions;
-using static Occt.Approx_ParametrizationType;
-using static Occt.Extrema_ExtAlgo;
-using static Occt.Extrema_ExtFlag;
+using static Kerf.Engine.Approximation.ParametrizationType;
+using static Kerf.Engine.Extrema.ExtAlgo;
+using static Kerf.Engine.Extrema.ExtFlag;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -42,19 +45,19 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
         return aNativeError is null && aPortError is null;
     }
 
-    private static void SameCurve(Oracle theO, N.Geom_BSplineCurve theNative, Geom_BSplineCurve thePort, string theWhat,
+    private static void SameCurve(Oracle theO, N.Geom_BSplineCurve theNative, BSplineCurve3D thePort, string theWhat,
                                   double theTolerance = Oracle.Tolerance)
     {
         theO.Same(theNative.Degree(), thePort.Degree(), $"{theWhat} degree");
-        theO.Same(theNative.IsPeriodic(), thePort.IsPeriodic(), $"{theWhat} periodic");
-        theO.Same(theNative.NbPoles(), thePort.NbPoles(), $"{theWhat} NbPoles");
-        theO.Same(theNative.NbKnots(), thePort.NbKnots(), $"{theWhat} NbKnots");
-        for (int i = 1; i <= thePort.NbPoles(); i++)
+        theO.Same(theNative.IsPeriodic(), thePort.IsPeriodic, $"{theWhat} periodic");
+        theO.Same(theNative.NbPoles(), thePort.PoleCount, $"{theWhat} NbPoles");
+        theO.Same(theNative.NbKnots(), thePort.KnotCount, $"{theWhat} NbKnots");
+        for (int i = 1; i <= thePort.PoleCount; i++)
         {
             using N.gp_Pnt aNP = theNative.Pole(i);
             theO.Same(aNP, thePort.Pole(i), $"{theWhat} pole {i}", theTolerance);
         }
-        for (int i = 1; i <= thePort.NbKnots(); i++)
+        for (int i = 1; i <= thePort.KnotCount; i++)
         {
             theO.Same(theNative.Knot(i), thePort.Knot(i), $"{theWhat} knot {i}", theTolerance);
             theO.Same(theNative.Multiplicity(i), thePort.Multiplicity(i), $"{theWhat} mult {i}");
@@ -72,11 +75,11 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
         int aPoints = 0;
         for (int c = 0; c < 400; c++)
         {
-            (N.Geom_Curve aNC, Geom_Curve aPC, string aKind) = TestAdaptorOracleTests.RandomCurve(anOracle);
+            (N.Geom_Curve aNC, Curve3D aPC, string aKind) = TestAdaptorOracleTests.RandomCurve(anOracle);
             using (aNC)
             {
                 (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(),
-                    aPC.LastParameter(), aPC.IsPeriodic());
+                    aPC.LastParameter(), aPC.IsPeriodic);
                 string aW = $"{aKind} #{c} [{aFirst:R}, {aLast:R}]";
                 using var aN = new N.GeomAPI_ProjectPointOnCurve();
                 var aPort = new GeomAPI_ProjectPointOnCurve();
@@ -85,7 +88,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                     continue;
                 }
                 anOracle.Same(aN.NbPoints(), aPort.NbPoints(), $"{aW} NbPoints after Init");
-                var aRange = new GeomAdaptor_Curve(aPC, aFirst, aLast);
+                var aRange = new CurveAdaptor(aPC, aFirst, aLast);
                 for (int k = 0; k < 3; k++)
                 {
                     Point3D aP = k == 0 ? anOracle.Pnt()
@@ -138,7 +141,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
         for (int c = 0; c < 550; c++)
         {
             int aKind = c % AdaptorOracleInputs.SurfaceKinds.Length;
-            (N.Geom_Surface aNS, Geom_Surface aPS) = AdaptorOracleInputs.RandomSurface(anOracle, aKind);
+            (N.Geom_Surface aNS, Surface aPS) = AdaptorOracleInputs.RandomSurface(anOracle, aKind);
             using (aNS)
             {
                 aPS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
@@ -146,12 +149,12 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                 (double aWV1, double aWV2) = Window(anOracle, aV1, aV2);
                 bool aWithTol = anOracle.Bool();
                 double aTol = Math.Pow(10, anOracle.Real(-9, -4));
-                Extrema_ExtAlgo anAlgo = anOracle.Int(0, 3) == 0 ? Extrema_ExtAlgo_Tree : Extrema_ExtAlgo_Grad;
-                Extrema_ExtFlag aFlag = anOracle.Int(0, 3) switch
+                ExtAlgo anAlgo = anOracle.Int(0, 3) == 0 ? ExtAlgo_Tree : ExtAlgo_Grad;
+                ExtFlag aFlag = anOracle.Int(0, 3) switch
                 {
-                    0 => Extrema_ExtFlag_MIN,
-                    1 => Extrema_ExtFlag_MAX,
-                    _ => Extrema_ExtFlag_MINMAX,
+                    0 => ExtFlag_MIN,
+                    1 => ExtFlag_MAX,
+                    _ => ExtFlag_MINMAX,
                 };
                 string aW = $"{AdaptorOracleInputs.SurfaceKinds[aKind]} #{c} ({anAlgo}, {aFlag}, {(aWithTol ? aTol.ToString("R") : "default tol")})";
 
@@ -378,11 +381,11 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
             double aTolerance;
             if (aMethod == 0)
             {
-                Approx_ParametrizationType aParType = anOracle.Int(0, 2) switch
+                ParametrizationType aParType = anOracle.Int(0, 2) switch
                 {
-                    0 => Approx_ChordLength,
-                    1 => Approx_Centripetal,
-                    _ => Approx_IsoParametric,
+                    0 => ChordLength,
+                    1 => Centripetal,
+                    _ => IsoParametric,
                 };
                 int aDegMin = anOracle.Int(1, 4);
                 int aDegMax = anOracle.Int(aDegMin, 8);

@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 
@@ -23,8 +25,8 @@ public static class GeomInt_LineTool
     {
         private bool myIsDone;
         private int myIndex;
-        private readonly Extrema_ExtPS myExtPS = new();
-        private readonly GeomAdaptor_Surface myGeomAdaptor = new();
+        private readonly ExtPS myExtPS = new();
+        private readonly SurfaceAdaptor myGeomAdaptor = new();
 
         public ProjectPointOnSurf()
         {
@@ -32,7 +34,7 @@ public static class GeomInt_LineTool
             myIndex = 0;
         }
 
-        public void Init(Geom_Surface Surface, double Umin, double Usup, double Vmin, double Vsup)
+        public void Init(Surface Surface, double Umin, double Usup, double Vmin, double Vsup)
         {
             double Tolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
             //
@@ -43,13 +45,13 @@ public static class GeomInt_LineTool
 
         public void Init()
         {
-            myIsDone = myExtPS.IsDone() && (myExtPS.NbExt() > 0);
+            myIsDone = myExtPS.IsDone && (myExtPS.ExtCount > 0);
             if (myIsDone)
             {
                 // evaluate the lower distance and its index;
                 double Dist2Min = myExtPS.SquareDistance(1);
                 myIndex = 1;
-                for (int i = 2; i <= myExtPS.NbExt(); i++)
+                for (int i = 2; i <= myExtPS.ExtCount; i++)
                 {
                     double Dist2 = myExtPS.SquareDistance(i);
                     if (Dist2 < Dist2Min)
@@ -372,8 +374,8 @@ public static class GeomInt_LineTool
     /// start a new part), moves the ends of the inner parts onto the boundaries, and keeps the parts inside the line
     /// constructor's parts as new walking lines in theNewLines. Returns false if the line isn't split.
     /// </summary>
-    public static bool DecompositionOfWLine(IntPatch_WLine theWLine, GeomAdaptor_Surface theSurface1,
-                                            GeomAdaptor_Surface theSurface2, double aTolSum,
+    public static bool DecompositionOfWLine(IntPatch_WLine theWLine, SurfaceAdaptor theSurface1,
+                                            SurfaceAdaptor theSurface2, double aTolSum,
                                             GeomInt_LineConstructor theLConstructor,
                                             NCollection_Sequence<IntPatch_Line> theNewLines)
     {
@@ -385,7 +387,7 @@ public static class GeomInt_LineTool
 
         // GeomAPI_ProjectPointOnSurf aPrj1, aPrj2;
         ProjectPointOnSurf aPrj1 = new(), aPrj2 = new();
-        Geom_Surface aSurf1, aSurf2;
+        Surface aSurf1, aSurf2;
         //
         aNbParts = theLConstructor.NbParts();
         aNbPnts = theWLine.NbPnts();
@@ -426,14 +428,14 @@ public static class GeomInt_LineTool
             //
             for (i = 0; i < 2; i++)
             { // exploration Surface 1,2
-                GeomAdaptor_Surface aGASurface = (i == 0) ? theSurface1 : theSurface2;
+                SurfaceAdaptor aGASurface = (i == 0) ? theSurface1 : theSurface2;
                 aGASurface.Surface()!.Bounds(out umin, out umax, out vmin, out vmax);
                 //
                 for (j = 0; j < 2; j++)
                 { // exploration of coordinate U,V
                     bool isperiodic;
                     //
-                    isperiodic = (j == 0) ? aGASurface.IsUPeriodic() : aGASurface.IsVPeriodic();
+                    isperiodic = (j == 0) ? aGASurface.IsUPeriodic : aGASurface.IsVPeriodic;
                     if (!isperiodic)
                     {
                         continue;
@@ -552,7 +554,7 @@ public static class GeomInt_LineTool
                 for (surfit = 0; surfit < 2; ++surfit)
                 {
 
-                    GeomAdaptor_Surface aGASurface = (surfit == 0) ? theSurface1 : theSurface2;
+                    SurfaceAdaptor aGASurface = (surfit == 0) ? theSurface1 : theSurface2;
 
                     umin = aGASurface.FirstUParameter();
                     umax = aGASurface.LastUParameter();
@@ -575,7 +577,7 @@ public static class GeomInt_LineTool
                     //
                     for (parit = 0; parit < 2; parit++)
                     {
-                        bool isperiodic = (parit == 0) ? aGASurface.IsUPeriodic() : aGASurface.IsVPeriodic();
+                        bool isperiodic = (parit == 0) ? aGASurface.IsUPeriodic : aGASurface.IsVPeriodic;
 
                         double aResolution = (parit == 0) ? aGASurface.UResolution(aTol) : aGASurface.VResolution(aTol);
                         double alowerboundary = (parit == 0) ? umin : vmin;
@@ -618,7 +620,7 @@ public static class GeomInt_LineTool
                     }
                     else if (nbboundaries == 1)
                     {
-                        bool isperiodic = (bIsUBoundary) ? aGASurface.IsUPeriodic() : aGASurface.IsVPeriodic();
+                        bool isperiodic = (bIsUBoundary) ? aGASurface.IsUPeriodic : aGASurface.IsVPeriodic;
 
                         if (isperiodic)
                         {
@@ -791,7 +793,7 @@ public static class GeomInt_LineTool
                             double aCriteria = aTolSum; // BRep_Tool::Tolerance(theFace1) + BRep_Tool::Tolerance(theFace2);
                             //GeomAPI_ProjectPointOnSurf& aProjector = (surfit == 0) ? aPrj2 : aPrj1;
                             ProjectPointOnSurf aProjector = (surfit == 0) ? aPrj2 : aPrj1;
-                            GeomAdaptor_Surface aSurface = (surfit == 0) ? theSurface1 : theSurface2;
+                            SurfaceAdaptor aSurface = (surfit == 0) ? theSurface1 : theSurface2;
 
                             Point3D aP3d = aSurface.Value(anewpoint.X(), anewpoint.Y());
                             aProjector.Perform(aP3d);

@@ -3,18 +3,19 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>Unit tests of BRepAlgo_Image and BRepAlgo_AsDes, the offset algorithms' records of shapes (unit 5O1).</summary>
 public class BRepAlgo_ImageAsDesTests
 {
-    private static TopoDS_Shape V(double x) => new BRepBuilderAPI_MakeVertex(new Point3D(x, 0, 0)).Vertex();
+    private static Shape V(double x) => new BRepBuilderAPI_MakeVertex(new Point3D(x, 0, 0)).Vertex();
 
-    private static List<TopoDS_Shape> Items(NCollection_List<TopoDS_Shape> theList)
+    private static List<Shape> Items(NCollection_List<Shape> theList)
     {
-        List<TopoDS_Shape> anItems = [];
-        for (NCollection_List<TopoDS_Shape>.Iterator it = new(theList); it.More(); it.Next())
+        List<Shape> anItems = [];
+        for (NCollection_List<Shape>.Iterator it = new(theList); it.More(); it.Next())
         {
             anItems.Add(it.Value());
         }
@@ -24,7 +25,7 @@ public class BRepAlgo_ImageAsDesTests
     [Fact]
     public void Image_BindAddLastImageAndRoot()
     {
-        TopoDS_Shape a = V(0), b = V(1), c = V(2), d = V(3);
+        Shape a = V(0), b = V(1), c = V(2), d = V(3);
         BRepAlgo_Image anImage = new();
         anImage.SetRoot(a);
         anImage.Bind(a, b);
@@ -37,7 +38,7 @@ public class BRepAlgo_ImageAsDesTests
         Assert.True(anImage.Root(d).IsSame(a));
         Assert.Equal([b, c], Items(anImage.Image(a)));
 
-        NCollection_List<TopoDS_Shape> aLast = new();
+        NCollection_List<Shape> aLast = new();
         anImage.LastImage(a, aLast);
         Assert.Equal([d, c], Items(aLast));
 
@@ -52,7 +53,7 @@ public class BRepAlgo_ImageAsDesTests
     [Fact]
     public void Image_RemoveAndReplaceRoot()
     {
-        TopoDS_Shape a = V(0), b = V(1), c = V(2), r = V(4);
+        Shape a = V(0), b = V(1), c = V(2), r = V(4);
         BRepAlgo_Image anImage = new();
         anImage.SetRoot(a);
         anImage.Bind(a, b);
@@ -73,7 +74,7 @@ public class BRepAlgo_ImageAsDesTests
         Thread aThread = new(() =>
         {
             BRepAlgo_Image anImage = new();
-            TopoDS_Shape a = V(0), b = V(1);
+            Shape a = V(0), b = V(1);
             Assert.Equal([a], Items(anImage.Image(a)));
             Assert.Equal([a, b], Items(anImage.Image(b)));
         });
@@ -84,19 +85,19 @@ public class BRepAlgo_ImageAsDesTests
     [Fact]
     public void AsDes_AddReplaceRemoveAndCommonDescendants()
     {
-        TopoDS_Shape f1 = V(0), f2 = V(1), e1 = V(2), e2 = V(3), e3 = V(4);
+        Shape f1 = V(0), f2 = V(1), e1 = V(2), e2 = V(3), e3 = V(4);
         BRepAlgo_AsDes anAsDes = new();
         anAsDes.Add(f1, e1);
         anAsDes.Add(f1, e2);
         anAsDes.Add(f2, e2);
         anAsDes.Add(f2, e3);
 
-        NCollection_List<TopoDS_Shape> aCommon = new();
+        NCollection_List<Shape> aCommon = new();
         Assert.True(anAsDes.HasCommonDescendant(f1, f2, aCommon));
         Assert.Equal([e2], Items(aCommon));
         Assert.Equal([f1, f2], Items(anAsDes.Ascendant(e2)));
 
-        TopoDS_Shape e4 = V(5);
+        Shape e4 = V(5);
         anAsDes.Replace(e2, e4);
         Assert.False(anAsDes.HasAscendant(e2));
         Assert.Equal([e1, e4], Items(anAsDes.Descendant(f1)));

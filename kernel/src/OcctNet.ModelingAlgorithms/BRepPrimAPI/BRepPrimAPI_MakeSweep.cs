@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 
 namespace Occt;
@@ -19,28 +21,28 @@ namespace Occt;
 public abstract class BRepPrimAPI_MakeSweep : BRepBuilderAPI_MakeShape
 {
     // OCCT.NET: the copy for write of a generating shape holding frozen TShapes
-    private TopoDS_Shape myGenOriginal = new();
-    private TopoDS_Shape myGenCopy = new();
-    private Dictionary<TopoDS_TShape, TopoDS_TShape>? myGenCopies; // original's TShape -> copy's
-    private Dictionary<TopoDS_TShape, TopoDS_TShape>? myGenFinal; // copy's TShape -> the one standing for it now
+    private Shape myGenOriginal = new();
+    private Shape myGenCopy = new();
+    private Dictionary<TShape, TShape>? myGenCopies; // original's TShape -> copy's
+    private Dictionary<TShape, TShape>? myGenFinal; // copy's TShape -> the one standing for it now
 
     private protected BRepPrimAPI_MakeSweep()
     {
     }
 
     /// <summary>The shape at the bottom of the sweep (frozen).</summary>
-    public TopoDS_Shape FirstShape() => Published(InternalFirstShape());
+    public Shape FirstShape() => Published(InternalFirstShape());
 
     /// <summary>The shape at the top of the sweep (frozen).</summary>
-    public TopoDS_Shape LastShape() => Published(InternalLastShape());
+    public Shape LastShape() => Published(InternalLastShape());
 
     /// <summary><see cref="FirstShape()"/> without freezing (OCCT's virtual).</summary>
-    internal abstract TopoDS_Shape InternalFirstShape();
+    internal abstract Shape InternalFirstShape();
 
     /// <summary><see cref="LastShape()"/> without freezing (OCCT's virtual).</summary>
-    internal abstract TopoDS_Shape InternalLastShape();
+    internal abstract Shape InternalLastShape();
 
-    private protected static TopoDS_Shape Published(TopoDS_Shape theShape)
+    private protected static Shape Published(Shape theShape)
     {
         theShape.TShape()?.FreezeGraph();
         return theShape;
@@ -52,20 +54,20 @@ public abstract class BRepPrimAPI_MakeSweep : BRepBuilderAPI_MakeShape
     /// The shape to sweep in place of <paramref name="theS"/>: an exact copy of it when it holds frozen TShapes,
     /// otherwise <paramref name="theS"/> itself (OCCT's in-place sweep).
     /// </summary>
-    private protected TopoDS_Shape GeneratingShapeForWrite(in TopoDS_Shape theS)
+    private protected Shape GeneratingShapeForWrite(in Shape theS)
     {
         myGenOriginal = theS;
-        if (theS.IsNull() || !HasFrozen(theS.TShape()!, new HashSet<TopoDS_TShape>(ReferenceEqualityComparer.Instance)))
+        if (theS.IsNull || !HasFrozen(theS.TShape()!, new HashSet<TShape>(ReferenceEqualityComparer.Instance)))
         {
             myGenCopy = theS;
             myGenCopies = null;
             return theS;
         }
-        myGenCopy = BRepTools.ExactCopyForWrite(theS, out _, out myGenCopies);
+        myGenCopy = BrepTools.ExactCopyForWrite(theS, out _, out myGenCopies);
         return myGenCopy;
     }
 
-    private static bool HasFrozen(TopoDS_TShape theTShape, HashSet<TopoDS_TShape> theVisited)
+    private static bool HasFrozen(TShape theTShape, HashSet<TShape> theVisited)
     {
         if (theTShape.IsFrozen)
         {
@@ -75,7 +77,7 @@ public abstract class BRepPrimAPI_MakeSweep : BRepBuilderAPI_MakeShape
         {
             return false;
         }
-        for (var anIt = new TopoDS_Iterator(new TopoDS_Shape(theTShape, new Placement(), TopAbs_Orientation.TopAbs_FORWARD));
+        for (var anIt = new Iterator(new Shape(theTShape, new Placement(), Orientation.Forward));
              anIt.More(); anIt.Next())
         {
             if (HasFrozen(anIt.Value().TShape()!, theVisited))
@@ -90,7 +92,7 @@ public abstract class BRepPrimAPI_MakeSweep : BRepBuilderAPI_MakeShape
     /// After the sweep of a copy: gives back the generating shape's sub-shapes the sweep left unchanged, in the
     /// result <paramref name="theResult"/> too (BRepTools.KeepUnchangedIn).
     /// </summary>
-    private protected void KeepUnchangedGenerating(ref TopoDS_Shape theResult)
+    private protected void KeepUnchangedGenerating(ref Shape theResult)
     {
         if (myGenCopies is null || myGenFinal is not null)
         {
@@ -98,29 +100,29 @@ public abstract class BRepPrimAPI_MakeSweep : BRepBuilderAPI_MakeShape
         }
         // the copy's graph is left as the sweep made it: the sweep reads it again for the history and the shapes it
         // builds on demand (its seam test walks the generating shape's faces)
-        myGenFinal = BRepTools.KeepUnchangedIn(myGenOriginal, myGenCopy, myGenCopies, ref theResult, out _, true);
+        myGenFinal = BrepTools.KeepUnchangedIn(myGenOriginal, myGenCopy, myGenCopies, ref theResult, out _, true);
     }
 
     /// <summary>The swept shape's sub-shape standing for the caller's sub-shape <paramref name="theS"/> (itself without a copy).</summary>
-    private protected TopoDS_Shape ToSwept(in TopoDS_Shape theS)
+    private protected Shape ToSwept(in Shape theS)
     {
-        if (myGenCopies is null || theS.IsNull() || !myGenCopies.TryGetValue(theS.TShape()!, out TopoDS_TShape? aCopy))
+        if (myGenCopies is null || theS.IsNull || !myGenCopies.TryGetValue(theS.TShape()!, out TShape? aCopy))
         {
             return theS;
         }
-        TopoDS_Shape aS = theS;
+        Shape aS = theS;
         aS.TShape(aCopy);
         return aS;
     }
 
     /// <summary>A shape the sweep returns, with a copy of the generating shape's sub-shape replaced by the one standing for it now.</summary>
-    private protected TopoDS_Shape FromSwept(in TopoDS_Shape theS)
+    private protected Shape FromSwept(in Shape theS)
     {
-        if (myGenFinal is null || theS.IsNull() || !myGenFinal.TryGetValue(theS.TShape()!, out TopoDS_TShape? aNow))
+        if (myGenFinal is null || theS.IsNull || !myGenFinal.TryGetValue(theS.TShape()!, out TShape? aNow))
         {
             return theS;
         }
-        TopoDS_Shape aS = theS;
+        Shape aS = theS;
         aS.TShape(aNow);
         return aS;
     }

@@ -5,7 +5,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -20,17 +21,17 @@ namespace Occt;
 /// </remarks>
 public class BOPDS_ShapeInfo
 {
-    protected TopoDS_Shape myShape = new();
-    protected TopAbs_ShapeEnum myType;
+    protected Shape myShape = new();
+    protected ShapeType myType;
     protected Box myBox = new();
     protected NCollection_List<int> mySubShapes;
     protected int myReference;
     protected int myFlag;
 
-    /// <summary>Empty information: type <see cref="TopAbs_SHAPE"/>, no reference, no flag.</summary>
+    /// <summary>Empty information: type <see cref="Shape"/>, no reference, no flag.</summary>
     public BOPDS_ShapeInfo()
     {
-        myType = TopAbs_SHAPE;
+        myType = global::Kerf.Topology.ShapeType.Shape;
         mySubShapes = new NCollection_List<int>();
         myReference = -1;
         myFlag = -1;
@@ -47,13 +48,13 @@ public class BOPDS_ShapeInfo
         myFlag = theOther.myFlag;
     }
 
-    internal void SetShape(in TopoDS_Shape theS) => myShape = theS;
+    internal void SetShape(in Shape theS) => myShape = theS;
 
-    public TopoDS_Shape Shape() => myShape;
+    public Shape Shape() => myShape;
 
-    internal void SetShapeType(TopAbs_ShapeEnum theType) => myType = theType;
+    internal void SetShapeType(ShapeType theType) => myType = theType;
 
-    public TopAbs_ShapeEnum ShapeType() => myType;
+    public ShapeType ShapeType() => myType;
 
     internal void SetBox(in Box theBox) => myBox = theBox;
 
@@ -79,7 +80,7 @@ public class BOPDS_ShapeInfo
     public bool HasBRep() => BOPDS_Tools.HasBRep(myType);
 
     /// <summary>True if the shape can take part in an interference.</summary>
-    public bool IsInterfering() => HasBRep() || myType == TopAbs_SOLID;
+    public bool IsInterfering() => HasBRep() || myType == global::Kerf.Topology.ShapeType.Solid;
 
     public bool HasFlag() => myFlag >= 0;
 
@@ -96,8 +97,8 @@ public class BOPDS_ShapeInfo
     /// <summary>Writes the type and the sub-shape indices as OCCT's <c>Dump</c> prints them.</summary>
     public void Dump(TextWriter theOS)
     {
-        TopAbs_ShapeEnum aTS = ShapeType();
-        theOS.Write(" " + TopAbs.ShapeTypeToString(aTS));
+        ShapeType aTS = ShapeType();
+        theOS.Write(" " + global::Kerf.Engine.Topology.TopAbs.ShapeTypeToString(aTS));
         theOS.Write(" {");
         for (NCollection_List<int>.Iterator aIt = new(mySubShapes); aIt.More(); aIt.Next())
         {

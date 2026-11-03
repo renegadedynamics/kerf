@@ -1,9 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Xunit.Abstractions;
-using static Occt.Approx_ParametrizationType;
+using static Kerf.Engine.Approximation.ParametrizationType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -72,7 +73,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
     };
 
     // GeomAPI_PointsToBSpline::Init's switch on the continuity.
-    private static void SetContinuity(AppDef_BSplineCompute theComputer, Continuity theContinuity)
+    private static void SetContinuity(BSplineCompute theComputer, Continuity theContinuity)
     {
         switch (theContinuity)
         {
@@ -93,7 +94,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void Compare(Oracle theOracle, N.Geom_BSplineCurve theNative, AppParCurves_MultiBSpCurve theCurve,
+    private static void Compare(Oracle theOracle, N.Geom_BSplineCurve theNative, MultiBSpCurve theCurve,
                                 NCollection_Array1<double> theKnots, string theWhat, double theTolerance)
     {
         theOracle.Same(theNative.Degree(), theCurve.Degree(), theWhat + " degree");
@@ -115,10 +116,10 @@ public class AppDefOracleTests(ITestOutputHelper output)
     }
 
     [Theory]
-    [InlineData(Approx_ChordLength)]
-    [InlineData(Approx_Centripetal)]
-    [InlineData(Approx_IsoParametric)]
-    public void PointsToBSpline_ParametrizationType(Approx_ParametrizationType theParType)
+    [InlineData(ChordLength)]
+    [InlineData(Centripetal)]
+    [InlineData(IsoParametric)]
+    public void PointsToBSpline_ParametrizationType(ParametrizationType theParType)
     {
         Tape.Row(theParType);
         Oracle anOracle = new(output, 20261029 + (int)theParType);
@@ -143,10 +144,10 @@ public class AppDefOracleTests(ITestOutputHelper output)
             {
                 UseSquares = true;
             }
-            AppDef_BSplineCompute TheComputer = new(aDegMin, aDegMax, aTol3D, Tol2D, nbit, true, theParType, UseSquares);
+            BSplineCompute TheComputer = new(aDegMin, aDegMax, aTol3D, Tol2D, nbit, true, theParType, UseSquares);
             SetContinuity(TheComputer, aCont);
-            TheComputer.Perform(new AppDef_MultiLine(aPoints));
-            AppParCurves_MultiBSpCurve TheCurve = TheComputer.Value();
+            TheComputer.Perform(new MultiLine(aPoints));
+            MultiBSpCurve TheCurve = TheComputer.Value();
 
             Assert.True(aNative.IsDone());
             using N.Geom_BSplineCurve? aNCurve = aNative.Curve();
@@ -195,11 +196,11 @@ public class AppDefOracleTests(ITestOutputHelper output)
             {
                 theParams[i] = (Params[i] - Uf) / Ul;
             }
-            AppDef_BSplineCompute TheComputer = new(aDegMin, aDegMax, aTol3D, Tol2D, 0, true, Approx_IsoParametric, true);
+            BSplineCompute TheComputer = new(aDegMin, aDegMax, aTol3D, Tol2D, 0, true, IsoParametric, true);
             TheComputer.SetParameters(theParams);
             SetContinuity(TheComputer, aCont);
-            TheComputer.Perform(new AppDef_MultiLine(aPoints));
-            AppParCurves_MultiBSpCurve TheCurve = TheComputer.Value();
+            TheComputer.Perform(new MultiLine(aPoints));
+            MultiBSpCurve TheCurve = TheComputer.Value();
             NCollection_Array1<double> Knots = TheCurve.Knots();
             global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(Params[Params.Lower()], Params[Params.Upper()], Knots);
 
@@ -259,21 +260,21 @@ public class AppDefOracleTests(ITestOutputHelper output)
             {
                 nbit = 0;
             }
-            AppDef_MultiLine multL = new(NbPoint);
+            MultiLine multL = new(NbPoint);
             for (i = 1; i <= NbPoint; ++i)
             {
-                AppDef_MultiPointConstraint mpc = new(1, 0);
+                MultiPointConstraint mpc = new(1, 0);
                 mpc.SetPoint(1, aPoints.Value(aPoints.Lower() + i - 1));
                 multL.SetValue(i, mpc);
             }
-            NCollection_HArray1<AppParCurves_ConstraintCouple> TABofCC = new(1, NbPoint);
-            AppParCurves_Constraint Constraint = AppParCurves_Constraint.AppParCurves_NoConstraint;
+            NCollection_HArray1<ConstraintCouple> TABofCC = new(1, NbPoint);
+            Constraint Constraint = global::Kerf.Engine.Approximation.Constraint.NoConstraint;
             for (i = 1; i <= NbPoint; ++i)
             {
-                AppParCurves_ConstraintCouple ACC = new(i, Constraint);
+                ConstraintCouple ACC = new(i, Constraint);
                 TABofCC.SetValue(i, ACC);
             }
-            AppDef_Variational? Variation = null;
+            Variational? Variation = null;
             bool aPortThrew = false;
             try
             {
@@ -298,13 +299,13 @@ public class AppDefOracleTests(ITestOutputHelper output)
                 continue;
             }
             bool aPortDone = false;
-            AppParCurves_MultiBSpCurve? TheCurve = null;
-            if (Variation!.IsCreated() && !Variation.IsOverConstrained())
+            MultiBSpCurve? TheCurve = null;
+            if (Variation!.IsCreated && !Variation.IsOverConstrained)
             {
                 try
                 {
                     Variation.Approximate();
-                    if (Variation.IsDone())
+                    if (Variation.IsDone)
                     {
                         TheCurve = Variation.Value();
                         aPortDone = true;

@@ -3,10 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -55,17 +57,17 @@ public sealed class Geom2dGcc_Circ2dTanCenGeo
         int                 nbsol  = 0;
         Direction2D            dirx   = new(Direction2D.D.X);
         double              thePar;
-        Geom2dAdaptor_Curve curve  = Qualified1.Qualified();
-        Extrema_ExtPC2d     distmin = new(Pcenter,
+        CurveAdaptor2D curve  = Qualified1.Qualified();
+        ExtPC2d     distmin = new(Pcenter,
                                           curve,
                                           Geom2dGcc_CurveTool.FirstParameter(curve),
                                           Geom2dGcc_CurveTool.LastParameter(curve),
                                           Tol);
-        if (!distmin.IsDone())
+        if (!distmin.IsDone)
         {
             throw new FailureException();
         }
-        int nbext = distmin.NbExt();
+        int nbext = distmin.ExtCount;
         if (nbext == 0)
         {
             throw new FailureException();

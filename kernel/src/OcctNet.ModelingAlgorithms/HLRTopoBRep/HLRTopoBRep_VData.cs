@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>A vertex inserted on an edge, with its parameter on the edge.</summary>
@@ -11,15 +13,15 @@ namespace Occt;
 public readonly struct HLRTopoBRep_VData : IEquatable<HLRTopoBRep_VData>
 {
     private readonly double myParameter;
-    private readonly TopoDS_Shape myVertex;
+    private readonly Shape myVertex;
 
     public HLRTopoBRep_VData()
     {
         myParameter = 0.0;
-        myVertex = new TopoDS_Shape();
+        myVertex = new Shape();
     }
 
-    public HLRTopoBRep_VData(double P, in TopoDS_Shape V)
+    public HLRTopoBRep_VData(double P, in Shape V)
     {
         myParameter = P;
         myVertex = V;
@@ -27,7 +29,7 @@ public readonly struct HLRTopoBRep_VData : IEquatable<HLRTopoBRep_VData>
 
     public double Parameter() => myParameter;
 
-    public TopoDS_Shape Vertex() => myVertex;
+    public Shape Vertex() => myVertex;
 
     public bool Equals(HLRTopoBRep_VData other) => myParameter.Equals(other.myParameter) && myVertex.Equals(other.myVertex);
 

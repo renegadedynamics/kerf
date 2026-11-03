@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Text;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
@@ -39,10 +43,10 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile));
+        Assert.True(BrepTools.Write(theShape, aFile));
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 
@@ -63,7 +67,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
             + $"{Failed} different; {ErrorsCompared} failed constructions with equal errors";
     }
 
-    private void Compare(Tally theTally, string theWhat, N.TopoDS_Shape theNative, in TopoDS_Shape thePort)
+    private void Compare(Tally theTally, string theWhat, N.TopoDS_Shape theNative, in Shape thePort)
     {
         string aN = NativeText(theNative);
         string aP = PortText(thePort);
@@ -201,7 +205,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
                     using var aN1 = Oracle.ToNative(aP1);
                     using var aN2 = Oracle.ToNative(aP2);
                     N.TopoDS_Vertex aNV1 = new N.BRepBuilderAPI_MakeVertex(aN1).Vertex(), aNV2 = new N.BRepBuilderAPI_MakeVertex(aN2).Vertex();
-                    TopoDS_Vertex aV1 = new BRepLib_MakeVertex(aP1).Vertex(), aV2 = new BRepLib_MakeVertex(aP2).Vertex();
+                    Vertex aV1 = new BRepLib_MakeVertex(aP1).Vertex(), aV2 = new BRepLib_MakeVertex(aP2).Vertex();
                     Compare(aT, "vertex", aNV1, aV1);
                     aNM = new N.BRepBuilderAPI_MakeEdge(aNV1, aNV2);
                     aPM = new BRepLib_MakeEdge(aV1, aV2);
@@ -313,7 +317,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
                     {
                         aPoles[i] = anO.Pnt();
                     }
-                    var aC = new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg);
+                    var aC = new BSplineCurve3D(aPoles, aKnots, aMults, aDeg);
                     N.Geom_BSplineCurve aNC = Oracle.ToNativeCurve(aPoles, null, aKnots, aMults, aDeg, false);
                     double f = aKnots[aKnots.Lower()], l = aKnots[aKnots.Upper()];
                     double p1 = f + anO.Real(-0.1, 0.5) * (l - f), p2 = f + anO.Real(0.5, 1.1) * (l - f);
@@ -327,7 +331,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
                         double t1 = f + 0.1 * (l - f), t2 = f + 0.9 * (l - f);
                         var aNT = new N.Geom_TrimmedCurve(aNC, t1, t2);
                         aNM = new N.BRepBuilderAPI_MakeEdge(aNT);
-                        aPM = new BRepLib_MakeEdge(new Geom_TrimmedCurve(aC, t1, t2));
+                        aPM = new BRepLib_MakeEdge(new TrimmedCurve3D(aC, t1, t2));
                     }
                     aWhat = "bspline";
                     break;
@@ -337,7 +341,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
                     // a vertex given at a point near or away from the curve (DifferentsPointAndParameter)
                     Point3D aP = anO.Pnt();
                     Direction3D aD = Dir(anO);
-                    var aL = new Geom_Line(aP, aD);
+                    var aL = new LineCurve3D(aP, aD);
                     using var aNP0 = Oracle.ToNative(aP);
                     using var aND = Oracle.ToNative(aD);
                     var aNL = new N.Geom_Line(aNP0, aND);
@@ -355,17 +359,17 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
                     // a curve on a surface: a 2D line or circle on a plane or a cylinder
                     CoordinateSystem anAx = Ax3(anO, anO.Bool());
                     using var aNAx = Oracle.ToNative(anAx);
-                    Geom_Surface aS;
+                    Surface aS;
                     N.Geom_Surface aNS;
                     if (anO.Bool())
                     {
-                        aS = new Geom_Plane(anAx);
+                        aS = new PlaneSurface(anAx);
                         aNS = new N.Geom_Plane(aNAx);
                     }
                     else
                     {
                         double r = anO.Real(0.5, 10);
-                        aS = new Geom_CylindricalSurface(anAx, r);
+                        aS = new CylindricalSurface(anAx, r);
                         aNS = new N.Geom_CylindricalSurface(aNAx, r);
                     }
                     Point2D aP = new(anO.Real(-3, 3), anO.Real(-3, 3));
@@ -376,14 +380,14 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
                     if (anO.Bool())
                     {
                         aNM = new N.BRepBuilderAPI_MakeEdge(new N.Geom2d_Line(aNP, aND), aNS, p1, p2);
-                        aPM = new BRepLib_MakeEdge(new Geom2d_Line(aP, aD), aS, p1, p2);
+                        aPM = new BRepLib_MakeEdge(new LineCurve2D(aP, aD), aS, p1, p2);
                     }
                     else
                     {
                         double r = anO.Real(0.2, 2);
                         using var aNA2 = new N.gp_Ax2d(aNP, aND);
                         aNM = new N.BRepBuilderAPI_MakeEdge(new N.Geom2d_Circle(aNA2, r), aNS);
-                        aPM = new BRepLib_MakeEdge(new Geom2d_Circle(new Axis2D(aP, aD), r), aS);
+                        aPM = new BRepLib_MakeEdge(new CircleCurve2D(new Axis2D(aP, aD), r), aS);
                     }
                     aWhat = "curve on surface";
                     break;
@@ -451,7 +455,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
             // edges between shared vertices (kind 1), or each with its own vertices, which coincide (kinds 2 to 4);
             // kind 3 moves each next start within the vertices' tolerance; kind 4 adds them as a shuffled list
             var aNV = new N.TopoDS_Vertex[n];
-            var aPV = new TopoDS_Vertex[n];
+            var aPV = new Vertex[n];
             for (int i = 0; i < n; i++)
             {
                 using var aN = Oracle.ToNative(aPts[i]);
@@ -461,7 +465,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
             bool aClosed = anO.Bool();
             int aNbEdges = aClosed ? n : n - 1;
             var aNE = new N.TopoDS_Edge[aNbEdges];
-            var aPE = new TopoDS_Edge[aNbEdges];
+            var aPE = new Edge[aNbEdges];
             for (int i = 0; i < aNbEdges; i++)
             {
                 int j = (i + 1) % n;
@@ -485,7 +489,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
                 if (anO.Int(0, 3) == 0)
                 {
                     aNE[i] = N.TopoDS.Edge(aNE[i].Reversed());
-                    aPE[i] = TopoDS.Edge(aPE[i].Reversed());
+                    aPE[i] = ShapeCasts.Edge(aPE[i].Reversed());
                 }
             }
 
@@ -495,7 +499,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
             {
                 int[] anOrder = Enumerable.Range(0, aNbEdges).OrderBy(_ => anO.Real()).ToArray();
                 using var aNL = new N.TopTools_ListOfShape();
-                var aPL = new NCollection_List<TopoDS_Shape>();
+                var aPL = new NCollection_List<Shape>();
                 foreach (int i in anOrder)
                 {
                     aNL.Append(aNE[i]);
@@ -622,7 +626,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
                             aPoles[i, j] = new Point3D(i * 3 + anO.Real(-1, 1), j * 3 + anO.Real(-1, 1), anO.Real(-2, 2));
                         }
                     }
-                    var aS = new Geom_BezierSurface(aPoles);
+                    var aS = new BezierSurface(aPoles);
                     using var aNPoles = Oracle.ToNative(aPoles);
                     var aNS = new N.Geom_BezierSurface(aNPoles);
                     double tol = anO.Bool() ? global::Kerf.Engine.Foundation.Precision.Confusion() : 1e-3;
@@ -695,7 +699,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
             aNP.Close();
             aPP.Close();
             N.TopoDS_Wire aNW = aNP.Wire();
-            TopoDS_Wire aPW = aPP.Wire();
+            Wire aPW = aPP.Wire();
 
             N.BRepBuilderAPI_MakeFace aNM;
             BRepLib_MakeFace aPM;
@@ -725,7 +729,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
 
             // a hole: a smaller polygon around the same centre, added to a face loaded from the result
             N.TopoDS_Face aNF = aNM.Face();
-            TopoDS_Face aPF = aPM.Face();
+            Face aPF = aPM.Face();
             if (anO.Bool())
             {
                 Point3D[] aHole = StarPolygon(anO, anAx, anO.Int(3, 6), 0.2);
@@ -740,7 +744,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
                 aNH.Close();
                 aPH.Close();
                 aNF = new N.BRepBuilderAPI_MakeFace(aNF, N.TopoDS.Wire(aNH.Wire().Reversed())).Face();
-                aPF = new BRepLib_MakeFace(aPF, TopoDS.Wire(aPH.Wire().Reversed())).Face();
+                aPF = new BRepLib_MakeFace(aPF, ShapeCasts.Wire(aPH.Wire().Reversed())).Face();
             }
             Compare(aT, $"face from wire {aKind}", aNF, aPF);
         }
@@ -776,7 +780,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
                     aPoles[i, j] = new Point3D(i * 2 + anO.Real(-0.5, 0.5), j * 2 + anO.Real(-0.5, 0.5), anO.Real(-2, 2));
                 }
             }
-            var aS = new Geom_BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, aDegU, aDegV);
+            var aS = new BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, aDegU, aDegV);
             using var aNPoles = Oracle.ToNative(aPoles);
             using var aNUK = Oracle.ToNative(aUKnots);
             using var aNVK = Oracle.ToNative(aVKnots);
@@ -821,7 +825,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
         {
             CoordinateSystem anAx = Ax3(anO);
             double dx = anO.Real(0.5, 10), dy = anO.Real(0.5, 10), dz = anO.Real(0.5, 10);
-            (N.TopoDS_Shell N, TopoDS_Shell P) aShell = BoxShell(anAx, dx, dy, dz);
+            (N.TopoDS_Shell N, Shell P) aShell = BoxShell(anAx, dx, dy, dz);
             N.BRepBuilderAPI_MakeSolid aNM;
             BRepLib_MakeSolid aPM;
             if (aCase % 2 == 0)
@@ -831,9 +835,9 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
             }
             else
             {
-                (N.TopoDS_Shell N, TopoDS_Shell P) aInner = BoxShell(anAx, dx / 2, dy / 2, dz / 2);
+                (N.TopoDS_Shell N, Shell P) aInner = BoxShell(anAx, dx / 2, dy / 2, dz / 2);
                 aNM = new N.BRepBuilderAPI_MakeSolid(aShell.N, N.TopoDS.Shell(aInner.N.Reversed()));
-                aPM = new BRepLib_MakeSolid(aShell.P, TopoDS.Shell(aInner.P.Reversed()));
+                aPM = new BRepLib_MakeSolid(aShell.P, ShapeCasts.Shell(aInner.P.Reversed()));
             }
             Assert.Equal(aNM.IsDone(), aPM.IsDone());
             Compare(aT, "solid", aNM.Solid(), aPM.Solid());
@@ -843,7 +847,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
 
     // A box [0, dx] x [0, dy] x [0, dz] in the placement: 8 vertices, 12 edges, 6 wires and 6 faces from the makers
     // (MakeVertex, MakeEdge, MakeWire, MakeFace(plane, wire)), sewn into a shell with BRep_Builder on both sides.
-    private static (N.TopoDS_Shell, TopoDS_Shell) BoxShell(in CoordinateSystem theAx, double dx, double dy, double dz)
+    private static (N.TopoDS_Shell, Shell) BoxShell(in CoordinateSystem theAx, double dx, double dy, double dz)
     {
         var aP = new Point3D[8];
         for (int i = 0; i < 8; i++)
@@ -852,7 +856,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
                 new Vector3D(theAx.Direction()) * (((i >> 2) & 1) * dz));
         }
         var aNV = new N.TopoDS_Vertex[8];
-        var aPV = new TopoDS_Vertex[8];
+        var aPV = new Vertex[8];
         for (int i = 0; i < 8; i++)
         {
             using var aN = Oracle.ToNative(aP[i]);
@@ -861,7 +865,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
         }
         int[][] anEdges = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]];
         var aNE = new N.TopoDS_Edge[12];
-        var aPE = new TopoDS_Edge[12];
+        var aPE = new Edge[12];
         for (int i = 0; i < 12; i++)
         {
             aNE[i] = new N.BRepBuilderAPI_MakeEdge(aNV[anEdges[i][0]], aNV[anEdges[i][1]]).Edge();
@@ -870,10 +874,10 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
         // faces by their edges, in order around them
         int[][] aFaces = [[0, 5, 1, 4], [2, 7, 3, 6], [0, 9, 2, 8], [1, 11, 3, 10], [4, 10, 6, 8], [5, 11, 7, 9]];
         var aNB = new N.BRep_Builder();
-        var aPB = new BRep_Builder();
+        var aPB = new BrepBuilder();
         var aNShell = new N.TopoDS_Shell();
         aNB.MakeShell(aNShell);
-        TopoDS_Shell aPShell = new();
+        Shell aPShell = new();
         aPB.MakeShell(ref aPShell);
         foreach (int[] aF in aFaces)
         {
@@ -885,7 +889,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
                 aPW.Add(aPE[e]);
             }
             N.TopoDS_Face aNF = new N.BRepBuilderAPI_MakeFace(aNW.Wire(), true).Face();
-            TopoDS_Face aPF = new BRepLib_MakeFace(aPW.Wire(), true).Face();
+            Face aPF = new BRepLib_MakeFace(aPW.Wire(), true).Face();
             aNB.Add(aNShell, aNF);
             aPB.Add(aPShell, aPF);
         }
@@ -924,7 +928,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
                 aPP.Close();
             }
             N.TopoDS_Shape aNS = aNP.Wire();
-            TopoDS_Shape aPS = aPP.Wire();
+            Shape aPS = aPP.Wire();
             if (aCase % 5 == 0)
             {
                 // a face of a cylinder or sphere between parameters: its edges have pcurves on the surface
@@ -963,8 +967,8 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
                 var aNB = new N.BRep_Builder();
                 var aNFace = new N.TopoDS_Face();
                 aNB.MakeFace(aNFace, aNF.Surface(), aNF.Location(), 1e-7);
-                TopoDS_Face aPFace = new();
-                new BRep_Builder().MakeFace(ref aPFace, aPF.Surface(), aPF.Location(), 1e-7);
+                Face aPFace = new();
+                new BrepBuilder().MakeFace(ref aPFace, aPF.Surface(), aPF.Location(), 1e-7);
                 Compare(aT, "found surface", aNFace, aPFace);
             }
         }

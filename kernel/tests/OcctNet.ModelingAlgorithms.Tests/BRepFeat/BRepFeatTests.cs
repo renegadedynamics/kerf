@@ -1,9 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.BRepFeat_StatusError;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -14,20 +18,20 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepFeatTests
 {
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType) => LocOpeTests.Count(theShape, theType);
+    private static int Count(in Shape theShape, ShapeType theType) => LocOpeTests.Count(theShape, theType);
 
-    private static double Volume(in TopoDS_Shape theShape) => LocOpeTests.Volume(theShape);
+    private static double Volume(in Shape theShape) => LocOpeTests.Volume(theShape);
 
     // A box 10 x 20 x 30 and a rectangle 4 x 6 on its top face (centred), as a face on the top face's plane
-    private static (TopoDS_Shape Box, TopoDS_Face Top, TopoDS_Face Rect) BoxAndRect()
+    private static (Shape Box, Face Top, Face Rect) BoxAndRect()
     {
-        TopoDS_Shape aBox = LocOpeTests.Box();
-        TopoDS_Face aTop = LocOpeTests.TopFace(aBox);
-        TopoDS_Face aRect = Rect(3, 7, 7, 13, 30);
+        Shape aBox = LocOpeTests.Box();
+        Face aTop = LocOpeTests.TopFace(aBox);
+        Face aRect = Rect(3, 7, 7, 13, 30);
         return (aBox, aTop, aRect);
     }
 
-    internal static TopoDS_Face Rect(double x1, double x2, double y1, double y2, double z)
+    internal static Face Rect(double x1, double x2, double y1, double y2, double z)
     {
         var aPoly = new BRepBuilderAPI_MakePolygon(new Point3D(x1, y1, z), new Point3D(x2, y1, z), new Point3D(x2, y2, z),
                                                    new Point3D(x1, y2, z), true);
@@ -37,12 +41,12 @@ public class BRepFeatTests
     [Fact]
     public void MakePrism_Protrusion_OfALength()
     {
-        (TopoDS_Shape aBox, TopoDS_Face aTop, TopoDS_Face aRect) = BoxAndRect();
+        (Shape aBox, Face aTop, Face aRect) = BoxAndRect();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox), aRectSnap = ShapeSnapshot.Of(aRect);
         var aPrism = new BRepFeat_MakePrism(aBox, aRect, aTop, new Direction3D(0, 0, 1), 1, true);
         aPrism.Perform(5.0);
         Assert.True(aPrism.IsDone());
-        TopoDS_Shape aRes = aPrism.Shape();
+        Shape aRes = aPrism.Shape();
         Assert.Equal(6000 + 4 * 6 * 5, Volume(aRes), 6);
         Assert.True(new BRepCheck_Analyzer(aRes).IsValid());
         Assert.True(LocOpeTests.AllFrozen(aRes));
@@ -50,18 +54,18 @@ public class BRepFeatTests
         aRectSnap.AssertUnchanged(aRect);
         // OCCT: a prism of a length without glued faces never reaches GlobalPerform, which sets the status
         Assert.Equal(BRepFeat_NotInitialized, aPrism.CurrentStatusError());
-        Assert.Equal(11, Count(aRes, TopAbs_FACE));
+        Assert.Equal(11, Count(aRes, ShapeType.Face));
     }
 
     [Fact]
     public void MakePrism_Depression_ThruAll()
     {
-        (TopoDS_Shape aBox, TopoDS_Face aTop, TopoDS_Face aRect) = BoxAndRect();
+        (Shape aBox, Face aTop, Face aRect) = BoxAndRect();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         var aPrism = new BRepFeat_MakePrism(aBox, aRect, aTop, new Direction3D(0, 0, -1), 0, true);
         aPrism.PerformThruAll();
         Assert.True(aPrism.IsDone());
-        TopoDS_Shape aRes = aPrism.Shape();
+        Shape aRes = aPrism.Shape();
         Assert.Equal(6000 - 4 * 6 * 30, Volume(aRes), 6);
         Assert.True(new BRepCheck_Analyzer(aRes).IsValid());
         aSnap.AssertUnchanged(aBox);
@@ -70,11 +74,11 @@ public class BRepFeatTests
     [Fact]
     public void MakePrism_Depression_UntilAFace()
     {
-        (TopoDS_Shape aBox, TopoDS_Face aTop, TopoDS_Face aRect) = BoxAndRect();
-        TopoDS_Shape aBottom = new TopExp_Explorer(aBox, TopAbs_FACE).Current();
-        for (var anExp = new TopExp_Explorer(aBox, TopAbs_FACE); anExp.More(); anExp.Next())
+        (Shape aBox, Face aTop, Face aRect) = BoxAndRect();
+        Shape aBottom = new Explorer(aBox, ShapeType.Face).Current();
+        for (var anExp = new Explorer(aBox, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            var aProps = new GProp_GProps();
+            var aProps = new Properties();
             BRepGProp.SurfaceProperties(anExp.Current(), aProps);
             if (Math.Abs(aProps.CentreOfMass().Z()) < 1e-9)
             {
@@ -88,11 +92,11 @@ public class BRepFeatTests
     }
 
     // The bottom face of the box (z = 0)
-    private static TopoDS_Shape Bottom(in TopoDS_Shape theBox)
+    private static Shape Bottom(in Shape theBox)
     {
-        for (var anExp = new TopExp_Explorer(theBox, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(theBox, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            var aProps = new GProp_GProps();
+            var aProps = new Properties();
             BRepGProp.SurfaceProperties(anExp.Current(), aProps);
             if (Math.Abs(aProps.CentreOfMass().Z()) < 1e-9)
             {
@@ -105,19 +109,19 @@ public class BRepFeatTests
     [Fact]
     public void MakeDPrism_Taper_TheInputsAreUnchanged_AndTheUntouchedFacesAreTheCallers()
     {
-        (TopoDS_Shape aBox, TopoDS_Face aTop, TopoDS_Face aRect) = BoxAndRect();
+        (Shape aBox, Face aTop, Face aRect) = BoxAndRect();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox), aRectSnap = ShapeSnapshot.Of(aRect);
         var aPrism = new BRepFeat_MakeDPrism(aBox, aRect, aTop, 5 * Math.PI / 180, 1, false);
         aPrism.Perform(4.0);
         Assert.True(aPrism.IsDone());
-        TopoDS_Shape aRes = aPrism.Shape();
+        Shape aRes = aPrism.Shape();
         Assert.True(LocOpeTests.AllFrozen(aRes));
         Assert.True(new BRepCheck_Analyzer(aRes).IsValid());
         Assert.True(Volume(aRes) > 6000 && Volume(aRes) < 6000 + 4 * 6 * 4);
         aSnap.AssertUnchanged(aBox);
         aRectSnap.AssertUnchanged(aRect);
         // the bottom face is untouched: the caller's own, not modified, not deleted
-        TopoDS_Shape aBottom = Bottom(aBox);
+        Shape aBottom = Bottom(aBox);
         Assert.True(LocOpeTests.Shares(aRes, aBottom));
         Assert.Empty(aPrism.Modified(aBottom));
         Assert.False(aPrism.IsDeleted(aBottom));
@@ -128,7 +132,7 @@ public class BRepFeatTests
     [Fact]
     public void MakeRevol_And_MakePipe_OnFrozenInputs()
     {
-        (TopoDS_Shape aBox, TopoDS_Face aTop, TopoDS_Face aRect) = BoxAndRect();
+        (Shape aBox, Face aTop, Face aRect) = BoxAndRect();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         var aRevol = new BRepFeat_MakeRevol(aBox, aRect, aTop, new Axis3D(new Point3D(0, 15, 30), new Direction3D(1, 0, 0)), 1, true);
         aRevol.Perform(30 * Math.PI / 180);
@@ -145,7 +149,7 @@ public class BRepFeatTests
     [Fact]
     public void MakeCylindricalHole_Blind_And_Through()
     {
-        TopoDS_Shape aBox = LocOpeTests.Box();
+        Shape aBox = LocOpeTests.Box();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         var aHole = new BRepFeat_MakeCylindricalHole();
         aHole.Init(aBox, new Axis3D(new Point3D(5, 10, 31), new Direction3D(0, 0, -1)));
@@ -167,18 +171,18 @@ public class BRepFeatTests
     [Fact]
     public void SplitShape_And_Gluer_OnFrozenInputs()
     {
-        (TopoDS_Shape aBox, TopoDS_Face aTop, TopoDS_Face aRect) = BoxAndRect();
+        (Shape aBox, Face aTop, Face aRect) = BoxAndRect();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         var aSplit = new BRepFeat_SplitShape(aBox);
-        aSplit.Add(BRepTools.OuterWire(aRect), aTop);
+        aSplit.Add(BrepTools.OuterWire(aRect), aTop);
         aSplit.Build();
         Assert.True(aSplit.IsDone());
-        Assert.Equal(7, Count(aSplit.Shape(), TopAbs_FACE));
+        Assert.Equal(7, Count(aSplit.Shape(), ShapeType.Face));
         Assert.Equal(2, aSplit.Modified(aTop).Count);
         aSnap.AssertUnchanged(aBox);
 
         // a box glued on the top face
-        TopoDS_Shape aNew = new BRepPrimAPI_MakePrism(aRect, new Vector3D(0, 0, 5)).Shape();
+        Shape aNew = new BRepPrimAPI_MakePrism(aRect, new Vector3D(0, 0, 5)).Shape();
         var aGluer = new BRepFeat_Gluer(aNew, aBox);
         aGluer.Bind(aRect, aTop);
         var aFE = new LocOpe_FindEdges(aRect, aTop);

@@ -3,8 +3,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -16,8 +19,8 @@ internal sealed class BOPAlgo_VertexEdge : BOPAlgo_ParallelAlgo, BOPTools_Parall
     private int myFlag;
     private double myT;
     private double myTolVNew;
-    private TopoDS_Vertex myV = new();
-    private TopoDS_Edge myE = new();
+    private Vertex myV = new();
+    private Edge myE = new();
     private IntTools_Context? myContext;
     private BOPDS_PaveBlock? myPB;
 
@@ -45,16 +48,16 @@ internal sealed class BOPAlgo_VertexEdge : BOPAlgo_ParallelAlgo, BOPTools_Parall
     }
 
     //
-    public void SetVertex(in TopoDS_Vertex aV) => myV = aV;
+    public void SetVertex(in Vertex aV) => myV = aV;
 
     //
-    public void SetEdge(in TopoDS_Edge aE) => myE = aE;
+    public void SetEdge(in Edge aE) => myE = aE;
 
     //
-    public TopoDS_Vertex Vertex() => myV;
+    public Vertex Vertex() => myV;
 
     //
-    public TopoDS_Edge Edge() => myE;
+    public Edge Edge() => myE;
 
     //
     public int Flag() => myFlag;
@@ -101,9 +104,9 @@ public partial class BOPAlgo_PaveFiller
     /// <summary>The vertex/edge interferences.</summary>
     protected virtual void PerformVE(ProgressRange theRange)
     {
-        FillShrunkData(TopAbs_VERTEX, TopAbs_EDGE);
+        FillShrunkData(ShapeType.Vertex, ShapeType.Edge);
         //
-        myIterator!.Initialize(TopAbs_VERTEX, TopAbs_EDGE);
+        myIterator!.Initialize(ShapeType.Vertex, ShapeType.Edge);
         using var aPS = new ProgressScope(theRange, null, 1);
 
         int iSize = myIterator.ExpectedLength();
@@ -230,8 +233,8 @@ public partial class BOPAlgo_PaveFiller
                 NCollection_List<int> pLI = aDMVSD.Bound(aPair, new NCollection_List<int>());
                 pLI.Append(nV);
                 //
-                TopoDS_Vertex aV = TopoDS.Vertex(myDS.Shape(nVSD));
-                TopoDS_Edge aE = TopoDS.Edge(myDS.Shape(nE));
+                Vertex aV = ShapeCasts.Vertex(myDS.Shape(nVSD));
+                Edge aE = ShapeCasts.Edge(myDS.Shape(nE));
                 //
                 BOPAlgo_VertexEdge aVESolver = aVVE.Append(new BOPAlgo_VertexEdge());
                 aVESolver.SetIndices(nVSD, nE);
@@ -423,8 +426,8 @@ public partial class BOPAlgo_PaveFiller
                         // Decide whether to unify vertices or not
                         if (bCheckDist)
                         {
-                            TopoDS_Vertex aV1 = TopoDS.Vertex(myDS.Shape(nV1));
-                            TopoDS_Vertex aV2 = TopoDS.Vertex(myDS.Shape(nV2));
+                            Vertex aV1 = ShapeCasts.Vertex(myDS.Shape(nV1));
+                            Vertex aV2 = ShapeCasts.Vertex(myDS.Shape(nV2));
                             if (BOPTools_AlgoTools.ComputeVV(aV1, aV2, myFuzzyValue) == 0)
                             {
                                 // vertices are interfering -> no valid range, unify vertices
@@ -525,8 +528,8 @@ public partial class BOPAlgo_PaveFiller
                         if (aLPBCB.IsEmpty())
                         {
                             aLPBCB.Append(aPB);
-                            TopoDS_Edge aEFirst = TopoDS.Edge(myDS!.Shape(aPB.OriginalEdge()));
-                            aTolEFirst = BRep_Tool.MaxTolerance(aEFirst, TopAbs_VERTEX);
+                            Edge aEFirst = ShapeCasts.Edge(myDS!.Shape(aPB.OriginalEdge()));
+                            aTolEFirst = Tool.MaxTolerance(aEFirst, ShapeType.Vertex);
                             //
                             double aTmFirst = (aPB.Pave1().Parameter() + aPB.Pave2().Parameter()) / 2.0;
                             BOPTools_AlgoTools.PointOnEdge(aEFirst, aTmFirst, out aPMFirst);
@@ -536,8 +539,8 @@ public partial class BOPAlgo_PaveFiller
                         }
                         //
                         // Check pave blocks for coincidence
-                        TopoDS_Edge aE = TopoDS.Edge(myDS!.Shape(aPB.OriginalEdge()));
-                        double aTolE = BRep_Tool.MaxTolerance(aE, TopAbs_VERTEX);
+                        Edge aE = ShapeCasts.Edge(myDS!.Shape(aPB.OriginalEdge()));
+                        double aTolE = Tool.MaxTolerance(aE, ShapeType.Vertex);
                         //
                         double aTOut = 0.0, aDist = 0.0; // OCCT: uninitialised, read only on success
                         int iErr = myContext!.ComputePE(aPMFirst, aTolEFirst + aTolE + myFuzzyValue, aE, ref aTOut, ref aDist);
@@ -564,13 +567,13 @@ public partial class BOPAlgo_PaveFiller
     }
 
     /// <summary>Adds the warning <see cref="BOPAlgo_AlertIntersectionOfPairOfShapesFailed"/> for the two shapes.</summary>
-    protected void AddIntersectionFailedWarning(in TopoDS_Shape theS1, in TopoDS_Shape theS2)
+    protected void AddIntersectionFailedWarning(in Shape theS1, in Shape theS2)
     {
         // Create the warn shape
-        TopoDS_Compound aWC = new();
-        new BRep_Builder().MakeCompound(ref aWC);
-        new BRep_Builder().Add(aWC, theS1);
-        new BRep_Builder().Add(aWC, theS2);
+        Compound aWC = new();
+        new BrepBuilder().MakeCompound(ref aWC);
+        new BrepBuilder().Add(aWC, theS1);
+        new BrepBuilder().Add(aWC, theS2);
         // Add the warning
         AddWarning(new BOPAlgo_AlertIntersectionOfPairOfShapesFailed(aWC));
     }

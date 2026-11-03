@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
@@ -110,19 +111,19 @@ internal static class FillRecordings
         public string Str() => Int(myN) + "," + myH.ToString("x", CultureInfo.InvariantCulture);
     }
 
-    private static void PutBSplineSurface(Writer theW, Geom_BSplineSurface? theS)
+    private static void PutBSplineSurface(Writer theW, BSplineSurface? theS)
     {
         if (theS is null)
         {
             theW.Put("srf:null");
             return;
         }
-        theW.Put("sdeg:" + Int(theS.UDegree()) + "," + Int(theS.VDegree()) + "," + Int(theS.NbUPoles()) + ","
-                 + Int(theS.NbVPoles()) + "," + (theS.IsURational() ? "1" : "0") + (theS.IsVRational() ? "1" : "0"));
+        theW.Put("sdeg:" + Int(theS.UDegree()) + "," + Int(theS.VDegree()) + "," + Int(theS.UPoleCount) + ","
+                 + Int(theS.VPoleCount) + "," + (theS.IsURational ? "1" : "0") + (theS.IsVRational ? "1" : "0"));
         Digest aP = new(), aW = new();
-        for (int i = 1; i <= theS.NbUPoles(); i++)
+        for (int i = 1; i <= theS.UPoleCount; i++)
         {
-            for (int j = 1; j <= theS.NbVPoles(); j++)
+            for (int j = 1; j <= theS.VPoleCount; j++)
             {
                 aP.Add(theS.Pole(i, j));
                 aW.Add(theS.Weight(i, j));
@@ -131,11 +132,11 @@ internal static class FillRecordings
         theW.Put("spol:" + aP.Str());
         theW.Put("swt:" + aW.Str());
         string aU = "", aV = "";
-        for (int i = 1; i <= theS.NbUKnots(); i++)
+        for (int i = 1; i <= theS.UKnotCount; i++)
         {
             aU = Join(aU, Hex(theS.UKnot(i)) + "," + Int(theS.UMultiplicity(i)));
         }
-        for (int i = 1; i <= theS.NbVKnots(); i++)
+        for (int i = 1; i <= theS.VKnotCount; i++)
         {
             aV = Join(aV, Hex(theS.VKnot(i)) + "," + Int(theS.VMultiplicity(i)));
         }
@@ -154,19 +155,19 @@ internal static class FillRecordings
         theW.Put("sd1:" + aD);
     }
 
-    private static void PutBezierSurface(Writer theW, Geom_BezierSurface? theS)
+    private static void PutBezierSurface(Writer theW, BezierSurface? theS)
     {
         if (theS is null)
         {
             theW.Put("srf:null");
             return;
         }
-        theW.Put("sdeg:" + Int(theS.UDegree()) + "," + Int(theS.VDegree()) + "," + (theS.IsURational() ? "1" : "0")
-                 + (theS.IsVRational() ? "1" : "0"));
+        theW.Put("sdeg:" + Int(theS.UDegree()) + "," + Int(theS.VDegree()) + "," + (theS.IsURational ? "1" : "0")
+                 + (theS.IsVRational ? "1" : "0"));
         Digest aP = new(), aW = new();
-        for (int i = 1; i <= theS.NbUPoles(); i++)
+        for (int i = 1; i <= theS.UPoleCount; i++)
         {
-            for (int j = 1; j <= theS.NbVPoles(); j++)
+            for (int j = 1; j <= theS.VPoleCount; j++)
             {
                 aP.Add(theS.Pole(i, j));
                 aW.Add(theS.Weight(i, j));
@@ -237,7 +238,7 @@ internal static class FillRecordings
             return new Point3D(x, y, z);
         }
 
-        public Geom_BSplineCurve BSpline()
+        public BSplineCurve3D BSpline()
         {
             int aDeg = I();
             bool aRat = B();
@@ -260,11 +261,11 @@ internal static class FillRecordings
                 aKnots[i] = D();
                 aMults[i] = I();
             }
-            return aRat ? new Geom_BSplineCurve(aPoles, aW, aKnots, aMults, aDeg)
-                        : new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg);
+            return aRat ? new BSplineCurve3D(aPoles, aW, aKnots, aMults, aDeg)
+                        : new BSplineCurve3D(aPoles, aKnots, aMults, aDeg);
         }
 
-        public Geom_BezierCurve Bezier()
+        public BezierCurve3D Bezier()
         {
             bool aRat = B();
             int aNbP = I();
@@ -278,7 +279,7 @@ internal static class FillRecordings
                     aW[i] = D();
                 }
             }
-            return aRat ? new Geom_BezierCurve(aPoles, aW) : new Geom_BezierCurve(aPoles);
+            return aRat ? new BezierCurve3D(aPoles, aW) : new BezierCurve3D(aPoles);
         }
     }
 
@@ -309,8 +310,8 @@ internal static class FillRecordings
     private static void CurvesCase(Writer theW, Reader theR, bool theBSpline, int theNbCurves)
     {
         int aStyle = theR.I();
-        List<Geom_BSplineCurve> aBS = [];
-        List<Geom_BezierCurve> aBZ = [];
+        List<BSplineCurve3D> aBS = [];
+        List<BezierCurve3D> aBZ = [];
         void Make()
         {
             if (theBSpline)
@@ -435,7 +436,7 @@ internal static class FillRecordings
         }
     }
 
-    private static Geom_BSplineSurface MakeSurface(Reader theR)
+    private static BSplineSurface MakeSurface(Reader theR)
     {
         int NU = theR.I();
         int NV = theR.I();
@@ -460,23 +461,23 @@ internal static class FillRecordings
         }
         Knots(NU, out NCollection_Array1<double> UK, out NCollection_Array1<int> UM);
         Knots(NV, out NCollection_Array1<double> VK, out NCollection_Array1<int> VM);
-        return new Geom_BSplineSurface(aP, UK, VK, UM, VM, 3, 3);
+        return new BSplineSurface(aP, UK, VK, UM, VM, 3, 3);
     }
 
     // Side k of S: 0 v=0 (u 0->1), 1 u=1 (v 0->1), 2 v=1 (u 0->1), 3 u=0 (v 0->1)
-    internal static GeomFill_Boundary MakeBound(Geom_BSplineSurface theS, int theSide, int theType, double theTol3d,
+    internal static GeomFill_Boundary MakeBound(BSplineSurface theS, int theSide, int theType, double theTol3d,
                                                 double theTolAng)
     {
         if (theType == 0)
         {
-            Geom_Curve anIso = theSide switch
+            Curve3D anIso = theSide switch
             {
                 0 => theS.VIso(0.0),
                 1 => theS.UIso(1.0),
                 2 => theS.VIso(1.0),
                 _ => theS.UIso(0.0),
             };
-            return new GeomFill_SimpleBound(new GeomAdaptor_Curve(anIso), theTol3d, theTolAng);
+            return new GeomFill_SimpleBound(new CurveAdaptor(anIso), theTol3d, theTolAng);
         }
         Point2D aP = theSide switch
         {
@@ -486,10 +487,10 @@ internal static class FillRecordings
             _ => new Point2D(0, 0),
         };
         Direction2D aD = (theSide == 0 || theSide == 2) ? new Direction2D(1, 0) : new Direction2D(0, 1);
-        Geom2d_Line aL = new(aP, aD);
-        Geom2dAdaptor_Curve aC2 = new(aL, 0.0, 1.0);
-        GeomAdaptor_Surface aSA = new(theS);
-        Adaptor3d_CurveOnSurface aCoS = new(aC2, aSA);
+        LineCurve2D aL = new(aP, aD);
+        CurveAdaptor2D aC2 = new(aL, 0.0, 1.0);
+        SurfaceAdaptor aSA = new(theS);
+        CurveOnSurface aCoS = new(aC2, aSA);
         return new GeomFill_BoundWithSurf(aCoS, theTol3d, theTolAng);
     }
 
@@ -501,7 +502,7 @@ internal static class FillRecordings
         bool aNoCheck = theR.B();
         double aTol3d = theR.D();
         double aTolAng = theR.D();
-        Geom_BSplineSurface S = MakeSurface(theR);
+        BSplineSurface S = MakeSurface(theR);
         int[] aType = new int[4];
         for (int k = 0; k < 4; k++)
         {

@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -19,13 +21,13 @@ public class Extrema_ExtPC_Test
 
         // Circle for projection
         Frame3D aAxis = new(new Point3D(0, 843.257, 0), global::Kerf.Engine.Geometry.Constants.DY().Reversed(), global::Kerf.Engine.Geometry.Constants.DX());
-        Geom_Circle aCircle = new(aAxis, 1725.9708621929999);
-        GeomAdaptor_Curve aC3D = new(aCircle);
+        CircleCurve3D aCircle = new(aAxis, 1725.9708621929999);
+        CurveAdaptor aC3D = new(aCircle);
 
         // Project point onto circle
-        Extrema_ExtPC aExtPC = new(aP3D, aC3D);
-        Assert.True(aExtPC.IsDone());
-        Assert.True(aExtPC.NbExt() > 0);
+        CurvePointExtrema aExtPC = new(aP3D, aC3D);
+        Assert.True(aExtPC.IsDone);
+        Assert.True(aExtPC.ExtCount > 0);
 
         Point3D aProj = aExtPC.Point(1).Value();
 

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Occt;
 
@@ -24,8 +25,8 @@ internal static class GeometryTestIntersectCommands
             return 1;
         }
 
-        Geom_Curve? GC1 = null;
-        Geom_Surface? GS1 = DrawTrSurf.GetSurface(theDI, a[2]);
+        Curve3D? GC1 = null;
+        Surface? GS1 = DrawTrSurf.GetSurface(theDI, a[2]);
         if (GS1 is null)
         {
             GC1 = DrawTrSurf.GetCurve(theDI, a[2]);
@@ -35,7 +36,7 @@ internal static class GeometryTestIntersectCommands
             }
         }
 
-        Geom_Surface? GS2 = DrawTrSurf.GetSurface(theDI, a[3]);
+        Surface? GS2 = DrawTrSurf.GetSurface(theDI, a[3]);
         if (GS2 is null)
         {
             return 1;
@@ -47,7 +48,7 @@ internal static class GeometryTestIntersectCommands
             tol = theDI.Atof(a[n - 1]);
         }
 
-        Geom_Curve Result;
+        Curve3D Result;
         Point3D Point;
 
         if (GC1 is null)
@@ -64,7 +65,7 @@ internal static class GeometryTestIntersectCommands
                 bool useStart = true, useBnd = true;
                 int ista1 = 0, ista2 = 0, ibnd1 = 0, ibnd2 = 0;
                 double[] UVsta = new double[4];
-                GeomAdaptor_Surface? AS1 = null, AS2 = null;
+                SurfaceAdaptor? AS1 = null, AS2 = null;
 
                 if (n <= 9) // user starting point
                 {
@@ -102,8 +103,8 @@ internal static class GeometryTestIntersectCommands
                         UVbnd[i - ibnd1] = theDI.Atof(a[i]);
                     }
 
-                    AS1 = new GeomAdaptor_Surface(GS1!, UVbnd[0], UVbnd[1], UVbnd[2], UVbnd[3]);
-                    AS2 = new GeomAdaptor_Surface(GS2, UVbnd[4], UVbnd[5], UVbnd[6], UVbnd[7]);
+                    AS1 = new SurfaceAdaptor(GS1!, UVbnd[0], UVbnd[1], UVbnd[2], UVbnd[3]);
+                    AS2 = new SurfaceAdaptor(GS2, UVbnd[4], UVbnd[5], UVbnd[6], UVbnd[7]);
                 }
 
                 if (useStart && !useBnd)

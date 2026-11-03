@@ -1,10 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Text;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -70,38 +74,38 @@ internal sealed class HlrDataRecorder
         }
     }
 
-    private void VertexRec(TopoDS_Vertex V)
+    private void VertexRec(Vertex V)
     {
-        if (V.IsNull())
+        if (V.IsNull)
         {
             Tag(" null");
             return;
         }
         Int((int)V.Orientation());
-        Pnt(BRep_Tool.Pnt(V));
-        Hex(BRep_Tool.Tolerance(V));
+        Pnt(Tool.Pnt(V));
+        Hex(Tool.Tolerance(V));
     }
 
-    private void EdgeRec(string theTag, TopoDS_Edge E, TopoDS_Face F)
+    private void EdgeRec(string theTag, Edge E, Face F)
     {
         Tag(theTag);
         Int((int)E.Orientation());
-        TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+        global::Kerf.Engine.Topology.Exploration.Vertices(E, out Vertex V1, out Vertex V2);
         VertexRec(V1);
         VertexRec(V2);
-        BRep_Tool.Range(E, out double f, out double l);
+        Tool.Range(E, out double f, out double l);
         Hex(f);
         Hex(l);
-        if (!V1.IsNull())
+        if (!V1.IsNull)
         {
-            Hex(BRep_Tool.Parameter(V1, E));
+            Hex(Tool.Parameter(V1, E));
         }
-        if (!V2.IsNull())
+        if (!V2.IsNull)
         {
-            Hex(BRep_Tool.Parameter(V2, E));
+            Hex(Tool.Parameter(V2, E));
         }
-        Int(BRep_Tool.Curve(E, out f, out l) is null ? 0 : 1);
-        Geom2d_Curve? aPC = BRep_Tool.CurveOnSurface(E, F, out double pf, out double pl);
+        Int(Tool.Curve(E, out f, out l) is null ? 0 : 1);
+        Curve2D? aPC = Tool.CurveOnSurface(E, F, out double pf, out double pl);
         if (aPC is not null)
         {
             Hex(pf);
@@ -110,26 +114,26 @@ internal sealed class HlrDataRecorder
             Pnt2d(aPC.Value(0.37 * pf + 0.63 * pl));
             Pnt2d(aPC.Value(pl));
         }
-        BRepAdaptor_Curve C = new(E);
+        EdgeCurveAdaptor C = new(E);
         Pnt(C.Value(C.FirstParameter()));
         Pnt(C.Value(0.37 * C.FirstParameter() + 0.63 * C.LastParameter()));
         Pnt(C.Value(C.LastParameter()));
         End();
     }
 
-    private void RecTopo(HLRTopoBRep_OutLiner S, TopoDS_Shape theWorking)
+    private void RecTopo(HLRTopoBRep_OutLiner S, Shape theWorking)
     {
         HLRTopoBRep_Data DS = S.DataStructure();
-        NCollection_Map<TopoDS_Shape> aFaces = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aFaces = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         int i = 0;
-        for (TopExp_Explorer ex = new(theWorking, TopAbs_FACE); ex.More(); ex.Next())
+        for (global::Kerf.Engine.Topology.Explorer ex = new(theWorking, ShapeType.Face); ex.More(); ex.Next())
         {
             if (!aFaces.Add(ex.Current()))
             {
                 continue;
             }
             i++;
-            TopoDS_Face F = TopoDS.Face(ex.Current().Oriented(TopAbs_Orientation.TopAbs_FORWARD));
+            Face F = global::Kerf.Engine.Topology.ShapeCasts.Face(ex.Current().Oriented(Orientation.Forward));
             Tag("face");
             Int(i);
             Int(DS.FaceHasIntL(F) ? DS.FaceIntL(F).Extent() : 0);
@@ -138,36 +142,36 @@ internal sealed class HlrDataRecorder
             End();
             if (DS.FaceHasIntL(F))
             {
-                for (NCollection_List<TopoDS_Shape>.Iterator it = new(DS.FaceIntL(F)); it.More(); it.Next())
+                for (NCollection_List<Shape>.Iterator it = new(DS.FaceIntL(F)); it.More(); it.Next())
                 {
-                    EdgeRec("intl", TopoDS.Edge(it.Value()), F);
+                    EdgeRec("intl", global::Kerf.Engine.Topology.ShapeCasts.Edge(it.Value()), F);
                 }
             }
             if (DS.FaceHasOutL(F))
             {
-                for (NCollection_List<TopoDS_Shape>.Iterator it = new(DS.FaceOutL(F)); it.More(); it.Next())
+                for (NCollection_List<Shape>.Iterator it = new(DS.FaceOutL(F)); it.More(); it.Next())
                 {
-                    EdgeRec("outl", TopoDS.Edge(it.Value()), F);
+                    EdgeRec("outl", global::Kerf.Engine.Topology.ShapeCasts.Edge(it.Value()), F);
                 }
             }
             if (DS.FaceHasIsoL(F))
             {
-                for (NCollection_List<TopoDS_Shape>.Iterator it = new(DS.FaceIsoL(F)); it.More(); it.Next())
+                for (NCollection_List<Shape>.Iterator it = new(DS.FaceIsoL(F)); it.More(); it.Next())
                 {
-                    EdgeRec("isol", TopoDS.Edge(it.Value()), F);
+                    EdgeRec("isol", global::Kerf.Engine.Topology.ShapeCasts.Edge(it.Value()), F);
                 }
             }
-            for (TopExp_Explorer exE = new(F, TopAbs_EDGE); exE.More(); exE.Next())
+            for (global::Kerf.Engine.Topology.Explorer exE = new(F, ShapeType.Edge); exE.More(); exE.Next())
             {
-                TopoDS_Edge E = TopoDS.Edge(exE.Current());
+                Edge E = global::Kerf.Engine.Topology.ShapeCasts.Edge(exE.Current());
                 if (DS.EdgeHasSplE(E))
                 {
                     Tag("split");
                     Int(DS.EdgeSplE(E).Extent());
                     End();
-                    for (NCollection_List<TopoDS_Shape>.Iterator it = new(DS.EdgeSplE(E)); it.More(); it.Next())
+                    for (NCollection_List<Shape>.Iterator it = new(DS.EdgeSplE(E)); it.More(); it.Next())
                     {
-                        EdgeRec("spl", TopoDS.Edge(it.Value()), F);
+                        EdgeRec("spl", global::Kerf.Engine.Topology.ShapeCasts.Edge(it.Value()), F);
                     }
                 }
             }
@@ -296,7 +300,7 @@ internal sealed class HlrDataRecorder
         I.Boundary().Value2D(out int FE, out double Param);
         Int(FE);
         Hex(Param);
-        I.Boundary().State3D(out TopAbs_State b, out TopAbs_State a);
+        I.Boundary().State3D(out Containment b, out Containment a);
         Int((int)b);
         Int((int)a);
         Int((int)I.Orientation());
@@ -305,7 +309,7 @@ internal sealed class HlrDataRecorder
         End();
     }
 
-    private void RecHide(HLRBRep_Data DS, NCollection_DataMap<TopoDS_Shape, BRepTopAdaptor_Tool> MST, int theMaxFaces)
+    private void RecHide(HLRBRep_Data DS, NCollection_DataMap<Shape, BRepTopAdaptor_Tool> MST, int theMaxFaces)
     {
         HLRAlgo_EdgesBlock.MinMaxIndices aTot = new();
         for (int k = 0; k < 8; k++)
@@ -409,14 +413,14 @@ internal sealed class HlrDataRecorder
         }
     }
 
-    public void RecData(string theName, TopoDS_Shape theShape, string theView, HLRAlgo_Projector P, int nbIso,
+    public void RecData(string theName, Shape theShape, string theView, HLRAlgo_Projector P, int nbIso,
                         int theMaxFaces)
     {
         gOut.Append("case hlrdata ").Append(theName).Append(' ').Append(theView).Append('\n');
         try
         {
             HLRTopoBRep_OutLiner S = new(theShape);
-            NCollection_DataMap<TopoDS_Shape, BRepTopAdaptor_Tool> MST = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_DataMap<Shape, BRepTopAdaptor_Tool> MST = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
             HLRBRep_Data DS = HLRBRep_ShapeToHLR.Load(S, P, MST, nbIso);
             Tag("sizes");
             Int(DS.NbVertices());
@@ -449,21 +453,21 @@ internal sealed class HlrDataRecorder
 
     public static readonly string[] THE_VIEWS = ["axo", "top", "bottom", "front", "back", "left", "right", "persp"];
 
-    public TopoDS_Shape ReadShape(string theFile)
+    public Shape ReadShape(string theFile)
     {
         string aPath = Path.Combine(myDataDir, "brep", theFile);
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aPath), aPath);
+        Assert.True(BrepTools.Read(out Shape aShape, aPath), aPath);
         return aShape;
     }
 
     /// <summary>The primitives in every view and in perspective (data.cpp's first loop).</summary>
     public void RecPrimitives()
     {
-        TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(10.0, 30.0).Shape();
-        TopoDS_Shape aTorus = new BRepPrimAPI_MakeTorus(30.0, 10.0).Shape();
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -10, -2), 10.0, 20.0, 30.0).Shape();
-        TopoDS_Shape aSph = new BRepPrimAPI_MakeSphere(new Point3D(3, 2, 1), 8.0).Shape();
-        TopoDS_Shape aCone =
+        Shape aCyl = new BRepPrimAPI_MakeCylinder(10.0, 30.0).Shape();
+        Shape aTorus = new BRepPrimAPI_MakeTorus(30.0, 10.0).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -10, -2), 10.0, 20.0, 30.0).Shape();
+        Shape aSph = new BRepPrimAPI_MakeSphere(new Point3D(3, 2, 1), 8.0).Shape();
+        Shape aCone =
             new BRepPrimAPI_MakeCone(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 1)), 10.0, 4.0, 20.0).Shape();
         for (int v = 0; v < 8; v++)
         {
@@ -478,7 +482,7 @@ internal sealed class HlrDataRecorder
     /// <summary>The B-spline shape of bug25908 in its seven views.</summary>
     public void RecBSplineClone(int theView)
     {
-        TopoDS_Shape aH1 = ReadShape("bug25908_hlr-bspline-clone2-tcl-h1.brep");
+        Shape aH1 = ReadShape("bug25908_hlr-bspline-clone2-tcl-h1.brep");
         RecData("bspline-clone2", aH1, THE_VIEWS[theView], View(theView), theView == 0 ? 2 : 0, 25);
     }
 

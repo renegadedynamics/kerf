@@ -1,6 +1,7 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomGridEval_Hyperbola_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -21,15 +22,15 @@ public class GeomGridEval_HyperbolaTest
     }
 
     // Hyperbola in XY plane, Major=3, Minor=2, center at origin
-    private static Geom_Hyperbola MakeCurve() => new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 3.0, 2.0);
+    private static HyperbolaCurve3D MakeCurve() => new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 3.0, 2.0);
 
     [Fact]
     public void BasicEvaluation()
     {
         // Hyperbola in XY plane, Major=3, Minor=2, center at origin
-        Geom_Hyperbola aCurve = MakeCurve();
+        HyperbolaCurve3D aCurve = MakeCurve();
 
-        GeomGridEval_Hyperbola anEval = new(aCurve);
+        HyperbolaGrid anEval = new(aCurve);
         Assert.NotNull(anEval.Geometry());
 
         // Test from -2 to 2
@@ -49,11 +50,11 @@ public class GeomGridEval_HyperbolaTest
     [Fact]
     public void DerivativeD1()
     {
-        Geom_Hyperbola aCurve = MakeCurve();
-        GeomGridEval_Hyperbola anEval = new(aCurve);
+        HyperbolaCurve3D aCurve = MakeCurve();
+        HyperbolaGrid anEval = new(aCurve);
 
         NCollection_Array1<double> aParams = CreateUniformParams(-2.0, 2.0, 9);
-        NCollection_Array1<Geom_Curve.ResD1> aGrid = anEval.EvaluateGridD1(aParams);
+        NCollection_Array1<Curve3D.ResD1> aGrid = anEval.EvaluateGridD1(aParams);
 
         for (int i = 1; i <= 9; ++i)
         {
@@ -66,11 +67,11 @@ public class GeomGridEval_HyperbolaTest
     [Fact]
     public void DerivativeD2()
     {
-        Geom_Hyperbola aCurve = MakeCurve();
-        GeomGridEval_Hyperbola anEval = new(aCurve);
+        HyperbolaCurve3D aCurve = MakeCurve();
+        HyperbolaGrid anEval = new(aCurve);
 
         NCollection_Array1<double> aParams = CreateUniformParams(-2.0, 2.0, 9);
-        NCollection_Array1<Geom_Curve.ResD2> aGrid = anEval.EvaluateGridD2(aParams);
+        NCollection_Array1<Curve3D.ResD2> aGrid = anEval.EvaluateGridD2(aParams);
 
         for (int i = 1; i <= 9; ++i)
         {
@@ -84,11 +85,11 @@ public class GeomGridEval_HyperbolaTest
     [Fact]
     public void DerivativeD3()
     {
-        Geom_Hyperbola aCurve = MakeCurve();
-        GeomGridEval_Hyperbola anEval = new(aCurve);
+        HyperbolaCurve3D aCurve = MakeCurve();
+        HyperbolaGrid anEval = new(aCurve);
 
         NCollection_Array1<double> aParams = CreateUniformParams(-2.0, 2.0, 9);
-        NCollection_Array1<Geom_Curve.ResD3> aGrid = anEval.EvaluateGridD3(aParams);
+        NCollection_Array1<Curve3D.ResD3> aGrid = anEval.EvaluateGridD3(aParams);
 
         for (int i = 1; i <= 9; ++i)
         {

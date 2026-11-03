@@ -1,10 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -31,7 +36,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
     }
 
     /// <summary>The native shape written to a file and read back by both sides.</summary>
-    private (N.TopoDS_Shape N, TopoDS_Shape P) RoundTrip(N.TopoDS_Shape theShape)
+    private (N.TopoDS_Shape N, Shape P) RoundTrip(N.TopoDS_Shape theShape)
     {
         string aFile = Path.Combine(myDirectory, $"s{myFileNumber++}.brep");
         Assert.True(N.BRepTools.Write(theShape, aFile));
@@ -41,7 +46,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
             Assert.True(N.BRepTools.Read(aNShape, aFile, aBuilder));
         }
 
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile));
+        Assert.True(BrepTools.Read(out Shape aPShape, aFile));
         return (aNShape, aPShape);
     }
 
@@ -178,14 +183,14 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
     }
 
     /// <summary>The curve written in an edge and read back by both sides.</summary>
-    private (N.Geom_Curve N, Geom_Curve P) RoundTripCurve(N.Geom_Curve theCurve, double theFirst, double theLast)
+    private (N.Geom_Curve N, Curve3D P) RoundTripCurve(N.Geom_Curve theCurve, double theFirst, double theLast)
     {
         using var aMaker = new N.BRepBuilderAPI_MakeEdge(theCurve, theFirst, theLast);
         Assert.True(aMaker.IsDone());
-        (N.TopoDS_Shape aN, TopoDS_Shape aP) = RoundTrip(aMaker.Shape());
+        (N.TopoDS_Shape aN, Shape aP) = RoundTrip(aMaker.Shape());
         double f = 0, l = 0;
         N.Geom_Curve? aNC = N.BRep_Tool.Curve(N.TopoDS.Edge(aN), ref f, ref l);
-        Geom_Curve? aPC = BRep_Tool.Curve(TopoDS.Edge(aP), out _, out _);
+        Curve3D? aPC = Tool.Curve(ShapeCasts.Edge(aP), out _, out _);
         Assert.NotNull(aNC);
         Assert.NotNull(aPC);
         return (aNC!, aPC!);
@@ -201,7 +206,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
         for (int i = 0; i < 270; i++)
         {
             (N.Geom_Curve aNative, double f, double l, string aWhat) = NativeCurve(anOracle, i);
-            (N.Geom_Curve aNC, Geom_Curve aPC) = RoundTripCurve(aNative, f, l);
+            (N.Geom_Curve aNC, Curve3D aPC) = RoundTripCurve(aNative, f, l);
             aNative.Dispose();
             string aCase = $"curve {i} ({aWhat})";
 
@@ -210,14 +215,14 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
             {
                 double t1 = f + (l - f) * anOracle.Real(0, 0.3), t2 = f + (l - f) * anOracle.Real(0.7, 1);
                 aNC = new N.Geom_TrimmedCurve(aNC, t1, t2);
-                aPC = new Geom_TrimmedCurve(aPC, t1, t2);
+                aPC = new TrimmedCurve3D(aPC, t1, t2);
                 f = aPC.FirstParameter();
                 l = aPC.LastParameter();
                 aCase += ", trimmed";
             }
 
             using var aNAdaptor = new N.GeomAdaptor_Curve(aNC, f, l);
-            var aPAdaptor = new GeomAdaptor_Curve(aPC, f, l);
+            var aPAdaptor = new CurveAdaptor(aPC, f, l);
             for (int k = 0; k < 8; k++)
             {
                 double t = f + (l - f) * anOracle.Real(-0.1, 1.1);
@@ -226,7 +231,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
                 aP = aP.Translated(new Vector3D(anOracle.Real(-1, 1), anOracle.Real(-1, 1), anOracle.Real(-1, 1)) * anOff);
                 if (k == 7 && aWhat == "circle")
                 {
-                    aP = ((Geom_Circle)(aPC is Geom_TrimmedCurve aT ? aT.BasisCurve() : aPC)).Location(); // on the axis
+                    aP = ((CircleCurve3D)(aPC is TrimmedCurve3D aT ? aT.BasisCurve() : aPC)).Location(); // on the axis
                 }
 
                 using N.gp_Pnt aNP = Oracle.ToNative(aP);
@@ -279,7 +284,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
             for (int k = 0; k < 4; k++)
             {
                 using N.Geom_Curve aNCopy = N.Geom_Curve.DownCast(aNC.Copy())!;
-                var aPCopy = (Geom_Curve)aPC.Copy();
+                var aPCopy = (Curve3D)aPC.Copy();
                 double aFirst = f + (l - f) * anOracle.Real(-0.3, 1.3), aLast = f + (l - f) * anOracle.Real(-0.3, 1.3);
                 if (k == 3)
                 {
@@ -325,7 +330,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
         var aSAC = new ShapeAnalysis_Curve();
         for (int i = 0; i < 500; i++)
         {
-            (N.Geom2d_Curve N, Geom2d_Curve P) Make()
+            (N.Geom2d_Curve N, Curve2D P) Make()
             {
                 double x = anOracle.Real(-5, 5), y = anOracle.Real(-5, 5);
                 N.gp_Dir2d aND;
@@ -353,19 +358,19 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
 
                 using N.gp_Pnt2d aNP = new(x, y);
                 var aNL = new N.Geom2d_Line(aNP, aND);
-                var aPL = new Geom2d_Line(new Point2D(x, y), aPD);
+                var aPL = new LineCurve2D(new Point2D(x, y), aPD);
                 aND.Dispose();
                 if (anOracle.Bool())
                 {
                     double t1 = anOracle.Real(-3, 3), t2 = t1 + (anOracle.Bool() ? 1 : -1) * anOracle.Real(0.5, 3);
-                    return (new N.Geom2d_TrimmedCurve(aNL, t1, t2), new Geom2d_TrimmedCurve(aPL, t1, t2));
+                    return (new N.Geom2d_TrimmedCurve(aNL, t1, t2), new TrimmedCurve2D(aPL, t1, t2));
                 }
 
                 return (aNL, aPL);
             }
 
-            (N.Geom2d_Curve aN1, Geom2d_Curve aP1) = Make();
-            (N.Geom2d_Curve aN2, Geom2d_Curve aP2) = Make();
+            (N.Geom2d_Curve aN1, Curve2D aP1) = Make();
+            (N.Geom2d_Curve aN2, Curve2D aP2) = Make();
             anOracle.Same(aNSAC.SelectForwardSeam(aN1, aN2), aSAC.SelectForwardSeam(aP1, aP2), $"pair {i}");
             aN1.Dispose();
             aN2.Dispose();
@@ -556,13 +561,13 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
     }
 
     /// <summary>The surface written in a face and read back by both sides.</summary>
-    private (N.Geom_Surface N, Geom_Surface P) RoundTripSurface(N.Geom_Surface theSurface, double theU1, double theU2, double theV1,
+    private (N.Geom_Surface N, Surface P) RoundTripSurface(N.Geom_Surface theSurface, double theU1, double theU2, double theV1,
                                                                 double theV2)
     {
         using var aMaker = new N.BRepBuilderAPI_MakeFace(theSurface, theU1, theU2, theV1, theV2, 1e-7);
         Assert.True(aMaker.IsDone());
-        (N.TopoDS_Shape aN, TopoDS_Shape aP) = RoundTrip(aMaker.Shape());
-        return (N.BRep_Tool.Surface(N.TopoDS.Face(aN))!, BRep_Tool.Surface(TopoDS.Face(aP))!);
+        (N.TopoDS_Shape aN, Shape aP) = RoundTrip(aMaker.Shape());
+        return (N.BRep_Tool.Surface(N.TopoDS.Face(aN))!, Tool.Surface(ShapeCasts.Face(aP))!);
     }
 
     private sealed class Counts
@@ -573,7 +578,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
     }
 
     /// <summary>The same calls on a native and a port analyzer of the same surface, compared.</summary>
-    private static void CompareSurface(Oracle theOracle, N.Geom_Surface theN, Geom_Surface theP, double theU1, double theU2,
+    private static void CompareSurface(Oracle theOracle, N.Geom_Surface theN, Surface theP, double theU1, double theU2,
                                        double theV1, double theV2, string theCase, Counts theCounts)
     {
         theCounts.Surfaces++;
@@ -743,7 +748,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
         for (int i = 0; i < 240; i++)
         {
             (N.Geom_Surface aNative, double u1, double u2, double v1, double v2, string aWhat) = NativeSurface(anOracle, i);
-            (N.Geom_Surface aNS, Geom_Surface aPS) = RoundTripSurface(aNative, u1, u2, v1, v2);
+            (N.Geom_Surface aNS, Surface aPS) = RoundTripSurface(aNative, u1, u2, v1, v2);
             aNative.Dispose();
             CompareSurface(anOracle, aNS, aPS, u1, u2, v1, v2, $"surface {i} ({aWhat})", aCounts);
             aNS.Dispose();
@@ -761,18 +766,18 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
         for (int i = 0; i < 48; i++)
         {
             using N.TopoDS_Shape aShape = BRepToolsIOOracleTests.NativeShape(anOracle, i, out string aWhat);
-            (N.TopoDS_Shape aN, TopoDS_Shape aP) = RoundTrip(aShape);
+            (N.TopoDS_Shape aN, Shape aP) = RoundTrip(aShape);
             using var aNMap = new N.TopTools_IndexedMapOfShape();
             N.TopExp.MapShapes(aN, N.TopAbs_ShapeEnum.TopAbs_FACE, aNMap);
-            var aPMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(aP, TopAbs_FACE, aPMap);
+            var aPMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            Exploration.MapShapes(aP, ShapeType.Face, aPMap);
             Assert.Equal(aNMap.Extent(), aPMap.Extent());
             for (int f = 1; f <= aPMap.Extent(); f++)
             {
-                TopoDS_Face aPF = TopoDS.Face(aPMap[f]);
-                BRepTools.UVBounds(aPF, out double u1, out double u2, out double v1, out double v2);
+                Face aPF = ShapeCasts.Face(aPMap[f]);
+                BrepTools.UVBounds(aPF, out double u1, out double u2, out double v1, out double v2);
                 using N.Geom_Surface aNS = N.BRep_Tool.Surface(N.TopoDS.Face(aNMap.FindKey(f)))!;
-                Geom_Surface aPS = BRep_Tool.Surface(aPF)!;
+                Surface aPS = Tool.Surface(aPF)!;
                 CompareSurface(anOracle, aNS, aPS, u1, u2, v1, v2, $"shape {i} ({aWhat}) face {f}", aCounts);
             }
 

@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
@@ -14,11 +15,11 @@ namespace Occt;
 
 /// <summary>What IntWalk_IWalking reads from its function, beyond math_FunctionSetWithDerivatives (decision 607).</summary>
 /// <typeparam name="TSelf">The function's class.</typeparam>
-public interface IIntWalk_IWFunction<TSelf> : IIntStart_SurfFunction<Adaptor3d_Surface>
+public interface IIntWalk_IWFunction<TSelf> : IIntStart_SurfFunction<SurfaceAdaptorBase>
     where TSelf : IIntWalk_IWFunction<TSelf>
 {
     /// <summary>The parametric surface.</summary>
-    Adaptor3d_Surface PSurface();
+    SurfaceAdaptorBase PSurface();
 
     /// <summary>A copy of <paramref name="theOther"/>: OCCT's copy constructor (decision 686).</summary>
     static abstract TSelf Copy(TSelf theOther);
@@ -232,7 +233,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
     /// (closed lines). Each point of a line verifies F(u, v) = 0.
     /// </summary>
     public void Perform(NCollection_Sequence<IntSurf_PathPoint> Pnts1, NCollection_Sequence<IntSurf_InteriorPoint> Pnts2,
-                        TheIWFunction Func, Adaptor3d_Surface Caro, bool Reversed = false)
+                        TheIWFunction Func, SurfaceAdaptorBase Caro, bool Reversed = false)
     {
         int I;
         bool Rajout = false;
@@ -243,10 +244,10 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
         Clear();
         reversed = Reversed;
 
-        Um = Adaptor3d_HSurfaceTool.FirstUParameter(Caro);
-        Vm = Adaptor3d_HSurfaceTool.FirstVParameter(Caro);
-        UM = Adaptor3d_HSurfaceTool.LastUParameter(Caro);
-        VM = Adaptor3d_HSurfaceTool.LastVParameter(Caro);
+        Um = HSurfaceTool.FirstUParameter(Caro);
+        Vm = HSurfaceTool.FirstVParameter(Caro);
+        UM = HSurfaceTool.LastUParameter(Caro);
+        VM = HSurfaceTool.LastVParameter(Caro);
 
         if (UM < Um)
         {
@@ -324,8 +325,8 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
             wd2.Append(aWD2);
         }
 
-        tolerance[1] = Adaptor3d_HSurfaceTool.UResolution(Caro, global::Kerf.Engine.Foundation.Precision.Confusion());
-        tolerance[2] = Adaptor3d_HSurfaceTool.VResolution(Caro, global::Kerf.Engine.Foundation.Precision.Confusion());
+        tolerance[1] = HSurfaceTool.UResolution(Caro, global::Kerf.Engine.Foundation.Precision.Confusion());
+        tolerance[2] = HSurfaceTool.VResolution(Caro, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Func.Set(Caro);
 
@@ -406,7 +407,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
     /// I + 1's data as point I's and, for the last one, past the vectors' end (out of bounds in OCCT; the port throws
     /// Standard_OutOfRange). No OCCT caller uses it (ImpPrm and Contap give interior points).
     /// </remarks>
-    public void Perform(NCollection_Sequence<IntSurf_PathPoint> Pnts1, TheIWFunction Func, Adaptor3d_Surface Caro,
+    public void Perform(NCollection_Sequence<IntSurf_PathPoint> Pnts1, TheIWFunction Func, SurfaceAdaptorBase Caro,
                         bool Reversed = false)
     {
         int I;
@@ -449,13 +450,13 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
             }
         }
 
-        tolerance[1] = Adaptor3d_HSurfaceTool.UResolution(Caro, global::Kerf.Engine.Foundation.Precision.Confusion());
-        tolerance[2] = Adaptor3d_HSurfaceTool.VResolution(Caro, global::Kerf.Engine.Foundation.Precision.Confusion());
+        tolerance[1] = HSurfaceTool.UResolution(Caro, global::Kerf.Engine.Foundation.Precision.Confusion());
+        tolerance[2] = HSurfaceTool.VResolution(Caro, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        Um = Adaptor3d_HSurfaceTool.FirstUParameter(Caro);
-        Vm = Adaptor3d_HSurfaceTool.FirstVParameter(Caro);
-        UM = Adaptor3d_HSurfaceTool.LastUParameter(Caro);
-        VM = Adaptor3d_HSurfaceTool.LastVParameter(Caro);
+        Um = HSurfaceTool.FirstUParameter(Caro);
+        Vm = HSurfaceTool.FirstVParameter(Caro);
+        UM = HSurfaceTool.LastUParameter(Caro);
+        VM = HSurfaceTool.LastVParameter(Caro);
 
         if (UM < Um)
         {

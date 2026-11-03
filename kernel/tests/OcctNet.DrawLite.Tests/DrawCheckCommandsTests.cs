@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using System.Text.RegularExpressions;
 using Occt;
 using OcctNet.DrawLite;
@@ -82,8 +84,8 @@ public class DrawCheckCommandsTests
                      + "WIRE\t:  1 Items -> compound named r_w\n"
                      + "FACE\t:  1 Items -> compound named r_f\n",
                      i.Eval("checkshape s r"));
-        Assert.Equal(TopAbs_ShapeEnum.TopAbs_COMPOUND, i.GetShape("r_w").ShapeType());
-        Assert.Equal(TopAbs_ShapeEnum.TopAbs_FACE, new TopoDS_Iterator(i.GetShape("r_f")).Value().ShapeType());
+        Assert.Equal(ShapeType.Compound, i.GetShape("r_w").ShapeType());
+        Assert.Equal(ShapeType.Face, new Iterator(i.GetShape("r_f")).Value().ShapeType());
         Assert.Equal("0", i.Eval("isdraw faulty_1"));
     }
 
@@ -183,7 +185,7 @@ public class DrawCheckCommandsTests
         Assert.Equal("Void box.\n", i.Eval("bounding c"));
         Assert.Equal("Void box.\n", i.Eval("bounding c -obb"));
         Assert.Equal("Void box.\n", i.Eval("bounding c -shape b"));
-        Assert.True(i.GetShape("b").IsNull());
+        Assert.True(i.GetShape("b").IsNull);
     }
 
     [Fact]

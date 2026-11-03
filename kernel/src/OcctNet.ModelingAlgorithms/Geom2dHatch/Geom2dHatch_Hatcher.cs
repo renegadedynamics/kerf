@@ -5,13 +5,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.HatchGen_ErrorStatus;
 using static Occt.HatchGen_IntersectionType;
 using static Occt.IntRes2d_Position;
 using static Occt.IntRes2d_TypeTrans;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -176,7 +178,7 @@ public class Geom2dHatch_Hatcher
     }
 
     /// <summary>The curve of the <paramref name="IndE"/>-th element.</summary>
-    public Geom2dAdaptor_Curve ElementCurve(int IndE)
+    public CurveAdaptor2D ElementCurve(int IndE)
     {
         Geom2dHatch_Element Element = myElements.Find(IndE);
         return Element.Curve();
@@ -186,7 +188,7 @@ public class Geom2dHatch_Hatcher
     /// Adds an element (a copy of <paramref name="Curve"/>, with its orientation) and returns its index: the lowest
     /// free one. The trimmings are cleared.
     /// </summary>
-    public int AddElement(Geom2dAdaptor_Curve Curve, TopAbs_Orientation Orientation = TopAbs_FORWARD)
+    public int AddElement(CurveAdaptor2D Curve, Orientation Orientation = Forward)
     {
         int IndE;
         for (IndE = 1; IndE <= myNbElements && myElements.IsBound(IndE); IndE++)
@@ -211,9 +213,9 @@ public class Geom2dHatch_Hatcher
     }
 
     /// <summary>Adds an element on the curve <paramref name="Curve"/>, with its orientation, and returns its index.</summary>
-    public int AddElement(Geom2d_Curve Curve, TopAbs_Orientation Orientation = TopAbs_FORWARD)
+    public int AddElement(Curve2D Curve, Orientation Orientation = Forward)
     {
-        Geom2dAdaptor_Curve aGAC = new(Curve);
+        CurveAdaptor2D aGAC = new(Curve);
         return AddElement(aGAC, Orientation);
     }
 
@@ -290,14 +292,14 @@ public class Geom2dHatch_Hatcher
     }
 
     /// <summary>The curve of the <paramref name="IndH"/>-th hatching.</summary>
-    public Geom2dAdaptor_Curve HatchingCurve(int IndH)
+    public CurveAdaptor2D HatchingCurve(int IndH)
     {
         Geom2dHatch_Hatching Hatching = myHatchings.Find(IndH);
         return Hatching.Curve();
     }
 
     /// <summary>Adds a hatching on (a copy of) <paramref name="Curve"/> and returns its index: the lowest free one.</summary>
-    public int AddHatching(Geom2dAdaptor_Curve Curve)
+    public int AddHatching(CurveAdaptor2D Curve)
     {
         int IndH;
         for (IndH = 1; IndH <= myNbHatchings && myHatchings.IsBound(IndH); IndH++)
@@ -375,7 +377,7 @@ public class Geom2dHatch_Hatcher
     }
 
     /// <summary>Adds a hatching on <paramref name="Curve"/>, trims it by the elements and returns its index.</summary>
-    public int Trim(Geom2dAdaptor_Curve Curve)
+    public int Trim(CurveAdaptor2D Curve)
     {
         int IndH = AddHatching(Curve);
         Trim(IndH);
@@ -423,8 +425,8 @@ public class Geom2dHatch_Hatcher
 
         // OCCT intersects copies of the two adaptors, which share their curves and evaluation caches with the
         // originals; the port passes the adaptors themselves (decision 666)
-        Geom2dAdaptor_Curve hatching = Hatching.ChangeCurve();
-        Geom2dAdaptor_Curve element = Element.ChangeCurve();
+        CurveAdaptor2D hatching = Hatching.ChangeCurve();
+        CurveAdaptor2D element = Element.ChangeCurve();
 
         myIntersector.Intersect(hatching, element);
 
@@ -538,7 +540,7 @@ public class Geom2dHatch_Hatcher
                     {
                         case IntRes2d_Head:
                         {
-                            PntE.SetPosition(TopAbs_FORWARD);
+                            PntE.SetPosition(Forward);
                             break;
                         }
                         case IntRes2d_Middle:
@@ -547,17 +549,17 @@ public class Geom2dHatch_Hatcher
                             {
                                 case IntRes2d_Head:
                                 {
-                                    PntE.SetPosition(TopAbs_FORWARD);
+                                    PntE.SetPosition(Forward);
                                     break;
                                 }
                                 case IntRes2d_Middle:
                                 {
-                                    PntE.SetPosition(TopAbs_INTERNAL);
+                                    PntE.SetPosition(Internal);
                                     break;
                                 }
                                 case IntRes2d_End:
                                 {
-                                    PntE.SetPosition(TopAbs_REVERSED);
+                                    PntE.SetPosition(Reversed);
                                     break;
                                 }
                                 default:
@@ -569,7 +571,7 @@ public class Geom2dHatch_Hatcher
                         }
                         case IntRes2d_End:
                         {
-                            PntE.SetPosition(TopAbs_REVERSED);
+                            PntE.SetPosition(Reversed);
                             break;
                         }
                         default:
@@ -577,9 +579,9 @@ public class Geom2dHatch_Hatcher
                             break;
                         }
                     }
-                    PntE.SetIntersectionType((PntE.Position() == TopAbs_INTERNAL) ? HatchGen_TRUE : HatchGen_TOUCH);
-                    PntE.SetStateBefore((TypePnt1H == IntRes2d_In) ? TopAbs_OUT : TopAbs_IN);
-                    PntE.SetStateAfter((TypePnt2H == IntRes2d_In) ? TopAbs_OUT : TopAbs_IN);
+                    PntE.SetIntersectionType((PntE.Position() == Internal) ? HatchGen_TRUE : HatchGen_TOUCH);
+                    PntE.SetStateBefore((TypePnt1H == IntRes2d_In) ? Out : In);
+                    PntE.SetStateAfter((TypePnt2H == IntRes2d_In) ? Out : In);
 
                     HatchGen_PointOnHatching PntH = new();
                     PntH.SetIndex(IndH);
@@ -588,7 +590,7 @@ public class Geom2dHatch_Hatcher
                     {
                         case IntRes2d_Head:
                         {
-                            PntH.SetPosition(TopAbs_FORWARD);
+                            PntH.SetPosition(Forward);
                             break;
                         }
                         case IntRes2d_Middle:
@@ -597,17 +599,17 @@ public class Geom2dHatch_Hatcher
                             {
                                 case IntRes2d_Head:
                                 {
-                                    PntH.SetPosition(TopAbs_FORWARD);
+                                    PntH.SetPosition(Forward);
                                     break;
                                 }
                                 case IntRes2d_Middle:
                                 {
-                                    PntH.SetPosition(TopAbs_INTERNAL);
+                                    PntH.SetPosition(Internal);
                                     break;
                                 }
                                 case IntRes2d_End:
                                 {
-                                    PntH.SetPosition(TopAbs_REVERSED);
+                                    PntH.SetPosition(Reversed);
                                     break;
                                 }
                                 default:
@@ -619,7 +621,7 @@ public class Geom2dHatch_Hatcher
                         }
                         case IntRes2d_End:
                         {
-                            PntH.SetPosition(TopAbs_REVERSED);
+                            PntH.SetPosition(Reversed);
                             break;
                         }
                         default:
@@ -686,8 +688,8 @@ public class Geom2dHatch_Hatcher
     // geometry of the hatching and of each element there.
     private bool GlobalTransition(HatchGen_PointOnHatching Point)
     {
-        TopAbs_State StateBefore = TopAbs_UNKNOWN;
-        TopAbs_State StateAfter = TopAbs_UNKNOWN;
+        Containment StateBefore = Unknown;
+        Containment StateAfter = Unknown;
         bool SegmentBegin = false;
         bool SegmentEnd = false;
 
@@ -695,7 +697,7 @@ public class Geom2dHatch_Hatcher
         Direction3D Tangente = new(), Normale = new();
         double Courbure;
 
-        Geom2dAdaptor_Curve CurveH = HatchingCurve(Point.Index());
+        CurveAdaptor2D CurveH = HatchingCurve(Point.Index());
 
         // OCCT passes CurveH.Curve(), converted to a new adaptor on the whole curve; LocalGeometry only reads the
         // adaptor's Curve(), which is the same
@@ -722,22 +724,22 @@ public class Geom2dHatch_Hatcher
             SegmentEnd = SegmentEnd || PntE.SegmentEnd();
 
             Geom2dHatch_Element Element = myElements.Find(PntE.Index());
-            Geom2dAdaptor_Curve CurveE = Element.Curve();
+            CurveAdaptor2D CurveE = Element.Curve();
 
-            TopAbs_Orientation ElementOrientation = Element.Orientation();
-            bool ToReverse = (ElementOrientation == TopAbs_REVERSED);
+            Orientation ElementOrientation = Element.Orientation();
+            bool ToReverse = (ElementOrientation == Reversed);
             double Param;
             switch (PntE.Position())
             {
-                case TopAbs_FORWARD:
+                case Forward:
                     Param = ToReverse ? CurveE.LastParameter() : CurveE.FirstParameter();
                     break;
 
-                case TopAbs_INTERNAL:
+                case Internal:
                     Param = PntE.Parameter();
                     break;
 
-                case TopAbs_REVERSED:
+                case Reversed:
                     Param = ToReverse ? CurveE.FirstParameter() : CurveE.LastParameter();
                     break;
 
@@ -763,27 +765,27 @@ public class Geom2dHatch_Hatcher
             //  - Sinon,       on a IN-OUT ou OUT-IN  ==> REVERSED/FORWARD
             // Les deux dernieres conditions avec l element vu en FORWARD.
             //-----------------------------------------------------------------------
-            TopAbs_Orientation LocalTransition = TopAbs_EXTERNAL;
+            Orientation LocalTransition = External;
 
-            if (ElementOrientation == TopAbs_INTERNAL)
+            if (ElementOrientation == Internal)
             {
-                LocalTransition = TopAbs_INTERNAL;
+                LocalTransition = Internal;
             }
-            else if (ElementOrientation == TopAbs_EXTERNAL)
+            else if (ElementOrientation == External)
             {
-                LocalTransition = TopAbs_EXTERNAL;
+                LocalTransition = External;
             }
             else if (PntE.IntersectionType() == HatchGen_TANGENT)
             {
-                if (PntE.Position() == TopAbs_INTERNAL)
+                if (PntE.Position() == Internal)
                 {
                     switch (PntE.StateBefore())
                     {
-                        case TopAbs_IN:
-                            LocalTransition = ToReverse ? TopAbs_EXTERNAL : TopAbs_INTERNAL;
+                        case In:
+                            LocalTransition = ToReverse ? External : Internal;
                             break;
-                        case TopAbs_OUT:
-                            LocalTransition = ToReverse ? TopAbs_INTERNAL : TopAbs_EXTERNAL;
+                        case Out:
+                            LocalTransition = ToReverse ? Internal : External;
                             break;
                         default:
                             break;
@@ -793,11 +795,11 @@ public class Geom2dHatch_Hatcher
                 {
                     switch (PntE.StateBefore())
                     {
-                        case TopAbs_IN:
-                            LocalTransition = ToReverse ? TopAbs_FORWARD : TopAbs_REVERSED;
+                        case In:
+                            LocalTransition = ToReverse ? Forward : Reversed;
                             break;
-                        case TopAbs_OUT:
-                            LocalTransition = ToReverse ? TopAbs_REVERSED : TopAbs_FORWARD;
+                        case Out:
+                            LocalTransition = ToReverse ? Reversed : Forward;
                             break;
                         default:
                             break;
@@ -808,11 +810,11 @@ public class Geom2dHatch_Hatcher
             {
                 switch (PntE.StateBefore())
                 {
-                    case TopAbs_IN:
-                        LocalTransition = ToReverse ? TopAbs_FORWARD : TopAbs_REVERSED;
+                    case In:
+                        LocalTransition = ToReverse ? Forward : Reversed;
                         break;
-                    case TopAbs_OUT:
-                        LocalTransition = ToReverse ? TopAbs_REVERSED : TopAbs_FORWARD;
+                    case Out:
+                        LocalTransition = ToReverse ? Reversed : Forward;
                         break;
                     default:
                         break;
@@ -822,17 +824,17 @@ public class Geom2dHatch_Hatcher
             //-----------------------------------------------------------------------
             // Orientation de la tangente au point d interference.
             //-----------------------------------------------------------------------
-            TopAbs_Orientation TangenteOrientation = TopAbs_FORWARD;
+            Orientation TangenteOrientation = Forward;
             switch (PntE.Position())
             {
-                case TopAbs_FORWARD:
-                    TangenteOrientation = ToReverse ? TopAbs_REVERSED : TopAbs_FORWARD;
+                case Forward:
+                    TangenteOrientation = ToReverse ? Reversed : Forward;
                     break;
-                case TopAbs_INTERNAL:
-                    TangenteOrientation = TopAbs_INTERNAL;
+                case Internal:
+                    TangenteOrientation = Internal;
                     break;
-                case TopAbs_REVERSED:
-                    TangenteOrientation = ToReverse ? TopAbs_FORWARD : TopAbs_REVERSED;
+                case Reversed:
+                    TangenteOrientation = ToReverse ? Forward : Reversed;
                     break;
 
                 default:
@@ -863,28 +865,28 @@ public class Geom2dHatch_Hatcher
 
         switch (ComplexTransition.StateBefore())
         {
-            case TopAbs_IN:
-                StateBefore = TopAbs_IN;
+            case In:
+                StateBefore = In;
                 break;
-            case TopAbs_OUT:
-                StateBefore = TopAbs_OUT;
+            case Out:
+                StateBefore = Out;
                 break;
-            case TopAbs_ON:
+            case On:
                 return false;
-            case TopAbs_UNKNOWN:
+            case Unknown:
                 return false;
         }
         switch (ComplexTransition.StateAfter())
         {
-            case TopAbs_IN:
-                StateAfter = TopAbs_IN;
+            case In:
+                StateAfter = In;
                 break;
-            case TopAbs_OUT:
-                StateAfter = TopAbs_OUT;
+            case Out:
+                StateAfter = Out;
                 break;
-            case TopAbs_ON:
+            case On:
                 return false;
-            case TopAbs_UNKNOWN:
+            case Unknown:
                 return false;
         }
 
@@ -941,7 +943,7 @@ public class Geom2dHatch_Hatcher
             //-- std::cout << "The hatching # " << std::setw(3) << IndH << " has to be classified" <<
             // std::endl ;
             Geom2dHatch_Classifier Classifier = new(myElements, Hatching.ClassificationPoint(), 0.0000001);
-            if (Classifier.State() == TopAbs_IN)
+            if (Classifier.State() == In)
             {
                 HatchGen_Domain domain0 = new();
                 Hatching.AddDomain(domain0);
@@ -964,8 +966,8 @@ public class Geom2dHatch_Hatcher
             // Calcul des domaines.
             //-----------------------------------------------------------------------
 
-            TopAbs_State StateBefore = CurPnt.StateBefore();
-            TopAbs_State StateAfter = CurPnt.StateAfter();
+            Containment StateBefore = CurPnt.StateBefore();
+            Containment StateAfter = CurPnt.StateAfter();
             bool SegmentBegin = CurPnt.SegmentBeginning();
             bool SegmentEnd = CurPnt.SegmentEnd();
 
@@ -982,13 +984,13 @@ public class Geom2dHatch_Hatcher
                 NbOpenedSegments = 0;
                 if (SegmentEnd && SegmentBegin)
                 {
-                    if (StateAfter == TopAbs_UNKNOWN)
+                    if (StateAfter == Unknown)
                     {
-                        StateAfter = TopAbs_IN;
+                        StateAfter = In;
                     }
-                    if (StateBefore == TopAbs_UNKNOWN)
+                    if (StateBefore == Unknown)
                     {
-                        StateBefore = TopAbs_IN;
+                        StateBefore = In;
                     }
 
                     if (Segments)
@@ -999,9 +1001,9 @@ public class Geom2dHatch_Hatcher
                 }
                 else if (SegmentEnd)
                 {
-                    if (StateAfter == TopAbs_UNKNOWN)
+                    if (StateAfter == Unknown)
                     {
-                        StateAfter = TopAbs_IN;
+                        StateAfter = In;
                     }
 
                     if (Segments)
@@ -1012,11 +1014,11 @@ public class Geom2dHatch_Hatcher
                 }
                 else if (SegmentBegin)
                 {
-                    if (StateBefore == TopAbs_UNKNOWN)
+                    if (StateBefore == Unknown)
                     {
-                        StateBefore = TopAbs_IN;
+                        StateBefore = In;
                     }
-                    if (StateBefore == TopAbs_IN)
+                    if (StateBefore == In)
                     {
                         SavPnt = true;
                         ISav = 0;
@@ -1024,7 +1026,7 @@ public class Geom2dHatch_Hatcher
                 }
                 else
                 {
-                    if (StateBefore == TopAbs_IN)
+                    if (StateBefore == In)
                     {
                         SavPnt = true;
                         ISav = 0;
@@ -1040,28 +1042,28 @@ public class Geom2dHatch_Hatcher
             {
                 if (SegmentEnd && SegmentBegin)
                 {
-                    if (StateAfter == TopAbs_UNKNOWN)
+                    if (StateAfter == Unknown)
                     {
-                        StateAfter = TopAbs_IN;
+                        StateAfter = In;
                     }
 
-                    if (StateBefore == TopAbs_UNKNOWN)
+                    if (StateBefore == Unknown)
                     {
-                        StateBefore = TopAbs_IN;
+                        StateBefore = In;
                     }
                 }
                 else if (SegmentEnd)
                 {
-                    if (StateAfter == TopAbs_UNKNOWN)
+                    if (StateAfter == Unknown)
                     {
-                        StateAfter = TopAbs_IN;
+                        StateAfter = In;
                     }
                 }
                 else if (SegmentBegin)
                 {
-                    if (StateBefore == TopAbs_UNKNOWN)
+                    if (StateBefore == Unknown)
                     {
-                        StateBefore = TopAbs_IN;
+                        StateBefore = In;
                     }
                 }
                 else
@@ -1077,7 +1079,7 @@ public class Geom2dHatch_Hatcher
 
             if (SegmentEnd && SegmentBegin)
             {
-                if (StateBefore != TopAbs_IN && StateAfter != TopAbs_IN)
+                if (StateBefore != In && StateAfter != In)
                 {
                     Hatching.Status(HatchGen_IncompatibleStates);
                     return;
@@ -1112,7 +1114,7 @@ public class Geom2dHatch_Hatcher
                     }
                     else
                     {
-                        bool isININ = (StateBefore == TopAbs_IN && StateAfter == TopAbs_IN);
+                        bool isININ = (StateBefore == In && StateAfter == In);
                         if (SavPnt && !isININ)
                         {
                             if (NoDomain)
@@ -1138,7 +1140,7 @@ public class Geom2dHatch_Hatcher
             {
                 if (Segments)
                 {
-                    if (StateAfter == TopAbs_OUT)
+                    if (StateAfter == Out)
                     {
                         if (!SavPnt)
                         {
@@ -1179,7 +1181,7 @@ public class Geom2dHatch_Hatcher
                 }
                 else
                 {
-                    if (StateAfter == TopAbs_IN)
+                    if (StateAfter == In)
                     {
                         SavPnt = true;
                         ISav = IPnt;
@@ -1192,7 +1194,7 @@ public class Geom2dHatch_Hatcher
             {
                 if (Segments)
                 {
-                    if (StateBefore == TopAbs_OUT)
+                    if (StateBefore == Out)
                     {
                         SavPnt = true;
                         ISav = IPnt;
@@ -1229,7 +1231,7 @@ public class Geom2dHatch_Hatcher
                 }
                 else
                 {
-                    if (StateBefore == TopAbs_IN)
+                    if (StateBefore == In)
                     {
                         if (!SavPnt)
                         {
@@ -1271,22 +1273,22 @@ public class Geom2dHatch_Hatcher
                 //-- Solution provisoire (lbr le 11 Aout 97 )
                 //-- si On a 2 points dont des points OUT OUT ou IN IN qui delimitent une isos
                 //-- on transforme les transitions
-                if (StateBefore == TopAbs_OUT && StateAfter == TopAbs_OUT)
+                if (StateBefore == Out && StateAfter == Out)
                 {
                     if (NbPnt == 2)
                     {
                         if (FirstPoint)
                         {
-                            StateAfter = TopAbs_IN;
+                            StateAfter = In;
                         }
                         else
                         {
-                            StateBefore = TopAbs_IN;
+                            StateBefore = In;
                         }
                     }
                 }
                 //-- ???????????????????????????????????????????????????????????????????????????
-                if (StateBefore == TopAbs_OUT && StateAfter == TopAbs_OUT)
+                if (StateBefore == Out && StateAfter == Out)
                 {
                     if (SavPnt)
                     {
@@ -1310,12 +1312,12 @@ public class Geom2dHatch_Hatcher
                         ISav = IPnt;
                     }
                 }
-                else if (StateBefore == TopAbs_OUT && StateAfter == TopAbs_IN)
+                else if (StateBefore == Out && StateAfter == In)
                 {
                     SavPnt = true;
                     ISav = IPnt;
                 }
-                else if (StateBefore == TopAbs_IN && StateAfter == TopAbs_OUT)
+                else if (StateBefore == In && StateAfter == Out)
                 {
                     if (!SavPnt)
                     {
@@ -1341,7 +1343,7 @@ public class Geom2dHatch_Hatcher
                     SavPnt = false;
                     ISav = 0;
                 }
-                else if (StateBefore == TopAbs_IN && StateAfter == TopAbs_IN)
+                else if (StateBefore == In && StateAfter == In)
                 {
                     if (Points)
                     {
@@ -1477,7 +1479,7 @@ public class Geom2dHatch_Hatcher
                 }
                 else if (SegmentEnd)
                 {
-                    if (StateAfter == TopAbs_IN)
+                    if (StateAfter == In)
                     {
                         if (!SavPnt)
                         {
@@ -1529,7 +1531,7 @@ public class Geom2dHatch_Hatcher
                 }
                 else
                 {
-                    if (StateAfter == TopAbs_IN)
+                    if (StateAfter == In)
                     {
                         if (!SavPnt)
                         {
@@ -1690,16 +1692,16 @@ public class Geom2dHatch_Hatcher
                 Geom2dHatch_Element Element = myElements.Find(IndE);
                 switch (Element.Orientation())
                 {
-                    case TopAbs_FORWARD:
+                    case Forward:
                         theOS.Write(" is FORWARD\n");
                         break;
-                    case TopAbs_REVERSED:
+                    case Reversed:
                         theOS.Write(" is REVERSED\n");
                         break;
-                    case TopAbs_INTERNAL:
+                    case Internal:
                         theOS.Write(" is INTERNAL\n");
                         break;
-                    case TopAbs_EXTERNAL:
+                    case External:
                         theOS.Write(" is EXTERNAL\n");
                         break;
                 }

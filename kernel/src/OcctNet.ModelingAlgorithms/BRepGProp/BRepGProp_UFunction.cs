@@ -5,9 +5,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using static Occt.GProp_ValueType;
+using static Kerf.Engine.Measurement.PropertyValueType;
 
 namespace Occt;
 
@@ -27,7 +28,7 @@ public class BRepGProp_UFunction : Function
     private readonly Point3D myVertex;
     private readonly double[] myCoeffs;
     private double myVParam;
-    private GProp_ValueType myValueType;
+    private PropertyValueType myValueType;
     private readonly bool myIsByPoint;
 
     /// <summary>The integrand on the face, with the location point, the mode and the coefficients (see the remarks).</summary>
@@ -37,12 +38,12 @@ public class BRepGProp_UFunction : Function
         myVertex = theVertex;
         myCoeffs = theCoeffs.ToArray();
         myVParam = 0.0;
-        myValueType = GProp_Unknown;
+        myValueType = Unknown;
         myIsByPoint = IsByPoint;
     }
 
     /// <summary>Sets the type of the value returned.</summary>
-    public void SetValueType(GProp_ValueType theType) => myValueType = theType;
+    public void SetValueType(PropertyValueType theType) => myValueType = theType;
 
     /// <summary>Sets the V parameter, constant during the integration.</summary>
     public void SetVParam(double theVParam) => myVParam = theVParam;
@@ -51,7 +52,7 @@ public class BRepGProp_UFunction : Function
     public override bool Value(double X, out double F)
     {
         // Volume computation
-        if (myValueType == GProp_Mass)
+        if (myValueType == Mass)
         {
             Xyz aPMP0;
             double aTmpPar1 = 0.0;
@@ -62,14 +63,14 @@ public class BRepGProp_UFunction : Function
         }
 
         // Center of mass computation
-        if (myValueType == GProp_CenterMassX || myValueType == GProp_CenterMassY || myValueType == GProp_CenterMassZ)
+        if (myValueType == CenterMassX || myValueType == CenterMassY || myValueType == CenterMassZ)
         {
             return CenterMassValue(X, out F);
         }
 
         // Inertia computation
-        if (myValueType == GProp_InertiaXX || myValueType == GProp_InertiaYY || myValueType == GProp_InertiaZZ
-            || myValueType == GProp_InertiaXY || myValueType == GProp_InertiaXZ || myValueType == GProp_InertiaYZ)
+        if (myValueType == InertiaXX || myValueType == InertiaYY || myValueType == InertiaZZ
+            || myValueType == InertiaXY || myValueType == InertiaXZ || myValueType == InertiaYZ)
         {
             return InertiaValue(X, out F);
         }
@@ -115,13 +116,13 @@ public class BRepGProp_UFunction : Function
         {
             switch (myValueType)
             {
-                case GProp_CenterMassX:
+                case CenterMassX:
                     F *= aPmP0.X();
                     break;
-                case GProp_CenterMassY:
+                case CenterMassY:
                     F *= aPmP0.Y();
                     break;
-                case GProp_CenterMassZ:
+                case CenterMassZ:
                     F *= aPmP0.Z();
                     break;
                 default:
@@ -136,13 +137,13 @@ public class BRepGProp_UFunction : Function
 
         switch (myValueType)
         {
-            case GProp_CenterMassX:
+            case CenterMassX:
                 F *= (aPmP0.X() - 0.5 * aCoeff[0] * aD1);
                 break;
-            case GProp_CenterMassY:
+            case CenterMassY:
                 F *= (aPmP0.Y() - 0.5 * aCoeff[1] * aD1);
                 break;
-            case GProp_CenterMassZ:
+            case CenterMassZ:
                 F *= (aPmP0.Z() - 0.5 * aCoeff[2] * aD1);
                 break;
             default:
@@ -169,18 +170,18 @@ public class BRepGProp_UFunction : Function
         {
             switch (myValueType)
             {
-                case GProp_InertiaXX:
-                case GProp_InertiaYZ:
+                case InertiaXX:
+                case InertiaYZ:
                     aParam1 = aPmP0.Y() - aCoeffs[1];
                     aParam2 = aPmP0.Z() - aCoeffs[2];
                     break;
-                case GProp_InertiaYY:
-                case GProp_InertiaXZ:
+                case InertiaYY:
+                case InertiaXZ:
                     aParam1 = aPmP0.X() - aCoeffs[0];
                     aParam2 = aPmP0.Z() - aCoeffs[2];
                     break;
-                case GProp_InertiaZZ:
-                case GProp_InertiaXY:
+                case InertiaZZ:
+                case InertiaXY:
                     aParam1 = aPmP0.X() - aCoeffs[0];
                     aParam2 = aPmP0.Y() - aCoeffs[1];
                     break;
@@ -188,7 +189,7 @@ public class BRepGProp_UFunction : Function
                     return false;
             }
 
-            if (myValueType == GProp_InertiaXX || myValueType == GProp_InertiaYY || myValueType == GProp_InertiaZZ)
+            if (myValueType == InertiaXX || myValueType == InertiaYY || myValueType == InertiaZZ)
             {
                 F *= aParam1 * aParam1 + aParam2 * aParam2;
             }
@@ -209,16 +210,16 @@ public class BRepGProp_UFunction : Function
         double aCoeff2;
 
         // Inertia computation for XX, YY and ZZ.
-        if (myValueType == GProp_InertiaXX || myValueType == GProp_InertiaYY || myValueType == GProp_InertiaZZ)
+        if (myValueType == InertiaXX || myValueType == InertiaYY || myValueType == InertiaZZ)
         {
-            if (myValueType == GProp_InertiaXX)
+            if (myValueType == InertiaXX)
             {
                 aPPar1 = aPmP0.Y();
                 aPPar2 = aPmP0.Z();
                 aCoeff1 = aCoeffs[1];
                 aCoeff2 = aCoeffs[2];
             }
-            else if (myValueType == GProp_InertiaYY)
+            else if (myValueType == InertiaYY)
             {
                 aPPar1 = aPmP0.X();
                 aPPar2 = aPmP0.Z();
@@ -244,16 +245,16 @@ public class BRepGProp_UFunction : Function
         }
 
         // Inertia computation for XY, YZ and XZ.
-        if (myValueType == GProp_InertiaXY || myValueType == GProp_InertiaYZ || myValueType == GProp_InertiaXZ)
+        if (myValueType == InertiaXY || myValueType == InertiaYZ || myValueType == InertiaXZ)
         {
-            if (myValueType == GProp_InertiaXY)
+            if (myValueType == InertiaXY)
             {
                 aPPar1 = aPmP0.X();
                 aPPar2 = aPmP0.Y();
                 aCoeff1 = aCoeffs[0];
                 aCoeff2 = aCoeffs[1];
             }
-            else if (myValueType == GProp_InertiaYZ)
+            else if (myValueType == InertiaYZ)
             {
                 aPPar1 = aPmP0.Y();
                 aPPar2 = aPmP0.Z();

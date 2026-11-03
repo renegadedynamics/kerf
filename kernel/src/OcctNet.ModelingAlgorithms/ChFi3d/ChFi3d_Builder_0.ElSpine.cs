@@ -5,11 +5,19 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Geometry.Properties;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.Approx_ParametrizationType;
+using Kerf.Topology;
+using static Kerf.Engine.Approximation.ParametrizationType;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -37,11 +45,11 @@ internal static partial class ChFi3d_Builder_0
         Continuity aContinuity;
         Point3D PDeb, PFin, Bout;
         Vector3D VrefDeb, VrefFin;
-        Geom_Curve Cv;
-        Geom_BoundedCurve TC;
-        Geom_BSplineCurve BS, BSpline;
-        TopoDS_Edge E, Eold;
-        TopoDS_Vertex V = new();
+        Curve3D Cv;
+        BoundedCurve3D TC;
+        BSplineCurve3D BS, BSpline;
+        Edge E, Eold;
+        Vertex V = new();
         //
         ChFiDS_ElSpine ES = HES;
         WF = ES.FirstParameter();
@@ -84,13 +92,13 @@ internal static partial class ChFi3d_Builder_0
         cepadur = false;
         E = (IsOffset) ? Spine.OffsetEdges(IF) : Spine.Edges(IF);
         Bof = BRepLib.BuildCurve3d(E);
-        BRepAdaptor_Curve edc = Spine.CurrentElementarySpine(IF);
+        EdgeCurveAdaptor edc = Spine.CurrentElementarySpine(IF);
         tolpared = edc.Resolution(tol);
-        Cv = BRep_Tool.Curve(E, out First, out Last)!;
+        Cv = Tool.Curve(E, out First, out Last)!;
         // Add vertex with tangent
-        if (ES.IsPeriodic())
+        if (ES.IsPeriodic)
         {
-            double ParForElSpine = (E.Orientation() == TopAbs_FORWARD) ? First : Last;
+            double ParForElSpine = (E.Orientation() == Forward) ? First : Last;
             Cv.D1(ParForElSpine, out Point3D PntForElSpine, out Vector3D DirForElSpine);
             ES.AddVertexWithTangent(new Axis3D(PntForElSpine, new Direction3D(DirForElSpine)));
         }
@@ -102,7 +110,7 @@ internal static partial class ChFi3d_Builder_0
             Spine.Parameter(IF, nwf, out pared, false);
         }
         //
-        if (E.Orientation() == TopAbs_REVERSED)
+        if (E.Orientation() == Reversed)
         {
             double sov = First;
             First = Cv.ReversedParameter(Last);
@@ -177,7 +185,7 @@ internal static partial class ChFi3d_Builder_0
         // sans parvenir a terminer. On tire une droite.
         if (cepadur)
         {
-            Geom_Line L;
+            LineCurve3D L;
             Point3D ptemp;
             Vector3D vtemp;
             if (WL < Spine.FirstParameter(1) + tol)
@@ -186,7 +194,7 @@ internal static partial class ChFi3d_Builder_0
                 Direction3D d = new(vtemp);
                 Point3D olin = new();
                 olin.ChangeCoord().SetLinearForm(-WL, d.XYZ(), PFin.XYZ());
-                L = new Geom_Line(olin, d);
+                L = new LineCurve3D(olin, d);
                 ES.SetCurve(L);
             }
             else if (WF > Spine.LastParameter(nbed) - tol)
@@ -195,14 +203,14 @@ internal static partial class ChFi3d_Builder_0
                 Direction3D d = new(vtemp);
                 Point3D olin = new();
                 olin.ChangeCoord().SetLinearForm(-WF, d.XYZ(), PDeb.XYZ());
-                L = new Geom_Line(olin, d);
+                L = new LineCurve3D(olin, d);
                 ES.SetCurve(L);
             }
             return; // =>
         }
         //
-        TC = new Geom_TrimmedCurve(Cv, First, Last);
-        BS = GeomConvert.CurveToBSplineCurve(TC);
+        TC = new TrimmedCurve3D(Cv, First, Last);
+        BS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(TC);
         CurveCleaner(BS, Math.Abs(WL - WF) * 1.0e-4, 0);
         //
         // Smoothing of the curve
@@ -217,7 +225,7 @@ internal static partial class ChFi3d_Builder_0
         }
         //
         //  Concatenation des aretes suivantes
-        GeomConvert_CompCurveToBSplineCurve Concat = new(TC, QuasiAngular);
+        CompCurveToBSplineCurve Concat = new(TC, QuasiAngular);
         //
         Eold = E;
         for (IEdge = IF + 1; IEdge <= IL; ++IEdge)
@@ -229,16 +237,16 @@ internal static partial class ChFi3d_Builder_0
             }
             //
             E = (IsOffset) ? Spine.OffsetEdges(iloc) : Spine.Edges(iloc);
-            if (BRep_Tool.Degenerated(E))
+            if (Tool.Degenerated(E))
             {
                 continue;
             }
             //
             epsV = tol;
-            Bof = TopExp.CommonVertex(Eold, E, ref V);
+            Bof = Exploration.CommonVertex(Eold, E, ref V);
             if (Bof)
             {
-                epsV = BRep_Tool.Tolerance(V);
+                epsV = Tool.Tolerance(V);
             }
             //
             Bof = BRepLib.BuildCurve3d(E);
@@ -247,9 +255,9 @@ internal static partial class ChFi3d_Builder_0
                 throw new ConstructionErrorException("PerformElSpine : BuildCurve3d error");
             }
             //
-            Cv = BRep_Tool.Curve(E, out First, out Last)!;
+            Cv = Tool.Curve(E, out First, out Last)!;
             // Add vertex with tangent
-            double ParForElSpine = (E.Orientation() == TopAbs_FORWARD) ? First : Last;
+            double ParForElSpine = (E.Orientation() == Forward) ? First : Last;
             Cv.D1(ParForElSpine, out Point3D PntForElSpine, out Vector3D DirForElSpine);
             ES.AddVertexWithTangent(new Axis3D(PntForElSpine, new Direction3D(DirForElSpine)));
             /////////////////////////
@@ -265,7 +273,7 @@ internal static partial class ChFi3d_Builder_0
                 {
                     pared = Last;
                 }
-                if (E.Orientation() == TopAbs_REVERSED)
+                if (E.Orientation() == Reversed)
                 {
                     double sov = First;
                     First = Cv.ReversedParameter(Last);
@@ -286,8 +294,8 @@ internal static partial class ChFi3d_Builder_0
                 }
             }
             //
-            TC = new Geom_TrimmedCurve(Cv, First, Last);
-            BS = GeomConvert.CurveToBSplineCurve(TC);
+            TC = new TrimmedCurve3D(Cv, First, Last);
+            BS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(TC);
             CurveCleaner(BS, Math.Abs(WL - WF) * 1.0e-4, 0);
             //
             // Smoothing of the curve
@@ -331,20 +339,20 @@ internal static partial class ChFi3d_Builder_0
         // Traitement des Extremites
         int caredeb, carefin;
         double LocalWL, LocalWF, Angle;
-        GeomAdaptor_Curve gacurve = new();
-        Geom_BSplineCurve? newc = null;
+        CurveAdaptor gacurve = new();
+        BSplineCurve3D? newc = null;
         //
         caredeb = 0;
         carefin = 0;
         Angle = Math.PI * 0.75;
         LocalWL = WL;
         LocalWF = WF;
-        if (!ES.IsPeriodic() && !PDeb.IsEqual(BSpline.Pole(1), tol))
+        if (!ES.IsPeriodic && !PDeb.IsEqual(BSpline.Pole(1), tol))
         {
             // Prolongement C3 au debut
             // afin d'eviter des pts d'inflexions dans la partie utile de la
             // spine le prolongement se fait jusqu'a un point eloigne.
-            if (BSpline.IsRational())
+            if (BSpline.IsRational)
             {
                 caredeb = 1;
             }
@@ -354,12 +362,12 @@ internal static partial class ChFi3d_Builder_0
             bool goodext = false;
             for (int icont = 3; icont >= 1 && !goodext; icont--)
             {
-                Geom_BoundedCurve anExtCurve = BSpline;
-                GeomLib.ExtendCurveToPoint(ref anExtCurve, Bout, icont, false);
-                newc = (Geom_BSplineCurve)anExtCurve;
+                BoundedCurve3D anExtCurve = BSpline;
+                global::Kerf.Engine.Geometry.Library.GeomLib.ExtendCurveToPoint(ref anExtCurve, Bout, icont, false);
+                newc = (BSplineCurve3D)anExtCurve;
                 gacurve.Load(newc);
-                GCPnts_AbscissaPoint GCP = new(gacurve, -rabdist, Wrefdeb, WF);
-                if (GCP.IsDone())
+                AbscissaPoint GCP = new(gacurve, -rabdist, Wrefdeb, WF);
+                if (GCP.IsDone)
                 {
                     WF = GCP.Parameter();
                     goodext = GoodExt(newc, VrefDeb, Wrefdeb, WF, Angle);
@@ -367,16 +375,16 @@ internal static partial class ChFi3d_Builder_0
             }
             if (caredeb != 0)
             {
-                caredeb = newc!.NbKnots() - BSpline.NbKnots();
+                caredeb = newc!.KnotCount - BSpline.KnotCount;
             }
             BSpline = newc!;
             LocalWF = BSpline.FirstParameter();
         }
         //
-        if (!ES.IsPeriodic() && !PFin.IsEqual(BSpline.Pole(BSpline.NbPoles()), tol))
+        if (!ES.IsPeriodic && !PFin.IsEqual(BSpline.Pole(BSpline.PoleCount), tol))
         {
             // Prolongement C3 en fin
-            if (BSpline.IsRational())
+            if (BSpline.IsRational)
             {
                 carefin = 1;
             }
@@ -385,12 +393,12 @@ internal static partial class ChFi3d_Builder_0
             bool goodext = false;
             for (int icont = 3; icont >= 1 && !goodext; icont--)
             {
-                Geom_BoundedCurve anExtCurve = BSpline;
-                GeomLib.ExtendCurveToPoint(ref anExtCurve, Bout, icont, true);
-                newc = (Geom_BSplineCurve)anExtCurve;
+                BoundedCurve3D anExtCurve = BSpline;
+                global::Kerf.Engine.Geometry.Library.GeomLib.ExtendCurveToPoint(ref anExtCurve, Bout, icont, true);
+                newc = (BSplineCurve3D)anExtCurve;
                 gacurve.Load(newc);
-                GCPnts_AbscissaPoint GCP = new(gacurve, rabdist, Wreffin, WL);
-                if (GCP.IsDone())
+                AbscissaPoint GCP = new(gacurve, rabdist, Wreffin, WL);
+                if (GCP.IsDone)
                 {
                     WL = GCP.Parameter();
                     goodext = GoodExt(newc, VrefFin, Wreffin, WL, Angle);
@@ -398,7 +406,7 @@ internal static partial class ChFi3d_Builder_0
             }
             if (carefin != 0)
             {
-                carefin = newc!.NbKnots() - BSpline.NbKnots();
+                carefin = newc!.KnotCount - BSpline.KnotCount;
             }
             BSpline = newc!;
             LocalWL = BSpline.LastParameter();
@@ -421,11 +429,11 @@ internal static partial class ChFi3d_Builder_0
             ES.LastParameter(WL);
         }
         //
-        if (BSpline.IsRational())
+        if (BSpline.IsRational)
         {
-            Geom_BSplineCurve C1;
-            C1 = (Geom_BSplineCurve)BSpline.Copy();
-            GeomConvert.C0BSplineToC1BSplineCurve(ref C1, tol, 0.1);
+            BSplineCurve3D C1;
+            C1 = (BSplineCurve3D)BSpline.Copy();
+            global::Kerf.Engine.Geometry.Conversion.GeomConvert.C0BSplineToC1BSplineCurve(ref C1, tol, 0.1);
             // Il faut s'assurer que l'origine n'a pas bouge (cts21158)
             if (C1.FirstParameter() == BSpline.FirstParameter())
             {
@@ -446,8 +454,8 @@ internal static partial class ChFi3d_Builder_0
         }
         //
         fk = 2;
-        lk = BSpline.NbKnots() - 1;
-        if (BSpline.IsPeriodic())
+        lk = BSpline.KnotCount - 1;
+        if (BSpline.IsPeriodic)
         {
             fk = 1;
         }
@@ -493,9 +501,9 @@ internal static partial class ChFi3d_Builder_0
             }
         }
         // elspine periodic => BSpline Periodic
-        if (ES.IsPeriodic())
+        if (ES.IsPeriodic)
         {
-            if (!BSpline.IsPeriodic())
+            if (!BSpline.IsPeriodic)
             {
                 BSpline.SetPeriodic();
                 // modified by NIZNHY-PKV Fri Dec 10 12:20:22 2010ft
@@ -536,9 +544,9 @@ internal static partial class ChFi3d_Builder_0
             }
             if (adjust)
             {
-                Geom_BoundedCurve anExtCurve = BSpline;
-                GeomLib.AdjustExtremity(ref anExtCurve, PDeb, PFin, VrefDeb, VrefFin);
-                BSpline = (Geom_BSplineCurve)anExtCurve;
+                BoundedCurve3D anExtCurve = BSpline;
+                global::Kerf.Engine.Geometry.Library.GeomLib.AdjustExtremity(ref anExtCurve, PDeb, PFin, VrefDeb, VrefFin);
+                BSpline = (BSplineCurve3D)anExtCurve;
             }
         }
 
@@ -554,7 +562,7 @@ internal static partial class ChFi3d_Builder_0
     //=================================================================================================
 
     /// <summary>A C2 B-spline through 101 points of <paramref name="C"/>.</summary>
-    internal static Geom_BSplineCurve ChFi3d_ApproxByC2(Geom_Curve C)
+    internal static BSplineCurve3D ChFi3d_ApproxByC2(Curve3D C)
     {
         double First = C.FirstParameter(), Last = C.LastParameter();
         int NbPoints = 101;
@@ -567,8 +575,8 @@ internal static partial class ChFi3d_Builder_0
         }
         Points[NbPoints] = C.Value(Last);
 
-        GeomAPI_PointsToBSpline Approx = new(Points, Approx_ChordLength, 3, 8, C2, 1.000001e-3);
-        Geom_BSplineCurve BS = Approx.Curve();
+        GeomAPI_PointsToBSpline Approx = new(Points, ChordLength, 3, 8, C2, 1.000001e-3);
+        BSplineCurve3D BS = Approx.Curve();
         return BS;
     }
 
@@ -576,16 +584,16 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>Whether the centre of curvature of <paramref name="C"/> moves smoothly (no turn over 60 degrees, no
     /// jump of the radius over a factor 2).</summary>
-    internal static bool ChFi3d_IsSmooth(Geom_Curve C)
+    internal static bool ChFi3d_IsSmooth(Curve3D C)
     {
-        GeomAdaptor_Curve GAC = new(C);
+        CurveAdaptor GAC = new(C);
 
         int ii;
         int intrv, nbintv = GAC.NbIntervals(CN);
         NCollection_Array1<double> TI = new(1, nbintv + 1);
         GAC.Intervals(TI, CN);
         double Resolution = Constants.Resolution(), Curvature;
-        GeomLProp_CLProps LProp = new(C, 2, Resolution);
+        CLProps LProp = new(C, 2, Resolution);
         Point3D P1, P2;
         int Discretisation = 30;
 

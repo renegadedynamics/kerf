@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using Schematiq.Collections;
 
 namespace Occt;
@@ -43,7 +44,7 @@ public sealed class BRepOffsetAPI_FindContigousEdges
     //=================================================================================================
 
     /// <summary>Adds a shape (a face, shell, solid...) to analyse.</summary>
-    public void Add(in TopoDS_Shape aShape)
+    public void Add(in Shape aShape)
     {
         mySewing.Add(aShape);
     }
@@ -65,7 +66,7 @@ public sealed class BRepOffsetAPI_FindContigousEdges
 
     /// <summary>The contiguous edge of index <paramref name="index"/>.</summary>
     /// <exception cref="OutOfRangeException">The index is out of range.</exception>
-    public TopoDS_Edge ContigousEdge(int index)
+    public Edge ContigousEdge(int index)
     {
         Standard_OutOfRange_Raise_if(index < 0 || index > NbContigousEdges(),
                                      "BRepOffsetAPI_FindContigousEdges::ContigousEdge");
@@ -76,7 +77,7 @@ public sealed class BRepOffsetAPI_FindContigousEdges
 
     /// <summary>The edges of the shapes added that make the contiguous edge of index <paramref name="index"/>.</summary>
     /// <exception cref="OutOfRangeException">The index is out of range.</exception>
-    public ISchematiqList<TopoDS_Shape> ContigousEdgeCouple(int index)
+    public ISchematiqList<Shape> ContigousEdgeCouple(int index)
     {
         Standard_OutOfRange_Raise_if(index < 0 || index > NbContigousEdges(),
                                      "BRepOffsetAPI_FindContigousEdges::ContigousEdgeCouple");
@@ -87,7 +88,7 @@ public sealed class BRepOffsetAPI_FindContigousEdges
 
     /// <summary>The boundary edge a section of a contiguous edge comes from.</summary>
     /// <exception cref="NoSuchObjectException">The edge isn't a section.</exception>
-    public TopoDS_Edge SectionToBoundary(in TopoDS_Edge section)
+    public Edge SectionToBoundary(in Edge section)
     {
         Standard_NoSuchObject_Raise_if(!mySewing.IsSectionBound(section),
                                        "BRepOffsetAPI_FindContigousEdges::SectionToBoundary");
@@ -103,7 +104,7 @@ public sealed class BRepOffsetAPI_FindContigousEdges
 
     /// <summary>The degenerated shape of index <paramref name="index"/>.</summary>
     /// <exception cref="OutOfRangeException">The index is out of range.</exception>
-    public TopoDS_Shape DegeneratedShape(int index)
+    public Shape DegeneratedShape(int index)
     {
         Standard_OutOfRange_Raise_if(index < 0 || index > NbDegeneratedShapes(),
                                      "BRepOffsetAPI_FindContigousEdges::DegereratedShape");
@@ -113,18 +114,18 @@ public sealed class BRepOffsetAPI_FindContigousEdges
     //=================================================================================================
 
     /// <summary>True if the shape is degenerated.</summary>
-    public bool IsDegenerated(in TopoDS_Shape aShape) => mySewing.IsDegenerated(aShape);
+    public bool IsDegenerated(in Shape aShape) => mySewing.IsDegenerated(aShape);
 
     //=================================================================================================
 
     /// <summary>True if the shape was modified.</summary>
-    public bool IsModified(in TopoDS_Shape aShape) => mySewing.IsModified(aShape);
+    public bool IsModified(in Shape aShape) => mySewing.IsModified(aShape);
 
     //=================================================================================================
 
     /// <summary>The shape a shape added was modified into.</summary>
     /// <exception cref="NoSuchObjectException">The shape wasn't modified.</exception>
-    public TopoDS_Shape Modified(in TopoDS_Shape aShape)
+    public Shape Modified(in Shape aShape)
     {
         Standard_NoSuchObject_Raise_if(!IsModified(aShape), "BRepOffsetAPI_FindContigousEdges::Modified");
         return mySewing.Modified(aShape);

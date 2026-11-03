@@ -5,7 +5,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -62,15 +63,15 @@ public sealed class HLRBRep_EdgeInterferenceTool
 
     public HLRAlgo_Intersection CurrentVertex() => inter[cur];
 
-    public TopAbs_Orientation CurrentOrientation()
+    public Orientation CurrentOrientation()
     {
         if (cur == 0)
         {
-            return TopAbs_FORWARD;
+            return Forward;
         }
         else
         {
-            return TopAbs_REVERSED;
+            return Reversed;
         }
     }
 
@@ -107,7 +108,7 @@ public sealed class HLRBRep_EdgeInterferenceTool
         {
             return true;
         }
-        return I.Intersection().Orientation() == ((cur == 0) ? TopAbs_FORWARD : TopAbs_REVERSED);
+        return I.Intersection().Orientation() == ((cur == 0) ? Forward : Reversed);
     }
 
     /// <summary>The tangent, normal and curvature of the interference's boundary edge, in the projection plane.</summary>

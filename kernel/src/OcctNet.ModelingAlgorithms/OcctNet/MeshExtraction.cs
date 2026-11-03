@@ -2,12 +2,16 @@
 // An OCCT.NET addition, not a port: the managed equivalent of build123d.NET's native mesh extraction
 // (native/shim/src/b3d_mesh.cpp, b3d_mesh_extract), which fills Bento's viewer's buffers. Open question 12.
 
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet;
 
@@ -19,14 +23,14 @@ namespace OcctNet;
 /// <para>
 /// The shape is meshed first (<see cref="BRepMesh_IncrementalMesh"/>); extraction only reads it, so it is safe from any
 /// thread on a frozen shape, and a shape shared by several callers is never written. Native OCCT computes the nodal
-/// normals into the face's own triangulation (<see cref="BRepLib_ToolTriangulatedShape.ComputeNormals(in TopoDS_Face, Triangulation?)"/>);
+/// normals into the face's own triangulation (<see cref="BRepLib_ToolTriangulatedShape.ComputeNormals(in Face, Triangulation?)"/>);
 /// here they are computed on an unattached copy (phase3-design section 5), with the same values.
 /// </para>
 /// <para>
 /// A face without a triangulation gives no nodes. An edge is taken from the polygon on triangulation of the first of
-/// its faces (in <see cref="TopExp.MapShapesAndAncestors"/> order) that carries one, so it lies exactly on the shaded
+/// its faces (in <see cref="Exploration.MapShapesAndAncestors"/> order) that carries one, so it lies exactly on the shaded
 /// surface; else from the mesher's 3D polygon of a free edge; else it is discretised with
-/// <see cref="GCPnts_TangentialDeflection"/> to the given deflection and angle. An edge's points run the way the edge
+/// <see cref="TangentialDeflection"/> to the given deflection and angle. An edge's points run the way the edge
 /// does.
 /// </para>
 /// </remarks>
@@ -41,14 +45,14 @@ public static class MeshExtraction
     /// <param name="theEdges">The edges to extract, with their locations and orientations.</param>
     /// <param name="theDeflection">The linear deflection for edges without a polygon.</param>
     /// <param name="theAngle">The angular deflection, in radians, for edges without a polygon.</param>
-    public static MeshBuffers Extract(in TopoDS_Shape theRoot, IReadOnlyList<TopoDS_Shape> theFaces,
-                                      IReadOnlyList<TopoDS_Shape> theEdges, double theDeflection, double theAngle)
+    public static MeshBuffers Extract(in Shape theRoot, IReadOnlyList<Shape> theFaces,
+                                      IReadOnlyList<Shape> theEdges, double theDeflection, double theAngle)
     {
         ArgumentNullException.ThrowIfNull(theFaces);
         ArgumentNullException.ThrowIfNull(theEdges);
 
-        var anEdgeFaces = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(theRoot, TopAbs_EDGE, TopAbs_FACE, anEdgeFaces);
+        var anEdgeFaces = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(theRoot, ShapeType.Edge, ShapeType.Face, anEdgeFaces);
 
         // Sizes first, so each buffer is allocated once at its final length
         var aTris = new Triangulation?[theFaces.Count];
@@ -56,7 +60,7 @@ public static class MeshExtraction
         long aNbNodes = 0, aNbIndices = 0;
         for (int i = 0; i < theFaces.Count; i++)
         {
-            aTris[i] = BRep_Tool.Triangulation(TopoDS.Face(theFaces[i]), out aLocations[i]);
+            aTris[i] = Tool.Triangulation(ShapeCasts.Face(theFaces[i]), out aLocations[i]);
             if (aTris[i] is { } aTri)
             {
                 aNbNodes += aTri.NodeCount;
@@ -67,14 +71,14 @@ public static class MeshExtraction
         var aBuilder = new Builder(checked((int)(3 * aNbNodes)), checked((int)aNbIndices), theFaces.Count, theEdges.Count);
         for (int i = 0; i < theFaces.Count; i++)
         {
-            aBuilder.AddFace(TopoDS.Face(theFaces[i]), aTris[i], aLocations[i]);
+            aBuilder.AddFace(ShapeCasts.Face(theFaces[i]), aTris[i], aLocations[i]);
         }
         aBuilder.FaceNodes[theFaces.Count] = aBuilder.NodeCount;
         aBuilder.FaceTriangles[theFaces.Count] = aBuilder.IndexCount;
 
         for (int i = 0; i < theEdges.Count; i++)
         {
-            aBuilder.AddEdge(TopoDS.Edge(theEdges[i]), anEdgeFaces, theDeflection, theAngle);
+            aBuilder.AddEdge(ShapeCasts.Edge(theEdges[i]), anEdgeFaces, theDeflection, theAngle);
         }
         return aBuilder.Finish();
     }
@@ -83,29 +87,29 @@ public static class MeshExtraction
     /// The buffers of every face and every edge of the meshed <paramref name="theRoot"/>, in the order of
     /// <see cref="Faces"/> and <see cref="Edges"/>: build123d.NET's <c>ShapeMesh</c>.
     /// </summary>
-    public static MeshBuffers Extract(in TopoDS_Shape theRoot, double theDeflection, double theAngle)
+    public static MeshBuffers Extract(in Shape theRoot, double theDeflection, double theAngle)
         => Extract(theRoot, Faces(theRoot), Edges(theRoot), theDeflection, theAngle);
 
     /// <summary>
     /// The distinct faces of a shape in exploration order, as build123d.NET's <c>Shape.Faces()</c>: each face once
-    /// (<see cref="TopoDS_Shape.IsSame"/>), at its first place, with the orientation of its last occurrence.
+    /// (<see cref="Shape.IsSame"/>), at its first place, with the orientation of its last occurrence.
     /// </summary>
-    public static List<TopoDS_Shape> Faces(in TopoDS_Shape theShape) => Entities(theShape, TopAbs_FACE);
+    public static List<Shape> Faces(in Shape theShape) => Entities(theShape, ShapeType.Face);
 
     /// <summary>The distinct edges of a shape, as <see cref="Faces"/>: build123d.NET's <c>Shape.Edges()</c>.</summary>
-    public static List<TopoDS_Shape> Edges(in TopoDS_Shape theShape) => Entities(theShape, TopAbs_EDGE);
+    public static List<Shape> Edges(in Shape theShape) => Entities(theShape, ShapeType.Edge);
 
-    private static List<TopoDS_Shape> Entities(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static List<Shape> Entities(in Shape theShape, ShapeType theType)
     {
-        var anIndex = new Dictionary<TopoDS_Shape, int>(TopTools_ShapeMapHasher.Instance);
-        var aFound = new List<TopoDS_Shape>();
-        if (theShape.IsNull())
+        var anIndex = new Dictionary<Shape, int>(ShapeHasher.Instance);
+        var aFound = new List<Shape>();
+        if (theShape.IsNull)
         {
             return aFound;
         }
-        for (var anExp = new TopExp_Explorer(theShape, theType); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(theShape, theType); anExp.More(); anExp.Next())
         {
-            TopoDS_Shape anItem = anExp.Current();
+            Shape anItem = anExp.Current();
             if (anIndex.TryGetValue(anItem, out int i))
             {
                 aFound[i] = anItem;
@@ -137,11 +141,11 @@ public static class MeshExtraction
 
         public long IndexCount => myIndices;
 
-        public void AddFace(in TopoDS_Face theFace, Triangulation? theTri, in Placement theLocation)
+        public void AddFace(in Face theFace, Triangulation? theTri, in Placement theLocation)
         {
             FaceNodes[myFace] = NodeCount;
             FaceTriangles[myFace] = myIndices;
-            FaceTypes[myFace++] = (int)new BRepAdaptor_Surface(theFace, false).GetType();
+            FaceTypes[myFace++] = (int)new FaceSurfaceAdaptor(theFace, false).GetType();
             if (theTri is null)
             {
                 return;
@@ -150,7 +154,7 @@ public static class MeshExtraction
             // The surface's normals at the nodes, on a copy: the face's own triangulation is never written
             Triangulation aTri = BRepLib_ToolTriangulatedShape.NormalsComputed(theFace, theTri)!;
             Transform3D aTrsf = theLocation.Transformation();
-            bool isReversed = theFace.Orientation() == TopAbs_REVERSED;
+            bool isReversed = theFace.Orientation() == Reversed;
             // Winding follows the surface's natural normal: flipped for a reversed face, and again by a mirroring location
             bool toFlip = isReversed != aTrsf.IsNegative;
             for (int i = 1; i <= aTri.NodeCount; ++i)
@@ -186,26 +190,26 @@ public static class MeshExtraction
             myPoints.Add((float)theP.Z());
         }
 
-        public void AddEdge(in TopoDS_Edge theEdge, NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEdgeFaces,
+        public void AddEdge(in Edge theEdge, NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theEdgeFaces,
                             double theDeflection, double theAngle)
         {
             EdgePoints[myEdge] = myPoints.Count / 3;
-            var aCurve = new BRepAdaptor_Curve(theEdge);
+            var aCurve = new EdgeCurveAdaptor(theEdge);
             EdgeTypes[myEdge++] = (int)aCurve.GetType();
             int aStart = myPoints.Count;
 
             // On a face's triangulation, so the edge sits exactly on the shaded surface
             bool isDone = false;
-            if (theEdgeFaces.FindFromKey(theEdge, out NCollection_List<TopoDS_Shape> aFaces))
+            if (theEdgeFaces.FindFromKey(theEdge, out NCollection_List<Shape> aFaces))
             {
-                foreach (TopoDS_Shape aShape in aFaces)
+                foreach (Shape aShape in aFaces)
                 {
-                    Triangulation? aTri = BRep_Tool.Triangulation(TopoDS.Face(aShape), out Placement aLocation);
+                    Triangulation? aTri = Tool.Triangulation(ShapeCasts.Face(aShape), out Placement aLocation);
                     if (aTri is null)
                     {
                         continue;
                     }
-                    PolygonOnTriangulation? aPolygon = BRep_Tool.PolygonOnTriangulation(theEdge, aTri, aLocation);
+                    PolygonOnTriangulation? aPolygon = Tool.PolygonOnTriangulation(theEdge, aTri, aLocation);
                     if (aPolygon is null)
                     {
                         continue;
@@ -222,7 +226,7 @@ public static class MeshExtraction
             // A free edge's own polygon, from the mesher
             if (!isDone)
             {
-                Polygon3D? aPolygon = BRep_Tool.Polygon3D(theEdge, out Placement aLocation);
+                Polygon3D? aPolygon = Tool.Polygon3D(theEdge, out Placement aLocation);
                 if (aPolygon is not null)
                 {
                     Transform3D aTrsf = aLocation.Transformation();
@@ -237,14 +241,14 @@ public static class MeshExtraction
             // Else discretised to the same tolerances
             if (!isDone)
             {
-                var aDiscretizer = new GCPnts_TangentialDeflection(aCurve, theAngle, theDeflection);
-                for (int i = 1; i <= aDiscretizer.NbPoints(); ++i)
+                var aDiscretizer = new TangentialDeflection(aCurve, theAngle, theDeflection);
+                for (int i = 1; i <= aDiscretizer.PointCount; ++i)
                 {
                     AddPoint(aDiscretizer.Value(i));
                 }
             }
             // Polygons follow the curve's parameter: reversed to run the way the edge does
-            if (theEdge.Orientation() == TopAbs_REVERSED)
+            if (theEdge.Orientation() == Reversed)
             {
                 int aCount = (myPoints.Count - aStart) / 3;
                 for (int i = 0; i < aCount / 2; ++i)
@@ -268,7 +272,7 @@ public static class MeshExtraction
 }
 
 /// <summary>
-/// The buffers <see cref="MeshExtraction.Extract(in TopoDS_Shape, IReadOnlyList{TopoDS_Shape}, IReadOnlyList{TopoDS_Shape}, double, double)"/>
+/// The buffers <see cref="MeshExtraction.Extract(in Shape, IReadOnlyList{Shape}, IReadOnlyList{Shape}, double, double)"/>
 /// fills, laid out as build123d.NET's <c>MeshBuffers</c>: every face's nodes (x, y, z each, located), their unit
 /// normals (facing out of a reversed face too) and its triangles (index triples into the face's own nodes, wound to
 /// face out) end to end, then every edge's polyline. The offsets have one entry per face or edge and a final total.

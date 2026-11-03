@@ -1,9 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -30,8 +32,8 @@ public class BRepIntCurveSurfaceOracleTests(ITestOutputHelper output)
                 continue;
             }
 
-            Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = ClassificationScenes.Scene(anOracle, aScene);
-            List<Twin<N.TopoDS_Shape, TopoDS_Shape>> aFaces = ClassificationScenes.Explore(aShape, TopAbs_FACE);
+            Twin<N.TopoDS_Shape, Shape> aShape = ClassificationScenes.Scene(anOracle, aScene);
+            List<Twin<N.TopoDS_Shape, Shape>> aFaces = ClassificationScenes.Explore(aShape, ShapeType.Face);
             List<Point3D> aPoints = ClassificationScenes.SamplePoints(anOracle, aShape.P, 6, 2);
             string aWhat = $"scene {aScene} ({ClassificationScenes.Name(aScene)})";
             double aTol = anOracle.Bool() ? 1e-7 : 1e-3;
@@ -61,7 +63,7 @@ public class BRepIntCurveSurfaceOracleTests(ITestOutputHelper output)
             aPI2.Load(aShape.P, aTol);
             for (int i = 0; i < 6; i++)
             {
-                (N.GeomAdaptor_Curve aNC, GeomAdaptor_Curve aPC) = RandomCurve(anOracle, aPoints);
+                (N.GeomAdaptor_Curve aNC, CurveAdaptor aPC) = RandomCurve(anOracle, aPoints);
                 using (aNC)
                 {
                     aNI2.Init(aNC);
@@ -78,7 +80,7 @@ public class BRepIntCurveSurfaceOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>A segment, a line, a circle or a B-spline curve through the sample points, bounded or not, on both sides.</summary>
-    private static (N.GeomAdaptor_Curve, GeomAdaptor_Curve) RandomCurve(Oracle theOracle, List<Point3D> thePoints)
+    private static (N.GeomAdaptor_Curve, CurveAdaptor) RandomCurve(Oracle theOracle, List<Point3D> thePoints)
     {
         Point3D aP = thePoints[theOracle.Int(0, thePoints.Count - 1)];
         Point3D aQ = thePoints[theOracle.Int(0, thePoints.Count - 1)];
@@ -92,14 +94,14 @@ public class BRepIntCurveSurfaceOracleTests(ITestOutputHelper output)
                 Xyz aD = aP.Distance(aQ) > 1e-3 ? aQ.XYZ() - aP.XYZ() : GeomOracleInputs.RawDir(theOracle);
                 using var aND = new N.gp_Dir(aD.X(), aD.Y(), aD.Z());
                 var aNLine = new N.Geom_Line(aNP, aND);
-                var aLine = new Geom_Line(aP, new Direction3D(aD.X(), aD.Y(), aD.Z()));
+                var aLine = new LineCurve3D(aP, new Direction3D(aD.X(), aD.Y(), aD.Z()));
                 if (theOracle.Bool())
                 {
                     double t1 = theOracle.Real(-5, 0), t2 = theOracle.Real(0.5, 3) * Math.Max(1.0, aD.Modulus());
-                    return (new N.GeomAdaptor_Curve(aNLine, t1, t2), new GeomAdaptor_Curve(aLine, t1, t2));
+                    return (new N.GeomAdaptor_Curve(aNLine, t1, t2), new CurveAdaptor(aLine, t1, t2));
                 }
 
-                return (new N.GeomAdaptor_Curve(aNLine), new GeomAdaptor_Curve(aLine));
+                return (new N.GeomAdaptor_Curve(aNLine), new CurveAdaptor(aLine));
             }
 
             case 2:
@@ -122,14 +124,14 @@ public class BRepIntCurveSurfaceOracleTests(ITestOutputHelper output)
                 using var aNX = new N.gp_Dir(anX.X(), anX.Y(), anX.Z());
                 using var aNAx = new N.gp_Ax2(aNC, aNN, aNX);
                 var aNCircle = new N.Geom_Circle(aNAx, r);
-                var aCircle = new Geom_Circle(new Frame3D(aC, new Direction3D(aN.X(), aN.Y(), aN.Z()), new Direction3D(anX.X(), anX.Y(), anX.Z())), r);
+                var aCircle = new CircleCurve3D(new Frame3D(aC, new Direction3D(aN.X(), aN.Y(), aN.Z()), new Direction3D(anX.X(), anX.Y(), anX.Z())), r);
                 if (theOracle.Bool())
                 {
                     double t1 = theOracle.Real(-1, 0), t2 = theOracle.Real(0.5, 4);
-                    return (new N.GeomAdaptor_Curve(aNCircle, t1, t2), new GeomAdaptor_Curve(aCircle, t1, t2));
+                    return (new N.GeomAdaptor_Curve(aNCircle, t1, t2), new CurveAdaptor(aCircle, t1, t2));
                 }
 
-                return (new N.GeomAdaptor_Curve(aNCircle), new GeomAdaptor_Curve(aCircle));
+                return (new N.GeomAdaptor_Curve(aNCircle), new CurveAdaptor(aCircle));
             }
 
             default:
@@ -146,16 +148,16 @@ public class BRepIntCurveSurfaceOracleTests(ITestOutputHelper output)
                     aPoles[i] = new Point3D(aBase.X() + theOracle.Real(-2, 2), aBase.Y() + theOracle.Real(-2, 2), aBase.Z() + theOracle.Real(-2, 2));
                 }
 
-                var aCurve = new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg);
+                var aCurve = new BSplineCurve3D(aPoles, aKnots, aMults, aDeg);
                 N.Geom_BSplineCurve aNCurve = Oracle.ToNativeCurve(aPoles, null, aKnots, aMults, aDeg, false);
-                return (new N.GeomAdaptor_Curve(aNCurve), new GeomAdaptor_Curve(aCurve));
+                return (new N.GeomAdaptor_Curve(aNCurve), new CurveAdaptor(aCurve));
             }
         }
     }
 
     /// <summary>Iterates both and compares every point; returns their number.</summary>
     private static int Compare(Oracle theOracle, N.BRepIntCurveSurface_Inter theN, BRepIntCurveSurface_Inter theP,
-                               List<Twin<N.TopoDS_Shape, TopoDS_Shape>> theFaces, string theWhat)
+                               List<Twin<N.TopoDS_Shape, Shape>> theFaces, string theWhat)
     {
         int aCount = 0;
         while (true)

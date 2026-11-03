@@ -4,6 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -15,14 +18,14 @@ namespace Occt;
 /// <remarks>A working object (OCCT's value class, decision 1185). Its map iterates in the order of binding.</remarks>
 public sealed class TopoDSToStep_Tool
 {
-    private NCollection_DataMap<TopoDS_Shape, Transient> myDataMap = new(TopTools_ShapeMapHasher.Instance);
+    private NCollection_DataMap<Shape, Transient> myDataMap = new(ShapeHasher.Instance);
     private bool myFacetedContext;
     private double myLowestTol;
-    private TopoDS_Shell myCurrentShell = new TopoDS_Shell();
-    private TopoDS_Face myCurrentFace = new TopoDS_Face();
-    private TopoDS_Wire myCurrentWire = new TopoDS_Wire();
-    private TopoDS_Edge myCurrentEdge = new TopoDS_Edge();
-    private TopoDS_Vertex myCurrentVertex = new TopoDS_Vertex();
+    private Shell myCurrentShell = new Shell();
+    private Face myCurrentFace = new Face();
+    private Wire myCurrentWire = new Wire();
+    private Edge myCurrentEdge = new Edge();
+    private Vertex myCurrentVertex = new Vertex();
     private bool myReversedSurface;
     private int myPCurveMode;
 
@@ -35,7 +38,7 @@ public sealed class TopoDSToStep_Tool
         myPCurveMode = theModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0;
     }
 
-    public TopoDSToStep_Tool(NCollection_DataMap<TopoDS_Shape, Transient> M, bool FacetedContext, int theSurfCurveMode)
+    public TopoDSToStep_Tool(NCollection_DataMap<Shape, Transient> M, bool FacetedContext, int theSurfCurveMode)
     {
         myLowestTol = 0.0;
         myReversedSurface = false;
@@ -43,33 +46,33 @@ public sealed class TopoDSToStep_Tool
     }
 
     /// <summary>Initializes the tool with a copy of the map.</summary>
-    public void Init(NCollection_DataMap<TopoDS_Shape, Transient> M, bool FacetedContext, int theSurfCurveMode)
+    public void Init(NCollection_DataMap<Shape, Transient> M, bool FacetedContext, int theSurfCurveMode)
     {
-        myDataMap = new NCollection_DataMap<TopoDS_Shape, Transient>(M);
+        myDataMap = new NCollection_DataMap<Shape, Transient>(M);
         myFacetedContext = FacetedContext;
         myPCurveMode = theSurfCurveMode;
     }
 
-    public bool IsBound(in TopoDS_Shape S) => myDataMap.IsBound(S);
+    public bool IsBound(in Shape S) => myDataMap.IsBound(S);
 
-    public void Bind(in TopoDS_Shape S, StepShape_TopologicalRepresentationItem? T) => myDataMap.Bind(S, T!);
+    public void Bind(in Shape S, StepShape_TopologicalRepresentationItem? T) => myDataMap.Bind(S, T!);
 
-    public StepShape_TopologicalRepresentationItem? Find(in TopoDS_Shape S) => myDataMap.Find(S) as StepShape_TopologicalRepresentationItem;
+    public StepShape_TopologicalRepresentationItem? Find(in Shape S) => myDataMap.Find(S) as StepShape_TopologicalRepresentationItem;
 
     public bool Faceted() => myFacetedContext;
 
-    public void SetCurrentShell(in TopoDS_Shell S)
+    public void SetCurrentShell(in Shell S)
     {
         // OCCT_DEBUG output left out
         myCurrentShell = S;
     }
 
-    public TopoDS_Shell CurrentShell() => myCurrentShell;
+    public Shell CurrentShell() => myCurrentShell;
 
-    public void SetCurrentFace(in TopoDS_Face F)
+    public void SetCurrentFace(in Face F)
     {
         // OCCT_DEBUG output left out
-        double FaceTol = BRep_Tool.Tolerance(F);
+        double FaceTol = Tool.Tolerance(F);
         if (FaceTol > myLowestTol)
         {
             myLowestTol = FaceTol;
@@ -78,20 +81,20 @@ public sealed class TopoDSToStep_Tool
         myCurrentFace = F;
     }
 
-    public TopoDS_Face CurrentFace() => myCurrentFace;
+    public Face CurrentFace() => myCurrentFace;
 
-    public void SetCurrentWire(in TopoDS_Wire W)
+    public void SetCurrentWire(in Wire W)
     {
         // OCCT_DEBUG output left out
         myCurrentWire = W;
     }
 
-    public TopoDS_Wire CurrentWire() => myCurrentWire;
+    public Wire CurrentWire() => myCurrentWire;
 
-    public void SetCurrentEdge(in TopoDS_Edge E)
+    public void SetCurrentEdge(in Edge E)
     {
         // OCCT_DEBUG output left out
-        double EdgeTol = BRep_Tool.Tolerance(E);
+        double EdgeTol = Tool.Tolerance(E);
         if (EdgeTol > myLowestTol)
         {
             myLowestTol = EdgeTol;
@@ -100,11 +103,11 @@ public sealed class TopoDSToStep_Tool
         myCurrentEdge = E;
     }
 
-    public TopoDS_Edge CurrentEdge() => myCurrentEdge;
+    public Edge CurrentEdge() => myCurrentEdge;
 
-    public void SetCurrentVertex(in TopoDS_Vertex V)
+    public void SetCurrentVertex(in Vertex V)
     {
-        double VertexTol = BRep_Tool.Tolerance(V);
+        double VertexTol = Tool.Tolerance(V);
         if (VertexTol > myLowestTol)
         {
             myLowestTol = VertexTol;
@@ -113,7 +116,7 @@ public sealed class TopoDSToStep_Tool
         myCurrentVertex = V;
     }
 
-    public TopoDS_Vertex CurrentVertex() => myCurrentVertex;
+    public Vertex CurrentVertex() => myCurrentVertex;
 
     public double Lowest3DTolerance() => myLowestTol;
 
@@ -122,7 +125,7 @@ public sealed class TopoDSToStep_Tool
     public bool SurfaceReversed() => myReversedSurface;
 
     /// <summary>The map of the shapes and their entities (the tool's own: read it, don't change it).</summary>
-    public NCollection_DataMap<TopoDS_Shape, Transient> Map() => myDataMap;
+    public NCollection_DataMap<Shape, Transient> Map() => myDataMap;
 
     /// <summary>The mode for writing pcurves (write.surfacecurve.mode).</summary>
     public int PCurveMode() => myPCurveMode;

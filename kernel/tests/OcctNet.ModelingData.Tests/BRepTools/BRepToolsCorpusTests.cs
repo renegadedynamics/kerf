@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Globalization;
 using System.Text;
 
@@ -39,13 +41,13 @@ public class BRepToolsCorpusTests
         int aNbFiles = 0, aNbWords = 0, aNbIdentical = 0;
         foreach (string aFile in Directory.GetFiles(GeomTools_CorpusTests.DataDirectory, "*.brep").Order(StringComparer.Ordinal))
         {
-            Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aFile), aFile);
+            Assert.True(BrepTools.Read(out Shape aShape, aFile), aFile);
             string aText = BRepToolsIOTests.Write(aShape);
 
             var aBinary = new MemoryStream();
-            BinTools.Write(aShape, aBinary);
+            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.Write(aShape, aBinary);
             aBinary.Position = 0;
-            BinTools.Read(out TopoDS_Shape aFromBinary, aBinary);
+            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.Read(out Shape aFromBinary, aBinary);
             Assert.True(aFromBinary.TShape()!.IsFrozen);
             string aText2 = BRepToolsIOTests.Write(aFromBinary);
 
@@ -70,9 +72,9 @@ public class BRepToolsCorpusTests
     {
         string aFile = Path.Combine(GeomTools_CorpusTests.DataDirectory, "Ball.brep");
         string aText = File.ReadAllText(aFile, Encoding.Latin1);
-        Assert.True(BRepTools.Read(out TopoDS_Shape aFromFile, aFile));
-        TopoDS_Shape aFromString = BRepToolsIOTests.Read(aText);
-        BRepTools.Read(out TopoDS_Shape aFromStream, new StreamReader(new MemoryStream(Encoding.Latin1.GetBytes(aText)), Encoding.Latin1));
+        Assert.True(BrepTools.Read(out Shape aFromFile, aFile));
+        Shape aFromString = BRepToolsIOTests.Read(aText);
+        BrepTools.Read(out Shape aFromStream, new StreamReader(new MemoryStream(Encoding.Latin1.GetBytes(aText)), Encoding.Latin1));
         string aWritten = BRepToolsIOTests.Write(aFromFile);
         Assert.Equal(aWritten, BRepToolsIOTests.Write(aFromString));
         Assert.Equal(aWritten, BRepToolsIOTests.Write(aFromStream));

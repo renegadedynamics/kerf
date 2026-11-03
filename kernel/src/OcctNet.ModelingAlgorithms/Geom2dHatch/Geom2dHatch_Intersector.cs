@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Properties;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -16,7 +18,7 @@ namespace Occt;
 /// A working object (decision 21) deriving from <see cref="Geom2dInt_GInter"/>, as in OCCT; it implements TopClass's
 /// intersector interface for <see cref="Geom2dHatch_FClass2dOfClassifier"/> (decisions 288, 391 and 665).
 /// </remarks>
-public sealed class Geom2dHatch_Intersector : Geom2dInt_GInter, ITopClass_Intersector<Geom2dAdaptor_Curve>
+public sealed class Geom2dHatch_Intersector : Geom2dInt_GInter, ITopClass_Intersector<CurveAdaptor2D>
 {
     private double myConfusionTolerance;
     private double myTangencyTolerance;
@@ -74,9 +76,9 @@ public sealed class Geom2dHatch_Intersector : Geom2dInt_GInter, ITopClass_Inters
     }
 
     /// <summary>Intersects the curves <paramref name="C1"/> and <paramref name="C2"/>; the results are this object's.</summary>
-    public void Intersect(Geom2dAdaptor_Curve C1, Geom2dAdaptor_Curve C2)
+    public void Intersect(CurveAdaptor2D C1, CurveAdaptor2D C2)
     {
-        Adaptor2d_Curve2d aC1 = C1, aC2 = C2;
+        Curve2DAdaptorBase aC1 = C1, aC2 = C2;
         base.Perform(aC1, aC2, myConfusionTolerance, myTangencyTolerance);
     }
 
@@ -85,7 +87,7 @@ public sealed class Geom2dHatch_Intersector : Geom2dInt_GInter, ITopClass_Inters
     /// the tolerance <paramref name="Tol"/> on the segment, and the curve <paramref name="C"/>. The order matters:
     /// the segment is the first curve, the element the second.
     /// </summary>
-    public void Perform(in Line2D L, double P, double Tol, in Geom2dAdaptor_Curve C)
+    public void Perform(in Line2D L, double P, double Tol, in CurveAdaptor2D C)
     {
         // double pfbid,plbid;
         IntRes2d_Domain DL = new();
@@ -105,8 +107,8 @@ public sealed class Geom2dHatch_Intersector : Geom2dInt_GInter, ITopClass_Inters
                                  C.LastParameter(),
                                  global::Kerf.Engine.Foundation.Precision.PIntersection());
 
-        Geom2d_Line GL = new(L);
-        Geom2dAdaptor_Curve CGA = new(GL);
+        LineCurve2D GL = new(L);
+        CurveAdaptor2D CGA = new(GL);
         Geom2dInt_GInter Inter = new(CGA, DL, C, DE, global::Kerf.Engine.Foundation.Precision.PConfusion(), global::Kerf.Engine.Foundation.Precision.PIntersection());
         SetValues(Inter);
     }
@@ -116,9 +118,9 @@ public sealed class Geom2dHatch_Intersector : Geom2dInt_GInter, ITopClass_Inters
     /// curve of <paramref name="E"/> at the parameter <paramref name="U"/>. Where the tangent is undefined, it is
     /// (1, 0) and the curvature 0.
     /// </summary>
-    public void LocalGeometry(in Geom2dAdaptor_Curve E, double U, out Direction2D Tang, out Direction2D Norm, out double C)
+    public void LocalGeometry(in CurveAdaptor2D E, double U, out Direction2D Tang, out Direction2D Norm, out double C)
     {
-        GeomLProp_CLProps2d Prop = new(E.Curve()!, U, 2, global::Kerf.Engine.Foundation.Precision.PConfusion());
+        CLProps2d Prop = new(E.Curve()!, U, 2, global::Kerf.Engine.Foundation.Precision.PConfusion());
         C = 0.0;
         if (Prop.IsTangentDefined())
         {

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
@@ -38,7 +39,7 @@ internal static class TrihedronOracle
             var anOracle = new Oracle(theOutput, theSeed + aKind);
             foreach (int i in Tape.Budget(theCases))
             {
-                (N.Geom_Curve aNC, Geom_Curve aPC, double aRange) = RandomCurve(anOracle, aKind);
+                (N.Geom_Curve aNC, Curve3D aPC, double aRange) = RandomCurve(anOracle, aKind);
                 using (aNC)
                 {
                     double aF = aPC.FirstParameter(), aL = aPC.LastParameter();
@@ -48,7 +49,7 @@ internal static class TrihedronOracle
                         aL = aF + anOracle.Real(0.1, 2 * aRange);
                     }
                     using var aNA = new N.GeomAdaptor_Curve(aNC, aF, aL);
-                    var aPA = new GeomAdaptor_Curve(aPC, aF, aL);
+                    var aPA = new CurveAdaptor(aPC, aF, aL);
                     using N.GeomFill_TrihedronLaw aNLaw = theNative();
                     GeomFill_TrihedronLaw aPLaw = thePort();
                     Compare(anOracle, aNLaw, aPLaw, aNA, aPA, $"{theName} on {CurveKinds[aKind]} #{i}");
@@ -59,7 +60,7 @@ internal static class TrihedronOracle
     }
 
     internal static void Compare(Oracle theO, N.GeomFill_TrihedronLaw theN, GeomFill_TrihedronLaw theP,
-                                 N.GeomAdaptor_Curve theNC, GeomAdaptor_Curve thePC, string theWhat)
+                                 N.GeomAdaptor_Curve theNC, CurveAdaptor thePC, string theWhat)
     {
         bool aNOk = false, aPOk = false;
         if (!SameOutcome(Catch(() => aNOk = theN.SetCurve(theNC)), Catch(() => aPOk = theP.SetCurve(thePC)),
@@ -121,7 +122,7 @@ internal static class TrihedronOracle
     }
 
     /// <summary>Random parameters, the bounds of the curve's intervals of every continuity, and the ends.</summary>
-    private static List<double> Params(Oracle theO, GeomAdaptor_Curve theC, double theF, double theL)
+    private static List<double> Params(Oracle theO, CurveAdaptor theC, double theF, double theL)
     {
         var aParams = new List<double> { theF, theL };
         foreach (Continuity aS in Shapes)

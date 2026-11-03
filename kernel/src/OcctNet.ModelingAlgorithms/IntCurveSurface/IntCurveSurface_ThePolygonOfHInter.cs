@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 
 using Kerf.Geometry;
@@ -18,7 +19,7 @@ namespace Occt;
 /// OCCT. At least five points are taken. OCCT's empty <c>Dump</c> is left out.
 /// </remarks>
 public sealed class IntCurveSurface_ThePolygonOfHInter
-    : IIntCurveSurface_ThePolygon<IntCurveSurface_ThePolygonOfHInter, Adaptor3d_Curve>
+    : IIntCurveSurface_ThePolygon<IntCurveSurface_ThePolygonOfHInter, CurveAdaptorBase>
 {
     private Box TheBnd = new();
     private double TheDeflection;
@@ -30,7 +31,7 @@ public sealed class IntCurveSurface_ThePolygonOfHInter
     private NCollection_HArray1<double>? myParams;
 
     /// <summary>A polygon of <paramref name="NbPnt"/> points (at least 5) over the whole curve.</summary>
-    public IntCurveSurface_ThePolygonOfHInter(Adaptor3d_Curve Curve, int NbPnt)
+    public IntCurveSurface_ThePolygonOfHInter(CurveAdaptorBase Curve, int NbPnt)
     {
         ThePnts = new NCollection_Array1<Point3D>(1, (NbPnt < 5) ? 5 : NbPnt);
         ClosedPolygon = false;
@@ -41,7 +42,7 @@ public sealed class IntCurveSurface_ThePolygonOfHInter
     }
 
     /// <summary>A polygon of <paramref name="NbPnt"/> points (at least 5) between the parameters <paramref name="U1"/> and <paramref name="U2"/>.</summary>
-    public IntCurveSurface_ThePolygonOfHInter(Adaptor3d_Curve Curve, double U1, double U2, int NbPnt)
+    public IntCurveSurface_ThePolygonOfHInter(CurveAdaptorBase Curve, double U1, double U2, int NbPnt)
     {
         ThePnts = new NCollection_Array1<Point3D>(1, (NbPnt < 5) ? 5 : NbPnt);
         ClosedPolygon = false;
@@ -52,7 +53,7 @@ public sealed class IntCurveSurface_ThePolygonOfHInter
     }
 
     /// <summary>A polygon through the points of the curve at the parameters <paramref name="Upars"/>.</summary>
-    public IntCurveSurface_ThePolygonOfHInter(Adaptor3d_Curve Curve, NCollection_Array1<double> Upars)
+    public IntCurveSurface_ThePolygonOfHInter(CurveAdaptorBase Curve, NCollection_Array1<double> Upars)
     {
         ThePnts = new NCollection_Array1<Point3D>(1, Upars.Length());
         ClosedPolygon = false;
@@ -62,14 +63,14 @@ public sealed class IntCurveSurface_ThePolygonOfHInter
         Init(Curve, Upars);
     }
 
-    static IntCurveSurface_ThePolygonOfHInter IIntCurveSurface_ThePolygon<IntCurveSurface_ThePolygonOfHInter, Adaptor3d_Curve>.Create(
-        in Adaptor3d_Curve Curve, int NbPnt) => new(Curve, NbPnt);
+    static IntCurveSurface_ThePolygonOfHInter IIntCurveSurface_ThePolygon<IntCurveSurface_ThePolygonOfHInter, CurveAdaptorBase>.Create(
+        in CurveAdaptorBase Curve, int NbPnt) => new(Curve, NbPnt);
 
-    static IntCurveSurface_ThePolygonOfHInter IIntCurveSurface_ThePolygon<IntCurveSurface_ThePolygonOfHInter, Adaptor3d_Curve>.Create(
-        in Adaptor3d_Curve Curve, double U1, double U2, int NbPnt) => new(Curve, U1, U2, NbPnt);
+    static IntCurveSurface_ThePolygonOfHInter IIntCurveSurface_ThePolygon<IntCurveSurface_ThePolygonOfHInter, CurveAdaptorBase>.Create(
+        in CurveAdaptorBase Curve, double U1, double U2, int NbPnt) => new(Curve, U1, U2, NbPnt);
 
-    static IntCurveSurface_ThePolygonOfHInter IIntCurveSurface_ThePolygon<IntCurveSurface_ThePolygonOfHInter, Adaptor3d_Curve>.Create(
-        in Adaptor3d_Curve Curve, NCollection_Array1<double> Upars) => new(Curve, Upars);
+    static IntCurveSurface_ThePolygonOfHInter IIntCurveSurface_ThePolygon<IntCurveSurface_ThePolygonOfHInter, CurveAdaptorBase>.Create(
+        in CurveAdaptorBase Curve, NCollection_Array1<double> Upars) => new(Curve, Upars);
 
     /// <summary>The bounding box of the polygon.</summary>
     public Box Bounding() => TheBnd;
@@ -105,16 +106,16 @@ public sealed class IntCurveSurface_ThePolygonOfHInter
     public double ApproxParamOnCurve(int Index, double ParamOnLine) =>
         IntCurveSurface_PolygonUtils.ApproxParamOnCurve(Index, ParamOnLine, Binf, Bsup, NbPntIn, myParams);
 
-    private void Init(Adaptor3d_Curve Curve)
+    private void Init(CurveAdaptorBase Curve)
     {
-        IntCurveSurface_PolygonUtils.InitUniform<Adaptor3d_Curve, IntCurveSurface_TheHCurveTool>(
+        IntCurveSurface_PolygonUtils.InitUniform<CurveAdaptorBase, IntCurveSurface_TheHCurveTool>(
             Curve, Binf, Bsup, NbPntIn, ThePnts, ref TheBnd, out TheDeflection);
         ClosedPolygon = false;
     }
 
-    private void Init(Adaptor3d_Curve Curve, NCollection_Array1<double> Upars)
+    private void Init(CurveAdaptorBase Curve, NCollection_Array1<double> Upars)
     {
-        IntCurveSurface_PolygonUtils.InitWithParams<Adaptor3d_Curve, IntCurveSurface_TheHCurveTool>(
+        IntCurveSurface_PolygonUtils.InitWithParams<CurveAdaptorBase, IntCurveSurface_TheHCurveTool>(
             Curve, Upars, NbPntIn, ThePnts, ref TheBnd, out TheDeflection, out NCollection_HArray1<double> aParams);
         myParams = aParams;
         ClosedPolygon = false;

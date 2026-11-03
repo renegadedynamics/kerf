@@ -5,9 +5,14 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Intersection.TwoD;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -22,7 +27,7 @@ public sealed class ChFi2d_AnaFilletAlgo
     private Plane3D plane = new();
 
     // Left neighbour.
-    private TopoDS_Edge e1 = new();
+    private Edge e1 = new();
     private bool segment1;
     private double x11;
     private double y11;
@@ -34,7 +39,7 @@ public sealed class ChFi2d_AnaFilletAlgo
     private bool cw1;
 
     // Right neighbour.
-    private TopoDS_Edge e2 = new();
+    private Edge e2 = new();
     private bool segment2;
     private double x21;
     private double y21;
@@ -46,17 +51,17 @@ public sealed class ChFi2d_AnaFilletAlgo
     private bool cw2;
 
     // Fillet (result).
-    private TopoDS_Edge fillet = new();
-    private TopoDS_Edge shrinke1 = new();
-    private TopoDS_Edge shrinke2 = new();
+    private Edge fillet = new();
+    private Edge shrinke1 = new();
+    private Edge shrinke2 = new();
 
     // Compute the flag: CW || CCW
-    private static bool isCW(BRepAdaptor_Curve AC)
+    private static bool isCW(EdgeCurveAdaptor AC)
     {
         double f = AC.FirstParameter();
         double l = AC.LastParameter();
         // OCCT: the middle point is taken on the edge's curve without the edge's location, the ends with it
-        Geom_Circle circle = (AC.Curve().Curve() as Geom_Circle)!; // OCCT dereferences down_cast's result unchecked
+        CircleCurve3D circle = (AC.Curve().Curve() as CircleCurve3D)!; // OCCT dereferences down_cast's result unchecked
         Point3D start = AC.Value(f);
         Point3D end = AC.Value(l);
         Point3D center = AC.Circle().Location();
@@ -120,7 +125,7 @@ public sealed class ChFi2d_AnaFilletAlgo
     /// <summary>
     /// An algorithm on a wire of two edges, each a segment or an arc of circle.
     /// </summary>
-    public ChFi2d_AnaFilletAlgo(in TopoDS_Wire theWire, in Plane3D thePlane)
+    public ChFi2d_AnaFilletAlgo(in Wire theWire, in Plane3D thePlane)
         : this()
     {
         plane = thePlane;
@@ -130,7 +135,7 @@ public sealed class ChFi2d_AnaFilletAlgo
     /// <summary>
     /// An algorithm on two edges with a common point, each a segment or an arc of circle.
     /// </summary>
-    public ChFi2d_AnaFilletAlgo(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in Plane3D thePlane)
+    public ChFi2d_AnaFilletAlgo(in Edge theEdge1, in Edge theEdge2, in Plane3D thePlane)
         : this()
     {
         plane = thePlane;
@@ -141,44 +146,44 @@ public sealed class ChFi2d_AnaFilletAlgo
     /// <summary>Initializes the class by a wire consisting of two edges.</summary>
     /// <exception cref="TypeMismatchException">The wire hasn't two edges, or one isn't a segment or an arc.</exception>
     /// <exception cref="FailureException">An edge is infinite.</exception>
-    public void Init(in TopoDS_Wire theWire, in Plane3D thePlane)
+    public void Init(in Wire theWire, in Plane3D thePlane)
     {
         plane = thePlane;
         // OCCT: e1 and e2 aren't reset, so a second Init keeps the edges of the first
-        var itr = new TopoDS_Iterator(theWire);
+        var itr = new Iterator(theWire);
         for (; itr.More(); itr.Next())
         {
-            if (e1.IsNull())
+            if (e1.IsNull)
             {
-                e1 = TopoDS.Edge(itr.Value());
+                e1 = ShapeCasts.Edge(itr.Value());
             }
-            else if (e2.IsNull())
+            else if (e2.IsNull)
             {
-                e2 = TopoDS.Edge(itr.Value());
+                e2 = ShapeCasts.Edge(itr.Value());
             }
         }
-        if (e1.IsNull() || e2.IsNull())
+        if (e1.IsNull || e2.IsNull)
         {
             throw new TypeMismatchException("The algorithm expects a wire consisting of two linear or circular edges.");
         }
 
         // Left neighbour.
-        var AC1 = new BRepAdaptor_Curve(e1);
+        var AC1 = new EdgeCurveAdaptor(e1);
         if (AC1.GetType() != Line && AC1.GetType() != Circle)
         {
             throw new TypeMismatchException("A segment or an arc of circle is expected.");
         }
 
-        TopExp.Vertices(e1, out TopoDS_Vertex v1, out TopoDS_Vertex v2, true);
-        if (v1.IsNull() || v2.IsNull())
+        Exploration.Vertices(e1, out Vertex v1, out Vertex v2, true);
+        if (v1.IsNull || v2.IsNull)
         {
             throw new FailureException("An infinite edge.");
         }
 
-        Point3D P1 = BRep_Tool.Pnt(v1);
-        Point3D P2 = BRep_Tool.Pnt(v2);
-        Point2D p1 = ProjLib.Project(thePlane, P1);
-        Point2D p2 = ProjLib.Project(thePlane, P2);
+        Point3D P1 = Tool.Pnt(v1);
+        Point3D P2 = Tool.Pnt(v2);
+        Point2D p1 = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(thePlane, P1);
+        Point2D p2 = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(thePlane, P2);
         p1.Coord(out x11, out y11);
         p2.Coord(out x12, out y12);
 
@@ -188,7 +193,7 @@ public sealed class ChFi2d_AnaFilletAlgo
             segment1 = false;
             Circle3D c = AC1.Circle();
 
-            Point2D loc = ProjLib.Project(thePlane, c.Location());
+            Point2D loc = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(thePlane, c.Location());
             loc.Coord(out xc1, out yc1);
 
             radius1 = c.Radius();
@@ -196,22 +201,22 @@ public sealed class ChFi2d_AnaFilletAlgo
         }
 
         // Right neighbour.
-        var AC2 = new BRepAdaptor_Curve(e2);
+        var AC2 = new EdgeCurveAdaptor(e2);
         if (AC2.GetType() != Line && AC2.GetType() != Circle)
         {
             throw new TypeMismatchException("A segment or an arc of circle is expected.");
         }
 
-        TopExp.Vertices(e2, out v1, out v2, true);
-        if (v1.IsNull() || v2.IsNull())
+        Exploration.Vertices(e2, out v1, out v2, true);
+        if (v1.IsNull || v2.IsNull)
         {
             throw new FailureException("An infinite edge.");
         }
 
-        P1 = BRep_Tool.Pnt(v1);
-        P2 = BRep_Tool.Pnt(v2);
-        p1 = ProjLib.Project(thePlane, P1);
-        p2 = ProjLib.Project(thePlane, P2);
+        P1 = Tool.Pnt(v1);
+        P2 = Tool.Pnt(v2);
+        p1 = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(thePlane, P1);
+        p2 = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(thePlane, P2);
         p1.Coord(out x21, out y21);
         p2.Coord(out x22, out y22);
 
@@ -221,7 +226,7 @@ public sealed class ChFi2d_AnaFilletAlgo
             segment2 = false;
             Circle3D c = AC2.Circle();
 
-            Point2D loc = ProjLib.Project(thePlane, c.Location());
+            Point2D loc = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(thePlane, c.Location());
             loc.Coord(out xc2, out yc2);
 
             radius2 = c.Radius();
@@ -231,22 +236,22 @@ public sealed class ChFi2d_AnaFilletAlgo
 
     /// <summary>Initializes the class by two edges with a common point.</summary>
     /// <exception cref="FailureException">An edge is infinite, the edges have no common point, or no wire is made.</exception>
-    public void Init(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in Plane3D thePlane)
+    public void Init(in Edge theEdge1, in Edge theEdge2, in Plane3D thePlane)
     {
         // Make a wire consisting of two edges.
 
         // Get common point.
-        TopExp.Vertices(theEdge1, out TopoDS_Vertex v11, out TopoDS_Vertex v12, true);
-        TopExp.Vertices(theEdge2, out TopoDS_Vertex v21, out TopoDS_Vertex v22, true);
-        if (v11.IsNull() || v12.IsNull() || v21.IsNull() || v22.IsNull())
+        Exploration.Vertices(theEdge1, out Vertex v11, out Vertex v12, true);
+        Exploration.Vertices(theEdge2, out Vertex v21, out Vertex v22, true);
+        if (v11.IsNull || v12.IsNull || v21.IsNull || v22.IsNull)
         {
             throw new FailureException("An infinite edge.");
         }
 
-        Point3D p11 = BRep_Tool.Pnt(v11);
-        Point3D p12 = BRep_Tool.Pnt(v12);
-        Point3D p21 = BRep_Tool.Pnt(v21);
-        Point3D p22 = BRep_Tool.Pnt(v22);
+        Point3D p11 = Tool.Pnt(v11);
+        Point3D p12 = Tool.Pnt(v12);
+        Point3D p21 = Tool.Pnt(v21);
+        Point3D p22 = Tool.Pnt(v22);
 
         Point3D pcommon;
         if (IsEqual(p11, p21) || IsEqual(p11, p22))
@@ -277,7 +282,7 @@ public sealed class ChFi2d_AnaFilletAlgo
         var mkWire = new BRepBuilderAPI_MakeWire();
         if (is1stReversed)
         {
-            mkWire.Add(TopoDS.Edge(theEdge1.Reversed()));
+            mkWire.Add(ShapeCasts.Edge(theEdge1.Reversed()));
         }
         else
         {
@@ -285,7 +290,7 @@ public sealed class ChFi2d_AnaFilletAlgo
         }
         if (is2ndReversed)
         {
-            mkWire.Add(TopoDS.Edge(theEdge2.Reversed()));
+            mkWire.Add(ShapeCasts.Edge(theEdge2.Reversed()));
         }
         else
         {
@@ -296,7 +301,7 @@ public sealed class ChFi2d_AnaFilletAlgo
             throw new FailureException("Can't make a wire.");
         }
 
-        TopoDS_Wire W = mkWire.InternalWire();
+        Wire W = mkWire.InternalWire();
         Init(W, thePlane);
     }
 
@@ -304,7 +309,7 @@ public sealed class ChFi2d_AnaFilletAlgo
     public bool Perform(double radius)
     {
         bool bRet = false;
-        if (e1.IsNull() || e2.IsNull() || radius < global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (e1.IsNull || e2.IsNull || radius < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return bRet;
         }
@@ -324,11 +329,11 @@ public sealed class ChFi2d_AnaFilletAlgo
             var mkWire = new BRepBuilderAPI_MakeWire(e1, e2);
             if (mkWire.IsDone())
             {
-                TopoDS_Wire W = mkWire.InternalWire();
+                Wire W = mkWire.InternalWire();
                 var mkFace = new BRepBuilderAPI_MakeFace(plane);
                 if (mkFace.IsDone())
                 {
-                    TopoDS_Face F = mkFace.InternalFace();
+                    Face F = mkFace.InternalFace();
                     var analyzer = new ShapeAnalysis_Wire(W, F, global::Kerf.Engine.Foundation.Precision.Confusion());
                     if (analyzer.CheckSelfIntersection())
                     {
@@ -344,8 +349,8 @@ public sealed class ChFi2d_AnaFilletAlgo
         } // a case of segment - segment
 
         // Choose the case.
-        var AC1 = new BRepAdaptor_Curve(e1);
-        var AC2 = new BRepAdaptor_Curve(e2);
+        var AC1 = new EdgeCurveAdaptor(e1);
+        var AC2 = new EdgeCurveAdaptor(e2);
         if (segment1 && segment2)
         {
             bRet = SegmentFilletSegment(radius, ref xc, ref yc, ref cw, ref start, ref end);
@@ -441,7 +446,7 @@ public sealed class ChFi2d_AnaFilletAlgo
             }
             else
             {
-                if (e1.Orientation() == TopAbs_FORWARD)
+                if (e1.Orientation() == Forward)
                 {
                     pstart = AC1.Value(AC1.LastParameter() - start);
                 }
@@ -458,7 +463,7 @@ public sealed class ChFi2d_AnaFilletAlgo
             }
             else
             {
-                if (e2.Orientation() == TopAbs_FORWARD)
+                if (e2.Orientation() == Forward)
                 {
                     pend = AC2.Value(AC2.FirstParameter() + end);
                 }
@@ -479,7 +484,7 @@ public sealed class ChFi2d_AnaFilletAlgo
                 // Left neighbour.
                 Point3D p1, p2;
                 shrinke1.Nullify();
-                if (e1.Orientation() == TopAbs_FORWARD)
+                if (e1.Orientation() == Forward)
                 {
                     p1 = AC1.Value(AC1.FirstParameter());
                     p2 = pstart;
@@ -510,7 +515,7 @@ public sealed class ChFi2d_AnaFilletAlgo
 
                 // Right neighbour.
                 shrinke2.Nullify();
-                if (e1.Orientation() == TopAbs_FORWARD) // OCCT: e1's orientation decides e2's ends
+                if (e1.Orientation() == Forward) // OCCT: e1's orientation decides e2's ends
                 {
                     p1 = pend;
                     p2 = AC2.Value(AC2.LastParameter());
@@ -539,7 +544,7 @@ public sealed class ChFi2d_AnaFilletAlgo
                     }
                 }
 
-                bRet = !shrinke1.IsNull() && !shrinke2.IsNull();
+                bRet = !shrinke1.IsNull && !shrinke2.IsNull;
             } // fillet edge is done
         } // shrinking is good
 
@@ -547,7 +552,7 @@ public sealed class ChFi2d_AnaFilletAlgo
     }
 
     /// <summary>The fillet, and the two edges it shrinks in <paramref name="theE1"/> and <paramref name="theE2"/> (frozen).</summary>
-    public TopoDS_Edge Result(ref TopoDS_Edge theE1, ref TopoDS_Edge theE2)
+    public Edge Result(ref Edge theE1, ref Edge theE2)
     {
         theE1 = shrinke1;
         theE2 = shrinke2;
@@ -693,8 +698,8 @@ public sealed class ChFi2d_AnaFilletAlgo
         }
 
         // Calculate intersection of the line and the circle.
-        var intersector = new IntAna2d_AnaIntersection(line, circ);
-        if (!intersector.IsDone() || intersector.NbPoints() == 0)
+        var intersector = new AnalyticIntersection(line, circ);
+        if (!intersector.IsDone || intersector.PointCount == 0)
         {
             return false;
         }
@@ -702,9 +707,9 @@ public sealed class ChFi2d_AnaFilletAlgo
         // Find center point of fillet.
         int i;
         double minDist = double.MaxValue;
-        for (i = 1; i <= intersector.NbPoints(); ++i)
+        for (i = 1; i <= intersector.PointCount; ++i)
         {
-            IntAna2d_IntPoint intp = intersector.Point(i);
+            IntPoint intp = intersector.Point(i);
             Point2D p = intp.Value();
 
             double d = nearl.Distance(p);
@@ -732,16 +737,16 @@ public sealed class ChFi2d_AnaFilletAlgo
         circ.SetLocation(pc2);
         circ.SetRadius(radius2);
         intersector.Perform(line, circ);
-        if (!intersector.IsDone() || intersector.NbPoints() == 0)
+        if (!intersector.IsDone || intersector.PointCount == 0)
         {
             return false;
         }
 
         xend = double.MaxValue;
         yend = double.MaxValue;
-        for (i = 1; i <= intersector.NbPoints(); ++i)
+        for (i = 1; i <= intersector.PointCount; ++i)
         {
-            IntAna2d_IntPoint intp = intersector.Point(i);
+            IntPoint intp = intersector.Point(i);
             Point2D p = intp.Value();
 
             double d2 = p.SquareDistance(pc);
@@ -841,8 +846,8 @@ public sealed class ChFi2d_AnaFilletAlgo
         }
 
         // Calculate intersection of the line and the big circle.
-        var intersector = new IntAna2d_AnaIntersection(line, circ);
-        if (!intersector.IsDone() || intersector.NbPoints() == 0)
+        var intersector = new AnalyticIntersection(line, circ);
+        if (!intersector.IsDone || intersector.PointCount == 0)
         {
             return false;
         }
@@ -850,9 +855,9 @@ public sealed class ChFi2d_AnaFilletAlgo
         // Find center point of fillet.
         int i;
         double minDist = double.MaxValue;
-        for (i = 1; i <= intersector.NbPoints(); ++i)
+        for (i = 1; i <= intersector.PointCount; ++i)
         {
-            IntAna2d_IntPoint intp = intersector.Point(i);
+            IntPoint intp = intersector.Point(i);
             Point2D p = intp.Value();
 
             double d = nearLine.Distance(p);
@@ -880,16 +885,16 @@ public sealed class ChFi2d_AnaFilletAlgo
         circ.SetLocation(pc1);
         circ.SetRadius(radius1);
         intersector.Perform(line, circ);
-        if (!intersector.IsDone() || intersector.NbPoints() == 0)
+        if (!intersector.IsDone || intersector.PointCount == 0)
         {
             return false;
         }
 
         xstart = double.MaxValue;
         ystart = double.MaxValue;
-        for (i = 1; i <= intersector.NbPoints(); ++i)
+        for (i = 1; i <= intersector.PointCount; ++i)
         {
-            IntAna2d_IntPoint intp = intersector.Point(i);
+            IntPoint intp = intersector.Point(i);
             Point2D p = intp.Value();
 
             double d2 = p.SquareDistance(pc);
@@ -973,8 +978,8 @@ public sealed class ChFi2d_AnaFilletAlgo
 
         // Calculate an intersection point of these two circles
         // and choose the one closer to the "check" point.
-        var intersector = new IntAna2d_AnaIntersection(c1, c2);
-        if (!intersector.IsDone() || intersector.NbPoints() == 0)
+        var intersector = new AnalyticIntersection(c1, c2);
+        if (!intersector.IsDone || intersector.PointCount == 0)
         {
             return false;
         }
@@ -982,9 +987,9 @@ public sealed class ChFi2d_AnaFilletAlgo
         // Find center point of fillet.
         Point2D pc = new();
         double minDist = double.MaxValue;
-        for (int i = 1; i <= intersector.NbPoints(); ++i)
+        for (int i = 1; i <= intersector.PointCount; ++i)
         {
-            IntAna2d_IntPoint intp = intersector.Point(i);
+            IntPoint intp = intersector.Point(i);
             Point2D p = intp.Value();
 
             double d = checkp.SquareDistance(p);
@@ -1015,14 +1020,14 @@ public sealed class ChFi2d_AnaFilletAlgo
     }
 
     // Cuts intersecting edges of a contour.
-    private bool Cut(in Plane3D thePlane, ref TopoDS_Edge theE1, ref TopoDS_Edge theE2)
+    private bool Cut(in Plane3D thePlane, ref Edge theE1, ref Edge theE2)
     {
         Point3D p = new();
         bool found = false;
         double param1 = 0.0, param2 = 0.0;
         double f1, l1, f2, l2;
-        Geom_Curve c1 = BRep_Tool.Curve(theE1, out f1, out l1)!;
-        Geom_Curve c2 = BRep_Tool.Curve(theE2, out f2, out l2)!;
+        Curve3D c1 = Tool.Curve(theE1, out f1, out l1)!;
+        Curve3D c2 = Tool.Curve(theE2, out f2, out l2)!;
         var extrema = new GeomAPI_ExtremaCurveCurve(c1, c2, f1, l1, f2, l2);
         if (extrema.NbExtrema() != 0)
         {
@@ -1056,7 +1061,7 @@ public sealed class ChFi2d_AnaFilletAlgo
                 {
                     theE2 = mkEdge2.Edge();
 
-                    Point2D p2d = ProjLib.Project(thePlane, p);
+                    Point2D p2d = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(thePlane, p);
                     p2d.Coord(out x12, out y12);
                     x21 = x12;
                     y21 = y12;

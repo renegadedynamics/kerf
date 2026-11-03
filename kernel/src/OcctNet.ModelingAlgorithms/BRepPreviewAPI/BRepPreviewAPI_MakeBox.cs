@@ -6,6 +6,7 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -73,7 +74,7 @@ public class BRepPreviewAPI_MakeBox : BRepPrimAPI_MakeBox
             makeRectangle(aPnt1, aPnt2, aPnt3, aPnt4);
         }
 
-        if (!myShape.IsNull())
+        if (!myShape.IsNull)
         {
             Done();
             return;
@@ -98,10 +99,10 @@ public class BRepPreviewAPI_MakeBox : BRepPrimAPI_MakeBox
     // Create a rectangular face if the box is thin in one direction only.
     private void makeRectangle(in Point3D thePnt1, in Point3D thePnt2, in Point3D thePnt3, in Point3D thePnt4)
     {
-        TopoDS_Edge anEdge1 = new BRepBuilderAPI_MakeEdge(thePnt1, thePnt2).InternalEdge();
-        TopoDS_Edge anEdge2 = new BRepBuilderAPI_MakeEdge(thePnt2, thePnt3).InternalEdge();
-        TopoDS_Edge anEdge3 = new BRepBuilderAPI_MakeEdge(thePnt3, thePnt4).InternalEdge();
-        TopoDS_Edge anEdge4 = new BRepBuilderAPI_MakeEdge(thePnt4, thePnt1).InternalEdge();
+        Edge anEdge1 = new BRepBuilderAPI_MakeEdge(thePnt1, thePnt2).InternalEdge();
+        Edge anEdge2 = new BRepBuilderAPI_MakeEdge(thePnt2, thePnt3).InternalEdge();
+        Edge anEdge3 = new BRepBuilderAPI_MakeEdge(thePnt3, thePnt4).InternalEdge();
+        Edge anEdge4 = new BRepBuilderAPI_MakeEdge(thePnt4, thePnt1).InternalEdge();
 
         BRepBuilderAPI_MakeWire aWire = new(anEdge1, anEdge2, anEdge3, anEdge4);
         BRepBuilderAPI_MakeFace aFace = new(aWire.InternalWire());

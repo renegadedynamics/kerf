@@ -8,39 +8,39 @@ namespace OcctNet.ModelingData.Tests;
 
 public class Geom2d_OffsetCurve_Test
 {
-    private readonly Geom2d_OffsetCurve myOriginalCurve;
+    private readonly OffsetCurve2D myOriginalCurve;
 
     public Geom2d_OffsetCurve_Test()
     {
         // Create a circle as basis curve
         Circle2D aCircle = new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(Direction2D.D.X)), 5.0);
-        Geom2d_Circle aBasisCurve = new Geom2d_Circle(aCircle);
+        CircleCurve2D aBasisCurve = new CircleCurve2D(aCircle);
 
         // Create offset curve
         double anOffsetValue = 2.0;
-        myOriginalCurve = new Geom2d_OffsetCurve(aBasisCurve, anOffsetValue);
+        myOriginalCurve = new OffsetCurve2D(aBasisCurve, anOffsetValue);
     }
 
     [Fact]
     public void CopyConstructorBasicProperties()
     {
         // Test copy constructor
-        Geom2d_OffsetCurve aCopiedCurve = new Geom2d_OffsetCurve(myOriginalCurve);
+        OffsetCurve2D aCopiedCurve = new OffsetCurve2D(myOriginalCurve);
 
         // Verify basic properties are identical
         Assert.Equal(myOriginalCurve.Offset(), aCopiedCurve.Offset());
-        Assert.Equal(myOriginalCurve.IsPeriodic(), aCopiedCurve.IsPeriodic());
-        Assert.Equal(myOriginalCurve.IsClosed(), aCopiedCurve.IsClosed());
+        Assert.Equal(myOriginalCurve.IsPeriodic, aCopiedCurve.IsPeriodic);
+        Assert.Equal(myOriginalCurve.IsClosed, aCopiedCurve.IsClosed);
     }
 
     [Fact]
     public void CopyConstructorBasisCurve()
     {
-        Geom2d_OffsetCurve aCopiedCurve = new Geom2d_OffsetCurve(myOriginalCurve);
+        OffsetCurve2D aCopiedCurve = new OffsetCurve2D(myOriginalCurve);
 
         // Verify basis curves are equivalent but independent
-        Geom2d_Curve anOrigBasis = myOriginalCurve.BasisCurve();
-        Geom2d_Curve aCopyBasis = aCopiedCurve.BasisCurve();
+        Curve2D anOrigBasis = myOriginalCurve.BasisCurve();
+        Curve2D aCopyBasis = aCopiedCurve.BasisCurve();
 
         // They should be different objects
         Assert.NotSame(anOrigBasis, aCopyBasis);
@@ -54,8 +54,8 @@ public class Geom2d_OffsetCurve_Test
     public void CopyMethodUsesOptimizedConstructor()
     {
         // Test that Copy() method uses the optimized copy constructor
-        Geom2d_Geometry aCopiedGeom = myOriginalCurve.Copy();
-        Geom2d_OffsetCurve? aCopiedCurve = aCopiedGeom as Geom2d_OffsetCurve;
+        Geometry2D aCopiedGeom = myOriginalCurve.Copy();
+        OffsetCurve2D? aCopiedCurve = aCopiedGeom as OffsetCurve2D;
 
         Assert.NotNull(aCopiedCurve);
 
@@ -78,7 +78,7 @@ public class Geom2d_OffsetCurve_Test
     [Fact]
     public void CopyIndependence()
     {
-        Geom2d_OffsetCurve aCopiedCurve = new Geom2d_OffsetCurve(myOriginalCurve);
+        OffsetCurve2D aCopiedCurve = new OffsetCurve2D(myOriginalCurve);
 
         // Store original offset value
         double anOrigOffset = aCopiedCurve.Offset();

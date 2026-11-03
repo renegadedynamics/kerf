@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Geometry;
 using static OcctNet.ModelingData.Tests.GeomEval_SurfaceTestHelpers;
 
@@ -16,7 +17,7 @@ public class GeomEval_CircularHelicoidSurfaceTest
     public void Construction_ValidParams()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_CircularHelicoidSurface aSurf = new(anAx3, 10.0);
+        CircularHelicoidSurface aSurf = new(anAx3, 10.0);
         Assert.Equal(10.0, aSurf.Pitch(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
@@ -24,14 +25,14 @@ public class GeomEval_CircularHelicoidSurfaceTest
     public void Construction_ZeroPitch_Throws()
     {
         CoordinateSystem anAx3 = new();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new GeomEval_CircularHelicoidSurface(anAx3, 0.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new CircularHelicoidSurface(anAx3, 0.0));
     }
 
     [Fact]
     public void Construction_NegativePitch_NoThrow()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_CircularHelicoidSurface aSurf = new(anAx3, -5.0);
+        CircularHelicoidSurface aSurf = new(anAx3, -5.0);
         Assert.Equal(-5.0, aSurf.Pitch());
     }
 
@@ -40,7 +41,7 @@ public class GeomEval_CircularHelicoidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         const double aP = 10.0;
-        GeomEval_CircularHelicoidSurface aSurf = new(anAx3, aP);
+        CircularHelicoidSurface aSurf = new(anAx3, aP);
 
         // S(0, 1) = (1, 0, 0)
         Point3D aP1 = aSurf.EvalD0(0.0, 1.0);
@@ -65,12 +66,12 @@ public class GeomEval_CircularHelicoidSurfaceTest
     public void D2V_IsZero_RuledSurface()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_CircularHelicoidSurface aSurf = new(anAx3, 10.0);
+        CircularHelicoidSurface aSurf = new(anAx3, 10.0);
 
         double[][] aParams = [[0.0, 1.0], [1.0, 2.0], [M_PI, -1.0]];
         foreach (double[] aUV in aParams)
         {
-            Geom_Surface.ResD2 aD2 = aSurf.EvalD2(aUV[0], aUV[1]);
+            Surface.ResD2 aD2 = aSurf.EvalD2(aUV[0], aUV[1]);
             Assert.Equal(0.0, aD2.D2V.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
@@ -79,13 +80,13 @@ public class GeomEval_CircularHelicoidSurfaceTest
     public void D1V_UnitRadial()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_CircularHelicoidSurface aSurf = new(anAx3, 10.0);
+        CircularHelicoidSurface aSurf = new(anAx3, 10.0);
 
         // |dS/dv| = |cos(u)*XDir + sin(u)*YDir| = 1
         double[] aParams = [0.0, 1.0, M_PI / 2.0, M_PI, 3.5];
         foreach (double aU in aParams)
         {
-            Geom_Surface.ResD1 aD1 = aSurf.EvalD1(aU, 2.0);
+            Surface.ResD1 aD1 = aSurf.EvalD1(aU, 2.0);
             Assert.Equal(1.0, aD1.D1V.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
@@ -96,8 +97,8 @@ public class GeomEval_CircularHelicoidSurfaceTest
         CoordinateSystem anAx3 = new();
         Frame3D anAx2 = new(anAx3.Location(), anAx3.Direction(), anAx3.XDirection());
         const double aP = 10.0, aR = 3.0;
-        GeomEval_CircularHelicoidSurface aSurf = new(anAx3, aP);
-        GeomEval_CircularHelixCurve aHelix = new(anAx2, aR, aP);
+        CircularHelicoidSurface aSurf = new(anAx3, aP);
+        CircularHelixCurve aHelix = new(anAx2, aR, aP);
 
         // S(u, R) should trace the same path as the helix C(u)
         double[] aParams = [0.0, 0.5, 1.0, M_PI, 2.0 * M_PI];
@@ -113,10 +114,10 @@ public class GeomEval_CircularHelicoidSurfaceTest
     public void EvalD1_ConsistentWithD0()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_CircularHelicoidSurface aSurf = new(anAx3, 10.0);
+        CircularHelicoidSurface aSurf = new(anAx3, 10.0);
         const double aU = 1.0, aV = 2.0;
 
-        Geom_Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
+        Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
         Point3D aPu1 = aSurf.EvalD0(aU + global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Point3D aPu2 = aSurf.EvalD0(aU - global::Kerf.Engine.Foundation.Precision.Confusion(), aV);
         Point3D aPv1 = aSurf.EvalD0(aU, aV + global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -133,7 +134,7 @@ public class GeomEval_CircularHelicoidSurfaceTest
     public void Bounds_Infinite()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_CircularHelicoidSurface aSurf = new(anAx3, 10.0);
+        CircularHelicoidSurface aSurf = new(anAx3, 10.0);
         aSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.True(global::Kerf.Engine.Foundation.Precision.IsInfinite(aU1));
         Assert.True(global::Kerf.Engine.Foundation.Precision.IsInfinite(aU2));
@@ -145,11 +146,11 @@ public class GeomEval_CircularHelicoidSurfaceTest
     public void Properties()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_CircularHelicoidSurface aSurf = new(anAx3, 10.0);
-        Assert.False(aSurf.IsUClosed());
-        Assert.False(aSurf.IsVClosed());
-        Assert.False(aSurf.IsUPeriodic());
-        Assert.False(aSurf.IsVPeriodic());
+        CircularHelicoidSurface aSurf = new(anAx3, 10.0);
+        Assert.False(aSurf.IsUClosed);
+        Assert.False(aSurf.IsVClosed);
+        Assert.False(aSurf.IsUPeriodic);
+        Assert.False(aSurf.IsVPeriodic);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UIso(0.0));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VIso(0.0));
     }
@@ -158,7 +159,7 @@ public class GeomEval_CircularHelicoidSurfaceTest
     public void Reverse_NotImplemented()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_CircularHelicoidSurface aSurf = new(anAx3, 10.0);
+        CircularHelicoidSurface aSurf = new(anAx3, 10.0);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReverse());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.VReverse());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.UReversedParameter(0.5));
@@ -169,7 +170,7 @@ public class GeomEval_CircularHelicoidSurfaceTest
     public void Transform_NotImplemented()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_CircularHelicoidSurface aSurf = new(anAx3, 10.0);
+        CircularHelicoidSurface aSurf = new(anAx3, 10.0);
         Transform3D aTrsf = new();
         aTrsf.SetTranslation(new Vector3D(1.0, 2.0, 3.0));
 
@@ -181,10 +182,10 @@ public class GeomEval_CircularHelicoidSurfaceTest
     public void Copy_Independent()
     {
         CoordinateSystem anAx3 = new();
-        GeomEval_CircularHelicoidSurface aSurf = new(anAx3, 10.0);
-        Geom_Geometry aCopy = aSurf.Copy();
+        CircularHelicoidSurface aSurf = new(anAx3, 10.0);
+        Geometry3D aCopy = aSurf.Copy();
         Assert.NotNull(aCopy);
-        GeomEval_CircularHelicoidSurface? aCopySurf = aCopy as GeomEval_CircularHelicoidSurface;
+        CircularHelicoidSurface? aCopySurf = aCopy as CircularHelicoidSurface;
         Assert.NotNull(aCopySurf);
         Assert.Equal(10.0, aCopySurf.Pitch(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -194,7 +195,7 @@ public class GeomEval_CircularHelicoidSurfaceTest
     public void Derivatives_MatchFiniteDifferences()
     {
         CoordinateSystem anAx3 = new(new Point3D(1.0, -2.0, 0.5), new Direction3D(1.0, 1.0, 1.0), new Direction3D(1.0, -1.0, 0.0));
-        GeomEval_CircularHelicoidSurface aSurf = new(anAx3, -3.5);
+        CircularHelicoidSurface aSurf = new(anAx3, -3.5);
         for (double aU = -4.0; aU <= 4.0; aU += 0.7)
         {
             for (double aV = -2.0; aV <= 2.0; aV += 0.7)
@@ -208,8 +209,8 @@ public class GeomEval_CircularHelicoidSurfaceTest
     [Fact]
     public void Setters_WithTwins_Freeze()
     {
-        GeomEval_CircularHelicoidSurface aSurf = new(new CoordinateSystem(), 10.0);
-        GeomEval_CircularHelicoidSurface aCopy = aSurf.WithPitch(-2.0);
+        CircularHelicoidSurface aSurf = new(new CoordinateSystem(), 10.0);
+        CircularHelicoidSurface aCopy = aSurf.WithPitch(-2.0);
         Assert.Equal(10.0, aSurf.Pitch());
         Assert.Equal(-2.0, aCopy.Pitch());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aSurf.WithPitch(0.0));

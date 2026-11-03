@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 
@@ -19,23 +21,23 @@ public class GeomFill_EvolvedSection : GeomFill_SectionLaw
 {
     private readonly double First;
     private readonly double Last;
-    private readonly Geom_Curve mySection;
+    private readonly Curve3D mySection;
     private readonly Law_Function myLaw;
     private Law_Function TLaw;
-    private readonly Geom_BSplineCurve myCurve;
+    private readonly BSplineCurve3D myCurve;
 
     /// <summary>The section C scaled by the law L, over L's bounds.</summary>
-    public GeomFill_EvolvedSection(Geom_Curve C, Law_Function L)
+    public GeomFill_EvolvedSection(Curve3D C, Law_Function L)
     {
         L.Bounds(out First, out Last);
-        mySection = (Geom_Curve)C.Copy();
+        mySection = (Curve3D)C.Copy();
         myLaw = L.Trim(First, Last, 1.0e-20);
         TLaw = myLaw;
-        Geom_BSplineCurve? aCurve = C as Geom_BSplineCurve;
+        BSplineCurve3D? aCurve = C as BSplineCurve3D;
         if (aCurve is null)
         {
-            aCurve = GeomConvert.CurveToBSplineCurve(C, QuasiAngular);
-            if (aCurve.IsPeriodic())
+            aCurve = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(C, QuasiAngular);
+            if (aCurve.IsPeriodic)
             {
                 int M = aCurve.Degree() / 2 + 1;
                 aCurve.RemoveKnot(1, M, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -105,12 +107,12 @@ public class GeomFill_EvolvedSection : GeomFill_SectionLaw
     }
 
     /// <summary>Null: OCCT's construction of the surface is commented out.</summary>
-    public override Geom_BSplineSurface? BSplineSurface() => null;
+    public override BSplineSurface? BSplineSurface() => null;
 
     public override void SectionShape(out int NbPoles, out int NbKnots, out int Degree)
     {
-        NbPoles = myCurve.NbPoles();
-        NbKnots = myCurve.NbKnots();
+        NbPoles = myCurve.PoleCount;
+        NbKnots = myCurve.KnotCount;
         Degree = myCurve.Degree();
     }
 
@@ -124,9 +126,9 @@ public class GeomFill_EvolvedSection : GeomFill_SectionLaw
         TMults.Assign(myCurve.InternalMultiplicities());
     }
 
-    public override bool IsRational() => myCurve.IsRational();
+    public override bool IsRational() => myCurve.IsRational;
 
-    public override bool IsUPeriodic() => myCurve.IsPeriodic();
+    public override bool IsUPeriodic() => myCurve.IsPeriodic;
 
     public override bool IsVPeriodic() => (Math.Abs(myLaw.Value(First) - myLaw.Value(Last)) < global::Kerf.Engine.Foundation.Precision.Confusion());
 
@@ -193,8 +195,8 @@ public class GeomFill_EvolvedSection : GeomFill_SectionLaw
     {
         double L, val, max, U, Delta;
         int ii;
-        GeomAdaptor_Curve AC = new GeomAdaptor_Curve(mySection);
-        L = GCPnts_AbscissaPoint.Length(AC);
+        CurveAdaptor AC = new CurveAdaptor(mySection);
+        L = AbscissaPoint.Length(AC);
 
         Delta = (Last - First) / 20;
         for (ii = 0, max = 0.0, U = First; ii <= 20; ii++, U += Delta)
@@ -222,7 +224,7 @@ public class GeomFill_EvolvedSection : GeomFill_SectionLaw
     }
 
     /// <summary>Throws StdFail_NotDone: the law is never constant (<see cref="IsConstant"/>).</summary>
-    public override Geom_Curve ConstantSection()
+    public override Curve3D ConstantSection()
     {
         double Err = 0, scale;
         if (!IsConstant(ref Err))
@@ -234,8 +236,8 @@ public class GeomFill_EvolvedSection : GeomFill_SectionLaw
         scale = myLaw.Value(First) + myLaw.Value((First + Last) / 2) + myLaw.Value(Last);
         T.SetScale(P, scale / 3);
 
-        Geom_Curve C;
-        C = (Geom_Curve)mySection.Copy();
+        Curve3D C;
+        C = (Curve3D)mySection.Copy();
         C.Transform(T);
         return C;
     }

@@ -3,10 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -21,16 +24,16 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
     private const double Probing_End = 0.7;
     private const double Probing_Step = 0.2111;
 
-    private TopoDS_Face myFace;
-    private readonly TopExp_Explorer myWExplorer = new();
-    private readonly TopExp_Explorer myEExplorer = new();
+    private Face myFace;
+    private readonly Explorer myWExplorer = new();
+    private readonly Explorer myEExplorer = new();
     private int myCurEdgeInd;
     private double myCurEdgePar;
     private double myMaxTolerance;
     private bool myUseBndBox;
 
-    private readonly NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myMapVE =
-        new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> myMapVE =
+        new(ShapeHasher.Instance);
 
     private double myUMin;
     private double myUMax;
@@ -38,7 +41,7 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
     private double myVMax;
 
     /// <summary>An explorer of the face <paramref name="F"/> (taken FORWARD).</summary>
-    public BRepClass_FaceExplorer(in TopoDS_Face F)
+    public BRepClass_FaceExplorer(in Face F)
     {
         myFace = F;
         myCurEdgeInd = 1;
@@ -49,18 +52,18 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
         myUMax = -global::Kerf.Engine.Foundation.Precision.Infinite();
         myVMin = global::Kerf.Engine.Foundation.Precision.Infinite();
         myVMax = -global::Kerf.Engine.Foundation.Precision.Infinite();
-        myFace.Orientation(TopAbs_FORWARD);
+        myFace.Orientation(Forward);
     }
 
     /// <summary>Computes the UV bounds of the face.</summary>
     protected void ComputeFaceBounds()
     {
-        Geom_Surface aSurface = BRep_Tool.Surface(myFace, out Placement _)!;
+        Surface aSurface = Tool.Surface(myFace, out Placement _)!;
         aSurface.Bounds(out myUMin, out myUMax, out myVMin, out myVMax);
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(myUMin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(myUMax)
             || global::Kerf.Engine.Foundation.Precision.IsInfinite(myVMin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(myVMax))
         {
-            BRepTools.UVBounds(myFace, out myUMin, out myUMax, out myVMin, out myVMax);
+            BrepTools.UVBounds(myFace, out myUMin, out myUMax, out myVMin, out myVMax);
         }
     }
 
@@ -121,11 +124,11 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
     /// <summary>Another half-line from <paramref name="P"/> (see <see cref="Segment"/>): each call gives another one.</summary>
     public bool OtherSegment(in Point2D P, out Line2D L, out double Par)
     {
-        var anExpF = new TopExp_Explorer(myFace, TopAbs_EDGE);
+        var anExpF = new Explorer(myFace, ShapeType.Edge);
         int i;
         double aFPar;
         double aLPar;
-        Geom2d_Curve? aC2d;
+        Curve2D? aC2d;
         double aTolParConf2 = global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion();
         Point2D aPOnC;
         double aParamIn;
@@ -140,14 +143,14 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
                 continue;
             }
 
-            TopoDS_Shape aLocalShape = anExpF.Current();
-            TopAbs_Orientation anOrientation = aLocalShape.Orientation();
+            Shape aLocalShape = anExpF.Current();
+            Orientation anOrientation = aLocalShape.Orientation();
 
-            if (anOrientation == TopAbs_FORWARD || anOrientation == TopAbs_REVERSED)
+            if (anOrientation == Forward || anOrientation == Reversed)
             {
-                TopoDS_Edge anEdge = TopoDS.Edge(aLocalShape);
+                Edge anEdge = ShapeCasts.Edge(aLocalShape);
 
-                aC2d = BRep_Tool.CurveOnSurface(anEdge, myFace, out aFPar, out aLPar);
+                aC2d = Tool.CurveOnSurface(anEdge, myFace, out aFPar, out aLPar);
 
                 if (aC2d is not null)
                 {
@@ -285,7 +288,7 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
     }
 
     /// <summary>Starts an exploration of the wires.</summary>
-    public void InitWires() => myWExplorer.Init(myFace, TopAbs_WIRE);
+    public void InitWires() => myWExplorer.Init(myFace, ShapeType.Wire);
 
     /// <summary>True if there is a current wire.</summary>
     public bool MoreWires() => myWExplorer.More();
@@ -299,9 +302,9 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
     /// <summary>Starts an exploration of the edges of the current wire.</summary>
     public void InitEdges()
     {
-        myEExplorer.Init(myWExplorer.Current(), TopAbs_EDGE);
+        myEExplorer.Init(myWExplorer.Current(), ShapeType.Edge);
         myMapVE.Clear();
-        TopExp.MapShapesAndAncestors(myWExplorer.Current(), TopAbs_VERTEX, TopAbs_EDGE, myMapVE);
+        Exploration.MapShapesAndAncestors(myWExplorer.Current(), ShapeType.Vertex, ShapeType.Edge, myMapVE);
     }
 
     /// <summary>True if there is a current edge.</summary>
@@ -318,11 +321,11 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
     /// next edge of <paramref name="E"/> is left as it was when the current edge has none (see
     /// <see cref="BRepClass_Edge.SetNextEdge"/>).
     /// </summary>
-    public void CurrentEdge(ref BRepClass_Edge E, out TopAbs_Orientation Or)
+    public void CurrentEdge(ref BRepClass_Edge E, out Orientation Or)
     {
         // OCCT: the next edge left from the previous edge reaches the intersector's CheckSkip for an edge without one
         // (a closed edge, or a vertex with more than two edges) (occt-issues.md)
-        E.ChangeEdge() = TopoDS.Edge(myEExplorer.Current());
+        E.ChangeEdge() = ShapeCasts.Edge(myEExplorer.Current());
         E.ChangeFace() = myFace;
         Or = E.Edge().Orientation();
         E.SetNextEdge(myMapVE);

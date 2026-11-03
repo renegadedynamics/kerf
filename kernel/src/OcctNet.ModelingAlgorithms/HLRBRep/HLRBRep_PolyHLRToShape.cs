@@ -5,8 +5,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -41,7 +44,7 @@ public class HLRBRep_PolyHLRToShape
         HLRAlgo_EdgeIterator It = new();
         myBiPntVis.Clear();
         myBiPntHid.Clear();
-        TopoDS_Shape S;
+        Shape S;
         bool reg1, regn, outl, intl;
         Transform3D T = myAlgo.Projector().Transformation();
         HLRAlgo_EdgeStatus status = new();
@@ -86,65 +89,65 @@ public class HLRBRep_PolyHLRToShape
     }
 
     /// <summary>The visible sharp edges.</summary>
-    public TopoDS_Shape VCompound() => InternalCompound(4, true, new TopoDS_Shape());
+    public Shape VCompound() => InternalCompound(4, true, new Shape());
 
-    public TopoDS_Shape VCompound(in TopoDS_Shape S) => InternalCompound(4, true, S);
+    public Shape VCompound(in Shape S) => InternalCompound(4, true, S);
 
     /// <summary>The visible smooth edges.</summary>
-    public TopoDS_Shape Rg1LineVCompound() => InternalCompound(2, true, new TopoDS_Shape());
+    public Shape Rg1LineVCompound() => InternalCompound(2, true, new Shape());
 
-    public TopoDS_Shape Rg1LineVCompound(in TopoDS_Shape S) => InternalCompound(2, true, S);
+    public Shape Rg1LineVCompound(in Shape S) => InternalCompound(2, true, S);
 
     /// <summary>The visible sewn edges.</summary>
-    public TopoDS_Shape RgNLineVCompound() => InternalCompound(3, true, new TopoDS_Shape());
+    public Shape RgNLineVCompound() => InternalCompound(3, true, new Shape());
 
-    public TopoDS_Shape RgNLineVCompound(in TopoDS_Shape S) => InternalCompound(3, true, S);
+    public Shape RgNLineVCompound(in Shape S) => InternalCompound(3, true, S);
 
     /// <summary>The visible outlines.</summary>
-    public TopoDS_Shape OutLineVCompound() => InternalCompound(1, true, new TopoDS_Shape());
+    public Shape OutLineVCompound() => InternalCompound(1, true, new Shape());
 
-    public TopoDS_Shape OutLineVCompound(in TopoDS_Shape S) => InternalCompound(1, true, S);
+    public Shape OutLineVCompound(in Shape S) => InternalCompound(1, true, S);
 
     /// <summary>The hidden sharp edges.</summary>
-    public TopoDS_Shape HCompound() => InternalCompound(4, false, new TopoDS_Shape());
+    public Shape HCompound() => InternalCompound(4, false, new Shape());
 
-    public TopoDS_Shape HCompound(in TopoDS_Shape S) => InternalCompound(4, false, S);
+    public Shape HCompound(in Shape S) => InternalCompound(4, false, S);
 
     /// <summary>The hidden smooth edges.</summary>
-    public TopoDS_Shape Rg1LineHCompound() => InternalCompound(2, false, new TopoDS_Shape());
+    public Shape Rg1LineHCompound() => InternalCompound(2, false, new Shape());
 
-    public TopoDS_Shape Rg1LineHCompound(in TopoDS_Shape S) => InternalCompound(2, false, S);
+    public Shape Rg1LineHCompound(in Shape S) => InternalCompound(2, false, S);
 
     /// <summary>The hidden sewn edges.</summary>
-    public TopoDS_Shape RgNLineHCompound() => InternalCompound(3, false, new TopoDS_Shape());
+    public Shape RgNLineHCompound() => InternalCompound(3, false, new Shape());
 
-    public TopoDS_Shape RgNLineHCompound(in TopoDS_Shape S) => InternalCompound(3, false, S);
+    public Shape RgNLineHCompound(in Shape S) => InternalCompound(3, false, S);
 
     /// <summary>The hidden outlines.</summary>
-    public TopoDS_Shape OutLineHCompound() => InternalCompound(1, false, new TopoDS_Shape());
+    public Shape OutLineHCompound() => InternalCompound(1, false, new Shape());
 
-    public TopoDS_Shape OutLineHCompound(in TopoDS_Shape S) => InternalCompound(1, false, S);
+    public Shape OutLineHCompound(in Shape S) => InternalCompound(1, false, S);
 
-    private TopoDS_Shape InternalCompound(int typ, bool visible, in TopoDS_Shape S)
+    private Shape InternalCompound(int typ, bool visible, in Shape S)
     {
-        NCollection_Map<TopoDS_Shape> Map = new(TopTools_ShapeMapHasher.Instance);
-        if (!S.IsNull())
+        NCollection_Map<Shape> Map = new(ShapeHasher.Instance);
+        if (!S.IsNull)
         {
-            TopExp_Explorer ex = new();
-            for (ex.Init(S, TopAbs_EDGE); ex.More(); ex.Next())
+            Explorer ex = new();
+            for (ex.Init(S, ShapeType.Edge); ex.More(); ex.Next())
             {
                 Map.Add(ex.Current());
             }
-            for (ex.Init(S, TopAbs_FACE); ex.More(); ex.Next())
+            for (ex.Init(S, ShapeType.Face); ex.More(); ex.Next())
             {
                 Map.Add(ex.Current());
             }
         }
         bool todraw, reg1, regn, outl, intl;
         bool added = false;
-        TopoDS_Shape Result;
-        BRep_Builder B = new();
-        TopoDS_Compound aCompound = new();
+        Shape Result;
+        BrepBuilder B = new();
+        Compound aCompound = new();
         B.MakeCompound(ref aCompound);
         Result = aCompound;
 
@@ -185,7 +188,7 @@ public class HLRBRep_PolyHLRToShape
                 }
                 if (todraw)
                 {
-                    if (!S.IsNull())
+                    if (!S.IsNull)
                     {
                         todraw = Map.Contains(BP.Shape());
                     }
@@ -205,7 +208,7 @@ public class HLRBRep_PolyHLRToShape
         else
         {
             Transform3D T = myAlgo!.Projector().Transformation();
-            TopoDS_Shape SBP;
+            Shape SBP;
 
             for (myAlgo.InitShow(); myAlgo.MoreShow(); myAlgo.NextShow())
             {
@@ -228,7 +231,7 @@ public class HLRBRep_PolyHLRToShape
                 }
                 if (todraw)
                 {
-                    if (!S.IsNull())
+                    if (!S.IsNull)
                     {
                         todraw = Map.Contains(SBP);
                     }
@@ -251,7 +254,7 @@ public class HLRBRep_PolyHLRToShape
         }
         if (!added)
         {
-            Result = new TopoDS_Shape();
+            Result = new Shape();
         }
         Result.TShape()?.FreezeGraph();
         return Result;

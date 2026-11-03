@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Engine.Geometry.IsoType;
 using static Kerf.Geometry.Continuity;
@@ -38,7 +40,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
         base.AdjustRange();
         mySurfaceType = GetSurface().GetType();
 
-        if (mySurfaceType == BezierSurface)
+        if (mySurfaceType == SurfaceKind.BezierSurface)
         {
             (double first, double second) aRangeU = GetRangeU();
             (double first, double second) aRangeV = GetRangeV();
@@ -61,7 +63,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
         (double first, double second) aDelta = GetDelta();
 
         double aDefFace = GetDFace().GetDeflection();
-        BRepAdaptor_Surface gFace = GetSurface();
+        FaceSurfaceAdaptor gFace = GetSurface();
 
         NCollection_Sequence<double>[] aParams =
         [
@@ -134,7 +136,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
     protected virtual bool initParameters()
     {
         Continuity aContinuity = CN;
-        BRepAdaptor_Surface aSurface = GetSurface();
+        FaceSurfaceAdaptor aSurface = GetSurface();
 
         NCollection_Array1<double>[] aIntervals = [new NCollection_Array1<double>(), new NCollection_Array1<double>()];
         getUndefinedInterval(aSurface, true, aContinuity, GetRangeU(), ref aIntervals[0]);
@@ -168,15 +170,15 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
     }
 
     /// <summary>The number of intervals computed from the available geometrical parameters: the poles less one.</summary>
-    protected virtual int getUndefinedIntervalNb(Adaptor3d_Surface theSurface,
+    protected virtual int getUndefinedIntervalNb(SurfaceAdaptorBase theSurface,
                                                  bool isU,
                                                  Continuity theContinuity)
     {
-        return (isU ? theSurface.NbUPoles() : theSurface.NbVPoles()) - 1;
+        return (isU ? theSurface.UPoleCount : theSurface.VPoleCount) - 1;
     }
 
     // Tries to compute intervals even for cases with no intervals at all using available geometrical parameters.
-    private void getUndefinedInterval(Adaptor3d_Surface theSurface,
+    private void getUndefinedInterval(SurfaceAdaptorBase theSurface,
                                       bool isU,
                                       Continuity theContinuity,
                                       (double first, double second) theRange,
@@ -227,7 +229,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
             aMinDiff /= theDelta;
         }
 
-        BRepAdaptor_Surface aSurface = GetSurface();
+        FaceSurfaceAdaptor aSurface = GetSurface();
         double aMinSize2d = Max(aSurface.UResolution(theParameters.MinSize),
                                 aSurface.VResolution(theParameters.MinSize));
 
@@ -411,7 +413,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
         return isAdded;
     }
 
-    private static bool toSplitIntervals(Geom_Surface theSurf, NCollection_Array1<double>[] theIntervals)
+    private static bool toSplitIntervals(Surface theSurf, NCollection_Array1<double>[] theIntervals)
     {
         int aIntervalU = theIntervals[0].Lower();
         for (; aIntervalU <= theIntervals[0].Upper(); ++aIntervalU)
@@ -432,7 +434,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
                     continue;
                 }
 
-                if (GeomLib.NormEstim(theSurf, new Point2D(aParamU, aParamV), global::Kerf.Engine.Foundation.Precision.Confusion(), ref aNorm)
+                if (global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(theSurf, new Point2D(aParamU, aParamV), global::Kerf.Engine.Foundation.Precision.Confusion(), ref aNorm)
                     != 0)
                 {
                     return true;
@@ -449,7 +451,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
     private sealed class AnalyticalFilter
     {
         private readonly IMeshData_Face myDFace;
-        private readonly Geom_Surface mySurface;
+        private readonly Surface mySurface;
         private readonly bool myIsoU;
         private readonly NCollection_Sequence<double> myParams;
         private readonly NCollection_Sequence<double> myControlParams;
@@ -460,7 +462,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
         private readonly NCollection_Map<double> myControlParamsToRemove;
 
         private IMeshTools_Parameters myParameters = new();
-        private GeomAdaptor_Curve? myIso;
+        private CurveAdaptor? myIso;
 
         private double myCurrParam;
 
@@ -512,7 +514,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
             for (int i = aStartIndex; i <= aEndIndex; ++i)
             {
                 myCurrParam = myParams.Value(i);
-                myIso = new GeomAdaptor_Curve(myIsoU ? mySurface.UIso(myCurrParam) : mySurface.VIso(myCurrParam));
+                myIso = new CurveAdaptor(myIsoU ? mySurface.UIso(myCurrParam) : mySurface.VIso(myCurrParam));
 
                 myPrevControlParam = myControlParams.Value(1);
                 myIso.D1(myPrevControlParam, out myPrevControlPnt, out myPrevControlVec);

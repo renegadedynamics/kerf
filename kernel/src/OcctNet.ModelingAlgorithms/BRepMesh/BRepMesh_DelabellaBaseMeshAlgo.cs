@@ -6,6 +6,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using static Occt.BRepMesh_DegreeOfFreedom;
 using static Kerf.Engine.Foundation.Gravity;
@@ -134,7 +135,7 @@ public class BRepMesh_DelabellaBaseMeshAlgo : BRepMesh_CustomBaseMeshAlgo
 
             throw new FailureException(theException.Message);
         }
-        catch (Exception anException) when (anException is not (ImmutableObjectException or TopoDS_LockedShape))
+        catch (Exception anException) when (anException is not (ImmutableObjectException or LockedShapeException))
         {
             if (aTriangulator is not null)
             {

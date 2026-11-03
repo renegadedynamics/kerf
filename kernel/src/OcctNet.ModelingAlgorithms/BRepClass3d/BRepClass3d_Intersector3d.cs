@@ -4,10 +4,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.IntCurveSurface_TransitionOnCurve;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -28,8 +31,8 @@ public class BRepClass3d_Intersector3d
     private IntCurveSurface_TransitionOnCurve transition;
     private bool done;
     private bool hasapoint;
-    private TopAbs_State state;
-    private TopoDS_Face face = new();
+    private Containment state;
+    private Face face = new();
 
     /// <summary>An empty intersector.</summary>
     public BRepClass3d_Intersector3d()
@@ -39,28 +42,28 @@ public class BRepClass3d_Intersector3d
         W = 0.0;
         done = false;
         hasapoint = false;
-        state = TopAbs_UNKNOWN;
+        state = Unknown;
     }
 
     /// <summary>
     /// Intersects the line <paramref name="L"/> with the face <paramref name="Face"/>, keeping the point with the
     /// smallest parameter on the line above -<paramref name="Tol"/>. <paramref name="Prm"/> is unused (OCCT's).
     /// </summary>
-    public void Perform(in Line3D L, double Prm, double Tol, in TopoDS_Face Face)
+    public void Perform(in Line3D L, double Prm, double Tol, in Face Face)
     {
         var HICS = new IntCurveSurface_HInter();
 
-        var surface = new BRepAdaptor_Surface();
+        var surface = new FaceSurfaceAdaptor();
         var classifier2d = new BRepClass_FaceClassifier();
 
-        var geomline = new Geom_Line(L);
+        var geomline = new LineCurve3D(L);
         // C++ builds adaptors and copies them into handles: one adaptor of each here
-        var LL = new GeomAdaptor_Curve(geomline);
+        var LL = new CurveAdaptor(geomline);
 
         surface.Initialize(Face, true);
 
-        bool IsUPer = surface.IsUPeriodic();
-        bool IsVPer = surface.IsVPeriodic();
+        bool IsUPer = surface.IsUPeriodic;
+        bool IsVPer = surface.IsVPeriodic;
         double uperiod = IsUPer ? surface.UPeriod() : 0.0;
         double vperiod = IsVPer ? surface.VPeriod() : 0.0;
 
@@ -70,8 +73,8 @@ public class BRepClass3d_Intersector3d
         double V2 = surface.LastVParameter();
 
         //--
-        GeomAdaptor_Curve HLL = LL;
-        BRepAdaptor_Surface Hsurface = surface;
+        CurveAdaptor HLL = LL;
+        FaceSurfaceAdaptor Hsurface = surface;
         //--
         HICS.Perform(HLL, Hsurface);
 
@@ -119,8 +122,8 @@ public class BRepClass3d_Intersector3d
                 }
 
                 classifier2d.Perform(Face, Puv, Tol);
-                TopAbs_State currentstate = classifier2d.State();
-                if (currentstate == TopAbs_IN || currentstate == TopAbs_ON)
+                Containment currentstate = classifier2d.State();
+                if (currentstate == In || currentstate == On)
                 {
                     IntCurveSurface_IntersectionPoint HICSPoint = HICS.Point(index);
                     double HICSW = HICSPoint.W();
@@ -137,7 +140,7 @@ public class BRepClass3d_Intersector3d
                         pnt = HICSPoint.Pnt();
                         state = currentstate;
                         face = Face;
-                        if (Face.Orientation() == TopAbs_REVERSED)
+                        if (Face.Orientation() == Reversed)
                         {
                             if (transition == IntCurveSurface_In)
                             {
@@ -178,8 +181,8 @@ public class BRepClass3d_Intersector3d
     public IntCurveSurface_TransitionOnCurve Transition() => (transition);
 
     /// <summary>The state of the point in the face: IN, or ON its boundary.</summary>
-    public TopAbs_State State() => (state);
+    public Containment State() => (state);
 
     /// <summary>The face.</summary>
-    public TopoDS_Face Face() => (face);
+    public Face Face() => (face);
 }

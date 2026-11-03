@@ -2,11 +2,13 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Foundation.Resources;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Reflection;
 using OcctNet.ModelingData.Tests;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -21,24 +23,24 @@ public class ShapeProcessTests
 
     private static string HealData => Path.Combine(Metadata("OcctSourceDir"), "tests", "heal", "data");
 
-    private static TopoDS_Shape FrozenBox()
+    private static Shape FrozenBox()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
         Assert.True(aBox.TShape()!.IsFrozen);
         return aBox;
     }
 
-    private static TopoDS_Shape FrozenCylinder()
+    private static Shape FrozenCylinder()
     {
-        TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 10).Shape();
+        Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 10).Shape();
         Assert.True(aCyl.TShape()!.IsFrozen);
         return aCyl;
     }
 
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
@@ -160,7 +162,7 @@ public class ShapeProcessTests
         // a cylinder: SplitAngle splits its lateral face, SetTolerance and SameParameter write tolerances in place
         string aDir = WriteResource("Seq", "Run.exec.op : SetTolerance, SameParameter, SplitAngle; NoSuchOperator\n"
                                            + "Run.SplitAngle.Angle : 1.6\nRun.SetTolerance.Mode : 1\nRun.SetTolerance.Value : 1e-3\n");
-        TopoDS_Shape aCyl = FrozenCylinder();
+        Shape aCyl = FrozenCylinder();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCyl);
         var aPrinter = new Capture();
         var aContext = new ShapeProcess_ShapeContext(aCyl, "Seq", "", aDir);
@@ -169,23 +171,23 @@ public class ShapeProcessTests
         aSnap.AssertUnchanged(aCyl);
 
         Assert.Contains("Error: Shape Processing: Operator NoSuchOperator is not found", aPrinter.Text.ToString(), StringComparison.Ordinal);
-        TopoDS_Shape aResult = aContext.Result();
+        Shape aResult = aContext.Result();
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.Equal(6, Count(aResult, TopAbs_FACE)); // the lateral face in 4
-        Assert.True(Math.Abs(BRep_Tool.Tolerance(TopoDS.Vertex(new TopExp_Explorer(aResult, TopAbs_VERTEX).Current())) - 1e-3) < 1e-9);
+        Assert.Equal(6, Count(aResult, ShapeType.Face)); // the lateral face in 4
+        Assert.True(Math.Abs(Tool.Tolerance(ShapeCasts.Vertex(new Explorer(aResult, ShapeType.Vertex).Current())) - 1e-3) < 1e-9);
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
 
         // the history is keyed by the caller's sub-shapes
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aMap = aContext.Map();
+        NCollection_DataMap<Shape, Shape> aMap = aContext.Map();
         Assert.True(aMap.IsBound(aCyl));
         int aSplit = 0;
-        for (var anExp = new TopExp_Explorer(aCyl, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aCyl, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            TopoDS_Shape aFace = anExp.Current().Located(new Placement());
-            if (aMap.Find(aFace, out TopoDS_Shape aNew))
+            Shape aFace = anExp.Current().Located(new Placement());
+            if (aMap.Find(aFace, out Shape aNew))
             {
                 Assert.True(aNew.TShape()!.IsFrozen);
-                aSplit += aNew.ShapeType() == TopAbs_COMPOUND || aNew.ShapeType() == TopAbs_SHELL ? 1 : 0;
+                aSplit += aNew.ShapeType() == ShapeType.Compound || aNew.ShapeType() == ShapeType.Shell ? 1 : 0;
             }
         }
         Assert.Equal(1, aSplit);
@@ -206,7 +208,7 @@ public class ShapeProcessTests
     public void A_shape_needing_nothing_comes_back_itself()
     {
         ShapeProcess_OperLibrary.Init();
-        TopoDS_Shape aBox = FrozenBox();
+        Shape aBox = FrozenBox();
         foreach (ShapeProcess.Operation anOperation in new[] { ShapeProcess.Operation.DirectFaces, ShapeProcess.Operation.SplitAngle,
                                                                ShapeProcess.Operation.SplitClosedFaces, ShapeProcess.Operation.FixShape,
                                                                ShapeProcess.Operation.ElementaryToRevolution })
@@ -222,8 +224,8 @@ public class ShapeProcessTests
     public void Each_operator_alone_leaves_frozen_inputs_unchanged()
     {
         ShapeProcess_OperLibrary.Init();
-        TopoDS_Shape[] aShapes = [FrozenBox(), FrozenCylinder(), new BRepPrimAPI_MakeSphere(4).Shape(), new BRepPrimAPI_MakeTorus(10, 2).Shape()];
-        foreach (TopoDS_Shape aShape in aShapes)
+        Shape[] aShapes = [FrozenBox(), FrozenCylinder(), new BRepPrimAPI_MakeSphere(4).Shape(), new BRepPrimAPI_MakeTorus(10, 2).Shape()];
+        foreach (Shape aShape in aShapes)
         {
             ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
             for (ShapeProcess.Operation anOperation = ShapeProcess.Operation.First; anOperation <= ShapeProcess.Operation.Last; anOperation++)
@@ -231,7 +233,7 @@ public class ShapeProcessTests
                 var aContext = new ShapeProcess_ShapeContext(aShape, "");
                 ShapeProcess.Perform(aContext, new ShapeProcess.OperationsFlags(anOperation));
                 // ToBezier with its default modes (nothing converted) gives a null result, as natively
-                Assert.True(aContext.Result().IsNull() || aContext.Result().TShape()!.IsFrozen);
+                Assert.True(aContext.Result().IsNull || aContext.Result().TShape()!.IsFrozen);
                 aSnap.AssertUnchanged(aShape);
             }
             // an operator run on its own works on a copy too
@@ -260,12 +262,12 @@ public class ShapeProcessTests
     [Fact]
     public void ApplySequence_runs_the_heal_groups_ToV4_and_prints_statistics()
     {
-        TopoDS_Shape aCyl = FrozenCylinder();
+        Shape aCyl = FrozenCylinder();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCyl);
         var aSeq = new ShapeProcessAPI_ApplySequence("MDTV", "ToV4", HealData);
         var aPrinter = new Capture();
         aSeq.Context().SetMessenger(new Messenger(aPrinter));
-        TopoDS_Shape aResult = aSeq.PrepareShape(aCyl, true, TopAbs_FACE);
+        Shape aResult = aSeq.PrepareShape(aCyl, true, ShapeType.Face);
         aSnap.AssertUnchanged(aCyl);
         Assert.True(aResult.TShape()!.IsFrozen);
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
@@ -279,7 +281,7 @@ public class ShapeProcessTests
         // a sequence the file doesn't define: the shape itself
         var aNone = new ShapeProcessAPI_ApplySequence("MDTV", "Nothing", HealData);
         Assert.Equal(aCyl, aNone.PrepareShape(aCyl));
-        Assert.True(aNone.PrepareShape(new TopoDS_Shape()).IsNull());
+        Assert.True(aNone.PrepareShape(new Shape()).IsNull);
     }
 }
 

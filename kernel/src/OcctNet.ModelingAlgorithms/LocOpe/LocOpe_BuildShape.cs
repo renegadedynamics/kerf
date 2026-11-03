@@ -5,10 +5,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -19,36 +22,36 @@ namespace Occt;
 /// </remarks>
 public sealed class LocOpe_BuildShape
 {
-    private TopoDS_Shape myRes = new();
+    private Shape myRes = new();
 
     public LocOpe_BuildShape()
     {
     }
 
     /// <summary>Builds shape(s) from the list <paramref name="L"/>. Uses only the faces of <paramref name="L"/>.</summary>
-    public LocOpe_BuildShape(NCollection_List<TopoDS_Shape> L)
+    public LocOpe_BuildShape(NCollection_List<Shape> L)
     {
         Perform(L);
     }
 
     /// <summary>Builds shape(s) from the list <paramref name="L"/>. Uses only the faces of <paramref name="L"/>.</summary>
-    public void Perform(NCollection_List<TopoDS_Shape> L)
+    public void Perform(NCollection_List<Shape> L)
     {
         int i;
         int j;
         int k;
         myRes.Nullify();
 
-        TopoDS_Compound C = new();
-        BRep_Builder B = new();
+        Compound C = new();
+        BrepBuilder B = new();
         B.MakeCompound(ref C);
 
-        NCollection_IndexedMap<TopoDS_Shape> mapF = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape>.Iterator itl = new();
+        NCollection_IndexedMap<Shape> mapF = new(ShapeHasher.Instance);
+        NCollection_List<Shape>.Iterator itl = new();
 
         for (itl.Initialize(L); itl.More(); itl.Next())
         {
-            if (itl.Value().ShapeType() == TopAbs_FACE && !mapF.Contains(itl.Value()))
+            if (itl.Value().ShapeType() == ShapeType.Face && !mapF.Contains(itl.Value()))
             {
                 mapF.Add(itl.Value());
                 B.Add(C, itl.Value());
@@ -60,14 +63,14 @@ public sealed class LocOpe_BuildShape
             return; // no face
         }
 
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMapEF = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(C, TopAbs_EDGE, TopAbs_FACE, theMapEF);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMapEF = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(C, ShapeType.Edge, ShapeType.Face, theMapEF);
 
         NCollection_IntMap mapI = new(), mapIf = new();
         int Nbedges = theMapEF.Extent();
 
-        NCollection_List<TopoDS_Shape> lshell = new();
-        NCollection_List<TopoDS_Shape> lresult = new();
+        NCollection_List<Shape> lshell = new();
+        NCollection_List<Shape> lresult = new();
 
         do
         {
@@ -85,26 +88,26 @@ public sealed class LocOpe_BuildShape
                 mapIf.Clear();
                 Add(i, mapI, mapF, theMapEF);
                 bool Manifold = true;
-                TopoDS_Shape FaceRef = new();
-                TopAbs_Orientation orient;
+                Shape FaceRef = new();
+                Orientation orient;
 
                 for (j = 1; j <= mapF.Extent(); j++)
                 {
                     orient = mapF[j].Orientation();
-                    if (orient == TopAbs_INTERNAL || orient == TopAbs_EXTERNAL)
+                    if (orient == Internal || orient == External)
                     {
                         Manifold = false;
                     }
-                    else if (FaceRef.IsNull())
+                    else if (FaceRef.IsNull)
                     {
                         FaceRef = mapF[j];
                     }
                     mapIf.Add(j);
                 }
 
-                TopoDS_Shell newSh = new();
+                Shell newSh = new();
                 B.MakeShell(ref newSh);
-                if (!Manifold && FaceRef.IsNull())
+                if (!Manifold && FaceRef.IsNull)
                 {
                     // on a un paquet de faces. pas d'orientation possible ?
                     for (j = 1; j <= mapF.Extent(); j++)
@@ -119,7 +122,7 @@ public sealed class LocOpe_BuildShape
                     {
                         for (j = 1; j <= mapF.Extent(); j++)
                         {
-                            if (mapF[j].Orientation() == TopAbs_INTERNAL || mapF[j].Orientation() == TopAbs_EXTERNAL)
+                            if (mapF[j].Orientation() == Internal || mapF[j].Orientation() == External)
                             {
                                 B.Add(newSh, mapF[j]);
                                 mapIf.Remove(j);
@@ -130,20 +133,20 @@ public sealed class LocOpe_BuildShape
                     B.Add(newSh, FaceRef);
                     Propagate(FaceRef, newSh, mapF, mapIf);
                 }
-                newSh.Closed(BRep_Tool.IsClosed(newSh));
+                newSh.Closed(Tool.IsClosed(newSh));
                 if (!Manifold)
                 {
-                    lshell.Append(newSh.Oriented(TopAbs_INTERNAL));
+                    lshell.Append(newSh.Oriented(Internal));
                 }
                 else
                 {
-                    NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMapEFbis = new(TopTools_ShapeMapHasher.Instance);
-                    TopExp.MapShapesAndAncestors(newSh, TopAbs_EDGE, TopAbs_FACE, theMapEFbis);
+                    NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMapEFbis = new(ShapeHasher.Instance);
+                    Exploration.MapShapesAndAncestors(newSh, ShapeType.Edge, ShapeType.Face, theMapEFbis);
                     for (k = 1; k <= theMapEFbis.Extent(); k++)
                     {
-                        TopoDS_Edge Ed = TopoDS.Edge(theMapEFbis.FindKey(k));
-                        TopAbs_Orientation OriEd = Ed.Orientation();
-                        if (OriEd != TopAbs_INTERNAL && OriEd != TopAbs_EXTERNAL)
+                        Edge Ed = ShapeCasts.Edge(theMapEFbis.FindKey(k));
+                        Orientation OriEd = Ed.Orientation();
+                        if (OriEd != Internal && OriEd != External)
                         {
                             int Nbfac = theMapEFbis[k].Extent();
                             if (Nbfac > 2)
@@ -152,7 +155,7 @@ public sealed class LocOpe_BuildShape
                             }
                             else if (Nbfac == 1)
                             {
-                                if (!BRep_Tool.Degenerated(Ed))
+                                if (!Tool.Degenerated(Ed))
                                 {
                                     break;
                                 }
@@ -161,14 +164,14 @@ public sealed class LocOpe_BuildShape
                     }
                     if (k > theMapEFbis.Extent())
                     {
-                        TopoDS_Solid newSo = new();
+                        Solid newSo = new();
                         B.MakeSolid(ref newSo);
                         B.Add(newSo, newSh); // newSh est FORWARD
                         BRepClass3d_SolidClassifier Class = new(newSo);
                         Class.PerformInfinitePoint(global::Kerf.Engine.Foundation.Precision.Confusion());
-                        if (Class.State() == TopAbs_IN)
+                        if (Class.State() == In)
                         {
-                            lresult.Append(newSh.Oriented(TopAbs_REVERSED));
+                            lresult.Append(newSh.Oriented(Reversed));
                         }
                         else
                         {
@@ -177,7 +180,7 @@ public sealed class LocOpe_BuildShape
                     }
                     else
                     {
-                        lshell.Append(newSh.Oriented(TopAbs_INTERNAL));
+                        lshell.Append(newSh.Oriented(Internal));
                     }
                 }
             }
@@ -188,22 +191,22 @@ public sealed class LocOpe_BuildShape
         // on n`accepte qu`1 niveau d'imbrication
 
         // OCCT iterates this map keyed by the shells' addresses; the port in insertion order (lresult's)
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> imbSh = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape> LIntern = new();
+        NCollection_DataMap<Shape, NCollection_List<Shape>> imbSh = new(ShapeHasher.Instance);
+        NCollection_List<Shape> LIntern = new();
 
         for (itl.Initialize(lresult); itl.More(); itl.Next())
         {
-            TopoDS_Shape sh = itl.Value();
-            TopoDS_Solid tempo = new();
+            Shape sh = itl.Value();
+            Solid tempo = new();
             B.MakeSolid(ref tempo);
             B.Add(tempo, sh);
 
-            NCollection_List<TopoDS_Shape> thelist = new();
+            NCollection_List<Shape> thelist = new();
             imbSh.Bind(sh, thelist);
-            NCollection_List<TopoDS_Shape>.Iterator itl2 = new();
+            NCollection_List<Shape>.Iterator itl2 = new();
             for (itl2.Initialize(lresult); itl2.More(); itl2.Next())
             {
-                TopoDS_Shape sh2 = itl2.Value();
+                Shape sh2 = itl2.Value();
                 if (!sh2.IsSame(sh))
                 {
                     if (IsInside(sh2, tempo))
@@ -219,19 +222,19 @@ public sealed class LocOpe_BuildShape
         // etant aussi des solides a part entiere.
         for (itl.Initialize(LIntern); itl.More(); itl.Next())
         {
-            TopoDS_Shape sh = itl.Value();
+            Shape sh = itl.Value();
             if (imbSh.IsBound(sh))
             {
                 imbSh.UnBind(sh);
             }
         }
 
-        NCollection_List<TopoDS_Shape> lsolid = new();
+        NCollection_List<Shape> lsolid = new();
         do
         {
-            TopoDS_Shape aKey = new();
-            NCollection_List<TopoDS_Shape>? aValue = null;
-            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> itdm in imbSh)
+            Shape aKey = new();
+            NCollection_List<Shape>? aValue = null;
+            foreach (KeyValuePair<Shape, NCollection_List<Shape>> itdm in imbSh)
             {
                 if (itdm.Value.Extent() != 0)
                 {
@@ -242,7 +245,7 @@ public sealed class LocOpe_BuildShape
             }
             if (aValue is not null)
             {
-                TopoDS_Solid newSo = new();
+                Solid newSo = new();
                 B.MakeSolid(ref newSo);
                 B.Add(newSo, aKey);
                 for (itl.Initialize(aValue); itl.More(); itl.Next())
@@ -254,9 +257,9 @@ public sealed class LocOpe_BuildShape
             }
             else
             {
-                foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> itdm in imbSh)
+                foreach (KeyValuePair<Shape, NCollection_List<Shape>> itdm in imbSh)
                 {
-                    TopoDS_Solid newSo = new();
+                    Solid newSo = new();
                     B.MakeSolid(ref newSo);
                     B.Add(newSo, itdm.Key);
                     lsolid.Append(newSo);
@@ -278,7 +281,7 @@ public sealed class LocOpe_BuildShape
         }
         else
         {
-            TopoDS_Compound aRes = new();
+            Compound aRes = new();
             B.MakeCompound(ref aRes);
             myRes = aRes;
             for (itl.Initialize(lsolid); itl.More(); itl.Next())
@@ -293,35 +296,35 @@ public sealed class LocOpe_BuildShape
     }
 
     /// <summary>The shape built (frozen).</summary>
-    public TopoDS_Shape Shape()
+    public Shape Shape()
     {
         myRes.TShape()?.FreezeGraph();
         return myRes;
     }
 
     /// <summary><see cref="Shape"/> without freezing, for ported callers.</summary>
-    internal TopoDS_Shape InternalShape() => myRes;
+    internal Shape InternalShape() => myRes;
 
     private static void Add(int ind,
                             NCollection_IntMap mapI,
-                            NCollection_IndexedMap<TopoDS_Shape> mapF,
-                            NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> mapEF)
+                            NCollection_IndexedMap<Shape> mapF,
+                            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapEF)
     {
         if (!mapI.Add(ind))
         {
             throw new ConstructionErrorException();
         }
 
-        NCollection_List<TopoDS_Shape>.Iterator itl = new(mapEF[ind]);
+        NCollection_List<Shape>.Iterator itl = new(mapEF[ind]);
         for (; itl.More(); itl.Next())
         {
             if (!mapF.Contains(itl.Value()))
             {
                 mapF.Add(itl.Value());
-                TopExp_Explorer exp = new();
-                for (exp.Init(itl.Value(), TopAbs_EDGE); exp.More(); exp.Next())
+                Explorer exp = new();
+                for (exp.Init(itl.Value(), ShapeType.Edge); exp.More(); exp.Next())
                 {
-                    TopoDS_Shape edg = exp.Current();
+                    Shape edg = exp.Current();
                     int indedg = mapEF.FindIndex(edg);
                     if (indedg == 0)
                     {
@@ -336,12 +339,12 @@ public sealed class LocOpe_BuildShape
         }
     }
 
-    private static void Propagate(in TopoDS_Shape F,
-                                  in TopoDS_Shape Sh,
-                                  NCollection_IndexedMap<TopoDS_Shape> mapF,
+    private static void Propagate(in Shape F,
+                                  in Shape Sh,
+                                  NCollection_IndexedMap<Shape> mapF,
                                   NCollection_IntMap mapIf)
     {
-        BRep_Builder B = new();
+        BrepBuilder B = new();
         int indf = mapF.FindIndex(F);
         if (!mapIf.Contains(indf))
         {
@@ -353,22 +356,22 @@ public sealed class LocOpe_BuildShape
             return;
         }
 
-        TopExp_Explorer exp = new();
-        for (exp.Init(F, TopAbs_EDGE); exp.More(); exp.Next())
+        Explorer exp = new();
+        for (exp.Init(F, ShapeType.Edge); exp.More(); exp.Next())
         {
-            TopoDS_Shape edg = exp.Current();
+            Shape edg = exp.Current();
 
-            TopAbs_Orientation ored1 = edg.Orientation(), ored2 = TopAbs_FORWARD;
+            Orientation ored1 = edg.Orientation(), ored2 = Forward;
 
-            if (ored1 == TopAbs_INTERNAL || ored1 == TopAbs_EXTERNAL)
+            if (ored1 == Internal || ored1 == External)
             {
                 continue;
             }
             NCollection_IntMap.Iterator itm = new(mapIf);
             for (; itm.More(); itm.Next())
             {
-                TopoDS_Shape newF = mapF[itm.Key()];
-                TopExp_Explorer exp2 = new(newF, TopAbs_EDGE);
+                Shape newF = mapF[itm.Key()];
+                Explorer exp2 = new(newF, ShapeType.Edge);
                 for (; exp2.More(); exp2.Next())
                 {
                     if (exp2.Current().IsSame(edg))
@@ -384,7 +387,7 @@ public sealed class LocOpe_BuildShape
             }
             if (itm.More())
             {
-                TopoDS_Shape FtoAdd = mapF[itm.Key()];
+                Shape FtoAdd = mapF[itm.Key()];
                 bool added = false;
                 if (ored2 == ored1)
                 {
@@ -392,7 +395,7 @@ public sealed class LocOpe_BuildShape
                     B.Add(Sh, FtoAdd);
                     added = true;
                 }
-                else if (ored2 == TopAbs.Reverse(ored1))
+                else if (ored2 == global::Kerf.Engine.Topology.TopAbs.Reverse(ored1))
                 {
                     B.Add(Sh, FtoAdd);
                     added = true;
@@ -405,21 +408,21 @@ public sealed class LocOpe_BuildShape
         }
     }
 
-    private static bool IsInside(in TopoDS_Shape S1, in TopoDS_Shape S2)
+    private static bool IsInside(in Shape S1, in Shape S2)
     {
         BRepClass3d_SolidClassifier Class = new(S2);
-        TopExp_Explorer exp = new();
-        for (exp.Init(S1, TopAbs_VERTEX); exp.More(); exp.Next())
+        Explorer exp = new();
+        for (exp.Init(S1, ShapeType.Vertex); exp.More(); exp.Next())
         {
-            TopoDS_Vertex vtx = TopoDS.Vertex(exp.Current());
-            Point3D Pttest = BRep_Tool.Pnt(vtx);
-            double Tol = BRep_Tool.Tolerance(vtx);
+            Vertex vtx = ShapeCasts.Vertex(exp.Current());
+            Point3D Pttest = Tool.Pnt(vtx);
+            double Tol = Tool.Tolerance(vtx);
             Class.Perform(Pttest, Tol);
-            if (Class.State() == TopAbs_IN)
+            if (Class.State() == In)
             {
                 return true;
             }
-            else if (Class.State() == TopAbs_OUT)
+            else if (Class.State() == Out)
             {
                 return false;
             }

@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.SurfaceKind;
 
@@ -14,7 +15,7 @@ namespace Occt;
 /// own sample points (a regular grid sized by the surface type, strictly inside the parametric range).
 /// </summary>
 /// <remarks>A working object (decision 21): the sample grid is computed on first use and kept.</remarks>
-public class IntTools_TopolTool : Adaptor3d_TopolTool
+public class IntTools_TopolTool : TopolTool
 {
     private int myNbSmplU;
     private int myNbSmplV;
@@ -33,7 +34,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
     }
 
     /// <summary>The tool of the surface.</summary>
-    public IntTools_TopolTool(Adaptor3d_Surface theSurface)
+    public IntTools_TopolTool(SurfaceAdaptorBase theSurface)
     {
         Initialize(theSurface);
         myNbSmplU = 0;
@@ -46,7 +47,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
     public override void Initialize() => throw new MethodNotImplementedException("IntTools_TopolTool::Initialize ()");
 
     /// <summary>Initializes the tool with the surface.</summary>
-    public override void Initialize(Adaptor3d_Surface theSurface)
+    public override void Initialize(SurfaceAdaptorBase theSurface)
     {
         base.Initialize(theSurface);
         // myS = theSurface;
@@ -60,10 +61,10 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
     public override void ComputeSamplePoints()
     {
         double uinf, usup, vinf, vsup;
-        uinf = myS!.FirstUParameter();
-        usup = myS.LastUParameter();
-        vinf = myS.FirstVParameter();
-        vsup = myS.LastVParameter();
+        uinf = _s!.FirstUParameter();
+        usup = _s.LastUParameter();
+        vinf = _s.FirstVParameter();
+        vsup = _s.LastVParameter();
         const int aMaxNbSample = 50;
 
         if (usup < uinf)
@@ -115,7 +116,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
         myV0 = vinf;
 
         int nbsu = 0, nbsv = 0;
-        SurfaceKind typS = myS.GetType();
+        SurfaceKind typS = _s.GetType();
 
         switch (typS)
         {
@@ -127,7 +128,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
                 break;
             case SurfaceKind.Cylinder:
                 {
-                    double aRadius = myS.Cylinder().Radius();
+                    double aRadius = _s.Cylinder().Radius();
                     double aMaxAngle = M_PI * 0.5;
                     double aDeflection = 1.0e-02;
 
@@ -165,7 +166,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
                 break;
             case SurfaceKind.Cone:
                 {
-                    Cone aCone = myS.Cone();
+                    Cone aCone = _s.Cone();
                     Circle3D aCircle = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(aCone.Position(), aCone.RefRadius(), aCone.SemiAngle(), vinf);
                     double aRadius = aCircle.Radius();
                     aCircle = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(aCone.Position(), aCone.RefRadius(), aCone.SemiAngle(), vsup);
@@ -218,7 +219,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
 
                     if (typS == SurfaceKind.Torus)
                     {
-                        Torus aTorus = myS.Torus();
+                        Torus aTorus = _s.Torus();
                         aCircle = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(aTorus.Position(), aTorus.MajorRadius(), aTorus.MinorRadius(), uinf);
                         aRadius2 = aCircle.Radius();
                         aCircle = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(aTorus.Position(), aTorus.MajorRadius(), aTorus.MinorRadius(), usup);
@@ -231,7 +232,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
                     }
                     else
                     {
-                        Sphere aSphere = myS.Sphere();
+                        Sphere aSphere = _s.Sphere();
                         aRadius1 = aSphere.Radius();
                         aRadius2 = aSphere.Radius();
                     }
@@ -276,14 +277,14 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
                     }
                 }
                 break;
-            case BezierSurface:
+            case SurfaceKind.BezierSurface:
                 {
-                    nbsv = 3 + myS.NbVPoles();
-                    nbsu = 3 + myS.NbUPoles();
+                    nbsv = 3 + _s.VPoleCount;
+                    nbsu = 3 + _s.UPoleCount;
 
                     if (nbsu > 10 || nbsv > 10)
                     {
-                        NCollection_Array2<Point3D> array2 = myS.Bezier().InternalPoles();
+                        NCollection_Array2<Point3D> array2 = _s.Bezier().InternalPoles();
                         Analyse(array2, out nbsu, out nbsv);
                     }
 
@@ -297,16 +298,16 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
                     }
                 }
                 break;
-            case BSplineSurface:
+            case SurfaceKind.BSplineSurface:
                 {
-                    nbsv = myS.NbVKnots();
-                    nbsv *= myS.VDegree();
+                    nbsv = _s.VKnotCount;
+                    nbsv *= _s.VDegree();
                     if (nbsv < 4)
                     {
                         nbsv = 4;
                     }
-                    nbsu = myS.NbUKnots();
-                    nbsu *= myS.UDegree();
+                    nbsu = _s.UKnotCount;
+                    nbsu *= _s.UDegree();
                     if (nbsu < 4)
                     {
                         nbsu = 4;
@@ -314,7 +315,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
 
                     if (nbsu > 10 || nbsv > 10)
                     {
-                        NCollection_Array2<Point3D> array2 = myS.BSpline().InternalPoles();
+                        NCollection_Array2<Point3D> array2 = _s.BSpline().InternalPoles();
                         Analyse(array2, out nbsu, out nbsv);
                     }
                     if (nbsu < 10)
@@ -326,8 +327,8 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
                         nbsv = 10;
                     }
                     // Check anisotropy
-                    double anULen = (usup - uinf) / myS.UResolution(1.0);
-                    double anVLen = (vsup - vinf) / myS.VResolution(1.0);
+                    double anULen = (usup - uinf) / _s.UResolution(1.0);
+                    double anVLen = (vsup - vinf) / _s.VResolution(1.0);
                     double aRatio = anULen / anVLen;
                     if (aRatio >= 10.0)
                     {
@@ -372,8 +373,8 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
         myNbSmplU = nbsu;
         myNbSmplV = nbsv;
 
-        myNbSamplesU = myNbSmplU;
-        myNbSamplesV = myNbSmplV;
+        _nbSamplesU = myNbSmplU;
+        _nbSamplesV = myNbSmplV;
 
         myDU = (usup - uinf) / (myNbSmplU + 1);
         myDV = (vsup - vinf) / (myNbSmplV + 1);
@@ -412,7 +413,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
     /// <summary>The sample point of the index (1 to NbSamples) in the parameter space and in 3D.</summary>
     public override void SamplePoint(int Index, out Point2D P2d, out Point3D P3d)
     {
-        if (myUPars is null)
+        if (_uPars is null)
         {
             if (myNbSmplU <= 0)
             {
@@ -423,7 +424,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
             double u = myU0 + iu * myDU;
             double v = myV0 + iv * myDV;
             P2d = new Point2D(u, v);
-            P3d = myS!.Value(u, v);
+            P3d = _s!.Value(u, v);
         }
         else
         {
@@ -557,10 +558,10 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
         myNbSmplU = base.NbSamplesU();
         myNbSmplV = base.NbSamplesV();
 
-        myU0 = myUPars!.Value(1);
-        myV0 = myVPars!.Value(1);
+        myU0 = _uPars!.Value(1);
+        myV0 = _vPars!.Value(1);
 
-        myDU = (myUPars.Value(myNbSmplU) - myU0) / (myNbSmplU - 1);
-        myDV = (myVPars.Value(myNbSmplV) - myV0) / (myNbSmplV - 1);
+        myDU = (_uPars.Value(myNbSmplU) - myU0) / (myNbSmplU - 1);
+        myDV = (_vPars.Value(myNbSmplV) - myV0) / (myNbSmplV - 1);
     }
 }

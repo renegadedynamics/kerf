@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 
@@ -21,8 +22,8 @@ public class GeomFill_CurveAndTrihedron : GeomFill_LocationLaw
 {
     private bool WithTrans;
     private readonly GeomFill_TrihedronLaw myLaw;
-    private Adaptor3d_Curve? myCurve;
-    private Adaptor3d_Curve? myTrimmed;
+    private CurveAdaptorBase? myCurve;
+    private CurveAdaptorBase? myTrimmed;
     private Point3D Point;
     private Vector3D V1;
     private Vector3D V2;
@@ -48,14 +49,14 @@ public class GeomFill_CurveAndTrihedron : GeomFill_LocationLaw
         return copy;
     }
 
-    public override bool SetCurve(Adaptor3d_Curve C)
+    public override bool SetCurve(CurveAdaptorBase C)
     {
         myCurve = C;
         myTrimmed = C;
         return myLaw.SetCurve(C);
     }
 
-    public override Adaptor3d_Curve? GetCurve() => myCurve;
+    public override CurveAdaptorBase? GetCurve() => myCurve;
 
     public override void SetTrsf(in Matrix3x3 Transfo)
     {
@@ -178,7 +179,7 @@ public class GeomFill_CurveAndTrihedron : GeomFill_LocationLaw
         myTrimmed.Intervals(IntC, S);
         myLaw.Intervals(IntL, S);
 
-        GeomLib.FuseIntervals(IntC, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
+        global::Kerf.Engine.Geometry.Library.GeomLib.FuseIntervals(IntC, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
         return Inter.Length() - 1;
     }
 
@@ -205,7 +206,7 @@ public class GeomFill_CurveAndTrihedron : GeomFill_LocationLaw
         myTrimmed.Intervals(IntC, S);
         myLaw.Intervals(IntL, S);
 
-        GeomLib.FuseIntervals(IntC, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
+        global::Kerf.Engine.Geometry.Library.GeomLib.FuseIntervals(IntC, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
         for (int ii = 1; ii <= Inter.Length(); ii++)
         {
             T[ii] = Inter[ii];

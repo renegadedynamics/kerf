@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_Situation;
@@ -13,9 +14,9 @@ public class IntPatch_GLineTests
 {
     private static readonly Circle3D theCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
 
-    private static Adaptor2d_Curve2d Arc() => new Geom2dAdaptor_Curve(new Geom2d_Line(new Line2D(new Point2D(0, 0), new Direction2D(1, 0))));
+    private static Curve2DAdaptorBase Arc() => new CurveAdaptor2D(new LineCurve2D(new Line2D(new Point2D(0, 0), new Direction2D(1, 0))));
 
-    private static IntPatch_Point Vertex(double theParam, double theU1 = 0.0, Adaptor2d_Curve2d? theArcOnS1 = null)
+    private static IntPatch_Point Vertex(double theParam, double theU1 = 0.0, Curve2DAdaptorBase? theArcOnS1 = null)
     {
         IntPatch_Point aPnt = new();
         aPnt.SetValue(global::Kerf.Engine.Geometry.ElCLib.Value(theParam, theCircle), 1.0e-7, false);
@@ -85,7 +86,7 @@ public class IntPatch_GLineTests
     public void OffDomainVertexNearARestrictionVertexIsRemoved()
     {
         IntPatch_GLine aLine = new(theCircle, false, IntSurf_In, IntSurf_Out);
-        Adaptor2d_Curve2d anArc = Arc();
+        Curve2DAdaptorBase anArc = Arc();
         aLine.AddVertex(Vertex(1.0, 0.0, anArc));
         aLine.AddVertex(Vertex(1.0 + 1.0e-7));
         aLine.AddVertex(Vertex(2.0));

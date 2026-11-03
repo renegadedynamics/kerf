@@ -2,10 +2,16 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Kerf.Engine.Geometry.IsoType;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -91,29 +97,29 @@ public class BRepMeshGeomToolTests
     [Fact]
     public void Normal_is_reversed_on_a_reversed_face()
     {
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(Constants.Origin(), Constants.DZ())).Face();
-        Assert.True(BRepMesh_GeomTool.Normal(new BRepAdaptor_Surface(aFace), 1, 2, out Point3D aP, out Direction3D aN));
+        Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(Constants.Origin(), Constants.DZ())).Face();
+        Assert.True(BRepMesh_GeomTool.Normal(new FaceSurfaceAdaptor(aFace), 1, 2, out Point3D aP, out Direction3D aN));
         Assert.True(aP.IsEqual(new Point3D(1, 2, 0), 0.0));
         Assert.True(aN.IsEqual(new Direction3D(0, 0, 1), 0.0));
 
-        TopoDS_Face aReversed = TopoDS.Face(aFace.Reversed());
-        Assert.True(BRepMesh_GeomTool.Normal(new BRepAdaptor_Surface(aReversed), 1, 2, out _, out aN));
+        Face aReversed = ShapeCasts.Face(aFace.Reversed());
+        Assert.True(BRepMesh_GeomTool.Normal(new FaceSurfaceAdaptor(aReversed), 1, 2, out _, out aN));
         Assert.True(aN.IsEqual(new Direction3D(0, 0, -1), 0.0));
     }
 
     [Fact]
     public void Discretizes_an_edge_and_an_iso_curve_as_GCPnts_does()
     {
-        Geom_Circle aCircle = new(new Frame3D(Constants.Origin(), Constants.DZ()), 10);
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(aCircle, 0.0, Math.PI).Edge();
-        BRepAdaptor_Curve anAdaptor = new(anEdge);
+        CircleCurve3D aCircle = new(new Frame3D(Constants.Origin(), Constants.DZ()), 10);
+        Edge anEdge = new BRepBuilderAPI_MakeEdge(aCircle, 0.0, Math.PI).Edge();
+        EdgeCurveAdaptor anAdaptor = new(anEdge);
         BRepMesh_GeomTool aTool = new(anAdaptor, 0.0, Math.PI, 0.1, 0.5, 4, 0.01);
-        var aRef = new GCPnts_TangentialDeflection(anAdaptor, 0.0, Math.PI, 0.5, 0.1, 4, global::Kerf.Engine.Foundation.Precision.PConfusion(), 0.01);
-        Assert.Equal(aRef.NbPoints(), aTool.NbPoints());
+        var aRef = new TangentialDeflection(anAdaptor, 0.0, Math.PI, 0.5, 0.1, 4, global::Kerf.Engine.Foundation.Precision.PConfusion(), 0.01);
+        Assert.Equal(aRef.PointCount, aTool.NbPoints());
 
         // On the edge: the parameters, the points and the UV points of the pcurve on a face (here, a plane's).
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(Constants.Origin(), Constants.DZ()), -20, 20, -20, 20).Face();
-        BRepAdaptor_Surface aSurf = new(aFace);
+        Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(Constants.Origin(), Constants.DZ()), -20, 20, -20, 20).Face();
+        FaceSurfaceAdaptor aSurf = new(aFace);
         Assert.False(aTool.Value(0, aSurf, out _, out _, out _));
         Assert.False(aTool.Value(aTool.NbPoints() + 1, aSurf, out _, out _, out _));
         for (int i = 1; i <= aTool.NbPoints(); i++)
@@ -133,9 +139,9 @@ public class BRepMeshGeomToolTests
         Assert.Equal(aNb + 1, aTool.NbPoints());
 
         // On an iso curve: the UV point has the iso parameter as its other coordinate; no pcurve value.
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(Constants.XOY()), 5);
-        TopoDS_Face aCylFace = new BRepBuilderAPI_MakeFace(aCyl, 0, 2 * Math.PI, 0, 10, global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
-        BRepAdaptor_Surface aCylSurf = new(aCylFace);
+        CylindricalSurface aCyl = new(new CoordinateSystem(Constants.XOY()), 5);
+        Face aCylFace = new BRepBuilderAPI_MakeFace(aCyl, 0, 2 * Math.PI, 0, 10, global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
+        FaceSurfaceAdaptor aCylSurf = new(aCylFace);
         BRepMesh_GeomTool aV = new(aCylSurf, IsoV, 3.0, 0.0, 2 * Math.PI, 0.1, 0.5);
         Assert.True(aV.NbPoints() > 4);
         Assert.False(aV.Value(1, aCylSurf, out _, out _, out _));
@@ -156,7 +162,7 @@ public class BRepMeshGeomToolTests
     [Fact]
     public void CellsCount_follows_the_surface_type()
     {
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(Constants.Origin(), Constants.DZ()), 0, 10, 0, 5).Face();
+        Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(Constants.Origin(), Constants.DZ()), 0, 10, 0, 5).Face();
         BRepMeshData_Face aDFace = new(aFace);
         Assert.Equal((-1, -1), BRepMesh_GeomTool.CellsCount(aDFace.GetSurface(), 10, 0.1, null));
 
@@ -176,7 +182,7 @@ public class BRepMeshGeomToolTests
     [Fact]
     public void DefaultRangeSplitter_ranges_scale_and_tolerances()
     {
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(Constants.Origin(), Constants.DZ()), 0, 10, 0, 5).Face();
+        Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(Constants.Origin(), Constants.DZ()), 0, 10, 0, 5).Face();
         BRepMeshData_Face aDFace = new(aFace);
         var aSplitter = new BRepMesh_DefaultRangeSplitter();
         aSplitter.Reset(aDFace, new IMeshTools_Parameters());
@@ -194,7 +200,7 @@ public class BRepMeshGeomToolTests
         // On a plane the lengths are the parametric ones: delta 1.
         Assert.Equal(1.0, aSplitter.GetDelta().first, 1e-12);
         Assert.Equal(1.0, aSplitter.GetDelta().second, 1e-12);
-        double aTol = BRep_Tool.Tolerance(aFace);
+        double aTol = Tool.Tolerance(aFace);
         Assert.Equal(Math.Max(Math.Min(1.0e-05, aDFace.GetSurface().UResolution(aTol) * 1.1), 1e-7 * 6), aSplitter.GetToleranceUV().first);
         Assert.Equal(Math.Max(Math.Min(1.0e-05, aDFace.GetSurface().VResolution(aTol) * 1.1), 1e-7 * 3), aSplitter.GetToleranceUV().second);
 
@@ -221,10 +227,10 @@ public class BRepMeshGeomToolTests
         Assert.False(BRepMesh_Deflection.IsConsistent(0.111, 0.1, false));
         Assert.True(BRepMesh_Deflection.IsConsistent(0.095, 0.1, true));
 
-        Assert.Equal(0.25, BRepMesh_Deflection.ComputeAbsoluteDeflection(new TopoDS_Shape(), 0.25, 1.0));
+        Assert.Equal(0.25, BRepMesh_Deflection.ComputeAbsoluteDeflection(new Shape(), 0.25, 1.0));
 
         // A 10 x 2 x 1 box: shape size 10 (the bounding box is enlarged by the tolerance), coefficient 0.5 to 2.
-        TopoDS_Solid aBox = TestShapes.Box(10, 2, 1);
+        Solid aBox = TestShapes.Box(10, 2, 1);
         Box aBnd = new();
         BRepBndLib.Add(aBox, ref aBnd, false);
         double aSize = 0.0;
@@ -237,17 +243,17 @@ public class BRepMeshGeomToolTests
     [Fact]
     public void Deflection_of_edges_wires_and_faces()
     {
-        TopoDS_Solid aBox = TestShapes.Box(10, 2, 1);
-        TopoDS_Face aFace = BRepGPropTestShapes.Faces(aBox)[0];
-        BRepMeshData_Face aDFace = new(TopoDS.Face(aFace.Oriented(TopAbs_FORWARD)));
-        IMeshData_Wire aDWire = aDFace.AddWire(BRepTools.OuterWire(aFace));
+        Solid aBox = TestShapes.Box(10, 2, 1);
+        Face aFace = BRepGPropTestShapes.Faces(aBox)[0];
+        BRepMeshData_Face aDFace = new(ShapeCasts.Face(aFace.Oriented(Forward)));
+        IMeshData_Wire aDWire = aDFace.AddWire(BrepTools.OuterWire(aFace));
 
         var aParams = new IMeshTools_Parameters { Deflection = 0.05, Angle = 0.3, DeflectionInterior = 0.2 };
         double aSum = 0.0;
         int aNb = 0;
-        for (var anExp = new TopExp_Explorer(aFace, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aFace, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            BRepMeshData_Edge aDEdge = new(TopoDS.Edge(anExp.Current()));
+            BRepMeshData_Edge aDEdge = new(ShapeCasts.Edge(anExp.Current()));
             BRepMesh_Deflection.ComputeDeflection(aDEdge, 10.0, aParams);
             Assert.Equal(0.05, aDEdge.GetDeflection());
             Assert.Equal(0.3, aDEdge.GetAngularDeflection());
@@ -276,7 +282,7 @@ public class BRepMeshGeomToolTests
         BRepMeshData_Edge aLong = new(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)));
         BRepMesh_Deflection.ComputeDeflection(aLong, 10.0, aParams);
         Assert.Equal(BRepMesh_Deflection.ComputeAbsoluteDeflection(aLong.GetEdge(), 0.1, 10.0), aLong.GetDeflection());
-        BRepMeshData_Wire anEmpty = new(new TopoDS_Wire(), 0);
+        BRepMeshData_Wire anEmpty = new(new Wire(), 0);
         BRepMesh_Deflection.ComputeDeflection(anEmpty, aParams);
         Assert.Equal(0.1, anEmpty.GetDeflection());
     }
@@ -285,9 +291,9 @@ public class BRepMeshGeomToolTests
     public void Edge_deflection_covers_the_distance_of_its_vertices_from_its_curve()
     {
         // An edge whose end vertex is 0.3 off its curve's end.
-        TopoDS_Vertex aV1 = TestShapes.Vertex(new Point3D(0, 0, 0));
-        TopoDS_Vertex aV2 = TestShapes.Vertex(new Point3D(10, 0.3, 0));
-        TopoDS_Edge anEdge = TestShapes.Edge(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 10, aV1, aV2);
+        Vertex aV1 = TestShapes.Vertex(new Point3D(0, 0, 0));
+        Vertex aV2 = TestShapes.Vertex(new Point3D(10, 0.3, 0));
+        Edge anEdge = TestShapes.Edge(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 10, aV1, aV2);
         BRepMeshData_Edge aDEdge = new(anEdge);
         BRepMesh_Deflection.ComputeDeflection(aDEdge, 10.0, new IMeshTools_Parameters { Deflection = 0.1 });
         Assert.Equal(0.3, aDEdge.GetDeflection(), 1e-15);

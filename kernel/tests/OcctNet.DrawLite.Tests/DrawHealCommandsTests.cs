@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using OcctNet.DrawLite;
 
 namespace OcctNet.DrawLite.Tests;
@@ -141,7 +144,7 @@ public class DrawHealCommandsTests
     {
         DrawInterpreter i = Load();
         i.Eval("box b 10 10 10");
-        TopoDS_Shape aBox = i.GetShape("b");
+        Shape aBox = i.GetShape("b");
         Assert.Equal("", i.Eval("fixshape r b"));
         Assert.True(i.GetShape("r").IsSame(aBox));
         Assert.Equal("", i.Eval("fixshape r2 b 1e-7 1 -l +o *h"));
@@ -174,22 +177,22 @@ public class DrawHealCommandsTests
     {
         DrawInterpreter i = Load();
         i.Eval("box b 10 10 10; explode b v");
-        TopoDS_Shape aBox = i.GetShape("b");
-        TopoDS_Shape aVertex = i.GetShape("b_1");
+        Shape aBox = i.GetShape("b");
+        Shape aVertex = i.GetShape("b_1");
         Assert.Equal("Setting Tolerance to 0.01\n", i.Eval("settolerance b 0.01"));
         // DRAWEXE writes into the box's vertices, which b_1 holds; Draw-lite rebinds the variables to the changed copy
-        Assert.Equal(0.01, BRep_Tool.Tolerance(TopoDS.Vertex(i.GetShape("b_1"))));
-        Assert.Equal(0.01, BRep_Tool.Tolerance(TopoDS.Edge(new TopExp_Explorer(i.GetShape("b"), TopAbs_ShapeEnum.TopAbs_EDGE).Current())));
-        Assert.True(TopoDS.Vertex(new TopExp_Explorer(i.GetShape("b"), TopAbs_ShapeEnum.TopAbs_VERTEX).Current()).IsSame(i.GetShape("b_1")));
+        Assert.Equal(0.01, Tool.Tolerance(ShapeCasts.Vertex(i.GetShape("b_1"))));
+        Assert.Equal(0.01, Tool.Tolerance(ShapeCasts.Edge(new Explorer(i.GetShape("b"), ShapeType.Edge).Current())));
+        Assert.True(ShapeCasts.Vertex(new Explorer(i.GetShape("b"), ShapeType.Vertex).Current()).IsSame(i.GetShape("b_1")));
         // the frozen shapes the variables held are untouched
-        Assert.Equal(1.0e-7, BRep_Tool.Tolerance(TopoDS.Vertex(aVertex)));
-        Assert.Equal(1.0e-7, BRep_Tool.Tolerance(TopoDS.Edge(new TopExp_Explorer(aBox, TopAbs_ShapeEnum.TopAbs_EDGE).Current())));
+        Assert.Equal(1.0e-7, Tool.Tolerance(ShapeCasts.Vertex(aVertex)));
+        Assert.Equal(1.0e-7, Tool.Tolerance(ShapeCasts.Edge(new Explorer(aBox, ShapeType.Edge).Current())));
         Assert.Equal("Maximum Tolerance to 0.001\n", i.Eval("settolerance b < 0.001"));
-        Assert.Equal(0.001, BRep_Tool.Tolerance(TopoDS.Vertex(i.GetShape("b_1"))));
+        Assert.Equal(0.001, Tool.Tolerance(ShapeCasts.Vertex(i.GetShape("b_1"))));
         Assert.Equal("Minimum Tolerance to 0.0050000000000000001\n", i.Eval("settolerance b v > 0.005"));
-        Assert.Equal(0.005, BRep_Tool.Tolerance(TopoDS.Vertex(i.GetShape("b_1"))));
+        Assert.Equal(0.005, Tool.Tolerance(ShapeCasts.Vertex(i.GetShape("b_1"))));
         Assert.Equal("Tolerance Limited between 1.0000000000000001e-05 and 0.002\n", i.Eval("settolerance b e 1e-5 0.002"));
-        Assert.Equal(0.001, BRep_Tool.Tolerance(TopoDS.Edge(new TopExp_Explorer(i.GetShape("b"), TopAbs_ShapeEnum.TopAbs_EDGE).Current())));
+        Assert.Equal(0.001, Tool.Tolerance(ShapeCasts.Edge(new Explorer(i.GetShape("b"), ShapeType.Edge).Current())));
     }
 
     [Fact]

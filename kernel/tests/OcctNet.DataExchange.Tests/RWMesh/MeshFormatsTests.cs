@@ -2,7 +2,10 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Buffers.Binary;
 using System.Globalization;
 using System.IO.Compression;
@@ -280,7 +283,7 @@ public class MeshFormatsTests
 
         byte[] aGlb = WriteGlb(aTree, new RWGltf_WriteOptions { MeshParameters = MeshParameters });
         Assert.Equal(WorldTriangles(aTree.Meshed(MeshParameters)!), WorldTriangles(ReadGltf(aGlb)));
-        Assert.Null(BRep_Tool.Triangulation(TopoDS.Face(new TopExp_Explorer(aTree.Roots[0].Product.Components[0].Product.Shape, TopAbs_ShapeEnum.TopAbs_FACE).Current()), out _));
+        Assert.Null(Tool.Triangulation(ShapeCasts.Face(new Explorer(aTree.Roots[0].Product.Components[0].Product.Shape, ShapeType.Face).Current()), out _));
 
         XdeDoc_Tree aHidden = SampleTree().WithLayers([new XdeDoc_Layer("L1", false)]);
         Assert.Equal(2, ReadGltf(WriteGlb(aHidden)).Flatten().Count);
@@ -574,15 +577,15 @@ public class MeshFormatsTests
     private static void CheckLantern(XdeDoc_Tree theTree)
     {
         XdeDoc_Instance aRoot = Assert.Single(theTree.Roots);
-        TopoDS_Shape aShape = aRoot.Shape;
-        Assert.Equal(3, CountShapes(aShape, TopAbs_ShapeEnum.TopAbs_FACE));
-        Assert.Equal(1, CountShapes(aShape, TopAbs_ShapeEnum.TopAbs_COMPOUND));
+        Shape aShape = aRoot.Shape;
+        Assert.Equal(3, CountShapes(aShape, ShapeType.Face));
+        Assert.Equal(1, CountShapes(aShape, ShapeType.Compound));
         Assert.Equal((5394, 4145), TriInfo(aShape));
         // INSTANCE COMPOUND "Lantern" -> ASSEMBLY COMPOUND "Lantern" -> three INSTANCE FACEs of PART FACEs
         Assert.Equal("Lantern", aRoot.DisplayName);
         Assert.True(aRoot.Product.IsAssembly);
         Assert.Equal(new[] { "LanternPole_Body", "LanternPole_Chain", "LanternPole_Lantern" }, aRoot.Product.Components.Select(c => c.DisplayName));
-        Assert.All(aRoot.Product.Components, c => Assert.Equal(TopAbs_ShapeEnum.TopAbs_FACE, c.Product.Shape.ShapeType()));
+        Assert.All(aRoot.Product.Components, c => Assert.Equal(ShapeType.Face, c.Product.Shape.ShapeType()));
         Assert.True(aRoot.Shape.TShape()!.IsFrozen);
     }
 

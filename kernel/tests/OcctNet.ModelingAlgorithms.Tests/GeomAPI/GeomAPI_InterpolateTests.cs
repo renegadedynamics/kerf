@@ -25,7 +25,7 @@ public class GeomAPI_Interpolate_Test
         anInterpolater.Perform();
         Assert.True(anInterpolater.IsDone(), "First interpolation should succeed");
 
-        Geom_BSplineCurve aCur = anInterpolater.Curve();
+        BSplineCurve3D aCur = anInterpolater.Curve();
         Assert.NotNull(aCur);
 
         aCur.D1(aCur.FirstParameter(), out _, out Vector3D aFirstTang);

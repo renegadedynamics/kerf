@@ -3,6 +3,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -39,7 +41,7 @@ internal static class XSDRAWSTLCommands
         }
         else
         {
-            TopoDS_Shape aShape = theDI.GetShape(argv[1]);
+            Shape aShape = theDI.GetShape(argv[1]);
             bool isASCIIMode = false;
             if (argc == 4)
             {
@@ -136,7 +138,7 @@ internal static class XSDRAWSTLCommands
             theDI.Output.WriteLine("Error: file '" + aFilePath + "' is not found");
         }
 
-        TopoDS_Shape aShape = new();
+        Shape aShape = new();
         if (!toCreateCompOfTris)
         {
             if (anIsMulti)
@@ -147,8 +149,8 @@ internal static class XSDRAWSTLCommands
                 {
                     RWStl.ReadFile(new MemoryStream(aBytes), aMergeAngle, aTriangList);
                 }
-                var aB = new BRep_Builder();
-                TopoDS_Face aFace = new();
+                var aB = new BrepBuilder();
+                Face aFace = new();
                 if (aTriangList.Size() == 1)
                 {
                     aB.MakeFace(ref aFace);
@@ -157,12 +159,12 @@ internal static class XSDRAWSTLCommands
                 }
                 else
                 {
-                    TopoDS_Compound aCmp = new();
+                    Compound aCmp = new();
                     aB.MakeCompound(ref aCmp);
 
                     for (int i = 1; i <= aTriangList.Length(); ++i)
                     {
-                        aFace = new TopoDS_Face();
+                        aFace = new Face();
                         aB.MakeFace(ref aFace);
                         aB.UpdateFace(aFace, aTriangList.Value(i));
                         aB.Add(aCmp, aFace);
@@ -175,8 +177,8 @@ internal static class XSDRAWSTLCommands
                 // Read STL file to the triangulation.
                 Triangulation? aTriangulation = isFile ? RWStl.ReadFile(new MemoryStream(aBytes), aMergeAngle) : null;
 
-                TopoDS_Face aFace = new();
-                var aB = new BRep_Builder();
+                Face aFace = new();
+                var aB = new BrepBuilder();
                 aB.MakeFace(ref aFace);
                 aB.UpdateFace(aFace, aTriangulation);
                 aShape = aFace;
@@ -190,7 +192,7 @@ internal static class XSDRAWSTLCommands
             {
                 var aConverter = new BRepBuilderAPI_MakeShapeOnMesh(aMesh);
                 aConverter.Build();
-                if (aConverter.IsDone() && !aConverter.Shape().IsNull())
+                if (aConverter.IsDone() && !aConverter.Shape().IsNull)
                 {
                     aShape = aConverter.Shape();
                 }

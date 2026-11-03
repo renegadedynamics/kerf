@@ -3,11 +3,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Geometry.Library;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -15,17 +21,17 @@ namespace Occt;
 public static partial class IntTools_Tools
 {
     /// <summary>0 if the distance between the vertices is less than the sum of their tolerances, -1 otherwise.</summary>
-    public static int ComputeVV(in TopoDS_Vertex aV1, in TopoDS_Vertex aV2)
+    public static int ComputeVV(in Vertex aV1, in Vertex aV2)
     {
         double aTolV1, aTolV2, aTolSum, d;
         Point3D aP1, aP2;
 
-        aTolV1 = BRep_Tool.Tolerance(aV1);
-        aTolV2 = BRep_Tool.Tolerance(aV2);
+        aTolV1 = Tool.Tolerance(aV1);
+        aTolV2 = Tool.Tolerance(aV2);
         aTolSum = aTolV1 + aTolV2;
 
-        aP1 = BRep_Tool.Pnt(aV1);
-        aP2 = BRep_Tool.Pnt(aV2);
+        aP1 = Tool.Pnt(aV1);
+        aP2 = Tool.Pnt(aV2);
         aTolSum = aTolSum * aTolSum;
         d = aP1.SquareDistance(aP2);
         if (d < aTolSum)
@@ -36,16 +42,16 @@ public static partial class IntTools_Tools
     }
 
     /// <summary>True if the wire has an INTERNAL edge.</summary>
-    public static bool HasInternalEdge(in TopoDS_Wire aW)
+    public static bool HasInternalEdge(in Wire aW)
     {
         bool bFlag = true;
 
-        TopExp_Explorer anExp = new(aW, TopAbs_EDGE);
+        Explorer anExp = new(aW, ShapeType.Edge);
         for (; anExp.More(); anExp.Next())
         {
-            TopoDS_Edge aE = TopoDS.Edge(anExp.Current());
-            TopAbs_Orientation anOr = aE.Orientation();
-            if (anOr == TopAbs_INTERNAL)
+            Edge aE = ShapeCasts.Edge(anExp.Current());
+            Orientation anOr = aE.Orientation();
+            if (anOr == Internal)
             {
                 return bFlag;
             }
@@ -57,23 +63,23 @@ public static partial class IntTools_Tools
     /// Builds a new face on the face's surface (an empty copy of the face taken FORWARD) bounded by the wire. The new
     /// face is unfrozen; the wire is added to it, not copied.
     /// </summary>
-    public static void MakeFaceFromWireAndFace(in TopoDS_Wire aW, in TopoDS_Face aF, out TopoDS_Face aFNew)
+    public static void MakeFaceFromWireAndFace(in Wire aW, in Face aF, out Face aFNew)
     {
-        TopoDS_Face aFF;
+        Face aFF;
         aFF = aF;
-        aFF.Orientation(TopAbs_FORWARD);
-        aFNew = TopoDS.Face(aFF.EmptyCopied());
-        BRep_Builder BB = new();
+        aFF.Orientation(Forward);
+        aFNew = ShapeCasts.Face(aFF.EmptyCopied());
+        BrepBuilder BB = new();
         BB.Add(aFNew, aW);
     }
 
     /// <summary>The state of the 2D point relative to the face, by a new <see cref="IntTools_FClass2d"/> with the face's tolerance.</summary>
-    public static TopAbs_State ClassifyPointByFace(in TopoDS_Face aF, in Point2D aP2d)
+    public static Containment ClassifyPointByFace(in Face aF, in Point2D aP2d)
     {
         double aFaceTolerance;
-        TopAbs_State aState;
+        Containment aState;
 
-        aFaceTolerance = BRep_Tool.Tolerance(aF);
+        aFaceTolerance = Tool.Tolerance(aF);
         IntTools_FClass2d aClass2d = new(aF, aFaceTolerance);
         aState = aClass2d.Perform(aP2d);
 
@@ -81,22 +87,22 @@ public static partial class IntTools_Tools
     }
 
     /// <summary>True if the edge's point at the parameter is within 1e-6 of one of its vertices (the vertices' tolerances are not used).</summary>
-    public static bool IsVertex(in TopoDS_Edge aE, double t)
+    public static bool IsVertex(in Edge aE, double t)
     {
         double aTolV2, d2;
-        TopoDS_Vertex aV;
+        Vertex aV;
         Point3D aPv, aPt;
 
-        BRepAdaptor_Curve aBAC = new(aE);
+        EdgeCurveAdaptor aBAC = new(aE);
         aBAC.D0(t, out aPt);
 
-        TopExp_Explorer anExp = new(aE, TopAbs_VERTEX);
+        Explorer anExp = new(aE, ShapeType.Vertex);
         for (; anExp.More(); anExp.Next())
         {
-            aV = TopoDS.Vertex(anExp.Current());
-            _ = BRep_Tool.Tolerance(aV);
+            aV = ShapeCasts.Vertex(anExp.Current());
+            _ = Tool.Tolerance(aV);
             aTolV2 = 1.0e-12; // OCCT: the vertex's tolerance is computed, then overwritten
-            aPv = BRep_Tool.Pnt(aV);
+            aPv = Tool.Pnt(aV);
             d2 = aPv.SquareDistance(aPt);
             if (d2 < aTolV2)
             {
@@ -107,17 +113,17 @@ public static partial class IntTools_Tools
     }
 
     /// <summary>True if the edge's point at the parameter is within the vertex's tolerance.</summary>
-    public static bool IsVertex(in TopoDS_Edge aE, in TopoDS_Vertex aV, double t)
+    public static bool IsVertex(in Edge aE, in Vertex aV, double t)
     {
         double aTolV, aTolV2, d2;
         Point3D aPv, aPt;
 
-        BRepAdaptor_Curve aBAC = new(aE);
+        EdgeCurveAdaptor aBAC = new(aE);
         aBAC.D0(t, out aPt);
 
-        aTolV = BRep_Tool.Tolerance(aV);
+        aTolV = Tool.Tolerance(aV);
         aTolV2 = aTolV * aTolV;
-        aPv = BRep_Tool.Pnt(aV);
+        aPv = Tool.Pnt(aV);
         d2 = aPv.SquareDistance(aPt);
         return d2 < aTolV2;
     }
@@ -128,7 +134,7 @@ public static partial class IntTools_Tools
         bool anIsVertex;
         double aParam;
 
-        TopoDS_Edge aE1 = aCmnPrt.Edge1();
+        Edge aE1 = aCmnPrt.Edge1();
         IntTools_Range aR1 = aCmnPrt.Range1();
         aParam = 0.5 * (aR1.First() + aR1.Last());
         anIsVertex = IsVertex(aE1, aParam);
@@ -138,7 +144,7 @@ public static partial class IntTools_Tools
             return true;
         }
 
-        TopoDS_Edge aE2 = aCmnPrt.Edge2();
+        Edge aE2 = aCmnPrt.Edge2();
         NCollection_Sequence<IntTools_Range> aRs2 = aCmnPrt.Ranges2();
         IntTools_Range aR2 = aRs2.Value(1);
         aParam = 0.5 * (aR2.First() + aR2.Last());
@@ -147,19 +153,19 @@ public static partial class IntTools_Tools
     }
 
     /// <summary>True if the middle points of the edges' 3D curves are closer than the sum of the edges' tolerances.</summary>
-    public static bool IsMiddlePointsEqual(in TopoDS_Edge aE1, in TopoDS_Edge aE2)
+    public static bool IsMiddlePointsEqual(in Edge aE1, in Edge aE2)
     {
         bool bRet;
         double m1, m2, aTol1, aTol2, aSumTol, aD2;
         Point3D aP1, aP2;
 
-        aTol1 = BRep_Tool.Tolerance(aE1);
-        Geom_Curve C1 = BRep_Tool.Curve(aE1, out double f1, out double l1)!;
+        aTol1 = Tool.Tolerance(aE1);
+        Curve3D C1 = Tool.Curve(aE1, out double f1, out double l1)!;
         m1 = 0.5 * (f1 + l1);
         C1.D0(m1, out aP1);
 
-        aTol2 = BRep_Tool.Tolerance(aE2);
-        Geom_Curve C2 = BRep_Tool.Curve(aE2, out double f2, out double l2)!;
+        aTol2 = Tool.Tolerance(aE2);
+        Curve3D C2 = Tool.Curve(aE2, out double f2, out double l2)!;
         m2 = 0.5 * (f2 + l2);
         C2.D0(m2, out aP2);
 
@@ -171,18 +177,18 @@ public static partial class IntTools_Tools
     }
 
     /// <summary>True if the point is within the vertex's tolerance plus <paramref name="aTolPV"/> plus Precision::Confusion.</summary>
-    public static bool IsVertex(in Point3D aP, double aTolPV, in TopoDS_Vertex aV)
+    public static bool IsVertex(in Point3D aP, double aTolPV, in Vertex aV)
     {
         bool bRet;
         double aTolV, aD, dTol;
         Point3D aPv;
 
-        aTolV = BRep_Tool.Tolerance(aV);
+        aTolV = Tool.Tolerance(aV);
         //
         dTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         aTolV = aTolV + aTolPV + dTol;
         //
-        aPv = BRep_Tool.Pnt(aV);
+        aPv = Tool.Pnt(aV);
         //
         aD = aPv.SquareDistance(aP);
         aTolV = aTolV * aTolV;
@@ -207,14 +213,14 @@ public static partial class IntTools_Tools
     /// </summary>
     public static int SplitCurve(in IntTools_Curve IC, NCollection_Sequence<IntTools_Curve> aCvs)
     {
-        Geom_Curve? aC3D = IC.Curve();
+        Curve3D? aC3D = IC.Curve();
         if (aC3D is null)
         {
             return 0;
         }
         //
-        Geom2d_Curve? aC2D1 = IC.FirstCurve2d();
-        Geom2d_Curve? aC2D2 = IC.SecondCurve2d();
+        Curve2D? aC2D1 = IC.FirstCurve2d();
+        Curve2D? aC2D2 = IC.SecondCurve2d();
         bool bIsClosed;
 
         bIsClosed = IsClosed(aC3D);
@@ -229,7 +235,7 @@ public static partial class IntTools_Tools
         aF = aC3D.FirstParameter();
         aL = aC3D.LastParameter();
         aMid = 0.5 * (aF + aL);
-        GeomAdaptor_Curve aGAC = new(aC3D);
+        CurveAdaptor aGAC = new(aC3D);
         CurveKind aCT = aGAC.GetType();
         if (aCT == BSplineCurve || aCT == BezierCurve)
         {
@@ -237,23 +243,23 @@ public static partial class IntTools_Tools
             aMid = IntermediatePoint(aF, aL);
         }
         //
-        Geom_Curve aC3DNewF, aC3DNewL;
-        aC3DNewF = new Geom_TrimmedCurve(aC3D, aF, aMid);
-        aC3DNewL = new Geom_TrimmedCurve(aC3D, aMid, aL);
+        Curve3D aC3DNewF, aC3DNewL;
+        aC3DNewF = new TrimmedCurve3D(aC3D, aF, aMid);
+        aC3DNewL = new TrimmedCurve3D(aC3D, aMid, aL);
 
         //
-        Geom2d_Curve? aC2D1F = null, aC2D1L = null, aC2D2F = null, aC2D2L = null;
+        Curve2D? aC2D1F = null, aC2D1L = null, aC2D2F = null, aC2D2L = null;
         //
         if (aC2D1 is not null)
         {
-            aC2D1F = new Geom2d_TrimmedCurve(aC2D1, aF, aMid);
-            aC2D1L = new Geom2d_TrimmedCurve(aC2D1, aMid, aL);
+            aC2D1F = new TrimmedCurve2D(aC2D1, aF, aMid);
+            aC2D1L = new TrimmedCurve2D(aC2D1, aMid, aL);
         }
 
         if (aC2D2 is not null)
         {
-            aC2D2F = new Geom2d_TrimmedCurve(aC2D2, aF, aMid);
-            aC2D2L = new Geom2d_TrimmedCurve(aC2D2, aMid, aL);
+            aC2D2F = new TrimmedCurve2D(aC2D2, aF, aMid);
+            aC2D2L = new TrimmedCurve2D(aC2D2, aMid, aL);
         }
         //
         IntTools_Curve aIC1 = new(aC3DNewF, aC2D1F, aC2D2F, IC.Tolerance(), IC.TangentialTolerance());
@@ -274,7 +280,7 @@ public static partial class IntTools_Tools
     {
         int i, j, aNb;
         bool bFlag;
-        Geom_Curve? aC3D;
+        Curve3D? aC3D;
 
         Direction3D aD1 = new(), aD2;
 
@@ -285,14 +291,14 @@ public static partial class IntTools_Tools
         {
             aC3D = aSIn[i].Curve();
             //
-            if (aC3D is Geom_TrimmedCurve aGTC)
+            if (aC3D is TrimmedCurve3D aGTC)
             {
                 aC3D = aGTC.BasisCurve();
                 aSIn[i].SetCurve(aC3D); // OCCT writes into its const input
             }
             IntTools_Curve IC = aSIn[i];
             //
-            if (aC3D is not Geom_Line aGLine)
+            if (aC3D is not LineCurve3D aGLine)
             {
                 aSOut.Clear();
                 for (j = 1; j <= aNb; j++)
@@ -346,13 +352,13 @@ public static partial class IntTools_Tools
     }
 
     /// <summary>True if the curve is bounded and its ends are closer than Precision::Confusion.</summary>
-    public static bool IsClosed(Geom_Curve aC3D)
+    public static bool IsClosed(Curve3D aC3D)
     {
         bool bRet;
         double aF, aL, aDist, aPC;
         Point3D aP1, aP2;
 
-        if (aC3D is not Geom_BoundedCurve)
+        if (aC3D is not BoundedCurve3D)
         {
             return false;
         }
@@ -375,7 +381,7 @@ public static partial class IntTools_Tools
     /// The tolerance of the curve: <paramref name="aTolBase"/>, enlarged for a trimmed parabola by its focal
     /// distance and the trimming parameters.
     /// </summary>
-    public static double CurveTolerance(Geom_Curve? aC3D, double aTolBase)
+    public static double CurveTolerance(Curve3D? aC3D, double aTolBase)
     {
         double aTolReached, aTf, aTl, aTolMin, aTolMax;
 
@@ -386,7 +392,7 @@ public static partial class IntTools_Tools
             return aTolReached;
         }
         //
-        if (aC3D is not Geom_TrimmedCurve aCT3D)
+        if (aC3D is not TrimmedCurve3D aCT3D)
         {
             return aTolReached;
         }
@@ -397,12 +403,12 @@ public static partial class IntTools_Tools
         aTf = aCT3D.FirstParameter();
         aTl = aCT3D.LastParameter();
         //
-        GeomAdaptor_Curve aGAC = new(aCT3D);
+        CurveAdaptor aGAC = new(aCT3D);
         CurveKind aCType = aGAC.GetType();
         //
         if (aCType == Parabola)
         {
-            Geom_Curve aC3DBase = aCT3D.BasisCurve();
+            Curve3D aC3DBase = aCT3D.BasisCurve();
             ParabolaTolerance(aC3DBase, aTf, aTl, aTolBase, ref aTolMin, ref aTolMax);
             aTolReached = aTolMax;
         }
@@ -410,14 +416,14 @@ public static partial class IntTools_Tools
         return aTolReached;
     }
 
-    private static void ParabolaTolerance(Geom_Curve aC3D, double aTf, double aTl, double aTol, ref double aTolMin,
+    private static void ParabolaTolerance(Curve3D aC3D, double aTf, double aTl, double aTol, ref double aTolMin,
                                           ref double aTolMax)
     {
 
         aTolMin = aTol;
         aTolMax = aTol;
 
-        if (aC3D is not Geom_Parabola aGP)
+        if (aC3D is not ParabolaCurve3D aGP)
         {
             return;
         }
@@ -427,7 +433,7 @@ public static partial class IntTools_Tools
         Point3D aPf, aPl;
         Parabola3D aParab = aGP.Parab();
         Axis3D aXAxis = aParab.XAxis();
-        Geom_Line aGAxis = new(aXAxis);
+        LineCurve3D aGAxis = new(aXAxis);
 
         aFocal = aGP.Focal();
         if (aFocal == 0.0)
@@ -484,7 +490,7 @@ public static partial class IntTools_Tools
     /// </summary>
     public static bool CheckCurve(in IntTools_Curve theCurve, ref Box theBox)
     {
-        Geom_Curve? aC3D = theCurve.Curve();
+        Curve3D? aC3D = theCurve.Curve();
         bool bValid = aC3D is not null;
         if (!bValid)
         {
@@ -492,7 +498,7 @@ public static partial class IntTools_Tools
         }
         //
         // Build bounding box for the curve
-        BndLib_Add3dCurve.Add(new GeomAdaptor_Curve(aC3D!),
+        Add3dCurve.Add(new CurveAdaptor(aC3D!),
                               Max(theCurve.Tolerance(), theCurve.TangentialTolerance()),
                               ref theBox);
         //
@@ -656,30 +662,30 @@ public static partial class IntTools_Tools
 
     /// <summary>
     /// Computes the maximal distance between the 3D curve and the 2D curve on the surface over [first, last]
-    /// (<see cref="GeomLib_CheckCurveOnSurface"/>), enlarged by a relative margin of 1e-5, and the parameter where it
+    /// (<see cref="CheckCurveOnSurface"/>), enlarged by a relative margin of 1e-5, and the parameter where it
     /// is reached. False if the check fails (the outputs are then 0, where OCCT leaves them unchanged; no caller reads them).
     /// </summary>
-    public static bool ComputeTolerance(Geom_Curve theCurve3D, Geom2d_Curve theCurve2D, Geom_Surface theSurf, double theFirst, double theLast,
+    public static bool ComputeTolerance(Curve3D theCurve3D, Curve2D theCurve2D, Surface theSurf, double theFirst, double theLast,
                                         out double theMaxDist, out double theMaxPar) =>
         ComputeTolerance(theCurve3D, theCurve2D, theSurf, theFirst, theLast, out theMaxDist, out theMaxPar, global::Kerf.Engine.Foundation.Precision.PConfusion());
 
-    /// <inheritdoc cref="ComputeTolerance(Geom_Curve, Geom2d_Curve, Geom_Surface, double, double, out double, out double)"/>
-    public static bool ComputeTolerance(Geom_Curve theCurve3D, Geom2d_Curve theCurve2D, Geom_Surface theSurf, double theFirst, double theLast,
+    /// <inheritdoc cref="ComputeTolerance(Curve3D, Curve2D, Surface, double, double, out double, out double)"/>
+    public static bool ComputeTolerance(Curve3D theCurve3D, Curve2D theCurve2D, Surface theSurf, double theFirst, double theLast,
                                         out double theMaxDist, out double theMaxPar, double theTolRange, bool theToRunParallel = false)
     {
-        GeomLib_CheckCurveOnSurface aCS = new();
+        CheckCurveOnSurface aCS = new();
         //
-        Adaptor3d_Curve aGeomAdaptorCurve = new GeomAdaptor_Curve(theCurve3D, theFirst, theLast);
+        CurveAdaptorBase aGeomAdaptorCurve = new CurveAdaptor(theCurve3D, theFirst, theLast);
 
-        Adaptor2d_Curve2d aGeom2dAdaptorCurve = new Geom2dAdaptor_Curve(theCurve2D, theFirst, theLast);
-        GeomAdaptor_Surface aGeomAdaptorSurface = new(theSurf);
+        Curve2DAdaptorBase aGeom2dAdaptorCurve = new CurveAdaptor2D(theCurve2D, theFirst, theLast);
+        SurfaceAdaptor aGeomAdaptorSurface = new(theSurf);
 
-        Adaptor3d_CurveOnSurface anAdaptor3dCurveOnSurface = new(aGeom2dAdaptorCurve, aGeomAdaptorSurface);
+        CurveOnSurface anAdaptor3dCurveOnSurface = new(aGeom2dAdaptorCurve, aGeomAdaptorSurface);
 
         aCS.Init(aGeomAdaptorCurve, theTolRange);
         aCS.SetParallel(theToRunParallel);
         aCS.Perform(anAdaptor3dCurveOnSurface);
-        if (!aCS.IsDone())
+        if (!aCS.IsDone)
         {
             // OCCT leaves the outputs unchanged; every caller reads them only on success.
             theMaxDist = 0.0;

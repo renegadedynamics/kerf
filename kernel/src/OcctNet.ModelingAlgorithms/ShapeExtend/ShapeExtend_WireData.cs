@@ -4,8 +4,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -17,13 +22,13 @@ namespace Occt;
 /// <remarks>
 /// A working object (decision 21) with OCCT's public mutators: it holds the caller's edges and changes only its own
 /// list. <see cref="Wire"/> and <see cref="WireAPIMake"/> freeze the wire they return; ported code that goes on
-/// building uses <see cref="InternalWire"/> and <see cref="InternalWireAPIMake"/>. <see cref="Reverse(in TopoDS_Face)"/>
+/// building uses <see cref="InternalWire"/> and <see cref="InternalWireAPIMake"/>. <see cref="Reverse(in Face)"/>
 /// swaps the pcurves of seam edges in place, so it is internal.
 /// </remarks>
 public class ShapeExtend_WireData : Transient
 {
-    private NCollection_HSequence<TopoDS_Shape> myEdges = null!;
-    private NCollection_HSequence<TopoDS_Shape> myNonmanifoldEdges = null!;
+    private NCollection_HSequence<Shape> myEdges = null!;
+    private NCollection_HSequence<Shape> myNonmanifoldEdges = null!;
     private NCollection_HSequence<int>? mySeams;
     private readonly NCollection_PackedMapOfInteger mySeamsCache = new NCollection_PackedMapOfInteger();
     private int mySeamF;
@@ -37,9 +42,9 @@ public class ShapeExtend_WireData : Transient
     }
 
     /// <summary>
-    /// The edges of the wire, as <see cref="Init(in TopoDS_Wire, bool, bool)"/> loads them.
+    /// The edges of the wire, as <see cref="Init(in Wire, bool, bool)"/> loads them.
     /// </summary>
-    public ShapeExtend_WireData(in TopoDS_Wire wire, bool chained = true, bool theManifoldMode = true)
+    public ShapeExtend_WireData(in Wire wire, bool chained = true, bool theManifoldMode = true)
     {
         Init(wire, chained, theManifoldMode);
     }
@@ -68,39 +73,39 @@ public class ShapeExtend_WireData : Transient
     /// chain; then, if not <paramref name="chained"/>, they are loaded again in the order of BRepTools_WireExplorer.
     /// In manifold mode the INTERNAL and EXTERNAL edges are kept apart.
     /// </summary>
-    public bool Init(in TopoDS_Wire wire, bool chained = true, bool theManifoldMode = true)
+    public bool Init(in Wire wire, bool chained = true, bool theManifoldMode = true)
     {
         Clear();
         myManifoldMode = theManifoldMode;
         bool OK = true;
-        TopoDS_Vertex Vlast = new TopoDS_Vertex();
-        for (var it = new TopoDS_Iterator(wire); it.More(); it.Next())
+        Vertex Vlast = new Vertex();
+        for (var it = new Iterator(wire); it.More(); it.Next())
         {
-            TopoDS_Edge E = TopoDS.Edge(it.Value());
+            Edge E = ShapeCasts.Edge(it.Value());
 
             // protect against INTERNAL/EXTERNAL edges
-            if ((E.Orientation() != TopAbs_REVERSED && E.Orientation() != TopAbs_FORWARD))
+            if ((E.Orientation() != Reversed && E.Orientation() != Forward))
             {
                 myNonmanifoldEdges.Append(E);
                 continue;
             }
 
-            TopoDS_Vertex V1 = new TopoDS_Vertex(), V2 = new TopoDS_Vertex();
-            for (var itv = new TopoDS_Iterator(E); itv.More(); itv.Next())
+            Vertex V1 = new Vertex(), V2 = new Vertex();
+            for (var itv = new Iterator(E); itv.More(); itv.Next())
             {
-                TopoDS_Vertex V = TopoDS.Vertex(itv.Value());
-                if (V.Orientation() == TopAbs_FORWARD)
+                Vertex V = ShapeCasts.Vertex(itv.Value());
+                if (V.Orientation() == Forward)
                 {
                     V1 = V;
                 }
-                else if (V.Orientation() == TopAbs_REVERSED)
+                else if (V.Orientation() == Reversed)
                 {
                     V2 = V;
                 }
             }
 
             // chainage? Si pas bon et chained False on repart sur WireExplorer
-            if (!Vlast.IsNull() && !Vlast.IsSame(V1) && theManifoldMode)
+            if (!Vlast.IsNull && !Vlast.IsSame(V1) && theManifoldMode)
             {
                 OK = false;
                 if (!chained)
@@ -110,7 +115,7 @@ public class ShapeExtend_WireData : Transient
             }
 
             Vlast = V2;
-            if (wire.Orientation() == TopAbs_REVERSED)
+            if (wire.Orientation() == Reversed)
             {
                 myEdges.Prepend(E);
             }
@@ -139,9 +144,9 @@ public class ShapeExtend_WireData : Transient
         }
 
         Clear();
-        for (var we = new BRepTools_WireExplorer(wire); we.More(); we.Next())
+        for (var we = new WireExplorer(wire); we.More(); we.Next())
         {
-            myEdges.Append(TopoDS.Edge(we.Current()));
+            myEdges.Append(ShapeCasts.Edge(we.Current()));
         }
 
         return OK;
@@ -150,8 +155,8 @@ public class ShapeExtend_WireData : Transient
     /// <summary>Clears the wire (and sets manifold mode).</summary>
     public void Clear()
     {
-        myEdges = new NCollection_HSequence<TopoDS_Shape>();
-        myNonmanifoldEdges = new NCollection_HSequence<TopoDS_Shape>();
+        myEdges = new NCollection_HSequence<Shape>();
+        myNonmanifoldEdges = new NCollection_HSequence<Shape>();
         mySeamF = mySeamR = -1;
         mySeams = null;
         myManifoldMode = true;
@@ -169,9 +174,9 @@ public class ShapeExtend_WireData : Transient
 
         mySeams = new NCollection_HSequence<int>();
         mySeamF = mySeamR = 0;
-        TopoDS_Shape S;
+        Shape S;
         int i, nb = NbEdges();
-        var ME = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var ME = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         int[] SE = new int[nb + 1];
 
         //  deux passes : d abord on mappe les Edges REVERSED
@@ -179,7 +184,7 @@ public class ShapeExtend_WireData : Transient
         for (i = 1; i <= nb; i++)
         {
             S = Edge(i);
-            if (S.Orientation() == TopAbs_REVERSED)
+            if (S.Orientation() == Reversed)
             {
                 int num = ME.Add(S);
                 SE[num] = i;
@@ -191,7 +196,7 @@ public class ShapeExtend_WireData : Transient
         for (i = 1; i <= nb; i++)
         {
             S = Edge(i);
-            if (S.Orientation() == TopAbs_REVERSED)
+            if (S.Orientation() == Reversed)
             {
                 continue;
             }
@@ -232,7 +237,7 @@ public class ShapeExtend_WireData : Transient
         int i, nb = NbEdges();
         for (i = nb; i > num; i--)
         {
-            TopoDS_Edge edge = TopoDS.Edge(myEdges.Value(nb));
+            Edge edge = ShapeCasts.Edge(myEdges.Value(nb));
             myEdges.Remove(nb);
             myEdges.InsertBefore(1, edge);
         }
@@ -246,7 +251,7 @@ public class ShapeExtend_WireData : Transient
         int i, nb = NbEdges();
         for (i = 1; i <= nb; i++)
         {
-            if (BRep_Tool.Degenerated(Edge(i)))
+            if (Tool.Degenerated(Edge(i)))
             {
                 SetLast(i);
                 return;
@@ -258,15 +263,15 @@ public class ShapeExtend_WireData : Transient
     /// Adds an edge at the end, or before edge <paramref name="atnum"/> if not 0. In manifold mode an INTERNAL or
     /// EXTERNAL edge goes to the non-manifold edges.
     /// </summary>
-    public void Add(in TopoDS_Edge edge, int atnum = 0)
+    public void Add(in Edge edge, int atnum = 0)
     {
-        if (edge.Orientation() != TopAbs_REVERSED && edge.Orientation() != TopAbs_FORWARD && myManifoldMode)
+        if (edge.Orientation() != Reversed && edge.Orientation() != Forward && myManifoldMode)
         {
             myNonmanifoldEdges.Append(edge);
             return;
         }
 
-        if (edge.IsNull())
+        if (edge.IsNull)
         {
             return;
         }
@@ -283,20 +288,20 @@ public class ShapeExtend_WireData : Transient
         mySeamF = -1;
     }
 
-    /// <summary>Adds the edges of a wire, in their stored order, as <see cref="Add(in TopoDS_Edge, int)"/>.</summary>
-    public void Add(in TopoDS_Wire wire, int atnum = 0)
+    /// <summary>Adds the edges of a wire, in their stored order, as <see cref="Add(in Edge, int)"/>.</summary>
+    public void Add(in Wire wire, int atnum = 0)
     {
-        if (wire.IsNull())
+        if (wire.IsNull)
         {
             return;
         }
 
         int n = atnum;
-        var aNMEdges = new NCollection_Sequence<TopoDS_Shape>();
-        for (var it = new TopoDS_Iterator(wire); it.More(); it.Next())
+        var aNMEdges = new NCollection_Sequence<Shape>();
+        for (var it = new Iterator(wire); it.More(); it.Next())
         {
-            TopoDS_Edge edge = TopoDS.Edge(it.Value());
-            if (edge.Orientation() != TopAbs_REVERSED && edge.Orientation() != TopAbs_FORWARD)
+            Edge edge = ShapeCasts.Edge(it.Value());
+            if (edge.Orientation() != Reversed && edge.Orientation() != Forward)
             {
                 if (myManifoldMode)
                 {
@@ -330,7 +335,7 @@ public class ShapeExtend_WireData : Transient
         mySeamF = -1;
     }
 
-    /// <summary>Adds the edges of another wire data, as <see cref="Add(in TopoDS_Edge, int)"/>.</summary>
+    /// <summary>Adds the edges of another wire data, as <see cref="Add(in Edge, int)"/>.</summary>
     public void Add(ShapeExtend_WireData? wire, int atnum = 0)
     {
         if (wire is null)
@@ -338,13 +343,13 @@ public class ShapeExtend_WireData : Transient
             return;
         }
 
-        var aNMEdges = new NCollection_Sequence<TopoDS_Shape>();
+        var aNMEdges = new NCollection_Sequence<Shape>();
         int n = atnum;
         int i = 1;
         for (; i <= wire.NbEdges(); i++)
         {
-            TopoDS_Edge aE = wire.Edge(i);
-            if (aE.Orientation() == TopAbs_INTERNAL || aE.Orientation() == TopAbs_EXTERNAL)
+            Edge aE = wire.Edge(i);
+            if (aE.Orientation() == Internal || aE.Orientation() == External)
             {
                 aNMEdges.Append(aE);
                 continue;
@@ -392,15 +397,15 @@ public class ShapeExtend_WireData : Transient
     }
 
     /// <summary>Adds an edge or the edges of a wire; other shapes are ignored.</summary>
-    public void Add(in TopoDS_Shape shape, int atnum = 0)
+    public void Add(in Shape shape, int atnum = 0)
     {
-        if (shape.ShapeType() == TopAbs_EDGE)
+        if (shape.ShapeType() == global::Kerf.Topology.ShapeType.Edge)
         {
-            Add(TopoDS.Edge(shape), atnum);
+            Add(ShapeCasts.Edge(shape), atnum);
         }
-        else if (shape.ShapeType() == TopAbs_WIRE)
+        else if (shape.ShapeType() == global::Kerf.Topology.ShapeType.Wire)
         {
-            Add(TopoDS.Wire(shape), atnum);
+            Add(ShapeCasts.Wire(shape), atnum);
         }
     }
 
@@ -408,14 +413,14 @@ public class ShapeExtend_WireData : Transient
     /// Adds an edge: <paramref name="mode"/> 0 at the end, 1 reversed at the end, 2 at the start, 3 reversed at the
     /// start; nothing if negative.
     /// </summary>
-    public void AddOriented(in TopoDS_Edge edge, int mode)
+    public void AddOriented(in Edge edge, int mode)
     {
-        if (edge.IsNull() || mode < 0)
+        if (edge.IsNull || mode < 0)
         {
             return;
         }
 
-        TopoDS_Edge E = edge;
+        Edge E = edge;
         if (mode == 1 || mode == 3)
         {
             E.Reverse();
@@ -424,15 +429,15 @@ public class ShapeExtend_WireData : Transient
         Add(E, mode / 2); // mode = 0,1 -> 0  mode = 2,3 -> 1
     }
 
-    /// <summary>Adds the edges of a wire, as <see cref="AddOriented(in TopoDS_Edge, int)"/>.</summary>
-    public void AddOriented(in TopoDS_Wire wire, int mode)
+    /// <summary>Adds the edges of a wire, as <see cref="AddOriented(in Edge, int)"/>.</summary>
+    public void AddOriented(in Wire wire, int mode)
     {
-        if (wire.IsNull() || mode < 0)
+        if (wire.IsNull || mode < 0)
         {
             return;
         }
 
-        TopoDS_Wire W = wire;
+        Wire W = wire;
         if (mode == 1 || mode == 3)
         {
             W.Reverse();
@@ -441,16 +446,16 @@ public class ShapeExtend_WireData : Transient
         Add(W, mode / 2); // mode = 0,1 -> 0  mode = 2,3 -> 1
     }
 
-    /// <summary>Adds an edge or the edges of a wire, as <see cref="AddOriented(in TopoDS_Edge, int)"/>.</summary>
-    public void AddOriented(in TopoDS_Shape shape, int mode)
+    /// <summary>Adds an edge or the edges of a wire, as <see cref="AddOriented(in Edge, int)"/>.</summary>
+    public void AddOriented(in Shape shape, int mode)
     {
-        if (shape.ShapeType() == TopAbs_EDGE)
+        if (shape.ShapeType() == global::Kerf.Topology.ShapeType.Edge)
         {
-            AddOriented(TopoDS.Edge(shape), mode);
+            AddOriented(ShapeCasts.Edge(shape), mode);
         }
-        else if (shape.ShapeType() == TopAbs_WIRE)
+        else if (shape.ShapeType() == global::Kerf.Topology.ShapeType.Wire)
         {
-            AddOriented(TopoDS.Wire(shape), mode);
+            AddOriented(ShapeCasts.Wire(shape), mode);
         }
     }
 
@@ -466,9 +471,9 @@ public class ShapeExtend_WireData : Transient
     /// Replaces edge <paramref name="num"/> (the last one for 0). In manifold mode an INTERNAL or EXTERNAL edge
     /// replaces the non-manifold edge <paramref name="num"/>, or is appended to them.
     /// </summary>
-    public void Set(in TopoDS_Edge edge, int num = 0)
+    public void Set(in Edge edge, int num = 0)
     {
-        if (edge.Orientation() != TopAbs_REVERSED && edge.Orientation() != TopAbs_FORWARD && myManifoldMode)
+        if (edge.Orientation() != Reversed && edge.Orientation() != Forward && myManifoldMode)
         {
             if (num <= myNonmanifoldEdges.Length())
             {
@@ -491,7 +496,7 @@ public class ShapeExtend_WireData : Transient
     /// OCCT.NET: replaces the edge <paramref name="num"/> (of the manifold list) whatever its orientation, for
     /// ShapeFix_Wire's copy at the entry, which puts copies in place of a frozen wire's edges.
     /// </summary>
-    internal void InternalSetEdge(in TopoDS_Edge edge, int num)
+    internal void InternalSetEdge(in Edge edge, int num)
     {
         myEdges.SetValue(num, edge);
         mySeamF = -1;
@@ -505,9 +510,9 @@ public class ShapeExtend_WireData : Transient
         // inverser les edges + les permuter pour inverser le wire
         for (i = 1; i <= nb / 2; i++)
         {
-            TopoDS_Shape S1 = myEdges.Value(i);
+            Shape S1 = myEdges.Value(i);
             S1.Reverse();
-            TopoDS_Shape S2 = myEdges.Value(nb + 1 - i);
+            Shape S2 = myEdges.Value(nb + 1 - i);
             S2.Reverse();
             myEdges.SetValue(i, S2);
             myEdges.SetValue(nb + 1 - i, S1);
@@ -517,7 +522,7 @@ public class ShapeExtend_WireData : Transient
         if (nb % 2 != 0)
         { //  test impair
             i = (nb + 1) / 2;
-            TopoDS_Shape SI = myEdges.Value(i);
+            Shape SI = myEdges.Value(i);
             SI.Reverse();
             myEdges.SetValue(i, SI);
         }
@@ -526,38 +531,38 @@ public class ShapeExtend_WireData : Transient
     }
 
     // The file-static SwapSeam of ShapeExtend_WireData.cxx: swaps the two pcurves of a seam edge on the face, in place.
-    private static void SwapSeam(in TopoDS_Shape S, in TopoDS_Face F)
+    private static void SwapSeam(in Shape S, in Face F)
     {
-        TopoDS_Edge E = TopoDS.Edge(S);
-        if (E.IsNull() || F.IsNull())
+        Edge E = ShapeCasts.Edge(S);
+        if (E.IsNull || F.IsNull)
         {
             return;
         }
 
-        if (E.Orientation() == TopAbs_REVERSED)
+        if (E.Orientation() == Reversed)
         {
             return; // ne le faire qu une fois !
         }
 
-        TopoDS_Face theface = F;
-        theface.Orientation(TopAbs_FORWARD);
+        Face theface = F;
+        theface.Orientation(Forward);
 
         //: S4136  double Tol = BRep_Tool::Tolerance(theface);
-        Geom2d_Curve? c2df, c2dr;
+        Curve2D? c2df, c2dr;
         double uff, ulf;
 
         // d abord FWD puis REV
-        c2df = BRep_Tool.CurveOnSurface(E, theface, out uff, out ulf);
-        E.Orientation(TopAbs_REVERSED);
-        c2dr = BRep_Tool.CurveOnSurface(E, theface, out _, out _);
+        c2df = Tool.CurveOnSurface(E, theface, out uff, out ulf);
+        E.Orientation(Reversed);
+        c2dr = Tool.CurveOnSurface(E, theface, out _, out _);
         if (c2df is null || c2dr is null)
         {
             return; //: q0
         }
 
         // On permute
-        E.Orientation(TopAbs_FORWARD);
-        var B = new BRep_Builder();
+        E.Orientation(Forward);
+        var B = new BrepBuilder();
         B.UpdateEdge(E, c2dr, c2df, theface, 0.0); //: S4136: Tol
         B.Range(E, theface, uff, ulf);
     }
@@ -569,10 +574,10 @@ public class ShapeExtend_WireData : Transient
     /// Internal: it writes into the seam edges, which throws on frozen ones (phase3-design 4.6). Without a face it is
     /// <see cref="Reverse()"/>.
     /// </remarks>
-    internal void Reverse(in TopoDS_Face face)
+    internal void Reverse(in Face face)
     {
         Reverse();
-        if (face.IsNull())
+        if (face.IsNull)
         {
             return;
         }
@@ -614,22 +619,22 @@ public class ShapeExtend_WireData : Transient
     }
 
     /// <summary>The non-manifold edge <paramref name="num"/>; a null edge for a negative index.</summary>
-    public TopoDS_Edge NonmanifoldEdge(int num)
+    public Edge NonmanifoldEdge(int num)
     {
-        TopoDS_Edge E = new TopoDS_Edge();
+        Edge E = new Edge();
         if (num < 0)
         {
             return E;
         }
 
-        return TopoDS.Edge(myNonmanifoldEdges.Value(num));
+        return ShapeCasts.Edge(myNonmanifoldEdges.Value(num));
     }
 
     /// <summary>The non-manifold edges, as a new read-only list.</summary>
     /// <remarks>OCCT returns its own sequence; ported code reads it through <see cref="InternalNonmanifoldEdges"/>.</remarks>
-    public Schematiq.Collections.ISchematiqList<TopoDS_Shape> NonmanifoldEdges()
+    public Schematiq.Collections.ISchematiqList<Shape> NonmanifoldEdges()
     {
-        var anArray = new TopoDS_Shape[myNonmanifoldEdges.Length()];
+        var anArray = new Shape[myNonmanifoldEdges.Length()];
         for (int i = 1; i <= anArray.Length; i++)
         {
             anArray[i - 1] = myNonmanifoldEdges.Value(i);
@@ -639,7 +644,7 @@ public class ShapeExtend_WireData : Transient
     }
 
     /// <summary>The wire data's own sequence of non-manifold edges, as OCCT's NonmanifoldEdges returns it.</summary>
-    internal NCollection_HSequence<TopoDS_Shape> InternalNonmanifoldEdges()
+    internal NCollection_HSequence<Shape> InternalNonmanifoldEdges()
     {
         return myNonmanifoldEdges;
     }
@@ -651,22 +656,22 @@ public class ShapeExtend_WireData : Transient
     }
 
     /// <summary>Edge <paramref name="num"/>; for a negative index, edge -num reversed.</summary>
-    public TopoDS_Edge Edge(int num)
+    public Edge Edge(int num)
     {
         if (num < 0)
         {
-            TopoDS_Edge E = Edge(-num);
+            Edge E = Edge(-num);
             E.Reverse();
             return E;
         }
 
-        return TopoDS.Edge(myEdges.Value(num));
+        return ShapeCasts.Edge(myEdges.Value(num));
     }
 
     /// <summary>
     /// The index of the edge (the same, with the same orientation if it is a seam), or 0 if it isn't in the wire.
     /// </summary>
-    public int Index(in TopoDS_Edge edge)
+    public int Index(in Edge edge)
     {
         for (int i = 1; i <= NbEdges(); i++)
         {
@@ -705,25 +710,25 @@ public class ShapeExtend_WireData : Transient
     /// A new wire holding the edges in their order (and the non-manifold edges in manifold mode), closed if its ends
     /// are the same vertex. Frozen.
     /// </summary>
-    public TopoDS_Wire Wire()
+    public Wire Wire()
     {
-        TopoDS_Wire W = InternalWire();
+        Wire W = InternalWire();
         W.TShape()!.FreezeGraph();
         return W;
     }
 
     /// <summary>As <see cref="Wire"/>, without freezing, for ported code that goes on building.</summary>
-    internal TopoDS_Wire InternalWire()
+    internal Wire InternalWire()
     {
-        TopoDS_Wire W = new TopoDS_Wire();
-        var B = new BRep_Builder();
+        Wire W = new Wire();
+        var B = new BrepBuilder();
         B.MakeWire(ref W);
         int i, nb = NbEdges();
         bool ismanifold = true;
         for (i = 1; i <= nb; i++)
         {
-            TopoDS_Edge aE = Edge(i);
-            if (aE.Orientation() != TopAbs_FORWARD && aE.Orientation() != TopAbs_REVERSED)
+            Edge aE = Edge(i);
+            if (aE.Orientation() != Forward && aE.Orientation() != Reversed)
             {
                 ismanifold = false;
             }
@@ -733,8 +738,8 @@ public class ShapeExtend_WireData : Transient
 
         if (ismanifold)
         {
-            TopExp.Vertices(W, out TopoDS_Vertex vf, out TopoDS_Vertex vl);
-            if (!vf.IsNull() && !vl.IsNull() && vf.IsSame(vl))
+            Exploration.Vertices(W, out Vertex vf, out Vertex vl);
+            if (!vf.IsNull && !vl.IsNull && vf.IsSame(vl))
             {
                 W.Closed(true);
             }
@@ -753,10 +758,10 @@ public class ShapeExtend_WireData : Transient
     }
 
     /// <summary>A new wire made by BRepBuilderAPI_MakeWire from the edges; a null wire if it fails. Frozen.</summary>
-    public TopoDS_Wire WireAPIMake()
+    public Wire WireAPIMake()
     {
-        TopoDS_Wire W = InternalWireAPIMake();
-        if (!W.IsNull())
+        Wire W = InternalWireAPIMake();
+        if (!W.IsNull)
         {
             W.TShape()!.FreezeGraph();
         }
@@ -765,9 +770,9 @@ public class ShapeExtend_WireData : Transient
     }
 
     /// <summary>As <see cref="WireAPIMake"/>, without freezing, for ported code that goes on building.</summary>
-    internal TopoDS_Wire InternalWireAPIMake()
+    internal Wire InternalWireAPIMake()
     {
-        TopoDS_Wire W = new TopoDS_Wire();
+        Wire W = new Wire();
         var MW = new BRepBuilderAPI_MakeWire();
         int i, nb = NbEdges();
         for (i = 1; i <= nb; i++)

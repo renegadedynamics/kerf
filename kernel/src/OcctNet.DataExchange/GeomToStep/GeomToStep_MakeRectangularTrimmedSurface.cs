@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of RectangularTrimmedSurface from Geom to a STEP rectangular_trimmed_surface.</summary>
@@ -21,7 +23,7 @@ public sealed class GeomToStep_MakeRectangularTrimmedSurface : GeomToStep_Root
     /// A rectangular trimmed surface: its basis surface, and its bounds with angles in degrees (OCCT writes 180/π,
     /// not the plane angle factor) and lengths divided by the length factor. Not done if the basis isn't mapped.
     /// </summary>
-    public GeomToStep_MakeRectangularTrimmedSurface(Geom_RectangularTrimmedSurface RTSurf, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeRectangularTrimmedSurface(TrimmedSurface RTSurf, in StepData_Factors theLocalFactors)
     {
         StepGeom_RectangularTrimmedSurface StepRTS = new StepGeom_RectangularTrimmedSurface();
 
@@ -46,29 +48,29 @@ public sealed class GeomToStep_MakeRectangularTrimmedSurface : GeomToStep_Root
         double uFact = 1.0;
         double vFact = 1.0;
         double LengthFact = theLocalFactors.LengthFactor();
-        Geom_Surface theSurf = RTSurf.BasisSurface();
-        if (theSurf is Geom_CylindricalSurface)
+        Surface theSurf = RTSurf.BasisSurface();
+        if (theSurf is CylindricalSurface)
         {
             uFact = AngleFact;
             vFact = 1.0 / LengthFact;
         }
-        else if (theSurf is Geom_SurfaceOfRevolution)
+        else if (theSurf is RevolutionSurface)
         {
             uFact = AngleFact;
         }
-        else if (theSurf is Geom_ToroidalSurface || theSurf is Geom_SphericalSurface)
+        else if (theSurf is ToroidalSurface || theSurf is SphericalSurface)
         {
             uFact = AngleFact;
             vFact = AngleFact;
         }
-        else if (theSurf is Geom_ConicalSurface)
+        else if (theSurf is ConicalSurface)
         {
-            Geom_ConicalSurface conicS = theSurf as Geom_ConicalSurface;
+            ConicalSurface conicS = theSurf as ConicalSurface;
             double semAng = conicS.SemiAngle();
             uFact = AngleFact;
             vFact = Math.Cos(semAng) / LengthFact;
         }
-        else if (theSurf is Geom_Plane)
+        else if (theSurf is PlaneSurface)
         {
             uFact = vFact = 1.0 / LengthFact;
         }
@@ -84,7 +86,7 @@ public sealed class GeomToStep_MakeRectangularTrimmedSurface : GeomToStep_Root
     }
 
     /// <summary>A rectangular trimmed surface (default factors).</summary>
-    public GeomToStep_MakeRectangularTrimmedSurface(Geom_RectangularTrimmedSurface RTSurf) : this(RTSurf, new StepData_Factors())
+    public GeomToStep_MakeRectangularTrimmedSurface(TrimmedSurface RTSurf) : this(RTSurf, new StepData_Factors())
     {
     }
 

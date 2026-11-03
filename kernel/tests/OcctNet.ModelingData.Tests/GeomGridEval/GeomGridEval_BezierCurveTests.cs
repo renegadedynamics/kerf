@@ -1,6 +1,7 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomGridEval_BezierCurve_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -21,18 +22,18 @@ public class GeomGridEval_BezierCurveTest
     }
 
     // The cubic Bezier curve used by most tests
-    private static Geom_BezierCurve CreateCubic()
+    private static BezierCurve3D CreateCubic()
     {
         NCollection_Array1<Point3D> aPoles = new(1, 4);
         aPoles.SetValue(1, new Point3D(0, 0, 0));
         aPoles.SetValue(2, new Point3D(1, 2, 0));
         aPoles.SetValue(3, new Point3D(3, 2, 0));
         aPoles.SetValue(4, new Point3D(4, 0, 0));
-        return new Geom_BezierCurve(aPoles);
+        return new BezierCurve3D(aPoles);
     }
 
     // Rational Bezier curve (quarter circle)
-    private static Geom_BezierCurve CreateQuarterCircle()
+    private static BezierCurve3D CreateQuarterCircle()
     {
         NCollection_Array1<Point3D> aPoles = new(1, 3);
         NCollection_Array1<double> aWeights = new(1, 3);
@@ -42,16 +43,16 @@ public class GeomGridEval_BezierCurveTest
         aWeights.SetValue(1, 1.0);
         aWeights.SetValue(2, 1.0 / Math.Sqrt(2.0));
         aWeights.SetValue(3, 1.0);
-        return new Geom_BezierCurve(aPoles, aWeights);
+        return new BezierCurve3D(aPoles, aWeights);
     }
 
     [Fact]
     public void BasicEvaluation()
     {
         // Create a cubic Bezier curve
-        Geom_BezierCurve aBezier = CreateCubic();
+        BezierCurve3D aBezier = CreateCubic();
 
-        GeomGridEval_BezierCurve anEval = new(aBezier);
+        BezierCurveGrid anEval = new(aBezier);
         Assert.NotNull(anEval.Geometry());
 
         // Test at 0, 0.5, 1
@@ -74,11 +75,11 @@ public class GeomGridEval_BezierCurveTest
     [Fact]
     public void DerivativeD1()
     {
-        Geom_BezierCurve aBezier = CreateCubic();
-        GeomGridEval_BezierCurve anEval = new(aBezier);
+        BezierCurve3D aBezier = CreateCubic();
+        BezierCurveGrid anEval = new(aBezier);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 5);
-        NCollection_Array1<Geom_Curve.ResD1> aGrid = anEval.EvaluateGridD1(aParams);
+        NCollection_Array1<Curve3D.ResD1> aGrid = anEval.EvaluateGridD1(aParams);
 
         for (int i = 1; i <= 5; ++i)
         {
@@ -91,11 +92,11 @@ public class GeomGridEval_BezierCurveTest
     [Fact]
     public void DerivativeD2()
     {
-        Geom_BezierCurve aBezier = CreateCubic();
-        GeomGridEval_BezierCurve anEval = new(aBezier);
+        BezierCurve3D aBezier = CreateCubic();
+        BezierCurveGrid anEval = new(aBezier);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 5);
-        NCollection_Array1<Geom_Curve.ResD2> aGrid = anEval.EvaluateGridD2(aParams);
+        NCollection_Array1<Curve3D.ResD2> aGrid = anEval.EvaluateGridD2(aParams);
 
         for (int i = 1; i <= 5; ++i)
         {
@@ -109,11 +110,11 @@ public class GeomGridEval_BezierCurveTest
     [Fact]
     public void DerivativeD3()
     {
-        Geom_BezierCurve aBezier = CreateCubic();
-        GeomGridEval_BezierCurve anEval = new(aBezier);
+        BezierCurve3D aBezier = CreateCubic();
+        BezierCurveGrid anEval = new(aBezier);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 5);
-        NCollection_Array1<Geom_Curve.ResD3> aGrid = anEval.EvaluateGridD3(aParams);
+        NCollection_Array1<Curve3D.ResD3> aGrid = anEval.EvaluateGridD3(aParams);
 
         for (int i = 1; i <= 5; ++i)
         {
@@ -129,8 +130,8 @@ public class GeomGridEval_BezierCurveTest
     public void RationalEvaluation()
     {
         // Rational Bezier curve (quarter circle)
-        Geom_BezierCurve aBezier = CreateQuarterCircle();
-        GeomGridEval_BezierCurve anEval = new(aBezier);
+        BezierCurve3D aBezier = CreateQuarterCircle();
+        BezierCurveGrid anEval = new(aBezier);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 11);
         NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
@@ -142,9 +143,9 @@ public class GeomGridEval_BezierCurveTest
         }
     }
 
-    private static void CheckDN(Geom_BezierCurve theBezier, NCollection_Array1<double> theParams, int theOrder)
+    private static void CheckDN(BezierCurve3D theBezier, NCollection_Array1<double> theParams, int theOrder)
     {
-        GeomGridEval_BezierCurve anEval = new(theBezier);
+        BezierCurveGrid anEval = new(theBezier);
         NCollection_Array1<Vector3D> aGrid = anEval.EvaluateGridDN(theParams, theOrder);
         for (int i = 1; i <= theParams.Length(); ++i)
         {
@@ -175,8 +176,8 @@ public class GeomGridEval_BezierCurveTest
     public void DerivativeDN_BeyondDegree()
     {
         // Cubic Bezier (degree 3), test DN for N > 3 should return zero vectors
-        Geom_BezierCurve aBezier = CreateCubic();
-        GeomGridEval_BezierCurve anEval = new(aBezier);
+        BezierCurve3D aBezier = CreateCubic();
+        BezierCurveGrid anEval = new(aBezier);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 5);
 
@@ -192,7 +193,7 @@ public class GeomGridEval_BezierCurveTest
     public void DerivativeDN_RationalCurve()
     {
         // Rational Bezier curve (quarter circle)
-        Geom_BezierCurve aBezier = CreateQuarterCircle();
+        BezierCurve3D aBezier = CreateQuarterCircle();
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 11);
 
         // Test DN for orders 1, 2

@@ -4,7 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_Orientation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -22,8 +24,8 @@ public class HLRBRep_InternalAlgo : Transient
     private HLRBRep_Data? myDS;
     private HLRAlgo_Projector myProj = new();
     private readonly NCollection_Sequence<HLRBRep_ShapeBounds> myShapes = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, BRepTopAdaptor_Tool> myMapOfShapeTool =
-        new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, BRepTopAdaptor_Tool> myMapOfShapeTool =
+        new(ShapeHasher.Instance);
     private bool myDebug;
 
     // HLRBRep_InternalAlgo.cxx's file statics, constants in OCCT's code (never changed)
@@ -290,14 +292,14 @@ public class HLRBRep_InternalAlgo : Transient
                 {
                     switch (fd.Orientation())
                     {
-                        case TopAbs_REVERSED:
+                        case Reversed:
                             visible = fd.Back();
                             break;
-                        case TopAbs_FORWARD:
+                        case Forward:
                             visible = !fd.Back();
                             break;
-                        case TopAbs_EXTERNAL:
-                        case TopAbs_INTERNAL:
+                        case External:
+                        case Internal:
                             visible = true;
                             break;
                     }

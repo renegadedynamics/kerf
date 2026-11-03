@@ -1,7 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Text;
 using Xunit.Abstractions;
 
@@ -44,10 +48,10 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile));
+        Assert.True(BrepTools.Write(theShape, aFile));
         return File.ReadAllText(aFile, Encoding.Latin1);
     }
 
@@ -77,11 +81,11 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
         }
     }
 
-    private static Geom_Surface PortSurface(SceneSpec theS) => theS.Kind switch
+    private static Surface PortSurface(SceneSpec theS) => theS.Kind switch
     {
-        SurfaceKind.Plane => new Geom_Plane(theS.Ax),
-        SurfaceKind.Cylinder => new Geom_CylindricalSurface(theS.Ax, theS.Radius),
-        _ => new Geom_BSplineSurface(theS.Poles!, Knots01(4), Knots01(4), Mults(4, 3), Mults(4, 3), 3, 3),
+        SurfaceKind.Plane => new PlaneSurface(theS.Ax),
+        SurfaceKind.Cylinder => new CylindricalSurface(theS.Ax, theS.Radius),
+        _ => new BSplineSurface(theS.Poles!, Knots01(4), Knots01(4), Mults(4, 3), Mults(4, 3), 3, 3),
     };
 
     private static NCollection_Array1<double> Knots01(int theNbPoles) => NCollection_Array1<double>.From([0.0, 1.0]);
@@ -125,7 +129,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
             }
         }
         var aScene = new SceneSpec(aKind, anAx, aRadius, aPoles, Math.Pow(10, theO.Real(-7, -3)), []);
-        Geom_Surface aSurf = PortSurface(aScene);
+        Surface aSurf = PortSurface(aScene);
         int aNbEdges = theO.Int(1, 3);
         bool isWithCurves = theO.Int(0, 3) != 0;
         var anEdges = new EdgeSpec[aNbEdges];
@@ -193,32 +197,32 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
     private sealed class Twin
     {
         public required N.TopoDS_Face NFace;
-        public required TopoDS_Face PFace;
-        public readonly List<(N.TopoDS_Edge N, TopoDS_Edge P)> Edges = [];
+        public required Face PFace;
+        public readonly List<(N.TopoDS_Edge N, Edge P)> Edges = [];
     }
 
     private static Twin Build(SceneSpec theS)
     {
         var aNB = new N.BRep_Builder();
-        var aB = new BRep_Builder();
-        Geom_Surface aSurf = PortSurface(theS);
+        var aB = new BrepBuilder();
+        Surface aSurf = PortSurface(theS);
         N.Geom_Surface aNSurf = NativeSurface(theS);
-        var aT = new Twin { NFace = new N.TopoDS_Face(), PFace = new TopoDS_Face() };
+        var aT = new Twin { NFace = new N.TopoDS_Face(), PFace = new Face() };
         aNB.MakeFace(aT.NFace, aNSurf, theS.FaceTol);
         aB.MakeFace(ref aT.PFace, aSurf, theS.FaceTol);
         var aNW = new N.TopoDS_Wire();
         aNB.MakeWire(aNW);
-        TopoDS_Wire aW = new();
+        Wire aW = new();
         aB.MakeWire(ref aW);
 
         foreach (EdgeSpec anE in theS.Edges)
         {
             var aNE = new N.TopoDS_Edge();
-            TopoDS_Edge aPE = new();
+            Edge aPE = new();
             // the 3D curve
             if (anE.HasCurve)
             {
-                Geom_Curve aC;
+                Curve3D aC;
                 N.Geom_Curve aNC;
                 switch (theS.Kind)
                 {
@@ -228,7 +232,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                             var aPoles = NCollection_Array1<Point3D>.From([aPA, aPB]);
                             var aKnots = NCollection_Array1<double>.From([anE.F3, anE.L3]);
                             var aMults = NCollection_Array1<int>.From([2, 2]);
-                            aC = new Geom_BSplineCurve(aPoles, aKnots, aMults, 1);
+                            aC = new BSplineCurve3D(aPoles, aKnots, aMults, 1);
                             aNC = Oracle.ToNativeCurve(aPoles, null, aKnots, aMults, 1, false);
                             break;
                         }
@@ -237,21 +241,21 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                             // the iso v: a circle on the cylinder's exact axes
                             Frame3D anAx2 = theS.Ax.Ax2();
                             anAx2.SetLocation(new Point3D(theS.Ax.Location().XYZ() + theS.Ax.Direction().XYZ() * anE.A.Y()));
-                            aC = new Geom_Circle(anAx2, theS.Radius);
+                            aC = new CircleCurve3D(anAx2, theS.Radius);
                             using var aNAx2 = Oracle.ToNative(anAx2);
                             aNC = new N.Geom_Circle(aNAx2, theS.Radius);
                             break;
                         }
                     default:
                         {
-                            var anIso = (Geom_BSplineCurve)((Geom_BSplineSurface)aSurf).UIso(anE.A.X());
-                            var aPoles = new NCollection_Array1<Point3D>(1, anIso.NbPoles());
+                            var anIso = (BSplineCurve3D)((BSplineSurface)aSurf).UIso(anE.A.X());
+                            var aPoles = new NCollection_Array1<Point3D>(1, anIso.PoleCount);
                             anIso.Poles(aPoles);
-                            var aKnots = new NCollection_Array1<double>(1, anIso.NbKnots());
+                            var aKnots = new NCollection_Array1<double>(1, anIso.KnotCount);
                             anIso.Knots(aKnots);
-                            var aMults = new NCollection_Array1<int>(1, anIso.NbKnots());
+                            var aMults = new NCollection_Array1<int>(1, anIso.KnotCount);
                             anIso.Multiplicities(aMults);
-                            aC = new Geom_BSplineCurve(aPoles, aKnots, aMults, anIso.Degree());
+                            aC = new BSplineCurve3D(aPoles, aKnots, aMults, anIso.Degree());
                             aNC = Oracle.ToNativeCurve(aPoles, null, aKnots, aMults, anIso.Degree(), false);
                             break;
                         }
@@ -283,7 +287,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
             }
             var aKnots2d = NCollection_Array1<double>.From([anE.PF, anE.PL]);
             var aMults2d = NCollection_Array1<int>.From([aDegree + 1, aDegree + 1]);
-            var aPC = new Geom2d_BSplineCurve(aPoles2d, aKnots2d, aMults2d, aDegree);
+            var aPC = new BSplineCurve2D(aPoles2d, aKnots2d, aMults2d, aDegree);
             N.Geom2d_BSplineCurve aNPC = Oracle.ToNativeCurve(aPoles2d, null, aKnots2d, aMults2d, aDegree, false);
             aNB.UpdateEdge(aNE, aNPC, aT.NFace, anE.Tol);
             aB.UpdateEdge(aPE, aPC, aT.PFace, anE.Tol);
@@ -293,7 +297,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
             Point3D aP2 = aSurf.Value(anE.B.X(), anE.B.Y()).Translated(anE.Move2);
             var aNV1 = new N.TopoDS_Vertex();
             var aNV2 = new N.TopoDS_Vertex();
-            TopoDS_Vertex aV1 = new(), aV2 = new();
+            Vertex aV1 = new(), aV2 = new();
             using (var aNP1 = Oracle.ToNative(aP1))
             using (var aNP2 = Oracle.ToNative(aP2))
             {
@@ -308,8 +312,8 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                 aNB.Add(aNE, aNF);
                 aNB.Add(aNE, aNR);
             }
-            aB.Add(aPE, aV1.Oriented(TopAbs_Orientation.TopAbs_FORWARD));
-            aB.Add(aPE, aV2.Oriented(TopAbs_Orientation.TopAbs_REVERSED));
+            aB.Add(aPE, aV1.Oriented(Orientation.Forward));
+            aB.Add(aPE, aV2.Oriented(Orientation.Reversed));
 
             // the ranges and flags
             aNB.Range(aNE, aT.NFace, anE.PF, anE.PL);
@@ -379,7 +383,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
     private int myValues;
     private readonly List<string> myDifferences = [];
 
-    private void CompareText(string theWhat, N.TopoDS_Shape theNative, in TopoDS_Shape thePort)
+    private void CompareText(string theWhat, N.TopoDS_Shape theNative, in Shape thePort)
     {
         string aN = NativeText(theNative);
         string aP = PortText(thePort);
@@ -412,7 +416,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
             {
                 Twin aT = Build(aSpec);
                 Exception? aNEx = null, aPEx = null;
-                (N.TopoDS_Edge aNE, TopoDS_Edge aPE) = aT.Edges[0];
+                (N.TopoDS_Edge aNE, Edge aPE) = aT.Edges[0];
                 double aTol = Math.Pow(10, anOracle.Real(-7, -3));
                 bool aFlag = anOracle.Bool();
                 string aWhat = $"scene {aScene} ({aSpec.Kind}, {aSpec.Edges.Length} edges, curves {aSpec.Edges[0].HasCurve}) op {anOp}";
@@ -461,7 +465,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                     case 7:
                         {
                             var aNR = new N.BRepTools_ReShape();
-                            var aR = new BRepTools_ReShape();
+                            var aR = new ReShape();
                             N.BRepLib.SameParameter(aT.NFace, aNR, aTol, aFlag);
                             BRepLib.SameParameter(aT.PFace, aR, aTol, aFlag);
                             CompareText(aWhat + " (input)", aT.NFace, aT.PFace);
@@ -472,7 +476,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                     case 8:
                         {
                             var aNR = new N.BRepTools_ReShape();
-                            var aR = new BRepTools_ReShape();
+                            var aR = new ReShape();
                             N.BRepLib.UpdateTolerances(aT.NFace, aNR, aFlag);
                             BRepLib.UpdateTolerances(aT.PFace, aR, aFlag);
                             CompareText(aWhat + " (input)", aT.NFace, aT.PFace);
@@ -484,10 +488,10 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                         {
                             double aNNewTol = -1, aNewTol = -1;
                             N.TopoDS_Edge aNRes = N.BRepLib.SameParameter(aNE, aTol, ref aNNewTol, false);
-                            TopoDS_Edge aRes = BRepLib.SameParameter(aPE, aTol, ref aNewTol, false);
+                            Edge aRes = BRepLib.SameParameter(aPE, aTol, ref aNewTol, false);
                             CompareValue(aWhat, aNNewTol, aNewTol);
-                            CompareValue(aWhat, aNRes.IsNull(), aRes.IsNull());
-                            if (!aRes.IsNull())
+                            CompareValue(aWhat, aNRes.IsNull(), aRes.IsNull);
+                            if (!aRes.IsNull)
                             {
                                 CompareText(aWhat + " (new edge)", aNRes, aRes);
                             }
@@ -555,7 +559,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                 double aTol = Math.Pow(10, anOracle.Real(-7, -3));
                 bool aFlag = anOracle.Bool();
                 string aWhat = $"scene {aScene} ({aSpec.Kind}) twin {anOp}";
-                TopoDS_Shape aResult;
+                Shape aResult;
                 try
                 {
                     switch (anOp)
@@ -596,10 +600,10 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
 
                 Assert.Equal(aBefore, PortText(aT.PFace));
                 Assert.True(aResult.TShape()!.IsFrozen);
-                for (var anExp = new TopExp_Explorer(aT.PFace, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
+                for (var anExp = new Explorer(aT.PFace, ShapeType.Edge); anExp.More(); anExp.Next())
                 {
                     anEdges++;
-                    for (var anExp2 = new TopExp_Explorer(aResult, TopAbs_ShapeEnum.TopAbs_EDGE); anExp2.More(); anExp2.Next())
+                    for (var anExp2 = new Explorer(aResult, ShapeType.Edge); anExp2.More(); anExp2.Next())
                     {
                         if (anExp2.Current().IsSame(anExp.Current()))
                         {
@@ -672,14 +676,14 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
 
             string aFile = NewFile();
             Assert.True(N.BRepTools.Write(aNS, aFile));
-            Assert.True(BRepTools.Read(out TopoDS_Shape aRead, aFile));
-            TopoDS_Solid aPS = TopoDS.Solid(aRead);
+            Assert.True(BrepTools.Read(out Shape aRead, aFile));
+            Solid aPS = ShapeCasts.Solid(aRead);
             bool aNOk = N.BRepLib.OrientClosedSolid(aNS);
             bool aOk = BRepLib.OrientClosedSolid(ref aPS);
             Assert.Equal(aNOk, aOk);
             Assert.Equal((int)aNS.Orientation(), (int)aPS.Orientation());
             aCases++;
-            if (aPS.Orientation() == TopAbs_Orientation.TopAbs_REVERSED)
+            if (aPS.Orientation() == Orientation.Reversed)
             {
                 aReversed++;
             }

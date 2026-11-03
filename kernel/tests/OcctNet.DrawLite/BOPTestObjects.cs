@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
 
@@ -31,10 +33,10 @@ internal sealed partial class BOPTestObjects
     private BOPAlgo_Builder myBuilderDefault = null!;
 
     /// <summary>The objects (baddobjects).</summary>
-    public NCollection_List<TopoDS_Shape> Shapes { get; } = new();
+    public NCollection_List<Shape> Shapes { get; } = new();
 
     /// <summary>The tools (baddtools).</summary>
-    public NCollection_List<TopoDS_Shape> Tools { get; } = new();
+    public NCollection_List<Shape> Tools { get; } = new();
 
     public bool RunParallel { get; set; }
 
@@ -137,8 +139,8 @@ internal sealed partial class BOPTestObjects
                     int aNbShapes = 0;
                     for (int aIt2 = aIt; aIt2 < aList.Count; ++aIt2)
                     {
-                        if (aList[aIt2] is TopoDS_AlertWithShape aShapeAlert && aType == aShapeAlert.GetType()
-                            && !aShapeAlert.GetShape().IsNull())
+                        if (aList[aIt2] is AlertWithShape aShapeAlert && aType == aShapeAlert.GetType()
+                            && !aShapeAlert.GetShape().IsNull)
                         {
                             string aName = $"{(iGravity != 0 ? "e" : "w")}s_{aPassedTypes.Count}_{++aNbShapes}";
                             theDI.SetShape(aName, aShapeAlert.GetShape());

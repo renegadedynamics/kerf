@@ -12,13 +12,13 @@ public class LocalAnalysis_CurveContinuityTests
 {
     // circle of radius 1 about the origin and circle of radius 2 about (-1, 0, 0), both in XY: they touch at (1, 0, 0)
     // at parameter 0, with the same tangent (+y) and the same normal (-x)
-    private static readonly Geom_Circle s_c1 = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
-    private static readonly Geom_Circle s_c2 = new(new Frame3D(new Point3D(-1, 0, 0), new Direction3D(0, 0, 1)), 2.0);
+    private static readonly CircleCurve3D s_c1 = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
+    private static readonly CircleCurve3D s_c2 = new(new Frame3D(new Point3D(-1, 0, 0), new Direction3D(0, 0, 1)), 2.0);
 
     [Fact]
     public void C0_IsTheDistanceOfThePoints()
     {
-        var aLine = new Geom_Line(new Point3D(1, 0.5, 0), new Direction3D(0, 1, 0));
+        var aLine = new LineCurve3D(new Point3D(1, 0.5, 0), new Direction3D(0, 1, 0));
         var c = new LocalAnalysis_CurveContinuity(s_c1, 0.0, aLine, 0.0, C0);
         Assert.True(c.IsDone());
         Assert.Equal(C0, c.ContinuityStatus());
@@ -42,14 +42,14 @@ public class LocalAnalysis_CurveContinuityTests
         Assert.False(c.IsC2()); // Lambda1^2 = 0.25 against Lambda2 = 0.5
 
         // opposite directions: the angle is folded into [0, PI/2]
-        var aReversed = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, -1), new Direction3D(1, 0, 0)), 1.0);
+        var aReversed = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, -1), new Direction3D(1, 0, 0)), 1.0);
         c = new LocalAnalysis_CurveContinuity(s_c1, 0.0, aReversed, 0.0, C1);
         Assert.Equal(0.0, c.C1Angle(), 1e-15);
         Assert.Equal(1.0, c.C1Ratio());
         Assert.True(c.IsC1());
 
         // a line at 30 degrees to the circle's tangent
-        var aLine = new Geom_Line(new Point3D(1, 0, 0), new Direction3D(Math.Sin(Math.PI / 6), Math.Cos(Math.PI / 6), 0));
+        var aLine = new LineCurve3D(new Point3D(1, 0, 0), new Direction3D(Math.Sin(Math.PI / 6), Math.Cos(Math.PI / 6), 0));
         c = new LocalAnalysis_CurveContinuity(s_c1, 0.0, aLine, 0.0, C1);
         Assert.Equal(Math.PI / 6, c.C1Angle(), 1e-14);
         Assert.False(c.IsC1());
@@ -78,7 +78,7 @@ public class LocalAnalysis_CurveContinuityTests
         Assert.False(c.IsG2());
         Assert.True(new LocalAnalysis_CurveContinuity(s_c1, 0.0, s_c2, 0.0, G2, Percent: 0.8).IsG2());
 
-        var aLine = new Geom_Line(new Point3D(1, 0, 0), new Direction3D(0, -1, 0));
+        var aLine = new LineCurve3D(new Point3D(1, 0, 0), new Direction3D(0, -1, 0));
         c = new LocalAnalysis_CurveContinuity(s_c1, 0.0, aLine, 0.0, G1);
         Assert.Equal(0.0, c.G1Angle(), 1e-15);
         Assert.True(c.IsG1());
@@ -87,8 +87,8 @@ public class LocalAnalysis_CurveContinuityTests
     [Fact]
     public void G2_OfTwoLines_FailsWithNoNormal()
     {
-        var aL1 = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        var aL2 = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        var aL1 = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        var aL2 = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         var c = new LocalAnalysis_CurveContinuity(aL1, 0.0, aL2, 0.0, G2);
         Assert.False(c.IsDone());
         Assert.Equal(LocalAnalysis_NormalNotDefined, c.StatusError());
@@ -106,8 +106,8 @@ public class LocalAnalysis_CurveContinuityTests
         aPoles[2] = new Point3D(0, 0, 0);
         aPoles[3] = new Point3D(1, 1, 0);
         aPoles[4] = new Point3D(2, 0, 0);
-        var aBez = new Geom_BezierCurve(aPoles);
-        var aLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        var aBez = new BezierCurve3D(aPoles);
+        var aLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
 
         var c = new LocalAnalysis_CurveContinuity(aBez, 0.0, aLine, 0.0, C1);
         Assert.False(c.IsDone());
@@ -139,7 +139,7 @@ public class LocalAnalysis_CurveContinuityTests
                      w.ToString());
 
         w = new StringWriter();
-        var aLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        var aLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         LocalAnalysis.Dump(new LocalAnalysis_CurveContinuity(aLine, 0.0, aLine, 0.0, G2), w);
         Assert.Equal("Problem in the computation \none (or both) normal is undefined\n", w.ToString());
     }

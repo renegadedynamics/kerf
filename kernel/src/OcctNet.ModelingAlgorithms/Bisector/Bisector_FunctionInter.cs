@@ -17,7 +17,7 @@ namespace Occt;
 /// </summary>
 public sealed class Bisector_FunctionInter : FunctionWithDerivative
 {
-    private Geom2d_Curve curve = null!;
+    private Curve2D curve = null!;
     private Bisector_Curve bisector1 = null!;
     private Bisector_Curve bisector2 = null!;
 
@@ -27,7 +27,7 @@ public sealed class Bisector_FunctionInter : FunctionWithDerivative
     }
 
     /// <summary>The function of the curve C and the bisectors B1 and B2.</summary>
-    public Bisector_FunctionInter(Geom2d_Curve C, Bisector_Curve B1, Bisector_Curve B2)
+    public Bisector_FunctionInter(Curve2D C, Bisector_Curve B1, Bisector_Curve B2)
     {
         curve = C;
         bisector1 = B1;
@@ -35,7 +35,7 @@ public sealed class Bisector_FunctionInter : FunctionWithDerivative
     }
 
     /// <summary>Sets the curve C and the bisectors B1 and B2.</summary>
-    public void Perform(Geom2d_Curve C, Bisector_Curve B1, Bisector_Curve B2)
+    public void Perform(Curve2D C, Bisector_Curve B1, Bisector_Curve B2)
     {
         curve = C;
         bisector1 = B1;

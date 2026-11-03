@@ -12,7 +12,7 @@ public class Geom_LineTest
     public void ConstructFromAx1()
     {
         Axis3D anAx1 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
-        Geom_Line aLine = new(anAx1);
+        LineCurve3D aLine = new(anAx1);
         Point3D aLoc = aLine.Lin().Location();
         Assert.True(aLoc.IsEqual(new Point3D(0.0, 0.0, 0.0), global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
@@ -20,7 +20,7 @@ public class Geom_LineTest
     [Fact]
     public void ConstructFromPointAndDir()
     {
-        Geom_Line aLine = new(new Point3D(1.0, 2.0, 3.0), new Direction3D(0.0, 0.0, 1.0));
+        LineCurve3D aLine = new(new Point3D(1.0, 2.0, 3.0), new Direction3D(0.0, 0.0, 1.0));
         Point3D aLoc = aLine.Lin().Location();
         Assert.True(aLoc.IsEqual(new Point3D(1.0, 2.0, 3.0), global::Kerf.Engine.Foundation.Precision.Confusion()));
         Assert.True(aLine.Lin().Direction().IsEqual(new Direction3D(0.0, 0.0, 1.0), global::Kerf.Engine.Foundation.Precision.Angular()));
@@ -29,7 +29,7 @@ public class Geom_LineTest
     [Fact]
     public void D0Evaluation()
     {
-        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        LineCurve3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         aLine.D0(5.0, out Point3D aPnt);
         Assert.Equal(5.0, aPnt.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aPnt.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -39,7 +39,7 @@ public class Geom_LineTest
     [Fact]
     public void D1Evaluation()
     {
-        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 1.0, 0.0));
+        LineCurve3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 1.0, 0.0));
         aLine.D1(3.0, out Point3D aPnt, out Vector3D aV1);
         Assert.Equal(3.0, aPnt.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
         // First derivative is the direction vector (constant for a line)
@@ -51,7 +51,7 @@ public class Geom_LineTest
     [Fact]
     public void D2Evaluation()
     {
-        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        LineCurve3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         aLine.D2(1.0, out _, out _, out Vector3D aV2);
         // Second derivative of a line is zero
         Assert.Equal(0.0, aV2.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -60,7 +60,7 @@ public class Geom_LineTest
     [Fact]
     public void InfiniteParameters()
     {
-        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        LineCurve3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         Assert.Equal(-global::Kerf.Engine.Foundation.Precision.Infinite(), aLine.FirstParameter());
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), aLine.LastParameter());
     }
@@ -68,7 +68,7 @@ public class Geom_LineTest
     [Fact]
     public void Reverse()
     {
-        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        LineCurve3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         aLine.Reverse();
         Assert.True(aLine.Lin().Direction().IsEqual(new Direction3D(-1.0, 0.0, 0.0), global::Kerf.Engine.Foundation.Precision.Angular()));
     }
@@ -76,9 +76,9 @@ public class Geom_LineTest
     [Fact]
     public void Reversed()
     {
-        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
-        Geom_Curve aReversed = aLine.Reversed();
-        Geom_Line? aRevLine = aReversed as Geom_Line;
+        LineCurve3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        Curve3D aReversed = aLine.Reversed();
+        LineCurve3D? aRevLine = aReversed as LineCurve3D;
         Assert.NotNull(aRevLine);
         Assert.True(aRevLine.Lin().Direction().IsEqual(new Direction3D(-1.0, 0.0, 0.0), global::Kerf.Engine.Foundation.Precision.Angular()));
     }
@@ -86,7 +86,7 @@ public class Geom_LineTest
     [Fact]
     public void Transform()
     {
-        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        LineCurve3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         Transform3D aTrsf = new();
         aTrsf.SetTranslation(new Vector3D(0.0, 0.0, 5.0));
         aLine.Transform(aTrsf);
@@ -96,9 +96,9 @@ public class Geom_LineTest
     [Fact]
     public void Copy()
     {
-        Geom_Line aLine = new(new Point3D(1.0, 2.0, 3.0), new Direction3D(0.0, 0.0, 1.0));
-        Geom_Geometry aCopy = aLine.Copy();
-        Geom_Line? aCopyLine = aCopy as Geom_Line;
+        LineCurve3D aLine = new(new Point3D(1.0, 2.0, 3.0), new Direction3D(0.0, 0.0, 1.0));
+        Geometry3D aCopy = aLine.Copy();
+        LineCurve3D? aCopyLine = aCopy as LineCurve3D;
         Assert.NotNull(aCopyLine);
         Assert.True(aCopyLine.Lin().Location().IsEqual(new Point3D(1.0, 2.0, 3.0), global::Kerf.Engine.Foundation.Precision.Confusion()));
     }

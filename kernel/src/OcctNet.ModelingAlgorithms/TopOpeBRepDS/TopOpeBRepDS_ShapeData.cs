@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_Orientation;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 using static Occt.TopOpeBRepDS_Config;
 
 namespace Occt;
@@ -16,11 +17,11 @@ namespace Occt;
 public sealed class TopOpeBRepDS_ShapeData
 {
     internal readonly NCollection_List<TopOpeBRepDS_Interference> myInterferences = new();
-    internal readonly NCollection_List<TopoDS_Shape> mySameDomain = new();
+    internal readonly NCollection_List<Shape> mySameDomain = new();
     internal int mySameDomainRef;
     internal TopOpeBRepDS_Config mySameDomainOri;
     internal int mySameDomainInd;
-    internal TopAbs_Orientation myOrientation;
+    internal Orientation myOrientation;
     internal bool myOrientationDef;
     internal int myAncestorRank;
     private bool myKeep;
@@ -31,7 +32,7 @@ public sealed class TopOpeBRepDS_ShapeData
         mySameDomainRef = 0;
         mySameDomainOri = TopOpeBRepDS_UNSHGEOMETRY;
         mySameDomainInd = 0;
-        myOrientation = TopAbs_FORWARD;
+        myOrientation = Forward;
         myOrientationDef = false;
         myAncestorRank = 0;
         myKeep = true;

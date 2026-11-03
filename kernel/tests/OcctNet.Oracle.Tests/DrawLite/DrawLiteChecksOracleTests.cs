@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
-using static Occt.TopTools_FormatVersion;
+using static Kerf.Engine.Exchange.Brep.FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -64,7 +64,7 @@ public partial class DrawLiteChecksOracleTests(ITestOutputHelper output) : IDisp
         }
 
         string aF1 = Path.Combine(myDirectory, $"s{myFileNumber++}.brep");
-        Assert.True(N.BRepTools.Write(aShape, aF1, true, false, (N.TopTools_FormatVersion)(int)TopTools_FormatVersion_CURRENT));
+        Assert.True(N.BRepTools.Write(aShape, aF1, true, false, (N.TopTools_FormatVersion)(int)FormatVersion_CURRENT));
         aShape.Dispose();
 
         // both sides read the same file: the original file and its F1 copy can differ in the last bits
@@ -414,15 +414,15 @@ public partial class DrawLiteChecksOracleTests(ITestOutputHelper output) : IDisp
 
     private static int Occurrences(DrawInterpreter theDI)
     {
-        Occt.TopoDS_Shape aShape = theDI.GetShape("s");
+        Kerf.Topology.Shape aShape = theDI.GetShape("s");
         int aCount = 0;
-        var aStack = new Stack<Occt.TopoDS_Shape>();
+        var aStack = new Stack<Kerf.Topology.Shape>();
         aStack.Push(aShape);
         while (aStack.Count > 0 && aCount <= MaxOccurrences)
         {
-            Occt.TopoDS_Shape aCurrent = aStack.Pop();
+            Kerf.Topology.Shape aCurrent = aStack.Pop();
             aCount++;
-            for (var anIt = new Occt.TopoDS_Iterator(aCurrent); anIt.More(); anIt.Next())
+            for (var anIt = new Kerf.Engine.Topology.Iterator(aCurrent); anIt.More(); anIt.Next())
             {
                 aStack.Push(anIt.Value());
             }

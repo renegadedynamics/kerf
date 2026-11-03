@@ -5,12 +5,17 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -26,12 +31,12 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
 {
     private readonly IMeshData_Edge myDEdge;
     private readonly IMeshTools_Parameters myParameters; // OCCT holds a reference; the caller's doesn't change meanwhile
-    private readonly TopoDS_Edge myEdge;
-    private readonly BRepAdaptor_Curve myCurve;
+    private readonly Edge myEdge;
+    private readonly EdgeCurveAdaptor myCurve;
     private readonly int myMinPointsNb;
-    private readonly GCPnts_TangentialDeflection myDiscretTool = new();
-    private TopoDS_Vertex myFirstVertex;
-    private TopoDS_Vertex myLastVertex;
+    private readonly TangentialDeflection myDiscretTool = new();
+    private Vertex myFirstVertex;
+    private Vertex myLastVertex;
     private double mySquareEdgeDef;
     private double mySquareMinSize;
     private double myEdgeSqTol;
@@ -47,7 +52,7 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
         myDEdge = theEdge;
         myParameters = theParameters;
         myEdge = theEdge.GetEdge();
-        myCurve = new BRepAdaptor_Curve(myEdge);
+        myCurve = new EdgeCurveAdaptor(myEdge);
         myMinPointsNb = theMinPointsNb;
         init();
     }
@@ -55,15 +60,15 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
     /// <summary>A tessellator of the edge, with the orientation, as a curve on the face.</summary>
     /// <exception cref="FailureException">The parameters' MinSize isn't positive.</exception>
     public BRepMesh_CurveTessellator(IMeshData_Edge theEdge,
-                                     TopAbs_Orientation theOrientation,
+                                     Orientation theOrientation,
                                      IMeshData_Face theFace,
                                      in IMeshTools_Parameters theParameters,
                                      int theMinPointsNb = 2)
     {
         myDEdge = theEdge;
         myParameters = theParameters;
-        myEdge = TopoDS.Edge(theEdge.GetEdge().Oriented(theOrientation));
-        myCurve = new BRepAdaptor_Curve(myEdge, theFace.GetFace());
+        myEdge = ShapeCasts.Edge(theEdge.GetEdge().Oriented(theOrientation));
+        myCurve = new EdgeCurveAdaptor(myEdge, theFace.GetFace());
         myMinPointsNb = theMinPointsNb;
         init();
     }
@@ -76,11 +81,11 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
             throw new FailureException("The structure \"myParameters\" is not initialized");
         }
 
-        TopExp.Vertices(myEdge, out myFirstVertex, out myLastVertex);
+        Exploration.Vertices(myEdge, out myFirstVertex, out myLastVertex);
 
         double aPreciseAngDef = 0.5 * myDEdge.GetAngularDeflection();
         double aPreciseLinDef = 0.5 * myDEdge.GetDeflection();
-        if (myEdge.Orientation() == TopAbs_INTERNAL)
+        if (myEdge.Orientation() == Internal)
         {
             aPreciseLinDef *= 0.5;
         }
@@ -93,7 +98,7 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
         {
             aMinSize = Min(aMinSize,
                            IMeshTools_Parameters.RelMinSize()
-                               * GCPnts_AbscissaPoint.Length(myCurve,
+                               * AbscissaPoint.Length(myCurve,
                                                              myCurve.FirstParameter(),
                                                              myCurve.LastParameter(),
                                                              aPreciseLinDef));
@@ -102,7 +107,7 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
         mySquareEdgeDef = aPreciseLinDef * aPreciseLinDef;
         mySquareMinSize = Max(mySquareEdgeDef, aMinSize * aMinSize);
 
-        myEdgeSqTol = BRep_Tool.Tolerance(myEdge);
+        myEdgeSqTol = Tool.Tolerance(myEdge);
         myEdgeSqTol *= myEdgeSqTol;
 
         int aMinPntThreshold = 2;
@@ -129,10 +134,10 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
                                  global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                  aMinSize);
 
-        if (myCurve.IsCurveOnSurface())
+        if (myCurve.IsCurveOnSurface)
         {
-            Adaptor3d_CurveOnSurface aCurve = myCurve.CurveOnSurface();
-            Adaptor3d_Surface aSurface = aCurve.GetSurface()!;
+            CurveOnSurface aCurve = myCurve.CurveOnSurface();
+            SurfaceAdaptorBase aSurface = aCurve.GetSurface()!;
 
             double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
             double aDu = aSurface.UResolution(aTol);
@@ -150,27 +155,27 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
     }
 
     /// <inheritdoc/>
-    public override int PointsNb() => myDiscretTool.NbPoints();
+    public override int PointsNb() => myDiscretTool.PointCount;
 
     // Check deflection in 2d space for improvement of edge tessellation.
     private void splitByDeflection2d()
     {
-        int aNodesNb = myDiscretTool.NbPoints();
+        int aNodesNb = myDiscretTool.PointCount;
         if (!myDEdge.IsFree() && myDEdge.GetSameParam() && myDEdge.GetSameRange() && aNodesNb > 1)
         {
             for (int aPCurveIt = 0; aPCurveIt < myDEdge.PCurvesNb(); ++aPCurveIt)
             {
                 IMeshData_PCurve aPCurve = myDEdge.GetPCurve(aPCurveIt);
-                TopoDS_Face aFace = aPCurve.GetFace().GetFace();
-                Geom_Surface aSurface = BRep_Tool.Surface(aFace, out Placement _)!;
-                if (aSurface.IsInstance(typeof(Geom_Plane)))
+                Face aFace = aPCurve.GetFace().GetFace();
+                Surface aSurface = Tool.Surface(aFace, out Placement _)!;
+                if (aSurface.IsInstance(typeof(PlaneSurface)))
                 {
                     continue;
                 }
 
-                TopoDS_Edge aCurrEdge = TopoDS.Edge(myEdge.Oriented(aPCurve.GetOrientation()));
+                Edge aCurrEdge = ShapeCasts.Edge(myEdge.Oriented(aPCurve.GetOrientation()));
 
-                Geom2d_Curve aCurve2d = BRep_Tool.CurveOnSurface(aCurrEdge, aFace, out double _, out double _)!;
+                Curve2D aCurve2d = Tool.CurveOnSurface(aCurrEdge, aFace, out double _, out double _)!;
                 NCollection_Array1<double> aParamArray = new(1, aNodesNb);
                 for (int i = 1; i <= aNodesNb; ++i)
                 {
@@ -190,24 +195,24 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
     {
         // PTv, chl/922/G9, Take into account internal vertices
         // it is necessary for internal edges, which do not split other edges, by their vertex
-        TopExp_Explorer aVertexIt = new(myEdge, TopAbs_VERTEX);
+        Explorer aVertexIt = new(myEdge, ShapeType.Vertex);
         for (; aVertexIt.More(); aVertexIt.Next())
         {
-            TopoDS_Vertex aVertex = TopoDS.Vertex(aVertexIt.Current());
-            if (aVertex.Orientation() != TopAbs_INTERNAL)
+            Vertex aVertex = ShapeCasts.Vertex(aVertexIt.Current());
+            if (aVertex.Orientation() != Internal)
             {
                 continue;
             }
 
-            myDiscretTool.AddPoint(BRep_Tool.Pnt(aVertex), BRep_Tool.Parameter(aVertex, myEdge), true);
+            myDiscretTool.AddPoint(Tool.Pnt(aVertex), Tool.Parameter(aVertex, myEdge), true);
         }
     }
 
     // Checks whether the given point lies within tolerance of the vertex (unused, as in OCCT).
-    private static bool isInToleranceOfVertex(in Point3D thePoint, in TopoDS_Vertex theVertex)
+    private static bool isInToleranceOfVertex(in Point3D thePoint, in Vertex theVertex)
     {
-        Point3D aPoint = BRep_Tool.Pnt(theVertex);
-        double aTolerance = BRep_Tool.Tolerance(theVertex);
+        Point3D aPoint = Tool.Pnt(theVertex);
+        double aTolerance = Tool.Tolerance(theVertex);
 
         return (thePoint.SquareDistance(aPoint) < aTolerance * aTolerance);
     }
@@ -222,23 +227,23 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
         thePoint = myDiscretTool.Value(theIndex);
         theParameter = myDiscretTool.Parameter(theIndex);
 
-        if (!myCurve.IsCurveOnSurface())
+        if (!myCurve.IsCurveOnSurface)
         {
             return true;
         }
 
         // If point coordinates are out of surface range,
         // it is necessary to re-project point.
-        Adaptor3d_CurveOnSurface aCurve = myCurve.CurveOnSurface();
-        Adaptor3d_Surface aSurface = aCurve.GetSurface()!;
-        if (aSurface.GetType() != BSplineSurface && aSurface.GetType() != BezierSurface
+        CurveOnSurface aCurve = myCurve.CurveOnSurface();
+        SurfaceAdaptorBase aSurface = aCurve.GetSurface()!;
+        if (aSurface.GetType() != SurfaceKind.BSplineSurface && aSurface.GetType() != SurfaceKind.BezierSurface
             && aSurface.GetType() != OtherSurface)
         {
             return true;
         }
 
         // Let skip periodic case.
-        if (aSurface.IsUPeriodic() || aSurface.IsVPeriodic())
+        if (aSurface.IsUPeriodic || aSurface.IsVPeriodic)
         {
             return true;
         }
@@ -256,8 +261,8 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
         return (thePoint.SquareDistance(aPntOnSurf) < myEdgeSqTol);
     }
 
-    private void splitSegment(Geom_Surface theSurf,
-                              Geom2d_Curve theCurve2d,
+    private void splitSegment(Surface theSurf,
+                              Curve2D theCurve2d,
                               double theFirst,
                               double theLast,
                               int theNbIter)

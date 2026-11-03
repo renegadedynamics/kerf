@@ -1,7 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -19,7 +20,7 @@ public class ShapeFix_WireSegmentTests
     public void Empty_IsForwardWithNoEdges()
     {
         var aSeg = new ShapeFix_WireSegment();
-        Assert.Equal(TopAbs_FORWARD, aSeg.Orientation());
+        Assert.Equal(Forward, aSeg.Orientation());
         Assert.Equal(0, aSeg.NbEdges());
         Assert.False(aSeg.WireData().ManifoldMode());
         Assert.False(aSeg.IsVertex());
@@ -30,12 +31,12 @@ public class ShapeFix_WireSegmentTests
     {
         ShapeExtend_WireData sbwd = Square(true);
         var aSeg = new ShapeFix_WireSegment(sbwd);
-        Assert.Equal(TopAbs_EXTERNAL, aSeg.Orientation());
+        Assert.Equal(External, aSeg.Orientation());
         Assert.Equal(4, aSeg.NbEdges());
         Assert.False(ReferenceEquals(aSeg.WireData(), sbwd));
         Assert.True(aSeg.Edge(2).IsSame(sbwd.Edge(2)));
         Assert.True(aSeg.IsClosed());
-        Assert.False(new ShapeFix_WireSegment(Square(false), TopAbs_REVERSED).IsClosed());
+        Assert.False(new ShapeFix_WireSegment(Square(false), Reversed).IsClosed());
 
         aSeg.GetPatchIndex(1, out int iumin, out int iumax, out int ivmin, out int ivmax);
         Assert.Equal((-32000, 32000, -32000, 32000), (iumin, iumax, ivmin, ivmax));
@@ -58,7 +59,7 @@ public class ShapeFix_WireSegmentTests
         aSeg.SetPatchIndex(2, 0, 2, 0, 0);
         Assert.False(aSeg.CheckPatchIndex(2));
 
-        TopoDS_Edge anExtra = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(0, 0, 1)).Edge();
+        Edge anExtra = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(0, 0, 1)).Edge();
         aSeg.AddEdge(0, anExtra, 5, 5, 6, 6);
         aSeg.AddEdge(1, anExtra);
         Assert.Equal(6, aSeg.NbEdges());
@@ -71,12 +72,12 @@ public class ShapeFix_WireSegmentTests
     [Fact]
     public void Copies_ShareTheWireButNotTheOrientationOrVertex()
     {
-        var aSeg = new ShapeFix_WireSegment(Square(true), TopAbs_FORWARD);
+        var aSeg = new ShapeFix_WireSegment(Square(true), Forward);
         ShapeFix_WireSegment aCopy = aSeg;
-        aCopy.Orientation(TopAbs_INTERNAL);
+        aCopy.Orientation(Internal);
         aCopy.SetVertex(new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Vertex());
         aCopy.SetEdge(1, aSeg.Edge(2));
-        Assert.Equal(TopAbs_FORWARD, aSeg.Orientation());
+        Assert.Equal(Forward, aSeg.Orientation());
         Assert.False(aSeg.IsVertex());
         Assert.True(aCopy.IsVertex());
         Assert.True(aSeg.Edge(1).IsSame(aSeg.Edge(2))); // the wire data is shared, as OCCT's handle

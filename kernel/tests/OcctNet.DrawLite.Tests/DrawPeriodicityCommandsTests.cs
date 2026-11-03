@@ -51,7 +51,7 @@ public class DrawPeriodicityCommandsTests(ITestOutputHelper output)
         i.Eval("clearrepetitions r");
         i.Eval("explode bp f");
         i.Eval("periodictwins t bp_2");
-        Assert.False(i.GetShape("t").IsNull());
+        Assert.False(i.GetShape("t").IsNull);
         i.Eval("savehistory h");
         Assert.Equal("Not deleted.", i.Eval("isdeleted h b"));
 
@@ -75,8 +75,8 @@ public class DrawPeriodicityCommandsTests(ITestOutputHelper output)
         i.Eval("if {[regexp \"not been modified\" [modified f h0 b1_2]]} {copy b1_2 f}");
         i.Eval("cmaterialson mp + f");
         i.Eval("cmaterialson mn - f");
-        Assert.False(i.GetShape("mp").IsNull());
-        Assert.False(i.GetShape("mn").IsNull());
+        Assert.False(i.GetShape("mp").IsNull);
+        Assert.False(i.GetShape("mn").IsNull);
         i.Eval("cmakeperiodic cp -x 20 -y 10");
         i.Eval("crepeatshape cr -x 1");
         Assert.Contains("SOLID     : 4", NbShapes(i, "cr"), StringComparison.Ordinal);
@@ -84,7 +84,7 @@ public class DrawPeriodicityCommandsTests(ITestOutputHelper output)
         Assert.Contains("SOLID     : 2", NbShapes(i, "cc"), StringComparison.Ordinal);
         i.Eval("savehistory h");
         i.Eval("modified m h b1");
-        Assert.False(i.GetShape("m").IsNull());
+        Assert.False(i.GetShape("m").IsNull);
     }
 
     /// <summary>

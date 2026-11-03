@@ -3,9 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
 using System.Globalization;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -23,9 +24,9 @@ public abstract class HatchGen_IntersectionPoint
 {
     protected int myIndex;
     protected double myParam;
-    protected TopAbs_Orientation myPosit;
-    protected TopAbs_State myBefore;
-    protected TopAbs_State myAfter;
+    protected Orientation myPosit;
+    protected Containment myBefore;
+    protected Containment myAfter;
     protected bool mySegBeg;
     protected bool mySegEnd;
 
@@ -34,9 +35,9 @@ public abstract class HatchGen_IntersectionPoint
     {
         myIndex = 0;
         myParam = RealLast();
-        myPosit = TopAbs_INTERNAL;
-        myBefore = TopAbs_UNKNOWN;
-        myAfter = TopAbs_UNKNOWN;
+        myPosit = Internal;
+        myBefore = Unknown;
+        myAfter = Unknown;
         mySegBeg = false;
         mySegEnd = false;
     }
@@ -72,31 +73,31 @@ public abstract class HatchGen_IntersectionPoint
     public double Parameter() => myParam;
 
     /// <summary>Sets the position of the point on the curve.</summary>
-    internal void SetPosition(TopAbs_Orientation Position)
+    internal void SetPosition(Orientation Position)
     {
         myPosit = Position;
     }
 
     /// <summary>The position of the point on the curve.</summary>
-    public TopAbs_Orientation Position() => myPosit;
+    public Orientation Position() => myPosit;
 
     /// <summary>Sets the transition state before the intersection.</summary>
-    internal void SetStateBefore(TopAbs_State State)
+    internal void SetStateBefore(Containment State)
     {
         myBefore = State;
     }
 
     /// <summary>The transition state before the intersection.</summary>
-    public TopAbs_State StateBefore() => myBefore;
+    public Containment StateBefore() => myBefore;
 
     /// <summary>Sets the transition state after the intersection.</summary>
-    internal void SetStateAfter(TopAbs_State State)
+    internal void SetStateAfter(Containment State)
     {
         myAfter = State;
     }
 
     /// <summary>The transition state after the intersection.</summary>
-    public TopAbs_State StateAfter() => myAfter;
+    public Containment StateAfter() => myAfter;
 
     /// <summary>Sets the flag that the point is the beginning of a segment.</summary>
     internal void SetSegmentBeginning(bool State = true)
@@ -128,19 +129,19 @@ public abstract class HatchGen_IntersectionPoint
     }
 
     // The names Dump writes for a position and a state (as OCCT's switches).
-    internal static string PositionName(TopAbs_Orientation thePosit) => thePosit switch
+    internal static string PositionName(Orientation thePosit) => thePosit switch
     {
-        TopAbs_FORWARD => "FORWARD  (i.e. BEGIN  )",
-        TopAbs_INTERNAL => "INTERNAL (i.e. MIDDLE )",
-        TopAbs_REVERSED => "REVERSED (i.e. END    )",
+        Forward => "FORWARD  (i.e. BEGIN  )",
+        Internal => "INTERNAL (i.e. MIDDLE )",
+        Reversed => "REVERSED (i.e. END    )",
         _ => "EXTERNAL (i.e. UNKNOWN)",
     };
 
-    internal static string StateName(TopAbs_State theState) => theState switch
+    internal static string StateName(Containment theState) => theState switch
     {
-        TopAbs_IN => "IN",
-        TopAbs_OUT => "OUT",
-        TopAbs_ON => "ON",
+        In => "IN",
+        Out => "OUT",
+        On => "ON",
         _ => "UNKNOWN",
     };
 

@@ -2,18 +2,21 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>BRepBuilderAPI_MakeShapeOnMesh (unit 8H1; compared with native through StlAPI_Reader in RWStlNativeTests).</summary>
 public class BRepBuilderAPI_MakeShapeOnMeshTests
 {
-    private static int Count(in TopoDS_Shape theS, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theS, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theS, theType, aMap);
+        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(theS, theType, aMap);
         return aMap.Extent();
     }
 
@@ -40,19 +43,19 @@ public class BRepBuilderAPI_MakeShapeOnMeshTests
         var aMaker = new BRepBuilderAPI_MakeShapeOnMesh(Quad());
         aMaker.Build();
         Assert.True(aMaker.IsDone());
-        TopoDS_Shape aShape = aMaker.Shape();
-        Assert.Equal(TopAbs_COMPOUND, aShape.ShapeType());
+        Shape aShape = aMaker.Shape();
+        Assert.Equal(ShapeType.Compound, aShape.ShapeType());
         Assert.True(aShape.TShape()!.IsFrozen);
-        Assert.Equal(2, Count(aShape, TopAbs_FACE));
-        Assert.Equal(5, Count(aShape, TopAbs_EDGE));
+        Assert.Equal(2, Count(aShape, ShapeType.Face));
+        Assert.Equal(5, Count(aShape, ShapeType.Edge));
         // the vertices of the nodes the triangles use
-        Assert.Equal(4, Count(aShape, TopAbs_VERTEX));
+        Assert.Equal(4, Count(aShape, ShapeType.Vertex));
         // both faces face +Z, as the triangles' node order says
-        for (var anExp = new TopExp_Explorer(aShape, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(aShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            var aSurf = new BRepAdaptor_Surface(TopoDS.Face(anExp.Current()));
+            var aSurf = new FaceSurfaceAdaptor(ShapeCasts.Face(anExp.Current()));
             Direction3D aNorm = aSurf.Plane().Axis().Direction();
-            double aSign = anExp.Current().Orientation() == TopAbs_Orientation.TopAbs_REVERSED ? -1 : 1;
+            double aSign = anExp.Current().Orientation() == Orientation.Reversed ? -1 : 1;
             Assert.Equal(1.0, aSign * aNorm.Z(), 12);
         }
         Assert.True(new BRepCheck_Analyzer(aShape).IsValid());
@@ -62,8 +65,8 @@ public class BRepBuilderAPI_MakeShapeOnMeshTests
     public void Degenerate_triangles_are_skipped()
     {
         var aMaker = new BRepBuilderAPI_MakeShapeOnMesh(Quad(new Triangle1(1, 1, 2), new Triangle1(3, 4, 5)));
-        TopoDS_Shape aShape = aMaker.Shape();
-        Assert.Equal(2, Count(aShape, TopAbs_FACE));
+        Shape aShape = aMaker.Shape();
+        Assert.Equal(2, Count(aShape, ShapeType.Face));
     }
 
     [Fact]

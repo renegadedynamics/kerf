@@ -4,12 +4,18 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2012-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -19,9 +25,9 @@ public partial class ShapeUpgrade_UnifySameDomain
     protected sealed class SubSequenceOfEdges
     {
         /// <summary>The edges of the chain.</summary>
-        public NCollection_Sequence<TopoDS_Shape> SeqsEdges = new();
+        public NCollection_Sequence<Shape> SeqsEdges = new();
         /// <summary>The edge they are merged into.</summary>
-        public TopoDS_Edge UnionEdges = new();
+        public Edge UnionEdges = new();
     }
 
     // OCCT.NET: frozen. A curve OCCT edits in place that may have been handed out frozen (a basis curve read through
@@ -31,45 +37,45 @@ public partial class ShapeUpgrade_UnifySameDomain
 
     private static object copyOf(Transient theCurve) => theCurve switch
     {
-        Geom2d_Geometry aG2d => aG2d.Copy(),
-        Geom_Geometry aG => aG.Copy(),
+        Geometry2D aG2d => aG2d.Copy(),
+        Geometry3D aG => aG.Copy(),
         _ => throw new ProgramErrorException("ShapeUpgrade_UnifySameDomain: not a geometry"),
     };
 
     // Glues 3d curves of the sequence of edges
-    private static TopoDS_Edge GlueEdgesWith3DCurves(NCollection_Sequence<TopoDS_Shape> aChain,
-                                                     in TopoDS_Vertex                   FirstVertex,
-                                                     in TopoDS_Vertex                   LastVertex)
+    private static Edge GlueEdgesWith3DCurves(NCollection_Sequence<Shape> aChain,
+                                                     in Vertex                   FirstVertex,
+                                                     in Vertex                   LastVertex)
     {
         // number of curves
         int aCurveCount = aChain.Length();
 
-        TopoDS_Edge   aPrevEdge     = TopoDS.Edge(aChain[1]);
-        TopoDS_Vertex aPrevVertex   = FirstVertex;
+        Edge   aPrevEdge     = ShapeCasts.Edge(aChain[1]);
+        Vertex aPrevVertex   = FirstVertex;
         double        aMaxTolerance = 0.0;
         // array of the curves converted to BSpline
-        var aBSplines = new NCollection_Array1<Geom_BSplineCurve>(0, aCurveCount - 1);
+        var aBSplines = new NCollection_Array1<BSplineCurve3D>(0, aCurveCount - 1);
         // array of the tolerances at the vertices
         var aVerticesTolerances = new NCollection_Array1<double>(0, aCurveCount - 1);
         for (int i = 1; i <= aCurveCount; ++i)
         {
-            TopoDS_Edge aCurrentEdge = TopoDS.Edge(aChain[i]);
-            TopExp.Vertices(aCurrentEdge, out TopoDS_Vertex aCurrentFirstVertex, out TopoDS_Vertex aCurrentLastVertex);
+            Edge aCurrentEdge = ShapeCasts.Edge(aChain[i]);
+            Exploration.Vertices(aCurrentEdge, out Vertex aCurrentFirstVertex, out Vertex aCurrentLastVertex);
             bool aToReverse = !aCurrentFirstVertex.IsSame(aPrevVertex);
 
-            aMaxTolerance = Max(Max(aMaxTolerance, BRep_Tool.Tolerance(aCurrentFirstVertex)),
-                                BRep_Tool.Tolerance(aCurrentLastVertex));
+            aMaxTolerance = Max(Max(aMaxTolerance, Tool.Tolerance(aCurrentFirstVertex)),
+                                Tool.Tolerance(aCurrentLastVertex));
             if (i > 1)
             {
-                var aCommonVertex = new TopoDS_Vertex();
-                TopExp.CommonVertex(aPrevEdge, aCurrentEdge, ref aCommonVertex);
-                aVerticesTolerances[i - 2] = BRep_Tool.Tolerance(aCommonVertex);
+                var aCommonVertex = new Vertex();
+                Exploration.CommonVertex(aPrevEdge, aCurrentEdge, ref aCommonVertex);
+                aVerticesTolerances[i - 2] = Tool.Tolerance(aCommonVertex);
             }
 
-            Geom_Curve aCurrentCurve = BRep_Tool.Curve(aCurrentEdge, out double aFirstParam, out double aLastParam)!;
-            var        aTrimmedCurve = new Geom_TrimmedCurve(aCurrentCurve, aFirstParam, aLastParam);
-            aBSplines[i - 1] = GeomConvert.CurveToBSplineCurve(aTrimmedCurve);
-            GeomConvert.C0BSplineToC1BSplineCurve(ref aBSplines[i - 1], global::Kerf.Engine.Foundation.Precision.Confusion());
+            Curve3D aCurrentCurve = Tool.Curve(aCurrentEdge, out double aFirstParam, out double aLastParam)!;
+            var        aTrimmedCurve = new TrimmedCurve3D(aCurrentCurve, aFirstParam, aLastParam);
+            aBSplines[i - 1] = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aTrimmedCurve);
+            global::Kerf.Engine.Geometry.Conversion.GeomConvert.C0BSplineToC1BSplineCurve(ref aBSplines[i - 1], global::Kerf.Engine.Foundation.Precision.Confusion());
             if (aToReverse)
             {
                 aBSplines[i - 1] = owned(aBSplines[i - 1]);
@@ -84,16 +90,16 @@ public partial class ShapeUpgrade_UnifySameDomain
         // Array of the remaining Vertex, effectively ignored here.
         // Flag of closedness of the concatenated curve, effectively ignored here.
         bool aClosedFlag = false;
-        GeomConvert.ConcatC1(aBSplines,
+        global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatC1(aBSplines,
                              aVerticesTolerances,
                              out NCollection_HArray1<int> _,
-                             out NCollection_HArray1<Geom_BSplineCurve> aConcatCurves,
+                             out NCollection_HArray1<BSplineCurve3D> aConcatCurves,
                              ref aClosedFlag,
                              global::Kerf.Engine.Foundation.Precision.Confusion()); // C1 concatenation
 
         if (aConcatCurves.Length() > 1)
         {
-            var Concat = new GeomConvert_CompCurveToBSplineCurve(aConcatCurves.Value(aConcatCurves.Lower()));
+            var Concat = new CompCurveToBSplineCurve(aConcatCurves.Value(aConcatCurves.Lower()));
 
             for (int i = aConcatCurves.Lower() + 1; i <= aConcatCurves.Upper(); ++i)
             {
@@ -103,34 +109,34 @@ public partial class ShapeUpgrade_UnifySameDomain
             aConcatCurves.SetValue(aConcatCurves.Lower(), Concat.InternalBSplineCurve()!);
         }
 
-        Geom_BSplineCurve aResCurve = aConcatCurves.Value(aConcatCurves.Lower());
-        TopoDS_Edge aResEdge = new BRepLib_MakeEdge(aResCurve,
+        BSplineCurve3D aResCurve = aConcatCurves.Value(aConcatCurves.Lower());
+        Edge aResEdge = new BRepLib_MakeEdge(aResCurve,
                                                     FirstVertex,
                                                     LastVertex,
                                                     aResCurve.FirstParameter(),
                                                     aResCurve.LastParameter()).InternalEdge();
-        var aBuilder = new BRep_Builder();
+        var aBuilder = new BrepBuilder();
         aBuilder.SameRange(aResEdge, false);
         aBuilder.SameParameter(aResEdge, false);
-        BRepLib.SameParameter((TopoDS_Shape)aResEdge, aMaxTolerance, true);
+        BRepLib.SameParameter((Shape)aResEdge, aMaxTolerance, true);
         return aResEdge;
     }
 
     /// <summary>Unifies the pcurves of the chain into one pcurve of the edge.</summary>
-    protected void UnionPCurves(NCollection_Sequence<TopoDS_Shape> theChain, ref TopoDS_Edge theEdge)
+    protected void UnionPCurves(NCollection_Sequence<Shape> theChain, ref Edge theEdge)
     {
-        Geom_Curve? aCurve   = BRep_Tool.Curve(theEdge, out double aFirst3d, out double aLast3d);
-        double      aTolEdge = BRep_Tool.Tolerance(theEdge);
+        Curve3D? aCurve   = Tool.Curve(theEdge, out double aFirst3d, out double aLast3d);
+        double      aTolEdge = Tool.Tolerance(theEdge);
         double      aMaxTol  = aTolEdge;
 
-        var aFaceSeq = new NCollection_Sequence<TopoDS_Shape>();
+        var aFaceSeq = new NCollection_Sequence<Shape>();
 
-        TopoDS_Edge                    aFirstEdge = TopoDS.Edge(theChain.Value(1));
-        NCollection_List<TopoDS_Shape> aFaceList  = myEFmap.FindFromKey(aFirstEdge);
-        var                            anItl      = new NCollection_List<TopoDS_Shape>.Iterator(aFaceList);
+        Edge                    aFirstEdge = ShapeCasts.Edge(theChain.Value(1));
+        NCollection_List<Shape> aFaceList  = myEFmap.FindFromKey(aFirstEdge);
+        var                            anItl      = new NCollection_List<Shape>.Iterator(aFaceList);
         for (; anItl.More(); anItl.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(anItl.Value());
+            Face aFace = ShapeCasts.Face(anItl.Value());
             if (myFacePlaneMap.IsBound(aFace))
             {
                 continue;
@@ -138,22 +144,22 @@ public partial class ShapeUpgrade_UnifySameDomain
 
             if (myFaceNewFace.IsBound(aFace))
             {
-                aFace = TopoDS.Face(myFaceNewFace[aFace]);
+                aFace = ShapeCasts.Face(myFaceNewFace[aFace]);
             }
 
-            aFace.Orientation(TopAbs_FORWARD); // to get proper pcurves of seam edges
+            aFace.Orientation(Forward); // to get proper pcurves of seam edges
 
-            var aBAsurf = new BRepAdaptor_Surface(aFace, false);
+            var aBAsurf = new FaceSurfaceAdaptor(aFace, false);
             if (aBAsurf.GetType() == Plane)
             {
                 continue;
             }
 
-            Geom_Surface? aSurf   = BRep_Tool.Surface(aFace, out Placement aLoc);
+            Surface? aSurf   = Tool.Surface(aFace, out Placement aLoc);
             bool          isFound = false;
             for (int ii = 1; ii <= aFaceSeq.Length(); ii++)
             {
-                Geom_Surface? aPrevSurf = BRep_Tool.Surface(TopoDS.Face(aFaceSeq[ii]), out Placement aPrevLoc);
+                Surface? aPrevSurf = Tool.Surface(ShapeCasts.Face(aFaceSeq[ii]), out Placement aPrevLoc);
                 if (ReferenceEquals(aPrevSurf, aSurf) && aPrevLoc == aLoc)
                 {
                     isFound = true;
@@ -168,16 +174,16 @@ public partial class ShapeUpgrade_UnifySameDomain
             aFaceSeq.Append(aFace);
         }
 
-        var         ResPCurves = new NCollection_Sequence<Geom2d_Curve>();
+        var         ResPCurves = new NCollection_Sequence<Curve2D>();
         var         ResFirsts  = new NCollection_Sequence<double>();
         var         ResLasts   = new NCollection_Sequence<double>();
         var         aTolVerSeq = new NCollection_Sequence<double>();
-        var         aPrevEdge  = new TopoDS_Edge();
+        var         aPrevEdge  = new Edge();
         bool        anIsSeam   = false;
 
         for (int j = 1; j <= aFaceSeq.Length(); j++)
         {
-            var               aPCurveSeq   = new NCollection_Sequence<Geom2d_Curve>();
+            var               aPCurveSeq   = new NCollection_Sequence<Curve2D>();
             var               aFirstsSeq   = new NCollection_Sequence<double>();
             var               aLastsSeq    = new NCollection_Sequence<double>();
             var               aForwardsSeq = new NCollection_Sequence<bool>();
@@ -186,15 +192,15 @@ public partial class ShapeUpgrade_UnifySameDomain
             double aFirst, aLast;
             for (int i = 1; i <= theChain.Length(); i++)
             {
-                TopoDS_Edge anEdge    = TopoDS.Edge(theChain.Value(i));
-                bool        isForward = (anEdge.Orientation() != TopAbs_REVERSED);
+                Edge anEdge    = ShapeCasts.Edge(theChain.Value(i));
+                bool        isForward = (anEdge.Orientation() != Reversed);
 
                 if (anIsSeam && j == 2)
                 { // second pass
                     anEdge.Reverse();
                 }
 
-                Geom2d_Curve? aPCurve = BRep_Tool.CurveOnSurface(anEdge, TopoDS.Face(aFaceSeq[j]), out aFirst, out aLast);
+                Curve2D? aPCurve = Tool.CurveOnSurface(anEdge, ShapeCasts.Face(aFaceSeq[j]), out aFirst, out aLast);
                 if (aPCurve is null)
                 {
                     continue;
@@ -202,10 +208,10 @@ public partial class ShapeUpgrade_UnifySameDomain
 
                 if (aFaceSeq.Length() == 1)
                 {
-                    TopoDS_Edge aReversedEdge = anEdge;
+                    Edge aReversedEdge = anEdge;
                     aReversedEdge.Reverse();
-                    Geom2d_Curve? aPCurve2 =
-                      BRep_Tool.CurveOnSurface(aReversedEdge, TopoDS.Face(aFaceSeq[j]), out aFirst, out aLast);
+                    Curve2D? aPCurve2 =
+                      Tool.CurveOnSurface(aReversedEdge, ShapeCasts.Face(aFaceSeq[j]), out aFirst, out aLast);
                     if (!ReferenceEquals(aPCurve, aPCurve2))
                     {
                         anIsSeam = true;
@@ -213,10 +219,10 @@ public partial class ShapeUpgrade_UnifySameDomain
                     }
                 }
 
-                var               anAdaptor = new Geom2dAdaptor_Curve(aPCurve);
+                var               anAdaptor = new CurveAdaptor2D(aPCurve);
                 CurveKind aType     = anAdaptor.GetType();
 
-                Geom2d_Line? aLine = null;
+                LineCurve2D? aLine = null;
                 if (aType == BSplineCurve || aType == BezierCurve)
                 {
                     TryMakeLine(aPCurve, aFirst, aLast, ref aLine);
@@ -230,8 +236,8 @@ public partial class ShapeUpgrade_UnifySameDomain
 
                 if (aPCurveSeq.IsEmpty())
                 {
-                    var aCopyPCurve = (Geom2d_Curve)aPCurve.Copy();
-                    if (aCopyPCurve is Geom2d_TrimmedCurve aCopyTrimmed)
+                    var aCopyPCurve = (Curve2D)aPCurve.Copy();
+                    if (aCopyPCurve is TrimmedCurve2D aCopyTrimmed)
                     {
                         aCopyPCurve = aCopyTrimmed.BasisCurve();
                     }
@@ -254,7 +260,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                 }
                 else if (aType == aCurrentType)
                 {
-                    var aPrevAdaptor = new Geom2dAdaptor_Curve(aPCurveSeq.Last());
+                    var aPrevAdaptor = new CurveAdaptor2D(aPCurveSeq.Last());
                     switch (aType)
                     {
                         case Line:
@@ -317,8 +323,8 @@ public partial class ShapeUpgrade_UnifySameDomain
                 }
                 else
                 {
-                    var aCopyPCurve = (Geom2d_Curve)aPCurve.Copy();
-                    if (aCopyPCurve is Geom2d_TrimmedCurve aCopyTrimmed)
+                    var aCopyPCurve = (Curve2D)aPCurve.Copy();
+                    if (aCopyPCurve is TrimmedCurve2D aCopyTrimmed)
                     {
                         aCopyPCurve = aCopyTrimmed.BasisCurve();
                     }
@@ -328,15 +334,15 @@ public partial class ShapeUpgrade_UnifySameDomain
                     aLastsSeq.Append(aLast);
                     aForwardsSeq.Append(isForward);
                     aCurrentType = aType;
-                    var aV = new TopoDS_Vertex();
-                    TopExp.CommonVertex(aPrevEdge, anEdge, ref aV);
-                    double aTol = BRep_Tool.Tolerance(aV);
+                    var aV = new Vertex();
+                    Exploration.CommonVertex(aPrevEdge, anEdge, ref aV);
+                    double aTol = Tool.Tolerance(aV);
                     aTolVerSeq.Append(aTol);
                 }
                 aPrevEdge = anEdge;
             }
 
-            Geom2d_Curve aResPCurve;
+            Curve2D aResPCurve;
             double       aResFirst, aResLast;
             if (aPCurveSeq.Length() == 1)
             {
@@ -357,16 +363,16 @@ public partial class ShapeUpgrade_UnifySameDomain
             else
             {
                 // C1 concatenation for PCurveSeq
-                var tab_c2d = new NCollection_Array1<Geom2d_BSplineCurve>(0, aPCurveSeq.Length() - 1);
+                var tab_c2d = new NCollection_Array1<BSplineCurve2D>(0, aPCurveSeq.Length() - 1);
                 for (int i = 1; i <= aPCurveSeq.Length(); i++)
                 {
-                    var aTrPCurve = new Geom2d_TrimmedCurve(aPCurveSeq[i], aFirstsSeq[i], aLastsSeq[i]);
+                    var aTrPCurve = new TrimmedCurve2D(aPCurveSeq[i], aFirstsSeq[i], aLastsSeq[i]);
                     if (!aForwardsSeq[i])
                     {
                         aTrPCurve.Reverse();
                     }
-                    tab_c2d[i - 1] = Geom2dConvert.CurveToBSplineCurve(aTrPCurve);
-                    Geom2dConvert.C0BSplineToC1BSplineCurve(ref tab_c2d[i - 1], global::Kerf.Engine.Foundation.Precision.Confusion());
+                    tab_c2d[i - 1] = Geom2dConvert2D.CurveToBSplineCurve(aTrPCurve);
+                    Geom2dConvert2D.C0BSplineToC1BSplineCurve(ref tab_c2d[i - 1], global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
 
                 var tabtolvertex = new NCollection_Array1<double>(0, aTolVerSeq.Length() - 1);
@@ -381,16 +387,16 @@ public partial class ShapeUpgrade_UnifySameDomain
                 }
 
                 bool aClosedFlag = false;
-                Geom2dConvert.ConcatC1(tab_c2d,
+                Geom2dConvert2D.ConcatC1(tab_c2d,
                                        tabtolvertex,
                                        out NCollection_HArray1<int> _,                     // array of the remaining Vertex
-                                       out NCollection_HArray1<Geom2d_BSplineCurve> concatc2d, // array of the concatenated curves
+                                       out NCollection_HArray1<BSplineCurve2D> concatc2d, // array of the concatenated curves
                                        ref aClosedFlag,
                                        global::Kerf.Engine.Foundation.Precision.Confusion()); // C1 concatenation
 
                 if (concatc2d.Length() > 1)
                 {
-                    var Concat2d = new Geom2dConvert_CompCurveToBSplineCurve(concatc2d.Value(concatc2d.Lower()));
+                    var Concat2d = new CompCurveToBSplineCurve2D(concatc2d.Value(concatc2d.Lower()));
 
                     for (int i = concatc2d.Lower() + 1; i <= concatc2d.Upper(); i++)
                     {
@@ -399,7 +405,7 @@ public partial class ShapeUpgrade_UnifySameDomain
 
                     concatc2d.SetValue(concatc2d.Lower(), Concat2d.InternalBSplineCurve()!);
                 }
-                Geom2d_BSplineCurve aBSplineCurve = concatc2d.Value(concatc2d.Lower());
+                BSplineCurve2D aBSplineCurve = concatc2d.Value(concatc2d.Lower());
                 aResPCurve = aBSplineCurve;
                 aResFirst  = aBSplineCurve.FirstParameter();
                 aResLast   = aBSplineCurve.LastParameter();
@@ -409,7 +415,7 @@ public partial class ShapeUpgrade_UnifySameDomain
             ResLasts.Append(aResLast);
         }
 
-        var aBuilder = new BRep_Builder();
+        var aBuilder = new BrepBuilder();
 
         // Check the results for consistency
         bool   IsBadRange = false;
@@ -427,20 +433,20 @@ public partial class ShapeUpgrade_UnifySameDomain
         {
             for (int ii = 1; ii <= ResPCurves.Length(); ii++)
             {
-                TopoDS_Face aFace     = TopoDS.Face(aFaceSeq[ii]);
-                Geom_Surface? aSurf   = BRep_Tool.Surface(aFace);
+                Face aFace     = ShapeCasts.Face(aFaceSeq[ii]);
+                Surface? aSurf   = Tool.Surface(aFace);
                 var         aSAS      = new ShapeAnalysis_Surface(aSurf);
                 var         aToolProj = new ShapeConstruct_ProjectCurveOnSurface();
                 aToolProj.Init(aSAS, global::Kerf.Engine.Foundation.Precision.Confusion());
-                if (aToolProj.InternalPerform(aCurve, aFirst3d, aLast3d, out Geom2d_Curve? aNewPCurve))
+                if (aToolProj.InternalPerform(aCurve, aFirst3d, aLast3d, out Curve2D? aNewPCurve))
                 {
                     ResPCurves[ii] = aNewPCurve!;
                 }
                 else
                 {
                     // Reparametrize pcurve
-                    var aTrPCurve = new Geom2d_TrimmedCurve(ResPCurves[ii], ResFirsts[ii], ResLasts[ii]);
-                    Geom2d_BSplineCurve aBSplinePCurve = owned(Geom2dConvert.CurveToBSplineCurve(aTrPCurve));
+                    var aTrPCurve = new TrimmedCurve2D(ResPCurves[ii], ResFirsts[ii], ResLasts[ii]);
+                    BSplineCurve2D aBSplinePCurve = owned(Geom2dConvert2D.CurveToBSplineCurve(aTrPCurve));
                     var aKnots = new NCollection_Array1<double>(aBSplinePCurve.InternalKnots());
                     global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(aFirst3d, aLast3d, aKnots);
                     aBSplinePCurve.SetKnots(aKnots);
@@ -458,7 +464,7 @@ public partial class ShapeUpgrade_UnifySameDomain
             {
                 if (Math.Abs(aFirst3d - ResFirsts[ii]) > aMaxTol || Math.Abs(aLast3d - ResLasts[ii]) > aMaxTol)
                 {
-                    var               aGAcurve = new Geom2dAdaptor_Curve(ResPCurves[ii]);
+                    var               aGAcurve = new CurveAdaptor2D(ResPCurves[ii]);
                     CurveKind aType    = aGAcurve.GetType();
                     if (aType == Line)
                     {
@@ -468,7 +474,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                         Vector2D anOffset = -new Vector2D(aDir2d);
                         anOffset *= aFirst3d;
                         aPnt2d.Translate(anOffset);
-                        var aNewLine2d = new Geom2d_Line(aPnt2d, aDir2d);
+                        var aNewLine2d = new LineCurve2D(aPnt2d, aDir2d);
                         ResPCurves[ii] = aNewLine2d;
                     }
                     else if (aType == Circle)
@@ -479,13 +485,13 @@ public partial class ShapeUpgrade_UnifySameDomain
                         Point2D  aLocation = aCirc2d.Location();
                         double    anOffset  = ResFirsts[ii] - aFirst3d;
                         aPosition.Rotate(aLocation, anOffset);
-                        var aNewCircle2d = new Geom2d_Circle(aPosition, aRadius);
+                        var aNewCircle2d = new CircleCurve2D(aPosition, aRadius);
                         ResPCurves[ii] = aNewCircle2d;
                     }
                     else // general case
                     {
-                        var aTrPCurve = new Geom2d_TrimmedCurve(ResPCurves[ii], ResFirsts[ii], ResLasts[ii]);
-                        Geom2d_BSplineCurve aBSplinePCurve = owned(Geom2dConvert.CurveToBSplineCurve(aTrPCurve));
+                        var aTrPCurve = new TrimmedCurve2D(ResPCurves[ii], ResFirsts[ii], ResLasts[ii]);
+                        BSplineCurve2D aBSplinePCurve = owned(Geom2dConvert2D.CurveToBSplineCurve(aTrPCurve));
                         var aKnots = new NCollection_Array1<double>(aBSplinePCurve.InternalKnots());
                         global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(aFirst3d, aLast3d, aKnots);
                         aBSplinePCurve.SetKnots(aKnots);
@@ -499,43 +505,43 @@ public partial class ShapeUpgrade_UnifySameDomain
 
         if (anIsSeam)
         {
-            aBuilder.UpdateEdge(theEdge, ResPCurves[1], ResPCurves[2], TopoDS.Face(aFaceSeq[1]), aTolEdge);
+            aBuilder.UpdateEdge(theEdge, ResPCurves[1], ResPCurves[2], ShapeCasts.Face(aFaceSeq[1]), aTolEdge);
         }
         else
         {
             for (int j = 1; j <= ResPCurves.Length(); j++)
             {
-                aBuilder.UpdateEdge(theEdge, ResPCurves[j], TopoDS.Face(aFaceSeq[j]), aTolEdge);
+                aBuilder.UpdateEdge(theEdge, ResPCurves[j], ShapeCasts.Face(aFaceSeq[j]), aTolEdge);
             }
         }
     }
 
     /// <summary>Merges a sequence of edges into one edge if possible.</summary>
-    protected bool MergeSubSeq(NCollection_Sequence<TopoDS_Shape>                                       theChain,
-                               NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theVFmap,
-                               ref TopoDS_Edge                                                          OutEdge)
+    protected bool MergeSubSeq(NCollection_Sequence<Shape>                                       theChain,
+                               NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theVFmap,
+                               ref Edge                                                          OutEdge)
     {
         var sae = new ShapeAnalysis_Edge();
-        var B   = new BRep_Builder();
+        var B   = new BrepBuilder();
         // union edges in chain
         int         j;
         double      fp1, lp1;
         bool        IsUnionOfLinesPossible   = true;
         bool        IsUnionOfCirclesPossible = true;
-        Geom_Curve? c3d1, c3d2;
+        Curve3D? c3d1, c3d2;
         for (j = 1; j < theChain.Length(); j++)
         {
-            TopoDS_Edge edge1 = TopoDS.Edge(theChain.Value(j));
-            TopoDS_Edge edge2 = TopoDS.Edge(theChain.Value(j + 1));
+            Edge edge1 = ShapeCasts.Edge(theChain.Value(j));
+            Edge edge2 = ShapeCasts.Edge(theChain.Value(j + 1));
 
-            if (BRep_Tool.Degenerated(edge1) && BRep_Tool.Degenerated(edge2))
+            if (Tool.Degenerated(edge1) && Tool.Degenerated(edge2))
             {
                 // Find the closest points in 2d
-                TopoDS_Edge        edgeFirst    = TopoDS.Edge(theChain.First());
-                TopoDS_Edge        edgeLast     = TopoDS.Edge(theChain.Last());
-                var                CommonFace   = new TopoDS_Face();
+                Edge        edgeFirst    = ShapeCasts.Edge(theChain.First());
+                Edge        edgeLast     = ShapeCasts.Edge(theChain.Last());
+                var                CommonFace   = new Face();
                 double             MinSqDist    = 0.0;
-                TopAbs_Orientation OrOfE1OnFace = TopAbs_FORWARD, OrOfE2OnFace = TopAbs_FORWARD;
+                Orientation OrOfE1OnFace = Forward, OrOfE2OnFace = Forward;
                 int                IndOnE1      = 0, IndOnE2 = 0;
                 Span<Point2D>     PointsOnEdge1 = [new Point2D(), new Point2D()];
                 Span<Point2D>     PointsOnEdge2 = [new Point2D(), new Point2D()];
@@ -561,22 +567,22 @@ public partial class ShapeUpgrade_UnifySameDomain
                 // Construct new degenerated edge
                 Point2D StartPoint = PointsOnEdge1[IndOnE1];
                 Point2D EndPoint   = PointsOnEdge2[IndOnE2];
-                if ((OrOfE1OnFace == TopAbs_FORWARD && IndOnE1 == 1)
-                    || (OrOfE1OnFace == TopAbs_REVERSED && IndOnE1 == 0))
+                if ((OrOfE1OnFace == Forward && IndOnE1 == 1)
+                    || (OrOfE1OnFace == Reversed && IndOnE1 == 0))
                 {
                     Point2D Tmp = StartPoint;
                     StartPoint = EndPoint;
                     EndPoint   = Tmp;
                 }
 
-                Geom2d_Line aLine = new GC_MakeLine2d(StartPoint, EndPoint).Value();
+                LineCurve2D aLine = new MakeLine2d(StartPoint, EndPoint).Value();
 
-                TopoDS_Vertex aVertex     = TopExp.FirstVertex(edgeFirst);
-                TopoDS_Vertex StartVertex = aVertex, EndVertex = aVertex;
-                StartVertex.Orientation(TopAbs_FORWARD);
-                EndVertex.Orientation(TopAbs_REVERSED);
+                Vertex aVertex     = Exploration.FirstVertex(edgeFirst);
+                Vertex StartVertex = aVertex, EndVertex = aVertex;
+                StartVertex.Orientation(Forward);
+                EndVertex.Orientation(Reversed);
 
-                var NewEdge = new TopoDS_Edge();
+                var NewEdge = new Edge();
                 B.MakeEdge(ref NewEdge);
                 B.UpdateEdge(NewEdge, aLine, CommonFace, global::Kerf.Engine.Foundation.Precision.Confusion());
                 B.Range(NewEdge, 0.0, StartPoint.Distance(EndPoint));
@@ -587,11 +593,11 @@ public partial class ShapeUpgrade_UnifySameDomain
                 return true;
             }
 
-            c3d1 = BRep_Tool.Curve(edge1, out fp1, out lp1);
-            c3d2 = BRep_Tool.Curve(edge2, out _, out _);
+            c3d1 = Tool.Curve(edge1, out fp1, out lp1);
+            c3d2 = Tool.Curve(edge2, out _, out _);
 
-            var    aBAcurve1 = new BRepAdaptor_Curve(edge1);
-            var    aBAcurve2 = new BRepAdaptor_Curve(edge2);
+            var    aBAcurve1 = new EdgeCurveAdaptor(edge1);
+            var    aBAcurve2 = new EdgeCurveAdaptor(edge2);
             Direction3D aDir1 = new(), aDir2 = new();
 
             if (c3d1 is null || c3d2 is null)
@@ -599,11 +605,11 @@ public partial class ShapeUpgrade_UnifySameDomain
                 return false;
             }
 
-            if (c3d1 is Geom_TrimmedCurve tc1)
+            if (c3d1 is TrimmedCurve3D tc1)
             {
                 c3d1 = tc1.BasisCurve();
             }
-            if (c3d2 is Geom_TrimmedCurve tc2)
+            if (c3d2 is TrimmedCurve3D tc2)
             {
                 c3d2 = tc2.BasisCurve();
             }
@@ -618,7 +624,7 @@ public partial class ShapeUpgrade_UnifySameDomain
             {
                 IsUnionOfLinesPossible = false;
             }
-            if (c3d1 is Geom_Circle C1 && c3d2 is Geom_Circle C2)
+            if (c3d1 is CircleCurve3D C1 && c3d2 is CircleCurve3D C2)
             {
                 Point3D P01 = C1.Location();
                 Point3D P02 = C2.Location();
@@ -640,11 +646,11 @@ public partial class ShapeUpgrade_UnifySameDomain
         // union of lines is possible
         if (IsUnionOfLinesPossible)
         {
-            var V = new TopoDS_Vertex[2];
-            V[0] = sae.FirstVertex(TopoDS.Edge(theChain.First()));
-            Point3D PV1 = BRep_Tool.Pnt(V[0]);
-            V[1] = sae.LastVertex(TopoDS.Edge(theChain.Last()));
-            Point3D PV2 = BRep_Tool.Pnt(V[1]);
+            var V = new Vertex[2];
+            V[0] = sae.FirstVertex(ShapeCasts.Edge(theChain.First()));
+            Point3D PV1 = Tool.Pnt(V[0]);
+            V[1] = sae.LastVertex(ShapeCasts.Edge(theChain.Last()));
+            Point3D PV2 = Tool.Pnt(V[1]);
             var    Vec = new Vector3D(PV1, PV2);
             if (mySafeInputMode)
             {
@@ -652,20 +658,20 @@ public partial class ShapeUpgrade_UnifySameDomain
                 {
                     if (!myContext.IsRecorded(V[k]))
                     {
-                        TopoDS_Vertex Vcopy = TopoDS.Vertex(V[k].EmptyCopied());
+                        Vertex Vcopy = ShapeCasts.Vertex(V[k].EmptyCopied());
                         myContext.Replace(V[k], Vcopy);
                         V[k] = Vcopy;
                     }
                     else
                     {
-                        V[k] = TopoDS.Vertex(myContext.InternalApply(V[k]));
+                        V[k] = ShapeCasts.Vertex(myContext.InternalApply(V[k]));
                     }
                 }
             }
-            var    L    = new Geom_Line(new Axis3D(PV1, new Direction3D(Vec)));
+            var    L    = new LineCurve3D(new Axis3D(PV1, new Direction3D(Vec)));
             double dist = PV1.Distance(PV2);
-            var    tc   = new Geom_TrimmedCurve(L, 0.0, dist);
-            var    E    = new TopoDS_Edge();
+            var    tc   = new TrimmedCurve3D(L, 0.0, dist);
+            var    E    = new Edge();
             B.MakeEdge(ref E, tc, global::Kerf.Engine.Foundation.Precision.Confusion());
             B.Add(E, V[0]);
             B.Add(E, V[1]);
@@ -678,26 +684,26 @@ public partial class ShapeUpgrade_UnifySameDomain
 
         if (IsUnionOfCirclesPossible)
         {
-            TopoDS_Edge FE  = TopoDS.Edge(theChain.First());
-            Geom_Curve  c3d = BRep_Tool.Curve(FE, out _, out _)!;
+            Edge FE  = ShapeCasts.Edge(theChain.First());
+            Curve3D  c3d = Tool.Curve(FE, out _, out _)!;
 
-            if (c3d is Geom_TrimmedCurve tc)
+            if (c3d is TrimmedCurve3D tc)
             {
                 c3d = tc.BasisCurve();
             }
-            var Cir = (Geom_Circle)c3d;
+            var Cir = (CircleCurve3D)c3d;
 
-            var V = new TopoDS_Vertex[2];
+            var V = new Vertex[2];
             V[0] = sae.FirstVertex(FE);
-            V[1] = sae.LastVertex(TopoDS.Edge(theChain.Last()));
+            V[1] = sae.LastVertex(ShapeCasts.Edge(theChain.Last()));
             bool isClosed = V[0].IsSame(V[1]);
             if (!isClosed)
             {
                 // additionally check the points for equality to make a final decision about closedness of the
                 // result curve
-                Point3D aP0  = BRep_Tool.Pnt(V[0]);
-                Point3D aP1  = BRep_Tool.Pnt(V[1]);
-                double aTol = Max(BRep_Tool.Tolerance(V[0]), BRep_Tool.Tolerance(V[1]));
+                Point3D aP0  = Tool.Pnt(V[0]);
+                Point3D aP1  = Tool.Pnt(V[1]);
+                double aTol = Max(Tool.Tolerance(V[0]), Tool.Tolerance(V[1]));
                 if (aP0.SquareDistance(aP1) < aTol * aTol)
                 {
                     isClosed = true;
@@ -705,14 +711,14 @@ public partial class ShapeUpgrade_UnifySameDomain
                     V[1].Reverse();
                 }
             }
-            var E = new TopoDS_Edge();
+            var E = new Edge();
             if (isClosed)
             {
                 // closed chain
-                var          adef = new BRepAdaptor_Curve(FE);
-                Geom_Circle  Cir1;
+                var          adef = new EdgeCurveAdaptor(FE);
+                CircleCurve3D  Cir1;
                 double       FP, LP;
-                if (FE.Orientation() == TopAbs_FORWARD)
+                if (FE.Orientation() == Forward)
                 {
                     FP = adef.FirstParameter();
                     LP = adef.LastParameter();
@@ -731,8 +737,8 @@ public partial class ShapeUpgrade_UnifySameDomain
                 }
                 else
                 {
-                    var MC1 = new GC_MakeCircle(adef.Value(FP), adef.Value((FP + LP) * 0.5), adef.Value(LP));
-                    if (MC1.IsDone())
+                    var MC1 = new MakeCircle(adef.Value(FP), adef.Value((FP + LP) * 0.5), adef.Value(LP));
+                    if (MC1.IsDone)
                     {
                         Cir1 = MC1.Value();
                     }
@@ -747,9 +753,9 @@ public partial class ShapeUpgrade_UnifySameDomain
             }
             else // open chain
             {
-                double        ParamFirst     = BRep_Tool.Parameter(V[0], FE);
-                TopoDS_Vertex VertexLastOnFE = sae.LastVertex(FE);
-                double        ParamLast      = BRep_Tool.Parameter(VertexLastOnFE, FE);
+                double        ParamFirst     = Tool.Parameter(V[0], FE);
+                Vertex VertexLastOnFE = sae.LastVertex(FE);
+                double        ParamLast      = Tool.Parameter(VertexLastOnFE, FE);
 
                 if (mySafeInputMode)
                 {
@@ -757,31 +763,31 @@ public partial class ShapeUpgrade_UnifySameDomain
                     {
                         if (!myContext.IsRecorded(V[k]))
                         {
-                            TopoDS_Vertex Vcopy = TopoDS.Vertex(V[k].EmptyCopied());
+                            Vertex Vcopy = ShapeCasts.Vertex(V[k].EmptyCopied());
                             myContext.Replace(V[k], Vcopy);
                             V[k] = Vcopy;
                         }
                         else
                         {
-                            V[k] = TopoDS.Vertex(myContext.InternalApply(V[k]));
+                            V[k] = ShapeCasts.Vertex(myContext.InternalApply(V[k]));
                         }
                     }
                 }
 
-                Point3D PointFirst = BRep_Tool.Pnt(V[0]);
+                Point3D PointFirst = Tool.Pnt(V[0]);
                 while (Math.Abs(ParamLast - ParamFirst) > 7 * M_PI / 8)
                 {
                     ParamLast = (ParamFirst + ParamLast) / 2;
                 }
-                var    BAcurveFE        = new BRepAdaptor_Curve(FE);
+                var    BAcurveFE        = new EdgeCurveAdaptor(FE);
                 Point3D PointLast        = BAcurveFE.Value(ParamLast);
                 Point3D Origin           = Cir.Circ().Location();
                 var    Dir1             = new Direction3D(new Vector3D(Origin, PointFirst));
                 var    Dir2             = new Direction3D(new Vector3D(Origin, PointLast));
                 Direction3D Vdir             = Dir1 ^ Dir2;
                 var    anAx2            = new Frame3D(Origin, Vdir, Dir1);
-                var    aNewCircle       = new Geom_Circle(anAx2, Cir.Radius());
-                Point3D PointLastInChain = BRep_Tool.Pnt(V[1]);
+                var    aNewCircle       = new CircleCurve3D(anAx2, Cir.Radius());
+                Point3D PointLastInChain = Tool.Pnt(V[1]);
                 var    DirLastInChain   = new Direction3D(new Vector3D(Origin, PointLastInChain));
                 double lpar             = Dir1.AngleWithRef(DirLastInChain, Vdir);
                 if (lpar < 0.0)
@@ -789,7 +795,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                     lpar += 2 * M_PI;
                 }
 
-                var tc1 = new Geom_TrimmedCurve(aNewCircle, 0.0, lpar);
+                var tc1 = new TrimmedCurve3D(aNewCircle, 0.0, lpar);
                 B.MakeEdge(ref E, tc1, global::Kerf.Engine.Foundation.Precision.Confusion());
                 B.Add(E, V[0]);
                 B.Add(E, V[1]);
@@ -806,22 +812,22 @@ public partial class ShapeUpgrade_UnifySameDomain
             // skl for bug 0020052 from Mantis: perform such unions
             // only if curves are bspline or bezier
 
-            TopoDS_Vertex VF        = sae.FirstVertex(TopoDS.Edge(theChain.First()));
-            TopoDS_Vertex VL        = sae.LastVertex(TopoDS.Edge(theChain.Last()));
+            Vertex VF        = sae.FirstVertex(ShapeCasts.Edge(theChain.First()));
+            Vertex VL        = sae.LastVertex(ShapeCasts.Edge(theChain.Last()));
             bool          NeedUnion = true;
             for (j = 1; j <= theChain.Length(); j++)
             {
-                TopoDS_Edge edge = TopoDS.Edge(theChain.Value(j));
-                Geom_Curve? c3d  = BRep_Tool.Curve(edge, out _, out fp1, out lp1);
+                Edge edge = ShapeCasts.Edge(theChain.Value(j));
+                Curve3D? c3d  = Tool.Curve(edge, out _, out fp1, out lp1);
                 if (c3d is null)
                 {
                     continue;
                 }
-                if (c3d is Geom_TrimmedCurve tc)
+                if (c3d is TrimmedCurve3D tc)
                 {
                     c3d = tc.BasisCurve();
                 }
-                if (c3d is Geom_BSplineCurve || c3d is Geom_BezierCurve)
+                if (c3d is BSplineCurve3D || c3d is BezierCurve3D)
                 {
                     continue;
                 }
@@ -838,25 +844,25 @@ public partial class ShapeUpgrade_UnifySameDomain
     }
 
     // Checks if merging of two edges is possible
-    private static bool IsMergingPossible(in TopoDS_Edge                                                         edge1,
-                                          in TopoDS_Edge                                                         edge2,
+    private static bool IsMergingPossible(in Edge                                                         edge1,
+                                          in Edge                                                         edge2,
                                           double                                                                 theAngTol,
                                           double                                                                 theLinTol,
-                                          NCollection_Map<TopoDS_Shape>                                          AvoidEdgeVrt,
+                                          NCollection_Map<Shape>                                          AvoidEdgeVrt,
                                           bool                                                                   theLineDirectionOk,
                                           in Point3D                                                              theFirstPoint,
                                           in Vector3D                                                              theDirectionVec,
-                                          NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theVFmap)
+                                          NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theVFmap)
     {
-        bool IsDegE1 = BRep_Tool.Degenerated(edge1);
-        bool IsDegE2 = BRep_Tool.Degenerated(edge2);
+        bool IsDegE1 = Tool.Degenerated(edge1);
+        bool IsDegE2 = Tool.Degenerated(edge2);
 
         if (IsDegE1 && IsDegE2)
         {
             // Find connstion point in 2d
-            var                CommonFace    = new TopoDS_Face();
+            var                CommonFace    = new Face();
             double             MinSqDist     = 0.0;
-            TopAbs_Orientation OrOfE1OnFace  = TopAbs_FORWARD, OrOfE2OnFace = TopAbs_FORWARD;
+            Orientation OrOfE1OnFace  = Forward, OrOfE2OnFace = Forward;
             int                IndOnE1       = 0, IndOnE2 = 0;
             Span<Point2D>     PointsOnEdge1 = [new Point2D(), new Point2D()];
             Span<Point2D>     PointsOnEdge2 = [new Point2D(), new Point2D()];
@@ -887,14 +893,14 @@ public partial class ShapeUpgrade_UnifySameDomain
             return false;
         }
 
-        TopoDS_Vertex CV = TopExp.LastVertex(edge1, true);
-        if (CV.IsNull() || AvoidEdgeVrt.Contains(CV))
+        Vertex CV = Exploration.LastVertex(edge1, true);
+        if (CV.IsNull || AvoidEdgeVrt.Contains(CV))
         {
             return false;
         }
 
-        var ade1 = new BRepAdaptor_Curve(edge1);
-        var ade2 = new BRepAdaptor_Curve(edge2);
+        var ade1 = new EdgeCurveAdaptor(edge1);
+        var ade2 = new EdgeCurveAdaptor(edge2);
 
         CurveKind t1 = ade1.GetType();
         CurveKind t2 = ade2.GetType();
@@ -918,7 +924,7 @@ public partial class ShapeUpgrade_UnifySameDomain
 
         Vector3D Diff1, Diff2;
         Point3D P1, P2;
-        if (edge1.Orientation() == TopAbs_FORWARD)
+        if (edge1.Orientation() == Forward)
         {
             ade1.D1(ade1.LastParameter(), out P1, out Diff1);
         }
@@ -928,7 +934,7 @@ public partial class ShapeUpgrade_UnifySameDomain
             Diff1 = -Diff1;
         }
 
-        if (edge2.Orientation() == TopAbs_FORWARD)
+        if (edge2.Orientation() == Forward)
         {
             ade2.D1(ade2.FirstParameter(), out P2, out Diff2);
         }
@@ -946,7 +952,7 @@ public partial class ShapeUpgrade_UnifySameDomain
         if (theLineDirectionOk && t2 == Line)
         {
             // Check that the accumulated deflection does not exceed the linear tolerance
-            double aLast = (edge2.Orientation() == TopAbs_FORWARD) ? ade2.LastParameter() : ade2.FirstParameter();
+            double aLast = (edge2.Orientation() == Forward) ? ade2.LastParameter() : ade2.FirstParameter();
             var    aCurV = new Vector3D(theFirstPoint, ade2.Value(aLast));
             double aDD   = theDirectionVec.CrossSquareMagnitude(aCurV);
             if (aDD > theLinTol * theLinTol)
@@ -967,25 +973,25 @@ public partial class ShapeUpgrade_UnifySameDomain
         return true;
     }
 
-    private static bool GetLineEdgePoints(in TopoDS_Edge theInpEdge, ref Point3D theFirstPoint, ref Vector3D theDirectionVec)
+    private static bool GetLineEdgePoints(in Edge theInpEdge, ref Point3D theFirstPoint, ref Vector3D theDirectionVec)
     {
-        Geom_Curve? aCur = BRep_Tool.Curve(theInpEdge, out double f, out double l);
+        Curve3D? aCur = Tool.Curve(theInpEdge, out double f, out double l);
         if (aCur is null)
         {
             return false;
         }
 
-        if (aCur is Geom_TrimmedCurve aTC)
+        if (aCur is TrimmedCurve3D aTC)
         {
             aCur = aTC.BasisCurve();
         }
 
-        if (aCur.GetType() != typeof(Geom_Line))
+        if (aCur.GetType() != typeof(LineCurve3D))
         {
             return false;
         }
 
-        if (theInpEdge.Orientation() == TopAbs_REVERSED)
+        if (theInpEdge.Orientation() == Reversed)
         {
             double tmp = f;
             f = l;
@@ -1000,19 +1006,19 @@ public partial class ShapeUpgrade_UnifySameDomain
 
     // Generates sub-sequences of edges from sequence of edges. Edges from each subsequences can be merged into the
     // one edge.
-    private static void generateSubSeq(NCollection_Sequence<TopoDS_Shape>                                       anInpEdgeSeq,
+    private static void generateSubSeq(NCollection_Sequence<Shape>                                       anInpEdgeSeq,
                                        NCollection_Sequence<SubSequenceOfEdges>                                 SeqOfSubSeqOfEdges,
                                        bool                                                                     IsClosed,
                                        double                                                                   theAngTol,
                                        double                                                                   theLinTol,
-                                       NCollection_Map<TopoDS_Shape>                                            AvoidEdgeVrt,
-                                       NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theVFmap)
+                                       NCollection_Map<Shape>                                            AvoidEdgeVrt,
+                                       NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theVFmap)
     {
         bool        isOk;
-        TopoDS_Edge edge1, edge2;
+        Edge edge1, edge2;
 
         var         SubSeq  = new SubSequenceOfEdges();
-        TopoDS_Edge RefEdge = TopoDS.Edge(anInpEdgeSeq[1]);
+        Edge RefEdge = ShapeCasts.Edge(anInpEdgeSeq[1]);
         SubSeq.SeqsEdges.Append(RefEdge);
         SeqOfSubSeqOfEdges.Append(SubSeq);
 
@@ -1022,8 +1028,8 @@ public partial class ShapeUpgrade_UnifySameDomain
 
         for (int i = 1; i < anInpEdgeSeq.Length(); i++)
         {
-            edge1 = TopoDS.Edge(anInpEdgeSeq[i]);
-            edge2 = TopoDS.Edge(anInpEdgeSeq[i + 1]);
+            edge1 = ShapeCasts.Edge(anInpEdgeSeq[i]);
+            edge2 = ShapeCasts.Edge(anInpEdgeSeq[i + 1]);
             isOk  = IsMergingPossible(edge1,
                                      edge2,
                                      theAngTol,
@@ -1048,8 +1054,8 @@ public partial class ShapeUpgrade_UnifySameDomain
         // check first and last chain segments
         if (IsClosed && SeqOfSubSeqOfEdges.Length() > 1)
         {
-            edge1 = TopoDS.Edge(anInpEdgeSeq.Last());
-            edge2 = TopoDS.Edge(anInpEdgeSeq.First());
+            edge1 = ShapeCasts.Edge(anInpEdgeSeq.Last());
+            edge2 = ShapeCasts.Edge(anInpEdgeSeq.First());
             if (IsMergingPossible(edge1,
                                   edge2,
                                   theAngTol,
@@ -1067,27 +1073,27 @@ public partial class ShapeUpgrade_UnifySameDomain
     }
 
     /// <summary>Splits the sequence of edges into the sequence of chains.</summary>
-    protected bool MergeEdges(NCollection_Sequence<TopoDS_Shape>                                       SeqEdges,
-                              NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theVFmap,
+    protected bool MergeEdges(NCollection_Sequence<Shape>                                       SeqEdges,
+                              NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theVFmap,
                               NCollection_Sequence<SubSequenceOfEdges>                                 SeqOfSubSeqOfEdges,
-                              NCollection_Map<TopoDS_Shape>                                            NonMergVrt)
+                              NCollection_Map<Shape>                                            NonMergVrt)
     {
-        var aMapVE          = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
+        var aMapVE          = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         int j;
-        var VerticesToAvoid = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var VerticesToAvoid = new NCollection_Map<Shape>(ShapeHasher.Instance);
         int aNbE            = SeqEdges.Length();
         for (j = 1; j <= aNbE; j++)
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(SeqEdges[j]);
+            Edge anEdge = ShapeCasts.Edge(SeqEdges[j]);
             // fill in the map V-E
-            for (var it = new TopoDS_Iterator(anEdge.Oriented(TopAbs_FORWARD)); it.More(); it.Next())
+            for (var it = new Iterator(anEdge.Oriented(Forward)); it.More(); it.Next())
             {
-                TopoDS_Shape aV = it.Value();
-                if (aV.Orientation() == TopAbs_FORWARD || aV.Orientation() == TopAbs_REVERSED)
+                Shape aV = it.Value();
+                if (aV.Orientation() == Forward || aV.Orientation() == Reversed)
                 {
                     if (!aMapVE.Contains(aV))
                     {
-                        aMapVE.Add(aV, new NCollection_List<TopoDS_Shape>());
+                        aMapVE.Add(aV, new NCollection_List<Shape>());
                     }
                     aMapVE.ChangeFromKey(aV).Append(anEdge);
                 }
@@ -1096,21 +1102,21 @@ public partial class ShapeUpgrade_UnifySameDomain
         NCollection_MapAlgo.Unite(VerticesToAvoid, NonMergVrt);
 
         // do loop while there are unused edges
-        var aUsedEdges = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aUsedEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
 
         for (int iE = 1; iE <= aNbE; ++iE)
         {
-            TopoDS_Edge edge = TopoDS.Edge(SeqEdges[iE]);
+            Edge edge = ShapeCasts.Edge(SeqEdges[iE]);
             if (!aUsedEdges.Add(edge))
             {
                 continue;
             }
 
             // make chain for unite
-            var aChain = new NCollection_Sequence<TopoDS_Shape>();
+            var aChain = new NCollection_Sequence<Shape>();
             aChain.Append(edge);
-            var V = new TopoDS_Vertex[2];
-            TopExp.Vertices(edge, out V[0], out V[1], true);
+            var V = new Vertex[2];
+            Exploration.Vertices(edge, out V[0], out V[1], true);
 
             // connect more edges to the chain in both directions
             for (j = 0; j < 2; j++)
@@ -1119,18 +1125,18 @@ public partial class ShapeUpgrade_UnifySameDomain
                 while (isAdded)
                 {
                     isAdded = false;
-                    if (V[j].IsNull())
+                    if (V[j].IsNull)
                     {
                         break;
                     }
-                    NCollection_List<TopoDS_Shape> aLE = aMapVE.FindFromKey(V[j]);
-                    for (var itL = new NCollection_List<TopoDS_Shape>.Iterator(aLE); itL.More(); itL.Next())
+                    NCollection_List<Shape> aLE = aMapVE.FindFromKey(V[j]);
+                    for (var itL = new NCollection_List<Shape>.Iterator(aLE); itL.More(); itL.Next())
                     {
-                        edge = TopoDS.Edge(itL.Value());
+                        edge = ShapeCasts.Edge(itL.Value());
                         if (!aUsedEdges.Contains(edge))
                         {
-                            var V2 = new TopoDS_Vertex[2];
-                            TopExp.Vertices(edge, out V2[0], out V2[1], true);
+                            var V2 = new Vertex[2];
+                            Exploration.Vertices(edge, out V2[0], out V2[1], true);
                             // the neighboring edge must have V[j] reversed and located on the opposite end
                             if (V2[1 - j].IsEqual(V[j].Reversed()))
                             {
@@ -1173,7 +1179,7 @@ public partial class ShapeUpgrade_UnifySameDomain
 
         for (int i = 1; i <= SeqOfSubSeqOfEdges.Length(); i++)
         {
-            var UE = new TopoDS_Edge();
+            var UE = new Edge();
             if (SeqOfSubSeqOfEdges[i].SeqsEdges.Length() < 2)
             {
                 continue;
@@ -1187,16 +1193,16 @@ public partial class ShapeUpgrade_UnifySameDomain
     }
 
     /// <summary>Tries to unify the sequence of edges with the set of another edges which lies on the same geometry.</summary>
-    protected bool MergeSeq(NCollection_Sequence<TopoDS_Shape>                                       SeqEdges,
-                            NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theVFmap,
-                            NCollection_Map<TopoDS_Shape>                                            nonMergVert)
+    protected bool MergeSeq(NCollection_Sequence<Shape>                                       SeqEdges,
+                            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theVFmap,
+                            NCollection_Map<Shape>                                            nonMergVert)
     {
         var SeqOfSubsSeqOfEdges = new NCollection_Sequence<SubSequenceOfEdges>();
         if (MergeEdges(SeqEdges, theVFmap, SeqOfSubsSeqOfEdges, nonMergVert))
         {
             for (int i = 1; i <= SeqOfSubsSeqOfEdges.Length(); i++)
             {
-                if (SeqOfSubsSeqOfEdges[i].UnionEdges.IsNull())
+                if (SeqOfSubsSeqOfEdges[i].UnionEdges.IsNull)
                 {
                     continue;
                 }

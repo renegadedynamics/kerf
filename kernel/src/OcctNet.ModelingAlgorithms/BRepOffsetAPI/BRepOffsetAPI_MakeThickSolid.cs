@@ -4,7 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepOffset_Mode;
 using static Kerf.Geometry.JoinKind;
 
@@ -43,7 +45,7 @@ public class BRepOffsetAPI_MakeThickSolid : BRepOffsetAPI_MakeOffsetShape
     /// offset by <paramref name="Offset"/>, the gap closed by the shape's own faces. The other arguments are those of
     /// <see cref="BRepOffsetAPI_MakeOffsetShape.PerformByJoin"/>.
     /// </summary>
-    public void MakeThickSolidByJoin(in TopoDS_Shape S, NCollection_List<TopoDS_Shape> ClosingFaces, double Offset,
+    public void MakeThickSolidByJoin(in Shape S, NCollection_List<Shape> ClosingFaces, double Offset,
                                      double Tol, BRepOffset_Mode Mode = BRepOffset_Skin, bool Intersection = false,
                                      bool SelfInter = false, JoinKind Join = Arc,
                                      bool RemoveIntEdges = false, ProgressRange theRange = default)
@@ -52,10 +54,10 @@ public class BRepOffsetAPI_MakeThickSolid : BRepOffsetAPI_MakeOffsetShape
         myLastUsedAlgo = OffsetAlgo_Type.OffsetAlgo_JOIN;
 
         myOffsetShape.Initialize(S, Offset, Tol, Mode, Intersection, SelfInter, Join, false, RemoveIntEdges);
-        NCollection_List<TopoDS_Shape>.Iterator it = new(ClosingFaces);
+        NCollection_List<Shape>.Iterator it = new(ClosingFaces);
         for (; it.More(); it.Next())
         {
-            myOffsetShape.AddFace(TopoDS.Face(it.Value()));
+            myOffsetShape.AddFace(ShapeCasts.Face(it.Value()));
         }
 
         myOffsetShape.MakeThickSolid(theRange);
@@ -71,7 +73,7 @@ public class BRepOffsetAPI_MakeThickSolid : BRepOffsetAPI_MakeOffsetShape
     //=================================================================================================
 
     /// <summary>Makes a thick solid with the simple algorithm (the shell offset, closed by walls).</summary>
-    public void MakeThickSolidBySimple(in TopoDS_Shape theS, double theOffsetValue)
+    public void MakeThickSolidBySimple(in Shape theS, double theOffsetValue)
     {
         NotDone();
         myLastUsedAlgo = OffsetAlgo_Type.OffsetAlgo_SIMPLE;
@@ -95,12 +97,12 @@ public class BRepOffsetAPI_MakeThickSolid : BRepOffsetAPI_MakeOffsetShape
 
     //=================================================================================================
 
-    internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape F)
+    internal override NCollection_List<Shape> InternalModified(in Shape F)
     {
         myGenerated.Clear();
 
         // OCCT.NET: the caller's face F is looked up through its working copy (decision 1005).
-        TopoDS_Shape aF = myOffsetShape.InternalCopied(F);
+        Shape aF = myOffsetShape.InternalCopied(F);
         if (myLastUsedAlgo == OffsetAlgo_Type.OffsetAlgo_JOIN && myOffsetShape.InternalOffsetFacesFromShapes().HasImage(aF))
         {
             if (myOffsetShape.InternalClosingFaces().Contains(aF))
@@ -109,7 +111,7 @@ public class BRepOffsetAPI_MakeThickSolid : BRepOffsetAPI_MakeOffsetShape
 
                 // Reverse generated shapes in case of small solids.
                 // Useful only for faces without influence on others.
-                NCollection_List<TopoDS_Shape>.Iterator it = new(myGenerated);
+                NCollection_List<Shape>.Iterator it = new(myGenerated);
                 for (; it.More(); it.Next())
                 {
                     it.ChangeValue().Reverse();
@@ -119,8 +121,8 @@ public class BRepOffsetAPI_MakeThickSolid : BRepOffsetAPI_MakeOffsetShape
         }
         else if (myLastUsedAlgo == OffsetAlgo_Type.OffsetAlgo_SIMPLE)
         {
-            TopoDS_Shape aModShape = mySimpleOffsetShape.InternalModified(F);
-            if (!aModShape.IsNull())
+            Shape aModShape = mySimpleOffsetShape.InternalModified(F);
+            if (!aModShape.IsNull)
             {
                 myGenerated.Append(aModShape);
             }

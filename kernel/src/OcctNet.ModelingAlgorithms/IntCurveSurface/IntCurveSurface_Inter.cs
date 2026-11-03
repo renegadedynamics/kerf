@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
@@ -75,7 +77,7 @@ public interface IIntCurveSurface_SurfaceTool<TheSurface> : IIntImp_ZerCSParPSur
 
     static abstract void VIntervals(in TheSurface S, NCollection_Array1<double> T, Continuity Sh);
 
-    static abstract Adaptor3d_Surface UTrim(in TheSurface S, double First, double Last, double Tol);
+    static abstract SurfaceAdaptorBase UTrim(in TheSurface S, double First, double Last, double Tol);
 
     static abstract bool IsUClosed(in TheSurface S);
 
@@ -91,9 +93,9 @@ public interface IIntCurveSurface_SurfaceTool<TheSurface> : IIntImp_ZerCSParPSur
 
     static abstract void D0(in TheSurface S, double U, double V, out Point3D P);
 
-    static abstract Adaptor3d_Surface BasisSurface(in TheSurface S);
+    static abstract SurfaceAdaptorBase BasisSurface(in TheSurface S);
 
-    static abstract Adaptor3d_Curve BasisCurve(in TheSurface S);
+    static abstract CurveAdaptorBase BasisCurve(in TheSurface S);
 
     static abstract Direction3D Direction(in TheSurface S);
 
@@ -470,7 +472,7 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
         if ((aSurfaceType != Plane) && (aSurfaceType != SurfaceKind.Cylinder) && (aSurfaceType != SurfaceKind.Cone)
             && (aSurfaceType != SurfaceKind.Sphere))
         {
-            if (aSurfaceType != BSplineSurface)
+            if (aSurfaceType != SurfaceKind.BSplineSurface)
             {
                 int nbsu = TheSurfaceTool.NbSamplesU(surface, U1, U2);
                 int nbsv = TheSurfaceTool.NbSamplesV(surface, V1, V2);
@@ -487,9 +489,9 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
             }
             else
             {
-                Adaptor3d_Surface aS = TheSurfaceTool.UTrim(surface, U1, U2, 1.0e-9);
+                SurfaceAdaptorBase aS = TheSurfaceTool.UTrim(surface, U1, U2, 1.0e-9);
                 aS = aS.VTrim(V1, V2, 1.0e-9);
-                Adaptor3d_TopolTool aTopTool = new(aS);
+                TopolTool aTopTool = new(aS);
                 double defl = 0.1;
                 aTopTool.SamplePnts(defl, 10, 10);
 
@@ -520,19 +522,19 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
         {
             case Plane:
             {
-                IntAna_IntConicQuad LinPlane = new(Line, TheSurfaceTool.Plane(surface), THE_TOLERANCE_ANGULAIRE);
+                IntConicQuad LinPlane = new(Line, TheSurfaceTool.Plane(surface), THE_TOLERANCE_ANGULAIRE);
                 AppendIntAna(curve, surface, LinPlane);
                 break;
             }
             case SurfaceKind.Cylinder:
             {
-                IntAna_IntConicQuad LinCylinder = new(Line, new IntAna_Quadric(TheSurfaceTool.Cylinder(surface)));
+                IntConicQuad LinCylinder = new(Line, new Quadric(TheSurfaceTool.Cylinder(surface)));
                 AppendIntAna(curve, surface, LinCylinder);
                 break;
             }
             case SurfaceKind.Sphere:
             {
-                IntAna_IntConicQuad LinSphere = new(Line, new IntAna_Quadric(TheSurfaceTool.Sphere(surface)));
+                IntConicQuad LinSphere = new(Line, new Quadric(TheSurfaceTool.Sphere(surface)));
                 AppendIntAna(curve, surface, LinSphere);
                 break;
             }
@@ -559,7 +561,7 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
                 Cone cn = TheSurfaceTool.Cone(surface);
                 if (Math.Abs(cn.SemiAngle()) < M_PI / 2.0 - correction)
                 {
-                    IntAna_IntConicQuad LinCone = new(Line, new IntAna_Quadric(cn));
+                    IntConicQuad LinCone = new(Line, new Quadric(cn));
                     AppendIntAna(curve, surface, LinCone);
                 }
                 else
@@ -608,7 +610,7 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
                         Line, surface, U1inf, U2inf, V1inf, V2inf, ref U1new, ref U2new, ref V1new, ref V2new,
                         out NoIntersection);
                 }
-                else if (aSurfaceType == OffsetSurface)
+                else if (aSurfaceType == SurfaceKind.OffsetSurface)
                 {
                     IntCurveSurface_InterUtils.EstLimForInfOffs<TheSurface, TheSurfaceTool>(
                         Line, surface, nbsu, U1inf, U2inf, V1inf, V2inf, ref U1new, ref U2new, ref V1new, ref V2new,
@@ -663,26 +665,26 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
         {
             case Plane:
             {
-                IntAna_IntConicQuad CircPlane = new(Circle, TheSurfaceTool.Plane(surface), THE_TOLERANCE_ANGULAIRE,
+                IntConicQuad CircPlane = new(Circle, TheSurfaceTool.Plane(surface), THE_TOLERANCE_ANGULAIRE,
                                                     THE_TOLERANCE);
                 AppendIntAna(curve, surface, CircPlane);
                 break;
             }
             case SurfaceKind.Cylinder:
             {
-                IntAna_IntConicQuad CircCylinder = new(Circle, new IntAna_Quadric(TheSurfaceTool.Cylinder(surface)));
+                IntConicQuad CircCylinder = new(Circle, new Quadric(TheSurfaceTool.Cylinder(surface)));
                 AppendIntAna(curve, surface, CircCylinder);
                 break;
             }
             case SurfaceKind.Cone:
             {
-                IntAna_IntConicQuad CircCone = new(Circle, new IntAna_Quadric(TheSurfaceTool.Cone(surface)));
+                IntConicQuad CircCone = new(Circle, new Quadric(TheSurfaceTool.Cone(surface)));
                 AppendIntAna(curve, surface, CircCone);
                 break;
             }
             case SurfaceKind.Sphere:
             {
-                IntAna_IntConicQuad CircSphere = new(Circle, new IntAna_Quadric(TheSurfaceTool.Sphere(surface)));
+                IntConicQuad CircSphere = new(Circle, new Quadric(TheSurfaceTool.Sphere(surface)));
                 AppendIntAna(curve, surface, CircSphere);
                 break;
             }
@@ -704,27 +706,27 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
         {
             case Plane:
             {
-                IntAna_IntConicQuad EllipsePlane = new(Ellipse, TheSurfaceTool.Plane(surface),
+                IntConicQuad EllipsePlane = new(Ellipse, TheSurfaceTool.Plane(surface),
                                                        THE_TOLERANCE_ANGULAIRE, THE_TOLERANCE);
                 AppendIntAna(curve, surface, EllipsePlane);
                 break;
             }
             case SurfaceKind.Cylinder:
             {
-                IntAna_IntConicQuad EllipseCylinder =
-                    new(Ellipse, new IntAna_Quadric(TheSurfaceTool.Cylinder(surface)));
+                IntConicQuad EllipseCylinder =
+                    new(Ellipse, new Quadric(TheSurfaceTool.Cylinder(surface)));
                 AppendIntAna(curve, surface, EllipseCylinder);
                 break;
             }
             case SurfaceKind.Cone:
             {
-                IntAna_IntConicQuad EllipseCone = new(Ellipse, new IntAna_Quadric(TheSurfaceTool.Cone(surface)));
+                IntConicQuad EllipseCone = new(Ellipse, new Quadric(TheSurfaceTool.Cone(surface)));
                 AppendIntAna(curve, surface, EllipseCone);
                 break;
             }
             case SurfaceKind.Sphere:
             {
-                IntAna_IntConicQuad EllipseSphere = new(Ellipse, new IntAna_Quadric(TheSurfaceTool.Sphere(surface)));
+                IntConicQuad EllipseSphere = new(Ellipse, new Quadric(TheSurfaceTool.Sphere(surface)));
                 AppendIntAna(curve, surface, EllipseSphere);
                 break;
             }
@@ -746,25 +748,25 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
         {
             case Plane:
             {
-                IntAna_IntConicQuad ParabPlane = new(Parab, TheSurfaceTool.Plane(surface), THE_TOLERANCE_ANGULAIRE);
+                IntConicQuad ParabPlane = new(Parab, TheSurfaceTool.Plane(surface), THE_TOLERANCE_ANGULAIRE);
                 AppendIntAna(curve, surface, ParabPlane);
                 break;
             }
             case SurfaceKind.Cylinder:
             {
-                IntAna_IntConicQuad ParabCylinder = new(Parab, new IntAna_Quadric(TheSurfaceTool.Cylinder(surface)));
+                IntConicQuad ParabCylinder = new(Parab, new Quadric(TheSurfaceTool.Cylinder(surface)));
                 AppendIntAna(curve, surface, ParabCylinder);
                 break;
             }
             case SurfaceKind.Cone:
             {
-                IntAna_IntConicQuad ParabCone = new(Parab, new IntAna_Quadric(TheSurfaceTool.Cone(surface)));
+                IntConicQuad ParabCone = new(Parab, new Quadric(TheSurfaceTool.Cone(surface)));
                 AppendIntAna(curve, surface, ParabCone);
                 break;
             }
             case SurfaceKind.Sphere:
             {
-                IntAna_IntConicQuad ParabSphere = new(Parab, new IntAna_Quadric(TheSurfaceTool.Sphere(surface)));
+                IntConicQuad ParabSphere = new(Parab, new Quadric(TheSurfaceTool.Sphere(surface)));
                 AppendIntAna(curve, surface, ParabSphere);
                 break;
             }
@@ -804,25 +806,25 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
         {
             case Plane:
             {
-                IntAna_IntConicQuad HyprPlane = new(Hypr, TheSurfaceTool.Plane(surface), THE_TOLERANCE_ANGULAIRE);
+                IntConicQuad HyprPlane = new(Hypr, TheSurfaceTool.Plane(surface), THE_TOLERANCE_ANGULAIRE);
                 AppendIntAna(curve, surface, HyprPlane);
                 break;
             }
             case SurfaceKind.Cylinder:
             {
-                IntAna_IntConicQuad HyprCylinder = new(Hypr, new IntAna_Quadric(TheSurfaceTool.Cylinder(surface)));
+                IntConicQuad HyprCylinder = new(Hypr, new Quadric(TheSurfaceTool.Cylinder(surface)));
                 AppendIntAna(curve, surface, HyprCylinder);
                 break;
             }
             case SurfaceKind.Cone:
             {
-                IntAna_IntConicQuad HyprCone = new(Hypr, new IntAna_Quadric(TheSurfaceTool.Cone(surface)));
+                IntConicQuad HyprCone = new(Hypr, new Quadric(TheSurfaceTool.Cone(surface)));
                 AppendIntAna(curve, surface, HyprCone);
                 break;
             }
             case SurfaceKind.Sphere:
             {
-                IntAna_IntConicQuad HyprSphere = new(Hypr, new IntAna_Quadric(TheSurfaceTool.Sphere(surface)));
+                IntConicQuad HyprSphere = new(Hypr, new Quadric(TheSurfaceTool.Sphere(surface)));
                 AppendIntAna(curve, surface, HyprSphere);
                 break;
             }
@@ -857,7 +859,7 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
     /// Appends the points of an analytic intersection inside the bounds, or records that the curve is parallel
     /// (IntCurveSurface_InterImpl::AppendIntAna).
     /// </summary>
-    protected void AppendIntAna(in TheCurve curve, in TheSurface surface, IntAna_IntConicQuad intana_ConicQuad)
+    protected void AppendIntAna(in TheCurve curve, in TheSurface surface, IntConicQuad intana_ConicQuad)
     {
         NCollection_DynamicArray<IntCurveSurface_IntersectionPoint> aPoints = new();
 

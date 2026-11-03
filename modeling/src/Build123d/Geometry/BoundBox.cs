@@ -65,7 +65,7 @@ public sealed class BoundBox
         shape.IsEmpty ? Empty : FromTopoDS(shape.TopoShape, tolerance, optimal);
 
     /// <summary>The bounding box of an OCCT shape (see <see cref="FromShape"/>).</summary>
-    public static BoundBox FromTopoDS(TopoDS_Shape shape, double? tolerance = null, bool optimal = true)
+    public static BoundBox FromTopoDS(global::Kerf.Topology.Shape shape, double? tolerance = null, bool optimal = true)
     {
         _ = tolerance;   // accepted, as build123d accepts it, but unused
         var box = new global::Kerf.Engine.Geometry.Bounds.Box();

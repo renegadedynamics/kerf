@@ -4,8 +4,10 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -24,7 +26,7 @@ internal static class IntCurveSurface_PolyhedronUtils
     public const double THE_MIN_EDGE_LENGTH_SQUARED = 1e-15;
 
     /// <summary>Samples the surface on a uniform UV grid with the grid evaluator, and adds the points to the box.</summary>
-    public static void InitUniform(GeomGridEval_Surface theEval, double theU0, double theV0, double theU1,
+    public static void InitUniform(SurfaceGrid theEval, double theU0, double theV0, double theU1,
                                    double theV1, int theNbDeltaU, int theNbDeltaV, Point3D[] thePnts, double[] theU,
                                    double[] theV, bool[] theIsOnBounds, ref Box theBnd)
     {
@@ -68,7 +70,7 @@ internal static class IntCurveSurface_PolyhedronUtils
     }
 
     /// <summary>Samples the surface on the given UV parameters with the grid evaluator, and adds the points to the box.</summary>
-    public static void InitWithParams(GeomGridEval_Surface theEval, NCollection_Array1<double> theUpars,
+    public static void InitWithParams(SurfaceGrid theEval, NCollection_Array1<double> theUpars,
                                       NCollection_Array1<double> theVpars, int theNbDeltaU, int theNbDeltaV,
                                       Point3D[] thePnts, double[] theU, double[] theV, bool[] theIsOnBounds,
                                       ref Box theBnd)
@@ -99,7 +101,7 @@ internal static class IntCurveSurface_PolyhedronUtils
     /// The maximum deflection along a boundary isoline (U-iso if <paramref name="theIsUIso"/>), from the boundary
     /// points and the midpoints evaluated with the grid evaluator.
     /// </summary>
-    public static double ComputeBorderDeflection(GeomGridEval_Surface theEval, double theParameter, double thePMin,
+    public static double ComputeBorderDeflection(SurfaceGrid theEval, double theParameter, double thePMin,
                                                  double thePMax, bool theIsUIso, int theNbSamples)
     {
         if (theNbSamples <= 0)
@@ -537,7 +539,7 @@ internal static class IntCurveSurface_PolyhedronUtils
     /// <summary>
     /// The maximum deflection over all the triangles, evaluating the surface at their centers one by one.
     /// </summary>
-    public static double ComputeMaxDeflection<PolyhedronType>(Adaptor3d_Surface theSurface, PolyhedronType thePolyhedron,
+    public static double ComputeMaxDeflection<PolyhedronType>(SurfaceAdaptorBase theSurface, PolyhedronType thePolyhedron,
                                                               int theNbTriangles)
         where PolyhedronType : IIntCurveSurface_Polyhedron
     {
@@ -570,7 +572,7 @@ internal static class IntCurveSurface_PolyhedronUtils
     }
 
     /// <summary>The maximum deflection over the four boundaries, evaluated with the grid evaluator.</summary>
-    public static double ComputeMaxBorderDeflection(GeomGridEval_Surface theEval, double theU0, double theV0,
+    public static double ComputeMaxBorderDeflection(SurfaceGrid theEval, double theU0, double theV0,
                                                     double theU1, double theV1, int theNbDeltaU, int theNbDeltaV)
     {
         double maxDeflection = RealFirst();

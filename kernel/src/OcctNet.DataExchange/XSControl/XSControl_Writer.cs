@@ -6,6 +6,7 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -91,7 +92,7 @@ public class XSControl_Writer
     /// <summary>
     /// Transfers a Shape according to the mode
     /// </summary>
-    public IFSelect_ReturnStatus TransferShape(TopoDS_Shape sh, int mode = 0, ProgressRange theProgress = default)
+    public IFSelect_ReturnStatus TransferShape(Shape sh, int mode = 0, ProgressRange theProgress = default)
     {
         thesession.TransferWriter().SetTransferMode(mode);
         return thesession.TransferWriteShape(sh, true, theProgress);

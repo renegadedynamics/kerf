@@ -7,6 +7,7 @@
 // - ShapeHistory.deep_copy_drops_the_record: copy.deepcopy has no counterpart.
 // - ShapeHistory.merge_returns_self_and_tolerates_none: records are immutable, so merging an empty record returns a
 //   new record rather than self; only the None case returns the same record.
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Occt;
 using Ops = Build123d.Operations;
@@ -58,7 +59,7 @@ public class ShapeHistoryTests
         var side = _box.Faces().SortBy(Axis.X)[0];
         var merged = history.Modified(side.Wrapped);
         Assert.Single(merged);
-        Check.AlmostEqual(150, new Face(TopoDS.Face(merged[0])).Area, 5);
+        Check.AlmostEqual(150, new Face(ShapeCasts.Face(merged[0])).Area, 5);
     }
 
     [Fact]
@@ -239,7 +240,7 @@ public class ShapeHistoryTests
     [Fact]
     public void RecordedPlacementsPreserveLastAndNewGeometry()
     {
-        static TopoDS_Shape Snapshot(TopoDS_Shape shape) => shape.Located(shape.Location());
+        static global::Kerf.Topology.Shape Snapshot(global::Kerf.Topology.Shape shape) => shape.Located(shape.Location());
 
         var recorded = CompoundObjects.Box(10, 10, 10) - CompoundObjects.Cylinder(2, 20);
         var originalHistory = recorded.History;
@@ -350,9 +351,9 @@ public class ShapeHistoryTests
     [Fact]
     public void Helpers()
     {
-        var subs = ShapeHistory.TrackedSubshapes([_box.Wrapped, new TopoDS_Shape()]);
+        var subs = ShapeHistory.TrackedSubshapes([_box.Wrapped, new global::Kerf.Topology.Shape()]);
         Assert.Equal(8 + 12 + 6 + 1, subs.Length);
-        var kernelList = new NCollection_List<TopoDS_Shape>();
+        var kernelList = new NCollection_List<global::Kerf.Topology.Shape>();
         foreach (var face in _box.Faces())
             kernelList.Append(face.Wrapped);
         Assert.Equal(6, TopoUtil.Items(kernelList).Length);

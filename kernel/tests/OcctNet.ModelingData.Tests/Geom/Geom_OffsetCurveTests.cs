@@ -8,41 +8,41 @@ namespace OcctNet.ModelingData.Tests;
 
 public class Geom_OffsetCurve_Test
 {
-    private readonly Geom_OffsetCurve myOriginalCurve;
+    private readonly OffsetCurve3D myOriginalCurve;
 
     public Geom_OffsetCurve_Test()
     {
         // Create a circle as basis curve
         Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 5.0);
-        Geom_Circle aBasisCurve = new(aCircle);
+        CircleCurve3D aBasisCurve = new(aCircle);
 
         // Create offset curve
         Direction3D anOffsetDir = new(Direction3D.D.Z);
         double anOffsetValue = 2.0;
-        myOriginalCurve = new Geom_OffsetCurve(aBasisCurve, anOffsetValue, anOffsetDir);
+        myOriginalCurve = new OffsetCurve3D(aBasisCurve, anOffsetValue, anOffsetDir);
     }
 
     [Fact]
     public void CopyConstructorBasicProperties()
     {
         // Test copy constructor
-        Geom_OffsetCurve aCopiedCurve = new(myOriginalCurve);
+        OffsetCurve3D aCopiedCurve = new(myOriginalCurve);
 
         // Verify basic properties are identical
         Assert.Equal(myOriginalCurve.Offset(), aCopiedCurve.Offset());
         Assert.True(myOriginalCurve.Direction().IsEqual(aCopiedCurve.Direction(), 1e-10));
-        Assert.Equal(myOriginalCurve.IsPeriodic(), aCopiedCurve.IsPeriodic());
-        Assert.Equal(myOriginalCurve.IsClosed(), aCopiedCurve.IsClosed());
+        Assert.Equal(myOriginalCurve.IsPeriodic, aCopiedCurve.IsPeriodic);
+        Assert.Equal(myOriginalCurve.IsClosed, aCopiedCurve.IsClosed);
     }
 
     [Fact]
     public void CopyConstructorBasisCurve()
     {
-        Geom_OffsetCurve aCopiedCurve = new(myOriginalCurve);
+        OffsetCurve3D aCopiedCurve = new(myOriginalCurve);
 
         // Verify basis curves are equivalent but independent
-        Geom_Curve anOrigBasis = myOriginalCurve.BasisCurve();
-        Geom_Curve aCopyBasis = aCopiedCurve.BasisCurve();
+        Curve3D anOrigBasis = myOriginalCurve.BasisCurve();
+        Curve3D aCopyBasis = aCopiedCurve.BasisCurve();
 
         // They should be different objects
         Assert.NotSame(anOrigBasis, aCopyBasis);
@@ -56,7 +56,7 @@ public class Geom_OffsetCurve_Test
     public void CopyMethodUsesOptimizedConstructor()
     {
         // Test that Copy() method uses the optimized copy constructor
-        Geom_OffsetCurve? aCopiedCurve = myOriginalCurve.Copy() as Geom_OffsetCurve;
+        OffsetCurve3D? aCopiedCurve = myOriginalCurve.Copy() as OffsetCurve3D;
         Assert.NotNull(aCopiedCurve);
 
         // Verify the copy is functionally identical
@@ -78,7 +78,7 @@ public class Geom_OffsetCurve_Test
     [Fact]
     public void CopyIndependence()
     {
-        Geom_OffsetCurve aCopiedCurve = new(myOriginalCurve);
+        OffsetCurve3D aCopiedCurve = new(myOriginalCurve);
 
         // Store original offset value
         double anOrigOffset = aCopiedCurve.Offset();

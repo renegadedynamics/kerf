@@ -4,11 +4,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -22,7 +26,7 @@ namespace Occt;
 /// <para>
 /// PointInFace hatches the face with the context's cached hatcher (<see cref="IntTools_Context.Hatcher"/>), clearing
 /// the hatchings first and removing its own at the end; a reused hatcher gives the answers of a fresh one (decision
-/// 670's audit, rechecked by unit 6B's tests). <see cref="DoSplitSEAMOnFace(in TopoDS_Edge, in TopoDS_Face)"/> and its
+/// 670's audit, rechecked by unit 6B's tests). <see cref="DoSplitSEAMOnFace(in Edge, in Face)"/> and its
 /// two-edge overload write the seam's two pcurves into the split edge they are given (plan 2.3).
 /// </para>
 /// </remarks>
@@ -32,7 +36,7 @@ public static class BOPTools_AlgoTools3D
     /// Makes the split edge a seam of the face: if its pcurve lies on a period boundary of the face's surface, gives it
     /// a second pcurve translated by the period. Writes into <paramref name="aSplit"/>. False if nothing is done.
     /// </summary>
-    public static bool DoSplitSEAMOnFace(in TopoDS_Edge aSplit, in TopoDS_Face aF)
+    public static bool DoSplitSEAMOnFace(in Edge aSplit, in Face aF)
     {
         bool bIsUPeriodic, bIsVPeriodic, bIsLeft;
         double anUPeriod = 0.0, anVPeriod = 0.0;
@@ -41,24 +45,24 @@ public static class BOPTools_AlgoTools3D
         double aUmin, aUmax, aVmin, aVmax;
         Point2D aP2D;
         Vector2D aVec2D;
-        Geom2d_Curve aTmpC1, aTmpC2;
-        Geom2d_Curve C2D1;
-        Geom_Surface aS;
-        BRep_Builder BB = new();
-        TopoDS_Edge aSp;
+        Curve2D aTmpC1, aTmpC2;
+        Curve2D C2D1;
+        Surface aS;
+        BrepBuilder BB = new();
+        Edge aSp;
         //
         bIsLeft = false;
         aSp = aSplit;
-        aSp.Orientation(TopAbs_FORWARD);
-        aTol = BRep_Tool.Tolerance(aSp);
+        aSp.Orientation(Forward);
+        aTol = Tool.Tolerance(aSp);
         //
-        aS = BRep_Tool.Surface(aF)!;
+        aS = Tool.Surface(aF)!;
         //
         aS.Bounds(out aUmin, out aUmax, out aVmin, out aVmax);
         //
 
-        bIsUPeriodic = aS.IsUClosed();
-        bIsVPeriodic = aS.IsVClosed();
+        bIsUPeriodic = aS.IsUClosed;
+        bIsVPeriodic = aS.IsVClosed;
 
         if (bIsUPeriodic)
         {
@@ -73,17 +77,17 @@ public static class BOPTools_AlgoTools3D
         if (!bIsUPeriodic && !bIsVPeriodic)
         {
 
-            if (aS is not Geom_RectangularTrimmedSurface aRTS)
+            if (aS is not TrimmedSurface aRTS)
             {
                 return false;
             }
             else
             {
-                Geom_Surface aSB;
+                Surface aSB;
                 //
                 aSB = aRTS.BasisSurface();
-                bIsUPeriodic = aSB.IsUPeriodic();
-                bIsVPeriodic = aSB.IsVPeriodic();
+                bIsUPeriodic = aSB.IsUPeriodic;
+                bIsVPeriodic = aSB.IsVPeriodic;
                 //
 
                 if (bIsUPeriodic || bIsVPeriodic)
@@ -93,8 +97,8 @@ public static class BOPTools_AlgoTools3D
                 }
                 else
                 {
-                    bool bIsUClosed = aSB.IsUClosed();
-                    bool bIsVClosed = aSB.IsVClosed();
+                    bool bIsUClosed = aSB.IsUClosed;
+                    bool bIsVClosed = aSB.IsVClosed;
                     aSB.Bounds(out double aGlobalUmin, out double aGlobalUmax, out double aGlobalVmin, out double aGlobalVmax);
 
                     if (bIsUClosed && Math.Abs(aUmin - aGlobalUmin) < aTol
@@ -119,7 +123,7 @@ public static class BOPTools_AlgoTools3D
         }
         //
         //---------------------------------------------------
-        C2D1 = BRep_Tool.CurveOnSurface(aSp, aF, out a, out b)!;
+        C2D1 = Tool.CurveOnSurface(aSp, aF, out a, out b)!;
         //
         aT = BOPTools_AlgoTools2D.IntermediatePoint(a, b);
         C2D1.D1(aT, out aP2D, out aVec2D);
@@ -131,7 +135,7 @@ public static class BOPTools_AlgoTools3D
         anU1 = anU;
         anV1 = anV;
         //
-        GeomAdaptor_Surface aGAS = new(aS);
+        SurfaceAdaptor aGAS = new(aS);
         dU = aGAS.UResolution(aTol);
         dV = aGAS.VResolution(aTol);
         //
@@ -170,11 +174,11 @@ public static class BOPTools_AlgoTools3D
         //
         aScPr = (anU1 == anU) ? aDir2D1 * aDOX : aDir2D1 * aDOY;
         //
-        aTmpC1 = (Geom2d_Curve)C2D1.Copy();
-        Geom2d_TrimmedCurve aC1 = new(aTmpC1, a, b);
+        aTmpC1 = (Curve2D)C2D1.Copy();
+        TrimmedCurve2D aC1 = new(aTmpC1, a, b);
         //
-        aTmpC2 = (Geom2d_Curve)C2D1.Copy();
-        Geom2d_TrimmedCurve aC2 = new(aTmpC2, a, b);
+        aTmpC2 = (Curve2D)C2D1.Copy();
+        TrimmedCurve2D aC2 = new(aTmpC2, a, b);
         Vector2D aTrV = new(anU1 - anU, anV1 - anV);
         aC2.Translate(aTrV);
         //
@@ -208,35 +212,35 @@ public static class BOPTools_AlgoTools3D
     /// edge's two pcurves and the other one is made by translation. Writes into <paramref name="theESplit"/>. True if
     /// the split is (or already was) a seam.
     /// </summary>
-    public static bool DoSplitSEAMOnFace(in TopoDS_Edge theEOrigin, in TopoDS_Edge theESplit, in TopoDS_Face theFace)
+    public static bool DoSplitSEAMOnFace(in Edge theEOrigin, in Edge theESplit, in Face theFace)
     {
-        if (!BRep_Tool.IsClosed(theEOrigin, theFace))
+        if (!Tool.IsClosed(theEOrigin, theFace))
         {
             return false;
         }
 
-        if (BRep_Tool.IsClosed(theESplit, theFace))
+        if (Tool.IsClosed(theESplit, theFace))
         {
             return true;
         }
 
-        TopoDS_Edge aESplit = theESplit;
-        aESplit.Orientation(TopAbs_FORWARD);
+        Edge aESplit = theESplit;
+        aESplit.Orientation(Forward);
 
-        TopoDS_Face aFace = theFace;
-        aFace.Orientation(TopAbs_FORWARD);
+        Face aFace = theFace;
+        aFace.Orientation(Forward);
 
-        Geom2d_Curve? aC2DSplit = BRep_Tool.CurveOnSurface(aESplit, aFace, out double aTS1, out double aTS2);
+        Curve2D? aC2DSplit = Tool.CurveOnSurface(aESplit, aFace, out double aTS1, out double aTS2);
         if (aC2DSplit is null)
         {
             return false;
         }
 
         double aT1, aT2;
-        Geom2d_Curve aC2D1 =
-            BRep_Tool.CurveOnSurface(TopoDS.Edge(theEOrigin.Oriented(TopAbs_FORWARD)), aFace, out aT1, out aT2)!;
-        Geom2d_Curve aC2D2 =
-            BRep_Tool.CurveOnSurface(TopoDS.Edge(theEOrigin.Oriented(TopAbs_REVERSED)), aFace, out aT1, out aT2)!;
+        Curve2D aC2D1 =
+            Tool.CurveOnSurface(ShapeCasts.Edge(theEOrigin.Oriented(Forward)), aFace, out aT1, out aT2)!;
+        Curve2D aC2D2 =
+            Tool.CurveOnSurface(ShapeCasts.Edge(theEOrigin.Oriented(Reversed)), aFace, out aT1, out aT2)!;
 
         double aT = BOPTools_AlgoTools2D.IntermediatePoint(aTS1, aTS2);
         aC2DSplit.D1(aT, out Point2D aPMid, out Vector2D aVTgt);
@@ -263,11 +267,11 @@ public static class BOPTools_AlgoTools3D
         Point2D aNewPnt = aDist1 < aDist2 ? aC2D2.Value(aProjPC1.LowerDistanceParameter())
                                            : aC2D1.Value(aProjPC2.LowerDistanceParameter());
 
-        Geom2d_Curve aTmpC1 = (Geom2d_Curve)aC2DSplit.Copy();
-        Geom2d_Curve aTmpC2 = (Geom2d_Curve)aC2DSplit.Copy();
+        Curve2D aTmpC1 = (Curve2D)aC2DSplit.Copy();
+        Curve2D aTmpC2 = (Curve2D)aC2DSplit.Copy();
 
-        Geom2d_TrimmedCurve aC1 = new(aTmpC1, aTS1, aTS2);
-        Geom2d_TrimmedCurve aC2 = new(aTmpC2, aTS1, aTS2);
+        TrimmedCurve2D aC1 = new(aTmpC1, aTS1, aTS2);
+        TrimmedCurve2D aC2 = new(aTmpC2, aTS1, aTS2);
 
         Vector2D aTrVec = new(aPMid, aNewPnt);
         aC2.Translate(aTrVec);
@@ -286,11 +290,11 @@ public static class BOPTools_AlgoTools3D
 
         if ((aDist1 < aDist2) == (aDot > 0))
         {
-            new BRep_Builder().UpdateEdge(aESplit, aC1, aC2, aFace, BRep_Tool.Tolerance(aESplit));
+            new BrepBuilder().UpdateEdge(aESplit, aC1, aC2, aFace, Tool.Tolerance(aESplit));
         }
         else
         {
-            new BRep_Builder().UpdateEdge(aESplit, aC2, aC1, aFace, BRep_Tool.Tolerance(aESplit));
+            new BrepBuilder().UpdateEdge(aESplit, aC2, aC1, aFace, Tool.Tolerance(aESplit));
         }
         return true;
     }
@@ -299,16 +303,16 @@ public static class BOPTools_AlgoTools3D
     /// The normal of the face's surface at the edge's intermediate point (through the edge's pcurve), reversed for a
     /// REVERSED face.
     /// </summary>
-    public static void GetNormalToFaceOnEdge(in TopoDS_Edge aE, in TopoDS_Face aF, out Direction3D aDNF, IntTools_Context? theContext = null)
+    public static void GetNormalToFaceOnEdge(in Edge aE, in Face aF, out Direction3D aDNF, IntTools_Context? theContext = null)
     {
         double aT;
 
-        BRep_Tool.CurveOnSurface(aE, aF, out double aT1, out double aT2);
+        Tool.CurveOnSurface(aE, aF, out double aT1, out double aT2);
         aT = BOPTools_AlgoTools2D.IntermediatePoint(aT1, aT2);
 
         GetNormalToFaceOnEdge(aE, aF, aT, out aDNF, theContext);
 
-        if (aF.Orientation() == TopAbs_REVERSED)
+        if (aF.Orientation() == Reversed)
         {
             aDNF.Reverse();
         }
@@ -318,15 +322,15 @@ public static class BOPTools_AlgoTools3D
     /// The normal of the face's surface (DU ^ DV, whatever the face's orientation) at the parameter of the edge,
     /// through the edge's pcurve (made if missing).
     /// </summary>
-    public static void GetNormalToFaceOnEdge(in TopoDS_Edge aE, in TopoDS_Face aF1, double aT, out Direction3D aDNF1,
+    public static void GetNormalToFaceOnEdge(in Edge aE, in Face aF1, double aT, out Direction3D aDNF1,
                                              IntTools_Context? theContext = null)
     {
         double U, V;
         Point2D aP2D;
 
-        Geom_Surface aS1 = BRep_Tool.Surface(aF1)!;
+        Surface aS1 = Tool.Surface(aF1)!;
 
-        BOPTools_AlgoTools2D.CurveOnSurface(aE, aF1, out Geom2d_Curve? aC2D1, out _, theContext);
+        BOPTools_AlgoTools2D.CurveOnSurface(aE, aF1, out Curve2D? aC2D1, out _, theContext);
 
         aC2D1!.D0(aT, out aP2D);
         U = aP2D.X();
@@ -371,7 +375,7 @@ public static class BOPTools_AlgoTools3D
     /// The normal DU ^ DV of the surface at (U, V); false (and <paramref name="aDNS"/> unchanged) where a derivative is
     /// null.
     /// </summary>
-    public static bool GetNormalToSurface(Geom_Surface aS, double U, double V, ref Direction3D aDNS)
+    public static bool GetNormalToSurface(Surface aS, double U, double V, ref Direction3D aDNS)
     {
         aS.D1(U, V, out _, out Vector3D aD1U, out Vector3D aD1V);
 
@@ -406,18 +410,18 @@ public static class BOPTools_AlgoTools3D
     /// classification) and the face's normal there. True if the point was found (PointNearEdge returned 0);
     /// <paramref name="aPNear"/> and <paramref name="aDNF"/> are unchanged when the edge has no pcurve on the face.
     /// </summary>
-    public static bool GetApproxNormalToFaceOnEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, ref Point3D aPNear,
+    public static bool GetApproxNormalToFaceOnEdge(in Edge aE, in Face aF, double aT, ref Point3D aPNear,
                                                    ref Direction3D aDNF, double aDt2D)
     {
         Point2D aPx2DNear = new();
         int iErr = PointNearEdge(aE, aF, aT, aDt2D, ref aPx2DNear, ref aPNear);
         if (iErr != 1)
         {
-            Geom_Surface aS = BRep_Tool.Surface(aF)!;
+            Surface aS = Tool.Surface(aF)!;
 
             GetNormalToSurface(aS, aPx2DNear.X(), aPx2DNear.Y(), ref aDNF);
 
-            if (aF.Orientation() == TopAbs_REVERSED)
+            if (aF.Orientation() == Reversed)
             {
                 aDNF.Reverse();
             }
@@ -427,18 +431,18 @@ public static class BOPTools_AlgoTools3D
     }
 
     /// <summary>As the overload with a step, the step chosen by PointNearEdge and the point checked to be in the face.</summary>
-    public static bool GetApproxNormalToFaceOnEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, ref Point3D aPNear,
+    public static bool GetApproxNormalToFaceOnEdge(in Edge aE, in Face aF, double aT, ref Point3D aPNear,
                                                    ref Direction3D aDNF, IntTools_Context theContext)
     {
         Point2D aPx2DNear = new();
         int iErr = PointNearEdge(aE, aF, aT, ref aPx2DNear, ref aPNear, theContext);
         if (iErr != 1)
         {
-            Geom_Surface aS = BRep_Tool.Surface(aF)!;
+            Surface aS = Tool.Surface(aF)!;
 
             GetNormalToSurface(aS, aPx2DNear.X(), aPx2DNear.Y(), ref aDNF);
 
-            if (aF.Orientation() == TopAbs_REVERSED)
+            if (aF.Orientation() == Reversed)
             {
                 aDNF.Reverse();
             }
@@ -448,18 +452,18 @@ public static class BOPTools_AlgoTools3D
     }
 
     /// <summary>As the overload with a step, the point checked to be in the face.</summary>
-    public static bool GetApproxNormalToFaceOnEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, double theStep,
+    public static bool GetApproxNormalToFaceOnEdge(in Edge aE, in Face aF, double aT, double theStep,
                                                    ref Point3D aPNear, ref Direction3D aDNF, IntTools_Context theContext)
     {
         Point2D aPx2DNear = new();
         int iErr = PointNearEdge(aE, aF, aT, theStep, ref aPx2DNear, ref aPNear, theContext);
         if (iErr != 1)
         {
-            Geom_Surface aS = BRep_Tool.Surface(aF)!;
+            Surface aS = Tool.Surface(aF)!;
 
             GetNormalToSurface(aS, aPx2DNear.X(), aPx2DNear.Y(), ref aDNF);
 
-            if (aF.Orientation() == TopAbs_REVERSED)
+            if (aF.Orientation() == Reversed)
             {
                 aDNF.Reverse();
             }
@@ -473,22 +477,22 @@ public static class BOPTools_AlgoTools3D
     /// large tolerances) perpendicular to the pcurve, into the face. Returns 1 (outputs unchanged) if the edge has no
     /// pcurve on the face, else 0. No classification.
     /// </summary>
-    public static int PointNearEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, double aDt2D, ref Point2D aPx2DNear,
+    public static int PointNearEdge(in Edge aE, in Face aF, double aT, double aDt2D, ref Point2D aPx2DNear,
                                     ref Point3D aPxNear)
     {
         double aETol, aFTol, transVal;
         SurfaceKind aTS;
-        Geom2d_Curve? aC2D;
-        Geom_Surface aS;
+        Curve2D? aC2D;
+        Surface aS;
         //
-        aC2D = BRep_Tool.CurveOnSurface(aE, aF, out _, out _);
+        aC2D = Tool.CurveOnSurface(aE, aF, out _, out _);
         int iErr = aC2D is null ? 1 : 0;
         if (iErr != 0)
         {
             return iErr;
         }
         //
-        aS = BRep_Tool.Surface(aF)!;
+        aS = Tool.Surface(aF)!;
         //
         aC2D!.D1(aT, out Point2D aPx2D, out Vector2D aVx2D);
         Direction2D aDx2D = new(aVx2D);
@@ -496,22 +500,22 @@ public static class BOPTools_AlgoTools3D
         Direction2D aDP = new();
         aDP.SetCoord(-aDx2D.Y(), aDx2D.X());
 
-        if (aE.Orientation() == TopAbs_REVERSED)
+        if (aE.Orientation() == Reversed)
         {
             aDP.Reverse();
         }
 
-        if (aF.Orientation() == TopAbs_REVERSED)
+        if (aF.Orientation() == Reversed)
         {
             aDP.Reverse();
         }
         //
-        aETol = BRep_Tool.Tolerance(aE);
-        aFTol = BRep_Tool.Tolerance(aF);
+        aETol = Tool.Tolerance(aE);
+        aFTol = Tool.Tolerance(aF);
         // NPAL19220
-        GeomAdaptor_Surface aGAS = new(aS);
+        SurfaceAdaptor aGAS = new(aS);
         aTS = aGAS.GetType();
-        if (aTS == BSplineSurface)
+        if (aTS == SurfaceKind.BSplineSurface)
         {
             if (aETol > 1.0e-5)
             {
@@ -558,27 +562,27 @@ public static class BOPTools_AlgoTools3D
 
     /// <summary>
     /// As the overload with a step, the step being 1e-4 (1e-3 on cylinders and spheres) or twice the sum of the
-    /// tolerances; a point not in the face is replaced by <see cref="PointInFace(in TopoDS_Face, in TopoDS_Edge, double, double, ref Point3D, ref Point2D, IntTools_Context)"/>'s.
+    /// tolerances; a point not in the face is replaced by <see cref="PointInFace(in Face, in Edge, double, double, ref Point3D, ref Point2D, IntTools_Context)"/>'s.
     /// Returns 0, 1 (no pcurve) or 2 (no point in the face).
     /// </summary>
-    public static int PointNearEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, ref Point2D aPx2DNear, ref Point3D aPxNear,
+    public static int PointNearEdge(in Edge aE, in Face aF, double aT, ref Point2D aPx2DNear, ref Point3D aPxNear,
                                     IntTools_Context theContext)
     {
         double aTolE, aTolF, dTx, dT2D;
-        Geom_Surface aS;
-        GeomAdaptor_Surface aGAS = new();
+        Surface aS;
+        SurfaceAdaptor aGAS = new();
         //
         dT2D = 10.0 * MinStepIn2d(); //~1.e-5;
         //
-        aS = BRep_Tool.Surface(aF)!;
+        aS = Tool.Surface(aF)!;
         aGAS.Load(aS);
         if (aGAS.GetType() == SurfaceKind.Cylinder || aGAS.GetType() == SurfaceKind.Sphere)
         {
             dT2D = 10.0 * dT2D;
         }
         //
-        aTolE = BRep_Tool.Tolerance(aE);
-        aTolF = BRep_Tool.Tolerance(aF);
+        aTolE = Tool.Tolerance(aE);
+        aTolF = Tool.Tolerance(aF);
         dTx = 2.0 * (aTolE + aTolF);
         if (dTx > dT2D)
         {
@@ -610,7 +614,7 @@ public static class BOPTools_AlgoTools3D
     /// As the overload without a context, then a point not in the face is replaced by PointInFace's. Returns 0, 1 (no
     /// pcurve) or 2 (no point in the face).
     /// </summary>
-    public static int PointNearEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, double theStep, ref Point2D aPx2DNear,
+    public static int PointNearEdge(in Edge aE, in Face aF, double aT, double theStep, ref Point2D aPx2DNear,
                                     ref Point3D aPxNear, IntTools_Context theContext)
     {
         int iErr = PointNearEdge(aE, aF, aT, theStep, ref aPx2DNear, ref aPxNear);
@@ -635,19 +639,19 @@ public static class BOPTools_AlgoTools3D
     }
 
     /// <summary>A point inside the face near the edge's intermediate point, the edge oriented as it is in the face.</summary>
-    public static int PointNearEdge(in TopoDS_Edge aE, in TopoDS_Face aF, ref Point2D aPInFace2D, ref Point3D aPInFace,
+    public static int PointNearEdge(in Edge aE, in Face aF, ref Point2D aPInFace2D, ref Point3D aPInFace,
                                     IntTools_Context theContext)
     {
         double aT;
         //
         // 1. compute parameter on edge
-        BRep_Tool.Range(aE, out double aT1, out double aT2);
+        Tool.Range(aE, out double aT1, out double aT2);
         aT = BOPTools_AlgoTools2D.IntermediatePoint(aT1, aT2);
         //
         // 2. compute point inside the face near the edge
-        TopoDS_Face aFF = aF;
-        aFF.Orientation(TopAbs_FORWARD);
-        OrientEdgeOnFace(aE, aFF, out TopoDS_Edge aERight);
+        Face aFF = aF;
+        aFF.Orientation(Forward);
+        OrientEdgeOnFace(aE, aFF, out Edge aERight);
         //
         int iErr = PointNearEdge(aERight, aFF, aT, ref aPInFace2D, ref aPInFace, theContext);
         //
@@ -662,18 +666,18 @@ public static class BOPTools_AlgoTools3D
     }
 
     /// <summary>True if no sub-shape of the shape (itself included) has geometry.</summary>
-    public static bool IsEmptyShape(in TopoDS_Shape aS)
+    public static bool IsEmptyShape(in Shape aS)
     {
         bool bHasGeometry = false;
         //
-        NCollection_IndexedMap<TopoDS_Shape> myShapes = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> myShapes = new(ShapeHasher.Instance);
         //
         Add(aS, myShapes, ref bHasGeometry);
 
         return !bHasGeometry;
     }
 
-    private static void Add(in TopoDS_Shape aS, NCollection_IndexedMap<TopoDS_Shape> myShapes, ref bool bHasGeometry)
+    private static void Add(in Shape aS, NCollection_IndexedMap<Shape> myShapes, ref bool bHasGeometry)
     {
         int anIndex;
         //
@@ -682,12 +686,12 @@ public static class BOPTools_AlgoTools3D
             return;
         }
         //
-        if (aS.IsNull())
+        if (aS.IsNull)
         {
             return;
         }
         //
-        TopoDS_Shape aSx = aS;
+        Shape aSx = aS;
         //
         anIndex = myShapes.FindIndex(aSx);
         if (anIndex == 0)
@@ -698,10 +702,10 @@ public static class BOPTools_AlgoTools3D
                 return;
             }
             //
-            TopoDS_Iterator anIt = new(aSx, false, false);
+            Iterator anIt = new(aSx, false, false);
             for (; anIt.More(); anIt.Next())
             {
-                TopoDS_Shape aSy = anIt.Value();
+                Shape aSy = anIt.Value();
                 Add(aSy, myShapes, ref bHasGeometry);
                 //
                 if (bHasGeometry)
@@ -714,25 +718,25 @@ public static class BOPTools_AlgoTools3D
         }
     }
 
-    private static bool HasGeometry(in TopoDS_Shape aS)
+    private static bool HasGeometry(in Shape aS)
     {
         bool bHasGeometry = true;
-        TopAbs_ShapeEnum aType = aS.ShapeType();
+        ShapeType aType = aS.ShapeType();
 
-        if (aType == TopAbs_VERTEX)
+        if (aType == ShapeType.Vertex)
         {
             return bHasGeometry;
         }
         //
-        else if (aType == TopAbs_EDGE)
+        else if (aType == ShapeType.Edge)
         {
-            BRep_TEdge TE = (BRep_TEdge)aS.TShape()!;
-            NCollection_List<BRep_CurveRepresentation>.Iterator itrc = new(TE.Curves());
+            BrepTEdge TE = (BrepTEdge)aS.TShape()!;
+            NCollection_List<CurveRepresentation>.Iterator itrc = new(TE.Curves());
 
             while (itrc.More())
             {
-                BRep_CurveRepresentation CR = itrc.Value();
-                if (CR.IsCurve3D())
+                CurveRepresentation CR = itrc.Value();
+                if (CR.IsCurve3D)
                 {
                     if (CR.Curve3D() is not null)
                     {
@@ -763,9 +767,9 @@ public static class BOPTools_AlgoTools3D
             }
         }
         //
-        else if (aType == TopAbs_FACE)
+        else if (aType == ShapeType.Face)
         {
-            BRep_TFace TF = (BRep_TFace)aS.TShape()!;
+            BrepTFace TF = (BrepTFace)aS.TShape()!;
             if (TF.Surface() is not null)
             {
                 return bHasGeometry;
@@ -784,24 +788,24 @@ public static class BOPTools_AlgoTools3D
     /// The edge with the orientation it has in the face (for a seam found twice, the edge's own orientation; found once,
     /// the face's occurrence).
     /// </summary>
-    public static void OrientEdgeOnFace(in TopoDS_Edge aE, in TopoDS_Face aF, out TopoDS_Edge aERight)
+    public static void OrientEdgeOnFace(in Edge aE, in Face aF, out Edge aERight)
     {
-        if (BRep_Tool.IsClosed(aE, aF))
+        if (Tool.IsClosed(aE, aF))
         {
             aERight = aE;
             aERight.Orientation(aE.Orientation());
 
             int iFoundCount = 0;
-            TopoDS_Edge anEdge = aE;
-            TopExp_Explorer anExp = new(aF, TopAbs_EDGE);
+            Edge anEdge = aE;
+            Explorer anExp = new(aF, ShapeType.Edge);
 
             for (; anExp.More(); anExp.Next())
             {
-                TopoDS_Shape aSS = anExp.Current();
+                Shape aSS = anExp.Current();
 
                 if (aSS.IsSame(aE))
                 {
-                    anEdge = TopoDS.Edge(aSS);
+                    anEdge = ShapeCasts.Edge(aSS);
                     iFoundCount++;
                 }
             }
@@ -813,10 +817,10 @@ public static class BOPTools_AlgoTools3D
             return;
         }
 
-        TopExp_Explorer anExp2 = new(aF, TopAbs_EDGE);
+        Explorer anExp2 = new(aF, ShapeType.Edge);
         for (; anExp2.More(); anExp2.Next())
         {
-            TopoDS_Shape aSS = anExp2.Current();
+            Shape aSS = anExp2.Current();
             if (aSS.IsSame(aE))
             {
                 aERight = aE;
@@ -832,7 +836,7 @@ public static class BOPTools_AlgoTools3D
     /// A point inside the face: hatches the face along the V-isoline at the intermediate U (then its mirror) and takes
     /// the middle of the first domain. Returns 0 on success, 1 to 4 (outputs unchanged) on failure.
     /// </summary>
-    public static int PointInFace(in TopoDS_Face theF, ref Point3D theP, ref Point2D theP2D, IntTools_Context theContext)
+    public static int PointInFace(in Face theF, ref Point3D theP, ref Point2D theP2D, IntTools_Context theContext)
     {
         int i, iErr = 1;
         double aUx;
@@ -845,7 +849,7 @@ public static class BOPTools_AlgoTools3D
         for (i = 0; i < 2; ++i)
         {
             Point2D aP2D = new(aUx, 0.0);
-            Geom2d_Line aL2D = new(aP2D, aD2D);
+            LineCurve2D aL2D = new(aP2D, aD2D);
             iErr = PointInFace(theF, aL2D, ref theP, ref theP2D, theContext);
             if (iErr == 0)
             {
@@ -868,14 +872,14 @@ public static class BOPTools_AlgoTools3D
     /// perpendicular to the pcurve, into the face, <paramref name="theDt2D"/> from the boundary if the domain is long
     /// enough. Returns 0 on success, 5 if the edge has no pcurve, 1 to 4 if hatching fails (outputs unchanged).
     /// </summary>
-    public static int PointInFace(in TopoDS_Face theF, in TopoDS_Edge theE, double theT, double theDt2D, ref Point3D theP,
+    public static int PointInFace(in Face theF, in Edge theE, double theT, double theDt2D, ref Point3D theP,
                                   ref Point2D theP2D, IntTools_Context theContext)
     {
         int iErr;
-        Geom2d_Curve? aC2D;
+        Curve2D? aC2D;
         //
         iErr = 0;
-        aC2D = BRep_Tool.CurveOnSurface(theE, theF, out _, out _);
+        aC2D = Tool.CurveOnSurface(theE, theF, out _, out _);
         if (aC2D is null)
         {
             iErr = 5;
@@ -888,18 +892,18 @@ public static class BOPTools_AlgoTools3D
         Direction2D aD2D = new();
         aD2D.SetCoord(-aD2Dx.Y(), aD2Dx.X());
         //
-        if (theE.Orientation() == TopAbs_REVERSED)
+        if (theE.Orientation() == Reversed)
         {
             aD2D.Reverse();
         }
         //
-        if (theF.Orientation() == TopAbs_REVERSED)
+        if (theF.Orientation() == Reversed)
         {
             aD2D.Reverse();
         }
         //
-        Geom2d_Line aL2D = new(aP2D, aD2D);
-        Geom2d_TrimmedCurve aL2DTrim = new(aL2D, 0.0, global::Kerf.Engine.Foundation.Precision.Infinite());
+        LineCurve2D aL2D = new(aP2D, aD2D);
+        TrimmedCurve2D aL2DTrim = new(aL2D, 0.0, global::Kerf.Engine.Foundation.Precision.Infinite());
         //
         iErr = PointInFace(theF, aL2DTrim, ref theP, ref theP2D, theContext, theDt2D);
         //
@@ -912,7 +916,7 @@ public static class BOPTools_AlgoTools3D
     /// else at its intermediate point. Returns 0 on success; 1 if trimming fails, 2 if there is no domain, 3 or 4 if
     /// the domain is open (outputs unchanged).
     /// </summary>
-    public static int PointInFace(in TopoDS_Face theF, Geom2d_Curve theL2D, ref Point3D theP, ref Point2D theP2D,
+    public static int PointInFace(in Face theF, Curve2D theL2D, ref Point3D theP, ref Point2D theP2D,
                                   IntTools_Context theContext, double theDt2D = 0.0)
     {
         bool bIsDone, bHasFirstPoint, bHasSecondPoint;
@@ -921,7 +925,7 @@ public static class BOPTools_AlgoTools3D
         //
         Geom2dHatch_Hatcher aHatcher = theContext.Hatcher(theF);
         //
-        Geom2dAdaptor_Curve aHCur = new(theL2D);
+        CurveAdaptor2D aHCur = new(theL2D);
         //
         aHatcher.ClrHatchings();
         aIH = aHatcher.AddHatching(aHCur);
@@ -973,7 +977,7 @@ public static class BOPTools_AlgoTools3D
             aVx = (theDt2D > 0.0 && (aV2 - aV1) > theDt2D) ? (aV1 + theDt2D)
                                                            : IntTools_Tools.IntermediatePoint(aV1, aV2);
             //
-            Geom_Surface aS = BRep_Tool.Surface(theF)!;
+            Surface aS = Tool.Surface(theF)!;
             //
             theL2D.D0(aVx, out theP2D);
             aS.D0(theP2D.X(), theP2D.Y(), out theP);

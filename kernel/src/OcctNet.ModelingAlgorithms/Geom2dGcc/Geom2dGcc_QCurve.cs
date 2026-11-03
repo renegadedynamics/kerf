@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -16,19 +17,19 @@ namespace Occt;
 public readonly struct Geom2dGcc_QCurve : IEquatable<Geom2dGcc_QCurve>
 {
     private readonly GccEnt_Position TheQualifier;
-    private readonly Geom2dAdaptor_Curve TheQualified;
+    private readonly CurveAdaptor2D TheQualified;
 
     /// <summary>Assigns the qualifier to the curve (copied).</summary>
-    public Geom2dGcc_QCurve(Geom2dAdaptor_Curve Curve, GccEnt_Position Qualifier)
+    public Geom2dGcc_QCurve(CurveAdaptor2D Curve, GccEnt_Position Qualifier)
     {
-        TheQualified = (Geom2dAdaptor_Curve)Curve.ShallowCopy();
+        TheQualified = (CurveAdaptor2D)Curve.ShallowCopy();
         TheQualifier = Qualifier;
     }
 
     /// <summary>The curve to which the qualifier is assigned: a new adaptor on the same curve and range.</summary>
-    public Geom2dAdaptor_Curve Qualified()
+    public CurveAdaptor2D Qualified()
     {
-        return (Geom2dAdaptor_Curve)TheQualified.ShallowCopy();
+        return (CurveAdaptor2D)TheQualified.ShallowCopy();
     }
 
     /// <summary>The qualifier.</summary>

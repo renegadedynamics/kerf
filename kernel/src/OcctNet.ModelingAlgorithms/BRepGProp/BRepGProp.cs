@@ -4,26 +4,30 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.BRepCheck_Status;
 using static Occt.BRepGProp_MeshProps.BRepGProp_MeshObjType;
 using static Kerf.Geometry.TransformForm;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
 /// <summary>
-/// The global properties of a shape: of its edges (length, <see cref="LinearProperties(in TopoDS_Shape, GProp_GProps, bool, bool)"/>),
-/// of its faces (area, <see cref="SurfaceProperties(in TopoDS_Shape, GProp_GProps, bool, bool)"/>) or of the volume
-/// they bound (<see cref="VolumeProperties(in TopoDS_Shape, GProp_GProps, bool, bool, bool)"/>): mass, centre of mass
+/// The global properties of a shape: of its edges (length, <see cref="LinearProperties(in Shape, Properties, bool, bool)"/>),
+/// of its faces (area, <see cref="SurfaceProperties(in Shape, Properties, bool, bool)"/>) or of the volume
+/// they bound (<see cref="VolumeProperties(in Shape, Properties, bool, bool, bool)"/>): mass, centre of mass
 /// and inertia, at density 1.
 /// </summary>
 /// <remarks>
 /// <para>
-/// OCCT's forms fill the caller's <see cref="GProp_GProps"/>, which is reset first, its reference point at the
+/// OCCT's forms fill the caller's <see cref="Properties"/>, which is reset first, its reference point at the
 /// shape's location. Each also has a functional overload that returns a new system.
 /// </para>
 /// <para>
@@ -39,9 +43,9 @@ public static class BRepGProp
     /// <remarks>
     /// Properties are computed once per unique solid and transformed for the duplicate instances at other locations.
     /// </remarks>
-    private sealed class GPropTransformer : GProp_GProps
+    private sealed class GPropTransformer : Properties
     {
-        public GPropTransformer(GProp_GProps theSource)
+        public GPropTransformer(Properties theSource)
             : base(theSource)
         {
         }
@@ -51,36 +55,36 @@ public static class BRepGProp
         //! as relative vector (rotation only, no translation), and rotates inertia tensor.
         public void ApplyTransform(in Transform3D theTrsf)
         {
-            loc.Transform(theTrsf);
+            _loc.Transform(theTrsf);
             TransformForm aForm = theTrsf.Form();
             if (aForm != Identity && aForm != Translation)
             {
                 // g is a relative offset from loc to center of mass - rotate only.
                 Matrix3x3 aR = theTrsf.VectorialPart();
-                Xyz aGxyz = g.XYZ();
+                Xyz aGxyz = _g.XYZ();
                 aGxyz.Multiply(aR);
-                g.SetXYZ(aGxyz);
+                _g.SetXYZ(aGxyz);
                 Matrix3x3 aRt = aR.Transposed();
-                inertia = aR.Multiplied(inertia).Multiplied(aRt);
+                _inertia = aR.Multiplied(_inertia).Multiplied(aRt);
             }
         }
 
         //! Negate volume contribution (for reversed solid orientation).
         public void Negate()
         {
-            dim = -dim;
-            inertia.Multiply(-1.0);
+            _dim = -_dim;
+            _inertia.Multiply(-1.0);
         }
     }
 
-    private static Point3D roughBaryCenter(in TopoDS_Shape S)
+    private static Point3D roughBaryCenter(in Shape S)
     {
         int i;
-        var ex = new TopExp_Explorer();
+        var ex = new Explorer();
         Xyz xyz = new(0, 0, 0);
-        for (ex.Init(S, TopAbs_VERTEX), i = 0; ex.More(); ex.Next(), i++)
+        for (ex.Init(S, ShapeType.Vertex), i = 0; ex.More(); ex.Next(), i++)
         {
-            xyz += BRep_Tool.Pnt(TopoDS.Vertex(ex.Current())).XYZ();
+            xyz += Tool.Pnt(ShapeCasts.Vertex(ex.Current())).XYZ();
         }
 
         if (i > 0)
@@ -90,11 +94,11 @@ public static class BRepGProp
         else
         {
             // Try using triangulation
-            ex.Init(S, TopAbs_FACE);
+            ex.Init(S, ShapeType.Face);
             for (; ex.More(); ex.Next())
             {
-                TopoDS_Shape aF = ex.Current();
-                Triangulation? aTri = BRep_Tool.Triangulation(TopoDS.Face(aF), out Placement aLocDummy);
+                Shape aF = ex.Current();
+                Triangulation? aTri = Tool.Triangulation(ShapeCasts.Face(aF), out Placement aLocDummy);
                 if (aTri is not null && aTri.NodeCount > 0)
                 {
                     xyz = aTri.Node(1).XYZ();
@@ -119,29 +123,29 @@ public static class BRepGProp
     /// <param name="LProps">The system to fill; reset first, its reference point at the shape's location.</param>
     /// <param name="SkipShared">Count an edge met again (IsSame) once.</param>
     /// <param name="UseTriangulation">Measure edges with a polygon on the polygon.</param>
-    public static void LinearProperties(in TopoDS_Shape S,
-                                        GProp_GProps LProps,
+    public static void LinearProperties(in Shape S,
+                                        Properties LProps,
                                         bool SkipShared = false,
                                         bool UseTriangulation = false)
     {
         // find the origin
         Point3D P = new(0, 0, 0);
         P.Transform(S.Location().Transformation());
-        LProps.Assign(new GProp_GProps(P));
+        LProps.Assign(new Properties(P));
 
-        var BAC = new BRepAdaptor_Curve();
-        var anEMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var ex = new TopExp_Explorer();
-        for (ex.Init(S, TopAbs_EDGE); ex.More(); ex.Next())
+        var BAC = new EdgeCurveAdaptor();
+        var anEMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var ex = new Explorer();
+        for (ex.Init(S, ShapeType.Edge); ex.More(); ex.Next())
         {
-            TopoDS_Edge aE = TopoDS.Edge(ex.Current());
+            Edge aE = ShapeCasts.Edge(ex.Current());
             if (SkipShared && !anEMap.Add(aE))
             {
                 continue;
             }
 
             NCollection_HArray1<Point3D>? theNodes = null;
-            bool IsGeom = BRep_Tool.IsGeometric(aE);
+            bool IsGeom = Tool.IsGeometric(aE);
             if (UseTriangulation || !IsGeom)
             {
                 theNodes = BRepGProp_MeshCinert.PreparePolygon(aE);
@@ -167,22 +171,22 @@ public static class BRepGProp
     }
 
     /// <summary>The linear properties of the edges of <paramref name="S"/>, in a new system (see the other form).</summary>
-    public static GProp_GProps LinearProperties(in TopoDS_Shape S, bool SkipShared = false, bool UseTriangulation = false)
+    public static Properties LinearProperties(in Shape S, bool SkipShared = false, bool UseTriangulation = false)
     {
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         LinearProperties(S, aProps, SkipShared, UseTriangulation);
         return aProps;
     }
 
-    private static double surfaceProperties(in TopoDS_Shape S,
-                                            GProp_GProps Props,
+    private static double surfaceProperties(in Shape S,
+                                            Properties Props,
                                             double Eps,
                                             bool SkipShared,
                                             bool UseTriangulation)
     {
         int i;
         double ErrorMax = 0.0, Error;
-        var ex = new TopExp_Explorer();
+        var ex = new Explorer();
         var P = roughBaryCenter(S);
         var G = new BRepGProp_Sinert();
         G.SetLocation(P);
@@ -191,12 +195,12 @@ public static class BRepGProp
 
         var BF = new BRepGProp_Face();
         var BD = new BRepGProp_Domain();
-        var aFMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aFMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
         Placement aLocDummy;
 
-        for (ex.Init(S, TopAbs_FACE), i = 1; ex.More(); ex.Next(), i++)
+        for (ex.Init(S, ShapeType.Face), i = 1; ex.More(); ex.Next(), i++)
         {
-            TopoDS_Face F = TopoDS.Face(ex.Current());
+            Face F = ShapeCasts.Face(ex.Current());
             if (SkipShared && !aFMap.Add(F))
             {
                 continue;
@@ -204,13 +208,13 @@ public static class BRepGProp
 
             bool NoSurf = false, NoTri = false;
             {
-                Geom_Surface? aSurf = BRep_Tool.Surface(F, out aLocDummy);
+                Surface? aSurf = Tool.Surface(F, out aLocDummy);
                 if (aSurf is null)
                 {
                     NoSurf = true;
                 }
 
-                Triangulation? aTri = BRep_Tool.Triangulation(F, out aLocDummy);
+                Triangulation? aTri = Tool.Triangulation(F, out aLocDummy);
                 if (aTri is null || aTri.NodeCount == 0 || aTri.TriangleCount == 0)
                 {
                     NoTri = true;
@@ -224,15 +228,15 @@ public static class BRepGProp
 
             if ((UseTriangulation && !NoTri) || (NoSurf && !NoTri))
             {
-                TopAbs_Orientation anOri = F.Orientation();
-                Triangulation? aTri = BRep_Tool.Triangulation(F, out aLocDummy);
+                Orientation anOri = F.Orientation();
+                Triangulation? aTri = Tool.Triangulation(F, out aLocDummy);
                 MG.Perform(aTri, aLocDummy, anOri);
                 Props.Add(MG);
             }
             else
             {
                 BF.Load(F);
-                bool IsNatRestr = (F.NbChildren() == 0);
+                bool IsNatRestr = (F.ChildCount == 0);
                 if (!IsNatRestr)
                 {
                     BD.Init(F);
@@ -274,22 +278,22 @@ public static class BRepGProp
     /// <param name="SProps">The system to fill; reset first, its reference point at the shape's location.</param>
     /// <param name="SkipShared">Count a face met again (IsSame) once.</param>
     /// <param name="UseTriangulation">Measure faces with a triangulation on the triangulation.</param>
-    public static void SurfaceProperties(in TopoDS_Shape S,
-                                         GProp_GProps SProps,
+    public static void SurfaceProperties(in Shape S,
+                                         Properties SProps,
                                          bool SkipShared = false,
                                          bool UseTriangulation = false)
     {
         // find the origin
         Point3D P = new(0, 0, 0);
         P.Transform(S.Location().Transformation());
-        SProps.Assign(new GProp_GProps(P));
+        SProps.Assign(new Properties(P));
         surfaceProperties(S, SProps, 1.0, SkipShared, UseTriangulation);
     }
 
     /// <summary>The surface properties of the faces of <paramref name="S"/>, in a new system (see the other form).</summary>
-    public static GProp_GProps SurfaceProperties(in TopoDS_Shape S, bool SkipShared = false, bool UseTriangulation = false)
+    public static Properties SurfaceProperties(in Shape S, bool SkipShared = false, bool UseTriangulation = false)
     {
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         SurfaceProperties(S, aProps, SkipShared, UseTriangulation);
         return aProps;
     }
@@ -299,12 +303,12 @@ public static class BRepGProp
     /// integration to the relative error <paramref name="Eps"/> of each face's area.
     /// </summary>
     /// <returns>The largest relative error reached by a face.</returns>
-    public static double SurfaceProperties(in TopoDS_Shape S, GProp_GProps SProps, double Eps, bool SkipShared = false)
+    public static double SurfaceProperties(in Shape S, Properties SProps, double Eps, bool SkipShared = false)
     {
         // find the origin
         Point3D P = new(0, 0, 0);
         P.Transform(S.Location().Transformation());
-        SProps.Assign(new GProp_GProps(P));
+        SProps.Assign(new Properties(P));
         double ErrorMax = surfaceProperties(S, SProps, Eps, SkipShared, false);
         return ErrorMax;
     }
@@ -312,8 +316,8 @@ public static class BRepGProp
     //! Process faces of a shape for volume properties computation.
     //! This is the core face-level integration loop used both for unique solids
     //! and for shapes without shared solids.
-    private static double volumePropertiesFaces(in TopoDS_Shape S,
-                                                GProp_GProps Props,
+    private static double volumePropertiesFaces(in Shape S,
+                                                Properties Props,
                                                 in Point3D theRefPnt,
                                                 double Eps,
                                                 bool SkipShared,
@@ -321,7 +325,7 @@ public static class BRepGProp
     {
         int i;
         double ErrorMax = 0.0, Error = 0.0;
-        var ex = new TopExp_Explorer();
+        var ex = new Explorer();
         var G = new BRepGProp_Vinert();
         G.SetLocation(theRefPnt);
         var MG = new BRepGProp_MeshProps(Vinert);
@@ -329,19 +333,19 @@ public static class BRepGProp
 
         var BF = new BRepGProp_Face();
         var BD = new BRepGProp_Domain();
-        var aFwdFMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var aRvsFMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aFwdFMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var aRvsFMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
         Placement aLocDummy;
 
-        for (ex.Init(S, TopAbs_FACE), i = 1; ex.More(); ex.Next(), i++)
+        for (ex.Init(S, ShapeType.Face), i = 1; ex.More(); ex.Next(), i++)
         {
-            TopoDS_Face F = TopoDS.Face(ex.Current());
-            TopAbs_Orientation anOri = F.Orientation();
-            bool isFwd = anOri == TopAbs_FORWARD;
+            Face F = ShapeCasts.Face(ex.Current());
+            Orientation anOri = F.Orientation();
+            bool isFwd = anOri == Forward;
             bool isRvs = false;
             if (!isFwd)
             {
-                isRvs = anOri == TopAbs_REVERSED;
+                isRvs = anOri == Reversed;
             }
 
             if (SkipShared)
@@ -354,13 +358,13 @@ public static class BRepGProp
 
             bool NoSurf = false, NoTri = false;
             {
-                Geom_Surface? aSurf = BRep_Tool.Surface(F, out aLocDummy);
+                Surface? aSurf = Tool.Surface(F, out aLocDummy);
                 if (aSurf is null)
                 {
                     NoSurf = true;
                 }
 
-                Triangulation? aTri = BRep_Tool.Triangulation(F, out aLocDummy);
+                Triangulation? aTri = Tool.Triangulation(F, out aLocDummy);
                 if (aTri is null || aTri.NodeCount == 0 || aTri.TriangleCount == 0)
                 {
                     NoTri = true;
@@ -376,14 +380,14 @@ public static class BRepGProp
             {
                 if ((UseTriangulation && !NoTri) || (NoSurf && !NoTri))
                 {
-                    Triangulation? aTri = BRep_Tool.Triangulation(F, out aLocDummy);
+                    Triangulation? aTri = Tool.Triangulation(F, out aLocDummy);
                     MG.Perform(aTri, aLocDummy, anOri);
                     Props.Add(MG);
                 }
                 else
                 {
                     BF.Load(F);
-                    bool IsNatRestr = (F.NbChildren() == 0);
+                    bool IsNatRestr = (F.ChildCount == 0);
                     if (!IsNatRestr)
                     {
                         BD.Init(F);
@@ -420,13 +424,13 @@ public static class BRepGProp
 
     private sealed class SolidCacheEntry
     {
-        public GProp_GProps Props = new();
+        public Properties Props = new();
         public Placement Location = new();
-        public TopAbs_Orientation Orientation;
+        public Orientation Orientation;
     }
 
-    private static double volumeProperties(in TopoDS_Shape S,
-                                           GProp_GProps Props,
+    private static double volumeProperties(in Shape S,
+                                           Properties Props,
                                            double Eps,
                                            bool SkipShared,
                                            bool UseTriangulation)
@@ -438,8 +442,8 @@ public static class BRepGProp
         // once per unique solid and reuse via rigid transform for duplicates.
         bool hasSharedSolids = false;
         {
-            var aSeenSolids = new NCollection_Map<TopoDS_TShape>(ReferenceEqualityComparer.Instance);
-            for (var exS = new TopExp_Explorer(S, TopAbs_SOLID); exS.More(); exS.Next())
+            var aSeenSolids = new NCollection_Map<TShape>(ReferenceEqualityComparer.Instance);
+            for (var exS = new Explorer(S, ShapeType.Solid); exS.More(); exS.Next())
             {
                 if (!aSeenSolids.Add(exS.Current().TShape()!))
                 {
@@ -459,14 +463,14 @@ public static class BRepGProp
         // For each unique TShape, compute properties once via face integration.
         // For duplicate instances, transform the cached result by the relative
         // location and add to Props (using Huygens theorem via GProp_GProps::Add).
-        var aSolidCache = new NCollection_DataMap<TopoDS_TShape, SolidCacheEntry>(ReferenceEqualityComparer.Instance);
+        var aSolidCache = new NCollection_DataMap<TShape, SolidCacheEntry>(ReferenceEqualityComparer.Instance);
 
         double ErrorMax = 0.0;
 
-        for (var exS = new TopExp_Explorer(S, TopAbs_SOLID); exS.More(); exS.Next())
+        for (var exS = new Explorer(S, ShapeType.Solid); exS.More(); exS.Next())
         {
-            TopoDS_Shape aSolid = exS.Current();
-            TopoDS_TShape aTS = aSolid.TShape()!;
+            Shape aSolid = exS.Current();
+            TShape aTS = aSolid.TShape()!;
 
             if (aSolidCache.IsBound(aTS))
             {
@@ -490,7 +494,7 @@ public static class BRepGProp
                     || aRelTrsf.IsNegative)
                 {
                     // Non-rigid relative transform: fall back to direct face-level computation.
-                    var aSolidProps = new GProp_GProps(P);
+                    var aSolidProps = new Properties(P);
                     double anError = volumePropertiesFaces(aSolid, aSolidProps, P, Eps, SkipShared, UseTriangulation);
                     if (ErrorMax < anError)
                     {
@@ -517,7 +521,7 @@ public static class BRepGProp
             else
             {
                 // First instance of this TShape: compute via face integration.
-                var aSolidProps = new GProp_GProps(P);
+                var aSolidProps = new Properties(P);
                 double anError = volumePropertiesFaces(aSolid, aSolidProps, P, Eps, SkipShared, UseTriangulation);
                 if (ErrorMax < anError)
                 {
@@ -526,7 +530,7 @@ public static class BRepGProp
 
                 var anEntry = new SolidCacheEntry
                 {
-                    Props = new GProp_GProps(aSolidProps),
+                    Props = new Properties(aSolidProps),
                     Location = aSolid.Location(),
                     Orientation = aSolid.Orientation(),
                 };
@@ -539,10 +543,10 @@ public static class BRepGProp
         // Handle faces not belonging to any solid (free shells/faces in the compound).
         {
             bool hasFree = false;
-            TopoDS_Compound aFreeComp = new();
-            var aBld = new BRep_Builder();
+            Compound aFreeComp = new();
+            var aBld = new BrepBuilder();
             aBld.MakeCompound(ref aFreeComp);
-            for (var exF = new TopExp_Explorer(S, TopAbs_FACE, TopAbs_SOLID); exF.More(); exF.Next())
+            for (var exF = new Explorer(S, ShapeType.Face, ShapeType.Solid); exF.More(); exF.Next())
             {
                 aBld.Add(aFreeComp, exF.Current());
                 hasFree = true;
@@ -550,7 +554,7 @@ public static class BRepGProp
 
             if (hasFree)
             {
-                var aFreeProps = new GProp_GProps(P);
+                var aFreeProps = new Properties(P);
                 double aFreeError = volumePropertiesFaces(aFreeComp, aFreeProps, P, Eps, SkipShared, UseTriangulation);
                 if (ErrorMax < aFreeError)
                 {
@@ -575,8 +579,8 @@ public static class BRepGProp
     /// <param name="OnlyClosed">Count only the closed shells (BRep_Tool.IsClosed).</param>
     /// <param name="SkipShared">Count a face met again (IsSame, with the same orientation) or a shell met again once.</param>
     /// <param name="UseTriangulation">Measure faces with a triangulation on the triangulation.</param>
-    public static void VolumeProperties(in TopoDS_Shape S,
-                                        GProp_GProps VProps,
+    public static void VolumeProperties(in Shape S,
+                                        Properties VProps,
                                         bool OnlyClosed = false,
                                         bool SkipShared = false,
                                         bool UseTriangulation = false)
@@ -584,20 +588,20 @@ public static class BRepGProp
         // find the origin
         Point3D P = new(0, 0, 0);
         P.Transform(S.Location().Transformation());
-        VProps.Assign(new GProp_GProps(P));
+        VProps.Assign(new Properties(P));
         if (OnlyClosed)
         {
-            var aShMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            var ex = new TopExp_Explorer(S, TopAbs_SHELL);
+            var aShMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var ex = new Explorer(S, ShapeType.Shell);
             for (; ex.More(); ex.Next())
             {
-                TopoDS_Shape Sh = ex.Current();
+                Shape Sh = ex.Current();
                 if (SkipShared && !aShMap.Add(Sh))
                 {
                     continue;
                 }
 
-                if (BRep_Tool.IsClosed(Sh))
+                if (Tool.IsClosed(Sh))
                 {
                     volumeProperties(Sh, VProps, 1.0, SkipShared, UseTriangulation);
                 }
@@ -610,12 +614,12 @@ public static class BRepGProp
     }
 
     /// <summary>The volume properties of <paramref name="S"/>, in a new system (see the other form).</summary>
-    public static GProp_GProps VolumeProperties(in TopoDS_Shape S,
+    public static Properties VolumeProperties(in Shape S,
                                                 bool OnlyClosed = false,
                                                 bool SkipShared = false,
                                                 bool UseTriangulation = false)
     {
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         VolumeProperties(S, aProps, OnlyClosed, SkipShared, UseTriangulation);
         return aProps;
     }
@@ -625,8 +629,8 @@ public static class BRepGProp
     /// the relative error <paramref name="Eps"/> of each face's contribution.
     /// </summary>
     /// <returns>The largest relative error reached by a face.</returns>
-    public static double VolumeProperties(in TopoDS_Shape S,
-                                          GProp_GProps VProps,
+    public static double VolumeProperties(in Shape S,
+                                          Properties VProps,
                                           double Eps,
                                           bool OnlyClosed = false,
                                           bool SkipShared = false)
@@ -634,22 +638,22 @@ public static class BRepGProp
         // find the origin
         Point3D P = new(0, 0, 0);
         P.Transform(S.Location().Transformation());
-        VProps.Assign(new GProp_GProps(P));
+        VProps.Assign(new Properties(P));
         int i;
         double ErrorMax = 0.0, Error = 0.0;
         if (OnlyClosed)
         {
-            var aShMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            var ex = new TopExp_Explorer(S, TopAbs_SHELL);
+            var aShMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var ex = new Explorer(S, ShapeType.Shell);
             for (i = 1; ex.More(); ex.Next(), i++)
             {
-                TopoDS_Shape Sh = ex.Current();
+                Shape Sh = ex.Current();
                 if (SkipShared && !aShMap.Add(Sh))
                 {
                     continue;
                 }
 
-                if (BRep_Tool.IsClosed(Sh))
+                if (Tool.IsClosed(Sh))
                 {
                     Error = volumeProperties(Sh, VProps, Eps, SkipShared, false);
                     if (ErrorMax < Error)
@@ -671,16 +675,16 @@ public static class BRepGProp
     // Volume properties by Gauss-Kronrod integration
     //===========================================================================================//
 
-    private static double volumePropertiesGK(in TopoDS_Shape theShape,
-                                             GProp_GProps theProps,
+    private static double volumePropertiesGK(in Shape theShape,
+                                             Properties theProps,
                                              double theTol,
                                              bool IsUseSpan,
                                              bool CGFlag,
                                              bool IFlag,
                                              bool SkipShared)
     {
-        var anExp = new TopExp_Explorer();
-        anExp.Init(theShape, TopAbs_FACE);
+        var anExp = new Explorer();
+        anExp.Init(theShape, ShapeType.Face);
 
         double aTol = theTol;
 
@@ -691,20 +695,20 @@ public static class BRepGProp
         var aPropDomain = new BRepGProp_Domain();
         double aLocalError;
         double anError = 0.0;
-        var aFwdFMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var aRvsFMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aFwdFMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var aRvsFMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
 
         aVProps.SetLocation(aLoc);
 
         for (; anExp.More(); anExp.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(anExp.Current());
-            TopAbs_Orientation anOri = aFace.Orientation();
-            bool isFwd = anOri == TopAbs_FORWARD;
+            Face aFace = ShapeCasts.Face(anExp.Current());
+            Orientation anOri = aFace.Orientation();
+            bool isFwd = anOri == Forward;
             bool isRvs = false;
             if (!isFwd)
             {
-                isRvs = anOri == TopAbs_REVERSED;
+                isRvs = anOri == Reversed;
             }
 
             if (SkipShared)
@@ -716,7 +720,7 @@ public static class BRepGProp
             }
 
             {
-                Geom_Surface? aSurf = BRep_Tool.Surface(aFace, out _);
+                Surface? aSurf = Tool.Surface(aFace, out _);
                 if (aSurf is null)
                 {
                     // skip faces without geometry
@@ -728,7 +732,7 @@ public static class BRepGProp
             {
                 aPropFace.Load(aFace);
 
-                bool IsNatRestr = (aFace.NbChildren() == 0);
+                bool IsNatRestr = (aFace.ChildCount == 0);
                 if (IsNatRestr)
                 {
                     aLocalError = aVProps.Perform(aPropFace, aTol, CGFlag, IFlag);
@@ -765,8 +769,8 @@ public static class BRepGProp
     /// <param name="IFlag">Compute the centre of mass and the inertia.</param>
     /// <param name="SkipShared">Count a face met again (IsSame, with the same orientation) or a shell met again once.</param>
     /// <returns>The absolute error reached divided by the volume (above Epsilon(1)), or a negative value on failure.</returns>
-    public static double VolumePropertiesGK(in TopoDS_Shape S,
-                                            GProp_GProps VProps,
+    public static double VolumePropertiesGK(in Shape S,
+                                            Properties VProps,
                                             double Eps = 0.001,
                                             bool OnlyClosed = false,
                                             bool IsUseSpan = false,
@@ -778,26 +782,26 @@ public static class BRepGProp
         double anError = 0.0;
 
         P.Transform(S.Location().Transformation());
-        VProps.Assign(new GProp_GProps(P));
+        VProps.Assign(new Properties(P));
 
         if (OnlyClosed)
         {
             // To select closed shells.
-            var anExp = new TopExp_Explorer();
-            var aClosedShells = new NCollection_List<TopoDS_Shape>();
-            var aShMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            var anExp = new Explorer();
+            var aClosedShells = new NCollection_List<Shape>();
+            var aShMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
 
-            anExp.Init(S, TopAbs_SHELL);
+            anExp.Init(S, ShapeType.Shell);
 
             for (; anExp.More(); anExp.Next())
             {
-                TopoDS_Shape aShell = anExp.Current();
+                Shape aShell = anExp.Current();
                 if (SkipShared && !aShMap.Add(aShell))
                 {
                     continue;
                 }
 
-                var aChecker = new BRepCheck_Shell(TopoDS.Shell(aShell));
+                var aChecker = new BRepCheck_Shell(ShapeCasts.Shell(aShell));
                 BRepCheck_Status aStatus = aChecker.Closed(false);
 
                 if (aStatus == BRepCheck_NoError)
@@ -814,11 +818,11 @@ public static class BRepGProp
             // Compute the properties for each closed shell.
             double aTol = Eps;
             double aLocalError;
-            var anIter = new NCollection_List<TopoDS_Shape>.Iterator(aClosedShells);
+            var anIter = new NCollection_List<Shape>.Iterator(aClosedShells);
 
             for (; anIter.More(); anIter.Next())
             {
-                TopoDS_Shape aShell = anIter.Value();
+                Shape aShell = anIter.Value();
 
                 aLocalError = volumePropertiesGK(aShell, VProps, aTol, IsUseSpan, CGFlag, IFlag, SkipShared);
 
@@ -844,8 +848,8 @@ public static class BRepGProp
         return anError;
     }
 
-    private static double volumePropertiesGK(in TopoDS_Shape theShape,
-                                             GProp_GProps theProps,
+    private static double volumePropertiesGK(in Shape theShape,
+                                             Properties theProps,
                                              in Plane3D thePln,
                                              double theTol,
                                              bool IsUseSpan,
@@ -853,8 +857,8 @@ public static class BRepGProp
                                              bool IFlag,
                                              bool SkipShared)
     {
-        var anExp = new TopExp_Explorer();
-        anExp.Init(theShape, TopAbs_FACE);
+        var anExp = new Explorer();
+        anExp.Init(theShape, ShapeType.Face);
 
         double aTol = theTol;
 
@@ -865,20 +869,20 @@ public static class BRepGProp
         var aPropDomain = new BRepGProp_Domain();
         double aLocalError;
         double anError = 0.0;
-        var aFwdFMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var aRvsFMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var aFwdFMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var aRvsFMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
 
         aVProps.SetLocation(aLoc);
 
         for (; anExp.More(); anExp.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(anExp.Current());
-            TopAbs_Orientation anOri = aFace.Orientation();
-            bool isFwd = anOri == TopAbs_FORWARD;
+            Face aFace = ShapeCasts.Face(anExp.Current());
+            Orientation anOri = aFace.Orientation();
+            bool isFwd = anOri == Forward;
             bool isRvs = false;
             if (!isFwd)
             {
-                isRvs = anOri == TopAbs_REVERSED;
+                isRvs = anOri == Reversed;
             }
 
             if (SkipShared)
@@ -890,7 +894,7 @@ public static class BRepGProp
             }
 
             {
-                Geom_Surface? aSurf = BRep_Tool.Surface(aFace, out _);
+                Surface? aSurf = Tool.Surface(aFace, out _);
                 if (aSurf is null)
                 {
                     // skip faces without geometry
@@ -902,7 +906,7 @@ public static class BRepGProp
             {
                 aPropFace.Load(aFace);
 
-                bool IsNatRestr = (aFace.NbChildren() == 0);
+                bool IsNatRestr = (aFace.ChildCount == 0);
                 if (IsNatRestr)
                 {
                     aLocalError = aVProps.Perform(aPropFace, thePln, aTol, CGFlag, IFlag);
@@ -931,8 +935,8 @@ public static class BRepGProp
     /// <paramref name="thePln"/> into <paramref name="VProps"/>, by adaptive Gauss-Kronrod integration; the parameters
     /// are those of the other form.
     /// </summary>
-    public static double VolumePropertiesGK(in TopoDS_Shape S,
-                                            GProp_GProps VProps,
+    public static double VolumePropertiesGK(in Shape S,
+                                            Properties VProps,
                                             in Plane3D thePln,
                                             double Eps = 0.001,
                                             bool OnlyClosed = false,
@@ -945,26 +949,26 @@ public static class BRepGProp
         double anError = 0.0;
 
         P.Transform(S.Location().Transformation());
-        VProps.Assign(new GProp_GProps(P));
+        VProps.Assign(new Properties(P));
 
         if (OnlyClosed)
         {
             // To select closed shells.
-            var anExp = new TopExp_Explorer();
-            var aClosedShells = new NCollection_List<TopoDS_Shape>();
-            var aShMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+            var anExp = new Explorer();
+            var aClosedShells = new NCollection_List<Shape>();
+            var aShMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
 
-            anExp.Init(S, TopAbs_SHELL);
+            anExp.Init(S, ShapeType.Shell);
 
             for (; anExp.More(); anExp.Next())
             {
-                TopoDS_Shape aShell = anExp.Current();
+                Shape aShell = anExp.Current();
                 if (SkipShared && !aShMap.Add(aShell))
                 {
                     continue;
                 }
 
-                var aChecker = new BRepCheck_Shell(TopoDS.Shell(aShell));
+                var aChecker = new BRepCheck_Shell(ShapeCasts.Shell(aShell));
                 BRepCheck_Status aStatus = aChecker.Closed(false);
 
                 if (aStatus == BRepCheck_NoError)
@@ -981,11 +985,11 @@ public static class BRepGProp
             // Compute the properties for each closed shell.
             double aTol = Eps;
             double aLocalError;
-            var anIter = new NCollection_List<TopoDS_Shape>.Iterator(aClosedShells);
+            var anIter = new NCollection_List<Shape>.Iterator(aClosedShells);
 
             for (; anIter.More(); anIter.Next())
             {
-                TopoDS_Shape aShell = anIter.Value();
+                Shape aShell = anIter.Value();
 
                 aLocalError = volumePropertiesGK(aShell, VProps, thePln, aTol, IsUseSpan, CGFlag, IFlag, SkipShared);
 

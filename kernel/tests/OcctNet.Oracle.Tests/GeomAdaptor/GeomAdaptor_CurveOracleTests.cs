@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
@@ -23,7 +24,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
          Continuity.C2, Continuity.C3, Continuity.CN];
 
     /// <summary>Continuity, and NbIntervals and Intervals for every continuity (throwing on both sides, or neither).</summary>
-    private static void SameIntervals(Oracle theO, N.GeomAdaptor_Curve theN, GeomAdaptor_Curve theP, string theWhat)
+    private static void SameIntervals(Oracle theO, N.GeomAdaptor_Curve theN, CurveAdaptor theP, string theWhat)
     {
         int aNC = 0, aPC = 0;
         if (SameOutcome(Catch(() => aNC = (int)theN.Continuity()), Catch(() => aPC = (int)theP.Continuity()), theWhat + " Continuity"))
@@ -53,15 +54,15 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>The queries that don't evaluate: type, data of the type, degree, poles, knots, closure, periodicity, resolution.</summary>
-    private static void SameQueries(Oracle theO, N.GeomAdaptor_Curve theN, GeomAdaptor_Curve theP, string theWhat)
+    private static void SameQueries(Oracle theO, N.GeomAdaptor_Curve theN, CurveAdaptor theP, string theWhat)
     {
         theO.Same(theN.FirstParameter(), theP.FirstParameter(), theWhat + " FirstParameter");
         theO.Same(theN.LastParameter(), theP.LastParameter(), theWhat + " LastParameter");
         theO.Same((int)theN.GetType_(), (int)theP.GetType(), theWhat + " GetType");
-        theO.Same(theN.IsClosed(), theP.IsClosed(), theWhat + " IsClosed");
-        theO.Same(theN.IsPeriodic(), theP.IsPeriodic(), theWhat + " IsPeriodic");
+        theO.Same(theN.IsClosed(), theP.IsClosed, theWhat + " IsClosed");
+        theO.Same(theN.IsPeriodic(), theP.IsPeriodic, theWhat + " IsPeriodic");
         theO.Same(theN.Period(), theP.Period(), theWhat + " Period");
-        theO.Same(theN.IsRational(), theP.IsRational(), theWhat + " IsRational");
+        theO.Same(theN.IsRational(), theP.IsRational, theWhat + " IsRational");
         foreach (double aR3d in new[] { 1e-7, 1e-3, 0.5, 30.0 })
         {
             theO.SameRelative(theN.Resolution(aR3d), theP.Resolution(aR3d), theWhat + " Resolution");
@@ -113,7 +114,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
             case CurveKind.BezierCurve:
             {
                 theO.Same(theN.Degree(), theP.Degree(), theWhat + " Degree");
-                theO.Same(theN.NbPoles(), theP.NbPoles(), theWhat + " NbPoles");
+                theO.Same(theN.NbPoles(), theP.PoleCount, theWhat + " NbPoles");
                 using N.Geom_BezierCurve aNB = theN.Bezier()!;
                 GeomIsoCurveCompare.SameCurve(theO, aNB, theP.Bezier(), theWhat + " Bezier()");
                 break;
@@ -121,8 +122,8 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
             case CurveKind.BSplineCurve:
             {
                 theO.Same(theN.Degree(), theP.Degree(), theWhat + " Degree");
-                theO.Same(theN.NbPoles(), theP.NbPoles(), theWhat + " NbPoles");
-                theO.Same(theN.NbKnots(), theP.NbKnots(), theWhat + " NbKnots");
+                theO.Same(theN.NbPoles(), theP.PoleCount, theWhat + " NbPoles");
+                theO.Same(theN.NbKnots(), theP.KnotCount, theWhat + " NbKnots");
                 using N.Geom_BSplineCurve aNB = theN.BSpline()!;
                 GeomIsoCurveCompare.SameCurve(theO, aNB, theP.BSpline(), theWhat + " BSpline()");
                 break;
@@ -130,7 +131,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
             case CurveKind.OffsetCurve:
             {
                 using N.Geom_OffsetCurve aNO = theN.OffsetCurve()!;
-                Geom_OffsetCurve aPO = theP.OffsetCurve();
+                OffsetCurve3D aPO = theP.OffsetCurve();
                 theO.Same(aNO.Offset(), aPO.Offset(), theWhat + " OffsetCurve offset");
                 using N.gp_Dir aND = aNO.Direction();
                 SameDir(theO, aND, aPO.Direction(), theWhat + " OffsetCurve direction");
@@ -143,7 +144,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
     /// A sequence of parameters in [theFirst, theLast]: random ones, the bounds (exactly), the knots of a B-spline
     /// curve, and points just inside the bounds; several in a row in the same span, so that the cache is reused.
     /// </summary>
-    private static List<double> Params(Oracle theO, GeomAdaptor_Curve theP, double theRange)
+    private static List<double> Params(Oracle theO, CurveAdaptor theP, double theRange)
     {
         double aF = theP.FirstParameter(), aL = theP.LastParameter();
         bool isInfinite = global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL);
@@ -163,8 +164,8 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
         }
         if (theP.GetType() == CurveKind.BSplineCurve)
         {
-            Geom_BSplineCurve aBS = theP.BSpline();
-            for (int i = 1; i <= aBS.NbKnots(); i++)
+            BSplineCurve3D aBS = theP.BSpline();
+            for (int i = 1; i <= aBS.KnotCount; i++)
             {
                 double aK = aBS.Knot(i);
                 if (isInfinite || (aK >= aF && aK <= aL))
@@ -172,7 +173,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
                     aParams.Add(aK);
                 }
             }
-            if (aBS.IsPeriodic())
+            if (aBS.IsPeriodic)
             {
                 aParams.Add(Param(theO, aF, aL, theRange) + aBS.Period() * theO.Int(-2, 2));
             }
@@ -194,18 +195,18 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
             var anOracle = new Oracle(output, 20261101 + aKind);
             for (int i = 0; i < Cases; i++)
             {
-                (N.Geom_Curve aNC, Geom_Curve aPC, double aRange) = RandomCurve(anOracle, aKind);
+                (N.Geom_Curve aNC, Curve3D aPC, double aRange) = RandomCurve(anOracle, aKind);
                 using (aNC)
                 {
                     string aWhat = CurveKinds[aKind];
 
                     // the whole curve, and random bounds within it
                     using var aNA = new N.GeomAdaptor_Curve(aNC);
-                    var aPA = new GeomAdaptor_Curve(aPC);
+                    var aPA = new CurveAdaptor(aPC);
                     CompareAdaptors(anOracle, aNA, aPA, aRange, aWhat);
 
                     double aF = aPC.FirstParameter(), aL = aPC.LastParameter();
-                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL) || aPC.IsPeriodic() && anOracle.Bool())
+                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL) || aPC.IsPeriodic && anOracle.Bool())
                     {
                         aF = anOracle.Real(-aRange, 0);
                         aL = aF + anOracle.Real(0.1, 2 * aRange);
@@ -216,7 +217,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
                         (aF, aL) = (anOracle.Real(aF, aF + 0.45 * aD), anOracle.Real(aF + 0.55 * aD, aL));
                     }
                     using var aNB = new N.GeomAdaptor_Curve(aNC, aF, aL);
-                    var aPB = new GeomAdaptor_Curve(aPC, aF, aL);
+                    var aPB = new CurveAdaptor(aPC, aF, aL);
                     CompareAdaptors(anOracle, aNB, aPB, aRange, aWhat + " bounded");
 
                     // Load on an existing adaptor: the same curve with other bounds (the cache is dropped), then another curve
@@ -229,7 +230,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void CompareAdaptors(Oracle theO, N.GeomAdaptor_Curve theN, GeomAdaptor_Curve theP, double theRange,
+    private static void CompareAdaptors(Oracle theO, N.GeomAdaptor_Curve theN, CurveAdaptor theP, double theRange,
                                         string theWhat)
     {
         SameQueries(theO, theN, theP, theWhat);
@@ -247,14 +248,14 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
             (aT1, aT2) = (aT2, aT1);
         }
         using N.Adaptor3d_Curve aNT = theN.Trim(aT1, aT2, 1e-7)!;
-        Adaptor3d_Curve aPT = theP.Trim(aT1, aT2, 1e-7);
+        CurveAdaptorBase aPT = theP.Trim(aT1, aT2, 1e-7);
         theO.Same(aNT.FirstParameter(), aPT.FirstParameter(), theWhat + " Trim first");
         theO.Same(aNT.LastParameter(), aPT.LastParameter(), theWhat + " Trim last");
         SameCurveEval(theO, aNT, aPT, aT1, 3, theWhat + " Trim");
         SameCurveEval(theO, aNT, aPT, 0.5 * (aT1 + aT2), 3, theWhat + " Trim");
 
         using N.Adaptor3d_Curve aNS = theN.ShallowCopy()!;
-        Adaptor3d_Curve aPS = theP.ShallowCopy();
+        CurveAdaptorBase aPS = theP.ShallowCopy();
         SameCurveEval(theO, aNS, aPS, Param(theO, aF, aL, theRange), 3, theWhat + " ShallowCopy");
     }
 }

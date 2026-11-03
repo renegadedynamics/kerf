@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -18,18 +22,18 @@ namespace Occt;
 /// </remarks>
 public sealed class HLRTopoBRep_Data
 {
-    private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myOldS = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> mySplE =
-        new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_DataMap<TopoDS_Shape, HLRTopoBRep_FaceData> myData =
-        new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_Map<TopoDS_Shape> myOutV = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_Map<TopoDS_Shape> myIntV = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<HLRTopoBRep_VData>> myEdgesVertices =
-        new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<Shape, Shape> myOldS = new(ShapeHasher.Instance);
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> mySplE =
+        new(ShapeHasher.Instance);
+    private readonly NCollection_DataMap<Shape, HLRTopoBRep_FaceData> myData =
+        new(ShapeHasher.Instance);
+    private readonly NCollection_Map<Shape> myOutV = new(ShapeHasher.Instance);
+    private readonly NCollection_Map<Shape> myIntV = new(ShapeHasher.Instance);
+    private readonly NCollection_DataMap<Shape, NCollection_List<HLRTopoBRep_VData>> myEdgesVertices =
+        new(ShapeHasher.Instance);
 
     // OCCT's map iterator on myEdgesVertices: the keys, in the map's order, and the current position
-    private readonly List<TopoDS_Shape> myEKeys = [];
+    private readonly List<Shape> myEKeys = [];
     private int myEIndex;
     private readonly NCollection_List<HLRTopoBRep_VData>.Iterator myVIterator = new();
     private NCollection_List<HLRTopoBRep_VData>? myVList;
@@ -56,7 +60,7 @@ public sealed class HLRTopoBRep_Data
     }
 
     /// <summary>True if the edge has splits.</summary>
-    public bool EdgeHasSplE(in TopoDS_Edge E)
+    public bool EdgeHasSplE(in Edge E)
     {
         if (!mySplE.IsBound(E))
         {
@@ -66,7 +70,7 @@ public sealed class HLRTopoBRep_Data
     }
 
     /// <summary>True if the face has internal outlines.</summary>
-    public bool FaceHasIntL(in TopoDS_Face F)
+    public bool FaceHasIntL(in Face F)
     {
         if (!myData.IsBound(F))
         {
@@ -76,7 +80,7 @@ public sealed class HLRTopoBRep_Data
     }
 
     /// <summary>True if the face has outlines on its boundary.</summary>
-    public bool FaceHasOutL(in TopoDS_Face F)
+    public bool FaceHasOutL(in Face F)
     {
         if (!myData.IsBound(F))
         {
@@ -86,7 +90,7 @@ public sealed class HLRTopoBRep_Data
     }
 
     /// <summary>True if the face has isolines.</summary>
-    public bool FaceHasIsoL(in TopoDS_Face F)
+    public bool FaceHasIsoL(in Face F)
     {
         if (!myData.IsBound(F))
         {
@@ -96,12 +100,12 @@ public sealed class HLRTopoBRep_Data
     }
 
     /// <summary>True if E2 is E1 or one of its splits.</summary>
-    public bool IsSplEEdgeEdge(in TopoDS_Edge E1, in TopoDS_Edge E2)
+    public bool IsSplEEdgeEdge(in Edge E1, in Edge E2)
     {
         bool found = false;
         if (EdgeHasSplE(E1))
         {
-            NCollection_List<TopoDS_Shape>.Iterator itS = new();
+            NCollection_List<Shape>.Iterator itS = new();
             for (itS.Initialize(EdgeSplE(E1)); itS.More() && !found; itS.Next())
             {
                 found = itS.Value().IsSame(E2);
@@ -115,52 +119,52 @@ public sealed class HLRTopoBRep_Data
     }
 
     /// <summary>True if E is (a split of) an internal outline of F.</summary>
-    public bool IsIntLFaceEdge(in TopoDS_Face F, in TopoDS_Edge E)
+    public bool IsIntLFaceEdge(in Face F, in Edge E)
     {
         bool found = false;
         if (FaceHasIntL(F))
         {
-            NCollection_List<TopoDS_Shape>.Iterator itE = new();
+            NCollection_List<Shape>.Iterator itE = new();
             for (itE.Initialize(FaceIntL(F)); itE.More() && !found; itE.Next())
             {
-                found = IsSplEEdgeEdge(TopoDS.Edge(itE.Value()), E);
+                found = IsSplEEdgeEdge(ShapeCasts.Edge(itE.Value()), E);
             }
         }
         return found;
     }
 
     /// <summary>True if E is (a split of) an outline of F.</summary>
-    public bool IsOutLFaceEdge(in TopoDS_Face F, in TopoDS_Edge E)
+    public bool IsOutLFaceEdge(in Face F, in Edge E)
     {
         bool found = false;
         if (FaceHasOutL(F))
         {
-            NCollection_List<TopoDS_Shape>.Iterator itE = new();
+            NCollection_List<Shape>.Iterator itE = new();
             for (itE.Initialize(FaceOutL(F)); itE.More() && !found; itE.Next())
             {
-                found = IsSplEEdgeEdge(TopoDS.Edge(itE.Value()), E);
+                found = IsSplEEdgeEdge(ShapeCasts.Edge(itE.Value()), E);
             }
         }
         return found;
     }
 
     /// <summary>True if E is (a split of) an isoline of F.</summary>
-    public bool IsIsoLFaceEdge(in TopoDS_Face F, in TopoDS_Edge E)
+    public bool IsIsoLFaceEdge(in Face F, in Edge E)
     {
         bool found = false;
         if (FaceHasIsoL(F))
         {
-            NCollection_List<TopoDS_Shape>.Iterator itE = new();
+            NCollection_List<Shape>.Iterator itE = new();
             for (itE.Initialize(FaceIsoL(F)); itE.More() && !found; itE.Next())
             {
-                found = IsSplEEdgeEdge(TopoDS.Edge(itE.Value()), E);
+                found = IsSplEEdgeEdge(ShapeCasts.Edge(itE.Value()), E);
             }
         }
         return found;
     }
 
     /// <summary>The shape a new shape comes from (itself if none).</summary>
-    public TopoDS_Shape NewSOldS(in TopoDS_Shape NewS)
+    public Shape NewSOldS(in Shape NewS)
     {
         if (myOldS.IsBound(NewS))
         {
@@ -172,20 +176,20 @@ public sealed class HLRTopoBRep_Data
         }
     }
 
-    public NCollection_List<TopoDS_Shape> EdgeSplE(in TopoDS_Edge E) => mySplE.Find(E);
+    public NCollection_List<Shape> EdgeSplE(in Edge E) => mySplE.Find(E);
 
-    public NCollection_List<TopoDS_Shape> FaceIntL(in TopoDS_Face F) => myData.Find(F).FaceIntL();
+    public NCollection_List<Shape> FaceIntL(in Face F) => myData.Find(F).FaceIntL();
 
-    public NCollection_List<TopoDS_Shape> FaceOutL(in TopoDS_Face F) => myData.Find(F).FaceOutL();
+    public NCollection_List<Shape> FaceOutL(in Face F) => myData.Find(F).FaceOutL();
 
-    public NCollection_List<TopoDS_Shape> FaceIsoL(in TopoDS_Face F) => myData.Find(F).FaceIsoL();
+    public NCollection_List<Shape> FaceIsoL(in Face F) => myData.Find(F).FaceIsoL();
 
-    public bool IsOutV(in TopoDS_Vertex V) => myOutV.Contains(V);
+    public bool IsOutV(in Vertex V) => myOutV.Contains(V);
 
-    public bool IsIntV(in TopoDS_Vertex V) => myIntV.Contains(V);
+    public bool IsIntV(in Vertex V) => myIntV.Contains(V);
 
     /// <summary>Records that NewS comes from OldS (the first record is kept).</summary>
-    public void AddOldS(in TopoDS_Shape NewS, in TopoDS_Shape OldS)
+    public void AddOldS(in Shape NewS, in Shape OldS)
     {
         if (!myOldS.IsBound(NewS))
         {
@@ -194,18 +198,18 @@ public sealed class HLRTopoBRep_Data
     }
 
     /// <summary>The splits of E, created empty if needed.</summary>
-    public NCollection_List<TopoDS_Shape> AddSplE(in TopoDS_Edge E)
+    public NCollection_List<Shape> AddSplE(in Edge E)
     {
         if (!mySplE.IsBound(E))
         {
-            NCollection_List<TopoDS_Shape> empty = new();
+            NCollection_List<Shape> empty = new();
             mySplE.Bind(E, empty);
         }
         return mySplE[E];
     }
 
     /// <summary>The internal outlines of F, created empty if needed.</summary>
-    public NCollection_List<TopoDS_Shape> AddIntL(in TopoDS_Face F)
+    public NCollection_List<Shape> AddIntL(in Face F)
     {
         if (!myData.IsBound(F))
         {
@@ -216,7 +220,7 @@ public sealed class HLRTopoBRep_Data
     }
 
     /// <summary>The outlines of F, created empty if needed.</summary>
-    public NCollection_List<TopoDS_Shape> AddOutL(in TopoDS_Face F)
+    public NCollection_List<Shape> AddOutL(in Face F)
     {
         if (!myData.IsBound(F))
         {
@@ -227,7 +231,7 @@ public sealed class HLRTopoBRep_Data
     }
 
     /// <summary>The isolines of F, created empty if needed.</summary>
-    public NCollection_List<TopoDS_Shape> AddIsoL(in TopoDS_Face F)
+    public NCollection_List<Shape> AddIsoL(in Face F)
     {
         if (!myData.IsBound(F))
         {
@@ -237,15 +241,15 @@ public sealed class HLRTopoBRep_Data
         return myData[F].AddIsoL();
     }
 
-    public void AddOutV(in TopoDS_Vertex V) => myOutV.Add(V);
+    public void AddOutV(in Vertex V) => myOutV.Add(V);
 
-    public void AddIntV(in TopoDS_Vertex V) => myIntV.Add(V);
+    public void AddIntV(in Vertex V) => myIntV.Add(V);
 
     /// <summary>Starts the iteration on the edges with inserted vertices.</summary>
     public void InitEdge()
     {
         myEKeys.Clear();
-        foreach (KeyValuePair<TopoDS_Shape, NCollection_List<HLRTopoBRep_VData>> anItem in myEdgesVertices)
+        foreach (KeyValuePair<Shape, NCollection_List<HLRTopoBRep_VData>> anItem in myEdgesVertices)
         {
             myEKeys.Add(anItem.Key);
         }
@@ -269,10 +273,10 @@ public sealed class HLRTopoBRep_Data
         }
     }
 
-    public TopoDS_Edge Edge() => TopoDS.Edge(myEKeys[myEIndex]);
+    public Edge Edge() => ShapeCasts.Edge(myEKeys[myEIndex]);
 
     /// <summary>Starts the iteration on the vertices inserted on E (creating the empty list if needed).</summary>
-    public void InitVertex(in TopoDS_Edge E)
+    public void InitVertex(in Edge E)
     {
         if (!myEdgesVertices.IsBound(E))
         {
@@ -288,19 +292,19 @@ public sealed class HLRTopoBRep_Data
 
     public void NextVertex() => myVIterator.Next();
 
-    public TopoDS_Vertex Vertex() => TopoDS.Vertex(myVIterator.Value().Vertex());
+    public Vertex Vertex() => ShapeCasts.Vertex(myVIterator.Value().Vertex());
 
     public double Parameter() => myVIterator.Value().Parameter();
 
     /// <summary>Inserts the vertex V of parameter P before the current one.</summary>
-    public void InsertBefore(in TopoDS_Vertex V, double P)
+    public void InsertBefore(in Vertex V, double P)
     {
         HLRTopoBRep_VData VD = new(P, V);
         myVList!.InsertBefore(VD, myVIterator);
     }
 
     /// <summary>Appends the vertex V of parameter P.</summary>
-    public void Append(in TopoDS_Vertex V, double P)
+    public void Append(in Vertex V, double P)
     {
         HLRTopoBRep_VData VD = new(P, V);
         myVList!.Append(VD);

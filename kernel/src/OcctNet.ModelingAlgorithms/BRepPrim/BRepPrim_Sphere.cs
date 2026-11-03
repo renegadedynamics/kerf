@@ -6,6 +6,7 @@
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -42,10 +43,10 @@ internal sealed class BRepPrim_Sphere : BRepPrim_Revolution
     }
 
     /// <summary>The surface normal should be directed towards the outside.</summary>
-    public override TopoDS_Face MakeEmptyLateralFace()
+    public override Face MakeEmptyLateralFace()
     {
-        Geom_SphericalSurface S = new(new CoordinateSystem(Axes()), myRadius);
-        TopoDS_Face F = new();
+        SphericalSurface S = new(new CoordinateSystem(Axes()), myRadius);
+        Face F = new();
         myBuilder.Builder().MakeFace(ref F, S, global::Kerf.Engine.Foundation.Precision.Confusion());
         return F;
     }
@@ -58,8 +59,8 @@ internal sealed class BRepPrim_Sphere : BRepPrim_Revolution
         Direction3D D = Axes().YDirection();
         D.Reverse();
         Frame3D A = new(Axes().Location(), D, Axes().XDirection());
-        Geom_Circle C = new(A, myRadius);
-        Geom2d_Circle C2d = new(new Axis2D(new Point2D(0, 0), new Direction2D(Direction2D.D.X)), myRadius);
+        CircleCurve3D C = new(A, myRadius);
+        CircleCurve2D C2d = new(new Axis2D(new Point2D(0, 0), new Direction2D(Direction2D.D.X)), myRadius);
         Meridian(C, C2d);
     }
 }

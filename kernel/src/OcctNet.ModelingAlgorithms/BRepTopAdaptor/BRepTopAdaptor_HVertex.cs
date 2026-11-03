@@ -3,33 +3,37 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
 /// <summary>A vertex of a face's edge, seen by the intersection algorithms through BRepTopAdaptor_TopolTool.</summary>
 /// <remarks>A working object (decision 101), keeping the vertex and the edge's 2D adaptor.</remarks>
-public class BRepTopAdaptor_HVertex : Adaptor3d_HVertex
+public class BRepTopAdaptor_HVertex : HVertex
 {
-    private TopoDS_Vertex myVtx;
-    private readonly BRepAdaptor_Curve2d myCurve;
+    private Vertex myVtx;
+    private readonly EdgeCurve2DAdaptor myCurve;
 
     /// <summary>The vertex <paramref name="Vtx"/> of the edge of <paramref name="Curve"/>.</summary>
-    public BRepTopAdaptor_HVertex(in TopoDS_Vertex Vtx, BRepAdaptor_Curve2d Curve)
+    public BRepTopAdaptor_HVertex(in Vertex Vtx, EdgeCurve2DAdaptor Curve)
     {
         myVtx = Vtx;
         myCurve = Curve;
     }
 
     /// <summary>The vertex.</summary>
-    public TopoDS_Vertex Vertex() => myVtx;
+    public Vertex Vertex() => myVtx;
 
     /// <summary>OCCT's non-const access to the vertex.</summary>
-    internal ref TopoDS_Vertex ChangeVertex() => ref myVtx;
+    internal ref Vertex ChangeVertex() => ref myVtx;
 
     /// <summary>The 2D curve the vertex was found on.</summary>
-    internal BRepAdaptor_Curve2d Curve() => myCurve;
+    internal EdgeCurve2DAdaptor Curve() => myCurve;
 
     /// <summary>Nothing: (RealFirst, RealFirst), as in OCCT.</summary>
     public override Point2D Value()
@@ -39,21 +43,21 @@ public class BRepTopAdaptor_HVertex : Adaptor3d_HVertex
     }
 
     /// <summary>The parameter of the vertex on the edge of <paramref name="C"/> (a BRepAdaptor_Curve2d).</summary>
-    public override double Parameter(Adaptor2d_Curve2d C)
+    public override double Parameter(Curve2DAdaptorBase C)
     {
-        var brhc = (BRepAdaptor_Curve2d)C;
-        return BRep_Tool.Parameter(myVtx, brhc.Edge(), brhc.Face());
+        var brhc = (EdgeCurve2DAdaptor)C;
+        return Tool.Parameter(myVtx, brhc.Edge(), brhc.Face());
     }
 
     /// <summary>The parametric resolution (2D) of the vertex's tolerance on the edge of <paramref name="C"/>.</summary>
-    public override double Resolution(Adaptor2d_Curve2d C)
+    public override double Resolution(Curve2DAdaptorBase C)
     {
-        var brhc = (BRepAdaptor_Curve2d)C;
-        TopoDS_Face F = brhc.Face();
-        var S = new BRepAdaptor_Surface(F, false);
-        double tv = BRep_Tool.Tolerance(myVtx);
-        double pp, p = BRep_Tool.Parameter(myVtx, brhc.Edge(), brhc.Face());
-        TopAbs_Orientation Or = Orientation();
+        var brhc = (EdgeCurve2DAdaptor)C;
+        Face F = brhc.Face();
+        var S = new FaceSurfaceAdaptor(F, false);
+        double tv = Tool.Tolerance(myVtx);
+        double pp, p = Tool.Parameter(myVtx, brhc.Edge(), brhc.Face());
+        Orientation Or = Orientation();
         C.D1(p, out Point2D p2d, out Vector2D v2d);
         Vector3D DC = new();
         S.D1(p2d.X(), p2d.Y(), out Point3D P, out Vector3D DU, out Vector3D DV);
@@ -83,7 +87,7 @@ public class BRepTopAdaptor_HVertex : Adaptor3d_HVertex
         }
 
         // Control
-        if (Or == TopAbs_REVERSED)
+        if (Or == Reversed)
         {
             pp = p + ResUV;
         }
@@ -112,7 +116,7 @@ public class BRepTopAdaptor_HVertex : Adaptor3d_HVertex
         {
             // Refine if possible
             double Dist1;
-            if (Or == TopAbs_REVERSED)
+            if (Or == Reversed)
             {
                 pp = p + tv / Dist;
             }
@@ -148,7 +152,7 @@ public class BRepTopAdaptor_HVertex : Adaptor3d_HVertex
                 mag = tv * 1.0e-7;
             }
 
-            if (Or == TopAbs_REVERSED)
+            if (Or == Reversed)
             {
                 pp = p + tv / mag;
             }
@@ -181,10 +185,10 @@ public class BRepTopAdaptor_HVertex : Adaptor3d_HVertex
     }
 
     /// <summary>The orientation of the vertex.</summary>
-    public override TopAbs_Orientation Orientation() => myVtx.Orientation();
+    public override Orientation Orientation() => myVtx.Orientation();
 
     /// <summary>True if <paramref name="Other"/> (a BRepTopAdaptor_HVertex) holds the same vertex.</summary>
-    public override bool IsSame(Adaptor3d_HVertex Other)
+    public override bool IsSame(HVertex Other)
     {
         var brhv = (BRepTopAdaptor_HVertex)Other;
         return myVtx.IsSame(brhv.Vertex());

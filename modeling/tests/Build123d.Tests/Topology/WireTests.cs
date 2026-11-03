@@ -11,6 +11,8 @@
 // - TestWireValidation.test_fillet_2d_vertex_not_on_wire: ported in Objects/Fillet2DTests.cs.
 // test_param_at_point_reversed_edges's BuildLine on Plane.YZ is the filleted line placed on Plane.YZ.
 // Python's random u values in test_param_at_point are fixed values here.
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Occt;
 using Ops = Build123d.Operations;
 using Rot = Build123d.Rotation;
@@ -183,7 +185,7 @@ public class WireTests
     public void ParamAtPointNativeParameterOnMultiedgeAndReversedWires()
     {
         var wire = new Wire([Edge.MakeLine((0, 0, 0), (10, 0, 0)), Edge.MakeLine((10, 0, 0), (10, 10, 0))], sequenced: true);
-        var reversedWire = new Wire(TopoDS.Wire(wire.Wrapped.Reversed()));
+        var reversedWire = new Wire(ShapeCasts.Wire(wire.Wrapped.Reversed()));
 
         foreach (var candidate in new[] { wire, reversedWire })
             foreach (var position in new[] { 0.25, 0.5, 0.6 })
@@ -229,7 +231,7 @@ public class WireTests
                 Edge.MakeCircle(5, new Plane((10, 5, 0)), startAngle: 270, endAngle: 360),
             ],
             sequenced: true);
-        var reversedWire = new Wire(TopoDS.Wire(wire.Wrapped.Reversed()));
+        var reversedWire = new Wire(ShapeCasts.Wire(wire.Wrapped.Reversed()));
         Assert.False(reversedWire.IsForward);
         foreach (var position in new[] { 0.0, 0.25, 0.6, 1.0 })
             foreach (var mode in new[] { PositionMode.Parameter, PositionMode.Length })
@@ -299,7 +301,7 @@ public class WireTests
     /// <summary>Wires the kernel marks as reversed, as those of a mirrored sketch are.</summary>
     private static Dictionary<string, Wire> ReversedWires()
     {
-        static Wire Flipped(Wire wire) => new(TopoDS.Wire(wire.Wrapped.Reversed()));
+        static Wire Flipped(Wire wire) => new(ShapeCasts.Wire(wire.Wrapped.Reversed()));
 
         var mixed = new Wire(
             [
@@ -437,7 +439,7 @@ public class WireTests
     {
         var w = Polyline((0, 0), (1, 0), (1, 1));
         var adaptor = w.GeomAdaptor();
-        Assert.IsType<BRepAdaptor_CompCurve>(adaptor);
+        Assert.IsType<WireCurveAdaptor>(adaptor);
         Assert.Throws<InvalidOperationException>(() => new Wire().GeomAdaptor());
     }
 
@@ -455,11 +457,11 @@ public class WireTests
         var w3 = new Wire([e0, e1]);
         Assert.True(w3.IsValid);
         Check.AlmostEqual(2, w3.Length, 5);
-        var w4 = new Wire(TopoDS.Wire(w0.Wrapped));
+        var w4 = new Wire(ShapeCasts.Wire(w0.Wrapped));
         Assert.True(w4.IsValid);
-        var w5 = new Wire(wire: TopoDS.Wire(w0.Wrapped));
+        var w5 = new Wire(wire: ShapeCasts.Wire(w0.Wrapped));
         Assert.True(w5.IsValid);
-        var w6 = new Wire(wire: TopoDS.Wire(w0.Wrapped), label: "w6", color: new Color("red"));
+        var w6 = new Wire(wire: ShapeCasts.Wire(w0.Wrapped), label: "w6", color: new Color("red"));
         Assert.True(w6.IsValid);
         Assert.Equal("w6", w6.Label);
         Assert.NotNull(w6.Color);

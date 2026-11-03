@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 using static Occt.GccInt_IType;
@@ -47,7 +48,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
     private readonly NCollection_Array1<double> parcen3 = new(1, aNbSolMAX);
 
     /// <summary>Circles tangent to two qualified circles, centred on a curve.</summary>
-    public Geom2dGcc_Circ2d2TanOnGeo(in GccEnt_QualifiedCirc Qualified1, in GccEnt_QualifiedCirc Qualified2, Geom2dAdaptor_Curve OnCurv, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnGeo(in GccEnt_QualifiedCirc Qualified1, in GccEnt_QualifiedCirc Qualified2, CurveAdaptor2D OnCurv, double Tolerance)
     {
         WellDone        = false;
         double thefirst = -100000.0;
@@ -78,8 +79,8 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
         {
             Geom2dInt_TheIntConicCurveOfGInter Intp = new();
             int                                nbsolution = Bis.NbSolutions();
-            Geom2dAdaptor_Curve   HCu2       = (Geom2dAdaptor_Curve)OnCurv.ShallowCopy(); // new Geom2dAdaptor_Curve(OnCurv)
-            Adaptor2d_OffsetCurve              Cu2 = new(HCu2, 0.0);
+            CurveAdaptor2D   HCu2       = (CurveAdaptor2D)OnCurv.ShallowCopy(); // new Geom2dAdaptor_Curve(OnCurv)
+            OffsetCurveAdaptor2D              Cu2 = new(HCu2, 0.0);
             firstparam = Max(Cu2.FirstParameter(), thefirst);
             lastparam  = Min(Cu2.LastParameter(), thelast);
             IntRes2d_Domain D2 = new(Cu2.Value(firstparam),
@@ -308,7 +309,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
     //  Les choix s effectuent a partir des Qualifieurs qualifiant C1 et L2.  +
     //=========================================================================
     /// <summary>Circles tangent to a qualified circle and a qualified line, centred on a curve.</summary>
-    public Geom2dGcc_Circ2d2TanOnGeo(in GccEnt_QualifiedCirc Qualified1, in GccEnt_QualifiedLin Qualified2, Geom2dAdaptor_Curve OnCurv, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnGeo(in GccEnt_QualifiedCirc Qualified1, in GccEnt_QualifiedLin Qualified2, CurveAdaptor2D OnCurv, double Tolerance)
     {
 
         WellDone        = false;
@@ -341,8 +342,8 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
             double                             Tol2 = Tol1;
             Geom2dInt_TheIntConicCurveOfGInter Intp = new();
             int                                nbsolution = Bis.NbSolutions();
-            Geom2dAdaptor_Curve   HCu2       = (Geom2dAdaptor_Curve)OnCurv.ShallowCopy(); // new Geom2dAdaptor_Curve(OnCurv)
-            Adaptor2d_OffsetCurve              C2 = new(HCu2, 0.0);
+            CurveAdaptor2D   HCu2       = (CurveAdaptor2D)OnCurv.ShallowCopy(); // new Geom2dAdaptor_Curve(OnCurv)
+            OffsetCurveAdaptor2D              C2 = new(HCu2, 0.0);
             firstparam = Max(C2.FirstParameter(), thefirst);
             lastparam  = Min(C2.LastParameter(), thelast);
             IntRes2d_Domain D2 = new(C2.Value(firstparam), firstparam, Tol, C2.Value(lastparam), lastparam, Tol);
@@ -504,7 +505,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
     //  Les choix s effectuent a partir des Qualifieurs qualifiant L1 et L2.  +
     //=========================================================================
     /// <summary>Circles tangent to two qualified lines, centred on a curve.</summary>
-    public Geom2dGcc_Circ2d2TanOnGeo(in GccEnt_QualifiedLin Qualified1, in GccEnt_QualifiedLin Qualified2, Geom2dAdaptor_Curve OnCurv, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnGeo(in GccEnt_QualifiedLin Qualified1, in GccEnt_QualifiedLin Qualified2, CurveAdaptor2D OnCurv, double Tolerance)
     {
 
         WellDone        = false;
@@ -536,8 +537,8 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
             double                             Tol2 = Tol1;
             Geom2dInt_TheIntConicCurveOfGInter Intp = new();
             int                                nbsolution = Bis.NbSolutions();
-            Geom2dAdaptor_Curve   HCu2       = (Geom2dAdaptor_Curve)OnCurv.ShallowCopy(); // new Geom2dAdaptor_Curve(OnCurv)
-            Adaptor2d_OffsetCurve              C2 = new(HCu2, 0.0);
+            CurveAdaptor2D   HCu2       = (CurveAdaptor2D)OnCurv.ShallowCopy(); // new Geom2dAdaptor_Curve(OnCurv)
+            OffsetCurveAdaptor2D              C2 = new(HCu2, 0.0);
             firstparam = Max(C2.FirstParameter(), thefirst);
             lastparam  = Min(C2.LastParameter(), thelast);
             IntRes2d_Domain D2 = new(C2.Value(firstparam), firstparam, Tol, C2.Value(lastparam), lastparam, Tol);
@@ -669,7 +670,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
     //  Les choix s effectuent a partir des Qualifieurs qualifiant C1.        +
     //=========================================================================
     /// <summary>Circles tangent to a qualified circle and through a point, centred on a curve.</summary>
-    public Geom2dGcc_Circ2d2TanOnGeo(in GccEnt_QualifiedCirc Qualified1, in Point2D Point2, Geom2dAdaptor_Curve OnCurv, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnGeo(in GccEnt_QualifiedCirc Qualified1, in Point2D Point2, CurveAdaptor2D OnCurv, double Tolerance)
     {
 
         WellDone        = false;
@@ -696,8 +697,8 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
             double                             Tol2 = Tol1;
             Geom2dInt_TheIntConicCurveOfGInter Intp = new();
             int                                nbsolution = Bis.NbSolutions();
-            Geom2dAdaptor_Curve   HCu2       = (Geom2dAdaptor_Curve)OnCurv.ShallowCopy(); // new Geom2dAdaptor_Curve(OnCurv)
-            Adaptor2d_OffsetCurve              C2 = new(HCu2, 0.0);
+            CurveAdaptor2D   HCu2       = (CurveAdaptor2D)OnCurv.ShallowCopy(); // new Geom2dAdaptor_Curve(OnCurv)
+            OffsetCurveAdaptor2D              C2 = new(HCu2, 0.0);
             firstparam = Max(C2.FirstParameter(), thefirst);
             lastparam  = Min(C2.LastParameter(), thelast);
             IntRes2d_Domain D2 = new(C2.Value(firstparam), firstparam, Tol, C2.Value(lastparam), lastparam, Tol);
@@ -852,7 +853,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
     //  Les choix s effectuent a partir des Qualifieurs qualifiant L1.        +
     //=========================================================================
     /// <summary>Circles tangent to a qualified line and through a point, centred on a curve.</summary>
-    public Geom2dGcc_Circ2d2TanOnGeo(in GccEnt_QualifiedLin Qualified1, in Point2D Point2, Geom2dAdaptor_Curve OnCurv, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnGeo(in GccEnt_QualifiedLin Qualified1, in Point2D Point2, CurveAdaptor2D OnCurv, double Tolerance)
     {
 
         WellDone        = false;
@@ -877,8 +878,8 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
             double                             Tol1 = Math.Abs(Tolerance);
             double                             Tol2 = Tol1;
             Geom2dInt_TheIntConicCurveOfGInter Intp = new();
-            Geom2dAdaptor_Curve   HCu2 = (Geom2dAdaptor_Curve)OnCurv.ShallowCopy(); // new Geom2dAdaptor_Curve(OnCurv)
-            Adaptor2d_OffsetCurve              C2 = new(HCu2, 0.0);
+            CurveAdaptor2D   HCu2 = (CurveAdaptor2D)OnCurv.ShallowCopy(); // new Geom2dAdaptor_Curve(OnCurv)
+            OffsetCurveAdaptor2D              C2 = new(HCu2, 0.0);
             firstparam = Max(C2.FirstParameter(), thefirst);
             lastparam  = Min(C2.LastParameter(), thelast);
             IntRes2d_Domain D2 = new(C2.Value(firstparam), firstparam, Tol, C2.Value(lastparam), lastparam, Tol);
@@ -992,7 +993,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
     //  donne les points parmis lesquels nous allons choisir les solutions.   +
     //=========================================================================
     /// <summary>Circles through two points, centred on a curve.</summary>
-    public Geom2dGcc_Circ2d2TanOnGeo(in Point2D Point1, in Point2D Point2, Geom2dAdaptor_Curve OnCurv, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnGeo(in Point2D Point1, in Point2D Point2, CurveAdaptor2D OnCurv, double Tolerance)
     {
 
         WellDone        = false;
@@ -1009,8 +1010,8 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
             double                             Tol1 = Math.Abs(Tolerance);
             double                             Tol2 = Tol1;
             Geom2dInt_TheIntConicCurveOfGInter Intp = new();
-            Geom2dAdaptor_Curve   HCu2 = (Geom2dAdaptor_Curve)OnCurv.ShallowCopy(); // new Geom2dAdaptor_Curve(OnCurv)
-            Adaptor2d_OffsetCurve              Cu2 = new(HCu2, 0.0);
+            CurveAdaptor2D   HCu2 = (CurveAdaptor2D)OnCurv.ShallowCopy(); // new Geom2dAdaptor_Curve(OnCurv)
+            OffsetCurveAdaptor2D              Cu2 = new(HCu2, 0.0);
             firstparam = Max(Cu2.FirstParameter(), thefirst);
             lastparam  = Min(Cu2.LastParameter(), thelast);
             IntRes2d_Domain D2 = new(Cu2.Value(firstparam),

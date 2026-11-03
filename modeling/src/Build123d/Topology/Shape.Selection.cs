@@ -1,3 +1,4 @@
+using Kerf.Engine.Topology.Brep;
 using Occt;
 
 namespace Build123d;
@@ -5,7 +6,7 @@ namespace Build123d;
 public abstract partial class Shape
 {
     /// <summary>The distinct OCCT sub-shapes of a type.</summary>
-    public IReadOnlyList<TopoDS_Shape> Entities(ShapeType type) =>
+    public IReadOnlyList<global::Kerf.Topology.Shape> Entities(ShapeType type) =>
         IsEmpty ? [] : TopoUtil.Entities(_wrapped, TopoUtil.ToTopAbs(type));
 
     /// <summary>The sub-shapes of a type, each noting that it was taken out of this shape.</summary>
@@ -32,7 +33,7 @@ public abstract partial class Shape
 
     /// <summary>All the non-degenerate edges in this shape, or those <paramref name="select"/> picks.</summary>
     public virtual ShapeList<Edge> Edges(Select select = Select.All) =>
-        SelectFrom(ShapeListOf<Edge>(ShapeType.Edge).FilterBy(e => BRep_Tool.Degenerated(e.TopoEdge), reverse: true), select);
+        SelectFrom(ShapeListOf<Edge>(ShapeType.Edge).FilterBy(e => Tool.Degenerated(e.TopoEdge), reverse: true), select);
 
     /// <summary>All the wires in this shape, or those <paramref name="select"/> picks.</summary>
     public virtual ShapeList<Wire> Wires(Select select = Select.All) => SelectFrom(ShapeListOf<Wire>(ShapeType.Wire), select);
@@ -89,7 +90,7 @@ public abstract partial class Shape
         // The record names the sub-shapes where the shape was when it was recorded. If the shape has been
         // relocated since, map each sub-shape back there to look it up.
         var here = _wrapped.Location();
-        Func<Shape, TopoDS_Shape> key;
+        Func<Shape, global::Kerf.Topology.Shape> key;
         if (_historyAt is not { } at || at.IsEqual(here))
             key = s => s.TopoShape;
         else

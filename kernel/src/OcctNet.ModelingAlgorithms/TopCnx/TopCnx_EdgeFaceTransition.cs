@@ -4,8 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -45,76 +46,76 @@ public sealed class TopCnx_EdgeFaceTransition
     /// Adds a curve element of the boundary: <paramref name="Or"/> is the orientation of the interference on the
     /// boundary curve, <paramref name="Tr"/> its transition and <paramref name="BTr"/> its boundary transition.
     /// </summary>
-    public void AddInterference(double Tole, in Direction3D Tang, in Direction3D Norm, double Curv, TopAbs_Orientation Or,
-                                TopAbs_Orientation Tr, TopAbs_Orientation BTr)
+    public void AddInterference(double Tole, in Direction3D Tang, in Direction3D Norm, double Curv, Orientation Or,
+                                Orientation Tr, Orientation BTr)
     {
         myCurveTransition.Compare(Tole, Tang, Norm, Curv, Tr, Or);
         switch (BTr)
         {
-            case TopAbs_FORWARD:
+            case Forward:
                 nbBoundForward++;
                 break;
-            case TopAbs_REVERSED:
+            case Reversed:
                 nbBoundReversed++;
                 break;
-            case TopAbs_INTERNAL:
-            case TopAbs_EXTERNAL:
+            case Internal:
+            case External:
                 break;
         }
     }
 
     /// <summary>The current cumulated transition.</summary>
-    public TopAbs_Orientation Transition()
+    public Orientation Transition()
     {
-        TopAbs_State Bef = myCurveTransition.StateBefore();
-        TopAbs_State Aft = myCurveTransition.StateAfter();
-        if (Bef == TopAbs_IN)
+        Containment Bef = myCurveTransition.StateBefore();
+        Containment Aft = myCurveTransition.StateAfter();
+        if (Bef == In)
         {
-            if (Aft == TopAbs_IN)
+            if (Aft == In)
             {
-                return TopAbs_INTERNAL;
+                return Internal;
             }
-            else if (Aft == TopAbs_OUT)
+            else if (Aft == Out)
             {
-                return TopAbs_REVERSED;
+                return Reversed;
             }
             // OCCT_DEBUG trace left out
         }
-        else if (Bef == TopAbs_OUT)
+        else if (Bef == Out)
         {
-            if (Aft == TopAbs_IN)
+            if (Aft == In)
             {
-                return TopAbs_FORWARD;
+                return Forward;
             }
-            else if (Aft == TopAbs_OUT)
+            else if (Aft == Out)
             {
-                return TopAbs_EXTERNAL;
+                return External;
             }
             // OCCT_DEBUG trace left out
         }
         // OCCT_DEBUG trace left out
-        return TopAbs_INTERNAL;
+        return Internal;
     }
 
     /// <summary>The current cumulated boundary transition.</summary>
-    public TopAbs_Orientation BoundaryTransition()
+    public Orientation BoundaryTransition()
     {
         if (nbBoundForward > nbBoundReversed)
         {
-            return TopAbs_FORWARD;
+            return Forward;
         }
         else if (nbBoundForward < nbBoundReversed)
         {
-            return TopAbs_REVERSED;
+            return Reversed;
         }
         // OCCT: both branches of the even/odd test return TopAbs_EXTERNAL
         else if ((nbBoundReversed % 2) == 0)
         {
-            return TopAbs_EXTERNAL;
+            return External;
         }
         else
         {
-            return TopAbs_EXTERNAL;
+            return External;
         }
     }
 }

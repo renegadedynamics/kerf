@@ -2,8 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Values;
+using Kerf.Engine.Intersection;
 using Kerf.Geometry;
-using static Occt.IntAna_ResultType;
+using static Kerf.Engine.Intersection.ResultType;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_Situation;
 using static Occt.IntSurf_TypeTrans;
@@ -193,7 +195,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         int i;
 
         IntSurf_TypeTrans trans1, trans2;
-        IntAna_ResultType typint;
+        ResultType typint;
         IntPatch_Point ptsol = new();
         Circle3D cirsol;
 
@@ -210,26 +212,26 @@ public sealed partial class IntPatch_ImpImpIntersection
             Cy = Quad2.Cylinder();
             Sp = Quad1.Sphere();
         }
-        IntAna_QuadQuadGeo inter = new(Cy, Sp, Tol);
+        QuadQuadGeo inter = new(Cy, Sp, Tol);
 
-        if (!inter.IsDone())
+        if (!inter.IsDone)
         {
             return false;
         }
 
         typint = inter.TypeInter();
-        int NbSol = inter.NbSolutions();
+        int NbSol = inter.SolutionCount;
         Empty = false;
 
         switch (typint)
         {
-            case IntAna_Empty:
+            case global::Kerf.Engine.Intersection.ResultType.Empty:
             {
                 Empty = true;
             }
             break;
 
-            case IntAna_Point:
+            case global::Kerf.Engine.Intersection.ResultType.Point:
             {
                 Point3D psol = inter.Point(1);
                 double U1 = 0, V1 = 0, U2 = 0, V2 = 0;
@@ -241,7 +243,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case IntAna_Circle:
+            case Circle:
             {
                 cirsol = inter.Circle(1);
                 global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out Point3D ptref, out Vector3D Tgt);
@@ -337,23 +339,23 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case IntAna_NoGeometricSolution:
+            case NoGeometricSolution:
             {
                 Point3D psol;
                 double U1 = 0, V1 = 0, U2 = 0, V2 = 0;
-                IntAna_IntQuadQuad anaint = new(Cy, new IntAna_Quadric(Sp), Tol);
-                if (!anaint.IsDone())
+                IntQuadQuad anaint = new(Cy, new Quadric(Sp), Tol);
+                if (!anaint.IsDone)
                 {
                     return false;
                 }
 
-                if (anaint.NbPnt() == 0 && anaint.NbCurve() == 0)
+                if (anaint.PntCount == 0 && anaint.CurveCount == 0)
                 {
                     Empty = true;
                 }
                 else
                 {
-                    NbSol = anaint.NbPnt();
+                    NbSol = anaint.PntCount;
                     for (i = 1; i <= NbSol; i++)
                     {
                         psol = anaint.Point(i);
@@ -367,11 +369,11 @@ public sealed partial class IntPatch_ImpImpIntersection
                     Point3D ptvalid = new(), ptf, ptl;
                     Vector3D tgvalid = new();
                     double first, last, para;
-                    IntAna_Curve curvsol;
+                    Curve curvsol;
                     bool tgfound;
                     int kount;
 
-                    NbSol = anaint.NbCurve();
+                    NbSol = anaint.CurveCount;
                     for (i = 1; i <= NbSol; i++)
                     {
                         curvsol = anaint.Curve(i);
@@ -464,7 +466,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         int i;
 
         IntSurf_TypeTrans trans1, trans2;
-        IntAna_ResultType typint;
+        ResultType typint;
         Circle3D cirsol;
 
         Cylinder Cy;
@@ -480,26 +482,26 @@ public sealed partial class IntPatch_ImpImpIntersection
             Cy = Quad2.Cylinder();
             Co = Quad1.Cone();
         }
-        IntAna_QuadQuadGeo inter = new(Cy, Co, Tol);
+        QuadQuadGeo inter = new(Cy, Co, Tol);
 
-        if (!inter.IsDone())
+        if (!inter.IsDone)
         {
             return false;
         }
 
         typint = inter.TypeInter();
-        int NbSol = inter.NbSolutions();
+        int NbSol = inter.SolutionCount;
         Empty = false;
 
         switch (typint)
         {
-            case IntAna_Empty:
+            case global::Kerf.Engine.Intersection.ResultType.Empty:
             {
                 Empty = true;
             }
             break;
 
-            case IntAna_Point:
+            case global::Kerf.Engine.Intersection.ResultType.Point:
             {
                 Point3D psol = inter.Point(1);
                 double U1 = 0, V1 = 0, U2 = 0, V2 = 0;
@@ -511,7 +513,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case IntAna_Circle:
+            case Circle:
             {
                 Vector3D Tgt;
                 Point3D ptref;
@@ -543,23 +545,23 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case IntAna_NoGeometricSolution:
+            case NoGeometricSolution:
             {
                 Point3D psol;
                 double U1 = 0, V1 = 0, U2 = 0, V2 = 0;
-                IntAna_IntQuadQuad anaint = new(Cy, new IntAna_Quadric(Co), Tol);
-                if (!anaint.IsDone())
+                IntQuadQuad anaint = new(Cy, new Quadric(Co), Tol);
+                if (!anaint.IsDone)
                 {
                     return false;
                 }
 
-                if (anaint.NbPnt() == 0 && anaint.NbCurve() == 0)
+                if (anaint.PntCount == 0 && anaint.CurveCount == 0)
                 {
                     Empty = true;
                 }
                 else
                 {
-                    NbSol = anaint.NbPnt();
+                    NbSol = anaint.PntCount;
                     for (i = 1; i <= NbSol; i++)
                     {
                         psol = anaint.Point(i);
@@ -581,12 +583,12 @@ public sealed partial class IntPatch_ImpImpIntersection
                     //
                     //
                     // IntAna_Curve curvsol;
-                    IntAna_Curve aC;
-                    NCollection_List<IntAna_Curve> aLC = new();
-                    NCollection_List<IntAna_Curve>.Iterator aIt = new();
+                    Curve aC;
+                    NCollection_List<Curve> aLC = new();
+                    NCollection_List<Curve>.Iterator aIt = new();
 
                     //
-                    NbSol = anaint.NbCurve();
+                    NbSol = anaint.CurveCount;
                     for (i = 1; i <= NbSol; ++i)
                     {
                         kept = false;
@@ -598,11 +600,11 @@ public sealed partial class IntPatch_ImpImpIntersection
                         aIt.Initialize(aLC);
                         for (; aIt.More(); aIt.Next())
                         {
-                            ref IntAna_Curve curvsol = ref aIt.ChangeValue();
+                            ref Curve curvsol = ref aIt.ChangeValue();
                             //
                             curvsol.Domain(out first, out last);
-                            firstp = !curvsol.IsFirstOpen();
-                            lastp = !curvsol.IsLastOpen();
+                            firstp = !curvsol.IsFirstOpen;
+                            lastp = !curvsol.IsLastOpen;
                             if (firstp)
                             {
                                 ptf = curvsol.Value(first);
@@ -689,9 +691,9 @@ public sealed partial class IntPatch_ImpImpIntersection
     // purpose  : Splits aC on several curves in the cone apex points.
     //=======================================================================
     private static bool ExploreCurve(in Cone theCo,
-                                     ref IntAna_Curve theCrv,
+                                     ref Curve theCrv,
                                      double theTol,
-                                     NCollection_List<IntAna_Curve> theLC)
+                                     NCollection_List<Curve> theLC)
     {
         double aSqTol = theTol * theTol;
         Point3D aPapx = theCo.Apex();
@@ -728,7 +730,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             double aSqD = aP.SquareDistance(aPapx);
             if (aSqD < aSqTol)
             {
-                IntAna_Curve aC1 = theCrv;
+                Curve aC1 = theCrv;
                 aC1.SetDomain(aT1, aPrm);
                 aT1 = aPrm;
                 theLC.Append(aC1);
@@ -748,7 +750,7 @@ public sealed partial class IntPatch_ImpImpIntersection
 
         if ((aT2 - aT1) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
-            IntAna_Curve aC1 = theCrv;
+            Curve aC1 = theCrv;
             aC1.SetDomain(aT1, aT2);
             theLC.Append(aC1);
         }
@@ -770,38 +772,38 @@ public sealed partial class IntPatch_ImpImpIntersection
         int i, NbSol;
         double U1 = 0, V1 = 0, U2 = 0, V2 = 0;
         IntSurf_TypeTrans trans1, trans2;
-        IntAna_ResultType typint;
+        ResultType typint;
         //
         Cone Co1 = Quad1.Cone();
         Cone Co2 = Quad2.Cone();
         //
-        IntAna_QuadQuadGeo inter = new(Co1, Co2, Tol);
-        if (!inter.IsDone())
+        QuadQuadGeo inter = new(Co1, Co2, Tol);
+        if (!inter.IsDone)
         {
             return false;
         }
         //
         typint = inter.TypeInter();
-        NbSol = inter.NbSolutions();
+        NbSol = inter.SolutionCount;
         Empty = false;
         Same = false;
 
         switch (typint)
         {
-            case IntAna_Empty:
+            case global::Kerf.Engine.Intersection.ResultType.Empty:
             {
                 Empty = true;
             }
             break;
 
-            case IntAna_Same:
+            case global::Kerf.Engine.Intersection.ResultType.Same:
             {
                 Same = true;
             }
             break;
 
             // modified by NIZNHY-PKV Wed Nov 30 12:56:06 2005f
-            case IntAna_Line:
+            case global::Kerf.Engine.Intersection.ResultType.Line:
             {
                 double para, aDot;
                 Point3D aPApex1, aPApex2, ptbid;
@@ -916,7 +918,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             break;
             // modified by NIZNHY-PKV Wed Nov 30 12:56:10 2005t
 
-            case IntAna_Point:
+            case global::Kerf.Engine.Intersection.ResultType.Point:
             {
                 Point3D ptcontact;
                 Point3D apex1 = Co1.Apex();
@@ -951,7 +953,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case IntAna_Circle:
+            case Circle:
             {
                 IntPatch_Point aPtsol = new();
                 Vector3D Tgt;
@@ -976,7 +978,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                         trans1 = trans2 = IntSurf_Undecided;
                     }
                     IntPatch_GLine glig = new(cirsol, false, trans1, trans2);
-                    if (inter.HasCommonGen())
+                    if (inter.HasCommonGen)
                     {
                         Point3D aPChar = inter.PChar();
                         Quad1.Parameters(aPChar, ref U1, ref V1);
@@ -991,7 +993,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case IntAna_Ellipse:
+            case Ellipse:
             {
                 IntPatch_Point aPtsol = new();
                 Ellipse3D elipsol = inter.Ellipse(1);
@@ -1014,7 +1016,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                     trans1 = trans2 = IntSurf_Undecided;
                 }
                 IntPatch_GLine glig = new(elipsol, false, trans1, trans2);
-                if (inter.HasCommonGen())
+                if (inter.HasCommonGen)
                 {
                     Point3D aPChar = inter.PChar();
                     Quad1.Parameters(aPChar, ref U1, ref V1);
@@ -1028,7 +1030,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case IntAna_Hyperbola:
+            case Hyperbola:
             {
                 IntPatch_Point aPtsol = new();
                 Vector3D Tgt;
@@ -1053,7 +1055,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                         trans1 = trans2 = IntSurf_Undecided;
                     }
                     IntPatch_GLine glig = new(hyprsol, false, trans1, trans2);
-                    if (inter.HasCommonGen())
+                    if (inter.HasCommonGen)
                     {
                         Point3D aPChar = inter.PChar();
                         Quad1.Parameters(aPChar, ref U1, ref V1);
@@ -1068,7 +1070,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case IntAna_Parabola:
+            case Parabola:
             {
                 IntPatch_Point aPtsol = new();
                 Parabola3D parabsol = inter.Parabola(1);
@@ -1092,7 +1094,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                 }
 
                 IntPatch_GLine glig = new(parabsol, false, trans1, trans2);
-                if (inter.HasCommonGen())
+                if (inter.HasCommonGen)
                 {
                     Point3D aPChar = inter.PChar();
                     Quad1.Parameters(aPChar, ref U1, ref V1);
@@ -1106,22 +1108,22 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case IntAna_NoGeometricSolution:
+            case NoGeometricSolution:
             {
                 Point3D psol;
-                IntAna_IntQuadQuad anaint = new(Co1, new IntAna_Quadric(Co2), Tol);
-                if (!anaint.IsDone())
+                IntQuadQuad anaint = new(Co1, new Quadric(Co2), Tol);
+                if (!anaint.IsDone)
                 {
                     return false;
                 }
 
-                if (anaint.NbPnt() == 0 && anaint.NbCurve() == 0)
+                if (anaint.PntCount == 0 && anaint.CurveCount == 0)
                 {
                     Empty = true;
                 }
                 else
                 {
-                    NbSol = anaint.NbPnt();
+                    NbSol = anaint.PntCount;
                     for (i = 1; i <= NbSol; i++)
                     {
                         psol = anaint.Point(i);
@@ -1142,15 +1144,15 @@ public sealed partial class IntPatch_ImpImpIntersection
                     bool tgfound, firstp, lastp, kept;
                     int kount;
 
-                    NbSol = anaint.NbCurve();
+                    NbSol = anaint.CurveCount;
                     for (i = 1; i <= NbSol; i++)
                     {
                         IntPatch_ALine alig;
                         kept = false;
-                        IntAna_Curve curvsol = anaint.Curve(i);
+                        Curve curvsol = anaint.Curve(i);
                         curvsol.Domain(out first, out last);
-                        firstp = !curvsol.IsFirstOpen();
-                        lastp = !curvsol.IsLastOpen();
+                        firstp = !curvsol.IsFirstOpen;
+                        lastp = !curvsol.IsLastOpen;
                         if (firstp)
                         {
                             ptf = curvsol.Value(first);
@@ -1237,7 +1239,7 @@ public sealed partial class IntPatch_ImpImpIntersection
 
         // When two cones have common generatrix passing through apexes
         // it is necessary to add it is solution
-        if (inter.HasCommonGen())
+        if (inter.HasCommonGen)
         {
             double para;
             IntPatch_Point aPtsol = new();
@@ -1245,7 +1247,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             aPApex1 = Co1.Apex();
             aPApex2 = Co2.Apex();
             // common generatrix of cones
-            gce_MakeLin aMkLin = new(aPApex1, aPApex2);
+            MakeLin aMkLin = new(aPApex1, aPApex2);
             Line3D linsol = aMkLin.Value();
             IntPatch_GLine glig = new(linsol, true, IntSurf_Undecided, IntSurf_Undecided);
 
@@ -1278,7 +1280,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         int i;
 
         IntSurf_TypeTrans trans1, trans2;
-        IntAna_ResultType typint;
+        ResultType typint;
 
         Sphere Sp;
         Cone Co;
@@ -1294,26 +1296,26 @@ public sealed partial class IntPatch_ImpImpIntersection
             Co = Quad2.Cone();
             Sp = Quad1.Sphere();
         }
-        IntAna_QuadQuadGeo inter = new(Sp, Co, Tol);
+        QuadQuadGeo inter = new(Sp, Co, Tol);
 
-        if (!inter.IsDone())
+        if (!inter.IsDone)
         {
             return false;
         }
 
         typint = inter.TypeInter();
-        int NbSol = inter.NbSolutions();
+        int NbSol = inter.SolutionCount;
         Empty = false;
 
         switch (typint)
         {
-            case IntAna_Empty:
+            case global::Kerf.Engine.Intersection.ResultType.Empty:
             {
                 Empty = true;
             }
             break;
 
-            case IntAna_Point:
+            case global::Kerf.Engine.Intersection.ResultType.Point:
             {
                 Point3D ptcontact;
                 Point3D apex = Co.Apex();
@@ -1344,7 +1346,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case IntAna_Circle:
+            case Circle:
             {
                 Vector3D Tgt;
                 Point3D ptref;
@@ -1379,7 +1381,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case IntAna_PointAndCircle:
+            case PointAndCircle:
             {
                 Point3D apex = Co.Apex();
                 double param;
@@ -1437,22 +1439,22 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case IntAna_NoGeometricSolution:
+            case NoGeometricSolution:
             {
                 Point3D psol;
-                IntAna_IntQuadQuad anaint = new(Co, new IntAna_Quadric(Sp), Tol);
-                if (!anaint.IsDone())
+                IntQuadQuad anaint = new(Co, new Quadric(Sp), Tol);
+                if (!anaint.IsDone)
                 {
                     return false;
                 }
 
-                if (anaint.NbPnt() == 0 && anaint.NbCurve() == 0)
+                if (anaint.PntCount == 0 && anaint.CurveCount == 0)
                 {
                     Empty = true;
                 }
                 else
                 {
-                    NbSol = anaint.NbPnt();
+                    NbSol = anaint.PntCount;
                     for (i = 1; i <= NbSol; i++)
                     {
                         psol = anaint.Point(i);
@@ -1472,15 +1474,15 @@ public sealed partial class IntPatch_ImpImpIntersection
                     bool tgfound, firstp, lastp, kept;
                     int kount;
 
-                    NbSol = anaint.NbCurve();
+                    NbSol = anaint.CurveCount;
                     for (i = 1; i <= NbSol; i++)
                     {
                         IntPatch_ALine alig;
                         kept = false;
-                        IntAna_Curve curvsol = anaint.Curve(i);
+                        Curve curvsol = anaint.Curve(i);
                         curvsol.Domain(out first, out last);
-                        firstp = !curvsol.IsFirstOpen();
-                        lastp = !curvsol.IsLastOpen();
+                        firstp = !curvsol.IsFirstOpen;
+                        lastp = !curvsol.IsLastOpen;
                         if (firstp)
                         {
                             ptf = curvsol.Value(first);
@@ -1577,12 +1579,12 @@ public sealed partial class IntPatch_ImpImpIntersection
                                 NCollection_Sequence<IntPatch_Point> spnt)
     {
         IntSurf_TypeTrans trans1, trans2;
-        IntAna_ResultType typint;
+        ResultType typint;
         Sphere sph1 = Quad1.Sphere();
         Sphere sph2 = Quad2.Sphere();
 
-        IntAna_QuadQuadGeo inter = new(sph1, sph2, Tol);
-        if (!inter.IsDone())
+        QuadQuadGeo inter = new(sph1, sph2, Tol);
+        if (!inter.IsDone)
         {
             return false;
         }
@@ -1593,19 +1595,19 @@ public sealed partial class IntPatch_ImpImpIntersection
 
         switch (typint)
         {
-            case IntAna_Empty:
+            case global::Kerf.Engine.Intersection.ResultType.Empty:
             {
                 Empty = true;
             }
             break;
 
-            case IntAna_Same:
+            case global::Kerf.Engine.Intersection.ResultType.Same:
             {
                 Same = true;
             }
             break;
 
-            case IntAna_Point:
+            case global::Kerf.Engine.Intersection.ResultType.Point:
             {
                 Point3D psol = inter.Point(1);
                 double U1 = 0, V1 = 0, U2 = 0, V2 = 0;
@@ -1618,7 +1620,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case IntAna_Circle:
+            case Circle:
             {
                 Circle3D cirsol = inter.Circle(1);
                 global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out Point3D ptref, out Vector3D Tgt);
@@ -1663,7 +1665,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         Cylinder aCyl = bReversed ? theQuad2.Cylinder() : theQuad1.Cylinder();
         Torus aTorus = bReversed ? theQuad1.Torus() : theQuad2.Torus();
         //
-        IntAna_QuadQuadGeo anInt = new(aCyl, aTorus, theTolTang);
+        QuadQuadGeo anInt = new(aCyl, aTorus, theTolTang);
         bool bRet = TreatResultTorus(theQuad1, theQuad2, anInt, ref bEmpty, theSeqLin);
         //
         return bRet;
@@ -1681,7 +1683,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         Cone aCone = bReversed ? theQuad2.Cone() : theQuad1.Cone();
         Torus aTorus = bReversed ? theQuad1.Torus() : theQuad2.Torus();
         //
-        IntAna_QuadQuadGeo anInt = new(aCone, aTorus, theTolTang);
+        QuadQuadGeo anInt = new(aCone, aTorus, theTolTang);
         bool bRet = TreatResultTorus(theQuad1, theQuad2, anInt, ref bEmpty, theSeqLin);
         //
         return bRet;
@@ -1699,7 +1701,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         Sphere aSphere = bReversed ? theQuad2.Sphere() : theQuad1.Sphere();
         Torus aTorus = bReversed ? theQuad1.Torus() : theQuad2.Torus();
         //
-        IntAna_QuadQuadGeo anInt = new(aSphere, aTorus, theTolTang);
+        QuadQuadGeo anInt = new(aSphere, aTorus, theTolTang);
         bool bRet = TreatResultTorus(theQuad1, theQuad2, anInt, ref bEmpty, theSeqLin);
         //
         return bRet;
@@ -1717,11 +1719,11 @@ public sealed partial class IntPatch_ImpImpIntersection
         Torus aTorus1 = theQuad1.Torus();
         Torus aTorus2 = theQuad2.Torus();
         //
-        IntAna_QuadQuadGeo anInt = new(aTorus1, aTorus2, theTolTang);
-        bool bRet = anInt.IsDone();
+        QuadQuadGeo anInt = new(aTorus1, aTorus2, theTolTang);
+        bool bRet = anInt.IsDone;
         if (bRet)
         {
-            if (anInt.TypeInter() == IntAna_Same)
+            if (anInt.TypeInter() == Same)
             {
                 bEmpty = false;
                 bSameSurf = true;
@@ -1739,28 +1741,28 @@ public sealed partial class IntPatch_ImpImpIntersection
 
     private static bool TreatResultTorus(in IntSurf_Quadric theQuad1,
                                          in IntSurf_Quadric theQuad2,
-                                         IntAna_QuadQuadGeo anInt,
+                                         QuadQuadGeo anInt,
                                          ref bool bEmpty,
                                          NCollection_Sequence<IntPatch_Line> theSeqLin)
     {
-        bool bRet = anInt.IsDone();
+        bool bRet = anInt.IsDone;
         //
         if (!bRet)
         {
             return bRet;
         }
         //
-        IntAna_ResultType typint = anInt.TypeInter();
-        int NbSol = anInt.NbSolutions();
+        ResultType typint = anInt.TypeInter();
+        int NbSol = anInt.SolutionCount;
         bEmpty = false;
         //
         switch (typint)
         {
-            case IntAna_Empty:
+            case Empty:
                 bEmpty = true;
                 break;
             //
-            case IntAna_Circle:
+            case Circle:
             {
                 int i;
                 IntSurf_TypeTrans trans1, trans2;
@@ -1797,7 +1799,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
             //
-            case IntAna_NoGeometricSolution:
+            case NoGeometricSolution:
             default:
                 bRet = false;
                 break;

@@ -6,6 +6,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -54,7 +55,7 @@ public sealed class GeomToStep_MakeVector : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D vector, its magnitude divided by the length factor.</summary>
-    public GeomToStep_MakeVector(Geom_Vector GVector, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeVector(GeometryVector3D GVector, in StepData_Factors theLocalFactors)
     {
         Vector3D V;
         V = GVector.Vec();
@@ -64,7 +65,7 @@ public sealed class GeomToStep_MakeVector : GeomToStep_Root
     }
 
     /// <summary>A 3D vector (default factors).</summary>
-    public GeomToStep_MakeVector(Geom_Vector GVector) : this(GVector, new StepData_Factors())
+    public GeomToStep_MakeVector(GeometryVector3D GVector) : this(GVector, new StepData_Factors())
     {
     }
 
@@ -73,7 +74,7 @@ public sealed class GeomToStep_MakeVector : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D vector (the factors aren't used).</summary>
-    public GeomToStep_MakeVector(Geom2d_Vector GVector, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeVector(GeometryVector2D GVector, in StepData_Factors theLocalFactors)
     {
         Vector2D V;
         V = GVector.Vec2d();
@@ -83,7 +84,7 @@ public sealed class GeomToStep_MakeVector : GeomToStep_Root
     }
 
     /// <summary>A 2D vector.</summary>
-    public GeomToStep_MakeVector(Geom2d_Vector GVector) : this(GVector, new StepData_Factors())
+    public GeomToStep_MakeVector(GeometryVector2D GVector) : this(GVector, new StepData_Factors())
     {
     }
 

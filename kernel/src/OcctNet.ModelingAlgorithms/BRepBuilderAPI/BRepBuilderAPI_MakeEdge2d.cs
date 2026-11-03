@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepBuilderAPI_EdgeError;
 using static Occt.BRepLib_EdgeError;
 
@@ -28,7 +29,7 @@ public class BRepBuilderAPI_MakeEdge2d : BRepBuilderAPI_MakeShape
         }
     }
 
-    public BRepBuilderAPI_MakeEdge2d(in TopoDS_Vertex V1, in TopoDS_Vertex V2)
+    public BRepBuilderAPI_MakeEdge2d(in Vertex V1, in Vertex V2)
     {
         myMakeEdge2d = new BRepLib_MakeEdge2d(V1, V2);
         TakeResult();
@@ -58,7 +59,7 @@ public class BRepBuilderAPI_MakeEdge2d : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge2d(in Line2D L, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
+    public BRepBuilderAPI_MakeEdge2d(in Line2D L, in Vertex V1, in Vertex V2)
     {
         myMakeEdge2d = new BRepLib_MakeEdge2d(L, V1, V2);
         TakeResult();
@@ -82,7 +83,7 @@ public class BRepBuilderAPI_MakeEdge2d : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge2d(in Circle2D C, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
+    public BRepBuilderAPI_MakeEdge2d(in Circle2D C, in Vertex V1, in Vertex V2)
     {
         myMakeEdge2d = new BRepLib_MakeEdge2d(C, V1, V2);
         TakeResult();
@@ -106,7 +107,7 @@ public class BRepBuilderAPI_MakeEdge2d : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge2d(in Ellipse2D E, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
+    public BRepBuilderAPI_MakeEdge2d(in Ellipse2D E, in Vertex V1, in Vertex V2)
     {
         myMakeEdge2d = new BRepLib_MakeEdge2d(E, V1, V2);
         TakeResult();
@@ -130,7 +131,7 @@ public class BRepBuilderAPI_MakeEdge2d : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge2d(in Hyperbola2D H, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
+    public BRepBuilderAPI_MakeEdge2d(in Hyperbola2D H, in Vertex V1, in Vertex V2)
     {
         myMakeEdge2d = new BRepLib_MakeEdge2d(H, V1, V2);
         TakeResult();
@@ -154,79 +155,79 @@ public class BRepBuilderAPI_MakeEdge2d : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge2d(in Parabola2D P, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
+    public BRepBuilderAPI_MakeEdge2d(in Parabola2D P, in Vertex V1, in Vertex V2)
     {
         myMakeEdge2d = new BRepLib_MakeEdge2d(P, V1, V2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge2d(Geom2d_Curve L)
+    public BRepBuilderAPI_MakeEdge2d(Curve2D L)
     {
         myMakeEdge2d = new BRepLib_MakeEdge2d(L);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge2d(Geom2d_Curve L, double p1, double p2)
+    public BRepBuilderAPI_MakeEdge2d(Curve2D L, double p1, double p2)
     {
         myMakeEdge2d = new BRepLib_MakeEdge2d(L, p1, p2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge2d(Geom2d_Curve L, in Point2D P1, in Point2D P2)
+    public BRepBuilderAPI_MakeEdge2d(Curve2D L, in Point2D P1, in Point2D P2)
     {
         myMakeEdge2d = new BRepLib_MakeEdge2d(L, P1, P2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge2d(Geom2d_Curve L, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
+    public BRepBuilderAPI_MakeEdge2d(Curve2D L, in Vertex V1, in Vertex V2)
     {
         myMakeEdge2d = new BRepLib_MakeEdge2d(L, V1, V2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge2d(Geom2d_Curve L, in Point2D P1, in Point2D P2, double p1, double p2)
+    public BRepBuilderAPI_MakeEdge2d(Curve2D L, in Point2D P1, in Point2D P2, double p1, double p2)
     {
         myMakeEdge2d = new BRepLib_MakeEdge2d(L, P1, P2, p1, p2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge2d(Geom2d_Curve L, in TopoDS_Vertex V1, in TopoDS_Vertex V2, double p1, double p2)
+    public BRepBuilderAPI_MakeEdge2d(Curve2D L, in Vertex V1, in Vertex V2, double p1, double p2)
     {
         myMakeEdge2d = new BRepLib_MakeEdge2d(L, V1, V2, p1, p2);
         TakeResult();
     }
 
-    public void Init(Geom2d_Curve C)
+    public void Init(Curve2D C)
     {
         myMakeEdge2d.Init(C);
         TakeResult();
     }
 
-    public void Init(Geom2d_Curve C, double p1, double p2)
+    public void Init(Curve2D C, double p1, double p2)
     {
         myMakeEdge2d.Init(C, p1, p2);
         TakeResult();
     }
 
-    public void Init(Geom2d_Curve C, in Point2D P1, in Point2D P2)
+    public void Init(Curve2D C, in Point2D P1, in Point2D P2)
     {
         myMakeEdge2d.Init(C, P1, P2);
         TakeResult();
     }
 
-    public void Init(Geom2d_Curve C, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
+    public void Init(Curve2D C, in Vertex V1, in Vertex V2)
     {
         myMakeEdge2d.Init(C, V1, V2);
         TakeResult();
     }
 
-    public void Init(Geom2d_Curve C, in Point2D P1, in Point2D P2, double p1, double p2)
+    public void Init(Curve2D C, in Point2D P1, in Point2D P2, double p1, double p2)
     {
         myMakeEdge2d.Init(C, P1, P2, p1, p2);
         TakeResult();
     }
 
-    public void Init(Geom2d_Curve CC, in TopoDS_Vertex VV1, in TopoDS_Vertex VV2, double pp1, double pp2)
+    public void Init(Curve2D CC, in Vertex VV1, in Vertex VV2, double pp1, double pp2)
     {
         myMakeEdge2d.Init(CC, VV1, VV2, pp1, pp2);
         TakeResult();
@@ -264,41 +265,41 @@ public class BRepBuilderAPI_MakeEdge2d : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The edge (frozen).</summary>
-    public TopoDS_Edge Edge()
+    public Edge Edge()
     {
         return myMakeEdge2d.Edge();
     }
 
     /// <summary><see cref="Edge"/> without freezing, for ported code.</summary>
-    internal TopoDS_Edge InternalEdge()
+    internal Edge InternalEdge()
     {
         return myMakeEdge2d.InternalEdge();
     }
 
     /// <summary>The first vertex of the edge (frozen with the edge). May be null.</summary>
-    public TopoDS_Vertex Vertex1()
+    public Vertex Vertex1()
     {
         return myMakeEdge2d.Vertex1();
     }
 
     /// <summary><see cref="Vertex1"/> without freezing, for ported code.</summary>
-    internal TopoDS_Vertex InternalVertex1()
+    internal Vertex InternalVertex1()
     {
         return myMakeEdge2d.InternalVertex1();
     }
 
     /// <summary>The second vertex of the edge (frozen with the edge). May be null.</summary>
-    public TopoDS_Vertex Vertex2()
+    public Vertex Vertex2()
     {
         return myMakeEdge2d.Vertex2();
     }
 
     /// <summary><see cref="Vertex2"/> without freezing, for ported code.</summary>
-    internal TopoDS_Vertex InternalVertex2()
+    internal Vertex InternalVertex2()
     {
         return myMakeEdge2d.InternalVertex2();
     }
 
     /// <summary>The edge (OCCT's conversion operator; frozen).</summary>
-    public static explicit operator TopoDS_Edge(BRepBuilderAPI_MakeEdge2d theMaker) => theMaker.Edge();
+    public static explicit operator Edge(BRepBuilderAPI_MakeEdge2d theMaker) => theMaker.Edge();
 }

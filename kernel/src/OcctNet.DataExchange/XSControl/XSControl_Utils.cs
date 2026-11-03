@@ -6,7 +6,10 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -226,10 +229,10 @@ public class XSControl_Utils
     /// <summary>
     /// Converts a list of Shapes to a Compound (a kind of Shape)
     /// </summary>
-    public TopoDS_Shape CompoundFromSeq(NCollection_HSequence<TopoDS_Shape>? seqval)
+    public Shape CompoundFromSeq(NCollection_HSequence<Shape>? seqval)
     {
-        BRep_Builder B = new BRep_Builder();
-        TopoDS_Compound C = new TopoDS_Compound();
+        BrepBuilder B = new BrepBuilder();
+        Compound C = new Compound();
         B.MakeCompound(ref C);
         int i, n = seqval.Length();
         for (i = 1; i <= n; i++)
@@ -244,54 +247,54 @@ public class XSControl_Utils
     /// &lt;shape&gt; is a Compound, iterates on its items. If all are of the same type, returns this type. Else,
     /// returns COMPOUND. If it is empty, returns SHAPE For a Null Shape, returns SHAPE
     /// </summary>
-    public TopAbs_ShapeEnum ShapeType(TopoDS_Shape shape, bool compound)
+    public ShapeType ShapeType(Shape shape, bool compound)
     {
-        if (shape.IsNull())
+        if (shape.IsNull)
         {
-            return TopAbs_SHAPE;
+            return global::Kerf.Topology.ShapeType.Shape;
         }
-        TopAbs_ShapeEnum res = shape.ShapeType();
-        if (!compound || res != TopAbs_COMPOUND)
+        ShapeType res = shape.ShapeType();
+        if (!compound || res != global::Kerf.Topology.ShapeType.Compound)
         {
             return res;
         }
-        res = TopAbs_SHAPE;
-        for (TopoDS_Iterator iter = new TopoDS_Iterator(shape); iter.More(); iter.Next())
+        res = global::Kerf.Topology.ShapeType.Shape;
+        for (Iterator iter = new Iterator(shape); iter.More(); iter.Next())
         {
-            TopoDS_Shape sh = iter.Value();
-            if (sh.IsNull())
+            Shape sh = iter.Value();
+            if (sh.IsNull)
             {
                 continue;
             }
-            TopAbs_ShapeEnum typ = sh.ShapeType();
-            if (typ == TopAbs_COMPOUND)
+            ShapeType typ = sh.ShapeType();
+            if (typ == global::Kerf.Topology.ShapeType.Compound)
             {
                 typ = ShapeType(sh, compound);
             }
-            if (res == TopAbs_SHAPE)
+            if (res == global::Kerf.Topology.ShapeType.Shape)
             {
                 res = typ;
                 //   Equality: OK;  Pseudo-Equality: EDGE/WIRE or FACE/SHELL
             }
-            else if (res == TopAbs_EDGE && typ == TopAbs_WIRE)
+            else if (res == global::Kerf.Topology.ShapeType.Edge && typ == global::Kerf.Topology.ShapeType.Wire)
             {
                 res = typ;
             }
-            else if (res == TopAbs_WIRE && typ == TopAbs_EDGE)
+            else if (res == global::Kerf.Topology.ShapeType.Wire && typ == global::Kerf.Topology.ShapeType.Edge)
             {
                 continue;
             }
-            else if (res == TopAbs_FACE && typ == TopAbs_SHELL)
+            else if (res == global::Kerf.Topology.ShapeType.Face && typ == global::Kerf.Topology.ShapeType.Shell)
             {
                 res = typ;
             }
-            else if (res == TopAbs_SHELL && typ == TopAbs_FACE)
+            else if (res == global::Kerf.Topology.ShapeType.Shell && typ == global::Kerf.Topology.ShapeType.Face)
             {
                 continue;
             }
             else if (res != typ)
             {
-                return TopAbs_COMPOUND;
+                return global::Kerf.Topology.ShapeType.Compound;
             }
         }
         return res;
@@ -304,34 +307,34 @@ public class XSControl_Utils
     /// makes shells) If &lt;compound&gt; is True, gathers items in compounds which correspond to starting
     /// COMPOUND,SOLID or SHELL containers, or items directly contained in a Compound
     /// </summary>
-    public TopoDS_Shape SortedCompound(TopoDS_Shape shape, TopAbs_ShapeEnum type, bool explore, bool compound)
+    public Shape SortedCompound(Shape shape, ShapeType type, bool explore, bool compound)
     {
-        if (shape.IsNull())
+        if (shape.IsNull)
         {
             return shape;
         }
-        TopAbs_ShapeEnum typ = shape.ShapeType();
-        TopoDS_Shape sh = default, sh0;
+        ShapeType typ = shape.ShapeType();
+        Shape sh = default, sh0;
         int nb = 0;
 
         //  Compound: we take it, either as is, or its content
-        if (typ == TopAbs_COMPOUND || typ == TopAbs_COMPSOLID)
+        if (typ == global::Kerf.Topology.ShapeType.Compound || typ == global::Kerf.Topology.ShapeType.CompSolid)
         {
-            TopoDS_Compound C = new TopoDS_Compound();
-            BRep_Builder B = new BRep_Builder();
+            Compound C = new Compound();
+            BrepBuilder B = new BrepBuilder();
             B.MakeCompound(ref C);
-            for (TopoDS_Iterator it = new TopoDS_Iterator(shape); it.More(); it.Next())
+            for (Iterator it = new Iterator(shape); it.More(); it.Next())
             {
                 sh0 = SortedCompound(it.Value(), type, explore, compound);
-                if (sh0.IsNull())
+                if (sh0.IsNull)
                 {
                     continue;
                 }
                 sh = sh0;
                 typ = sh.ShapeType();
-                if (typ == TopAbs_COMPOUND && !compound)
+                if (typ == global::Kerf.Topology.ShapeType.Compound && !compound)
                 {
-                    for (TopoDS_Iterator it2 = new TopoDS_Iterator(sh); it2.More(); it2.Next())
+                    for (Iterator it2 = new Iterator(sh); it2.More(); it2.Next())
                     {
                         nb++;
                         sh = it2.Value();
@@ -360,42 +363,42 @@ public class XSControl_Utils
         {
             return shape;
         }
-        if (typ == TopAbs_EDGE && type == TopAbs_WIRE)
+        if (typ == global::Kerf.Topology.ShapeType.Edge && type == global::Kerf.Topology.ShapeType.Wire)
         {
-            BRep_Builder B = new BRep_Builder();
-            TopoDS_Wire W = new TopoDS_Wire();
+            BrepBuilder B = new BrepBuilder();
+            Wire W = new Wire();
             B.MakeWire(ref W);
             B.Add(W, shape); // ne passe pas ! : TopoDS::Edge(shape)
             return W;
         }
-        if (typ == TopAbs_FACE && type == TopAbs_SHELL)
+        if (typ == global::Kerf.Topology.ShapeType.Face && type == global::Kerf.Topology.ShapeType.Shell)
         {
-            BRep_Builder B = new BRep_Builder();
-            TopoDS_Shell S = new TopoDS_Shell();
+            BrepBuilder B = new BrepBuilder();
+            Shell S = new Shell();
             B.MakeShell(ref S);
             B.Add(S, shape); // ne passe pas ! : TopoDS::Face(shape));
-            S.Closed(BRep_Tool.IsClosed(S));
+            S.Closed(Tool.IsClosed(S));
             return S;
         }
 
         //   Le reste : selon exploration
         if (!explore)
         {
-            TopoDS_Shape nulsh = default;
+            Shape nulsh = default;
             return nulsh;
         }
 
         //  Ici, on doit explorer
         //  SOLID + mode COMPOUND : reconduire les SHELLs
-        if (typ == TopAbs_SOLID && compound)
+        if (typ == global::Kerf.Topology.ShapeType.Solid && compound)
         {
-            TopoDS_Compound C = new TopoDS_Compound();
-            BRep_Builder B = new BRep_Builder();
+            Compound C = new Compound();
+            BrepBuilder B = new BrepBuilder();
             B.MakeCompound(ref C);
-            for (TopoDS_Iterator it = new TopoDS_Iterator(shape); it.More(); it.Next())
+            for (Iterator it = new Iterator(shape); it.More(); it.Next())
             {
                 sh0 = SortedCompound(it.Value(), type, explore, compound);
-                if (sh0.IsNull())
+                if (sh0.IsNull)
                 {
                     continue;
                 }
@@ -415,10 +418,10 @@ public class XSControl_Utils
         }
 
         //  Exploration classique
-        TopoDS_Compound CC = new TopoDS_Compound();
-        BRep_Builder BB = new BRep_Builder();
+        Compound CC = new Compound();
+        BrepBuilder BB = new BrepBuilder();
         BB.MakeCompound(ref CC);
-        for (TopExp_Explorer aExp = new TopExp_Explorer(shape, type); aExp.More(); aExp.Next())
+        for (Explorer aExp = new Explorer(shape, type); aExp.More(); aExp.Next())
         {
             nb++;
             sh = aExp.Current();
@@ -435,9 +438,9 @@ public class XSControl_Utils
         return CC;
     }
 
-    public TopoDS_Shape ShapeValue(NCollection_HSequence<TopoDS_Shape>? seqval, int num)
+    public Shape ShapeValue(NCollection_HSequence<Shape>? seqval, int num)
     {
-        TopoDS_Shape shape = default;
+        Shape shape = default;
         if (seqval is null)
         {
             return shape;
@@ -449,12 +452,12 @@ public class XSControl_Utils
         return shape;
     }
 
-    public NCollection_HSequence<TopoDS_Shape> NewSeqShape()
+    public NCollection_HSequence<Shape> NewSeqShape()
     {
-        return new NCollection_HSequence<TopoDS_Shape>();
+        return new NCollection_HSequence<Shape>();
     }
 
-    public void AppendShape(NCollection_HSequence<TopoDS_Shape>? seqval, TopoDS_Shape shape)
+    public void AppendShape(NCollection_HSequence<Shape>? seqval, Shape shape)
     {
         seqval.Append(shape);
     }
@@ -464,7 +467,7 @@ public class XSControl_Utils
     /// Transient but can process a Shape, such as viewing functions) or a HShape (according to hs) Default is a
     /// HShape
     /// </summary>
-    public Transient ShapeBinder(TopoDS_Shape shape, bool hs = true)
+    public Transient ShapeBinder(Shape shape, bool hs = true)
     {
         if (hs)
         {
@@ -479,9 +482,9 @@ public class XSControl_Utils
     /// <summary>
     /// From a Transient, returns a Shape. In fact, recognizes ShapeBinder ShapeMapper and HShape
     /// </summary>
-    public TopoDS_Shape BinderShape(Transient? tr)
+    public Shape BinderShape(Transient? tr)
     {
-        TopoDS_Shape sh = default;
+        Shape sh = default;
         if (tr is Transfer_Binder sb)
         {
             return TransferBRep.ShapeResult(sb);
@@ -515,7 +518,7 @@ public class XSControl_Utils
         {
             return seqt.Length();
         }
-        if (seqval is NCollection_HSequence<TopoDS_Shape> seqh)
+        if (seqval is NCollection_HSequence<Shape> seqh)
         {
             return seqh.Length();
         }

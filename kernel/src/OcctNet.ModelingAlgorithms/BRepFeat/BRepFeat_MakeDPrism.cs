@@ -5,12 +5,15 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.BRepFeat_PerfSelection;
 using static Occt.BRepFeat_StatusError;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -27,13 +30,13 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
 {
-    private TopoDS_Face myPbase = new();
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> mySlface = new(TopTools_ShapeMapHasher.Instance);
+    private Face myPbase = new();
+    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> mySlface = new(ShapeHasher.Instance);
     private double myAngle;
-    private readonly NCollection_Sequence<Geom_Curve> myCurves = new();
-    private Geom_Curve? myBCurve;
-    private NCollection_List<TopoDS_Shape> myTopEdges = new();
-    private NCollection_List<TopoDS_Shape> myLatEdges = new();
+    private readonly NCollection_Sequence<Curve3D> myCurves = new();
+    private Curve3D? myBCurve;
+    private NCollection_List<Shape> myTopEdges = new();
+    private NCollection_List<Shape> myLatEdges = new();
     // OCCT: the class declares its own myStatusError, hiding BRepFeat_Form's; CurrentStatusError reads the form's
 #pragma warning disable CS0414 // written, never read: as in OCCT
     private BRepFeat_StatusError myStatusError;
@@ -44,7 +47,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
     /// <paramref name="Angle"/> (radians), from the sketch face <paramref name="Skface"/>; <paramref name="Fuse"/> is
     /// the mode (0 cut, 1 fuse, 2 the feature alone).
     /// </summary>
-    public BRepFeat_MakeDPrism(in TopoDS_Shape Sbase, in TopoDS_Face Pbase, in TopoDS_Face Skface, double Angle, int Fuse,
+    public BRepFeat_MakeDPrism(in Shape Sbase, in Face Pbase, in Face Skface, double Angle, int Fuse,
                                bool Modify)
     {
         Init(Sbase, Pbase, Skface, Angle, Fuse, Modify);
@@ -58,7 +61,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
     }
 
     /// <summary>Initializes the draft prism (see the constructor).</summary>
-    public void Init(in TopoDS_Shape Sbase, in TopoDS_Face Pbase, in TopoDS_Face Skface, double Angle, int Mode,
+    public void Init(in Shape Sbase, in Face Pbase, in Face Skface, double Angle, int Mode,
                      bool Modify)
     {
         // OCCT.NET: the working copies of frozen inputs (decision 1052)
@@ -93,10 +96,10 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         myLShape.Nullify();
         myTopEdges.Clear();
         myLatEdges.Clear();
-        TopExp_Explorer exp = new();
-        for (exp.Init(mySbase, TopAbs_FACE); exp.More(); exp.Next())
+        Explorer exp = new();
+        for (exp.Init(mySbase, ShapeType.Face); exp.More(); exp.Next())
         {
-            NCollection_List<TopoDS_Shape> thelist = new();
+            NCollection_List<Shape> thelist = new();
             myMap.Bind(exp.Current(), thelist);
             myMap[exp.Current()].Append(exp.Current());
         }
@@ -106,10 +109,10 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
 
     /// <summary>Adds an element of sliding: the edge <paramref name="E"/> of the profile slides on the face <paramref name="F"/>.</summary>
     /// <exception cref="ConstructionErrorException">F isn't a face of the basis shape, or E an edge of the profile.</exception>
-    public void Add(in TopoDS_Edge E, in TopoDS_Face F)
+    public void Add(in Edge E, in Face F)
     {
-        TopExp_Explorer exp = new();
-        for (exp.Init(mySbase, TopAbs_FACE); exp.More(); exp.Next())
+        Explorer exp = new();
+        for (exp.Init(mySbase, ShapeType.Face); exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(Working(F)))
             {
@@ -121,7 +124,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
             throw new ConstructionErrorException();
         }
 
-        for (exp.Init(myPbase, TopAbs_EDGE); exp.More(); exp.Next())
+        for (exp.Init(myPbase, ShapeType.Edge); exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(Working(E)))
             {
@@ -135,10 +138,10 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
 
         if (!mySlface.IsBound(F))
         {
-            NCollection_List<TopoDS_Shape> thelist = new();
+            NCollection_List<Shape> thelist = new();
             mySlface.Bind(F, thelist);
         }
-        NCollection_List<TopoDS_Shape>.Iterator itl = new(mySlface[F]);
+        NCollection_List<Shape>.Iterator itl = new(mySlface[F]);
         for (; itl.More(); itl.Next())
         {
             if (itl.Value().IsSame(E))
@@ -165,15 +168,15 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
 
         double theheight = Height / Math.Cos(myAngle);
         LocOpe_DPrism theDPrism = new(myPbase, theheight, myAngle);
-        TopoDS_Shape VraiDPrism = theDPrism.InternalShape();
+        Shape VraiDPrism = theDPrism.InternalShape();
 
         MajMap(myPbase, theDPrism, myMap, ref myFShape, ref myLShape);
 
         myGShape = VraiDPrism;
         GeneratedShapeValid();
 
-        TopoDS_Shape Base = theDPrism.InternalFirstShape();
-        TopExp_Explorer exp = new(Base, TopAbs_FACE);
+        Shape Base = theDPrism.InternalFirstShape();
+        Explorer exp = new(Base, ShapeType.Face);
         exp.Next();
         if (exp.More())
         {
@@ -216,13 +219,13 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
 
     /// <summary>Builds a draft prism up to the shape <paramref name="Until"/>.</summary>
     /// <exception cref="ConstructionErrorException">Until is null or has no face.</exception>
-    public void Perform(in TopoDS_Shape Until)
+    public void Perform(in Shape Until)
     {
-        if (Until.IsNull())
+        if (Until.IsNull)
         {
             throw new ConstructionErrorException();
         }
-        TopExp_Explorer exp = new(Until, TopAbs_FACE);
+        Explorer exp = new(Until, ShapeType.Face);
         if (!exp.More())
         {
             throw new ConstructionErrorException();
@@ -236,20 +239,20 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         mySUntil = Working(Until);
         bool Trf = TransformShapeFU(1);
         ShapeUntilValid();
-        Geom_Curve? C = TestCurve(myPbase);
+        Curve3D? C = TestCurve(myPbase);
         int sens = SensOfPrism(C, mySUntil);
 
-        BRep_Builder bB = new();
+        BrepBuilder bB = new();
         double Height = sens * HeightMax(mySbase, mySkface, mySFrom, mySUntil);
         LocOpe_DPrism theDPrism = new(myPbase, Height, myAngle);
-        TopoDS_Shape VraiDPrism = theDPrism.InternalShape();
+        Shape VraiDPrism = theDPrism.InternalShape();
         if (!Trf)
         {
             MajMap(myPbase, theDPrism, myMap, ref myFShape, ref myLShape);
             myGShape = VraiDPrism;
             GeneratedShapeValid();
-            TopoDS_Shape Base = theDPrism.InternalFirstShape();
-            exp.Init(Base, TopAbs_FACE);
+            Shape Base = theDPrism.InternalFirstShape();
+            exp.Init(Base, ShapeType.Face);
             exp.Next();
             if (exp.More())
             {
@@ -266,7 +269,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         else
         {
             MajMap(myPbase, theDPrism, myMap, ref myFShape, ref myLShape);
-            Geom_Curve? C1;
+            Curve3D? C1;
             if (sens == -1)
             {
                 C1 = C!.Reversed();
@@ -275,12 +278,12 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
             {
                 C1 = C;
             }
-            NCollection_Sequence<Geom_Curve?> scur = new();
+            NCollection_Sequence<Curve3D?> scur = new();
             scur.Clear();
             scur.Append(C1);
             LocOpe_CSIntersector ASI = new(mySUntil);
             ASI.Perform(scur);
-            TopAbs_Orientation Or;
+            Orientation Or;
             if (ASI.IsDone() && ASI.NbPoints(1) >= 1)
             {
                 if (myFuse)
@@ -291,19 +294,19 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
                 {
                     Or = ASI.Point(1, ASI.NbPoints(1)).Orientation();
                 }
-                TopoDS_Face FUntil = ASI.Point(1, 1).Face();
-                TopoDS_Compound Comp = new();
+                Face FUntil = ASI.Point(1, 1).Face();
+                Compound Comp = new();
                 bB.MakeCompound(ref Comp);
-                TopoDS_Solid S = BRepFeat.Tool(mySUntil, FUntil, Or);
-                if (!S.IsNull())
+                Solid S = BRepFeat.Tool(mySUntil, FUntil, Or);
+                if (!S.IsNull)
                 {
                     bB.Add(Comp, S);
                 }
 
                 BRepAlgoAPI_Cut trP = new(VraiDPrism, Comp);
                 UpdateDescendants(trP, trP.InternalShape(), false);
-                TopExp_Explorer ex = new(trP.InternalShape(), TopAbs_SOLID);
-                TopoDS_Shape Cutsh = ex.Current();
+                Explorer ex = new(trP.InternalShape(), ShapeType.Solid);
+                Shape Cutsh = ex.Current();
                 if (myFuse)
                 {
                     BRepAlgoAPI_Fuse f = new(mySbase, Cutsh);
@@ -321,29 +324,29 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
             }
         }
         // The new edges are the gluing's own edges of the result (unfrozen), written in place as in OCCT
-        NCollection_List<TopoDS_Shape>.Iterator ited = new(myNewEdges);
+        NCollection_List<Shape>.Iterator ited = new(myNewEdges);
         for (; ited.More(); ited.Next())
         {
-            TopoDS_Edge ledg = TopoDS.Edge(ited.Value());
+            Edge ledg = ShapeCasts.Edge(ited.Value());
             if (!BRepAlgo.IsValid(ledg))
             {
                 bB.SameRange(ledg, false);
                 bB.SameParameter(ledg, false);
-                BRepLib.SameParameter(ledg, BRep_Tool.Tolerance(ledg));
+                BRepLib.SameParameter(ledg, Tool.Tolerance(ledg));
             }
         }
     }
 
     /// <summary>Builds a draft prism from the shape <paramref name="From"/> up to the shape <paramref name="Until"/>.</summary>
     /// <exception cref="ConstructionErrorException">From or Until is null or has no face.</exception>
-    public void Perform(in TopoDS_Shape From, in TopoDS_Shape Until)
+    public void Perform(in Shape From, in Shape Until)
     {
-        if (From.IsNull() || Until.IsNull())
+        if (From.IsNull || Until.IsNull)
         {
             throw new ConstructionErrorException();
         }
 
-        if (!mySkface.IsNull())
+        if (!mySkface.IsNull)
         {
             if (Working(From).IsSame(mySkface))
             {
@@ -369,12 +372,12 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         myPerfSelection = BRepFeat_SelectionFU;
         PerfSelectionValid();
 
-        TopExp_Explorer exp = new(From, TopAbs_FACE);
+        Explorer exp = new(From, ShapeType.Face);
         if (!exp.More())
         {
             throw new ConstructionErrorException();
         }
-        exp.Init(Until, TopAbs_FACE);
+        exp.Init(Until, ShapeType.Face);
         if (!exp.More())
         {
             throw new ConstructionErrorException();
@@ -391,7 +394,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
             myStatusError = BRepFeat_IncTypes;
             return;
         }
-        Geom_Curve? C = TestCurve(myPbase);
+        Curve3D? C = TestCurve(myPbase);
         int sens;
         if (From.IsSame(Until))
         {
@@ -404,7 +407,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
 
         double Height = sens * HeightMax(mySbase, myPbase, mySFrom, mySUntil);
         LocOpe_DPrism theDPrism = new(myPbase, Height, Height, myAngle);
-        TopoDS_Shape VraiDPrism = theDPrism.InternalShape();
+        Shape VraiDPrism = theDPrism.InternalShape();
         if (!Trff)
         {
             MajMap(myPbase, theDPrism, myMap, ref myFShape, ref myLShape);
@@ -424,7 +427,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         {
             // management of descendants
             MajMap(myPbase, theDPrism, myMap, ref myFShape, ref myLShape);
-            Geom_Curve? C1;
+            Curve3D? C1;
             if (sens == -1)
             {
                 C1 = C!.Reversed();
@@ -433,15 +436,15 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
             {
                 C1 = C;
             }
-            NCollection_Sequence<Geom_Curve?> scur = new();
+            NCollection_Sequence<Curve3D?> scur = new();
             scur.Clear();
             scur.Append(C1);
             LocOpe_CSIntersector ASI1 = new(mySUntil);
             LocOpe_CSIntersector ASI2 = new(mySFrom);
             ASI1.Perform(scur);
             ASI2.Perform(scur);
-            TopAbs_Orientation OrU, OrF;
-            TopoDS_Face FFrom, FUntil;
+            Orientation OrU, OrF;
+            Face FFrom, FUntil;
             // direction of dprism
             if (ASI1.IsDone() && ASI1.NbPoints(1) >= 1)
             {
@@ -464,7 +467,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
             if (ASI2.IsDone() && ASI2.NbPoints(1) >= 1)
             {
                 OrF = ASI2.Point(1, 1).Orientation();
-                OrF = TopAbs.Reverse(OrF);
+                OrF = global::Kerf.Engine.Topology.TopAbs.Reverse(OrF);
                 FFrom = ASI2.Point(1, 1).Face();
             }
             else
@@ -473,11 +476,11 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
                 myStatusError = BRepFeat_NoIntersectF;
                 return;
             }
-            TopoDS_Compound Comp = new();
-            BRep_Builder B = new();
+            Compound Comp = new();
+            BrepBuilder B = new();
             B.MakeCompound(ref Comp);
-            TopoDS_Solid S = BRepFeat.Tool(mySUntil, FUntil, OrU);
-            if (!S.IsNull())
+            Solid S = BRepFeat.Tool(mySUntil, FUntil, OrU);
+            if (!S.IsNull)
             {
                 B.Add(Comp, S);
             }
@@ -487,8 +490,8 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
                 myStatusError = BRepFeat_NullToolU;
                 return;
             }
-            TopoDS_Solid SS = BRepFeat.Tool(mySFrom, FFrom, OrF);
-            if (!SS.IsNull())
+            Solid SS = BRepFeat.Tool(mySFrom, FFrom, OrF);
+            if (!SS.IsNull)
             {
                 B.Add(Comp, SS);
             }
@@ -529,7 +532,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         ShapeFromValid();
         double Height = HeightMax(mySbase, mySkface, mySFrom, mySUntil);
         LocOpe_DPrism theDPrism = new(myPbase, Height, myAngle);
-        TopoDS_Shape VraiDPrism = theDPrism.InternalShape();
+        Shape VraiDPrism = theDPrism.InternalShape();
 
         MajMap(myPbase, theDPrism, myMap, ref myFShape, ref myLShape);
         myGShape = VraiDPrism;
@@ -543,19 +546,19 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
 
     /// <summary>Builds a draft prism from the end of the basis shape up to the shape <paramref name="Until"/>.</summary>
     /// <exception cref="ConstructionErrorException">Until is null or has no face.</exception>
-    public void PerformFromEnd(in TopoDS_Shape Until)
+    public void PerformFromEnd(in Shape Until)
     {
-        if (Until.IsNull())
+        if (Until.IsNull)
         {
             throw new ConstructionErrorException();
         }
-        if (!mySkface.IsNull() && Working(Until).IsSame(mySkface))
+        if (!mySkface.IsNull && Working(Until).IsSame(mySkface))
         {
             PerformUntilEnd();
             return;
         }
-        TopExp_Explorer exp = new();
-        exp.Init(Until, TopAbs_FACE);
+        Explorer exp = new();
+        exp.Init(Until, ShapeType.Face);
         if (!exp.More())
         {
             throw new ConstructionErrorException();
@@ -567,12 +570,12 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         mySUntil = Working(Until);
         bool Trf = TransformShapeFU(1);
         ShapeUntilValid();
-        Geom_Curve? C = TestCurve(myPbase);
+        Curve3D? C = TestCurve(myPbase);
         int sens = SensOfPrism(C, mySUntil);
         double Height = sens * HeightMax(mySbase, mySkface, mySFrom, mySUntil);
         LocOpe_DPrism theDPrism = new(myPbase, Height, Height, myAngle);
-        TopoDS_Shape VraiDPrism = theDPrism.InternalShape();
-        if (VraiDPrism.IsNull())
+        Shape VraiDPrism = theDPrism.InternalShape();
+        if (VraiDPrism.IsNull)
         {
             NotDone();
             myStatusError = BRepFeat_NullRealTool;
@@ -593,7 +596,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         else
         { // case support
             MajMap(myPbase, theDPrism, myMap, ref myFShape, ref myLShape);
-            Geom_Curve? C2;
+            Curve3D? C2;
             if (sens == -1)
             {
                 C2 = C!.Reversed();
@@ -602,22 +605,22 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
             {
                 C2 = C;
             }
-            NCollection_Sequence<Geom_Curve?> scur = new();
+            NCollection_Sequence<Curve3D?> scur = new();
             scur.Clear();
             scur.Append(C2);
             LocOpe_CSIntersector ASI1 = new(mySUntil);
             LocOpe_CSIntersector ASI2 = new(mySbase);
             ASI1.Perform(scur);
             ASI2.Perform(scur);
-            TopAbs_Orientation OrU = TopAbs_FORWARD, OrF = TopAbs_FORWARD;
-            TopoDS_Face FUntil = new(), FFrom = new();
+            Orientation OrU = Forward, OrF = Forward;
+            Face FUntil = new(), FFrom = new();
             if (ASI1.IsDone() && ASI1.NbPoints(1) >= 1)
             {
                 OrU = ASI1.Point(1, 1).Orientation();
                 double prm = ASI1.Point(1, 1).Parameter();
                 if (prm < 0)
                 {
-                    OrU = TopAbs.Reverse(OrU);
+                    OrU = global::Kerf.Engine.Topology.TopAbs.Reverse(OrU);
                 }
                 FUntil = ASI1.Point(1, 1).Face();
             }
@@ -628,7 +631,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
                 double prm = ASI2.Point(1, 1).Parameter();
                 FFrom = ASI2.Point(1, 1).Face();
                 OrF = ASI2.Point(1, 1).Orientation();
-                OrF = TopAbs.Reverse(OrF);
+                OrF = global::Kerf.Engine.Topology.TopAbs.Reverse(OrF);
                 for (int iii = 1; iii <= jj; iii++)
                 {
                     if (ASI2.Point(1, iii).Parameter() < prm)
@@ -636,24 +639,24 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
                         prm = ASI2.Point(1, iii).Parameter();
                         FFrom = ASI2.Point(1, iii).Face();
                         OrF = ASI2.Point(1, iii).Orientation();
-                        OrF = TopAbs.Reverse(OrF);
+                        OrF = global::Kerf.Engine.Topology.TopAbs.Reverse(OrF);
                     }
                 }
-                Geom_Surface S = BRep_Tool.Surface(FFrom)!;
-                if (S.GetType() == typeof(Geom_RectangularTrimmedSurface))
+                Surface S = Tool.Surface(FFrom)!;
+                if (S.GetType() == typeof(TrimmedSurface))
                 {
-                    S = ((Geom_RectangularTrimmedSurface)S).BasisSurface();
+                    S = ((TrimmedSurface)S).BasisSurface();
                 }
                 BRepLib_MakeFace fac = new(S, global::Kerf.Engine.Foundation.Precision.Confusion());
                 mySFrom = fac.InternalFace();
                 Trf = TransformShapeFU(0);
             }
 
-            TopoDS_Compound Comp = new();
-            BRep_Builder B = new();
+            Compound Comp = new();
+            BrepBuilder B = new();
             B.MakeCompound(ref Comp);
-            TopoDS_Solid Sol = BRepFeat.Tool(mySUntil, FUntil, OrU);
-            if (!Sol.IsNull())
+            Solid Sol = BRepFeat.Tool(mySUntil, FUntil, OrU);
+            if (!Sol.IsNull)
             {
                 B.Add(Comp, Sol);
             }
@@ -664,8 +667,8 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
                 return;
             }
 
-            TopoDS_Solid Sol1 = BRepFeat.Tool(mySFrom, FFrom, OrF);
-            if (!Sol1.IsNull())
+            Solid Sol1 = BRepFeat.Tool(mySFrom, FFrom, OrF);
+            if (!Sol1.IsNull)
             {
                 B.Add(Comp, Sol1);
             }
@@ -716,7 +719,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
 
         double Height = HeightMax(mySbase, mySkface, mySFrom, mySUntil);
         LocOpe_DPrism theDPrism = new(myPbase, Height, Height, myAngle);
-        TopoDS_Shape VraiDPrism = theDPrism.InternalShape();
+        Shape VraiDPrism = theDPrism.InternalShape();
         MajMap(myPbase, theDPrism, myMap, ref myFShape, ref myLShape);
 
         myGShape = VraiDPrism;
@@ -742,11 +745,11 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
 
     /// <summary>Builds a draft prism up to the shape <paramref name="Until"/>, at the height <paramref name="Height"/>.</summary>
     /// <exception cref="ConstructionErrorException">Until has no face (a null Until included, see below).</exception>
-    public void PerformUntilHeight(in TopoDS_Shape Until, double Height)
+    public void PerformUntilHeight(in Shape Until, double Height)
     {
         // OCCT: neither of the two first calls returns: a null Until goes on and throws below, a zero height goes on
         // and builds the draft prism again with the height 0
-        if (Until.IsNull())
+        if (Until.IsNull)
         {
             Perform(Height);
         }
@@ -754,7 +757,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         {
             Perform(Until);
         }
-        TopExp_Explorer exp = new(Until, TopAbs_FACE);
+        Explorer exp = new(Until, ShapeType.Face);
         if (!exp.More())
         {
             throw new ConstructionErrorException();
@@ -767,18 +770,18 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         mySUntil = Working(Until);
         bool Trf = TransformShapeFU(1);
         ShapeUntilValid();
-        Geom_Curve? C = TestCurve(myPbase);
+        Curve3D? C = TestCurve(myPbase);
         int sens = SensOfPrism(C, mySUntil);
         LocOpe_DPrism theDPrism = new(myPbase, sens * Height, myAngle);
-        TopoDS_Shape VraiDPrism = theDPrism.InternalShape();
+        Shape VraiDPrism = theDPrism.InternalShape();
 
         if (!Trf)
         { // case face finished
             MajMap(myPbase, theDPrism, myMap, ref myFShape, ref myLShape);
             myGShape = VraiDPrism;
             GeneratedShapeValid();
-            TopoDS_Shape Base = theDPrism.InternalFirstShape();
-            exp.Init(Base, TopAbs_FACE);
+            Shape Base = theDPrism.InternalFirstShape();
+            exp.Init(Base, ShapeType.Face);
             exp.Next();
             if (exp.More())
             {
@@ -795,7 +798,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         else
         { // case support
             MajMap(myPbase, theDPrism, myMap, ref myFShape, ref myLShape);
-            Geom_Curve? C1;
+            Curve3D? C1;
             if (sens == -1)
             {
                 C1 = C!.Reversed();
@@ -804,12 +807,12 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
             {
                 C1 = C;
             }
-            NCollection_Sequence<Geom_Curve?> scur = new();
+            NCollection_Sequence<Curve3D?> scur = new();
             scur.Clear();
             scur.Append(C1);
             LocOpe_CSIntersector ASI = new(mySUntil);
             ASI.Perform(scur);
-            TopAbs_Orientation Or;
+            Orientation Or;
             if (ASI.IsDone() && ASI.NbPoints(1) >= 1)
             {
                 if (myFuse)
@@ -820,12 +823,12 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
                 {
                     Or = ASI.Point(1, ASI.NbPoints(1)).Orientation();
                 }
-                TopoDS_Face FUntil = ASI.Point(1, 1).Face();
-                TopoDS_Compound Comp = new();
-                BRep_Builder B = new();
+                Face FUntil = ASI.Point(1, 1).Face();
+                Compound Comp = new();
+                BrepBuilder B = new();
                 B.MakeCompound(ref Comp);
-                TopoDS_Solid S = BRepFeat.Tool(mySUntil, FUntil, Or);
-                if (!S.IsNull())
+                Solid S = BRepFeat.Tool(mySUntil, FUntil, Or);
+                if (!S.IsNull)
                 {
                     B.Add(Comp, S);
                 }
@@ -849,7 +852,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
     }
 
     /// <summary>The curves along the draft prism.</summary>
-    public override void Curves(NCollection_Sequence<Geom_Curve> scur)
+    public override void Curves(NCollection_Sequence<Curve3D> scur)
     {
         scur.Assign(myCurves);
     }
@@ -860,15 +863,15 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
     /// </summary>
     public void BossEdges(int signature)
     {
-        NCollection_List<TopoDS_Shape> theLastShape = new();
+        NCollection_List<Shape> theLastShape = new();
         theLastShape.Clear();
         if (signature == 1 || signature == -1)
         {
-            theLastShape = new NCollection_List<TopoDS_Shape>(InternalFirstShape());
+            theLastShape = new NCollection_List<Shape>(InternalFirstShape());
         }
         else if (signature == 2 || signature == -2)
         {
-            theLastShape = new NCollection_List<TopoDS_Shape>(InternalLastShape());
+            theLastShape = new NCollection_List<Shape>(InternalLastShape());
         }
         else
         {
@@ -876,14 +879,14 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         }
 
         // Edges Top
-        NCollection_List<TopoDS_Shape>.Iterator itLS = new();
-        TopExp_Explorer ExpE = new();
+        NCollection_List<Shape>.Iterator itLS = new();
+        Explorer ExpE = new();
         for (itLS.Initialize(theLastShape); itLS.More(); itLS.Next())
         {
-            TopoDS_Face FF = TopoDS.Face(itLS.Value());
-            for (ExpE.Init(FF, TopAbs_EDGE); ExpE.More(); ExpE.Next())
+            Face FF = ShapeCasts.Face(itLS.Value());
+            for (ExpE.Init(FF, ShapeType.Edge); ExpE.More(); ExpE.Next())
             {
-                TopoDS_Edge EE = TopoDS.Edge(ExpE.Current());
+                Edge EE = ShapeCasts.Edge(ExpE.Current());
                 myTopEdges.Append(EE);
             }
         }
@@ -892,44 +895,44 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         if (signature < 0)
         {
             // Attention check if TgtEdges is important
-            myLatEdges = new NCollection_List<TopoDS_Shape>(InternalNewEdges());
+            myLatEdges = new NCollection_List<Shape>(InternalNewEdges());
         }
         else if (signature > 0)
         {
-            if (!myShape.IsNull())
+            if (!myShape.IsNull)
             {
                 // OCCT iterates this address-keyed map into the lateral edges: the port in the order of its additions and
                 // removals (decision 1054)
-                NCollection_Map<TopoDS_Shape> MapE = new(TopTools_ShapeMapHasher.Instance);
+                NCollection_Map<Shape> MapE = new(ShapeHasher.Instance);
                 bool Found;
 
-                TopExp_Explorer ExpF = new();
-                for (ExpF.Init(myShape, TopAbs_FACE); ExpF.More(); ExpF.Next())
+                Explorer ExpF = new();
+                for (ExpF.Init(myShape, ShapeType.Face); ExpF.More(); ExpF.Next())
                 {
                     Found = false;
-                    TopoDS_Face FF = TopoDS.Face(ExpF.Current());
+                    Face FF = ShapeCasts.Face(ExpF.Current());
                     for (itLS.Initialize(theLastShape); itLS.More(); itLS.Next())
                     {
-                        TopoDS_Face TopFace = TopoDS.Face(itLS.Value());
+                        Face TopFace = ShapeCasts.Face(itLS.Value());
                         if (!FF.IsSame(TopFace))
                         {
-                            for (ExpE.Init(FF, TopAbs_EDGE); ExpE.More() && !Found; ExpE.Next())
+                            for (ExpE.Init(FF, ShapeType.Edge); ExpE.More() && !Found; ExpE.Next())
                             {
-                                TopoDS_Edge E1 = TopoDS.Edge(ExpE.Current());
-                                TopExp.Vertices(E1, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-                                NCollection_List<TopoDS_Shape>.Iterator it = new(myTopEdges);
+                                Edge E1 = ShapeCasts.Edge(ExpE.Current());
+                                Exploration.Vertices(E1, out Vertex V1, out Vertex V2);
+                                NCollection_List<Shape>.Iterator it = new(myTopEdges);
                                 for (; it.More() && !Found; it.Next())
                                 {
-                                    TopoDS_Edge E2 = TopoDS.Edge(it.Value());
-                                    TopExp.Vertices(E2, out TopoDS_Vertex VT1, out TopoDS_Vertex VT2);
+                                    Edge E2 = ShapeCasts.Edge(it.Value());
+                                    Exploration.Vertices(E2, out Vertex VT1, out Vertex VT2);
 
                                     if (V1.IsSame(VT1) || V1.IsSame(VT2) || V2.IsSame(VT1) || V2.IsSame(VT2))
                                     {
                                         Found = true;
-                                        TopExp_Explorer ExpE2 = new();
-                                        for (ExpE2.Init(FF, TopAbs_EDGE); ExpE2.More(); ExpE2.Next())
+                                        Explorer ExpE2 = new();
+                                        for (ExpE2.Init(FF, ShapeType.Edge); ExpE2.More(); ExpE2.Next())
                                         {
-                                            TopoDS_Edge E3 = TopoDS.Edge(ExpE2.Current());
+                                            Edge E3 = ShapeCasts.Edge(ExpE2.Current());
                                             if (MapE.Contains(E3))
                                             {
                                                 MapE.Remove(E3);
@@ -946,7 +949,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
                     }
                 }
 
-                NCollection_List<TopoDS_Shape>.Iterator it2 = new(myTopEdges);
+                NCollection_List<Shape>.Iterator it2 = new(myTopEdges);
                 for (; it2.More(); it2.Next())
                 {
                     if (MapE.Contains(it2.Value()))
@@ -955,9 +958,9 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
                     }
                 }
 
-                foreach (TopoDS_Shape itMap in MapE)
+                foreach (Shape itMap in MapE)
                 {
-                    if (!BRep_Tool.Degenerated(TopoDS.Edge(itMap)))
+                    if (!Tool.Degenerated(ShapeCasts.Edge(itMap)))
                     {
                         myLatEdges.Append(itMap);
                     }
@@ -967,46 +970,46 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
     }
 
     /// <summary>The edges of the top of the boss (frozen).</summary>
-    public ISchematiqList<TopoDS_Shape> TopEdges()
+    public ISchematiqList<Shape> TopEdges()
     {
         BeforePublishingTopology();
         return PublishedList(myTopEdges);
     }
 
     /// <summary><see cref="TopEdges"/> without freezing, for ported code.</summary>
-    internal NCollection_List<TopoDS_Shape> InternalTopEdges() => myTopEdges;
+    internal NCollection_List<Shape> InternalTopEdges() => myTopEdges;
 
     /// <summary>The lateral edges of the boss (frozen).</summary>
-    public ISchematiqList<TopoDS_Shape> LatEdges()
+    public ISchematiqList<Shape> LatEdges()
     {
         BeforePublishingTopology();
         return PublishedList(myLatEdges);
     }
 
     /// <summary><see cref="LatEdges"/> without freezing, for ported code.</summary>
-    internal NCollection_List<TopoDS_Shape> InternalLatEdges() => myLatEdges;
+    internal NCollection_List<Shape> InternalLatEdges() => myLatEdges;
 
     private void BeforePublishingTopology() => myShape.TShape()?.FreezeGraph();
 
     /// <summary>The curve along the draft prism through the barycentre of its profile.</summary>
-    public override Geom_Curve? BarycCurve()
+    public override Curve3D? BarycCurve()
     {
         return myBCurve;
     }
 
-    private static double HeightMax(in TopoDS_Shape theSbase,  // shape initial
-                                    in TopoDS_Face theSkface,  // face de sketch
-                                    in TopoDS_Shape theSFrom,  // shape from
-                                    in TopoDS_Shape theSUntil) // shape until
+    private static double HeightMax(in Shape theSbase,  // shape initial
+                                    in Face theSkface,  // face de sketch
+                                    in Shape theSFrom,  // shape from
+                                    in Shape theSUntil) // shape until
     {
         Box Box = new();
         BRepBndLib.Add(theSbase, ref Box);
         BRepBndLib.Add(theSkface, ref Box);
-        if (!theSFrom.IsNull())
+        if (!theSFrom.IsNull)
         {
             BRepBndLib.Add(theSFrom, ref Box);
         }
-        if (!theSUntil.IsNull())
+        if (!theSUntil.IsNull)
         {
             BRepBndLib.Add(theSUntil, ref Box);
         }
@@ -1018,10 +1021,10 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         return par;
     }
 
-    private static int SensOfPrism(Geom_Curve? C, in TopoDS_Shape Until)
+    private static int SensOfPrism(Curve3D? C, in Shape Until)
     {
         LocOpe_CSIntersector ASI1 = new(Until);
-        NCollection_Sequence<Geom_Curve?> scur = new();
+        NCollection_Sequence<Curve3D?> scur = new();
         scur.Append(C);
         ASI1.Perform(scur);
         int sens = 1;
@@ -1042,52 +1045,52 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         return sens;
     }
 
-    private static void MajMap(in TopoDS_Shape theB, LocOpe_DPrism theP,
-                               NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMap,
-                               ref TopoDS_Shape theFShape, ref TopoDS_Shape theLShape)
+    private static void MajMap(in Shape theB, LocOpe_DPrism theP,
+                               NCollection_DataMap<Shape, NCollection_List<Shape>> theMap,
+                               ref Shape theFShape, ref Shape theLShape)
     {
-        TopExp_Explorer exp = new();
-        if (!theP.InternalFirstShape().IsNull())
+        Explorer exp = new();
+        if (!theP.InternalFirstShape().IsNull)
         {
-            exp.Init(theP.InternalFirstShape(), TopAbs_WIRE);
+            exp.Init(theP.InternalFirstShape(), ShapeType.Wire);
             if (exp.More())
             {
                 theFShape = exp.Current();
-                NCollection_List<TopoDS_Shape> thelist = new();
+                NCollection_List<Shape> thelist = new();
                 theMap.Bind(theFShape, thelist);
-                for (exp.Init(theP.InternalFirstShape(), TopAbs_FACE); exp.More(); exp.Next())
+                for (exp.Init(theP.InternalFirstShape(), ShapeType.Face); exp.More(); exp.Next())
                 {
                     theMap[theFShape].Append(exp.Current());
                 }
             }
         }
 
-        if (!theP.InternalLastShape().IsNull())
+        if (!theP.InternalLastShape().IsNull)
         {
-            exp.Init(theP.InternalLastShape(), TopAbs_WIRE);
+            exp.Init(theP.InternalLastShape(), ShapeType.Wire);
             if (exp.More())
             {
                 theLShape = exp.Current();
-                NCollection_List<TopoDS_Shape> thelist1 = new();
+                NCollection_List<Shape> thelist1 = new();
                 theMap.Bind(theLShape, thelist1);
-                for (exp.Init(theP.InternalLastShape(), TopAbs_FACE); exp.More(); exp.Next())
+                for (exp.Init(theP.InternalLastShape(), ShapeType.Face); exp.More(); exp.Next())
                 {
                     theMap[theLShape].Append(exp.Current());
                 }
             }
         }
 
-        for (exp.Init(theB, TopAbs_EDGE); exp.More(); exp.Next())
+        for (exp.Init(theB, ShapeType.Edge); exp.More(); exp.Next())
         {
             if (!theMap.IsBound(exp.Current()))
             {
-                TopoDS_Edge edg = TopoDS.Edge(exp.Current());
-                theMap.Bind(edg, new NCollection_List<TopoDS_Shape>(theP.InternalShapes(edg)));
+                Edge edg = ShapeCasts.Edge(exp.Current());
+                theMap.Bind(edg, new NCollection_List<Shape>(theP.InternalShapes(edg)));
             }
         }
     }
 
-    private static Geom_Curve? TestCurve(in TopoDS_Face Base)
+    private static Curve3D? TestCurve(in Face Base)
     {
         Point3D bar = new(0.0, 0.0, 0.0);
         NCollection_Sequence<Point3D> spt = new();
@@ -1098,19 +1101,19 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
             bar.ChangeCoord() += pvt.XYZ();
         }
         bar.ChangeCoord().Divide(spt.Length());
-        Geom_Surface s = BRep_Tool.Surface(Base)!;
-        if (s.GetType() == typeof(Geom_RectangularTrimmedSurface))
+        Surface s = Tool.Surface(Base)!;
+        if (s.GetType() == typeof(TrimmedSurface))
         {
-            s = ((Geom_RectangularTrimmedSurface)s).BasisSurface();
+            s = ((TrimmedSurface)s).BasisSurface();
         }
-        if (s is not Geom_Plane P)
+        if (s is not PlaneSurface P)
         {
             return null;
         }
         Plane3D pp = P.Pln();
         Direction3D Normale = pp.Position().XDirection() ^ pp.Position().YDirection();
         Axis3D theAx = new(bar, Normale);
-        Geom_Line theLin = new(theAx);
+        LineCurve3D theLin = new(theAx);
         return theLin;
     }
 }

@@ -1,11 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
-using static Occt.TopTools_FormatVersion;
+using static Kerf.Engine.Exchange.Brep.FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -56,10 +59,10 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         return aText;
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile));
+        Assert.True(BrepTools.Write(theShape, aFile));
         string aText = File.ReadAllText(aFile, Encoding.Latin1);
         File.Delete(aFile);
         return aText;
@@ -159,8 +162,8 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         return aC;
     }
 
-    private static TopoDS_Shape PortCompound(IEnumerable<TopoDS_Shape> theShapes) =>
-        TopoDS_Builder.MakeCompound(theShapes.Where(s => !s.IsNull()));
+    private static Shape PortCompound(IEnumerable<Shape> theShapes) =>
+        Builder.MakeCompound(theShapes.Where(s => !s.IsNull));
 
     /// <summary>Native OCCT reads the file and writes it in the current format; both sides read that. Null if unreadable.</summary>
     private string? NativeF1(string theFile, bool theExplodeFaces)
@@ -198,7 +201,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         }
 
         string aF1 = NewFile();
-        Assert.True(N.BRepTools.Write(aShape, aF1, true, false, (N.TopTools_FormatVersion)(int)TopTools_FormatVersion_CURRENT));
+        Assert.True(N.BRepTools.Write(aShape, aF1, true, false, (N.TopTools_FormatVersion)(int)FormatVersion_CURRENT));
         return aF1;
     }
 
@@ -210,9 +213,9 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         return aShape;
     }
 
-    private static TopoDS_Shape PortRead(string theFile)
+    private static Shape PortRead(string theFile)
     {
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, theFile), theFile);
+        Assert.True(BrepTools.Read(out Shape aShape, theFile), theFile);
         aShape.TShape()!.FreezeGraph();
         return aShape;
     }
@@ -244,14 +247,14 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
     // A fresh port sewing of the file's inputs: the sewn shape's text.
     private string PortSewedText(string theF1, bool theChildren, double theTolerance, double theMinTol)
     {
-        TopoDS_Shape aShape = PortRead(theF1);
+        Shape aShape = PortRead(theF1);
         var aP = new BRepBuilderAPI_Sewing();
         aP.Init(theTolerance, true, true, true, false);
         aP.SetMinTolerance(theMinTol);
         aP.SetMaxTolerance(global::Kerf.Engine.Foundation.Precision.Infinite());
         if (theChildren)
         {
-            for (var anIt = new TopoDS_Iterator(aShape); anIt.More(); anIt.Next())
+            for (var anIt = new Iterator(aShape); anIt.More(); anIt.Next())
             {
                 aP.Add(anIt.Value());
             }
@@ -282,9 +285,9 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
     private void Sew(Tally theTally, string theCase, string theF1, bool theChildren, double theTol)
     {
         N.TopoDS_Shape aNShape = NativeRead(theF1);
-        TopoDS_Shape aPShape = PortRead(theF1);
+        Shape aPShape = PortRead(theF1);
         var aNInputs = new List<N.TopoDS_Shape>();
-        var aPInputs = new List<TopoDS_Shape>();
+        var aPInputs = new List<Shape>();
         if (theChildren)
         {
             for (var anIt = new N.TopoDS_Iterator(aNShape); anIt.More(); anIt.Next())
@@ -292,7 +295,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
                 aNInputs.Add(anIt.Value());
             }
             GC.KeepAlive(aNShape); // native TopoDS_Iterator holds no reference to the shape it iterates (decision 1109)
-            for (var anIt = new TopoDS_Iterator(aPShape); anIt.More(); anIt.Next())
+            for (var anIt = new Iterator(aPShape); anIt.More(); anIt.Next())
             {
                 aPInputs.Add(anIt.Value());
             }
@@ -352,7 +355,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
             aP.SetFaceMode(true);
             aP.SetMinTolerance(aMinTol);
             aP.SetMaxTolerance(global::Kerf.Engine.Foundation.Precision.Infinite());
-            foreach (TopoDS_Shape anInput in aPInputs)
+            foreach (Shape anInput in aPInputs)
             {
                 aP.Add(anInput);
             }
@@ -433,24 +436,24 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         {
             isIdentical &= CompareText(theTally, aCase, "free edges",
                                        NativeText(NativeCompound(Enumerable.Range(1, aN.NbFreeEdges()).Select(i => (N.TopoDS_Shape)aN.FreeEdge(i)))),
-                                       PortText(PortCompound(Enumerable.Range(1, aP.NbFreeEdges()).Select(i => (TopoDS_Shape)aP.FreeEdge(i)))));
+                                       PortText(PortCompound(Enumerable.Range(1, aP.NbFreeEdges()).Select(i => (Shape)aP.FreeEdge(i)))));
         }
         if (aN.NbMultipleEdges() == aP.NbMultipleEdges() && aN.NbMultipleEdges() > 0)
         {
             isIdentical &= CompareText(theTally, aCase, "multiple edges",
                                        NativeText(NativeCompound(Enumerable.Range(1, aN.NbMultipleEdges()).Select(i => (N.TopoDS_Shape)aN.MultipleEdge(i)))),
-                                       PortText(PortCompound(Enumerable.Range(1, aP.NbMultipleEdges()).Select(i => (TopoDS_Shape)aP.MultipleEdge(i)))));
+                                       PortText(PortCompound(Enumerable.Range(1, aP.NbMultipleEdges()).Select(i => (Shape)aP.MultipleEdge(i)))));
         }
         if (aN.NbContigousEdges() == aP.NbContigousEdges())
         {
             isIdentical &= CompareText(theTally, aCase, "contiguous edges",
                                        NativeText(NativeCompound(Enumerable.Range(1, aN.NbContigousEdges()).Select(i => (N.TopoDS_Shape)aN.ContigousEdge(i)))),
-                                       PortText(PortCompound(Enumerable.Range(1, aP.NbContigousEdges()).Select(i => (TopoDS_Shape)aP.ContigousEdge(i)))));
+                                       PortText(PortCompound(Enumerable.Range(1, aP.NbContigousEdges()).Select(i => (Shape)aP.ContigousEdge(i)))));
             int aNBound = 0, aPBound = 0;
             for (int i = 1; i <= aN.NbContigousEdges(); i++)
             {
                 aNBound += aN.ContigousEdgeCouple(i).Count(s => aN.IsSectionBound(N.TopoDS.Edge(s)));
-                aPBound += aP.ContigousEdgeCouple(i).Count(s => aP.IsSectionBound(TopoDS.Edge(s)));
+                aPBound += aP.ContigousEdgeCouple(i).Count(s => aP.IsSectionBound(ShapeCasts.Edge(s)));
             }
             CompareValue(theTally, aCase, "bound sections", aNBound, aPBound);
         }
@@ -464,12 +467,12 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         {
             isIdentical &= CompareText(theTally, aCase, "deleted faces",
                                        NativeText(NativeCompound(Enumerable.Range(1, aN.NbDeletedFaces()).Select(i => (N.TopoDS_Shape)aN.DeletedFace(i)))),
-                                       PortText(PortCompound(Enumerable.Range(1, aP.NbDeletedFaces()).Select(i => (TopoDS_Shape)aP.DeletedFace(i)))));
+                                       PortText(PortCompound(Enumerable.Range(1, aP.NbDeletedFaces()).Select(i => (Shape)aP.DeletedFace(i)))));
         }
 
         // Modified of every input, with IsModified.
         var aNMod = new List<N.TopoDS_Shape>();
-        var aPMod = new List<TopoDS_Shape>();
+        var aPMod = new List<Shape>();
         for (int i = 0; i < aNInputs.Count; i++)
         {
             if (!isNativeWritten)
@@ -484,13 +487,13 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         // ModifiedSubShape of every input edge (TopExp::MapShapes order, the same on both sides), with IsModifiedSubShape.
         using var aNEdges = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(aNShape, N.TopAbs_ShapeEnum.TopAbs_EDGE, aNEdges);
-        var aPEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aPShape, TopAbs_ShapeEnum.TopAbs_EDGE, aPEdges);
+        var aPEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        Exploration.MapShapes(aPShape, ShapeType.Edge, aPEdges);
         CompareValue(theTally, aCase, "input edges", aNEdges.Extent(), aPEdges.Extent());
         if (aNEdges.Extent() == aPEdges.Extent())
         {
             var aNSub = new List<N.TopoDS_Shape>();
-            var aPSub = new List<TopoDS_Shape>();
+            var aPSub = new List<Shape>();
             int aNModified = 0, aPModified = 0;
             for (int i = 1; i <= aNEdges.Extent(); i++)
             {
@@ -510,7 +513,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
             {
                 CompareValue(theTally, aCase, "IsModifiedSubShape count", aNModified, aPModified);
             }
-            CompareValue(theTally, aCase, "null ModifiedSubShape", aNSub.Count(s => s.IsNull()), aPSub.Count(s => s.IsNull()));
+            CompareValue(theTally, aCase, "null ModifiedSubShape", aNSub.Count(s => s.IsNull()), aPSub.Count(s => s.IsNull));
             isIdentical &= CompareText(theTally, aCase, "ModifiedSubShape", NativeText(NativeCompound(aNSub)), PortText(PortCompound(aPSub)));
         }
 
@@ -565,7 +568,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
                 continue;
             }
             int aNbFaces = 0;
-            for (var anIt = new TopoDS_Iterator(PortRead(aF1)); anIt.More(); anIt.Next())
+            for (var anIt = new Iterator(PortRead(aF1)); anIt.More(); anIt.Next())
             {
                 aNbFaces++;
             }

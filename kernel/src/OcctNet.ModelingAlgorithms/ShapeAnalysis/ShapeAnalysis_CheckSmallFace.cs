@@ -5,10 +5,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -106,7 +109,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
     /// <paramref name="spot"/> is its location and <paramref name="spotol"/> half the largest dimension of its box. A
     /// face without wires gives 1 with <paramref name="spot"/> and <paramref name="spotol"/> unchanged, as in OCCT.
     /// </summary>
-    public int IsSpotFace(in TopoDS_Face F, ref Point3D spot, ref double spotol, double tol = -1.0)
+    public int IsSpotFace(in Face F, ref Point3D spot, ref double spotol, double tol = -1.0)
     {
         double toler = tol;
         double tolv = tol;
@@ -116,14 +119,14 @@ public sealed class ShapeAnalysis_CheckSmallFace
         // gka Mar2000 Protection against faces without wires
         // but they occur due to bugs in the algorithm itself, it needs to be fixed
         bool isWir = false;
-        for (var itw = new TopoDS_Iterator(F, false); itw.More(); itw.Next())
+        for (var itw = new Iterator(F, false); itw.More(); itw.Next())
         {
-            if (itw.Value().ShapeType() != TopAbs_WIRE)
+            if (itw.Value().ShapeType() != ShapeType.Wire)
             {
                 continue;
             }
-            TopoDS_Wire w1 = TopoDS.Wire(itw.Value());
-            if (!w1.IsNull())
+            Wire w1 = ShapeCasts.Wire(itw.Value());
+            if (!w1.IsNull)
             {
                 isWir = true;
                 break;
@@ -136,12 +139,12 @@ public sealed class ShapeAnalysis_CheckSmallFace
         int nbv = 0;
         double minx = 0, miny = 0, minz = 0, maxx = Kerf.Engine.Foundation.Precision.Infinite(), maxy = Kerf.Engine.Foundation.Precision.Infinite(),
                maxz = Kerf.Engine.Foundation.Precision.Infinite();
-        TopoDS_Vertex V0 = new();
+        Vertex V0 = new();
         bool same = true;
-        for (var iv = new TopExp_Explorer(F, TopAbs_VERTEX); iv.More(); iv.Next())
+        for (var iv = new Explorer(F, ShapeType.Vertex); iv.More(); iv.Next())
         {
-            TopoDS_Vertex V = TopoDS.Vertex(iv.Current());
-            if (V0.IsNull())
+            Vertex V = ShapeCasts.Vertex(iv.Current());
+            if (V0.IsNull)
             {
                 V0 = V;
             }
@@ -153,12 +156,12 @@ public sealed class ShapeAnalysis_CheckSmallFace
                 }
             }
 
-            Point3D pnt = BRep_Tool.Pnt(V);
+            Point3D pnt = Tool.Pnt(V);
             MinMaxPnt(pnt, ref nbv, ref minx, ref miny, ref minz, ref maxx, ref maxy, ref maxz);
 
             if (tol < 0)
             {
-                tolv = BRep_Tool.Tolerance(V);
+                tolv = Tool.Tolerance(V);
                 if (tolv > toler)
                 {
                     toler = tolv;
@@ -175,10 +178,10 @@ public sealed class ShapeAnalysis_CheckSmallFace
         //   All vertices are confused
         //   Check edges (a closed edge may be a non-null length edge !)
         //   By picking intermediate point on each one
-        for (var ie = new TopExp_Explorer(F, TopAbs_EDGE); ie.More(); ie.Next())
+        for (var ie = new Explorer(F, ShapeType.Edge); ie.More(); ie.Next())
         {
-            TopoDS_Edge E = TopoDS.Edge(ie.Current());
-            Geom_Curve? C3D = BRep_Tool.Curve(E, out double cf, out double cl);
+            Edge E = ShapeCasts.Edge(ie.Current());
+            Curve3D? C3D = Tool.Curve(E, out double cf, out double cl);
             if (C3D is null)
             {
                 continue;
@@ -201,7 +204,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
     }
 
     /// <summary>As <see cref="IsSpotFace"/>, recording the result in <see cref="StatusSpot"/> (DONE1, DONE2).</summary>
-    public bool CheckSpotFace(in TopoDS_Face F, double tol = -1.0)
+    public bool CheckSpotFace(in Face F, double tol = -1.0)
     {
         Point3D spot = new();
         double spotol = 0.0;
@@ -228,7 +231,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
     /// Checks if a face lies on a B-spline or Bezier surface that is a strip (by its poles), small in V
     /// (<see cref="StatusStrip"/> DONE2) or in U (DONE1). <paramref name="tol"/> is the largest width (1e-7 by default).
     /// </summary>
-    public bool IsStripSupport(in TopoDS_Face F, double tol = -1.0)
+    public bool IsStripSupport(in Face F, double tol = -1.0)
     {
         double toler = tol;
         if (toler < 0)
@@ -236,7 +239,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
             toler = 1.0e-07; // ?? better to compute tolerance zones
         }
 
-        Geom_Surface? surf = BRep_Tool.Surface(F, out Placement _);
+        Surface? surf = Tool.Surface(F, out Placement _);
         if (surf is null)
         {
             return false;
@@ -245,8 +248,8 @@ public sealed class ShapeAnalysis_CheckSmallFace
         //  Checking on poles for bezier-bspline
         //  A more general way is to check Values by scanning ISOS (slower)
 
-        var bs = surf as Geom_BSplineSurface;
-        var bz = surf as Geom_BezierSurface;
+        var bs = surf as BSplineSurface;
+        var bz = surf as BezierSurface;
 
         if (bs is not null || bz is not null)
         {
@@ -254,13 +257,13 @@ public sealed class ShapeAnalysis_CheckSmallFace
             int iu, iv, nbu, nbv;
             if (cbz)
             {
-                nbu = bz!.NbUPoles();
-                nbv = bz.NbVPoles();
+                nbu = bz!.UPoleCount;
+                nbv = bz.VPoleCount;
             }
             else
             {
-                nbu = bs!.NbUPoles();
-                nbv = bs.NbVPoles();
+                nbu = bs!.UPoleCount;
+                nbv = bs.VPoleCount;
             }
             double minx = 0.0, miny = 0.0, minz = 0.0, maxx = 0.0, maxy = 0.0, maxz = 0.0;
             bool issmall = true;
@@ -315,14 +318,14 @@ public sealed class ShapeAnalysis_CheckSmallFace
     /// Checks if two edges define a strip: the largest distance <paramref name="dmax"/> between them (sampled both
     /// ways) below <paramref name="tol"/>, or half the sum of the edges' tolerances when <paramref name="tol"/> &lt; 0.
     /// </summary>
-    public bool CheckStripEdges(in TopoDS_Edge E1, in TopoDS_Edge E2, double tol, out double dmax)
+    public bool CheckStripEdges(in Edge E1, in Edge E2, double tol, out double dmax)
     {
         //  We have the topological configuration OK : 2 edges, 2 vertices
         //  But, are these two edges well confused ?
         double toler = tol;
         if (tol < 0)
         {
-            double tole = BRep_Tool.Tolerance(E1) + BRep_Tool.Tolerance(E2);
+            double tole = Tool.Tolerance(E1) + Tool.Tolerance(E2);
             if (toler < tole / 2.0)
             {
                 toler = tole / 2.0;
@@ -336,22 +339,22 @@ public sealed class ShapeAnalysis_CheckSmallFace
         ShapeAnalysis_Curve SAC = new();
         double u;
         dmax = 0;
-        Geom_Curve? C1 = BRep_Tool.Curve(E1, out double cf1, out double cl1);
-        Geom_Curve? C2 = BRep_Tool.Curve(E2, out double cf2, out double cl2);
+        Curve3D? C1 = Tool.Curve(E1, out double cf1, out double cl1);
+        Curve3D? C2 = Tool.Curve(E2, out double cf2, out double cl2);
         if (C1 is null || C2 is null)
         {
             return false;
         }
         cf1 = Max(cf1, C1.FirstParameter());
         cl1 = Min(cl1, C1.LastParameter());
-        Geom_TrimmedCurve C1T = new(C1, cf1, cl1, true);
+        TrimmedCurve3D C1T = new(C1, cf1, cl1, true);
         // pdn protection against feature in Trimmed_Curve
         cf1 = C1T.FirstParameter();
         cl1 = C1T.LastParameter();
-        Geom_TrimmedCurve CC;
+        TrimmedCurve3D CC;
         cf2 = Max(cf2, C2.FirstParameter());
         cl2 = Min(cl2, C2.LastParameter());
-        Geom_TrimmedCurve C2T = new(C2, cf2, cl2, true);
+        TrimmedCurve3D C2T = new(C2, cf2, cl2, true);
         cf2 = C2T.FirstParameter();
         cl2 = C2T.LastParameter();
 
@@ -377,7 +380,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
             {
                 Point3D p1 = C1T.Value(u);
                 // pdn Adaptor curve is used to avoid of enhancing of domain.
-                GeomAdaptor_Curve GAC = new(C2T);
+                CurveAdaptor GAC = new(C2T);
                 double dist = SAC.Project(GAC, p1, toler, out Point3D _, out double para);
                 // pdn check if parameter of projection is in the domain of the edge.
                 if (para < f || para > l)
@@ -402,32 +405,32 @@ public sealed class ShapeAnalysis_CheckSmallFace
     /// Searches the face for two and only two edges that aren't small; true if they define a strip, with their largest
     /// distance in <paramref name="dmax"/> (unchanged when they aren't found or aren't checked).
     /// </summary>
-    public bool FindStripEdges(in TopoDS_Face F, out TopoDS_Edge E1, out TopoDS_Edge E2, double tol, ref double dmax)
+    public bool FindStripEdges(in Face F, out Edge E1, out Edge E2, double tol, ref double dmax)
     {
-        E1 = new TopoDS_Edge();
-        E2 = new TopoDS_Edge();
+        E1 = new Edge();
+        E2 = new Edge();
         int nb = 0;
-        for (var ex = new TopExp_Explorer(F, TopAbs_EDGE); ex.More(); ex.Next())
+        for (var ex = new Explorer(F, ShapeType.Edge); ex.More(); ex.Next())
         {
-            TopoDS_Edge E = TopoDS.Edge(ex.Current());
+            Edge E = ShapeCasts.Edge(ex.Current());
             if (nb == 1 && E.IsSame(E1))
             {
                 continue; // ignore seam edge
             }
-            TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+            Exploration.Vertices(E, out Vertex V1, out Vertex V2);
             Point3D p1, p2;
-            p1 = BRep_Tool.Pnt(V1);
-            p2 = BRep_Tool.Pnt(V2);
+            p1 = Tool.Pnt(V1);
+            p2 = Tool.Pnt(V2);
             double toler = tol;
             if (toler <= 0)
             {
-                toler = (BRep_Tool.Tolerance(V1) + BRep_Tool.Tolerance(V2)) / 2.0;
+                toler = (Tool.Tolerance(V1) + Tool.Tolerance(V2)) / 2.0;
             }
 
             //    Extremities
             double dist = p1.Distance(p2);
             //    Middle point
-            Geom_Curve? CC = BRep_Tool.Curve(E, out double cf, out double cl);
+            Curve3D? CC = Tool.Curve(E, out double cf, out double cl);
             bool isNullLength = true;
             if (CC is not null)
             {
@@ -457,7 +460,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
             }
         }
         //   Now, check these two edge to define a strip !
-        if (!E1.IsNull() && !E2.IsNull())
+        if (!E1.IsNull && !E2.IsNull)
         {
             if (!CheckStripEdges(E1, E2, tol, out dmax))
             {
@@ -477,19 +480,19 @@ public sealed class ShapeAnalysis_CheckSmallFace
     /// small edges. Records <see cref="StatusStrip"/> DONE3. <paramref name="E1"/> and <paramref name="E2"/> get the
     /// great edges as they are found (unchanged where OCCT doesn't write them).
     /// </summary>
-    public bool CheckSingleStrip(in TopoDS_Face F, ref TopoDS_Edge E1, ref TopoDS_Edge E2, double tol = -1.0)
+    public bool CheckSingleStrip(in Face F, ref Edge E1, ref Edge E2, double tol = -1.0)
     {
         double toler = tol;
         double minx = 0.0, miny = 0.0, minz = 0.0, maxx = 0.0, maxy = 0.0, maxz = 0.0;
 
         // In this case, we have 2 vertices and 2 great edges. Plus possibly 2 small
         //    edges, one on each vertex
-        TopoDS_Vertex V1 = new(), V2 = new();
+        Vertex V1 = new(), V2 = new();
         int nb = 0;
-        for (var itv = new TopExp_Explorer(F, TopAbs_VERTEX); itv.More(); itv.Next())
+        for (var itv = new Explorer(F, ShapeType.Vertex); itv.More(); itv.Next())
         {
-            TopoDS_Vertex V = TopoDS.Vertex(itv.Current());
-            if (V1.IsNull())
+            Vertex V = ShapeCasts.Vertex(itv.Current());
+            if (V1.IsNull)
             {
                 V1 = V;
             }
@@ -497,7 +500,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
             {
                 continue;
             }
-            else if (V2.IsNull())
+            else if (V2.IsNull)
             {
                 V2 = V;
             }
@@ -513,23 +516,23 @@ public sealed class ShapeAnalysis_CheckSmallFace
 
         // Checking edges
         nb = 0;
-        for (var ite = new TopExp_Explorer(F, TopAbs_EDGE); ite.More(); ite.Next())
+        for (var ite = new Explorer(F, ShapeType.Edge); ite.More(); ite.Next())
         {
-            TopoDS_Edge E = TopoDS.Edge(ite.Current());
+            Edge E = ShapeCasts.Edge(ite.Current());
             if (nb == 1 && E.IsSame(E1))
             {
                 continue; // ignore seam edge
             }
-            TopExp.Vertices(E, out TopoDS_Vertex VA, out TopoDS_Vertex VB);
+            Exploration.Vertices(E, out Vertex VA, out Vertex VB);
             if (tol < 0)
             {
                 double tolv;
-                tolv = BRep_Tool.Tolerance(VA);
+                tolv = Tool.Tolerance(VA);
                 if (toler < tolv)
                 {
                     toler = tolv;
                 }
-                tolv = BRep_Tool.Tolerance(VB);
+                tolv = Tool.Tolerance(VB);
                 if (toler < tolv)
                 {
                     toler = tolv;
@@ -540,10 +543,10 @@ public sealed class ShapeAnalysis_CheckSmallFace
             if (VA.IsSame(VB))
             {
                 double cf = 0.0, cl = 0.0;
-                Geom_Curve? C3D = null;
-                if (!BRep_Tool.Degenerated(E))
+                Curve3D? C3D = null;
+                if (!Tool.Degenerated(E))
                 {
-                    C3D = BRep_Tool.Curve(E, out cf, out cl);
+                    C3D = Tool.Curve(E, out cf, out cl);
                 }
                 if (C3D is null)
                 {
@@ -612,7 +615,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
     /// Checks if a face is a strip: <see cref="CheckSingleStrip"/>, then <see cref="FindStripEdges"/>. The two edges
     /// delimiting it are returned in <paramref name="E1"/> and <paramref name="E2"/>.
     /// </summary>
-    public bool CheckStripFace(in TopoDS_Face F, ref TopoDS_Edge E1, ref TopoDS_Edge E2, double tol = -1.0)
+    public bool CheckStripFace(in Face F, ref Edge E1, ref Edge E2, double tol = -1.0)
     {
         if (CheckSingleStrip(F, ref E1, ref E2, tol))
         {
@@ -632,19 +635,19 @@ public sealed class ShapeAnalysis_CheckSmallFace
     /// the vertex is added to the compound: <paramref name="theAllVert"/> becomes a new frozen compound holding its
     /// previous items (if not null) and the splitting vertices. Returns the count of splitting vertices.
     /// </summary>
-    public int CheckSplittingVertices(in TopoDS_Face F,
-                                      NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> MapEdges,
-                                      NCollection_DataMap<TopoDS_Shape, NCollection_List<double>> MapParam,
-                                      ref TopoDS_Compound theAllVert)
+    public int CheckSplittingVertices(in Face F,
+                                      NCollection_DataMap<Shape, NCollection_List<Shape>> MapEdges,
+                                      NCollection_DataMap<Shape, NCollection_List<double>> MapParam,
+                                      ref Compound theAllVert)
     {
         // OCCT.NET: OCCT adds to the caller's compound in place; the public form adds to a new compound holding the
         // caller's items, and publishes it frozen (design 4.6).
-        BRep_Builder aB = new();
-        TopoDS_Compound aCompound = new();
+        BrepBuilder aB = new();
+        Compound aCompound = new();
         aB.MakeCompound(ref aCompound);
-        if (!theAllVert.IsNull())
+        if (!theAllVert.IsNull)
         {
-            for (var anIt = new TopoDS_Iterator(theAllVert, false, false); anIt.More(); anIt.Next())
+            for (var anIt = new Iterator(theAllVert, false, false); anIt.More(); anIt.Next())
             {
                 aB.Add(aCompound, anIt.Value());
             }
@@ -659,16 +662,16 @@ public sealed class ShapeAnalysis_CheckSmallFace
     /// <see cref="CheckSplittingVertices"/> as OCCT writes it: adds the splitting vertices to
     /// <paramref name="theAllVert"/> in place (throws on a frozen compound). For ported code that owns the compound.
     /// </summary>
-    internal int InternalCheckSplittingVertices(in TopoDS_Face F,
-                                                NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> MapEdges,
-                                                NCollection_DataMap<TopoDS_Shape, NCollection_List<double>> MapParam,
-                                                in TopoDS_Compound theAllVert)
+    internal int InternalCheckSplittingVertices(in Face F,
+                                                NCollection_DataMap<Shape, NCollection_List<Shape>> MapEdges,
+                                                NCollection_DataMap<Shape, NCollection_List<double>> MapParam,
+                                                in Compound theAllVert)
     {
         //  Prepare array of vertices with their locations //TopTools
         int nbv = 0, nbp = 0;
-        BRep_Builder theBuilder = new();
-        TopExp_Explorer itv = new(); // svv Jan11 2000 : porting on DEC
-        for (itv.Init(F, TopAbs_VERTEX); itv.More(); itv.Next())
+        BrepBuilder theBuilder = new();
+        Explorer itv = new(); // svv Jan11 2000 : porting on DEC
+        for (itv.Init(F, ShapeType.Vertex); itv.More(); itv.Next())
         {
             nbv++;
         }
@@ -677,22 +680,22 @@ public sealed class ShapeAnalysis_CheckSmallFace
         {
             return 0;
         }
-        NCollection_Array1<TopoDS_Shape> vtx = new(1, nbv);
+        NCollection_Array1<Shape> vtx = new(1, nbv);
         NCollection_Array1<Point3D> vtp = new(1, nbv);
         NCollection_Array1<double> vto = new(1, nbv);
 
         nbp = 0;
-        for (itv.Init(F, TopAbs_VERTEX); itv.More(); itv.Next())
+        for (itv.Init(F, ShapeType.Vertex); itv.More(); itv.Next())
         {
             nbp++;
-            TopoDS_Vertex unv = TopoDS.Vertex(itv.Current());
+            Vertex unv = ShapeCasts.Vertex(itv.Current());
             vtx.SetValue(nbp, unv);
-            Point3D unp = BRep_Tool.Pnt(unv);
+            Point3D unp = Tool.Pnt(unv);
             vtp.SetValue(nbp, unp);
             double unt = myPrecision;
             if (unt < 0)
             {
-                unt = BRep_Tool.Tolerance(unv);
+                unt = Tool.Tolerance(unv);
             }
             vto.SetValue(nbp, unt);
         }
@@ -703,15 +706,15 @@ public sealed class ShapeAnalysis_CheckSmallFace
         ShapeAnalysis_Curve SAC = new();
         for (int iv = 1; iv <= nbv; iv++)
         {
-            TopoDS_Vertex V = TopoDS.Vertex(vtx.Value(iv));
-            NCollection_List<TopoDS_Shape> listEdge = new();
+            Vertex V = ShapeCasts.Vertex(vtx.Value(iv));
+            NCollection_List<Shape> listEdge = new();
             NCollection_List<double> listParam = new();
             bool issplit = false;
-            for (var ite = new TopExp_Explorer(F, TopAbs_EDGE); ite.More(); ite.Next())
+            for (var ite = new Explorer(F, ShapeType.Edge); ite.More(); ite.Next())
             {
-                TopoDS_Edge E = TopoDS.Edge(ite.Current());
-                TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-                Geom_Curve? C3D = BRep_Tool.Curve(E, out double cf, out double cl);
+                Edge E = ShapeCasts.Edge(ite.Current());
+                Exploration.Vertices(E, out Vertex V1, out Vertex V2);
+                Curve3D? C3D = Tool.Curve(E, out double cf, out double cl);
                 if (C3D is null)
                 {
                     continue;
@@ -816,11 +819,11 @@ public sealed class ShapeAnalysis_CheckSmallFace
     /// <paramref name="sence"/> 1 in U, 2 in V, and the row in <paramref name="whatrow"/> (both unchanged for an
     /// elementary or other surface). <see cref="StatusPin"/>: DONE1 smooth pin, DONE2 sharp, DONE3 equal poles.
     /// </summary>
-    public bool CheckPin(in TopoDS_Face F, ref int whatrow, ref int sence)
+    public bool CheckPin(in Face F, ref int whatrow, ref int sence)
     {
-        Geom_Surface? surf = BRep_Tool.Surface(F, out Placement _);
+        Surface? surf = Tool.Surface(F, out Placement _);
         // OCCT dereferences a null surface here; the port throws NullReferenceException.
-        if (surf!.IsKind(typeof(Geom_ElementarySurface)))
+        if (surf!.IsKind(typeof(ElementarySurface)))
         {
             return false;
         }
@@ -836,17 +839,17 @@ public sealed class ShapeAnalysis_CheckSmallFace
 
         //  Take the poles : they give good idea of sharpness of a pin
         int nbu = 0, nbv = 0;
-        var bs = surf as Geom_BSplineSurface;
-        var bz = surf as Geom_BezierSurface;
+        var bs = surf as BSplineSurface;
+        var bz = surf as BezierSurface;
         if (bs is not null)
         {
-            nbu = bs.NbUPoles();
-            nbv = bs.NbVPoles();
+            nbu = bs.UPoleCount;
+            nbv = bs.VPoleCount;
         }
         if (bz is not null)
         {
-            nbu = bz.NbUPoles();
-            nbv = bz.NbVPoles();
+            nbu = bz.UPoleCount;
+            nbv = bz.VPoleCount;
         }
         if (nbu == 0 || nbv == 0)
         {
@@ -934,11 +937,11 @@ public sealed class ShapeAnalysis_CheckSmallFace
     /// Checks if the support of a face is twisted (two normals of a 5 x 5 grid at more than 90 degrees); then
     /// <paramref name="paramu"/> and <paramref name="paramv"/> locate it (unchanged otherwise).
     /// </summary>
-    public bool CheckTwisted(in TopoDS_Face F, ref double paramu, ref double paramv)
+    public bool CheckTwisted(in Face F, ref double paramu, ref double paramv)
     {
-        Geom_Surface? surf = BRep_Tool.Surface(F, out Placement _);
+        Surface? surf = Tool.Surface(F, out Placement _);
         // OCCT dereferences a null surface here; the port throws NullReferenceException.
-        if (surf!.IsKind(typeof(Geom_ElementarySurface)))
+        if (surf!.IsKind(typeof(ElementarySurface)))
         {
             return false;
         }
@@ -949,7 +952,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
             toler = 1.0e-4;
         }
         _ = toler; // OCCT computes it for a commented-out GeomLProp_SLProps
-        GeomAdaptor_Surface GAS = new(surf);
+        SurfaceAdaptor GAS = new(surf);
 
         // to be done : on isos of the surface
         //  and on edges, at least of outer wire
@@ -1007,18 +1010,18 @@ public sealed class ShapeAnalysis_CheckSmallFace
     /// Finds pairs of consecutive pin edges of the face (short edges, by their vertices, folded on each other) and
     /// binds them in <paramref name="mapEdges"/> (the caller's working map). OCCT: "not tested on many examples".
     /// </summary>
-    public bool CheckPinFace(in TopoDS_Face F, NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> mapEdges, double toler = -1.0)
+    public bool CheckPinFace(in Face F, NCollection_DataMap<Shape, Shape> mapEdges, double toler = -1.0)
     {
-        TopExp_Explorer exp_w = new(F, TopAbs_WIRE);
+        Explorer exp_w = new(F, ShapeType.Wire);
         exp_w.More();
         double coef1 = 0, coef2; // =0 for deleting warning (skl)
-        TopoDS_Wire theCurWire = TopoDS.Wire(exp_w.Current());
+        Wire theCurWire = ShapeCasts.Wire(exp_w.Current());
         ShapeAnalysis_WireOrder wi = new();
         ShapeAnalysis_Wire sfw = new();
         ShapeExtend_WireData sbwd = new(theCurWire);
         sfw.Load(sbwd);
         sfw.CheckOrder(wi);
-        NCollection_HSequence<TopoDS_Shape> newedges = new();
+        NCollection_HSequence<Shape> newedges = new();
         int nb = wi.NbEdges();
         int i = 0;
         for (i = 1; i <= nb; i++)
@@ -1027,7 +1030,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
         }
         for (i = 1; i <= nb; i++)
         {
-            sbwd.Set(TopoDS.Edge(newedges.Value(i)), i);
+            sbwd.Set(ShapeCasts.Edge(newedges.Value(i)), i);
         }
         // OCCT rebuilds the reordered wire and never uses it (the edges below are the face's).
         theCurWire = sbwd.InternalWire();
@@ -1035,20 +1038,20 @@ public sealed class ShapeAnalysis_CheckSmallFace
         i = 1;
         bool done = false;
         double tol = Kerf.Engine.Foundation.Precision.Confusion();
-        TopoDS_Edge theFirstEdge = new(), theSecondEdge;
+        Edge theFirstEdge = new(), theSecondEdge;
         double d1 = 0, d2 = 0;
-        for (var exp_e = new TopExp_Explorer(F, TopAbs_EDGE); exp_e.More(); exp_e.Next())
+        for (var exp_e = new Explorer(F, ShapeType.Edge); exp_e.More(); exp_e.Next())
         {
-            TopoDS_Vertex V1, V2;
+            Vertex V1, V2;
             Point3D p1, p2;
             if (i == 1)
             {
-                theFirstEdge = TopoDS.Edge(exp_e.Current());
-                V1 = TopExp.FirstVertex(theFirstEdge);
-                V2 = TopExp.LastVertex(theFirstEdge);
-                p1 = BRep_Tool.Pnt(V1);
-                p2 = BRep_Tool.Pnt(V2);
-                tol = Max(BRep_Tool.Tolerance(V1), BRep_Tool.Tolerance(V2));
+                theFirstEdge = ShapeCasts.Edge(exp_e.Current());
+                V1 = Exploration.FirstVertex(theFirstEdge);
+                V2 = Exploration.LastVertex(theFirstEdge);
+                p1 = Tool.Pnt(V1);
+                p2 = Tool.Pnt(V2);
+                tol = Max(Tool.Tolerance(V1), Tool.Tolerance(V2));
                 if (toler > 0)
                 { // tol = std::max(tol, toler); gka
                     tol = toler;
@@ -1074,15 +1077,15 @@ public sealed class ShapeAnalysis_CheckSmallFace
                 continue;
             }
             // Check the length of edge
-            theSecondEdge = TopoDS.Edge(exp_e.Current());
-            V1 = TopExp.FirstVertex(theSecondEdge);
-            V2 = TopExp.LastVertex(theSecondEdge);
+            theSecondEdge = ShapeCasts.Edge(exp_e.Current());
+            V1 = Exploration.FirstVertex(theSecondEdge);
+            V2 = Exploration.LastVertex(theSecondEdge);
 
-            p1 = BRep_Tool.Pnt(V1);
-            p2 = BRep_Tool.Pnt(V2);
+            p1 = Tool.Pnt(V1);
+            p2 = Tool.Pnt(V2);
             if (toler == -1)
             {
-                tol = Max(BRep_Tool.Tolerance(V1), BRep_Tool.Tolerance(V2));
+                tol = Max(Tool.Tolerance(V1), Tool.Tolerance(V2));
             }
             else
             {
@@ -1138,11 +1141,11 @@ public sealed class ShapeAnalysis_CheckSmallFace
     /// Checks if two edges sharing the first one's last vertex are pin edges (folded on each other near the vertex,
     /// with tangent derivatives). OCCT: "not tested on many examples".
     /// </summary>
-    public bool CheckPinEdges(in TopoDS_Edge theFirstEdge, in TopoDS_Edge theSecondEdge, double coef1, double coef2, double toler)
+    public bool CheckPinEdges(in Edge theFirstEdge, in Edge theSecondEdge, double coef1, double coef2, double toler)
     {
-        Geom_Curve? C1, C2, C3;
-        C1 = BRep_Tool.Curve(theFirstEdge, out double cf1, out double cl1);
-        C2 = BRep_Tool.Curve(theSecondEdge, out double cf2, out double cl2);
+        Curve3D? C1, C2, C3;
+        C1 = Tool.Curve(theFirstEdge, out double cf1, out double cl1);
+        C2 = Tool.Curve(theSecondEdge, out double cf2, out double cl2);
         Point3D p1, p2, pp1, pp2, pv;
         double d1 = (cf1 - cl1) / coef1;
         double d2 = (cf2 - cl2) / coef2;
@@ -1153,16 +1156,16 @@ public sealed class ShapeAnalysis_CheckSmallFace
         pp2 = C2.Value(cl2);
         double tol;
         double paramc1 = 0, paramc2 = 0; // =0 for deleting warning (skl)
-        TopoDS_Vertex theSharedV = TopExp.LastVertex(theFirstEdge);
+        Vertex theSharedV = Exploration.LastVertex(theFirstEdge);
         if (toler == -1)
         {
-            tol = BRep_Tool.Tolerance(theSharedV);
+            tol = Tool.Tolerance(theSharedV);
         }
         else
         {
             tol = toler;
         }
-        pv = BRep_Tool.Pnt(theSharedV);
+        pv = Tool.Pnt(theSharedV);
         if (pv.Distance(p1) <= tol)
         {
             paramc1 = cf1;
@@ -1204,7 +1207,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
                 proj = C2.Value(paramc2 - 3 * d2);
             }
         }
-        GeomAdaptor_Curve GAC = new(C3);
+        CurveAdaptor GAC = new(C3);
         double f = C3.FirstParameter();
         double l = C3.LastParameter();
         ShapeAnalysis_Curve SAC = new();

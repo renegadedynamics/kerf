@@ -1,9 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Reflection;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -38,27 +43,27 @@ public class IntTools_FClass2dOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static IEnumerable<Point2D> Points(Random theRandom, in TopoDS_Face theF)
+    private static IEnumerable<Point2D> Points(Random theRandom, in Face theF)
     {
         var aList = new List<Point2D>();
-        BRepTools.UVBounds(theF, out double u1, out double u2, out double v1, out double v2);
+        BrepTools.UVBounds(theF, out double u1, out double u2, out double v1, out double v2);
         double du = u2 - u1, dv = v2 - v1;
-        var aS = new BRepAdaptor_Surface(theF, false);
+        var aS = new FaceSurfaceAdaptor(theF, false);
         // In and around the UV box
         for (int i = 0; i < PointsPerFace / 2; i++)
         {
             aList.Add(new Point2D(u1 - 0.2 * du + 1.4 * du * theRandom.NextDouble(), v1 - 0.2 * dv + 1.4 * dv * theRandom.NextDouble()));
         }
         // Near the pcurves, at distances from 0 to 1e-3 of the box
-        var anEdges = new List<TopoDS_Edge>();
-        for (var anExp = new TopExp_Explorer(theF, TopAbs_EDGE); anExp.More(); anExp.Next())
+        var anEdges = new List<Edge>();
+        for (var anExp = new Explorer(theF, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            anEdges.Add(TopoDS.Edge(anExp.Current()));
+            anEdges.Add(ShapeCasts.Edge(anExp.Current()));
         }
         for (int i = 0; i < PointsPerFace / 2 && anEdges.Count > 0; i++)
         {
-            TopoDS_Edge anE = anEdges[theRandom.Next(anEdges.Count)];
-            Geom2d_Curve? aC = BRep_Tool.CurveOnSurface(anE, theF, out double f, out double l);
+            Edge anE = anEdges[theRandom.Next(anEdges.Count)];
+            Curve2D? aC = Tool.CurveOnSurface(anE, theF, out double f, out double l);
             if (aC is null)
             {
                 continue;
@@ -73,15 +78,15 @@ public class IntTools_FClass2dOracleTests(ITestOutputHelper output)
         for (int i = 0; i < n; i += 3)
         {
             double x = aList[i].X(), y = aList[i].Y();
-            if (aS.IsUPeriodic())
+            if (aS.IsUPeriodic)
             {
                 x += aS.UPeriod() * theRandom.Next(-2, 3);
             }
-            if (aS.IsVPeriodic())
+            if (aS.IsVPeriodic)
             {
                 y += aS.VPeriod() * theRandom.Next(-2, 3);
             }
-            if (aS.IsUPeriodic() || aS.IsVPeriodic())
+            if (aS.IsUPeriodic || aS.IsVPeriodic)
             {
                 aList.Add(new Point2D(x, y));
             }
@@ -103,25 +108,25 @@ public class IntTools_FClass2dOracleTests(ITestOutputHelper output)
                 return;
             }
         }
-        if (!BRepTools.Read(out TopoDS_Shape aPShape, theFile))
+        if (!BrepTools.Read(out Shape aPShape, theFile))
         {
             myMismatches.Add($"{aName}: the port can't read it");
             return;
         }
 
         var aNExp = new N.TopExp_Explorer(aNShape, N.TopAbs_ShapeEnum.TopAbs_FACE);
-        var aPExp = new TopExp_Explorer(aPShape, TopAbs_FACE);
+        var aPExp = new Explorer(aPShape, ShapeType.Face);
         int iF = 0;
         for (; aNExp.More() && iF < theMaxFaces; aNExp.Next(), aPExp.Next(), iF++)
         {
             Assert.True(aPExp.More());
             N.TopoDS_Face aNF = N.TopoDS.Face(aNExp.Current());
-            TopoDS_Face aPF = TopoDS.Face(aPExp.Current());
-            if (BRep_Tool.Surface(aPF) is null)
+            Face aPF = ShapeCasts.Face(aPExp.Current());
+            if (Tool.Surface(aPF) is null)
             {
                 continue; // a face without a surface: neither side can classify on it
             }
-            double aTol = BRep_Tool.Tolerance(aPF);
+            double aTol = Tool.Tolerance(aPF);
             string aWhat = $"{aName} face {iF}";
             IntTools_FClass2d aP;
             try

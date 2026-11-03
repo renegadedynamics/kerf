@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using static Occt.TopOpeBRepDS_Config;
 using static Occt.TopOpeBRepDS_Kind;
 
@@ -31,11 +32,11 @@ public sealed class TopOpeBRepDS_PointIterator : TopOpeBRepDS_InterferenceIterat
     public int Current() => Value().Geometry();
 
     /// <summary>The orientation of the current interference's transition for the state <paramref name="S"/>.</summary>
-    public TopAbs_Orientation Orientation(TopAbs_State S)
+    public Orientation Orientation(Containment S)
     {
         TopOpeBRepDS_Interference I = Value();
         TopOpeBRepDS_Transition T = I.Transition();
-        TopAbs_Orientation o = T.Orientation(S);
+        Orientation o = T.Orientation(S);
         return o;
     }
 

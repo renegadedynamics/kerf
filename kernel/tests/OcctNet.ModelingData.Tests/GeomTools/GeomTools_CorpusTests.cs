@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -75,7 +77,7 @@ public partial class GeomTools_CorpusTests(ITestOutputHelper output)
     [
         new("Curve2ds", "Curves ", (theSection, thePrecision) =>
         {
-            var aSet = new GeomTools_Curve2dSet();
+            var aSet = new Curve2dSet();
             aSet.Read(new StringReader(theSection));
             var aWriter = new StringWriter();
             StreamUtilities.Precision(aWriter, thePrecision);
@@ -83,16 +85,16 @@ public partial class GeomTools_CorpusTests(ITestOutputHelper output)
             aWriter.Write($"Curve2ds {aCount}\n");
             for (int i = 1; i <= aCount; i++)
             {
-                Geom2d_Curve? aCurve = aSet.Curve2d(i);
+                Curve2D? aCurve = aSet.Curve2d(i);
                 Assert.NotNull(aCurve);
-                GeomTools_Curve2dSet.PrintCurve2d(aCurve, aWriter, true);
+                Curve2dSet.PrintCurve2d(aCurve, aWriter, true);
             }
 
             return aWriter.ToString();
         }),
         new("Curves", "Polygon3D ", (theSection, thePrecision) =>
         {
-            var aSet = new GeomTools_CurveSet();
+            var aSet = new CurveSet();
             aSet.Read(new StringReader(theSection));
             var aWriter = new StringWriter();
             StreamUtilities.Precision(aWriter, thePrecision);
@@ -100,16 +102,16 @@ public partial class GeomTools_CorpusTests(ITestOutputHelper output)
             aWriter.Write($"Curves {aCount}\n");
             for (int i = 1; i <= aCount; i++)
             {
-                Geom_Curve? aCurve = aSet.Curve(i);
+                Curve3D? aCurve = aSet.Curve(i);
                 Assert.NotNull(aCurve);
-                GeomTools_CurveSet.PrintCurve(aCurve, aWriter, true);
+                CurveSet.PrintCurve(aCurve, aWriter, true);
             }
 
             return aWriter.ToString();
         }),
         new("Surfaces", "Triangulations ", (theSection, thePrecision) =>
         {
-            var aSet = new GeomTools_SurfaceSet();
+            var aSet = new SurfaceSet();
             aSet.Read(new StringReader(theSection));
             var aWriter = new StringWriter();
             StreamUtilities.Precision(aWriter, thePrecision);
@@ -117,9 +119,9 @@ public partial class GeomTools_CorpusTests(ITestOutputHelper output)
             aWriter.Write($"Surfaces {aCount}\n");
             for (int i = 1; i <= aCount; i++)
             {
-                Geom_Surface? aSurface = aSet.Surface(i);
+                Surface? aSurface = aSet.Surface(i);
                 Assert.NotNull(aSurface);
-                GeomTools_SurfaceSet.PrintSurface(aSurface, aWriter, true);
+                SurfaceSet.PrintSurface(aSurface, aWriter, true);
             }
 
             return aWriter.ToString();

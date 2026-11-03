@@ -1,6 +1,7 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/Geom_OffsetSurface_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -8,42 +9,42 @@ namespace OcctNet.ModelingData.Tests;
 /// <summary>Geom_OffsetSurface: copies (the fixture suite of the GTest file).</summary>
 public class Geom_OffsetSurface_Test
 {
-    private readonly Geom_OffsetSurface myOriginalSurface;
+    private readonly OffsetSurface myOriginalSurface;
 
     public Geom_OffsetSurface_Test()
     {
         // Create a plane as basis surface
         Plane3D aPlane = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
-        Geom_Plane aBasisSurface = new(aPlane);
+        PlaneSurface aBasisSurface = new(aPlane);
 
         // Create offset surface
         double anOffsetValue = 3.0;
 
-        myOriginalSurface = new Geom_OffsetSurface(aBasisSurface, anOffsetValue);
+        myOriginalSurface = new OffsetSurface(aBasisSurface, anOffsetValue);
     }
 
     [Fact]
     public void CopyConstructorBasicProperties()
     {
         // Test copy constructor
-        Geom_OffsetSurface aCopiedSurface = new(myOriginalSurface);
+        OffsetSurface aCopiedSurface = new(myOriginalSurface);
 
         // Verify basic properties are identical
         Assert.Equal(myOriginalSurface.Offset(), aCopiedSurface.Offset());
-        Assert.Equal(myOriginalSurface.IsUPeriodic(), aCopiedSurface.IsUPeriodic());
-        Assert.Equal(myOriginalSurface.IsVPeriodic(), aCopiedSurface.IsVPeriodic());
-        Assert.Equal(myOriginalSurface.IsUClosed(), aCopiedSurface.IsUClosed());
-        Assert.Equal(myOriginalSurface.IsVClosed(), aCopiedSurface.IsVClosed());
+        Assert.Equal(myOriginalSurface.IsUPeriodic, aCopiedSurface.IsUPeriodic);
+        Assert.Equal(myOriginalSurface.IsVPeriodic, aCopiedSurface.IsVPeriodic);
+        Assert.Equal(myOriginalSurface.IsUClosed, aCopiedSurface.IsUClosed);
+        Assert.Equal(myOriginalSurface.IsVClosed, aCopiedSurface.IsVClosed);
     }
 
     [Fact]
     public void CopyConstructorBasisSurface()
     {
-        Geom_OffsetSurface aCopiedSurface = new(myOriginalSurface);
+        OffsetSurface aCopiedSurface = new(myOriginalSurface);
 
         // Verify basis surfaces are equivalent but independent
-        Geom_Surface anOrigBasis = myOriginalSurface.BasisSurface();
-        Geom_Surface aCopyBasis = aCopiedSurface.BasisSurface();
+        Surface anOrigBasis = myOriginalSurface.BasisSurface();
+        Surface aCopyBasis = aCopiedSurface.BasisSurface();
 
         // They should be different objects
         Assert.NotSame(anOrigBasis, aCopyBasis);
@@ -62,8 +63,8 @@ public class Geom_OffsetSurface_Test
     public void CopyMethodUsesOptimizedConstructor()
     {
         // Test that Copy() method uses the optimized copy constructor
-        Geom_Geometry aCopiedGeom = myOriginalSurface.Copy();
-        Geom_OffsetSurface? aCopiedSurface = aCopiedGeom as Geom_OffsetSurface;
+        Geometry3D aCopiedGeom = myOriginalSurface.Copy();
+        OffsetSurface? aCopiedSurface = aCopiedGeom as OffsetSurface;
 
         Assert.NotNull(aCopiedSurface);
 
@@ -85,7 +86,7 @@ public class Geom_OffsetSurface_Test
     [Fact]
     public void CopyIndependence()
     {
-        Geom_OffsetSurface aCopiedSurface = new(myOriginalSurface);
+        OffsetSurface aCopiedSurface = new(myOriginalSurface);
 
         // Store original offset value
         double anOrigOffset = aCopiedSurface.Offset();
@@ -107,17 +108,17 @@ public class Geom_OffsetSurface_EquivalentSurface
     {
         // Create a plane at origin with Z-normal.
         CoordinateSystem anAxis = new(new Point3D(1.0, 2.0, 3.0), new Direction3D(0, 0, 1));
-        Geom_Plane aPlane = new(anAxis);
+        PlaneSurface aPlane = new(anAxis);
 
         double anOffset = 5.0;
-        Geom_OffsetSurface anOffsetSurf = new(aPlane, anOffset);
+        OffsetSurface anOffsetSurf = new(aPlane, anOffset);
 
         // Get equivalent surface.
-        Geom_Surface? anEquiv = anOffsetSurf.Surface();
+        Surface? anEquiv = anOffsetSurf.Surface();
         Assert.NotNull(anEquiv);
 
         // Should be a plane.
-        Geom_Plane? anEquivPlane = anEquiv as Geom_Plane;
+        PlaneSurface? anEquivPlane = anEquiv as PlaneSurface;
         Assert.NotNull(anEquivPlane);
 
         // Verify the plane is translated by offset along normal.
@@ -132,11 +133,11 @@ public class Geom_OffsetSurface_EquivalentSurface
     public void Cylinder_PositiveOffset_ReturnsLargerCylinder()
     {
         // Create a cylinder with radius 10.
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
 
-        Geom_OffsetSurface anOffsetSurf = new(aCyl, 3.0);
+        OffsetSurface anOffsetSurf = new(aCyl, 3.0);
 
-        Geom_CylindricalSurface? anEquivCyl = anOffsetSurf.Surface() as Geom_CylindricalSurface;
+        CylindricalSurface? anEquivCyl = anOffsetSurf.Surface() as CylindricalSurface;
         Assert.NotNull(anEquivCyl);
 
         // Radius should increase by offset.
@@ -146,11 +147,11 @@ public class Geom_OffsetSurface_EquivalentSurface
     [Fact]
     public void Cylinder_NegativeOffset_ReturnsSmallerCylinder()
     {
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
 
-        Geom_OffsetSurface anOffsetSurf = new(aCyl, -3.0);
+        OffsetSurface anOffsetSurf = new(aCyl, -3.0);
 
-        Geom_CylindricalSurface? anEquivCyl = anOffsetSurf.Surface() as Geom_CylindricalSurface;
+        CylindricalSurface? anEquivCyl = anOffsetSurf.Surface() as CylindricalSurface;
         Assert.NotNull(anEquivCyl);
 
         Assert.Equal(7.0, anEquivCyl.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -160,11 +161,11 @@ public class Geom_OffsetSurface_EquivalentSurface
     public void Cylinder_NegativeRadiusFlip_ReturnsFlippedCylinder()
     {
         // Offset that makes radius negative should flip the surface.
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
+        CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
 
-        Geom_OffsetSurface anOffsetSurf = new(aCyl, -8.0); // Results in radius = -3
+        OffsetSurface anOffsetSurf = new(aCyl, -8.0); // Results in radius = -3
 
-        Geom_CylindricalSurface? anEquivCyl = anOffsetSurf.Surface() as Geom_CylindricalSurface;
+        CylindricalSurface? anEquivCyl = anOffsetSurf.Surface() as CylindricalSurface;
         Assert.NotNull(anEquivCyl);
 
         // Radius should be absolute value.
@@ -174,11 +175,11 @@ public class Geom_OffsetSurface_EquivalentSurface
     [Fact]
     public void Sphere_PositiveOffset_ReturnsLargerSphere()
     {
-        Geom_SphericalSurface aSphere = new(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 10.0);
+        SphericalSurface aSphere = new(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 10.0);
 
-        Geom_OffsetSurface anOffsetSurf = new(aSphere, 5.0);
+        OffsetSurface anOffsetSurf = new(aSphere, 5.0);
 
-        Geom_SphericalSurface? anEquivSphere = anOffsetSurf.Surface() as Geom_SphericalSurface;
+        SphericalSurface? anEquivSphere = anOffsetSurf.Surface() as SphericalSurface;
         Assert.NotNull(anEquivSphere);
 
         Assert.Equal(15.0, anEquivSphere.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -189,11 +190,11 @@ public class Geom_OffsetSurface_EquivalentSurface
     [Fact]
     public void Sphere_NegativeRadiusFlip_ReturnsFlippedSphere()
     {
-        Geom_SphericalSurface aSphere = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
+        SphericalSurface aSphere = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
 
-        Geom_OffsetSurface anOffsetSurf = new(aSphere, -8.0); // Results in radius = -3
+        OffsetSurface anOffsetSurf = new(aSphere, -8.0); // Results in radius = -3
 
-        Geom_SphericalSurface? anEquivSphere = anOffsetSurf.Surface() as Geom_SphericalSurface;
+        SphericalSurface? anEquivSphere = anOffsetSurf.Surface() as SphericalSurface;
         Assert.NotNull(anEquivSphere);
 
         Assert.Equal(3.0, anEquivSphere.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -204,12 +205,12 @@ public class Geom_OffsetSurface_EquivalentSurface
     {
         double aSemiAngle = M_PI / 6.0; // 30 degrees
         double aRefRadius = 10.0;
-        Geom_ConicalSurface aCone = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aSemiAngle, aRefRadius);
+        ConicalSurface aCone = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aSemiAngle, aRefRadius);
 
         double anOffset = 2.0;
-        Geom_OffsetSurface anOffsetSurf = new(aCone, anOffset);
+        OffsetSurface anOffsetSurf = new(aCone, anOffset);
 
-        Geom_ConicalSurface? anEquivCone = anOffsetSurf.Surface() as Geom_ConicalSurface;
+        ConicalSurface? anEquivCone = anOffsetSurf.Surface() as ConicalSurface;
         Assert.NotNull(anEquivCone);
 
         // Semi-angle should remain the same.
@@ -225,12 +226,12 @@ public class Geom_OffsetSurface_EquivalentSurface
     {
         double aMajorRadius = 20.0;
         double aMinorRadius = 5.0;
-        Geom_ToroidalSurface aTorus = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aMajorRadius, aMinorRadius);
+        ToroidalSurface aTorus = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aMajorRadius, aMinorRadius);
 
         double anOffset = 2.0;
-        Geom_OffsetSurface anOffsetSurf = new(aTorus, anOffset);
+        OffsetSurface anOffsetSurf = new(aTorus, anOffset);
 
-        Geom_ToroidalSurface? anEquivTorus = anOffsetSurf.Surface() as Geom_ToroidalSurface;
+        ToroidalSurface? anEquivTorus = anOffsetSurf.Surface() as ToroidalSurface;
         Assert.NotNull(anEquivTorus);
 
         // Major radius should remain the same.
@@ -244,11 +245,11 @@ public class Geom_OffsetSurface_EquivalentSurface
     {
         double aMajorRadius = 20.0;
         double aMinorRadius = 5.0;
-        Geom_ToroidalSurface aTorus = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aMajorRadius, aMinorRadius);
+        ToroidalSurface aTorus = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aMajorRadius, aMinorRadius);
 
-        Geom_OffsetSurface anOffsetSurf = new(aTorus, -2.0);
+        OffsetSurface anOffsetSurf = new(aTorus, -2.0);
 
-        Geom_ToroidalSurface? anEquivTorus = anOffsetSurf.Surface() as Geom_ToroidalSurface;
+        ToroidalSurface? anEquivTorus = anOffsetSurf.Surface() as ToroidalSurface;
         Assert.NotNull(anEquivTorus);
 
         Assert.Equal(aMajorRadius, anEquivTorus.MajorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -260,11 +261,11 @@ public class Geom_OffsetSurface_EquivalentSurface
     {
         double aMajorRadius = 20.0;
         double aMinorRadius = 3.0;
-        Geom_ToroidalSurface aTorus = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aMajorRadius, aMinorRadius);
+        ToroidalSurface aTorus = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aMajorRadius, aMinorRadius);
 
-        Geom_OffsetSurface anOffsetSurf = new(aTorus, -5.0); // Results in minor radius = -2
+        OffsetSurface anOffsetSurf = new(aTorus, -5.0); // Results in minor radius = -2
 
-        Geom_ToroidalSurface? anEquivTorus = anOffsetSurf.Surface() as Geom_ToroidalSurface;
+        ToroidalSurface? anEquivTorus = anOffsetSurf.Surface() as ToroidalSurface;
         Assert.NotNull(anEquivTorus);
 
         Assert.Equal(aMajorRadius, anEquivTorus.MajorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -274,18 +275,18 @@ public class Geom_OffsetSurface_EquivalentSurface
     [Fact]
     public void ZeroOffset_ReturnsBasisSurface()
     {
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
 
-        Geom_OffsetSurface anOffsetSurf = new(aCyl, 0.0);
+        OffsetSurface anOffsetSurf = new(aCyl, 0.0);
 
-        Geom_Surface? anEquiv = anOffsetSurf.Surface();
+        Surface? anEquiv = anOffsetSurf.Surface();
         Assert.NotNull(anEquiv);
 
         // Should return the internal basis surface (which is a copy of the original).
         Assert.Same(anOffsetSurf.BasisSurface(), anEquiv);
 
         // The equivalent should be geometrically identical to the original.
-        Geom_CylindricalSurface? anEquivCyl = anEquiv as Geom_CylindricalSurface;
+        CylindricalSurface? anEquivCyl = anEquiv as CylindricalSurface;
         Assert.NotNull(anEquivCyl);
         Assert.Equal(10.0, anEquivCyl.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -293,15 +294,15 @@ public class Geom_OffsetSurface_EquivalentSurface
     [Fact]
     public void TrimmedPlane_ReturnsTrimmedTranslatedPlane()
     {
-        Geom_Plane aPlane = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
+        PlaneSurface aPlane = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
 
         // Create trimmed surface.
-        Geom_RectangularTrimmedSurface aTrimmed = new(aPlane, 0.0, 10.0, 0.0, 5.0);
+        TrimmedSurface aTrimmed = new(aPlane, 0.0, 10.0, 0.0, 5.0);
 
-        Geom_OffsetSurface anOffsetSurf = new(aTrimmed, 3.0);
+        OffsetSurface anOffsetSurf = new(aTrimmed, 3.0);
 
         // Should be a trimmed surface.
-        Geom_RectangularTrimmedSurface? anEquivTrimmed = anOffsetSurf.Surface() as Geom_RectangularTrimmedSurface;
+        TrimmedSurface? anEquivTrimmed = anOffsetSurf.Surface() as TrimmedSurface;
         Assert.NotNull(anEquivTrimmed);
 
         // Verify bounds are preserved.
@@ -316,11 +317,11 @@ public class Geom_OffsetSurface_EquivalentSurface
     public void DegenerateCylinder_ReturnsNull()
     {
         // Offset that makes radius too small (degenerate case).
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
+        CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
 
         // Offset close to -1 should result in degenerate surface.
         double anOffset = -1.0 + 0.5 * global::Kerf.Engine.Foundation.Precision.Confusion();
-        Geom_OffsetSurface anOffsetSurf = new(aCyl, anOffset);
+        OffsetSurface anOffsetSurf = new(aCyl, anOffset);
 
         // Degenerate surface should return null.
         Assert.Null(anOffsetSurf.Surface());
@@ -330,11 +331,11 @@ public class Geom_OffsetSurface_EquivalentSurface
     public void EquivalentSurface_EvaluationConsistency()
     {
         // Verify that evaluation on offset surface matches evaluation on equivalent surface.
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
 
-        Geom_OffsetSurface anOffsetSurf = new(aCyl, 3.0);
+        OffsetSurface anOffsetSurf = new(aCyl, 3.0);
 
-        Geom_Surface? anEquiv = anOffsetSurf.Surface();
+        Surface? anEquiv = anOffsetSurf.Surface();
         Assert.NotNull(anEquiv);
 
         // Test evaluation at several points.
@@ -357,22 +358,22 @@ internal static class OffsetSurfaceTestUtils
     public static bool VectorsEqual(in Vector3D theV1, in Vector3D theV2, double theTol) => (theV1 - theV2).Magnitude() < theTol;
 
     /// <summary>The offset surface's adaptor and the adaptor of its equivalent surface.</summary>
-    public static (GeomAdaptor_Surface Offset, GeomAdaptor_Surface Equiv) Adaptors(Geom_OffsetSurface theSurf)
+    public static (SurfaceAdaptor Offset, SurfaceAdaptor Equiv) Adaptors(OffsetSurface theSurf)
     {
-        GeomAdaptor_Surface anOffsetAdaptor = new(theSurf);
-        Geom_Surface? anEquiv = theSurf.Surface();
+        SurfaceAdaptor anOffsetAdaptor = new(theSurf);
+        Surface? anEquiv = theSurf.Surface();
         Assert.NotNull(anEquiv);
-        return (anOffsetAdaptor, new GeomAdaptor_Surface(anEquiv));
+        return (anOffsetAdaptor, new SurfaceAdaptor(anEquiv));
     }
 
-    public static void CheckD0(Adaptor3d_Surface theA, Adaptor3d_Surface theB, double u, double v, double aTol)
+    public static void CheckD0(SurfaceAdaptorBase theA, SurfaceAdaptorBase theB, double u, double v, double aTol)
     {
         theA.D0(u, v, out Point3D aP1);
         theB.D0(u, v, out Point3D aP2);
         Assert.True(aP1.IsEqual(aP2, aTol), $"D0 mismatch at u={u}, v={v}");
     }
 
-    public static void CheckD1(Adaptor3d_Surface theA, Adaptor3d_Surface theB, double u, double v, double aTol)
+    public static void CheckD1(SurfaceAdaptorBase theA, SurfaceAdaptorBase theB, double u, double v, double aTol)
     {
         theA.D1(u, v, out Point3D aP1D1, out Vector3D aD1U1, out Vector3D aD1V1);
         theB.D1(u, v, out Point3D aP2D1, out Vector3D aD1U2, out Vector3D aD1V2);
@@ -381,7 +382,7 @@ internal static class OffsetSurfaceTestUtils
         Assert.True(VectorsEqual(aD1V1, aD1V2, aTol), $"D1V mismatch at u={u}, v={v}");
     }
 
-    public static void CheckD2(Adaptor3d_Surface theA, Adaptor3d_Surface theB, double u, double v, double aTol)
+    public static void CheckD2(SurfaceAdaptorBase theA, SurfaceAdaptorBase theB, double u, double v, double aTol)
     {
         theA.D2(u, v, out Point3D aP1D2, out _, out _, out Vector3D aD2U1, out Vector3D aD2V1, out Vector3D aD2UV1);
         theB.D2(u, v, out Point3D aP2D2, out _, out _, out Vector3D aD2U2, out Vector3D aD2V2, out Vector3D aD2UV2);
@@ -391,7 +392,7 @@ internal static class OffsetSurfaceTestUtils
         Assert.True(VectorsEqual(aD2UV1, aD2UV2, aTol), $"D2UV mismatch at u={u}, v={v}");
     }
 
-    public static void CheckD3(Adaptor3d_Surface theA, Adaptor3d_Surface theB, double u, double v, double aTol)
+    public static void CheckD3(SurfaceAdaptorBase theA, SurfaceAdaptorBase theB, double u, double v, double aTol)
     {
         theA.D3(u, v, out Point3D aP1D3, out _, out _, out _, out _, out _, out Vector3D aD3U1, out Vector3D aD3V1,
                 out Vector3D aD3UUV1, out Vector3D aD3UVV1);
@@ -405,8 +406,8 @@ internal static class OffsetSurfaceTestUtils
     }
 
     /// <summary>Direct evaluation on the Geom surface against both adaptors, up to theOrder (0 to 2).</summary>
-    public static void CheckThreeWay(Geom_Surface theDirect, Adaptor3d_Surface theOffsetAdaptor,
-                                     Adaptor3d_Surface theEquivAdaptor, double u, double v, double aTol, int theOrder)
+    public static void CheckThreeWay(Surface theDirect, SurfaceAdaptorBase theOffsetAdaptor,
+                                     SurfaceAdaptorBase theEquivAdaptor, double u, double v, double aTol, int theOrder)
     {
         // D0.
         Point3D aDirectPnt = theDirect.Value(u, v);
@@ -456,8 +457,8 @@ public class Geom_OffsetSurface_Derivatives
     [Fact]
     public void Plane_D0D1D2D3_Consistency()
     {
-        Geom_Plane aPlane = new(new CoordinateSystem(new Point3D(1.0, 2.0, 3.0), new Direction3D(0, 0, 1)));
-        var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(new Geom_OffsetSurface(aPlane, 5.0));
+        PlaneSurface aPlane = new(new CoordinateSystem(new Point3D(1.0, 2.0, 3.0), new Direction3D(0, 0, 1)));
+        var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(new OffsetSurface(aPlane, 5.0));
 
         // Test at several points.
         for (double u = -5.0; u <= 5.0; u += 2.5)
@@ -474,8 +475,8 @@ public class Geom_OffsetSurface_Derivatives
     [Fact]
     public void Cylinder_D0D1D2D3_Consistency()
     {
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
-        var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(new Geom_OffsetSurface(aCyl, 3.0));
+        CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(new OffsetSurface(aCyl, 3.0));
 
         for (double u = 0.0; u < 2.0 * M_PI; u += M_PI / 4.0)
         {
@@ -492,8 +493,8 @@ public class Geom_OffsetSurface_Derivatives
     [Fact]
     public void Sphere_D0D1D2D3_Consistency()
     {
-        Geom_SphericalSurface aSphere = new(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 10.0);
-        var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(new Geom_OffsetSurface(aSphere, 5.0));
+        SphericalSurface aSphere = new(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 10.0);
+        var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(new OffsetSurface(aSphere, 5.0));
 
         // Avoid poles at v = +/- PI/2.
         for (double u = 0.0; u < 2.0 * M_PI; u += M_PI / 4.0)
@@ -510,8 +511,8 @@ public class Geom_OffsetSurface_Derivatives
     [Fact]
     public void Cone_D0D1D2_Consistency()
     {
-        Geom_ConicalSurface aCone = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), M_PI / 6.0, 10.0);
-        var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(new Geom_OffsetSurface(aCone, 2.0));
+        ConicalSurface aCone = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), M_PI / 6.0, 10.0);
+        var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(new OffsetSurface(aCone, 2.0));
 
         for (double u = 0.0; u < 2.0 * M_PI; u += M_PI / 4.0)
         {
@@ -527,8 +528,8 @@ public class Geom_OffsetSurface_Derivatives
     [Fact]
     public void Torus_D0D1D2D3_Consistency()
     {
-        Geom_ToroidalSurface aTorus = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 5.0);
-        var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(new Geom_OffsetSurface(aTorus, 2.0));
+        ToroidalSurface aTorus = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 5.0);
+        var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(new OffsetSurface(aTorus, 2.0));
 
         for (double u = 0.0; u < 2.0 * M_PI; u += M_PI / 4.0)
         {
@@ -545,8 +546,8 @@ public class Geom_OffsetSurface_Derivatives
     [Fact]
     public void Cylinder_DN_Consistency()
     {
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
-        var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(new Geom_OffsetSurface(aCyl, 3.0));
+        CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(new OffsetSurface(aCyl, 3.0));
 
         double u = M_PI / 3.0;
         double v = 2.5;
@@ -571,8 +572,8 @@ public class Geom_OffsetSurface_Derivatives
     public void NegativeOffset_Cylinder_D0D1D2_Consistency()
     {
         // Test with negative offset (smaller cylinder).
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
-        var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(new Geom_OffsetSurface(aCyl, -3.0));
+        CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(new OffsetSurface(aCyl, -3.0));
 
         for (double u = 0.0; u < 2.0 * M_PI; u += M_PI / 3.0)
         {
@@ -587,9 +588,9 @@ public class Geom_OffsetSurface_Derivatives
     public void FlippedCylinder_D0D1_Consistency()
     {
         // Test with offset that causes cylinder flip (negative radius).
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
+        CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
         // Results in flipped cylinder with radius 3.
-        var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(new Geom_OffsetSurface(aCyl, -8.0));
+        var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(new OffsetSurface(aCyl, -8.0));
 
         for (double u = 0.0; u < 2.0 * M_PI; u += M_PI / 3.0)
         {
@@ -611,8 +612,8 @@ public class Geom_OffsetSurface_ThreeWay
     {
         // Verify that direct Geom_OffsetSurface, adaptor from offset surface, and adaptor
         // from equivalent surface all return the same values.
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
-        Geom_OffsetSurface anOffsetSurf = new(aCyl, 3.0);
+        CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        OffsetSurface anOffsetSurf = new(aCyl, 3.0);
         var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(anOffsetSurf);
 
         for (double u = 0.0; u < 2.0 * M_PI; u += M_PI / 4.0)
@@ -627,8 +628,8 @@ public class Geom_OffsetSurface_ThreeWay
     [Fact]
     public void Cylinder_D1_ThreeWayConsistency()
     {
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
-        Geom_OffsetSurface anOffsetSurf = new(aCyl, 3.0);
+        CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        OffsetSurface anOffsetSurf = new(aCyl, 3.0);
         var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(anOffsetSurf);
 
         for (double u = 0.0; u < 2.0 * M_PI; u += M_PI / 4.0)
@@ -643,8 +644,8 @@ public class Geom_OffsetSurface_ThreeWay
     [Fact]
     public void Cylinder_D2_ThreeWayConsistency()
     {
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
-        Geom_OffsetSurface anOffsetSurf = new(aCyl, 3.0);
+        CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        OffsetSurface anOffsetSurf = new(aCyl, 3.0);
         var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(anOffsetSurf);
 
         for (double u = 0.0; u < 2.0 * M_PI; u += M_PI / 4.0)
@@ -659,8 +660,8 @@ public class Geom_OffsetSurface_ThreeWay
     [Fact]
     public void Sphere_D0D1D2_ThreeWayConsistency()
     {
-        Geom_SphericalSurface aSphere = new(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 10.0);
-        Geom_OffsetSurface anOffsetSurf = new(aSphere, 5.0);
+        SphericalSurface aSphere = new(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 10.0);
+        OffsetSurface anOffsetSurf = new(aSphere, 5.0);
         var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(anOffsetSurf);
 
         // Avoid poles at v = +/- PI/2.
@@ -676,8 +677,8 @@ public class Geom_OffsetSurface_ThreeWay
     [Fact]
     public void Plane_D0D1D2_ThreeWayConsistency()
     {
-        Geom_Plane aPlane = new(new CoordinateSystem(new Point3D(1.0, 2.0, 3.0), new Direction3D(0, 0, 1)));
-        Geom_OffsetSurface anOffsetSurf = new(aPlane, 5.0);
+        PlaneSurface aPlane = new(new CoordinateSystem(new Point3D(1.0, 2.0, 3.0), new Direction3D(0, 0, 1)));
+        OffsetSurface anOffsetSurf = new(aPlane, 5.0);
         var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(anOffsetSurf);
 
         for (double u = -5.0; u <= 5.0; u += 2.5)
@@ -692,8 +693,8 @@ public class Geom_OffsetSurface_ThreeWay
     [Fact]
     public void Torus_D0D1D2_ThreeWayConsistency()
     {
-        Geom_ToroidalSurface aTorus = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 5.0);
-        Geom_OffsetSurface anOffsetSurf = new(aTorus, 2.0);
+        ToroidalSurface aTorus = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 5.0);
+        OffsetSurface anOffsetSurf = new(aTorus, 2.0);
         var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(anOffsetSurf);
 
         for (double u = 0.0; u < 2.0 * M_PI; u += M_PI / 4.0)
@@ -708,8 +709,8 @@ public class Geom_OffsetSurface_ThreeWay
     [Fact]
     public void Cone_D0D1_ThreeWayConsistency()
     {
-        Geom_ConicalSurface aCone = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), M_PI / 6.0, 10.0);
-        Geom_OffsetSurface anOffsetSurf = new(aCone, 2.0);
+        ConicalSurface aCone = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), M_PI / 6.0, 10.0);
+        OffsetSurface anOffsetSurf = new(aCone, 2.0);
         var (anOffsetAdaptor, anEquivAdaptor) = OffsetSurfaceTestUtils.Adaptors(anOffsetSurf);
 
         for (double u = 0.0; u < 2.0 * M_PI; u += M_PI / 4.0)

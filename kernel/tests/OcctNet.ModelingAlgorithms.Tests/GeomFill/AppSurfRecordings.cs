@@ -1,10 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
-using static Occt.Approx_ParametrizationType;
+using static Kerf.Engine.Approximation.ParametrizationType;
 using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -109,7 +110,7 @@ internal static class AppSurfRecordings
         public int NextInt() => (int)theInputs[myPos++];
     }
 
-    private static Geom_Curve MakeSection(Reader theR)
+    private static Curve3D MakeSection(Reader theR)
     {
         int aType = theR.NextInt();
         if (aType == 0)
@@ -137,8 +138,8 @@ internal static class AppSurfRecordings
                 aKnots[i] = theR.Next();
                 aMults[i] = theR.NextInt();
             }
-            return aRat ? new Geom_BSplineCurve(aPoles, aW, aKnots, aMults, aDeg, aPer)
-                        : new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg, aPer);
+            return aRat ? new BSplineCurve3D(aPoles, aW, aKnots, aMults, aDeg, aPer)
+                        : new BSplineCurve3D(aPoles, aKnots, aMults, aDeg, aPer);
         }
         if (aType == 1)
         {
@@ -155,19 +156,19 @@ internal static class AppSurfRecordings
                     aW[i] = theR.Next();
                 }
             }
-            return aRat ? new Geom_BezierCurve(aPoles, aW) : new Geom_BezierCurve(aPoles);
+            return aRat ? new BezierCurve3D(aPoles, aW) : new BezierCurve3D(aPoles);
         }
         if (aType == 2)
         {
             double cx = theR.Next(), h = theR.Next(), cz = theR.Next(), r = theR.Next(), a = theR.Next(), b = theR.Next();
-            Geom_Circle aC = new(new Frame3D(new Point3D(cx, h, cz), new Direction3D(0, 1, 0)), r);
-            return new Geom_TrimmedCurve(aC, a, b);
+            CircleCurve3D aC = new(new Frame3D(new Point3D(cx, h, cz), new Direction3D(0, 1, 0)), r);
+            return new TrimmedCurve3D(aC, a, b);
         }
         {
             double x = theR.Next(), y = theR.Next(), z = theR.Next();
             double dx = theR.Next(), dy = theR.Next(), dz = theR.Next(), l = theR.Next();
-            Geom_Line aL = new(new Point3D(x, y, z), new Direction3D(dx, dy, dz));
-            return new Geom_TrimmedCurve(aL, 0.0, l);
+            LineCurve3D aL = new(new Point3D(x, y, z), new Direction3D(dx, dy, dz));
+            return new TrimmedCurve3D(aL, 0.0, l);
         }
     }
 
@@ -175,10 +176,10 @@ internal static class AppSurfRecordings
     // Results
 
     // As appsurfrec's PutProfile: false when the curves have not been brought to one number of poles.
-    private static bool PutProfile(Writer theW, List<Geom_Curve> theCurves)
+    private static bool PutProfile(Writer theW, List<Curve3D> theCurves)
     {
         GeomFill_Profiler aP = new();
-        foreach (Geom_Curve aC in theCurves)
+        foreach (Curve3D aC in theCurves)
         {
             aP.AddCurve(aC);
         }
@@ -198,9 +199,9 @@ internal static class AppSurfRecordings
         bool anEqual = true;
         for (int c = 1; c <= theCurves.Count; c++)
         {
-            Geom_BSplineCurve aC = (Geom_BSplineCurve)aP.Curve(c);
-            aCounts = Join(aCounts, Int(aC.NbPoles()) + "," + Int(aC.NbKnots()));
-            anEqual = anEqual && aC.NbPoles() == aNbP && aC.NbKnots() == aNbK;
+            BSplineCurve3D aC = (BSplineCurve3D)aP.Curve(c);
+            aCounts = Join(aCounts, Int(aC.PoleCount) + "," + Int(aC.KnotCount));
+            anEqual = anEqual && aC.PoleCount == aNbP && aC.KnotCount == aNbK;
         }
         theW.Put("pn:" + aCounts);
         if (!anEqual)
@@ -224,15 +225,15 @@ internal static class AppSurfRecordings
         return true;
     }
 
-    private static void PutBSplineSurface(Writer theW, Geom_BSplineSurface theS)
+    private static void PutBSplineSurface(Writer theW, BSplineSurface theS)
     {
-        theW.Put("sdeg:" + Int(theS.UDegree()) + "," + Int(theS.VDegree()) + "," + Int(theS.NbUPoles()) + ","
-                 + Int(theS.NbVPoles()) + "," + (theS.IsURational() ? "1" : "0") + (theS.IsVRational() ? "1" : "0")
-                 + (theS.IsUPeriodic() ? "1" : "0") + (theS.IsVPeriodic() ? "1" : "0"));
+        theW.Put("sdeg:" + Int(theS.UDegree()) + "," + Int(theS.VDegree()) + "," + Int(theS.UPoleCount) + ","
+                 + Int(theS.VPoleCount) + "," + (theS.IsURational ? "1" : "0") + (theS.IsVRational ? "1" : "0")
+                 + (theS.IsUPeriodic ? "1" : "0") + (theS.IsVPeriodic ? "1" : "0"));
         Digest aP = new(), aW = new();
-        for (int i = 1; i <= theS.NbUPoles(); i++)
+        for (int i = 1; i <= theS.UPoleCount; i++)
         {
-            for (int j = 1; j <= theS.NbVPoles(); j++)
+            for (int j = 1; j <= theS.VPoleCount; j++)
             {
                 aP.Add(theS.Pole(i, j));
                 aW.Add(theS.Weight(i, j));
@@ -241,11 +242,11 @@ internal static class AppSurfRecordings
         theW.Put("spol:" + aP.Str());
         theW.Put("swt:" + aW.Str());
         string aU = "", aV = "";
-        for (int i = 1; i <= theS.NbUKnots(); i++)
+        for (int i = 1; i <= theS.UKnotCount; i++)
         {
             aU = Join(aU, Hex(theS.UKnot(i)) + "," + Int(theS.UMultiplicity(i)));
         }
-        for (int i = 1; i <= theS.NbVKnots(); i++)
+        for (int i = 1; i <= theS.VKnotCount; i++)
         {
             aV = Join(aV, Hex(theS.VKnot(i)) + "," + Int(theS.VMultiplicity(i)));
         }
@@ -301,7 +302,7 @@ internal static class AppSurfRecordings
         // the surface Draw's appsurf builds
         try
         {
-            Geom_BSplineSurface aS = new(theA.SurfPoles(), theA.SurfWeights(), theA.SurfUKnots(), theA.SurfVKnots(),
+            BSplineSurface aS = new(theA.SurfPoles(), theA.SurfWeights(), theA.SurfUKnots(), theA.SurfVKnots(),
                                          theA.SurfUMults(), theA.SurfVMults(), theA.UDegree(), theA.VDegree());
             PutBSplineSurface(theW, aS);
         }
@@ -329,7 +330,7 @@ internal static class AppSurfRecordings
             _ => throw new InvalidOperationException(theCase.Kind),
         };
         int aNb = aR.NextInt();
-        List<Geom_Curve> aCurves = [];
+        List<Curve3D> aCurves = [];
         for (int i = 0; i < aNb; i++)
         {
             aCurves.Add(MakeSection(aR));
@@ -343,12 +344,12 @@ internal static class AppSurfRecordings
                     return aW.Tokens;
                 }
                 GeomFill_Generator aGen = new();
-                foreach (Geom_Curve aC in aCurves)
+                foreach (Curve3D aC in aCurves)
                 {
                     aGen.AddCurve(aC);
                 }
                 aGen.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
-                PutBSplineSurface(aW, (Geom_BSplineSurface)aGen.Surface()!);
+                PutBSplineSurface(aW, (BSplineSurface)aGen.Surface()!);
             }
             catch (global::Kerf.Engine.Foundation.FailureException anExc)
             {
@@ -384,7 +385,7 @@ internal static class AppSurfRecordings
                 return aW.Tokens;
             }
             GeomFill_SectionGenerator aSec = new();
-            foreach (Geom_Curve aC in aCurves)
+            foreach (Curve3D aC in aCurves)
             {
                 aSec.AddCurve(aC);
             }
@@ -405,7 +406,7 @@ internal static class AppSurfRecordings
             {
                 anApp.Init(aDMin, aDMax, aTol3d, aTol2d, aNbIt, aKnown);
                 Continuity[] aConts = [C0, C1, C2, C3];
-                Approx_ParametrizationType[] aPars = [Approx_ChordLength, Approx_Centripetal, Approx_IsoParametric];
+                ParametrizationType[] aPars = [ChordLength, Centripetal, IsoParametric];
                 anApp.SetContinuity(aConts[aCont]);
                 anApp.SetParType(aPars[aParT]);
                 anApp.SetCriteriumWeight(aW1, aW2, aW3);

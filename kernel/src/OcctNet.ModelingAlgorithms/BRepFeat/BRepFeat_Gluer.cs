@@ -5,7 +5,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -28,13 +30,13 @@ public sealed class BRepFeat_Gluer : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Initializes the shapes to be glued, the new shape Snew and the basis shape Sbase.</summary>
-    public BRepFeat_Gluer(in TopoDS_Shape Snew, in TopoDS_Shape Sbase)
+    public BRepFeat_Gluer(in Shape Snew, in Shape Sbase)
     {
         myGluer = new LocOpe_Gluer(Sbase, Snew); // Attention a l'inversion
     }
 
     /// <summary>Initializes the new shape Snew and the basis shape Sbase for the local glueing operation.</summary>
-    public void Init(in TopoDS_Shape Snew, in TopoDS_Shape Sbase)
+    public void Init(in Shape Snew, in Shape Sbase)
     {
         myGluer.Init(Sbase, Snew);
     }
@@ -43,13 +45,13 @@ public sealed class BRepFeat_Gluer : BRepBuilderAPI_MakeShape
     /// Defines a contact between Fnew on the new shape and Fbase on the basis shape. The contact faces of the glued
     /// shape must not have parts outside the contact faces of the basis shape.
     /// </summary>
-    public void Bind(in TopoDS_Face Fnew, in TopoDS_Face Fbase)
+    public void Bind(in Face Fnew, in Face Fbase)
     {
         myGluer.Bind(Fnew, Fbase);
     }
 
     /// <summary>The edge Enew in the new shape is the same as the edge Ebase in the basis shape.</summary>
-    public void Bind(in TopoDS_Edge Enew, in TopoDS_Edge Ebase)
+    public void Bind(in Edge Enew, in Edge Ebase)
     {
         myGluer.Bind(Enew, Ebase);
     }
@@ -58,10 +60,10 @@ public sealed class BRepFeat_Gluer : BRepBuilderAPI_MakeShape
     public LocOpe_Operation OpeType() => myGluer.OpeType();
 
     /// <summary>Returns the basis shape (the caller's).</summary>
-    public TopoDS_Shape BasisShape() => myGluer.BasisShape();
+    public Shape BasisShape() => myGluer.BasisShape();
 
     /// <summary>Returns the glued shape (the caller's).</summary>
-    public TopoDS_Shape GluedShape() => myGluer.GluedShape();
+    public Shape GluedShape() => myGluer.GluedShape();
 
     /// <summary>Glues the shapes.</summary>
     public override void Build(ProgressRange theRange = default)
@@ -79,22 +81,22 @@ public sealed class BRepFeat_Gluer : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Returns the status of the face <paramref name="F"/> after the shape creation.</summary>
-    public override bool IsDeleted(in TopoDS_Shape F)
+    public override bool IsDeleted(in Shape F)
     {
-        return myGluer.InternalDescendantFaces(TopoDS.Face(F)).IsEmpty();
+        return myGluer.InternalDescendantFaces(ShapeCasts.Face(F)).IsEmpty();
     }
 
     /// <summary>The faces descending from the face <paramref name="F"/> (OCCT's virtual; unfrozen).</summary>
-    internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape F)
+    internal override NCollection_List<Shape> InternalModified(in Shape F)
     {
-        if (F.ShapeType() == TopAbs_FACE)
+        if (F.ShapeType() == ShapeType.Face)
         {
-            NCollection_List<TopoDS_Shape> LS = myGluer.InternalDescendantFaces(TopoDS.Face(F));
+            NCollection_List<Shape> LS = myGluer.InternalDescendantFaces(ShapeCasts.Face(F));
             if (!LS.IsEmpty())
             {
                 if (!LS.First().IsSame(F))
                 {
-                    return myGluer.InternalDescendantFaces(TopoDS.Face(F));
+                    return myGluer.InternalDescendantFaces(ShapeCasts.Face(F));
                 }
             }
         }

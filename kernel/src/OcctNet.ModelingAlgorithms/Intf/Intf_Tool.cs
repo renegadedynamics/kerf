@@ -7,6 +7,8 @@ using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Geometry.Bounds;
 
+using Kerf.Engine.Intersection;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -359,12 +361,12 @@ public class Intf_Tool
         if (!Domain.IsOpenYmax)
         {
             Line2D L1 = new(new Point2D(0.0, ymax), new Direction2D(Direction2D.D.NX));
-            IntAna2d_AnaIntersection Inters1 = new(theCurv, new IntAna2d_Conic(L1));
-            if (Inters1.IsDone())
+            AnalyticIntersection Inters1 = new(theCurv, new Conic(L1));
+            if (Inters1.IsDone)
             {
-                if (!Inters1.IsEmpty())
+                if (!Inters1.IsEmpty)
                 {
-                    for (npi = 1; npi <= Inters1.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters1.PointCount; npi++)
                     {
                         xint[nbpi] = Inters1.Point(npi).Value().X();
                         if (xmin < xint[nbpi] && xint[nbpi] <= xmax)
@@ -382,12 +384,12 @@ public class Intf_Tool
         if (!Domain.IsOpenXmin)
         {
             Line2D L2 = new(new Point2D(xmin, 0.0), new Direction2D(Direction2D.D.NY));
-            IntAna2d_AnaIntersection Inters2 = new(theCurv, new IntAna2d_Conic(L2));
-            if (Inters2.IsDone())
+            AnalyticIntersection Inters2 = new(theCurv, new Conic(L2));
+            if (Inters2.IsDone)
             {
-                if (!Inters2.IsEmpty())
+                if (!Inters2.IsEmpty)
                 {
-                    for (npi = 1; npi <= Inters2.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters2.PointCount; npi++)
                     {
                         yint[nbpi] = Inters2.Point(npi).Value().Y();
                         if (ymin < yint[nbpi] && yint[nbpi] <= ymax)
@@ -405,12 +407,12 @@ public class Intf_Tool
         if (!Domain.IsOpenYmin)
         {
             Line2D L3 = new(new Point2D(0.0, ymin), new Direction2D(Direction2D.D.X));
-            IntAna2d_AnaIntersection Inters3 = new(theCurv, new IntAna2d_Conic(L3));
-            if (Inters3.IsDone())
+            AnalyticIntersection Inters3 = new(theCurv, new Conic(L3));
+            if (Inters3.IsDone)
             {
-                if (!Inters3.IsEmpty())
+                if (!Inters3.IsEmpty)
                 {
-                    for (npi = 1; npi <= Inters3.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters3.PointCount; npi++)
                     {
                         xint[nbpi] = Inters3.Point(npi).Value().X();
                         if (xmin <= xint[nbpi] && xint[nbpi] < xmax)
@@ -428,12 +430,12 @@ public class Intf_Tool
         if (!Domain.IsOpenXmax)
         {
             Line2D L4 = new(new Point2D(xmax, 0.0), new Direction2D(Direction2D.D.Y));
-            IntAna2d_AnaIntersection Inters4 = new(theCurv, new IntAna2d_Conic(L4));
-            if (Inters4.IsDone())
+            AnalyticIntersection Inters4 = new(theCurv, new Conic(L4));
+            if (Inters4.IsDone)
             {
-                if (!Inters4.IsEmpty())
+                if (!Inters4.IsEmpty)
                 {
-                    for (npi = 1; npi <= Inters4.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters4.PointCount; npi++)
                     {
                         yint[nbpi] = Inters4.Point(npi).Value().Y();
                         if (ymin <= yint[nbpi] && yint[nbpi] < ymax)
@@ -617,12 +619,12 @@ public class Intf_Tool
         if (!Domain.IsOpenYmax)
         {
             Line2D L1 = new(new Point2D(0.0, ymax), new Direction2D(Direction2D.D.NX));
-            IntAna2d_AnaIntersection Inters1 = new(theCurv, new IntAna2d_Conic(L1));
-            if (Inters1.IsDone())
+            AnalyticIntersection Inters1 = new(theCurv, new Conic(L1));
+            if (Inters1.IsDone)
             {
-                if (!Inters1.IsEmpty())
+                if (!Inters1.IsEmpty)
                 {
-                    for (npi = 1; npi <= Inters1.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters1.PointCount; npi++)
                     {
                         xint[nbpi] = Inters1.Point(npi).Value().X();
                         if (xmin < xint[nbpi] && xint[nbpi] <= xmax)
@@ -640,12 +642,12 @@ public class Intf_Tool
         if (!Domain.IsOpenXmin)
         {
             Line2D L2 = new(new Point2D(xmin, 0.0), new Direction2D(Direction2D.D.NY));
-            IntAna2d_AnaIntersection Inters2 = new(theCurv, new IntAna2d_Conic(L2));
-            if (Inters2.IsDone())
+            AnalyticIntersection Inters2 = new(theCurv, new Conic(L2));
+            if (Inters2.IsDone)
             {
-                if (!Inters2.IsEmpty())
+                if (!Inters2.IsEmpty)
                 {
-                    for (npi = 1; npi <= Inters2.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters2.PointCount; npi++)
                     {
                         yint[nbpi] = Inters2.Point(npi).Value().Y();
                         if (ymin < yint[nbpi] && yint[nbpi] <= ymax)
@@ -663,12 +665,12 @@ public class Intf_Tool
         if (!Domain.IsOpenYmin)
         {
             Line2D L3 = new(new Point2D(0.0, ymin), new Direction2D(Direction2D.D.X));
-            IntAna2d_AnaIntersection Inters3 = new(theCurv, new IntAna2d_Conic(L3));
-            if (Inters3.IsDone())
+            AnalyticIntersection Inters3 = new(theCurv, new Conic(L3));
+            if (Inters3.IsDone)
             {
-                if (!Inters3.IsEmpty())
+                if (!Inters3.IsEmpty)
                 {
-                    for (npi = 1; npi <= Inters3.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters3.PointCount; npi++)
                     {
                         xint[nbpi] = Inters3.Point(npi).Value().X();
                         if (xmin <= xint[nbpi] && xint[nbpi] < xmax)
@@ -686,12 +688,12 @@ public class Intf_Tool
         if (!Domain.IsOpenXmax)
         {
             Line2D L4 = new(new Point2D(xmax, 0.0), new Direction2D(Direction2D.D.Y));
-            IntAna2d_AnaIntersection Inters4 = new(theCurv, new IntAna2d_Conic(L4));
-            if (Inters4.IsDone())
+            AnalyticIntersection Inters4 = new(theCurv, new Conic(L4));
+            if (Inters4.IsDone)
             {
-                if (!Inters4.IsEmpty())
+                if (!Inters4.IsEmpty)
                 {
-                    for (npi = 1; npi <= Inters4.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters4.PointCount; npi++)
                     {
                         yint[nbpi] = Inters4.Point(npi).Value().Y();
                         if (ymin <= yint[nbpi] && yint[nbpi] < ymax)
@@ -1071,12 +1073,12 @@ public class Intf_Tool
 
         if (!Domain.IsOpenXmin)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(1.0, 0.0, 0.0, -xmin), global::Kerf.Engine.Foundation.Precision.Angular());
-            if (Inters1.IsDone())
+            IntConicQuad Inters1 = new(theCurv, new Plane3D(1.0, 0.0, 0.0, -xmin), global::Kerf.Engine.Foundation.Precision.Angular());
+            if (Inters1.IsDone)
             {
-                if (!Inters1.IsInQuadric())
+                if (!Inters1.IsInQuadric)
                 {
-                    for (npi = 1; npi <= Inters1.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters1.PointCount; npi++)
                     {
                         yint[nbpi] = Inters1.Point(npi).Y();
                         zint[nbpi] = Inters1.Point(npi).Z();
@@ -1094,12 +1096,12 @@ public class Intf_Tool
 
         if (!Domain.IsOpenYmin)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 1.0, 0.0, -ymin), global::Kerf.Engine.Foundation.Precision.Angular());
-            if (Inters1.IsDone())
+            IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 1.0, 0.0, -ymin), global::Kerf.Engine.Foundation.Precision.Angular());
+            if (Inters1.IsDone)
             {
-                if (!Inters1.IsInQuadric())
+                if (!Inters1.IsInQuadric)
                 {
-                    for (npi = 1; npi <= Inters1.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters1.PointCount; npi++)
                     {
                         xint[nbpi] = Inters1.Point(npi).X();
                         zint[nbpi] = Inters1.Point(npi).Z();
@@ -1117,12 +1119,12 @@ public class Intf_Tool
 
         if (!Domain.IsOpenZmin)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 0.0, 1.0, -zmin), global::Kerf.Engine.Foundation.Precision.Angular());
-            if (Inters1.IsDone())
+            IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 0.0, 1.0, -zmin), global::Kerf.Engine.Foundation.Precision.Angular());
+            if (Inters1.IsDone)
             {
-                if (!Inters1.IsInQuadric())
+                if (!Inters1.IsInQuadric)
                 {
-                    for (npi = 1; npi <= Inters1.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters1.PointCount; npi++)
                     {
                         xint[nbpi] = Inters1.Point(npi).X();
                         yint[nbpi] = Inters1.Point(npi).Y();
@@ -1140,12 +1142,12 @@ public class Intf_Tool
 
         if (!Domain.IsOpenXmax)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(-1.0, 0.0, 0.0, xmax), global::Kerf.Engine.Foundation.Precision.Angular());
-            if (Inters1.IsDone())
+            IntConicQuad Inters1 = new(theCurv, new Plane3D(-1.0, 0.0, 0.0, xmax), global::Kerf.Engine.Foundation.Precision.Angular());
+            if (Inters1.IsDone)
             {
-                if (!Inters1.IsInQuadric())
+                if (!Inters1.IsInQuadric)
                 {
-                    for (npi = 1; npi <= Inters1.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters1.PointCount; npi++)
                     {
                         yint[nbpi] = Inters1.Point(npi).Y();
                         zint[nbpi] = Inters1.Point(npi).Z();
@@ -1163,12 +1165,12 @@ public class Intf_Tool
 
         if (!Domain.IsOpenYmax)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, -1.0, 0.0, ymax), global::Kerf.Engine.Foundation.Precision.Angular());
-            if (Inters1.IsDone())
+            IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, -1.0, 0.0, ymax), global::Kerf.Engine.Foundation.Precision.Angular());
+            if (Inters1.IsDone)
             {
-                if (!Inters1.IsInQuadric())
+                if (!Inters1.IsInQuadric)
                 {
-                    for (npi = 1; npi <= Inters1.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters1.PointCount; npi++)
                     {
                         xint[nbpi] = Inters1.Point(npi).X();
                         zint[nbpi] = Inters1.Point(npi).Z();
@@ -1186,12 +1188,12 @@ public class Intf_Tool
 
         if (!Domain.IsOpenZmax)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 0.0, -1.0, zmax), global::Kerf.Engine.Foundation.Precision.Angular());
-            if (Inters1.IsDone())
+            IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 0.0, -1.0, zmax), global::Kerf.Engine.Foundation.Precision.Angular());
+            if (Inters1.IsDone)
             {
-                if (!Inters1.IsInQuadric())
+                if (!Inters1.IsInQuadric)
                 {
-                    for (npi = 1; npi <= Inters1.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters1.PointCount; npi++)
                     {
                         xint[nbpi] = Inters1.Point(npi).X();
                         yint[nbpi] = Inters1.Point(npi).Y();
@@ -1252,12 +1254,12 @@ public class Intf_Tool
 
         if (!Domain.IsOpenXmin)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(1.0, 0.0, 0.0, -xmin), global::Kerf.Engine.Foundation.Precision.Angular());
-            if (Inters1.IsDone())
+            IntConicQuad Inters1 = new(theCurv, new Plane3D(1.0, 0.0, 0.0, -xmin), global::Kerf.Engine.Foundation.Precision.Angular());
+            if (Inters1.IsDone)
             {
-                if (!Inters1.IsInQuadric())
+                if (!Inters1.IsInQuadric)
                 {
-                    for (npi = 1; npi <= Inters1.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters1.PointCount; npi++)
                     {
                         yint[nbpi] = Inters1.Point(npi).Y();
                         zint[nbpi] = Inters1.Point(npi).Z();
@@ -1275,12 +1277,12 @@ public class Intf_Tool
 
         if (!Domain.IsOpenYmin)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 1.0, 0.0, -ymin), global::Kerf.Engine.Foundation.Precision.Angular());
-            if (Inters1.IsDone())
+            IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 1.0, 0.0, -ymin), global::Kerf.Engine.Foundation.Precision.Angular());
+            if (Inters1.IsDone)
             {
-                if (!Inters1.IsInQuadric())
+                if (!Inters1.IsInQuadric)
                 {
-                    for (npi = 1; npi <= Inters1.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters1.PointCount; npi++)
                     {
                         xint[nbpi] = Inters1.Point(npi).X();
                         zint[nbpi] = Inters1.Point(npi).Z();
@@ -1298,12 +1300,12 @@ public class Intf_Tool
 
         if (!Domain.IsOpenZmin)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 0.0, 1.0, -zmin), global::Kerf.Engine.Foundation.Precision.Angular());
-            if (Inters1.IsDone())
+            IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 0.0, 1.0, -zmin), global::Kerf.Engine.Foundation.Precision.Angular());
+            if (Inters1.IsDone)
             {
-                if (!Inters1.IsInQuadric())
+                if (!Inters1.IsInQuadric)
                 {
-                    for (npi = 1; npi <= Inters1.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters1.PointCount; npi++)
                     {
                         xint[nbpi] = Inters1.Point(npi).X();
                         yint[nbpi] = Inters1.Point(npi).Y();
@@ -1321,12 +1323,12 @@ public class Intf_Tool
 
         if (!Domain.IsOpenXmax)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(-1.0, 0.0, 0.0, xmax), global::Kerf.Engine.Foundation.Precision.Angular());
-            if (Inters1.IsDone())
+            IntConicQuad Inters1 = new(theCurv, new Plane3D(-1.0, 0.0, 0.0, xmax), global::Kerf.Engine.Foundation.Precision.Angular());
+            if (Inters1.IsDone)
             {
-                if (!Inters1.IsInQuadric())
+                if (!Inters1.IsInQuadric)
                 {
-                    for (npi = 1; npi <= Inters1.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters1.PointCount; npi++)
                     {
                         yint[nbpi] = Inters1.Point(npi).Y();
                         zint[nbpi] = Inters1.Point(npi).Z();
@@ -1344,12 +1346,12 @@ public class Intf_Tool
 
         if (!Domain.IsOpenYmax)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, -1.0, 0.0, ymax), global::Kerf.Engine.Foundation.Precision.Angular());
-            if (Inters1.IsDone())
+            IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, -1.0, 0.0, ymax), global::Kerf.Engine.Foundation.Precision.Angular());
+            if (Inters1.IsDone)
             {
-                if (!Inters1.IsInQuadric())
+                if (!Inters1.IsInQuadric)
                 {
-                    for (npi = 1; npi <= Inters1.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters1.PointCount; npi++)
                     {
                         xint[nbpi] = Inters1.Point(npi).X();
                         zint[nbpi] = Inters1.Point(npi).Z();
@@ -1367,12 +1369,12 @@ public class Intf_Tool
 
         if (!Domain.IsOpenZmax)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 0.0, -1.0, zmax), global::Kerf.Engine.Foundation.Precision.Angular());
-            if (Inters1.IsDone())
+            IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 0.0, -1.0, zmax), global::Kerf.Engine.Foundation.Precision.Angular());
+            if (Inters1.IsDone)
             {
-                if (!Inters1.IsInQuadric())
+                if (!Inters1.IsInQuadric)
                 {
-                    for (npi = 1; npi <= Inters1.NbPoints(); npi++)
+                    for (npi = 1; npi <= Inters1.PointCount; npi++)
                     {
                         xint[nbpi] = Inters1.Point(npi).X();
                         yint[nbpi] = Inters1.Point(npi).Y();

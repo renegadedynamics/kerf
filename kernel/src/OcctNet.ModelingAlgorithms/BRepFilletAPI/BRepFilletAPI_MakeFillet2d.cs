@@ -5,6 +5,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.ChFi2d_ConstructionError;
 
@@ -24,7 +26,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
 {
     private readonly ChFi2d_Builder myMakeChFi2d = new();
 
-    /// <summary>An empty algorithm: the face is given by <see cref="Init(in TopoDS_Face)"/>.</summary>
+    /// <summary>An empty algorithm: the face is given by <see cref="Init(in Face)"/>.</summary>
     public BRepFilletAPI_MakeFillet2d()
     {
     }
@@ -33,7 +35,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     /// An algorithm on the face <paramref name="F"/>: <see cref="Status"/> is ChFi2d_Ready, ChFi2d_NotPlanar or
     /// ChFi2d_NoFace.
     /// </summary>
-    public BRepFilletAPI_MakeFillet2d(in TopoDS_Face F)
+    public BRepFilletAPI_MakeFillet2d(in Face F)
     {
         myMakeChFi2d.Init(F);
     }
@@ -42,7 +44,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     /// Initializes the algorithm with the face <paramref name="F"/>: <see cref="Status"/> is ChFi2d_Ready,
     /// ChFi2d_NotPlanar or ChFi2d_NoFace.
     /// </summary>
-    public void Init(in TopoDS_Face F)
+    public void Init(in Face F)
     {
         myMakeChFi2d.Init(F);
     }
@@ -51,7 +53,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     /// Initializes the algorithm with a face <paramref name="RefFace"/> and a face <paramref name="ModFace"/> derived from
     /// it, to modify the fillets and chamfers already built on <paramref name="ModFace"/>.
     /// </summary>
-    public void Init(in TopoDS_Face RefFace, in TopoDS_Face ModFace)
+    public void Init(in Face RefFace, in Face ModFace)
     {
         myMakeChFi2d.Init(RefFace, ModFace);
     }
@@ -62,13 +64,13 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     /// the face), ChFi2d_ComputationError (radius too large), ChFi2d_NotAuthorized (an edge is a fillet or chamfer, or
     /// not a line or circle), ChFi2d_TangencyError.
     /// </summary>
-    public TopoDS_Edge AddFillet(in TopoDS_Vertex V, double Radius)
+    public Edge AddFillet(in Vertex V, double Radius)
     {
         return myMakeChFi2d.AddFillet(V, Radius);
     }
 
     /// <summary>Gives the fillet <paramref name="Fillet"/> the radius <paramref name="Radius"/>; returns the new fillet (frozen).</summary>
-    public TopoDS_Edge ModifyFillet(in TopoDS_Edge Fillet, double Radius)
+    public Edge ModifyFillet(in Edge Fillet, double Radius)
     {
         return myMakeChFi2d.ModifyFillet(Fillet, Radius);
     }
@@ -77,7 +79,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     /// Removes the fillet <paramref name="Fillet"/>; returns the vertex connecting its two adjacent edges (frozen), null
     /// if <paramref name="Fillet"/> is not on the face.
     /// </summary>
-    public TopoDS_Vertex RemoveFillet(in TopoDS_Edge Fillet)
+    public Vertex RemoveFillet(in Edge Fillet)
     {
         return myMakeChFi2d.RemoveFillet(Fillet);
     }
@@ -86,7 +88,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     /// Adds a chamfer between the adjacent edges <paramref name="E1"/> and <paramref name="E2"/>, its ends at the
     /// distances <paramref name="D1"/> and <paramref name="D2"/> along them; returns it (frozen).
     /// </summary>
-    public TopoDS_Edge AddChamfer(in TopoDS_Edge E1, in TopoDS_Edge E2, double D1, double D2)
+    public Edge AddChamfer(in Edge E1, in Edge E2, double D1, double D2)
     {
         return myMakeChFi2d.AddChamfer(E1, E2, D1, D2);
     }
@@ -96,19 +98,19 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     /// <paramref name="Ang"/> (radians) with <paramref name="E"/>, one end on <paramref name="E"/> at the distance
     /// <paramref name="D"/> from <paramref name="V"/>; returns it (frozen).
     /// </summary>
-    public TopoDS_Edge AddChamfer(in TopoDS_Edge E, in TopoDS_Vertex V, double D, double Ang)
+    public Edge AddChamfer(in Edge E, in Vertex V, double D, double Ang)
     {
         return myMakeChFi2d.AddChamfer(E, V, D, Ang);
     }
 
     /// <summary>Modifies the chamfer <paramref name="Chamfer"/> built between <paramref name="E1"/> and <paramref name="E2"/>.</summary>
-    public TopoDS_Edge ModifyChamfer(in TopoDS_Edge Chamfer, in TopoDS_Edge E1, in TopoDS_Edge E2, double D1, double D2)
+    public Edge ModifyChamfer(in Edge Chamfer, in Edge E1, in Edge E2, double D1, double D2)
     {
         return myMakeChFi2d.ModifyChamfer(Chamfer, E1, E2, D1, D2);
     }
 
     /// <summary>Modifies the chamfer <paramref name="Chamfer"/>: an angle <paramref name="Ang"/> with <paramref name="E"/>.</summary>
-    public TopoDS_Edge ModifyChamfer(in TopoDS_Edge Chamfer, in TopoDS_Edge E, double D, double Ang)
+    public Edge ModifyChamfer(in Edge Chamfer, in Edge E, double D, double Ang)
     {
         return myMakeChFi2d.ModifyChamfer(Chamfer, E, D, Ang);
     }
@@ -117,19 +119,19 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     /// Removes the chamfer <paramref name="Chamfer"/>; returns the vertex connecting its two adjacent edges (frozen),
     /// null if <paramref name="Chamfer"/> is not on the face.
     /// </summary>
-    public TopoDS_Vertex RemoveChamfer(in TopoDS_Edge Chamfer)
+    public Vertex RemoveChamfer(in Edge Chamfer)
     {
         return myMakeChFi2d.RemoveChamfer(Chamfer);
     }
 
     /// <summary>True if the edge <paramref name="E"/> of the face is chamfered or filleted.</summary>
-    public bool IsModified(in TopoDS_Edge E)
+    public bool IsModified(in Edge E)
     {
         return myMakeChFi2d.IsModified(E);
     }
 
     /// <summary>The fillets on the face (frozen).</summary>
-    public ISchematiqList<TopoDS_Shape> FilletEdges()
+    public ISchematiqList<Shape> FilletEdges()
     {
         return myMakeChFi2d.FilletEdges();
     }
@@ -141,7 +143,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The chamfers on the face (frozen).</summary>
-    public ISchematiqList<TopoDS_Shape> ChamferEdges()
+    public ISchematiqList<Shape> ChamferEdges()
     {
         return myMakeChFi2d.ChamferEdges();
     }
@@ -153,11 +155,11 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     }
 
     // Modified(S): the shapes modified from S, the descendant edge of the edge S.
-    internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape E)
+    internal override NCollection_List<Shape> InternalModified(in Shape E)
     {
         myGenerated.Clear();
         // OCCT: DescendantEdge reads the history with Find, which throws Standard_NoSuchObject for an unmodified edge
-        myGenerated.Append(myMakeChFi2d.InternalDescendantEdge(TopoDS.Edge(E)));
+        myGenerated.Append(myMakeChFi2d.InternalDescendantEdge(ShapeCasts.Edge(E)));
         return myGenerated;
     }
 
@@ -174,7 +176,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The edges created for the curve <paramref name="I"/>: the fillets first, then the chamfers (frozen).</summary>
-    public ISchematiqList<TopoDS_Shape> NewEdges(int I)
+    public ISchematiqList<Shape> NewEdges(int I)
     {
         myGenerated.Clear();
         if (I <= NbFillet())
@@ -190,7 +192,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
         return PublishedList(myGenerated);
     }
 
-    public bool HasDescendant(in TopoDS_Edge E)
+    public bool HasDescendant(in Edge E)
     {
         return myMakeChFi2d.HasDescendant(E);
     }
@@ -199,7 +201,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     /// The chamfered or filleted edge built from the edge <paramref name="E"/> of the face (frozen).
     /// </summary>
     /// <exception cref="NoSuchObjectException"><paramref name="E"/> has no descendant.</exception>
-    public TopoDS_Edge DescendantEdge(in TopoDS_Edge E)
+    public Edge DescendantEdge(in Edge E)
     {
         return myMakeChFi2d.DescendantEdge(E);
     }
@@ -208,7 +210,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     /// The edge of the face from which the edge <paramref name="E"/> was built; <paramref name="E"/> itself if it is
     /// not a descendant.
     /// </summary>
-    public TopoDS_Edge BasisEdge(in TopoDS_Edge E)
+    public Edge BasisEdge(in Edge E)
     {
         return myMakeChFi2d.BasisEdge(E);
     }

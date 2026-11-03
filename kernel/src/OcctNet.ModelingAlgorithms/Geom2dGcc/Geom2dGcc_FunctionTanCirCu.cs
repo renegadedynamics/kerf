@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -19,7 +20,7 @@ namespace Occt;
 public sealed class Geom2dGcc_FunctionTanCirCu : FunctionWithDerivative
 {
     private readonly Circle2D TheCirc;
-    private readonly Geom2dAdaptor_Curve Curve;
+    private readonly CurveAdaptor2D Curve;
     private readonly double myWeight;
 
     //=========================================================================
@@ -49,7 +50,7 @@ public sealed class Geom2dGcc_FunctionTanCirCu : FunctionWithDerivative
     //                      by an average square distance between the circle  +
     //                      and the curve.                                    +
     //=========================================================================
-    public Geom2dGcc_FunctionTanCirCu(in Circle2D Circ, Geom2dAdaptor_Curve Curv)
+    public Geom2dGcc_FunctionTanCirCu(in Circle2D Circ, CurveAdaptor2D Curv)
     {
         Curve   = Curv;
         TheCirc = Circ;

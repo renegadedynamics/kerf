@@ -4,11 +4,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using static Kerf.Engine.Foundation.Gravity;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -37,9 +40,9 @@ public class ShapeUpgrade_ShapeDivide
     /// <summary>The message registrator.</summary>
     protected ShapeExtend_BasicMsgRegistrator? myMsgReg;
     /// <summary>The shape.</summary>
-    protected TopoDS_Shape myShape;
+    protected Shape myShape;
     /// <summary>The result.</summary>
-    protected TopoDS_Shape myResult;
+    protected Shape myResult;
     /// <summary>The precision.</summary>
     protected double myPrecision;
     /// <summary>The minimal tolerance.</summary>
@@ -58,8 +61,8 @@ public class ShapeUpgrade_ShapeDivide
     /// <summary>Empty constructor.</summary>
     public ShapeUpgrade_ShapeDivide()
     {
-        myShape = new TopoDS_Shape();
-        myResult = new TopoDS_Shape();
+        myShape = new Shape();
+        myResult = new Shape();
         myStatus = 0;
         myPrecision = myMinTol = Kerf.Engine.Foundation.Precision.Confusion();
         myMaxTol = 1; // Precision::Infinite() ?? pdn
@@ -71,13 +74,13 @@ public class ShapeUpgrade_ShapeDivide
     }
 
     /// <summary>Initializes by a shape.</summary>
-    public ShapeUpgrade_ShapeDivide(in TopoDS_Shape S) : this()
+    public ShapeUpgrade_ShapeDivide(in Shape S) : this()
     {
         Init(S);
     }
 
     /// <summary>Initializes by a shape.</summary>
-    public void Init(in TopoDS_Shape S)
+    public void Init(in Shape S)
     {
         myShape = S;
     }
@@ -127,15 +130,15 @@ public class ShapeUpgrade_ShapeDivide
     /// </summary>
     protected bool PerformAtEntry(bool newContext, Func<bool, bool> theBody)
     {
-        if (myEntryDepth > 0 || myShape.IsNull())
+        if (myEntryDepth > 0 || myShape.IsNull)
         {
             return theBody(newContext);
         }
 
         // the requests already recorded in a kept context move onto the copies
-        var anEntry = new BRepTools_CopyAtEntry(myShape, newContext ? null : myContext);
+        var anEntry = new CopyAtEntry(myShape, newContext ? null : myContext);
         myShape = anEntry.Shape();
-        TopoDS_Shape aCopy = myShape;
+        Shape aCopy = myShape;
         bool aRes;
         myEntryDepth++;
         try
@@ -149,7 +152,7 @@ public class ShapeUpgrade_ShapeDivide
 
         anEntry.AttachContext(myContext);
         // ShapeConvertToBezier leaves myShape on the intermediate result of its surface conversion
-        bool isIntermediate = !myShape.IsNull() && !ReferenceEquals(myShape.TShape(), aCopy.TShape());
+        bool isIntermediate = !myShape.IsNull && !ReferenceEquals(myShape.TShape(), aCopy.TShape());
         myResult = anEntry.Finish(myResult, isIntermediate ? [myShape] : null);
         myShape = anEntry.Final(myShape);
         return aRes;
@@ -158,7 +161,7 @@ public class ShapeUpgrade_ShapeDivide
     private bool performBody(bool newContext)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
-        if (myShape.IsNull())
+        if (myShape.IsNull)
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
             return false;
@@ -171,16 +174,16 @@ public class ShapeUpgrade_ShapeDivide
 
         // Process COMPOUNDs separately in order to handle sharing in assemblies
         // NOTE: not optimized: subshape can be processed twice (second time - no modif)
-        if (myShape.ShapeType() == TopAbs_COMPOUND)
+        if (myShape.ShapeType() == ShapeType.Compound)
         {
             int locStatus = myStatus;
-            var C = new TopoDS_Compound();
-            var B = new BRep_Builder();
+            var C = new Compound();
+            var B = new BrepBuilder();
             B.MakeCompound(ref C);
-            TopoDS_Shape savShape = myShape;
-            for (var it = new TopoDS_Iterator(savShape, false); it.More(); it.Next())
+            Shape savShape = myShape;
+            for (var it = new Iterator(savShape, false); it.More(); it.Next())
             {
-                TopoDS_Shape shape = it.Value();
+                Shape shape = it.Value();
                 Placement L = shape.Location();
                 if (myContext.ModeConsiderLocation())
                 {
@@ -193,7 +196,7 @@ public class ShapeUpgrade_ShapeDivide
                 {
                     myResult.Location(L);
                 }
-                myResult.Orientation(TopAbs.Compose(myResult.Orientation(), savShape.Orientation()));
+                myResult.Orientation(global::Kerf.Engine.Topology.TopAbs.Compose(myResult.Orientation(), savShape.Orientation()));
                 B.Add(C, myResult);
                 locStatus |= myStatus;
             }
@@ -202,7 +205,7 @@ public class ShapeUpgrade_ShapeDivide
             myStatus = locStatus;
             if (Status(ShapeExtend_DONE))
             {
-                myResult = myContext.InternalApply(C, TopAbs_SHAPE);
+                myResult = myContext.InternalApply(C, ShapeType.Shape);
                 myContext.Replace(myShape, myResult);
                 return true;
             }
@@ -225,18 +228,18 @@ public class ShapeUpgrade_ShapeDivide
             }
             Msg doneMsg = GetFaceMsg();
 
-            for (var exp = new TopExp_Explorer(myShape, TopAbs_FACE); exp.More(); exp.Next())
+            for (var exp = new Explorer(myShape, ShapeType.Face); exp.More(); exp.Next())
             {
-                TopoDS_Shape tmpF = exp.Current().Oriented(TopAbs_FORWARD);
-                TopoDS_Face F = TopoDS.Face(tmpF); // protection against INTERNAL shapes: cts20105a.rle
-                TopoDS_Shape sh = myContext.InternalApply(F, TopAbs_SHAPE);
-                for (var exp2 = new TopExp_Explorer(sh, TopAbs_FACE); exp2.More(); exp2.Next())
+                Shape tmpF = exp.Current().Oriented(Forward);
+                Face F = ShapeCasts.Face(tmpF); // protection against INTERNAL shapes: cts20105a.rle
+                Shape sh = myContext.InternalApply(F, ShapeType.Shape);
+                for (var exp2 = new Explorer(sh, ShapeType.Face); exp2.More(); exp2.Next())
                 {
                     try
                     {
                         for (; exp2.More(); exp2.Next())
                         {
-                            TopoDS_Face face = TopoDS.Face(exp2.Current());
+                            Face face = ShapeCasts.Face(exp2.Current());
                             SplitFace.Init(face);
                             SplitFace.SetContext(myContext);
                             SplitFace.Perform();
@@ -277,23 +280,23 @@ public class ShapeUpgrade_ShapeDivide
         ShapeUpgrade_WireDivide? SplitWire = SplitFace!.GetWireDivideTool();
         if (SplitWire is not null)
         {
-            SplitWire.SetFace(new TopoDS_Face());
+            SplitWire.SetFace(new Face());
             SplitWire.SetPrecision(myPrecision);
             SplitWire.SetMaxTolerance(myMaxTol);
             SplitWire.SetMinTolerance(myMinTol);
             SplitWire.SetEdgeMode(myEdgeMode);
             Msg doneMsg = GetWireMsg();
 
-            var exp = new TopExp_Explorer(); // svv Jan 10 2000 : porting on DEC
-            for (exp.Init(myShape, TopAbs_WIRE, TopAbs_FACE); exp.More(); exp.Next())
+            var exp = new Explorer(); // svv Jan 10 2000 : porting on DEC
+            for (exp.Init(myShape, ShapeType.Wire, ShapeType.Face); exp.More(); exp.Next())
             {
                 // smh#8
-                TopoDS_Shape tmpW = exp.Current().Oriented(TopAbs_FORWARD);
-                TopoDS_Wire W = TopoDS.Wire(tmpW); // protection against INTERNAL shapes
-                TopoDS_Shape sh = myContext.InternalApply(W, TopAbs_SHAPE);
-                for (var exp2 = new TopExp_Explorer(sh, TopAbs_WIRE); exp2.More(); exp2.Next())
+                Shape tmpW = exp.Current().Oriented(Forward);
+                Wire W = ShapeCasts.Wire(tmpW); // protection against INTERNAL shapes
+                Shape sh = myContext.InternalApply(W, ShapeType.Shape);
+                for (var exp2 = new Explorer(sh, ShapeType.Wire); exp2.More(); exp2.Next())
                 {
-                    TopoDS_Wire wire = TopoDS.Wire(exp2.Current());
+                    Wire wire = ShapeCasts.Wire(exp2.Current());
                     SplitWire.Load(wire);
                     SplitWire.SetContext(myContext);
                     SplitWire.Perform();
@@ -312,20 +315,20 @@ public class ShapeUpgrade_ShapeDivide
 
             // Process free EDGEs
             Msg edgeDoneMsg = GetEdgeMsg();
-            for (exp.Init(myShape, TopAbs_EDGE, TopAbs_WIRE); exp.More(); exp.Next())
+            for (exp.Init(myShape, ShapeType.Edge, ShapeType.Wire); exp.More(); exp.Next())
             {
                 // smh#8
-                TopoDS_Shape tmpE = exp.Current().Oriented(TopAbs_FORWARD);
-                TopoDS_Edge E = TopoDS.Edge(tmpE); // protection against INTERNAL shapes
-                TopExp.Vertices(E, out TopoDS_Vertex V2, out TopoDS_Vertex V1);
-                if (V1.IsNull() && V2.IsNull())
+                Shape tmpE = exp.Current().Oriented(Forward);
+                Edge E = ShapeCasts.Edge(tmpE); // protection against INTERNAL shapes
+                Exploration.Vertices(E, out Vertex V2, out Vertex V1);
+                if (V1.IsNull && V2.IsNull)
                 {
                     continue; // skl 27.10.2004 for OCC5624
                 }
-                TopoDS_Shape sh = myContext.InternalApply(E, TopAbs_SHAPE);
-                for (var exp2 = new TopExp_Explorer(sh, TopAbs_EDGE); exp2.More(); exp2.Next())
+                Shape sh = myContext.InternalApply(E, ShapeType.Shape);
+                for (var exp2 = new Explorer(sh, ShapeType.Edge); exp2.More(); exp2.Next())
                 {
-                    TopoDS_Edge edge = TopoDS.Edge(exp2.Current());
+                    Edge edge = ShapeCasts.Edge(exp2.Current());
                     SplitWire.Load(edge);
                     SplitWire.SetContext(myContext);
                     SplitWire.Perform();
@@ -342,19 +345,19 @@ public class ShapeUpgrade_ShapeDivide
                 }
             }
         }
-        myResult = myContext.InternalApply(myShape, TopAbs_SHAPE);
+        myResult = myContext.InternalApply(myShape, ShapeType.Shape);
         return !myResult.IsSame(myShape);
     }
 
     /// <summary>Gives the resulting shape (null if not done), frozen.</summary>
-    public TopoDS_Shape Result()
+    public Shape Result()
     {
         myResult.TShape()?.FreezeGraph();
         return myResult;
     }
 
     /// <summary><see cref="Result"/> without freezing it, for ported callers (ShapeProcess).</summary>
-    internal TopoDS_Shape InternalResult() => myResult;
+    internal Shape InternalResult() => myResult;
 
     /// <summary>Returns the context with all the modifications made during the last call(s) to Perform recorded.</summary>
     public ShapeBuild_ReShape? GetContext() => myContext;
@@ -375,7 +378,7 @@ public class ShapeUpgrade_ShapeDivide
     public ShapeExtend_BasicMsgRegistrator? MsgRegistrator() => myMsgReg;
 
     /// <summary>Sends a message attached to the shape, through the message registrator.</summary>
-    public void SendMsg(in TopoDS_Shape shape, Msg message, Gravity gravity = Info)
+    public void SendMsg(in Shape shape, Msg message, Gravity gravity = Info)
     {
         myMsgReg?.Send(shape, message, gravity);
     }

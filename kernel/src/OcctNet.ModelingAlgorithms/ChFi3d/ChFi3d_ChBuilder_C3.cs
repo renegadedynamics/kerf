@@ -7,7 +7,10 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFiKPart_ComputeData_Fcts;
 using static Occt.ChFi3d_ChBuilder_C3;
@@ -16,9 +19,9 @@ using static Occt.ChFiDS_State;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 using static Occt.TopOpeBRepDS_Kind;
 
 namespace Occt;
@@ -64,13 +67,13 @@ public partial class ChFi3d_ChBuilder
         bool issmooth = false;
 
         TopOpeBRepDS_DataStructure DStr = myDS.ChangeDS();
-        TopoDS_Vertex Vtx = myVDataMap.FindKey(Jndex);
+        Vertex Vtx = myVDataMap.FindKey(Jndex);
         NCollection_List<ChFiDS_Stripe>.Iterator It = new();
         //  int Index[3],pivot,deb,fin,ii,jj,kk;
         int[] Index = new int[3];
         int pivot = 0, deb = 0, fin = 0, ii = 0;
         ChFiDS_Stripe?[] CD = new ChFiDS_Stripe?[3];
-        TopoDS_Face[] face = [new(), new(), new()];
+        Face[] face = [new(), new(), new()];
         int[,] jf = new int[3, 3];
         bool[] sameside = new bool[3], oksea = new bool[3];
         for (int g = 0; g <= 2; g++)
@@ -210,13 +213,13 @@ public partial class ChFi3d_ChBuilder
         // On construit les HSurfaces et autres outils qui vont bien.
         // ----------------------------------------------------------
 
-        BRepAdaptor_Surface? Fac = new BRepAdaptor_Surface(face[pivot]);
-        GeomAdaptor_Surface? bidsurf = (GeomAdaptor_Surface)Fac.AdaptorSurfaceOriginal().ShallowCopy(); // OCCT's copy
-        Adaptor3d_TopolTool? IFac = new Adaptor3d_TopolTool(bidsurf);
+        FaceSurfaceAdaptor? Fac = new FaceSurfaceAdaptor(face[pivot]);
+        SurfaceAdaptor? bidsurf = (SurfaceAdaptor)Fac.AdaptorSurfaceOriginal().ShallowCopy(); // OCCT's copy
+        TopolTool? IFac = new TopolTool(bidsurf);
 
-        GeomAdaptor_Surface? Surf = 
+        SurfaceAdaptor? Surf = 
             ChFi3d_BoundSurf(DStr, fdpiv, jf[pivot, deb], jf[pivot, fin]);
-        Adaptor3d_TopolTool? ISurf = new Adaptor3d_TopolTool(Surf);
+        TopolTool? ISurf = new TopolTool(Surf);
 
         // Creation of a new Stripe for the corner
         ChFiDS_Stripe? corner = new ChFiDS_Stripe();
@@ -228,9 +231,9 @@ public partial class ChFi3d_ChBuilder
 
         // Pour plus de surete, on verifie les intersections des pcurves des chanfreins sur leur
         // face commune
-        GeomAdaptor_Surface? HSdeb = new GeomAdaptor_Surface(DStr.Surface(fddeb.Surf()).Surface());
-        GeomAdaptor_Surface? HSfin = new GeomAdaptor_Surface(DStr.Surface(fdfin.Surf()).Surface());
-        GeomAdaptor_Surface? HSpiv = new GeomAdaptor_Surface(DStr.Surface(fdpiv.Surf()).Surface());
+        SurfaceAdaptor? HSdeb = new SurfaceAdaptor(DStr.Surface(fddeb.Surf()).Surface());
+        SurfaceAdaptor? HSfin = new SurfaceAdaptor(DStr.Surface(fdfin.Surf()).Surface());
+        SurfaceAdaptor? HSpiv = new SurfaceAdaptor(DStr.Surface(fdpiv.Surf()).Surface());
 
         Point2D[] p2d = [new(), new(), new(), new()];
         Point3D[] p3d = [new(), new(), new(), new()];
@@ -322,7 +325,7 @@ public partial class ChFi3d_ChBuilder
         done = false;
 
         int Icf = 0, Icl = 0;
-        Geom2d_Curve? debpc1 = null, finpc1 = null;
+        Curve2D? debpc1 = null, finpc1 = null;
 
         if (!c1triangle)
         {
@@ -343,29 +346,29 @@ public partial class ChFi3d_ChBuilder
             {
                 planAx3.YReverse();
             }
-            Geom_Plane? gpl = new Geom_Plane(planAx3);
+            PlaneSurface? gpl = new PlaneSurface(planAx3);
             coin.ChangeSurf(ChFiKPart_IndexSurfaceInDS(gpl, DStr));
 
             // on oriente coin
             Vector3D norface = norpl;
-            if (face[pivot].Orientation() == TopAbs_REVERSED)
+            if (face[pivot].Orientation() == Reversed)
             {
                 norface.Reverse();
             }
             Vector3D norcoin = new(gpl.Pln().Position().XDirection().Crossed(gpl.Pln().Position().YDirection()));
             if (norcoin.Dot(norface) <= 0.0)
             {
-                coin.ChangeOrientation() = TopAbs_REVERSED;
+                coin.ChangeOrientation() = Reversed;
             }
             else
             {
-                coin.ChangeOrientation() = TopAbs_FORWARD;
+                coin.ChangeOrientation() = Forward;
             }
 
             // on calcule les intersections
-            Geom_Curve? gcpiv = null, gcdeb = null, gcfin = null;
-            Geom_TrimmedCurve? gcface = null;
-            Geom2d_Curve? pivpc1 = null, pivpc2 = null, debpc2 = null, finpc2 = null, facepc1 = null, facepc2 = null;
+            Curve3D? gcpiv = null, gcdeb = null, gcfin = null;
+            TrimmedCurve3D? gcface = null;
+            Curve2D? pivpc1 = null, pivpc2 = null, debpc2 = null, finpc2 = null, facepc1 = null, facepc2 = null;
             Point2D ptbid = new();
 
             // intersection coin-pivot
@@ -423,8 +426,8 @@ public partial class ChFi3d_ChBuilder
             if (!c1triangle)
             {
                 GeomInt_IntSS inter = new();
-                BRepAdaptor_Surface facebid = new(face[pivot]);
-                Geom_Surface? surfbid = facebid.GeomSurfaceTransformed();
+                FaceSurfaceAdaptor facebid = new(face[pivot]);
+                Surface? surfbid = facebid.GeomSurfaceTransformed();
                 inter.Perform(gpl, surfbid, global::Kerf.Engine.Foundation.Precision.Intersection());
                 if (inter.IsDone())
                 {
@@ -436,11 +439,11 @@ public partial class ChFi3d_ChBuilder
                     {
                         ChFi3d_TrimCurve(inter.Line(1), p3d[pivot], p3dface, out gcface);
 
-                        GeomAdaptor_Curve? gac = new GeomAdaptor_Curve();
+                        CurveAdaptor? gac = new CurveAdaptor();
                         gac.Load(gcface);
-                        GeomAdaptor_Surface? gas = new GeomAdaptor_Surface();
+                        SurfaceAdaptor? gas = new SurfaceAdaptor();
                         gas.Load(gpl);
-                        BRepAdaptor_Surface? gaf = new BRepAdaptor_Surface();
+                        FaceSurfaceAdaptor? gaf = new FaceSurfaceAdaptor();
                         gaf.Initialize(face[pivot]);
 
                         double tolr = 0.0;
@@ -451,7 +454,7 @@ public partial class ChFi3d_ChBuilder
             }
 
             // on remplit les donnees du coin oriente face-pivot
-            TopAbs_Orientation trans = default;
+            Orientation trans = default;
 
             // avec les CommonPoints
             coin.ChangeVertexFirstOnS1().SetPoint(p3d[pivot]);
@@ -475,13 +478,13 @@ public partial class ChFi3d_ChBuilder
             // sur face[pivot]
             if (norcoin.Dot(norpl) <= 0.0)
             {
-                trans = TopAbs_FORWARD;
+                trans = Forward;
             }
             else
             {
-                trans = TopAbs_REVERSED;
+                trans = Reversed;
             }
-            Geom2d_Curve? bidpc = null;
+            Curve2D? bidpc = null;
             if (c1triangle)
             {
                 fi1.SetInterference(0, trans, bidpc, bidpc);
@@ -496,11 +499,11 @@ public partial class ChFi3d_ChBuilder
             // sur le pivot
             if (norcoin.Dot(norpiv) <= 0.0)
             {
-                trans = TopAbs_REVERSED;
+                trans = Reversed;
             }
             else
             {
-                trans = TopAbs_FORWARD;
+                trans = Forward;
             }
             Igcpiv = ChFiKPart_IndexCurveInDS(gcpiv, DStr);
             fi2.SetInterference(Igcpiv, trans, pivpc1, pivpc2);
@@ -514,8 +517,8 @@ public partial class ChFi3d_ChBuilder
             // !c1plan
             //--------
 
-            Geom_Surface? Surfcoin = null;
-            Geom2d_Curve? PCurveOnFace = null, PCurveOnPiv = null;
+            Surface? Surfcoin = null;
+            Curve2D? PCurveOnFace = null, PCurveOnPiv = null;
 
             // le contour a remplir est constitue de courbes isos sur deb et fin
             // de deux pcurves calculees sur piv et la face opposee.
@@ -624,7 +627,7 @@ public partial class ChFi3d_ChBuilder
                     coin.InterferenceOnS1().PCurveOnSurf().Value(coin.InterferenceOnS1().FirstParameter());
                 pp2 =
                     coin.InterferenceOnS2().PCurveOnSurf().Value(coin.InterferenceOnS2().FirstParameter());
-                Geom_Curve? C3d = null;
+                Curve3D? C3d = null;
                 double tolreached = 0.0;
                 ChFi3d_ComputeArete(Pf1, pp1, Pf2, pp2, DStr.Surface(coin.Surf()).Surface(), ref C3d,
                                                         ref corner.ChangeFirstPCurve(), ref P1deb, ref P2deb, tolapp3d, tol2d, out tolreached, 0);
@@ -653,7 +656,7 @@ public partial class ChFi3d_ChBuilder
                     coin.InterferenceOnS1().PCurveOnSurf().Value(coin.InterferenceOnS1().LastParameter());
                 pp2 =
                     coin.InterferenceOnS2().PCurveOnSurf().Value(coin.InterferenceOnS2().LastParameter());
-                Geom_Curve? C3d = null;
+                Curve3D? C3d = null;
                 double tolreached = 0.0;
                 ChFi3d_ComputeArete(Pl1, pp1, Pl2, pp2, DStr.Surface(coin.Surf()).Surface(), ref C3d,
                                                         ref corner.ChangeLastPCurve(), ref P1fin, ref P2fin, tolapp3d, tol2d, out tolreached, 0);
@@ -682,7 +685,7 @@ public partial class ChFi3d_ChBuilder
             {
                 isurf1 = 2;
                 isurf2 = 1;
-                CD[deb].SetOrientation(TopAbs_REVERSED, isfirst);
+                CD[deb].SetOrientation(Reversed, isfirst);
             }
             CD[deb].SetCurve(Icf, isfirst);
             CD[deb].SetIndexPoint(If1, isfirst, isurf1);
@@ -719,7 +722,7 @@ public partial class ChFi3d_ChBuilder
             {
                 isurf1 = 2;
                 isurf2 = 1;
-                CD[fin].SetOrientation(TopAbs_REVERSED, isfirst);
+                CD[fin].SetOrientation(Reversed, isfirst);
             }
             CD[fin].SetCurve(Icl, isfirst);
             CD[fin].SetIndexPoint(Il1, isfirst, isurf1);
@@ -751,7 +754,7 @@ public partial class ChFi3d_ChBuilder
             {
                 isurf1 = 2;
                 isurf2 = 1;
-                CD[pivot].SetOrientation(TopAbs_REVERSED, isfirst);
+                CD[pivot].SetOrientation(Reversed, isfirst);
             }
             CD[pivot].SetCurve(fi.LineIndex(), isfirst);
             CD[pivot].ChangePCurve(isfirst) = fi.PCurveOnFace();
@@ -839,10 +842,10 @@ internal static class ChFi3d_ChBuilder_C3
         return (vecDABC.Magnitude() / Alpha) < global::Kerf.Engine.Foundation.Precision.Confusion();
     }
 
-    internal static GeomAdaptor_Surface? BoundSurf(Geom_Surface? S, in Point2D Pdeb, in Point2D Pfin)
+    internal static SurfaceAdaptor? BoundSurf(Surface? S, in Point2D Pdeb, in Point2D Pfin)
     {
-        GeomAdaptor_Surface? HS = new GeomAdaptor_Surface();
-        GeomAdaptor_Surface GAS = HS;
+        SurfaceAdaptor? HS = new SurfaceAdaptor();
+        SurfaceAdaptor GAS = HS;
         GAS.Load(S);
 
         double uu1 = 0.0, uu2 = 0.0, vv1 = 0.0, vv2 = 0.0;
@@ -859,7 +862,7 @@ internal static class ChFi3d_ChBuilder_C3
         return HS;
     }
 
-    internal static bool ComputeIntersection(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData? SD, ChFiDS_SurfData? SDCoin, in Point3D pdeb, in Point2D p2ddeb, in Point3D pfin, in Point2D p2dfin, ref Geom_Curve? gc, ref Geom2d_Curve? pc1, ref Geom2d_Curve? pc2, ref Vector3D derudeb,
+    internal static bool ComputeIntersection(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData? SD, ChFiDS_SurfData? SDCoin, in Point3D pdeb, in Point2D p2ddeb, in Point3D pfin, in Point2D p2dfin, ref Curve3D? gc, ref Curve2D? pc1, ref Curve2D? pc2, ref Vector3D derudeb,
                                              ref Vector3D dervdeb, ref Point2D ptcoindeb, double tol3d, double tol2d,
                                              ref double tolreached)
     {
@@ -867,11 +870,11 @@ internal static class ChFi3d_ChBuilder_C3
 
         // take the surface of the pivot SurfData and trim it to allow
         // the intersection computation if it's an analytic surface
-        GeomAdaptor_Surface? HS1 = null;
+        SurfaceAdaptor? HS1 = null;
         HS1 = ChFi3d_BoundSurf(DStr, SD, 1, 2);
 
-        Geom_Surface? gpl = DStr.Surface(SDCoin.Surf()).Surface();
-        Geom_Surface? gSD = DStr.Surface(SD.Surf()).Surface();
+        Surface? gpl = DStr.Surface(SDCoin.Surf()).Surface();
+        Surface? gSD = DStr.Surface(SD.Surf()).Surface();
 
         // compute pardeb
         NCollection_Array1<double> Pardeb = new(1, 4), Parfin = new(1, 4);
@@ -905,7 +908,7 @@ internal static class ChFi3d_ChBuilder_C3
         // Trims the chamfer surface to allow the intersection computation
         // and computes a GeomAdaptor_Surface for using the ComputeCurves
         // function
-        GeomAdaptor_Surface? HS2 = null;
+        SurfaceAdaptor? HS2 = null;
         HS2 = BoundSurf(gpl, ptcoindeb, cpf2);
 
         // compute the intersection curves and pcurves

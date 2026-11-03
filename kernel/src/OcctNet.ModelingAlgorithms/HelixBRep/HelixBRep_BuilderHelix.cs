@@ -5,8 +5,12 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -36,7 +40,7 @@ public class HelixBRep_BuilderHelix
     protected int myMaxSegments;
     protected int myErrorStatus;
     protected int myWarningStatus;
-    protected TopoDS_Shape myShape = new();
+    protected Shape myShape = new();
     private int myNParts;
 
     /// <summary>A builder with no parameters (error status 1), about the global Z axis.</summary>
@@ -270,10 +274,10 @@ public class HelixBRep_BuilderHelix
 
         myTolReached = 0.0;
         myShape.Nullify();
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
         // aBB.MakeCompound(TopoDS::Compound(myShape));
 
-        NCollection_List<TopoDS_Shape> anLst = new();
+        NCollection_List<Shape> anLst = new();
 
         Axis3D anAxis = myAxis3.Axis();
         Point3D aPStart = myAxis3.Location();
@@ -299,7 +303,7 @@ public class HelixBRep_BuilderHelix
 
             aTaperAngle = Math.Atan(.5 * (myDiams.Value(i + 1) - myDiams.Value(i)) / aHeight);
 
-            TopoDS_Wire aPart = new();
+            Wire aPart = new();
             aBB.MakeWire(ref aPart);
 
             BuildPart(anAxis, aPStart, aHeight, aPitch, aTaperAngle, bIsClockwise, ref aPart);
@@ -308,9 +312,9 @@ public class HelixBRep_BuilderHelix
                 return;
             }
 
-            TopExp.Vertices(aPart, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
+            Exploration.Vertices(aPart, out Vertex V1, out Vertex V2);
 
-            aPStart = BRep_Tool.Pnt(V2);
+            aPStart = Tool.Pnt(V2);
 
             anAxis.SetLocation(anAxis.Location().Translated(aHeight * new Vector3D(anAxis.Direction())));
 
@@ -320,12 +324,12 @@ public class HelixBRep_BuilderHelix
 
         Smoothing(anLst);
 
-        NCollection_List<TopoDS_Shape>.Iterator anIt = new(anLst);
-        BRepBuilderAPI_MakeWire aMkWire = new(TopoDS.Wire(anLst.First()));
+        NCollection_List<Shape>.Iterator anIt = new(anLst);
+        BRepBuilderAPI_MakeWire aMkWire = new(ShapeCasts.Wire(anLst.First()));
         anIt.Next();
         for (; anIt.More(); anIt.Next())
         {
-            aMkWire.Add(TopoDS.Wire(anIt.Value()));
+            aMkWire.Add(ShapeCasts.Wire(anIt.Value()));
         }
 
         myShape = aMkWire.InternalShape();
@@ -337,7 +341,7 @@ public class HelixBRep_BuilderHelix
                            double thePitch,
                            double theTaperAngle,
                            bool bIsClockwise,
-                           ref TopoDS_Wire thePart)
+                           ref Wire thePart)
     {
         if (myErrorStatus != 0)
         {
@@ -403,11 +407,11 @@ public class HelixBRep_BuilderHelix
         int iErr, aNbC, i;
         HelixGeom_BuilderHelix aBH = new();
         Point3D aP1, aP2;
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
         BRepBuilderAPI_MakeEdge aBME = new();
-        TopoDS_Vertex aV1 = new(), aV2 = new();
+        Vertex aV1 = new(), aV2 = new();
         // TopoDS_Wire aW;
-        TopoDS_Edge aE;
+        Edge aE;
         //
         aBH.SetPosition(aAx2);
         aBH.SetCurveParameters(aT0, aT2, thePitch, aDist, theTaperAngle, bIsClockwise);
@@ -425,7 +429,7 @@ public class HelixBRep_BuilderHelix
         aBB.MakeWire(ref thePart);
         //
         myTolReached = Math.Max(myTolReached, aBH.ToleranceReached());
-        NCollection_Sequence<Geom_Curve> aSC = new();
+        NCollection_Sequence<Curve3D> aSC = new();
         aSC.Assign(aBH.InternalCurves());
         if (aT1 < 0.0)
         {
@@ -444,7 +448,7 @@ public class HelixBRep_BuilderHelix
             }
 
             myTolReached = Math.Max(myTolReached, aBH1.ToleranceReached());
-            NCollection_Sequence<Geom_Curve> aSC1 = aBH1.InternalCurves();
+            NCollection_Sequence<Curve3D> aSC1 = aBH1.InternalCurves();
             int nbc = aSC1.Length();
             for (i = nbc; i >= 1; i--)
             {
@@ -455,26 +459,26 @@ public class HelixBRep_BuilderHelix
         aNbC = aSC.Length();
         for (i = 1; i <= aNbC; ++i)
         {
-            Geom_Curve aC = aSC[i];
+            Curve3D aC = aSC[i];
             //
             if (i == 1)
             {
                 if (aT1 > 0.0)
                 {
                     aT2 = aC.LastParameter();
-                    Geom_TrimmedCurve aCT = new(aC, aT1, aT2);
+                    TrimmedCurve3D aCT = new(aC, aT1, aT2);
                     aC = aCT;
                 }
                 aT1 = aC.FirstParameter();
                 aC.D0(aT1, out aP1);
                 aBB.MakeVertex(ref aV1, aP1, myTolReached);
-                aV1.Orientation(TopAbs_FORWARD);
+                aV1.Orientation(Forward);
             }
             //
             aT2 = aC.LastParameter();
             aC.D0(aT2, out aP2);
             aBB.MakeVertex(ref aV2, aP2, myTolReached);
-            aV2.Orientation(TopAbs_REVERSED);
+            aV2.Orientation(Reversed);
             //
             aBME.Init(aC, aV1, aV2);
             bIsDone = aBME.IsDone();
@@ -489,7 +493,7 @@ public class HelixBRep_BuilderHelix
 
             //
             aV1 = aV2;
-            aV1.Orientation(TopAbs_FORWARD);
+            aV1.Orientation(Forward);
         }
         //
         if (myTolReached > myTolerance)
@@ -498,31 +502,31 @@ public class HelixBRep_BuilderHelix
         }
     }
 
-    private void Smoothing(NCollection_List<TopoDS_Shape> theParts)
+    private void Smoothing(NCollection_List<Shape> theParts)
     {
         if (theParts.Extent() == 1)
         {
             return;
         }
 
-        BRepTools_WireExplorer anExpl = new();
+        WireExplorer anExpl = new();
 
-        TopoDS_Wire aPrevWire = TopoDS.Wire(theParts.First());
+        Wire aPrevWire = ShapeCasts.Wire(theParts.First());
         anExpl.Init(aPrevWire);
-        TopoDS_Edge aPrevEdge = new();
+        Edge aPrevEdge = new();
         for (; anExpl.More(); anExpl.Next())
         {
             aPrevEdge = anExpl.Current();
         }
 
-        NCollection_List<TopoDS_Shape>.Iterator anIter = new(theParts);
+        NCollection_List<Shape>.Iterator anIter = new(theParts);
         anIter.Next();
         for (; anIter.More(); anIter.Next())
         {
-            TopoDS_Wire aNextWire = TopoDS.Wire(anIter.Value());
+            Wire aNextWire = ShapeCasts.Wire(anIter.Value());
             anExpl.Clear();
             anExpl.Init(aNextWire);
-            TopoDS_Edge aNextEdge = anExpl.Current();
+            Edge aNextEdge = anExpl.Current();
 
             // Smoothing curves
             SmoothingEdges(aPrevEdge, aNextEdge);
@@ -534,15 +538,15 @@ public class HelixBRep_BuilderHelix
         }
     }
 
-    private void SmoothingEdges(in TopoDS_Edge thePrev, in TopoDS_Edge theNext)
+    private void SmoothingEdges(in Edge thePrev, in Edge theNext)
     {
         const double EpsAng = 1.0e-7;
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
 
         double f1, l1, f2, l2;
-        Geom_BSplineCurve aCPrev = (BRep_Tool.Curve(thePrev, out f1, out l1) as Geom_BSplineCurve)!;
+        BSplineCurve3D aCPrev = (Tool.Curve(thePrev, out f1, out l1) as BSplineCurve3D)!;
 
-        Geom_BSplineCurve aCNext = (BRep_Tool.Curve(theNext, out f2, out l2) as Geom_BSplineCurve)!;
+        BSplineCurve3D aCNext = (Tool.Curve(theNext, out f2, out l2) as BSplineCurve3D)!;
 
         Point3D P1, P2;
         Vector3D V1, V2;
@@ -561,11 +565,11 @@ public class HelixBRep_BuilderHelix
         // OCCT changes the edges' own curves in place, which BRep_Builder froze when it attached them: the port
         // changes copies and puts them on the edges (decision 994). OCCT's curve also keeps the degrees it was
         // raised to when no degree lets the tangent move; the copy is put on the edge in that case too.
-        aCPrev = (Geom_BSplineCurve)aCPrev.Copy();
-        aCNext = (Geom_BSplineCurve)aCNext.Copy();
+        aCPrev = (BSplineCurve3D)aCPrev.Copy();
+        aCNext = (BSplineCurve3D)aCNext.Copy();
 
         int anErrorStatus = 1;
-        int aDegMax = Geom_BSplineCurve.MaxDegree();
+        int aDegMax = BSplineCurve3D.MaxDegree();
         int aDeg = aCPrev.Degree();
         int i;
         bool bPrevOK = false;
@@ -592,7 +596,7 @@ public class HelixBRep_BuilderHelix
 
         if (bPrevOK || aCPrev.Degree() != aDeg)
         {
-            aBB.UpdateEdge(thePrev, aCPrev, BRep_Tool.Tolerance(thePrev));
+            aBB.UpdateEdge(thePrev, aCPrev, Tool.Tolerance(thePrev));
         }
 
         aDeg = aCNext.Degree();
@@ -617,7 +621,7 @@ public class HelixBRep_BuilderHelix
 
         if (bNextOK || aCNext.Degree() != aDeg)
         {
-            aBB.UpdateEdge(theNext, aCNext, BRep_Tool.Tolerance(theNext));
+            aBB.UpdateEdge(theNext, aCNext, Tool.Tolerance(theNext));
         }
     }
 
@@ -628,12 +632,12 @@ public class HelixBRep_BuilderHelix
     public int WarningStatus() => myWarningStatus;
 
     /// <summary>The helix wire (frozen), or a null shape if it wasn't built.</summary>
-    public TopoDS_Shape Shape()
+    public Shape Shape()
     {
         myShape.TShape()?.FreezeGraph();
         return myShape;
     }
 
     /// <summary>OCCT's <c>Shape()</c>, without freezing, for ported code.</summary>
-    internal TopoDS_Shape InternalShape() => myShape;
+    internal Shape InternalShape() => myShape;
 }

@@ -3,11 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -32,9 +35,9 @@ namespace Occt;
 public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
 {
     /// <summary>The supporting face (null for free wires and edges).</summary>
-    protected TopoDS_Face myFace;
+    protected Face myFace;
     /// <summary>The wire.</summary>
-    protected TopoDS_Wire myWire;
+    protected Wire myWire;
     /// <summary>The status.</summary>
     protected int myStatus;
     /// <summary>The mode for splitting 3D curves (0: of free edges only, 1: of shared edges only, 2: all).</summary>
@@ -49,8 +52,8 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
     /// <summary>Empty constructor.</summary>
     public ShapeUpgrade_WireDivide()
     {
-        myFace = new TopoDS_Face();
-        myWire = new TopoDS_Wire();
+        myFace = new Face();
+        myWire = new Wire();
         myStatus = 0;
         mySplitCurve3dTool = new ShapeUpgrade_SplitCurve3d();
         mySplitCurve2dTool = new ShapeUpgrade_SplitCurve2d();
@@ -61,7 +64,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
     }
 
     /// <summary>Initializes by wire and face.</summary>
-    public void Init(in TopoDS_Wire W, in TopoDS_Face F)
+    public void Init(in Wire W, in Face F)
     {
         myWire = W;
         myFace = F;
@@ -69,7 +72,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
     }
 
     /// <summary>Initializes by wire and surface.</summary>
-    public void Init(in TopoDS_Wire W, Geom_Surface S)
+    public void Init(in Wire W, Surface S)
     {
         myWire = W;
         var mkf = new BRepLib_MakeFace(S, Kerf.Engine.Foundation.Precision.Confusion());
@@ -78,13 +81,13 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
     }
 
     /// <summary>Loads the working wire.</summary>
-    public void Load(in TopoDS_Wire W)
+    public void Load(in Wire W)
     {
         myWire = W;
     }
 
     /// <summary>Makes a wire of the edge and loads it.</summary>
-    public void Load(in TopoDS_Edge E)
+    public void Load(in Edge E)
     {
         var MakeWire = new BRepLib_MakeWire(E);
         if (MakeWire.IsDone())
@@ -94,22 +97,22 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
     }
 
     /// <summary>Sets the supporting surface by a face.</summary>
-    public void SetFace(in TopoDS_Face F)
+    public void SetFace(in Face F)
     {
         myFace = F;
     }
 
     /// <summary>Sets the supporting surface.</summary>
-    public void SetSurface(Geom_Surface S)
+    public void SetSurface(Surface S)
     {
         var mkf = new BRepLib_MakeFace(S, Kerf.Engine.Foundation.Precision.Confusion());
         myFace = mkf.InternalFace();
     }
 
     /// <summary>Sets the supporting surface with a location.</summary>
-    public void SetSurface(Geom_Surface S, in Placement L)
+    public void SetSurface(Surface S, in Placement L)
     {
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         B.MakeFace(ref myFace, S, L, Kerf.Engine.Foundation.Precision.Confusion());
     }
 
@@ -255,29 +258,29 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
 
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         var sae = new ShapeAnalysis_Edge();
 
-        var newWire = new TopoDS_Wire();
+        var newWire = new Wire();
         B.MakeWire(ref newWire);
         Placement Loc = new();
-        Geom_Surface? Surf = null;
-        if (!myFace.IsNull())
+        Surface? Surf = null;
+        if (!myFace.IsNull)
         {
-            Surf = BRep_Tool.Surface(myFace, out Loc);
+            Surf = Tool.Surface(myFace, out Loc);
         }
 
         bool isSplit3d = true;
         switch (myEdgeMode)
         {
             case 0:
-                if (!myFace.IsNull())
+                if (!myFace.IsNull)
                 {
                     isSplit3d = false;
                 }
                 break;
             case 1:
-                if (myFace.IsNull())
+                if (myFace.IsNull)
                 {
                     isSplit3d = false;
                 }
@@ -291,15 +294,15 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
             myEdgeDivide.SetSplitCurve3dTool(GetSplitCurve3dTool());
         }
         myEdgeDivide.SetSplitCurve2dTool(GetSplitCurve2dTool());
-        for (var ItW = new TopoDS_Iterator(myWire, false); ItW.More(); ItW.Next())
+        for (var ItW = new Iterator(myWire, false); ItW.More(); ItW.Next())
         {
             // for each Edge:
-            TopoDS_Shape sh = Context()!.InternalApply(ItW.Value(), TopAbs_SHAPE);
-            for (var exp = new TopExp_Explorer(sh, TopAbs_EDGE); exp.More(); exp.Next())
+            Shape sh = Context()!.InternalApply(ItW.Value(), ShapeType.Shape);
+            for (var exp = new Explorer(sh, ShapeType.Edge); exp.More(); exp.Next())
             {
-                TopoDS_Edge E = TopoDS.Edge(exp.Current());
+                Edge E = ShapeCasts.Edge(exp.Current());
                 // skip degenerated edges (and also INTERNAL/EXTERNAL, to avoid failures)
-                if (E.Orientation() == TopAbs_INTERNAL || E.Orientation() == TopAbs_EXTERNAL)
+                if (E.Orientation() == Internal || E.Orientation() == External)
                 {
                     B.Add(newWire, E);
                     continue;
@@ -368,21 +371,21 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                 }
 
                 bool isSeam = false;
-                if (!myFace.IsNull())
+                if (!myFace.IsNull)
                 {
-                    isSeam = BRep_Tool.IsClosed(E, myFace);
+                    isSeam = Tool.IsClosed(E, myFace);
                 }
-                NCollection_HArray1<Geom2d_Curve>? theSegments2d = null;
+                NCollection_HArray1<Curve2D>? theSegments2d = null;
                 if (myEdgeDivide.HasCurve2d())
                 {
                     theSegments2d = theSplit2dTool.GetCurves();
                 }
-                NCollection_HArray1<Geom2d_Curve>? theSegments2dR = null;
+                NCollection_HArray1<Curve2D>? theSegments2dR = null;
                 if (isSeam)
                 {
-                    TopoDS_Shape tmpE = E.Reversed();
-                    TopoDS_Edge erev = TopoDS.Edge(tmpE);
-                    if (sae.PCurve(erev, myFace, out Geom2d_Curve? c2, out double f2, out double l2, false))
+                    Shape tmpE = E.Reversed();
+                    Edge erev = ShapeCasts.Edge(tmpE);
+                    if (sae.PCurve(erev, myFace, out Curve2D? c2, out double f2, out double l2, false))
                     {
                         theSplit2dTool.Init(c2!, f2, l2);
                         if (theKnots2d is not null)
@@ -408,57 +411,57 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                 }
 
                 // Exploring theEdge
-                TopoDS_Vertex V1o = TopExp.FirstVertex(E, false);
-                TopoDS_Vertex V2o = TopExp.LastVertex(E, false);
-                bool isForward = (E.Orientation() == TopAbs_FORWARD);
-                double TolEdge = BRep_Tool.Tolerance(E);
-                bool isDeg = BRep_Tool.Degenerated(E);
+                Vertex V1o = Exploration.FirstVertex(E, false);
+                Vertex V2o = Exploration.LastVertex(E, false);
+                bool isForward = (E.Orientation() == Forward);
+                double TolEdge = Tool.Tolerance(E);
+                bool isDeg = Tool.Degenerated(E);
 
                 // Copy vertices to protect original shape against SameParamseter
-                TopoDS_Shape emptyCopiedV1 = V1o.EmptyCopied();
-                TopoDS_Vertex V1 = TopoDS.Vertex(emptyCopiedV1);
+                Shape emptyCopiedV1 = V1o.EmptyCopied();
+                Vertex V1 = ShapeCasts.Vertex(emptyCopiedV1);
                 Context()!.Replace(V1o, V1);
-                TopoDS_Vertex V2;
+                Vertex V2;
                 if (V1o.IsSame(V2o))
                 {
-                    TopoDS_Shape tmpV = V1.Oriented(V2o.Orientation());
-                    V2 = TopoDS.Vertex(tmpV);
+                    Shape tmpV = V1.Oriented(V2o.Orientation());
+                    V2 = ShapeCasts.Vertex(tmpV);
                 }
                 else
                 {
-                    TopoDS_Shape emptyCopied = V2o.EmptyCopied();
-                    V2 = TopoDS.Vertex(emptyCopied);
+                    Shape emptyCopied = V2o.EmptyCopied();
+                    V2 = ShapeCasts.Vertex(emptyCopied);
                     Context()!.Replace(V2o, V2);
                 }
 
                 // collect NM vertices
                 double af = 0.0, al = 0.0;
-                Geom_Curve? c3d = null;
-                var AdCS = new Adaptor3d_CurveOnSurface();
+                Curve3D? c3d = null;
+                var AdCS = new CurveOnSurface();
                 if (myEdgeDivide.HasCurve3d())
                 {
                     sae.Curve3d(E, out c3d, out af, out al, false);
                 }
                 else if (myEdgeDivide.HasCurve2d() && Surf is not null)
                 {
-                    sae.PCurve(E, myFace, out Geom2d_Curve? c2d, out af, out al, false);
-                    Adaptor3d_Surface AdS = new GeomAdaptor_Surface(Surf);
-                    Adaptor2d_Curve2d AC2d = new Geom2dAdaptor_Curve(c2d!, af, al);
+                    sae.PCurve(E, myFace, out Curve2D? c2d, out af, out al, false);
+                    SurfaceAdaptorBase AdS = new SurfaceAdaptor(Surf);
+                    Curve2DAdaptorBase AC2d = new CurveAdaptor2D(c2d!, af, al);
                     AdCS.Load(AC2d);
                     AdCS.Load(AdS);
                 }
-                var aSeqNMVertices = new NCollection_Sequence<TopoDS_Shape>();
+                var aSeqNMVertices = new NCollection_Sequence<Shape>();
                 var aSeqParNM = new NCollection_Sequence<double>();
-                var aItv = new TopoDS_Iterator(E, false);
+                var aItv = new Iterator(E, false);
                 var sac = new ShapeAnalysis_Curve();
                 for (; aItv.More(); aItv.Next())
                 {
-                    if (aItv.Value().Orientation() == TopAbs_INTERNAL
-                        || aItv.Value().Orientation() == TopAbs_EXTERNAL)
+                    if (aItv.Value().Orientation() == Internal
+                        || aItv.Value().Orientation() == External)
                     {
-                        TopoDS_Vertex aVold = TopoDS.Vertex(aItv.Value());
+                        Vertex aVold = ShapeCasts.Vertex(aItv.Value());
                         aSeqNMVertices.Append(aVold);
-                        Point3D aP = BRep_Tool.Pnt(TopoDS.Vertex(aVold));
+                        Point3D aP = Tool.Pnt(ShapeCasts.Vertex(aVold));
                         double ppar;
                         if (c3d is not null)
                         {
@@ -473,7 +476,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                 }
 
                 // creating new edge(s)
-                NCollection_HArray1<Geom_Curve>? theSegments3d = null;
+                NCollection_HArray1<Curve3D>? theSegments3d = null;
                 if (myEdgeDivide.HasCurve3d())
                 {
                     theSegments3d = theSplit3dTool.GetCurves();
@@ -507,10 +510,10 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
 
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
 
-                var resWire = new TopoDS_Wire();
+                var resWire = new Wire();
                 B.MakeWire(ref resWire);
                 int numE = 0;
-                Point3D pntV1 = BRep_Tool.Pnt(V1);
+                Point3D pntV1 = Tool.Pnt(V1);
                 // gp_Pnt pntV2 = BRep_Tool::Pnt(V2); // pntV2 not used - see below (skl)
                 // double V2Tol = LimitTolerance( BRep_Tool::Tolerance(V2) ); // V2Tol not used - see below (skl)
 
@@ -525,24 +528,24 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                 int Small = 0;
                 for (int icurv = 1; icurv <= nbc; icurv++)
                 {
-                    Geom_Curve? theNewCurve3d = null;
+                    Curve3D? theNewCurve3d = null;
                     if (theSegments3d is not null)
                     {
                         theNewCurve3d = theSegments3d.Value(icurv);
                     }
 
-                    Geom2d_Curve? theNewPCurve1 = null;
+                    Curve2D? theNewPCurve1 = null;
                     if (theSegments2d is not null)
                     {
                         theNewPCurve1 = theSegments2d.Value(icurv);
                     }
-                    Geom2d_Curve? revPCurve = null;
+                    Curve2D? revPCurve = null;
                     if (isSeam)
                     {
                         revPCurve = theSegments2dR!.Value(icurv);
                     }
                     // construction of the intermediate Vertex
-                    var V = new TopoDS_Vertex();
+                    var V = new Vertex();
                     if (icurv <= nbc && nbc != 1 && !isDeg)
                     {
                         double par, parf /*,SavParl*/;
@@ -550,7 +553,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                         // if edge has 3d curve, take point from it
                         if (theNewCurve3d is not null)
                         {
-                            if (theNewCurve3d is Geom_BoundedCurve)
+                            if (theNewCurve3d is BoundedCurve3D)
                             {
                                 par = theNewCurve3d.LastParameter();
                                 parf = theNewCurve3d.FirstParameter();
@@ -569,9 +572,9 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                         {
                             if (Surf is null)
                             {
-                                Surf = BRep_Tool.Surface(myFace, out Loc);
+                                Surf = Tool.Surface(myFace, out Loc);
                             }
-                            if (theNewPCurve1 is Geom2d_BoundedCurve)
+                            if (theNewPCurve1 is BoundedCurve2D)
                             {
                                 par = theNewPCurve1.LastParameter();
                                 parf = theNewPCurve1.FirstParameter();
@@ -593,7 +596,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                         }
 
                         if (P.Distance(pntV1) < MinTolerance() && P.Distance(PM) < MinTolerance()
-                            && !myFace.IsNull())
+                            && !myFace.IsNull)
                         {
                             if (Small == 0)
                             {
@@ -604,7 +607,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                             Small++;
                             if (icurv == nbc)
                             {
-                                TopoDS_Vertex VVV = V1;
+                                Vertex VVV = V1;
                                 VVV.Orientation(V2.Orientation());
                                 Context()!.Replace(V2, VVV);
                             }
@@ -620,8 +623,8 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                             }
                             else
                             {
-                                Geom_Curve? atmpCurve = null;
-                                Geom2d_Curve? atmpCurve2d1 = null, atmprepcurve = null;
+                                Curve3D? atmpCurve = null;
+                                Curve2D? atmpCurve2d1 = null, atmprepcurve = null;
                                 if (FixSmallCurveTool.Approx(ref atmpCurve, ref atmpCurve2d1, ref atmprepcurve, ref SavParf, ref par))
                                 { // BRepTools
                                     theNewCurve3d = atmpCurve;
@@ -652,18 +655,18 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                     }
                     // else V = V2;
 
-                    TopoDS_Edge newEdge;
+                    Edge newEdge;
                     var sbe = new ShapeBuild_Edge();
                     if (isForward)
                     {
-                        V1.Orientation(TopAbs_FORWARD);
-                        V.Orientation(TopAbs_REVERSED);
+                        V1.Orientation(Forward);
+                        V.Orientation(Reversed);
                         newEdge = sbe.InternalCopyReplaceVertices(E, V1, V);
                     }
                     else
                     {
-                        V1.Orientation(TopAbs_REVERSED);
-                        V.Orientation(TopAbs_FORWARD);
+                        V1.Orientation(Reversed);
+                        V.Orientation(Forward);
                         newEdge = sbe.InternalCopyReplaceVertices(E, V, V1);
                     }
                     sbe.CopyPCurves(newEdge, E);
@@ -685,7 +688,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                     bool srNew;
                     if (theNewCurve3d is not null)
                     {
-                        if (theNewCurve3d is Geom_BoundedCurve)
+                        if (theNewCurve3d is BoundedCurve3D)
                         {
                             f3d = theNewCurve3d.FirstParameter();
                             l3d = theNewCurve3d.LastParameter();
@@ -706,7 +709,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                     double f2d = 0, l2d = 0;
                     if (theNewPCurve1 is not null)
                     {
-                        if (theNewPCurve1 is Geom2d_BoundedCurve)
+                        if (theNewPCurve1 is BoundedCurve2D)
                         {
                             f2d = theNewPCurve1.FirstParameter();
                             l2d = theNewPCurve1.LastParameter();
@@ -735,14 +738,14 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                     }
                     // (OCCT's commented-out CopyRanges left out)
                     Savnum = 0;
-                    if (!myFace.IsNull() && sae.PCurve(newEdge, myFace, out _, out double setF, out double setL, false))
+                    if (!myFace.IsNull && sae.PCurve(newEdge, myFace, out _, out double setF, out double setL, false))
                     {
                         srNew &= ((setF == f2d) && (setL == l2d));
                     }
 
                     if (isSeam)
                     {
-                        if (newEdge.Orientation() == TopAbs_FORWARD)
+                        if (newEdge.Orientation() == Forward)
                         {
                             B.UpdateEdge(newEdge, theNewPCurve1, revPCurve, myFace, 0.0);
                         }
@@ -751,7 +754,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                             B.UpdateEdge(newEdge, revPCurve, theNewPCurve1, myFace, 0.0);
                         }
                     }
-                    else if (!myFace.IsNull())
+                    else if (!myFace.IsNull)
                     {
                         B.UpdateEdge(newEdge, theNewPCurve1, myFace, 0.0);
                     }
@@ -764,7 +767,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                     {
                         B.Range(newEdge, myFace, f2d, l2d);
                     }
-                    if ((!wasSR || !srNew) && !BRep_Tool.Degenerated(newEdge))
+                    if ((!wasSR || !srNew) && !Tool.Degenerated(newEdge))
                     {
                         B.SameRange(newEdge, false);
                     }
@@ -775,8 +778,8 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                     for (int n = 1; n <= aSeqParNM.Length(); ++n)
                     {
                         double apar = aSeqParNM.Value(n);
-                        TopoDS_Vertex aVold = TopoDS.Vertex(aSeqNMVertices.Value(n));
-                        TopoDS_Vertex aNMVer = ShapeAnalysis_TransferParametersProj.InternalCopyNMVertex(aVold, newEdge, E);
+                        Vertex aVold = ShapeCasts.Vertex(aSeqNMVertices.Value(n));
+                        Vertex aNMVer = ShapeAnalysis_TransferParametersProj.InternalCopyNMVertex(aVold, newEdge, E);
                         Context()!.Replace(aVold, aNMVer);
                         if (Math.Abs(apar - afpar) <= Kerf.Engine.Foundation.Precision.PConfusion())
                         {
@@ -806,7 +809,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                 }
                 if (numE != 0)
                 {
-                    resWire.Closed(BRep_Tool.IsClosed(resWire));
+                    resWire.Closed(Tool.IsClosed(resWire));
                     Context()!.Replace(E, resWire);
                 }
                 else
@@ -817,23 +820,23 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
         }
         if (Status(ShapeExtend_DONE))
         {
-            newWire.Closed(BRep_Tool.IsClosed(newWire));
-            TopoDS_Shape tmpW = Context()!.InternalApply(newWire).Oriented(myWire.Orientation());
-            myWire = TopoDS.Wire(tmpW);
+            newWire.Closed(Tool.IsClosed(newWire));
+            Shape tmpW = Context()!.InternalApply(newWire).Oriented(myWire.Orientation());
+            myWire = ShapeCasts.Wire(tmpW);
         }
     }
 
     /// <summary>
     /// Returns the resulting wire (the initial one if not done, null if not loaded), frozen.
     /// </summary>
-    public TopoDS_Wire Wire()
+    public Wire Wire()
     {
         myWire.TShape()?.FreezeGraph();
         return myWire;
     }
 
     /// <summary><see cref="Wire"/> without freezing it, for ported callers.</summary>
-    internal TopoDS_Wire InternalWire() => myWire;
+    internal Wire InternalWire() => myWire;
 
     /// <summary>
     /// Queries the status of the last <see cref="Perform"/>: OK (no edge split), DONE1 (some edges split), FAIL1 (some

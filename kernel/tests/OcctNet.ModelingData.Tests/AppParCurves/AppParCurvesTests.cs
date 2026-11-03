@@ -3,16 +3,16 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using static Occt.AppParCurves_Constraint;
+using static Kerf.Engine.Approximation.Constraint;
 
 namespace OcctNet.ModelingData.Tests;
 
-using LeastSquare = AppParCurves_LeastSquare<AppParCurves_TestLine, AppParCurves_TestLineTool>;
-using ResolConstraint = AppParCurves_ResolConstraint<AppParCurves_TestLine, AppParCurves_TestLineTool>;
-using Function = AppParCurves_Function<AppParCurves_TestLine, AppParCurves_TestLineTool>;
-using Gradient = AppParCurves_Gradient<AppParCurves_TestLine, AppParCurves_TestLineTool>;
-using BSpFunction = AppParCurves_BSpFunction<AppParCurves_TestLine, AppParCurves_TestLineTool>;
-using BSpGradient = AppParCurves_BSpGradient<AppParCurves_TestLine, AppParCurves_TestLineTool>;
+using LeastSquare = global::Kerf.Engine.Approximation.LeastSquare<AppParCurves_TestLine, AppParCurves_TestLineTool>;
+using ResolConstraint = global::Kerf.Engine.Approximation.ResolConstraint<AppParCurves_TestLine, AppParCurves_TestLineTool>;
+using Function = global::Kerf.Engine.Approximation.Function<AppParCurves_TestLine, AppParCurves_TestLineTool>;
+using Gradient = global::Kerf.Engine.Approximation.Gradient<AppParCurves_TestLine, AppParCurves_TestLineTool>;
+using BSpFunction = global::Kerf.Engine.Approximation.BSpFunction<AppParCurves_TestLine, AppParCurves_TestLineTool>;
+using BSpGradient = global::Kerf.Engine.Approximation.BSpGradient<AppParCurves_TestLine, AppParCurves_TestLineTool>;
 
 /// <summary>
 /// AppParCurves (no OCCT GTests): the basis functions, the data classes, and the generic algorithms instantiated
@@ -22,14 +22,14 @@ using BSpGradient = AppParCurves_BSpGradient<AppParCurves_TestLine, AppParCurves
 public class AppParCurvesTests
 {
     // A cubic MultiCurve: one 3d curve and one 2d curve
-    private static AppParCurves_MultiCurve Cubic()
+    private static global::Kerf.Engine.Approximation.MultiCurve Cubic()
     {
         Point3D[] aP3d = [new(0, 0, 0), new(1, 2, 0.5), new(3, 2.5, -1), new(4, 0, 1)];
         Point2D[] aP2d = [new(0, 1), new(1, 3), new(2, -1), new(4, 0.5)];
-        AppParCurves_MultiCurve aCurve = new(4);
+        global::Kerf.Engine.Approximation.MultiCurve aCurve = new(4);
         for (int i = 1; i <= 4; i++)
         {
-            AppParCurves_MultiPoint aMP = new(1, 1);
+            global::Kerf.Engine.Approximation.MultiPoint aMP = new(1, 1);
             aMP.SetPoint(1, aP3d[i - 1]);
             aMP.SetPoint2d(2, aP2d[i - 1]);
             aCurve.SetValue(i, aMP);
@@ -38,19 +38,19 @@ public class AppParCurvesTests
     }
 
     // A cubic B-spline MultiCurve with an interior knot at 0.4: 5 poles, one 3d curve and one 2d curve
-    private static AppParCurves_MultiBSpCurve CubicBSpline()
+    private static global::Kerf.Engine.Approximation.MultiBSpCurve CubicBSpline()
     {
         Point3D[] aP3d = [new(0, 0, 0), new(1, 2, 0.5), new(2, 2.5, -1), new(3, 0, 1), new(4, 1, 0)];
         Point2D[] aP2d = [new(0, 1), new(1, 3), new(2, -1), new(3, 0.5), new(5, 1)];
-        NCollection_Array1<AppParCurves_MultiPoint> aPoles = new(1, 5);
+        NCollection_Array1<global::Kerf.Engine.Approximation.MultiPoint> aPoles = new(1, 5);
         for (int i = 1; i <= 5; i++)
         {
-            AppParCurves_MultiPoint aMP = new(1, 1);
+            global::Kerf.Engine.Approximation.MultiPoint aMP = new(1, 1);
             aMP.SetPoint(1, aP3d[i - 1]);
             aMP.SetPoint2d(2, aP2d[i - 1]);
             aPoles[i] = aMP;
         }
-        return new AppParCurves_MultiBSpCurve(aPoles, Knots(), Mults());
+        return new global::Kerf.Engine.Approximation.MultiBSpCurve(aPoles, Knots(), Mults());
     }
 
     private static NCollection_Array1<double> Knots() => NCollection_Array1<double>.From([0.0, 0.4, 1.0]);
@@ -79,17 +79,17 @@ public class AppParCurvesTests
         return aV;
     }
 
-    private static NCollection_HArray1<AppParCurves_ConstraintCouple> Constraints(params (int, AppParCurves_Constraint)[] theCouples)
+    private static NCollection_HArray1<global::Kerf.Engine.Approximation.ConstraintCouple> Constraints(params (int, global::Kerf.Engine.Approximation.Constraint)[] theCouples)
     {
-        NCollection_HArray1<AppParCurves_ConstraintCouple> aTab = new(1, theCouples.Length);
+        NCollection_HArray1<global::Kerf.Engine.Approximation.ConstraintCouple> aTab = new(1, theCouples.Length);
         for (int i = 0; i < theCouples.Length; i++)
         {
-            aTab[i + 1] = new AppParCurves_ConstraintCouple(theCouples[i].Item1, theCouples[i].Item2);
+            aTab[i + 1] = new global::Kerf.Engine.Approximation.ConstraintCouple(theCouples[i].Item1, theCouples[i].Item2);
         }
         return aTab;
     }
 
-    private static void AssertSamePoles(AppParCurves_MultiCurve theExpected, AppParCurves_MultiCurve theActual, double theTol)
+    private static void AssertSamePoles(global::Kerf.Engine.Approximation.MultiCurve theExpected, global::Kerf.Engine.Approximation.MultiCurve theActual, double theTol)
     {
         Assert.Equal(theExpected.NbPoles(), theActual.NbPoles());
         for (int i = 1; i <= theExpected.NbPoles(); i++)
@@ -107,8 +107,8 @@ public class AppParCurvesTests
         const int aNbPoles = 6;
         math_Vector U = Vector([0.0, 0.1, 0.37, 0.5, 0.9, 1.0]);
         global::Kerf.Engine.Numerics.Matrix A = new(1, 6, 1, aNbPoles), DA = new(1, 6, 1, aNbPoles), A2 = new(1, 6, 1, aNbPoles);
-        AppParCurves.Bernstein(aNbPoles, U, A, DA);
-        AppParCurves.BernsteinMatrix(aNbPoles, U, A2);
+        global::Kerf.Engine.Approximation.AppParCurves.Bernstein(aNbPoles, U, A, DA);
+        global::Kerf.Engine.Approximation.AppParCurves.BernsteinMatrix(aNbPoles, U, A2);
         const double h = 1e-6;
         for (int i = 1; i <= 6; i++)
         {
@@ -152,10 +152,10 @@ public class AppParCurvesTests
         foreach (double u in new[] { 0.2, 0.5, 0.83 })
         {
             math_Vector DDA = new(1, aNbPoles);
-            AppParCurves.SecondDerivativeBernstein(u, DDA);
+            global::Kerf.Engine.Approximation.AppParCurves.SecondDerivativeBernstein(u, DDA);
             math_Vector U = Vector([u - h, u + h]);
             global::Kerf.Engine.Numerics.Matrix A = new(1, 2, 1, aNbPoles), DA = new(1, 2, 1, aNbPoles);
-            AppParCurves.Bernstein(aNbPoles, U, A, DA);
+            global::Kerf.Engine.Approximation.AppParCurves.Bernstein(aNbPoles, U, A, DA);
             for (int j = 1; j <= aNbPoles; j++)
             {
                 Assert.Equal((DA[2, j] - DA[1, j]) / (2 * h), DDA[j], 1e-5);
@@ -167,7 +167,7 @@ public class AppParCurvesTests
     public void SecondDerivativeBernstein_DegreeOne()
     {
         math_Vector DDA = new(1, 2, 7.0);
-        AppParCurves.SecondDerivativeBernstein(0.3, DDA);
+        global::Kerf.Engine.Approximation.AppParCurves.SecondDerivativeBernstein(0.3, DDA);
         Assert.Equal(0.0, DDA[1]);
         Assert.Equal(0.0, DDA[2]);
     }
@@ -180,10 +180,10 @@ public class AppParCurvesTests
         math_Vector U = Vector([0.0, 0.1, 0.4, 0.55, 0.99, 1.0]);
         global::Kerf.Engine.Numerics.Matrix A = new(1, 6, 1, 5), DA = new(1, 6, 1, 5);
         math_IntegerVector anIndex = new(1, 6);
-        AppParCurves.SplineFunction(5, 3, U, aFlat, A, DA, anIndex);
+        global::Kerf.Engine.Approximation.AppParCurves.SplineFunction(5, 3, U, aFlat, A, DA, anIndex);
 
         // compare with the curve: sum_j A(i, j) P_j against BSplCLib's evaluation of 1d poles 1..5
-        AppParCurves_MultiBSpCurve aCurve = CubicBSpline();
+        global::Kerf.Engine.Approximation.MultiBSpCurve aCurve = CubicBSpline();
         for (int i = 1; i <= 6; i++)
         {
             double aSum = 0;
@@ -210,24 +210,24 @@ public class AppParCurvesTests
     [Fact]
     public void ConstraintCouple_DefaultsAndTwins()
     {
-        AppParCurves_ConstraintCouple aC = new();
+        global::Kerf.Engine.Approximation.ConstraintCouple aC = new();
         Assert.Equal(-1, aC.Index());
-        Assert.Equal(AppParCurves_NoConstraint, aC.Constraint());
-        AppParCurves_ConstraintCouple aD = aC.WithIndex(3).WithConstraint(AppParCurves_TangencyPoint);
-        Assert.Equal(new AppParCurves_ConstraintCouple(3, AppParCurves_TangencyPoint), aD);
+        Assert.Equal(NoConstraint, aC.Constraint());
+        global::Kerf.Engine.Approximation.ConstraintCouple aD = aC.WithIndex(3).WithConstraint(TangencyPoint);
+        Assert.Equal(new global::Kerf.Engine.Approximation.ConstraintCouple(3, TangencyPoint), aD);
         Assert.Equal(-1, aC.Index());
         // arrays default-construct their elements as C++ does
-        NCollection_Array1<AppParCurves_ConstraintCouple> anArray = new(1, 2);
+        NCollection_Array1<global::Kerf.Engine.Approximation.ConstraintCouple> anArray = new(1, 2);
         Assert.Equal(-1, anArray[2].Index());
     }
 
     [Fact]
     public void MultiPoint_IndexesAndTransform()
     {
-        AppParCurves_MultiPoint aMP = new(NCollection_Array1<Point3D>.From([new Point3D(1, 2, 3)]),
+        global::Kerf.Engine.Approximation.MultiPoint aMP = new(NCollection_Array1<Point3D>.From([new Point3D(1, 2, 3)]),
                                           NCollection_Array1<Point2D>.From([new Point2D(4, 5), new Point2D(6, 7)], 0));
-        Assert.Equal(1, aMP.NbPoints());
-        Assert.Equal(2, aMP.NbPoints2d());
+        Assert.Equal(1, aMP.PointCount);
+        Assert.Equal(2, aMP.Points2dCount);
         Assert.Equal(3, aMP.Dimension(1));
         Assert.Equal(2, aMP.Dimension(3));
         Assert.Equal(new Point2D(6, 7), aMP.Point2d(3));
@@ -243,7 +243,7 @@ public class AppParCurvesTests
         Assert.Contains(" Pole z = -3", aMP.ToString());
 
         // OCCT's copy shares the points
-        AppParCurves_MultiPoint aCopy = new(aMP);
+        global::Kerf.Engine.Approximation.MultiPoint aCopy = new(aMP);
         aCopy.SetPoint(1, new Point3D(9, 9, 9));
         Assert.Equal(new Point3D(9, 9, 9), aMP.Point(1));
     }
@@ -251,14 +251,14 @@ public class AppParCurvesTests
     [Fact]
     public void MultiCurve_EvaluatesBezierCurves()
     {
-        AppParCurves_MultiCurve aCurve = Cubic();
+        global::Kerf.Engine.Approximation.MultiCurve aCurve = Cubic();
         Assert.Equal(2, aCurve.NbCurves());
         Assert.Equal(4, aCurve.NbPoles());
         Assert.Equal(3, aCurve.Degree());
         Assert.Equal(3, aCurve.Dimension(1));
         Assert.Equal(2, aCurve.Dimension(2));
-        Assert.Equal(0, new AppParCurves_MultiCurve().NbCurves());
-        Assert.Equal(0, new AppParCurves_MultiCurve(3).NbCurves()); // empty MultiPoints, as C++ default-constructs them
+        Assert.Equal(0, new global::Kerf.Engine.Approximation.MultiCurve().NbCurves());
+        Assert.Equal(0, new global::Kerf.Engine.Approximation.MultiCurve(3).NbCurves()); // empty MultiPoints, as C++ default-constructs them
 
         aCurve.D2(1, 0.0, out Point3D aP, out Vector3D aV1, out Vector3D aV2);
         Assert.Equal(new Point3D(0, 0, 0), aP);
@@ -280,7 +280,7 @@ public class AppParCurvesTests
     [Fact]
     public void MultiBSpCurve_EvaluatesAndCopiesKnots()
     {
-        AppParCurves_MultiBSpCurve aCurve = CubicBSpline();
+        global::Kerf.Engine.Approximation.MultiBSpCurve aCurve = CubicBSpline();
         Assert.Equal(3, aCurve.Degree());
         Assert.Equal(5, aCurve.NbPoles());
         aCurve.Value(1, 0.0, out Point3D aP0);
@@ -297,7 +297,7 @@ public class AppParCurvesTests
         Assert.Equal(4, aCurve.Multiplicities()[3]);
 
         // OCCT's copy shares the poles and copies the degree
-        AppParCurves_MultiBSpCurve aCopy = new(aCurve);
+        global::Kerf.Engine.Approximation.MultiBSpCurve aCopy = new(aCurve);
         Assert.Equal(3, aCopy.Degree());
         aCopy.Transform2d(2, 0, 2, 0, 2);
         Assert.Equal(new Point2D(10, 2), aCurve.Pole2d(2, 5));
@@ -307,22 +307,22 @@ public class AppParCurvesTests
     // ---------------------------------------------------------------- least squares
 
     [Theory]
-    [InlineData(AppParCurves_NoConstraint, AppParCurves_NoConstraint)]
-    [InlineData(AppParCurves_PassPoint, AppParCurves_NoConstraint)]
-    [InlineData(AppParCurves_NoConstraint, AppParCurves_PassPoint)]
-    [InlineData(AppParCurves_PassPoint, AppParCurves_PassPoint)]
-    [InlineData(AppParCurves_TangencyPoint, AppParCurves_PassPoint)]
-    [InlineData(AppParCurves_PassPoint, AppParCurves_TangencyPoint)]
-    public void LeastSquare_ReproducesABezierCurve(AppParCurves_Constraint theFirst, AppParCurves_Constraint theLast)
+    [InlineData(NoConstraint, NoConstraint)]
+    [InlineData(PassPoint, NoConstraint)]
+    [InlineData(NoConstraint, PassPoint)]
+    [InlineData(PassPoint, PassPoint)]
+    [InlineData(TangencyPoint, PassPoint)]
+    [InlineData(PassPoint, TangencyPoint)]
+    public void LeastSquare_ReproducesABezierCurve(global::Kerf.Engine.Approximation.Constraint theFirst, global::Kerf.Engine.Approximation.Constraint theLast)
     {
-        AppParCurves_MultiCurve aRef = Cubic();
+        global::Kerf.Engine.Approximation.MultiCurve aRef = Cubic();
         double[] aParams = Params(12);
         AppParCurves_TestLine aLine = AppParCurves_TestLine.Sample(aRef, 1, 1, aParams);
         aLine.SetTangents(aRef, 1, aParams[0]);
         aLine.SetTangents(aRef, 12, aParams[11]);
 
         LeastSquare aLSQ = new(aLine, 1, 12, theFirst, theLast, Vector(aParams), 4);
-        Assert.True(aLSQ.IsDone());
+        Assert.True(aLSQ.IsDone);
         AssertSamePoles(aRef, aLSQ.BezierValue(), 1e-10);
 
         aLSQ.Error(out double F, out double aMax3d, out double aMax2d);
@@ -334,12 +334,12 @@ public class AppParCurvesTests
         Assert.Throws<NoSuchObjectException>(() => new LeastSquare(aLine, Knots(), Mults(), 1, 12, theFirst, theLast,
                                                                    Vector(aParams), 5).BezierValue());
 
-        if (theFirst == AppParCurves_TangencyPoint)
+        if (theFirst == TangencyPoint)
         {
             // P2 = P1 + lambda1 * V1, with V1 = 3 (P2 - P1)
             Assert.Equal(1.0 / 3.0, aLSQ.FirstLambda(), 1e-10);
         }
-        if (theLast == AppParCurves_TangencyPoint)
+        if (theLast == TangencyPoint)
         {
             Assert.Equal(1.0 / 3.0, aLSQ.LastLambda(), 1e-10);
         }
@@ -348,20 +348,20 @@ public class AppParCurvesTests
     [Fact]
     public void LeastSquare_BothTangencies()
     {
-        AppParCurves_MultiCurve aRef = Cubic();
+        global::Kerf.Engine.Approximation.MultiCurve aRef = Cubic();
         double[] aParams = Params(12);
         AppParCurves_TestLine aLine = AppParCurves_TestLine.Sample(aRef, 1, 1, aParams);
         aLine.SetTangents(aRef, 1, aParams[0]);
         aLine.SetTangents(aRef, 12, aParams[11]);
 
         // four poles are all fixed by two tangencies: OCCT's protection for overconstrained cases
-        LeastSquare aLSQ = new(aLine, 1, 12, AppParCurves_TangencyPoint, AppParCurves_TangencyPoint, Vector(aParams), 4);
-        Assert.False(aLSQ.IsDone());
+        LeastSquare aLSQ = new(aLine, 1, 12, TangencyPoint, TangencyPoint, Vector(aParams), 4);
+        Assert.False(aLSQ.IsDone);
 
         // with five poles, the degree-4 curve is the cubic
-        aLSQ = new LeastSquare(aLine, 1, 12, AppParCurves_TangencyPoint, AppParCurves_TangencyPoint, Vector(aParams), 5);
-        Assert.True(aLSQ.IsDone());
-        AppParCurves_MultiCurve aResult = aLSQ.BezierValue();
+        aLSQ = new LeastSquare(aLine, 1, 12, TangencyPoint, TangencyPoint, Vector(aParams), 5);
+        Assert.True(aLSQ.IsDone);
+        global::Kerf.Engine.Approximation.MultiCurve aResult = aLSQ.BezierValue();
         foreach (double u in new[] { 0.0, 0.3, 0.71, 1.0 })
         {
             aRef.Value(1, u, out Point3D aP);
@@ -379,21 +379,21 @@ public class AppParCurvesTests
     [Fact]
     public void LeastSquare_TangencyWithoutTangentsBecomesPassPoint()
     {
-        AppParCurves_MultiCurve aRef = Cubic();
+        global::Kerf.Engine.Approximation.MultiCurve aRef = Cubic();
         double[] aParams = Params(10);
         AppParCurves_TestLine aLine = AppParCurves_TestLine.Sample(aRef, 1, 1, aParams);
-        LeastSquare aLSQ = new(aLine, 1, 10, AppParCurves_TangencyPoint, AppParCurves_CurvaturePoint, Vector(aParams), 4);
-        Assert.True(aLSQ.IsDone());
+        LeastSquare aLSQ = new(aLine, 1, 10, TangencyPoint, CurvaturePoint, Vector(aParams), 4);
+        Assert.True(aLSQ.IsDone);
         AssertSamePoles(aRef, aLSQ.BezierValue(), 1e-10);
     }
 
     [Fact]
     public void LeastSquare_PerformWithGivenTangents()
     {
-        AppParCurves_MultiCurve aRef = Cubic();
+        global::Kerf.Engine.Approximation.MultiCurve aRef = Cubic();
         double[] aParams = Params(10);
         AppParCurves_TestLine aLine = AppParCurves_TestLine.Sample(aRef, 1, 1, aParams);
-        LeastSquare aLSQ = new(aLine, 1, 10, AppParCurves_PassPoint, AppParCurves_PassPoint, 5);
+        LeastSquare aLSQ = new(aLine, 1, 10, PassPoint, PassPoint, 5);
 
         // tangents (3d then 2d coordinates) of the cubic, as a degree-4 curve: P2 = P1 + l1 V1 with V1 = derivative
         aRef.D1(1, 0.0, out Point3D _, out Vector3D aV3a);
@@ -403,8 +403,8 @@ public class AppParCurvesTests
         math_Vector V1t = Vector([aV3a.X(), aV3a.Y(), aV3a.Z(), aV2a.X(), aV2a.Y()]);
         math_Vector V2t = Vector([aV3b.X(), aV3b.Y(), aV3b.Z(), aV2b.X(), aV2b.Y()]);
         aLSQ.Perform(Vector(aParams), V1t, V2t, 0.25, 0.25);
-        Assert.True(aLSQ.IsDone());
-        AppParCurves_MultiCurve aResult = aLSQ.BezierValue();
+        Assert.True(aLSQ.IsDone);
+        global::Kerf.Engine.Approximation.MultiCurve aResult = aLSQ.BezierValue();
         Assert.Equal(5, aResult.NbPoles());
         foreach (double u in new[] { 0.0, 0.3, 0.71, 1.0 })
         {
@@ -420,16 +420,16 @@ public class AppParCurvesTests
     [Fact]
     public void LeastSquare_ReproducesABSplineCurve()
     {
-        AppParCurves_MultiBSpCurve aRef = CubicBSpline();
+        global::Kerf.Engine.Approximation.MultiBSpCurve aRef = CubicBSpline();
         double[] aParams = Params(15);
         AppParCurves_TestLine aLine = AppParCurves_TestLine.Sample(aRef, 1, 1, aParams);
 
-        foreach (var (aFirst, aLast) in new[] { (AppParCurves_NoConstraint, AppParCurves_NoConstraint),
-                                                (AppParCurves_PassPoint, AppParCurves_PassPoint) })
+        foreach (var (aFirst, aLast) in new[] { (NoConstraint, NoConstraint),
+                                                (PassPoint, PassPoint) })
         {
             LeastSquare aLSQ = new(aLine, Knots(), Mults(), 1, 15, aFirst, aLast, Vector(aParams), 5);
-            Assert.True(aLSQ.IsDone());
-            AppParCurves_MultiBSpCurve aResult = aLSQ.BSplineValue();
+            Assert.True(aLSQ.IsDone);
+            global::Kerf.Engine.Approximation.MultiBSpCurve aResult = aLSQ.BSplineValue();
             Assert.Equal(3, aResult.Degree());
             Assert.Equal(0.4, aResult.Knots()[2]);
             AssertSamePoles(aRef, aResult, 1e-10);
@@ -450,9 +450,9 @@ public class AppParCurvesTests
     {
         AppParCurves_TestLine aLine = AppParCurves_TestLine.Sample(Cubic(), 1, 1, Params(6));
         // two poles, both fixed by tangency constraints: nothing left to compute
-        LeastSquare aLSQ = new(aLine, 1, 6, AppParCurves_PassPoint, AppParCurves_PassPoint, 2);
+        LeastSquare aLSQ = new(aLine, 1, 6, PassPoint, PassPoint, 2);
         aLSQ.Perform(Vector(Params(6)));
-        Assert.False(aLSQ.IsDone());
+        Assert.False(aLSQ.IsDone);
         Assert.Throws<NotDoneException>(() => aLSQ.BSplineValue());
         Assert.Throws<NotDoneException>(() => aLSQ.Error(out _, out _, out _));
         Assert.Throws<NotDoneException>(() => aLSQ.FunctionMatrix());
@@ -484,14 +484,14 @@ public class AppParCurvesTests
         // 3d only: OCCT reads the 2d passing points out of bounds (occt-issues.md)
         AppParCurves_TestLine aLine = Helix(15, out double[] aParams, 0);
         math_Vector U = Vector(aParams);
-        LeastSquare aLSQ = new(aLine, 1, 15, AppParCurves_PassPoint, AppParCurves_PassPoint, U, 4);
-        AppParCurves_MultiCurve aCurve = aLSQ.BezierValue();
+        LeastSquare aLSQ = new(aLine, 1, 15, PassPoint, PassPoint, U, 4);
+        global::Kerf.Engine.Approximation.MultiCurve aCurve = aLSQ.BezierValue();
         aCurve.Value(1, aParams[7], out Point3D aBefore);
         Assert.True(aBefore.Distance(aLine.P3d[7][0]) > 1e-4);
 
-        var aConstraints = Constraints((1, AppParCurves_PassPoint), (8, AppParCurves_PassPoint), (15, AppParCurves_PassPoint));
+        var aConstraints = Constraints((1, PassPoint), (8, PassPoint), (15, PassPoint));
         ResolConstraint aResol = new(aLine, aCurve, 1, 15, aConstraints, aLSQ.FunctionMatrix(), aLSQ.DerivativeFunctionMatrix());
-        Assert.True(aResol.IsDone());
+        Assert.True(aResol.IsDone);
         // 3 passing points, 3 coordinates each
         Assert.Equal(9, aResol.ConstraintMatrix().RowNumber());
         Assert.Equal(12, aResol.ConstraintMatrix().ColNumber());
@@ -522,12 +522,12 @@ public class AppParCurvesTests
         Vector3D aTangent = new(-Math.Sin(2.5 * 0.5), Math.Cos(2.5 * 0.5), 0.3);
         aLine.Tangents[8] = ([aTangent], []);
         math_Vector U = Vector(aParams);
-        LeastSquare aLSQ = new(aLine, 1, 15, AppParCurves_PassPoint, AppParCurves_PassPoint, U, 5);
-        AppParCurves_MultiCurve aCurve = aLSQ.BezierValue();
+        LeastSquare aLSQ = new(aLine, 1, 15, PassPoint, PassPoint, U, 5);
+        global::Kerf.Engine.Approximation.MultiCurve aCurve = aLSQ.BezierValue();
 
-        var aConstraints = Constraints((1, AppParCurves_PassPoint), (8, AppParCurves_TangencyPoint), (15, AppParCurves_PassPoint));
+        var aConstraints = Constraints((1, PassPoint), (8, TangencyPoint), (15, PassPoint));
         ResolConstraint aResol = new(aLine, aCurve, 1, 15, aConstraints, aLSQ.FunctionMatrix(), aLSQ.DerivativeFunctionMatrix());
-        Assert.True(aResol.IsDone());
+        Assert.True(aResol.IsDone);
         aCurve.D1(1, aParams[7], out Point3D aP, out Vector3D aV);
         Assert.True(aP.Distance(aLine.P3d[7][0]) < 1e-8);
         Assert.True(aV.Crossed(aTangent).Magnitude() < 1e-8 * aV.Magnitude());
@@ -537,10 +537,10 @@ public class AppParCurvesTests
     public void Function_GradientMatchesDifferences()
     {
         AppParCurves_TestLine aLine = Helix(12, out double[] aParams);
-        var aConstraints = Constraints((1, AppParCurves_PassPoint), (12, AppParCurves_PassPoint));
+        var aConstraints = Constraints((1, PassPoint), (12, PassPoint));
         Function aF = new(aLine, 1, 12, aConstraints, Vector(aParams), 4);
         Assert.Equal(12, aF.VariableCount);
-        Assert.Equal(AppParCurves_PassPoint, aF.FirstConstraint(aConstraints, 1));
+        Assert.Equal(PassPoint, aF.FirstConstraint(aConstraints, 1));
 
         math_Vector X = Vector(aParams);
         math_Vector G = new(1, 12);
@@ -568,7 +568,7 @@ public class AppParCurvesTests
     public void BSpFunction_GradientMatchesDifferences()
     {
         AppParCurves_TestLine aLine = Helix(14, out double[] aParams);
-        var aConstraints = Constraints((1, AppParCurves_PassPoint), (14, AppParCurves_PassPoint));
+        var aConstraints = Constraints((1, PassPoint), (14, PassPoint));
         BSpFunction aF = new(aLine, 1, 14, aConstraints, Vector(aParams), Knots(), Mults(), 5);
         math_Vector X = Vector(aParams);
         math_Vector G = new(1, 14);
@@ -605,13 +605,13 @@ public class AppParCurvesTests
     {
         AppParCurves_TestLine aLine = Helix(15, out double[] aParams, 0);
         math_Vector U = Vector(aParams);
-        var aConstraints = Constraints((1, AppParCurves_PassPoint), (8, AppParCurves_PassPoint), (15, AppParCurves_PassPoint));
+        var aConstraints = Constraints((1, PassPoint), (8, PassPoint), (15, PassPoint));
         Gradient aGrad = new(aLine, 1, 15, aConstraints, U, 5, 1e-3, 1e-3, 50);
-        AppParCurves_MultiCurve aCurve = aGrad.Value();
+        global::Kerf.Engine.Approximation.MultiCurve aCurve = aGrad.Value();
         Assert.Equal(6, aCurve.NbPoles());
         Assert.True(aGrad.MaxError3d() < 1e-2, $"MaxError3d {aGrad.MaxError3d()}");
         Assert.True(aGrad.AverageError() <= aGrad.MaxError3d());
-        Assert.Equal(aGrad.IsDone(), aGrad.MaxError3d() <= 1e-3);
+        Assert.Equal(aGrad.IsDone, aGrad.MaxError3d() <= 1e-3);
 
         // the interior passing point holds at its (possibly moved) parameter
         aCurve.Value(1, U[8], out Point3D aP);
@@ -625,7 +625,7 @@ public class AppParCurvesTests
     {
         // OCCT reads the 2d points of a mixed line at the curve index (occt-issues.md); the port's range check throws
         AppParCurves_TestLine aLine = Helix(10, out double[] aParams);
-        var aConstraints = Constraints((1, AppParCurves_PassPoint), (5, AppParCurves_PassPoint), (10, AppParCurves_PassPoint));
+        var aConstraints = Constraints((1, PassPoint), (5, PassPoint), (10, PassPoint));
         Assert.ThrowsAny<OutOfRangeException>(() => new Function(aLine, 1, 10, aConstraints, Vector(aParams), 4));
     }
 
@@ -639,8 +639,8 @@ public class AppParCurvesTests
             double t = aParams[i];
             aParams[i] = t + 0.1 * t * (1 - t);
         }
-        var aConstraints = Constraints((1, AppParCurves_PassPoint), (20, AppParCurves_PassPoint));
-        LeastSquare aStart = new(aLine, Knots(), Mults(), 1, 20, AppParCurves_PassPoint, AppParCurves_PassPoint,
+        var aConstraints = Constraints((1, PassPoint), (20, PassPoint));
+        LeastSquare aStart = new(aLine, Knots(), Mults(), 1, 20, PassPoint, PassPoint,
                                  Vector(aParams), 5);
         aStart.Error(out _, out double aStart3d, out double aStart2d);
 
@@ -648,7 +648,7 @@ public class AppParCurvesTests
         BSpGradient aGrad = new(aLine, 1, 20, aConstraints, U, Knots(), Mults(), 3, 1e-6, 1e-6, 30);
         Assert.True(aGrad.MaxError3d() < aStart3d, $"{aGrad.MaxError3d()} >= {aStart3d}");
         Assert.True(aGrad.MaxError2d() < aStart2d, $"{aGrad.MaxError2d()} >= {aStart2d}");
-        AppParCurves_MultiBSpCurve aCurve = aGrad.Value();
+        global::Kerf.Engine.Approximation.MultiBSpCurve aCurve = aGrad.Value();
         Assert.Equal(3, aCurve.Degree());
         Assert.Equal(5, aCurve.NbPoles());
         Assert.True(aGrad.Error(10) <= aGrad.MaxError3d() + aGrad.MaxError2d());
@@ -664,21 +664,21 @@ public class AppParCurvesTests
     [Fact]
     public void BSpGradient_TangencyEndsWithGivenLambdas()
     {
-        AppParCurves_MultiBSpCurve aRef = CubicBSpline();
+        global::Kerf.Engine.Approximation.MultiBSpCurve aRef = CubicBSpline();
         double[] aParams = Params(15);
         AppParCurves_TestLine aLine = AppParCurves_TestLine.Sample(aRef, 1, 1, aParams);
         aLine.SetTangents(aRef, 1, 0.0);
         aLine.SetTangents(aRef, 15, 1.0);
-        var aConstraints = Constraints((1, AppParCurves_TangencyPoint), (15, AppParCurves_TangencyPoint));
+        var aConstraints = Constraints((1, TangencyPoint), (15, TangencyPoint));
 
         // the lambdas of the fit: P2 = P1 + l1 V1, with V1 = 3 (P2 - P1) / 0.4
         BSpGradient aGrad = new(aLine, 1, 15, aConstraints, Vector(aParams), Knots(), Mults(), 3, 1e-9, 1e-9, 0);
-        Assert.True(aGrad.IsDone());
+        Assert.True(aGrad.IsDone);
         AssertSamePoles(aRef, aGrad.Value(), 1e-9);
 
         BSpGradient aGiven = new(aLine, 1, 15, aConstraints, Vector(aParams), Knots(), Mults(), 3, 1e-9, 1e-9, 0,
                                  0.4 / 3, 0.6 / 3);
-        Assert.True(aGiven.IsDone());
+        Assert.True(aGiven.IsDone);
         AssertSamePoles(aRef, aGiven.Value(), 1e-9);
     }
 }

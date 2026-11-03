@@ -5,6 +5,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
@@ -52,7 +57,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
     // OCC_CATCH_SIGNALS: OCCT catches Standard_Failure, and access violations as failures (decision 917); never a write
     // into a frozen shape or geometry (decision 423)
     private static bool IsCaughtFailure(Exception theException)
-        => theException is not (ImmutableObjectException or TopoDS_LockedShape)
+        => theException is not (ImmutableObjectException or LockedShapeException)
            && theException is FailureException or NullReferenceException;
 
     private static Continuity IntegerToGeomAbsShape(int i)
@@ -105,7 +110,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         return result;
     }
 
-    private static bool IsConvertCurve3d(Geom_Curve? aCurve,
+    private static bool IsConvertCurve3d(Curve3D? aCurve,
                                          int Degree,
                                          int NbSeg,
                                          bool myRational,
@@ -119,32 +124,32 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         {
             return true;
         }
-        if (aCurve is Geom_TrimmedCurve tmp)
+        if (aCurve is TrimmedCurve3D tmp)
         {
-            Geom_Curve BasCurve = tmp.BasisCurve();
+            Curve3D BasCurve = tmp.BasisCurve();
             return IsConvertCurve3d(BasCurve, Degree, NbSeg, myRational, aParameters);
         }
 
-        if (aCurve is Geom_OffsetCurve tmpO)
+        if (aCurve is OffsetCurve3D tmpO)
         {
             if (aParameters.ConvertOffsetCurv3d())
             {
                 return true;
             }
-            Geom_Curve BasCurve = tmpO.BasisCurve();
+            Curve3D BasCurve = tmpO.BasisCurve();
             return IsConvertCurve3d(BasCurve, Degree, NbSeg, myRational, aParameters);
         }
-        if (aCurve is Geom_BSplineCurve BsC)
+        if (aCurve is BSplineCurve3D BsC)
         {
             // OCCT: '>=' here, '>' for 2D curves (occt-issues.md)
-            if (BsC.Degree() > Degree || ((BsC.NbKnots() - 1) >= NbSeg))
+            if (BsC.Degree() > Degree || ((BsC.KnotCount - 1) >= NbSeg))
             {
                 return true;
             }
-            return myRational && BsC.IsRational();
+            return myRational && BsC.IsRational;
         }
-        if (aCurve is Geom_BezierCurve aBz
-            && (aBz.Degree() > Degree || (myRational && aBz.IsRational())))
+        if (aCurve is BezierCurve3D aBz
+            && (aBz.Degree() > Degree || (myRational && aBz.IsRational)))
         {
             return true;
         }
@@ -152,7 +157,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         return false;
     }
 
-    private static bool IsConvertSurface(Geom_Surface? aSurface,
+    private static bool IsConvertSurface(Surface? aSurface,
                                          int Degree,
                                          int NbSeg,
                                          bool myRational,
@@ -162,23 +167,23 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         {
             return false;
         }
-        if (aSurface is Geom_Plane)
+        if (aSurface is PlaneSurface)
         {
             return aParameters.ConvertPlane();
         }
-        else if (aSurface is Geom_ConicalSurface)
+        else if (aSurface is ConicalSurface)
         {
             return aParameters.ConvertConicalSurf();
         }
-        else if (aSurface is Geom_SphericalSurface)
+        else if (aSurface is SphericalSurface)
         {
             return aParameters.ConvertSphericalSurf();
         }
-        else if (aSurface is Geom_CylindricalSurface)
+        else if (aSurface is CylindricalSurface)
         {
             return aParameters.ConvertCylindricalSurf();
         }
-        else if (aSurface is Geom_ToroidalSurface)
+        else if (aSurface is ToroidalSurface)
         {
             return aParameters.ConvertToroidalSurf();
         }
@@ -186,51 +191,51 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         // else if(aSurface->IsKind(STANDARD_TYPE(Geom_ElementarySurface)))    {
         //   return aParameters->ConvertElementarySurf();
         //  }
-        if (aSurface is Geom_SweptSurface aSwept)
+        if (aSurface is SweptSurface aSwept)
         {
-            if (aSurface is Geom_SurfaceOfRevolution && aParameters.ConvertRevolutionSurf())
+            if (aSurface is RevolutionSurface && aParameters.ConvertRevolutionSurf())
             {
                 return true;
             }
-            if (aSurface is Geom_SurfaceOfLinearExtrusion && aParameters.ConvertExtrusionSurf())
+            if (aSurface is ExtrusionSurface && aParameters.ConvertExtrusionSurf())
             {
                 return true;
             }
-            Geom_Curve BasCurve = aSwept.BasisCurve();
+            Curve3D BasCurve = aSwept.BasisCurve();
             return IsConvertCurve3d(BasCurve, Degree, NbSeg, myRational, aParameters);
         }
-        if (aSurface is Geom_RectangularTrimmedSurface aRTS)
+        if (aSurface is TrimmedSurface aRTS)
         {
-            Geom_Surface theSurf = aRTS.BasisSurface();
+            Surface theSurf = aRTS.BasisSurface();
             return IsConvertSurface(theSurf, Degree, NbSeg, myRational, aParameters);
         }
-        if (aSurface is Geom_OffsetSurface aOS)
+        if (aSurface is OffsetSurface aOS)
         {
             if (aParameters.ConvertOffsetSurf())
             {
                 return true;
             }
-            Geom_Surface theSurf = aOS.BasisSurface();
+            Surface theSurf = aOS.BasisSurface();
             return IsConvertSurface(theSurf, Degree, NbSeg, myRational, aParameters);
         }
-        if (aSurface is Geom_BSplineSurface theBSurf)
+        if (aSurface is BSplineSurface theBSurf)
         {
             if (theBSurf.UDegree() > Degree || theBSurf.VDegree() > Degree)
             {
                 return true;
             }
-            if ((theBSurf.NbUKnots() - 1) * (theBSurf.NbVKnots() - 1) > NbSeg)
+            if ((theBSurf.UKnotCount - 1) * (theBSurf.VKnotCount - 1) > NbSeg)
             {
                 return true;
             }
-            if (myRational && (theBSurf.IsURational() || theBSurf.IsVRational()))
+            if (myRational && (theBSurf.IsURational || theBSurf.IsVRational))
             {
                 return true;
             }
             return false;
         }
 
-        if (aSurface is Geom_BezierSurface theBzSurf)
+        if (aSurface is BezierSurface theBzSurf)
         {
             if (aParameters.ConvertBezierSurf())
             {
@@ -240,7 +245,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             {
                 return true;
             }
-            if (myRational && (theBzSurf.IsURational() || theBzSurf.IsVRational()))
+            if (myRational && (theBzSurf.IsURational || theBzSurf.IsVRational))
             {
                 return true;
             }
@@ -249,7 +254,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         return false;
     }
 
-    private static bool IsConvertCurve2d(Geom2d_Curve? aCurve,
+    private static bool IsConvertCurve2d(Curve2D? aCurve,
                                          int Degree,
                                          int NbSeg,
                                          bool myRational,
@@ -263,28 +268,28 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         {
             return true;
         }
-        if (aCurve is Geom2d_TrimmedCurve tmp)
+        if (aCurve is TrimmedCurve2D tmp)
         {
-            Geom2d_Curve BasCurve = tmp.BasisCurve();
+            Curve2D BasCurve = tmp.BasisCurve();
             return IsConvertCurve2d(BasCurve, Degree, NbSeg, myRational, aParameters);
         }
-        if (aCurve is Geom2d_OffsetCurve tmpO)
+        if (aCurve is OffsetCurve2D tmpO)
         {
             if (aParameters.ConvertOffsetCurv2d())
             {
                 return true;
             }
-            Geom2d_Curve BasCurve = tmpO.BasisCurve();
+            Curve2D BasCurve = tmpO.BasisCurve();
             return IsConvertCurve2d(BasCurve, Degree, NbSeg, myRational, aParameters);
         }
-        if (aCurve is Geom2d_BSplineCurve aBs
-            && ((aBs.Degree() > Degree || ((aBs.NbKnots() - 1) > NbSeg))
-                || (myRational && aBs.IsRational())))
+        if (aCurve is BSplineCurve2D aBs
+            && ((aBs.Degree() > Degree || ((aBs.KnotCount - 1) > NbSeg))
+                || (myRational && aBs.IsRational)))
         {
             return true;
         }
-        if (aCurve is Geom2d_BezierCurve aBz
-            && ((aBz.Degree() > Degree) || (myRational && aBz.IsRational())))
+        if (aCurve is BezierCurve2D aBz
+            && ((aBz.Degree() > Degree) || (myRational && aBz.IsRational)))
         {
             return true;
         }
@@ -386,8 +391,8 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
     /// True if the face's surface is approximated: then S is the approximation (over the face's UV bounds in the
     /// segment mode, or where the surface is infinite).
     /// </summary>
-    public override bool NewSurface(in TopoDS_Face F,
-                                    out Geom_Surface? S,
+    public override bool NewSurface(in Face F,
+                                    out Surface? S,
                                     out Placement L,
                                     out double Tol,
                                     out bool RevWires,
@@ -404,7 +409,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         RevWires = false;
         RevFace = false;
         myConvert = false;
-        Geom_Surface? aSurface = BRep_Tool.Surface(F, out L);
+        Surface? aSurface = Tool.Surface(F, out L);
         if (aSurface is null)
         {
             return false;
@@ -415,7 +420,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             IsOf = false;
         }
         aSurface.Bounds(out double UF, out double UL, out double VF, out double VL);
-        BRepTools.UVBounds(F, out double Umin, out double Umax, out double Vmin, out double Vmax);
+        BrepTools.UVBounds(F, out double Umin, out double Umax, out double Vmin, out double Vmax);
         if (myParameters.SegmentSurfaceMode())
         {
             UF = Umin;
@@ -442,10 +447,10 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
 
         if (IsConv)
         {
-            bool wasBSpline = aSurface is Geom_BSplineSurface;
-            if (aSurface is Geom_RectangularTrimmedSurface rts)
+            bool wasBSpline = aSurface is BSplineSurface;
+            if (aSurface is TrimmedSurface rts)
             {
-                wasBSpline = rts.BasisSurface() is Geom_BSplineSurface;
+                wasBSpline = rts.BasisSurface() is BSplineSurface;
             }
 
             if (wasBSpline)
@@ -461,16 +466,16 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         return IsConv;
     }
 
-    private static void ConvertExtrusion(Geom_Curve? C, /*const gp_Dir& direction,*/
+    private static void ConvertExtrusion(Curve3D? C, /*const gp_Dir& direction,*/
                                          in Transform3D shiftF,
                                          in Transform3D shiftL,
                                          double VF,
                                          double VL,
-                                         out Geom_Surface bspline)
+                                         out Surface bspline)
     {
         // OCCT: dereferences C, null when the approximation of the basis curve failed (an access violation natively)
-        Geom_BSplineCurve bspl = (Geom_BSplineCurve)C!;
-        int nbPoles = bspl.NbPoles();
+        BSplineCurve3D bspl = (BSplineCurve3D)C!;
+        int nbPoles = bspl.PoleCount;
         NCollection_Array1<Point3D> poles = bspl.InternalPoles();
         NCollection_Array1<double> weights = bspl.InternalWeightsArray();
         NCollection_Array1<double> knots = bspl.InternalKnots();
@@ -492,7 +497,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         vknots[2] = VL;
         vmults[1] = vmults[2] = 2;
 
-        bspline = new Geom_BSplineSurface(resPoles,
+        bspline = new BSplineSurface(resPoles,
                                           resWeigth,
                                           knots,
                                           vknots,
@@ -500,7 +505,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                                           vmults,
                                           bspl.Degree(),
                                           1,
-                                          bspl.IsPeriodic(),
+                                          bspl.IsPeriodic,
                                           false);
     }
 
@@ -508,8 +513,8 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
     /// True if the surface is converted: then S is the result (left unchanged otherwise). With <paramref name="IsOf"/>,
     /// offset surfaces are approximated as offsets of approximated bases, else as B-splines.
     /// </summary>
-    public bool ConvertSurface(Geom_Surface aSurface,
-                               ref Geom_Surface? S,
+    public bool ConvertSurface(Surface aSurface,
+                               ref Surface? S,
                                double UF,
                                double UL,
                                double VF,
@@ -521,8 +526,8 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             return false;
         }
 
-        Geom_Surface aSurf = aSurface;
-        if (aSurf is Geom_Plane pln && myParameters.ConvertPlane())
+        Surface aSurf = aSurface;
+        if (aSurf is PlaneSurface pln && myParameters.ConvertPlane())
         {
             NCollection_Array2<Point3D> poles = new(1, 2, 1, 2);
             NCollection_Array1<double> uknots = new(1, 2);
@@ -539,17 +544,17 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             vknots[1] = VF;
             vknots[2] = VL;
             umults[1] = umults[2] = vmults[1] = vmults[2] = 2;
-            S = new Geom_BSplineSurface(poles, uknots, vknots, umults, vmults, 1, 1, false, false);
+            S = new BSplineSurface(poles, uknots, vknots, umults, vmults, 1, 1, false, false);
             return true;
         }
-        if (aSurf is Geom_SurfaceOfRevolution SurfaceR)
+        if (aSurf is RevolutionSurface SurfaceR)
         {
-            Geom_Curve BasCurve = SurfaceR.BasisCurve();
-            Geom_Curve? ResCurve = null;
+            Curve3D BasCurve = SurfaceR.BasisCurve();
+            Curve3D? ResCurve = null;
             double TolS = global::Kerf.Engine.Foundation.Precision.Confusion();
             if (myParameters.ConvertRevolutionSurf())
             {
-                if (BasCurve is Geom_OffsetCurve)
+                if (BasCurve is OffsetCurve3D)
                 {
                     Continuity cnt = BasCurve.Continuity();
                     cnt = (cnt > C2 ? C2 : cnt);
@@ -561,7 +566,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                                      ref TolS,
                                      false))
                     {
-                        Geom_SurfaceOfRevolution newRevol = new Geom_SurfaceOfRevolution(ResCurve!, SurfaceR.Axis());
+                        RevolutionSurface newRevol = new RevolutionSurface(ResCurve!, SurfaceR.Axis());
                         aSurf = newRevol;
                     }
                 }
@@ -576,7 +581,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                                  ref TolS,
                                  IsOf))
                 {
-                    S = new Geom_SurfaceOfRevolution(ResCurve!, SurfaceR.Axis());
+                    S = new RevolutionSurface(ResCurve!, SurfaceR.Axis());
                     return true;
                 }
                 else
@@ -585,16 +590,16 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                 }
             }
         }
-        if (aSurf is Geom_SurfaceOfLinearExtrusion SurfaceE)
+        if (aSurf is ExtrusionSurface SurfaceE)
         {
-            Geom_Curve? BasCurve = SurfaceE.BasisCurve();
-            Geom_Curve? ResCurve = null;
+            Curve3D? BasCurve = SurfaceE.BasisCurve();
+            Curve3D? ResCurve = null;
             double TolS = global::Kerf.Engine.Foundation.Precision.Confusion();
             if (myParameters.ConvertExtrusionSurf())
             {
                 Continuity cnt = SurfaceE.Continuity();
                 cnt = (cnt > C2 ? C2 : cnt);
-                Geom_BSplineCurve? bspl =
+                BSplineCurve3D? bspl =
                     ShapeConstruct.InternalConvertCurveToBSpline(BasCurve, UF, UL, TolS, cnt, myNbMaxSeg, myMaxDegree);
                 BasCurve = bspl;
                 // OCCT: dereferences BasCurve, null when the conversion failed (an access violation natively)
@@ -608,7 +613,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                 Transform3D shiftF = new Transform3D(), shiftL = new Transform3D();
                 shiftF.SetTranslation(SurfaceE.Value(UF, 0), SurfaceE.Value(UF, VF));
                 shiftL.SetTranslation(SurfaceE.Value(UF, 0), SurfaceE.Value(UF, VL));
-                ConvertExtrusion(ResCurve, /*Surface->Direction(),*/ shiftF, shiftL, VF, VL, out Geom_Surface aBSpline);
+                ConvertExtrusion(ResCurve, /*Surface->Direction(),*/ shiftF, shiftL, VF, VL, out Surface aBSpline);
                 S = aBSpline;
                 return true;
             }
@@ -622,7 +627,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                                  ref TolS,
                                  IsOf))
                 {
-                    S = new Geom_SurfaceOfLinearExtrusion(ResCurve!, SurfaceE.Direction());
+                    S = new ExtrusionSurface(ResCurve!, SurfaceE.Direction());
                     return true;
                 }
                 else
@@ -631,11 +636,11 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                 }
             }
         }
-        if (aSurf is Geom_RectangularTrimmedSurface tmpR)
+        if (aSurf is TrimmedSurface tmpR)
         {
             tmpR.Bounds(out double U1, out double U2, out double V1, out double V2);
-            Geom_Surface theSurf = tmpR.BasisSurface();
-            Geom_Surface? ResSurface = null;
+            Surface theSurf = tmpR.BasisSurface();
+            Surface? ResSurface = null;
             if (ConvertSurface(theSurf, ref ResSurface, U1, U2, V1, V2, IsOf))
             {
                 // S = new Geom_RectangularTrimmedSurface(ResSurface,U1,U2,V1,V2);
@@ -647,15 +652,15 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                 return false;
             }
         }
-        if (aSurf is Geom_OffsetSurface tmpO && IsOf)
+        if (aSurf is OffsetSurface tmpO && IsOf)
         {
-            Geom_Surface theSurf = tmpO.BasisSurface();
-            Geom_Surface? ResSurface = null;
+            Surface theSurf = tmpO.BasisSurface();
+            Surface? ResSurface = null;
             if (ConvertSurface(theSurf, ref ResSurface, UF, UL, VF, VL))
             {
                 if (ResSurface!.Continuity() != C0)
                 {
-                    S = new Geom_OffsetSurface(ResSurface, tmpO.Offset());
+                    S = new OffsetSurface(ResSurface, tmpO.Offset());
                     return true;
                 }
                 else if (ConvertSurface(aSurf, ref S, UF, UL, VF, VL, false))
@@ -672,7 +677,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                 return false;
             }
         }
-        if (aSurf is Geom_BezierSurface bezier && myParameters.ConvertBezierSurf())
+        if (aSurf is BezierSurface bezier && myParameters.ConvertBezierSurf())
         {
             int uDegree = bezier.UDegree();
             int vDegree = bezier.VDegree();
@@ -686,8 +691,8 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             NCollection_Array1<int> uMults = new(1, 2), vMults = new(1, 2);
             uMults.Init(uDegree + 1);
             vMults.Init(vDegree + 1);
-            Geom_BSplineSurface bspline =
-                new Geom_BSplineSurface(aPoles, aWeights, uKnots, vKnots, uMults, vMults, uDegree, vDegree);
+            BSplineSurface bspline =
+                new BSplineSurface(aPoles, aWeights, uKnots, vKnots, uMults, vMults, uDegree, vDegree);
 
             if (!ConvertSurface(bspline, ref S, UF, UL, VF, VL, IsOf))
             {
@@ -700,26 +705,26 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         bool URat = false;
         bool VRat = false;
         int UDeg = 1, VDeg = 1;
-        if (aSurf is Geom_BSplineSurface BsS)
+        if (aSurf is BSplineSurface BsS)
         {
             UDeg = BsS.UDegree();
             VDeg = BsS.VDegree();
-            NbSeg = (BsS.NbUKnots() - 1) * (BsS.NbVKnots() - 1);
-            URat = BsS.IsURational();
-            VRat = BsS.IsVRational();
+            NbSeg = (BsS.UKnotCount - 1) * (BsS.VKnotCount - 1);
+            URat = BsS.IsURational;
+            VRat = BsS.IsVRational;
             bool IsR = (myRational && (URat || VRat));
             if (UDeg <= myMaxDegree && VDeg <= myMaxDegree && NbSeg <= myNbMaxSeg && !IsR)
             {
                 return false;
             }
         }
-        if (aSurf is Geom_BezierSurface BsZ)
+        if (aSurf is BezierSurface BsZ)
         {
             UDeg = BsZ.UDegree();
             VDeg = BsZ.VDegree();
             NbSeg = 1;
-            URat = BsZ.IsURational();
-            VRat = BsZ.IsVRational();
+            URat = BsZ.IsURational;
+            VRat = BsZ.IsVRational;
             bool IsR = (myRational && (URat || VRat));
             if (UDeg <= myMaxDegree && VDeg <= myMaxDegree && NbSeg <= myNbMaxSeg && !IsR)
             {
@@ -727,7 +732,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             }
         }
         Continuity Cont = myContinuity3d;
-        if (aSurf is Geom_OffsetSurface)
+        if (aSurf is OffsetSurface)
         {
             Cont = C0;
         }
@@ -742,13 +747,13 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             || Math.Abs(v1 - VF) > global::Kerf.Engine.Foundation.Precision.PConfusion() || Math.Abs(v2 - VL) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             bool isTrim = false;
-            if (!aSurf.IsUPeriodic())
+            if (!aSurf.IsUPeriodic)
             { // else {
                 u1 = Max(u1, UF);
                 u2 = Min(u2, UL);
                 isTrim = true;
             }
-            if (!aSurf.IsVPeriodic())
+            if (!aSurf.IsVPeriodic)
             { // else
                 v1 = Max(v1, VF);
                 v2 = Min(v2, VL);
@@ -757,7 +762,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
 
             if (isTrim && (u1 != u2) && (v1 != v2))
             {
-                Geom_RectangularTrimmedSurface trSurface = new Geom_RectangularTrimmedSurface(aSurf, u1, u2, v1, v2);
+                TrimmedSurface trSurface = new TrimmedSurface(aSurf, u1, u2, v1, v2);
                 trSurface.Bounds(out double ur1, out double ur2, out double vr1, out double vr2);
                 ShiftU = u1 - ur1;
                 ShiftV = v1 - vr1;
@@ -788,27 +793,27 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                         Continuity aContV = IntegerToGeomAbsShape(aCV);
                         Continuity aContU = IntegerToGeomAbsShape(aCU);
 
-                        GeomConvert_ApproxSurface anApprox = new GeomConvert_ApproxSurface(aSurf, aTol3d, aContU, aContV, MaxDeg, MaxDeg, MaxSeg, 0);
-                        bool Done = anApprox.IsDone();
+                        ApproxSurface anApprox = new ApproxSurface(aSurf, aTol3d, aContU, aContV, MaxDeg, MaxDeg, MaxSeg, 0);
+                        bool Done = anApprox.IsDone;
                         newTol = anApprox.MaxError();
                         if (anApprox.MaxError() <= myTol3d && Done)
                         {
-                            nbOfSpan = (anApprox.Surface()!.NbUKnots() - 1) * (anApprox.Surface()!.NbVKnots() - 1);
+                            nbOfSpan = (anApprox.Surface()!.UKnotCount - 1) * (anApprox.Surface()!.VKnotCount - 1);
                             S = anApprox.Surface();
-                            Geom_BSplineSurface Bsc = (Geom_BSplineSurface)S!;
+                            BSplineSurface Bsc = (BSplineSurface)S!;
                             // OCCT.NET: the approximation's surface is frozen (decision 197); OCCT changes it in place
                             // below, the port changes a copy (decision 974)
-                            if (aSurface.IsUPeriodic() || aSurface.IsVPeriodic() || Math.Abs(ShiftU) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                            if (aSurface.IsUPeriodic || aSurface.IsVPeriodic || Math.Abs(ShiftU) > global::Kerf.Engine.Foundation.Precision.PConfusion()
                                 || Math.Abs(ShiftV) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {
-                                Bsc = (Geom_BSplineSurface)Bsc.Copy();
+                                Bsc = (BSplineSurface)Bsc.Copy();
                                 S = Bsc;
                             }
-                            if (aSurface.IsUPeriodic())
+                            if (aSurface.IsUPeriodic)
                             {
                                 Bsc.SetUPeriodic();
                             }
-                            if (aSurface.IsVPeriodic())
+                            if (aSurface.IsVPeriodic)
                             {
                                 Bsc.SetVPeriodic();
                             }
@@ -921,7 +926,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
     /// True if the edge's 3D curve is approximated, or (C then a copy of the curve) if a surface or pcurve of the
     /// edge is.
     /// </summary>
-    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out Placement L, out double Tol)
+    public override bool NewCurve(in Edge E, out Curve3D? C, out Placement L, out double Tol)
     {
         C = null;
         Tol = 0.0;
@@ -930,21 +935,21 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             L = new Placement();
             return false;
         }
-        Geom_Curve? aCurve = BRep_Tool.Curve(E, out L, out double First, out double Last);
-        double TolCur = BRep_Tool.Tolerance(E);
+        Curve3D? aCurve = Tool.Curve(E, out L, out double First, out double Last);
+        double TolCur = Tool.Tolerance(E);
         // if(aCurve.IsNull()) return false;
         bool IsConvert = false;
-        BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
+        BrepTEdge TE = (BrepTEdge)E.TShape()!;
         // iterate on pcurves
-        var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(TE.Curves());
+        var itcr = new NCollection_List<CurveRepresentation>.Iterator(TE.Curves());
         for (; itcr.More(); itcr.Next())
         {
-            if (itcr.Value() is not BRep_GCurve GC || !GC.IsCurveOnSurface())
+            if (itcr.Value() is not GCurve GC || !GC.IsCurveOnSurface())
             {
                 continue;
             }
-            Geom_Surface? aSurface = GC.Surface();
-            Geom2d_Curve? aCurve2d = GC.PCurve();
+            Surface? aSurface = GC.Surface();
+            Curve2D? aCurve2d = GC.PCurve();
             if ((myApproxSurfaceFlag
                  && IsConvertSurface(aSurface, myMaxDegree, myNbMaxSeg, myRational, myParameters))
                 || (myApproxCurve2dFlag
@@ -973,14 +978,14 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             IsOf = false;
         }
         bool IsConv = ConvertCurve(aCurve, ref C, IsConvert, First, Last, ref TolCur, IsOf);
-        Tol = BRep_Tool.Tolerance(E); // TolCur;
+        Tol = Tool.Tolerance(E); // TolCur;
 
         if (IsConv)
         {
-            bool wasBSpline = aCurve is Geom_BSplineCurve;
-            if (aCurve is Geom_TrimmedCurve tc)
+            bool wasBSpline = aCurve is BSplineCurve3D;
+            if (aCurve is TrimmedCurve3D tc)
             {
-                wasBSpline = tc.BasisCurve() is Geom_BSplineCurve;
+                wasBSpline = tc.BasisCurve() is BSplineCurve3D;
             }
 
             if (wasBSpline)
@@ -1000,8 +1005,8 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
     /// otherwise) and TolCur its error. With <paramref name="IsOf"/>, offset curves are approximated as offsets of
     /// approximated bases, else as B-splines.
     /// </summary>
-    public bool ConvertCurve(Geom_Curve aCurve,
-                             ref Geom_Curve? C,
+    public bool ConvertCurve(Curve3D aCurve,
+                             ref Curve3D? C,
                              bool IsConvert,
                              double First,
                              double Last,
@@ -1009,10 +1014,10 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                              bool IsOf = true)
     {
         //  TolCur =  Precision::Confusion();
-        if (aCurve is Geom_TrimmedCurve tmpT)
+        if (aCurve is TrimmedCurve3D tmpT)
         {
-            Geom_Curve BasCurve = tmpT.BasisCurve();
-            Geom_Curve? ResCurve = null;
+            Curve3D BasCurve = tmpT.BasisCurve();
+            Curve3D? ResCurve = null;
             if (ConvertCurve(BasCurve, ref ResCurve, IsConvert, First, Last, ref TolCur, IsOf))
             {
                 C = ResCurve;
@@ -1022,7 +1027,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             {
                 if (IsConvert)
                 {
-                    C = (Geom_Curve)aCurve.Copy();
+                    C = (Curve3D)aCurve.Copy();
                     TolCur = global::Kerf.Engine.Foundation.Precision.Confusion();
                     return true;
                 }
@@ -1031,7 +1036,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             }
         }
 
-        if (aCurve is Geom_Line aLine && myParameters.ConvertCurve3d())
+        if (aCurve is LineCurve3D aLine && myParameters.ConvertCurve3d())
         {
             NCollection_Array1<Point3D> poles = new(1, 2);
             poles[1] = aLine.Value(First);
@@ -1041,27 +1046,27 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             knots[2] = Last;
             NCollection_Array1<int> mults = new(1, 2);
             mults.Init(2);
-            Geom_BSplineCurve res = new Geom_BSplineCurve(poles, knots, mults, 1);
+            BSplineCurve3D res = new BSplineCurve3D(poles, knots, mults, 1);
             C = res;
             return true;
         }
 
-        if (aCurve is Geom_Conic && myParameters.ConvertCurve3d())
+        if (aCurve is ConicCurve3D && myParameters.ConvertCurve3d())
         {
-            Geom_BSplineCurve aBSpline;
-            Geom_Curve tcurve = new Geom_TrimmedCurve(aCurve, First, Last); // protection against parabols ets
-            GeomConvert_ApproxCurve approx = new GeomConvert_ApproxCurve(tcurve,
+            BSplineCurve3D aBSpline;
+            Curve3D tcurve = new TrimmedCurve3D(aCurve, First, Last); // protection against parabols ets
+            ApproxCurve approx = new ApproxCurve(tcurve,
                                                                         myTol3d /*Precision::Approximation()*/,
                                                                         myContinuity2d,
                                                                         myNbMaxSeg,
                                                                         6);
-            if (approx.HasResult())
+            if (approx.HasResult)
             {
                 aBSpline = approx.InternalCurve()!;
             }
             else
             {
-                aBSpline = GeomConvert.CurveToBSplineCurve(tcurve, QuasiAngular);
+                aBSpline = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(tcurve, QuasiAngular);
             }
 
             double Shift = First - aBSpline.FirstParameter();
@@ -1074,7 +1079,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                 }
                 aBSpline.SetKnots(newKnots);
             }
-            Geom_Curve? ResCurve = null;
+            Curve3D? ResCurve = null;
             if (ConvertCurve(aBSpline, ref ResCurve, IsConvert, First, Last, ref TolCur, false))
             {
                 C = ResCurve;
@@ -1088,10 +1093,10 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             }
         }
 
-        if (aCurve is Geom_BezierCurve && myParameters.ConvertCurve3d())
+        if (aCurve is BezierCurve3D && myParameters.ConvertCurve3d())
         {
-            Geom_Curve aBSpline = GeomConvert.CurveToBSplineCurve(aCurve, QuasiAngular);
-            Geom_Curve? ResCurve = null;
+            Curve3D aBSpline = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aCurve, QuasiAngular);
+            Curve3D? ResCurve = null;
             if (ConvertCurve(aBSpline, ref ResCurve, IsConvert, First, Last, ref TolCur, false))
             {
                 C = ResCurve;
@@ -1105,15 +1110,15 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             }
         }
 
-        if (aCurve is Geom_OffsetCurve tmpO && IsOf)
+        if (aCurve is OffsetCurve3D tmpO && IsOf)
         {
-            Geom_Curve BasCurve = tmpO.BasisCurve();
-            Geom_Curve? ResCurve = null;
+            Curve3D BasCurve = tmpO.BasisCurve();
+            Curve3D? ResCurve = null;
             if (ConvertCurve(BasCurve, ref ResCurve, IsConvert, First, Last, ref TolCur))
             {
                 if (ResCurve!.Continuity() != C0)
                 {
-                    C = new Geom_OffsetCurve(ResCurve, tmpO.Offset(), tmpO.Direction());
+                    C = new OffsetCurve3D(ResCurve, tmpO.Offset(), tmpO.Direction());
                     return true;
                 }
                 else if (ConvertCurve(aCurve, ref C, IsConvert, First, Last, ref TolCur, false))
@@ -1124,7 +1129,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                 {
                     if (IsConvert)
                     {
-                        C = (Geom_Curve)aCurve.Copy();
+                        C = (Curve3D)aCurve.Copy();
                         TolCur = global::Kerf.Engine.Foundation.Precision.Confusion();
                         return true;
                     }
@@ -1135,28 +1140,28 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             {
                 if (IsConvert)
                 {
-                    C = (Geom_Curve)aCurve.Copy();
+                    C = (Curve3D)aCurve.Copy();
                     TolCur = global::Kerf.Engine.Foundation.Precision.Confusion();
                     return true;
                 }
                 return false;
             }
         }
-        if (aCurve is Geom_BSplineCurve
-            || aCurve is Geom_BezierCurve
-            || (aCurve is Geom_OffsetCurve && !IsOf))
+        if (aCurve is BSplineCurve3D
+            || aCurve is BezierCurve3D
+            || (aCurve is OffsetCurve3D && !IsOf))
         {
             int Deg = 1;
 
-            if (aCurve is Geom_BSplineCurve BsC)
+            if (aCurve is BSplineCurve3D BsC)
             {
                 Deg = BsC.Degree();
-                bool IsR = (myRational && BsC.IsRational());
-                if (!IsR && Deg <= myMaxDegree && (BsC.NbKnots() - 1) <= myNbMaxSeg)
+                bool IsR = (myRational && BsC.IsRational);
+                if (!IsR && Deg <= myMaxDegree && (BsC.KnotCount - 1) <= myNbMaxSeg)
                 {
                     if (IsConvert)
                     {
-                        C = (Geom_Curve)aCurve.Copy();
+                        C = (Curve3D)aCurve.Copy();
                         TolCur = global::Kerf.Engine.Foundation.Precision.Confusion();
                         return true;
                     }
@@ -1166,15 +1171,15 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                     }
                 }
             }
-            if (aCurve is Geom_BezierCurve BzC)
+            if (aCurve is BezierCurve3D BzC)
             {
                 Deg = BzC.Degree();
-                bool IsR = (myRational && BzC.IsRational());
+                bool IsR = (myRational && BzC.IsRational);
                 if (!IsR && Deg <= myMaxDegree)
                 {
                     if (IsConvert)
                     {
-                        C = (Geom_Curve)aCurve.Copy();
+                        C = (Curve3D)aCurve.Copy();
                         TolCur = global::Kerf.Engine.Foundation.Precision.Confusion();
                         return true;
                     }
@@ -1184,19 +1189,19 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                     }
                 }
             }
-            Geom_Curve aCurve1;
+            Curve3D aCurve1;
             double pf = aCurve.FirstParameter(), pl = aCurve.LastParameter();
             // 15.11.2002 PTV OCC966
             if (ShapeAnalysis_Curve.IsPeriodic(aCurve) && (First != Last))
             {
-                aCurve1 = new Geom_TrimmedCurve(aCurve, First, Last);
+                aCurve1 = new TrimmedCurve3D(aCurve, First, Last);
             }
             else if (pf < (First - global::Kerf.Engine.Foundation.Precision.PConfusion()) || pl > (Last + global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
                 double F = Max(First, pf), L = Min(Last, pl);
                 if (F != L)
                 {
-                    aCurve1 = new Geom_TrimmedCurve(aCurve, F, L);
+                    aCurve1 = new TrimmedCurve3D(aCurve, F, L);
                 }
                 else
                 {
@@ -1223,13 +1228,13 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                     for (int j = 1; j <= 2; j++)
                     {
                         Continuity aCont = IntegerToGeomAbsShape(aC);
-                        GeomConvert_ApproxCurve anApprox = new GeomConvert_ApproxCurve(aCurve1, myTol3d, aCont, MaxSeg, MaxDeg);
-                        bool Done = anApprox.IsDone();
+                        ApproxCurve anApprox = new ApproxCurve(aCurve1, myTol3d, aCont, MaxSeg, MaxDeg);
+                        bool Done = anApprox.IsDone;
                         C = anApprox.InternalCurve();
                         // OCCT: dereferences the curve, null when the approximation has no result (an access
                         // violation natively, caught as a failure: decision 917)
-                        int Nbseg = ((Geom_BSplineCurve)C!).NbKnots() - 1;
-                        int DegC = ((Geom_BSplineCurve)C).Degree();
+                        int Nbseg = ((BSplineCurve3D)C!).KnotCount - 1;
+                        int DegC = ((BSplineCurve3D)C).Degree();
                         if (myDeg
                             && ((DegC > MaxDeg) || !Done || (anApprox.MaxError() >= Max(TolCur, myTol3d))))
                         {
@@ -1245,7 +1250,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                             {
                                 if (IsConvert)
                                 {
-                                    C = (Geom_Curve)aCurve.Copy();
+                                    C = (Curve3D)aCurve.Copy();
                                     TolCur = global::Kerf.Engine.Foundation.Precision.Confusion();
                                     return true;
                                 }
@@ -1265,7 +1270,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                             {
                                 if (IsConvert)
                                 {
-                                    C = (Geom_Curve)aCurve.Copy();
+                                    C = (Curve3D)aCurve.Copy();
                                     TolCur = global::Kerf.Engine.Foundation.Precision.Confusion();
                                     return true;
                                 }
@@ -1288,7 +1293,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         {
             if (IsConvert)
             {
-                C = (Geom_Curve)aCurve.Copy();
+                C = (Curve3D)aCurve.Copy();
                 TolCur = global::Kerf.Engine.Foundation.Precision.Confusion();
                 return true;
             }
@@ -1300,11 +1305,11 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
     /// True if the edge's pcurve on the face is approximated, or (C then a copy of the pcurve) if the face's surface or
     /// the edge's 3D curve or another pcurve is.
     /// </summary>
-    public override bool NewCurve2d(in TopoDS_Edge E,
-                                    in TopoDS_Face F,
-                                    in TopoDS_Edge NewE,
-                                    in TopoDS_Face NewF,
-                                    out Geom2d_Curve? C,
+    public override bool NewCurve2d(in Edge E,
+                                    in Face F,
+                                    in Edge NewE,
+                                    in Face NewF,
+                                    out Curve2D? C,
                                     out double Tol)
     {
         C = null;
@@ -1313,16 +1318,16 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         {
             return false;
         }
-        Geom_Surface? aSurface = BRep_Tool.Surface(F, out Placement L);
-        GeomAdaptor_Surface AdS = new GeomAdaptor_Surface(aSurface!);
+        Surface? aSurface = Tool.Surface(F, out Placement L);
+        SurfaceAdaptor AdS = new SurfaceAdaptor(aSurface!);
         double TolCur =
-            Min(AdS.UResolution(BRep_Tool.Tolerance(E)), AdS.VResolution(BRep_Tool.Tolerance(E)));
-        Geom2d_Curve? aCurve = BRep_Tool.CurveOnSurface(E, F, out double First, out double Last);
+            Min(AdS.UResolution(Tool.Tolerance(E)), AdS.VResolution(Tool.Tolerance(E)));
+        Curve2D? aCurve = Tool.CurveOnSurface(E, F, out double First, out double Last);
         if (aCurve is null)
         {
             return false;
         }
-        Geom_Curve? aCur3d = BRep_Tool.Curve(E, out Placement Loc1, out double F1, out double L1);
+        Curve3D? aCur3d = Tool.Curve(E, out Placement Loc1, out double F1, out double L1);
         //  bool IsConvert = (IsConvertSurface(aSurface,myMaxDegree,myNbMaxSeg) ||
         //  !E.IsSame(NewE));
 
@@ -1334,17 +1339,17 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
 
         if (!IsConvert)
         {
-            BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
+            BrepTEdge TE = (BrepTEdge)E.TShape()!;
             // iterate on pcurves
-            var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(TE.Curves());
+            var itcr = new NCollection_List<CurveRepresentation>.Iterator(TE.Curves());
             for (; itcr.More(); itcr.Next())
             {
-                if (itcr.Value() is not BRep_GCurve GC || !GC.IsCurveOnSurface())
+                if (itcr.Value() is not GCurve GC || !GC.IsCurveOnSurface())
                 {
                     continue;
                 }
-                Geom_Surface? aSurf = GC.Surface();
-                Geom2d_Curve? aCur2d = GC.PCurve();
+                Surface? aSurf = GC.Surface();
+                Curve2D? aCur2d = GC.PCurve();
                 if ((myApproxSurfaceFlag
                      && IsConvertSurface(aSurf, myMaxDegree, myNbMaxSeg, myRational, myParameters))
                     || (myApproxCurve2dFlag
@@ -1359,7 +1364,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         {
             if (IsConvert)
             {
-                C = (Geom2d_Curve)aCurve.Copy();
+                C = (Curve2D)aCurve.Copy();
                 return true;
             }
             else
@@ -1374,8 +1379,8 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         }
         bool IsConv = ConvertCurve2d(aCurve, ref C, IsConvert, First, Last, ref TolCur, IsOf);
 
-        Tol = BRep_Tool.Tolerance(E); // TolCur;
-        BRep_Builder B = new BRep_Builder();
+        Tol = Tool.Tolerance(E); // TolCur;
+        BrepBuilder B = new BrepBuilder();
         if (!IsConv && !NewE.IsSame(E))
         {
             // OCCT.NET: NewE is the modifier's new edge (or its dummy), never the caller's (decision 973)
@@ -1389,8 +1394,8 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
     /// unchanged otherwise) and TolCur its error. With <paramref name="IsOf"/>, offset pcurves are approximated as
     /// offsets of approximated bases, else as B-splines.
     /// </summary>
-    public bool ConvertCurve2d(Geom2d_Curve aCurve,
-                               ref Geom2d_Curve? C,
+    public bool ConvertCurve2d(Curve2D aCurve,
+                               ref Curve2D? C,
                                bool IsConvert,
                                double First,
                                double Last,
@@ -1398,10 +1403,10 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                                bool IsOf = true)
     {
         // TolCur = Precision::PConfusion();
-        if (aCurve is Geom2d_TrimmedCurve tmpT)
+        if (aCurve is TrimmedCurve2D tmpT)
         {
-            Geom2d_Curve BasCurve = tmpT.BasisCurve();
-            Geom2d_Curve? ResCurve = null;
+            Curve2D BasCurve = tmpT.BasisCurve();
+            Curve2D? ResCurve = null;
             if (ConvertCurve2d(BasCurve, ref ResCurve, IsConvert, First, Last, ref TolCur, IsOf))
             {
                 C = ResCurve;
@@ -1411,7 +1416,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             {
                 if (IsConvert)
                 {
-                    C = (Geom2d_Curve)aCurve.Copy();
+                    C = (Curve2D)aCurve.Copy();
                     TolCur = global::Kerf.Engine.Foundation.Precision.PConfusion();
                     return true;
                 }
@@ -1422,7 +1427,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             }
         }
 
-        if (aCurve is Geom2d_Line aLine2d && myParameters.ConvertCurve2d())
+        if (aCurve is LineCurve2D aLine2d && myParameters.ConvertCurve2d())
         {
             NCollection_Array1<Point2D> poles = new(1, 2);
             poles[1] = aLine2d.Value(First);
@@ -1432,23 +1437,23 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             knots[2] = Last;
             NCollection_Array1<int> mults = new(1, 2);
             mults.Init(2);
-            Geom2d_BSplineCurve res = new Geom2d_BSplineCurve(poles, knots, mults, 1);
+            BSplineCurve2D res = new BSplineCurve2D(poles, knots, mults, 1);
             C = res;
             return true;
         }
 
-        if (aCurve is Geom2d_Conic && myParameters.ConvertCurve2d())
+        if (aCurve is ConicCurve2D && myParameters.ConvertCurve2d())
         {
-            Geom2d_BSplineCurve aBSpline2d;
-            Geom2d_Curve tcurve = new Geom2d_TrimmedCurve(aCurve, First, Last); // protection against parabols ets
-            Geom2dConvert_ApproxCurve approx = new Geom2dConvert_ApproxCurve(tcurve, myTol2d, myContinuity2d, myNbMaxSeg, 6);
-            if (approx.HasResult())
+            BSplineCurve2D aBSpline2d;
+            Curve2D tcurve = new TrimmedCurve2D(aCurve, First, Last); // protection against parabols ets
+            ApproxCurve2D approx = new ApproxCurve2D(tcurve, myTol2d, myContinuity2d, myNbMaxSeg, 6);
+            if (approx.HasResult)
             {
                 aBSpline2d = approx.InternalCurve()!;
             }
             else
             {
-                aBSpline2d = Geom2dConvert.CurveToBSplineCurve(tcurve, QuasiAngular);
+                aBSpline2d = Geom2dConvert2D.CurveToBSplineCurve(tcurve, QuasiAngular);
             }
 
             double Shift = First - aBSpline2d.FirstParameter();
@@ -1461,7 +1466,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                 }
                 aBSpline2d.SetKnots(newKnots);
             }
-            Geom2d_Curve? ResCurve = null;
+            Curve2D? ResCurve = null;
             if (ConvertCurve2d(aBSpline2d, ref ResCurve, IsConvert, First, Last, ref TolCur, false))
             {
                 C = ResCurve;
@@ -1475,10 +1480,10 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             }
         }
 
-        if (aCurve is Geom2d_BezierCurve && myParameters.ConvertCurve2d())
+        if (aCurve is BezierCurve2D && myParameters.ConvertCurve2d())
         {
-            Geom2d_Curve aBSpline2d = Geom2dConvert.CurveToBSplineCurve(aCurve, QuasiAngular);
-            Geom2d_Curve? ResCurve = null;
+            Curve2D aBSpline2d = Geom2dConvert2D.CurveToBSplineCurve(aCurve, QuasiAngular);
+            Curve2D? ResCurve = null;
             if (ConvertCurve2d(aBSpline2d, ref ResCurve, IsConvert, First, Last, ref TolCur, false))
             {
                 C = ResCurve;
@@ -1492,15 +1497,15 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             }
         }
 
-        if (aCurve is Geom2d_OffsetCurve tmpO && IsOf)
+        if (aCurve is OffsetCurve2D tmpO && IsOf)
         {
-            Geom2d_Curve BasCurve = tmpO.BasisCurve();
-            Geom2d_Curve? ResCurve = null;
+            Curve2D BasCurve = tmpO.BasisCurve();
+            Curve2D? ResCurve = null;
             if (ConvertCurve2d(BasCurve, ref ResCurve, IsConvert, First, Last, ref TolCur))
             {
                 if (ResCurve!.Continuity() != C0)
                 {
-                    C = new Geom2d_OffsetCurve(ResCurve, tmpO.Offset());
+                    C = new OffsetCurve2D(ResCurve, tmpO.Offset());
                     return true;
                 }
                 // OCCT: converts into ResCurve, not C, so C is left unchanged with true returned (occt-issues.md)
@@ -1512,7 +1517,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                 {
                     if (IsConvert)
                     {
-                        C = (Geom2d_Curve)aCurve.Copy();
+                        C = (Curve2D)aCurve.Copy();
                         TolCur = global::Kerf.Engine.Foundation.Precision.PConfusion();
                         return true;
                     }
@@ -1526,7 +1531,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
             {
                 if (IsConvert)
                 {
-                    C = (Geom2d_Curve)aCurve.Copy();
+                    C = (Curve2D)aCurve.Copy();
                     TolCur = global::Kerf.Engine.Foundation.Precision.PConfusion();
                     return true;
                 }
@@ -1536,21 +1541,21 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                 }
             }
         }
-        if (aCurve is Geom2d_BSplineCurve
-            || aCurve is Geom2d_BezierCurve
-            || ((aCurve is Geom2d_OffsetCurve) && !IsOf))
+        if (aCurve is BSplineCurve2D
+            || aCurve is BezierCurve2D
+            || ((aCurve is OffsetCurve2D) && !IsOf))
         {
             int Deg = 1;
 
-            if (aCurve is Geom2d_BSplineCurve BsC)
+            if (aCurve is BSplineCurve2D BsC)
             {
                 Deg = BsC.Degree();
-                bool IsR = (myRational && BsC.IsRational());
-                if (!IsR && Deg <= myMaxDegree && (BsC.NbKnots() - 1) <= myNbMaxSeg)
+                bool IsR = (myRational && BsC.IsRational);
+                if (!IsR && Deg <= myMaxDegree && (BsC.KnotCount - 1) <= myNbMaxSeg)
                 {
                     if (IsConvert)
                     {
-                        C = (Geom2d_Curve)aCurve.Copy();
+                        C = (Curve2D)aCurve.Copy();
                         TolCur = global::Kerf.Engine.Foundation.Precision.PConfusion();
                         return true;
                     }
@@ -1560,15 +1565,15 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                     }
                 }
             }
-            if (aCurve is Geom2d_BezierCurve BzC)
+            if (aCurve is BezierCurve2D BzC)
             {
                 Deg = BzC.Degree();
-                bool IsR = (myRational && BzC.IsRational());
+                bool IsR = (myRational && BzC.IsRational);
                 if (!IsR && Deg <= myMaxDegree)
                 {
                     if (IsConvert)
                     {
-                        C = (Geom2d_Curve)aCurve.Copy();
+                        C = (Curve2D)aCurve.Copy();
                         TolCur = global::Kerf.Engine.Foundation.Precision.PConfusion();
                         return true;
                     }
@@ -1578,12 +1583,12 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                     }
                 }
             }
-            Geom2d_Curve aCurve1;
+            Curve2D aCurve1;
             double pf = aCurve.FirstParameter(), pl = aCurve.LastParameter();
             // 15.11.2002 PTV OCC966
             if (ShapeAnalysis_Curve.IsPeriodic(aCurve) && (First != Last))
             {
-                aCurve1 = new Geom2d_TrimmedCurve(aCurve, First, Last);
+                aCurve1 = new TrimmedCurve2D(aCurve, First, Last);
             }
             else if (aCurve.FirstParameter() < (First - global::Kerf.Engine.Foundation.Precision.PConfusion())
                      || aCurve.LastParameter() > (Last + global::Kerf.Engine.Foundation.Precision.PConfusion()))
@@ -1591,7 +1596,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                 double F = Max(First, pf), L = Min(Last, pl);
                 if (F != L)
                 {
-                    aCurve1 = new Geom2d_TrimmedCurve(aCurve, F, L);
+                    aCurve1 = new TrimmedCurve2D(aCurve, F, L);
                 }
                 else
                 {
@@ -1618,13 +1623,13 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                     Continuity aCont = IntegerToGeomAbsShape(aC);
                     for (int j = 1; j <= 2; j++)
                     {
-                        Geom2dConvert_ApproxCurve anApprox = new Geom2dConvert_ApproxCurve(aCurve1, myTol2d, aCont, MaxSeg, MaxDeg);
-                        bool Done = anApprox.IsDone();
+                        ApproxCurve2D anApprox = new ApproxCurve2D(aCurve1, myTol2d, aCont, MaxSeg, MaxDeg);
+                        bool Done = anApprox.IsDone;
                         C = anApprox.InternalCurve();
                         // OCCT: dereferences the curve, null when the approximation has no result (an access
                         // violation natively, caught as a failure: decision 917)
-                        int Nbseg = ((Geom2d_BSplineCurve)C!).NbKnots() - 1;
-                        int DegC = ((Geom2d_BSplineCurve)C).Degree();
+                        int Nbseg = ((BSplineCurve2D)C!).KnotCount - 1;
+                        int DegC = ((BSplineCurve2D)C).Degree();
 
                         if (myDeg
                             && ((DegC > MaxDeg) || !Done || (anApprox.MaxError() >= Max(myTol2d, TolCur))))
@@ -1640,7 +1645,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                             {
                                 if (IsConvert)
                                 {
-                                    C = (Geom2d_Curve)aCurve.Copy();
+                                    C = (Curve2D)aCurve.Copy();
                                     TolCur = global::Kerf.Engine.Foundation.Precision.PConfusion();
                                     return true;
                                 }
@@ -1660,7 +1665,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
                             {
                                 if (IsConvert)
                                 {
-                                    C = (Geom2d_Curve)aCurve.Copy();
+                                    C = (Curve2D)aCurve.Copy();
                                     TolCur = global::Kerf.Engine.Foundation.Precision.PConfusion();
                                     return true;
                                 }
@@ -1683,7 +1688,7 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
         {
             if (IsConvert)
             {
-                C = (Geom2d_Curve)aCurve.Copy();
+                C = (Curve2D)aCurve.Copy();
                 TolCur = global::Kerf.Engine.Foundation.Precision.PConfusion();
                 return true;
             }
@@ -1697,14 +1702,14 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
     /// <summary>
     /// True (P the vertex's point, Tol its tolerance) if anything was converted before the call, false otherwise.
     /// </summary>
-    public override bool NewPoint(in TopoDS_Vertex V, out Point3D P, out double Tol)
+    public override bool NewPoint(in Vertex V, out Point3D P, out double Tol)
     {
         P = new Point3D();
-        Tol = BRep_Tool.Tolerance(V);
+        Tol = Tool.Tolerance(V);
         // OCCT: myConvert is the state of the last conversion before the call (occt-issues.md)
         if (myConvert)
         {
-            Point3D p1 = new Point3D(BRep_Tool.Pnt(V).XYZ());
+            Point3D p1 = new Point3D(Tool.Pnt(V).XYZ());
             P = p1;
             return true;
         }
@@ -1715,20 +1720,20 @@ public class ShapeCustom_BSplineRestriction : ShapeCustom_Modification
     }
 
     /// <summary>False: parameters are never modified.</summary>
-    public override bool NewParameter(in TopoDS_Vertex V, in TopoDS_Edge E, ref double P, ref double Tol)
+    public override bool NewParameter(in Vertex V, in Edge E, ref double P, ref double Tol)
     {
         return false;
     }
 
     /// <summary>The continuity of the edge between the faces, unchanged.</summary>
-    public override Continuity Continuity(in TopoDS_Edge E,
-                                             in TopoDS_Face F1,
-                                             in TopoDS_Face F2,
-                                             in TopoDS_Edge NewE,
-                                             in TopoDS_Face NewF1,
-                                             in TopoDS_Face NewF2)
+    public override Continuity Continuity(in Edge E,
+                                             in Face F1,
+                                             in Face F2,
+                                             in Edge NewE,
+                                             in Face NewF1,
+                                             in Face NewF2)
     {
-        return BRep_Tool.Continuity(E, F1, F2);
+        return Tool.Continuity(E, F1, F2);
     }
 
     /// <summary>The largest errors of the approximations of surfaces (returned), 3D curves and pcurves.</summary>

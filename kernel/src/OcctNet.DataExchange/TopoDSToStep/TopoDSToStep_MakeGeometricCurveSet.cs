@@ -6,6 +6,8 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -14,11 +16,11 @@ public sealed class TopoDSToStep_MakeGeometricCurveSet : TopoDSToStep_Root
 {
     private StepShape_GeometricCurveSet theGeometricCurveSet;
 
-    public TopoDSToStep_MakeGeometricCurveSet(in TopoDS_Shape aShape, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
+    public TopoDSToStep_MakeGeometricCurveSet(in Shape aShape, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
     {
         done = false;
         NCollection_HSequence<Transient> itemList;
-        var aMap = new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
+        var aMap = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
         StepData_StepModel aStepModel = FP.Model() as StepData_StepModel;
         var aTool = new TopoDSToStep_Tool(aMap, false, aStepModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0);
         var wirefB = new TopoDSToStep_WireframeBuilder(aShape, aTool, theLocalFactors);
@@ -48,7 +50,7 @@ public sealed class TopoDSToStep_MakeGeometricCurveSet : TopoDSToStep_Root
         }
     }
 
-    public TopoDSToStep_MakeGeometricCurveSet(in TopoDS_Shape aShape, Transfer_FinderProcess FP)
+    public TopoDSToStep_MakeGeometricCurveSet(in Shape aShape, Transfer_FinderProcess FP)
         : this(aShape, FP, new StepData_Factors())
     {
     }

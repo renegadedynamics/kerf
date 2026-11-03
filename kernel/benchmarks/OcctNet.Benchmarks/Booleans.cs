@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
@@ -160,33 +163,33 @@ public static class Booleans
     // The two files' shapes as one compound, written by the port (both sides read it)
     private static string? CompoundText(string theA, string theB)
     {
-        if (!BRepTools.Read(out TopoDS_Shape aA, theA) || !BRepTools.Read(out TopoDS_Shape aB, theB) || aA.IsNull() || aB.IsNull())
+        if (!BrepTools.Read(out Shape aA, theA) || !BrepTools.Read(out Shape aB, theB) || aA.IsNull || aB.IsNull)
         {
             return null;
         }
         var aWriter = new StringWriter();
-        BRepTools.Write(TopoDS_Builder.MakeCompound([aA, aB]), aWriter);
+        BrepTools.Write(Builder.MakeCompound([aA, aB]), aWriter);
         return aWriter.ToString();
     }
 
     // ---------------------------------------------------------------------------------------------------------------
     // The two sides
 
-    private static (List<TopoDS_Shape> Objects, List<TopoDS_Shape> Tools) PortArgs(BooleanCase theCase)
+    private static (List<Shape> Objects, List<Shape> Tools) PortArgs(BooleanCase theCase)
     {
-        BRepTools.Read(out TopoDS_Shape aC, new StringReader(theCase.ArgsText));
+        BrepTools.Read(out Shape aC, new StringReader(theCase.ArgsText));
         // read shapes are frozen (TopTools_ShapeSet), as a caller's
-        var anObjects = new List<TopoDS_Shape>();
-        var aTools = new List<TopoDS_Shape>();
+        var anObjects = new List<Shape>();
+        var aTools = new List<Shape>();
         int i = 0;
-        for (var anIt = new TopoDS_Iterator(aC); anIt.More(); anIt.Next())
+        for (var anIt = new Iterator(aC); anIt.More(); anIt.Next())
         {
             (i++ < theCase.NbObjects ? anObjects : aTools).Add(anIt.Value());
         }
         return (anObjects, aTools);
     }
 
-    private static BRepAlgoAPI_BuilderAlgo PortOperation(BooleanCase theCase, List<TopoDS_Shape> theObjects, List<TopoDS_Shape> theTools,
+    private static BRepAlgoAPI_BuilderAlgo PortOperation(BooleanCase theCase, List<Shape> theObjects, List<Shape> theTools,
                                                          bool theParallel)
     {
         BRepAlgoAPI_BuilderAlgo anOp = theCase.Op switch
@@ -197,8 +200,8 @@ public static class Booleans
             "Section" => new BRepAlgoAPI_Section(),
             _ => new BRepAlgoAPI_Splitter(),
         };
-        var anArgs = new NCollection_List<TopoDS_Shape>();
-        var aTools = new NCollection_List<TopoDS_Shape>();
+        var anArgs = new NCollection_List<Shape>();
+        var aTools = new NCollection_List<Shape>();
         theObjects.ForEach(s => anArgs.Append(s));
         theTools.ForEach(s => aTools.Append(s));
         anOp.SetArguments(anArgs);
@@ -217,14 +220,14 @@ public static class Booleans
         return anOp;
     }
 
-    private static TopoDS_Shape PortRun(BooleanCase theCase, List<TopoDS_Shape> theObjects, List<TopoDS_Shape> theTools, bool theParallel)
+    private static Shape PortRun(BooleanCase theCase, List<Shape> theObjects, List<Shape> theTools, bool theParallel)
     {
         BRepAlgoAPI_BuilderAlgo anOp = PortOperation(theCase, theObjects, theTools, theParallel);
         anOp.Build();
-        return anOp.HasErrors() ? new TopoDS_Shape() : anOp.Shape();
+        return anOp.HasErrors() ? new Shape() : anOp.Shape();
     }
 
-    private static TopoDS_Shape PortClean(in TopoDS_Shape theShape)
+    private static Shape PortClean(in Shape theShape)
     {
         var aU = new ShapeUpgrade_UnifySameDomain(theShape, true, true, true);
         aU.AllowInternalEdges(false);
@@ -281,15 +284,15 @@ public static class Booleans
             {
                 continue;
             }
-            (List<TopoDS_Shape> aPObjects, List<TopoDS_Shape> aPTools) = PortArgs(aCase);
-            TopoDS_Shape aPResult = PortRun(aCase, aPObjects, aPTools, false);
+            (List<Shape> aPObjects, List<Shape> aPTools) = PortArgs(aCase);
+            Shape aPResult = PortRun(aCase, aPObjects, aPTools, false);
             long aBytes = GC.GetTotalAllocatedBytes(true);
             PortRun(aCase, aPObjects, aPTools, false);
             double anAllocated = (GC.GetTotalAllocatedBytes(true) - aBytes) / 1048576.0;
             double aPortSerial = Measure(() => PortRun(aCase, aPObjects, aPTools, false));
             double aPortParallel = Measure(() => PortRun(aCase, aPObjects, aPTools, true));
             double aPortClean = 0, aCleanAllocated = 0;
-            if (!aPResult.IsNull())
+            if (!aPResult.IsNull)
             {
                 aBytes = GC.GetTotalAllocatedBytes(true);
                 PortClean(aPResult);
@@ -351,8 +354,8 @@ public static class Booleans
             {
                 continue;
             }
-            (List<TopoDS_Shape> aPObjects, List<TopoDS_Shape> aPTools) = PortArgs(aCase);
-            var anAll = new NCollection_List<TopoDS_Shape>();
+            (List<Shape> aPObjects, List<Shape> aPTools) = PortArgs(aCase);
+            var anAll = new NCollection_List<Shape>();
             aPObjects.Concat(aPTools).ToList().ForEach(s => anAll.Append(s));
             var aFillers = new List<double>();
             var aBuilders = new List<double>();

@@ -2,7 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -21,7 +24,7 @@ public partial class BOPAlgo_PaveFiller
             return;
         }
         //
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
         Span<int> nVs = stackalloc int[2];
         //
         int i, aNbR = myDS!.NbRanges();
@@ -30,8 +33,8 @@ public partial class BOPAlgo_PaveFiller
             BOPDS_IndexRange aR = myDS.Range(i);
             //
             // Map of connections of interfering shapes
-            NCollection_IndexedDataMap<TopoDS_Shape, NCollection_IndexedMap<TopoDS_Shape>> aMCSI =
-                new(TopTools_ShapeMapHasher.Instance);
+            NCollection_IndexedDataMap<Shape, NCollection_IndexedMap<Shape>> aMCSI =
+                new(ShapeHasher.Instance);
             NCollection_Map<BOPDS_CommonBlock> aMCBFence = new();
             //
             int j = aR.First(), aRLast = aR.Last();
@@ -44,9 +47,9 @@ public partial class BOPAlgo_PaveFiller
                     continue;
                 }
                 //
-                TopoDS_Shape aS = aSI.Shape();
+                Shape aS = aSI.Shape();
                 //
-                if (aSI.ShapeType() == TopAbs_EDGE)
+                if (aSI.ShapeType() == ShapeType.Edge)
                 {
                     if (aSI.HasFlag())
                     {
@@ -81,7 +84,7 @@ public partial class BOPAlgo_PaveFiller
                                 if (!aR.Contains(nVs[k]) && !aMSubS.Contains(nVs[k]))
                                 {
                                     // Add connection
-                                    TopoDS_Shape aV = myDS.Shape(nVs[k]);
+                                    Shape aV = myDS.Shape(nVs[k]);
                                     AddConnection(aMCSI, aV, aS);
                                 }
                             }
@@ -111,13 +114,13 @@ public partial class BOPAlgo_PaveFiller
                                 {
                                     // Add the acquired self-interference warning:
                                     // The same common block contains several edges from one argument
-                                    TopoDS_Compound aWC = new();
+                                    Compound aWC = new();
                                     aBB.MakeCompound(ref aWC);
                                     //
                                     NCollection_List<int>.Iterator aItLE = new(aLE);
                                     for (; aItLE.More(); aItLE.Next())
                                     {
-                                        TopoDS_Shape aE1 = myDS.Shape(aItLE.Value());
+                                        Shape aE1 = myDS.Shape(aItLE.Value());
                                         aBB.Add(aWC, aE1);
                                     }
                                     //
@@ -127,7 +130,7 @@ public partial class BOPAlgo_PaveFiller
                         }
                     }
                 }
-                else if (aSI.ShapeType() == TopAbs_FACE)
+                else if (aSI.ShapeType() == ShapeType.Face)
                 {
                     // Analyze IN and Section vertices and edges of the faces
                     BOPDS_FaceInfo aFI = myDS.FaceInfo(j);
@@ -137,7 +140,7 @@ public partial class BOPAlgo_PaveFiller
                         NCollection_IntMap aMVF = k == 0 ? aFI.VerticesIn() : aFI.VerticesSc();
                         foreach (int aVIndex in aMVF)
                         {
-                            TopoDS_Shape aV = myDS.Shape(aVIndex);
+                            Shape aV = myDS.Shape(aVIndex);
                             // add connection
                             AddConnection(aMCSI, aV, aS);
                         }
@@ -155,7 +158,7 @@ public partial class BOPAlgo_PaveFiller
                             {
                                 continue;
                             }
-                            TopoDS_Shape aE = myDS.Shape(aPB.Edge());
+                            Shape aE = myDS.Shape(aPB.Edge());
                             // add connection
                             AddConnection(aMCSI, aE, aS);
                         }
@@ -167,18 +170,18 @@ public partial class BOPAlgo_PaveFiller
             int aNbC = aMCSI.Extent();
             for (j = 1; j <= aNbC; ++j)
             {
-                NCollection_IndexedMap<TopoDS_Shape> aMCS = aMCSI[j];
+                NCollection_IndexedMap<Shape> aMCS = aMCSI[j];
                 if (aMCS.Extent() > 1)
                 {
                     // Add acquired self-interference warning:
                     // Several faces from one argument contain the same vertex or edge
-                    TopoDS_Compound aWC = new();
+                    Compound aWC = new();
                     aBB.MakeCompound(ref aWC);
                     //
                     int iS, aNbS = aMCS.Extent();
                     for (iS = 1; iS <= aNbS; ++iS)
                     {
-                        TopoDS_Shape aSx = aMCS[iS];
+                        Shape aSx = aMCS[iS];
                         aBB.Add(aWC, aSx);
                     }
                     AddWarning(new BOPAlgo_AlertAcquiredSelfIntersection(aWC));
@@ -188,13 +191,13 @@ public partial class BOPAlgo_PaveFiller
     }
 
     // OCCT's ChangeSeek-or-Add of the connection map, written once.
-    private static void AddConnection(NCollection_IndexedDataMap<TopoDS_Shape, NCollection_IndexedMap<TopoDS_Shape>> theMCSI,
-                                      in TopoDS_Shape theKey, in TopoDS_Shape theShape)
+    private static void AddConnection(NCollection_IndexedDataMap<Shape, NCollection_IndexedMap<Shape>> theMCSI,
+                                      in Shape theKey, in Shape theShape)
     {
         int anIndex = theMCSI.FindIndex(theKey);
-        NCollection_IndexedMap<TopoDS_Shape> pMSOr = anIndex > 0
+        NCollection_IndexedMap<Shape> pMSOr = anIndex > 0
             ? theMCSI[anIndex]
-            : theMCSI[theMCSI.Add(theKey, new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance))];
+            : theMCSI[theMCSI.Add(theKey, new NCollection_IndexedMap<Shape>(ShapeHasher.Instance))];
         pMSOr.Add(theShape);
     }
 }

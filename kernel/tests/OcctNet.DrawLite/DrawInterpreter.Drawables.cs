@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -103,9 +104,9 @@ public sealed partial class DrawInterpreter
     }
 
     /// <summary>DBRep::Set: binds a shape, frozen first (decision 272), to the variable.</summary>
-    public void SetShape(string theName, in TopoDS_Shape theShape)
+    public void SetShape(string theName, in Shape theShape)
     {
-        if (!theShape.IsNull())
+        if (!theShape.IsNull)
         {
             theShape.TShape()!.FreezeGraph();
         }
@@ -114,26 +115,26 @@ public sealed partial class DrawInterpreter
     }
 
     /// <summary>DBRep::Get: the shape of the variable, or a null shape when it holds no shape.</summary>
-    public TopoDS_Shape GetShape(string theName) => GetDrawable(theName) is DrawShape aShape ? aShape.Shape : new TopoDS_Shape();
+    public Shape GetShape(string theName) => GetDrawable(theName) is DrawShape aShape ? aShape.Shape : new Shape();
 
     /// <summary>
     /// DBRep::Get(name, type, complain): the shape when it is of the type, or a null shape, with Draw's message
     /// when it isn't.
     /// </summary>
-    public TopoDS_Shape GetShape(string theName, TopAbs_ShapeEnum theType, bool theToComplain = true)
+    public Shape GetShape(string theName, ShapeType theType, bool theToComplain = true)
     {
-        TopoDS_Shape aShape = GetShape(theName);
-        if (aShape.IsNull() || theType == TopAbs_ShapeEnum.TopAbs_SHAPE || theType == aShape.ShapeType())
+        Shape aShape = GetShape(theName);
+        if (aShape.IsNull || theType == ShapeType.Shape || theType == aShape.ShapeType())
         {
             return aShape;
         }
 
         if (theToComplain)
         {
-            Output.WriteLine($"{theName} is not a {TopAbs.ShapeTypeToString(theType)} but a {TopAbs.ShapeTypeToString(aShape.ShapeType())}");
+            Output.WriteLine($"{theName} is not a {Kerf.Engine.Topology.TopAbs.ShapeTypeToString(theType)} but a {Kerf.Engine.Topology.TopAbs.ShapeTypeToString(aShape.ShapeType())}");
         }
 
-        return new TopoDS_Shape();
+        return new Shape();
     }
 
     /// <summary>Draw::Set(name, value): updates the Draw_Number of that name, or binds a new one.</summary>

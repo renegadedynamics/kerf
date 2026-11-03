@@ -5,6 +5,8 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
@@ -24,8 +26,8 @@ namespace Occt;
 /// </remarks>
 public sealed class Bisector_BisecCC : Bisector_Curve
 {
-    private Geom2d_Curve curve1 = null!;
-    private Geom2d_Curve curve2 = null!;
+    private Curve2D curve1 = null!;
+    private Curve2D curve2 = null!;
     private double sign1;
     private double sign2;
     private NCollection_Sequence<double> startIntervals = new();
@@ -60,7 +62,7 @@ public sealed class Bisector_BisecCC : Bisector_Curve
     /// The bisector of Cu1 and Cu2, on the left of Cu1 (resp. Cu2) if Side1 (resp. Side2) is 1, on its right if -1,
     /// starting from Origin, limited to the points closer to the curves than DistMax.
     /// </summary>
-    public Bisector_BisecCC(Geom2d_Curve Cu1, Geom2d_Curve Cu2, double Side1, double Side2, in Point2D Origin,
+    public Bisector_BisecCC(Curve2D Cu1, Curve2D Cu2, double Side1, double Side2, in Point2D Origin,
                             double DistMax = 500)
     {
         Perform(Cu1, Cu2, Side1, Side2, Origin, DistMax);
@@ -70,15 +72,15 @@ public sealed class Bisector_BisecCC : Bisector_Curve
     /// Computes the bisector of Cu1 and Cu2, on the left of Cu1 (resp. Cu2) if Side1 (resp. Side2) is 1, on its
     /// right if -1, starting from Origin, limited to the points closer to the curves than DistMax.
     /// </summary>
-    internal void Perform(Geom2d_Curve Cu1, Geom2d_Curve Cu2, double Side1, double Side2, in Point2D Origin,
+    internal void Perform(Curve2D Cu1, Curve2D Cu2, double Side1, double Side2, in Point2D Origin,
                           double DistMax = 500)
     {
         CheckMutable();
         isEmpty = false;
         distMax = DistMax;
 
-        curve1 = (Geom2d_Curve)Cu1.Copy();
-        curve2 = (Geom2d_Curve)Cu2.Copy();
+        curve1 = (Curve2D)Cu1.Copy();
+        curve2 = (Curve2D)Cu2.Copy();
 
         sign1 = Side1;
         sign2 = Side2;
@@ -325,10 +327,10 @@ public sealed class Bisector_BisecCC : Bisector_Curve
     public override double ReversedParameter(double U) => LastParameter() + FirstParameter() - U;
 
     /// <summary>A new, unfrozen bisector with copies of the curves and of the polygon.</summary>
-    public override Geom2d_Geometry Copy()
+    public override Geometry2D Copy()
     {
-        Geom2d_Curve CopyCurve1 = (Geom2d_Curve)curve1.Copy();
-        Geom2d_Curve CopyCurve2 = (Geom2d_Curve)curve2.Copy();
+        Curve2D CopyCurve1 = (Curve2D)curve1.Copy();
+        Curve2D CopyCurve2 = (Curve2D)curve2.Copy();
 
         Bisector_BisecCC C = new();
 
@@ -411,11 +413,11 @@ public sealed class Bisector_BisecCC : Bisector_Curve
         // OCCT.NET: a curve frozen elsewhere is copied before it changes.
         if (curve1.IsFrozen)
         {
-            curve1 = (Geom2d_Curve)curve1.Copy();
+            curve1 = (Curve2D)curve1.Copy();
         }
         if (curve2.IsFrozen)
         {
-            curve2 = (Geom2d_Curve)curve2.Copy();
+            curve2 = (Curve2D)curve2.Copy();
         }
         curve1.Transform(T);
         curve2.Transform(T);
@@ -483,22 +485,25 @@ public sealed class Bisector_BisecCC : Bisector_Curve
     }
 
     /// <summary>True if the first curve is closed and the bisector covers it.</summary>
-    public override bool IsClosed()
+    public override bool IsClosed
     {
-        if (curve1.IsClosed())
+        get
         {
-            if (startIntervals.First() == curve1.FirstParameter() && endIntervals.Last() == curve1.LastParameter())
+            if (curve1.IsClosed)
             {
-                return true;
+                if (startIntervals.First() == curve1.FirstParameter() && endIntervals.Last() == curve1.LastParameter())
+                {
+                    return true;
+                }
             }
+            return false;
         }
-        return false;
     }
 
     /// <summary>False.</summary>
-    public override bool IsPeriodic() => false;
+    public override bool IsPeriodic => false;
 
-    private static double Curvature(Geom2d_Curve C, double U, double Tol)
+    private static double Curvature(Curve2D C, double U, double Tol)
     {
         double K1;
         C.D2(U, out Point2D _, out Vector2D D1, out Vector2D D2);
@@ -667,10 +672,10 @@ public sealed class Bisector_BisecCC : Bisector_Curve
             double DMin = global::Kerf.Engine.Foundation.Precision.Infinite();
             Point2D P;
             Bisector_BisecPC BisPC = new(curve2, P1, sign2, VMin, VMax);
-            Geom2d_Line NorLi = new(P1, new Direction2D(N1));
+            LineCurve2D NorLi = new(P1, new Direction2D(N1));
 
-            Geom2dAdaptor_Curve ABisPC = new(BisPC);
-            Geom2dAdaptor_Curve ANorLi = new(NorLi);
+            CurveAdaptor2D ABisPC = new(BisPC);
+            CurveAdaptor2D ANorLi = new(NorLi);
             //-------------------------------------------------------------------------
             Geom2dInt_GInter Intersect = new(ABisPC, ANorLi, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion());
             //-------------------------------------------------------------------------
@@ -905,12 +910,12 @@ public sealed class Bisector_BisecCC : Bisector_Curve
     }
 
     /// <summary>The derivative of order N (1 to 3) at U (0 for N = 2 or 3, as OCCT computes them).</summary>
-    /// <exception cref="Geom2d_UndefinedDerivative">N is not 1, 2 or 3.</exception>
+    /// <exception cref="UndefinedDerivative2DException">N is not 1, 2 or 3.</exception>
     public override Vector2D EvalDN(double U, int N)
     {
         if (N < 1)
         {
-            throw new Geom2d_UndefinedDerivative("Bisector_BisecCC::EvalDN");
+            throw new UndefinedDerivative2DException("Bisector_BisecCC::EvalDN");
         }
         Values(U, N, out Point2D _, out Vector2D V1, out Vector2D V2, out Vector2D V3);
         switch (N)
@@ -923,7 +928,7 @@ public sealed class Bisector_BisecCC : Bisector_Curve
                 return V3;
             default:
             {
-                throw new Geom2d_UndefinedDerivative("Bisector_BisecCC::EvalDN");
+                throw new UndefinedDerivative2DException("Bisector_BisecCC::EvalDN");
             }
         }
     }
@@ -1180,7 +1185,7 @@ public sealed class Bisector_BisecCC : Bisector_Curve
     //           The point of the bisector of CA and CB whose projection on CA is the point
     //           of parameter UOnA.
     //=============================================================================
-    private static bool PointByInt(Geom2d_Curve CA, Geom2d_Curve CB, double SignA, double SignB, double UOnA,
+    private static bool PointByInt(Curve2D CA, Curve2D CB, double SignA, double SignB, double UOnA,
                                    ref double UOnB, ref double Dist)
     {
         //------------------------------------------------------------------
@@ -1244,10 +1249,10 @@ public sealed class Bisector_BisecCC : Bisector_Curve
             return false;
         }
 
-        Geom2d_Line NorLi = new(P1, new Direction2D(N1));
+        LineCurve2D NorLi = new(P1, new Direction2D(N1));
 
-        Geom2dAdaptor_Curve ABisPC = new(BisPC);
-        Geom2dAdaptor_Curve ANorLi = new(NorLi);
+        CurveAdaptor2D ABisPC = new(BisPC);
+        CurveAdaptor2D ANorLi = new(NorLi);
         //-------------------------------------------------------------------------
         Geom2dInt_GInter Intersect = new(ABisPC, ANorLi, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion());
         //-------------------------------------------------------------------------
@@ -1358,7 +1363,7 @@ public sealed class Bisector_BisecCC : Bisector_Curve
 
     /// <summary>The curve I (1 or 2), shared with this bisector as OCCT's handle.</summary>
     /// <exception cref="OutOfRangeException">I is not 1 or 2.</exception>
-    public Geom2d_Curve Curve(int I)
+    public Curve2D Curve(int I)
     {
         if (I == 1)
         {
@@ -1405,7 +1410,7 @@ public sealed class Bisector_BisecCC : Bisector_Curve
 
     // OCCT's Dump (std::cout) is left out.
 
-    private void Curve(int I, Geom2d_Curve C)
+    private void Curve(int I, Curve2D C)
     {
         if (I == 1)
         {
@@ -1518,7 +1523,7 @@ public sealed class Bisector_BisecCC : Bisector_Curve
         return UMid;
     }
 
-    private static bool ProjOnCurve(in Point2D P, Geom2d_Curve C, out double theParam)
+    private static bool ProjOnCurve(in Point2D P, Curve2D C, out double theParam)
     {
         theParam = 0.0;
         C.D1(C.FirstParameter(), out Point2D PF, out Vector2D TF);
@@ -1563,7 +1568,7 @@ public sealed class Bisector_BisecCC : Bisector_Curve
         return true;
     }
 
-    private static bool TestExtension(Geom2d_Curve C1, Geom2d_Curve C2, int Start_End)
+    private static bool TestExtension(Curve2D C1, Curve2D C2, int Start_End)
     {
         Point2D P1, P2;
         Vector2D T1, T2;

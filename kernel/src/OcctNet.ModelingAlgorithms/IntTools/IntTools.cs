@@ -3,11 +3,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Values;
 using Kerf.Engine.Foundation.Std;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.CurveKind;
-using static Occt.gce_ErrorType;
-using static Occt.TopAbs_State;
+using static Kerf.Engine.Construction.Values.ErrorType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -19,7 +25,7 @@ public static class IntTools
     /// radius of the circle through the points at t1, (t1 + t3) / 2 and t3. Returns 0 if computed, 1 for a line, 2 for
     /// confused or colinear points, -1 for another failure.
     /// </summary>
-    public static int GetRadius(BRepAdaptor_Curve C, double t1, double t3, out double aR)
+    public static int GetRadius(EdgeCurveAdaptor C, double t1, double t3, out double aR)
     {
         aR = 0.0;
         CurveKind aType = C.GetType();
@@ -45,15 +51,15 @@ public static class IntTools
         P3 = C.Value(t3);
         //
         //
-        gce_MakeCirc aMakeCirc = new(P1, P2, P3);
-        gce_ErrorType anErrorType;
+        MakeCirc aMakeCirc = new(P1, P2, P3);
+        ErrorType anErrorType;
 
         anErrorType = aMakeCirc.Status();
 
-        if (!aMakeCirc.IsDone())
+        if (!aMakeCirc.IsDone)
         {
-            if (anErrorType == gce_ConfusedPoints || anErrorType == gce_IntersectionError
-                || anErrorType == gce_ColinearPoints)
+            if (anErrorType == ConfusedPoints || anErrorType == IntersectionError
+                || anErrorType == ColinearPoints)
             {
                 return 2;
             }
@@ -76,7 +82,7 @@ public static class IntTools
     /// <paramref name="anArgs"/> is resized to [0, NbArgs - 1]. OCCT's C is a non-const reference only because
     /// GCPnts takes one; the adaptor isn't changed.
     /// </remarks>
-    public static int PrepareArgs(BRepAdaptor_Curve C, double Tmax, double Tmin, int Discret, double Deflection,
+    public static int PrepareArgs(EdgeCurveAdaptor C, double Tmax, double Tmin, int Discret, double Deflection,
                                   NCollection_Array1<double> anArgs)
     {
         NCollection_List<double> aPars = new();
@@ -119,14 +125,14 @@ public static class IntTools
             if (ip == 0)
             {
                 anAbsDeflection = Deflection * aR;
-                GCPnts_QuasiUniformDeflection anUD = new();
+                QuasiUniformDeflection anUD = new();
                 anUD.Initialize(C, anAbsDeflection, tCurrent, tNext);
-                if (!anUD.IsDone())
+                if (!anUD.IsDone)
                 {
                     return 2;
                 }
 
-                aNbDeflectionPoints = anUD.NbPoints();
+                aNbDeflectionPoints = anUD.PointCount;
                 if (aNbDeflectionPoints > 2)
                 {
                     aNbDeflectionPoints--;
@@ -151,13 +157,13 @@ public static class IntTools
     }
 
     /// <summary>The length of the edge (0 for a degenerated or non-geometric edge).</summary>
-    public static double Length(in TopoDS_Edge anEdge)
+    public static double Length(in Edge anEdge)
     {
         double aLength = 0;
 
-        if (!BRep_Tool.Degenerated(anEdge) && BRep_Tool.IsGeometric(anEdge))
+        if (!Tool.Degenerated(anEdge) && Tool.IsGeometric(anEdge))
         {
-            GProp_GProps Temp = new();
+            Properties Temp = new();
             BRepGProp.LinearProperties(anEdge, Temp);
             aLength = Temp.Mass();
         }
@@ -242,45 +248,45 @@ public static class IntTools
                 case 0: // Simple Root
                     if (f1 > 0.0 && f2 < 0.0)
                     {
-                        aR.SetStateBefore(TopAbs_OUT);
-                        aR.SetStateAfter(TopAbs_IN);
+                        aR.SetStateBefore(Out);
+                        aR.SetStateAfter(In);
                     }
                     else
                     {
-                        aR.SetStateBefore(TopAbs_IN);
-                        aR.SetStateAfter(TopAbs_OUT);
+                        aR.SetStateBefore(In);
+                        aR.SetStateAfter(Out);
                     }
                     break;
 
                 case 1: // Complete 0;
-                    aR.SetStateBefore(TopAbs_ON);
-                    aR.SetStateAfter(TopAbs_ON);
+                    aR.SetStateBefore(On);
+                    aR.SetStateAfter(On);
                     break;
 
                 case 2: // Smart;
                     absf2 = Math.Abs(f2);
                     if (absf2 < myEpsNull)
                     {
-                        aR.SetStateAfter(TopAbs_ON);
+                        aR.SetStateAfter(On);
                         if (f1 > 0.0)
                         {
-                            aR.SetStateBefore(TopAbs_OUT);
+                            aR.SetStateBefore(Out);
                         }
                         else
                         {
-                            aR.SetStateBefore(TopAbs_IN);
+                            aR.SetStateBefore(In);
                         }
                     }
                     else
                     {
-                        aR.SetStateBefore(TopAbs_ON);
+                        aR.SetStateBefore(On);
                         if (f2 > 0.0)
                         {
-                            aR.SetStateAfter(TopAbs_OUT);
+                            aR.SetStateAfter(Out);
                         }
                         else
                         {
-                            aR.SetStateAfter(TopAbs_IN);
+                            aR.SetStateAfter(In);
                         }
                     }
                     break; // OCCT falls through to "default: break;", the same
@@ -295,7 +301,7 @@ public static class IntTools
     /// The parameter of the point on the curve: exact on conics, by projection on Bézier and B-spline curves. Returns
     /// 0 if computed, 2 if the projection found nothing, 1 for another curve type (the parameter left as it was).
     /// </summary>
-    public static int Parameter(in Point3D aP, Geom_Curve aCurve, ref double aParameter)
+    public static int Parameter(in Point3D aP, Curve3D aCurve, ref double aParameter)
     {
         double aFirst, aLast;
         CurveKind aCurveType;
@@ -303,7 +309,7 @@ public static class IntTools
         aFirst = aCurve.FirstParameter();
         aLast = aCurve.LastParameter();
 
-        GeomAdaptor_Curve aGAC = new();
+        CurveAdaptor aGAC = new();
         aGAC.Load(aCurve, aFirst, aLast);
         aCurveType = aGAC.GetType();
 

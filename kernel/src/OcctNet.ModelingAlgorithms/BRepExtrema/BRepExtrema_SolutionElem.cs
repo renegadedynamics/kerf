@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepExtrema_SupportType;
 
 namespace Occt;
@@ -21,9 +22,9 @@ public readonly struct BRepExtrema_SolutionElem : IEquatable<BRepExtrema_Solutio
     private readonly double myDist;
     private readonly Point3D myPoint;
     private readonly BRepExtrema_SupportType mySupType;
-    private readonly TopoDS_Vertex myVertex;
-    private readonly TopoDS_Edge myEdge;
-    private readonly TopoDS_Face myFace;
+    private readonly Vertex myVertex;
+    private readonly Edge myEdge;
+    private readonly Face myFace;
     private readonly double myPar1;
     private readonly double myPar2;
 
@@ -38,7 +39,7 @@ public readonly struct BRepExtrema_SolutionElem : IEquatable<BRepExtrema_Solutio
     }
 
     /// <summary>A solution at a vertex.</summary>
-    public BRepExtrema_SolutionElem(double theDist, in Point3D thePoint, BRepExtrema_SupportType theSolType, in TopoDS_Vertex theVertex)
+    public BRepExtrema_SolutionElem(double theDist, in Point3D thePoint, BRepExtrema_SupportType theSolType, in Vertex theVertex)
     {
         myDist = theDist;
         myPoint = thePoint;
@@ -49,7 +50,7 @@ public readonly struct BRepExtrema_SolutionElem : IEquatable<BRepExtrema_Solutio
     }
 
     /// <summary>A solution on an edge at the parameter <paramref name="theParam"/>.</summary>
-    public BRepExtrema_SolutionElem(double theDist, in Point3D thePoint, BRepExtrema_SupportType theSolType, in TopoDS_Edge theEdge, double theParam)
+    public BRepExtrema_SolutionElem(double theDist, in Point3D thePoint, BRepExtrema_SupportType theSolType, in Edge theEdge, double theParam)
     {
         myDist = theDist;
         myPoint = thePoint;
@@ -60,7 +61,7 @@ public readonly struct BRepExtrema_SolutionElem : IEquatable<BRepExtrema_Solutio
     }
 
     /// <summary>A solution in a face at the parameters (<paramref name="theU"/>, <paramref name="theV"/>).</summary>
-    public BRepExtrema_SolutionElem(double theDist, in Point3D thePoint, BRepExtrema_SupportType theSolType, in TopoDS_Face theFace, double theU, double theV)
+    public BRepExtrema_SolutionElem(double theDist, in Point3D thePoint, BRepExtrema_SupportType theSolType, in Face theFace, double theU, double theV)
     {
         myDist = theDist;
         myPoint = thePoint;
@@ -80,13 +81,13 @@ public readonly struct BRepExtrema_SolutionElem : IEquatable<BRepExtrema_Solutio
     public BRepExtrema_SupportType SupportKind() => mySupType;
 
     /// <summary>The vertex, if the solution is a vertex.</summary>
-    public TopoDS_Vertex Vertex() => myVertex;
+    public Vertex Vertex() => myVertex;
 
     /// <summary>The edge, if the solution is on an edge.</summary>
-    public TopoDS_Edge Edge() => myEdge;
+    public Edge Edge() => myEdge;
 
     /// <summary>The face, if the solution is in a face.</summary>
-    public TopoDS_Face Face() => myFace;
+    public Face Face() => myFace;
 
     /// <summary>The parameter on the edge.</summary>
     public void EdgeParameter(out double theParam) => theParam = myPar1;

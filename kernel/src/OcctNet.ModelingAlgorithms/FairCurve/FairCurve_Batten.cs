@@ -397,7 +397,7 @@ public class FairCurve_Batten
 
         mults.Init(L);
 
-        Geom2d_BSplineCurve DeltaCurve = new(HermitePoles, knots, mults, L - 1);
+        BSplineCurve2D DeltaCurve = new(HermitePoles, knots, mults, L - 1);
 
         DeltaCurve.IncreaseDegree(Degree);
         if (Mults.Length() > 2)
@@ -561,7 +561,7 @@ public class FairCurve_Batten
 
         if (NewKnots)
         {
-            Geom2d_BSplineCurve NewBS = new(NPoles.Array1(), Knots.Array1(), Mults.Array1(), Degree);
+            BSplineCurve2D NewBS = new(NPoles.Array1(), Knots.Array1(), Mults.Array1(), Degree);
 
             NCollection_HArray1<int> NMults = new(1, NbKnots);
             NMults.Init(Degree - 3);
@@ -750,9 +750,9 @@ public class FairCurve_Batten
     }
 
     /// <summary>The computed curve: a new 2D B-spline, frozen (decision 859).</summary>
-    public Geom2d_BSplineCurve Curve()
+    public BSplineCurve2D Curve()
     {
-        Geom2d_BSplineCurve TheCurve = new(Poles.Array1(), Knots.Array1(), Mults.Array1(), Degree);
+        BSplineCurve2D TheCurve = new(Poles.Array1(), Knots.Array1(), Mults.Array1(), Degree);
         TheCurve.Freeze();
         return TheCurve;
     }

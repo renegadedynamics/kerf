@@ -5,7 +5,11 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -20,8 +24,8 @@ public abstract class BRepFill_SectionLaw : Transient
     protected bool uclosed;
     protected bool vclosed;
     protected bool myDone;
-    protected readonly NCollection_DataMap<TopoDS_Shape, int> myIndices = new(TopTools_ShapeMapHasher.Instance);
-    private readonly BRepTools_WireExplorer myIterator = new();
+    protected readonly NCollection_DataMap<Shape, int> myIndices = new(ShapeHasher.Instance);
+    private readonly WireExplorer myIterator = new();
 
     //=======================================================================
     // function : NbLaw
@@ -40,7 +44,7 @@ public abstract class BRepFill_SectionLaw : Transient
 
     /// <summary>The index of <paramref name="anEdge"/> in the section (negative for a reversed edge of NSections).</summary>
     /// <exception cref="NoSuchObjectException">The edge isn't in the section.</exception>
-    public int IndexOfEdge(in TopoDS_Shape anEdge) => myIndices.Find(anEdge);
+    public int IndexOfEdge(in Shape anEdge) => myIndices.Find(anEdge);
 
     /// <summary>True if the law is constant.</summary>
     public abstract bool IsConstant();
@@ -73,15 +77,15 @@ public abstract class BRepFill_SectionLaw : Transient
     public abstract double VertexTol(int Index, double Param);
 
     /// <summary>The section's vertex of rank <paramref name="Index"/> at the law's parameter <paramref name="Param"/>.</summary>
-    public abstract TopoDS_Vertex Vertex(int Index, double Param);
+    public abstract Vertex Vertex(int Index, double Param);
 
     /// <summary>The section at the law's parameter <paramref name="U"/>.</summary>
-    public abstract void D0(double U, ref TopoDS_Shape S);
+    public abstract void D0(double U, ref Shape S);
 
     //=================================================================================================
 
     /// <summary>Starts parsing <paramref name="W"/> with <see cref="CurrentEdge"/>.</summary>
-    public void Init(in TopoDS_Wire W)
+    public void Init(in Wire W)
     {
         myIterator.Init(W);
     }
@@ -92,9 +96,9 @@ public abstract class BRepFill_SectionLaw : Transient
     //=======================================================================
 
     /// <summary>The next non-degenerated edge of the wire given to <see cref="Init"/>.</summary>
-    public TopoDS_Edge CurrentEdge()
+    public Edge CurrentEdge()
     {
-        TopoDS_Edge E = new();
+        Edge E = new();
         // Class BRep_Tool without fields and without Constructor :
         //  BRep_Tool B;
         bool Suivant = false;
@@ -102,7 +106,7 @@ public abstract class BRepFill_SectionLaw : Transient
         {
             E = myIterator.Current();
             //    Next = (B.Degenerated(E));
-            Suivant = (BRep_Tool.Degenerated(E));
+            Suivant = (Tool.Degenerated(E));
         }
 
         while (Suivant)
@@ -110,7 +114,7 @@ public abstract class BRepFill_SectionLaw : Transient
             myIterator.Next();
             E = myIterator.Current();
             //    Next = (B.Degenerated(E) && myIterator.More());
-            Suivant = (BRep_Tool.Degenerated(E) && myIterator.More());
+            Suivant = (Tool.Degenerated(E) && myIterator.More());
         }
 
         if (myIterator.More())

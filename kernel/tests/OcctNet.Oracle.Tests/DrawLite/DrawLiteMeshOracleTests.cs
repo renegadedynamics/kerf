@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
@@ -8,7 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
-using static Occt.TopTools_FormatVersion;
+using static Kerf.Engine.Exchange.Brep.FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -114,7 +116,7 @@ public sealed partial class DrawLiteMeshOracleTests(ITestOutputHelper output) : 
             }
 
             string aCopy = NewFile();
-            return N.BRepTools.Write(aShape, aCopy, true, false, (N.TopTools_FormatVersion)(int)TopTools_FormatVersion_CURRENT) ? aCopy : null;
+            return N.BRepTools.Write(aShape, aCopy, true, false, (N.TopTools_FormatVersion)(int)FormatVersion_CURRENT) ? aCopy : null;
         }
         catch (Exception)
         {
@@ -424,11 +426,11 @@ public sealed partial class DrawLiteMeshOracleTests(ITestOutputHelper output) : 
         return true;
     }
 
-    private void CompareTexts(N.TopoDS_Shape theNative, in TopoDS_Shape thePort, bool theWithNormals, string theWhat)
+    private void CompareTexts(N.TopoDS_Shape theNative, in Shape thePort, bool theWithNormals, string theWhat)
     {
         string aNFile = NewFile(), aPFile = NewFile();
-        Assert.True(N.BRepTools.Write(theNative, aNFile, true, theWithNormals, (N.TopTools_FormatVersion)(int)TopTools_FormatVersion_CURRENT));
-        Assert.True(BRepTools.Write(thePort, aPFile, true, theWithNormals, TopTools_FormatVersion_CURRENT));
+        Assert.True(N.BRepTools.Write(theNative, aNFile, true, theWithNormals, (N.TopTools_FormatVersion)(int)FormatVersion_CURRENT));
+        Assert.True(BrepTools.Write(thePort, aPFile, true, theWithNormals, FormatVersion_CURRENT));
         myTexts++;
         if (File.ReadAllText(aNFile, Encoding.Latin1) == File.ReadAllText(aPFile, Encoding.Latin1))
         {

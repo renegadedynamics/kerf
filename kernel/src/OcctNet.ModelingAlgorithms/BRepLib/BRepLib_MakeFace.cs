@@ -3,12 +3,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepLib_FaceError;
 using static Kerf.Geometry.CurveKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -31,7 +36,7 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
 {
     private BRepLib_FaceError myError;
     // OCCT.NET: the history of the copy for write of the wire (null if none).
-    private BRepTools_History? myHistory;
+    private History? myHistory;
 
     /// <summary>Not done.</summary>
     public BRepLib_MakeFace()
@@ -40,7 +45,7 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
     }
 
     /// <summary>Loads the face (a copy holding the same wires), to add wires to it.</summary>
-    public BRepLib_MakeFace(in TopoDS_Face F)
+    public BRepLib_MakeFace(in Face F)
     {
         Init(F);
     }
@@ -48,75 +53,75 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
     /// <summary>A face on the whole plane.</summary>
     public BRepLib_MakeFace(in Plane3D P)
     {
-        var GP = new Geom_Plane(P);
+        var GP = new PlaneSurface(P);
         Init(GP, true, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>A face on the whole cylinder.</summary>
     public BRepLib_MakeFace(in Cylinder C)
     {
-        var GC = new Geom_CylindricalSurface(C);
+        var GC = new CylindricalSurface(C);
         Init(GC, true, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>A face on the whole cone.</summary>
     public BRepLib_MakeFace(in Cone C)
     {
-        var GC = new Geom_ConicalSurface(C);
+        var GC = new ConicalSurface(C);
         Init(GC, true, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>A face on the whole sphere.</summary>
     public BRepLib_MakeFace(in Sphere S)
     {
-        var GS = new Geom_SphericalSurface(S);
+        var GS = new SphericalSurface(S);
         Init(GS, true, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>A face on the whole torus.</summary>
     public BRepLib_MakeFace(in Torus T)
     {
-        var GT = new Geom_ToroidalSurface(T);
+        var GT = new ToroidalSurface(T);
         Init(GT, true, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>A face on the whole surface; <paramref name="TolDegen"/> decides degenerated boundaries.</summary>
-    public BRepLib_MakeFace(Geom_Surface S, double TolDegen)
+    public BRepLib_MakeFace(Surface S, double TolDegen)
     {
         Init(S, true, TolDegen);
     }
 
     public BRepLib_MakeFace(in Plane3D P, double UMin, double UMax, double VMin, double VMax)
     {
-        var GP = new Geom_Plane(P);
+        var GP = new PlaneSurface(P);
         Init(GP, UMin, UMax, VMin, VMax, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     public BRepLib_MakeFace(in Cylinder C, double UMin, double UMax, double VMin, double VMax)
     {
-        var GC = new Geom_CylindricalSurface(C);
+        var GC = new CylindricalSurface(C);
         Init(GC, UMin, UMax, VMin, VMax, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     public BRepLib_MakeFace(in Cone C, double UMin, double UMax, double VMin, double VMax)
     {
-        var GC = new Geom_ConicalSurface(C);
+        var GC = new ConicalSurface(C);
         Init(GC, UMin, UMax, VMin, VMax, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     public BRepLib_MakeFace(in Sphere S, double UMin, double UMax, double VMin, double VMax)
     {
-        var GS = new Geom_SphericalSurface(S);
+        var GS = new SphericalSurface(S);
         Init(GS, UMin, UMax, VMin, VMax, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     public BRepLib_MakeFace(in Torus T, double UMin, double UMax, double VMin, double VMax)
     {
-        var GT = new Geom_ToroidalSurface(T);
+        var GT = new ToroidalSurface(T);
         Init(GT, UMin, UMax, VMin, VMax, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
-    public BRepLib_MakeFace(Geom_Surface S, double UMin, double UMax, double VMin, double VMax, double TolDegen)
+    public BRepLib_MakeFace(Surface S, double UMin, double UMax, double VMin, double VMax, double TolDegen)
     {
         Init(S, UMin, UMax, VMin, VMax, TolDegen);
     }
@@ -125,7 +130,7 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
     /// A face on a surface through the wire (with <paramref name="OnlyPlane"/>, a plane), found by
     /// <see cref="BRepLib_FindSurface"/>; BRepLib_NotPlanar if there is none.
     /// </summary>
-    public BRepLib_MakeFace(in TopoDS_Wire W, bool OnlyPlane = false)
+    public BRepLib_MakeFace(in Wire W, bool OnlyPlane = false)
     {
         // Find a surface through the wire
         var FS = new BRepLib_FindSurface(W, -1, OnlyPlane, true);
@@ -136,31 +141,31 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         }
 
         // build the face and add the wire
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         myError = BRepLib_FaceDone;
 
         double tol = Max(1.2 * FS.ToleranceReached(), FS.Tolerance());
 
-        TopoDS_Face aFace = new();
+        Face aFace = new();
         B.MakeFace(ref aFace, FS.Surface(), FS.Location(), tol);
         myShape = aFace;
 
-        TopoDS_Wire aW = new();
+        Wire aW = new();
         if (OnlyPlane)
         {
             // get rid of degenerative edges in the input wire
-            var aB = new BRep_Builder();
+            var aB = new BrepBuilder();
             aB.MakeWire(ref aW);
 
-            TopoDS_Wire aWForw = W;
+            Wire aWForw = W;
             bool hasDegenerated = false;
-            aWForw.Orientation(TopAbs_FORWARD);
-            var anIter = new TopoDS_Iterator(aWForw);
+            aWForw.Orientation(Forward);
+            var anIter = new Iterator(aWForw);
             for (; anIter.More(); anIter.Next())
             {
-                TopoDS_Edge aE = TopoDS.Edge(anIter.Value());
+                Edge aE = ShapeCasts.Edge(anIter.Value());
 
-                if (BRep_Tool.Degenerated(aE))
+                if (Tool.Degenerated(aE))
                 {
                     hasDegenerated = true;
                 }
@@ -190,11 +195,11 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         // unchanged are the caller's own again afterwards, so that faces built on wires sharing edges share them.
         // UpdateTolerances raises every vertex by its rounding guard (2 * Epsilon(tol)); a raise of no more than that
         // is ignored, else no frozen vertex could ever be kept.
-        TopoDS_Wire aWOriginal = new();
+        Wire aWOriginal = new();
         if (hasFrozenSubShape(aW))
         {
             aWOriginal = aW;
-            aW = TopoDS.Wire(BRepTools.ExactCopyForWrite(aW, out _));
+            aW = ShapeCasts.Wire(BrepTools.ExactCopyForWrite(aW, out _));
         }
 
         Add(aW);
@@ -203,39 +208,39 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         //
         BRepLib.SameParameter(myShape, tol, true);
         //
-        if (!aWOriginal.IsNull())
+        if (!aWOriginal.IsNull)
         {
-            aW = TopoDS.Wire(BRepTools.KeepUnchanged(aWOriginal, aW, out BRepTools_History aHistory, true));
+            aW = ShapeCasts.Wire(BrepTools.KeepUnchanged(aWOriginal, aW, out History aHistory, true));
             myHistory = aHistory;
-            if (!ReferenceEquals(aW.TShape(), myShape.TShape()!.myShapes.First().TShape()))
+            if (!ReferenceEquals(aW.TShape(), myShape.TShape()!._shapes.First().TShape()))
             {
                 // the face holds the copy: it gets the wire with the kept edges in its place
-                myShape.TShape()!.myShapes.Clear();
+                myShape.TShape()!._shapes.Clear();
                 Add(aW);
             }
         }
         //
-        if (BRep_Tool.IsClosed(aW))
+        if (Tool.IsClosed(aW))
         {
             CheckInside();
         }
     }
 
     // True if the shape or any of its sub-shapes is frozen.
-    private static bool hasFrozenSubShape(in TopoDS_Shape theShape)
+    private static bool hasFrozenSubShape(in Shape theShape)
     {
         if (theShape.TShape()!.IsFrozen)
         {
             return true;
         }
-        for (var anExp = new TopExp_Explorer(theShape, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(theShape, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             if (anExp.Current().TShape()!.IsFrozen)
             {
                 return true;
             }
         }
-        for (var anExp = new TopExp_Explorer(theShape, TopAbs_VERTEX); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(theShape, ShapeType.Vertex); anExp.More(); anExp.Next())
         {
             if (anExp.Current().TShape()!.IsFrozen)
             {
@@ -246,87 +251,87 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
     }
 
     /// <summary>A face on the plane bounded by the wire; reversed if the wire would bound an infinite area.</summary>
-    public BRepLib_MakeFace(in Plane3D P, in TopoDS_Wire W, bool Inside = true)
+    public BRepLib_MakeFace(in Plane3D P, in Wire W, bool Inside = true)
     {
-        var Pl = new Geom_Plane(P);
+        var Pl = new PlaneSurface(P);
         Init(Pl, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         Add(W);
-        if (Inside && BRep_Tool.IsClosed(W))
+        if (Inside && Tool.IsClosed(W))
         {
             CheckInside();
         }
     }
 
-    public BRepLib_MakeFace(in Cylinder C, in TopoDS_Wire W, bool Inside = true)
+    public BRepLib_MakeFace(in Cylinder C, in Wire W, bool Inside = true)
     {
-        var GC = new Geom_CylindricalSurface(C);
+        var GC = new CylindricalSurface(C);
         Init(GC, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         Add(W);
-        if (Inside && BRep_Tool.IsClosed(W))
+        if (Inside && Tool.IsClosed(W))
         {
             CheckInside();
         }
     }
 
-    public BRepLib_MakeFace(in Cone C, in TopoDS_Wire W, bool Inside = true)
+    public BRepLib_MakeFace(in Cone C, in Wire W, bool Inside = true)
     {
-        var GC = new Geom_ConicalSurface(C);
+        var GC = new ConicalSurface(C);
         Init(GC, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         Add(W);
-        if (Inside && BRep_Tool.IsClosed(W))
+        if (Inside && Tool.IsClosed(W))
         {
             CheckInside();
         }
     }
 
-    public BRepLib_MakeFace(in Sphere S, in TopoDS_Wire W, bool Inside = true)
+    public BRepLib_MakeFace(in Sphere S, in Wire W, bool Inside = true)
     {
-        var GS = new Geom_SphericalSurface(S);
+        var GS = new SphericalSurface(S);
         Init(GS, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         Add(W);
-        if (Inside && BRep_Tool.IsClosed(W))
+        if (Inside && Tool.IsClosed(W))
         {
             CheckInside();
         }
     }
 
-    public BRepLib_MakeFace(in Torus T, in TopoDS_Wire W, bool Inside = true)
+    public BRepLib_MakeFace(in Torus T, in Wire W, bool Inside = true)
     {
-        var GT = new Geom_ToroidalSurface(T);
+        var GT = new ToroidalSurface(T);
         Init(GT, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         Add(W);
-        if (Inside && BRep_Tool.IsClosed(W))
+        if (Inside && Tool.IsClosed(W))
         {
             CheckInside();
         }
     }
 
-    public BRepLib_MakeFace(Geom_Surface S, in TopoDS_Wire W, bool Inside = true)
+    public BRepLib_MakeFace(Surface S, in Wire W, bool Inside = true)
     {
         Init(S, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         Add(W);
-        if (Inside && BRep_Tool.IsClosed(W))
+        if (Inside && Tool.IsClosed(W))
         {
             CheckInside();
         }
     }
 
     /// <summary>A copy of the face with the wire added.</summary>
-    public BRepLib_MakeFace(in TopoDS_Face F, in TopoDS_Wire W)
+    public BRepLib_MakeFace(in Face F, in Wire W)
     {
         Init(F);
         Add(W);
     }
 
     /// <summary>Loads the face: a new face on its surface holding the same wires.</summary>
-    public void Init(in TopoDS_Face F)
+    public void Init(in Face F)
     {
         // copy the face
         myShape = F.EmptyCopied();
         myError = BRepLib_FaceDone;
 
-        var B = new BRep_Builder();
-        var It = new TopoDS_Iterator(F);
+        var B = new BrepBuilder();
+        var It = new Iterator(F);
         while (It.More())
         {
             B.Add(myShape, It.Value());
@@ -335,7 +340,7 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
     }
 
     /// <summary>A face on the surface; with <paramref name="Bound"/>, bounded by its natural bounds.</summary>
-    public void Init(Geom_Surface S, bool Bound, double TolDegen)
+    public void Init(Surface S, bool Bound, double TolDegen)
     {
         myError = BRepLib_FaceDone;
         if (Bound)
@@ -345,13 +350,13 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         }
         else
         {
-            var B0 = new BRep_Builder();
-            TopoDS_Face aFace = new();
+            var B0 = new BrepBuilder();
+            Face aFace = new();
             B0.MakeFace(ref aFace, S, global::Kerf.Engine.Foundation.Precision.Confusion());
             myShape = aFace;
         }
-        var B = new BRep_Builder();
-        B.NaturalRestriction(TopoDS.Face(myShape), true);
+        var B = new BrepBuilder();
+        B.NaturalRestriction(ShapeCasts.Face(myShape), true);
     }
 
     /// <summary>
@@ -359,9 +364,9 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
     /// or Bezier curve whose poles are that close to the first); <paramref name="theActTol"/> is the tolerance that
     /// decided it. For BRepLib_MakeFace and BRepLib_MakeShell.
     /// </summary>
-    public static bool IsDegenerated(Geom_Curve theCurve, double theMaxTol, out double theActTol)
+    public static bool IsDegenerated(Curve3D theCurve, double theMaxTol, out double theActTol)
     {
-        var AC = new GeomAdaptor_Curve(theCurve);
+        var AC = new CurveAdaptor(theCurve);
         double aConfusion = global::Kerf.Engine.Foundation.Precision.Confusion();
         theActTol = aConfusion;
         CurveKind Type = AC.GetType();
@@ -378,8 +383,8 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         }
         else if (Type == BSplineCurve)
         {
-            Geom_BSplineCurve BS = AC.BSpline();
-            int NbPoles = BS.NbPoles();
+            BSplineCurve3D BS = AC.BSpline();
+            int NbPoles = BS.PoleCount;
             double aMaxPoleDist2 = 0.0, aMaxTol2 = theMaxTol * theMaxTol;
             Point3D P1, P2;
             P1 = BS.Pole(1);
@@ -401,8 +406,8 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         }
         else if (Type == BezierCurve)
         {
-            Geom_BezierCurve BZ = AC.Bezier();
-            int NbPoles = BZ.NbPoles();
+            BezierCurve3D BZ = AC.Bezier();
+            int NbPoles = BZ.PoleCount;
             double aMaxPoleDist2 = 0.0, aMaxTol2 = theMaxTol * theMaxTol;
             Point3D P1, P2;
             P1 = BZ.Pole(1);
@@ -427,7 +432,7 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
     }
 
     /// <summary>A face on the surface between the parameter values (adjusted into the periods of a periodic surface).</summary>
-    public void Init(Geom_Surface SS, double Um, double UM, double Vm, double VM, double TolDegen)
+    public void Init(Surface SS, double Um, double UM, double Vm, double VM, double TolDegen)
     {
         myError = BRepLib_FaceDone;
 
@@ -438,13 +443,13 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
 
         double T;
 
-        Geom_Surface S = SS, BS = SS;
-        if (S is Geom_RectangularTrimmedSurface RS)
+        Surface S = SS, BS = SS;
+        if (S is TrimmedSurface RS)
         {
             BS = RS.BasisSurface();
         }
 
-        bool OffsetSurface = BS.GetType() == typeof(Geom_OffsetSurface);
+        bool OffsetSurface = BS.GetType() == typeof(OffsetSurface);
 
         // adjust periodical surface or reordonate
         // check if the values are in the natural range
@@ -454,32 +459,32 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
 
         if (OffsetSurface)
         {
-            var OS = (Geom_OffsetSurface)BS;
-            Geom_Surface Base = OS.BasisSurface();
+            var OS = (OffsetSurface)BS;
+            Surface Base = OS.BasisSurface();
 
-            if (Base.GetType() == typeof(Geom_SurfaceOfLinearExtrusion))
+            if (Base.GetType() == typeof(ExtrusionSurface))
             {
                 if (global::Kerf.Engine.Foundation.Precision.IsInfinite(umin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(umax))
                 {
-                    S = new Geom_RectangularTrimmedSurface(OS, UMin, UMax, VMin, VMax);
+                    S = new TrimmedSurface(OS, UMin, UMax, VMin, VMax);
                 }
                 else
                 {
-                    S = new Geom_RectangularTrimmedSurface(OS, VMin, VMax, false);
+                    S = new TrimmedSurface(OS, VMin, VMax, false);
                 }
             }
-            else if (Base.GetType() == typeof(Geom_SurfaceOfRevolution))
+            else if (Base.GetType() == typeof(RevolutionSurface))
             {
                 if (global::Kerf.Engine.Foundation.Precision.IsInfinite(vmin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vmax))
                 {
-                    S = new Geom_RectangularTrimmedSurface(OS, VMin, VMax, false);
+                    S = new TrimmedSurface(OS, VMin, VMax, false);
                 }
             }
         }
 
         // OCCT checks the natural range only when the parameters come reversed (occt-issues.md): ordered parameters
         // outside it are accepted.
-        if (S.IsUPeriodic())
+        if (S.IsUPeriodic)
         {
             global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(umin, umax, epsilon, ref UMin, ref UMax);
         }
@@ -495,7 +500,7 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
             }
         }
 
-        if (S.IsVPeriodic())
+        if (S.IsVPeriodic)
         {
             global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(vmin, vmax, epsilon, ref VMin, ref VMax);
         }
@@ -518,13 +523,13 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         bool vmaxinf = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(VMax);
 
         // closed flag
-        bool uclosed = S.IsUClosed() && Math.Abs(UMin - umin) < epsilon && Math.Abs(UMax - umax) < epsilon;
+        bool uclosed = S.IsUClosed && Math.Abs(UMin - umin) < epsilon && Math.Abs(UMax - umax) < epsilon;
 
-        bool vclosed = S.IsVClosed() && Math.Abs(VMin - vmin) < epsilon && Math.Abs(VMax - vmax) < epsilon;
+        bool vclosed = S.IsVClosed && Math.Abs(VMin - vmin) < epsilon && Math.Abs(VMax - vmax) < epsilon;
 
         // compute 3d curves and degenerate flag
         double maxTol = TolDegen;
-        Geom_Curve? Cumin = null, Cumax = null, Cvmin = null, Cvmax = null;
+        Curve3D? Cumin = null, Cumax = null, Cvmin = null, Cvmax = null;
         bool Dumin, Dumax, Dvmin, Dvmax;
         Dumin = Dumax = Dvmin = Dvmax = false;
         double uminTol = global::Kerf.Engine.Foundation.Precision.Confusion(), umaxTol = global::Kerf.Engine.Foundation.Precision.Confusion(),
@@ -552,9 +557,9 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         }
 
         // compute vertices
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
 
-        TopoDS_Vertex V00 = new(), V10 = new(), V11 = new(), V01 = new();
+        Vertex V00 = new(), V10 = new(), V11 = new(), V01 = new();
 
         if (!umininf)
         {
@@ -609,32 +614,32 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         }
 
         // make the lines
-        Geom2d_Line? Lumin = null, Lumax = null, Lvmin = null, Lvmax = null;
+        LineCurve2D? Lumin = null, Lumax = null, Lvmin = null, Lvmax = null;
         if (!umininf)
         {
-            Lumin = new Geom2d_Line(new Point2D(UMin, 0), new Direction2D(Direction2D.D.Y));
+            Lumin = new LineCurve2D(new Point2D(UMin, 0), new Direction2D(Direction2D.D.Y));
         }
         if (!umaxinf)
         {
-            Lumax = new Geom2d_Line(new Point2D(UMax, 0), new Direction2D(Direction2D.D.Y));
+            Lumax = new LineCurve2D(new Point2D(UMax, 0), new Direction2D(Direction2D.D.Y));
         }
         if (!vmininf)
         {
-            Lvmin = new Geom2d_Line(new Point2D(0, VMin), new Direction2D(Direction2D.D.X));
+            Lvmin = new LineCurve2D(new Point2D(0, VMin), new Direction2D(Direction2D.D.X));
         }
         if (!vmaxinf)
         {
-            Lvmax = new Geom2d_Line(new Point2D(0, VMax), new Direction2D(Direction2D.D.X));
+            Lvmax = new LineCurve2D(new Point2D(0, VMax), new Direction2D(Direction2D.D.X));
         }
 
         // make the face
         // OCCT.NET: OCCT remakes the face in myShape; the port makes it in a new variable (as BRepLib_MakeEdge).
-        TopoDS_Face F = new();
+        Face F = new();
         B.MakeFace(ref F, S, global::Kerf.Engine.Foundation.Precision.Confusion());
         myShape = F;
 
         // make the edges
-        TopoDS_Edge eumin = new(), eumax = new(), evmin = new(), evmax = new();
+        Edge eumin = new(), eumax = new(), evmin = new(), evmax = new();
 
         if (!umininf)
         {
@@ -657,12 +662,12 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
             B.Degenerated(eumin, Dumin);
             if (!vmininf)
             {
-                V00.Orientation(TopAbs_FORWARD);
+                V00.Orientation(Forward);
                 B.Add(eumin, V00);
             }
             if (!vmaxinf)
             {
-                V01.Orientation(TopAbs_REVERSED);
+                V01.Orientation(Reversed);
                 B.Add(eumin, V01);
             }
             B.Range(eumin, VMin, VMax);
@@ -688,12 +693,12 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
                 B.Degenerated(eumax, Dumax);
                 if (!vmininf)
                 {
-                    V10.Orientation(TopAbs_FORWARD);
+                    V10.Orientation(Forward);
                     B.Add(eumax, V10);
                 }
                 if (!vmaxinf)
                 {
-                    V11.Orientation(TopAbs_REVERSED);
+                    V11.Orientation(Reversed);
                     B.Add(eumax, V11);
                 }
                 B.Range(eumax, VMin, VMax);
@@ -721,12 +726,12 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
             B.Degenerated(evmin, Dvmin);
             if (!umininf)
             {
-                V00.Orientation(TopAbs_FORWARD);
+                V00.Orientation(Forward);
                 B.Add(evmin, V00);
             }
             if (!umaxinf)
             {
-                V10.Orientation(TopAbs_REVERSED);
+                V10.Orientation(Reversed);
                 B.Add(evmin, V10);
             }
             B.Range(evmin, UMin, UMax);
@@ -752,12 +757,12 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
                 B.Degenerated(evmax, Dvmax);
                 if (!umininf)
                 {
-                    V01.Orientation(TopAbs_FORWARD);
+                    V01.Orientation(Forward);
                     B.Add(evmax, V01);
                 }
                 if (!umaxinf)
                 {
-                    V11.Orientation(TopAbs_REVERSED);
+                    V11.Orientation(Reversed);
                     B.Add(evmax, V11);
                 }
                 B.Range(evmax, UMin, UMax);
@@ -765,10 +770,10 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         }
 
         // make the wires and add them to the face
-        eumin.Orientation(TopAbs_REVERSED);
-        evmax.Orientation(TopAbs_REVERSED);
+        eumin.Orientation(Reversed);
+        evmax.Orientation(Reversed);
 
-        TopoDS_Wire W = new();
+        Wire W = new();
 
         if (!umininf && !umaxinf && vmininf && vmaxinf)
         {
@@ -831,31 +836,31 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
     }
 
     /// <summary>Adds the wire to the face (a hole, or another boundary); the face is no longer a natural restriction.</summary>
-    public void Add(in TopoDS_Wire W)
+    public void Add(in Wire W)
     {
         UnfreezeResult(); // OCCT.NET: frozen
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         B.Add(myShape, W);
-        B.NaturalRestriction(TopoDS.Face(myShape), false);
+        B.NaturalRestriction(ShapeCasts.Face(myShape), false);
         Done();
     }
 
     /// <summary>The face (frozen). As in OCCT, it isn't checked that the face is done.</summary>
-    public TopoDS_Face Face()
+    public Face Face()
     {
-        TopoDS_Face aFace = TopoDS.Face(myShape);
+        Face aFace = ShapeCasts.Face(myShape);
         aFace.TShape()?.FreezeGraph();
         return aFace;
     }
 
     /// <summary><see cref="Face"/> without freezing, for ported code.</summary>
-    internal TopoDS_Face InternalFace()
+    internal Face InternalFace()
     {
-        return TopoDS.Face(myShape);
+        return ShapeCasts.Face(myShape);
     }
 
     /// <summary>The face (OCCT's conversion operator; frozen).</summary>
-    public static explicit operator TopoDS_Face(BRepLib_MakeFace theMaker) => theMaker.Face();
+    public static explicit operator Face(BRepLib_MakeFace theMaker) => theMaker.Face();
 
     /// <summary>Returns the construction status.</summary>
     public BRepLib_FaceError Error()
@@ -867,19 +872,19 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
     /// OCCT.NET: the history of the copy for write of the wire that the face from a wire was built on, when the
     /// wire held frozen sub-shapes: each of its edges and vertices modified into its copy. Null if no copy was made.
     /// </summary>
-    internal BRepTools_History? InternalHistory() => myHistory;
+    internal History? InternalHistory() => myHistory;
 
     // Reverses the current face if not a bounded area
     private void CheckInside()
     {
         // compute the area and return the face if the area is negative
-        TopoDS_Face F = TopoDS.Face(myShape);
+        Face F = ShapeCasts.Face(myShape);
         var FClass = new BRepTopAdaptor_FClass2d(F, 0.0);
-        if (FClass.PerformInfinitePoint() == TopAbs_IN)
+        if (FClass.PerformInfinitePoint() == In)
         {
-            var B = new BRep_Builder();
-            TopoDS_Shape S = myShape.EmptyCopied();
-            var it = new TopoDS_Iterator(myShape);
+            var B = new BrepBuilder();
+            Shape S = myShape.EmptyCopied();
+            var it = new Iterator(myShape);
             while (it.More())
             {
                 B.Add(S, it.Value().Reversed());

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -33,7 +34,7 @@ internal sealed class AppParCurves_TestLine
     public int NbP2d => P2d[0].Length;
 
     /// <summary>Samples the curves of <paramref name="theCurve"/> at <paramref name="theParams"/> (0-based array).</summary>
-    public static AppParCurves_TestLine Sample(AppParCurves_MultiCurve theCurve, int theNbP3d, int theNbP2d, double[] theParams)
+    public static AppParCurves_TestLine Sample(MultiCurve theCurve, int theNbP3d, int theNbP2d, double[] theParams)
     {
         AppParCurves_TestLine aLine = new(theParams.Length, theNbP3d, theNbP2d);
         for (int i = 0; i < theParams.Length; i++)
@@ -51,7 +52,7 @@ internal sealed class AppParCurves_TestLine
     }
 
     /// <summary>Stores the derivatives of <paramref name="theCurve"/> at the point <paramref name="theIndex"/> as its tangents.</summary>
-    public void SetTangents(AppParCurves_MultiCurve theCurve, int theIndex, double theParam)
+    public void SetTangents(MultiCurve theCurve, int theIndex, double theParam)
     {
         Vector3D[] aV3d = new Vector3D[NbP3d];
         Vector2D[] aV2d = new Vector2D[NbP2d];
@@ -68,7 +69,7 @@ internal sealed class AppParCurves_TestLine
 }
 
 /// <summary>The line tool of <see cref="AppParCurves_TestLine"/>, as AppDef_MyLineTool will be for AppDef_MultiLine.</summary>
-internal struct AppParCurves_TestLineTool : IAppParCurves_LineTool<AppParCurves_TestLine>
+internal struct AppParCurves_TestLineTool : ILineTool<AppParCurves_TestLine>
 {
     public static int FirstPoint(AppParCurves_TestLine ML) => 1;
 

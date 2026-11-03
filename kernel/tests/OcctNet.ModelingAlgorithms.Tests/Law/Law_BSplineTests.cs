@@ -17,7 +17,7 @@ public class Law_BSplineTests
 {
     private const double Tol = 1.0e-10;
 
-    internal sealed record Pair(Law_BSpline Law, Geom2d_BSplineCurve Curve);
+    internal sealed record Pair(Law_BSpline Law, BSplineCurve2D Curve);
 
     /// <summary>A random 1D B-spline and its planar twin.</summary>
     internal static Pair RandomPair(Random theRnd, bool? thePeriodic = null, bool? theRational = null, int theMaxDeg = 5)
@@ -57,14 +57,14 @@ public class Law_BSplineTests
             if (aRat)
             {
                 return new Pair(new Law_BSpline(aPoles, aWeights, aKnots, aMults, aDeg, aPer),
-                                new Geom2d_BSplineCurve(aPoles2d, aWeights, aKnots, aMults, aDeg, aPer));
+                                new BSplineCurve2D(aPoles2d, aWeights, aKnots, aMults, aDeg, aPer));
             }
             return new Pair(new Law_BSpline(aPoles, aKnots, aMults, aDeg, aPer),
-                            new Geom2d_BSplineCurve(aPoles2d, aKnots, aMults, aDeg, aPer));
+                            new BSplineCurve2D(aPoles2d, aKnots, aMults, aDeg, aPer));
         }
     }
 
-    private static void AssertSameFunction(Law_BSpline theLaw, Geom2d_BSplineCurve theCurve, string theWhat)
+    private static void AssertSameFunction(Law_BSpline theLaw, BSplineCurve2D theCurve, string theWhat)
     {
         Assert.Equal(theCurve.FirstParameter(), theLaw.FirstParameter(), Tol);
         Assert.Equal(theCurve.LastParameter(), theLaw.LastParameter(), Tol);
@@ -84,9 +84,9 @@ public class Law_BSplineTests
         {
             Pair p = RandomPair(aRnd);
             Assert.Equal(p.Curve.Degree(), p.Law.Degree());
-            Assert.Equal(p.Curve.NbPoles(), p.Law.NbPoles());
+            Assert.Equal(p.Curve.PoleCount, p.Law.NbPoles());
             Assert.Equal(p.Curve.Continuity(), p.Law.Continuity());
-            Assert.Equal(p.Curve.IsRational(), p.Law.IsRational());
+            Assert.Equal(p.Curve.IsRational, p.Law.IsRational());
             Assert.Equal(p.Curve.KnotDistribution(), p.Law.KnotDistribution());
             for (int n = 0; n <= 4; n++)
             {
@@ -96,7 +96,7 @@ public class Law_BSplineTests
             for (int k = 0; k <= 10; k++)
             {
                 double u = aF + (aL - aF) * k / 10.0;
-                Geom2d_Curve.ResD3 r = p.Curve.EvalD3(u);
+                Curve2D.ResD3 r = p.Curve.EvalD3(u);
                 p.Law.D3(u, out double P, out double V1, out double V2, out double V3);
                 Assert.Equal(r.Point.Y(), P, Tol);
                 Assert.Equal(r.D1.Y(), V1, 1.0e-8);
@@ -166,17 +166,17 @@ public class Law_BSplineTests
             // knot insertion, as Geom2d does it
             double u = aF + (aL - aF) * (0.2 + 0.6 * aRnd.NextDouble());
             Law_BSpline anIns = aLaw.KnotInserted(u, 1);
-            Geom2d_BSplineCurve aCIns = (Geom2d_BSplineCurve)p.Curve.Copy();
+            BSplineCurve2D aCIns = (BSplineCurve2D)p.Curve.Copy();
             aCIns.InsertKnot(u, 1);
-            Assert.Equal(aCIns.NbPoles(), anIns.NbPoles());
-            Assert.Equal(aCIns.NbKnots(), anIns.NbKnots());
+            Assert.Equal(aCIns.PoleCount, anIns.NbPoles());
+            Assert.Equal(aCIns.KnotCount, anIns.NbKnots());
             AssertSameFunction(anIns, p.Curve, "InsertKnot");
 
             // degree elevation
             Law_BSpline anInc = aLaw.DegreeIncreased(Math.Min(aLaw.Degree() + 2, Law_BSpline.MaxDegree()));
-            Geom2d_BSplineCurve aCInc = (Geom2d_BSplineCurve)p.Curve.Copy();
+            BSplineCurve2D aCInc = (BSplineCurve2D)p.Curve.Copy();
             aCInc.IncreaseDegree(anInc.Degree());
-            Assert.Equal(aCInc.NbPoles(), anInc.NbPoles());
+            Assert.Equal(aCInc.PoleCount, anInc.NbPoles());
             // the same poles as Geom2d's degree elevation
             for (int k = 1; k <= anInc.NbPoles(); k++)
             {
@@ -291,9 +291,9 @@ public class Law_BSplineTests
 
             Law_BSpline aNP = aLaw.WithNotPeriodic();
             Assert.False(aNP.IsPeriodic());
-            Geom2d_BSplineCurve aCNP = (Geom2d_BSplineCurve)p.Curve.Copy();
+            BSplineCurve2D aCNP = (BSplineCurve2D)p.Curve.Copy();
             aCNP.SetNotPeriodic();
-            Assert.Equal(aCNP.NbPoles(), aNP.NbPoles());
+            Assert.Equal(aCNP.PoleCount, aNP.NbPoles());
             AssertSameFunction(aNP, p.Curve, "SetNotPeriodic");
 
             if (aLaw.NbKnots() > 2)

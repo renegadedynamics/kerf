@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -21,21 +23,21 @@ public sealed class GeomToStep_MakeBoundedSurface : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A bounded surface.</summary>
-    public GeomToStep_MakeBoundedSurface(Geom_BoundedSurface S, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeBoundedSurface(BoundedSurface S, in StepData_Factors theLocalFactors)
     {
         done = true;
-        if (S is Geom_BSplineSurface)
+        if (S is BSplineSurface)
         {
-            Geom_BSplineSurface BS = S as Geom_BSplineSurface;
+            BSplineSurface BS = S as BSplineSurface;
             // UPDATE FMA 1-04-96
-            if (S.IsUPeriodic() || S.IsVPeriodic())
+            if (S.IsUPeriodic || S.IsVPeriodic)
             {
-                Geom_BSplineSurface newBS = BS.Copy() as Geom_BSplineSurface;
+                BSplineSurface newBS = BS.Copy() as BSplineSurface;
                 newBS.SetUNotPeriodic();
                 newBS.SetVNotPeriodic();
                 BS = newBS;
             }
-            if (BS.IsURational() || BS.IsVRational())
+            if (BS.IsURational || BS.IsVRational)
             {
                 GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface MkRatBSplineS =
                     new GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface(BS, theLocalFactors);
@@ -47,11 +49,11 @@ public sealed class GeomToStep_MakeBoundedSurface : GeomToStep_Root
                 theBoundedSurface = MkBSplineS.Value();
             }
         }
-        else if (S is Geom_BezierSurface)
+        else if (S is BezierSurface)
         {
-            Geom_BezierSurface Sur = S as Geom_BezierSurface;
-            Geom_BSplineSurface BS = GeomConvert.SurfaceToBSplineSurface(Sur);
-            if (BS.IsURational() || BS.IsVRational())
+            BezierSurface Sur = S as BezierSurface;
+            BSplineSurface BS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(Sur);
+            if (BS.IsURational || BS.IsVRational)
             {
                 GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface MkRatBSplineS =
                     new GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurface(BS, theLocalFactors);
@@ -63,9 +65,9 @@ public sealed class GeomToStep_MakeBoundedSurface : GeomToStep_Root
                 theBoundedSurface = MkBSplineS.Value();
             }
         }
-        else if (S is Geom_RectangularTrimmedSurface)
+        else if (S is TrimmedSurface)
         {
-            Geom_RectangularTrimmedSurface Sur = S as Geom_RectangularTrimmedSurface;
+            TrimmedSurface Sur = S as TrimmedSurface;
             GeomToStep_MakeRectangularTrimmedSurface MkRTSurf = new GeomToStep_MakeRectangularTrimmedSurface(Sur, theLocalFactors);
             theBoundedSurface = MkRTSurf.Value();
         }
@@ -76,7 +78,7 @@ public sealed class GeomToStep_MakeBoundedSurface : GeomToStep_Root
     }
 
     /// <summary>A bounded surface (default factors).</summary>
-    public GeomToStep_MakeBoundedSurface(Geom_BoundedSurface S) : this(S, new StepData_Factors())
+    public GeomToStep_MakeBoundedSurface(BoundedSurface S) : this(S, new StepData_Factors())
     {
     }
 

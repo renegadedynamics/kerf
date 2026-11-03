@@ -3,10 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
-using static Occt.Approx_ParametrizationType;
+using static Kerf.Engine.Approximation.ParametrizationType;
 using static Kerf.Geometry.Continuity;
 
 namespace Occt;
@@ -24,7 +25,7 @@ namespace Occt;
 public class Geom2dAPI_PointsToBSpline
 {
     private bool myIsDone;
-    private Geom2d_BSplineCurve? myCurve;
+    private BSplineCurve2D? myCurve;
 
     private static bool hasMeaningfulSpan(double theSpan)
     {
@@ -58,7 +59,7 @@ public class Geom2dAPI_PointsToBSpline
     }
 
     /// <summary>Approximates <paramref name="Points"/> with the parametrisation <paramref name="ParType"/>.</summary>
-    public Geom2dAPI_PointsToBSpline(NCollection_Array1<Point2D> Points, Approx_ParametrizationType ParType,
+    public Geom2dAPI_PointsToBSpline(NCollection_Array1<Point2D> Points, ParametrizationType ParType,
                                      int DegMin = 3, int DegMax = 8, Continuity Continuity = C2,
                                      double Tol2D = 1.0e-3)
     {
@@ -87,7 +88,7 @@ public class Geom2dAPI_PointsToBSpline
     }
 
     /// <summary>Approximates <paramref name="Points"/> with the parametrisation <paramref name="ParType"/>.</summary>
-    public void Init(NCollection_Array1<Point2D> Points, Approx_ParametrizationType ParType, int DegMin = 3,
+    public void Init(NCollection_Array1<Point2D> Points, ParametrizationType ParType, int DegMin = 3,
                      int DegMax = 8, Continuity Continuity = C2, double Tol2D = 1.0e-3)
     {
         myIsDone = false;
@@ -100,19 +101,19 @@ public class Geom2dAPI_PointsToBSpline
             UseSquares = true;
         }
 
-        AppDef_BSplineCompute TheComputer = new(DegMin, DegMax, Tol3D, Tol2D, nbit, true, ParType, UseSquares);
+        BSplineCompute TheComputer = new(DegMin, DegMax, Tol3D, Tol2D, nbit, true, ParType, UseSquares);
 
         SetContinuity(TheComputer, Continuity);
 
-        TheComputer.Perform(new AppDef_MultiLine(Points));
+        TheComputer.Perform(new MultiLine(Points));
 
-        AppParCurves_MultiBSpCurve TheCurve = TheComputer.Value();
+        MultiBSpCurve TheCurve = TheComputer.Value();
 
         NCollection_Array1<Point2D> Poles = new(1, TheCurve.NbPoles());
 
         TheCurve.Curve(1, Poles);
 
-        myCurve = new Geom2d_BSplineCurve(Poles, TheCurve.Knots(), TheCurve.Multiplicities(), TheCurve.Degree());
+        myCurve = new BSplineCurve2D(Poles, TheCurve.Knots(), TheCurve.Multiplicities(), TheCurve.Degree());
         myIsDone = true;
     }
 
@@ -146,13 +147,13 @@ public class Geom2dAPI_PointsToBSpline
             Points[i].SetCoord(0.0, YValues[i]);
         }
 
-        AppDef_BSplineCompute TheComputer = new(Param, DegMin, DegMax, Tol3D, Tol2D, 0, true, true);
+        BSplineCompute TheComputer = new(Param, DegMin, DegMax, Tol3D, Tol2D, 0, true, true);
 
         SetContinuity(TheComputer, Continuity);
 
-        TheComputer.Perform(new AppDef_MultiLine(Points));
+        TheComputer.Perform(new MultiLine(Points));
 
-        AppParCurves_MultiBSpCurve TheCurve = TheComputer.Value();
+        MultiBSpCurve TheCurve = TheComputer.Value();
 
         int Degree = TheCurve.Degree();
         NCollection_Array1<Point2D> Poles = new(1, TheCurve.NbPoles());
@@ -198,7 +199,7 @@ public class Geom2dAPI_PointsToBSpline
             Poles[i].SetX(XPoles[i]);
         }
 
-        myCurve = new Geom2d_BSplineCurve(Poles, Knots, Mults, Degree);
+        myCurve = new BSplineCurve2D(Poles, Knots, Mults, Degree);
         myIsDone = true;
     }
 
@@ -207,7 +208,7 @@ public class Geom2dAPI_PointsToBSpline
                      Continuity Continuity = C2, double Tol2D = 1.0e-6)
     {
         myIsDone = false;
-        Init(Points, Approx_ChordLength, DegMin, DegMax, Continuity, Tol2D);
+        Init(Points, ChordLength, DegMin, DegMax, Continuity, Tol2D);
     }
 
     /// <summary>Approximates <paramref name="Points"/> at the parameters <paramref name="Params"/>.</summary>
@@ -239,22 +240,22 @@ public class Geom2dAPI_PointsToBSpline
             theParams[i] = (Params[i] - Uf) / Ul;
         }
 
-        AppDef_BSplineCompute TheComputer = new(DegMin, DegMax, Tol3D, Tol2D, 0, true, Approx_IsoParametric, true);
+        BSplineCompute TheComputer = new(DegMin, DegMax, Tol3D, Tol2D, 0, true, IsoParametric, true);
 
         TheComputer.SetParameters(theParams);
 
         SetContinuity(TheComputer, Continuity);
 
-        TheComputer.Perform(new AppDef_MultiLine(Points));
+        TheComputer.Perform(new MultiLine(Points));
 
-        AppParCurves_MultiBSpCurve TheCurve = TheComputer.Value();
+        MultiBSpCurve TheCurve = TheComputer.Value();
 
         NCollection_Array1<Point2D> Poles = new(1, TheCurve.NbPoles());
 
         TheCurve.Curve(1, Poles);
 
         // unlike GeomAPI_PointsToBSpline, OCCT keeps the knots on [0, 1] here (no Reparametrize to Params' range)
-        myCurve = new Geom2d_BSplineCurve(Poles, TheCurve.Knots(), TheCurve.Multiplicities(), TheCurve.Degree());
+        myCurve = new BSplineCurve2D(Poles, TheCurve.Knots(), TheCurve.Multiplicities(), TheCurve.Degree());
         myIsDone = true;
     }
 
@@ -275,24 +276,24 @@ public class Geom2dAPI_PointsToBSpline
         }
 
         // Variational algo
-        AppDef_MultiLine multL = new(NbPoint);
+        MultiLine multL = new(NbPoint);
         for (i = 1; i <= NbPoint; ++i)
         {
-            AppDef_MultiPointConstraint mpc = new(0, 1);
+            MultiPointConstraint mpc = new(0, 1);
             mpc.SetPoint2d(1, Points.Value(Points.Lower() + i - 1));
             multL.SetValue(i, mpc);
         }
 
-        NCollection_HArray1<AppParCurves_ConstraintCouple> TABofCC = new(1, NbPoint);
-        AppParCurves_Constraint Constraint = AppParCurves_Constraint.AppParCurves_NoConstraint;
+        NCollection_HArray1<ConstraintCouple> TABofCC = new(1, NbPoint);
+        Constraint Constraint = global::Kerf.Engine.Approximation.Constraint.NoConstraint;
 
         for (i = 1; i <= NbPoint; ++i)
         {
-            AppParCurves_ConstraintCouple ACC = new(i, Constraint);
+            ConstraintCouple ACC = new(i, Constraint);
             TABofCC.SetValue(i, ACC);
         }
 
-        AppDef_Variational Variation = new(multL, 1, NbPoint, TABofCC);
+        Variational Variation = new(multL, 1, NbPoint, TABofCC);
 
         //===================================
         int theMaxSegments = 1000;
@@ -309,12 +310,12 @@ public class Geom2dAPI_PointsToBSpline
 
         Variation.SetCriteriumWeight(W1, W2, W3);
 
-        if (!Variation.IsCreated())
+        if (!Variation.IsCreated)
         {
             return;
         }
 
-        if (Variation.IsOverConstrained())
+        if (Variation.IsOverConstrained)
         {
             return;
         }
@@ -328,24 +329,24 @@ public class Geom2dAPI_PointsToBSpline
             return;
         }
 
-        if (!Variation.IsDone())
+        if (!Variation.IsDone)
         {
             return;
         }
 
-        AppParCurves_MultiBSpCurve TheCurve = Variation.Value();
+        MultiBSpCurve TheCurve = Variation.Value();
 
         NCollection_Array1<Point2D> Poles = new(1, TheCurve.NbPoles());
 
         TheCurve.Curve(1, Poles);
 
-        myCurve = new Geom2d_BSplineCurve(Poles, TheCurve.Knots(), TheCurve.Multiplicities(), TheCurve.Degree());
+        myCurve = new BSplineCurve2D(Poles, TheCurve.Knots(), TheCurve.Multiplicities(), TheCurve.Degree());
 
         myIsDone = true;
     }
 
     // The switch on the continuity that OCCT writes out in each least-squares Init.
-    private static void SetContinuity(AppDef_BSplineCompute TheComputer, Continuity Continuity)
+    private static void SetContinuity(BSplineCompute TheComputer, Continuity Continuity)
     {
         switch (Continuity)
         {
@@ -370,7 +371,7 @@ public class Geom2dAPI_PointsToBSpline
     }
 
     /// <summary>The approximating curve (frozen). Throws StdFail_NotDone if the approximation failed.</summary>
-    public Geom2d_BSplineCurve Curve()
+    public BSplineCurve2D Curve()
     {
         if (!myIsDone)
         {
@@ -381,7 +382,7 @@ public class Geom2dAPI_PointsToBSpline
     }
 
     /// <summary>OCCT's <c>operator occ::handle&lt;Geom2d_BSplineCurve&gt;</c>: the curve, null if not computed.</summary>
-    public static explicit operator Geom2d_BSplineCurve?(Geom2dAPI_PointsToBSpline theApprox)
+    public static explicit operator BSplineCurve2D?(Geom2dAPI_PointsToBSpline theApprox)
     {
         theApprox.myCurve?.Freeze();
         return theApprox.myCurve;

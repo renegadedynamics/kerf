@@ -5,8 +5,10 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -44,7 +46,7 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
 #pragma warning restore CS0414
 
     //================================================================================
-    private static int NbPOnU(Adaptor3d_Surface S)
+    private static int NbPOnU(SurfaceAdaptorBase S)
     {
         double u0 = S.FirstUParameter();
         double u1 = S.LastUParameter();
@@ -53,7 +55,7 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
     }
 
     //================================================================================
-    private static int NbPOnV(Adaptor3d_Surface S)
+    private static int NbPOnV(SurfaceAdaptorBase S)
     {
         double v0 = S.FirstVParameter();
         double v1 = S.LastVParameter();
@@ -72,7 +74,7 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
     /// <summary>
     /// A polyhedron of the surface with as many cells as IntPatch_HInterTool samples (at most 30 in each direction).
     /// </summary>
-    public IntPatch_Polyhedron(Adaptor3d_Surface Surface)
+    public IntPatch_Polyhedron(SurfaceAdaptorBase Surface)
     {
         TheDeflection = Epsilon(100.0);
         nbdeltaU = NbPOnU(Surface);
@@ -85,7 +87,7 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
     }
 
     /// <summary>A polyhedron of the surface with <paramref name="nbu"/> by <paramref name="nbv"/> cells (at least 1 by 1).</summary>
-    public IntPatch_Polyhedron(Adaptor3d_Surface Surface, int nbu, int nbv)
+    public IntPatch_Polyhedron(SurfaceAdaptorBase Surface, int nbu, int nbv)
     {
         TheDeflection = Epsilon(100.0);
         nbdeltaU = (nbu < 1 ? 1 : nbu);
@@ -98,7 +100,7 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
     }
 
     // The body both of OCCT's constructors repeat verbatim after their member initialisers.
-    private void Init(Adaptor3d_Surface Surface)
+    private void Init(SurfaceAdaptorBase Surface)
     {
         int t = (nbdeltaU + 1) * (nbdeltaV + 1) + 1;
         Point3D[] CMyPnts = new Point3D[t];
@@ -129,7 +131,7 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
         }
 
         // Use grid evaluator for batch point evaluation
-        GeomGridEval_Surface anEval = new(Surface);
+        SurfaceGrid anEval = new(Surface);
         NCollection_Array2<Point3D> aGridPnts = anEval.EvaluateGrid(aUParams, aVParams);
 
         // Copy to internal arrays and build bounding box

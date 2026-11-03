@@ -29,7 +29,7 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
     private const int CasesPerKind = 60;
 
     // Compares two 2D results; theFirst and theLast is the range to evaluate (a bounded range).
-    internal static void SamePCurve(Oracle theO, N.Geom2d_Curve? theN, Geom2d_Curve? theP, double theFirst, double theLast,
+    internal static void SamePCurve(Oracle theO, N.Geom2d_Curve? theN, Curve2D? theP, double theFirst, double theLast,
                                     string theWhat)
     {
         theO.Same(theN is null, theP is null, theWhat + " null");
@@ -40,27 +40,27 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
         theO.Same(true, theN.IsInstance(global::Kerf.Engine.Foundation.OcctTypeNames.Of(theP.GetType())), $"{theWhat} type {Kerf.Engine.Foundation.OcctTypeNames.Of(theP.GetType())}");
         theO.Same(theN.FirstParameter(), theP.FirstParameter(), theWhat + " first");
         theO.Same(theN.LastParameter(), theP.LastParameter(), theWhat + " last");
-        theO.Same(theN.IsPeriodic(), theP.IsPeriodic(), theWhat + " periodic");
+        theO.Same(theN.IsPeriodic(), theP.IsPeriodic, theWhat + " periodic");
         for (int i = 0; i <= 10; i++)
         {
             double t = theFirst + (theLast - theFirst) * i / 10;
             using N.gp_Pnt2d aNP = theN.Value(t);
             theO.Same(aNP, theP.Value(t), $"{theWhat} value at {t}");
         }
-        if (theP is Geom2d_BSplineCurve aPB)
+        if (theP is BSplineCurve2D aPB)
         {
             using N.Geom2d_BSplineCurve aNB = N.Geom2d_BSplineCurve.DownCast(theN)!;
             theO.Same(aNB.Degree(), aPB.Degree(), theWhat + " degree");
-            theO.Same(aNB.NbPoles(), aPB.NbPoles(), theWhat + " poles");
-            theO.Same(aNB.NbKnots(), aPB.NbKnots(), theWhat + " knots");
-            theO.Same(aNB.IsRational(), aPB.IsRational(), theWhat + " rational");
-            for (int i = 1; i <= aPB.NbPoles(); i++)
+            theO.Same(aNB.NbPoles(), aPB.PoleCount, theWhat + " poles");
+            theO.Same(aNB.NbKnots(), aPB.KnotCount, theWhat + " knots");
+            theO.Same(aNB.IsRational(), aPB.IsRational, theWhat + " rational");
+            for (int i = 1; i <= aPB.PoleCount; i++)
             {
                 using N.gp_Pnt2d aNP = aNB.Pole(i);
                 theO.Same(aNP, aPB.Pole(i), $"{theWhat} pole {i}");
                 theO.Same(aNB.Weight(i), aPB.Weight(i), $"{theWhat} weight {i}");
             }
-            for (int i = 1; i <= aPB.NbKnots(); i++)
+            for (int i = 1; i <= aPB.KnotCount; i++)
             {
                 theO.Same(aNB.Knot(i), aPB.Knot(i), $"{theWhat} knot {i}");
                 theO.Same(aNB.Multiplicity(i), aPB.Multiplicity(i), $"{theWhat} mult {i}");
@@ -69,7 +69,7 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
     }
 
     // A bounded range of the curve to evaluate on.
-    internal static (double First, double Last) Range(Geom_Curve theC, double theHalfRange)
+    internal static (double First, double Last) Range(Curve3D theC, double theHalfRange)
     {
         double aF = theC.FirstParameter(), aL = theC.LastParameter();
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL))
@@ -80,18 +80,18 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
     }
 
     // GeomAPI::To2d's body.
-    private static Geom2d_Curve? To2d(Geom_Curve C, in Plane3D P)
+    private static Curve2D? To2d(Curve3D C, in Plane3D P)
     {
-        Geom2d_Curve? result = null;
-        GeomAdaptor_Curve HC = new(C);
-        Geom_Plane Plane = new(P);
-        GeomAdaptor_Surface HS = new(Plane);
+        Curve2D? result = null;
+        global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor HC = new(C);
+        PlaneSurface Plane = new(P);
+        global::Kerf.Engine.Geometry.Adaptors.SurfaceAdaptor HS = new(Plane);
 
-        ProjLib_ProjectedCurve Proj = new(HS, HC);
+        global::Kerf.Engine.Geometry.Projection.ProjectedCurve Proj = new(HS, HC);
 
         if (Proj.GetType() != OffsetCurve && Proj.GetType() != OtherCurve)
         {
-            result = Geom2dAdaptor.MakeCurve(Proj);
+            result = global::Kerf.Engine.Geometry.Adaptors.Geom2dAdaptor.MakeCurve(Proj);
         }
 
         return result;
@@ -107,14 +107,14 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
             for (int i = 0; i < CasesPerKind; i++)
             {
                 string aWhat = $"{CurveKinds[aKind]} {i}";
-                (N.Geom_Curve aNC, Geom_Curve aPC, double aRange) = RandomCurve(anO, aKind);
+                (N.Geom_Curve aNC, Curve3D aPC, double aRange) = RandomCurve(anO, aKind);
                 (N.gp_Ax3 aNAx, CoordinateSystem anAx) = GeomOracleInputs.Ax3s(anO);
                 using (aNC)
                 using (aNAx)
                 using (var aNPln = new N.gp_Pln(aNAx))
                 {
                     N.Geom2d_Curve? aNRes = null;
-                    Geom2d_Curve? aPRes = null;
+                    Curve2D? aPRes = null;
                     Exception? aNErr = Catch(() => aNRes = N.GeomAPI.To2d(aNC, aNPln));
                     Exception? aPErr = Catch(() => aPRes = To2d(aPC, new Plane3D(anAx)));
                     using (aNRes)
@@ -139,20 +139,20 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
     }
 
     // BRep_Tool::CurveOnPlane's body (the edge's location is the identity).
-    private static Geom2d_Curve? CurveOnPlane(Geom_Curve C3D, double f, double l, Geom_Plane GP)
+    private static Curve2D? CurveOnPlane(Curve3D C3D, double f, double l, PlaneSurface GP)
     {
-        Geom_TrimmedCurve aTrimmedCurve = new(C3D, f, l, true, false);
+        TrimmedCurve3D aTrimmedCurve = new(C3D, f, l, true, false);
 
         // Perform projection
-        Geom_Curve? ProjOnPlane = GeomProjLib.ProjectOnPlane(aTrimmedCurve, GP, GP.Position().Direction(), true);
+        Curve3D? ProjOnPlane = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(aTrimmedCurve, GP, GP.Position().Direction(), true);
 
-        GeomAdaptor_Surface HS = new(GP);
-        GeomAdaptor_Curve HC = new(ProjOnPlane!);
+        global::Kerf.Engine.Geometry.Adaptors.SurfaceAdaptor HS = new(GP);
+        global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor HC = new(ProjOnPlane!);
 
-        ProjLib_ProjectedCurve Proj = new(HS, HC);
-        Geom2d_Curve pc = Geom2dAdaptor.MakeCurve(Proj);
+        global::Kerf.Engine.Geometry.Projection.ProjectedCurve Proj = new(HS, HC);
+        Curve2D pc = global::Kerf.Engine.Geometry.Adaptors.Geom2dAdaptor.MakeCurve(Proj);
 
-        if (pc is Geom2d_TrimmedCurve TC)
+        if (pc is TrimmedCurve2D TC)
         {
             pc = TC.BasisCurve();
         }
@@ -170,11 +170,11 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
             for (int i = 0; i < CasesPerKind; i++)
             {
                 string aWhat = $"{CurveKinds[aKind]} {i}";
-                (N.Geom_Curve aNC, Geom_Curve aPC, double aRange) = RandomCurve(anO, aKind);
+                (N.Geom_Curve aNC, Curve3D aPC, double aRange) = RandomCurve(anO, aKind);
                 (N.gp_Ax3 aNAx, CoordinateSystem anAx) = GeomOracleInputs.Ax3s(anO);
                 // An edge range inside the curve's range (periodic curves: any range up to a period).
                 (double aF0, double aL0) = Range(aPC, aRange);
-                if (aPC.IsPeriodic())
+                if (aPC.IsPeriodic)
                 {
                     aF0 = anO.Real(-7, 7);
                     aL0 = aF0 + aPC.Period();
@@ -189,10 +189,10 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
                 {
                     aB.MakeEdge(aNE, aNC, 1.0e-7);
                     aB.Range(aNE, aF, aL);
-                    var aPlane = new Geom_Plane(anAx);
+                    var aPlane = new PlaneSurface(anAx);
                     double aNF = 0.0, aNL = 0.0;
                     N.Geom2d_Curve? aNRes = null;
-                    Geom2d_Curve? aPRes = null;
+                    Curve2D? aPRes = null;
                     Exception? aNErr = Catch(() => aNRes = N.BRep_Tool.CurveOnSurface(aNE, aNPlane, aLoc, ref aNF, ref aNL));
                     Exception? aPErr = Catch(() => aPRes = CurveOnPlane(aPC, aF, aL, aPlane));
                     using (aNRes)

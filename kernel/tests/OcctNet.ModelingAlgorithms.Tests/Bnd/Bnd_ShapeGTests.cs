@@ -5,8 +5,10 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -21,7 +23,7 @@ public class Bnd_BoundSortBox_Test
     public void BUC60729_InitializeWithFaceBoxes()
     {
         // Create a simple box solid
-        TopoDS_Shape aShape = new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Solid();
+        Shape aShape = new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Solid();
 
         // Create main bounding box for the shape
         Box aMainBox = new();
@@ -33,12 +35,12 @@ public class Bnd_BoundSortBox_Test
         aBoundSortBox.Initialize(aMainBox, aMaxNbrBox);
 
         // Iterate through faces and add their bounding boxes
-        TopExp_Explorer aExplorer = new(aShape, TopAbs_FACE);
+        Explorer aExplorer = new(aShape, ShapeType.Face);
         int i;
 
         for (i = 1, aExplorer.ReInit(); aExplorer.More(); aExplorer.Next(), i++)
         {
-            TopoDS_Shape aFace = aExplorer.Current();
+            Shape aFace = aExplorer.Current();
             Box aBox = new();
             BRepBndLib.Add(aFace, ref aBox);
             aBoundSortBox.Add(aBox, i);
@@ -57,7 +59,7 @@ public class Bnd_OBB_Test
     {
         // Make a shape somewhere far from (0, 0, 0)
         BRepPrimAPI_MakeBox aMkBox = new(new Point3D(100, 100, 100), 100, 100, 100);
-        TopoDS_Shape aBox = aMkBox.Shape();
+        Shape aBox = aMkBox.Shape();
 
         // Add a bounding box of a shape to a void bounding box
         OrientedBox aVoidBox = new(), aOBB = new();

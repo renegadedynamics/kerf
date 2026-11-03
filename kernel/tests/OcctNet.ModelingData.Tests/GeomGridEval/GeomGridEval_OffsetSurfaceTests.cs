@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomGridEval_OffsetSurface_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -21,22 +23,22 @@ public class GeomGridEval_OffsetSurfaceTest
     }
 
     // Cylinder radius 5, offset by 2.0 -> cylinder radius 7 (outward)
-    private static Geom_OffsetSurface MakeCylinderOffset()
+    private static OffsetSurface MakeCylinderOffset()
     {
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
-        return new Geom_OffsetSurface(aCyl, 2.0);
+        CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
+        return new OffsetSurface(aCyl, 2.0);
     }
 
-    private static Geom_OffsetSurface PlaneOffsetSurface(double theOffset)
+    private static OffsetSurface PlaneOffsetSurface(double theOffset)
     {
-        Geom_Plane aPlane = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
-        return new Geom_OffsetSurface(aPlane, theOffset);
+        PlaneSurface aPlane = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
+        return new OffsetSurface(aPlane, theOffset);
     }
 
     private static void CheckDN(int theNU, int theNV)
     {
-        Geom_OffsetSurface anOffset = MakeCylinderOffset();
-        GeomGridEval_OffsetSurface anEval = new(anOffset);
+        OffsetSurface anOffset = MakeCylinderOffset();
+        OffsetSurfaceGrid anEval = new(anOffset);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 3);
@@ -59,9 +61,9 @@ public class GeomGridEval_OffsetSurfaceTest
     public void PlaneOffset()
     {
         // Plane at Z=0, offset by 10.0 -> Plane at Z=10
-        Geom_OffsetSurface anOffset = PlaneOffsetSurface(10.0);
+        OffsetSurface anOffset = PlaneOffsetSurface(10.0);
 
-        GeomGridEval_OffsetSurface anEval = new(anOffset);
+        OffsetSurfaceGrid anEval = new(anOffset);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 10.0, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 10.0, 5);
@@ -82,9 +84,9 @@ public class GeomGridEval_OffsetSurfaceTest
     [Fact]
     public void CylinderOffset()
     {
-        Geom_OffsetSurface anOffset = MakeCylinderOffset();
+        OffsetSurface anOffset = MakeCylinderOffset();
 
-        GeomGridEval_OffsetSurface anEval = new(anOffset);
+        OffsetSurfaceGrid anEval = new(anOffset);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 9);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 5);
@@ -109,13 +111,13 @@ public class GeomGridEval_OffsetSurfaceTest
     [Fact]
     public void DerivativeD1()
     {
-        Geom_OffsetSurface anOffset = MakeCylinderOffset();
-        GeomGridEval_OffsetSurface anEval = new(anOffset);
+        OffsetSurface anOffset = MakeCylinderOffset();
+        OffsetSurfaceGrid anEval = new(anOffset);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 3);
 
-        NCollection_Array2<Geom_Surface.ResD1> aGrid = anEval.EvaluateGridD1(aUParams, aVParams);
+        NCollection_Array2<Surface.ResD1> aGrid = anEval.EvaluateGridD1(aUParams, aVParams);
 
         for (int i = 1; i <= 5; ++i)
         {
@@ -133,9 +135,9 @@ public class GeomGridEval_OffsetSurfaceTest
     public void NestedDispatch()
     {
         // Test that GeomGridEval_Surface correctly dispatches to GeomGridEval_OffsetSurface
-        Geom_OffsetSurface anOffset = PlaneOffsetSurface(5.0);
+        OffsetSurface anOffset = PlaneOffsetSurface(5.0);
 
-        GeomGridEval_Surface anEval = new(anOffset);
+        SurfaceGrid anEval = new(anOffset);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 3);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 3);
@@ -149,13 +151,13 @@ public class GeomGridEval_OffsetSurfaceTest
     [Fact]
     public void DerivativeD2()
     {
-        Geom_OffsetSurface anOffset = MakeCylinderOffset();
-        GeomGridEval_OffsetSurface anEval = new(anOffset);
+        OffsetSurface anOffset = MakeCylinderOffset();
+        OffsetSurfaceGrid anEval = new(anOffset);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 3);
 
-        NCollection_Array2<Geom_Surface.ResD2> aGrid = anEval.EvaluateGridD2(aUParams, aVParams);
+        NCollection_Array2<Surface.ResD2> aGrid = anEval.EvaluateGridD2(aUParams, aVParams);
 
         for (int i = 1; i <= 5; ++i)
         {
@@ -176,15 +178,15 @@ public class GeomGridEval_OffsetSurfaceTest
     [Fact]
     public void DerivativeD3()
     {
-        Geom_OffsetSurface anOffset = MakeCylinderOffset();
-        GeomGridEval_OffsetSurface anEval = new(anOffset);
+        OffsetSurface anOffset = MakeCylinderOffset();
+        OffsetSurfaceGrid anEval = new(anOffset);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 3);
 
-        NCollection_Array2<Geom_Surface.ResD3> aGrid = anEval.EvaluateGridD3(aUParams, aVParams);
+        NCollection_Array2<Surface.ResD3> aGrid = anEval.EvaluateGridD3(aUParams, aVParams);
 
-        GeomAdaptor_Surface anAdaptor = new(anOffset);
+        SurfaceAdaptor anAdaptor = new(anOffset);
         for (int i = 1; i <= 5; ++i)
         {
             for (int j = 1; j <= 3; ++j)
@@ -234,8 +236,8 @@ public class GeomGridEval_OffsetSurfaceTest
     public void DerivativeDN_PlaneOffset()
     {
         // Plane offset - simpler case for testing
-        Geom_OffsetSurface anOffset = PlaneOffsetSurface(10.0);
-        GeomGridEval_OffsetSurface anEval = new(anOffset);
+        OffsetSurface anOffset = PlaneOffsetSurface(10.0);
+        OffsetSurfaceGrid anEval = new(anOffset);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 10.0, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 10.0, 5);
@@ -269,8 +271,8 @@ public class GeomGridEval_OffsetSurfaceTest
     [Fact]
     public void IsolineU_CompareToGeomD0()
     {
-        Geom_OffsetSurface anOffset = MakeCylinderOffset();
-        GeomGridEval_OffsetSurface anEval = new(anOffset);
+        OffsetSurface anOffset = MakeCylinderOffset();
+        OffsetSurfaceGrid anEval = new(anOffset);
 
         // U-isoline: 1 U param, multiple V params (triggers isoline path)
         NCollection_Array1<double> aUParams = NCollection_Array1<double>.From([M_PI / 4]);
@@ -293,8 +295,8 @@ public class GeomGridEval_OffsetSurfaceTest
     [Fact]
     public void IsolineV_CompareToGeomD0()
     {
-        Geom_OffsetSurface anOffset = MakeCylinderOffset();
-        GeomGridEval_OffsetSurface anEval = new(anOffset);
+        OffsetSurface anOffset = MakeCylinderOffset();
+        OffsetSurfaceGrid anEval = new(anOffset);
 
         // V-isoline: multiple U params, 1 V param (triggers isoline path)
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 15);
@@ -318,8 +320,8 @@ public class GeomGridEval_OffsetSurfaceTest
     public void IsolinePlane_CompareToGeomD0()
     {
         // Plane offset (simple case)
-        Geom_OffsetSurface anOffset = PlaneOffsetSurface(3.0);
-        GeomGridEval_OffsetSurface anEval = new(anOffset);
+        OffsetSurface anOffset = PlaneOffsetSurface(3.0);
+        OffsetSurfaceGrid anEval = new(anOffset);
 
         // U-isoline on plane offset
         NCollection_Array1<double> aUParams = NCollection_Array1<double>.From([5.0]);

@@ -2,7 +2,10 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -43,31 +46,31 @@ internal static class BRepTestFillet2DCommands
         }
 
         // set up the algorithm
-        TopoDS_Shape F = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_FACE);
-        if (F.IsNull())
+        Shape F = theDI.GetShape(a[2], ShapeType.Face);
+        if (F.IsNull)
         {
             di.Append("chfi2d : ").Append(a[2]).Append(" not a face");
             return 1;
         }
 
-        var MF = new BRepFilletAPI_MakeFillet2d(TopoDS.Face(F));
+        var MF = new BRepFilletAPI_MakeFillet2d(ShapeCasts.Face(F));
         if (MF.Status() == ChFi2d_ConstructionError.ChFi2d_NotPlanar)
         {
             di.Append("chfi2d : not a planar face");
             return 1;
         }
 
-        TopoDS_Shape res = new();
+        Shape res = new();
         bool partial_result = false;
         int i = 3;
         while (i + 1 < n)
         {
-            TopoDS_Shape aLocalEdge = theDI.GetShape(a[i], TopAbs_ShapeEnum.TopAbs_EDGE);
-            TopoDS_Edge E1 = TopoDS.Edge(aLocalEdge);
-            aLocalEdge = theDI.GetShape(a[i + 1], TopAbs_ShapeEnum.TopAbs_EDGE);
-            TopoDS_Edge E2 = TopoDS.Edge(aLocalEdge);
+            Shape aLocalEdge = theDI.GetShape(a[i], ShapeType.Edge);
+            Edge E1 = ShapeCasts.Edge(aLocalEdge);
+            aLocalEdge = theDI.GetShape(a[i + 1], ShapeType.Edge);
+            Edge E2 = ShapeCasts.Edge(aLocalEdge);
 
-            if (E1.IsNull() || E2.IsNull())
+            if (E1.IsNull || E2.IsNull)
             {
                 di.Append("chfi2d : ").Append(a[i]).Append(" or ").Append(a[i + 1]).Append(" not an edge");
                 if (partial_result)
@@ -78,8 +81,8 @@ internal static class BRepTestFillet2DCommands
                 return 1;
             }
 
-            TopoDS_Vertex V = new();
-            if (!TopExp.CommonVertex(E1, E2, ref V))
+            Vertex V = new();
+            if (!Exploration.CommonVertex(E1, E2, ref V))
             {
                 di.Append("chfi2d ").Append(a[i]).Append(" and ").Append(a[i + 1]).Append(" does not share a vertex");
                 if (partial_result)
@@ -192,9 +195,9 @@ internal static class BRepTestFillet2DCommands
     //         : (the edge are located not in a plane).
     //=======================================================================
 
-    private static Geom_Plane? findPlane(in TopoDS_Shape S)
+    private static PlaneSurface? findPlane(in Shape S)
     {
-        Geom_Plane? plane = null;
+        PlaneSurface? plane = null;
         var planeFinder = new BRepBuilderAPI_FindPlane(S);
         if (planeFinder.Found())
         {
@@ -203,10 +206,10 @@ internal static class BRepTestFillet2DCommands
         return plane;
     }
 
-    private static Geom_Plane? findPlane(in TopoDS_Shape E1, in TopoDS_Shape E2)
+    private static PlaneSurface? findPlane(in Shape E1, in Shape E2)
     {
-        var B = new BRep_Builder();
-        TopoDS_Compound C = new();
+        var B = new BrepBuilder();
+        Compound C = new();
         B.MakeCompound(ref C);
         B.Add(C, E1);
         B.Add(C, E2);
@@ -218,15 +221,15 @@ internal static class BRepTestFillet2DCommands
     // purpose  : Find a common (or the most close) point of two edges.
     //=======================================================================
 
-    private static Point3D findCommonPoint(in TopoDS_Shape E1, in TopoDS_Shape E2)
+    private static Point3D findCommonPoint(in Shape E1, in Shape E2)
     {
-        TopExp.Vertices(TopoDS.Edge(E1), out TopoDS_Vertex v11, out TopoDS_Vertex v12);
-        TopExp.Vertices(TopoDS.Edge(E2), out TopoDS_Vertex v21, out TopoDS_Vertex v22);
+        Exploration.Vertices(ShapeCasts.Edge(E1), out Vertex v11, out Vertex v12);
+        Exploration.Vertices(ShapeCasts.Edge(E2), out Vertex v21, out Vertex v22);
 
-        Point3D p11 = BRep_Tool.Pnt(v11);
-        Point3D p12 = BRep_Tool.Pnt(v12);
-        Point3D p21 = BRep_Tool.Pnt(v21);
-        Point3D p22 = BRep_Tool.Pnt(v22);
+        Point3D p11 = Tool.Pnt(v11);
+        Point3D p12 = Tool.Pnt(v12);
+        Point3D p21 = Tool.Pnt(v21);
+        Point3D p22 = Tool.Pnt(v22);
 
         Point3D common = new();
         double d1121 = p11.SquareDistance(p21);
@@ -253,17 +256,17 @@ internal static class BRepTestFillet2DCommands
         return common;
     }
 
-    private static Point3D findCommonPoint(in TopoDS_Shape W)
+    private static Point3D findCommonPoint(in Shape W)
     {
         // The common point for two edges inside a wire
         // is a sharing vertex of two edges.
-        NCollection_Map<TopoDS_Shape> vertices = new(TopTools_ShapeMapHasher.Instance);
-        var aExp = new TopExp_Explorer(W, TopAbs_ShapeEnum.TopAbs_VERTEX);
+        NCollection_Map<Shape> vertices = new(ShapeHasher.Instance);
+        var aExp = new Explorer(W, ShapeType.Vertex);
         for (; aExp.More(); aExp.Next())
         {
             if (!vertices.Add(aExp.Current()))
             {
-                return BRep_Tool.Pnt(TopoDS.Vertex(aExp.Current()));
+                return Tool.Pnt(ShapeCasts.Vertex(aExp.Current()));
             }
         }
         return Constants.Origin(); // not found
@@ -284,24 +287,24 @@ internal static class BRepTestFillet2DCommands
             return 1;
         }
 
-        TopoDS_Shape E1 = new(), E2 = new(), W = new();
+        Shape E1 = new(), E2 = new(), W = new();
         if (n == 5)
         {
             // Get the edges.
-            E1 = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_EDGE, true);
-            E2 = theDI.GetShape(a[3], TopAbs_ShapeEnum.TopAbs_EDGE, true);
+            E1 = theDI.GetShape(a[2], ShapeType.Edge, true);
+            E2 = theDI.GetShape(a[3], ShapeType.Edge, true);
         }
         else
         {
             // Get the wire.
-            W = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_WIRE, true);
+            W = theDI.GetShape(a[2], ShapeType.Wire, true);
         }
 
         // Get the radius value.
         double radius = CAtof(n == 5 ? a[4] : a[3]);
 
         // Find plane of the edges.
-        Geom_Plane? hPlane = n == 5 ? findPlane(E1, E2) : findPlane(W);
+        PlaneSurface? hPlane = n == 5 ? findPlane(E1, E2) : findPlane(W);
         if (hPlane is null)
         {
             di.Append("Error: the edges are located not in a plane.");
@@ -313,13 +316,13 @@ internal static class BRepTestFillet2DCommands
         Plane3D plane = hPlane.Pln();
         if (n == 5)
         {
-            TopoDS_Edge e1 = TopoDS.Edge(E1);
-            TopoDS_Edge e2 = TopoDS.Edge(E2);
+            Edge e1 = ShapeCasts.Edge(E1);
+            Edge e2 = ShapeCasts.Edge(E2);
             algo.Init(e1, e2, plane);
         }
         else
         {
-            TopoDS_Wire w = TopoDS.Wire(W);
+            Wire w = ShapeCasts.Wire(W);
             algo.Init(w, plane);
         }
         bool status = algo.Perform(radius);
@@ -341,9 +344,9 @@ internal static class BRepTestFillet2DCommands
         }
 
         // Get the result for the "nearest" solution (near the common point).
-        TopoDS_Edge M1 = new(), M2 = new(); // modified E1 and E2
-        TopoDS_Edge fillet = algo.Result(common, ref M1, ref M2);
-        if (fillet.IsNull())
+        Edge M1 = new(), M2 = new(); // modified E1 and E2
+        Edge fillet = algo.Result(common, ref M1, ref M2);
+        if (fillet.IsNull)
         {
             di.Append("Error: the algorithm produced no result.");
             return 1;
@@ -388,17 +391,17 @@ internal static class BRepTestFillet2DCommands
             return 1;
         }
 
-        TopoDS_Shape W = new();
-        TopoDS_Shape E1 = new(), E2 = new();
+        Shape W = new();
+        Shape E1 = new(), E2 = new();
         if (n == 6)
         {
             // Get the edges.
-            E1 = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_EDGE, true);
-            E2 = theDI.GetShape(a[3], TopAbs_ShapeEnum.TopAbs_EDGE, true);
+            E1 = theDI.GetShape(a[2], ShapeType.Edge, true);
+            E2 = theDI.GetShape(a[3], ShapeType.Edge, true);
         }
         else
         {
-            W = theDI.GetShape(a[2], TopAbs_ShapeEnum.TopAbs_WIRE, true);
+            W = theDI.GetShape(a[2], ShapeType.Wire, true);
         }
 
         // Get the lengths.
@@ -409,13 +412,13 @@ internal static class BRepTestFillet2DCommands
         var algo = new ChFi2d_ChamferAPI();
         if (n == 6)
         {
-            TopoDS_Edge e1 = TopoDS.Edge(E1);
-            TopoDS_Edge e2 = TopoDS.Edge(E2);
+            Edge e1 = ShapeCasts.Edge(E1);
+            Edge e2 = ShapeCasts.Edge(E2);
             algo.Init(e1, e2);
         }
         else
         {
-            TopoDS_Wire w = TopoDS.Wire(W);
+            Wire w = ShapeCasts.Wire(W);
             algo.Init(w);
         }
 
@@ -423,9 +426,9 @@ internal static class BRepTestFillet2DCommands
         algo.Perform();
 
         // Get the result.
-        TopoDS_Edge M1 = new(), M2 = new(); // modified E1 and E2
-        TopoDS_Edge chamfer = algo.Result(ref M1, ref M2, length1, length2);
-        if (chamfer.IsNull())
+        Edge M1 = new(), M2 = new(); // modified E1 and E2
+        Edge chamfer = algo.Result(ref M1, ref M2, length1, length2);
+        if (chamfer.IsNull)
         {
             di.Append("Error: the algorithm produced no result.");
             return 1;

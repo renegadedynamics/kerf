@@ -1,14 +1,18 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 
 using static Occt.MAT_Side;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -83,7 +87,7 @@ internal static class MatRecordings
         public int I() => int.Parse(Word(), CultureInfo.InvariantCulture);
     }
 
-    private static TopoDS_Wire ReadWire(Reader theR, out bool theClosed)
+    private static Wire ReadWire(Reader theR, out bool theClosed)
     {
         string aKind = theR.Word();
         if (aKind == "O")
@@ -99,7 +103,7 @@ internal static class MatRecordings
         List<string> aKinds = [];
         List<Point3D> aMids = [];
         List<Point3D> aMids2 = [];
-        List<TopoDS_Vertex> aVerts = [];
+        List<Vertex> aVerts = [];
         for (int i = 0; i < aNb; i++)
         {
             double x = theR.D(), y = theR.D();
@@ -132,7 +136,7 @@ internal static class MatRecordings
             int j = (i + 1) % aNb;
             if (aKinds[i] == "A")
             {
-                Geom_TrimmedCurve anArc = new GC_MakeArcOfCircle(aPnts[i], aMids[i], aPnts[j]).Value();
+                TrimmedCurve3D anArc = new MakeArcOfCircle(aPnts[i], aMids[i], aPnts[j]).Value();
                 aMW.Add(new BRepBuilderAPI_MakeEdge(anArc, aVerts[i], aVerts[j]).Edge());
             }
             else if (aKinds[i] == "S")
@@ -142,7 +146,7 @@ internal static class MatRecordings
                 aPoles[2] = aMids[i];
                 aPoles[3] = aMids2[i];
                 aPoles[4] = aPnts[j];
-                Geom_BezierCurve aB = new(aPoles);
+                BezierCurve3D aB = new(aPoles);
                 aMW.Add(new BRepBuilderAPI_MakeEdge(aB, aVerts[i], aVerts[j]).Edge());
             }
             else
@@ -153,14 +157,14 @@ internal static class MatRecordings
         return aMW.Wire();
     }
 
-    private static TopoDS_Face ReadFace(Reader theR)
+    private static Face ReadFace(Reader theR)
     {
         int aNbWires = theR.I();
-        TopoDS_Face aFace = new();
+        Face aFace = new();
         Plane3D aPln = new(new CoordinateSystem(Constants.XOY()));
         for (int i = 0; i < aNbWires; i++)
         {
-            TopoDS_Wire aW = ReadWire(theR, out bool isClosed);
+            Wire aW = ReadWire(theR, out bool isClosed);
             if (i == 0)
             {
                 if (isClosed)
@@ -181,7 +185,7 @@ internal static class MatRecordings
     }
 
     /// <summary>The face of a case's input.</summary>
-    public static TopoDS_Face Face(string theInput)
+    public static Face Face(string theInput)
     {
         Reader aR = new(theInput);
         aR.Word();
@@ -194,20 +198,20 @@ internal static class MatRecordings
     //=============================================================================================
     // The results, as matrec's RunCase
 
-    private static string ShapeName(in TopoDS_Shape theS, NCollection_IndexedMap<TopoDS_Shape> theEdges,
-                                    NCollection_IndexedMap<TopoDS_Shape> theVerts)
+    private static string ShapeName(in Shape theS, NCollection_IndexedMap<Shape> theEdges,
+                                    NCollection_IndexedMap<Shape> theVerts)
     {
         const string anOri = "FRIE";
-        if (theS.IsNull())
+        if (theS.IsNull)
         {
             return "null";
         }
         string aName;
-        if (theS.ShapeType() == TopAbs_EDGE)
+        if (theS.ShapeType() == ShapeType.Edge)
         {
             aName = "E" + theEdges.FindIndex(theS).ToString(CultureInfo.InvariantCulture);
         }
-        else if (theS.ShapeType() == TopAbs_VERTEX)
+        else if (theS.ShapeType() == ShapeType.Vertex)
         {
             aName = "V" + theVerts.FindIndex(theS).ToString(CultureInfo.InvariantCulture);
         }
@@ -218,19 +222,19 @@ internal static class MatRecordings
         return aName + anOri[(int)theS.Orientation()];
     }
 
-    private static string GeomName(Geom2d_Geometry? theG)
+    private static string GeomName(Geometry2D? theG)
     {
         if (theG is null)
         {
             return "null";
         }
         string aName = global::Kerf.Engine.Foundation.OcctTypeNames.Of(theG.GetType());
-        if (theG is Geom2d_TrimmedCurve aT)
+        if (theG is TrimmedCurve2D aT)
         {
             aName += "/" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aT.ChangeBasisCurve().GetType()) + "," + Hex(aT.FirstParameter()) + ","
                      + Hex(aT.LastParameter());
         }
-        if (theG is Geom2d_CartesianPoint aP)
+        if (theG is CartesianPoint2 aP)
         {
             aName += "," + Hex(aP.Pnt2d());
         }
@@ -239,13 +243,13 @@ internal static class MatRecordings
 
     private static void Bisec(List<string> theOut, string thePre, Bisector_Bisec theB)
     {
-        Geom2d_TrimmedCurve? aC = theB.Value();
+        TrimmedCurve2D? aC = theB.Value();
         if (aC is null)
         {
             theOut.Add(thePre + "null");
             return;
         }
-        Geom2d_Curve aBasis = aC.ChangeBasisCurve();
+        Curve2D aBasis = aC.ChangeBasisCurve();
         string aKind = global::Kerf.Engine.Foundation.OcctTypeNames.Of(aBasis.GetType());
         if (aBasis is Bisector_BisecAna anAna)
         {
@@ -282,17 +286,17 @@ internal static class MatRecordings
         string aSide = aR.Word();
         int aJoin = aR.I();
         int anOpen = aR.I();
-        TopoDS_Face aFace = new();
+        Face aFace = new();
         string aFail = Fail(() => aFace = ReadFace(aR));
         if (aFail.Length != 0)
         {
             anOut.Add("face:" + aFail);
             return anOut;
         }
-        NCollection_IndexedMap<TopoDS_Shape> anEdges = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_IndexedMap<TopoDS_Shape> aVerts = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aFace, TopAbs_EDGE, anEdges);
-        TopExp.MapShapes(aFace, TopAbs_VERTEX, aVerts);
+        NCollection_IndexedMap<Shape> anEdges = new(ShapeHasher.Instance);
+        NCollection_IndexedMap<Shape> aVerts = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aFace, ShapeType.Edge, anEdges);
+        Exploration.MapShapes(aFace, ShapeType.Vertex, aVerts);
         anOut.Add("nE:" + I(anEdges.Extent()));
 
         BRepMAT2d_Explorer anExplo = new();
@@ -407,7 +411,7 @@ internal static class MatRecordings
         }
         for (int k = 1; k <= anEdges.Extent() + aVerts.Extent(); k++)
         {
-            TopoDS_Shape aS = k <= anEdges.Extent() ? anEdges.FindKey(k) : aVerts.FindKey(k - anEdges.Extent());
+            Shape aS = k <= anEdges.Extent() ? anEdges.FindKey(k) : aVerts.FindKey(k - anEdges.Extent());
             string aNm = k <= anEdges.Extent() ? "lE" + I(k) : "lV" + I(k - anEdges.Extent());
             Tok(anOut, aNm, () =>
             {

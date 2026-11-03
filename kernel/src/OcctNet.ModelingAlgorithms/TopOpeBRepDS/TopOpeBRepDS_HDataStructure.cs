@@ -4,9 +4,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 using static Occt.TopOpeBRepDS_Config;
 using static Occt.TopOpeBRepDS_Kind;
 
@@ -44,7 +47,7 @@ public sealed class TopOpeBRepDS_HDataStructure : Transient
     }
 
     /// <summary>Whether the face <paramref name="F1"/> has a face/edge/face interference with the face <paramref name="F2"/>.</summary>
-    internal static bool FUN_HDS_FACESINTERFER(in TopoDS_Shape F1, in TopoDS_Shape F2, TopOpeBRepDS_HDataStructure HDS)
+    internal static bool FUN_HDS_FACESINTERFER(in Shape F1, in Shape F2, TopOpeBRepDS_HDataStructure HDS)
     {
         bool yainterf = false;
         TopOpeBRepDS_DataStructure DS = HDS.DS();
@@ -85,19 +88,19 @@ public sealed class TopOpeBRepDS_HDataStructure : Transient
     }
 
     /// <summary>Adds to the data structure the wires, faces, shells and solids of <paramref name="S"/> that contain a shape of it.</summary>
-    internal void AddAncestors(in TopoDS_Shape S)
+    internal void AddAncestors(in Shape S)
     {
-        AddAncestors(S, TopAbs_WIRE, TopAbs_EDGE);
-        AddAncestors(S, TopAbs_FACE, TopAbs_WIRE);
-        AddAncestors(S, TopAbs_SHELL, TopAbs_FACE);
-        AddAncestors(S, TopAbs_SOLID, TopAbs_SHELL);
+        AddAncestors(S, ShapeType.Wire, ShapeType.Edge);
+        AddAncestors(S, ShapeType.Face, ShapeType.Wire);
+        AddAncestors(S, ShapeType.Shell, ShapeType.Face);
+        AddAncestors(S, ShapeType.Solid, ShapeType.Shell);
     }
 
     /// <summary>
     /// Adds the shapes of type <paramref name="T1"/> of <paramref name="S"/> containing a sub-shape of type
     /// <paramref name="T2"/> that is in the data structure, with <paramref name="S"/>'s ancestor rank.
     /// </summary>
-    internal void AddAncestors(in TopoDS_Shape S, TopAbs_ShapeEnum T1, TopAbs_ShapeEnum T2)
+    internal void AddAncestors(in Shape S, ShapeType T1, ShapeType T2)
     {
         TopOpeBRepDS_DataStructure BDS = ChangeDS();
         int rankS = myDS.AncestorRank(S);
@@ -105,10 +108,10 @@ public sealed class TopOpeBRepDS_HDataStructure : Transient
         // find the shapes of type T1 containing HasShape() of type T2
         for (TopOpeBRepTool_ShapeExplorer eT1 = new(S, T1); eT1.More(); eT1.Next())
         {
-            TopoDS_Shape ST1 = eT1.Current();
+            Shape ST1 = eT1.Current();
             for (TopOpeBRepTool_ShapeExplorer eT2 = new(ST1, T2); eT2.More(); eT2.Next())
             {
-                TopoDS_Shape ST2 = eT2.Current();
+                Shape ST2 = eT2.Current();
                 if (BDS.HasShape(ST2))
                 {
                     BDS.AddShape(ST1, rankS);
@@ -160,40 +163,40 @@ public sealed class TopOpeBRepDS_HDataStructure : Transient
     public TopOpeBRepDS_Point Point(int I) => myDS.Point(I);
 
     /// <summary>Whether the shape <paramref name="S"/> has new geometries.</summary>
-    public bool HasGeometry(in TopoDS_Shape S)
+    public bool HasGeometry(in Shape S)
     {
         bool b = myDS.HasGeometry(S);
         return b;
     }
 
     /// <summary>Whether the shape <paramref name="S"/> is in the data structure.</summary>
-    public bool HasShape(in TopoDS_Shape S, bool FindKeep = true)
+    public bool HasShape(in Shape S, bool FindKeep = true)
     {
         bool b = myDS.HasShape(S, FindKeep);
         return b;
     }
 
     /// <summary>Whether the shape <paramref name="S"/> shares its geometrical domain with other shapes.</summary>
-    public bool HasSameDomain(in TopoDS_Shape S, bool FindKeep = true)
+    public bool HasSameDomain(in Shape S, bool FindKeep = true)
     {
         if (!HasShape(S, FindKeep))
         {
             return false;
         }
-        NCollection_List<TopoDS_Shape> l = myDS.ShapeSameDomain(S);
+        NCollection_List<Shape> l = myDS.ShapeSameDomain(S);
         bool res = !l.IsEmpty();
         return res;
     }
 
     /// <summary>An iterator on the shapes sharing the geometrical domain of <paramref name="S"/>.</summary>
-    public NCollection_List<TopoDS_Shape>.Iterator SameDomain(in TopoDS_Shape S)
+    public NCollection_List<Shape>.Iterator SameDomain(in Shape S)
     {
-        NCollection_List<TopoDS_Shape> L = myDS.ShapeSameDomain(S);
-        return new NCollection_List<TopoDS_Shape>.Iterator(L);
+        NCollection_List<Shape> L = myDS.ShapeSameDomain(S);
+        return new NCollection_List<Shape>.Iterator(L);
     }
 
     /// <summary>How <paramref name="S"/> lies with respect to its same-domain reference.</summary>
-    public TopOpeBRepDS_Config SameDomainOrientation(in TopoDS_Shape S)
+    public TopOpeBRepDS_Config SameDomainOrientation(in Shape S)
     {
         if (!HasShape(S))
         {
@@ -203,7 +206,7 @@ public sealed class TopOpeBRepDS_HDataStructure : Transient
     }
 
     /// <summary>The index of the same-domain reference of <paramref name="S"/>.</summary>
-    public int SameDomainReference(in TopoDS_Shape S)
+    public int SameDomainReference(in Shape S)
     {
         if (!HasShape(S))
         {
@@ -216,16 +219,16 @@ public sealed class TopOpeBRepDS_HDataStructure : Transient
     public int NbShapes() => myDS.NbShapes();
 
     /// <summary>The shape <paramref name="I"/>.</summary>
-    public TopoDS_Shape Shape(int I, bool FindKeep = true) => myDS.Shape(I, FindKeep);
+    public Shape Shape(int I, bool FindKeep = true) => myDS.Shape(I, FindKeep);
 
     /// <summary>The index of the shape <paramref name="S"/>, or 0.</summary>
-    public int Shape(in TopoDS_Shape S, bool FindKeep = true) => myDS.Shape(S, FindKeep);
+    public int Shape(in Shape S, bool FindKeep = true) => myDS.Shape(S, FindKeep);
 
     /// <summary>
     /// An iterator on the surfaces attached to the solid <paramref name="S"/> (see <see cref="TopOpeBRepDS_SurfaceIterator"/>
     /// for OCCT's first value).
     /// </summary>
-    public TopOpeBRepDS_SurfaceIterator SolidSurfaces(in TopoDS_Shape S)
+    public TopOpeBRepDS_SurfaceIterator SolidSurfaces(in Shape S)
     {
         NCollection_List<TopOpeBRepDS_Interference> L = myDS.ShapeInterferences(S);
         return new TopOpeBRepDS_SurfaceIterator(L);
@@ -239,7 +242,7 @@ public sealed class TopOpeBRepDS_HDataStructure : Transient
     }
 
     /// <summary>An iterator on the curves attached to the face <paramref name="F"/>.</summary>
-    public TopOpeBRepDS_CurveIterator FaceCurves(in TopoDS_Shape F)
+    public TopOpeBRepDS_CurveIterator FaceCurves(in Shape F)
     {
         NCollection_List<TopOpeBRepDS_Interference> L = myDS.ShapeInterferences(F);
         return new TopOpeBRepDS_CurveIterator(L);
@@ -253,7 +256,7 @@ public sealed class TopOpeBRepDS_HDataStructure : Transient
     }
 
     /// <summary>An iterator on the points attached to the edge <paramref name="E"/>.</summary>
-    public TopOpeBRepDS_PointIterator EdgePoints(in TopoDS_Shape E)
+    public TopOpeBRepDS_PointIterator EdgePoints(in Shape E)
     {
         NCollection_List<TopOpeBRepDS_Interference> L = myDS.ShapeInterferences(E);
         return new TopOpeBRepDS_PointIterator(L);
@@ -279,8 +282,8 @@ public sealed class TopOpeBRepDS_HDataStructure : Transient
             SCI2 = new TopOpeBRepDS_SurfaceCurveInterference(I2);
         }
 
-        TopoDS_Shape S1 = curC.Shape1();
-        TopoDS_Shape S2 = curC.Shape2();
+        Shape S1 = curC.Shape1();
+        Shape S2 = curC.Shape2();
 
         // add the new SCIs in the lists of SCIs connected to the shapes
         if (SCI1 is not null)
@@ -366,7 +369,7 @@ public sealed class TopOpeBRepDS_HDataStructure : Transient
         int res = 0;
         const bool FindKeep = false;
 
-        TopAbs_ShapeEnum S = TopOpeBRepDS.KindToShape(K);
+        ShapeType S = TopOpeBRepDS.KindToShape(K);
         for (int i = 1; i <= NbTopology(); i++)
         {
             if (myDS.KeepShape(i, FindKeep))
@@ -386,11 +389,11 @@ public sealed class TopOpeBRepDS_HDataStructure : Transient
         int i, n = myDS.NbShapes();
         for (i = 1; i <= n; i++)
         {
-            TopoDS_Shape s = myDS.Shape(i);
-            if (s.ShapeType() == TopAbs_EDGE)
+            Shape s = myDS.Shape(i);
+            if (s.ShapeType() == ShapeType.Edge)
             {
-                TopoDS_Edge e = TopoDS.Edge(s);
-                if (!BRep_Tool.SameParameter(e))
+                Edge e = ShapeCasts.Edge(s);
+                if (!Tool.SameParameter(e))
                 {
                     return false;
                 }
@@ -465,8 +468,8 @@ public sealed class TopOpeBRepDS_HDataStructure : Transient
             TopOpeBRepDS_Interference I = it.Value();
             if (!found)
             {
-                TopAbs_Orientation o = I.Transition().Orientation(TopAbs_IN);
-                if (o == TopAbs_FORWARD)
+                Orientation o = I.Transition().Orientation(In);
+                if (o == Forward)
                 {
                     found = true;
                     L1.Append(I);
@@ -606,7 +609,7 @@ public sealed class TopOpeBRepDS_HDataStructure : Transient
 
     /// <summary>Stores the interference <paramref name="I"/> on the shape <paramref name="S"/> (and its geometry).</summary>
     /// <exception cref="ProgramErrorException"><paramref name="S"/> is not in the data structure.</exception>
-    internal void StoreInterference(TopOpeBRepDS_Interference I, in TopoDS_Shape S, string str = "")
+    internal void StoreInterference(TopOpeBRepDS_Interference I, in Shape S, string str = "")
     {
         _ = str;
         bool h = myDS.HasShape(S);
@@ -645,7 +648,7 @@ public sealed class TopOpeBRepDS_HDataStructure : Transient
     }
 
     /// <summary>Stores each interference of <paramref name="LI"/> on the shape <paramref name="S"/>.</summary>
-    internal void StoreInterferences(NCollection_List<TopOpeBRepDS_Interference> LI, in TopoDS_Shape S, string str = "")
+    internal void StoreInterferences(NCollection_List<TopOpeBRepDS_Interference> LI, in Shape S, string str = "")
     {
         _ = str;
         NCollection_List<TopOpeBRepDS_Interference> lids = myDS.ChangeShapeInterferences(S);
@@ -672,7 +675,7 @@ public sealed class TopOpeBRepDS_HDataStructure : Transient
     }
 
     /// <summary>Empties the interferences of the shape <paramref name="S"/>, then stores those of <paramref name="LI"/>.</summary>
-    internal void ClearStoreInterferences(NCollection_List<TopOpeBRepDS_Interference> LI, in TopoDS_Shape S, string str = "")
+    internal void ClearStoreInterferences(NCollection_List<TopOpeBRepDS_Interference> LI, in Shape S, string str = "")
     {
         _ = str;
         NCollection_List<TopOpeBRepDS_Interference> lids = myDS.ChangeShapeInterferences(S);

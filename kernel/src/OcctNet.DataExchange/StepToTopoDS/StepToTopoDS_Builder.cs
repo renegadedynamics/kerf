@@ -7,9 +7,14 @@
 #pragma warning disable CS0168 // locals OCCT declares and never uses
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using static Occt.StepToTopoDS_BuilderError;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -34,9 +39,9 @@ namespace Occt;
 public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
 {
     private StepToTopoDS_BuilderError myError;
-    private TopoDS_Shape myResult = new TopoDS_Shape();
+    private Shape myResult = new Shape();
 
-    private static void ResetPreci(StepData_StepModel theStepModel, in TopoDS_Shape S, double maxtol)
+    private static void ResetPreci(StepData_StepModel theStepModel, in Shape S, double maxtol)
     {
         //: S4136
         int modetol = (int)theStepModel.InternalParameters.ReadMaxPrecisionMode;
@@ -77,7 +82,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         // Initialisation of the Tool
 
         var aTool = new StepToTopoDS_Tool();
-        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape>();
+        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape>();
         aTool.Init(aMap, theTP);
 
         // Start Mapping
@@ -97,10 +102,10 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
             return;
         }
 
-        TopoDS_Shape aShape = myTranShell.InternalValue();
+        Shape aShape = myTranShell.InternalValue();
         aShape.Closed(true);
-        TopoDS_Solid aSolid = new TopoDS_Solid();
-        var aBuilder = new BRep_Builder();
+        Solid aSolid = new Solid();
+        var aBuilder = new BrepBuilder();
         aBuilder.MakeSolid(ref aSolid);
         aBuilder.Add(aSolid, aShape);
         myResult = aSolid;
@@ -126,12 +131,12 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         using Messenger.StreamBuffer sout = theTP.Messenger().SendInfo();
         // Initialisation of the Tool
         var aTool = new StepToTopoDS_Tool();
-        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape>();
+        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape>();
         aTool.Init(aMap, theTP);
 
         // Start Mapping
-        TopoDS_Solid aSolid = new TopoDS_Solid();
-        var aBuilder = new BRep_Builder();
+        Solid aSolid = new Solid();
+        var aBuilder = new BrepBuilder();
         aBuilder.MakeSolid(ref aSolid);
 
         using var aPS = new ProgressScope(theProgress, "Shell", theBRepWithVoids.NbVoids() + 1);
@@ -153,7 +158,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
             return;
         }
 
-        TopoDS_Shape aShape = aTranShell.InternalValue();
+        Shape aShape = aTranShell.InternalValue();
         aShape.Closed(true);
         aBuilder.MakeSolid(ref aSolid);
         aBuilder.Add(aSolid, aShape);
@@ -208,7 +213,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
     {
         // Initialisation of the Tool
         var aTool = new StepToTopoDS_Tool();
-        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape>();
+        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape>();
         aTool.Init(aMap, theTP);
 
         // Start Mapping
@@ -229,13 +234,13 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
             return;
         }
 
-        TopoDS_Shape aShape = aTranShell.InternalValue();
+        Shape aShape = aTranShell.InternalValue();
         aShape.Closed(true);
 
         aTool.ClearEdgeMap();
         aTool.ClearVertexMap();
-        TopoDS_Solid aSolid = new TopoDS_Solid();
-        var aBuilder = new BRep_Builder();
+        Solid aSolid = new Solid();
+        var aBuilder = new BrepBuilder();
         aBuilder.MakeSolid(ref aSolid);
         aBuilder.Add(aSolid, aShape);
         myResult = aSolid;
@@ -251,7 +256,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
     {
         // Initialisation of the Tool
         var aTool = new StepToTopoDS_Tool();
-        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape>();
+        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape>();
         aTool.Init(aMap, theTP);
 
         // Start Mapping
@@ -274,11 +279,11 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
             return;
         }
 
-        TopoDS_Shape aShape = aTranShell.InternalValue();
+        Shape aShape = aTranShell.InternalValue();
         aShape.Closed(true);
 
-        TopoDS_Solid aSolid = new TopoDS_Solid();
-        var aBuilder = new BRep_Builder();
+        Solid aSolid = new Solid();
+        var aBuilder = new BrepBuilder();
         aBuilder.MakeSolid(ref aSolid);
         aBuilder.Add(aSolid, aShape);
 
@@ -318,7 +323,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         // Initialisation of the Tool
 
         var myTool = new StepToTopoDS_Tool();
-        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape>();
+        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape>();
         myTool.Init(aMap, TP);
 
         // Start Mapping
@@ -327,9 +332,9 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         StepShape_Shell aShell;
         StepShape_OpenShell aOpenShell;
         StepShape_ClosedShell aClosedShell;
-        TopoDS_Compound S = new TopoDS_Compound();
-        TopoDS_Shape Shl = new TopoDS_Shape();
-        var B = new BRep_Builder();
+        Compound S = new Compound();
+        Shape Shl = new Shape();
+        var B = new BrepBuilder();
         B.MakeCompound(ref S);
         var myTranShell = new StepToTopoDS_TranslateShell();
 
@@ -348,7 +353,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
                 myTranShell.Init(aOpenShell, myTool, NMTool, theLocalFactors, aRange);
                 if (myTranShell.IsDone())
                 {
-                    Shl = TopoDS.Shell(myTranShell.InternalValue());
+                    Shl = ShapeCasts.Shell(myTranShell.InternalValue());
                     Shl.Closed(false);
                     B.Add(S, Shl);
                 }
@@ -362,7 +367,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
                 myTranShell.Init(aClosedShell, myTool, NMTool, theLocalFactors, aRange);
                 if (myTranShell.IsDone())
                 {
-                    Shl = TopoDS.Shell(myTranShell.InternalValue());
+                    Shl = ShapeCasts.Shell(myTranShell.InternalValue());
                     Shl.Closed(true);
                     B.Add(S, Shl);
                 }
@@ -413,15 +418,15 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         }
 
         var myTool = new StepToTopoDS_Tool();
-        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape>();
+        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape>();
         myTool.Init(aMap, TP);
 
         var myTranEdge = new StepToTopoDS_TranslateEdge();
         myTranEdge.SetPrecision(Precision());
         myTranEdge.SetMaxTol(MaxTol());
 
-        TopoDS_Compound C = new TopoDS_Compound();
-        var B = new BRep_Builder();
+        Compound C = new Compound();
+        var B = new BrepBuilder();
         B.MakeCompound(ref C);
 
         var dummyNMTool = new StepToTopoDS_NMTool();
@@ -441,7 +446,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
                 continue;
             }
 
-            TopoDS_Wire W = new TopoDS_Wire();
+            Wire W = new Wire();
             for (int j = 1; j <= edges.Length(); j++)
             {
                 myTranEdge.Init(edges.Value(j), myTool, dummyNMTool, theLocalFactors);
@@ -450,13 +455,13 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
                     continue;
                 }
 
-                TopoDS_Edge E = TopoDS.Edge(myTranEdge.InternalValue());
-                if (E.IsNull())
+                Edge E = ShapeCasts.Edge(myTranEdge.InternalValue());
+                if (E.IsNull)
                 {
                     continue; // NULL, on saute
                 }
 
-                if (W.IsNull())
+                if (W.IsNull)
                 {
                     B.MakeWire(ref W);
                 }
@@ -464,14 +469,14 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
                 B.Add(W, E);
             }
 
-            if (W.IsNull())
+            if (W.IsNull)
             {
                 continue;
             }
 
-            W.Closed(BRep_Tool.IsClosed(W));
+            W.Closed(Tool.IsClosed(W));
             B.Add(C, W);
-            if (myResult.IsNull())
+            if (myResult.IsNull)
             {
                 myResult = W;
             }
@@ -481,8 +486,8 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
             }
         }
 
-        myError = (myResult.IsNull() ? StepToTopoDS_BuilderDone : StepToTopoDS_BuilderOther); // OCCT: the codes are swapped
-        done = !myResult.IsNull();
+        myError = (myResult.IsNull ? StepToTopoDS_BuilderDone : StepToTopoDS_BuilderOther); // OCCT: the codes are swapped
+        done = !myResult.IsNull;
 
         StepData_StepModel aStepModel = TP.Model() as StepData_StepModel;
         ResetPreci(aStepModel, myResult, MaxTol());
@@ -503,15 +508,15 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         }
 
         var myTool = new StepToTopoDS_Tool();
-        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape>();
+        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape>();
         myTool.Init(aMap, TP);
 
         var myTranFace = new StepToTopoDS_TranslateFace();
         myTranFace.SetPrecision(Precision());
         myTranFace.SetMaxTol(MaxTol());
 
-        TopoDS_Compound C = new TopoDS_Compound();
-        var B = new BRep_Builder();
+        Compound C = new Compound();
+        var B = new BrepBuilder();
         B.MakeCompound(ref C);
 
         // Non-manifold topology is not mapped via FaceBasedSurfaceModel (ssv; 14.11.2010)
@@ -532,7 +537,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
                 continue;
             }
 
-            TopoDS_Shell S = new TopoDS_Shell();
+            Shell S = new Shell();
             for (int j = 1; j <= faces.Length(); j++)
             {
                 StepShape_FaceSurface fs = faces.Value(j) as StepShape_FaceSurface;
@@ -542,13 +547,13 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
                     continue;
                 }
 
-                TopoDS_Face F = TopoDS.Face(myTranFace.InternalValue());
-                if (F.IsNull())
+                Face F = ShapeCasts.Face(myTranFace.InternalValue());
+                if (F.IsNull)
                 {
                     continue; // NULL, on saute
                 }
 
-                if (S.IsNull())
+                if (S.IsNull)
                 {
                     B.MakeShell(ref S);
                 }
@@ -556,14 +561,14 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
                 B.Add(S, F);
             }
 
-            if (S.IsNull())
+            if (S.IsNull)
             {
                 continue;
             }
 
-            S.Closed(BRep_Tool.IsClosed(S));
+            S.Closed(Tool.IsClosed(S));
             B.Add(C, S);
-            if (myResult.IsNull())
+            if (myResult.IsNull)
             {
                 myResult = S;
             }
@@ -573,8 +578,8 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
             }
         }
 
-        myError = (myResult.IsNull() ? StepToTopoDS_BuilderDone : StepToTopoDS_BuilderOther); // OCCT: the codes are swapped
-        done = !myResult.IsNull();
+        myError = (myResult.IsNull ? StepToTopoDS_BuilderDone : StepToTopoDS_BuilderOther); // OCCT: the codes are swapped
+        done = !myResult.IsNull;
 
         StepData_StepModel aStepModel = TP.Model() as StepData_StepModel;
         ResetPreci(aStepModel, myResult, MaxTol());
@@ -585,19 +590,19 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
     // ***start DTH Apr/6
     //: i6 abv 17 Sep 98: ProSTEP TR9 r0601-ct.stp: to be able read GS: GeometricCurveSet ->
     //: GeometricSet
-    private static TopoDS_Face TranslateBoundedSurf(StepGeom_Surface surf, double TolDegen, in StepData_Factors theLocalFactors)
+    private static Face TranslateBoundedSurf(StepGeom_Surface surf, double TolDegen, in StepData_Factors theLocalFactors)
     {
-        TopoDS_Face res = new TopoDS_Face();
+        Face res = new Face();
 
-        Geom_Surface theSurf = StepToGeom.MakeSurface(surf, theLocalFactors);
+        Surface theSurf = StepToGeom.MakeSurface(surf, theLocalFactors);
         if (theSurf is null || //: i6: protection
-            theSurf is not Geom_BoundedSurface)
+            theSurf is not BoundedSurface)
         {
             return res;
         }
 
         var myMkFace = new BRepBuilderAPI_MakeFace();
-        Geom_RectangularTrimmedSurface RS = theSurf as Geom_RectangularTrimmedSurface;
+        TrimmedSurface RS = theSurf as TrimmedSurface;
 
         if (RS is not null)
         {
@@ -622,10 +627,10 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
                      Transfer_ActorOfTransientProcess RA = null, bool isManifold = false, ProgressRange theProgress = default)
     {
         // Start Mapping
-        TopoDS_Compound S = new TopoDS_Compound();
-        var B = new BRep_Builder();
+        Compound S = new Compound();
+        var B = new BrepBuilder();
         B.MakeCompound(ref S);
-        TopoDS_Edge theEdge;
+        Edge theEdge;
         int i;
         double preci = Precision(); // gka
         double maxtol = MaxTol();
@@ -637,8 +642,8 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
             StepShape_GeometricSetSelect aGSS = GCS.ElementsValue(i);
             Transient ent = aGSS?.Value();
 
-            TopoDS_Shape res = TransferBRep.ShapeResult(TP, ent);
-            if (!res.IsNull())
+            Shape res = TransferBRep.ShapeResult(TP, ent);
+            if (!res.IsNull)
             { // already translated
                 B.Add(S, res);
                 continue;
@@ -668,11 +673,11 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
                     {
                         if (TrCC.IsInfiniteSegment())
                         {
-                            var aB = new BRep_Builder();
-                            TopoDS_Compound aComp = new TopoDS_Compound();
+                            var aB = new BrepBuilder();
+                            Compound aComp = new Compound();
                             aB.MakeCompound(ref aComp);
-                            var anExp = new TopExp_Explorer();
-                            for (anExp.Init(TrCC.InternalValue(), TopAbs_EDGE); anExp.More(); anExp.Next())
+                            var anExp = new Explorer();
+                            for (anExp.Init(TrCC.InternalValue(), ShapeType.Edge); anExp.More(); anExp.Next())
                             {
                                 aB.Add(aComp, anExp.Current());
                             }
@@ -687,7 +692,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
                 }
                 else
                 { // try other curves
-                    Geom_Curve aGeomCrv = null;
+                    Curve3D aGeomCrv = null;
                     try
                     {
                         aGeomCrv = StepToGeom.MakeCurve(aCrv, theLocalFactors);
@@ -713,7 +718,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
             else if (ent is StepGeom_CartesianPoint)
             {
                 StepGeom_CartesianPoint aPnt = ent as StepGeom_CartesianPoint;
-                Geom_CartesianPoint thePnt = StepToGeom.MakeCartesianPoint(aPnt, theLocalFactors);
+                CartesianPoint thePnt = StepToGeom.MakeCartesianPoint(aPnt, theLocalFactors);
                 if (thePnt is not null)
                 {
                     var myMkVtx = new BRepBuilderAPI_MakeVertex(thePnt.Pnt());
@@ -748,15 +753,15 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
                     StepGeom_RectangularCompositeSurface RCS = aSurf as StepGeom_RectangularCompositeSurface;
                     int nbi = RCS.NbSegmentsI();
                     int nbj = RCS.NbSegmentsJ();
-                    TopoDS_Compound C = new TopoDS_Compound();
+                    Compound C = new Compound();
                     B.MakeCompound(ref C);
                     for (int ii = 1; ii <= nbi; ii++)
                     {
                         for (int j = 1; j <= nbj; j++)
                         {
                             StepGeom_SurfacePatch patch = RCS.SegmentsValue(ii, j);
-                            TopoDS_Face f = TranslateBoundedSurf(patch.ParentSurface(), preci, theLocalFactors);
-                            if (!f.IsNull())
+                            Face f = TranslateBoundedSurf(patch.ParentSurface(), preci, theLocalFactors);
+                            if (!f.IsNull)
                             {
                                 B.Add(C, f);
                             }
@@ -795,7 +800,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
                 TP.AddWarning(ent, " Entity is not a Curve, Point, Surface or GeometricRepresentationItem");
             }
 
-            if (!res.IsNull())
+            if (!res.IsNull)
             {
                 B.Add(S, res);
                 TransferBRep.SetShapeResult(TP, ent, res);
@@ -824,7 +829,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         aTranSolid.SetMaxTol(MaxTol());
 
         var aTool = new StepToTopoDS_Tool();
-        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape>();
+        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape>();
         aTool.Init(aMap, theTP);
 
         var aDummyNMTool = new StepToTopoDS_NMTool();
@@ -838,8 +843,8 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
             return;
         }
 
-        TopoDS_Shape aS = aTranSolid.InternalValue();
-        myResult = TopoDS.Solid(aS);
+        Shape aS = aTranSolid.InternalValue();
+        myResult = ShapeCasts.Solid(aS);
         myError = StepToTopoDS_BuilderDone;
         done = true;
     }
@@ -856,7 +861,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         aTranShell.SetMaxTol(MaxTol());
 
         var aTool = new StepToTopoDS_Tool();
-        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape>();
+        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape>();
         aTool.Init(aMap, theTP);
 
         var aDummyNMTool = new StepToTopoDS_NMTool();
@@ -870,8 +875,8 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
             return;
         }
 
-        TopoDS_Shape aS = aTranShell.InternalValue();
-        myResult = TopoDS.Shell(aS);
+        Shape aS = aTranShell.InternalValue();
+        myResult = ShapeCasts.Shell(aS);
         myError = StepToTopoDS_BuilderDone;
         done = true;
     }
@@ -888,7 +893,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         aTranFace.SetMaxTol(MaxTol());
 
         var aTool = new StepToTopoDS_Tool();
-        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape>();
+        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape>();
         aTool.Init(aMap, theTP);
 
         var aDummyNMTool = new StepToTopoDS_NMTool();
@@ -902,8 +907,8 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
             return;
         }
 
-        TopoDS_Shape aS = aTranFace.InternalValue();
-        myResult = TopoDS.Face(aS);
+        Shape aS = aTranFace.InternalValue();
+        myResult = ShapeCasts.Face(aS);
         myError = StepToTopoDS_BuilderDone;
         done = true;
     }
@@ -919,7 +924,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         aTranFace.SetMaxTol(MaxTol());
 
         var aTool = new StepToTopoDS_Tool();
-        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape>();
+        var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape>();
         aTool.Init(aMap, theTP);
 
         var aDummyNMTool = new StepToTopoDS_NMTool();
@@ -934,8 +939,8 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
             return;
         }
 
-        TopoDS_Shape aS = aTranFace.InternalValue();
-        myResult = TopoDS.Face(aS);
+        Shape aS = aTranFace.InternalValue();
+        myResult = ShapeCasts.Face(aS);
         myError = StepToTopoDS_BuilderDone;
         done = true;
     }
@@ -945,15 +950,15 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
 
     /// <summary>The result of the mapping, frozen.</summary>
     /// <exception cref="NotDoneException">The translation wasn't done.</exception>
-    public TopoDS_Shape Value()
+    public Shape Value()
     {
-        TopoDS_Shape aShape = InternalValue();
+        Shape aShape = InternalValue();
         aShape.TShape()?.FreezeGraph();
         return aShape;
     }
 
     /// <summary>As <see cref="Value"/>, without freezing: the reader's working shape (decision 1247).</summary>
-    internal TopoDS_Shape InternalValue()
+    internal Shape InternalValue()
     {
         StdFail_NotDone_Raise_if(!done, "StepToTopoDS_Builder::Value() - no result");
         return myResult;

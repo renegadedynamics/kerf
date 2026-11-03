@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using Occt;
 
@@ -45,9 +48,9 @@ internal static class BRepTestModifyCommands
         {
             return 1;
         }
-        TopoDS_Shape InpShape;
+        Shape InpShape;
         int arg = 2, i;
-        NCollection_Sequence<TopoDS_Shape> Args = new();
+        NCollection_Sequence<Shape> Args = new();
 
         double Tol = 1.0e-4;
         double Tol2d;
@@ -56,7 +59,7 @@ internal static class BRepTestModifyCommands
         int MaxDeg = 14;
         int MaxSeg = 16;
 
-        while ((n > arg) && !(InpShape = theDI.GetShape(a[arg])).IsNull())
+        while ((n > arg) && !(InpShape = theDI.GetShape(a[arg])).IsNull)
         {
             Args.Append(InpShape);
             arg++;
@@ -130,7 +133,7 @@ internal static class BRepTestModifyCommands
 
         OrtProj.SetParams(Tol, Tol2d, Continuity, MaxDeg, MaxSeg);
         OrtProj.Build();
-        NCollection_List<TopoDS_Shape> Wire = new();
+        NCollection_List<Shape> Wire = new();
         bool IsWire = OrtProj.BuildWire(Wire);
         if (IsWire)
         {
@@ -156,8 +159,8 @@ internal static class BRepTestModifyCommands
         var nbscv = new BRepBuilderAPI_NurbsConvert();
         for (int i = 0; i < (n - 1) / 2; i++)
         {
-            TopoDS_Shape S = theDI.GetShape(a[2 * i + 2]);
-            if (S.IsNull())
+            Shape S = theDI.GetShape(a[2 * i + 2]);
+            if (S.IsNull)
             {
                 di.Append(a[2 * i + 2]).Append(" is not a valid shape\n");
             }
@@ -190,8 +193,8 @@ internal static class BRepTestModifyCommands
         var rot = new Matrix3x3(theDI.Atof(a[3]), 0, 0, 0, theDI.Atof(a[4]), 0, 0, 0, theDI.Atof(a[5]));
         GT.SetVectorialPart(rot);
         var gtrf = new BRepBuilderAPI_GTransform(GT);
-        TopoDS_Shape aShape = theDI.GetShape(a[2]);
-        if (aShape.IsNull())
+        Shape aShape = theDI.GetShape(a[2]);
+        if (aShape.IsNull)
         {
             di.Append("Syntax error: '").Append(a[2]).Append("' is not a valid shape");
             return 1;
@@ -215,8 +218,8 @@ internal static class BRepTestModifyCommands
             return 1;
         }
 
-        TopoDS_Shape aShapeBase = theDI.GetShape(a[2]);
-        if (aShapeBase.IsNull())
+        Shape aShapeBase = theDI.GetShape(a[2]);
+        if (aShapeBase.IsNull)
         {
             return 1;
         }
@@ -258,22 +261,22 @@ internal static class BRepTestModifyCommands
             aTol = aTol1;
         }
 
-        TopoDS_Shape anInpS = theDI.GetShape(IsUseTol ? a[n - 2] : a[n - 1]);
-        if (anInpS.IsNull())
+        Shape anInpS = theDI.GetShape(IsUseTol ? a[n - 2] : a[n - 1]);
+        if (anInpS.IsNull)
         {
             return 1;
         }
 
         if ((n == 4 && IsUseTol) || (n == 3 && !IsUseTol))
         {
-            var aResh = new BRepTools_ReShape();
+            var aResh = new ReShape();
             BRepLib.SameParameter(anInpS, aResh, aTol, force);
             theDI.SetShape(a[1], aResh.Apply(anInpS));
         }
         else
         {
             // in place in OCCT: on a copy of the graph here
-            TopoDS_Shape aCopy = DrawShapeCopy.Copy(anInpS);
+            Shape aCopy = DrawShapeCopy.Copy(anInpS);
             BRepLib.SameParameter(aCopy, aTol, force);
             theDI.SetShape(a[1], aCopy);
         }
@@ -293,24 +296,24 @@ internal static class BRepTestModifyCommands
             return 1;
         }
 
-        TopoDS_Shape aSh1 = theDI.GetShape(a[n - 1]);
-        bool IsF = aSh1.IsNull();
-        TopoDS_Shape anInpS = IsF ? theDI.GetShape(a[n - 2]) : aSh1;
-        if (anInpS.IsNull())
+        Shape aSh1 = theDI.GetShape(a[n - 1]);
+        bool IsF = aSh1.IsNull;
+        Shape anInpS = IsF ? theDI.GetShape(a[n - 2]) : aSh1;
+        if (anInpS.IsNull)
         {
             return 1;
         }
 
         if ((n == 4 && IsF) || (n == 3 && !IsF))
         {
-            var aResh = new BRepTools_ReShape();
+            var aResh = new ReShape();
             BRepLib.UpdateTolerances(anInpS, aResh, IsF);
             theDI.SetShape(a[1], aResh.Apply(anInpS));
         }
         else
         {
             // in place in OCCT: on a copy of the graph here
-            TopoDS_Shape aCopy = DrawShapeCopy.Copy(anInpS);
+            Shape aCopy = DrawShapeCopy.Copy(anInpS);
             BRepLib.UpdateTolerances(aCopy, IsF);
             theDI.SetShape(a[1], aCopy);
         }
@@ -326,18 +329,18 @@ internal static class BRepTestModifyCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[1]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[1]);
+        if (S.IsNull)
         {
             return 1;
         }
 
-        if (S.ShapeType() != TopAbs_ShapeEnum.TopAbs_SOLID)
+        if (S.ShapeType() != ShapeType.Solid)
         {
             return 1;
         }
 
-        TopoDS_Solid aSolid = TopoDS.Solid(S);
+        Solid aSolid = ShapeCasts.Solid(S);
         BRepLib.OrientClosedSolid(ref aSolid);
         theDI.SetShape(a[1], aSolid);
         return 0;
@@ -352,13 +355,13 @@ internal static class BRepTestModifyCommands
         }
 
         double Tolerance = theDI.Atof(a[2]);
-        TopoDS_Shape S = theDI.GetShape(a[1]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[1]);
+        if (S.IsNull)
         {
             return 1;
         }
 
-        TopoDS_Shape aCopy = DrawShapeCopy.Copy(S);
+        Shape aCopy = DrawShapeCopy.Copy(S);
         BRepLib.BuildCurves3d(aCopy, Tolerance);
         theDI.SetShape(a[1], aCopy);
         return 0;
@@ -371,8 +374,8 @@ internal static class BRepTestModifyCommands
             return 1;
         }
 
-        TopoDS_Shape S = theDI.GetShape(a[1]);
-        if (S.IsNull())
+        Shape S = theDI.GetShape(a[1]);
+        if (S.IsNull)
         {
             return 1;
         }
@@ -396,8 +399,8 @@ internal static class BRepTestModifyCommands
             return 1;
         }
 
-        TopoDS_Shape aS1 = theDI.GetShape(a[1]);
-        TopoDS_Shape aS2 = theDI.GetShape(a[2]);
+        Shape aS1 = theDI.GetShape(a[1]);
+        Shape aS2 = theDI.GetShape(a[2]);
         if (aS1.IsSame(aS2))
         {
             di.Append("same shapes\n");
@@ -423,19 +426,19 @@ internal static class BRepTestModifyCommands
             return 1;
         }
 
-        TopoDS_Shape aSubShape = theDI.GetShape(a[1]);
-        TopoDS_Shape aShape = theDI.GetShape(a[2]);
-        if (aSubShape.IsNull() || aShape.IsNull())
+        Shape aSubShape = theDI.GetShape(a[1]);
+        Shape aShape = theDI.GetShape(a[2]);
+        if (aSubShape.IsNull || aShape.IsNull)
         {
             di.Append("null shapes\n");
             return 0;
         }
 
-        var aMShapes = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var anExp = new TopExp_Explorer(aShape, aSubShape.ShapeType());
+        var aMShapes = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var anExp = new Explorer(aShape, aSubShape.ShapeType());
         for (; anExp.More(); anExp.Next())
         {
-            TopoDS_Shape aSS = anExp.Current();
+            Shape aSS = anExp.Current();
             if (aMShapes.Add(aSS) && aSS.IsSame(aSubShape))
             {
                 break;
@@ -462,26 +465,26 @@ internal static class BRepTestModifyCommands
             return 1;
         }
 
-        TopoDS_Shape C1 = theDI.GetShape(argv[1], TopAbs_ShapeEnum.TopAbs_WIRE);
-        TopoDS_Shape C2 = new();
+        Shape C1 = theDI.GetShape(argv[1], ShapeType.Wire);
+        Shape C2 = new();
         if (argc > 2)
         {
-            C2 = theDI.GetShape(argv[2], TopAbs_ShapeEnum.TopAbs_FACE);
+            C2 = theDI.GetShape(argv[2], ShapeType.Face);
         }
 
-        if (C1.IsNull())
+        if (C1.IsNull)
         {
             return 1;
         }
 
-        var we = new BRepTools_WireExplorer();
-        if (C2.IsNull())
+        var we = new WireExplorer();
+        if (C2.IsNull)
         {
-            we.Init(TopoDS.Wire(C1));
+            we.Init(ShapeCasts.Wire(C1));
         }
         else
         {
-            we.Init(TopoDS.Wire(C1), TopoDS.Face(C2));
+            we.Init(ShapeCasts.Wire(C1), ShapeCasts.Face(C2));
         }
 
         for (int k = 1; we.More(); we.Next(), k++)

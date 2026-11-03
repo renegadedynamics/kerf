@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -10,10 +12,10 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ApproxIntTests
 {
-    private static Adaptor3d_Surface PlaneZ() => new GeomAdaptor_Surface(new Geom_Plane(new Plane3D()));
+    private static SurfaceAdaptorBase PlaneZ() => new SurfaceAdaptor(new PlaneSurface(new Plane3D()));
 
-    private static Adaptor3d_Surface PlaneX() =>
-        new GeomAdaptor_Surface(new Geom_Plane(new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0))));
+    private static SurfaceAdaptorBase PlaneX() =>
+        new SurfaceAdaptor(new PlaneSurface(new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0))));
 
     private static void AssertPnt(double x, double y, double z, Point3D P)
     {
@@ -93,7 +95,7 @@ public class ApproxIntTests
         GeomInt_WLApprox app = new();
         app.Perform(StraightLine(300), true, true, true, theMin, theMax);
         Assert.True(app.IsDone());
-        AppParCurves_MultiBSpCurve mb = app.Value(1);
+        MultiBSpCurve mb = app.Value(1);
         int np = mb.NbPoles();
         Assert.Equal(8, np);
         Assert.Equal(3, mb.Knots().Length());
@@ -110,7 +112,7 @@ public class ApproxIntTests
         GeomInt_TheMultiLineOfWLApprox ml = new(WL, 1, 1, true, false, 1, 2, 3, 10, 20, 30, 40, false, 7, 3);
         Assert.Equal(3, ml.FirstPoint());
         Assert.Equal(7, ml.LastPoint());
-        Assert.Equal(Approx_Status.Approx_NoPointsAdded, ml.WhatStatus());
+        Assert.Equal(Status.NoPointsAdded, ml.WhatStatus());
         NCollection_Array1<Point3D> P = new(1, 1);
         NCollection_Array1<Point2D> P2 = new(1, 1);
         ml.Value(4, P, P2);
@@ -134,7 +136,7 @@ public class ApproxIntTests
     [InlineData(true, 0.905)]
     public void MultiLine_WithSvSurfaces_AddsPoints(bool theNonUniform, double theNewY)
     {
-        Adaptor3d_Surface S1 = PlaneZ(), S2 = PlaneX();
+        SurfaceAdaptorBase S1 = PlaneZ(), S2 = PlaneX();
         Plane3D pl1 = new(), pl2 = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         IntSurf_LineOn2S L = new();
         for (int k = 0; k <= 20; k++)
@@ -148,7 +150,7 @@ public class ApproxIntTests
         IntPatch_WLine WL = new(L, false);
         GeomInt_ThePrmPrmSvSurfacesOfWLApprox sv = new(S1, S2);
         GeomInt_TheMultiLineOfWLApprox ml = new(WL, sv, 1, 2, true, true, 0, 0, 0, 0, 0, 0, 0, true, 1, 21);
-        Assert.Equal(Approx_Status.Approx_PointsAdded, ml.WhatStatus());
+        Assert.Equal(Status.PointsAdded, ml.WhatStatus());
         NCollection_Array1<Vector3D> T = new(1, 1);
         NCollection_Array1<Vector2D> T2 = new(1, 2);
         Assert.True(ml.Tangency(5, T, T2));
@@ -159,7 +161,7 @@ public class ApproxIntTests
         {
             ApproxInt_MultiLine<IntPatch_WLine> aBetween = ml.MakeMLBetween(1, 21, n);
             Assert.Equal((1, 1), (aBetween.FirstPoint(), aBetween.LastPoint()));
-            Assert.Equal(Approx_Status.Approx_NoPointsAdded, aBetween.WhatStatus());
+            Assert.Equal(Status.NoPointsAdded, aBetween.WhatStatus());
         }
 
         Assert.True(ml.MakeMLOneMorePoint(1, 21, 11, out ApproxInt_MultiLine<IntPatch_WLine> anOther));
@@ -184,7 +186,7 @@ public class ApproxIntTests
             mu[i] = 1;
         }
         mu[1] = mu[3] = 2;
-        BRepApprox_ApproxLine L = new(new Geom_BSplineCurve(p3, kn, mu, 1), null, new Geom2d_BSplineCurve(p2, kn, mu, 1));
+        BRepApprox_ApproxLine L = new(new BSplineCurve3D(p3, kn, mu, 1), null, new BSplineCurve2D(p2, kn, mu, 1));
         Assert.Equal(3, L.NbPnts());
         IntSurf_PntOn2S aP = L.Point(2);
         AssertPnt(2, 4, 6, aP.Value());

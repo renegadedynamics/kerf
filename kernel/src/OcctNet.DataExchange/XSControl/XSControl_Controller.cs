@@ -6,6 +6,7 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using static Occt.IFSelect_ReturnStatus;
 
 namespace Occt;
@@ -312,7 +313,7 @@ public abstract class XSControl_Controller : Transient
     /// <summary>
     /// Tells if a shape is valid for a transfer to a model Asks the ActorWrite (through a ShapeMapper)
     /// </summary>
-    public virtual bool RecognizeWriteShape(TopoDS_Shape shape, int modetrans = 0)
+    public virtual bool RecognizeWriteShape(Shape shape, int modetrans = 0)
     {
         if (myAdaptorWrite is null)
         {
@@ -327,9 +328,9 @@ public abstract class XSControl_Controller : Transient
     /// ActorWrite; can be redefined as necessary Returned value is a status, as follows : Done OK , Void : No
     /// Result , Fail : Fail (e.g. exception) Error : bad conditions , bad model or null model
     /// </summary>
-    public virtual IFSelect_ReturnStatus TransferWriteShape(TopoDS_Shape shape, Transfer_FinderProcess? FP, Interface_InterfaceModel? model, int modetrans = 0, ProgressRange theProgress = default)
+    public virtual IFSelect_ReturnStatus TransferWriteShape(Shape shape, Transfer_FinderProcess? FP, Interface_InterfaceModel? model, int modetrans = 0, ProgressRange theProgress = default)
     {
-        if (shape.IsNull())
+        if (shape.IsNull)
         {
             return IFSelect_RetVoid;
         }

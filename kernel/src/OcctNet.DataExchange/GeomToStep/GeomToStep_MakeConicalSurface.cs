@@ -6,6 +6,7 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 
 namespace Occt;
 
@@ -23,7 +24,7 @@ public sealed class GeomToStep_MakeConicalSurface : GeomToStep_Root
     /// A cone, its position and reference radius divided by the length factor (its semi-angle in radians); throws
     /// Standard_DomainError when the semi-angle is negative, which STEP doesn't allow.
     /// </summary>
-    public GeomToStep_MakeConicalSurface(Geom_ConicalSurface CS, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeConicalSurface(ConicalSurface CS, in StepData_Factors theLocalFactors)
     {
         StepGeom_ConicalSurface CSstep = new StepGeom_ConicalSurface();
         StepGeom_Axis2Placement3d aPosition;
@@ -46,7 +47,7 @@ public sealed class GeomToStep_MakeConicalSurface : GeomToStep_Root
     }
 
     /// <summary>A cone (default factors).</summary>
-    public GeomToStep_MakeConicalSurface(Geom_ConicalSurface CS) : this(CS, new StepData_Factors())
+    public GeomToStep_MakeConicalSurface(ConicalSurface CS) : this(CS, new StepData_Factors())
     {
     }
 

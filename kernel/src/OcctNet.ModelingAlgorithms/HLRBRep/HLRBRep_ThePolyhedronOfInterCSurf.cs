@@ -7,6 +7,7 @@ using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Geometry.Bounds;
 
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -88,7 +89,7 @@ public sealed class HLRBRep_ThePolyhedronOfInterCSurf
 
     private void Init(HLRBRep_Surface Surface, double U0, double V0, double U1, double V1)
     {
-        GeomGridEval_Surface anEval = new(Surface.Surface());
+        SurfaceGrid anEval = new(Surface.Surface());
         IntCurveSurface_PolyhedronUtils.InitUniform(anEval, U0, V0, U1, V1, nbdeltaU, nbdeltaV, C_MyPnts!, C_MyU!,
                                                     C_MyV!, C_MyIsOnBounds!, ref TheBnd);
         double tol = IntCurveSurface_PolyhedronUtils.ComputeMaxDeflection(Surface.Surface(), this, NbTriangles());
@@ -100,7 +101,7 @@ public sealed class HLRBRep_ThePolyhedronOfInterCSurf
 
     private void Init(HLRBRep_Surface Surface, NCollection_Array1<double> Upars, NCollection_Array1<double> Vpars)
     {
-        GeomGridEval_Surface anEval = new(Surface.Surface());
+        SurfaceGrid anEval = new(Surface.Surface());
         IntCurveSurface_PolyhedronUtils.InitWithParams(anEval, Upars, Vpars, nbdeltaU, nbdeltaV, C_MyPnts!, C_MyU!,
                                                        C_MyV!, C_MyIsOnBounds!, ref TheBnd);
         double tol = IntCurveSurface_PolyhedronUtils.ComputeMaxDeflection(Surface.Surface(), this, NbTriangles());

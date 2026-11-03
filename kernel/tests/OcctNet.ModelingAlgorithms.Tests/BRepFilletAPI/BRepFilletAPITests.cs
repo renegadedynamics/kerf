@@ -1,11 +1,17 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.FilletSurf_ErrorTypeStatus;
 using static Occt.FilletSurf_StatusDone;
 using static Occt.FilletSurf_StatusType;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -16,38 +22,38 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepFilletAPITests
 {
-    private static TopoDS_Shape Box(double theSize = 10.0) => new BRepPrimAPI_MakeBox(theSize, theSize, theSize).Shape();
+    private static Shape Box(double theSize = 10.0) => new BRepPrimAPI_MakeBox(theSize, theSize, theSize).Shape();
 
-    private static TopoDS_Edge EdgeOf(in TopoDS_Shape S, int k)
+    private static Edge EdgeOf(in Shape S, int k)
     {
-        NCollection_IndexedMap<TopoDS_Shape> M = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(S, TopAbs_EDGE, M);
-        return TopoDS.Edge(M[k]);
+        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        Exploration.MapShapes(S, ShapeType.Edge, M);
+        return ShapeCasts.Edge(M[k]);
     }
 
-    private static List<TopoDS_Shape> Faces(in TopoDS_Shape S)
+    private static List<Shape> Faces(in Shape S)
     {
-        List<TopoDS_Shape> r = [];
-        for (TopExp_Explorer ex = new(S, TopAbs_FACE); ex.More(); ex.Next())
+        List<Shape> r = [];
+        for (Explorer ex = new(S, ShapeType.Face); ex.More(); ex.Next())
         {
             r.Add(ex.Current());
         }
         return r;
     }
 
-    private static string Text(in TopoDS_Shape S)
+    private static string Text(in Shape S)
     {
         using StringWriter aWriter = new(System.Globalization.CultureInfo.InvariantCulture);
-        BRepTools.Write(S, aWriter);
+        BrepTools.Write(S, aWriter);
         return aWriter.ToString();
     }
 
-    private static double[] VertexTolerances(in TopoDS_Shape S)
+    private static double[] VertexTolerances(in Shape S)
     {
         List<double> r = [];
-        for (TopExp_Explorer ex = new(S, TopAbs_VERTEX); ex.More(); ex.Next())
+        for (Explorer ex = new(S, ShapeType.Vertex); ex.More(); ex.Next())
         {
-            r.Add(BRep_Tool.Tolerance(TopoDS.Vertex(ex.Current())));
+            r.Add(Tool.Tolerance(ShapeCasts.Vertex(ex.Current())));
         }
         return [.. r];
     }
@@ -55,24 +61,24 @@ public class BRepFilletAPITests
     [Fact]
     public void TheCallersShapeIsUnwrittenAndItsUnchangedFacesAreInTheResult()
     {
-        TopoDS_Shape aBox = Box();
-        Assert.True(BRepTools.HoldsFrozen(aBox));
+        Shape aBox = Box();
+        Assert.True(BrepTools.HoldsFrozen(aBox));
         double[] aBefore = VertexTolerances(aBox);
         string aText = Text(aBox);
-        TopoDS_Edge E = EdgeOf(aBox, 1);
+        Edge E = EdgeOf(aBox, 1);
 
         BRepFilletAPI_MakeFillet aFillet = new(aBox);
         aFillet.Add(2.0, E);
-        TopoDS_Shape aResult = aFillet.Shape();
+        Shape aResult = aFillet.Shape();
         Assert.True(aFillet.IsDone());
         Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(aBefore, VertexTolerances(aBox));
         Assert.Equal(aText, Text(aBox));
 
         // the faces away from the edge are the caller's own; the two faces of the edge are split; the others kept
-        List<TopoDS_Shape> aResultFaces = Faces(aResult);
+        List<Shape> aResultFaces = Faces(aResult);
         int aShared = 0, aModified = 0;
-        foreach (TopoDS_Shape F in Faces(aBox))
+        foreach (Shape F in Faces(aBox))
         {
             if (aResultFaces.Any(r => r.IsSame(F)))
             {
@@ -104,8 +110,8 @@ public class BRepFilletAPITests
     [Fact]
     public void AnUnfrozenInputIsWorkedOnInPlaceAsOcct()
     {
-        TopoDS_Shape aBox = BRepTools.ExactCopyForWrite(Box(), out BRepTools_History _);
-        Assert.False(BRepTools.HoldsFrozen(aBox));
+        Shape aBox = BrepTools.ExactCopyForWrite(Box(), out History _);
+        Assert.False(BrepTools.HoldsFrozen(aBox));
         BRepFilletAPI_MakeFillet aFillet = new(aBox);
         aFillet.Add(2.0, EdgeOf(aBox, 1));
         aFillet.Build();
@@ -116,8 +122,8 @@ public class BRepFilletAPITests
     [Fact]
     public void TheEvolvingRadii()
     {
-        TopoDS_Shape aBox = Box();
-        TopoDS_Edge E = EdgeOf(aBox, 1);
+        Shape aBox = Box();
+        Edge E = EdgeOf(aBox, 1);
 
         BRepFilletAPI_MakeFillet aLinear = new(aBox);
         aLinear.Add(1.0, 3.0, E);
@@ -151,7 +157,7 @@ public class BRepFilletAPITests
     [Fact]
     public void ARadiusTooLargeGivesTheDiagnostics()
     {
-        TopoDS_Shape aBox = Box(1.0);
+        Shape aBox = Box(1.0);
         BRepFilletAPI_MakeFillet aFillet = new(aBox);
         aFillet.Add(5.0, EdgeOf(aBox, 1));
         aFillet.Build();
@@ -166,12 +172,12 @@ public class BRepFilletAPITests
     [Fact]
     public void AChamferKeepsTheCallersShapeAndGivesItsHistory()
     {
-        TopoDS_Shape aBox = Box();
+        Shape aBox = Box();
         string aText = Text(aBox);
-        TopoDS_Edge E = EdgeOf(aBox, 1);
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> M = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(aBox, TopAbs_EDGE, TopAbs_FACE, M);
-        TopoDS_Face F = TopoDS.Face(M.FindFromKey(E).First());
+        Edge E = EdgeOf(aBox, 1);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> M = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, M);
+        Face F = ShapeCasts.Face(M.FindFromKey(E).First());
 
         BRepFilletAPI_MakeChamfer aChamfer = new(aBox);
         aChamfer.Add(1.0, 2.0, E, F);
@@ -179,7 +185,7 @@ public class BRepFilletAPITests
         double d1 = 0, d2 = 0;
         aChamfer.Dists(1, ref d1, ref d2);
         Assert.Equal((1.0, 2.0), (d1, d2));
-        TopoDS_Shape aResult = aChamfer.Shape();
+        Shape aResult = aChamfer.Shape();
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
         Assert.Equal(1000.0 - 1.0 * 2.0 / 2.0 * 10.0, ReconComparison.Volume(aResult), 1.0e-6);
         Assert.Equal(aText, Text(aBox));
@@ -191,9 +197,9 @@ public class BRepFilletAPITests
     [Fact]
     public void FilletSurfGivesTheFilletsGeometryWithoutAShape()
     {
-        TopoDS_Shape aBox = Box();
-        TopoDS_Edge E = EdgeOf(aBox, 1);
-        NCollection_List<TopoDS_Shape> L = new();
+        Shape aBox = Box();
+        Edge E = EdgeOf(aBox, 1);
+        NCollection_List<Shape> L = new();
         L.Append(E);
         FilletSurf_Builder aB = new(aBox, L, 2.0);
         Assert.Equal(FilletSurf_IsOk, aB.IsDone());
@@ -205,19 +211,19 @@ public class BRepFilletAPITests
         Assert.Equal(FilletSurf_TwoExtremityOnEdge, aB.EndSectionStatus());
 
         // the support faces are the caller's, those of the edge
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> M = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(aBox, TopAbs_EDGE, TopAbs_FACE, M);
-        NCollection_List<TopoDS_Shape> aFaces = M.FindFromKey(E);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> M = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, M);
+        NCollection_List<Shape> aFaces = M.FindFromKey(E);
         Assert.Contains(aFaces, f => f.IsSame(aB.SupportFace1(1)));
         Assert.Contains(aFaces, f => f.IsSame(aB.SupportFace2(1)));
 
         // the curves on the faces lie on them, 2 from the edge; the parameters span the edge
-        BRepAdaptor_Curve anEdge = new(E);
-        foreach (Geom_Curve C in new[] { aB.CurveOnFace1(1), aB.CurveOnFace2(1) })
+        EdgeCurveAdaptor anEdge = new(E);
+        foreach (Curve3D C in new[] { aB.CurveOnFace1(1), aB.CurveOnFace2(1) })
         {
             Point3D P = C.Value(0.5 * (C.FirstParameter() + C.LastParameter()));
-            Extrema_ExtPC anExt = new(P, anEdge);
-            Assert.True(anExt.IsDone() && anExt.NbExt() > 0);
+            CurvePointExtrema anExt = new(P, anEdge);
+            Assert.True(anExt.IsDone && anExt.ExtCount > 0);
             Assert.Equal(2.0, Math.Sqrt(anExt.SquareDistance(1)), 1.0e-4);
         }
         Assert.Equal(anEdge.FirstParameter(), Math.Min(aB.FirstParameter(), aB.LastParameter()), 1.0e-6);
@@ -229,20 +235,20 @@ public class BRepFilletAPITests
         aS.Simulate();
         Assert.Equal(FilletSurf_IsOk, aS.IsDone());
         Assert.True(aS.NbSection(1) > 1);
-        Geom_TrimmedCurve aArc = aS.Section(1, 1);
-        Assert.Equal(2.0, ((Geom_Circle)aArc.BasisCurve()!).Radius(), 1.0e-9);
+        TrimmedCurve3D aArc = aS.Section(1, 1);
+        Assert.Equal(2.0, ((CircleCurve3D)aArc.BasisCurve()!).Radius(), 1.0e-9);
     }
 
     [Fact]
     public void FilletSurfReportsOcctsErrors()
     {
-        TopoDS_Shape aBox = Box();
-        FilletSurf_Builder anEmpty = new(aBox, new NCollection_List<TopoDS_Shape>(), 1.0);
+        Shape aBox = Box();
+        FilletSurf_Builder anEmpty = new(aBox, new NCollection_List<Shape>(), 1.0);
         Assert.Equal(FilletSurf_IsNotOk, anEmpty.IsDone());
         Assert.Equal(FilletSurf_EmptyList, anEmpty.StatusError());
         Assert.Throws<NotDoneException>(() => anEmpty.NbSurface());
 
-        NCollection_List<TopoDS_Shape> aForeign = new();
+        NCollection_List<Shape> aForeign = new();
         aForeign.Append(EdgeOf(Box(), 1));
         FilletSurf_Builder aNotOn = new(aBox, aForeign, 1.0);
         Assert.Equal(FilletSurf_EdgeNotOnShape, aNotOn.StatusError());
@@ -251,12 +257,12 @@ public class BRepFilletAPITests
     [Fact]
     public void TheFunctionalTwinsAreTheMakers()
     {
-        TopoDS_Shape aBox = Box();
-        TopoDS_Edge E = EdgeOf(aBox, 1);
+        Shape aBox = Box();
+        Edge E = EdgeOf(aBox, 1);
         Assert.Equal(new BRepFilletAPI_FilletOptions(), new BRepFilletAPI_FilletOptions());
         Assert.NotEqual(new BRepFilletAPI_FilletOptions(), new BRepFilletAPI_FilletOptions { Tesp = 1.0e-3 });
 
-        TopoDS_Shape aTwin = BRepFilletAPI.Fillet(aBox, [E], 2.0, new BRepFilletAPI_FilletOptions(), out BRepTools_History aHistory);
+        Shape aTwin = BRepFilletAPI.Fillet(aBox, [E], 2.0, new BRepFilletAPI_FilletOptions(), out History aHistory);
         BRepFilletAPI_MakeFillet aMaker = new(aBox);
         aMaker.Add(2.0, E);
         Assert.True(aTwin.TShape()!.IsFrozen);
@@ -264,10 +270,10 @@ public class BRepFilletAPITests
         Assert.Single(aHistory.Generated(E));
         Assert.Equal(4, Faces(aBox).Count(f => aHistory.Modified(f).Count() == 1)); // the edge's two faces and the two at its ends
 
-        TopoDS_Shape aChamfer = BRepFilletAPI.Chamfer(aBox, [E], 1.0, new BRepFilletAPI_ChamferOptions());
+        Shape aChamfer = BRepFilletAPI.Chamfer(aBox, [E], 1.0, new BRepFilletAPI_ChamferOptions());
         Assert.Equal(1000.0 - 0.5 * 10.0, ReconComparison.Volume(aChamfer), 1.0e-6);
 
-        TopoDS_Shape aSmall = Box(1.0);
+        Shape aSmall = Box(1.0);
         Assert.Throws<NotDoneException>(() => BRepFilletAPI.Fillet(aSmall, [EdgeOf(aSmall, 1)], 5.0, new BRepFilletAPI_FilletOptions()));
     }
 }

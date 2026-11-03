@@ -4,8 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -18,7 +19,7 @@ namespace Occt;
 /// <c>new Sweep_NumShape()</c>, OCCT's dummy shape of type TopAbs_SHAPE.</remarks>
 internal struct Sweep_NumShape : IEquatable<Sweep_NumShape>
 {
-    private TopAbs_ShapeEnum myType;
+    private ShapeType myType;
     private int myIndex;
     private bool myClosed;
     private bool myBegInf;
@@ -27,7 +28,7 @@ internal struct Sweep_NumShape : IEquatable<Sweep_NumShape>
     /// <summary>A dummy indexed edge.</summary>
     public Sweep_NumShape()
     {
-        myType = TopAbs_SHAPE;
+        myType = ShapeType.Shape;
         myIndex = 0;
         myClosed = false;
         myBegInf = false;
@@ -35,7 +36,7 @@ internal struct Sweep_NumShape : IEquatable<Sweep_NumShape>
     }
 
     /// <summary>A simple indexed edge or vertex.</summary>
-    public Sweep_NumShape(int Index, TopAbs_ShapeEnum Type, bool Closed = false, bool BegInf = false, bool EndInf = false)
+    public Sweep_NumShape(int Index, ShapeType Type, bool Closed = false, bool BegInf = false, bool EndInf = false)
     {
         myType = Type;
         myIndex = Index;
@@ -45,7 +46,7 @@ internal struct Sweep_NumShape : IEquatable<Sweep_NumShape>
     }
 
     /// <summary>Reinitializes the indexed edge or vertex.</summary>
-    internal void Init(int Index, TopAbs_ShapeEnum Type, bool Closed = false, bool BegInf = false, bool EndInf = false)
+    internal void Init(int Index, ShapeType Type, bool Closed = false, bool BegInf = false, bool EndInf = false)
     {
         myIndex = Index;
         myType = Type;
@@ -56,7 +57,7 @@ internal struct Sweep_NumShape : IEquatable<Sweep_NumShape>
 
     public readonly int Index() => myIndex;
 
-    public readonly TopAbs_ShapeEnum Type() => myType;
+    public readonly ShapeType Type() => myType;
 
     public readonly bool Closed() => myClosed;
 
@@ -64,21 +65,21 @@ internal struct Sweep_NumShape : IEquatable<Sweep_NumShape>
 
     public readonly bool EndInfinite() => myEndInf;
 
-    public readonly TopAbs_Orientation Orientation()
+    public readonly Orientation Orientation()
     {
-        if (myType == TopAbs_EDGE)
+        if (myType == ShapeType.Edge)
         {
-            return TopAbs_FORWARD;
+            return Forward;
         }
         else
         {
             if (myIndex == 2)
             {
-                return TopAbs_FORWARD;
+                return Forward;
             }
             else
             {
-                return TopAbs_REVERSED;
+                return Reversed;
             }
         }
     }

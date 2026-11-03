@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.BOPAlgo_CheckStatus;
 using static Occt.BOPAlgo_Operation;
@@ -23,8 +24,8 @@ namespace Occt;
 public class BRepAlgoAPI_Check : BOPAlgo_Options
 {
     // Inputs
-    protected TopoDS_Shape myS1 = new();             //!< The first shape
-    protected TopoDS_Shape myS2 = new();             //!< The second shape
+    protected Shape myS1 = new();             //!< The first shape
+    protected Shape myS2 = new();             //!< The second shape
     protected bool myTestSE;                         //!< Flag defining whether to look for small edges in the given shapes or not
     protected bool myTestSI;                         //!< Flag defining whether to check the input edges on self-interference or not
     protected BOPAlgo_Operation myOperation;         //!< Type of Boolean operation for which the validity of input shapes should be checked
@@ -32,7 +33,7 @@ public class BRepAlgoAPI_Check : BOPAlgo_Options
     // Results
     protected NCollection_List<BOPAlgo_CheckResult> myFaultyShapes = new(); //!< Found faulty shapes
 
-    /// <summary>An empty check: give the shapes with <see cref="SetData(in TopoDS_Shape, bool, bool)"/>.</summary>
+    /// <summary>An empty check: give the shapes with <see cref="SetData(in Shape, bool, bool)"/>.</summary>
     public BRepAlgoAPI_Check()
     {
         myTestSE = true;
@@ -41,7 +42,7 @@ public class BRepAlgoAPI_Check : BOPAlgo_Options
     }
 
     /// <summary>Checks a single shape, on small edges and self-interference unless told not to.</summary>
-    public BRepAlgoAPI_Check(in TopoDS_Shape theS, bool bTestSE = true, bool bTestSI = true,
+    public BRepAlgoAPI_Check(in Shape theS, bool bTestSE = true, bool bTestSI = true,
                              ProgressRange theRange = default)
     {
         myS1 = theS;
@@ -55,7 +56,7 @@ public class BRepAlgoAPI_Check : BOPAlgo_Options
     /// Checks a couple of shapes: each shape's validity, and the validity of their types for the Boolean operation
     /// of the given type.
     /// </summary>
-    public BRepAlgoAPI_Check(in TopoDS_Shape theS1, in TopoDS_Shape theS2, BOPAlgo_Operation theOp = BOPAlgo_UNKNOWN,
+    public BRepAlgoAPI_Check(in Shape theS1, in Shape theS2, BOPAlgo_Operation theOp = BOPAlgo_UNKNOWN,
                              bool bTestSE = true, bool bTestSI = true, ProgressRange theRange = default)
     {
         myS1 = theS1;
@@ -67,17 +68,17 @@ public class BRepAlgoAPI_Check : BOPAlgo_Options
     }
 
     /// <summary>Initializes the algorithm with a single shape.</summary>
-    public void SetData(in TopoDS_Shape theS, bool bTestSE = true, bool bTestSI = true)
+    public void SetData(in Shape theS, bool bTestSE = true, bool bTestSI = true)
     {
         myS1 = theS;
-        myS2 = new TopoDS_Shape();
+        myS2 = new Shape();
         myTestSE = bTestSE;
         myTestSI = bTestSI;
         myFaultyShapes.Clear();
     }
 
     /// <summary>Initializes the algorithm with a couple of shapes and the operation they are checked for.</summary>
-    public void SetData(in TopoDS_Shape theS1, in TopoDS_Shape theS2, BOPAlgo_Operation theOp = BOPAlgo_UNKNOWN,
+    public void SetData(in Shape theS1, in Shape theS2, BOPAlgo_Operation theOp = BOPAlgo_UNKNOWN,
                         bool bTestSE = true, bool bTestSI = true)
     {
         myS1 = theS1;
@@ -114,9 +115,9 @@ public class BRepAlgoAPI_Check : BOPAlgo_Options
         myFaultyShapes = new NCollection_List<BOPAlgo_CheckResult>(anAnalyzer.InternalGetCheckResult());
 
         // Check the topological validity of the shapes
-        bool isValidS1 = !myS1.IsNull() ? new BRepCheck_Analyzer(myS1).IsValid() : true;
+        bool isValidS1 = !myS1.IsNull ? new BRepCheck_Analyzer(myS1).IsValid() : true;
 
-        bool isValidS2 = !myS2.IsNull() ? new BRepCheck_Analyzer(myS2).IsValid() : true;
+        bool isValidS2 = !myS2.IsNull ? new BRepCheck_Analyzer(myS2).IsValid() : true;
 
         if (!isValidS1 || !isValidS2)
         {

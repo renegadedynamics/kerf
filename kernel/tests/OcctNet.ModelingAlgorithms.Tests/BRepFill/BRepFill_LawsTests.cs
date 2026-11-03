@@ -1,10 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -18,7 +23,7 @@ public class BRepFill_LawsTests
 {
     // ------------------------------------------------------------------------------------------------ inputs
 
-    private static TopoDS_Wire Polyline(params Point3D[] thePoints)
+    private static Wire Polyline(params Point3D[] thePoints)
     {
         BRepBuilderAPI_MakePolygon aP = new();
         foreach (Point3D aQ in thePoints)
@@ -28,7 +33,7 @@ public class BRepFill_LawsTests
         return aP.Wire();
     }
 
-    private static TopoDS_Wire ClosedSquare(double theSide, double theZ = 0)
+    private static Wire ClosedSquare(double theSide, double theZ = 0)
     {
         BRepBuilderAPI_MakePolygon aP = new(new Point3D(0, 0, theZ), new Point3D(theSide, 0, theZ),
                                             new Point3D(theSide, theSide, theZ), new Point3D(0, theSide, theZ), true);
@@ -36,7 +41,7 @@ public class BRepFill_LawsTests
     }
 
     // A smooth spine: one cubic B-spline cut into two edges at its middle (a G1 vertex).
-    private static TopoDS_Wire SmoothSpine()
+    private static Wire SmoothSpine()
     {
         NCollection_Array1<Point3D> aPoles = new(1, 5);
         aPoles[1] = new Point3D(0, 0, 0);
@@ -52,10 +57,10 @@ public class BRepFill_LawsTests
         aM[1] = 4;
         aM[2] = 1;
         aM[3] = 4;
-        Geom_BSplineCurve aC = new(aPoles, aK, aM, 3);
-        TopoDS_Vertex V0 = new BRepBuilderAPI_MakeVertex(aC.Value(0)).Vertex();
-        TopoDS_Vertex V1 = new BRepBuilderAPI_MakeVertex(aC.Value(0.7)).Vertex();
-        TopoDS_Vertex V2 = new BRepBuilderAPI_MakeVertex(aC.Value(2)).Vertex();
+        BSplineCurve3D aC = new(aPoles, aK, aM, 3);
+        Vertex V0 = new BRepBuilderAPI_MakeVertex(aC.Value(0)).Vertex();
+        Vertex V1 = new BRepBuilderAPI_MakeVertex(aC.Value(0.7)).Vertex();
+        Vertex V2 = new BRepBuilderAPI_MakeVertex(aC.Value(2)).Vertex();
         BRepBuilderAPI_MakeWire aMW = new(new BRepBuilderAPI_MakeEdge(aC, V0, V1, 0, 0.7).Edge(),
                                           new BRepBuilderAPI_MakeEdge(aC, V1, V2, 0.7, 2).Edge());
         return aMW.Wire();
@@ -63,17 +68,17 @@ public class BRepFill_LawsTests
 
     private static GeomFill_LocationLaw Frenet() => new GeomFill_CurveAndTrihedron(new GeomFill_CorrectedFrenet());
 
-    private static string Text(in TopoDS_Shape theShape)
+    private static string Text(in Shape theShape)
     {
         StringWriter aW = new();
-        BRepTools.Write(theShape, aW);
+        BrepTools.Write(theShape, aW);
         return aW.ToString();
     }
 
-    private static bool AllFrozen(in TopoDS_Shape theShape)
+    private static bool AllFrozen(in Shape theShape)
     {
-        NCollection_IndexedMap<TopoDS_Shape> aMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, aMap);
+        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, aMap);
         for (int i = 1; i <= aMap.Extent(); i++)
         {
             if (!aMap.FindKey(i).TShape()!.IsFrozen)
@@ -89,7 +94,7 @@ public class BRepFill_LawsTests
     [Fact]
     public void Edge3DLaw_on_a_polyline_has_a_law_per_edge_and_holes_at_its_corners()
     {
-        TopoDS_Wire aW = Polyline(new Point3D(0, 0, 0), new Point3D(5, 0, 0), new Point3D(5, 5, 0), new Point3D(5, 5, 5));
+        Wire aW = Polyline(new Point3D(0, 0, 0), new Point3D(5, 0, 0), new Point3D(5, 5, 0), new Point3D(5, 5, 5));
         BRepFill_Edge3DLaw aLaw = new(aW, Frenet());
         Assert.Equal(3, aLaw.NbLaw());
         Assert.False(aLaw.IsClosed());
@@ -116,9 +121,9 @@ public class BRepFill_LawsTests
         Assert.Equal(0, anIdx); // past the end
 
         // vertices of the path
-        Assert.True(BRep_Tool.Pnt(aLaw.Vertex(1)).IsEqual(new Point3D(0, 0, 0), 1e-12));
-        Assert.True(BRep_Tool.Pnt(aLaw.Vertex(4)).IsEqual(new Point3D(5, 5, 5), 1e-12));
-        Assert.True(aLaw.Vertex(5).IsNull());
+        Assert.True(Tool.Pnt(aLaw.Vertex(1)).IsEqual(new Point3D(0, 0, 0), 1e-12));
+        Assert.True(Tool.Pnt(aLaw.Vertex(4)).IsEqual(new Point3D(5, 5, 5), 1e-12));
+        Assert.True(aLaw.Vertex(5).IsNull);
     }
 
     [Fact]
@@ -148,7 +153,7 @@ public class BRepFill_LawsTests
     public void Abscissa_before_the_lengths_are_known_takes_the_edge_end_as_OCCT_does()
     {
         // OCCT: Abscissa reads CurvilinearBounds' Last as the edge's start when the lengths aren't computed yet
-        TopoDS_Wire aW = Polyline(new Point3D(0, 0, 0), new Point3D(4, 0, 0), new Point3D(4, 3, 0));
+        Wire aW = Polyline(new Point3D(0, 0, 0), new Point3D(4, 0, 0), new Point3D(4, 3, 0));
         BRepFill_Edge3DLaw aFresh = new(aW, Frenet());
         aFresh.Law(2).GetDomain(out double f, out double l);
         double aBuggy = aFresh.Abscissa(2, 0.5 * (f + l));
@@ -161,30 +166,30 @@ public class BRepFill_LawsTests
     {
         BRepFill_Edge3DLaw aLaw = new(Polyline(new Point3D(0, 0, 0), new Point3D(10, 0, 0)),
                                       new GeomFill_CurveAndTrihedron(new GeomFill_Fixed(new Vector3D(1, 0, 0), new Vector3D(0, 1, 0))));
-        TopoDS_Shape aSection = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Vertex();
-        TopoDS_Shape aOrig = aSection;
+        Shape aSection = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Vertex();
+        Shape aOrig = aSection;
         aLaw.D0(4, ref aSection);
         Assert.False(aSection.IsSame(aOrig));
         Assert.True(AllFrozen(aSection));
-        Assert.True(BRep_Tool.Pnt(TopoDS.Vertex(aSection)).IsEqual(new Point3D(4, 0, 0), 1e-9));
+        Assert.True(Tool.Pnt(ShapeCasts.Vertex(aSection)).IsEqual(new Point3D(4, 0, 0), 1e-9));
         aLaw.D0(11, ref aSection);
-        Assert.True(aSection.IsNull());
+        Assert.True(aSection.IsNull);
     }
 
     [Fact]
     public void PerformVertex_is_frozen_and_InternalPerformVertex_is_not()
     {
         BRepFill_Edge3DLaw aLaw = new(Polyline(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0)), Frenet());
-        TopoDS_Vertex anIn = new BRepBuilderAPI_MakeVertex(new Point3D(0, 1, 0)).Vertex();
-        aLaw.PerformVertex(1, anIn, 1e-7, out TopoDS_Vertex aPublic);
-        aLaw.InternalPerformVertex(1, anIn, 1e-7, out TopoDS_Vertex anInternal);
+        Vertex anIn = new BRepBuilderAPI_MakeVertex(new Point3D(0, 1, 0)).Vertex();
+        aLaw.PerformVertex(1, anIn, 1e-7, out Vertex aPublic);
+        aLaw.InternalPerformVertex(1, anIn, 1e-7, out Vertex anInternal);
         Assert.True(aPublic.TShape()!.IsFrozen);
         Assert.False(anInternal.TShape()!.IsFrozen);
-        Assert.Equal(BRep_Tool.Pnt(aPublic), BRep_Tool.Pnt(anInternal));
+        Assert.Equal(Tool.Pnt(aPublic), Tool.Pnt(anInternal));
         // the average of both laws at a corner has a tolerance covering half their gap
-        Assert.True(BRep_Tool.Tolerance(aPublic) > 1e-7);
-        aLaw.PerformVertex(1, anIn, 1e-7, out TopoDS_Vertex aBefore, -1);
-        Assert.Equal(1e-7, BRep_Tool.Tolerance(aBefore));
+        Assert.True(Tool.Tolerance(aPublic) > 1e-7);
+        aLaw.PerformVertex(1, anIn, 1e-7, out Vertex aBefore, -1);
+        Assert.Equal(1e-7, Tool.Tolerance(aBefore));
     }
 
     [Fact]
@@ -211,11 +216,11 @@ public class BRepFill_LawsTests
     [Fact]
     public void ACRLaw_sets_each_edge_origin_to_its_reduced_abscissae()
     {
-        TopoDS_Wire aSpine = Polyline(new Point3D(0, 0, 0), new Point3D(4, 0, 0), new Point3D(4, 0, 6));
+        Wire aSpine = Polyline(new Point3D(0, 0, 0), new Point3D(4, 0, 0), new Point3D(4, 0, 6));
         Transform3D aT = new();
         aT.SetTranslation(new Vector3D(0, 3, 0));
-        TopoDS_Wire aGuide = TopoDS.Wire(new BRepBuilderAPI_Transform(aSpine, aT, true).Shape());
-        GeomFill_LocationGuide aLoc = new(new GeomFill_GuideTrihedronAC(new BRepAdaptor_CompCurve(aGuide)));
+        Wire aGuide = ShapeCasts.Wire(new BRepBuilderAPI_Transform(aSpine, aT, true).Shape());
+        GeomFill_LocationGuide aLoc = new(new GeomFill_GuideTrihedronAC(new WireCurveAdaptor(aGuide)));
         BRepFill_ACRLaw aLaw = new(aSpine, aLoc);
         Assert.Equal(2, aLaw.NbLaw());
         Assert.NotSame(aLoc, aLaw.Law(1));
@@ -233,13 +238,13 @@ public class BRepFill_LawsTests
     [Fact]
     public void EdgeOnSurfLaw_has_no_result_when_an_edge_is_off_the_shape()
     {
-        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(), 3);
-        TopoDS_Face aCylFace = new BRepBuilderAPI_MakeFace(aCyl, 0, 6, 0, 10, 1e-7).Face();
-        TopoDS_Wire aW = Polyline(new Point3D(0, 0, 0), new Point3D(5, 0, 0));
+        CylindricalSurface aCyl = new(new CoordinateSystem(), 3);
+        Face aCylFace = new BRepBuilderAPI_MakeFace(aCyl, 0, 6, 0, 10, 1e-7).Face();
+        Wire aW = Polyline(new Point3D(0, 0, 0), new Point3D(5, 0, 0));
         BRepFill_EdgeOnSurfLaw aLaw = new(aW, aCylFace); // the segment has no pcurve on the cylinder
         Assert.False(aLaw.HasResult());
 
-        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(new Geom2d_Line(new Point2D(0, 1), new Direction2D(1, 0.2)), aCyl, 0, 3).InternalEdge();
+        Edge anE = new BRepBuilderAPI_MakeEdge(new LineCurve2D(new Point2D(0, 1), new Direction2D(1, 0.2)), aCyl, 0, 3).InternalEdge();
         BRepLib.BuildCurves3d(anE);
         BRepFill_EdgeOnSurfLaw aLaw2 = new(new BRepBuilderAPI_MakeWire(anE).Wire(), aCylFace);
         Assert.True(aLaw2.HasResult());
@@ -256,14 +261,14 @@ public class BRepFill_LawsTests
     [Fact]
     public void ShapeLaw_on_a_vertex_is_a_constant_degenerate_section()
     {
-        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(1, 2, 3)).Vertex();
+        Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(1, 2, 3)).Vertex();
         BRepFill_ShapeLaw aLaw = new(aV);
         Assert.True(aLaw.IsVertex());
         Assert.True(aLaw.IsConstant());
         Assert.True(aLaw.IsVClosed());
         Assert.False(aLaw.IsUClosed());
         Assert.Equal(1, aLaw.NbLaw());
-        TopoDS_Shape S = new();
+        Shape S = new();
         aLaw.D0(0.3, ref S);
         Assert.True(S.IsSame(aV)); // the caller's vertex
     }
@@ -271,7 +276,7 @@ public class BRepFill_LawsTests
     [Fact]
     public void ShapeLaw_on_a_closed_wire_reverses_reversed_edges_into_new_curves()
     {
-        TopoDS_Wire aW = ClosedSquare(2);
+        Wire aW = ClosedSquare(2);
         string aBefore = Text(aW);
         BRepFill_ShapeLaw aLaw = new(aW);
         Assert.Equal(4, aLaw.NbLaw());
@@ -279,7 +284,7 @@ public class BRepFill_LawsTests
         Assert.Equal(C0, aLaw.Continuity(1, 1e-4));
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aLaw.VertexTol(1, 0), 1e-12);
         int i = 1;
-        for (TopExp_Explorer anExp = new(aW, TopAbs_EDGE); anExp.More(); anExp.Next(), i++)
+        for (Explorer anExp = new(aW, ShapeType.Edge); anExp.More(); anExp.Next(), i++)
         {
             Assert.Equal(i, aLaw.IndexOfEdge(anExp.Current()));
         }
@@ -291,26 +296,26 @@ public class BRepFill_LawsTests
     [Fact]
     public void ShapeLaw_with_a_law_scales_the_section_and_its_vertices()
     {
-        TopoDS_Wire aW = Polyline(new Point3D(1, 0, 0), new Point3D(2, 0, 0));
+        Wire aW = Polyline(new Point3D(1, 0, 0), new Point3D(2, 0, 0));
         Law_Linear aL = new();
         aL.Set(0, 1, 1, 3);
         BRepFill_ShapeLaw aLaw = new(aW, aL);
         Assert.False(aLaw.IsConstant());
-        TopoDS_Vertex aV = aLaw.Vertex(2, 0.5);
-        Assert.True(BRep_Tool.Pnt(aV).IsEqual(new Point3D(4, 0, 0), 1e-9));
+        Vertex aV = aLaw.Vertex(2, 0.5);
+        Assert.True(Tool.Pnt(aV).IsEqual(new Point3D(4, 0, 0), 1e-9));
         Assert.True(aV.TShape()!.IsFrozen);
-        TopoDS_Shape S = new();
+        Shape S = new();
         aLaw.D0(1, ref S);
         Assert.True(AllFrozen(S));
-        TopExp.Vertices(TopoDS.Wire(S), out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-        Assert.True(BRep_Tool.Pnt(V1).IsEqual(new Point3D(3, 0, 0), 1e-9));
-        Assert.True(BRep_Tool.Pnt(V2).IsEqual(new Point3D(6, 0, 0), 1e-9));
+        Exploration.Vertices(ShapeCasts.Wire(S), out Vertex V1, out Vertex V2);
+        Assert.True(Tool.Pnt(V1).IsEqual(new Point3D(3, 0, 0), 1e-9));
+        Assert.True(Tool.Pnt(V2).IsEqual(new Point3D(6, 0, 0), 1e-9));
     }
 
     [Fact]
     public void NSections_interpolates_the_wires_and_keeps_its_surface_unfrozen()
     {
-        NCollection_Sequence<TopoDS_Shape> aS = new();
+        NCollection_Sequence<Shape> aS = new();
         aS.Append(ClosedSquare(2, 0));
         aS.Append(ClosedSquare(3, 5));
         aS.Append(ClosedSquare(2, 10));
@@ -325,10 +330,10 @@ public class BRepFill_LawsTests
         Assert.False(aL1.InternalBSplineSurface()!.IsFrozen);
 
         // the section at the middle wire's parameter passes through its corner
-        TopoDS_Vertex aV = aLaw.Vertex(1, 1.0);
-        Assert.True(BRep_Tool.Pnt(aV).IsEqual(new Point3D(0, 0, 5), 1e-5));
+        Vertex aV = aLaw.Vertex(1, 1.0);
+        Assert.True(Tool.Pnt(aV).IsEqual(new Point3D(0, 0, 5), 1e-5));
         Assert.True(aV.TShape()!.IsFrozen);
-        TopoDS_Shape W = new();
+        Shape W = new();
         aLaw.D0(1.0, ref W);
         Assert.True(AllFrozen(W));
         Assert.False(aL1.InternalBSplineSurface()!.IsFrozen);
@@ -339,7 +344,7 @@ public class BRepFill_LawsTests
     [Fact]
     public void NSections_with_decreasing_parameters_is_not_done()
     {
-        NCollection_Sequence<TopoDS_Shape> aS = new();
+        NCollection_Sequence<Shape> aS = new();
         aS.Append(ClosedSquare(2, 0));
         aS.Append(ClosedSquare(3, 5));
         NCollection_Sequence<Transform3D> aT = new();
@@ -356,22 +361,22 @@ public class BRepFill_LawsTests
     {
         Transform3D aT = new();
         aT.SetTranslation(new Vector3D(1, 2, 3));
-        TopoDS_Wire aProfile = TopoDS.Wire(ClosedSquare(1).Moved(new Placement(aT)));
-        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D()).Vertex();
+        Wire aProfile = ShapeCasts.Wire(ClosedSquare(1).Moved(new Placement(aT)));
+        Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D()).Vertex();
         BRepFill_Section aSec = new(aProfile, aV, true, false);
         Assert.False(aSec.IsPunctual());
         Assert.True(aSec.WithContact());
         Assert.False(aSec.WithCorrection());
         Assert.False(aSec.InternalWire().TShape()!.IsFrozen);
-        TopoDS_Wire W = aSec.Wire();
+        Wire W = aSec.Wire();
         Assert.True(AllFrozen(W));
-        for (TopExp_Explorer anExp = new(W, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(W, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Assert.True(anExp.Current().Location().IsIdentity);
         }
-        TopExp_Explorer anOrig = new(aProfile, TopAbs_EDGE);
-        TopoDS_Shape aMod = aSec.ModifiedShape(anOrig.Current());
-        Assert.Equal(TopAbs_EDGE, aMod.ShapeType());
+        Explorer anOrig = new(aProfile, ShapeType.Edge);
+        Shape aMod = aSec.ModifiedShape(anOrig.Current());
+        Assert.Equal(ShapeType.Edge, aMod.ShapeType());
         Assert.True(aSec.ModifiedShape(aProfile).IsSame(W));
         Assert.True(aSec.OriginalShape().IsEqual(aProfile));
 
@@ -385,13 +390,13 @@ public class BRepFill_LawsTests
     [Fact]
     public void Section_of_a_vertex_is_a_closed_wire_of_one_degenerated_edge()
     {
-        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(1, 1, 1)).Vertex();
-        BRepFill_Section aSec = new(aV, new TopoDS_Vertex(), false, false);
+        Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(1, 1, 1)).Vertex();
+        BRepFill_Section aSec = new(aV, new Vertex(), false, false);
         Assert.True(aSec.IsPunctual());
-        TopoDS_Wire W = aSec.Wire();
+        Wire W = aSec.Wire();
         Assert.True(W.Closed());
-        TopExp_Explorer anExp = new(W, TopAbs_EDGE);
-        Assert.True(BRep_Tool.Degenerated(TopoDS.Edge(anExp.Current())));
+        Explorer anExp = new(W, ShapeType.Edge);
+        Assert.True(Tool.Degenerated(ShapeCasts.Edge(anExp.Current())));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => new BRepFill_Section(new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).Face(),
                                                                       aV, false, false));
     }
@@ -399,9 +404,9 @@ public class BRepFill_LawsTests
     [Fact]
     public void SectionPlacement_places_the_section_at_the_nearest_point_of_the_path()
     {
-        TopoDS_Wire aW = Polyline(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0));
+        Wire aW = Polyline(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0));
         BRepFill_Edge3DLaw aLaw = new(aW, new GeomFill_CurveAndTrihedron(new GeomFill_Fixed(new Vector3D(1, 0, 0), new Vector3D(0, 1, 0))));
-        TopoDS_Vertex aSec = new BRepBuilderAPI_MakeVertex(new Point3D(3, 0.5, 0)).Vertex();
+        Vertex aSec = new BRepBuilderAPI_MakeVertex(new Point3D(3, 0.5, 0)).Vertex();
         BRepFill_SectionPlacement aP = new(aLaw, aSec);
         Assert.Equal(3.0, aP.AbscissaOnPath(), 1e-6);
         BRepFill_SectionPlacement aOnV = new(aLaw, aSec, aLaw.Vertex(2));
@@ -417,20 +422,20 @@ public class BRepFill_LawsTests
     {
         Transform3D aT = new();
         aT.SetRotation(new Axis3D(new Point3D(), new Direction3D(0, 0, 1)), 0.3);
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape().Moved(new Placement(aT));
+        Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape().Moved(new Placement(aT));
         string aBefore = Text(aBox);
         ShapeUpgrade_RemoveLocations aRL = new();
-        Assert.Equal(TopAbs_SHAPE, aRL.RemoveLevel());
+        Assert.Equal(ShapeType.Shape, aRL.RemoveLevel());
         Assert.True(aRL.Remove(aBox));
-        TopoDS_Shape R = aRL.GetResult();
+        Shape R = aRL.GetResult();
         Assert.True(AllFrozen(R));
         Assert.True(R.Location().IsIdentity);
-        for (TopExp_Explorer anExp = new(R, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(R, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            BRep_Tool.Surface(TopoDS.Face(anExp.Current()), out Placement L);
+            Tool.Surface(ShapeCasts.Face(anExp.Current()), out Placement L);
             Assert.True(L.IsIdentity);
         }
-        GProp_GProps aG1 = new(), aG2 = new();
+        Properties aG1 = new(), aG2 = new();
         BRepGProp.VolumeProperties(aBox, aG1);
         BRepGProp.VolumeProperties(R, aG2);
         Assert.Equal(aG1.Mass(), aG2.Mass(), 1e-9);
@@ -438,8 +443,8 @@ public class BRepFill_LawsTests
         Assert.Equal(aBefore, Text(aBox));
 
         // levels below the face are the face
-        aRL.SetRemoveLevel(TopAbs_EDGE);
-        Assert.Equal(TopAbs_FACE, aRL.RemoveLevel());
+        aRL.SetRemoveLevel(ShapeType.Edge);
+        Assert.Equal(ShapeType.Face, aRL.RemoveLevel());
         Assert.True(aRL.ModifiedShape(aBox).IsSame(R));
         Assert.True(aRL.GetModifiedShapesMap().Extent() > 0);
     }

@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Topology;
 using static Kerf.Engine.Foundation.Status;
 
 namespace Occt;
@@ -21,7 +22,7 @@ public class BRepMesh_ModelBuilder : IMeshTools_ModelBuilder
     }
 
     /// <summary>The discrete model of the shape; null for an empty shape.</summary>
-    protected override IMeshData_Model? performInternal(in TopoDS_Shape theShape, in IMeshTools_Parameters theParameters)
+    protected override IMeshData_Model? performInternal(in Shape theShape, in IMeshTools_Parameters theParameters)
     {
         BRepMeshData_Model? aModel = null;
 

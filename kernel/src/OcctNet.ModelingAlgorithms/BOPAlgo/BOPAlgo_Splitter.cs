@@ -4,7 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -30,9 +32,9 @@ public class BOPAlgo_Splitter : BOPAlgo_ToolsProvider
         }
         //
         // prepare shapes for intersection
-        NCollection_List<TopoDS_Shape> aLS = new();
+        NCollection_List<Shape> aLS = new();
         //
-        NCollection_List<TopoDS_Shape>.Iterator aItLS = new(myArguments);
+        NCollection_List<Shape>.Iterator aItLS = new(myArguments);
         for (; aItLS.More(); aItLS.Next())
         {
             aLS.Append(aItLS.Value());
@@ -72,11 +74,11 @@ public class BOPAlgo_Splitter : BOPAlgo_ToolsProvider
         CheckFiller();
     }
 
-    protected override void BuildResult(TopAbs_ShapeEnum theType)
+    protected override void BuildResult(ShapeType theType)
     {
         base.BuildResult(theType);
 
-        if (theType == TopAbs_COMPOUND)
+        if (theType == ShapeType.Compound)
         {
             // The method is called for the last time for this operation.
             // If there is only one argument shape and it has been modified into
@@ -84,10 +86,10 @@ public class BOPAlgo_Splitter : BOPAlgo_ToolsProvider
             // has to be overwritten to avoid the unnecessary enclosure into compound.
             if (myArguments.Extent() == 1)
             {
-                TopoDS_Iterator it = new(myShape);
+                Iterator it = new(myShape);
                 if (it.More())
                 {
-                    TopoDS_Shape aSFirst = it.Value();
+                    Shape aSFirst = it.Value();
                     it.Next();
                     if (!it.More())
                     {

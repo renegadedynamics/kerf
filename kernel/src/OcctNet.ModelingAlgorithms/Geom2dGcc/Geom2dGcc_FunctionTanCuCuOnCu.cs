@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using static Occt.Geom2dGcc_Type2;
@@ -17,14 +18,14 @@ namespace Occt;
 /// <remarks>OCCT copies the adaptors; the port shares the solver's, which nothing writes (decision 797).</remarks>
 public sealed class Geom2dGcc_FunctionTanCuCuOnCu : FunctionSetWithDerivatives
 {
-    private readonly Geom2dAdaptor_Curve Curv1 = new();
-    private readonly Geom2dAdaptor_Curve Curv2 = new();
+    private readonly CurveAdaptor2D Curv1 = new();
+    private readonly CurveAdaptor2D Curv2 = new();
     private readonly Circle2D Circ1 = new();
     private readonly Line2D Lin1 = new();
     private readonly Point2D Pnt2 = new();
     private readonly Circle2D Circon = new();
     private readonly Line2D Linon = new();
-    private readonly Geom2dAdaptor_Curve Curvon = new();
+    private readonly CurveAdaptor2D Curvon = new();
     private readonly double FirstRad;
     private readonly Geom2dGcc_Type2 TheType;
 
@@ -145,7 +146,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         }
     }
 
-    public Geom2dGcc_FunctionTanCuCuOnCu(Geom2dAdaptor_Curve C1, Geom2dAdaptor_Curve C2, Geom2dAdaptor_Curve C3, double Rad)
+    public Geom2dGcc_FunctionTanCuCuOnCu(CurveAdaptor2D C1, CurveAdaptor2D C2, CurveAdaptor2D C3, double Rad)
     {
         Curv1 = C1;
         Curv2 = C2;
@@ -154,7 +155,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         TheType = Geom2dGcc_CuCuOnCu;
     }
 
-    public Geom2dGcc_FunctionTanCuCuOnCu(in Circle2D C1, Geom2dAdaptor_Curve C2, Geom2dAdaptor_Curve C3, double Rad)
+    public Geom2dGcc_FunctionTanCuCuOnCu(in Circle2D C1, CurveAdaptor2D C2, CurveAdaptor2D C3, double Rad)
     {
         Circ1 = C1;
         Curv2 = C2;
@@ -163,7 +164,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         TheType = Geom2dGcc_CiCuOnCu;
     }
 
-    public Geom2dGcc_FunctionTanCuCuOnCu(in Line2D L1, Geom2dAdaptor_Curve C2, Geom2dAdaptor_Curve C3, double Rad)
+    public Geom2dGcc_FunctionTanCuCuOnCu(in Line2D L1, CurveAdaptor2D C2, CurveAdaptor2D C3, double Rad)
     {
         Lin1 = L1;
         Curv2 = C2;
@@ -172,7 +173,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         TheType = Geom2dGcc_LiCuOnCu;
     }
 
-    public Geom2dGcc_FunctionTanCuCuOnCu(Geom2dAdaptor_Curve C1, in Point2D P2, Geom2dAdaptor_Curve C3, double Rad)
+    public Geom2dGcc_FunctionTanCuCuOnCu(CurveAdaptor2D C1, in Point2D P2, CurveAdaptor2D C3, double Rad)
     {
         Curv1 = C1;
         Pnt2 = P2;
@@ -181,7 +182,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         TheType = Geom2dGcc_CuPtOnCu;
     }
 
-    public Geom2dGcc_FunctionTanCuCuOnCu(Geom2dAdaptor_Curve C1, Geom2dAdaptor_Curve C2, in Line2D OnLi, double Rad)
+    public Geom2dGcc_FunctionTanCuCuOnCu(CurveAdaptor2D C1, CurveAdaptor2D C2, in Line2D OnLi, double Rad)
     {
         Curv1 = C1;
         Curv2 = C2;
@@ -190,7 +191,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         TheType = Geom2dGcc_CuCuOnLi;
     }
 
-    public Geom2dGcc_FunctionTanCuCuOnCu(in Circle2D C1, Geom2dAdaptor_Curve C2, in Line2D OnLi, double Rad)
+    public Geom2dGcc_FunctionTanCuCuOnCu(in Circle2D C1, CurveAdaptor2D C2, in Line2D OnLi, double Rad)
     {
         Circ1 = C1;
         Curv2 = C2;
@@ -199,7 +200,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         TheType = Geom2dGcc_CiCuOnLi;
     }
 
-    public Geom2dGcc_FunctionTanCuCuOnCu(in Line2D L1, Geom2dAdaptor_Curve C2, in Line2D OnLi, double Rad)
+    public Geom2dGcc_FunctionTanCuCuOnCu(in Line2D L1, CurveAdaptor2D C2, in Line2D OnLi, double Rad)
     {
         Lin1 = L1;
         Curv2 = C2;
@@ -208,7 +209,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         TheType = Geom2dGcc_LiCuOnLi;
     }
 
-    public Geom2dGcc_FunctionTanCuCuOnCu(Geom2dAdaptor_Curve C1, in Point2D P2, in Line2D OnLi, double Rad)
+    public Geom2dGcc_FunctionTanCuCuOnCu(CurveAdaptor2D C1, in Point2D P2, in Line2D OnLi, double Rad)
     {
         Curv1 = C1;
         Pnt2 = P2;
@@ -217,7 +218,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         TheType = Geom2dGcc_CuPtOnLi;
     }
 
-    public Geom2dGcc_FunctionTanCuCuOnCu(Geom2dAdaptor_Curve C1, Geom2dAdaptor_Curve C2, in Circle2D OnCi, double Rad)
+    public Geom2dGcc_FunctionTanCuCuOnCu(CurveAdaptor2D C1, CurveAdaptor2D C2, in Circle2D OnCi, double Rad)
     {
         Curv1 = C1;
         Curv2 = C2;
@@ -226,7 +227,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         TheType = Geom2dGcc_CuCuOnCi;
     }
 
-    public Geom2dGcc_FunctionTanCuCuOnCu(in Circle2D C1, Geom2dAdaptor_Curve C2, in Circle2D OnCi, double Rad)
+    public Geom2dGcc_FunctionTanCuCuOnCu(in Circle2D C1, CurveAdaptor2D C2, in Circle2D OnCi, double Rad)
     {
         Circ1 = C1;
         Curv2 = C2;
@@ -235,7 +236,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         TheType = Geom2dGcc_CuCuOnCi; // OCCT: should be Geom2dGcc_CiCuOnCi; InitDerivative then evaluates the unset Curv1
     }
 
-    public Geom2dGcc_FunctionTanCuCuOnCu(in Line2D L1, Geom2dAdaptor_Curve C2, in Circle2D OnCi, double Rad)
+    public Geom2dGcc_FunctionTanCuCuOnCu(in Line2D L1, CurveAdaptor2D C2, in Circle2D OnCi, double Rad)
     {
         Lin1 = L1;
         Curv2 = C2;
@@ -244,7 +245,7 @@ public sealed class Geom2dGcc_FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         TheType = Geom2dGcc_LiCuOnCi;
     }
 
-    public Geom2dGcc_FunctionTanCuCuOnCu(Geom2dAdaptor_Curve C1, in Point2D P2, in Circle2D OnCi, double Rad)
+    public Geom2dGcc_FunctionTanCuCuOnCu(CurveAdaptor2D C1, in Point2D P2, in Circle2D OnCi, double Rad)
     {
         Curv1 = C1;
         Pnt2 = P2;

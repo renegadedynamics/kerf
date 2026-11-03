@@ -7,8 +7,10 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 
 namespace Occt;
@@ -24,7 +26,7 @@ namespace Occt;
 /// is empty in OCCT and kept so; <c>Dump</c> (empty) is left out.
 /// </remarks>
 public sealed class IntCurveSurface_ThePolyhedronOfHInter
-    : IIntCurveSurface_ThePolyhedron<IntCurveSurface_ThePolyhedronOfHInter, Adaptor3d_Surface>
+    : IIntCurveSurface_ThePolyhedron<IntCurveSurface_ThePolyhedronOfHInter, SurfaceAdaptorBase>
 {
     private readonly int nbdeltaU;
     private readonly int nbdeltaV;
@@ -51,7 +53,7 @@ public sealed class IntCurveSurface_ThePolyhedronOfHInter
     /// A polyhedron of <paramref name="nbdU"/> by <paramref name="nbdV"/> cells (at least 3 by 3) over the
     /// parameter range [<paramref name="u1"/>, <paramref name="u2"/>] × [<paramref name="v1"/>, <paramref name="v2"/>].
     /// </summary>
-    public IntCurveSurface_ThePolyhedronOfHInter(Adaptor3d_Surface Surface, int nbdU, int nbdV, double u1, double v1,
+    public IntCurveSurface_ThePolyhedronOfHInter(SurfaceAdaptorBase Surface, int nbdU, int nbdV, double u1, double v1,
                                                  double u2, double v2)
     {
         nbdeltaU = (nbdU < 3) ? 3 : nbdU;
@@ -68,7 +70,7 @@ public sealed class IntCurveSurface_ThePolyhedronOfHInter
 
     /// <summary>A polyhedron through the points of the surface at the parameters <paramref name="Upars"/> × <paramref name="Vpars"/>.</summary>
     /// <exception cref="OutOfRangeException">An array has fewer than two values.</exception>
-    public IntCurveSurface_ThePolyhedronOfHInter(Adaptor3d_Surface Surface, NCollection_Array1<double> Upars,
+    public IntCurveSurface_ThePolyhedronOfHInter(SurfaceAdaptorBase Surface, NCollection_Array1<double> Upars,
                                                  NCollection_Array1<double> Vpars)
     {
         nbdeltaU = nbDeltaFromParameters(Upars, "IntCurveSurface_ThePolyhedronOfHInter::IntCurveSurface_"
@@ -85,21 +87,21 @@ public sealed class IntCurveSurface_ThePolyhedronOfHInter
         Init(Surface, Upars, Vpars);
     }
 
-    static IntCurveSurface_ThePolyhedronOfHInter IIntCurveSurface_ThePolyhedron<IntCurveSurface_ThePolyhedronOfHInter, Adaptor3d_Surface>.Create(
-        in Adaptor3d_Surface Surface, int nbdU, int nbdV, double U1, double V1, double U2, double V2) =>
+    static IntCurveSurface_ThePolyhedronOfHInter IIntCurveSurface_ThePolyhedron<IntCurveSurface_ThePolyhedronOfHInter, SurfaceAdaptorBase>.Create(
+        in SurfaceAdaptorBase Surface, int nbdU, int nbdV, double U1, double V1, double U2, double V2) =>
         new(Surface, nbdU, nbdV, U1, V1, U2, V2);
 
-    static IntCurveSurface_ThePolyhedronOfHInter IIntCurveSurface_ThePolyhedron<IntCurveSurface_ThePolyhedronOfHInter, Adaptor3d_Surface>.Create(
-        in Adaptor3d_Surface Surface, NCollection_Array1<double> Upars, NCollection_Array1<double> Vpars) =>
+    static IntCurveSurface_ThePolyhedronOfHInter IIntCurveSurface_ThePolyhedron<IntCurveSurface_ThePolyhedronOfHInter, SurfaceAdaptorBase>.Create(
+        in SurfaceAdaptorBase Surface, NCollection_Array1<double> Upars, NCollection_Array1<double> Vpars) =>
         new(Surface, Upars, Vpars);
 
     /// <summary>Drops the arrays of points and parameters (OCCT's destructor calls it).</summary>
     public void Destroy() =>
         IntCurveSurface_PolyhedronUtils.Destroy(ref C_MyPnts, ref C_MyU, ref C_MyV, ref C_MyIsOnBounds);
 
-    private void Init(Adaptor3d_Surface Surface, double U0, double V0, double U1, double V1)
+    private void Init(SurfaceAdaptorBase Surface, double U0, double V0, double U1, double V1)
     {
-        GeomGridEval_Surface anEval = new(Surface);
+        SurfaceGrid anEval = new(Surface);
         IntCurveSurface_PolyhedronUtils.InitUniform(anEval, U0, V0, U1, V1, nbdeltaU, nbdeltaV, C_MyPnts!, C_MyU!,
                                                     C_MyV!, C_MyIsOnBounds!, ref TheBnd);
         double tol = IntCurveSurface_PolyhedronUtils.ComputeMaxDeflection(Surface, this, NbTriangles());
@@ -109,9 +111,9 @@ public sealed class IntCurveSurface_ThePolyhedronOfHInter
             IntCurveSurface_PolyhedronUtils.ComputeMaxBorderDeflection(anEval, U0, V0, U1, V1, nbdeltaU, nbdeltaV);
     }
 
-    private void Init(Adaptor3d_Surface Surface, NCollection_Array1<double> Upars, NCollection_Array1<double> Vpars)
+    private void Init(SurfaceAdaptorBase Surface, NCollection_Array1<double> Upars, NCollection_Array1<double> Vpars)
     {
-        GeomGridEval_Surface anEval = new(Surface);
+        SurfaceGrid anEval = new(Surface);
         IntCurveSurface_PolyhedronUtils.InitWithParams(anEval, Upars, Vpars, nbdeltaU, nbdeltaV, C_MyPnts!, C_MyU!,
                                                        C_MyV!, C_MyIsOnBounds!, ref TheBnd);
         double tol = IntCurveSurface_PolyhedronUtils.ComputeMaxDeflection(Surface, this, NbTriangles());

@@ -4,7 +4,10 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -15,7 +18,7 @@ public partial class BOPAlgo_PaveFiller
     {
         int n1, n2, iFlag, aSize;
         //
-        myIterator!.Initialize(TopAbs_VERTEX, TopAbs_VERTEX);
+        myIterator!.Initialize(ShapeType.Vertex, ShapeType.Vertex);
         aSize = myIterator.ExpectedLength();
         using var aPS = new ProgressScope(theRange, null, 2.0);
         if (aSize == 0)
@@ -54,8 +57,8 @@ public partial class BOPAlgo_PaveFiller
                 int n2SD = n2;
                 myDS.HasShapeSD(n2, ref n2SD);
 
-                TopoDS_Vertex aV1 = TopoDS.Vertex(myDS.Shape(n1SD));
-                TopoDS_Vertex aV2 = TopoDS.Vertex(myDS.Shape(n2SD));
+                Vertex aV1 = ShapeCasts.Vertex(myDS.Shape(n1SD));
+                Vertex aV2 = ShapeCasts.Vertex(myDS.Shape(n2SD));
 
                 iFlag = BOPTools_AlgoTools.ComputeVV(aV1, aV2, myFuzzyValue);
                 if (iFlag == 0)
@@ -104,19 +107,19 @@ public partial class BOPAlgo_PaveFiller
     /// </summary>
     protected int MakeSDVertices(NCollection_List<int> theVertIndices, bool theAddInterfs = true)
     {
-        TopoDS_Vertex aVSD = new(), aVn = new();
+        Vertex aVSD = new(), aVn = new();
         int nSD = -1;
         NCollection_List<int>.Iterator aItLI = new(theVertIndices);
-        NCollection_List<TopoDS_Shape> aLV = new();
+        NCollection_List<Shape> aLV = new();
         for (; aItLI.More(); aItLI.Next())
         {
             int nX = aItLI.Value(), nSD1 = 0;
             if (myDS!.HasShapeSD(nX, ref nSD1))
             {
-                TopoDS_Shape aVSD1 = myDS.Shape(nSD1);
+                Shape aVSD1 = myDS.Shape(nSD1);
                 if (nSD == -1)
                 {
-                    aVSD = TopoDS.Vertex(aVSD1);
+                    aVSD = ShapeCasts.Vertex(aVSD1);
                     nSD = nSD1;
                 }
                 else
@@ -124,7 +127,7 @@ public partial class BOPAlgo_PaveFiller
                     aLV.Append(aVSD1);
                 }
             }
-            TopoDS_Shape aV = myDS.Shape(nX);
+            Shape aV = myDS.Shape(nX);
             aLV.Append(aV);
         }
         BOPTools_AlgoTools.MakeVertex(aLV, ref aVn);
@@ -132,9 +135,9 @@ public partial class BOPAlgo_PaveFiller
         if (nSD != -1)
         {
             // update old SD vertex with new value (a vertex the filler made: never an argument's)
-            BRep_TVertex aTVertex = (BRep_TVertex)aVSD.TShape()!;
-            aTVertex.Pnt(BRep_Tool.Pnt(aVn));
-            aTVertex.Tolerance(BRep_Tool.Tolerance(aVn));
+            BrepTVertex aTVertex = (BrepTVertex)aVSD.TShape()!;
+            aTVertex.Pnt(Tool.Pnt(aVn));
+            aTVertex.Tolerance(Tool.Tolerance(aVn));
             aVn = aVSD;
             nV = nSD;
         }
@@ -142,14 +145,14 @@ public partial class BOPAlgo_PaveFiller
         {
             // Append new vertex to the DS
             BOPDS_ShapeInfo aSIn = new();
-            aSIn.SetShapeType(TopAbs_VERTEX);
+            aSIn.SetShapeType(ShapeType.Vertex);
             aSIn.SetShape(aVn);
             nV = myDS!.Append(aSIn);
         }
         BOPDS_ShapeInfo aSIDS = myDS!.ChangeShapeInfo(nV);
         ref Box aBox = ref aSIDS.ChangeBox();
-        aBox.Add(BRep_Tool.Pnt(aVn));
-        aBox.SetGap(BRep_Tool.Tolerance(aVn) + global::Kerf.Engine.Foundation.Precision.Confusion());
+        aBox.Add(Tool.Pnt(aVn));
+        aBox.SetGap(Tool.Tolerance(aVn) + global::Kerf.Engine.Foundation.Precision.Confusion());
         //
         // Fill ShapesSD
         NCollection_DynamicArray<BOPDS_InterfVV> aVVs = myDS.InterfVV();
@@ -161,7 +164,7 @@ public partial class BOPAlgo_PaveFiller
             myDS.AddShapeSD(n1, nV);
             //
             int iR1 = myDS.Rank(n1);
-            TopoDS_Shape aV1 = myDS.Shape(n1);
+            Shape aV1 = myDS.Shape(n1);
             //
             NCollection_List<int>.Iterator aItLI2 = new();
             aItLI2.Reset(theVertIndices, aItLI.Index);
@@ -173,12 +176,12 @@ public partial class BOPAlgo_PaveFiller
                 if (iR1 >= 0 && iR1 == myDS.Rank(n2))
                 {
                     // add warning status
-                    TopoDS_Shape aV2 = myDS.Shape(n2);
+                    Shape aV2 = myDS.Shape(n2);
                     //
-                    TopoDS_Compound aWC = new();
-                    new BRep_Builder().MakeCompound(ref aWC);
-                    new BRep_Builder().Add(aWC, aV1);
-                    new BRep_Builder().Add(aWC, aV2);
+                    Compound aWC = new();
+                    new BrepBuilder().MakeCompound(ref aWC);
+                    new BrepBuilder().Add(aWC, aV1);
+                    new BrepBuilder().Add(aWC, aV2);
                     //
                     AddWarning(new BOPAlgo_AlertSelfInterferingShape(aWC));
                 }

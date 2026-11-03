@@ -6,27 +6,29 @@
 // as written (decisions 77 and 902). Properties returning a ReadOnlySpan over a constant array are stored in the
 // assembly's data section: reading them allocates nothing. Don't edit: regenerate.
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Approximation.Advanced;
 
 /// <summary>The <c>mmapgss_1_</c> common block: views of one constant table (decision 112).</summary>
-internal readonly ref struct mmapgss_1_
+internal readonly ref struct MmapgssCommon
 {
     /// <summary><c>double gslxjs[5017]</c>, from element 0.</summary>
-    public readonly F2cConstPtr<double> gslxjs;
+    public readonly global::Kerf.Engine.Approximation.Advanced.F2cConstPtr<double> gslxjs;
 
     /// <summary><c>double gsl0js[52]</c>, from element 5017.</summary>
-    public readonly F2cConstPtr<double> gsl0js;
+    public readonly global::Kerf.Engine.Approximation.Advanced.F2cConstPtr<double> gsl0js;
 
-    internal mmapgss_1_(ReadOnlySpan<double> theTable)
+    internal MmapgssCommon(ReadOnlySpan<double> table)
     {
-        gslxjs = new F2cConstPtr<double>(theTable, 0);
-        gsl0js = new F2cConstPtr<double>(theTable, 5017);
+        gslxjs = new global::Kerf.Engine.Approximation.Advanced.F2cConstPtr<double>(table, 0);
+        gsl0js = new global::Kerf.Engine.Approximation.Advanced.F2cConstPtr<double>(table, 5017);
     }
 }
 
-internal static partial class AdvApp2Var_Data
+internal static partial class Data
 {
-    public static mmapgss_1_ Getmmapgss() => new(s_e_Mmapgss);
+    public static MmapgssCommon Getmmapgss() => new(s_e_Mmapgss);
 
     // C++: static double e_1[5069], cast to mmapgss_1_.
     private static ReadOnlySpan<double> s_e_Mmapgss => [

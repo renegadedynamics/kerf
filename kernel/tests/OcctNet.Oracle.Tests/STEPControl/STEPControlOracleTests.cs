@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Reflection;
@@ -102,10 +104,10 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
     }
 
     // the BRep file's text, as native's (with Draw's header line)
-    private string PortBRep(TopoDS_Shape theShape)
+    private string PortBRep(Shape theShape)
     {
         string aFile = TempFile(".brep");
-        Assert.True(BRepTools.Write(theShape, aFile));
+        Assert.True(BrepTools.Write(theShape, aFile));
         return File.ReadAllText(aFile);
     }
 
@@ -137,17 +139,17 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
             return "free";
         }
         // the canonical comparison of the two shapes, both read by the port from the texts
-        TopoDS_Shape aNative = ReadPortBRep(theNative.BRep);
-        TopoDS_Shape aPort = ReadPortBRep(thePort.BRep);
+        Shape aNative = ReadPortBRep(theNative.BRep);
+        Shape aPort = ReadPortBRep(thePort.BRep);
         CanonicalComparison aCanonical = CanonicalShapeComparer.Compare(aNative, aPort,
                                                                         new CanonicalOptions { CheckValidity = false });
         return aCanonical.IsIdentical ? $"canonical: {aDiff}" : $"differs: {aDiff}; {aCanonical}";
     }
 
-    private static TopoDS_Shape ReadPortBRep(string theText)
+    private static Shape ReadPortBRep(string theText)
     {
         using var aReader = new StringReader(theText);
-        BRepTools.Read(out TopoDS_Shape aShape, aReader);
+        BrepTools.Read(out Shape aShape, aReader);
         return aShape;
     }
 
@@ -224,7 +226,7 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
 
     private (int Status, string Text, string File) PortWrite(string theBRepFile, STEPControl_StepModelType theMode)
     {
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, theBRepFile));
+        Assert.True(BrepTools.Read(out Shape aShape, theBRepFile));
         string aBefore = BRepTextComparison.Write(aShape);
         var aWriter = new STEPControl_Writer();
         int aStatus = (int)aWriter.Transfer(aShape, theMode);
@@ -254,7 +256,7 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
         }
 
         // assemblies: two instances of a shape (one translated and rotated), and a nested assembly of two shapes
-        var aBuilder = new BRep_Builder();
+        var aBuilder = new BrepBuilder();
         foreach (string aName in new[] { "Ball.brep", "Pump_Nut.brep", "bottle.brep" })
         {
             string aFile = Path.Combine(aDir, aName);
@@ -262,22 +264,22 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
             {
                 continue;
             }
-            Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aFile));
+            Assert.True(BrepTools.Read(out Shape aShape, aFile));
             var aTrsf = new Transform3D();
             aTrsf.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0.5);
             aTrsf.SetTranslationPart(new Vector3D(100.0, 50.0, 0.0));
-            var anAssembly = new TopoDS_Compound();
+            var anAssembly = new Compound();
             aBuilder.MakeCompound(ref anAssembly);
             aBuilder.Add(anAssembly, aShape);
             aBuilder.Add(anAssembly, aShape.Moved(new Placement(aTrsf)));
-            var aTop = new TopoDS_Compound();
+            var aTop = new Compound();
             aBuilder.MakeCompound(ref aTop);
             var aTrsf2 = new Transform3D();
             aTrsf2.SetTranslation(new Vector3D(0.0, 0.0, 300.0));
             aBuilder.Add(aTop, anAssembly);
             aBuilder.Add(aTop, anAssembly.Moved(new Placement(aTrsf2)));
             string anAssemblyFile = TempFile(".brep");
-            Assert.True(BRepTools.Write(aTop, anAssemblyFile));
+            Assert.True(BrepTools.Write(aTop, anAssemblyFile));
             anInputs.Add(($"assembly of {aName}", anAssemblyFile));
         }
         return anInputs;

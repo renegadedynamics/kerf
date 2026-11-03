@@ -2,6 +2,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // The file-static functions of IntPatch_PrmPrmIntersection.cxx (see IntPatch_PrmPrmIntersection.cs).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 using static Occt.Intf_PIType;
@@ -13,7 +14,7 @@ public partial class IntPatch_PrmPrmIntersection
     // Replaces, for each vertex of theWLline, its point by the nearest vertex of the other walking lines when that
     // vertex is near enough in both parameter spaces (within the walking's maximal steps), removing the neighbouring
     // point where it is more than 10 points away; theWLline becomes the new line.
-    private static void SeveralWlinesProcessing(Adaptor3d_Surface theSurf1, Adaptor3d_Surface theSurf2,
+    private static void SeveralWlinesProcessing(SurfaceAdaptorBase theSurf1, SurfaceAdaptorBase theSurf2,
                                                 NCollection_Sequence<IntPatch_Line> theSLin, double[] thePeriodsArr,
                                                 IntSurf_TypeTrans theTrans1, IntSurf_TypeTrans theTrans2,
                                                 double theTol, double theMaxStepS1, double theMaxStepS2,
@@ -366,7 +367,7 @@ public partial class IntPatch_PrmPrmIntersection
 
     // Moves the end points of the walking lines (of 10 points or more) that lie on a period's bound (0 or the period,
     // within 1e-7) to the other bound, when the next point is more than a quarter period away.
-    private static void AdjustOnPeriodic(Adaptor3d_Surface Surf1, Adaptor3d_Surface Surf2,
+    private static void AdjustOnPeriodic(SurfaceAdaptorBase Surf1, SurfaceAdaptorBase Surf2,
                                          NCollection_Sequence<IntPatch_Line> aSLin)
     {
         bool bModified, bIsNull, bIsPeriod;
@@ -385,10 +386,10 @@ public partial class IntPatch_PrmPrmIntersection
             aPeriod[k] = 0.0;
         }
         //
-        bIsPeriodic[0] = Surf1.IsUPeriodic();
-        bIsPeriodic[1] = Surf1.IsVPeriodic();
-        bIsPeriodic[2] = Surf2.IsUPeriodic();
-        bIsPeriodic[3] = Surf2.IsVPeriodic();
+        bIsPeriodic[0] = Surf1.IsUPeriodic;
+        bIsPeriodic[1] = Surf1.IsVPeriodic;
+        bIsPeriodic[2] = Surf2.IsUPeriodic;
+        bIsPeriodic[3] = Surf2.IsVPeriodic;
         //
         if (bIsPeriodic[0])
         {

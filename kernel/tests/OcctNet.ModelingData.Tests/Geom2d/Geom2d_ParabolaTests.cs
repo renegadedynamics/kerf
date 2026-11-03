@@ -9,8 +9,8 @@ namespace OcctNet.ModelingData.Tests;
 public class Geom2d_ParabolaTest
 {
     // Parabola centered at origin with focal distance 4
-    private readonly Geom2d_Parabola myParabola =
-        new Geom2d_Parabola(new Parabola2D(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 4.0));
+    private readonly ParabolaCurve2D myParabola =
+        new ParabolaCurve2D(new Parabola2D(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 4.0));
 
     [Fact]
     public void Focal()
@@ -21,8 +21,8 @@ public class Geom2d_ParabolaTest
     [Fact]
     public void IsNotClosedNotPeriodic()
     {
-        Assert.False(myParabola.IsClosed());
-        Assert.False(myParabola.IsPeriodic());
+        Assert.False(myParabola.IsClosed);
+        Assert.False(myParabola.IsPeriodic);
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class Geom2d_ParabolaTest
     [Fact]
     public void EvalD1_AtZero()
     {
-        Geom2d_Curve.ResD1 aR = myParabola.EvalD1(0.0);
+        Curve2D.ResD1 aR = myParabola.EvalD1(0.0);
         // At vertex: tangent is along Y axis
         Assert.Equal(0.0, aR.D1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aR.D1.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -78,7 +78,7 @@ public class Geom2d_ParabolaTest
     [Fact]
     public void EvalD2_AtZero()
     {
-        Geom2d_Curve.ResD2 aR = myParabola.EvalD2(0.0);
+        Curve2D.ResD2 aR = myParabola.EvalD2(0.0);
         // Second derivative at vertex should be along X (opening direction)
         Assert.True(aR.D2.X() > 0.0);
     }
@@ -109,8 +109,8 @@ public class Geom2d_ParabolaTest
     [Fact]
     public void Copy()
     {
-        Geom2d_Geometry aCopyGeom = myParabola.Copy();
-        Geom2d_Parabola? aCopy = aCopyGeom as Geom2d_Parabola;
+        Geometry2D aCopyGeom = myParabola.Copy();
+        ParabolaCurve2D? aCopy = aCopyGeom as ParabolaCurve2D;
         Assert.NotNull(aCopy);
         Assert.Equal(4.0, aCopy.Focal(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }

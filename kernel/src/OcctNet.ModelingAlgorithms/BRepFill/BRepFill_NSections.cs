@@ -3,10 +3,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -25,11 +30,11 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
 {
     private readonly double VFirst;
     private readonly double VLast;
-    private readonly NCollection_Sequence<TopoDS_Shape> myShapes = new();
+    private readonly NCollection_Sequence<Shape> myShapes = new();
     private readonly NCollection_Sequence<Transform3D> myTrsfs = new();
     private readonly NCollection_Sequence<double> myParams = new();
-    private NCollection_HArray2<TopoDS_Shape>? myEdges;
-    private Geom_BSplineSurface? mySurface;
+    private NCollection_HArray2<Shape>? myEdges;
+    private BSplineSurface? mySurface;
 
     //=======================================================================
     // function : EdgeToBSpline
@@ -38,10 +43,10 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
     //=======================================================================
 
     // NOTE: this code duplicates the same function in BRepOffsetAPI_ThruSections.cxx
-    private static Geom_BSplineCurve EdgeToBSpline(in TopoDS_Edge theEdge)
+    private static BSplineCurve3D EdgeToBSpline(in Edge theEdge)
     {
-        Geom_BSplineCurve? aBSCurve = null;
-        if (BRep_Tool.Degenerated(theEdge))
+        BSplineCurve3D? aBSCurve = null;
+        if (Tool.Degenerated(theEdge))
         {
             // degenerated edge : construction of a point curve
             NCollection_Array1<double> aKnots = new(1, 2);
@@ -53,32 +58,32 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
             aMults[2] = 2;
 
             NCollection_Array1<Point3D> aPoles = new(1, 2);
-            TopExp.Vertices(theEdge, out TopoDS_Vertex vl, out TopoDS_Vertex vf);
-            aPoles[1] = BRep_Tool.Pnt(vf);
-            aPoles[2] = BRep_Tool.Pnt(vl);
+            Exploration.Vertices(theEdge, out Vertex vl, out Vertex vf);
+            aPoles[1] = Tool.Pnt(vf);
+            aPoles[2] = Tool.Pnt(vl);
 
-            aBSCurve = new Geom_BSplineCurve(aPoles, aKnots, aMults, 1);
+            aBSCurve = new BSplineCurve3D(aPoles, aKnots, aMults, 1);
         }
         else
         {
             // get the curve of the edge
-            Geom_Curve aCurve = BRep_Tool.Curve(theEdge, out Placement aLoc, out double aFirst, out double aLast)!;
+            Curve3D aCurve = Tool.Curve(theEdge, out Placement aLoc, out double aFirst, out double aLast)!;
 
             // convert its part used by edge to bspline; note that if edge curve is bspline,
             // approximation or conversion made via trimmed curve is still needed -- it will copy it,
             // segment as appropriate, and remove periodicity if it is periodic (deadly for approximator)
-            Geom_TrimmedCurve aTrimCurve = new(aCurve, aFirst, aLast);
+            TrimmedCurve3D aTrimCurve = new(aCurve, aFirst, aLast);
 
-            Geom_Curve aCurveTemp = aTrimCurve; // to avoid ambiguity
-            GeomConvert_ApproxCurve anAppr = new(aCurveTemp, global::Kerf.Engine.Foundation.Precision.Confusion(), C1, 16, 14);
-            if (anAppr.HasResult())
+            Curve3D aCurveTemp = aTrimCurve; // to avoid ambiguity
+            ApproxCurve anAppr = new(aCurveTemp, global::Kerf.Engine.Foundation.Precision.Confusion(), C1, 16, 14);
+            if (anAppr.HasResult)
             {
                 aBSCurve = anAppr.InternalCurve();
             }
 
             if (aBSCurve is null)
             {
-                aBSCurve = GeomConvert.CurveToBSplineCurve(aTrimCurve);
+                aBSCurve = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aTrimCurve);
             }
 
             // apply transformation if needed
@@ -94,7 +99,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
         }
 
         // reverse curve if edge is reversed
-        if (theEdge.Orientation() == TopAbs_REVERSED)
+        if (theEdge.Orientation() == Reversed)
         {
             aBSCurve.Reverse();
         }
@@ -104,7 +109,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
 
     //=================================================================================================
 
-    private static Geom_BSplineSurface totalsurf(NCollection_Array2<TopoDS_Shape> shapes,
+    private static BSplineSurface totalsurf(NCollection_Array2<Shape> shapes,
                                                  int NbSects,
                                                  int NbEdges,
                                                  NCollection_Sequence<double> @params,
@@ -115,27 +120,27 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
                                                  double myPres3d)
     {
         int i, j, jdeb = 1, jfin = NbSects;
-        TopoDS_Edge edge;
+        Edge edge;
 
         GeomFill_SectionGenerator section = new();
-        Geom_BSplineSurface surface;
-        Geom_BSplineCurve? BS, BS1 = null;
+        BSplineSurface surface;
+        BSplineCurve3D? BS, BS1 = null;
 
         if (w1Point)
         {
             jdeb++;
-            edge = TopoDS.Edge(shapes.Value(1, 1));
-            TopExp.Vertices(edge, out TopoDS_Vertex vl, out TopoDS_Vertex vf);
+            edge = ShapeCasts.Edge(shapes.Value(1, 1));
+            Exploration.Vertices(edge, out Vertex vl, out Vertex vf);
             NCollection_Array1<Point3D> Extremities = new(1, 2);
-            Extremities[1] = BRep_Tool.Pnt(vf);
-            Extremities[2] = BRep_Tool.Pnt(vl);
+            Extremities[1] = Tool.Pnt(vf);
+            Extremities[2] = Tool.Pnt(vl);
             NCollection_Array1<double> Bounds = new(1, 2);
             Bounds[1] = 0.0;
             Bounds[2] = 1.0;
             NCollection_Array1<int> Mult = new(1, 2);
             Mult[1] = 2;
             Mult[2] = 2;
-            Geom_BSplineCurve BSPoint = new(Extremities, Bounds, Mult, 1);
+            BSplineCurve3D BSPoint = new(Extremities, Bounds, Mult, 1);
             section.AddCurve(BSPoint);
         }
 
@@ -156,25 +161,25 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
             else
             {
                 // read the first edge to initialise CompBS;
-                TopoDS_Edge aPrevEdge = TopoDS.Edge(shapes.Value(1, j));
-                Geom_BSplineCurve curvBS = EdgeToBSpline(aPrevEdge);
+                Edge aPrevEdge = ShapeCasts.Edge(shapes.Value(1, j));
+                BSplineCurve3D curvBS = EdgeToBSpline(aPrevEdge);
 
                 // initialization
-                GeomConvert_CompCurveToBSplineCurve CompBS = new(curvBS);
+                CompCurveToBSplineCurve CompBS = new(curvBS);
 
                 for (i = 2; i <= NbEdges; i++)
                 {
                     // read the edge
-                    TopoDS_Edge aNextEdge = TopoDS.Edge(shapes.Value(i, j));
+                    Edge aNextEdge = ShapeCasts.Edge(shapes.Value(i, j));
                     curvBS = EdgeToBSpline(aNextEdge);
 
                     // concatenation
-                    TopoDS_Vertex ComV = new();
+                    Vertex ComV = new();
                     double epsV;
-                    bool Bof = TopExp.CommonVertex(aPrevEdge, aNextEdge, ref ComV);
+                    bool Bof = Exploration.CommonVertex(aPrevEdge, aNextEdge, ref ComV);
                     if (Bof)
                     {
-                        epsV = BRep_Tool.Tolerance(ComV);
+                        epsV = Tool.Tolerance(ComV);
                     }
                     else
                     {
@@ -204,18 +209,18 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
 
         if (w2Point)
         {
-            edge = TopoDS.Edge(shapes.Value(NbEdges, NbSects));
-            TopExp.Vertices(edge, out TopoDS_Vertex vl, out TopoDS_Vertex vf);
+            edge = ShapeCasts.Edge(shapes.Value(NbEdges, NbSects));
+            Exploration.Vertices(edge, out Vertex vl, out Vertex vf);
             NCollection_Array1<Point3D> Extremities = new(1, 2);
-            Extremities[1] = BRep_Tool.Pnt(vf);
-            Extremities[2] = BRep_Tool.Pnt(vl);
+            Extremities[1] = Tool.Pnt(vf);
+            Extremities[2] = Tool.Pnt(vl);
             NCollection_Array1<double> Bounds = new(1, 2);
             Bounds[1] = 0.0;
             Bounds[2] = 1.0;
             NCollection_Array1<int> Mult = new(1, 2);
             Mult[1] = 2;
             Mult[2] = 2;
-            Geom_BSplineCurve BSPoint = new(Extremities, Bounds, Mult, 1);
+            BSplineCurve3D BSPoint = new(Extremities, Bounds, Mult, 1);
             section.AddCurve(BSPoint);
         }
 
@@ -316,7 +321,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
             }
         }
 
-        surface = new Geom_BSplineSurface(poles,
+        surface = new BSplineSurface(poles,
                                           weights,
                                           anApprox.SurfUKnots(),
                                           anApprox.SurfVKnots(),
@@ -332,7 +337,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
     //=================================================================================================
 
     /// <summary>The law through the wires or vertices <paramref name="S"/>, at the parameters 0, 1, 2, ...</summary>
-    public BRepFill_NSections(NCollection_Sequence<TopoDS_Shape> S, bool Build = true)
+    public BRepFill_NSections(NCollection_Sequence<Shape> S, bool Build = true)
 
     {
         myShapes.Assign(S);
@@ -359,7 +364,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
     /// parameters <paramref name="P"/>, on the path's parameter range [<paramref name="VF"/>, <paramref name="VL"/>].
     /// Not done if the parameters don't increase.
     /// </summary>
-    public BRepFill_NSections(NCollection_Sequence<TopoDS_Shape> S,
+    public BRepFill_NSections(NCollection_Sequence<Shape> S,
                               NCollection_Sequence<Transform3D> Transformations,
                               NCollection_Sequence<double> P,
                               double VF,
@@ -394,31 +399,31 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
     //=======================================================================
     private void Init(NCollection_Sequence<double> P, bool Build)
     {
-        BRepTools_WireExplorer wexp = new();
+        WireExplorer wexp = new();
         // Class BRep_Tool without fields and without Constructor :
         //  BRep_Tool B;
-        TopoDS_Edge E;
+        Edge E;
         int ii, NbEdge, jj, NbSects = P.Length();
         int ideb = 1, ifin = NbSects;
         bool wClosed, w1Point = true, w2Point = true;
-        TopoDS_Wire W;
+        Wire W;
 
         // Check if the start and end wires are punctual
-        W = TopoDS.Wire(myShapes[1]);
+        W = ShapeCasts.Wire(myShapes[1]);
         for (wexp.Init(W); wexp.More(); wexp.Next())
         {
             //    w1Point = w1Point && B.Degenerated(wexp.Current());
-            w1Point = w1Point && BRep_Tool.Degenerated(wexp.Current());
+            w1Point = w1Point && Tool.Degenerated(wexp.Current());
         }
         if (w1Point)
         {
             ideb++;
         }
-        W = TopoDS.Wire(myShapes[NbSects]);
+        W = ShapeCasts.Wire(myShapes[NbSects]);
         for (wexp.Init(W); wexp.More(); wexp.Next())
         {
             //    w2Point = w2Point && B.Degenerated(wexp.Current());
-            w2Point = w2Point && BRep_Tool.Degenerated(wexp.Current());
+            w2Point = w2Point && Tool.Degenerated(wexp.Current());
         }
         if (w2Point)
         {
@@ -429,34 +434,34 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
         vclosed = myShapes[1].IsSame(myShapes[NbSects]);
 
         // Count the number of non-degenerated edges
-        W = TopoDS.Wire(myShapes[ideb]);
+        W = ShapeCasts.Wire(myShapes[ideb]);
         for (NbEdge = 0, wexp.Init(W); wexp.More(); wexp.Next())
         {
             //    if (! B.Degenerated(wexp.Current())) NbEdge++;
-            if (!BRep_Tool.Degenerated(wexp.Current()))
+            if (!Tool.Degenerated(wexp.Current()))
             {
                 NbEdge++;
             }
         }
 
-        myEdges = new NCollection_HArray2<TopoDS_Shape>(1, NbEdge, 1, NbSects);
+        myEdges = new NCollection_HArray2<Shape>(1, NbEdge, 1, NbSects);
 
         // Fill tables
         uclosed = true;
         for (jj = ideb; jj <= ifin; jj++)
         {
 
-            W = TopoDS.Wire(myShapes[jj]);
+            W = ShapeCasts.Wire(myShapes[jj]);
 
             for (ii = 1, wexp.Init(W); ii <= NbEdge; wexp.Next(), ii++)
             {
                 E = wexp.Current();
 
                 //      if ( ! B.Degenerated(E)) {
-                if (!BRep_Tool.Degenerated(E))
+                if (!Tool.Degenerated(E))
                 {
                     myEdges.SetValue(ii, jj, E);
-                    if (E.Orientation() == TopAbs_FORWARD)
+                    if (E.Orientation() == Forward)
                     {
                         myIndices.Bind(E, ii);
                     }
@@ -473,26 +478,26 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
             if (!wClosed)
             {
                 // if unsure about the flag, make check
-                TopoDS_Edge Edge1, Edge2;
-                TopoDS_Vertex V1, V2;
-                Edge1 = TopoDS.Edge(myEdges.Value(NbEdge, jj));
-                Edge2 = TopoDS.Edge(myEdges.Value(1, jj));
+                Edge Edge1, Edge2;
+                Vertex V1, V2;
+                Edge1 = ShapeCasts.Edge(myEdges.Value(NbEdge, jj));
+                Edge2 = ShapeCasts.Edge(myEdges.Value(1, jj));
 
-                if (Edge1.Orientation() == TopAbs_REVERSED)
+                if (Edge1.Orientation() == Reversed)
                 {
-                    V1 = TopExp.FirstVertex(Edge1);
+                    V1 = Exploration.FirstVertex(Edge1);
                 }
                 else
                 {
-                    V1 = TopExp.LastVertex(Edge1);
+                    V1 = Exploration.LastVertex(Edge1);
                 }
-                if (Edge2.Orientation() == TopAbs_REVERSED)
+                if (Edge2.Orientation() == Reversed)
                 {
-                    V2 = TopExp.LastVertex(Edge2);
+                    V2 = Exploration.LastVertex(Edge2);
                 }
                 else
                 {
-                    V2 = TopExp.FirstVertex(Edge2);
+                    V2 = Exploration.FirstVertex(Edge2);
                 }
                 if (V1.IsSame(V2))
                 {
@@ -500,11 +505,11 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
                 }
                 else
                 {
-                    BRepAdaptor_Curve Curve1 = new(Edge1);
-                    BRepAdaptor_Curve Curve2 = new(Edge2);
-                    double U1 = BRep_Tool.Parameter(V1, Edge1);
-                    double U2 = BRep_Tool.Parameter(V2, Edge2);
-                    double Eps = BRep_Tool.Tolerance(V2) + BRep_Tool.Tolerance(V1);
+                    EdgeCurveAdaptor Curve1 = new(Edge1);
+                    EdgeCurveAdaptor Curve2 = new(Edge2);
+                    double U1 = Tool.Parameter(V1, Edge1);
+                    double U2 = Tool.Parameter(V2, Edge2);
+                    double Eps = Tool.Tolerance(V2) + Tool.Tolerance(V1);
 
                     wClosed = Curve1.Value(U1).IsEqual(Curve2.Value(U2), Eps);
                 }
@@ -518,7 +523,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
         // point sections at end
         if (w1Point)
         {
-            W = TopoDS.Wire(myShapes[1]);
+            W = ShapeCasts.Wire(myShapes[1]);
             wexp.Init(W);
             E = wexp.Current();
             for (ii = 1; ii <= NbEdge; ii++)
@@ -529,7 +534,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
 
         if (w2Point)
         {
-            W = TopoDS.Wire(myShapes[NbSects]);
+            W = ShapeCasts.Wire(myShapes[NbSects]);
             wexp.Init(W);
             E = wexp.Current();
             for (ii = 1; ii <= NbEdge; ii++)
@@ -564,45 +569,45 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
         {
             for (ii = 1; ii <= NbEdge; ii++)
             {
-                NCollection_Sequence<Geom_Curve> NC = new();
+                NCollection_Sequence<Curve3D> NC = new();
                 NC.Clear();
                 for (jj = 1; jj <= NbSects; jj++)
                 {
-                    E = TopoDS.Edge(myEdges.Value(ii, jj));
-                    Geom_Curve C;
+                    E = ShapeCasts.Edge(myEdges.Value(ii, jj));
+                    Curve3D C;
                     //	if (B.Degenerated(E)) {
-                    if (BRep_Tool.Degenerated(E))
+                    if (Tool.Degenerated(E))
                     {
-                        TopExp.Vertices(E, out TopoDS_Vertex vl, out TopoDS_Vertex vf);
+                        Exploration.Vertices(E, out Vertex vl, out Vertex vf);
                         NCollection_Array1<Point3D> Extremities = new(1, 2);
-                        Extremities[1] = BRep_Tool.Pnt(vf);
-                        Extremities[2] = BRep_Tool.Pnt(vl);
+                        Extremities[1] = Tool.Pnt(vf);
+                        Extremities[2] = Tool.Pnt(vl);
                         NCollection_Array1<double> Bounds = new(1, 2);
                         Bounds[1] = 0.0;
                         Bounds[2] = 1.0;
                         NCollection_Array1<int> Mult = new(1, 2);
                         Mult[1] = 2;
                         Mult[2] = 2;
-                        Geom_BSplineCurve BSPoint = new(Extremities, Bounds, Mult, 1);
+                        BSplineCurve3D BSPoint = new(Extremities, Bounds, Mult, 1);
                         C = BSPoint;
                     }
                     else
                     {
-                        C = BRep_Tool.Curve(E, out double First, out double Last)!;
+                        C = Tool.Curve(E, out double First, out double Last)!;
 
-                        if (E.Orientation() == TopAbs_REVERSED)
+                        if (E.Orientation() == Reversed)
                         {
                             double aux;
-                            Geom_Curve CBis;
+                            Curve3D CBis;
                             CBis = C.Reversed(); // To avoid the spoiling of the topology
                             aux = C.ReversedParameter(First);
                             First = C.ReversedParameter(Last);
                             Last = aux;
                             C = CBis;
                         }
-                        if ((ii > 1) || (!BRep_Tool.IsClosed(E)))
+                        if ((ii > 1) || (!Tool.IsClosed(E)))
                         { // Cut C
-                            Geom_TrimmedCurve TC = new(C, First, Last);
+                            TrimmedCurve3D TC = new(C, First, Last);
                             C = TC;
                         }
                         //  otherwise preserve the integrity of the curve
@@ -629,7 +634,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
     public override bool IsConstant() => false;
 
     // The surface of the elementary law of rank Index, unfrozen (OCCT reads BSplineSurface(), decision 902).
-    private Geom_BSplineSurface LawSurface(int Index) => ((GeomFill_NSections)myLaws!.Value(Index)).InternalBSplineSurface()!;
+    private BSplineSurface LawSurface(int Index) => ((GeomFill_NSections)myLaws!.Value(Index)).InternalBSplineSurface()!;
 
     //=================================================================================================
 
@@ -637,23 +642,23 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
     /// A new frozen vertex at the start of the section's edge of rank <paramref name="Index"/> (the end of the last
     /// edge for NbLaw() + 1) at the path parameter <paramref name="Param"/>.
     /// </summary>
-    public override TopoDS_Vertex Vertex(int Index, double Param)
+    public override Vertex Vertex(int Index, double Param)
     {
-        BRep_Builder B = new();
-        TopoDS_Vertex V = new();
+        BrepBuilder B = new();
+        Vertex V = new();
         B.MakeVertex(ref V);
         Point3D P;
 
         if (Index <= myEdges!.ColLength())
         {
-            Geom_BSplineCurve Curve = (Geom_BSplineCurve)LawSurface(Index).VIso(Param);
+            BSplineCurve3D Curve = (BSplineCurve3D)LawSurface(Index).VIso(Param);
             double first = Curve.FirstParameter();
             Curve.D0(first, out P);
             B.UpdateVertex(V, P, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
         else if (Index == myEdges.ColLength() + 1)
         {
-            Geom_BSplineCurve Curve = (Geom_BSplineCurve)LawSurface(Index - 1).VIso(Param);
+            BSplineCurve3D Curve = (BSplineCurve3D)LawSurface(Index - 1).VIso(Param);
             double last = Curve.LastParameter();
             Curve.D0(last, out P);
             B.UpdateVertex(V, P, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -693,7 +698,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
         NCollection_HArray1<Point3D> Poles;
         NCollection_HArray1<double> Knots, Weigth;
         NCollection_HArray1<int> Mults;
-        Geom_BSplineCurve BS;
+        BSplineCurve3D BS;
         Point3D PFirst;
 
         Loi = myLaws!.Value(I1);
@@ -705,7 +710,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
         Loi.Knots(Knots.ChangeArray1());
         Mults = new NCollection_HArray1<int>(1, NbKnots);
         Loi.Mults(Mults.ChangeArray1());
-        BS = new Geom_BSplineCurve(Poles.Array1(),
+        BS = new BSplineCurve3D(Poles.Array1(),
                                    Weigth.Array1(),
                                    Knots.Array1(),
                                    Mults.Array1(),
@@ -722,7 +727,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
         Loi.Knots(Knots.ChangeArray1());
         Mults = new NCollection_HArray1<int>(1, NbKnots);
         Loi.Mults(Mults.ChangeArray1());
-        BS = new Geom_BSplineCurve(Poles.Array1(),
+        BS = new BSplineCurve3D(Poles.Array1(),
                                    Weigth.Array1(),
                                    Knots.Array1(),
                                    Mults.Array1(),
@@ -748,7 +753,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
         else
         {
             mySurface!.Bounds(out double Ufirst, out double Ulast, out double Vfirst, out double Vlast);
-            NCollection_Sequence<Geom_Curve> NCompo = new();
+            NCollection_Sequence<Curve3D> NCompo = new();
             NCompo.Clear();
             for (int jj = 1; jj <= myShapes.Length(); jj++)
             {
@@ -772,7 +777,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
         for (jj = 1; jj <= myShapes.Length(); jj++)
         {
 
-            TopoDS_Edge Edge1, Edge2;
+            Edge Edge1, Edge2;
             if ((Index == 0) || (Index == myEdges!.ColLength()))
             {
                 if (!uclosed)
@@ -780,45 +785,45 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
                     return C0; // The least possible error
                 }
 
-                Edge1 = TopoDS.Edge(myEdges!.Value(myEdges.ColLength(), jj));
-                Edge2 = TopoDS.Edge(myEdges.Value(1, jj));
+                Edge1 = ShapeCasts.Edge(myEdges!.Value(myEdges.ColLength(), jj));
+                Edge2 = ShapeCasts.Edge(myEdges.Value(1, jj));
             }
             else
             {
-                Edge1 = TopoDS.Edge(myEdges.Value(Index, jj));
-                Edge2 = TopoDS.Edge(myEdges.Value(Index + 1, jj));
+                Edge1 = ShapeCasts.Edge(myEdges.Value(Index, jj));
+                Edge2 = ShapeCasts.Edge(myEdges.Value(Index + 1, jj));
             }
 
-            TopoDS_Vertex V1, V2;
-            if (Edge1.Orientation() == TopAbs_REVERSED)
+            Vertex V1, V2;
+            if (Edge1.Orientation() == Reversed)
             {
-                V1 = TopExp.FirstVertex(Edge1);
+                V1 = Exploration.FirstVertex(Edge1);
             }
             else
             {
-                V1 = TopExp.LastVertex(Edge1);
+                V1 = Exploration.LastVertex(Edge1);
             }
-            if (Edge2.Orientation() == TopAbs_REVERSED)
+            if (Edge2.Orientation() == Reversed)
             {
-                V2 = TopExp.LastVertex(Edge2);
+                V2 = Exploration.LastVertex(Edge2);
             }
             else
             {
-                V2 = TopExp.FirstVertex(Edge2);
+                V2 = Exploration.FirstVertex(Edge2);
             }
 
-            if (BRep_Tool.Degenerated(Edge1) || BRep_Tool.Degenerated(Edge2))
+            if (Tool.Degenerated(Edge1) || Tool.Degenerated(Edge2))
             {
                 cont_jj = CN;
             }
             else
             {
-                double U1 = BRep_Tool.Parameter(V1, Edge1);
-                double U2 = BRep_Tool.Parameter(V2, Edge2);
-                BRepAdaptor_Curve Curve1 = new(Edge1);
-                BRepAdaptor_Curve Curve2 = new(Edge2);
-                double Eps = BRep_Tool.Tolerance(V2) + BRep_Tool.Tolerance(V1);
-                cont_jj = BRepLProp.Continuity(Curve1, Curve2, U1, U2, Eps, TolAngular);
+                double U1 = Tool.Parameter(V1, Edge1);
+                double U2 = Tool.Parameter(V2, Edge2);
+                EdgeCurveAdaptor Curve1 = new(Edge1);
+                EdgeCurveAdaptor Curve2 = new(Edge2);
+                double Eps = Tool.Tolerance(V2) + Tool.Tolerance(V1);
+                cont_jj = global::Kerf.Engine.Topology.Properties.BRepLProp.Continuity(Curve1, Curve2, U1, U2, Eps, TolAngular);
             }
 
             if (jj == 1)
@@ -837,20 +842,20 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
     //=================================================================================================
 
     /// <summary>The section at the path parameter <paramref name="V"/>: a new frozen wire of the law's iso-curves.</summary>
-    public override void D0(double V, ref TopoDS_Shape S)
+    public override void D0(double V, ref Shape S)
     {
         BRepLib_MakeWire MW = new();
         int ii, NbEdge = myLaws!.Length();
         for (ii = 1; ii <= NbEdge; ii++)
         {
-            Geom_BSplineCurve Curve = (Geom_BSplineCurve)LawSurface(ii).VIso(V);
+            BSplineCurve3D Curve = (BSplineCurve3D)LawSurface(ii).VIso(V);
             double first = Curve.FirstParameter(), last = Curve.LastParameter();
-            TopoDS_Edge E = new BRepLib_MakeEdge(Curve, first, last).InternalEdge();
+            Edge E = new BRepLib_MakeEdge(Curve, first, last).InternalEdge();
             MW.Add(E);
         }
-        TopAbs_Orientation Orien = TopAbs_FORWARD;
-        TopoDS_Shape aLocalShape = MW.Wire().Oriented(Orien);
-        S = TopoDS.Wire(aLocalShape);
+        Orientation Orien = Forward;
+        Shape aLocalShape = MW.Wire().Oriented(Orien);
+        S = ShapeCasts.Wire(aLocalShape);
         //  S = TopoDS::Wire(MW.Wire().Oriented(Orien));
     }
 }

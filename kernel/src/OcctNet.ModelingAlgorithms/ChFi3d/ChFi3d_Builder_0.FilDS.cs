@@ -2,9 +2,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 using static Occt.TopOpeBRepDS_Kind;
 
 namespace Occt;
@@ -27,7 +30,7 @@ internal static partial class ChFi3d_Builder_0
                                       NCollection_List<ChFiDS_Regul> reglist, double tol3d, double tol2d)
     {
         //  BRep_Tool Outil;
-        TopExp_Explorer ex = new();
+        Explorer ex = new();
         ChFiDS_Spine? spine = CorDat.Spine();
         bool Closed = false;
         bool Degene = false, isVertex1 = false, isVertex2 = false, Singulier_en_Bout = false;
@@ -39,19 +42,19 @@ internal static partial class ChFi3d_Builder_0
         int Ipoin1 = CorDat.IndexFirstPointOnS1();
         int Ipoin2 = CorDat.IndexFirstPointOnS2();
         int NumEdge = 1;
-        TopoDS_Vertex BoutdeVtx = new();
+        Vertex BoutdeVtx = new();
         int Icurv = 0;
         int Iarc1 = 0, Iarc2 = 0;
-        TopAbs_Orientation trafil1 = TopAbs_FORWARD, trafil2 = TopAbs_FORWARD;
+        Orientation trafil1 = Forward, trafil2 = Forward;
         int IcFil1, IcFil2, Isurf, Ishape1, Ishape2;
         double Pardeb = 0.0, Parfin = 0.0;
-        TopAbs_Orientation ET1;
+        Orientation ET1;
         TopOpeBRepDS_CurvePointInterference Interfp1, Interfp2;
         TopOpeBRepDS_SurfaceCurveInterference Interfc1, Interfc2;
         TopOpeBRepDS_SurfaceCurveInterference Interfc3, Interfc4;
         TopOpeBRepDS_CurvePointInterference Interfp3, Interfp4;
         TopOpeBRepDS_CurvePointInterference Interfp5, Interfp6;
-        Geom2d_Curve? PCurv = null;
+        Curve2D? PCurv = null;
         TopOpeBRepDS_Curve Crv;
 
         NCollection_List<TopOpeBRepDS_Interference> SolidInterfs = DStr.ChangeShapeInterferences(SolidIndex);
@@ -182,9 +185,9 @@ internal static partial class ChFi3d_Builder_0
                 {
                     ChFi3d_Orientation(SolidInterfs, SolidIndex, -Ishape1, ref trafil1);
                 }
-                trafil1 = TopAbs.Compose(trafil1, Fd.Orientation());
-                trafil1 = TopAbs.Compose(TopAbs.Reverse(Fi1.Transition()), trafil1);
-                trafil2 = TopAbs.Reverse(trafil1);
+                trafil1 = global::Kerf.Engine.Topology.TopAbs.Compose(trafil1, Fd.Orientation());
+                trafil1 = global::Kerf.Engine.Topology.TopAbs.Compose(global::Kerf.Engine.Topology.TopAbs.Reverse(Fi1.Transition()), trafil1);
+                trafil2 = global::Kerf.Engine.Topology.TopAbs.Reverse(trafil1);
             }
             else
             {
@@ -196,33 +199,33 @@ internal static partial class ChFi3d_Builder_0
                 {
                     ChFi3d_Orientation(SolidInterfs, SolidIndex, -Ishape2, ref trafil2);
                 }
-                trafil2 = TopAbs.Compose(trafil2, Fd.Orientation());
-                trafil2 = TopAbs.Compose(TopAbs.Reverse(Fi2.Transition()), trafil2);
-                trafil1 = TopAbs.Reverse(trafil2);
+                trafil2 = global::Kerf.Engine.Topology.TopAbs.Compose(trafil2, Fd.Orientation());
+                trafil2 = global::Kerf.Engine.Topology.TopAbs.Compose(global::Kerf.Engine.Topology.TopAbs.Reverse(Fi2.Transition()), trafil2);
+                trafil1 = global::Kerf.Engine.Topology.TopAbs.Reverse(trafil2);
             }
 
-            ET1 = TopAbs.Reverse(trafil1);
+            ET1 = global::Kerf.Engine.Topology.TopAbs.Reverse(trafil1);
 
             // A small paragraph to process contacts of edges, which touch
             // a vertex of the obstacle.
             if (V1.IsVertex() && Fd.IsOnCurve1())
             {
-                TopoDS_Vertex vv1 = V1.Vertex();
+                Vertex vv1 = V1.Vertex();
                 CutEdge(vv1, Fd, DStr, true, 1);
             }
             if (V2.IsVertex() && Fd.IsOnCurve2())
             {
-                TopoDS_Vertex vv2 = V2.Vertex();
+                Vertex vv2 = V2.Vertex();
                 CutEdge(vv2, Fd, DStr, true, 2);
             }
             if (V3.IsVertex() && Fd.IsOnCurve1())
             {
-                TopoDS_Vertex vv3 = V3.Vertex();
+                Vertex vv3 = V3.Vertex();
                 CutEdge(vv3, Fd, DStr, false, 1);
             }
             if (V4.IsVertex() && Fd.IsOnCurve2())
             {
-                TopoDS_Vertex vv4 = V4.Vertex();
+                Vertex vv4 = V4.Vertex();
                 CutEdge(vv4, Fd, DStr, false, 2);
             }
 
@@ -242,14 +245,14 @@ internal static partial class ChFi3d_Builder_0
                     {
                         isVertex1 = isVertex2 = true; // caution...
                         // The edge is removed from spine starting on this vertex.
-                        TopoDS_Edge Arcspine = spine!.Edges(1);
+                        Edge Arcspine = spine!.Edges(1);
                         BoutdeVtx = V1.Vertex();
                         int IArcspine = DStr.AddShape(Arcspine);
                         int IVtx = CorDat.IndexFirstPointOnS1();
 
-                        TopAbs_Orientation OVtx = TopAbs_FORWARD;
+                        Orientation OVtx = Forward;
 
-                        for (ex.Init(Arcspine.Oriented(TopAbs_FORWARD), TopAbs_VERTEX); ex.More(); ex.Next())
+                        for (ex.Init(Arcspine.Oriented(Forward), ShapeType.Vertex); ex.More(); ex.Next())
                         {
                             if (BoutdeVtx.IsSame(ex.Current()))
                             {
@@ -257,8 +260,8 @@ internal static partial class ChFi3d_Builder_0
                                 break;
                             }
                         }
-                        OVtx = TopAbs.Reverse(OVtx);
-                        double parVtx = BRep_Tool.Parameter(BoutdeVtx, Arcspine);
+                        OVtx = global::Kerf.Engine.Topology.TopAbs.Reverse(OVtx);
+                        double parVtx = Tool.Parameter(BoutdeVtx, Arcspine);
                         TopOpeBRepDS_CurvePointInterference interfv =
                             ChFi3d_FilVertexInDS(OVtx, IArcspine, IVtx, parVtx);
                         DStr.ChangeShapeInterferences(IArcspine).Append(interfv);
@@ -291,7 +294,7 @@ internal static partial class ChFi3d_Builder_0
 
                 if (!isInDS1)
                 {
-                    ET1 = TopAbs.Compose(ET1, CorDat.FirstPCurveOrientation());
+                    ET1 = global::Kerf.Engine.Topology.TopAbs.Compose(ET1, CorDat.FirstPCurveOrientation());
                     Icurv = CorDat.FirstCurve();
                     if (Closed && !Singulier_en_Bout)
                     {
@@ -304,15 +307,15 @@ internal static partial class ChFi3d_Builder_0
                     NCollection_List<TopOpeBRepDS_Interference> Li = DStr.ChangeCurveInterferences(Icurv);
                     if (Li.IsEmpty())
                     {
-                        if (CorDat.FirstPCurveOrientation() == TopAbs_REVERSED)
+                        if (CorDat.FirstPCurveOrientation() == Reversed)
                         {
-                            Interfp1 = ChFi3d_FilPointInDS(TopAbs_REVERSED, Icurv, Ipoin1, Parfin, isVertex1);
-                            Interfp2 = ChFi3d_FilPointInDS(TopAbs_FORWARD, Icurv, Ipoin2, Pardeb, isVertex2);
+                            Interfp1 = ChFi3d_FilPointInDS(Reversed, Icurv, Ipoin1, Parfin, isVertex1);
+                            Interfp2 = ChFi3d_FilPointInDS(Forward, Icurv, Ipoin2, Pardeb, isVertex2);
                         }
                         else
                         {
-                            Interfp1 = ChFi3d_FilPointInDS(TopAbs_FORWARD, Icurv, Ipoin1, Pardeb, isVertex1);
-                            Interfp2 = ChFi3d_FilPointInDS(TopAbs_REVERSED, Icurv, Ipoin2, Parfin, isVertex2);
+                            Interfp1 = ChFi3d_FilPointInDS(Forward, Icurv, Ipoin1, Pardeb, isVertex1);
+                            Interfp2 = ChFi3d_FilPointInDS(Reversed, Icurv, Ipoin2, Parfin, isVertex2);
                         }
                         Li.Append(Interfp1);
                         Li.Append(Interfp2);
@@ -339,11 +342,11 @@ internal static partial class ChFi3d_Builder_0
                     {
                         // The edge is removed from the spine starting on this vertex.
                         NumEdge++; // The previous edge of the vertex has already been found.
-                        TopoDS_Edge Arcspine = spine!.Edges(NumEdge);
+                        Edge Arcspine = spine!.Edges(NumEdge);
                         int IArcspine = DStr.AddShape(Arcspine);
                         int IVtx = DStr.AddShape(BoutdeVtx);
-                        TopAbs_Orientation OVtx = TopAbs_FORWARD;
-                        for (ex.Init(Arcspine.Oriented(TopAbs_FORWARD), TopAbs_VERTEX); ex.More(); ex.Next())
+                        Orientation OVtx = Forward;
+                        for (ex.Init(Arcspine.Oriented(Forward), ShapeType.Vertex); ex.More(); ex.Next())
                         {
                             if (BoutdeVtx.IsSame(ex.Current()))
                             {
@@ -351,8 +354,8 @@ internal static partial class ChFi3d_Builder_0
                                 break;
                             }
                         }
-                        OVtx = TopAbs.Reverse(OVtx);
-                        double parVtx = BRep_Tool.Parameter(BoutdeVtx, Arcspine);
+                        OVtx = global::Kerf.Engine.Topology.TopAbs.Reverse(OVtx);
+                        double parVtx = Tool.Parameter(BoutdeVtx, Arcspine);
                         TopOpeBRepDS_CurvePointInterference interfv =
                             ChFi3d_FilVertexInDS(OVtx, IArcspine, IVtx, parVtx);
                         DStr.ChangeShapeInterferences(IArcspine).Append(interfv);
@@ -366,7 +369,7 @@ internal static partial class ChFi3d_Builder_0
                     if (Degene)
                     {
                         // pcurve is associated via SCI to TopOpeBRepDSCurve.
-                        ChFi3d_ComputePCurv(UV1, UV2, out Geom2d_Curve aPCurv, Pardeb, Parfin);
+                        ChFi3d_ComputePCurv(UV1, UV2, out Curve2D aPCurv, Pardeb, Parfin);
                         PCurv = aPCurv;
                         Interfc1 = ChFi3d_FilCurveInDS(Icurv, Isurf, PCurv, ET1);
                         DStr.ChangeSurfaceInterferences(Isurf).Append(Interfc1);
@@ -379,7 +382,7 @@ internal static partial class ChFi3d_Builder_0
                         regfilfil.SetS2(Isurf, false);
                         reglist.Append(regfilfil);
                         double tolreached;
-                        ChFi3d_ComputePCurv(TCurv.ChangeCurve()!, UV1, UV2, out Geom2d_Curve aPCurv,
+                        ChFi3d_ComputePCurv(TCurv.ChangeCurve()!, UV1, UV2, out Curve2D aPCurv,
                                             DStr.Surface(Fd.Surf()).Surface()!, Pardeb, Parfin, tol3d,
                                             out tolreached);
                         PCurv = aPCurv;
@@ -473,13 +476,13 @@ internal static partial class ChFi3d_Builder_0
 
                 if (!ChFi3d_Contains(Li, IcFil1, Ipoin1))
                 {
-                    Interfp1 = ChFi3d_FilPointInDS(TopAbs_FORWARD, IcFil1, Ipoin1, Fi1.FirstParameter(), isVertex1);
+                    Interfp1 = ChFi3d_FilPointInDS(Forward, IcFil1, Ipoin1, Fi1.FirstParameter(), isVertex1);
                     DStr.ChangeCurveInterferences(IcFil1).Append(Interfp1);
                 }
 
                 if (ipoin == Ipoin1 || !ChFi3d_Contains(Li, IcFil1, ipoin))
                 {
-                    Interfp3 = ChFi3d_FilPointInDS(TopAbs_REVERSED, IcFil1, ipoin, Fi1.LastParameter(), isVertex);
+                    Interfp3 = ChFi3d_FilPointInDS(Reversed, IcFil1, ipoin, Fi1.LastParameter(), isVertex);
                     DStr.ChangeCurveInterferences(IcFil1).Append(Interfp3);
                 }
                 Ipoin1 = ipoin;
@@ -572,13 +575,13 @@ internal static partial class ChFi3d_Builder_0
 
                 if (!ChFi3d_Contains(Li, IcFil2, Ipoin2))
                 {
-                    Interfp2 = ChFi3d_FilPointInDS(TopAbs_FORWARD, IcFil2, Ipoin2, Fi2.FirstParameter(), isVertex2);
+                    Interfp2 = ChFi3d_FilPointInDS(Forward, IcFil2, Ipoin2, Fi2.FirstParameter(), isVertex2);
                     DStr.ChangeCurveInterferences(IcFil2).Append(Interfp2);
                 }
 
                 if (ipoin == Ipoin2 || !ChFi3d_Contains(Li, IcFil2, ipoin))
                 {
-                    Interfp4 = ChFi3d_FilPointInDS(TopAbs_REVERSED, IcFil2, ipoin, Fi2.LastParameter(), isVertex);
+                    Interfp4 = ChFi3d_FilPointInDS(Reversed, IcFil2, ipoin, Fi2.LastParameter(), isVertex);
                     DStr.ChangeCurveInterferences(IcFil2).Append(Interfp4);
                 }
                 Ipoin2 = ipoin;
@@ -597,20 +600,20 @@ internal static partial class ChFi3d_Builder_0
                         reglist.Append(regcout);
                     }
                     PCurv = CorDat.LastPCurve();
-                    ET1 = TopAbs.Compose(ET1, CorDat.LastPCurveOrientation());
+                    ET1 = global::Kerf.Engine.Topology.TopAbs.Compose(ET1, CorDat.LastPCurveOrientation());
                     CorDat.LastParameters(out Pardeb, out Parfin);
                     NCollection_List<TopOpeBRepDS_Interference> Li = DStr.ChangeCurveInterferences(Icurv);
                     if (Li.IsEmpty())
                     {
-                        if (CorDat.LastPCurveOrientation() == TopAbs_REVERSED)
+                        if (CorDat.LastPCurveOrientation() == Reversed)
                         {
-                            Interfp5 = ChFi3d_FilPointInDS(TopAbs_REVERSED, Icurv, Ipoin1, Parfin, isVertex1);
-                            Interfp6 = ChFi3d_FilPointInDS(TopAbs_FORWARD, Icurv, Ipoin2, Pardeb, isVertex2);
+                            Interfp5 = ChFi3d_FilPointInDS(Reversed, Icurv, Ipoin1, Parfin, isVertex1);
+                            Interfp6 = ChFi3d_FilPointInDS(Forward, Icurv, Ipoin2, Pardeb, isVertex2);
                         }
                         else
                         {
-                            Interfp5 = ChFi3d_FilPointInDS(TopAbs_FORWARD, Icurv, Ipoin1, Pardeb, isVertex1);
-                            Interfp6 = ChFi3d_FilPointInDS(TopAbs_REVERSED, Icurv, Ipoin2, Parfin, isVertex2);
+                            Interfp5 = ChFi3d_FilPointInDS(Forward, Icurv, Ipoin1, Pardeb, isVertex1);
+                            Interfp6 = ChFi3d_FilPointInDS(Reversed, Icurv, Ipoin2, Parfin, isVertex2);
                         }
                         Li.Append(Interfp5);
                         Li.Append(Interfp6);
@@ -636,7 +639,7 @@ internal static partial class ChFi3d_Builder_0
                 // eap, Apr 29 2002, occ 293
                 if (!isInDS2)
                 {
-                    Geom_Curve? C3d = null;
+                    Curve3D? C3d = null;
                     double tolreached;
                     ChFi3d_ComputeArete(Fd.VertexLastOnS1(),
                                         Fd.InterferenceOnS1().PCurveOnSurf()!.Value(
@@ -650,9 +653,9 @@ internal static partial class ChFi3d_Builder_0
                     Icurv = DStr.AddCurve(ref Crv);
                     regfilfil.SetCurve(Icurv);
                     regfilfil.SetS1(Isurf, false);
-                    Interfp5 = ChFi3d_FilPointInDS(TopAbs_FORWARD, Icurv, Ipoin1, Pardeb, isVertex1);
+                    Interfp5 = ChFi3d_FilPointInDS(Forward, Icurv, Ipoin1, Pardeb, isVertex1);
                     DStr.ChangeCurveInterferences(Icurv).Append(Interfp5);
-                    Interfp6 = ChFi3d_FilPointInDS(TopAbs_REVERSED, Icurv, Ipoin2, Parfin, isVertex2);
+                    Interfp6 = ChFi3d_FilPointInDS(Reversed, Icurv, Ipoin2, Parfin, isVertex2);
                     DStr.ChangeCurveInterferences(Icurv).Append(Interfp6);
                     Interfc1 = ChFi3d_FilCurveInDS(Icurv, Isurf, PCurv, ET1);
                     DStr.ChangeSurfaceInterferences(Isurf).Append(Interfc1);
@@ -673,14 +676,14 @@ internal static partial class ChFi3d_Builder_0
                 {
                     // The edge of the spine starting on this vertex is removed.
                     bool Trouve = false;
-                    TopoDS_Edge Arcspine = new();
-                    TopAbs_Orientation OVtx = TopAbs_FORWARD;
+                    Edge Arcspine = new();
+                    Orientation OVtx = Forward;
                     BoutdeVtx = V3.Vertex();
 
                     while (NumEdge <= spine!.NbEdges() && !Trouve)
                     {
                         Arcspine = spine.Edges(NumEdge);
-                        for (ex.Init(Arcspine.Oriented(TopAbs_FORWARD), TopAbs_VERTEX); ex.More() && (!Trouve);
+                        for (ex.Init(Arcspine.Oriented(Forward), global::Kerf.Topology.ShapeType.Vertex); ex.More() && (!Trouve);
                              ex.Next())
                         {
                             if (BoutdeVtx.IsSame(ex.Current()))
@@ -711,8 +714,8 @@ internal static partial class ChFi3d_Builder_0
                     {
                         IVtx = DStr.AddShape(BoutdeVtx);
                     }
-                    OVtx = TopAbs.Reverse(OVtx);
-                    double parVtx = BRep_Tool.Parameter(BoutdeVtx, Arcspine);
+                    OVtx = global::Kerf.Engine.Topology.TopAbs.Reverse(OVtx);
+                    double parVtx = Tool.Parameter(BoutdeVtx, Arcspine);
                     TopOpeBRepDS_CurvePointInterference interfv = ChFi3d_FilVertexInDS(OVtx, IArcspine, IVtx, parVtx);
                     DStr.ChangeShapeInterferences(IArcspine).Append(interfv);
                 }

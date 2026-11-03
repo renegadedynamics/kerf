@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Text;
 using OcctNet.DataExchange.Tests.IFSelect;
 using OcctNet.DataExchange.Tests.Interface;
@@ -203,8 +205,8 @@ public class XSControlTests
         Assert.Equal(0, reader.GiveList("xst-shared", reader.GiveList("(1)"))!.Length()); // not in full mode: none
         Assert.Equal(3, reader.TransferRoots());
         Assert.Equal(3, reader.NbShapes());
-        Assert.True(reader.Shape(1).IsNull()); // the toy's results are no shapes (null shapes are kept)
-        Assert.True(reader.OneShape().IsNull());
+        Assert.True(reader.Shape(1).IsNull); // the toy's results are no shapes (null shapes are kept)
+        Assert.True(reader.OneShape().IsNull);
         Assert.True(reader.TransferOne(2));
         Assert.Equal(4, reader.NbShapes());
         Assert.False(reader.TransferEntity(null));
@@ -234,7 +236,7 @@ public class XSControlTests
         Assert.Equal("X\n", Encoding.UTF8.GetString(anOut.ToArray()));
         Assert.True(WS.TransferWriteCheckList().IsEmpty(false));
         // a null shape: void
-        Assert.Equal(IFSelect_RetVoid, writer.TransferShape(new TopoDS_Shape()));
+        Assert.Equal(IFSelect_RetVoid, writer.TransferShape(new Shape()));
         // a new model clears the transfers
         Assert.NotNull(WS.NewModel());
         Assert.Equal(0, WS.TransferWriter()!.FinderProcess()!.NbMapped());
@@ -252,18 +254,18 @@ public class XSControlTests
         Assert.True(vars.GetPoint("p", ref p));
         Assert.Equal(2.0, p.Y());
         Assert.False(vars.GetPoint("a", ref p));
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
+        Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
         vars.SetShape("s", aBox);
         Assert.True(vars.GetShape("s").IsSame(aBox));
-        Assert.True(vars.GetShape("a").IsNull());
+        Assert.True(vars.GetShape("a").IsNull);
 
         var xu = new XSControl_Utils();
         Assert.Equal("TCollection_HAsciiString", xu.TypeName(new TCollection_HAsciiString("x")));
         Assert.Equal("HAsciiString", xu.TypeName(new TCollection_HAsciiString("x"), true));
-        Assert.Equal(TopAbs_ShapeEnum.TopAbs_SOLID, xu.ShapeType(aBox, true));
-        TopoDS_Shape faces = xu.SortedCompound(aBox, TopAbs_ShapeEnum.TopAbs_FACE, true, false);
-        Assert.Equal(TopAbs_ShapeEnum.TopAbs_COMPOUND, faces.ShapeType());
-        Assert.Equal(TopAbs_ShapeEnum.TopAbs_FACE, xu.ShapeType(faces, true));
+        Assert.Equal(ShapeType.Solid, xu.ShapeType(aBox, true));
+        Shape faces = xu.SortedCompound(aBox, ShapeType.Face, true, false);
+        Assert.Equal(ShapeType.Compound, faces.ShapeType());
+        Assert.Equal(ShapeType.Face, xu.ShapeType(faces, true));
         Assert.True(xu.BinderShape(xu.ShapeBinder(aBox)).IsSame(aBox));
         Assert.True(xu.BinderShape(xu.ShapeBinder(aBox, false)).IsSame(aBox));
         NCollection_HSequence<TCollection_HAsciiString> seq = xu.NewSeqCStr();
@@ -278,14 +280,14 @@ public class XSControlTests
         var TP = new Transfer_TransientProcess();
         ToyModel M = ToyNorm.Model(new ToyEntity("f1"), new ToyEntity("f2"));
         TP.SetModel(M);
-        var aFaces = new List<TopoDS_Shape>();
-        for (var anExp = new TopExp_Explorer(aBox, TopAbs_ShapeEnum.TopAbs_FACE); anExp.More(); anExp.Next())
+        var aFaces = new List<Shape>();
+        for (var anExp = new Explorer(aBox, ShapeType.Face); anExp.More(); anExp.Next())
         {
             aFaces.Add(anExp.Current());
         }
         Occt.TransferBRep.SetShapeResult(TP, M.Value(1), aFaces[0]);
         Occt.TransferBRep.SetShapeResult(TP, M.Value(2), aFaces[2]);
-        NCollection_HSequence<Transient>? adj = XSControl_ConnectedShapes.AdjacentEntities(aFaces[0], TP, TopAbs_ShapeEnum.TopAbs_FACE);
+        NCollection_HSequence<Transient>? adj = XSControl_ConnectedShapes.AdjacentEntities(aFaces[0], TP, ShapeType.Face);
         Assert.Equal("f1 f2", Names(adj)); // the box's faces 1 and 3 share an edge
     }
 }

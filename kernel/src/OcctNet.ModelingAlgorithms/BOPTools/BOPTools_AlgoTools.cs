@@ -5,12 +5,16 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Engine.Foundation.Gravity;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -41,43 +45,43 @@ public static partial class BOPTools_AlgoTools
     /// Makes the connexity blocks of the elements of <paramref name="theS"/> connected through sub-shapes of
     /// <paramref name="theConnectionType"/>, each as a list, and fills the connection map.
     /// </summary>
-    public static void MakeConnexityBlocks(in TopoDS_Shape theS,
-                                           TopAbs_ShapeEnum theConnectionType,
-                                           TopAbs_ShapeEnum theElementType,
-                                           NCollection_List<NCollection_List<TopoDS_Shape>> theLCB,
-                                           NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theConnectionMap)
+    public static void MakeConnexityBlocks(in Shape theS,
+                                           ShapeType theConnectionType,
+                                           ShapeType theElementType,
+                                           NCollection_List<NCollection_List<Shape>> theLCB,
+                                           NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theConnectionMap)
     {
         // Map shapes to find connected elements
-        TopExp.MapShapesAndAncestors(theS, theConnectionType, theElementType, theConnectionMap);
+        Exploration.MapShapesAndAncestors(theS, theConnectionType, theElementType, theConnectionMap);
         // Fence map
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
 
-        TopExp_Explorer aExp = new(theS, theElementType);
+        Explorer aExp = new(theS, theElementType);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Shape aS = aExp.Current();
+            Shape aS = aExp.Current();
             if (!aMFence.Add(aS))
             {
                 continue;
             }
             // The block
-            NCollection_List<TopoDS_Shape> aLBlock = new();
+            NCollection_List<Shape> aLBlock = new();
             // Start the block
             aLBlock.Append(aS);
             // Look for connected parts
-            NCollection_List<TopoDS_Shape>.Iterator aItB = new(aLBlock);
+            NCollection_List<Shape>.Iterator aItB = new(aLBlock);
             for (; aItB.More(); aItB.Next())
             {
-                TopoDS_Shape aS1 = aItB.Value();
-                TopExp_Explorer aExpSS = new(aS1, theConnectionType);
+                Shape aS1 = aItB.Value();
+                Explorer aExpSS = new(aS1, theConnectionType);
                 for (; aExpSS.More(); aExpSS.Next())
                 {
-                    TopoDS_Shape aSubS = aExpSS.Current();
-                    NCollection_List<TopoDS_Shape> aLS = theConnectionMap.FindFromKey(aSubS);
-                    NCollection_List<TopoDS_Shape>.Iterator aItLS = new(aLS);
+                    Shape aSubS = aExpSS.Current();
+                    NCollection_List<Shape> aLS = theConnectionMap.FindFromKey(aSubS);
+                    NCollection_List<Shape>.Iterator aItLS = new(aLS);
                     for (; aItLS.More(); aItLS.Next())
                     {
-                        TopoDS_Shape aS2 = aItLS.Value();
+                        Shape aS2 = aItLS.Value();
                         if (aMFence.Add(aS2))
                         {
                             aLBlock.Append(aS2);
@@ -94,26 +98,26 @@ public static partial class BOPTools_AlgoTools
     /// Makes the connexity blocks of the elements of <paramref name="theS"/> connected through sub-shapes of
     /// <paramref name="theConnectionType"/>, each as a compound.
     /// </summary>
-    public static void MakeConnexityBlocks(in TopoDS_Shape theS,
-                                           TopAbs_ShapeEnum theConnectionType,
-                                           TopAbs_ShapeEnum theElementType,
-                                           NCollection_List<TopoDS_Shape> theLCB)
+    public static void MakeConnexityBlocks(in Shape theS,
+                                           ShapeType theConnectionType,
+                                           ShapeType theElementType,
+                                           NCollection_List<Shape> theLCB)
     {
-        NCollection_List<NCollection_List<TopoDS_Shape>> aLBlocks = new();
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aCMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_List<NCollection_List<Shape>> aLBlocks = new();
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aCMap = new(ShapeHasher.Instance);
         MakeConnexityBlocks(theS, theConnectionType, theElementType, aLBlocks, aCMap);
 
         // Make compound from each block
-        NCollection_List<NCollection_List<TopoDS_Shape>>.Iterator aItB = new(aLBlocks);
+        NCollection_List<NCollection_List<Shape>>.Iterator aItB = new(aLBlocks);
         for (; aItB.More(); aItB.Next())
         {
-            NCollection_List<TopoDS_Shape> aLB = aItB.Value();
+            NCollection_List<Shape> aLB = aItB.Value();
 
-            TopoDS_Compound aBlock = new();
-            new BRep_Builder().MakeCompound(ref aBlock);
-            for (NCollection_List<TopoDS_Shape>.Iterator it = new(aLB); it.More(); it.Next())
+            Compound aBlock = new();
+            new BrepBuilder().MakeCompound(ref aBlock);
+            for (NCollection_List<Shape>.Iterator it = new(aLB); it.More(); it.Next())
             {
-                new BRep_Builder().Add(aBlock, it.Value());
+                new BrepBuilder().Add(aBlock, it.Value());
             }
 
             theLCB.Append(aBlock);
@@ -125,22 +129,22 @@ public static partial class BOPTools_AlgoTools
     /// <paramref name="theConnectionType"/>, and tells whether each is regular (every connection shared by exactly two
     /// elements, no element given twice).
     /// </summary>
-    public static void MakeConnexityBlocks(NCollection_List<TopoDS_Shape> theLS,
-                                           TopAbs_ShapeEnum theConnectionType,
-                                           TopAbs_ShapeEnum theElementType,
+    public static void MakeConnexityBlocks(NCollection_List<Shape> theLS,
+                                           ShapeType theConnectionType,
+                                           ShapeType theElementType,
                                            NCollection_List<BOPTools_ConnexityBlock> theLCB)
     {
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
         // Make connexity blocks from start elements
-        TopoDS_Compound aCStart = new();
+        Compound aCStart = new();
         aBB.MakeCompound(ref aCStart);
 
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance), aMNRegular = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance), aMNRegular = new(ShapeHasher.Instance);
 
-        NCollection_List<TopoDS_Shape>.Iterator aItL = new(theLS);
+        NCollection_List<Shape>.Iterator aItL = new(theLS);
         for (; aItL.More(); aItL.Next())
         {
-            TopoDS_Shape aS = aItL.Value();
+            Shape aS = aItL.Value();
             if (aMFence.Add(aS))
             {
                 aBB.Add(aCStart, aS);
@@ -151,29 +155,29 @@ public static partial class BOPTools_AlgoTools
             }
         }
 
-        NCollection_List<NCollection_List<TopoDS_Shape>> aLCB = new();
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aCMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_List<NCollection_List<Shape>> aLCB = new();
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aCMap = new(ShapeHasher.Instance);
         MakeConnexityBlocks(aCStart, theConnectionType, theElementType, aLCB, aCMap);
 
         // Save the blocks and check their regularity
-        NCollection_List<NCollection_List<TopoDS_Shape>>.Iterator aItB = new(aLCB);
+        NCollection_List<NCollection_List<Shape>>.Iterator aItB = new(aLCB);
         for (; aItB.More(); aItB.Next())
         {
-            NCollection_List<TopoDS_Shape> aBlock = aItB.Value();
+            NCollection_List<Shape> aBlock = aItB.Value();
 
             BOPTools_ConnexityBlock aCB = new();
-            NCollection_List<TopoDS_Shape> aLCS = aCB.ChangeShapes();
+            NCollection_List<Shape> aLCS = aCB.ChangeShapes();
 
             bool bRegular = true;
-            for (NCollection_List<TopoDS_Shape>.Iterator it = new(aBlock); it.More(); it.Next())
+            for (NCollection_List<Shape>.Iterator it = new(aBlock); it.More(); it.Next())
             {
-                TopoDS_Shape aS = it.Value();
+                Shape aS = it.Value();
                 if (aMNRegular.Contains(aS))
                 {
                     bRegular = false;
-                    aS.Orientation(TopAbs_FORWARD);
+                    aS.Orientation(Forward);
                     aLCS.Append(aS);
-                    aS.Orientation(TopAbs_REVERSED);
+                    aS.Orientation(Reversed);
                     aLCS.Append(aS);
                 }
                 else
@@ -182,7 +186,7 @@ public static partial class BOPTools_AlgoTools
                     if (bRegular)
                     {
                         // Check if there are no multi-connected shapes
-                        for (TopExp_Explorer ex = new(aS, theConnectionType); ex.More() && bRegular; ex.Next())
+                        for (Explorer ex = new(aS, theConnectionType); ex.More() && bRegular; ex.Next())
                         {
                             bRegular = (aCMap.FindFromKey(ex.Current()).Extent() == 2);
                         }
@@ -197,28 +201,28 @@ public static partial class BOPTools_AlgoTools
     }
 
     /// <summary>Reorients the edges of the wire for a correct ordering (connected edges oriented head to tail).</summary>
-    public static void OrientEdgesOnWire(ref TopoDS_Shape theWire)
+    public static void OrientEdgesOnWire(ref Shape theWire)
     {
         // make vertex-edges connexity map
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aVEMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(theWire, TopAbs_VERTEX, TopAbs_EDGE, aVEMap);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aVEMap = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(theWire, ShapeType.Vertex, ShapeType.Edge, aVEMap);
         //
         if (aVEMap.IsEmpty())
         {
             return;
         }
         //
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
         // new wire
-        TopoDS_Wire aWire = new();
+        Wire aWire = new();
         aBB.MakeWire(ref aWire);
         // fence map (OCCT's default hasher: orientation included, decision 6433)
-        NCollection_Map<TopoDS_Shape> aMFence = new(EqualityComparer<TopoDS_Shape>.Default);
+        NCollection_Map<Shape> aMFence = new(EqualityComparer<Shape>.Default);
         //
-        TopoDS_Iterator aIt = new(theWire);
+        Iterator aIt = new(theWire);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Edge aEC = TopoDS.Edge(aIt.Value());
+            Edge aEC = ShapeCasts.Edge(aIt.Value());
             if (!aMFence.Add(aEC))
             {
                 continue;
@@ -227,7 +231,7 @@ public static partial class BOPTools_AlgoTools
             // add edge to a wire as it is
             aBB.Add(aWire, aEC);
             //
-            TopExp.Vertices(aEC, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2, true);
+            Exploration.Vertices(aEC, out Vertex aV1, out Vertex aV2, true);
             //
             if (aV1.IsSame(aV2))
             {
@@ -238,11 +242,11 @@ public static partial class BOPTools_AlgoTools
             // orient the adjacent edges
             for (int i = 0; i < 2; ++i)
             {
-                TopoDS_Shape aVC = i == 0 ? aV1 : aV2;
+                Shape aVC = i == 0 ? aV1 : aV2;
                 //
                 for (; ; )
                 {
-                    NCollection_List<TopoDS_Shape> aLE = aVEMap.FindFromKey(aVC);
+                    NCollection_List<Shape> aLE = aVEMap.FindFromKey(aVC);
                     if (aLE.Extent() != 2)
                     {
                         // free vertex or multi-connexity, go to the next edge
@@ -251,16 +255,16 @@ public static partial class BOPTools_AlgoTools
                     //
                     bool bStop = true;
                     //
-                    NCollection_List<TopoDS_Shape>.Iterator aItLE = new(aLE);
+                    NCollection_List<Shape>.Iterator aItLE = new(aLE);
                     for (; aItLE.More(); aItLE.Next())
                     {
-                        TopoDS_Edge aEN = TopoDS.Edge(aItLE.Value());
+                        Edge aEN = ShapeCasts.Edge(aItLE.Value());
                         if (aMFence.Contains(aEN))
                         {
                             continue;
                         }
                         //
-                        TopExp.Vertices(aEN, out TopoDS_Vertex aVN1, out TopoDS_Vertex aVN2, true);
+                        Exploration.Vertices(aEN, out Vertex aVN1, out Vertex aVN2, true);
                         if (aVN1.IsSame(aVN2))
                         {
                             // closed edge, go to the next edge
@@ -297,36 +301,36 @@ public static partial class BOPTools_AlgoTools
     /// Makes a new shell of the faces of <paramref name="aShell"/>, reversing faces so that each edge shared by two
     /// faces has opposite orientations in them.
     /// </summary>
-    public static void OrientFacesOnShell(ref TopoDS_Shape aShell)
+    public static void OrientFacesOnShell(ref Shape aShell)
     {
         bool bIsProcessed1, bIsProcessed2;
         int i, aNbE, aNbF, j;
-        TopAbs_Orientation anOrE1, anOrE2;
-        TopoDS_Face aF1x, aF2x;
-        TopoDS_Shape aShellNew = new();
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aEFMap = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_IndexedMap<TopoDS_Shape> aProcessedFaces = new(TopTools_ShapeMapHasher.Instance);
-        BRep_Builder aBB = new();
+        Orientation anOrE1, anOrE2;
+        Face aF1x, aF2x;
+        Shape aShellNew = new();
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aEFMap = new(ShapeHasher.Instance);
+        NCollection_IndexedMap<Shape> aProcessedFaces = new(ShapeHasher.Instance);
+        BrepBuilder aBB = new();
         //
-        MakeContainer(TopAbs_SHELL, ref aShellNew);
+        MakeContainer(ShapeType.Shell, ref aShellNew);
         //
-        TopExp.MapShapesAndAncestors(aShell, TopAbs_EDGE, TopAbs_FACE, aEFMap);
+        Exploration.MapShapesAndAncestors(aShell, ShapeType.Edge, ShapeType.Face, aEFMap);
         aNbE = aEFMap.Extent();
         //
         // One seam edge  in aEFMap contains  2 equivalent faces.
         for (i = 1; i <= aNbE; ++i)
         {
-            NCollection_List<TopoDS_Shape> aLF = aEFMap.ChangeFromIndex(i);
+            NCollection_List<Shape> aLF = aEFMap.ChangeFromIndex(i);
             aNbF = aLF.Extent();
             if (aNbF > 1)
             {
-                NCollection_List<TopoDS_Shape> aLFTmp = new();
-                NCollection_IndexedMap<TopoDS_Shape> aFM = new(TopTools_ShapeMapHasher.Instance);
+                NCollection_List<Shape> aLFTmp = new();
+                NCollection_IndexedMap<Shape> aFM = new(ShapeHasher.Instance);
                 //
-                NCollection_List<TopoDS_Shape>.Iterator anIt = new(aLF);
+                NCollection_List<Shape>.Iterator anIt = new(aLF);
                 for (; anIt.More(); anIt.Next())
                 {
-                    TopoDS_Shape aF = anIt.Value();
+                    Shape aF = anIt.Value();
                     if (!aFM.Contains(aF))
                     {
                         aFM.Add(aF);
@@ -341,13 +345,13 @@ public static partial class BOPTools_AlgoTools
         // Do
         for (i = 1; i <= aNbE; ++i)
         {
-            TopoDS_Edge aE = TopoDS.Edge(aEFMap.FindKey(i));
-            if (BRep_Tool.Degenerated(aE))
+            Edge aE = ShapeCasts.Edge(aEFMap.FindKey(i));
+            if (Tool.Degenerated(aE))
             {
                 continue;
             }
             //
-            NCollection_List<TopoDS_Shape> aLF = aEFMap.FindFromIndex(i);
+            NCollection_List<Shape> aLF = aEFMap.FindFromIndex(i);
             aNbF = aLF.Extent();
             if (aNbF != 2)
             {
@@ -355,8 +359,8 @@ public static partial class BOPTools_AlgoTools
             }
             //
             // OCCT holds references into the list and reverses its items in place.
-            ref TopoDS_Shape aF1 = ref aLF.ChangeFirst();
-            ref TopoDS_Shape aF2 = ref aLF.ChangeLast();
+            ref Shape aF1 = ref aLF.ChangeFirst();
+            ref Shape aF2 = ref aLF.ChangeLast();
             //
             bIsProcessed1 = aProcessedFaces.Contains(aF1);
             bIsProcessed2 = aProcessedFaces.Contains(aF2);
@@ -372,18 +376,18 @@ public static partial class BOPTools_AlgoTools
                 bIsProcessed1 = !bIsProcessed1;
             }
             //
-            aF1x = TopoDS.Face(aF1);
+            aF1x = ShapeCasts.Face(aF1);
             if (bIsProcessed1)
             {
                 j = aProcessedFaces.FindIndex(aF1);
-                aF1x = TopoDS.Face(aProcessedFaces.FindKey(j));
+                aF1x = ShapeCasts.Face(aProcessedFaces.FindKey(j));
             }
             //
-            aF2x = TopoDS.Face(aF2);
+            aF2x = ShapeCasts.Face(aF2);
             if (bIsProcessed2)
             {
                 j = aProcessedFaces.FindIndex(aF2);
-                aF2x = TopoDS.Face(aProcessedFaces.FindKey(j));
+                aF2x = ShapeCasts.Face(aProcessedFaces.FindKey(j));
             }
             //
             anOrE1 = Orientation(aE, aF1x);
@@ -393,7 +397,7 @@ public static partial class BOPTools_AlgoTools
             {
                 if (anOrE1 == anOrE2)
                 {
-                    if (!BRep_Tool.IsClosed(aE, TopoDS.Face(aF1)) && !BRep_Tool.IsClosed(aE, TopoDS.Face(aF2)))
+                    if (!Tool.IsClosed(aE, ShapeCasts.Face(aF1)) && !Tool.IsClosed(aE, ShapeCasts.Face(aF2)))
                     {
                         aF2.Reverse();
                     }
@@ -405,7 +409,7 @@ public static partial class BOPTools_AlgoTools
             {
                 if (anOrE1 == anOrE2)
                 {
-                    if (!BRep_Tool.IsClosed(aE, TopoDS.Face(aF1)) && !BRep_Tool.IsClosed(aE, TopoDS.Face(aF2)))
+                    if (!Tool.IsClosed(aE, ShapeCasts.Face(aF1)) && !Tool.IsClosed(aE, ShapeCasts.Face(aF2)))
                     {
                         aF1.Reverse();
                     }
@@ -418,20 +422,20 @@ public static partial class BOPTools_AlgoTools
         //
         for (i = 1; i <= aNbE; ++i)
         {
-            TopoDS_Edge aE = TopoDS.Edge(aEFMap.FindKey(i));
-            if (BRep_Tool.Degenerated(aE))
+            Edge aE = ShapeCasts.Edge(aEFMap.FindKey(i));
+            if (Tool.Degenerated(aE))
             {
                 continue;
             }
             //
-            NCollection_List<TopoDS_Shape> aLF = aEFMap.FindFromIndex(i);
+            NCollection_List<Shape> aLF = aEFMap.FindFromIndex(i);
             aNbF = aLF.Extent();
             if (aNbF != 2)
             {
-                NCollection_List<TopoDS_Shape>.Iterator anIt = new(aLF);
+                NCollection_List<Shape>.Iterator anIt = new(aLF);
                 for (; anIt.More(); anIt.Next())
                 {
-                    TopoDS_Shape aF = anIt.Value();
+                    Shape aF = anIt.Value();
                     if (!aProcessedFaces.Contains(aF))
                     {
                         aProcessedFaces.Add(aF);
@@ -444,15 +448,15 @@ public static partial class BOPTools_AlgoTools
     }
 
     // The orientation of the edge in the face (the first same edge found), INTERNAL if the face hasn't it.
-    private static TopAbs_Orientation Orientation(in TopoDS_Edge anE, in TopoDS_Face aF)
+    private static Orientation Orientation(in Edge anE, in Face aF)
     {
-        TopAbs_Orientation anOr = TopAbs_INTERNAL;
+        Orientation anOr = Internal;
 
-        TopExp_Explorer anExp = new();
-        anExp.Init(aF, TopAbs_EDGE);
+        Explorer anExp = new();
+        anExp.Init(aF, ShapeType.Edge);
         for (; anExp.More(); anExp.Next())
         {
-            TopoDS_Shape anEF1 = anExp.Current();
+            Shape anEF1 = anExp.Current();
             if (anEF1.IsSame(anE))
             {
                 anOr = anEF1.Orientation();
@@ -466,29 +470,29 @@ public static partial class BOPTools_AlgoTools
     /// Makes the connexity block of faces of <paramref name="theLFIn"/> that contains its first face, through edges
     /// not in <paramref name="theMEAvoid"/>, and appends its faces to <paramref name="theLCB"/>.
     /// </summary>
-    public static void MakeConnexityBlock(NCollection_List<TopoDS_Shape> theLFIn,
-                                          NCollection_IndexedMap<TopoDS_Shape> theMEAvoid,
-                                          NCollection_List<TopoDS_Shape> theLCB)
+    public static void MakeConnexityBlock(NCollection_List<Shape> theLFIn,
+                                          NCollection_IndexedMap<Shape> theMEAvoid,
+                                          NCollection_List<Shape> theLCB)
     {
         int aNbF, aNbAdd1, aNbAdd, i;
-        TopExp_Explorer aExp = new();
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new();
+        Explorer aExp = new();
+        NCollection_List<Shape>.Iterator aIt = new();
         //
-        NCollection_IndexedMap<TopoDS_Shape> aMCB = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_IndexedMap<TopoDS_Shape> aMAdd = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_IndexedMap<TopoDS_Shape> aMAdd1 = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMEF = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedMap<Shape> aMCB = new(ShapeHasher.Instance);
+        NCollection_IndexedMap<Shape> aMAdd = new(ShapeHasher.Instance);
+        NCollection_IndexedMap<Shape> aMAdd1 = new(ShapeHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
         //
         // 1. aMEF
         aIt.Initialize(theLFIn);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aF = aIt.Value();
-            TopExp.MapShapesAndAncestors(aF, TopAbs_EDGE, TopAbs_FACE, aMEF);
+            Shape aF = aIt.Value();
+            Exploration.MapShapesAndAncestors(aF, ShapeType.Edge, ShapeType.Face, aMEF);
         }
         //
         // 2. aMCB
-        TopoDS_Shape aF1 = theLFIn.First();
+        Shape aF1 = theLFIn.First();
         aMAdd.Add(aF1);
         //
         for (; ; )
@@ -497,23 +501,23 @@ public static partial class BOPTools_AlgoTools
             aNbAdd = aMAdd.Extent();
             for (i = 1; i <= aNbAdd; ++i)
             {
-                TopoDS_Shape aF = aMAdd[i];
+                Shape aF = aMAdd[i];
                 //
                 // aMAdd1.Clear();
-                aExp.Init(aF, TopAbs_EDGE);
+                aExp.Init(aF, ShapeType.Edge);
                 for (; aExp.More(); aExp.Next())
                 {
-                    TopoDS_Shape aE = aExp.Current();
+                    Shape aE = aExp.Current();
                     if (theMEAvoid.Contains(aE))
                     {
                         continue;
                     }
                     //
-                    NCollection_List<TopoDS_Shape> aLF = aMEF.FindFromKey(aE);
+                    NCollection_List<Shape> aLF = aMEF.FindFromKey(aE);
                     aIt.Initialize(aLF);
                     for (; aIt.More(); aIt.Next())
                     {
-                        TopoDS_Shape aFx = aIt.Value();
+                        Shape aFx = aIt.Value();
                         if (aFx.IsSame(aF))
                         {
                             continue;
@@ -537,7 +541,7 @@ public static partial class BOPTools_AlgoTools
             aMAdd.Clear();
             for (i = 1; i <= aNbAdd1; ++i)
             {
-                TopoDS_Shape aFAdd = aMAdd1[i];
+                Shape aFAdd = aMAdd1[i];
                 aMAdd.Add(aFAdd);
             }
             //
@@ -547,40 +551,40 @@ public static partial class BOPTools_AlgoTools
         aNbF = aMCB.Extent();
         for (i = 1; i <= aNbF; ++i)
         {
-            TopoDS_Shape aF = aMCB[i];
+            Shape aF = aMCB[i];
             theLCB.Append(aF);
         }
     }
 
     /// <summary>
     /// The state of the shape relative to the solid, from one point of it: a vertex's point, an edge's intermediate
-    /// point, a face's point (see the face form of <see cref="ComputeState(in TopoDS_Face, in TopoDS_Solid, double,
-    /// NCollection_IndexedMap{TopoDS_Shape}, IntTools_Context)"/>). UNKNOWN for other types.
+    /// point, a face's point (see the face form of <see cref="ComputeState(in Face, in Solid, double,
+    /// NCollection_IndexedMap{Shape}, IntTools_Context)"/>). UNKNOWN for other types.
     /// </summary>
-    public static TopAbs_State ComputeStateByOnePoint(in TopoDS_Shape theS, in TopoDS_Solid theRef, double theTol,
+    public static Containment ComputeStateByOnePoint(in Shape theS, in Solid theRef, double theTol,
                                                       IntTools_Context theContext)
     {
-        TopAbs_State aState = TopAbs_UNKNOWN;
-        TopAbs_ShapeEnum aType = theS.ShapeType();
+        Containment aState = Unknown;
+        ShapeType aType = theS.ShapeType();
 
         switch (aType)
         {
-            case TopAbs_VERTEX:
-                aState = ComputeState(TopoDS.Vertex(theS), theRef, theTol, theContext);
+            case ShapeType.Vertex:
+                aState = ComputeState(ShapeCasts.Vertex(theS), theRef, theTol, theContext);
                 break;
-            case TopAbs_EDGE:
-                aState = ComputeState(TopoDS.Edge(theS), theRef, theTol, theContext);
+            case ShapeType.Edge:
+                aState = ComputeState(ShapeCasts.Edge(theS), theRef, theTol, theContext);
                 break;
-            case TopAbs_FACE:
+            case ShapeType.Face:
                 {
-                    NCollection_IndexedMap<TopoDS_Shape> aBounds = new(TopTools_ShapeMapHasher.Instance);
-                    TopExp.MapShapes(theRef, TopAbs_EDGE, aBounds);
-                    aState = ComputeState(TopoDS.Face(theS), theRef, theTol, aBounds, theContext);
+                    NCollection_IndexedMap<Shape> aBounds = new(ShapeHasher.Instance);
+                    Exploration.MapShapes(theRef, ShapeType.Edge, aBounds);
+                    aState = ComputeState(ShapeCasts.Face(theS), theRef, theTol, aBounds, theContext);
                     break;
                 }
             default:
                 {
-                    TopoDS_Iterator it = new(theS);
+                    Iterator it = new(theS);
                     if (it.More())
                     {
                         // OCCT discards the state of the first sub-shape, so a container gives UNKNOWN.
@@ -596,19 +600,19 @@ public static partial class BOPTools_AlgoTools
     /// The state of the face relative to the solid: the state of an edge of the face that isn't in
     /// <paramref name="theBounds"/> (the solid's edges), else of a point inside the face.
     /// </summary>
-    public static TopAbs_State ComputeState(in TopoDS_Face theF, in TopoDS_Solid theRef, double theTol,
-                                            NCollection_IndexedMap<TopoDS_Shape> theBounds, IntTools_Context theContext)
+    public static Containment ComputeState(in Face theF, in Solid theRef, double theTol,
+                                            NCollection_IndexedMap<Shape> theBounds, IntTools_Context theContext)
     {
-        TopAbs_State aState = TopAbs_UNKNOWN;
+        Containment aState = Unknown;
 
         // Try to find the edge on the face which does not
         // belong to the solid and classify the middle point of that
         // edge relatively solid.
-        TopExp_Explorer aExp = new(theF, TopAbs_EDGE);
+        Explorer aExp = new(theF, ShapeType.Edge);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Edge aSE = TopoDS.Edge(aExp.Current());
-            if (BRep_Tool.Degenerated(aSE))
+            Edge aSE = ShapeCasts.Edge(aExp.Current());
+            if (Tool.Degenerated(aSE))
             {
                 continue;
             }
@@ -628,11 +632,11 @@ public static partial class BOPTools_AlgoTools
         if (iErr != 0)
         {
             // Hatcher fails to find the point -> get point near some edge
-            aExp.Init(theF, TopAbs_EDGE);
+            aExp.Init(theF, ShapeType.Edge);
             for (; aExp.More() && iErr != 0; aExp.Next())
             {
-                TopoDS_Edge aSE = TopoDS.Edge(aExp.Current());
-                if (BRep_Tool.Degenerated(aSE))
+                Edge aSE = ShapeCasts.Edge(aExp.Current());
+                if (Tool.Degenerated(aSE))
                 {
                     continue;
                 }
@@ -650,12 +654,12 @@ public static partial class BOPTools_AlgoTools
     }
 
     /// <summary>The state of the vertex's point relative to the solid.</summary>
-    public static TopAbs_State ComputeState(in TopoDS_Vertex theV, in TopoDS_Solid theRef, double theTol, IntTools_Context theContext)
+    public static Containment ComputeState(in Vertex theV, in Solid theRef, double theTol, IntTools_Context theContext)
     {
-        TopAbs_State aState;
+        Containment aState;
         Point3D aP3D;
         //
-        aP3D = BRep_Tool.Pnt(theV);
+        aP3D = Tool.Pnt(theV);
         aState = ComputeState(aP3D, theRef, theTol, theContext);
         return aState;
     }
@@ -664,24 +668,24 @@ public static partial class BOPTools_AlgoTools
     /// The state of the edge's intermediate point (or of its vertex, for an edge without a 3D curve) relative to the
     /// solid.
     /// </summary>
-    public static TopAbs_State ComputeState(in TopoDS_Edge theE, in TopoDS_Solid theRef, double theTol, IntTools_Context theContext)
+    public static Containment ComputeState(in Edge theE, in Solid theRef, double theTol, IntTools_Context theContext)
     {
         double aT = 0.0;
-        TopAbs_State aState;
-        Geom_Curve? aC3D;
+        Containment aState;
+        Curve3D? aC3D;
         Point3D aP3D;
         //
-        aC3D = BRep_Tool.Curve(theE, out double aT1, out double aT2);
+        aC3D = Tool.Curve(theE, out double aT1, out double aT2);
         //
         if (aC3D is null)
         {
             // it means that we are in degenerated edge
-            TopoDS_Vertex aV = TopExp.FirstVertex(theE);
-            if (aV.IsNull())
+            Vertex aV = Exploration.FirstVertex(theE);
+            if (aV.IsNull)
             {
-                return TopAbs_UNKNOWN;
+                return Unknown;
             }
-            aP3D = BRep_Tool.Pnt(aV);
+            aP3D = Tool.Pnt(aV);
         }
         else
         { // usual case
@@ -716,9 +720,9 @@ public static partial class BOPTools_AlgoTools
     }
 
     /// <summary>The state of the point relative to the solid, by the context's solid classifier.</summary>
-    public static TopAbs_State ComputeState(in Point3D theP, in TopoDS_Solid theRef, double theTol, IntTools_Context theContext)
+    public static Containment ComputeState(in Point3D theP, in Solid theRef, double theTol, IntTools_Context theContext)
     {
-        TopAbs_State aState;
+        Containment aState;
         //
         BRepClass3d_SolidClassifier aSC = theContext.SolidClassifier(theRef);
         aSC.Perform(theP, theTol);
@@ -732,16 +736,16 @@ public static partial class BOPTools_AlgoTools
     /// True if the face is inside the solid: by the angles between the faces at an edge of the face found in
     /// <paramref name="theMEF"/> (the solid's edge/face map), else by classifying a point of the face.
     /// </summary>
-    public static bool IsInternalFace(in TopoDS_Face theFace,
-                                      in TopoDS_Solid theSolid,
-                                      NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theMEF,
+    public static bool IsInternalFace(in Face theFace,
+                                      in Solid theSolid,
+                                      NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMEF,
                                       double theTol,
                                       IntTools_Context theContext)
     {
         bool bDegenerated;
-        TopAbs_Orientation aOr;
-        TopoDS_Edge aE1 = new();
-        TopExp_Explorer aExp = new();
+        Orientation aOr;
+        Edge aE1 = new();
+        Explorer aExp = new();
         //
         // For all invoked functions: [::IsInternalFace(...)]
         // the returned value iRet means:
@@ -750,34 +754,34 @@ public static partial class BOPTools_AlgoTools
         // iRet=2;  - state can not be found by the method of angles
         int iRet = 0;
         // 1 Try to find an edge from theFace in theMEF
-        aExp.Init(theFace, TopAbs_EDGE);
+        aExp.Init(theFace, ShapeType.Edge);
         for (; aExp.More(); aExp.Next())
         {
-            TopoDS_Edge aE = TopoDS.Edge(aExp.Current());
+            Edge aE = ShapeCasts.Edge(aExp.Current());
             if (!theMEF.Contains(aE))
             {
                 continue;
             }
             //
             aOr = aE.Orientation();
-            if (aOr == TopAbs_INTERNAL)
+            if (aOr == Internal)
             {
                 continue;
             }
-            bDegenerated = BRep_Tool.Degenerated(aE);
+            bDegenerated = Tool.Degenerated(aE);
             if (bDegenerated)
             {
                 continue;
             }
             // aE
-            NCollection_List<TopoDS_Shape> aLF = theMEF.ChangeFromKey(aE);
+            NCollection_List<Shape> aLF = theMEF.ChangeFromKey(aE);
             int aNbF = aLF.Extent();
             if (aNbF == 1)
             {
                 // aE is internal edge on aLF.First()
-                TopoDS_Face aF1 = TopoDS.Face(aLF.First());
+                Face aF1 = ShapeCasts.Face(aLF.First());
                 GetEdgeOnFace(aE, aF1, ref aE1);
-                if (aE1.Orientation() != TopAbs_INTERNAL)
+                if (aE1.Orientation() != Internal)
                 {
                     continue;
                 }
@@ -788,8 +792,8 @@ public static partial class BOPTools_AlgoTools
             //
             else if (aNbF == 2)
             {
-                TopoDS_Face aF1 = TopoDS.Face(aLF.First());
-                TopoDS_Face aF2 = TopoDS.Face(aLF.Last());
+                Face aF1 = ShapeCasts.Face(aLF.First());
+                Face aF2 = ShapeCasts.Face(aLF.Last());
                 iRet = IsInternalFace(theFace, aE, aF1, aF2, theContext);
                 if (iRet != 2)
                 {
@@ -806,20 +810,20 @@ public static partial class BOPTools_AlgoTools
         //========================================
         // 2. Classify face using classifier
         //
-        TopAbs_State aState;
-        NCollection_IndexedMap<TopoDS_Shape> aBounds = new(TopTools_ShapeMapHasher.Instance);
+        Containment aState;
+        NCollection_IndexedMap<Shape> aBounds = new(ShapeHasher.Instance);
         //
-        TopExp.MapShapes(theSolid, TopAbs_EDGE, aBounds);
+        Exploration.MapShapes(theSolid, ShapeType.Edge, aBounds);
         //
         aState = ComputeState(theFace, theSolid, theTol, aBounds, theContext);
-        return aState == TopAbs_IN;
+        return aState == In;
     }
 
     /// <summary>
     /// Whether the face is inside the faces <paramref name="theLF"/> sharing <paramref name="theEdge"/>: 1 if IN, 0 if
     /// not, 2 if the angles can't tell.
     /// </summary>
-    public static int IsInternalFace(in TopoDS_Face theFace, in TopoDS_Edge theEdge, NCollection_List<TopoDS_Shape> theLF,
+    public static int IsInternalFace(in Face theFace, in Edge theEdge, NCollection_List<Shape> theLF,
                                      IntTools_Context theContext)
     {
         int aNbF, iRet;
@@ -829,8 +833,8 @@ public static partial class BOPTools_AlgoTools
         aNbF = theLF.Extent();
         if (aNbF == 2)
         {
-            TopoDS_Face aF1 = TopoDS.Face(theLF.First());
-            TopoDS_Face aF2 = TopoDS.Face(theLF.Last());
+            Face aF1 = ShapeCasts.Face(theLF.First());
+            Face aF2 = ShapeCasts.Face(theLF.Last());
             iRet = IsInternalFace(theFace, theEdge, aF1, aF2, theContext);
             return iRet;
         }
@@ -847,8 +851,8 @@ public static partial class BOPTools_AlgoTools
             {
                 BOPTools_CoupleOfShape aCSFF = aIt.Value();
                 //
-                TopoDS_Face aF1 = TopoDS.Face(aCSFF.Shape1());
-                TopoDS_Face aF2 = TopoDS.Face(aCSFF.Shape2());
+                Face aF1 = ShapeCasts.Face(aCSFF.Shape1());
+                Face aF2 = ShapeCasts.Face(aCSFF.Shape2());
                 iRet = IsInternalFace(theFace, theEdge, aF1, aF2, theContext);
                 if (iRet != 0)
                 {
@@ -863,26 +867,26 @@ public static partial class BOPTools_AlgoTools
     /// Whether the face is between <paramref name="theFace1"/> and <paramref name="theFace2"/> at
     /// <paramref name="theEdge"/>: 1 if IN, 0 if not, 2 if the angles can't tell.
     /// </summary>
-    public static int IsInternalFace(in TopoDS_Face theFace, in TopoDS_Edge theEdge, in TopoDS_Face theFace1, in TopoDS_Face theFace2,
+    public static int IsInternalFace(in Face theFace, in Edge theEdge, in Face theFace1, in Face theFace2,
                                      IntTools_Context theContext)
     {
-        TopoDS_Edge aE1 = new(), aE2 = new();
-        TopoDS_Face aFOff = new();
+        Edge aE1 = new(), aE2 = new();
+        Face aFOff = new();
         NCollection_List<BOPTools_CoupleOfShape> theLCSOff = new();
         BOPTools_CoupleOfShape aCS1 = new(), aCS2 = new();
         //
         GetEdgeOnFace(theEdge, theFace1, ref aE1);
-        if (aE1.Orientation() == TopAbs_INTERNAL)
+        if (aE1.Orientation() == Internal)
         {
             aE2 = aE1;
-            aE1.Orientation(TopAbs_FORWARD);
-            aE2.Orientation(TopAbs_REVERSED);
+            aE1.Orientation(Forward);
+            aE2.Orientation(Reversed);
         }
         else if (theFace1 == theFace2)
         {
             aE2 = aE1;
-            aE1.Orientation(TopAbs_FORWARD);
-            aE2.Orientation(TopAbs_REVERSED);
+            aE1.Orientation(Forward);
+            aE2.Orientation(Reversed);
         }
         else
         {
@@ -918,23 +922,23 @@ public static partial class BOPTools_AlgoTools
     /// smallest angle with <paramref name="theF1"/> around the edge <paramref name="theE1"/>. False if the smallest
     /// angle can't be told apart (<paramref name="theFOff"/> may still be set).
     /// </summary>
-    public static bool GetFaceOff(in TopoDS_Edge theE1, in TopoDS_Face theF1, NCollection_List<BOPTools_CoupleOfShape> theLCSOff,
-                                  ref TopoDS_Face theFOff, IntTools_Context theContext)
+    public static bool GetFaceOff(in Edge theE1, in Face theF1, NCollection_List<BOPTools_CoupleOfShape> theLCSOff,
+                                  ref Face theFOff, IntTools_Context theContext)
     {
         bool bRet, bIsComputed;
         double aT, aAngle, aTwoPI, aAngleMin, aDt3D;
         Point3D aPx;
         Direction3D aDBF, aDBF2, aDTF;
         Vector3D aVTgt = new();
-        TopAbs_Orientation aOr;
-        Geom_Curve aC3D;
-        Geom_Plane aPL;
+        Orientation aOr;
+        Curve3D aC3D;
+        PlaneSurface aPL;
         NCollection_List<BOPTools_CoupleOfShape>.Iterator aIt = new();
         GeomAPI_ProjectPointOnSurf aProjPL = new();
         //
         aAngleMin = 100.0;
         aTwoPI = M_PI + M_PI;
-        aC3D = BRep_Tool.Curve(theE1, out double aT1, out double aT2)!;
+        aC3D = Tool.Curve(theE1, out double aT1, out double aT2)!;
         aT = BOPTools_AlgoTools2D.IntermediatePoint(aT1, aT2);
         aC3D.D0(aT, out aPx);
         //
@@ -942,7 +946,7 @@ public static partial class BOPTools_AlgoTools
         Direction3D aDTgt = new(aVTgt), aDTgt2;
         aOr = theE1.Orientation();
         //
-        aPL = new Geom_Plane(aPx, aDTgt);
+        aPL = new PlaneSurface(aPx, aDTgt);
         aPL.Bounds(out double aUmin, out double aUsup, out double aVmin, out double aVsup);
         aProjPL.Init(aPL, aUmin, aUsup, aVmin, aVsup);
         //
@@ -962,8 +966,8 @@ public static partial class BOPTools_AlgoTools
         for (; aIt.More(); aIt.Next())
         {
             BOPTools_CoupleOfShape aCS = aIt.Value();
-            TopoDS_Edge aE2 = TopoDS.Edge(aCS.Shape1());
-            TopoDS_Face aF2 = TopoDS.Face(aCS.Shape2());
+            Edge aE2 = ShapeCasts.Edge(aCS.Shape1());
+            Face aF2 = ShapeCasts.Face(aCS.Shape2());
             //
             aDTgt2 = (aE2.Orientation() == aOr) ? aDTgt : aDTgt.Reversed();
             bIsComputed = GetFaceDir(aE2, aF2, aPx, aT, aDTgt2, bSmallFaces, out _, out aDBF2, theContext, aProjPL, aDt3D);
@@ -1012,20 +1016,20 @@ public static partial class BOPTools_AlgoTools
     }
 
     /// <summary>Finds in the face the edge same as <paramref name="theE1"/> with the opposite orientation.</summary>
-    public static bool GetEdgeOff(in TopoDS_Edge theE1, in TopoDS_Face theF2, ref TopoDS_Edge theE2)
+    public static bool GetEdgeOff(in Edge theE1, in Face theF2, ref Edge theE2)
     {
         bool bFound;
-        TopAbs_Orientation aOr1, aOr1C, aOr2;
-        TopExp_Explorer anExp = new();
+        Orientation aOr1, aOr1C, aOr2;
+        Explorer anExp = new();
         //
         bFound = false;
         aOr1 = theE1.Orientation();
-        aOr1C = TopAbs.Reverse(aOr1);
+        aOr1C = global::Kerf.Engine.Topology.TopAbs.Reverse(aOr1);
         //
-        anExp.Init(theF2, TopAbs_EDGE);
+        anExp.Init(theF2, ShapeType.Edge);
         for (; anExp.More(); anExp.Next())
         {
-            TopoDS_Edge aEF2 = TopoDS.Edge(anExp.Current());
+            Edge aEF2 = ShapeCasts.Edge(anExp.Current());
             if (aEF2.IsSame(theE1))
             {
                 aOr2 = aEF2.Orientation();
@@ -1044,11 +1048,11 @@ public static partial class BOPTools_AlgoTools
     /// True if the faces coincide: a point inside the first face is valid for the second, within the faces' and their
     /// edges' tolerances and the fuzzy value.
     /// </summary>
-    public static bool AreFacesSameDomain(in TopoDS_Face theF1, in TopoDS_Face theF2, IntTools_Context theContext) =>
+    public static bool AreFacesSameDomain(in Face theF1, in Face theF2, IntTools_Context theContext) =>
         AreFacesSameDomain(theF1, theF2, theContext, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-    /// <inheritdoc cref="AreFacesSameDomain(in TopoDS_Face, in TopoDS_Face, IntTools_Context)"/>
-    public static bool AreFacesSameDomain(in TopoDS_Face theF1, in TopoDS_Face theF2, IntTools_Context theContext, double theFuzz)
+    /// <inheritdoc cref="AreFacesSameDomain(in Face, in Face, IntTools_Context)"/>
+    public static bool AreFacesSameDomain(in Face theF1, in Face theF2, IntTools_Context theContext, double theFuzz)
     {
         bool bFacesSD = false;
 
@@ -1074,20 +1078,20 @@ public static partial class BOPTools_AlgoTools
 
         // Compute the tolerance of the faces, taking into account the deviation
         // of the edges from the surfaces
-        double aTolF1 = BRep_Tool.Tolerance(theF1), aTolF2 = BRep_Tool.Tolerance(theF2);
+        double aTolF1 = Tool.Tolerance(theF1), aTolF2 = Tool.Tolerance(theF2);
 
         // Find maximal tolerance of edges.
         // The faces should have the same boundaries, thus
         // it does not matter which face to explore.
         {
             double aTolEMax = -1.0;
-            TopExp_Explorer anExpE = new(theF1, TopAbs_EDGE);
+            Explorer anExpE = new(theF1, ShapeType.Edge);
             for (; anExpE.More(); anExpE.Next())
             {
-                TopoDS_Edge aE = TopoDS.Edge(anExpE.Current());
-                if (!BRep_Tool.Degenerated(aE))
+                Edge aE = ShapeCasts.Edge(anExpE.Current());
+                if (!Tool.Degenerated(aE))
                 {
-                    double aTolE = BRep_Tool.Tolerance(aE);
+                    double aTolE = Tool.Tolerance(aE);
                     if (aTolE > aTolEMax)
                     {
                         aTolEMax = aTolE;
@@ -1117,33 +1121,33 @@ public static partial class BOPTools_AlgoTools
     /// The relative sense of two faces sharing an edge: 0 if they share no (non-degenerated, non-seam) edge, else
     /// <see cref="BOPTools_AlgoTools3D.SenseFlag"/> of their normals at it.
     /// </summary>
-    public static int Sense(in TopoDS_Face theF1, in TopoDS_Face theF2, IntTools_Context theContext)
+    public static int Sense(in Face theF1, in Face theF2, IntTools_Context theContext)
     {
         int iSense = 0;
         Direction3D aDNF1, aDNF2;
-        TopoDS_Edge aE1 = new(), aE2 = new();
-        TopExp_Explorer aExp = new();
+        Edge aE1 = new(), aE2 = new();
+        Explorer aExp = new();
         //
-        aExp.Init(theF1, TopAbs_EDGE);
+        aExp.Init(theF1, ShapeType.Edge);
         for (; aExp.More(); aExp.Next())
         {
-            aE1 = TopoDS.Edge(aExp.Current());
-            if (!BRep_Tool.Degenerated(aE1))
+            aE1 = ShapeCasts.Edge(aExp.Current());
+            if (!Tool.Degenerated(aE1))
             {
-                if (!BRep_Tool.IsClosed(aE1, theF1))
+                if (!Tool.IsClosed(aE1, theF1))
                 {
                     break;
                 }
             }
         }
         //
-        aExp.Init(theF2, TopAbs_EDGE);
+        aExp.Init(theF2, ShapeType.Edge);
         for (; aExp.More(); aExp.Next())
         {
-            aE2 = TopoDS.Edge(aExp.Current());
-            if (!BRep_Tool.Degenerated(aE2))
+            aE2 = ShapeCasts.Edge(aExp.Current());
+            if (!Tool.Degenerated(aE2))
             {
-                if (!BRep_Tool.IsClosed(aE2, theF2))
+                if (!Tool.IsClosed(aE2, theF2))
                 {
                     if (aE2.IsSame(aE1))
                     {
@@ -1171,18 +1175,18 @@ public static partial class BOPTools_AlgoTools
     /// True if the split (an edge or a face) must be reversed to have the orientation of the original shape it was
     /// split from. Other types give false.
     /// </summary>
-    public static bool IsSplitToReverse(in TopoDS_Shape theSp, in TopoDS_Shape theSr, IntTools_Context? theContext) =>
+    public static bool IsSplitToReverse(in Shape theSp, in Shape theSr, IntTools_Context? theContext) =>
         IsSplitToReverse(theSp, theSr, theContext, out _);
 
     /// <summary>
-    /// As <see cref="IsSplitToReverse(in TopoDS_Shape, in TopoDS_Shape, IntTools_Context?)"/>, with the error status
+    /// As <see cref="IsSplitToReverse(in Shape, in Shape, IntTools_Context?)"/>, with the error status
     /// (0 if fine, 100 for an unsupported type; the face and edge forms give their own codes). OCCT's
     /// <c>int* theError</c>.
     /// </summary>
-    public static bool IsSplitToReverse(in TopoDS_Shape theSp, in TopoDS_Shape theSr, IntTools_Context? theContext, out int theError)
+    public static bool IsSplitToReverse(in Shape theSp, in Shape theSr, IntTools_Context? theContext, out int theError)
     {
         bool bRet;
-        TopAbs_ShapeEnum aType;
+        ShapeType aType;
         //
         bRet = false;
         theError = 0; // the edge and face forms always set it
@@ -1190,18 +1194,18 @@ public static partial class BOPTools_AlgoTools
         aType = theSp.ShapeType();
         switch (aType)
         {
-            case TopAbs_EDGE:
+            case ShapeType.Edge:
                 {
-                    TopoDS_Edge aESp = TopoDS.Edge(theSp);
-                    TopoDS_Edge aESr = TopoDS.Edge(theSr);
+                    Edge aESp = ShapeCasts.Edge(theSp);
+                    Edge aESr = ShapeCasts.Edge(theSr);
                     bRet = IsSplitToReverse(aESp, aESr, theContext, out theError);
                 }
                 break;
             //
-            case TopAbs_FACE:
+            case ShapeType.Face:
                 {
-                    TopoDS_Face aFSp = TopoDS.Face(theSp);
-                    TopoDS_Face aFSr = TopoDS.Face(theSr);
+                    Face aFSp = ShapeCasts.Face(theSp);
+                    Face aFSr = ShapeCasts.Face(theSr);
                     bRet = IsSplitToReverse(aFSp, aFSr, theContext, out theError);
                 }
                 break;
@@ -1214,10 +1218,10 @@ public static partial class BOPTools_AlgoTools
     }
 
     /// <summary>
-    /// As <see cref="IsSplitToReverse(in TopoDS_Shape, in TopoDS_Shape, IntTools_Context?)"/>; when the check fails,
+    /// As <see cref="IsSplitToReverse(in Shape, in Shape, IntTools_Context?)"/>; when the check fails,
     /// adds a <see cref="BOPAlgo_AlertUnableToOrientTheShape"/> warning (with both shapes) to the report.
     /// </summary>
-    public static bool IsSplitToReverseWithWarn(in TopoDS_Shape theSplit, in TopoDS_Shape theShape, IntTools_Context? theContext,
+    public static bool IsSplitToReverseWithWarn(in Shape theSplit, in Shape theShape, IntTools_Context? theContext,
                                                 Report? theReport = null)
     {
         bool isToReverse = IsSplitToReverse(theSplit, theShape, theContext, out int anErr);
@@ -1225,10 +1229,10 @@ public static partial class BOPTools_AlgoTools
         {
             // The error occurred during the check.
             // Add warning to the report, storing the shapes into the warning.
-            TopoDS_Compound aWC = new();
-            new BRep_Builder().MakeCompound(ref aWC);
-            new BRep_Builder().Add(aWC, theSplit);
-            new BRep_Builder().Add(aWC, theShape);
+            Compound aWC = new();
+            new BrepBuilder().MakeCompound(ref aWC);
+            new BrepBuilder().Add(aWC, theSplit);
+            new BrepBuilder().Add(aWC, theShape);
             theReport.AddAlert(Warning, new BOPAlgo_AlertUnableToOrientTheShape(aWC));
         }
         return isToReverse;
@@ -1238,22 +1242,22 @@ public static partial class BOPTools_AlgoTools
     /// True if the split face must be reversed: its normal at a point inside it points against the original face's
     /// normal at the projection of that point (orientations included).
     /// </summary>
-    public static bool IsSplitToReverse(in TopoDS_Face theFSp, in TopoDS_Face theFSr, IntTools_Context? theContext) =>
+    public static bool IsSplitToReverse(in Face theFSp, in Face theFSr, IntTools_Context? theContext) =>
         IsSplitToReverse(theFSp, theFSr, theContext, out _);
 
     /// <summary>
-    /// As <see cref="IsSplitToReverse(in TopoDS_Face, in TopoDS_Face, IntTools_Context?)"/>, with the error status: 0
+    /// As <see cref="IsSplitToReverse(in Face, in Face, IntTools_Context?)"/>, with the error status: 0
     /// fine, 1 no point found in the split, 2 no normal on the split, 3 the projection failed, 4 no normal on the
     /// original.
     /// </summary>
-    public static bool IsSplitToReverse(in TopoDS_Face theFSp, in TopoDS_Face theFSr, IntTools_Context? theContext, out int theError)
+    public static bool IsSplitToReverse(in Face theFSp, in Face theFSr, IntTools_Context? theContext, out int theError)
     {
         // Set OK error status
         theError = 0;
 
         // Compare surfaces
-        Geom_Surface aSFSp = BRep_Tool.Surface(theFSp)!;
-        Geom_Surface aSFOr = BRep_Tool.Surface(theFSr)!;
+        Surface aSFSp = Tool.Surface(theFSp)!;
+        Surface aSFOr = Tool.Surface(theFSr)!;
         if (ReferenceEquals(aSFSp, aSFOr))
         {
             return theFSp.Orientation() != theFSr.Orientation();
@@ -1273,11 +1277,11 @@ public static partial class BOPTools_AlgoTools
             // Hatcher has failed to find a point.
             // Try to get the point near some not closed and
             // not degenerated edge on the split face.
-            TopExp_Explorer anExp = new(theFSp, TopAbs_EDGE);
+            Explorer anExp = new(theFSp, ShapeType.Edge);
             for (; anExp.More(); anExp.Next())
             {
-                TopoDS_Edge aESp = TopoDS.Edge(anExp.Current());
-                if (!BRep_Tool.Degenerated(aESp) && !BRep_Tool.IsClosed(aESp, theFSp))
+                Edge aESp = ShapeCasts.Edge(anExp.Current());
+                if (!Tool.Degenerated(aESp) && !Tool.IsClosed(aESp, theFSp))
                 {
                     iErr = BOPTools_AlgoTools3D.PointNearEdge(aESp, theFSp, ref aP2DFSp, ref aPFSp, theContext!);
                     if (iErr == 0)
@@ -1304,7 +1308,7 @@ public static partial class BOPTools_AlgoTools
             return bDone;
         }
         //
-        if (theFSp.Orientation() == TopAbs_REVERSED)
+        if (theFSp.Orientation() == Reversed)
         {
             aDNFSp.Reverse();
         }
@@ -1331,7 +1335,7 @@ public static partial class BOPTools_AlgoTools
             return bDone;
         }
         //
-        if (theFSr.Orientation() == TopAbs_REVERSED)
+        if (theFSr.Orientation() == Reversed)
         {
             aDNFOr.Reverse();
         }
@@ -1345,21 +1349,21 @@ public static partial class BOPTools_AlgoTools
     /// True if the split edge must be reversed: its tangent at a point inside it points against the original edge's
     /// tangent at the projection of that point (orientations included).
     /// </summary>
-    public static bool IsSplitToReverse(in TopoDS_Edge theESp, in TopoDS_Edge theEOr, IntTools_Context? theContext) =>
+    public static bool IsSplitToReverse(in Edge theESp, in Edge theEOr, IntTools_Context? theContext) =>
         IsSplitToReverse(theESp, theEOr, theContext, out _);
 
     /// <summary>
-    /// As <see cref="IsSplitToReverse(in TopoDS_Edge, in TopoDS_Edge, IntTools_Context?)"/>, with the error status: 0
+    /// As <see cref="IsSplitToReverse(in Edge, in Edge, IntTools_Context?)"/>, with the error status: 0
     /// fine, 1 a degenerated edge, else the last failure over the samples (2 no tangent on the split, 3 the projection
     /// failed, 4 no tangent on the original).
     /// </summary>
-    public static bool IsSplitToReverse(in TopoDS_Edge theESp, in TopoDS_Edge theEOr, IntTools_Context? theContext, out int theError)
+    public static bool IsSplitToReverse(in Edge theESp, in Edge theEOr, IntTools_Context? theContext, out int theError)
     {
         // The idea is to compare the tangent vectors of two edges computed in
         // the same point. Thus, we need to take the point on split edge (since it is
         // shorter) and project it onto original edge to find corresponding parameter.
 
-        if (BRep_Tool.Degenerated(theESp) || BRep_Tool.Degenerated(theEOr))
+        if (Tool.Degenerated(theESp) || Tool.Degenerated(theEOr))
         {
             theError = 1;
             return false;
@@ -1369,8 +1373,8 @@ public static partial class BOPTools_AlgoTools
         theError = 0;
 
         // Get the curves from the edges
-        Geom_Curve? aCSp = BRep_Tool.Curve(theESp, out double f, out double l);
-        Geom_Curve? aCOr = BRep_Tool.Curve(theEOr, out f, out l);
+        Curve3D? aCSp = Tool.Curve(theESp, out double f, out double l);
+        Curve3D? aCOr = Tool.Curve(theEOr, out f, out l);
 
         // If the curves are the same, compare orientations only
         if (ReferenceEquals(aCSp, aCOr))
@@ -1382,7 +1386,7 @@ public static partial class BOPTools_AlgoTools
         // tangent vectors will be inside both edges.
         if (!BRepLib.FindValidRange(theESp, ref f, ref l))
         {
-            BRep_Tool.Range(theESp, out f, out l);
+            Tool.Range(theESp, out f, out l);
         }
 
         // Error code
@@ -1436,44 +1440,44 @@ public static partial class BOPTools_AlgoTools
     /// <summary>
     /// True if the wire is a hole in the face: the signed area its pcurves sweep (sampled) is positive.
     /// </summary>
-    public static bool IsHole(in TopoDS_Shape aW, in TopoDS_Shape aFace)
+    public static bool IsHole(in Shape aW, in Shape aFace)
     {
         bool bIsHole;
         int i, aNbS;
         double aS;
         double aU1, aU, dU;
         double aX1, aY1, aX0, aY0;
-        TopAbs_Orientation aOr;
+        Orientation aOr;
 
         Point2D aP2D0, aP2D1;
-        Geom2d_Curve? aC2D;
-        TopoDS_Face aF, aFF;
-        TopoDS_Iterator aItW = new();
+        Curve2D? aC2D;
+        Face aF, aFF;
+        Iterator aItW = new();
         //
         bIsHole = false;
         //
-        aF = TopoDS.Face(aFace);
+        aF = ShapeCasts.Face(aFace);
         aFF = aF;
-        aFF.Orientation(TopAbs_FORWARD);
+        aFF.Orientation(Forward);
         //
         aS = 0.0;
         aItW.Initialize(aW);
         for (; aItW.More(); aItW.Next())
         {
-            TopoDS_Edge aE = TopoDS.Edge(aItW.Value());
+            Edge aE = ShapeCasts.Edge(aItW.Value());
             aOr = aE.Orientation();
-            if (aOr != TopAbs_FORWARD && aOr != TopAbs_REVERSED)
+            if (aOr != Forward && aOr != Reversed)
             {
                 continue;
             }
             //
-            aC2D = BRep_Tool.CurveOnSurface(aE, aFF, out double aT1, out double aT2);
+            aC2D = Tool.CurveOnSurface(aE, aFF, out double aT1, out double aT2);
             if (aC2D is null)
             {
                 break; // xx
             }
             //
-            BRepAdaptor_Curve2d aBAC2D = new(aE, aFF);
+            EdgeCurve2DAdaptor aBAC2D = new(aE, aFF);
             aNbS = Geom2dInt_Geom2dCurveTool.NbSamples(aBAC2D);
             if (aNbS > 2)
             {
@@ -1483,7 +1487,7 @@ public static partial class BOPTools_AlgoTools
             dU = (aT2 - aT1) / (double)(aNbS - 1);
             aU = aT1;
             aU1 = aT1;
-            if (aOr == TopAbs_REVERSED)
+            if (aOr == Reversed)
             {
                 aU = aT2;
                 aU1 = aT2;
@@ -1511,48 +1515,48 @@ public static partial class BOPTools_AlgoTools
     /// Makes an empty container of the type (compound, compsolid, solid, shell or wire); other types leave
     /// <paramref name="theC"/> unchanged.
     /// </summary>
-    public static void MakeContainer(TopAbs_ShapeEnum theType, ref TopoDS_Shape theC)
+    public static void MakeContainer(ShapeType theType, ref Shape theC)
     {
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
         //
         switch (theType)
         {
-            case TopAbs_COMPOUND:
+            case ShapeType.Compound:
                 {
-                    TopoDS_Compound aC = new();
+                    Compound aC = new();
                     aBB.MakeCompound(ref aC);
                     theC = aC;
                 }
                 break;
             //
-            case TopAbs_COMPSOLID:
+            case ShapeType.CompSolid:
                 {
-                    TopoDS_CompSolid aCS = new();
+                    CompSolid aCS = new();
                     aBB.MakeCompSolid(ref aCS);
                     theC = aCS;
                 }
                 break;
             //
-            case TopAbs_SOLID:
+            case ShapeType.Solid:
                 {
-                    TopoDS_Solid aSolid = new();
+                    Solid aSolid = new();
                     aBB.MakeSolid(ref aSolid);
                     theC = aSolid;
                 }
                 break;
             //
             //
-            case TopAbs_SHELL:
+            case ShapeType.Shell:
                 {
-                    TopoDS_Shell aShell = new();
+                    Shell aShell = new();
                     aBB.MakeShell(ref aShell);
                     theC = aShell;
                 }
                 break;
             //
-            case TopAbs_WIRE:
+            case ShapeType.Wire:
                 {
-                    TopoDS_Wire aWire = new();
+                    Wire aWire = new();
                     aBB.MakeWire(ref aWire);
                     theC = aWire;
                 }
@@ -1567,20 +1571,20 @@ public static partial class BOPTools_AlgoTools
     /// Adds to the edge its pcurves on the faces where asked: the intersection curve's own pcurve, or one built,
     /// adjusted to the face's periods; then makes the edge same-parameter. Writes into <paramref name="aE"/>.
     /// </summary>
-    public static void MakePCurve(in TopoDS_Edge aE, in TopoDS_Face aF1, in TopoDS_Face aF2, in IntTools_Curve aIC, bool bPC1, bool bPC2,
+    public static void MakePCurve(in Edge aE, in Face aF1, in Face aF2, in IntTools_Curve aIC, bool bPC1, bool bPC2,
                                   IntTools_Context? theContext = null)
     {
         int i;
         double aTolE;
-        Geom2d_Curve? aC2D, aC2DA, aC2Dx1;
-        TopoDS_Face aFFWD;
-        BRep_Builder aBB = new();
+        Curve2D? aC2D, aC2DA, aC2Dx1;
+        Face aFFWD;
+        BrepBuilder aBB = new();
         bool bPC;
         //
-        aTolE = BRep_Tool.Tolerance(aE);
+        aTolE = Tool.Tolerance(aE);
         //
-        Geom_Curve aC3DE = BRep_Tool.Curve(aE, out double aT1, out double aT2)!;
-        Geom_TrimmedCurve aC3DETrim = new(aC3DE, aT1, aT2);
+        Curve3D aC3DE = Tool.Curve(aE, out double aT1, out double aT2)!;
+        TrimmedCurve3D aC3DETrim = new(aC3DE, aT1, aT2);
         //
         for (i = 0; i < 2; ++i)
         {
@@ -1601,7 +1605,7 @@ public static partial class BOPTools_AlgoTools
                 aC2Dx1 = aIC.SecondCurve2d();
             }
             //
-            aFFWD.Orientation(TopAbs_FORWARD);
+            aFFWD.Orientation(Forward);
             //
             aC2D = aC2Dx1;
             if (aC2D is null)
@@ -1610,7 +1614,7 @@ public static partial class BOPTools_AlgoTools
                 BOPTools_AlgoTools2D.CurveOnSurface(aE, aFFWD, out aC2D, out _, out _, out _, theContext);
             }
             //
-            if (aC3DE.IsPeriodic())
+            if (aC3DE.IsPeriodic)
             {
                 BOPTools_AlgoTools2D.AdjustPCurveOnFace(aFFWD, aT1, aT2, aC2D!, out aC2DA, theContext);
             }
@@ -1629,10 +1633,10 @@ public static partial class BOPTools_AlgoTools
     /// Makes the section edge of the intersection curve between the vertices (<see cref="MakeSectEdge"/>) with the
     /// tolerance <paramref name="theTolR3D"/>, raising the vertices' tolerances to it first. Writes into the vertices.
     /// </summary>
-    public static void MakeEdge(in IntTools_Curve theIC, in TopoDS_Vertex theV1, double theT1, in TopoDS_Vertex theV2, double theT2,
-                                double theTolR3D, out TopoDS_Edge theE)
+    public static void MakeEdge(in IntTools_Curve theIC, in Vertex theV1, double theT1, in Vertex theV2, double theT2,
+                                double theTolR3D, out Edge theE)
     {
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
         double aNeedTol = theTolR3D + DTolerance();
         //
         aBB.UpdateVertex(theV1, aNeedTol);
@@ -1644,17 +1648,17 @@ public static partial class BOPTools_AlgoTools
     }
 
     /// <summary>0 if the point is within the vertex's tolerance plus <paramref name="aTolP2"/> (and Confusion), else 1.</summary>
-    public static int ComputeVV(in TopoDS_Vertex aV1, in Point3D aP2, double aTolP2)
+    public static int ComputeVV(in Vertex aV1, in Point3D aP2, double aTolP2)
     {
         double aTolV1, aTolSum, aTolSum2, aD2;
         Point3D aP1;
         //
-        aTolV1 = BRep_Tool.Tolerance(aV1);
+        aTolV1 = Tool.Tolerance(aV1);
 
         aTolSum = aTolV1 + aTolP2 + global::Kerf.Engine.Foundation.Precision.Confusion();
         aTolSum2 = aTolSum * aTolSum;
         //
-        aP1 = BRep_Tool.Pnt(aV1);
+        aP1 = Tool.Pnt(aV1);
         //
         aD2 = aP1.SquareDistance(aP2);
         if (aD2 > aTolSum2)
@@ -1665,22 +1669,22 @@ public static partial class BOPTools_AlgoTools
     }
 
     /// <summary>0 if the vertices are within the sum of their tolerances and the fuzzy value, else 1.</summary>
-    public static int ComputeVV(in TopoDS_Vertex aV1, in TopoDS_Vertex aV2) => ComputeVV(aV1, aV2, global::Kerf.Engine.Foundation.Precision.Confusion());
+    public static int ComputeVV(in Vertex aV1, in Vertex aV2) => ComputeVV(aV1, aV2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-    /// <inheritdoc cref="ComputeVV(in TopoDS_Vertex, in TopoDS_Vertex)"/>
-    public static int ComputeVV(in TopoDS_Vertex aV1, in TopoDS_Vertex aV2, double aFuzz)
+    /// <inheritdoc cref="ComputeVV(in Vertex, in Vertex)"/>
+    public static int ComputeVV(in Vertex aV1, in Vertex aV2, double aFuzz)
     {
         double aTolV1, aTolV2, aTolSum, aTolSum2, aD2;
         Point3D aP1, aP2;
         double aFuzz1 = (aFuzz > global::Kerf.Engine.Foundation.Precision.Confusion() ? aFuzz : global::Kerf.Engine.Foundation.Precision.Confusion());
         //
-        aTolV1 = BRep_Tool.Tolerance(aV1);
-        aTolV2 = BRep_Tool.Tolerance(aV2);
+        aTolV1 = Tool.Tolerance(aV1);
+        aTolV2 = Tool.Tolerance(aV2);
         aTolSum = aTolV1 + aTolV2 + aFuzz1;
         aTolSum2 = aTolSum * aTolSum;
         //
-        aP1 = BRep_Tool.Pnt(aV1);
-        aP2 = BRep_Tool.Pnt(aV2);
+        aP1 = Tool.Pnt(aV1);
+        aP2 = Tool.Pnt(aV2);
         //
         aD2 = aP1.SquareDistance(aP2);
         if (aD2 > aTolSum2)
@@ -1694,42 +1698,42 @@ public static partial class BOPTools_AlgoTools
     /// A vertex covering the vertices of the list: the vertex itself for one, a new bounding vertex
     /// (<see cref="BRepLib.BoundingVertex"/>) for several; an empty list leaves <paramref name="aVnew"/> unchanged.
     /// </summary>
-    public static void MakeVertex(NCollection_List<TopoDS_Shape> aLV, ref TopoDS_Vertex aVnew)
+    public static void MakeVertex(NCollection_List<Shape> aLV, ref Vertex aVnew)
     {
         int aNb = aLV.Extent();
         if (aNb == 1)
         {
-            aVnew = TopoDS.Vertex(aLV.First());
+            aVnew = ShapeCasts.Vertex(aLV.First());
         }
         else if (aNb > 1)
         {
             double aNTol = 0.0;
             Point3D aNC = new();
             BRepLib.BoundingVertex(aLV, ref aNC, ref aNTol);
-            BRep_Builder aBB = new();
+            BrepBuilder aBB = new();
             aBB.MakeVertex(ref aVnew, aNC, aNTol);
         }
     }
 
     /// <summary>Finds in the face the edge same as <paramref name="theE1"/> (any orientation), through its wires.</summary>
-    public static bool GetEdgeOnFace(in TopoDS_Edge theE1, in TopoDS_Face theF2, ref TopoDS_Edge theE2)
+    public static bool GetEdgeOnFace(in Edge theE1, in Face theF2, ref Edge theE2)
     {
         bool bFound;
-        TopoDS_Iterator aItF = new(), aItW = new();
+        Iterator aItF = new(), aItW = new();
         //
         bFound = false;
         //
         aItF.Initialize(theF2);
         for (; aItF.More(); aItF.Next())
         {
-            TopoDS_Shape aW = aItF.Value();
+            Shape aW = aItF.Value();
             aItW.Initialize(aW);
             for (; aItW.More(); aItW.Next())
             {
-                TopoDS_Shape aE = aItW.Value();
+                Shape aE = aItW.Value();
                 if (aE.IsSame(theE1))
                 {
-                    theE2 = TopoDS.Edge(aE);
+                    theE2 = ShapeCasts.Edge(aE);
                     bFound = !bFound;
                     return bFound;
                 }
@@ -1739,16 +1743,16 @@ public static partial class BOPTools_AlgoTools
     }
 
     // Pairs the faces of thLF sharing theE (each with the face off it); false if the edge isn't on one of them.
-    private static bool FindFacePairs(in TopoDS_Edge theE, NCollection_List<TopoDS_Shape> thLF,
+    private static bool FindFacePairs(in Edge theE, NCollection_List<Shape> thLF,
                                       NCollection_List<BOPTools_CoupleOfShape> theLCFF, IntTools_Context theContext)
     {
         bool bFound;
         int i, aNbCEF;
-        TopAbs_Orientation aOr, aOrC = TopAbs_FORWARD;
-        NCollection_Map<TopoDS_Shape> aMFP = new(TopTools_ShapeMapHasher.Instance);
-        TopoDS_Face aF1 = new(), aF2 = new();
-        TopoDS_Edge aEL = new(), aE1 = new();
-        NCollection_List<TopoDS_Shape>.Iterator aItLF = new();
+        Orientation aOr, aOrC = Forward;
+        NCollection_Map<Shape> aMFP = new(ShapeHasher.Instance);
+        Face aF1 = new(), aF2 = new();
+        Edge aEL = new(), aE1 = new();
+        NCollection_List<Shape>.Iterator aItLF = new();
         BOPTools_CoupleOfShape aCEF = new(), aCFF = new();
         NCollection_List<BOPTools_CoupleOfShape> aLCEF = new(), aLCEFx = new();
         NCollection_List<BOPTools_CoupleOfShape>.Iterator aIt = new();
@@ -1759,7 +1763,7 @@ public static partial class BOPTools_AlgoTools
         aItLF.Initialize(thLF);
         for (; aItLF.More(); aItLF.Next())
         {
-            TopoDS_Face aFL = TopoDS.Face(aItLF.Value());
+            Face aFL = ShapeCasts.Face(aItLF.Value());
             //
             bFound = GetEdgeOnFace(theE, aFL, ref aEL);
             if (!bFound)
@@ -1782,16 +1786,16 @@ public static partial class BOPTools_AlgoTools
             for (i = 0; aIt.More(); aIt.Next(), ++i)
             {
                 BOPTools_CoupleOfShape aCSx = aIt.Value();
-                TopoDS_Shape aEx = aCSx.Shape1();
-                TopoDS_Shape aFx = aCSx.Shape2();
+                Shape aEx = aCSx.Shape1();
+                Shape aFx = aCSx.Shape2();
                 //
                 aOr = aEx.Orientation();
                 //
                 if (i == 0)
                 {
-                    aOrC = TopAbs.Reverse(aOr);
-                    aE1 = TopoDS.Edge(aEx);
-                    aF1 = TopoDS.Face(aFx);
+                    aOrC = global::Kerf.Engine.Topology.TopAbs.Reverse(aOr);
+                    aE1 = ShapeCasts.Edge(aEx);
+                    aF1 = ShapeCasts.Face(aFx);
                     aMFP.Add(aFx);
                     continue;
                 }
@@ -1821,7 +1825,7 @@ public static partial class BOPTools_AlgoTools
             for (; aIt.More(); aIt.Next())
             {
                 BOPTools_CoupleOfShape aCSx = aIt.Value();
-                TopoDS_Shape aFx = aCSx.Shape2();
+                Shape aFx = aCSx.Shape2();
                 if (!aMFP.Contains(aFx))
                 {
                     aLCEF.Append(aCSx);
@@ -1870,7 +1874,7 @@ public static partial class BOPTools_AlgoTools
     /// True if the part of the edge in the range (shrunk by 0.75% at each end) lies in or on the face: its two end
     /// points and its intermediate point project in or on the face, the intermediate one within the tolerances.
     /// </summary>
-    public static bool IsBlockInOnFace(in IntTools_Range aShrR, in TopoDS_Face aF, in TopoDS_Edge aE1, IntTools_Context aContext)
+    public static bool IsBlockInOnFace(in IntTools_Range aShrR, in Face aF, in Edge aE1, IntTools_Context aContext)
     {
         bool bFlag;
         double ULD, VLD;
@@ -1939,8 +1943,8 @@ public static partial class BOPTools_AlgoTools
             return bFlag;
         }
         //
-        aTolE = BRep_Tool.Tolerance(aE1);
-        aTolF = BRep_Tool.Tolerance(aF);
+        aTolE = Tool.Tolerance(aE1);
+        aTolF = Tool.Tolerance(aF);
         aTol = aTolE + aTolF;
         aDist = aProjector.LowerDistance();
         if (aDist > aTol)
@@ -1964,21 +1968,21 @@ public static partial class BOPTools_AlgoTools
     /// True if the edge is a micro edge: degenerated, without geometry, or too small for a shrunk range
     /// (<see cref="IntTools_ShrunkRange"/>), or, if <paramref name="bCheckSplittable"/>, not splittable.
     /// </summary>
-    public static bool IsMicroEdge(in TopoDS_Edge aE, IntTools_Context? aCtx, bool bCheckSplittable = true)
+    public static bool IsMicroEdge(in Edge aE, IntTools_Context? aCtx, bool bCheckSplittable = true)
     {
         bool bRet;
         double aT1, aT2, aTmp;
         //
-        bRet = (BRep_Tool.Degenerated(aE) || !BRep_Tool.IsGeometric(aE));
+        bRet = (Tool.Degenerated(aE) || !Tool.IsGeometric(aE));
         if (bRet)
         {
             return bRet;
         }
         //
-        _ = BRep_Tool.Curve(aE, out aT1, out aT2);
-        TopExp.Vertices(aE, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
-        aT1 = BRep_Tool.Parameter(aV1, aE);
-        aT2 = BRep_Tool.Parameter(aV2, aE);
+        _ = Tool.Curve(aE, out aT1, out aT2);
+        Exploration.Vertices(aE, out Vertex aV1, out Vertex aV2);
+        aT1 = Tool.Parameter(aV1, aE);
+        aT2 = Tool.Parameter(aV2, aE);
         if (aT2 < aT1)
         {
             aTmp = aT1;
@@ -2000,8 +2004,8 @@ public static partial class BOPTools_AlgoTools
     }
 
     // The bi-normal direction aDB of the face at the point aP of the edge (and its normal aDN).
-    private static bool GetFaceDir(in TopoDS_Edge aE,
-                                   in TopoDS_Face aF,
+    private static bool GetFaceDir(in Edge aE,
+                                   in Face aF,
                                    in Point3D aP,
                                    double aT,
                                    in Direction3D aDTgt,
@@ -2016,12 +2020,12 @@ public static partial class BOPTools_AlgoTools
         Point3D aPx = new();
         //
         BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(aE, aF, aT, out aDN, theContext);
-        if (aF.Orientation() == TopAbs_REVERSED)
+        if (aF.Orientation() == Reversed)
         {
             aDN.Reverse();
         }
         //
-        aTolE = BRep_Tool.Tolerance(aE);
+        aTolE = Tool.Tolerance(aE);
         aDB = aDN ^ aDTgt;
         //
         // do not try to look for the point in the small face by intersecting
@@ -2048,7 +2052,7 @@ public static partial class BOPTools_AlgoTools
 
     // Finds a point in the face in the direction aDB: intersects the face with the circle of radius aDt at aP in the
     // plane of aProjPL, iterating projections.
-    private static bool FindPointInFace(in TopoDS_Face aF,
+    private static bool FindPointInFace(in Face aF,
                                         in Point3D aP,
                                         ref Direction3D aDB,
                                         ref Point3D aPOut,
@@ -2122,8 +2126,8 @@ public static partial class BOPTools_AlgoTools
     }
 
     // The 3D step for GetFaceDir, and whether some face is too small for it.
-    private static double MinStep3D(in TopoDS_Edge theE1,
-                                    in TopoDS_Face theF1,
+    private static double MinStep3D(in Edge theE1,
+                                    in Face theF1,
                                     NCollection_List<BOPTools_CoupleOfShape> theLCS,
                                     in Point3D aP,
                                     IntTools_Context theContext,
@@ -2139,7 +2143,7 @@ public static partial class BOPTools_AlgoTools
         NCollection_List<BOPTools_CoupleOfShape> aLCS = new(theLCS);
         aLCS.Append(aCS1);
         //
-        aTolE = BRep_Tool.Tolerance(theE1);
+        aTolE = Tool.Tolerance(theE1);
         aDtMax = -1.0;
         aDtMin = 5.0e-6;
         //
@@ -2147,9 +2151,9 @@ public static partial class BOPTools_AlgoTools
         for (; aIt.More(); aIt.Next())
         {
             BOPTools_CoupleOfShape aCS = aIt.Value();
-            TopoDS_Face aF = TopoDS.Face(aCS.Shape2());
+            Face aF = ShapeCasts.Face(aCS.Shape2());
             //
-            aTolF = BRep_Tool.Tolerance(aF);
+            aTolF = Tool.Tolerance(aF);
             aDt = 2 * (aTolE + aTolF);
             if (aDt > aDtMax)
             {
@@ -2157,7 +2161,7 @@ public static partial class BOPTools_AlgoTools
             }
             //
             // try to compute the minimal 3D step
-            BRepAdaptor_Surface aBAS = theContext.SurfaceAdaptor(aF);
+            FaceSurfaceAdaptor aBAS = theContext.SurfaceAdaptor(aF);
             double aR = 0.0;
             SurfaceKind aSType = aBAS.GetType();
             switch (aSType)
@@ -2206,9 +2210,9 @@ public static partial class BOPTools_AlgoTools
         for (; aIt.More(); aIt.Next())
         {
             BOPTools_CoupleOfShape aCS = aIt.Value();
-            TopoDS_Face aF = TopoDS.Face(aCS.Shape2());
+            Face aF = ShapeCasts.Face(aCS.Shape2());
             //
-            BRepAdaptor_Surface aBAS = theContext.SurfaceAdaptor(aF);
+            FaceSurfaceAdaptor aBAS = theContext.SurfaceAdaptor(aF);
             //
             theContext.UVBounds(aF, out double aUMin, out double aUMax, out double aVMin, out double aVMax);
             //
@@ -2239,33 +2243,33 @@ public static partial class BOPTools_AlgoTools
     }
 
     /// <summary>True if the shell has a free edge: a non-degenerated edge in only one forward or reversed face.</summary>
-    public static bool IsOpenShell(in TopoDS_Shell aSh)
+    public static bool IsOpenShell(in Shell aSh)
     {
         bool bRet;
         int i, aNbE, aNbF;
-        TopAbs_Orientation aOrF;
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMEF = new(TopTools_ShapeMapHasher.Instance);
+        Orientation aOrF;
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
         //
         bRet = false;
         //
-        TopExp.MapShapesAndAncestors(aSh, TopAbs_EDGE, TopAbs_FACE, aMEF);
+        Exploration.MapShapesAndAncestors(aSh, ShapeType.Edge, ShapeType.Face, aMEF);
         //
         aNbE = aMEF.Extent();
         for (i = 1; i <= aNbE; ++i)
         {
-            TopoDS_Edge aE = TopoDS.Edge(aMEF.FindKey(i));
-            if (BRep_Tool.Degenerated(aE))
+            Edge aE = ShapeCasts.Edge(aMEF.FindKey(i));
+            if (Tool.Degenerated(aE))
             {
                 continue;
             }
             //
             aNbF = 0;
-            NCollection_List<TopoDS_Shape> aLF = aMEF.FindFromIndex(i);
-            for (NCollection_List<TopoDS_Shape>.Iterator aItLS = new(aLF); aItLS.More(); aItLS.Next())
+            NCollection_List<Shape> aLF = aMEF.FindFromIndex(i);
+            for (NCollection_List<Shape>.Iterator aItLS = new(aLF); aItLS.More(); aItLS.Next())
             {
-                TopoDS_Shape aF = aItLS.Value();
+                Shape aF = aItLS.Value();
                 aOrF = aF.Orientation();
-                if (aOrF == TopAbs_INTERNAL || aOrF == TopAbs_EXTERNAL)
+                if (aOrF == Internal || aOrF == External)
                 {
                     continue;
                 }
@@ -2283,15 +2287,15 @@ public static partial class BOPTools_AlgoTools
     }
 
     /// <summary>True if the solid is inverted: the infinite point classifies inside it.</summary>
-    public static bool IsInvertedSolid(in TopoDS_Solid aSolid)
+    public static bool IsInvertedSolid(in Solid aSolid)
     {
         double aTolS;
-        TopAbs_State aState;
+        Containment aState;
         BRepClass3d_SolidClassifier aSC = new(aSolid);
         //
         aTolS = 1.0e-7;
         aSC.PerformInfinitePoint(aTolS);
         aState = aSC.State();
-        return aState == TopAbs_IN;
+        return aState == In;
     }
 }

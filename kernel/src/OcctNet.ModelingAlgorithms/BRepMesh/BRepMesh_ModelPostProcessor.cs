@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.IMeshData_Status;
@@ -137,12 +138,12 @@ public class BRepMesh_ModelPostProcessor : IMeshTools_ModelAlgo
             }
 
             // Commit polygons related to separate face.
-            TopoDS_Edge aEdge = theDEdge.GetEdge();
+            Edge aEdge = theDEdge.GetEdge();
             for (int aPolygonIt = 1; aPolygonIt <= aMapOfPCurves.Extent(); ++aPolygonIt)
             {
-                TopoDS_Face aFace = aMapOfPCurves.FindKey(aPolygonIt).GetFace();
+                Face aFace = aMapOfPCurves.FindKey(aPolygonIt).GetFace();
 
-                Triangulation? aTriangulation = BRep_Tool.Triangulation(aFace, out Placement aLoc);
+                Triangulation? aTriangulation = Tool.Triangulation(aFace, out Placement aLoc);
 
                 if (aTriangulation is not null)
                 {
@@ -211,7 +212,7 @@ public class BRepMesh_ModelPostProcessor : IMeshTools_ModelAlgo
 
             BRepLib.UpdateDeflection(aDFace.GetFace());
 
-            Triangulation? aTriangulation = BRep_Tool.Triangulation(aDFace.GetFace(), out Placement _);
+            Triangulation? aTriangulation = Tool.Triangulation(aDFace.GetFace(), out Placement _);
 
             if (aTriangulation is not null)
             {

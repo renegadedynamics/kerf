@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
@@ -36,7 +37,7 @@ public class HLRBRep_PCLocFOfTheLocateExtPCOfTheProjPCurOfCInter : FunctionWithD
     private double myD1f;
     private readonly NCollection_Sequence<double> mySqDist = new();
     private readonly NCollection_Sequence<int> myIsMin = new();
-    private readonly NCollection_Sequence<Extrema_POnCurv2d> myPoint = new();
+    private readonly NCollection_Sequence<POnCurv2d> myPoint = new();
     private bool myPinit;
     private bool myCinit;
 #pragma warning disable CS0414 // OCCT sets myD1Init and never reads it
@@ -376,7 +377,7 @@ public class HLRBRep_PCLocFOfTheLocateExtPCOfTheProjPCurOfCInter : FunctionWithD
         }
 
         myIsMin.Append(IntVal);
-        myPoint.Append(new Extrema_POnCurv2d(myU, myPc));
+        myPoint.Append(new POnCurv2d(myU, myPc));
         return 0;
     }
 
@@ -407,7 +408,7 @@ public class HLRBRep_PCLocFOfTheLocateExtPCOfTheProjPCurOfCInter : FunctionWithD
 
     /// <summary>The Nth extremum point.</summary>
     /// <exception cref="TypeMismatchException">The point or the curve is not set.</exception>
-    public Extrema_POnCurv2d Point(int theN)
+    public POnCurv2d Point(int theN)
     {
         if (!myPinit || !myCinit)
         {

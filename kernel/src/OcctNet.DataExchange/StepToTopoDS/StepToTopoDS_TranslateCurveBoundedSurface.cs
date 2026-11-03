@@ -5,6 +5,12 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Topology.Brep;
+
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>Translates a curve_bounded_surface into a TopoDS_Face.</summary>
@@ -14,7 +20,7 @@ namespace Occt;
 /// </remarks>
 public sealed class StepToTopoDS_TranslateCurveBoundedSurface : StepToTopoDS_Root
 {
-    private TopoDS_Face myFace = new TopoDS_Face();
+    private Face myFace = new Face();
 
     public StepToTopoDS_TranslateCurveBoundedSurface()
     {
@@ -40,7 +46,7 @@ public sealed class StepToTopoDS_TranslateCurveBoundedSurface : StepToTopoDS_Roo
 
         // translate basis surface
         StepGeom_Surface S = CBS.BasisSurface();
-        Geom_Surface Surf = StepToGeom.MakeSurface(S, theLocalFactors);
+        Surface Surf = StepToGeom.MakeSurface(S, theLocalFactors);
         if (Surf is null)
         {
             TP.AddFail(CBS, "Basis surface not translated");
@@ -52,7 +58,7 @@ public sealed class StepToTopoDS_TranslateCurveBoundedSurface : StepToTopoDS_Roo
         StepGeom_BSplineSurface sgbss = S as StepGeom_BSplineSurface;
         if (sgbss is not null)
         {
-            Geom_Surface periodicSurf = ShapeAlgo.AlgoContainer().ConvertToPeriodic(Surf);
+            Surface periodicSurf = ShapeAlgo.AlgoContainer().ConvertToPeriodic(Surf);
             if (periodicSurf is not null)
             {
                 TP.AddWarning(S, "Surface forced to be periodic");
@@ -61,13 +67,13 @@ public sealed class StepToTopoDS_TranslateCurveBoundedSurface : StepToTopoDS_Roo
         }
 
         // create face
-        var B = new BRep_Builder();
+        var B = new BrepBuilder();
         B.MakeFace(ref myFace, Surf, Kerf.Engine.Foundation.Precision.Confusion());
 
         // add natural bound if implicit
         if (CBS.ImplicitOuter())
         {
-            if (Surf is Geom_BoundedSurface)
+            if (Surf is BoundedSurface)
             {
                 var mf = new BRepBuilderAPI_MakeFace(Surf, Kerf.Engine.Foundation.Precision.Confusion());
                 myFace = mf.InternalFace();
@@ -99,20 +105,20 @@ public sealed class StepToTopoDS_TranslateCurveBoundedSurface : StepToTopoDS_Roo
             B.Add(myFace, TrCC.InternalValue());
         }
 
-        done = !myFace.IsNull();
+        done = !myFace.IsNull;
         return done;
     }
 
     public bool Init(StepGeom_CurveBoundedSurface CBS, Transfer_TransientProcess TP) => Init(CBS, TP, new StepData_Factors());
 
     /// <summary>The result of the last translation, frozen; a null face if it failed.</summary>
-    public TopoDS_Face Value()
+    public Face Value()
     {
-        TopoDS_Face aFace = myFace;
+        Face aFace = myFace;
         aFace.TShape()?.FreezeGraph();
         return aFace;
     }
 
     /// <summary>As <see cref="Value"/>, without freezing: the reader's working shape.</summary>
-    internal TopoDS_Face InternalValue() => myFace;
+    internal Face InternalValue() => myFace;
 }

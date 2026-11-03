@@ -4,7 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -98,7 +101,7 @@ public class BOPAlgo_Section : BOPAlgo_Builder
             return;
         }
         //
-        BuildResult(TopAbs_VERTEX);
+        BuildResult(ShapeType.Vertex);
         if (HasErrors())
         {
             return;
@@ -110,7 +113,7 @@ public class BOPAlgo_Section : BOPAlgo_Builder
             return;
         }
         //
-        BuildResult(TopAbs_EDGE);
+        BuildResult(ShapeType.Edge);
         if (HasErrors())
         {
             return;
@@ -137,27 +140,27 @@ public class BOPAlgo_Section : BOPAlgo_Builder
         using var aPS = new ProgressScope(theRange, "Building the result of Section operation", 1);
         int i, aNbMS, aNbLE;
         int j, nE, nV, aNb, aNbF, aNbPBSc;
-        TopoDS_Shape aRC = new(), aRC1 = new();
-        BRep_Builder aBB = new();
-        TopExp_Explorer aExp = new();
-        NCollection_List<TopoDS_Shape> aLSA = new(), aLS = new();
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new(), aItIm = new(), aItLS = new();
-        NCollection_IndexedDataMap<TopoDS_Shape, int> aMSI = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_IndexedMap<TopoDS_Shape> aMS = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
+        Shape aRC = new(), aRC1 = new();
+        BrepBuilder aBB = new();
+        Explorer aExp = new();
+        NCollection_List<Shape> aLSA = new(), aLS = new();
+        NCollection_List<Shape>.Iterator aIt = new(), aItIm = new(), aItLS = new();
+        NCollection_IndexedDataMap<Shape, int> aMSI = new(ShapeHasher.Instance);
+        NCollection_IndexedMap<Shape> aMS = new(ShapeHasher.Instance);
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
         NCollection_IntMap.Iterator aItMI = new();
         NCollection_List<BOPDS_PaveBlock>.Iterator aItPB = new();
         //
         GetReport().Clear();
         //
-        BOPTools_AlgoTools.MakeContainer(TopAbs_COMPOUND, ref aRC1);
+        BOPTools_AlgoTools.MakeContainer(ShapeType.Compound, ref aRC1);
         //
         // 1. aRC1
         aNb = myDS!.NbSourceShapes();
         for (i = 0; i < aNb; ++i)
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() != TopAbs_FACE)
+            if (aSI.ShapeType() != ShapeType.Face)
             {
                 continue;
             }
@@ -174,7 +177,7 @@ public class BOPAlgo_Section : BOPAlgo_Builder
             for (; aItMI.More(); aItMI.Next())
             {
                 nV = aItMI.Key();
-                TopoDS_Shape aV = myDS.Shape(nV);
+                Shape aV = myDS.Shape(nV);
                 aBB.Add(aRC1, aV);
             }
             //
@@ -190,7 +193,7 @@ public class BOPAlgo_Section : BOPAlgo_Builder
                 }
                 if (myDS.IsNewShape(nV) || myDS.HasInterf(nV))
                 {
-                    TopoDS_Shape aV = myDS.Shape(nV);
+                    Shape aV = myDS.Shape(nV);
                     aBB.Add(aRC1, aV);
                 }
             }
@@ -203,7 +206,7 @@ public class BOPAlgo_Section : BOPAlgo_Builder
             {
                 BOPDS_PaveBlock aPB = aMPBSc[j];
                 nE = aPB.Edge();
-                TopoDS_Shape aE = myDS.Shape(nE);
+                Shape aE = myDS.Shape(nE);
                 aBB.Add(aRC1, aE);
             }
         }
@@ -228,7 +231,7 @@ public class BOPAlgo_Section : BOPAlgo_Builder
                     {
                         BOPDS_PaveBlock aPBR = aCB.PaveBlock1();
                         nE = aPBR.Edge();
-                        TopoDS_Shape aE = myDS.Shape(nE);
+                        Shape aE = myDS.Shape(nE);
                         aBB.Add(aRC1, aE);
                     }
                 }
@@ -238,7 +241,7 @@ public class BOPAlgo_Section : BOPAlgo_Builder
         aIt.Initialize(myArguments);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aSA = aIt.Value();
+            Shape aSA = aIt.Value();
             if (aMFence.Add(aSA))
             {
                 aLSA.Append(aSA);
@@ -257,25 +260,25 @@ public class BOPAlgo_Section : BOPAlgo_Builder
             {
                 return;
             }
-            TopoDS_Shape aSA = aIt.Value();
+            Shape aSA = aIt.Value();
             //
             aLS.Clear();
             aMS.Clear();
             aMFence.Clear();
             //
-            aExp.Init(aSA, TopAbs_EDGE);
+            aExp.Init(aSA, ShapeType.Edge);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Shape aE = aExp.Current();
+                Shape aE = aExp.Current();
                 if (aMFence.Add(aE))
                 {
                     aLS.Append(aE);
                 }
             }
-            aExp.Init(aSA, TopAbs_VERTEX);
+            aExp.Init(aSA, ShapeType.Vertex);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Shape aE = aExp.Current();
+                Shape aE = aExp.Current();
                 if (aMFence.Add(aE))
                 {
                     aLS.Append(aE);
@@ -286,30 +289,30 @@ public class BOPAlgo_Section : BOPAlgo_Builder
             aItLS.Initialize(aLS);
             for (; aItLS.More(); aItLS.Next())
             {
-                TopoDS_Shape aS = aItLS.Value();
+                Shape aS = aItLS.Value();
                 //
                 if (myImages.IsBound(aS))
                 {
-                    NCollection_List<TopoDS_Shape> aLSIm = myImages.Find(aS);
+                    NCollection_List<Shape> aLSIm = myImages.Find(aS);
                     aItIm.Initialize(aLSIm);
                     for (; aItIm.More(); aItIm.Next())
                     {
-                        TopoDS_Shape aSIm = aItIm.Value();
-                        TopExp.MapShapes(aSIm, TopAbs_VERTEX, aMS);
-                        TopExp.MapShapes(aSIm, TopAbs_EDGE, aMS);
+                        Shape aSIm = aItIm.Value();
+                        Exploration.MapShapes(aSIm, ShapeType.Vertex, aMS);
+                        Exploration.MapShapes(aSIm, ShapeType.Edge, aMS);
                     }
                 }
                 else
                 {
-                    TopExp.MapShapes(aS, TopAbs_VERTEX, aMS);
-                    TopExp.MapShapes(aS, TopAbs_EDGE, aMS);
+                    Exploration.MapShapes(aS, ShapeType.Vertex, aMS);
+                    Exploration.MapShapes(aS, ShapeType.Edge, aMS);
                 }
             }
             //
             aNbMS = aMS.Extent();
             for (i = 1; i <= aNbMS; ++i)
             {
-                TopoDS_Shape aS = aMS[i];
+                Shape aS = aMS[i];
                 if (aMSI.Contains(aS))
                 {
                     ref int iCnt = ref aMSI.ChangeFromKey(aS);
@@ -326,22 +329,22 @@ public class BOPAlgo_Section : BOPAlgo_Builder
         aMFence.Clear();
         //
         // 4. Build the result
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMVE = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMVE = new(ShapeHasher.Instance);
         //
-        TopExp.MapShapesAndAncestors(aRC1, TopAbs_VERTEX, TopAbs_EDGE, aMVE);
+        Exploration.MapShapesAndAncestors(aRC1, ShapeType.Vertex, ShapeType.Edge, aMVE);
         //
         aNbMS = aMSI.Extent();
         for (i = 1; i <= aNbMS; ++i)
         {
-            TopoDS_Shape aV = aMSI.FindKey(i);
+            Shape aV = aMSI.FindKey(i);
             int iCnt = aMSI.FindFromIndex(i);
             if (iCnt > 1)
             {
-                TopExp.MapShapesAndAncestors(aV, TopAbs_VERTEX, TopAbs_EDGE, aMVE);
+                Exploration.MapShapesAndAncestors(aV, ShapeType.Vertex, ShapeType.Edge, aMVE);
             }
         }
         //
-        BOPTools_AlgoTools.MakeContainer(TopAbs_COMPOUND, ref aRC);
+        BOPTools_AlgoTools.MakeContainer(ShapeType.Compound, ref aRC);
         //
         aNbMS = aMVE.Extent();
         for (i = 1; i <= aNbMS; ++i)
@@ -350,8 +353,8 @@ public class BOPAlgo_Section : BOPAlgo_Builder
             {
                 return;
             }
-            TopoDS_Shape aV = aMVE.FindKey(i);
-            NCollection_List<TopoDS_Shape> aLE = aMVE.FindFromIndex(i);
+            Shape aV = aMVE.FindKey(i);
+            NCollection_List<Shape> aLE = aMVE.FindFromIndex(i);
             aNbLE = aLE.Extent();
             if (aNbLE == 0)
             {
@@ -367,7 +370,7 @@ public class BOPAlgo_Section : BOPAlgo_Builder
                 aIt.Initialize(aLE);
                 for (; aIt.More(); aIt.Next())
                 {
-                    TopoDS_Shape aE = aIt.Value();
+                    Shape aE = aIt.Value();
                     if (aMFence.Add(aE))
                     {
                         aBB.Add(aRC, aE);

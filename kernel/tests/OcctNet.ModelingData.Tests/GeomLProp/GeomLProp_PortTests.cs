@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
 
@@ -26,18 +27,18 @@ public class GeomLProp_PortTests
         int aCompared = 0;
         for (int i = 0; i < 440; i++)
         {
-            Geom_Curve aCurve = GeomHash_PortTests.Curve(aRand, i % 11);
-            var anAdaptor = new GeomAdaptor_Curve(aCurve);
+            Curve3D aCurve = GeomHash_PortTests.Curve(aRand, i % 11);
+            var anAdaptor = new CurveAdaptor(aCurve);
             double aFirst = Max(aCurve.FirstParameter(), -10.0), aLast = Min(aCurve.LastParameter(), 10.0);
             for (int j = 0; j <= 4; j++)
             {
                 double aU = aFirst + (aLast - aFirst) * j / 4.0;
                 int aN = j % 4;
-                var aGeom = new GeomLProp_CLProps(aCurve, aU, aN, 1e-7);
-                var anAdapt = new LProp_CLProps3d(anAdaptor, aU, aN, 1e-7);
+                var aGeom = new global::Kerf.Engine.Geometry.Properties.CLProps(aCurve, aU, aN, 1e-7);
+                var anAdapt = new global::Kerf.Engine.Geometry.Properties.CLProps3d(anAdaptor, aU, aN, 1e-7);
 
                 // the adaptor's B-spline and Bezier caches may differ from the curve's evaluation in the last bits
-                bool isExact = aCurve is not (Geom_BSplineCurve or Geom_BezierCurve or Geom_OffsetCurve);
+                bool isExact = aCurve is not (BSplineCurve3D or BezierCurve3D or OffsetCurve3D);
                 Assert.Equal(aGeom.IsTangentDefined(), anAdapt.IsTangentDefined());
                 if (isExact)
                 {
@@ -56,8 +57,8 @@ public class GeomLProp_PortTests
         }
 
         // 2D: a planar 3D curve and the same 2D curve
-        var aCircle2d = new GeomLProp_CLProps2d(new Geom2d_Circle(new Axis2D(new Point2D(1, 2), new Direction2D(1, 0)), 3), 0.7, 3, 1e-7);
-        var aCircle3d = new GeomLProp_CLProps(new Geom_Circle(new Frame3D(new Point3D(1, 2, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 3), 0.7, 3, 1e-7);
+        var aCircle2d = new global::Kerf.Engine.Geometry.Properties.CLProps2d(new CircleCurve2D(new Axis2D(new Point2D(1, 2), new Direction2D(1, 0)), 3), 0.7, 3, 1e-7);
+        var aCircle3d = new global::Kerf.Engine.Geometry.Properties.CLProps(new CircleCurve3D(new Frame3D(new Point3D(1, 2, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 3), 0.7, 3, 1e-7);
         Assert.Equal(aCircle2d.Curvature(), aCircle3d.Curvature());
         aCircle2d.CentreOfCurvature(out Point2D aC2);
         aCircle3d.CentreOfCurvature(out Point3D aC3);
@@ -80,51 +81,51 @@ public class GeomLProp_PortTests
         aPoles[2] = new Point3D(0, 0, 0);
         aPoles[3] = new Point3D(1, 1, 0);
         aPoles[4] = new Point3D(2, 0, 0);
-        var aCurve = new Geom_BezierCurve(aPoles);
-        var aProps = new GeomLProp_CLProps(aCurve, 0.0, 2, 1e-7);
+        var aCurve = new BezierCurve3D(aPoles);
+        var aProps = new global::Kerf.Engine.Geometry.Properties.CLProps(aCurve, 0.0, 2, 1e-7);
         Assert.True(aProps.IsTangentDefined());
         aProps.Tangent(out Direction3D aTangent);
         Assert.Equal(1.0 / Math.Sqrt(2.0), aTangent.X(), 1e-15);
         Assert.Equal(1.0 / Math.Sqrt(2.0), aTangent.Y(), 1e-15);
         Assert.Equal(RealLast(), aProps.Curvature());
-        Assert.ThrowsAny<LProp_NotDefined>(() => aProps.Normal(out _));
+        Assert.ThrowsAny<global::Kerf.Engine.Geometry.Properties.NotDefinedException>(() => aProps.Normal(out _));
 
         // OCCT goes on with the null normal D2 (D1.D1) - D1 (D1.D2) and the stale curvature 0 (occt-issues.md): its
         // release build computes NaN, the port's gp_Vec::Normalize throws
         Assert.ThrowsAny<ConstructionErrorException>(() => aProps.CentreOfCurvature(out _));
 
         // a point (all derivatives null): no tangent
-        var aPoint = new Geom_BezierCurve(new NCollection_Array1<Point3D>(1, 2));
-        var aPointProps = new GeomLProp_CLProps(aPoint, 0.5, 1, 1e-7);
+        var aPoint = new BezierCurve3D(new NCollection_Array1<Point3D>(1, 2));
+        var aPointProps = new global::Kerf.Engine.Geometry.Properties.CLProps(aPoint, 0.5, 1, 1e-7);
         Assert.False(aPointProps.IsTangentDefined());
-        Assert.ThrowsAny<LProp_NotDefined>(() => aPointProps.Tangent(out _));
-        Assert.ThrowsAny<LProp_NotDefined>(() => aPointProps.Curvature());
+        Assert.ThrowsAny<global::Kerf.Engine.Geometry.Properties.NotDefinedException>(() => aPointProps.Tangent(out _));
+        Assert.ThrowsAny<global::Kerf.Engine.Geometry.Properties.NotDefinedException>(() => aPointProps.Curvature());
 
-        Assert.ThrowsAny<OutOfRangeException>(() => new GeomLProp_CLProps(aCurve, 4, 1e-7));
-        Assert.ThrowsAny<OutOfRangeException>(() => new GeomLProp_SLProps(3, 1e-7));
+        Assert.ThrowsAny<OutOfRangeException>(() => new global::Kerf.Engine.Geometry.Properties.CLProps(aCurve, 4, 1e-7));
+        Assert.ThrowsAny<OutOfRangeException>(() => new global::Kerf.Engine.Geometry.Properties.SLProps(3, 1e-7));
     }
 
     [Fact]
     public void Continuity_of_joined_curves()
     {
-        var aLine1 = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        var aLine2 = new Geom_Line(new Point3D(5, 0, 0), new Direction3D(1, 0, 0));
-        Assert.Equal(C2, GeomLProp.Continuity(aLine1, aLine2, 5.0, 0.0, false, false));
-        Assert.Equal(C0, GeomLProp.Continuity(aLine1, aLine2, 5.0, 0.0, true, false));
-        Assert.Equal(C2, GeomLProp.Continuity(aLine1, aLine2, 5.0, 0.0, true, true));
+        var aLine1 = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        var aLine2 = new LineCurve3D(new Point3D(5, 0, 0), new Direction3D(1, 0, 0));
+        Assert.Equal(C2, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aLine1, aLine2, 5.0, 0.0, false, false));
+        Assert.Equal(C0, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aLine1, aLine2, 5.0, 0.0, true, false));
+        Assert.Equal(C2, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aLine1, aLine2, 5.0, 0.0, true, true));
 
         // same direction, different speed: G1
-        var aCircle = new Geom_Circle(new Frame3D(new Point3D(0, 2, 0), new Direction3D(0, 0, 1)), 2.0);
-        Assert.Equal(G1, GeomLProp.Continuity(aLine1, aCircle, 0.0, -Math.PI / 2, false, false));
+        var aCircle = new CircleCurve3D(new Frame3D(new Point3D(0, 2, 0), new Direction3D(0, 0, 1)), 2.0);
+        Assert.Equal(G1, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aLine1, aCircle, 0.0, -Math.PI / 2, false, false));
 
         // at an angle: C0
-        var aLine3 = new Geom_Line(new Point3D(5, 0, 0), new Direction3D(0, 1, 0));
-        Assert.Equal(C0, GeomLProp.Continuity(aLine1, aLine3, 5.0, 0.0, false, false));
+        var aLine3 = new LineCurve3D(new Point3D(5, 0, 0), new Direction3D(0, 1, 0));
+        Assert.Equal(C0, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aLine1, aLine3, 5.0, 0.0, false, false));
 
-        Assert.ThrowsAny<FailureException>(() => GeomLProp.Continuity(aLine1, aLine3, 4.0, 0.0, false, false));
+        Assert.ThrowsAny<FailureException>(() => global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aLine1, aLine3, 4.0, 0.0, false, false));
     }
 
-    private static Geom_BSplineCurve CubicWithKnot(int theMult)
+    private static BSplineCurve3D CubicWithKnot(int theMult)
     {
         int aNbPoles = 4 + theMult;
         var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
@@ -141,7 +142,7 @@ public class GeomLProp_PortTests
         aMults[1] = 4;
         aMults[2] = theMult;
         aMults[3] = 4;
-        return new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
+        return new BSplineCurve3D(aPoles, aKnots, aMults, 3);
     }
 
     /// <summary>
@@ -152,28 +153,28 @@ public class GeomLProp_PortTests
     public void Continuity_at_a_BSpline_knot_is_reported_lower_as_in_OCCT()
     {
         // a cubic with a simple knot is C2 there: OCCT compares first derivatives only
-        Geom_BSplineCurve aC2 = CubicWithKnot(1);
-        Assert.Equal(C1, GeomLProp.Continuity(aC2, aC2, 0.5, 0.5, false, false));
+        BSplineCurve3D aC2 = CubicWithKnot(1);
+        Assert.Equal(C1, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aC2, aC2, 0.5, 0.5, false, false));
 
         // with a double knot it is C1: OCCT compares nothing
-        Geom_BSplineCurve aC1 = CubicWithKnot(2);
-        Assert.Equal(C0, GeomLProp.Continuity(aC1, aC1, 0.5, 0.5, false, false));
+        BSplineCurve3D aC1 = CubicWithKnot(2);
+        Assert.Equal(C0, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aC1, aC1, 0.5, 0.5, false, false));
 
         // away from the knot (not a B-spline knot: cont 5, n 3) both are C2
-        Assert.Equal(C2, GeomLProp.Continuity(aC1, aC1, 0.25, 0.25, false, false));
+        Assert.Equal(C2, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aC1, aC1, 0.25, 0.25, false, false));
     }
 
     [Fact]
     public void Surface_curvatures_of_known_surfaces()
     {
         var anAx3 = new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1));
-        var aSphere = new GeomLProp_SLProps(new Geom_SphericalSurface(anAx3, 2.0), 0.4, 0.3, 2, 1e-7);
+        var aSphere = new global::Kerf.Engine.Geometry.Properties.SLProps(new SphericalSurface(anAx3, 2.0), 0.4, 0.3, 2, 1e-7);
         Assert.True(aSphere.IsCurvatureDefined());
         Assert.Equal(-0.5, aSphere.MaxCurvature(), 1e-15);
         Assert.Equal(-0.5, aSphere.MinCurvature(), 1e-15);
         Assert.Equal(0.25, aSphere.GaussianCurvature(), 1e-15);
 
-        var aCylinder = new GeomLProp_SLProps(new Geom_CylindricalSurface(anAx3, 4.0), 1.0, 5.0, 2, 1e-7);
+        var aCylinder = new global::Kerf.Engine.Geometry.Properties.SLProps(new CylindricalSurface(anAx3, 4.0), 1.0, 5.0, 2, 1e-7);
         Assert.True(aCylinder.IsCurvatureDefined());
         Assert.Equal(0.0, aCylinder.MaxCurvature(), 1e-15);
         Assert.Equal(-0.25, aCylinder.MinCurvature(), 1e-15);
@@ -186,14 +187,14 @@ public class GeomLProp_PortTests
         Assert.Equal(new Direction3D(Math.Cos(1.0), Math.Sin(1.0), 0.0).X(), aCylinder.Normal().X(), 1e-15);
 
         // a cone at its apex: no normal, no curvature
-        var aCone = new GeomLProp_SLProps(new Geom_ConicalSurface(anAx3, 0.5, 0.0), 0.0, 0.0, 2, 1e-7);
-        Assert.False(aCone.IsNormalDefined());
+        var aCone = new global::Kerf.Engine.Geometry.Properties.SLProps(new ConicalSurface(anAx3, 0.5, 0.0), 0.0, 0.0, 2, 1e-7);
+        Assert.False(aCone.IsNormalDefined);
         Assert.False(aCone.IsCurvatureDefined());
-        Assert.ThrowsAny<LProp_NotDefined>(() => aCone.Normal());
-        Assert.ThrowsAny<LProp_NotDefined>(() => aCone.MaxCurvature());
+        Assert.ThrowsAny<global::Kerf.Engine.Geometry.Properties.NotDefinedException>(() => aCone.Normal());
+        Assert.ThrowsAny<global::Kerf.Engine.Geometry.Properties.NotDefinedException>(() => aCone.MaxCurvature());
 
         // the adaptor instantiation agrees on the sphere
-        var anAdapted = new LProp_SLProps3d(new GeomAdaptor_Surface(new Geom_SphericalSurface(anAx3, 2.0)), 0.4, 0.3, 2, 1e-7);
+        var anAdapted = new global::Kerf.Engine.Geometry.Properties.SLProps3d(new SurfaceAdaptor(new SphericalSurface(anAx3, 2.0)), 0.4, 0.3, 2, 1e-7);
         Assert.True(anAdapted.IsCurvatureDefined());
         Assert.Equal(aSphere.MeanCurvature(), anAdapted.MeanCurvature());
         Assert.Equal(aSphere.Normal(), anAdapted.Normal());
@@ -207,13 +208,13 @@ public class GeomLProp_PortTests
     [Fact]
     public void Curvatures_asked_first_return_the_previous_value_as_in_OCCT()
     {
-        var aSphere = new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
-        var aProps = new GeomLProp_SLProps(aSphere, 0.4, 0.3, 2, 1e-7);
+        var aSphere = new SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
+        var aProps = new global::Kerf.Engine.Geometry.Properties.SLProps(aSphere, 0.4, 0.3, 2, 1e-7);
         Assert.Equal(0.0, aProps.MaxCurvature());
         Assert.Equal(-0.5, aProps.MaxCurvature(), 1e-15);
 
-        var aCylinder = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 4.0);
-        var aCylProps = new GeomLProp_SLProps(aCylinder, 0.4, 0.3, 2, 1e-7);
+        var aCylinder = new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 4.0);
+        var aCylProps = new global::Kerf.Engine.Geometry.Properties.SLProps(aCylinder, 0.4, 0.3, 2, 1e-7);
         Assert.True(aCylProps.IsUmbilic()); // compares 0 and 0
         Assert.False(aCylProps.IsUmbilic());
         aCylProps.SetParameters(1.0, 1.0);

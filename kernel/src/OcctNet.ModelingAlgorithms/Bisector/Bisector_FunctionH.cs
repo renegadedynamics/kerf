@@ -15,12 +15,12 @@ namespace Occt;
 /// </summary>
 public sealed class Bisector_FunctionH : FunctionWithDerivative
 {
-    private readonly Geom2d_Curve curve2;
+    private readonly Curve2D curve2;
     private readonly Point2D p1;
     private readonly Vector2D t1;
 
     /// <summary>The function of the curve C2, for the point P1 of tangent T1.</summary>
-    public Bisector_FunctionH(Geom2d_Curve C2, in Point2D P1, in Vector2D T1)
+    public Bisector_FunctionH(Curve2D C2, in Point2D P1, in Vector2D T1)
     {
         p1 = P1;
         Vector2D aT1 = T1;

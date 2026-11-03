@@ -3,10 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using static Occt.IMeshData_Status;
 using static Occt.ShapeExtend_Status;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -16,23 +19,23 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// Only reads the shape (ShapeAnalysis' checks work on frozen shapes, decision 515), except
-/// <see cref="BRepTools.Update(in TopoDS_Face)"/>, which marks an unfrozen face checked after updating its UV points,
+/// <see cref="BrepTools.Update(in Face)"/>, which marks an unfrozen face checked after updating its UV points,
 /// as in OCCT, and does nothing on a frozen face.
 /// </remarks>
 public class BRepMesh_ShapeVisitor : IMeshTools_ShapeVisitor
 {
     private readonly IMeshData_Model myModel;
-    private readonly NCollection_DataMap<TopoDS_Shape, int> myDEdgeMap;
+    private readonly NCollection_DataMap<Shape, int> myDEdgeMap;
 
     /// <summary>A visitor filling the model.</summary>
     public BRepMesh_ShapeVisitor(IMeshData_Model theModel)
     {
         myModel = theModel;
-        myDEdgeMap = new NCollection_DataMap<TopoDS_Shape, int>(TopTools_ShapeMapHasher.Instance);
+        myDEdgeMap = new NCollection_DataMap<Shape, int>(ShapeHasher.Instance);
     }
 
     /// <summary>Adds the edge to the model, once.</summary>
-    public override void Visit(in TopoDS_Edge theEdge)
+    public override void Visit(in Edge theEdge)
     {
         if (!myDEdgeMap.IsBound(theEdge))
         {
@@ -46,23 +49,23 @@ public class BRepMesh_ShapeVisitor : IMeshTools_ShapeVisitor
     /// <see cref="IMeshData_Failure"/>; an inner wire that can't is skipped, with
     /// <see cref="IMeshData_UnorientedWire"/>.
     /// </summary>
-    public override void Visit(in TopoDS_Face theFace)
+    public override void Visit(in Face theFace)
     {
-        BRepTools.Update(theFace);
+        BrepTools.Update(theFace);
         IMeshData_Face aDFace = myModel.AddFace(theFace);
 
         // Outer wire should always be the first in the model.
-        TopoDS_Wire aOuterWire = ShapeAnalysis.OuterWire(theFace);
+        Wire aOuterWire = ShapeAnalysis.OuterWire(theFace);
         if (!addWire(aOuterWire, aDFace))
         {
             aDFace.SetStatus(IMeshData_Failure);
             return;
         }
 
-        TopExp_Explorer aWireIt = new(theFace, TopAbs_WIRE);
+        Explorer aWireIt = new(theFace, ShapeType.Wire);
         for (; aWireIt.More(); aWireIt.Next())
         {
-            TopoDS_Wire aWire = TopoDS.Wire(aWireIt.Current());
+            Wire aWire = ShapeCasts.Wire(aWireIt.Current());
             if (aWire.IsSame(aOuterWire))
             {
                 continue;
@@ -78,9 +81,9 @@ public class BRepMesh_ShapeVisitor : IMeshTools_ShapeVisitor
     }
 
     // Adds wire to face discrete model.
-    private bool addWire(in TopoDS_Wire theWire, IMeshData_Face theDFace)
+    private bool addWire(in Wire theWire, IMeshData_Face theDFace)
     {
-        if (theWire.IsNull())
+        if (theWire.IsNull)
         {
             return false;
         }
@@ -110,8 +113,8 @@ public class BRepMesh_ShapeVisitor : IMeshTools_ShapeVisitor
         for (int i = 1; i <= aEdgesNb; ++i)
         {
             int aEdgeIndex = aOrderTool.Ordered(i);
-            TopoDS_Edge aEdge = aWireData.Edge(aEdgeIndex);
-            if (aEdge.Orientation() != TopAbs_EXTERNAL)
+            Edge aEdge = aWireData.Edge(aEdgeIndex);
+            if (aEdge.Orientation() != External)
             {
                 IMeshData_Edge aDEdge = myModel.GetEdge(myDEdgeMap.Find(aEdge));
 

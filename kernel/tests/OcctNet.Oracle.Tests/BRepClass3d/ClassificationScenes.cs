@@ -1,10 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -38,10 +42,10 @@ internal static class ClassificationScenes
         _ => "mesh tetrahedron",
     };
 
-    public static Twin<N.TopoDS_Shape, TopoDS_Shape> Scene(Oracle theOracle, int theScene)
+    public static Twin<N.TopoDS_Shape, Shape> Scene(Oracle theOracle, int theScene)
     {
         var aTwins = new GPropTwins();
-        Twin<N.TopoDS_Shape, TopoDS_Shape> aShape;
+        Twin<N.TopoDS_Shape, Shape> aShape;
         switch (theScene % Kinds)
         {
             case 0:
@@ -65,11 +69,11 @@ internal static class ClassificationScenes
                 break;
             case 7:
             {
-                Twin<N.TopoDS_Shape, TopoDS_Shape> aBox = TwinShapes.Up(aTwins.Twins.Box(theOracle.Real(1, 5), theOracle.Real(1, 5), theOracle.Real(1, 5)));
-                Twin<N.TopoDS_Shape, TopoDS_Shape> aCyl = TwinShapes.Up(aTwins.CylinderSolid(theOracle.Real(0.5, 2), theOracle.Real(0.5, 3)));
+                Twin<N.TopoDS_Shape, Shape> aBox = TwinShapes.Up(aTwins.Twins.Box(theOracle.Real(1, 5), theOracle.Real(1, 5), theOracle.Real(1, 5)));
+                Twin<N.TopoDS_Shape, Shape> aCyl = TwinShapes.Up(aTwins.CylinderSolid(theOracle.Real(0.5, 2), theOracle.Real(0.5, 3)));
                 (N.TopLoc_Location aNL1, Placement aL1) = RandomLocation(theOracle, false);
                 (N.TopLoc_Location aNL2, Placement aL2) = RandomLocation(theOracle, false);
-                Twin<N.TopoDS_Compound, TopoDS_Compound> aCompound = aTwins.Twins.Compound(
+                Twin<N.TopoDS_Compound, Compound> aCompound = aTwins.Twins.Compound(
                     aBox,
                     new(aBox.N.Moved(aNL1), aBox.P.Moved(aL1)),
                     new(aCyl.N.Moved(aNL2), aCyl.P.Moved(aL2)));
@@ -79,7 +83,7 @@ internal static class ClassificationScenes
 
             case 8:
             {
-                Twin<N.TopoDS_Solid, TopoDS_Solid> aBox = aTwins.Twins.Box(theOracle.Real(0.5, 10), theOracle.Real(0.5, 10), theOracle.Real(0.5, 10));
+                Twin<N.TopoDS_Solid, Solid> aBox = aTwins.Twins.Box(theOracle.Real(0.5, 10), theOracle.Real(0.5, 10), theOracle.Real(0.5, 10));
                 aTwins.AttachQuadMeshes(TwinShapes.Up(aBox));
                 aShape = Placed(theOracle, TwinShapes.Up(aBox), true);
                 break;
@@ -95,9 +99,9 @@ internal static class ClassificationScenes
     }
 
     /// <summary>The shape at a random location (or none; scaled if allowed, sometimes), and reversed half the time.</summary>
-    public static Twin<N.TopoDS_Shape, TopoDS_Shape> Placed(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, bool theAllowScale)
+    public static Twin<N.TopoDS_Shape, Shape> Placed(Oracle theOracle, Twin<N.TopoDS_Shape, Shape> theShape, bool theAllowScale)
     {
-        Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = theShape;
+        Twin<N.TopoDS_Shape, Shape> aShape = theShape;
         if (theOracle.Bool())
         {
             (N.TopLoc_Location aNL, Placement aL) = RandomLocation(theOracle, theAllowScale && theOracle.Bool());
@@ -149,7 +153,7 @@ internal static class ClassificationScenes
     }
 
     /// <summary>A square face with a rectangular hole, on a random plane (the hole's wire first).</summary>
-    public static Twin<N.TopoDS_Face, TopoDS_Face> FaceWithHole(Oracle theOracle, TwinShapes theTwins)
+    public static Twin<N.TopoDS_Face, Face> FaceWithHole(Oracle theOracle, TwinShapes theTwins)
     {
         Point3D anOrigin = new(theOracle.Real(-10, 10), theOracle.Real(-10, 10), theOracle.Real(-10, 10));
         global::Kerf.Engine.Geometry.Xyz aNormal = GeomOracleInputs.RawDir(theOracle);
@@ -166,14 +170,14 @@ internal static class ClassificationScenes
         double hu1 = theOracle.Real(0.5, 1.5), hu2 = theOracle.Real(2, 3.5), hv1 = theOracle.Real(0.5, 1.5), hv2 = theOracle.Real(2, 3.5);
         (double U, double V)[] aUV = [(0, 0), (aSize, 0), (aSize, aSize), (0, aSize), (hu1, hv1), (hu1, hv2), (hu2, hv2), (hu2, hv1)];
         var aPoints = new Point3D[8];
-        var aV = new Twin<N.TopoDS_Vertex, TopoDS_Vertex>[8];
+        var aV = new Twin<N.TopoDS_Vertex, Vertex>[8];
         for (int i = 0; i < 8; i++)
         {
             aPoints[i] = global::Kerf.Engine.Geometry.ElSLib.Value(aUV[i].U, aUV[i].V, aPln);
             aV[i] = theTwins.Vertex(aPoints[i], 1e-6);
         }
 
-        return theTwins.PolygonFace(aPoints, aV, new Dictionary<(int, int), Twin<N.TopoDS_Edge, TopoDS_Edge>>(),
+        return theTwins.PolygonFace(aPoints, aV, new Dictionary<(int, int), Twin<N.TopoDS_Edge, Edge>>(),
                                     anOrigin, aNormal, anX, [4, 5, 6, 7], [0, 1, 2, 3]);
     }
 
@@ -182,14 +186,14 @@ internal static class ClassificationScenes
     /// a surface of revolution of the seam line around Z: the same parametrization as the cylindrical surface, so the
     /// pcurves are the cylinder's. Two discs share its circles.
     /// </summary>
-    public static Twin<N.TopoDS_Solid, TopoDS_Solid> SweptCylinder(GPropTwins theTwins, double r, double h, bool theRevolution)
+    public static Twin<N.TopoDS_Solid, Solid> SweptCylinder(GPropTwins theTwins, double r, double h, bool theRevolution)
     {
         var aNB = new N.BRep_Builder();
-        var aPB = new BRep_Builder();
+        var aPB = new BrepBuilder();
         const double Tol = 1e-7;
         double aTwoPi = 2.0 * Math.PI;
         TwinShapes aTw = theTwins.Twins;
-        Twin<N.TopoDS_Vertex, TopoDS_Vertex> aV0 = aTw.Vertex(new Point3D(r, 0, 0)), aV1 = aTw.Vertex(new Point3D(r, 0, h));
+        Twin<N.TopoDS_Vertex, Vertex> aV0 = aTw.Vertex(new Point3D(r, 0, 0)), aV1 = aTw.Vertex(new Point3D(r, 0, h));
         using var aNO = new N.gp_Pnt(0, 0, 0);
         using var aNOh = new N.gp_Pnt(0, 0, h);
         using var aNZ = new N.gp_Dir(0, 0, 1);
@@ -198,36 +202,36 @@ internal static class ClassificationScenes
         using var aNAx2h = new N.gp_Ax2(aNOh, aNZ, aNX);
         var aNoLoc = new Placement();
         var aNBottomCircle = new N.Geom_Circle(aNAx2, r);
-        var aBottomCircle = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
-        Twin<N.TopoDS_Edge, TopoDS_Edge> aBottom = aTw.EdgeOn(aNBottomCircle, aBottomCircle, aNoLoc, null, 0, aTwoPi, aV0, aV0);
-        Twin<N.TopoDS_Edge, TopoDS_Edge> aTop = aTw.EdgeOn(new N.Geom_Circle(aNAx2h, r),
-            new Geom_Circle(new Frame3D(new Point3D(0, 0, h), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r), aNoLoc, null, 0, aTwoPi, aV1, aV1);
+        var aBottomCircle = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
+        Twin<N.TopoDS_Edge, Edge> aBottom = aTw.EdgeOn(aNBottomCircle, aBottomCircle, aNoLoc, null, 0, aTwoPi, aV0, aV0);
+        Twin<N.TopoDS_Edge, Edge> aTop = aTw.EdgeOn(new N.Geom_Circle(aNAx2h, r),
+            new CircleCurve3D(new Frame3D(new Point3D(0, 0, h), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r), aNoLoc, null, 0, aTwoPi, aV1, aV1);
         using var aNSeamP = new N.gp_Pnt(r, 0, 0);
         var aNSeamLine = new N.Geom_Line(aNSeamP, aNZ);
-        var aSeamLine = new Geom_Line(new Point3D(r, 0, 0), new Direction3D(0, 0, 1));
-        Twin<N.TopoDS_Edge, TopoDS_Edge> aSeam = aTw.EdgeOn(aNSeamLine, aSeamLine, aNoLoc, null, 0, h, aV0, aV1);
+        var aSeamLine = new LineCurve3D(new Point3D(r, 0, 0), new Direction3D(0, 0, 1));
+        Twin<N.TopoDS_Edge, Edge> aSeam = aTw.EdgeOn(aNSeamLine, aSeamLine, aNoLoc, null, 0, h, aV0, aV1);
 
         N.Geom_Surface aNS;
-        Geom_Surface aS;
+        Surface aS;
         if (theRevolution)
         {
             using var aNAx1 = new N.gp_Ax1(aNO, aNZ);
             aNS = new N.Geom_SurfaceOfRevolution(new N.Geom_Line(aNSeamP, aNZ), aNAx1);
-            aS = new Geom_SurfaceOfRevolution(new Geom_Line(new Point3D(r, 0, 0), new Direction3D(0, 0, 1)), new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
+            aS = new RevolutionSurface(new LineCurve3D(new Point3D(r, 0, 0), new Direction3D(0, 0, 1)), new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
         }
         else
         {
             aNS = new N.Geom_SurfaceOfLinearExtrusion(new N.Geom_Circle(aNAx2, r), aNZ);
-            aS = new Geom_SurfaceOfLinearExtrusion(new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r), new Direction3D(0, 0, 1));
+            aS = new ExtrusionSurface(new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r), new Direction3D(0, 0, 1));
         }
 
         var aNF = new N.TopoDS_Face();
         aNB.MakeFace(aNF, aNS, Tol);
-        TopoDS_Face aF = new();
+        Face aF = new();
         aPB.MakeFace(ref aF, aS, Tol);
 
         // the pcurves (u along the circle, v along Z) as on the cylinder
-        void Update(Twin<N.TopoDS_Edge, TopoDS_Edge> theE, (double X, double Y, double DX, double DY) theL1,
+        void Update(Twin<N.TopoDS_Edge, Edge> theE, (double X, double Y, double DX, double DY) theL1,
                     (double X, double Y, double DX, double DY)? theL2)
         {
             N.Geom2d_Line NativeLine((double X, double Y, double DX, double DY) l)
@@ -237,7 +241,7 @@ internal static class ClassificationScenes
                 return new N.Geom2d_Line(aP, aD);
             }
 
-            static Geom2d_Line PortLine((double X, double Y, double DX, double DY) l) => new(new Point2D(l.X, l.Y), new Direction2D(l.DX, l.DY));
+            static LineCurve2D PortLine((double X, double Y, double DX, double DY) l) => new(new Point2D(l.X, l.Y), new Direction2D(l.DX, l.DY));
 
             if (theL2 is null)
             {
@@ -254,20 +258,20 @@ internal static class ClassificationScenes
         Update(aBottom, (0, 0, 1, 0), null);
         Update(aTop, (0, h, 1, 0), null);
         Update(aSeam, (aTwoPi, 0, 0, 1), (0, 0, 0, 1));
-        Twin<N.TopoDS_Wire, TopoDS_Wire> aW = aTw.Wire(true, aBottom,
+        Twin<N.TopoDS_Wire, Wire> aW = aTw.Wire(true, aBottom,
                                                        aSeam,
-                                                       new(N.TopoDS.Edge(aTop.N.Reversed()), TopoDS.Edge(aTop.P.Reversed())),
-                                                       new(N.TopoDS.Edge(aSeam.N.Reversed()), TopoDS.Edge(aSeam.P.Reversed())));
+                                                       new(N.TopoDS.Edge(aTop.N.Reversed()), ShapeCasts.Edge(aTop.P.Reversed())),
+                                                       new(N.TopoDS.Edge(aSeam.N.Reversed()), ShapeCasts.Edge(aSeam.P.Reversed())));
         aNB.Add(aNF, aW.N);
         aPB.Add(aF, aW.P);
 
-        Twin<N.TopoDS_Face, TopoDS_Face> aBottomFace = Disc(aNB, aPB, aBottom, 0, r), aTopFace = Disc(aNB, aPB, aTop, h, r);
-        return theTwins.Solid(TwinShapes.Up(new Twin<N.TopoDS_Face, TopoDS_Face>(aNF, aF)),
+        Twin<N.TopoDS_Face, Face> aBottomFace = Disc(aNB, aPB, aBottom, 0, r), aTopFace = Disc(aNB, aPB, aTop, h, r);
+        return theTwins.Solid(TwinShapes.Up(new Twin<N.TopoDS_Face, Face>(aNF, aF)),
                               new(aBottomFace.N.Reversed(), aBottomFace.P.Reversed()),
                               TwinShapes.Up(aTopFace));
     }
 
-    private static Twin<N.TopoDS_Face, TopoDS_Face> Disc(N.BRep_Builder theNB, BRep_Builder thePB, Twin<N.TopoDS_Edge, TopoDS_Edge> theCircle, double z, double r)
+    private static Twin<N.TopoDS_Face, Face> Disc(N.BRep_Builder theNB, BrepBuilder thePB, Twin<N.TopoDS_Edge, Edge> theCircle, double z, double r)
     {
         const double Tol = 1e-7;
         using var aNO = new N.gp_Pnt(0, 0, z);
@@ -276,8 +280,8 @@ internal static class ClassificationScenes
         using var aNAx3 = new N.gp_Ax3(aNO, aNZ, aNX);
         var aNF = new N.TopoDS_Face();
         theNB.MakeFace(aNF, new N.Geom_Plane(aNAx3), Tol);
-        TopoDS_Face aF = new();
-        thePB.MakeFace(ref aF, new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, z), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))), Tol);
+        Face aF = new();
+        thePB.MakeFace(ref aF, new PlaneSurface(new CoordinateSystem(new Point3D(0, 0, z), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))), Tol);
         using (var aNC = new N.gp_Pnt2d(0, 0))
         using (var aND = new N.gp_Dir2d(1, 0))
         using (var aNAx = new N.gp_Ax2d(aNC, aND))
@@ -285,10 +289,10 @@ internal static class ClassificationScenes
             theNB.UpdateEdge(theCircle.N, new N.Geom2d_Circle(aNAx, r), aNF, Tol);
         }
 
-        thePB.UpdateEdge(theCircle.P, new Geom2d_Circle(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), r), aF, Tol);
+        thePB.UpdateEdge(theCircle.P, new CircleCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), r), aF, Tol);
         var aNW = new N.TopoDS_Wire();
         theNB.MakeWire(aNW);
-        TopoDS_Wire aW = new();
+        Wire aW = new();
         thePB.MakeWire(ref aW);
         theNB.Add(aNW, theCircle.N);
         thePB.Add(aW, theCircle.P);
@@ -300,11 +304,11 @@ internal static class ClassificationScenes
     }
 
     /// <summary>The sub-shapes of the type, in exploration order, on both sides.</summary>
-    public static List<Twin<N.TopoDS_Shape, TopoDS_Shape>> Explore(Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, TopAbs_ShapeEnum theType)
+    public static List<Twin<N.TopoDS_Shape, Shape>> Explore(Twin<N.TopoDS_Shape, Shape> theShape, ShapeType theType)
     {
-        var aList = new List<Twin<N.TopoDS_Shape, TopoDS_Shape>>();
+        var aList = new List<Twin<N.TopoDS_Shape, Shape>>();
         var aNE = new N.TopExp_Explorer(theShape.N, TwinShapes.ToNative(theType));
-        for (var aPE = new TopExp_Explorer(theShape.P, theType); aPE.More(); aPE.Next(), aNE.Next())
+        for (var aPE = new Explorer(theShape.P, theType); aPE.More(); aPE.Next(), aNE.Next())
         {
             Assert.True(aNE.More());
             aList.Add(new(aNE.Current(), aPE.Current()));
@@ -314,7 +318,7 @@ internal static class ClassificationScenes
     }
 
     /// <summary>The index (from 1) of the face IsSame as <paramref name="theFace"/> among the native faces, 0 if none or null.</summary>
-    public static int NativeIndex(List<Twin<N.TopoDS_Shape, TopoDS_Shape>> theFaces, N.TopoDS_Shape theFace)
+    public static int NativeIndex(List<Twin<N.TopoDS_Shape, Shape>> theFaces, N.TopoDS_Shape theFace)
     {
         if (theFace.IsNull())
         {
@@ -333,9 +337,9 @@ internal static class ClassificationScenes
     }
 
     /// <summary>The index (from 1) of the face IsSame as <paramref name="theFace"/> among the port's faces, 0 if none or null.</summary>
-    public static int PortIndex(List<Twin<N.TopoDS_Shape, TopoDS_Shape>> theFaces, in TopoDS_Shape theFace)
+    public static int PortIndex(List<Twin<N.TopoDS_Shape, Shape>> theFaces, in Shape theFace)
     {
-        if (theFace.IsNull())
+        if (theFace.IsNull)
         {
             return 0;
         }
@@ -356,7 +360,7 @@ internal static class ClassificationScenes
     /// (from random UV in the faces' bounds) with small and large offsets along the normal, points on its edges and
     /// its vertices.
     /// </summary>
-    public static List<Point3D> SamplePoints(Oracle theOracle, in TopoDS_Shape theShape, int theNbRandom, int thePerFace)
+    public static List<Point3D> SamplePoints(Oracle theOracle, in Shape theShape, int theNbRandom, int thePerFace)
     {
         var aPoints = new List<Point3D>();
         Box aBox = BRepBndLib.Box(theShape);
@@ -367,16 +371,16 @@ internal static class ClassificationScenes
             aPoints.Add(new Point3D(theOracle.Real(x1 - dx, x2 + dx), theOracle.Real(y1 - dy, y2 + dy), theOracle.Real(z1 - dz, z2 + dz)));
         }
 
-        for (var anExp = new TopExp_Explorer(theShape, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(theShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            TopoDS_Face aF = TopoDS.Face(anExp.Current());
-            if (BRep_Tool.Surface(aF) is null)
+            Face aF = ShapeCasts.Face(anExp.Current());
+            if (Tool.Surface(aF) is null)
             {
                 continue;
             }
 
-            BRepTools.UVBounds(aF, out double u1, out double u2, out double v1, out double v2);
-            var aS = new BRepAdaptor_Surface(aF, false);
+            BrepTools.UVBounds(aF, out double u1, out double u2, out double v1, out double v2);
+            var aS = new FaceSurfaceAdaptor(aF, false);
             for (int i = 0; i < thePerFace; i++)
             {
                 double u = theOracle.Real(u1, u2), v = theOracle.Real(v1, v2);
@@ -399,23 +403,23 @@ internal static class ClassificationScenes
             }
         }
 
-        for (var anExp = new TopExp_Explorer(theShape, TopAbs_EDGE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(theShape, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            TopoDS_Edge anE = TopoDS.Edge(anExp.Current());
-            if (!BRep_Tool.IsGeometric(anE) || theOracle.Int(0, 2) != 0)
+            Edge anE = ShapeCasts.Edge(anExp.Current());
+            if (!Tool.IsGeometric(anE) || theOracle.Int(0, 2) != 0)
             {
                 continue;
             }
 
-            var aC = new BRepAdaptor_Curve(anE);
+            var aC = new EdgeCurveAdaptor(anE);
             aPoints.Add(aC.Value(theOracle.Real(aC.FirstParameter(), aC.LastParameter())));
         }
 
-        for (var anExp = new TopExp_Explorer(theShape, TopAbs_VERTEX); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(theShape, ShapeType.Vertex); anExp.More(); anExp.Next())
         {
             if (theOracle.Int(0, 3) == 0)
             {
-                aPoints.Add(BRep_Tool.Pnt(TopoDS.Vertex(anExp.Current())));
+                aPoints.Add(Tool.Pnt(ShapeCasts.Vertex(anExp.Current())));
             }
         }
 

@@ -2,13 +2,19 @@
 // results. Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+
+using Kerf.Engine.Topology.Tools;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 public partial class ShapeFix_Face
 {
     // The copy of the loaded face, from the first fix to the public result; null when the loaded face holds no frozen
     // shape (a face ported code owns, fixed in place as in OCCT).
-    private BRepTools_CopyAtEntry? myEntry;
+    private CopyAtEntry? myEntry;
 
     // True when the loaded face must be checked (and copied if frozen) before the next fix: after a load and after a
     // public result.
@@ -19,7 +25,7 @@ public partial class ShapeFix_Face
     /// frozen, the sub-shapes the fixes left unchanged are the caller's own, and the context answers for the caller's
     /// shapes.
     /// </summary>
-    public TopoDS_Face Face()
+    public Face Face()
     {
         endWork();
         myFace.TShape()?.FreezeGraph();
@@ -30,7 +36,7 @@ public partial class ShapeFix_Face
     /// Returns the result of the fixes (a face, or a shell or compound of faces after a split), frozen; see
     /// <see cref="Face"/>.
     /// </summary>
-    public TopoDS_Shape Result()
+    public Shape Result()
     {
         endWork();
         myResult.TShape()?.FreezeGraph();
@@ -38,10 +44,10 @@ public partial class ShapeFix_Face
     }
 
     /// <summary>The fixed face, unfrozen, for ported callers fixing a face they own (ShapeFix_Shell, ...).</summary>
-    internal TopoDS_Face InternalFace() => myFace;
+    internal Face InternalFace() => myFace;
 
     /// <summary>The result, unfrozen, for ported callers fixing a face they own.</summary>
-    internal TopoDS_Shape InternalResult() => myResult;
+    internal Shape InternalResult() => myResult;
 
     /// <summary>Sets the context; a context set by a fix after the copy at the entry is re-keyed by the result too.</summary>
     public override void SetContext(ShapeBuild_ReShape? context)
@@ -69,13 +75,13 @@ public partial class ShapeFix_Face
         }
         myToEnter = false;
         myEntry   = null;
-        if (myFace.IsNull() || !BRepTools.HoldsFrozen(myFace))
+        if (myFace.IsNull || !BrepTools.HoldsFrozen(myFace))
         {
             return;
         }
 
-        myEntry = new BRepTools_CopyAtEntry(myFace, Context());
-        myFace  = TopoDS.Face(myEntry.Shape());
+        myEntry = new CopyAtEntry(myFace, Context());
+        myFace  = ShapeCasts.Face(myEntry.Shape());
         myShape = myFace;
     }
 
@@ -87,7 +93,7 @@ public partial class ShapeFix_Face
     private void endWork()
     {
         myToEnter = true;
-        BRepTools_CopyAtEntry? anEntry = myEntry;
+        CopyAtEntry? anEntry = myEntry;
         myEntry = null;
         if (anEntry is null)
         {
@@ -95,9 +101,9 @@ public partial class ShapeFix_Face
         }
 
         myResult = anEntry.Finish(myResult, [myFace]);
-        if (!myFace.IsNull())
+        if (!myFace.IsNull)
         {
-            myFace = TopoDS.Face(anEntry.Final(myFace));
+            myFace = ShapeCasts.Face(anEntry.Final(myFace));
         }
         myShape = myFace;
     }

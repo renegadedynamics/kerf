@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 
@@ -32,12 +34,12 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
     // Whether OCCT's curve grid DN of this order is one of its errors: any order of a B-spline basis (its span
     // index is a flat-knot index passed with the knots and multiplicities), and orders above the degree of a
     // rational Bezier basis (zero).
-    private static bool CurveDNIsOcctError(Geom_Curve? theBasis, int theOrder)
+    private static bool CurveDNIsOcctError(Curve3D? theBasis, int theOrder)
     {
         return theBasis switch
         {
-            Geom_BSplineCurve => theOrder >= 1,
-            Geom_BezierCurve aBz => aBz.IsRational() && theOrder > aBz.Degree(),
+            BSplineCurve3D => theOrder >= 1,
+            BezierCurve3D aBz => aBz.IsRational && theOrder > aBz.Degree(),
             _ => false,
         };
     }
@@ -160,7 +162,7 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
         return NCollection_Array1<double>.From(aValues);
     }
 
-    private static Geom_BSplineCurve RandomBSplineCurve(Random theRnd, bool theRational)
+    private static BSplineCurve3D RandomBSplineCurve(Random theRnd, bool theRational)
     {
         int aDeg = theRnd.Next(1, 5);
         int aNbKnots = theRnd.Next(2, 6);
@@ -184,11 +186,11 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
             aPoles[i] = RandomPnt(theRnd, 10.0);
             aWeights[i] = Uniform(theRnd, 0.5, 2.0);
         }
-        return theRational ? new Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, aDeg)
-                           : new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg);
+        return theRational ? new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, aDeg)
+                           : new BSplineCurve3D(aPoles, aKnots, aMults, aDeg);
     }
 
-    private static Geom_BezierCurve RandomBezierCurve(Random theRnd, bool theRational)
+    private static BezierCurve3D RandomBezierCurve(Random theRnd, bool theRational)
     {
         int aNb = theRnd.Next(2, 8);
         NCollection_Array1<Point3D> aPoles = new(1, aNb);
@@ -198,10 +200,10 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
             aPoles[i] = RandomPnt(theRnd, 10.0);
             aWeights[i] = Uniform(theRnd, 0.5, 2.0);
         }
-        return theRational ? new Geom_BezierCurve(aPoles, aWeights) : new Geom_BezierCurve(aPoles);
+        return theRational ? new BezierCurve3D(aPoles, aWeights) : new BezierCurve3D(aPoles);
     }
 
-    private static Geom_BezierSurface RandomBezierSurface(Random theRnd, bool theRational)
+    private static BezierSurface RandomBezierSurface(Random theRnd, bool theRational)
     {
         int aNbU = theRnd.Next(2, 7), aNbV = theRnd.Next(2, 7);
         NCollection_Array2<Point3D> aPoles = new(1, aNbU, 1, aNbV);
@@ -214,17 +216,17 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
                 aWeights[i, j] = Uniform(theRnd, 0.5, 2.0);
             }
         }
-        return theRational ? new Geom_BezierSurface(aPoles, aWeights) : new Geom_BezierSurface(aPoles);
+        return theRational ? new BezierSurface(aPoles, aWeights) : new BezierSurface(aPoles);
     }
 
-    private static Geom_Curve RandomBasisCurve(Random theRnd, int theKind)
+    private static Curve3D RandomBasisCurve(Random theRnd, int theKind)
     {
         switch (theKind)
         {
             case 0:
-                return new Geom_Line(RandomPnt(theRnd, 10.0), RandomDir(theRnd));
+                return new LineCurve3D(RandomPnt(theRnd, 10.0), RandomDir(theRnd));
             case 1:
-                return new Geom_Circle(RandomAx3(theRnd).Ax2(), Uniform(theRnd, 0.5, 10.0));
+                return new CircleCurve3D(RandomAx3(theRnd).Ax2(), Uniform(theRnd, 0.5, 10.0));
             case 2:
             case 3:
                 return RandomBSplineCurve(theRnd, theKind == 3);
@@ -233,24 +235,24 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
         }
     }
 
-    private (string Name, Geom_Surface Surf, GeomGridEval.ISurfaceEvaluator Eval) RandomCase(Random theRnd, int theKind)
+    private (string Name, Surface Surf, GeomGridEvalGrid.ISurfaceEvaluator Eval) RandomCase(Random theRnd, int theKind)
     {
         switch (theKind)
         {
             case 0:
             {
-                Geom_Plane aS = new(RandomAx3(theRnd));
-                return ("Plane", aS, new GeomGridEval_Plane(aS));
+                PlaneSurface aS = new(RandomAx3(theRnd));
+                return ("Plane", aS, new PlaneGrid(aS));
             }
             case 1:
             {
-                Geom_CylindricalSurface aS = new(RandomAx3(theRnd), Uniform(theRnd, 0.1, 10.0));
-                return ("Cylinder", aS, new GeomGridEval_Cylinder(aS));
+                CylindricalSurface aS = new(RandomAx3(theRnd), Uniform(theRnd, 0.1, 10.0));
+                return ("Cylinder", aS, new CylinderGrid(aS));
             }
             case 2:
             {
-                Geom_SphericalSurface aS = new(RandomAx3(theRnd), Uniform(theRnd, 0.1, 10.0));
-                return ("Sphere", aS, new GeomGridEval_Sphere(aS));
+                SphericalSurface aS = new(RandomAx3(theRnd), Uniform(theRnd, 0.1, 10.0));
+                return ("Sphere", aS, new SphereGrid(aS));
             }
             case 3:
             {
@@ -260,40 +262,40 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
                 {
                     anAng = 0.3;
                 }
-                Geom_ConicalSurface aS = new(RandomAx3(theRnd), anAng, aRef);
-                return ("Cone", aS, new GeomGridEval_Cone(aS));
+                ConicalSurface aS = new(RandomAx3(theRnd), anAng, aRef);
+                return ("Cone", aS, new ConeGrid(aS));
             }
             case 4:
             {
                 double aMaj = Uniform(theRnd, 0.5, 10.0);
                 double aMin = theRnd.Next(3) == 0 ? aMaj * Uniform(theRnd, 1.1, 2.0) : aMaj * Uniform(theRnd, 0.1, 0.9);
-                Geom_ToroidalSurface aS = new(RandomAx3(theRnd), aMaj, aMin);
-                return ("Torus", aS, new GeomGridEval_Torus(aS));
+                ToroidalSurface aS = new(RandomAx3(theRnd), aMaj, aMin);
+                return ("Torus", aS, new TorusGrid(aS));
             }
             case 5:
             case 6:
             {
-                Geom_BezierSurface aS = RandomBezierSurface(theRnd, theKind == 6);
-                return (theKind == 6 ? "BezierRational" : "Bezier", aS, new GeomGridEval_BezierSurface(aS));
+                BezierSurface aS = RandomBezierSurface(theRnd, theKind == 6);
+                return (theKind == 6 ? "BezierRational" : "Bezier", aS, new BezierSurfaceGrid(aS));
             }
             case 7:
             {
                 int aBasis = theRnd.Next(6);
-                Geom_Curve aC = RandomBasisCurve(theRnd, aBasis);
-                Geom_SurfaceOfRevolution aS = new(aC, new Axis3D(RandomPnt(theRnd, 10.0), RandomDir(theRnd)));
-                return ("Revolution", aS, new GeomGridEval_SurfaceOfRevolution(aS));
+                Curve3D aC = RandomBasisCurve(theRnd, aBasis);
+                RevolutionSurface aS = new(aC, new Axis3D(RandomPnt(theRnd, 10.0), RandomDir(theRnd)));
+                return ("Revolution", aS, new SurfaceOfRevolutionGrid(aS));
             }
             default:
             {
                 int aBasis = theRnd.Next(6);
-                Geom_Curve aC = RandomBasisCurve(theRnd, aBasis);
-                Geom_SurfaceOfLinearExtrusion aS = new(aC, RandomDir(theRnd));
-                return ("Extrusion", aS, new GeomGridEval_SurfaceOfExtrusion(aS));
+                Curve3D aC = RandomBasisCurve(theRnd, aBasis);
+                ExtrusionSurface aS = new(aC, RandomDir(theRnd));
+                return ("Extrusion", aS, new SurfaceOfExtrusionGrid(aS));
             }
         }
     }
 
-    private static (double U1, double U2, double V1, double V2) Range(Geom_Surface theSurf)
+    private static (double U1, double U2, double V1, double V2) Range(Surface theSurf)
     {
         theSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aU1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aU2))
@@ -310,34 +312,34 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
     }
 
     private void CheckGrid(string theName,
-                           Geom_Surface theSurf,
-                           GeomGridEval.ISurfaceEvaluator theEval,
+                           Surface theSurf,
+                           GeomGridEvalGrid.ISurfaceEvaluator theEval,
                            NCollection_Array1<double> theU,
                            NCollection_Array1<double> theV)
     {
-        GeomAdaptor_Surface anAdaptor = new(theSurf);
+        SurfaceAdaptor anAdaptor = new(theSurf);
 
         // Swept surfaces evaluate their basis curve with GeomGridEval_Curve: their grid can only equal the
         // surface's point evaluation where the curve's grid equals the curve's point evaluation. Record, per
         // curve parameter and order, whether it does.
-        Geom_Curve? aBasis = (theSurf as Geom_SweptSurface)?.BasisCurve();
-        bool isRevolution = theSurf is Geom_SurfaceOfRevolution;
+        Curve3D? aBasis = (theSurf as SweptSurface)?.BasisCurve();
+        bool isRevolution = theSurf is RevolutionSurface;
         NCollection_Array1<double> aCurveParams = isRevolution ? theV : theU;
         bool[,] aCurveExact = new bool[aCurveParams.Length() + 1, 4];
         if (aBasis is not null)
         {
-            GeomGridEval_Curve aCurveEval = new(aBasis);
+            CurveGrid aCurveEval = new(aBasis);
             NCollection_Array1<Point3D> aC0 = aCurveEval.EvaluateGrid(aCurveParams);
-            NCollection_Array1<Geom_Curve.ResD1> aC1 = aCurveEval.EvaluateGridD1(aCurveParams);
-            NCollection_Array1<Geom_Curve.ResD2> aC2 = aCurveEval.EvaluateGridD2(aCurveParams);
-            NCollection_Array1<Geom_Curve.ResD3> aC3 = aCurveEval.EvaluateGridD3(aCurveParams);
+            NCollection_Array1<Curve3D.ResD1> aC1 = aCurveEval.EvaluateGridD1(aCurveParams);
+            NCollection_Array1<Curve3D.ResD2> aC2 = aCurveEval.EvaluateGridD2(aCurveParams);
+            NCollection_Array1<Curve3D.ResD3> aC3 = aCurveEval.EvaluateGridD3(aCurveParams);
             for (int k = 1; k <= aCurveParams.Length(); ++k)
             {
                 // Each order against the curve's own evaluator of that order (EvalD3's point may differ from EvalD0's)
                 double t = aCurveParams.Value(k);
-                Geom_Curve.ResD1 aRef1 = aBasis.EvalD1(t);
-                Geom_Curve.ResD2 aRef2 = aBasis.EvalD2(t);
-                Geom_Curve.ResD3 aRef = aBasis.EvalD3(t);
+                Curve3D.ResD1 aRef1 = aBasis.EvalD1(t);
+                Curve3D.ResD2 aRef2 = aBasis.EvalD2(t);
+                Curve3D.ResD3 aRef = aBasis.EvalD3(t);
                 aCurveExact[k, 0] = aC0.Value(k).Equals(aBasis.EvalD0(t));
                 aCurveExact[k, 1] = aC1.Value(k).Point.Equals(aRef1.Point) && aC1.Value(k).D1.Equals(aRef1.D1);
                 aCurveExact[k, 2] = aC2.Value(k).Point.Equals(aRef2.Point) && aC2.Value(k).D1.Equals(aRef2.D1)
@@ -346,13 +348,13 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
                                     && aC3.Value(k).D2.Equals(aRef.D2) && aC3.Value(k).D3.Equals(aRef.D3);
             }
         }
-        bool isRational = theSurf is Geom_BezierSurface aBz && (aBz.IsURational() || aBz.IsVRational());
-        int aUDeg = (theSurf as Geom_BezierSurface)?.UDegree() ?? int.MaxValue;
-        int aVDeg = (theSurf as Geom_BezierSurface)?.VDegree() ?? int.MaxValue;
+        bool isRational = theSurf is BezierSurface aBz && (aBz.IsURational || aBz.IsVRational);
+        int aUDeg = (theSurf as BezierSurface)?.UDegree() ?? int.MaxValue;
+        int aVDeg = (theSurf as BezierSurface)?.VDegree() ?? int.MaxValue;
         NCollection_Array2<Point3D> aD0 = theEval.EvaluateGrid(theU, theV);
-        NCollection_Array2<Geom_Surface.ResD1> aD1 = theEval.EvaluateGridD1(theU, theV);
-        NCollection_Array2<Geom_Surface.ResD2> aD2 = theEval.EvaluateGridD2(theU, theV);
-        NCollection_Array2<Geom_Surface.ResD3> aD3 = theEval.EvaluateGridD3(theU, theV);
+        NCollection_Array2<Surface.ResD1> aD1 = theEval.EvaluateGridD1(theU, theV);
+        NCollection_Array2<Surface.ResD2> aD2 = theEval.EvaluateGridD2(theU, theV);
+        NCollection_Array2<Surface.ResD3> aD3 = theEval.EvaluateGridD3(theU, theV);
         (int, int)[] anOrders = [(1, 0), (0, 1), (1, 1), (2, 0), (0, 2), (2, 1), (1, 2), (3, 0), (0, 3), (4, 0), (2, 2), (0, 4), (5, 1)];
         NCollection_Array2<Vector3D>?[] aDN = new NCollection_Array2<Vector3D>?[anOrders.Length];
         for (int k = 0; k < anOrders.Length; ++k)
@@ -377,14 +379,14 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
             for (int j = 1; j <= theV.Length(); ++j)
             {
                 double v = theV.Value(j);
-                foreach ((string aRefName, Func<double, double, Geom_Surface.ResD3> aRefD3, Func<double, double, Point3D> aRefD0,
-                          Func<double, double, Geom_Surface.ResD1> aRefD1, Func<double, double, Geom_Surface.ResD2> aRefD2,
+                foreach ((string aRefName, Func<double, double, Surface.ResD3> aRefD3, Func<double, double, Point3D> aRefD0,
+                          Func<double, double, Surface.ResD1> aRefD1, Func<double, double, Surface.ResD2> aRefD2,
                           Func<double, double, int, int, Vector3D> aRefDN) in new[]
                          {
-                             ("Geom", (Func<double, double, Geom_Surface.ResD3>)theSurf.EvalD3,
+                             ("Geom", (Func<double, double, Surface.ResD3>)theSurf.EvalD3,
                               (Func<double, double, Point3D>)theSurf.EvalD0,
-                              (Func<double, double, Geom_Surface.ResD1>)theSurf.EvalD1,
-                              (Func<double, double, Geom_Surface.ResD2>)theSurf.EvalD2,
+                              (Func<double, double, Surface.ResD1>)theSurf.EvalD1,
+                              (Func<double, double, Surface.ResD2>)theSurf.EvalD2,
                               (Func<double, double, int, int, Vector3D>)theSurf.EvalDN),
                              ("Adaptor", anAdaptor.EvalD3, anAdaptor.EvalD0, anAdaptor.EvalD1, anAdaptor.EvalD2,
                               anAdaptor.EvalDN),
@@ -398,21 +400,21 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
                         aTag[d] = aBasis is null ? "" : (aCurveExact[aC, d] ? " [curve exact]" : " [curve inexact]");
                     }
                     Compare(aP + "D0" + aTag[0], aD0.Value(i, j), aRefD0(u, v));
-                    Geom_Surface.ResD1 r1 = aRefD1(u, v);
-                    Geom_Surface.ResD1 g1 = aD1.Value(i, j);
+                    Surface.ResD1 r1 = aRefD1(u, v);
+                    Surface.ResD1 g1 = aD1.Value(i, j);
                     Compare(aP + "D1.P" + aTag[1], g1.Point, r1.Point);
                     Compare(aP + "D1.D1" + aTag[1], g1.D1U, r1.D1U);
                     Compare(aP + "D1.D1" + aTag[1], g1.D1V, r1.D1V);
-                    Geom_Surface.ResD2 r2 = aRefD2(u, v);
-                    Geom_Surface.ResD2 g2 = aD2.Value(i, j);
+                    Surface.ResD2 r2 = aRefD2(u, v);
+                    Surface.ResD2 g2 = aD2.Value(i, j);
                     Compare(aP + "D2.P" + aTag[2], g2.Point, r2.Point);
                     Compare(aP + "D2.D1" + aTag[2], g2.D1U, r2.D1U);
                     Compare(aP + "D2.D1" + aTag[2], g2.D1V, r2.D1V);
                     Compare(aP + "D2.D2" + aTag[2], g2.D2U, r2.D2U);
                     Compare(aP + "D2.D2" + aTag[2], g2.D2V, r2.D2V);
                     Compare(aP + "D2.D2" + aTag[2], g2.D2UV, r2.D2UV);
-                    Geom_Surface.ResD3 r3 = aRefD3(u, v);
-                    Geom_Surface.ResD3 g3 = aD3.Value(i, j);
+                    Surface.ResD3 r3 = aRefD3(u, v);
+                    Surface.ResD3 g3 = aD3.Value(i, j);
                     Compare(aP + "D3.P" + aTag[3], g3.Point, r3.Point);
                     Compare(aP + "D3.D1" + aTag[3], g3.D1U, r3.D1U);
                     Compare(aP + "D3.D1" + aTag[3], g3.D1V, r3.D1V);
@@ -452,7 +454,7 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
         {
             for (int anIter = 0; anIter < 40; ++anIter)
             {
-                (string aName, Geom_Surface aSurf, GeomGridEval.ISurfaceEvaluator anEval) = RandomCase(aRnd, aKind);
+                (string aName, Surface aSurf, GeomGridEvalGrid.ISurfaceEvaluator anEval) = RandomCase(aRnd, aKind);
                 (double aU1, double aU2, double aV1, double aV2) = Range(aSurf);
                 NCollection_Array1<double> aU = SortedParams(aRnd, aU1, aU2, aRnd.Next(2, 10));
                 NCollection_Array1<double> aV = SortedParams(aRnd, aV1, aV2, aRnd.Next(2, 10));

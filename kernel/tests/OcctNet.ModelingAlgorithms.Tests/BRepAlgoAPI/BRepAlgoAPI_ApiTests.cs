@@ -1,10 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using OcctNet.ModelingData.Tests;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests.BRepAlgoAPI;
 
@@ -15,37 +19,37 @@ namespace OcctNet.ModelingAlgorithms.Tests.BRepAlgoAPI;
 /// </summary>
 public class BRepAlgoAPI_ApiTests
 {
-    private static TopoDS_Shape Box(double x, double y = 0, double z = 0, double dx = 1, double dy = 1, double dz = 1) =>
+    private static Shape Box(double x, double y = 0, double z = 0, double dx = 1, double dy = 1, double dz = 1) =>
         new BRepPrimAPI_MakeBox(new Point3D(x, y, z), dx, dy, dz).Shape();
 
-    private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int Count(in Shape theShape, ShapeType theType)
     {
-        NCollection_IndexedMap<TopoDS_Shape> aMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, theType, aMap);
+        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
         return aMap.Extent();
     }
 
-    private static string Text(in TopoDS_Shape theShape)
+    private static string Text(in Shape theShape)
     {
         using StringWriter aW = new();
-        BRepTools.Write(theShape, aW);
+        BrepTools.Write(theShape, aW);
         return aW.ToString();
     }
 
-    private static double Volume(in TopoDS_Shape theShape)
+    private static double Volume(in Shape theShape)
     {
-        GProp_GProps aProps = new();
+        Properties aProps = new();
         BRepGProp.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
-    private static bool AllFrozen(in TopoDS_Shape theShape)
+    private static bool AllFrozen(in Shape theShape)
     {
         if (theShape.TShape() is { } aT && !aT.IsFrozen)
         {
             return false;
         }
-        for (TopoDS_Iterator anIt = new(theShape); anIt.More(); anIt.Next())
+        for (Iterator anIt = new(theShape); anIt.More(); anIt.Next())
         {
             if (!AllFrozen(anIt.Value()))
             {
@@ -62,21 +66,21 @@ public class BRepAlgoAPI_ApiTests
     [InlineData(true)]
     public void SimplifyResult_BoxesSideBySide_UnifiesTheCoplanarFaces(bool theNonDestructive)
     {
-        TopoDS_Shape a = Box(0, 0, 0, 2, 1, 1), b = Box(1, 0, 0, 2, 1, 1);
+        Shape a = Box(0, 0, 0, 2, 1, 1), b = Box(1, 0, 0, 2, 1, 1);
         ShapeSnapshot aSnapA = ShapeSnapshot.Of(a), aSnapB = ShapeSnapshot.Of(b);
 
         BRepAlgoAPI_Fuse aFuse = new();
-        aFuse.SetArguments(new NCollection_List<TopoDS_Shape>([a]));
-        aFuse.SetTools(new NCollection_List<TopoDS_Shape>([b]));
+        aFuse.SetArguments(new NCollection_List<Shape>([a]));
+        aFuse.SetTools(new NCollection_List<Shape>([b]));
         aFuse.SetNonDestructive(theNonDestructive);
         aFuse.Build();
         Assert.True(aFuse.IsDone());
-        Assert.Equal(14, Count(aFuse.InternalShape(), TopAbs_FACE)); // the side faces split
+        Assert.Equal(14, Count(aFuse.InternalShape(), ShapeType.Face)); // the side faces split
 
         aFuse.SimplifyResult();
-        TopoDS_Shape aResult = aFuse.Shape();
-        Assert.Equal(6, Count(aResult, TopAbs_FACE));
-        Assert.Equal(12, Count(aResult, TopAbs_EDGE));
+        Shape aResult = aFuse.Shape();
+        Assert.Equal(6, Count(aResult, ShapeType.Face));
+        Assert.Equal(12, Count(aResult, ShapeType.Edge));
         Assert.Equal(3.0, Volume(aResult), 1e-9);
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
         Assert.True(AllFrozen(aResult));
@@ -87,13 +91,13 @@ public class BRepAlgoAPI_ApiTests
 
         // the history answers for the arguments' faces through the simplification: each face of a is in the result,
         // as a merged face, or as itself (its left and right end faces)
-        NCollection_IndexedMap<TopoDS_Shape> aResultFaces = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aResult, TopAbs_FACE, aResultFaces);
+        NCollection_IndexedMap<Shape> aResultFaces = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aResult, ShapeType.Face, aResultFaces);
         int aModified = 0;
-        for (TopExp_Explorer anExp = new(a, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(a, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            TopoDS_Shape aF = anExp.Current();
-            ISchematiqList<TopoDS_Shape> aLM = aFuse.Modified(aF);
+            Shape aF = anExp.Current();
+            ISchematiqList<Shape> aLM = aFuse.Modified(aF);
             if (aLM.Count > 0)
             {
                 ++aModified;
@@ -114,25 +118,25 @@ public class BRepAlgoAPI_ApiTests
     public void SimplifyResult_SectionEdgesFollowTheSimplification()
     {
         // a box pocketed by a smaller one: the section edges are kept through the simplification (nothing to unify there)
-        TopoDS_Shape a = Box(0, 0, 0, 4, 4, 4), b = Box(1, 1, 2, 2, 2, 4);
+        Shape a = Box(0, 0, 0, 4, 4, 4), b = Box(1, 1, 2, 2, 2, 4);
         BRepAlgoAPI_Cut aCut = new(a, b);
         Assert.True(aCut.IsDone());
         int aBefore = aCut.InternalSectionEdges().Extent();
         Assert.True(aBefore > 0);
         aCut.SimplifyResult();
-        ISchematiqList<TopoDS_Shape> aSE = aCut.SectionEdges();
+        ISchematiqList<Shape> aSE = aCut.SectionEdges();
         Assert.Equal(aBefore, aSE.Count);
-        NCollection_IndexedMap<TopoDS_Shape> anEdges = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aCut.Shape(), TopAbs_EDGE, anEdges);
+        NCollection_IndexedMap<Shape> anEdges = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aCut.Shape(), ShapeType.Edge, anEdges);
         Assert.All(aSE, e => Assert.True(anEdges.Contains(e)));
     }
 
     [Fact]
     public void SimplifyResult_NothingToUnify_OrNothingAsked_KeepsTheResult()
     {
-        TopoDS_Shape a = Box(0), b = Box(5);
+        Shape a = Box(0), b = Box(5);
         BRepAlgoAPI_Fuse aFuse = new(a, b);
-        TopoDS_Shape aBefore = aFuse.InternalShape();
+        Shape aBefore = aFuse.InternalShape();
         aFuse.SimplifyResult(false, false);
         Assert.True(aFuse.InternalShape().IsSame(aBefore));
         aFuse.SimplifyResult();
@@ -140,36 +144,36 @@ public class BRepAlgoAPI_ApiTests
 
         // on an error the result isn't touched (OCCT's HasErrors check)
         BRepAlgoAPI_Cut aCut = new();
-        aCut.SetArguments(new NCollection_List<TopoDS_Shape>([a]));
+        aCut.SetArguments(new NCollection_List<Shape>([a]));
         aCut.Build();
         Assert.True(aCut.HasErrors());
         aCut.SimplifyResult();
-        Assert.True(aCut.InternalShape().IsNull());
+        Assert.True(aCut.InternalShape().IsNull);
     }
 
     [Fact]
     public void Twins_Simplify_GiveTheWorkingObjectsResult()
     {
-        TopoDS_Shape a = Box(0, 0, 0, 2, 1, 1), b = Box(1, 0, 0, 2, 1, 1);
+        Shape a = Box(0, 0, 0, 2, 1, 1), b = Box(1, 0, 0, 2, 1, 1);
         BRepAlgoAPI_Options anOptions = new() { Simplify = true, RunParallel = true };
-        TopoDS_Shape aTwin = Occt.BRepAlgoAPI.Fuse([a], [b], anOptions, out BRepTools_History aHistory);
+        Shape aTwin = Occt.BRepAlgoAPI.Fuse([a], [b], anOptions, out History aHistory);
 
         BRepAlgoAPI_Fuse aFuse = new(a, b);
         aFuse.SimplifyResult();
-        TopoDS_Shape anAlgo = aFuse.Shape();
+        Shape anAlgo = aFuse.Shape();
 
         Assert.Equal(Text(anAlgo), Text(aTwin));
         Assert.True(AllFrozen(aTwin));
-        Assert.Equal(6, Count(aTwin, TopAbs_FACE));
+        Assert.Equal(6, Count(aTwin, ShapeType.Face));
         int aModified = 0;
-        for (TopExp_Explorer anExp = new(b, TopAbs_FACE); anExp.More(); anExp.Next())
+        for (Explorer anExp = new(b, ShapeType.Face); anExp.More(); anExp.Next())
         {
             aModified += aHistory.Modified(anExp.Current()).Count > 0 ? 1 : 0;
         }
         Assert.InRange(aModified, 4, 5);
 
         // without Simplify the twin gives the unsimplified result
-        Assert.Equal(14, Count(Occt.BRepAlgoAPI.Fuse([a], [b], new BRepAlgoAPI_Options()), TopAbs_FACE));
+        Assert.Equal(14, Count(Occt.BRepAlgoAPI.Fuse([a], [b], new BRepAlgoAPI_Options()), ShapeType.Face));
     }
 
     // ------------------------------------------------------------------------------------------- progress
@@ -196,9 +200,9 @@ public class BRepAlgoAPI_ApiTests
     {
         Recorder aRecorder = new();
         ProgressIndicator anIndicator = new(default, aRecorder);
-        TopoDS_Shape aResult = Occt.BRepAlgoAPI.Cut([Box(0, 0, 0, 4, 4, 4)], [new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(2, 2, -1), new Direction3D(0, 0, 1)), 1, 6).Shape()],
+        Shape aResult = Occt.BRepAlgoAPI.Cut([Box(0, 0, 0, 4, 4, 4)], [new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(2, 2, -1), new Direction3D(0, 0, 1)), 1, 6).Shape()],
                                                    new BRepAlgoAPI_Options { RunParallel = theParallel }, anIndicator.Start());
-        Assert.False(aResult.IsNull());
+        Assert.False(aResult.IsNull);
         Assert.NotEmpty(aRecorder.Values);
         for (int i = 1; i < aRecorder.Values.Count; i++)
         {
@@ -213,15 +217,15 @@ public class BRepAlgoAPI_ApiTests
     [InlineData(true)]
     public void Cancellation_BeforeTheStart_StopsWithUserBreak(bool theParallel)
     {
-        TopoDS_Shape a = Box(0, 0, 0, 2, 1, 1), b = Box(1, 0, 0, 2, 1, 1);
+        Shape a = Box(0, 0, 0, 2, 1, 1), b = Box(1, 0, 0, 2, 1, 1);
         ShapeSnapshot aSnapA = ShapeSnapshot.Of(a);
         using CancellationTokenSource aSource = new();
         aSource.Cancel();
 
         // the working object: OCCT's BOPAlgo_AlertUserBreak, not done
         BRepAlgoAPI_Fuse aFuse = new();
-        aFuse.SetArguments(new NCollection_List<TopoDS_Shape>([a]));
-        aFuse.SetTools(new NCollection_List<TopoDS_Shape>([b]));
+        aFuse.SetArguments(new NCollection_List<Shape>([a]));
+        aFuse.SetTools(new NCollection_List<Shape>([b]));
         aFuse.SetRunParallel(theParallel);
         aFuse.Build(new ProgressIndicator(aSource.Token).Start());
         Assert.False(aFuse.IsDone());
@@ -246,8 +250,8 @@ public class BRepAlgoAPI_ApiTests
     [InlineData(true, 0.8)]
     public void Cancellation_DuringTheOperation_StopsWithUserBreak(bool theParallel, double theAt)
     {
-        TopoDS_Shape a = Box(0, 0, 0, 4, 4, 4);
-        TopoDS_Shape b = new BRepPrimAPI_MakeSphere(new Point3D(4, 4, 4), 2.5).Shape();
+        Shape a = Box(0, 0, 0, 4, 4, 4);
+        Shape b = new BRepPrimAPI_MakeSphere(new Point3D(4, 4, 4), 2.5).Shape();
         ShapeSnapshot aSnapA = ShapeSnapshot.Of(a), aSnapB = ShapeSnapshot.Of(b);
         using CancellationTokenSource aSource = new();
         Recorder aRecorder = new();
@@ -261,8 +265,8 @@ public class BRepAlgoAPI_ApiTests
         ProgressIndicator anIndicator = new(aSource.Token, aRecorder);
 
         BRepAlgoAPI_Common aCommon = new();
-        aCommon.SetArguments(new NCollection_List<TopoDS_Shape>([a]));
-        aCommon.SetTools(new NCollection_List<TopoDS_Shape>([b]));
+        aCommon.SetArguments(new NCollection_List<Shape>([a]));
+        aCommon.SetTools(new NCollection_List<Shape>([b]));
         aCommon.SetRunParallel(theParallel);
         aCommon.Build(anIndicator.Start());
 
@@ -276,8 +280,8 @@ public class BRepAlgoAPI_ApiTests
         aSnapB.AssertUnchanged(b);
 
         // the same operation uncancelled afterwards gives the uncancelled result: nothing was left behind
-        TopoDS_Shape aRef = Occt.BRepAlgoAPI.Common([Box(0, 0, 0, 4, 4, 4)], [new BRepPrimAPI_MakeSphere(new Point3D(4, 4, 4), 2.5).Shape()], new BRepAlgoAPI_Options());
-        TopoDS_Shape aAgain = Occt.BRepAlgoAPI.Common([a], [b], new BRepAlgoAPI_Options());
+        Shape aRef = Occt.BRepAlgoAPI.Common([Box(0, 0, 0, 4, 4, 4)], [new BRepPrimAPI_MakeSphere(new Point3D(4, 4, 4), 2.5).Shape()], new BRepAlgoAPI_Options());
+        Shape aAgain = Occt.BRepAlgoAPI.Common([a], [b], new BRepAlgoAPI_Options());
         Assert.Equal(Text(aRef), Text(aAgain));
     }
 }

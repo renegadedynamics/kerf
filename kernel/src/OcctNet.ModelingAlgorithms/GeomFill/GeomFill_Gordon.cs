@@ -5,9 +5,11 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using static Occt.Approx_ParametrizationType;
+using static Kerf.Engine.Approximation.ParametrizationType;
 using static Kerf.Geometry.Continuity;
 
 namespace Occt;
@@ -103,13 +105,13 @@ public class GeomFill_Gordon
         public static bool operator !=(BuildReport left, BuildReport right) => !left.Equals(right);
     }
 
-    private NCollection_Array1<Geom_BSplineCurve?> myInputProfiles = new();
-    private NCollection_Array1<Geom_BSplineCurve?> myInputGuides = new();
-    private NCollection_Array1<Geom_BSplineCurve?> myProfiles = new();
-    private NCollection_Array1<Geom_BSplineCurve?> myGuides = new();
+    private NCollection_Array1<BSplineCurve3D?> myInputProfiles = new();
+    private NCollection_Array1<BSplineCurve3D?> myInputGuides = new();
+    private NCollection_Array1<BSplineCurve3D?> myProfiles = new();
+    private NCollection_Array1<BSplineCurve3D?> myGuides = new();
     private NCollection_Array2<double> myProfileParams = new();
     private NCollection_Array2<double> myGuideParams = new();
-    private Geom_BSplineSurface? mySurface;
+    private BSplineSurface? mySurface;
     private double myTolerance = 0.0;
     private bool myIsUClosed = false;
     private bool myIsVClosed = false;
@@ -118,11 +120,11 @@ public class GeomFill_Gordon
     private BuildReport myReport = new();
 
     // Returns whether at least one prepared curve uses rational weights.
-    private static bool hasRationalCurve(NCollection_Array1<Geom_BSplineCurve?> theCurves)
+    private static bool hasRationalCurve(NCollection_Array1<BSplineCurve3D?> theCurves)
     {
         for (int aCurveIdx = 0; aCurveIdx < theCurves.Size(); ++aCurveIdx)
         {
-            if (theCurves.At(aCurveIdx) is not null && theCurves.At(aCurveIdx)!.IsRational())
+            if (theCurves.At(aCurveIdx) is not null && theCurves.At(aCurveIdx)!.IsRational)
             {
                 return true;
             }
@@ -131,8 +133,8 @@ public class GeomFill_Gordon
     }
 
     // Returns whether either prepared curve family uses rational weights.
-    private static bool hasRationalCurve(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
-                                         NCollection_Array1<Geom_BSplineCurve?> theGuides)
+    private static bool hasRationalCurve(NCollection_Array1<BSplineCurve3D?> theProfiles,
+                                         NCollection_Array1<BSplineCurve3D?> theGuides)
     {
         return hasRationalCurve(theProfiles) || hasRationalCurve(theGuides);
     }
@@ -178,17 +180,17 @@ public class GeomFill_Gordon
     }
 
     // Chooses a deterministic fallback grid density from the prepared network itself.
-    private static int fallbackSampleCount(NCollection_Array1<Geom_BSplineCurve?> theCurves)
+    private static int fallbackSampleCount(NCollection_Array1<BSplineCurve3D?> theCurves)
     {
         int aNbSamples = Max(theCurves.Size(), 2);
         for (int aCurveIdx = 0; aCurveIdx < theCurves.Size(); ++aCurveIdx)
         {
             if (theCurves.At(aCurveIdx) is not null)
             {
-                aNbSamples = Max(aNbSamples, theCurves.At(aCurveIdx)!.NbPoles());
+                aNbSamples = Max(aNbSamples, theCurves.At(aCurveIdx)!.PoleCount);
             }
         }
-        return Max(aNbSamples, Geom_BSplineCurve.MaxDegree() / 2);
+        return Max(aNbSamples, BSplineCurve3D.MaxDegree() / 2);
     }
 
     // Returns regularly spaced parameters in the unit interval.
@@ -203,23 +205,23 @@ public class GeomFill_Gordon
     }
 
     // Fits a non-exact B-spline surface through a point grid for approximate fallback.
-    private static Geom_BSplineSurface? approximateGrid(NCollection_Array2<Point3D> thePoints, double theTolerance)
+    private static BSplineSurface? approximateGrid(NCollection_Array2<Point3D> thePoints, double theTolerance)
     {
         GeomAPI_PointsToBSplineSurface anApprox = new();
-        anApprox.Init(thePoints, Approx_IsoParametric, 1, Geom_BSplineSurface.MaxDegree(), C1,
+        anApprox.Init(thePoints, IsoParametric, 1, BSplineSurface.MaxDegree(), C1,
                       Max(theTolerance, global::Kerf.Engine.Foundation.Precision.Confusion()));
         return anApprox.IsDone() ? anApprox.Surface() : null;
     }
 
     // Samples the prepared profiles as section curves of an approximate profile skin.
-    private static NCollection_Array2<Point3D> profileSampleGrid(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
+    private static NCollection_Array2<Point3D> profileSampleGrid(NCollection_Array1<BSplineCurve3D?> theProfiles,
                                                                 int theNbUSamples)
     {
         NCollection_Array1<double> aUParams = unitParameters(theNbUSamples);
         NCollection_Array2<Point3D> aPoints = new(1, theNbUSamples, 1, theProfiles.Size());
         for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
         {
-            GeomGridEval_Curve anEvaluator = new(theProfiles.At(aProfileIdx));
+            CurveGrid anEvaluator = new(theProfiles.At(aProfileIdx));
             NCollection_Array1<Point3D> aProfilePoints = anEvaluator.EvaluateGrid(aUParams);
             for (int aUIdx = 0; aUIdx < theNbUSamples; ++aUIdx)
             {
@@ -230,14 +232,14 @@ public class GeomFill_Gordon
     }
 
     // Samples the prepared guides as section curves of an approximate guide skin.
-    private static NCollection_Array2<Point3D> guideSampleGrid(NCollection_Array1<Geom_BSplineCurve?> theGuides,
+    private static NCollection_Array2<Point3D> guideSampleGrid(NCollection_Array1<BSplineCurve3D?> theGuides,
                                                               int theNbVSamples)
     {
         NCollection_Array1<double> aVParams = unitParameters(theNbVSamples);
         NCollection_Array2<Point3D> aPoints = new(1, theGuides.Size(), 1, theNbVSamples);
         for (int aGuideIdx = 0; aGuideIdx < theGuides.Size(); ++aGuideIdx)
         {
-            GeomGridEval_Curve anEvaluator = new(theGuides.At(aGuideIdx));
+            CurveGrid anEvaluator = new(theGuides.At(aGuideIdx));
             NCollection_Array1<Point3D> aGuidePoints = anEvaluator.EvaluateGrid(aVParams);
             for (int aVIdx = 0; aVIdx < theNbVSamples; ++aVIdx)
             {
@@ -248,17 +250,17 @@ public class GeomFill_Gordon
     }
 
     // Builds a sampled fallback from approximate profile, guide, and reference surfaces.
-    private static Geom_BSplineSurface? approximatePreparedNetwork(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
-                                                                   NCollection_Array1<Geom_BSplineCurve?> theGuides,
+    private static BSplineSurface? approximatePreparedNetwork(NCollection_Array1<BSplineCurve3D?> theProfiles,
+                                                                   NCollection_Array1<BSplineCurve3D?> theGuides,
                                                                    NCollection_Array2<Point3D> theIntersections,
                                                                    double theTolerance)
     {
         int aNbUSamples = fallbackSampleCount(theProfiles);
         int aNbVSamples = fallbackSampleCount(theGuides);
 
-        Geom_BSplineSurface? aProfileSurface = approximateGrid(profileSampleGrid(theProfiles, aNbUSamples), theTolerance);
-        Geom_BSplineSurface? aGuideSurface = approximateGrid(guideSampleGrid(theGuides, aNbVSamples), theTolerance);
-        Geom_BSplineSurface? aReferenceSurface = approximateGrid(theIntersections, theTolerance);
+        BSplineSurface? aProfileSurface = approximateGrid(profileSampleGrid(theProfiles, aNbUSamples), theTolerance);
+        BSplineSurface? aGuideSurface = approximateGrid(guideSampleGrid(theGuides, aNbVSamples), theTolerance);
+        BSplineSurface? aReferenceSurface = approximateGrid(theIntersections, theTolerance);
         if (aProfileSurface is null || aGuideSurface is null || aReferenceSurface is null)
         {
             return null;
@@ -266,9 +268,9 @@ public class GeomFill_Gordon
         NCollection_Array2<Point3D> aPoints = new(1, aNbUSamples, 1, aNbVSamples);
         NCollection_Array1<double> aUParams = unitParameters(aNbUSamples);
         NCollection_Array1<double> aVParams = unitParameters(aNbVSamples);
-        GeomGridEval_Surface aProfileEvaluator = new(aProfileSurface);
-        GeomGridEval_Surface aGuideEvaluator = new(aGuideSurface);
-        GeomGridEval_Surface aReferenceEvaluator = new(aReferenceSurface);
+        SurfaceGrid aProfileEvaluator = new(aProfileSurface);
+        SurfaceGrid aGuideEvaluator = new(aGuideSurface);
+        SurfaceGrid aReferenceEvaluator = new(aReferenceSurface);
         NCollection_Array2<Point3D> aProfilePoints = aProfileEvaluator.EvaluateGrid(aUParams, aVParams);
         NCollection_Array2<Point3D> aGuidePoints = aGuideEvaluator.EvaluateGrid(aUParams, aVParams);
         NCollection_Array2<Point3D> aReferencePoints = aReferenceEvaluator.EvaluateGrid(aUParams, aVParams);
@@ -298,7 +300,7 @@ public class GeomFill_Gordon
     }
 
     // Returns whether every profile closes geometrically at its parameter endpoints.
-    private static bool areClosedCurves(NCollection_Array1<Geom_BSplineCurve?> theCurves, double theTolerance)
+    private static bool areClosedCurves(NCollection_Array1<BSplineCurve3D?> theCurves, double theTolerance)
     {
         if (theCurves.IsEmpty())
         {
@@ -307,7 +309,7 @@ public class GeomFill_Gordon
         double aTolerance = Max(theTolerance, global::Kerf.Engine.Foundation.Precision.Confusion());
         for (int aCurveIdx = 0; aCurveIdx < theCurves.Size(); ++aCurveIdx)
         {
-            Geom_BSplineCurve? aCurve = theCurves.At(aCurveIdx);
+            BSplineCurve3D? aCurve = theCurves.At(aCurveIdx);
             if (aCurve is null
                 || aCurve.Value(aCurve.FirstParameter()).Distance(aCurve.Value(aCurve.LastParameter())) > aTolerance)
             {
@@ -318,8 +320,8 @@ public class GeomFill_Gordon
     }
 
     // Clones input curves because network preparation modifies its working copies.
-    private static bool copyWorkingCurves(NCollection_Array1<Geom_BSplineCurve?> theInput,
-                                          NCollection_Array1<Geom_BSplineCurve?> theWorking)
+    private static bool copyWorkingCurves(NCollection_Array1<BSplineCurve3D?> theInput,
+                                          NCollection_Array1<BSplineCurve3D?> theWorking)
     {
         try
         {
@@ -329,7 +331,7 @@ public class GeomFill_Gordon
                 {
                     return false;
                 }
-                theWorking.ChangeAt(aCurveIdx) = theInput.At(aCurveIdx)!.Copy() as Geom_BSplineCurve;
+                theWorking.ChangeAt(aCurveIdx) = theInput.At(aCurveIdx)!.Copy() as BSplineCurve3D;
                 if (theWorking.At(aCurveIdx) is null)
                 {
                     return false;
@@ -344,29 +346,29 @@ public class GeomFill_Gordon
     }
 
     // Returns the first knot in the requested surface parameter direction.
-    private static double surfaceStartParameter(Geom_BSplineSurface theSurface, bool theIsU)
+    private static double surfaceStartParameter(BSplineSurface theSurface, bool theIsU)
     {
         return theIsU ? theSurface.UKnot(1) : theSurface.VKnot(1);
     }
 
     // Returns the last knot in the requested surface parameter direction.
-    private static double surfaceEndParameter(Geom_BSplineSurface theSurface, bool theIsU)
+    private static double surfaceEndParameter(BSplineSurface theSurface, bool theIsU)
     {
-        return theIsU ? theSurface.UKnot(theSurface.NbUKnots()) : theSurface.VKnot(theSurface.NbVKnots());
+        return theIsU ? theSurface.UKnot(theSurface.UKnotCount) : theSurface.VKnot(theSurface.VKnotCount);
     }
 
     // Maps a unit parameter to the knot range of the requested surface direction.
-    private static double surfaceParameter(Geom_BSplineSurface theSurface, bool theIsU, double theUnitParameter)
+    private static double surfaceParameter(BSplineSurface theSurface, bool theIsU, double theUnitParameter)
     {
         double aFirst = surfaceStartParameter(theSurface, theIsU);
         return aFirst + theUnitParameter * (surfaceEndParameter(theSurface, theIsU) - aFirst);
     }
 
     // Measures the maximum deviation of a curve from its corresponding surface isoparameter.
-    private static double maxCurveDeviation(Geom_BSplineSurface theSurface, Geom_BSplineCurve theCurve,
+    private static double maxCurveDeviation(BSplineSurface theSurface, BSplineCurve3D theCurve,
                                             double theFixedParameter, bool theIsProfile)
     {
-        GeomAdaptor_Curve anAdaptor = new(theCurve);
+        CurveAdaptor anAdaptor = new(theCurve);
         double aMaxDeviation = 0.0;
         void evaluate(double theParameter)
         {
@@ -378,7 +380,7 @@ public class GeomFill_Gordon
         }
 
         int aSamplesPerSpan = theCurve.Degree() + (theIsProfile ? theSurface.UDegree() : theSurface.VDegree());
-        for (int aKnotIdx = 1; aKnotIdx < theCurve.NbKnots(); ++aKnotIdx)
+        for (int aKnotIdx = 1; aKnotIdx < theCurve.KnotCount; ++aKnotIdx)
         {
             double aFirst = theCurve.Knot(aKnotIdx);
             double aLast = theCurve.Knot(aKnotIdx + 1);
@@ -398,8 +400,8 @@ public class GeomFill_Gordon
     }
 
     // Returns the largest profile-to-surface deviation over all profile isoparameters.
-    private static double maxProfileDeviation(Geom_BSplineSurface theSurface,
-                                              NCollection_Array1<Geom_BSplineCurve?> theProfiles,
+    private static double maxProfileDeviation(BSplineSurface theSurface,
+                                              NCollection_Array1<BSplineCurve3D?> theProfiles,
                                               math_Vector theProfileParams)
     {
         double aMaxDeviation = 0.0;
@@ -412,8 +414,8 @@ public class GeomFill_Gordon
     }
 
     // Returns the largest guide-to-surface deviation over all guide isoparameters.
-    private static double maxGuideDeviation(Geom_BSplineSurface theSurface,
-                                            NCollection_Array1<Geom_BSplineCurve?> theGuides,
+    private static double maxGuideDeviation(BSplineSurface theSurface,
+                                            NCollection_Array1<BSplineCurve3D?> theGuides,
                                             math_Vector theGuideParams)
     {
         double aMaxDeviation = 0.0;
@@ -439,8 +441,8 @@ public class GeomFill_Gordon
             return;
         }
 
-        myProfiles = new NCollection_Array1<Geom_BSplineCurve?>(1, myInputProfiles.Length());
-        myGuides = new NCollection_Array1<Geom_BSplineCurve?>(1, myInputGuides.Length());
+        myProfiles = new NCollection_Array1<BSplineCurve3D?>(1, myInputProfiles.Length());
+        myGuides = new NCollection_Array1<BSplineCurve3D?>(1, myInputGuides.Length());
         if (!copyWorkingCurves(myInputProfiles, myProfiles) || !copyWorkingCurves(myInputGuides, myGuides))
         {
             setStatus(ref myReport, ResultStatus.ConversionFailed, BuildStage.InputConversion);
@@ -550,7 +552,7 @@ public class GeomFill_Gordon
     /// (U-direction sections, at least two) and the geometric tolerance of intersection detection. The curves are
     /// converted to B-splines of the algorithm's own; the caller's are not changed.
     /// </summary>
-    public void Init(NCollection_Array1<Geom_Curve> theProfiles, NCollection_Array1<Geom_Curve> theGuides,
+    public void Init(NCollection_Array1<Curve3D> theProfiles, NCollection_Array1<Curve3D> theGuides,
                      double theTolerance)
     {
         myTolerance = theTolerance;
@@ -565,23 +567,23 @@ public class GeomFill_Gordon
         if (aNbProf < 2 || aNbGuid < 2)
         {
             // Store counts but don't try to convert - Perform() will check and return.
-            myInputProfiles = new NCollection_Array1<Geom_BSplineCurve?>(1, aNbProf);
-            myInputGuides = new NCollection_Array1<Geom_BSplineCurve?>(1, aNbGuid);
+            myInputProfiles = new NCollection_Array1<BSplineCurve3D?>(1, aNbProf);
+            myInputGuides = new NCollection_Array1<BSplineCurve3D?>(1, aNbGuid);
             return;
         }
 
         // Convert input arrays to immutable B-spline seeds. Perform() deep-copies these
         // seeds before applying destructive preparation steps.
-        myInputProfiles = new NCollection_Array1<Geom_BSplineCurve?>(1, aNbProf);
-        myInputGuides = new NCollection_Array1<Geom_BSplineCurve?>(1, aNbGuid);
+        myInputProfiles = new NCollection_Array1<BSplineCurve3D?>(1, aNbProf);
+        myInputGuides = new NCollection_Array1<BSplineCurve3D?>(1, aNbGuid);
 
         for (int aProfileIdx = 0; aProfileIdx < aNbProf; ++aProfileIdx)
         {
-            myInputProfiles.ChangeAt(aProfileIdx) = GeomConvert.CurveToBSplineCurve(theProfiles.At(aProfileIdx));
+            myInputProfiles.ChangeAt(aProfileIdx) = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(theProfiles.At(aProfileIdx));
         }
         for (int aGuideIdx = 0; aGuideIdx < aNbGuid; ++aGuideIdx)
         {
-            myInputGuides.ChangeAt(aGuideIdx) = GeomConvert.CurveToBSplineCurve(theGuides.At(aGuideIdx));
+            myInputGuides.ChangeAt(aGuideIdx) = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(theGuides.At(aGuideIdx));
         }
 
         // Initialize parameter matrices.
@@ -614,7 +616,7 @@ public class GeomFill_Gordon
     public BuildReport Report() => myReport;
 
     /// <summary>The Gordon surface, frozen. Throws StdFail_NotDone unless <see cref="Perform"/> succeeded.</summary>
-    public Geom_BSplineSurface Surface()
+    public BSplineSurface Surface()
     {
         if (!IsDone())
         {

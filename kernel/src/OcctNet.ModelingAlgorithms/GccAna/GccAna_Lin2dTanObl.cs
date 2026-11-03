@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
@@ -62,12 +63,12 @@ public sealed class GccAna_Lin2dTanObl
         //                               =======================================
         qualifier1[1] = GccEnt_noqualifier;
         pnttg1sol[1] = ThePoint;
-        IntAna2d_AnaIntersection Intp = new(linsol[1], TheLine);
-        if (Intp.IsDone())
+        AnalyticIntersection Intp = new(linsol[1], TheLine);
+        if (Intp.IsDone)
         {
-            if (!Intp.IsEmpty())
+            if (!Intp.IsEmpty)
             {
-                for (int i = 1; i <= Intp.NbPoints(); i++)
+                for (int i = 1; i <= Intp.PointCount; i++)
                 {
                     pntint2sol[1] = Intp.Point(i).Value();
                 }
@@ -128,14 +129,14 @@ public sealed class GccAna_Lin2dTanObl
                 linsol[1] = new Line2D(pnttg1sol[1], new Direction2D(xy));
                 //     ===============================================
                 qualifier1[1] = Qualified1.Qualifier();
-                IntAna2d_AnaIntersection Intp = new(linsol[1], TheLine);
+                AnalyticIntersection Intp = new(linsol[1], TheLine);
                 NbrSol = 1;
                 WellDone = true;
-                if (Intp.IsDone())
+                if (Intp.IsDone)
                 {
-                    if (!Intp.IsEmpty())
+                    if (!Intp.IsEmpty)
                     {
-                        for (int i = 1; i <= Intp.NbPoints(); i++)
+                        for (int i = 1; i <= Intp.PointCount; i++)
                         {
                             pntint2sol[1] = Intp.Point(i).Value();
                         }
@@ -151,14 +152,14 @@ public sealed class GccAna_Lin2dTanObl
                 linsol[1] = new Line2D(pnttg1sol[1], new Direction2D(xy));
                 //     ===============================================
                 qualifier1[1] = Qualified1.Qualifier();
-                IntAna2d_AnaIntersection Intp = new(linsol[1], TheLine);
+                AnalyticIntersection Intp = new(linsol[1], TheLine);
                 WellDone = true;
                 NbrSol = 1;
-                if (Intp.IsDone())
+                if (Intp.IsDone)
                 {
-                    if (!Intp.IsEmpty())
+                    if (!Intp.IsEmpty)
                     {
-                        for (int i = 1; i <= Intp.NbPoints(); i++)
+                        for (int i = 1; i <= Intp.PointCount; i++)
                         {
                             pntint2sol[1] = Intp.Point(i).Value();
                         }
@@ -174,14 +175,14 @@ public sealed class GccAna_Lin2dTanObl
                 linsol[1] = new Line2D(pnttg1sol[1], new Direction2D(xy));
                 //     ===============================================
                 qualifier1[1] = GccEnt_enclosing;
-                IntAna2d_AnaIntersection Intp = new(linsol[1], TheLine);
+                AnalyticIntersection Intp = new(linsol[1], TheLine);
                 WellDone = true;
                 NbrSol = 1;
-                if (Intp.IsDone())
+                if (Intp.IsDone)
                 {
-                    if (!Intp.IsEmpty())
+                    if (!Intp.IsEmpty)
                     {
-                        for (int i = 1; i <= Intp.NbPoints(); i++)
+                        for (int i = 1; i <= Intp.PointCount; i++)
                         {
                             pntint2sol[1] = Intp.Point(i).Value();
                         }
@@ -193,14 +194,14 @@ public sealed class GccAna_Lin2dTanObl
                 qualifier1[2] = GccEnt_outside;
                 // OCCT: intersects the first solution again, not linsol(2), so the second solution's intersection
                 // point is the first's
-                Intp = new IntAna2d_AnaIntersection(linsol[1], TheLine);
+                Intp = new AnalyticIntersection(linsol[1], TheLine);
                 NbrSol++;
                 WellDone = true;
-                if (Intp.IsDone())
+                if (Intp.IsDone)
                 {
-                    if (!Intp.IsEmpty())
+                    if (!Intp.IsEmpty)
                     {
-                        for (int i = 1; i <= Intp.NbPoints(); i++)
+                        for (int i = 1; i <= Intp.PointCount; i++)
                         {
                             pntint2sol[2] = Intp.Point(i).Value();
                         }

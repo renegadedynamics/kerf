@@ -5,9 +5,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.IntCurveSurface_TransitionOnCurve;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace Occt;
 
@@ -26,21 +28,21 @@ public sealed class LocOpe_CurveShapeIntersector
         myDone = false;
     }
 
-    public LocOpe_CurveShapeIntersector(in Axis3D Axis, in TopoDS_Shape S)
+    public LocOpe_CurveShapeIntersector(in Axis3D Axis, in Shape S)
     {
         Init(Axis, S);
     }
 
-    public LocOpe_CurveShapeIntersector(in Circle3D C, in TopoDS_Shape S)
+    public LocOpe_CurveShapeIntersector(in Circle3D C, in Shape S)
     {
         Init(C, S);
     }
 
-    public void Init(in Axis3D Axis, in TopoDS_Shape S)
+    public void Init(in Axis3D Axis, in Shape S)
     {
         myDone = false;
         myPoints.Clear();
-        if (S.IsNull())
+        if (S.IsNull)
         {
             return;
         }
@@ -52,18 +54,18 @@ public sealed class LocOpe_CurveShapeIntersector
         myDone = true;
     }
 
-    public void Init(in Circle3D C, in TopoDS_Shape S)
+    public void Init(in Circle3D C, in Shape S)
     {
         myDone = false;
         myPoints.Clear();
-        if (S.IsNull())
+        if (S.IsNull)
         {
             return;
         }
         double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-        Geom_Circle GC = new(C);
-        GeomAdaptor_Curve AC = new(GC, 0.0, 2.0 * Math.PI);
+        CircleCurve3D GC = new(C);
+        CurveAdaptor AC = new(GC, 0.0, 2.0 * Math.PI);
 
         BRepIntCurveSurface_Inter theInt = new();
         theInt.Init(S, AC, Tol);
@@ -96,7 +98,7 @@ public sealed class LocOpe_CurveShapeIntersector
     /// Searches the first intersection point located after the parameter <paramref name="From"/> whose orientation
     /// is not EXTERNAL; see <see cref="LocOpe_CSIntersector"/>. The outputs are left unchanged where OCCT leaves them.
     /// </summary>
-    public bool LocalizeAfter(double From, ref TopAbs_Orientation Or, ref int IndFrom, ref int IndTo)
+    public bool LocalizeAfter(double From, ref Orientation Or, ref int IndFrom, ref int IndTo)
     {
         if (!myDone)
         {
@@ -127,9 +129,9 @@ public sealed class LocOpe_CurveShapeIntersector
                 {
                     if (myPoints.Value(i).Parameter() - param <= Eps)
                     {
-                        if (Or != TopAbs_EXTERNAL && Or != myPoints.Value(i).Orientation())
+                        if (Or != External && Or != myPoints.Value(i).Orientation())
                         {
-                            Or = TopAbs_EXTERNAL;
+                            Or = External;
                         }
                         i++;
                     }
@@ -138,7 +140,7 @@ public sealed class LocOpe_CurveShapeIntersector
                         break;
                     }
                 }
-                if (Or == TopAbs_EXTERNAL)
+                if (Or == External)
                 {
                     found = (i > nbpoints);
                     IndFrom = i;
@@ -159,7 +161,7 @@ public sealed class LocOpe_CurveShapeIntersector
     /// Searches the first intersection point located before the parameter <paramref name="From"/> whose orientation
     /// is not EXTERNAL.
     /// </summary>
-    public bool LocalizeBefore(double From, ref TopAbs_Orientation Or, ref int IndFrom, ref int IndTo)
+    public bool LocalizeBefore(double From, ref Orientation Or, ref int IndFrom, ref int IndTo)
     {
         if (!myDone)
         {
@@ -190,9 +192,9 @@ public sealed class LocOpe_CurveShapeIntersector
                 {
                     if (param - myPoints.Value(i).Parameter() <= Eps)
                     {
-                        if (Or != TopAbs_EXTERNAL && Or != myPoints.Value(i).Orientation())
+                        if (Or != External && Or != myPoints.Value(i).Orientation())
                         {
-                            Or = TopAbs_EXTERNAL;
+                            Or = External;
                         }
                         i--;
                     }
@@ -201,7 +203,7 @@ public sealed class LocOpe_CurveShapeIntersector
                         break;
                     }
                 }
-                if (Or == TopAbs_EXTERNAL)
+                if (Or == External)
                 {
                     found = (i < 1);
                     IndTo = i;
@@ -219,7 +221,7 @@ public sealed class LocOpe_CurveShapeIntersector
     }
 
     /// <summary>Searches the first intersection point after the index <paramref name="FromInd"/> whose orientation is not EXTERNAL.</summary>
-    public bool LocalizeAfter(int FromInd, ref TopAbs_Orientation Or, ref int IndFrom, ref int IndTo)
+    public bool LocalizeAfter(int FromInd, ref Orientation Or, ref int IndFrom, ref int IndTo)
     {
         if (!myDone)
         {
@@ -265,9 +267,9 @@ public sealed class LocOpe_CurveShapeIntersector
                 {
                     if (myPoints.Value(i).Parameter() - param <= Eps)
                     {
-                        if (Or != TopAbs_EXTERNAL && Or != myPoints.Value(i).Orientation())
+                        if (Or != External && Or != myPoints.Value(i).Orientation())
                         {
-                            Or = TopAbs_EXTERNAL;
+                            Or = External;
                         }
                         i++;
                     }
@@ -276,7 +278,7 @@ public sealed class LocOpe_CurveShapeIntersector
                         break;
                     }
                 }
-                if (Or == TopAbs_EXTERNAL)
+                if (Or == External)
                 {
                     found = (i > nbpoints);
                     IndFrom = i;
@@ -293,7 +295,7 @@ public sealed class LocOpe_CurveShapeIntersector
     }
 
     /// <summary>Searches the first intersection point before the index <paramref name="FromInd"/> whose orientation is not EXTERNAL.</summary>
-    public bool LocalizeBefore(int FromInd, ref TopAbs_Orientation Or, ref int IndFrom, ref int IndTo)
+    public bool LocalizeBefore(int FromInd, ref Orientation Or, ref int IndFrom, ref int IndTo)
     {
         if (!myDone)
         {
@@ -339,9 +341,9 @@ public sealed class LocOpe_CurveShapeIntersector
                 {
                     if (param - myPoints.Value(i).Parameter() <= Eps)
                     {
-                        if (Or != TopAbs_EXTERNAL && Or != myPoints.Value(i).Orientation())
+                        if (Or != External && Or != myPoints.Value(i).Orientation())
                         {
-                            Or = TopAbs_EXTERNAL;
+                            Or = External;
                         }
                         i--;
                     }
@@ -350,7 +352,7 @@ public sealed class LocOpe_CurveShapeIntersector
                         break;
                     }
                 }
-                if (Or == TopAbs_EXTERNAL)
+                if (Or == External)
                 {
                     found = (i < 1);
                     IndTo = i;
@@ -371,12 +373,12 @@ public sealed class LocOpe_CurveShapeIntersector
         double param, paramu, paramv;
         int i, nbpoints = 0;
 
-        TopAbs_Orientation theor = TopAbs_FORWARD, orface;
+        Orientation theor = Forward, orface;
 
         while (theInt.More())
         {
             Point3D thept = theInt.Pnt();
-            TopoDS_Face theface = theInt.Face();
+            Face theface = theInt.Face();
             orface = theface.Orientation();
             param = theInt.W();
             paramu = theInt.U();
@@ -385,35 +387,35 @@ public sealed class LocOpe_CurveShapeIntersector
             switch (theInt.Transition())
             {
                 case IntCurveSurface_In:
-                    if (orface == TopAbs_FORWARD)
+                    if (orface == Forward)
                     {
-                        theor = TopAbs_FORWARD;
+                        theor = Forward;
                     }
-                    else if (orface == TopAbs_REVERSED)
+                    else if (orface == Reversed)
                     {
-                        theor = TopAbs_REVERSED;
+                        theor = Reversed;
                     }
                     else
                     {
-                        theor = TopAbs_EXTERNAL;
+                        theor = External;
                     }
                     break;
                 case IntCurveSurface_Out:
-                    if (orface == TopAbs_FORWARD)
+                    if (orface == Forward)
                     {
-                        theor = TopAbs_REVERSED;
+                        theor = Reversed;
                     }
-                    else if (orface == TopAbs_REVERSED)
+                    else if (orface == Reversed)
                     {
-                        theor = TopAbs_FORWARD;
+                        theor = Forward;
                     }
                     else
                     {
-                        theor = TopAbs_EXTERNAL;
+                        theor = External;
                     }
                     break;
                 case IntCurveSurface_Tangent:
-                    theor = TopAbs_EXTERNAL;
+                    theor = External;
                     break;
             }
 

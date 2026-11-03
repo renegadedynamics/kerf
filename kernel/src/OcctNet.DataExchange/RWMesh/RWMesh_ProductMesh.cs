@@ -7,6 +7,8 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Meshing;
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 
 using Kerf.Topology;
@@ -51,14 +53,14 @@ internal sealed class RWMesh_ProductMesh
     /// </summary>
     public static RWMesh_ProductMesh Make(XdeDoc_Product thePart, bool toComputeNormals, bool toMergeFaces = true)
     {
-        Dictionary<TopoDS_Shape, XdeDoc_Style> aFaceStyles = faceStyles(thePart);
+        Dictionary<Shape, XdeDoc_Style> aFaceStyles = faceStyles(thePart);
         var aGroups = new List<Group>();
         var aByColor = new Dictionary<ColorWithAlpha, Group>();
         Group? anInherited = null;
 
-        for (var anExp = new TopExp_Explorer(thePart.Shape, TopAbs_ShapeEnum.TopAbs_FACE); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(thePart.Shape, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            TopoDS_Face aFace = TopoDS.Face(anExp.Current());
+            Face aFace = ShapeCasts.Face(anExp.Current());
             ColorWithAlpha? aColor = null;
             if (aFaceStyles.TryGetValue(aFace, out XdeDoc_Style aStyle))
             {
@@ -68,7 +70,7 @@ internal sealed class RWMesh_ProductMesh
                 }
                 aColor = aStyle.SurfaceColor;
             }
-            Triangulation? aTri = BRep_Tool.Triangulation(aFace, out Placement aLoc);
+            Triangulation? aTri = Tool.Triangulation(aFace, out Placement aLoc);
             if (aTri is null || aTri.TriangleCount == 0 || aTri.NodeCount == 0)
             {
                 continue;
@@ -112,9 +114,9 @@ internal sealed class RWMesh_ProductMesh
 
     // The styles the part's sub-shapes give its faces: the sub-shapes taken from the most general type (compound) to
     // the most specific (face), so that a face's own colour overrides its solid's (decision 1232)
-    private static Dictionary<TopoDS_Shape, XdeDoc_Style> faceStyles(XdeDoc_Product thePart)
+    private static Dictionary<Shape, XdeDoc_Style> faceStyles(XdeDoc_Product thePart)
     {
-        var aResult = new Dictionary<TopoDS_Shape, XdeDoc_Style>(TopTools_ShapeMapHasher.Instance);
+        var aResult = new Dictionary<Shape, XdeDoc_Style>(ShapeHasher.Instance);
         if (thePart.SubShapes.IsEmpty)
         {
             return aResult;
@@ -131,9 +133,9 @@ internal sealed class RWMesh_ProductMesh
             {
                 continue;
             }
-            for (var anExp = new TopExp_Explorer(aSub.Shape, TopAbs_ShapeEnum.TopAbs_FACE); anExp.More(); anExp.Next())
+            for (var anExp = new Explorer(aSub.Shape, ShapeType.Face); anExp.More(); anExp.Next())
             {
-                TopoDS_Shape aFace = anExp.Current();
+                Shape aFace = anExp.Current();
                 XdeDoc_Style aBase = aResult.TryGetValue(aFace, out XdeDoc_Style aKnown) ? aKnown : new XdeDoc_Style(null, null);
                 aResult[aFace] = aBase.Merged(anAttributes);
             }
@@ -141,12 +143,12 @@ internal sealed class RWMesh_ProductMesh
         return aResult;
     }
 
-    private static void addFace(Group theGroup, in TopoDS_Face theFace, Triangulation theTri, in Placement theLoc, bool toComputeNormals)
+    private static void addFace(Group theGroup, in Face theFace, Triangulation theTri, in Placement theLoc, bool toComputeNormals)
     {
         Transform3D aTrsf = theLoc.Transformation();
         bool isIdentity = theLoc.IsIdentity;
         bool isMirrored = aTrsf.VectorialPart().Determinant() < 0.0;
-        bool isReversed = theFace.Orientation() == TopAbs_Orientation.TopAbs_REVERSED;
+        bool isReversed = theFace.Orientation() == Orientation.Reversed;
 
         Triangulation? aNormalsTri = theTri.HasNormals
                                             ? theTri

@@ -1,10 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -49,10 +54,10 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         return aText;
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
+        Assert.True(BrepTools.Write(theShape, aFile, true, false, FormatVersion.FormatVersion_VERSION_3));
         string aText = File.ReadAllText(aFile);
         File.Delete(aFile);
         return aText;
@@ -67,13 +72,13 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
 
     // ---- inputs ----
 
-    private static TopoDS_Face Face(in TopoDS_Wire theWire) => new BRepBuilderAPI_MakeFace(theWire, true).Face();
+    private static Face Face(in Wire theWire) => new BRepBuilderAPI_MakeFace(theWire, true).Face();
 
     private static Point3D OnPlane(in Frame3D theAx, double theU, double theV)
         => theAx.Location().Translated(new Vector3D(theAx.XDirection()) * theU + new Vector3D(theAx.YDirection()) * theV);
 
     // A polygon around the origin of the plane (theArcs: some sides arcs of circles)
-    private static TopoDS_Face Profile(Oracle theOracle, bool theArcs, out double theSize)
+    private static Face Profile(Oracle theOracle, bool theArcs, out double theSize)
     {
         Frame3D anAx = theOracle.Bool() ? new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)) : theOracle.Ax2();
         int aNb = theOracle.Int(3, 8);
@@ -106,7 +111,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
                 var aSide = new Vector3D(a, b);
                 Vector3D aNormal = new Vector3D(anAx.Direction()).Crossed(aSide);
                 Point3D aMid = a.Translated(aSide * 0.5).Translated(aNormal * theOracle.Real(-0.3, 0.3));
-                aWire.Add(new BRepBuilderAPI_MakeEdge(new GC_MakeArcOfCircle(a, aMid, b).Value()).Edge());
+                aWire.Add(new BRepBuilderAPI_MakeEdge(new MakeArcOfCircle(a, aMid, b).Value()).Edge());
             }
             else
             {
@@ -117,7 +122,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
     }
 
     // build123d.NET's Face.MakeRect: a rectangle centred on the origin of Plane.XY
-    private static TopoDS_Wire Rect(double theW, double theH, double theX = 0.0, double theY = 0.0)
+    private static Wire Rect(double theW, double theH, double theX = 0.0, double theY = 0.0)
     {
         var aPoly = new BRepBuilderAPI_MakePolygon(new Point3D(theX - theW / 2, theY - theH / 2, 0), new Point3D(theX + theW / 2, theY - theH / 2, 0),
                                                    new Point3D(theX + theW / 2, theY + theH / 2, 0), new Point3D(theX - theW / 2, theY + theH / 2, 0), true);
@@ -165,67 +170,67 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         public BRepFilletAPI_MakeFillet2d Maker = null!;
     }
 
-    private static PortRun RunPort(in TopoDS_Face theFace, List<Op> theOps)
+    private static PortRun RunPort(in Face theFace, List<Op> theOps)
     {
         var aRun = new PortRun();
         var aMaker = new BRepFilletAPI_MakeFillet2d(theFace);
         aRun.Maker = aMaker;
         aRun.Steps.Add("init " + (int)aMaker.Status());
-        NCollection_IndexedMap<TopoDS_Shape> aVertices = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theFace, TopAbs_VERTEX, aVertices);
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anAncestors = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(theFace, TopAbs_VERTEX, TopAbs_EDGE, anAncestors);
-        TopoDS_Edge aLastFillet = new(), aLastChamfer = new();
+        NCollection_IndexedMap<Shape> aVertices = new(ShapeHasher.Instance);
+        Exploration.MapShapes(theFace, ShapeType.Vertex, aVertices);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anAncestors = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(theFace, ShapeType.Vertex, ShapeType.Edge, anAncestors);
+        Edge aLastFillet = new(), aLastChamfer = new();
         foreach (Op anOp in theOps)
         {
             string aStep;
             try
             {
-                TopoDS_Edge anEdge = new();
-                TopoDS_Vertex aV = anOp.Vertex > 0 ? TopoDS.Vertex(aVertices.FindKey(anOp.Vertex)) : new TopoDS_Vertex();
-                NCollection_List<TopoDS_Shape>? aList = anOp.Vertex > 0 ? anAncestors.FindFromKey(aV) : null;
+                Edge anEdge = new();
+                Vertex aV = anOp.Vertex > 0 ? ShapeCasts.Vertex(aVertices.FindKey(anOp.Vertex)) : new Vertex();
+                NCollection_List<Shape>? aList = anOp.Vertex > 0 ? anAncestors.FindFromKey(aV) : null;
                 switch (anOp.Kind)
                 {
                     case OpKind.Fillet:
                         anEdge = aMaker.AddFillet(aV, anOp.A);
-                        if (!anEdge.IsNull())
+                        if (!anEdge.IsNull)
                         {
                             aLastFillet = anEdge;
                         }
                         break;
                     case OpKind.ChamferDD:
                         {
-                            TopoDS_Edge E1 = TopoDS.Edge(aList!.First()), E2 = TopoDS.Edge(aList.Last());
+                            Edge E1 = ShapeCasts.Edge(aList!.First()), E2 = ShapeCasts.Edge(aList.Last());
                             anEdge = anOp.Swap ? aMaker.AddChamfer(E2, E1, anOp.A, anOp.B) : aMaker.AddChamfer(E1, E2, anOp.A, anOp.B);
                             break;
                         }
                     case OpKind.ChamferDA:
-                        anEdge = aMaker.AddChamfer(TopoDS.Edge(anOp.Swap ? aList!.Last() : aList!.First()), aV, anOp.A, anOp.B);
+                        anEdge = aMaker.AddChamfer(ShapeCasts.Edge(anOp.Swap ? aList!.Last() : aList!.First()), aV, anOp.A, anOp.B);
                         break;
                     case OpKind.ModifyFillet:
                         anEdge = aMaker.ModifyFillet(aLastFillet, anOp.A);
                         break;
                     case OpKind.RemoveFillet:
-                        aStep = aMaker.RemoveFillet(aLastFillet).IsNull() ? "v0" : "v1";
+                        aStep = aMaker.RemoveFillet(aLastFillet).IsNull ? "v0" : "v1";
                         aRun.Steps.Add($"{anOp.Kind} {aStep} {(int)aMaker.Status()}");
                         continue;
                     case OpKind.ModifyChamfer:
                         if (aMaker.NbChamfer() > 0)
                         {
-                            aLastChamfer = TopoDS.Edge(aMaker.ChamferEdges()[aMaker.NbChamfer() - 1]);
+                            aLastChamfer = ShapeCasts.Edge(aMaker.ChamferEdges()[aMaker.NbChamfer() - 1]);
                         }
                         anEdge = aMaker.ModifyChamfer(aLastChamfer, aLastChamfer, anOp.A, Math.Min(1.4, anOp.B));
                         break;
                     case OpKind.RemoveChamfer:
                         if (aMaker.NbChamfer() > 0)
                         {
-                            aLastChamfer = TopoDS.Edge(aMaker.ChamferEdges()[aMaker.NbChamfer() - 1]);
+                            aLastChamfer = ShapeCasts.Edge(aMaker.ChamferEdges()[aMaker.NbChamfer() - 1]);
                         }
-                        aStep = aMaker.RemoveChamfer(aLastChamfer).IsNull() ? "v0" : "v1";
+                        aStep = aMaker.RemoveChamfer(aLastChamfer).IsNull ? "v0" : "v1";
                         aRun.Steps.Add($"{anOp.Kind} {aStep} {(int)aMaker.Status()}");
                         continue;
                 }
-                aStep = $"{anOp.Kind} {(anEdge.IsNull() ? "e0" : "e1")} {(int)aMaker.Status()}";
+                aStep = $"{anOp.Kind} {(anEdge.IsNull ? "e0" : "e1")} {(int)aMaker.Status()}";
             }
             catch (FailureException e)
             {
@@ -315,21 +320,21 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
 
     // ---- the comparison ----
 
-    private void Compare(in TopoDS_Face theFace, List<Op> theOps, string theWhat)
+    private void Compare(in Face theFace, List<Op> theOps, string theWhat)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theFace, aFile, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
+        Assert.True(BrepTools.Write(theFace, aFile, true, false, FormatVersion.FormatVersion_VERSION_3));
         var aNShape = new N.TopoDS_Shape();
         using (var aBuilder = new N.BRep_Builder())
         {
             Assert.True(N.BRepTools.Read(aNShape, aFile, aBuilder));
         }
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile));
+        Assert.True(BrepTools.Read(out Shape aPShape, aFile));
         File.Delete(aFile);
         aPShape.TShape()!.FreezeGraph(); // a caller's face
         string anInputText = BRepTextComparison.Write(aPShape);
         N.TopoDS_Face aNFace = N.TopoDS.Face(aNShape);
-        TopoDS_Face aPFace = TopoDS.Face(aPShape);
+        Face aPFace = ShapeCasts.Face(aPShape);
         myCases++;
 
         NativeRun aN = RunNative(aNFace, theOps);
@@ -359,7 +364,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         }
 
         N.TopoDS_Shape aNRes = aN.Maker.Shape();
-        TopoDS_Shape aPRes = aP.Maker.Shape();
+        Shape aPRes = aP.Maker.Shape();
         string aNT = NativeText(aNRes), aPT = PortText(aPRes);
         BRepTextDiff aDiff = BRepTextComparison.Compare(aNT, aPT);
         if (aDiff.IsIdentical)
@@ -375,7 +380,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         {
             string aTextFile = NewFile();
             File.WriteAllText(aTextFile, aNT);
-            Assert.True(BRepTools.Read(out TopoDS_Shape aNP, aTextFile));
+            Assert.True(BrepTools.Read(out Shape aNP, aTextFile));
             File.Delete(aTextFile);
             CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aNP, aPRes);
             if (aCanon.IsIdentical)
@@ -391,18 +396,18 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         // the history, as indices in the result
         var aNResEdges = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(aNRes, N.TopAbs_ShapeEnum.TopAbs_EDGE, aNResEdges);
-        NCollection_IndexedMap<TopoDS_Shape> aPResEdges = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aPRes, TopAbs_EDGE, aPResEdges);
+        NCollection_IndexedMap<Shape> aPResEdges = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aPRes, ShapeType.Edge, aPResEdges);
         var aNEdges = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(aNFace, N.TopAbs_ShapeEnum.TopAbs_EDGE, aNEdges);
-        NCollection_IndexedMap<TopoDS_Shape> aPEdges = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(aPFace, TopAbs_EDGE, aPEdges);
+        NCollection_IndexedMap<Shape> aPEdges = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aPFace, ShapeType.Edge, aPEdges);
         var aNH = new List<string>();
         var aPH = new List<string>();
         for (int i = 1; i <= aNEdges.Extent(); i++)
         {
             N.TopoDS_Edge aNE = N.TopoDS.Edge(aNEdges.FindKey(i));
-            TopoDS_Edge aPE = TopoDS.Edge(aPEdges.FindKey(i));
+            Edge aPE = ShapeCasts.Edge(aPEdges.FindKey(i));
             aNH.Add($"{i}:{aN.Maker.IsModified(aNE)},{aN.Maker.HasDescendant(aNE)}");
             aPH.Add($"{i}:{aP.Maker.IsModified(aPE)},{aP.Maker.HasDescendant(aPE)}");
             try
@@ -430,7 +435,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         for (int k = 1; k <= aNResEdges.Extent(); k++)
         {
             aNH.Add("basis" + aNEdges.FindIndex(aN.Maker.BasisEdge(N.TopoDS.Edge(aNResEdges.FindKey(k)))));
-            aPH.Add("basis" + aPEdges.FindIndex(aP.Maker.BasisEdge(TopoDS.Edge(aPResEdges.FindKey(k)))));
+            aPH.Add("basis" + aPEdges.FindIndex(aP.Maker.BasisEdge(ShapeCasts.Edge(aPResEdges.FindKey(k)))));
         }
         if (aNH.SequenceEqual(aPH))
         {
@@ -447,10 +452,10 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         }
     }
 
-    private static int NbVertices(in TopoDS_Shape theShape)
+    private static int NbVertices(in Shape theShape)
     {
-        NCollection_IndexedMap<TopoDS_Shape> aMap = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(theShape, TopAbs_VERTEX, aMap);
+        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, ShapeType.Vertex, aMap);
         return aMap.Extent();
     }
 
@@ -472,7 +477,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         for (int i = 0; i < 400; i++)
         {
             bool isArcs = i % 2 == 1;
-            TopoDS_Face aFace;
+            Face aFace;
             double aSize;
             try
             {
@@ -497,11 +502,11 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         {
             double w = anOracle.Real(1.0, 100.0), h = anOracle.Real(1.0, 100.0);
             bool isHole = i % 4 == 3;
-            TopoDS_Face aFace;
+            Face aFace;
             if (isHole)
             {
                 var aMaker = new BRepBuilderAPI_MakeFace(Rect(w, h), true);
-                aMaker.Add(TopoDS.Wire(Rect(w / 3, h / 3, w / 10, -h / 10).Reversed()));
+                aMaker.Add(ShapeCasts.Wire(Rect(w / 3, h / 3, w / 10, -h / 10).Reversed()));
                 aFace = aMaker.Face();
             }
             else

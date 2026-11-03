@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Approximation;
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
@@ -11,13 +12,13 @@ namespace Occt;
 
 /// <summary>
 /// The function swept by <see cref="GeomFill_Sweep"/>: a section law placed by a location law, as the
-/// <see cref="Approx_SweepFunction"/> that <see cref="Approx_SweepApproximation"/> approximates.
+/// <see cref="SweepFunction"/> that <see cref="SweepApproximation"/> approximates.
 /// </summary>
 /// <remarks>
 /// A working object (decision 21): it keeps the caller's laws, as OCCT keeps the handles, and
 /// <see cref="SetInterval"/> and <see cref="SetTolerance"/> change them.
 /// </remarks>
-public class GeomFill_SweepFunction : Approx_SweepFunction
+public class GeomFill_SweepFunction : SweepFunction
 {
     private readonly GeomFill_LocationLaw myLoc;
     private readonly GeomFill_SectionLaw mySec;
@@ -198,7 +199,7 @@ public class GeomFill_SweepFunction : Approx_SweepFunction
         mySec.Mults(TMults);
     }
 
-    public override bool IsRational() => mySec.IsRational();
+    public override bool IsRational => mySec.IsRational();
 
     public override int NbIntervals(Continuity S)
     {
@@ -228,7 +229,7 @@ public class GeomFill_SweepFunction : Approx_SweepFunction
         }
         myLoc.Intervals(IntL, S);
 
-        GeomLib.FuseIntervals(IntS, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
+        global::Kerf.Engine.Geometry.Library.GeomLib.FuseIntervals(IntS, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
         return Inter.Length() - 1;
     }
 
@@ -268,7 +269,7 @@ public class GeomFill_SweepFunction : Approx_SweepFunction
         }
         myLoc.Intervals(IntL, S);
 
-        GeomLib.FuseIntervals(IntS, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
+        global::Kerf.Engine.Geometry.Library.GeomLib.FuseIntervals(IntS, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
         for (ii = 1; ii <= Inter.Length(); ii++)
         {
             T[ii] = Inter[ii];

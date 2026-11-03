@@ -1,8 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.Contap_IType;
-using static Occt.TopAbs_Orientation;
+using static Kerf.Topology.Orientation;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -13,9 +16,9 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ContapTests
 {
-    private static Contap_Contour Contour(TopoDS_Face theFace, Func<Contap_Contour> theMake)
+    private static Contap_Contour Contour(Face theFace, Func<Contap_Contour> theMake)
     {
-        TopoDS_Face aF = TopoDS.Face(theFace.Oriented(TopAbs_FORWARD));
+        Face aF = ShapeCasts.Face(theFace.Oriented(Forward));
         BRepTopAdaptor_Tool aTool = new(aF, global::Kerf.Engine.Foundation.Precision.PConfusion());
         Contap_Contour C = theMake();
         C.Perform(aTool.GetSurface()!, aTool.GetTopolTool());
@@ -49,9 +52,9 @@ public class ContapTests
         }
     }
 
-    private static Vector3D Normal(TopoDS_Face theFace, Point3D P)
+    private static Vector3D Normal(Face theFace, Point3D P)
     {
-        Geom_Surface aS = BRep_Tool.Surface(theFace)!;
+        Surface aS = Tool.Surface(theFace)!;
         GeomAPI_ProjectPointOnSurf aProj = new(P, aS);
         aProj.LowerDistanceParameters(out double u, out double v);
         aS.D1(u, v, out _, out Vector3D du, out Vector3D dv);
@@ -64,7 +67,7 @@ public class ContapTests
     [MemberData(nameof(FaceNames))]
     public void Contour_ForADirection_IsWhereTheNormalIsOrthogonal(string theName)
     {
-        TopoDS_Face aFace = HlrRecorder.Faces().First(f => f.Name == theName).Face;
+        Face aFace = HlrRecorder.Faces().First(f => f.Name == theName).Face;
         Vector3D aDir = theName == "bspline" ? new Vector3D(1, 0, 0) : new Vector3D(0.3, -0.4, 0.8);
         Contap_Contour C = Contour(aFace, () => new Contap_Contour(aDir));
         Assert.True(C.NbLines() > 0);
@@ -85,7 +88,7 @@ public class ContapTests
     [MemberData(nameof(FaceNames))]
     public void Contour_ForAnEye_IsWhereTheNormalIsOrthogonalToTheLineOfSight(string theName)
     {
-        TopoDS_Face aFace = HlrRecorder.Faces().First(f => f.Name == theName).Face;
+        Face aFace = HlrRecorder.Faces().First(f => f.Name == theName).Face;
         Point3D aEye = new(40, -25, 30);
         Contap_Contour C = Contour(aFace, () => new Contap_Contour(aEye));
         int aChecked = 0;
@@ -104,7 +107,7 @@ public class ContapTests
     [Fact]
     public void Contour_OfASphere_IsAGreatCircle()
     {
-        TopoDS_Face aFace = HlrRecorder.Faces().First(f => f.Name == "sphere").Face;
+        Face aFace = HlrRecorder.Faces().First(f => f.Name == "sphere").Face;
         Contap_Contour C = Contour(aFace, () => new Contap_Contour(new Vector3D(0, 0, 1)));
         for (int l = 1; l <= C.NbLines(); l++)
         {
@@ -122,7 +125,7 @@ public class ContapTests
         Contap_Contour C = new();
         Assert.False(C.IsDone());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => C.NbLines());
-        TopoDS_Face aFace = HlrRecorder.Faces().First(f => f.Name == "sphere").Face;
+        Face aFace = HlrRecorder.Faces().First(f => f.Name == "sphere").Face;
         BRepTopAdaptor_Tool aTool = new(aFace, global::Kerf.Engine.Foundation.Precision.PConfusion());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => C.Perform(aTool.GetSurface()!, aTool.GetTopolTool()));
     }

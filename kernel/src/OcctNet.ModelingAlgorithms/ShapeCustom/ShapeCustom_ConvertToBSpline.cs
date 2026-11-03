@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
@@ -34,14 +36,14 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
         myPlaneMode = false;
     }
 
-    private bool IsToConvert(Geom_Surface S, out Geom_Surface SS)
+    private bool IsToConvert(Surface S, out Surface SS)
     {
         SS = S;
-        if (S is Geom_RectangularTrimmedSurface RTS)
+        if (S is TrimmedSurface RTS)
         {
             SS = RTS.BasisSurface();
         }
-        if (SS is Geom_OffsetSurface OS)
+        if (SS is OffsetSurface OS)
         {
             if (myOffsetMode)
             {
@@ -49,19 +51,19 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
             }
             else
             {
-                Geom_Surface basis = OS.BasisSurface();
+                Surface basis = OS.BasisSurface();
                 return IsToConvert(basis, out _);
             }
         }
-        if (SS is Geom_SurfaceOfLinearExtrusion)
+        if (SS is ExtrusionSurface)
         {
             return myExtrMode;
         }
-        if (SS is Geom_SurfaceOfRevolution)
+        if (SS is RevolutionSurface)
         {
             return myRevolMode;
         }
-        if (SS is Geom_Plane)
+        if (SS is PlaneSurface)
         {
             return myPlaneMode;
         }
@@ -72,8 +74,8 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
     /// True if the face's surface is to convert: then S is the B-spline (Precision::Approximation(), up to 10000 spans
     /// of degree 15), over the face's UV bounds where the surface is infinite, trimmed as the original.
     /// </summary>
-    public override bool NewSurface(in TopoDS_Face F,
-                                    out Geom_Surface? S,
+    public override bool NewSurface(in Face F,
+                                    out Surface? S,
                                     out Placement L,
                                     out double Tol,
                                     out bool RevWires,
@@ -81,9 +83,9 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
     {
         Tol = 0.0;
         RevWires = RevFace = false;
-        S = BRep_Tool.Surface(F, out L);
+        S = Tool.Surface(F, out L);
         S!.Bounds(out double U1, out double U2, out double V1, out double V2);
-        BRepTools.UVBounds(F, out double Umin, out double Umax, out double Vmin, out double Vmax);
+        BrepTools.UVBounds(F, out double Umin, out double Umax, out double Vmin, out double Vmax);
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(U1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(U2))
         {
             U1 = Umin;
@@ -95,17 +97,17 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
             V2 = Vmax;
         }
 
-        if (!IsToConvert(S, out Geom_Surface surf))
+        if (!IsToConvert(S, out Surface surf))
         {
             return false;
         }
 
-        Geom_Surface? res;
-        if (surf is Geom_OffsetSurface OS && !myOffsetMode)
+        Surface? res;
+        if (surf is OffsetSurface OS && !myOffsetMode)
         {
-            Geom_Surface basis = OS.BasisSurface();
+            Surface basis = OS.BasisSurface();
             double offset = OS.Offset();
-            Geom_BSplineSurface? bspl =
+            BSplineSurface? bspl =
                 ShapeConstruct.InternalConvertSurfaceToBSpline(basis,
                                                                U1,
                                                                U2,
@@ -115,13 +117,13 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
                                                                surf.Continuity(),
                                                                10000,
                                                                15);
-            Geom_OffsetSurface nOff = new Geom_OffsetSurface(bspl!, offset);
+            OffsetSurface nOff = new OffsetSurface(bspl!, offset);
             res = nOff;
         }
         else
         {
             Continuity cnt = surf.Continuity();
-            if (surf is Geom_OffsetSurface)
+            if (surf is OffsetSurface)
             {
                 cnt = C0; // pdn 30.06.99 because of hang-up in GeomConvert_ApproxSurface
             }
@@ -135,10 +137,10 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
                                                                  10000,
                                                                  15);
         }
-        if (S is Geom_RectangularTrimmedSurface RTS)
+        if (S is TrimmedSurface RTS)
         {
             RTS.Bounds(out double UF, out double UL, out double VF, out double VL);
-            S = new Geom_RectangularTrimmedSurface(res!, UF, UL, VF, VL);
+            S = new TrimmedSurface(res!, UF, UL, VF, VL);
         }
         else
         {
@@ -147,7 +149,7 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
 
         SendMsg(F, new Msg("ConvertToBSpline.NewSurface.MSG0"));
 
-        Tol = BRep_Tool.Tolerance(F);
+        Tol = Tool.Tolerance(F);
         RevWires = false;
         RevFace = false;
         return true;
@@ -157,33 +159,33 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
     /// True if the edge has a pcurve on a surface to convert (so that the edge is copied): then C is a copy of its 3D
     /// curve.
     /// </summary>
-    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out Placement L, out double Tol)
+    public override bool NewCurve(in Edge E, out Curve3D? C, out Placement L, out double Tol)
     {
         C = null;
         L = new Placement();
         Tol = 0.0;
         //: p5 abv 26 Feb 99: force copying of edge if any its pcurve will be replaced
-        BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
+        BrepTEdge TE = (BrepTEdge)E.TShape()!;
 
         // iterate on pcurves
-        var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(TE.Curves());
+        var itcr = new NCollection_List<CurveRepresentation>.Iterator(TE.Curves());
         for (; itcr.More(); itcr.Next())
         {
-            if (itcr.Value() is not BRep_GCurve GC || !GC.IsCurveOnSurface())
+            if (itcr.Value() is not GCurve GC || !GC.IsCurveOnSurface())
             {
                 continue;
             }
-            Geom_Surface S = GC.Surface()!;
+            Surface S = GC.Surface()!;
             if (!IsToConvert(S, out _))
             {
                 continue;
             }
-            C = BRep_Tool.Curve(E, out L, out double f, out double l);
+            C = Tool.Curve(E, out L, out double f, out double l);
             if (C is not null)
             {
-                C = (Geom_Curve)C.Copy();
+                C = (Curve3D)C.Copy();
             }
-            Tol = BRep_Tool.Tolerance(E);
+            Tol = Tool.Tolerance(E);
             SendMsg(E, new Msg("ConvertToBSpline.NewCurve.MSG0"));
             return true;
         }
@@ -191,7 +193,7 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
     }
 
     /// <summary>False: 3D points are never modified.</summary>
-    public override bool NewPoint(in TopoDS_Vertex V, out Point3D P, out double Tol)
+    public override bool NewPoint(in Vertex V, out Point3D P, out double Tol)
     {
         P = new Point3D();
         Tol = 0.0;
@@ -199,16 +201,16 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
     }
 
     /// <summary>True if the face's surface is converted or the edge was copied: C is a copy of the pcurve.</summary>
-    public override bool NewCurve2d(in TopoDS_Edge E,
-                                    in TopoDS_Face F,
-                                    in TopoDS_Edge NewE,
-                                    in TopoDS_Face NewF,
-                                    out Geom2d_Curve? C,
+    public override bool NewCurve2d(in Edge E,
+                                    in Face F,
+                                    in Edge NewE,
+                                    in Face NewF,
+                                    out Curve2D? C,
                                     out double Tol)
     {
         C = null;
         Tol = 0.0;
-        Geom_Surface S = BRep_Tool.Surface(F, out Placement L)!;
+        Surface S = Tool.Surface(F, out Placement L)!;
 
         // just copy pcurve if either its surface is changing or edge was copied
         if (!IsToConvert(S, out _) && E.IsSame(NewE))
@@ -216,31 +218,31 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
             return false;
         }
 
-        C = BRep_Tool.CurveOnSurface(E, F, out double f, out double l);
+        C = Tool.CurveOnSurface(E, F, out double f, out double l);
         if (C is not null)
         {
-            C = (Geom2d_Curve)C.Copy();
+            C = (Curve2D)C.Copy();
         }
 
-        Tol = BRep_Tool.Tolerance(E);
+        Tol = Tool.Tolerance(E);
         return true;
     }
 
     /// <summary>False: parameters are never modified.</summary>
-    public override bool NewParameter(in TopoDS_Vertex V, in TopoDS_Edge E, ref double P, ref double Tol)
+    public override bool NewParameter(in Vertex V, in Edge E, ref double P, ref double Tol)
     {
         return false;
     }
 
     /// <summary>The continuity of the edge between the faces, unchanged.</summary>
-    public override Continuity Continuity(in TopoDS_Edge E,
-                                             in TopoDS_Face F1,
-                                             in TopoDS_Face F2,
-                                             in TopoDS_Edge NewE,
-                                             in TopoDS_Face NewF1,
-                                             in TopoDS_Face NewF2)
+    public override Continuity Continuity(in Edge E,
+                                             in Face F1,
+                                             in Face F2,
+                                             in Edge NewE,
+                                             in Face NewF1,
+                                             in Face NewF2)
     {
-        return BRep_Tool.Continuity(E, F1, F2);
+        return Tool.Continuity(E, F1, F2);
     }
 
     /// <summary>Sets the mode for surfaces of linear extrusion (true by default).</summary>

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Occt;
@@ -20,9 +21,9 @@ public partial struct HLRAlgo_Interference : IEquatable<HLRAlgo_Interference>
 {
     private HLRAlgo_Intersection myIntersection;
     private HLRAlgo_Coincidence myBoundary;
-    private TopAbs_Orientation myOrientation;
-    private TopAbs_Orientation myTransition;
-    private TopAbs_Orientation myBTransition;
+    private Orientation myOrientation;
+    private Orientation myTransition;
+    private Orientation myBTransition;
 
     public HLRAlgo_Interference()
     {
@@ -31,7 +32,7 @@ public partial struct HLRAlgo_Interference : IEquatable<HLRAlgo_Interference>
     }
 
     public HLRAlgo_Interference(in HLRAlgo_Intersection Inters, in HLRAlgo_Coincidence Bound,
-                                TopAbs_Orientation Orient, TopAbs_Orientation Trans, TopAbs_Orientation BTrans)
+                                Orientation Orient, Orientation Trans, Orientation BTrans)
     {
         myIntersection = Inters;
         myBoundary = Bound;
@@ -46,11 +47,11 @@ public partial struct HLRAlgo_Interference : IEquatable<HLRAlgo_Interference>
 
     internal void Boundary(in HLRAlgo_Coincidence B) => myBoundary = B;
 
-    internal void Orientation(TopAbs_Orientation Or) => myOrientation = Or;
+    internal void Orientation(Orientation Or) => myOrientation = Or;
 
-    internal void Transition(TopAbs_Orientation Or) => myTransition = Or;
+    internal void Transition(Orientation Or) => myTransition = Or;
 
-    internal void BoundaryTransition(TopAbs_Orientation Or) => myBTransition = Or;
+    internal void BoundaryTransition(Orientation Or) => myBTransition = Or;
 
     [UnscopedRef]
     internal ref HLRAlgo_Intersection ChangeIntersection() => ref myIntersection;
@@ -64,11 +65,11 @@ public partial struct HLRAlgo_Interference : IEquatable<HLRAlgo_Interference>
 
     public readonly HLRAlgo_Coincidence Boundary() => myBoundary;
 
-    public readonly TopAbs_Orientation Orientation() => myOrientation;
+    public readonly Orientation Orientation() => myOrientation;
 
-    public readonly TopAbs_Orientation Transition() => myTransition;
+    public readonly Orientation Transition() => myTransition;
 
-    public readonly TopAbs_Orientation BoundaryTransition() => myBTransition;
+    public readonly Orientation BoundaryTransition() => myBTransition;
 
     public readonly HLRAlgo_Interference WithIntersection(in HLRAlgo_Intersection I)
     {
@@ -84,21 +85,21 @@ public partial struct HLRAlgo_Interference : IEquatable<HLRAlgo_Interference>
         return aCopy;
     }
 
-    public readonly HLRAlgo_Interference WithOrientation(TopAbs_Orientation Or)
+    public readonly HLRAlgo_Interference WithOrientation(Orientation Or)
     {
         HLRAlgo_Interference aCopy = this;
         aCopy.Orientation(Or);
         return aCopy;
     }
 
-    public readonly HLRAlgo_Interference WithTransition(TopAbs_Orientation Or)
+    public readonly HLRAlgo_Interference WithTransition(Orientation Or)
     {
         HLRAlgo_Interference aCopy = this;
         aCopy.Transition(Or);
         return aCopy;
     }
 
-    public readonly HLRAlgo_Interference WithBoundaryTransition(TopAbs_Orientation Or)
+    public readonly HLRAlgo_Interference WithBoundaryTransition(Orientation Or)
     {
         HLRAlgo_Interference aCopy = this;
         aCopy.BoundaryTransition(Or);

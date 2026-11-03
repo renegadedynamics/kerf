@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/ExtremaPC_Comparison_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -16,18 +18,18 @@ public class ExtremaPC_ComparisonTest
     // @param theNew    New ExtremaPC result
     // @param theOld    Old Extrema_ExtPC result
     // @param theTestName Name of the test for reporting
-    void CompareMinDistance(ExtremaPC.Result theNew,
-            Extrema_ExtPC theOld,
+    void CompareMinDistance(global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result theNew,
+            CurvePointExtrema theOld,
             string theTestName)
     {
         // Both must complete successfully
-        Assert.True(theNew.IsDone()); // theTestName << ": New implementation failed"
-        Assert.True(theOld.IsDone()); // theTestName << ": Old implementation failed"
+        Assert.True(theNew.IsDone); // theTestName << ": New implementation failed"
+        Assert.True(theOld.IsDone); // theTestName << ": Old implementation failed"
 
         // Find minimum from old implementation
         double aOldMinSqDist = RealLast();
         int aOldMinIdx = -1;
-        for (int i = 1; i <= theOld.NbExt(); ++i)
+        for (int i = 1; i <= theOld.ExtCount; ++i)
         {
             double aSqDist = theOld.SquareDistance(i);
             if (aSqDist < aOldMinSqDist)
@@ -87,20 +89,20 @@ public class ExtremaPC_ComparisonTest
     // @param theNew    New ExtremaPC result
     // @param theOld    Old Extrema_ExtPC result
     // @param theTestName Name of the test for reporting
-    void VerifyNewNotWorse(ExtremaPC.Result theNew,
-            Extrema_ExtPC theOld,
+    void VerifyNewNotWorse(global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result theNew,
+            CurvePointExtrema theOld,
             string theTestName)
     {
-        if (!theOld.IsDone() || theOld.NbExt() == 0)
+        if (!theOld.IsDone || theOld.ExtCount == 0)
         {
             return; // Old implementation found nothing - nothing to compare
         }
 
-        Assert.True(theNew.IsDone()); // theTestName << ": New implementation failed"
+        Assert.True(theNew.IsDone); // theTestName << ": New implementation failed"
 
         // Find minimum from old implementation
         double aOldMinSqDist = RealLast();
-        for (int i = 1; i <= theOld.NbExt(); ++i)
+        for (int i = 1; i <= theOld.ExtCount; ++i)
         {
             double aSqDist = theOld.SquareDistance(i);
             if (aSqDist < aOldMinSqDist)
@@ -110,7 +112,7 @@ public class ExtremaPC_ComparisonTest
         }
 
         // New implementation should find distance at least as good
-        if (theNew.NbExt() > 0)
+        if (theNew.ExtCount > 0)
         {
             double aNewMinSqDist = theNew.MinSquareDistance();
             // New should be <= old (with tolerance)
@@ -125,17 +127,17 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void Line_PointOnLine()
     {
-        Geom_Line aGeomLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        GeomAdaptor_Curve anAdaptor = new(aGeomLine, -100.0, 100.0);
+        LineCurve3D aGeomLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        CurveAdaptor anAdaptor = new(aGeomLine, -100.0, 100.0);
 
         Point3D aPoint = new(5.0, 0.0, 0.0);
 
         // New implementation
-        ExtremaPC_Curve anExtPC = new(anAdaptor);
-        ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
         // Old implementation
-        Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+        CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
         CompareMinDistance(aNewResult, anOldExtPC, "Line_PointOnLine");
     }
@@ -143,15 +145,15 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void Line_PointOffLine()
     {
-        Geom_Line aGeomLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        GeomAdaptor_Curve anAdaptor = new(aGeomLine, -100.0, 100.0);
+        LineCurve3D aGeomLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        CurveAdaptor anAdaptor = new(aGeomLine, -100.0, 100.0);
 
         Point3D aPoint = new(5.0, 3.0, 4.0);
 
-        ExtremaPC_Curve anExtPC = new(anAdaptor);
-        ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
-        Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+        CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
         CompareMinDistance(aNewResult, anOldExtPC, "Line_PointOffLine");
     }
@@ -163,16 +165,16 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void Circle_PointOutside()
     {
-        Geom_Circle aGeomCircle =
-            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
-        GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
+        CircleCurve3D aGeomCircle =
+            new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        CurveAdaptor anAdaptor = new(aGeomCircle);
 
         Point3D aPoint = new(20.0, 0.0, 0.0);
 
-        ExtremaPC_Curve anExtPC = new(anAdaptor);
-        ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
-        Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+        CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
         CompareMinDistance(aNewResult, anOldExtPC, "Circle_PointOutside");
     }
@@ -180,16 +182,16 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void Circle_PointInside()
     {
-        Geom_Circle aGeomCircle =
-            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
-        GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
+        CircleCurve3D aGeomCircle =
+            new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        CurveAdaptor anAdaptor = new(aGeomCircle);
 
         Point3D aPoint = new(3.0, 0.0, 0.0);
 
-        ExtremaPC_Curve anExtPC = new(anAdaptor);
-        ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
-        Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+        CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
         CompareMinDistance(aNewResult, anOldExtPC, "Circle_PointInside");
     }
@@ -197,16 +199,16 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void Circle_PointOffPlane()
     {
-        Geom_Circle aGeomCircle =
-            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
-        GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
+        CircleCurve3D aGeomCircle =
+            new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        CurveAdaptor anAdaptor = new(aGeomCircle);
 
         Point3D aPoint = new(15.0, 0.0, 5.0);
 
-        ExtremaPC_Curve anExtPC = new(anAdaptor);
-        ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
-        Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+        CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
         CompareMinDistance(aNewResult, anOldExtPC, "Circle_PointOffPlane");
     }
@@ -218,16 +220,16 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void Ellipse_PointOnMajorAxis()
     {
-        Geom_Ellipse aGeomEllipse =
-            new Geom_Ellipse(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
-        GeomAdaptor_Curve anAdaptor = new(aGeomEllipse);
+        EllipseCurve3D aGeomEllipse =
+            new EllipseCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        CurveAdaptor anAdaptor = new(aGeomEllipse);
 
         Point3D aPoint = new(30.0, 0.0, 0.0);
 
-        ExtremaPC_Curve anExtPC = new(anAdaptor);
-        ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
-        Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+        CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
         CompareMinDistance(aNewResult, anOldExtPC, "Ellipse_PointOnMajorAxis");
     }
@@ -235,16 +237,16 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void Ellipse_PointGeneral()
     {
-        Geom_Ellipse aGeomEllipse =
-            new Geom_Ellipse(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
-        GeomAdaptor_Curve anAdaptor = new(aGeomEllipse);
+        EllipseCurve3D aGeomEllipse =
+            new EllipseCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        CurveAdaptor anAdaptor = new(aGeomEllipse);
 
         Point3D aPoint = new(15.0, 12.0, 0.0);
 
-        ExtremaPC_Curve anExtPC = new(anAdaptor);
-        ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
-        Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+        CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
         CompareMinDistance(aNewResult, anOldExtPC, "Ellipse_PointGeneral");
     }
@@ -256,16 +258,16 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void Parabola_PointNearVertex()
     {
-        Geom_Parabola aGeomParabola =
-            new Geom_Parabola(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
-        GeomAdaptor_Curve anAdaptor = new(aGeomParabola, -10.0, 10.0);
+        ParabolaCurve3D aGeomParabola =
+            new ParabolaCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
+        CurveAdaptor anAdaptor = new(aGeomParabola, -10.0, 10.0);
 
         Point3D aPoint = new(1.0, 2.0, 0.0);
 
-        ExtremaPC_Curve anExtPC = new(anAdaptor);
-        ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
-        Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+        CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
         CompareMinDistance(aNewResult, anOldExtPC, "Parabola_PointNearVertex");
     }
@@ -277,16 +279,16 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void Hyperbola_PointNearBranch()
     {
-        Geom_Hyperbola aGeomHyperbola =
-            new Geom_Hyperbola(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0, 5.0);
-        GeomAdaptor_Curve anAdaptor = new(aGeomHyperbola, -2.0, 2.0);
+        HyperbolaCurve3D aGeomHyperbola =
+            new HyperbolaCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0, 5.0);
+        CurveAdaptor anAdaptor = new(aGeomHyperbola, -2.0, 2.0);
 
         Point3D aPoint = new(15.0, 3.0, 0.0);
 
-        ExtremaPC_Curve anExtPC = new(anAdaptor);
-        ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
-        Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+        CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
         CompareMinDistance(aNewResult, anOldExtPC, "Hyperbola_PointNearBranch");
     }
@@ -312,15 +314,15 @@ public class ExtremaPC_ComparisonTest
         aMults[1] = 4;
         aMults[2] = 4;
 
-        Geom_BSplineCurve aBSpline = new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
+        BSplineCurve3D aBSpline = new BSplineCurve3D(aPoles, aKnots, aMults, 3);
+        CurveAdaptor anAdaptor = new(aBSpline);
 
         Point3D aPoint = new(1.5, 3.0, 0.0);
 
-        ExtremaPC_Curve anExtPC = new(anAdaptor);
-        ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
-        Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+        CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
         CompareMinDistance(aNewResult, anOldExtPC, "BSpline_CubicCurve");
     }
@@ -350,15 +352,15 @@ public class ExtremaPC_ComparisonTest
         aMults[3] = 2;
         aMults[4] = 3;
 
-        Geom_BSplineCurve aBSpline = new Geom_BSplineCurve(aPoles, aKnots, aMults, 2);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
+        BSplineCurve3D aBSpline = new BSplineCurve3D(aPoles, aKnots, aMults, 2);
+        CurveAdaptor anAdaptor = new(aBSpline);
 
         Point3D aPoint = new(3.0, 4.0, 0.0);
 
-        ExtremaPC_Curve anExtPC = new(anAdaptor);
-        ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
-        Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+        CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
         // NOTE: Multi-span BSplines with complex configurations may find different extrema
         // due to BVH subdivision strategy. The new implementation finds valid extrema,
@@ -366,10 +368,10 @@ public class ExtremaPC_ComparisonTest
         // For this test, we only verify:
         // 1. New implementation completes successfully
         // 2. Results are geometrically valid (point is actually on curve)
-        Assert.True(aNewResult.IsDone()); // "New implementation should complete"
-        Assert.True(aNewResult.NbExt() > 0); // "New implementation should find at least one extremum"
+        Assert.True(aNewResult.IsDone); // "New implementation should complete"
+        Assert.True(aNewResult.ExtCount > 0); // "New implementation should find at least one extremum"
 
-        if (aNewResult.NbExt() > 0)
+        if (aNewResult.ExtCount > 0)
         {
             // Verify the found point is actually on the curve
             var aExtremum = aNewResult[aNewResult.MinIndex()];
@@ -378,10 +380,10 @@ public class ExtremaPC_ComparisonTest
         }
 
         // Log the difference for information
-        if (anOldExtPC.IsDone() && anOldExtPC.NbExt() > 0 && aNewResult.NbExt() > 0)
+        if (anOldExtPC.IsDone && anOldExtPC.ExtCount > 0 && aNewResult.ExtCount > 0)
         {
             double aOldMinSqDist = RealLast();
-            for (int i = 1; i <= anOldExtPC.NbExt(); ++i)
+            for (int i = 1; i <= anOldExtPC.ExtCount; ++i)
             {
                 if (anOldExtPC.SquareDistance(i) < aOldMinSqDist)
                 {
@@ -408,15 +410,15 @@ public class ExtremaPC_ComparisonTest
         aPoles[3] = new Point3D(3, 3, 0);
         aPoles[4] = new Point3D(4, 0, 0);
 
-        Geom_BezierCurve aBezier = new Geom_BezierCurve(aPoles);
-        GeomAdaptor_Curve anAdaptor = new(aBezier);
+        BezierCurve3D aBezier = new BezierCurve3D(aPoles);
+        CurveAdaptor anAdaptor = new(aBezier);
 
         Point3D aPoint = new(2.0, 4.0, 0.0);
 
-        ExtremaPC_Curve anExtPC = new(anAdaptor);
-        ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
-        Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+        CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
         CompareMinDistance(aNewResult, anOldExtPC, "Bezier_CubicCurve");
     }
@@ -428,17 +430,17 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void OffsetCircle()
     {
-        Geom_Circle aCircle =
-            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
-        Geom_OffsetCurve anOffsetCurve = new Geom_OffsetCurve(aCircle, 5.0, new Direction3D(0, 0, 1));
-        GeomAdaptor_Curve anAdaptor = new(anOffsetCurve);
+        CircleCurve3D aCircle =
+            new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        OffsetCurve3D anOffsetCurve = new OffsetCurve3D(aCircle, 5.0, new Direction3D(0, 0, 1));
+        CurveAdaptor anAdaptor = new(anOffsetCurve);
 
         Point3D aPoint = new(25.0, 0.0, 0.0);
 
-        ExtremaPC_Curve anExtPC = new(anAdaptor);
-        ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
-        Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+        CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
         CompareMinDistance(aNewResult, anOldExtPC, "OffsetCircle");
     }
@@ -450,9 +452,9 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void Circle_RandomPoints()
     {
-        Geom_Circle aGeomCircle =
-            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
-        GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
+        CircleCurve3D aGeomCircle =
+            new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        CurveAdaptor anAdaptor = new(aGeomCircle);
 
         Mt19937 aGen = new(12345); // std::mt19937 // Fixed seed for reproducibility
 
@@ -463,17 +465,17 @@ public class ExtremaPC_ComparisonTest
         {
             Point3D aPoint = new(aGen.NextReal(-30.0, 30.0), aGen.NextReal(-30.0, 30.0), aGen.NextReal(-30.0, 30.0));
 
-            ExtremaPC_Curve anExtPC = new(anAdaptor);
-            ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+            global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+            global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
-            Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+            CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
-            if (aNewResult.IsDone() && anOldExtPC.IsDone() && aNewResult.NbExt() > 0
-                    && anOldExtPC.NbExt() > 0)
+            if (aNewResult.IsDone && anOldExtPC.IsDone && aNewResult.ExtCount > 0
+                    && anOldExtPC.ExtCount > 0)
             {
                 double aNewMin = Math.Sqrt(aNewResult.MinSquareDistance());
                 double aOldMin = RealLast();
-                for (int j = 1; j <= anOldExtPC.NbExt(); ++j)
+                for (int j = 1; j <= anOldExtPC.ExtCount; ++j)
                 {
                     aOldMin = Min(aOldMin, Math.Sqrt(anOldExtPC.SquareDistance(j)));
                 }
@@ -513,8 +515,8 @@ public class ExtremaPC_ComparisonTest
         aMults[3] = 1;
         aMults[4] = 3;
 
-        Geom_BSplineCurve aBSpline = new Geom_BSplineCurve(aPoles, aKnots, aMults, 2);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
+        BSplineCurve3D aBSpline = new BSplineCurve3D(aPoles, aKnots, aMults, 2);
+        CurveAdaptor anAdaptor = new(aBSpline);
 
         Mt19937 aGen = new(54321); // std::mt19937
 
@@ -525,17 +527,17 @@ public class ExtremaPC_ComparisonTest
         {
             Point3D aPoint = new(aGen.NextReal(-2.0, 7.0), aGen.NextReal(-2.0, 7.0), aGen.NextReal(-2.0, 7.0));
 
-            ExtremaPC_Curve anExtPC = new(anAdaptor);
-            ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+            global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+            global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
-            Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+            CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
-            if (aNewResult.IsDone() && anOldExtPC.IsDone() && aNewResult.NbExt() > 0
-                    && anOldExtPC.NbExt() > 0)
+            if (aNewResult.IsDone && anOldExtPC.IsDone && aNewResult.ExtCount > 0
+                    && anOldExtPC.ExtCount > 0)
             {
                 double aNewMin = Math.Sqrt(aNewResult.MinSquareDistance());
                 double aOldMin = RealLast();
-                for (int j = 1; j <= anOldExtPC.NbExt(); ++j)
+                for (int j = 1; j <= anOldExtPC.ExtCount; ++j)
                 {
                     aOldMin = Min(aOldMin, Math.Sqrt(anOldExtPC.SquareDistance(j)));
                 }
@@ -557,17 +559,17 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void PointOnCurve_Circle()
     {
-        Geom_Circle aGeomCircle =
-            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
-        GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
+        CircleCurve3D aGeomCircle =
+            new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        CurveAdaptor anAdaptor = new(aGeomCircle);
 
         // Point exactly on the circle
         Point3D aPoint = new(10.0, 0.0, 0.0);
 
-        ExtremaPC_Curve anExtPC = new(anAdaptor);
-        ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
-        Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+        CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
         CompareMinDistance(aNewResult, anOldExtPC, "PointOnCurve_Circle");
 
@@ -592,16 +594,16 @@ public class ExtremaPC_ComparisonTest
         aMults[1] = 4;
         aMults[2] = 4;
 
-        Geom_BSplineCurve aBSpline = new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
-        GeomAdaptor_Curve anAdaptor = new(aBSpline);
+        BSplineCurve3D aBSpline = new BSplineCurve3D(aPoles, aKnots, aMults, 3);
+        CurveAdaptor anAdaptor = new(aBSpline);
 
         // Point on curve at u=0.5
         Point3D aPoint = aBSpline.Value(0.5);
 
-        ExtremaPC_Curve anExtPC = new(anAdaptor);
-        ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
+        global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
+        global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
 
-        Extrema_ExtPC anOldExtPC = new(aPoint, anAdaptor);
+        CurvePointExtrema anOldExtPC = new(aPoint, anAdaptor);
 
         CompareMinDistance(aNewResult, anOldExtPC, "PointOnCurve_BSpline");
 

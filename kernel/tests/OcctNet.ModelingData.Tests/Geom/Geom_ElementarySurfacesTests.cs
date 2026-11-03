@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingData.Tests;
@@ -14,47 +15,47 @@ public class Geom_ElementarySurfacesTests
 {
     private static readonly CoordinateSystem Frame = new(new Point3D(1, -2, 3), new Direction3D(1, 2, 2), new Direction3D(2, -1, 0));
 
-    private static Geom_ElementarySurface[] All() =>
+    private static ElementarySurface[] All() =>
     [
-        new Geom_CylindricalSurface(Frame, 2.5),
-        new Geom_ConicalSurface(Frame, 0.4, 1.5),
-        new Geom_SphericalSurface(Frame, 3.0),
-        new Geom_ToroidalSurface(Frame, 5.0, 1.25),
+        new CylindricalSurface(Frame, 2.5),
+        new ConicalSurface(Frame, 0.4, 1.5),
+        new SphericalSurface(Frame, 3.0),
+        new ToroidalSurface(Frame, 5.0, 1.25),
     ];
 
     [Fact]
     public void Constructors_Check_Their_Arguments()
     {
-        Assert.Throws<ConstructionErrorException>(() => new Geom_CylindricalSurface(Frame, -1));
-        Assert.Throws<ConstructionErrorException>(() => new Geom_ConicalSurface(Frame, 0.4, -1));
-        Assert.Throws<ConstructionErrorException>(() => new Geom_ConicalSurface(Frame, 0.0, 1));
-        Assert.Throws<ConstructionErrorException>(() => new Geom_ConicalSurface(Frame, M_PI / 2, 1));
-        Assert.Throws<ConstructionErrorException>(() => new Geom_SphericalSurface(Frame, -1));
-        Assert.Throws<ConstructionErrorException>(() => new Geom_ToroidalSurface(Frame, -1, 1));
-        Assert.Throws<ConstructionErrorException>(() => new Geom_ToroidalSurface(Frame, 1, -1));
+        Assert.Throws<ConstructionErrorException>(() => new CylindricalSurface(Frame, -1));
+        Assert.Throws<ConstructionErrorException>(() => new ConicalSurface(Frame, 0.4, -1));
+        Assert.Throws<ConstructionErrorException>(() => new ConicalSurface(Frame, 0.0, 1));
+        Assert.Throws<ConstructionErrorException>(() => new ConicalSurface(Frame, M_PI / 2, 1));
+        Assert.Throws<ConstructionErrorException>(() => new SphericalSurface(Frame, -1));
+        Assert.Throws<ConstructionErrorException>(() => new ToroidalSurface(Frame, -1, 1));
+        Assert.Throws<ConstructionErrorException>(() => new ToroidalSurface(Frame, 1, -1));
         // OCCT's constructor accepts MinorRadius > MajorRadius; SetMajorRadius and SetMinorRadius don't
-        Geom_ToroidalSurface aTorus = new(Frame, 1, 2);
+        ToroidalSurface aTorus = new(Frame, 1, 2);
         Assert.Throws<ConstructionErrorException>(() => aTorus.WithMajorRadius(1.5));
-        Assert.Throws<ConstructionErrorException>(() => new Geom_ToroidalSurface(Frame, 3, 1).WithMinorRadius(3));
+        Assert.Throws<ConstructionErrorException>(() => new ToroidalSurface(Frame, 3, 1).WithMinorRadius(3));
     }
 
     [Fact]
     public void From_gp_And_Back()
     {
         Cylinder aCyl = new(Frame, 2);
-        Assert.Equal(2.0, new Geom_CylindricalSurface(aCyl).Cylinder().Radius());
+        Assert.Equal(2.0, new CylindricalSurface(aCyl).Cylinder().Radius());
         Cone aCone = new(Frame, 0.3, 4);
-        Geom_ConicalSurface aGCone = new(aCone);
+        ConicalSurface aGCone = new(aCone);
         Assert.Equal(0.3, aGCone.Cone().SemiAngle());
         Assert.Equal(4.0, aGCone.RefRadius());
         Assert.True(aGCone.Apex().IsEqual(aCone.Apex(), 1e-12));
-        Assert.Equal(7.0, new Geom_SphericalSurface(new Sphere(Frame, 7)).Sphere().Radius());
-        Geom_ToroidalSurface aTor = new(new Torus(Frame, 6, 2));
+        Assert.Equal(7.0, new SphericalSurface(new Sphere(Frame, 7)).Sphere().Radius());
+        ToroidalSurface aTor = new(new Torus(Frame, 6, 2));
         Assert.Equal(6.0, aTor.Torus().MajorRadius());
         Assert.Equal(2.0, aTor.MinorRadius());
         Assert.Equal(4.0 * M_PI * M_PI * 12.0, aTor.Area(), 1e-12);
         Assert.Equal(M_PI * 4.0 * 2.0 * M_PI * 6.0, aTor.Volume(), 1e-12);
-        Geom_SphericalSurface aSph = new(Frame, 2);
+        SphericalSurface aSph = new(Frame, 2);
         Assert.Equal(16.0 * M_PI, aSph.Area(), 1e-12);
         Assert.Equal(32.0 * M_PI / 3.0, aSph.Volume(), 1e-12);
     }
@@ -62,9 +63,9 @@ public class Geom_ElementarySurfacesTests
     [Fact]
     public void Points_Satisfy_The_Implicit_Equations()
     {
-        Geom_CylindricalSurface aCyl = new(Frame, 2.5);
-        Geom_ConicalSurface aCone = new(Frame, 0.4, 1.5);
-        Geom_SphericalSurface aSph = new(Frame, 3.0);
+        CylindricalSurface aCyl = new(Frame, 2.5);
+        ConicalSurface aCone = new(Frame, 0.4, 1.5);
+        SphericalSurface aSph = new(Frame, 3.0);
         foreach ((double U, double V) in new[] { (0.3, 0.2), (2.0, -1.1), (5.5, 0.9) })
         {
             Assert.Equal(0.0, Quadric(aCyl.Coefficients, aCyl.Value(U, V)), 1e-11);
@@ -73,14 +74,14 @@ public class Geom_ElementarySurfacesTests
 
         // OCCT: Geom_ConicalSurface::Coefficients has wrong linear and constant terms (occt-issues.md); they are
         // right only when the local origin is the global one and the reference radius is 0, where gp_Cone agrees.
-        Geom_ConicalSurface aBadCone = new(Frame, 0.4, 1.5);
+        ConicalSurface aBadCone = new(Frame, 0.4, 1.5);
         Assert.True(Math.Abs(Quadric(aBadCone.Coefficients, aBadCone.Value(0.3, 0.2))) > 1e-3);
-        Geom_ConicalSurface aApexCone = new(new CoordinateSystem(new Point3D(), new Direction3D(1, 2, 2), new Direction3D(2, -1, 0)), 0.4, 0.0);
+        ConicalSurface aApexCone = new(new CoordinateSystem(new Point3D(), new Direction3D(1, 2, 2), new Direction3D(2, -1, 0)), 0.4, 0.0);
         Assert.Equal(0.0, Quadric(aApexCone.Coefficients, aApexCone.Value(0.3, 0.2)), 1e-12);
         Cone aGpCone = aBadCone.Cone();
         Assert.Equal(0.0, Quadric(aGpCone.Coefficients, aBadCone.Value(0.3, 0.2)), 1e-11);
 
-        Geom_ToroidalSurface aTor = new(Frame, 5.0, 1.25);
+        ToroidalSurface aTor = new(Frame, 5.0, 1.25);
         NCollection_Array1<double> aCoef = new(1, 35);
         aTor.Coefficients(aCoef);
         double[] aExpected = new double[35];
@@ -103,25 +104,25 @@ public class Geom_ElementarySurfacesTests
     [Fact]
     public void Bounds_Periodicity_And_Reversed_Parameters()
     {
-        foreach (Geom_ElementarySurface S in All())
+        foreach (ElementarySurface S in All())
         {
             S.Bounds(out double U1, out double U2, out double V1, out double V2);
             Assert.Equal(0.0, U1);
             Assert.Equal(2 * M_PI, U2);
-            Assert.True(S.IsUClosed());
-            Assert.True(S.IsUPeriodic());
+            Assert.True(S.IsUClosed);
+            Assert.True(S.IsUPeriodic);
             Assert.Equal(2 * M_PI, S.UPeriod());
-            Assert.Equal(S is Geom_ToroidalSurface, S.IsVPeriodic());
-            Assert.Equal(S is Geom_ToroidalSurface, S.IsVClosed());
-            if (S is Geom_SphericalSurface)
+            Assert.Equal(S is ToroidalSurface, S.IsVPeriodic);
+            Assert.Equal(S is ToroidalSurface, S.IsVClosed);
+            if (S is SphericalSurface)
             {
                 Assert.Equal(-M_PI / 2, V1);
                 Assert.Equal(M_PI / 2, V2);
             }
 
             // Reversing a direction keeps the point set: (U, V) maps to the reversed parameters
-            Geom_Surface aU = S.UReversed();
-            Geom_Surface aV = S.VReversed();
+            Surface aU = S.UReversed();
+            Surface aV = S.VReversed();
             foreach ((double U, double V) in new[] { (0.3, 0.2), (2.0, -1.1), (5.5, 0.9) })
             {
                 Assert.True(S.Value(U, V).IsEqual(aU.Value(S.UReversedParameter(U), V), 1e-12));
@@ -133,8 +134,8 @@ public class Geom_ElementarySurfacesTests
     [Fact]
     public void Cone_VReverse_Flips_The_SemiAngle()
     {
-        Geom_ConicalSurface aCone = new(Frame, 0.4, 1.5);
-        Geom_ConicalSurface aRev = (Geom_ConicalSurface)aCone.VReversed();
+        ConicalSurface aCone = new(Frame, 0.4, 1.5);
+        ConicalSurface aRev = (ConicalSurface)aCone.VReversed();
         Assert.Equal(-0.4, aRev.SemiAngle());
         Assert.True(aRev.Apex().IsEqual(aCone.Apex(), 1e-12));
     }
@@ -142,7 +143,7 @@ public class Geom_ElementarySurfacesTests
     [Fact]
     public void Derivatives_Are_Consistent()
     {
-        foreach (Geom_ElementarySurface S in All())
+        foreach (ElementarySurface S in All())
         {
             double U = 0.7, V = 0.3;
             S.D3(U, V, out Point3D P, out Vector3D D1U, out Vector3D D1V, out Vector3D D2U, out Vector3D D2V, out Vector3D D2UV,
@@ -155,7 +156,7 @@ public class Geom_ElementarySurfacesTests
             Assert.True(S.DN(U, V, 3, 0).IsEqual(D3U, 1e-12, 1e-12));
             Assert.True(S.DN(U, V, 2, 1).IsEqual(D3UUV, 1e-12, 1e-12));
             Assert.True(S.DN(U, V, 1, 2).IsEqual(D3UVV, 1e-12, 1e-12));
-            if (S is not Geom_CylindricalSurface and not Geom_ConicalSurface)
+            if (S is not CylindricalSurface and not ConicalSurface)
             {
                 Assert.True(S.DN(U, V, 0, 2).IsEqual(D2V, 1e-12, 1e-12));
                 Assert.True(S.DN(U, V, 0, 3).IsEqual(D3V, 1e-12, 1e-12));
@@ -169,7 +170,7 @@ public class Geom_ElementarySurfacesTests
             double h = 1e-6;
             Vector3D aFdU = new Vector3D(S.Value(U - h, V), S.Value(U + h, V)) / (2 * h);
             Assert.True(aFdU.IsEqual(D1U, 1e-6, 1e-6));
-            Assert.Throws<Geom_UndefinedDerivative>(() => S.DN(U, V, 0, 0));
+            Assert.Throws<UndefinedDerivative3DException>(() => S.DN(U, V, 0, 0));
         }
     }
 
@@ -177,9 +178,9 @@ public class Geom_ElementarySurfacesTests
     public void Transform_Scales_The_Radii_And_TransformParameters_Follows()
     {
         Transform3D T = Transform3D.Scale(new Point3D(1, 1, 1), -2.0);
-        foreach (Geom_ElementarySurface S in All())
+        foreach (ElementarySurface S in All())
         {
-            Geom_Surface aMoved = (Geom_Surface)S.Transformed(T);
+            Surface aMoved = (Surface)S.Transformed(T);
             double U = 0.7, V = 0.3;
             double U2 = U, V2 = V;
             S.TransformParameters(ref U2, ref V2, T);
@@ -189,8 +190,8 @@ public class Geom_ElementarySurfacesTests
             Assert.Equal(U2, aPU, 1e-14);
             Assert.Equal(V2, aPV, 1e-14);
         }
-        Assert.Equal(5.0, ((Geom_CylindricalSurface)new Geom_CylindricalSurface(Frame, 2.5).Transformed(T)).Radius());
-        Geom_ToroidalSurface aTor = (Geom_ToroidalSurface)new Geom_ToroidalSurface(Frame, 5.0, 1.25).Transformed(T);
+        Assert.Equal(5.0, ((CylindricalSurface)new CylindricalSurface(Frame, 2.5).Transformed(T)).Radius());
+        ToroidalSurface aTor = (ToroidalSurface)new ToroidalSurface(Frame, 5.0, 1.25).Transformed(T);
         Assert.Equal(10.0, aTor.MajorRadius());
         Assert.Equal(2.5, aTor.MinorRadius());
     }
@@ -198,11 +199,11 @@ public class Geom_ElementarySurfacesTests
     [Fact]
     public void Frozen_Surfaces_Refuse_Mutation_But_Twins_Work()
     {
-        Geom_CylindricalSurface aCyl = new(Frame, 2.5);
-        Geom_ConicalSurface aCone = new(Frame, 0.4, 1.5);
-        Geom_SphericalSurface aSph = new(Frame, 3.0);
-        Geom_ToroidalSurface aTor = new(Frame, 5.0, 1.25);
-        foreach (Geom_ElementarySurface S in new Geom_ElementarySurface[] { aCyl, aCone, aSph, aTor })
+        CylindricalSurface aCyl = new(Frame, 2.5);
+        ConicalSurface aCone = new(Frame, 0.4, 1.5);
+        SphericalSurface aSph = new(Frame, 3.0);
+        ToroidalSurface aTor = new(Frame, 5.0, 1.25);
+        foreach (ElementarySurface S in new ElementarySurface[] { aCyl, aCone, aSph, aTor })
         {
             S.Freeze();
             Assert.Throws<ImmutableObjectException>(() => S.Transform(new Transform3D()));
@@ -232,22 +233,22 @@ public class Geom_ElementarySurfacesTests
     [Fact]
     public void IsoCurves_Are_Lines_Circles_And_Half_Circles()
     {
-        Geom_ElementarySurface[] aSurfaces = All();
-        Assert.IsType<Geom_Line>(aSurfaces[0].UIso(0.5));
-        Assert.IsType<Geom_Circle>(aSurfaces[0].VIso(0.5));
-        Assert.IsType<Geom_Line>(aSurfaces[1].UIso(0.5));
-        Assert.IsType<Geom_Circle>(aSurfaces[1].VIso(0.5));
-        Geom_TrimmedCurve aHalf = Assert.IsType<Geom_TrimmedCurve>(aSurfaces[2].UIso(0.5));
-        Assert.IsType<Geom_Circle>(aHalf.BasisCurve());
+        ElementarySurface[] aSurfaces = All();
+        Assert.IsType<LineCurve3D>(aSurfaces[0].UIso(0.5));
+        Assert.IsType<CircleCurve3D>(aSurfaces[0].VIso(0.5));
+        Assert.IsType<LineCurve3D>(aSurfaces[1].UIso(0.5));
+        Assert.IsType<CircleCurve3D>(aSurfaces[1].VIso(0.5));
+        TrimmedCurve3D aHalf = Assert.IsType<TrimmedCurve3D>(aSurfaces[2].UIso(0.5));
+        Assert.IsType<CircleCurve3D>(aHalf.BasisCurve());
         // [-PI/2, PI/2], brought into the circle's first period by Geom_TrimmedCurve
         Assert.Equal(1.5 * M_PI, aHalf.FirstParameter(), 1e-15);
         Assert.Equal(2.5 * M_PI, aHalf.LastParameter(), 1e-15);
-        Assert.IsType<Geom_Circle>(aSurfaces[2].VIso(0.5));
-        Assert.IsType<Geom_Circle>(aSurfaces[3].UIso(0.5));
-        Assert.IsType<Geom_Circle>(aSurfaces[3].VIso(0.5));
+        Assert.IsType<CircleCurve3D>(aSurfaces[2].VIso(0.5));
+        Assert.IsType<CircleCurve3D>(aSurfaces[3].UIso(0.5));
+        Assert.IsType<CircleCurve3D>(aSurfaces[3].VIso(0.5));
 
         // Each iso-curve has the surface's parametrization in the other direction
-        foreach (Geom_ElementarySurface S in aSurfaces)
+        foreach (ElementarySurface S in aSurfaces)
         {
             foreach (double P in new[] { -0.7, 0.5, 1.2 })
             {

@@ -4,6 +4,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using Schematiq.Collections;
 
 namespace Occt;
@@ -30,7 +32,7 @@ namespace Occt;
 public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
 {
     // Inputs
-    protected NCollection_List<TopoDS_Shape> myArguments = new(); //!< Arguments of the operation
+    protected NCollection_List<Shape> myArguments = new(); //!< Arguments of the operation
 
     // Options
     protected bool myNonDestructive;  //!< Non-destructive mode management
@@ -42,8 +44,8 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
     protected bool myIsIntersectionNeeded;         //!< Whether the intersection of the arguments is performed
     private protected BOPAlgo_PaveFiller? myDSFiller; //!< Intersection tool
     private protected BOPAlgo_Builder? myBuilder;     //!< Building tool
-    protected BRepTools_History? myHistory;           //!< The history of the whole operation
-    protected BRepTools_History? mySimplifierHistory; //!< The history of the result's simplification (unit 6P)
+    protected History? myHistory;           //!< The history of the whole operation
+    protected History? mySimplifierHistory; //!< The history of the result's simplification (unit 6P)
 
     /// <summary>An empty algorithm.</summary>
     public BRepAlgoAPI_BuilderAlgo()
@@ -70,10 +72,10 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
     }
 
     /// <summary>Sets the arguments (copies the list).</summary>
-    public void SetArguments(NCollection_List<TopoDS_Shape> theLS) => myArguments = new NCollection_List<TopoDS_Shape>(theLS);
+    public void SetArguments(NCollection_List<Shape> theLS) => myArguments = new NCollection_List<Shape>(theLS);
 
     /// <summary>The arguments.</summary>
-    public NCollection_List<TopoDS_Shape> Arguments() => myArguments;
+    public NCollection_List<Shape> Arguments() => myArguments;
 
     /// <summary>
     /// Sets the non-destructive mode: the arguments are not modified, a copy of a sub-shape is made in the result
@@ -168,12 +170,12 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
     }
 
     /// <summary>The algorithm's own list behind <c>Modified</c>: the splits of <paramref name="theS"/> in the result.</summary>
-    internal override NCollection_List<TopoDS_Shape> InternalModified(in TopoDS_Shape theS)
+    internal override NCollection_List<Shape> InternalModified(in Shape theS)
     {
         myGenerated.Clear();
         if (myFillHistory && myHistory is not null)
         {
-            foreach (TopoDS_Shape aS in myHistory.Modified(theS))
+            foreach (Shape aS in myHistory.Modified(theS))
             {
                 myGenerated.Append(aS);
             }
@@ -182,12 +184,12 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
     }
 
     /// <summary>The algorithm's own list behind <c>Generated</c>: the shapes generated from <paramref name="theS"/>.</summary>
-    internal override NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape theS)
+    internal override NCollection_List<Shape> InternalGenerated(in Shape theS)
     {
         myGenerated.Clear();
         if (myFillHistory && myHistory is not null)
         {
-            foreach (TopoDS_Shape aS in myHistory.Generated(theS))
+            foreach (Shape aS in myHistory.Generated(theS))
             {
                 myGenerated.Append(aS);
             }
@@ -196,16 +198,16 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
     }
 
     /// <summary>True if <paramref name="aS"/> has been removed: neither it nor a split of it is in the result.</summary>
-    public override bool IsDeleted(in TopoDS_Shape aS) => myFillHistory && myHistory is not null && myHistory.IsRemoved(aS);
+    public override bool IsDeleted(in Shape aS) => myFillHistory && myHistory is not null && myHistory.IsRemoved(aS);
 
     /// <summary>True if any argument has been modified.</summary>
-    public virtual bool HasModified() => myFillHistory && myHistory is not null && myHistory.HasModified();
+    public virtual bool HasModified() => myFillHistory && myHistory is not null && myHistory.HasModified;
 
     /// <summary>True if any argument has generated shapes.</summary>
-    public virtual bool HasGenerated() => myFillHistory && myHistory is not null && myHistory.HasGenerated();
+    public virtual bool HasGenerated() => myFillHistory && myHistory is not null && myHistory.HasGenerated;
 
     /// <summary>True if any argument has been deleted.</summary>
-    public virtual bool HasDeleted() => myFillHistory && myHistory is not null && myHistory.HasRemoved();
+    public virtual bool HasDeleted() => myFillHistory && myHistory is not null && myHistory.HasRemoved;
 
     /// <summary>Enables or disables the collection of the history.</summary>
     public void SetToFillHistory(bool theHistFlag) => myFillHistory = theHistFlag;
@@ -214,14 +216,14 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
     public bool HasHistory() => myFillHistory;
 
     /// <summary>The section edges: the edges where the arguments intersect (frozen, with the whole result).</summary>
-    public ISchematiqList<TopoDS_Shape> SectionEdges()
+    public ISchematiqList<Shape> SectionEdges()
     {
         BeforePublishingLists();
         return PublishedList(InternalSectionEdges());
     }
 
     /// <summary>The algorithm's own list behind <see cref="SectionEdges"/>, unfrozen.</summary>
-    internal NCollection_List<TopoDS_Shape> InternalSectionEdges()
+    internal NCollection_List<Shape> InternalSectionEdges()
     {
         myGenerated.Clear();
         if (myBuilder is null)
@@ -230,7 +232,7 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
         }
 
         // Fence map to avoid duplicated section edges in the result list
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
         // Intersection results
         BOPDS_DS pDS = myDSFiller!.PDS()!;
         // Iterate on all Face/Face interferences and take section edges
@@ -249,7 +251,7 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
                 for (NCollection_List<BOPDS_PaveBlock>.Iterator aItPB = new(aCurve.PaveBlocks()); aItPB.More(); aItPB.Next())
                 {
                     BOPDS_PaveBlock aPB = aItPB.Value();
-                    TopoDS_Shape aSE = pDS.Shape(aPB.Edge());
+                    Shape aSE = pDS.Shape(aPB.Edge());
                     if (!aMFence.Add(aSE))
                     {
                         continue;
@@ -262,10 +264,10 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
                             continue;
                         }
 
-                        ISchematiqList<TopoDS_Shape> aLSEIm = mySimplifierHistory.Modified(aSE);
+                        ISchematiqList<Shape> aLSEIm = mySimplifierHistory.Modified(aSE);
                         if (aLSEIm.Count != 0)
                         {
-                            foreach (TopoDS_Shape aSEIm in aLSEIm)
+                            foreach (Shape aSEIm in aLSEIm)
                             {
                                 if (aMFence.Add(aSEIm))
                                 {
@@ -298,14 +300,14 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
     /// The history of the operation, null if it isn't collected. The result is frozen first, so every shape the
     /// history lists is frozen.
     /// </summary>
-    public BRepTools_History? History()
+    public History? History()
     {
         BeforePublishingLists();
         return InternalHistory();
     }
 
     /// <summary>OCCT's <c>History()</c>, without freezing the result.</summary>
-    internal BRepTools_History? InternalHistory() => myFillHistory ? myHistory : null;
+    internal History? InternalHistory() => myFillHistory ? myHistory : null;
 
     /// <summary>Sets the options of the derived classes on the intersection tool; nothing here.</summary>
     protected virtual void SetAttributes()
@@ -313,7 +315,7 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
     }
 
     /// <summary>Intersects the given shapes with a new intersection tool, unless one was given.</summary>
-    protected void IntersectShapes(NCollection_List<TopoDS_Shape> theArgs, ProgressRange theRange)
+    protected void IntersectShapes(NCollection_List<Shape> theArgs, ProgressRange theRange)
     {
         if (!myIsIntersectionNeeded)
         {
@@ -361,7 +363,7 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
         // Fill history
         if (myFillHistory)
         {
-            myHistory = new BRepTools_History();
+            myHistory = new History();
             myHistory.Merge(myBuilder.InternalHistory());
         }
     }

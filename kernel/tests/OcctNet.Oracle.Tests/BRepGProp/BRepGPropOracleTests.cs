@@ -1,12 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Xunit.Abstractions;
 using static Kerf.Engine.Geometry.IsoType;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -36,7 +39,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
         var aCounts = new Counts();
         for (int aScene = 0; aScene < Scenes; aScene++)
         {
-            (Twin<N.TopoDS_Shape, TopoDS_Shape> aShape, bool aMeshed) = RandomScene(anOracle, aScene);
+            (Twin<N.TopoDS_Shape, Shape> aShape, bool aMeshed) = RandomScene(anOracle, aScene);
             aShape.P.TShape()!.FreezeGraph();
             CompareProperties(anOracle, aShape, aMeshed, aScene % 8 is not (2 or 3), $"scene {aScene}", aCounts);
         }
@@ -52,16 +55,16 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
         var aCounts = new Counts();
         for (int aScene = 0; aScene < Scenes; aScene++)
         {
-            (Twin<N.TopoDS_Shape, TopoDS_Shape> aShape, bool aMeshed) = RandomScene(anOracle, aScene);
+            (Twin<N.TopoDS_Shape, Shape> aShape, bool aMeshed) = RandomScene(anOracle, aScene);
             if (aMeshed && aScene % 8 == 7)
             {
                 continue; // faces without a surface
             }
 
             aShape.P.TShape()!.FreezeGraph();
-            foreach (Twin<N.TopoDS_Shape, TopoDS_Shape> aF in Explore(aShape, TopAbs_FACE))
+            foreach (Twin<N.TopoDS_Shape, Shape> aF in Explore(aShape, ShapeType.Face))
             {
-                CompareFace(anOracle, new(N.TopoDS.Face(aF.N), TopoDS.Face(aF.P)), $"scene {aScene}", aCounts);
+                CompareFace(anOracle, new(N.TopoDS.Face(aF.N), ShapeCasts.Face(aF.P)), $"scene {aScene}", aCounts);
             }
         }
 
@@ -71,7 +74,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
 
     // Scenes
 
-    internal static (Twin<N.TopoDS_Shape, TopoDS_Shape>, bool) RandomScene(Oracle theOracle, int theScene)
+    internal static (Twin<N.TopoDS_Shape, Shape>, bool) RandomScene(Oracle theOracle, int theScene)
     {
         var aTwins = new GPropTwins();
         switch (theScene % 8)
@@ -85,12 +88,12 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
             case 3:
             {
                 // a compound sharing a solid at several locations (rigid, reversed, sometimes scaled), with free faces
-                Twin<N.TopoDS_Shape, TopoDS_Shape> aBox = TwinShapes.Up(aTwins.Twins.Box(theOracle.Real(1, 5), theOracle.Real(1, 5), theOracle.Real(1, 5)));
-                Twin<N.TopoDS_Shape, TopoDS_Shape> aCyl = TwinShapes.Up(aTwins.CylinderSolid(theOracle.Real(0.5, 2), theOracle.Real(0.5, 3)));
+                Twin<N.TopoDS_Shape, Shape> aBox = TwinShapes.Up(aTwins.Twins.Box(theOracle.Real(1, 5), theOracle.Real(1, 5), theOracle.Real(1, 5)));
+                Twin<N.TopoDS_Shape, Shape> aCyl = TwinShapes.Up(aTwins.CylinderSolid(theOracle.Real(0.5, 2), theOracle.Real(0.5, 3)));
                 (N.TopLoc_Location aNL1, Placement aL1) = RandomLocation(theOracle, false);
                 (N.TopLoc_Location aNL2, Placement aL2) = RandomLocation(theOracle, theOracle.Bool());
                 (N.TopLoc_Location aNL3, Placement aL3) = RandomLocation(theOracle, false);
-                Twin<N.TopoDS_Compound, TopoDS_Compound> aCompound = aTwins.Twins.Compound(
+                Twin<N.TopoDS_Compound, Compound> aCompound = aTwins.Twins.Compound(
                     aBox,
                     new(aBox.N.Moved(aNL1), aBox.P.Moved(aL1)),
                     new(aBox.N.Moved(aNL2).Reversed(), aBox.P.Moved(aL2).Reversed()),
@@ -107,7 +110,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                 return (Placed(theOracle, aTwins.BSplineScene(theOracle), false), false);
             case 6:
             {
-                Twin<N.TopoDS_Solid, TopoDS_Solid> aBox = aTwins.Twins.Box(theOracle.Real(0.5, 10), theOracle.Real(0.5, 10), theOracle.Real(0.5, 10));
+                Twin<N.TopoDS_Solid, Solid> aBox = aTwins.Twins.Box(theOracle.Real(0.5, 10), theOracle.Real(0.5, 10), theOracle.Real(0.5, 10));
                 aTwins.AttachQuadMeshes(TwinShapes.Up(aBox));
                 return (Placed(theOracle, TwinShapes.Up(aBox), true), true);
             }
@@ -118,9 +121,9 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>The shape at a random location (or none; scaled if allowed, sometimes), and reversed half the time.</summary>
-    private static Twin<N.TopoDS_Shape, TopoDS_Shape> Placed(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, bool theAllowScale)
+    private static Twin<N.TopoDS_Shape, Shape> Placed(Oracle theOracle, Twin<N.TopoDS_Shape, Shape> theShape, bool theAllowScale)
     {
-        Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = theShape;
+        Twin<N.TopoDS_Shape, Shape> aShape = theShape;
         if (theOracle.Bool())
         {
             (N.TopLoc_Location aNL, Placement aL) = RandomLocation(theOracle, theAllowScale && theOracle.Bool());
@@ -172,7 +175,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>A square face with a rectangular hole, on a random plane (the hole's wire first).</summary>
-    private static Twin<N.TopoDS_Face, TopoDS_Face> FaceWithHole(Oracle theOracle, TwinShapes theTwins)
+    private static Twin<N.TopoDS_Face, Face> FaceWithHole(Oracle theOracle, TwinShapes theTwins)
     {
         Point3D anOrigin = theOracle.Pnt();
         global::Kerf.Engine.Geometry.Xyz aNormal = GeomOracleInputs.RawDir(theOracle);
@@ -189,20 +192,20 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
         double hu1 = theOracle.Real(0.5, 1.5), hu2 = theOracle.Real(2, 3.5), hv1 = theOracle.Real(0.5, 1.5), hv2 = theOracle.Real(2, 3.5);
         (double U, double V)[] aUV = [(0, 0), (aSize, 0), (aSize, aSize), (0, aSize), (hu1, hv1), (hu1, hv2), (hu2, hv2), (hu2, hv1)];
         var aPoints = new Point3D[8];
-        var aV = new Twin<N.TopoDS_Vertex, TopoDS_Vertex>[8];
+        var aV = new Twin<N.TopoDS_Vertex, Vertex>[8];
         for (int i = 0; i < 8; i++)
         {
             aPoints[i] = global::Kerf.Engine.Geometry.ElSLib.Value(aUV[i].U, aUV[i].V, aPln);
             aV[i] = theTwins.Vertex(aPoints[i], 1e-6);
         }
 
-        return theTwins.PolygonFace(aPoints, aV, new Dictionary<(int, int), Twin<N.TopoDS_Edge, TopoDS_Edge>>(),
+        return theTwins.PolygonFace(aPoints, aV, new Dictionary<(int, int), Twin<N.TopoDS_Edge, Edge>>(),
                                     anOrigin, aNormal, anX, [4, 5, 6, 7], [0, 1, 2, 3]);
     }
 
     // Comparisons
 
-    private static void SameProps(Oracle theOracle, N.GProp_GProps theN, GProp_GProps theP, string theWhat)
+    private static void SameProps(Oracle theOracle, N.GProp_GProps theN, Properties theP, string theWhat)
     {
         theOracle.Same(theN.Mass(), theP.Mass(), theWhat + " mass");
         using (N.gp_Pnt aNC = theN.CentreOfMass())
@@ -237,11 +240,11 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void CompareProperties(Oracle theOracle, Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, bool theMeshed,
+    private static void CompareProperties(Oracle theOracle, Twin<N.TopoDS_Shape, Shape> theShape, bool theMeshed,
                                           bool theGK, string theScene, Counts theCounts)
     {
         N.TopoDS_Shape aNS = theShape.N;
-        TopoDS_Shape aPS = theShape.P;
+        Shape aPS = theShape.P;
         bool[] aBools = [false, true];
 
         foreach (bool aSkip in aBools)
@@ -251,14 +254,14 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                 string aWhat = $"{theScene} skip {aSkip} tri {aTri}";
                 {
                     using var aN = new N.GProp_GProps();
-                    var aP = new GProp_GProps();
+                    var aP = new Properties();
                     N.BRepGProp.LinearProperties(aNS, aN, aSkip, aTri);
                     BRepGProp.LinearProperties(aPS, aP, aSkip, aTri);
                     SameProps(theOracle, aN, aP, aWhat + " linear");
                 }
                 {
                     using var aN = new N.GProp_GProps();
-                    var aP = new GProp_GProps();
+                    var aP = new Properties();
                     N.BRepGProp.SurfaceProperties(aNS, aN, aSkip, aTri);
                     BRepGProp.SurfaceProperties(aPS, aP, aSkip, aTri);
                     SameProps(theOracle, aN, aP, aWhat + " surface");
@@ -266,7 +269,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                 foreach (bool aClosed in aBools)
                 {
                     using var aN = new N.GProp_GProps();
-                    var aP = new GProp_GProps();
+                    var aP = new Properties();
                     N.BRepGProp.VolumeProperties(aNS, aN, aClosed, aSkip, aTri);
                     BRepGProp.VolumeProperties(aPS, aP, aClosed, aSkip, aTri);
                     SameProps(theOracle, aN, aP, aWhat + $" volume closed {aClosed}");
@@ -285,7 +288,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                 string aWhat = $"{theScene} skip {aSkip} eps {anEps}";
                 {
                     using var aN = new N.GProp_GProps();
-                    var aP = new GProp_GProps();
+                    var aP = new Properties();
                     double aNE = N.BRepGProp.SurfaceProperties(aNS, aN, anEps, aSkip);
                     double aPE = BRepGProp.SurfaceProperties(aPS, aP, anEps, aSkip);
                     theOracle.Same(aNE, aPE, aWhat + " surface error");
@@ -294,7 +297,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                 foreach (bool aClosed in aBools)
                 {
                     using var aN = new N.GProp_GProps();
-                    var aP = new GProp_GProps();
+                    var aP = new Properties();
                     double aNE = N.BRepGProp.VolumeProperties(aNS, aN, anEps, aClosed, aSkip);
                     double aPE = BRepGProp.VolumeProperties(aPS, aP, anEps, aClosed, aSkip);
                     theOracle.Same(aNE, aPE, aWhat + $" volume error closed {aClosed}");
@@ -312,7 +315,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                 bool aClosed = theOracle.Bool(), aSpan = theOracle.Bool(), aCG = theOracle.Bool(), anI = theOracle.Bool();
                 string aWhat = $"{theScene} GK eps {anEps} closed {aClosed} span {aSpan} CG {aCG} I {anI} skip {aSkip}";
                 using var aN = new N.GProp_GProps();
-                var aP = new GProp_GProps();
+                var aP = new Properties();
                 double aNE, aPE;
                 if (k == 0)
                 {
@@ -339,7 +342,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void CompareFace(Oracle theOracle, Twin<N.TopoDS_Face, TopoDS_Face> theFace, string theScene, Counts theCounts)
+    private static void CompareFace(Oracle theOracle, Twin<N.TopoDS_Face, Face> theFace, string theScene, Counts theCounts)
     {
         bool aSpan = theOracle.Bool();
         using var aNF = new N.BRepGProp_Face(theFace.N, aSpan);
@@ -384,11 +387,11 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
 
         // the edges, then the sides of the UV rectangle
         var aNE = new N.TopExp_Explorer(theFace.N.Oriented(N.TopAbs_Orientation.TopAbs_FORWARD), N.TopAbs_ShapeEnum.TopAbs_EDGE);
-        var aPE = new TopExp_Explorer(theFace.P.Oriented(TopAbs_FORWARD), TopAbs_EDGE);
+        var aPE = new Explorer(theFace.P.Oriented(Forward), ShapeType.Edge);
         for (; aPE.More(); aPE.Next(), aNE.Next())
         {
             theCounts.Edges++;
-            bool aLoaded = aPF.Load(TopoDS.Edge(aPE.Current()));
+            bool aLoaded = aPF.Load(ShapeCasts.Edge(aPE.Current()));
             theOracle.Same(aNF.Load(N.TopoDS.Edge(aNE.Current())), aLoaded, aWhat + " Load(E)");
             if (aLoaded)
             {
@@ -468,11 +471,11 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static List<Twin<N.TopoDS_Shape, TopoDS_Shape>> Explore(Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, TopAbs_ShapeEnum theType)
+    private static List<Twin<N.TopoDS_Shape, Shape>> Explore(Twin<N.TopoDS_Shape, Shape> theShape, ShapeType theType)
     {
-        var aList = new List<Twin<N.TopoDS_Shape, TopoDS_Shape>>();
+        var aList = new List<Twin<N.TopoDS_Shape, Shape>>();
         var aNE = new N.TopExp_Explorer(theShape.N, TwinShapes.ToNative(theType));
-        for (var aPE = new TopExp_Explorer(theShape.P, theType); aPE.More(); aPE.Next(), aNE.Next())
+        for (var aPE = new Explorer(theShape.P, theType); aPE.More(); aPE.Next(), aNE.Next())
         {
             Assert.True(aNE.More());
             aList.Add(new(aNE.Current(), aPE.Current()));
@@ -490,7 +493,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
 internal sealed class GPropTwins
 {
     private readonly N.BRep_Builder myN = new();
-    private readonly BRep_Builder myP = new();
+    private readonly BrepBuilder myP = new();
     private const double Tol = 1e-7;
 
     public TwinShapes Twins { get; } = new();
@@ -499,10 +502,10 @@ internal sealed class GPropTwins
         => new(theOracle.Real(theMin, theMax), theOracle.Real(theMin, theMax), theOracle.Real(theMin, theMax));
 
     /// <summary>A closed cylinder around Z: the lateral face and two discs sharing its circles, in a solid.</summary>
-    public Twin<N.TopoDS_Solid, TopoDS_Solid> CylinderSolid(double r, double h)
+    public Twin<N.TopoDS_Solid, Solid> CylinderSolid(double r, double h)
     {
         double aTwoPi = 2.0 * Math.PI;
-        Twin<N.TopoDS_Vertex, TopoDS_Vertex> aV0 = Twins.Vertex(new Point3D(r, 0, 0)), aV1 = Twins.Vertex(new Point3D(r, 0, h));
+        Twin<N.TopoDS_Vertex, Vertex> aV0 = Twins.Vertex(new Point3D(r, 0, 0)), aV1 = Twins.Vertex(new Point3D(r, 0, h));
         using var aNO = new N.gp_Pnt(0, 0, 0);
         using var aNOh = new N.gp_Pnt(0, 0, h);
         using var aNZ = new N.gp_Dir(0, 0, 1);
@@ -510,25 +513,25 @@ internal sealed class GPropTwins
         using var aNAx2 = new N.gp_Ax2(aNO, aNZ, aNX);
         using var aNAx2h = new N.gp_Ax2(aNOh, aNZ, aNX);
         var aNoLoc = new Placement();
-        Twin<N.TopoDS_Edge, TopoDS_Edge> aBottom = Twins.EdgeOn(new N.Geom_Circle(aNAx2, r),
-            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r), aNoLoc, null, 0, aTwoPi, aV0, aV0);
-        Twin<N.TopoDS_Edge, TopoDS_Edge> aTop = Twins.EdgeOn(new N.Geom_Circle(aNAx2h, r),
-            new Geom_Circle(new Frame3D(new Point3D(0, 0, h), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r), aNoLoc, null, 0, aTwoPi, aV1, aV1);
+        Twin<N.TopoDS_Edge, Edge> aBottom = Twins.EdgeOn(new N.Geom_Circle(aNAx2, r),
+            new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r), aNoLoc, null, 0, aTwoPi, aV0, aV0);
+        Twin<N.TopoDS_Edge, Edge> aTop = Twins.EdgeOn(new N.Geom_Circle(aNAx2h, r),
+            new CircleCurve3D(new Frame3D(new Point3D(0, 0, h), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r), aNoLoc, null, 0, aTwoPi, aV1, aV1);
         using var aNSeamP = new N.gp_Pnt(r, 0, 0);
-        Twin<N.TopoDS_Edge, TopoDS_Edge> aSeam = Twins.EdgeOn(new N.Geom_Line(aNSeamP, aNZ),
-            new Geom_Line(new Point3D(r, 0, 0), new Direction3D(0, 0, 1)), aNoLoc, null, 0, h, aV0, aV1);
+        Twin<N.TopoDS_Edge, Edge> aSeam = Twins.EdgeOn(new N.Geom_Line(aNSeamP, aNZ),
+            new LineCurve3D(new Point3D(r, 0, 0), new Direction3D(0, 0, 1)), aNoLoc, null, 0, h, aV0, aV1);
 
         using var aNAx3 = new N.gp_Ax3(aNO, aNZ, aNX);
         var aNF = new N.TopoDS_Face();
         myN.MakeFace(aNF, new N.Geom_CylindricalSurface(aNAx3, r), Tol);
-        TopoDS_Face aF = new();
-        myP.MakeFace(ref aF, new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r), Tol);
+        Face aF = new();
+        myP.MakeFace(ref aF, new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r), Tol);
         UpdateEdge(aBottom, (0, 0, 1, 0), null, aNF, aF);
         UpdateEdge(aTop, (0, h, 1, 0), null, aNF, aF);
         UpdateEdge(aSeam, (aTwoPi, 0, 0, 1), (0, 0, 0, 1), aNF, aF);
         var aNW = new N.TopoDS_Wire();
         myN.MakeWire(aNW);
-        TopoDS_Wire aW = new();
+        Wire aW = new();
         myP.MakeWire(ref aW);
         AddToWire(aNW, aW, aBottom.N, aBottom.P);
         AddToWire(aNW, aW, aSeam.N, aSeam.P);
@@ -537,11 +540,11 @@ internal sealed class GPropTwins
         myN.Add(aNF, aNW);
         myP.Add(aF, aW);
 
-        Twin<N.TopoDS_Face, TopoDS_Face> aBottomFace = Disc(aBottom, 0, r), aTopFace = Disc(aTop, h, r);
+        Twin<N.TopoDS_Face, Face> aBottomFace = Disc(aBottom, 0, r), aTopFace = Disc(aTop, h, r);
         return Solid(new(aNF, aF), new(aBottomFace.N.Reversed(), aBottomFace.P.Reversed()), TwinShapes.Up(aTopFace));
     }
 
-    private Twin<N.TopoDS_Face, TopoDS_Face> Disc(Twin<N.TopoDS_Edge, TopoDS_Edge> theCircle, double z, double r)
+    private Twin<N.TopoDS_Face, Face> Disc(Twin<N.TopoDS_Edge, Edge> theCircle, double z, double r)
     {
         using var aNO = new N.gp_Pnt(0, 0, z);
         using var aNZ = new N.gp_Dir(0, 0, 1);
@@ -549,8 +552,8 @@ internal sealed class GPropTwins
         using var aNAx3 = new N.gp_Ax3(aNO, aNZ, aNX);
         var aNF = new N.TopoDS_Face();
         myN.MakeFace(aNF, new N.Geom_Plane(aNAx3), Tol);
-        TopoDS_Face aF = new();
-        myP.MakeFace(ref aF, new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, z), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))), Tol);
+        Face aF = new();
+        myP.MakeFace(ref aF, new PlaneSurface(new CoordinateSystem(new Point3D(0, 0, z), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))), Tol);
         using (var aNC = new N.gp_Pnt2d(0, 0))
         using (var aND = new N.gp_Dir2d(1, 0))
         using (var aNAx = new N.gp_Ax2d(aNC, aND))
@@ -558,10 +561,10 @@ internal sealed class GPropTwins
             myN.UpdateEdge(theCircle.N, new N.Geom2d_Circle(aNAx, r), aNF, Tol);
         }
 
-        myP.UpdateEdge(theCircle.P, new Geom2d_Circle(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), r), aF, Tol);
+        myP.UpdateEdge(theCircle.P, new CircleCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), r), aF, Tol);
         var aNW = new N.TopoDS_Wire();
         myN.MakeWire(aNW);
-        TopoDS_Wire aW = new();
+        Wire aW = new();
         myP.MakeWire(ref aW);
         AddToWire(aNW, aW, theCircle.N, theCircle.P);
         myN.Add(aNF, aNW);
@@ -569,8 +572,8 @@ internal sealed class GPropTwins
         return new(aNF, aF);
     }
 
-    private void UpdateEdge(Twin<N.TopoDS_Edge, TopoDS_Edge> theE, (double X, double Y, double DX, double DY) theL1,
-                            (double X, double Y, double DX, double DY)? theL2, N.TopoDS_Face theNF, TopoDS_Face theF)
+    private void UpdateEdge(Twin<N.TopoDS_Edge, Edge> theE, (double X, double Y, double DX, double DY) theL1,
+                            (double X, double Y, double DX, double DY)? theL2, N.TopoDS_Face theNF, Face theF)
     {
         N.Geom2d_Line NativeLine((double X, double Y, double DX, double DY) l)
         {
@@ -579,7 +582,7 @@ internal sealed class GPropTwins
             return new N.Geom2d_Line(aP, aD);
         }
 
-        static Geom2d_Line PortLine((double X, double Y, double DX, double DY) l) => new(new Point2D(l.X, l.Y), new Direction2D(l.DX, l.DY));
+        static LineCurve2D PortLine((double X, double Y, double DX, double DY) l) => new(new Point2D(l.X, l.Y), new Direction2D(l.DX, l.DY));
 
         if (theL2 is null)
         {
@@ -593,7 +596,7 @@ internal sealed class GPropTwins
         }
     }
 
-    private void AddToWire(N.TopoDS_Wire theNW, TopoDS_Wire theW, N.TopoDS_Shape theNE, TopoDS_Shape theE)
+    private void AddToWire(N.TopoDS_Wire theNW, Wire theW, N.TopoDS_Shape theNE, Shape theE)
     {
         myN.Add(theNW, theNE);
         myP.Add(theW, theE);
@@ -602,13 +605,13 @@ internal sealed class GPropTwins
     }
 
     /// <summary>A closed shell of the faces in a solid.</summary>
-    public Twin<N.TopoDS_Solid, TopoDS_Solid> Solid(params Twin<N.TopoDS_Shape, TopoDS_Shape>[] theFaces)
+    public Twin<N.TopoDS_Solid, Solid> Solid(params Twin<N.TopoDS_Shape, Shape>[] theFaces)
     {
         var aNSh = new N.TopoDS_Shell();
         myN.MakeShell(aNSh);
-        TopoDS_Shell aSh = new();
+        Shell aSh = new();
         myP.MakeShell(ref aSh);
-        foreach (Twin<N.TopoDS_Shape, TopoDS_Shape> aF in theFaces)
+        foreach (Twin<N.TopoDS_Shape, Shape> aF in theFaces)
         {
             myN.Add(aNSh, aF.N);
             myP.Add(aSh, aF.P);
@@ -619,19 +622,19 @@ internal sealed class GPropTwins
         var aNSo = new N.TopoDS_Solid();
         myN.MakeSolid(aNSo);
         myN.Add(aNSo, aNSh);
-        TopoDS_Solid aSo = new();
+        Solid aSo = new();
         myP.MakeSolid(ref aSo);
         myP.Add(aSo, aSh);
         return new(aNSo, aSo);
     }
 
     /// <summary>A face on the surface with no wire, its natural restriction flag set.</summary>
-    public Twin<N.TopoDS_Face, TopoDS_Face> NaturalFace(N.Geom_Surface theNS, Geom_Surface theS)
+    public Twin<N.TopoDS_Face, Face> NaturalFace(N.Geom_Surface theNS, Surface theS)
     {
         var aNF = new N.TopoDS_Face();
         myN.MakeFace(aNF, theNS, Tol);
         myN.NaturalRestriction(aNF, true);
-        TopoDS_Face aF = new();
+        Face aF = new();
         myP.MakeFace(ref aF, theS, Tol);
         myP.NaturalRestriction(aF, true);
         return new(aNF, aF);
@@ -657,7 +660,7 @@ internal sealed class GPropTwins
     }
 
     /// <summary>A natural sphere or torus in a closed shell, or a natural patch of a trimmed sphere.</summary>
-    public Twin<N.TopoDS_Shape, TopoDS_Shape> NaturalSurfaceShape(Oracle theOracle)
+    public Twin<N.TopoDS_Shape, Shape> NaturalSurfaceShape(Oracle theOracle)
     {
         (N.gp_Ax3 aNAx, CoordinateSystem anAx) = Ax3(theOracle);
         using (aNAx)
@@ -667,13 +670,13 @@ internal sealed class GPropTwins
                 case 0:
                 {
                     double r = theOracle.Real(0.5, 5);
-                    return TwinShapes.Up(Solid(TwinShapes.Up(NaturalFace(new N.Geom_SphericalSurface(aNAx, r), new Geom_SphericalSurface(anAx, r)))));
+                    return TwinShapes.Up(Solid(TwinShapes.Up(NaturalFace(new N.Geom_SphericalSurface(aNAx, r), new SphericalSurface(anAx, r)))));
                 }
 
                 case 1:
                 {
                     double r1 = theOracle.Real(2, 5), r2 = theOracle.Real(0.3, 1.5);
-                    return TwinShapes.Up(Solid(TwinShapes.Up(NaturalFace(new N.Geom_ToroidalSurface(aNAx, r1, r2), new Geom_ToroidalSurface(anAx, r1, r2)))));
+                    return TwinShapes.Up(Solid(TwinShapes.Up(NaturalFace(new N.Geom_ToroidalSurface(aNAx, r1, r2), new ToroidalSurface(anAx, r1, r2)))));
                 }
 
                 default:
@@ -682,7 +685,7 @@ internal sealed class GPropTwins
                     double u1 = theOracle.Real(0, 3), u2 = u1 + theOracle.Real(0.5, 3);
                     double v1 = theOracle.Real(-1.5, 0), v2 = v1 + theOracle.Real(0.3, 1.5);
                     var aNS = new N.Geom_RectangularTrimmedSurface(new N.Geom_SphericalSurface(aNAx, r), u1, u2, v1, v2);
-                    var aS = new Geom_RectangularTrimmedSurface(new Geom_SphericalSurface(anAx, r), u1, u2, v1, v2);
+                    var aS = new TrimmedSurface(new SphericalSurface(anAx, r), u1, u2, v1, v2);
                     return TwinShapes.Up(NaturalFace(aNS, aS));
                 }
             }
@@ -690,7 +693,7 @@ internal sealed class GPropTwins
     }
 
     /// <summary>A compound of a natural B-spline face and a B-spline edge.</summary>
-    public Twin<N.TopoDS_Shape, TopoDS_Shape> BSplineScene(Oracle theOracle)
+    public Twin<N.TopoDS_Shape, Shape> BSplineScene(Oracle theOracle)
     {
         int aUDeg = theOracle.Int(1, 3), aVDeg = theOracle.Int(1, 3);
         theOracle.BSplineKnots(aUDeg, false, out NCollection_Array1<double> aUKnots, out NCollection_Array1<int> aUMults);
@@ -710,9 +713,9 @@ internal sealed class GPropTwins
         using N.TColStd_Array1OfReal aNVKnots = Oracle.ToNative(aVKnots);
         using N.TColStd_Array1OfInteger aNUMults = Oracle.ToNative(aUMults);
         using N.TColStd_Array1OfInteger aNVMults = Oracle.ToNative(aVMults);
-        Twin<N.TopoDS_Face, TopoDS_Face> aFace = NaturalFace(
+        Twin<N.TopoDS_Face, Face> aFace = NaturalFace(
             new N.Geom_BSplineSurface(aNPoles, aNUKnots, aNVKnots, aNUMults, aNVMults, aUDeg, aVDeg, false, false),
-            new Geom_BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, aUDeg, aVDeg, false, false));
+            new BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, aUDeg, aVDeg, false, false));
 
         int aDeg = theOracle.Int(1, 4);
         theOracle.BSplineKnots(aDeg, false, out NCollection_Array1<double> aKnots, out NCollection_Array1<int> aMults);
@@ -723,26 +726,26 @@ internal sealed class GPropTwins
             aCPoles[i] = Pnt(theOracle, -5, 5);
         }
 
-        var aCurve = new Geom_BSplineCurve(aCPoles, aKnots, aMults, aDeg);
+        var aCurve = new BSplineCurve3D(aCPoles, aKnots, aMults, aDeg);
         N.Geom_BSplineCurve aNCurve = Oracle.ToNativeCurve(aCPoles, null, aKnots, aMults, aDeg, false);
         double f = aKnots[aKnots.Lower()], l = aKnots[aKnots.Upper()];
-        Twin<N.TopoDS_Vertex, TopoDS_Vertex> aV1 = Twins.Vertex(aCurve.Value(f)), aV2 = Twins.Vertex(aCurve.Value(l));
-        Twin<N.TopoDS_Edge, TopoDS_Edge> anEdge = Twins.EdgeOn(aNCurve, aCurve, new Placement(), null, f, l, aV1, aV2);
+        Twin<N.TopoDS_Vertex, Vertex> aV1 = Twins.Vertex(aCurve.Value(f)), aV2 = Twins.Vertex(aCurve.Value(l));
+        Twin<N.TopoDS_Edge, Edge> anEdge = Twins.EdgeOn(aNCurve, aCurve, new Placement(), null, f, l, aV1, aV2);
         return TwinShapes.Up(Twins.Compound(TwinShapes.Up(aFace), TwinShapes.Up(anEdge)));
     }
 
     /// <summary>Attaches to each face of a box a two-triangle mesh of its quadrangle, wound as the face's surface.</summary>
-    public void AttachQuadMeshes(Twin<N.TopoDS_Shape, TopoDS_Shape> theBox)
+    public void AttachQuadMeshes(Twin<N.TopoDS_Shape, Shape> theBox)
     {
         var aNE = new N.TopExp_Explorer(theBox.N, N.TopAbs_ShapeEnum.TopAbs_FACE);
-        for (var aPE = new TopExp_Explorer(theBox.P, TopAbs_FACE); aPE.More(); aPE.Next(), aNE.Next())
+        for (var aPE = new Explorer(theBox.P, ShapeType.Face); aPE.More(); aPE.Next(), aNE.Next())
         {
-            TopoDS_Face aF = TopoDS.Face(aPE.Current());
+            Face aF = ShapeCasts.Face(aPE.Current());
             var aCorners = new List<Point3D>();
-            for (var aW = new TopExp_Explorer(aF.Oriented(TopAbs_FORWARD), TopAbs_EDGE); aW.More(); aW.Next())
+            for (var aW = new Explorer(aF.Oriented(Forward), ShapeType.Edge); aW.More(); aW.Next())
             {
-                TopExp.Vertices(TopoDS.Edge(aW.Current()), out TopoDS_Vertex aFirst, out _, true);
-                aCorners.Add(BRep_Tool.Pnt(aFirst));
+                Exploration.Vertices(ShapeCasts.Edge(aW.Current()), out Vertex aFirst, out _, true);
+                aCorners.Add(Tool.Pnt(aFirst));
             }
 
             var aNT = new N.Poly_Triangulation(4, 2, false);
@@ -769,7 +772,7 @@ internal sealed class GPropTwins
     }
 
     /// <summary>A tetrahedron of faces that are only a triangle each (no surface), in a closed shell, in a solid.</summary>
-    public Twin<N.TopoDS_Shape, TopoDS_Shape> MeshTetra(Oracle theOracle)
+    public Twin<N.TopoDS_Shape, Shape> MeshTetra(Oracle theOracle)
     {
         Point3D[] aNodes = [Pnt(theOracle, -3, 3), Pnt(theOracle, -3, 3), Pnt(theOracle, -3, 3), Pnt(theOracle, -3, 3)];
         // orient the triangles outwards
@@ -779,7 +782,7 @@ internal sealed class GPropTwins
             (aNodes[1], aNodes[2]) = (aNodes[2], aNodes[1]);
         }
 
-        var aFaces = new List<Twin<N.TopoDS_Shape, TopoDS_Shape>>();
+        var aFaces = new List<Twin<N.TopoDS_Shape, Shape>>();
         foreach ((int, int, int) aTri in new[] { (1, 2, 3), (1, 4, 2), (1, 3, 4), (2, 4, 3) })
         {
             var aNT = new N.Poly_Triangulation(4, 1, false);
@@ -799,7 +802,7 @@ internal sealed class GPropTwins
             aT.SetTriangle(1, new Triangle1(aTri.Item1, aTri.Item2, aTri.Item3));
             var aNF = new N.TopoDS_Face();
             myN.MakeFace(aNF, aNT);
-            TopoDS_Face aF = new();
+            Face aF = new();
             myP.MakeFace(ref aF, aT);
             aFaces.Add(new(aNF, aF));
         }

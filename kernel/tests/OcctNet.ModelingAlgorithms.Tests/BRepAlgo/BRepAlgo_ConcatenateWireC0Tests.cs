@@ -1,5 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Reflection;
 using Xunit.Abstractions;
 
@@ -15,9 +20,9 @@ public class BRepAlgo_ConcatenateWireC0Tests(ITestOutputHelper output)
     private static string Metadata(string theKey) =>
         typeof(BRepAlgo_ConcatenateWireC0Tests).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>().Single(a => a.Key == theKey).Value!;
 
-    private static double Length(in TopoDS_Shape theShape)
+    private static double Length(in Shape theShape)
     {
-        var aProps = new GProp_GProps();
+        var aProps = new Properties();
         BRepGProp.LinearProperties(theShape, aProps);
         return aProps.Mass();
     }
@@ -31,36 +36,36 @@ public class BRepAlgo_ConcatenateWireC0Tests(ITestOutputHelper output)
             output.WriteLine($"{aFile} isn't there: nothing to do");
             return;
         }
-        Assert.True(BRepTools.Read(out TopoDS_Shape aShape, aFile));
+        Assert.True(BrepTools.Read(out Shape aShape, aFile));
         aShape.TShape()!.FreezeGraph(); // a caller's shape
         string aBefore = BRepTextOf(aShape);
 
         int aWires = 0;
-        for (var anIt = new TopoDS_Iterator(aShape); anIt.More(); anIt.Next())
+        for (var anIt = new Iterator(aShape); anIt.More(); anIt.Next())
         {
-            TopoDS_Wire aWire = TopoDS.Wire(anIt.Value());
-            TopoDS_Edge anEdge = BRepAlgo.ConcatenateWireC0(aWire);
-            Assert.False(anEdge.IsNull());
+            Wire aWire = ShapeCasts.Wire(anIt.Value());
+            Edge anEdge = BRepAlgo.ConcatenateWireC0(aWire);
+            Assert.False(anEdge.IsNull);
             // checknbshapes r -vertex 2 -edge 1
-            var aVertices = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-            TopExp.MapShapes(anEdge, TopAbs_ShapeEnum.TopAbs_VERTEX, aVertices);
+            var aVertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            Exploration.MapShapes(anEdge, ShapeType.Vertex, aVertices);
             Assert.Equal(2, aVertices.Extent());
             // the same path: its length, and its ends at the wire's ends
             Assert.Equal(Length(aWire), Length(anEdge), Length(aWire) * 1e-6);
-            TopExp.Vertices(aWire, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
-            TopExp.Vertices(anEdge, out TopoDS_Vertex aE1, out TopoDS_Vertex aE2);
-            Assert.True(BRep_Tool.Pnt(aV1).Distance(BRep_Tool.Pnt(aE1)) < 1e-6 || BRep_Tool.Pnt(aV1).Distance(BRep_Tool.Pnt(aE2)) < 1e-6);
-            Assert.True(BRep_Tool.Pnt(aV2).Distance(BRep_Tool.Pnt(aE1)) < 1e-6 || BRep_Tool.Pnt(aV2).Distance(BRep_Tool.Pnt(aE2)) < 1e-6);
+            Exploration.Vertices(aWire, out Vertex aV1, out Vertex aV2);
+            Exploration.Vertices(anEdge, out Vertex aE1, out Vertex aE2);
+            Assert.True(Tool.Pnt(aV1).Distance(Tool.Pnt(aE1)) < 1e-6 || Tool.Pnt(aV1).Distance(Tool.Pnt(aE2)) < 1e-6);
+            Assert.True(Tool.Pnt(aV2).Distance(Tool.Pnt(aE1)) < 1e-6 || Tool.Pnt(aV2).Distance(Tool.Pnt(aE2)) < 1e-6);
             aWires++;
         }
         Assert.Equal(2, aWires);
         Assert.Equal(aBefore, BRepTextOf(aShape));
     }
 
-    private static string BRepTextOf(in TopoDS_Shape theShape)
+    private static string BRepTextOf(in Shape theShape)
     {
         var aWriter = new StringWriter();
-        BRepTools.Write(theShape, aWriter);
+        BrepTools.Write(theShape, aWriter);
         return aWriter.ToString();
     }
 }

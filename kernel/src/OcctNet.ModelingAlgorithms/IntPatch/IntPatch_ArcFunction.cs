@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -21,8 +22,8 @@ namespace Occt;
 /// </remarks>
 public class IntPatch_ArcFunction : FunctionWithDerivative, IIntStart_ArcFunction
 {
-    private Adaptor2d_Curve2d? myArc;
-    private Adaptor3d_Surface? mySurf;
+    private Curve2DAdaptorBase? myArc;
+    private SurfaceAdaptorBase? mySurf;
     private IntSurf_Quadric myQuad;
     private Point3D ptsol;
     private readonly NCollection_Sequence<Point3D> seqpt;
@@ -40,13 +41,13 @@ public class IntPatch_ArcFunction : FunctionWithDerivative, IIntStart_ArcFunctio
         seqpt.Clear();
     }
 
-    public void Set(Adaptor2d_Curve2d A)
+    public void Set(Curve2DAdaptorBase A)
     {
         myArc = A;
         seqpt.Clear();
     }
 
-    public void Set(Adaptor3d_Surface S)
+    public void Set(SurfaceAdaptorBase S)
     {
         mySurf = S;
         seqpt.Clear();
@@ -102,9 +103,9 @@ public class IntPatch_ArcFunction : FunctionWithDerivative, IIntStart_ArcFunctio
 
     public IntSurf_Quadric Quadric() => (myQuad);
 
-    public Adaptor2d_Curve2d Arc() => (myArc!);
+    public Curve2DAdaptorBase Arc() => (myArc!);
 
-    public Adaptor3d_Surface Surface() => (mySurf!);
+    public SurfaceAdaptorBase Surface() => (mySurf!);
 
     /// <summary>The point computed by the last call to <see cref="Value"/> (or the derivatives).</summary>
     public Point3D LastComputedPoint() => ptsol;

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>A surface of the legacy data structure: a surface with a tolerance, and whether it is kept.</summary>
@@ -12,7 +14,7 @@ namespace Occt;
 /// </remarks>
 public partial struct TopOpeBRepDS_Surface : IEquatable<TopOpeBRepDS_Surface>
 {
-    private Geom_Surface? mySurface;
+    private Surface? mySurface;
     private double myTolerance;
     private bool myKeep;
 
@@ -25,7 +27,7 @@ public partial struct TopOpeBRepDS_Surface : IEquatable<TopOpeBRepDS_Surface>
     }
 
     /// <summary>The surface <paramref name="theSurface"/> with the tolerance <paramref name="theTolerance"/>, not kept.</summary>
-    public TopOpeBRepDS_Surface(Geom_Surface? theSurface, double theTolerance)
+    public TopOpeBRepDS_Surface(Surface? theSurface, double theTolerance)
     {
         mySurface = theSurface;
         myTolerance = theTolerance;
@@ -48,7 +50,7 @@ public partial struct TopOpeBRepDS_Surface : IEquatable<TopOpeBRepDS_Surface>
     }
 
     /// <summary>The surface.</summary>
-    public readonly Geom_Surface? Surface() => mySurface;
+    public readonly Surface? Surface() => mySurface;
 
     /// <summary>The tolerance.</summary>
     public readonly double Tolerance() => myTolerance;

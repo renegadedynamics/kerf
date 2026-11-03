@@ -1,3 +1,11 @@
+using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Geometry;
 using Occt;
 
 namespace Build123d;
@@ -11,7 +19,7 @@ public partial class Wire : Shape1D
     public Wire() : base(null) { }
 
     /// <summary>A wire wrapping an OCCT wire.</summary>
-    public Wire(TopoDS_Wire wire, string label = "", Color? color = null) : base(wire, label, color) { }
+    public Wire(global::Kerf.Topology.Wire wire, string label = "", Color? color = null) : base(wire, label, color) { }
 
     /// <summary>A copy of a wire (sharing its geometry).</summary>
     public Wire(Wire wire, string label = "", Color? color = null) : base(wire.TopoWire, label, color) { }
@@ -29,13 +37,13 @@ public partial class Wire : Shape1D
     public Wire(IEnumerable<Edge> edges, bool sequenced = false, string label = "", Color? color = null)
         : base(MakeWireOrNull(edges, sequenced), label, color) { }
 
-    internal TopoDS_Wire TopoWire => TopoDS.Wire(TopoShape);
+    internal global::Kerf.Topology.Wire TopoWire => ShapeCasts.Wire(TopoShape);
 
     internal override double Order => 1.5;
 
     internal override Shape MakeZero() => new Wire();
 
-    private static TopoDS_Wire? MakeWireOrNull(IEnumerable<Edge> edges, bool sequenced)
+    private static global::Kerf.Topology.Wire? MakeWireOrNull(IEnumerable<Edge> edges, bool sequenced)
     {
         var list = edges.ToList();
         return list.Count == 0 ? null : MakeWire(list, sequenced);
@@ -44,7 +52,7 @@ public partial class Wire : Shape1D
     /// <summary>An OCCT wire of edges, put in order first with <paramref name="sequenced"/>.</summary>
     /// <exception cref="ArgumentException">The edges are disconnected.</exception>
     /// <exception cref="InvalidOperationException">The wire is empty.</exception>
-    internal static TopoDS_Wire MakeWire(IEnumerable<Edge> edges, bool sequenced = false)
+    internal static global::Kerf.Topology.Wire MakeWire(IEnumerable<Edge> edges, bool sequenced = false)
     {
         var list = edges.ToList();
         if (sequenced && list.Count > 0)
@@ -198,20 +206,20 @@ public partial class Wire : Shape1D
         if (IsEmpty)
             return [];
         var edges = new List<Edge>();
-        var explored = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var explorer = new BRepTools_WireExplorer(TopoWire);
+        var explored = new NCollection_Map<global::Kerf.Topology.Shape>(ShapeHasher.Instance);
+        var explorer = new WireExplorer(TopoWire);
         for (; explorer.More(); explorer.Next())
         {
             var edge = explorer.Current();
             explored.Add(edge);
             edges.Add((Edge)new Edge(edge).ExtractedFrom(this));
         }
-        var all = new TopExp_Explorer(TopoShape, TopAbs_ShapeEnum.TopAbs_EDGE);
+        var all = new Explorer(TopoShape, global::Kerf.Topology.ShapeType.Edge);
         for (; all.More(); all.Next())
         {
             var edge = all.Current();
             if (explored.Add(edge))
-                edges.Add((Edge)new Edge(TopoDS.Edge(edge)).ExtractedFrom(this));
+                edges.Add((Edge)new Edge(ShapeCasts.Edge(edge)).ExtractedFrom(this));
         }
         return SelectFrom(new ShapeList<Edge>(edges), select);
     }
@@ -230,11 +238,11 @@ public partial class Wire : Shape1D
     // ---- Curve parameters ----
 
     /// <inheritdoc/>
-    public override BRepAdaptor_CompCurve GeomAdaptor()
+    public override WireCurveAdaptor GeomAdaptor()
     {
         if (IsEmpty)
             throw new InvalidOperationException("Can't get geom adaptor of empty wire");
-        return new BRepAdaptor_CompCurve(TopoWire);
+        return new WireCurveAdaptor(TopoWire);
     }
 
     /// <summary>The parameter of the wire's <c>BRepAdaptor_CompCurve</c> at a position (not an edge parameter).</summary>
@@ -243,13 +251,13 @@ public partial class Wire : Shape1D
         var curve = GeomAdaptor();
         var target = PositionAt(position);
         var pnt = target.ToGpPnt();
-        var extrema = new Extrema_ExtPC(pnt, curve);
-        if (!extrema.IsDone() || extrema.NbExt() == 0)
+        var extrema = new CurvePointExtrema(pnt, curve);
+        if (!extrema.IsDone || extrema.ExtCount == 0)
             throw new InvalidOperationException("Failed to find point on curve");
         double minDist = double.PositiveInfinity;
         Vector? closest = null;
         double closestParam = 0;
-        for (int i = 1; i <= extrema.NbExt(); i++)
+        for (int i = 1; i <= extrema.ExtCount; i++)
         {
             var dist = extrema.SquareDistance(i);
             if (dist < minDist)
@@ -281,23 +289,23 @@ public partial class Wire : Shape1D
         if (!extrema.IsDone() || extrema.NbSolution() == 0)
             throw new ArgumentException("point is not on Wire");
 
-        TopoDS_Edge closestEdge;
+        global::Kerf.Topology.Edge closestEdge;
         double closestParam;
         switch (extrema.SupportTypeShape2(1))
         {
             case BRepExtrema_SupportType.BRepExtrema_IsOnEdge:
-                closestEdge = TopoDS.Edge(extrema.SupportOnShape2(1));
+                closestEdge = ShapeCasts.Edge(extrema.SupportOnShape2(1));
                 closestParam = 0;
                 extrema.ParOnEdgeS2(1, out closestParam);
                 break;
             case BRepExtrema_SupportType.BRepExtrema_IsVertex:
             {
-                var hit = TopoDS.Vertex(extrema.SupportOnShape2(1));
-                var map = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-                TopExp.MapShapesAndAncestors(TopoShape, TopAbs_ShapeEnum.TopAbs_VERTEX, TopAbs_ShapeEnum.TopAbs_EDGE, map);
+                var hit = ShapeCasts.Vertex(extrema.SupportOnShape2(1));
+                var map = new NCollection_IndexedDataMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
+                Exploration.MapShapesAndAncestors(TopoShape, global::Kerf.Topology.ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, map);
                 var edges = map.FindFromKey(hit);
-                closestEdge = TopoDS.Edge(edges.First());
-                closestParam = BRep_Tool.Parameter(hit, closestEdge);
+                closestEdge = ShapeCasts.Edge(edges.First());
+                closestParam = Tool.Parameter(hit, closestEdge);
                 break;
             }
             default:
@@ -306,26 +314,26 @@ public partial class Wire : Shape1D
 
         double distanceAlongWire;
         {
-            var adaptor = new BRepAdaptor_Curve(closestEdge);
+            var adaptor = new EdgeCurveAdaptor(closestEdge);
             double paramMin = 0, paramMax = 0;
-            BRep_Tool.Range(closestEdge, out paramMin, out paramMax);
-            if (adaptor.IsPeriodic())
+            Tool.Range(closestEdge, out paramMin, out paramMax);
+            if (adaptor.IsPeriodic)
                 closestParam = PyMath.Mod(closestParam - paramMin, adaptor.Period()) + paramMin;
-            distanceAlongWire = closestEdge.Orientation() == TopAbs_Orientation.TopAbs_FORWARD
-                ? GCPnts_AbscissaPoint.Length(adaptor, paramMin, closestParam)
-                : GCPnts_AbscissaPoint.Length(adaptor, closestParam, paramMax);
+            distanceAlongWire = closestEdge.Orientation() == global::Kerf.Topology.Orientation.Forward
+                ? AbscissaPoint.Length(adaptor, paramMin, closestParam)
+                : AbscissaPoint.Length(adaptor, closestParam, paramMax);
         }
         // The lengths of the edges before the closest one
-        var explorer = new BRepTools_WireExplorer(TopoWire);
+        var explorer = new WireExplorer(TopoWire);
         for (; explorer.More(); explorer.Next())
         {
             var edge = explorer.Current();
-            if (BRep_Tool.Degenerated(edge))
+            if (Tool.Degenerated(edge))
                 continue;
             if (edge.IsEqual(closestEdge))
                 break;
-            var adaptor = new BRepAdaptor_Curve(edge);
-            distanceAlongWire += GCPnts_AbscissaPoint.Length(adaptor);
+            var adaptor = new EdgeCurveAdaptor(edge);
+            distanceAlongWire += AbscissaPoint.Length(adaptor);
         }
         // The explorer follows the wire's orientation while positions measure a reversed wire from its other end
         var u = distanceAlongWire / Length;
@@ -333,7 +341,7 @@ public partial class Wire : Shape1D
         return normalize ? normalized : ParamAt(normalized);
     }
 
-    internal override (BRepAdaptor_Curve Curve, double Param, bool Forward) OcctParamAt(double position, PositionMode mode = PositionMode.Parameter)
+    internal override (EdgeCurveAdaptor Curve, double Param, bool Forward) OcctParamAt(double position, PositionMode mode = PositionMode.Parameter)
     {
         // The absolute distance along the wire
         double distance;
@@ -403,14 +411,14 @@ public partial class Wire : Shape1D
             throw new InvalidOperationException("Can't chamfer empty wire");
         var unchamfered = TopoUtil.MakeFaceFromWires(TopoWire);
         var builder = new BRepFilletAPI_MakeFillet2d(unchamfered);
-        var map = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(unchamfered, TopAbs_ShapeEnum.TopAbs_VERTEX, TopAbs_ShapeEnum.TopAbs_EDGE, map);
+        var map = new NCollection_IndexedDataMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(unchamfered, global::Kerf.Topology.ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, map);
         foreach (var v in vertices)
         {
             if (v.IsEmpty)
                 continue;
             var list = map.FindFromKey(v.TopoShape);
-            var pair = (new Edge(TopoDS.Edge(list.First())), new Edge(TopoDS.Edge(list.Last())));
+            var pair = (new Edge(ShapeCasts.Edge(list.First())), new Edge(ShapeCasts.Edge(list.Last())));
             var (edge1, edge2) = OrderChamferEdges(edge, pair);
             if (!edge1.IsEmpty && !edge2.IsEmpty)
                 builder.AddChamfer(edge1.TopoEdge, edge2.TopoEdge, distance, distance2);
@@ -423,7 +431,7 @@ public partial class Wire : Shape1D
         var fixedShape = TopoUtil.Downcast(fix.Shape());
         if (!fixedShape.IsFace())
             throw new InvalidOperationException("An internal error occured creating the chamfer");
-        var result = new Wire(BRepTools.OuterWire(TopoDS.Face(fixedShape)));
+        var result = new Wire(BrepTools.OuterWire(ShapeCasts.Face(fixedShape)));
         return (Wire)result.MadeBy(ShapeHistory.FromAlgorithm(builder, [TopoShape], result.TopoShape));
     }
 
@@ -437,7 +445,7 @@ public partial class Wire : Shape1D
         fix.SetMaxTolerance(1e-6);
         fix.FixSmallEdges();
         fix.FixWireGaps();
-        return new Wire(TopoDS.Wire(TopoUtil.Downcast(fix.Shape())));
+        return new Wire(ShapeCasts.Wire(TopoUtil.Downcast(fix.Shape())));
     }
 
     /// <summary>This wire joined to another.</summary>
@@ -460,18 +468,18 @@ public partial class Wire : Shape1D
     {
         if (IsEmpty)
             throw new InvalidOperationException("Can't convert an empty wire");
-        var builder = new GeomConvert_CompCurveToBSplineCurve();
-        var explorer = new BRepTools_WireExplorer(TopoWire);
+        var builder = new CompCurveToBSplineCurve();
+        var explorer = new WireExplorer(TopoWire);
         for (; explorer.More(); explorer.Next())
         {
             var edge = explorer.Current();
-            if (BRep_Tool.Degenerated(edge))
+            if (Tool.Degenerated(edge))
                 continue;
             double first = 0, last = 0;
-            BRep_Tool.Range(edge, out first, out last);
+            Tool.Range(edge, out first, out last);
             double f = 0, l = 0;
-            var curve = BRep_Tool.Curve(edge, out f, out l);
-            var trimmed = new Geom_TrimmedCurve(curve!, first, last);
+            var curve = Tool.Curve(edge, out f, out l);
+            var trimmed = new TrimmedCurve3D(curve!, first, last);
             if (!builder.Add(trimmed, Constants.Tolerance))
                 throw new InvalidOperationException("Failed to build bspline.");
         }
@@ -569,7 +577,7 @@ public partial class Wire : Shape1D
                 var projected = projection.Current();
                 output.Add(orientation == projected.Orientation()
                     ? new Wire(projected)
-                    : new Wire(TopoDS.Wire(projected.Reversed())));
+                    : new Wire(ShapeCasts.Wire(projected.Reversed())));
             }
         }
         // BRepProj_Projection is inconsistent in the order it returns the wires: sort them by distance from this wire

@@ -6,6 +6,9 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using static Occt.StepToTopoDS_TranslateSolidError;
 
 namespace Occt;
@@ -15,7 +18,7 @@ namespace Occt;
 public sealed class StepToTopoDS_TranslateSolid : StepToTopoDS_Root
 {
     private StepToTopoDS_TranslateSolidError myError;
-    private TopoDS_Shape myResult = new TopoDS_Shape();
+    private Shape myResult = new Shape();
 
     public StepToTopoDS_TranslateSolid()
     {
@@ -32,9 +35,9 @@ public sealed class StepToTopoDS_TranslateSolid : StepToTopoDS_Root
             return;
         }
 
-        var aB = new BRep_Builder();
-        TopoDS_Shell aSh = new TopoDS_Shell();
-        TopoDS_Solid aSo = new TopoDS_Solid();
+        var aB = new BrepBuilder();
+        Shell aSh = new Shell();
+        Solid aSo = new Solid();
 
         int aNb = theTSo.NbItems();
         using var aPS = new ProgressScope(theProgress, "Face", aNb);
@@ -49,7 +52,7 @@ public sealed class StepToTopoDS_TranslateSolid : StepToTopoDS_Root
         }
 
         bool aNewSolid = false;
-        if (aSo.IsNull())
+        if (aSo.IsNull)
         {
             aB.MakeShell(ref aSh);
             aB.MakeSolid(ref aSo);
@@ -75,7 +78,7 @@ public sealed class StepToTopoDS_TranslateSolid : StepToTopoDS_Root
                 {
                     if (aNewSolid)
                     {
-                        aB.Add(aSh, TopoDS.Face(aTranTF.InternalValue()));
+                        aB.Add(aSh, ShapeCasts.Face(aTranTF.InternalValue()));
                     }
 
                     theHasGeom &= aHasFaceGeom;
@@ -107,15 +110,15 @@ public sealed class StepToTopoDS_TranslateSolid : StepToTopoDS_Root
 
     /// <summary>The solid, frozen.</summary>
     /// <exception cref="NotDoneException">The translation wasn't done.</exception>
-    public TopoDS_Shape Value()
+    public Shape Value()
     {
-        TopoDS_Shape aShape = InternalValue();
+        Shape aShape = InternalValue();
         aShape.TShape()?.FreezeGraph();
         return aShape;
     }
 
     /// <summary>As <see cref="Value"/>, without freezing: the reader's working shape.</summary>
-    internal TopoDS_Shape InternalValue()
+    internal Shape InternalValue()
     {
         StdFail_NotDone_Raise_if(!done, "StepToTopoDS_TranslateSolid::Value() - no result");
         return myResult;

@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Topology;
 
 namespace Occt;
 
@@ -18,23 +19,23 @@ namespace Occt;
 /// </remarks>
 public abstract class IMeshData_Shape : Transient
 {
-    private TopoDS_Shape myShape;
+    private Shape myShape;
 
     /// <summary>An entity with a null shape.</summary>
     protected IMeshData_Shape()
     {
-        myShape = new TopoDS_Shape();
+        myShape = new Shape();
     }
 
     /// <summary>An entity of the given shape.</summary>
-    protected IMeshData_Shape(in TopoDS_Shape theShape)
+    protected IMeshData_Shape(in Shape theShape)
     {
         myShape = theShape;
     }
 
     /// <summary>Assigns the shape to the discrete shape.</summary>
-    public void SetShape(in TopoDS_Shape theShape) => myShape = theShape;
+    public void SetShape(in Shape theShape) => myShape = theShape;
 
     /// <summary>The shape assigned to the discrete shape.</summary>
-    public TopoDS_Shape GetShape() => myShape;
+    public Shape GetShape() => myShape;
 }

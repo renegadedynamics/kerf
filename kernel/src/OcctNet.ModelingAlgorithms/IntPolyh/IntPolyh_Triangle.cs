@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
 using System.Runtime.CompilerServices;
@@ -262,7 +263,7 @@ public partial struct IntPolyh_Triangle : IEquatable<IntPolyh_Triangle>
     /// barycenter of its (U, V). Marks the triangle degenerated (deflection 0) if two of its points are degenerated or
     /// its normal vanishes.
     /// </summary>
-    internal double ComputeDeflection(Adaptor3d_Surface theSurface, IntPolyh_Array<IntPolyh_Point> TPoints)
+    internal double ComputeDeflection(SurfaceAdaptorBase theSurface, IntPolyh_Array<IntPolyh_Point> TPoints)
     {
         myDeflection = 0.0;
         //
@@ -398,7 +399,7 @@ public partial struct IntPolyh_Triangle : IEquatable<IntPolyh_Triangle>
     }
 
     private static void NewTriangle(int P1, int P2, int P3, IntPolyh_Array<IntPolyh_Triangle> TTriangles,
-                                    Adaptor3d_Surface MySurface, IntPolyh_Array<IntPolyh_Point> TPoints)
+                                    SurfaceAdaptorBase MySurface, IntPolyh_Array<IntPolyh_Point> TPoints)
     {
         int FinTT = TTriangles.NbItems();
         TTriangles[FinTT].SetFirstPoint(P1);
@@ -435,7 +436,7 @@ public partial struct IntPolyh_Triangle : IEquatable<IntPolyh_Triangle>
     /// Splits the triangle (number <paramref name="NumTri"/>) in two by the middle of its longest side, and the triangle
     /// adjacent along that side too; the split triangles are made obsolete (deflection -1, no intersection possible).
     /// </summary>
-    internal void MiddleRefinement(int NumTri, Adaptor3d_Surface MySurface, IntPolyh_Array<IntPolyh_Point> TPoints,
+    internal void MiddleRefinement(int NumTri, SurfaceAdaptorBase MySurface, IntPolyh_Array<IntPolyh_Point> TPoints,
                                    IntPolyh_Array<IntPolyh_Triangle> TTriangles, IntPolyh_Array<IntPolyh_Edge> TEdges)
     {
         int FinTE = TEdges.NbItems();
@@ -734,7 +735,7 @@ public partial struct IntPolyh_Triangle : IEquatable<IntPolyh_Triangle>
     /// the box; at most about twice the number of triangles there were before.
     /// </summary>
     internal void MultipleMiddleRefinement(double theRefineCriterion, in Box theBox, int theTriangleNumber,
-                                           Adaptor3d_Surface theSurface, IntPolyh_Array<IntPolyh_Point> TPoints,
+                                           SurfaceAdaptorBase theSurface, IntPolyh_Array<IntPolyh_Point> TPoints,
                                            IntPolyh_Array<IntPolyh_Triangle> TTriangles, IntPolyh_Array<IntPolyh_Edge> TEdges)
     {
         // Number of triangles before refinement of current triangle

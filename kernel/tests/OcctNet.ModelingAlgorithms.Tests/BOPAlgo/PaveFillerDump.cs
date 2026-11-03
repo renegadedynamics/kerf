@@ -1,9 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Text;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -61,23 +64,23 @@ internal static class PaveFillerDump
         for (int i = 0; i < aNb; ++i)
         {
             BOPDS_ShapeInfo aSI = theDS.ShapeInfo(i);
-            TopoDS_Shape aS = aSI.Shape();
-            TopAbs_ShapeEnum aType = aSI.ShapeType();
+            Shape aS = aSI.Shape();
+            ShapeType aType = aSI.ShapeType();
             aB.Append("s ").Append(i).Append(' ').Append((int)aType).Append(' ').Append((int)aS.Orientation());
             List<int> aSub = [.. aSI.SubShapes()];
             aB.Append(" sub ").Append(i < aNbSrc ? Sorted(aSub) : string.Join(",", aSub));
-            if (aType == TopAbs_VERTEX)
+            if (aType == ShapeType.Vertex)
             {
-                TopoDS_Vertex aV = TopoDS.Vertex(aS);
-                aB.Append(" tol ").Append(H(BRep_Tool.Tolerance(aV))).Append(" p ").Append(P(BRep_Tool.Pnt(aV)));
+                Vertex aV = ShapeCasts.Vertex(aS);
+                aB.Append(" tol ").Append(H(Tool.Tolerance(aV))).Append(" p ").Append(P(Tool.Pnt(aV)));
             }
-            else if (aType == TopAbs_EDGE)
+            else if (aType == ShapeType.Edge)
             {
-                TopoDS_Edge aE = TopoDS.Edge(aS);
-                aB.Append(" tol ").Append(H(BRep_Tool.Tolerance(aE))).Append(" deg ").Append(BRep_Tool.Degenerated(aE) ? 1 : 0);
+                Edge aE = ShapeCasts.Edge(aS);
+                aB.Append(" tol ").Append(H(Tool.Tolerance(aE))).Append(" deg ").Append(Tool.Degenerated(aE) ? 1 : 0);
                 if (i >= aNbSrc)
                 {
-                    Geom_Curve? aC = BRep_Tool.Curve(aE, out double aT1, out double aT2);
+                    Curve3D? aC = Tool.Curve(aE, out double aT1, out double aT2);
                     aB.Append(" r ").Append(H(aT1)).Append(' ').Append(H(aT2));
                     if (aC is not null)
                     {
@@ -86,9 +89,9 @@ internal static class PaveFillerDump
                     }
                 }
             }
-            else if (aType == TopAbs_FACE)
+            else if (aType == ShapeType.Face)
             {
-                aB.Append(" tol ").Append(H(BRep_Tool.Tolerance(TopoDS.Face(aS))));
+                aB.Append(" tol ").Append(H(Tool.Tolerance(ShapeCasts.Face(aS))));
                 aFaces.Add(i);
             }
             aB.Append('\n');
@@ -96,19 +99,19 @@ internal static class PaveFillerDump
         // p-curves of the new edges on the faces
         for (int i = aNbSrc; i < aNb; ++i)
         {
-            if (theDS.ShapeInfo(i).ShapeType() != TopAbs_EDGE)
+            if (theDS.ShapeInfo(i).ShapeType() != ShapeType.Edge)
             {
                 continue;
             }
-            TopoDS_Edge aE = TopoDS.Edge(theDS.Shape(i));
-            if (BRep_Tool.Degenerated(aE))
+            Edge aE = ShapeCasts.Edge(theDS.Shape(i));
+            if (Tool.Degenerated(aE))
             {
                 continue;
             }
             foreach (int nF in aFaces)
             {
-                TopoDS_Face aF = TopoDS.Face(theDS.Shape(nF));
-                Geom2d_Curve? aC2 = BRep_Tool.CurveOnSurface(aE, aF, out double aT1, out double aT2, out bool anIsStored);
+                Face aF = ShapeCasts.Face(theDS.Shape(nF));
+                Curve2D? aC2 = Tool.CurveOnSurface(aE, aF, out double aT1, out double aT2, out bool anIsStored);
                 if (aC2 is not null && anIsStored)
                 {
                     aB.Append("pc ").Append(i).Append(' ').Append(nF).Append(' ').Append(H(aT1)).Append(' ').Append(H(aT2))
@@ -131,7 +134,7 @@ internal static class PaveFillerDump
         for (int i = 0; i < aNb; ++i)
         {
             BOPDS_ShapeInfo aSI = theDS.ShapeInfo(i);
-            if (aSI.ShapeType() != TopAbs_EDGE || !theDS.HasPaveBlocks(i))
+            if (aSI.ShapeType() != ShapeType.Edge || !theDS.HasPaveBlocks(i))
             {
                 continue;
             }

@@ -1,8 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
 using System.Globalization;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -15,9 +17,9 @@ public class ChFi3dBuilderNativeTests
     /// <summary>The reconstruction tests plug in: it records the data structure at Perform and builds nothing.</summary>
     internal sealed class RecordingReconstruction : ChFi3d_Reconstruction
     {
-        private readonly TopoDS_Shape myInput;
+        private readonly Shape myInput;
 
-        internal RecordingReconstruction(in TopoDS_Shape theInput) => myInput = theInput;
+        internal RecordingReconstruction(in Shape theInput) => myInput = theInput;
 
         /// <summary>The data structure's text at Perform (<see cref="TopOpeBRepDS_TextDump"/>), null before.</summary>
         internal string? Text { get; private set; }
@@ -38,33 +40,33 @@ public class ChFi3dBuilderNativeTests
 
         private void count(string theMember) => Calls[theMember] = Calls.GetValueOrDefault(theMember) + 1;
 
-        public override void MergeSolid(in TopoDS_Shape S, TopAbs_State TB) => count("MergeSolid " + S.ShapeType() + " " + TB);
+        public override void MergeSolid(in Shape S, Containment TB) => count("MergeSolid " + Kerf.Engine.Foundation.OcctTypeNames.Of(S.ShapeType()) + " " + Kerf.Engine.Foundation.OcctTypeNames.Of(TB));
 
-        public override bool IsSplit(in TopoDS_Shape S, TopAbs_State ToBuild)
+        public override bool IsSplit(in Shape S, Containment ToBuild)
         {
-            count("IsSplit " + S.ShapeType() + " " + ToBuild);
+            count("IsSplit " + Kerf.Engine.Foundation.OcctTypeNames.Of(S.ShapeType()) + " " + Kerf.Engine.Foundation.OcctTypeNames.Of(ToBuild));
             return false;
         }
 
-        public override NCollection_List<TopoDS_Shape> Splits(in TopoDS_Shape S, TopAbs_State ToBuild)
+        public override NCollection_List<Shape> Splits(in Shape S, Containment ToBuild)
         {
-            count("Splits " + S.ShapeType() + " " + ToBuild);
+            count("Splits " + Kerf.Engine.Foundation.OcctTypeNames.Of(S.ShapeType()) + " " + Kerf.Engine.Foundation.OcctTypeNames.Of(ToBuild));
             return new();
         }
 
-        public override NCollection_List<TopoDS_Shape> Merged(in TopoDS_Shape S, TopAbs_State ToBuild)
+        public override NCollection_List<Shape> Merged(in Shape S, Containment ToBuild)
         {
-            count("Merged " + S.ShapeType() + " " + ToBuild);
+            count("Merged " + Kerf.Engine.Foundation.OcctTypeNames.Of(S.ShapeType()) + " " + Kerf.Engine.Foundation.OcctTypeNames.Of(ToBuild));
             return new();
         }
 
-        public override NCollection_List<TopoDS_Shape> NewFaces(int I)
+        public override NCollection_List<Shape> NewFaces(int I)
         {
             count("NewFaces");
             return new();
         }
 
-        public override NCollection_List<TopoDS_Shape> NewEdges(int I)
+        public override NCollection_List<Shape> NewEdges(int I)
         {
             count("NewEdges");
             return new();
@@ -79,19 +81,19 @@ public class ChFi3dBuilderNativeTests
     /// </summary>
     internal readonly record struct CaseEdge(int K, double R1, double R2 = -1, int Mode = 0);
 
-    internal static TopoDS_Edge EdgeOf(in TopoDS_Shape S, int k)
+    internal static Edge EdgeOf(in Shape S, int k)
     {
-        NCollection_IndexedMap<TopoDS_Shape> M = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapes(S, TopAbs_EDGE, M);
-        return TopoDS.Edge(M[k]);
+        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        Exploration.MapShapes(S, ShapeType.Edge, M);
+        return ShapeCasts.Edge(M[k]);
     }
 
     /// <summary>tools/dsrec's FaceOf: the first face of the edge in TopExp::MapShapesAndAncestors(S, EDGE, FACE).</summary>
-    internal static TopoDS_Face FaceOf(in TopoDS_Shape S, in TopoDS_Edge E)
+    internal static Face FaceOf(in Shape S, in Edge E)
     {
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> M = new(TopTools_ShapeMapHasher.Instance);
-        TopExp.MapShapesAndAncestors(S, TopAbs_EDGE, TopAbs_FACE, M);
-        return TopoDS.Face(M.FindFromKey(E).First());
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> M = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(S, ShapeType.Edge, ShapeType.Face, M);
+        return ShapeCasts.Face(M.FindFromKey(E).First());
     }
 
     /// <summary>The case's operation (true: chamfer) and edges, as tools/dsrec records them in the status line.</summary>
@@ -119,7 +121,7 @@ public class ChFi3dBuilderNativeTests
     /// BRepFilletAPI_MakeFillet's Add (constant or evolving radius) and Build on the port's ChFi3d_FilBuilder, with the
     /// recording reconstruction in place of TopOpeBRepBuild_HBuilder.
     /// </summary>
-    internal static (ChFi3d_FilBuilder Builder, RecordingReconstruction Rec) RunFillet(in TopoDS_Shape S,
+    internal static (ChFi3d_FilBuilder Builder, RecordingReconstruction Rec) RunFillet(in Shape S,
                                                                                        IEnumerable<CaseEdge> theEdges)
     {
         ChFi3d_FilBuilder aB = new(S);
@@ -127,7 +129,7 @@ public class ChFi3dBuilderNativeTests
         aB.myCoup = aRec;
         foreach (CaseEdge e in theEdges)
         {
-            TopoDS_Edge E = EdgeOf(S, e.K);
+            Edge E = EdgeOf(S, e.K);
             aB.Add(E);
             int IC = aB.Contains(E, out int IinC);
             if (IC != 0)
@@ -146,7 +148,7 @@ public class ChFi3dBuilderNativeTests
     }
 
     /// <summary>BRepFilletAPI_MakeChamfer's Add, AddDA and Build on the port's ChFi3d_ChBuilder.</summary>
-    internal static (ChFi3d_ChBuilder Builder, RecordingReconstruction Rec) RunChamfer(in TopoDS_Shape S,
+    internal static (ChFi3d_ChBuilder Builder, RecordingReconstruction Rec) RunChamfer(in Shape S,
                                                                                        IEnumerable<CaseEdge> theEdges)
     {
         ChFi3d_ChBuilder aB = new(S);
@@ -154,7 +156,7 @@ public class ChFi3dBuilderNativeTests
         aB.myCoup = aRec;
         foreach (CaseEdge e in theEdges)
         {
-            TopoDS_Edge E = EdgeOf(S, e.K);
+            Edge E = EdgeOf(S, e.K);
             if (e.Mode == 1)
             {
                 aB.AddDA(e.R1, e.R2 * M_PI / 180.0, E, FaceOf(S, E));
@@ -174,7 +176,7 @@ public class ChFi3dBuilderNativeTests
 
     internal static (ChFi3d_Builder Builder, RecordingReconstruction Rec) Run(DsCase theCase)
     {
-        TopoDS_Shape anInput = theCase.Input;
+        Shape anInput = theCase.Input;
         (bool aChamfer, List<CaseEdge> anEdges) = CaseEdges(theCase);
         if (aChamfer)
         {
@@ -248,7 +250,7 @@ public class ChFi3dBuilderNativeTests
     /// </summary>
     internal static ChFi3d_Builder RunEndToEnd(DsCase theCase)
     {
-        TopoDS_Shape anInput = theCase.Input;
+        Shape anInput = theCase.Input;
         (bool aChamfer, List<CaseEdge> anEdges) = CaseEdges(theCase);
         ChFi3d_Builder aB;
         if (aChamfer)
@@ -256,7 +258,7 @@ public class ChFi3dBuilderNativeTests
             ChFi3d_ChBuilder c = new(anInput);
             foreach (CaseEdge e in anEdges)
             {
-                TopoDS_Edge E = EdgeOf(anInput, e.K);
+                Edge E = EdgeOf(anInput, e.K);
                 if (e.Mode == 1)
                 {
                     c.AddDA(e.R1, e.R2 * M_PI / 180.0, E, FaceOf(anInput, E));
@@ -277,7 +279,7 @@ public class ChFi3dBuilderNativeTests
             ChFi3d_FilBuilder f = new(anInput);
             foreach (CaseEdge e in anEdges)
             {
-                TopoDS_Edge E = EdgeOf(anInput, e.K);
+                Edge E = EdgeOf(anInput, e.K);
                 f.Add(E);
                 int IC = f.Contains(E, out int IinC);
                 double r1 = e.R1, r2 = e.R2 < 0 ? e.R1 : e.R2;
@@ -324,16 +326,16 @@ public class ChFi3dBuilderNativeTests
         }
         ChFi3d_Builder aB = RunEndToEnd(aCase);
         Assert.True(aB.IsDone(), theName);
-        TopoDS_Shape aMine = aB.Shape();
+        Shape aMine = aB.Shape();
         bool aValid = new BRepCheck_Analyzer(aMine).IsValid();
         // attributed to the reconstruction (unit 7R), whose recording has no native result for these unit 7N2 cases
         Assert.True(aValid != KnownInvalidResults.Contains(theName), theName + " " + ReconComparison.Faults(aMine));
         if (!NativeDegenerate.Contains(theName) && ReconRecordings.Cases.TryGetValue(theName, out ReconCase? aRecon)
-            && aRecon.Result is TopoDS_Shape aNative)
+            && aRecon.Result is Shape aNative)
         {
             Assert.Equal(ReconComparison.Volume(aNative), ReconComparison.Volume(aMine), 1.0e-6 * Math.Abs(ReconComparison.Volume(aNative)) + 1.0e-9);
             Assert.Equal(ReconComparison.Area(aNative), ReconComparison.Area(aMine), 1.0e-6 * ReconComparison.Area(aNative));
-            foreach (TopAbs_ShapeEnum T in new[] { TopAbs_SOLID, TopAbs_SHELL, TopAbs_FACE, TopAbs_EDGE, TopAbs_VERTEX })
+            foreach (ShapeType T in new[] { ShapeType.Solid, ShapeType.Shell, ShapeType.Face, ShapeType.Edge, ShapeType.Vertex })
             {
                 Assert.Equal(ReconComparison.Count(aNative, T), ReconComparison.Count(aMine, T));
             }

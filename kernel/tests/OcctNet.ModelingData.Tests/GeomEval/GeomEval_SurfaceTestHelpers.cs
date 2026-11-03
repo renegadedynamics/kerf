@@ -41,24 +41,24 @@ internal static class GeomEval_SurfaceTestHelpers
         return aP;
     }
 
-    public static Geom_Surface.ResD1 SphereEvalD1(in CoordinateSystem thePos, double theR, double theU, double theV)
+    public static Surface.ResD1 SphereEvalD1(in CoordinateSystem thePos, double theR, double theU, double theV)
     {
-        Geom_Surface.ResD1 aR;
+        Surface.ResD1 aR;
         global::Kerf.Engine.Geometry.ElSLib.SphereD1(theU, theV, thePos, theR, out aR.Point, out aR.D1U, out aR.D1V);
         return aR;
     }
 
-    public static Geom_Surface.ResD2 SphereEvalD2(in CoordinateSystem thePos, double theR, double theU, double theV)
+    public static Surface.ResD2 SphereEvalD2(in CoordinateSystem thePos, double theR, double theU, double theV)
     {
-        Geom_Surface.ResD2 aR;
+        Surface.ResD2 aR;
         global::Kerf.Engine.Geometry.ElSLib.SphereD2(theU, theV, thePos, theR, out aR.Point, out aR.D1U, out aR.D1V,
                         out aR.D2U, out aR.D2V, out aR.D2UV);
         return aR;
     }
 
-    public static Geom_Surface.ResD3 SphereEvalD3(in CoordinateSystem thePos, double theR, double theU, double theV)
+    public static Surface.ResD3 SphereEvalD3(in CoordinateSystem thePos, double theR, double theU, double theV)
     {
-        Geom_Surface.ResD3 aR;
+        Surface.ResD3 aR;
         global::Kerf.Engine.Geometry.ElSLib.SphereD3(theU, theV, thePos, theR, out aR.Point, out aR.D1U, out aR.D1V,
                         out aR.D2U, out aR.D2V, out aR.D2UV, out aR.D3U, out aR.D3V, out aR.D3UUV, out aR.D3UVV);
         return aR;

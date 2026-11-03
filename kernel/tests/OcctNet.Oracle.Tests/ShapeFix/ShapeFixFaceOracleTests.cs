@@ -1,7 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -59,17 +64,17 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
         return aText;
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3));
+        Assert.True(BrepTools.Write(theShape, aFile, true, false, FormatVersion.FormatVersion_VERSION_3));
         string aText = File.ReadAllText(aFile);
         File.Delete(aFile);
         return aText;
     }
 
     /// <summary>Native writes the shape; both read it. Null if native OCCT can't write or read it.</summary>
-    private (N.TopoDS_Shape N, TopoDS_Shape P)? Read(N.TopoDS_Shape theShape)
+    private (N.TopoDS_Shape N, Shape P)? Read(N.TopoDS_Shape theShape)
     {
         string aFile = NewFile();
         if (!N.BRepTools.Write(theShape, aFile, true, false, N.TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3))
@@ -84,9 +89,9 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
                 return null;
             }
         }
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile), aFile);
+        Assert.True(BrepTools.Read(out Shape aPShape, aFile), aFile);
         File.Delete(aFile);
-        if (!aPShape.IsNull())
+        if (!aPShape.IsNull)
         {
             aPShape.TShape()!.FreezeGraph(); // a caller's shape
         }
@@ -170,7 +175,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
         return aFix.Result();
     }
 
-    private static TopoDS_Shape PortFix(in TopoDS_Face theFace, Mode theMode, out bool theDone, out int theStatus)
+    private static Shape PortFix(in Face theFace, Mode theMode, out bool theDone, out int theStatus)
     {
         var aFix = new ShapeFix_Face();
         theDone = false;
@@ -187,12 +192,12 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
                 break;
             default:
             {
-                aFix.Init(BRep_Tool.Surface(theFace)!, 1.0e-7, theMode == Mode.SurfaceAndWires);
-                for (var anIt = new TopoDS_Iterator(theFace); anIt.More(); anIt.Next())
+                aFix.Init(Tool.Surface(theFace)!, 1.0e-7, theMode == Mode.SurfaceAndWires);
+                for (var anIt = new Iterator(theFace); anIt.More(); anIt.Next())
                 {
-                    if (anIt.Value().ShapeType() == TopAbs_ShapeEnum.TopAbs_WIRE)
+                    if (anIt.Value().ShapeType() == ShapeType.Wire)
                     {
-                        aFix.Add(TopoDS.Wire(anIt.Value()));
+                        aFix.Add(ShapeCasts.Wire(anIt.Value()));
                     }
                 }
                 theDone = aFix.Perform();
@@ -200,14 +205,14 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
             }
         }
         theStatus = PortStatus(aFix);
-        TopoDS_Shape aResult = aFix.Result();
-        Assert.True(aResult.IsNull() || aResult.TShape()!.IsFrozen);
+        Shape aResult = aFix.Result();
+        Assert.True(aResult.IsNull || aResult.TShape()!.IsFrozen);
         return aResult;
     }
 
     private void Compare(N.TopoDS_Shape theFace, string theWhat, Mode theMode)
     {
-        if (Read(theFace) is not (N.TopoDS_Shape aNS, TopoDS_Shape aPS) || aPS.ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE)
+        if (Read(theFace) is not (N.TopoDS_Shape aNS, Shape aPS) || aPS.ShapeType() != ShapeType.Face)
         {
             return;
         }
@@ -233,13 +238,13 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
             aNErr = ErrorOf(e);
         }
 
-        TopoDS_Shape aPRes = new();
+        Shape aPRes = new();
         bool aPDone = false;
         int aPStatus = 0;
         string? aPErr = null;
         try
         {
-            aPRes = PortFix(TopoDS.Face(aPS), theMode, out aPDone, out aPStatus);
+            aPRes = PortFix(ShapeCasts.Face(aPS), theMode, out aPDone, out aPStatus);
         }
         catch (FailureException e)
         {
@@ -273,9 +278,9 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
         {
             myDifferences.Add($"{w}: status {aNDone}/{aNStatus:X} natively, {aPDone}/{aPStatus:X} in the port");
         }
-        if (aNRes!.IsNull() || aPRes.IsNull())
+        if (aNRes!.IsNull() || aPRes.IsNull)
         {
-            if (aNRes.IsNull() == aPRes.IsNull())
+            if (aNRes.IsNull() == aPRes.IsNull)
             {
                 myIdentical++;
             }
@@ -308,7 +313,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
             // both read from the native result's text: the canonical comparison of decision 581
             string aFile = NewFile();
             File.WriteAllText(aFile, aNT);
-            Assert.True(BRepTools.Read(out TopoDS_Shape aNP, aFile));
+            Assert.True(BrepTools.Read(out Shape aNP, aFile));
             File.Delete(aFile);
             CanonicalComparison aCanon = CanonicalShapeComparer.Compare(aNP, aPRes, new CanonicalOptions { CheckValidity = false });
             if (Environment.GetEnvironmentVariable("OCCTNET_SFF_DUMP") is string aDump && !aCanon.IsIdentical)

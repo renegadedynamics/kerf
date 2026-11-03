@@ -4,6 +4,7 @@
 // - TestEdge.test_make_spline_failure, test_make_spline_approx_failure: patch OCCT classes with mocks.
 // - TestEdgeParamAt.test_param_at_point_fallback_returns_native_parameter_in_both_modes,
 //   test_param_at_point_search_fallback, test_param_at_point_not_found: patch OCCT classes with mocks.
+using Kerf.Engine.Topology;
 using Occt;
 using static Build123d.Operations;
 
@@ -518,7 +519,7 @@ public class EdgeTests
         sewing.Add(plate.Wrapped);
         sewing.Add(wall.Wrapped);
         sewing.Perform();
-        var shell = new Shell(TopoDS.Shell(sewing.SewedShape()));
+        var shell = new Shell(ShapeCasts.Shell(sewing.SewedShape()));
         var shared = shell.Edges().Where(e => e.GeomType == GeomType.Line && Math.Abs(e.Center().Y) < 1e-6).ToList();
         Assert.Single(shared);
         Assert.Equal(Convexity.Saddle, shared[0].Convexity);

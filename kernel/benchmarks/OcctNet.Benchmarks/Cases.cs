@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Reflection;
 using Occt;
 
@@ -36,9 +39,9 @@ public static class Cases
     private static string NewFile(string theName)
         => Path.Combine(TheDirectory.Value, $"{Interlocked.Increment(ref theFileNumber)}-{theName.Replace(' ', '_')}.brep");
 
-    public static TopoDS_Shape PortRead(string theFile)
+    public static Shape PortRead(string theFile)
     {
-        if (!BRepTools.Read(out TopoDS_Shape aShape, theFile))
+        if (!BrepTools.Read(out Shape aShape, theFile))
         {
             throw new InvalidOperationException("cannot read " + theFile);
         }
@@ -46,7 +49,7 @@ public static class Cases
     }
 
     /// <summary>The viewer's deflection: 0.1% of the bounding box's diagonal.</summary>
-    public static double ViewerDeflection(in TopoDS_Shape theShape)
+    public static double ViewerDeflection(in Shape theShape)
     {
         var aBox = new Box();
         BRepBndLib.Add(theShape, ref aBox, true);
@@ -70,7 +73,7 @@ public static class Cases
 
     private static Case Make(string theName, string theF1)
     {
-        TopoDS_Shape aShape = PortRead(theF1);
+        Shape aShape = PortRead(theF1);
         return new Case(theName, theF1, ViewerDeflection(aShape), MeshExtraction.Faces(aShape).Count);
     }
 
@@ -78,15 +81,15 @@ public static class Cases
     private static string F1OfFile(string thePath)
     {
         string aFile = NewFile(Path.GetFileNameWithoutExtension(thePath));
-        BRepTools.Write(BRepTools.Cleaned(PortRead(thePath)), aFile, false, false, TopTools_FormatVersion.TopTools_FormatVersion_CURRENT);
+        BrepTools.Write(BrepTools.Cleaned(PortRead(thePath)), aFile, false, false, FormatVersion.FormatVersion_CURRENT);
         return aFile;
     }
 
 
     /// <summary>What Bento's viewer does with the port: mesh (a copy of the frozen input) and extract.</summary>
-    public static MeshBuffers PortMeshAndExtract(in TopoDS_Shape theShape, double theDeflection, bool theParallel)
+    public static MeshBuffers PortMeshAndExtract(in Shape theShape, double theDeflection, bool theParallel)
     {
-        TopoDS_Shape aMeshed = new BRepMesh_IncrementalMesh(theShape, theDeflection, false, Angle, theParallel).Shape();
+        Shape aMeshed = new BRepMesh_IncrementalMesh(theShape, theDeflection, false, Angle, theParallel).Shape();
         return MeshExtraction.Extract(aMeshed, theDeflection, Angle);
     }
 }

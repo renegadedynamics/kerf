@@ -3,15 +3,20 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepBuilderAPI_FaceError;
-using static Occt.Extrema_ExtFlag;
+using static Kerf.Engine.Extrema.ExtFlag;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.JoinKind;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -34,18 +39,18 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
     private JoinKind myJoin;
     private bool myIsOpenResult;
     private bool myIsToApprox;
-    private TopoDS_Face myFace = new();
-    private readonly NCollection_List<TopoDS_Shape> myWires = new();
+    private Face myFace = new();
+    private readonly NCollection_List<Shape> myWires = new();
     private readonly NCollection_List<BRepFill_OffsetWire> myLeft = new();
     private readonly NCollection_List<BRepFill_OffsetWire> myRight = new();
 
-    private static bool NeedsConvertion(in TopoDS_Wire theWire)
+    private static bool NeedsConvertion(in Wire theWire)
     {
-        TopoDS_Iterator anIter = new(theWire);
+        Iterator anIter = new(theWire);
         for (; anIter.More(); anIter.Next())
         {
-            TopoDS_Edge anEdge = TopoDS.Edge(anIter.Value());
-            BRepAdaptor_Curve aBAcurve = new(anEdge);
+            Edge anEdge = ShapeCasts.Edge(anIter.Value());
+            EdgeCurveAdaptor aBAcurve = new(anEdge);
             CurveKind aType = aBAcurve.GetType();
             if (aType != Line && aType != Circle)
             {
@@ -59,29 +64,29 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
     /// Converts each wire of the face into a contour of arcs of circles and segments only (with new 3D curves); wires
     /// already made of lines and circles are kept. The result is frozen.
     /// </summary>
-    public static TopoDS_Face ConvertFace(in TopoDS_Face theFace, double theAngleTolerance)
+    public static Face ConvertFace(in Face theFace, double theAngleTolerance)
     {
-        TopoDS_Face aNewFace = InternalConvertFace(theFace, theAngleTolerance);
+        Face aNewFace = InternalConvertFace(theFace, theAngleTolerance);
         aNewFace.TShape()?.FreezeGraph();
         return aNewFace;
     }
 
     /// <summary><see cref="ConvertFace"/> without freezing, for <see cref="Perform"/>.</summary>
-    internal static TopoDS_Face InternalConvertFace(in TopoDS_Face theFace, double theAngleTolerance)
+    internal static Face InternalConvertFace(in Face theFace, double theAngleTolerance)
     {
-        TopAbs_Orientation anOr = theFace.Orientation();
-        TopoDS_Face aFace = theFace;
-        aFace.Orientation(TopAbs_FORWARD);
-        TopoDS_Face aNewFace = TopoDS.Face(aFace.EmptyCopied());
-        BRep_Builder aBB = new();
-        TopoDS_Iterator anIter = new(aFace);
+        Orientation anOr = theFace.Orientation();
+        Face aFace = theFace;
+        aFace.Orientation(Forward);
+        Face aNewFace = ShapeCasts.Face(aFace.EmptyCopied());
+        BrepBuilder aBB = new();
+        Iterator anIter = new(aFace);
         for (; anIter.More(); anIter.Next())
         {
-            TopoDS_Wire aWire = TopoDS.Wire(anIter.Value());
+            Wire aWire = ShapeCasts.Wire(anIter.Value());
             if (NeedsConvertion(aWire))
             {
-                TopAbs_Orientation anOrOfWire = aWire.Orientation();
-                aWire.Orientation(TopAbs_FORWARD);
+                Orientation anOrOfWire = aWire.Orientation();
+                aWire.Orientation(Forward);
                 // OCCT.NET: the converted wire is new; BuildCurves3d writes into it (decision 915)
                 aWire = BRepAlgo.InternalConvertWire(aWire, theAngleTolerance, aFace);
                 BRepLib.BuildCurves3d(aWire);
@@ -103,7 +108,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The offset of the wires of the planar face <paramref name="Spine"/>.</summary>
-    public BRepOffsetAPI_MakeOffset(in TopoDS_Face Spine, JoinKind Join = Arc, bool IsOpenResult = false)
+    public BRepOffsetAPI_MakeOffset(in Face Spine, JoinKind Join = Arc, bool IsOpenResult = false)
     {
         Init(Spine, Join, IsOpenResult);
     }
@@ -113,22 +118,22 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
     /// parallels around the salient vertices: arcs of circles (GeomAbs_Arc) or the adjacent parallels prolonged to
     /// their intersection (GeomAbs_Intersection).
     /// </summary>
-    public void Init(in TopoDS_Face Spine, JoinKind Join = Arc, bool IsOpenResult = false)
+    public void Init(in Face Spine, JoinKind Join = Arc, bool IsOpenResult = false)
     {
         myFace = Spine;
         myIsInitialized = true;
         myJoin = Join;
         myIsOpenResult = IsOpenResult;
         myIsToApprox = false;
-        TopExp_Explorer exp = new();
-        for (exp.Init(myFace, TopAbs_WIRE); exp.More(); exp.Next())
+        Explorer exp = new();
+        for (exp.Init(myFace, ShapeType.Wire); exp.More(); exp.Next())
         {
             myWires.Append(exp.Current());
         }
     }
 
     /// <summary>The offset of the planar wire <paramref name="Spine"/>.</summary>
-    public BRepOffsetAPI_MakeOffset(in TopoDS_Wire Spine, JoinKind Join = Arc, bool IsOpenResult = false)
+    public BRepOffsetAPI_MakeOffset(in Wire Spine, JoinKind Join = Arc, bool IsOpenResult = false)
     {
         myWires.Append(Spine);
         myIsInitialized = true;
@@ -154,14 +159,14 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Adds a wire to offset.</summary>
-    public void AddWire(in TopoDS_Wire Spine)
+    public void AddWire(in Wire Spine)
     {
         myIsInitialized = true;
         myWires.Append(Spine);
     }
 
-    private static void BuildDomains(ref TopoDS_Face myFace,
-                                     NCollection_List<TopoDS_Shape> WorkWires,
+    private static void BuildDomains(ref Face myFace,
+                                     NCollection_List<Shape> WorkWires,
                                      NCollection_List<BRepFill_OffsetWire> myAlgos,
                                      JoinKind myJoin,
                                      bool myIsOpenResult,
@@ -169,33 +174,33 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
                                      ref bool isWasReversed)
     {
         BRepAlgo_FaceRestrictor FR = new();
-        TopoDS_Vertex VF, VL;
-        NCollection_List<TopoDS_Shape> LOW = new();
-        BRep_Builder B = new();
+        Vertex VF, VL;
+        NCollection_List<Shape> LOW = new();
+        BrepBuilder B = new();
 
-        if (myFace.IsNull())
+        if (myFace.IsNull)
         {
-            myFace = new BRepBuilderAPI_MakeFace(TopoDS.Wire(WorkWires.First()), true).Face();
-            if (myFace.IsNull())
+            myFace = new BRepBuilderAPI_MakeFace(ShapeCasts.Wire(WorkWires.First()), true).Face();
+            if (myFace.IsNull)
             {
                 throw new NotDoneException("BRepOffsetAPI_MakeOffset : the wire is not planar");
             }
         }
         //  Modified by Sergey KHROMOV - Thu Apr 26 16:04:43 2001 Begin
-        TopExp_Explorer anExp = new(myFace, TopAbs_WIRE);
-        TopoDS_Shape aWire1 = WorkWires.First();
-        TopoDS_Shape aWire2;
+        Explorer anExp = new(myFace, ShapeType.Wire);
+        Shape aWire1 = WorkWires.First();
+        Shape aWire2;
         if (anExp.More())
         {
             aWire2 = anExp.Current();
             if ((aWire1.Orientation() == aWire2.Orientation() && isPositive)
-                || (aWire1.Orientation() == TopAbs.Complement(aWire2.Orientation()) && !isPositive))
+                || (aWire1.Orientation() == global::Kerf.Engine.Topology.TopAbs.Complement(aWire2.Orientation()) && !isPositive))
             {
-                NCollection_List<TopoDS_Shape> LWires = new();
-                NCollection_List<TopoDS_Shape>.Iterator itl1 = new();
+                NCollection_List<Shape> LWires = new();
+                NCollection_List<Shape>.Iterator itl1 = new();
                 for (itl1.Initialize(WorkWires); itl1.More(); itl1.Next())
                 {
-                    TopoDS_Shape W = itl1.Value();
+                    Shape W = itl1.Value();
                     LWires.Append(W.Reversed());
                 }
                 isWasReversed = true;
@@ -209,16 +214,16 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
         //====================================================
         // Construction of faces limited by closed wires.
         //====================================================
-        NCollection_List<TopoDS_Shape>.Iterator itl = new(WorkWires);
+        NCollection_List<Shape>.Iterator itl = new(WorkWires);
         for (; itl.More(); itl.Next())
         {
-            TopoDS_Wire W = TopoDS.Wire(itl.Value());
+            Wire W = ShapeCasts.Wire(itl.Value());
             if (W.Closed())
             {
                 FR.Add(W);
                 continue;
             }
-            TopExp.Vertices(W, out VF, out VL);
+            Exploration.Vertices(W, out VF, out VL);
             if (VF.IsSame(VL))
             {
                 FR.Add(W);
@@ -235,7 +240,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
         {
             throw new NotDoneException("BRepOffsetAPI_MakeOffset : Build Domains");
         }
-        NCollection_List<TopoDS_Shape> Faces = new();
+        NCollection_List<Shape> Faces = new();
         for (; FR.More(); FR.Next())
         {
             Faces.Append(FR.InternalCurrent());
@@ -246,9 +251,9 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
         //===========================================
         if (Faces.IsEmpty())
         {
-            TopoDS_Shape aLocalShape = myFace.EmptyCopied();
-            TopoDS_Face F = TopoDS.Face(aLocalShape);
-            NCollection_List<TopoDS_Shape>.Iterator itW = new(LOW);
+            Shape aLocalShape = myFace.EmptyCopied();
+            Face F = ShapeCasts.Face(aLocalShape);
+            NCollection_List<Shape>.Iterator itW = new(LOW);
             for (; itW.More(); itW.Next())
             {
                 B.Add(F, itW.Value());
@@ -261,31 +266,31 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
         //====================================================
         // Classification of open wires.
         //====================================================
-        NCollection_List<TopoDS_Shape>.Iterator itF = new();
+        NCollection_List<Shape>.Iterator itF = new();
         for (itF.Initialize(Faces); itF.More(); itF.Next())
         {
-            TopoDS_Face F = TopoDS.Face(itF.Value());
-            BRepAdaptor_Surface S = new(F, false);
-            double Tol = BRep_Tool.Tolerance(F);
+            Face F = ShapeCasts.Face(itF.Value());
+            FaceSurfaceAdaptor S = new(F, false);
+            double Tol = Tool.Tolerance(F);
 
             BRepTopAdaptor_FClass2d CL = new(F, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-            NCollection_List<TopoDS_Shape>.Iterator itW = new(LOW);
+            NCollection_List<Shape>.Iterator itW = new(LOW);
             while (itW.More())
             {
-                TopoDS_Wire W = TopoDS.Wire(itW.Value());
+                Wire W = ShapeCasts.Wire(itW.Value());
                 //=======================================================
                 // Choice of a point on the wire. + projection on the face.
                 //=======================================================
-                TopExp_Explorer exp = new(W, TopAbs_VERTEX);
-                TopoDS_Vertex V = TopoDS.Vertex(exp.Current());
+                Explorer exp = new(W, ShapeType.Vertex);
+                Vertex V = ShapeCasts.Vertex(exp.Current());
                 Point2D PV = new();
-                Point3D P3d = BRep_Tool.Pnt(V);
-                Extrema_ExtPS ExtPS = new(P3d, S, Tol, Tol, Extrema_ExtFlag_MIN);
+                Point3D P3d = Tool.Pnt(V);
+                ExtPS ExtPS = new(P3d, S, Tol, Tol, ExtFlag_MIN);
                 double Dist2Min = global::Kerf.Engine.Foundation.Precision.Infinite();
                 // OCCT declares Found as a double
                 bool Found = false;
-                for (int ie = 1; ie <= ExtPS.NbExt(); ie++)
+                for (int ie = 1; ie <= ExtPS.ExtCount; ie++)
                 {
                     double X, Y;
                     if (ExtPS.SquareDistance(ie) < Dist2Min)
@@ -296,7 +301,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
                         PV.SetCoord(X, Y);
                     }
                 }
-                if (Found && (CL.Perform(PV) == TopAbs_IN))
+                if (Found && (CL.Perform(PV) == In))
                 {
                     // The face that contains a wire is found and it is removed from the list
                     B.Add(F, W);
@@ -314,7 +319,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
         //========================================
         for (itF.Initialize(Faces); itF.More(); itF.Next())
         {
-            BRepFill_OffsetWire Algo = new(TopoDS.Face(itF.Value()), myJoin, myIsOpenResult);
+            BRepFill_OffsetWire Algo = new(ShapeCasts.Face(itF.Value()), myJoin, myIsOpenResult);
             myAlgos.Append(Algo);
         }
     }
@@ -334,14 +339,14 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
             if (myIsToApprox)
             {
                 double aTol = 0.1;
-                if (myFace.IsNull())
+                if (myFace.IsNull)
                 {
-                    TopoDS_Face aFace = new();
+                    Face aFace = new();
                     bool OnlyPlane = true;
-                    NCollection_List<TopoDS_Shape>.Iterator anItl = new(myWires);
+                    NCollection_List<Shape>.Iterator anItl = new(myWires);
                     for (; anItl.More(); anItl.Next())
                     {
-                        BRepBuilderAPI_MakeFace aFaceMaker = new(TopoDS.Wire(anItl.Value()), OnlyPlane);
+                        BRepBuilderAPI_MakeFace aFaceMaker = new(ShapeCasts.Wire(anItl.Value()), OnlyPlane);
                         if (aFaceMaker.Error() == BRepBuilderAPI_FaceDone)
                         {
                             aFace = aFaceMaker.Face();
@@ -350,10 +355,10 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
                     }
                     for (anItl.Initialize(myWires); anItl.More(); anItl.Next())
                     {
-                        TopoDS_Wire aWire = TopoDS.Wire(anItl.Value());
+                        Wire aWire = ShapeCasts.Wire(anItl.Value());
                         if (NeedsConvertion(aWire))
                         {
-                            TopoDS_Wire aNewWire = BRepAlgo.InternalConvertWire(aWire, aTol, aFace);
+                            Wire aNewWire = BRepAlgo.InternalConvertWire(aWire, aTol, aFace);
                             BRepLib.BuildCurves3d(aNewWire);
                             aNewWire.Orientation(aWire.Orientation());
                             anItl.ChangeValue() = aNewWire;
@@ -365,7 +370,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
                     myFace = InternalConvertFace(myFace, aTol);
                     BRepLib.BuildCurves3d(myFace);
                     myWires.Clear();
-                    TopoDS_Iterator anIter = new(myFace);
+                    Iterator anIter = new(myFace);
                     for (; anIter.More(); anIter.Next())
                     {
                         myWires.Append(anIter.Value());
@@ -375,8 +380,8 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
 
             int i = 1;
             NCollection_List<BRepFill_OffsetWire>.Iterator itOW = new();
-            TopoDS_Compound Res = new();
-            BRep_Builder B = new();
+            Compound Res = new();
+            BrepBuilder B = new();
             B.MakeCompound(ref Res);
             myLastIsLeft = (Offset <= 0);
 
@@ -394,7 +399,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
                 {
                     BRepFill_OffsetWire Algo = itOW.Value();
                     Algo.Perform(Math.Abs(Offset), Alt);
-                    if (Algo.IsDone() && !Algo.InternalShape().IsNull())
+                    if (Algo.IsDone() && !Algo.InternalShape().IsNull)
                     {
                         B.Add(Res, isWasReversed ? Algo.InternalShape().Reversed() : Algo.InternalShape());
                         if (i == 1)
@@ -420,7 +425,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
                     BRepFill_OffsetWire Algo = itOW.Value();
                     Algo.Perform(Offset, Alt);
 
-                    if (Algo.IsDone() && !Algo.InternalShape().IsNull())
+                    if (Algo.IsDone() && !Algo.InternalShape().IsNull)
                     {
                         B.Add(Res, isWasReversed ? Algo.InternalShape().Reversed() : Algo.InternalShape());
                         if (i == 1)
@@ -438,7 +443,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
                 myShape = Res;
             }
 
-            if (myShape.IsNull())
+            if (myShape.IsNull)
             {
                 NotDone();
             }
@@ -448,7 +453,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
             }
         }
         catch (Exception anException) when (anException is FailureException or NullReferenceException
-                                            && anException is not (ImmutableObjectException or TopoDS_LockedShape))
+                                            && anException is not (ImmutableObjectException or LockedShapeException))
         {
             // OCCT catches Standard_Failure; with the signals Draw and build123d.NET set, an access violation (the
             // medial axis's null bisector, occt-issues.md) arrives as one: the port's NullReferenceException
@@ -470,7 +475,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The shapes of the last parallel generated by the edge or vertex <paramref name="S"/> of a spine.</summary>
-    internal override NCollection_List<TopoDS_Shape> InternalGenerated(in TopoDS_Shape S)
+    internal override NCollection_List<Shape> InternalGenerated(in Shape S)
     {
         myGenerated.Clear();
         NCollection_List<BRepFill_OffsetWire>.Iterator itOW = new();
@@ -483,10 +488,10 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
         for (itOW.Initialize(Algos); itOW.More(); itOW.Next())
         {
             BRepFill_OffsetWire OW = itOW.Value();
-            NCollection_List<TopoDS_Shape> L;
-            L = new NCollection_List<TopoDS_Shape>(OW.InternalGeneratedShapes(S.Oriented(TopAbs_FORWARD)));
+            NCollection_List<Shape> L;
+            L = new NCollection_List<Shape>(OW.InternalGeneratedShapes(S.Oriented(Forward)));
             myGenerated.Append(L);
-            L = new NCollection_List<TopoDS_Shape>(OW.InternalGeneratedShapes(S.Oriented(TopAbs_REVERSED)));
+            L = new NCollection_List<Shape>(OW.InternalGeneratedShapes(S.Oriented(Reversed)));
             myGenerated.Append(L);
         }
         return myGenerated;

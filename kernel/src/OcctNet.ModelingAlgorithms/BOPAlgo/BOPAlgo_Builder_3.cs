@@ -4,24 +4,27 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
 using static Kerf.Engine.Foundation.Gravity;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
 /// <summary>Extends BOPAlgo_BuilderSolid with the solid to split and its own progress range, for the builder's parallel loop.</summary>
 internal sealed class BOPAlgo_SplitSolid : BOPAlgo_BuilderSolid, BOPTools_Parallel.ISolver
 {
-    private TopoDS_Solid mySolid = new(); //!< Solid to split
+    private Solid mySolid = new(); //!< Solid to split
     private ProgressRange myRange;
 
     //! Sets the solid
-    public void SetSolid(in TopoDS_Solid theSolid) => mySolid = theSolid;
+    public void SetSolid(in Solid theSolid) => mySolid = theSolid;
 
     //! Returns the solid
-    public TopoDS_Solid Solid() => mySolid;
+    public Solid Solid() => mySolid;
 
     //! Sets progress range
     public void SetProgressRange(ProgressRange theRange) => myRange = theRange;
@@ -52,7 +55,7 @@ public partial class BOPAlgo_Builder
         for (i = 0; i < aNbS; ++i)
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() == TopAbs_SOLID)
+            if (aSI.ShapeType() == ShapeType.Solid)
             {
                 break;
             }
@@ -64,7 +67,7 @@ public partial class BOPAlgo_Builder
 
         using var aPS = new ProgressScope(theRange, "Building splits of solids", 10);
         // Draft solids
-        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aDraftSolids = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, Shape> aDraftSolids = new(ShapeHasher.Instance);
         // Find all IN faces for all IN faces
         FillIn3DParts(aDraftSolids, aPS.Next(4));
         if (HasErrors())
@@ -82,26 +85,26 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>Builds the draft solids and finds the faces IN each solid (its own internal ones and others').</summary>
-    protected virtual void FillIn3DParts(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theDraftSolids, ProgressRange theRange)
+    protected virtual void FillIn3DParts(NCollection_DataMap<Shape, Shape> theDraftSolids, ProgressRange theRange)
     {
         using var aPS = new ProgressScope(theRange, null, 2);
 
         // Find all faces that are IN solids
 
         // Store boxes of the shapes into a map
-        NCollection_DataMap<TopoDS_Shape, Box> aShapeBoxMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, Box> aShapeBoxMap = new(ShapeHasher.Instance);
 
         // Fence map
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
 
         // Get all faces
-        NCollection_List<TopoDS_Shape> aLFaces = new();
+        NCollection_List<Shape> aLFaces = new();
 
         int i, aNbS = myDS!.NbSourceShapes();
         for (i = 0; i < aNbS; ++i)
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() != TopAbs_FACE)
+            if (aSI.ShapeType() != ShapeType.Face)
             {
                 continue;
             }
@@ -111,14 +114,14 @@ public partial class BOPAlgo_Builder
                 return;
             }
 
-            TopoDS_Shape aS = aSI.Shape();
+            Shape aS = aSI.Shape();
 
-            if (myImages.Find(aS, out NCollection_List<TopoDS_Shape> pLSIm))
+            if (myImages.Find(aS, out NCollection_List<Shape> pLSIm))
             {
-                NCollection_List<TopoDS_Shape>.Iterator aItLSIm = new(pLSIm);
+                NCollection_List<Shape>.Iterator aItLSIm = new(pLSIm);
                 for (; aItLSIm.More(); aItLSIm.Next())
                 {
-                    TopoDS_Shape aSIm = aItLSIm.Value();
+                    Shape aSIm = aItLSIm.Value();
                     if (aMFence.Add(aSIm))
                     {
                         aLFaces.Append(aSIm);
@@ -132,19 +135,19 @@ public partial class BOPAlgo_Builder
             }
         }
 
-        BRep_Builder aBB = new();
+        BrepBuilder aBB = new();
 
         // Get all solids
-        NCollection_List<TopoDS_Shape> aLSolids = new();
+        NCollection_List<Shape> aLSolids = new();
         // Keep INTERNAL faces of the solids
-        NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aSolidsIF = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aSolidsIF = new(ShapeHasher.Instance);
         // Draft solids
-        NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> aDraftSolid = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, Shape> aDraftSolid = new(ShapeHasher.Instance);
 
         for (i = 0; i < aNbS; ++i)
         {
             BOPDS_ShapeInfo aSI = myDS.ChangeShapeInfo(i);
-            if (aSI.ShapeType() != TopAbs_SOLID)
+            if (aSI.ShapeType() != ShapeType.Solid)
             {
                 continue;
             }
@@ -152,8 +155,8 @@ public partial class BOPAlgo_Builder
             {
                 return;
             }
-            TopoDS_Shape aS = aSI.Shape();
-            TopoDS_Solid aSolid = TopoDS.Solid(aS);
+            Shape aS = aSI.Shape();
+            Solid aSolid = ShapeCasts.Solid(aS);
             //
             // Bounding box for the solid aS
             ref Box aBoxS = ref aSI.ChangeBox();
@@ -163,10 +166,10 @@ public partial class BOPAlgo_Builder
             }
 
             // Build Draft Solid
-            NCollection_List<TopoDS_Shape> aLIF = new();
-            TopoDS_Solid aSD0 = new();
+            NCollection_List<Shape> aLIF = new();
+            Solid aSD0 = new();
             aBB.MakeSolid(ref aSD0);
-            TopoDS_Shape aSD = aSD0;
+            Shape aSD = aSD0;
             BuildDraftSolid(aSolid, ref aSD, aLIF);
 
             aLSolids.Append(aSD);
@@ -176,7 +179,7 @@ public partial class BOPAlgo_Builder
         }
 
         // Perform classification of the faces
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anInParts = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anInParts = new(ShapeHasher.Instance);
 
         BOPAlgo_Tools.ClassifyFaces(aLFaces,
                                     aLSolids,
@@ -195,10 +198,10 @@ public partial class BOPAlgo_Builder
             {
                 return;
             }
-            TopoDS_Solid aSolid = TopoDS.Solid(aDraftSolid.FindKey(i));
-            TopoDS_Solid aSDraft = TopoDS.Solid(aDraftSolid[i]);
-            NCollection_List<TopoDS_Shape> aLInFaces = anInParts.FindFromKey(aSDraft);
-            NCollection_List<TopoDS_Shape> aLInternal = aSolidsIF.Find(aSDraft);
+            Solid aSolid = ShapeCasts.Solid(aDraftSolid.FindKey(i));
+            Solid aSDraft = ShapeCasts.Solid(aDraftSolid[i]);
+            NCollection_List<Shape> aLInFaces = anInParts.FindFromKey(aSDraft);
+            NCollection_List<Shape> aLInternal = aSolidsIF.Find(aSDraft);
 
             int aNbIN = aLInFaces.Extent();
 
@@ -206,7 +209,7 @@ public partial class BOPAlgo_Builder
             {
                 bool bHasImage = false;
                 // Check if the shells of the solid have image
-                for (TopoDS_Iterator it = new(aSolid); it.More() && !bHasImage; it.Next())
+                for (Iterator it = new(aSolid); it.More() && !bHasImage; it.Next())
                 {
                     bHasImage = myImages.IsBound(it.Value());
                 }
@@ -224,9 +227,9 @@ public partial class BOPAlgo_Builder
             if (aNbInt != 0 || aNbIN != 0)
             {
                 // Combine the lists
-                NCollection_List<TopoDS_Shape> pLIN = myInParts.Bound(aSolid, new NCollection_List<TopoDS_Shape>());
+                NCollection_List<Shape> pLIN = myInParts.Bound(aSolid, new NCollection_List<Shape>());
 
-                NCollection_List<TopoDS_Shape>.Iterator aItLS = new(aLInFaces);
+                NCollection_List<Shape>.Iterator aItLS = new(aLInFaces);
                 for (; aItLS.More(); aItLS.Next())
                 {
                     pLIN.Append(aItLS.Value());
@@ -242,16 +245,16 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>Builds the draft solid of the solid from the images of its faces, collecting its internal faces.</summary>
-    protected void BuildDraftSolid(in TopoDS_Shape theSolid, ref TopoDS_Shape theDraftSolid, NCollection_List<TopoDS_Shape> theLIF)
+    protected void BuildDraftSolid(in Shape theSolid, ref Shape theDraftSolid, NCollection_List<Shape> theLIF)
     {
         bool bToReverse;
         int iFlag;
-        TopAbs_Orientation aOrF, aOrSh, aOrSd;
-        TopoDS_Iterator aIt1 = new(), aIt2 = new();
-        TopoDS_Shell aShD = new();
-        TopoDS_Shape aFx;
-        BRep_Builder aBB = new();
-        NCollection_List<TopoDS_Shape>.Iterator aItS = new();
+        Orientation aOrF, aOrSh, aOrSd;
+        Iterator aIt1 = new(), aIt2 = new();
+        Shell aShD = new();
+        Shape aFx;
+        BrepBuilder aBB = new();
+        NCollection_List<Shape>.Iterator aItS = new();
         //
         aOrSd = theSolid.Orientation();
         theDraftSolid.Orientation(aOrSd);
@@ -259,8 +262,8 @@ public partial class BOPAlgo_Builder
         aIt1.Initialize(theSolid);
         for (; aIt1.More(); aIt1.Next())
         {
-            TopoDS_Shape aSh = aIt1.Value();
-            if (aSh.ShapeType() != TopAbs_SHELL)
+            Shape aSh = aIt1.Value();
+            if (aSh.ShapeType() != ShapeType.Shell)
             {
                 continue; // mb internal edges,vertices
             }
@@ -273,12 +276,12 @@ public partial class BOPAlgo_Builder
             aIt2.Initialize(aSh);
             for (; aIt2.More(); aIt2.Next())
             {
-                TopoDS_Shape aF = aIt2.Value();
+                Shape aF = aIt2.Value();
                 aOrF = aF.Orientation();
                 //
                 if (myImages.IsBound(aF))
                 {
-                    NCollection_List<TopoDS_Shape> aLSp = myImages.Find(aF);
+                    NCollection_List<Shape> aLSp = myImages.Find(aF);
                     aItS.Initialize(aLSp);
                     for (; aItS.More(); aItS.Next())
                     {
@@ -287,7 +290,7 @@ public partial class BOPAlgo_Builder
                         if (myShapesSD.IsBound(aFx))
                         {
                             //
-                            if (aOrF == TopAbs_INTERNAL)
+                            if (aOrF == Internal)
                             {
                                 aFx.Orientation(aOrF);
                                 theLIF.Append(aFx);
@@ -307,7 +310,7 @@ public partial class BOPAlgo_Builder
                         else
                         {
                             aFx.Orientation(aOrF);
-                            if (aOrF == TopAbs_INTERNAL)
+                            if (aOrF == Internal)
                             {
                                 theLIF.Append(aFx);
                             }
@@ -322,7 +325,7 @@ public partial class BOPAlgo_Builder
                 //
                 else
                 {
-                    if (aOrF == TopAbs_INTERNAL)
+                    if (aOrF == Internal)
                     {
                         theLIF.Append(aF);
                     }
@@ -336,22 +339,22 @@ public partial class BOPAlgo_Builder
             //
             if (iFlag != 0)
             {
-                aShD.Closed(BRep_Tool.IsClosed(aShD));
+                aShD.Closed(Tool.IsClosed(aShD));
                 aBB.Add(theDraftSolid, aShD);
             }
         } // for (; aIt1.More(); aIt1.Next()) {
     }
 
     /// <summary>Builds the split solids from the draft solids and their IN faces.</summary>
-    protected void BuildSplitSolids(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theDraftSolids, ProgressRange theRange)
+    protected void BuildSplitSolids(NCollection_DataMap<Shape, Shape> theDraftSolids, ProgressRange theRange)
     {
         bool bFlagSD;
         int i, aNbS;
-        TopExp_Explorer aExp = new();
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new();
+        Explorer aExp = new();
+        NCollection_List<Shape>.Iterator aIt = new();
         //
-        NCollection_List<TopoDS_Shape> aSFS = new();
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_List<Shape> aSFS = new();
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
         // OCCT's NCollection_Map<BOPTools_Set>, of which Added() returns the key in the map: an indexed map gives
         // the stored key back from its index, and the map is never iterated
         NCollection_IndexedMap<BOPTools_Set> aMST = new();
@@ -364,7 +367,7 @@ public partial class BOPAlgo_Builder
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
             //
-            if (aSI.ShapeType() != TopAbs_SOLID)
+            if (aSI.ShapeType() != ShapeType.Solid)
             {
                 continue;
             }
@@ -373,7 +376,7 @@ public partial class BOPAlgo_Builder
                 return;
             }
             //
-            TopoDS_Shape aS = aSI.Shape();
+            Shape aS = aSI.Shape();
             if (!aMFence.Add(aS))
             {
                 continue;
@@ -385,44 +388,44 @@ public partial class BOPAlgo_Builder
             //
             BOPTools_Set aST = new();
             //
-            aST.Add(aS, TopAbs_FACE);
+            aST.Add(aS, ShapeType.Face);
             aMST.Add(aST);
             //
         } // for (i=1; i<=aNbS; ++i)
         //
         // Build temporary map of solids images to avoid rebuilding
         // of the solids without internal faces
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aSolidsIm = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aSolidsIm = new(ShapeHasher.Instance);
         // 1. Build solids for interfered source solids
         for (i = 0; i < aNbS; ++i)
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() != TopAbs_SOLID)
+            if (aSI.ShapeType() != ShapeType.Solid)
             {
                 continue;
             }
 
-            TopoDS_Shape aS = aSI.Shape();
-            TopoDS_Solid aSolid = TopoDS.Solid(aS);
+            Shape aS = aSI.Shape();
+            Solid aSolid = ShapeCasts.Solid(aS);
             if (!theDraftSolids.IsBound(aS))
             {
                 continue;
             }
 
-            TopoDS_Shape aSD = theDraftSolids.Find(aS);
-            if (!myInParts.Find(aS, out NCollection_List<TopoDS_Shape> pLFIN) || pLFIN.IsEmpty())
+            Shape aSD = theDraftSolids.Find(aS);
+            if (!myInParts.Find(aS, out NCollection_List<Shape> pLFIN) || pLFIN.IsEmpty())
             {
-                aSolidsIm[aSolidsIm.Add(aS, new NCollection_List<TopoDS_Shape>())].Append(aSD);
+                aSolidsIm[aSolidsIm.Add(aS, new NCollection_List<Shape>())].Append(aSD);
                 continue;
             }
 
             aSFS.Clear();
             //
             // 1.1 Fill Shell Faces Set
-            aExp.Init(aSD, TopAbs_FACE);
+            aExp.Init(aSD, ShapeType.Face);
             for (; aExp.More(); aExp.Next())
             {
-                TopoDS_Shape aF = aExp.Current();
+                Shape aF = aExp.Current();
                 aSFS.Append(aF);
             }
             //
@@ -430,11 +433,11 @@ public partial class BOPAlgo_Builder
             aIt.Initialize(pLFIN);
             for (; aIt.More(); aIt.Next())
             {
-                TopoDS_Shape aF = aIt.Value();
+                Shape aF = aIt.Value();
                 //
-                aF.Orientation(TopAbs_FORWARD);
+                aF.Orientation(Forward);
                 aSFS.Append(aF);
-                aF.Orientation(TopAbs_REVERSED);
+                aF.Orientation(Reversed);
                 aSFS.Append(aF);
             }
             //
@@ -469,7 +472,7 @@ public partial class BOPAlgo_Builder
         for (k = 0; k < aNbBS; ++k)
         {
             BOPAlgo_SplitSolid aBS = aVBS[k];
-            aSolidsIm.Add(aBS.Solid(), new NCollection_List<TopoDS_Shape>(aBS.Areas()));
+            aSolidsIm.Add(aBS.Solid(), new NCollection_List<Shape>(aBS.Areas()));
 
             // Merge BuilderSolid's report into main report,
             // assigning the solid with the warnings/errors which
@@ -484,13 +487,13 @@ public partial class BOPAlgo_Builder
                 {
                     Alert anAlert = itA.Value();
 
-                    if (itA.Value() is TopoDS_AlertWithShape anAlertWithShape)
+                    if (itA.Value() is AlertWithShape anAlertWithShape)
                     {
-                        TopoDS_Compound aWarnShape0 = new();
-                        new BRep_Builder().MakeCompound(ref aWarnShape0);
-                        TopoDS_Shape aWarnShape = aWarnShape0;
-                        new BRep_Builder().Add(aWarnShape, aBS.Solid());
-                        new BRep_Builder().Add(aWarnShape, anAlertWithShape.InternalGetShape());
+                        Compound aWarnShape0 = new();
+                        new BrepBuilder().MakeCompound(ref aWarnShape0);
+                        Shape aWarnShape = aWarnShape0;
+                        new BrepBuilder().Add(aWarnShape, aBS.Solid());
+                        new BrepBuilder().Add(aWarnShape, anAlertWithShape.InternalGetShape());
 
                         anAlertWithShape.SetShape(aWarnShape);
                         AddWarning(anAlertWithShape);
@@ -507,30 +510,30 @@ public partial class BOPAlgo_Builder
         aNbBS = aSolidsIm.Extent();
         for (k = 1; k <= aNbBS; ++k)
         {
-            TopoDS_Shape aS = aSolidsIm.FindKey(k);
-            NCollection_List<TopoDS_Shape> aLSR = aSolidsIm[k];
+            Shape aS = aSolidsIm.FindKey(k);
+            NCollection_List<Shape> aLSR = aSolidsIm[k];
             //
             if (!myImages.IsBound(aS))
             {
-                NCollection_List<TopoDS_Shape> pLSx = myImages.Bound(aS, new NCollection_List<TopoDS_Shape>());
+                NCollection_List<Shape> pLSx = myImages.Bound(aS, new NCollection_List<Shape>());
                 //
                 aIt.Initialize(aLSR);
                 for (; aIt.More(); aIt.Next())
                 {
                     BOPTools_Set aST = new();
                     //
-                    TopoDS_Shape aSR = aIt.Value();
-                    aST.Add(aSR, TopAbs_FACE);
+                    Shape aSR = aIt.Value();
+                    aST.Add(aSR, ShapeType.Face);
                     //
                     bFlagSD = aMST.Contains(aST);
                     //
                     BOPTools_Set aSTx = aMST.FindKey(aMST.Add(aST)); // OCCT: aMST.Added(aST)
-                    TopoDS_Shape aSx = aSTx.Shape();
+                    Shape aSx = aSTx.Shape();
                     pLSx.Append(aSx);
                     //
-                    if (!myOrigins.Find(aSx, out NCollection_List<TopoDS_Shape> pLOr))
+                    if (!myOrigins.Find(aSx, out NCollection_List<Shape> pLOr))
                     {
-                        pLOr = myOrigins.Bound(aSx, new NCollection_List<TopoDS_Shape>());
+                        pLOr = myOrigins.Bound(aSx, new NCollection_List<Shape>());
                     }
                     pLOr.Append(aS);
                     //
@@ -547,22 +550,22 @@ public partial class BOPAlgo_Builder
     protected void FillInternalShapes(ProgressRange theRange)
     {
         int i, j, aNbS, aNbSI, aNbSx;
-        TopAbs_ShapeEnum aType;
-        TopAbs_State aState;
-        TopoDS_Iterator aItS = new();
-        BRep_Builder aBB = new();
-        NCollection_List<TopoDS_Shape>.Iterator aIt = new(), aIt1 = new();
+        ShapeType aType;
+        Containment aState;
+        Iterator aItS = new();
+        BrepBuilder aBB = new();
+        NCollection_List<Shape>.Iterator aIt = new(), aIt1 = new();
         //
         //-----------------------------------------------------scope f
-        NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMSx = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_IndexedMap<TopoDS_Shape> aMx = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_IndexedMap<TopoDS_Shape> aMSI = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_Map<TopoDS_Shape> aMSOr = new(TopTools_ShapeMapHasher.Instance);
-        NCollection_List<TopoDS_Shape> aLSd = new();
-        NCollection_List<TopoDS_Shape> aLArgs = new();
-        NCollection_List<TopoDS_Shape> aLSC = new();
-        NCollection_List<TopoDS_Shape> aLSI = new();
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMSx = new(ShapeHasher.Instance);
+        NCollection_IndexedMap<Shape> aMx = new(ShapeHasher.Instance);
+        NCollection_IndexedMap<Shape> aMSI = new(ShapeHasher.Instance);
+        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
+        NCollection_Map<Shape> aMSOr = new(ShapeHasher.Instance);
+        NCollection_List<Shape> aLSd = new();
+        NCollection_List<Shape> aLArgs = new();
+        NCollection_List<Shape> aLSC = new();
+        NCollection_List<Shape> aLSI = new();
 
         using var aPS = new ProgressScope(theRange, null, 10);
         //
@@ -571,31 +574,31 @@ public partial class BOPAlgo_Builder
         // 1.1 Shapes from pure arguments aMSI
         // 1.1.1 vertex, edge, wire
         //
-        NCollection_List<TopoDS_Shape> aArguments = myDS!.Arguments();
+        NCollection_List<Shape> aArguments = myDS!.Arguments();
         aIt.Initialize(aArguments);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aS = aIt.Value();
+            Shape aS = aIt.Value();
             BOPTools_AlgoTools.TreatCompound(aS, aLSC, aMFence);
         }
         aIt.Initialize(aLSC);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aS = aIt.Value();
+            Shape aS = aIt.Value();
             aType = aS.ShapeType();
-            if (aType == TopAbs_WIRE)
+            if (aType == ShapeType.Wire)
             {
                 aItS.Initialize(aS);
                 for (; aItS.More(); aItS.Next())
                 {
-                    TopoDS_Shape aE = aItS.Value();
+                    Shape aE = aItS.Value();
                     if (aMFence.Add(aE))
                     {
                         aLArgs.Append(aE);
                     }
                 }
             }
-            else if (aType == TopAbs_VERTEX || aType == TopAbs_EDGE)
+            else if (aType == ShapeType.Vertex || aType == ShapeType.Edge)
             {
                 aLArgs.Append(aS);
             }
@@ -605,19 +608,19 @@ public partial class BOPAlgo_Builder
         aIt.Initialize(aLArgs);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aS = aIt.Value();
+            Shape aS = aIt.Value();
             aType = aS.ShapeType();
-            if (aType == TopAbs_VERTEX || aType == TopAbs_EDGE || aType == TopAbs_WIRE)
+            if (aType == ShapeType.Vertex || aType == ShapeType.Edge || aType == ShapeType.Wire)
             {
                 if (aMFence.Add(aS))
                 {
                     if (myImages.IsBound(aS))
                     {
-                        NCollection_List<TopoDS_Shape> aLSp = myImages.Find(aS);
+                        NCollection_List<Shape> aLSp = myImages.Find(aS);
                         aIt1.Initialize(aLSp);
                         for (; aIt1.More(); aIt1.Next())
                         {
-                            TopoDS_Shape aSp = aIt1.Value();
+                            Shape aSp = aIt1.Value();
                             aMSI.Add(aSp);
                         }
                     }
@@ -643,7 +646,7 @@ public partial class BOPAlgo_Builder
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
             //
-            if (aSI.ShapeType() != TopAbs_SOLID)
+            if (aSI.ShapeType() != ShapeType.Solid)
             {
                 continue;
             }
@@ -652,7 +655,7 @@ public partial class BOPAlgo_Builder
                 return;
             }
             //
-            TopoDS_Shape aS = aSI.Shape();
+            Shape aS = aSI.Shape();
             //
             aMx.Clear();
             OwnInternalShapes(aS, aMx);
@@ -660,14 +663,14 @@ public partial class BOPAlgo_Builder
             aNbSx = aMx.Extent();
             for (j = 1; j <= aNbSx; ++j)
             {
-                TopoDS_Shape aSi = aMx[j];
+                Shape aSi = aMx[j];
                 if (myImages.IsBound(aSi))
                 {
-                    NCollection_List<TopoDS_Shape> aLSp = myImages.Find(aSi);
+                    NCollection_List<Shape> aLSp = myImages.Find(aSi);
                     aIt1.Initialize(aLSp);
                     for (; aIt1.More(); aIt1.Next())
                     {
-                        TopoDS_Shape aSp = aIt1.Value();
+                        Shape aSp = aIt1.Value();
                         aMSI.Add(aSp);
                     }
                 }
@@ -680,16 +683,16 @@ public partial class BOPAlgo_Builder
             // build aux map from splits of solids
             if (myImages.IsBound(aS))
             {
-                NCollection_List<TopoDS_Shape> aLSp = myImages.Find(aS);
+                NCollection_List<Shape> aLSp = myImages.Find(aS);
                 aIt.Initialize(aLSp);
                 for (; aIt.More(); aIt.Next())
                 {
-                    TopoDS_Shape aSp = aIt.Value();
+                    Shape aSp = aIt.Value();
                     if (aMFence.Add(aSp))
                     {
-                        TopExp.MapShapesAndAncestors(aSp, TopAbs_VERTEX, TopAbs_EDGE, aMSx);
-                        TopExp.MapShapesAndAncestors(aSp, TopAbs_VERTEX, TopAbs_FACE, aMSx);
-                        TopExp.MapShapesAndAncestors(aSp, TopAbs_EDGE, TopAbs_FACE, aMSx);
+                        Exploration.MapShapesAndAncestors(aSp, ShapeType.Vertex, ShapeType.Edge, aMSx);
+                        Exploration.MapShapesAndAncestors(aSp, ShapeType.Vertex, ShapeType.Face, aMSx);
+                        Exploration.MapShapesAndAncestors(aSp, ShapeType.Edge, ShapeType.Face, aMSx);
                         aLSd.Append(aSp);
                     }
                 }
@@ -698,9 +701,9 @@ public partial class BOPAlgo_Builder
             {
                 if (aMFence.Add(aS))
                 {
-                    TopExp.MapShapesAndAncestors(aS, TopAbs_VERTEX, TopAbs_EDGE, aMSx);
-                    TopExp.MapShapesAndAncestors(aS, TopAbs_VERTEX, TopAbs_FACE, aMSx);
-                    TopExp.MapShapesAndAncestors(aS, TopAbs_EDGE, TopAbs_FACE, aMSx);
+                    Exploration.MapShapesAndAncestors(aS, ShapeType.Vertex, ShapeType.Edge, aMSx);
+                    Exploration.MapShapesAndAncestors(aS, ShapeType.Vertex, ShapeType.Face, aMSx);
+                    Exploration.MapShapesAndAncestors(aS, ShapeType.Edge, ShapeType.Face, aMSx);
                     aLSd.Append(aS);
                     aMSOr.Add(aS);
                 }
@@ -712,10 +715,10 @@ public partial class BOPAlgo_Builder
         aNbSI = aMSI.Extent();
         for (i = 1; i <= aNbSI; ++i)
         {
-            TopoDS_Shape aSI = aMSI[i];
+            Shape aSI = aMSI[i];
             if (aMSx.Contains(aSI))
             {
-                NCollection_List<TopoDS_Shape> aLSx = aMSx.FindFromKey(aSI);
+                NCollection_List<Shape> aLSx = aMSx.FindFromKey(aSI);
                 aNbSx = aLSx.Extent();
                 if (aNbSx == 0)
                 {
@@ -745,17 +748,17 @@ public partial class BOPAlgo_Builder
         aIt.Initialize(aLSd);
         for (; aIt.More(); aIt.Next(), aPSLoop.Next())
         {
-            TopoDS_Solid aSd = TopoDS.Solid(aIt.Value());
+            Solid aSd = ShapeCasts.Solid(aIt.Value());
             //
             aIt1.Initialize(aLSI);
             for (; aIt1.More();)
             {
-                TopoDS_Shape aSI = aIt1.Value();
-                aSI.Orientation(TopAbs_INTERNAL);
+                Shape aSI = aIt1.Value();
+                aSI.Orientation(Internal);
                 //
                 aState = BOPTools_AlgoTools.ComputeStateByOnePoint(aSI, aSd, 1.0e-11, myContext!);
                 //
-                if (aState != TopAbs_IN)
+                if (aState != In)
                 {
                     aIt1.Next();
                     continue;
@@ -764,23 +767,23 @@ public partial class BOPAlgo_Builder
                 if (aMSOr.Contains(aSd))
                 {
                     // make new solid
-                    TopoDS_Solid aSdx = new();
+                    Solid aSdx = new();
                     //
                     aBB.MakeSolid(ref aSdx);
                     aItS.Initialize(aSd);
                     for (; aItS.More(); aItS.Next())
                     {
-                        TopoDS_Shape aSh = aItS.Value();
+                        Shape aSh = aItS.Value();
                         aBB.Add(aSdx, aSh);
                     }
                     //
                     aBB.Add(aSdx, aSI);
                     //
                     // no need to check for images of aSd as aMSOr contains only original solids
-                    NCollection_List<TopoDS_Shape> pLS = myImages.Bound(aSd, new NCollection_List<TopoDS_Shape>());
+                    NCollection_List<Shape> pLS = myImages.Bound(aSd, new NCollection_List<Shape>());
                     pLS.Append(aSdx);
                     //
-                    NCollection_List<TopoDS_Shape> pLOr = myOrigins.Bound(aSdx, new NCollection_List<TopoDS_Shape>());
+                    NCollection_List<Shape> pLOr = myOrigins.Bound(aSdx, new NCollection_List<Shape>());
                     pLOr.Append(aSd);
                     //
                     aMSOr.Remove(aSd);
@@ -808,15 +811,15 @@ public partial class BOPAlgo_Builder
     }
 
     // The own internal parts (all but the shells) of the shape.
-    private static void OwnInternalShapes(in TopoDS_Shape theS, NCollection_IndexedMap<TopoDS_Shape> theMx)
+    private static void OwnInternalShapes(in Shape theS, NCollection_IndexedMap<Shape> theMx)
     {
-        TopoDS_Iterator aIt = new();
+        Iterator aIt = new();
         //
         aIt.Initialize(theS);
         for (; aIt.More(); aIt.Next())
         {
-            TopoDS_Shape aSx = aIt.Value();
-            if (aSx.ShapeType() != TopAbs_SHELL)
+            Shape aSx = aIt.Value();
+            if (aSx.ShapeType() != ShapeType.Shell)
             {
                 theMx.Add(aSx);
             }

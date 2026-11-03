@@ -3,7 +3,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -17,11 +19,11 @@ public class ShapeUpgrade_FaceDivideTest
         for (int i = 0; i < 10; ++i)
         {
             double aSize = 10.0 + i * 0.5;
-            TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(aSize, aSize + 5, aSize + 10).Shape();
-            var anExp = new TopExp_Explorer(aBox, TopAbs_FACE);
+            Shape aBox = new BRepPrimAPI_MakeBox(aSize, aSize + 5, aSize + 10).Shape();
+            var anExp = new Explorer(aBox, ShapeType.Face);
             Assert.True(anExp.More(), "No faces found in box");
 
-            var aDivider = new ShapeUpgrade_FaceDivide(TopoDS.Face(anExp.Current()));
+            var aDivider = new ShapeUpgrade_FaceDivide(ShapeCasts.Face(anExp.Current()));
             Exception? anException = Record.Exception(() => aDivider.Perform());
             Assert.Null(anException);
         }
@@ -35,8 +37,8 @@ public class ShapeUpgrade_FaceDivideTest
         OsdParallel.For(0, 100, theIndex =>
         {
             double aSize = 10.0 + theIndex * 0.1;
-            TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(aSize, aSize + 5, aSize + 10).Shape();
-            var anExp = new TopExp_Explorer(aBox, TopAbs_FACE);
+            Shape aBox = new BRepPrimAPI_MakeBox(aSize, aSize + 5, aSize + 10).Shape();
+            var anExp = new Explorer(aBox, ShapeType.Face);
             if (!anExp.More())
             {
                 Volatile.Write(ref anError, true);
@@ -44,7 +46,7 @@ public class ShapeUpgrade_FaceDivideTest
             }
             try
             {
-                var aDivider = new ShapeUpgrade_FaceDivide(TopoDS.Face(anExp.Current()));
+                var aDivider = new ShapeUpgrade_FaceDivide(ShapeCasts.Face(anExp.Current()));
                 aDivider.Perform();
             }
             catch

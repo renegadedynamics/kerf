@@ -2,20 +2,22 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // The file-static functions of IntPatch_ImpPrmIntersection.cxx (see IntPatch_ImpPrmIntersection.cs).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
 using static Occt.IntPatch_SpecPntType;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_State;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
 public partial class IntPatch_ImpPrmIntersection
 {
-    private static IntPatch_SpecPntType IsSeamOrPole(Adaptor3d_Surface theQSurf, IntSurf_LineOn2S theLine,
+    private static IntPatch_SpecPntType IsSeamOrPole(SurfaceAdaptorBase theQSurf, IntSurf_LineOn2S theLine,
                                                      bool IsReversed, int theRefIndex, double theTol3D,
                                                      double theDeltaMax)
     {
@@ -107,17 +109,17 @@ public partial class IntPatch_ImpPrmIntersection
     }
 
     private static void ComputeTangency(IntPatch_TheSOnBounds solrst, NCollection_Sequence<IntSurf_PathPoint> seqpdep,
-                                        Adaptor3d_TopolTool Domain, IntPatch_TheSurfFunction Func,
-                                        Adaptor3d_Surface PSurf, NCollection_Array1<int> Destination)
+                                        TopolTool Domain, IntPatch_TheSurfFunction Func,
+                                        SurfaceAdaptorBase PSurf, NCollection_Array1<int> Destination)
     {
         int i, k, NbPoints, seqlength;
         double theparam, test;
         bool fairpt, ispassing;
-        TopAbs_Orientation arcorien, vtxorien;
-        Adaptor2d_Curve2d thearc;
+        Orientation arcorien, vtxorien;
+        Curve2DAdaptorBase thearc;
         // OCCT keeps the vertex handle across the points: in the complex-transition branch of an INTERNAL or EXTERNAL
         // arc it is the one an earlier point left (null if none), as here.
-        Adaptor3d_HVertex? vtx = null, vtxbis;
+        HVertex? vtx = null, vtxbis;
         IntPatch_ThePathPointOfTheSOnBounds PStart;
         IntSurf_PathPoint PPoint = new();
         Vector3D vectg;
@@ -140,7 +142,7 @@ public partial class IntPatch_ImpPrmIntersection
                 thearc = PStart.Arc();
                 theparam = PStart.Parameter();
                 arcorien = Domain.Orientation(thearc);
-                ispassing = (arcorien == TopAbs_INTERNAL || arcorien == TopAbs_EXTERNAL);
+                ispassing = (arcorien == Internal || arcorien == External);
 
                 thearc.D0(theparam, out p2d);
                 X[1] = p2d.X();
@@ -169,7 +171,7 @@ public partial class IntPatch_ImpPrmIntersection
                                         theparam = PStart.Parameter();
                                         arcorien = Domain.Orientation(thearc);
                                         ispassing = ispassing
-                                                    && (arcorien == TopAbs_INTERNAL || arcorien == TopAbs_EXTERNAL);
+                                                    && (arcorien == Internal || arcorien == External);
 
                                         thearc.D0(theparam, out p2d);
                                         PPoint.AddUV(p2d.X(), p2d.Y());
@@ -197,7 +199,7 @@ public partial class IntPatch_ImpPrmIntersection
                     test = vectg.Dot(v1.Crossed(v2));
                     if (PStart.IsNew())
                     {
-                        if ((test < 0.0 && arcorien == TopAbs_FORWARD) || (test > 0.0 && arcorien == TopAbs_REVERSED))
+                        if ((test < 0.0 && arcorien == Forward) || (test > 0.0 && arcorien == Reversed))
                         {
                             vectg.Reverse();
                             dirtg.Reverse();
@@ -212,10 +214,10 @@ public partial class IntPatch_ImpPrmIntersection
                     { // traiter la transition complexe
                         Direction3D bidnorm = new(1.0, 1.0, 1.0);
                         double tole = 1.0e-8;
-                        TopAbs_Orientation LocTrans;
+                        Orientation LocTrans;
                         TopTrans_CurveTransition comptrans = new();
                         comptrans.Reset(new Direction3D(vectg), bidnorm, 0.0);
-                        if (arcorien == TopAbs_FORWARD || arcorien == TopAbs_REVERSED)
+                        if (arcorien == Forward || arcorien == Reversed)
                         {
                             // pour essai
 
@@ -223,20 +225,20 @@ public partial class IntPatch_ImpPrmIntersection
                             vtxorien = Domain.Orientation(vtx);
                             if (Math.Abs(test) <= tole)
                             {
-                                LocTrans = TopAbs_EXTERNAL; // et pourquoi pas INTERNAL
+                                LocTrans = External; // et pourquoi pas INTERNAL
                             }
                             else
                             {
-                                if (((test > 0.0) && arcorien == TopAbs_FORWARD)
-                                    || ((test < 0.0) && arcorien == TopAbs_REVERSED))
+                                if (((test > 0.0) && arcorien == Forward)
+                                    || ((test < 0.0) && arcorien == Reversed))
                                 {
-                                    LocTrans = TopAbs_FORWARD;
+                                    LocTrans = Forward;
                                 }
                                 else
                                 {
-                                    LocTrans = TopAbs_REVERSED;
+                                    LocTrans = Reversed;
                                 }
-                                if (arcorien == TopAbs_REVERSED)
+                                if (arcorien == Reversed)
                                 {
                                     v2.Reverse();
                                 }
@@ -264,7 +266,7 @@ public partial class IntPatch_ImpPrmIntersection
                                         thearc.D1(theparam, out p2d, out d2d);
                                         PPoint.AddUV(p2d.X(), p2d.Y());
 
-                                        if (arcorien == TopAbs_FORWARD || arcorien == TopAbs_REVERSED)
+                                        if (arcorien == Forward || arcorien == Reversed)
                                         {
                                             ispassing = false;
                                             v2.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
@@ -273,20 +275,20 @@ public partial class IntPatch_ImpPrmIntersection
                                             vtxorien = Domain.Orientation(PStart.Vertex());
                                             if (Math.Abs(test) <= tole)
                                             {
-                                                LocTrans = TopAbs_EXTERNAL; // et pourquoi pas INTERNAL
+                                                LocTrans = External; // et pourquoi pas INTERNAL
                                             }
                                             else
                                             {
-                                                if (((test > 0.0) && arcorien == TopAbs_FORWARD)
-                                                    || ((test < 0.0) && arcorien == TopAbs_REVERSED))
+                                                if (((test > 0.0) && arcorien == Forward)
+                                                    || ((test < 0.0) && arcorien == Reversed))
                                                 {
-                                                    LocTrans = TopAbs_FORWARD;
+                                                    LocTrans = Forward;
                                                 }
                                                 else
                                                 {
-                                                    LocTrans = TopAbs_REVERSED;
+                                                    LocTrans = Reversed;
                                                 }
-                                                if (arcorien == TopAbs_REVERSED)
+                                                if (arcorien == Reversed)
                                                 {
                                                     v2.Reverse();
                                                 }
@@ -302,15 +304,15 @@ public partial class IntPatch_ImpPrmIntersection
                         fairpt = true;
                         if (!ispassing)
                         {
-                            TopAbs_State Before = comptrans.StateBefore();
-                            TopAbs_State After = comptrans.StateAfter();
-                            if ((Before == TopAbs_UNKNOWN) || (After == TopAbs_UNKNOWN))
+                            Containment Before = comptrans.StateBefore();
+                            Containment After = comptrans.StateAfter();
+                            if ((Before == Unknown) || (After == Unknown))
                             {
                                 fairpt = false;
                             }
-                            else if (Before == TopAbs_IN)
+                            else if (Before == In)
                             {
-                                if (After == TopAbs_IN)
+                                if (After == In)
                                 {
                                     ispassing = true;
                                 }
@@ -322,7 +324,7 @@ public partial class IntPatch_ImpPrmIntersection
                             }
                             else
                             {
-                                if (After != TopAbs_IN)
+                                if (After != In)
                                 {
                                     fairpt = false;
                                 }
@@ -413,14 +415,14 @@ public partial class IntPatch_ImpPrmIntersection
         pt.SetParameters(U1, V1, U2, V2);
     }
 
-    private static double GetLocalStep(Adaptor3d_Surface theSurf, double theStep)
+    private static double GetLocalStep(SurfaceAdaptorBase theSurf, double theStep)
     {
         double aLocalStep = theStep;
         if (theSurf.UContinuity() > C0 && theSurf.VContinuity() > C0)
         {
             SurfaceKind aSType = theSurf.GetType();
 
-            if (aSType == BezierSurface || aSType == BSplineSurface)
+            if (aSType == SurfaceKind.BezierSurface || aSType == SurfaceKind.BSplineSurface)
             {
                 double aMinRes;
                 int aMaxDeg;
@@ -725,7 +727,7 @@ public partial class IntPatch_ImpPrmIntersection
         }
     }
 
-    private static void AdjustLine(IntSurf_LineOn2S Line, bool IsReversed, Adaptor3d_Surface QSurf, double TOL2D)
+    private static void AdjustLine(IntSurf_LineOn2S Line, bool IsReversed, SurfaceAdaptorBase QSurf, double TOL2D)
     {
         double VF = QSurf.FirstVParameter();
         double VL = QSurf.LastVParameter();
@@ -1007,7 +1009,7 @@ public partial class IntPatch_ImpPrmIntersection
     }
 
     private static bool TestMiddleOnPrm(in IntSurf_PntOn2S aP, in IntSurf_PntOn2S aV, bool IsReversed, double ArcTol,
-                                        Adaptor3d_TopolTool PDomain)
+                                        TopolTool PDomain)
     {
         bool result = false;
         double Up, Vp, Uv, Vv;
@@ -1023,8 +1025,8 @@ public partial class IntPatch_ImpPrmIntersection
         }
         double Um = (Up + Uv) * 0.5, Vm = (Vp + Vv) * 0.5;
         Point2D a2DPntM = new(Um, Vm);
-        TopAbs_State PosM = PDomain.Classify(a2DPntM, ArcTol);
-        if (PosM == TopAbs_ON || PosM == TopAbs_IN)
+        Containment PosM = PDomain.Classify(a2DPntM, ArcTol);
+        if (PosM == On || PosM == In)
         {
             result = true;
         }
@@ -1032,7 +1034,7 @@ public partial class IntPatch_ImpPrmIntersection
     }
 
     private static void VerifyVertices(IntSurf_LineOn2S Line, bool IsReversed, IntSurf_LineOn2S Vertices, double TOL2D,
-                                       double ArcTol, Adaptor3d_TopolTool PDomain, ref IntSurf_PntOn2S VrtF,
+                                       double ArcTol, TopolTool PDomain, ref IntSurf_PntOn2S VrtF,
                                        out bool AddFirst, ref IntSurf_PntOn2S VrtL, out bool AddLast)
     {
         int nbp = Line.NbPoints(), nbv = Vertices.NbPoints();
@@ -1351,7 +1353,7 @@ public partial class IntPatch_ImpPrmIntersection
                         // In fact, aRLine is always on the parametric surface.
                         // If (theIsReversed == TRUE) then (U1, V1) - point on
                         // parametric surface, otherwise - point on quadric.
-                        Adaptor2d_Curve2d anArc = (aRLine.IsArcOnS1() ? aRLine.ArcOnS1() : aRLine.ArcOnS2())!;
+                        Curve2DAdaptorBase anArc = (aRLine.IsArcOnS1() ? aRLine.ArcOnS1() : aRLine.ArcOnS2())!;
 
                         Line2D aLin = anArc.Line();
                         Point2D aPSurf;
@@ -1497,13 +1499,13 @@ public partial class IntPatch_ImpPrmIntersection
 
     // Can change values of theNewLine (by adding the computed point on boundary, which parameter will be adjusted)
     // and theIsOnBoundary variables.
-    private static void DetectOfBoundaryAchievement(Adaptor3d_Surface theQSurf, bool theIsReversed,
+    private static void DetectOfBoundaryAchievement(SurfaceAdaptorBase theQSurf, bool theIsReversed,
                                                     IntSurf_LineOn2S theSourceLine, int thePointIndex,
                                                     double theToler2D, IntSurf_LineOn2S theNewLine,
                                                     ref bool theIsOnBoundary)
     {
-        double aUPeriod = theQSurf.IsUPeriodic() ? theQSurf.UPeriod() : 0.0,
-               aVPeriod = theQSurf.IsVPeriodic() ? theQSurf.VPeriod() : 0.0;
+        double aUPeriod = theQSurf.IsUPeriodic ? theQSurf.UPeriod() : 0.0,
+               aVPeriod = theQSurf.IsVPeriodic ? theQSurf.VPeriod() : 0.0;
         double aUf = theQSurf.FirstUParameter(), aUl = theQSurf.LastUParameter(), aVf = theQSurf.FirstVParameter(),
                aVl = theQSurf.LastVParameter();
 
@@ -1567,15 +1569,15 @@ public partial class IntPatch_ImpPrmIntersection
     // Splits theLine in the places where it passes through seam edge or singularity (apex of cone or pole of
     // sphere). This passage is detected by jump of U-parameter from point to point.
     private static bool DecomposeResult(IntPatch_PointLine theLine, bool IsReversed, in IntSurf_Quadric theQuad,
-                                        Adaptor3d_TopolTool thePDomain, Adaptor3d_Surface theQSurf,
-                                        Adaptor3d_Surface thePSurf, double theArcTol, double theTolTang,
+                                        TopolTool thePDomain, SurfaceAdaptorBase theQSurf,
+                                        SurfaceAdaptorBase thePSurf, double theArcTol, double theTolTang,
                                         NCollection_Sequence<IntPatch_Line> theLines)
     {
         if (theLine.ArcType() == IntPatch_Restriction)
         {
             if (theLine is IntPatch_RLine aRL)
             {
-                Adaptor2d_Curve2d anArc = (aRL.IsArcOnS1() ? aRL.ArcOnS1() : aRL.ArcOnS2())!;
+                Curve2DAdaptorBase anArc = (aRL.IsArcOnS1() ? aRL.ArcOnS1() : aRL.ArcOnS2())!;
                 if (anArc.GetType() != CurveKind.Line)
                 {
                     // Restriction line must be isoline.
@@ -2017,7 +2019,7 @@ public partial class IntPatch_ImpPrmIntersection
                     PutIntVertices(aRLine, sline, IsReversed, aVLine, theArcTol);
                 }
 
-                Adaptor2d_Curve2d anArc = (aRLine.IsArcOnS1() ? aRLine.ArcOnS1() : aRLine.ArcOnS2())!;
+                Curve2DAdaptorBase anArc = (aRLine.IsArcOnS1() ? aRLine.ArcOnS1() : aRLine.ArcOnS2())!;
 
                 double aFPar = anArc.FirstParameter(), aLPar = anArc.LastParameter();
 
@@ -2109,7 +2111,7 @@ public partial class IntPatch_ImpPrmIntersection
     // Check, if theLine is coincided with theArc (in 2d-space). Cases when theArc is not 2d-line adaptor are
     // supported by TopOpeBRep classes only (i.e. are archaic).
     private static bool IsCoincide(IntPatch_TheSurfFunction theFunc, IntPatch_PointLine theLine,
-                                   Adaptor2d_Curve2d theArc, bool isTheSurface1Using, double theToler3D,
+                                   Curve2DAdaptorBase theArc, bool isTheSurface1Using, double theToler3D,
                                    double theToler2D, double thePeriod)
     {
         ReadOnlySpan<double> aCoeffs =
@@ -2120,7 +2122,7 @@ public partial class IntPatch_ImpPrmIntersection
         if (theLine.ArcType() == IntPatch_Restriction)
         { // Restriction-restriction processing
             IntPatch_RLine aRL2 = (IntPatch_RLine)theLine;
-            Adaptor2d_Curve2d anArc = (aRL2.IsArcOnS1() ? aRL2.ArcOnS1() : aRL2.ArcOnS2())!;
+            Curve2DAdaptorBase anArc = (aRL2.IsArcOnS1() ? aRL2.ArcOnS1() : aRL2.ArcOnS2())!;
 
             if (anArc.GetType() != CurveKind.Line)
             {

@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Topology;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -20,7 +22,7 @@ internal sealed class BOPAlgo_ShrunkRange : IntTools_ShrunkRange, BOPTools_Paral
 
 public partial class BOPAlgo_PaveFiller
 {
-    protected void FillShrunkData(TopAbs_ShapeEnum aType1, TopAbs_ShapeEnum aType2)
+    protected void FillShrunkData(ShapeType aType1, ShapeType aType2)
     {
         myIterator!.Initialize(aType1, aType2);
         int iSize = myIterator.ExpectedLength();
@@ -35,7 +37,7 @@ public partial class BOPAlgo_PaveFiller
         NCollection_List<BOPDS_PaveBlock>.Iterator aItLPB = new();
         NCollection_IntMap aMI = new();
         NCollection_DynamicArray<BOPAlgo_ShrunkRange> aVSD = new();
-        Span<TopAbs_ShapeEnum> aType = [aType1, aType2];
+        Span<ShapeType> aType = [aType1, aType2];
         //
         for (; myIterator.More(); myIterator.Next())
         {
@@ -44,7 +46,7 @@ public partial class BOPAlgo_PaveFiller
             for (i = 0; i < 2; ++i)
             {
                 nE = nS[i];
-                if (aType[i] != TopAbs_EDGE || !aMI.Add(nE))
+                if (aType[i] != ShapeType.Edge || !aMI.Add(nE))
                 {
                     continue;
                 }
@@ -69,11 +71,11 @@ public partial class BOPAlgo_PaveFiller
                     aPB.Indices(out nV1, out nV2);
                     aPB.Range(out aT1, out aT2);
                     //
-                    TopoDS_Edge aE = TopoDS.Edge(aSIE.Shape());
+                    Edge aE = ShapeCasts.Edge(aSIE.Shape());
                     //
-                    TopoDS_Vertex aV1 = TopoDS.Vertex(myDS.Shape(nV1));
+                    Vertex aV1 = ShapeCasts.Vertex(myDS.Shape(nV1));
                     //
-                    TopoDS_Vertex aV2 = TopoDS.Vertex(myDS.Shape(nV2));
+                    Vertex aV2 = ShapeCasts.Vertex(myDS.Shape(nV2));
                     //
                     BOPAlgo_ShrunkRange aSD = aVSD.Append(new BOPAlgo_ShrunkRange());
                     //

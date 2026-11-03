@@ -5,12 +5,15 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Occt.BOPAlgo_GlueEnum;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -80,8 +83,8 @@ internal sealed class BOPAlgo_EdgeFace : IntTools_EdgeFace, BOPTools_Parallel.IC
         {
             return;
         }
-        TopoDS_Face aFace = myFace;
-        TopoDS_Edge anEdge = myEdge;
+        Face aFace = myFace;
+        Edge anEdge = myEdge;
         bool hasTrsf = false;
         try
         {
@@ -121,9 +124,9 @@ public partial class BOPAlgo_PaveFiller
     /// <summary>The edge/face interferences.</summary>
     protected virtual void PerformEF(ProgressRange theRange)
     {
-        FillShrunkData(TopAbs_EDGE, TopAbs_FACE);
+        FillShrunkData(ShapeType.Edge, ShapeType.Face);
         //
-        myIterator!.Initialize(TopAbs_EDGE, TopAbs_FACE);
+        myIterator!.Initialize(ShapeType.Edge, ShapeType.Face);
         using var aPSOuter = new ProgressScope(theRange, null, 10);
         int iSize = myIterator.ExpectedLength();
         if (iSize == 0)
@@ -157,13 +160,13 @@ public partial class BOPAlgo_PaveFiller
         Span<int> nV = stackalloc int[2];
         int aNbEdgeFace, k;
         double aTolE, aTolF, aTS1 = 0.0, aTS2 = 0.0, aT1 = 0.0, aT2 = 0.0;
-        TopAbs_ShapeEnum aType;
+        ShapeType aType;
         NCollection_List<BOPDS_PaveBlock>.Iterator aIt = new();
         NCollection_DynamicArray<BOPAlgo_EdgeFace> aVEdgeFace = new();
         //-----------------------------------------------------scope f
         //
         NCollection_IntMap aMIEFC = new(100);
-        NCollection_IndexedDataMap<TopoDS_Shape, BOPDS_CoupleOfPaveBlocks> aMVCPB = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<Shape, BOPDS_CoupleOfPaveBlocks> aMVCPB = new(ShapeHasher.Instance);
         NCollection_IndexedDataMap<BOPDS_PaveBlock, NCollection_List<int>> aMPBLI = new();
         NCollection_DataMap<BOPDS_PaveBlock, Box> aDMPBBox = new();
         //
@@ -183,8 +186,8 @@ public partial class BOPAlgo_PaveFiller
                 continue;
             }
             //
-            TopoDS_Edge aE = TopoDS.Edge(aSIE.Shape());
-            TopoDS_Face aF = TopoDS.Face(myDS.Shape(nF));
+            Edge aE = ShapeCasts.Edge(aSIE.Shape());
+            Face aF = ShapeCasts.Face(myDS.Shape(nF));
             Box aBBF = myDS.ShapeInfo(nF).Box();
             //
             BOPDS_FaceInfo aFI = myDS.ChangeFaceInfo(nF);
@@ -193,8 +196,8 @@ public partial class BOPAlgo_PaveFiller
             NCollection_IntMap aMVIn = aFI.VerticesIn();
             NCollection_IntMap aMVOn = aFI.VerticesOn();
             //
-            aTolE = BRep_Tool.Tolerance(aE);
-            aTolF = BRep_Tool.Tolerance(aF);
+            aTolE = Tool.Tolerance(aE);
+            aTolF = Tool.Tolerance(aF);
             //
             NCollection_List<BOPDS_PaveBlock> aLPB = myDS.ChangePaveBlocks(nE);
             aIt.Initialize(aLPB);
@@ -289,11 +292,11 @@ public partial class BOPAlgo_PaveFiller
             //
             aEdgeFace.Indices(out nE, out nF);
             //
-            TopoDS_Edge aE = aEdgeFace.Edge();
-            TopoDS_Face aF = aEdgeFace.Face();
+            Edge aE = aEdgeFace.Edge();
+            Face aF = aEdgeFace.Face();
             //
-            aTolE = BRep_Tool.Tolerance(aE);
-            aTolF = BRep_Tool.Tolerance(aF);
+            aTolE = Tool.Tolerance(aE);
+            aTolF = Tool.Tolerance(aF);
             //
             NCollection_Sequence<IntTools_CommonPrt> aCPrts = aEdgeFace.CommonParts();
             aNbCPrts = aCPrts.Length();
@@ -325,7 +328,7 @@ public partial class BOPAlgo_PaveFiller
             //
             anewSR.Range(out aTS1, out aTS2);
             //
-            if (aCPrts[1].Type() == TopAbs_VERTEX)
+            if (aCPrts[1].Type() == ShapeType.Vertex)
             {
                 // for the intersection type VERTEX
                 // extend vertices ranges using Edge/Edge intersections
@@ -343,7 +346,7 @@ public partial class BOPAlgo_PaveFiller
             bool bLinePlane = false;
             if (aNbCPrts != 0)
             {
-                BRepAdaptor_Curve aBAC = new(aE);
+                EdgeCurveAdaptor aBAC = new(aE);
                 bLinePlane = (aBAC.GetType() == Line && myContext!.SurfaceAdaptor(aF).GetType() == Plane);
             }
             //
@@ -357,11 +360,11 @@ public partial class BOPAlgo_PaveFiller
                 aType = aCPart.Type();
                 switch (aType)
                 {
-                    case TopAbs_VERTEX:
+                    case ShapeType.Vertex:
                     {
                         int j;
                         double aT, aTolToDecide;
-                        TopoDS_Vertex aVnew;
+                        Vertex aVnew;
                         //
                         IntTools_Tools.VertexParameter(aCPart, out aT);
                         BOPTools_AlgoTools.MakeNewVertex(aE, aT, aF, out aVnew);
@@ -379,7 +382,7 @@ public partial class BOPAlgo_PaveFiller
                             if (bV[0] && bV[1])
                             {
                                 IntTools_CommonPrt aCP = new(aCPart);
-                                aCP.SetType(TopAbs_EDGE);
+                                aCP.SetType(ShapeType.Edge);
                                 BOPDS_InterfEF aEF0 = aEFs.Append(new BOPDS_InterfEF());
                                 iX = aEFs.Length() - 1;
                                 aEF0.SetIndices(nE, nF);
@@ -419,7 +422,7 @@ public partial class BOPAlgo_PaveFiller
                             // If it is an intersection point, update the existing vertex to cover the
                             // intersection point.
                             GeomAPI_ProjectPointOnSurf aProjPS = myContext!.ProjPS(aF);
-                            Point3D aPnew0 = BRep_Tool.Pnt(aVnew);
+                            Point3D aPnew0 = Tool.Pnt(aVnew);
                             aProjPS.Perform(aPnew0);
                             double aMinDistEF = (aProjPS.IsDone() && aProjPS.NbPoints() != 0) ? aProjPS.LowerDistance()
                                                                                              : global::Kerf.Engine.Foundation.Precision.Infinite();
@@ -437,10 +440,10 @@ public partial class BOPAlgo_PaveFiller
                             {
                                 if (bIsOnPave[j])
                                 {
-                                    TopoDS_Vertex aV = TopoDS.Vertex(myDS.Shape(nV[j]));
-                                    Point3D aP = BRep_Tool.Pnt(aV);
+                                    Vertex aV = ShapeCasts.Vertex(myDS.Shape(nV[j]));
+                                    Point3D aP = Tool.Pnt(aV);
                                     double aDistPP = aP.Distance(aPnew0);
-                                    double aTol = BRep_Tool.Tolerance(aV);
+                                    double aTol = Tool.Tolerance(aV);
                                     double aMaxDist = 1.0e4 * aTol;
                                     if (aTol < .01)
                                     {
@@ -461,9 +464,9 @@ public partial class BOPAlgo_PaveFiller
                             continue;
                         }
                         //
-                        double aTolVnew = BRep_Tool.Tolerance(aVnew);
+                        double aTolVnew = Tool.Tolerance(aVnew);
                         aTolVnew = Max(aTolVnew, Max(aTolE, aTolF));
-                        new BRep_Builder().UpdateVertex(aVnew, aTolVnew);
+                        new BrepBuilder().UpdateVertex(aVnew, aTolVnew);
                         if (bLinePlane)
                         {
                             // increase tolerance for Line/Plane intersection, but do not update
@@ -472,7 +475,7 @@ public partial class BOPAlgo_PaveFiller
                             aTolVnew = Max(aTolVnew, (aCR.Last() - aCR.First()) / 2.0);
                         }
                         //
-                        Point3D aPnew = BRep_Tool.Pnt(aVnew);
+                        Point3D aPnew = Tool.Pnt(aVnew);
                         //
                         if (!myContext!.IsPointInFace(aPnew, aF, aTolVnew))
                         {
@@ -496,7 +499,7 @@ public partial class BOPAlgo_PaveFiller
                         aMVCPB.Add(aVnew, aCPB);
                     }
                     break;
-                    case TopAbs_EDGE:
+                    case ShapeType.Edge:
                     {
                         aMIEFC.Add(nF);
                         //
@@ -552,7 +555,7 @@ public partial class BOPAlgo_PaveFiller
     }
 
     /// <summary>Whether the new vertex interferes with one of the vertices of the map.</summary>
-    protected bool CheckFacePaves(in TopoDS_Vertex aVnew, NCollection_IntMap aMIF)
+    protected bool CheckFacePaves(in Vertex aVnew, NCollection_IntMap aMIF)
     {
         bool bRet;
         int iFlag;
@@ -562,7 +565,7 @@ public partial class BOPAlgo_PaveFiller
         // OCCT iterates the map in its hash order (decision 784); the result is whether any vertex interferes.
         foreach (int nV in aMIF)
         {
-            TopoDS_Vertex aV = TopoDS.Vertex(myDS!.Shape(nV));
+            Vertex aV = ShapeCasts.Vertex(myDS!.Shape(nV));
             iFlag = BOPTools_AlgoTools.ComputeVV(aVnew, aV);
             if (iFlag == 0)
             {
@@ -581,8 +584,8 @@ public partial class BOPAlgo_PaveFiller
         double U = 0.0, V = 0.0, aTolVNew = 0.0;
         //
         bRet = false;
-        TopoDS_Vertex aV = TopoDS.Vertex(myDS!.Shape(nV));
-        TopoDS_Face aF = TopoDS.Face(myDS.Shape(nF));
+        Vertex aV = ShapeCasts.Vertex(myDS!.Shape(nV));
+        Face aF = ShapeCasts.Face(myDS.Shape(nF));
         //
         iFlag = myContext!.ComputeVF(aV, aF, ref U, ref V, ref aTolVNew, myFuzzyValue);
         if (iFlag == 0 || iFlag == -2)
@@ -615,10 +618,10 @@ public partial class BOPAlgo_PaveFiller
             if (iRV >= 0 && iRV == myDS.Rank(nF))
             {
                 // add warning status
-                TopoDS_Compound aWC = new();
-                new BRep_Builder().MakeCompound(ref aWC);
-                new BRep_Builder().Add(aWC, aV);
-                new BRep_Builder().Add(aWC, aF);
+                Compound aWC = new();
+                new BrepBuilder().MakeCompound(ref aWC);
+                new BrepBuilder().Add(aWC, aV);
+                new BrepBuilder().Add(aWC, aF);
                 AddWarning(new BOPAlgo_AlertSelfInterferingShape(aWC));
             }
         }
@@ -658,7 +661,7 @@ public partial class BOPAlgo_PaveFiller
         for (; aItLI.More(); aItLI.Next())
         {
             nE1 = aItLI.Value();
-            if (myDS.ShapeInfo(nE1).ShapeType() == TopAbs_EDGE)
+            if (myDS.ShapeInfo(nE1).ShapeType() == ShapeType.Edge)
             {
                 aMFE.Add(nE1);
             }
@@ -733,7 +736,7 @@ public partial class BOPAlgo_PaveFiller
         for (int nE = 0; nE < aNbS; ++nE)
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(nE);
-            if (aSI.ShapeType() != TopAbs_EDGE)
+            if (aSI.ShapeType() != ShapeType.Edge)
             {
                 // Not an edge
                 continue;
@@ -823,7 +826,7 @@ public partial class BOPAlgo_PaveFiller
         for (int nF = 0; nF < aNbS; ++nF)
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(nF);
-            if (aSI.ShapeType() != TopAbs_FACE)
+            if (aSI.ShapeType() != ShapeType.Face)
             {
                 // Not a face
                 continue;
@@ -849,7 +852,7 @@ public partial class BOPAlgo_PaveFiller
                 continue;
             }
 
-            TopoDS_Face aF = TopoDS.Face(aSI.Shape());
+            Face aF = ShapeCasts.Face(aSI.Shape());
             BOPDS_FaceInfo aFI = myDS.FaceInfo(nF);
             // Vertices of the face
             NCollection_IntMap aMVF = new();
@@ -877,7 +880,7 @@ public partial class BOPAlgo_PaveFiller
 
             // Projection tool
             GeomAPI_ProjectPointOnSurf aProjPS = myContext!.ProjPS(aF);
-            BRepAdaptor_Surface aSurfAdaptor = myContext.SurfaceAdaptor(aF);
+            FaceSurfaceAdaptor aSurfAdaptor = myContext.SurfaceAdaptor(aF);
 
             // Iterate on pave blocks and combine pairs containing
             // the same vertices
@@ -915,8 +918,8 @@ public partial class BOPAlgo_PaveFiller
                     }
                 }
 
-                TopoDS_Edge aE = TopoDS.Edge(myDS.Shape(nE));
-                BRepAdaptor_Curve aBAC = new(aE);
+                Edge aE = ShapeCasts.Edge(myDS.Shape(nE));
+                EdgeCurveAdaptor aBAC = new(aE);
 
                 // Check directions coincidence at middle point on the edge
                 // and projection of that point on the face.
@@ -943,14 +946,14 @@ public partial class BOPAlgo_PaveFiller
 
                 // Check the distance in the middle point, using the max vertices
                 // tolerance as the criteria.
-                TopoDS_Vertex aV1 = TopoDS.Vertex(myDS.Shape(nV1));
-                TopoDS_Vertex aV2 = TopoDS.Vertex(myDS.Shape(nV2));
+                Vertex aV1 = ShapeCasts.Vertex(myDS.Shape(nV1));
+                Vertex aV2 = ShapeCasts.Vertex(myDS.Shape(nV2));
 
                 // In the Self-Interference check mode we are interested in real
                 // intersections only, so use only the real tolerance of edges,
                 // no need to use the extended tolerance.
                 double aTolCheck = (bSICheckMode ? myFuzzyValue
-                                                 : 2 * Max(BRep_Tool.Tolerance(aV1), BRep_Tool.Tolerance(aV2)));
+                                                 : 2 * Max(Tool.Tolerance(aV1), Tool.Tolerance(aV2)));
 
                 if (aProjPS.LowerDistance() > aTolCheck + myFuzzyValue)
                 {
@@ -1004,7 +1007,7 @@ public partial class BOPAlgo_PaveFiller
                     }
                     if (aTolAdd > 0.0)
                     {
-                        aTolAdd -= (BRep_Tool.Tolerance(aE) + BRep_Tool.Tolerance(aF));
+                        aTolAdd -= (Tool.Tolerance(aE) + Tool.Tolerance(aF));
                         if (aTolAdd < 0.0)
                         {
                             aTolAdd = 0.0;
@@ -1086,7 +1089,7 @@ public partial class BOPAlgo_PaveFiller
             }
 
             IntTools_CommonPrt aCP = aCParts[1];
-            if (aCP.Type() != TopAbs_EDGE)
+            if (aCP.Type() != ShapeType.Edge)
             {
                 continue;
             }

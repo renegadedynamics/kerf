@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -20,36 +22,36 @@ public sealed class GeomToStep_MakeElementarySurface : GeomToStep_Root
     //=============================================================================
 
     /// <summary>An elementary surface.</summary>
-    public GeomToStep_MakeElementarySurface(Geom_ElementarySurface S, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeElementarySurface(ElementarySurface S, in StepData_Factors theLocalFactors)
     {
         done = true;
-        if (S is Geom_CylindricalSurface)
+        if (S is CylindricalSurface)
         {
-            Geom_CylindricalSurface Sur = S as Geom_CylindricalSurface;
+            CylindricalSurface Sur = S as CylindricalSurface;
             GeomToStep_MakeCylindricalSurface MkCylindrical = new GeomToStep_MakeCylindricalSurface(Sur, theLocalFactors);
             theElementarySurface = MkCylindrical.Value();
         }
-        else if (S is Geom_ConicalSurface)
+        else if (S is ConicalSurface)
         {
-            Geom_ConicalSurface Sur = S as Geom_ConicalSurface;
+            ConicalSurface Sur = S as ConicalSurface;
             GeomToStep_MakeConicalSurface MkConical = new GeomToStep_MakeConicalSurface(Sur, theLocalFactors);
             theElementarySurface = MkConical.Value();
         }
-        else if (S is Geom_SphericalSurface)
+        else if (S is SphericalSurface)
         {
-            Geom_SphericalSurface Sur = S as Geom_SphericalSurface;
+            SphericalSurface Sur = S as SphericalSurface;
             GeomToStep_MakeSphericalSurface MkSpherical = new GeomToStep_MakeSphericalSurface(Sur, theLocalFactors);
             theElementarySurface = MkSpherical.Value();
         }
-        else if (S is Geom_ToroidalSurface)
+        else if (S is ToroidalSurface)
         {
-            Geom_ToroidalSurface Sur = S as Geom_ToroidalSurface;
+            ToroidalSurface Sur = S as ToroidalSurface;
             GeomToStep_MakeToroidalSurface MkToroidal = new GeomToStep_MakeToroidalSurface(Sur, theLocalFactors);
             theElementarySurface = MkToroidal.Value();
         }
-        else if (S is Geom_Plane)
+        else if (S is PlaneSurface)
         {
-            Geom_Plane Sur = S as Geom_Plane;
+            PlaneSurface Sur = S as PlaneSurface;
             GeomToStep_MakePlane MkPlane = new GeomToStep_MakePlane(Sur, theLocalFactors);
             theElementarySurface = MkPlane.Value();
         }
@@ -60,7 +62,7 @@ public sealed class GeomToStep_MakeElementarySurface : GeomToStep_Root
     }
 
     /// <summary>An elementary surface (default factors).</summary>
-    public GeomToStep_MakeElementarySurface(Geom_ElementarySurface S) : this(S, new StepData_Factors())
+    public GeomToStep_MakeElementarySurface(ElementarySurface S) : this(S, new StepData_Factors())
     {
     }
 

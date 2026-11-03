@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using static Kerf.Geometry.CurveKind;
 
@@ -46,8 +47,8 @@ public sealed class Geom2dGcc_Lin2dTanObl
         pararg1    = new(1, 2);
         pararg2    = new(1, 2);
 
-        Geom2dAdaptor_Curve C1    = Qualified1.Qualified();
-        Geom2d_Curve?       CC1   = C1.Curve();
+        CurveAdaptor2D C1    = Qualified1.Qualified();
+        Curve2D?       CC1   = C1.Curve();
         CurveKind   Type1 = C1.GetType();
 
         //=============================================================================
@@ -58,7 +59,7 @@ public sealed class Geom2dGcc_Lin2dTanObl
         NbrSol   = 0;
         if (Type1 == Circle)
         {
-            Geom2d_Circle        CCC1 = (CC1 as Geom2d_Circle)!;
+            CircleCurve2D        CCC1 = (CC1 as CircleCurve2D)!;
             Circle2D            c1   = CCC1.Circ2d();
             GccEnt_QualifiedCirc Qc1  = new(c1, Qualified1.Qualifier());
             GccAna_Lin2dTanObl   Lin  = new(Qc1, TheLine, Angle);
@@ -120,8 +121,8 @@ public sealed class Geom2dGcc_Lin2dTanObl
         pararg1    = new(1, 2);
         pararg2    = new(1, 2);
 
-        Geom2dAdaptor_Curve C1    = Qualified1.Qualified();
-        Geom2d_Curve?       CC1   = C1.Curve();
+        CurveAdaptor2D C1    = Qualified1.Qualified();
+        Curve2D?       CC1   = C1.Curve();
         CurveKind   Type1 = C1.GetType();
 
         //=============================================================================
@@ -132,7 +133,7 @@ public sealed class Geom2dGcc_Lin2dTanObl
         NbrSol   = 0;
         if (Type1 == Circle)
         {
-            Geom2d_Circle        CCC1 = (CC1 as Geom2d_Circle)!;
+            CircleCurve2D        CCC1 = (CC1 as CircleCurve2D)!;
             Circle2D            c1   = CCC1.Circ2d();
             GccEnt_QualifiedCirc Qc1  = new(c1, Qualified1.Qualifier());
             GccAna_Lin2dTanObl   Lin  = new(Qc1, TheLine, Angle);
@@ -246,7 +247,7 @@ public sealed class Geom2dGcc_Lin2dTanObl
 
     // IsParallel2 is declared in OCCT V8_0_1's header but never defined: left out.
 
-    private bool Add(int theIndex, Geom2dGcc_Lin2dTanOblIter theLin, double theTol, Geom2dAdaptor_Curve theC1)
+    private bool Add(int theIndex, Geom2dGcc_Lin2dTanOblIter theLin, double theTol, CurveAdaptor2D theC1)
     {
         int      i;
         Line2D aLin = theLin.ThisSolution();

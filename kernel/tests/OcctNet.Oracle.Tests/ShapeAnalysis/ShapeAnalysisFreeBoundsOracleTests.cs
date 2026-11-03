@@ -1,12 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
-using static Occt.TopAbs_ShapeEnum;
-using static Occt.TopTools_FormatVersion;
+using static Kerf.Topology.ShapeType;
+using static Kerf.Engine.Exchange.Brep.FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -56,10 +59,10 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
         return aText;
     }
 
-    private string PortText(in TopoDS_Shape theShape)
+    private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BRepTools.Write(theShape, aFile, true, false, TopTools_FormatVersion_VERSION_3));
+        Assert.True(BrepTools.Write(theShape, aFile, true, false, FormatVersion_VERSION_3));
         string aText = File.ReadAllText(aFile);
         File.Delete(aFile);
         return aText;
@@ -68,14 +71,14 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
     private static readonly Regex theFlags = new("(?m)^[01]([01]{6})\r?$");
 
     // Compares the BRep texts, the Free column of the flag lines masked (and counted where it differs).
-    private void SameShape(N.TopoDS_Shape theN, in TopoDS_Shape theP, string theWhat)
+    private void SameShape(N.TopoDS_Shape theN, in Shape theP, string theWhat)
     {
         myCompared++;
-        if (theN.IsNull() || theP.IsNull())
+        if (theN.IsNull() || theP.IsNull)
         {
-            if (theN.IsNull() != theP.IsNull())
+            if (theN.IsNull() != theP.IsNull)
             {
-                myDifferences.Add($"{theWhat}: null {theN.IsNull()} natively, {theP.IsNull()} in the port");
+                myDifferences.Add($"{theWhat}: null {theN.IsNull()} natively, {theP.IsNull} in the port");
             }
             else
             {
@@ -116,7 +119,7 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
     private static int B(bool theValue) => theValue ? 1 : 0;
 
     /// <summary>Native writes the shape; both read it. Null if native OCCT can't write or read it.</summary>
-    private (N.TopoDS_Shape N, TopoDS_Shape P)? Read(N.TopoDS_Shape theShape)
+    private (N.TopoDS_Shape N, Shape P)? Read(N.TopoDS_Shape theShape)
     {
         string aFile = NewFile();
         if (!N.BRepTools.Write(theShape, aFile, true, false, N.TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3))
@@ -131,7 +134,7 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
                 return null;
             }
         }
-        Assert.True(BRepTools.Read(out TopoDS_Shape aPShape, aFile), aFile);
+        Assert.True(BrepTools.Read(out Shape aPShape, aFile), aFile);
         File.Delete(aFile);
         return (aNShape, aPShape);
     }
@@ -197,7 +200,7 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
 
     private void Compare(N.TopoDS_Shape theShape, string theWhat)
     {
-        if (Read(theShape) is not (N.TopoDS_Shape aNS, TopoDS_Shape aPS))
+        if (Read(theShape) is not (N.TopoDS_Shape aNS, Shape aPS))
         {
             return;
         }
@@ -230,13 +233,13 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
                 {
                     aNSeq.Append(anExp.Current());
                 }
-                var aPSeq = new NCollection_HSequence<TopoDS_Shape>();
-                for (var anExp = new TopExp_Explorer(aPSas.FreeEdges(), TopAbs_EDGE); anExp.More(); anExp.Next())
+                var aPSeq = new NCollection_HSequence<Shape>();
+                for (var anExp = new Explorer(aPSas.FreeEdges(), ShapeType.Edge); anExp.More(); anExp.Next())
                 {
                     aPSeq.Append(anExp.Current());
                 }
                 N.TopTools_HSequenceOfShape? aNW = Try(() => N.ShapeAnalysis_FreeBounds.ConnectEdgesToWires(aNSeq, 1e-4, false)!, out aNErr);
-                NCollection_HSequence<TopoDS_Shape>? aPW = Try(() => ShapeAnalysis_FreeBounds.ConnectEdgesToWires(aPSeq, 1e-4, false), out aPErr);
+                NCollection_HSequence<Shape>? aPW = Try(() => ShapeAnalysis_FreeBounds.ConnectEdgesToWires(aPSeq, 1e-4, false), out aPErr);
                 if (Failed(aNErr, aPErr, w + ", ConnectEdgesToWires"))
                 {
                     continue;

@@ -5,8 +5,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.TopAbs_Orientation;
-using static Occt.TopAbs_ShapeEnum;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Topology;
+using static Kerf.Topology.Orientation;
+using static Kerf.Topology.ShapeType;
 
 namespace Occt;
 
@@ -30,9 +33,9 @@ namespace Occt;
 /// </remarks>
 public partial struct BRepFill_Section : IEquatable<BRepFill_Section>
 {
-    private TopoDS_Shape myOriginalShape;
-    private TopoDS_Wire wire;
-    private TopoDS_Vertex vertex;
+    private Shape myOriginalShape;
+    private Wire wire;
+    private Vertex vertex;
     private bool islaw;
     private bool ispunctual;
     private bool contact;
@@ -41,9 +44,9 @@ public partial struct BRepFill_Section : IEquatable<BRepFill_Section>
     /// <summary>An empty section.</summary>
     public BRepFill_Section()
     {
-        myOriginalShape = new TopoDS_Shape();
-        wire = new TopoDS_Wire();
-        vertex = new TopoDS_Vertex();
+        myOriginalShape = new Shape();
+        wire = new Wire();
+        vertex = new Vertex();
         islaw = false;
         ispunctual = false;
         contact = false;
@@ -52,35 +55,35 @@ public partial struct BRepFill_Section : IEquatable<BRepFill_Section>
 
     /// <summary>The section <paramref name="Profile"/> (a wire or a vertex) placed on the spine's vertex <paramref name="V"/>.</summary>
     /// <exception cref="FailureException">The profile is neither a wire nor a vertex.</exception>
-    public BRepFill_Section(in TopoDS_Shape Profile, in TopoDS_Vertex V, bool WithContact, bool WithCorrection)
+    public BRepFill_Section(in Shape Profile, in Vertex V, bool WithContact, bool WithCorrection)
     {
         vertex = V;
         islaw = false;
         ispunctual = false;
         contact = WithContact;
         correction = WithCorrection;
-        wire = new TopoDS_Wire();
+        wire = new Wire();
         myOriginalShape = Profile;
 
         ShapeUpgrade_RemoveLocations RemLoc = new();
-        RemLoc.SetRemoveLevel(TopAbs_COMPOUND);
+        RemLoc.SetRemoveLevel(ShapeType.Compound);
         RemLoc.Remove(Profile);
-        TopoDS_Shape aProfile = RemLoc.InternalGetResult();
+        Shape aProfile = RemLoc.InternalGetResult();
 
-        if (aProfile.ShapeType() == TopAbs_WIRE)
+        if (aProfile.ShapeType() == global::Kerf.Topology.ShapeType.Wire)
         {
-            wire = TopoDS.Wire(aProfile);
+            wire = ShapeCasts.Wire(aProfile);
         }
-        else if (aProfile.ShapeType() == TopAbs_VERTEX)
+        else if (aProfile.ShapeType() == global::Kerf.Topology.ShapeType.Vertex)
         {
             ispunctual = true;
-            TopoDS_Vertex aVertex = TopoDS.Vertex(aProfile);
-            BRep_Builder BB = new();
+            Vertex aVertex = ShapeCasts.Vertex(aProfile);
+            BrepBuilder BB = new();
 
-            TopoDS_Edge DegEdge = new();
+            Edge DegEdge = new();
             BB.MakeEdge(ref DegEdge);
-            BB.Add(DegEdge, aVertex.Oriented(TopAbs_FORWARD));
-            BB.Add(DegEdge, aVertex.Oriented(TopAbs_REVERSED));
+            BB.Add(DegEdge, aVertex.Oriented(Forward));
+            BB.Add(DegEdge, aVertex.Oriented(Reversed));
             BB.Degenerated(DegEdge, true);
 
             BB.MakeWire(ref wire);
@@ -108,52 +111,52 @@ public partial struct BRepFill_Section : IEquatable<BRepFill_Section>
     }
 
     /// <summary>The profile as given.</summary>
-    public readonly TopoDS_Shape OriginalShape() => myOriginalShape;
+    public readonly Shape OriginalShape() => myOriginalShape;
 
     /// <summary>The profile's wire without locations, frozen.</summary>
-    public readonly TopoDS_Wire Wire()
+    public readonly Wire Wire()
     {
         wire.TShape()?.FreezeGraph();
         return wire;
     }
 
     /// <summary><see cref="Wire"/> without freezing it, for the sweeps that build on it.</summary>
-    internal readonly TopoDS_Wire InternalWire() => wire;
+    internal readonly Wire InternalWire() => wire;
 
     /// <summary>The spine's vertex the section is placed on.</summary>
-    public readonly TopoDS_Vertex Vertex() => vertex;
+    public readonly Vertex Vertex() => vertex;
 
     /// <summary>
     /// The sub-shape of <see cref="Wire"/> made from <paramref name="theShape"/> (the profile, one of its edges or
     /// vertices), frozen; null otherwise.
     /// </summary>
-    public readonly TopoDS_Shape ModifiedShape(in TopoDS_Shape theShape)
+    public readonly Shape ModifiedShape(in Shape theShape)
     {
         wire.TShape()?.FreezeGraph();
         return InternalModifiedShape(theShape);
     }
 
     /// <summary><see cref="ModifiedShape"/> without freezing the wire, for ported callers.</summary>
-    internal readonly TopoDS_Shape InternalModifiedShape(in TopoDS_Shape theShape)
+    internal readonly Shape InternalModifiedShape(in Shape theShape)
     {
-        TopoDS_Shape aModifiedShape = new();
+        Shape aModifiedShape = new();
 
         switch (theShape.ShapeType())
         {
-            case TopAbs_WIRE:
+            case global::Kerf.Topology.ShapeType.Wire:
                 if (theShape.IsSame(myOriginalShape))
                 {
                     aModifiedShape = wire;
                 }
                 break;
-            case TopAbs_EDGE:
+            case ShapeType.Edge:
                 {
-                    TopoDS_Iterator itor = new(myOriginalShape);
-                    TopoDS_Iterator itw = new(wire);
+                    Iterator itor = new(myOriginalShape);
+                    Iterator itw = new(wire);
                     for (; itor.More(); itor.Next(), itw.Next())
                     {
-                        TopoDS_Shape anOriginalEdge = itor.Value();
-                        TopoDS_Shape anEdge = itw.Value();
+                        Shape anOriginalEdge = itor.Value();
+                        Shape anEdge = itw.Value();
                         if (anOriginalEdge.IsSame(theShape))
                         {
                             aModifiedShape = anEdge;
@@ -162,20 +165,20 @@ public partial struct BRepFill_Section : IEquatable<BRepFill_Section>
                     }
                 }
                 break;
-            case TopAbs_VERTEX:
+            case global::Kerf.Topology.ShapeType.Vertex:
                 if (theShape.IsSame(myOriginalShape))
                 {
-                    TopExp_Explorer Explo = new(wire, TopAbs_VERTEX);
+                    Explorer Explo = new(wire, global::Kerf.Topology.ShapeType.Vertex);
                     aModifiedShape = Explo.Current();
                 }
                 else
                 {
-                    TopExp_Explorer ExpOrig = new(myOriginalShape, TopAbs_VERTEX);
-                    TopExp_Explorer ExpWire = new(wire, TopAbs_VERTEX);
+                    Explorer ExpOrig = new(myOriginalShape, global::Kerf.Topology.ShapeType.Vertex);
+                    Explorer ExpWire = new(wire, global::Kerf.Topology.ShapeType.Vertex);
                     for (; ExpOrig.More(); ExpOrig.Next(), ExpWire.Next())
                     {
-                        TopoDS_Shape anOriginalVertex = ExpOrig.Current();
-                        TopoDS_Shape aVertex = ExpWire.Current();
+                        Shape anOriginalVertex = ExpOrig.Current();
+                        Shape aVertex = ExpWire.Current();
                         if (anOriginalVertex.IsSame(theShape))
                         {
                             aModifiedShape = aVertex;

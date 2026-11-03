@@ -3,21 +3,22 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.ShapeExtend_Status;
 
 namespace Occt;
 
 /// <summary>
 /// Splits a 2D curve with a criterion (the base class splits at the values given). The curve given is copied at
-/// <see cref="Init(Geom2d_Curve, double, double)"/>, so it is never modified.
+/// <see cref="Init(Curve2D, double, double)"/>, so it is never modified.
 /// </summary>
 /// <remarks>A working object (decision 21). The resulting curves are the tool's own, unfrozen.</remarks>
 public class ShapeUpgrade_SplitCurve2d : ShapeUpgrade_SplitCurve
 {
     /// <summary>The tool's copy of the curve.</summary>
-    protected Geom2d_Curve? myCurve;
+    protected Curve2D? myCurve;
     /// <summary>The resulting curves.</summary>
-    protected NCollection_HArray1<Geom2d_Curve>? myResultingCurves;
+    protected NCollection_HArray1<Curve2D>? myResultingCurves;
 
     /// <summary>Empty constructor.</summary>
     public ShapeUpgrade_SplitCurve2d()
@@ -25,22 +26,22 @@ public class ShapeUpgrade_SplitCurve2d : ShapeUpgrade_SplitCurve
     }
 
     /// <summary>Initializes with the curve over its whole range.</summary>
-    public void Init(Geom2d_Curve C)
+    public void Init(Curve2D C)
     {
         Init(C, C.FirstParameter(), C.LastParameter());
     }
 
     /// <summary>Initializes with a copy of the curve, bounded by the parameters (clipped to a non-periodic curve's domain).</summary>
-    public void Init(Geom2d_Curve C, double First, double Last)
+    public void Init(Curve2D C, double First, double Last)
     {
-        Geom2d_Curve CopyOfC = (Geom2d_Curve)C.Copy();
+        Curve2D CopyOfC = (Curve2D)C.Copy();
         myCurve = CopyOfC;
 
         double precision = Kerf.Engine.Foundation.Precision.PConfusion();
         double firstPar = First;
         double lastPar = Last;
-        Geom2d_Curve aCurve = myCurve;
-        if (aCurve is Geom2d_TrimmedCurve aTrimmed)
+        Curve2D aCurve = myCurve;
+        if (aCurve is TrimmedCurve2D aTrimmed)
         {
             aCurve = aTrimmed.BasisCurve();
         }
@@ -91,19 +92,19 @@ public class ShapeUpgrade_SplitCurve2d : ShapeUpgrade_SplitCurve
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
         }
-        if (myCurve is Geom2d_TrimmedCurve tmp)
+        if (myCurve is TrimmedCurve2D tmp)
         {
-            Geom2d_Curve BasCurve = tmp.BasisCurve();
+            Curve2D BasCurve = tmp.BasisCurve();
             var spc = new ShapeUpgrade_SplitCurve2d();
             spc.Init(BasCurve, First, Last);
             spc.SetSplitValues(mySplitValues);
             spc.Build(Segment);
             myNbCurves = spc.GetCurves()!.Length();
 
-            myResultingCurves = new NCollection_HArray1<Geom2d_Curve>(1, myNbCurves);
+            myResultingCurves = new NCollection_HArray1<Curve2D>(1, myNbCurves);
             if (myNbCurves == 1)
             {
-                var NewTrimCurve = new Geom2d_TrimmedCurve(spc.GetCurves()!.Value(1), First, Last);
+                var NewTrimCurve = new TrimmedCurve2D(spc.GetCurves()!.Value(1), First, Last);
                 myResultingCurves.SetValue(1, NewTrimCurve);
             }
             else
@@ -113,19 +114,19 @@ public class ShapeUpgrade_SplitCurve2d : ShapeUpgrade_SplitCurve
             myStatus |= spc.myStatus;
             return;
         }
-        else if (myCurve is Geom2d_OffsetCurve tmpOffset)
+        else if (myCurve is OffsetCurve2D tmpOffset)
         {
-            Geom2d_Curve BasCurve = tmpOffset.BasisCurve();
+            Curve2D BasCurve = tmpOffset.BasisCurve();
             double Offset = tmpOffset.Offset();
             var spc = new ShapeUpgrade_SplitCurve2d();
             spc.Init(BasCurve, First, Last);
             spc.SetSplitValues(mySplitValues);
             spc.Build(Segment);
             myNbCurves = spc.GetCurves()!.Length();
-            myResultingCurves = new NCollection_HArray1<Geom2d_Curve>(1, myNbCurves);
+            myResultingCurves = new NCollection_HArray1<Curve2D>(1, myNbCurves);
             for (int i = 1; i <= myNbCurves; i++)
             {
-                var NewOffsetCurve = new Geom2d_OffsetCurve(spc.GetCurves()!.Value(i), Offset);
+                var NewOffsetCurve = new OffsetCurve2D(spc.GetCurves()!.Value(i), Offset);
                 myResultingCurves.SetValue(i, NewOffsetCurve);
             }
             myStatus |= spc.myStatus;
@@ -133,7 +134,7 @@ public class ShapeUpgrade_SplitCurve2d : ShapeUpgrade_SplitCurve
         }
 
         myNbCurves = mySplitValues.Length() - 1;
-        myResultingCurves = new NCollection_HArray1<Geom2d_Curve>(1, myNbCurves);
+        myResultingCurves = new NCollection_HArray1<Curve2D>(1, myNbCurves);
         if (myNbCurves == 1)
         {
             bool filled = true;
@@ -142,33 +143,33 @@ public class ShapeUpgrade_SplitCurve2d : ShapeUpgrade_SplitCurve
             {
                 myResultingCurves.SetValue(1, myCurve);
             }
-            else if (!Segment || (myCurve is not Geom2d_BSplineCurve && myCurve is not Geom2d_BezierCurve)
+            else if (!Segment || (myCurve is not BSplineCurve2D && myCurve is not BezierCurve2D)
                      || !Status(ShapeExtend_DONE2))
             {
-                if (myCurve is Geom2d_BSplineCurve || myCurve is Geom2d_BezierCurve)
+                if (myCurve is BSplineCurve2D || myCurve is BezierCurve2D)
                 {
-                    var theNewCurve = (Geom2d_Curve)myCurve.Copy();
+                    var theNewCurve = (Curve2D)myCurve.Copy();
                     try
                     {
-                        if (myCurve is Geom2d_BSplineCurve)
+                        if (myCurve is BSplineCurve2D)
                         {
-                            ((Geom2d_BSplineCurve)theNewCurve).Segment(First, Last);
+                            ((BSplineCurve2D)theNewCurve).Segment(First, Last);
                         }
-                        else if (myCurve is Geom2d_BezierCurve)
+                        else if (myCurve is BezierCurve2D)
                         {
-                            ((Geom2d_BezierCurve)theNewCurve).Segment(First, Last);
+                            ((BezierCurve2D)theNewCurve).Segment(First, Last);
                         }
                     }
                     catch (Exception anException) when (ShapeUpgrade.IsCaughtFailure(anException))
                     {
                         // OCCT_DEBUG output left out
-                        theNewCurve = new Geom2d_TrimmedCurve((Geom2d_Curve)myCurve.Copy(), First, Last);
+                        theNewCurve = new TrimmedCurve2D((Curve2D)myCurve.Copy(), First, Last);
                     }
                     myResultingCurves.SetValue(1, theNewCurve);
                 }
                 else
                 {
-                    var theNewCurve = new Geom2d_TrimmedCurve((Geom2d_Curve)myCurve.Copy(), First, Last);
+                    var theNewCurve = new TrimmedCurve2D((Curve2D)myCurve.Copy(), First, Last);
                     myResultingCurves.SetValue(1, theNewCurve);
                 }
             }
@@ -181,9 +182,9 @@ public class ShapeUpgrade_SplitCurve2d : ShapeUpgrade_SplitCurve
                 return;
             }
         }
-        if (myCurve is Geom2d_BSplineCurve)
+        if (myCurve is BSplineCurve2D)
         {
-            var BsCurve = (Geom2d_BSplineCurve)myCurve.Copy();
+            var BsCurve = (BSplineCurve2D)myCurve.Copy();
             int FirstInd = BsCurve.FirstUKnotIndex(), LastInd = BsCurve.LastUKnotIndex();
             int j = FirstInd;
             for (int ii = 1; ii <= mySplitValues.Length(); ii++)
@@ -212,34 +213,34 @@ public class ShapeUpgrade_SplitCurve2d : ShapeUpgrade_SplitCurve
         {
             // skl : in the next block I change "First","Last" to "Firstt","Lastt"
             double Firstt = mySplitValues.Value(i), Lastt = mySplitValues.Value(i + 1);
-            Geom2d_Curve? theNewCurve = null;
+            Curve2D? theNewCurve = null;
             if (Segment)
             {
                 // creates a copy of myCurve before to segment:
-                if (myCurve is Geom2d_BSplineCurve || myCurve is Geom2d_BezierCurve)
+                if (myCurve is BSplineCurve2D || myCurve is BezierCurve2D)
                 {
-                    theNewCurve = (Geom2d_Curve)myCurve!.Copy();
+                    theNewCurve = (Curve2D)myCurve!.Copy();
                     try
                     {
-                        if (myCurve is Geom2d_BSplineCurve)
+                        if (myCurve is BSplineCurve2D)
                         {
-                            ((Geom2d_BSplineCurve)theNewCurve).Segment(Firstt, Lastt);
+                            ((BSplineCurve2D)theNewCurve).Segment(Firstt, Lastt);
                         }
-                        else if (myCurve is Geom2d_BezierCurve)
+                        else if (myCurve is BezierCurve2D)
                         {
-                            ((Geom2d_BezierCurve)theNewCurve).Segment(Firstt, Lastt);
+                            ((BezierCurve2D)theNewCurve).Segment(Firstt, Lastt);
                         }
                         myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE3);
                     }
                     catch (Exception anException) when (ShapeUpgrade.IsCaughtFailure(anException))
                     {
                         // OCCT_DEBUG output left out
-                        theNewCurve = new Geom2d_TrimmedCurve((Geom2d_Curve)myCurve.Copy(), Firstt, Lastt);
+                        theNewCurve = new TrimmedCurve2D((Curve2D)myCurve.Copy(), Firstt, Lastt);
                     }
                 }
                 else
                 {
-                    theNewCurve = new Geom2d_TrimmedCurve((Geom2d_Curve)myCurve!.Copy(), Firstt, Lastt);
+                    theNewCurve = new TrimmedCurve2D((Curve2D)myCurve!.Copy(), Firstt, Lastt);
                 }
             }
             myResultingCurves.SetValue(i, theNewCurve!);
@@ -247,5 +248,5 @@ public class ShapeUpgrade_SplitCurve2d : ShapeUpgrade_SplitCurve
     }
 
     /// <summary>Returns the resulting curves (the tool's own).</summary>
-    public NCollection_HArray1<Geom2d_Curve>? GetCurves() => myResultingCurves;
+    public NCollection_HArray1<Curve2D>? GetCurves() => myResultingCurves;
 }

@@ -3,11 +3,14 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Buffers.Binary;
 using System.Text;
-using static Occt.TopAbs_ShapeEnum;
+using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DataExchange.Tests;
 
@@ -19,7 +22,7 @@ namespace OcctNet.DataExchange.Tests;
 public class RWStlTests
 {
     // DESTL_Provider_Test's CreateTriangulatedFace: a planar face with a two-triangle triangulation
-    private static TopoDS_Shape CreateTriangulatedFace()
+    private static Shape CreateTriangulatedFace()
     {
         var aNodes = new NCollection_Array1<Point3D>(1, 4);
         aNodes.SetValue(1, new Point3D(0.0, 0.0, 0.0));
@@ -32,26 +35,26 @@ public class RWStlTests
         return FaceWith(new Triangulation(aNodes, aTriangles), 10.0);
     }
 
-    private static TopoDS_Shape FaceWith(Triangulation theTriangulation, double theSize)
+    private static Shape FaceWith(Triangulation theTriangulation, double theSize)
     {
         var aPlane = new Plane3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0, 0, 1));
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aPlane, 0.0, theSize, 0.0, theSize).InternalFace();
-        new BRep_Builder().UpdateFace(aFace, theTriangulation);
+        Face aFace = new BRepBuilderAPI_MakeFace(aPlane, 0.0, theSize, 0.0, theSize).InternalFace();
+        new BrepBuilder().UpdateFace(aFace, theTriangulation);
         aFace.TShape()!.FreezeGraph();
         return aFace;
     }
 
-    private static int CountShapeElements(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
+    private static int CountShapeElements(in Shape theShape, ShapeType theType)
     {
         int aCount = 0;
-        for (var anExplorer = new TopExp_Explorer(theShape, theType); anExplorer.More(); anExplorer.Next())
+        for (var anExplorer = new Explorer(theShape, theType); anExplorer.More(); anExplorer.Next())
         {
             aCount++;
         }
         return aCount;
     }
 
-    private static byte[] Write(in TopoDS_Shape theShape, bool theAscii)
+    private static byte[] Write(in Shape theShape, bool theAscii)
     {
         var aWriter = new StlAPI_Writer();
         aWriter.SetASCIIMode(theAscii);
@@ -61,15 +64,15 @@ public class RWStlTests
     }
 
     // DESTL_Provider::Read(stream, shape) with ReadBRep off: RWStl::ReadStream, a face holding the triangulation
-    private static TopoDS_Shape ReadFace(byte[] theData)
+    private static Shape ReadFace(byte[] theData)
     {
         Triangulation? aTriangulation = RWStl.ReadStream(new MemoryStream(theData));
         if (aTriangulation is null)
         {
-            return new TopoDS_Shape();
+            return new Shape();
         }
-        TopoDS_Face aFace = new();
-        var aB = new BRep_Builder();
+        Face aFace = new();
+        var aB = new BrepBuilder();
         aB.MakeFace(ref aFace);
         aB.UpdateFace(aFace, aTriangulation);
         return aFace;
@@ -81,9 +84,9 @@ public class RWStlTests
         byte[] aStlContent = Write(CreateTriangulatedFace(), true);
         string aText = Encoding.ASCII.GetString(aStlContent);
         Assert.True(aText.Contains("solid", StringComparison.Ordinal) || aText.Contains("facet", StringComparison.Ordinal));
-        TopoDS_Shape aReadShape = ReadFace(aStlContent);
-        Assert.False(aReadShape.IsNull());
-        Assert.True(CountShapeElements(aReadShape, TopAbs_FACE) > 0);
+        Shape aReadShape = ReadFace(aStlContent);
+        Assert.False(aReadShape.IsNull);
+        Assert.True(CountShapeElements(aReadShape, ShapeType.Face) > 0);
     }
 
     [Fact]
@@ -103,28 +106,28 @@ public class RWStlTests
     {
         byte[] aStlContent = Write(CreateTriangulatedFace(), true);
         Assert.True(aStlContent.Length > 100);
-        Assert.False(ReadFace(aStlContent).IsNull());
+        Assert.False(ReadFace(aStlContent).IsNull);
         // with ReadBRep on: StlAPI_Reader, a face per triangle
-        TopoDS_Shape aShape = new();
+        Shape aShape = new();
         Assert.True(new StlAPI_Reader().Read(ref aShape, new MemoryStream(aStlContent)));
-        Assert.Equal(2, CountShapeElements(aShape, TopAbs_FACE));
+        Assert.Equal(2, CountShapeElements(aShape, ShapeType.Face));
     }
 
     [Fact]
     public void ErrorHandling()
     {
         // a null shape: nothing written
-        Assert.False(new StlAPI_Writer().Write(new TopoDS_Shape(), new MemoryStream()));
+        Assert.False(new StlAPI_Writer().Write(new Shape(), new MemoryStream()));
         // invalid content
-        Assert.True(ReadFace(Encoding.ASCII.GetBytes("This is not valid STL content")).IsNull());
+        Assert.True(ReadFace(Encoding.ASCII.GetBytes("This is not valid STL content")).IsNull);
     }
 
     [Fact]
     public void StreamErrorConditions()
     {
-        Assert.True(ReadFace(Encoding.ASCII.GetBytes("This is not STL data at all")).IsNull());
+        Assert.True(ReadFace(Encoding.ASCII.GetBytes("This is not STL data at all")).IsNull);
         // partial STL data
-        Assert.True(ReadFace(Encoding.ASCII.GetBytes("solid test\n  facet normal 0 0 1\n")).IsNull());
+        Assert.True(ReadFace(Encoding.ASCII.GetBytes("solid test\n  facet normal 0 0 1\n")).IsNull);
     }
 
     [Fact]
@@ -136,13 +139,13 @@ public class RWStlTests
         aNodes.SetValue(3, new Point3D(2.5, 5.0, 0.0));
         var aTriangles = new NCollection_Array1<Triangle1>(1, 1);
         aTriangles.SetValue(1, new Triangle1(1, 2, 3));
-        TopoDS_Shape aTriangleFace = FaceWith(new Triangulation(aNodes, aTriangles), 5.0);
+        Shape aTriangleFace = FaceWith(new Triangulation(aNodes, aTriangles), 5.0);
 
         byte[] aContent1 = Write(CreateTriangulatedFace(), true);
         byte[] aContent2 = Write(aTriangleFace, true);
         Assert.NotEqual(aContent1, aContent2);
-        Assert.False(ReadFace(aContent1).IsNull());
-        Assert.False(ReadFace(aContent2).IsNull());
+        Assert.False(ReadFace(aContent1).IsNull);
+        Assert.False(ReadFace(aContent2).IsNull);
     }
 
     [Fact]
@@ -158,8 +161,8 @@ public class RWStlTests
     [Fact]
     public void Writers_leave_their_input_unchanged_and_readers_publish_frozen_results()
     {
-        TopoDS_Shape aFace = CreateTriangulatedFace();
-        Triangulation aTriangulation = BRep_Tool.Triangulation(TopoDS.Face(aFace), out _)!;
+        Shape aFace = CreateTriangulatedFace();
+        Triangulation aTriangulation = Tool.Triangulation(ShapeCasts.Face(aFace), out _)!;
         string aBefore = Text(aFace);
         Write(aFace, true);
         Write(aFace, false);
@@ -174,15 +177,15 @@ public class RWStlTests
         var aList = new NCollection_Sequence<Triangulation>();
         RWStl.ReadFile(new MemoryStream(aData), Math.PI / 2, aList);
         Assert.True(aList.Value(1).IsFrozen);
-        TopoDS_Shape aShape = new();
+        Shape aShape = new();
         Assert.True(new StlAPI_Reader().Read(ref aShape, new MemoryStream(aData)));
         Assert.True(aShape.TShape()!.IsFrozen);
     }
 
-    private static string Text(in TopoDS_Shape theShape)
+    private static string Text(in Shape theShape)
     {
         var aWriter = new StringWriter { NewLine = "\n" };
-        BRepTools.Write(theShape, aWriter);
+        BrepTools.Write(theShape, aWriter);
         return aWriter.ToString();
     }
 
@@ -226,7 +229,7 @@ public class RWStlTests
         Assert.Null(RWStl.ReadFile(new MemoryStream(anAscii), Math.PI / 2, default, aOneTriangle));
         Assert.Null(RWStl.ReadBinaryStream(new MemoryStream(aBinary), Math.PI / 2, default, aOneTriangle));
         Assert.NotNull(RWStl.ReadFile(new MemoryStream(aBinary), Math.PI / 2, default, new RWStl_ReadLimits { MaxBytes = aBinary.Length, MaxTriangles = 2 }));
-        TopoDS_Shape aShape = new();
+        Shape aShape = new();
         Assert.False(new StlAPI_Reader().Read(ref aShape, new MemoryStream(aBinary), default, aOneTriangle));
 
         var aReader = new CountingReader();
@@ -337,13 +340,13 @@ public class RWStlTests
             Assert.False(RWStl.WriteAscii(null, Path.Combine(aDir, "c.stl")));
             Assert.False(RWStl.WriteBinary(new Triangulation(), new MemoryStream()));
 
-            TopoDS_Shape aFace = FaceWith(aMesh, 3.0);
+            Shape aFace = FaceWith(aMesh, 3.0);
             Assert.True(StlAPI.Write(aFace, Path.Combine(aDir, "s.stl"), false));
-            TopoDS_Shape aShape = new();
+            Shape aShape = new();
 #pragma warning disable CS0618 // the deprecated legacy reader
             Assert.True(StlAPI.Read(ref aShape, Path.Combine(aDir, "s.stl")));
 #pragma warning restore CS0618
-            Assert.Equal(18, CountShapeElements(aShape, TopAbs_FACE));
+            Assert.Equal(18, CountShapeElements(aShape, ShapeType.Face));
         }
         finally
         {
@@ -354,10 +357,10 @@ public class RWStlTests
     [Fact]
     public void Reversed_and_located_faces_are_written_as_placed()
     {
-        TopoDS_Shape aFace = CreateTriangulatedFace();
+        Shape aFace = CreateTriangulatedFace();
         var aTrsf = new Transform3D();
         aTrsf.SetTranslation(new Vector3D(0, 0, 5));
-        TopoDS_Shape aMoved = aFace.Moved(new Placement(aTrsf)).Reversed();
+        Shape aMoved = aFace.Moved(new Placement(aTrsf)).Reversed();
         Triangulation? aRead = RWStl.ReadFile(new MemoryStream(Write(aMoved, false)));
         Assert.NotNull(aRead);
         Assert.Equal(5.0, aRead.Node(1).Z());

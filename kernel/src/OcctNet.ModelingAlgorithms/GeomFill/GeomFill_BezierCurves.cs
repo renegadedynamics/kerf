@@ -21,7 +21,7 @@ namespace Occt;
 /// </remarks>
 public class GeomFill_BezierCurves
 {
-    private Geom_BezierSurface? mySurface;
+    private BezierSurface? mySurface;
 
     // SetSameWeights uses the following property of rational Bezier curves: if Wi = Weight(i), Pi = Pole(i),
     // n = NbPoles, then for any a, b, c != 0 the transformation Wi = a * b^i * c^(n-i) doesn't modify the geometry
@@ -78,16 +78,16 @@ public class GeomFill_BezierCurves
     //                 |           |
     //                  ----->-----
     //                   CC1 = C1
-    private static bool Arrange(Geom_BezierCurve C1, Geom_BezierCurve C2, Geom_BezierCurve C3, Geom_BezierCurve C4,
-                                out Geom_BezierCurve CC1, out Geom_BezierCurve CC2, out Geom_BezierCurve CC3,
-                                out Geom_BezierCurve CC4, double Tol)
+    private static bool Arrange(BezierCurve3D C1, BezierCurve3D C2, BezierCurve3D C3, BezierCurve3D C4,
+                                out BezierCurve3D CC1, out BezierCurve3D CC2, out BezierCurve3D CC3,
+                                out BezierCurve3D CC4, double Tol)
     {
-        Geom_BezierCurve[] GC = new Geom_BezierCurve[4];
-        Geom_BezierCurve Dummy;
-        GC[0] = (Geom_BezierCurve)C1.Copy();
-        GC[1] = (Geom_BezierCurve)C2.Copy();
-        GC[2] = (Geom_BezierCurve)C3.Copy();
-        GC[3] = (Geom_BezierCurve)C4.Copy();
+        BezierCurve3D[] GC = new BezierCurve3D[4];
+        BezierCurve3D Dummy;
+        GC[0] = (BezierCurve3D)C1.Copy();
+        GC[1] = (BezierCurve3D)C2.Copy();
+        GC[2] = (BezierCurve3D)C3.Copy();
+        GC[3] = (BezierCurve3D)C4.Copy();
         CC1 = CC2 = CC3 = CC4 = null!;
 
         int i, j;
@@ -107,7 +107,7 @@ public class GeomFill_BezierCurves
                 }
                 else if (GC[j].EndPoint().Distance(GC[i - 1].EndPoint()) < Tol)
                 {
-                    GC[j] = (Geom_BezierCurve)GC[j].Reversed();
+                    GC[j] = (BezierCurve3D)GC[j].Reversed();
                     Dummy = GC[i];
                     GC[i] = GC[j];
                     GC[j] = Dummy;
@@ -122,23 +122,23 @@ public class GeomFill_BezierCurves
 
         CC1 = GC[0];
         CC2 = GC[1];
-        CC3 = (Geom_BezierCurve)GC[2].Reversed();
-        CC4 = (Geom_BezierCurve)GC[3].Reversed();
+        CC3 = (BezierCurve3D)GC[2].Reversed();
+        CC4 = (BezierCurve3D)GC[3].Reversed();
 
         return true;
     }
 
     // OCCT's Poles() and WeightsArray() const references: copies of the values (the curves are this object's own).
-    private static NCollection_Array1<Point3D> PolesOf(Geom_BezierCurve C)
+    private static NCollection_Array1<Point3D> PolesOf(BezierCurve3D C)
     {
-        NCollection_Array1<Point3D> P = new(1, C.NbPoles());
+        NCollection_Array1<Point3D> P = new(1, C.PoleCount);
         C.Poles(P);
         return P;
     }
 
-    private static NCollection_Array1<double> WeightsOf(Geom_BezierCurve C)
+    private static NCollection_Array1<double> WeightsOf(BezierCurve3D C)
     {
-        NCollection_Array1<double> W = new(1, C.NbPoles());
+        NCollection_Array1<double> W = new(1, C.PoleCount);
         C.Weights(W);
         return W;
     }
@@ -148,31 +148,31 @@ public class GeomFill_BezierCurves
     }
 
     /// <summary>The filling of four contiguous curves in the style <paramref name="Type"/>.</summary>
-    public GeomFill_BezierCurves(Geom_BezierCurve C1, Geom_BezierCurve C2, Geom_BezierCurve C3, Geom_BezierCurve C4,
+    public GeomFill_BezierCurves(BezierCurve3D C1, BezierCurve3D C2, BezierCurve3D C3, BezierCurve3D C4,
                                  GeomFill_FillingStyle Type)
     {
         Init(C1, C2, C3, C4, Type);
     }
 
     /// <summary>The filling of three contiguous curves, closed by a segment, in the style <paramref name="Type"/>.</summary>
-    public GeomFill_BezierCurves(Geom_BezierCurve C1, Geom_BezierCurve C2, Geom_BezierCurve C3,
+    public GeomFill_BezierCurves(BezierCurve3D C1, BezierCurve3D C2, BezierCurve3D C3,
                                  GeomFill_FillingStyle Type)
     {
         Init(C1, C2, C3, Type);
     }
 
     /// <summary>The filling between two curves in the style <paramref name="Type"/>.</summary>
-    public GeomFill_BezierCurves(Geom_BezierCurve C1, Geom_BezierCurve C2, GeomFill_FillingStyle Type)
+    public GeomFill_BezierCurves(BezierCurve3D C1, BezierCurve3D C2, GeomFill_FillingStyle Type)
     {
         Init(C1, C2, Type);
     }
 
     /// <summary>Fills four contiguous curves; throws Standard_ConstructionError if they don't join.</summary>
-    public void Init(Geom_BezierCurve C1, Geom_BezierCurve C2, Geom_BezierCurve C3, Geom_BezierCurve C4,
+    public void Init(BezierCurve3D C1, BezierCurve3D C2, BezierCurve3D C3, BezierCurve3D C4,
                      GeomFill_FillingStyle Type)
     {
         // On ordonne les courbes
-        Geom_BezierCurve CC1, CC2, CC3, CC4;
+        BezierCurve3D CC1, CC2, CC3, CC4;
 
         double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         // OCCT's release build ignores the result (No_Exception); the port checks it (decision 9).
@@ -213,7 +213,7 @@ public class GeomFill_BezierCurves
         NCollection_Array1<Point3D> P4 = PolesOf(CC4);
 
         // Traitement des courbes rationelles
-        bool isRat = (CC1.IsRational() || CC2.IsRational() || CC3.IsRational() || CC4.IsRational());
+        bool isRat = (CC1.IsRational || CC2.IsRational || CC3.IsRational || CC4.IsRational);
 
         GeomFill_Filling Caro = new();
         if (isRat)
@@ -264,18 +264,18 @@ public class GeomFill_BezierCurves
         {
             NCollection_Array2<double> Weights = new(1, NbUPoles, 1, NbVPoles);
             Caro.Weights(Weights);
-            mySurface = new Geom_BezierSurface(Poles, Weights);
+            mySurface = new BezierSurface(Poles, Weights);
         }
         else
         {
-            mySurface = new Geom_BezierSurface(Poles);
+            mySurface = new BezierSurface(Poles);
         }
     }
 
     /// <summary>Fills three contiguous curves, the fourth side being the segment between the free ends.</summary>
-    public void Init(Geom_BezierCurve C1, Geom_BezierCurve C2, Geom_BezierCurve C3, GeomFill_FillingStyle Type)
+    public void Init(BezierCurve3D C1, BezierCurve3D C2, BezierCurve3D C3, GeomFill_FillingStyle Type)
     {
-        Geom_BezierCurve C4;
+        BezierCurve3D C4;
         NCollection_Array1<Point3D> Poles = new(1, 2);
         double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         Tol = Tol * Tol;
@@ -298,7 +298,7 @@ public class GeomFill_BezierCurves
         {
             Poles[2] = C3.EndPoint();
         }
-        C4 = new Geom_BezierCurve(Poles);
+        C4 = new BezierCurve3D(Poles);
         Init(C1, C2, C3, C4, Type);
     }
 
@@ -306,15 +306,15 @@ public class GeomFill_BezierCurves
     /// Fills between two curves: a ruled surface for the Stretch and Coons styles, the first curve translated along
     /// the second for the Curved style (which needs the curves to share an end; else Standard_OutOfRange).
     /// </summary>
-    public void Init(Geom_BezierCurve C1, Geom_BezierCurve C2, GeomFill_FillingStyle Type)
+    public void Init(BezierCurve3D C1, BezierCurve3D C2, GeomFill_FillingStyle Type)
     {
-        Geom_BezierCurve CC1 = (Geom_BezierCurve)C1.Copy();
-        Geom_BezierCurve CC2 = (Geom_BezierCurve)C2.Copy();
+        BezierCurve3D CC1 = (BezierCurve3D)C1.Copy();
+        BezierCurve3D CC2 = (BezierCurve3D)C2.Copy();
 
         int Deg1 = CC1.Degree();
         int Deg2 = CC2.Degree();
 
-        bool isRat = (CC1.IsRational() || CC2.IsRational());
+        bool isRat = (CC1.IsRational || CC2.IsRational);
 
         if (Type != GeomFill_CurvedStyle)
         {
@@ -349,11 +349,11 @@ public class GeomFill_BezierCurves
                     Weights[i, 1] = W1[i];
                     Weights[i, 2] = W2[i];
                 }
-                mySurface = new Geom_BezierSurface(Poles, Weights);
+                mySurface = new BezierSurface(Poles, Weights);
             }
             else
             {
-                mySurface = new Geom_BezierSurface(Poles);
+                mySurface = new BezierSurface(Poles);
             }
         }
         else
@@ -412,22 +412,22 @@ public class GeomFill_BezierCurves
             {
                 NCollection_Array2<double> Weights = new(1, NbUPoles, 1, NbVPoles);
                 Caro.Weights(Weights);
-                mySurface = new Geom_BezierSurface(Poles, Weights);
+                mySurface = new BezierSurface(Poles, Weights);
             }
             else
             {
-                mySurface = new Geom_BezierSurface(Poles);
+                mySurface = new BezierSurface(Poles);
             }
         }
     }
 
     /// <summary>The surface (null before <c>Init</c>), frozen.</summary>
-    public Geom_BezierSurface? Surface()
+    public BezierSurface? Surface()
     {
         mySurface?.Freeze();
         return mySurface;
     }
 
     /// <summary>The surface, not frozen, for ported callers.</summary>
-    internal Geom_BezierSurface? InternalSurface() => mySurface;
+    internal BezierSurface? InternalSurface() => mySurface;
 }

@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
+using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -70,13 +73,13 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
         BitConverter.Int64BitsToDouble(long.Parse(theText, NumberStyles.HexNumber, CultureInfo.InvariantCulture));
 
     /// <summary>The case's two arguments (the second null when there is one), frozen as BRepTools.Read publishes them.</summary>
-    internal static (TopoDS_Shape S1, TopoDS_Shape S2) Arguments(Case theCase)
+    internal static (Shape S1, Shape S2) Arguments(Case theCase)
     {
-        BRepTools.Read(out TopoDS_Shape aShape, new StringReader(theCase.ShapesText));
-        TopoDS_Iterator anIt = new(aShape);
-        TopoDS_Shape aS1 = anIt.Value();
+        BrepTools.Read(out Shape aShape, new StringReader(theCase.ShapesText));
+        Iterator anIt = new(aShape);
+        Shape aS1 = anIt.Value();
         anIt.Next();
-        TopoDS_Shape aS2 = anIt.More() ? anIt.Value() : new TopoDS_Shape();
+        Shape aS2 = anIt.More() ? anIt.Value() : new Shape();
         return (aS1, aS2);
     }
 
@@ -92,22 +95,22 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
 
     private sealed class ShapeIndex
     {
-        private readonly NCollection_IndexedMap<TopoDS_Shape> myMap = new(TopTools_ShapeMapHasher.Instance);
+        private readonly NCollection_IndexedMap<Shape> myMap = new(ShapeHasher.Instance);
 
-        public ShapeIndex(in TopoDS_Shape theS1, in TopoDS_Shape theS2)
+        public ShapeIndex(in Shape theS1, in Shape theS2)
         {
-            if (!theS1.IsNull())
+            if (!theS1.IsNull)
             {
-                TopExp.MapShapes(theS1, myMap);
+                Exploration.MapShapes(theS1, myMap);
             }
-            if (!theS2.IsNull())
+            if (!theS2.IsNull)
             {
-                TopExp.MapShapes(theS2, myMap);
+                Exploration.MapShapes(theS2, myMap);
             }
         }
 
-        public string Of(in TopoDS_Shape theS) =>
-            theS.IsNull() ? "-" : $"{myMap.FindIndex(theS)}o{(int)theS.Orientation()}";
+        public string Of(in Shape theS) =>
+            theS.IsNull ? "-" : $"{myMap.FindIndex(theS)}o{(int)theS.Orientation()}";
     }
 
     private static string Results(IEnumerable<BOPAlgo_CheckResult> theResults, ShapeIndex theIndex)
@@ -119,12 +122,12 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
         {
             aB.Append("r ").Append((int)aR.GetCheckStatus()).Append(' ').Append(theIndex.Of(aR.GetShape1())).Append(' ')
               .Append(theIndex.Of(aR.GetShape2())).Append(" f1");
-            foreach (TopoDS_Shape aS in aR.GetFaultyShapes1())
+            foreach (Shape aS in aR.GetFaultyShapes1())
             {
                 aB.Append(' ').Append(theIndex.Of(aS));
             }
             aB.Append(" f2");
-            foreach (TopoDS_Shape aS in aR.GetFaultyShapes2())
+            foreach (Shape aS in aR.GetFaultyShapes2())
             {
                 aB.Append(' ').Append(theIndex.Of(aS));
             }
@@ -137,14 +140,14 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
     /// <summary>The port's record of a run, as the recorder writes native's.</summary>
     internal static string Run(Case theCase, bool theParallel = false)
     {
-        (TopoDS_Shape aS1, TopoDS_Shape aS2) = Arguments(theCase);
+        (Shape aS1, Shape aS2) = Arguments(theCase);
         string[] aRun = theCase.Run;
         switch (aRun[0])
         {
             case "si":
             {
                 BOPAlgo_CheckerSI aChecker = new();
-                NCollection_List<TopoDS_Shape> aLS = new();
+                NCollection_List<Shape> aLS = new();
                 aLS.Append(aS1);
                 aChecker.SetArguments(aLS);
                 aChecker.SetLevelOfCheck(int.Parse(aRun[1], CultureInfo.InvariantCulture));
@@ -168,7 +171,7 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
             case "aa":
             {
                 string aModes = aRun[1];
-                if (aRun[4] == "1" && !aS2.IsNull())
+                if (aRun[4] == "1" && !aS2.IsNull)
                 {
                     aS2 = new BRepBuilderAPI_Copy(aS2).Shape();
                 }
@@ -176,7 +179,7 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
                 aChecker.SetFuzzyValue(FromHex(aRun[3]));
                 aChecker.SetRunParallel(theParallel);
                 aChecker.SetShape1(aS1);
-                if (!aS2.IsNull())
+                if (!aS2.IsNull)
                 {
                     aChecker.SetShape2(aS2);
                 }
@@ -200,7 +203,7 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
                 aChecker.SetFuzzyValue(FromHex(aRun[4]));
                 aChecker.SetRunParallel(theParallel);
                 bool aSE = aRun[2] == "1", aSI = aRun[3] == "1";
-                if (aS2.IsNull())
+                if (aS2.IsNull)
                 {
                     aChecker.SetData(aS1, aSE, aSI);
                 }

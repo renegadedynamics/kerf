@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using static Occt.TopAbs_State;
+using Kerf.Topology;
+using static Kerf.Topology.Containment;
 
 namespace Occt;
 
@@ -16,7 +18,7 @@ namespace Occt;
 /// A working object (decision 21). The body is TopClass_Classifier2d's (decision 285), as for
 /// BRepClass_FClass2dOfFClassifier.
 /// </remarks>
-public sealed class Geom2dHatch_FClass2dOfClassifier : ITopClass_FClass2d<Geom2dAdaptor_Curve>
+public sealed class Geom2dHatch_FClass2dOfClassifier : ITopClass_FClass2d<CurveAdaptor2D>
 {
     private bool myIsSet;
     private bool myFirstCompare;
@@ -27,7 +29,7 @@ public sealed class Geom2dHatch_FClass2dOfClassifier : ITopClass_FClass2d<Geom2d
     private readonly TopTrans_CurveTransition myTrans = new();
     private readonly Geom2dHatch_Intersector myIntersector = new();
     private int myClosest;
-    private TopAbs_State myState;
+    private Containment myState;
     private bool myIsHeadOrEnd;
 
     /// <summary>An undefined classifier.</summary>
@@ -39,7 +41,7 @@ public sealed class Geom2dHatch_FClass2dOfClassifier : ITopClass_FClass2d<Geom2d
         myParam = 0.0;
         myTolerance = 0.0;
         myClosest = 0;
-        myState = TopAbs_UNKNOWN;
+        myState = Unknown;
         myIsHeadOrEnd = false;
     }
 
@@ -64,7 +66,7 @@ public sealed class Geom2dHatch_FClass2dOfClassifier : ITopClass_FClass2d<Geom2d
     }
 
     /// <summary>Updates the classification with the element <paramref name="E"/> of orientation <paramref name="Or"/>.</summary>
-    public void Compare(in Geom2dAdaptor_Curve E, TopAbs_Orientation Or)
+    public void Compare(in CurveAdaptor2D E, Orientation Or)
     {
         TopClass_Classifier2d.Compare(ref myClosest,
                                       myIntersector,
@@ -86,7 +88,7 @@ public sealed class Geom2dHatch_FClass2dOfClassifier : ITopClass_FClass2d<Geom2d
     /// <summary>The intersector (the classifier's own object).</summary>
     public Geom2dHatch_Intersector Intersector() => myIntersector;
 
-    IntRes2d_Intersection ITopClass_FClass2d<Geom2dAdaptor_Curve>.Intersector() => myIntersector;
+    IntRes2d_Intersection ITopClass_FClass2d<CurveAdaptor2D>.Intersector() => myIntersector;
 
     /// <summary>
     /// 0 if the last compared element had no relevant intersection, otherwise the index of that intersection in the
@@ -95,7 +97,7 @@ public sealed class Geom2dHatch_FClass2dOfClassifier : ITopClass_FClass2d<Geom2d
     public int ClosestIntersection() => myClosest;
 
     /// <summary>The current state of the point.</summary>
-    public TopAbs_State State() => myState;
+    public Containment State() => myState;
 
     /// <summary>True if the closest intersection is the head or the end of its element.</summary>
     public bool IsHeadOrEnd() => myIsHeadOrEnd;
